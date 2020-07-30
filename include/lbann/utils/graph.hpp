@@ -36,7 +36,7 @@ namespace graph {
 /** Print the nodes and edges of a graph to an output stream. */
 void print(const std::set<El::Int>& nodes,
            const std::map<El::Int,std::set<El::Int>>& edges,
-           std::ostream& os = std::cout);
+           std::ostream& os);
 
 /** Get nodes adjacent to a given node. */
 std::set<El::Int> get_neighbors(El::Int node,

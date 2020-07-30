@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_TRANSFORM_TESSELLATE_HPP_INCLUDED
 #define LBANN_LAYERS_TRANSFORM_TESSELLATE_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
 
@@ -57,20 +57,34 @@ namespace lbann {
  *  e_n@f$. Then, denoting the modulo operator with @f$ \% @f$,
  *  @f[ Y_{i_1,\cdots,i_n} = X_{i_1\% d_1,\cdots,i_n\% d_n} @f]
  */
-template <data_layout Layout = data_layout::DATA_PARALLEL, El::Device Device = El::Device::CPU>
-class tessellate_layer : public Layer {
+template <typename TensorDataType,
+          data_layout Layout = data_layout::DATA_PARALLEL,
+          El::Device Device = El::Device::CPU>
+class tessellate_layer : public data_type_layer<TensorDataType> {
+public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+  /** @brief The local tensor type expected in this object. */
+  using AbsMatrixType = El::AbstractMatrix<TensorDataType>;
+
+  ///@}
+
 public:
 
   tessellate_layer(lbann_comm *comm, std::vector<int> dims = {})
-    : Layer(comm) {
-    set_output_dims(dims);
+    : data_type_layer<TensorDataType>(comm) {
+    this->set_output_dims(dims);
   }
 
   tessellate_layer(const tessellate_layer& other)
-    : Layer(other),
+    : data_type_layer<TensorDataType>(other),
       m_input_v(other.m_input_v ? other.m_input_v->Copy() : nullptr) {}
   tessellate_layer& operator=(const tessellate_layer& other) {
-    Layer::operator=(other);
+    data_type_layer<TensorDataType>::operator=(other);
     m_input_v.reset(other.m_input_v ? other.m_input_v->Copy() : nullptr);
     return *this;
   }
@@ -80,15 +94,15 @@ public:
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
 
-  void setup_dims() override {
-    Layer::setup_dims();
+  void setup_dims(DataReaderMetaData& dr_metadata) override {
+    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     std::stringstream err;
 
     // Check input and output dimensions
-    const auto input_dims = get_input_dims();
-    const auto& output_dims = get_output_dims();
+    const auto input_dims = this->get_input_dims();
+    const auto& output_dims = this->get_output_dims();
     if (input_dims.size() != output_dims.size()) {
-      err << get_type() << " layer \"" << get_name() << "\" "
+      err << get_type() << " layer \"" << this->get_name() << "\" "
           << "attempted to tessellate a ";
       for (size_t i = 0; i < input_dims.size(); ++i) {
         err << (i > 0 ? "x" : "") << input_dims[i];
@@ -103,7 +117,7 @@ public:
 
     /// @todo Support tessellation with >3 dimensions
     if (input_dims.size() > 3) {
-      err << get_type() << " layer \"" << get_name() << "\" "
+      err << get_type() << " layer \"" << this->get_name() << "\" "
           << "attempted to tessellate a ";
       for (size_t i = 0; i < input_dims.size(); ++i) {
         err << (i > 0 ? "x" : "") << input_dims[i];
@@ -115,10 +129,10 @@ public:
   }
 
   void setup_matrices(const El::Grid& grid) override {
-    Layer::setup_matrices(grid);
-    auto dist_data = get_prev_activations().DistData();
+    data_type_layer<TensorDataType>::setup_matrices(grid);
+    auto dist_data = this->get_prev_activations().DistData();
     dist_data.colDist = El::STAR;
-    m_input_v.reset(AbsDistMat::Instantiate(dist_data));
+    m_input_v.reset(AbsDistMatrixType::Instantiate(dist_data));
   }
 
 protected:
@@ -126,14 +140,14 @@ protected:
   void fp_compute() override {
 
     // Get input and output dimensions
-    auto input_dims = get_input_dims();
-    auto output_dims = get_output_dims();
+    auto input_dims = this->get_input_dims();
+    auto output_dims = this->get_output_dims();
     while (input_dims.size() < 3) { input_dims.insert(input_dims.begin(), 1); }
     while (output_dims.size() < 3) { output_dims.insert(output_dims.begin(), 1); }
 
     // Get input and output data
-    auto& output = get_activations();
-    const auto& input = get_prev_activations();
+    auto& output = this->get_activations();
+    const auto& input = this->get_prev_activations();
     m_input_v->Empty(false);
     m_input_v->AlignWith(output);
     if (m_input_v->DistData() == input.DistData()) {
@@ -155,14 +169,14 @@ protected:
   void bp_compute() override {
 
     // Get input and output dimensions
-    auto input_dims = get_input_dims();
-    auto output_dims = get_output_dims();
+    auto input_dims = this->get_input_dims();
+    auto output_dims = this->get_output_dims();
     while (input_dims.size() < 3) { input_dims.insert(input_dims.begin(), 1); }
     while (output_dims.size() < 3) { output_dims.insert(output_dims.begin(), 1); }
 
     // Get input and output data
-    const auto& gradient_wrt_output = get_prev_error_signals();
-    auto& gradient_wrt_input = get_error_signals();
+    const auto& gradient_wrt_output = this->get_prev_error_signals();
+    auto& gradient_wrt_input = this->get_error_signals();
     m_input_v->Empty(false);
     m_input_v->AlignWith(gradient_wrt_output);
     if (m_input_v->DistData() == gradient_wrt_input.DistData()) {
@@ -180,7 +194,7 @@ protected:
 
     // Accumulate local error signals, if needed
     if (m_input_v->DistData() != gradient_wrt_input.DistData()) {
-      m_comm->allreduce(*m_input_v, m_input_v->RedundantComm());
+      this->m_comm->allreduce(*m_input_v, m_input_v->RedundantComm());
       El::Copy(*m_input_v, gradient_wrt_input);
     }
 
@@ -189,27 +203,36 @@ protected:
 private:
 
   /** View into input tensor. */
-  std::unique_ptr<AbsDistMat> m_input_v;
+  std::unique_ptr<AbsDistMatrixType> m_input_v;
 
   /** Apply tessellation.
    *  Columns of 'input' should be intact mini-batch samples. If the
    *  data layout is not purely data-parallel, this means input data
    *  is duplicated over the input matrix's column communicator.
    */
-  static void fp_compute_3d(const std::vector<int>& input_dims,
-                            const std::vector<int>& output_dims,
-                            const AbsMat& input,
-                            AbsDistMat& output);
+  void fp_compute_3d(const std::vector<int>& input_dims,
+                     const std::vector<int>& output_dims,
+                     const AbsMatrixType& input,
+                     AbsDistMatrixType& output);
   /** Compute local contribution to tessellation back prop
    *  The global gradient w.r.t. input can be obtained by performing
    *  an allreduce over the input matrix's column communicator.
    */
-  static void bp_compute_3d(const std::vector<int>& input_dims,
-                            const std::vector<int>& output_dims,
-                            const AbsDistMat& gradient_wrt_output,
-                            AbsMat& gradient_wrt_input);
+  void bp_compute_3d(const std::vector<int>& input_dims,
+                     const std::vector<int>& output_dims,
+                     const AbsDistMatrixType& gradient_wrt_output,
+                     AbsMatrixType& gradient_wrt_input);
 
 };
+
+#ifndef LBANN_TESSELLATE_LAYER_INSTANTIATE
+#define PROTO_DEVICE(T, Device) \
+  extern template class tessellate_layer<T, data_layout::DATA_PARALLEL, Device>; \
+  extern template class tessellate_layer<T, data_layout::MODEL_PARALLEL, Device>
+
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+#endif // LBANN_TESSELLATE_LAYER_INSTANTIATE
 
 } // namespace lbann
 

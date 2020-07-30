@@ -27,7 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_synthetic.hpp"
-#include "lbann/utils/random.hpp"
+#include "lbann/utils/random_number_generators.hpp"
 #include <cstdio>
 #include <string>
 
@@ -91,6 +91,7 @@ void data_reader_synthetic::load() {
   m_shuffled_indices.clear();
   m_shuffled_indices.resize(m_num_samples);
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
+  resize_shuffled_indices();
   select_subset_of_data();
 }
 

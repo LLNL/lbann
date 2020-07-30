@@ -27,8 +27,6 @@
 
 #include "lbann_config.hpp"
 
-#ifdef LBANN_HAS_CONDUIT
-
 #include "conduit/conduit.hpp"
 #include "conduit/conduit_relay_io_handle.hpp"
 #include <iostream>
@@ -42,8 +40,7 @@
 using namespace lbann;
 
 int main(int argc, char *argv[]) {
-  int random_seed = lbann_default_random_seed;
-  world_comm_ptr comm = initialize(argc, argv, random_seed);
+  world_comm_ptr comm = initialize(argc, argv);
   bool master = comm->am_world_master();
   const int rank = comm->get_rank_in_world();
   const int np = comm->get_procs_in_world();
@@ -103,7 +100,7 @@ int main(int argc, char *argv[]) {
     std::vector<std::string> cnames;
     try {
       hndl.list_child_names(cnames);
-    } catch (std::exception e) {
+    } catch (const std::exception&) {
       err << "list_child_names failed for this file: " << files[j];
       LBANN_ERROR(err.str());
     }
@@ -161,4 +158,3 @@ int main(int argc, char *argv[]) {
   out.close();
   std::cout << "\nMade directory 'corrupt_jag_samples/' and wrote files in that directory\n\n";
 }
-#endif //#ifdef LBANN_HAS_CONDUIT

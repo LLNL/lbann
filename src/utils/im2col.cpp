@@ -24,13 +24,15 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_UTILS_IM2COL_INSTANTIATE
 #include "lbann/utils/im2col.hpp"
 #include "lbann/utils/exception.hpp"
 
 namespace lbann {
 
-void im2col(const CPUMat& im,
-            CPUMat& col,
+template <typename TensorDataType>
+void im2col(const CPUMatDT<TensorDataType>& im,
+            CPUMatDT<TensorDataType>& col,
             const int num_channels,
             const int im_num_dims,
             const int * im_dims,
@@ -41,8 +43,8 @@ void im2col(const CPUMat& im,
   // Input and output parameters
   const int col_height = col.Height();
   const int col_width = col.Width();
-  const DataType *__restrict__ im_buffer = im.LockedBuffer();
-  DataType *__restrict__ col_buffer = col.Buffer();
+  const TensorDataType *__restrict__ im_buffer = im.LockedBuffer();
+  TensorDataType *__restrict__ col_buffer = col.Buffer();
 
   // im2col parameters
   std::vector<int> offset_start(im_num_dims);
@@ -145,15 +147,145 @@ void im2col(const CPUMat& im,
 
       // Copy im matrix entry to col matrix if valid
       col_buffer[col_index] = (im_pos_valid ?
-                               im_buffer[im_index] : DataType(0));
+                               im_buffer[im_index] : TensorDataType(0.));
 
     }
   }
 
 }
 
-void col2im(const CPUMat& col,
-            CPUMat& im,
+namespace {
+template <typename TensorDataType, typename ReductionOpType>
+void col2im_impl(const CPUMatDT<TensorDataType>& col,
+                 CPUMatDT<TensorDataType>& im,
+                 const int num_channels,
+                 const int im_num_dims,
+                 const int * im_dims,
+                 const int * im_pads,
+                 const int * window_dims,
+                 const int * window_strides,
+                 ReductionOpType reduction_op) {
+
+  // Input and output parameters
+  const int col_height = col.Height();
+  const int im_size = im.Height();
+  const TensorDataType *__restrict__ col_buffer = col.LockedBuffer();
+  TensorDataType *__restrict__ im_buffer = im.Buffer();
+
+  // im2col parameters
+  std::vector<int> offset_start(im_num_dims);
+  std::vector<int> offset_end(im_num_dims);
+  std::vector<int> offset_stride(im_num_dims);
+  std::vector<int> offset_num(im_num_dims);
+  for(int d = 0; d < im_num_dims; ++d) {
+    offset_start[d] = -im_pads[d];
+    offset_end[d] = im_dims[d] + im_pads[d] - window_dims[d] + 1;
+    offset_stride[d] = window_strides[d];
+    offset_num[d] = (offset_end[d] - offset_start[d] + offset_stride[d] - 1) / offset_stride[d];
+  }
+
+  // Call optimized routine for 1x1 col2im
+  std::vector<int> zeros(im_num_dims, 0), ones(im_num_dims, 1);
+  if(std::equal(im_pads, im_pads + im_num_dims, zeros.begin())
+     && std::equal(window_dims, window_dims + im_num_dims, ones.begin())
+     && std::equal(window_strides, window_strides + im_num_dims, ones.begin())) {
+    col2im_1x1(col_buffer, im_buffer, num_channels, im_num_dims, im_dims);
+    return;
+  }
+
+  // Iterate through im matrix entries
+  LBANN_OMP_PARALLEL_FOR
+  for(int im_index = 0; im_index < im_size; ++im_index) {
+
+    // Initialize arrays
+    std::vector<int> im_pos(im_num_dims);
+    std::vector<int> first_offset(im_num_dims);
+    std::vector<int> last_offset(im_num_dims);
+    std::vector<int> offset(im_num_dims);
+
+    // Get position of im matrix entry
+    int im_index_remainder = im_index;
+    for(int d = im_num_dims-1; d >= 0; --d) {
+      im_pos[d] = im_index_remainder % im_dims[d];
+      im_index_remainder /= im_dims[d];
+    }
+    const int channel = im_index_remainder;
+
+    // Initialize im matrix entry
+    TensorDataType im_entry = El::TypeTraits<TensorDataType>::Zero();
+    bool im_entry_initialized = false;
+    bool offsets_finished = false;
+
+    // Get window offsets containing im matrix entry
+    for(int d = 0; d < im_num_dims; ++d) {
+      first_offset[d] = (im_pos[d] - offset_start[d] - window_dims[d] + offset_stride[d]) / offset_stride[d];
+      first_offset[d] = std::max(first_offset[d], 0);
+      last_offset[d] = (im_pos[d] - offset_start[d]) / offset_stride[d];
+      last_offset[d] = std::min(last_offset[d], offset_num[d] - 1);
+      offset[d] = first_offset[d];
+      if(first_offset[d] > last_offset[d]) {
+        offsets_finished = true;
+      }
+    }
+
+    // Iterate through window offsets containing im matrix entry
+    while(!offsets_finished) {
+
+      // Get col matrix entry corresponding to im matrix entry
+      int col_row = channel;
+      int col_col = 0;
+      for(int d = 0; d < im_num_dims; ++d) {
+        const int window_pos = im_pos[d] - (offset_start[d] + offset[d] * offset_stride[d]);
+        col_row = window_pos + col_row * window_dims[d];
+        col_col = offset[d] + col_col * offset_num[d];
+      }
+      const int col_index = col_row + col_col * col_height;
+
+      // Add col matrix entry to im matrix entry
+      const TensorDataType col_entry = col_buffer[col_index];
+      im_entry = (im_entry_initialized ?
+                  reduction_op(im_entry, col_entry) :
+                  col_entry);
+      im_entry_initialized = true;
+
+      // Move to next window offset
+      ++offset[im_num_dims-1];
+      for(int d = im_num_dims-1; d >= 1; --d) {
+        if(offset[d] > last_offset[d]) {
+          offset[d] = first_offset[d];
+          ++offset[d-1];
+        }
+      }
+      offsets_finished = offset[0] > last_offset[0];
+
+    }
+
+    // Update output entry
+    im_buffer[im_index] = im_entry;
+
+  }
+
+}
+}// namespace <anon>
+
+template <typename TensorDataType>
+void col2im(const CPUMatDT<TensorDataType>& col,
+            CPUMatDT<TensorDataType>& im,
+            int num_channels,
+            int im_num_dims,
+            const int * im_dims,
+            const int * im_pads,
+            const int * window_dims,
+            const int * window_strides,
+            std::function<TensorDataType(const TensorDataType&, const TensorDataType&)> reduction_op) {
+  col2im_impl(col, im,
+              num_channels, im_num_dims,
+              im_dims, im_pads, window_dims, window_strides, reduction_op);
+}
+
+template <typename TensorDataType>
+void col2im(const CPUMatDT<TensorDataType>& col,
+            CPUMatDT<TensorDataType>& im,
             const int num_channels,
             const int im_num_dims,
             const int * im_dims,
@@ -162,8 +294,8 @@ void col2im(const CPUMat& col,
             const int * window_strides) {
 
   // Input and output parameters
-  const DataType *__restrict__ col_buffer = col.LockedBuffer();
-  DataType *__restrict__ im_buffer = im.Buffer();
+  const TensorDataType *__restrict__ col_buffer = col.LockedBuffer();
+  TensorDataType *__restrict__ im_buffer = im.Buffer();
 
   // col2im parameters
   std::vector<int> offset_start(im_num_dims);
@@ -230,125 +362,16 @@ void col2im(const CPUMat& col,
   }
 
   // Default algorithm
-  col2im(col, im, num_channels, im_num_dims,
-         im_dims, im_pads, window_dims, window_strides,
-         std::plus<DataType>());
+  col2im_impl(col, im, num_channels, im_num_dims,
+              im_dims, im_pads, window_dims, window_strides,
+              std::plus<TensorDataType>());
 
 }
 
-void col2im(const CPUMat& col,
-            CPUMat& im,
-            const int num_channels,
-            const int im_num_dims,
-            const int * im_dims,
-            const int * im_pads,
-            const int * window_dims,
-            const int * window_strides,
-            std::function<DataType(const DataType&,const DataType&)> reduction_op) {
 
-  // Input and output parameters
-  const int col_height = col.Height();
-  const int im_size = im.Height();
-  const DataType *__restrict__ col_buffer = col.LockedBuffer();
-  DataType *__restrict__ im_buffer = im.Buffer();
-
-  // im2col parameters
-  std::vector<int> offset_start(im_num_dims);
-  std::vector<int> offset_end(im_num_dims);
-  std::vector<int> offset_stride(im_num_dims);
-  std::vector<int> offset_num(im_num_dims);
-  for(int d = 0; d < im_num_dims; ++d) {
-    offset_start[d] = -im_pads[d];
-    offset_end[d] = im_dims[d] + im_pads[d] - window_dims[d] + 1;
-    offset_stride[d] = window_strides[d];
-    offset_num[d] = (offset_end[d] - offset_start[d] + offset_stride[d] - 1) / offset_stride[d];
-  }
-
-  // Call optimized routine for 1x1 col2im
-  std::vector<int> zeros(im_num_dims, 0), ones(im_num_dims, 1);
-  if(std::equal(im_pads, im_pads + im_num_dims, zeros.begin())
-     && std::equal(window_dims, window_dims + im_num_dims, ones.begin())
-     && std::equal(window_strides, window_strides + im_num_dims, ones.begin())) {
-    col2im_1x1(col_buffer, im_buffer, num_channels, im_num_dims, im_dims);
-    return;
-  }
-
-  // Iterate through im matrix entries
-  LBANN_OMP_PARALLEL_FOR
-  for(int im_index = 0; im_index < im_size; ++im_index) {
-
-    // Initialize arrays
-    std::vector<int> im_pos(im_num_dims);
-    std::vector<int> first_offset(im_num_dims);
-    std::vector<int> last_offset(im_num_dims);
-    std::vector<int> offset(im_num_dims);
-
-    // Get position of im matrix entry
-    int im_index_remainder = im_index;
-    for(int d = im_num_dims-1; d >= 0; --d) {
-      im_pos[d] = im_index_remainder % im_dims[d];
-      im_index_remainder /= im_dims[d];
-    }
-    const int channel = im_index_remainder;
-
-    // Initialize im matrix entry
-    DataType im_entry = 0;
-    bool im_entry_initialized = false;
-    bool offsets_finished = false;
-
-    // Get window offsets containing im matrix entry
-    for(int d = 0; d < im_num_dims; ++d) {
-      first_offset[d] = (im_pos[d] - offset_start[d] - window_dims[d] + offset_stride[d]) / offset_stride[d];
-      first_offset[d] = std::max(first_offset[d], 0);
-      last_offset[d] = (im_pos[d] - offset_start[d]) / offset_stride[d];
-      last_offset[d] = std::min(last_offset[d], offset_num[d] - 1);
-      offset[d] = first_offset[d];
-      if(first_offset[d] > last_offset[d]) {
-        offsets_finished = true;
-      }
-    }
-
-    // Iterate through window offsets containing im matrix entry
-    while(!offsets_finished) {
-
-      // Get col matrix entry corresponding to im matrix entry
-      int col_row = channel;
-      int col_col = 0;
-      for(int d = 0; d < im_num_dims; ++d) {
-        const int window_pos = im_pos[d] - (offset_start[d] + offset[d] * offset_stride[d]);
-        col_row = window_pos + col_row * window_dims[d];
-        col_col = offset[d] + col_col * offset_num[d];
-      }
-      const int col_index = col_row + col_col * col_height;
-
-      // Add col matrix entry to im matrix entry
-      const DataType col_entry = col_buffer[col_index];
-      im_entry = (im_entry_initialized ?
-                  reduction_op(im_entry, col_entry) :
-                  col_entry);
-      im_entry_initialized = true;
-
-      // Move to next window offset
-      ++offset[im_num_dims-1];
-      for(int d = im_num_dims-1; d >= 1; --d) {
-        if(offset[d] > last_offset[d]) {
-          offset[d] = first_offset[d];
-          ++offset[d-1];
-        }
-      }
-      offsets_finished = offset[0] > last_offset[0];
-
-    }
-
-    // Update output entry
-    im_buffer[im_index] = im_entry;
-
-  }
-
-}
-
-void im2col_1x1(const DataType * input_buffer,
-                DataType * output_buffer,
+template <typename TensorDataType>
+void im2col_1x1(const TensorDataType * __restrict__ input_buffer,
+                TensorDataType * __restrict__ output_buffer,
                 const int num_channels,
                 const int num_input_dims,
                 const int * input_dims) {
@@ -356,13 +379,16 @@ void im2col_1x1(const DataType * input_buffer,
                                            input_dims + num_input_dims,
                                            1,
                                            std::multiplies<int>());
-  const CPUMat input_matrix(spatial_size, num_channels, input_buffer, spatial_size);
-  CPUMat output_matrix(num_channels, spatial_size, output_buffer, num_channels);
+  const CPUMatDT<TensorDataType> input_matrix(spatial_size, num_channels,
+                                              input_buffer, spatial_size);
+  CPUMatDT<TensorDataType> output_matrix(num_channels, spatial_size,
+                                         output_buffer, num_channels);
   El::Transpose(input_matrix, output_matrix);
 }
 
-void im2col_2d(const DataType *__restrict__ input_buffer,
-               DataType *__restrict__ output_buffer,
+template <typename TensorDataType>
+void im2col_2d(const TensorDataType *__restrict__ input_buffer,
+               TensorDataType *__restrict__ output_buffer,
                const int input_dim_x,
                const int input_dim_y,
                const int input_pad_x,
@@ -416,7 +442,7 @@ void im2col_2d(const DataType *__restrict__ input_buffer,
 
             // Copy input entry to output entry if valid
             output_buffer[output_index]
-              = input_pos_valid ? input_buffer[input_index] : DataType(0);
+              = input_pos_valid ? input_buffer[input_index] : TensorDataType(0.);
 
           }
         }
@@ -426,8 +452,9 @@ void im2col_2d(const DataType *__restrict__ input_buffer,
 
 }
 
-void col2im_1x1(const DataType * input_buffer,
-                DataType * output_buffer,
+template <typename TensorDataType>
+void col2im_1x1(const TensorDataType * input_buffer,
+                TensorDataType * output_buffer,
                 const int num_channels,
                 const int num_output_dims,
                 const int * output_dims) {
@@ -435,13 +462,16 @@ void col2im_1x1(const DataType * input_buffer,
                                            output_dims + num_output_dims,
                                            1,
                                            std::multiplies<int>());
-  const CPUMat input_matrix(num_channels, spatial_size, input_buffer, num_channels);
-  CPUMat output_matrix(spatial_size, num_channels, output_buffer, spatial_size);
+  const CPUMatDT<TensorDataType> input_matrix(num_channels, spatial_size,
+                                              input_buffer, num_channels);
+  CPUMatDT<TensorDataType> output_matrix(spatial_size, num_channels,
+                                         output_buffer, spatial_size);
   El::Transpose(input_matrix, output_matrix);
 }
 
-void col2im_2d(const DataType *__restrict__ input_buffer,
-               DataType *__restrict__ output_buffer,
+template <typename TensorDataType>
+void col2im_2d(const TensorDataType *__restrict__ input_buffer,
+               TensorDataType *__restrict__ output_buffer,
                const int output_dim_x,
                const int output_dim_y,
                const int output_pad_x,
@@ -475,7 +505,7 @@ void col2im_2d(const DataType *__restrict__ input_buffer,
         const int output_index = (output_pos_x
                                   + output_pos_y * output_dim_x
                                   + channel * output_dim_x * output_dim_y);
-        DataType output_entry = 0;
+        TensorDataType output_entry = El::TypeTraits<TensorDataType>::Zero();
 
         // Get window offsets containing output entry
         const int offset_x_lower = (output_pos_x - offset_start_x - window_dim_x + offset_stride_x) / offset_stride_x;
@@ -518,5 +548,38 @@ void col2im_2d(const DataType *__restrict__ input_buffer,
   }
 
 }
+
+#define PROTO(T)                                                    \
+  template void im2col<T>(                                          \
+    const CPUMatDT<T>&, CPUMatDT<T>&,                               \
+    int, int,                                                       \
+    const int*, const int*,                                         \
+    const int*, const int*);                                        \
+  template void col2im<T>(                                          \
+    const CPUMatDT<T>&,                                             \
+    CPUMatDT<T>&,                                                   \
+    int, int,                                                       \
+    const int*, const int*,                                         \
+    const int*, const int*);                                        \
+  template void col2im<T>(                                          \
+    const CPUMatDT<T>&,                                             \
+    CPUMatDT<T>&,                                                   \
+    int, int,                                                       \
+    const int*, const int*,                                         \
+    const int*, const int*,                                         \
+    std::function<T(T const&, T const&)>);                          \
+  template void im2col_1x1<T>(                                      \
+    const T*, T*, int, int, const int*);                            \
+  template void im2col_2d(                                          \
+    const T*, T*, int, int, int, int, int, int, int, int, int);     \
+  template void col2im_1x1(                                         \
+    const T*, T*, int, int, const int*);                            \
+  template void col2im_2d(                                          \
+    const T*, T*, int, int, int, int, int, int, int, int, int)
+
+#define LBANN_INSTANTIATE_CPU_HALF
+// FIXME -- these should never be called in GPU code.
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 }  // namespace lbann

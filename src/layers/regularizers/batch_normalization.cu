@@ -24,7 +24,9 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_BATCH_NORMALIZATION_LAYER_INSTANTIATE
 #include "lbann/layers/regularizers/batch_normalization.hpp"
+#include "lbann/weights/weights_helpers.hpp"
 #include "lbann/utils/cuda.hpp"
 
 namespace lbann {
@@ -34,13 +36,13 @@ namespace {
 /** CUDA kernel to compute channel sums.
  *  Sums and squares of sums are used to compute mean and variance.
  */
-template <El::Int block_size>
+template <El::Int block_size, typename TensorDataType>
 __global__ void channel_sums_kernel(
   El::Int channel_height,
   El::Int width,
-  const DataType * __restrict__ data, El::Int data_ldim,
-        DataType * __restrict__ sums,
-        DataType * __restrict__ sqsums) {
+  const TensorDataType * __restrict__ data, El::Int data_ldim,
+        TensorDataType * __restrict__ sums,
+        TensorDataType * __restrict__ sqsums) {
 
   // Indices
   const El::Int tid = threadIdx.x;
@@ -48,12 +50,12 @@ __global__ void channel_sums_kernel(
   const El::Int bidy = blockIdx.y;
 
   // Initialize shared memory
-  __shared__ DataType shared_sums[block_size];
-  __shared__ DataType shared_sqsums[block_size];
+  __shared__ TensorDataType shared_sums[block_size];
+  __shared__ TensorDataType shared_sqsums[block_size];
 
   // Compute row sums in shared memory
-  DataType private_sum = 0;
-  DataType private_sqsum = 0;
+  TensorDataType private_sum = 0;
+  TensorDataType private_sqsum = 0;
   if (gidx < channel_height) {
     const auto& row = gidx + bidy * channel_height;
     for (El::Int col = 0; col < width; ++col) {
@@ -87,24 +89,26 @@ __global__ void channel_sums_kernel(
  *  On input, global_mean and global_var are assumed to contain sums
  *  and squares of sums, respectively.
  */
+template <typename TensorDataType>
 __global__ void compute_statistics_kernel(
   El::Int num_sums,
   El::Int num_per_sum,
-  DataType epsilon,
-  DataType decay,
-  DataType * __restrict__ global_mean,
-  DataType * __restrict__ global_var,
-  DataType * __restrict__ global_running_mean,
-  DataType * __restrict__ global_running_var) {
-  constexpr DataType one = 1;
+  TensorDataType epsilon,
+  TensorDataType decay,
+  TensorDataType * __restrict__ global_mean,
+  TensorDataType * __restrict__ global_var,
+  TensorDataType * __restrict__ global_running_mean,
+  TensorDataType * __restrict__ global_running_var) {
+
   const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int num_threads = blockDim.x * gridDim.x;
   for (El::Int i = gid; i < num_sums; i += num_threads) {
 
+    TensorDataType num_per_sum_dt = TensorDataType(num_per_sum);
     // Compute mean and variance
-    const auto& mean = global_mean[i] / num_per_sum;
-    const auto& sqmean = global_var[i] / num_per_sum;
-    auto var = num_per_sum * (sqmean - mean * mean) / (num_per_sum - 1);
+    const auto& mean = global_mean[i] / num_per_sum_dt;
+    const auto& sqmean = global_var[i] / num_per_sum_dt;
+    auto var = num_per_sum_dt * (sqmean - mean * mean) / TensorDataType(num_per_sum - 1);
     var = var > epsilon ? var : epsilon;
     global_mean[gid] = mean;
     global_var[gid] = var;
@@ -112,25 +116,25 @@ __global__ void compute_statistics_kernel(
     // Compute running statistics
     auto& running_mean = global_running_mean[gid];
     auto& running_var = global_running_var[gid];
-    running_mean = decay * running_mean + (one - decay) * mean;
-    running_var = decay * running_var + (one - decay) * var;
+    running_mean = decay * running_mean + (TensorDataType(1.0) - decay) * mean;
+    running_var = decay * running_var + (TensorDataType(1.0) - decay) * var;
 
   }
 
 }
 
 /** CUDA kernel to apply batch normalization. */
-template <El::Int block_size>
+template <El::Int block_size, typename TensorDataType>
 __global__ void batch_normalization_kernel(
   El::Int channel_height,
   El::Int width,
-  const DataType * __restrict__ global_input, El::Int input_ldim,
-  const DataType * __restrict__ global_mean,
-  const DataType * __restrict__ global_var,
-  DataType epsilon,
-  const DataType * __restrict__ global_scale,
-  const DataType * __restrict__ global_bias,
-        DataType * __restrict__ global_output, El::Int output_ldim) {
+  const TensorDataType * __restrict__ global_input, El::Int input_ldim,
+  const TensorDataType * __restrict__ global_mean,
+  const TensorDataType * __restrict__ global_var,
+  TensorDataType epsilon,
+  const TensorDataType * __restrict__ global_scale,
+  const TensorDataType * __restrict__ global_bias,
+        TensorDataType * __restrict__ global_output, El::Int output_ldim) {
 
   // Indices
   const El::Int gidx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -159,22 +163,22 @@ __global__ void batch_normalization_kernel(
 }
 
 /** CUDA kernel to compute gradients w.r.t. batch norm parameters. */
-template <El::Int block_size>
+template <El::Int block_size, typename TensorDataType>
 __global__ void backprop1_kernel(
   El::Int channel_height,
   El::Int width,
-  const DataType * __restrict__ global_input,
+  const TensorDataType * __restrict__ global_input,
   El::Int input_ldim,
-  const DataType * __restrict__ global_gradient_wrt_output,
+  const TensorDataType * __restrict__ global_gradient_wrt_output,
   El::Int gradient_wrt_output_ldim,
-  const DataType * __restrict__ global_mean,
-  const DataType * __restrict__ global_var,
-  DataType epsilon,
-  const DataType * __restrict__ global_scale,
-        DataType * __restrict__ global_dscale,
-        DataType * __restrict__ global_dbias,
-        DataType * __restrict__ global_dmean,
-        DataType * __restrict__ global_dvar) {
+  const TensorDataType * __restrict__ global_mean,
+  const TensorDataType * __restrict__ global_var,
+  TensorDataType epsilon,
+  const TensorDataType * __restrict__ global_scale,
+        TensorDataType * __restrict__ global_dscale,
+        TensorDataType * __restrict__ global_dbias,
+        TensorDataType * __restrict__ global_dmean,
+        TensorDataType * __restrict__ global_dvar) {
 
   // Indices
   const El::Int tid = threadIdx.x;
@@ -182,10 +186,10 @@ __global__ void backprop1_kernel(
   const El::Int bidy = blockIdx.y;
 
   // Initialize shared memory
-  __shared__ DataType shared_dscale[block_size];
-  __shared__ DataType shared_dbias[block_size];
-  __shared__ DataType shared_dmean[block_size];
-  __shared__ DataType shared_dvar[block_size];
+  __shared__ TensorDataType shared_dscale[block_size];
+  __shared__ TensorDataType shared_dbias[block_size];
+  __shared__ TensorDataType shared_dmean[block_size];
+  __shared__ TensorDataType shared_dvar[block_size];
 
   // Copy batch normalization parameters to private memory
   const auto& mean = global_mean[bidy];
@@ -193,9 +197,9 @@ __global__ void backprop1_kernel(
   const auto& scale = global_scale[bidy];
 
   // Compute useful constants
-  constexpr DataType zero = 0;
+  const TensorDataType zero = TensorDataType(0);
   const auto& inv_stdev = cuda::rsqrt(var + epsilon);
-  const auto& dvar_factor = inv_stdev * inv_stdev * inv_stdev / 2;
+  const auto& dvar_factor = inv_stdev * inv_stdev * inv_stdev / TensorDataType(2);
 
   // Compute row-wise gradient contributions in shared memory
   auto dscale = zero;
@@ -243,22 +247,22 @@ __global__ void backprop1_kernel(
 }
 
 /** CUDA kernel to compute gradients w.r.t. input. */
-template <El::Int block_size>
+template <El::Int block_size, typename TensorDataType>
 __global__ void backprop2_kernel(
   El::Int channel_height,
   El::Int local_width,
   El::Int num_per_sum,
-  const DataType * __restrict__ global_input,
+  const TensorDataType * __restrict__ global_input,
   El::Int input_ldim,
-  const DataType * __restrict__ global_gradient_wrt_output,
+  const TensorDataType * __restrict__ global_gradient_wrt_output,
   El::Int gradient_wrt_output_ldim,
-  const DataType * __restrict__ global_mean,
-  const DataType * __restrict__ global_var,
-  DataType epsilon,
-  const DataType * __restrict__ global_scale,
-  const DataType * __restrict__ global_dmean,
-  const DataType * __restrict__ global_dvar,
-        DataType * __restrict__ global_gradient_wrt_input,
+  const TensorDataType * __restrict__ global_mean,
+  const TensorDataType * __restrict__ global_var,
+  TensorDataType epsilon,
+  const TensorDataType * __restrict__ global_scale,
+  const TensorDataType * __restrict__ global_dmean,
+  const TensorDataType * __restrict__ global_dvar,
+        TensorDataType * __restrict__ global_gradient_wrt_input,
   El::Int gradient_wrt_input_ldim) {
 
   // Indices
@@ -274,8 +278,8 @@ __global__ void backprop2_kernel(
 
   // Compute useful constants
   const auto& inv_stdev = cuda::rsqrt(var + epsilon);
-  const auto& dmean_term = dmean / num_per_sum;
-  const auto& dvar_term = dvar * 2 / (num_per_sum - 1);
+  const auto& dmean_term = dmean / TensorDataType(num_per_sum);
+  const auto& dvar_term = dvar * TensorDataType(2) / TensorDataType(num_per_sum - 1);
 
   // Apply batch normalization
   if (gidx < channel_height) {
@@ -293,35 +297,140 @@ __global__ void backprop2_kernel(
 
 } // namespace
 
-template <>
-void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
-  constexpr DataType one = 1;
-  const bool is_training = this->m_model->get_execution_mode() == execution_mode::training;
+#ifdef LBANN_HAS_DISTCONV
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>::fp_compute() {
+  assert_always(Dev == El::Device::GPU);
+  assert_always(T_layout == data_layout::DATA_PARALLEL);
+
+  using ValuesGetter = weights_details::SafeWeightsAccessor<TensorDataType>;
+
+  auto &l = dynamic_cast<batch_normalization_layer<
+    TensorDataType, T_layout, Dev>&>(this->layer());
+
+  const bool is_training =
+      l.m_model->get_execution_context().get_execution_mode() == execution_mode::training;
+  auto& local_running_mean =
+    ValuesGetter::mutable_values(this->get_weights(2)).Matrix();
+  auto& local_running_var =
+    ValuesGetter::mutable_values(this->get_weights(3)).Matrix();
+
+  assert0(dc::tensor::View(
+      m_scale, l.weights_values(0).LockedMatrix().LockedBuffer()));
+  assert0(dc::tensor::View(
+      m_bias, l.weights_values(1).LockedMatrix().LockedBuffer()));
+  assert0(dc::tensor::View(
+      m_running_mean, local_running_mean.Buffer()));
+  assert0(dc::tensor::View(
+      m_running_var, local_running_var.Buffer()));
+
+  m_bn->forward_stage1(this->get_prev_activations(), m_mean,
+                       m_var, is_training);
+
+  if (l.m_statistics_group_size == 0) {
+    l.m_comm->allreduce(*l.m_mean_and_var, l.m_mean_and_var->RedundantComm(),
+                        El::mpi::SUM);
+  } else if (l.m_statistics_group_size == 1) {
+    // Local aggregation
+  } else {
+    LBANN_ERROR("statics_group_size must be either 0 or 1 for now.");
+  }
+
+  m_bn->forward_stage2(this->get_prev_activations(),
+                       m_mean, m_var, m_running_mean,
+                       m_running_var, m_scale, m_bias,
+                       this->get_activations(), is_training);
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>::bp_compute() {
+  assert_always(Dev == El::Device::GPU);
+  assert_always(T_layout == data_layout::DATA_PARALLEL);
+
+  auto &l = dynamic_cast<batch_normalization_layer<
+    TensorDataType, T_layout, Dev>&>(this->layer());
+
+  // Check execution mode
+  const bool is_training =
+      l.m_model->get_execution_context().get_execution_mode() == execution_mode::training;
+  assert_always(is_training);
+
+  assert0(dc::tensor::View(
+      m_scale, l.weights_values(0).LockedMatrix().LockedBuffer()));
+
+  m_bn->backward_stage1(this->get_prev_activations(),
+                        this->get_prev_error_signals(),
+                        m_mean, m_var, m_scale,
+                        m_scale_gradient, m_bias_gradient,
+                        m_mean_gradient, m_var_gradient);
+
+  // Verbatim copy from bp_compute_gpu
+  // Accumulate gradients
+  if (is_training) {
+    if (l.m_statistics_group_size == 0) {
+      l.m_comm->allreduce(*l.m_mean_and_var_gradient,
+                          l.m_mean_and_var_gradient->RedundantComm(),
+                          El::mpi::SUM);
+    }
+  } else {
+    Zero(*l.m_mean_and_var_gradient);
+  }
+
+  auto* scale_optimizer = l.get_weights(0).get_optimizer();
+  if (scale_optimizer != nullptr) {
+    scale_optimizer->add_to_gradient(*l.m_scale_gradient, TensorDataType{1}, true);
+  }
+  auto* bias_optimizer = l.get_weights(1).get_optimizer();
+  if (bias_optimizer != nullptr) {
+    bias_optimizer->add_to_gradient(*l.m_bias_gradient, TensorDataType{1}, true);
+  }
+
+  m_bn->backward_stage2(this->get_prev_activations(), this->get_prev_error_signals(),
+                        m_mean, m_var, m_scale, m_mean_gradient, m_var_gradient,
+                        this->get_error_signals());
+}
+
+#endif // LBANN_HAS_DISTCONV
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute() {
+#ifdef LBANN_HAS_DISTCONV
+  if (this->distconv_enabled()) {
+    get_distconv_adapter().fp_compute();
+    return;
+  }
+#endif // LBANN_HAS_DISTCONV
+
+  const bool is_training = this->m_model->get_execution_context().get_execution_mode() == execution_mode::training;
 
   // CUDA objects
   CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
   auto&& stream = El::GPUManager::Stream();
 
   // Matrices
-  const auto& input = get_prev_activations();
+  const auto& input = this->get_prev_activations();
   const auto& local_input = input.LockedMatrix();
-  auto& local_output = get_local_activations();
+  auto& local_output = this->get_local_activations();
 
   // Matrix parameters
   const auto& width = input.Width();
   const auto& local_width = local_input.Width();
-  const auto& output_dims = get_output_dims();
+  const auto& output_dims = this->get_output_dims();
   const auto& num_channels = output_dims[0];
-  const auto& channel_size = get_output_size() / num_channels;
+  const auto& channel_size = this->get_output_size() / num_channels;
 
   // Compute statistics
   if (is_training) {
+    using ValuesGetter = weights_details::SafeWeightsAccessor<TensorDataType>;
 
     // Local matrices
-    auto& local_mean = m_mean->Matrix();
-    auto& local_var = m_var->Matrix();
-    auto& local_running_mean = this->m_weights[2]->get_values().Matrix();
-    auto& local_running_var = this->m_weights[3]->get_values().Matrix();
+    auto& local_mean = this->m_mean_v->Matrix();
+    auto& local_var = this->m_var_v->Matrix();
+    auto& local_running_mean =
+      ValuesGetter::mutable_values(this->get_weights(2)).Matrix();
+    auto& local_running_var =
+      ValuesGetter::mutable_values(this->get_weights(3)).Matrix();
 
     // Compute sums and sums of squares
     El::Zero(local_mean);
@@ -339,39 +448,37 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_
           local_mean.Buffer(), local_var.Buffer());
     }
     El::Int num_per_sum;
-    switch (m_stats_aggregation) {
-    case batch_normalization_stats_aggregation::global:
-      m_comm->allreduce(*m_mean, m_mean->RedundantComm(), El::mpi::SUM);
-      m_comm->allreduce(*m_var, m_var->RedundantComm(), El::mpi::SUM);
+    if (this->m_statistics_group_size == 0) {
+      // Global statistics aggregation; allreduce on fused buffer.
+      this->m_comm->allreduce(*this->m_mean_and_var, this->m_mean_and_var->RedundantComm(),
+                        El::mpi::SUM);
       num_per_sum = channel_size * width;
-      break;
-    case batch_normalization_stats_aggregation::node_local:
-      m_comm->allreduce(*m_mean, m_comm->get_node_comm(), El::mpi::SUM);
-      m_comm->allreduce(*m_var, m_comm->get_node_comm(), El::mpi::SUM);
-      if (m_num_per_sum_cache.count(width) == 0) {
-        num_per_sum = channel_size * local_width;
-        num_per_sum = m_comm->allreduce(num_per_sum, m_comm->get_node_comm());
-        m_num_per_sum_cache[width] = num_per_sum;
-      } else {
-        num_per_sum = m_num_per_sum_cache[width];
-      }
-      break;
-    case batch_normalization_stats_aggregation::local:
+    } else if (this->m_statistics_group_size == 1) {
+      // Local aggregation, no allreduce needed.
       num_per_sum = channel_size * local_width;
-      break;
-    default:
-      LBANN_ERROR("Unknown batch normalization stats aggregation");
+    } else {
+      // Grouped batchnorm. Allreduce on fused buffer.
+      this->m_comm->allreduce(*this->m_mean_and_var,
+                        this->m_comm->get_packed_group_comm(this->m_statistics_group_size),
+                        El::mpi::SUM);
+      if (this->m_num_per_sum_cache.count(width) == 0) {
+        num_per_sum = channel_size * local_width;
+        num_per_sum = this->m_comm->allreduce(
+          num_per_sum, this->m_comm->get_packed_group_comm(this->m_statistics_group_size));
+        this->m_num_per_sum_cache[width] = num_per_sum;
+      } else {
+        num_per_sum = this->m_num_per_sum_cache[width];
+      }
     }
 
     // Compute minibatch statistics
     if (num_per_sum <= 1) {
-      El::Fill(local_var, one);
+      El::Fill(local_var, TensorDataType(1.0));
     } else if (num_channels > 0) {
       const El::Int block_dim = 256;
       const El::Int grid_dim = (num_channels + block_dim - 1) / block_dim;
-      compute_statistics_kernel
-        <<<grid_dim, block_dim, 0, stream>>>(
-          num_channels, num_per_sum, m_epsilon, m_decay,
+      compute_statistics_kernel<<<grid_dim, block_dim, 0, stream>>>(
+          num_channels, num_per_sum, this->m_epsilon, this->m_decay,
           local_mean.Buffer(), local_var.Buffer(),
           local_running_mean.Buffer(), local_running_var.Buffer());
     }
@@ -379,14 +486,14 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_
   }
 
   // Apply batch normalization
-  const auto& local_scale = this->m_weights[0]->get_values().LockedMatrix();
-  const auto& local_bias = this->m_weights[1]->get_values().LockedMatrix();
+  const auto& local_scale = this->weights_values(0).LockedMatrix();
+  const auto& local_bias = this->weights_values(1).LockedMatrix();
   const auto& local_mean = (is_training ?
-                            m_mean->LockedMatrix() :
-                            this->m_weights[2]->get_values().LockedMatrix());
+                            this->m_mean_v->LockedMatrix() :
+                            this->weights_values(2).LockedMatrix());
   const auto& local_var = (is_training ?
-                           m_var->LockedMatrix() :
-                           this->m_weights[3]->get_values().LockedMatrix());
+                           this->m_var_v->LockedMatrix() :
+                           this->weights_values(3).LockedMatrix());
   if (!local_input.IsEmpty()) {
     const El::Int block_size = 256;
     dim3 block_dims, grid_dims;
@@ -397,46 +504,51 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_
       <<<grid_dims, block_dims, 0, stream>>>(
         channel_size, local_width,
         local_input.LockedBuffer(), local_input.LDim(),
-        local_mean.LockedBuffer(), local_var.LockedBuffer(), m_epsilon,
+        local_mean.LockedBuffer(), local_var.LockedBuffer(), this->m_epsilon,
         local_scale.LockedBuffer(), local_bias.LockedBuffer(),
         local_output.Buffer(), local_output.LDim());
   }
 
 }
 
-template <>
-void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
-  constexpr DataType one = 1;
-  const bool is_training = this->m_model->get_execution_mode() == execution_mode::training;
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_compute() {
+#ifdef LBANN_HAS_DISTCONV
+  if (this->distconv_enabled()) {
+    get_distconv_adapter().bp_compute();
+    return;
+  }
+#endif // LBANN_HAS_DISTCONV
+
+  const bool is_training = this->m_model->get_execution_context().get_execution_mode() == execution_mode::training;
 
   // CUDA objects
   CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
   auto&& stream = El::GPUManager::Stream();
 
   // Matrices
-  const auto& local_scale = this->m_weights[0]->get_values().LockedMatrix();
+  const auto& local_scale = this->weights_values(0).LockedMatrix();
   const auto& local_mean = (is_training ?
-                            m_mean->LockedMatrix() :
-                            this->m_weights[2]->get_values().LockedMatrix());
+                            this->m_mean_v->LockedMatrix() :
+                            this->weights_values(2).LockedMatrix());
   const auto& local_var = (is_training ?
-                           m_var->LockedMatrix() :
-                           this->m_weights[3]->get_values().LockedMatrix());
-  const auto& input = get_prev_activations();
+                           this->m_var_v->LockedMatrix() :
+                           this->weights_values(3).LockedMatrix());
+  const auto& input = this->get_prev_activations();
   const auto& local_input = input.LockedMatrix();
-  const auto& local_gradient_wrt_output = get_local_prev_error_signals();
-  auto& local_gradient_wrt_input = get_local_error_signals();
-  auto& local_mean_gradient = m_mean_gradient->Matrix();
-  auto& local_var_gradient = m_var_gradient->Matrix();
-  auto& local_scale_gradient = m_scale_gradient->Matrix();
-  auto& local_bias_gradient = m_bias_gradient->Matrix();
+  const auto& local_gradient_wrt_output = this->get_local_prev_error_signals();
+  auto& local_gradient_wrt_input = this->get_local_error_signals();
+  auto& local_mean_gradient = this->m_mean_gradient_v->Matrix();
+  auto& local_var_gradient = this->m_var_gradient_v->Matrix();
+  auto& local_scale_gradient = this->m_scale_gradient->Matrix();
+  auto& local_bias_gradient = this->m_bias_gradient->Matrix();
 
   // Matrix parameters
-  const El::Int effective_mini_batch_size = this->m_model->get_effective_mini_batch_size();
   const auto& width = input.Width();
   const auto& local_width = local_input.Width();
-  const auto& output_dims = get_output_dims();
+  const auto& output_dims = this->get_output_dims();
   const auto& num_channels = output_dims[0];
-  const auto& channel_size = get_output_size() / num_channels;
+  const auto& channel_size = this->get_output_size() / num_channels;
 
   // Compute local gradients
   // Compute gradients w.r.t. batch norm parameters
@@ -455,7 +567,7 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_
         channel_size, local_width,
         local_input.LockedBuffer(), local_input.LDim(),
         local_gradient_wrt_output.LockedBuffer(), local_gradient_wrt_output.LDim(),
-        local_mean.LockedBuffer(), local_var.LockedBuffer(), m_epsilon,
+        local_mean.LockedBuffer(), local_var.LockedBuffer(), this->m_epsilon,
         local_scale.LockedBuffer(),
         local_scale_gradient.Buffer(), local_bias_gradient.Buffer(),
         local_mean_gradient.Buffer(), local_var_gradient.Buffer());
@@ -463,52 +575,41 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_
 
   // Accumulate gradients
   if (is_training) {
-    if (m_stats_aggregation == batch_normalization_stats_aggregation::global) {
-      m_comm->allreduce(*m_mean_gradient,
-                        m_mean_gradient->RedundantComm(),
+    if (this->m_statistics_group_size == 0) {
+      // Global aggregation; allreduce on fused buffer.
+      this->m_comm->allreduce(*this->m_mean_and_var_gradient,
+                        this->m_mean_and_var_gradient->RedundantComm(),
                         El::mpi::SUM);
-      m_comm->allreduce(*m_var_gradient,
-                        m_var_gradient->RedundantComm(),
-                        El::mpi::SUM);
-    } else if (m_stats_aggregation == batch_normalization_stats_aggregation::node_local) {
-      m_comm->allreduce(*m_mean_gradient,
-                        m_comm->get_node_comm(),
-                        El::mpi::SUM);
-      m_comm->allreduce(*m_var_gradient,
-                        m_comm->get_node_comm(),
+    } else if (this->m_statistics_group_size > 1) {
+      // Grouped batchnorm; allreduce on fused buffer.
+      this->m_comm->allreduce(*this->m_mean_and_var_gradient,
+                        this->m_comm->get_packed_group_comm(this->m_statistics_group_size),
                         El::mpi::SUM);
     }
   } else {
-    El::Zero(*m_mean_gradient);
-    El::Zero(*m_var_gradient);
+    // Zero fused buffer.
+    El::Zero(*this->m_mean_and_var_gradient);
   }
-  optimizer* scale_optimizer = m_weights[0]->get_optimizer();
+  auto* scale_optimizer = this->get_weights(0).get_optimizer();
   if (scale_optimizer != nullptr) {
-    scale_optimizer->add_to_gradient(*m_scale_gradient,
-                                     one / effective_mini_batch_size,
-                                     true);
+    scale_optimizer->add_to_gradient(*this->m_scale_gradient, TensorDataType(1.0), true);
   }
-  optimizer* bias_optimizer = m_weights[1]->get_optimizer();
+  auto* bias_optimizer = this->get_weights(1).get_optimizer();
   if (bias_optimizer != nullptr) {
-    bias_optimizer->add_to_gradient(*m_bias_gradient,
-                                    one / effective_mini_batch_size,
-                                    true);
+    bias_optimizer->add_to_gradient(*this->m_bias_gradient, TensorDataType(1.0), true);
   }
 
   // Compute error signal
   El::Int num_per_sum;
-  switch (m_stats_aggregation) {
-  case batch_normalization_stats_aggregation::global:
+  if (this->m_statistics_group_size == 0) {
+    // Global statistics aggregation.
     num_per_sum = channel_size * width;
-    break;
-  case batch_normalization_stats_aggregation::node_local:
-    num_per_sum = m_num_per_sum_cache[width];  // This was computed in FP.
-    break;
-  case batch_normalization_stats_aggregation::local:
+  } else if (this->m_statistics_group_size == 1) {
+    // Local aggregation.
     num_per_sum = channel_size * local_width;
-    break;
-  default:
-    LBANN_ERROR("Unknown batch normalization stats aggregation");
+  } else {
+    // Grouped batchnorm.
+    num_per_sum = this->m_num_per_sum_cache[width];  // This was computed in FP.
   }
   if (num_per_sum <= 1) {
     El::Zero(local_gradient_wrt_input);
@@ -523,12 +624,18 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_
         channel_size, local_width, num_per_sum,
         local_input.LockedBuffer(), local_input.LDim(),
         local_gradient_wrt_output.LockedBuffer(), local_gradient_wrt_output.LDim(),
-        local_mean.LockedBuffer(), local_var.LockedBuffer(), m_epsilon,
+        local_mean.LockedBuffer(), local_var.LockedBuffer(), this->m_epsilon,
         local_scale.LockedBuffer(),
         local_mean_gradient.LockedBuffer(), local_var_gradient.LockedBuffer(),
         local_gradient_wrt_input.Buffer(), local_gradient_wrt_input.LDim());
   }
 
 }
+
+#define PROTO(T)                                      \
+  template class batch_normalization_layer<T, data_layout::DATA_PARALLEL, El::Device::GPU>
+
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

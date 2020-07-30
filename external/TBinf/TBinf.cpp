@@ -68,6 +68,26 @@ void SummaryWriter::add_scalar(const std::string tag, float value,
   write_summary_event(s, step);
 }
 
+void SummaryWriter::add_image(const std::string& tag,
+                              std::string encoded_img,
+                              const std::vector<size_t>& dims,
+                              int64_t step){
+
+  auto s = std::unique_ptr<tensorflow::Summary>(new tensorflow::Summary());
+  tensorflow::Summary::Value *v = s->add_value();
+  v->set_tag(tag);
+  tensorflow::Summary_Image *img = v->mutable_image();
+  img->Clear();
+  img->set_colorspace(dims[0]);
+  img->set_height(dims[1]);
+  img->set_width(dims[2]);
+
+  img->set_encoded_image_string(std::move(encoded_img));
+
+  write_summary_event(s.release(), step);
+}
+
+
 void SummaryWriter::add_histogram(const std::string tag,
                                   std::vector<float>::const_iterator first,
                                   std::vector<float>::const_iterator last,

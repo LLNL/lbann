@@ -26,25 +26,28 @@
 
 #include "lbann/optimizers/sgd.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/memory.hpp"
 
 namespace lbann {
 
-sgd::sgd(lbann_comm* comm,
-         DataType learning_rate,
-         DataType momentum,
+template <typename TensorDataType>
+sgd<TensorDataType>::sgd(TensorDataType learning_rate,
+         TensorDataType momentum,
          bool nesterov)
-  : optimizer(comm, learning_rate),
+  : BaseType(learning_rate),
     m_momentum(momentum),
     m_nesterov(nesterov) {}
 
-sgd::sgd(const sgd& other)
-  : optimizer(other),
+template <typename TensorDataType>
+sgd<TensorDataType>::sgd(const sgd& other)
+  : BaseType(other),
     m_momentum(other.m_momentum),
     m_nesterov(other.m_nesterov),
     m_velocity(other.m_velocity ? other.m_velocity->Copy() : nullptr) {}
 
-sgd& sgd::operator=(const sgd& other) {
-  optimizer::operator=(other);
+template <typename TensorDataType>
+sgd<TensorDataType>& sgd<TensorDataType>::operator=(const sgd<TensorDataType>& other) {
+  OptimizerType::operator=(other);
   m_momentum = other.m_momentum;
   m_nesterov = other.m_nesterov;
   m_velocity.reset(other.m_velocity ?
@@ -52,34 +55,39 @@ sgd& sgd::operator=(const sgd& other) {
   return *this;
 }
 
-description sgd::get_description() const {
-  auto&& desc = optimizer::get_description();
+template <typename TensorDataType>
+description sgd<TensorDataType>::get_description() const {
+  auto desc = OptimizerType::get_description();
   desc.add("Momentum", m_momentum);
   desc.add("Nesterov acceleration", m_nesterov);
   return desc;
 }
 
-const AbsDistMat& sgd::get_velocity() const {
+template <typename TensorDataType>
+auto sgd<TensorDataType>::get_velocity() const -> const AbsDistMatrixType& {
   if (m_velocity == nullptr) {
     LBANN_ERROR(get_type() + " optimizer "
                 + "attempted to access velocity before it was setup");
   }
   return *m_velocity;
 }
-AbsDistMat& sgd::get_velocity() {
+template <typename TensorDataType>
+auto sgd<TensorDataType>::get_velocity() -> AbsDistMatrixType& {
   // Item 3, p. 23 in "Effective C++", 3rd ed., by Scott Meyers
-  return const_cast<AbsDistMat&>(static_cast<const sgd&>(*this).get_velocity());
+  return const_cast<AbsDistMatrixType&>(static_cast<const sgd&>(*this).get_velocity());
 }
 
-void sgd::setup(weights* w) {
-  optimizer::setup(w);
+template <typename TensorDataType>
+void sgd<TensorDataType>::setup(WeightsType* w) {
+  OptimizerType::setup(w);
   const auto& gradient = this->get_gradient();
-  m_velocity.reset(AbsDistMat::Instantiate(gradient.DistData()));
+  m_velocity.reset(AbsDistMatrixType::Instantiate(gradient.DistData()));
   El::Zeros(*m_velocity, gradient.Height(), gradient.Width());
 }
 
-void sgd::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
-  if (m_momentum == DataType(0)) {
+template <typename TensorDataType>
+void sgd<TensorDataType>::step_compute(AbsDistMatrixType& values, const AbsDistMatrixType& gradient) {
+  if (m_momentum == TensorDataType(0.)) {
     // Vanilla SGD
     El::Axpy(-this->get_learning_rate(), gradient, values);
   } else {
@@ -98,7 +106,9 @@ void sgd::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
   }
 }
 
-void sgd::momentum_step_cpu(AbsDistMat& values, const AbsDistMat& gradient) {
+template <typename TensorDataType>
+void sgd<TensorDataType>::momentum_step_cpu(AbsDistMatrixType& values,
+                                            const AbsDistMatrixType& gradient) {
 
   // Get local matrix data
   const auto& learning_rate = this->get_learning_rate();
@@ -163,11 +173,10 @@ void sgd::momentum_step_cpu(AbsDistMat& values, const AbsDistMat& gradient) {
 // Checkpointing
 // =============================================
 
-bool sgd::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
-  optimizer::save_to_checkpoint_shared(p, name_prefix);
-
-  if (get_comm().am_trainer_master()) {
-    pack_scalars(p);
+template <typename TensorDataType>
+bool sgd<TensorDataType>::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
+  if (this->get_comm().am_trainer_master()) {
+    write_cereal_archive(*this, p, "sgd.xml");
   }
 
   char l_name[512];
@@ -177,16 +186,10 @@ bool sgd::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
   return true;
 }
 
-bool sgd::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
-  optimizer::load_from_checkpoint_shared(p, name_prefix);
-  struct packing_header header;
-  if (get_comm().am_trainer_master()) {
-    unpack_scalars(p, &header);
-  }
+template <typename TensorDataType>
+bool sgd<TensorDataType>::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
+  load_from_shared_cereal_archive(*this, p, this->get_comm(), "sgd.xml");
 
-  get_comm().trainer_broadcast(0, header);
-
-  unpack_header(header);
   char l_name[512];
   sprintf(l_name, "%s_optimizer_velocity_%lldx%lld.bin", name_prefix.c_str(), m_velocity->Height(), m_velocity->Width());
   p.read_distmat(persist_type::train, l_name, m_velocity.get());
@@ -194,10 +197,9 @@ bool sgd::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
   return true;
 }
 
-bool sgd::save_to_checkpoint_distributed(persist& p, std::string name_prefix) {
-  optimizer::save_to_checkpoint_distributed(p, name_prefix);
-
-  pack_scalars(p);
+template <typename TensorDataType>
+bool sgd<TensorDataType>::save_to_checkpoint_distributed(persist& p, std::string name_prefix) {
+  write_cereal_archive(*this, p, "sgd.xml");
 
   char l_name[512];
   sprintf(l_name, "%s_optimizer_velocity_%lldx%lld", name_prefix.c_str(), m_velocity->LocalHeight(), m_velocity->LocalWidth());
@@ -206,10 +208,9 @@ bool sgd::save_to_checkpoint_distributed(persist& p, std::string name_prefix) {
   return true;
 }
 
-bool sgd::load_from_checkpoint_distributed(persist& p, std::string name_prefix) {
-  optimizer::load_from_checkpoint_distributed(p, name_prefix);
-  struct packing_header header;
-  unpack_scalars(p, &header);
+template <typename TensorDataType>
+bool sgd<TensorDataType>::load_from_checkpoint_distributed(persist& p, std::string name_prefix) {
+  read_cereal_archive(*this, p, "sgd.xml");
 
   char l_name[512];
   sprintf(l_name, "%s_optimizer_velocity_%lldx%lld", name_prefix.c_str(), m_velocity->LocalHeight(), m_velocity->LocalWidth());
@@ -218,4 +219,23 @@ bool sgd::load_from_checkpoint_distributed(persist& p, std::string name_prefix) 
   return true;
 }
 
+template <typename TensorDataType>
+std::unique_ptr<optimizer>
+build_sgd_optimizer_from_pbuf(
+  google::protobuf::Message const& msg) {
+  const auto& params = dynamic_cast<lbann_data::Optimizer::SGD const&>(msg);
+  return make_unique<sgd<TensorDataType>>(TensorDataType(params.learn_rate()),
+                                          TensorDataType(params.momentum()),
+                                          params.nesterov());
+}
+
+#define PROTO(T)                                \
+  template class sgd<T>;                        \
+  template std::unique_ptr<optimizer>           \
+  build_sgd_optimizer_from_pbuf<T>(             \
+    google::protobuf::Message const&)
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 } // namespace lbann

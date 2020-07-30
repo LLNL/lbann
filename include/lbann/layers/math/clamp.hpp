@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_MATH_CLAMP_HPP_INCLUDED
 #define LBANN_LAYERS_MATH_CLAMP_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
 
@@ -42,12 +42,18 @@ namespace lbann {
  *      \end{cases}
  *  @f]
  */
-template <data_layout Layout, El::Device Device>
-class clamp_layer : public Layer {
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+class clamp_layer : public data_type_layer<TensorDataType> {
+#ifdef LBANN_HAS_GPU_FP16
+  using CompareType = typename std::conditional<std::is_same<TensorDataType, fp16>::value, float, TensorDataType>::type;
+#else
+  using CompareType = TensorDataType;
+#endif
+
 public:
-  clamp_layer(lbann_comm *comm, DataType min, DataType max)
-    : Layer(comm), m_min(min), m_max(max) {
-    if (m_min > m_max) {
+  clamp_layer(lbann_comm *comm, TensorDataType min, TensorDataType max)
+    : data_type_layer<TensorDataType>(comm), m_min(min), m_max(max) {
+    if (CompareType(m_min) > CompareType(m_max)) {
       std::stringstream err;
       err << "[" << m_min << "," << m_max << "] is an invalid range";
       LBANN_ERROR(err.str());
@@ -59,7 +65,7 @@ public:
   El::Device get_device_allocation() const override { return Device; }
 
   description get_description() const override {
-    auto&& desc = Layer::get_description();
+    auto desc = data_type_layer<TensorDataType>::get_description();
     std::stringstream ss;
     ss << "[" << m_min << "," << m_max << "]";
     desc.add("Range", ss.str());
@@ -67,20 +73,33 @@ public:
   }
 
 protected:
-  void setup_dims() override {
-    Layer::setup_dims();
-    set_output_dims(get_input_dims());
+  void setup_dims(DataReaderMetaData& dr_metadata) override {
+    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+    this->set_output_dims(this->get_input_dims());
   }
   void fp_compute() override;
   void bp_compute() override;
 
 private:
   /** Minimum output. */
-  DataType m_min;
+  TensorDataType m_min;
   /** Maximum output. */
-  DataType m_max;
+  TensorDataType m_max;
 
 };
+
+#ifndef LBANN_CLAMP_LAYER_INSTANTIATE
+
+#define PROTO_DEVICE(T, Device)             \
+  extern template class clamp_layer<        \
+    T, data_layout::DATA_PARALLEL, Device>; \
+  extern template class clamp_layer<        \
+    T, data_layout::MODEL_PARALLEL, Device>
+
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+
+#endif // LBANN_CLAMP_LAYER_INSTANTIATE
 
 } // namespace lbann
 

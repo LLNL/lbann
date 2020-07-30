@@ -13,8 +13,9 @@ CORAL=$([[ $(hostname) =~ (sierra|lassen|ray) ]] && echo 1 || echo 0)
 COMPILER=gnu
 if [ "${CLUSTER}" == "surface" -o "${CLUSTER}" == "pascal" ]; then
     module load gcc/7.3.0
-    module load opt cudatoolkit/9.2
-elif [ "${CLUSTER}" == "sierra" -o "${CLUSTER}" == "lassen" ]; then
+elif [ "${CORAL}" -eq 1 ]; then
+    # Make sure module commands available
+    . /usr/share/lmod/lmod/init/bash
     module load gcc/7.3.1
 fi
 if [ "${ARCH}" == "x86_64" ]; then
@@ -43,10 +44,9 @@ if [ "${ARCH}" == "x86_64" ]; then
 fi
 
 
-ELEMENTAL_MATH_LIBS=
-PATCH_OPENBLAS=ON
 C_FLAGS=
 CXX_FLAGS=-DLBANN_SET_EL_RNG
+CUDA_FLAGS=
 Fortran_FLAGS=
 CLEAN_BUILD=0
 DATATYPE=float
@@ -62,7 +62,6 @@ INSTALL_DIR=
 BUILD_SUFFIX=
 DETERMINISTIC=OFF
 WITH_CUDA=
-WITH_CUDA_2=ON
 WITH_TOPO_AWARE=ON
 INSTRUMENT=
 WITH_ALUMINUM=
@@ -70,6 +69,8 @@ ALUMINUM_WITH_MPI_CUDA=OFF
 ALUMINUM_WITH_NCCL=
 WITH_CONDUIT=ON
 WITH_TBINF=OFF
+WITH_DIHYDROGEN=OFF
+WITH_DISTCONV=OFF
 RECONFIGURE=0
 USE_NINJA=0
 # In case that autoconf fails during on-demand buid on surface, try the newer
@@ -78,6 +79,8 @@ USE_NINJA=0
 # by enabling LIBJPEG_TURBO_DIR
 WITH_LIBJPEG_TURBO=ON
 #LIBJPEG_TURBO_DIR="/p/lscratchh/brainusr/libjpeg-turbo-1.5.2"
+WITH_NVSHMEM=0
+NVSHMEM_DIR=
 
 function version_gt() { test "$(printf '%s\n' "$@" | sort -V | head -n 1)" != "$1"; }
 
@@ -129,6 +132,7 @@ Options:
   ${C}--with-conduit              Build with conduit interface
   ${C}--ninja                     Generate ninja files instead of makefiles
   ${C}--ninja-processes${N} <val> Number of parallel processes for ninja.
+  ${C}--nvshmem${N}               Enable NVSHMEM
 EOF
 }
 
@@ -249,7 +253,6 @@ while :; do
             ;;
         --disable-cuda)
             WITH_CUDA=OFF
-            WITH_CUDA_2=OFF
             ;;
         --disable-topo-aware)
             WITH_TOPO_AWARE=OFF
@@ -272,6 +275,20 @@ while :; do
             ;;
         --reconfigure)
             RECONFIGURE=1
+            ;;
+        --nvshmem)
+            WITH_NVSHMEM=1
+            ;;
+        --with-dihydrogen)
+            WITH_DIHYDROGEN=ON
+            ;;
+        --with-distconv)
+            WITH_DISTCONV=ON
+            WITH_DIHYDROGEN=ON
+            # CUDA is required for Distconv
+            WITH_CUDA=ON
+            # MPI-CUDA backend is required for Distconv
+            ALUMINUM_WITH_MPI_CUDA=ON
             ;;
         -?*)
             # Unknown option
@@ -313,7 +330,7 @@ fi
 # Load packages
 if [ ${USE_MODULES} -ne 0 ]; then
     module load git
-    module load cmake/3.12.1
+    module load cmake/3.14.5
 else
     use git
 fi
@@ -408,8 +425,8 @@ fi
 # Add compiler optimization flags
 if [ "${BUILD_TYPE}" == "Release" ]; then
     if [ "${COMPILER}" == "gnu" ]; then
-        C_FLAGS="${C_FLAGS} -O3 ${INSTRUMENT}"
-        CXX_FLAGS="${CXX_FLAGS} -O3 ${INSTRUMENT}"
+        C_FLAGS="${C_FLAGS} -O3 ${INSTRUMENT} -fno-omit-frame-pointer"
+        CXX_FLAGS="${CXX_FLAGS} -O3 ${INSTRUMENT} -fno-omit-frame-pointer"
         Fortran_FLAGS="${Fortran_FLAGS} -O3"
         if [ "${CLUSTER}" == "catalyst" ]; then
             C_FLAGS="${C_FLAGS} -march=ivybridge -mtune=ivybridge"
@@ -435,8 +452,8 @@ if [ "${BUILD_TYPE}" == "Release" ]; then
     fi
 else
     if [ "${COMPILER}" == "gnu" ]; then
-        C_FLAGS="${C_FLAGS} -g ${INSTRUMENT}"
-        CXX_FLAGS="${CXX_FLAGS} -g ${INSTRUMENT}"
+        C_FLAGS="${C_FLAGS} -g ${INSTRUMENT} -fno-omit-frame-pointer"
+        CXX_FLAGS="${CXX_FLAGS} -g ${INSTRUMENT} -fno-omit-frame-pointer"
         Fortran_FLAGS="${Fortran_FLAGS} -g"
     fi
 fi
@@ -445,6 +462,16 @@ fi
 CXX_FLAGS="${CXX_FLAGS} -ldl"
 C_FLAGS="${CXX_FLAGS}"
 
+# Hacks to build with NVSHMEM
+if [ ${WITH_NVSHMEM} -ne 0 ]; then
+    if [ "${CLUSTER}" == "lassen" ]; then
+        NVSHMEM_DIR=/usr/workspace/wsb/brain/nvshmem/nvshmem_0.3.3/cuda-10.1_ppc64le
+        CUDA_FLAGS="-gencode=arch=compute_70,code=sm_70"
+    else
+        echo "NVSHMEM is currently only supported on Lassen"
+        exit 1
+    fi
+fi
 
 # Set environment variables
 CC=${C_COMPILER}
@@ -564,16 +591,12 @@ if [ "${CLUSTER}" == "surface" -o "${CORAL}" -eq 1 -o "${CLUSTER}" == "pascal" ]
     HAS_GPU=1
     WITH_CUDA=${WITH_CUDA:-ON}
     WITH_CUDNN=ON
-    WITH_CUB=ON
-    ELEMENTAL_USE_CUBLAS=OFF
+    WITH_CUB=${WITH_CUB:-ON}
     WITH_ALUMINUM=${WITH_ALUMINUM:-ON}
     ALUMINUM_WITH_NCCL=${ALUMINUM_WITH_NCCL:-ON}
 	if [[ ${CORAL} -eq 1 ]]; then
-		export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.4.2-1+cuda9.2_ppc64le
 		module del cuda
-		CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda/9.2.148}
-	else
-		export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.4.2-1+cuda9.2_x86_64
+		CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda/10.1.243}
 	fi
 
     # Hack for surface
@@ -583,8 +606,7 @@ if [ "${CLUSTER}" == "surface" -o "${CORAL}" -eq 1 -o "${CLUSTER}" == "pascal" ]
 		    CUDA_TOOLKIT_MODULE=cudatoolkit/9.2
 		    ;;
 		pascal)
-                    module load opt
-		    CUDA_TOOLKIT_MODULE=cudatoolkit/9.2
+		    CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda/10.1.168}
 		    ;;
 	esac
 fi
@@ -613,23 +635,35 @@ if [ "${WITH_CUDA}" == "ON" ]; then
 	CUDA_TOOLKIT_VERSION=$(${CUDA_TOOLKIT_ROOT_DIR}/bin/nvcc --version | grep -oE "V[0-9]+\.[0-9]+" | sed 's/V//')
 
 	# CUDNN
-	if [ -z "${CUDNN_DIR}" ]; then
-		if [ "${CUDA_TOOLKIT_VERSION}" == "9.2" ]; then
-			CUDNN_DIR=/usr/workspace/wsb/brain/cudnn/cudnn-7.5.1/cuda-${CUDA_TOOLKIT_VERSION}_${ARCH}
-		elif [ "${CUDA_TOOLKIT_VERSION}" == "9.1" ]; then
-			CUDNN_DIR=/usr/workspace/wsb/brain/cudnn/cudnn-7.1.3/cuda-${CUDA_TOOLKIT_VERSION}_${ARCH}
-		fi
+	if [[ -z $CUDNN_DIR ]]; then
+        CUDNN_VER=${CUDNN_VER:-7.6.4}
+		CUDNN_DIR=/usr/workspace/wsb/brain/cudnn/cudnn-${CUDNN_VER}/cuda-${CUDA_TOOLKIT_VERSION}_${ARCH}
 	fi
-	if [ ! -d "${CUDNN_DIR}" ]; then
+	if [[ ! -d $CUDNN_DIR ]]; then
 		echo "Could not find cuDNN at $CUDNN_DIR"
 		exit 1
 	fi
 	export CUDNN_DIR
+
+    # NCCL
+    if [[ -z $NCCL_DIR ]]; then
+        # Subsequent 2.4.X versions are known to have a performance
+        # regression. See the release notes.
+        NCCL_VER=${NCCL_VER:-2.4.2-1}
+        NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_${NCCL_VER}+cuda${CUDA_TOOLKIT_VERSION}_${ARCH}
+    fi
+    if [[ ! -d $NCCL_DIR ]]; then
+        echo "Could not find NCCL at $NCCL_DIR"
+        exit 1
+    fi
+    export NCCL_DIR
 else
     HAS_GPU=0
     WITH_CUDA=${WITH_CUDA:-OFF}
     WITH_CUDNN=OFF
-    ELEMENTAL_USE_CUBLAS=OFF
+    WITH_CUB=OFF
+    ALUMINUM_WITH_NCCL=OFF
+    ALUMINUM_WITH_MPI_CUDA=OFF
 fi
 
 ################################################################
@@ -708,9 +742,6 @@ if [ ${VERBOSE} -ne 0 ]; then
     print_variable WITH_CUDA
     print_variable WITH_CUDNN
     print_variable WITH_NVPROF
-    print_variable ELEMENTAL_USE_CUBLAS
-    print_variable ELEMENTAL_MATH_LIBS
-    print_variable PATCH_OPENBLAS
     print_variable DETERMINISTIC
     print_variable CLEAN_BUILD
     print_variable VERBOSE
@@ -764,6 +795,7 @@ cmake \
 -D CMAKE_INSTALL_MESSAGE=${CMAKE_INSTALL_MESSAGE} \
 -D CMAKE_INSTALL_PREFIX=${INSTALL_DIR} \
 -D LBANN_SB_BUILD_CEREAL=ON \
+-D LBANN_SB_BUILD_CLARA=ON \
 -D LBANN_SB_BUILD_CNPY=ON \
 -D LBANN_SB_BUILD_HYDROGEN=ON \
 -D LBANN_SB_FWD_HYDROGEN_Hydrogen_ENABLE_CUDA=${WITH_CUDA} \
@@ -773,6 +805,7 @@ cmake \
 -D LBANN_SB_BUILD_PROTOBUF=ON \
 -D LBANN_SB_BUILD_CUB=${WITH_CUB} \
 -D LBANN_SB_BUILD_ALUMINUM=${WITH_ALUMINUM} \
+-D ALUMINUM_TAG=v0.3.3 \
 -D ALUMINUM_ENABLE_MPI_CUDA=${ALUMINUM_WITH_MPI_CUDA} \
 -D ALUMINUM_ENABLE_NCCL=${ALUMINUM_WITH_NCCL} \
 -D LBANN_SB_BUILD_CONDUIT=${WITH_CONDUIT} \
@@ -780,6 +813,7 @@ cmake \
 -D LBANN_SB_BUILD_LBANN=ON \
 -D CMAKE_CXX_FLAGS="${CXX_FLAGS}" \
 -D CMAKE_C_FLAGS="${C_FLAGS}" \
+-D CMAKE_CUDA_FLAGS="${CUDA_FLAGS}" \
 -D CMAKE_C_COMPILER=${C_COMPILER} \
 -D CMAKE_CXX_COMPILER=${CXX_COMPILER} \
 -D CMAKE_Fortran_COMPILER=${Fortran_COMPILER} \
@@ -791,10 +825,17 @@ cmake \
 -D LBANN_DATATYPE=${DATATYPE} \
 -D LBANN_DETERMINISTIC=${DETERMINISTIC} \
 -D LBANN_WITH_ALUMINUM=${WITH_ALUMINUM} \
+-D LBANN_SB_BUILD_CATCH2=ON \
 -D LBANN_NO_OMP_FOR_DATA_READERS=${NO_OMP_FOR_DATA_READERS} \
 -D LBANN_CONDUIT_DIR=${CONDUIT_DIR} \
 -D LBANN_BUILT_WITH_SPECTRUM=${WITH_SPECTRUM} \
 -D OPENBLAS_ARCH_COMMAND=${OPENBLAS_ARCH} \
+-D LBANN_WITH_NVSHMEM=${WITH_NVSHMEM} \
+-D LBANN_SB_FWD_LBANN_NVSHMEM_DIR=${NVSHMEM_DIR} \
+-D LBANN_SB_BUILD_DIHYDROGEN=${WITH_DIHYDROGEN} \
+-D DIHYDROGEN_ENABLE_DISTCONV_LEGACY=${WITH_DISTCONV} \
+-D LBANN_WITH_DIHYDROGEN=${WITH_DIHYDROGEN} \
+-D LBANN_WITH_DISTCONV=${WITH_DISTCONV} \
 ${SUPERBUILD_DIR}
 EOF
 )

@@ -3,30 +3,20 @@ data_reader {
     name: "cifar10"
     role: "train"
     shuffle: true
-    data_filename: "/p/lscratchh/brainusr/datasets/cifar10-bin/data_all.bin"
-    label_filename: "/p/lscratchh/brainusr/datasets/cifar10-bin/data_all.bin"
+    data_filedir: "/p/lscratchh/brainusr/datasets/cifar10-bin/"
     validation_percent: 0.1
     absolute_sample_count: 0
     percent_of_data_to_use: 1.0
-    image_preprocessor {
-      normalizer {
-        scale: true
-        subtract_mean: false
-        unit_variance: false
-        z_score: false
+
+    transforms {
+      horizontal_flip {
+        p: 0.5
       }
-      augmenter {
-        disable: true
-        horizontal_flip: false
-        vertical_flip: false
-        rotation: 0
-        horizontal_shift: 0
-        vertical_shift: 0
-        shear_range: 0
-      }
-      noiser {
-        disable: true
-        factor: 0.0
+    }
+    transforms {
+      normalize_to_lbann_layout {
+        means: "0.44653 0.48216 0.4914"
+        stddevs: "0.26159 0.24349 0.24703"
       }
     }
   }
@@ -34,29 +24,19 @@ data_reader {
     name: "cifar10"
     role: "test"
     shuffle: true
-    data_filename: "/p/lscratchh/brainusr/datasets/cifar10-bin/test_batch.bin"
-    label_filename: "/p/lscratchh/brainusr/datasets/cifar10-bin/test_batch.bin"
+    data_filedir: "/p/lscratchh/brainusr/datasets/cifar10-bin/"
     absolute_sample_count: 0
     percent_of_data_to_use: 1.0
-    image_preprocessor {
-      normalizer {
-        scale: true
-        subtract_mean: false
-        unit_variance: false
-        z_score: false
+
+    transforms {
+      horizontal_flip {
+        p: 0.5
       }
-      augmenter {
-        disable: true
-        horizontal_flip: false
-        vertical_flip: false
-        rotation: 0
-        horizontal_shift: 0
-        vertical_shift: 0
-        shear_range: 0
-      }
-      noiser {
-        disable: true
-        factor: 0.0
+    }
+    transforms {
+      normalize_to_lbann_layout {
+        means: "0.44653 0.48216 0.4914"
+        stddevs: "0.26159 0.24349 0.24703"
       }
     }
   }

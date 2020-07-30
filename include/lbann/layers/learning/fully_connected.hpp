@@ -29,67 +29,55 @@
 
 #include "lbann/layers/learning/learning.hpp"
 #include "lbann/models/model.hpp"
-#include "lbann/weights/initializer.hpp"
-#include "lbann/weights/variance_scaling_initializers.hpp"
+
 #include <string>
-#include <sstream>
 
 namespace lbann {
 
-/** @brief Perform an affine transformation. */
-template <data_layout T_layout, El::Device Dev>
-class fully_connected_layer : public learning_layer {
+/** @brief Affine transformation
+ *
+ *  Flattens the input tensor, multiplies with a weights matrix, and
+ *  optionally applies an entry-wise bias. Following the
+ *  column-vector convention:
+ *    @f[ y = W * \text{vec}(x) + b @f]
+ *
+ *  Two weights are required if bias is applied: the linearity and the
+ *  bias. Only the linearity weights are required if bias is not
+ *  applied. If weights aren't provided, the linearity weights are
+ *  initialized with He normal initialization and the bias weights are
+ *  initialized to zero.
+ */
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+class fully_connected_layer : public learning_layer<TensorDataType> {
+public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+  /** @brief The concrete weights type used by this object. */
+  using WeightsType = data_type_weights<TensorDataType>;
+
+  /** @brief The concrete optimizer type used by this object. */
+  using OptimizerType = data_type_optimizer<TensorDataType>;
+
+  ///@}
+
 public:
 
   /** @todo Accept a vector for output_size */
   fully_connected_layer(lbann_comm *comm,
                         int output_size,
                         bool transpose = false,
-                        weights* weight = nullptr,
-                        bool has_bias = true)
-    : learning_layer(comm),
-      m_bias_gradient(nullptr),
-      m_transpose(transpose) {
+                        WeightsType* weight = nullptr,
+                        bool has_bias = true);
 
-    // Initialize output tensor dimensions
-    set_output_dims({output_size});
+  fully_connected_layer(const fully_connected_layer& other);
 
-    // Initialize bias
-    m_bias_scaling_factor = has_bias ? DataType(1) : DataType(0);
+  fully_connected_layer& operator=(const fully_connected_layer& other);
 
-  }
-
-  fully_connected_layer(const fully_connected_layer& other) :
-    learning_layer(other),
-    m_bias_scaling_factor(other.m_bias_scaling_factor),
-    m_transpose(other.m_transpose) {
-
-    // Deep matrix copies
-    m_bias_gradient = other.m_bias_gradient;
-    if (m_bias_gradient != nullptr) {
-      m_bias_gradient = m_bias_gradient->Copy();
-    }
-
-  }
-
-  fully_connected_layer& operator=(const fully_connected_layer& other) {
-    learning_layer::operator=(other);
-    m_bias_scaling_factor = other.m_bias_scaling_factor;
-    m_transpose = other.m_transpose;
-
-    // Deep matrix copies
-    deallocate_matrices();
-    m_bias_gradient = other.m_bias_gradient;
-    if (m_bias_gradient != nullptr) {
-      m_bias_gradient = m_bias_gradient->Copy();
-    }
-
-    return *this;
-  }
-
-  ~fully_connected_layer() override {
-    deallocate_matrices();
-  }
+  ~fully_connected_layer() override;
 
   fully_connected_layer* copy() const override {
     return new fully_connected_layer(*this);
@@ -99,110 +87,12 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-  description get_description() const override {
-    auto&& desc = learning_layer::get_description();
-    const auto& bias_str = (m_bias_scaling_factor == DataType(0) ?
-                            "disabled" : "enabled");
-    desc.add("Bias", bias_str);
-    return desc;
-  }
+  description get_description() const override;
 
 protected:
 
   void setup_matrices(const El::Grid& grid) override;
-
-  void setup_data() override {
-    learning_layer::setup_data();
-
-    // Initialize default weights if none are provided
-    if (this->m_weights.size() > 2) {
-      std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << "attempted to setup " << m_name << " with an invalid number of weights";
-      throw lbann_exception(err.str());
-    }
-    if (m_bias_scaling_factor != DataType(0)) {
-      this->m_weights.resize(2, nullptr);
-    } else {
-      this->m_weights.resize(1, nullptr);
-    }
-    if (this->m_weights[0] == nullptr) {
-      auto* w = new weights(get_comm());
-      std::unique_ptr<weights_initializer> init(new he_initializer(probability_distribution::gaussian));
-      std::unique_ptr<optimizer> opt(m_model->create_optimizer());
-      w->set_name(get_name() + "_linearity_weights");
-      w->set_initializer(init);
-      w->set_optimizer(opt);
-      this->m_weights[0] = w;
-      this->m_model->add_weights(w);
-    }
-    auto& linearity_weights = *this->m_weights[0];
-
-    // Initialize variance scaling initialization
-    auto* cast_initializer
-      = dynamic_cast<variance_scaling_initializer*>(linearity_weights.get_initializer());
-    if (cast_initializer != nullptr) {
-      cast_initializer->set_fan_in(get_input_size());
-      cast_initializer->set_fan_out(get_output_size());
-    }
-
-    // Setup linearity weights
-    auto linearity_dist = get_prev_activations().DistData();
-    if (linearity_dist.colDist != El::MC
-        || linearity_dist.rowDist != El::MR) {
-      linearity_dist.colDist = El::STAR;
-      linearity_dist.rowDist = El::STAR;
-    }
-    if (m_transpose) {
-      linearity_weights.set_dims(get_input_dims(), get_output_dims());
-    } else {
-      linearity_weights.set_dims(get_output_dims(), get_input_dims());
-    }
-    linearity_weights.set_matrix_distribution(linearity_dist);
-
-    // Set up bias if needed.
-    if (m_bias_scaling_factor != DataType(0)) {
-      if (this->m_weights[1] == nullptr) {
-        auto* w = new weights(get_comm());
-        std::unique_ptr<optimizer> opt(m_model->create_optimizer());
-        w->set_name(get_name() + "_bias_weights");
-        w->set_optimizer(opt);
-        this->m_weights[1] = w;
-        this->m_model->add_weights(w);
-      }
-      auto& bias_weights = *this->m_weights[1];
-      // Setup bias weights
-      auto bias_dist = get_activations().DistData();
-      bias_dist.rowDist = El::STAR;
-      bias_weights.set_dims(get_output_dims());
-      bias_weights.set_matrix_distribution(bias_dist);
-      if (this->m_bias_gradient != nullptr) {
-        El::Zeros(*this->m_bias_gradient,
-                  bias_weights.get_matrix_height(),
-                  bias_weights.get_matrix_width());
-      }
-    }
-
-    // Initialize freeze state
-    for (auto&& w : this->m_weights) {
-      if (m_frozen) {
-        w->freeze();
-      } else {
-        w->unfreeze();
-      }
-    }
-    for (auto&& w : this->m_weights) {
-      if (w->is_frozen() != m_frozen) {
-        std::stringstream err;
-        err << (m_frozen ? "" : "un") << "frozen "
-            << "layer \"" << get_name() << "\" has "
-            << (w->is_frozen() ? "" : "un") << "frozen "
-            << "weights \"" << w->get_name() << "\"";
-        LBANN_ERROR(err.str());
-      }
-    }
-
-  }
+  void setup_data(size_t max_mini_batch_size) override;
 
   void fp_compute() override;
   void bp_compute() override;
@@ -212,13 +102,13 @@ private:
   /** Scaling factor for bias term.
    *  If the scaling factor is zero, bias is not applied.
    */
-  DataType m_bias_scaling_factor;
+  TensorDataType m_bias_scaling_factor;
 
   /** Bias weights gradient.
    *  This is this layer's contribution to the objective function
    *  gradient w.r.t. the bias weights.
    */
-  AbsDistMat* m_bias_gradient;
+  AbsDistMatrixType* m_bias_gradient;
 
   /** Whether the transpose of the linearity matrix is applied. */
   bool m_transpose;
@@ -228,7 +118,25 @@ private:
     if (m_bias_gradient != nullptr) delete m_bias_gradient;
   }
 
+  template <typename U>
+  friend void fp_compute_impl(fully_connected_layer<U, T_layout, Dev>& l);
+  template <typename U>
+  friend void bp_compute_impl(fully_connected_layer<U, T_layout, Dev>& l);
 };
+
+// Builder function
+LBANN_DEFINE_LAYER_BUILDER(fully_connected);
+
+#ifndef LBANN_FULLY_CONNECTED_LAYER_INSTANTIATE
+
+#define PROTO_DEVICE(T, Device) \
+  extern template class fully_connected_layer<T, data_layout::DATA_PARALLEL, Device>; \
+  extern template class fully_connected_layer<T, data_layout::MODEL_PARALLEL, Device>
+
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+
+#endif // LBANN_FULLY_CONNECTED_LAYER_INSTANTIATE
 
 } // namespace lbann
 

@@ -50,31 +50,6 @@ void metric_statistics::reset() {
   m_num_samples = 0;
 }
 
-bool metric_statistics::pack_scalars(persist& p) {
-  p.write_double(persist_type::validate, "sum", m_sum);
-  p.write_uint64(persist_type::validate, "num_samples", m_num_samples);
-  return true;
-}
-
-bool metric_statistics::unpack_scalars(persist& p, struct packing_header *header) {
-  double sum;
-  uint64_t num_samples;
-  p.read_double(persist_type::validate, "sum", &sum);
-  p.read_uint64(persist_type::validate, "num_samples", (uint64_t *) &num_samples);
-  m_sum = sum;
-  m_num_samples = num_samples;
-  if (header != nullptr) {
-    header->sum = sum;
-    header->num_samples = num_samples;
-  }
-  return true;
-}
-
-void metric_statistics::unpack_header(struct packing_header& header) {
-  m_sum = header.sum;
-  m_num_samples = header.num_samples;
-}
-
 metric::metric(lbann_comm *comm) : m_comm(comm) {}
 
 EvalType metric::get_mean_value(execution_mode mode) const {
@@ -109,54 +84,6 @@ void metric::set_layer_pointers(std::vector<Layer*> layers) {
         << "(expected 0, found " << layers.size() << ")";
     LBANN_ERROR(err.str());
   }
-}
-
-bool metric::save_to_checkpoint_shared(persist& p) {
-  // write out fields we need to save for model
-  if (m_comm->am_trainer_master()) {
-    m_statistics[execution_mode::training].pack_scalars(p);
-    m_statistics[execution_mode::testing].pack_scalars(p);
-    m_statistics[execution_mode::validation].pack_scalars(p);
-  }
-  return true;
-}
-
-bool metric::load_from_checkpoint_shared(persist& p) {
-  struct metric_statistics::packing_header training_header, validation_header, testing_header;
-  if (m_comm->am_trainer_master()) {
-    m_statistics[execution_mode::training].unpack_scalars(p, &training_header);
-    m_statistics[execution_mode::testing].unpack_scalars(p, &testing_header);
-    m_statistics[execution_mode::validation].unpack_scalars(p, &validation_header);
-  }
-
-  m_comm->trainer_broadcast(0, training_header);
-  m_comm->trainer_broadcast(0, validation_header);
-  m_comm->trainer_broadcast(0, testing_header);
-
-  m_statistics[execution_mode::training].unpack_header(training_header);
-  m_statistics[execution_mode::validation].unpack_header(validation_header);
-  m_statistics[execution_mode::testing].unpack_header(testing_header);
-  return true;
-}
-
-bool metric::save_to_checkpoint_distributed(persist& p) {
-  // write out fields we need to save for model
-  m_statistics[execution_mode::training].pack_scalars(p);
-  m_statistics[execution_mode::testing].pack_scalars(p);
-  m_statistics[execution_mode::validation].pack_scalars(p);
-  return true;
-}
-
-bool metric::load_from_checkpoint_distributed(persist& p) {
-  struct metric_statistics::packing_header training_header, validation_header, testing_header;
-  m_statistics[execution_mode::training].unpack_scalars(p, &training_header);
-  m_statistics[execution_mode::testing].unpack_scalars(p, &testing_header);
-  m_statistics[execution_mode::validation].unpack_scalars(p, &validation_header);
-
-  m_statistics[execution_mode::training].unpack_header(training_header);
-  m_statistics[execution_mode::validation].unpack_header(validation_header);
-  m_statistics[execution_mode::testing].unpack_header(testing_header);
-  return true;
 }
 
 }  // namespace lbann

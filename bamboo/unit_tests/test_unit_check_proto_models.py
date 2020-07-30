@@ -5,7 +5,8 @@ import pytest
 import os
 
 
-def skeleton_models(cluster, dir_name, executables, compiler_name):
+def skeleton_models(cluster, dir_name, executables, compiler_name,
+                    weekly, data_reader_percent):
     if compiler_name not in executables:
         e = 'skeleton_models: default_exes[%s] does not exist' % compiler_name
         print('Skip - ' + e)
@@ -37,23 +38,6 @@ def skeleton_models(cluster, dir_name, executables, compiler_name):
                     data_filedir_default = '/p/lscratchh/brainusr/datasets/MNIST'
                     data_reader_path = '%s/model_zoo/models/gan/mnist/discriminator_data.prototext' % (dir_name)
                     data_reader_name = None
-                elif 'triplet' in file_name:
-                    # Disabling triplet test.
-                    print('Skipping triplet tests.')
-                    continue
-                    data_filedir_train_default = '/p/lscratchh/brainusr/datasets/ILSVRC2012/patches_84h_110x110_13x13-blur-ab_compact/'
-                    data_filename_train_default = '/p/lscratchh/brainusr/datasets/ILSVRC2012/patches_84h_110x110_13x13-blur-ab_compact/train/train_list_8h.nfl.npz'
-                    data_filedir_test_default = '/p/lscratchh/brainusr/datasets/ILSVRC2012/patches_84h_110x110_13x13-blur-ab_compact/'
-                    data_filename_test_default = '/p/lscratchh/brainusr/datasets/ILSVRC2012/patches_84h_110x110_13x13-blur-ab_compact/val/val_list_8h.nfl.npz'
-                    data_reader_path = '%s/model_zoo/models/siamese/triplet/data_reader_triplet.prototext' % (dir_name)
-                    data_reader_name = None
-                elif 'siamese_alexnet' in file_name:
-                    data_filedir_train_default = '/p/lscratchh/brainusr/datasets/ILSVRC2012/original/train/'
-                    data_filename_train_default = '/p/lscratchh/brainusr/datasets/ILSVRC2012/labels/train.txt'
-                    data_filedir_test_default = '/p/lscratchh/brainusr/datasets/ILSVRC2012/original/val/'
-                    data_filename_test_default = '/p/lscratchh/brainusr/datasets/ILSVRC2012/labels/val.txt'
-                    data_reader_path = '%s/model_zoo/models/siamese/siamese_alexnet/data_reader_imagenet_patches.prototext' % (dir_name)
-                    data_reader_name = None
                 elif 'net' in file_name:
                     data_filedir_train_default = '/p/lscratchh/brainusr/datasets/ILSVRC2012/original/train/'
                     data_filename_train_default = '/p/lscratchh/brainusr/datasets/ILSVRC2012/labels/train.txt'
@@ -65,6 +49,8 @@ def skeleton_models(cluster, dir_name, executables, compiler_name):
                         time_limit = 3
                     if 'resnet50' in file_name:
                         node_count = 8
+                        if not weekly:
+                            continue # This is too many nodes for nightly.
                 elif 'cifar' in file_name:
                     data_filename_train_default = '/p/lscratchh/brainusr/datasets/cifar10-bin/data_all.bin'
                     data_filename_test_default = '/p/lscratchh/brainusr/datasets/cifar10-bin/test_batch.bin'
@@ -98,10 +84,11 @@ def skeleton_models(cluster, dir_name, executables, compiler_name):
                         data_filename_test_default=data_filename_test_default,
                         data_reader_name=data_reader_name,
                         data_reader_path=data_reader_path,
+                        data_reader_percent=data_reader_percent,
                         exit_after_setup=True, model_path=model_path,
                         optimizer_name=opt,
                         output_file_name=output_file_name,
-                        error_file_name=error_file_name)
+                        error_file_name=error_file_name, weekly=weekly)
                     if os.system(cmd) != 0:
                         print("Error detected in " + model_path)
                         #defective_models.append(file_name)
@@ -115,30 +102,29 @@ def skeleton_models(cluster, dir_name, executables, compiler_name):
         print('Errors for: The following models exited with errors %s' % compiler_name)
         for model in defective_models:
             print(model)
-    assert num_defective == 0
+    if num_defective != 0:
+        raise AssertionError(
+            'num_defective={nd}\nDefective models:\n{dms}'.format(
+                nd=num_defective, dms=defective_models))
 
 
-def test_unit_models_clang4(cluster, dirname, exes):
-    skeleton_models(cluster, dirname, exes, 'clang4')
+def test_unit_models_clang6(cluster, dirname, exes, weekly, data_reader_percent):
+    skeleton_models(cluster, dirname, exes, 'clang6', weekly, data_reader_percent)
 
 
-def test_unit_models_gcc4(cluster, dirname, exes):
-    skeleton_models(cluster, dirname, exes, 'gcc4')
+def test_unit_models_gcc7(cluster, dirname, exes, weekly, data_reader_percent):
+    skeleton_models(cluster, exes, dirname, 'gcc7', weekly, data_reader_percent)
 
 
-def test_unit_models_gcc7(cluster, dirname, exes):
-    skeleton_models(cluster, exes, dirname, 'gcc7')
+def test_unit_models_intel19(cluster, dirname, exes, weekly, data_reader_percent):
+    skeleton_models(cluster, dirname, exes, 'intel19', weekly, data_reader_percent)
 
 
-def test_unit_models_intel18(cluster, dirname, exes):
-    skeleton_models(cluster, dirname, exes, 'intel18')
-
-
-# Run with python -m pytest -s test_unit_check_proto_models.py -k 'test_unit_models_exe' --exe=<executable>
-def test_unit_models_exe(cluster, dirname, exe):
+# Run with python3 -m pytest -s test_unit_check_proto_models.py -k 'test_unit_models_exe' --exe=<executable>
+def test_unit_models_exe(cluster, dirname, exe, weekly, data_reader_percent):
     if exe is None:
         e = 'test_unit_models_exe: Non-local testing'
         print('Skip - ' + e)
         pytest.skip(e)
     exes = {'exe' : exe}
-    skeleton_models(cluster, dirname, exes, 'exe')
+    skeleton_models(cluster, dirname, exes, 'exe', weekly, data_reader_percent)

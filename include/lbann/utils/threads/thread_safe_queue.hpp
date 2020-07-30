@@ -1,10 +1,11 @@
-#ifndef __LBANN_THREAD_SAFE_QUEUE_HPP__
-#define __LBANN_THREAD_SAFE_QUEUE_HPP__
-
-#include <condition_variable>
-#include <mutex>
+#ifndef LBANN_UTILS_THREADS_THREAD_SAFE_QUEUE_HPP_INCLUDED
+#define LBANN_UTILS_THREADS_THREAD_SAFE_QUEUE_HPP_INCLUDED
 
 #include <lbann/utils/memory.hpp>
+
+#include <condition_variable>
+#include <memory>
+#include <mutex>
 
 namespace lbann {
 
@@ -146,4 +147,4 @@ private:
 };// class thread_safe_queue
 
 }// namespace lbann
-#endif /* __LBANN_THREAD_SAFE_QUEUE_HPP__ */
+#endif /* LBANN_UTILS_THREADS_THREAD_SAFE_QUEUE_HPP_INCLUDED */

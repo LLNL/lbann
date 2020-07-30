@@ -27,16 +27,17 @@
 #ifndef LBANN_LAYER_TRANSFORM_HPP_INCLUDED
 #define LBANN_LAYER_TRANSFORM_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
 
 /** @todo Remove. Layers should inherit directly from the base layer
  *  class.
  */
-class transform_layer : public Layer {
+template <typename TensorDataType>
+class transform_layer : public data_type_layer<TensorDataType> {
  public:
-  transform_layer(lbann_comm *comm) : Layer(comm) {}
+  transform_layer(lbann_comm *comm) : data_type_layer<TensorDataType>(comm) {}
 };
 
 } // namespace lbann

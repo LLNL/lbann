@@ -21,7 +21,8 @@ namespace lbann
 namespace utils
 {
 
-#ifdef LBANN_HAS_STD_ANY
+// Note (tym 4/8/20): CMake doesn't support NVCC with C++17
+#if defined(LBANN_HAS_STD_ANY) && !defined(__CUDACC__)
 // This case is simple symbol injection; don't feel great about this,
 // but it's not my fault they couldn't get this into C++11...
 
@@ -64,7 +65,7 @@ public:
   ///@{
 
   /** @brief Default construct an empty "any" */
-  any() noexcept = default;
+  any() noexcept {}
 
   /** @brief Construct an object holding a T */
   template <typename T>

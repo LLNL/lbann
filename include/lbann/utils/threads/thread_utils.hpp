@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_THREAD_UTILS_HPP
-#define LBANN_THREAD_UTILS_HPP
+#ifndef LBANN_UTILS_THREADS_THREAD_UTILS_HPP_INCLUDED
+#define LBANN_UTILS_THREADS_THREAD_UTILS_HPP_INCLUDED
 
 #include "lbann/comm.hpp"
 
@@ -36,4 +36,4 @@ int free_core_offset(const lbann_comm *comm);
 
 } // namespace lbann
 
-#endif // LBANN_THREAD_UTILS_HPP
+#endif // LBANN_UTILS_THREADS_THREAD_UTILS_HPP_INCLUDED

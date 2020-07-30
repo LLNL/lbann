@@ -1,0 +1,114 @@
+########################################################################
+# The HYDRA normalization values were computed over the 
+# the 00008 set of 100 files (10K samples), June, 2019
+# John Field cautions that the HYDRA schema will change in
+# the future
+########################################################################
+
+data_set_metadata {
+  schema {
+    split_jag_image_channels: false
+
+    # JAG_Image, JAG_Scalar, JAG_Input
+    independent: [ { pieces: [ JAG_Image, JAG_Scalar ] }, { pieces: [ JAG_Input ] } ]
+    dependent: [ { pieces: [ JAG_Input ] } ]
+
+    image_prefix: "/images/"
+
+    ## all hydra image keys: 
+    #                    "(90,0)/bang/image/data" 
+    #                    "(90,0)/0.03/image/data" 
+    #                    "(90,0)/0.02/image/data" 
+    #                    "(90,0)/0.01/image/data" 
+    #
+    #                    "(0,0)/bang/image/data" 
+    #                    "(0,0)/0.03/image/data" 
+    #                    "(0,0)/0.02/image/data" 
+    #                    "(0,0)/0.01/image/data"
+    jag_image_keys: ["(90,0)/bang/image/data", "(0,0)/bang/image/data"]
+
+    scalar_prefix: "/scalars/"
+
+    # An empty list indicates to use all
+    # The commented out variables are not on the Jim's original list but used in the numpy-based format
+    jag_scalar_keys:
+      [ "avg_rhor",
+        "peak_eprod",
+        "peak_tion_bw_DT",
+        "bt_tion_bw_DT",
+        "avg_tion_bw_DT",
+        "adiabat",
+        "bangt",
+        "burnwidth",
+        "bt_rhor",
+        "bt_eprodr",
+        "peak_eprodr"
+      ]
+
+    # When using all the keys without explicit selection, key filters can be used
+    # to explicitly exclude the particular variables with keys that matches a filter.
+    # 'jag_scalar_filters' and 'jag_input_filters' rely on exact key string matching.
+    # 'jag_scalar_prefix_filters' and 'jag_input_prefix_filters' define a filter as
+    # the pair of a prefix substring and the minimum key length.
+    # For example, with the example below, any key that has a length no shorter
+    # than 26 and starts with the substring "image_(" is excluded.
+
+    jag_scalar_prefix_filters: [ { key_prefix: "image_(" min_len: 26} ]
+    jag_scalar_filters: [ "iBT" ]
+
+    input_prefix: "/inputs/"
+
+    jag_input_keys: ["preheat",
+                     "sc_peak",
+                     "t_3rd",
+                     "t_end"
+                    ]  
+  }
+
+   jag_input_normalization_params: [
+      { scale: 0.0337373  bias: -0.0105617 }, #p_preheat avg= 15.4355
+      { scale: 1.04127  bias: 0.49368 }, #sc_peak avg= 0.00650919
+      { scale: 1.00482  bias: 0.499533 }, #t_3rd avg= -0.0241983
+      { scale: 1.00725  bias: 0.496931 } #t_end avg= -0.00750582
+    ]
+
+    jag_scalar_normalization_params: [
+      { scale: 1.82482  bias: -0.511432 }, #avg_rhor avg= 0.529763
+      { scale: 0.681226  bias: -0.0150223 }, #peak_eprod avg= 0.201066
+      { scale: 0.198934  bias: -0.801525 }, #peak_tion_bw_DT avg= 6.37529
+      { scale: 0.244173  bias: -0.604468 }, #bt_tion_bw_DT avg= 4.0855
+      { scale: 0.269391  bias: -0.656678 }, #avg_tion_bw_DT avg= 3.91583
+      { scale: 0.0492209  bias: -0.186354 }, #adiabat avg= 10.6166
+      { scale: 522.423  bias: -3.80809 }, #bangt avg= 0.00814444
+      { scale: 3787.06  bias: -0.274563 }, #burnwidth avg= 0.000173271
+      { scale: 1.68807  bias: -0.510794 }, #bt_rhor avg= 0.578218
+      { scale: 5.27623e-05  bias: -0.00320741 }, #bt_eprodr avg= 1572.53
+      { scale: 5.21263e-05  bias: -0.00322019 } #peak_eprodr avg= 1587.55
+    ]
+
+    # image data shape is (3,3,64,64)
+    # from John Field: sets of three: {absorption, emission forward, 
+    # and emission back} # Since we are in 1D, forward and back emission 
+    # are the same. 
+    jag_image_normalization_params: [
+      { scale: 1.31227  bias: -5.2241e-05 }, #(90,0)/bang/image/data
+      { scale: 1.5386e-05  bias: 8.4296e-05 }, #(90,0)/bang/image/data
+      { scale: 1.5386e-05  bias: 8.4296e-05 }, #(90,0)/bang/image/data
+      { scale: 1.28446  bias: -0.18841 }, #(90,0)/bang/image/data
+      { scale: 4.06761e-05  bias: 1.03167e-06 }, #(90,0)/bang/image/data
+      { scale: 4.06761e-05  bias: 1.03167e-06 }, #(90,0)/bang/image/data
+      { scale: 1.44979  bias: -0.289003 }, #(90,0)/bang/image/data
+      { scale: 0.00024344  bias: 7.96652e-08 }, #(90,0)/bang/image/data
+      { scale: 0.00024344  bias: 7.96652e-08 }, #(90,0)/bang/image/data
+      { scale: 1.31227  bias: -5.2241e-05 } #(0,0)/bang/image/data
+      { scale: 1.5386e-05  bias: 8.4296e-05 } #(0,0)/bang/image/data
+      { scale: 1.5386e-05  bias: 8.4296e-05 } #(0,0)/bang/image/data
+      { scale: 1.28446  bias: -0.18841 } #(0,0)/bang/image/data
+      { scale: 4.06761e-05  bias: 1.03167e-06 } #(0,0)/bang/image/data
+      { scale: 4.06761e-05  bias: 1.03167e-06 } #(0,0)/bang/image/data
+      { scale: 1.44979  bias: -0.289003 } #(0,0)/bang/image/data
+      { scale: 0.00024344  bias: 7.96652e-08 } #(0,0)/bang/image/data
+      { scale: 0.00024344  bias: 7.96652e-08 } #(0,0)/bang/image/data
+    ]
+
+}

@@ -32,15 +32,17 @@
 namespace lbann {
 
 /** @brief Constant output. */
-template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
-class constant_layer : public transform_layer {
+template <typename TensorDataType,
+          data_layout T_layout = data_layout::DATA_PARALLEL,
+          El::Device Dev = El::Device::CPU>
+class constant_layer : public transform_layer<TensorDataType> {
 public:
 
   constant_layer(lbann_comm *comm,
-                 DataType value,
+                 TensorDataType value,
                  std::vector<int> dims)
-    : transform_layer(comm), m_value(value) {
-    set_output_dims(dims);
+    : transform_layer<TensorDataType>(comm), m_value(value) {
+    this->set_output_dims(dims);
     this->m_expected_num_parent_layers = 0;
   }
 
@@ -50,7 +52,7 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
   description get_description() const override {
-    auto&& desc = transform_layer::get_description();
+    auto desc = transform_layer<TensorDataType>::get_description();
     desc.add("Value", m_value);
     return desc;
   }
@@ -59,18 +61,29 @@ protected:
 
   void fp_compute() override {
     if (m_value == EvalType(0)) {
-      El::Zero(get_activations());
+      El::Zero(this->get_activations());
     } else {
-      El::Fill(get_activations(), m_value);
+      El::Fill(this->get_activations(), m_value);
     }
   }
 
 private:
 
   /** Constant value. */
-  DataType m_value;
+  TensorDataType m_value;
 
 };
+
+LBANN_DEFINE_LAYER_BUILDER(constant);
+
+#ifndef LBANN_CONSTANT_LAYER_INSTANTIATE
+#define PROTO_DEVICE(T, Device) \
+  extern template class constant_layer<T, data_layout::DATA_PARALLEL, Device>; \
+  extern template class constant_layer<T, data_layout::MODEL_PARALLEL, Device>
+
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+#endif // LBANN_CONSTANT_LAYER_INSTANTIATE
 
 } // namespace lbann
 

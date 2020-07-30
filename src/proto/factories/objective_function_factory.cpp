@@ -26,13 +26,21 @@
 
 #include "lbann/proto/factories.hpp"
 
+#include "lbann/objective_functions/objective_function.hpp"
+
+#include "lbann/objective_functions/layer_term.hpp"
+#include "lbann/objective_functions/weight_regularization/l2.hpp"
+
+#include <objective_functions.pb.h>
+
 namespace lbann {
 namespace proto {
 
-objective_function* construct_objective_function(const lbann_data::ObjectiveFunction& proto_obj) {
+std::unique_ptr<objective_function>
+construct_objective_function(const lbann_data::ObjectiveFunction& proto_obj) {
 
   // Instantiate objective function
-  objective_function* obj = new objective_function();
+  auto obj = make_unique<objective_function>();
 
   // Weight regularization terms
   for (int i=0; i<proto_obj.l2_weight_regularization_size(); ++i) {

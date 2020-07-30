@@ -1,12 +1,11 @@
 #Discriminator Model
+trainer {
+}
 model {
   data_layout: "model_parallel"
   mini_batch_size: 32
-  block_size: 256
   super_steps: 100000
   num_epochs: 1
-  num_parallel_readers: 0
-  procs_per_trainer: 0
 
   ###################################################
   # Objective function
@@ -137,8 +136,10 @@ model {
   }
   weights {
      name: "gen_fc1_weights"
-     optimizer { }
-     glorot_normal_initializer {}
+     optimizer { no_optimizer {} }
+     initializer {
+       glorot_normal_initializer {}
+     }
   }
   #############
   # FC 1
@@ -178,8 +179,10 @@ model {
 
   weights {
      name: "gen_fc2_weights"
-     optimizer { }
-     glorot_normal_initializer {}
+     optimizer { no_optimizer {} }
+     initializer {
+       glorot_normal_initializer {}
+     }
   }
   layer {
     name: "fc2"
@@ -216,8 +219,10 @@ model {
 
   weights {
      name: "gen_fc3_weights"
-     optimizer { }
-     glorot_normal_initializer {}
+     optimizer { no_optimizer {} }
+     initializer {
+       glorot_normal_initializer {}
+     }
   }
   layer {
     name: "fc3"
@@ -254,8 +259,10 @@ model {
 
   weights {
      name: "gen_fc4_weights"
-     optimizer { }
-     glorot_normal_initializer {}
+     optimizer { no_optimizer {} }
+     initializer {
+       glorot_normal_initializer {}
+     }
   }
   layer {
     name: "fc4"

@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_LOSS_L2_NORM2_HPP_INCLUDED
 #define LBANN_LAYERS_LOSS_L2_NORM2_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
 
@@ -35,18 +35,27 @@ namespace lbann {
  *
  *  @f[ \lVert x\rVert_2^2 = \sum\limits_{i} x_i^2 @f]
  */
-template <data_layout T_layout, El::Device Dev>
-class l2_norm2_layer : public Layer {
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+class l2_norm2_layer : public data_type_layer<TensorDataType> {
+public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+  ///@}
+
 public:
 
-  l2_norm2_layer(lbann_comm *comm) : Layer(comm) {}
+  l2_norm2_layer(lbann_comm *comm) : data_type_layer<TensorDataType>(comm) {}
 
   l2_norm2_layer(const l2_norm2_layer& other)
-    : Layer(other),
+    : data_type_layer<TensorDataType>(other),
       m_workspace(other.m_workspace ?
                   other.m_workspace->Copy() : nullptr) {}
   l2_norm2_layer& operator=(const l2_norm2_layer& other) {
-    Layer::operator=(other);
+    data_type_layer<TensorDataType>::operator=(other);
     m_workspace.reset(other.m_workspace ?
                       other.m_workspace->Copy() : nullptr);
     return *this;
@@ -57,18 +66,18 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-  void setup_dims() override {
-    Layer::setup_dims();
-    set_output_dims({1});
+  void setup_dims(DataReaderMetaData& dr_metadata) override {
+    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+    this->set_output_dims({1});
   }
 
-  void setup_data() override {
-    Layer::setup_data();
+  void setup_data(size_t max_mini_batch_size) override {
+    data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
 
     // Initialize workspace
-    auto dist = get_prev_activations().DistData();
+    auto dist = this->get_prev_activations().DistData();
     dist.colDist = El::STAR;
-    m_workspace.reset(AbsDistMat::Instantiate(dist));
+    m_workspace.reset(AbsDistMatrixType::Instantiate(dist));
 #ifdef HYDROGEN_HAVE_CUB
     if (m_workspace->GetLocalDevice() == El::Device::GPU) {
       m_workspace->Matrix().SetMemoryMode(1); // CUB memory pool
@@ -81,15 +90,14 @@ public:
 
     // Initialize workspace
     m_workspace->Empty();
-    m_workspace->AlignWith(get_prev_activations());
-    m_workspace->Resize(1, get_prev_activations().Width());
+    m_workspace->AlignWith(this->get_prev_activations());
+    m_workspace->Resize(1, this->get_prev_activations().Width());
 
     // Compute local contributions and accumulate
     /// @todo Consider reduce rather than allreduce
-    local_fp_compute(get_local_prev_activations(),
-                     m_workspace->Matrix());
-    m_comm->allreduce(*m_workspace, m_workspace->RedundantComm());
-    El::Copy(*m_workspace, get_activations());
+    local_fp_compute();
+    this->get_comm()->allreduce(*m_workspace, m_workspace->RedundantComm());
+    El::Copy(*m_workspace, this->get_activations());
 
     // Clean up
     m_workspace->Empty();
@@ -100,13 +108,11 @@ public:
 
     // Initialize workspace
     m_workspace->Empty();
-    m_workspace->AlignWith(get_prev_activations());
-    El::Copy(get_prev_error_signals(), *m_workspace);
+    m_workspace->AlignWith(this->get_prev_activations());
+    El::Copy(this->get_prev_error_signals(), *m_workspace);
 
     // Compute local gradients
-    local_bp_compute(get_local_prev_activations(),
-                     m_workspace->LockedMatrix(),
-                     get_local_error_signals());
+    local_bp_compute();
 
     // Clean up
     m_workspace->Empty();
@@ -116,17 +122,27 @@ public:
 private:
 
   /** Compute local contributions to L2 norm. */
-  static void local_fp_compute(const AbsMat& local_input,
-                               AbsMat& local_contribution);
+  void local_fp_compute();
   /** Compute local gradients. */
-  static void local_bp_compute(const AbsMat& local_input,
-                               const AbsMat& local_gradient_wrt_output,
-                               AbsMat& local_gradient_wrt_input);
+  void local_bp_compute();
 
   /** Workspace matrix. */
-  std::unique_ptr<AbsDistMat> m_workspace;
+  std::unique_ptr<AbsDistMatrixType> m_workspace;
 
 };
+
+#ifndef LBANN_L2_NORM2_LAYER_INSTANTIATE
+
+#define PROTO_DEVICE(T, Device)                     \
+  extern template class l2_norm2_layer<             \
+    T, data_layout::DATA_PARALLEL, Device>;         \
+  extern template class l2_norm2_layer<             \
+    T, data_layout::MODEL_PARALLEL, Device>
+
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+
+#endif // LBANN_L2_NORM2_LAYER_INSTANTIATE
 
 } // namespace lbann
 

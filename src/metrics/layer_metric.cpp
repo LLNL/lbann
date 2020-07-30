@@ -80,7 +80,7 @@ void layer_metric::setup(model& m) {
 EvalType layer_metric::evaluate(execution_mode mode,
                                 int mini_batch_size) {
   const auto& start = get_time();
-  auto value = get_evaluation_layer().get_value(false);
+  auto value = dynamic_cast<abstract_evaluation_layer<DataType>&>(get_evaluation_layer()).get_value(false);
   get_evaluate_time() += get_time() - start;
   if (m_unit == "%") { value *= 100; }
   get_statistics()[mode].add_value(value * mini_batch_size,
@@ -88,9 +88,9 @@ EvalType layer_metric::evaluate(execution_mode mode,
   return value;
 }
 
-abstract_evaluation_layer& layer_metric::get_evaluation_layer() {
+/*abstract_evaluation_*/Layer& layer_metric::get_evaluation_layer() {
   auto& l = get_layer();
-  auto* eval = dynamic_cast<abstract_evaluation_layer*>(&l);
+  auto* eval = dynamic_cast<abstract_evaluation_layer<DataType>*>(&l);
   if (eval == nullptr) {
     std::stringstream err;
     err << "attempted to get the evaluation layer corresponding to "
@@ -100,6 +100,29 @@ abstract_evaluation_layer& layer_metric::get_evaluation_layer() {
     LBANN_ERROR(err.str());
   }
   return *eval;
+}
+
+bool layer_metric::save_to_checkpoint_shared(persist& p) {
+  // write out fields we need to save for model
+  if (get_comm().am_trainer_master()) {
+    write_cereal_archive<layer_metric>(*this, p, "metrics.xml");
+  }
+  return true;
+}
+
+bool layer_metric::load_from_checkpoint_shared(persist& p) {
+  load_from_shared_cereal_archive<layer_metric>(*this, p, get_comm(), "metrics.xml");
+  return true;
+}
+
+bool layer_metric::save_to_checkpoint_distributed(persist& p) {
+  write_cereal_archive<layer_metric>(*this, p, "metrics.xml");
+  return true;
+}
+
+bool layer_metric::load_from_checkpoint_distributed(persist& p) {
+  read_cereal_archive<layer_metric>(*this, p, "metrics.xml");
+  return true;
 }
 
 } // namespace lbann

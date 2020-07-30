@@ -27,8 +27,6 @@
 
 #include "lbann_config.hpp"
 
-#ifdef LBANN_HAS_CONDUIT
-
 #include "conduit/conduit.hpp"
 #include "conduit/conduit_relay.hpp"
 #include "conduit/conduit_relay_io_hdf5.hpp"
@@ -83,8 +81,7 @@ void print_sample_ids(
   const std::vector<std::set<int> > &samples);
 //==========================================================================
 int main(int argc, char *argv[]) {
-  int random_seed = lbann_default_random_seed;
-  world_comm_ptr comm = initialize(argc, argv, random_seed);
+  world_comm_ptr comm = initialize(argc, argv);
   bool master = comm->am_world_master();
   const int rank = comm->get_rank_in_world();
   const int np = comm->get_procs_in_world();
@@ -150,11 +147,11 @@ int main(int argc, char *argv[]) {
 
     extract_samples(comm.get(), rank, np, conduit_filenames, samples);
 
-  } catch (exception& e) {
+  } catch (const exception& e) {
     std::cerr << "\n\n" << rank << " ::::: caught exception, outer try/catch: " << e.what() << "\n\n";
     El::ReportException(e);
     return EXIT_FAILURE;
-  } catch (std::exception& e) {
+  } catch (const std::exception& e) {
     El::ReportException(e);
     return EXIT_FAILURE;
   }
@@ -415,7 +412,7 @@ std::cerr << rank << " samples.size: " << samples.size() << " np: " << np << "\n
 
     try {
       conduit::relay::io::hdf5_close_file( hdf5_file_hnd );
-    } catch (exception e) {
+    } catch (const exception& e) {
        throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: exception hdf5_close_file; " + filenames[j] + "; " + e.what());
     }
 
@@ -434,7 +431,7 @@ std::cerr << rank << " samples.size: " << samples.size() << " np: " << np << "\n
               << "_" << file_id++ << ".bundle";
     try {
       conduit::relay::io::save(save_me, fn.str(), "hdf5");
-    } catch (exception e) {
+    } catch (const exception& e) {
       throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: exception conduit::relay::save(); what: " + e.what());
     }
   }
@@ -476,4 +473,3 @@ void print_sample_ids(
   }
   std::cerr << "\n==========================================\n";
 }
-#endif //#ifdef LBANN_HAS_CONDUIT

@@ -1,0 +1,167 @@
+////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
+// Written by the LBANN Research Team (B. Van Essen, et al.) listed in
+// the CONTRIBUTORS file. <lbann-dev@llnl.gov>
+//
+// LLNL-CODE-697807.
+// All rights reserved.
+//
+// This file is part of LBANN: Livermore Big Artificial Neural Network
+// Toolkit. For details, see http://software.llnl.gov/LBANN or
+// https://github.com/LLNL/LBANN.
+//
+// Licensed under the Apache License, Version 2.0 (the "Licensee"); you
+// may not use this file except in compliance with the License.  You may
+// obtain a copy of the License at:
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the license.
+////////////////////////////////////////////////////////////////////////////////
+
+syntax = "proto3";
+
+package lbann_data;
+
+message Transform {
+  // Transforms that apply to LBANN data.
+  // Normalize channel-wise with mean and standard deviation.
+  message Normalize {
+    string means = 1;
+    string stddevs = 2;
+  }
+  // Normalize each sample to have mean 0, standard deviation 1.
+  message SampleNormalize {}
+  // Scale by a constant.
+  message Scale {
+    float scale = 1;
+  }
+
+  // Transforms that apply to images.
+  // Adjust the brightness of an image.
+  message AdjustBrightness {
+    float factor = 1;
+  }
+  // Adjust the contrast of an image.
+  message AdjustContrast {
+    float factor = 1;
+  }
+  // Adjust the saturation of an image.
+  message AdjustSaturation {
+    float factor = 1;
+  }
+  // Crop of size height x width from the center.
+  message CenterCrop {
+    uint64 height = 1;
+    uint64 width = 2;
+  }
+  // Convert to color.
+  message Colorize {}
+  // Randomly jitter brightness/contrast/saturation.
+  message ColorJitter {
+    float min_brightness_factor = 1;
+    float max_brightness_factor = 2;
+    float min_contrast_factor = 3;
+    float max_contrast_factor = 4;
+    float min_saturation_factor = 5;
+    float max_saturation_factor = 6;
+  }
+  // Apply cutout augmentation.
+  message Cutout {
+    uint64 num_holes = 1;
+    uint64 length = 2;
+  }
+  // Convert to grayscale.
+  message Grayscale {}
+  // Horizontal flip with probability p.
+  message HorizontalFlip {
+    float p = 1;
+  }
+  // Fused Normalize + ToLBANNLayout.
+  message NormalizeToLBANNLayout {
+    string means = 1;
+    string stddevs = 2;
+  }
+  // Apply a random affine transform.
+  message RandomAffine {
+    float rotate_min = 1;
+    float rotate_max = 2;
+    float translate_h = 3;
+    float translate_w = 4;
+    float scale_min = 5;
+    float scale_max = 6;
+    float shear_min = 7;
+    float shear_max = 8;
+  }
+  // Crop of size height x width from a random location.
+  message RandomCrop {
+    uint64 height = 1;
+    uint64 width = 2;
+  }
+  // Random crop with scale and aspect ratio augmentation.
+  message RandomResizedCrop {
+    uint64 height = 1;
+    uint64 width = 2;
+    float scale_min = 3;
+    float scale_max = 4;
+    float ar_min = 5;
+    float ar_max = 6;
+  }
+  // Resize to height x width, then randomly crop to crop_height x crop_width.
+  message RandomResizedCropWithFixedAspectRatio {
+    uint64 height = 1;
+    uint64 width = 2;
+    uint64 crop_height = 3;
+    uint64 crop_width = 4;
+  }
+  // Resize to height x width.
+  message Resize {
+    uint64 height = 1;
+    uint64 width = 2;
+  }
+  // Resize to height x width then crop to crop_height x crop_width at the center.
+  message ResizedCenterCrop {
+    uint64 height = 1;
+    uint64 width = 2;
+    uint64 crop_height = 3;
+    uint64 crop_width = 4;
+  }
+  // Convert from an image to LBANN data.
+  message ToLBANNLayout { }
+  // Vertical flip with probability p.
+  message VerticalFlip {
+    float p = 1;
+  }
+
+  oneof transform_type {
+    // On LBANN data:
+    Normalize normalize = 1;
+    SampleNormalize sample_normalize = 2;
+    Scale scale = 3;
+
+    // On images:
+    CenterCrop center_crop = 100;
+    Colorize colorize = 101;
+    Grayscale grayscale = 102;
+    HorizontalFlip horizontal_flip = 103;
+    NormalizeToLBANNLayout normalize_to_lbann_layout = 104;
+    RandomAffine random_affine = 105;
+    RandomCrop random_crop = 106;
+    RandomResizedCrop random_resized_crop = 107;
+    RandomResizedCropWithFixedAspectRatio random_resized_crop_with_fixed_aspect_ratio = 108;
+    Resize resize = 109;
+    ResizedCenterCrop resized_center_crop = 110;
+    ToLBANNLayout to_lbann_layout = 111;
+    VerticalFlip vertical_flip = 112;
+    AdjustBrightness adjust_brightness = 113;
+    AdjustContrast adjust_contrast = 114;
+    AdjustSaturation adjust_saturation = 115;
+    ColorJitter color_jitter = 116;
+    Cutout cutout = 117;
+  }
+}

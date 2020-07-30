@@ -10,9 +10,11 @@ list(APPEND CMAKE_MODULE_PATH "@EXTRA_CMAKE_MODULE_DIR@")
 
 set(LBANN_VERSION ${PACKAGE_VERSION})
 
+set(LBANN_BUILD_TYPE "@CMAKE_BUILD_TYPE@")
+
 # Record compiler information
 set(LBANN_CXX_COMPILER "@CMAKE_CXX_COMPILER@")
-set(LBANN_CUDA_COMPILER "$@CMAKE_CUDA_COMPILER@")
+set(LBANN_CUDA_COMPILER "@CMAKE_CUDA_COMPILER@")
 
 set(LBANN_CXX_FLAGS "@CMAKE_CXX_FLAGS@")
 set(LBANN_CUDA_FLAGS "@CMAKE_CUDA_FLAGS@")
@@ -28,6 +30,7 @@ if (CMAKE_CXX_STANDARD LESS LBANN_CXX_STANDARD)
 endif ()
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
+
 # Record the various flags and switches accumlated in LBANN
 set(LBANN_ALUMINUM_MPI_PASSTHROUGH @LBANN_ALUMINUM_MPI_PASSTHROUGH@)
 set(LBANN_BUILT_WITH_SPECTRUM @LBANN_BUILT_WITH_SPECTRUM@)
@@ -37,7 +40,7 @@ set(LBANN_GNU_LINUX @LBANN_GNU_LINUX@)
 set(LBANN_HAS_ALUMINUM @LBANN_HAS_ALUMINUM@)
 set(LBANN_HAS_CEREAL @LBANN_HAS_CEREAL@)
 set(LBANN_HAS_CNPY @LBANN_HAS_CNPY@)
-set(LBANN_HAS_CONDUIT @LBANN_HAS_CONDUIT@)
+set(LBANN_HAS_CONDUIT @LBANN_WITH_CONDUIT@)
 set(LBANN_HAS_CUDA @LBANN_HAS_CUDA@)
 set(LBANN_HAS_CUDNN @LBANN_HAS_CUDNN@)
 set(LBANN_HAS_DOXYGEN @LBANN_HAS_DOXYGEN@)
@@ -46,28 +49,38 @@ set(LBANN_HAS_LBANN_PROTO @LBANN_HAS_LBANN_PROTO@)
 set(LBANN_HAS_OPENCV @LBANN_HAS_OPENCV@)
 set(LBANN_HAS_NCCL2 @LBANN_HAS_NCCL2@)
 set(LBANN_HAS_PROTOBUF @LBANN_HAS_PROTOBUF@)
+set(LBANN_HAS_PYTHON @LBANN_HAS_PYTHON@)
 set(LBANN_HAS_TBINF @LBANN_HAS_TBINF@)
 set(LBANN_HAS_VTUNE @LBANN_HAS_VTUNE@)
-set(LBANN_NO_OMP_FOR_DATA_READERS @LBANN_NO_OMP_FOR_DATA_READERS@)
 set(LBANN_NVPROF @LBANN_NVPROF@)
-set(LBANN_SEQUENTIAL_INITIALIZATION @LBANN_SEQUENTIAL_INITIALIZAION@)
 set(LBANN_TOPO_AWARE @LBANN_TOPO_AWARE@)
 
 # Setup dependencies
+find_package(Threads REQUIRED)
 
-# First, CEREAL.
 if (LBANN_HAS_CEREAL)
-  find_package(CEREAL NO_MODULE
+  find_package(CEREAL NO_MODULE QUIET
     HINTS ${CEREAL_DIR} $ENV{CEREAL_DIR}
     PATH_SUFFIXES share/cmake/cereal
     NO_DEFAULT_PATH)
   if (NOT CEREAL_FOUND)
-    find_package(CEREAL NO_MODULE)
+    find_package(CEREAL NO_MODULE QUIET)
   endif ()
   if (NOT CEREAL_FOUND AND NOT CEREAL_DIR)
     set(CEREAL_DIR "@CEREAL_DIR@")
     find_package(CEREAL NO_MODULE REQUIRED)
   endif ()
+  if (NOT CEREAL_FOUND)
+    message(FATAL_ERROR "Required dependency CEREAL not found.")
+  endif ()
+endif ()
+
+if (NOT HWLOC_DIR)
+  set(HWLOC_DIR "@HWLOC_DIR@")
+endif ()
+if (LBANN_TOPO_AWARE)
+  find_package(HWLOC REQUIRED)
+  set(LBANN_TOPO_AWARE ${HWLOC_FOUND})
 endif ()
 
 # Next, Hydrogen. We can probably inherit Aluminum-ness from
@@ -191,6 +204,102 @@ if (LBANN_HAS_CUDA)
   enable_language(CUDA)
   include(SetupCUDAToolkit)
 endif (LBANN_HAS_CUDA)
+
+set(_LBANN_CONDUIT_DIR "@Conduit_DIR@")
+set(_LBANN_HDF5_DIR "@HDF5_DIR@")
+if (LBANN_HAS_CONDUIT)
+  # Apparently we have to find HDF5, too.
+  find_package(HDF5 CONFIG QUIET
+    HINTS ${HDF5_DIR} $ENV{HDF5_DIR} ${_LBANN_HDF5_DIR}
+    PATH_SUFFIXES share/cmake/hdf5
+    NO_DEFAULT_PATH)
+  if (NOT HDF5_FOUND)
+    find_package(HDF5 CONFIG QUIET)
+  endif ()
+  if (NOT HDF5_FOUND)
+    enable_language(C) # WHY??????????????
+    find_package(HDF5 REQUIRED)
+    set(HDF5_FOUND_WITH_MODULE TRUE)
+  else ()
+    message(STATUS "Found HDF5: ${HDF5_DIR}")
+  endif ()
+
+  find_package(Conduit CONFIG QUIET
+    HINTS ${Conduit_DIR} $ENV{Conduit_DIR}
+    ${CONDUIT_DIR} $ENV{CONDUIT_DIR}
+    ${_LBANN_CONDUIT_DIR}
+    PATH_SUFFIXES lib64/cmake lib/cmake
+    NO_DEFAULT_PATH)
+  if (NOT Conduit_FOUND)
+    find_package(Conduit CONFIG REQUIRED
+      PATH_SUFFIXES lib64/cmake lib/cmake)
+  endif ()
+  message(STATUS "Found CONDUIT: ${Conduit_DIR}")
+
+  # Ugh. I don't like that this requires intimate knowledge of
+  # specific targets that CONDUIT exports. It should support
+  # components.
+  if (NOT TARGET conduit_relay_mpi)
+    message(FATAL_ERROR "CONDUIT does not have proper MPI support.")
+  endif ()
+
+  if (NOT TARGET conduit OR NOT TARGET conduit_relay
+      OR NOT TARGET conduit_blueprint)
+    message(FATAL_ERROR "Missing some CONDUIT required library.")
+  endif ()
+
+  if (NOT TARGET conduit::conduit)
+    add_library(conduit::conduit INTERFACE IMPORTED)
+  endif ()
+
+  set(_conduit_interface_link_libs
+    "conduit;conduit_relay;conduit_relay_mpi;conduit_blueprint")
+
+  # Remove -pthread from linkage, if found
+  foreach (_lib IN LISTS _conduit_interface_link_libs)
+    if (TARGET ${_lib})
+      get_property(_tmp_interface_link_libs TARGET ${_lib}
+        PROPERTY INTERFACE_LINK_LIBRARIES)
+
+      list(FIND _tmp_interface_link_libs "-pthread" _pthread_idx)
+      if (_pthread_idx GREATER_EQUAL 0)
+        list(REMOVE_AT _tmp_interface_link_libs ${_pthread_idx})
+
+        set_property(TARGET ${_lib} PROPERTY
+          INTERFACE_LINK_LIBRARIES ${_tmp_interface_link_libs})
+      endif ()
+
+      get_property(_tmp_interface_compile_opts TARGET ${_lib}
+        PROPERTY INTERFACE_COMPILE_OPTIONS)
+      set_property(TARGET ${_lib}
+        PROPERTY INTERFACE_COMPILE_OPTIONS
+          $<$<COMPILE_LANGUAGE:CXX>:${_tmp_interface_compile_opts}>)
+    endif ()
+  endforeach ()
+
+  get_filename_component(_conduit_include_dirs
+    "${CONDUIT_INCLUDE_DIRS}" DIRECTORY)
+
+  if (HDF5_FOUND_WITH_MODULE)
+    list(APPEND _conduit_interface_link_libs
+      ${HDF5_LIBRARIES})
+
+    list(APPEND _conduit_include_dirs
+      "${HDF5_INCLUDE_DIRS}")
+  endif ()
+
+  set_property(TARGET conduit::conduit
+    PROPERTY
+    INTERFACE_INCLUDE_DIRECTORIES
+    "${_conduit_include_dirs}")
+
+  set_target_properties(conduit::conduit
+    PROPERTIES
+    INTERFACE_LINK_LIBRARIES
+    "${_conduit_interface_link_libs}")
+
+  set(CONDUIT_LIBRARIES conduit::conduit)
+endif (LBANN_HAS_CONDUIT)
 
 @PACKAGE_INIT@
 

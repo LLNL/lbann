@@ -29,6 +29,7 @@
 
 #include "lbann/base.hpp"
 #include "lbann/utils/cuda.hpp"
+#include "lbann/utils/exception.hpp"
 
 #ifdef LBANN_HAS_CUDA
 #include <cuda_runtime.h>
@@ -44,8 +45,9 @@
       const cublasStatus_t status_FORCE_CHECK_CUBLAS = (cublas_call);   \
       if (status_FORCE_CHECK_CUBLAS != CUBLAS_STATUS_SUCCESS) {         \
         cudaDeviceReset();                                              \
-        LBANN_ERROR(std::string("cuBLAS error: ")                       \
-                    + lbann::cublas::get_error_string(status_FORCE_CHECK_CUBLAS)); \
+        LBANN_ERROR("cuBLAS error: ",                                   \
+                    lbann::cublas::get_error_string(                    \
+                      status_FORCE_CHECK_CUBLAS));                      \
       }                                                                 \
     }                                                                   \
     {                                                                   \
@@ -55,8 +57,8 @@
         status_FORCE_CHECK_CUBLAS = cudaGetLastError();                 \
       if (status_FORCE_CHECK_CUBLAS != cudaSuccess) {                   \
         cudaDeviceReset();                                              \
-        LBANN_ERROR(std::string("CUDA error: ")                         \
-                    + cudaGetErrorString(status_FORCE_CHECK_CUBLAS));   \
+        LBANN_ERROR("CUDA error: ",                                     \
+                    cudaGetErrorString(status_FORCE_CHECK_CUBLAS));     \
       }                                                                 \
     }                                                                   \
   } while (0)
@@ -67,20 +69,19 @@
       const cublasStatus_t status_FORCE_CHECK_CUBLAS = (cublas_call);   \
       if (status_FORCE_CHECK_CUBLAS != CUBLAS_STATUS_SUCCESS) {         \
         cudaDeviceReset();                                              \
-        LBANN_ERROR(std::string("cuBLAS error: ")                       \
-                    + lbann::cublas::get_error_string(status_FORCE_CHECK_CUBLAS)); \
+        LBANN_ERROR("cuBLAS error: ",                                   \
+                    lbann::cublas::get_error_string(                    \
+                      status_FORCE_CHECK_CUBLAS));                      \
       }                                                                 \
     }                                                                   \
   } while (0)
-#define FORCE_CHECK_CUBLAS_SYNC(cuda_call)                                    \
-  do {                                                                        \
-    const cudaError_t cuda_status = cuda_call;                                \
-    if (cuda_status != cudaSuccess) {                                         \
-      std::cerr << "CUDA error: " << cudaGetErrorString(cuda_status) << "\n"; \
-      std::cerr << "Error at " << __FILE__ << ":" << __LINE__ << "\n";        \
-      cudaDeviceReset();                                                      \
-      throw lbann::lbann_exception("CUDA error");                             \
-    }                                                                         \
+#define FORCE_CHECK_CUBLAS_SYNC(cuda_call)                              \
+  do {                                                                  \
+    const cudaError_t cuda_status = cuda_call;                          \
+    if (cuda_status != cudaSuccess) {                                   \
+      cudaDeviceReset();                                                \
+      LBANN_ERROR("CUDA error: ", cudaGetErrorString(cuda_status));     \
+    }                                                                   \
   } while (0)
 #ifdef LBANN_DEBUG
 #define CHECK_CUBLAS(cublas_call)                       \
@@ -99,61 +100,88 @@ namespace cublas {
 const std::string get_error_string(cublasStatus_t status);
 
 // BLAS Level-1 functions
+template <typename TensorDataType>
 void axpy(cublasHandle_t const& handle,
           int n,
-          DataType alpha,
-          DataType const* x, int incx,
-          DataType * y, int incy);
+          TensorDataType alpha,
+          TensorDataType const* x, int incx,
+          TensorDataType * y, int incy);
+template <typename TensorDataType>
 void dot(cublasHandle_t const& handle,
          int n,
-         DataType const* x, int incx,
-         DataType const* y, int incy,
-         DataType * result);
-DataType dot(cublasHandle_t const& handle,
+         TensorDataType const* x, int incx,
+         TensorDataType const* y, int incy,
+         TensorDataType * result);
+template <typename TensorDataType>
+TensorDataType dot(cublasHandle_t const& handle,
              int n,
-             DataType const* x, int incx,
-             DataType const* y, int incy);
+             TensorDataType const* x, int incx,
+             TensorDataType const* y, int incy);
+template <typename TensorDataType>
 void nrm2(cublasHandle_t const& handle,
           int n,
-          DataType const* x, int incx,
-          DataType * result);
-DataType nrm2(cublasHandle_t const& handle,
+          TensorDataType const* x, int incx,
+          TensorDataType * result);
+template <typename TensorDataType>
+TensorDataType nrm2(cublasHandle_t const& handle,
               int n,
-              DataType const* x, int incx);
+              TensorDataType const* x, int incx);
+template <typename TensorDataType>
 void scal(cublasHandle_t const& handle,
           int n,
-          DataType alpha,
-          DataType * x, int incx);
+          TensorDataType alpha,
+          TensorDataType * x, int incx);
 
 // BLAS Level-2 functions
+template <typename TensorDataType>
 void gemv(cublasHandle_t const& handle,
           cublasOperation_t trans,
           int m, int n,
-          DataType alpha,
-          DataType const * A, int lda,
-          DataType const * x, int incx,
-          DataType beta,
-          DataType * y, int iny);
+          TensorDataType alpha,
+          TensorDataType const * A, int lda,
+          TensorDataType const * x, int incx,
+          TensorDataType beta,
+          TensorDataType * y, int iny);
 
 // BLAS Level-3 functions
+template <typename TensorDataType>
 void gemm(cublasHandle_t const& handle,
           cublasOperation_t transa, cublasOperation_t transb,
           int m, int n, int k,
-          DataType alpha,
-          DataType const * A, int lda,
-          DataType const * B, int ldb,
-          DataType beta,
-          DataType * C, int ldc);
+          TensorDataType alpha,
+          TensorDataType const * A, int lda,
+          TensorDataType const * B, int ldb,
+          TensorDataType beta,
+          TensorDataType * C, int ldc);
 
 // BLAS-like extension
+template <typename TensorDataType>
 void geam(cublasHandle_t const& handle,
           cublasOperation_t transa, cublasOperation_t transb,
           int m, int n,
-          DataType alpha,
-          DataType const * A, int lda,
-          DataType beta,
-          DataType const * B, int ldb,
-          DataType * C, int ldc);
+          TensorDataType alpha,
+          TensorDataType const * A, int lda,
+          TensorDataType beta,
+          TensorDataType const * B, int ldb,
+          TensorDataType * C, int ldc);
+template <typename TensorDataType>
+void gemm_strided_batched(cublasHandle_t const& handle,
+                          cublasOperation_t transa, cublasOperation_t transb,
+                          int m, int n, int k,
+                          TensorDataType alpha,
+                          TensorDataType const * A, int lda,
+                          long long int strideA,
+                          TensorDataType const * B, int ldb,
+                          long long int strideB,
+                          TensorDataType beta,
+                          TensorDataType * C, int ldc,
+                          long long int strideC,
+                          int batchCount);
+
+/** @brief Set the default to use tensor core operations, allowing
+ *         FP32->FP16 conversions.
+ */
+void default_to_tensor_ops();
 
 } // namespace cublas
 } // namespace lbann

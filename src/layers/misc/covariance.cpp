@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_COVARIANCE_LAYER_INSTANTIATE
 #include "lbann/layers/misc/covariance.hpp"
 
 namespace lbann {
@@ -34,18 +35,20 @@ namespace {
  *  We use a two-pass algorithm since it is more numerically stable
  *  than the naive single-pass algorithm.
  */
-void fp_cpu(const AbsDistMat& input0,
-            const AbsDistMat& input1,
-            AbsDistMat& output,
-            AbsDistMat& means,
-            AbsDistMat& workspace,
+template <typename TensorDataType>
+void fp_cpu(const El::AbstractDistMatrix<TensorDataType>& input0,
+            const El::AbstractDistMatrix<TensorDataType>& input1,
+            El::AbstractDistMatrix<TensorDataType>& output,
+            El::AbstractDistMatrix<TensorDataType>& means,
+            El::AbstractDistMatrix<TensorDataType>& workspace,
             bool biased) {
+  using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
 
   // Local matrices
-  const auto& local_input0 = static_cast<const CPUMat&>(input0.LockedMatrix());
-  const auto& local_input1 = static_cast<const CPUMat&>(input1.LockedMatrix());
-  auto& local_means = static_cast<CPUMat&>(means.Matrix());
-  auto& local_workspace = static_cast<CPUMat&>(workspace.Matrix());
+  const auto& local_input0 = static_cast<const CPUMatType&>(input0.LockedMatrix());
+  const auto& local_input1 = static_cast<const CPUMatType&>(input1.LockedMatrix());
+  auto& local_means = static_cast<CPUMatType&>(means.Matrix());
+  auto& local_workspace = static_cast<CPUMatType&>(workspace.Matrix());
 
   // Dimensions
   const auto& height = input0.Height();
@@ -59,7 +62,8 @@ void fp_cpu(const AbsDistMat& input0,
   means.Resize(2, width);
   LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
-    DataType sum0 = 0, sum1 = 0;
+    TensorDataType sum0 = El::TypeTraits<TensorDataType>::Zero(),
+      sum1 = El::TypeTraits<TensorDataType>::Zero();
     for (El::Int row = 0; row < local_height; ++row) {
       sum0 += local_input0(row, col);
       sum1 += local_input1(row, col);
@@ -77,7 +81,7 @@ void fp_cpu(const AbsDistMat& input0,
   for (El::Int col = 0; col < local_width; ++col) {
     const auto& mean0 = local_means(0, col);
     const auto& mean1 = local_means(1, col);
-    DataType sum = 0;
+    TensorDataType sum = El::TypeTraits<TensorDataType>::Zero();
     for (El::Int row = 0; row < local_height; ++row) {
       const auto& x0 = local_input0(row, col);
       const auto& x1 = local_input1(row, col);
@@ -93,22 +97,24 @@ void fp_cpu(const AbsDistMat& input0,
 /** CPU backprop implementation.
  *  Means have already been computed in forward prop.
  */
-void bp_cpu(const AbsDistMat& input0,
-            const AbsDistMat& input1,
-            const AbsDistMat& gradient_wrt_output,
-            AbsDistMat& gradient_wrt_input0,
-            AbsDistMat& gradient_wrt_input1,
-            const AbsDistMat& means,
-            AbsDistMat& workspace,
+template <typename TensorDataType>
+void bp_cpu(const El::AbstractDistMatrix<TensorDataType>& input0,
+            const El::AbstractDistMatrix<TensorDataType>& input1,
+            const El::AbstractDistMatrix<TensorDataType>& gradient_wrt_output,
+            El::AbstractDistMatrix<TensorDataType>& gradient_wrt_input0,
+            El::AbstractDistMatrix<TensorDataType>& gradient_wrt_input1,
+            const El::AbstractDistMatrix<TensorDataType>& means,
+            El::AbstractDistMatrix<TensorDataType>& workspace,
             bool biased) {
+  using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
 
   // Local matrices
-  const auto& local_input0 = static_cast<const CPUMat&>(input0.LockedMatrix());
-  const auto& local_input1 = static_cast<const CPUMat&>(input1.LockedMatrix());
-  auto& local_gradient_wrt_input0 = static_cast<CPUMat&>(gradient_wrt_input0.Matrix());
-  auto& local_gradient_wrt_input1 = static_cast<CPUMat&>(gradient_wrt_input1.Matrix());
-  const auto& local_means = static_cast<const CPUMat&>(means.LockedMatrix());
-  auto& local_workspace = static_cast<CPUMat&>(workspace.Matrix());
+  const auto& local_input0 = static_cast<const CPUMatType&>(input0.LockedMatrix());
+  const auto& local_input1 = static_cast<const CPUMatType&>(input1.LockedMatrix());
+  auto& local_gradient_wrt_input0 = static_cast<CPUMatType&>(gradient_wrt_input0.Matrix());
+  auto& local_gradient_wrt_input1 = static_cast<CPUMatType&>(gradient_wrt_input1.Matrix());
+  const auto& local_means = static_cast<const CPUMatType&>(means.LockedMatrix());
+  auto& local_workspace = static_cast<CPUMatType&>(workspace.Matrix());
 
   // Dimensions
   const auto& height = input0.Height();
@@ -119,7 +125,7 @@ void bp_cpu(const AbsDistMat& input0,
   El::Copy(gradient_wrt_output, workspace);
 
   // Compute gradients w.r.t. input
-  const DataType scale = DataType(1) / (biased? height : height - 1);
+  const TensorDataType scale = El::TypeTraits<TensorDataType>::One() / El::To<TensorDataType>(biased ? height : height - 1);
   LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (El::Int col = 0; col < local_width; ++col) {
     for (El::Int row = 0; row < local_height; ++row) {
@@ -139,52 +145,33 @@ void bp_cpu(const AbsDistMat& input0,
 
 } // namespace
 
-template <>
-void covariance_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
-     ::fp_compute() {
-  fp_cpu(get_prev_activations(0),
-         get_prev_activations(1),
-         get_activations(),
-         *m_means,
-         *m_workspace,
-         m_biased);
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void covariance_layer<TensorDataType, Layout, Device>::fp_compute() {
+  fp_cpu(this->get_prev_activations(0),
+         this->get_prev_activations(1),
+         this->get_activations(),
+         *this->m_means,
+         *this->m_workspace,
+         this->m_biased);
 }
 
-template <>
-void covariance_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
-     ::bp_compute() {
-  bp_cpu(get_prev_activations(0),
-         get_prev_activations(1),
-         get_prev_error_signals(),
-         get_error_signals(0),
-         get_error_signals(1),
-         *m_means,
-         *m_workspace,
-         m_biased);
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void covariance_layer<TensorDataType, Layout, Device>::bp_compute() {
+  bp_cpu(this->get_prev_activations(0),
+         this->get_prev_activations(1),
+         this->get_prev_error_signals(),
+         this->get_error_signals(0),
+         this->get_error_signals(1),
+         *this->m_means,
+         *this->m_workspace,
+         this->m_biased);
 }
 
-template <>
-void covariance_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
-     ::fp_compute() {
-  fp_cpu(get_prev_activations(0),
-         get_prev_activations(1),
-         get_activations(),
-         *m_means,
-         *m_workspace,
-         m_biased);
-}
+#define PROTO(T)                     \
+  template class covariance_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>; \
+  template class covariance_layer<T, data_layout::MODEL_PARALLEL, El::Device::CPU>
 
-template <>
-void covariance_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
-     ::bp_compute() {
-  bp_cpu(get_prev_activations(0),
-         get_prev_activations(1),
-         get_prev_error_signals(),
-         get_error_signals(0),
-         get_error_signals(1),
-         *m_means,
-         *m_workspace,
-         m_biased);
-}
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

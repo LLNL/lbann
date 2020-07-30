@@ -1,7 +1,15 @@
 # Add the headers for this directory
 set_full_path(THIS_DIR_HEADERS
   layer.hpp
+  data_type_layer.hpp
   )
+
+if (LBANN_HAS_DISTCONV)
+  list(APPEND THIS_DIR_HEADERS
+    "${CMAKE_CURRENT_SOURCE_DIR}/distconv_adapter.hpp")
+  list(APPEND THIS_DIR_HEADERS
+    "${CMAKE_CURRENT_SOURCE_DIR}/data_type_distconv_adapter.hpp")
+endif ()
 
 # Add the subdirectories
 add_subdirectory(activations)

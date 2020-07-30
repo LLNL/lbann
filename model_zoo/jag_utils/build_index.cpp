@@ -27,8 +27,6 @@
 
 #include "lbann_config.hpp"
 
-#ifdef LBANN_HAS_CONDUIT
-
 #include "conduit/conduit.hpp"
 #include "conduit/conduit_relay.hpp"
 #include "conduit/conduit_relay_io_hdf5.hpp"
@@ -43,8 +41,7 @@
 using namespace lbann;
 
 int main(int argc, char *argv[]) {
-  int random_seed = lbann_default_random_seed;
-  world_comm_ptr comm = initialize(argc, argv, random_seed);
+  world_comm_ptr comm = initialize(argc, argv);
   bool master = comm->am_world_master();
 
   if (master) {
@@ -130,6 +127,19 @@ if (j >= 400) break;
       conduit::Node n_ok;
       for (size_t h=0; h<cnames.size(); h++) {
         const std::string key_1 = "/" + cnames[h] + "/performance/success";
+
+        // adding this since hydra has one top-level child in each file
+        // that is not the root or a complete sample. Instead it's some
+        // sort of meta-data
+        bool good = conduit::relay::io::hdf5_has_path(hdf5_file_hnd, key_1);
+        if (!good) {
+          std::cerr << "missing path: " << key_1 << " (this is probably OK for hydra)\n";
+          s5 << cnames[h] << " ";
+          ++num_samples_bad;
+          ++local_num_samples_bad;
+          continue;
+        }
+
         try {
           conduit::relay::io::hdf5_read(hdf5_file_hnd, key_1, n_ok);
         } catch (...) {
@@ -209,5 +219,3 @@ if (j >= 400) break;
   // Clean up
   return EXIT_SUCCESS;
 }
-
-#endif //#ifdef LBANN_HAS_CONDUIT

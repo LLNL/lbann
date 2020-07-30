@@ -63,6 +63,15 @@ if (TARGET ALUMINUM)
     list(APPEND _LBANN_DEPENDS ALUMINUM)
   endif (LBANN_WITH_ALUMINUM)
 endif (TARGET ALUMINUM)
+
+if (TARGET CATCH2)
+  option(LBANN_WITH_UNIT_TESTING "Build catch2 unit tests in LBANN" ON)
+  if (LBANN_WITH_UNIT_TESTING)
+    set(LBANN_SB_FWD_LBANN_CATCH2_DIR ${CATCH2_DIR})
+    list(APPEND _LBANN_DEPENDS CATCH2)
+  endif ()
+endif (TARGET CATCH2)
+
 if (TARGET CEREAL)
   list(APPEND _LBANN_DEPENDS CEREAL)
   set(LBANN_SB_FWD_LBANN_CEREAL_DIR "${CEREAL_DIR}")
@@ -106,6 +115,21 @@ if (TARGET PROTOBUF)
     set(LBANN_SB_FWD_LBANN_Protobuf_PROTOC_EXECUTABLE
       "${HOST_PROTOBUF_protoc_EXE}")
     # This will exist by the time LBANN configures.
+  endif ()
+endif ()
+
+# DiHydrogen and Distconv
+if (TARGET DIHYDROGEN)
+  option(LBANN_WITH_DIHYDROGEN "Whether to use DiHydrogen in LBANN" ON)
+  if (LBANN_WITH_DIHYDROGEN)
+    list(APPEND _LBANN_DEPENDS DIHYDROGEN)
+    set(LBANN_SB_FWD_LBANN_DIHYDROGEN_DIR "${DIHYDROGEN_DIR}"
+      CACHE STRING "The path to DiHydrogen for LBANN.")
+    set(LBANN_SB_FWD_LBANN_WITH_DIHYDROGEN ON)
+  endif ()
+  option(LBANN_WITH_DISTCONV "Whether to use Distconv in LBANN" OFF)
+  if (LBANN_WITH_DISTCONV)
+    set(LBANN_SB_FWD_LBANN_WITH_DISTCONV ON)
   endif ()
 endif ()
 
@@ -177,6 +201,23 @@ ExternalProject_Add(LBANN
   -DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
   ${LBANN_CMAKE_ARGS}
   )
+
+# Ensure the JAG utils are built
+ExternalProject_Add_Step(LBANN build-jag-utils
+  COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --config $<CONFIG> --target jag-utils
+  COMMENT "Performing building of JAG utils for 'LBANN'"
+  DEPENDEES build
+  DEPENDERS install
+  LOG 1
+  USES_TERMINAL 1)
+# Ensure the ATOM utils are built
+ExternalProject_Add_Step(LBANN build-atom-utils
+  COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --config $<CONFIG> --target atom-utils
+  COMMENT "Performing building of ATOM tools for 'LBANN'"
+  DEPENDEES build
+  DEPENDERS install
+  LOG 1
+  USES_TERMINAL 1)
 
 set(LBANN_DIR ${LBANN_CMAKE_INSTALL_PREFIX}
   CACHE INTERNAL "The install prefix of LBANN.")

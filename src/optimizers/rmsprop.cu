@@ -31,16 +31,17 @@ namespace lbann {
 
 namespace {
 
+template <typename TensorDataType>
 __global__ void rmsprop_kernel(size_t height,
                                size_t width,
-                               DataType learning_rate,
-                               DataType decay_rate,
-                               DataType eps,
-                               DataType * __restrict__ values,
+                               TensorDataType learning_rate,
+                               TensorDataType decay_rate,
+                               TensorDataType eps,
+                               TensorDataType * __restrict__ values,
                                size_t values_ldim,
-                               const DataType * __restrict__ gradient,
+                               const TensorDataType * __restrict__ gradient,
                                size_t gradient_ldim,
-                               DataType * __restrict__ cache,
+                               TensorDataType * __restrict__ cache,
                                size_t cache_ldim) {
   const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
   const size_t nthreads = gridDim.x * blockDim.x;
@@ -50,14 +51,16 @@ __global__ void rmsprop_kernel(size_t height,
     const auto& g = gradient[row + col * gradient_ldim];
     auto& c = cache[row + col * cache_ldim];
     auto& x = values[row + col * values_ldim];
-    c = decay_rate * c + (DataType(1) - decay_rate) * g * g;
+    c = decay_rate * c + (TensorDataType(1) - decay_rate) * g * g;
     x -= learning_rate * g / (cuda::sqrt(c) + eps);
   }
 }
 
 } // namespace
 
-void rmsprop::step_compute_gpu(AbsDistMat& values, const AbsDistMat& gradient) {
+template <typename TensorDataType>
+void rmsprop<TensorDataType>::step_compute_gpu(AbsDistMatrixType& values,
+                                               const AbsDistMatrixType& gradient) {
   const size_t local_height = values.LocalHeight();
   const size_t local_width = values.LocalWidth();
   const size_t local_size = local_height * local_width;
@@ -65,7 +68,7 @@ void rmsprop::step_compute_gpu(AbsDistMat& values, const AbsDistMat& gradient) {
     constexpr size_t block_size = 256;
     const size_t grid_size = (local_size + block_size - 1) / block_size;
     auto&& stream = El::GPUManager::Stream();
-    rmsprop_kernel<<<grid_size, block_size, 0, stream>>>(
+    rmsprop_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
       local_height, local_width,
       this->get_learning_rate(), m_decay_rate, m_eps,
       values.Buffer(), values.LDim(),
@@ -73,5 +76,21 @@ void rmsprop::step_compute_gpu(AbsDistMat& values, const AbsDistMat& gradient) {
       m_cache->Buffer(), m_cache->LDim());
   }
 }
+
+#ifdef LBANN_HAS_HALF
+template <>
+void rmsprop<cpu_fp16>::step_compute_gpu(AbsDistMatrixType&,
+                                         const AbsDistMatrixType&) {
+  LBANN_ERROR("Can't call this function with cpu_fp16!");
+}
+#endif // LBANN_HAS_HALF
+
+#define PROTO(T)                               \
+  template void rmsprop<T>::step_compute_gpu(  \
+    El::AbstractDistMatrix<T>&,                \
+    const El::AbstractDistMatrix<T>&)
+
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

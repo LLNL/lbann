@@ -30,40 +30,99 @@
 #define LBANN_PERSIST_H
 
 #include "lbann/base.hpp"
+#include "lbann/utils/exception.hpp"
+#include "lbann/utils/enum_iterator.hpp"
 #include "El.hpp"
+#include <cereal/archives/binary.hpp>
+#include <cereal/archives/xml.hpp>
+#include <cereal/types/base_class.hpp>
+#include <cereal/types/polymorphic.hpp>
+#include <sstream>
 
 namespace lbann {
 
 enum class persist_type {
   train, // data should be saved in file with train data
   model, // data should be saved in file with model data
-  validate
+  metrics,
+  validate,
+  testing,
+  prediction_context,
+  training_context,
+  testing_context,
+  validation_context,
 };
 
+using persist_type_iterator = enum_iterator<persist_type, persist_type::train, persist_type::validation_context>;
+
+inline persist_type execution_mode_to_persist_type(execution_mode m) {
+  switch(m) {
+  case execution_mode::training:
+    return persist_type::training_context;
+  case execution_mode::validation:
+    return persist_type::validation_context;
+  case execution_mode::testing:
+    return persist_type::testing_context;
+  case execution_mode::prediction:
+    return persist_type::prediction_context;
+  // case execution_mode::tournament:
+  //   return persist_type::tournament;
+  case execution_mode::invalid:
+  default:
+    LBANN_ERROR("Invalid execution mode specified");
+  }
+}
+
+inline std::string to_string(persist_type pt) {
+  switch(pt) {
+  case persist_type::model:
+    return "model";
+  case persist_type::metrics:
+    return "metrics";
+  case persist_type::train:
+    return "train";
+  case persist_type::validate:
+    return "validate";
+  case persist_type::testing:
+    return "test";
+  case persist_type::prediction_context:
+    return "prediction";
+  case persist_type::training_context:
+    return "training";
+  case persist_type::validation_context:
+    return "validation";
+  case persist_type::testing_context:
+    return "testing";
+  default:
+      LBANN_ERROR("Invalid persist type specified");
+  }
+}
+
+/// @todo Fix the callback types to properly track execution phases
 enum class callback_type {
-  batch,
-  epoch,
-  validation,
-  inference,
+  model_only,
+  weights_only,
+  execution_context_only,
+  full_checkpoint,
   invalid
 };
 
 class persist {
- protected:
-  uint64_t m_bytes;
-  int m_model_fd;
-  int m_train_fd;
-  int m_validate_fd;
-  char m_model_filename[1024];
-  char m_train_filename[1024];
-  char m_validate_filename[1024];
+ private:
+  std::map<persist_type, uint64_t> m_bytes;
+  std::map<persist_type, std::string> m_filenames;
   callback_type ckpt_type;
  public:
-  char m_checkpoint_dir[1024];
+  std::string m_checkpoint_dir;
 
  public:
   persist();
   ~persist() {};
+
+  /** Archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar) {
+    ar(CEREAL_NVP(ckpt_type));
+  }
 
   callback_type get_cb_type() const {
     return ckpt_type;
@@ -73,77 +132,190 @@ class persist {
     ckpt_type = type;
   }
 
-  void open_checkpoint(const char *dir);
+  void open_checkpoint_dir(const std::string& dir, bool create_dir);
+  void open_checkpoint(const std::string& dir, bool create_dir);
   void close_checkpoint();
 
-  void open_restart(const char *dir);
+  void open_restart(const std::string& dir);
   void close_restart();
+  void set_restart_dir(const std::string& dir) { m_checkpoint_dir = dir; }
 
   uint64_t get_bytes() const {
-    return m_bytes;
+    uint64_t bytes = 0;
+    for(auto& pt : m_bytes) {
+      bytes += pt.second;
+    }
+    return bytes;
   }
 
   void reset_bytes() {
-    m_bytes = 0;
+    for(auto& pt : m_bytes) {
+      pt.second = 0;
+    }
   }
 
-  bool write_rank_distmat(persist_type type, const char *name, const AbsDistMat& M);
-  bool read_rank_distmat(persist_type type, const char *name, AbsDistMat& M);
+  template <typename TensorDataType>
+  bool write_rank_distmat(persist_type type, const char *name, const El::AbstractDistMatrix<TensorDataType>& M);
+  template <typename TensorDataType>
+  bool read_rank_distmat(persist_type type, const char *name, El::AbstractDistMatrix<TensorDataType>& M);
 
-  bool write_distmat(persist_type type, const char *name, AbsDistMat *M);
-  bool read_distmat (persist_type type, const char *name, AbsDistMat *M);
+  template <typename TensorDataType>
+  bool write_distmat(persist_type type, const char *name, El::AbstractDistMatrix<TensorDataType> *M);
+  template <typename TensorDataType>
+  bool read_distmat (persist_type type, const char *name, El::AbstractDistMatrix<TensorDataType> *M);
 
-  bool write_bytes(persist_type type, const char *name, const void *buf, size_t size);
-  bool read_bytes(persist_type type, const char *name, void *buf, size_t size);
+  const std::string& get_checkpoint_dir() const { return m_checkpoint_dir; }
 
-  bool write_uint32(persist_type type, const char *name, uint32_t  val);
-  bool read_uint32 (persist_type type, const char *name, uint32_t *val);
-
-  bool write_uint64(persist_type type, const char *name, uint64_t  val);
-  bool read_uint64 (persist_type type, const char *name, uint64_t *val);
-
-  bool write_int32_contig(persist_type type, const char *name, const int32_t *buf, uint64_t count);
-  bool read_int32_contig (persist_type type, const char *name, int32_t *buf, uint64_t count);
-
-  bool write_float(persist_type type, const char *name, float  val);
-  bool read_float (persist_type type, const char *name, float *val);
-
-  bool write_string(persist_type type, const char *name, const char *val, int str_length);
-  bool read_string (persist_type type, const char *name, char *val, int str_length);
-
-  bool write_double(persist_type type, const char *name, double  val);
-  bool read_double (persist_type type, const char *name, double *val);
-
-  bool write_datatype(persist_type type, const char *name, DataType  val);
-  bool read_datatype (persist_type type, const char *name, DataType *val);
-
- private:
-  int get_fd(persist_type type) const;
+  std::string get_filename(persist_type type) const;
 };
-
-bool write_distmat(int fd, const char *name, DistMat *M, uint64_t *bytes);
-bool read_distmat (int fd, const char *name, DistMat *M, uint64_t *bytes);
 
 bool write_bytes(int fd, const char *name, const void *buf, size_t size);
 bool read_bytes(int fd, const char *name, void *buf, size_t size);
 
-bool write_uint32(int fd, const char *name, uint32_t  val);
-bool read_uint32 (int fd, const char *name, uint32_t *val);
-
-bool write_uint64(int fd, const char *name, uint64_t  val);
-bool read_uint64 (int fd, const char *name, uint64_t *val);
-
-bool write_int32_contig(int fd, const char *name, const int32_t *buf, uint64_t count);
-bool read_int32_contig (int fd, const char *name, int32_t *buf, uint64_t count);
-
-bool write_float(int fd, const char *name, float  val);
-bool read_float (int fd, const char *name, float *val);
-
-bool write_double(int fd, const char *name, double  val);
-bool read_double (int fd, const char *name, double *val);
-
 bool write_string(int fd, const char *name, const char *buf, size_t size);
 bool read_string(int fd, const char *name, char *buf, size_t size);
+
+class NonexistentArchiveFile : public std::runtime_error {
+public:
+  NonexistentArchiveFile(std::string const& filename) : std::runtime_error(std::string("Archive file not found: ") + filename) {}
+};
+
+template <typename C>
+void write_cereal_archive(C& obj, const std::string& filename) {
+  std::ofstream os(filename);
+  if(!os.is_open()) {
+    throw NonexistentArchiveFile(filename);
+  }
+  cereal::XMLOutputArchive archive(os);
+  archive(obj);
+}
+
+template <typename C>
+void write_cereal_archive(C& obj, persist& p, const std::string& filename) {
+  write_cereal_archive<C>(obj, p.get_checkpoint_dir() + "/" + filename);
+}
+
+template <typename C>
+void write_cereal_archive(C& obj, persist& p, persist_type pt, const std::string& suffix) {
+  write_cereal_archive<C>(obj, p.get_filename(pt) + suffix);
+}
+
+template <typename C>
+void write_cereal_archive(C& obj, persist& p, execution_mode mode, const std::string& suffix) {
+  const persist_type pt = execution_mode_to_persist_type(mode);
+  write_cereal_archive<C>(obj, p, pt, suffix);
+}
+
+template <typename C>
+void read_cereal_archive(C& obj, const std::string& filename) {
+  std::ifstream is(filename);
+  if(!is.is_open()) {
+    throw NonexistentArchiveFile(filename);
+  }
+  cereal::XMLInputArchive archive(is);
+  archive(obj);
+}
+
+template <typename C>
+void read_cereal_archive(C& obj, persist& p, const std::string& filename) {
+  read_cereal_archive(obj, p.get_checkpoint_dir() + "/" + filename);
+}
+
+template <typename C>
+void read_cereal_archive(C& obj, persist& p, persist_type pt, const std::string& suffix) {
+  read_cereal_archive(obj, p.get_filename(pt) + suffix);
+}
+
+template <typename C>
+void read_cereal_archive(C& obj, persist& p, execution_mode mode, const std::string& suffix) {
+  const persist_type pt = execution_mode_to_persist_type(mode);
+  read_cereal_archive<C>(obj, p, pt, suffix);
+}
+
+template <typename C>
+std::string create_cereal_archive_binary_string(C& obj) {
+  std::ostringstream ss;
+  {
+    cereal::BinaryOutputArchive archive(ss);
+    archive(obj);
+  } // archive goes out of scope, ensuring all contents are flushed
+  return ss.str();
+}
+
+template <typename C>
+void unpack_cereal_archive_binary_string(C& obj, const std::string& buf) {
+  std::istringstream ss(buf);
+  {
+    cereal::BinaryInputArchive archive(ss);
+    archive(obj);
+  } // archive goes out of scope, ensuring all contents are flushed
+}
+
+template <typename C>
+void load_from_shared_cereal_archive(C& obj,
+                                     lbann_comm& comm,
+                                     const std::string& filename) {
+  std::string buf;
+  if (comm.am_trainer_master()) {
+    read_cereal_archive<C>(obj, filename);
+    buf = create_cereal_archive_binary_string<C>(obj);
+  }else {
+    // If you are not the trainer master, still check to see if the file exists
+    std::ifstream is(filename);
+    if(!is.is_open()) {
+      throw NonexistentArchiveFile(filename);
+    }
+  }
+
+  // TODO: this assumes homogeneous processors
+  // broadcast state from rank 0
+  comm.trainer_broadcast(0, buf);
+
+  if (!comm.am_trainer_master()) {
+    unpack_cereal_archive_binary_string<C>(obj, buf);
+  }
+}
+
+template <typename C>
+void load_from_shared_cereal_archive(C& obj, persist& p,
+                                     lbann_comm& comm,
+                                     const std::string& filename) {
+  load_from_shared_cereal_archive(obj, comm, p.get_checkpoint_dir() + filename);
+}
+
+template <typename C>
+void load_from_shared_cereal_archive(C& obj, persist& p, persist_type pt,
+                                     lbann_comm& comm,
+                                     const std::string& suffix) {
+  load_from_shared_cereal_archive(obj, comm, p.get_filename(pt) + suffix);
+}
+
+template <typename C>
+void load_from_shared_cereal_archive(C& obj, persist& p, execution_mode mode,
+                                     lbann_comm& comm,
+                                     const std::string& suffix) {
+  const persist_type pt = execution_mode_to_persist_type(mode);
+  load_from_shared_cereal_archive<C>(obj, p, pt, comm, suffix);
+}
+
+#ifndef LBANN_PERSIST_INSTANTIATE
+#define PROTO(T)                                                            \
+  extern template bool persist::write_rank_distmat<T>(                      \
+  persist_type type, const char *name, const El::AbstractDistMatrix<T>& M); \
+  extern template bool persist::read_rank_distmat<T>(                       \
+  persist_type type, const char *name, El::AbstractDistMatrix<T>& M);       \
+  extern template bool persist::write_distmat<T>(                           \
+  persist_type type, const char *name, El::AbstractDistMatrix<T> *M);       \
+  extern template bool persist::read_distmat<T>(                            \
+  persist_type type, const char *name, El::AbstractDistMatrix<T> *M)
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
+#undef PROTO
+#undef LBANN_INSTANTIATE_CPU_HALF
+#undef LBANN_INSTANTIATE_GPU_HALF
+#endif // LBANN_PERSIST_INSTANTIATE
 
 } // namespace lbann
 

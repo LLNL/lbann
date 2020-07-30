@@ -29,8 +29,32 @@
 
 #include "lbann/layers/learning/base_convolution.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/distconv.hpp"
 
 namespace lbann {
+
+// Forward declaration.
+namespace callback {
+class imcomm;
+}
+
+#ifdef LBANN_HAS_DISTCONV
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+class convolution_distconv_adapter
+  : public base_convolution_adapter<TensorDataType, Device> {
+public:
+  using TensorDevType = typename base_convolution_adapter<TensorDataType, Device>::TensorDevType;
+
+  convolution_distconv_adapter(Layer& layer)
+    : base_convolution_adapter<TensorDataType, Device>(layer)
+  {}
+  virtual ~convolution_distconv_adapter() = default;
+
+  void setup_distributions(tensor_overlap_constraints &constraints) override;
+  void setup_layer(size_t workspace_capacity) override;
+  dc::Shape get_activations_local_shape(int index=0) const override;
+};
+#endif // LBANN_HAS_DISTCONV
 
 /** @brief Standard deep learning convolution.
  *
@@ -38,11 +62,18 @@ namespace lbann {
  *  tensors. This is primarily optimized for image data in NCHW
  *  format.
  */
-template <data_layout Layout = data_layout::DATA_PARALLEL, El::Device Device = El::Device::CPU>
-class convolution_layer : public base_convolution_layer<Device> {
+template <typename TensorDataType,
+          data_layout Layout = data_layout::DATA_PARALLEL,
+          El::Device Device = El::Device::CPU>
+class convolution_layer
+  : public base_convolution_layer<TensorDataType, Device> {
+
+  static_assert(Layout == data_layout::DATA_PARALLEL,
+                "convolution layer only supports DATA_PARALLEL");
+
 private:
 
-  friend class lbann_callback_imcomm;
+  friend class callback::imcomm;
 
 public:
 
@@ -54,16 +85,7 @@ public:
                     int stride,
                     int dilation,
                     int groups,
-                    bool has_bias = true)
-    : convolution_layer(comm,
-                        num_data_dims,
-                        num_output_channels,
-                        std::vector<int>(num_data_dims, conv_dim),
-                        std::vector<int>(num_data_dims, pad),
-                        std::vector<int>(num_data_dims, stride),
-                        std::vector<int>(num_data_dims, dilation),
-                        groups,
-                        has_bias) {}
+                    bool has_bias = true);
 
   convolution_layer(lbann_comm *comm,
                     int num_data_dims,
@@ -73,21 +95,7 @@ public:
                     std::vector<int> strides,
                     std::vector<int> dilations,
                     int groups,
-                    bool has_bias = true)
-    : base_convolution_layer<Device>(
-        comm,
-        num_data_dims,
-        num_output_channels,
-        std::move(conv_dims),
-        std::move(pads),
-        std::move(strides),
-        std::move(dilations),
-        groups,
-        has_bias) {
-    static_assert(Layout == data_layout::DATA_PARALLEL,
-                  "convolution layer only supports DATA_PARALLEL");
-
-  }
+                    bool has_bias = true);
 
   convolution_layer* copy() const override { return new convolution_layer(*this); }
 
@@ -99,61 +107,31 @@ public:
 
 protected:
 
-  void setup_dims() override {
-    base_convolution_layer<Device>::setup_dims();
+  void setup_dims(DataReaderMetaData& dr_metadata) override;
+  std::vector<int> get_kernel_dims() const override;
+  void fp_compute() override;
+  void bp_compute() override;
 
-    // Get tensor dimensions
-    const auto& input_dims = this->get_input_dims();
-    auto output_dims = input_dims;
-
-    // Initialize output tensor dimensions
-    output_dims[0] = this->m_output_channels;
-    for (size_t i = 0; i < output_dims.size() - 1; ++i) {
-      const auto& input_dim = input_dims[i+1];
-      const auto& kernel_dim = this->m_conv_dims[i];
-      const auto& stride = this->m_strides[i];
-      const auto& pad = this->m_pads[i];
-      const auto& dilation = this->m_dilations[i];
-      const auto& effective_dim = (input_dim
-                                   + 2 * pad
-                                   - dilation * (kernel_dim-1));
-      output_dims[i+1] = (effective_dim + stride - 1) / stride;
-    }
-    this->set_output_dims(output_dims);
-
-  }
-
-  std::vector<int> get_kernel_dims() const {
-    std::vector<int> dims;
-    dims.push_back(this->m_output_channels);
-    dims.push_back(this->get_input_dims()[0] / this->m_groups);
-    dims.insert(dims.end(),
-                this->m_conv_dims.begin(),
-                this->m_conv_dims.end());
-    return dims;
-  }
-
-  void fp_compute() override {
-    if(this->using_gpus()) {
-      base_convolution_layer<Device>::apply_convolution_cudnn(true);
-      base_convolution_layer<Device>::apply_bias_cudnn();
-    } else {
-      base_convolution_layer<Device>::apply_convolution_im2col(true);
-      base_convolution_layer<Device>::apply_bias_cpu();
-    }
-  }
-
-  void bp_compute() override {
-    if(this->using_gpus()) {
-      base_convolution_layer<Device>::compute_gradients_cudnn(false);
-      base_convolution_layer<Device>::apply_transposed_convolution_cudnn(false);
-    } else {
-      base_convolution_layer<Device>::compute_gradients_im2col(false);
-      base_convolution_layer<Device>::apply_transposed_convolution_im2col(false);
-    }
-  }
-
+#ifdef LBANN_HAS_DISTCONV
+  friend class convolution_distconv_adapter<TensorDataType, Layout, Device>;
+ protected:
+  void setup_distconv_adapter() override;
+  bool is_distconv_supported() const override;
+#endif // LBANN_HAS_DISTCONV
 };
+
+// Builder function
+LBANN_DEFINE_LAYER_BUILDER(convolution);
+
+#ifndef LBANN_CONVOLUTION_LAYER_INSTANTIATE
+
+#define PROTO_DEVICE(T, Device) \
+  extern template class convolution_layer<T, data_layout::DATA_PARALLEL, Device>;
+
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+
+#endif // LBANN_CONVOLUTION_LAYER_INSTANTIATE
 
 } // namespace lbann
 

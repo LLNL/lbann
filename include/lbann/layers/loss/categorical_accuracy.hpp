@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_LOSS_CATEGORICAL_ACCURACY_HPP_INCLUDED
 #define LBANN_LAYERS_LOSS_CATEGORICAL_ACCURACY_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
 
@@ -42,11 +42,11 @@ namespace lbann {
  *  This is primarily intended for use as a metric since it is not
  *  differentiable.
  */
-template <data_layout T_layout, El::Device Dev>
-class categorical_accuracy_layer : public Layer {
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+class categorical_accuracy_layer : public data_type_layer<TensorDataType> {
 public:
 
-  categorical_accuracy_layer(lbann_comm *comm) : Layer(comm) {
+  categorical_accuracy_layer(lbann_comm *comm) : data_type_layer<TensorDataType>(comm) {
     this->m_expected_num_parent_layers = 2;
   }
 
@@ -57,18 +57,18 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-  void setup_dims() override {
-    Layer::setup_dims();
-    set_output_dims({1});
+  void setup_dims(DataReaderMetaData& dr_metadata) override {
+    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+    this->set_output_dims({1});
 
     // Check that input dimensions match
-    if (get_input_dims(0) != get_input_dims(1)) {
-      const auto& parents = get_parent_layers();
+    if (this->get_input_dims(0) != this->get_input_dims(1)) {
+      const auto& parents = this->get_parent_layers();
       std::stringstream err;
-      err << get_type() << " layer \"" << get_name() << "\" "
+      err << get_type() << " layer \"" << this->get_name() << "\" "
           << "has input tensors with different dimensions (";
-      for (int i = 0; i < get_num_parents(); ++i) {
-        const auto& dims = get_input_dims(i);
+      for (int i = 0; i < this->get_num_parents(); ++i) {
+        const auto& dims = this->get_input_dims(i);
         err << (i > 0 ? ", " : "")
             << "layer \"" << parents[i]->get_name() << "\" outputs ";
         for (size_t j = 0; j < dims.size(); ++j) {
@@ -84,6 +84,19 @@ public:
   void fp_compute() override;
 
 };
+
+#ifndef LBANN_CATEGORICAL_ACCURACY_LAYER_INSTANTIATE
+
+#define PROTO_DEVICE(T, Device)                     \
+  extern template class categorical_accuracy_layer< \
+    T, data_layout::DATA_PARALLEL, Device>;         \
+  extern template class categorical_accuracy_layer< \
+    T, data_layout::MODEL_PARALLEL, Device>
+
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+
+#endif // LBANN_CATEGORICAL_ACCURACY_LAYER_INSTANTIATE
 
 } // namespace lbann
 

@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_LOSS_TOP_K_CATEGORICAL_ACCURACY_HPP_INCLUDED
 #define LBANN_LAYERS_LOSS_TOP_K_CATEGORICAL_ACCURACY_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
 
@@ -42,12 +42,12 @@ namespace lbann {
  *
  *  @todo Gracefully handle case where label is not a one-hot vector.
  */
-template <data_layout T_layout, El::Device Dev>
-class top_k_categorical_accuracy_layer : public Layer {
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+class top_k_categorical_accuracy_layer : public data_type_layer<TensorDataType> {
 public:
 
   top_k_categorical_accuracy_layer(lbann_comm *comm, El::Int k)
-    : Layer(comm), m_k(k) {
+    : data_type_layer<TensorDataType>(comm), m_k(k) {
     this->m_expected_num_parent_layers = 2;
   }
 
@@ -59,25 +59,25 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
   description get_description() const override {
-    auto&& desc = Layer::get_description();
+    auto desc = data_type_layer<TensorDataType>::get_description();
     desc.add("k", m_k);
     return desc;
   }
 
 protected:
 
-  void setup_dims() override {
-    Layer::setup_dims();
-    set_output_dims({1});
+  void setup_dims(DataReaderMetaData& dr_metadata) override {
+    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+    this->set_output_dims({1});
 
     // Check that input dimensions match
-    if (get_input_dims(0) != get_input_dims(1)) {
-      const auto& parents = get_parent_layers();
+    if (this->get_input_dims(0) != this->get_input_dims(1)) {
+      const auto& parents = this->get_parent_layers();
       std::stringstream err;
-      err << get_type() << " layer \"" << get_name() << "\" "
+      err << get_type() << " layer \"" << this->get_name() << "\" "
           << "has input tensors with different dimensions (";
-      for (int i = 0; i < get_num_parents(); ++i) {
-        const auto& dims = get_input_dims(i);
+      for (int i = 0; i < this->get_num_parents(); ++i) {
+        const auto& dims = this->get_input_dims(i);
         err << (i > 0 ? ", " : "")
             << "layer \"" << parents[i]->get_name() << "\" outputs ";
         for (size_t j = 0; j < dims.size(); ++j) {
@@ -98,6 +98,18 @@ private:
   const El::Int m_k;
 
 };
+
+#ifndef LBANN_TOP_K_CATEGORICAL_ACCURACY_LAYER_INSTANTIATE
+
+#define PROTO_DEVICE(T, Device)                           \
+  extern template class top_k_categorical_accuracy_layer< \
+    T, data_layout::DATA_PARALLEL, Device>;               \
+  extern template class top_k_categorical_accuracy_layer< \
+    T, data_layout::MODEL_PARALLEL, Device>
+
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+#endif // LBANN_TOP_K_CATEGORICAL_ACCURACY_LAYER_INSTANTIATE
 
 } // namespace lbann
 

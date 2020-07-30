@@ -12,12 +12,25 @@ import sys
 
 if len(sys.argv) == 1 :
   print '''
-    usage: sanity.py id_mapping_fn bar_fn t0_fn [t1_fn, ...]
+    usage: sanity.py id_mapping_fn sample_list_dir sample_list_base_name num_sample_lists
     where: bar_fn, t0_fn, etc, are outputs from build_trainer_lists.py
     function: test that the intersection of the sample IDs in the
-              sample lists are empty.\n'''
+              sample lists are empty, and that every sample_ID
+              is in either one sample list or in the exclusion (bar) file\n
+    example usage: 
+      python sanity.py \\
+        /p/lustre2/brainusr/datasets/10MJAG/1M_A/id_mapping.txt \\
+        /p/lustre2/brainusr/datasets/10MJAG/1M_A/select_samples_test/another_dir \\
+        my_samples.txt \\
+        10 
+        
+    CAUTION: this script is fragile: it may break if/when model_zoo/jag_utils/select_samples.cpp is modified
+        '''
+
+
   exit(9)
 
+#======================================================================
 def buildInc(mp, fn) :
   r = set()
   print 'buildInc; opening:', fn
@@ -29,8 +42,11 @@ def buildInc(mp, fn) :
     t = line.split()
     for j in t[3:] :
       r.add(j)
+  print '   num sample IDs:', len(r)
   return r
 
+#======================================================================
+#returns (excluded, included) sample IDs from an input EXCLUSION sample list
 def buildExc(mp, fn) :
   s = set()
   print 'buildExc; opening:', fn
@@ -42,35 +58,91 @@ def buildExc(mp, fn) :
     t = line.split()
     for j in t[3:] :
       s.add(j)
+  #at this point, 's' contains all excluded sample IDs (these are the IDs
+  #that are explicitly listed in the exclusion bar file);
+  #mp is the set of all sample IDs, whether included, or excluded 
+  #(unsuccessfule)
   r = set()
   for sample_id in mp :
     if sample_id not in s :
       r.add(sample_id)
-  return r
+  print '   num sample IDs:', len(r)
+  return (s, r)
 
-
+#======================================================================
+#build set that contains all sample names
 mp = set()
 a = open(sys.argv[1])
 for line in a :
   t = line.split()
   for j in t[1:] :
     mp.add(j)
-print '\nlen(map):', len(mp), '/n'
+print '\nlen(map):', len(mp)
 
+sample_list_dir = sys.argv[2]
+sample_list_base_name = sys.argv[3]
+
+#build exclusion set; this set contains all valid (successful) sample IDs
+(excluded, included) = buildExc(mp, sample_list_dir + '/t_exclusion_' + sample_list_base_name + '_bar')
+
+print '\nlen(included):', len(included), 'len(excluded):', len(excluded), 'intersection:', len(included.intersection(excluded))
 data = []
-s2 = buildExc(mp, sys.argv[2])
-data.append(s2)
+data.append(included)
 
-for j in range(3, len(sys.argv)) :
-  s2 = buildInc(mp, sys.argv[j])
-  data.append(s2)
-  print len(s2)
+#build bar inclusion set
+(included2, excluded2) = buildExc(mp, sample_list_dir + '/t_inclusion_' + sample_list_base_name + '_bar')
+#(excluded2, included2) = buildExc(mp, sample_list_dir + '/t_inclusion_' + sample_list_base_name + '_bar')
+print '\nlen(included):', len(included2), 'len(excluded):', len(excluded2), 'intersection:', len(included2.intersection(excluded2))
 
 print
+print 'checking that the bar files do not intersect'
+r = len(excluded.intersection(included2))
+if r != 0 :
+  print 'FAILED!'
+  print 'len(intersection):', r
+  exit(0)
+#print 'bar inclusion file contains', len(bar), 'sample IDs'
+#data.append(bar)
+
+
+for j in range(int(sys.argv[4])) :
+  s2 = buildInc(mp, sample_list_dir + '/t' + str(j) + '_' + sample_list_base_name)
+  data.append(s2)
+  print len(s2)
+print
 print '===================================================================='
+print 'running intersection test ...'
+success = True
 for j in range(0, len(data)-1) :
   for k in range(1, len(data)) :
-    a = data[j]
-    b = data[k]
-    print 'testing', sys.argv[j], 'against', sys.argv[k], '; len(intersection):',  len(a.intersection(b))
+    if j != k :
+      a = data[j]
+      b = data[k]
+      print 'testing', j, 'against', k, 'len:', len(a), len(b)
+      r = len(a.intersection(b))
+      if r != 0 :
+        print 'FAILED: ', j, 'intersection with',k, '=' , r
+        tt = 0
+        for x in a :
+          if x in b :
+            print x,
+            tt += 1
+        print
+        print 'total:', tt
+        exit(9)
+        success = False
+if success :
+  print '  SUCCESS!'
 
+print
+print 'testing that all samples appear in one sample list, or the exclusion bar file'
+
+s2 = set()
+for j in range(0, len(data)) :
+  for sample_id in data[j] :
+    assert(sample_id in mp)
+    mp.remove(sample_id)
+if len(mp) == 0 :
+  print '  SUCCESS!'
+else :
+  print '  FAILED; len(mp)= ', len(mp), 'should be zero'

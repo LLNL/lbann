@@ -24,55 +24,19 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_UTILS_RNG_HPP
-#define LBANN_UTILS_RNG_HPP
+#ifndef LBANN_UTILS_RANDOM_HPP
+#define LBANN_UTILS_RANDOM_HPP
 
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
 #include "lbann/io/persist.hpp"
-#include <random>
+#include "lbann/utils/exception.hpp"
+#include "lbann/utils/random_number_generators.hpp"
 
 namespace lbann {
 
 /** Probability distributions. */
 enum class probability_distribution {invalid, gaussian, bernoulli, uniform};
-
-using rng_gen = std::mt19937;  // Mersenne Twister
-using fast_rng_gen = std::minstd_rand;  // Minimum standard, LC
-
-/**
- * Return a reference to the global LBANN random number generator.
- * @note If compiling with OpenMP, this is stored in a threadprivate variable.
- */
-rng_gen& get_generator();
-
-/**
- * Return a reference to a possibly-faster global LBANN random number generator.
- * Compared to get_generator, this should be slightly faster.
- * @note If compiling with OpenMP, this is stored in a threadprivate variable.
- */
-fast_rng_gen& get_fast_generator();
-
-/**
- * Return a reference to the global LBANN random number generator used
- * for shuffling the data samples within each mini-batch
- * @note This is stored in a thread_local variable.
- */
-rng_gen& get_data_seq_generator();
-
-/**
- * Return a reference to the global LBANN random number generator used
- * for shuffling the data samples within each mini-batch
- * @note This is stored in a thread_local variable.
- */
-rng_gen& get_io_generator();
-
-/**
- * Return a reference to the fast global LBANN random number generator used
- * for the I/O threads
- * @note This is stored in a thread_local variable.
- */
-fast_rng_gen& get_fast_io_generator();
 
 /**
  * Return random integers uniformly distributed in [0, max).
@@ -84,6 +48,11 @@ fast_rng_gen& get_fast_io_generator();
  */
 template <typename Generator, typename T>
 inline T fast_rand_int(Generator& g, T max) {
+#ifdef LBANN_DEBUG
+  if (max == 0) {
+    LBANN_ERROR("fast_rand_int called with max=0");
+  }
+#endif
   typename Generator::result_type x;
   do {
     x = g();
@@ -107,32 +76,47 @@ inline T fast_rand_int_pow2(Generator& g, T max) {
   return x & ((typename Generator::result_type) max);
 }
 
-/** @brief Initialize the random number generator (with optional seed).
- *
- *  @param seed Seed value for the random number generator
- *  @param comm If present, mixes the process's rank within the model
- *              into the seed; if not, uses the MPI world rank.
- *
- */
-void init_random(int seed = -1, lbann_comm *comm = nullptr);
+// Methods for generating uniformly random values in [0, 1).
 
-/**
- * Initialize a random number generator (with optional seed) that is
- * specifically used for sequencing the training / testing data
- * samples.  Using a separate RNG for the data sequences helps provide
- * a stable training result that does not vary with how much I/O
- * parallelism is applied.
- */
-void init_data_seq_random(int seed = -1);
+namespace details {
 
-/**
- * Initialize a random number generator (with optional seed) that is
- * specifically used by the I/O threads for tasks such as data
- * preprocessing, etc.
- *
- * Called from init_random
+/** Generates uniform random value in the range [0, 1). The generator
+ *  is assumed to produce at least 32 random bits.
  */
-void init_io_random(int seed = -1);
+template <typename Generator, typename T>
+struct random_uniform_impl {
+  static T generate(Generator&);
+};
+template <typename Generator>
+struct random_uniform_impl<Generator, float> {
+  static float generate(Generator& g) {
+    // float has a 24-bit significand, including an implicit bit. See
+    // section on converting uint64_ts to doubles in
+    // http://xoshiro.di.unimi.it/
+    constexpr uint64_t mask32 = 0xFFFFFFFFull;
+    const uint64_t r = uint64_t(g()) & mask32;
+    return (r >> 8) * (1.0f / 16777216.0f);
+  }
+};
+template <typename Generator>
+struct random_uniform_impl<Generator, double> {
+  static double generate(Generator& g) {
+    // double has a 53-bit significand, including an implicit bit. See
+    // section on converting uint64_ts to doubles in
+    // http://xoshiro.di.unimi.it/
+    constexpr uint64_t mask32 = 0xFFFFFFFFull;
+    const uint64_t r = (uint64_t(g()) << 32) | (uint64_t(g()) & mask32);
+    return (r >> 11) * (1.0 / 9007199254740992.0);
+  }
+};
+
+} // namespace details
+
+/** @brief Generate uniform random value in the range [0, 1). */
+template <typename T, typename Generator>
+inline T random_uniform(Generator& g) {
+  return details::random_uniform_impl<Generator, T>::generate(g);
+}
 
 /**
  * Make mat into an m x n matrix where each entry is independently drawn from
@@ -141,21 +125,24 @@ void init_io_random(int seed = -1);
  * not change as the grid it is distributed over changes; that is, it will have
  * the same entries when mat spans any number of processes.
  */
-void gaussian_fill(AbsDistMat& mat, El::Int m, El::Int n, DataType mean = 0.0f,
-                   DataType stddev = 1.0f);
+template <typename TensorDataType>
+void gaussian_fill(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::Int n, TensorDataType mean = 0.0,
+                   TensorDataType stddev = 1.0);
 /**
  * Make mat into an m x n matrix where each entry is an indepenent Bernoulli
  * random variable with parameter p.
  * This makes the same guarantees as gaussian_fill.
  */
-void bernoulli_fill(AbsDistMat& mat, El::Int m, El::Int n, double p = 0.5);
+template <typename TensorDataType>
+void bernoulli_fill(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::Int n, double p = 0.5);
 /**
  * Make mat into an m x n matrix where each entry is independently uniformly
  * sampled from a ball with the given center and radius.
  * This makes the same guarantees as gaussian_fill.
  */
-void uniform_fill(AbsDistMat& mat, El::Int m, El::Int n, DataType center = 0.0f,
-                  DataType radius = 1.0f);
+template <typename TensorDataType>
+void uniform_fill(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::Int n, TensorDataType center = 0.0,
+                  TensorDataType radius = 1.0);
 
 /**
  * Make mat into an m x n matrix where each entry is independently drawn from
@@ -163,24 +150,28 @@ void uniform_fill(AbsDistMat& mat, El::Int m, El::Int n, DataType center = 0.0f,
  * This always ensures that the entries of the matrix do not change as the grid
  * it is distributed over changes.
  */
-void gaussian_fill_procdet(AbsDistMat& mat, El::Int m, El::Int n,
-                           DataType mean = 0.0f, DataType stddev = 1.0f);
+template <typename TensorDataType>
+void gaussian_fill_procdet(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::Int n,
+                           TensorDataType mean = 0.0, TensorDataType stddev = 1.0);
 /**
  * Make mat into an m x n matrix where each entry is an independent Bernoulli
  * random variable with parameter p.
  * This makes the same guarantees as gaussian_fill_procdet.
  */
-void bernoulli_fill_procdet(AbsDistMat& mat, El::Int m, El::Int n, double p = 0.5);
+template <typename TensorDataType>
+void bernoulli_fill_procdet(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::Int n, double p = 0.5);
 /**
  * Make mat into an m x n matrix where each entry is independently uniformly
  * sampled from a ball with the given center and radius.
  * This makes the same guarantees as gaussian_fill_procdet.
  */
-void uniform_fill_procdet(AbsDistMat& mat, El::Int m, El::Int n,
-                          DataType center = 0.0f, DataType radius = 1.0f);
+template <typename TensorDataType>
+void uniform_fill_procdet(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::Int n,
+                          TensorDataType center = 0.0, TensorDataType radius = 1.0);
 
-bool save_rng_to_checkpoint_shared(persist& p, const lbann_comm* comm);
-bool load_rng_from_checkpoint_shared(persist& p, const lbann_comm* comm);
+bool save_rng_to_checkpoint_shared(persist& p, lbann_comm* comm);
+bool save_rng_to_checkpoint_distributed(persist& p, lbann_comm* comm);
+bool load_rng_from_checkpoint(persist& p, const lbann_comm* comm);
 
 template<typename DistType,typename DType=DataType>
 class rng {
@@ -218,6 +209,22 @@ void rng_bernoulli(const float p, DistMat *m) {
   }
 }
 
+#ifndef LBANN_RANDOM_INSTANTIATE
+#define PROTO(T)                                                                                                         \
+  extern template void gaussian_fill<T>(El::AbstractDistMatrix<T>& mat, El::Int m, El::Int n, T mean, T stddev);         \
+  extern template void bernoulli_fill<T>(El::AbstractDistMatrix<T>& mat, El::Int m, El::Int n, double p);                \
+  extern template void uniform_fill<T>(El::AbstractDistMatrix<T>& mat, El::Int m, El::Int n, T center, T radius);        \
+  extern template void gaussian_fill_procdet<T>(El::AbstractDistMatrix<T>& mat, El::Int m, El::Int n, T mean, T stddev); \
+  extern template void bernoulli_fill_procdet<T>(El::AbstractDistMatrix<T>& mat, El::Int m, El::Int n, double p);        \
+  extern template void uniform_fill_procdet<T>(El::AbstractDistMatrix<T>& mat, El::Int m, El::Int n, T center, T radius)
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
+#undef PROTO
+#undef LBANN_INSTANTIATE_CPU_HALF
+#undef LBANN_INSTANTIATE_GPU_HALF
+#endif // LBANN_RANDOM_INSTANTIATE
 
 }// end namespace
-#endif // LBANN_UTILS_RNG_HPP
+#endif // LBANN_UTILS_RANDOM_HPP

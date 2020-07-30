@@ -24,18 +24,20 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_TESSELLATE_LAYER_INSTANTIATE
 #include "lbann/layers/transform/tessellate.hpp"
 
 namespace lbann {
 
 namespace {
 
+template <typename TensorDataType>
 __global__ void fp_gpu_3d_kernel(
   El::Int input_dim0, El::Int input_dim1, El::Int input_dim2,
   El::Int output_dim0, El::Int output_dim1, El::Int output_dim2,
   El::Int local_output_height, El::Int local_output_width,
-  const DataType * __restrict__ input, El::Int input_ldim,
-  DataType * __restrict__ local_output, El::Int local_output_ldim,
+  const TensorDataType * __restrict__ input, El::Int input_ldim,
+  TensorDataType * __restrict__ local_output, El::Int local_output_ldim,
   El::Int output_col_shift, El::Int output_col_stride) {
 
   // Indices
@@ -70,15 +72,16 @@ __global__ void fp_gpu_3d_kernel(
 
 }
 
+template <typename TensorDataType>
 __global__ void bp_gpu_3d_kernel(
   El::Int input_dim0, El::Int input_dim1, El::Int input_dim2,
   El::Int output_dim0, El::Int output_dim1, El::Int output_dim2,
   El::Int local_output_height, El::Int local_output_width,
-  const DataType * __restrict__ local_gradient_wrt_output,
+  const TensorDataType * __restrict__ local_gradient_wrt_output,
   El::Int local_gradient_wrt_output_ldim,
   El::Int gradient_wrt_output_col_shift,
   El::Int gradient_wrt_output_col_stride,
-  DataType * __restrict__ gradient_wrt_input,
+  TensorDataType * __restrict__ gradient_wrt_input,
   El::Int gradient_wrt_input_ldim) {
 
   // Indices
@@ -113,31 +116,36 @@ __global__ void bp_gpu_3d_kernel(
 
 }
 
-void fp_gpu_3d(const std::vector<int>& input_dims,
-               const std::vector<int>& output_dims,
-               const AbsMat& input,
-               AbsDistMat& output) {
+}// namespace <anon>
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void tessellate_layer<TensorDataType, T_layout, Dev>
+::fp_compute_3d(const std::vector<int>& input_dims,
+                const std::vector<int>& output_dims,
+                const El::AbstractMatrix<TensorDataType>& input,
+                El::AbstractDistMatrix<TensorDataType>& output) {
   auto& local_output = output.Matrix();
   if (!local_output.IsEmpty()) {
     const auto& local_height = local_output.Height();
     const auto& local_width = local_output.Width();
     const auto& block_size = 256;
     const auto& grid_size = (local_height * local_width + block_size - 1) / block_size;
-    fp_gpu_3d_kernel
-      <<<grid_size, block_size, 0, El::GPUManager::Stream()>>>(
-        input_dims[0], input_dims[1], input_dims[2],
-        output_dims[0], output_dims[1], output_dims[2],
-        local_height, local_width,
-        input.LockedBuffer(), input.LDim(),
-        local_output.Buffer(), local_output.LDim(),
-        output.ColShift(), output.ColStride());
+    fp_gpu_3d_kernel<<<grid_size, block_size, 0, El::GPUManager::Stream()>>>(
+      input_dims[0], input_dims[1], input_dims[2],
+      output_dims[0], output_dims[1], output_dims[2],
+      local_height, local_width,
+      input.LockedBuffer(), input.LDim(),
+      local_output.Buffer(), local_output.LDim(),
+      output.ColShift(), output.ColStride());
   }
 }
 
-void bp_gpu_3d(const std::vector<int>& input_dims,
-               const std::vector<int>& output_dims,
-               const AbsDistMat& gradient_wrt_output,
-               AbsMat& gradient_wrt_input) {
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void tessellate_layer<TensorDataType, T_layout, Dev>
+::bp_compute_3d(const std::vector<int>& input_dims,
+                const std::vector<int>& output_dims,
+                const El::AbstractDistMatrix<TensorDataType>& gradient_wrt_output,
+                El::AbstractMatrix<TensorDataType>& gradient_wrt_input) {
   const auto& local_gradient_wrt_output = gradient_wrt_output.LockedMatrix();
   El::Zero(gradient_wrt_input);
   if (!local_gradient_wrt_output.IsEmpty()) {
@@ -145,56 +153,24 @@ void bp_gpu_3d(const std::vector<int>& input_dims,
     const auto& local_width = local_gradient_wrt_output.Width();
     const auto& block_size = 256;
     const auto& grid_size = (local_height * local_width + block_size - 1) / block_size;
-    bp_gpu_3d_kernel
-      <<<grid_size, block_size, 0, El::GPUManager::Stream()>>>(
-        input_dims[0], input_dims[1], input_dims[2],
-        output_dims[0], output_dims[1], output_dims[2],
-        local_height, local_width,
-        local_gradient_wrt_output.LockedBuffer(),
-        local_gradient_wrt_output.LDim(),
-        gradient_wrt_output.ColShift(),
-        gradient_wrt_output.ColStride(),
-        gradient_wrt_input.Buffer(),
-        gradient_wrt_input.LDim());
+    bp_gpu_3d_kernel<<<grid_size, block_size, 0, El::GPUManager::Stream()>>>(
+      input_dims[0], input_dims[1], input_dims[2],
+      output_dims[0], output_dims[1], output_dims[2],
+      local_height, local_width,
+      local_gradient_wrt_output.LockedBuffer(),
+      local_gradient_wrt_output.LDim(),
+      gradient_wrt_output.ColShift(),
+      gradient_wrt_output.ColStride(),
+      gradient_wrt_input.Buffer(),
+      gradient_wrt_input.LDim());
   }
 }
 
-} // namespace
+#define PROTO(T)                                      \
+  template class tessellate_layer<T, data_layout::DATA_PARALLEL, El::Device::GPU>; \
+  template class tessellate_layer<T, data_layout::MODEL_PARALLEL, El::Device::GPU>
 
-template <>
-void tessellate_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
-     ::fp_compute_3d(const std::vector<int>& input_dims,
-                     const std::vector<int>& output_dims,
-                     const AbsMat& input,
-                     AbsDistMat& output) {
-  fp_gpu_3d(input_dims, output_dims, input, output);
-}
-template <>
-void tessellate_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
-     ::fp_compute_3d(const std::vector<int>& input_dims,
-                     const std::vector<int>& output_dims,
-                     const AbsMat& input,
-                     AbsDistMat& output) {
-  fp_gpu_3d(input_dims, output_dims, input, output);
-}
-
-template <>
-void tessellate_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
-     ::bp_compute_3d(const std::vector<int>& input_dims,
-                     const std::vector<int>& output_dims,
-                     const AbsDistMat& gradient_wrt_output,
-                     AbsMat& gradient_wrt_input) {
-  bp_gpu_3d(input_dims, output_dims,
-            gradient_wrt_output, gradient_wrt_input);
-}
-template <>
-void tessellate_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
-     ::bp_compute_3d(const std::vector<int>& input_dims,
-                     const std::vector<int>& output_dims,
-                     const AbsDistMat& gradient_wrt_output,
-                     AbsMat& gradient_wrt_input) {
-  bp_gpu_3d(input_dims, output_dims,
-            gradient_wrt_output, gradient_wrt_input);
-}
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

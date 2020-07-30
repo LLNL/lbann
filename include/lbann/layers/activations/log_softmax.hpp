@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_ACTIVATIONS_LOG_SOFTMAX_HPP_INCLUDED
 #define LBANN_LAYERS_ACTIVATIONS_LOG_SOFTMAX_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 #include "lbann/utils/cudnn.hpp"
 
 namespace lbann {
@@ -36,19 +36,28 @@ namespace lbann {
  *
  *  @f[ \log \text{softmax}(x)_i = x_i - \log \sum_j e^{x_j} @f]
  */
-template <data_layout Layout, El::Device Device>
-class log_softmax_layer : public Layer {
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+class log_softmax_layer : public data_type_layer<TensorDataType> {
+public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+  ///@}
+
 public:
 
   log_softmax_layer(lbann_comm *comm)
-    : Layer(comm)
+    : data_type_layer<TensorDataType>(comm)
 #ifdef LBANN_HAS_CUDNN
     , m_tensors_cudnn_desc(this)
 #endif // LBANN_HAS_CUDNN
   {}
 
   log_softmax_layer(const log_softmax_layer& other)
-    : Layer(other),
+    : data_type_layer<TensorDataType>(other),
       m_workspace(other.m_workspace ?
                   other.m_workspace->Copy() : nullptr)
 #ifdef LBANN_HAS_CUDNN
@@ -61,7 +70,7 @@ public:
   }
 
   log_softmax_layer& operator=(const log_softmax_layer& other) {
-    Layer::operator=(other);
+    data_type_layer<TensorDataType>::operator=(other);
     m_workspace.reset(other.m_workspace ?
                       other.m_workspace->Copy() : nullptr);
 #ifdef LBANN_HAS_CUDNN
@@ -78,16 +87,16 @@ public:
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
 
-  void setup_dims() override {
-    Layer::setup_dims();
-    set_output_dims(get_input_dims());
+  void setup_dims(DataReaderMetaData& dr_metadata) override {
+    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+    this->set_output_dims(this->get_input_dims());
   }
 
   void setup_matrices(const El::Grid& grid) override {
-    Layer::setup_matrices(grid);
-    auto dist = get_prev_activations().DistData();
+    data_type_layer<TensorDataType>::setup_matrices(grid);
+    auto dist = this->get_prev_activations().DistData();
     dist.colDist = El::STAR;
-    m_workspace.reset(AbsDistMat::Instantiate(dist));
+    m_workspace.reset(AbsDistMatrixType::Instantiate(dist));
 #ifdef HYDROGEN_HAVE_CUB
     if (m_workspace->GetLocalDevice() == El::Device::GPU) {
       m_workspace->Matrix().SetMemoryMode(1); // CUB memory pool
@@ -96,8 +105,8 @@ public:
   }
 
   void fp_setup_outputs(El::Int mini_batch_size) override {
-    Layer::fp_setup_outputs(mini_batch_size);
-    const auto& dist_data = get_prev_activations().DistData();
+    data_type_layer<TensorDataType>::fp_setup_outputs(mini_batch_size);
+    const auto& dist_data = this->get_prev_activations().DistData();
     m_workspace->Empty(false);
     m_workspace->AlignWith(dist_data);
     m_workspace->Resize(1, mini_batch_size);
@@ -106,17 +115,31 @@ public:
   void fp_compute() override;
   void bp_compute() override;
 
+  template <typename U>
+  friend void fp_compute_impl(log_softmax_layer<U, Layout, Device>& l);
+  template <typename U>
+  friend void bp_compute_impl(log_softmax_layer<U, Layout, Device>& l);
+
 private:
 
   /** Workspace for column-wise reductions. */
-  std::unique_ptr<AbsDistMat> m_workspace;
+  std::unique_ptr<AbsDistMatrixType> m_workspace;
 
 #ifdef LBANN_HAS_CUDNN
   /** Tensor cuDNN descriptors. */
-  cudnn::data_parallel_layer_tensor_manager m_tensors_cudnn_desc;
+  cudnn::data_parallel_layer_tensor_manager<TensorDataType> m_tensors_cudnn_desc;
 #endif // LBANN_HAS_CUDNN
 
 };
+
+#ifndef LBANN_LOG_SOFTMAX_LAYER_INSTANTIATE
+#define PROTO_DEVICE(T, Device) \
+  extern template class log_softmax_layer<T, data_layout::DATA_PARALLEL, Device>; \
+  extern template class log_softmax_layer<T, data_layout::MODEL_PARALLEL, Device>
+
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+#endif // LBANN_LOG_SOFTMAX_LAYER_INSTANTIATE
 
 } // namespace lbann
 

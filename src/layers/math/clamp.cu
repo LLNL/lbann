@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_CLAMP_LAYER_INSTANTIATE
 #include "lbann/layers/math/clamp.hpp"
 
 namespace lbann {
@@ -31,13 +32,14 @@ namespace lbann {
 namespace {
 
 /** CUDA kernel for forward prop computation. */
-__global__ void fp_kernel(DataType min,
-                          DataType max,
+template <typename TensorDataType>
+__global__ void fp_kernel(TensorDataType min,
+                          TensorDataType max,
                           El::Int height,
                           El::Int width,
-                          const DataType* __restrict__ input,
+                          const TensorDataType* __restrict__ input,
                           El::Int input_ldim,
-                          DataType* __restrict__ output,
+                          TensorDataType* __restrict__ output,
                           El::Int output_ldim) {
   const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int size = height * width;
@@ -54,15 +56,16 @@ __global__ void fp_kernel(DataType min,
 }
 
 /** CUDA kernel for backprop computation. */
-__global__ void bp_kernel(DataType min,
-                          DataType max,
+template <typename TensorDataType>
+__global__ void bp_kernel(TensorDataType min,
+                          TensorDataType max,
                           El::Int height,
                           El::Int width,
-                          const DataType* __restrict__ input,
+                          const TensorDataType* __restrict__ input,
                           El::Int input_ldim,
-                          const DataType* __restrict__ gradient_wrt_output,
+                          const TensorDataType* __restrict__ gradient_wrt_output,
                           El::Int gradient_wrt_output_ldim,
-                          DataType* __restrict__ gradient_wrt_input,
+                          TensorDataType* __restrict__ gradient_wrt_input,
                           El::Int gradient_wrt_input_ldim) {
   const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int size = height * width;
@@ -73,15 +76,16 @@ __global__ void bp_kernel(DataType min,
     const auto& x = input[row + col * input_ldim];
     const auto& dy = gradient_wrt_output[row + col * gradient_wrt_output_ldim];
     auto& dx = gradient_wrt_input[row + col * gradient_wrt_input_ldim];
-    dx = (x <= min || x >= max) ? DataType(0) : dy;
+    dx = (x <= min || x >= max) ? TensorDataType(0.f) : dy;
   }
 }
 
 /** Local forward prop computation. */
-void local_fp(DataType min,
-              DataType max,
-              const AbsMat& input,
-              AbsMat& output) {
+template <typename TensorDataType>
+void local_fp(TensorDataType min,
+              TensorDataType max,
+              const El::AbstractMatrix<TensorDataType>& input,
+              El::AbstractMatrix<TensorDataType>& output) {
 
   // Get CUDA grid dimensions
   // Note: Maximum CUDA grid dimension is 2^32-1
@@ -106,11 +110,12 @@ void local_fp(DataType min,
 }
 
 /** Local backprop computation. */
-void local_bp(DataType min,
-              DataType max,
-              const AbsMat& input,
-              const AbsMat& gradient_wrt_output,
-              AbsMat& gradient_wrt_input) {
+template <typename TensorDataType>
+void local_bp(TensorDataType min,
+              TensorDataType max,
+              const El::AbstractMatrix<TensorDataType>& input,
+              const El::AbstractMatrix<TensorDataType>& gradient_wrt_output,
+              El::AbstractMatrix<TensorDataType>& gradient_wrt_input) {
 
   // Get CUDA grid dimensions
   // Note: Maximum CUDA grid dimension is 2^32-1
@@ -137,35 +142,27 @@ void local_bp(DataType min,
 
 } // namespace
 
-template <>
-void clamp_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
-       ::fp_compute() {
-  local_fp(m_min, m_max,
-           get_local_prev_activations(),
-           get_local_activations());
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void clamp_layer<TensorDataType, Layout, Device>::fp_compute() {
+  local_fp(this->m_min, this->m_max,
+           this->get_local_prev_activations(),
+           this->get_local_activations());
 }
-template <>
-void clamp_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
-     ::bp_compute() {
-  local_bp(m_min, m_max,
-           get_local_prev_activations(),
-           get_local_prev_error_signals(),
-           get_local_error_signals());
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void clamp_layer<TensorDataType, Layout, Device>::bp_compute() {
+  local_bp(this->m_min, this->m_max,
+           this->get_local_prev_activations(),
+           this->get_local_prev_error_signals(),
+           this->get_local_error_signals());
 }
-template <>
-void clamp_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
-       ::fp_compute() {
-  local_fp(m_min, m_max,
-           get_local_prev_activations(),
-           get_local_activations());
-}
-template <>
-void clamp_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
-     ::bp_compute() {
-  local_bp(m_min, m_max,
-           get_local_prev_activations(),
-           get_local_prev_error_signals(),
-           get_local_error_signals());
-}
+
+#define PROTO(T)                                     \
+  template class clamp_layer<                        \
+    T, data_layout::DATA_PARALLEL, El::Device::GPU>; \
+  template class clamp_layer<                        \
+    T, data_layout::MODEL_PARALLEL, El::Device::GPU>
+
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

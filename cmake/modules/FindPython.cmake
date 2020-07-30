@@ -64,13 +64,19 @@ execute_process(
   COMMAND "${Python_EXECUTABLE}" "-c"
   "import sys; from distutils.sysconfig import get_config_var; sys.stdout.write(get_config_var('LIBDIR'))"
   OUTPUT_VARIABLE _LIB_DIR)
-if (BUILD_SHARED_LIBS)
-  set(_GLOB_EXPR "${_LIB_DIR}/libpython*${CMAKE_SHARED_LIBRARY_SUFFIX}")
-ELSE (BUILD_SHARED_LIBS)
-  set(_GLOB_EXPR "${_LIB_DIR}/libpython*${CMAKE_STATIC_LIBRARY_SUFFIX}")
-endif (BUILD_SHARED_LIBS)
-FILE(GLOB _GLOB_RESULT "${_GLOB_EXPR}")
-get_filename_component(Python_LIBRARIES "${_GLOB_RESULT}" ABSOLUTE)
+
+set(_PY_MAJ_MIN_VERSION "${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}")
+find_library(Python_LIBRARY
+  NAMES python python${_PY_MAJ_MIN_VERSION}m python${_PY_MAJ_MIN_VERSION}
+  python${Python_VERSION_MAJOR}m python${Python_VERSION_MAJOR}
+  HINTS ${_LIB_DIR}
+  DOC "The python${Python_VERSION_MAJOR} library."
+  NO_DEFAULT_PATH)
+if (NOT Python_LIBRARY)
+  message(FATAL_ERROR "Could not find Python library for version "
+    "${_PY_MAJ_MIN_VERSION} in directory: ${_LIB_DIR}")
+endif ()
+set(Python_LIBRARIES "${Python_LIBRARY}")
 
 # Handle the find_package arguments
 include(FindPackageHandleStandardArgs)

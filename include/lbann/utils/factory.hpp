@@ -2,13 +2,35 @@
 #ifndef LBANN_UTILS_FACTORY_HPP_
 #define LBANN_UTILS_FACTORY_HPP_
 
+#include <lbann_config.hpp>
+#include <lbann/utils/factory_error_policies.hpp>
+
+#ifdef LBANN_HAS_DIHYDROGEN
+
+#include <h2/patterns/factory/ObjectFactory.hpp>
+
+namespace lbann
+{
+
+template <class BaseT, typename KeyT,
+          typename BuilderT = std::function<std::unique_ptr<BaseT>()>,
+          template <typename, class> class KeyErrorPolicy
+          = default_key_error_policy>
+using generic_factory =
+  h2::factory::ObjectFactory<BaseT, KeyT, BuilderT, KeyErrorPolicy>;
+
+} // namespace lbann
+
+#else // !LBANN_HAS_DIHYDROGEN
+
+// WARNING: This code is deprecated and will be removed when
+// DiHydrogen becomes a required dependency of LBANN.
+
 #include <algorithm>
 #include <forward_list>
 #include <functional>
 #include <memory>
 #include <unordered_map>
-
-#include <lbann/utils/factory_error_policies.hpp>
 
 namespace lbann
 {
@@ -24,30 +46,30 @@ namespace lbann
  *      using callback_factory
  *        = generic_factory<lbann_callback, string, callback_builder_type>;
  *
- *  The default behavior for key errors is to throw an exception.
+ *  The default behavior for id errors is to throw an exception.
  *
  *  @tparam BaseT        The base class of the types being constructed.
- *  @tparam KeyT         The index type used to differentiate concrete types.
+ *  @tparam IdT         The index type used to differentiate concrete types.
  *  @tparam BuilderT     The functor type that builds concrete types.
- *  @tparam ErrorPolicy  The policy for handling key errors.
+ *  @tparam ErrorPolicy  The policy for handling id errors.
  */
-template <class BaseT, typename KeyT,
+template <class BaseT, typename IdT,
           typename BuilderT = std::function<std::unique_ptr<BaseT>()>,
-          template <typename, class> class KeyErrorPolicy
+          template <typename, class> class IdErrorPolicy
           = default_key_error_policy>
-class generic_factory : private KeyErrorPolicy<KeyT,BaseT>
+class generic_factory : private IdErrorPolicy<IdT,BaseT>
 {
 public:
   using base_type = BaseT;
-  using key_type = KeyT;
+  using id_type = IdT;
   using builder_type = BuilderT;
 
 private:
   // This could be any of std::unordered_map, std::map, and something
-  // even more bland like std::list<std::pair<key_type, builder_type>>
-  // depending on the properties of "key_type". My initial assumption
-  // is that keys will be hashable types...
-  using map_type = std::unordered_map<key_type,builder_type>;
+  // even more bland like std::list<std::pair<id_type, builder_type>>
+  // depending on the properties of "id_type". My initial assumption
+  // is that ids will be hashable types...
+  using map_type = std::unordered_map<id_type,builder_type>;
 
 public:
   using size_type = typename map_type::size_type;
@@ -56,32 +78,32 @@ public:
   /** @name Builder registration */
   ///@{
 
-  /** @brief Register a new builder for key @c key.
+  /** @brief Register a new builder for id @c id.
    *
-   *  @param key     An identifier for a concrete type to be constructed.
+   *  @param id     An identifier for a concrete type to be constructed.
    *  @param builder An @c Invokable object that builds concrete objects.
    *
    *  @return @c true if the builder was registered successfully; @c
    *      false otherise.
    */
-  bool register_builder(key_type key, builder_type builder)
+  bool register_builder(id_type id, builder_type builder)
   {
     return m_registered_builders.emplace(
       std::piecewise_construct,
-      std::forward_as_tuple(std::move(key)),
+      std::forward_as_tuple(std::move(id)),
       std::forward_as_tuple(std::move(builder))).second;
   }
 
-  /** @brief Unregister the current builder for key @c key.
+  /** @brief Unregister the current builder for id @c id.
    *
-   *  @param key The key for the builder to be removed from the factory.
+   *  @param id The id for the builder to be removed from the factory.
    *
    *  @return @c true if a builder was unregistered; @c false
    *      otherwise.
    */
-  bool unregister(key_type const& key)
+  bool unregister(id_type const& id)
   {
-    return m_registered_builders.erase(key);
+    return m_registered_builders.erase(id);
   }
 
   ///@}
@@ -90,20 +112,20 @@ public:
 
   /** @brief Construct a new object.
    *
-   *  @param key  The key for the object to be created.
+   *  @param id  The id for the object to be created.
    *  @param args Extra arguments for the builder.
    *
    *  @return A newly-built object managed by an @c std::unique_ptr.
    */
   template <typename... Ts>
   std::unique_ptr<base_type> create_object(
-    key_type const& key, Ts&&... args) const
+    id_type const& id, Ts&&... args) const
   {
-    auto it = m_registered_builders.find(key);
+    auto it = m_registered_builders.find(id);
     if (it != m_registered_builders.end())
       return (it->second)(std::forward<Ts>(args)...);
 
-    return this->handle_unknown_key(key);
+    return this->handle_unknown_id(id);
   }
 
   ///@}
@@ -111,18 +133,18 @@ public:
   ///@{
 
   /** @brief Get the number of registered builders. */
-  size_type get_num_registered_builders() const noexcept
+  size_type size() const noexcept
   {
     return m_registered_builders.size();
   }
 
   /** @brief Get the names of all builders known to the factory.
    *
-   *  @return A list of the known keys.
+   *  @return A list of the known ids.
    */
-  std::forward_list<key_type> get_registered_keys() const
+  std::forward_list<id_type> registered_ids() const
   {
-    std::forward_list<key_type> names;
+    std::forward_list<id_type> names;
     std::transform(
       m_registered_builders.cbegin(), m_registered_builders.cend(),
       std::front_inserter(names),
@@ -137,9 +159,10 @@ public:
   }
 
 private:
-  /** @brief An associative list of keys and builders. */
+  /** @brief An associative list of ids and builders. */
   map_type m_registered_builders;
 };// class generic_factory
 
 }// namespace lbann
-#endif /* LBANN_UTILS_FACTORY_HPP_ */
+#endif // LBANN_HAS_DIHYDROGEN
+#endif // LBANN_UTILS_FACTORY_HPP_

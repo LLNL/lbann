@@ -1,0 +1,21 @@
+# Setup standard ignores to keep the applications directory hierarchy clean
+  
+# Building in source tree garbage
+.cproject
+.project
+*.o
+*.a
+
+# Emacs backup garbage
+.backup/
+
+# Other standard ignores
+*~
+*.pyc
+\#*#
+.#*
+.*.swp
+.DS_Store
+
+# Python garbage
+__pycache__/

@@ -25,9 +25,14 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <thrust/system/cuda/execution_policy.h>
+
+// Headers for NVCC
 #ifdef __CUDACC__
+#ifdef HYDROGEN_HAVE_CUB
+#include "cub/block/block_reduce.cuh"
+#endif // HYDROGEN_HAVE_CUB
 #include <math_constants.h>
-#include <cuda_fp16.hpp>
+#include <cuda_fp16.h>
 #endif // __CUDACC__
 
 namespace lbann {
@@ -42,7 +47,7 @@ namespace cuda {
 #if __CUDA_ARCH__ >= 530
 template <> __device__ __forceinline__
 __half atomic_add<__half>(__half* address, __half val) {
-#if 0 // TODO: replace this once Nvidia implements atomicAdd for __half
+#if __CUDA_ARCH__ >= 700 || !defined(__CUDA_ARCH__)
   return atomicAdd(address, val);
 #else
   unsigned int* address_as_uint = (unsigned int*) address;
@@ -58,7 +63,7 @@ __half atomic_add<__half>(__half* address, __half val) {
     old = atomicCAS(address_as_uint, assumed, updated);
   } while (assumed != old);
   return *old_as_half;
-#endif // 0
+#endif // __CUDA_ARCH__ >= 700 || !defined(__CUDA_ARCH__)
 }
 #endif // __CUDA_ARCH__ >= 530
 template <> __device__ __forceinline__
@@ -81,6 +86,59 @@ double atomic_add<double>(double* address, double val) {
   } while (assumed != old);
   return __longlong_as_double(old);
 #endif // __CUDA_ARCH__ < 600
+}
+
+// Block reduction
+template <size_t bdimx, size_t bdimy, size_t bdimz, class T>
+__device__ __forceinline__
+T block_reduce(T val) {
+#ifdef HYDROGEN_HAVE_CUB
+  constexpr auto reduce_algo = cub::BLOCK_REDUCE_WARP_REDUCTIONS;
+  using BlockReduce = cub::BlockReduce<T, bdimx, reduce_algo, bdimy, bdimz>;
+  __shared__ typename BlockReduce::TempStorage workspace;
+  val = BlockReduce(workspace).Sum(val);
+#else
+  const size_t tid = threadIdx.x + threadIdx.y*bdimx + threadIdx.z*bdimx*bdimy;
+  constexpr size_t bsize = bdimx * bdimy * bdimz;
+  __shared__ DataType shared_max_vals[bsize];
+  shared_vals[tid] = val;
+  for (size_t stride = bsize/2; stride > 0; stride /= 2) {
+    __syncthreads();
+    if (tid < stride) {
+      shared_vals[tid] = shared_vals[tid] + shared_vals[tid+stride];
+    }
+  }
+  if (tid == 0) {
+    val = shared_vals[0];
+  }
+#endif // HYDROGEN_HAVE_CUB
+  return val;
+}
+template <size_t bdimx, size_t bdimy, size_t bdimz, class T, class Op>
+__device__ __forceinline__
+T block_reduce(T val) {
+#ifdef HYDROGEN_HAVE_CUB
+  constexpr auto reduce_algo = cub::BLOCK_REDUCE_WARP_REDUCTIONS;
+  using BlockReduce = cub::BlockReduce<T, bdimx, reduce_algo, bdimy, bdimz>;
+  __shared__ typename BlockReduce::TempStorage workspace;
+  val = BlockReduce(workspace).Reduce(val, Op());
+#else
+  Op op;
+  const size_t tid = threadIdx.x + threadIdx.y*bdimx + threadIdx.z*bdimx*bdimy;
+  constexpr size_t bsize = bdimx * bdimy * bdimz;
+  __shared__ DataType shared_max_vals[bsize];
+  shared_vals[tid] = val;
+  for (size_t stride = bsize/2; stride > 0; stride /= 2) {
+    __syncthreads();
+    if (tid < stride) {
+      shared_vals[tid] = op(shared_vals[tid], shared_vals[tid+stride]);
+    }
+  }
+  if (tid == 0) {
+    val = shared_vals[0];
+  }
+#endif // HYDROGEN_HAVE_CUB
+  return val;
 }
 
 // Unary math functions
@@ -118,6 +176,71 @@ WRAP_UNARY_CUDA_MATH_FUNCTION(asinh)
 WRAP_UNARY_CUDA_MATH_FUNCTION(atanh)
 #undef WRAP_UNARY_CUDA_MATH_FUNCTION
 
+template <typename T> __device__ __forceinline__
+bool isfinite(T const& x) { return ::isfinite(x); }
+
+template <typename T> __device__ __forceinline__
+bool isnan(T const& x) { return ::isnan(x); }
+
+#if __CUDA_ARCH__ >= 530
+template <> __device__ __forceinline__
+bool isfinite(__half const& x) { return !(::__isnan(x) || ::__hisinf(x)); }
+
+template <> __device__ __forceinline__
+bool isnan(__half const& x) { return ::__hisnan(x); }
+
+// This support is far from complete!
+#define WRAP_UNARY_CUDA_HALF_MATH_FUNCTION(func)              \
+  template <> __device__ __forceinline__                      \
+  __half func<__half>(__half const& x) { return ::h##func(x); }
+
+// FIXME (trb): This is maybe not the best long-term solution, but it
+// might be the best we can do without really digging into
+// half-precision implementation.
+#define WRAP_UNARY_CUDA_HALF_CAST_TO_FLOAT_MATH_FUNCTION(func) \
+  template <> __device__ __forceinline__                       \
+  __half func<__half>(__half const& x) { return func(float(x)); }
+
+WRAP_UNARY_CUDA_HALF_CAST_TO_FLOAT_MATH_FUNCTION(round)
+WRAP_UNARY_CUDA_HALF_MATH_FUNCTION(ceil)
+WRAP_UNARY_CUDA_HALF_MATH_FUNCTION(floor)
+WRAP_UNARY_CUDA_HALF_MATH_FUNCTION(sqrt)
+WRAP_UNARY_CUDA_HALF_MATH_FUNCTION(rsqrt)
+WRAP_UNARY_CUDA_HALF_MATH_FUNCTION(exp)
+//WRAP_UNARY_CUDA_HALF_MATH_FUNCTION(expm1)
+//
+// FIXME (trb): This is not going to be as accurate as a native expm1
+// implementation could be:
+template <> __device__ __forceinline__
+__half expm1<__half>(__half const& x) {
+    return ::__hsub(::hexp(x), ::__float2half(1.f));
+}
+
+WRAP_UNARY_CUDA_HALF_MATH_FUNCTION(log)
+WRAP_UNARY_CUDA_HALF_CAST_TO_FLOAT_MATH_FUNCTION(log1p)
+WRAP_UNARY_CUDA_HALF_MATH_FUNCTION(cos)
+WRAP_UNARY_CUDA_HALF_MATH_FUNCTION(sin)
+
+//WRAP_UNARY_CUDA_HALF_MATH_FUNCTION(tan)
+//
+// FIXME (trb): This just uses the trig identity. Probably less
+// accurate than a native implementation.
+template <> __device__ __forceinline__
+__half tan<__half>(__half const& x) { return ::__hdiv(::hsin(x), ::hcos(x)); }
+
+WRAP_UNARY_CUDA_HALF_CAST_TO_FLOAT_MATH_FUNCTION(acos)
+WRAP_UNARY_CUDA_HALF_CAST_TO_FLOAT_MATH_FUNCTION(asin)
+WRAP_UNARY_CUDA_HALF_CAST_TO_FLOAT_MATH_FUNCTION(atan)
+WRAP_UNARY_CUDA_HALF_CAST_TO_FLOAT_MATH_FUNCTION(cosh)
+WRAP_UNARY_CUDA_HALF_CAST_TO_FLOAT_MATH_FUNCTION(sinh)
+WRAP_UNARY_CUDA_HALF_CAST_TO_FLOAT_MATH_FUNCTION(tanh)
+WRAP_UNARY_CUDA_HALF_CAST_TO_FLOAT_MATH_FUNCTION(acosh)
+WRAP_UNARY_CUDA_HALF_CAST_TO_FLOAT_MATH_FUNCTION(asinh)
+WRAP_UNARY_CUDA_HALF_CAST_TO_FLOAT_MATH_FUNCTION(atanh)
+
+#undef WRAP_UNARY_CUDA_HALF_MATH_FUNCTION
+#endif // __CUDA_ARCH__ >= 530
+
 // Binary math functions
 #define WRAP_BINARY_CUDA_MATH_FUNCTION(func)                    \
   template <> __device__ __forceinline__                        \
@@ -149,6 +272,24 @@ double mod<double>(const double& x, const double& y) { return ::fmod(x,y); }
 WRAP_BINARY_CUDA_MATH_FUNCTION(pow)
 #undef WRAP_BINARY_CUDA_MATH_FUNCTION
 
+template <> __device__ __forceinline__
+__half pow<__half>(const __half& x, const __half& y)
+{ return pow(float(x), float(y)); }
+
+template <> __device__ __forceinline__
+__half mod<__half>(const __half& x, const __half& y)
+{ return mod(float(x), float(y)); }
+
+#if __CUDA_ARCH__ >= 530
+template <> __device__ __forceinline__
+__half min<__half>(const __half& x, const __half& y)
+{ return ::__hle(x, y) ? x : y; }
+
+template <> __device__ __forceinline__
+__half max<__half>(const __half& x, const __half& y)
+{ return ::__hle(x, y) ? y : x; }
+#endif // __CUDA_ARCH__ >= 530
+
 // Numeric limits
 #ifdef __CUDACC_RELAXED_CONSTEXPR__
 template <typename T> constexpr __device__ __forceinline__ T min() {
@@ -179,8 +320,40 @@ SPECIFIERS constexpr float epsilon<float>()   { return FLT_EPSILON; }
 SPECIFIERS constexpr double epsilon<double>() { return DBL_EPSILON; }
 SPECIFIERS float infinity<float>()   { return CUDART_INF_F; }
 SPECIFIERS double infinity<double>() { return CUDART_INF;   }
-#undef HEADER
+#undef SPECIFIERS
 #endif // __CUDACC_RELAXED_CONSTEXPR__
+
+// FIXME (TRB): I think this is right? Borrowed the values from the
+// sourceforge half library.
+template <> __device__ __forceinline__ __half min<__half>() {
+  return __short_as_half(0x0400);
+}
+template <> __device__ __forceinline__ __half max<__half>() {
+  return __short_as_half(0x7BFF);
+}
+template <> __device__ __forceinline__ __half epsilon<__half>() {
+  return __short_as_half(0x1400);
+}
+template <> __device__ __forceinline__ __half infinity<__half>() {
+  return __short_as_half(0x7C00);
+}
+
+// Array member functions
+template <typename T, size_t N>
+__host__ __device__ __forceinline__
+size_t array<T,N>::size() const {
+  return N;
+}
+template <typename T, size_t N>
+__host__ __device__ __forceinline__
+T& array<T,N>::operator[](size_t i) {
+  return vals[i];
+}
+template <typename T, size_t N>
+__host__ __device__ __forceinline__
+const T& array<T,N>::operator[](size_t i) const {
+  return vals[i];
+}
 
 #endif // __CUDACC__
 
@@ -190,17 +363,17 @@ SPECIFIERS double infinity<double>() { return CUDART_INF;   }
 #ifdef __CUDACC__
 
 /** CUDA kernel to apply an entry-wise unary operator. */
-template <typename UnaryOperator>
+template <template <typename> class UnaryOperator, typename TensorDataType>
 __global__
 void entrywise_unary_operator_kernel(El::Int height, El::Int width,
-                                     const DataType* __restrict__ input,
+                                     const TensorDataType* __restrict__ input,
                                      El::Int input_ldim,
-                                     DataType* __restrict__ output,
+                                     TensorDataType* __restrict__ output,
                                      El::Int output_ldim) {
   const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int size = height * width;
   const El::Int num_threads = blockDim.x * gridDim.x;
-  UnaryOperator op;
+  UnaryOperator<TensorDataType> op;
   for (El::Int pos = gid; pos < size; pos += num_threads) {
     const auto& row = pos % height;
     const auto& col = pos / height;
@@ -211,19 +384,19 @@ void entrywise_unary_operator_kernel(El::Int height, El::Int width,
 }
 
 /** CUDA kernel to apply an entry-wise binary operator. */
-template <typename BinaryOperator>
+template <template <typename> class BinaryOperator, typename TensorDataType>
 __global__
 void entrywise_binary_operator_kernel(El::Int height, El::Int width,
-                                     const DataType* __restrict__ input1,
+                                     const TensorDataType* __restrict__ input1,
                                      El::Int input1_ldim,
-                                     const DataType* __restrict__ input2,
+                                     const TensorDataType* __restrict__ input2,
                                      El::Int input2_ldim,
-                                     DataType* __restrict__ output,
+                                     TensorDataType* __restrict__ output,
                                      El::Int output_ldim) {
   const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int size = height * width;
   const El::Int num_threads = blockDim.x * gridDim.x;
-  BinaryOperator op;
+  BinaryOperator<TensorDataType> op;
   for (El::Int pos = gid; pos < size; pos += num_threads) {
     const auto& row = pos % height;
     const auto& col = pos / height;
@@ -238,23 +411,22 @@ void entrywise_binary_operator_kernel(El::Int height, El::Int width,
  *  The input and output data must be on GPU and must have the same
  *  dimensions.
  */
-template <typename UnaryOperator>
-void apply_entrywise_unary_operator(const AbsMat& input,
-                                    AbsMat& output) {
+template <template <typename> class UnaryOp, typename TensorDataType>
+void apply_entrywise_unary_operator(
+  const El::AbstractMatrix<TensorDataType>& input,
+  El::AbstractMatrix<TensorDataType>& output) {
 
   // Check that input and output are valid
-  std::stringstream err;
   if (input.GetDevice() != El::Device::GPU) {
     LBANN_ERROR("input is not on GPU");
   } else if (output.GetDevice() != El::Device::GPU) {
     LBANN_ERROR("output is not on GPU");
   } else if (input.Height() != output.Height()
              || input.Width() != output.Width()) {
-    err << "input matrix dimensions "
-        << "(" << input.Height() << " x " << input.Width() << ")"
-        << "don't match output matrix dimensions "
-        << "(" << output.Height() << " x " << output.Width() << ")";
-    LBANN_ERROR(err.str());
+    LBANN_ERROR("input matrix dimensions "
+                "(", input.Height(), " x ", input.Width(), ")"
+                "don't match output matrix dimensions "
+                "(", output.Height(), " x ", output.Width(), ")");
   }
 
   // Get CUDA grid dimensions
@@ -272,7 +444,7 @@ void apply_entrywise_unary_operator(const AbsMat& input,
   // Launch CUDA kernel
   if (grid_dim > 0) {
     CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
-    entrywise_unary_operator_kernel<UnaryOperator>
+    entrywise_unary_operator_kernel<UnaryOp>
       <<<grid_dim, block_dim, 0, El::GPUManager::Stream()>>>(
         height, width, input.LockedBuffer(), input.LDim(),
         output.Buffer(), output.LDim());
@@ -284,13 +456,13 @@ void apply_entrywise_unary_operator(const AbsMat& input,
  *  The input and output data must be on GPU and must have the same
  *  dimensions.
  */
-template <typename BinaryOperator>
-void apply_entrywise_binary_operator(const AbsMat& input1,
-                                     const AbsMat& input2,
-                                     AbsMat& output) {
+template <template <typename> class BinaryOp, typename TensorDataType>
+void apply_entrywise_binary_operator(
+  const El::AbstractMatrix<TensorDataType>& input1,
+  const El::AbstractMatrix<TensorDataType>& input2,
+  El::AbstractMatrix<TensorDataType>& output) {
 
   // Check that input and output are valid
-  std::stringstream err;
   if (input1.GetDevice() != El::Device::GPU
       || input2.GetDevice() != El::Device::GPU) {
     LBANN_ERROR("input is not on GPU");
@@ -300,12 +472,11 @@ void apply_entrywise_binary_operator(const AbsMat& input1,
              || input1.Width() != input2.Width()
              || input1.Height() != output.Height()
              || input1.Width() != output.Width()) {
-    err << "input matrix dimensions "
-        << "(" << input1.Height() << " x " << input1.Width() << ", "
-        << input2.Height() << " x " << input2.Width() << ")"
-        << "don't match output matrix dimensions "
-        << "(" << output.Height() << " x " << output.Width() << ")";
-    LBANN_ERROR(err.str());
+    LBANN_ERROR("input matrix dimensions "
+                "(", input1.Height(), " x ", input1.Width(), ", ",
+                input2.Height(), " x ", input2.Width(), ")"
+                "don't match output matrix dimensions "
+                "(", output.Height(), " x ", output.Width(), ")");
   }
 
   // Get CUDA grid dimensions
@@ -323,7 +494,7 @@ void apply_entrywise_binary_operator(const AbsMat& input1,
   // Launch CUDA kernel
   if (grid_dim > 0) {
     CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
-    entrywise_binary_operator_kernel<BinaryOperator>
+    entrywise_binary_operator_kernel<BinaryOp>
       <<<grid_dim, block_dim, 0, El::GPUManager::Stream()>>>(
         height, width,
         input1.LockedBuffer(), input1.LDim(),
@@ -337,17 +508,16 @@ void apply_entrywise_binary_operator(const AbsMat& input1,
  *  The input and output data must be on GPU, have the same
  *  dimensions, and be aligned.
  */
-template <typename UnaryOperator>
-void apply_entrywise_unary_operator(const AbsDistMat& input,
-                                    AbsDistMat& output) {
-  std::stringstream err;
+template <template <typename> class UnaryOperator, typename TensorDataType>
+void apply_entrywise_unary_operator(
+  const El::AbstractDistMatrix<TensorDataType>& input,
+  El::AbstractDistMatrix<TensorDataType>& output) {
   if (input.Height() != output.Height()
       || input.Width() != output.Width()) {
-    err << "input matrix dimensions "
-        << "(" << input.Height() << " x " << input.Width() << ")"
-        << "don't match output matrix dimensions "
-        << "(" << output.Height() << " x " << output.Width() << ")";
-    LBANN_ERROR(err.str());
+    LBANN_ERROR("input matrix dimensions "
+                "(", input.Height(), " x ", input.Width(), ")"
+                "don't match output matrix dimensions "
+                "(", output.Height(), " x ", output.Width(), ")");
   } else if (input.DistData() != output.DistData()) {
     LBANN_ERROR("input and output matrix distributions don't match");
   }
@@ -359,21 +529,20 @@ void apply_entrywise_unary_operator(const AbsDistMat& input,
  *  The input and output data must be on GPU, have the same
  *  dimensions, and be aligned.
  */
-template <typename BinaryOperator>
-void apply_entrywise_binary_operator(const AbsDistMat& input1,
-                                     const AbsDistMat& input2,
-                                     AbsDistMat& output) {
+template <template <typename> class BinaryOperator, typename TensorDataType>
+void apply_entrywise_binary_operator(
+  const El::AbstractDistMatrix<TensorDataType>& input1,
+  const El::AbstractDistMatrix<TensorDataType>& input2,
+  El::AbstractDistMatrix<TensorDataType>& output) {
   if (input1.Height() != input2.Height()
       || input1.Width() != input2.Width()
       || input1.Height() != output.Height()
       || input1.Width() != output.Width()) {
-    std::stringstream err;
-    err << "input matrix dimensions "
-        << "(" << input1.Height() << " x " << input1.Width() << ", "
-        << input2.Height() << " x " << input2.Width() << ")"
-        << "don't match output matrix dimensions "
-        << "(" << output.Height() << " x " << output.Width() << ")";
-    LBANN_ERROR(err.str());
+    LBANN_ERROR("input matrix dimensions "
+                "(", input1.Height(), " x ", input1.Width(), ", ",
+                input2.Height(), " x ", input2.Width(), ")"
+                "don't match output matrix dimensions "
+                "(", output.Height(), " x ", output.Width(), ")");
   } else if (input1.DistData() != input2.DistData()
              || input1.DistData() != output.DistData()) {
     LBANN_ERROR("input and output matrix distributions don't match");

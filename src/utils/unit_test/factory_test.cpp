@@ -83,7 +83,7 @@ TEMPLATE_TEST_CASE(
 
       THEN("The factory knows about two builders")
       {
-        auto names = factory.get_registered_keys();
+        auto names = factory.registered_ids();
         REQUIRE(std::distance(names.begin(), names.end()) == 2UL);
       }
       AND_WHEN("A builder is added with an existing key")
@@ -97,7 +97,7 @@ TEMPLATE_TEST_CASE(
 
         THEN("The factory still knows about only two factories")
         {
-          auto names = factory.get_registered_keys();
+          auto names = factory.registered_ids();
           REQUIRE(std::distance(names.begin(), names.end()) == 2UL);
         }
       }
@@ -130,7 +130,7 @@ TEMPLATE_TEST_CASE(
         THEN("The number of known factories has decreased.")
         {
           REQUIRE(success == true);
-          auto names = factory.get_registered_keys();
+          auto names = factory.registered_ids();
           REQUIRE(std::distance(names.begin(), names.end()) == 1UL);
         }
 

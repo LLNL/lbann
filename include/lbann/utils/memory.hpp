@@ -8,7 +8,7 @@ namespace lbann {
 
 #ifdef LBANN_HAS_STD_MAKE_UNIQUE
 
-using std::make_unique;
+using ::std::make_unique;
 
 #else
 
@@ -22,6 +22,13 @@ std::unique_ptr<T> make_unique(Ts&&... params)
 }
 
 #endif
+
+/** @brief Convert the raw pointer to a unique_ptr. */
+template <typename T>
+std::unique_ptr<T> to_unique_ptr(T* ptr)
+{
+  return std::unique_ptr<T>(ptr);
+}
 
 }// namespace lbann
 

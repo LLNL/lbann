@@ -1,32 +1,35 @@
-import os
-import os.path
 import datetime
+import os, os.path
+import subprocess
 import lbann
 import lbann.proto
 import lbann.launcher.slurm
 import lbann.launcher.lsf
+from lbann.util import make_iterable
 
 # ==============================================
 # Run experiments
 # ==============================================
 
-def run(model, data_reader, optimizer,
-        lbann_exe=lbann.lbann_exe(),
-        lbann_args='',
-        experiment_dir=None,
+def run(trainer, model, data_reader, optimizer,
+        work_dir=None,
         nodes=1,
         procs_per_node=1,
-        time_limit=60,
-        scheduler='slurm',
+        time_limit=None,
+        scheduler=None,
         job_name='lbann',
-        system=None,
         partition=None,
         account=None,
         reservation=None,
-        launcher_args='',
+        launcher_args=[],
+        lbann_exe=lbann.lbann_exe(),
+        lbann_args=[],
         environment={},
-        setup_only=False):
-    """Run LBANN experiment.
+        overwrite_script=False,
+        setup_only=False,
+        batch_job=False,
+        experiment_dir=None):
+    """Run LBANN.
 
     This is intended to interface with job schedulers on HPC
     clusters. It will either submit a batch job (if on a login node)
@@ -39,87 +42,207 @@ def run(model, data_reader, optimizer,
     can be set with the environment variable `LBANN_EXPERIMENT_DIR`.
 
     Args:
-        model (lbann.model.Model or lbann_pb2.Model): Neural network
+        trainer (lbann.Trainer): LBANN trainer.
+        model (lbann.Model): Neural network model.
+        data_reader (lbann.reader_pb2.DataReader): Data reader.
+        optimizer (lbann.model.Optimizer): Default optimizer for
             model.
-        data_reader (lbann_pb2.DataReader): Data reader.
-        optimizer (lbann.model.Model or lbann_pb2.Optimizer): Default
-            optimizer for model.
-        lbann_exe (str, optional): LBANN executable.
-        lbann_args (str, optional): Command-line arguments to LBANN
-            executable.
-        experiment_dir (str, optional): Experiment directory.
+        work_dir (str, optional): Working directory.
         nodes (int, optional): Number of compute nodes.
         procs_per_node (int, optional): Number of processes per compute
             node.
         time_limit (int, optional): Job time limit, in minutes.
         scheduler (str, optional): Job scheduler.
         job_name (str, optional): Batch job name.
-        system (str, optional): Target system.
         partition (str, optional): Scheduler partition.
         account (str, optional): Scheduler account.
         reservation (str, optional): Scheduler reservation name.
         launcher_args (str, optional): Command-line arguments to
             launcher.
+        lbann_exe (str, optional): LBANN executable.
+        lbann_args (str, optional): Command-line arguments to LBANN
+            executable.
         environment (dict of {str: str}, optional): Environment
             variables.
+        overwrite_script (bool, optional): Whether to overwrite script
+            file if it already exists.
         setup_only (bool, optional): If true, the experiment is not
             run after the experiment directory is initialized.
+        batch_job (bool, optional): If true, the experiment is
+            submitted to the scheduler as a batch job.
+        experiment_dir (str, optional, deprecated): See `work_dir`.
+
+    Returns:
+        int: Exit status.
 
     """
 
-    # Construct experiment directory if needed
-    if not experiment_dir:
-        if 'LBANN_EXPERIMENT_DIR' in os.environ:
-            experiment_dir = os.environ['LBANN_EXPERIMENT_DIR']
-        else:
-            experiment_dir = os.path.join(os.getcwd())
-        timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-        experiment_dir = os.path.join(experiment_dir,
-                                      '{}_{}'.format(timestamp, job_name))
-        i = 1
-        while os.path.lexists(experiment_dir):
-            i += 1
-            experiment_dir = os.path.join(
-                os.path.dirname(experiment_dir),
-                '{}_{}_{}'.format(timestamp, job_name, i))
-    experiment_dir = os.path.abspath(experiment_dir)
-    os.makedirs(experiment_dir, exist_ok=True)
+    # Create batch script generator
+    if not work_dir:
+        work_dir = experiment_dir
+    script = make_batch_script(work_dir=work_dir,
+                               nodes=nodes,
+                               procs_per_node=procs_per_node,
+                               time_limit=time_limit,
+                               scheduler=scheduler,
+                               job_name=job_name,
+                               partition=partition,
+                               account=account,
+                               reservation=reservation,
+                               launcher_args=launcher_args,
+                               environment=environment)
 
-    # Create experiment prototext file
-    prototext_file = os.path.join(experiment_dir, 'experiment.prototext')
+    # Batch script prints start time
+    script.add_command('echo "Started at $(date)"')
+
+    # Batch script invokes LBANN
+    lbann_command = [lbann_exe]
+    lbann_command.extend(make_iterable(lbann_args))
+    prototext_file = os.path.join(script.work_dir, 'experiment.prototext')
     lbann.proto.save_prototext(prototext_file,
-                               model = model,
-                               data_reader = data_reader,
-                               optimizer = optimizer)
-    lbann_args += ' --prototext=' + prototext_file
+                               trainer=trainer,
+                               model=model,
+                               data_reader=data_reader,
+                               optimizer=optimizer)
+    lbann_command.append('--prototext={}'.format(prototext_file))
+    script.add_parallel_command(lbann_command)
+    script.add_command('status=$?')
 
-    # Run experiment
+    # Batch script prints finish time and returns status
+    script.add_command('echo "Finished at $(date)"')
+    script.add_command('exit ${status}')
+
+    # Write, submit, or run batch script
+    status = 0
+    if setup_only:
+        script.write(overwrite=overwrite_script)
+    elif batch_job:
+        status = script.submit(overwrite=overwrite_script)
+    else:
+        status = script.run(overwrite=overwrite_script)
+    return status
+
+def make_batch_script(script_file=None,
+                      work_dir=None,
+                      nodes=1,
+                      procs_per_node=1,
+                      time_limit=None,
+                      scheduler=None,
+                      job_name='lbann',
+                      partition=None,
+                      account=None,
+                      reservation=None,
+                      launcher_args=[],
+                      environment={},
+                      experiment_dir=None):
+    """Construct batch script manager.
+
+    Attempts to detect a scheduler if one is not provided.
+
+    If a working directory is not provided, a timestamped directory is
+    created (by default in the current working directory). The
+    location of autogenerated working directories can be set with the
+    environment variable `LBANN_EXPERIMENT_DIR`.
+
+    Args:
+        script_file (str): Script file.
+        work_dir (str, optional): Working directory
+            (default: autogenerated, timestamped directory).
+        nodes (int, optional): Number of compute nodes
+            (default: 1).
+        procs_per_node (int, optional): Parallel processes per
+            compute node (default: 1).
+        time_limit (int, optional): Job time limit, in minutes.
+        scheduler (str, optional): Job scheduler
+            (default: autodetected scheduler).
+        job_name (str, optional): Job name (default: 'lbann').
+        partition (str, optional): Scheduler partition.
+        account (str, optional): Scheduler account.
+        reservation (str, optional): Scheduler advance reservation.
+        launcher_args (`Iterable` of `str`, optional):
+            Command-line arguments to parallel command launcher.
+        environment (`dict` of `{str: str}`, optional): Environment
+            variables.
+        experiment_dir (str, optional, deprecated): See `work_dir`.
+
+    Returns:
+        `lbann.launcher.batch_script.BatchScript`
+
+    """
+
+    # Try detecting job scheduler if not provided
+    if not scheduler:
+        try:
+            subprocess.call(['sbatch', '--version'],
+                            stdout=subprocess.DEVNULL,
+                            stderr=subprocess.DEVNULL)
+            scheduler = 'slurm'
+        except:
+            pass
+    if not scheduler:
+        try:
+            subprocess.call(['bsub', '-V'],
+                            stdout=subprocess.DEVNULL,
+                            stderr=subprocess.DEVNULL)
+            scheduler = 'lsf'
+        except:
+            pass
+    if not scheduler:
+        raise RuntimeError('could not detect job scheduler')
+
+    # Create work directory if not provided
+    if not work_dir:
+       work_dir = experiment_dir
+    if not work_dir:
+        if 'LBANN_EXPERIMENT_DIR' in os.environ:
+            work_dir = os.environ['LBANN_EXPERIMENT_DIR']
+        else:
+            work_dir = os.path.join(os.getcwd())
+        timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        work_dir = os.path.join(work_dir,
+                                '{}_{}'.format(timestamp, job_name))
+        i = 1
+        while os.path.lexists(work_dir):
+            i += 1
+            work_dir = os.path.join(
+                os.path.dirname(work_dir),
+                '{}_{}_{}'.format(timestamp, job_name, i))
+    work_dir = os.path.realpath(work_dir)
+    os.makedirs(work_dir, exist_ok=True)
+
+    # Create batch script manager
+    if not script_file:
+        script_file = os.path.join(work_dir, 'batch.sh')
+    script = None
     if scheduler.lower() in ('slurm', 'srun', 'sbatch'):
-        slurm.run(experiment_dir=experiment_dir,
-                  command='{} {}'.format(lbann_exe, lbann_args),
-                  nodes=nodes,
-                  procs_per_node=procs_per_node,
-                  time_limit=time_limit,
-                  job_name=job_name,
-                  partition=partition,
-                  account=account,
-                  reservation=reservation,
-                  srun_args=launcher_args,
-                  environment=environment,
-                  setup_only=setup_only)
+        script = lbann.launcher.slurm.SlurmBatchScript(
+            script_file=script_file,
+            work_dir=work_dir,
+            nodes=nodes,
+            procs_per_node=procs_per_node,
+            time_limit=time_limit,
+            job_name=job_name,
+            partition=partition,
+            account=account,
+            launcher_args=launcher_args)
     elif scheduler.lower() in ('lsf', 'jsrun', 'bsub'):
-        lsf.run(experiment_dir=experiment_dir,
-                command='{} {}'.format(lbann_exe, lbann_args),
-                nodes=nodes,
-                procs_per_node=procs_per_node,
-                time_limit=time_limit,
-                job_name=job_name,
-                partition=partition,
-                account=account,
-                reservation=reservation,
-                jsrun_args=launcher_args,
-                environment=environment,
-                setup_only=setup_only)
+        script = lbann.launcher.lsf.LSFBatchScript(
+            script_file=script_file,
+            work_dir=work_dir,
+            nodes=nodes,
+            procs_per_node=procs_per_node,
+            time_limit=time_limit,
+            job_name=job_name,
+            partition=partition,
+            account=account,
+            reservation=reservation,
+            launcher_args=launcher_args)
     else:
         raise RuntimeError('unsupported job scheduler ({})'
                            .format(scheduler))
+
+    # Set batch script environment
+    for variable, value in environment.items():
+        script.add_command('export {0}={1}'.format(variable, value))
+
+    return script

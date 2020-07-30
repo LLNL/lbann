@@ -85,16 +85,19 @@ cudnnHandle_t& get_handle() {
 // Helper functions for cuDNN types
 ////////////////////////////////////////////////////////////
 
+template <typename TensorDataType>
 cudnnDataType_t get_data_type() {
-  switch (sizeof(DataType)) {
-  case 2: return CUDNN_DATA_HALF;
-  case 4: return CUDNN_DATA_FLOAT;
-  case 8: return CUDNN_DATA_DOUBLE;
-  default: LBANN_ERROR("invalid data type for cuDNN");
-  }
+  LBANN_ERROR("invalid data type for cuDNN");
   return CUDNN_DATA_FLOAT;
 }
 
+#ifdef LBANN_HAS_GPU_FP16
+template <> cudnnDataType_t get_data_type<fp16>() { return CUDNN_DATA_HALF; }
+#endif // LBANN_HAS_GPU_FP16
+template <> cudnnDataType_t get_data_type<float>() { return CUDNN_DATA_FLOAT; }
+template <> cudnnDataType_t get_data_type<double>() { return CUDNN_DATA_DOUBLE; }
+
+template <typename TensorDataType>
 void set_tensor_desc(cudnnTensorDescriptor_t& desc,
                      std::vector<int> dims,
                      std::vector<int> strides) {
@@ -164,7 +167,7 @@ void set_tensor_desc(cudnnTensorDescriptor_t& desc,
     CHECK_CUDNN(cudnnCreateTensorDescriptor(&desc));
   }
   CHECK_CUDNN(cudnnSetTensorNdDescriptor(desc,
-                                         get_data_type(),
+                                         get_data_type<TensorDataType>(),
                                          dims.size(),
                                          dims.data(),
                                          strides.data()));
@@ -242,12 +245,14 @@ void copy_activation_desc(const cudnnActivationDescriptor_t& src,
 // Base cuDNN tensor manager
 ////////////////////////////////////////////////////////////
 
-layer_tensor_manager::layer_tensor_manager(const Layer* l)
+template <typename TensorDataType>
+layer_tensor_manager<TensorDataType>::layer_tensor_manager(const data_type_layer<TensorDataType>* l)
   : m_layer(nullptr) {
   set_layer(l);
 }
 
-layer_tensor_manager::layer_tensor_manager(const layer_tensor_manager& other)
+template <typename TensorDataType>
+layer_tensor_manager<TensorDataType>::layer_tensor_manager(const layer_tensor_manager<TensorDataType>& other)
   : m_layer(other.m_layer),
     m_prev_activations(other.m_prev_activations.size(), nullptr),
     m_activations(other.m_activations.size(), nullptr),
@@ -267,7 +272,8 @@ layer_tensor_manager::layer_tensor_manager(const layer_tensor_manager& other)
   }
 }
 
-layer_tensor_manager& layer_tensor_manager::operator=(const layer_tensor_manager& other) {
+template <typename TensorDataType>
+layer_tensor_manager<TensorDataType>& layer_tensor_manager<TensorDataType>::operator=(const layer_tensor_manager<TensorDataType>& other) {
 
   // Set layer being managed
   m_layer = other.m_layer;
@@ -297,7 +303,8 @@ layer_tensor_manager& layer_tensor_manager::operator=(const layer_tensor_manager
   return *this;
 }
 
-layer_tensor_manager::~layer_tensor_manager() {
+template <typename TensorDataType>
+layer_tensor_manager<TensorDataType>::~layer_tensor_manager() {
   for (auto&& desc : m_prev_activations) {
     if (desc != nullptr) { cudnnDestroyTensorDescriptor(desc); }
   }
@@ -312,13 +319,15 @@ layer_tensor_manager::~layer_tensor_manager() {
   }
 }
 
-void layer_tensor_manager::set_layer(const Layer* new_layer) {
+template <typename TensorDataType>
+void layer_tensor_manager<TensorDataType>::set_layer(const data_type_layer<TensorDataType>* new_layer) {
   m_layer = new_layer;
-  set_num_parents(m_layer == nullptr ? 0 : m_layer->get_num_parents());
-  set_num_children(m_layer == nullptr ? 0 : m_layer->get_num_children());
+  set_num_parents(this->m_layer == nullptr ? 0 : m_layer->get_num_parents());
+  set_num_children(this->m_layer == nullptr ? 0 : m_layer->get_num_children());
 }
 
-void layer_tensor_manager::set_num_parents(int num_parents) {
+template <typename TensorDataType>
+void layer_tensor_manager<TensorDataType>::set_num_parents(int num_parents) {
 #ifdef LBANN_DEBUG
   if (num_parents < 0) { LBANN_ERROR("negative number of parents"); }
 #endif // LBANN_DEBUG
@@ -338,7 +347,8 @@ void layer_tensor_manager::set_num_parents(int num_parents) {
   m_error_signals.resize(num_parents, nullptr);
 }
 
-void layer_tensor_manager::set_num_children(int num_children) {
+template <typename TensorDataType>
+void layer_tensor_manager<TensorDataType>::set_num_children(int num_children) {
 #ifdef LBANN_DEBUG
   if (num_children < 0) { LBANN_ERROR("negative number of children"); }
 #endif // LBANN_DEBUG
@@ -362,17 +372,19 @@ void layer_tensor_manager::set_num_children(int num_children) {
 // Data-parallel cuDNN tensor manager
 ////////////////////////////////////////////////////////////
 
-data_parallel_layer_tensor_manager
-::data_parallel_layer_tensor_manager(const Layer* l)
-  : layer_tensor_manager(l) {}
+template <typename TensorDataType>
+data_parallel_layer_tensor_manager<TensorDataType>
+::data_parallel_layer_tensor_manager(const data_type_layer<TensorDataType>* l)
+  : layer_tensor_manager<TensorDataType>(l) {}
 
 namespace {
 
 /** Set a cuDNN tensor descriptor for a data-parallel data layout.
  */
+template <typename TensorDataType>
 void set_data_parallel_tensor_desc(cudnnTensorDescriptor_t& desc,
                                    std::vector<int> dims,
-                                   const AbsMat& local_data) {
+                                   const El::AbstractMatrix<TensorDataType>& local_data) {
 #ifdef LBANN_DEBUG
   if (local_data.GetDevice() != El::Device::GPU) {
     LBANN_ERROR("attempted to setup cuDNN tensor with non-GPU data");
@@ -385,57 +397,61 @@ void set_data_parallel_tensor_desc(cudnnTensorDescriptor_t& desc,
     }
     dims.insert(dims.begin(), local_data.Width());
     strides.insert(strides.begin(), local_data.LDim());
-    set_tensor_desc(desc, dims, strides);
+    set_tensor_desc<TensorDataType>(desc, dims, strides);
   }
 }
 
 } // namespace
 
-cudnnTensorDescriptor_t& data_parallel_layer_tensor_manager::get_prev_activations(int parent_index) {
-  if (m_layer == nullptr) {
+template <typename TensorDataType>
+cudnnTensorDescriptor_t& data_parallel_layer_tensor_manager<TensorDataType>::get_prev_activations(int parent_index) {
+  if (this->m_layer == nullptr) {
     LBANN_ERROR("tensor manager is not managing a layer");
   }
-  const auto& local_data = m_layer->get_local_prev_activations(parent_index);
-  const auto& dims = m_layer->get_input_dims(parent_index);
-  set_num_parents(m_layer->get_num_parents());
-  auto& desc = m_prev_activations[parent_index];
-  set_data_parallel_tensor_desc(desc, dims, local_data);
+  const auto& local_data = this->m_layer->get_local_prev_activations(parent_index);
+  const auto& dims = this->m_layer->get_input_dims(parent_index);
+  this->set_num_parents(this->m_layer->get_num_parents());
+  auto& desc = this->m_prev_activations[parent_index];
+  set_data_parallel_tensor_desc<TensorDataType>(desc, dims, local_data);
   return desc;
 }
 
-cudnnTensorDescriptor_t& data_parallel_layer_tensor_manager::get_activations(int child_index) {
-  if (m_layer == nullptr) {
+template <typename TensorDataType>
+cudnnTensorDescriptor_t& data_parallel_layer_tensor_manager<TensorDataType>::get_activations(int child_index) {
+  if (this->m_layer == nullptr) {
     LBANN_ERROR("tensor manager is not managing a layer");
   }
-  const auto& local_data = m_layer->get_local_activations(child_index);
-  const auto& dims = m_layer->get_output_dims(child_index);
-  set_num_children(m_layer->get_num_children());
-  auto& desc = m_activations[child_index];
-  set_data_parallel_tensor_desc(desc, dims, local_data);
+  const auto& local_data = this->m_layer->get_local_activations(child_index);
+  const auto& dims = this->m_layer->get_output_dims(child_index);
+  this->set_num_children(this->m_layer->get_num_children());
+  auto& desc = this->m_activations[child_index];
+  set_data_parallel_tensor_desc<TensorDataType>(desc, dims, local_data);
   return desc;
 }
 
-cudnnTensorDescriptor_t& data_parallel_layer_tensor_manager::get_prev_error_signals(int child_index) {
-  if (m_layer == nullptr) {
+template <typename TensorDataType>
+cudnnTensorDescriptor_t& data_parallel_layer_tensor_manager<TensorDataType>::get_prev_error_signals(int child_index) {
+  if (this->m_layer == nullptr) {
     LBANN_ERROR("tensor manager is not managing a layer");
   }
-  const auto& local_data = m_layer->get_local_prev_error_signals(child_index);
-  const auto& dims = m_layer->get_output_dims(child_index);
-  set_num_children(m_layer->get_num_children());
-  auto& desc = m_prev_error_signals[child_index];
-  set_data_parallel_tensor_desc(desc, dims, local_data);
+  const auto& local_data = this->m_layer->get_local_prev_error_signals(child_index);
+  const auto& dims = this->m_layer->get_output_dims(child_index);
+  this->set_num_children(this->m_layer->get_num_children());
+  auto& desc = this->m_prev_error_signals[child_index];
+  set_data_parallel_tensor_desc<TensorDataType>(desc, dims, local_data);
   return desc;
 }
 
-cudnnTensorDescriptor_t& data_parallel_layer_tensor_manager::get_error_signals(int parent_index) {
-  if (m_layer == nullptr) {
+template <typename TensorDataType>
+cudnnTensorDescriptor_t& data_parallel_layer_tensor_manager<TensorDataType>::get_error_signals(int parent_index) {
+  if (this->m_layer == nullptr) {
     LBANN_ERROR("tensor manager is not managing a layer");
   }
-  const auto& local_data = m_layer->get_local_error_signals(parent_index);
-  const auto& dims = m_layer->get_input_dims(parent_index);
-  set_num_parents(m_layer->get_num_parents());
-  auto& desc = m_error_signals[parent_index];
-  set_data_parallel_tensor_desc(desc, dims, local_data);
+  const auto& local_data = this->m_layer->get_local_error_signals(parent_index);
+  const auto& dims = this->m_layer->get_input_dims(parent_index);
+  this->set_num_parents(this->m_layer->get_num_parents());
+  auto& desc = this->m_error_signals[parent_index];
+  set_data_parallel_tensor_desc<TensorDataType>(desc, dims, local_data);
   return desc;
 }
 
@@ -443,9 +459,10 @@ cudnnTensorDescriptor_t& data_parallel_layer_tensor_manager::get_error_signals(i
 // Entry-wise cuDNN tensor manager
 ////////////////////////////////////////////////////////////
 
-entrywise_layer_tensor_manager
-::entrywise_layer_tensor_manager(const Layer* l)
-  : layer_tensor_manager(l) {}
+template <typename TensorDataType>
+entrywise_layer_tensor_manager<TensorDataType>
+::entrywise_layer_tensor_manager(const data_type_layer<TensorDataType>* l)
+  : layer_tensor_manager<TensorDataType>(l) {}
 
 namespace {
 
@@ -455,8 +472,9 @@ namespace {
  *  a*b*c=height. This is because cuDNN is optimized for 4D tensors
  *  and gets poor performance with 1D tensors and 2D tensors.
  */
+template <typename TensorDataType>
 void set_entrywise_tensor_desc(cudnnTensorDescriptor_t& desc,
-                               const AbsMat& local_data) {
+                               const El::AbstractMatrix<TensorDataType>& local_data) {
 #ifdef LBANN_DEBUG
   if (local_data.GetDevice() != El::Device::GPU) {
     LBANN_ERROR("attempted to setup cuDNN tensor with non-GPU data");
@@ -476,7 +494,7 @@ void set_entrywise_tensor_desc(cudnnTensorDescriptor_t& desc,
     }
 
     // Set cuDNN tensor descriptor with 4D tensor
-    set_tensor_desc(desc,
+    set_tensor_desc<TensorDataType>(desc,
                     {width, factors[2], factors[1], factors[0]},
                     {ldim, factors[1]*factors[0], factors[0], 1});
 
@@ -485,47 +503,51 @@ void set_entrywise_tensor_desc(cudnnTensorDescriptor_t& desc,
 
 } // namespace
 
-cudnnTensorDescriptor_t& entrywise_layer_tensor_manager::get_prev_activations(int parent_index) {
-  if (m_layer == nullptr) {
+template <typename TensorDataType>
+cudnnTensorDescriptor_t& entrywise_layer_tensor_manager<TensorDataType>::get_prev_activations(int parent_index) {
+  if (this->m_layer == nullptr) {
     LBANN_ERROR("tensor manager is not managing a layer");
   }
-  const auto& local_data = m_layer->get_local_prev_activations(parent_index);
-  set_num_parents(m_layer->get_num_parents());
-  auto& desc = m_prev_activations[parent_index];
-  set_entrywise_tensor_desc(desc, local_data);
+  const auto& local_data = this->m_layer->get_local_prev_activations(parent_index);
+  this->set_num_parents(this->m_layer->get_num_parents());
+  auto& desc = this->m_prev_activations[parent_index];
+  set_entrywise_tensor_desc<TensorDataType>(desc, local_data);
   return desc;
 }
 
-cudnnTensorDescriptor_t& entrywise_layer_tensor_manager::get_activations(int child_index) {
-  if (m_layer == nullptr) {
+template <typename TensorDataType>
+cudnnTensorDescriptor_t& entrywise_layer_tensor_manager<TensorDataType>::get_activations(int child_index) {
+  if (this->m_layer == nullptr) {
     LBANN_ERROR("tensor manager is not managing a layer");
   }
-  const auto& local_data = m_layer->get_local_activations(child_index);
-  set_num_children(m_layer->get_num_children());
-  auto& desc = m_activations[child_index];
-  set_entrywise_tensor_desc(desc, local_data);
+  const auto& local_data = this->m_layer->get_local_activations(child_index);
+  this->set_num_children(this->m_layer->get_num_children());
+  auto& desc = this->m_activations[child_index];
+  set_entrywise_tensor_desc<TensorDataType>(desc, local_data);
   return desc;
 }
 
-cudnnTensorDescriptor_t& entrywise_layer_tensor_manager::get_prev_error_signals(int child_index) {
-  if (m_layer == nullptr) {
+template <typename TensorDataType>
+cudnnTensorDescriptor_t& entrywise_layer_tensor_manager<TensorDataType>::get_prev_error_signals(int child_index) {
+  if (this->m_layer == nullptr) {
     LBANN_ERROR("tensor manager is not managing a layer");
   }
-  const auto& local_data = m_layer->get_local_prev_error_signals(child_index);
-  set_num_children(m_layer->get_num_children());
-  auto& desc = m_prev_error_signals[child_index];
-  set_entrywise_tensor_desc(desc, local_data);
+  const auto& local_data = this->m_layer->get_local_prev_error_signals(child_index);
+  this->set_num_children(this->m_layer->get_num_children());
+  auto& desc = this->m_prev_error_signals[child_index];
+  set_entrywise_tensor_desc<TensorDataType>(desc, local_data);
   return desc;
 }
 
-cudnnTensorDescriptor_t& entrywise_layer_tensor_manager::get_error_signals(int parent_index) {
-  if (m_layer == nullptr) {
+template <typename TensorDataType>
+cudnnTensorDescriptor_t& entrywise_layer_tensor_manager<TensorDataType>::get_error_signals(int parent_index) {
+  if (this->m_layer == nullptr) {
     LBANN_ERROR("tensor manager is not managing a layer");
   }
-  const auto& local_data = m_layer->get_local_error_signals(parent_index);
-  set_num_parents(m_layer->get_num_parents());
-  auto& desc = m_error_signals[parent_index];
-  set_entrywise_tensor_desc(desc, local_data);
+  const auto& local_data = this->m_layer->get_local_error_signals(parent_index);
+  this->set_num_parents(this->m_layer->get_num_parents());
+  auto& desc = this->m_error_signals[parent_index];
+  set_entrywise_tensor_desc<TensorDataType>(desc, local_data);
   return desc;
 }
 
@@ -860,6 +882,31 @@ cudnnConvolutionBwdFilterAlgo_t get_bwd_filter_algorithm(
                                          kernel_gradient_desc, ws_size);
   }
 }
+
+namespace {
+cudnnMathType_t default_tensor_ops_mode = CUDNN_DEFAULT_MATH;
+}
+
+void default_to_tensor_ops() noexcept
+{
+  default_tensor_ops_mode = CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION;
+}
+
+cudnnMathType_t get_default_convolution_math_type() noexcept
+{
+  return default_tensor_ops_mode;
+}
+
+#define PROTO(T)                                       \
+  template cudnnDataType_t get_data_type<T>();                   \
+  template void set_tensor_desc<T>(cudnnTensorDescriptor_t&, std::vector<int>, std::vector<int>); \
+  template class layer_tensor_manager<T>;               \
+  template class data_parallel_layer_tensor_manager<T>; \
+  template class entrywise_layer_tensor_manager<T>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace cudnn
 } // namespace lbann

@@ -27,68 +27,83 @@
 #ifndef LBANN_LAYERS_MATH_BINARY_HPP_INCLUDED
 #define LBANN_LAYERS_MATH_BINARY_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
 
-/** @brief Templated class for entry-wise binary layers.
- *  @param Layout   Parallelism scheme.
- *  @param Device   Device allocation.
- *  @param Name     Type that can be converted into a string.
- */
-template <data_layout Layout, El::Device Device, typename Name>
-class entrywise_binary_layer : public Layer {
-public:
-
-  entrywise_binary_layer(lbann_comm *comm) : Layer(comm) {
-    this->m_expected_num_parent_layers = 2;
-  }
-  entrywise_binary_layer* copy() const override {
-    return new entrywise_binary_layer<Layout,Device,Name>(*this);
-  }
-  std::string get_type() const override { return Name(); }
-  data_layout get_data_layout() const override { return Layout; }
-  El::Device get_device_allocation() const override { return Device; }
-
-protected:
-
-  void setup_dims() override {
-    Layer::setup_dims();
-    set_output_dims(get_input_dims());
-
-    // Check that input dimensions match
-    if (get_input_dims(0) != get_input_dims(1)) {
-      const auto& parents = get_parent_layers();
-      std::stringstream err;
-      err << get_type() << " layer \"" << get_name() << "\" "
-          << "has input tensors with different dimensions (";
-      for (int i = 0; i < get_num_parents(); ++i) {
-        const auto& dims = get_input_dims(i);
-        err << (i > 0 ? ", " : "")
-            << "layer \"" << parents[i]->get_name() << "\" outputs ";
-        for (size_t j = 0; j < dims.size(); ++j) {
-          err << (j > 0 ? " x " : "") << dims[j];
-        }
-      }
-      err << ")";
-      LBANN_ERROR(err.str());
-    }
-
+#define LBANN_DECLARE_ENTRYWISE_BINARY_LAYER(LAYER_NAME, LAYER_STRING)      \
+  template <typename TensorDataType, data_layout Layout, El::Device Device> \
+  class LAYER_NAME : public data_type_layer<TensorDataType> {               \
+  public:                                                                   \
+    LAYER_NAME(lbann_comm *comm) : data_type_layer<TensorDataType>(comm) {  \
+      this->m_expected_num_parent_layers = 2;                               \
+    }                                                                       \
+    LAYER_NAME* copy() const override {                                     \
+      return new LAYER_NAME<TensorDataType,Layout,Device>(*this);           \
+    }                                                                       \
+    std::string get_type() const override { return LAYER_STRING; }          \
+    data_layout get_data_layout() const override { return Layout; }         \
+    El::Device get_device_allocation() const override { return Device; }    \
+  protected:                                                                \
+    void setup_dims(DataReaderMetaData& dr_metadata) override {                                            \
+      data_type_layer<TensorDataType>::setup_dims(dr_metadata);                        \
+      this->set_output_dims(this->get_input_dims());                        \
+      /* Check that input dimensions match */                               \
+      if (this->get_input_dims(0) != this->get_input_dims(1)) {             \
+        const auto& parents = this->get_parent_layers();                    \
+        std::stringstream err;                                              \
+        err << this->get_type() << " layer \"" << this->get_name() << "\" " \
+            << "has input tensors with different dimensions (";             \
+        for (int i = 0; i < this->get_num_parents(); ++i) {                 \
+          const auto& dims = this->get_input_dims(i);                       \
+          err << (i > 0 ? ", " : "")                                        \
+              << "layer \"" << parents[i]->get_name() << "\" outputs ";     \
+          for (size_t j = 0; j < dims.size(); ++j) {                        \
+            err << (j > 0 ? " x " : "") << dims[j];                         \
+          }                                                                 \
+        }                                                                   \
+        err << ")";                                                         \
+        LBANN_ERROR(err.str());                                             \
+      }                                                                     \
+    }                                                                       \
+    void fp_compute() override;                                             \
+    void bp_compute() override;                                             \
   }
 
-  void fp_compute() override;
-  void bp_compute() override;
+// Convenience macros for ETI decls for binary layers
 
-};
+#ifndef LBANN_BINARY_LAYER_INSTANTIATE
+#define BINARY_ETI_DECL_MACRO_DEV(LAYER_NAME, T, DEVICE)                   \
+  extern template class LAYER_NAME<T, data_layout::DATA_PARALLEL, DEVICE>; \
+  extern template class LAYER_NAME<T, data_layout::MODEL_PARALLEL, DEVICE>
+#else
+#define BINARY_ETI_DECL_MACRO_DEV(...)
+#endif // LBANN_BINARY_LAYER_INSTANTIATE
+
+// Instnatiate both data and model parallel layers
+#define BINARY_ETI_INST_MACRO_DEV_DT(LAYER_NAME, T, DEVICE)             \
+  template class LAYER_NAME<T, data_layout::DATA_PARALLEL, DEVICE>;  \
+  template class LAYER_NAME<T, data_layout::MODEL_PARALLEL, DEVICE>
+
+// Instantiate a DEVICE for each allowed tensor data type
+#define BINARY_ETI_INST_MACRO_DEV(LAYER_NAME, DEVICE)      \
+  BINARY_ETI_INST_MACRO_DEV_DT(LAYER_NAME, float, DEVICE); \
+  BINARY_ETI_INST_MACRO_DEV_DT(LAYER_NAME, double, DEVICE)
+
+#ifdef LBANN_HAS_GPU
+#define BINARY_ETI_DECL_MACRO(LAYER_NAME, T)                 \
+  BINARY_ETI_DECL_MACRO_DEV(LAYER_NAME, T, El::Device::CPU); \
+  BINARY_ETI_DECL_MACRO_DEV(LAYER_NAME, T, El::Device::GPU)
+#else
+#define BINARY_ETI_DECL_MACRO(LAYER_NAME, T)                 \
+  BINARY_ETI_DECL_MACRO_DEV(LAYER_NAME, T, El::Device::CPU)
+#endif // LBANN_HAS_GPU
 
 // Convenience macro to define an entry-wise binary layer class
 #define DEFINE_ENTRYWISE_BINARY_LAYER(layer_name, layer_string)         \
-  struct layer_name##_name_struct {                                     \
-    inline operator std::string() { return layer_string; }              \
-  };                                                                    \
-  template <data_layout Layout, El::Device Device>                      \
-  using layer_name                                                      \
-  = entrywise_binary_layer<Layout, Device, layer_name##_name_struct>;
+  LBANN_DECLARE_ENTRYWISE_BINARY_LAYER(layer_name, layer_string);       \
+  BINARY_ETI_DECL_MACRO(layer_name, float);                             \
+  BINARY_ETI_DECL_MACRO(layer_name, double)
 
 // Arithmetic operations
 DEFINE_ENTRYWISE_BINARY_LAYER(add_layer,                "add");
@@ -118,4 +133,7 @@ DEFINE_ENTRYWISE_BINARY_LAYER(logical_xor_layer, "logical xor");
 } // namespace lbann
 
 #undef DEFINE_ENTRYWISE_BINARY_LAYER
+#undef BINARY_ETI_DECL_MACRO
+#undef BINARY_ETI_DECL_MACRO_DEV
+
 #endif // LBANN_LAYERS_MATH_BINARY_HPP_INCLUDED

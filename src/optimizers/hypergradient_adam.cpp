@@ -26,25 +26,29 @@
 
 #include "lbann/optimizers/hypergradient_adam.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/memory.hpp"
+
+#include <optimizers.pb.h>
 
 namespace lbann {
 
-hypergradient_adam::hypergradient_adam(lbann_comm *comm,
-                                       DataType init_learning_rate,
-                                       DataType hyper_learning_rate,
-                                       DataType beta1,
-                                       DataType beta2,
-                                       DataType eps)
-  : optimizer(comm, init_learning_rate),
+template <typename TensorDataType>
+hypergradient_adam<TensorDataType>::hypergradient_adam(TensorDataType init_learning_rate,
+                                                       TensorDataType hyper_learning_rate,
+                                                       TensorDataType beta1,
+                                                       TensorDataType beta2,
+                                                       TensorDataType eps)
+  : BaseType(init_learning_rate),
     m_hyper_learning_rate(hyper_learning_rate),
     m_beta1(beta1),
     m_beta2(beta2),
     m_eps(eps),
-    m_current_beta1(1),
-    m_current_beta2(1) {}
+    m_current_beta1(1.),
+    m_current_beta2(1.) {}
 
-hypergradient_adam::hypergradient_adam(const hypergradient_adam& other)
-  : optimizer(other),
+template <typename TensorDataType>
+hypergradient_adam<TensorDataType>::hypergradient_adam(const hypergradient_adam& other)
+  : BaseType(other),
     m_hyper_learning_rate(other.m_hyper_learning_rate),
     m_beta1(other.m_beta1),
     m_beta2(other.m_beta2),
@@ -56,8 +60,9 @@ hypergradient_adam::hypergradient_adam(const hypergradient_adam& other)
     m_old_gradient(other.m_old_gradient ?
                    other.m_old_gradient->Copy() : nullptr) {}
 
-hypergradient_adam& hypergradient_adam::operator=(const hypergradient_adam& other) {
-  optimizer::operator=(other);
+template <typename TensorDataType>
+hypergradient_adam<TensorDataType>& hypergradient_adam<TensorDataType>::operator=(const hypergradient_adam<TensorDataType>& other) {
+  OptimizerType::operator=(other);
   m_hyper_learning_rate = other.m_hyper_learning_rate;
   m_beta1 = other.m_beta1;
   m_beta2 = other.m_beta2;
@@ -71,8 +76,9 @@ hypergradient_adam& hypergradient_adam::operator=(const hypergradient_adam& othe
   return *this;
 }
 
-description hypergradient_adam::get_description() const {
-  auto&& desc = optimizer::get_description();
+template <typename TensorDataType>
+description hypergradient_adam<TensorDataType>::get_description() const {
+  auto desc = OptimizerType::get_description();
   desc.add("Hypergradient learning rate", m_hyper_learning_rate);
   desc.add("beta1", m_beta1);
   desc.add("beta2", m_beta2);
@@ -80,19 +86,21 @@ description hypergradient_adam::get_description() const {
   return desc;
 }
 
-void hypergradient_adam::setup(weights* w) {
-  optimizer::setup(w);
+template <typename TensorDataType>
+void hypergradient_adam<TensorDataType>::setup(WeightsType* w) {
+  OptimizerType::setup(w);
   const auto& gradient = this->get_gradient();
-  m_moment1.reset(AbsDistMat::Instantiate(gradient.DistData()));
-  m_moment2.reset(AbsDistMat::Instantiate(gradient.DistData()));
-  m_old_gradient.reset(AbsDistMat::Instantiate(gradient.DistData()));
+  m_moment1.reset(AbsDistMatrixType::Instantiate(gradient.DistData()));
+  m_moment2.reset(AbsDistMatrixType::Instantiate(gradient.DistData()));
+  m_old_gradient.reset(AbsDistMatrixType::Instantiate(gradient.DistData()));
   El::Zeros(*m_moment1, gradient.Height(), gradient.Width());
   El::Zeros(*m_moment2, gradient.Height(), gradient.Width());
   El::Zeros(*m_old_gradient, gradient.Height(), gradient.Width());
 }
 
-void hypergradient_adam::step_compute(AbsDistMat& values,
-                                      const AbsDistMat& gradient) {
+template <typename TensorDataType>
+void hypergradient_adam<TensorDataType>::step_compute(AbsDistMatrixType& values,
+                                                      const AbsDistMatrixType& gradient) {
   if (values.GetLocalDevice() != El::Device::CPU) {
     LBANN_ERROR("hypergradient Adam is only supported on CPU");
   }
@@ -100,15 +108,15 @@ void hypergradient_adam::step_compute(AbsDistMat& values,
   // Precompute the bias correction.
   m_current_beta1 *= m_beta1;
   m_current_beta2 *= m_beta2;
-  const DataType correction = std::sqrt(DataType(1) - m_current_beta2) /
-                              (DataType(1) - m_current_beta1);
+  const TensorDataType correction = El::Sqrt(TensorDataType(1.) - m_current_beta2) /
+                              (TensorDataType(1.) - m_current_beta1);
 
   // Get local matrix data
   const size_t local_height = values.LocalHeight();
   const size_t local_width = values.LocalWidth();
   auto* __restrict__ values_buffer = values.Buffer();
   const size_t values_ldim = values.LDim();
-  const DataType* __restrict__ gradient_buffer = gradient.LockedBuffer();
+  const TensorDataType* __restrict__ gradient_buffer = gradient.LockedBuffer();
   const size_t gradient_ldim = gradient.LDim();
   auto* __restrict__ moment1_buffer = m_moment1->Buffer();
   const size_t moment1_ldim = m_moment1->LDim();
@@ -118,7 +126,7 @@ void hypergradient_adam::step_compute(AbsDistMat& values,
   const size_t old_gradient_ldim = m_old_gradient->LDim();
 
   // Compute the learning rate update.
-  DataType lr_update = El::Dot(gradient, *m_old_gradient);
+  TensorDataType lr_update = El::Dot(gradient, *m_old_gradient);
   auto learning_rate = this->get_learning_rate();
   learning_rate += m_hyper_learning_rate * lr_update;
   this->set_learning_rate(learning_rate);
@@ -132,20 +140,19 @@ void hypergradient_adam::step_compute(AbsDistMat& values,
       auto& m1 = moment1_buffer[row+col*moment1_ldim];
       auto& m2 = moment2_buffer[row+col*moment2_ldim];
       auto& old_c = old_gradient_buffer[row+col*old_gradient_ldim];
-      m1 = m_beta1 * m1 + (DataType(1) - m_beta1) * g;
-      m2 = m_beta2 * m2 + (DataType(1) - m_beta2) * g * g;
-      old_c = correction * m1 / (std::sqrt(m2) + m_eps);
+      m1 = m_beta1 * m1 + (TensorDataType(1.) - m_beta1) * g;
+      m2 = m_beta2 * m2 + (TensorDataType(1.) - m_beta2) * g * g;
+      old_c = correction * m1 / (El::Sqrt(m2) + m_eps);
       x -= learning_rate * old_c;
     }
   }
 
 }
 
-bool hypergradient_adam::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
-  if(p.get_cb_type() == callback_type::batch)
-    optimizer::save_to_checkpoint_shared(p,name_prefix);
-  if (get_comm().am_trainer_master()) {
-    pack_scalars(p);
+template <typename TensorDataType>
+bool hypergradient_adam<TensorDataType>::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
+  if (this->get_comm().am_trainer_master()) {
+    write_cereal_archive(*this, p, "hypergradient_adam.xml");
   }
 
   char l_name[512];
@@ -161,17 +168,9 @@ bool hypergradient_adam::save_to_checkpoint_shared(persist& p, std::string name_
   return true;
 }
 
-bool hypergradient_adam::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
-  if(p.get_cb_type() == callback_type::batch)
-    optimizer::load_from_checkpoint_shared(p,name_prefix);
-  struct packing_header header;
-  if (get_comm().am_trainer_master()) {
-    unpack_scalars(p, &header);
-  }
-
-  get_comm().trainer_broadcast(0, header);
-
-  unpack_header(header);
+template <typename TensorDataType>
+bool hypergradient_adam<TensorDataType>::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
+  load_from_shared_cereal_archive(*this, p, this->get_comm(), "hypergradient_adam.xml");
 
   char l_name[512];
   sprintf(l_name, "%s_optimizer_adam_moment1_%lldx%lld.bin", name_prefix.c_str(), m_moment1->Height(), m_moment2->Width());
@@ -185,10 +184,9 @@ bool hypergradient_adam::load_from_checkpoint_shared(persist& p, std::string nam
   return true;
 }
 
-bool hypergradient_adam::save_to_checkpoint_distributed(persist& p, std::string name_prefix) {
-  if(p.get_cb_type() == callback_type::batch)
-    optimizer::save_to_checkpoint_distributed(p,name_prefix);
-  pack_scalars(p);
+template <typename TensorDataType>
+bool hypergradient_adam<TensorDataType>::save_to_checkpoint_distributed(persist& p, std::string name_prefix) {
+  write_cereal_archive(*this, p, "hypergradient_adam.xml");
 
   char l_name[512];
   sprintf(l_name, "%s_optimizer_adam_moment1_%lldx%lld", name_prefix.c_str(), m_moment1->Height(), m_moment2->Width());
@@ -203,11 +201,9 @@ bool hypergradient_adam::save_to_checkpoint_distributed(persist& p, std::string 
   return true;
 }
 
-bool hypergradient_adam::load_from_checkpoint_distributed(persist& p, std::string name_prefix) {
-  if(p.get_cb_type() == callback_type::batch)
-    optimizer::load_from_checkpoint_distributed(p,name_prefix);
-  struct packing_header header;
-  unpack_scalars(p, &header);
+template <typename TensorDataType>
+bool hypergradient_adam<TensorDataType>::load_from_checkpoint_distributed(persist& p, std::string name_prefix) {
+  read_cereal_archive(*this, p, "hypergradient_adam.xml");
 
   char l_name[512];
   sprintf(l_name, "%s_optimizer_adam_moment1_%lldx%lld", name_prefix.c_str(), m_moment1->Height(), m_moment2->Width());
@@ -220,5 +216,29 @@ bool hypergradient_adam::load_from_checkpoint_distributed(persist& p, std::strin
   p.read_rank_distmat(persist_type::train, l_name, *m_old_gradient);
   return true;
 }
+
+template <typename TensorDataType>
+std::unique_ptr<optimizer>
+build_hypergradient_adam_optimizer_from_pbuf(
+  google::protobuf::Message const& msg) {
+  const auto& params =
+    dynamic_cast<lbann_data::Optimizer::HypergradientAdam const&>(msg);
+  return make_unique<hypergradient_adam<TensorDataType>>(
+    TensorDataType(params.init_learning_rate()),
+    TensorDataType(params.hyper_learning_rate()),
+    TensorDataType(params.beta1()),
+    TensorDataType(params.beta2()),
+    TensorDataType(params.eps()));
+}
+
+#define PROTO(T)                                    \
+  template class hypergradient_adam<T>;             \
+  template std::unique_ptr<optimizer>               \
+  build_hypergradient_adam_optimizer_from_pbuf<T>(  \
+    google::protobuf::Message const&)
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 }  // namespace lbann

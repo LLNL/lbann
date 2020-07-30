@@ -28,19 +28,22 @@
 #include "lbann/utils/exception.hpp"
 
 namespace lbann {
-generic_io_buffer::generic_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers)
+template <typename TensorDataType>
+generic_io_buffer<TensorDataType>::generic_io_buffer(lbann_comm *comm, int num_parallel_readers)
   : m_comm(comm), fetch_data_fn(nullptr),  update_data_reader_fn(nullptr) {}
 
-generic_io_buffer::generic_io_buffer(const generic_io_buffer& rhs)
+template <typename TensorDataType>
+generic_io_buffer<TensorDataType>::generic_io_buffer(const generic_io_buffer& rhs)
 : m_comm(rhs.m_comm)
 {
   if (rhs.fetch_data_fn)
-    fetch_data_fn = new fetch_data_functor(*(rhs.fetch_data_fn));
+    fetch_data_fn = new fetch_data_functor<IODataType>(*(rhs.fetch_data_fn));
   if (rhs.update_data_reader_fn)
     update_data_reader_fn = new update_data_reader_functor(*(rhs.update_data_reader_fn));
 }
 
-generic_io_buffer& generic_io_buffer::operator=(const generic_io_buffer& rhs) {
+template <typename TensorDataType>
+generic_io_buffer<TensorDataType>& generic_io_buffer<TensorDataType>::operator=(const generic_io_buffer<TensorDataType>& rhs) {
   m_comm = rhs.m_comm;
   if (fetch_data_fn) {
     delete fetch_data_fn;
@@ -51,11 +54,18 @@ generic_io_buffer& generic_io_buffer::operator=(const generic_io_buffer& rhs) {
     update_data_reader_fn = nullptr;
   }
   if (rhs.fetch_data_fn)
-    fetch_data_fn = new fetch_data_functor(*(rhs.fetch_data_fn));
+    fetch_data_fn = new fetch_data_functor<IODataType>(*(rhs.fetch_data_fn));
   if (rhs.update_data_reader_fn)
     update_data_reader_fn = new update_data_reader_functor(*(rhs.update_data_reader_fn));
 
   return (*this);
 }
+
+#define PROTO(T)                      \
+  template class generic_io_buffer<T>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

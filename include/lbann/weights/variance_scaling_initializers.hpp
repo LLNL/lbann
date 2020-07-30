@@ -28,6 +28,7 @@
 #define LBANN_WEIGHTS_VARIANCE_SCALING_INITIALIZER_HPP
 
 #include "lbann/weights/initializer.hpp"
+#include "lbann/utils/cloneable.hpp"
 #include "lbann/utils/random.hpp"
 
 namespace lbann {
@@ -42,20 +43,33 @@ namespace lbann {
  *  with layers that set fan-in and fan-out parameters, e.g. the
  *  convolution and fully-connected layers.
  */
-class variance_scaling_initializer : public weights_initializer {
+template <typename TensorDataType>
+class variance_scaling_initializer
+  : public Cloneable<
+      HasAbstractFunction<variance_scaling_initializer<TensorDataType>>,
+      data_type_weights_initializer<TensorDataType>> {
+public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+  ///@}
+
 public:
   variance_scaling_initializer(probability_distribution dist);
-  description get_description() const;
-  void fill(AbsDistMat& matrix) override;
+  description get_description() const override;
+  void fill(AbsDistMatrixType& matrix) override;
 
   /** Set fan-in parameter. */
   void set_fan_in(El::Int fan_in) { m_fan_in = fan_in; }
   /** Set fan-out parameter. */
   void set_fan_out(El::Int fan_out) { m_fan_out = fan_out; }
 
-protected:
+private:
   /** Get probability distribution variance. */
-  virtual DataType get_variance(El::Int fan_in, El::Int fan_out) = 0;
+  virtual TensorDataType get_variance(El::Int fan_in, El::Int fan_out) = 0;
 
 private:
   /** Probability distribution. */
@@ -71,43 +85,76 @@ private:
  *
  *  Also called Xavier initialization.
  */
-class glorot_initializer : public variance_scaling_initializer {
+template <typename TensorDataType>
+class glorot_initializer
+  : public Cloneable<glorot_initializer<TensorDataType>,
+                     variance_scaling_initializer<TensorDataType>> {
+  using BaseType = Cloneable<glorot_initializer<TensorDataType>,
+                             variance_scaling_initializer<TensorDataType>>;
 public:
   glorot_initializer(probability_distribution prob_dist)
-    : variance_scaling_initializer(prob_dist) {}
-  glorot_initializer* copy() const override {
-    return new glorot_initializer(*this);
-  }
-  std::string get_type() const { return "Glorot"; }
-protected:
-  DataType get_variance(El::Int fan_in, El::Int fan_out) override;
+    : BaseType(prob_dist) {}
+  std::string get_type() const override { return "Glorot"; }
+private:
+  TensorDataType get_variance(El::Int fan_in, El::Int fan_out) override;
 };
 
 /** @brief Fill weights with variance of 2 / fan-in. */
-class he_initializer : public variance_scaling_initializer {
+template <typename TensorDataType>
+class he_initializer
+  : public Cloneable<he_initializer<TensorDataType>,
+                     variance_scaling_initializer<TensorDataType>> {
+  using BaseType = Cloneable<he_initializer<TensorDataType>,
+                             variance_scaling_initializer<TensorDataType>>;
 public:
   he_initializer(probability_distribution prob_dist)
-    : variance_scaling_initializer(prob_dist) {}
-  he_initializer* copy() const override {
-    return new he_initializer(*this);
-  }
-  std::string get_type() const { return "He"; }
-protected:
-  DataType get_variance(El::Int fan_in, El::Int fan_out) override;
+    : BaseType(prob_dist) {}
+  std::string get_type() const override { return "He"; }
+private:
+  TensorDataType get_variance(El::Int fan_in, El::Int fan_out) override;
 };
 
 /** @brief Fill weights with variance of 1 / fan-in. */
-class lecun_initializer : public variance_scaling_initializer {
+template <typename TensorDataType>
+class lecun_initializer
+  : public Cloneable<lecun_initializer<TensorDataType>,
+                     variance_scaling_initializer<TensorDataType>> {
+  using BaseType = Cloneable<lecun_initializer<TensorDataType>,
+                             variance_scaling_initializer<TensorDataType>>;
 public:
   lecun_initializer(probability_distribution prob_dist)
-    : variance_scaling_initializer(prob_dist) {}
-  lecun_initializer* copy() const override {
-    return new lecun_initializer(*this);
-  }
-  std::string get_type() const { return "LeCun"; }
-protected:
-  DataType get_variance(El::Int fan_in, El::Int fan_out) override;
+    : BaseType(prob_dist) {}
+  std::string get_type() const override { return "LeCun"; }
+private:
+  TensorDataType get_variance(El::Int fan_in, El::Int fan_out) override;
 };
+
+void set_fan_in(weights_initializer& initializer, double value);
+void set_fan_out(weights_initializer& initializer, double value);
+
+template <typename TensorDataType>
+std::unique_ptr<weights_initializer>
+build_glorot_initializer_from_pbuf(google::protobuf::Message const& msg);
+template <typename TensorDataType>
+std::unique_ptr<weights_initializer>
+build_he_initializer_from_pbuf(google::protobuf::Message const& msg);
+template <typename TensorDataType>
+std::unique_ptr<weights_initializer>
+build_lecun_initializer_from_pbuf(google::protobuf::Message const& msg);
+
+#ifndef LBANN_VARIANCE_SCALING_INITIALIZER_INSTANTIATE
+#define PROTO(T)                               \
+  extern template class glorot_initializer<T>; \
+  extern template class he_initializer<T>;     \
+  extern template class lecun_initializer<T>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
+#undef PROTO
+#undef LBANN_INSTANTIATE_CPU_HALF
+#undef LBANN_INSTANTIATE_GPU_HALF
+#endif // LBANN_VARIANCE_SCALING_INITIALIZER_INSTANTIATE
 
 } // namespace lbann
 

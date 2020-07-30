@@ -38,12 +38,14 @@ namespace lbann {
  *  one and the rest to zero. Ties are broken in favor of entries with
  *  smaller indices.
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
-class in_top_k_layer : public transform_layer {
+template <typename TensorDataType,
+          data_layout T_layout = data_layout::DATA_PARALLEL,
+          El::Device Dev = El::Device::CPU>
+class in_top_k_layer : public transform_layer<TensorDataType> {
  public:
 
   in_top_k_layer(lbann_comm *comm, El::Int k)
-    : transform_layer(comm), m_k(k) {
+    : transform_layer<TensorDataType>(comm), m_k(k) {
     if (m_k < 0) {
       std::stringstream err;
       err << "invalid parameter for top-k search (k=" << m_k << ")";
@@ -57,16 +59,16 @@ class in_top_k_layer : public transform_layer {
   El::Device get_device_allocation() const override { return Dev; }
 
   description get_description() const override {
-    auto&& desc = transform_layer::get_description();
+    auto desc = transform_layer<TensorDataType>::get_description();
     desc.add("k", m_k);
     return desc;
   }
 
  protected:
 
-  void setup_dims() override {
-    Layer::setup_dims();
-    set_output_dims(get_input_dims());
+  void setup_dims(DataReaderMetaData& dr_metadata) override {
+    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+    this->set_output_dims(this->get_input_dims());
   }
 
   void fp_compute() override;
@@ -77,6 +79,15 @@ class in_top_k_layer : public transform_layer {
   const El::Int m_k;
 
 };
+
+#ifndef LBANN_IN_TOP_K_LAYER_INSTANTIATE
+#define PROTO_DEVICE(T, Device) \
+  extern template class in_top_k_layer<T, data_layout::DATA_PARALLEL, Device>; \
+  extern template class in_top_k_layer<T, data_layout::MODEL_PARALLEL, Device>
+
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+#endif // LBANN_IN_TOP_K_LAYER_INSTANTIATE
 
 } // namespace lbann
 

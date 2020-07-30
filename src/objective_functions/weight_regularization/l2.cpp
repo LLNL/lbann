@@ -29,30 +29,35 @@
 #ifdef LBANN_HAS_GPU
 #include "lbann/utils/cublas.hpp"
 #endif // LBANN_HAS_GPU
+#include "lbann/optimizers/data_type_optimizer.hpp"
+#include "lbann/weights/data_type_weights.hpp"
+#include "lbann/utils/h2_tmp.hpp"
 
 namespace lbann {
 
 template <>
-void l2_weight_regularization::accumulate_contribution<El::Device::CPU>(const CPUMat& vals,
-                                                                        CPUMat& contribution) {
+void l2_weight_regularization::accumulate_contribution<El::Device::CPU>(const CPUMatType& vals,
+                                                                        CPUMatType& contribution) {
   auto& sqsum = contribution(0, 0);
-  if (vals.IsEmpty()) {
-  } else if (vals.Contiguous()) {
-    const size_t size = vals.Height() * vals.Width();
-    const auto& __restrict__ vals_buf = vals.LockedBuffer();
-    LBANN_OMP_PARALLEL_FOR_ARGS(reduction(+:sqsum))
-    for (size_t i = 0; i < size; ++i) {
-      const auto& val = vals_buf[i];
-      sqsum += val * val;
-    }
-  } else {
-    const El::Int height = vals.Height();
-    const El::Int width = vals.Width();
-    LBANN_OMP_PARALLEL_FOR_ARGS(reduction(+:sqsum) collapse(2))
-    for (El::Int col = 0; col < width; ++col) {
-      for (El::Int row = 0; row < height; ++row) {
-        const EvalType val = vals(row, col);
+  if (!vals.IsEmpty()) {
+    if (vals.Contiguous()) {
+      const size_t size = vals.Height() * vals.Width();
+      const auto& __restrict__ vals_buf = vals.LockedBuffer();
+      LBANN_OMP_PARALLEL_FOR_ARGS(reduction(+:sqsum))
+      for (size_t i = 0; i < size; ++i) {
+        const auto& val = vals_buf[i];
         sqsum += val * val;
+      }
+    }
+    else {
+      const El::Int height = vals.Height();
+      const El::Int width = vals.Width();
+      LBANN_OMP_PARALLEL_FOR_ARGS(reduction(+:sqsum) collapse(2))
+      for (El::Int col = 0; col < width; ++col) {
+        for (El::Int row = 0; row < height; ++row) {
+          const EvalType val = vals(row, col);
+          sqsum += val * val;
+        }
       }
     }
   }
@@ -66,7 +71,8 @@ void l2_weight_regularization::setup(model& m) {
 
   // Check that term has no layer pointers
   if (!m_layers.empty()) {
-    LBANN_ERROR("attempted to setup L2 weight regularization with layer pointers");
+    LBANN_ERROR("attempted to setup L2 weight regularization "
+                "with no layer pointers");
   }
 
   // Add all weights in model if no weights pointers are provided
@@ -76,7 +82,7 @@ void l2_weight_regularization::setup(model& m) {
 
   // Construct accumulation variables for each device
   for (auto* w : m_weights) {
-    const auto& device = w->get_values().GetLocalDevice();
+    const auto& device = dynamic_cast<WeightsType*>(w)->get_values().GetLocalDevice();
     if (m_contributions.count(device) == 0) {
 #ifdef LBANN_HAS_GPU
       m_contributions[device].SetMemoryMode(1); // Pinned memory
@@ -96,16 +102,16 @@ void l2_weight_regularization::start_evaluation() {
     auto& contribution = m_contributions[El::Device::CPU];
     contribution(0, 0) = DataType(0);
     for (El::Int i = 0; i < num_weights; ++i) {
-      const auto& vals = m_weights[i]->get_values();
+      const auto& vals = dynamic_cast<WeightsType*>(m_weights[i])->get_values();
       if (vals.GetLocalDevice() == El::Device::CPU
           && vals.Participating()
           && vals.RedundantRank() == i % vals.RedundantSize()) {
         accumulate_contribution<El::Device::CPU>(
-          static_cast<const CPUMat&>(vals.LockedMatrix()),
+          static_cast<const CPUMatType&>(vals.LockedMatrix()),
           contribution);
       }
     }
-    get_comm().nb_allreduce(static_cast<AbsMat&>(contribution),
+    get_comm().nb_allreduce(static_cast<El::AbstractMatrix<AccumulateDataType>&>(contribution),
                             get_comm().get_trainer_comm(),
                             m_allreduce_req);
   }
@@ -114,22 +120,22 @@ void l2_weight_regularization::start_evaluation() {
   // Compute contributions from GPU weights
   if (m_contributions.count(El::Device::GPU) > 0) {
     auto&& stream = El::GPUManager::Stream();
-    GPUMat contribution;
+    DMatType<El::Device::GPU> contribution;
 #ifdef HYDROGEN_HAVE_CUB
     contribution.SetMemoryMode(1); // CUB GPU memory pool
 #endif // HYDROGEN_HAVE_CUB
     El::Zeros(contribution, 1, 1);
     for (El::Int i = 0; i < num_weights; ++i) {
-      const auto& vals = m_weights[i]->get_values();
+      const auto& vals = dynamic_cast<WeightsType*>(m_weights[i])->get_values();
       if (vals.GetLocalDevice() == El::Device::GPU
           && vals.Participating()
           && vals.RedundantRank() == i % vals.RedundantSize()) {
         accumulate_contribution<El::Device::GPU>(
-          static_cast<const GPUMat&>(vals.LockedMatrix()),
+          static_cast<const DMatType<El::Device::GPU>&>(vals.LockedMatrix()),
           contribution);
       }
     }
-    get_comm().allreduce(static_cast<AbsMat&>(contribution),
+    get_comm().allreduce(static_cast<El::AbstractMatrix<AccumulateDataType>&>(contribution),
                          get_comm().get_trainer_comm());
     CHECK_CUDA(cudaMemcpyAsync(m_contributions[El::Device::GPU].Buffer(),
                                contribution.LockedBuffer(),
@@ -158,12 +164,53 @@ EvalType l2_weight_regularization::finish_evaluation() {
   return m_scale_factor * sqsum / 2;
 }
 
+// Somewhat hacky approach to avoid a BaseDistMat implementation of
+// optimizer::add_to_gradient, since this is literally the only
+// use-case. Given the line count, this was clearly the way to go... :/
+namespace {
+struct AddToGrad {
+  AddToGrad(optimizer& opt, EvalType scale_factor)
+    : opt_{&opt},
+      scale_{scale_factor}
+  {}
+  void DispatchError(El::BaseDistMatrix const&) {
+    LBANN_ERROR("Unable to dispatch!");
+  }
+  void DeductionError(El::BaseDistMatrix const&) {
+    LBANN_ERROR("Unable to deduce type!");
+  }
+  template <typename T>
+  void operator()(El::AbstractDistMatrix<T> const& contrib) {
+    opt_->add_to_gradient(contrib, El::To<T>(scale_));
+  }
+  optimizer* opt_;
+  EvalType scale_;
+};// struct AddToGrad
+
+using ValidDataTypes = h2::meta::TL<
+#ifdef LBANN_HAS_GPU_FP16
+  fp16,
+#endif
+#ifdef LBANN_HAS_HALF
+  cpu_fp16,
+#endif
+  float, double>;
+
+using MatTypes =
+  h2::meta::tlist::ExpandTL<El::AbstractDistMatrix, ValidDataTypes>;
+
+using DispatcherType =
+  h2::multimethods::SwitchDispatcher<AddToGrad,
+                                     void,
+                                     El::BaseDistMatrix, MatTypes>;
+}
+
 void l2_weight_regularization::compute_weight_regularization() {
   if (m_scale_factor == EvalType(0)) { return; }
-  for (auto&& w : m_weights) {
-    auto&& opt = w->get_optimizer();
+  for (auto* w : m_weights) {
+    auto* opt = w->get_optimizer();
     if (opt != nullptr) {
-      opt->add_to_gradient(w->get_values(), m_scale_factor);
+      DispatcherType::Exec(AddToGrad(*opt, m_scale_factor), w->get_values());
     }
   }
 }

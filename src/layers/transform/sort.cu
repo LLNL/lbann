@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_SORT_LAYER_INSTANTIATE
 #include "lbann/layers/transform/sort.hpp"
 #include "lbann/utils/cuda.hpp"
 #include "lbann/utils/exception.hpp"
@@ -36,14 +37,13 @@
 
 namespace lbann {
 
-template <>
-void sort_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
-     ::fp_compute() {
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void sort_layer<TensorDataType, T_layout, Dev>::fp_compute() {
 
   // Local matrices
-  const auto& local_input = get_local_prev_activations();
-  auto& local_output = get_local_activations();
-  auto& local_indices = *m_indices;
+  const auto& local_input = this->get_local_prev_activations();
+  auto& local_output = this->get_local_activations();
+  auto& local_indices = *this->m_indices;
   const auto& local_height = local_input.Height();
   const auto& local_width = local_input.Width();
 
@@ -54,31 +54,30 @@ void sort_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
   // Sort each matrix column
   El::Copy(local_input, local_output);
   for (El::Int col = 0; col < local_width; ++col) {
-    ::thrust::device_ptr<DataType> vals(local_output.Buffer(0, col));
+    ::thrust::device_ptr<TensorDataType> vals(local_output.Buffer(0, col));
     ::thrust::device_ptr<El::Int> inds(local_indices.Buffer(0, col));
     ::thrust::sequence(thrust::cuda::par(alloc).on(stream),
                        inds, inds + local_height);
-    if (m_descending) {
+    if (this->m_descending) {
       ::thrust::sort_by_key(thrust::cuda::par(alloc).on(stream),
                             vals, vals + local_height, inds,
-                            ::thrust::greater<DataType>());
+                            ::thrust::greater<TensorDataType>());
     } else {
       ::thrust::sort_by_key(thrust::cuda::par(alloc).on(stream),
                             vals, vals + local_height, inds,
-                            ::thrust::less<DataType>());
+                            ::thrust::less<TensorDataType>());
     }
   }
 
 }
 
-template <>
-void sort_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
-     ::bp_compute() {
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void sort_layer<TensorDataType, T_layout, Dev>::bp_compute() {
 
   // Local matrices
-  const auto& local_gradient_wrt_output = get_local_prev_error_signals();
-  auto& local_gradient_wrt_input = get_local_error_signals();
-  const auto& local_indices = *m_indices;
+  const auto& local_gradient_wrt_output = this->get_local_prev_error_signals();
+  auto& local_gradient_wrt_input = this->get_local_error_signals();
+  const auto& local_indices = *this->m_indices;
   const auto& local_height = local_gradient_wrt_input.Height();
   const auto& local_width = local_gradient_wrt_input.Width();
 
@@ -88,14 +87,20 @@ void sort_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
 
   // Scatter gradients based on sorted indices
   for (El::Int col = 0; col < local_width; ++col) {
-    const ::thrust::device_ptr<const El::Int> inds(m_indices->LockedBuffer(0, col));
-    const ::thrust::device_ptr<const DataType> grad_wrt_out(local_gradient_wrt_output.LockedBuffer(0, col));
-    ::thrust::device_ptr<DataType> grad_wrt_in(local_gradient_wrt_input.Buffer(0, col));
+    const ::thrust::device_ptr<const El::Int> inds(this->m_indices->LockedBuffer(0, col));
+    const ::thrust::device_ptr<const TensorDataType> grad_wrt_out(local_gradient_wrt_output.LockedBuffer(0, col));
+    ::thrust::device_ptr<TensorDataType> grad_wrt_in(local_gradient_wrt_input.Buffer(0, col));
     ::thrust::scatter(thrust::cuda::par(alloc).on(stream),
                       grad_wrt_out, grad_wrt_out + local_height, inds,
                       grad_wrt_in);
   }
 
 }
+
+#define PROTO(T)                                      \
+  template class sort_layer<T, data_layout::DATA_PARALLEL, El::Device::GPU>
+
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

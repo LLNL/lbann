@@ -1,14 +1,25 @@
-#ifndef __LBANN_THREAD_POOL_HPP__
-#define __LBANN_THREAD_POOL_HPP__
+#ifndef LBANN_UTILS_THREADS_THREAD_POOL_HPP_INCLUDED
+#define LBANN_UTILS_THREADS_THREAD_POOL_HPP_INCLUDED
 
-#include <future>
-#include <thread>
-#include <vector>
-#include <unordered_map>
+#include "lbann_config.hpp"
 
 #include "thread_safe_queue.hpp"
 #include "type_erased_function.hpp"
 #include "lbann/utils/exception.hpp"
+
+#if defined(LBANN_TOPO_AWARE)
+#include <hwloc.h>
+#if defined(HWLOC_API_VERSION) && (HWLOC_API_VERSION < 0x00010b00)
+#define HWLOC_OBJ_NUMANODE HWLOC_OBJ_NODE
+#endif
+#endif
+
+#include <sched.h>
+
+#include <future>
+#include <thread>
+#include <unordered_map>
+#include <vector>
 
 namespace lbann {
 
@@ -111,8 +122,9 @@ public:
 private:
   /** @brief The task executed by each thread */
   void do_thread_work_();
-  void do_thread_work_pinned_thread_(int tid, cpu_set_t cpu_set);
-
+#if defined(LBANN_TOPO_AWARE)
+  void do_thread_work_pinned_thread_(int tid, hwloc_topology_t topo, hwloc_cpuset_t cpuset);
+#endif // LBANN_TOPO_AWARE
 private:
 
   /** @brief Container holding the threads */
@@ -138,4 +150,4 @@ private:
 };// class thread_pool
 
 }// namespace lbann
-#endif /* __LBANN_THREAD_POOL_HPP__ */
+#endif /* LBANN_UTILS_THREADS_THREAD_POOL_HPP_INCLUDED */

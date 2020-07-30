@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_MISC_COVARIANCE_HPP_INCLUDED
 #define LBANN_LAYERS_MISC_COVARIANCE_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
 
@@ -43,22 +43,31 @@ namespace lbann {
  *  Scaling by @f$ 1/n @f$ instead of @f$ 1/(n-1) @f$ is a biased
  *  estimator.
  */
-template <data_layout Layout, El::Device Device>
-class covariance_layer : public Layer {
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+class covariance_layer : public data_type_layer<TensorDataType> {
+public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+  ///@}
+
 public:
 
   covariance_layer(lbann_comm *comm, bool biased)
-    : Layer(comm), m_biased(biased) {
+    : data_type_layer<TensorDataType>(comm), m_biased(biased) {
     this->m_expected_num_parent_layers = 2;
   }
   covariance_layer(const covariance_layer& other)
-    : Layer(other),
+    : data_type_layer<TensorDataType>(other),
       m_biased(other.m_biased),
       m_means(other.m_means ? other.m_means->Copy() : nullptr),
       m_workspace(other.m_workspace ?
                   other.m_workspace->Copy() : nullptr) {}
   covariance_layer& operator=(const covariance_layer& other) {
-    Layer::operator=(other);
+    data_type_layer<TensorDataType>::operator=(other);
     m_biased = other.m_biased;
     m_means.reset(other.m_means ? other.m_means->Copy() : nullptr);
     m_workspace.reset(other.m_workspace ?
@@ -72,7 +81,7 @@ public:
   El::Device get_device_allocation() const override { return Device; }
 
   description get_description() const override {
-    auto&& desc = Layer::get_description();
+    auto desc = data_type_layer<TensorDataType>::get_description();
     desc.add("Biased", m_biased);
     return desc;
   }
@@ -80,23 +89,23 @@ public:
 protected:
 
   void setup_matrices(const El::Grid& grid) override {
-    Layer::setup_matrices(grid);
-    auto dist_data = get_prev_activations().DistData();
+    data_type_layer<TensorDataType>::setup_matrices(grid);
+    auto dist_data = this->get_prev_activations().DistData();
     dist_data.colDist = El::STAR;
-    m_means.reset(AbsDistMat::Instantiate(dist_data));
-    m_workspace.reset(AbsDistMat::Instantiate(dist_data));
+    m_means.reset(AbsDistMatrixType::Instantiate(dist_data));
+    m_workspace.reset(AbsDistMatrixType::Instantiate(dist_data));
   }
 
-  void setup_dims() override {
-    Layer::setup_dims();
-    set_output_dims({1});
-    if (get_input_dims(0) != get_input_dims(1)) {
-      const auto& parents = get_parent_layers();
+  void setup_dims(DataReaderMetaData& dr_metadata) override {
+    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+    this->set_output_dims({1});
+    if (this->get_input_dims(0) != this->get_input_dims(1)) {
+      const auto& parents = this->get_parent_layers();
       std::stringstream err;
-      err << get_type() << " layer \"" << get_name() << "\" "
+      err << get_type() << " layer \"" << this->get_name() << "\" "
           << "has input tensors with different dimensions (";
-      for (int i = 0; i < get_num_parents(); ++i) {
-        const auto& dims = get_input_dims(i);
+      for (int i = 0; i < this->get_num_parents(); ++i) {
+        const auto& dims = this->get_input_dims(i);
         err << (i > 0 ? ", " : "")
             << "layer \"" << parents[i]->get_name() << "\" outputs ";
         for (size_t j = 0; j < dims.size(); ++j) {
@@ -117,11 +126,20 @@ private:
   bool m_biased;
 
   /** Means for each mini-batch sample.  */
-  std::unique_ptr<AbsDistMat> m_means;
+  std::unique_ptr<AbsDistMatrixType> m_means;
   /** Workspace. */
-  std::unique_ptr<AbsDistMat> m_workspace;
+  std::unique_ptr<AbsDistMatrixType> m_workspace;
 
 };
+
+#ifndef LBANN_COVARIANCE_LAYER_INSTANTIATE
+#define PROTO_DEVICE(T, Device) \
+  extern template class covariance_layer<T, data_layout::DATA_PARALLEL, Device>; \
+  extern template class covariance_layer<T, data_layout::MODEL_PARALLEL, Device>
+
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+#endif // LBANN_COVARIANCE_LAYER_INSTANTIATE
 
 } // namespace lbann
 

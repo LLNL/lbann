@@ -28,19 +28,38 @@
 #define LBANN_LAYERS_LEARNING_DECONVOLUTION_HPP_INCLUDED
 
 #include "lbann/layers/learning/base_convolution.hpp"
-#include "lbann/utils/exception.hpp"
+#include "lbann/utils/distconv.hpp"
 
 namespace lbann {
 
 // Forward declaration.
-class lbann_callback_imcomm;
+namespace callback {
+class imcomm;
+}
+
+#ifdef LBANN_HAS_DISTCONV
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+class deconvolution_distconv_adapter: public base_convolution_adapter<TensorDataType, Device> {
+ public:
+  using TensorDevType = typename base_convolution_adapter<TensorDataType, Device>::TensorDevType;
+
+  deconvolution_distconv_adapter(Layer& layer): base_convolution_adapter<TensorDataType, Device>(layer) {}
+  virtual ~deconvolution_distconv_adapter() = default;
+
+  void setup_distributions(tensor_overlap_constraints &constraints) override;
+  void setup_layer(size_t workspace_capacity) override;
+  dc::Shape get_activations_local_shape(int index=0) const override;
+};
+#endif // LBANN_HAS_DISTCONV
 
 /** @brief Transpose of the convolution layer. */
-template <data_layout Layout = data_layout::DATA_PARALLEL, El::Device Device = El::Device::CPU>
-class deconvolution_layer : public base_convolution_layer<Device> {
+template <typename TensorDataType, data_layout Layout = data_layout::DATA_PARALLEL, El::Device Device = El::Device::CPU>
+class deconvolution_layer : public base_convolution_layer<TensorDataType, Device> {
+  static_assert(Layout == data_layout::DATA_PARALLEL,
+                "deconvolution layer only supports DATA_PARALLEL");
 private:
 
-  friend class lbann_callback_imcomm;
+  friend class callback::imcomm;
 
 public:
 
@@ -52,16 +71,7 @@ public:
                       int stride,
                       int dilation,
                       int groups,
-                      bool has_bias = true)
-    : deconvolution_layer(comm,
-                          num_data_dims,
-                          num_output_channels,
-                          std::vector<int>(num_data_dims, conv_dim),
-                          std::vector<int>(num_data_dims, pad),
-                          std::vector<int>(num_data_dims, stride),
-                          std::vector<int>(num_data_dims, dilation),
-                          groups,
-                          has_bias) {}
+                      bool has_bias = true);
 
   deconvolution_layer(lbann_comm *comm,
                       int num_data_dims,
@@ -71,23 +81,11 @@ public:
                       std::vector<int> strides,
                       std::vector<int> dilations,
                       int groups,
-                      bool has_bias = true)
-    : base_convolution_layer<Device>(
-        comm,
-        num_data_dims,
-        num_output_channels,
-        std::move(conv_dims),
-        std::move(pads),
-        std::move(strides),
-        std::move(dilations),
-        groups,
-        has_bias) {
-    static_assert(Layout == data_layout::DATA_PARALLEL,
-                  "deconvolution layer only supports DATA_PARALLEL");
+                      bool has_bias = true);
 
+  deconvolution_layer* copy() const override {
+    return new deconvolution_layer(*this);
   }
-
-  deconvolution_layer* copy() const override { return new deconvolution_layer(*this); }
 
   std::string get_type() const override { return "deconvolution"; }
 
@@ -95,84 +93,31 @@ public:
 
   El::Device get_device_allocation() const override { return Device; }
 
-  void setup_dims() override {
-    base_convolution_layer<Device>::setup_dims();
-    std::stringstream err;
-
-    // Get tensor dimensions
-    const auto& input_dims = this->get_input_dims();
-    auto output_dims = input_dims;
-
-    // Check for unsupported features
-    /// @todo Implement dilated and grouped deconvolution
-    if (std::any_of(this->m_dilations.begin(),
-                    this->m_dilations.end(),
-                    [] (int d) { return d != 1; })) {
-      err << this->get_type() << " layer "
-          << "\"" << this->get_name() << "\" "
-          << "has non-unit dilations (";
-      for (size_t i = 0; i < this->m_dilations.size(); ++i) {
-        err << (i > 0 ? ", " : "") << this->m_dilations[i];
-      }
-      err << ")";
-      LBANN_ERROR(err.str());
-    }
-    if (this->m_groups != 1) {
-      err << this->get_type() << " layer "
-          << "\"" << this->get_name() << "\" "
-          << "has non-unit groups "
-          << "(" << this->m_groups << ")";
-      LBANN_ERROR(err.str());
-    }
-
-    // Initialize output tensor dimensions
-    /// @todo Dilated deconvolution
-    output_dims[0] = this->m_output_channels;
-    for (size_t i = 0; i < output_dims.size() - 1; ++i) {
-      const auto& input_dim = input_dims[i+1];
-      const auto& kernel_dim = this->m_conv_dims[i];
-      const auto& stride = this->m_strides[i];
-      const auto& pad = this->m_pads[i];
-      // const auto& dilation = this->m_dilations[i];
-      output_dims[i+1] = (input_dim-1) * stride + kernel_dim - 2 * pad;
-    }
-    this->set_output_dims(output_dims);
-
-  }
+  void setup_dims(DataReaderMetaData& dr_metadata) override;
 
 protected:
 
-  std::vector<int> get_kernel_dims() const {
-    std::vector<int> dims;
-    dims.push_back(this->get_input_dims()[0]);
-    dims.push_back(this->m_output_channels);
-    dims.insert(dims.end(),
-                this->m_conv_dims.begin(),
-                this->m_conv_dims.end());
-    return dims;
-  }
+  std::vector<int> get_kernel_dims() const override;
+  void fp_compute() override;
+  void bp_compute() override;
 
-  void fp_compute() override {
-    if(this->using_gpus()) {
-      base_convolution_layer<Device>::apply_transposed_convolution_cudnn(true);
-      base_convolution_layer<Device>::apply_bias_cudnn();
-    } else {
-      base_convolution_layer<Device>::apply_transposed_convolution_im2col(true);
-      base_convolution_layer<Device>::apply_bias_cpu();
-    }
-  }
-
-  void bp_compute() override {
-    if(this->using_gpus()) {
-      base_convolution_layer<Device>::compute_gradients_cudnn(true);
-      base_convolution_layer<Device>::apply_convolution_cudnn(false);
-    } else {
-      base_convolution_layer<Device>::compute_gradients_im2col(true);
-      base_convolution_layer<Device>::apply_convolution_im2col(false);
-    }
-  }
-
+#ifdef LBANN_HAS_DISTCONV
+  friend class deconvolution_distconv_adapter<TensorDataType, Layout, Device>;
+ protected:
+  void setup_distconv_adapter() override;
+  bool is_distconv_supported() const override;
+#endif // LBANN_HAS_DISTCONV
 };
+
+#ifndef LBANN_DECONVOLUTION_LAYER_INSTANTIATE
+
+#define PROTO_DEVICE(T, Device) \
+  extern template class deconvolution_layer<T, data_layout::DATA_PARALLEL, Device>;
+
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+
+#endif // LBANN_DECONVOLUTION_LAYER_INSTANTIATE
 
 } // namespace lbann
 

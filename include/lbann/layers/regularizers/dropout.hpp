@@ -28,7 +28,9 @@
 #define LBANN_LAYER_REGULARIZER_DROPOUT_HPP_INCLUDED
 
 #include "lbann/layers/regularizers/regularizer.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/utils/cudnn.hpp"
+#include "lbann/utils/random_number_generators.hpp"
 
 namespace lbann {
 
@@ -43,13 +45,22 @@ namespace lbann {
  *  prevent neural networks from overfitting." The Journal of Machine
  *  Learning Research 15, no. 1 (2014): 1929-1958.
  */
-template <data_layout T_layout, El::Device Dev>
-class dropout : public regularizer_layer {
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+class dropout : public regularizer_layer<TensorDataType> {
+public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+  ///@}
+
 public:
   /** Keep units with probabiliy keep_prob. */
   dropout(lbann_comm *comm,
           EvalType keep_prob = EvalType(0.5))
-    : regularizer_layer(comm),
+    : regularizer_layer<TensorDataType>(comm),
       m_keep_prob(keep_prob)
 #ifdef LBANN_HAS_CUDNN
     , m_dropout_cudnn_desc(nullptr),
@@ -58,7 +69,7 @@ public:
   {
 #if defined(LBANN_HAS_CUDNN) && defined(LBANN_DETERMINISTIC)
     /// @todo GPU implementation of dropout with sequential consistency
-    if (Dev == El::Device::GPU && get_comm()->am_trainer_master()) {
+    if (Dev == El::Device::GPU && this->get_comm()->am_trainer_master()) {
       std::cerr << "Warning: GPU dropout currently does not guarantee "
                 << "sequential consistency" << std::endl;
     }
@@ -66,7 +77,7 @@ public:
   }
 
   dropout(const dropout& other)
-    : regularizer_layer(other),
+    : regularizer_layer<TensorDataType>(other),
       m_keep_prob(other.m_keep_prob),
       m_mask(other.m_mask ? other.m_mask->Copy() : nullptr)
 #ifdef LBANN_HAS_CUDNN
@@ -85,9 +96,9 @@ public:
   }
 
   dropout& operator=(const dropout& other) {
-    regularizer_layer::operator=(other);
+    regularizer_layer<TensorDataType>::operator=(other);
     m_keep_prob = other.m_keep_prob;
-    m_mask = other.m_mask ? other.m_mask->Copy() : nullptr;
+    m_mask = other.m_mask ? std::unique_ptr<AbsDistMatrixType>(other.m_mask->Copy()) : nullptr;
 #ifdef LBANN_HAS_CUDNN
     m_tensors_cudnn_desc = other.m_tensors_cudnn_desc;
     m_tensors_cudnn_desc.set_layer(this);
@@ -117,25 +128,33 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
   description get_description() const override {
-    auto&& desc = regularizer_layer::get_description();
+    auto desc = regularizer_layer<TensorDataType>::get_description();
     desc.add("Keep probability", m_keep_prob);
     return desc;
+  }
+  /** @brief get prob for keep each unit. */
+  EvalType get_keep_prob() const {
+    return m_keep_prob;
+  }
+  /** @brief set prob for keep each unit. */
+  void set_keep_prob(EvalType keep_prob) {
+    m_keep_prob = keep_prob;
   }
 
 protected:
 
-  void setup_dims() override {
-    regularizer_layer::setup_dims();
-    set_output_dims(get_input_dims());
+  void setup_dims(DataReaderMetaData& dr_metadata) override {
+    regularizer_layer<TensorDataType>::setup_dims(dr_metadata);
+    this->set_output_dims(this->get_input_dims());
   }
 
   void setup_matrices(const El::Grid& grid) override {
-    regularizer_layer::setup_matrices(grid);
-    m_mask = std::unique_ptr<AbsDistMat>(get_activations().Copy());
+    regularizer_layer<TensorDataType>::setup_matrices(grid);
+    m_mask = std::unique_ptr<AbsDistMatrixType>(this->get_activations().Copy());
   }
 
   void setup_gpu() override {
-    regularizer_layer::setup_gpu();
+    regularizer_layer<TensorDataType>::setup_gpu();
 #ifndef LBANN_HAS_CUDNN
     LBANN_ERROR("cuDNN not detected");
 #else
@@ -147,7 +166,7 @@ protected:
   }
 
   void fp_compute () override {
-    if (using_gpus()) {
+    if (this->using_gpus()) {
       fp_compute_gpu();
     } else {
       fp_compute_cpu();
@@ -155,7 +174,7 @@ protected:
   }
 
   void bp_compute () override {
-    if (using_gpus()) {
+    if (this->using_gpus()) {
       bp_compute_gpu();
     } else {
       bp_compute_cpu();
@@ -167,31 +186,31 @@ protected:
   void fp_compute_cpu() {
 
     // Matrices
-    const auto& input = get_prev_activations();
-    auto& output = get_activations();
+    const auto& input = this->get_prev_activations();
+    auto& output = this->get_activations();
 
     // Do nothing if dropout is disabled
-    const auto& mode = this->m_model->get_execution_mode();
+    const auto& mode = this->m_model->get_execution_context().get_execution_mode();
     if (mode != execution_mode::training || m_keep_prob < EvalType(0)) {
       El::Copy(input, output);
       return;
     }
 
     // Construct mask matrix
-    const DataType scale = 1 / m_keep_prob;
+    const TensorDataType scale = static_cast<TensorDataType>(1 / m_keep_prob);
     const auto& height = input.Height();
     const auto& width = input.Width();
     m_mask->Resize(height, width);
 #ifdef LBANN_DETERMINISTIC
-    bernoulli_fill_procdet(*m_mask, height, width, DataType(m_keep_prob));
+    bernoulli_fill_procdet(*m_mask, height, width, TensorDataType(m_keep_prob));
     El::Scale(scale, *m_mask);
 #else
     El::EntrywiseMap(*m_mask,
-                     (std::function<DataType(const DataType&)>)
-                     ([this,scale](const DataType& z)->DataType {
+                     (std::function<TensorDataType(const TensorDataType&)>)
+                     ([this,scale](const TensorDataType& z)->TensorDataType {
                        auto& gen = get_fast_generator();
                        std::bernoulli_distribution dist(m_keep_prob);
-                       return dist(gen) ? scale : DataType(0);
+                       return dist(gen) ? scale : El::TypeTraits<TensorDataType>::Zero();
                      }));
 #endif // LBANN_DETERMINISTIC
 
@@ -202,9 +221,9 @@ protected:
 
   /** Adjust gradients for dropout in backprop. */
   void bp_compute_cpu() {
-    const auto& gradient_wrt_output = get_prev_error_signals();
-    auto& gradient_wrt_input = get_error_signals();
-    const auto& mode = this->m_model->get_execution_mode();
+    const auto& gradient_wrt_output = this->get_prev_error_signals();
+    auto& gradient_wrt_input = this->get_error_signals();
+    const auto& mode = this->m_model->get_execution_context().get_execution_mode();
     if (mode != execution_mode::training || m_keep_prob < EvalType(0)) {
       El::Copy(gradient_wrt_output, gradient_wrt_input);
     } else {
@@ -218,13 +237,13 @@ protected:
 #else
 
     // Matrices
-    const auto& input = get_prev_activations();
+    const auto& input = this->get_prev_activations();
     const auto& local_input = input.LockedMatrix();
-    auto& output = get_activations();
+    auto& output = this->get_activations();
     auto& local_output = output.Matrix();
 
     // Do nothing if dropout is disabled or there is no local data
-    const auto& mode = this->m_model->get_execution_mode();
+    const auto& mode = this->m_model->get_execution_context().get_execution_mode();
     if (mode != execution_mode::training || m_keep_prob < EvalType(0)) {
       El::Copy(input, output);
       return;
@@ -236,7 +255,7 @@ protected:
     auto&& output_desc = m_tensors_cudnn_desc.get_activations();
     size_t size;
     CHECK_CUDNN(cudnnDropoutGetReserveSpaceSize(input_desc, &size));
-    m_reserve_space.Resize((size + sizeof(DataType) - 1) / sizeof(DataType), 1);
+    m_reserve_space.Resize((size + sizeof(TensorDataType) - 1) / sizeof(TensorDataType), 1);
 
     // Apply dropout on the GPU
     CHECK_CUDNN(cudnnDropoutForward(cudnn::get_handle(),
@@ -246,7 +265,7 @@ protected:
                                     output_desc,
                                     local_output.Buffer(),
                                     m_reserve_space.Buffer(),
-                                    m_reserve_space.Height() * sizeof(DataType)));
+                                    m_reserve_space.Height() * sizeof(TensorDataType)));
 
 #endif // LBANN_HAS_CUDNN
   }
@@ -257,13 +276,13 @@ protected:
 #else
 
     // Matrices
-    const auto& gradient_wrt_output = get_prev_error_signals();
+    const auto& gradient_wrt_output = this->get_prev_error_signals();
     const auto& local_gradient_wrt_output = gradient_wrt_output.LockedMatrix();
-    auto& gradient_wrt_input = get_error_signals();
+    auto& gradient_wrt_input = this->get_error_signals();
     auto& local_gradient_wrt_input = gradient_wrt_input.Matrix();
 
     // Copy error signal if dropout is disabled
-    const auto& mode = this->m_model->get_execution_mode();
+    const auto& mode = this->m_model->get_execution_context().get_execution_mode();
     if (mode != execution_mode::training || m_keep_prob < EvalType(0)) {
       El::Copy(gradient_wrt_output, gradient_wrt_input);
     } else {
@@ -276,7 +295,7 @@ protected:
                                          m_tensors_cudnn_desc.get_error_signals(),
                                          local_gradient_wrt_input.Buffer(),
                                          m_reserve_space.Buffer(),
-                                         m_reserve_space.Height() * sizeof(DataType)));
+                                         m_reserve_space.Height() * sizeof(TensorDataType)));
       }
     }
 #endif // LBANN_HAS_CUDNN
@@ -296,7 +315,7 @@ protected:
     // Setup RNG state
     size_t size;
     CHECK_CUDNN(cudnnDropoutGetStatesSize(cudnn::get_handle(), &size));
-    m_states.Resize((size + sizeof(DataType) - 1) / sizeof(DataType), 1);
+    m_states.Resize((size + sizeof(TensorDataType) - 1) / sizeof(TensorDataType), 1);
 
     // Setup dropout descriptor
     CHECK_CUDNN(cudnnCreateDropoutDescriptor(&m_dropout_cudnn_desc));
@@ -304,7 +323,7 @@ protected:
                                           cudnn::get_handle(),
                                           float(1 - m_keep_prob),
                                           m_states.Buffer(),
-                                          m_states.Height() * sizeof(DataType),
+                                          m_states.Height() * sizeof(TensorDataType),
                                           get_generator()()));
 
   }
@@ -313,20 +332,34 @@ protected:
   /** Probability of keeping each unit. */
   EvalType m_keep_prob;
   /** Current dropout mask (a scaled Bernoulli random matrix). */
-  std::unique_ptr<AbsDistMat> m_mask;
+  std::unique_ptr<AbsDistMatrixType> m_mask;
 
 #ifdef LBANN_HAS_CUDNN
   /** Dropout cuDNN descriptor. */
   cudnnDropoutDescriptor_t m_dropout_cudnn_desc;
   /** Tensor cuDNN descriptors. */
-  cudnn::entrywise_layer_tensor_manager m_tensors_cudnn_desc;
+  cudnn::entrywise_layer_tensor_manager<TensorDataType> m_tensors_cudnn_desc;
   /** RNG state for cuDNN dropout. */
-  GPUMat m_states;
+  El::Matrix<TensorDataType, El::Device::GPU> m_states;
   /** Work space for cuDNN dropout. */
-  GPUMat m_reserve_space;
+  El::Matrix<TensorDataType, El::Device::GPU> m_reserve_space;
 #endif // LBANN_HAS_CUDNN
 
 };
+
+template <typename T, data_layout L, El::Device D>
+using dropout_layer = dropout<T, L, D>;
+
+LBANN_DEFINE_LAYER_BUILDER(dropout);
+
+#ifndef LBANN_DROPOUT_LAYER_INSTANTIATE
+#define PROTO_DEVICE(T, Device) \
+  extern template class dropout<T, data_layout::DATA_PARALLEL, Device>; \
+  extern template class dropout<T, data_layout::MODEL_PARALLEL, Device>
+
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+#endif // LBANN_DROPOUT_LAYER_INSTANTIATE
 
 } // namespace lbann
 

@@ -31,6 +31,7 @@
 #include "lbann/utils/cuda.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 #include <vector>
 
 #ifdef LBANN_HAS_CUDNN
@@ -83,6 +84,23 @@ class Layer;
 
 namespace cudnn {
 
+template <typename T>
+struct ScalingParameterT
+{
+  using type = T;
+};
+
+template <typename T>
+using ScalingParamType = typename ScalingParameterT<T>::type;
+
+#ifdef LBANN_HAS_GPU_FP16
+template <>
+struct ScalingParameterT<fp16>
+{
+  using type = float;
+};
+#endif // LBANN_USE_GPU_FP16
+
 ////////////////////////////////////////////////////////////
 // Global cuDNN objects
 ////////////////////////////////////////////////////////////
@@ -102,11 +120,13 @@ cudnnHandle_t& get_handle();
 ////////////////////////////////////////////////////////////
 
 /** Get cuDNN data type associated with DataType. */
+template <typename TensorDataType>
 cudnnDataType_t get_data_type();
 
 /** Set cuDNN tensor descriptor.
  *  desc is created if necessary.
  */
+template <typename TensorDataType>
 void set_tensor_desc(cudnnTensorDescriptor_t& desc,
                      std::vector<int> dims,
                      std::vector<int> strides = {});
@@ -128,17 +148,20 @@ void copy_activation_desc(const cudnnActivationDescriptor_t& src,
 ////////////////////////////////////////////////////////////
 
 /** Manager for a layer's cuDNN tensor descriptors. */
+template <typename TensorDataType>
 class layer_tensor_manager {
 public:
-  layer_tensor_manager(const Layer* l = nullptr);
+  using LayerType = data_type_layer<TensorDataType>;
+public:
+  layer_tensor_manager(const LayerType* l = nullptr);
   layer_tensor_manager(const layer_tensor_manager& other);
   layer_tensor_manager& operator=(const layer_tensor_manager& other);
   virtual ~layer_tensor_manager();
 
   /** Get the layer being managed. */
-  const Layer* get_layer() const { return m_layer; }
+  const LayerType* get_layer() const { return m_layer; }
   /** Set the layer being managed. */
-  void set_layer(const Layer* l);
+  void set_layer(const LayerType* l);
 
   /** Get cuDNN tensor descriptor for layer input. */
   virtual cudnnTensorDescriptor_t& get_prev_activations(int parent_index = 0) = 0;
@@ -157,7 +180,7 @@ protected:
   void set_num_children(int num_children);
 
   /** Layer being managed. */
-  const Layer* m_layer;
+  const LayerType* m_layer;
   /** cuDNN tensor descriptors for layer inputs. */
   std::vector<cudnnTensorDescriptor_t> m_prev_activations;
   /** cuDNN tensor descriptors for layer outputs. */
@@ -170,9 +193,12 @@ protected:
 };
 
 /** Manager for a data-parallel layer's cuDNN tensor descriptors. */
-class data_parallel_layer_tensor_manager : public layer_tensor_manager {
+template <typename TensorDataType>
+class data_parallel_layer_tensor_manager : public layer_tensor_manager<TensorDataType> {
 public:
-  data_parallel_layer_tensor_manager(const Layer* l = nullptr);
+  using LayerType = data_type_layer<TensorDataType>;
+public:
+  data_parallel_layer_tensor_manager(const LayerType* l = nullptr);
   data_parallel_layer_tensor_manager(
     const data_parallel_layer_tensor_manager& other) = default;
   data_parallel_layer_tensor_manager&
@@ -185,9 +211,12 @@ public:
 };
 
 /** Manager for an entry-wise layer's cuDNN tensor descriptors. */
-class entrywise_layer_tensor_manager : public layer_tensor_manager {
+template <typename TensorDataType>
+class entrywise_layer_tensor_manager : public layer_tensor_manager<TensorDataType> {
 public:
-  entrywise_layer_tensor_manager(const Layer* l = nullptr);
+  using LayerType = data_type_layer<TensorDataType>;
+public:
+  entrywise_layer_tensor_manager(const LayerType* l = nullptr);
   entrywise_layer_tensor_manager(
     const entrywise_layer_tensor_manager& other) = default;
   entrywise_layer_tensor_manager&
@@ -266,6 +295,17 @@ cudnnConvolutionBwdFilterAlgo_t get_bwd_filter_algorithm(
   void* kernel_gradient,
   size_t ws_size,
   void* ws);
+
+/** @brief Set the default to use tensor core operations, allowing
+ *         FP32->FP16 conversions.
+ */
+void default_to_tensor_ops() noexcept;
+
+/** @brief Get the default math type.
+ *
+ *  Will query the command-line args.
+ */
+cudnnMathType_t get_default_convolution_math_type() noexcept;
 
 } // namespace cudnn
 } // namespace lbann

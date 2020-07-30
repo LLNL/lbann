@@ -55,6 +55,29 @@ if (TARGET ALUMINUM)
   endif (Hydrogen_ENABLE_ALUMINUM)
 endif (TARGET ALUMINUM)
 
+if (TARGET CUB)
+  option(Hydrogen_ENABLE_CUB "Whether to use CUB in Hydrogen" ON)
+  if (Hydrogen_ENABLE_CUB)
+    message(STATUS "Building Hydrogen with CUB support")
+    set(LBANN_SB_FWD_HYDROGEN_CUB_DIR "${CUB_DIR}"
+      CACHE STRING "The path to CUB for Hydrogen.")
+
+    set(_hydrogen_depends_tag DEPENDS)
+    list(APPEND _HYDROGEN_DEPENDS CUB)
+
+    set(Hydrogen_ENABLE_CUDA ON)
+  endif ()
+endif (TARGET CUB)
+
+if (TARGET CATCH2)
+  option(Hydrogen_ENABLE_UNIT_TESTS "Build catch2 unit tests in hydrogen" ON)
+  if (Hydrogen_ENABLE_UNIT_TESTS)
+    set(LBANN_SB_FWD_HYDROGEN_CATCH2_DIR ${CATCH2_DIR})
+    set(_hydrogen_depends_tag DEPENDS)
+    list(APPEND _HYDROGEN_DEPENDS CATCH2)
+  endif ()
+endif (TARGET CATCH2)
+
 if (Hydrogen_ENABLE_CUDA)
   enable_language(CUDA)
 endif ()
@@ -86,18 +109,31 @@ else ()
 endif ()
 
 # ... then the tag.
-set(HYDROGEN_TAG "hydrogen"
+set(HYDROGEN_TAG "v1.3.4"
   CACHE STRING "The git tag or hash to checkout for Hydrogen")
+
+if (HYDROGEN_CUSTOM_SOURCE_DIR)
+  set(HYDROGEN_SOURCE_DIR "${HYDROGEN_CUSTOM_SOURCE_DIR}")
+  set(HYDROGEN_URL "")
+  set(HYDROGEN_TAG "")
+  set(_GIT_REPOSITORY_TAG)
+  set(_GIT_TAG_TAG)
+  message(STATUS "Using HYDROGEN source in: ${HYDROGEN_SOURCE_DIR}")
+else ()
+  set(HYDROGEN_SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/src")
+  set(_GIT_REPOSITORY_TAG "GIT_REPOSITORY")
+  set(_GIT_TAG_TAG "GIT_TAG")
+endif ()
 
 include(ExternalProject)
 ExternalProject_Add(HYDROGEN
   PREFIX ${CMAKE_CURRENT_BINARY_DIR}
   TMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/tmp
   STAMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/stamp
-  GIT_REPOSITORY ${HYDROGEN_URL}
-  GIT_TAG ${HYDROGEN_TAG}
+  ${_GIT_REPOSITORY_TAG} ${HYDROGEN_URL}
+  ${_GIT_TAG_TAG} ${HYDROGEN_TAG}
+  SOURCE_DIR ${HYDROGEN_SOURCE_DIR}
   ${_hydrogen_depends_tag} ${_HYDROGEN_DEPENDS}
-  SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/src
   BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/build
   INSTALL_DIR ${HYDROGEN_CMAKE_INSTALL_PREFIX}
   USES_TERMINAL_BUILD 1

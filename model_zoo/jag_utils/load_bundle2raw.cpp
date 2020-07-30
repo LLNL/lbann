@@ -27,8 +27,6 @@
 
 #include "lbann_config.hpp"
 
-#ifdef LBANN_HAS_CONDUIT
-
 #include "conduit/conduit.hpp"
 #include "conduit/conduit_relay.hpp"
 #include "conduit/conduit_relay_io_hdf5.hpp"
@@ -50,8 +48,7 @@ void get_input_names(std::vector<std::string> &s);
 
 //==========================================================================
 int main(int argc, char *argv[]) {
-  int random_seed = lbann_default_random_seed;
-  world_comm_ptr comm = initialize(argc, argv, random_seed);
+  world_comm_ptr comm = initialize(argc, argv);
   bool master = comm->am_world_master();
   const int rank = comm->get_rank_in_world();
   const int np = comm->get_procs_in_world();
@@ -255,6 +252,3 @@ void get_scalar_names(std::vector<std::string> &s) {
   s.push_back("tMINradius");
   s.push_back("MINradius");
 }
-
-
-#endif //#ifdef LBANN_HAS_CONDUIT

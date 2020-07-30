@@ -29,13 +29,57 @@
 #include "lbann/lbann.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/protobuf_utils.hpp"
+#include "lbann/utils/argument_parser.hpp"
+
+#include <lbann.pb.h>
+#include <model.pb.h>
+
 #include <cstdlib>
 
 using namespace lbann;
 
+namespace {
+int guess_global_rank() noexcept
+{
+  int have_mpi;
+  MPI_Initialized(&have_mpi);
+  if (have_mpi) {
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    return rank;
+  }
+  else {
+    if (char const* slurm_flag = std::getenv("SLURM_PROCID"))
+      return std::stoi(slurm_flag);
+    if (char const* open_mpi_flag = std::getenv("OMPI_WORLD_COMM_RANK"))
+      return std::stoi(open_mpi_flag);
+    else if (char const* mv2_flag = std::getenv("MV2_COMM_WORLD_LOCAL_RANK"))
+      return std::stoi(mv2_flag);
+    else
+      return -1;
+  }
+}
+}// namespace <anon>
+
 int main(int argc, char *argv[]) {
-  int random_seed = lbann_default_random_seed;
-  world_comm_ptr comm = initialize(argc, argv, random_seed);
+  auto& arg_parser = global_argument_parser();
+  construct_std_options();
+
+  try {
+    arg_parser.parse(argc, argv);
+  }
+  catch (std::exception const& e) {
+    auto guessed_rank = guess_global_rank();
+    if (guessed_rank <= 0)
+      // Cannot call `El::ReportException` because MPI hasn't been
+      // initialized yet.
+      std::cerr << "Error during argument parsing:\n\ne.what():\n\n  "
+                << e.what() << "\n\nProcess terminating."
+                << std::endl;
+    std::terminate();
+  }
+
+  world_comm_ptr comm = initialize(argc, argv);
   const bool master = comm->am_world_master();
 
   try {
@@ -49,16 +93,34 @@ int main(int argc, char *argv[]) {
 
     std::ostringstream err;
 
-    // Initalize a global I/O thread pool
-    std::shared_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(comm.get());
-
     auto pbs = protobuf_utils::load_prototext(master, argc, argv);
+    // Optionally over-ride some values in the prototext for each model
+    for(size_t i = 0; i < pbs.size(); i++) {
+      get_cmdline_overrides(*comm, *(pbs[i]));
+    }
 
-    auto model_1 = build_model_from_prototext(argc, argv, *(pbs[0]), comm.get(), io_thread_pool, true); //discriminator
-                                                                                    //model
+    lbann_data::LbannPB& pb = *(pbs[0]);
+    lbann_data::Trainer *pb_trainer = pb.mutable_trainer();
+
+    // Construct the trainer
+    std::unique_ptr<trainer> trainer = construct_trainer(comm.get(), pb_trainer, *(pbs[0]), opts);
+
+    thread_pool& io_thread_pool = trainer->get_io_thread_pool();
+
+    int training_dr_linearized_data_size = -1;
+    auto *dr = trainer->get_data_coordinator().get_data_reader(execution_mode::training);
+    if(dr != nullptr) {
+      training_dr_linearized_data_size = dr->get_linearized_data_size();
+    }
+
+    auto model_1 = build_model_from_prototext(argc, argv, pb_trainer, *(pbs[0]), comm.get(), opts, io_thread_pool,
+                                              trainer->get_callbacks_with_ownership(),
+                                              training_dr_linearized_data_size); //discriminator model
     std::unique_ptr<model> model_2 = nullptr; //adversarial model
     if (pbs.size() > 1) {
-      model_2 = build_model_from_prototext(argc, argv, *(pbs[1]), comm.get(), io_thread_pool, false);
+      model_2 = build_model_from_prototext(argc, argv, pb_trainer, *(pbs[1]), comm.get(), opts, io_thread_pool,
+                                           trainer->get_callbacks_with_ownership(),
+                                           training_dr_linearized_data_size);
     }
 
     const lbann_data::Model pb_model = pbs[0]->model();
@@ -71,7 +133,7 @@ int main(int argc, char *argv[]) {
     while (super_step <= max_super_step) {
       if (master)  std::cerr << "\nSTARTING train - discriminator model at step " << super_step <<"\n\n";
       //@todo freeze generator layers in this step
-      model_1->train( super_step*pb_model.num_epochs() );
+      trainer->train(model_1.get(), super_step*pb_model.num_epochs() );
 
       //Replace/copy "proxy" layer in adversarial model (model2) with its "equivalent" layer in discriminator model (model1)
       //@todo freeze layers after replacement
@@ -84,7 +146,7 @@ int main(int argc, char *argv[]) {
           for(size_t l1=0; l1 < layers1.size(); l1++) {
              if(l2_name == layers1[l1]->get_name()){
                if(master) std::cout << "Replacing adversarial model (model 2) Layer " << layers1[l1]->get_name();
-               layers2[l2]->replace_weights(layers1[l1]);
+               layers2[l2]->replace_weights(*layers1[l1]);
                if(master) std::cout << " with corresponding layer " << layers2[l2]->get_name() << " in discriminator model (model1) " << std::endl;
              }
           }
@@ -92,14 +154,16 @@ int main(int argc, char *argv[]) {
       }
 
       if (master) std::cerr << "\n STARTING train - adversarial model at step " << super_step << " \n\n";
-      model_2->train( super_step*pb_model_2.num_epochs() );
+      trainer->train(model_2.get(), super_step*pb_model_2.num_epochs() );
 
       super_step++;
     }
 
   } catch (std::exception& e) {
     El::ReportException(e);
-    return EXIT_FAILURE;
+    // It's possible that a proper subset of ranks throw some
+    // exception. But we want to tear down the whole world.
+    El::mpi::Abort(El::mpi::COMM_WORLD, EXIT_FAILURE);
   }
 
   return EXIT_SUCCESS;

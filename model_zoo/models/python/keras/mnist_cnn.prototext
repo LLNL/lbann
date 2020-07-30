@@ -132,5 +132,4 @@ model {
     print {
     }
   }
-  block_size: 256
 }

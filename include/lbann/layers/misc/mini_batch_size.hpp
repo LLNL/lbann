@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_MISC_MINI_BATCH_SIZE_HPP_INCLUDED
 #define LBANN_LAYERS_MISC_MINI_BATCH_SIZE_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
 
@@ -36,11 +36,13 @@ namespace lbann {
  *  Output tensor is a 1D tensor with a single entry containing the
  *  model's current mini-batch size.
  */
-template <data_layout Layout = data_layout::DATA_PARALLEL, El::Device Device = El::Device::CPU>
-class mini_batch_size_layer : public Layer {
+template <typename TensorDataType,
+          data_layout Layout = data_layout::DATA_PARALLEL,
+          El::Device Device = El::Device::CPU>
+class mini_batch_size_layer : public data_type_layer<TensorDataType> {
 public:
 
-  mini_batch_size_layer(lbann_comm* comm) : Layer(comm) {
+  mini_batch_size_layer(lbann_comm* comm) : data_type_layer<TensorDataType>(comm) {
     this->m_expected_num_parent_layers = 0;
   }
 
@@ -51,18 +53,18 @@ public:
 
 protected:
 
-  void setup_dims() override {
-    Layer::setup_dims();
-    set_output_dims({1});
+  void setup_dims(DataReaderMetaData& dr_metadata) override {
+    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+    this->set_output_dims({1});
   }
 
   void fp_setup_outputs(El::Int mini_batch_size) override {
-    Layer::fp_setup_outputs(mini_batch_size);
+    data_type_layer<TensorDataType>::fp_setup_outputs(mini_batch_size);
     m_mini_batch_size = mini_batch_size;
   }
 
   void fp_compute() override {
-    El::Fill(get_activations(), DataType(m_mini_batch_size));
+    El::Fill(this->get_activations(), El::To<TensorDataType>(m_mini_batch_size));
   }
 
 private:
@@ -71,6 +73,15 @@ private:
   El::Int m_mini_batch_size = 0;
 
 };
+
+#ifndef LBANN_MINI_BATCH_SIZE_LAYER_INSTANTIATE
+#define PROTO_DEVICE(T, Device) \
+  extern template class mini_batch_size_layer<T, data_layout::DATA_PARALLEL, Device>; \
+  extern template class mini_batch_size_layer<T, data_layout::MODEL_PARALLEL, Device>
+
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+#endif // LBANN_MINI_BATCH_SIZE_LAYER_INSTANTIATE
 
 } // namespace lbann
 

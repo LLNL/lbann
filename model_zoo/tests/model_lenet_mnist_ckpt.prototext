@@ -1,10 +1,20 @@
+trainer {
+  mini_batch_size: 64
+
+  ###################################################
+  # Callbacks
+  ###################################################
+  callback {
+    checkpoint {
+      checkpoint_dir: "ckpt"
+      checkpoint_epochs: 1
+      checkpoint_steps: 845
+    }
+  }
+}
 model {
   data_layout: "data_parallel"
-  mini_batch_size: 64
-  block_size: 256
   num_epochs: 20
-  num_parallel_readers: 0
-  procs_per_trainer: 0
   disable_cuda: true
   ###################################################
   # Objective function
@@ -32,23 +42,18 @@ model {
   ###################################################
   # Callbacks
   ###################################################
+  summarizer {
+    dir: "."
+  }
 
   callback { print {} }
   callback { timer {} }
   callback {
     summary {
-      dir: "."
       mat_interval: 25
     }
   }
 
-  callback {
-    checkpoint {
-      checkpoint_dir: "ckpt"
-      checkpoint_epochs: 1
-      checkpoint_steps: 845
-    }
-  }
   callback {
     adaptive_learning_rate {
       patience: 4
