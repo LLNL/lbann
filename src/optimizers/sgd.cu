@@ -109,7 +109,7 @@ void sgd<TensorDataType>::momentum_step_gpu(AbsDistMatrixType& values,
   // Launch CUDA kernels for momentum SGD or NAG
   constexpr size_t block_size = 256;
   const size_t grid_size = (local_size + block_size - 1) / block_size;
-  auto&& stream = El::GPUManager::Stream();
+  auto&& stream = hydrogen::cuda::GetDefaultStream();
   if (m_nesterov) {
     nesterov_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
       local_height, local_width,

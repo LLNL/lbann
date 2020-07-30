@@ -289,12 +289,12 @@ void initialize(MPI_Comm comm) {
   p2p_instance = new p2p::P2P(mpi_comm);
 #endif // DISTCONV_HAS_P2P
   mpicuda_comm_instance = new Al::mpicuda_backend::comm_type(
-      mpi_comm, El::GPUManager::Stream());
+      mpi_comm, hydrogen::cuda::GetDefaultStream());
   ::distconv::cudnn::Options backend_opts;
   backend_opts.m_deterministic = opt_deterministic;
   backend_instance = new Backend(
       mpi_comm, lbann::cudnn::get_handle(),
-      El::GPUManager::Stream(), backend_opts);
+      hydrogen::cuda::GetDefaultStream(), backend_opts);
   print_options(std::cout);
   initialized = true;
 }

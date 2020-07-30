@@ -118,7 +118,7 @@ void fp_impl(
     block_dims.y = block_size_y;
     grid_dims.x = (local_height + block_size_x - 1) / block_size_x;
     grid_dims.y = (local_width + block_size_y - 1) / block_size_y;
-    fp_kernel<<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
+    fp_kernel<<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
         local_height, local_width,
         local_input.LockedBuffer(), local_input.LDim(),
         local_output.Buffer(), local_output.LDim(),
@@ -153,7 +153,7 @@ void bp_impl(
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
     grid_dims.x = (local_height + block_size - 1) / block_size;
-    bp_kernel <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
+    bp_kernel <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
       local_height, local_width,
       local_input.LockedBuffer(), local_input.LDim(),
       local_gradient_wrt_output.LockedBuffer(), local_gradient_wrt_output.LDim(),
