@@ -4,22 +4,31 @@ from lbann.modules.graph.utils import GraphVertexData
 from lbann.util import str_list
 
 class GINConv(Module):
-    """Details of the kernel is detailed in: 
+    """Details of the kernel is available in: 
        https://arxiv.org/abs/1810.00826
     """
     global_count = 0; 
 
-    def __init__(self, sequential_nn, output_channels, eps = 1e-6,name = None):
+    def __init__(self, 
+                 sequential_nn,
+                 output_channels,
+                 eps = 1e-6,
+                 name = None,
+                 data_layout = 'data_parallel'):
         """Initialize graph kernel as described in Graph Isomorphism Network.
            
-           Args:sequential_nn ([Layers] or (Layers)): 
-                output_channels (int):
-                eps (float):
-                name (str): 
-                data_layout (str): 
+        Args:
+            sequential_nn ([Layers] or (Layers)): A list or tuple of layers to be used as  
+            output_channels (int): The output size of the node features
+            eps (float): Default value is 1e-6
+            name (str): Default name of the layer is GIN_{number}
+            data_layout (str): Data layout
         """
         GINConv.global_count += 1
-        self.name = (self.name if name else 'GIN_{}'.format(GINConv.global_count))
+        self.name = (name 
+                     if name 
+                     else 'GIN_{}'.format(GINConv.global_count))
+        self.data_layout = data_layout
         self.nn = sequential_nn
         self.eps = eps 
         self.output_channels = output_channels
@@ -38,7 +47,7 @@ class GINConv(Module):
                                 applied. (default: lbann.Relu) 
         Returns: 
             
-            LBANN_Data_Mat: The output after GCN. The output can passed into another Graph Conv layer
+            (GraphVertexData): The output after GCN. The output can passed into another Graph Conv layer
                           directly
         """
         in_channel = X.shape[1]

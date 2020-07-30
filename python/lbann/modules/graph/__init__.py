@@ -9,4 +9,4 @@ convolutional networks.
 
 from lbann.modules.graph.utils import GraphVertexData
 from lbann.modules.graph.dense import DenseGCNConv, DenseGraphConv
-from lbann.modules.graph.sparse import GCNConv, GINConv
+from lbann.modules.graph.sparse import GCNConv, GINConv, GraphConv, GatedGraphConv

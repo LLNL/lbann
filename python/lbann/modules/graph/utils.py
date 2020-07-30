@@ -33,7 +33,7 @@ class GraphVertexData:
         """
         self.layers[node] = feature
 
-    def size(index = None):
+    def size(self, index = None):
         """Get the size (shape) of the GraphVertexObject, where the size is represented
            as a tuple (n,m), where n is the number of nodes and m is the number of 
            features per node. 
@@ -43,7 +43,7 @@ class GraphVertexData:
            returns: (int) or (int,int): Either returns the tuple (n,m) or n or m. 
 
         """
-        if (index):
+        if isinstance(index,int):
             return self.shape[index]
         else:
             return self.shape
