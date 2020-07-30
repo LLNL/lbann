@@ -30,12 +30,13 @@ expected_test_accuracy_range = (98, 99)
 
 # Average mini-batch time (in sec) for each LC system
 # Note that run times are with LBANN_DETERMINISTIC set
+# Commented out times are prior to thread safe RNGs
 expected_mini_batch_times = {
-    'pascal':   0.0013,
-    'catalyst': 0.0055,
+    'pascal':   0.0014, # 0.0013,
+    'catalyst': 0.0070, # 0.0055,
     'lassen':   0.0022,
     'ray':      0.0025,
-    'corona':   0.0075,
+    'corona':   0.0117, # 0.0075,
 }
 
 # ==============================================
