@@ -7,6 +7,13 @@
 #include "type_erased_function.hpp"
 #include "lbann/utils/exception.hpp"
 
+#if defined(LBANN_TOPO_AWARE)
+#include <hwloc.h>
+#if defined(HWLOC_API_VERSION) && (HWLOC_API_VERSION < 0x00010b00)
+#define HWLOC_OBJ_NUMANODE HWLOC_OBJ_NODE
+#endif
+#endif
+
 #include <sched.h>
 
 #include <future>
@@ -115,9 +122,9 @@ public:
 private:
   /** @brief The task executed by each thread */
   void do_thread_work_();
-#ifdef LBANN_HAS_PTHREAD_AFFINITY_SUPPORT
-  void do_thread_work_pinned_thread_(int tid, cpu_set_t cpu_set);
-#endif // LBANN_HAS_PTHREAD_AFFINITY_SUPPORT
+#if defined(LBANN_TOPO_AWARE)
+  void do_thread_work_pinned_thread_(int tid, hwloc_topology_t topo, hwloc_cpuset_t cpuset);
+#endif // LBANN_TOPO_AWARE
 private:
 
   /** @brief Container holding the threads */
