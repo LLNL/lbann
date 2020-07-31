@@ -17,15 +17,15 @@ EXTERNAL_PACKAGES=$(cat <<EOF
     cmake::
       buildable: True
       variants: ~openssl ~ncurses
-      version: [3.14.5]
-      paths:
-        cmake@3.14.5 arch=linux-rhel7-haswell:  /usr/tce/packages/cmake/cmake-3.14.5
+      version: [3.18.0]
+      modules:
+        cmake@3.18.0 arch=linux-rhel7-haswell:  cmake/3.18.0
 
     cuda::
       buildable: False
-      version: [10.1.168]
+      version: [10.2.89]
       modules:
-        cuda@10.1.168 arch=linux-rhel7-haswell: cuda/10.1.168
+        cuda@10.2.89 arch=linux-rhel7-haswell: cuda/10.2.89
 
     cudnn::
       buildable: true

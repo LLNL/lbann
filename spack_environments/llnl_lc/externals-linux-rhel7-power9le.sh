@@ -17,9 +17,9 @@ EXTERNAL_PACKAGES=$(cat <<EOF
     cmake::
       buildable: True
       variants: ~openssl ~ncurses
-      version: [3.14.5]
-      paths:
-        cmake@3.14.5 arch=linux-rhel7-power9le:   /usr/tce/packages/cmake/cmake-3.14.5
+      version: [3.18.0]
+      modules:
+        cmake@3.18.0 arch=linux-rhel7-power9le: cmake/3.18.0
 
     cuda::
       buildable: False
