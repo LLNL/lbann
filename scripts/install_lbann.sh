@@ -258,7 +258,7 @@ ${STD_PACKAGES}
 
     aluminum:
       buildable: true
-      version: [0.4]
+      version: [0.4.0]
       ${AL_VARIANTS}
       providers: {}
       paths: {}
@@ -267,7 +267,7 @@ ${STD_PACKAGES}
       target: []
     hydrogen:
       buildable: true
-      version: [1.4]
+      version: [1.4.0]
       ${HYDROGEN_VARIANTS}
       providers: {}
       paths: {}
