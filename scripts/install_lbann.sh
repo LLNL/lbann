@@ -240,7 +240,7 @@ if [[ "${ENABLE_GPUS}" == "ON" ]]; then
 #    CUDA_ARCH="cuda_arch=60,61,62,70"
     AL_VARIANTS="variants: +cuda +nccl +ht +mpi_gpu_rdma"
     HYDROGEN_VARIANTS="${HYDROGEN_VARIANTS} +cuda"
-    DIHYDROGEN_VARIANTS="${DIHYDROGEN_VARIANTS} +cuda +legacy +docs"
+    DIHYDROGEN_VARIANTS="${DIHYDROGEN_VARIANTS} +cuda +legacy"
 fi
 
 SPACK_ENV=$(cat <<EOF
