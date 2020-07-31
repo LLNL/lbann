@@ -76,7 +76,7 @@ class GraphConv(Module):
             self.bias_weights = lbann.Weights(initializer = lbann.ConstantInitializer(
                                                             value = 0.0),
                                               name = self.name+'_bias_weights')
-            self.bias = lbann.WeightsLayer(dims = str(output_channels), 
+            self.bias = lbann.WeightsLayer(dims = str_list([1,output_channels]), 
                                            weights = self.bias_weights, 
                                            name = self.name+'_bias_layer')
         
@@ -127,6 +127,6 @@ class GraphConv(Module):
             for node_feature in range(X.shape[0]):
                 X[node_feature] = self.activation(X[node_feature])
 
-        X.num_features = self.output_channels 
+        X.update_num_features(self.output_channels) 
         return X
 

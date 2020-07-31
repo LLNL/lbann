@@ -5,12 +5,7 @@ import lbann.contrib.args
 import argparse 
 import os 
 
-#import sparse_train
-#import train
-import GIN_train
-import GCN_train
-import Graph_train
-
+import Sparse_Graph_Trainer 
 import data.MNIST_Superpixel
 import data.PROTEINS
 
@@ -56,14 +51,21 @@ model_arch = args.model
 ## Get Model
 
 if (model_arch == 'GRAPH'):
-    model = Graph_train.make_model(dataset = 'PROTEINS',
-                            num_epochs = num_epochs)
+    model = Sparse_Graph_Trainer.make_model(dataset = 'PROTEINS',
+                                            kernel_type = 'Graph',
+                                            num_epochs = num_epochs)
 elif(model_arch=='GIN'):
-    model = GIN_train.make_model(dataset = 'PROTEINS',
-                            num_epochs = num_epochs)
+    model = Sparse_Graph_Trainer.make_model(dataset = 'PROTEINS',
+                                            kernel_type = 'GIN',
+                                            num_epochs = num_epochs)
+elif(model_arch=='GATEDGRAPH'):
+    model = Sparse_Graph_Trainer.make_model(dataset = 'PROTEINS',
+                                            kernel_type = 'GatedGraph',
+                                            num_epochs = num_epochs)
 else:
-    model = GCN_train.make_model(dataset = 'PROTEINS',
-                            num_epochs=num_epochs)
+    model = Sparse_Graph_Trainer.make_model(dataset = 'PROTEINS',
+                                            kernel_type = 'GCN',
+                                            num_epochs=num_epochs)
 
 
 optimizer = lbann.SGD(learn_rate = 1e-3)

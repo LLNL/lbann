@@ -32,7 +32,14 @@ class GraphVertexData:
                  layer (Layer): 
         """
         self.layers[node] = feature
+    def update_num_features(self, num_features):
+        """Update the internal shapes to keep track of features
 
+        Args: 
+             num_features (int): the features per vertex
+        """
+        self.num_features = num_features 
+        self.shape = (len(self.layers), num_features)
     def size(self, index = None):
         """Get the size (shape) of the GraphVertexObject, where the size is represented
            as a tuple (n,m), where n is the number of nodes and m is the number of 

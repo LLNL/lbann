@@ -56,7 +56,8 @@ class GCNConv(Module):
 
         self.W = lbann.WeightsLayer(dims = str_list([input_channels, output_channels]),
                                     name = self.name+'_layer',
-                                    weights = self.mat_weights)
+                                    weights = self.mat_weights,
+                                    data_layout = self.data_layout)
         
         ## Initialize bias variables
         self.has_bias = bias
@@ -67,9 +68,10 @@ class GCNConv(Module):
             self.bias_weights = lbann.Weights(initializer = lbann.ConstantInitializer(
                                                             value = 0.0),
                                               name = self.name+'_bias_weights')
-            self.bias = lbann.WeightsLayer(dims = str(output_channels), 
+            self.bias = lbann.WeightsLayer(dims = str_list([1,output_channels]), 
                                            weights = self.bias_weights, 
-                                           name = self.name+'_bias_layer')
+                                           name = self.name+'_bias_layer',
+                                           data_layout = self.data_layout)
 
         self.activation = None 
 
@@ -101,7 +103,7 @@ class GCNConv(Module):
                 X[i] = lbann.Sum(X[i], self.bias, name=self.name+'_message_bias_'+str(i))
 
         # Pass Message to Node Features
-        out = X.get_mat()
+        out = X.get_mat(self.output_channels)
         out = lbann.MatMul(A, out, name=self.name+'_aggregate')
         
         if self.activation:

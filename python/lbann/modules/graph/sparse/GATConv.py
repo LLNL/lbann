@@ -50,7 +50,8 @@ class GatedGraphConv(Module):
                                                           standard_deviation = 1/((i+1) * output_channels)))
             weight_layer = lbann.WeightsLayer(dims = str_list([output_channels, output_channels]),
                                               weights = weight_init, 
-                                              name = self.name+'_'+str(i)+'_weight')
+                                              name = self.name+'_'+str(i)+'_weight',
+                                              data_layout = self.data_layout)
             self.weights.append(weight_layer)
         
 
@@ -72,12 +73,15 @@ class GatedGraphConv(Module):
 
         if (input_features < self.output_channels):
             for i in range(num_nodes):
-                zeros = lbann.Constant(value = 0, num_neurons = str(self.output_channels - X.size(0)))
-                X[i] = lbann.Concatenation(X[i], zeros, axis = 0)       
+                num_zeros = self.output_channels - input_features 
+                zeros = lbann.Constant(value = 0, num_neurons = str_list([1,num_zeros]), name = self.name+'_zero_'+str(i))
+                X[i] = lbann.Concatenation(X[i], zeros, axis = 1)       
         elif (input_features > self.output_channels):
             ValueError('The feature size of the nodes {} cannot be greater than the output dimension {}'.
                         format(input_features, self.output_channels))
         
+        X.update_num_features(self.output_channels)
+
         for layer in range(self.num_layers): 
             ##
             X_mat = X.get_mat()
@@ -87,6 +91,8 @@ class GatedGraphConv(Module):
             M = GraphVertexData.matrix_to_graph(aggregate, num_nodes, self.output_channels)
 
             for i in range(num_nodes):
-                X[i] = lbann.MatMul(X[i], self.weights[layer])
-                _,X[i] = self.rnn(M[i], X[i])
+                X[i] = lbann.Reshape(X[i], dims = str(self.output_channels))
+                X[i] = lbann.Reshape(self.rnn(M[i], X[i])[1],
+                                        dims = str_list([1, self.output_channels]))
+        
         return X

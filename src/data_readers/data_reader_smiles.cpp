@@ -318,7 +318,7 @@ void smiles_data_reader::print_statistics() const {
 
   std::cout << "\n======================================================\n";
   std::cout << "role: " << get_role() << std::endl;
-  //std::cout << "mem for data, lower bound: " << utils::commify(get_mem_usage()) << std::endl;   
+  //std::cout << "mem for data, lower bound: " << utils::commify(get_mem_usage()) << std::endl; 
   std::cout << "num samples per trainer: " << m_shuffled_indices.size() << std::endl;
   std::cout << "max sequence length: " << utils::commify(m_linearized_data_size) << std::endl;
   std::cout << "num features=" << utils::commify(m_linearized_data_size) << std::endl;
