@@ -17,19 +17,19 @@ EXTERNAL_PACKAGES=$(cat <<EOF
     cmake::
       buildable: True
       variants: ~openssl ~ncurses
-      version: [3.14.5]
-      paths:
-        cmake@3.14.5 arch=linux-rhel7-power9le:   /usr/tce/packages/cmake/cmake-3.14.5
+      version: [3.18.0]
+      modules:
+        cmake@3.18.0 arch=linux-rhel7-power9le: cmake/3.18.0
 
     cuda::
       buildable: False
-      version: [10.1.243]
+      version: [10.2.89]
       modules:
-        cuda@10.1.243 arch=linux-rhel7-power9le: cuda/10.1.243
+        cuda@10.2.89 arch=linux-rhel7-power9le: cuda/10.2.89
 
     cudnn::
       buildable: true
-      version: [7.6.5.32-10.1-linux-ppc64le]
+      version: [7.6.5.32-10.2-linux-ppc64le]
 
     gcc::
        buildable: False
@@ -46,7 +46,7 @@ EXTERNAL_PACKAGES=$(cat <<EOF
     openblas::
       buildable: True
       variants: threads=openmp ~avx2 ~avx512
-      version: [0.3.6]
+      version: [0.3.10]
 
     opencv::
       buildable: true
