@@ -857,7 +857,7 @@ void generic_data_reader::preload_data_store() {
     get_local_list_sizes(local_list_sizes);
     m_data_store->set_profile_msg("generic_data_reader::preload_data_store(): calling m_data_store->build_preloaded_owner_map()");
 
-    std::sort(m_shuffled_indices.begin(), m_shuffled_indices.end());
+    // std::sort(m_shuffled_indices.begin(), m_shuffled_indices.end());
     m_data_store->build_preloaded_owner_map(local_list_sizes);
    // shuffle_indices();
 
