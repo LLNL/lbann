@@ -315,7 +315,7 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
           [](const El::Matrix<DataType, El::Device::GPU>& X,
              const char *name) {
             El::Matrix<DataType> XCPU(X);
-            const auto nrm2 = El::Nrm2(XCPU);
+            const auto nrm2 = El::Nrm2(El::Reshape(XCPU.Height()*XCPU.Width(), 1, XCPU));
             std::ostringstream oss;
             oss << name
                 << "("
