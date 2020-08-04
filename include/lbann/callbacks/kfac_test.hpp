@@ -60,18 +60,21 @@ class kfac_test : public callback_base {
 
   /** Constructor.
    */
-  kfac_test(double damping_0, double damping_target,
+  kfac_test(double damping_act_0, double damping_err_0,
+            double damping_act_target, double damping_err_target,
             double damping_warmup_steps,
             double kronecker_decay,
             bool print_time, bool print_matrix,
             bool print_matrix_summary)
       : callback_base(),
-        m_damping_0(damping_0), m_damping_target(damping_target),
+        m_damping_act_0(damping_act_0), m_damping_err_0(damping_err_0),
+        m_damping_act_target(damping_act_target), m_damping_err_target(damping_err_target),
         m_damping_warmup_steps(damping_warmup_steps),
         m_kronecker_decay(kronecker_decay),
         m_print_time(print_time), m_print_matrix(print_matrix),
         m_print_matrix_summary(print_matrix_summary) {
-    m_damping = m_damping_0;
+    m_damping_act = m_damping_act_0;
+    m_damping_err = m_damping_err_0;
   }
   kfac_test(const kfac_test&) = default;
   kfac_test& operator=(const kfac_test&) = default;
@@ -93,7 +96,9 @@ class kfac_test : public callback_base {
  private:
 
   /** @brief Parameters of a Tikhonov damping technique. */
-  const double m_damping_0, m_damping_target, m_damping_warmup_steps;
+  const double m_damping_act_0, m_damping_err_0,
+    m_damping_act_target, m_damping_err_target,
+    m_damping_warmup_steps;
 
   /** @brief The decay factor of kronecker factors. */
   const double m_kronecker_decay;
@@ -101,8 +106,8 @@ class kfac_test : public callback_base {
   /** @brief Knobs to print information for debugging. */
   const bool m_print_time, m_print_matrix, m_print_matrix_summary;
 
-  /** @brief The current damping value. */
-  double m_damping;
+  /** @brief The current damping values. */
+  double m_damping_act, m_damping_err;
 
   /** @brief Exponential moving average of kronecker factors. */
   std::unordered_map<

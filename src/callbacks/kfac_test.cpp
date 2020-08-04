@@ -64,8 +64,10 @@ void kfac_test::setup(model *m) {
   if(comm->am_trainer_master()) {
     std::ostringstream oss;
     oss << "K-FAC callback setup:"
-        << " damping_0=" << m_damping_0
-        << " damping_target=" << m_damping_target
+        << " damping_act_0=" << m_damping_act_0
+        << " damping_act_target=" << m_damping_act_target
+        << " damping_err_0=" << m_damping_err_0
+        << " damping_err_target=" << m_damping_err_target
         << " damping_warmup_steps=" << m_damping_warmup_steps
         << " kronecker_decay=" << m_kronecker_decay
         << std::endl;
@@ -76,8 +78,21 @@ void kfac_test::setup(model *m) {
 void kfac_test::on_backward_prop_end(model *m) {
   // Using a modified Tikhonov damping tequnique from
   // http://arxiv.org/abs/1811.12019.
-  const DataType alpha = DataType(2.0) * log10(m_damping_0 / m_damping_target) / m_damping_warmup_steps;
-  m_damping = (DataType(1.0)-alpha) * m_damping + alpha * m_damping_target;
+  const auto get_next_damping =
+      [](const double damping_prev,
+         const double damping_0,
+         const double damping_target,
+         const double damping_warmup_steps) {
+        const DataType alpha = 2.0 * log10(damping_0 / damping_target) / damping_warmup_steps;
+        return (1.0-alpha) * damping_prev + alpha * damping_target;
+      };
+
+  m_damping_act = get_next_damping(
+      m_damping_act, m_damping_act_0, m_damping_act_target,
+      m_damping_warmup_steps);
+  m_damping_err = get_next_damping(
+      m_damping_err, m_damping_err_0, m_damping_err_target,
+      m_damping_warmup_steps);
 }
 
 void kfac_test::on_epoch_end(model *m) {
@@ -86,10 +101,11 @@ void kfac_test::on_epoch_end(model *m) {
     const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
     const auto epoch = c.get_epoch();
     std::ostringstream oss;
-    oss << "K-FAC callback: changing damping value to " << m_damping
+    // TODO: Print m_damping_err as well
+    oss << "K-FAC callback: changing damping value to " << m_damping_act
         << " at " << epoch << " epochs"
-        << " (g_0=" << m_damping_0
-        << ", g_target=" << m_damping_target
+        << " (g_0=" << m_damping_act_0
+        << ", g_target=" << m_damping_act_target
         << ", t_warmup=" << m_damping_warmup_steps
         << ")"
         << std::endl;
@@ -261,8 +277,8 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
 
     // Compute the inverse of the factors
     const bool print_time = comm->am_trainer_master() && m_print_time;
-    const auto Ainv = get_inverse(Aave, print_time, DataType(m_damping), l->get_name(), "A");
-    const auto Ginv = get_inverse(Gave, print_time, DataType(m_damping), l->get_name(), "G");
+    const auto Ainv = get_inverse(Aave, print_time, DataType(m_damping_act), l->get_name(), "A");
+    const auto Ginv = get_inverse(Gave, print_time, DataType(m_damping_err), l->get_name(), "G");
 
     // Compute preconditioned gradients
     El::Matrix<DataType, El::Device::GPU> Gg(G.Height(), gradient.Width());
@@ -359,15 +375,16 @@ build_kfac_test_callback_from_pbuf(
   using MsgType = lbann_data::Callback::CallbackKFACTest;
   using CallbackType = kfac_test;
   const auto& params = dynamic_cast<const MsgType&>(proto_msg);
-  double damping_0 = params.damping_0();
-  if(damping_0 == 0.0)
-    damping_0 = kfac_test::damping_0_default;
-  double damping_target = params.damping_target();
-  if(damping_target == 0.0)
-    damping_target = kfac_test::damping_target_default;
+  double damping_act_0 = params.damping_act_0();
+  double damping_err_0 = params.damping_err_0();
+  if(damping_act_0 == 0.0) damping_act_0 = kfac_test::damping_0_default;
+  if(damping_err_0 == 0.0) damping_err_0 = kfac_test::damping_0_default;
+  double damping_act_target = params.damping_act_target();
+  double damping_err_target = params.damping_err_target();
+  if(damping_act_target == 0.0) damping_act_target = kfac_test::damping_target_default;
+  if(damping_err_target == 0.0) damping_err_target = kfac_test::damping_target_default;
   double damping_warmup_steps = params.damping_warmup_steps();
-  if(damping_warmup_steps == 0.0)
-    damping_warmup_steps = kfac_test::damping_warmup_steps_default;
+  if(damping_warmup_steps == 0.0) damping_warmup_steps = kfac_test::damping_warmup_steps_default;
   double kronecker_decay = params.kronecker_decay();
   if(kronecker_decay == 0.0)
     kronecker_decay = kfac_test::kronecker_decay_default;
@@ -375,7 +392,9 @@ build_kfac_test_callback_from_pbuf(
   const bool print_matrix = params.print_matrix();
   const bool print_matrix_summary = params.print_matrix_summary();
   return make_unique<CallbackType>(
-      damping_0, damping_target, damping_warmup_steps,
+      damping_act_0, damping_err_0,
+      damping_act_target, damping_err_target,
+      damping_warmup_steps,
       kronecker_decay,
       print_time, print_matrix, print_matrix_summary);
 }
