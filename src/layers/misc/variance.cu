@@ -150,7 +150,7 @@ void fp_gpu(const El::AbstractDistMatrix<TensorDataType>& input,
     grid_dims.y = local_width;
     const auto& scale = El::TypeTraits<TensorDataType>::One() / (biased ? TensorDataType(height) : TensorDataType(height - 1));
     variance_contribution_kernel<TensorDataType, block_size>
-      <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
+      <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
         local_height, local_width, scale,
         local_input.LockedBuffer(), local_input.LDim(),
         local_means.LockedBuffer(),
@@ -192,7 +192,7 @@ void bp_gpu(const El::AbstractDistMatrix<TensorDataType>& input,
   El::Int grid_size = (local_height * local_width + block_size - 1) / block_size;
   if (grid_size > 0) {
     variance_backprop_kernel<TensorDataType>
-      <<<grid_size, block_size, 0, El::GPUManager::Stream()>>>(
+      <<<grid_size, block_size, 0, hydrogen::cuda::GetDefaultStream()>>>(
         local_height, local_width, scale,
         local_workspace.LockedBuffer(),
         local_input.LockedBuffer(), local_input.LDim(),

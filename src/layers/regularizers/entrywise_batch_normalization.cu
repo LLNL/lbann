@@ -26,9 +26,8 @@
 
 #define LBANN_ENTRYWISE_BATCH_NORMALIZATION_LAYER_INSTANTIATE
 #include "lbann/layers/regularizers/entrywise_batch_normalization.hpp"
+#include "lbann/weights/weights_helpers.hpp"
 #include "lbann/utils/cuda.hpp"
-
-#include "batch_norm_helpers.hpp"
 
 namespace lbann {
 
@@ -128,7 +127,7 @@ void compute_batch_statistics(lbann_comm& comm,
     block_dims.x = block_size;
     grid_dims.x = (local_height + block_size - 1) / block_size;
     row_sums_kernel<TensorDataType>
-      <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
+      <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
         local_height,
         local_width,
         local_input.LockedBuffer(),
@@ -156,7 +155,7 @@ void compute_batch_statistics(lbann_comm& comm,
       block_dims.x = block_size;
       grid_dims.x = (local_height + block_size - 1) / block_size;
       compute_statistics_kernel<TensorDataType>
-        <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
+        <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
           local_height,
           statistics_count,
           decay,
@@ -220,7 +219,7 @@ void apply_batchnorm(DataType epsilon,
     grid_dims.x = (local_height + block_size_x - 1) / block_size_x;
     grid_dims.y = (local_width + block_size_y - 1) / block_size_y;
     batchnorm_kernel<TensorDataType>
-      <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
+      <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
         local_height,
         local_width,
         epsilon,
@@ -420,7 +419,7 @@ void bp_training_impl(lbann_comm& comm,
     block_dims.x = block_size;
     grid_dims.x = (local_height + block_size - 1) / block_size;
     bp_training_stats_gradient_kernel<TensorDataType>
-      <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
+      <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
         local_height,
         local_width,
         epsilon,
@@ -453,7 +452,7 @@ void bp_training_impl(lbann_comm& comm,
     grid_dims.x = (local_height + block_size_x - 1) / block_size_x;
     grid_dims.y = (local_width + block_size_y - 1) / block_size_y;
     bp_training_error_signal_kernel
-      <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
+      <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
         local_height,
         local_width,
         epsilon,
@@ -531,7 +530,7 @@ void bp_inference_impl(DataType epsilon,
     grid_dims.x = (local_height + block_size_x - 1) / block_size_x;
     grid_dims.y = (local_width + block_size_y - 1) / block_size_y;
     bp_inference_kernel<TensorDataType>
-      <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
+      <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
         local_height,
         local_width,
         epsilon,
@@ -579,7 +578,7 @@ void bp_impl(lbann_comm& comm,
 // Template instantiation
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void entrywise_batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute() {
-  using ValuesGetter = bn_details::SafeWeightsAccessor<TensorDataType>;
+  using ValuesGetter = weights_details::SafeWeightsAccessor<TensorDataType>;
 
   const auto mode = this->get_model()->get_execution_context().get_execution_mode();
   fp_impl(*this->get_comm(),

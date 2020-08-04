@@ -3,7 +3,7 @@
 EXTERNAL_ALL_PACKAGES=$(cat <<EOF
     all:
       providers:
-        mpi: [mvapich2@2.3 arch=linux-rhel7-broadwell]
+        mpi: [mvapich2@2.3 arch=linux-rhel7-ivybridge]
         lapack: [openblas threads=openmp]
         blas: [openblas threasd=openmp]
       buildable: true
@@ -19,35 +19,35 @@ EXTERNAL_PACKAGES=$(cat <<EOF
       variants: ~openssl ~ncurses
       version: [3.18.0]
       modules:
-        cmake@3.18.0 arch=linux-rhel7-broadwell:  cmake/3.18.0
+        cmake@3.18.0 arch=linux-rhel7-ivybridge:  cmake/3.18.0
 
     cuda::
       buildable: False
       version: [10.2.89]
       modules:
-        cuda@10.2.89 arch=linux-rhel7-broadwell: cuda/10.2.89
+        cuda@10.2.89 arch=linux-rhel7-ivybridge: cuda/10.2.89
 
     cudnn::
       buildable: true
-      version: [7.6.5.32-10.2-linux-x64]
+      version: [8.0.0.180-10.2-linux-x64]
 
     gcc::
        buildable: False
        version: [7.3.0]
        modules:
-         gcc@7.3.0 arch=linux-rhel7-broadwell: gcc/7.3.0
+         gcc@7.3.0 arch=linux-rhel7-ivybridge: gcc/7.3.0
 
     hwloc::
       buildable: False
       version: [2.0.2]
       paths:
-        hwloc@2.0.2 arch=linux-rhel7-broadwell: /usr/lib64/libhwloc.so
+        hwloc@2.0.2 arch=linux-rhel7-ivybridge: /usr/lib64/libhwloc.so
 
     mvapich2::
       buildable: True
       version: [2.3]
       paths:
-        mvapich2@2.3%gcc@7.3.0 arch=linux-rhel7-broadwell: /usr/tce/packages/mvapich2/mvapich2-2.3-gcc-7.3.0/
+        mvapich2@2.3%gcc@7.3.0 arch=linux-rhel7-ivybridge: /usr/tce/packages/mvapich2/mvapich2-2.3-gcc-7.3.0/
 
     openblas::
       buildable: True
@@ -64,12 +64,12 @@ EXTERNAL_PACKAGES=$(cat <<EOF
       variants: +shared ~readline ~zlib ~bz2 ~lzma ~pyexpat
       version: [3.7.2]
       modules:
-        python@3.7.2 arch=linux-rhel7-broadwell: python/3.7.2
+        python@3.7.2 arch=linux-rhel7-ivybridge: python/3.7.2
 
     rdma-core::
       buildable: False
       version: [20]
       paths:
-        rdma-core@20 arch=linux-rhel7-broadwell: /usr
+        rdma-core@20 arch=linux-rhel7-ivybridge: /usr
 EOF
 )

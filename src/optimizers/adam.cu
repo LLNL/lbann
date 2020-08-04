@@ -96,7 +96,7 @@ void adam<TensorDataType>::step_compute_gpu(AbsDistMatrixType& values,
   // Launch CUDA kernel
   constexpr size_t block_size = 256;
   const size_t grid_size = (local_size + block_size - 1) / block_size;
-  auto&& stream = El::GPUManager::Stream();
+  auto&& stream = hydrogen::cuda::GetDefaultStream();
   if (values.Contiguous() && gradient.Contiguous()
       && m_moment1->Contiguous() && m_moment2->Contiguous()) {
     adam_contiguous_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(

@@ -28,12 +28,53 @@
 #define LBANN_UTILS_RNG_HPP
 
 #include "lbann/comm.hpp"
+#include "lbann/utils/exception.hpp"
 #include <random>
+#include <atomic>
+#include <thread>
 
 namespace lbann {
 
 using rng_gen = std::mt19937;  // Mersenne Twister
 using fast_rng_gen = std::minstd_rand;  // Minimum standard, LC
+
+struct io_rng_t {
+  lbann::rng_gen generator;
+  lbann::fast_rng_gen fast_generator;
+  // Track the owner so that it is easy to ensure the right thread is
+  // using this structure.
+  std::atomic<std::thread::id> active_thread_id;
+
+  io_rng_t()
+    : generator(42ULL),
+      fast_generator(42ULL),
+      active_thread_id(std::thread::id()) {}
+
+  io_rng_t(const io_rng_t& other)
+    : generator(other.generator),
+      fast_generator(other.fast_generator),
+      active_thread_id(other.active_thread_id.load()) {}
+};
+
+struct locked_io_rng_ref {
+  io_rng_t* rng_;
+  locked_io_rng_ref(io_rng_t& rng)
+    : rng_(&rng)
+  {
+    std::thread::id prev_tid = rng_->active_thread_id.exchange( std::this_thread::get_id());
+    if(prev_tid != std::thread::id()) {
+      LBANN_ERROR("Acquired a \'locked\' RNG that isn't owned by this thread");
+    }
+  }
+  explicit operator io_rng_t&() { return *rng_; }
+  ~locked_io_rng_ref() {
+    std::thread::id prev_tid = rng_->active_thread_id.exchange(std::thread::id());
+    if(prev_tid != std::this_thread::get_id()) {
+      LBANN_WARNING("Releasing a \'locked\' RNG that isn't owned by this thread");
+    }
+  }
+  locked_io_rng_ref(locked_io_rng_ref&& ) = default;
+};
 
 /**
  * Return a reference to the global LBANN random number generator.
@@ -54,6 +95,12 @@ fast_rng_gen& get_fast_generator();
  * @note This is stored in a thread_local variable.
  */
 rng_gen& get_data_seq_generator();
+
+/** @brief Returns the number of provisioned I/O generators. */
+int get_num_io_generators();
+
+/** @brief Sets the local index for a thread to access the correct I/O RNGs. */
+locked_io_rng_ref set_io_generators_local_index(size_t idx);
 
 /**
  * Return a reference to the global LBANN random number generator used
@@ -76,7 +123,7 @@ fast_rng_gen& get_fast_io_generator();
  *              into the seed; if not, uses the MPI world rank.
  *
  */
-void init_random(int seed = -1, lbann_comm *comm = nullptr);
+void init_random(int seed = -1, int num_io_RNGs = 1, lbann_comm *comm = nullptr);
 
 /**
  * Initialize a random number generator (with optional seed) that is
@@ -91,10 +138,11 @@ void init_data_seq_random(int seed = -1);
  * Initialize a random number generator (with optional seed) that is
  * specifically used by the I/O threads for tasks such as data
  * preprocessing, etc.
+ * Includes the number of I/O RNGs required.
  *
  * Called from init_random
  */
-void init_io_random(int seed = -1);
+void init_io_random(int seed = -1, int num_io_RNGs = 1);
 
 } // namespace lbann
 

@@ -194,7 +194,7 @@ EOF
         SUPERBUILD_SPECS=$(cat <<EOF
   - aluminum
   - hydrogen
-  - dihydrogen
+#  - dihydrogen
 EOF
 )
     fi
@@ -237,7 +237,8 @@ fi
 
 AL_VARIANTS=
 if [[ "${ENABLE_GPUS}" == "ON" ]]; then
-    AL_VARIANTS="variants: +gpu+nccl+mpi_cuda"
+#    CUDA_ARCH="cuda_arch=60,61,62,70"
+    AL_VARIANTS="variants: +cuda +nccl +ht +mpi_gpu_rdma"
     HYDROGEN_VARIANTS="${HYDROGEN_VARIANTS} +cuda"
     DIHYDROGEN_VARIANTS="${DIHYDROGEN_VARIANTS} +cuda +legacy"
 fi
@@ -257,7 +258,7 @@ ${STD_PACKAGES}
 
     aluminum:
       buildable: true
-      version: [0.3.3]
+      version: [0.4.0]
       ${AL_VARIANTS}
       providers: {}
       paths: {}
@@ -266,7 +267,7 @@ ${STD_PACKAGES}
       target: []
     hydrogen:
       buildable: true
-      version: [1.3.4]
+      version: [1.4.0]
       ${HYDROGEN_VARIANTS}
       providers: {}
       paths: {}

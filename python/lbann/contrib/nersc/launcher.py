@@ -1,7 +1,8 @@
+import math
+import os
 from lbann.contrib.nersc.systems import *
 import lbann.launcher
 from lbann.util import make_iterable
-from math import ceil
 
 def make_batch_script(
     system=system(),
@@ -24,12 +25,19 @@ def make_batch_script(
     launcher_args = list(make_iterable(launcher_args))
     environment = environment.copy()
 
+    # Helper function to configure environment variables
+    # Note: User-provided values take precedence, followed by values
+    # in the environment, followed by default values.
+    def set_environment(key, default):
+        if key not in environment:
+            environment[key] = os.getenv(key, default)
+
+    # Optimizations for Cori GPU nodes
     if system == 'cgpu':
         cores_per_proc = cores_per_node(system) // procs_per_node
-        if 'AL_PROGRESS_RANKS_PER_NUMA_NODE' not in environment:
-            environment['AL_PROGRESS_RANKS_PER_NUMA_NODE'] = ceil(procs_per_node / numa_nodes_per_node(system))
-        if 'OMP_NUM_THREADS' not in environment:
-            environment['OMP_NUM_THREADS'] = cores_per_proc - 1
+        set_environment('AL_PROGRESS_RANKS_PER_NUMA_NODE',
+                        math.ceil(procs_per_node / numa_nodes_per_node(system)))
+        set_environment('OMP_NUM_THREADS', cores_per_proc - 1)
         if scheduler == 'slurm':
             masks = [2**cores_per_proc - 1]
             while len(masks) < procs_per_node:
@@ -49,17 +57,13 @@ def make_batch_script(
         # Setting IBV_FORK_SAFE seems to fix this issue, but it may
         # hurt performance (see
         # https://linux.die.net/man/3/ibv_fork_init).
-        if 'IBV_FORK_SAFE' not in environment:
-            environment['IBV_FORK_SAFE'] = 1
+        set_environment('IBV_FORK_SAFE', 1)
 
-        if 'MV2_ENABLE_AFFINITY' not in environment:
-            environment['MV2_ENABLE_AFFINITY'] = 0
+        set_environment('MV2_ENABLE_AFFINITY', 0)
 
-        if 'MV2_USE_CUDA' not in environment:
-            environment['MV2_USE_CUDA'] = 1
+        set_environment('MV2_USE_CUDA', 1)
 
-        if 'MKL_THREADING_LAYER' not in environment:
-            environment['MKL_THREADING_LAYER'] = 'GNU'
+        set_environment('MKL_THREADING_LAYER', 'GNU')
 
     return lbann.launcher.make_batch_script(
         procs_per_node=procs_per_node,
