@@ -256,10 +256,10 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
     assert_always(activations.Height() == gradient.Width());
     assert_always(error_signals.Height() == gradient.Height());
 
-    // Compute Kronecker factors
-    const DataType alpha = DataType(1.0/mini_batch_size);
-    auto A = get_kronecker_factor(activations, alpha);
-    auto G = get_kronecker_factor(error_signals, alpha);
+    // Compute Kronecker factors, assuming that error_signals are
+    // already multiplied by 1/N in the loss layer.
+    auto A = get_kronecker_factor(activations, 1.0/mini_batch_size);
+    auto G = get_kronecker_factor(error_signals, mini_batch_size);
     // OPTIMIZE: Communicate only the lower triangulars
     comm->allreduce((El::AbstractMatrix<DataType>&) A, comm->get_trainer_comm());
     comm->allreduce((El::AbstractMatrix<DataType>&) G, comm->get_trainer_comm());
