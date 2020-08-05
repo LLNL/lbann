@@ -30,6 +30,7 @@
 ################################################################################
 
 import os.path
+import google.protobuf.text_format as txtf
 import sys
 import argparse
 import lbann
@@ -40,7 +41,7 @@ import lbann.contrib.launcher
 
 
 # Command-line arguments
-desc = ('Construct and run CANDLE on ImageNet-1K data. '
+desc = ('Construct and run CANDLE on Pilot1 data. '
         'Running the experiment is only supported on LC systems.')
 parser = argparse.ArgumentParser(description=desc)
 lbann.contrib.args.add_scheduler_arguments(parser)
@@ -59,17 +60,9 @@ parser.add_argument(
 parser.add_argument(
     '--random-seed', action='store', default=0, type=int,
     help='random seed for LBANN RNGs', metavar='NUM')
-#FIXME: is this right?
-parser.add_argument(
-    '--dataset', action='store', default='imagenet', type=str,
-    help='dataset to use; \"cifar10\" or \"imagenet\"')
-parser.add_argument(
-    '--data-reader-percent', action='store',
-    default=1.0, type=float,
-    help='the percent of the data to use (default: 1.0)', metavar='NUM')
 parser.add_argument(
     '--data-reader', action='store',
-    default='data_readers/data_reader_candle_pilot1.prototext', type=str,
+    default='./data_readers/data_reader_candle_pilot1.prototext', type=str,
     help='scheduler job name (default: data_readers/data_reader_candle_pilot1.prototext)')
 lbann.contrib.args.add_optimizer_arguments(parser, default_learning_rate=0.1)
 args = parser.parse_args()
@@ -157,7 +150,8 @@ relu9 = lbann.Relu(decode2, name="relu9", data_layout="model_parallel")
 decode1 = lbann.FullyConnected(relu9,
                                name="decode1",
                                data_layout="model_parallel",
-                               num_neurons_from_data_reader=True,
+                               hint_layer=data,
+                               #num_neurons_from_data_reader=True,
                                has_bias=True)
 
 relu10 = lbann.Relu(decode1, name="relu10", data_layout="model_parallel")
