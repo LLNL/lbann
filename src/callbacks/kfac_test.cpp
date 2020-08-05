@@ -264,6 +264,8 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
     const El::AbstractMatrix<DataType>& error_signals = dtl_child.get_local_error_signals();
     const auto mini_batch_size = dtl_parent.get_activations().Width();
     assert_always(mini_batch_size == dtl_child.get_error_signals().Width());
+    // The current implementation assumes that bias is not used in any layers.
+    assert_always(l->num_weights() == 1);
     auto& w = l->get_weights(0);
     optimizer *opt = w.get_optimizer();
     auto* dto = dynamic_cast<data_type_optimizer<DataType>*>(opt);
