@@ -386,6 +386,7 @@ message Callback {
     bool print_time = 7; // default: false
     bool print_matrix = 8; // default: false
     bool print_matrix_summary = 9; // default: false
+    bool use_pi = 10; // default: false
   }
 
 }

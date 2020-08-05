@@ -65,14 +65,16 @@ class kfac_test : public callback_base {
             double damping_warmup_steps,
             double kronecker_decay,
             bool print_time, bool print_matrix,
-            bool print_matrix_summary)
+            bool print_matrix_summary,
+            bool use_pi)
       : callback_base(),
         m_damping_act_0(damping_act_0), m_damping_err_0(damping_err_0),
         m_damping_act_target(damping_act_target), m_damping_err_target(damping_err_target),
         m_damping_warmup_steps(damping_warmup_steps),
         m_kronecker_decay(kronecker_decay),
         m_print_time(print_time), m_print_matrix(print_matrix),
-        m_print_matrix_summary(print_matrix_summary) {
+        m_print_matrix_summary(print_matrix_summary),
+        m_use_pi(use_pi) {
     m_damping_act = m_damping_act_0;
     m_damping_err = m_damping_err_0;
   }
@@ -105,6 +107,10 @@ class kfac_test : public callback_base {
 
   /** @brief Knobs to print information for debugging. */
   const bool m_print_time, m_print_matrix, m_print_matrix_summary;
+
+  /** @brief Weather to use the pi constant to adjust the damping
+      constant. */
+  const bool m_use_pi;
 
   /** @brief The current damping values. */
   double m_damping_act, m_damping_err;

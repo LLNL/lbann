@@ -228,6 +228,21 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
         return Ainv;
       };
 
+  // TODO: Static functions
+  const auto compute_pi =
+      [](const El::Matrix<DataType, El::Device::GPU> A,
+         const El::Matrix<DataType, El::Device::GPU> G) {
+        // OPTIMIZE: El::Trace is defined but not implemented yet.
+        const auto get_trace =
+            [](const El::Matrix<DataType, El::Device::GPU> X) {
+              const El::Matrix<DataType> XCPU(X);
+              DataType s = 0.0;
+              for(int i = 0; i < XCPU.Height(); i++)
+                s += XCPU(i, i);
+              return s;
+            };
+        return sqrt((get_trace(A)/A.Height())/(get_trace(G)/G.Height()));
+      };
 
   const auto comm = m->get_comm();
   if(l->get_type() == "fully connected") {
@@ -275,10 +290,17 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
     kfac_test_update_kronecker_average(
         Gave.Buffer(), G.Buffer(), G.Height()*G.Width(), m_kronecker_decay);
 
+    // Compute the pi constant
+    const DataType pi = m_use_pi ? compute_pi(Aave, Gave) : 1.0;
+
     // Compute the inverse of the factors
     const bool print_time = comm->am_trainer_master() && m_print_time;
-    const auto Ainv = get_inverse(Aave, print_time, DataType(m_damping_act), l->get_name(), "A");
-    const auto Ginv = get_inverse(Gave, print_time, DataType(m_damping_err), l->get_name(), "G");
+    // Since setting different damping constants for A and G is an
+    // alternative heuristics to pi, they should be the same if pi is used.
+    if(m_use_pi)
+      assert_always(m_damping_act == m_damping_err);
+    const auto Ainv = get_inverse(Aave, print_time, DataType(m_damping_act*pi), l->get_name(), "A");
+    const auto Ginv = get_inverse(Gave, print_time, DataType(m_damping_err/pi), l->get_name(), "G");
 
     // Compute preconditioned gradients
     El::Matrix<DataType, El::Device::GPU> Gg(G.Height(), gradient.Width());
@@ -360,6 +382,7 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
           << ", " << get_stat(Ginv, "Ginv")
           << ", " << get_stat(gradient, "grad")
           << ", " << get_stat(Fgrad, "Finvgrad")
+          << ", pi=" << pi
           << std::endl;
       std::cout << oss.str();
     }
@@ -391,12 +414,14 @@ build_kfac_test_callback_from_pbuf(
   const bool print_time = params.print_time();
   const bool print_matrix = params.print_matrix();
   const bool print_matrix_summary = params.print_matrix_summary();
+  const bool use_pi = params.use_pi();
   return make_unique<CallbackType>(
       damping_act_0, damping_err_0,
       damping_act_target, damping_err_target,
       damping_warmup_steps,
       kronecker_decay,
-      print_time, print_matrix, print_matrix_summary);
+      print_time, print_matrix, print_matrix_summary,
+      use_pi);
 }
 
 #undef KFAC_CALLBACK_USE_MAGMA
