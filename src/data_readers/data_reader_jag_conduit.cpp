@@ -864,6 +864,7 @@ void data_reader_jag_conduit::do_preload_data_store() {
     do_preload_data_store_jun_2020();
     return;
   }
+
   LBANN_INFO("starting data_reader_jag_conduit::do_preload_data_store, revised method, for role: ", get_role());
 
   conduit::Node work;
@@ -885,6 +886,7 @@ void data_reader_jag_conduit::do_preload_data_store() {
   }
 
   // Collect the sample IDs assigned to this rank
+  std::sort(m_shuffled_indices.begin(), m_shuffled_indices.end());
   std::set<int> my_indices;
   for (size_t idx=0; idx < m_shuffled_indices.size(); idx++) {
     int index = m_shuffled_indices[idx];
@@ -894,6 +896,7 @@ void data_reader_jag_conduit::do_preload_data_store() {
     my_indices.insert(index);
   }
   int total = my_indices.size();
+  shuffle_indices(get_data_seq_generator());
 
   for (auto index : my_indices) {
     try {

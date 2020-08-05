@@ -1320,9 +1320,11 @@ void data_store_conduit::exchange_images(std::vector<char> &work, map_is_t &imag
 }
 
 void data_store_conduit::exchange_owner_maps() {
+  // just in case ... please refactor me
   if (is_local_cache()) {
     return;
   }  
+
   if (m_owner_maps_were_exchanged) {
     if (m_trainer_master) {
       std::cout << "Immediate return from data_store_conduit::exchange_owner_maps(), since this was previously called for role: " << m_reader->get_role() << "\n";
