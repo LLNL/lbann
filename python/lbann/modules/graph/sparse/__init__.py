@@ -2,7 +2,7 @@
 from .GINConv  import GINConv
 from .GCNConv import GCNConv
 from .GraphConv import GraphConv
-from .GATConv import GatedGraphConv
+from .GatedGraphConv import GatedGraphConv
 __all__ = [
     'GCNConv',
     'GINConv', 

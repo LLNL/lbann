@@ -18,8 +18,7 @@ class GatedGraphConv(Module):
     def __init__(self, 
                  output_channels,
                  num_layers = 1,
-                 name = None,
-                 data_layout = 'data_parallel'):
+                 name = None):
         """Initialize GatedGraph layer
         Args: 
             output_channels (int): The output size of the node features 
@@ -61,7 +60,6 @@ class GatedGraphConv(Module):
             X (GraphVertexData): LBANN Data object, which is a collection of Layers. Each Layer is of
                                  the shape (1,input_channels) 
             A (Layer): Adjacency matrix input with shape (num_nodes, num_nodes)
-                                applied. (default: lbann.Relu) 
         Returns: 
             LBANN_Data_Mat: The output after Gated Graph Kernel. 
                         The output can passed into another Graph Conv layer directly

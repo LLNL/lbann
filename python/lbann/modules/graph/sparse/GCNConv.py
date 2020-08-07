@@ -90,7 +90,8 @@ class GCNConv(Module):
             X (GraphVertexData): LBANN Data object, which is a collection of Layers. Each Layer is of
                                  the shape (1,input_channels) 
             A (Layer): Adjacency matrix input with shape (num_nodes, num_nodes)
-                                applied. (default: lbann.Relu) 
+                                applied. The adjacency matrix is assumed to be normalized in the 
+                                pre-processing step. 
         Returns:     
             LBANN_Data_Mat: The output after GCN. The output can passed into another Graph Conv layer
                           directly
@@ -104,6 +105,9 @@ class GCNConv(Module):
 
         # Pass Message to Node Features
         out = X.get_mat(self.output_channels)
+        
+        # A - adjacency matrix is assumed to be normalized such that 
+        # A = D^-0.5 A D^0.5 as the convention in the GCN paper.  
         out = lbann.MatMul(A, out, name=self.name+'_aggregate')
         
         if self.activation:

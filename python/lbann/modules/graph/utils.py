@@ -63,8 +63,7 @@ class GraphVertexData:
 
         mat = lbann.Identity(self.layers[0])
         
-        for i in range(1,self.shape[0]):
-            mat = lbann.Concatenation(mat, self.layers[i])
+        mat = lbann.Concatenation(self.layers)
 
         if (cols):
             mat = lbann.Reshape(mat, dims=str_list([self.shape[0], cols]))    
