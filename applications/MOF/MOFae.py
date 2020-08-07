@@ -7,10 +7,11 @@ import os.path
 # ----------------------------------
 def gen_layers(latent_dim, number_of_atoms):
     ''' Generates the model for the 3D Convolutional Auto Encoder. 
-
-        returns the Directed Acyclic Graph (DAG) that the lbann 
+        
+                returns the Directed Acyclic Graph (DAG) that the lbann 
         model will run on. 
     '''
+    
     input_ = lbann.Input( target_mode = "reconstruction")
     tensors = lbann.Identity(input_)
 

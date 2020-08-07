@@ -7,7 +7,7 @@ from graph_data_util import lbann_Graph_Data
 def GINConvLayer(X,A):
     """An example GIN kernel with 4 layer deep sequential nn.  
     Args:
-        X (GraphVertexData): 
+        X (GraphVertexData): Contains all the node feaures of the graph 
         A (Layer): Adjancency matrix layer. Should have the shape: 
                    (num_nodes, num_nodes)
     Returns: 
@@ -32,7 +32,7 @@ def GINConvLayer(X,A):
 def GCNConvLayer(X,A):
     """An example 2-layer GCN kernel.
     Args:
-        X (GraphVertexData): 
+        X (GraphVertexData): Contains all the node feaures of the graph
         A (Layer): Adjancency matrix layer. Should have the shape: 
                    (num_nodes, num_nodes)
     Returns: 
@@ -60,7 +60,7 @@ def GCNConvLayer(X,A):
 def GraphConvLayer(X,A):
     """An example 2-layer Graph kernel.
     Args:
-        X (GraphVertexData): 
+        X (GraphVertexData): Contains all the node feaures of the graph
         A (Layer): Adjancency matrix layer. Should have the shape: 
                    (num_nodes, num_nodes)
     Returns: 
@@ -88,7 +88,7 @@ def GraphConvLayer(X,A):
 def GATConvLayer(X,A):
     """An example single layer GatedGraph kernel.
     Args:
-        X (GraphVertexData): 
+        X (GraphVertexData): Contains all the node feaures of the graph
         A (Layer): Adjancency matrix layer. Should have the shape: 
                    (num_nodes, num_nodes)
     Returns: 

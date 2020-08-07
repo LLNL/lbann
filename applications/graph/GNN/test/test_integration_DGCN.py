@@ -12,7 +12,7 @@ current_dir = os.path.dirname(current_file)
 root_dir = os.path.dirname(current_dir)
 
 import data.PROTEINS
-import Sparse_Graph_Trainer
+import Dense_Graph_Trainer
 
 graph_dir = os.path.dirname(root_dir)
 applications_dir = os.path.dirname(graph_dir)
@@ -22,18 +22,18 @@ sys.path.append(common_python_dir)
 import tools
 
 
-num_epochs = 100
+num_epochs = 30
 mini_batch_size = 64
 num_nodes = 2
 
 
-expected_accuracy_range = (70, 80)
+expected_accuracy_range = (64, 71)
 
 expected_mini_batch_times = {
-       'ray' : 0.0792
+       'ray' : 0.005
        }
 expected_gpu_usage = {
-        'ray' : 0.535
+        'ray' : 0.7
         }
 
 def setup_experiment(lbann):
@@ -53,8 +53,8 @@ def setup_experiment(lbann):
     
 
     
-    model = Sparse_Graph_Trainer.make_model(dataset = 'PROTEINS',
-                                            kernel_type = 'GIN',
+    model = Dense_Graph_Trainer.make_model(dataset = 'PROTEINS',
+                                            kernel_type = 'GCN',
                                             num_epochs = num_epochs,
                                             callbacks = callbacks)
     reader = data.PROTEINS.make_data_reader()

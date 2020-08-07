@@ -9,7 +9,7 @@ class DenseGraphConv(Module):
         super().__init__()
         self.name = (name if name else 'DenseGraph_{}'.format(DenseGraphConv.global_count))
         
-        DenseGraph.global_count+=1                        
+        DenseGraphConv.global_count+=1                        
         
         bounds = math.sqrt(6.0/(input_channels + output_channels))
 

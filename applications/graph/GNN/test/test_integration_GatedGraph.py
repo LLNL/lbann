@@ -27,10 +27,10 @@ mini_batch_size = 128
 num_nodes = 2
 
 
-expected_accuracy_range = (42, 60)
+expected_accuracy_range = (65, 75)
 
 expected_mini_batch_times = {
-       'ray' : 0.532
+       'ray' : 0.05
        }
 expected_gpu_usage = {
         'ray' : 0.56

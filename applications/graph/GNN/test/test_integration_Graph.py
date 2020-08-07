@@ -27,7 +27,7 @@ mini_batch_size = 64
 num_nodes = 2
 
 
-expected_accuracy_range = (58, 75)
+expected_accuracy_range = (70, 80)
 
 expected_mini_batch_times = {
        'ray' : 0.085

@@ -60,8 +60,6 @@ class GraphVertexData:
 
            args: cols (int) 
         """
-
-        mat = lbann.Identity(self.layers[0])
         
         mat = lbann.Concatenation(self.layers)
 

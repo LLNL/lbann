@@ -6,6 +6,7 @@ import argparse
 import os 
 
 import Sparse_Graph_Trainer 
+import Dense_Graph_Trainer
 import data.MNIST_Superpixel
 import data.PROTEINS
 
@@ -62,7 +63,15 @@ elif(model_arch=='GATEDGRAPH'):
     model = Sparse_Graph_Trainer.make_model(dataset = 'PROTEINS',
                                             kernel_type = 'GatedGraph',
                                             num_epochs = num_epochs)
-else:
+elif (model_arch =='DGCN'):
+    model = Dense_Graph_Trainer.make_model(dataset = 'PROTEINS',
+                                           kernel_type = 'GCN',
+                                           num_epochs = num_epochs)
+elif (model_arch == 'DGRAPH'):
+    model = Dense_Graph_Trainer.make_model(dataset = 'PROTEINS',
+                                           kernel_type = 'Graph',
+                                           num_epochs = num_epochs)
+else:   
     model = Sparse_Graph_Trainer.make_model(dataset = 'PROTEINS',
                                             kernel_type = 'GCN',
                                             num_epochs=num_epochs)

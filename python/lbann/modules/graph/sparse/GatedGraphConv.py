@@ -3,6 +3,7 @@ from lbann.modules import Module
 from lbann.util import str_list
 from lbann.modules.graph.utils import GraphVertexData
 import lbann.modules
+import math 
 
 class GatedGraphConv(Module):
     """Gated Graph Convolution layer. For kernel details, see: 
@@ -45,8 +46,9 @@ class GatedGraphConv(Module):
         self.weights = [] 
 
         for i in range(num_layers):
-            weight_init = lbann.Weights(initializer = lbann.NormalInitializer(mean=0, 
-                                                          standard_deviation = 1/((i+1) * output_channels)))
+            
+            weight_init = lbann.Weights(initializer = lbann.UniformInitializer(min =-1/(math.sqrt(output_channels)), 
+                                                                               max = 1/(math.sqrt(output_channels))))
             weight_layer = lbann.WeightsLayer(dims = str_list([output_channels, output_channels]),
                                               weights = weight_init, 
                                               name = self.name+'_'+str(i)+'_weight',

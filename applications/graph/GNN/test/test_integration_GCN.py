@@ -30,7 +30,7 @@ num_nodes = 2
 expected_accuracy_range = (58, 75)
 
 expected_mini_batch_times = {
-       'ray' : 0.0587
+       'ray' : 0.04
        }
 expected_gpu_usage = {
         'ray' : 0.554

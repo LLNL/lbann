@@ -72,5 +72,5 @@ class GINConv(Module):
         if activation:
             for node_feature in range(X.shape[0]):
                 X[node_feature] = activation(X[node_feature])
-        X.num_features = self.output_channels
+        X.update_num_features(self.output_channels) 
         return X
