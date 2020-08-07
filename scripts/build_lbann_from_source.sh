@@ -46,11 +46,18 @@ if [[ ${SYS} = "Darwin" ]]; then
     BUILD_SUFFIX=llnl.gov
 else
     CORI=$([[ $(hostname) =~ (cori|cgpu) ]] && echo 1 || echo 0)
+    DOMAINNAME=$(python -c 'import socket; domain = socket.getfqdn().split("."); print(domain[-2] + "." + domain[-1])')
     if [[ ${CORI} -eq 1 ]]; then
         CENTER="nersc"
         # Make sure to purge and setup the modules properly prior to finding the Spack architecture
         source ${SPACK_ENV_DIR}/${CENTER}/setup_modules.sh
         BUILD_SUFFIX=nersc.gov
+    elif [[ ${DOMAINNAME} = "ornl.gov" ]]; then
+        CENTER="olcf"
+        BUILD_SUFFIX=${DOMAINNAME}
+    elif [[ ${DOMAINNAME} = "llnl.gov" ]]; then
+        CENTER="llnl_lc"
+        BUILD_SUFFIX=${DOMAINNAME}
     else
         CENTER="llnl_lc"
         BUILD_SUFFIX=llnl.gov
