@@ -18,7 +18,7 @@ class GINConv(Module):
         """Initialize graph kernel as described in Graph Isomorphism Network.
            
         Args:
-            sequential_nn ([Layers] or (Layers)): A list or tuple of layers to be used as  
+            sequential_nn ([Module] or (Module)): A list or tuple of layer modules to be used  
             output_channels (int): The output size of the node features
             eps (float): Default value is 1e-6
             name (str): Default name of the layer is GIN_{number}
