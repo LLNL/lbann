@@ -308,6 +308,35 @@ auto data_type_layer<TensorDataType>::get_branch_tag_input_vector()
   return m_subgrid_tensors_split;
 }
 
+template <typename TensorDataType>
+auto data_type_layer<TensorDataType>::get_all_activations()
+  ->    std::vector<std::unique_ptr<AbsDistMatrixType>>& {
+  
+  return m_outputs;
+  
+}
+
+template <typename TensorDataType>
+auto data_type_layer<TensorDataType>::get_all_prev_activations()
+  ->    std::vector<std::unique_ptr<AbsDistMatrixType>>& {
+  
+  return m_inputs;
+}
+
+template <typename TensorDataType>
+auto data_type_layer<TensorDataType>::get_all_prev_error_signals()
+  ->    std::vector<std::unique_ptr<AbsDistMatrixType>>& {
+  
+  return m_gradient_wrt_outputs;
+}
+
+template <typename TensorDataType>
+auto data_type_layer<TensorDataType>::get_all_error_signals()
+  ->    std::vector<std::unique_ptr<AbsDistMatrixType>>& {
+  
+  return m_gradient_wrt_inputs;
+}
+
 // Accessing non-const distributed matrices
 // Note: Using idiom from Item 3, p. 23 in "Effective C++", 3rd ed.,
 // by Scott Meyers.
@@ -490,8 +519,9 @@ void data_type_layer<TensorDataType>::setup_matrices(const El::Grid& grid) {
   auto parents = get_parent_layers();
 
   
-  if(get_name().find("split")!= std::string::npos  && this->get_model()->is_subgraph_parallelism_enabled())
+  if((get_name().find("split")!= std::string::npos || this->get_type()=="slice")  && this->get_model()->is_subgraph_parallelism_enabled()  && this->get_parallel_strategy().enable_subgraph==1)
   {
+
     //split layer 
     m_subgrid_tensors_split.clear();
     //std::cout<<"Number of spliting groups:"<<childs[0]->num_spliting_groups<<"\n";
@@ -542,7 +572,7 @@ void data_type_layer<TensorDataType>::setup_matrices(const El::Grid& grid) {
     }
     
   }
-  else if(get_type()=="sum" && this->get_model()->is_subgraph_parallelism_enabled())
+  else if( (get_type()=="sum" || this->get_type()=="concatenate" ) && this->get_model()->is_subgraph_parallelism_enabled() && this->get_parallel_strategy().enable_subgraph==1)
   {
     //split layer 
     m_subgrid_tensors_split.clear();
@@ -768,6 +798,7 @@ void data_type_layer<TensorDataType>::fp_setup_inputs(El::Int mini_batch_size) {
     // Check input matrix dimensions
     const auto& height = get_input_size(i);
     const auto& width = mini_batch_size;
+    //std::cout<<"Layer name:"<<this->get_type()<<" batch size:"<<mini_batch_size<<"\n";
     if (input.Height() != height || input.Width() != width) {
       std::stringstream err;
       err << "layer \"" << get_name() << "\" "
@@ -1026,7 +1057,7 @@ void data_type_layer<TensorDataType>::allocate_new_gradients_() {
     if (!keep_original_gradient_wrt_inputs(i)) continue;
 #endif // LBANN_HAS_DISTCONV
     if (!m_gradient_wrt_inputs[i]) {
-      if(get_type()=="sum")
+      if(get_type()=="sum" && this->get_parallel_strategy().enable_subgraph==1)
       {
         //std::cout<<"Initializing Sum layer grads in allocate new gradients\n";
         m_gradient_wrt_inputs[i] =
@@ -1046,7 +1077,11 @@ void data_type_layer<TensorDataType>::allocate_new_gradients_() {
     }
     auto& gradient_wrt_input = get_error_signals(i);
     gradient_wrt_input.Empty(false);
-    if(get_type()!="sum")
+    if(get_type()=="sum" && this->get_parallel_strategy().enable_subgraph==1)
+    {
+      
+    }
+    else
     {
       gradient_wrt_input.AlignWith(get_prev_activations(i));
     }

@@ -752,7 +752,7 @@ void model::setup_subgrid_layers_run_condition()
   const El::Int num_layers = layers.size();
   int myrank = El::mpi::Rank();
   for (El::Int node = 0; node < num_layers; ++node) {
-    if((*layers[node]->subgrid_ranks).find(myrank) != (*layers[node]->subgrid_ranks).end() || layers[node]->get_type()=="add" || layers[node]->get_type()=="concatenate" || layers[node]->get_type()=="sum")
+    if((*layers[node]->subgrid_ranks).find(myrank) != (*layers[node]->subgrid_ranks).end() || layers[node]->get_type()=="add" || layers[node]->get_type()=="concatenate" || layers[node]->get_type()=="sum" || layers[node]->get_type()=="slice")
     {
       layers[node]->set_run_layer_in_subgraph();
     }
@@ -763,61 +763,83 @@ void model::setup_subgrid_layers_run_condition()
 void  model::setup_subgrids(){
   const auto& layers = this->get_layers();
   const El::Int num_layers = layers.size();
-  El::Int grid_number = 0;
+  //El::Int grid_number = 0;
   
   const El::GridOrder orderGrid =  El::COLUMN_MAJOR;
-  
-  grids_mpi_groups[0] = std::unique_ptr<El::mpi::Group>(new El::mpi::Group);
+
+  std::string grid_global_index = "";
+  std::string grid_temp_index = "";
 
   El::mpi::Comm sub_comm = El::mpi::NewWorldComm();
   El::Int commSize = El::mpi::Size( sub_comm);
-  El::mpi::CommGroup( El::mpi::NewWorldComm(), *grids_mpi_groups[0]  );
 
-
-  //grids[grid_number] = std::unique_ptr<El::Grid>(new El::Grid(sub_comm,group, commSize, orderGrid ));
-  //grids.insert(std::make_pair(grid_number, std::shared_ptr<El::Grid>(new El::Grid(El::mpi::NewWorldComm(),*grids_mpi_groups[0], commSize, orderGrid ))));
-  //make_shared<Song>
-  //grids.insert(std::make_pair(grid_number, std::make_shared<El::Grid>(El::mpi::NewWorldComm(),*grids_mpi_groups[0], commSize, orderGrid )));
-  grids[grid_number] = std::make_shared<El::Grid>(El::mpi::NewWorldComm(),*grids_mpi_groups[0], commSize, orderGrid );
-  std::unique_ptr<El::Grid> temp_ptr;
-  //grids[grid_number] = temp_ptr;
-  //grids.insert({grid_number,temp_ptr});
- 
-  
-
-
-  
-
-
-
-  //grids.insert(std::make_pair(grid_number, std::unique_ptr<El::Grid>(new El::Grid(El::mpi::NewWorldComm(),grid1Group, 2, orderGrid ))));
-
-
+  //Start will all the ranks for the layer 
   std::set <int, std::greater <int> > initial_ranks;
-
-
+  std::set <int, std::greater <int> > initial_ranks_global;
   for( El::Int i=0; i<commSize; ++i )
   {
     initial_ranks.insert(i);
+    initial_ranks_global.insert(i);
   }
+
+  // index based on ranks 
+  for (auto it=initial_ranks.begin(); it != initial_ranks.end(); ++it) 
+        grid_global_index += " " + std::to_string(*it);
+
+
+
+  grids_mpi_groups[grid_global_index] = std::unique_ptr<El::mpi::Group>(new El::mpi::Group);
+
+  
+  El::mpi::CommGroup( El::mpi::NewWorldComm(), *grids_mpi_groups[grid_global_index]  );
+
+
+  
+  std::unique_ptr<El::Grid> temp_ptr;
+
+  
+
+  grids[grid_global_index] = std::make_shared<El::Grid>(El::mpi::NewWorldComm(),*grids_mpi_groups[grid_global_index], commSize, orderGrid );
+  //std::shared_ptr<El::Grid> mcomm_grid(&(m_comm->get_trainer_grid()));
+  //grids[grid_global_index] = mcomm_grid;
+  // subgrid_number
+  // grid_number
+
+
   
 
 
   for (El::Int node = 0; node < num_layers; ++node) {
+    //std::cout<<" Layer number:"<<node<<" Layer type:"<< layers[node]->get_type()<<" Layer name:"<<layers[node]->get_name()<<"\n";
     layers[node]->enable_subgraph_parallelism();
-    if(layers[node]->get_type()=="split" || layers[node]->get_type()=="sum")
+
+    //special cases
+    if(layers[node]->get_type()=="split" || layers[node]->get_type()=="sum" || layers[node]->get_type()=="slice" || layers[node]->get_type()=="concatenate")
     {
       layers[node]->set_communication_flag(this->get_subgrid_communication_type());
       //std::cout<<"communication type for subgrid:"<<this->get_subgrid_communication_type()<<"\n";
+
+      //set enable subgrpah parallelism variable for split layers
+      if(layers[node]->get_type()=="split")
+      {
+        auto childs = layers[node]->get_child_layers();
+        if(childs[0]->get_parallel_strategy().sub_branch_tag > 0)
+        {
+          std::cout<<"Enabling subgraph parallelism for "<<layers[node]->get_name()<<"\n";
+          layers[node]->set_enable_subgraph_variable();
+        }
+      }
+
     }
 
 
-    if(layers[node]->get_type() == "input")
+    if(layers[node]->get_type() == "input" || layers[node]->get_type() == "constant" )
     {
-      layers[node]->subgrid_ranks.reset(new std::set<int, std::greater <int> >(initial_ranks.begin(),initial_ranks.end()));
-      layers[node]->subgrid_number = 0;
+      //std::cout<<"Input or constance layer:"<<layers[node]->get_type()<<"\n";
+      layers[node]->subgrid_ranks.reset(new std::set<int, std::greater <int> >(initial_ranks_global.begin(),initial_ranks_global.end()));
+      layers[node]->subgrid_index = grid_global_index;
       //layers[node]->mygrid.reset(grids[grid_number].get());
-      layers[node]->mygrid = grids[grid_number];
+      layers[node]->mygrid = grids[grid_global_index];
 
     }
     else
@@ -826,14 +848,23 @@ void  model::setup_subgrids(){
       {
         std::vector<const Layer*>& parents = layers[node]->get_parent_layers();
         //when layer has only one parent no branching copy everthing from parent 
-        if(parents.size()==1)
+
+        if(parents.size()==0)
+        {
+          layers[node]->subgrid_ranks.reset(new std::set<int, std::greater <int> >(initial_ranks_global.begin(),initial_ranks_global.end()));
+          layers[node]->subgrid_index = grid_global_index;
+          layers[node]->mygrid = grids[grid_global_index];
+          std::cout<<"Zero Parents layer:"<<layers[node]->get_type()<<"\n";
+
+        }
+        else if(parents.size()==1)
         {
 
           std::set <int, std::greater <int> > layer_ranks = *(parents[0]->subgrid_ranks);
           layers[node]->subgrid_ranks.reset(new std::set<int, std::greater <int> >(layer_ranks.begin(),layer_ranks.end()));
-          layers[node]->subgrid_number = parents[0]->subgrid_number;
+          layers[node]->subgrid_index = parents[0]->subgrid_index;
           //layers[node]->mygrid.reset(grids[layers[node]->subgrid_number].get());
-          layers[node]->mygrid = grids[layers[node]->subgrid_number];
+          layers[node]->mygrid = grids[layers[node]->subgrid_index];
         }
         else
         {
@@ -842,7 +873,7 @@ void  model::setup_subgrids(){
           std::set<int,std::greater <int>> pooled_set;
           for(int parent= 0; parent< int(parents.size());++parent)
           {
-            std::set<int> temp_set(pooled_set.begin(),pooled_set.end());
+            std::set<int, std::greater <int> > temp_set(pooled_set.begin(),pooled_set.end());
             pooled_set.clear();
 
             std::set_union(temp_set.begin(), temp_set.end(),
@@ -852,30 +883,47 @@ void  model::setup_subgrids(){
           layers[node]->subgrid_ranks.reset(new std::set<int,std::greater <int>> (pooled_set.begin(),pooled_set.end()));
 
           //create new grid 
-          std::vector<int> ranks_in_grid(pooled_set.begin(), pooled_set.end());
-          
-          grid_number++;
-          grids_mpi_groups[grid_number] = std::unique_ptr<El::mpi::Group>(new El::mpi::Group);
-          El::mpi::Incl( *grids_mpi_groups[0], ranks_in_grid.size(), ranks_in_grid.data(), *grids_mpi_groups[grid_number] );
-          
+          std::vector<int > ranks_in_grid(pooled_set.begin(), pooled_set.end());
 
-          grids[grid_number] = std::make_shared<El::Grid>(El::mpi::NewWorldComm(),*grids_mpi_groups[grid_number], ranks_in_grid.size(), orderGrid );
-          //grids_mpi_groups[grid_number] = std::unique_ptr<El::mpi::Group>(temp_group);
-          layers[node]->subgrid_number = grid_number;
-          //layers[node]->mygrid.reset(grids[grid_number].get());
-          layers[node]->mygrid = grids[grid_number];
+          grid_temp_index = "";
+          for (auto it=ranks_in_grid.begin(); it != ranks_in_grid.end(); ++it) 
+            grid_temp_index += " " + std::to_string(*it);
 
+          if(grids.find(grid_temp_index) != grids.end())
+          //subgrid already exist with required resources
+          {
+            layers[node]->subgrid_index = grid_temp_index;
+            layers[node]->mygrid = grids[grid_temp_index];
+          }
+          else
+          {
+            
+            grids_mpi_groups[grid_temp_index] = std::unique_ptr<El::mpi::Group>(new El::mpi::Group);
+            El::mpi::Incl( *grids_mpi_groups[grid_global_index], ranks_in_grid.size(), ranks_in_grid.data(), *grids_mpi_groups[grid_temp_index] );
+            
+
+            grids[grid_temp_index] = std::make_shared<El::Grid>(El::mpi::NewWorldComm(),*grids_mpi_groups[grid_temp_index], ranks_in_grid.size(), orderGrid );
+            layers[node]->subgrid_index = grid_temp_index;
+            layers[node]->mygrid = grids[grid_temp_index];
+
+            std::cout<<"Grid temp index "<<layers[node]->get_type()<< ":"<<grid_temp_index<<"\n";
+
+            
+
+            std::string temp_print;
+
+            for(int vec_index = 0; vec_index<int(ranks_in_grid.size());++vec_index)
+            {
+              std::string s = std::to_string(ranks_in_grid[vec_index]);
+              temp_print.append(s);
+              temp_print.append(" ");
+            }
+
+
+          }
           get_parent_subgrid_tags(node );
 
-          std::string temp_print;
-
-          for(int vec_index = 0; vec_index<int(ranks_in_grid.size());++vec_index)
-          {
-            std::string s = std::to_string(ranks_in_grid[vec_index]);
-            temp_print.append(s);
-            temp_print.append(" ");
-          }
-
+          
           //std::cout<<"Adding Layer:"<<layers[node]->get_name()<< " Pooled resources:"<<temp_print<<"\n";
 
 
@@ -894,6 +942,8 @@ void  model::setup_subgrids(){
         std::set <int, std::greater <int> > parent_layer_ranks = *(parents[0]->subgrid_ranks);
         std::set <int, std::greater <int> > my_sub_ranks ;
 
+        
+
         bool flag_subgrid_found  = false;
 
         for(El::Int child = 0; child<int(childs.size());++child)
@@ -901,12 +951,12 @@ void  model::setup_subgrids(){
           num_divisions = std::max(num_divisions, int(childs[child]->get_parallel_strategy().sub_branch_tag));
 
           //check if the grid is initialized for the childs with similar tag
-          if(childs[child]->subgrid_number > 0 && int(childs[child]->get_parallel_strategy().sub_branch_tag) == (layers[node]->get_parallel_strategy().sub_branch_tag ))
+          if(childs[child]->subgrid_index != "" && int(childs[child]->get_parallel_strategy().sub_branch_tag) == (layers[node]->get_parallel_strategy().sub_branch_tag ))
           {
-            layers[node]->subgrid_number = childs[child]->subgrid_number;
+            layers[node]->subgrid_index = childs[child]->subgrid_index;
             layers[node]->subgrid_ranks.reset(new std::set<int,std::greater <int>> (  (*childs[child]->subgrid_ranks).begin()  ,(*childs[child]->subgrid_ranks).end())    );
             //layers[node]->mygrid.reset(grids[grid_number].get());
-            layers[node]->mygrid = grids[childs[child]->subgrid_number];
+            layers[node]->mygrid = grids[childs[child]->subgrid_index];
             layers[node]->num_spliting_groups = childs[child]->num_spliting_groups;
             flag_subgrid_found = true;
 
@@ -924,7 +974,7 @@ void  model::setup_subgrids(){
 
 
 
-        std::set<int> :: iterator itr;
+        std::set<int,std::greater <int>> :: iterator itr;
         El::Int counter = 0 ;
         for (itr = parent_layer_ranks.begin(); itr != parent_layer_ranks.end(); ++itr) 
         {
@@ -938,25 +988,45 @@ void  model::setup_subgrids(){
         
         //create new grid 
         std::vector<int> ranks_in_grid(my_sub_ranks.begin(), my_sub_ranks.end());
-        grid_number++;
-        grids_mpi_groups[grid_number] = std::unique_ptr<El::mpi::Group>(new El::mpi::Group);
-        El::mpi::Incl( *grids_mpi_groups[0], ranks_in_grid.size(), ranks_in_grid.data(), *grids_mpi_groups[grid_number] );
-        
+        grid_temp_index = "";
+        for (auto it=ranks_in_grid.begin(); it != ranks_in_grid.end(); ++it) 
+          grid_temp_index += " " + std::to_string(*it);
 
-        grids[grid_number] = std::make_shared<El::Grid>(El::mpi::NewWorldComm(),*grids_mpi_groups[grid_number], ranks_in_grid.size(), orderGrid );
 
-        layers[node]->subgrid_number = grid_number;
-        layers[node]->subgrid_ranks.reset(new std::set<int,std::greater <int>> (my_sub_ranks.begin(),my_sub_ranks.end()));
-        //layers[node]->mygrid.reset(grids[grid_number].get());
-        layers[node]->mygrid = grids[grid_number];
-        layers[node]->num_spliting_groups=num_divisions;
+        if(grids.find(grid_temp_index) != grids.end())
+        //subgrid already exist with required resources
+        {
+          layers[node]->subgrid_index = grid_temp_index;
+          layers[node]->mygrid = grids[grid_temp_index];
+          layers[node]->num_spliting_groups=num_divisions;
+          layers[node]->subgrid_ranks.reset(new std::set<int,std::greater <int>> (my_sub_ranks.begin(),my_sub_ranks.end()));
+        }
+        else
+        {
 
-        // if(parents[0]->get_name().find("split")!= std::string::npos)
-        // {
-        //   parents[0]->subgrid_number = grid_number;
-        //   parents[0]->subgrid_ranks.reset(new std::set<int,std::greater <int>> (my_sub_ranks.begin(),my_sub_ranks.end()));
-        //   std::cout<<"My parent is spliting layer "<<layers[node]->get_name()<<"\n";
-        // }
+
+
+          grids_mpi_groups[grid_temp_index] = std::unique_ptr<El::mpi::Group>(new El::mpi::Group);
+          El::mpi::Incl( *grids_mpi_groups[grid_global_index], ranks_in_grid.size(), ranks_in_grid.data(), *grids_mpi_groups[grid_temp_index] );
+          
+
+          grids[grid_temp_index] = std::make_shared<El::Grid>(El::mpi::NewWorldComm(),*grids_mpi_groups[grid_temp_index], ranks_in_grid.size(), orderGrid );
+          std::cout<<"Grid temp index split/slice:"<<grid_temp_index<<"\n";
+
+          layers[node]->subgrid_index = grid_temp_index;
+          layers[node]->subgrid_ranks.reset(new std::set<int,std::greater <int>> (my_sub_ranks.begin(),my_sub_ranks.end()));
+          //layers[node]->mygrid.reset(grids[grid_number].get());
+          layers[node]->mygrid = grids[grid_temp_index];
+          layers[node]->num_spliting_groups=num_divisions;
+
+          // if(parents[0]->get_name().find("split")!= std::string::npos)
+          // {
+          //   parents[0]->subgrid_number = grid_number;
+          //   parents[0]->subgrid_ranks.reset(new std::set<int,std::greater <int>> (my_sub_ranks.begin(),my_sub_ranks.end()));
+          //   std::cout<<"My parent is spliting layer "<<layers[node]->get_name()<<"\n";
+          // }
+
+        }
 
         std::string temp_print;
 
@@ -981,7 +1051,10 @@ void  model::setup_subgrids(){
     //std::cout<<"In model Layer name:"<<layers[node]->get_name()<<" Type:"<<layers[node]->get_type()<<" Enable subgraph:"<<layers[node]->get_parallel_strategy().enable_subgraph<< " Ranks size:"<< (*layers[node]->subgrid_ranks).size()<<"\n";
 
   }
-  std::cout<<"Number of subgrids created:"<<grid_number<<"\n";
+  std::cout<<"Number of subgrids created:"<<grids.size()<<"\n";
+  for (auto const& pair: grids) {
+    std::cout << "{" << pair.first << ": "  << "}\n";
+  }
 
   this->setup_subgrid_layers_run_condition();
   //std::cout<<"Times shared pointer 0 is used:"<<grids[0].use_count()<<"\n";
@@ -1017,7 +1090,9 @@ void model::setup_layers(size_t max_mini_batch_size, DataReaderMetaData& dr_meta
 
     if(this->is_subgraph_parallelism_enabled())
     {
-      l.setup(max_mini_batch_size, dr_metadata,*(grids[l.subgrid_number]));
+      
+      l.setup(max_mini_batch_size, dr_metadata,*(grids[l.subgrid_index]));
+      
 
     }
     else
@@ -1352,13 +1427,15 @@ void model::forward_prop(execution_mode mode) {
     //std::cout<<"Running FP with"<<l.get_type()<<" Layer name:"<<l.get_name()<<" Rank:"<<myrank<<"\n";
     if(this->is_subgraph_parallelism_enabled())
     {
-      if((*l.subgrid_ranks).find(myrank) != (*l.subgrid_ranks).end() || l.get_type()=="add" || l.get_type()=="concatenate" || l.get_type()=="sum")
+      if((*l.subgrid_ranks).find(myrank) != (*l.subgrid_ranks).end() || l.get_type()=="add" || l.get_type()=="concatenate" || l.get_type()=="sum" || l.get_type()=="slice")
       {
         //std::cout<<"calling fp for :"<<l.get_name()<<" Rank:"<<myrank<<"\n";
+        //std::cout<<"Rank:"<<myrank<<" Forward pass starting Layer:"<<l.get_type()<<" Layer name:"<<l.get_name()<<"\n";
         do_layer_forward_prop_begin_cbs(mode, &l);
 
         l.forward_prop();
         do_layer_forward_prop_end_cbs(mode, &l);
+
       }
 
     }
@@ -1376,6 +1453,7 @@ void model::forward_prop(execution_mode mode) {
     
   }
   do_model_forward_prop_end_cbs(mode);
+  //std::cout<<"Forward Pass completed\n";
 
   //c.set_current_mini_batch_size(effective_batch_size/4);
 }
@@ -1397,9 +1475,10 @@ void model::backward_prop() {
     
     if(this->is_subgraph_parallelism_enabled())
     {
-      if((*l.subgrid_ranks).find(myrank) != (*l.subgrid_ranks).end() || l.get_type()=="add" || l.get_type()=="concatenate" || l.get_type()=="sum")
+      if((*l.subgrid_ranks).find(myrank) != (*l.subgrid_ranks).end() || l.get_type()=="add" || l.get_type()=="concatenate" || l.get_type()=="sum" || l.get_type()=="slice")
       {
         //std::cout<<"Actually Running BP with:"<<l.get_type()<<" Layer name:"<<l.get_name()<<"\n";
+        //std::cout<<"Rank:"<<myrank<<" Backward pass starting Layer:"<<l.get_type()<<" Layer name:"<<l.get_name()<<"\n";
 
         do_layer_backward_prop_begin_cbs(&l);
         l.back_prop();
@@ -1431,6 +1510,7 @@ void model::backward_prop() {
   }
   //std::cout<<"BP is complete Rank:"<<myrank<<"\n";
   do_model_backward_prop_end_cbs();
+  //std::cout<<"Backward Pass completed\n";
   
 }
 

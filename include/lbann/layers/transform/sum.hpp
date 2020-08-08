@@ -118,7 +118,7 @@ protected:
 
 
 
-    if(this->is_subgraph_parallelism_enabled())
+    if(this->is_subgraph_parallelism_enabled() && this->get_parallel_strategy().enable_subgraph==1)
     {
       auto subgrid_tags = (*this->parent_tags);
       int tag=0;
@@ -221,7 +221,7 @@ protected:
 
       auto& output = this->get_activations(i);
       output.Empty(false);
-      if (align_outputs && this->is_subgraph_parallelism_enabled() ==false) { output.AlignWith(alignment_dist); }
+      if (align_outputs &&  this->get_parallel_strategy().enable_subgraph==0) { output.AlignWith(alignment_dist); }
       output.Resize(this->get_output_size(i), mini_batch_size);
       }
 
@@ -232,7 +232,7 @@ protected:
     const auto& gradient_wrt_output = this->get_prev_error_signals();
     
 
-    if(this->is_subgraph_parallelism_enabled())
+    if(this->is_subgraph_parallelism_enabled() && this->get_parallel_strategy().enable_subgraph==1)
     {
       auto subgrid_tags = (*this->parent_tags);
       

@@ -70,6 +70,7 @@ public:
   description get_description() const override;
 
 protected:
+  El::SyncInfo<Device> syncSubGridCommunication = El::SyncInfo<Device>();
 
   void setup_pointers() override;
   void setup_dims(DataReaderMetaData& dr_metadata) override;
@@ -105,6 +106,10 @@ private:
   friend void bp_setup_gradient_wrt_inputs_impl(concatenate_layer<U,Layout,D>&);
   template <typename U>
   friend void bp_compute_impl(concatenate_layer<U,Layout,Device>&, size_t);
+
+  void fp_compute_subgrid();
+
+  void bp_compute_subgrid();
 
 #ifdef LBANN_HAS_DISTCONV
   friend class concatenate_distconv_adapter<TensorDataType, Layout, Device>;
@@ -247,13 +252,62 @@ void concatenate_layer<TensorDataType,Layout,Device>::fp_setup_outputs(El::Int m
     El::LockedView(output, input0);
   }
   else {
-    output.AlignWith(input0);
+    if(this->is_subgraph_parallelism_enabled()==false || this->get_parallel_strategy().enable_subgraph==0)
+    {
+      output.AlignWith(input0);
+    }
+    
     output.Resize(this->get_output_size(), input0.Width());
   }
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
+void concatenate_layer<TensorDataType,Layout,Device>::fp_compute_subgrid() {
+
+  const auto& input_dims = this->get_input_dims(0);
+
+  int split_dim = int(input_dims[m_concat_dim] );
+
+  auto& input = this->get_activations();
+
+  auto * ptr_input = dynamic_cast<El::DistMatrix<TensorDataType, El::STAR  , El::VC, El::ELEMENT, Device> *>(&input);
+
+  El::copy::TranslateBetweenGridsGatherComm<TensorDataType,Device,Device>(*ptr_input,this->get_all_prev_activations(), split_dim,this->get_subgrid_comm(),syncSubGridCommunication);
+
+  }
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void concatenate_layer<TensorDataType,Layout,Device>::bp_compute_subgrid() {
+
+  const auto& input_dims = this->get_input_dims(0);
+
+  int split_dim = int(input_dims[m_concat_dim] * this->get_num_parents() );
+
+  const auto& input_grad = this->get_prev_error_signals();
+
+  auto const* ptr_input_grad = dynamic_cast<El::DistMatrix<TensorDataType, El::STAR  , El::VC, El::ELEMENT, Device> const *>(&input_grad);
+
+  if(this->get_communication_flag()==2)
+  {
+    El::copy::TranslateBetweenGridsSliceGatherOptComm<TensorDataType,Device,Device>(*ptr_input_grad,this->get_all_error_signals(),split_dim,this->get_subgrid_comm(),syncSubGridCommunication);
+  }
+  else if(this->get_communication_flag()==1)
+  {
+    El::copy::TranslateBetweenGridsScatterOptComm<TensorDataType,Device,Device>(*ptr_input_grad,this->get_all_error_signals(),split_dim,this->get_subgrid_comm(),syncSubGridCommunication);
+  }
+  else
+  {
+    El::copy::TranslateBetweenGridsScatterComm<TensorDataType,Device,Device>(*ptr_input_grad,this->get_all_error_signals(),split_dim,this->get_subgrid_comm(),syncSubGridCommunication);
+
+  }
+
+  //El::copy::TranslateBetweenGridsScatterOptComm<TensorDataType,Device,Device>(*ptr_input_grad,this->get_all_error_signals(),split_dim,this->get_subgrid_comm(),syncSubGridCommunication);
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
 void concatenate_layer<TensorDataType,Layout,Device>::fp_compute() {
+  const auto& input_dims = this->get_input_dims();
+  const size_t num_dims = input_dims.size();
 #ifdef LBANN_HAS_DISTCONV
   if (this->distconv_enabled()) {
     get_distconv_adapter().fp_compute();
@@ -268,7 +322,15 @@ void concatenate_layer<TensorDataType,Layout,Device>::fp_compute() {
   }
 
   // Perform concatenation
-  fp_compute_impl(*this, m_concat_dim);
+  if(m_concat_dim==num_dims-1 && this->is_subgraph_parallelism_enabled() && this->get_parallel_strategy().enable_subgraph==1)
+  {
+    this->fp_compute_subgrid();
+  }
+  else
+  {
+    fp_compute_impl(*this, m_concat_dim);
+  }
+  
 
 }
 
@@ -314,7 +376,7 @@ void bp_setup_gradient_wrt_inputs_impl(
       if (!l.keep_original_gradient_wrt_inputs(j)) continue;
 #endif
       auto& input_grad = l.get_error_signals(j);
-      input_grad.AlignWith(output_grad);
+      if (l.get_parallel_strategy().enable_subgraph==0) { input_grad.AlignWith(output_grad); }
       input_grad.Resize(l.get_input_size(j), output_grad.Width());
     }
   }
@@ -328,6 +390,10 @@ void concatenate_layer<TensorDataType,Layout,Device>::bp_setup_gradient_wrt_inpu
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void concatenate_layer<TensorDataType,Layout,Device>::bp_compute() {
+  
+  const auto& input_dims = this->get_input_dims();
+  const size_t num_dims = input_dims.size();
+
 #ifdef LBANN_HAS_DISTCONV
   if (this->distconv_enabled()) {
     get_distconv_adapter().bp_compute();
@@ -342,7 +408,15 @@ void concatenate_layer<TensorDataType,Layout,Device>::bp_compute() {
   }
 
   // Perform slice
-  bp_compute_impl(*this, m_concat_dim);
+  if(m_concat_dim==num_dims-1 && this->is_subgraph_parallelism_enabled() &&  this->get_parallel_strategy().enable_subgraph==1)
+  {
+    this->bp_compute_subgrid();
+  }
+  else
+  {
+    bp_compute_impl(*this, m_concat_dim);
+  }
+  
 
 }
 

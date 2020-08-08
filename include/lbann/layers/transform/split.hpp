@@ -90,7 +90,7 @@ protected:
 
     int tag=0;
     auto childs = this->get_child_layers(); 
-    if(childs[0]->get_parallel_strategy().enable_subgraph==1)
+    if(this->get_parallel_strategy().enable_subgraph==1)
     {
       //std::cout<<"Layer name:"<<this->get_name()<<" starting\n";
       //if subgraph parallelism is enabled 
@@ -148,7 +148,7 @@ protected:
     auto& gradient_wrt_input = this->get_error_signals();
     auto childs = this->get_child_layers(); 
 
-    if(childs[0]->get_parallel_strategy().enable_subgraph==1)
+    if(this->get_parallel_strategy().enable_subgraph==1)
     {
       int tag=0;
       

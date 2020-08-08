@@ -838,8 +838,8 @@ cmake \
 -D DIHYDROGEN_ENABLE_DISTCONV_LEGACY=${WITH_DISTCONV} \
 -D LBANN_WITH_DIHYDROGEN=${WITH_DIHYDROGEN} \
 -D LBANN_WITH_DISTCONV=${WITH_DISTCONV} \
--DLBANN_SB_FWD_LBANN_Python_EXECUTABLE=/usr/workspace/jain8/miniconda3/envs/lbann_dev_test/bin/python \
--DLBANN_SB_FWD_LBANN_Python_LIBRARY=/usr/workspace/jain8/miniconda3/envs/lbann_dev_test/lib/libpython3.7m.so.1.0 \
+-DLBANN_SB_FWD_LBANN_Python_EXECUTABLE=/usr/workspace/jain8/miniconda3/envs/hope_lbann_pytorch/bin/python \
+-DLBANN_SB_FWD_LBANN_Python_LIBRARY=/usr/workspace/jain8/miniconda3/envs/hope_lbann_pytorch/lib/libpython3.7m.so.1.0 \
 ${SUPERBUILD_DIR}
 EOF
 )

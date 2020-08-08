@@ -191,7 +191,7 @@ public:
   /** Ranks in grid for the sub-graph */  
   std::unique_ptr<std::set <int, std::greater <int> >> subgrid_ranks; 
   std::unique_ptr<std::vector<int>> parent_tags;
-  El::Int subgrid_number=-1;
+  std::string subgrid_index="";
   El::Int num_spliting_groups=1;
 
   std::shared_ptr<El::Grid> mygrid;
@@ -242,7 +242,7 @@ public:
   {
     apply_subgraph_parallelism = true;
   }
-
+  //model wide sub graph parallelism enabled 
   bool is_subgraph_parallelism_enabled()
   {
     return apply_subgraph_parallelism;
@@ -266,6 +266,13 @@ public:
   {
     num_spliting_groups = num_grps;
   }
+  //enable subgraph parallelism for this layer 
+  //to set variable for ssplit layer
+  void set_enable_subgraph_variable()
+  {
+    m_parallel_strategy.enable_subgraph=1;
+  }
+
 
   /** Human-readable description. */
   virtual description get_description() const;

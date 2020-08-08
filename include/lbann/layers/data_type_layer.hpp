@@ -122,6 +122,14 @@ public:
   AbsDistMatrixType& get_branch_tag_input(int tag) ;
 
   std::vector<std::unique_ptr<AbsDistMatrixType>>& get_branch_tag_input_vector() ;
+
+  std::vector<std::unique_ptr<AbsDistMatrixType>>& get_all_activations() ;
+  std::vector<std::unique_ptr<AbsDistMatrixType>>& get_all_prev_activations() ;
+
+
+  std::vector<std::unique_ptr<AbsDistMatrixType>>& get_all_prev_error_signals() ;
+  std::vector<std::unique_ptr<AbsDistMatrixType>>& get_all_error_signals() ;
+
   /** Get activation tensor. */
   AbsDistMatrixType& get_activations(int child_index = 0);
   /** Get error signal tensor. */
