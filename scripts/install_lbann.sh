@@ -181,7 +181,7 @@ EOF
     if [[ "${ENABLE_GPUS}" == "ON" ]]; then
         GPU_PACKAGES=$(cat <<EOF
   - cudnn
-  - cub
+#  - cub
   - cuda
   - nccl
 EOF
@@ -201,7 +201,7 @@ EOF
         SUPERBUILD_SPECS=$(cat <<EOF
   - aluminum
   - hydrogen
-  - dihydrogen
+#  - dihydrogen
 EOF
 )
     fi

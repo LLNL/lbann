@@ -23,19 +23,21 @@ EXTERNAL_PACKAGES=$(cat <<EOF
 
     cuda::
       buildable: False
-      version: [10.1.243]
+      version: [11.0.2]
+#      version: [10.1.243]
       modules:
-        cuda@10.1.243 arch=linux-rhel7-power9le: cuda/10.1.243
+        cuda@11.0.2 arch=linux-rhel7-power9le: cuda/11.0.2
+#        cuda@10.1.243 arch=linux-rhel7-power9le: cuda/10.1.243
 
     cudnn::
       buildable: true
-      version: [8.0.2.39-10.1-linux-ppc64le]
+      version: [8.0.2.39-11.0-linux-ppc64le]
 
     gcc::
        buildable: False
-       version: [7.4.0]
+       version: [8.1.1]
        modules:
-         gcc@7.4.0 arch=linux-rhel7-power9le: gcc/7.4.0
+         gcc@8.1.1 arch=linux-rhel7-power9le: gcc/8.1.1
 
     hwloc::
       buildable: False
@@ -70,7 +72,7 @@ EXTERNAL_PACKAGES=$(cat <<EOF
       buildable: False
       version: [10.3.1.2-20200121]
       modules:
-        spectrum-mpi@10.3.1.2-20200121 %gcc@6.4.0 arch=linux-rhel7-power9le: spectrum-mpi/10.3.1.2-20200121
+        spectrum-mpi@10.3.1.2-20200121 %gcc@8.1.1 arch=linux-rhel7-power9le: spectrum-mpi/10.3.1.2-20200121
 #        spectrum-mpi@10.3.1.2-20200121 %gcc@7.4.0 arch=linux-rhel7-power9le: spectrum-mpi/10.3.1.2-20200121
 EOF
 )
