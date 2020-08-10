@@ -40,7 +40,7 @@ void embedding_layer<TensorDataType,Layout,Device>::fp_compute() {
   using MatType = El::Matrix<TensorDataType, El::Device::CPU>;
 
   // Local data
-  const auto& local_embeddings = dynamic_cast<const MatType&>(this->get_data_type_weights(0).get_values().LockedMatrix());
+  const auto& local_embeddings = dynamic_cast<const MatType&>(this->weights_values(0).LockedMatrix());
   const auto& local_input = dynamic_cast<const MatType&>(this->get_local_prev_activations());
   auto& local_output = dynamic_cast<MatType&>(this->get_local_activations());
   const size_t input_size = this->get_input_size();
@@ -74,8 +74,8 @@ void embedding_layer<TensorDataType, Layout, Device>::bp_compute() {
   El::Zero(this->get_error_signals());
 
   // Nothing to be done if embeddings are not being optimized
-  if (this->get_data_type_weights(0).get_optimizer() == nullptr) { return; }
-  auto& opt = *this->get_data_type_weights(0).get_optimizer();
+  if (this->get_weights(0).get_optimizer() == nullptr) { return; }
+  auto& opt = *this->get_weights(0).get_optimizer();
 
   // Local data
   const auto& local_input = dynamic_cast<const MatType&>(this->get_local_prev_activations());

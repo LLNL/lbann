@@ -70,6 +70,7 @@
 #include "lbann/layers/misc/argmax.hpp"
 #include "lbann/layers/misc/argmin.hpp"
 #include "lbann/layers/misc/one_hot.hpp"
+#include "lbann/layers/misc/dist_embedding.hpp"
 #include "lbann/layers/regularizers/batch_normalization.hpp"
 #include "lbann/layers/regularizers/dropout.hpp"
 #include "lbann/layers/regularizers/local_response_normalization.hpp"
@@ -257,12 +258,15 @@ private:
     LBANN_REGISTER_DEFAULT_BUILDER(SigmoidBinaryCrossEntropy, sigmoid_binary_cross_entropy);
 
     // Regularizer layers
+    LBANN_REGISTER_BUILDER(Dropout, dropout);
     LBANN_REGISTER_BUILDER(InstanceNorm, instance_norm);
-
+    LBANN_REGISTER_BUILDER(LocalResponseNormalization,
+                           local_response_normalization);
     // Miscellaneous layers
     LBANN_REGISTER_BUILDER(ChannelwiseSoftmax, channelwise_softmax);
     LBANN_REGISTER_DEFAULT_BUILDER(MiniBatchIndex, mini_batch_index);
     LBANN_REGISTER_DEFAULT_BUILDER(MiniBatchSize, mini_batch_size);
+    LBANN_REGISTER_BUILDER(DistEmbedding, dist_embedding);
 
   }
 
@@ -588,24 +592,6 @@ std::unique_ptr<Layer> construct_layer_legacy(
     } else {
       LBANN_ERROR("batch normalization layer is only supported with "
                   "a data-parallel layout");
-    }
-  }
-  if (proto_layer.has_dropout()) {
-    const auto& params = proto_layer.dropout();
-    return lbann::make_unique<dropout<TensorDataType, Layout, Device>>(comm, params.keep_prob());
-  }
-  if (proto_layer.has_local_response_normalization()) {
- const auto& params = proto_layer.local_response_normalization();
-    if (Layout == data_layout::DATA_PARALLEL) {
-      return lbann::make_unique<local_response_normalization_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(
-             comm,
-             params.window_width(),
-             params.lrn_alpha(),
-             params.lrn_beta(),
-             params.lrn_k());
-    } else {
-      LBANN_ERROR("local response normalization layer is only supported "
-                  "with a data-parallel layout");
     }
   }
   if (proto_layer.has_selu_dropout()) {

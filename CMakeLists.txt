@@ -48,7 +48,7 @@ endif ()
 #
 
 set(LBANN_VERSION_MAJOR 0)
-set(LBANN_VERSION_MINOR 99)
+set(LBANN_VERSION_MINOR 100)
 set(LBANN_VERSION_PATCH 0)
 
 set(LBANN_VERSION "${LBANN_VERSION_MAJOR}.${LBANN_VERSION_MINOR}.${LBANN_VERSION_PATCH}")
@@ -188,15 +188,19 @@ set(LBANN_HAS_CEREAL ${CEREAL_FOUND})
 # The imported target is just called "cereal". Super.
 
 # Setup the linear algebra library
-find_package(Hydrogen 1.3.3 NO_MODULE QUIET
+find_package(Hydrogen 1.4.0 NO_MODULE QUIET
   HINTS ${Hydrogen_DIR} ${HYDROGEN_DIR} $ENV{Hydrogen_DIR} $ENV{HYDROGEN_DIR}
   PATH_SUFFIXES lib/cmake/hydrogen
   NO_DEFAULT_PATH)
 if (NOT Hydrogen_FOUND)
-  find_package(Hydrogen 1.3.3 NO_MODULE QUIET REQUIRED)
+  find_package(Hydrogen 1.4.0 NO_MODULE QUIET REQUIRED)
 endif ()
 message(STATUS "Found Hydrogen: ${Hydrogen_DIR}")
 set(LBANN_HAS_HYDROGEN ${Hydrogen_FOUND})
+
+if (_HYDROGEN_HAVE_ROCM)
+  message(FATAL_ERROR "ROCm not yet supported in LBANN.")
+endif ()
 
 # DiHydrogen and Distconv
 if (LBANN_WITH_DISTCONV AND NOT LBANN_WITH_DIHYDROGEN)
@@ -271,13 +275,13 @@ if (LBANN_WITH_ALUMINUM)
   if (NOT Aluminum_FOUND)
     message(WARNING
       "Using Aluminum without Hydrogen support may not be well-supported.")
-    find_package(Aluminum 0.3.0 NO_MODULE QUIET
+    find_package(Aluminum 0.4.0 NO_MODULE QUIET
       HINTS ${Aluminum_DIR} ${ALUMINUM_DIR} ${AL_DIR}
       $ENV{Aluminum_DIR} $ENV{ALUMINUM_DIR} $ENV{AL_DIR}
       PATH_SUFFIXES lib64/cmake/aluminum lib/cmake/aluminum
       NO_DEFAULT_PATH)
     if (NOT Aluminum_FOUND)
-      find_package(Aluminum 0.3.0 NO_MODULE QUIET)
+      find_package(Aluminum 0.4.0 NO_MODULE QUIET)
     endif ()
   endif ()
   set(LBANN_HAS_ALUMINUM ${Aluminum_FOUND})
@@ -526,6 +530,7 @@ if (LBANN_WITH_UNIT_TESTING)
   include(Catch)
   add_subdirectory(src/proto/unit_test)
   add_subdirectory(src/utils/unit_test)
+  add_subdirectory(src/weights/unit_test)
   add_subdirectory(src/transforms/unit_test)
   add_subdirectory(src/transforms/vision/unit_test)
 

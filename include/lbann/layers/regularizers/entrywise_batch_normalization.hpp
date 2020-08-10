@@ -128,30 +128,32 @@ protected:
           << "(found " << this->num_weights() << ", expected 2)";
       LBANN_ERROR(err.str());
     }
-    this->set_num_data_type_weights(2);
-    if (!this->has_data_type_weights(0)) {
+    this->set_num_weights(2);
+    if (!this->has_weights(0)) {
       auto w = make_unique<WeightsType>(this->get_comm());
       auto init = make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::Zero());
       w->set_name(this->get_name() + "_running_mean");
       w->set_initializer(std::move(init));
-      this->set_data_type_weights(0, w.get());
+      this->set_weights(0, w.get());
       this->m_model->add_weights(std::move(w));
     }
-    if (!this->has_data_type_weights(1)) {
+    if (!this->has_weights(1)) {
       auto w = make_unique<WeightsType>(this->get_comm());
       auto init = make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::One());
       w->set_name(this->get_name() + "_running_variance");
       w->set_initializer(std::move(init));
-      this->set_data_type_weights(1, w.get());
+      this->set_weights(1, w.get());
       this->m_model->add_weights(std::move(w));
     }
 
     // Setup weights
     auto dist = this->get_prev_activations().DistData();
     dist.rowDist = El::STAR;
-    for (auto* w : this->get_data_type_weights()) {
-      w->set_dims(output_dims);
-      w->set_matrix_distribution(dist);
+    auto const num_weights = this->num_weights();
+    for (size_t ii = 0; ii < num_weights; ++ii) {
+      auto& w = this->get_weights(ii);
+      w.set_dims(output_dims);
+      w.set_matrix_distribution(dist);
     }
 
     // Initialize matrices
@@ -178,8 +180,8 @@ protected:
     /// @todo Realign tensors if misaligned
     bool aligned = true;
     try {
-      const auto& running_mean = get_data_type_weights(0).get_values();
-      const auto& running_var = get_data_type_weights(1).get_values();
+      const auto& running_mean = weights_values(0);
+      const auto& running_var = weights_values(1);
       aligned = (input.ColAlign() == running_mean.ColAlign()
                  && input.RowAlign() == running_mean.RowAlign()
                  && input.ColAlign() == running_var.ColAlign()

@@ -271,7 +271,8 @@ void exchange_models(lbann_comm& comm,
                     weights_names.end(),
                     model_weights[i]->get_name())
           == weights_names.end()) {
-        *model_weights[i] = *local_weights[i];
+        using dtw_type = data_type_weights<TensorDataType>;
+        dynamic_cast<dtw_type&>(*model_weights[i]) = *local_weights[i];
       }
     }
   }
@@ -373,7 +374,7 @@ ltfb::ltfb(const ltfb& other) :
   m_workspace_weights.clear();
   m_workspace_weights.reserve(other.m_workspace_weights.size());
   for (const auto& w : other.m_workspace_weights) {
-    m_workspace_weights.emplace_back(w->copy());
+    m_workspace_weights.emplace_back(w->clone());
   }
 
 }
@@ -393,7 +394,7 @@ ltfb& ltfb::operator=(const ltfb& other) {
   m_workspace_weights.clear();
   m_workspace_weights.reserve(other.m_workspace_weights.size());
   for (const auto& w : other.m_workspace_weights) {
-    m_workspace_weights.emplace_back(w->copy());
+    m_workspace_weights.emplace_back(w->clone());
   }
 
   return *this;
@@ -406,7 +407,7 @@ void ltfb::setup(model *m) {
   m_workspace_weights.clear();
   m_workspace_weights.reserve(model_weights.size());
   for (const auto& w : model_weights) {
-    m_workspace_weights.emplace_back(w->copy());
+    m_workspace_weights.emplace_back(w->clone());
   }
 
   // Make sure model does not have inter-trainer communication callback

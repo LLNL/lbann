@@ -38,8 +38,7 @@
 using namespace lbann;
 
 int main(int argc, char *argv[]) {
-  int random_seed = 0;
-  world_comm_ptr comm = initialize(argc, argv, random_seed);
+  world_comm_ptr comm = initialize(argc, argv);
   bool master = comm->am_world_master();
 
   try {
@@ -59,7 +58,7 @@ int main(int argc, char *argv[]) {
     read_filelist(comm.get(), input_fn, filenames);
 
     size_t nn = 0; // only used for user feedback
-    std::vector<xyz> beads(Num_beads);  
+    std::vector<xyz> beads(Num_beads);
     for (size_t j=rank; j<filenames.size(); j+=np) {
       if (!rank && j == 0) {
         std::cerr << "Opening for processing: " << filenames[j] << std::endl;
@@ -87,7 +86,7 @@ int main(int argc, char *argv[]) {
         out.write((char*)&num_frames, sizeof(float));
         float nbeads = static_cast<float>(Num_beads);
         out.write((char*)&nbeads, sizeof(float));
-  
+
         // Get the bbs data array
         const float *bd = a["bbs"].data<float>();
 
@@ -99,13 +98,13 @@ int main(int argc, char *argv[]) {
             beads.push_back(xyz(bd[0], bd[1], bd[2]));
             bd += 3;
           }
-          
+
           // Write output for the current sample
           //
           // z-coordinates
           for (size_t g=0; g<Num_beads; g++) {
             out.write((char*)&beads[g].z, sizeof(float));
-          }  
+          }
 
           // euclidean distance between each pair of beads i, h,
           // where h >= i
@@ -116,11 +115,11 @@ int main(int argc, char *argv[]) {
             }
           }
         }
-        
+
         // User feedback
         ++nn;
         if (!rank) {
-          std::cerr << "approx " << (nn*np) << " files of " 
+          std::cerr << "approx " << (nn*np) << " files of "
           << filenames.size() << " processed\n";
         }
 
@@ -139,4 +138,3 @@ int main(int argc, char *argv[]) {
   }
   return EXIT_SUCCESS;
 }
-

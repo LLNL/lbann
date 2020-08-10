@@ -30,8 +30,10 @@ expected_train_accuracy_range = (9, 15)
 expected_test_accuracy_range = (15, 24)
 
 # Average mini-batch time (in sec) for each LC system
+# Note that run times are with LBANN_DETERMINISTIC set
+# Commented out times are prior to thread safe RNGs
 expected_mini_batch_times = {
-    'pascal': 0.100,
+    'pascal': 0.154, # 0.100,
     'lassen': 0.050,
     'ray':    0.075,
 }

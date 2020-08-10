@@ -53,8 +53,10 @@ void replace_weights::on_batch_end(model *m) {
   const auto& step = c.get_step();
   if(step % m_batch_interval == 0) {
     for(size_t i = 0; i < m_src_layers.size(); i++) {
-      auto* dtl = dynamic_cast<data_type_layer<DataType>*>(m_dst_layers[i]);
-      dtl->replace_weights(dynamic_cast<data_type_layer<DataType>*>(m_src_layers[i]));
+      if (!m_src_layers[i])
+        LBANN_ERROR("Source layer pointer ", i, " is null. "
+                    "It probably shouldn't be.");
+      m_dst_layers[i]->replace_weights(*m_src_layers[i]);
     }
   }
 }

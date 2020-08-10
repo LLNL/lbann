@@ -32,11 +32,11 @@ namespace lbann {
 
 template <typename TensorDataType>
 adagrad<TensorDataType>::adagrad(TensorDataType learning_rate, TensorDataType eps)
-  : OptimizerType(learning_rate), m_eps(eps) {}
+  : BaseType(learning_rate), m_eps(eps) {}
 
 template <typename TensorDataType>
 adagrad<TensorDataType>::adagrad(const adagrad<TensorDataType>& other)
-  : OptimizerType(other),
+  : BaseType(other),
     m_eps(other.m_eps),
     m_cache(other.m_cache ? other.m_cache->Copy() : nullptr) {}
 

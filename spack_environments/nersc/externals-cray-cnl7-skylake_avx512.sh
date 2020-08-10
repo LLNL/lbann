@@ -58,7 +58,7 @@ EXTERNAL_PACKAGES=$(cat <<EOF
     openblas::
       buildable: True
       variants: threads=openmp
-      version: [0.3.6]
+      version: [0.3.10]
 
     opencv::
       buildable: true

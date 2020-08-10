@@ -167,7 +167,7 @@ void UpdateRequest(typename ::Al::NCCLBackend::req_type& req,
                    El::SyncInfo<El::Device::GPU> const& si) noexcept
 {
   if (req)
-    req->orig_stream = si.stream_;
+    req->orig_stream = si.Stream();
 }
 #endif // AL_HAS_NCCL
 
@@ -181,7 +181,7 @@ void UpdateRequest(typename ::Al::MPICUDABackend::req_type& req,
                    El::SyncInfo<El::Device::GPU> const& si) noexcept
 {
   if (req)
-    req->orig_stream = si.stream_;
+    req->orig_stream = si.Stream();
 }
 #endif // AL_HAS_MPI_CUDA
 #endif // defined(LBANN_HAS_GPU) && defined(LBANN_HAS_ALUMINUM)
