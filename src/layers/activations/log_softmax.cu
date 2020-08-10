@@ -301,8 +301,8 @@ void fp_compute_impl(log_softmax_layer<TensorDataType, data_layout::MODEL_PARALL
   const auto& local_width = local_input.Width();
 
   // GPU objects
-  auto&& stream = El::GPUManager::Stream();
-  auto&& event = El::GPUManager::Event();
+  auto&& stream = hydrogen::cuda::GetDefaultStream();
+  auto&& event = hydrogen::cuda::GetDefaultEvent();
   El::SyncInfo<El::Device::GPU> sync_info{stream, event};
 
   // Find max value in each column
@@ -383,8 +383,8 @@ void bp_compute_impl(log_softmax_layer<TensorDataType, data_layout::MODEL_PARALL
   const auto& local_width = local_output.Width();
 
   // GPU objects
-  auto&& stream = El::GPUManager::Stream();
-  auto&& event = El::GPUManager::Event();
+  auto&& stream = hydrogen::cuda::GetDefaultStream();
+  auto&& event = hydrogen::cuda::GetDefaultEvent();
   El::SyncInfo<El::Device::GPU> sync_info{stream, event};
 
   // Compute sum of entries in gradient w.r.t. output

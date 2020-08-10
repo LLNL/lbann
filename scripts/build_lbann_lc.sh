@@ -330,7 +330,9 @@ fi
 # Load packages
 if [ ${USE_MODULES} -ne 0 ]; then
     module load git
+
     #module load cmake/3.14.5
+
 else
     use git
 fi
@@ -805,7 +807,6 @@ cmake \
 -D LBANN_SB_BUILD_PROTOBUF=ON \
 -D LBANN_SB_BUILD_CUB=${WITH_CUB} \
 -D LBANN_SB_BUILD_ALUMINUM=${WITH_ALUMINUM} \
--D ALUMINUM_TAG=v0.3.3 \
 -D ALUMINUM_ENABLE_MPI_CUDA=${ALUMINUM_WITH_MPI_CUDA} \
 -D ALUMINUM_ENABLE_NCCL=${ALUMINUM_WITH_NCCL} \
 -D HYDROGEN_TAG="v1.3.4_differentGrids" \

@@ -35,6 +35,7 @@ namespace lbann {
 const int lbann_default_random_seed = 42;
 
 #define MAX_RNG_SEEDS_DISPLAY "RNG seeds per trainer to display"
+#define NUM_IO_THREADS "Num. IO threads"
 
 void construct_std_options();
 

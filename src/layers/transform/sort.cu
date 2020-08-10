@@ -48,7 +48,7 @@ void sort_layer<TensorDataType, T_layout, Dev>::fp_compute() {
   const auto& local_width = local_input.Width();
 
   // GPU objects
-  auto&& stream = El::GPUManager::Stream();
+  auto&& stream = hydrogen::cuda::GetDefaultStream();
   cuda::thrust::allocator<> alloc(stream);
 
   // Sort each matrix column
@@ -82,7 +82,7 @@ void sort_layer<TensorDataType, T_layout, Dev>::bp_compute() {
   const auto& local_width = local_gradient_wrt_input.Width();
 
   // GPU objects
-  auto&& stream = El::GPUManager::Stream();
+  auto&& stream = hydrogen::cuda::GetDefaultStream();
   cuda::thrust::allocator<> alloc(stream);
 
   // Scatter gradients based on sorted indices

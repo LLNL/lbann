@@ -119,7 +119,7 @@ void l2_weight_regularization::start_evaluation() {
 #ifdef LBANN_HAS_GPU
   // Compute contributions from GPU weights
   if (m_contributions.count(El::Device::GPU) > 0) {
-    auto&& stream = El::GPUManager::Stream();
+    auto&& stream = hydrogen::cuda::GetDefaultStream();
     DMatType<El::Device::GPU> contribution;
 #ifdef HYDROGEN_HAVE_CUB
     contribution.SetMemoryMode(1); // CUB GPU memory pool

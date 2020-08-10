@@ -106,13 +106,14 @@ int python_reader::get_linearized_label_size() const {
 }
 
 bool python_reader::fetch_data_block(CPUMat& X,
-                                     El::Int thread_id,
+                                     El::Int block_offset,
+                                     El::Int block_stride,
                                      El::Int mb_size,
                                      El::Matrix<El::Int>& indices_fetched) {
 
   // Acquire Python GIL on first IO thread
   // Note: Do nothing on other IO threads.
-  if (thread_id != 0) { return true; }
+  if (block_offset != 0) { return true; }
   python::global_interpreter_lock gil;
 
   // Check that shared memory array is large enough
