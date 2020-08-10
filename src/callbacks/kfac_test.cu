@@ -67,6 +67,21 @@ __global__ void kfac_test_update_kronecker_average_kernel(
   }
 }
 
+template <typename TensorDataType>
+__global__ void kfac_test_conv_transpose_kernel(
+    const TensorDataType * __restrict__ A,
+    TensorDataType * __restrict__ Acol,
+    const size_t mini_batch_size, const size_t num_channels,
+    const size_t spatial_prod, const size_t num_elems) {
+  const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
+  if(gid < num_elems) {
+    const auto i_spatial = gid%spatial_prod;
+    const auto i_c = (gid/spatial_prod)%num_channels;
+    const auto i_n = (gid/spatial_prod/num_channels);
+    Acol[i_c+i_spatial*num_channels+i_n*num_channels*spatial_prod] = A[gid];
+  }
+}
+
 } // namespace
 
 // TODO: static function
@@ -108,6 +123,22 @@ void kfac_test_update_kronecker_average(
       Aave, A, count, decay);
 }
 
+// Transpose NC(D)HW matrix to N(D)HWC.
+template <typename TensorDataType>
+void kfac_test_conv_transpose(
+    const TensorDataType * __restrict__ activations,
+    TensorDataType * __restrict__ act_columns,
+    const size_t mini_batch_size, const size_t num_channels,
+    const size_t spatial_prod) {
+  constexpr size_t block_size = 256;
+  const size_t num_elems = mini_batch_size*num_channels*spatial_prod;
+  const size_t grid_size = (num_elems + block_size - 1) / block_size;
+  auto&& stream = El::GPUManager::Stream();
+  kfac_test_conv_transpose_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
+      activations, act_columns, mini_batch_size, num_channels, spatial_prod,
+      num_elems);
+}
+
 #define PROTO(T)                                        \
   template void kfac_test_add_to_diagonal<T>(           \
       T* __restrict__ A,                                \
@@ -119,7 +150,13 @@ void kfac_test_update_kronecker_average(
   template void kfac_test_update_kronecker_average<T>(  \
       T * __restrict__ Aave,                            \
       const T * __restrict__ A,                         \
-      const size_t count, const DataType decay)
+      const size_t count, const DataType decay);        \
+  template void kfac_test_conv_transpose<T>(            \
+      const T * __restrict__ activations,               \
+      T * __restrict__ act_columns,                     \
+      const size_t mini_batch_size,                     \
+      const size_t num_channels,                        \
+      const size_t spatial_prod)
 
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"

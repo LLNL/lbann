@@ -92,6 +92,11 @@ public:
 
   ///@}
 
+  const std::vector<int> get_conv_dims() const { return m_conv_dims; }
+  const std::vector<int> get_pads() const { return m_pads; }
+  const std::vector<int> get_strides() const { return m_strides; }
+  const std::vector<int> get_dilations() const { return m_dilations; }
+
 protected:
 
   int m_output_channels;

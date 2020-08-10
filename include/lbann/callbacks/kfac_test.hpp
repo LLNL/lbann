@@ -54,6 +54,14 @@ void kfac_test_update_kronecker_average(
     const TensorDataType * __restrict__ A,
     const size_t count, const DataType decay);
 
+// Transpose NC(D)HW matrix to N(D)HWC.
+template <typename TensorDataType>
+void kfac_test_conv_transpose(
+    const TensorDataType * __restrict__ activations,
+    TensorDataType * __restrict__ act_columns,
+    const size_t mini_batch_size, const size_t num_channels,
+    const size_t spatial_prod);
+
 /** Callback hooks for the K-FAC method. */
 class kfac_test : public callback_base {
  public:

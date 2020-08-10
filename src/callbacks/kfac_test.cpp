@@ -30,6 +30,8 @@
 
 #include "lbann/callbacks/kfac_test.hpp"
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/layers/learning/base_convolution.hpp"
+#include "lbann/utils/im2col.hpp"
 
 #include "cblas.h"
 #include "lapacke.h"
@@ -116,14 +118,58 @@ void kfac_test::on_epoch_end(model *m) {
 void kfac_test::on_backward_prop_end(model *m, Layer *l) {
 
   // TODO: Static functions
-  const auto get_kronecker_factor =
-      [](const El::AbstractMatrix<DataType>& A,
+  const auto get_kronecker_factor_fc =
+      [](const El::AbstractMatrix<DataType>& A, // TODO: Use GPUMat
          const DataType alpha) {
         assert_always(A.GetDevice() == El::Device::GPU);
         El::Matrix<DataType, El::Device::GPU> factor(A.Height(), A.Height());
         El::Gemm(
             El::NORMAL, El::TRANSPOSE,
             alpha, A, A,
+            El::TypeTraits<DataType>::Zero(), factor);
+        return factor;
+      };
+
+  const auto get_kronecker_factor_conv =
+      [](const El::Matrix<DataType, El::Device::GPU>& A,
+         const DataType alpha,
+         const size_t mini_batch_size, const size_t num_channels,
+         const std::vector<int> spatial_dims,
+         const base_convolution_layer<DataType, El::Device::GPU> *l_conv,
+         const bool use_im2col) {
+        assert_always(A.GetDevice() == El::Device::GPU);
+
+        const auto dilations = l_conv->get_dilations();
+        for(auto i = dilations.begin(); i != dilations.end(); i++) {
+          if(*i != 1) {
+            std::cerr << "dilation should be 1." << std::endl;
+            exit(1);
+          }
+        }
+
+        // The matrix size will be overwritten later.
+        El::Matrix<DataType, El::Device::GPU> Acol(1, 1);
+        if(use_im2col) {
+          im2col(A, Acol,
+                 num_channels, spatial_dims.size(),
+                 &(spatial_dims[0]),
+                 &(l_conv->get_pads()[0]),
+                 &(l_conv->get_conv_dims()[0]),
+                 &(l_conv->get_strides()[0]));
+        } else {
+          size_t spatial_prod = 1;
+          for(auto i = spatial_dims.begin(); i != spatial_dims.end(); i++)
+            spatial_prod *= *i;
+          Acol.Resize(num_channels, mini_batch_size*spatial_prod);
+          kfac_test_conv_transpose(
+              A.LockedBuffer(), Acol.Buffer(),
+              mini_batch_size, num_channels, spatial_prod);
+        }
+
+        El::Matrix<DataType, El::Device::GPU> factor(Acol.Height(), Acol.Height());
+        El::Gemm(
+            El::NORMAL, El::TRANSPOSE,
+            alpha, Acol, Acol,
             El::TypeTraits<DataType>::Zero(), factor);
         return factor;
       };
@@ -245,8 +291,11 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
       };
 
   const auto comm = m->get_comm();
-  if(l->get_type() == "fully connected") {
+  // TODO: Use dynamic_cast for type checking
+  const bool is_fc = (l->get_type() == "fully connected");
+  const bool is_conv = (l->get_type() == "convolution");
 
+  if(is_fc || is_conv) {
     // Get the layer ID
     const auto layers = m->get_layers();
     const auto layer_it_in_list = std::find(layers.begin(), layers.end(), l);
@@ -270,13 +319,48 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
     optimizer *opt = w.get_optimizer();
     auto* dto = dynamic_cast<data_type_optimizer<DataType>*>(opt);
     El::Matrix<DataType, El::Device::GPU> gradient = dto->get_gradient().Matrix();
-    assert_always(activations.Height() == gradient.Width());
-    assert_always(error_signals.Height() == gradient.Height());
 
     // Compute Kronecker factors, assuming that error_signals are
     // already multiplied by 1/N in the loss layer.
-    auto A = get_kronecker_factor(activations, 1.0/mini_batch_size);
-    auto G = get_kronecker_factor(error_signals, mini_batch_size);
+    El::Matrix<DataType, El::Device::GPU> A, G;
+    if(is_fc) {
+      assert_always(activations.Height() == gradient.Width());
+      assert_always(error_signals.Height() == gradient.Height());
+      A = get_kronecker_factor_fc(activations, 1.0/mini_batch_size);
+      G = get_kronecker_factor_fc(error_signals, mini_batch_size);
+    } else {
+
+      El::Write(activations, "acts", El::FileFormatNS::ASCII);
+      El::Write(error_signals, "errs", El::FileFormatNS::ASCII);
+
+      const auto input_dims = l->get_input_dims(); // CHW
+      const auto output_dims = l->get_output_dims(); // KH'W'
+      // Consider only 2D and 3D layers
+      assert_always(input_dims.size() == 3 || input_dims.size() == 4);
+      const size_t num_input_channels = input_dims[0];
+      const size_t num_output_channels = output_dims[0];
+      size_t spatial_input_prod = 1, spatial_output_prod = 1;
+      // std::accumulate might overflow for large 3D layers
+      std::vector<int> input_spatial_dims, output_spatial_dims;
+      for(auto i = input_dims.begin()+1; i != input_dims.end(); i++) {
+        spatial_input_prod *= *i;
+        input_spatial_dims.push_back(*i);
+      }
+      for(auto i = output_dims.begin()+1; i != output_dims.end(); i++) {
+        spatial_output_prod *= *i;
+        output_spatial_dims.push_back(*i);
+      }
+      assert_always((size_t) activations.Height() == num_input_channels*spatial_input_prod);
+      assert_always((size_t) error_signals.Height() == num_output_channels*spatial_output_prod);
+
+      auto *l_conv = dynamic_cast<base_convolution_layer<DataType, El::Device::GPU>*>(l);
+      A = get_kronecker_factor_conv(activations, 1.0/mini_batch_size,
+                                    mini_batch_size, num_input_channels, input_spatial_dims,
+                                    l_conv, true);
+      G = get_kronecker_factor_conv(error_signals, DataType(mini_batch_size)/spatial_output_prod, // REVIEW
+                                    mini_batch_size, num_output_channels, output_spatial_dims,
+                                    l_conv, false);
+    }
     // OPTIMIZE: Communicate only the lower triangulars
     comm->allreduce((El::AbstractMatrix<DataType>&) A, comm->get_trainer_comm());
     comm->allreduce((El::AbstractMatrix<DataType>&) G, comm->get_trainer_comm());
@@ -304,10 +388,23 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
     const auto Ainv = get_inverse(Aave, print_time, DataType(m_damping_act*pi), l->get_name(), "A");
     const auto Ginv = get_inverse(Gave, print_time, DataType(m_damping_err/pi), l->get_name(), "G");
 
+    if(is_conv) {
+      const auto num_output_channels = l->get_output_dims()[0];
+      assert_always(gradient.Width() == 1);
+      assert_always((gradient.Height()%num_output_channels) == 0);
+
+      // OPTIMIZE
+      const auto height_reshaped = gradient.Height()/num_output_channels;
+      gradient.Attach(height_reshaped,
+                      num_output_channels,
+                      gradient.Buffer(),
+                      height_reshaped);
+    }
+
     // Compute preconditioned gradients
-    El::Matrix<DataType, El::Device::GPU> Gg(G.Height(), gradient.Width());
+    El::Matrix<DataType, El::Device::GPU> Gg(G.Height(), is_conv ? gradient.Height() : gradient.Width());
     El::Gemm(
-        El::NORMAL, El::NORMAL,
+        El::NORMAL, is_conv ? El::TRANSPOSE : El::NORMAL,
         El::TypeTraits<DataType>::One(), Ginv, gradient,
         El::TypeTraits<DataType>::Zero(), Gg);
     El::Matrix<DataType, El::Device::GPU> Fgrad(G.Height(), A.Width());
@@ -315,8 +412,19 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
         El::NORMAL, El::NORMAL,
         El::TypeTraits<DataType>::One(), Gg, Ainv,
         El::TypeTraits<DataType>::Zero(), Fgrad);
-    assert_always(Fgrad.Height() == gradient.Height());
-    assert_always(Fgrad.Width() == gradient.Width());
+
+    if(is_conv) {
+      Fgrad.Attach(Fgrad.Width()*Fgrad.Height(), 1,
+                   Fgrad.Buffer(),
+                   Fgrad.Width()*Fgrad.Height());
+    } else {
+      assert_always(Fgrad.Height() == gradient.Height());
+      assert_always(Fgrad.Width() == gradient.Width());
+    }
+
+    std::cout << "conv F OK"
+              << " " << Fgrad.Height() << "x" << Fgrad.Width()
+              << std::endl;
 
     // Apply preconditioned grads
     DataType dst_scale = El::TypeTraits<DataType>::Zero(),
