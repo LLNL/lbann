@@ -80,12 +80,16 @@ public:
 
 protected:
 
+  El::SyncInfo<Device> syncSubGridCommunication = El::SyncInfo<Device>();
+
   void setup_dims(DataReaderMetaData& dr_metadata) override;
 
   void fp_setup_outputs(El::Int mini_batch_size) override;
   void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override;
   void fp_compute() override;
   void bp_compute() override;
+  void fp_compute_subgrid();
+  void bp_compute_subgrid();
 
 private:
 
@@ -261,7 +265,8 @@ void fp_setup_outputs_impl(
   const auto& input = l.get_prev_activations();
   for (size_t j=0; j<num_outputs; ++j) {
     auto& output = l.get_activations(j);
-    output.AlignWith(input);
+    //output.AlignWith(input);
+    //std::cout<<"Input width slice layer number:"<<j<<" "<<l.get_output_size(j)<<" "<<input.Width()<<"\n";
     output.Resize(l.get_output_size(j), input.Width());
   }
 
@@ -272,9 +277,79 @@ void slice_layer<TensorDataType,Layout,Device>::fp_setup_outputs(El::Int mini_ba
   fp_setup_outputs_impl(*this);
 }
 
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void slice_layer<TensorDataType,Layout,Device>::fp_compute_subgrid( )
+{
+  const auto& input_dims = this->get_input_dims();
+  const size_t num_dims = input_dims.size();
+  if (num_dims > 3) {
+    LBANN_ERROR(this->get_type()," layer \"",this->get_name(),"\" ",
+                "is operating on ",num_dims,"-D tensors, ",
+                "but only 3-D tensors are currently supported");
+  }
+
+  const int split_dim = input_dims[this->m_slice_dim];
+
+  if(this->m_slice_dim!=num_dims-1)
+  {
+    LBANN_ERROR(this->get_type()," layer \"",this->get_name(),"\" ",
+                "has axis ",this->m_slice_dim," However, ",
+                "Subgrpah parallelism is supported when split axis is the last dimension");
+  }
+  const auto& input = this->get_prev_activations();
+
+  auto const* ptr_input = dynamic_cast<El::DistMatrix<TensorDataType, El::STAR  , El::VC, El::ELEMENT, Device> const *>(&input);
+
+  if(this->get_communication_flag()==2)
+  {
+    El::copy::TranslateBetweenGridsSliceGatherOptComm<TensorDataType,Device,Device>(*ptr_input,this->get_all_activations(),split_dim,this->get_subgrid_comm(),syncSubGridCommunication);
+  }
+  else if(this->get_communication_flag()==1)
+  {
+    El::copy::TranslateBetweenGridsScatterOptComm<TensorDataType,Device,Device>(*ptr_input,this->get_all_activations(),split_dim,this->get_subgrid_comm(),syncSubGridCommunication);
+  }
+  else
+  {
+    El::copy::TranslateBetweenGridsScatterComm<TensorDataType,Device,Device>(*ptr_input,this->get_all_activations(),split_dim,this->get_subgrid_comm(),syncSubGridCommunication);
+
+  }
+  
+}
+
+
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void slice_layer<TensorDataType,Layout,Device>::fp_compute() {
-  fp_compute_impl(*this);
+  const auto& input_dims = this->get_input_dims();
+  const size_t num_dims = input_dims.size();
+
+  //std::cout<<"Slice layer, Slice dim:"<<this->m_slice_dim<<" Num dims:"<<num_dims<<"\n";
+
+  if(this->m_slice_dim==num_dims-1 && this->get_parallel_strategy().enable_subgraph==1)
+  {
+    fp_compute_subgrid();
+  }
+  else
+  {
+    fp_compute_impl(*this);
+  }
+  
+}
+
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void slice_layer<TensorDataType,Layout,Device>::bp_compute_subgrid( )
+{
+  const auto& input_dims = this->get_input_dims();
+
+  const int split_dim = int(input_dims[this->m_slice_dim] / this->get_num_children());
+
+  auto& input_grad = this->get_error_signals();
+
+  auto * ptr_input_grad = dynamic_cast<El::DistMatrix<TensorDataType, El::STAR  , El::VC, El::ELEMENT, Device>  *>(&input_grad);
+
+  El::copy::TranslateBetweenGridsGatherComm<TensorDataType,Device,Device>(*ptr_input_grad,this->get_all_prev_error_signals(),split_dim,this->get_subgrid_comm(),syncSubGridCommunication);
+
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -282,13 +357,29 @@ void slice_layer<TensorDataType,Layout,Device>::bp_setup_gradient_wrt_inputs(El:
   const auto& output0_grad = this->get_prev_error_signals(0);
   auto& input_grad = this->get_error_signals();
   input_grad.Empty(false);
-  input_grad.AlignWith(output0_grad);
+  //std::cout<<"Size of output grad for slice layer:"<<output0_grad.Width()<<"\n";
+  input_grad.Resize(this->get_input_size(), output0_grad.Width());
+  //input_grad.Resize(this->get_input_size(), mini_batch_size);
+  //input_grad.AlignWith(output0_grad);
   El::Zeros(input_grad, this->get_input_size(), output0_grad.Width());
+  //El::Zeros(input_grad, this->get_input_size(), mini_batch_size);
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void slice_layer<TensorDataType,Layout,Device>::bp_compute() {
-  bp_compute_impl(*this);
+
+  const auto& input_dims = this->get_input_dims();
+  const size_t num_dims = input_dims.size();
+
+  if(this->m_slice_dim==num_dims-1 && this->get_parallel_strategy().enable_subgraph==1)
+  {
+    bp_compute_subgrid();
+  }
+  else
+  {
+    bp_compute_impl(*this);
+  }
+  
 }
 
 #ifndef LBANN_SLICE_LAYER_INSTANTIATE

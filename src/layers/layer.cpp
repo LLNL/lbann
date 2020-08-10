@@ -286,6 +286,9 @@ std::vector<int> Layer::get_input_dims(int input_index) const {
         << "\"" << parent.get_name() << "\"";
     LBANN_ERROR(err.str());
   }
+  auto temp = parent.get_output_dims(parent_output_index);
+
+  //std::cout<<"Input Dim Layer Name:"<<get_name()<<" dims size"<<temp.size()<<" Dims"<<temp[0]<< " "<< temp[1]<<"\n";
   return parent.get_output_dims(parent_output_index);
 
 }
@@ -396,10 +399,11 @@ bool Layer::is_frozen() const {
   return m_frozen;
 }
 
-void Layer::setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata) {
+void Layer::setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata, const El::Grid& grid) {
   setup_pointers();
   setup_dims(dr_metadata);
-  setup_matrices(m_comm->get_trainer_grid());
+  //setup_matrices(m_comm->get_trainer_grid()); 
+  setup_matrices(grid);
 #ifdef LBANN_HAS_DISTCONV
   prepare_distconv();
 #endif // LBANN_HAS_DISTCONV

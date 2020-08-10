@@ -37,6 +37,7 @@ class TransformerEncoderLayer(lbann.modules.Module):
 
     def __init__(
         self,
+        branches,
         embed_dim=512,
         num_heads=8,
         feedforward_dim=2048,
@@ -58,6 +59,7 @@ class TransformerEncoderLayer(lbann.modules.Module):
         self.attention = lbann.modules.transformer.MultiheadAttention(
             self.embed_dim,
             num_heads,
+            branches=branches,
             name=f'{self.name}_attention'
         )
 
@@ -154,6 +156,7 @@ class TransformerDecoderLayer(lbann.modules.Module):
 
     def __init__(
         self,
+        branches,
         embed_dim=512,
         num_heads=8,
         feedforward_dim=2048,
@@ -175,11 +178,13 @@ class TransformerDecoderLayer(lbann.modules.Module):
         self.attention1 = lbann.modules.transformer.MultiheadAttention(
             embed_dim,
             num_heads,
+            branches=branches,
             name=f'{self.name}_attention1'
         )
         self.attention2 = lbann.modules.transformer.MultiheadAttention(
             embed_dim,
             num_heads,
+            branches=branches,
             name=f'{self.name}_attention2'
         )
 
@@ -299,6 +304,7 @@ class Transformer(lbann.modules.Module):
 
     def __init__(
         self,
+        branches,
         hidden_size=512,
         num_heads=8,
         num_encoder_layers=6,
@@ -323,6 +329,7 @@ class Transformer(lbann.modules.Module):
         # Encoder and decoder stacks
         self.encoder = [
             TransformerEncoderLayer(
+                branches,
                 embed_dim=hidden_size,
                 num_heads=num_heads,
                 feedforward_dim=filter_size,
@@ -333,6 +340,7 @@ class Transformer(lbann.modules.Module):
         ]
         self.decoder = [
             TransformerDecoderLayer(
+                branches,
                 embed_dim=hidden_size,
                 num_heads=num_heads,
                 feedforward_dim=filter_size,
@@ -425,9 +433,9 @@ class Transformer(lbann.modules.Module):
 
         # Encoder stack
         # Note: Add positional encoding to input
-        x = lbann.Add(
+        x = lbann.Sum([
             source,
-            self._positional_encoding(source_length),
+            self._positional_encoding(source_length)],
             name=f'{self.name}_instance{self.instance}_positional_source',
         )
         for encoder_layer in self.encoder:
@@ -436,9 +444,9 @@ class Transformer(lbann.modules.Module):
 
         # Decoder stack
         # Note: Add positional encoding to input
-        x = lbann.Add(
-            target,
-            self._positional_encoding(target_length),
+        x = lbann.Sum(
+            [target,
+            self._positional_encoding(target_length)],
             name=f'{self.name}_instance{self.instance}_positional_target',
         )
         for decoder_layer in self.decoder:

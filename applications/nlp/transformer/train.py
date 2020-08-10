@@ -27,7 +27,9 @@ def make_model(
     embed_dim,
     num_heads,
     label_smoothing,
+    branches,
 ):
+    #branches = 4
 
     # Embedding weights
     var = 2 / (embed_dim + vocab_size) # Glorot initialization
@@ -68,7 +70,7 @@ def make_model(
     decoder_input = lbann.Identity(embeddings_slice)
 
     # Apply transformer model
-    transformer = lbann.models.Transformer(
+    transformer = lbann.models.Transformer(branches = branches,
         hidden_size=embed_dim,
         num_heads=num_heads,
         name='transformer',
@@ -134,8 +136,14 @@ def make_model(
     # Construct model
     metrics = []
     callbacks = [lbann.CallbackPrint(), lbann.CallbackTimer()]
+
+    layers = list(lbann.traverse_layer_graph(input_))
+
+    # for l in layers:
+    #     l.device = "GPU"
     return lbann.Model(
         num_epochs,
+        vector_communication=2,
         layers=lbann.traverse_layer_graph(input_),
         objective_function=loss,
         metrics=metrics,
@@ -167,7 +175,7 @@ def make_data_reader():
 def make_batch_script(trainer_params, model_params, script_params):
 
     # Create LBANN objects
-    trainer = lbann.Trainer(mini_batch_size=trainer_params.mini_batch_size)
+    trainer = lbann.Trainer(mini_batch_size=trainer_params['mini_batch_size'])
     model = make_model(**model_params)
     reader = make_data_reader()
 
@@ -198,12 +206,12 @@ def make_batch_script(trainer_params, model_params, script_params):
     )
 
     # Dump weights after every epoch
-    model.callbacks.append(
-        lbann.CallbackDumpWeights(
-            basename=os.path.join(script_params['work_dir'], 'weights'),
-            epoch_interval=1,
-        )
-    )
+    # model.callbacks.append(
+    #     lbann.CallbackDumpWeights(
+    #         basename=os.path.join(script_params['work_dir'], 'weights'),
+    #         epoch_interval=1,
+    #     )
+    # )
 
     # Create Protobuf file
     protobuf_file = os.path.join(script_params['work_dir'], 'experiment.prototext')

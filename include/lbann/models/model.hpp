@@ -109,6 +109,28 @@ public:
    */
   void set_name(std::string name);
 
+  void set_subgrid_communication_type(int type)
+  {
+    vector_communication_subgraph =type;
+  }
+
+  int get_subgrid_communication_type()
+  {
+    return vector_communication_subgraph;
+  }
+
+  void enable_subgraph_parallelism()
+  {
+    apply_subgraph_parallelism = true;
+  }
+
+  bool is_subgraph_parallelism_enabled()
+  {
+    return apply_subgraph_parallelism;
+  }
+
+
+
   /** @brief Human-readable description. */
   virtual description get_description() const;
 
@@ -324,10 +346,23 @@ protected:
    *  relationships between layers are reciprocated.
    */
   virtual void setup_layer_topology();
+
+  /** setup sub grids for the sub graph parallelism	
+
+  */	
+  virtual void setup_subgrids();	
+
+  virtual void check_subgraph_parallelism();
+
+  virtual void setup_subgrid_layers_run_condition();
+
+  virtual void get_parent_subgrid_tags(int layer_index );
+
   /** @brief Set up layer execution order.
    *
    *  Called in setup function.
    */
+
   virtual void setup_layer_execution_order();
   /** @brief Set up layers.
    *
@@ -415,6 +450,13 @@ public:
   /** @brief Execute callbacks at the end of weight optimization. */
   virtual void do_weight_optimize_end_cbs(weights *w);
 
+	
+public:	
+  //std::unique_ptr<El::Grid> grid1,grid2;	
+  std::unordered_map<std::string, std::shared_ptr<El::Grid>> grids; 
+  std::unordered_map<std::string, std::unique_ptr<El::mpi::Group>> grids_mpi_groups; 
+
+
 private:
 
   /** Pointer to the execution context object used for training or evaluating this model */
@@ -423,6 +465,19 @@ private:
   /** @brief LBANN communicator. */
   lbann_comm* m_comm;
 
+  /*experimental code for Sub graph*/
+  /** Enable vector communication for the subgraph parallelism */
+  //0: send-recv based subgrid communication
+  //1: collective based subgrid communication without optimization that requires specific assumptions like subgrids should have same size
+  //2: collective based subgrid communication with optimization
+
+  int vector_communication_subgraph = 0;
+  bool apply_subgraph_parallelism = false;
+
+
+
+
+  
   /** @brief Model instance's name.
    *  @details Each model in a trainer should have a unique,
    *  preferably human-readable, name.

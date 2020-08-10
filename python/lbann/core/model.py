@@ -7,7 +7,7 @@ import lbann.core.objective_function
 class Model:
     """Neural network model."""
 
-    def __init__(self, epochs,
+    def __init__(self, epochs,vector_communication=0,
                  layers=[], weights=[], objective_function=None,
                  metrics=[], callbacks=[],
                  summary_dir=None,serialize_io=False):
@@ -36,12 +36,14 @@ class Model:
         # Metrics and callbacks
         self.metrics = make_iterable(metrics)
         self.callbacks = make_iterable(callbacks)
+        self.vector_communication = vector_communication
 
     def export_proto(self):
         """Construct and return a protobuf message."""
         # Initialize protobuf message
         model = model_pb2.Model()
         model.num_epochs = self.epochs
+        model.vector_communication = self.vector_communication
         if self.summary_dir is not None:
             model.summarizer.dir = self.summary_dir
         model.serialize_io = self.serialize_io

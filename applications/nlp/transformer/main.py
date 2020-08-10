@@ -5,7 +5,7 @@ import math
 import os
 import os.path
 import sys
-
+sys.path.append("/usr/workspace/jain8/internship/subgraph/transformers/github/lbann//build/gnu.Release.lassen.llnl.gov/install/lib/python3.7/site-packages")
 import lbann
 import lbann.contrib.args
 
@@ -39,6 +39,10 @@ parser.add_argument(
 parser.add_argument(
     '--embed-dim', action='store', default=512, type=int,
     help='embedding space dimensions (default: 512)', metavar='NUM')
+
+parser.add_argument(
+    '--branches', action='store', default=0, type=int,
+    help='Number of Branches 0 means DP (default: 0)', metavar='NUM')
 args = parser.parse_args()
 
 # Hard-coded options
@@ -69,10 +73,13 @@ model_params = {
     'embed_dim': args.embed_dim,
     'num_heads': args.num_attention_heads,
     'label_smoothing': label_smoothing,
+    'branches': args.branches,
 }
 script_params = lbann.contrib.args.get_scheduler_kwargs(args)
 script_params['work_dir'] = work_dir
 script_params['job_name'] = args.job_name
+#script_params['mini_batch_size'] = args.mini_batch_size
+#print("script params",trainer_params['mini_batch_size'])
 train_script = train.make_batch_script(
     trainer_params=trainer_params,
     model_params=model_params,
@@ -91,4 +98,4 @@ train_script.run(overwrite=True)
 # ----------------------------------------------
 # Evaluate
 # ----------------------------------------------
-evaluate.evaluate_transformer(weights_prefix)
+#evaluate.evaluate_transformer(weights_prefix)

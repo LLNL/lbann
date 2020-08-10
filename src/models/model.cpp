@@ -35,6 +35,7 @@
 #include "lbann/layers/transform/evaluation.hpp"
 #include "lbann/objective_functions/layer_term.hpp"
 #include "lbann/metrics/layer_metric.hpp"
+
 #include "lbann/utils/omp_diagnostics.hpp"
 #include "lbann/utils/description.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
@@ -74,7 +75,11 @@ model::model(lbann_comm* comm,
   static El::Int num_models = 0;
   m_name = "model" + std::to_string(num_models);
   num_models++;
+  
 
+
+
+  
 }
 
 model::model(const model& other) :
@@ -124,9 +129,12 @@ model::model(const model& other) :
     m_weights.emplace_back(make_unique<data_type_weights<DataType>>(dynamic_cast<data_type_weights<DataType>&>(*other_weights)));
     weights_map[other_weights.get()] = m_weights.back().get();
   }
+  
 
   // Fix pointers
   remap_pointers(layer_map, weights_map);
+
+
 
 }
 
@@ -182,8 +190,12 @@ model& model::operator=(const model& other) {
     weights_map[other_weights.get()] = m_weights.back().get();
   }
 
+  
+
   // Fix pointers
   remap_pointers(layer_map, weights_map);
+
+
 
   return *this;
 }
@@ -572,10 +584,19 @@ void model::setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata) {
   // Bail out if the model is already setup
   if(m_model_is_setup) { return; }
 
+  check_subgraph_parallelism();
+
   // Setup layers
+
   setup_layer_topology();
   setup_layer_execution_order();
+  if(this->is_subgraph_parallelism_enabled())
+  {
+    setup_subgrids();
+  }
+  
   setup_layers(max_mini_batch_size, dr_metadata);
+
 
   // Setup weights
   setup_weights();
@@ -657,6 +678,388 @@ void model::setup_layer_topology() {
 
 }
 
+void model::get_parent_subgrid_tags(int layer_index ){
+	const auto& layers = this->get_layers();
+	std::vector<const Layer*>& parents = layers[layer_index]->get_parent_layers();
+	std::vector < std::set < int,  std::greater <int>>> diff_subgrids;
+	std::vector<int> parent_tags(parents.size());
+  
+
+
+	//diffbranches.push_back(temp);
+	for (int i = 0; i < int(parents.size()); ++i)
+	{
+		std::set<int,std::greater <int>> parent_subgrid_ranks_set = *(parents[i]->subgrid_ranks);
+		if(diff_subgrids.size()==0)
+		{
+		    diff_subgrids.push_back(parent_subgrid_ranks_set);
+		}
+		else
+		{
+		    
+		    bool flag_found = false;
+		    for(int j=0; j< int(diff_subgrids.size()); ++j)
+		    {
+		        if(parent_subgrid_ranks_set==diff_subgrids[j])
+		        {
+		            parent_tags[i] = j;
+		            flag_found = true;
+		            break;
+		        }
+		    }
+		    
+		    if(flag_found==false)
+		    {
+		        parent_tags[i] = int(diff_subgrids.size());
+		        diff_subgrids.push_back(parent_subgrid_ranks_set);
+		    }
+		    
+		    
+		}
+	  
+
+	}
+  layers[layer_index]->parent_tags.reset(new std::vector<int>(parent_tags.begin(),parent_tags.end()) );
+  // std::cout<<"Parent tags are ";
+  // for(int i = 0; i< int(parent_tags.size());++i)
+  // {
+  //   std::cout<<(*layers[layer_index]->parent_tags)[i]<<" ";
+  // }
+  // std::cout<<"\n";
+  layers[layer_index]->num_spliting_groups = int(diff_subgrids.size());
+
+
+}
+
+void model::check_subgraph_parallelism(){
+  const auto& layers = this->get_layers();
+  const El::Int num_layers = layers.size();
+  for (El::Int node = 0; node < num_layers; ++node) {
+    if(layers[node]->get_parallel_strategy().sub_branch_tag != 0)
+    {
+      this->enable_subgraph_parallelism();
+      break;
+    }
+
+  }
+  std::cout<<"Is subgraph parallelism enabled:"<<this->is_subgraph_parallelism_enabled()<<"\n";
+
+}
+
+void model::setup_subgrid_layers_run_condition()
+{
+  const auto& layers = this->get_layers();
+  const El::Int num_layers = layers.size();
+  int myrank = El::mpi::Rank();
+  for (El::Int node = 0; node < num_layers; ++node) {
+    if((*layers[node]->subgrid_ranks).find(myrank) != (*layers[node]->subgrid_ranks).end() || layers[node]->get_type()=="add" || layers[node]->get_type()=="concatenate" || layers[node]->get_type()=="sum" || layers[node]->get_type()=="slice")
+    {
+      layers[node]->set_run_layer_in_subgraph();
+    }
+
+  }
+}
+
+void  model::setup_subgrids(){
+  const auto& layers = this->get_layers();
+  const El::Int num_layers = layers.size();
+  //El::Int grid_number = 0;
+  
+  const El::GridOrder orderGrid =  El::COLUMN_MAJOR;
+
+  std::string grid_global_index = "";
+  std::string grid_temp_index = "";
+
+  El::mpi::Comm sub_comm = El::mpi::NewWorldComm();
+  El::Int commSize = El::mpi::Size( sub_comm);
+
+  //Start will all the ranks for the layer 
+  std::set <int, std::greater <int> > initial_ranks;
+  std::set <int, std::greater <int> > initial_ranks_global;
+  for( El::Int i=0; i<commSize; ++i )
+  {
+    initial_ranks.insert(i);
+    initial_ranks_global.insert(i);
+  }
+
+  // index based on ranks 
+  for (auto it=initial_ranks.begin(); it != initial_ranks.end(); ++it) 
+        grid_global_index += " " + std::to_string(*it);
+
+
+
+  grids_mpi_groups[grid_global_index] = std::unique_ptr<El::mpi::Group>(new El::mpi::Group);
+
+  
+  El::mpi::CommGroup( El::mpi::NewWorldComm(), *grids_mpi_groups[grid_global_index]  );
+
+
+  
+  std::unique_ptr<El::Grid> temp_ptr;
+
+  
+
+  grids[grid_global_index] = std::make_shared<El::Grid>(El::mpi::NewWorldComm(),*grids_mpi_groups[grid_global_index], commSize, orderGrid );
+  //std::shared_ptr<El::Grid> mcomm_grid(&(m_comm->get_trainer_grid()));
+  //grids[grid_global_index] = mcomm_grid;
+  // subgrid_number
+  // grid_number
+
+
+  
+
+
+  for (El::Int node = 0; node < num_layers; ++node) {
+    //std::cout<<" Layer number:"<<node<<" Layer type:"<< layers[node]->get_type()<<" Layer name:"<<layers[node]->get_name()<<"\n";
+    layers[node]->enable_subgraph_parallelism();
+
+    //special cases
+    if(layers[node]->get_type()=="split" || layers[node]->get_type()=="sum" || layers[node]->get_type()=="slice" || layers[node]->get_type()=="concatenate")
+    {
+      layers[node]->set_communication_flag(this->get_subgrid_communication_type());
+      //std::cout<<"communication type for subgrid:"<<this->get_subgrid_communication_type()<<"\n";
+
+      //set enable subgrpah parallelism variable for split layers
+      if(layers[node]->get_type()=="split")
+      {
+        auto childs = layers[node]->get_child_layers();
+        if(childs[0]->get_parallel_strategy().sub_branch_tag > 0)
+        {
+          std::cout<<"Enabling subgraph parallelism for "<<layers[node]->get_name()<<"\n";
+          layers[node]->set_enable_subgraph_variable();
+        }
+      }
+
+    }
+
+
+    if(layers[node]->get_type() == "input" || layers[node]->get_type() == "constant" )
+    {
+      //std::cout<<"Input or constance layer:"<<layers[node]->get_type()<<"\n";
+      layers[node]->subgrid_ranks.reset(new std::set<int, std::greater <int> >(initial_ranks_global.begin(),initial_ranks_global.end()));
+      layers[node]->subgrid_index = grid_global_index;
+      //layers[node]->mygrid.reset(grids[grid_number].get());
+      layers[node]->mygrid = grids[grid_global_index];
+
+    }
+    else
+    {
+      if(layers[node]->get_parallel_strategy().sub_branch_tag == 0)
+      {
+        std::vector<const Layer*>& parents = layers[node]->get_parent_layers();
+        //when layer has only one parent no branching copy everthing from parent 
+
+        if(parents.size()==0)
+        {
+          layers[node]->subgrid_ranks.reset(new std::set<int, std::greater <int> >(initial_ranks_global.begin(),initial_ranks_global.end()));
+          layers[node]->subgrid_index = grid_global_index;
+          layers[node]->mygrid = grids[grid_global_index];
+          std::cout<<"Zero Parents layer:"<<layers[node]->get_type()<<"\n";
+
+        }
+        else if(parents.size()==1)
+        {
+
+          std::set <int, std::greater <int> > layer_ranks = *(parents[0]->subgrid_ranks);
+          layers[node]->subgrid_ranks.reset(new std::set<int, std::greater <int> >(layer_ranks.begin(),layer_ranks.end()));
+          layers[node]->subgrid_index = parents[0]->subgrid_index;
+          //layers[node]->mygrid.reset(grids[layers[node]->subgrid_number].get());
+          layers[node]->mygrid = grids[layers[node]->subgrid_index];
+        }
+        else
+        {
+
+          //when layer has multiple parents, pool resources (ranks) from parents 
+          std::set<int,std::greater <int>> pooled_set;
+          for(int parent= 0; parent< int(parents.size());++parent)
+          {
+            std::set<int, std::greater <int> > temp_set(pooled_set.begin(),pooled_set.end());
+            pooled_set.clear();
+
+            std::set_union(temp_set.begin(), temp_set.end(),
+                        (*parents[parent]->subgrid_ranks).begin(), (*parents[parent]->subgrid_ranks).end(),
+                        std::inserter(pooled_set, pooled_set.begin()));
+          }
+          layers[node]->subgrid_ranks.reset(new std::set<int,std::greater <int>> (pooled_set.begin(),pooled_set.end()));
+
+          //create new grid 
+          std::vector<int > ranks_in_grid(pooled_set.begin(), pooled_set.end());
+
+          grid_temp_index = "";
+          for (auto it=ranks_in_grid.begin(); it != ranks_in_grid.end(); ++it) 
+            grid_temp_index += " " + std::to_string(*it);
+
+          if(grids.find(grid_temp_index) != grids.end())
+          //subgrid already exist with required resources
+          {
+            layers[node]->subgrid_index = grid_temp_index;
+            layers[node]->mygrid = grids[grid_temp_index];
+          }
+          else
+          {
+            
+            grids_mpi_groups[grid_temp_index] = std::unique_ptr<El::mpi::Group>(new El::mpi::Group);
+            El::mpi::Incl( *grids_mpi_groups[grid_global_index], ranks_in_grid.size(), ranks_in_grid.data(), *grids_mpi_groups[grid_temp_index] );
+            
+
+            grids[grid_temp_index] = std::make_shared<El::Grid>(El::mpi::NewWorldComm(),*grids_mpi_groups[grid_temp_index], ranks_in_grid.size(), orderGrid );
+            layers[node]->subgrid_index = grid_temp_index;
+            layers[node]->mygrid = grids[grid_temp_index];
+
+            std::cout<<"Grid temp index "<<layers[node]->get_type()<< ":"<<grid_temp_index<<"\n";
+
+            
+
+            std::string temp_print;
+
+            for(int vec_index = 0; vec_index<int(ranks_in_grid.size());++vec_index)
+            {
+              std::string s = std::to_string(ranks_in_grid[vec_index]);
+              temp_print.append(s);
+              temp_print.append(" ");
+            }
+
+
+          }
+          get_parent_subgrid_tags(node );
+
+          
+          //std::cout<<"Adding Layer:"<<layers[node]->get_name()<< " Pooled resources:"<<temp_print<<"\n";
+
+
+
+        }
+      }
+
+      else
+      {
+        //custom number of resources and edge cases not supported 
+
+        std::vector<const Layer*>& parents = layers[node]->get_parent_layers();
+        auto parent  = parents[0];
+        int num_divisions = 1;
+        auto childs = parents[0]->get_child_layers(); 
+        std::set <int, std::greater <int> > parent_layer_ranks = *(parents[0]->subgrid_ranks);
+        std::set <int, std::greater <int> > my_sub_ranks ;
+
+        
+
+        bool flag_subgrid_found  = false;
+
+        for(El::Int child = 0; child<int(childs.size());++child)
+        {
+          num_divisions = std::max(num_divisions, int(childs[child]->get_parallel_strategy().sub_branch_tag));
+
+          //check if the grid is initialized for the childs with similar tag
+          if(childs[child]->subgrid_index != "" && int(childs[child]->get_parallel_strategy().sub_branch_tag) == (layers[node]->get_parallel_strategy().sub_branch_tag ))
+          {
+            layers[node]->subgrid_index = childs[child]->subgrid_index;
+            layers[node]->subgrid_ranks.reset(new std::set<int,std::greater <int>> (  (*childs[child]->subgrid_ranks).begin()  ,(*childs[child]->subgrid_ranks).end())    );
+            //layers[node]->mygrid.reset(grids[grid_number].get());
+            layers[node]->mygrid = grids[childs[child]->subgrid_index];
+            layers[node]->num_spliting_groups = childs[child]->num_spliting_groups;
+            flag_subgrid_found = true;
+
+          }
+
+        }
+
+        if(flag_subgrid_found){
+          continue;
+        }
+
+        int number_ranks_in_grid = ( (*parent[0].subgrid_ranks).size())/num_divisions;
+        
+        //parents[0]->num_spliting_groups = num_divisions;
+
+
+
+        std::set<int,std::greater <int>> :: iterator itr;
+        El::Int counter = 0 ;
+        for (itr = parent_layer_ranks.begin(); itr != parent_layer_ranks.end(); ++itr) 
+        {
+          if(counter >= (layers[node]->get_parallel_strategy().sub_branch_tag - 1)*number_ranks_in_grid  &&   counter < (layers[node]->get_parallel_strategy().sub_branch_tag )*number_ranks_in_grid)
+          {
+            my_sub_ranks.insert(*itr);
+          }
+          counter++;
+
+        }
+        
+        //create new grid 
+        std::vector<int> ranks_in_grid(my_sub_ranks.begin(), my_sub_ranks.end());
+        grid_temp_index = "";
+        for (auto it=ranks_in_grid.begin(); it != ranks_in_grid.end(); ++it) 
+          grid_temp_index += " " + std::to_string(*it);
+
+
+        if(grids.find(grid_temp_index) != grids.end())
+        //subgrid already exist with required resources
+        {
+          layers[node]->subgrid_index = grid_temp_index;
+          layers[node]->mygrid = grids[grid_temp_index];
+          layers[node]->num_spliting_groups=num_divisions;
+          layers[node]->subgrid_ranks.reset(new std::set<int,std::greater <int>> (my_sub_ranks.begin(),my_sub_ranks.end()));
+        }
+        else
+        {
+
+
+
+          grids_mpi_groups[grid_temp_index] = std::unique_ptr<El::mpi::Group>(new El::mpi::Group);
+          El::mpi::Incl( *grids_mpi_groups[grid_global_index], ranks_in_grid.size(), ranks_in_grid.data(), *grids_mpi_groups[grid_temp_index] );
+          
+
+          grids[grid_temp_index] = std::make_shared<El::Grid>(El::mpi::NewWorldComm(),*grids_mpi_groups[grid_temp_index], ranks_in_grid.size(), orderGrid );
+          std::cout<<"Grid temp index split/slice:"<<grid_temp_index<<"\n";
+
+          layers[node]->subgrid_index = grid_temp_index;
+          layers[node]->subgrid_ranks.reset(new std::set<int,std::greater <int>> (my_sub_ranks.begin(),my_sub_ranks.end()));
+          //layers[node]->mygrid.reset(grids[grid_number].get());
+          layers[node]->mygrid = grids[grid_temp_index];
+          layers[node]->num_spliting_groups=num_divisions;
+
+          // if(parents[0]->get_name().find("split")!= std::string::npos)
+          // {
+          //   parents[0]->subgrid_number = grid_number;
+          //   parents[0]->subgrid_ranks.reset(new std::set<int,std::greater <int>> (my_sub_ranks.begin(),my_sub_ranks.end()));
+          //   std::cout<<"My parent is spliting layer "<<layers[node]->get_name()<<"\n";
+          // }
+
+        }
+
+        std::string temp_print;
+
+        for(int vec_index = 0; vec_index<int(ranks_in_grid.size());++vec_index)
+        {
+          std::string s = std::to_string(ranks_in_grid[vec_index]);
+          temp_print.append(s);
+          temp_print.append(" ");
+        }
+
+        //std::cout<<"Spliting Layer:"<<layers[node]->get_name()<< " Pooled resources:"<<temp_print<<"\n";
+
+
+
+
+
+      }
+
+    }
+
+
+    //std::cout<<"In model Layer name:"<<layers[node]->get_name()<<" Type:"<<layers[node]->get_type()<<" Enable subgraph:"<<layers[node]->get_parallel_strategy().enable_subgraph<< " Ranks size:"<< (*layers[node]->subgrid_ranks).size()<<"\n";
+
+  }
+  std::cout<<"Number of subgrids created:"<<grids.size()<<"\n";
+  for (auto const& pair: grids) {
+    std::cout << "{" << pair.first << ": "  << "}\n";
+  }
+
+  this->setup_subgrid_layers_run_condition();
+  //std::cout<<"Times shared pointer 0 is used:"<<grids[0].use_count()<<"\n";
+}
+
 void model::setup_layer_execution_order() {
 
   // Find input layers
@@ -680,15 +1083,30 @@ void model::setup_layer_execution_order() {
 }
 
 void model::setup_layers(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata) {
+
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     auto& l = get_layer(i);
     l.set_model(this);
-    l.setup(max_mini_batch_size, dr_metadata);
+
+    if(this->is_subgraph_parallelism_enabled())
+    {
+      
+      l.setup(max_mini_batch_size, dr_metadata,*(grids[l.subgrid_index]));
+      
+
+    }
+    else
+    {
+
+      l.setup(max_mini_batch_size, dr_metadata,m_comm->get_trainer_grid());
+    }
     l.check_setup();
   }
 }
 
 void model::setup_weights() {
+
+
 
   // Sort weights by name
   // Note: For run-to-run consistency. Names are assumed to be unique.
@@ -991,25 +1409,92 @@ void model::clear_gradients() {
 }
 
 void model::forward_prop(execution_mode mode) {
+  int myrank = El::mpi::Rank();
+
+  
+
   do_model_forward_prop_begin_cbs(mode);
+  
+
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     auto& l = get_layer(i);
-    do_layer_forward_prop_begin_cbs(mode, &l);
-    l.forward_prop();
-    do_layer_forward_prop_end_cbs(mode, &l);
+
+
+
+    
+    
+
+    //std::cout<<"Running FP with"<<l.get_type()<<" Layer name:"<<l.get_name()<<" Rank:"<<myrank<<"\n";
+    if(this->is_subgraph_parallelism_enabled())
+    {
+      if((*l.subgrid_ranks).find(myrank) != (*l.subgrid_ranks).end() || l.get_type()=="add" || l.get_type()=="concatenate" || l.get_type()=="sum" || l.get_type()=="slice")
+      {
+        //std::cout<<"calling fp for :"<<l.get_name()<<" Rank:"<<myrank<<"\n";
+        //std::cout<<"Rank:"<<myrank<<" Forward pass starting Layer:"<<l.get_type()<<" Layer name:"<<l.get_name()<<"\n";
+        do_layer_forward_prop_begin_cbs(mode, &l);
+
+        l.forward_prop();
+        do_layer_forward_prop_end_cbs(mode, &l);
+
+      }
+
+    }
+    else
+    {
+      do_layer_forward_prop_begin_cbs(mode, &l);
+      l.forward_prop();
+      do_layer_forward_prop_end_cbs(mode, &l);
+
+    }
+    
+
+    
+    
+    
   }
   do_model_forward_prop_end_cbs(mode);
+  //std::cout<<"Forward Pass completed\n";
+
+  //c.set_current_mini_batch_size(effective_batch_size/4);
 }
 
 void model::backward_prop() {
+  int myrank = El::mpi::Rank();
   do_model_backward_prop_begin_cbs();
+
+ 
+
   for (El::Int i = get_num_layers()-1; i >= 0; --i) {
 
     // Perform backward prop step on current layer
     auto& l = get_layer(i);
-    do_layer_backward_prop_begin_cbs(&l);
-    l.back_prop();
-    do_layer_backward_prop_end_cbs(&l);
+
+    
+    
+
+    
+    if(this->is_subgraph_parallelism_enabled())
+    {
+      if((*l.subgrid_ranks).find(myrank) != (*l.subgrid_ranks).end() || l.get_type()=="add" || l.get_type()=="concatenate" || l.get_type()=="sum" || l.get_type()=="slice")
+      {
+        //std::cout<<"Actually Running BP with:"<<l.get_type()<<" Layer name:"<<l.get_name()<<"\n";
+        //std::cout<<"Rank:"<<myrank<<" Backward pass starting Layer:"<<l.get_type()<<" Layer name:"<<l.get_name()<<"\n";
+
+        do_layer_backward_prop_begin_cbs(&l);
+        l.back_prop();
+        do_layer_backward_prop_end_cbs(&l);
+      }
+
+    }
+    else
+    {
+      do_layer_backward_prop_begin_cbs(&l);
+      l.back_prop();
+      do_layer_backward_prop_end_cbs(&l);
+
+    }
+    
+    
 
     // Terminate early if all gradients have been computed
     bool all_gradients_computed = true;
@@ -1023,7 +1508,10 @@ void model::backward_prop() {
     if (all_gradients_computed) { break; }
 
   }
+  //std::cout<<"BP is complete Rank:"<<myrank<<"\n";
   do_model_backward_prop_end_cbs();
+  //std::cout<<"Backward Pass completed\n";
+  
 }
 
 void model::update_weights() {
@@ -1036,15 +1524,31 @@ void model::update_weights() {
   // after a weights gradient has been computed. Thus, iterating in
   // reverse order will use gradients that have already finished their
   // allreduce, giving more time for more recent allreduces to finish.
+  int counter = 0;
   for (auto rit = m_weights.rbegin(); rit != m_weights.rend(); ++rit) {
     auto& w = **rit;
     auto&& opt = w.get_optimizer();
+
+    // auto ranks = w.get_resources();
+
+    // std::cout<<"In weight: weightname:"<<w.get_name();
+    //  for (int const& r : ranks)
+    // {
+    //     std::cout << r << ' ';
+    // }
+    // std::cout<<"\n";
+
+
     if (opt != nullptr) {
       do_weight_optimize_begin_cbs(&w);
       opt->step();
       do_weight_optimize_end_cbs(&w);
+      counter++;
     }
   }
+
+  //std::cout<<"Times weights are updated:"<<counter<<"\n";
+
 
   do_model_optimize_end_cbs();
 }
