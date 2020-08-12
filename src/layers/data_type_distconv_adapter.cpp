@@ -327,7 +327,7 @@ setup_prev_activations_i(int index) const {
     const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
     t = make_unique<TensorDevType>(shape, loc, dist, local_shape);
     assert0(t->allocate());
-    t->zero(El::GPUManager::Stream());
+    t->zero(hydrogen::cuda::GetDefaultStream());
   } else {
     // Create a shallow copy
     const auto &parent_activations =
@@ -421,7 +421,7 @@ setup_activations_i(int index) const {
   const auto local_shape = get_activations_local_shape(index);
   auto t = make_unique<TensorDevType>(shape, loc, dist, local_shape);
   assert0(t->allocate());
-  t->zero(El::GPUManager::Stream());
+  t->zero(hydrogen::cuda::GetDefaultStream());
   return t;
 }
 
@@ -475,7 +475,7 @@ setup_prev_error_signals_i(int index) const {
     const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
     t = make_unique<TensorDevType>(shape, loc, dist, local_shape);
     assert0(t->allocate());
-    t->zero(El::GPUManager::Stream());
+    t->zero(hydrogen::cuda::GetDefaultStream());
   } else {
     // Create a shallow copy
     const auto &child_error_signals =
@@ -540,7 +540,7 @@ setup_error_signals_i(int index) const {
   const auto local_shape = get_error_signals_local_shape(index);
   auto t = make_unique<TensorDevType>(shape, loc, dist, local_shape);
   assert0(t->allocate());
-  t->zero(El::GPUManager::Stream());
+  t->zero(hydrogen::cuda::GetDefaultStream());
   return t;
 }
 
@@ -774,7 +774,7 @@ void data_type_distconv_adapter<TensorDataType>::ensure_prev_activations() {
     shuffler.shuffle_forward(
         get_original_prev_activations().get_const_base_ptr(),
         get_prev_activations().get_base_ptr(),
-        El::GPUManager::Stream());
+        hydrogen::cuda::GetDefaultStream());
   }
 }
 
@@ -796,7 +796,7 @@ void data_type_distconv_adapter<TensorDataType>::copy_out_activations() {
     shuffler.shuffle_forward(
         get_activations().get_const_base_ptr(),
         get_original_activations().get_base_ptr(),
-        El::GPUManager::Stream());
+        hydrogen::cuda::GetDefaultStream());
   }
 }
 
@@ -823,7 +823,7 @@ void data_type_distconv_adapter<TensorDataType>::ensure_prev_error_signals() {
     shuffler.shuffle_forward(
         get_original_prev_error_signals(i).get_const_base_ptr(),
         get_prev_error_signals(i).get_base_ptr(),
-        El::GPUManager::Stream());
+        hydrogen::cuda::GetDefaultStream());
   }
 }
 
@@ -846,7 +846,7 @@ void data_type_distconv_adapter<TensorDataType>::copy_out_error_signals() {
     shuffler.shuffle_forward(
         get_error_signals(i).get_const_base_ptr(),
         get_original_error_signals(i).get_base_ptr(),
-        El::GPUManager::Stream());
+        hydrogen::cuda::GetDefaultStream());
   }
 }
 

@@ -91,9 +91,9 @@ void local_fp_gpu(const El::AbstractMatrix<TensorDataType>& local_prediction,
     block_dims.x = block_size;
     grid_dims.x = (height + block_size - 1) / block_size;
     grid_dims.y = width;
-    CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
+    CHECK_CUDA(cudaSetDevice(hydrogen::gpu::DefaultDevice()));
     fp_kernel<block_size>
-      <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
+      <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
         height, width,
         local_prediction.LockedBuffer(), local_prediction.LDim(),
         local_ground_truth.LockedBuffer(), local_ground_truth.LDim(),
@@ -147,9 +147,9 @@ void local_bp_gpu(const El::AbstractMatrix<TensorDataType>& local_prediction,
     block_dims.x = block_size;
     grid_dims.x = (height + block_size - 1) / block_size;
     grid_dims.y = width;
-    CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
+    CHECK_CUDA(cudaSetDevice(hydrogen::gpu::DefaultDevice()));
     bp_kernel<block_size>
-      <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
+      <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
         height, width,
         local_prediction.LockedBuffer(), local_prediction.LDim(),
         local_ground_truth.LockedBuffer(), local_ground_truth.LDim(),

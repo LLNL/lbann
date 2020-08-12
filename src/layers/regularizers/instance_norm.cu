@@ -208,7 +208,7 @@ void fp_impl(lbann_comm& comm,
     grid_dims.y = num_channels;
     grid_dims.z = local_mini_batch_size;
     fp_sums_kernel<TensorDataType,block_size>
-      <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
+      <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
         local_mini_batch_size, num_channels, channel_size,
         local_input.LockedBuffer(), local_input.LDim(),
         local_sums.Buffer(), local_sums.LDim(),
@@ -223,7 +223,7 @@ void fp_impl(lbann_comm& comm,
     grid_dims.x = (channel_size + block_size - 1) / block_size;
     grid_dims.y = num_channels;
     grid_dims.z = local_mini_batch_size;
-    fp_output_kernel<<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
+    fp_output_kernel<<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
       local_mini_batch_size, num_channels, channel_size, epsilon,
       local_input.LockedBuffer(), local_input.LDim(),
       local_output.Buffer(), local_output.LDim(),
@@ -454,7 +454,7 @@ void bp_impl(lbann_comm& comm,
     grid_dims.y = num_channels;
     grid_dims.z = local_mini_batch_size;
     bp_statistics_grad_kernel<TensorDataType,block_size>
-      <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
+      <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
         local_mini_batch_size, num_channels, channel_size, epsilon,
         local_input.LockedBuffer(), local_input.LDim(),
         local_output_grad.LockedBuffer(), local_output_grad.LDim(),
@@ -473,7 +473,7 @@ void bp_impl(lbann_comm& comm,
     grid_dims.y = num_channels;
     grid_dims.z = local_mini_batch_size;
     bp_input_grad_kernel
-      <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
+      <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
         local_mini_batch_size, num_channels, channel_size, epsilon,
         local_input.LockedBuffer(), local_input.LDim(),
         local_output_grad.LockedBuffer(), local_output_grad.LDim(),

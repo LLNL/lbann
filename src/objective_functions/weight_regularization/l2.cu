@@ -81,8 +81,8 @@ void l2_weight_regularization::accumulate_contribution<El::Device::GPU>(const El
     const auto& size = vals.Height() * vals.Width();
     const El::Int block_size = 256;
     const auto& grid_size = (size + block_size - 1) / block_size;
-    auto&& stream = El::GPUManager::Stream();
-    CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
+    auto&& stream = hydrogen::cuda::GetDefaultStream();
+    CHECK_CUDA(cudaSetDevice(hydrogen::gpu::DefaultDevice()));
     accumulate_contribution_kernel<AccumulateDataType, block_size>
       <<<grid_size, block_size, 0, stream>>>(
         vals.Height(), vals.Width(),
