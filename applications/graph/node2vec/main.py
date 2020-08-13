@@ -8,6 +8,8 @@ import lbann.contrib.launcher
 import lbann.contrib.args
 
 import data.data_readers
+import model.random_projection
+import model.skip_gram
 import utils
 import utils.graph
 import utils.snap
@@ -60,10 +62,10 @@ if args.learning_rate < 0:
 
 # Random walk options
 epoch_size = 100 * args.mini_batch_size
-walk_length = 500
+walk_length = 100
 return_param = 0.25
 inout_param = 0.25
-num_negative_samples = 200
+num_negative_samples = 20
 
 # ----------------------------------
 # Create data reader
@@ -108,10 +110,12 @@ num_vertices = utils.graph.max_vertex_index(graph_file) + 1
 # ----------------------------------
 # Construct layer graph
 # ----------------------------------
+obj = []
+metrics = []
 
 # Embedding vectors, including negative sampling
 # Note: Input is sequence of vertex IDs
-input_ = lbann.Input()
+input_ = lbann.Identity(lbann.Input())
 if args.embeddings == 'distributed':
     embeddings_weights = lbann.Weights(
         initializer=lbann.NormalInitializer(
@@ -143,121 +147,57 @@ elif args.embeddings == 'replicated':
 elif args.embeddings == 'random_projection':
     proj_dim = 1024
     hidden_dim = 1024
-    row_indices = lbann.Reshape(input_, dims='-1 1')
-    col_indices = lbann.Weights(
-        initializer=lbann.ValueInitializer(values=utils.str_list(range(proj_dim))),
-        optimizer=lbann.NoOptimizer(),
+    proj = model.random_projection.random_projection(
+        input_,
+        sample_size,
+        proj_dim,
     )
-    col_indices = lbann.WeightsLayer(dims=utils.str_list(proj_dim), weights=col_indices)
-    col_indices = lbann.Reshape(col_indices, dims='1 -1')
-    flat_indices = lbann.Sum(
-        lbann.Tessellate(
-            lbann.WeightedSum(
-                row_indices, scaling_factors=utils.str_list(proj_dim)
-            ),
-            dims=utils.str_list([sample_size, proj_dim]),
-        ),
-        lbann.Tessellate(
-            col_indices,
-            dims=utils.str_list([sample_size, proj_dim]),
-        ),
+    proj_mlp = model.random_projection.ChannelwiseFullyConnectedAutoencoder(
+        proj_dim,
+        args.latent_dim,
+        [hidden_dim],
     )
-    proj = lbann.UniformHash(flat_indices)
-    ones = lbann.Constant(value=1, num_neurons=utils.str_list([sample_size, proj_dim]))
-    proj = lbann.ErfInv(
-        lbann.WeightedSum(
-            proj,
-            ones,
-            scaling_factors='1.99 -0.995',
-        )
-    )
-    proj = lbann.InstanceNorm(proj)
-    x = proj
-    x = lbann.Relu(
-        lbann.InstanceNorm(
-            lbann.ChannelwiseFullyConnected(
-                x,
-                output_channel_dims=hidden_dim,
-                bias=False,
-            )
-        )
-    )
-    x = lbann.Relu(
-        lbann.InstanceNorm(
-            lbann.ChannelwiseFullyConnected(
-                x,
-                output_channel_dims=hidden_dim,
-                bias=False,
-            )
-        )
-    )
-    embeddings = lbann.ChannelwiseFullyConnected(
-        x,
-        output_channel_dims=args.latent_dim,
-        bias=False,
-    )
-    embeddings = lbann.WeightedSum(
-        lbann.InstanceNorm(embeddings),
-        scaling_factors=str(1/args.latent_dim),
-    )
+    embeddings = proj_mlp.encode(proj)
 else:
     raise RuntimeError(
         f'unknown method to get embedding vectors ({args.embeddings})'
     )
-num_encoder_embeddings = walk_length - 1
-num_decoder_embeddings = num_negative_samples + walk_length - 1
-encoder_embeddings = lbann.Slice(
+embeddings_slice = lbann.Slice(
     embeddings,
     axis=0,
-    slice_points=f'{num_negative_samples+1} {sample_size}',
+    slice_points=utils.str_list([0, num_negative_samples, sample_size]),
 )
-decoder_embeddings = lbann.Slice(
-    embeddings,
-    axis=0,
-    slice_points=f'0 {sample_size-1}',
-)
+negative_samples_embeddings = lbann.Identity(embeddings_slice)
+walk_embeddings = lbann.Identity(embeddings_slice)
 
-# Multiply encoder and decoder embeddings
-preds = lbann.MatMul(decoder_embeddings, encoder_embeddings, transpose_b=True)
-preds_slice = lbann.Slice(
-    preds,
-    axis=0,
-    slice_points=f'0 {num_negative_samples} {sample_size-1}',
+# Skip-Gram objective function
+positive_loss = model.skip_gram.positive_samples_loss(
+    walk_length,
+    lbann.Identity(walk_embeddings),
+    lbann.Identity(walk_embeddings),
+    scale_decay=0.8,
 )
-preds_negative = lbann.Identity(preds_slice)
-preds_positive = lbann.Identity(preds_slice)
-
-# Loss function for positive samples
-mask_dims = (num_decoder_embeddings-num_negative_samples, num_encoder_embeddings)
-mask_decay = 0.8
-mask = np.zeros((walk_length-1,walk_length-1))
-for i in range(walk_length-1):
-    for j in range(i, walk_length-1):
-        mask[i,j] = (1-mask_decay) * mask_decay**(j-i)
-mask = lbann.Weights(
-    initializer=lbann.ValueInitializer(values=utils.str_list(np.nditer(mask))),
-    optimizer=lbann.NoOptimizer(),
+negative_loss = model.skip_gram.negative_samples_loss(
+    walk_embeddings,
+    negative_samples_embeddings,
 )
-mask = lbann.WeightsLayer(dims=utils.str_list(mask_dims), weights=mask)
-obj_positive = lbann.LogSigmoid(preds_positive)
-obj_positive = lbann.MatMul(
-    lbann.Reshape(obj_positive, dims='1 -1'),
-    lbann.Reshape(mask, dims='1 -1'),
-    transpose_b=True,
-)
+obj.append(positive_loss)
+obj.append(lbann.WeightedSum(negative_loss, scaling_factors='2'))
+metrics.append(lbann.Metric(positive_loss, name='positive loss'))
+metrics.append(lbann.Metric(negative_loss, name='negative loss'))
 
-# Loss function for negative samples
-obj_negative = lbann.WeightedSum(preds_negative, scaling_factors='-1')
-obj_negative = lbann.LogSigmoid(obj_negative)
-obj_negative = lbann.Reduction(obj_negative, mode='average')
-
-# Loss function
-obj = [
-    lbann.LayerTerm(obj_positive, scale=-1/(walk_length-1)),
-    lbann.LayerTerm(obj_negative, scale=-1),
-]
+# Additional objective function terms
 if args.embeddings == 'random_projection':
-    obj.append(lbann.L2WeightRegularization(scale=1e-12))
+    obj.append(lbann.L2WeightRegularization(scale=1e-8))
+    recon_loss = lbann.WeightedSum(
+        lbann.MeanSquaredError(
+            proj,
+            proj_mlp.decode(embeddings),
+        ),
+        scaling_factors=utils.str_list(1e-1),
+    )
+    obj.append(recon_loss)
+    metrics.append(lbann.Metric(recon_loss, name='reconstruction loss'))
 
 # ----------------------------------
 # Run LBANN
@@ -278,12 +218,12 @@ callbacks = [
     lbann.CallbackTimer(),
     lbann.CallbackDumpWeights(directory='embeddings',
                               epoch_interval=num_epochs),
-    lbann.CallbackPrintModelDescription(),
 ]
 model = lbann.Model(
     num_epochs,
     layers=lbann.traverse_layer_graph(input_),
     objective_function=obj,
+    metrics=metrics,
     callbacks=callbacks,
 )
 
