@@ -71,9 +71,9 @@ args = parser.parse_args()
 # Start of layers
 
 # Construct layer graph
-input_ = lbann.Input(name='input')
-data = lbann.Identity(input_, name='data')
-labels = lbann.Identity(input_, name='labels')
+input_ = lbann.Input(name='input', target_mode="reconstruction")
+data = lbann.Split(input_, name='data')
+dummy = lbann.Dummy(input_, name='dummy')
 
 # Encoder
 encode1 = lbann.FullyConnected(data,
@@ -89,6 +89,7 @@ encode2 = lbann.FullyConnected(relu1,
                                data_layout="model_parallel",
                                num_neurons=1000,
                                has_bias=True)
+
 relu2 = lbann.Relu(encode2, name="relu2", data_layout="model_parallel")
 
 encode3 = lbann.FullyConnected(relu2,
@@ -230,7 +231,6 @@ trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size)
 
 # Run experiment
 kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
-kwargs['lbann_args'] = '--data_reader_percent='+str(args.data_reader_percent)
 
 lbann.contrib.launcher.run(trainer, model, data_reader_proto, opt,
                            job_name=args.job_name,
