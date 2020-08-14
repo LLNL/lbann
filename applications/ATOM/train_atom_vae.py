@@ -5,8 +5,8 @@ import models.vae as molvae
 # Data paths
 #data_dir = '/usr/workspace/wsa/jacobs32/deepL/moses.fork/scripts/moses_zinc_train250K.npy'
 #data_dir = '/p/lustre2/brainusr/datasets/zinc/moses_zinc_train250K.npy'
-#data_dir = '/p/gscratchr/brainusr/datasets/zinc/moses_zinc_train250K.npy'
-data_dir = '/p/gpfs1/brainusr/datasets/zinc/moses_zinc_train250K.npy'
+data_dir = '/p/gscratchr/brainusr/datasets/zinc/moses_zinc_train250K.npy'
+#data_dir = '/p/gpfs1/brainusr/datasets/zinc/moses_zinc_train250K.npy'
 train_samples = np.load(data_dir)[:200000] #200K for training
 val_samples = np.load(data_dir)[200000:250000] #1000 sampes for validation
 
@@ -91,6 +91,7 @@ def construct_model():
       recon_loss.append(loss)
       '''
     #vae_loss.extend(kl_weight_loss)
+    #vae_loss.extend(kl_loss)
     vae_loss.extend(recon_loss)
     #vae_loss.extend(recon_loss)
     print("LEN vae loss ", len(vae_loss))
@@ -216,7 +217,7 @@ if __name__ == '__main__':
     status = lbann.contrib.launcher.run(trainer,model, data_reader, opt,
                        scheduler='lsf',
                        #account='hpcdl',
-                       nodes=1,
+                       nodes=2,
                        procs_per_node=4,
                        batch_job = True,
                        time_limit=720,
