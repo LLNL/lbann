@@ -127,7 +127,8 @@ class MolVAE(lbann.modules.Module):
         #prev_state = last_output
          
         #h = self.encoder_rnn(x, [prev_state])
-        x,self.enc_rnn_last_output = self.encoder_rnn(x, [self.enc_rnn_last_output])
+        #x,self.enc_rnn_last_output = self.encoder_rnn(x, [self.enc_rnn_last_output])
+        _,h = self.encoder_rnn(x, [self.enc_rnn_last_output])
 
           #h = h[-(1 + int(self.encoder_rnn.bidirectional)):]
           #h = torch.cat(h.split(1), dim=-1).squeeze(0)
@@ -137,7 +138,8 @@ class MolVAE(lbann.modules.Module):
         #mu = self.q_mu(x)
         #KL from here
         #mu, logvar = self.q_mu(h[0]), self.q_logvar(h[0])
-        mu, logvar = self.q_mu(x), self.q_logvar(x)
+        #mu, logvar = self.q_mu(x), self.q_logvar(x)
+        mu, logvar = self.q_mu(h), self.q_logvar(h)
           #eps = torch.randn_like(mu)
         
         eps = lbann.Gaussian(mean=0, stdev=1,hint_layer=mu) 
