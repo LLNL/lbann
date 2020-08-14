@@ -330,9 +330,7 @@ fi
 # Load packages
 if [ ${USE_MODULES} -ne 0 ]; then
     module load git
-
     #module load cmake/3.14.5
-
 else
     use git
 fi
@@ -639,7 +637,8 @@ if [ "${WITH_CUDA}" == "ON" ]; then
 	# CUDNN
 	if [[ -z $CUDNN_DIR ]]; then
         CUDNN_VER=${CUDNN_VER:-7.6.4}
-		CUDNN_DIR=/usr/workspace/wsb/brain/cudnn/cudnn-${CUDNN_VER}/cuda-${CUDA_TOOLKIT_VERSION}_${ARCH}
+		CUDNN_DIR=/usr/WS1/jain8/internship/cudnn/cuda/targets/ppc64le-linux
+        #CUDNN_DIR=/usr/workspace/wsb/brain/cudnn/cudnn-${CUDNN_VER}/cuda-${CUDA_TOOLKIT_VERSION}_${ARCH}
 	fi
 	if [[ ! -d $CUDNN_DIR ]]; then
 		echo "Could not find cuDNN at $CUDNN_DIR"
@@ -652,7 +651,8 @@ if [ "${WITH_CUDA}" == "ON" ]; then
         # Subsequent 2.4.X versions are known to have a performance
         # regression. See the release notes.
         NCCL_VER=${NCCL_VER:-2.4.2-1}
-        NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_${NCCL_VER}+cuda${CUDA_TOOLKIT_VERSION}_${ARCH}
+        NCCL_DIR=/usr/WS1/jain8/internship/elemental_patch/new_aluminum/new_nccl/nccl/build/
+        # NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_${NCCL_VER}+cuda${CUDA_TOOLKIT_VERSION}_${ARCH}
     fi
     if [[ ! -d $NCCL_DIR ]]; then
         echo "Could not find NCCL at $NCCL_DIR"
@@ -807,9 +807,10 @@ cmake \
 -D LBANN_SB_BUILD_PROTOBUF=ON \
 -D LBANN_SB_BUILD_CUB=${WITH_CUB} \
 -D LBANN_SB_BUILD_ALUMINUM=${WITH_ALUMINUM} \
+-D ALUMINUM_TAG=master \
 -D ALUMINUM_ENABLE_MPI_CUDA=${ALUMINUM_WITH_MPI_CUDA} \
 -D ALUMINUM_ENABLE_NCCL=${ALUMINUM_WITH_NCCL} \
--D HYDROGEN_TAG="v1.3.4_differentGrids" \
+-D HYDROGEN_TAG="slice_alum" \
 -D HYDROGEN_URL=https://github.com/aj-prime/Elemental.git \
 -D LBANN_SB_BUILD_CONDUIT=${WITH_CONDUIT} \
 -D LBANN_SB_BUILD_HDF5=${WITH_CONDUIT} \

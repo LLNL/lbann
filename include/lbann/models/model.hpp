@@ -119,6 +119,16 @@ public:
     return vector_communication_subgraph;
   }
 
+  void set_subgrid_topology(int type)
+  {
+    subgraph_topology = type;
+  }
+
+  int get_subgrid_topology()
+  {
+    return subgraph_topology;
+  }
+
   void enable_subgraph_parallelism()
   {
     apply_subgraph_parallelism = true;
@@ -352,11 +362,17 @@ protected:
   */	
   virtual void setup_subgrids();	
 
+  virtual void get_subgrids_order(std::vector<int> &ranks_order, int num_branches);
+
+  virtual int get_max_subgraph_branches();
+
   virtual void check_subgraph_parallelism();
 
   virtual void setup_subgrid_layers_run_condition();
 
   virtual void get_parent_subgrid_tags(int layer_index );
+
+  virtual void get_subgraph_subgrids_ranks(std::vector<int> &parent_ranks, std::vector<int> &subgrid_ranks, int layer_index,int number_ranks_in_grid);
 
   /** @brief Set up layer execution order.
    *
@@ -472,6 +488,10 @@ private:
   //2: collective based subgrid communication with optimization
 
   int vector_communication_subgraph = 0;
+
+  //0: no topology aware design
+  //1: master grid in round robin manner of nodes (GPUs per node 4)  1 3 5 7, 2 4 6 8     
+  int subgraph_topology = 0;
   bool apply_subgraph_parallelism = false;
 
 

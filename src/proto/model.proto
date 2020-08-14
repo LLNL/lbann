@@ -51,6 +51,8 @@ message Model {
   int64 evaluation_frequency = 54;
   
   int64 vector_communication = 13;  //Subgrid vector communication flag
+
+  int64 subgraph_topology = 27;
   
   bool  serialize_io = 101;
 

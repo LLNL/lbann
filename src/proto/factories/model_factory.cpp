@@ -292,6 +292,7 @@ std::unique_ptr<model> construct_model(
     m->set_name(name);
   }
   m->set_subgrid_communication_type(proto_model.vector_communication());
+  m->set_subgrid_topology(proto_model.subgraph_topology());
   return m;
 
 }

@@ -43,6 +43,10 @@ parser.add_argument(
 parser.add_argument(
     '--branches', action='store', default=0, type=int,
     help='Number of Branches 0 means DP (default: 0)', metavar='NUM')
+
+parser.add_argument(
+    '--subgraph-topology', action='store', default=0, type=int,
+    help='Stategy for topology aware subgraph parallelism (default: 0) ', metavar='NUM')
 args = parser.parse_args()
 
 # Hard-coded options
@@ -74,6 +78,7 @@ model_params = {
     'num_heads': args.num_attention_heads,
     'label_smoothing': label_smoothing,
     'branches': args.branches,
+    'subgraph_topology':args.subgraph_topology
 }
 script_params = lbann.contrib.args.get_scheduler_kwargs(args)
 script_params['work_dir'] = work_dir

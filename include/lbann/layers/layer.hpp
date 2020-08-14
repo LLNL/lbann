@@ -189,7 +189,7 @@ class Layer {
 
 public:
   /** Ranks in grid for the sub-graph */  
-  std::unique_ptr<std::set <int, std::greater <int> >> subgrid_ranks; 
+  std::unique_ptr<std::set <int>> subgrid_ranks; 
   std::unique_ptr<std::vector<int>> parent_tags;
   std::string subgrid_index="";
   El::Int num_spliting_groups=1;
