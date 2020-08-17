@@ -35,7 +35,6 @@ python3 -m pytest
 For more information on the data representation: 
 
 
-
 @article {Kimeaax9324,
 	author = {Kim, Baekjun and Lee, Sangwon and Kim, Jihan},
 	title = {Inverse design of porous materials using artificial neural networks},
@@ -49,4 +48,6 @@ For more information on the data representation:
 	eprint = {https://advances.sciencemag.org/content/6/1/eaax9324.full.pdf},
 	journal = {Science Advances}
 }
- 
+
+The model is based on the work supported by the National Science Foundation under Grant No. DMR-1940243.
+Any opinions, findings, and conclusions or recommendations expressed in this material are those of the author(s) and do not necessarily reflect the views of the National Science Foundation

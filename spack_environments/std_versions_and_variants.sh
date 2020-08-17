@@ -3,7 +3,7 @@
 STD_PACKAGES=$(cat <<EOF
     cereal::
       buildable: true
-      version: [1.2.2]
+      version: [1.3.0]
 
     conduit::
       buildable: true
@@ -21,7 +21,7 @@ STD_PACKAGES=$(cat <<EOF
 
     nccl::
       buildable: true
-      version: [2.5.7-1]
+      version: [2.7.8-1]
 
     protobuf::
       buildable: True

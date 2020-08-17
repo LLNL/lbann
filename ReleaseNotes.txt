@@ -21,6 +21,102 @@ Bug fixes:
 
 Retired features:
 
+============================== Release Notes: v0.100 ==============================
+Support for new network structures:
+ - 3D molecular generation models for Metal Organic Frameworks from the CoRE MOF Database.
+ - 3D CosmoFlow Model
+ - DenseNet
+ - ATOM LSTM model
+ - RAS state classifier
+ - node2vec
+ - Transformer and other attention-based models
+ - ExaGAN (formerly CosmoGAN)
+ - MaCC ICF surrogate model
+
+Applications:
+ - Created a directory of example applications, deprecating the "model zoo" directory
+
+Support for new layers:
+ - Embedding layer
+ - Distributed embedding layer
+ - Channel-wise scale/bias layer
+ - Entry-wise scale/bias layer
+ - Gated-Recurrent Units (GRU)
+ - Entry-wise batchnorm
+ - Argmax, Argmin, and one-hot layers
+ - Layer norm
+ - Deconvolution layer (transposed convolution)
+ - Layers for channel-wise operations (channel-wise fully-connected, channel-wise softmax, channel-wise scale/bias, instance norm)
+ - Matrix multiply layer
+
+Python front-end:
+ - Can now configure contrib launcher with environment variables
+ - Added NERSC compute center
+ - Per-layer specification of compute device (CPU or GPU)
+ - Option to write custom batch scripts with Python front-end
+
+Performance optimizations:
+ - Parallelized Python data reader with "multiprocessing" module
+ - Fuse batchnorm stats allreduces in FP/BP.
+ - Tuned concatenate and slice layer
+ - Dynamically allocate and free memory for layer error signals (halves LBANN's memory footprint)
+
+Model portability & usability:
+ - Bamboo tests for individual layers
+
+Internal features:
+ - Added support for DistConv features (distributed, generalized,
+   parallel convolution)
+ - Added support for NVSHMEM 1.0 API (used in distributed embedding
+   layer and DistConv halo exchange)
+ - Support for multiple data types per model (per-layer)
+ - Support for per-layer mixed-precision weight training and inference,
+   includes per-weight object and objective function mixed-precision.
+ - Improved how and when the RNGs are initialized
+ - Callback to dump images to TensorBoard
+ - Callback to save model weights (useful to export to PyTorch)
+ - Callback to save top K models (LTFB)
+ - Improved run-to-run reproducibility by initializing weights in alphabetical order
+ - Moved models from model_zoo directory to applications directory
+ - Cleanup and refactoring of callbacks and layer instantiation
+ - Grouped batchnorm statistics
+ - Callback to print model description
+ - Refactored trainer and training-state out of the model class
+ - Support for transposing data in matrix multiply layers
+ - Added DiHydrogen tensor and DistConv library
+ - Added parallel strategy to layer class to support DistConv
+ - LBANN inference mode supports loading models from multiple directories
+ - Cleanup of checkpoint and restart logic
+
+I/O & data readers:
+ - Added in-memory data store that caches samples in CPU memory.  It can be loaded
+   during the first epoch or preloaded
+ - Added new "transform" data preprocessing ingestion pipeline
+ - Added sample list format for specifying data sets
+ - Introduced data coordinator that manages data readers and extracts them from
+   the input layers
+ - Data store is able to checkpoint / spill it's contents to local disk
+ - Data reader for SMILE strings
+
+Build system:
+ - Hydrogen 1.3.4
+ - Aluminum 0.3.3
+ - Improved documentation on read the docs (RTD)
+ - Robust support for using Spack as a build system around CMake
+ - Identified compute centers for specifying build and run dependencies
+ - Added Catch2-based tests
+
+Bug fixes:
+ - Fixed path resolution for dump weights, save model, and checkpoint callbacks
+ - Added mutexes for preloading the data store
+ - Fixed the LTFB exchange to include all ADAM optimizer state
+ - Fixed the mapping of I/O RNGs to I/O processing threads to ensure
+   consistent and correct multi-threaded performance
+
+Retired features:
+ - moving MNIST data reader is replaced by python data reader
+ - ASCII data reader is deprecated
+
 ============================== Release Notes: v0.99 ==============================
 Support for new training algorithms:
  - Improvements to LTFB infrastructure (including transfer of SGD and Adam hyperparameters)

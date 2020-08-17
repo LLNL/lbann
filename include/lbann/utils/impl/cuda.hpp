@@ -443,9 +443,9 @@ void apply_entrywise_unary_operator(
 
   // Launch CUDA kernel
   if (grid_dim > 0) {
-    CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
+    CHECK_CUDA(cudaSetDevice(hydrogen::gpu::DefaultDevice()));
     entrywise_unary_operator_kernel<UnaryOp>
-      <<<grid_dim, block_dim, 0, El::GPUManager::Stream()>>>(
+      <<<grid_dim, block_dim, 0, hydrogen::cuda::GetDefaultStream()>>>(
         height, width, input.LockedBuffer(), input.LDim(),
         output.Buffer(), output.LDim());
   }
@@ -493,9 +493,9 @@ void apply_entrywise_binary_operator(
 
   // Launch CUDA kernel
   if (grid_dim > 0) {
-    CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
+    CHECK_CUDA(cudaSetDevice(hydrogen::gpu::DefaultDevice()));
     entrywise_binary_operator_kernel<BinaryOp>
-      <<<grid_dim, block_dim, 0, El::GPUManager::Stream()>>>(
+      <<<grid_dim, block_dim, 0, hydrogen::cuda::GetDefaultStream()>>>(
         height, width,
         input1.LockedBuffer(), input1.LDim(),
         input2.LockedBuffer(), input2.LDim(),

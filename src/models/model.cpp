@@ -1330,7 +1330,7 @@ bool model::load_from_checkpoint_shared(persist& p) {
     //  }
   p.set_restart_dir(trainer_dir);
 #ifdef LBANN_HAS_GPU
-  El::GPUManager::SynchronizeDevice();
+  hydrogen::gpu::SynchronizeDevice();
 #endif // LBANN_HAS_GPU
   return true;
 }

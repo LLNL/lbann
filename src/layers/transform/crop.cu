@@ -185,7 +185,7 @@ void crop_layer<TensorDataType, T_layout, Dev>::fp_compute_3d() {
     block_dims.x = block_size;
     grid_dims.x = (output_size + block_size - 1) / block_size;
     grid_dims.y = local_width;
-    fp_compute_3d_kernel<<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
+    fp_compute_3d_kernel<<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
       input_dims[2], input_dims[1], input_dims[0],
       output_dims[2], output_dims[1], output_dims[0],
       local_width,
@@ -221,7 +221,7 @@ void crop_layer<TensorDataType, T_layout, Dev>::bp_compute_3d() {
     block_dims.x = block_size;
     grid_dims.x = (output_size + block_size - 1) / block_size;
     grid_dims.y = local_width;
-    bp_compute_3d_kernel<<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
+    bp_compute_3d_kernel<<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
       input_dims[2], input_dims[1], input_dims[0],
       output_dims[2], output_dims[1], output_dims[0],
       local_width,

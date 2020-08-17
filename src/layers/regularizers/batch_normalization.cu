@@ -405,8 +405,8 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute() {
   const bool is_training = this->m_model->get_execution_context().get_execution_mode() == execution_mode::training;
 
   // CUDA objects
-  CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
-  auto&& stream = El::GPUManager::Stream();
+  CHECK_CUDA(cudaSetDevice(hydrogen::gpu::DefaultDevice()));
+  auto&& stream = hydrogen::cuda::GetDefaultStream();
 
   // Matrices
   const auto& input = this->get_prev_activations();
@@ -523,8 +523,8 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_compute() {
   const bool is_training = this->m_model->get_execution_context().get_execution_mode() == execution_mode::training;
 
   // CUDA objects
-  CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
-  auto&& stream = El::GPUManager::Stream();
+  CHECK_CUDA(cudaSetDevice(hydrogen::gpu::DefaultDevice()));
+  auto&& stream = hydrogen::cuda::GetDefaultStream();
 
   // Matrices
   const auto& local_scale = this->weights_values(0).LockedMatrix();
