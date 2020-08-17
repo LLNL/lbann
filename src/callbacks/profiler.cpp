@@ -47,7 +47,7 @@ namespace callback {
 profiler::profiler(bool sync, bool skip_init) :
     callback_base(), m_sync(sync), m_skip_init(skip_init) {
 #ifdef LBANN_NVPROF
-  nvtxNameCudaStreamA(El::GPUManager::Stream(), "Hydrogen");
+  nvtxNameCudaStreamA(hydrogen::cuda::GetDefaultStream(), "Hydrogen");
 #endif
   if (!m_skip_init) {
     prof_start();

@@ -60,7 +60,8 @@ public:
 
 protected:
   bool fetch_data_block(CPUMat& X,
-                        El::Int thread_id,
+                        El::Int block_offset,
+                        El::Int block_stride,
                         El::Int mb_size,
                         El::Matrix<El::Int>& indices_fetched) override;
   bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;

@@ -886,8 +886,6 @@ void print_help(std::ostream& os)
        "  --hydrogen_block_size=<int>\n"
        "  --procs_per_trainer=<int>\n"
        "  --num_parallel_readers=<int>\n"
-       "  --num_io_threads=<int>\n"
-       "      # of threads used for I/O by the data readers\n"
        "  --serialize_io=<bool>\n"
        "      force data readers to use a single thread for I/O\n"
        "  --disable_background_io_activity=<bool>\n"

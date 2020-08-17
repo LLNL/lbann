@@ -65,7 +65,8 @@ def make_batch_script(
         set_environment('AL_PROGRESS_RANKS_PER_NUMA_NODE', procs_per_node)
         set_environment('OMP_NUM_THREADS', cores_per_proc - 1)
         if scheduler == 'slurm':
-            masks = [2**cores_per_proc - 1]
+            # Include the hyperthreaded cores in the mask
+            masks = [2**cores_per_proc - 1 | ((2**cores_per_proc - 1) << 2*cores_per_socket)]
             while len(masks) < procs_per_node:
                 masks.append(masks[-1] << cores_per_proc)
             mask_str = ','.join([hex(mask) for mask in masks])

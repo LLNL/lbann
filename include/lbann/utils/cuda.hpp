@@ -305,7 +305,7 @@ public:
   typedef typename parent_class::system_type system_type;
 
   /** Default constructor. */
-  allocator(cudaStream_t stream = El::GPUManager::Stream());
+  allocator(cudaStream_t stream = hydrogen::cuda::GetDefaultStream());
   /** Allocate GPU buffer. */
   pointer allocate(size_type size);
   /** Deallocate GPU buffer.
