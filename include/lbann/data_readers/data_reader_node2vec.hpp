@@ -86,15 +86,22 @@ public:
 protected:
   bool fetch_data_block(
     CPUMat& X,
-    El::Int thread_id,
+    El::Int block_offset,
+    El::Int block_stride,
     El::Int mb_size,
     El::Matrix<El::Int>& indices_fetched) override;
   bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;
 
 private:
 
-  /** Perform random walks, starting from random local vertices. */
-  std::vector<std::vector<size_t>> run_walker(size_t num_walks);
+  /** Perform random walks, starting from random local vertices.
+   *
+   *  This uses IO RNG objects internally, so we have to make sure
+   *  that the caller has acquired control of the IO RNG.
+   */
+  std::vector<std::vector<size_t>> run_walker(
+    size_t num_walks,
+    const locked_io_rng_ref&);
 
   /** Update noise distribution for negative sampling.
    *
