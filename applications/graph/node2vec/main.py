@@ -46,6 +46,9 @@ parser.add_argument(
     '--work-dir', action='store', default=None, type=str,
     help='working directory', metavar='DIR')
 parser.add_argument(
+    '--batch-job', action='store_true',
+    help='submit as batch job')
+parser.add_argument(
     '--offline-walks', action='store_true',
     help='perform random walks offline')
 parser.add_argument(
@@ -268,4 +271,7 @@ script.add_parallel_command([
 ])
 
 # Run LBANN
-script.run()
+if args.batch_job:
+    script.submit(True)
+else:
+    script.run(True)
