@@ -339,7 +339,8 @@ EvalType evaluate(model& m, const std::string& metric_name) {
   m.make_data_store_preloaded(execution_mode::validation);
 
   // Clean up and return metric value
-  c.set_execution_mode(original_mode);
+  m.reset_mode(c, original_mode);
+  c.get_trainer().get_data_coordinator().reset_mode(c);
   return metric_value;
 
 }
