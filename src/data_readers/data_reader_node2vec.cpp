@@ -123,14 +123,20 @@ int node2vec_reader::get_linearized_label_size() const {
 
 bool node2vec_reader::fetch_data_block(
   CPUMat& X,
-  El::Int thread_id,
+  El::Int block_offset,
+  El::Int block_stride,
   El::Int mb_size,
   El::Matrix<El::Int>& indices_fetched) {
-  if (thread_id != 0) { return true; }
+
+  // Acquire IO RNG objects
+  const auto io_rng = set_io_generators_local_index(block_offset);
+
+  // Only run on first IO thread
+  if (block_offset != 0) { return true; }
   const size_t mb_size_ = mb_size;
 
   // Perform random walks and add to cache
-  auto walks = run_walker(mb_size);
+  auto walks = run_walker(mb_size, io_rng);
   const auto max_cache_size = std::max(mb_size_, m_walks_cache.size());
   for (auto& walk : walks) {
     if (m_walks_cache.size() >= max_cache_size) {
@@ -246,9 +252,10 @@ void node2vec_reader::load() {
   update_noise_distribution();
 
   // Make sure walks cache has at least one walk
+  const auto io_rng = set_io_generators_local_index(0);
   m_walks_cache.clear();
   do {
-    auto walks = run_walker(1);
+    auto walks = run_walker(1, io_rng);
     for (auto& walk : walks) {
       m_walks_cache.emplace_back(std::move(walk));
     }
@@ -263,7 +270,9 @@ void node2vec_reader::load() {
 
 }
 
-std::vector<std::vector<size_t>> node2vec_reader::run_walker(size_t num_walks) {
+std::vector<std::vector<size_t>> node2vec_reader::run_walker(
+  size_t num_walks,
+  const locked_io_rng_ref&) {
 
   // HavoqGT graph
   const auto& graph = *m_distributed_database->get_segment_manager()->find<Graph>("graph_obj").first;
