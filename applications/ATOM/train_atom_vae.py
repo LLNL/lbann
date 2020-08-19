@@ -180,7 +180,6 @@ def main():
 
     # add data_config data
     # and do not overwrite args if data_reader_prototext is enabled
-    print("RUN ARGS ", run_args)
     if os.path.isfile(run_args.data_config) and not run_args.data_reader_prototext:
         with open(run_args.data_config, "r") as f:
             config = json.load(f)
