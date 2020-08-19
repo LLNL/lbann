@@ -1,226 +1,252 @@
+import argparse
+import datetime
+import os
+import os.path
+import sys
+
+from google.protobuf import text_format as txtf
+import json
 import numpy as np
-import models.vae as molvae
-#from misc import KLAnnealer
+import vae as molvae
 
-# Data paths
-#data_dir = '/usr/workspace/wsa/jacobs32/deepL/moses.fork/scripts/moses_zinc_train250K.npy'
-#data_dir = '/p/lustre2/brainusr/datasets/zinc/moses_zinc_train250K.npy'
-data_dir = '/p/gscratchr/brainusr/datasets/zinc/moses_zinc_train250K.npy'
-#data_dir = '/p/gpfs1/brainusr/datasets/zinc/moses_zinc_train250K.npy'
-train_samples = np.load(data_dir)[:200000] #200K for training
-val_samples = np.load(data_dir)[200000:250000] #1000 sampes for validation
+import lbann
+import lbann.contrib.launcher
+import lbann.modules
+from lbann.util import str_list
 
-#samples = np.load(data_dir)
-print("DATA DIR ", data_dir)
-print("TRAIN DATA_SHAPE ", train_samples.shape)
 
-print("VAL DATA_SHAPE ", val_samples.shape)
+def construct_lc_launcher_args():
 
-dims = len(train_samples[0])
-#dims = 30 #hack to test nan
-pad_indx = 27 #from pytorch
-print("DIMS ", dims)
-# Sample access functions
-def get_sample(index):
-    #np.random.shuffle(train_samples)
-    sample = train_samples[index]
-    diff = dims - len(sample)
-    sample = np.concatenate((sample,np.full(diff,pad_indx))) if diff > 0 else np.resize(sample,dims)
-    return sample
+    # defaults correspond to the settings needed for training on the moses dataset
+    parser = argparse.ArgumentParser(prog="lbann ATOM VAE training")
+    parser.add_argument("--partition", default=None)
+    parser.add_argument("--account", default="hpcdl")
+    parser.add_argument("--scheduler", type=str, default="slurm")
+    parser.add_argument(
+        "--data-module-file",
+        default="dataset.py",
+        help="specifies the module that contains the logic for loading data",
+    )
+    parser.add_argument(
+        "--data-config",
+        default=os.path.join(
+            os.path.abspath(os.path.dirname(__file__)), "zinc_data_config.json"
+        ),
+        help="path to a data config file that is used for the construction of python data reader",
+    )
+    parser.add_argument(
+        "--time-limit",
+        type=int,
+        default=720,
+        help="specified time limit in number of minutes",
+    )
+    parser.add_argument("--nodes", type=int, default=1)
+    parser.add_argument("--job-name", default="atom_vae")
+    parser.add_argument("--embedding-dim", type=int, default=None)
+    parser.add_argument("--num-embeddings", type=int, default=None)
+    parser.add_argument("--batch-size", type=int, default=512)
+    parser.add_argument("--num-epochs", type=int, default=20)
+    parser.add_argument("--data-reader-prototext", default=None)
+    parser.add_argument("--pad-index", type=int, default=None)
+    parser.add_argument("--sequence-length", type=int, default=None)
+    parser.add_argument("--dump_weights_dir", type=str, default="weights")
+    parser.add_argument("--num-samples", type=int, default=None)
+    parser.add_argument("--num-io-threads", type=int, default=11)
+    parser.add_argument("--vocab", default=None)
+    parser.add_argument("--delimiter", default="c")
+    parser.add_argument("--no-header", type=bool, default=True)
 
-def num_samples():
-    return train_samples.shape[0]
+    # these are specific to the Trainer object
+    parser.add_argument(
+        "--procs-per-trainer",
+        type=int,
+        default=0,
+        help="number of processes to use per trainer",
+    )
+    parser.add_argument(
+        "--lr",
+        type=float,
+        default=3e-4,
+        help="optimizer learning rate to use for training",
+    )
+    return parser.parse_args()
 
-def sample_dims():
-    return [dims]
-
-def get_val_sample(index):
-    val_sample = val_samples[index]
-    diff = dims - len(val_sample)
-    val_sample = np.concatenate((val_sample,np.full(diff,pad_indx))) if diff > 0 else np.resize(val_sample,dims)
-    return val_sample
-
-def num_val_samples():
-    return val_samples.shape[0]
-
-def str_list(l):
-    return ' '.join([str(i) for i in l])
 # ==============================================
 # Setup and launch experiment
 # ==============================================
 
-def construct_model():
+def construct_model(run_args):
     """Construct LBANN model.
 
-    Initial model for ATOM molecular VAE 
+    Initial model for ATOM molecular VAE
 
     """
     import lbann
 
-    # Layer graph
-    input = lbann.Input(name='inp_tensor')
-    #Slice input layer feature dims (axis=0)
-    vae_loss= []
-    x_slice = lbann.Slice(input, axis=0, slice_points=str_list(list(range(sample_dims()[0]+1))),name='inp_slice')
-    input_feature_dims = sample_dims()[0]
-    dictionary_size = 29 #from pytorch
-    embedding_size = 29 #from pytorch
-    kl, recon,arg_max = molvae.MolVAE(input_feature_dims,dictionary_size,
-                                embedding_size, pad_indx)(x_slice)
+    pad_index = run_args.pad_index
+    assert pad_index is not None
 
-    vae_loss.extend(kl)
-    #vae_loss.extend(recon[:-1])
-    recon_loss=[]
-    #kl_weight_loss=[]
-    #kl_weight = lbann.Weights(initializer=lbann.ConstantInitializer())
-    for i in range(input_feature_dims-1):
-      recon_loss.append(lbann.LayerTerm(recon[i],scale=1/(input_feature_dims-1))) 
-      '''
-      kl_weight_loss.append(lbann.Multiply(
-                       lbann.WeightsLayer(weights=kl_weight, dims='1'),
-                               kl_loss[i],
-                               ))
-      loss = lbann.Add(
-                 lbann.Multiply(
-                       lbann.WeightsLayer(weights=kl_weight, dims='1'),
-                               kl_loss[i],
-                               ),
-                        #recon_loss[:-1],
-                        lbann.LayerTerm(recon[i],scale=1/(input_feature_dims-1)) 
-                    )
-      recon_loss.append(loss)
-      '''
-    #vae_loss.extend(kl_weight_loss)
-    #vae_loss.extend(kl_loss)
-    vae_loss.extend(recon_loss)
-    #vae_loss.extend(recon_loss)
+    sequence_length = run_args.sequence_length
+    assert sequence_length is not None
+
+    print("sequence length is {}".format(sequence_length))
+    data_layout = "data_parallel"
+    # Layer graph
+    input_ = lbann.Identity(lbann.Input(name='inp'), name='inp1')
+    vae_loss= []
+    input_feature_dims = sequence_length
+
+    embedding_size = run_args.embedding_dim
+    dictionary_size = run_args.num_embeddings
+    assert embedding_size is not None
+    assert dictionary_size is not None
+
+    kl, recon, arg_max = molvae.MolVAE(input_feature_dims,
+                                       dictionary_size,
+                                       embedding_size,
+                                       pad_index)(input_)
+
+    vae_loss.append(kl)
+    vae_loss.append(recon)
     print("LEN vae loss ", len(vae_loss))
-    #vae_loss.extend(recon[:-1])
     #metric layers
-    kl_metric = lbann.Reduction(lbann.Concatenation(kl),mode='average')
-    recon_metric = lbann.Reduction(lbann.Concatenation(recon[:-1]), mode='average')
     pred_tensor = lbann.Concatenation(arg_max[:-1], name='pred_tensor')
 
-    layers = list(lbann.traverse_layer_graph(input))
+    layers = list(lbann.traverse_layer_graph(input_))
     # Setup objective function
     weights = set()
     for l in layers:
       weights.update(l.weights)
-    #l2_reg = lbann.L2WeightRegularization(weights=weights, scale=5e-4)
-    #kl_weight = lbann.Weights(lbann.ConstantInitializer(123.0))
-    '''
-    loss = lbann.Add(
-                 lbann.Multiply(
-                       lbann.WeightsLayer(weights=kl_weight, dims='1'),
-                               kl_loss,
-                               ),
-                        recon_loss[:-1],
-                    )
-    '''
-    #vae_loss.extend(kl_weight_loss)
+    l2_reg = lbann.L2WeightRegularization(weights=weights, scale=5e-4)
     obj = lbann.ObjectiveFunction(vae_loss)
-    #obj = lbann.ObjectiveFunction(recon_loss)
-    #obj = lbann.ObjectiveFunction(kl_weight_loss)
 
     # Initialize check metric callback
-    metrics = [lbann.Metric(kl_metric, name='kl_loss'),
-               lbann.Metric(recon_metric, name='recon')
+    metrics = [lbann.Metric(kl, name='kl_loss'),
+               lbann.Metric(recon, name='recon')
                 ]
-    num_epochs = 100
 
-    #kl_annealer = KLAnnealer(num_epochs, self.config)
-    '''
-    kl_annealer = KLAnnealer(num_epochs)
-
-    kl_callbacks = []
-    for epoch in range(0, num_epochs):
-      kl_callbacks.append(
-         lbann.CallbackSetWeightsValue(
-              weight_name=kl_weight.name,
-              weight_value=kl_annealer(epoch),
-              epoch_interval=epoch,
-          )
-       )
-    '''
     callbacks = [lbann.CallbackPrint(),
                  lbann.CallbackTimer(),
-                 #lbann.CallbackStepLearningRate(step=10, amt=0.5),
-                 #lbann.CallbackDumpGradients(basename='grads',interval=100),
-                 lbann.CallbackDumpWeights(directory='weights', epoch_interval=4)]
-    #callbacks.extend(kl_callbacks)
-                  
+                 lbann.CallbackDumpWeights(directory=run_args.dump_weights_dir, epoch_interval=10)]
+
 
     # Construct model
-    return lbann.Model(num_epochs,
+    return lbann.Model(run_args.num_epochs,
                        weights=weights,
                        layers=layers,
                        objective_function=obj,
                        metrics=metrics,
                        callbacks=callbacks)
 
-def construct_data_reader():
-    """Construct Protobuf message for Python data reader.
+
+def construct_data_reader(run_args):
+    """
+    Construct Protobuf message for Python data reader.
 
     The Python data reader will import this Python file to access the
     sample access functions.
 
     """
-    import os.path
-    import lbann
-    module_file = os.path.abspath(__file__)
+
+    module_file = os.path.abspath(run_args.data_module_file)
+    os.environ["DATA_CONFIG"] = os.path.abspath(run_args.data_config)
+
     module_name = os.path.splitext(os.path.basename(module_file))[0]
     module_dir = os.path.dirname(module_file)
+
+    print("module_name: {}\tmodule_dir: {}".format(module_name, module_dir))
 
     # Base data reader message
     message = lbann.reader_pb2.DataReader()
 
     # Training set data reader
-    # TODO: This can be removed once
-    # https://github.com/LLNL/lbann/issues/1098 is resolved.
     data_reader = message.reader.add()
-    data_reader.name = 'python'
-    data_reader.role = 'train'
+    data_reader.name = "python"
+    data_reader.role = "train"
     data_reader.shuffle = True
     data_reader.percent_of_data_to_use = 1.0
+    data_reader.validation_percent = 0.1
     data_reader.python.module = module_name
     data_reader.python.module_dir = module_dir
-    data_reader.python.sample_function = 'get_sample'
-    data_reader.python.num_samples_function = 'num_samples'
-    data_reader.python.sample_dims_function = 'sample_dims'
+    data_reader.python.sample_function = "get_sample"
+    data_reader.python.num_samples_function = "num_samples"
+    data_reader.python.sample_dims_function = "sample_dims"
 
-    # Test set data reader
-    data_reader = message.reader.add()
-    data_reader.name = 'python'
-    data_reader.role = 'validate'
-    data_reader.percent_of_data_to_use = 1.0
-    data_reader.python.module = module_name
-    data_reader.python.module_dir = module_dir
-    data_reader.python.sample_function = 'get_val_sample'
-    data_reader.python.num_samples_function = 'num_val_samples'
-    data_reader.python.sample_dims_function = 'sample_dims'
     return message
 
-if __name__ == '__main__':
-    import lbann
-    import lbann.contrib.launcher
-    model = construct_model()
-    #opt = lbann.Optimizer() # No optimizer
-    # Setup optimizer
-    #opt = lbann.SGD(learn_rate=0.01, momentum=0.9)
-    opt = lbann.Adam(learn_rate=0.0003,beta1=0.9,beta2=0.99,eps=1e-8)
-    data_reader = construct_data_reader()
-    mini_batch_size = 512
-    trainer = lbann.Trainer(mini_batch_size=mini_batch_size,
+
+def main():
+    run_args = construct_lc_launcher_args()
+
+    # add data_config data
+    # and do not overwrite args if data_reader_prototext is enabled
+    print("RUN ARGS ", run_args)
+    if os.path.isfile(run_args.data_config) and not run_args.data_reader_prototext:
+        with open(run_args.data_config, "r") as f:
+            config = json.load(f)
+        for k, v in config.items():
+            setattr(run_args, k, v)
+
+    trainer = lbann.Trainer(
+        run_args.batch_size,
         name=None,
-       # procs_per_trainer=run_args.procs_per_trainer,
+        procs_per_trainer=run_args.procs_per_trainer,
     )
-    status = lbann.contrib.launcher.run(trainer,model, data_reader, opt,
-                       scheduler='lsf',
-                       #account='hpcdl',
-                       nodes=2,
-                       procs_per_node=4,
-                       batch_job = True,
-                       time_limit=720,
-                       setup_only = False,
-                       job_name='go_vae_shuffleT_emb29')
-    print(status)
+
+    # define data_reader
+    if run_args.data_reader_prototext:
+        print("Using data_reader_prototext")
+        assert run_args.sequence_length is not None
+        assert run_args.vocab is not None
+
+        data_reader_proto = lbann.lbann_pb2.LbannPB()
+        with open(run_args.data_reader_prototext, "r") as f:
+            txtf.Merge(f.read(), data_reader_proto)
+        data_reader = data_reader_proto.data_reader
+    else:
+        data_reader = construct_data_reader(run_args)
+
+    if "LBANN_EXPERIMENT_DIR" in os.environ:
+        work_dir = os.environ["LBANN_EXPERIMENT_DIR"]
+    else:
+        work_dir = os.path.join(os.getcwd())
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    experiment_dir = os.path.join(
+        work_dir, "{}_{}".format(timestamp, run_args.job_name)
+    )
+    if not os.path.exists(experiment_dir):
+        os.makedirs(experiment_dir)
+
+    # model and optimizer
+    model = construct_model(run_args)
+    opt = lbann.Adam(learn_rate=run_args.lr, beta1=0.9, beta2=0.99, eps=1e-8)
+
+    # dump the config to the experiment_dir so that it can be used to load the model in pytorch (moses codebase)
+    ppn = 4 if run_args.scheduler == "lsf" else 2
+    print("args:\n" + str(run_args))
+    if(run_args.scheduler == 'slurm'):
+      import torch
+      torch.save(run_args, "{}/{}_config.pt".format(experiment_dir, run_args.job_name))
+
+    status = lbann.contrib.launcher.run(
+        trainer,
+        model,
+        data_reader,
+        opt,
+        #partition=run_args.partition,
+        scheduler=run_args.scheduler,
+        #account=run_args.account,
+        time_limit=run_args.time_limit,
+        nodes=run_args.nodes,
+        procs_per_node=ppn,
+        batch_job = True,
+        job_name=run_args.job_name,
+        experiment_dir=experiment_dir,
+        lbann_args=f"--vocab={run_args.vocab} --num_samples={run_args.num_samples} --sequence_length={run_args.sequence_length}  --num_io_threads={run_args.num_io_threads} --no_header={run_args.no_header} --delimiter={run_args.delimiter}",
+    )
+
+    print("LBANN launcher status:\n" + str(status))
+
+
+if __name__ == "__main__":
+    sys.exit(main())
