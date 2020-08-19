@@ -262,8 +262,14 @@ public:
    */
   void synchronize_with_master()
   {
-    if (!empty() && !values_->Viewing()) {
-      El::Copy(master_weights_->get_values(), *values_);
+    if (!empty()) {
+      const auto& master_values = master_weights_->get_values();
+      if (values_->Viewing()) {
+        El::LockedView(*values_, dynamic_cast<const ValuesType&>(master_values));
+      }
+      else {
+        El::Copy(master_values, *values_);
+      }
     }
   }
 
