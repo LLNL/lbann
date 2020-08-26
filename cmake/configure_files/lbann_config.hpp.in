@@ -59,6 +59,10 @@
 
 #cmakedefine LBANN_HAS_DISTCONV
 
+#cmakedefine LBANN_HAS_FFTW
+#cmakedefine LBANN_HAS_FFTW_FLOAT
+#cmakedefine LBANN_HAS_FFTW_DOUBLE
+
 // Define the LBANN datatype
 namespace lbann
 {
