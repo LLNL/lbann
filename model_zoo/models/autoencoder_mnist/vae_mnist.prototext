@@ -1,0 +1,282 @@
+# LBANN implementation of MNIST VAE in Doersch's autoencoder tutorial
+# See https://github.com/cdoersch/vae_tutorial/blob/master/mnist_vae.prototxt
+trainer {
+}
+model {
+  data_layout: "data_parallel"
+  mini_batch_size: 100
+  num_epochs: 50
+
+  ##############################################
+  # Objective function
+  ##############################################
+
+  objective_function {
+    layer_term { layer: "binary_cross_entropy_sum" }
+    layer_term { layer: "kldiv" }
+    l2_weight_regularization {
+      scale_factor: 0.0005
+    }
+  }
+
+  ##############################################
+  # Metrics
+  ##############################################
+
+  metric {
+    layer_metric {
+      name: "mean squared error"
+      layer: "mean_squared_error"
+    }
+  }
+
+  ##############################################
+  # Callbacks
+  ##############################################
+
+  callback { print {} }
+  callback { timer {} }
+  callback {
+    save_images {
+      layers: "image reconstruction"
+      image_format: "jpg"
+    }
+  }
+
+  ##############################################
+  # Layers
+  ##############################################
+
+  # Data
+  layer {
+    name: "data"
+    children: "image dummy"
+    data_layout: "data_parallel"
+    input {}
+  }
+  layer {
+    parents: "data"
+    name: "image"
+    data_layout: "data_parallel"
+    split {}
+  }
+  layer {
+    parents: "data"
+    name: "dummy"
+    data_layout: "data_parallel"
+    dummy {}
+  }
+
+  # Encoder
+  layer {
+    parents: "image"
+    name: "encode1"
+    data_layout: "data_parallel"
+    fully_connected {
+      num_neurons: 1000
+      has_bias: true
+    }
+  }
+  layer {
+    parents: "encode1"
+    name: "encode1neuron"
+    data_layout: "data_parallel"
+    relu {}
+  }
+  layer {
+    parents: "encode1neuron"
+    name: "encode2"
+    data_layout: "data_parallel"
+    fully_connected {
+      num_neurons: 500
+      has_bias: true
+    }
+  }
+  layer {
+    parents: "encode2"
+    name: "encode2neuron"
+    data_layout: "data_parallel"
+    relu {}
+  }
+  layer {
+    parents: "encode2neuron"
+    name: "encode3"
+    data_layout: "data_parallel"
+    fully_connected {
+      num_neurons: 250
+      has_bias: true
+    }
+  }
+  layer {
+    parents: "encode3"
+    name: "encode3neuron"
+    data_layout: "data_parallel"
+    relu {}
+  }
+
+  # Latent space
+  layer {
+    parents: "encode3neuron"
+    name: "mu"
+    data_layout: "data_parallel"
+    fully_connected {
+      num_neurons: 30
+      has_bias: true
+    }
+  }
+  layer {
+    parents: "encode3"
+    name: "logsd"
+    data_layout: "data_parallel"
+    fully_connected {
+      num_neurons: 30
+      has_bias: true
+    }
+  }
+
+  # KL divergence
+  layer {
+    parents: "logsd"
+    name: "sd"
+    data_layout: "data_parallel"
+    exp {}
+  }
+  layer {
+    parents: "sd"
+    name: "var"
+    data_layout: "data_parallel"
+    square {}
+  }
+  layer {
+    parents: "mu"
+    name: "meansq"
+    data_layout: "data_parallel"
+    square {}
+  }
+  layer {
+    parents: "meansq var logsd"
+    name: "kldiv_plus_half"
+    data_layout: "data_parallel"
+    weighted_sum {
+      scaling_factors: "0.5 0.5 -1"
+    }
+  }
+  layer {
+    parents: "kldiv_plus_half"
+    name: "kldiv_full"
+    data_layout: "data_parallel"
+    rsqrt {}
+  }
+  layer {
+    parents: "kldiv_full"
+    name: "kldiv"
+    data_layout: "data_parallel"
+    reduction { mode: "sum" }
+  }
+
+  # Generate sample
+  layer {
+    name: "noise"
+    data_layout: "data_parallel"
+    gaussian {
+      mean: 0
+      stdev: 1
+    }
+    hint_layer: "mu"
+  }
+  layer {
+    parents: "noise sd"
+    name: "sdnoise"
+    data_layout: "data_parallel"
+    hadamard {}
+  }
+  layer {
+    parents: "mu sdnoise"
+    name: "sample"
+    data_layout: "data_parallel"
+    add {}
+  }
+
+  # Decoder
+  layer {
+    parents: "sample"
+    name: "decode4"
+    data_layout: "data_parallel"
+    fully_connected {
+      has_bias: true
+    }
+    hint_layer: "encode3"
+  }
+  layer {
+    parents: "decode4"
+    name: "decode4neuron"
+    data_layout: "data_parallel"
+    relu {}
+  }
+  layer {
+    parents: "decode4neuron"
+    name: "decode3"
+    data_layout: "data_parallel"
+    fully_connected {
+      has_bias: true
+    }
+    hint_layer: "encode2"
+  }
+  layer {
+    parents: "decode3"
+    name: "decode3neuron"
+    data_layout: "data_parallel"
+    relu {}
+  }
+  layer {
+    parents: "decode3neuron"
+    name: "decode2"
+    data_layout: "data_parallel"
+    fully_connected {
+      has_bias: true
+    }
+    hint_layer: "encode1"
+  }
+  layer {
+    parents: "decode2"
+    name: "decode2neuron"
+    data_layout: "data_parallel"
+    relu {}
+  }
+  layer {
+    parents: "decode2neuron"
+    name: "decode1"
+    data_layout: "data_parallel"
+    fully_connected {
+      has_bias: true
+    }
+    hint_layer: "image"
+  }
+
+  # Reconstruction error
+  layer {
+    parents: "decode1"
+    name: "reconstruction"
+    data_layout: "data_parallel"
+    sigmoid {}
+  }
+  layer {
+    parents: "decode1 image"
+    name: "binary_cross_entropy"
+    data_layout: "data_parallel"
+    sigmoid_binary_cross_entropy {}
+  }
+  layer {
+    parents: "binary_cross_entropy"
+    name: "binary_cross_entropy_sum"
+    data_layout: "data_parallel"
+    reduction { mode: "sum" }
+  }
+  layer {
+    parents: "reconstruction image"
+    name: "mean_squared_error"
+    data_layout: "data_parallel"
+    mean_squared_error {}
+  }
+
+}
