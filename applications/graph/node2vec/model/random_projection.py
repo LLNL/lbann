@@ -1,3 +1,4 @@
+import numpy as np
 import lbann
 import lbann.modules
 
@@ -52,6 +53,53 @@ def random_projection(indices, num_projections, projection_dim):
     )
     return proj
 
+def mean_squared_error(
+        data_dim,
+        sequence_length,
+        source_sequence,
+        target_sequence,
+        scale_decay=0.8,
+):
+
+    # Compute inner product between source and target vectors
+    # Note: Inner products are computed for each (x,y) pair and a
+    # weighted sum is computed. The scaling factors sum to 1 and decay
+    # exponentially as x and y get further apart in the sequence.
+    prods = lbann.MatMul(
+        source_sequence,
+        target_sequence,
+        transpose_b=True,
+    )
+    scale_dims = (sequence_length,sequence_length)
+    scales = np.zeros(scale_dims)
+    for i in range(sequence_length):
+        for j in range(sequence_length):
+            if i != j:
+                scales[i,j] = (
+                    (1-scale_decay)/(2*scale_decay)
+                    * scale_decay**np.abs(j-i)
+                )
+    scales = lbann.Weights(
+        initializer=lbann.ValueInitializer(values=utils.str_list(np.nditer(scales))),
+        optimizer=lbann.NoOptimizer(),
+    )
+    scales = lbann.WeightsLayer(dims=utils.str_list(scale_dims), weights=scales)
+    prods = lbann.MatMul(
+        lbann.Reshape(prods, dims='1 -1'),
+        lbann.Reshape(scales, dims='1 -1'),
+        transpose_b=True,
+    )
+    prods = lbann.Reshape(prods, dims='1')
+
+    # MSE(x,y) = ( norm(x)^2 + norm(y)^T - 2*prod(x,y) ) / dim(x)
+    scale = 1 / (data_dim * sequence_length)
+    return lbann.WeightedSum(
+        lbann.L2Norm2(source_sequence),
+        lbann.L2Norm2(target_sequence),
+        prods,
+        scaling_factors=utils.str_list([scale, scale, -2*scale])
+    )
+
 class ChannelwiseFullyConnectedAutoencoder(lbann.modules.Module):
 
     def __init__(self, input_dim, output_dim, hidden_dims=[]):
@@ -88,11 +136,11 @@ class ChannelwiseFullyConnectedAutoencoder(lbann.modules.Module):
 
     def decode(self, x):
         x = lbann.Reshape(x, dims=utils.str_list([-1, self.output_dim]))
-        for i in range(len(self.hidden_dims)-1, 0, -1):
+        for i in range(len(self.hidden_dims)):
             x = lbann.ChannelwiseFullyConnected(
                 x,
-                weights=self.weights[i+1],
-                output_channel_dims=self.hidden_dims[i],
+                weights=self.weights[-i-1],
+                output_channel_dims=self.hidden_dims[-i-1],
                 transpose=True,
                 bias=False,
             )

@@ -8,7 +8,7 @@ import lbann.contrib.launcher
 import lbann.contrib.args
 
 import data.data_readers
-import model.skip_gram
+import model.random_projection
 import utils
 import utils.graph
 import utils.snap
@@ -36,6 +36,9 @@ parser.add_argument(
     '--num-iterations', action='store', default=1000, type=int,
     help='number of epochs (default: 1000)', metavar='NUM')
 parser.add_argument(
+    '--proj_dim', action='store', default=10000, type=int,
+    help='projection space dimensions (default: 10000)', metavar='NUM')
+parser.add_argument(
     '--latent-dim', action='store', default=128, type=int,
     help='latent space dimensions (default: 128)', metavar='NUM')
 parser.add_argument(
@@ -50,11 +53,6 @@ parser.add_argument(
 parser.add_argument(
     '--offline-walks', action='store_true',
     help='perform random walks offline')
-parser.add_argument(
-    '--embeddings', action='store', default='distributed', type=str,
-    help=('method to get embedding vectors '
-          '(options: distributed (default), replicated)'),
-    metavar='METHOD')
 args = parser.parse_args()
 
 # Default learning rate
@@ -64,10 +62,10 @@ if args.learning_rate < 0:
 
 # Random walk options
 epoch_size = 100 * args.mini_batch_size
-walk_length = 100
+walk_length = 50
 return_param = 0.25
 inout_param = 0.25
-num_negative_samples = 20
+num_negative_samples = 0
 
 # ----------------------------------
 # Create data reader
@@ -115,64 +113,31 @@ num_vertices = utils.graph.max_vertex_index(graph_file) + 1
 obj = []
 metrics = []
 
-# Embedding vectors, including negative sampling
+# Autoencoder
 # Note: Input is sequence of vertex IDs
 input_ = lbann.Identity(lbann.Input())
-if args.embeddings == 'distributed':
-    embeddings_weights = lbann.Weights(
-        initializer=lbann.NormalInitializer(
-            mean=0, standard_deviation=1/args.latent_dim,
-        ),
-        name='embeddings',
-    )
-    embeddings = lbann.DistEmbedding(
-        input_,
-        weights=embeddings_weights,
-        num_embeddings=num_vertices,
-        embedding_dim=args.latent_dim,
-        sparse_sgd=True,
-        learning_rate=args.learning_rate,
-    )
-elif args.embeddings == 'replicated':
-    embeddings_weights = lbann.Weights(
-        initializer=lbann.NormalInitializer(
-            mean=0, standard_deviation=1/args.latent_dim,
-        ),
-        name='embeddings',
-    )
-    embeddings = lbann.Embedding(
-        input_,
-        weights=embeddings_weights,
-        num_embeddings=num_vertices,
-        embedding_dim=args.latent_dim,
-    )
-else:
-    raise RuntimeError(
-        f'unknown method to get embedding vectors ({args.embeddings})'
-    )
-embeddings_slice = lbann.Slice(
-    embeddings,
-    axis=0,
-    slice_points=utils.str_list([0, num_negative_samples, sample_size]),
+proj = model.random_projection.random_projection(
+    input_,
+    sample_size,
+    args.proj_dim,
 )
-negative_samples_embeddings = lbann.Identity(embeddings_slice)
-walk_embeddings = lbann.Identity(embeddings_slice)
+autoencoder = model.random_projection.ChannelwiseFullyConnectedAutoencoder(
+    args.proj_dim,
+    args.latent_dim,
+    [],
+)
+proj_recon = autoencoder(proj)
 
-# Skip-Gram objective function
-positive_loss = model.skip_gram.positive_samples_loss(
-    walk_length,
-    lbann.Identity(walk_embeddings),
-    lbann.Identity(walk_embeddings),
-    scale_decay=0.8,
+# Mean square error loss
+scale_decay = 0.5
+loss = model.random_projection.mean_squared_error(
+    data_dim=args.proj_dim,
+    sequence_length=walk_length,
+    source_sequence=proj_recon,
+    target_sequence=proj,
+    scale_decay=scale_decay,
 )
-negative_loss = model.skip_gram.negative_samples_loss(
-    walk_embeddings,
-    negative_samples_embeddings,
-)
-obj.append(positive_loss)
-obj.append(lbann.WeightedSum(negative_loss, scaling_factors='2'))
-metrics.append(lbann.Metric(positive_loss, name='positive loss'))
-metrics.append(lbann.Metric(negative_loss, name='negative loss'))
+obj.append(loss)
 
 # ----------------------------------
 # Run LBANN
@@ -191,7 +156,7 @@ trainer = lbann.Trainer(
 callbacks = [
     lbann.CallbackPrint(),
     lbann.CallbackTimer(),
-    lbann.CallbackDumpWeights(directory='embeddings',
+    lbann.CallbackDumpWeights(directory='weights',
                               epoch_interval=num_epochs),
 ]
 model = lbann.Model(
