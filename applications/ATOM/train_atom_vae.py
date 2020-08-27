@@ -47,6 +47,8 @@ def construct_lc_launcher_args():
     parser.add_argument("--batch-size", type=int, default=512)
     parser.add_argument("--num-epochs", type=int, default=20)
     parser.add_argument("--data-reader-prototext", default=None)
+    parser.add_argument("--data-filedir", default=None)
+    parser.add_argument("--data-filename", default=None)
     parser.add_argument("--pad-index", type=int, default=None)
     parser.add_argument("--sequence-length", type=int, default=None)
     parser.add_argument("--dump_weights_dir", type=str, default="weights")
@@ -92,7 +94,7 @@ def construct_model(run_args):
     print("sequence length is {}".format(sequence_length))
     data_layout = "data_parallel"
     # Layer graph
-    input_ = lbann.Identity(lbann.Input(name='inp'), name='inp1')
+    input_ = lbann.Identity(lbann.Input(name='inp',target_mode="N/A"), name='inp1')
     vae_loss= []
     input_feature_dims = sequence_length
 
@@ -232,16 +234,17 @@ def main():
         model,
         data_reader,
         opt,
-        #partition=run_args.partition,
+        partition=run_args.partition,
         scheduler=run_args.scheduler,
         #account=run_args.account,
         time_limit=run_args.time_limit,
         nodes=run_args.nodes,
         procs_per_node=ppn,
-        batch_job = True,
+        #batch_job = True,
         job_name=run_args.job_name,
         experiment_dir=experiment_dir,
-        lbann_args=f"--vocab={run_args.vocab} --num_samples={run_args.num_samples} --sequence_length={run_args.sequence_length}  --num_io_threads={run_args.num_io_threads} --no_header={run_args.no_header} --delimiter={run_args.delimiter}",
+        #lbann_args=f"--vocab={run_args.vocab} --num_samples={run_args.num_samples} --sequence_length={run_args.sequence_length}  --num_io_threads={run_args.num_io_threads} --no_header={run_args.no_header} --delimiter={run_args.delimiter}",
+        lbann_args=f"--vocab={run_args.vocab} --use_data_store --preload_data_store --data_filedir={run_args.data_filedir} --data_filename_train={run_args.data_filename} --num_samples={run_args.num_samples} --sequence_length={run_args.sequence_length}  --num_io_threads={run_args.num_io_threads} --no_header={run_args.no_header} --delimiter={run_args.delimiter}",
     )
 
     print("LBANN launcher status:\n" + str(status))
