@@ -133,6 +133,11 @@ def construct_model():
                  lbann.CallbackReplaceWeights(source_layers=list2str(src_layers),
                                       destination_layers=list2str(dst_layers),
                                       batch_interval=2)]
+    #Add flag for LTFB
+
+    callbacks.append(lbann.CallbackLTFB(batch_interval=2930,metric='recon_error',
+                                    low_score_wins=True,
+                                    exchange_hyperparameters=True))
 
     # Construct model
     return lbann.Model(args.num_epochs,
