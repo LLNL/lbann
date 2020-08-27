@@ -7,7 +7,7 @@ if [ -n "${SPACK_ROOT}" ]; then
 fi
 
 SPACK_VERSION=$(spack --version | sed 's/-.*//g')
-MIN_SPACK_VERSION=0.13.3
+MIN_SPACK_VERSION=0.15.4
 
 source $(dirname ${BASH_SOURCE})/utilities.sh
 
