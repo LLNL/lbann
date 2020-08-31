@@ -125,7 +125,7 @@ void im2col(const El::Matrix<TensorDataType, El::Device::GPU>& im,
   if(im_num_dims == 2) {
     constexpr size_t block_size = 256;
     const size_t grid_size = (output_num + block_size - 1) / block_size;
-    auto&& stream = El::GPUManager::Stream();
+    auto&& stream = hydrogen::cuda::GetDefaultStream();
     im2col_2d_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
         im.LockedBuffer(), col.Buffer(),
         im_dims[0], im_dims[1],

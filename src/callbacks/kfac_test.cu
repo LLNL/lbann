@@ -92,7 +92,7 @@ void kfac_test_add_to_diagonal(
     const TensorDataType damping) {
   constexpr size_t block_size = 256;
   const size_t grid_size = (height + block_size - 1) / block_size;
-  auto&& stream = El::GPUManager::Stream();
+  auto&& stream =  hydrogen::cuda::GetDefaultStream();
   kfac_test_add_to_diagonal_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
       A, height, damping);
 }
@@ -105,7 +105,7 @@ void kfac_test_fill_upper_tri(
   constexpr size_t block_size = 256;
   // OPTIMIZE: Launch N^2/2 threads instead of N^2
   const size_t grid_size = (height*height + block_size - 1) / block_size;
-  auto&& stream = El::GPUManager::Stream();
+  auto&& stream =  hydrogen::cuda::GetDefaultStream();
   kfac_test_fill_upper_tri_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
       A, height);
 }
@@ -118,7 +118,7 @@ void kfac_test_update_kronecker_average(
     const size_t count, const DataType decay) {
   constexpr size_t block_size = 256;
   const size_t grid_size = (count + block_size - 1) / block_size;
-  auto&& stream = El::GPUManager::Stream();
+  auto&& stream =  hydrogen::cuda::GetDefaultStream();
   kfac_test_update_kronecker_average_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
       Aave, A, count, decay);
 }
@@ -133,7 +133,7 @@ void kfac_test_conv_transpose(
   constexpr size_t block_size = 256;
   const size_t num_elems = mini_batch_size*num_channels*spatial_prod;
   const size_t grid_size = (num_elems + block_size - 1) / block_size;
-  auto&& stream = El::GPUManager::Stream();
+  auto&& stream =  hydrogen::cuda::GetDefaultStream();
   kfac_test_conv_transpose_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
       activations, act_columns, mini_batch_size, num_channels, spatial_prod,
       num_elems);
