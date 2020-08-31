@@ -422,10 +422,6 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
       assert_always(Fgrad.Width() == gradient.Width());
     }
 
-    std::cout << "conv F OK"
-              << " " << Fgrad.Height() << "x" << Fgrad.Width()
-              << std::endl;
-
     // Apply preconditioned grads
     DataType dst_scale = El::TypeTraits<DataType>::Zero(),
         gradient_scale = El::TypeTraits<DataType>::One();
