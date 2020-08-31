@@ -273,7 +273,7 @@ void data_type_weights<TensorDataType>::set_value(TensorDataType value, int inde
 
 #ifdef LBANN_DEBUG
   // Check that tensor position is valid
-  const auto& size = get_size();
+  const auto& size = weights::get_size();
   if (index < 0 || index >= size) {
     LBANN_ERROR("attempted to set value in "
                 "weights \"", this->get_name(), "\""

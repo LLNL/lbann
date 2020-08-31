@@ -130,7 +130,7 @@ void tessellate_layer<TensorDataType, T_layout, Dev>
     const auto& local_width = local_output.Width();
     const auto& block_size = 256;
     const auto& grid_size = (local_height * local_width + block_size - 1) / block_size;
-    fp_gpu_3d_kernel<<<grid_size, block_size, 0, El::GPUManager::Stream()>>>(
+    fp_gpu_3d_kernel<<<grid_size, block_size, 0, hydrogen::cuda::GetDefaultStream()>>>(
       input_dims[0], input_dims[1], input_dims[2],
       output_dims[0], output_dims[1], output_dims[2],
       local_height, local_width,
@@ -153,7 +153,7 @@ void tessellate_layer<TensorDataType, T_layout, Dev>
     const auto& local_width = local_gradient_wrt_output.Width();
     const auto& block_size = 256;
     const auto& grid_size = (local_height * local_width + block_size - 1) / block_size;
-    bp_gpu_3d_kernel<<<grid_size, block_size, 0, El::GPUManager::Stream()>>>(
+    bp_gpu_3d_kernel<<<grid_size, block_size, 0, hydrogen::cuda::GetDefaultStream()>>>(
       input_dims[0], input_dims[1], input_dims[2],
       output_dims[0], output_dims[1], output_dims[2],
       local_height, local_width,

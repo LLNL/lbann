@@ -173,7 +173,7 @@ void fp_compute_impl(matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,El:
   // Compute matrix multiplication for each mini-batch sample
   // Note: cuBLAS expects matrices in Fortran layout while LBANN
   // tensors are in C layout.
-  auto&& handle = El::GPUManager::cuBLASHandle();
+  auto&& handle = hydrogen::cublas::GetLibraryHandle();
   cublas::gemm_strided_batched(
     handle,
     transpose_input1 ? CUBLAS_OP_T : CUBLAS_OP_N,
@@ -223,7 +223,7 @@ void bp_compute_impl(matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,El:
   // Compute gradients for each mini-batch sample
   // Note: cuBLAS expects matrices in Fortran layout while LBANN
   // tensors are in C layout.
-  auto&& handle = El::GPUManager::cuBLASHandle();
+  auto&& handle = hydrogen::cublas::GetLibraryHandle();
   if (transpose_input0) {
     cublas::gemm_strided_batched(
       handle,
