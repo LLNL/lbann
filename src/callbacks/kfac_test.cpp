@@ -35,13 +35,9 @@
 
 #include "cblas.h"
 #include "lapacke.h"
-#include <magma.h>
 
 namespace lbann {
 namespace callback {
-
-// Use the MAGMA library instead of OpenBLAS.
-#define KFAC_CALLBACK_USE_MAGMA
 
 // Always-assert from the DiHydrogen library.
 #define assert_always(...) do {                 \
@@ -56,12 +52,6 @@ namespace callback {
 
 
 void kfac_test::setup(model *m) {
-#if defined(KFAC_CALLBACK_USE_MAGMA)
-  const auto ret = magma_init();
-  assert_always(ret == MAGMA_SUCCESS);
-  // TODO: Call magma_finalize at last
-#endif
-
   const auto comm = m->get_comm();
   if(comm->am_trainer_master()) {
     std::ostringstream oss;
@@ -188,81 +178,46 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
         kfac_test_add_to_diagonal(
             Ainv.Buffer(), Ainv.Height(), damping);
 
-#if defined(KFAC_CALLBACK_USE_MAGMA)
-        const magma_uplo_t uplo = MagmaLower;
-#else
-        const int matrix_layout = LAPACK_COL_MAJOR;
-        const char uplo = 'L';
-        El::Matrix<DataType> AinvCPU(Ainv.Height(), Ainv.Width());
-#endif
-
         const double t_damping = get_time();
 
-#if defined(KFAC_CALLBACK_USE_MAGMA)
-        { // TODO: CHECK_MAGMA
-          magma_int_t ret;
-          magma_spotrf_gpu(
-              uplo,
-              Ainv.Height(), Ainv.Buffer(),
-              Ainv.Height(),
-              &ret);
-
-          if(ret != 0) {
-            std::cerr << "K-FAC callback: Cholesky decomposition of "
-                      << matrix_name << " failed at "
-                      << layer_name << std::endl;
-            abort();
-          }
-        }
-
-#else
-        El::Copy(Ainv, AinvCPU);
-        // TODO: CHECK_LAPACK
-        LAPACKE_spotrf(
-            matrix_layout,
+        const auto uplo = El::UpperOrLowerNS::LOWER;
+        El::Cholesky(
             uplo,
-            AinvCPU.Height(), AinvCPU.Buffer(),
-            AinvCPU.Height() );
-        El::Copy(AinvCPU, Ainv);
-#endif
+            (El::AbstractMatrix<DataType> &) Ainv);
 
         const double t_spotrf = get_time();
 
-#if defined(KFAC_CALLBACK_USE_MAGMA)
-        { // TODO: CHECK_MAGMA
-          magma_int_t ret;
-          magma_spotri_gpu(
-              uplo,
-              Ainv.Height(), Ainv.Buffer(),
-              Ainv.Height(),
-              &ret);
-          assert_always(ret == 0);
-        }
+        // OPTIMIZE: El::Identity on GPU?
+        El::Matrix<DataType, El::Device::GPU> Linv(Ainv.Height(), Ainv.Width());
+        El::Zeros(Linv, Linv.Height(), Linv.Width());
+        kfac_test_add_to_diagonal(Linv.Buffer(), Linv.Height(), DataType(1.0));
 
-#else
-        El::Copy(Ainv, AinvCPU);
-        // TODO: CHECK_LAPACK
-        LAPACKE_spotri(
-            matrix_layout,
-            'L',
-            AinvCPU.Height(), AinvCPU.Buffer(),
-            AinvCPU.Height() );
-        El::Copy(AinvCPU, Ainv);
-#endif
+        El::Trsm(
+            El::LeftOrRightNS::LEFT,
+            uplo,
+            El::OrientationNS::NORMAL,
+            El::UnitOrNonUnitNS::NON_UNIT,
+            El::TypeTraits<DataType>::One(),
+            (const El::AbstractMatrix<DataType> &) Ainv,
+            (El::AbstractMatrix<DataType> &) Linv,
+            true);
+
+        El::Gemm(
+            El::TRANSPOSE, El::NORMAL,
+            El::TypeTraits<DataType>::One(), Linv, Linv,
+            El::TypeTraits<DataType>::Zero(), Ainv);
 
         const double t_spotri = get_time();
-        kfac_test_fill_upper_tri(Ainv.Buffer(), Ainv.Height());
+
+        // TRSM+GEMM is equivalent to POTRI+fill_upper_tri.
+        // kfac_test_fill_upper_tri(Ainv.Buffer(), Ainv.Height());
 
         const double t_fill = get_time();
 
         if(report_time) {
           std::cout << "K-FAC callback: get_inverse of"
                     << " " << A.Height() << "x" << A.Width()
-#if defined(KFAC_CALLBACK_USE_MAGMA)
-                    << " using MAGMA"
-#else
-                    << " using OpenBLAS @ " << openblas_get_num_threads() << " threads"
-#endif
+                    << " using Hydrogen"
                     << " (damping=" << damping << "): "
                     << " t_damping=" << (t_damping-t_start)
                     << ", t_spotrf=" << (t_spotrf-t_damping)
@@ -529,8 +484,6 @@ build_kfac_test_callback_from_pbuf(
       print_time, print_matrix, print_matrix_summary,
       use_pi);
 }
-
-#undef KFAC_CALLBACK_USE_MAGMA
 
 } // namespace callback
 } // namespace lbann

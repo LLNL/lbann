@@ -37,10 +37,10 @@ template <typename TensorDataType>
 __global__ void kfac_test_add_to_diagonal_kernel(
     TensorDataType * __restrict__ A,
     const size_t height,
-    const TensorDataType damping) {
+    const TensorDataType value) {
   const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
   if(gid < height) {
-    A[gid+gid*height] += damping;
+    A[gid+gid*height] += value;
   }
 }
 
@@ -143,7 +143,7 @@ void kfac_test_conv_transpose(
   template void kfac_test_add_to_diagonal<T>(           \
       T* __restrict__ A,                                \
       const size_t height,                              \
-      const T damping);                                 \
+      const T value);                                   \
   template void kfac_test_fill_upper_tri<T>(            \
       T * __restrict__ A,                               \
       const size_t height);                             \

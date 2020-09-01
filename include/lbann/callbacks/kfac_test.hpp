@@ -39,7 +39,7 @@ template <typename TensorDataType>
 void kfac_test_add_to_diagonal(
     TensorDataType * __restrict__ A,
     const size_t height,
-    const TensorDataType damping);
+    const TensorDataType value);
 
 // Fill the upper trianglar with the lower trianglar.
 template <typename TensorDataType>
