@@ -181,7 +181,6 @@ EOF
     if [[ "${ENABLE_GPUS}" == "ON" ]]; then
         GPU_PACKAGES=$(cat <<EOF
   - cudnn
-#  - cub
   - cuda
   - nccl
 EOF
@@ -201,7 +200,7 @@ EOF
         SUPERBUILD_SPECS=$(cat <<EOF
   - aluminum
   - hydrogen
-#  - dihydrogen
+  - dihydrogen
 EOF
 )
     fi
@@ -258,11 +257,8 @@ ${BUILD_SPECS}
   packages:
 ${EXTERNAL_ALL_PACKAGES}
 ${COMPILER_ALL_PACKAGES}
-
 ${EXTERNAL_PACKAGES}
-
 ${STD_PACKAGES}
-
     aluminum:
       buildable: true
       version:
@@ -287,9 +283,7 @@ ${STD_PACKAGES}
       providers: {}
       compiler: []
       target: []
-
 ${COMPILER_DEFINITIONS}
-
 ${STD_MODULES}
   view: true
 EOF
