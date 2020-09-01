@@ -266,7 +266,6 @@ void fp_setup_outputs_impl(
   for (size_t j=0; j<num_outputs; ++j) {
     auto& output = l.get_activations(j);
     //output.AlignWith(input);
-    //std::cout<<"Input width slice layer number:"<<j<<" "<<l.get_output_size(j)<<" "<<input.Width()<<"\n";
     output.Resize(l.get_output_size(j), input.Width());
   }
 
@@ -314,6 +313,7 @@ void slice_layer<TensorDataType,Layout,Device>::fp_compute_subgrid( )
     El::copy::TranslateBetweenGridsScatterComm<TensorDataType,Device,Device>(*ptr_input,this->get_all_activations(),split_dim,this->get_subgrid_comm(),syncSubGridCommunication);
 
   }
+
   
 }
 
@@ -322,8 +322,6 @@ template <typename TensorDataType, data_layout Layout, El::Device Device>
 void slice_layer<TensorDataType,Layout,Device>::fp_compute() {
   const auto& input_dims = this->get_input_dims();
   const size_t num_dims = input_dims.size();
-
-  //std::cout<<"Slice layer, Slice dim:"<<this->m_slice_dim<<" Num dims:"<<num_dims<<"\n";
 
   if(this->m_slice_dim==num_dims-1 && this->get_parallel_strategy().enable_subgraph==1)
   {
@@ -357,12 +355,9 @@ void slice_layer<TensorDataType,Layout,Device>::bp_setup_gradient_wrt_inputs(El:
   const auto& output0_grad = this->get_prev_error_signals(0);
   auto& input_grad = this->get_error_signals();
   input_grad.Empty(false);
-  //std::cout<<"Size of output grad for slice layer:"<<output0_grad.Width()<<"\n";
   input_grad.Resize(this->get_input_size(), output0_grad.Width());
-  //input_grad.Resize(this->get_input_size(), mini_batch_size);
-  //input_grad.AlignWith(output0_grad);
   El::Zeros(input_grad, this->get_input_size(), output0_grad.Width());
-  //El::Zeros(input_grad, this->get_input_size(), mini_batch_size);
+
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>

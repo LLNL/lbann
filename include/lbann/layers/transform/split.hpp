@@ -80,10 +80,7 @@ protected:
   }
 
   void fp_setup_outputs(El::Int mini_batch_size) override {
-    // const auto D = this->get_device_allocation();
-    // const auto T = this->get_data_layout();
-    //using concrete_matrix_type = El::DistMatrix<TensorDataType, El::MC  , El::MR, El::ELEMENT, Dev>;
-    
+
     const auto& input = this->get_prev_activations();
 
     auto const* ptr_input = dynamic_cast<El::DistMatrix<TensorDataType, El::STAR  , El::VC, El::ELEMENT, Dev> const *>(&input);
@@ -92,9 +89,8 @@ protected:
     auto childs = this->get_child_layers(); 
     if(this->get_parallel_strategy().enable_subgraph==1)
     {
-      //std::cout<<"Layer name:"<<this->get_name()<<" starting\n";
       //if subgraph parallelism is enabled 
-      //std::cout<<"In FP setup output num spliting grp:"<<childs[0]->num_spliting_groups<<"\n";
+
       if(this->get_communication_flag()==2)
       {
         El::copy::TranslateBetweenGridsBroadcastOptComm<TensorDataType,Dev,Dev>(*ptr_input,this->get_branch_tag_input_vector(),this->get_subgrid_comm(),syncSubGridCommunication);
@@ -112,22 +108,23 @@ protected:
         }
 
       }
-      
-      //std::cout<<"Layer name:"<<this->get_name()<<" intermediate Complete\n";
+
 
       for (int i = 0; i < this->get_num_children(); ++i) {
         tag = childs[i]->get_parallel_strategy().sub_branch_tag;
-        //std::cout<<"Layer name:"<<this->get_name()<<"  tag is:"<<tag<<"\n";
+
         El::LockedView(this->get_activations(i), this->get_branch_tag_input(tag-1));
-        //El::Copy( input,this->get_activations(i));
+
       }
-      //std::cout<<"Layer name:"<<this->get_name()<<"  Complete\n";
+
     }
     else
     {
+      
       for (int i = 0; i < this->get_num_children(); ++i) {
         
         El::LockedView(this->get_activations(i), input);
+        this->get_activations(i).Resize(this->get_output_size(), input.Width());
 
       }
     }

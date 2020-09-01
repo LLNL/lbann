@@ -113,10 +113,6 @@ protected:
 #endif // LBANN_HAS_DISTCONV
     auto& output = this->get_activations();
     auto parents = this->get_parent_layers(); 
-    //El::Copy(this->get_prev_activations(0), output);
-    
-
-
 
     if(this->is_subgraph_parallelism_enabled() && this->get_parallel_strategy().enable_subgraph==1)
     {
@@ -147,7 +143,6 @@ protected:
       }
 
       // copy and add data from reduced gradients from same branch 
-      //std::cout<<"Completed locally reducing sum on subgrid "<<" Rank:"<<El::mpi::Rank()<<"\n";
 
       if(this->get_communication_flag()==2)
       //If vector is enabled copy data using allreduce operation from aggregated subgrids to the output
@@ -196,11 +191,6 @@ protected:
 
     }
 
-
-
-  //   for (int i = 1; i < this->get_num_parents(); ++i) {
-  //     El::Axpy(DataType(1), this->get_prev_activations(i), output);
-  //   }
   }
 
   void fp_setup_outputs(El::Int mini_batch_size) override {
@@ -268,7 +258,7 @@ protected:
         
       }
       
-    }//useless condition 
+    } 
     else
     {
       for (int i = 0; i < this->get_num_parents(); ++i) {
@@ -279,13 +269,6 @@ protected:
     }
 
 
-
-    // for (int i = 0; i < this->get_num_parents(); ++i) {
-    //   //El::LockedView(this->get_error_signals(i), gradient_wrt_output);
-      
-    //   El::Copy(gradient_wrt_output,this->get_error_signals(i) );
-    //   //std::cout<<"Sum layer gradient size:"<<this->get_error_signals(i).LocalHeight()<< " "<<this->get_error_signals(i).LocalWidth()<<"\n";
-    // }
   }
 
   void bp_compute() override {}

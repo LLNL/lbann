@@ -118,15 +118,15 @@ public:
 
   /** Get temp Grad Tensor. */
   AbsDistMatrixType& get_temp_grad() ;
-  /** Get transfered inpit for each branch tag **/
+  /** Get transfered input for each branch tag **/
   AbsDistMatrixType& get_branch_tag_input(int tag) ;
 
   std::vector<std::unique_ptr<AbsDistMatrixType>>& get_branch_tag_input_vector() ;
 
+  /** return all activations/errors for a layer
+      Used in subgraph parallelism to implement collective communication in split, sum, ... layers*/
   std::vector<std::unique_ptr<AbsDistMatrixType>>& get_all_activations() ;
   std::vector<std::unique_ptr<AbsDistMatrixType>>& get_all_prev_activations() ;
-
-
   std::vector<std::unique_ptr<AbsDistMatrixType>>& get_all_prev_error_signals() ;
   std::vector<std::unique_ptr<AbsDistMatrixType>>& get_all_error_signals() ;
 

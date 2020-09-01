@@ -799,7 +799,10 @@ void data_type_layer<TensorDataType>::fp_setup_inputs(El::Int mini_batch_size) {
     const auto& height = get_input_size(i);
     const auto& width = mini_batch_size;
     //std::cout<<"Layer name:"<<this->get_type()<<" batch size:"<<mini_batch_size<<"\n";
-    if (input.Height() != height || input.Width() != width) {
+    
+    if ((input.Height() != height || input.Width() != width) ) {
+
+      std::cout<<"Error layer parent output:"<<parent_output.Width()<<"\n";
       std::stringstream err;
       err << "layer \"" << get_name() << "\" "
           << "expected an input tensor stored in a "

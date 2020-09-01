@@ -468,8 +468,9 @@ public:
 
 	
 public:	
-  //std::unique_ptr<El::Grid> grid1,grid2;	
+  // map to store all distinct grids in the model
   std::unordered_map<std::string, std::shared_ptr<El::Grid>> grids; 
+  // map to store all distinct mpi groups in the model (one to one mapping with grids)
   std::unordered_map<std::string, std::unique_ptr<El::mpi::Group>> grids_mpi_groups; 
 
 
@@ -492,6 +493,8 @@ private:
   //0: no topology aware design
   //1: master grid in round robin manner of nodes (GPUs per node 4)  1 3 5 7, 2 4 6 8     
   int subgraph_topology = 0;
+
+  // whether subgraph parallelism is enabled or not for the model 
   bool apply_subgraph_parallelism = false;
 
 
