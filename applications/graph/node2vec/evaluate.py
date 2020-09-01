@@ -21,11 +21,15 @@ parser.add_argument(
 parser.add_argument(
     '--snap-embedding-file', default='results.emb', type=str,
     help='node embeddings in SNAP format', metavar='FILE')
+parser.add_argument(
+    '--col-major-embeddings', action='store_true',
+    help='embeddings are in column-major format')
 args = parser.parse_args()
 
 # Construct embedding file in SNAP's format
 embeddings = np.loadtxt(args.embedding_file)
-embeddings = np.transpose(embeddings)
+if args.col_major_embeddings:
+    embeddings = np.transpose(embeddings)
 with open(args.snap_embedding_file, 'w') as f:
     f.write(f'{embeddings.shape[0]} {embeddings.shape[1]}\n')
     for index, embedding in enumerate(embeddings):

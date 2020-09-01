@@ -36,7 +36,7 @@ parser.add_argument(
     '--num-iterations', action='store', default=1000, type=int,
     help='number of epochs (default: 1000)', metavar='NUM')
 parser.add_argument(
-    '--proj_dim', action='store', default=10000, type=int,
+    '--proj_dim', action='store', default=1024, type=int,
     help='projection space dimensions (default: 10000)', metavar='NUM')
 parser.add_argument(
     '--latent-dim', action='store', default=128, type=int,
@@ -62,7 +62,7 @@ if args.learning_rate < 0:
 
 # Random walk options
 epoch_size = 100 * args.mini_batch_size
-walk_length = 50
+walk_length = 100
 return_param = 0.25
 inout_param = 0.25
 num_negative_samples = 0
