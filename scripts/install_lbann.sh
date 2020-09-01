@@ -7,7 +7,7 @@ if [ -n "${SPACK_ROOT}" ]; then
 fi
 
 SPACK_VERSION=$(spack --version | sed 's/-.*//g')
-MIN_SPACK_VERSION=0.13.3
+MIN_SPACK_VERSION=0.15.4
 
 source $(dirname ${BASH_SOURCE})/utilities.sh
 
@@ -258,29 +258,26 @@ ${STD_PACKAGES}
 
     aluminum:
       buildable: true
-      version: [0.4.0]
+      version:
+      - 0.4.0
       ${AL_VARIANTS}
       providers: {}
-      paths: {}
-      modules: {}
       compiler: []
       target: []
     hydrogen:
       buildable: true
-      version: [1.4.0]
+      version:
+      - 1.4.0
       ${HYDROGEN_VARIANTS}
       providers: {}
-      paths: {}
-      modules: {}
       compiler: []
       target: []
     dihydrogen:
       buildable: true
-      version: [master]
+      version:
+      - master
       ${DIHYDROGEN_VARIANTS}
       providers: {}
-      paths: {}
-      modules: {}
       compiler: []
       target: []
 
