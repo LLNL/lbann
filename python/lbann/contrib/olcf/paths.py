@@ -8,12 +8,10 @@ from lbann.contrib.lc.systems import system
 
 def parallel_file_system_path(system = system()):
     """Base path to parallel file system."""
-    if system in ('lassen', 'sierra'):
-        return '/p/gpfs1/'
-    elif system == 'ray':
-        return '/p/gscratchr/'
+    if system in ('summit'):
+        return '/ccs/proj/ast153/'
     else:
-        return '/p/lustre2/'
+        return '/ccs/proj/ast153/'
 
 def mnist_dir(system = system()):
     """MNIST directory on OLCF system.
@@ -24,11 +22,13 @@ def mnist_dir(system = system()):
     from http://yann.lecun.com/exdb/mnist/ and uncompressing.
 
     """
-    return parallel_file_system_path(system) + 'brainusr/datasets/MNIST'
+    raise AssertionError("Unimplemented data set")
+    return parallel_file_system_path(system) + '/datasets/MNIST'
 
 def cifar10_dir(system = system()):
     """CIFAR10 directory on OLCF systems."""
-    return parallel_file_system_path(system) + 'brainusr/datasets/cifar10-bin'
+    raise AssertionError("Unimplemented data set")
+    return parallel_file_system_path(system) + '/datasets/cifar10-bin'
 
 def imagenet_dir(system = system(), data_set = 'training',
                  num_classes = 1000):
@@ -49,8 +49,9 @@ def imagenet_dir(system = system(), data_set = 'training',
     subsampled data sets may vary by system.
 
     """
+    raise AssertionError("Unimplemented data set")
     base_path = parallel_file_system_path(system)
-    base_path += 'brainusr/datasets/ILSVRC2012/original/'
+    base_path += 'datasets/ILSVRC2012/original/'
     if data_set.lower() in ('train', 'training'):
         return base_path + 'train/'
     elif data_set.lower() in ('val', 'validation'):
@@ -79,11 +80,12 @@ def imagenet_labels(system = system(), data_set = 'train',
     subsampled data sets may vary by system.
 
     """
+    raise AssertionError("Unimplemented data set")
     label_dir = parallel_file_system_path(system)
     if system in ('lassen', 'sierra'):
-        label_dir += 'brainusr/datasets/ILSVRC2012/original/labels/'
+        label_dir += 'datasets/ILSVRC2012/original/labels/'
     else:
-        label_dir += 'brainusr/datasets/ILSVRC2012/labels/'
+        label_dir += 'datasets/ILSVRC2012/labels/'
     suffixes = {1000: '', 10: '_c0-9', 100: '_c0-99',
                 200: '_c100-299', 300: '_c0-299'}
     if data_set.lower() in ('train', 'training'):
