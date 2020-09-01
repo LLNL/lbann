@@ -1,7 +1,8 @@
 #!/bin/sh
 
 COMPILER_ALL_PACKAGES=$(cat <<EOF
-      compiler: [gcc@8.1.1 arch=linux-rhel7-power9le]
+      compiler:
+      - gcc@8.1.1 arch=linux-rhel7-power9le
 EOF
 )
 
@@ -21,7 +22,8 @@ COMPILER_DEFINITIONS=$(cat <<EOF
   #     spec: gcc@7.4.0
   #     target: ppc64le
   - compiler:
-      environment: {}
+      environment:
+        unset: []
       extra_rpaths: []
       flags: {}
       modules: []
