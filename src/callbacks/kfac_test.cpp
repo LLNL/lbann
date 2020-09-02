@@ -285,9 +285,6 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
       G = get_kronecker_factor_fc(error_signals, mini_batch_size);
     } else {
 
-      El::Write(activations, "acts", El::FileFormatNS::ASCII);
-      El::Write(error_signals, "errs", El::FileFormatNS::ASCII);
-
       const auto input_dims = l->get_input_dims(); // CHW
       const auto output_dims = l->get_output_dims(); // KH'W'
       // Consider only 2D and 3D layers
