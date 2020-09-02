@@ -26,18 +26,18 @@ fi
 BUILD_TYPE=Release
 Elemental_DIR=
 case $TOSS in
-	3.10.0|4.11.0|4.14.0)
-		OpenCV_DIR=""
-		if [ "${ARCH}" == "x86_64" ]; then
-			export VTUNE_DIR=/usr/tce/packages/vtune/default
-		elif [ "${ARCH}" == "ppc64le" ]; then
-			export VTUNE_DIR=
-		fi
-		;;
-	*)
+    3.10.0|4.11.0|4.14.0)
+        OpenCV_DIR=""
+        if [ "${ARCH}" == "x86_64" ]; then
+            export VTUNE_DIR=/usr/tce/packages/vtune/default
+        elif [ "${ARCH}" == "ppc64le" ]; then
+            export VTUNE_DIR=
+        fi
+        ;;
+    *)
       OpenCV_DIR=/usr/gapps/brain/tools/OpenCV/2.4.13
       export VTUNE_DIR=/usr/local/tools/vtune
-	  ;;
+      ;;
 esac
 if [ "${ARCH}" == "x86_64" ]; then
     IPPROOT=/p/lscratchh/brainusr/ippicv_lnx
@@ -309,17 +309,17 @@ done
 # Determine whether system uses modules
 USE_MODULES=0
 case $TOSS in
-	3.10.0|4.11.0|4.14.0)
-		USE_MODULES=1
-		;;
-	2.6.32)
-		USE_MODULES=0
-		;;
-	*)
-		# Initialize modules
-		. /usr/share/[mM]odules/init/bash
-		USE_MODULES=1
-		;;
+    3.10.0|4.11.0|4.14.0)
+        USE_MODULES=1
+        ;;
+    2.6.32)
+        USE_MODULES=0
+        ;;
+    *)
+        # Initialize modules
+        . /usr/share/[mM]odules/init/bash
+        USE_MODULES=1
+        ;;
 esac
 
 # Initialize Dotkit if system doesn't use modules
@@ -330,7 +330,7 @@ fi
 # Load packages
 if [ ${USE_MODULES} -ne 0 ]; then
     module load git
-    #module load cmake/3.14.5
+    module load cmake/3.16.8
 else
     use git
 fi
@@ -522,55 +522,55 @@ if [ "${MPI}" == "spectrum" ]; then
 fi
 
 if [ -z "${MPI_HOME}" ]; then
-	if [ ${USE_MODULES} -ne 0 ]; then
-		if [ -z "$(module list 2>&1 | grep ${MPI})" ]; then
-			MPI=$(module --terse spider ${MPI} 2>&1 | sed '/^$/d' | tail -1)
-			module load ${MPI}
-		fi
-		if [ -z "$(module list 2>&1 | grep ${MPI})" ]; then
-			echo "Could not load module (${MPI})"
-			exit 1
-		fi
-		MPI_HOME=$(module show ${MPI} 2>&1 | grep '\"PATH\"' | cut -d ',' -f 2 | cut -d ')' -f 1 | sed 's/\/bin//' | sed 's/\"//g')
-	else
-		# The idea here is to check if the module of the specified mpi type is loaded
-		MPI_DOTKIT=$(use | grep ${MPI} | sed 's/ //g')
-		if [ -z "${MPI_DOTKIT}" ]; then
-			if [ "${COMPILER}" == "gnu" ] || [ "${COMPILER}" == "intel" ] || [ "${COMPILER}" == "pgi" ] ; then
-				MPI_COMPILER=-${COMPILER}
-			elif [ "${COMPILER}" == "clang" ]; then
-				MPI_COMPILER=-gnu
-			fi
-			# The default MVAPICH version does not work on surface
-			if [ "${CLUSTER}" == "surface" -a "${MPI}" == "mvapich2" ]; then
-				MPI_VERSION="-2.2"
-			else
-				MPI_VERSION=""
-			fi
-		else
-			MPI_COMPILER=-$(echo ${MPI_DOTKIT} | awk 'BEGIN{FS="-"}{print $2}')
-			MPI_VERSION=-$(echo ${MPI_DOTKIT} |  awk 'BEGIN{FS="-"}{print $NF}')
-		fi
-		if [ "${BUILD_TYPE}" == "Debug" ]; then
-			MPI_DEBUG="-debug"
-		else
-			MPI_DEBUG=""
-		fi
-		MPI_DOTKIT=${MPI}${MPI_COMPILER}${MPI_DEBUG}${MPI_VERSION}
-		echo "Using ${MPI_DOTKIT}"
-		use ${MPI_DOTKIT}
-		if [ -z "$(use | grep ${MPI_DOTKIT})" ]; then
-			echo "Could not load dotkit (${MPI_DOTKIT})"
-			exit 1
-		fi
-		if [ "${COMPILER}" == "gnu" ] || [ "${COMPILER}" == "intel" ] || [ "${COMPILER}" == "pgi" ]; then
-			if [ "`echo ${MPI_DOTKIT} | grep ${COMPILER}`" == "" ] ; then
-				echo "switch to an MPI version that is consistent with (${COMPILER}) compilers"
-				exit 1
-			fi
-		fi
-		MPI_HOME=$(use -hv ${MPI_DOTKIT} | grep 'dk_alter PATH' | awk '{print $3}' | sed 's/\/bin//')
-	fi
+    if [ ${USE_MODULES} -ne 0 ]; then
+        if [ -z "$(module list 2>&1 | grep ${MPI})" ]; then
+            MPI=$(module --terse spider ${MPI} 2>&1 | sed '/^$/d' | tail -1)
+            module load ${MPI}
+        fi
+        if [ -z "$(module list 2>&1 | grep ${MPI})" ]; then
+            echo "Could not load module (${MPI})"
+            exit 1
+        fi
+        MPI_HOME=$(module show ${MPI} 2>&1 | grep '\"PATH\"' | cut -d ',' -f 2 | cut -d ')' -f 1 | sed 's/\/bin//' | sed 's/\"//g')
+    else
+        # The idea here is to check if the module of the specified mpi type is loaded
+        MPI_DOTKIT=$(use | grep ${MPI} | sed 's/ //g')
+        if [ -z "${MPI_DOTKIT}" ]; then
+            if [ "${COMPILER}" == "gnu" ] || [ "${COMPILER}" == "intel" ] || [ "${COMPILER}" == "pgi" ] ; then
+                MPI_COMPILER=-${COMPILER}
+            elif [ "${COMPILER}" == "clang" ]; then
+                MPI_COMPILER=-gnu
+            fi
+            # The default MVAPICH version does not work on surface
+            if [ "${CLUSTER}" == "surface" -a "${MPI}" == "mvapich2" ]; then
+                MPI_VERSION="-2.2"
+            else
+                MPI_VERSION=""
+            fi
+        else
+            MPI_COMPILER=-$(echo ${MPI_DOTKIT} | awk 'BEGIN{FS="-"}{print $2}')
+            MPI_VERSION=-$(echo ${MPI_DOTKIT} |  awk 'BEGIN{FS="-"}{print $NF}')
+        fi
+        if [ "${BUILD_TYPE}" == "Debug" ]; then
+            MPI_DEBUG="-debug"
+        else
+            MPI_DEBUG=""
+        fi
+        MPI_DOTKIT=${MPI}${MPI_COMPILER}${MPI_DEBUG}${MPI_VERSION}
+        echo "Using ${MPI_DOTKIT}"
+        use ${MPI_DOTKIT}
+        if [ -z "$(use | grep ${MPI_DOTKIT})" ]; then
+            echo "Could not load dotkit (${MPI_DOTKIT})"
+            exit 1
+        fi
+        if [ "${COMPILER}" == "gnu" ] || [ "${COMPILER}" == "intel" ] || [ "${COMPILER}" == "pgi" ]; then
+            if [ "`echo ${MPI_DOTKIT} | grep ${COMPILER}`" == "" ] ; then
+                echo "switch to an MPI version that is consistent with (${COMPILER}) compilers"
+                exit 1
+            fi
+        fi
+        MPI_HOME=$(use -hv ${MPI_DOTKIT} | grep 'dk_alter PATH' | awk '{print $3}' | sed 's/\/bin//')
+    fi
 fi
 
 # Get MPI compilers
@@ -594,65 +594,63 @@ if [ "${CLUSTER}" == "surface" -o "${CORAL}" -eq 1 -o "${CLUSTER}" == "pascal" ]
     WITH_CUB=${WITH_CUB:-ON}
     WITH_ALUMINUM=${WITH_ALUMINUM:-ON}
     ALUMINUM_WITH_NCCL=${ALUMINUM_WITH_NCCL:-ON}
-	if [[ ${CORAL} -eq 1 ]]; then
-		module del cuda
-		CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda/10.1.243}
-	fi
+    if [[ ${CORAL} -eq 1 ]]; then
+        module del cuda
+        CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda/10.1.243}
+    fi
 
     # Hack for surface
-	case $CLUSTER in
-		surface)
-		    . /usr/share/[mM]odules/init/bash
-		    CUDA_TOOLKIT_MODULE=cudatoolkit/9.2
-		    ;;
-		pascal)
-		    CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda/10.1.168}
-		    ;;
-	esac
+    case $CLUSTER in
+        surface)
+            . /usr/share/[mM]odules/init/bash
+            CUDA_TOOLKIT_MODULE=cudatoolkit/9.2
+            ;;
+        pascal)
+            CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda/10.1.168}
+            ;;
+    esac
 fi
 
 if [ "${WITH_CUDA}" == "ON" ]; then
-	# Defines CUDA_TOOLKIT_ROOT_DIR
-	if [ -z "${CUDA_TOOLKIT_ROOT_DIR}" ]; then
-		if [ -n "${CUDA_PATH}" ]; then
-			CUDA_TOOLKIT_ROOT_DIR=${CUDA_PATH}
-		elif [ -n "${CUDA_HOME}" ]; then
-			CUDA_TOOLKIT_ROOT_DIR=${CUDA_HOME}
-		elif [ -n "${CUDA_TOOLKIT_MODULE}" -o ${USE_MODULES} -ne 0 ]; then
-			CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda}
-			module load ${CUDA_TOOLKIT_MODULE}
-			CUDA_TOOLKIT_ROOT_DIR=${CUDA_HOME:-${CUDA_PATH}}
-		fi
-	fi
-	if [ -n "${CUDA_TOOLKIT_ROOT_DIR}" -a -d "${CUDA_TOOLKIT_ROOT_DIR}" ]; then
-		export CUDA_TOOLKIT_ROOT_DIR
-	else
-		echo "Could not find CUDA"
-		exit 1
-	fi
-	# Defines CUDA_TOOLKIT_VERSION
-	#CUDA_TOOLKIT_VERSION=$(ls -l ${CUDA_TOOLKIT_ROOT_DIR} | awk '{print $NF}' | cut -d '-' -f 2)
-	CUDA_TOOLKIT_VERSION=$(${CUDA_TOOLKIT_ROOT_DIR}/bin/nvcc --version | grep -oE "V[0-9]+\.[0-9]+" | sed 's/V//')
+    # Defines CUDA_TOOLKIT_ROOT_DIR
+    if [ -z "${CUDA_TOOLKIT_ROOT_DIR}" ]; then
+        if [ -n "${CUDA_PATH}" ]; then
+            CUDA_TOOLKIT_ROOT_DIR=${CUDA_PATH}
+        elif [ -n "${CUDA_HOME}" ]; then
+            CUDA_TOOLKIT_ROOT_DIR=${CUDA_HOME}
+        elif [ -n "${CUDA_TOOLKIT_MODULE}" -o ${USE_MODULES} -ne 0 ]; then
+            CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda}
+            module load ${CUDA_TOOLKIT_MODULE}
+            CUDA_TOOLKIT_ROOT_DIR=${CUDA_HOME:-${CUDA_PATH}}
+        fi
+    fi
+    if [ -n "${CUDA_TOOLKIT_ROOT_DIR}" -a -d "${CUDA_TOOLKIT_ROOT_DIR}" ]; then
+        export CUDA_TOOLKIT_ROOT_DIR
+    else
+        echo "Could not find CUDA"
+        exit 1
+    fi
+    # Defines CUDA_TOOLKIT_VERSION
+    #CUDA_TOOLKIT_VERSION=$(ls -l ${CUDA_TOOLKIT_ROOT_DIR} | awk '{print $NF}' | cut -d '-' -f 2)
+    CUDA_TOOLKIT_VERSION=$(${CUDA_TOOLKIT_ROOT_DIR}/bin/nvcc --version | grep -oE "V[0-9]+\.[0-9]+" | sed 's/V//')
 
-	# CUDNN
-	if [[ -z $CUDNN_DIR ]]; then
+    # CUDNN
+    if [[ -z $CUDNN_DIR ]]; then
         CUDNN_VER=${CUDNN_VER:-7.6.4}
-		CUDNN_DIR=/usr/WS1/jain8/internship/cudnn/cuda/targets/ppc64le-linux
-        #CUDNN_DIR=/usr/workspace/wsb/brain/cudnn/cudnn-${CUDNN_VER}/cuda-${CUDA_TOOLKIT_VERSION}_${ARCH}
-	fi
-	if [[ ! -d $CUDNN_DIR ]]; then
-		echo "Could not find cuDNN at $CUDNN_DIR"
-		exit 1
-	fi
-	export CUDNN_DIR
+        CUDNN_DIR=/usr/workspace/wsb/brain/cudnn/cudnn-${CUDNN_VER}/cuda-${CUDA_TOOLKIT_VERSION}_${ARCH}
+    fi
+    if [[ ! -d $CUDNN_DIR ]]; then
+        echo "Could not find cuDNN at $CUDNN_DIR"
+        exit 1
+    fi
+    export CUDNN_DIR
 
     # NCCL
     if [[ -z $NCCL_DIR ]]; then
         # Subsequent 2.4.X versions are known to have a performance
         # regression. See the release notes.
         NCCL_VER=${NCCL_VER:-2.4.2-1}
-        NCCL_DIR=/usr/WS1/jain8/internship/elemental_patch/new_aluminum/new_nccl/nccl/build/
-        # NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_${NCCL_VER}+cuda${CUDA_TOOLKIT_VERSION}_${ARCH}
+        NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_${NCCL_VER}+cuda${CUDA_TOOLKIT_VERSION}_${ARCH}
     fi
     if [[ ! -d $NCCL_DIR ]]; then
         echo "Could not find NCCL at $NCCL_DIR"
@@ -672,9 +670,9 @@ fi
 # Library options
 ################################################################
 if [ "${CLUSTER}" == "sierra" -o "${CLUSTER}" == "lassen" ]; then
-	OPENBLAS_ARCH="TARGET=POWER8"
+    OPENBLAS_ARCH="TARGET=POWER8"
 else
-	OPENBLAS_ARCH=
+    OPENBLAS_ARCH=
 fi
 
 ################################################################
@@ -807,11 +805,8 @@ cmake \
 -D LBANN_SB_BUILD_PROTOBUF=ON \
 -D LBANN_SB_BUILD_CUB=${WITH_CUB} \
 -D LBANN_SB_BUILD_ALUMINUM=${WITH_ALUMINUM} \
--D ALUMINUM_TAG=master \
 -D ALUMINUM_ENABLE_MPI_CUDA=${ALUMINUM_WITH_MPI_CUDA} \
 -D ALUMINUM_ENABLE_NCCL=${ALUMINUM_WITH_NCCL} \
--D HYDROGEN_TAG="slice_alum" \
--D HYDROGEN_URL=https://github.com/aj-prime/Elemental.git \
 -D LBANN_SB_BUILD_CONDUIT=${WITH_CONDUIT} \
 -D LBANN_SB_BUILD_HDF5=${WITH_CONDUIT} \
 -D LBANN_SB_BUILD_LBANN=ON \
@@ -840,8 +835,6 @@ cmake \
 -D DIHYDROGEN_ENABLE_DISTCONV_LEGACY=${WITH_DISTCONV} \
 -D LBANN_WITH_DIHYDROGEN=${WITH_DIHYDROGEN} \
 -D LBANN_WITH_DISTCONV=${WITH_DISTCONV} \
--DLBANN_SB_FWD_LBANN_Python_EXECUTABLE=/usr/workspace/jain8/miniconda3/envs/hope_lbann_pytorch/bin/python \
--DLBANN_SB_FWD_LBANN_Python_LIBRARY=/usr/workspace/jain8/miniconda3/envs/hope_lbann_pytorch/lib/libpython3.7m.so.1.0 \
 ${SUPERBUILD_DIR}
 EOF
 )

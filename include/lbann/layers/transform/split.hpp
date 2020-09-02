@@ -93,7 +93,7 @@ protected:
 
       if(this->get_communication_flag()==2)
       {
-        El::copy::TranslateBetweenGridsBroadcastOptComm<TensorDataType,Dev,Dev>(*ptr_input,this->get_branch_tag_input_vector(),this->get_subgrid_comm(),syncSubGridCommunication);
+        El::copy::TranslateBetweenGridsBroadcast<TensorDataType,Dev,Dev>(*ptr_input,this->get_branch_tag_input_vector(),this->get_subgrid_comm(),syncSubGridCommunication);
       }
       else if(this->get_communication_flag()==1)
       {
@@ -175,13 +175,13 @@ protected:
       {
         auto * ptr_gradient = dynamic_cast<El::DistMatrix<TensorDataType, El::STAR  , El::VC, El::ELEMENT, Dev> *>(&gradient_wrt_input);
 
-        El::copy::TranslateBetweenGridsAllreduceOptComm<TensorDataType,Dev,Dev>(*ptr_gradient,this->get_branch_tag_input_vector(),this->get_subgrid_comm(),syncSubGridCommunication);
+        El::copy::TranslateBetweenGridsAllreduce<TensorDataType,Dev,Dev>(*ptr_gradient,this->get_branch_tag_input_vector(),this->get_subgrid_comm(),syncSubGridCommunication);
       }
       else if(this->get_communication_flag()==1)
       {
         auto * ptr_gradient = dynamic_cast<El::DistMatrix<TensorDataType, El::STAR  , El::VC, El::ELEMENT, Dev> *>(&gradient_wrt_input);
 
-        El::copy::TranslateBetweenGridsAllreduce<TensorDataType,Dev,Dev>(*ptr_gradient,this->get_branch_tag_input_vector());
+        El::copy::TranslateBetweenGridsAllreduce<TensorDataType,Dev,Dev>(*ptr_gradient,this->get_branch_tag_input_vector(),1);
 
       }
       else

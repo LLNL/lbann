@@ -149,7 +149,7 @@ protected:
       {
         auto * ptr_output = dynamic_cast<El::DistMatrix<TensorDataType, El::STAR  , El::VC, El::ELEMENT, Dev> *>(&output);
 
-        El::copy::TranslateBetweenGridsAllreduceOptComm<TensorDataType,Dev,Dev>(*ptr_output,this->get_branch_tag_input_vector(),this->get_subgrid_comm(),syncSubGridCommunication);
+        El::copy::TranslateBetweenGridsAllreduce<TensorDataType,Dev,Dev>(*ptr_output,this->get_branch_tag_input_vector(),this->get_subgrid_comm(),syncSubGridCommunication,1);
 
       }
       else if(this->get_communication_flag()==1)
@@ -230,7 +230,7 @@ protected:
       //If vector copy is enable, broadcast the gradients from parent grid to multiple subgrids
       {
         auto const* ptr_gradient = dynamic_cast<El::DistMatrix<TensorDataType, El::STAR  , El::VC, El::ELEMENT, Dev> const*>(&gradient_wrt_output);
-        El::copy::TranslateBetweenGridsBroadcastOptComm<TensorDataType,Dev,Dev>(*ptr_gradient,this->get_branch_tag_input_vector(),this->get_subgrid_comm(),syncSubGridCommunication);
+        El::copy::TranslateBetweenGridsBroadcast<TensorDataType,Dev,Dev>(*ptr_gradient,this->get_branch_tag_input_vector(),this->get_subgrid_comm(),syncSubGridCommunication);
 
       }
       else if(this->get_communication_flag()==1)
