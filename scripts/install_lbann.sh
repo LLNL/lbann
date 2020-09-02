@@ -41,10 +41,15 @@ if [[ ${SYS} = "Darwin" ]]; then
     CENTER="osx"
 else
     CORI=$([[ $(hostname) =~ (cori|cgpu) ]] && echo 1 || echo 0)
+    DOMAINNAME=$(python -c 'import socket; domain = socket.getfqdn().split("."); print(domain[-2] + "." + domain[-1])')
     if [[ ${CORI} -eq 1 ]]; then
         CENTER="nersc"
         # Make sure to purge and setup the modules properly prior to finding the Spack architecture
         source ${SPACK_ENV_DIR}/${CENTER}/setup_modules.sh
+    elif [[ ${DOMAINNAME} = "ornl.gov" ]]; then
+        CENTER="olcf"
+    elif [[ ${DOMAINNAME} = "llnl.gov" ]]; then
+        CENTER="llnl_lc"
     else
         CENTER="llnl_lc"
     fi
@@ -158,12 +163,14 @@ DIHYDROGEN_VARIANTS="variants: +shared +al +openmp ${HALF_VARIANTS}"
 if [[ ${DEPS_ONLY} = "TRUE" ]]; then
     if [[ ${SYS} != "Darwin" ]]; then
         HYDROGEN_VARIANTS="${HYDROGEN_VARIANTS} +openmp_blas"
+        DIHYDROGEN_VARIANTS="${DIHYDROGEN_VARIANTS} +openmp_blas"
         COMPILER_PACKAGE=$(cat <<EOF
   - gcc
 EOF
 )
     else
         HYDROGEN_VARIANTS="${HYDROGEN_VARIANTS} blas=accelerate"
+        DIHYDROGEN_VARIANTS="${DIHYDROGEN_VARIANTS} blas=accelerate"
         COMPILER_PACKAGE=$(cat <<EOF
   - llvm
 EOF
@@ -174,7 +181,6 @@ EOF
     if [[ "${ENABLE_GPUS}" == "ON" ]]; then
         GPU_PACKAGES=$(cat <<EOF
   - cudnn
-  - cub
   - cuda
   - nccl
 EOF
@@ -251,11 +257,8 @@ ${BUILD_SPECS}
   packages:
 ${EXTERNAL_ALL_PACKAGES}
 ${COMPILER_ALL_PACKAGES}
-
 ${EXTERNAL_PACKAGES}
-
 ${STD_PACKAGES}
-
     aluminum:
       buildable: true
       version:
@@ -280,9 +283,7 @@ ${STD_PACKAGES}
       providers: {}
       compiler: []
       target: []
-
 ${COMPILER_DEFINITIONS}
-
 ${STD_MODULES}
   view: true
 EOF

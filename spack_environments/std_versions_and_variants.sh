@@ -54,6 +54,8 @@ STD_MODULES=$(cat <<EOF
       core_compilers:
         - 'gcc@7.3.0'
         - 'gcc@7.3.1'
+        - 'gcc@7.4.0'
+        - 'gcc@8.1.1'
       projections:
         all: '\${PACKAGE}/\${VERSION}-\${COMPILERNAME}-\${COMPILERVER}'
       blacklist:
@@ -79,6 +81,8 @@ STD_MODULES=$(cat <<EOF
       core_compilers:
         - 'gcc@7.3.0'
         - 'gcc@7.3.1'
+        - 'gcc@7.4.0'
+        - 'gcc@8.1.1'
       projections:
         all: '\${PACKAGE}/\${VERSION}-\${COMPILERNAME}-\${COMPILERVER}'
       whitelist:

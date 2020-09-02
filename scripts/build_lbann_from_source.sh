@@ -34,6 +34,7 @@ fi
 
 LBANN_HOME=$(dirname ${SCRIPTS_DIR})
 SPACK_ENV_DIR=${LBANN_HOME}/spack_environments
+NINJA_NUM_PROCESSES=0 # Let ninja decide
 
 # Identify the center that we are running at
 CENTER=
@@ -46,11 +47,19 @@ if [[ ${SYS} = "Darwin" ]]; then
     BUILD_SUFFIX=llnl.gov
 else
     CORI=$([[ $(hostname) =~ (cori|cgpu) ]] && echo 1 || echo 0)
+    DOMAINNAME=$(python -c 'import socket; domain = socket.getfqdn().split("."); print(domain[-2] + "." + domain[-1])')
     if [[ ${CORI} -eq 1 ]]; then
         CENTER="nersc"
         # Make sure to purge and setup the modules properly prior to finding the Spack architecture
         source ${SPACK_ENV_DIR}/${CENTER}/setup_modules.sh
         BUILD_SUFFIX=nersc.gov
+    elif [[ ${DOMAINNAME} = "ornl.gov" ]]; then
+        CENTER="olcf"
+        BUILD_SUFFIX=${DOMAINNAME}
+        NINJA_NUM_PROCESSES=16 # Don't let OLCF kill build jobs
+    elif [[ ${DOMAINNAME} = "llnl.gov" ]]; then
+        CENTER="llnl_lc"
+        BUILD_SUFFIX=${DOMAINNAME}
     else
         CENTER="llnl_lc"
         BUILD_SUFFIX=llnl.gov
@@ -102,6 +111,7 @@ Options:
   ${C}--instrument${N}         Use -finstrument-functions flag, for profiling stack traces
   ${C}-s | --superbuild${N}    Superbuild LBANN with hydrogen and aluminum
   ${C}-c | --distconv${N}      Enable the DistConv library
+  ${C}--ninja-processes${N} <val> Number of parallel processes for ninja.
 EOF
 }
 
@@ -208,6 +218,15 @@ while :; do
             # MPI-CUDA backend is required for Distconv
             ALUMINUM_WITH_MPI_CUDA=ON
             ;;
+        --ninja-processes)
+            if [ -n "${2}" ]; then
+                NINJA_NUM_PROCESSES=${2}
+                shift
+            else
+                echo "\"${1}\" option requires a non-empty option argument" >&2
+                exit 1
+            fi
+            ;;
         -?*)
             # Unknown option
             echo "Unknown option (${1})" >&2
@@ -266,9 +285,16 @@ fi
 
 source ${SPACK_ENV_DIR}/${SUPERBUILD}
 
-ninja install
+if [ ${NINJA_NUM_PROCESSES} -ne 0 ]; then
+    BUILD_COMMAND="ninja -j${NINJA_NUM_PROCESSES}"
+else
+    # Usually equivalent to -j<num_cpus+2>
+    BUILD_COMMAND="ninja"
+fi
+
+${BUILD_COMMAND} install
 
 echo "To rebuild the environment:"
 echo "    ${SPACK_ENV_CMD}"
 echo "    cd ${LBANN_BUILD_DIR}"
-echo "    ninja install"
+echo "    ${BUILD_COMMAND} install"
