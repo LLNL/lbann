@@ -123,7 +123,7 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
   const auto get_kronecker_factor_conv =
       [](const El::Matrix<DataType, El::Device::GPU>& A,
          const DataType alpha,
-         const size_t mini_batch_size, const size_t num_channels,
+         const size_t local_batch_size, const size_t num_channels,
          const std::vector<int> spatial_dims,
          const base_convolution_layer<DataType, El::Device::GPU> *l_conv,
          const bool use_im2col) {
@@ -150,10 +150,10 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
           size_t spatial_prod = 1;
           for(auto i = spatial_dims.begin(); i != spatial_dims.end(); i++)
             spatial_prod *= *i;
-          Acol.Resize(num_channels, mini_batch_size*spatial_prod);
+          Acol.Resize(num_channels, local_batch_size*spatial_prod);
           kfac_test_conv_transpose(
               A.LockedBuffer(), Acol.Buffer(),
-              mini_batch_size, num_channels, spatial_prod);
+              local_batch_size, num_channels, spatial_prod);
         }
 
         El::Matrix<DataType, El::Device::GPU> factor(Acol.Height(), Acol.Height());
@@ -264,10 +264,11 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
     const auto child = l->get_child_layers()[0];
     const auto& dtl_parent = dynamic_cast<const data_type_layer<DataType>&>(*parent);
     const auto& dtl_child = dynamic_cast<const data_type_layer<DataType>&>(*child);
-    const El::AbstractMatrix<DataType>& activations = dtl_parent.get_local_activations();
-    const El::AbstractMatrix<DataType>& error_signals = dtl_child.get_local_error_signals();
+    const El::AbstractMatrix<DataType>& local_activations = dtl_parent.get_local_activations();
+    const El::AbstractMatrix<DataType>& local_errors = dtl_child.get_local_error_signals();
     const auto mini_batch_size = dtl_parent.get_activations().Width();
     assert_always(mini_batch_size == dtl_child.get_error_signals().Width());
+    const auto local_batch_size = local_activations.Width();
     // The current implementation assumes that bias is not used in any layers.
     assert_always(l->num_weights() == 1);
     auto& w = l->get_weights(0);
@@ -275,14 +276,14 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
     auto* dto = dynamic_cast<data_type_optimizer<DataType>*>(opt);
     El::Matrix<DataType, El::Device::GPU> gradient = dto->get_gradient().Matrix();
 
-    // Compute Kronecker factors, assuming that error_signals are
+    // Compute Kronecker factors, assuming that local_errors are
     // already multiplied by 1/N in the loss layer.
     El::Matrix<DataType, El::Device::GPU> A, G;
     if(is_fc) {
-      assert_always(activations.Height() == gradient.Width());
-      assert_always(error_signals.Height() == gradient.Height());
-      A = get_kronecker_factor_fc(activations, 1.0/mini_batch_size);
-      G = get_kronecker_factor_fc(error_signals, mini_batch_size);
+      assert_always(local_activations.Height() == gradient.Width());
+      assert_always(local_errors.Height() == gradient.Height());
+      A = get_kronecker_factor_fc(local_activations, 1.0/mini_batch_size);
+      G = get_kronecker_factor_fc(local_errors, mini_batch_size);
     } else {
 
       const auto input_dims = l->get_input_dims(); // CHW
@@ -302,17 +303,20 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
         spatial_output_prod *= *i;
         output_spatial_dims.push_back(*i);
       }
-      assert_always((size_t) activations.Height() == num_input_channels*spatial_input_prod);
-      assert_always((size_t) error_signals.Height() == num_output_channels*spatial_output_prod);
+      assert_always((size_t) local_activations.Height() == num_input_channels*spatial_input_prod);
+      assert_always((size_t) local_errors.Height() == num_output_channels*spatial_output_prod);
 
       auto *l_conv = dynamic_cast<base_convolution_layer<DataType, El::Device::GPU>*>(l);
-      A = get_kronecker_factor_conv(activations, 1.0/mini_batch_size,
-                                    mini_batch_size, num_input_channels, input_spatial_dims,
-                                    l_conv, true);
-      G = get_kronecker_factor_conv(error_signals, DataType(mini_batch_size)/spatial_output_prod, // REVIEW
-                                    mini_batch_size, num_output_channels, output_spatial_dims,
-                                    l_conv, false);
+      A = get_kronecker_factor_conv(
+          local_activations, 1.0/mini_batch_size,
+          local_batch_size, num_input_channels, input_spatial_dims,
+          l_conv, true);
+      G = get_kronecker_factor_conv(
+          local_errors, DataType(mini_batch_size)/spatial_output_prod,
+          local_batch_size, num_output_channels, output_spatial_dims,
+          l_conv, false);
     }
+
     // OPTIMIZE: Communicate only the lower triangulars
     comm->allreduce((El::AbstractMatrix<DataType>&) A, comm->get_trainer_comm());
     comm->allreduce((El::AbstractMatrix<DataType>&) G, comm->get_trainer_comm());
@@ -430,8 +434,8 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
       std::ostringstream oss;
       oss << "K-FAC callback: L2 norm @ "<< l->get_name() << ": "
           << get_stat(weights.LockedMatrix(), "W")
-          << ", " << get_stat(activations, "acts")
-          << ", " << get_stat(error_signals, "errs")
+          << ", " << get_stat(local_activations, "acts")
+          << ", " << get_stat(local_errors, "errs")
           << ", " << get_stat(A, "A")
           << ", " << get_stat(G, "G")
           << ", " << get_stat(Aave, "Aave")
