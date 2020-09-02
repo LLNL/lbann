@@ -26,9 +26,9 @@ if (NOT DEFINED BUILD_SHARED_LIBS)
   set(BUILD_SHARED_LIBS ON)
 endif ()
 
-# Build with at least C++11 standard; allow newer standards.
+# Build with at least C++14 standard; allow newer standards.
 if (NOT CMAKE_CXX_STANDARD OR CMAKE_CXX_STANDARD EQUAL 98)
-  set(CMAKE_CXX_STANDARD 11)
+  set(CMAKE_CXX_STANDARD 14)
   set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 endif ()
 
@@ -264,7 +264,7 @@ if (LBANN_HAS_CUDA)
   enable_language(CUDA)
 
   if (NOT CMAKE_CUDA_STANDARD OR CMAKE_CUDA_STANDARD EQUAL 98)
-    set(CMAKE_CUDA_STANDARD 11)
+    set(CMAKE_CUDA_STANDARD 14)
   endif ()
 
   set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
