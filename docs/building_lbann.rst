@@ -142,6 +142,7 @@ CMake flags known to LBANN's "Superbuild" build system.
 
     .. code-block:: bash
 
+        spack env activate -p lbann
         <path to lbann repo>/scripts/build_lbann_from_source.sh
 
 
