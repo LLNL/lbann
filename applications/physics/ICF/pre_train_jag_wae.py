@@ -70,6 +70,9 @@ parser.add_argument(
 parser.add_argument(
     '--procs-per-trainer', action='store', default=0, type=int,
     help='processes per trainer (default: 0)', metavar='NUM')
+parser.add_argument(
+    '--ltfb-batch-interval', action='store', default=0, type=int,
+    help='LTFB batch interval (default: 0, no LTFB)', metavar='NUM')
 args = parser.parse_args()
 
 
@@ -133,9 +136,9 @@ def construct_model():
                  lbann.CallbackReplaceWeights(source_layers=list2str(src_layers),
                                       destination_layers=list2str(dst_layers),
                                       batch_interval=2)]
-    #Add flag for LTFB
 
-    callbacks.append(lbann.CallbackLTFB(batch_interval=2930,metric='recon_error',
+    if(args.ltfb_batch_interval > 0) :
+      callbacks.append(lbann.CallbackLTFB(batch_interval=args.ltfb_batch_interval,metric='recon_error',
                                     low_score_wins=True,
                                     exchange_hyperparameters=True))
 
@@ -168,7 +171,7 @@ if __name__ == '__main__':
                        nodes=args.num_nodes,
                        procs_per_node=args.ppn,
                        time_limit=720,
-                       setup_only=False,
+                       setup_only=True,
                        job_name=args.job_name,
                        lbann_args=['--use_data_store --preload_data_store',
                                    f'--metadata={metadata_prototext}',

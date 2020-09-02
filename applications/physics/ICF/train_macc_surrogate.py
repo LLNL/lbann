@@ -88,6 +88,9 @@ parser.add_argument(
 parser.add_argument(
     '--procs-per-trainer', action='store', default=0, type=int,
     help='processes per trainer (default: 0)', metavar='NUM')
+parser.add_argument(
+    '--ltfb-batch-interval', action='store', default=0, type=int,
+    help='LTFB batch interval (default: 0, no LTFB)', metavar='NUM')
 args = parser.parse_args()
 
 if not(args.pretrained_dir):
@@ -180,6 +183,10 @@ def construct_model():
                  lbann.CallbackLoadModel(dirs=str(args.pretrained_dir)),
                  lbann.CallbackTimer()]
 
+    if(args.ltfb_batch_interval > 0) :
+      callbacks.append(lbann.CallbackLTFB(batch_interval=args.ltfb_batch_interval,metric='fw_loss',
+                                    low_score_wins=True,
+                                    exchange_hyperparameters=True))
     # Construct model
     return lbann.Model(args.num_epochs,
                        weights=weights,
