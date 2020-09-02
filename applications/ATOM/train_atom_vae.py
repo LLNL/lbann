@@ -51,12 +51,15 @@ def construct_lc_launcher_args():
     parser.add_argument("--data-filename", default=None)
     parser.add_argument("--pad-index", type=int, default=None)
     parser.add_argument("--sequence-length", type=int, default=None)
-    parser.add_argument("--dump_weights_dir", type=str, default="weights")
+    parser.add_argument("--dump-weights-dir", type=str, default="weights")
+    parser.add_argument("--dump-weights-interval", type=int, default=10)
     parser.add_argument("--num-samples", type=int, default=None)
     parser.add_argument("--num-io-threads", type=int, default=11)
     parser.add_argument("--vocab", default=None)
     parser.add_argument("--delimiter", default="c")
     parser.add_argument("--no-header", type=bool, default=True)
+    parser.add_argument("--ltfb", type=bool, default=False)
+    parser.add_argument("--ltfb-batch-interval", type=int, default=100)
 
     # these are specific to the Trainer object
     parser.add_argument(
@@ -129,9 +132,11 @@ def construct_model(run_args):
 
     callbacks = [lbann.CallbackPrint(),
                  lbann.CallbackTimer(),
-                 lbann.CallbackDumpWeights(directory=run_args.dump_weights_dir, epoch_interval=10)]
+                 lbann.CallbackDumpWeights(directory=run_args.dump_weights_dir, epoch_interval=run_args.dump_weights_interval)]
 
-
+    if(run_args.ltfb):
+      callbacks.append(lbann.CallbackLTFB(batch_interval=run_args.ltfb_batch_interval,metric='recon',
+                                          low_score_wins=True,exchange_hyperparameters=True))
     # Construct model
     return lbann.Model(run_args.num_epochs,
                        weights=weights,
@@ -229,6 +234,12 @@ def main():
       import torch
       torch.save(run_args, "{}/{}_config.pt".format(experiment_dir, run_args.job_name))
 
+    m_lbann_args=f"--vocab={run_args.vocab} --data_filedir={run_args.data_filedir} --data_filename_train={run_args.data_filename} --num_samples={run_args.num_samples} --sequence_length={run_args.sequence_length}  --num_io_threads={run_args.num_io_threads} --no_header={run_args.no_header} --delimiter={run_args.delimiter}"
+    if(run_args.data_reader_prototext):
+      m_lbann_args = " ".join((m_lbann_args, " --use_data_store --preload_data_store "))
+    if(run_args.ltfb):
+      m_lbann_args = " ".join((m_lbann_args, "--ltfb"))
+
     status = lbann.contrib.launcher.run(
         trainer,
         model,
@@ -241,10 +252,10 @@ def main():
         nodes=run_args.nodes,
         procs_per_node=ppn,
         #batch_job = True,
+        setup_only = True,
         job_name=run_args.job_name,
         experiment_dir=experiment_dir,
-        #lbann_args=f"--vocab={run_args.vocab} --num_samples={run_args.num_samples} --sequence_length={run_args.sequence_length}  --num_io_threads={run_args.num_io_threads} --no_header={run_args.no_header} --delimiter={run_args.delimiter}",
-        lbann_args=f"--vocab={run_args.vocab} --use_data_store --preload_data_store --data_filedir={run_args.data_filedir} --data_filename_train={run_args.data_filename} --num_samples={run_args.num_samples} --sequence_length={run_args.sequence_length}  --num_io_threads={run_args.num_io_threads} --no_header={run_args.no_header} --delimiter={run_args.delimiter}",
+        lbann_args = m_lbann_args,
     )
 
     print("LBANN launcher status:\n" + str(status))
