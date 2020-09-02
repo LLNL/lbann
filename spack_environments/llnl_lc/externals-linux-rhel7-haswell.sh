@@ -35,7 +35,7 @@ EXTERNAL_PACKAGES=$(cat <<EOF
     cudnn::
       buildable: true
       version:
-      - 7.6.5.32-10.1-linux-x64
+      - 7.6.5.32-10.2-linux-x64
     gcc::
       buildable: False
       version:
