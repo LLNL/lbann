@@ -272,7 +272,7 @@ void concatenate_layer<TensorDataType,Layout,Device>::fp_compute_subgrid() {
 
   auto * ptr_input = dynamic_cast<El::DistMatrix<TensorDataType, El::STAR  , El::VC, El::ELEMENT, Device> *>(&input);
 
-  El::copy::TranslateBetweenGridsGatherComm<TensorDataType,Device,Device>(*ptr_input,this->get_all_prev_activations(), split_dim,this->get_subgrid_comm(),syncSubGridCommunication);
+  El::copy::TranslateBetweenGridsGather<TensorDataType,Device,Device>(*ptr_input,this->get_all_prev_activations(), split_dim,this->get_subgrid_comm(),syncSubGridCommunication);
 
   }
 
@@ -289,15 +289,15 @@ void concatenate_layer<TensorDataType,Layout,Device>::bp_compute_subgrid() {
 
   if(this->get_communication_flag()==2)
   {
-    El::copy::TranslateBetweenGridsSliceGatherOptComm<TensorDataType,Device,Device>(*ptr_input_grad,this->get_all_error_signals(),split_dim,this->get_subgrid_comm(),syncSubGridCommunication);
+    El::copy::TranslateBetweenGridsScatter<TensorDataType,Device,Device>(*ptr_input_grad,this->get_all_error_signals(),split_dim,this->get_subgrid_comm(),syncSubGridCommunication,3);
   }
   else if(this->get_communication_flag()==1)
   {
-    El::copy::TranslateBetweenGridsScatterOptComm<TensorDataType,Device,Device>(*ptr_input_grad,this->get_all_error_signals(),split_dim,this->get_subgrid_comm(),syncSubGridCommunication);
+    El::copy::TranslateBetweenGridsScatter<TensorDataType,Device,Device>(*ptr_input_grad,this->get_all_error_signals(),split_dim,this->get_subgrid_comm(),syncSubGridCommunication,2);
   }
   else
   {
-    El::copy::TranslateBetweenGridsScatterComm<TensorDataType,Device,Device>(*ptr_input_grad,this->get_all_error_signals(),split_dim,this->get_subgrid_comm(),syncSubGridCommunication);
+    El::copy::TranslateBetweenGridsScatter<TensorDataType,Device,Device>(*ptr_input_grad,this->get_all_error_signals(),split_dim,this->get_subgrid_comm(),syncSubGridCommunication,1);
 
   }
 
