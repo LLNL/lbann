@@ -5,7 +5,6 @@ import math
 import os
 import os.path
 import sys
-sys.path.append("/usr/workspace/jain8/internship/subgraph/transformers/github/lbann//build/gnu.Release.lassen.llnl.gov/install/lib/python3.7/site-packages")
 import lbann
 import lbann.contrib.args
 
@@ -83,8 +82,7 @@ model_params = {
 script_params = lbann.contrib.args.get_scheduler_kwargs(args)
 script_params['work_dir'] = work_dir
 script_params['job_name'] = args.job_name
-#script_params['mini_batch_size'] = args.mini_batch_size
-#print("script params",trainer_params['mini_batch_size'])
+
 train_script = train.make_batch_script(
     trainer_params=trainer_params,
     model_params=model_params,

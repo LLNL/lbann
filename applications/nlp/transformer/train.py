@@ -30,7 +30,6 @@ def make_model(
     branches,
     subgraph_topology,
 ):
-    #branches = 4
 
     # Embedding weights
     var = 2 / (embed_dim + vocab_size) # Glorot initialization
@@ -139,10 +138,8 @@ def make_model(
     callbacks = [lbann.CallbackPrint(), lbann.CallbackTimer()]
 
     layers = list(lbann.traverse_layer_graph(input_))
-    print("Subgrpah subgraph_topology",subgraph_topology)
 
-    # for l in layers:
-    #     l.device = "GPU"
+
     return lbann.Model(
         num_epochs,
         vector_communication=2,

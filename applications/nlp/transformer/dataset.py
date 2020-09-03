@@ -25,15 +25,12 @@ sequence_length = 64
 
 # Load WMT 2014 dataset
 data_dir = utils.paths.wmt_dir()
-print("Dataset dir", data_dir)
 dataset_train, dataset_val = torchnlp.datasets.wmt_dataset(
     directory=data_dir,
     train=True,
     dev=True,
 )
 
-dataset_train = dataset_train[:1024*16]
-dataset_val = dataset_val[:1024]
 # Load token vocabulary
 with open(os.path.join(data_dir, 'vocab.bpe.32000')) as f:
     tokens = f.read().splitlines()
