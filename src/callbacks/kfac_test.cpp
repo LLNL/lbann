@@ -271,17 +271,17 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
     const auto local_batch_size = local_activations.Width();
     // The current implementation assumes that bias is not used in any layers.
     assert_always(l->num_weights() == 1);
-    auto& w = l->get_weights(0);
-    optimizer *opt = w.get_optimizer();
-    auto* dto = dynamic_cast<data_type_optimizer<DataType>*>(opt);
-    El::Matrix<DataType, El::Device::GPU> gradient = dto->get_gradient().Matrix();
+    auto& weights = l->get_weights(0);
+    optimizer *w_optimizer = weights.get_optimizer();
+    auto* w_dto = dynamic_cast<data_type_optimizer<DataType>*>(w_optimizer);
+    El::Matrix<DataType, El::Device::GPU> w_gradients = w_dto->get_gradient().Matrix();
 
     // Compute Kronecker factors, assuming that local_errors are
     // already multiplied by 1/N in the loss layer.
     El::Matrix<DataType, El::Device::GPU> A, G;
     if(is_fc) {
-      assert_always(local_activations.Height() == gradient.Width());
-      assert_always(local_errors.Height() == gradient.Height());
+      assert_always(local_activations.Height() == w_gradients.Width());
+      assert_always(local_errors.Height() == w_gradients.Height());
       A = get_kronecker_factor_fc(local_activations, 1.0/mini_batch_size);
       G = get_kronecker_factor_fc(local_errors, mini_batch_size);
     } else {
@@ -346,22 +346,22 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
 
     if(is_conv) {
       const auto num_output_channels = l->get_output_dims()[0];
-      assert_always(gradient.Width() == 1);
-      assert_always((gradient.Height()%num_output_channels) == 0);
+      assert_always(w_gradients.Width() == 1);
+      assert_always((w_gradients.Height()%num_output_channels) == 0);
 
       // OPTIMIZE
-      const auto height_reshaped = gradient.Height()/num_output_channels;
-      gradient.Attach(height_reshaped,
+      const auto height_reshaped = w_gradients.Height()/num_output_channels;
+      w_gradients.Attach(height_reshaped,
                       num_output_channels,
-                      gradient.Buffer(),
+                      w_gradients.Buffer(),
                       height_reshaped);
     }
 
     // Compute preconditioned gradients
-    El::Matrix<DataType, El::Device::GPU> Gg(G.Height(), is_conv ? gradient.Height() : gradient.Width());
+    El::Matrix<DataType, El::Device::GPU> Gg(G.Height(), is_conv ? w_gradients.Height() : w_gradients.Width());
     El::Gemm(
         El::NORMAL, is_conv ? El::TRANSPOSE : El::NORMAL,
-        El::TypeTraits<DataType>::One(), Ginv, gradient,
+        El::TypeTraits<DataType>::One(), Ginv, w_gradients,
         El::TypeTraits<DataType>::Zero(), Gg);
     El::Matrix<DataType, El::Device::GPU> Fgrad(G.Height(), A.Width());
     El::Gemm(
@@ -374,14 +374,14 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
                    Fgrad.Buffer(),
                    Fgrad.Width()*Fgrad.Height());
     } else {
-      assert_always(Fgrad.Height() == gradient.Height());
-      assert_always(Fgrad.Width() == gradient.Width());
+      assert_always(Fgrad.Height() == w_gradients.Height());
+      assert_always(Fgrad.Width() == w_gradients.Width());
     }
 
     // Apply preconditioned grads
     DataType dst_scale = El::TypeTraits<DataType>::Zero(),
         gradient_scale = El::TypeTraits<DataType>::One();
-    auto& grad_buffer = opt->get_gradient_buffer(
+    auto& grad_buffer = w_optimizer->get_gradient_buffer(
         dst_scale, gradient_scale, false);
     El::Copy(Fgrad, grad_buffer.Matrix());
 
@@ -401,7 +401,7 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
         std::cout << std::endl;
         El::Print(Ginv, "Ginv");
         std::cout << std::endl;
-        El::Print(gradient, "grad");
+        El::Print(w_gradients, "w_grad");
         std::cout << std::endl;
         El::Print(Fgrad, "Fgrad");
         std::cout << std::endl;
@@ -429,11 +429,11 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
             return oss.str();
           };
 
-      const auto &dtw = dynamic_cast<data_type_weights<DataType>*>(&w);
-      const auto &weights = dtw->get_values();
+      const auto &dtw = dynamic_cast<data_type_weights<DataType>*>(&weights);
+      const auto &w_values = dtw->get_values();
       std::ostringstream oss;
       oss << "K-FAC callback: L2 norm @ "<< l->get_name() << ": "
-          << get_stat(weights.LockedMatrix(), "W")
+          << get_stat(w_values.LockedMatrix(), "W")
           << ", " << get_stat(local_activations, "acts")
           << ", " << get_stat(local_errors, "errs")
           << ", " << get_stat(A, "A")
@@ -442,7 +442,7 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
           << ", " << get_stat(Gave, "Gave")
           << ", " << get_stat(Ainv, "Ainv")
           << ", " << get_stat(Ginv, "Ginv")
-          << ", " << get_stat(gradient, "grad")
+          << ", " << get_stat(w_gradients, "grad")
           << ", " << get_stat(Fgrad, "Finvgrad")
           << ", pi=" << pi
           << std::endl;
