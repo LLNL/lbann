@@ -99,8 +99,8 @@ __global__ void kfac_test_compute_bn_factor_kernel(
 
     const auto error = errors[gid];
     const auto act = (activations[gid]-biases[i_c])/scales[i_c];
-    factor[gid] = error * act;
-    factor[gid+num_elems] = error;
+    factor[i_c+i_n*num_channels*2] = error * act;
+    factor[i_c+num_channels+i_n*num_channels*2] = error;
   }
 }
 
