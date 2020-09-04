@@ -106,8 +106,25 @@ void kfac_test::on_epoch_end(model *m) {
 }
 
 void kfac_test::on_backward_prop_end(model *m, Layer *l) {
-
   // TODO: Static functions
+  const auto get_matrix_stat =
+      [](const El::Matrix<DataType, El::Device::GPU>& X,
+         const char *name) {
+        El::Matrix<DataType> XCPU(X);
+        const auto nrm2 = El::Nrm2(El::Reshape(XCPU.Height()*XCPU.Width(), 1, XCPU));
+        std::ostringstream oss;
+        oss << name
+            << "("
+            << X.Height()
+            << "x"
+            << X.Width()
+            << ")="
+            << std::setprecision(2)
+            << std::scientific
+            << nrm2;
+        return oss.str();
+      };
+
   const auto get_kronecker_factor_fc =
       [](const El::AbstractMatrix<DataType>& A, // TODO: Use GPUMat
          const DataType alpha) {
@@ -249,8 +266,9 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
   // TODO: Use dynamic_cast for type checking
   const bool is_fc = (l->get_type() == "fully connected");
   const bool is_conv = (l->get_type() == "convolution");
+  const bool is_bn = (l->get_type() == "batch normalization");
 
-  if(is_fc || is_conv) {
+  if(is_fc || is_conv || is_bn) {
     // Get the layer ID
     const auto layers = m->get_layers();
     const auto layer_it_in_list = std::find(layers.begin(), layers.end(), l);
@@ -269,184 +287,257 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
     const auto mini_batch_size = dtl_parent.get_activations().Width();
     assert_always(mini_batch_size == dtl_child.get_error_signals().Width());
     const auto local_batch_size = local_activations.Width();
-    // The current implementation assumes that bias is not used in any layers.
-    assert_always(l->num_weights() == 1);
-    auto& weights = l->get_weights(0);
-    optimizer *w_optimizer = weights.get_optimizer();
-    auto* w_dto = dynamic_cast<data_type_optimizer<DataType>*>(w_optimizer);
-    El::Matrix<DataType, El::Device::GPU> w_gradients = w_dto->get_gradient().Matrix();
 
-    // Compute Kronecker factors, assuming that local_errors are
-    // already multiplied by 1/N in the loss layer.
-    El::Matrix<DataType, El::Device::GPU> A, G;
-    if(is_fc) {
-      assert_always(local_activations.Height() == w_gradients.Width());
-      assert_always(local_errors.Height() == w_gradients.Height());
-      A = get_kronecker_factor_fc(local_activations, 1.0/mini_batch_size);
-      G = get_kronecker_factor_fc(local_errors, mini_batch_size);
+    if(is_fc || is_conv) {
+      // The current implementation assumes that bias is not used in any layers.
+      assert_always(l->num_weights() == 1);
+      auto& weights = l->get_weights(0);
+      optimizer *w_optimizer = weights.get_optimizer();
+      auto* w_dto = dynamic_cast<data_type_optimizer<DataType>*>(w_optimizer);
+      El::Matrix<DataType, El::Device::GPU> w_gradients = w_dto->get_gradient().Matrix();
+
+      // Compute Kronecker factors, assuming that local_errors are
+      // already multiplied by 1/N in the loss layer.
+      El::Matrix<DataType, El::Device::GPU> A, G;
+      if(is_fc) {
+        assert_always(local_activations.Height() == w_gradients.Width());
+        assert_always(local_errors.Height() == w_gradients.Height());
+        A = get_kronecker_factor_fc(local_activations, 1.0/mini_batch_size);
+        G = get_kronecker_factor_fc(local_errors, mini_batch_size);
+      } else {
+
+        const auto input_dims = l->get_input_dims(); // CHW
+        const auto output_dims = l->get_output_dims(); // KH'W'
+        // Consider only 2D and 3D layers
+        assert_always(input_dims.size() == 3 || input_dims.size() == 4);
+        const size_t num_input_channels = input_dims[0];
+        const size_t num_output_channels = output_dims[0];
+        size_t spatial_input_prod = 1, spatial_output_prod = 1;
+        // std::accumulate might overflow for large 3D layers
+        std::vector<int> input_spatial_dims, output_spatial_dims;
+        for(auto i = input_dims.begin()+1; i != input_dims.end(); i++) {
+          spatial_input_prod *= *i;
+          input_spatial_dims.push_back(*i);
+        }
+        for(auto i = output_dims.begin()+1; i != output_dims.end(); i++) {
+          spatial_output_prod *= *i;
+          output_spatial_dims.push_back(*i);
+        }
+        assert_always((size_t) local_activations.Height() == num_input_channels*spatial_input_prod);
+        assert_always((size_t) local_errors.Height() == num_output_channels*spatial_output_prod);
+
+        auto *l_conv = dynamic_cast<base_convolution_layer<DataType, El::Device::GPU>*>(l);
+        A = get_kronecker_factor_conv(
+            local_activations, 1.0/mini_batch_size,
+            local_batch_size, num_input_channels, input_spatial_dims,
+            l_conv, true);
+        G = get_kronecker_factor_conv(
+            local_errors, DataType(mini_batch_size)/spatial_output_prod,
+            local_batch_size, num_output_channels, output_spatial_dims,
+            l_conv, false);
+      }
+
+      // OPTIMIZE: Communicate only the lower triangulars
+      comm->allreduce((El::AbstractMatrix<DataType>&) A, comm->get_trainer_comm());
+      comm->allreduce((El::AbstractMatrix<DataType>&) G, comm->get_trainer_comm());
+
+      // Compute exponential moving average of the factors
+      if(m_kronecker_average.find(layer_id) == m_kronecker_average.end())
+        m_kronecker_average.emplace(layer_id, std::make_pair(A, G));
+      auto& AGave = (*m_kronecker_average.find(layer_id)).second;
+      auto& Aave = AGave.first;
+      auto& Gave = AGave.second;
+      kfac_test_update_kronecker_average(
+          Aave.Buffer(), A.Buffer(), A.Height()*A.Width(), m_kronecker_decay);
+      kfac_test_update_kronecker_average(
+          Gave.Buffer(), G.Buffer(), G.Height()*G.Width(), m_kronecker_decay);
+
+      // Compute the pi constant
+      const DataType pi = m_use_pi ? compute_pi(Aave, Gave) : 1.0;
+
+      // Compute the inverse of the factors
+      const bool print_time = comm->am_trainer_master() && m_print_time;
+      // Since setting different damping constants for A and G is an
+      // alternative heuristics to pi, they should be the same if pi is used.
+      if(m_use_pi)
+        assert_always(m_damping_act == m_damping_err);
+      const auto Ainv = get_inverse(Aave, print_time, DataType(m_damping_act*pi), l->get_name(), "A");
+      const auto Ginv = get_inverse(Gave, print_time, DataType(m_damping_err/pi), l->get_name(), "G");
+
+      if(is_conv) {
+        const auto num_output_channels = l->get_output_dims()[0];
+        assert_always(w_gradients.Width() == 1);
+        assert_always((w_gradients.Height()%num_output_channels) == 0);
+
+        // OPTIMIZE
+        const auto height_reshaped = w_gradients.Height()/num_output_channels;
+        w_gradients.Attach(height_reshaped,
+                           num_output_channels,
+                           w_gradients.Buffer(),
+                           height_reshaped);
+      }
+
+      // Compute preconditioned gradients
+      El::Matrix<DataType, El::Device::GPU> Gg(G.Height(), is_conv ? w_gradients.Height() : w_gradients.Width());
+      El::Gemm(
+          El::NORMAL, is_conv ? El::TRANSPOSE : El::NORMAL,
+          El::TypeTraits<DataType>::One(), Ginv, w_gradients,
+          El::TypeTraits<DataType>::Zero(), Gg);
+      El::Matrix<DataType, El::Device::GPU> Fgrad(G.Height(), A.Width());
+      El::Gemm(
+          El::NORMAL, El::NORMAL,
+          El::TypeTraits<DataType>::One(), Gg, Ainv,
+          El::TypeTraits<DataType>::Zero(), Fgrad);
+
+      if(is_conv) {
+        Fgrad.Attach(Fgrad.Width()*Fgrad.Height(), 1,
+                     Fgrad.Buffer(),
+                     Fgrad.Width()*Fgrad.Height());
+      } else {
+        assert_always(Fgrad.Height() == w_gradients.Height());
+        assert_always(Fgrad.Width() == w_gradients.Width());
+      }
+
+      // Apply preconditioned grads
+      DataType dst_scale = El::TypeTraits<DataType>::Zero(),
+          gradient_scale = El::TypeTraits<DataType>::One();
+      auto& grad_buffer = w_optimizer->get_gradient_buffer(
+          dst_scale, gradient_scale, false);
+      El::Copy(Fgrad, grad_buffer.Matrix());
+
+      // Damp matrices for debugging
+      if(comm->am_trainer_master() && m_print_matrix) {
+        if(comm->am_trainer_master()) {
+          std::cout << std::endl;
+          El::Print(A, "A");
+          std::cout << std::endl;
+          El::Print(G, "G");
+          std::cout << std::endl;
+          El::Print(Aave, "Aave");
+          std::cout << std::endl;
+          El::Print(Gave, "Gave");
+          std::cout << std::endl;
+          El::Print(Ainv, "Ainv");
+          std::cout << std::endl;
+          El::Print(Ginv, "Ginv");
+          std::cout << std::endl;
+          El::Print(w_gradients, "w_grad");
+          std::cout << std::endl;
+          El::Print(Fgrad, "Fgrad");
+          std::cout << std::endl;
+        }
+      }
+
+      // dump L2 norm of matrices
+      if(comm->am_trainer_master() && m_print_matrix_summary) {
+        const auto &dtw = dynamic_cast<data_type_weights<DataType>*>(&weights);
+        const auto &w_values = dtw->get_values();
+        std::ostringstream oss;
+        oss << "K-FAC callback: L2 norm @ "<< l->get_name() << ": "
+            << get_matrix_stat(w_values.LockedMatrix(), "W")
+            << ", " << get_matrix_stat(local_activations, "acts")
+            << ", " << get_matrix_stat(local_errors, "errs")
+            << ", " << get_matrix_stat(A, "A")
+            << ", " << get_matrix_stat(G, "G")
+            << ", " << get_matrix_stat(Aave, "Aave")
+            << ", " << get_matrix_stat(Gave, "Gave")
+            << ", " << get_matrix_stat(Ainv, "Ainv")
+            << ", " << get_matrix_stat(Ginv, "Ginv")
+            << ", " << get_matrix_stat(w_gradients, "grad")
+            << ", " << get_matrix_stat(Fgrad, "Finvgrad")
+            << ", pi=" << pi
+            << std::endl;
+        std::cout << oss.str();
+      }
     } else {
+      assert_always(is_bn);
+      // TODO: Support BN layers after convolution
+      assert_always(parent->get_type() == "fully connected");
 
-      const auto input_dims = l->get_input_dims(); // CHW
-      const auto output_dims = l->get_output_dims(); // KH'W'
-      // Consider only 2D and 3D layers
-      assert_always(input_dims.size() == 3 || input_dims.size() == 4);
-      const size_t num_input_channels = input_dims[0];
-      const size_t num_output_channels = output_dims[0];
-      size_t spatial_input_prod = 1, spatial_output_prod = 1;
-      // std::accumulate might overflow for large 3D layers
-      std::vector<int> input_spatial_dims, output_spatial_dims;
-      for(auto i = input_dims.begin()+1; i != input_dims.end(); i++) {
-        spatial_input_prod *= *i;
-        input_spatial_dims.push_back(*i);
+      assert_always(l->num_weights() == 4); // scale, bias, r_mean, r_var
+      auto& scales = l->get_weights(0);
+      auto& biases = l->get_weights(1);
+      optimizer *s_optimizer = scales.get_optimizer();
+      optimizer *b_optimizer = biases.get_optimizer();
+      auto* s_dto = dynamic_cast<data_type_optimizer<DataType>*>(s_optimizer);
+      auto* b_dto = dynamic_cast<data_type_optimizer<DataType>*>(b_optimizer);
+      El::Matrix<DataType, El::Device::GPU> s_gradients = s_dto->get_gradient().Matrix();
+      El::Matrix<DataType, El::Device::GPU> b_gradients = b_dto->get_gradient().Matrix();
+      const auto &s_dtw = dynamic_cast<data_type_weights<DataType>*>(&scales);
+      const auto &b_dtw = dynamic_cast<data_type_weights<DataType>*>(&biases);
+      const auto &scale_values = s_dtw->get_values();
+      const auto &bias_values = b_dtw->get_values();
+
+      const auto num_channels = local_activations.Height();
+      assert_always(num_channels == local_errors.Height());
+      assert_always(num_channels == scale_values.Height());
+      assert_always(num_channels == scale_values.LocalHeight());
+      assert_always(num_channels == bias_values.Height());
+      assert_always(num_channels == bias_values.LocalHeight());
+
+      // REVIEW: Does inverse-scaling result in NaN?
+      El::Matrix<DataType, El::Device::GPU> factor(num_channels*2, local_batch_size);
+      kfac_test_compute_bn_factor(
+          local_activations.LockedBuffer(),
+          local_errors.LockedBuffer(),
+          scale_values.LockedMatrix().LockedBuffer(),
+          bias_values.LockedMatrix().LockedBuffer(),
+          factor.Buffer(),
+          local_batch_size,
+          num_channels);
+
+      El::Matrix<DataType, El::Device::GPU> fisher_block(num_channels*2, num_channels*2);
+      const DataType alpha = mini_batch_size;
+      El::Gemm(
+          El::NORMAL, El::TRANSPOSE,
+          alpha, factor, factor,
+          El::TypeTraits<DataType>::Zero(), fisher_block);
+      comm->allreduce((El::AbstractMatrix<DataType>&) fisher_block, comm->get_trainer_comm());
+
+      El::Matrix<DataType, El::Device::GPU> stacked_grads(num_channels*2, 1);
+      // TODO: Better way to copy?
+      CHECK_CUDA(cudaMemcpy(
+          stacked_grads.Buffer(), s_gradients.LockedBuffer(),
+          num_channels*sizeof(DataType), cudaMemcpyDeviceToDevice));
+      CHECK_CUDA(cudaMemcpy(
+          stacked_grads.Buffer()+num_channels, b_gradients.LockedBuffer(),
+          num_channels*sizeof(DataType), cudaMemcpyDeviceToDevice));
+
+      El::Matrix<DataType, El::Device::GPU> Fgrad(num_channels*2, 1);
+      El::Gemm(
+          El::NORMAL, El::NORMAL,
+          El::TypeTraits<DataType>::One(), fisher_block, stacked_grads,
+          El::TypeTraits<DataType>::Zero(), Fgrad);
+
+      DataType dst_scale = El::TypeTraits<DataType>::Zero(),
+          gradient_scale = El::TypeTraits<DataType>::One();
+      auto& s_grad_buffer = s_optimizer->get_gradient_buffer(
+          dst_scale, gradient_scale, false);
+      auto& b_grad_buffer = b_optimizer->get_gradient_buffer(
+          dst_scale, gradient_scale, false);
+      // TODO: Better way to copy?
+      CHECK_CUDA(cudaMemcpy(
+          s_grad_buffer.Matrix().Buffer(), Fgrad.LockedBuffer(),
+          num_channels*sizeof(DataType), cudaMemcpyDeviceToDevice));
+      CHECK_CUDA(cudaMemcpy(
+          b_grad_buffer.Matrix().Buffer(), Fgrad.LockedBuffer()+num_channels,
+          num_channels*sizeof(DataType), cudaMemcpyDeviceToDevice));
+
+      // dump L2 norm of matrices
+      if(comm->am_trainer_master() && m_print_matrix_summary) {
+        std::ostringstream oss;
+        oss << "K-FAC callback: L2 norm @ "<< l->get_name() << ": "
+            << get_matrix_stat(scale_values.LockedMatrix(), "scale")
+            << ", " << get_matrix_stat(bias_values.LockedMatrix(), "bias")
+            << ", " << get_matrix_stat(local_activations, "acts")
+            << ", " << get_matrix_stat(local_errors, "errs")
+            << ", " << get_matrix_stat(s_gradients, "scale_grad")
+            << ", " << get_matrix_stat(b_gradients, "bias_grad")
+            << ", " << get_matrix_stat(Fgrad, "Finvgrad")
+            << std::endl;
+        std::cout << oss.str();
       }
-      for(auto i = output_dims.begin()+1; i != output_dims.end(); i++) {
-        spatial_output_prod *= *i;
-        output_spatial_dims.push_back(*i);
-      }
-      assert_always((size_t) local_activations.Height() == num_input_channels*spatial_input_prod);
-      assert_always((size_t) local_errors.Height() == num_output_channels*spatial_output_prod);
 
-      auto *l_conv = dynamic_cast<base_convolution_layer<DataType, El::Device::GPU>*>(l);
-      A = get_kronecker_factor_conv(
-          local_activations, 1.0/mini_batch_size,
-          local_batch_size, num_input_channels, input_spatial_dims,
-          l_conv, true);
-      G = get_kronecker_factor_conv(
-          local_errors, DataType(mini_batch_size)/spatial_output_prod,
-          local_batch_size, num_output_channels, output_spatial_dims,
-          l_conv, false);
-    }
-
-    // OPTIMIZE: Communicate only the lower triangulars
-    comm->allreduce((El::AbstractMatrix<DataType>&) A, comm->get_trainer_comm());
-    comm->allreduce((El::AbstractMatrix<DataType>&) G, comm->get_trainer_comm());
-
-    // Compute exponential moving average of the factors
-    if(m_kronecker_average.find(layer_id) == m_kronecker_average.end())
-      m_kronecker_average.emplace(layer_id, std::make_pair(A, G));
-    auto& AGave = (*m_kronecker_average.find(layer_id)).second;
-    auto& Aave = AGave.first;
-    auto& Gave = AGave.second;
-    kfac_test_update_kronecker_average(
-        Aave.Buffer(), A.Buffer(), A.Height()*A.Width(), m_kronecker_decay);
-    kfac_test_update_kronecker_average(
-        Gave.Buffer(), G.Buffer(), G.Height()*G.Width(), m_kronecker_decay);
-
-    // Compute the pi constant
-    const DataType pi = m_use_pi ? compute_pi(Aave, Gave) : 1.0;
-
-    // Compute the inverse of the factors
-    const bool print_time = comm->am_trainer_master() && m_print_time;
-    // Since setting different damping constants for A and G is an
-    // alternative heuristics to pi, they should be the same if pi is used.
-    if(m_use_pi)
-      assert_always(m_damping_act == m_damping_err);
-    const auto Ainv = get_inverse(Aave, print_time, DataType(m_damping_act*pi), l->get_name(), "A");
-    const auto Ginv = get_inverse(Gave, print_time, DataType(m_damping_err/pi), l->get_name(), "G");
-
-    if(is_conv) {
-      const auto num_output_channels = l->get_output_dims()[0];
-      assert_always(w_gradients.Width() == 1);
-      assert_always((w_gradients.Height()%num_output_channels) == 0);
-
-      // OPTIMIZE
-      const auto height_reshaped = w_gradients.Height()/num_output_channels;
-      w_gradients.Attach(height_reshaped,
-                      num_output_channels,
-                      w_gradients.Buffer(),
-                      height_reshaped);
-    }
-
-    // Compute preconditioned gradients
-    El::Matrix<DataType, El::Device::GPU> Gg(G.Height(), is_conv ? w_gradients.Height() : w_gradients.Width());
-    El::Gemm(
-        El::NORMAL, is_conv ? El::TRANSPOSE : El::NORMAL,
-        El::TypeTraits<DataType>::One(), Ginv, w_gradients,
-        El::TypeTraits<DataType>::Zero(), Gg);
-    El::Matrix<DataType, El::Device::GPU> Fgrad(G.Height(), A.Width());
-    El::Gemm(
-        El::NORMAL, El::NORMAL,
-        El::TypeTraits<DataType>::One(), Gg, Ainv,
-        El::TypeTraits<DataType>::Zero(), Fgrad);
-
-    if(is_conv) {
-      Fgrad.Attach(Fgrad.Width()*Fgrad.Height(), 1,
-                   Fgrad.Buffer(),
-                   Fgrad.Width()*Fgrad.Height());
-    } else {
-      assert_always(Fgrad.Height() == w_gradients.Height());
-      assert_always(Fgrad.Width() == w_gradients.Width());
-    }
-
-    // Apply preconditioned grads
-    DataType dst_scale = El::TypeTraits<DataType>::Zero(),
-        gradient_scale = El::TypeTraits<DataType>::One();
-    auto& grad_buffer = w_optimizer->get_gradient_buffer(
-        dst_scale, gradient_scale, false);
-    El::Copy(Fgrad, grad_buffer.Matrix());
-
-    // Damp matrices for debugging
-    if(comm->am_trainer_master() && m_print_matrix) {
-      if(comm->am_trainer_master()) {
-        std::cout << std::endl;
-        El::Print(A, "A");
-        std::cout << std::endl;
-        El::Print(G, "G");
-        std::cout << std::endl;
-        El::Print(Aave, "Aave");
-        std::cout << std::endl;
-        El::Print(Gave, "Gave");
-        std::cout << std::endl;
-        El::Print(Ainv, "Ainv");
-        std::cout << std::endl;
-        El::Print(Ginv, "Ginv");
-        std::cout << std::endl;
-        El::Print(w_gradients, "w_grad");
-        std::cout << std::endl;
-        El::Print(Fgrad, "Fgrad");
-        std::cout << std::endl;
-      }
-    }
-
-    // damp L2 norm of matrices
-    if(comm->am_trainer_master() && m_print_matrix_summary) {
-
-      const auto get_stat =
-          [](const El::Matrix<DataType, El::Device::GPU>& X,
-             const char *name) {
-            El::Matrix<DataType> XCPU(X);
-            const auto nrm2 = El::Nrm2(El::Reshape(XCPU.Height()*XCPU.Width(), 1, XCPU));
-            std::ostringstream oss;
-            oss << name
-                << "("
-                << X.Height()
-                << "x"
-                << X.Width()
-                << ")="
-                << std::setprecision(2)
-                << std::scientific
-                << nrm2;
-            return oss.str();
-          };
-
-      const auto &dtw = dynamic_cast<data_type_weights<DataType>*>(&weights);
-      const auto &w_values = dtw->get_values();
-      std::ostringstream oss;
-      oss << "K-FAC callback: L2 norm @ "<< l->get_name() << ": "
-          << get_stat(w_values.LockedMatrix(), "W")
-          << ", " << get_stat(local_activations, "acts")
-          << ", " << get_stat(local_errors, "errs")
-          << ", " << get_stat(A, "A")
-          << ", " << get_stat(G, "G")
-          << ", " << get_stat(Aave, "Aave")
-          << ", " << get_stat(Gave, "Gave")
-          << ", " << get_stat(Ainv, "Ainv")
-          << ", " << get_stat(Ginv, "Ginv")
-          << ", " << get_stat(w_gradients, "grad")
-          << ", " << get_stat(Fgrad, "Finvgrad")
-          << ", pi=" << pi
-          << std::endl;
-      std::cout << oss.str();
     }
 
   }

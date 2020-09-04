@@ -62,6 +62,17 @@ void kfac_test_conv_transpose(
     const size_t mini_batch_size, const size_t num_channels,
     const size_t spatial_prod);
 
+// Compute the factor of a batch-normalization layer.
+template <typename TensorDataType>
+void kfac_test_compute_bn_factor(
+    const TensorDataType * __restrict__ activations,
+    const TensorDataType * __restrict__ errors,
+    const TensorDataType * __restrict__ scales,
+    const TensorDataType * __restrict__ biases,
+    TensorDataType * __restrict__ factor,
+    const size_t batch_size,
+    const size_t num_channels);
+
 /** Callback hooks for the K-FAC method. */
 class kfac_test : public callback_base {
  public:

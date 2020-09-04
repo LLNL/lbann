@@ -82,6 +82,28 @@ __global__ void kfac_test_conv_transpose_kernel(
   }
 }
 
+template <typename TensorDataType>
+__global__ void kfac_test_compute_bn_factor_kernel(
+    const TensorDataType * __restrict__ activations,
+    const TensorDataType * __restrict__ errors,
+    const TensorDataType * __restrict__ scales,
+    const TensorDataType * __restrict__ biases,
+    TensorDataType * __restrict__ factor,
+    const size_t batch_size,
+    const size_t num_channels,
+    const size_t num_elems) { // = batch_size*num_channels
+  const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
+  if(gid < num_elems) {
+    const size_t i_c = num_elems%num_channels;
+    const size_t i_n = num_elems/num_channels;
+
+    const auto error = errors[gid];
+    const auto act = (activations[gid]-biases[i_c])/scales[i_c];
+    factor[gid] = error * act;
+    factor[gid+num_elems] = error;
+  }
+}
+
 } // namespace
 
 // TODO: static function
@@ -139,6 +161,29 @@ void kfac_test_conv_transpose(
       num_elems);
 }
 
+// Compute the factor of a batch-normalization layer.
+template <typename TensorDataType>
+void kfac_test_compute_bn_factor(
+    const TensorDataType * __restrict__ activations,
+    const TensorDataType * __restrict__ errors,
+    const TensorDataType * __restrict__ scales,
+    const TensorDataType * __restrict__ biases,
+    TensorDataType * __restrict__ factor,
+    const size_t batch_size,
+    const size_t num_channels) {
+  constexpr size_t block_size = 256;
+  const size_t num_elems = batch_size * num_channels;
+  const size_t grid_size = (num_elems + block_size - 1) / block_size;
+  auto&& stream =  hydrogen::cuda::GetDefaultStream();
+  kfac_test_compute_bn_factor_kernel<TensorDataType>
+      <<<grid_size, block_size, 0, stream>>>(
+          activations, errors,
+          scales, biases,
+          factor,
+          batch_size, num_channels,
+          num_elems);
+}
+
 #define PROTO(T)                                        \
   template void kfac_test_add_to_diagonal<T>(           \
       T* __restrict__ A,                                \
@@ -156,10 +201,18 @@ void kfac_test_conv_transpose(
       T * __restrict__ act_columns,                     \
       const size_t mini_batch_size,                     \
       const size_t num_channels,                        \
-      const size_t spatial_prod)
+      const size_t spatial_prod);                       \
+  template void kfac_test_compute_bn_factor<T>(         \
+      const T * __restrict__ activations,               \
+      const T * __restrict__ errors,                    \
+      const T * __restrict__ scales,                    \
+      const T * __restrict__ biases,                    \
+      T * __restrict__ factor,                          \
+      const size_t batch_size,                          \
+      const size_t num_channels)
 
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
 
-} // namespace callback
+            } // namespace callback
 } // namespace lbann
