@@ -185,15 +185,15 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
   const auto get_inverse =
       [](const El::Matrix<DataType, El::Device::GPU>& A,
          const bool report_time=false,
-         const DataType damping,
-         const std::string layer_name,
-         const std::string matrix_name) {
+         const DataType damping=0) {
         assert_always(A.Width() == A.Height());
         El::Matrix<DataType, El::Device::GPU> Ainv(A);
 
         const double t_start = get_time();
-        kfac_test_add_to_diagonal(
-            Ainv.Buffer(), Ainv.Height(), damping);
+
+        if(damping > 0)
+          kfac_test_add_to_diagonal(
+              Ainv.Buffer(), Ainv.Height(), damping);
 
         const double t_damping = get_time();
 
@@ -361,8 +361,8 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
       // alternative heuristics to pi, they should be the same if pi is used.
       if(m_use_pi)
         assert_always(m_damping_act == m_damping_err);
-      const auto Ainv = get_inverse(Aave, print_time, DataType(m_damping_act*pi), l->get_name(), "A");
-      const auto Ginv = get_inverse(Gave, print_time, DataType(m_damping_err/pi), l->get_name(), "G");
+      const auto Ainv = get_inverse(Aave, print_time, DataType(m_damping_act*pi));
+      const auto Ginv = get_inverse(Gave, print_time, DataType(m_damping_err/pi));
 
       if(is_conv) {
         const auto num_output_channels = l->get_output_dims()[0];
@@ -503,10 +503,15 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
           stacked_grads.Buffer()+num_channels, b_gradients.LockedBuffer(),
           num_channels*sizeof(DataType), cudaMemcpyDeviceToDevice));
 
+      const bool print_time = comm->am_trainer_master() && m_print_time;
+      const auto Finv = get_inverse(
+          fisher_block, print_time,
+          DataType(m_damping_act)); // TODO: Use a dedicated damping factor
+
       El::Matrix<DataType, El::Device::GPU> Fgrad(num_channels*2, 1);
       El::Gemm(
           El::NORMAL, El::NORMAL,
-          El::TypeTraits<DataType>::One(), fisher_block, stacked_grads,
+          El::TypeTraits<DataType>::One(), Finv, stacked_grads,
           El::TypeTraits<DataType>::Zero(), Fgrad);
 
       DataType dst_scale = El::TypeTraits<DataType>::Zero(),
@@ -533,7 +538,7 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
             << ", " << get_matrix_stat(local_errors, "errs")
             << ", " << get_matrix_stat(s_gradients, "scale_grad")
             << ", " << get_matrix_stat(b_gradients, "bias_grad")
-            << ", " << get_matrix_stat(Fgrad, "Finvgrad")
+            << ", " << get_matrix_stat(Finv, "Finvgrad")
             << std::endl;
         std::cout << oss.str();
       }
