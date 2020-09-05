@@ -29,6 +29,7 @@
 #define LBANN_COMM_INSTANTIATE
 #include "lbann/comm.hpp"
 #include "lbann/utils/timer.hpp"
+#include "lbann/utils/options.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/cuda.hpp"
 #include "mpi.h"
@@ -75,9 +76,19 @@ lbann_comm::lbann_comm(int ppm, El::mpi::Comm world) :
 
   // Setup threads
   setup_threads();
+
+  // Optionally open debug files; using raw MPI call here for safety XX
+  if (options::get()->get_bool("debugc")) {
+    m_debug_filename = m_debug_filename_base + "." + std::to_string(get_rank_in_world()) + ".txt";
+    m_debug = new std::ofstream(m_debug_filename.c_str());
+  }
+  if (!m_debug) {
+    LBANN_ERROR("failed to open ", m_debug_filename, " for writing");
+  }
 }
 
 lbann_comm::~lbann_comm() {
+  if (m_debug) m_debug->close();
   delete grid;
   El::mpi::Free(trainer_comm);
   El::mpi::Free(intertrainer_comm);

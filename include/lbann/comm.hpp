@@ -803,6 +803,7 @@ class lbann_comm {
   template <typename T, El::Device D>
   void send(const T *data, int count, int trainer, int rank, El::SyncInfo<D> const& syncInfo) {
     bytes_sent += sizeof(T) * count;
+    DEBUG_DS("send: count=",count," sending_to trainer=", trainer, " rank=", rank);
     El::mpi::Send(data, count, get_world_rank(trainer, rank), get_world_comm(), syncInfo);
   }
   template <typename T, El::Device D>
@@ -823,12 +824,14 @@ class lbann_comm {
   void nb_send(const T *data, int count, int trainer, int rank,
                El::mpi::Request<T>& req) {
     bytes_sent += sizeof(T) * count;
+    DEBUG_DS("nb_send: count=",count," sending_to trainer=", trainer, " rank=", rank);
     El::mpi::ISend(data, count, get_world_rank(trainer, rank), get_world_comm(), req);
   }
   template <typename T>
   void nb_tagged_send(const T *data, int count, int rank, int tag,
                El::mpi::Request<T>& req, const El::mpi::Comm& c) {
     bytes_sent += sizeof(T) * count;
+    DEBUG_DS("nb_tagged_send: count=", count," sending_to: ", rank, " tag: ", tag);
     El::mpi::TaggedISend(data, count, rank, tag, c, req);
   }
   template <typename T> void nb_send(const T *data, int count, int trainer,
@@ -885,6 +888,7 @@ class lbann_comm {
   /** Corresponding non-blocking receives. */
   template <typename T> void nb_recv(T *data, int count, int trainer, int rank,
                                      El::mpi::Request<T>& req) {
+    DEBUG_DS("nb_recv: count=",count," rcving_from trainer=", trainer, " rank=", rank);
     El::mpi::IRecv(data, count, get_world_rank(trainer, rank), get_world_comm(),
                req);
     bytes_received += sizeof(T) * count;
@@ -892,6 +896,7 @@ class lbann_comm {
   template <typename T> void nb_tagged_recv(
                T *data, int count, int rank, int tag,
                El::mpi::Request<T>& req, const El::mpi::Comm& c) {
+    DEBUG_DS("nb_tagged_recv: count=", count," rcv_from: ", rank, " tag: ", tag);
     El::mpi::TaggedIRecv(data, count, rank, tag, c, req);
     bytes_received += sizeof(T) * count;
   }
@@ -1096,6 +1101,39 @@ class lbann_comm {
    *  cores per node divided by the number of processes per node.
    */
   void setup_threads();
+
+  /// debug variables and methods start here
+  const std::string m_debug_filename_base = "debug";
+  std::string m_debug_filename;
+  std::ofstream *m_debug = nullptr;
+
+  void DEBUG_DS() { 
+    if (!m_debug) {
+      return;
+    }
+    (*m_debug) << std::endl; 
+    flush_debug_file();
+  }
+
+  template <typename T, typename... Types>
+  void DEBUG_DS(T var1, Types... var2) {
+    if (!m_debug) {
+      return;
+    }
+    (*m_debug) << var1 << " ";
+    DEBUG_DS(var2...) ;
+    flush_debug_file();
+  }
+
+  void flush_debug_file() {
+    if (!m_debug) {
+      return;
+    }
+    m_debug->close();
+    m_debug->open(m_debug_filename.c_str(), std::ios::app);
+  }
+
+  /// debug variables and methods END here
 
 };
 
