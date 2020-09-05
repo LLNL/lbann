@@ -235,7 +235,7 @@ void fp_impl(size_t num_channels,
     grid_dims.z = local_mini_batch_size;
     LocalMat maxvals(grid_dims.x * num_channels, local_mini_batch_size);
     fp_max_kernel<TensorDataType,block_size>
-      <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
+      <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
         {local_mini_batch_size, num_channels, channel_size},
         local_input.LockedBuffer(),
         {static_cast<size_t>(local_input.LDim()), channel_size, 1},
@@ -247,7 +247,7 @@ void fp_impl(size_t num_channels,
       const LocalMat prev_maxvals(std::move(maxvals));
       maxvals.Resize(grid_dims.x * num_channels, local_mini_batch_size);
       fp_max_kernel<TensorDataType,block_size>
-        <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
+        <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
           {local_mini_batch_size, num_channels, prev_dim},
           prev_maxvals.LockedBuffer(),
           {static_cast<size_t>(prev_maxvals.LDim()), prev_dim, 1},
@@ -268,7 +268,7 @@ void fp_impl(size_t num_channels,
     grid_dims.y = num_channels;
     grid_dims.z = local_mini_batch_size;
     fp_denom_kernel<TensorDataType,block_size>
-      <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
+      <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
         {local_mini_batch_size, num_channels, channel_size},
         local_input.LockedBuffer(),
         {static_cast<size_t>(local_input.LDim()), channel_size, 1},
@@ -285,7 +285,7 @@ void fp_impl(size_t num_channels,
     grid_dims.y = num_channels;
     grid_dims.z = local_mini_batch_size;
     fp_output_kernel<TensorDataType>
-      <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
+      <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
         {local_mini_batch_size, num_channels, channel_size},
         local_input.LockedBuffer(),
         {static_cast<size_t>(local_input.LDim()), channel_size, 1},
@@ -446,7 +446,7 @@ void bp_impl(size_t num_channels,
     grid_dims.y = num_channels;
     grid_dims.z = local_mini_batch_size;
     bp_y_dot_dy_kernel<TensorDataType,block_size>
-      <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
+      <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
         {local_mini_batch_size, num_channels, channel_size},
         local_output.LockedBuffer(),
         {static_cast<size_t>(local_output.LDim()), channel_size, 1},
@@ -464,7 +464,7 @@ void bp_impl(size_t num_channels,
     grid_dims.y = num_channels;
     grid_dims.z = local_mini_batch_size;
     bp_input_grad_kernel<TensorDataType>
-      <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
+      <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
         {local_mini_batch_size, num_channels, channel_size},
         local_output.LockedBuffer(),
         {static_cast<size_t>(local_output.LDim()), channel_size, 1},

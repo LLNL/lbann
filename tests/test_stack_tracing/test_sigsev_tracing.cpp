@@ -30,8 +30,6 @@
 
 using namespace lbann;
 
-const int lbann_default_random_seed = 42;
-
 class A {
   public :
     void testme_class_A_one() {
@@ -66,8 +64,7 @@ class B {
 };
 
 int main(int argc, char *argv[]) {
-  int random_seed = lbann_default_random_seed;
-  lbann_comm *comm = initialize(argc, argv, random_seed);
+  lbann_comm *comm = initialize(argc, argv);
   bool master = comm->am_world_master();
 
   try {

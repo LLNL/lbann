@@ -146,7 +146,7 @@ int main(int argc, char *argv[]) {
           for(size_t l1=0; l1 < layers1.size(); l1++) {
              if(l2_name == layers1[l1]->get_name()){
                if(master) std::cout << "Replacing adversarial model (model 2) Layer " << layers1[l1]->get_name();
-               layers2[l2]->replace_weights(layers1[l1]);
+               layers2[l2]->replace_weights(*layers1[l1]);
                if(master) std::cout << " with corresponding layer " << layers2[l2]->get_name() << " in discriminator model (model1) " << std::endl;
              }
           }

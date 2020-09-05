@@ -180,7 +180,7 @@ setup_activations_i(int index) const {
     const auto local_shape = get_activations_local_shape(index);
     auto t = make_unique<TensorDevType>(shape, loc, dist, local_shape);
     assert0(t->allocate());
-    t->zero(El::GPUManager::Stream());
+    t->zero(hydrogen::cuda::GetDefaultStream());
     return t;
   }
 }
@@ -267,7 +267,7 @@ template <typename TensorDataType, typename T_io_buffer,
 void input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev>::fp_compute() {
   auto &l = dynamic_cast<input_layer<
     TensorDataType, T_io_buffer, T_layout, Dev>&>(this->layer());
-  auto stream = El::GPUManager::Stream();
+  auto stream = hydrogen::cuda::GetDefaultStream();
   // Note that the mini-batch size of the data reader is not
   // actually the one for the current mini-batch as the mini-batch
   // index is already updated by fp_compute.

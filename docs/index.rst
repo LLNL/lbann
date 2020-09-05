@@ -31,6 +31,7 @@ Users are advised to view `the Doxygen API Documentation
 
    building_lbann
    running_lbann
+   callbacks
 
 .. toctree::
    :maxdepth: 1

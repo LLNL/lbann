@@ -275,8 +275,11 @@ void data_store_conduit::spill_preloaded_conduit_node(int data_id, const conduit
 
 void data_store_conduit::set_preloaded_conduit_node(int data_id, const conduit::Node &node) {
   // note: at this point m_data[data_id] = node
-  if (m_data.find(data_id) == m_data.end()) {
-    LBANN_ERROR("(m_data.find(data_id) == m_data.end() for id: ", data_id);
+  {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    if (m_data.find(data_id) == m_data.end()) {
+      LBANN_ERROR("(m_data.find(data_id) == m_data.end() for id: ", data_id);
+    }
   }
 
   // TODO: get rid of "m_my_num_indices" -dah, May 2020

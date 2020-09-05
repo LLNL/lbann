@@ -24,6 +24,7 @@ set_full_path(THIS_DIR_HEADERS
   lbann_library.hpp
   mild_exception.hpp
   number_theory.hpp
+  nvshmem.hpp
   omp_diagnostics.hpp
   opencv.hpp
   options.hpp

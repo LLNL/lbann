@@ -377,8 +377,8 @@ void fp_compute_impl(softmax_layer<TensorDataType, data_layout::MODEL_PARALLEL, 
   const size_t local_width = local_input.Width();
 
   // GPU objects
-  auto&& stream = El::GPUManager::Stream();
-  auto&& event = El::GPUManager::Event();
+  auto&& stream = hydrogen::cuda::GetDefaultStream();
+  auto&& event = hydrogen::cuda::GetDefaultEvent();
   El::SyncInfo<El::Device::GPU> sync_info{stream, event};
 
   // Find max value in each column
@@ -462,8 +462,8 @@ void bp_compute_impl(softmax_layer<TensorDataType, data_layout::MODEL_PARALLEL, 
   const auto& local_width = local_output.Width();
 
   // GPU objects
-  auto&& stream = El::GPUManager::Stream();
-  auto&& event = El::GPUManager::Event();
+  auto&& stream = hydrogen::cuda::GetDefaultStream();
+  auto&& event = hydrogen::cuda::GetDefaultEvent();
   El::SyncInfo<El::Device::GPU> sync_info{stream, event};
 
   // Compute dot(y,dy)

@@ -102,7 +102,7 @@ weights& weights::operator=(const weights& other) {
 }
 
 description weights::get_description() const {
-  std::stringstream ss;
+  std::ostringstream ss;
 
   // Construct description object
   description desc(get_name());
@@ -120,6 +120,9 @@ description weights::get_description() const {
   if (is_frozen()) {
     desc.add("Frozen");
   }
+
+  // Derived class contribution
+  do_augment_description_(desc);
 
   return desc;
 }
@@ -157,13 +160,25 @@ int weights::get_matrix_width() const {
 }
 void weights::set_dims(std::vector<int> matrix_height_dims,
                        std::vector<int> matrix_width_dims) {
-  m_matrix_height_dims = matrix_height_dims;
-  m_matrix_width_dims = matrix_width_dims;
+  m_matrix_height_dims = std::move(matrix_height_dims);
+  m_matrix_width_dims = std::move(matrix_width_dims);
+  do_set_dims_(matrix_height_dims, matrix_width_dims);
 }
 
 // -----------------------------------------------
 // Matrix distribution accessors
 // -----------------------------------------------
+
+void weights::set_values(El::BaseDistMatrix const& values) {
+  if ((values.Height() != get_values().Height())
+      || (values.Width() != get_values().Width())) {
+    LBANN_ERROR("Expected matrix size ",
+                this->get_matrix_height(), "x", this->get_matrix_width(),
+                "; got a matrix with size ",
+                values.Height(), "x", values.Width());
+  }
+  El::Copy(values, this->get_values());
+}
 
 El::DistData weights::get_matrix_distribution() const {
   return m_matrix_dist;
@@ -205,13 +220,14 @@ void weights::setup() {
       || std::any_of(m_matrix_width_dims.begin(),
                      m_matrix_width_dims.end(),
                      is_nonpositive)) {
-    std::stringstream err;
-    err << "attempted to setup weights \"" << get_name() << "\" with a "
-        << get_dims_string(m_matrix_height_dims, m_matrix_width_dims) << " "
-        << "weights matrix";
-    LBANN_ERROR(err.str());
+    LBANN_ERROR(
+      "attempted to setup weights \"", this->get_name(), "\" with a ",
+      get_dims_string(m_matrix_height_dims, m_matrix_width_dims),
+      " weights matrix");
   }
 
+  // Derived class setup
+  do_setup_();
 }
 
 }  // namespace lbann

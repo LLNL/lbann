@@ -31,6 +31,8 @@
 #include "lbann/utils/commify.hpp"
 #include "lbann/utils/lbann_library.hpp"
 #include <mutex>
+#include <random>
+#include <time.h>
 
 namespace lbann {
 
@@ -70,7 +72,6 @@ void smiles_data_reader::copy_members(const smiles_data_reader &rhs) {
       m_data_store = new data_store_conduit(rhs.get_data_store());
       m_data_store->set_data_reader_ptr(this);
   }
-  m_num_samples = rhs.m_num_samples;
   m_linearized_data_size = rhs.m_linearized_data_size;
   m_linearized_label_size = rhs.m_linearized_label_size;
   m_linearized_response_size = rhs.m_linearized_response_size;
@@ -93,6 +94,11 @@ void smiles_data_reader::load() {
 
   options *opts = options::get();
 
+  if (opts->get_bool("ltfb")) {
+    opts->set_option("use_data_store", 1);
+    opts->set_option("preload_data_store", 1);
+  }
+
   if (!opts->has_int("sequence_length")) {
     LBANN_ERROR("you must pass --sequence_length=<int> on the cmd line");
   }
@@ -101,60 +107,76 @@ void smiles_data_reader::load() {
   // load the vocabulary; this is a map: string -> short
   load_vocab();
 
-  // Count total number of samples in the file
-  //m_has_header = !opts->get_bool("no_header");
+  // m_has_header = !opts->get_bool("no_header");
+  //  side effects -- hard code for now, relook later
   m_has_header = true;
 
+  // get the total number of samples in the file
   const std::string infile = get_file_dir() + "/" + get_data_filename();
-  m_total_samples = get_num_lines(infile);
+  int num_samples = get_num_lines(infile);
   if (m_has_header) {
-    --m_total_samples;
+    --num_samples;
   }
 
-  // Get the number of samples to use (this is separate from "percent_of_data_to_use," etc);
-  m_num_samples = m_total_samples;
-  if (opts->has_int("num_samples")) {
-    m_num_samples = opts->get_int("num_samples");
-  }
-  if (m_num_samples > m_total_samples) {
-    LBANN_ERROR("You requested to use ", m_num_samples, " samples, but input file only contains ", m_total_samples);
-  }
-
-  // Do the usual things we always do to finish up ...
   m_shuffled_indices.clear();
-  m_shuffled_indices.resize(m_num_samples);
+  m_shuffled_indices.resize(num_samples);
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
   resize_shuffled_indices();
 
-  
   // Optionally run "poor man's" LTFB
-  // TODO: does this work with validation? I think: all trainers should
-  //       have a common validation set
   if (opts->get_bool("ltfb")) {
+    if (is_master()) {
+      std::cout << "running poor man's LTFB\n";
+    }
     size_t my_trainer = m_comm->get_trainer_rank();
     size_t num_trainers = m_comm->get_num_trainers();
-    size_t samples_per_trainer = m_num_samples / num_trainers;
+    std::set<int> my_trainers_indices;
 
-    std::set<int> my_indices;
-    for (size_t t=0; t<m_shuffled_indices.size(); t++) {
-      if (t % num_trainers == my_trainer) {
-        my_indices.insert(m_shuffled_indices[t]);
+    // Use two loops here, to assure all trainers have
+    // the same number of samples
+    // ensure then number of samples is evenly divisible by
+    // the number of trainers
+    size_t n = m_shuffled_indices.size() / num_trainers;
+    size_t s3 = n*num_trainers;
+    if (m_shuffled_indices.size() != s3) {
+      if (is_master()) {
+        std::cout << "adjusting global sample size from " << m_shuffled_indices.size() << " to " << s3 << std::endl;
+      }
+      m_shuffled_indices.resize(s3);
+    }
+    for (size_t j=0; j<m_shuffled_indices.size(); j += num_trainers) {
+      for (size_t k=0; k<num_trainers; k++) {
+        int idx = j+k;
+        if (idx % num_trainers == my_trainer)
+          my_trainers_indices.insert(m_shuffled_indices[idx]);
       }
     }
 
-    m_num_samples = samples_per_trainer;
     m_shuffled_indices.clear();
-    for (const auto &t : my_indices) {
+    for (const auto &t : my_trainers_indices) {
       m_shuffled_indices.push_back(t);
     }
-  } 
+
+  } else {
+    if (is_master()) std::cout << "NOT running ltfb\n";
+  }
 
   instantiate_data_store();
   select_subset_of_data();
 
+  // get values for ad-hoc sanity checking; see: do_preload()
+  m_min_index = INT_MAX;
+  m_max_index = 0;
+  for (const auto &idx : m_shuffled_indices) {
+    if (idx < m_min_index) m_min_index = idx;
+    if (idx > m_max_index) m_max_index = idx;
+  }
+
   get_delimiter();
 
   // TODO: does this work if we carve off a validation set?
+  // NOTE: if ltfb is run, we've hard-coded above to use the
+  //       data-store
   if (m_data_store == nullptr) {
     double tm4 = get_time();
     setup_local_cache();
@@ -169,12 +191,13 @@ void smiles_data_reader::load() {
 void smiles_data_reader::do_preload_data_store() {
   double tm1 = get_time();
   if (is_master()) {
-    std::cout << "starting do_preload_data_store; num indices: " 
-              << utils::commify(m_shuffled_indices.size()) 
+    std::cout << "starting do_preload_data_store; num indices: "
+              << utils::commify(m_shuffled_indices.size())
               << " for role: " << get_role() << std::endl;
   }
+
   m_data_store->set_node_sizes_vary();
-  m_data_store->set_is_local_cache();
+  //m_data_store->set_is_local_cache();
   const std::string infile = get_file_dir() + "/" + get_data_filename();
   std::ifstream in(infile.c_str());
   if (!in) {
@@ -182,41 +205,68 @@ void smiles_data_reader::do_preload_data_store() {
   }
   std::string line;
   if (m_has_header) {
-    getline(in, line); 
+    getline(in, line);
   }
 
-  size_t max_line = 0;
+  // Collect the (global) set of sample_ids to be used in this experiment
   std::unordered_set<int> valid_ids;
-  for (const auto &id : m_shuffled_indices) {
+  int sanity_min = INT_MAX;
+  int sanity_max = 0;
+  /*for (const auto &id : m_shuffled_indices) {
     valid_ids.insert(id);
-    max_line = static_cast<size_t>(id) > max_line ? id : max_line;
+    if (id < sanity_min) sanity_min = id;
+    if (id > sanity_max) sanity_max = id;
+  }*/
+  for (size_t idx=0; idx<m_shuffled_indices.size(); idx++) {
+    int id = m_shuffled_indices[idx];
+    if (id < sanity_min) sanity_min = id;
+    if (id > sanity_max) sanity_max = id;
+    if (m_data_store->get_index_owner(id) != m_comm->get_rank_in_trainer()) {
+      continue;
+    }
+    valid_ids.insert(id);
+  }
+  int max_index = sanity_max;
+
+  // cheap sanity check
+  if ( (sanity_min != m_min_index || sanity_max != m_max_index)
+        &&
+        get_role() == "train") {
+    LBANN_ERROR("sanity_min != m_min_index || sanity_max != m_max_index: ", sanity_min, " ", m_min_index, " ", sanity_max, " ", m_max_index);
   }
 
-  size_t sample_id = -1;
+  // Load the samples. As currently written, each rank loads all samples,
+  // hence, there will be no data exchange phases. This can be expanded
+  // in the future, to use the data store for sharding, instead of a purely
+  // local cache
+  int sample_id = -1;
+  size_t sanity = 0;
   while (true) {
     ++sample_id;
-    ssize_t n = 0;
     getline(in, line);
     if (valid_ids.find(sample_id) != valid_ids.end()) {
       conduit::Node &node = m_data_store->get_empty_node(sample_id);
       construct_conduit_node(sample_id, line, node);
       m_data_store->set_preloaded_conduit_node(sample_id, node);
+      ++sanity;
     }
-    if (sample_id >= max_line || n == -1) {
+    if (sample_id >= max_index) {
       break;
+    }
+    if (is_master() && (sanity % 1000000 == 0) && sanity > 0) {
+      std::cout << sanity/1000000 << "M " << get_role() << " samples loaded" << std::endl;
     }
   }
   in.close();
   m_data_store->set_loading_is_complete();
+
+  // Sanity check
+  if (sanity != valid_ids.size()) {
+    LBANN_ERROR("sanity != valid_ids.size() (sanity=", sanity, "; valid_ids.size()=", valid_ids.size());
+  }
+
   if (is_master()) {
     std::cout << " do_preload_data_store time: " << get_time() - tm1 << std::endl;
-  }
-  if (is_master()) {
-    pid_t p = getpid();
-    char buf[80];
-    sprintf(buf, "cat /proc/%d/status >& status.txt", p);
-    system(buf);
-    std::cout << "wrote proc/[pid]/status to 'status.txt'" << std::endl;
   }
 }
 
@@ -227,7 +277,7 @@ bool smiles_data_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
   // no data_store: all data is stored locally
   if (m_data_store == nullptr) {
     get_sample(data_id, data);
-    data_ptr = data.data();  
+    data_ptr = data.data();
     sz = data.size();
   }
 
@@ -247,10 +297,10 @@ bool smiles_data_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
     data_ptr = data.data();
     sz = data.size();
   }
-  
+
   size_t j;
   for (j = 0; j < sz; ++j) {
-    X(j, mb_idx) = data_ptr[j]; 
+    X(j, mb_idx) = data_ptr[j];
   }
   for (; j<static_cast<size_t>(m_linearized_data_size); j++) {
     X(j, mb_idx) = m_pad;
@@ -283,13 +333,13 @@ void smiles_data_reader::print_statistics() const {
   std::cout << "max sequence length: " << utils::commify(m_linearized_data_size) << std::endl;
   std::cout << "num features=" << utils::commify(m_linearized_data_size) << std::endl;
   if (m_delimiter == '\t') {
-    std::cout << "delimiter: <tab>\n"; 
+    std::cout << "delimiter: <tab>\n";
   } else if (m_delimiter == ',') {
-    std::cout << "delimiter: <comma>\n"; 
-  } else if (m_delimiter == '0') {
-    std::cout << "delimiter: <none>\n"; 
+    std::cout << "delimiter: <comma>\n";
+  } else if (m_delimiter == '\0') {
+    std::cout << "delimiter: <none>\n";
   } else {
-    LBANN_ERROR("invalid delimiter character: ", m_delimiter);
+    LBANN_ERROR("invalid delimiter character, as int: ", (int)m_delimiter);
   }
   std::cout << "pad index: " << m_pad << std::endl;
 
@@ -316,7 +366,7 @@ void smiles_data_reader::load_vocab() {
     if (token.size() == 1) {
       m_vocab[token[0]] = id;
       m_vocab_inv[id] = token[0];
-    }  
+    }
     if (token == "<pad>") {
       m_pad = id;
       --sanity;
@@ -348,27 +398,44 @@ void smiles_data_reader::load_vocab() {
 
 int smiles_data_reader::get_num_lines(std::string fn) {
   double tm1 = get_time();
-  if (is_master()) {
-    std::cout << "starting: count number of lines in the input file" << std::endl;
-  }
-
   int count = 0;
   if (is_master()) {
     std::ifstream in(fn.c_str());
     if (!in) {
       LBANN_ERROR("failed to open data file: ", fn, " for reading");
     }
+    std::cout << "opened " << fn << " for reading\n";
     std::string line;
     while(getline(in,line)) {
       ++count;
     }
     in.close();
 
-    std::cout << "smiles_data_reader::get_num_lines; num_lines: " 
+    std::cout << "smiles_data_reader::get_num_lines; num_lines: "
               << utils::commify(count) << " time: " << get_time()-tm1 << std::endl;
   }
+
+  //I'm putting temporary timing around the bcast, because it
+  //seems to be taking a long time
+  if (is_master()) std::cout << "XX calling bcast ..." << std::endl;
+  tm1 = get_time();
   m_comm->broadcast<int>(0, &count, 1, m_comm->get_world_comm());
-  return count;
+  double tm = get_time() - tm1;
+  if (is_master()) std::cout << "XX DONE! calling bcast ... TIME: " << tm << std::endl;
+
+  //check if user want less than all samples in this file
+  //@todo, this (flag or entire function) should really be deprecated since it can be accomplished with absoulte sample count
+  options *opts = options::get();
+  int n_lines = INT_MAX;
+  if (opts->has_int("n_lines")) {
+     n_lines = opts->get_int("n_lines");
+     if(is_master() && count < n_lines) {
+       std::cout << "WARNING:: number of available samples (" << count
+                << " ) in file " << fn << " is less than number of samples requested (" << n_lines
+                << " ) I am returning number of available samples " << std::endl;
+       }
+  }
+  return std::min(count,n_lines);
 }
 
 void smiles_data_reader::construct_conduit_node(int data_id, const std::string &line, conduit::Node &node) {
@@ -454,7 +521,7 @@ void smiles_data_reader::setup_local_cache() {
   double tm3 = get_time();
   if (is_master()) {
     std::cout << "\nSTARTING smiles_data_reader::setup_fast_experimental() " << std::endl << std::endl;
-  }  
+  }
 
   // This will hold: (dataum_id, datum_offset, datum length) for each sample
   std::vector<size_t> sample_offsets(m_shuffled_indices.size()*3);
@@ -474,15 +541,15 @@ void smiles_data_reader::setup_local_cache() {
     std::string line;
     if (m_has_header) {
       getline(in, line);
-    }  
+    }
 
     // Part 1: compute memory requirements for local cache
 
-    // Get max sample id, which will be the number of lines we need to 
+    // Get max sample id, which will be the number of lines we need to
     // read from file. This is needed if (1) not using 100% of data,
     // and/or (2) carving off part of train data to use as validation.
     std::unordered_set<int> samples_to_use;
-    int max_sample_id = 0; 
+    int max_sample_id = 0;
     for (size_t j=0; j<m_shuffled_indices.size(); j++) {
       samples_to_use.insert(m_shuffled_indices[j]);
       max_sample_id = m_shuffled_indices[j] > max_sample_id ? m_shuffled_indices[j] : max_sample_id;
@@ -511,8 +578,8 @@ void smiles_data_reader::setup_local_cache() {
     // Part 2: Fill in the data buffer
     in.seekg(0);
     if (m_has_header) {
-      getline(in, line); 
-    }  
+      getline(in, line);
+    }
     offset = 0;
     for (int j=0; j<max_sample_id; j++) {
       getline(in, line);
@@ -534,7 +601,7 @@ void smiles_data_reader::setup_local_cache() {
   // Construct lookup table for locating samples in the m_data vector (aka, the sample buffer)
   m_comm->broadcast<size_t>(0, sample_offsets.data(), sample_offsets.size(), m_comm->get_world_comm());
   for (size_t j=0; j<sample_offsets.size(); j += 3) {
-    m_sample_lookup[sample_offsets[j]] = 
+    m_sample_lookup[sample_offsets[j]] =
       std::make_pair(sample_offsets[j+1], sample_offsets[j+2]);
   }
 
@@ -576,7 +643,7 @@ void smiles_data_reader::setup_local_cache() {
 void smiles_data_reader::test_encode() {
   // What this does: at this point, P_0 has read and bcast the data set,
   // and each rank has built a lookup table. Below, P_1 looks up each
-  // data_id; encodes the string (E1); reads the string from file (S2); 
+  // data_id; encodes the string (E1); reads the string from file (S2);
   // decodes E1 to produce string S1; compares S1 and S2 for equality.
   double tm1 = get_time();
   if (is_master()) {
@@ -585,7 +652,7 @@ void smiles_data_reader::test_encode() {
   if (m_comm->get_rank_in_world() != 1) {
     return;
   }
-  
+
   // option: testing the test ;)
   bool fail = options::get()->get_bool("make_test_fail");
 
@@ -619,7 +686,7 @@ void smiles_data_reader::test_encode() {
       ++num_tested;
       // encode then decode the datum that is stored in memory
       get_sample(sample_id, encoded);
-      decode_smiles(encoded, decoded); 
+      decode_smiles(encoded, decoded);
 
       // get datum length from the line we've just read from file
       size_t k = get_smiles_string_length(line, sample_id);
@@ -631,7 +698,7 @@ void smiles_data_reader::test_encode() {
       if (num_tested > 10 && fail) {
         for (size_t h=0; h<S2.size(); h++) {
           S2[h] = '~';
-        }  
+        }
       }
 
       // conduct tests
@@ -651,7 +718,7 @@ void smiles_data_reader::test_encode() {
     LBANN_ERROR("num_tested= ", num_tested, "; m_sample_lookup.size()= ", m_sample_lookup.size(), "; should be equal");
   }
 
-  std::cout << "ENDING TEST_ENCODE; time: " << get_time()-tm1 
+  std::cout << "ENDING TEST_ENCODE; time: " << get_time()-tm1
             << " >>> TESTS PASSED <<< " << std::endl;
 }
 
@@ -665,7 +732,7 @@ void smiles_data_reader::decode_smiles(const std::vector<short> &data, std::stri
       for (auto tt : data) {
         s2 << tt << " ";
       }
-      s2 << "; m_vocab_inv.size(): " << m_vocab_inv.size() 
+      s2 << "; m_vocab_inv.size(): " << m_vocab_inv.size()
          << " m_vocab_inv keys: ";
       for (auto tt : m_vocab_inv) {
         s2 << tt.first << " ";
@@ -678,7 +745,7 @@ void smiles_data_reader::decode_smiles(const std::vector<short> &data, std::stri
       s << "<unk>";
     } else if (!(x == "<bos>" || x == "<eos>" || x == "<pad>")) {
       s << m_vocab_inv[t];
-    } 
+    }
   }
   out = s.str();
 }
@@ -709,7 +776,7 @@ void smiles_data_reader::get_delimiter() {
         break;
       default :
         LBANN_ERROR("Invalid delimiter character; should be 'c', 't', '0'; you passed: ", d);
-    }  
+    }
   }
   if (is_master()) {
     std::cout << "USING delimiter character: (int)" << (int)m_delimiter << std::endl;

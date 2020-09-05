@@ -2,6 +2,7 @@
 set_full_path(THIS_DIR_HEADERS
   thread_pool.hpp
   thread_safe_queues.hpp
+  thread_topology.hpp
   type_erased_function.hpp
   memory.hpp
   thread_utils.hpp

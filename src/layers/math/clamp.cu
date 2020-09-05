@@ -101,7 +101,7 @@ void local_fp(TensorDataType min,
 
   // Launch CUDA kernel
   if (grid_dim > 0) {
-    fp_kernel<<<grid_dim, block_dim, 0, El::GPUManager::Stream()>>>(
+    fp_kernel<<<grid_dim, block_dim, 0, hydrogen::cuda::GetDefaultStream()>>>(
       min, max, height, width,
       input.LockedBuffer(), input.LDim(),
       output.Buffer(), output.LDim());
@@ -131,7 +131,7 @@ void local_bp(TensorDataType min,
 
   // Launch CUDA kernel
   if (grid_dim > 0) {
-    bp_kernel<<<grid_dim, block_dim, 0, El::GPUManager::Stream()>>>(
+    bp_kernel<<<grid_dim, block_dim, 0, hydrogen::cuda::GetDefaultStream()>>>(
       min, max, height, width,
       input.LockedBuffer(), input.LDim(),
       gradient_wrt_output.LockedBuffer(), gradient_wrt_output.LDim(),
