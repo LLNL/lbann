@@ -76,15 +76,6 @@ lbann_comm::lbann_comm(int ppm, El::mpi::Comm world) :
 
   // Setup threads
   setup_threads();
-
-  // Optionally open debug files; using raw MPI call here for safety XX
-  if (options::get()->get_bool("debugc")) {
-    m_debug_filename = m_debug_filename_base + "." + std::to_string(get_rank_in_world()) + ".txt";
-    m_debug = new std::ofstream(m_debug_filename.c_str());
-  }
-  if (!m_debug) {
-    LBANN_ERROR("failed to open ", m_debug_filename, " for writing");
-  }
 }
 
 lbann_comm::~lbann_comm() {
@@ -96,6 +87,17 @@ lbann_comm::~lbann_comm() {
 #ifdef LBANN_HAS_ALUMINUM
   ::Al::Finalize();
 #endif
+}
+
+void lbann_comm::open_debug() {
+  m_debug_filename = m_debug_filename_base + "_lbann_comm." + std::to_string(get_rank_in_world()) + ".txt";
+  m_debug = new std::ofstream(m_debug_filename.c_str());
+  if (!m_debug) {
+    LBANN_ERROR("failed to open ", m_debug_filename, " for writing");
+  }
+  if (am_world_master()) {
+    std::cout << "\nLBANN_COMM DEBUGGING TURNED ON\n\n";
+  }
 }
 
 void lbann_comm::split_trainers(int ppm) {

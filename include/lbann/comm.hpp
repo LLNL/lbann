@@ -1048,6 +1048,9 @@ class lbann_comm {
   /** throws an lbann_exception **/
   void lbann_comm_abort(std::string msg);
 
+  /** print info to file **/
+  void open_debug();
+
  private:
   /** World communicator. */
   const El::mpi::Comm world_comm;

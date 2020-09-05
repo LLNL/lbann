@@ -119,6 +119,11 @@ int main(int argc, char *argv[]) {
       print_help(*comm);
       return EXIT_SUCCESS;
     }
+    
+    // Optionally open lbann_comm debugging
+    if (opts->get_bool("debugc")) {
+      comm->open_debug();
+    }
 
     // Setup cuDNN and cuBLAS defaults
     if (master) {
