@@ -295,8 +295,7 @@ void data_store_conduit::set_preloaded_conduit_node(int data_id, const conduit::
   }
 
   {
-    // TODO: why are we copying here? dah, May 2020
-    conduit::Node n2 = node;
+    conduit::Node n2 = node;  // node == m_data[data_id]
     std::lock_guard<std::mutex> lock(m_mutex);
     build_node_for_sending(n2, m_data[data_id]);
   }
