@@ -24,8 +24,8 @@ data_set_metadata {
     image_height: 64
     image_num_channels: 4
 
-    #jag_image_keys: ["(0.0, 0.0)/0.0/emi", "(90.0, 0.0)/0.0/emi", "(90.0, 78.0)/0.0/emi"] #3 views
-    jag_image_keys: ["(0.0, 0.0)/0.0/emi"] #1 view, default
+    jag_image_keys: ["(0.0, 0.0)/0.0/emi", "(90.0, 0.0)/0.0/emi", "(90.0, 78.0)/0.0/emi"] #3 views
+    #jag_image_keys: ["(0.0, 0.0)/0.0/emi"] #1 view, default
 
     scalar_prefix: "/outputs/scalars/"
 

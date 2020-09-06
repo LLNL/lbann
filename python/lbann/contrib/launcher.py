@@ -30,6 +30,20 @@ def is_nersc_center():
     """
     return bool(os.getenv('NERSC_HOST'))
 
+def is_olcf_center():
+    """Current system is operated by the Oak Ridge Leadership
+    Computing Facility at Oak Ridge National Laboratory.
+
+    Checks whether the domain name ends with ".ornl.gov".
+    Checks whether the environment variable OLCF_MODULEPATH_ROOT is set.
+
+    """
+    domain = socket.getfqdn().split('.')
+    return (len(domain) > 2
+            and domain[-2] == 'ornl'
+            and domain[-1] == 'gov')
+#    return bool(os.getenv('OLCF_MODULEPATH_ROOT'))
+
 # Detect compute center and choose launcher
 _center = 'unknown'
 launcher = lbann.launcher
@@ -41,6 +55,10 @@ elif is_nersc_center():
     _center = 'nersc'
     import lbann.contrib.nersc.launcher
     launcher = lbann.contrib.nersc.launcher
+elif is_olcf_center():
+    _center = 'olcf'
+    import lbann.contrib.olcf.launcher
+    launcher = lbann.contrib.olcf.launcher
 
 def compute_center():
     """Name of organization that operates current system."""
