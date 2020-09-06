@@ -44,8 +44,8 @@ class MolVAE(lbann.modules.Module):
         #Encoder
         winit = lbann.GlorotNormalInitializer()
         self.encoder_rnn = gru(size=256, name=self.name+'_encoder_rnn')
-        self.q_mu = fc(128,name=self.name+'_qmu')
-        self.q_logvar = fc(128,name=self.name+'_qlogvar')
+        self.q_mu = fc(128,name=self.name+'_encoder_qmu')
+        self.q_logvar = fc(128,name=self.name+'_encoder_qlogvar')
         #Decoder
         self.decoder_rnn0 = gru(size=512, name=self.name+'_decoder_rnn0')
         self.decoder_rnn1 = gru(size=512, name=self.name+'_decoder_rnn1')
