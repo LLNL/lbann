@@ -37,10 +37,12 @@ template <typename TensorDataType>
 __global__ void kfac_test_add_to_diagonal_kernel(
     TensorDataType * __restrict__ A,
     const size_t height,
-    const TensorDataType value) {
+    const TensorDataType value,
+    const TensorDataType value_bn_err,
+    const bool is_bn) {
   const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
   if(gid < height) {
-    A[gid+gid*height] += value;
+    A[gid+gid*height] += (is_bn && gid >= height/2 ? value_bn_err : value);
   }
 }
 
@@ -122,12 +124,15 @@ template <typename TensorDataType>
 void kfac_test_add_to_diagonal(
     TensorDataType * __restrict__ A,
     const size_t height,
-    const TensorDataType damping) {
+    const TensorDataType damping,
+    const TensorDataType damping_bn_err,
+    const bool is_bn) {
   constexpr size_t block_size = 256;
   const size_t grid_size = (height + block_size - 1) / block_size;
   auto&& stream =  hydrogen::cuda::GetDefaultStream();
   kfac_test_add_to_diagonal_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
-      A, height, damping);
+      A, height, damping,
+      damping_bn_err, is_bn);
 }
 
 // TODO: static function
@@ -200,7 +205,9 @@ void kfac_test_compute_bn_factor(
   template void kfac_test_add_to_diagonal<T>(           \
       T* __restrict__ A,                                \
       const size_t height,                              \
-      const T value);                                   \
+      const T value,                                    \
+      const T value_bn_err,                             \
+      const bool is_bn);                                \
   template void kfac_test_fill_upper_tri<T>(            \
       T * __restrict__ A,                               \
       const size_t height);                             \

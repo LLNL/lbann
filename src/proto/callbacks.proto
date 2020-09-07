@@ -377,10 +377,10 @@ message Callback {
   }// message CallbackSummarizeImages
 
   message CallbackKFACTest {
-    double damping_act_0 = 1; // default: 3e-2
-    double damping_err_0 = 2; // default: 3e-2
-    double damping_act_target = 3; // default: 1e-4
-    double damping_err_target = 4; // default: 1e-4
+    string damping_act = 1; // default: 3e-2
+    string damping_err = 2; // default: 3e-2
+    string damping_bn_act = 3; // default: 3e-2
+    string damping_bn_err = 4; // default: 3e-2
     double damping_warmup_steps = 5; // default: 100
     double kronecker_decay = 6; // default: 0.99
     bool print_time = 7; // default: false

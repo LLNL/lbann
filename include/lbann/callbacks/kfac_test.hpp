@@ -39,7 +39,9 @@ template <typename TensorDataType>
 void kfac_test_add_to_diagonal(
     TensorDataType * __restrict__ A,
     const size_t height,
-    const TensorDataType value);
+    const TensorDataType value,
+    const TensorDataType value_bn_err=0,
+    const bool is_bn=false);
 
 // Fill the upper trianglar with the lower trianglar.
 template <typename TensorDataType>
@@ -80,23 +82,28 @@ class kfac_test : public callback_base {
 
   /** Constructor.
    */
-  kfac_test(double damping_act_0, double damping_err_0,
-            double damping_act_target, double damping_err_target,
+  kfac_test(std::vector<double> damping_act_params,
+            std::vector<double> damping_err_params,
+            std::vector<double> damping_bn_act_params,
+            std::vector<double> damping_bn_err_params,
             double damping_warmup_steps,
             double kronecker_decay,
             bool print_time, bool print_matrix,
             bool print_matrix_summary,
             bool use_pi)
       : callback_base(),
-        m_damping_act_0(damping_act_0), m_damping_err_0(damping_err_0),
-        m_damping_act_target(damping_act_target), m_damping_err_target(damping_err_target),
+        m_damping_act_params(damping_act_params),
+        m_damping_err_params(damping_err_params),
+        m_damping_bn_act_params(damping_bn_act_params), m_damping_bn_err_params(damping_bn_err_params),
         m_damping_warmup_steps(damping_warmup_steps),
         m_kronecker_decay(kronecker_decay),
         m_print_time(print_time), m_print_matrix(print_matrix),
         m_print_matrix_summary(print_matrix_summary),
         m_use_pi(use_pi) {
-    m_damping_act = m_damping_act_0;
-    m_damping_err = m_damping_err_0;
+    m_damping_act = m_damping_act_params[0];
+    m_damping_err = m_damping_err_params[0];
+    m_damping_bn_act = m_damping_bn_act_params[0];
+    m_damping_bn_err = m_damping_bn_err_params[0];
   }
   kfac_test(const kfac_test&) = default;
   kfac_test& operator=(const kfac_test&) = default;
@@ -109,7 +116,6 @@ class kfac_test : public callback_base {
 
   /** @brief The default parameters of a Tikhonov damping technique. */
   constexpr static const double damping_0_default = 3e-2;
-  constexpr static const double damping_target_default = 1e-4;
   constexpr static const double damping_warmup_steps_default = 100;
 
   /** @brief The default parameters of the decay factor. */
@@ -118,9 +124,9 @@ class kfac_test : public callback_base {
  private:
 
   /** @brief Parameters of a Tikhonov damping technique. */
-  const double m_damping_act_0, m_damping_err_0,
-    m_damping_act_target, m_damping_err_target,
-    m_damping_warmup_steps;
+  const std::vector<double> m_damping_act_params, m_damping_err_params,
+    m_damping_bn_act_params, m_damping_bn_err_params;
+  const double m_damping_warmup_steps;
 
   /** @brief The decay factor of kronecker factors. */
   const double m_kronecker_decay;
@@ -133,7 +139,8 @@ class kfac_test : public callback_base {
   const bool m_use_pi;
 
   /** @brief The current damping values. */
-  double m_damping_act, m_damping_err;
+  double m_damping_act, m_damping_err,
+    m_damping_bn_act, m_damping_bn_err;
 
   /** @brief Exponential moving average of kronecker factors. */
   std::unordered_map<

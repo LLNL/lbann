@@ -52,14 +52,25 @@ namespace callback {
 
 
 void kfac_test::setup(model *m) {
+  const auto v2s =
+      [](const std::vector<double> v) {
+        std::ostringstream oss;
+        for(auto i = v.begin(); i != v.end(); i++) {
+          if(i != v.begin())
+            oss << ",";
+          oss << *i;
+        }
+        return oss.str();
+      };
+
   const auto comm = m->get_comm();
   if(comm->am_trainer_master()) {
     std::ostringstream oss;
     oss << "K-FAC callback setup:"
-        << " damping_act_0=" << m_damping_act_0
-        << " damping_act_target=" << m_damping_act_target
-        << " damping_err_0=" << m_damping_err_0
-        << " damping_err_target=" << m_damping_err_target
+        << " damping_act=" << v2s(m_damping_act_params)
+        << " damping_err=" << v2s(m_damping_err_params)
+        << " damping_bn_act=" << v2s(m_damping_bn_act_params)
+        << " damping_bn_err=" << v2s(m_damping_bn_err_params)
         << " damping_warmup_steps=" << m_damping_warmup_steps
         << " kronecker_decay=" << m_kronecker_decay
         << std::endl;
@@ -72,19 +83,22 @@ void kfac_test::on_backward_prop_end(model *m) {
   // http://arxiv.org/abs/1811.12019.
   const auto get_next_damping =
       [](const double damping_prev,
-         const double damping_0,
-         const double damping_target,
+         const std::vector<double> damping_params,
          const double damping_warmup_steps) {
-        const DataType alpha = 2.0 * log10(damping_0 / damping_target) / damping_warmup_steps;
-        return (1.0-alpha) * damping_prev + alpha * damping_target;
+        if(damping_params.size() == 1)
+          return damping_params[0];
+        const DataType alpha = 2.0 * log10(damping_params[0] / damping_params[1]) / damping_warmup_steps;
+        return (1.0-alpha) * damping_prev + alpha * damping_params[1];
       };
 
   m_damping_act = get_next_damping(
-      m_damping_act, m_damping_act_0, m_damping_act_target,
-      m_damping_warmup_steps);
+      m_damping_act, m_damping_act_params, m_damping_warmup_steps);
   m_damping_err = get_next_damping(
-      m_damping_err, m_damping_err_0, m_damping_err_target,
-      m_damping_warmup_steps);
+      m_damping_err, m_damping_err_params, m_damping_warmup_steps);
+  m_damping_bn_act = get_next_damping(
+      m_damping_bn_act, m_damping_bn_act_params, m_damping_warmup_steps);
+  m_damping_bn_err = get_next_damping(
+      m_damping_bn_err, m_damping_bn_err_params, m_damping_warmup_steps);
 }
 
 void kfac_test::on_epoch_end(model *m) {
@@ -94,12 +108,12 @@ void kfac_test::on_epoch_end(model *m) {
     const auto epoch = c.get_epoch();
     std::ostringstream oss;
     // TODO: Print m_damping_err as well
-    oss << "K-FAC callback: changing damping value to " << m_damping_act
+    oss << "K-FAC callback: changing damping value to "
+        << m_damping_act << " (act)"
+        << ", " << m_damping_err << " (err)"
+        << ", " << m_damping_bn_act << " (bn_act)"
+        << ", " << m_damping_bn_err << " (bn_err)"
         << " at " << epoch << " epochs"
-        << " (g_0=" << m_damping_act_0
-        << ", g_target=" << m_damping_act_target
-        << ", t_warmup=" << m_damping_warmup_steps
-        << ")"
         << std::endl;
     std::cout << oss.str();
   }
@@ -185,15 +199,19 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
   const auto get_inverse =
       [](const El::Matrix<DataType, El::Device::GPU>& A,
          const bool report_time=false,
-         const DataType damping=0) {
+         const DataType damping=0,
+         const DataType damping_bn_err=0,
+         const bool is_bn=false) {
         assert_always(A.Width() == A.Height());
         El::Matrix<DataType, El::Device::GPU> Ainv(A);
 
         const double t_start = get_time();
 
-        if(damping > 0)
+        if(damping > 0 || damping_bn_err > 0)
           kfac_test_add_to_diagonal(
-              Ainv.Buffer(), Ainv.Height(), damping);
+              Ainv.Buffer(), Ainv.Height(),
+              damping, damping_bn_err,
+              is_bn);
 
         const double t_damping = get_time();
 
@@ -521,7 +539,9 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
       const bool print_time = comm->am_trainer_master() && m_print_time;
       const auto Finv = get_inverse(
           fisher_block, print_time,
-          DataType(m_damping_act)); // TODO: Use a dedicated damping factor
+          DataType(m_damping_bn_act),
+          DataType(m_damping_bn_err),
+          true);
 
       El::Matrix<DataType, El::Device::GPU> Fgrad(num_channels*2, 1);
       El::Gemm(
@@ -571,14 +591,19 @@ build_kfac_test_callback_from_pbuf(
   using MsgType = lbann_data::Callback::CallbackKFACTest;
   using CallbackType = kfac_test;
   const auto& params = dynamic_cast<const MsgType&>(proto_msg);
-  double damping_act_0 = params.damping_act_0();
-  double damping_err_0 = params.damping_err_0();
-  if(damping_act_0 == 0.0) damping_act_0 = kfac_test::damping_0_default;
-  if(damping_err_0 == 0.0) damping_err_0 = kfac_test::damping_0_default;
-  double damping_act_target = params.damping_act_target();
-  double damping_err_target = params.damping_err_target();
-  if(damping_act_target == 0.0) damping_act_target = kfac_test::damping_target_default;
-  if(damping_err_target == 0.0) damping_err_target = kfac_test::damping_target_default;
+
+  const auto parse_damping_params =
+      [](const std::string str) {
+        if(str == "")
+          return std::vector<double>({kfac_test::damping_0_default});
+        else
+          return parse_list<double>(str);
+      };
+
+  const std::vector<double> damping_act_params = parse_damping_params(params.damping_act());
+  const std::vector<double> damping_err_params = parse_damping_params(params.damping_err());
+  const std::vector<double> damping_bn_act_params = parse_damping_params(params.damping_bn_act());
+  const std::vector<double> damping_bn_err_params = parse_damping_params(params.damping_bn_err());
   double damping_warmup_steps = params.damping_warmup_steps();
   if(damping_warmup_steps == 0.0) damping_warmup_steps = kfac_test::damping_warmup_steps_default;
   double kronecker_decay = params.kronecker_decay();
@@ -589,8 +614,10 @@ build_kfac_test_callback_from_pbuf(
   const bool print_matrix_summary = params.print_matrix_summary();
   const bool use_pi = params.use_pi();
   return make_unique<CallbackType>(
-      damping_act_0, damping_err_0,
-      damping_act_target, damping_err_target,
+      damping_act_params,
+      damping_err_params,
+      damping_bn_act_params,
+      damping_bn_err_params,
       damping_warmup_steps,
       kronecker_decay,
       print_time, print_matrix, print_matrix_summary,
