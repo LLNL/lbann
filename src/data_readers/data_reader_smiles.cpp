@@ -85,6 +85,7 @@ void smiles_data_reader::copy_members(const smiles_data_reader &rhs) {
   m_missing_char_in_vocab_count = rhs.m_missing_char_in_vocab_count;
   m_missing_chars = rhs.m_missing_chars;
   m_vocab = rhs.m_vocab;
+  m_sample_lookup_map = rhs.m_sample_lookup_map;
 }
 
 void smiles_data_reader::load() {
@@ -93,11 +94,6 @@ void smiles_data_reader::load() {
   }
 
   options *opts = options::get();
-
-  if (opts->get_bool("ltfb")) {
-    opts->set_option("use_data_store", 1);
-    opts->set_option("preload_data_store", 1);
-  }
 
   if (!opts->has_int("sequence_length")) {
     LBANN_ERROR("you must pass --sequence_length=<int> on the cmd line");
@@ -164,26 +160,10 @@ void smiles_data_reader::load() {
   instantiate_data_store();
   select_subset_of_data();
 
-  // get values for ad-hoc sanity checking; see: do_preload()
-  m_min_index = INT_MAX;
-  m_max_index = 0;
-  for (const auto &idx : m_shuffled_indices) {
-    if (idx < m_min_index) m_min_index = idx;
-    if (idx > m_max_index) m_max_index = idx;
-  }
-
   get_delimiter();
 
-  // TODO: does this work if we carve off a validation set?
-  // NOTE: if ltfb is run, we've hard-coded above to use the
-  //       data-store
   if (m_data_store == nullptr) {
-    double tm4 = get_time();
-    setup_local_cache();
-    if (is_master()) {
-      std::cout << "time for setup_local_cache(): " << get_time()-tm4
-                << "; num samples: " << m_sample_lookup.size() << std::endl;
-    }
+    build_sample_lookup_map();
   }
   print_statistics();
 }
@@ -197,7 +177,6 @@ void smiles_data_reader::do_preload_data_store() {
   }
 
   m_data_store->set_node_sizes_vary();
-  //m_data_store->set_is_local_cache();
   const std::string infile = get_file_dir() + "/" + get_data_filename();
   std::ifstream in(infile.c_str());
   if (!in) {
@@ -212,11 +191,6 @@ void smiles_data_reader::do_preload_data_store() {
   std::unordered_set<int> valid_ids;
   int sanity_min = INT_MAX;
   int sanity_max = 0;
-  /*for (const auto &id : m_shuffled_indices) {
-    valid_ids.insert(id);
-    if (id < sanity_min) sanity_min = id;
-    if (id > sanity_max) sanity_max = id;
-  }*/
   for (size_t idx=0; idx<m_shuffled_indices.size(); idx++) {
     int id = m_shuffled_indices[idx];
     if (id < sanity_min) sanity_min = id;
@@ -226,25 +200,17 @@ void smiles_data_reader::do_preload_data_store() {
     }
     valid_ids.insert(id);
   }
-  int max_index = sanity_max;
 
-  // cheap sanity check
-  if ( (sanity_min != m_min_index || sanity_max != m_max_index)
-        &&
-        get_role() == "train") {
-    LBANN_ERROR("sanity_min != m_min_index || sanity_max != m_max_index: ", sanity_min, " ", m_min_index, " ", sanity_max, " ", m_max_index);
-  }
-
-  // Load the samples. As currently written, each rank loads all samples,
-  // hence, there will be no data exchange phases. This can be expanded
-  // in the future, to use the data store for sharding, instead of a purely
-  // local cache
   int sample_id = -1;
   size_t sanity = 0;
   while (true) {
     ++sample_id;
     getline(in, line);
     if (valid_ids.find(sample_id) != valid_ids.end()) {
+      if(m_data_store->get_index_owner(sample_id) != m_rank_in_model) {
+        continue;
+      }
+
       conduit::Node &node = m_data_store->get_empty_node(sample_id);
       construct_conduit_node(sample_id, line, node);
       m_data_store->set_preloaded_conduit_node(sample_id, node);
@@ -274,7 +240,7 @@ bool smiles_data_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
   short *data_ptr = nullptr;
   size_t sz = 0;
   std::vector<short> data;
-  // no data_store: all data is stored locally
+  // read sample from file
   if (m_data_store == nullptr) {
     get_sample(data_id, data);
     data_ptr = data.data();
@@ -288,11 +254,8 @@ bool smiles_data_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
     }
 
     //get data from node from data store
-    // TODO: change if/when using sharing:
-    //   node["/data/" + ...
     const conduit::Node& node = m_data_store->get_conduit_node(data_id);
     const std::string &smiles_string = node["/" + LBANN_DATA_ID_STR(data_id) + "/data"].as_string();
-    //const std::string &smiles_string = node["/data/" + LBANN_DATA_ID_STR(data_id) + "/data"].as_string();
     encode_smiles(smiles_string, data, data_id);
     data_ptr = data.data();
     sz = data.size();
@@ -486,22 +449,17 @@ void smiles_data_reader::encode_smiles(const char *smiles, short size, std::vect
 }
 
 void smiles_data_reader::get_sample(int sample_id, std::vector<short> &sample_out) {
-  std::unordered_map<int, std::pair<size_t, short>>::const_iterator iter = m_sample_lookup.find(sample_id);
-  if (iter == m_sample_lookup.end()) {
-    std::stringstream s;
-    s << "; m_sample_lookup.size: " << m_sample_lookup.size() << " known data_ids: ";
-    for (auto t : m_sample_lookup) s << t.first << " ";
-    LBANN_ERROR("failed to find data_id ", sample_id, " in m_sample_lookup", s.str());
+  const std::pair<size_t,int>> &p = m_sample_lookup_map(sample_id);
+  const size_t &offset = m_sample_lookup_map(sample_id).first;
+  int sample_length = m_sample_lookup_map(sample_id).second;
+  m_data_fp.seekg(offset);
+  sample_out.resize(sample_length);
+  int r = fread(raw_data.data(), 1, sample_length);
+  if (r != sample_length) {
+    LBANN_ERROR("r=", r, "; sample_length=", sample_length, "; should be equal!");
   }
-  size_t offset = iter->second.first;
-  short size = iter->second.second;
-  if (offset + size > m_data.size()) {
-    LBANN_ERROR("offset: ", offset, " + size: ", size, " is > m_data.size(): ", m_data.size());
-  }
+  encode_smiles(raw_data.data(), sample_length, sample_out, sample_id);
 
-  const char *v = m_data.data()+offset;
-  const std::string smiles_string(v, size);
-  encode_smiles(v, size, sample_out, sample_id);
 }
 
 int smiles_data_reader::get_smiles_string_length(const std::string &line, int line_number) {
@@ -513,213 +471,6 @@ int smiles_data_reader::get_smiles_string_length(const std::string &line, int li
     LBANN_ERROR("failed to find delimit character; as an int: ", (int)m_delimiter, "; line: ", line, " which is line number ", line_number);
   }
   return k;
-}
-
-// TODO: break into several function calls ??
-// TODO: some/most of the following could/should be in the data_store ??
-void smiles_data_reader::setup_local_cache() {
-  double tm3 = get_time();
-  if (is_master()) {
-    std::cout << "\nSTARTING smiles_data_reader::setup_fast_experimental() " << std::endl << std::endl;
-  }
-
-  // This will hold: (dataum_id, datum_offset, datum length) for each sample
-  std::vector<size_t> sample_offsets(m_shuffled_indices.size()*3);
-
-  // Will hold size of above buffer, for bcasting
-  size_t buffer_size;
-
-  if (is_master()) {
-    double tm1 = get_time();
-
-    // Open input file and discard header line, if it exists
-    const std::string infile = get_file_dir() + "/" + get_data_filename();
-    std::ifstream in(infile.c_str());
-    if (!in) {
-      LBANN_ERROR("failed to open data file: ", infile, " for reading");
-    }
-    std::string line;
-    if (m_has_header) {
-      getline(in, line);
-    }
-
-    // Part 1: compute memory requirements for local cache
-
-    // Get max sample id, which will be the number of lines we need to
-    // read from file. This is needed if (1) not using 100% of data,
-    // and/or (2) carving off part of train data to use as validation.
-    std::unordered_set<int> samples_to_use;
-    int max_sample_id = 0;
-    for (size_t j=0; j<m_shuffled_indices.size(); j++) {
-      samples_to_use.insert(m_shuffled_indices[j]);
-      max_sample_id = m_shuffled_indices[j] > max_sample_id ? m_shuffled_indices[j] : max_sample_id;
-    }
-    ++max_sample_id;
-
-    // Construct sample_offsets vector
-    sample_offsets.clear();
-    size_t offset = 0;
-    for (int j=0; j<max_sample_id; j++) {
-      getline(in, line);
-      if (line.size() < 5) {
-        LBANN_ERROR("read ", j, " lines from file; could not read another. --num_samples is probably incorrect");
-      }
-      if (samples_to_use.find(j) != samples_to_use.end()) {
-        int k = get_smiles_string_length(line, j);
-        sample_offsets.push_back(j);
-        sample_offsets.push_back(offset);
-        sample_offsets.push_back(k);
-        offset += k;
-      }
-    }
-    buffer_size = offset;
-    m_data.resize(buffer_size);
-
-    // Part 2: Fill in the data buffer
-    in.seekg(0);
-    if (m_has_header) {
-      getline(in, line);
-    }
-    offset = 0;
-    for (int j=0; j<max_sample_id; j++) {
-      getline(in, line);
-      if (samples_to_use.find(j) != samples_to_use.end()) {
-        int k = get_smiles_string_length(line, j);
-        for (int n=0; n<k; n++) {
-          m_data[n+offset] = line[n];
-        }
-        offset += k;
-      }
-    }
-
-    if (sample_offsets.size()/3 != m_shuffled_indices.size()) {
-      LBANN_ERROR("sample_offsets.size()/3: ", sample_offsets.size()/3, " should be equal to m_shuffled_indices.size which is ", m_shuffled_indices.size());
-    }
-    std::cout << "P_0 time for computing sample sizes and filling buffer: " << get_time() - tm1 << std::endl;
-  }
-
-  // Construct lookup table for locating samples in the m_data vector (aka, the sample buffer)
-  m_comm->broadcast<size_t>(0, sample_offsets.data(), sample_offsets.size(), m_comm->get_world_comm());
-  for (size_t j=0; j<sample_offsets.size(); j += 3) {
-    m_sample_lookup[sample_offsets[j]] =
-      std::make_pair(sample_offsets[j+1], sample_offsets[j+2]);
-  }
-
-  // Bcast the sample buffer
-  m_comm->broadcast<size_t>(0, &buffer_size, 1, m_comm->get_world_comm());
-  m_data.resize(buffer_size);
-
-  int full_rounds = m_data.size() / INT_MAX;
-  int last_round = m_data.size() % INT_MAX;
-  size_t the_offset = 0;
-
-  for (int j=0; j<full_rounds; j++) {
-    m_comm->broadcast<char>(0, m_data.data()+the_offset, INT_MAX, m_comm->get_world_comm());
-    the_offset += INT_MAX;
-  }
-  if (last_round) {
-    m_comm->broadcast<char>(0, m_data.data()+the_offset, last_round, m_comm->get_world_comm());
-  }
-
-  if (is_master()) {
-    std::cout << "total time for loading data: " << get_time()-tm3 << std::endl
-              << "num samples: " << m_sample_lookup.size() << std::endl;
-  }
-
-  // Only used for testing/debugging during development
-  if (options::get()->get_bool("test_encode")) {
-    test_encode();
-  }
-
-  if (is_master()) {
-    pid_t p = getpid();
-    char buf[80];
-    sprintf(buf, "cat /proc/%d/status >& status.txt", p);
-    system(buf);
-    std::cout << "wrote proc/[pid]/status to 'status.txt'" << std::endl;
-  }
-}
-
-void smiles_data_reader::test_encode() {
-  // What this does: at this point, P_0 has read and bcast the data set,
-  // and each rank has built a lookup table. Below, P_1 looks up each
-  // data_id; encodes the string (E1); reads the string from file (S2);
-  // decodes E1 to produce string S1; compares S1 and S2 for equality.
-  double tm1 = get_time();
-  if (is_master()) {
-    std::cout << "STARTING TEST_ENCODE" << std::endl;
-  }
-  if (m_comm->get_rank_in_world() != 1) {
-    return;
-  }
-
-  // option: testing the test ;)
-  bool fail = options::get()->get_bool("make_test_fail");
-
-  // Build ordered set of data_ids so we can more easily iterate
-  // through the file -- instead of jumping around
-  std::set<int> data_ids;
-  for (auto t : m_sample_lookup) {
-    data_ids.insert(t.first);
-  }
-
-  // Open input file and discard header (if it exists)
-  const std::string infile = get_file_dir() + "/" + get_data_filename();
-  std::ifstream in(infile.c_str());
-  if (!in) {
-    LBANN_ERROR("failed to open ", infile, " for reading");
-  }
-  std::string line;
-  if (m_has_header) {
-    getline(in, line);
-  }
-
-  size_t num_tested = 0;
-
-  std::vector<short> encoded;
-  std::string decoded;
-  int sample_id = -1;
-  while (getline(in, line)) {
-    ++sample_id;
-
-    if (data_ids.find(sample_id) != data_ids.end()) {
-      ++num_tested;
-      // encode then decode the datum that is stored in memory
-      get_sample(sample_id, encoded);
-      decode_smiles(encoded, decoded);
-
-      // get datum length from the line we've just read from file
-      size_t k = get_smiles_string_length(line, sample_id);
-      std::string S2(line.data(), k);
-
-      // test the test! Optionally make the test fail;
-      // assumes smiles string contains at least 8 characters,
-      // and no string contains "~~~~"
-      if (num_tested > 10 && fail) {
-        for (size_t h=0; h<S2.size(); h++) {
-          S2[h] = '~';
-        }
-      }
-
-      // conduct tests
-      // It would be simpler to throw exceptions here, but currently that
-      // would cause all other procs to hang
-      if (S2.size() != decoded.size()) {
-        LBANN_ERROR("S2.size (", S2.size(), ") != decoded.size (", decoded.size());
-      }
-      if (S2 != decoded) {
-        LBANN_ERROR("test_encoded failed; string from memory: ", decoded, "; string from file: ", S2, "; should be equal");
-      }
-    }
-  }
-  in.close();
-
-  if (num_tested != m_sample_lookup.size()) {
-    LBANN_ERROR("num_tested= ", num_tested, "; m_sample_lookup.size()= ", m_sample_lookup.size(), "; should be equal");
-  }
-
-  std::cout << "ENDING TEST_ENCODE; time: " << get_time()-tm1
-            << " >>> TESTS PASSED <<< " << std::endl;
 }
 
 void smiles_data_reader::decode_smiles(const std::vector<short> &data, std::string &out) {
@@ -780,6 +531,43 @@ void smiles_data_reader::get_delimiter() {
   }
   if (is_master()) {
     std::cout << "USING delimiter character: (int)" << (int)m_delimiter << std::endl;
+  }
+}
+
+void smiles_data_reader::build_sample_lookup_map() {
+  double tm1 = get_time();
+
+  // Open input file
+  const std::string fn = get_file_dir() + "/" + get_data_filename();
+  std::ifstream in(fn.c_str());
+  if (!in) {
+    LBANN_ERROR("failed to open data file: ", fn, " for reading");
+  }
+  std::cout << "opened " << fn << " for reading\n";
+
+  // Loop over lines in the file and construct the lookup map
+  std::string line;
+  getline(in, line); //discard header
+  int sz_prime = m_linearized_data_size-2; // adjust for too long sequences
+  while(true) {
+    size_t offset = in.tellg();
+    getline(in, line);
+    if (!line.size()) {
+      break; //only exit from loop!
+    }
+    int sz = get_smiles_string_length(line, data_id);
+    if (sz > sz_prime) sz = sz_prime; // adjust for too long sequences
+    m_sample_lookup_map.push_back( make_pair(offset, sz) );
+  }
+  in.close();
+
+  std::cout << "smiles_data_reader::build_sample_lookup_map time: "
+            << get_time()-tm1 << std::endl;
+
+  // Open file for reading the actual samples; this is used during fetch_datum
+  m_data_fp = fopen(fn.c_str(), "r");
+  if (m_data_fp == NULL) {
+    LBANN_ERROR("failed to open ", fn, " for reading");
   }
 }
 

@@ -31,6 +31,7 @@
 #include "conduit/conduit.hpp"
 #include "lbann/utils/options.hpp"
 #include "lbann/data_readers/data_reader.hpp"
+#include <cstdio>
 
 namespace lbann {
   /**
@@ -69,34 +70,15 @@ public:
 
 private:
 
-  /// used for sanity checking in load() and do_preload();
-  /// may eventually go away
-  int m_min_index = INT_MAX;
-  int m_max_index = 0;
-
-  //==== start hack to make it work fast ====
-  
-  // maps: sample_id to <sample offset, wrt m_data[0], sample_size>
-  std::unordered_map<int, std::pair<size_t, short>> m_sample_lookup;
-
   std::vector<char> m_data;
 
   void get_sample(int sample_id, std::vector<short> &sample_out);
-
-  void setup_local_cache();
-
-  // to enable this feature, add '#define DEBUG_F' to data_reader_smiles.cpp;
-  // this is ONLY for testing/development; if enabled, each rank will encode
-  // all samples after loading, and prior to the first epoch
-  void test_encode();
 
   char m_delimiter = '\0';
 
   // CAUTION: line_number is same as sample_id, i.e, assumes a single
   //          data input file
   int get_smiles_string_length(const std::string &line, int line_number);
-
-  //==== end hack to make it work fast ====
 
   int m_linearized_data_size = 0;
   int m_linearized_label_size = 0;
@@ -119,9 +101,15 @@ private:
   size_t m_missing_char_in_vocab_count = 0;
   std::unordered_set<char> m_missing_chars;
 
+  // m_sample_lookup_map[j].first is the sample's offset in the file
+  // m_sample_lookup_map[j].second is the sample's length
+  std::vector<std::pair<size_t,int>> m_sample_lookup_map;
+  FILE *m_data_fp = 0;
   //=====================================================================
   // private methods follow
   //=====================================================================
+
+  void build_sample_lookup_map();
 
   void get_delimiter();
 
