@@ -451,8 +451,9 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
       }
     } else {
       assert_always(is_bn);
-      // TODO: Support BN layers after convolution
-      assert_always(parent->get_type() == "fully connected");
+      const bool is_bn_after_fc = (parent->get_type() == "fully connected");
+      const bool is_bn_after_conv = (parent->get_type() == "convolution");
+      assert_always(is_bn_after_fc || is_bn_after_conv);
 
       assert_always(l->num_weights() == 4); // scale, bias, r_mean, r_var
       auto& scales = l->get_weights(0);
@@ -468,12 +469,25 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
       const auto &scale_values = s_dtw->get_values();
       const auto &bias_values = b_dtw->get_values();
 
-      const auto num_channels = local_activations.Height();
-      assert_always(num_channels == local_errors.Height());
-      assert_always(num_channels == scale_values.Height());
-      assert_always(num_channels == scale_values.LocalHeight());
-      assert_always(num_channels == bias_values.Height());
-      assert_always(num_channels == bias_values.LocalHeight());
+      size_t num_channels;
+      size_t spatial_prod;
+      if(is_bn_after_fc) {
+        num_channels = local_activations.Height();
+        spatial_prod = 1;
+        assert_always(num_channels == (size_t) local_errors.Height());
+      } else {
+        const auto input_dims = l->get_input_dims(); // CHW
+        num_channels = input_dims[0];
+        spatial_prod = 1;
+        // std::accumulate might overflow for large 3D layers
+        for(auto i = input_dims.begin()+1; i != input_dims.end(); i++)
+          spatial_prod *= *i;
+      }
+
+      assert_always(num_channels == (size_t) scale_values.Height());
+      assert_always(num_channels == (size_t) scale_values.LocalHeight());
+      assert_always(num_channels == (size_t) bias_values.Height());
+      assert_always(num_channels == (size_t) bias_values.LocalHeight());
 
       // REVIEW: Does inverse-scaling result in NaN?
       El::Matrix<DataType, El::Device::GPU> factor(num_channels*2, local_batch_size);
@@ -484,7 +498,8 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
           bias_values.LockedMatrix().LockedBuffer(),
           factor.Buffer(),
           local_batch_size,
-          num_channels);
+          num_channels,
+          spatial_prod);
 
       El::Matrix<DataType, El::Device::GPU> fisher_block(num_channels*2, num_channels*2);
       const DataType alpha = mini_batch_size;
@@ -538,7 +553,7 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
             << ", " << get_matrix_stat(local_errors, "errs")
             << ", " << get_matrix_stat(s_gradients, "scale_grad")
             << ", " << get_matrix_stat(b_gradients, "bias_grad")
-            << ", " << get_matrix_stat(Finv, "Finvgrad")
+            << ", " << get_matrix_stat(Fgrad, "Fgrad")
             << std::endl;
         std::cout << oss.str();
       }
