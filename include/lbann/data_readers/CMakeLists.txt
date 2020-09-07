@@ -19,5 +19,10 @@ set_full_path(THIS_DIR_HEADERS
   data_reader_smiles.hpp
   )
 
+if (LBANN_HAS_DISTCONV)
+  list(APPEND THIS_DIR_HEADERS
+    "${CMAKE_CURRENT_SOURCE_DIR}/data_reader_hdf5.hpp")
+endif ()
+
 # Propagate the files up the tree
 set(HEADERS "${HEADERS}" "${THIS_DIR_HEADERS}" PARENT_SCOPE)

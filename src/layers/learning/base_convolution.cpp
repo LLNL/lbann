@@ -1386,6 +1386,14 @@ void base_convolution_adapter<TensorDataType, Device>::bp_compute_convolution_fi
     m_kernel_gradient->scale(dst_scale, hydrogen::cuda::GetDefaultStream());
   }
 }
+
+
+#define PROTO_DEVICE(T, Device)                                            \
+  template class base_convolution_adapter<T, Device>
+
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+
 #endif // LBANN_HAS_DISTCONV
 
 #define PROTO_DEVICE(T, Device)                                            \
