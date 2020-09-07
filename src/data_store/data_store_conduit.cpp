@@ -193,7 +193,11 @@ void data_store_conduit::copy_members(const data_store_conduit& rhs) {
   m_world_master = rhs.m_world_master;
   m_trainer_master = rhs.m_trainer_master;
   m_rank_in_trainer = rhs.m_rank_in_trainer;
+  m_rank_in_world = rhs.m_rank_in_world;
+  m_partition_in_trainer = rhs.m_partition_in_trainer;
+  m_offset_in_partition = rhs.m_offset_in_partition;
   m_np_in_trainer = rhs.m_np_in_trainer;
+  m_num_partitions_in_trainer = rhs.m_num_partitions_in_trainer;
   m_owner = rhs.m_owner;
   m_shuffled_indices = rhs.m_shuffled_indices;
   m_sample_sizes = rhs.m_sample_sizes;
@@ -404,8 +408,8 @@ void data_store_conduit::set_conduit_node(int data_id, const conduit::Node &node
       auto key = std::make_pair(data_id, m_offset_in_partition);
       m_owner[key] = m_rank_in_trainer;
       build_node_for_sending(node, m_data[data_id]);
-      error_check_compacted_node(m_data[data_id], data_id);
       m_sample_sizes[data_id] = m_data[data_id].total_bytes_compact();
+      error_check_compacted_node(m_data[data_id], data_id);
       //      m_mutex.unlock();
     }
   }
@@ -590,6 +594,7 @@ void data_store_conduit::exchange_data_by_sample(size_t current_pos, size_t mb_s
   tm5 = get_time();
   m_comm->wait_all(m_send_requests);
   m_comm->wait_all(m_recv_requests);
+  m_comm->trainer_barrier();
   m_wait_all_time += (get_time() - tm5);
 
   //========================================================================
@@ -1709,6 +1714,12 @@ void data_store_conduit::load_checkpoint(std::string dir_name, generic_data_read
            m_owner, m_sample_sizes);
 
   if (reader != nullptr) {
+#ifdef LBANN_HAS_DISTCONV
+    int num_io_parts = dc::get_number_of_io_partitions();
+#else
+    int num_io_parts = 1;
+#endif // LBANN_HAS_DISTCONV
+
     m_reader = reader;
     m_comm = m_reader->get_comm();
     m_shuffled_indices = &(m_reader->get_shuffled_indices());
@@ -1716,7 +1727,10 @@ void data_store_conduit::load_checkpoint(std::string dir_name, generic_data_read
     m_trainer_master = m_comm->am_trainer_master();
     m_rank_in_trainer = m_comm->get_rank_in_trainer();
     m_rank_in_world = m_comm->get_rank_in_world();
+    m_partition_in_trainer = m_rank_in_trainer/num_io_parts; // needs a better name  which group you are in
+    m_offset_in_partition = m_rank_in_trainer%num_io_parts;
     m_np_in_trainer = m_comm->get_procs_per_trainer();
+    m_num_partitions_in_trainer = m_np_in_trainer/num_io_parts; // rename this m_num_io_groups_in_trainer
   }
 
   // Open metadata filename; this is in index re, checkpointed conduit filenames
