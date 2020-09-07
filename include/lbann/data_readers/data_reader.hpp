@@ -37,7 +37,6 @@
 #include "lbann/io/file_io.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/utils/options.hpp"
-#include "lbann/utils/threads/thread_pool.hpp"
 #include "lbann/transforms/transform_pipeline.hpp"
 #include "lbann/utils/distconv.hpp"
 
@@ -59,6 +58,7 @@
 namespace lbann {
 
 class data_store_conduit;
+class thread_pool;
 class trainer;
 
 /**
@@ -702,7 +702,7 @@ class generic_data_reader {
 
   lbann_comm *m_comm;
 
-  virtual bool fetch_data_block(CPUMat& X, El::Int thread_index, El::Int mb_size, El::Matrix<El::Int>& indices_fetched);
+  virtual bool fetch_data_block(CPUMat& X, El::Int block_offset, El::Int block_stride, El::Int mb_size, El::Matrix<El::Int>& indices_fetched);
 
   /**
    * Fetch a single sample into a matrix.

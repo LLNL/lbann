@@ -37,8 +37,7 @@
 using namespace lbann;
 
 int main(int argc, char *argv[]) {
-  int random_seed = 0;
-  world_comm_ptr comm = initialize(argc, argv, random_seed);
+  world_comm_ptr comm = initialize(argc, argv);
   bool master = comm->am_world_master();
 
   try {
@@ -99,4 +98,3 @@ int main(int argc, char *argv[]) {
   // Clean up
   return EXIT_SUCCESS;
 }
-

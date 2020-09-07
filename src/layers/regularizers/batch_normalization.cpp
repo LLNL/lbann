@@ -26,6 +26,7 @@
 
 #define LBANN_BATCH_NORMALIZATION_LAYER_INSTANTIATE
 #include "lbann/layers/regularizers/batch_normalization.hpp"
+#include "lbann/weights/weights_helpers.hpp"
 
 namespace lbann {
 
@@ -49,13 +50,14 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute() {
 
   // Compute statistics
   if (is_training) {
-
+    using ValuesGetter = weights_details::SafeWeightsAccessor<TensorDataType>;
     // Local matrices
     auto& local_mean = this->m_mean_v->Matrix();
     auto& local_var = this->m_var_v->Matrix();
-    auto& local_running_mean = this->get_data_type_weights(2).get_values().Matrix();
-    auto& local_running_var = this->get_data_type_weights(3).get_values().Matrix();
-
+    auto& local_running_mean =
+      ValuesGetter::mutable_values(this->get_weights(2)).Matrix();
+    auto& local_running_var =
+      ValuesGetter::mutable_values(this->get_weights(3)).Matrix();
     // Compute sums and sums of squares
     LBANN_OMP_PARALLEL_FOR
     for (El::Int channel = 0; channel < num_channels; ++channel) {
@@ -121,14 +123,14 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute() {
   }
 
   // Get matrices
-  const auto& local_scale = this->get_data_type_weights(0).get_values().LockedMatrix();
-  const auto& local_bias = this->get_data_type_weights(1).get_values().LockedMatrix();
+  const auto& local_scale = this->weights_values(0).LockedMatrix();
+  const auto& local_bias = this->weights_values(1).LockedMatrix();
   const auto& local_mean = (is_training ?
                             this->m_mean_v->LockedMatrix() :
-                            this->get_data_type_weights(2).get_values().LockedMatrix());
+                            this->weights_values(2).LockedMatrix());
   const auto& local_var = (is_training ?
                            this->m_var_v->LockedMatrix() :
-                           this->get_data_type_weights(3).get_values().LockedMatrix());
+                           this->weights_values(3).LockedMatrix());
 
   // Iterate through channels
   LBANN_OMP_PARALLEL_FOR
@@ -162,13 +164,13 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_compute() {
   const bool is_training = this->m_model->get_execution_context().get_execution_mode() == execution_mode::training;
 
   // Matrices
-  const auto& local_scale = this->get_data_type_weights(0).get_values().LockedMatrix();
+  const auto& local_scale = this->weights_values(0).LockedMatrix();
   const auto& local_mean = (is_training ?
                             this->m_mean_v->LockedMatrix() :
-                            this->get_data_type_weights(2).get_values().LockedMatrix());
+                            this->weights_values(2).LockedMatrix());
   const auto& local_var = (is_training ?
                            this->m_var_v->LockedMatrix() :
-                           this->get_data_type_weights(3).get_values().LockedMatrix());
+                           this->weights_values(3).LockedMatrix());
   const auto& input = this->get_prev_activations();
   const auto& local_input = input.LockedMatrix();
   const auto& local_gradient_wrt_output = this->get_local_prev_error_signals();
@@ -239,11 +241,11 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_compute() {
     // Zero fused buffer.
     El::Zero(*this->m_mean_and_var_gradient);
   }
-  auto* scale_optimizer = this->get_data_type_weights(0).get_optimizer();
+  auto* scale_optimizer = this->get_weights(0).get_optimizer();
   if (scale_optimizer != nullptr) {
     scale_optimizer->add_to_gradient(*this->m_scale_gradient, El::TypeTraits<TensorDataType>::One(), true);
   }
-  auto* bias_optimizer = this->get_data_type_weights(1).get_optimizer();
+  auto* bias_optimizer = this->get_weights(1).get_optimizer();
   if (bias_optimizer != nullptr) {
     bias_optimizer->add_to_gradient(*this->m_bias_gradient, El::TypeTraits<TensorDataType>::One(), true);
   }

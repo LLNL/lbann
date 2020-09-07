@@ -11,7 +11,7 @@ else ()
     CACHE STRING "The URL from which to clone Aluminum")
 endif ()
 
-set(ALUMINUM_TAG "v0.3.3"
+set(ALUMINUM_TAG "v0.4.0"
   CACHE STRING "The git tag to checkout for Aluminum")
 
 set(ALUMINUM_CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}"

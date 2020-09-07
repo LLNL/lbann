@@ -217,7 +217,5 @@
 #include "lbann/utils/peek_map.hpp"
 #include "lbann/utils/stack_trace.hpp"
 #include "lbann/utils/stack_profiler.hpp"
-#include "lbann/utils/threads/thread_pool.hpp"
-#include "lbann/utils/threads/thread_utils.hpp"
 
 #endif // LBANN_LBANN_HPP_INCLUDED

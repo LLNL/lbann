@@ -27,6 +27,9 @@
 #define LBANN_INPUT_LAYER_INSTANTIATE
 #include "lbann/layers/io/input/input_layer.hpp"
 #include "lbann/utils/profiling.hpp"
+#ifdef LBANN_HAS_DISTCONV
+#include "lbann/data_readers/data_reader_hdf5.hpp"
+#endif // LBANN_HAS_DISTCONV
 
 namespace lbann {
 
@@ -42,6 +45,18 @@ input_distconv_adapter(Layer& layer, const bool shuffle_required)
   for (int i = 0; i < layer.get_num_children(); ++i) {
     m_is_input_processed.push_back(layer.get_child_layers()[i]->distconv_enabled());
   }
+  auto &l = dynamic_cast<input_layer<
+    TensorDataType, T_io_buffer, T_layout, Dev>&>(this->layer());
+  // TODO: hdf5_reader is assumed to return a sub-sample partitioned
+  // in the same way as specified by the parallel strategy of this input
+  // layer. Other data readers are assumed to return a complete
+  // sample, thus shuffling is required (unless sample-parallel
+  // strategy is given). Conceptually, it seems to make sense if a
+  // data reader is annotated with a parallel strategy. Note that,
+  // when the HDF5 data reader is used, it is assumed that it is used
+  // in all execution modes.
+  auto training_dr = l.get_data_reader(execution_mode::training);
+  m_shuffle_required = dynamic_cast<hdf5_reader*>(training_dr) == nullptr;
   if (m_shuffle_required) {
     m_shufflers.resize(layer.get_num_children());
   }
@@ -166,7 +181,7 @@ setup_activations_i(int index) const {
     const auto local_shape = get_activations_local_shape(index);
     auto t = make_unique<TensorDevType>(shape, loc, dist, local_shape);
     assert0(t->allocate());
-    t->zero(El::GPUManager::Stream());
+    t->zero(hydrogen::cuda::GetDefaultStream());
     return t;
   }
 }
@@ -253,7 +268,7 @@ template <typename TensorDataType, typename T_io_buffer,
 void input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev>::fp_compute() {
   auto &l = dynamic_cast<input_layer<
     TensorDataType, T_io_buffer, T_layout, Dev>&>(this->layer());
-  auto stream = El::GPUManager::Stream();
+  auto stream = hydrogen::cuda::GetDefaultStream();
   // Note that the mini-batch size of the data reader is not
   // actually the one for the current mini-batch as the mini-batch
   // index is already updated by fp_compute.

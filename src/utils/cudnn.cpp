@@ -48,10 +48,10 @@ namespace {
 struct handle_wrapper {
   cudnnHandle_t handle;
   handle_wrapper() : handle(nullptr) {
-    CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
+    CHECK_CUDA(cudaSetDevice(hydrogen::gpu::DefaultDevice()));
     if (handle == nullptr) { CHECK_CUDNN(cudnnCreate(&handle)); }
     if (handle == nullptr) { LBANN_ERROR("failed to create cuDNN handle"); }
-    CHECK_CUDNN(cudnnSetStream(handle, El::GPUManager::Stream()));
+    CHECK_CUDNN(cudnnSetStream(handle, hydrogen::cuda::GetDefaultStream()));
   }
   handle_wrapper(const handle_wrapper&) = delete;
   handle_wrapper& operator=(const handle_wrapper&) = delete;
@@ -75,9 +75,9 @@ void destroy() {
 
 cudnnHandle_t& get_handle() {
   if (!handle_instance) { initialize(); }
-  CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
+  CHECK_CUDA(cudaSetDevice(hydrogen::gpu::DefaultDevice()));
   CHECK_CUDNN(cudnnSetStream(handle_instance->handle,
-                             El::GPUManager::Stream()));
+                             hydrogen::cuda::GetDefaultStream()));
   return handle_instance->handle;
 }
 

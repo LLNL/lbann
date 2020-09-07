@@ -8,7 +8,7 @@ namespace lbann {
 
 #ifdef LBANN_HAS_STD_MAKE_UNIQUE
 
-using std::make_unique;
+using ::std::make_unique;
 
 #else
 

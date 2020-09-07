@@ -197,18 +197,18 @@ class data_store_conduit {
 
   /// fills in m_owner, which maps index -> owning processor
   void set_preloaded_owner_map(const std::unordered_map<int,int> &owner) {
-    // TODO: needs slab extension
-    // m_owner = owner;
-    LBANN_ERROR("Slab-extension missing");
+    for(auto&& i : owner) {
+      m_owner[std::make_pair(i.first, m_offset_in_partition)] = i.second;
+    }
   }
 
   /** @brief Special hanling for ras_lipid_conduit_data_reader; may go away in the future */
   void clear_owner_map();
 
   void set_owner_map(const std::unordered_map<int, int> &m) {
-    // TODO: needs slab extension
-    // m_owner = m;
-    LBANN_ERROR("Slab-extension missing");
+    for(auto&& i : m) {
+      m_owner[std::make_pair(i.first, m_offset_in_partition)] = i.second;
+    }
   }
 
   /** @brief Special handling for ras_lipid_conduit_data_reader; may go away in the future */

@@ -134,17 +134,17 @@ public:
     // Setup weights and weights gradient
     m_gradient->AlignWith(this->get_activations());
     m_gradient->Resize(this->get_output_size(), 1);
-    this->get_data_type_weights(0).set_dims(this->get_output_dims());
-    this->get_data_type_weights(0).set_matrix_distribution(m_gradient->DistData());
+    this->get_weights(0).set_dims(this->get_output_dims());
+    this->get_weights(0).set_matrix_distribution(m_gradient->DistData());
 
     // Initialize freeze state
-    if (this->m_frozen) { this->get_data_type_weights(0).freeze(); }
-    else                { this->get_data_type_weights(0).unfreeze(); }
-    if (this->get_data_type_weights(0).is_frozen() != this->m_frozen) {
+    if (this->m_frozen) { this->get_weights(0).freeze(); }
+    else                { this->get_weights(0).unfreeze(); }
+    if (this->get_weights(0).is_frozen() != this->m_frozen) {
       LBANN_ERROR((this->m_frozen ? "" : "un"),"frozen ",
                   "layer \"",this->get_name(),"\" has ",
-                  (this->get_data_type_weights(0).is_frozen() ? "" : "un"),"frozen ",
-                  "weights \"",this->get_data_type_weights(0).get_name(),"\"");
+                  (this->get_weights(0).is_frozen() ? "" : "un"),"frozen ",
+                  "weights \"",this->get_weights(0).get_name(),"\"");
     }
 
   }
@@ -152,8 +152,7 @@ public:
   void fp_compute() override {
 
     // Matrices
-    const auto& local_weights =
-      this->get_data_type_weights(0).get_values().LockedMatrix();
+    const auto& local_weights = this->weights_values(0).LockedMatrix();
     auto& local_output = this->get_local_activations();
     El::Ones(m_workspace, local_output.Width(), 1);
 
@@ -171,7 +170,7 @@ public:
 
     // Get optimizer
     // Note: Nothing needs to be done if there is no optimizer
-    auto* opt = this->get_data_type_weights(0).get_optimizer();
+    auto* opt = this->get_weights(0).get_optimizer();
     if (opt == nullptr) { return; }
 
     // Matrices

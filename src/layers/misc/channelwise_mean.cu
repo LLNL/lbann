@@ -139,7 +139,7 @@ void channelwise_mean_layer<TensorDataType, Layout, Device>::fp_compute() {
     grid_dims.y = num_channels;
     grid_dims.z = local_width;
     mean_kernel<block_size>
-      <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
+      <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
         num_channels, channel_size, local_width,
         local_input.LockedBuffer(), local_input.LDim(),
         local_output.Buffer(), local_output.LDim());
@@ -171,7 +171,7 @@ void channelwise_mean_layer<TensorDataType, Layout, Device>::bp_compute() {
     grid_dims.x = (channel_size + block_size - 1) / block_size;
     grid_dims.y = num_channels;
     grid_dims.z = local_width;
-    backprop_kernel<<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
+    backprop_kernel<<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
         num_channels, channel_size, local_width,
         local_gradient_wrt_output.LockedBuffer(),
         local_gradient_wrt_output.LDim(),

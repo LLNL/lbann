@@ -48,7 +48,7 @@ class batch_normalization_distconv_adapter: public data_type_distconv_adapter<Te
  public:
   using TensorDevType = typename data_type_distconv_adapter<TensorDataType>::TensorDevType;
   batch_normalization_distconv_adapter(Layer& layer):
-      data_type_distconv_adapter<TensorDataType>(layer) {}
+    data_type_distconv_adapter<TensorDataType>(layer) {}
   virtual ~batch_normalization_distconv_adapter() = default;
   void setup_fp_tensors() override;
   void setup_bp_tensors() override;
@@ -293,41 +293,41 @@ protected:
           << "with an invalid number of weights";
       LBANN_ERROR(err.str());
     }
-    this->set_num_data_type_weights(4);
-    if (!this->has_data_type_weights(0)) {
+    this->set_num_weights(4);
+    if (!this->has_weights(0)) {
       auto w = make_unique<WeightsType>(this->get_comm());
       auto init = make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::One());
       auto opt = this->m_model->template create_optimizer<TensorDataType>();
       w->set_name(this->get_name() + "_scale");
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
-      this->set_data_type_weights(0, w.get());
+      this->set_weights(0, w.get());
       this->m_model->add_weights(std::move(w));
     }
-    if (!this->has_data_type_weights(1)) {
+    if (!this->has_weights(1)) {
       auto w = make_unique<WeightsType>(this->get_comm());
       auto init = make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::Zero());
       auto opt = this->m_model->template create_optimizer<TensorDataType>();
       w->set_name(this->get_name() + "_bias");
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
-      this->set_data_type_weights(1, w.get());
+      this->set_weights(1, w.get());
       this->m_model->add_weights(std::move(w));
     }
-    if (!this->has_data_type_weights(2)) {
+    if (!this->has_weights(2)) {
       auto w = make_unique<WeightsType>(this->get_comm());
       auto init = make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::Zero());
       w->set_name(this->get_name() + "_running_mean");
       w->set_initializer(std::move(init));
-      this->set_data_type_weights(2, w.get());
+      this->set_weights(2, w.get());
       this->m_model->add_weights(std::move(w));
     }
-    if (!this->has_data_type_weights(3)) {
+    if (!this->has_weights(3)) {
       auto w = make_unique<WeightsType>(this->get_comm());
       auto init = make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::One());
       w->set_name(this->get_name() + "_running_variance");
       w->set_initializer(std::move(init));
-      this->set_data_type_weights(3, w.get());
+      this->set_weights(3, w.get());
       this->m_model->add_weights(std::move(w));
     }
 
@@ -335,9 +335,11 @@ protected:
     auto dist = this->get_prev_activations().DistData();
     dist.colDist = El::STAR;
     dist.rowDist = El::STAR;
-    for (auto* w : this->get_data_type_weights()) {
-      w->set_dims(num_channels);
-      w->set_matrix_distribution(dist);
+    size_t const num_weights = this->num_weights();
+    for (size_t ii = 0; ii < num_weights; ++ii) {
+      auto& w = this->get_weights(ii);
+      w.set_dims(num_channels);
+      w.set_matrix_distribution(dist);
     }
 
     // Initialize matrices
@@ -355,21 +357,21 @@ protected:
              El::ALL, El::IR(1, 2));
 
     // Initialize freeze state
-    for (auto&& w : this->get_data_type_weights()) {
+    for (size_t ii = 0; ii < num_weights; ++ii) {
+      auto& w = this->get_weights(ii);
       if (this->m_frozen) {
-        w->freeze();
+        w.freeze();
       } else {
-        w->unfreeze();
+        w.unfreeze();
       }
     }
-    for (auto&& w : this->get_data_type_weights()) {
-      if (w->is_frozen() != this->m_frozen) {
-        std::stringstream err;
-        err << (this->m_frozen ? "" : "un") << "frozen "
-            << "layer \"" << this->get_name() << "\" has "
-            << (w->is_frozen() ? "" : "un") << "frozen "
-            << "weights \"" << w->get_name() << "\"";
-        LBANN_ERROR(err.str());
+    for (size_t ii = 0; ii < num_weights; ++ii) {
+      auto& w = this->get_weights(ii);
+      if (w.is_frozen() != this->m_frozen) {
+        LBANN_ERROR((this->m_frozen ? "" : "un"), "frozen layer "
+                    "\"", this->get_name(), "\" has ",
+                    (w.is_frozen() ? "" : "un"), "frozen weights "
+                    "\"", w.get_name(), "\"");;
       }
     }
 

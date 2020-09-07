@@ -147,7 +147,7 @@ void bilinear_resize_layer<TensorDataType, Layout, Device>::fp_compute() {
   // Launch CUDA kernel
   if (grid_dim > 0) {
     fp_kernel<block_dim>
-      <<<grid_dim, block_dim, 0, El::GPUManager::Stream()>>>(
+      <<<grid_dim, block_dim, 0, hydrogen::cuda::GetDefaultStream()>>>(
         num_samples, num_channels,
         input_height, input_width,
         local_input.LockedBuffer(), local_input.LDim(),

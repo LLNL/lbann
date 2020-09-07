@@ -51,8 +51,7 @@ vector<string> get_image_names();
 #define MAGIC_NUMBER 9
 
 int main(int argc, char *argv[]) {
-  int random_seed = lbann_default_random_seed;
-  world_comm_ptr comm = initialize(argc, argv, random_seed);
+  world_comm_ptr comm = initialize(argc, argv);
   bool master = comm->am_world_master();
   const int rank = comm->get_rank_in_world();
 
@@ -145,7 +144,7 @@ int main(int argc, char *argv[]) {
               if (v < inputs_v_min[h]) inputs_v_min[h] = v;
               if (v > inputs_v_max[h]) inputs_v_max[h] = v;
               inputs_sum[h] += v;
-            }  
+            }
 
             for (size_t h=0; h<scalar_names.size(); h++) {
               key = cnames[i] + "/scalars/" + scalar_names[h];
@@ -154,7 +153,7 @@ int main(int argc, char *argv[]) {
               if (v < scalars_v_min[h]) scalars_v_min[h] = v;
               if (v > scalars_v_max[h]) scalars_v_max[h] = v;
               scalars_sum[h] += v;
-            }  
+            }
 
             for (size_t h=0; h<image_names.size(); h++) {
               key = cnames[i] + "/images/" + image_names[h];
@@ -192,10 +191,10 @@ int main(int argc, char *argv[]) {
       double bias =  -1*inputs_v_min[h] / (inputs_v_max[h] - inputs_v_min[h]);
       if (h < input_names.size()-1) {
         out << "      { scale: " << scale << "  bias: " << bias << " }, #" << input_names[h] << " avg= " << inputs_sum[h] / num_samples << "}\n";
-      } else {  
+      } else {
         out << "      { scale: " << scale << "  bias: " << bias << " } #" << input_names[h] << " avg= " << inputs_sum[h] / num_samples << "}\n";
-      }  
-    }  
+      }
+    }
     out << "    ]\n";
 
     out << "    jag_scalar_normalization_params: [\n";
@@ -204,10 +203,10 @@ int main(int argc, char *argv[]) {
       double bias =  -1*scalars_v_min[h] / (scalars_v_max[h] - scalars_v_min[h]);
       if (h < scalar_names.size()-1) {
         out << "      { scale: " << scale << "  bias: " << bias << " }, #" << scalar_names[h] << " avg= " << scalars_sum[h] / num_samples << "\n";
-      } else {  
+      } else {
         out << "      { scale: " << scale << "  bias: " << bias << " } #" << scalar_names[h] << " avg= " << scalars_sum[h] / num_samples << "\n";
-      }  
-    }  
+      }
+    }
     out << "    ]\n";
 
     out << "    jag_image_normalization_params: [\n";
@@ -218,11 +217,11 @@ cout << h << " "<< g << " " << images_v_min[h][g] << " " << images_v_max[h][g] <
         double bias =  -1*images_v_min[h][g] / (images_v_max[h][g] - images_v_min[h][g]);
       if (h < image_names.size()-1) {
         out << "      { scale: " << scale << "  bias: " << bias << " }, #" << image_names[h] << "\n"; // avg= TODO" << "\n";
-      } else {  
+      } else {
         out << "      { scale: " << scale << "  bias: " << bias << " } #" << image_names[h] << "\n"; // avg= TODO" << "\n";
-      }  
-    }  
-  }  
+      }
+    }
+  }
   out << "    ]\n";
 
   cout << "\noutput was written to file: normalize.txt\n";

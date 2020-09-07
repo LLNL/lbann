@@ -201,8 +201,8 @@ void fp_gpu(lbann_comm& comm,
   const auto& col_comm_root = loss.RowOwner(0);
 
   // GPU objects
-  auto&& stream = El::GPUManager::Stream();
-  auto&& event = El::GPUManager::Event();
+  auto&& stream = hydrogen::cuda::GetDefaultStream();
+  auto&& event = hydrogen::cuda::GetDefaultEvent();
   El::SyncInfo<El::Device::GPU> syncInfo{stream, event};
   cuda::thrust::allocator<> alloc(stream);
 

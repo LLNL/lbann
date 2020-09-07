@@ -9,3 +9,4 @@ basic building blocks for larger models.
 from lbann.modules.base import Module, FullyConnectedModule, ConvolutionModule, Convolution2dModule, Convolution3dModule
 from lbann.modules.rnn import LSTMCell, GRU
 from lbann.modules.transformer import MultiheadAttention
+from lbann.modules.graph import *
