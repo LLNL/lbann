@@ -1281,9 +1281,13 @@ void base_convolution_adapter<TensorDataType, Device>::setup_bp_tensors() {
 
   m_kernel_gradient = make_unique<TensorDevType>(kernel_shape, loc, shared_dist);
   // Gradient buffer is needed for auto-tuning the bp filter algorithm
+
+  auto dst_scale_dt = El::TypeTraits<TensorDataType>::Zero(),
+      gradient_scale_dt = El::TypeTraits<TensorDataType>::Zero();
   assert0(dc::tensor::View(
-            *m_kernel_gradient,
-            l.get_weights(0).get_optimizer()->get_gradient().Buffer()));
+      *m_kernel_gradient,
+      l.get_weights(0).get_optimizer()->get_gradient_buffer(
+          dst_scale_dt, gradient_scale_dt, true).Buffer()));
 
   // Bias tensor. Shared by all procs
   if (l.m_bias_scaling_factor != TensorDataType(0)) {
@@ -1296,7 +1300,8 @@ void base_convolution_adapter<TensorDataType, Device>::setup_bp_tensors() {
       // which is set when its view is set.
       assert0(dc::tensor::View(
                 *m_bias_gradient,
-                l.get_weights(1).get_optimizer()->get_gradient().Buffer()));
+                l.get_weights(1).get_optimizer()->get_gradient_buffer(
+                    dst_scale_dt, gradient_scale_dt, true).Buffer()));
     }
   }
 }
