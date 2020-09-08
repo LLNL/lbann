@@ -259,6 +259,9 @@ private:
   void compute_common(OutputMatType& in, InputMatType& out, int dir) const
   {
     auto const num_samples = in.Width();
+    if (num_samples == 0)
+      return;
+
     auto const good_plan =
       std::find_if(cbegin(plans_), cend(plans_),
                    [num_samples](InternalPlanType const& a) {
@@ -304,6 +307,9 @@ private:
 
     // Look for an acceptable plan
     int const num_samples = in.Width();
+    if (num_samples == 0)
+      return;
+
     auto const good_plan =
       std::find_if(cbegin(plans_), cend(plans_),
                    [num_samples](InternalPlanType const& a) {

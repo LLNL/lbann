@@ -56,7 +56,7 @@ struct FFTBackendT<T, El::Device::CPU>
 using namespace El;
 // Updates B(i,j) = func(A(i,j), B(i,j));
 template <typename S, typename T, typename F>
-void Combine2D(
+void Combine(
   Matrix<S, Device::CPU> const& A,
   Matrix<T, Device::CPU>& B,
   F func)
@@ -130,13 +130,13 @@ static void ApplyAbsGradientUpdate(
   El::Matrix<El::Complex<T>, El::Device::CPU>& input_output)
 {
   using ComplexT = El::Complex<T>;
-  Combine2D(grad_wrt_output, input_output,
-            [](T const& dy, ComplexT const& x)
-            {
-              return (x == ComplexT(T(0))
-                      ? ComplexT(T(0))
-                      : El::Conj(x * (dy / El::Abs(x))));
-            });
+  Combine(grad_wrt_output, input_output,
+          [](T const& dy, ComplexT const& x)
+          {
+            return (x == ComplexT(T(0))
+                    ? ComplexT(T(0))
+                    : El::Conj(x * (dy / El::Abs(x))));
+          });
 }
 
 template <typename T>
@@ -250,6 +250,7 @@ public:
     auto const num_samples = input.Width();
     auto const output_height = get_linear_size(full_dims_);
 
+    // Nothing to do; short-circuit.
     workspace_.Resize(output_height, num_samples);
     fft_impl_.setup_forward(workspace_, full_dims_);
     fft_impl_.setup_backward(workspace_, full_dims_);

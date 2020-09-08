@@ -114,7 +114,7 @@ def construct_model(lbann):
 
     # LBANN implementation
     x = x_lbann
-    y = lbann.DFTAbs(x, device='cpu')
+    y = lbann.DFTAbs(x)
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='data-parallel layout'))
