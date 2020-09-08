@@ -360,9 +360,9 @@ void batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>::fp_com
   const bool is_training =
       l.m_model->get_execution_context().get_execution_mode() == execution_mode::training;
   auto& local_running_mean =
-    ValuesGetter::mutable_values(this->get_weights(2)).Matrix();
+    ValuesGetter::mutable_values(l.get_weights(2)).Matrix();
   auto& local_running_var =
-    ValuesGetter::mutable_values(this->get_weights(3)).Matrix();
+    ValuesGetter::mutable_values(l.get_weights(3)).Matrix();
 
   assert0(dc::tensor::View(
       m_scale, l.weights_values(0).LockedMatrix().LockedBuffer()));
