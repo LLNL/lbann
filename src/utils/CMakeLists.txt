@@ -23,6 +23,7 @@ set_full_path(THIS_DIR_SOURCES
   stack_profiler.cpp
   stack_trace.cpp
   statistics.cpp
+  std_options.cpp
   summary.cpp
   system_info.cpp
   lbann_library.cpp

@@ -35,6 +35,8 @@
 #include "lbann/utils/distconv.hpp"
 #include "lbann/utils/file_utils.hpp"
 #include "lbann/utils/commify.hpp"
+#include "lbann/utils/std_options.hpp"
+#include "lbann/utils/argument_parser.hpp"
 #include <unordered_set>
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -432,7 +434,25 @@ const conduit::Node & data_store_conduit::get_conduit_node(int data_id) const {
     if (t3 != m_data.end()) {
       return t3->second["data"];
     }
-    LBANN_ERROR("failed to find data_id: ", data_id, " in m_minibatch_data; m_minibatch_data.size: ", m_minibatch_data.size(), " and also failed to find it in m_data; m_data.size: ", m_data.size(), "; role: ", m_reader->get_role());
+    auto& arg_parser = global_argument_parser();
+    bool fail_on_missing_samples = arg_parser.get<bool>(DATA_STORE_FAIL_ON_MISSING_SAMPLES);
+    if(fail_on_missing_samples) {
+      LBANN_ERROR("failed to find data_id: ", data_id,
+                  " in m_minibatch_data; m_minibatch_data.size: ", m_minibatch_data.size(),
+                  " and also failed to find it in m_data; m_data.size: ", m_data.size(),
+                  "; role: ", m_reader->get_role());
+    }else {
+      int rand_data_id;
+      // Surrogate data nodes are not packed into compact format and
+      // don't have everything in a data subfield
+      const conduit::Node& rand_data = get_random_data(data_id, rand_data_id);
+      LBANN_WARNING("failed to find data_id: ", data_id,
+                    " in m_minibatch_data; m_minibatch_data.size: ", m_minibatch_data.size(),
+                    " and also failed to find it in m_data; m_data.size: ", m_data.size(),
+                    "; role: ", m_reader->get_role(),
+                    " substituting with data from node id=", rand_data_id);
+      return rand_data;
+    }
   }
 
   return t2->second;
@@ -696,6 +716,40 @@ void data_store_conduit::build_preloaded_owner_map(const std::vector<int>& per_r
   }
 PROFILE("build_preloaded_owner_map; m_owner_maps_were_exchanged = true");
   m_owner_maps_were_exchanged = true;
+}
+
+const conduit::Node & data_store_conduit::get_random_data(int data_id, int& rand_data_id) const {
+  const conduit::Node& rand_node = get_random_node();
+  conduit::Node surrogate_node = rand_node;
+  std::string rand_data_id_str = "";
+  // Any random node will be in a compact format based on how it has
+  // been repacked before sending
+  conduit::NodeIterator itr = surrogate_node.children();
+  while(itr.has_next()) {
+    conduit::Node &cld = itr.next();
+    std::string cld_name = itr.name();
+    // Look for the data field in the compact / schema based format
+    if(cld_name == "data") {
+      conduit::NodeIterator data_itr = cld.children();
+      std::string data_id_str = LBANN_DATA_ID_STR(data_id);
+      while(data_itr.has_next()) {
+        //        conduit::Node &datum = data_itr.next();
+        data_itr.next(); // Advanced the iterator
+        std::string datum_name = data_itr.name();
+        if(rand_data_id_str != "") {
+          LBANN_ERROR("This conduit node has multiple entries in the data field -- not supported: data_id=", datum_name);
+        }
+        rand_data_id_str = datum_name;
+        rand_data_id = std::stoi(rand_data_id_str);
+      }
+      if(rand_data_id_str == "") {
+        LBANN_ERROR("This conduit node had no entries in the data field -- not supported");
+      }
+      cld.rename_child(rand_data_id_str, data_id_str);
+      m_surrogate_data_cache[data_id] = cld;
+    }
+  }
+  return m_surrogate_data_cache[data_id];
 }
 
 const conduit::Node & data_store_conduit::get_random_node() const {
@@ -1514,6 +1568,8 @@ PROFILE("exchange_mini_batch_data; m_owner_maps_were_exchanged = true");
     */
   }
 
+  // Clear and setup a cache for any samples that don't exist this mini-batch
+  m_surrogate_data_cache.clear();
   exchange_data_by_sample(current_pos, mb_size);
   m_exchange_time += (get_time() - tm1);
 }

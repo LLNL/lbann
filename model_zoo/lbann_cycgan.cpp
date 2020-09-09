@@ -29,6 +29,7 @@
 #include "lbann/lbann.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/protobuf_utils.hpp"
+#include "lbann/utils/std_options.hpp"
 #include "lbann/utils/argument_parser.hpp"
 
 #include <lbann.pb.h>

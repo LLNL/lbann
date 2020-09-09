@@ -34,28 +34,13 @@
 #include "lbann/callbacks/dump_weights.hpp"
 #include "lbann/callbacks/save_model.hpp"
 #include "lbann/callbacks/load_model.hpp"
+#include "lbann/utils/std_options.hpp"
 #include "lbann/utils/argument_parser.hpp"
 
 #include <lbann.pb.h>
 #include <model.pb.h>
 
 namespace lbann {
-
-void construct_std_options() {
-  auto& arg_parser = global_argument_parser();
-  arg_parser.add_option(MAX_RNG_SEEDS_DISPLAY,
-                        {"--rng_seeds_per_trainer_to_display"},
-                        utils::ENV("LBANN_RNG_SEEDS_PER_TRAINER_TO_DISPLAY"),
-                        "Limit how many random seeds LBANN should display "
-                        "from each trainer",
-                        2);
-  arg_parser.add_option(NUM_IO_THREADS,
-                        {"--num_io_threads"},
-                        utils::ENV("LBANN_NUM_IO_THREADS"),
-                        "Number of threads available to both I/O and "
-                        "initial data transformations for each rank.",
-                        64);
-}
 
 /// Construct a trainer that contains a lbann comm object and threadpool
 std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,

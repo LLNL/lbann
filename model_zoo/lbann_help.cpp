@@ -27,6 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <lbann/proto/proto_common.hpp>
+#include "lbann/utils/std_options.hpp"
 #include "lbann/utils/argument_parser.hpp"
 #include "lbann/utils/lbann_library.hpp"
 

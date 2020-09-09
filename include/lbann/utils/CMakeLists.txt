@@ -36,6 +36,7 @@ set_full_path(THIS_DIR_HEADERS
   random_number_generators.hpp
   serialization.hpp
   statistics.hpp
+  std_options.hpp
   summary.hpp
   summary_impl.hpp
   timer.hpp

@@ -32,6 +32,7 @@
 #include "lbann/proto/init_image_data_readers.hpp"
 #include "lbann/proto/factories.hpp"
 #include "lbann/utils/file_utils.hpp"
+#include "lbann/utils/std_options.hpp"
 #include "lbann/utils/argument_parser.hpp"
 
 #include <lbann.pb.h>
