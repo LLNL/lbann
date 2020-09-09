@@ -103,6 +103,7 @@ message Layer {
     ChannelwiseScaleBias channelwise_scale_bias = 329;
     EntrywiseScaleBias entrywise_scale_bias = 330;
     ChannelwiseFullyConnected channelwise_fully_connected = 331;
+    GRU gru = 333;
 
     // Loss layers
     CrossEntropy cross_entropy = 60;
@@ -660,6 +661,10 @@ message Layer {
      *  @details Default: false
      */
     google.protobuf.BoolValue transpose = 3;
+  }
+
+  message GRU {
+    uint64 hidden_size = 1;
   }
 
   //////////////////
