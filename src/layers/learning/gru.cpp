@@ -130,7 +130,7 @@ gru_layer<TensorDataType,Layout,Device>
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void gru_layer<TensorDataType, Layout, Device>::setup_dims(DataReaderMetaData& dr_metadata) {
   data_type_layer<TensorDataType>::setup_dims(dr_metadata);
-  const int sequence_length = this->get_input_dims()[0];
+  const int sequence_length = this->get_input_dims(0)[0];
   if (static_cast<size_t>(this->get_input_size(1)) != m_hidden_size) {
     LBANN_ERROR(
       this->get_type()," layer \"",this->get_name(),"\" ",
@@ -169,6 +169,7 @@ void gru_layer<TensorDataType, Layout, Device>
 
   // Construct default weights if needed
   if (!this->has_weights()) {
+    this->set_num_weights(4);
     const auto scale = El::To<TensorDataType>(1./std::sqrt(m_hidden_size));
     for (size_t i=0; i<4; ++i) {
       auto w = make_unique<data_type_weights<TensorDataType>>(this->get_comm());
