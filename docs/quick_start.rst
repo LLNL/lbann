@@ -41,6 +41,12 @@ the :ref:`CMake install <build-with-cmake>`.
 
         spack install lbann <customization options>
 
+    A complete list of LBANN install options can be found with:
+    
+    .. code-block:: bash
+    
+        spack info lbann
+
     For users new to Spack, LBANN provides a script that will perform some
     basic configuration (e.g., add paths to externally installed packages) and
     install LBANN in a Spack environment.  *This script is only tested and
