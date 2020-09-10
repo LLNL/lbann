@@ -66,7 +66,7 @@ protected:
 #endif // LBANN_HAS_CUDNN
 
   void fp_compute() override;
-  // void bp_compute() override; /// @todo Implement
+  void bp_compute() override;
 
 private:
 
@@ -84,10 +84,8 @@ private:
 
   template <typename T>
   friend void fp_compute_impl(gru_layer<T,Layout,Device>&);
-#ifdef LBANN_HAS_GPU
   template <typename T>
   friend void bp_compute_impl(gru_layer<T,Layout,Device>&);
-#endif // LBANN_HAS_GPU
 
 };
 

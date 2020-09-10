@@ -131,15 +131,19 @@ def construct_model(lbann):
     ih_bias = np.random.normal(size=(3*_hidden_size,)).astype(np.float32)
     hh_bias = np.random.normal(size=(3*_hidden_size,)).astype(np.float32)
     ih_matrix_weights = lbann.Weights(
+        optimizer=lbann.NoOptimizer(), ### @todo Remove
         initializer=lbann.ValueInitializer(
             values=tools.str_list(np.nditer(ih_matrix, order='F'))))
     hh_matrix_weights = lbann.Weights(
+        optimizer=lbann.NoOptimizer(), ### @todo Remove
         initializer=lbann.ValueInitializer(
             values=tools.str_list(np.nditer(hh_matrix, order='F'))))
     ih_bias_weights = lbann.Weights(
+        optimizer=lbann.NoOptimizer(), ### @todo Remove
         initializer=lbann.ValueInitializer(
             values=tools.str_list(np.nditer(ih_bias))))
     hh_bias_weights = lbann.Weights(
+        optimizer=lbann.NoOptimizer(), ### @todo Remove
         initializer=lbann.ValueInitializer(
             values=tools.str_list(np.nditer(hh_bias))))
 
@@ -178,8 +182,7 @@ def construct_model(lbann):
     # Gradient checking
     # ------------------------------------------
 
-    ### @todo Restore
-    # callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
+    callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
 
     # ------------------------------------------
     # Construct model
