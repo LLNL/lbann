@@ -63,7 +63,7 @@ def numpy_gru(x, h, ih_matrix, hh_matrix, ih_bias, hh_bias):
     y = []
     for t in range(sequence_length):
         ih = np.matmul(ih_matrix, x[t]) + ih_bias
-        hh = np.matmul(hh_matrix, h) + ih_bias
+        hh = np.matmul(hh_matrix, h) + hh_bias
         r = scipy.special.expit(ih[:hidden_size] + hh[:hidden_size])
         z = scipy.special.expit(ih[hidden_size:2*hidden_size] + hh[hidden_size:2*hidden_size])
         n = np.tanh(ih[2*hidden_size:] + r*hh[2*hidden_size:])
@@ -131,19 +131,15 @@ def construct_model(lbann):
     ih_bias = np.random.normal(size=(3*_hidden_size,)).astype(np.float32)
     hh_bias = np.random.normal(size=(3*_hidden_size,)).astype(np.float32)
     ih_matrix_weights = lbann.Weights(
-        optimizer=lbann.NoOptimizer(), ### @todo Remove
         initializer=lbann.ValueInitializer(
             values=tools.str_list(np.nditer(ih_matrix, order='F'))))
     hh_matrix_weights = lbann.Weights(
-        optimizer=lbann.NoOptimizer(), ### @todo Remove
         initializer=lbann.ValueInitializer(
             values=tools.str_list(np.nditer(hh_matrix, order='F'))))
     ih_bias_weights = lbann.Weights(
-        optimizer=lbann.NoOptimizer(), ### @todo Remove
         initializer=lbann.ValueInitializer(
             values=tools.str_list(np.nditer(ih_bias))))
     hh_bias_weights = lbann.Weights(
-        optimizer=lbann.NoOptimizer(), ### @todo Remove
         initializer=lbann.ValueInitializer(
             values=tools.str_list(np.nditer(hh_bias))))
 

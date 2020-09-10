@@ -78,7 +78,7 @@ private:
   cudnn::TensorDescriptor m_input_cudnn_desc;
   cudnn::TensorDescriptor m_output_cudnn_desc;
   cudnn::TensorDescriptor m_hidden_cudnn_desc;
-  cudnn::FilterDescriptor m_weights_cudnn_desc;
+  cudnn::FilterDescriptor m_packed_weights_cudnn_desc;
   ByteBuffer m_cudnn_reserve_space;
 #endif // LBANN_HAS_CUDNN
 

@@ -53,7 +53,7 @@ gru_layer<TensorDataType, Layout, Device>::gru_layer(const gru_layer& other)
     m_input_cudnn_desc{other.m_input_cudnn_desc},
     m_output_cudnn_desc{other.m_output_cudnn_desc},
     m_hidden_cudnn_desc{other.m_hidden_cudnn_desc},
-    m_weights_cudnn_desc{other.m_weights_cudnn_desc}
+    m_packed_weights_cudnn_desc{other.m_packed_weights_cudnn_desc}
 #endif // LBANN_HAS_CUDNN
 {
 #ifdef LBANN_HAS_CUDNN
@@ -71,7 +71,7 @@ gru_layer<TensorDataType, Layout, Device>& gru_layer<TensorDataType, Layout, Dev
   m_input_cudnn_desc = other.m_input_cudnn_desc;
   m_output_cudnn_desc = other.m_output_cudnn_desc;
   m_hidden_cudnn_desc = other.m_hidden_cudnn_desc;
-  m_weights_cudnn_desc = other.m_weights_cudnn_desc;
+  m_packed_weights_cudnn_desc = other.m_packed_weights_cudnn_desc;
   /// @todo Copy m_cudnn_reserve_space?
 #endif // LBANN_HAS_CUDNN
   return *this;
@@ -248,7 +248,7 @@ void gru_layer<TensorDataType, Layout, Device>::setup_gpu() {
       m_input_cudnn_desc,
       &weights_size,
       data_type));
-  m_weights_cudnn_desc.set(
+  m_packed_weights_cudnn_desc.set(
     data_type,
     CUDNN_TENSOR_NCHW,
     weights_size / sizeof(TensorDataType),
@@ -307,7 +307,7 @@ hydrogen::simple_buffer<El::byte, El::Device::GPU> pack_cudnn_rnn_weights(
       cudnnGetRNNLinLayerMatrixParams(
         handle,
         rnn_desc,
-        0, // pseudoLayer
+        0,  // pseudoLayer
         input_desc,
         weights_desc,
         packed_weights.data(),
@@ -322,7 +322,7 @@ hydrogen::simple_buffer<El::byte, El::Device::GPU> pack_cudnn_rnn_weights(
       cudnnGetRNNLinLayerBiasParams(
         handle,
         rnn_desc,
-        0, // pseudoLayer
+        0,  // pseudoLayer
         input_desc,
         weights_desc,
         packed_weights.data(),
@@ -378,7 +378,7 @@ hydrogen::simple_buffer<El::byte, El::Device::GPU> pack_cudnn_rnn_weights(
       get_bias_ptr(3+i),
       hidden_size);
     El::Copy(
-      ih_bias(El::IR(i*hidden_size, (i+1)*hidden_size), El::ALL),
+      hh_bias(El::IR(i*hidden_size, (i+1)*hidden_size), El::ALL),
       packed_weights_view);
   }
 
@@ -416,7 +416,7 @@ void fp_compute_impl(
   const size_t input_size = l.get_input_size(0) / sequence_length;
   const size_t hidden_size = l.m_hidden_size;
 
-  // Return immediately if there is no work to be done
+  // Return immediately if there is no local data
   if (mini_batch_size <= 0) {
     return;
   }
@@ -458,11 +458,11 @@ void fp_compute_impl(
   }
 
   // Pack weights into workspace buffer
-  auto weights_workspace = pack_cudnn_rnn_weights(
+  auto packed_weights = pack_cudnn_rnn_weights(
     handle,
     l.m_rnn_cudnn_desc,
     input_desc,
-    l.m_weights_cudnn_desc,
+    l.m_packed_weights_cudnn_desc,
     sync_info,
     input_size,
     hidden_size,
@@ -503,8 +503,8 @@ void fp_compute_impl(
       local_init_hidden.LockedBuffer(),
       hidden_desc,  // cxDesc
       nullptr,      // cx
-      l.m_weights_cudnn_desc,
-      weights_workspace.data(),
+      l.m_packed_weights_cudnn_desc,
+      packed_weights.data(),
       output_desc_list.data(),
       output_sequence_workspace.Buffer(),
       hidden_desc,  // hyDesc
@@ -543,6 +543,109 @@ void gru_layer<TensorDataType, Layout, Device>::bp_compute() {
   bp_compute_impl(*this);
 }
 
+namespace {
+#ifdef LBANN_HAS_CUDNN
+template <typename TensorDataType>
+void unpack_cudnn_rnn_weights(
+  const cudnnHandle_t& handle,
+  const cudnn::RNNDescriptor& rnn_desc,
+  const cudnn::TensorDescriptor& input_desc,
+  const cudnn::FilterDescriptor& weights_desc,
+  const El::SyncInfo<El::Device::GPU>& sync_info,
+  size_t input_size,
+  size_t hidden_size,
+  const TensorDataType* packed_weights_buffer,
+  El::Matrix<TensorDataType,El::Device::GPU>& ih_matrix,
+  El::Matrix<TensorDataType,El::Device::GPU>& hh_matrix,
+  El::Matrix<TensorDataType,El::Device::GPU>& ih_bias,
+  El::Matrix<TensorDataType,El::Device::GPU>& hh_bias) {
+
+  // Construct objects
+  static cudnn::FilterDescriptor result_weights_desc;
+  result_weights_desc.create();
+  El::Matrix<TensorDataType,El::Device::GPU> packed_weights_view;
+  packed_weights_view.SetSyncInfo(sync_info);
+
+  // Functions to get pointers in packed weights buffer
+  auto get_matrix_ptr = [&] (size_t id) -> const TensorDataType* {
+    TensorDataType* ptr;
+    CHECK_CUDNN(
+      cudnnGetRNNLinLayerMatrixParams(
+        handle,
+        rnn_desc,
+        0,  // pseudoLayer
+        input_desc,
+        weights_desc,
+        const_cast<void*>(reinterpret_cast<const void*>(packed_weights_buffer)),
+        id, // linLayerID
+        result_weights_desc,
+        reinterpret_cast<void**>(&ptr)));
+    return ptr;
+  };
+  auto get_bias_ptr = [&] (size_t id) -> const TensorDataType* {
+    TensorDataType* ptr;
+    CHECK_CUDNN(
+      cudnnGetRNNLinLayerBiasParams(
+        handle,
+        rnn_desc,
+        0,  // pseudoLayer
+        input_desc,
+        weights_desc,
+        const_cast<void*>(reinterpret_cast<const void*>(packed_weights_buffer)),
+        id, // linLayerID
+        result_weights_desc,
+        reinterpret_cast<void**>(&ptr)));
+    return ptr;
+  };
+
+  // Copy from ih_matrix
+  for (auto i : {0, 1, 2}) {
+    packed_weights_view.LockedAttach(
+      input_size,
+      hidden_size,
+      get_matrix_ptr(i),
+      input_size);
+    auto ih_matrix_view = ih_matrix(El::IR(i*hidden_size, (i+1)*hidden_size), El::ALL);
+    El::Transpose(packed_weights_view, ih_matrix_view, false);
+  }
+
+  // Copy from hh_matrix
+  for (auto i : {0, 1, 2}) {
+    packed_weights_view.LockedAttach(
+      hidden_size,
+      hidden_size,
+      get_matrix_ptr(3+i),
+      hidden_size);
+    auto hh_matrix_view = hh_matrix(El::IR(i*hidden_size, (i+1)*hidden_size), El::ALL);
+    El::Transpose(packed_weights_view, hh_matrix_view, false);
+  }
+
+  // Copy from ih_bias
+  for (auto i : {0, 1, 2}) {
+    packed_weights_view.LockedAttach(
+      hidden_size,
+      1,
+      get_bias_ptr(i),
+      hidden_size);
+    auto ih_bias_view = ih_bias(El::IR(i*hidden_size, (i+1)*hidden_size), El::ALL);
+    El::Copy(packed_weights_view, ih_bias_view);
+  }
+
+  // Copy from hh_bias
+  for (auto i : {0, 1, 2}) {
+    packed_weights_view.LockedAttach(
+      hidden_size,
+      1,
+      get_bias_ptr(3+i),
+      hidden_size);
+    auto hh_bias_view = hh_bias(El::IR(i*hidden_size, (i+1)*hidden_size), El::ALL);
+    El::Copy(packed_weights_view, hh_bias_view);
+  }
+
+}
+#endif // LBANN_HAS_CUDNN
+} // namespace <anon>
+
 #ifdef LBANN_HAS_CUDNN
 template <typename TensorDataType>
 void bp_compute_impl(
@@ -578,15 +681,59 @@ void bp_compute_impl(
   const size_t input_size = l.get_input_size(0) / sequence_length;
   const size_t hidden_size = l.m_hidden_size;
 
-  // Return immediately if there is no work to be done
-  /// @todo Handle this case
-  if (mini_batch_size <= 0) {
-    return;
-  }
-
   // GPU objects
   auto&& sync_info = local_input_sequence.GetSyncInfo();
   auto&& handle = cudnn::get_handle();
+
+  // Define closure to send weight gradients to optimizers
+
+  // Note: As of cuDNN 7.6.4, cuDNN accumulates all of the gradient in
+  // ih_bias_grad and leaves no gradient in hh_bias_grad.
+  LocalMat ih_matrix_grad, hh_matrix_grad, ih_bias_grad, hh_bias_grad;
+  ih_matrix_grad.SetSyncInfo(sync_info);
+  hh_matrix_grad.SetSyncInfo(sync_info);
+  ih_bias_grad.SetSyncInfo(sync_info);
+  hh_bias_grad.SetSyncInfo(sync_info);
+  ih_matrix_grad.Resize(3*hidden_size, input_size);
+  hh_matrix_grad.Resize(3*hidden_size, hidden_size);
+  ih_bias_grad.Resize(3*hidden_size, 1);
+  hh_bias_grad.Resize(3*hidden_size, 1);
+  auto send_weight_grads_to_optimizers = [&] () {
+    TensorDataType buf_scale, in_scale;
+    auto&& ih_matrix_opt = l.get_weights(0).get_optimizer();
+    auto&& hh_matrix_opt = l.get_weights(1).get_optimizer();
+    auto&& ih_bias_opt = l.get_weights(2).get_optimizer();
+    auto&& hh_bias_opt = l.get_weights(3).get_optimizer();
+    if (ih_matrix_opt != nullptr) {
+      auto& buf = ih_matrix_opt->get_gradient_buffer(buf_scale, in_scale, true);
+      El::Scale(buf_scale, buf);
+      El::Axpy(in_scale, ih_matrix_grad, buf.Matrix());
+    }
+    if (hh_matrix_opt != nullptr) {
+      auto& buf = hh_matrix_opt->get_gradient_buffer(buf_scale, in_scale, true);
+      El::Scale(buf_scale, buf);
+      El::Axpy(in_scale, hh_matrix_grad, buf.Matrix());
+    }
+    if (ih_bias_opt != nullptr) {
+      auto& buf = ih_bias_opt->get_gradient_buffer(buf_scale, in_scale, true);
+      El::Scale(buf_scale, buf);
+      El::Axpy(in_scale, ih_bias_grad, buf.Matrix());
+    }
+    if (hh_bias_opt != nullptr) {
+      auto& buf = hh_bias_opt->get_gradient_buffer(buf_scale, in_scale, true);
+      El::Scale(buf_scale, buf);
+      El::Axpy(in_scale, hh_bias_grad, buf.Matrix());
+    }
+  };
+
+  // Return immediately if there is no local data
+  if (mini_batch_size <= 0) {
+    El::Zero(ih_matrix_grad);
+    El::Zero(hh_matrix_grad);
+    El::Zero(ih_bias_grad);
+    El::Zero(hh_bias_grad);
+    send_weight_grads_to_optimizers();
+  }
 
   // Configure input and output tensor descriptors
   // Note: Descriptor dims have already been set in forward prop
@@ -645,11 +792,11 @@ void bp_compute_impl(
   }
 
   // Pack weights into workspace buffer
-  auto weights_workspace = pack_cudnn_rnn_weights(
+  auto packed_weights = pack_cudnn_rnn_weights(
     handle,
     l.m_rnn_cudnn_desc,
     input_desc,
-    l.m_weights_cudnn_desc,
+    l.m_packed_weights_cudnn_desc,
     sync_info,
     input_size,
     hidden_size,
@@ -657,7 +804,12 @@ void bp_compute_impl(
     hh_matrix,
     ih_bias,
     hh_bias);
-  ByteBuffer weights_grad_workspace(weights_workspace.size(), sync_info);
+  LocalMat weights_grad_workspace;
+  weights_grad_workspace.SetSyncInfo(sync_info);
+  El::Zeros(
+    weights_grad_workspace,
+    packed_weights.size() / sizeof(TensorDataType),
+    1);
 
   // Allocate cuDNN workspace buffers
   size_t cudnn_workspace_size;
@@ -684,8 +836,8 @@ void bp_compute_impl(
       nullptr,
       hidden_desc,  // dcyDesc
       nullptr,
-      l.m_weights_cudnn_desc,
-      weights_workspace.data(),
+      l.m_packed_weights_cudnn_desc,
+      packed_weights.data(),
       hidden_desc,
       local_init_hidden.LockedBuffer(),
       hidden_desc,  // cxDesc
@@ -713,12 +865,26 @@ void bp_compute_impl(
       output_sequence_workspace.LockedBuffer(),
       cudnn_workspace.data(),
       cudnn_workspace.size(),
-      l.m_weights_cudnn_desc,
-      weights_grad_workspace.data(),
+      l.m_packed_weights_cudnn_desc,
+      weights_grad_workspace.Buffer(),
       l.m_cudnn_reserve_space.data(),
       l.m_cudnn_reserve_space.size()));
 
-  /// @todo Send gradients to optimizers
+  // Send gradients to optimizers
+  unpack_cudnn_rnn_weights(
+    handle,
+    l.m_rnn_cudnn_desc,
+    input_desc,
+    l.m_packed_weights_cudnn_desc,
+    sync_info,
+    input_size,
+    hidden_size,
+    weights_grad_workspace.LockedBuffer(),
+    ih_matrix_grad,
+    hh_matrix_grad,
+    ih_bias_grad,
+    hh_bias_grad);
+  send_weight_grads_to_optimizers();
 
   // Reorder input grad tensor dims
   // Note: cuDNN uses sequence_length x mini_batch_size x input_size
