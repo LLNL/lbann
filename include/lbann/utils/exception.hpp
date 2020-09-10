@@ -59,6 +59,25 @@
               << std::endl;                                     \
   } while (0)
 
+// Macro to print a warning to standard error stream.
+#define LBANN_WARN_ERROR_ON_FLAG(flag, ...)                     \
+  do {                                                          \
+    const int rank_LBANN_WARNING = lbann::get_rank_in_world();  \
+    std::string type = "warning";                               \
+    if(flag) { type = "error"; }                                \
+    std::string msg = lbann::build_string(                      \
+      "LBANN ", flag,                                           \
+      (rank_LBANN_WARNING >= 0                                  \
+       ? " on rank " + std::to_string(rank_LBANN_WARNING)       \
+       : std::string()),                                        \
+      " (", __FILE__, ":", __LINE__, "): ", __VA_ARGS__);       \
+    if(flag) {                                                  \
+      throw lbann::exception(msg);                              \
+    }else {                                                     \
+      std::cerr << msg << std::endl;                            \
+    }                                                           \
+  } while (0)
+
 // Macro to print a message to standard cout stream.
 #define LBANN_MSG(...)                                          \
   do {                                                          \

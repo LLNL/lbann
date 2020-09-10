@@ -48,6 +48,21 @@ void construct_std_options() {
                       utils::ENV("LBANN_DS_FAIL_ON_MISSING_SAMPLES"),
                       "Force the data store to fail on a missing sample "
                       "rather than substituting it with a random sample.");
+  arg_parser.add_flag(SAMPLE_LIST_FAIL_ON_MISSING_FILES,
+                      {"--sl_fail_on_missing_files"},
+                      utils::ENV("LBANN_SL_FAIL_ON_MISSING_FILES"),
+                      "Force the sample list to fail on a missing file "
+                      "rather than skipping it and working with a smaller "
+                      "data set or allowing the data store to substitute "
+                      "random samples later.");
+  arg_parser.add_flag(SAMPLE_LIST_FAIL_ON_UNREADABLE_FILES,
+                      {"--sl_fail_on_unreadable_files"},
+                      utils::ENV("LBANN_SL_FAIL_ON_UNDREADABLE_FILES"),
+                      "Force the sample list to fail on a files that cannot "
+                      "be opened rather than skipping it and working with a "
+                      "smaller data set or allowing the data store to "
+                      "substitute random samples later.");
+
 }
 
 } // namespace lbann

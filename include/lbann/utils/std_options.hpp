@@ -33,6 +33,8 @@ namespace lbann {
 #define MAX_RNG_SEEDS_DISPLAY "RNG seeds per trainer to display"
 #define NUM_IO_THREADS "Num. IO threads"
 #define DATA_STORE_FAIL_ON_MISSING_SAMPLES "Data store fail on missing samples"
+#define SAMPLE_LIST_FAIL_ON_MISSING_FILES "Sample list fail on missing files"
+#define SAMPLE_LIST_FAIL_ON_UNREADABLE_FILES "Sample list fail on unreadable files"
 
 void construct_std_options();
 
