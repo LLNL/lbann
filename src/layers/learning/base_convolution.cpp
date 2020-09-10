@@ -1255,15 +1255,11 @@ void base_convolution_adapter<TensorDataType, Device>::setup_fp_tensors() {
   std::reverse(kernel_shape.begin(), kernel_shape.end());
   const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
   m_kernel = make_unique<TensorDevType>(kernel_shape, loc, shared_dist);
-  assert0(dc::tensor::View(
-            *m_kernel, layer.weights_values(0).LockedBuffer()));
 
   if (layer.m_bias_scaling_factor != TensorDataType(0)) {
     dc::Shape bias_shape(dc::get_num_dims(layer), 1);
     bias_shape[dc::get_channel_dim()] = layer.get_output_dims()[0];
     m_bias = make_unique<TensorDevType>(bias_shape, loc, shared_dist);
-    assert0(dc::tensor::View(
-              *m_bias, layer.weights_values(1).LockedBuffer()));
   }
 }
 
