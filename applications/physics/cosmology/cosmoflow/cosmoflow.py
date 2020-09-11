@@ -321,6 +321,10 @@ if __name__ == "__main__":
         '--keep-error-signals', action='store_true',
         help='Keep error signals (default: False)')
 
+    parser.add_argument(
+        '--batch-job', action='store_true',
+        help='Run as a batch job (default: false)')
+
     lbann.contrib.args.add_optimizer_arguments(
         parser,
         default_optimizer="adam",
@@ -424,4 +428,5 @@ if __name__ == "__main__":
         job_name=args.job_name,
         environment=environment,
         lbann_args=lbann_args,
+        batch_job=args.batch_job,
         **kwargs)
