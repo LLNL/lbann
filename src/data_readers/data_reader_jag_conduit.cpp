@@ -313,9 +313,9 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
         const std::string new_child = LBANN_DATA_ID_STR(i);
         node.rename_child(cur_child, new_child);
         m_using_random_node.emplace(m_io_thread_pool->get_local_thread_id());
-        std::cout << get_type() + ":: replacing with random node, since failed to open file "
-                  << file_name << " for sample " << sample_name
-                  <<" and key: " << key << "\n";
+        LBANN_WARNING(get_type() + ":: replacing with random node, since failed to open file ",
+                      file_name , " for sample " , sample_name,
+                      " and key: " , key);
         return false;
       } else {
         if (!m_sample_list.is_file_handle_valid(h)) {
@@ -890,24 +890,41 @@ void data_reader_jag_conduit::do_preload_data_store() {
     if(m_data_store->get_index_owner(index) != m_rank_in_model) {
       continue;
     }
-    try {
-      const sample_t& s = m_sample_list[index];
-      const std::string& sample_name = s.second;
-      sample_file_id_t id = s.first;
-      m_sample_list.open_samples_file_handle(index, true);
-      auto h = m_sample_list.get_samples_file_handle(id);
-      conduit::Node & node = m_data_store->get_empty_node(index);
+    const sample_t& s = m_sample_list[index];
+    const std::string& sample_name = s.second;
+    sample_file_id_t id = s.first;
+    m_sample_list.open_samples_file_handle(index, true);
+    auto h = m_sample_list.get_samples_file_handle(id);
+    conduit::Node & node = m_data_store->get_empty_node(index);
 
+    try {
       preload_helper(h, sample_name, m_output_scalar_prefix, index, node);
       preload_helper(h, sample_name, m_input_prefix, index, node);
       for (auto t : m_emi_image_keys) {
         const std::string field_name = m_output_image_prefix + t;
         preload_helper(h, sample_name, field_name, index, node);
       }
-      m_data_store->set_preloaded_conduit_node(index, node);
     } catch (conduit::Error const& e) {
-      LBANN_ERROR(" :: trying to load the node " + std::to_string(index) + " with key " + key + " and got " + e.what());
+      // If there is no valid sample, grab a replacement one and use
+      // it for this sample
+      int rand_data_id;
+      const conduit::Node& rand_data = m_data_store->get_random_data(index, rand_data_id);
+      node = rand_data;
+      auto& arg_parser = global_argument_parser();
+      bool fail_on_unreadable_files = arg_parser.get<bool>(SAMPLE_LIST_FAIL_ON_UNREADABLE_FILES);
+      std::string err_msg;
+      if(fail_on_unreadable_files) {
+        err_msg = std::string(" with error ") + e.what();
+      }else {
+        err_msg = std::string(": replacing with data from ") + std::to_string(rand_data_id);
+      }
+      LBANN_WARN_ERROR_ON_FLAG(fail_on_unreadable_files,
+                               " :: trying to load the node ", index,
+                               " and failed to read the file", err_msg);
+                               // " with key ", key + " and got " + e.what(),
+                               // ": replacing with data from ", rand_data_id);
     }
+    m_data_store->set_preloaded_conduit_node(index, node);
   }
   /// Once all of the data has been preloaded, close all of the file handles
   for (size_t idx=0; idx < m_shuffled_indices.size(); idx++) {
