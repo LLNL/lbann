@@ -921,8 +921,6 @@ void data_reader_jag_conduit::do_preload_data_store() {
       LBANN_WARN_ERROR_ON_FLAG(fail_on_unreadable_files,
                                " :: trying to load the node ", index,
                                " and failed to read the file", err_msg);
-                               // " with key ", key + " and got " + e.what(),
-                               // ": replacing with data from ", rand_data_id);
     }
     m_data_store->set_preloaded_conduit_node(index, node);
   }
