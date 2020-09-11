@@ -733,7 +733,6 @@ const conduit::Node & data_store_conduit::get_random_data(int data_id, int& rand
       conduit::NodeIterator data_itr = cld.children();
       std::string data_id_str = LBANN_DATA_ID_STR(data_id);
       while(data_itr.has_next()) {
-        //        conduit::Node &datum = data_itr.next();
         data_itr.next(); // Advanced the iterator
         std::string datum_name = data_itr.name();
         if(rand_data_id_str != "") {
