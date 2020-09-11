@@ -106,16 +106,14 @@ def construct_model(run_args):
     assert embedding_size is not None
     assert dictionary_size is not None
 
-    kl, recon, arg_max = molvae.MolVAE(input_feature_dims,
-                                       dictionary_size,
-                                       embedding_size,
-                                       pad_index)(input_)
+    kl, recon = molvae.MolVAE(input_feature_dims,
+                              dictionary_size,
+                              embedding_size,
+                              pad_index)(input_)
 
     vae_loss.append(kl)
     vae_loss.append(recon)
     print("LEN vae loss ", len(vae_loss))
-    #metric layers
-    pred_tensor = lbann.Concatenation(arg_max[:-1], name='pred_tensor')
 
     layers = list(lbann.traverse_layer_graph(input_))
     # Setup objective function

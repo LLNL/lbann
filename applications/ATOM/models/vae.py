@@ -69,10 +69,14 @@ class MolVAE(lbann.modules.Module):
         z, kl_loss = self.forward_encoder(x_emb)
 
         # Decoder: x, z -> recon_loss
-        pred, arg_max = self.forward_decoder(x_emb, z)
+        pred = self.forward_decoder(x_emb, z)
         recon_loss = self.compute_loss(x, pred)
 
-        return kl_loss, recon_loss, arg_max
+        # Hack to remove blocking GPU allreduce in evaluation layer
+        kl_loss = lbann.Identity(kl_loss, device='CPU')
+        recon_loss = lbann.Identity(recon_loss, device='CPU')
+
+        return kl_loss, recon_loss
 
     def forward_encoder(self, x_emb):
         """Encoder step, emulating z ~ E(x) = q_E(z|x)
@@ -159,16 +163,7 @@ class MolVAE(lbann.modules.Module):
             name=f'{self.name}_decoder_fc',
         )
 
-        # Find argmax
-        y_slice = lbann.Slice(
-            y,
-            axis=0,
-            slice_points=str_list(range(self.input_feature_dims+1)),
-        )
-        y_slice = [lbann.Reshape(y_slice, dims='-1') for _ in range(self.input_feature_dims)]
-        arg_max = [lbann.Argmax(yi, device='CPU') for yi in y_slice]
-
-        return y, arg_max
+        return y
 
     def compute_loss(self, x, y):
 
@@ -187,7 +182,8 @@ class MolVAE(lbann.modules.Module):
         )
         x = lbann.Identity(x)
 
-        # Set ignored labels to -1
+        # Convert indices in x to one-hot representation
+        # Note: Ignored indices result in zero vectors
         ignore_mask = lbann.Equal(
             x,
             lbann.Constant(value=self.label_to_ignore, hint_layer=x),
@@ -199,6 +195,11 @@ class MolVAE(lbann.modules.Module):
             lbann.Multiply(keep_mask, x),
             lbann.Multiply(ignore_mask, lbann.Constant(value=-1, hint_layer=x)),
         )
+        x = lbann.Slice(x, slice_points=str_list(range(self.input_feature_dims)))
+        x = [lbann.Identity(x) for _ in range(self.input_feature_dims-1)]
+        x = [lbann.OneHot(xi, size=self.dictionary_size) for xi in x]
+        x = [lbann.Reshape(xi, dims=str_list([1, self.dictionary_size])) for xi in x]
+        x = lbann.Concatenation(x, axis=0)
 
         # recon_loss = F.cross_entropy(
         #     y[:, :-1].contiguous().view(-1, y.size(-1)),
@@ -206,11 +207,6 @@ class MolVAE(lbann.modules.Module):
         #     ignore_index=self.pad
         # )
         y = lbann.ChannelwiseSoftmax(y)
-        x = lbann.Slice(x, slice_points=str_list(range(self.input_feature_dims)))
-        x = [lbann.Identity(x) for _ in range(self.input_feature_dims-1)]
-        x = [lbann.OneHot(xi, size=self.dictionary_size) for xi in x]
-        x = [lbann.Reshape(xi, dims=str_list([1, self.dictionary_size])) for xi in x]
-        x = lbann.Concatenation(x, axis=0)
         recon_loss = lbann.CrossEntropy(y, x)
         recon_loss = lbann.Divide(recon_loss, length)
 
