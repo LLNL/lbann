@@ -577,6 +577,20 @@ RNNDescriptor::RNNDescriptor(const RNNDescriptor& other) {
     cudnnRNNMode_t mode;
     cudnnRNNAlgo_t algo;
     cudnnDataType_t math_precision;
+#if CUDNN_VERSION >= 8000
+    CHECK_CUDNN(
+      cudnnGetRNNDescriptor_v6(
+        get_handle(),
+        other.desc_,
+        &hidden_size,
+        &num_layers,
+        &dropout_desc,
+        &input_mode,
+        &direction,
+        &mode,
+        &algo,
+        &math_precision));
+#else // CUDNN_VERSION < 8000
     CHECK_CUDNN(
       cudnnGetRNNDescriptor(
         get_handle(),
@@ -589,6 +603,7 @@ RNNDescriptor::RNNDescriptor(const RNNDescriptor& other) {
         &mode,
         &algo,
         &math_precision));
+#endif // CUDNN_VERSION >= 8000
     set(
       hidden_size,
       num_layers,
@@ -653,7 +668,7 @@ void RNNDescriptor::set(
   cudnnDataType_t math_precision) {
   create();
   CHECK_CUDNN(
-    cudnnSetRNNDescriptor(
+    cudnnSetRNNDescriptor_v6(
       get_handle(),
       desc_,
       hidden_size,
