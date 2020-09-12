@@ -1,11 +1,91 @@
+import math
 import lbann
 import lbann.modules
-from math import sqrt
 from lbann.util import make_iterable
 
 def str_list(l):
     """Convert an iterable object to a space-separated string."""
     return ' '.join(str(i) for i in make_iterable(l))
+
+class GRUModule(lbann.modules.Module):
+
+    global_count = 0  # Static counter, used for default names
+
+    def __init__(
+        self,
+        hidden_size,
+        num_layers=1,
+        weights=[],
+        name=None,
+        device=None,
+        datatype=None,
+        weights_datatype=None,
+    ):
+        GRUModule.global_count += 1
+        self.instance = 0
+        self.hidden_size = hidden_size
+        self.num_layers = num_layers
+        self.name = name if name else f'gru{GRUModule.global_count}'
+        self.device = device
+        self.datatype = datatype
+
+        # Construct weights if needed
+        self.weights = weights
+        if not self.weights:
+            scale = 1 / math.sqrt(self.hidden_size)
+            init = lbann.UniformInitializer(min=-scale,max=scale)
+            if weights_datatype is None:
+                weights_datatype = self.datatype
+            self.weights = []
+            for i in range(self.num_layers):
+                self.weights.extend(
+                    lbann.Weights(
+                        initializer=init,
+                        name=f'{self.name}_layer{i}_{weight_name}',
+                        datatype=weights_datatype,
+                    )
+                    for weight_name in ('ih_matrix', 'hh_matrix', 'ih_bias', 'hh_bias')
+                )
+        if self.weights and len(self.weights) != 4*self.num_layers:
+            raise ValueError(
+                f'expected {4*self.num_layers} weights, '
+                f'but recieved {len(self.weights)}'
+            )
+
+        # Default initial hidden state
+        self.zeros = lbann.Constant(
+            value=0,
+            num_neurons=str(hidden_size),
+            name=f'{self.name}_zeros',
+            device=self.device,
+            datatype=self.datatype,
+        )
+
+    def forward(self, x, h=None):
+        self.instance += 1
+        name = f'{self.name}_instance{self.instance}'
+
+        # Initial hidden state
+        if not h:
+            h = [self.zeros] * self.num_layers
+        if not isinstance(h, list) or len(h) != self.num_layers:
+            raise ValueError(
+                f'expected `h` to be a list with {num_layers} layers'
+            )
+
+        # Stacked GRU
+        ### @todo Replace with single GRU once LBANN supports stacked GRUs
+        for i in range(self.num_layers):
+            x = lbann.GRU(
+                x,
+                h[i],
+                hidden_size=self.hidden_size,
+                name=f'{name}_layer{i}',
+                weights=self.weights[4*i:4*(i+1)],
+                device=self.device,
+                datatype=self.datatype,
+            )
+        return x
 
 class MolVAE(lbann.modules.Module):
     """Molecular VAE.
@@ -40,10 +120,13 @@ class MolVAE(lbann.modules.Module):
         self.label_to_ignore = ignore_label
 
         fc = lbann.modules.FullyConnectedModule
+        gru = GRUModule
         #Encoder
+        self.encoder_rnn = gru(hidden_size=256, name=self.name+'_encoder_rnn', datatype=lbann.DataType.FP16, weights_datatype=lbann.DataType.FLOAT)
         self.q_mu = fc(128,name=self.name+'_qmu')
         self.q_logvar = fc(128,name=self.name+'_qlogvar')
         #Decoder
+        self.decoder_rnn = gru(hidden_size=512, num_layers=3, name=self.name+'_decoder_rnn', datatype=lbann.DataType.FP16, weights_datatype=lbann.DataType.FLOAT)
         self.decoder_lat = fc(512,name=self.name+'_decoder_lat')
         #shared encoder/decodeer weights
         self.emb_weights = lbann.Weights(initializer=lbann.NormalInitializer(mean=0, standard_deviation=1),
@@ -88,15 +171,9 @@ class MolVAE(lbann.modules.Module):
         :return: float, kl term component of loss
         """
 
-        h = lbann.Constant(
-            value=0.0,
-            num_neurons='256',
-        )
-        h = lbann.GRU(
-            x_emb, h,
-            hidden_size=256,
-            name=f'{self.name}_encoder_rnn',
-        )
+        # _, h = self.encoder_rnn(x, None)
+        h = self.encoder_rnn(x_emb, None)
+
         h = lbann.Slice(
             h,
             slice_points=str_list([self.input_feature_dims-1,
@@ -144,21 +221,7 @@ class MolVAE(lbann.modules.Module):
         h_0 = self.decoder_lat(z)
 
         # output, _ = self.decoder_rnn(x_input, h_0)
-        h_1 = lbann.GRU(
-            x_emb, h_0,
-            hidden_size=512,
-            name=f'{self.name}_decoder_rnn0',
-        )
-        h_2 = lbann.GRU(
-            h_1, h_0,
-            hidden_size=512,
-            name=f'{self.name}_decoder_rnn1',
-        )
-        output = lbann.GRU(
-            h_2, h_0,
-            hidden_size=512,
-            name=f'{self.name}_decoder_rnn2',
-        )
+        output = self.decoder_rnn(x_input, [h_0, h_0, h_0])
 
         # y = self.decoder_fc(output)
         y = lbann.ChannelwiseFullyConnected(
