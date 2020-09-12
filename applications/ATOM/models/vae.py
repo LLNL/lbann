@@ -122,11 +122,11 @@ class MolVAE(lbann.modules.Module):
         fc = lbann.modules.FullyConnectedModule
         gru = GRUModule
         #Encoder
-        self.encoder_rnn = gru(hidden_size=256, name=self.name+'_encoder_rnn', datatype=lbann.DataType.FP16, weights_datatype=lbann.DataType.FLOAT)
+        self.encoder_rnn = gru(hidden_size=256, name=self.name+'_encoder_rnn')
         self.q_mu = fc(128,name=self.name+'_qmu')
         self.q_logvar = fc(128,name=self.name+'_qlogvar')
         #Decoder
-        self.decoder_rnn = gru(hidden_size=512, num_layers=3, name=self.name+'_decoder_rnn', datatype=lbann.DataType.FP16, weights_datatype=lbann.DataType.FLOAT)
+        self.decoder_rnn = gru(hidden_size=512, num_layers=3, name=self.name+'_decoder_rnn')
         self.decoder_lat = fc(512,name=self.name+'_decoder_lat')
         #shared encoder/decodeer weights
         self.emb_weights = lbann.Weights(initializer=lbann.NormalInitializer(mean=0, standard_deviation=1),
