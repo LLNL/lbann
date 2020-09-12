@@ -57,6 +57,8 @@ class MolVAE(lbann.modules.Module):
         :return: float, recon component of loss
         """
 
+        x = lbann.Slice(x, slice_points=str_list([0, self.input_feature_dims]))
+        x = lbann.Identity(x)
         x_emb = lbann.Embedding(
             x,
             num_embeddings=self.dictionary_size,
@@ -86,7 +88,10 @@ class MolVAE(lbann.modules.Module):
         :return: float, kl term component of loss
         """
 
-        h = lbann.Constant(value=0.0, num_neurons='256')
+        h = lbann.Constant(
+            value=0.0,
+            num_neurons='256',
+        )
         h = lbann.GRU(
             x_emb, h,
             hidden_size=256,

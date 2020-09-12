@@ -140,25 +140,6 @@ void gru_layer<TensorDataType, Layout, Device>::setup_dims(DataReaderMetaData& d
   this->set_output_dims(output_dims);
 }
 
-namespace {
-
-std::string get_gru_weight_name(size_t index) {
-  switch (index) {
-  case 0:
-    return "ih_matrix";
-  case 1:
-    return "hh_matrix";
-  case 2:
-    return "ih_bias";
-  case 3:
-    return "hh_bias";
-  default:
-    LBANN_ERROR("unknown index for GRU weight (",index,")");
-  }
-}
-
-} // namespace <anon>
-
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void gru_layer<TensorDataType, Layout, Device>
 ::setup_data(size_t max_mini_batch_size) {
@@ -169,13 +150,15 @@ void gru_layer<TensorDataType, Layout, Device>
 
   // Construct default weights if needed
   if (!this->has_weights()) {
+    const std::vector<std::string> weight_names
+      = {"ih_matrix", "hh_matrix", "ih_bias", "hh_bias"};
     this->set_num_weights(4);
     const auto scale = El::To<TensorDataType>(1./std::sqrt(m_hidden_size));
     for (size_t i=0; i<4; ++i) {
       auto w = make_unique<data_type_weights<TensorDataType>>(this->get_comm());
       auto init = make_unique<uniform_initializer<TensorDataType>>(-scale, scale);
       auto opt = this->m_model->template create_optimizer<TensorDataType>();
-      w->set_name(this->get_name() + "_" + get_gru_weight_name(i));
+      w->set_name(this->get_name() + "_" + weight_names[i]);
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
       this->set_weights(i, w.get());
@@ -687,9 +670,6 @@ void bp_compute_impl(
   auto&& handle = cudnn::get_handle();
 
   // Define closure to send weight gradients to optimizers
-
-  // Note: As of cuDNN 7.6.4, cuDNN accumulates all of the gradient in
-  // ih_bias_grad and leaves no gradient in hh_bias_grad.
   LocalMat ih_matrix_grad, hh_matrix_grad, ih_bias_grad, hh_bias_grad;
   ih_matrix_grad.SetSyncInfo(sync_info);
   hh_matrix_grad.SetSyncInfo(sync_info);

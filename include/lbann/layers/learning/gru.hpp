@@ -34,6 +34,27 @@
 
 namespace lbann {
 
+/** @brief Gated recurrent unit
+ *
+ *  Expects two inputs: a 2D input sequence (
+ *  @f$ \text{sequence\_length}\times\text{input\_size} @f$ )
+ *  and a 1D initial hidden state ( @f$ \text{hidden\_size} @f$ ).
+ *
+ *  Uses four weights: "ih\_matrix" (
+ *  @f$ 3 \text{hidden\_size}\times\text{input\_size} @f$ ),
+ *  "hh\_matrix" (
+ *  @f$ 3 \text{hidden\_size}\times\text{hidden\_size} @f$ ),
+ *  "ih_bias" ( @f$ 3 \text{hidden\_size} @f$ ),
+ *  "hh_bias" ( @f$ 3 \text{hidden\_size} @f$ ).
+ *
+ *  @todo Support CPU
+ *  @todo Support bidirectional RNNs
+ *  @todo Support stacked RNNs
+ *
+ *  @warning cuDNN 8 exposes a new RNN API and deprecates the old one.
+ *  Consider reimplementing this layer once cuDNN 8 is the minimum
+ *  version.
+ */
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 class gru_layer
   : public data_type_layer<TensorDataType> {
