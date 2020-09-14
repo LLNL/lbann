@@ -33,7 +33,7 @@
 
 /// Number of system and other files that may be open during execution
 #define LBANN_MAX_OPEN_FILE_MARGIN 128
-#define LBANN_MAX_OPEN_FILE_RETRY 3
+#define LBANN_MAX_OPEN_FILE_RETRY 1
 
 namespace lbann {
 
