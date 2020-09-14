@@ -94,14 +94,21 @@ void local_fp(TensorDataType alpha,
     grid_dim = std::numeric_limits<uint32_t>::max();
   }
 
-  // Launch CUDA kernel
+  // Launch GPU kernel
   if (grid_dim > 0) {
-    fp_kernel<<<grid_dim, block_dim, 0, hydrogen::cuda::GetDefaultStream()>>>(
+    using GPUMatType = El::Matrix<TensorDataType, El::Device::GPU>;
+    auto const& input_gpu = static_cast<GPUMatType const&>(input);
+    auto& output_gpu = static_cast<GPUMatType&>(output);
+    auto multisync = hydrogen::MakeMultiSync(
+                       El::SyncInfoFromMatrix(output_gpu),
+                       El::SyncInfoFromMatrix(input_gpu));
+    hydrogen::gpu::LaunchKernel(
+      fp_kernel<TensorDataType>, grid_dim, block_dim, 0,
+      static_cast<El::SyncInfo<El::Device::GPU> const&>(multisync),
       alpha, height, width,
-      input.LockedBuffer(), input.LDim(),
-      output.Buffer(), output.LDim());
+      input_gpu.LockedBuffer(), input_gpu.LDim(),
+      output_gpu.Buffer(), output_gpu.LDim());
   }
-
 }
 
 /** Local backprop computation. */
