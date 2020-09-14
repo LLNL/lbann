@@ -719,35 +719,40 @@ PROFILE("build_preloaded_owner_map; m_owner_maps_were_exchanged = true");
 }
 
 const conduit::Node & data_store_conduit::get_random_data(int data_id, int& rand_data_id) const {
-  const conduit::Node& rand_node = get_random_node();
-  conduit::Node surrogate_node = rand_node;
-  std::string rand_data_id_str = "";
-  // Any random node will be in a compact format based on how it has
-  // been repacked before sending
-  conduit::NodeIterator itr = surrogate_node.children();
-  while(itr.has_next()) {
-    conduit::Node &cld = itr.next();
-    std::string cld_name = itr.name();
-    // Look for the data field in the compact / schema based format
-    if(cld_name == "data") {
-      conduit::NodeIterator data_itr = cld.children();
-      std::string data_id_str = LBANN_DATA_ID_STR(data_id);
-      while(data_itr.has_next()) {
-        data_itr.next(); // Advanced the iterator
-        std::string datum_name = data_itr.name();
-        if(rand_data_id_str != "") {
-          LBANN_ERROR("This conduit node has multiple entries in the data field -- not supported: data_id=", datum_name);
-        }
-        rand_data_id_str = datum_name;
-        rand_data_id = std::stoi(rand_data_id_str);
-      }
-      if(rand_data_id_str == "") {
-        LBANN_ERROR("This conduit node had no entries in the data field -- not supported");
-      }
-      cld.rename_child(rand_data_id_str, data_id_str);
-      m_surrogate_data_cache[data_id] = cld;
+  int retry_count = 0;
+  int MAX_RETRIES = 10;
+  bool found_valid_node = false;
+  do {
+    const conduit::Node& rand_node = get_random_node();
+    // Any random node will be in a compact format based on how it has
+    // been repacked before sending
+    // Get the data field in the compact / schema based format
+    const conduit::Node& surrogate_node = rand_node["data"];
+    const std::vector<std::string>& child_names = surrogate_node.child_names();
+    retry_count++;
+    if(child_names.size() == 0) {
+      LBANN_WARN_ERROR_ON_FLAG((retry_count == MAX_RETRIES),
+                               "This conduit node had no entries in the data field -- not supported",
+                               " retry count ", retry_count);
+      continue;
+    }else if(child_names.size() > 1) {
+      LBANN_WARN_ERROR_ON_FLAG((retry_count == MAX_RETRIES),
+        "This conduit node has multiple entries in the data field -- not supported: data_id[0]=",
+        child_names[0], " data_id[1]=", child_names[1], " ...");
+      continue;
     }
-  }
+    const std::string cur_child = child_names[0];
+    rand_data_id = std::stoi(cur_child);
+    if(rand_data_id < 0) {
+      LBANN_WARN_ERROR_ON_FLAG((retry_count == MAX_RETRIES),
+                               "Unknown why the data id is negative ", rand_data_id);
+      continue;
+    }
+    const std::string new_child = LBANN_DATA_ID_STR(data_id);
+    m_surrogate_data_cache[data_id] = surrogate_node;
+    m_surrogate_data_cache[data_id].rename_child(cur_child, new_child);
+    found_valid_node = true;
+  }while(retry_count < MAX_RETRIES && !found_valid_node);
   return m_surrogate_data_cache[data_id];
 }
 
@@ -759,9 +764,45 @@ const conduit::Node & data_store_conduit::get_random_node() const {
     LBANN_ERROR("can't return random node since we have no data (set_conduit_node has never been called)");
   }
 
-  int offset = random() % sz;
-  auto it = std::next(m_data.begin(), offset);
-  return it->second;
+  if (m_compacted_sample_size == 0) {
+    LBANN_ERROR("can't return random node since we have no valid size for data (set_conduit_node has never been called)");
+  }
+  int retry_count = 0, MAX_RNG_SAMPLE_SELECTIONS = 10;
+  do {
+    int offset = random() % sz;
+    auto it = std::next(m_data.begin(), offset);
+    const conduit::Node& random_node = it->second;
+
+    retry_count++;
+    // Only allow random nodes that are in a compact format
+    bool flag = retry_count > MAX_RNG_SAMPLE_SELECTIONS;
+    if(!random_node.is_contiguous()) {
+      LBANN_WARN_ERROR_ON_FLAG(flag, "Unable to find a valid random sample for data substitution, ",
+                               "random_node does not have a contiguous layout");
+      continue;
+    }
+    if(random_node.data_ptr() == nullptr) {
+      LBANN_WARN_ERROR_ON_FLAG(flag, "Unable to find a valid random sample for data substitution, ",
+                               "random_node does not have a valid data pointer");
+      continue;
+    }
+    if(random_node.contiguous_data_ptr() == nullptr) {
+      LBANN_WARN_ERROR_ON_FLAG(flag, "Unable to find a valid random sample for data substitution, ",
+                               "random_node does not have a valid contiguous data pointer");
+      continue;
+    }
+
+    if(it->second.total_bytes_compact() != m_compacted_sample_size) {
+      LBANN_WARN_ERROR_ON_FLAG(flag, "Unable to find a valid random sample for data substitution, ",
+                               "selected random node has invalid size ",
+                               it->second.total_bytes_compact(),
+                               " m_compacted_sample_size = ",
+                               m_compacted_sample_size);
+      continue;
+    }
+    return random_node;
+  }while(retry_count <= MAX_RNG_SAMPLE_SELECTIONS);
+  LBANN_ERROR("Unable to find a valid random sample for data substitution");
 }
 
 const conduit::Node & data_store_conduit::get_random_node(const std::string &field) const {
