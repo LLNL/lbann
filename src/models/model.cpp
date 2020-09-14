@@ -594,6 +594,7 @@ void model::setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata) {
   }
 
 #ifdef LBANN_HAS_DISTCONV
+  m_max_mini_batch_size_distconv = max_mini_batch_size;
   setup_distconv();
 #endif
 

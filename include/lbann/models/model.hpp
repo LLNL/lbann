@@ -415,6 +415,11 @@ public:
   /** @brief Execute callbacks at the end of weight optimization. */
   virtual void do_weight_optimize_end_cbs(weights *w);
 
+#ifdef LBANN_HAS_DISTCONV
+  /* @brief Return the maximum mini-batch size used by Distconv. */
+  size_t get_max_mini_batch_size_distconv() const { return m_max_mini_batch_size_distconv; }
+#endif
+
 private:
 
   /** Pointer to the execution context object used for training or evaluating this model */
@@ -504,6 +509,12 @@ private:
   void setup_distconv();
   void setup_distributions();
   void print_distributions() const;
+
+  /** @brief The maximum mini-batch size used by Distconv.
+   *  @details This should be set before setup_distconv() is called.
+   */
+  size_t m_max_mini_batch_size_distconv;
+
 #endif // LBANN_HAS_DISTCONV
 };
 

@@ -27,6 +27,9 @@
 #define LBANN_INPUT_LAYER_INSTANTIATE
 #include "lbann/layers/io/input/input_layer.hpp"
 #include "lbann/utils/profiling.hpp"
+#ifdef LBANN_HAS_DISTCONV
+#include "lbann/data_readers/data_reader_hdf5.hpp"
+#endif // LBANN_HAS_DISTCONV
 
 namespace lbann {
 
@@ -41,6 +44,18 @@ input_distconv_adapter(Layer& layer): data_type_distconv_adapter<TensorDataType>
   for (int i = 0; i < layer.get_num_children(); ++i) {
     m_is_input_processed.push_back(layer.get_child_layers()[i]->distconv_enabled());
   }
+  auto &l = dynamic_cast<input_layer<
+    TensorDataType, T_io_buffer, T_layout, Dev>&>(this->layer());
+  // TODO: hdf5_reader is assumed to return a sub-sample partitioned
+  // in the same way as specified by the parallel strategy of this input
+  // layer. Other data readers are assumed to return a complete
+  // sample, thus shuffling is required (unless sample-parallel
+  // strategy is given). Conceptually, it seems to make sense if a
+  // data reader is annotated with a parallel strategy. Note that,
+  // when the HDF5 data reader is used, it is assumed that it is used
+  // in all execution modes.
+  auto training_dr = l.get_data_reader(execution_mode::training);
+  m_shuffle_required = dynamic_cast<hdf5_reader*>(training_dr) == nullptr;
   if (m_shuffle_required) {
     m_shufflers.resize(layer.get_num_children());
   }
