@@ -78,7 +78,7 @@ class input_distconv_adapter: public data_type_distconv_adapter<TensorDataType> 
   std::vector<std::unique_ptr<TensorHost>> m_original_host_tensors;
   std::vector<std::unique_ptr<TensorHost>> m_host_tensors;
 
-  bool m_shuffle_required;
+  const bool m_shuffle_required;
   std::vector<std::array<std::unique_ptr<TensorHostShuffler>, 4>> m_shufflers;
   std::unique_ptr<TensorDataType> m_shuffler_src_buf;
   size_t m_shuffler_src_buf_size = 0;
