@@ -94,7 +94,7 @@ void local_fp(TensorDataType negative_slope,
     grid_dim = std::numeric_limits<uint32_t>::max();
   }
 
-  // Launch CUDA kernel
+  // Launch GPU kernel
   if (grid_dim > 0) {
     using GPUMatType = El::Matrix<TensorDataType, El::Device::GPU>;
     auto const& input_gpu = static_cast<GPUMatType const&>(input);
@@ -131,13 +131,25 @@ void local_bp(TensorDataType negative_slope,
     grid_dim = std::numeric_limits<uint32_t>::max();
   }
 
-  // Launch CUDA kernel
+  // Launch GPU kernel
   if (grid_dim > 0) {
-    bp_kernel<<<grid_dim, block_dim, 0, hydrogen::cuda::GetDefaultStream()>>>(
+    using GPUMatType = El::Matrix<TensorDataType, El::Device::GPU>;
+    auto const& input_gpu = static_cast<GPUMatType const&>(input);
+    auto const& gradient_wrt_output_gpu = static_cast<GPUMatType const&>
+                                            (gradient_wrt_output);
+    auto& gradient_wrt_input_gpu = static_cast<GPUMatType&>
+                                     (gradient_wrt_input);
+    auto multisync = hydrogen::MakeMultiSync(
+                       El::SyncInfoFromMatrix(gradient_wrt_input_gpu),
+                       El::SyncInfoFromMatrix(gradient_wrt_output_gpu),
+                       El::SyncInfoFromMatrix(input_gpu));
+    hydrogen::gpu::LaunchKernel(
+      bp_kernel<TensorDataType>, grid_dim, block_dim, 0,
+      static_cast<El::SyncInfo<El::Device::GPU> const&>(multisync),
       negative_slope, height, width,
-      input.LockedBuffer(), input.LDim(),
-      gradient_wrt_output.LockedBuffer(), gradient_wrt_output.LDim(),
-      gradient_wrt_input.Buffer(), gradient_wrt_input.LDim());
+      input_gpu.LockedBuffer(), input_gpu.LDim(),
+      gradient_wrt_output_gpu.LockedBuffer(), gradient_wrt_output_gpu.LDim(),
+      gradient_wrt_input_gpu.LockedBuffer(), gradient_wrt_input_gpu.LDim());
   }
 
 }
