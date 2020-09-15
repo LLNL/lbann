@@ -26,7 +26,7 @@
 
 #define LBANN_SOFTMAX_LAYER_INSTANTIATE
 #include "lbann/layers/activations/softmax.hpp"
-#include "lbann/utils/cuda.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 
 namespace lbann {
 

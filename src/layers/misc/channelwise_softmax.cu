@@ -26,7 +26,7 @@
 
 #define LBANN_CHANNELWISE_SOFTMAX_LAYER_INSTANTIATE
 #include "lbann/layers/misc/channelwise_softmax.hpp"
-#include "lbann/utils/cuda.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 
 namespace lbann {
 
@@ -220,6 +220,9 @@ void fp_impl(size_t num_channels,
   const auto& local_input = dynamic_cast<const LocalMat&>(input.LockedMatrix());
   auto& local_output = dynamic_cast<LocalMat&>(output.Matrix());
 
+  auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_output),
+                                     gpu::get_sync_info(local_input));
+
   // Dimensions
   const size_t local_mini_batch_size = local_input.Width();
   // const Size3 input_dims{local_mini_batch_size, num_channels, channel_size};
@@ -234,25 +237,27 @@ void fp_impl(size_t num_channels,
     grid_dims.y = num_channels;
     grid_dims.z = local_mini_batch_size;
     LocalMat maxvals(grid_dims.x * num_channels, local_mini_batch_size);
-    fp_max_kernel<TensorDataType,block_size>
-      <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
-        {local_mini_batch_size, num_channels, channel_size},
-        local_input.LockedBuffer(),
-        {static_cast<size_t>(local_input.LDim()), channel_size, 1},
-        maxvals.Buffer(),
-        {static_cast<size_t>(maxvals.LDim()), grid_dims.x, 1});
+    hydrogen::gpu::LaunchKernel(
+      fp_max_kernel<TensorDataType, block_size>,
+      grid_dims, block_dims, 0, multisync,
+      Size3{local_mini_batch_size, num_channels, channel_size},
+      local_input.LockedBuffer(),
+      Size3{static_cast<size_t>(local_input.LDim()), channel_size, 1},
+      maxvals.Buffer(),
+      Size3{static_cast<size_t>(maxvals.LDim()), grid_dims.x, 1});
     while (grid_dims.x > 1) {
       const size_t prev_dim = grid_dims.x;
       grid_dims.x = (prev_dim + block_size - 1) / block_size;
       const LocalMat prev_maxvals(std::move(maxvals));
       maxvals.Resize(grid_dims.x * num_channels, local_mini_batch_size);
-      fp_max_kernel<TensorDataType,block_size>
-        <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
-          {local_mini_batch_size, num_channels, prev_dim},
-          prev_maxvals.LockedBuffer(),
-          {static_cast<size_t>(prev_maxvals.LDim()), prev_dim, 1},
-          maxvals.Buffer(),
-          {static_cast<size_t>(maxvals.LDim()), grid_dims.x, 1});
+      hydrogen::gpu::LaunchKernel(
+        fp_max_kernel<TensorDataType, block_size>,
+        grid_dims, block_dims, 0, multisync,
+        Size3{local_mini_batch_size, num_channels, prev_dim},
+        prev_maxvals.LockedBuffer(),
+        Size3{static_cast<size_t>(prev_maxvals.LDim()), prev_dim, 1},
+        maxvals.Buffer(),
+        Size3{static_cast<size_t>(maxvals.LDim()), grid_dims.x, 1});
     }
     local_shifts = std::move(maxvals);
   }
@@ -267,13 +272,14 @@ void fp_impl(size_t num_channels,
     grid_dims.x = (channel_size + block_size - 1) / block_size;
     grid_dims.y = num_channels;
     grid_dims.z = local_mini_batch_size;
-    fp_denom_kernel<TensorDataType,block_size>
-      <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
-        {local_mini_batch_size, num_channels, channel_size},
-        local_input.LockedBuffer(),
-        {static_cast<size_t>(local_input.LDim()), channel_size, 1},
-        local_shifts.LockedBuffer(),
-        local_denoms.Buffer());
+    hydrogen::gpu::LaunchKernel(
+      fp_denom_kernel<TensorDataType, block_size>,
+      grid_dims, block_dims, 0, multisync,
+      Size3{local_mini_batch_size, num_channels, channel_size},
+      local_input.LockedBuffer(),
+      Size3{static_cast<size_t>(local_input.LDim()), channel_size, 1},
+      local_shifts.LockedBuffer(),
+      local_denoms.Buffer());
   }
 
   // Compute softmax
@@ -284,15 +290,16 @@ void fp_impl(size_t num_channels,
     grid_dims.x = (channel_size + block_size - 1) / block_size;
     grid_dims.y = num_channels;
     grid_dims.z = local_mini_batch_size;
-    fp_output_kernel<TensorDataType>
-      <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
-        {local_mini_batch_size, num_channels, channel_size},
-        local_input.LockedBuffer(),
-        {static_cast<size_t>(local_input.LDim()), channel_size, 1},
-        local_output.Buffer(),
-        {static_cast<size_t>(local_output.LDim()), channel_size, 1},
-        local_shifts.LockedBuffer(),
-        local_denoms.LockedBuffer());
+    hydrogen::gpu::LaunchKernel(
+      fp_output_kernel<TensorDataType>,
+      grid_dims, block_dims, 0, multisync,
+      Size3{local_mini_batch_size, num_channels, channel_size},
+      local_input.LockedBuffer(),
+      Size3{static_cast<size_t>(local_input.LDim()), channel_size, 1},
+      local_output.Buffer(),
+      Size3{static_cast<size_t>(local_output.LDim()), channel_size, 1},
+      local_shifts.LockedBuffer(),
+      local_denoms.LockedBuffer());
   }
 
 }
@@ -438,6 +445,12 @@ void bp_impl(size_t num_channels,
   // dot(y,dL/dy)
   LocalMat local_y_dot_dy(num_channels, local_mini_batch_size);
   El::Zero(local_y_dot_dy);
+
+  auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_input_grad),
+                                     gpu::get_sync_info(local_output_grad),
+                                     gpu::get_sync_info(local_output),
+                                     gpu::get_sync_info(local_y_dot_dy));
+
   if (!local_output.IsEmpty()) {
     constexpr size_t block_size = 256;
     dim3 block_dims, grid_dims;
@@ -445,14 +458,15 @@ void bp_impl(size_t num_channels,
     grid_dims.x = (channel_size + block_size - 1) / block_size;
     grid_dims.y = num_channels;
     grid_dims.z = local_mini_batch_size;
-    bp_y_dot_dy_kernel<TensorDataType,block_size>
-      <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
-        {local_mini_batch_size, num_channels, channel_size},
-        local_output.LockedBuffer(),
-        {static_cast<size_t>(local_output.LDim()), channel_size, 1},
-        local_output_grad.LockedBuffer(),
-        {static_cast<size_t>(local_output_grad.LDim()), channel_size, 1},
-        local_y_dot_dy.Buffer());
+    hydrogen::gpu::LaunchKernel(
+      bp_y_dot_dy_kernel<TensorDataType, block_size>,
+      grid_dims, block_dims, 0, multisync,
+      Size3{local_mini_batch_size, num_channels, channel_size},
+      local_output.LockedBuffer(),
+      Size3{static_cast<size_t>(local_output.LDim()), channel_size, 1},
+      local_output_grad.LockedBuffer(),
+      Size3{static_cast<size_t>(local_output_grad.LDim()), channel_size, 1},
+      local_y_dot_dy.Buffer());
   }
 
   // Compute gradient w.r.t. input
@@ -463,16 +477,17 @@ void bp_impl(size_t num_channels,
     grid_dims.x = (channel_size + block_size - 1) / block_size;
     grid_dims.y = num_channels;
     grid_dims.z = local_mini_batch_size;
-    bp_input_grad_kernel<TensorDataType>
-      <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
-        {local_mini_batch_size, num_channels, channel_size},
-        local_output.LockedBuffer(),
-        {static_cast<size_t>(local_output.LDim()), channel_size, 1},
-        local_output_grad.LockedBuffer(),
-        {static_cast<size_t>(local_output_grad.LDim()), channel_size, 1},
-        local_input_grad.Buffer(),
-        {static_cast<size_t>(local_input_grad.LDim()), channel_size, 1},
-        local_y_dot_dy.LockedBuffer());
+    hydrogen::gpu::LaunchKernel(
+      bp_input_grad_kernel<TensorDataType>,
+      grid_dims, block_dims, 0, multisync,
+      Size3{local_mini_batch_size, num_channels, channel_size},
+      local_output.LockedBuffer(),
+      Size3{static_cast<size_t>(local_output.LDim()), channel_size, 1},
+      local_output_grad.LockedBuffer(),
+      Size3{static_cast<size_t>(local_output_grad.LDim()), channel_size, 1},
+      local_input_grad.Buffer(),
+      Size3{static_cast<size_t>(local_input_grad.LDim()), channel_size, 1},
+      local_y_dot_dy.LockedBuffer());
   }
 
 }

@@ -26,6 +26,7 @@
 
 #define LBANN_TESSELLATE_LAYER_INSTANTIATE
 #include "lbann/layers/transform/tessellate.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 
 namespace lbann {
 
@@ -126,11 +127,17 @@ void tessellate_layer<TensorDataType, T_layout, Dev>
                 El::AbstractDistMatrix<TensorDataType>& output) {
   auto& local_output = output.Matrix();
   if (!local_output.IsEmpty()) {
+    auto multisync = El::MakeMultiSync(gpu::get_sync_info(output),
+                                       gpu::get_sync_info(input));
+
     const auto& local_height = local_output.Height();
     const auto& local_width = local_output.Width();
     const auto& block_size = 256;
-    const auto& grid_size = (local_height * local_width + block_size - 1) / block_size;
-    fp_gpu_3d_kernel<<<grid_size, block_size, 0, hydrogen::cuda::GetDefaultStream()>>>(
+    const auto& grid_size =
+      (local_height * local_width + block_size - 1) / block_size;
+    hydrogen::gpu::LaunchKernel(
+      fp_gpu_3d_kernel<TensorDataType>,
+      grid_size, block_size, 0, multisync,
       input_dims[0], input_dims[1], input_dims[2],
       output_dims[0], output_dims[1], output_dims[2],
       local_height, local_width,
@@ -149,11 +156,17 @@ void tessellate_layer<TensorDataType, T_layout, Dev>
   const auto& local_gradient_wrt_output = gradient_wrt_output.LockedMatrix();
   El::Zero(gradient_wrt_input);
   if (!local_gradient_wrt_output.IsEmpty()) {
+    auto multisync = El::MakeMultiSync(gpu::get_sync_info(gradient_wrt_input),
+                                       gpu::get_sync_info(gradient_wrt_output));
+
     const auto& local_height = local_gradient_wrt_output.Height();
     const auto& local_width = local_gradient_wrt_output.Width();
     const auto& block_size = 256;
-    const auto& grid_size = (local_height * local_width + block_size - 1) / block_size;
-    bp_gpu_3d_kernel<<<grid_size, block_size, 0, hydrogen::cuda::GetDefaultStream()>>>(
+    const auto& grid_size =
+      (local_height * local_width + block_size - 1) / block_size;
+    hydrogen::gpu::LaunchKernel(
+      bp_gpu_3d_kernel<TensorDataType>,
+      grid_size, block_size, 0, multisync,
       input_dims[0], input_dims[1], input_dims[2],
       output_dims[0], output_dims[1], output_dims[2],
       local_height, local_width,

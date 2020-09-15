@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/optimizers/adagrad.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 
 namespace lbann {
 
@@ -63,10 +64,13 @@ void adagrad<TensorDataType>::step_compute_gpu(AbsDistMatrixType& values,
   const size_t local_width = values.LocalWidth();
   const size_t local_size = local_height * local_width;
   if (local_size > 0) {
+    auto multisync = El::MakeMultiSync(gpu::get_sync_info(values),
+                                       gpu::get_sync_info(gradient));
     constexpr size_t block_size = 256;
     const size_t grid_size = (local_size + block_size - 1) / block_size;
-    auto&& stream = hydrogen::cuda::GetDefaultStream();
-    adagrad_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
+    hydrogen::gpu::LaunchKernel(
+      adagrad_kernel<TensorDataType>,
+      grid_size, block_size, 0, multisync,
       local_height, local_width,
       this->get_learning_rate(), m_eps,
       values.Buffer(), values.LDim(),

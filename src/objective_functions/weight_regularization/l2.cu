@@ -26,9 +26,8 @@
 
 #include "lbann/objective_functions/weight_regularization/l2.hpp"
 #include "lbann/models/model.hpp"
-#ifdef LBANN_HAS_GPU
-#include "lbann/utils/cublas.hpp"
-#endif // LBANN_HAS_GPU
+
+#include "lbann/utils/gpu/helpers.hpp"
 
 namespace lbann {
 
@@ -75,19 +74,23 @@ __global__ void accumulate_contribution_kernel(El::Int height,
 } // namespace
 
 template <>
-void l2_weight_regularization::accumulate_contribution<El::Device::GPU>(const El::Matrix<AccumulateDataType, El::Device::GPU>& vals,
-                                                                        El::Matrix<AccumulateDataType, El::Device::GPU>& contribution) {
+void l2_weight_regularization::accumulate_contribution<El::Device::GPU>(
+  const El::Matrix<AccumulateDataType, El::Device::GPU>& vals,
+  El::Matrix<AccumulateDataType, El::Device::GPU>& contribution) {
+
   if (!vals.IsEmpty()) {
+    auto multisync = El::MakeMultiSync(gpu::get_sync_info(contribution),
+                                       gpu::get_sync_info(vals));
+
     const auto& size = vals.Height() * vals.Width();
     const El::Int block_size = 256;
     const auto& grid_size = (size + block_size - 1) / block_size;
-    auto&& stream = hydrogen::cuda::GetDefaultStream();
-    CHECK_CUDA(cudaSetDevice(hydrogen::gpu::DefaultDevice()));
-    accumulate_contribution_kernel<AccumulateDataType, block_size>
-      <<<grid_size, block_size, 0, stream>>>(
-        vals.Height(), vals.Width(),
-        vals.LockedBuffer(), vals.LDim(),
-        contribution.Buffer());
+    hydrogen::gpu::LaunchKernel(
+      accumulate_contribution_kernel<AccumulateDataType, block_size>,
+      grid_size, block_size, 0, multisync,
+      vals.Height(), vals.Width(),
+      vals.LockedBuffer(), vals.LDim(),
+      contribution.Buffer());
   }
 }
 

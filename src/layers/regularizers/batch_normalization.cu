@@ -27,7 +27,7 @@
 #define LBANN_BATCH_NORMALIZATION_LAYER_INSTANTIATE
 #include "lbann/layers/regularizers/batch_normalization.hpp"
 #include "lbann/weights/weights_helpers.hpp"
-#include "lbann/utils/cuda.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 
 namespace lbann {
 
@@ -484,38 +484,42 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute() {
     El::Zero(local_mean);
     El::Zero(local_var);
     if (!local_input.IsEmpty()) {
-      constexpr int block_size = 256;
+      auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_mean),
+                                         gpu::get_sync_info(local_var),
+                                         gpu::get_sync_info(local_input));
+      const El::Int block_size = 256;
       dim3 block_dims, grid_dims;
       block_dims.x = block_size;
       grid_dims.x = (channel_size + block_size - 1) / block_size;
       grid_dims.y = El::Min(num_channels, 65535);
-      fp_sums_kernel<TensorDataType, block_size>
-        <<<grid_dims, block_dims, 0, stream>>>(
-          local_width,
-          num_channels,
-          channel_size,
-          local_input.LockedBuffer(), local_input.LDim(),
-          local_mean.Buffer(),
-          local_var.Buffer());
+      hydrogen::gpu::LaunchKernel(
+        fp_sums_kernel<TensorDataType, block_size>,
+        grid_dims, block_dims, 0, multisync,
+        channel_size, local_width,
+        local_input.LockedBuffer(), local_input.LDim(),
+        local_mean.Buffer(), local_var.Buffer());
     }
     int num_per_sum;
     if (this->m_statistics_group_size == 0) {
       // Global statistics aggregation; allreduce on fused buffer.
-      this->m_comm->allreduce(*this->m_mean_and_var, this->m_mean_and_var->RedundantComm(),
-                        El::mpi::SUM);
+      this->m_comm->allreduce(*this->m_mean_and_var,
+                              this->m_mean_and_var->RedundantComm(),
+                              El::mpi::SUM);
       num_per_sum = channel_size * width;
     } else if (this->m_statistics_group_size == 1) {
       // Local aggregation, no allreduce needed.
       num_per_sum = channel_size * local_width;
     } else {
       // Grouped batchnorm. Allreduce on fused buffer.
-      this->m_comm->allreduce(*this->m_mean_and_var,
-                        this->m_comm->get_packed_group_comm(this->m_statistics_group_size),
-                        El::mpi::SUM);
+      this->m_comm->allreduce(
+        *this->m_mean_and_var,
+        this->m_comm->get_packed_group_comm(this->m_statistics_group_size),
+        El::mpi::SUM);
       if (this->m_num_per_sum_cache.count(width) == 0) {
         num_per_sum = channel_size * local_width;
         num_per_sum = this->m_comm->allreduce(
-          num_per_sum, this->m_comm->get_packed_group_comm(this->m_statistics_group_size));
+          num_per_sum,
+          this->m_comm->get_packed_group_comm(this->m_statistics_group_size));
         this->m_num_per_sum_cache[width] = num_per_sum;
       } else {
         num_per_sum = this->m_num_per_sum_cache[width];
@@ -526,13 +530,20 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute() {
     if (num_per_sum <= 1) {
       El::Fill(local_var, TensorDataType(1.0));
     } else if (num_channels > 0) {
+      auto multisync =
+        El::MakeMultiSync(gpu::get_sync_info(local_running_mean),
+                          gpu::get_sync_info(local_running_var),
+                          gpu::get_sync_info(local_mean),
+                          gpu::get_sync_info(local_var));
       constexpr size_t block_dim = 256;
       const size_t grid_dim = El::Min((num_channels + block_dim - 1) / block_dim,
                                       65535);
-      fp_statistics_kernel<<<grid_dim, block_dim, 0, stream>>>(
-          num_channels, num_per_sum, this->m_epsilon, this->m_decay,
-          local_mean.Buffer(), local_var.Buffer(),
-          local_running_mean.Buffer(), local_running_var.Buffer());
+      hydrogen::gpu::LaunchKernel(
+        fp_statistics_kernel<TensorDataType>,
+        grid_dim, block_dim, 0, multisync,
+        num_channels, num_per_sum, this->m_epsilon, this->m_decay,
+        local_mean.Buffer(), local_var.Buffer(),
+        local_running_mean.Buffer(), local_running_var.Buffer());
     }
 
   }
@@ -547,19 +558,27 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute() {
                            this->m_var_v->LockedMatrix() :
                            this->weights_values(3).LockedMatrix());
   if (!local_input.IsEmpty()) {
-    constexpr int block_size = 256;
+    auto multisync =
+      El::MakeMultiSync(gpu::get_sync_info(local_output),
+                        gpu::get_sync_info(local_scale),
+                        gpu::get_sync_info(local_bias),
+                        gpu::get_sync_info(local_var),
+                        gpu::get_sync_info(local_mean),
+                        gpu::get_sync_info(local_input));
+    const El::Int block_size = 256;
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
     grid_dims.x = (channel_size + block_size - 1) / block_size;
     grid_dims.y = El::Min(local_width, 65535);
     grid_dims.z = El::Min(num_channels, 65535);
-    fp_output_kernel
-      <<<grid_dims, block_dims, 0, stream>>>(
-        local_width, num_channels, channel_size,
-        local_input.LockedBuffer(), local_input.LDim(),
-        local_mean.LockedBuffer(), local_var.LockedBuffer(), this->m_epsilon,
-        local_scale.LockedBuffer(), local_bias.LockedBuffer(),
-        local_output.Buffer(), local_output.LDim());
+    hydrogen::gpu::LaunchKernel(
+      fp_output_kernel<TensorDataType>,
+      grid_dims, block_dims, 0, multisync,
+      local_width, num_channels, channel_size,
+      local_input.LockedBuffer(), local_input.LDim(),
+      local_mean.LockedBuffer(), local_var.LockedBuffer(), this->m_epsilon,
+      local_scale.LockedBuffer(), local_bias.LockedBuffer(),
+      local_output.Buffer(), local_output.LDim());
   }
 
 }
@@ -609,21 +628,31 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_compute() {
   El::Zero(local_bias_gradient);
   El::Zero(local_mean_gradient);
   El::Zero(local_var_gradient);
+  auto multisync =
+    El::MakeMultiSync(gpu::get_sync_info(local_gradient_wrt_input),
+                      gpu::get_sync_info(local_input),
+                      gpu::get_sync_info(local_gradient_wrt_output),
+                      gpu::get_sync_info(local_mean_gradient),
+                      gpu::get_sync_info(local_var_gradient),
+                      gpu::get_sync_info(local_scale_gradient),
+                      gpu::get_sync_info(local_bias_gradient));
+
   if (!local_input.IsEmpty()) {
     constexpr int block_size = 256;
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
     grid_dims.x = (channel_size + block_size - 1) / block_size;
     grid_dims.y = El::Min(num_channels, 65535);
-    bp_statistics_grad_kernel<TensorDataType,block_size>
-      <<<grid_dims, block_dims, 0, stream>>>(
-        local_width, num_channels, channel_size,
-        local_input.LockedBuffer(), local_input.LDim(),
-        local_gradient_wrt_output.LockedBuffer(), local_gradient_wrt_output.LDim(),
-        local_mean.LockedBuffer(), local_var.LockedBuffer(), this->m_epsilon,
-        local_scale.LockedBuffer(),
-        local_scale_gradient.Buffer(), local_bias_gradient.Buffer(),
-        local_mean_gradient.Buffer(), local_var_gradient.Buffer());
+    hydrogen::gpu::LaunchKernel(
+      bp_statistics_grad_kernel<TensorDataType,block_size>,
+      grid_dims, block_dims, 0, multisync,
+      local_width, num_channels, channel_size,
+      local_input.LockedBuffer(), local_input.LDim(),
+      local_gradient_wrt_output.LockedBuffer(), local_gradient_wrt_output.LDim(),
+      local_mean.LockedBuffer(), local_var.LockedBuffer(), this->m_epsilon,
+      local_scale.LockedBuffer(),
+      local_scale_gradient.Buffer(), local_bias_gradient.Buffer(),
+      local_mean_gradient.Buffer(), local_var_gradient.Buffer());
   }
 
   // Accumulate gradients
@@ -673,15 +702,16 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_compute() {
     grid_dims.x = (channel_size + block_size - 1) / block_size;
     grid_dims.y = El::Min(local_width, 65535);
     grid_dims.z = El::Min(num_channels, 65535);
-    bp_input_grad_kernel
-      <<<grid_dims, block_dims, 0, stream>>>(
-        local_width, num_channels, channel_size, num_per_sum,
-        local_input.LockedBuffer(), local_input.LDim(),
-        local_gradient_wrt_output.LockedBuffer(), local_gradient_wrt_output.LDim(),
-        local_mean.LockedBuffer(), local_var.LockedBuffer(), this->m_epsilon,
-        local_scale.LockedBuffer(),
-        local_mean_gradient.LockedBuffer(), local_var_gradient.LockedBuffer(),
-        local_gradient_wrt_input.Buffer(), local_gradient_wrt_input.LDim());
+    hydrogen::gpu::LaunchKernel(
+      bp_input_grad_kernel<TensorDataType>,
+      grid_dims, block_dims, 0, multisync,
+      local_width, num_channels, channel_size, num_per_sum,
+      local_input.LockedBuffer(), local_input.LDim(),
+      local_gradient_wrt_output.LockedBuffer(), local_gradient_wrt_output.LDim(),
+      local_mean.LockedBuffer(), local_var.LockedBuffer(), this->m_epsilon,
+      local_scale.LockedBuffer(),
+      local_mean_gradient.LockedBuffer(), local_var_gradient.LockedBuffer(),
+      local_gradient_wrt_input.Buffer(), local_gradient_wrt_input.LDim());
   }
 
 }

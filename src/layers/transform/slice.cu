@@ -26,7 +26,7 @@
 
 #define LBANN_SLICE_LAYER_INSTANTIATE
 #include "lbann/layers/transform/slice.hpp"
-#include "lbann/utils/cuda.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 
 namespace lbann {
 

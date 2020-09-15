@@ -26,7 +26,7 @@
 
 #define LBANN_UNARY_LAYER_INSTANTIATE
 #include "lbann/layers/math/unary.hpp"
-#include "lbann/utils/cuda.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 
 namespace lbann {
 

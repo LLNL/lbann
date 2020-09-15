@@ -26,7 +26,7 @@
 
 #define LBANN_LAYER_NORM_LAYER_INSTANTIATE
 #include "lbann/layers/regularizers/layer_norm.hpp"
-#include "lbann/utils/cuda.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 
 #include <thrust/pair.h>
 
@@ -197,12 +197,16 @@ void fp_impl(lbann_comm& comm,
   // Compute sums
   El::Zero(statistics);
   if (!local_input.IsEmpty()) {
+    auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_statistics),
+                                       gpu::get_sync_info(local_input));
     constexpr size_t block_size = 256;
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
     grid_dims.x = (local_sample_size + block_size - 1) / block_size;
     grid_dims.y = local_num_samples;
-    fp_sums_kernel<block_size><<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
+    hydrogen::gpu::LaunchKernel(
+      fp_sums_kernel<block_size, TensorDataType>,
+      grid_dims, block_dims, 0, multisync,
       local_num_samples, local_sample_size,
       local_input.LockedBuffer(), local_input.LDim(),
       local_means.Buffer(), local_means.LDim(),
@@ -216,11 +220,14 @@ void fp_impl(lbann_comm& comm,
     El::Fill(local_vars, El::TypeTraits<TensorDataType>::One());
   }
   else if (!local_statistics.IsEmpty()) {
+    auto sync_info = gpu::get_sync_info(local_statistics);
     constexpr size_t block_size = 256;
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
     grid_dims.x = (local_num_samples + block_size - 1) / block_size;
-    fp_statistics_kernel<<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
+    hydrogen::gpu::LaunchKernel(
+      fp_statistics_kernel<TensorDataType>,
+      grid_dims, block_dims, 0, sync_info,
       sample_size, local_num_samples,
       local_means.Buffer(), local_means.LDim(),
       local_vars.Buffer(), local_vars.LDim());
@@ -228,12 +235,17 @@ void fp_impl(lbann_comm& comm,
 
   // Apply layer norm
   if (!local_output.IsEmpty()) {
+    auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_output),
+                                       gpu::get_sync_info(local_statistics),
+                                       gpu::get_sync_info(local_input));
     constexpr size_t block_size = 256;
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
     grid_dims.x = (local_sample_size + block_size - 1) / block_size;
     grid_dims.y = local_num_samples;
-    fp_output_kernel<<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
+    hydrogen::gpu::LaunchKernel(
+      fp_output_kernel<TensorDataType>,
+      grid_dims, block_dims, 0, multisync,
       local_num_samples, local_sample_size, epsilon,
       local_input.LockedBuffer(), local_input.LDim(),
       local_output.Buffer(), local_output.LDim(),
@@ -401,20 +413,25 @@ void bp_impl(lbann_comm& comm,
   // Compute gradient w.r.t. statistics
   El::Zero(statistics_grad);
   if (!local_output_grad.IsEmpty()) {
+    auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_statistics_grad),
+                                       gpu::get_sync_info(local_output_grad),
+                                       gpu::get_sync_info(local_statistics),
+                                       gpu::get_sync_info(local_input));
     constexpr size_t block_size = 256;
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
     grid_dims.x = (local_sample_size + block_size - 1) / block_size;
     grid_dims.y = local_num_samples;
-    bp_statistics_grad_kernel<block_size>
-      <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
-        local_num_samples, local_sample_size, epsilon,
-        local_input.LockedBuffer(), local_input.LDim(),
-        local_output_grad.LockedBuffer(), local_output_grad.LDim(),
-        local_means.LockedBuffer(), local_means.LDim(),
-        local_vars.LockedBuffer(), local_vars.LDim(),
-        local_means_grad.Buffer(), local_means_grad.LDim(),
-        local_vars_grad.Buffer(), local_vars_grad.LDim());
+    hydrogen::gpu::LaunchKernel(
+      bp_statistics_grad_kernel<block_size, TensorDataType>,
+      grid_dims, block_dims, 0, multisync,
+      local_num_samples, local_sample_size, epsilon,
+      local_input.LockedBuffer(), local_input.LDim(),
+      local_output_grad.LockedBuffer(), local_output_grad.LDim(),
+      local_means.LockedBuffer(), local_means.LDim(),
+      local_vars.LockedBuffer(), local_vars.LDim(),
+      local_means_grad.Buffer(), local_means_grad.LDim(),
+      local_vars_grad.Buffer(), local_vars_grad.LDim());
   }
   comm.allreduce(statistics_grad,
                  statistics_grad.RedundantComm(),
@@ -422,21 +439,26 @@ void bp_impl(lbann_comm& comm,
 
   // Compute gradient w.r.t. input
   if (!local_input_grad.IsEmpty()) {
+    auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_statistics_grad),
+                                       gpu::get_sync_info(local_output_grad),
+                                       gpu::get_sync_info(local_statistics),
+                                       gpu::get_sync_info(local_input));
     constexpr size_t block_size = 256;
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
     grid_dims.x = (local_sample_size + block_size - 1) / block_size;
     grid_dims.y = local_num_samples;
-    bp_input_grad_kernel
-      <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
-        sample_size, local_num_samples, local_sample_size, epsilon,
-        local_input.LockedBuffer(), local_input.LDim(),
-        local_output_grad.LockedBuffer(), local_output_grad.LDim(),
-        local_input_grad.Buffer(), local_input_grad.LDim(),
-        local_means.LockedBuffer(), local_means.LDim(),
-        local_vars.LockedBuffer(), local_vars.LDim(),
-        local_means_grad.LockedBuffer(), local_means_grad.LDim(),
-        local_vars_grad.LockedBuffer(), local_vars_grad.LDim());
+    hydrogen::gpu::LaunchKernel(
+      bp_input_grad_kernel<TensorDataType>,
+      grid_dims, block_dims, 0, multisync,
+      sample_size, local_num_samples, local_sample_size, epsilon,
+      local_input.LockedBuffer(), local_input.LDim(),
+      local_output_grad.LockedBuffer(), local_output_grad.LDim(),
+      local_input_grad.Buffer(), local_input_grad.LDim(),
+      local_means.LockedBuffer(), local_means.LDim(),
+      local_vars.LockedBuffer(), local_vars.LDim(),
+      local_means_grad.LockedBuffer(), local_means_grad.LDim(),
+      local_vars_grad.LockedBuffer(), local_vars_grad.LDim());
   }
 
 }

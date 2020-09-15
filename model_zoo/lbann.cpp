@@ -34,9 +34,6 @@
 #ifdef LBANN_HAS_CUDNN
 #include "lbann/utils/cudnn.hpp"
 #endif // LBANN_HAS_CUDNN
-#ifdef LBANN_HAS_CUDA
-#include "lbann/utils/cublas.hpp"
-#endif // LBANN_HAS_CUDA
 
 #include <lbann.pb.h>
 #include <model.pb.h>

@@ -26,6 +26,7 @@
 
 #define LBANN_ELU_LAYER_INSTANTIATE
 #include "lbann/layers/activations/elu.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 
 namespace lbann {
 

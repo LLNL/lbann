@@ -26,6 +26,7 @@
 
 #define LBANN_VARIANCE_LAYER_INSTANTIATE
 #include "lbann/layers/misc/variance.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 
 namespace lbann {
 
@@ -134,7 +135,8 @@ void fp_gpu(const El::AbstractDistMatrix<TensorDataType>& input,
   ones.Resize(local_height, 1);
   El::Fill(ones, El::TypeTraits<TensorDataType>::One());
   El::Gemv(El::TRANSPOSE,
-           El::TypeTraits<TensorDataType>::One() / TensorDataType(height), local_input, ones,
+           El::TypeTraits<TensorDataType>::One() / TensorDataType(height),
+           local_input, ones,
            El::TypeTraits<TensorDataType>::Zero(), local_means);
   El::AllReduce(means, means.RedundantComm());
 
@@ -143,18 +145,22 @@ void fp_gpu(const El::AbstractDistMatrix<TensorDataType>& input,
   workspace.AlignWith(input);
   El::Zeros(workspace, 1, width);
   if (!local_input.IsEmpty()) {
+    auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_workspace),
+                                       gpu::get_sync_info(local_means),
+                                       gpu::get_sync_info(local_input));
     constexpr El::Int block_size = 256;
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
     grid_dims.x = (local_height + block_size - 1) / block_size;
     grid_dims.y = local_width;
     const auto& scale = El::TypeTraits<TensorDataType>::One() / (biased ? TensorDataType(height) : TensorDataType(height - 1));
-    variance_contribution_kernel<TensorDataType, block_size>
-      <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
-        local_height, local_width, scale,
-        local_input.LockedBuffer(), local_input.LDim(),
-        local_means.LockedBuffer(),
-        local_workspace.Buffer());
+    hydrogen::gpu::LaunchKernel(
+      variance_contribution_kernel<TensorDataType, block_size>,
+      grid_dims, block_dims, 0, multisync,
+      local_height, local_width, scale,
+      local_input.LockedBuffer(), local_input.LDim(),
+      local_means.LockedBuffer(),
+      local_workspace.Buffer());
   }
   El::AllReduce(workspace, workspace.RedundantComm());
   El::Copy(workspace, output);
@@ -191,13 +197,19 @@ void bp_gpu(const El::AbstractDistMatrix<TensorDataType>& input,
   constexpr El::Int block_size = 256;
   El::Int grid_size = (local_height * local_width + block_size - 1) / block_size;
   if (grid_size > 0) {
-    variance_backprop_kernel<TensorDataType>
-      <<<grid_size, block_size, 0, hydrogen::cuda::GetDefaultStream()>>>(
-        local_height, local_width, scale,
-        local_workspace.LockedBuffer(),
-        local_input.LockedBuffer(), local_input.LDim(),
-        local_means.LockedBuffer(),
-        local_gradient_wrt_input.Buffer(), local_gradient_wrt_input.LDim());
+    auto multisync =
+      El::MakeMultiSync(gpu::get_sync_info(local_gradient_wrt_input),
+                        gpu::get_sync_info(local_workspace),
+                        gpu::get_sync_info(local_input),
+                        gpu::get_sync_info(local_means));
+    hydrogen::gpu::LaunchKernel(
+      variance_backprop_kernel<TensorDataType>,
+      grid_size, block_size, 0, multisync,
+      local_height, local_width, scale,
+      local_workspace.LockedBuffer(),
+      local_input.LockedBuffer(), local_input.LDim(),
+      local_means.LockedBuffer(),
+      local_gradient_wrt_input.Buffer(), local_gradient_wrt_input.LDim());
   }
 
 }

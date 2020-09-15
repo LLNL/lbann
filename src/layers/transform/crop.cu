@@ -26,7 +26,7 @@
 
 #define LBANN_CROP_LAYER_INSTANTIATE
 #include "lbann/layers/transform/crop.hpp"
-#include "lbann/utils/cuda.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 
 namespace lbann {
 

@@ -26,7 +26,7 @@
 
 #define LBANN_INSTANCE_NORM_LAYER_INSTANTIATE
 #include "lbann/layers/regularizers/instance_norm.hpp"
-#include "lbann/utils/cuda.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 
 #include <thrust/pair.h>
 
@@ -201,29 +201,37 @@ void fp_impl(lbann_comm& comm,
                                El::IR(num_channels, 2*num_channels),
                                El::ALL);
   if (!local_input.IsEmpty()) {
+    auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_workspace),
+                                       gpu::get_sync_info(local_input));
     constexpr size_t block_size = 256;
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
     grid_dims.x = (channel_size + block_size - 1) / block_size;
     grid_dims.y = num_channels;
     grid_dims.z = local_mini_batch_size;
-    fp_sums_kernel<TensorDataType,block_size>
-      <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
-        local_mini_batch_size, num_channels, channel_size,
-        local_input.LockedBuffer(), local_input.LDim(),
-        local_sums.Buffer(), local_sums.LDim(),
-        local_sqsums.Buffer(), local_sqsums.LDim());
+    hydrogen::gpu::LaunchKernel(
+      fp_sums_kernel<TensorDataType, block_size>,
+      grid_dims, block_dims, 0, multisync,
+      local_mini_batch_size, num_channels, channel_size,
+      local_input.LockedBuffer(), local_input.LDim(),
+      local_sums.Buffer(), local_sums.LDim(),
+      local_sqsums.Buffer(), local_sqsums.LDim());
   }
 
   // Normalize output
   if (!local_output.IsEmpty()) {
+    auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_output),
+                                       gpu::get_sync_info(local_workspace),
+                                       gpu::get_sync_info(local_input));
     constexpr size_t block_size = 256;
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
     grid_dims.x = (channel_size + block_size - 1) / block_size;
     grid_dims.y = num_channels;
     grid_dims.z = local_mini_batch_size;
-    fp_output_kernel<<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
+    hydrogen::gpu::LaunchKernel(
+      fp_output_kernel<TensorDataType>,
+      grid_dims, block_dims, 0, multisync,
       local_mini_batch_size, num_channels, channel_size, epsilon,
       local_input.LockedBuffer(), local_input.LDim(),
       local_output.Buffer(), local_output.LDim(),
@@ -447,41 +455,54 @@ void bp_impl(lbann_comm& comm,
                                   El::IR(num_channels, 2*num_channels),
                                   El::ALL);
   if (!local_output_grad.IsEmpty()) {
+    auto multisync =
+      El::MakeMultiSync(gpu::get_sync_info(local_statistics_grad),
+                        gpu::get_sync_info(local_workspace),
+                        gpu::get_sync_info(local_output_grad),
+                        gpu::get_sync_info(local_input));
     constexpr size_t block_size = 256;
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
     grid_dims.x = (channel_size + block_size - 1) / block_size;
     grid_dims.y = num_channels;
     grid_dims.z = local_mini_batch_size;
-    bp_statistics_grad_kernel<TensorDataType,block_size>
-      <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
-        local_mini_batch_size, num_channels, channel_size, epsilon,
-        local_input.LockedBuffer(), local_input.LDim(),
-        local_output_grad.LockedBuffer(), local_output_grad.LDim(),
-        local_sums.LockedBuffer(), local_sums.LDim(),
-        local_sqsums.LockedBuffer(), local_sqsums.LDim(),
-        local_means_grad.Buffer(), local_means_grad.LDim(),
-        local_vars_grad.Buffer(), local_vars_grad.LDim());
+    hydrogen::gpu::LaunchKernel(
+      bp_statistics_grad_kernel<TensorDataType, block_size>,
+      grid_dims, block_dims, 0, multisync,
+      local_mini_batch_size, num_channels, channel_size, epsilon,
+      local_input.LockedBuffer(), local_input.LDim(),
+      local_output_grad.LockedBuffer(), local_output_grad.LDim(),
+      local_sums.LockedBuffer(), local_sums.LDim(),
+      local_sqsums.LockedBuffer(), local_sqsums.LDim(),
+      local_means_grad.Buffer(), local_means_grad.LDim(),
+      local_vars_grad.Buffer(), local_vars_grad.LDim());
   }
 
   // Compute gradient w.r.t. input
   if (!local_input_grad.IsEmpty()) {
+    auto multisync =
+      El::MakeMultiSync(gpu::get_sync_info(local_input_grad),
+                        gpu::get_sync_info(local_workspace),
+                        gpu::get_sync_info(local_statistics_grad),
+                        gpu::get_sync_info(local_output_grad),
+                        gpu::get_sync_info(local_input));
     constexpr size_t block_size = 256;
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
     grid_dims.x = (channel_size + block_size - 1) / block_size;
     grid_dims.y = num_channels;
     grid_dims.z = local_mini_batch_size;
-    bp_input_grad_kernel
-      <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
-        local_mini_batch_size, num_channels, channel_size, epsilon,
-        local_input.LockedBuffer(), local_input.LDim(),
-        local_output_grad.LockedBuffer(), local_output_grad.LDim(),
-        local_input_grad.Buffer(), local_input_grad.LDim(),
-        local_sums.LockedBuffer(), local_sums.LDim(),
-        local_sqsums.LockedBuffer(), local_sqsums.LDim(),
-        local_means_grad.LockedBuffer(), local_means_grad.LDim(),
-        local_vars_grad.LockedBuffer(), local_vars_grad.LDim());
+    hydrogen::gpu::LaunchKernel(
+      bp_input_grad_kernel<TensorDataType>,
+      grid_dims, block_dims, 0, multisync,
+      local_mini_batch_size, num_channels, channel_size, epsilon,
+      local_input.LockedBuffer(), local_input.LDim(),
+      local_output_grad.LockedBuffer(), local_output_grad.LDim(),
+      local_input_grad.Buffer(), local_input_grad.LDim(),
+      local_sums.LockedBuffer(), local_sums.LDim(),
+      local_sqsums.LockedBuffer(), local_sqsums.LDim(),
+      local_means_grad.LockedBuffer(), local_means_grad.LDim(),
+      local_vars_grad.LockedBuffer(), local_vars_grad.LDim());
   }
 
 }

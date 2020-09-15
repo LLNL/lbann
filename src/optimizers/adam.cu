@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/optimizers/adam.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 
 namespace lbann {
 

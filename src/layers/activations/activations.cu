@@ -26,7 +26,7 @@
 
 #define LBANN_ACTIVATIONS_LAYER_INSTANTIATE
 #include "lbann/layers/activations/activations.hpp"
-#include "lbann/utils/cuda.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 
 namespace lbann {
 

@@ -26,6 +26,7 @@
 
 #define LBANN_MEAN_ABSOLUTE_ERROR_LAYER_INSTANTIATE
 #include "lbann/layers/loss/mean_absolute_error.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 
 namespace lbann {
 
@@ -85,18 +86,22 @@ void local_fp_gpu(El::Int height,
   const auto& local_height = local_prediction.Height();
   const auto& local_width = local_prediction.Width();
   if (local_height > 0 && local_width > 0) {
+    auto multisync =
+      El::MakeMultiSync(gpu::get_sync_info(local_contribution),
+                        gpu::get_sync_info(local_ground_truth),
+                        gpu::get_sync_info(local_prediction));
     const int block_size = 256;
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
     grid_dims.x = (local_height + block_size - 1) / block_size;
     grid_dims.y = local_width;
-    CHECK_CUDA(cudaSetDevice(hydrogen::gpu::DefaultDevice()));
-    fp_kernel<block_size>
-      <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
-        height, local_height, local_width,
-        local_prediction.LockedBuffer(), local_prediction.LDim(),
-        local_ground_truth.LockedBuffer(), local_ground_truth.LDim(),
-        local_contribution.Buffer());
+    hydrogen::gpu::LaunchKernel(
+      fp_kernel<block_size, TensorDataType>,
+      grid_dims, block_dims, 0, multisync,
+      height, local_height, local_width,
+      local_prediction.LockedBuffer(), local_prediction.LDim(),
+      local_ground_truth.LockedBuffer(), local_ground_truth.LDim(),
+      local_contribution.Buffer());
   }
 }
 
@@ -152,22 +157,28 @@ void local_bp_gpu(El::Int height,
   const auto& local_height = local_prediction.Height();
   const auto& local_width = local_prediction.Width();
   if (local_height > 0 && local_width > 0) {
+    auto multisync =
+      El::MakeMultiSync(gpu::get_sync_info(local_gradient_wrt_prediction),
+                        gpu::get_sync_info(local_gradient_wrt_ground_truth),
+                        gpu::get_sync_info(local_gradient_wrt_output),
+                        gpu::get_sync_info(local_ground_truth),
+                        gpu::get_sync_info(local_prediction));
     const int block_size = 256;
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
     grid_dims.x = (local_height + block_size - 1) / block_size;
     grid_dims.y = local_width;
-    CHECK_CUDA(cudaSetDevice(hydrogen::gpu::DefaultDevice()));
-    bp_kernel<block_size>
-      <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
-        height, local_height, local_width,
-        local_prediction.LockedBuffer(), local_prediction.LDim(),
-        local_ground_truth.LockedBuffer(), local_ground_truth.LDim(),
-        local_gradient_wrt_output.LockedBuffer(),
-        local_gradient_wrt_prediction.Buffer(),
-        local_gradient_wrt_prediction.LDim(),
-        local_gradient_wrt_ground_truth.Buffer(),
-        local_gradient_wrt_ground_truth.LDim());
+    hydrogen::gpu::LaunchKernel(
+      bp_kernel<block_size, TensorDataType>,
+      grid_dims, block_dims, 0, multisync,
+      height, local_height, local_width,
+      local_prediction.LockedBuffer(), local_prediction.LDim(),
+      local_ground_truth.LockedBuffer(), local_ground_truth.LDim(),
+      local_gradient_wrt_output.LockedBuffer(),
+      local_gradient_wrt_prediction.Buffer(),
+      local_gradient_wrt_prediction.LDim(),
+      local_gradient_wrt_ground_truth.Buffer(),
+      local_gradient_wrt_ground_truth.LDim());
   }
 }
 

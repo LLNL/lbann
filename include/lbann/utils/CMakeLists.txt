@@ -3,9 +3,6 @@ set_full_path(THIS_DIR_HEADERS
   any.hpp
   argument_parser.hpp
   compiler_control.hpp
-  cublas.hpp
-  cuda.hpp
-  cudnn.hpp
   dataset.hpp
   description.hpp
   dim_helpers.hpp

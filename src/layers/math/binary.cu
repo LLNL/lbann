@@ -26,7 +26,7 @@
 
 #define LBANN_BINARY_LAYER_INSTANTIATE
 #include "lbann/layers/math/binary.hpp"
-#include "lbann/utils/cuda.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 
 namespace lbann {
 
@@ -93,15 +93,20 @@ void apply_binary_backprop_operator(const El::AbstractMatrix<TensorDataType>& x1
 
   // Launch CUDA kernel
   if (grid_dim > 0) {
-    CHECK_CUDA(cudaSetDevice(hydrogen::gpu::DefaultDevice()));
-    binary_backprop_operator_kernel<BinaryBackPropOperator>
-      <<<grid_dim, block_dim, 0, hydrogen::cuda::GetDefaultStream()>>>(
-        height, width,
-        x1.LockedBuffer(), x1.LDim(),
-        x2.LockedBuffer(), x2.LDim(),
-        dy.LockedBuffer(), dy.LDim(),
-        dx1.Buffer(), dx1.LDim(),
-        dx2.Buffer(), dx2.LDim());
+    auto multisync = El::MakeMultiSync(gpu::get_sync_info(dx2),
+                                       gpu::get_sync_info(dx1),
+                                       gpu::get_sync_info(dy),
+                                       gpu::get_sync_info(x2),
+                                       gpu::get_sync_info(x1));
+    hydrogen::gpu::LaunchKernel(
+      binary_backprop_operator_kernel<BinaryBackPropOperator, TensorDataType>,
+      grid_dim, block_dim, 0, multisync,
+      height, width,
+      x1.LockedBuffer(), x1.LDim(),
+      x2.LockedBuffer(), x2.LDim(),
+      dy.LockedBuffer(), dy.LDim(),
+      dx1.Buffer(), dx1.LDim(),
+      dx2.Buffer(), dx2.LDim());
   }
 
 }

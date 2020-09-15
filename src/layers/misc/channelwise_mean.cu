@@ -26,6 +26,7 @@
 
 #define LBANN_CHANNELWISE_MEAN_LAYER_INSTANTIATE
 #include "lbann/layers/misc/channelwise_mean.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 
 namespace lbann {
 
@@ -132,17 +133,20 @@ void channelwise_mean_layer<TensorDataType, Layout, Device>::fp_compute() {
   // Compute channel-wise mean
   El::Zero(local_output);
   if (!local_input.IsEmpty()) {
+    auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_output),
+                                       gpu::get_sync_info(local_input));
     constexpr El::Int block_size = 256;
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
     grid_dims.x = (channel_size + block_size - 1) / block_size;
     grid_dims.y = num_channels;
     grid_dims.z = local_width;
-    mean_kernel<block_size>
-      <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
-        num_channels, channel_size, local_width,
-        local_input.LockedBuffer(), local_input.LDim(),
-        local_output.Buffer(), local_output.LDim());
+    hydrogen::gpu::LaunchKernel(
+      mean_kernel<block_size, TensorDataType>,
+      grid_dims, block_dims, 0, multisync,
+      num_channels, channel_size, local_width,
+      local_input.LockedBuffer(), local_input.LDim(),
+      local_output.Buffer(), local_output.LDim());
   }
 
 }
@@ -165,17 +169,22 @@ void channelwise_mean_layer<TensorDataType, Layout, Device>::bp_compute() {
 
   // Compute gradients
   if (!local_gradient_wrt_input.IsEmpty()) {
+    auto multisync =
+      El::MakeMultiSync(gpu::get_sync_info(local_gradient_wrt_input),
+                        gpu::get_sync_info(local_gradient_wrt_output));
     constexpr El::Int block_size = 256;
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
     grid_dims.x = (channel_size + block_size - 1) / block_size;
     grid_dims.y = num_channels;
     grid_dims.z = local_width;
-    backprop_kernel<<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
-        num_channels, channel_size, local_width,
-        local_gradient_wrt_output.LockedBuffer(),
-        local_gradient_wrt_output.LDim(),
-        local_gradient_wrt_input.Buffer(), local_gradient_wrt_input.LDim());
+    hydrogen::gpu::LaunchKernel(
+      backprop_kernel<TensorDataType>,
+      grid_dims, block_dims, 0, multisync,
+      num_channels, channel_size, local_width,
+      local_gradient_wrt_output.LockedBuffer(),
+      local_gradient_wrt_output.LDim(),
+      local_gradient_wrt_input.Buffer(), local_gradient_wrt_input.LDim());
   }
 
 }

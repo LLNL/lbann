@@ -27,7 +27,7 @@
 #include "lbann/layers/misc/dist_embedding.hpp"
 #ifdef LBANN_HAS_NVSHMEM
 
-#include "lbann/utils/cuda.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 #include "lbann/utils/nvshmem.hpp"
 
 namespace lbann

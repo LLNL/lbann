@@ -31,7 +31,7 @@
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/hydrogen_utils.hpp"
 #ifdef LBANN_HAS_GPU
-#include "lbann/utils/cublas.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 #endif // LBANN_HAS_GPU
 
 namespace lbann {
@@ -103,31 +103,40 @@ void fp_gpu(lbann_comm& comm,
   ones_d.SetMemoryMode(1); // Use CUB GPU memory pool
 #endif // HYDROGEN_HAVE_CUB
   sum_d.Resize(1, 1);
-  auto&& handle = hydrogen::cublas::GetLibraryHandle();
-  auto&& stream = hydrogen::cuda::GetDefaultStream();
-  CHECK_CUBLAS(cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE));
+
+  // Sync object
+  auto multisync = El::MakeMultiSync(gpu::get_sync_info(sum_d),
+                                     gpu::get_sync_info(ones_d),
+                                     gpu::get_sync_info(*local_input));
+  El::SyncInfo<El::Device::GPU> const& sync_info = multisync;
+
+  // Setup GPU_BLAS to be in Device pointer mode
+  hydrogen::gpu_blas::SetPointerMode(hydrogen::PointerMode::DEVICE);
 
   // Compute sum of local input matrix entries
+  static constexpr El::Int int_one = 1;
   if (local_input->IsEmpty()) {
     El::Zero(sum_d);
   } else if (local_input->Contiguous()) {
     ones_d.Resize(local_height * local_width, 1);
     El::Fill(ones_d, one);
-    cublas::dot(handle,
-                local_height * local_width,
-                local_input->LockedBuffer(), 1,
-                ones_d.LockedBuffer(), 1,
-                sum_d.Buffer());
+    hydrogen::gpu_blas::Dot(local_height * local_width,
+                            local_input->LockedBuffer(), int_one,
+                            ones_d.LockedBuffer(), int_one,
+                            sum_d.Buffer(),
+                            sync_info);
   } else if (local_height == 1) {
     ones_d.Resize(local_width, 1);
     El::Fill(ones_d, one);
-    cublas::dot(handle,
-                local_width,
-                local_input->LockedBuffer(), local_input->LDim(),
-                ones_d.LockedBuffer(), 1,
-                sum_d.Buffer());
+    hydrogen::gpu_blas::Dot(local_width,
+                            local_input->LockedBuffer(),
+                            local_input->LDim(),
+                            ones_d.LockedBuffer(), int_one,
+                            sum_d.Buffer(),
+                            sync_info);
   } else {
-    El::Matrix<EvalDataType, El::Device::GPU> col_sums_d;
+    El::Matrix<TensorDataType, El::Device::GPU> col_sums_d;
+    El::SetSyncInfo(col_sums_d, sync_info);
 #ifdef HYDROGEN_HAVE_CUB
     col_sums_d.SetMemoryMode(1);  // Use CUB GPU memory pool
 #endif // HYDROGEN_HAVE_CUB
@@ -139,24 +148,21 @@ void fp_gpu(lbann_comm& comm,
       ones_d.Resize(local_width, 1);
       El::Fill(ones_d, one);
     }
-    cublas::dot(handle,
-                local_width,
-                col_sums_d.LockedBuffer(), 1,
-                ones_d.LockedBuffer(), 1,
-                sum_d.Buffer());
+    hydrogen::gpu_blas::Dot(local_width,
+                            col_sums_d.LockedBuffer(), int_one,
+                            ones_d.LockedBuffer(), int_one,
+                            sum_d.Buffer(),
+                            sync_info);
   }
-  CHECK_CUBLAS(cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_HOST));
+  // Restore the host pointer mode
+  hydrogen::gpu_blas::SetPointerMode(hydrogen::PointerMode::HOST);
 
   // Compute average value across mini-batch
-  El::Scale(one / El::To<EvalDataType>(mini_batch_size), sum_d);
-  comm.allreduce(static_cast<El::AbstractMatrix<EvalDataType>&>(sum_d), input.DistComm());
-  CHECK_CUDA(cudaMemcpyAsync(&value,
-                             sum_d.LockedBuffer(),
-                             sizeof(EvalDataType),
-                             cudaMemcpyDeviceToHost,
-                             stream));
-  copy_event.record(stream);
-
+  El::Scale(one / El::To<TensorDataType>(mini_batch_size), sum_d);
+  comm.allreduce(
+    static_cast<El::AbstractMatrix<TensorDataType>&>(sum_d), input.DistComm());
+  hydrogen::gpu::Copy1DToHost(sum_d.LockedBuffer(), &value, 1, sync_info);
+  copy_event.record(sync_info.Stream());
 }
 
 #ifdef LBANN_HAS_GPU_FP16

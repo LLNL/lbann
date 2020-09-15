@@ -28,7 +28,7 @@
 #define LBANN_UTILS_CUDNN_HPP
 
 #include "lbann/base.hpp"
-#include "lbann/utils/cuda.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/layers/layer.hpp"
 #include "lbann/layers/data_type_layer.hpp"

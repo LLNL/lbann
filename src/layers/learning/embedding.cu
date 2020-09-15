@@ -26,6 +26,7 @@
 
 #define LBANN_EMBEDDING_LAYER_INSTANTIATE
 #include "lbann/layers/learning/embedding.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 
 namespace lbann {
 
@@ -129,13 +130,18 @@ void embedding_layer<TensorDataType, T_layout, Dev>::fp_compute() {
 
   // Launch CUDA kernel
   if (!local_input.IsEmpty()) {
+    auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_output),
+                                       gpu::get_sync_info(local_input),
+                                       gpu::get_sync_info(local_embeddings));
     constexpr size_t block_size = 256;
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
     grid_dims.x = (this->m_embedding_dim + block_size - 1) / block_size;
     grid_dims.y = input_size;
     grid_dims.z = local_mini_batch_size;
-    fp_kernel<<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
+    hydrogen::gpu::LaunchKernel(
+      fp_kernel<TensorDataType>,
+      grid_dims, block_dims, 0, multisync,
       this->m_num_embeddings,
       this->m_embedding_dim,
       input_size,
@@ -171,13 +177,19 @@ void embedding_layer<TensorDataType, T_layout, Dev>::bp_compute() {
   // Launch CUDA kernel
   El::Zero(local_embedding_grad);
   if (!local_input.IsEmpty()) {
+    auto multisync =
+      El::MakeMultiSync(gpu::get_sync_info(local_embedding_grad),
+                        gpu::get_sync_info(local_output_grad),
+                        gpu::get_sync_info(local_input));
     constexpr size_t block_size = 256;
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
     grid_dims.x = (this->m_embedding_dim + block_size - 1) / block_size;
     grid_dims.y = input_size;
     grid_dims.z = local_mini_batch_size;
-    bp_kernel<<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
+    hydrogen::gpu::LaunchKernel(
+      bp_kernel<TensorDataType>,
+      grid_dims, block_dims, 0, multisync,
       this->m_num_embeddings,
       this->m_embedding_dim,
       input_size,
@@ -190,8 +202,9 @@ void embedding_layer<TensorDataType, T_layout, Dev>::bp_compute() {
       local_embedding_grad.Buffer(),
       local_embedding_grad.LDim());
   }
-  opt.add_to_gradient(*this->m_embeddings_grad, El::TypeTraits<TensorDataType>::One(), true);
-
+  opt.add_to_gradient(*this->m_embeddings_grad,
+                      El::TypeTraits<TensorDataType>::One(),
+                      true);
 }
 
 // Explicit instantiation
