@@ -217,6 +217,10 @@ void gru_layer<TensorDataType, Layout, Device>::setup_gpu() {
     CUDNN_GRU,
     CUDNN_RNN_ALGO_STANDARD,
     data_type);
+  CHECK_CUDNN(
+    cudnnSetRNNMatrixMathType(
+      m_rnn_cudnn_desc,
+      cudnn::get_default_convolution_math_type()));
 
   // Input and output tensor descriptors
   m_input_cudnn_desc.set(data_type, 1, input_size, 1);

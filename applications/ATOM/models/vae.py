@@ -118,7 +118,7 @@ class MolVAE(lbann.modules.Module):
         self.embedding_size = embedding_size
         self.dictionary_size = dictionary_size
         self.label_to_ignore = ignore_label
-        self.datatype = lbann.DataType.FLOAT
+        self.datatype = lbann.DataType.FP16
         self.weights_datatype = lbann.DataType.FLOAT
 
         fc = lbann.modules.FullyConnectedModule
