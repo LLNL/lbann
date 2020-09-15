@@ -39,18 +39,6 @@
 namespace lbann {
 namespace callback {
 
-// Always-assert from the DiHydrogen library.
-#define assert_always(...) do {                 \
-    if ((__VA_ARGS__) == 0) {                   \
-      std::stringstream ss;                     \
-      ss << __FILE__ << ":" << __LINE__         \
-         << ": " << __func__ << " Assertion "   \
-         << #__VA_ARGS__ << " failed.\n";       \
-      std::cerr << ss.str();                    \
-      abort();                                  \
-    } } while (0)
-
-
 void kfac::setup(model *m) {
   const auto v2s =
       [](const std::vector<double> v) {
@@ -107,7 +95,6 @@ void kfac::on_epoch_end(model *m) {
     const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
     const auto epoch = c.get_epoch();
     std::ostringstream oss;
-    // TODO: Print m_damping_err as well
     oss << "K-FAC callback: changing damping value to "
         << m_damping_act << " (act)"
         << ", " << m_damping_err << " (err)"
@@ -142,7 +129,7 @@ void kfac::on_backward_prop_end(model *m, Layer *l) {
   const auto get_kronecker_factor_fc =
       [](const El::AbstractMatrix<DataType>& A, // TODO: Use GPUMat
          const DataType alpha) {
-        assert_always(A.GetDevice() == El::Device::GPU);
+        assert(A.GetDevice() == El::Device::GPU);
         El::Matrix<DataType, El::Device::GPU> factor(A.Height(), A.Height());
         El::Gemm(
             El::NORMAL, El::TRANSPOSE,
@@ -158,7 +145,7 @@ void kfac::on_backward_prop_end(model *m, Layer *l) {
          const std::vector<int> spatial_dims,
          const base_convolution_layer<DataType, El::Device::GPU> *l_conv,
          const bool use_im2col) {
-        assert_always(A.GetDevice() == El::Device::GPU);
+        assert(A.GetDevice() == El::Device::GPU);
 
         const auto dilations = l_conv->get_dilations();
         for(auto i = dilations.begin(); i != dilations.end(); i++) {
@@ -202,7 +189,7 @@ void kfac::on_backward_prop_end(model *m, Layer *l) {
          const DataType damping=0,
          const DataType damping_bn_err=0,
          const bool is_bn=false) {
-        assert_always(A.Width() == A.Height());
+        assert(A.Width() == A.Height());
         El::Matrix<DataType, El::Device::GPU> Ainv(A);
 
         const double t_start = get_time();
@@ -290,12 +277,18 @@ void kfac::on_backward_prop_end(model *m, Layer *l) {
     // Get the layer ID
     const auto layers = m->get_layers();
     const auto layer_it_in_list = std::find(layers.begin(), layers.end(), l);
-    assert_always(layer_it_in_list != layers.end());
+    assert(layer_it_in_list != layers.end());
     const size_t layer_id = std::distance(layers.begin(), layer_it_in_list);
 
     // Get activations, errors, and gradients
-    assert_always(l->get_num_parents() == 1);
-    assert_always(l->get_num_children() == 1);
+    if(l->get_num_parents() != 1 || l->get_num_children() != 1) {
+      std::stringstream err;
+      err << "The K-FAC callback only supports layers who have exact one parent and child."
+          << " layer: " << l->get_name()
+          << ", #parent: " << l->get_num_parents()
+          << ", #child: " << l->get_num_children();
+      LBANN_ERROR(err.str());
+    }
     const auto parent = l->get_parent_layers()[0];
     const auto child = l->get_child_layers()[0];
     const auto& dtl_parent = dynamic_cast<const data_type_layer<DataType>&>(*parent);
@@ -303,12 +296,26 @@ void kfac::on_backward_prop_end(model *m, Layer *l) {
     const El::AbstractMatrix<DataType>& local_activations = dtl_parent.get_local_activations();
     const El::AbstractMatrix<DataType>& local_errors = dtl_child.get_local_error_signals();
     const auto mini_batch_size = dtl_parent.get_activations().Width();
-    assert_always(mini_batch_size == dtl_child.get_error_signals().Width());
+    assert(mini_batch_size == dtl_child.get_error_signals().Width());
     const auto local_batch_size = local_activations.Width();
 
+    if(local_activations.GetDevice() != El::Device::GPU
+       || local_errors.GetDevice() != El::Device::GPU) {
+      std::stringstream err;
+      err << "The K-FAC callback only supports GPU layers."
+          << " layer: " << l->get_name();
+      LBANN_ERROR(err.str());
+    }
+
     if(is_fc || is_conv) {
-      // The current implementation assumes that bias is not used in any layers.
-      assert_always(l->num_weights() == 1);
+      if(l->num_weights() != 1) {
+        std::stringstream err;
+        err << "The K-FAC callback does not currently support biases."
+            << " layer: " << l->get_name()
+            << ", #weights: " << l->num_weights();
+        LBANN_ERROR(err.str());
+      }
+
       auto& weights = l->get_weights(0);
       optimizer *w_optimizer = weights.get_optimizer();
       auto* w_dto = dynamic_cast<data_type_optimizer<DataType>*>(w_optimizer);
@@ -318,16 +325,25 @@ void kfac::on_backward_prop_end(model *m, Layer *l) {
       // already multiplied by 1/N in the loss layer.
       El::Matrix<DataType, El::Device::GPU> A, G;
       if(is_fc) {
-        assert_always(local_activations.Height() == w_gradients.Width());
-        assert_always(local_errors.Height() == w_gradients.Height());
+        assert(local_activations.Height() == w_gradients.Width());
+        assert(local_errors.Height() == w_gradients.Height());
         A = get_kronecker_factor_fc(local_activations, 1.0/mini_batch_size);
         G = get_kronecker_factor_fc(local_errors, mini_batch_size);
       } else {
 
         const auto input_dims = l->get_input_dims(); // CHW
         const auto output_dims = l->get_output_dims(); // KH'W'
-        // Consider only 2D and 3D layers
-        assert_always(input_dims.size() == 3 || input_dims.size() == 4);
+
+        if(input_dims.size() != 3 && input_dims.size() != 4) {
+          std::stringstream err;
+          err << "The K-FAC callback only supports 2D or 3D tensors."
+              << " layer: " << l->get_name()
+              << ", input_dims: ";
+          for(auto i = input_dims.begin(); i != input_dims.end(); i++)
+            err << (std::distance(input_dims.begin(), i) > 0 ? "," : "") << *i;
+          LBANN_ERROR(err.str());
+        }
+
         const size_t num_input_channels = input_dims[0];
         const size_t num_output_channels = output_dims[0];
         size_t spatial_input_prod = 1, spatial_output_prod = 1;
@@ -341,8 +357,8 @@ void kfac::on_backward_prop_end(model *m, Layer *l) {
           spatial_output_prod *= *i;
           output_spatial_dims.push_back(*i);
         }
-        assert_always((size_t) local_activations.Height() == num_input_channels*spatial_input_prod);
-        assert_always((size_t) local_errors.Height() == num_output_channels*spatial_output_prod);
+        assert((size_t) local_activations.Height() == num_input_channels*spatial_input_prod);
+        assert((size_t) local_errors.Height() == num_output_channels*spatial_output_prod);
 
         auto *l_conv = dynamic_cast<base_convolution_layer<DataType, El::Device::GPU>*>(l);
         A = get_kronecker_factor_conv(
@@ -377,15 +393,21 @@ void kfac::on_backward_prop_end(model *m, Layer *l) {
       const bool print_time = comm->am_trainer_master() && m_print_time;
       // Since setting different damping constants for A and G is an
       // alternative heuristics to pi, they should be the same if pi is used.
-      if(m_use_pi)
-        assert_always(m_damping_act == m_damping_err);
+      if(m_use_pi && m_damping_act != m_damping_err) {
+        std::stringstream err;
+        err << "Damping values for activations and errors are different while the pi constant is used."
+            << " layer: " << l->get_name()
+            << ", m_damping_act: " << m_damping_act
+            << ", m_damping_err: " << m_damping_err;
+        LBANN_WARNING(err.str());
+      }
       const auto Ainv = get_inverse(Aave, print_time, DataType(m_damping_act*pi));
       const auto Ginv = get_inverse(Gave, print_time, DataType(m_damping_err/pi));
 
       if(is_conv) {
         const auto num_output_channels = l->get_output_dims()[0];
-        assert_always(w_gradients.Width() == 1);
-        assert_always((w_gradients.Height()%num_output_channels) == 0);
+        assert(w_gradients.Width() == 1);
+        assert((w_gradients.Height()%num_output_channels) == 0);
 
         // OPTIMIZE
         const auto height_reshaped = w_gradients.Height()/num_output_channels;
@@ -412,8 +434,8 @@ void kfac::on_backward_prop_end(model *m, Layer *l) {
                      Fgrad.Buffer(),
                      Fgrad.Width()*Fgrad.Height());
       } else {
-        assert_always(Fgrad.Height() == w_gradients.Height());
-        assert_always(Fgrad.Width() == w_gradients.Width());
+        assert(Fgrad.Height() == w_gradients.Height());
+        assert(Fgrad.Width() == w_gradients.Width());
       }
 
       // Apply preconditioned grads
@@ -468,12 +490,19 @@ void kfac::on_backward_prop_end(model *m, Layer *l) {
         std::cout << oss.str();
       }
     } else {
-      assert_always(is_bn);
+      assert(is_bn);
       const bool is_bn_after_fc = (parent->get_type() == "fully connected");
       const bool is_bn_after_conv = (parent->get_type() == "convolution");
-      assert_always(is_bn_after_fc || is_bn_after_conv);
+      if(!is_bn_after_fc && !is_bn_after_conv) {
+        std::stringstream err;
+        err << "The K-FAC callback only supports batch-normalization layers after "
+            << "fully-connected layers or convolutional layers."
+            << " layer: " << l->get_name()
+            << " parent type: " << parent->get_type();
+        LBANN_ERROR(err.str());
+      }
 
-      assert_always(l->num_weights() == 4); // scale, bias, r_mean, r_var
+      assert(l->num_weights() == 4); // scale, bias, r_mean, r_var
       auto& scales = l->get_weights(0);
       auto& biases = l->get_weights(1);
       optimizer *s_optimizer = scales.get_optimizer();
@@ -492,7 +521,7 @@ void kfac::on_backward_prop_end(model *m, Layer *l) {
       if(is_bn_after_fc) {
         num_channels = local_activations.Height();
         spatial_prod = 1;
-        assert_always(num_channels == (size_t) local_errors.Height());
+        assert(num_channels == (size_t) local_errors.Height());
       } else {
         const auto input_dims = l->get_input_dims(); // CHW
         num_channels = input_dims[0];
@@ -502,12 +531,11 @@ void kfac::on_backward_prop_end(model *m, Layer *l) {
           spatial_prod *= *i;
       }
 
-      assert_always(num_channels == (size_t) scale_values.Height());
-      assert_always(num_channels == (size_t) scale_values.LocalHeight());
-      assert_always(num_channels == (size_t) bias_values.Height());
-      assert_always(num_channels == (size_t) bias_values.LocalHeight());
+      assert(num_channels == (size_t) scale_values.Height());
+      assert(num_channels == (size_t) scale_values.LocalHeight());
+      assert(num_channels == (size_t) bias_values.Height());
+      assert(num_channels == (size_t) bias_values.LocalHeight());
 
-      // REVIEW: Does inverse-scaling result in NaN?
       El::Matrix<DataType, El::Device::GPU> factor(num_channels*2, local_batch_size);
       kfac_compute_bn_factor(
           local_activations.LockedBuffer(),
