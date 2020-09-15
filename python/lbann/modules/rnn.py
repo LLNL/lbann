@@ -213,6 +213,13 @@ class GRU(Module):
             data_layout=self.data_layout
         )
 
+        self.ones = lbann.Constant(
+            value=1.0,
+            num_neurons=str(size),
+            data_layout=self.data_layout,
+            name=self.name+'_ones',
+        )
+
     def forward(self, x, prev_state):
         """Apply GRU step.
 
@@ -285,7 +292,7 @@ class GRU(Module):
             lbann.Add(
                 lbann.Multiply(
                     lbann.WeightedSum(
-                        lbann.Constant(value=1.0, hint_layer=zt, data_layout=self.data_layout),
+                        self.ones,
                         zt,
                         scaling_factors='1 -1', data_layout=self.data_layout
                     ),

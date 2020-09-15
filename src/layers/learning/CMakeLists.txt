@@ -10,6 +10,7 @@ set_full_path(THIS_DIR_SOURCES
   embedding.cpp
   embedding_builder.cpp
   fully_connected.cpp
+  gru.cpp
   )
 
 if (LBANN_HAS_CUDA)
