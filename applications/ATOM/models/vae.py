@@ -216,8 +216,7 @@ class MolVAE(lbann.modules.Module):
         in_stack = {l : True for l in stack}
         while stack:
             l = stack.pop()
-            if (isinstance(l, lbann.FullyConnected)
-                or isinstance(l, lbann.ChannelwiseFullyConnected)):
+            if type(l) not in (lbann.Slice, lbann.Reshape, lbann.Tessellate):
                 l.datatype = self.datatype
             for parent in l.parents:
                 if parent not in in_stack and parent is not x_emb:
@@ -278,8 +277,7 @@ class MolVAE(lbann.modules.Module):
         in_stack = {l : True for l in stack}
         while stack:
             l = stack.pop()
-            if (isinstance(l, lbann.FullyConnected)
-                or isinstance(l, lbann.ChannelwiseFullyConnected)):
+            if type(l) not in (lbann.Slice, lbann.Reshape, lbann.Tessellate):
                 l.datatype = self.datatype
             for parent in l.parents:
                 if parent not in in_stack and parent not in (x_emb, z):
