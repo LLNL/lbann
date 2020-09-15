@@ -50,6 +50,9 @@ __global__ void adam_noncontiguous_kernel(size_t height,
     const auto& row = gid % height;
     const auto& col = gid / height;
     const auto& g = gradient[row + col * gradient_ldim] + eps;
+    if (cuda::isinf(g) || cuda::isnan(g)) {
+      return;
+    }
     auto& m1 = moment1[row + col * moment1_ldim];
     auto& m2 = moment2[row + col * moment2_ldim];
     auto& x = values[row + col * values_ldim];
@@ -72,6 +75,9 @@ __global__ void adam_contiguous_kernel(size_t size,
   const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
   if (gid < size) {
     const auto& g = gradient[gid] + eps;
+    if (cuda::isinf(g) || cuda::isnan(g)) {
+      return;
+    }
     auto& m1 = moment1[gid];
     auto& m2 = moment2[gid];
     auto& x = values[gid];

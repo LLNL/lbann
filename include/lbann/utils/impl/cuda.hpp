@@ -178,14 +178,16 @@ WRAP_UNARY_CUDA_MATH_FUNCTION(atanh)
 
 template <typename T> __device__ __forceinline__
 bool isfinite(T const& x) { return ::isfinite(x); }
-
+template <typename T> __device__ __forceinline__
+bool isinf(T const& x) { return ::isinf(x); }
 template <typename T> __device__ __forceinline__
 bool isnan(T const& x) { return ::isnan(x); }
 
 #if __CUDA_ARCH__ >= 530
 template <> __device__ __forceinline__
 bool isfinite(__half const& x) { return !(::__isnan(x) || ::__hisinf(x)); }
-
+template <> __device__ __forceinline__
+bool isinf(__half const& x) { return ::__hisinf(x); }
 template <> __device__ __forceinline__
 bool isnan(__half const& x) { return ::__hisnan(x); }
 
