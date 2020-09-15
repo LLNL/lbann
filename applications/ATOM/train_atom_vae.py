@@ -7,13 +7,15 @@ import sys
 from google.protobuf import text_format as txtf
 import json
 import numpy as np
-import vae as molvae
+import models.vae as molvae
 
 import lbann
 import lbann.contrib.launcher
 import lbann.modules
 from lbann.util import str_list
 
+def list2str(l):
+    return ' '.join(l)
 
 def construct_lc_launcher_args():
 
@@ -60,6 +62,7 @@ def construct_lc_launcher_args():
     parser.add_argument("--no-header", type=bool, default=True)
     parser.add_argument("--ltfb", type=bool, default=False)
     parser.add_argument("--ltfb-batch-interval", type=int, default=100)
+    parser.add_argument("--weights-to-send", type=str, default='')
 
     # these are specific to the Trainer object
     parser.add_argument(
@@ -129,11 +132,17 @@ def construct_model(run_args):
                 ]
 
     callbacks = [lbann.CallbackPrint(),
-                 lbann.CallbackTimer(),
-                 lbann.CallbackDumpWeights(directory=run_args.dump_weights_dir, epoch_interval=run_args.dump_weights_interval)]
+                 lbann.CallbackTimer()]
 
+    if(run_args.dump_weights_interval > 0):
+      callbacks.append(lbann.CallbackDumpWeights(directory=run_args.dump_weights_dir, 
+                                              epoch_interval=run_args.dump_weights_interval))
     if(run_args.ltfb):
+      send_name = ('' if run_args.weights_to_send == 'All' else run_args.weights_to_send) #hack for Merlin empty string
+      weights_to_ex = [w.name for w in weights if send_name in w.name]
+      print("LTFB Weights to exchange ", weights_to_ex)
       callbacks.append(lbann.CallbackLTFB(batch_interval=run_args.ltfb_batch_interval,metric='recon',
+                                          weights = list2str(weights_to_ex),
                                           low_score_wins=True,exchange_hyperparameters=True))
     # Construct model
     return lbann.Model(run_args.num_epochs,
@@ -250,7 +259,7 @@ def main():
         nodes=run_args.nodes,
         procs_per_node=ppn,
         #batch_job = True,
-        setup_only = True,
+        #setup_only = True,
         job_name=run_args.job_name,
         experiment_dir=experiment_dir,
         lbann_args = m_lbann_args,
