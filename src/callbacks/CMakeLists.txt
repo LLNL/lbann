@@ -41,13 +41,13 @@ set_full_path(THIS_DIR_SOURCES
   timeline.cpp
   timer.cpp
   variable_minibatch.cpp
-  kfac_test.cpp
+  kfac.cpp
 )
 
 if (LBANN_HAS_CUDA)
   # Add the CUDA source files for this directory
   set_full_path(THIS_DIR_CU_SOURCES
-    kfac_test.cu
+    kfac.cu
     )
 endif ()
 

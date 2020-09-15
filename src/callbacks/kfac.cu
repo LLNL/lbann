@@ -25,7 +25,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/callbacks/kfac_test.hpp"
+#include "lbann/callbacks/kfac.hpp"
 
 
 namespace lbann {
@@ -34,7 +34,7 @@ namespace callback {
 namespace {
 
 template <typename TensorDataType>
-__global__ void kfac_test_add_to_diagonal_kernel(
+__global__ void kfac_add_to_diagonal_kernel(
     TensorDataType * __restrict__ A,
     const size_t height,
     const TensorDataType value,
@@ -47,7 +47,7 @@ __global__ void kfac_test_add_to_diagonal_kernel(
 }
 
 template <typename TensorDataType>
-__global__ void kfac_test_fill_upper_tri_kernel(
+__global__ void kfac_fill_upper_tri_kernel(
     TensorDataType * __restrict__ A,
     const size_t height) {
   const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
@@ -59,7 +59,7 @@ __global__ void kfac_test_fill_upper_tri_kernel(
 }
 
 template <typename TensorDataType>
-__global__ void kfac_test_update_kronecker_average_kernel(
+__global__ void kfac_update_kronecker_average_kernel(
     TensorDataType * __restrict__ Aave,
     const TensorDataType * __restrict__ A,
     const size_t count, const DataType decay) {
@@ -70,7 +70,7 @@ __global__ void kfac_test_update_kronecker_average_kernel(
 }
 
 template <typename TensorDataType>
-__global__ void kfac_test_conv_transpose_kernel(
+__global__ void kfac_conv_transpose_kernel(
     const TensorDataType * __restrict__ A,
     TensorDataType * __restrict__ Acol,
     const size_t mini_batch_size, const size_t num_channels,
@@ -85,7 +85,7 @@ __global__ void kfac_test_conv_transpose_kernel(
 }
 
 template <typename TensorDataType>
-__global__ void kfac_test_compute_bn_factor_kernel(
+__global__ void kfac_compute_bn_factor_kernel(
     const TensorDataType * __restrict__ activations,
     const TensorDataType * __restrict__ errors,
     const TensorDataType * __restrict__ scales,
@@ -121,7 +121,7 @@ __global__ void kfac_test_compute_bn_factor_kernel(
 
 // TODO: static function
 template <typename TensorDataType>
-void kfac_test_add_to_diagonal(
+void kfac_add_to_diagonal(
     TensorDataType * __restrict__ A,
     const size_t height,
     const TensorDataType damping,
@@ -130,40 +130,40 @@ void kfac_test_add_to_diagonal(
   constexpr size_t block_size = 256;
   const size_t grid_size = (height + block_size - 1) / block_size;
   auto&& stream =  hydrogen::cuda::GetDefaultStream();
-  kfac_test_add_to_diagonal_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
+  kfac_add_to_diagonal_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
       A, height, damping,
       damping_bn_err, is_bn);
 }
 
 // TODO: static function
 template <typename TensorDataType>
-void kfac_test_fill_upper_tri(
+void kfac_fill_upper_tri(
     TensorDataType * __restrict__ A,
     const size_t height) {
   constexpr size_t block_size = 256;
   // OPTIMIZE: Launch N^2/2 threads instead of N^2
   const size_t grid_size = (height*height + block_size - 1) / block_size;
   auto&& stream =  hydrogen::cuda::GetDefaultStream();
-  kfac_test_fill_upper_tri_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
+  kfac_fill_upper_tri_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
       A, height);
 }
 
 // TODO: static function
 template <typename TensorDataType>
-void kfac_test_update_kronecker_average(
+void kfac_update_kronecker_average(
     TensorDataType * __restrict__ Aave,
     const TensorDataType * __restrict__ A,
     const size_t count, const DataType decay) {
   constexpr size_t block_size = 256;
   const size_t grid_size = (count + block_size - 1) / block_size;
   auto&& stream =  hydrogen::cuda::GetDefaultStream();
-  kfac_test_update_kronecker_average_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
+  kfac_update_kronecker_average_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
       Aave, A, count, decay);
 }
 
 // Transpose NC(D)HW matrix to N(D)HWC.
 template <typename TensorDataType>
-void kfac_test_conv_transpose(
+void kfac_conv_transpose(
     const TensorDataType * __restrict__ activations,
     TensorDataType * __restrict__ act_columns,
     const size_t mini_batch_size, const size_t num_channels,
@@ -172,14 +172,14 @@ void kfac_test_conv_transpose(
   const size_t num_elems = mini_batch_size*num_channels*spatial_prod;
   const size_t grid_size = (num_elems + block_size - 1) / block_size;
   auto&& stream =  hydrogen::cuda::GetDefaultStream();
-  kfac_test_conv_transpose_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
+  kfac_conv_transpose_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
       activations, act_columns, mini_batch_size, num_channels, spatial_prod,
       num_elems);
 }
 
 // Compute the factor of a batch-normalization layer.
 template <typename TensorDataType>
-void kfac_test_compute_bn_factor(
+void kfac_compute_bn_factor(
     const TensorDataType * __restrict__ activations,
     const TensorDataType * __restrict__ errors,
     const TensorDataType * __restrict__ scales,
@@ -192,7 +192,7 @@ void kfac_test_compute_bn_factor(
   const size_t num_threads = batch_size * num_channels;
   const size_t grid_size = (num_threads + block_size - 1) / block_size;
   auto&& stream =  hydrogen::cuda::GetDefaultStream();
-  kfac_test_compute_bn_factor_kernel<TensorDataType>
+  kfac_compute_bn_factor_kernel<TensorDataType>
       <<<grid_size, block_size, 0, stream>>>(
           activations, errors,
           scales, biases,
@@ -202,26 +202,26 @@ void kfac_test_compute_bn_factor(
 }
 
 #define PROTO(T)                                        \
-  template void kfac_test_add_to_diagonal<T>(           \
+  template void kfac_add_to_diagonal<T>(           \
       T* __restrict__ A,                                \
       const size_t height,                              \
       const T value,                                    \
       const T value_bn_err,                             \
       const bool is_bn);                                \
-  template void kfac_test_fill_upper_tri<T>(            \
+  template void kfac_fill_upper_tri<T>(            \
       T * __restrict__ A,                               \
       const size_t height);                             \
-  template void kfac_test_update_kronecker_average<T>(  \
+  template void kfac_update_kronecker_average<T>(  \
       T * __restrict__ Aave,                            \
       const T * __restrict__ A,                         \
       const size_t count, const DataType decay);        \
-  template void kfac_test_conv_transpose<T>(            \
+  template void kfac_conv_transpose<T>(            \
       const T * __restrict__ activations,               \
       T * __restrict__ act_columns,                     \
       const size_t mini_batch_size,                     \
       const size_t num_channels,                        \
       const size_t spatial_prod);                       \
-  template void kfac_test_compute_bn_factor<T>(         \
+  template void kfac_compute_bn_factor<T>(         \
       const T * __restrict__ activations,               \
       const T * __restrict__ errors,                    \
       const T * __restrict__ scales,                    \

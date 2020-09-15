@@ -78,7 +78,7 @@ message Callback {
     CallbackLoadModel load_model = 46;
     CallbackSetWeightsValue set_weights_value = 47;
     CallbackSummarizeImages summarize_images = 48;
-    CallbackKFACTest kfac_test = 49;
+    CallbackKFACTest kfac = 49;
   }
 
   message CallbackLTFB {

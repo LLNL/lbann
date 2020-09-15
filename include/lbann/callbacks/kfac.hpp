@@ -23,11 +23,11 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// callback_kfac_test .hpp .cpp - Callbacks for the K-FAC method
+// callback_kfac .hpp .cpp - Callbacks for the K-FAC 2nd-order opt. method
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_CALLBACKS_CALLBACK_KFAC_TEST_HPP_INCLUDED
-#define LBANN_CALLBACKS_CALLBACK_KFAC_TEST_HPP_INCLUDED
+#ifndef LBANN_CALLBACKS_CALLBACK_KFAC_HPP_INCLUDED
+#define LBANN_CALLBACKS_CALLBACK_KFAC_HPP_INCLUDED
 
 #include "lbann/callbacks/callback.hpp"
 
@@ -36,7 +36,7 @@ namespace callback {
 
 // Add the damping value to the diagonal elements of A.
 template <typename TensorDataType>
-void kfac_test_add_to_diagonal(
+void kfac_add_to_diagonal(
     TensorDataType * __restrict__ A,
     const size_t height,
     const TensorDataType value,
@@ -45,20 +45,20 @@ void kfac_test_add_to_diagonal(
 
 // Fill the upper trianglar with the lower trianglar.
 template <typename TensorDataType>
-void kfac_test_fill_upper_tri(
+void kfac_fill_upper_tri(
     TensorDataType * __restrict__ A,
     const size_t height);
 
 // Aave = Aave * decay + A * (1-decay)
 template <typename TensorDataType>
-void kfac_test_update_kronecker_average(
+void kfac_update_kronecker_average(
     TensorDataType * __restrict__ Aave,
     const TensorDataType * __restrict__ A,
     const size_t count, const DataType decay);
 
 // Transpose NC(D)HW matrix to N(D)HWC.
 template <typename TensorDataType>
-void kfac_test_conv_transpose(
+void kfac_conv_transpose(
     const TensorDataType * __restrict__ activations,
     TensorDataType * __restrict__ act_columns,
     const size_t mini_batch_size, const size_t num_channels,
@@ -66,7 +66,7 @@ void kfac_test_conv_transpose(
 
 // Compute the factor of a batch-normalization layer.
 template <typename TensorDataType>
-void kfac_test_compute_bn_factor(
+void kfac_compute_bn_factor(
     const TensorDataType * __restrict__ activations,
     const TensorDataType * __restrict__ errors,
     const TensorDataType * __restrict__ scales,
@@ -77,12 +77,12 @@ void kfac_test_compute_bn_factor(
     const size_t spatial_prod);
 
 /** Callback hooks for the K-FAC method. */
-class kfac_test : public callback_base {
+class kfac : public callback_base {
  public:
 
   /** Constructor.
    */
-  kfac_test(std::vector<double> damping_act_params,
+  kfac(std::vector<double> damping_act_params,
             std::vector<double> damping_err_params,
             std::vector<double> damping_bn_act_params,
             std::vector<double> damping_bn_err_params,
@@ -105,9 +105,9 @@ class kfac_test : public callback_base {
     m_damping_bn_act = m_damping_bn_act_params[0];
     m_damping_bn_err = m_damping_bn_err_params[0];
   }
-  kfac_test(const kfac_test&) = default;
-  kfac_test& operator=(const kfac_test&) = default;
-  kfac_test* copy() const override { return new kfac_test(*this); }
+  kfac(const kfac&) = default;
+  kfac& operator=(const kfac&) = default;
+  kfac* copy() const override { return new kfac(*this); }
   void setup(model *m) override;
   void on_backward_prop_end(model *m) override;
   void on_epoch_end(model *m) override;
@@ -152,10 +152,10 @@ class kfac_test : public callback_base {
 
 // Builder function
 std::unique_ptr<callback_base>
-build_kfac_test_callback_from_pbuf(
+build_kfac_callback_from_pbuf(
     const google::protobuf::Message&,std::shared_ptr<lbann_summary> const&);
 
 } // namespace callback
 } // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_KFAC_TEST_HPP_INCLUDED
+#endif  // LBANN_CALLBACKS_CALLBACK_KFAC_HPP_INCLUDED

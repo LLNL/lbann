@@ -66,7 +66,7 @@
 #include "lbann/callbacks/timer.hpp"
 #include "lbann/callbacks/variable_minibatch.hpp"
 #include "lbann/callbacks/set_weights_value.hpp"
-#include "lbann/callbacks/kfac_test.hpp"
+#include "lbann/callbacks/kfac.hpp"
 
 #include "lbann/proto/factories.hpp"
 #include "lbann/proto/helpers.hpp"
@@ -192,7 +192,7 @@ void register_default_builders(factory_type& factory)
   factory.register_builder("CallbackSetWeightsValue",
                            build_set_weights_value_callback_from_pbuf);
   factory.register_builder("CallbackKFACTest",
-                           build_kfac_test_callback_from_pbuf);
+                           build_kfac_callback_from_pbuf);
 }
 
 // Manage a global factory

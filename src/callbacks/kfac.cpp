@@ -28,7 +28,7 @@
 #include <iomanip>
 #include <sstream>
 
-#include "lbann/callbacks/kfac_test.hpp"
+#include "lbann/callbacks/kfac.hpp"
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/layers/learning/base_convolution.hpp"
 #include "lbann/utils/im2col.hpp"
@@ -51,7 +51,7 @@ namespace callback {
     } } while (0)
 
 
-void kfac_test::setup(model *m) {
+void kfac::setup(model *m) {
   const auto v2s =
       [](const std::vector<double> v) {
         std::ostringstream oss;
@@ -78,7 +78,7 @@ void kfac_test::setup(model *m) {
   }
 }
 
-void kfac_test::on_backward_prop_end(model *m) {
+void kfac::on_backward_prop_end(model *m) {
   // Using a modified Tikhonov damping tequnique from
   // http://arxiv.org/abs/1811.12019.
   const auto get_next_damping =
@@ -101,7 +101,7 @@ void kfac_test::on_backward_prop_end(model *m) {
       m_damping_bn_err, m_damping_bn_err_params, m_damping_warmup_steps);
 }
 
-void kfac_test::on_epoch_end(model *m) {
+void kfac::on_epoch_end(model *m) {
   const auto comm = m->get_comm();
   if(comm->am_trainer_master()) {
     const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
@@ -119,7 +119,7 @@ void kfac_test::on_epoch_end(model *m) {
   }
 }
 
-void kfac_test::on_backward_prop_end(model *m, Layer *l) {
+void kfac::on_backward_prop_end(model *m, Layer *l) {
   // TODO: Static functions
   const auto get_matrix_stat =
       [](const El::Matrix<DataType, El::Device::GPU>& X,
@@ -182,7 +182,7 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
           for(auto i = spatial_dims.begin(); i != spatial_dims.end(); i++)
             spatial_prod *= *i;
           Acol.Resize(num_channels, local_batch_size*spatial_prod);
-          kfac_test_conv_transpose(
+          kfac_conv_transpose(
               A.LockedBuffer(), Acol.Buffer(),
               local_batch_size, num_channels, spatial_prod);
         }
@@ -208,7 +208,7 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
         const double t_start = get_time();
 
         if(damping > 0 || damping_bn_err > 0)
-          kfac_test_add_to_diagonal(
+          kfac_add_to_diagonal(
               Ainv.Buffer(), Ainv.Height(),
               damping, damping_bn_err,
               is_bn);
@@ -225,7 +225,7 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
         // OPTIMIZE: El::Identity on GPU?
         El::Matrix<DataType, El::Device::GPU> Linv(Ainv.Height(), Ainv.Width());
         El::Zeros(Linv, Linv.Height(), Linv.Width());
-        kfac_test_add_to_diagonal(Linv.Buffer(), Linv.Height(), DataType(1.0));
+        kfac_add_to_diagonal(Linv.Buffer(), Linv.Height(), DataType(1.0));
 
         El::Trsm(
             El::LeftOrRightNS::LEFT,
@@ -245,7 +245,7 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
         const double t_spotri = get_time();
 
         // TRSM+GEMM is equivalent to POTRI+fill_upper_tri.
-        // kfac_test_fill_upper_tri(Ainv.Buffer(), Ainv.Height());
+        // kfac_fill_upper_tri(Ainv.Buffer(), Ainv.Height());
 
         const double t_fill = get_time();
 
@@ -365,9 +365,9 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
       auto& AGave = (*m_kronecker_average.find(layer_id)).second;
       auto& Aave = AGave.first;
       auto& Gave = AGave.second;
-      kfac_test_update_kronecker_average(
+      kfac_update_kronecker_average(
           Aave.Buffer(), A.Buffer(), A.Height()*A.Width(), m_kronecker_decay);
-      kfac_test_update_kronecker_average(
+      kfac_update_kronecker_average(
           Gave.Buffer(), G.Buffer(), G.Height()*G.Width(), m_kronecker_decay);
 
       // Compute the pi constant
@@ -509,7 +509,7 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
 
       // REVIEW: Does inverse-scaling result in NaN?
       El::Matrix<DataType, El::Device::GPU> factor(num_channels*2, local_batch_size);
-      kfac_test_compute_bn_factor(
+      kfac_compute_bn_factor(
           local_activations.LockedBuffer(),
           local_errors.LockedBuffer(),
           scale_values.LockedMatrix().LockedBuffer(),
@@ -585,17 +585,17 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
 }
 
 std::unique_ptr<callback_base>
-build_kfac_test_callback_from_pbuf(
+build_kfac_callback_from_pbuf(
     const google::protobuf::Message& proto_msg,
     const std::shared_ptr<lbann_summary>&) {
   using MsgType = lbann_data::Callback::CallbackKFACTest;
-  using CallbackType = kfac_test;
+  using CallbackType = kfac;
   const auto& params = dynamic_cast<const MsgType&>(proto_msg);
 
   const auto parse_damping_params =
       [](const std::string str) {
         if(str == "")
-          return std::vector<double>({kfac_test::damping_0_default});
+          return std::vector<double>({kfac::damping_0_default});
         else
           return parse_list<double>(str);
       };
@@ -605,10 +605,10 @@ build_kfac_test_callback_from_pbuf(
   const std::vector<double> damping_bn_act_params = parse_damping_params(params.damping_bn_act());
   const std::vector<double> damping_bn_err_params = parse_damping_params(params.damping_bn_err());
   double damping_warmup_steps = params.damping_warmup_steps();
-  if(damping_warmup_steps == 0.0) damping_warmup_steps = kfac_test::damping_warmup_steps_default;
+  if(damping_warmup_steps == 0.0) damping_warmup_steps = kfac::damping_warmup_steps_default;
   double kronecker_decay = params.kronecker_decay();
   if(kronecker_decay == 0.0)
-    kronecker_decay = kfac_test::kronecker_decay_default;
+    kronecker_decay = kfac::kronecker_decay_default;
   const bool print_time = params.print_time();
   const bool print_matrix = params.print_matrix();
   const bool print_matrix_summary = params.print_matrix_summary();

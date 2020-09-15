@@ -39,7 +39,7 @@ set_full_path(THIS_DIR_HEADERS
   timeline.hpp
   timer.hpp
   variable_minibatch.hpp
-  kfac_test.hpp
+  kfac.hpp
   )
 
 # Propagate the files up the tree
