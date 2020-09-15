@@ -263,6 +263,10 @@ def main():
         job_name=run_args.job_name,
         experiment_dir=experiment_dir,
         lbann_args = m_lbann_args,
+        environment = {
+            'LBANN_USE_CUBLAS_TENSOR_OPS' : 1,
+            'LBANN_USE_CUDNN_TENSOR_OPS' : 1,
+        },
     )
 
     print("LBANN launcher status:\n" + str(status))
