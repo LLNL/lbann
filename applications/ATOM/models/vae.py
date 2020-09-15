@@ -131,8 +131,8 @@ class MolVAE(lbann.modules.Module):
             datatype=self.datatype,
             weights_datatype=self.weights_datatype,
         )
-        self.q_mu = fc(128,name=self.name+'_qmu')
-        self.q_logvar = fc(128,name=self.name+'_qlogvar')
+        self.q_mu = fc(128,name=self.name+'_encoder_qmu')
+        self.q_logvar = fc(128,name=self.name+'_encoder_qlogvar')
         for w in self.q_mu.weights + self.q_logvar.weights:
             w.datatype = self.weights_datatype
 
