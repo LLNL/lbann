@@ -70,7 +70,7 @@ class GRUModule(lbann.modules.Module):
             h = [self.zeros] * self.num_layers
         if not isinstance(h, list) or len(h) != self.num_layers:
             raise ValueError(
-                f'expected `h` to be a list with {num_layers} layers'
+                f'expected `h` to be a list with {self.num_layers} layers'
             )
 
         # Stacked GRU
@@ -118,19 +118,45 @@ class MolVAE(lbann.modules.Module):
         self.embedding_size = embedding_size
         self.dictionary_size = dictionary_size
         self.label_to_ignore = ignore_label
+        self.datatype = lbann.DataType.FLOAT
+        self.weights_datatype = lbann.DataType.FLOAT
 
         fc = lbann.modules.FullyConnectedModule
         gru = GRUModule
+
         #Encoder
-        self.encoder_rnn = gru(hidden_size=256, name=self.name+'_encoder_rnn')
+        self.encoder_rnn = gru(
+            hidden_size=256,
+            name=self.name+'_encoder_rnn',
+            datatype=self.datatype,
+            weights_datatype=self.weights_datatype,
+        )
         self.q_mu = fc(128,name=self.name+'_qmu')
         self.q_logvar = fc(128,name=self.name+'_qlogvar')
+        for w in self.q_mu.weights + self.q_logvar.weights:
+            w.datatype = self.weights_datatype
+
         #Decoder
-        self.decoder_rnn = gru(hidden_size=512, num_layers=3, name=self.name+'_decoder_rnn')
-        self.decoder_lat = fc(512,name=self.name+'_decoder_lat')
-        #shared encoder/decodeer weights
-        self.emb_weights = lbann.Weights(initializer=lbann.NormalInitializer(mean=0, standard_deviation=1),
-                                   name='emb_matrix')
+        self.decoder_rnn = gru(
+            hidden_size=512,
+            num_layers=3,
+            name=self.name+'_decoder_rnn',
+            datatype=self.datatype,
+            weights_datatype=self.weights_datatype,
+        )
+        self.decoder_lat = fc(512, name=self.name+'_decoder_lat')
+        self.decoder_fc = fc(self.dictionary_size, name=self.name+'_decoder_fc')
+        for w in self.decoder_lat.weights + self.decoder_fc.weights:
+            w.datatype = self.weights_datatype
+        self.decoder_fc.weights[0].initializer = lbann.NormalInitializer(
+            mean=0, standard_deviation=1/math.sqrt(512))
+
+        #shared encoder/decoder weights
+        self.emb_weights = lbann.Weights(
+            initializer=lbann.NormalInitializer(mean=0, standard_deviation=1),
+            name='emb_matrix',
+            datatype=self.weights_datatype,
+        )
 
     def forward(self, x):
         """Do the VAE forward step
@@ -184,6 +210,20 @@ class MolVAE(lbann.modules.Module):
 
         mu, logvar = self.q_mu(h), self.q_logvar(h)
 
+        # Set datatype of previous layers
+        # Note: Depth-first search from mu and logvar to x_emb
+        stack = [mu, logvar]
+        in_stack = {l : True for l in stack}
+        while stack:
+            l = stack.pop()
+            if (isinstance(l, lbann.FullyConnected)
+                or isinstance(l, lbann.ChannelwiseFullyConnected)):
+                l.datatype = self.datatype
+            for parent in l.parents:
+                if parent not in in_stack and parent is not x_emb:
+                    stack.append(parent)
+                    in_stack[parent] = True
+
         # eps = torch.randn_like(mu)
         eps = lbann.Gaussian(mean=0, stdev=1,hint_layer=mu)
 
@@ -228,8 +268,23 @@ class MolVAE(lbann.modules.Module):
             output,
             output_channel_dims=self.dictionary_size,
             bias=True,
-            name=f'{self.name}_decoder_fc',
+            name=f'{self.decoder_fc.name}',
+            weights=self.decoder_fc.weights,
         )
+
+        # Set datatype of layers
+        # Note: Depth-first search from y to x_emb and z
+        stack = [y]
+        in_stack = {l : True for l in stack}
+        while stack:
+            l = stack.pop()
+            if (isinstance(l, lbann.FullyConnected)
+                or isinstance(l, lbann.ChannelwiseFullyConnected)):
+                l.datatype = self.datatype
+            for parent in l.parents:
+                if parent not in in_stack and parent not in (x_emb, z):
+                    stack.append(parent)
+                    in_stack[parent] = True
 
         return y
 
@@ -258,7 +313,10 @@ class MolVAE(lbann.modules.Module):
         )
         keep_mask = lbann.LogicalNot(ignore_mask)
         length = lbann.Reduction(keep_mask, mode='sum')
-        length = lbann.Max(length, lbann.Constant(value=1, num_neurons="1"))
+        length = lbann.Max(
+            length,
+            lbann.Constant(value=1, num_neurons=str_list([1])),
+        )
         x = lbann.Add(
             lbann.Multiply(keep_mask, x),
             lbann.Multiply(ignore_mask, lbann.Constant(value=-1, hint_layer=x)),
@@ -274,8 +332,25 @@ class MolVAE(lbann.modules.Module):
         #     x[:, 1:].contiguous().view(-1),
         #     ignore_index=self.pad
         # )
-        y = lbann.ChannelwiseSoftmax(y)
-        recon_loss = lbann.CrossEntropy(y, x)
+        z = lbann.MatMul(
+            lbann.Exp(y),
+            lbann.Constant(
+                value=1,
+                num_neurons=str_list([self.dictionary_size, 1]),
+            ),
+        )
+        z = lbann.Log(z)
+        z = lbann.MatMul(
+            lbann.Reshape(keep_mask, dims=str_list([1, -1])),
+            z,
+        )
+        recon_loss = lbann.MatMul(
+            lbann.Reshape(y, dims=str_list([-1, 1])),
+            lbann.Reshape(x, dims=str_list([-1, 1])),
+            transpose_a=True,
+        )
+        recon_loss = lbann.Subtract(z, recon_loss)
+        recon_loss = lbann.Reshape(recon_loss, dims=str_list([1]))
         recon_loss = lbann.Divide(recon_loss, length)
 
         return recon_loss
