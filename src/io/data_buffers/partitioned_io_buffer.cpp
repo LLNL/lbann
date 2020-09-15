@@ -26,6 +26,8 @@
 
 #include "lbann/io/data_buffers/partitioned_io_buffer.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/profiling.hpp"
+#include "lbann/utils/distconv.hpp"
 
 namespace lbann {
 
@@ -69,6 +71,9 @@ partitioned_io_buffer<TensorDataType>& partitioned_io_buffer<TensorDataType>::op
 
 template <typename TensorDataType>
 void partitioned_io_buffer<TensorDataType>::fp_setup_data(El::Int cur_mini_batch_size, int idx) {
+#ifdef LBANN_HAS_DISTCONV
+  cur_mini_batch_size *= dc::get_number_of_io_partitions();
+#endif
   for (auto& buf : m_data_buffers) {
     buf.second->m_input_buffers[idx]->Resize(buf.second->m_input_buffers[idx]->Height(), cur_mini_batch_size);
   }
@@ -76,8 +81,23 @@ void partitioned_io_buffer<TensorDataType>::fp_setup_data(El::Int cur_mini_batch
 
 template <typename TensorDataType>
 void partitioned_io_buffer<TensorDataType>::setup_data(El::Int num_neurons, El::Int num_targets, El::Int max_mini_batch_size) {
+#ifdef LBANN_HAS_DISTCONV
+  if (dc::is_cosmoflow_parallel_io_enabled()) {
+    num_neurons /= dc::get_number_of_io_partitions();
+    // TensorDataType is assumed to be 2-byte integer types such as
+    // short or int16_t.
+    assert_eq(sizeof(TensorDataType), sizeof(short));
+    max_mini_batch_size *= dc::get_number_of_io_partitions();
+  }
+#endif // LBANN_HAS_DISTCONV
   El::Int local_mini_batch_size = max_mini_batch_size / this->m_comm->get_procs_per_trainer();
   El::Int partial_mini_batch_size = max_mini_batch_size % this->m_comm->get_procs_per_trainer();
+#ifdef LBANN_HAS_DISTCONV
+  if (dc::is_cosmoflow_parallel_io_enabled()) {
+    assert_eq(local_mini_batch_size, 1);
+    assert_eq(partial_mini_batch_size, 0);
+  }
+#endif // LBANN_HAS_DISTCONV
   if(partial_mini_batch_size > 0 && this->m_comm->get_rank_in_trainer() < partial_mini_batch_size) {
     local_mini_batch_size++;
   }
@@ -104,6 +124,7 @@ template <typename TensorDataType>
 int partitioned_io_buffer<TensorDataType>::fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode) {
   int num_parallel_readers = data_reader->get_num_parallel_readers();
 
+  prof_region_begin("fetch_to_local_matrix", prof_colors[2], false);
   /// Coordinate all available readers so that the perform I/O in the same step
   /// Check to make sure that the local matrix has space for data
   data_buffer<IODataType> *buf = get_data_buffer(mode);
@@ -121,15 +142,24 @@ int partitioned_io_buffer<TensorDataType>::fetch_to_local_matrix(generic_data_re
       //      m_num_data_per_epoch+=num_samples_fetched; /// BVE FIXME need to change how this is shared
     }
   }
+  prof_region_end("fetch_to_local_matrix", false);
   return buf->m_num_samples_fetched;
 }
 
 template <typename TensorDataType>
 void partitioned_io_buffer<TensorDataType>::distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMatrixType& sample, AbsDistMatrixType& response) {
+  prof_region_begin("distribute_from_local_matrix", prof_colors[3], false);
   data_buffer<IODataType> *buf = get_data_buffer(mode);
   Copy(*buf->m_input_buffers[0], sample);
   Copy(*buf->m_input_buffers[1], response);
+#ifdef LBANN_HAS_DISTCONV
+  if (dc::is_cosmoflow_parallel_io_enabled()) {
+    response.Resize(response.Height(), response.Width() /
+                    dc::get_number_of_io_partitions());
+  }
+#endif
   buf->m_num_samples_fetched = 0;
+  prof_region_end("distribute_from_local_matrix", false);
   return;
 }
 
