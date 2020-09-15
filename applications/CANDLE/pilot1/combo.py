@@ -30,7 +30,6 @@
 ################################################################################
 
 import os.path
-import google.protobuf.text_format as txtf
 import sys
 import argparse
 import lbann
@@ -39,6 +38,11 @@ import lbann.contrib.args
 import lbann.contrib.models.wide_resnet
 import lbann.contrib.launcher
 
+# Get relative path to data
+current_file = os.path.realpath(__file__)
+current_dir = os.path.dirname(current_file)
+sys.path.insert(0, os.path.join(os.path.dirname(current_dir), 'data'))
+import pilot1
 
 # Command-line arguments
 desc = ('Construct and run CANDLE on Pilot1 data. '
@@ -46,24 +50,20 @@ desc = ('Construct and run CANDLE on Pilot1 data. '
 parser = argparse.ArgumentParser(description=desc)
 lbann.contrib.args.add_scheduler_arguments(parser)
 parser.add_argument(
-    '--job-name', action='store', default='lbann_image_ae', type=str,
-    help='scheduler job name (default: lbann_CANDLE)')
+    '--job-name', action='store', default='lbann_CANDLE_pilot1', type=str,
+    help='scheduler job name (default: lbann_CANDLE_pilot1)')
 parser.add_argument(
-    '--mini-batch-size', action='store', default=128, type=int,
-    help='mini-batch size (default: 250)', metavar='NUM')
+    '--mini-batch-size', action='store', default=256, type=int,
+    help='mini-batch size (default: 256)', metavar='NUM')
 parser.add_argument(
-    '--num-epochs', action='store', default=90, type=int,
+    '--num-epochs', action='store', default=10, type=int,
     help='number of epochs (default: 10)', metavar='NUM')
-parser.add_argument(
-    '--num-classes', action='store', default=1000, type=int,
-    help='number of ImageNet classes (default: 1000)', metavar='NUM')
 parser.add_argument(
     '--random-seed', action='store', default=0, type=int,
     help='random seed for LBANN RNGs', metavar='NUM')
 parser.add_argument(
-    '--data-reader', action='store',
-    default='../../../data_readers/data_reader_candle_pilot1_combo.prototext', type=str,
-    help='scheduler job name (default: data_readers/data_reader_candle_pilot1_combo.prototext)')
+    '--data-reader', action='store', default='default', type=str,
+    help='Data reader options: \"combo\", \"gdc\", or \"growth\" (default: data_reader_candle_pilot1.prototext)')
 lbann.contrib.args.add_optimizer_arguments(parser, default_learning_rate=0.1)
 args = parser.parse_args()
 
@@ -366,11 +366,18 @@ model = lbann.Model(args.num_epochs,
 opt = lbann.contrib.args.create_optimizer(args)
 
 # Setup data reader
-data_reader_file = args.data_reader
-data_reader_proto = lbann.lbann_pb2.LbannPB()
-with open(data_reader_file, 'r') as f:
-    txtf.Merge(f.read(), data_reader_proto)
-data_reader_proto = data_reader_proto.data_reader
+data_reader_prefix = 'data_reader_candle_pilot1'
+if args.data_reader == "default":
+  data_reader_file = data_reader_prefix + '.prototext'
+elif args.data_reader == "combo":
+  data_reader_file = data_reader_prefix + '_combo.prototext'
+elif args.data_reader == "gdc":
+  data_reader_file = data_reader_prefix + '_gdc.prototext'
+elif args.data_reader == "growth":
+  data_reader_file = data_reader_prefix + '_growth.prototext'
+else
+  raise InvalidOption('Data reader selection \"' + args.data_reader + '\" is invalid. Use \"combo\", \"gdc\", or \"growth\". Default is data_reader_candle_pilot1.prototext.')
+pilot1.make_data_reader(data_reader_file)
 
 # Setup trainer
 trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size)
