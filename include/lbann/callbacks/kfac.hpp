@@ -30,6 +30,7 @@
 #define LBANN_CALLBACKS_CALLBACK_KFAC_HPP_INCLUDED
 
 #include "lbann/callbacks/callback.hpp"
+#include "lbann/layers/learning/convolution.hpp"
 
 namespace lbann {
 namespace callback {
@@ -83,14 +84,14 @@ class kfac : public callback_base {
   /** Constructor.
    */
   kfac(std::vector<double> damping_act_params,
-            std::vector<double> damping_err_params,
-            std::vector<double> damping_bn_act_params,
-            std::vector<double> damping_bn_err_params,
-            double damping_warmup_steps,
-            double kronecker_decay,
-            bool print_time, bool print_matrix,
-            bool print_matrix_summary,
-            bool use_pi)
+       std::vector<double> damping_err_params,
+       std::vector<double> damping_bn_act_params,
+       std::vector<double> damping_bn_err_params,
+       double damping_warmup_steps,
+       double kronecker_decay,
+       bool print_time, bool print_matrix,
+       bool print_matrix_summary,
+       bool use_pi)
       : callback_base(),
         m_damping_act_params(damping_act_params),
         m_damping_err_params(damping_err_params),
@@ -109,6 +110,7 @@ class kfac : public callback_base {
   kfac& operator=(const kfac&) = default;
   kfac* copy() const override { return new kfac(*this); }
   void setup(model *m) override;
+  void setup(trainer *t) override {}
   void on_backward_prop_end(model *m) override;
   void on_epoch_end(model *m) override;
   void on_backward_prop_end(model *m, Layer *l) override;
@@ -122,6 +124,38 @@ class kfac : public callback_base {
   constexpr static const double kronecker_decay_default = 0.99;
 
  private:
+
+  /** @brief Gets the Kronecker factor matrix of a FC layer. **/
+  static El::Matrix<DataType, El::Device::GPU> get_kronecker_factor_fc(
+      const El::AbstractMatrix<DataType>& A,
+      const DataType alpha);
+
+  /** @brief Gets the Kronecker factor matrix of a convolutional layer. **/
+  static El::Matrix<DataType, El::Device::GPU> get_kronecker_factor_conv(
+      const El::Matrix<DataType, El::Device::GPU>& A,
+      const DataType alpha,
+      const size_t local_batch_size, const size_t num_channels,
+      const std::vector<int> spatial_dims,
+      const convolution_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU> *l_conv,
+      const bool use_im2col);
+
+  /** @brief Gets the inverse matrix of A. **/
+  static El::Matrix<DataType, El::Device::GPU> get_matrix_inverse(
+      const El::Matrix<DataType, El::Device::GPU>& A,
+      const bool report_time=false,
+      const DataType damping=0,
+      const DataType damping_bn_err=0,
+      const bool is_bn=false);
+
+  /** @brief Returns the pi constant. **/
+  static double compute_pi(
+      const El::Matrix<DataType, El::Device::GPU>& A,
+      const El::Matrix<DataType, El::Device::GPU>& G);
+
+  /** @brief Gets statistics of a given matrix. **/
+  static std::string get_matrix_stat(
+      const El::Matrix<DataType, El::Device::GPU>& X,
+      const char *name);
 
   /** @brief Parameters of a Tikhonov damping technique. */
   const std::vector<double> m_damping_act_params, m_damping_err_params,

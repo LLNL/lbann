@@ -30,7 +30,9 @@
 
 #include "lbann/callbacks/kfac.hpp"
 #include "lbann/layers/data_type_layer.hpp"
-#include "lbann/layers/learning/base_convolution.hpp"
+#include "lbann/layers/learning/fully_connected.hpp"
+#include "lbann/layers/learning/convolution.hpp"
+#include "lbann/layers/regularizers/batch_normalization.hpp"
 #include "lbann/utils/im2col.hpp"
 
 #include "cblas.h"
@@ -107,171 +109,13 @@ void kfac::on_epoch_end(model *m) {
 }
 
 void kfac::on_backward_prop_end(model *m, Layer *l) {
-  // TODO: Static functions
-  const auto get_matrix_stat =
-      [](const El::Matrix<DataType, El::Device::GPU>& X,
-         const char *name) {
-        El::Matrix<DataType> XCPU(X);
-        const auto nrm2 = El::Nrm2(El::Reshape(XCPU.Height()*XCPU.Width(), 1, XCPU));
-        std::ostringstream oss;
-        oss << name
-            << "("
-            << X.Height()
-            << "x"
-            << X.Width()
-            << ")="
-            << std::setprecision(2)
-            << std::scientific
-            << nrm2;
-        return oss.str();
-      };
-
-  const auto get_kronecker_factor_fc =
-      [](const El::AbstractMatrix<DataType>& A, // TODO: Use GPUMat
-         const DataType alpha) {
-        assert(A.GetDevice() == El::Device::GPU);
-        El::Matrix<DataType, El::Device::GPU> factor(A.Height(), A.Height());
-        El::Gemm(
-            El::NORMAL, El::TRANSPOSE,
-            alpha, A, A,
-            El::TypeTraits<DataType>::Zero(), factor);
-        return factor;
-      };
-
-  const auto get_kronecker_factor_conv =
-      [](const El::Matrix<DataType, El::Device::GPU>& A,
-         const DataType alpha,
-         const size_t local_batch_size, const size_t num_channels,
-         const std::vector<int> spatial_dims,
-         const base_convolution_layer<DataType, El::Device::GPU> *l_conv,
-         const bool use_im2col) {
-        assert(A.GetDevice() == El::Device::GPU);
-
-        const auto dilations = l_conv->get_dilations();
-        for(auto i = dilations.begin(); i != dilations.end(); i++) {
-          if(*i != 1) {
-            std::cerr << "dilation should be 1." << std::endl;
-            exit(1);
-          }
-        }
-
-        // The matrix size will be overwritten later.
-        El::Matrix<DataType, El::Device::GPU> Acol(1, 1);
-        if(use_im2col) {
-          im2col(A, Acol,
-                 num_channels, spatial_dims.size(),
-                 &(spatial_dims[0]),
-                 &(l_conv->get_pads()[0]),
-                 &(l_conv->get_conv_dims()[0]),
-                 &(l_conv->get_strides()[0]));
-        } else {
-          size_t spatial_prod = 1;
-          for(auto i = spatial_dims.begin(); i != spatial_dims.end(); i++)
-            spatial_prod *= *i;
-          Acol.Resize(num_channels, local_batch_size*spatial_prod);
-          kfac_conv_transpose(
-              A.LockedBuffer(), Acol.Buffer(),
-              local_batch_size, num_channels, spatial_prod);
-        }
-
-        El::Matrix<DataType, El::Device::GPU> factor(Acol.Height(), Acol.Height());
-        El::Gemm(
-            El::NORMAL, El::TRANSPOSE,
-            alpha, Acol, Acol,
-            El::TypeTraits<DataType>::Zero(), factor);
-        return factor;
-      };
-
-  // TODO: Static functions
-  const auto get_inverse =
-      [](const El::Matrix<DataType, El::Device::GPU>& A,
-         const bool report_time=false,
-         const DataType damping=0,
-         const DataType damping_bn_err=0,
-         const bool is_bn=false) {
-        assert(A.Width() == A.Height());
-        El::Matrix<DataType, El::Device::GPU> Ainv(A);
-
-        const double t_start = get_time();
-
-        if(damping > 0 || damping_bn_err > 0)
-          kfac_add_to_diagonal(
-              Ainv.Buffer(), Ainv.Height(),
-              damping, damping_bn_err,
-              is_bn);
-
-        const double t_damping = get_time();
-
-        const auto uplo = El::UpperOrLowerNS::LOWER;
-        El::Cholesky(
-            uplo,
-            (El::AbstractMatrix<DataType> &) Ainv);
-
-        const double t_spotrf = get_time();
-
-        // OPTIMIZE: El::Identity on GPU?
-        El::Matrix<DataType, El::Device::GPU> Linv(Ainv.Height(), Ainv.Width());
-        El::Zeros(Linv, Linv.Height(), Linv.Width());
-        kfac_add_to_diagonal(Linv.Buffer(), Linv.Height(), DataType(1.0));
-
-        El::Trsm(
-            El::LeftOrRightNS::LEFT,
-            uplo,
-            El::OrientationNS::NORMAL,
-            El::UnitOrNonUnitNS::NON_UNIT,
-            El::TypeTraits<DataType>::One(),
-            (const El::AbstractMatrix<DataType> &) Ainv,
-            (El::AbstractMatrix<DataType> &) Linv,
-            true);
-
-        El::Gemm(
-            El::TRANSPOSE, El::NORMAL,
-            El::TypeTraits<DataType>::One(), Linv, Linv,
-            El::TypeTraits<DataType>::Zero(), Ainv);
-
-        const double t_spotri = get_time();
-
-        // TRSM+GEMM is equivalent to POTRI+fill_upper_tri.
-        // kfac_fill_upper_tri(Ainv.Buffer(), Ainv.Height());
-
-        const double t_fill = get_time();
-
-        if(report_time) {
-          std::cout << "K-FAC callback: get_inverse of"
-                    << " " << A.Height() << "x" << A.Width()
-                    << " using Hydrogen"
-                    << " (damping=" << damping << "): "
-                    << " t_damping=" << (t_damping-t_start)
-                    << ", t_spotrf=" << (t_spotrf-t_damping)
-                    << ", t_spotri=" << (t_spotri-t_spotrf)
-                    << ", t_fill=" << (t_fill-t_spotri)
-                    << std::endl;
-        }
-
-        return Ainv;
-      };
-
-  // TODO: Static functions
-  const auto compute_pi =
-      [](const El::Matrix<DataType, El::Device::GPU> A,
-         const El::Matrix<DataType, El::Device::GPU> G) {
-        // OPTIMIZE: El::Trace is defined but not implemented yet.
-        const auto get_trace =
-            [](const El::Matrix<DataType, El::Device::GPU> X) {
-              const El::Matrix<DataType> XCPU(X);
-              DataType s = 0.0;
-              for(int i = 0; i < XCPU.Height(); i++)
-                s += XCPU(i, i);
-              return s;
-            };
-        return sqrt((get_trace(A)/A.Height())/(get_trace(G)/G.Height()));
-      };
-
   const auto comm = m->get_comm();
-  // TODO: Use dynamic_cast for type checking
-  const bool is_fc = (l->get_type() == "fully connected");
-  const bool is_conv = (l->get_type() == "convolution");
-  const bool is_bn = (l->get_type() == "batch normalization");
+  const auto *l_fc = dynamic_cast<fully_connected_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>*>(l);
+  const auto *l_conv = dynamic_cast<convolution_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>*>(l);
+  const auto *l_bn = dynamic_cast<batch_normalization_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>*>(l);
+  const bool is_fc = (l_fc != nullptr);
+  const bool is_conv = (l_conv != nullptr);
+  const bool is_bn = (l_bn != nullptr);
 
   if(is_fc || is_conv || is_bn) {
     // Get the layer ID
@@ -360,7 +204,6 @@ void kfac::on_backward_prop_end(model *m, Layer *l) {
         assert((size_t) local_activations.Height() == num_input_channels*spatial_input_prod);
         assert((size_t) local_errors.Height() == num_output_channels*spatial_output_prod);
 
-        auto *l_conv = dynamic_cast<base_convolution_layer<DataType, El::Device::GPU>*>(l);
         A = get_kronecker_factor_conv(
             local_activations, 1.0/mini_batch_size,
             local_batch_size, num_input_channels, input_spatial_dims,
@@ -371,7 +214,7 @@ void kfac::on_backward_prop_end(model *m, Layer *l) {
             l_conv, false);
       }
 
-      // OPTIMIZE: Communicate only the lower triangulars
+      // TODO: Communicate only the lower triangulars
       comm->allreduce((El::AbstractMatrix<DataType>&) A, comm->get_trainer_comm());
       comm->allreduce((El::AbstractMatrix<DataType>&) G, comm->get_trainer_comm());
 
@@ -401,15 +244,13 @@ void kfac::on_backward_prop_end(model *m, Layer *l) {
             << ", m_damping_err: " << m_damping_err;
         LBANN_WARNING(err.str());
       }
-      const auto Ainv = get_inverse(Aave, print_time, DataType(m_damping_act*pi));
-      const auto Ginv = get_inverse(Gave, print_time, DataType(m_damping_err/pi));
+      const auto Ainv = get_matrix_inverse(Aave, print_time, DataType(m_damping_act*pi));
+      const auto Ginv = get_matrix_inverse(Gave, print_time, DataType(m_damping_err/pi));
 
       if(is_conv) {
         const auto num_output_channels = l->get_output_dims()[0];
         assert(w_gradients.Width() == 1);
         assert((w_gradients.Height()%num_output_channels) == 0);
-
-        // OPTIMIZE
         const auto height_reshaped = w_gradients.Height()/num_output_channels;
         w_gradients.Attach(height_reshaped,
                            num_output_channels,
@@ -491,8 +332,12 @@ void kfac::on_backward_prop_end(model *m, Layer *l) {
       }
     } else {
       assert(is_bn);
-      const bool is_bn_after_fc = (parent->get_type() == "fully connected");
-      const bool is_bn_after_conv = (parent->get_type() == "convolution");
+      const bool is_bn_after_fc =
+          (dynamic_cast<const fully_connected_layer<DataType,
+           data_layout::DATA_PARALLEL, El::Device::GPU>*>(parent) != nullptr);
+      const bool is_bn_after_conv =
+          (dynamic_cast<const convolution_layer<DataType,
+           data_layout::DATA_PARALLEL, El::Device::GPU>*>(parent) != nullptr);
       if(!is_bn_after_fc && !is_bn_after_conv) {
         std::stringstream err;
         err << "The K-FAC callback only supports batch-normalization layers after "
@@ -565,7 +410,7 @@ void kfac::on_backward_prop_end(model *m, Layer *l) {
           num_channels*sizeof(DataType), cudaMemcpyDeviceToDevice));
 
       const bool print_time = comm->am_trainer_master() && m_print_time;
-      const auto Finv = get_inverse(
+      const auto Finv = get_matrix_inverse(
           fisher_block, print_time,
           DataType(m_damping_bn_act),
           DataType(m_damping_bn_err),
@@ -605,11 +450,164 @@ void kfac::on_backward_prop_end(model *m, Layer *l) {
             << std::endl;
         std::cout << oss.str();
       }
+    }
+  }
+}
 
+El::Matrix<DataType, El::Device::GPU> kfac::get_kronecker_factor_fc(
+    const El::AbstractMatrix<DataType>& A,
+    const DataType alpha) {
+  assert(A.GetDevice() == El::Device::GPU);
+  El::Matrix<DataType, El::Device::GPU> factor(A.Height(), A.Height());
+  El::Gemm(
+      El::NORMAL, El::TRANSPOSE,
+      alpha, A, A,
+      El::TypeTraits<DataType>::Zero(), factor);
+  return factor;
+}
+
+El::Matrix<DataType, El::Device::GPU> kfac::get_kronecker_factor_conv(
+    const El::Matrix<DataType, El::Device::GPU>& A,
+    const DataType alpha,
+    const size_t local_batch_size, const size_t num_channels,
+    const std::vector<int> spatial_dims,
+    const convolution_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU> *l_conv,
+    const bool use_im2col) {
+  assert(A.GetDevice() == El::Device::GPU);
+
+  const auto dilations = l_conv->get_dilations();
+  for(auto i = dilations.begin(); i != dilations.end(); i++)
+    if(*i != 1) {
+      std::stringstream err;
+      err << "The K-FAC callback onky supports dilation width of 1."
+          << " layer: " << l_conv->get_name();
+      LBANN_ERROR(err.str());
     }
 
+  // The matrix size will be overwritten later.
+  El::Matrix<DataType, El::Device::GPU> Acol(1, 1);
+  if(use_im2col) {
+    im2col(A, Acol,
+           num_channels, spatial_dims.size(),
+           &(spatial_dims[0]),
+           &(l_conv->get_pads()[0]),
+           &(l_conv->get_conv_dims()[0]),
+           &(l_conv->get_strides()[0]));
+  } else {
+    size_t spatial_prod = 1;
+    for(auto i = spatial_dims.begin(); i != spatial_dims.end(); i++)
+      spatial_prod *= *i;
+    Acol.Resize(num_channels, local_batch_size*spatial_prod);
+    kfac_conv_transpose(
+        A.LockedBuffer(), Acol.Buffer(),
+        local_batch_size, num_channels, spatial_prod);
   }
 
+  El::Matrix<DataType, El::Device::GPU> factor(Acol.Height(), Acol.Height());
+  El::Gemm(
+      El::NORMAL, El::TRANSPOSE,
+      alpha, Acol, Acol,
+      El::TypeTraits<DataType>::Zero(), factor);
+  return factor;
+}
+
+El::Matrix<DataType, El::Device::GPU> kfac::get_matrix_inverse(
+    const El::Matrix<DataType, El::Device::GPU>& A,
+    const bool report_time,
+    const DataType damping,
+    const DataType damping_bn_err,
+    const bool is_bn) {
+  assert(A.Width() == A.Height());
+  El::Matrix<DataType, El::Device::GPU> Ainv(A);
+
+  const double t_start = get_time();
+
+  if(damping > 0 || damping_bn_err > 0)
+    kfac_add_to_diagonal(
+        Ainv.Buffer(), Ainv.Height(),
+        damping, damping_bn_err,
+        is_bn);
+
+  const double t_damping = get_time();
+
+  const auto uplo = El::UpperOrLowerNS::LOWER;
+  El::Cholesky(
+      uplo,
+      (El::AbstractMatrix<DataType> &) Ainv);
+
+  const double t_spotrf = get_time();
+
+  // TODO: El::Identity on GPU?
+  El::Matrix<DataType, El::Device::GPU> Linv(Ainv.Height(), Ainv.Width());
+  El::Zeros(Linv, Linv.Height(), Linv.Width());
+  kfac_add_to_diagonal(Linv.Buffer(), Linv.Height(), DataType(1.0));
+
+  El::Trsm(
+      El::LeftOrRightNS::LEFT,
+      uplo,
+      El::OrientationNS::NORMAL,
+      El::UnitOrNonUnitNS::NON_UNIT,
+      El::TypeTraits<DataType>::One(),
+      (const El::AbstractMatrix<DataType> &) Ainv,
+      (El::AbstractMatrix<DataType> &) Linv,
+      true);
+
+  El::Gemm(
+      El::TRANSPOSE, El::NORMAL,
+      El::TypeTraits<DataType>::One(), Linv, Linv,
+      El::TypeTraits<DataType>::Zero(), Ainv);
+
+  const double t_spotri = get_time();
+
+  // TRSM+GEMM is equivalent to POTRI+fill_upper_tri.
+  // kfac_fill_upper_tri(Ainv.Buffer(), Ainv.Height());
+
+  const double t_fill = get_time();
+
+  if(report_time) {
+    std::cout << "K-FAC callback: get_matrix_inverse of"
+              << " " << A.Height() << "x" << A.Width()
+              << " using Hydrogen"
+              << " (damping=" << damping << "): "
+              << " t_damping=" << (t_damping-t_start)
+              << ", t_spotrf=" << (t_spotrf-t_damping)
+              << ", t_spotri=" << (t_spotri-t_spotrf)
+              << ", t_fill=" << (t_fill-t_spotri)
+              << std::endl;
+  }
+
+  return Ainv;
+}
+
+double kfac::compute_pi(const El::Matrix<DataType, El::Device::GPU>& A,
+                        const El::Matrix<DataType, El::Device::GPU>& G) {
+  // TODO: El::Trace is defined but not implemented yet.
+  const auto get_trace =
+      [](const El::Matrix<DataType, El::Device::GPU> X) {
+        const El::Matrix<DataType> XCPU(X);
+        DataType s = 0.0;
+        for(int i = 0; i < XCPU.Height(); i++)
+          s += XCPU(i, i);
+        return (double) s;
+      };
+  return sqrt((get_trace(A)/A.Height())/(get_trace(G)/G.Height()));
+}
+
+std::string kfac::get_matrix_stat(const El::Matrix<DataType, El::Device::GPU>& X,
+                                  const char *name) {
+  El::Matrix<DataType> XCPU(X);
+  const auto nrm2 = El::Nrm2(El::Reshape(XCPU.Height()*XCPU.Width(), 1, XCPU));
+  std::ostringstream oss;
+  oss << name
+      << "("
+      << X.Height()
+      << "x"
+      << X.Width()
+      << ")="
+      << std::setprecision(2)
+      << std::scientific
+      << nrm2;
+  return oss.str();
 }
 
 std::unique_ptr<callback_base>
