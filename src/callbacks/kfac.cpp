@@ -224,9 +224,9 @@ void kfac::on_backward_prop_end(model *m, Layer *l) {
       auto& AGave = (*m_kronecker_average.find(layer_id)).second;
       auto& Aave = AGave.first;
       auto& Gave = AGave.second;
-      kfac_update_kronecker_average(
+      update_kronecker_average(
           Aave.Buffer(), A.Buffer(), A.Height()*A.Width(), m_kronecker_decay);
-      kfac_update_kronecker_average(
+      update_kronecker_average(
           Gave.Buffer(), G.Buffer(), G.Height()*G.Width(), m_kronecker_decay);
 
       // Compute the pi constant
@@ -382,7 +382,7 @@ void kfac::on_backward_prop_end(model *m, Layer *l) {
       assert(num_channels == (size_t) bias_values.LocalHeight());
 
       El::Matrix<DataType, El::Device::GPU> factor(num_channels*2, local_batch_size);
-      kfac_compute_bn_factor(
+      compute_bn_factor(
           local_activations.LockedBuffer(),
           local_errors.LockedBuffer(),
           scale_values.LockedMatrix().LockedBuffer(),
@@ -498,7 +498,7 @@ El::Matrix<DataType, El::Device::GPU> kfac::get_kronecker_factor_conv(
     for(auto i = spatial_dims.begin(); i != spatial_dims.end(); i++)
       spatial_prod *= *i;
     Acol.Resize(num_channels, local_batch_size*spatial_prod);
-    kfac_conv_transpose(
+    conv_transpose(
         A.LockedBuffer(), Acol.Buffer(),
         local_batch_size, num_channels, spatial_prod);
   }
@@ -523,7 +523,7 @@ El::Matrix<DataType, El::Device::GPU> kfac::get_matrix_inverse(
   const double t_start = get_time();
 
   if(damping > 0 || damping_bn_err > 0)
-    kfac_add_to_diagonal(
+    add_to_diagonal(
         Ainv.Buffer(), Ainv.Height(),
         damping, damping_bn_err,
         is_bn);
@@ -540,7 +540,7 @@ El::Matrix<DataType, El::Device::GPU> kfac::get_matrix_inverse(
   // TODO: El::Identity on GPU?
   El::Matrix<DataType, El::Device::GPU> Linv(Ainv.Height(), Ainv.Width());
   El::Zeros(Linv, Linv.Height(), Linv.Width());
-  kfac_add_to_diagonal(Linv.Buffer(), Linv.Height(), DataType(1.0));
+  add_to_diagonal(Linv.Buffer(), Linv.Height(), DataType(1.0));
 
   El::Trsm(
       El::LeftOrRightNS::LEFT,
@@ -560,7 +560,7 @@ El::Matrix<DataType, El::Device::GPU> kfac::get_matrix_inverse(
   const double t_spotri = get_time();
 
   // TRSM+GEMM is equivalent to POTRI+fill_upper_tri.
-  // kfac_fill_upper_tri(Ainv.Buffer(), Ainv.Height());
+  // fill_upper_tri(Ainv.Buffer(), Ainv.Height());
 
   const double t_fill = get_time();
 

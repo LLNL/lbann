@@ -51,7 +51,6 @@ __global__ void kfac_fill_upper_tri_kernel(
     TensorDataType * __restrict__ A,
     const size_t height) {
   const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
-  // REVIEW
   const size_t row = gid%height, col = gid/height;
   if(row < height && col < height && row < col) {
     A[row+col*height] += A[col+row*height];
@@ -104,7 +103,7 @@ __global__ void kfac_compute_bn_factor_kernel(
     const auto bias = biases[i_c];
 
     TensorDataType sum_ea = 0.0, sum_e = 0.0;
-    // OPTIMIZE: This loop would be slow in large (3D) CNNs.
+    // TODO: This loop would be slow in large (3D) CNNs
     for(size_t i_s = 0; i_s < spatial_prod; i_s++) {
       const auto i_act = i_s+gid*spatial_prod;
       const auto error = errors[i_act];
@@ -119,9 +118,8 @@ __global__ void kfac_compute_bn_factor_kernel(
 
 } // namespace
 
-// TODO: static function
 template <typename TensorDataType>
-void kfac_add_to_diagonal(
+void kfac::add_to_diagonal(
     TensorDataType * __restrict__ A,
     const size_t height,
     const TensorDataType damping,
@@ -135,22 +133,20 @@ void kfac_add_to_diagonal(
       damping_bn_err, is_bn);
 }
 
-// TODO: static function
 template <typename TensorDataType>
-void kfac_fill_upper_tri(
+void kfac::fill_upper_tri(
     TensorDataType * __restrict__ A,
     const size_t height) {
   constexpr size_t block_size = 256;
-  // OPTIMIZE: Launch N^2/2 threads instead of N^2
+  // TODO: Launch N^2/2 threads instead of N^2
   const size_t grid_size = (height*height + block_size - 1) / block_size;
   auto&& stream =  hydrogen::cuda::GetDefaultStream();
   kfac_fill_upper_tri_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
       A, height);
 }
 
-// TODO: static function
 template <typename TensorDataType>
-void kfac_update_kronecker_average(
+void kfac::update_kronecker_average(
     TensorDataType * __restrict__ Aave,
     const TensorDataType * __restrict__ A,
     const size_t count, const DataType decay) {
@@ -161,9 +157,8 @@ void kfac_update_kronecker_average(
       Aave, A, count, decay);
 }
 
-// Transpose NC(D)HW matrix to N(D)HWC.
 template <typename TensorDataType>
-void kfac_conv_transpose(
+void kfac::conv_transpose(
     const TensorDataType * __restrict__ activations,
     TensorDataType * __restrict__ act_columns,
     const size_t mini_batch_size, const size_t num_channels,
@@ -177,9 +172,8 @@ void kfac_conv_transpose(
       num_elems);
 }
 
-// Compute the factor of a batch-normalization layer.
 template <typename TensorDataType>
-void kfac_compute_bn_factor(
+void kfac::compute_bn_factor(
     const TensorDataType * __restrict__ activations,
     const TensorDataType * __restrict__ errors,
     const TensorDataType * __restrict__ scales,
@@ -202,26 +196,26 @@ void kfac_compute_bn_factor(
 }
 
 #define PROTO(T)                                        \
-  template void kfac_add_to_diagonal<T>(           \
+  template void kfac::add_to_diagonal<T>(               \
       T* __restrict__ A,                                \
       const size_t height,                              \
       const T value,                                    \
       const T value_bn_err,                             \
       const bool is_bn);                                \
-  template void kfac_fill_upper_tri<T>(            \
+  template void kfac::fill_upper_tri<T>(                \
       T * __restrict__ A,                               \
       const size_t height);                             \
-  template void kfac_update_kronecker_average<T>(  \
+  template void kfac::update_kronecker_average<T>(      \
       T * __restrict__ Aave,                            \
       const T * __restrict__ A,                         \
       const size_t count, const DataType decay);        \
-  template void kfac_conv_transpose<T>(            \
+  template void kfac::conv_transpose<T>(                \
       const T * __restrict__ activations,               \
       T * __restrict__ act_columns,                     \
       const size_t mini_batch_size,                     \
       const size_t num_channels,                        \
       const size_t spatial_prod);                       \
-  template void kfac_compute_bn_factor<T>(         \
+  template void kfac::compute_bn_factor<T>(             \
       const T * __restrict__ activations,               \
       const T * __restrict__ errors,                    \
       const T * __restrict__ scales,                    \

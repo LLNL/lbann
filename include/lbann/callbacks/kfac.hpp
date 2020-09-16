@@ -35,48 +35,6 @@
 namespace lbann {
 namespace callback {
 
-// Add the damping value to the diagonal elements of A.
-template <typename TensorDataType>
-void kfac_add_to_diagonal(
-    TensorDataType * __restrict__ A,
-    const size_t height,
-    const TensorDataType value,
-    const TensorDataType value_bn_err=0,
-    const bool is_bn=false);
-
-// Fill the upper trianglar with the lower trianglar.
-template <typename TensorDataType>
-void kfac_fill_upper_tri(
-    TensorDataType * __restrict__ A,
-    const size_t height);
-
-// Aave = Aave * decay + A * (1-decay)
-template <typename TensorDataType>
-void kfac_update_kronecker_average(
-    TensorDataType * __restrict__ Aave,
-    const TensorDataType * __restrict__ A,
-    const size_t count, const DataType decay);
-
-// Transpose NC(D)HW matrix to N(D)HWC.
-template <typename TensorDataType>
-void kfac_conv_transpose(
-    const TensorDataType * __restrict__ activations,
-    TensorDataType * __restrict__ act_columns,
-    const size_t mini_batch_size, const size_t num_channels,
-    const size_t spatial_prod);
-
-// Compute the factor of a batch-normalization layer.
-template <typename TensorDataType>
-void kfac_compute_bn_factor(
-    const TensorDataType * __restrict__ activations,
-    const TensorDataType * __restrict__ errors,
-    const TensorDataType * __restrict__ scales,
-    const TensorDataType * __restrict__ biases,
-    TensorDataType * __restrict__ factor,
-    const size_t batch_size,
-    const size_t num_channels,
-    const size_t spatial_prod);
-
 /** Callback hooks for the K-FAC method.
  *
  * Martens, James and Roger Grosse. "Optimizing neural networks with
@@ -170,6 +128,50 @@ class kfac : public callback_base {
   static std::string get_matrix_stat(
       const El::Matrix<DataType, El::Device::GPU>& X,
       const char *name);
+
+  /** @brief Add the damping value to the diagonal elements of A. **/
+  template <typename TensorDataType>
+  static void add_to_diagonal(
+      TensorDataType * __restrict__ A,
+      const size_t height,
+      const TensorDataType value,
+      const TensorDataType value_bn_err=0,
+      const bool is_bn=false);
+
+  /** @brief Fill the upper trianglar with the lower trianglar. **/
+  template <typename TensorDataType>
+  static void fill_upper_tri(
+      TensorDataType * __restrict__ A,
+      const size_t height);
+
+  /** @brief Update a Kronecker factor matrix using decay.
+   *
+   * Aave = Aave * decay + A * (1-decay) **/
+  template <typename TensorDataType>
+  static void update_kronecker_average(
+      TensorDataType * __restrict__ Aave,
+      const TensorDataType * __restrict__ A,
+      const size_t count, const DataType decay);
+
+  /** @brief Transpose NC(D)HW matrix to N(D)HWC. **/
+  template <typename TensorDataType>
+  static void conv_transpose(
+      const TensorDataType * __restrict__ activations,
+      TensorDataType * __restrict__ act_columns,
+      const size_t mini_batch_size, const size_t num_channels,
+      const size_t spatial_prod);
+
+  /** @brief Compute the factor of a batch-normalization layer. **/
+  template <typename TensorDataType>
+  static void compute_bn_factor(
+      const TensorDataType * __restrict__ activations,
+      const TensorDataType * __restrict__ errors,
+      const TensorDataType * __restrict__ scales,
+      const TensorDataType * __restrict__ biases,
+      TensorDataType * __restrict__ factor,
+      const size_t batch_size,
+      const size_t num_channels,
+      const size_t spatial_prod);
 
   /** @brief Pairs of the initial and the target damping value.
    *  If only one value is specified, it will be used throughout trainig.
