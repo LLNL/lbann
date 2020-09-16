@@ -77,7 +77,21 @@ void kfac_compute_bn_factor(
     const size_t num_channels,
     const size_t spatial_prod);
 
-/** Callback hooks for the K-FAC method. */
+/** Callback hooks for the K-FAC method.
+ *
+ * Martens, James and Roger Grosse. "Optimizing neural networks with
+ * kronecker-factored approximate curvature." International conference
+ * on machine learning. 2015.
+ *
+ * Grosse, Roger, and James Martens. "A kronecker-factored approximate
+ * fisher matrix for convolution layers." International Conference on
+ * Machine Learning. 2016.
+ *
+ * Osawa, Kazuki, et al. "Large-scale distributed second-order
+ * optimization using kronecker-factored approximate curvature for
+ * deep convolutional neural networks." Proceedings of the IEEE
+ * Conference on Computer Vision and Pattern Recognition. 2019.
+ */
 class kfac : public callback_base {
  public:
 
@@ -157,9 +171,13 @@ class kfac : public callback_base {
       const El::Matrix<DataType, El::Device::GPU>& X,
       const char *name);
 
-  /** @brief Parameters of a Tikhonov damping technique. */
+  /** @brief Pairs of the initial and the target damping value.
+   *  If only one value is specified, it will be used throughout trainig.
+   */
   const std::vector<double> m_damping_act_params, m_damping_err_params,
     m_damping_bn_act_params, m_damping_bn_err_params;
+
+  /** @brief The number of warmup steps of the Tikhnov damping technique. */
   const double m_damping_warmup_steps;
 
   /** @brief The decay factor of kronecker factors. */
