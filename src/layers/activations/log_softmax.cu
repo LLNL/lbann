@@ -318,10 +318,22 @@ void fp_compute_impl(log_softmax_layer<TensorDataType, data_layout::MODEL_PARALL
     grid_dims.x = (local_height + block_size - 1) / block_size;
     grid_dims.y = local_width;
     max_vals.resize(grid_dims.x * local_width);
-    reduce_max_kernel<block_size><<<grid_dims, block_dims, 0, stream>>>(
+
+    // Launch GPU Kernel
+    using GPUMatType = El::Matrix<TensorDataType, El::Device::GPU>;
+    auto const& local_input_gpu = static_cast<GPUMatType const&>(local_input);
+    //auto multisync = hydrogen::MakeMultiSync(
+    //                   El::SyncInfoFromMatrix(local_input_gpu));
+    hydrogen::gpu::LaunchKernel(
+      reduce_max_kernel<block_size, TensorDataType>, grid_dims, block_dims, 0,
+      static_cast<El::SyncInfo<El::Device::GPU> const&>(El::SyncInfoFromMatrix(local_input_gpu)),
       local_height, local_width,
-      local_input.LockedBuffer(), local_input.LDim(),
+      local_input_gpu.LockedBuffer(), local_input_gpu.LDim(),
       max_vals.data().get());
+    //reduce_max_kernel<block_size><<<grid_dims, block_dims, 0, stream>>>(
+    //  local_height, local_width,
+    //  local_input.LockedBuffer(), local_input.LDim(),
+    //  max_vals.data().get());
     while (grid_dims.x > 1) {
       const size_t prev_height = grid_dims.x;
       grid_dims.x = (prev_height + block_size - 1) / block_size;
