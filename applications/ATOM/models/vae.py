@@ -118,7 +118,7 @@ class MolVAE(lbann.modules.Module):
         self.embedding_size = embedding_size
         self.dictionary_size = dictionary_size
         self.label_to_ignore = ignore_label
-        self.datatype = lbann.DataType.FP16
+        self.datatype = lbann.DataType.FLOAT
         self.weights_datatype = lbann.DataType.FLOAT
 
         fc = lbann.modules.FullyConnectedModule
@@ -217,8 +217,7 @@ class MolVAE(lbann.modules.Module):
         while stack:
             l = stack.pop()
             if type(l) not in (lbann.Slice, lbann.Reshape, lbann.Tessellate):
-                #l.datatype = self.datatype
-                l.datatype = lbann.DataType.FLOAT
+                l.datatype = self.datatype
             for parent in l.parents:
                 if parent not in in_stack and parent is not x_emb:
                     stack.append(parent)
