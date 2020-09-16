@@ -314,6 +314,7 @@ class MolVAE(lbann.modules.Module):
         )
         keep_mask = lbann.LogicalNot(ignore_mask)
         length = lbann.Reduction(keep_mask, mode='sum')
+        length = lbann.Max(length, self.constant(1, [1]))
         x = lbann.Add(
             lbann.Multiply(keep_mask, x),
             lbann.Multiply(ignore_mask, self.constant(-1, hint_layer=x)),
@@ -354,7 +355,7 @@ class MolVAE(lbann.modules.Module):
         )
         recon_loss = lbann.Subtract(z, recon_loss)
         recon_loss = lbann.Reshape(recon_loss, dims=str_list([1]))
-        recon_loss = lbann.SafeDivide(recon_loss, length)
+        recon_loss = lbann.Divide(recon_loss, length)
 
         return recon_loss
 
