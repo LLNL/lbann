@@ -119,6 +119,16 @@ public:
     return vector_communication_subgraph;
   }
 
+  void set_subgraph_num_parent_resources(int num_resources)
+  {
+    subgraph_num_resources_parent = num_resources;
+  }
+
+  int get_subgraph_num_parent_resources()
+  {
+    return subgraph_num_resources_parent;
+  }
+
   void set_subgrid_topology(int type)
   {
     subgraph_topology = type;
@@ -137,6 +147,26 @@ public:
   bool is_subgraph_parallelism_enabled()
   {
     return apply_subgraph_parallelism;
+  }
+
+  int get_num_resources_non_branch_layers()
+  {
+    return num_resources_non_branch_layers;
+  }
+
+  int get_num_resources_branch_layers()
+  {
+    return num_resources_branch_layers;
+  }
+
+  void set_num_resources_non_branch_layers(int num)
+  {
+    num_resources_non_branch_layers = num;
+  }
+
+  void set_num_resources_branch_layers(int num)
+  {
+    num_resources_branch_layers = num;
   }
 
 
@@ -374,6 +404,15 @@ protected:
 
   virtual void get_subgraph_subgrids_ranks(std::vector<int> &parent_ranks, std::vector<int> &subgrid_ranks, int layer_index,int number_ranks_in_grid);
 
+  virtual void get_resources_for_spliting_point(std::vector<int> &parent_ranks, 
+                  std::vector<int> &subgrid_ranks, 
+                  int layer_index,
+                  int number_ranks_in_grid,
+                  int num_subgrids);
+  virtual void get_resources_for_merge_layers(std::set<int>& pooled_set,int child_index, int num_subgrids);
+
+  virtual void get_resources_for_input_layer(std::vector<int>& masterSubGrid, int num_subgrids);
+  
   /** @brief Set up layer execution order.
    *
    *  Called in setup function.
@@ -490,6 +529,10 @@ private:
 
   int vector_communication_subgraph = 0;
 
+  //Number of resources for parent (common) grid
+  //0: use all resources (default) 
+  int subgraph_num_resources_parent = 0;
+
   //0: no topology aware design
   //1: master grid in round robin manner of nodes (GPUs per node 4)  1 3 5 7, 2 4 6 8     
   int subgraph_topology = 0;
@@ -497,9 +540,11 @@ private:
   // whether subgraph parallelism is enabled or not for the model 
   bool apply_subgraph_parallelism = false;
 
+  // total number of resources / ranks for branch (subgrid) layers
+  int num_resources_branch_layers;
 
-
-
+  // total number of resources / ranks for common/seq layers
+  int num_resources_non_branch_layers;
   
   /** @brief Model instance's name.
    *  @details Each model in a trainer should have a unique,

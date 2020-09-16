@@ -159,6 +159,7 @@ public:
 
 
 
+
 protected:
 
   // ===========================================================
@@ -395,6 +396,7 @@ private:
   /** Inter subgrids comm for STAR,VC distribution
   */
   El::mpi::Comm interSubGridVCComm;
+
 
 
 

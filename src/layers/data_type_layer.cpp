@@ -1122,16 +1122,11 @@ void data_type_layer<TensorDataType>::setup_inter_subgrid_comm_based_on_childs(c
     if(childs[child]->mygrid->InGrid())
     
     {
-      // if(indexSubgrid!=-1)
-      // {
-      //   LBANN_ERROR("Logic error: Subgrid inter communicator check "
-      //             "a process can only be in one subgrid");
-      // }
       indexSubgrid = child;
     }
   }
   const int posInSubGrid = childs[indexSubgrid]->mygrid->VCRank();
-  const int posInGrid = grid.VCRank();
+  const int posInGrid = grid.ViewingRank();
   auto& interSubgridComm = this->get_subgrid_comm();
   El::mpi::Split(this->get_comm()->get_trainer_comm(), posInSubGrid, posInGrid, interSubgridComm); 
 
@@ -1145,21 +1140,15 @@ void data_type_layer<TensorDataType>::setup_inter_subgrid_comm_based_on_parents(
   int indexSubgrid = -1;
   for(int parent = 0 ; parent < this->get_num_parents(); ++parent )
   {
-    if(parents[parent]->mygrid->InGrid())
-    
+    if(parents[parent]->mygrid->InGrid())    
     {
-      // if(indexSubgrid!=-1)
-      // {
-      //   LBANN_ERROR("Logic error: Subgrid inter communicator check "
-      //             "a process can only be in one subgrid");
-      // }
       indexSubgrid = parent;
     }
   }
   const int posInSubGrid = parents[indexSubgrid]->mygrid->VCRank();
-  const int posInGrid = grid.VCRank();
+  const int posInGrid = grid.ViewingRank();
   auto& interSubgridComm = this->get_subgrid_comm();
-  El::mpi::Split(this->get_comm()->get_trainer_comm(), posInSubGrid, posInGrid, interSubgridComm); 
+  El::mpi::Split(this->get_comm()->get_trainer_comm(), posInSubGrid, posInGrid, interSubgridComm);
 
   }
 

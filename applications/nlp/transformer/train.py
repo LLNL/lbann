@@ -29,6 +29,7 @@ def make_model(
     label_smoothing,
     branches,
     subgraph_topology,
+    subgraph_num_common_resources,
 ):
     #branches = 4
 
@@ -145,8 +146,9 @@ def make_model(
     #     l.device = "GPU"
     return lbann.Model(
         num_epochs,
-        vector_communication=2,
+        vector_communication=1,
         subgraph_topology=subgraph_topology,
+        subgraph_num_common_resources = subgraph_num_common_resources,
         layers=lbann.traverse_layer_graph(input_),
         objective_function=loss,
         metrics=metrics,

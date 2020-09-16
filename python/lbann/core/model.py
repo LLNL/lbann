@@ -9,6 +9,7 @@ class Model:
 
     def __init__(self, epochs,vector_communication=0,
                  subgraph_topology = 0,
+                 subgraph_num_common_resources = 0, 
                  layers=[], weights=[], objective_function=None,
                  metrics=[], callbacks=[],
                  summary_dir=None,serialize_io=False):
@@ -39,6 +40,7 @@ class Model:
         self.callbacks = make_iterable(callbacks)
         self.vector_communication = vector_communication
         self.subgraph_topology = subgraph_topology
+        self.subgraph_num_common_resources = subgraph_num_common_resources
 
     def export_proto(self):
         """Construct and return a protobuf message."""
@@ -47,6 +49,7 @@ class Model:
         model.num_epochs = self.epochs
         model.vector_communication = self.vector_communication
         model.subgraph_topology = self.subgraph_topology
+        model.subgraph_parent_grid_resources = self.subgraph_num_common_resources
         if self.summary_dir is not None:
             model.summarizer.dir = self.summary_dir
         model.serialize_io = self.serialize_io
