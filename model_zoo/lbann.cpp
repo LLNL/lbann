@@ -30,6 +30,13 @@
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/protobuf_utils.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
+#include "lbann/utils/argument_parser.hpp"
+#ifdef LBANN_HAS_CUDNN
+#include "lbann/utils/cudnn.hpp"
+#endif // LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_CUDA
+#include "lbann/utils/cublas.hpp"
+#endif // LBANN_HAS_CUDA
 
 #include <lbann.pb.h>
 #include <model.pb.h>
@@ -38,13 +45,63 @@
 
 using namespace lbann;
 
+namespace {
+int guess_global_rank() noexcept
+{
+  int have_mpi;
+  MPI_Initialized(&have_mpi);
+  if (have_mpi) {
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    return rank;
+  }
+  else {
+    if (char const* slurm_flag = std::getenv("SLURM_PROCID"))
+      return std::stoi(slurm_flag);
+    if (char const* open_mpi_flag = std::getenv("OMPI_WORLD_COMM_RANK"))
+      return std::stoi(open_mpi_flag);
+    else if (char const* mv2_flag = std::getenv("MV2_COMM_WORLD_LOCAL_RANK"))
+      return std::stoi(mv2_flag);
+    else
+      return -1;
+  }
+}
+}// namespace <anon>
+
 int main(int argc, char *argv[]) {
-  int random_seed = lbann_default_random_seed;
-  world_comm_ptr comm = initialize(argc, argv, random_seed);
+  auto& arg_parser = global_argument_parser();
+  construct_std_options();
+  auto use_cudnn_tensor_ops =
+    arg_parser.add_flag("use cudnn tensor ops",
+                        {"--use-cudnn-tensor-ops"},
+                        utils::ENV("LBANN_USE_CUDNN_TENSOR_OPS"),
+                        "Set the default cuDNN math mode to use "
+                        "Tensor Core operations when available.");
+  auto use_cublas_tensor_ops =
+    arg_parser.add_flag("use cublas tensor ops",
+                        {"--use-cublas-tensor-ops"},
+                        utils::ENV("LBANN_USE_CUBLAS_TENSOR_OPS"),
+                        "Set the default cuBLAS math mode to use "
+                        "Tensor Core operations when available.");
+  try {
+    arg_parser.parse(argc, argv);
+  }
+  catch (std::exception const& e) {
+    auto guessed_rank = guess_global_rank();
+    if (guessed_rank <= 0)
+      // Cannot call `El::ReportException` because MPI hasn't been
+      // initialized yet.
+      std::cerr << "Error during argument parsing:\n\ne.what():\n\n  "
+                << e.what() << "\n\nProcess terminating."
+                << std::endl;
+    std::terminate();
+  }
+
+  world_comm_ptr comm = initialize(argc, argv);
   const bool master = comm->am_world_master();
 
   if (master) {
-    std::cout << "\n\n==============================================================\n"
+    std::cout << "\n\n" << std::string(62,'=') << '\n'
               << "STARTING lbann with this command line:\n";
     for (int j=0; j<argc; j++) {
       std::cout << argv[j] << " ";
@@ -57,9 +114,29 @@ int main(int argc, char *argv[]) {
     options *opts = options::get();
     opts->init(argc, argv);
     if (opts->has_string("h") or opts->has_string("help") or argc == 1) {
+      if (master)
+        std::cout << arg_parser << std::endl;
       print_help(*comm);
       return EXIT_SUCCESS;
     }
+
+    // Setup cuDNN and cuBLAS defaults
+    if (master) {
+      std::cout << "Default tensor core settings:\n"
+                << "   cuDNN: " << (use_cudnn_tensor_ops ? "" : "NOT ")
+                << "using tensor core math." << "\n"
+                << "  cuBLAS: " << (use_cublas_tensor_ops ? "" : "NOT ")
+                << "using tensor core math." << "\n"
+                << std::endl;
+    }
+#ifdef LBANN_HAS_CUDNN
+    if (use_cudnn_tensor_ops)
+      cudnn::default_to_tensor_ops();
+#endif // LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_CUDA
+    if (use_cublas_tensor_ops)
+      cublas::default_to_tensor_ops();
+#endif // LBANN_HAS_CUDA
 
     //this must be called after call to opts->init();
     if (!opts->get_bool("disable_signal_handler")) {
@@ -139,10 +216,14 @@ int main(int argc, char *argv[]) {
       e.print_report(fs);
     }
     El::ReportException(e);
-    return EXIT_FAILURE;
+    // It's possible that a proper subset of ranks throw some
+    // exception. But we want to tear down the whole world.
+    El::mpi::Abort(El::mpi::COMM_WORLD, EXIT_FAILURE);
   } catch (std::exception& e) {
     El::ReportException(e);
-    return EXIT_FAILURE;
+    // It's possible that a proper subset of ranks throw some
+    // exception. But we want to tear down the whole world.
+    El::mpi::Abort(El::mpi::COMM_WORLD, EXIT_FAILURE);
   }
 
   return EXIT_SUCCESS;

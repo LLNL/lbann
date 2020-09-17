@@ -152,22 +152,38 @@ auto GetRequest(Al::request& r, BackendTag<::Al::MPIBackend>)
 {
     return r.mpi_req;
 }
+void UpdateRequest(typename ::Al::MPIBackend::req_type&,
+                   El::SyncInfo<El::Device::CPU> const&) noexcept
+{
+}
 
 #ifdef AL_HAS_NCCL
-auto GetRequest(Al::request& r, BackendTag<::Al::NCCLBackend>)
+auto GetRequest(Al::request& r, BackendTag<::Al::NCCLBackend>) noexcept
     -> typename ::Al::NCCLBackend::req_type&
 {
     return r.nccl_req;
 }
+void UpdateRequest(typename ::Al::NCCLBackend::req_type& req,
+                   El::SyncInfo<El::Device::GPU> const& si) noexcept
+{
+  if (req)
+    req->orig_stream = si.Stream();
+}
 #endif // AL_HAS_NCCL
 
 #ifdef AL_HAS_MPI_CUDA
-auto GetRequest(Al::request& r, BackendTag<::Al::MPICUDABackend>)
+auto GetRequest(Al::request& r, BackendTag<::Al::MPICUDABackend>) noexcept
     -> typename ::Al::MPICUDABackend::req_type&
 {
     return r.mpicuda_req;
 }
-#endif // AL_HAS_NCCL
+void UpdateRequest(typename ::Al::MPICUDABackend::req_type& req,
+                   El::SyncInfo<El::Device::GPU> const& si) noexcept
+{
+  if (req)
+    req->orig_stream = si.Stream();
+}
+#endif // AL_HAS_MPI_CUDA
 #endif // defined(LBANN_HAS_GPU) && defined(LBANN_HAS_ALUMINUM)
 
 // The best we can do on CPU is exactly the Elemental implementation:
@@ -230,13 +246,16 @@ void nb_allreduce_aluminum(El::Matrix<T, El::Device::GPU>& m,
                            typename BackendT::allreduce_algo_type algo
                            = BackendT::allreduce_algo_type::automatic) {
   const auto local_size = m.Height() * m.Width();
+  const auto& syncinfo = El::SyncInfoFromMatrix(m);
+  auto& request = GetRequest(req, tag);
   ::Al::NonblockingAllreduce<BackendT>(
     m.Buffer(),
     local_size,
     mpi_op_to_al_op(op),
-    c.template GetComm<BackendT>(El::SyncInfoFromMatrix(m)),
-    GetRequest(req, tag),
+    c.template GetComm<BackendT>(syncinfo),
+    request,
     algo);
+  UpdateRequest(request, syncinfo);
 }
 
 template <typename T, typename BackendT,

@@ -32,6 +32,7 @@
 #include "lbann/proto/init_image_data_readers.hpp"
 #include "lbann/proto/factories.hpp"
 #include "lbann/utils/file_utils.hpp"
+#include "lbann/utils/argument_parser.hpp"
 
 #include <lbann.pb.h>
 #include <reader.pb.h>
@@ -185,6 +186,17 @@ void init_data_readers(
       reader_numpy_npz->set_has_responses(!readme.disable_responses());
       reader_numpy_npz->set_scaling_factor_int16(readme.scaling_factor_int16());
       reader = reader_numpy_npz;
+#ifdef LBANN_HAS_DISTCONV
+    } else if (name=="cosmoflow_hdf5") {
+      auto* reader_cosmo_hdf5 = new hdf5_reader(shuffle);
+      auto filedir = readme.data_filedir();
+      if(!endsWith(filedir, "/")) {
+        filedir = filedir + "/";
+      }
+      const auto paths = glob(filedir +readme.data_file_pattern());
+      reader_cosmo_hdf5->set_hdf5_paths(paths);
+      reader = reader_cosmo_hdf5;
+#endif // LBANN_HAS_DISTCONV
     } else if (name == "pilot2_molecular_reader") {
       pilot2_molecular_reader* reader_pilot2_molecular = new pilot2_molecular_reader(readme.num_neighbors(), readme.max_neighborhood(), shuffle);
       reader = reader_pilot2_molecular;
@@ -306,7 +318,8 @@ void init_data_readers(
                                  params.module_dir(),
                                  params.sample_function(),
                                  params.num_samples_function(),
-                                 params.sample_dims_function());
+                                 params.sample_dims_function(),
+                                 shuffle);
 #else
       LBANN_ERROR("attempted to construct Python data reader, "
                   "but LBANN is not built with Python/C API");
@@ -463,7 +476,8 @@ void init_data_readers(
                                               params.module_dir(),
                                               params.sample_function(),
                                               params.num_samples_function(),
-                                              params.sample_dims_function());
+                                              params.sample_dims_function(),
+                                              shuffle);
         (*(python_reader *)reader_validation) = (*(python_reader *)reader);
 #else
         LBANN_ERROR("attempted to construct Python data reader, "
@@ -795,7 +809,11 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
 
 }
 
-void print_parameters(const lbann_comm& comm, lbann_data::LbannPB& p)
+void print_parameters(const lbann_comm& comm,
+                      lbann_data::LbannPB& p,
+                      std::vector<int>& root_random_seeds,
+                      std::vector<int>& random_seeds,
+                      std::vector<int>& data_seq_random_seeds)
 {
   if (!comm.am_world_master()) {
     return;
@@ -812,21 +830,45 @@ void print_parameters(const lbann_comm& comm, lbann_data::LbannPB& p)
 #ifndef LBANN_HAS_CUDNN
   disable_cudnn = true;
 #endif // LBANN_HAS_CUDNN
+  bool enable_determinism = false;
+#ifdef LBANN_DETERMINISTIC
+  enable_determinism = true;
+#endif // LBANN_DETERMINISTIC
 
   std::cout << std::endl
             << "Running with these parameters:\n"
             << " General:\n"
-            << "  datatype size:           " << sizeof(DataType) << std::endl
-            << "  mini_batch_size:         " << t.mini_batch_size() << std::endl
-            << "  num_epochs:              " << m.num_epochs()  << std::endl
-            << "  hydrogen_block_size:     " << t.hydrogen_block_size()  << std::endl
-            << "  procs_per_trainer:       " << t.procs_per_trainer()  << std::endl
-            << "  num_parallel_readers:    " << t.num_parallel_readers()  << std::endl
-            << "  serialize_io:            " << m.serialize_io()  << std::endl
-            << "  cuda:                    " << (disable_cuda ? "disabled" : "enabled") << std::endl
-            << "  cudnn:                   " << (disable_cudnn ? "disabled" : "enabled") << std::endl
-            << "  random_seed:             " << t.random_seed() << std::endl
-            << "  data_layout:             " << m.data_layout()  << std::endl
+            << "  datatype size:              " << sizeof(DataType) << std::endl
+            << "  mini_batch_size:            " << t.mini_batch_size() << std::endl
+            << "  num_epochs:                 " << m.num_epochs()  << std::endl
+            << "  hydrogen_block_size:        " << t.hydrogen_block_size()  << std::endl
+            << "  procs_per_trainer:          " << t.procs_per_trainer()  << std::endl
+            << "  num_parallel_readers:       " << t.num_parallel_readers()  << std::endl
+            << "  serialize_io:               " << m.serialize_io()  << std::endl
+            << "  cuda:                       " << (disable_cuda ? "disabled" : "enabled") << std::endl
+            << "  cudnn:                      " << (disable_cudnn ? "disabled" : "enabled") << std::endl;
+  auto& arg_parser = global_argument_parser();
+  std::stringstream root_rng, rng, data_seq_rng;
+  for(size_t i = 0; i < random_seeds.size(); i++) {
+    int trainer_rank = comm.map_world_rank_to_trainer_rank(i);
+    int rank_in_trainer = comm.map_world_rank_to_rank_in_trainer(i);
+    if(rank_in_trainer < arg_parser.get<int>(MAX_RNG_SEEDS_DISPLAY)) {
+      std::stringstream id;
+      id << "[" << trainer_rank << "][" << rank_in_trainer << "]";
+      root_rng << id.str() << "=" << std::setfill('0') << std::setw(10) << static_cast<unsigned int>(root_random_seeds[i]) << " " ;
+      rng << id.str() << "=" << std::setfill('0') << std::setw(10) << static_cast<unsigned int>(random_seeds[i]) << " " ;
+      data_seq_rng << id.str() << "=" << std::setfill('0') << std::setw(10) << static_cast<unsigned int>(data_seq_random_seeds[i]) << " " ;
+    }else {
+      root_rng << "... ";
+      rng << "... ";
+      data_seq_rng << "... ";
+    }
+  }
+  std::cout << "  root_random_seed[t][r]:     " << root_rng.str() << std::endl;
+  std::cout << "  random_seed[t][r]:          " << rng.str() << std::endl;
+  std::cout << "  data_seq_random_seed[t][r]: " << data_seq_rng.str() << std::endl;
+  std::cout << "  deterministic_exec:         " << (enable_determinism ? "enabled" : "disabled") << std::endl
+            << "  data_layout:                " << m.data_layout()  << std::endl
             << "     (only used for metrics)\n";
 }
 
@@ -861,8 +903,6 @@ void print_help(std::ostream& os)
        "  --hydrogen_block_size=<int>\n"
        "  --procs_per_trainer=<int>\n"
        "  --num_parallel_readers=<int>\n"
-       "  --num_io_threads=<int>\n"
-       "      # of threads used for I/O by the data readers\n"
        "  --serialize_io=<bool>\n"
        "      force data readers to use a single thread for I/O\n"
        "  --disable_background_io_activity=<bool>\n"

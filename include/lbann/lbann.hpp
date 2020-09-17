@@ -136,6 +136,9 @@
 #include "lbann/data_readers/data_reader_pilot2_molecular.hpp"
 #include "lbann/data_readers/data_reader_mesh.hpp"
 #include "lbann/data_readers/data_reader_python.hpp"
+#ifdef LBANN_HAS_DISTCONV
+#include "lbann/data_readers/data_reader_hdf5.hpp"
+#endif // LBANN_HAS_DISTCONV
 #include "lbann/data_readers/data_reader_smiles.hpp"
 
 /// Data stores
@@ -214,7 +217,5 @@
 #include "lbann/utils/peek_map.hpp"
 #include "lbann/utils/stack_trace.hpp"
 #include "lbann/utils/stack_profiler.hpp"
-#include "lbann/utils/threads/thread_pool.hpp"
-#include "lbann/utils/threads/thread_utils.hpp"
 
 #endif // LBANN_LBANN_HPP_INCLUDED

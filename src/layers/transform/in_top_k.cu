@@ -188,8 +188,8 @@ void fp_gpu(lbann_comm& comm,
   const auto& col_comm_size = El::mpi::Size(col_comm);
 
   // GPU objects
-  auto&& stream = El::GPUManager::Stream();
-  auto&& event = El::GPUManager::Event();
+  auto&& stream = hydrogen::cuda::GetDefaultStream();
+  auto&& event = hydrogen::cuda::GetDefaultEvent();
   cuda::thrust::allocator<> alloc(stream);
 
   // Find top-k entries in each column of local prediction matrix

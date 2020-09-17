@@ -79,7 +79,11 @@ void set_num_parallel_readers(const lbann_comm& comm, ::lbann_data::LbannPB& p);
 void get_cmdline_overrides(const lbann_comm& comm, ::lbann_data::LbannPB& p);
 
 /** @brief print various params (learn_rate, etc) to cout */
-void print_parameters(const lbann_comm& comm, ::lbann_data::LbannPB& p);
+void print_parameters(const lbann_comm& comm,
+                      ::lbann_data::LbannPB& p,
+                      std::vector<int>& root_random_seeds,
+                      std::vector<int>& random_seeds,
+                      std::vector<int>& data_seq_random_seeds);
 
 /** @brief prints usage information */
 void print_help(const lbann_comm& comm);
@@ -169,6 +173,7 @@ std::set<T> parse_set(std::string const& str) {
     return details::parse_set_impl<T>(trim_str);
   return {};
 }
+
 } // namespace lbann
 
 #endif // LBANN_PROTO_PROTO_COMMON_HPP_INCLUDED

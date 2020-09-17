@@ -1,4 +1,4 @@
-import macc_models 
+import macc_models
 import argparse
 from os.path import abspath, dirname, join
 import google.protobuf.text_format as txtf
@@ -23,7 +23,7 @@ metadata_prototext = join(dirname(cur_dir),
 #Load at least pretrained WAE model
 #assert model_dir, 'pre_trained_dir should not be empty'
 #Assume pre_trained model is in current directory, change path if not
-#pre_trained_dir=join(cur_dir,model_dir) 
+#pre_trained_dir=join(cur_dir,model_dir)
 
 # Command-line arguments
 parser = argparse.ArgumentParser()
@@ -52,6 +52,12 @@ parser.add_argument(
 parser.add_argument(
     '--xdim', action='store', default=5, type=int,
     help='input (x) dim (default: 5)', metavar='NUM')
+parser.add_argument(
+    '--wae_mcf', action='store', default=1, type=int,
+    help='model capacity factor (default: 1)', metavar='NUM')
+parser.add_argument(
+    '--surrogate_mcf', action='store', default=1, type=int,
+    help='model capacity factor (default: 1)', metavar='NUM')
 parser.add_argument(
     '--lamda-cyc', action='store', default=1e-3, type=float,
     help='lamda-cyc (default: 1e-3)', metavar='NUM')
@@ -82,11 +88,13 @@ parser.add_argument(
 parser.add_argument(
     '--procs-per-trainer', action='store', default=0, type=int,
     help='processes per trainer (default: 0)', metavar='NUM')
+parser.add_argument(
+    '--ltfb-batch-interval', action='store', default=0, type=int,
+    help='LTFB batch interval (default: 0, no LTFB)', metavar='NUM')
 args = parser.parse_args()
 
 if not(args.pretrained_dir):
-  print("WARNING pretrained dir ", args.pretrained_dir, " is empty, default option assumes
-         pretrained autoencoder")
+  print("WARNING pretrained dir ", args.pretrained_dir, " is empty, default option assumes pretrained autoencoder")
 
 def list2str(l):
     return ' '.join(l)
@@ -100,7 +108,7 @@ def construct_model():
     import lbann
 
     # Layer graph
-    input = lbann.Input(target_mode='N/A',data_set_per_model=True,name='inp_data')
+    input = lbann.Input(target_mode='N/A',name='inp_data')
     # data is 64*64*4 images + 15 scalar + 5 param
     inp_slice = lbann.Slice(input, axis=0, slice_points=str_list([0,args.ydim,args.ydim+args.xdim]),name='inp_slice')
     gt_y = lbann.Identity(inp_slice,name='gt_y')
@@ -111,11 +119,11 @@ def construct_model():
 
 
     z = lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims="20")
-    wae = macc_models.MACCWAE(args.zdim,args.ydim,use_CNN=args.useCNN) #pretrained, freeze
-    inv = macc_models.MACCInverse(args.xdim)
-    fwd = macc_models.MACCForward(args.zdim)
-    
-    
+    wae = macc_models.MACCWAE(args.zdim,args.ydim,cf=args.wae_mcf,use_CNN=args.useCNN) #pretrained, freeze
+    inv = macc_models.MACCInverse(args.xdim,cf=args.surrogate_mcf)
+    fwd = macc_models.MACCForward(args.zdim,cf=args.surrogate_mcf)
+
+
     y_pred_fwd = wae.encoder(gt_y)
 
     param_pred_ = wae.encoder(gt_y)
@@ -136,8 +144,8 @@ def construct_model():
 
     L_l2_y =  lbann.MeanSquaredError(output_fake,y_pred_fwd)
     L_cyc_y = lbann.MeanSquaredError(output_cyc,y_pred_fwd)
-   
-     
+
+
     #@todo slice here to separate scalar from image
     img_sca_loss = lbann.MeanSquaredError(y_image_re,gt_y)
     #L_cyc = L_cyc_y + L_cyc_x
@@ -159,7 +167,7 @@ def construct_model():
           for w in range(len(l.weights)):
             l.weights[w].optimizer = lbann.NoOptimizer()
       weights.update(l.weights)
-         
+
     l2_reg = lbann.L2WeightRegularization(weights=weights, scale=1e-4)
     #d_adv_bce = lbann.LayerTerm(d_adv_bce,scale=0.01)
     # Setup objective function
@@ -174,10 +182,13 @@ def construct_model():
                  lbann.CallbackSaveModel(dir=args.dump_models),
                  lbann.CallbackLoadModel(dirs=str(args.pretrained_dir)),
                  lbann.CallbackTimer()]
-                                            
+
+    if(args.ltfb_batch_interval > 0) :
+      callbacks.append(lbann.CallbackLTFB(batch_interval=args.ltfb_batch_interval,metric='fw_loss',
+                                    low_score_wins=True,
+                                    exchange_hyperparameters=True))
     # Construct model
-    return lbann.Model(args.mini_batch_size,
-                       args.num_epochs,
+    return lbann.Model(args.num_epochs,
                        weights=weights,
                        serialize_io=True,
                        layers=layers,
@@ -188,8 +199,9 @@ def construct_model():
 
 if __name__ == '__main__':
     import lbann
-    
-    trainer = lbann.Trainer(procs_per_trainer=args.procs_per_trainer)
+
+    trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size,
+                            procs_per_trainer=args.procs_per_trainer)
     model = construct_model()
     # Setup optimizer
     opt = lbann.Adam(learn_rate=0.0001,beta1=0.9,beta2=0.99,eps=1e-8)

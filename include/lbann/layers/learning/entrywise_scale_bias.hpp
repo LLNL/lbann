@@ -70,36 +70,77 @@ public:
 
 public:
 
-  entrywise_scale_bias_layer(lbann_comm *comm)
-    : data_type_layer<TensorDataType>(comm) {}
-
-  entrywise_scale_bias_layer(const entrywise_scale_bias_layer& other)
-    : data_type_layer<TensorDataType>(other),
-      m_weights_gradient(other.m_weights_gradient ?
-                         other.m_weights_gradient->Copy() : nullptr) {}
-  entrywise_scale_bias_layer& operator=(const entrywise_scale_bias_layer& other) {
-    data_type_layer<TensorDataType>::operator=(other);
-    m_weights_gradient.reset(other.m_weights_gradient ?
-                             other.m_weights_gradient->Copy() :
-                             nullptr);
-    return *this;
-  }
+  entrywise_scale_bias_layer(lbann_comm *comm);
+  entrywise_scale_bias_layer(const entrywise_scale_bias_layer& other);
+  entrywise_scale_bias_layer& operator=(
+    const entrywise_scale_bias_layer& other);
 
   entrywise_scale_bias_layer* copy() const override {
     return new entrywise_scale_bias_layer(*this);
   }
+
   std::string get_type() const override { return "entry-wise scale/bias"; }
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
 
-  void setup_matrices(const El::Grid& grid) override {
-    data_type_layer<TensorDataType>::setup_matrices(grid);
-    auto dist = this->get_prev_activations().DistData();
-    dist.rowDist = El::STAR;
-    m_weights_gradient.reset(AbsDistMatrixType::Instantiate(dist));
-  }
+  void setup_matrices(const El::Grid& grid) override;
+  void setup_data(size_t max_mini_batch_size) override;
 
-  void setup_data(size_t max_mini_batch_size) override {
+  void fp_setup_outputs(El::Int mini_batch_size) override;
+  void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override;
+
+protected:
+
+  void fp_compute() override;
+  void bp_compute() override;
+
+private:
+
+  /** @brief Objective function gradient w.r.t. weights. */
+  std::unique_ptr<AbsDistMatrixType> m_weights_gradient;
+
+};
+
+// Implementation
+template <typename TensorDataType, data_layout Layout, El::Device Dev>
+entrywise_scale_bias_layer<TensorDataType, Layout, Dev>
+::entrywise_scale_bias_layer(lbann_comm *comm)
+  : data_type_layer<TensorDataType>(comm)
+{}
+
+template <typename TensorDataType, data_layout Layout, El::Device Dev>
+entrywise_scale_bias_layer<TensorDataType, Layout, Dev>
+::entrywise_scale_bias_layer(const entrywise_scale_bias_layer& other)
+  : data_type_layer<TensorDataType>(other),
+  m_weights_gradient(other.m_weights_gradient ?
+                     other.m_weights_gradient->Copy() : nullptr)
+{}
+
+template <typename TensorDataType, data_layout Layout, El::Device Dev>
+auto entrywise_scale_bias_layer<TensorDataType, Layout, Dev>
+::operator=(const entrywise_scale_bias_layer& other)
+  -> entrywise_scale_bias_layer& {
+  data_type_layer<TensorDataType>::operator=(other);
+  m_weights_gradient.reset(other.m_weights_gradient ?
+                           other.m_weights_gradient->Copy() :
+                           nullptr);
+  return *this;
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Dev>
+void
+entrywise_scale_bias_layer<TensorDataType, Layout, Dev>
+::setup_matrices(const El::Grid& grid) {
+  data_type_layer<TensorDataType>::setup_matrices(grid);
+  auto dist = this->get_prev_activations().DistData();
+  dist.rowDist = El::STAR;
+  m_weights_gradient.reset(AbsDistMatrixType::Instantiate(dist));
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Dev>
+void
+entrywise_scale_bias_layer<TensorDataType, Layout, Dev>
+::setup_data(size_t max_mini_batch_size) {
     data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
 
     // Initialize output dimensions
@@ -111,8 +152,10 @@ public:
     // Note: Scale is initialized to 1 and bias to 0
     if (!this->has_weights()) {
       auto w = make_unique<WeightsType>(this->get_comm());
-      std::vector<TensorDataType> vals(2*output_size, El::TypeTraits<TensorDataType>::Zero());
-      std::fill(vals.begin(), vals.begin()+output_size, El::TypeTraits<TensorDataType>::One());
+      std::vector<TensorDataType> vals(2*output_size,
+                                       El::TypeTraits<TensorDataType>::Zero());
+      std::fill(vals.begin(), vals.begin()+output_size,
+                El::TypeTraits<TensorDataType>::One());
       auto init = make_unique<value_initializer<TensorDataType>>(vals);
       auto opt = this->m_model->template create_optimizer<TensorDataType>();
       w->set_name(this->get_name() + "_weights");
@@ -131,63 +174,58 @@ public:
     // Setup weights
     auto dist = this->get_prev_activations().DistData();
     dist.rowDist = El::STAR;
-    this->get_data_type_weights(0).set_dims(output_dims,
+    this->get_weights(0).set_dims(output_dims,
                                      {static_cast<int>(2)});
-    this->get_data_type_weights(0).set_matrix_distribution(dist);
+    this->get_weights(0).set_matrix_distribution(dist);
 
     // Setup gradient w.r.t. weights
     m_weights_gradient->AlignWith(dist);
     m_weights_gradient->Resize(output_size, 2);
+}
 
-  }
-
-  void fp_setup_outputs(El::Int mini_batch_size) override {
-    data_type_layer<TensorDataType>::fp_setup_outputs(mini_batch_size);
+template <typename TensorDataType, data_layout Layout, El::Device Dev>
+void
+entrywise_scale_bias_layer<TensorDataType, Layout, Dev>
+::fp_setup_outputs(El::Int mini_batch_size) {
+  data_type_layer<TensorDataType>::fp_setup_outputs(mini_batch_size);
 
 #if 0 /// @todo See https://github.com/LLNL/lbann/issues/1123
 
-    // Check that input and weights tensors are aligned
-    /// @todo Realign weights tensor if misaligned
-    bool aligned = true;
-    try {
-      const auto& x = this->get_prev_activations();
-      const auto& w = m_weights[0]->get_values();
-      aligned = (x.ColAlign() == w.ColAlign()
-                 && x.RowAlign() == w.RowAlign());
-    }
-    catch (const exception& e) {
-      // An exception is thrown if you try accessing weights values
-      // before they are initialized. We don't care if this case is
-      // aligned, so it's safe to ignore.
-    }
-    if (!aligned) {
-      std::ostringstream err;
-      err << this->get_type() << " layer \"" << this->get_name() << "\" "
-          << "has misaligned input and weights matrices";
-      LBANN_ERROR(err.str());
-    }
+  // Check that input and weights tensors are aligned
+  /// @todo Realign weights tensor if misaligned
+  bool aligned = true;
+  try {
+    const auto& x = this->get_prev_activations();
+    const auto& w = m_weights[0]->get_values();
+    aligned = (x.ColAlign() == w.ColAlign()
+               && x.RowAlign() == w.RowAlign());
+  }
+  catch (const exception& e) {
+    // An exception is thrown if you try accessing weights values
+    // before they are initialized. We don't care if this case is
+    // aligned, so it's safe to ignore.
+  }
+  if (!aligned) {
+    std::ostringstream err;
+    err << this->get_type() << " layer \"" << this->get_name() << "\" "
+        << "has misaligned input and weights matrices";
+    LBANN_ERROR(err.str());
+  }
 
 #endif // 0
 
-  }
+}
 
-  void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override {
-    data_type_layer<TensorDataType>::bp_setup_gradient_wrt_inputs(mini_batch_size);
-    m_weights_gradient->Empty(false);
-    m_weights_gradient->AlignWith(this->get_prev_activations());
-    m_weights_gradient->Resize(this->get_input_size(), 2);
-  }
+template <typename TensorDataType, data_layout Layout, El::Device Dev>
+void
+entrywise_scale_bias_layer<TensorDataType, Layout, Dev>
+::bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) {
+  data_type_layer<TensorDataType>::bp_setup_gradient_wrt_inputs(mini_batch_size);
+  m_weights_gradient->Empty(false);
+  m_weights_gradient->AlignWith(this->get_prev_activations());
+  m_weights_gradient->Resize(this->get_input_size(), 2);
+}
 
-protected:
-  void fp_compute() override;
-  void bp_compute() override;
-
-private:
-
-  /** Objective function gradient w.r.t. weights. */
-  std::unique_ptr<AbsDistMatrixType> m_weights_gradient;
-
-};
 
 LBANN_DEFINE_LAYER_BUILDER(entrywise_scale_bias);
 

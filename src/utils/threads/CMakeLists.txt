@@ -32,6 +32,7 @@ endif ()
 set_full_path(THIS_DIR_SOURCES
   thread_pool.cpp
   thread_utils.cpp
+  thread_topology.cpp
 )
 
 # Propagate the files up the tree

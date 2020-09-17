@@ -37,7 +37,7 @@ using dim4 = cuda::array<size_t, 4>;
 /**
  *  Block dimensions: bsize x 1 x 1
  *
- *  Grid dimensions: (max_input_size / bsize) x num_inputs x 1
+ *  Grid dimensions: (max_input_dims[3] / bsize) x max_input_dims[2] x max_input_dims[1]
  */
 template <typename T>
 __global__ void concat4d_kernel(
@@ -52,42 +52,37 @@ __global__ void concat4d_kernel(
   // Indices
   const size_t gidx = threadIdx.x + blockIdx.x * blockDim.x;
   const size_t gidy = threadIdx.y + blockIdx.y * blockDim.y;
+  const size_t gidz = threadIdx.z + blockIdx.z * blockDim.z;
   const size_t nthreadsx = gridDim.x * blockDim.x;
   const size_t nthreadsy = gridDim.y * blockDim.y;
+  const size_t nthreadsz = gridDim.z * blockDim.z;
 
-  for (size_t j=gidy; j<num_inputs; j+=nthreadsy) {
+  for (size_t j=0; j<num_inputs; ++j) {
 
-    // Objects for current input tensor
+    // Current input tensor
     const auto& input_buffer = input_buffer_list[j];
     const auto& input_dims = input_dims_list[j];
     const auto& input_strides = input_strides_list[j];
     const auto& output_offset = output_offset_list[j];
-    const auto& input_size = (input_dims[0] * input_dims[1]
-                              * input_dims[2] * input_dims[3]);
 
-    for (size_t i=gidx; i<input_size; i+=nthreadsx) {
-
-      // Get position in input tensor
-      dim4 pos;
-      size_t pos_flat = i;
-      #pragma unroll
-      for (int d=3; d>=0; --d) {
-        pos[d] = pos_flat % input_dims[d];
-        pos_flat = pos_flat / input_dims[d];
+    // Copy from input tensor to output tensor
+    for (size_t i0=0; i0<input_dims[0]; ++i0) {
+      for (size_t i1=gidz; i1<input_dims[1]; i1+=nthreadsz) {
+        for (size_t i2=gidy; i2<input_dims[2]; i2+=nthreadsy) {
+          for (size_t i3=gidx; i3<input_dims[3]; i3+=nthreadsx) {
+            const auto& x = input_buffer[i0 * input_strides[0]
+                                         + i1 * input_strides[1]
+                                         + i2 * input_strides[2]
+                                         + i3 * input_strides[3]];
+            auto& y = output_buffer[output_offset
+                                    + i0 * output_strides[0]
+                                    + i1 * output_strides[1]
+                                    + i2 * output_strides[2]
+                                    + i3 * output_strides[3]];
+            y = x;
+          }
+        }
       }
-
-      // Copy value to output tensor
-      const auto& x = input_buffer[pos[0] * input_strides[0]
-                                   + pos[1] * input_strides[1]
-                                   + pos[2] * input_strides[2]
-                                   + pos[3] * input_strides[3]];
-      auto& y = output_buffer[output_offset
-                              + pos[0] * output_strides[0]
-                              + pos[1] * output_strides[1]
-                              + pos[2] * output_strides[2]
-                              + pos[3] * output_strides[3]];
-      y = x;
-
     }
 
   }
@@ -97,7 +92,8 @@ __global__ void concat4d_kernel(
 /**
  *  Block dimensions: bsize x 1 x 1
  *
- *  Grid dimensions: (max_input_size / bsize) x num_inputs x 1
+ *  Grid dimensions: (max_output_dims[3] / bsize) x max_output_dims[2] x max_output_dims[1]
+ *
  */
 template <typename T>
 __global__ void slice4d_kernel(
@@ -112,42 +108,37 @@ __global__ void slice4d_kernel(
   // Indices
   const size_t gidx = threadIdx.x + blockIdx.x * blockDim.x;
   const size_t gidy = threadIdx.y + blockIdx.y * blockDim.y;
+  const size_t gidz = threadIdx.z + blockIdx.z * blockDim.z;
   const size_t nthreadsx = gridDim.x * blockDim.x;
   const size_t nthreadsy = gridDim.y * blockDim.y;
+  const size_t nthreadsz = gridDim.z * blockDim.z;
 
-  for (size_t j=gidy; j<num_outputs; j+=nthreadsy) {
+  for (size_t j=0; j<num_outputs; ++j) {
 
-    // Objects for current output tensor
+    // Current output tensor
     const auto& input_offset = input_offset_list[j];
     auto& output_buffer = output_buffer_list[j];
     const auto& output_dims = output_dims_list[j];
     const auto& output_strides = output_strides_list[j];
-    const auto& output_size = (output_dims[0] * output_dims[1]
-                              * output_dims[2] * output_dims[3]);
 
-    for (size_t i=gidx; i<output_size; i+=nthreadsx) {
-
-      // Get position in output tensor
-      dim4 pos;
-      size_t pos_flat = i;
-      #pragma unroll
-      for (int d=3; d>=0; --d) {
-        pos[d] = pos_flat % output_dims[d];
-        pos_flat = pos_flat / output_dims[d];
+    // Copy from input tensor to output tensor
+    for (size_t i0=0; i0<output_dims[0]; ++i0) {
+      for (size_t i1=gidz; i1<output_dims[1]; i1+=nthreadsz) {
+        for (size_t i2=gidy; i2<output_dims[2]; i2+=nthreadsy) {
+          for (size_t i3=gidx; i3<output_dims[3]; i3+=nthreadsx) {
+            const auto& x = input_buffer[input_offset
+                                         + i0 * input_strides[0]
+                                         + i1 * input_strides[1]
+                                         + i2 * input_strides[2]
+                                         + i3 * input_strides[3]];
+            auto& y = output_buffer[i0 * output_strides[0]
+                                    + i1 * output_strides[1]
+                                    + i2 * output_strides[2]
+                                    + i3 * output_strides[3]];
+            y = x;
+          }
+        }
       }
-
-      // Copy value to input tensor
-      const auto& x = input_buffer[input_offset
-                                   + pos[0] * input_strides[0]
-                                   + pos[1] * input_strides[1]
-                                   + pos[2] * input_strides[2]
-                                   + pos[3] * input_strides[3]];
-      auto& y = output_buffer[pos[0] * output_strides[0]
-                              + pos[1] * output_strides[1]
-                              + pos[2] * output_strides[2]
-                              + pos[3] * output_strides[3]];
-      y = x;
-
     }
 
   }
@@ -199,11 +190,18 @@ void fp_compute_impl(
                 "but only 3-D tensors are currently supported");
   }
 
+  // Get synchronization info from output tensor
+  using LocalMatrix = El::Matrix<TensorDataType, El::Device::GPU>;
+  auto& output = l.get_activations();
+  auto& local_output = dynamic_cast<LocalMatrix&>(output.Matrix());
+  auto&& sync_info = El::SyncInfoFromMatrix(local_output);
+  auto&& stream = sync_info.Stream();
+
   // Get dimensions and strides for each input tensor
   const size_t num_inputs = l.get_num_parents();
   std::vector<const TensorDataType*> input_buffer_list;
   std::vector<dim4> input_dims_list, input_strides_list;
-  size_t max_input_size = 0;
+  dim4 max_input_dims{0,0,0,0};
   for (size_t j=0; j<num_inputs; ++j) {
     const auto& input = l.get_prev_activations(j);
     const auto& input_dims = l.get_input_dims(j);
@@ -226,13 +224,13 @@ void fp_compute_impl(
     input_dims_list.push_back({rdims[3], rdims[2], rdims[1], rdims[0]});
     input_strides_list.push_back(
       {rstrides[3], rstrides[2], rstrides[1], rstrides[0]});
-    max_input_size = std::max(max_input_size,
-                              rdims[3]*rdims[2]*rdims[1]*rdims[0]);
+    for (size_t i=0; i<4; ++i) {
+      max_input_dims[i] = std::max(max_input_dims[i], rdims[3-i]);
+    }
   }
 
   // Get strides for output tensor
   dim4 output_strides;
-  auto& output = l.get_activations();
   {
     const auto& output_dims = l.get_output_dims();
 
@@ -243,8 +241,8 @@ void fp_compute_impl(
     for (size_t d=1; d<output_dims.size(); ++d) {
       rstrides[d] = rdims[d-1] * rstrides[d-1];
     }
-    rdims.push_back(output.LocalWidth());
-    rstrides.push_back(output.LDim());
+    rdims.push_back(local_output.Width());
+    rstrides.push_back(local_output.LDim());
 
     // Pad tensor dimensions to 4D
     rdims.resize(4, 1);
@@ -285,9 +283,10 @@ void fp_compute_impl(
   pos += sizeof(size_t) * output_offset_list.size();
 
   // Copy tensor data to GPU
-  auto&& stream = El::GPUManager::Stream();
-  cuda::thrust::vector<unsigned char> device_workspace(l.m_workspace.size());
-  unsigned char* device_workspace_ptr = device_workspace.data().get();
+  hydrogen::simple_buffer<unsigned char, El::Device::GPU> device_workspace(
+    l.m_workspace.size(),
+    sync_info);
+  unsigned char* device_workspace_ptr = device_workspace.data();
   cudaMemcpyAsync(device_workspace_ptr,
                   l.m_workspace.data(),
                   l.m_workspace.size(),
@@ -309,18 +308,21 @@ void fp_compute_impl(
   pos += sizeof(size_t) * output_offset_list.size();
 
   // Launch CUDA kernel
+  const auto& max_input_size = (max_input_dims[0] * max_input_dims[1]
+                                * max_input_dims[2] * max_input_dims[3]);
   if (max_input_size > 0) {
-    constexpr size_t block_size = 256;
+    constexpr size_t block_size = 64;
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
-    grid_dims.x = (max_input_size + block_size - 1) / block_size;
-    grid_dims.y = num_inputs;
+    grid_dims.x = (max_input_dims[3] + block_size - 1) / block_size;
+    grid_dims.y = max_input_dims[2];
+    grid_dims.z = max_input_dims[1];
     concat4d_kernel<<<grid_dims, block_dims, 0, stream>>>(
       num_inputs,
       device_input_buffer_list,
       device_input_dims_list,
       device_input_strides_list,
-      output.Buffer(),
+      local_output.Buffer(),
       output_strides,
       device_output_offset_list);
   }
@@ -341,11 +343,18 @@ void bp_compute_impl(
                 "but only 3-D tensors are currently supported");
   }
 
+  // Get synchronization info from output gradient tensor
+  using LocalMatrix = El::Matrix<TensorDataType, El::Device::GPU>;
+  const auto& output_grad = l.get_prev_error_signals();
+  auto& local_output_grad = dynamic_cast<const LocalMatrix&>(output_grad.LockedMatrix());
+  auto&& sync_info = El::SyncInfoFromMatrix(local_output_grad);
+  auto&& stream = sync_info.Stream();
+
   // Get dimensions and strides for each input gradient tensor
   const size_t num_inputs = l.get_num_parents();
   std::vector<TensorDataType*> input_grad_buffer_list;
   std::vector<dim4> input_grad_dims_list, input_grad_strides_list;
-  size_t max_input_grad_size = 0;
+  dim4 max_input_grad_dims{0,0,0,0};
   for (size_t j=0; j<num_inputs; ++j) {
     auto& input_grad = l.get_error_signals(j);
     const auto& input_grad_dims = l.get_input_dims(j);
@@ -368,13 +377,13 @@ void bp_compute_impl(
     input_grad_dims_list.push_back({rdims[3], rdims[2], rdims[1], rdims[0]});
     input_grad_strides_list.push_back(
       {rstrides[3], rstrides[2], rstrides[1], rstrides[0]});
-    max_input_grad_size = std::max(max_input_grad_size,
-                                   rdims[3]*rdims[2]*rdims[1]*rdims[0]);
+    for (size_t i=0; i<4; ++i) {
+      max_input_grad_dims[i] = std::max(max_input_grad_dims[i], rdims[3-i]);
+    }
   }
 
   // Get strides for output gradient tensor
   dim4 output_grad_strides;
-  const auto& output_grad = l.get_prev_error_signals();
   {
     const auto& output_grad_dims = l.get_output_dims();
 
@@ -385,8 +394,8 @@ void bp_compute_impl(
     for (size_t d=1; d<output_grad_dims.size(); ++d) {
       rstrides[d] = rdims[d-1] * rstrides[d-1];
     }
-    rdims.push_back(output_grad.LocalWidth());
-    rstrides.push_back(output_grad.LDim());
+    rdims.push_back(local_output_grad.Width());
+    rstrides.push_back(local_output_grad.LDim());
 
     // Pad tensor dimensions to 4D
     rdims.resize(4, 1);
@@ -427,9 +436,10 @@ void bp_compute_impl(
   pos += sizeof(dim4) * input_grad_strides_list.size();
 
   // Copy tensor data to GPU
-  auto&& stream = El::GPUManager::Stream();
-  cuda::thrust::vector<unsigned char> device_workspace(l.m_workspace.size());
-  unsigned char* device_workspace_ptr = device_workspace.data().get();
+  hydrogen::simple_buffer<unsigned char, El::Device::GPU> device_workspace(
+    l.m_workspace.size(),
+    sync_info);
+  unsigned char* device_workspace_ptr = device_workspace.data();
   cudaMemcpyAsync(device_workspace_ptr,
                   l.m_workspace.data(),
                   l.m_workspace.size(),
@@ -451,15 +461,20 @@ void bp_compute_impl(
   pos += sizeof(dim4) * input_grad_strides_list.size();
 
   // Launch CUDA kernel
+  const auto& max_input_grad_size = (max_input_grad_dims[0]
+                                     * max_input_grad_dims[1]
+                                     * max_input_grad_dims[2]
+                                     * max_input_grad_dims[3]);
   if (max_input_grad_size > 0) {
-    constexpr size_t block_size = 256;
+    constexpr size_t block_size = 64;
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
-    grid_dims.x = (max_input_grad_size + block_size - 1) / block_size;
-    grid_dims.y = num_inputs;
+    grid_dims.x = (max_input_grad_dims[3] + block_size - 1) / block_size;
+    grid_dims.y = max_input_grad_dims[2];
+    grid_dims.z = max_input_grad_dims[1];
     slice4d_kernel<<<grid_dims, block_dims, 0, stream>>>(
       num_inputs,
-      output_grad.LockedBuffer(),
+      local_output_grad.LockedBuffer(),
       output_grad_strides,
       device_output_grad_offset_list,
       device_input_grad_buffer_list,

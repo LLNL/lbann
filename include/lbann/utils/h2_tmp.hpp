@@ -657,7 +657,7 @@ namespace multimethods
  *
  *  @code{.cpp}
  *  struct MyFunctor {
- *    void operator=()(int x, deduced& a, deduced& b) {...}
+ *    void operator()(int x, deduced& a, deduced& b) {...}
  *  };
  *  @endcode
  *
@@ -666,9 +666,9 @@ namespace multimethods
  *  @code{.cpp}
  *  struct MyFunctor {
  *    // ERROR: Additional argument splits deduced arguments
- *    void operator=()(deduced& a, int x, deduced& b) {...}
+ *    void operator()(deduced& a, int x, deduced& b) {...}
  *    // ERROR: Additional argument follows deduced arguments
- *    void operator=()(deduced& a, deduced& b, int x) {...}
+ *    void operator()(deduced& a, deduced& b, int x) {...}
  *  };
  *  @endcode
  *
@@ -732,7 +732,7 @@ namespace multimethods
  *  For a functor with `N` dynamically-deduced arguments, there will
  *  be `2+2*N` template parameters to the dispatcher. The first two
  *  are very simple: the type of the functor and the type that is
- *  returned by its `operator=()` (or the overload set that will be
+ *  returned by its `operator()` (or the overload set that will be
  *  exploited in this dispatch). Following that, the remaining `2*N`
  *  arguments must be given in pairs: first a base type, then a list
  *  of concrete types against which to test the formal argument. These

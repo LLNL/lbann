@@ -35,7 +35,6 @@
 #include "lbann/layers/transform/evaluation.hpp"
 #include "lbann/objective_functions/layer_term.hpp"
 #include "lbann/metrics/layer_metric.hpp"
-#include "lbann/utils/random.hpp"
 #include "lbann/utils/omp_diagnostics.hpp"
 #include "lbann/utils/description.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
@@ -63,13 +62,14 @@ namespace lbann {
 // =============================================
 
 model::model(lbann_comm* comm,
-             objective_function* obj_fn,
+             std::unique_ptr<objective_function> obj_fn,
              std::unique_ptr<lbann_data::Optimizer> default_optimizer_msg)
   : m_execution_context(nullptr),
     m_comm(comm),
-    m_default_optimizer_msg(std::move(default_optimizer_msg)),
-    m_objective_function(obj_fn) {
+    m_default_optimizer_msg(std::move(default_optimizer_msg))
+{
 
+  m_objective_function = std::move(obj_fn);
   // Default model name
   static El::Int num_models = 0;
   m_name = "model" + std::to_string(num_models);
@@ -88,8 +88,9 @@ model::model(const model& other) :
                              ? make_unique<lbann_data::Optimizer>(
                                *other.m_default_optimizer_msg)
                              : nullptr);
-  m_objective_function = (other.m_objective_function ?
-                          other.m_objective_function->copy() : nullptr);
+  m_objective_function = (other.m_objective_function
+                          ? make_unique<objective_function>(*other.m_objective_function)
+                          : nullptr);
   m_metrics = other.m_metrics;
   m_callbacks = other.m_callbacks;
   for (auto& m : m_metrics) {
@@ -133,7 +134,6 @@ model& model::operator=(const model& other) {
 
   // Delete objects
   if (m_execution_context  != nullptr) { delete m_execution_context; } /// @todo BVE FIXME what do we do with smart pointers here
-  if (m_objective_function != nullptr) { delete m_objective_function; }
   for (const auto& m : m_metrics)      { delete m; }
 
   // Shallow copies
@@ -143,12 +143,11 @@ model& model::operator=(const model& other) {
 
   // Deep copies
   m_execution_context  = other.m_execution_context;
-  m_objective_function = other.m_objective_function;
+  m_objective_function = (other.m_objective_function
+                          ? make_unique<objective_function>(*other.m_objective_function)
+                          : nullptr);
   m_metrics            = other.m_metrics;
   m_callbacks          = other.m_callbacks;
-  if (m_objective_function != nullptr) {
-    m_objective_function = m_objective_function->copy();
-  }
   for (auto& m : m_metrics) {
     m = m->copy();
   }
@@ -190,7 +189,6 @@ model& model::operator=(const model& other) {
 }
 
 model::~model() {
-  if (m_objective_function != nullptr) { delete m_objective_function; }
   for (const auto& m : m_metrics)      { delete m; }
 }
 
@@ -582,6 +580,9 @@ void model::setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata) {
   // Setup weights
   setup_weights();
 
+  // Setup objective function
+  m_objective_function->setup(*this);
+
   // Setup metrics
   for (const auto& m : m_metrics) {
     m->setup(*this);
@@ -593,6 +594,7 @@ void model::setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata) {
   }
 
 #ifdef LBANN_HAS_DISTCONV
+  m_max_mini_batch_size_distconv = max_mini_batch_size;
   setup_distconv();
 #endif
 
@@ -1329,7 +1331,7 @@ bool model::load_from_checkpoint_shared(persist& p) {
     //  }
   p.set_restart_dir(trainer_dir);
 #ifdef LBANN_HAS_GPU
-  El::GPUManager::SynchronizeDevice();
+  hydrogen::gpu::SynchronizeDevice();
 #endif // LBANN_HAS_GPU
   return true;
 }

@@ -39,7 +39,8 @@ public:
                 std::string module_dir,
                 std::string sample_function,
                 std::string num_samples_function,
-                std::string sample_dims_function);
+                std::string sample_dims_function,
+                bool shuffle);
   python_reader(const python_reader&) = default;
   python_reader& operator=(const python_reader&) = default;
   ~python_reader() override;
@@ -59,7 +60,8 @@ public:
 
 protected:
   bool fetch_data_block(CPUMat& X,
-                        El::Int thread_id,
+                        El::Int block_offset,
+                        El::Int block_stride,
                         El::Int mb_size,
                         El::Matrix<El::Int>& indices_fetched) override;
   bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;

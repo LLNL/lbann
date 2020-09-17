@@ -76,7 +76,7 @@ public:
   // ===========================================
 
   model(lbann_comm* comm,
-        objective_function* obj_fn,
+        std::unique_ptr<objective_function> obj_fn,
         std::unique_ptr<lbann_data::Optimizer> default_optimizer_msg = nullptr);
   model(const model& other);
   model& operator=(const model& other);
@@ -85,6 +85,7 @@ public:
 
   /** Archive for checkpoint and restart */
   template <class Archive> void serialize(Archive & ar) {
+    ar(CEREAL_NVP(*m_objective_function));
   }
 
   // ===========================================
@@ -112,8 +113,8 @@ public:
   virtual description get_description() const;
 
   /** @brief Mathematical function to be minimized during training. */
-  objective_function* get_objective_function() const {
-    return m_objective_function;
+  observer_ptr<objective_function> get_objective_function() const {
+    return m_objective_function.get();
   }
 
   /** @brief Return the model's metrics. */
@@ -414,6 +415,11 @@ public:
   /** @brief Execute callbacks at the end of weight optimization. */
   virtual void do_weight_optimize_end_cbs(weights *w);
 
+#ifdef LBANN_HAS_DISTCONV
+  /* @brief Return the maximum mini-batch size used by Distconv. */
+  size_t get_max_mini_batch_size_distconv() const { return m_max_mini_batch_size_distconv; }
+#endif
+
 private:
 
   /** Pointer to the execution context object used for training or evaluating this model */
@@ -444,7 +450,7 @@ private:
   std::unique_ptr<lbann_data::Optimizer> m_default_optimizer_msg;
 
   /** @brief Mathematical function to be minimized during training. */
-  objective_function* m_objective_function;
+  std::unique_ptr<objective_function> m_objective_function;
 
   /** @brief Numerical quantities to evaluate model performance.
    *  @details Does not affect training.
@@ -503,6 +509,12 @@ private:
   void setup_distconv();
   void setup_distributions();
   void print_distributions() const;
+
+  /** @brief The maximum mini-batch size used by Distconv.
+   *  @details This should be set before setup_distconv() is called.
+   */
+  size_t m_max_mini_batch_size_distconv;
+
 #endif // LBANN_HAS_DISTCONV
 };
 

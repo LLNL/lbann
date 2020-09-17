@@ -37,8 +37,7 @@
 using namespace lbann;
 
 int main(int argc, char *argv[]) {
-  int random_seed = 0;
-  world_comm_ptr comm = initialize(argc, argv, random_seed);
+  world_comm_ptr comm = initialize(argc, argv);
   bool master = comm->am_world_master();
 
   try {
@@ -187,7 +186,7 @@ if (j == 0) {
       std::ofstream out(output_fn.c_str());
       out << "max min mean std_dev:\n";
       for (size_t i=0; i<f_max.size(); i++) {
-        out << f_max[i] << " " << f_min[i] << " " 
+        out << f_max[i] << " " << f_min[i] << " "
             << f_mean[i] << " " << f_std_dev[i] << "\n";
       }
       /*
@@ -218,4 +217,3 @@ if (master) std::cout << "num samples: " << n3 << std::endl;
   // Clean up
   return EXIT_SUCCESS;
 }
-

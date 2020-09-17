@@ -92,9 +92,9 @@ void apply_binary_backprop_operator(
 
   // Launch CUDA kernel
   if (grid_dim > 0) {
-    CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
+    CHECK_CUDA(cudaSetDevice(hydrogen::gpu::DefaultDevice()));
     binary_backprop_operator_kernel<Op>
-      <<<grid_dim, block_dim, 0, El::GPUManager::Stream()>>>(
+      <<<grid_dim, block_dim, 0, hydrogen::cuda::GetDefaultStream()>>>(
         height, width,
         x1.LockedBuffer(), x1.LDim(),
         x2.LockedBuffer(), x2.LDim(),

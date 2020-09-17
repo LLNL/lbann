@@ -109,7 +109,7 @@ else ()
 endif ()
 
 # ... then the tag.
-set(HYDROGEN_TAG "v1.3.3"
+set(HYDROGEN_TAG "v1.4.0"
   CACHE STRING "The git tag or hash to checkout for Hydrogen")
 
 if (HYDROGEN_CUSTOM_SOURCE_DIR)

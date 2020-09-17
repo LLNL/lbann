@@ -26,7 +26,7 @@
 
 #include "lbann/callbacks/ltfb.hpp"
 #include "lbann/callbacks/imcomm.hpp"
-#include "lbann/utils/random.hpp"
+#include "lbann/utils/random_number_generators.hpp"
 #include "lbann/optimizers/sgd.hpp"
 #include "lbann/optimizers/adam.hpp"
 #include "lbann/proto/proto_common.hpp"
@@ -271,7 +271,8 @@ void exchange_models(lbann_comm& comm,
                     weights_names.end(),
                     model_weights[i]->get_name())
           == weights_names.end()) {
-        *model_weights[i] = *local_weights[i];
+        using dtw_type = data_type_weights<TensorDataType>;
+        dynamic_cast<dtw_type&>(*model_weights[i]) = *local_weights[i];
       }
     }
   }
@@ -338,7 +339,8 @@ EvalType evaluate(model& m, const std::string& metric_name) {
   m.make_data_store_preloaded(execution_mode::validation);
 
   // Clean up and return metric value
-  c.set_execution_mode(original_mode);
+  m.reset_mode(c, original_mode);
+  c.get_trainer().get_data_coordinator().reset_mode(c);
   return metric_value;
 
 }
@@ -373,7 +375,7 @@ ltfb::ltfb(const ltfb& other) :
   m_workspace_weights.clear();
   m_workspace_weights.reserve(other.m_workspace_weights.size());
   for (const auto& w : other.m_workspace_weights) {
-    m_workspace_weights.emplace_back(w->copy());
+    m_workspace_weights.emplace_back(w->clone());
   }
 
 }
@@ -393,7 +395,7 @@ ltfb& ltfb::operator=(const ltfb& other) {
   m_workspace_weights.clear();
   m_workspace_weights.reserve(other.m_workspace_weights.size());
   for (const auto& w : other.m_workspace_weights) {
-    m_workspace_weights.emplace_back(w->copy());
+    m_workspace_weights.emplace_back(w->clone());
   }
 
   return *this;
@@ -406,7 +408,7 @@ void ltfb::setup(model *m) {
   m_workspace_weights.clear();
   m_workspace_weights.reserve(model_weights.size());
   for (const auto& w : model_weights) {
-    m_workspace_weights.emplace_back(w->copy());
+    m_workspace_weights.emplace_back(w->clone());
   }
 
   // Make sure model does not have inter-trainer communication callback

@@ -30,8 +30,10 @@ expected_train_accuracy_range = (9, 15)
 expected_test_accuracy_range = (15, 24)
 
 # Average mini-batch time (in sec) for each LC system
+# Note that run times are with LBANN_DETERMINISTIC set
+# Commented out times are prior to thread safe RNGs
 expected_mini_batch_times = {
-    'pascal': 0.100,
+    'pascal': 0.154, # 0.100,
     'lassen': 0.050,
     'ray':    0.075,
 }
@@ -53,6 +55,8 @@ def setup_experiment(lbann):
     data_reader = data.imagenet.make_data_reader(lbann, num_classes=1000)
     # We train on a subset of ImageNet
     data_reader.reader[0].percent_of_data_to_use = imagenet_fraction
+    # Only evaluate on ImageNet validation set at end of training
+    data_reader.reader[1].role = 'test'
 
     optimizer = lbann.SGD(learn_rate=0.01, momentum=0.9)
     return trainer, model, data_reader, optimizer

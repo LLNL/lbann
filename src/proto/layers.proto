@@ -36,6 +36,17 @@ enum DataType {
   FP16 = 2;
 }
 
+// Lives here because it's used by both Convolution and
+// Deconvolution.
+enum ConvTensorOpsMode {
+  // Use the global default.
+  DEFAULT_TENSOR_OPS = 0;
+  // Explicitly disable tensor ops.
+  NO_TENSOR_OPS = 1;
+  // Use tensor ops -- allows conversion FP32->FP16
+  USE_TENSOR_OPS = 2;
+}
+
 message Layer {
   string name = 50;
   string parents = 151;
@@ -193,6 +204,7 @@ message Layer {
     Argmin argmin = 606;
     OneHot one_hot = 607;
     ChannelwiseSoftmax channelwise_softmax = 608;
+    DistEmbedding dist_embedding = 609;
 
   }
 
@@ -562,6 +574,9 @@ message Layer {
     bool has_bias = 10;                   //default: true
     double bias_initial_value = 11;       //default: 0
     double l2_regularization_factor = 12; //default: 0
+
+    // This field is ignored for non-GPU layers.
+    ConvTensorOpsMode conv_tensor_op_mode = 13;
   }
 
   message Deconvolution {
@@ -587,6 +602,9 @@ message Layer {
     bool has_bias = 10;                   //default: true
     double bias_initial_value = 11;       //default: 0
     double l2_regularization_factor = 12; //default: 0
+
+    // This field is ignored for non-GPU layers.
+    ConvTensorOpsMode conv_tensor_op_mode = 13;
   }
 
   /** @brief Lookup table to embedding vectors.
@@ -690,6 +708,40 @@ message Layer {
   }
 
   message ChannelwiseSoftmax {}
+
+  /** @brief Embedding layer with distributed weights.
+   *
+   *  @warning This is extremely experimental.
+   */
+  message DistEmbedding {
+
+    /** Size of dictionary of embeddings. */
+    int64 num_embeddings = 1;
+    /** Size of embedding vectors. */
+    int64 embedding_dim = 2;
+
+    /** Perform sparse SGD during backprop.
+     *
+     *  Bypasses optimizer class.
+     */
+    bool sparse_sgd = 3;
+    /** SGD learning rate. */
+    double learning_rate = 4;
+
+    /** Perform a blocking barrier at the beginning of forward prop.
+     *
+     *  This layer performs synchronization with non-blocking barriers
+     *  to ensure the correctness of asynchronous communication.
+     *  However, gradient checking changes the embedding values without
+     *  performing any synchronization. The quickest fix is to do a
+     *  blocking barrier at the beginning of forward prop to make sure
+     *  that all the embeddings are ready to be accessed.
+     *
+     *  @todo Think of a way to avoid this synchronization.
+     */
+    bool barrier_in_forward_prop = 5;
+
+  }
 
 } // message Layer
 

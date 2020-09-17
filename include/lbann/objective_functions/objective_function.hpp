@@ -48,6 +48,17 @@ class objective_function {
   /** Copy function. */
   objective_function* copy() const { return new objective_function(*this); }
 
+  /** Archive for checkpoint and restart */
+  template <class Archive> void serialize( Archive & ar ) {
+    ar(CEREAL_NVP(m_statistics));
+
+    // Serialized each objective function term object explicitly, not the pointer to
+    // the objective function term
+    for(auto&& t : m_terms) {
+      ar(CEREAL_NVP(*t));
+    }
+  }
+
   /** Add a term to the objective function.
    *  The objective function takes ownership of the objective function
    *  term and deallocates it during destruction.
@@ -84,9 +95,13 @@ class objective_function {
   void compute_weight_regularization();
 
   /** Clear all statistics. */
-  void reset_statistics() { m_statistics.clear(); }
+  void reset_statistics() {
+    for (auto& stats : m_statistics) {
+      stats.second.reset();
+    }
+  }
   /** Clear statistics for an execution mode. */
-  void reset_statistics(execution_mode mode) { m_statistics.erase(mode); }
+  void reset_statistics(execution_mode mode) { m_statistics[mode].reset(); }
 
   /** Get mean objective function value.
    *  This is a weighted average such that each mini-batch sample makes

@@ -8,6 +8,7 @@ import numpy as np
 import pytest
 import shutil
 import subprocess
+from filecmp import cmp
 
 def check_list(substrings, strings):
     errors = []
@@ -100,10 +101,6 @@ def get_command(cluster,
             time_limit = DEFAULT_TIME
     if time_limit > MAX_TIME:
         time_limit = MAX_TIME
-
-    # Check executable existence
-    if check_executable_existence:
-        process_executable_existence(executable, skip_no_exe)
 
     # Determine scheduler
     if cluster in ['catalyst', 'corona', 'pascal']:
@@ -554,18 +551,6 @@ def get_command(cluster,
         return command_string
 
 
-def process_executable_existence(executable, skip_no_exe=True):
-    executable_exists = os.path.exists(executable)
-    if not executable_exists:
-        error_string = 'Executable does not exist: %s' % executable
-        if skip_no_exe:
-            print('Skip - ' + error_string)
-            import pytest
-            pytest.skip(error_string)
-        else:
-            raise Exception(error_string)
-
-
 def process_executable(name, compiler_name, executables):
     if compiler_name not in executables:
         e = '{n}: default_exes[{c}] does not exist'.format(
@@ -575,7 +560,6 @@ def process_executable(name, compiler_name, executables):
         pytest.skip(e)
     executable_path = executables[compiler_name]
     print('{n}: executable_path={e}'.format(n=name, e=executable_path))
-    process_executable_existence(executable_path)
 
 
 def get_spack_exes(default_dirname, cluster):
@@ -851,6 +835,7 @@ def create_python_data_reader(lbann,
     reader = lbann.reader_pb2.Reader()
     reader.name = 'python'
     reader.role = execution_mode
+    reader.shuffle = False
     reader.percent_of_data_to_use = 1.0
     reader.python.module = module_name
     reader.python.module_dir = dir_name
@@ -934,3 +919,71 @@ def multidir_diff(baseline, test, fileList):
             tmpList.append(filePath)
 
     return tmpList, err, err_msg
+
+# Perform a line by line difference of an xml file and look for any floating point values
+# For each floating point value, check to see if it is close-enough and log a warning if it
+# is within a threshhold.
+def approx_diff_xml_files(file1, file2, rel_tol):
+    f1 = open(file1, 'r')
+    f2 = open(file2, 'r')
+    files_differ = False
+    diff_list = []
+    near_diff_list = []
+    for l1 in f1:
+        l2 = next(f2)
+        if l1 != l2:
+            try:
+                v1 = float(re.sub(r'\s*<\w*>(\S*)<\/\w*>\s*', r'\1', l1))
+                v2 = float(re.sub(r'\s*<\w*>(\S*)<\/\w*>\s*', r'\1', l2))
+                close = math.isclose(v1, v2, rel_tol=rel_tol, abs_tol=0.0)
+                if not close:
+                    err = ('lines: %s and %s differ: %.13f != %.13f (+/- %.1e)' % (l1.rstrip(), l2.rstrip(), v1, v2, rel_tol))
+                    diff_list.append(err)
+                    files_differ = True
+                else:
+                    warn = ('lines: %s and %s are close: %.13f ~= %.13f (+/- %.1e)' % (l1.rstrip(), l2.rstrip(), v1, v2, rel_tol))
+                    near_diff_list.append(warn)
+            except ValueError:
+                # Non-numerical diff.
+                err = ('lines: %s and %s differ' % (l1.rstrip(), l2.rstrip()))
+                diff_list.append(err)
+                files_differ = True
+    return files_differ, diff_list, near_diff_list
+
+# Given a recursive python diff from dircmp, perform a recursive exploration of any files
+# with differences.  For files with differences, if check any XML files for approximate equivalence
+# which can be seen in some of the floating point recorded values
+def print_diff_files(dcmp):
+    any_files_differ = False
+    all_diffs = []
+    all_warns = []
+    for name in dcmp.diff_files:
+        from pprint import pprint
+        err = f'Files {os.path.join(dcmp.left, name)} and {os.path.join(dcmp.right, name)} differ'
+        if re.search('.xml', name):
+            files_differ, diff_list, warn_list = approx_diff_xml_files(
+                os.path.join(dcmp.left, name), os.path.join(dcmp.right, name), 1e-6)
+            if files_differ:
+                any_files_differ = True
+                all_diffs.append(err)
+                for d in diff_list:
+                    all_diffs.append(d)
+            if len(warn_list) > 0:
+                warn = f'Files {os.path.join(dcmp.left, name)} and {os.path.join(dcmp.right, name)} have a near difference'
+                all_warns.append(warn)
+                for w in warn_list:
+                    all_warns.append(w)
+        else:
+            any_files_differ = True
+            all_diffs.append(err)
+
+    for sub_dcmp in dcmp.subdirs.values():
+        files_differ, diff_list, warn_list = print_diff_files(sub_dcmp)
+        if files_differ:
+            any_files_differ = True
+            for d in diff_list:
+                all_diffs.append(d)
+        for d in warn_list:
+            all_warns.append(d)
+
+    return any_files_differ, all_diffs, all_warns

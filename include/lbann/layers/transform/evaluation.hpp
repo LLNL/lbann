@@ -35,7 +35,12 @@ namespace lbann {
 template <typename TensorDataType>
 class abstract_evaluation_layer : public transform_layer<TensorDataType> {
 public:
-  using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
+#ifdef LBANN_DETERMINISTIC
+  using EvalDataType = EvalType;
+#else
+  using EvalDataType = TensorDataType;
+#endif
+  using CPUMatType = El::Matrix<EvalDataType, El::Device::CPU>;
 
 public:
 

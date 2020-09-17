@@ -221,7 +221,7 @@ void embedding_layer<TensorDataType,Layout,Device>::setup_data(size_t max_mini_b
   }
 
   // Initialize dictionary
-  auto& embeddings = this->get_data_type_weights(0);
+  auto& embeddings = this->get_weights(0);
   auto matrix_dist = this->get_prev_activations().DistData();
   matrix_dist.colDist = El::STAR;
   matrix_dist.rowDist = El::STAR;
@@ -233,7 +233,11 @@ void embedding_layer<TensorDataType,Layout,Device>::setup_data(size_t max_mini_b
   // Zero out embedding vector for padding index
   if (0 <= m_padding_idx
       && m_padding_idx < static_cast<El::Int>(m_embedding_dim)) {
-    auto& embedding_values = embeddings.get_values();
+    // FIXME (trb 06/01/2020): Assuming embedding values have data
+    // type that matches this layer. In future, we should abstract
+    // this or dynamically dispatch it.
+    auto& embedding_values =
+      dynamic_cast<AbsDistMatrixType&>(embeddings.get_values());
     std::unique_ptr<AbsDistMatrixType> pad_embedding(
       embedding_values.Construct(embedding_values.Grid(),
                                  embedding_values.Root()));

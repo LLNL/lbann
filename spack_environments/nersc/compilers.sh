@@ -1,7 +1,8 @@
 #!/bin/sh
 
 COMPILER_ALL_PACKAGES=$(cat <<EOF
-      compiler: [gcc@8.2.0 arch=linux-opensuse_leap15-skylake_avx512]
+      compiler:
+          - gcc@8.2.0 arch=cray-cnl7-skylake_avx512
 EOF
 )
 

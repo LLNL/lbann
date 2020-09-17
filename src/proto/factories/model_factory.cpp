@@ -61,7 +61,7 @@ instantiate_model(lbann_comm* comm,
   const auto& type = proto_model.type();
   if (type.empty() || type == "directed_acyclic_graph_model") {
     return make_unique<directed_acyclic_graph_model>(
-      comm, obj.release(),
+      comm, std::move(obj),
       make_unique<lbann_data::Optimizer>(proto_opt));
   }
 
