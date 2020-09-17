@@ -451,7 +451,7 @@ if (LBANN_WITH_PYTHON OR LBANN_WITH_PYTHON_CXX)
     CACHE PATH
     "Relative path from PYTHON_INSTALL_PREFIX to the python package install")
 
-endif (LBANN_WITH_PYTHON)
+endif (LBANN_WITH_PYTHON OR LBANN_WITH_PYTHON_CXX)
 
 if (LBANN_WITH_VTUNE)
   find_package(VTune MODULE)
