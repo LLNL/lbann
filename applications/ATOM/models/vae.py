@@ -118,7 +118,7 @@ class MolVAE(lbann.modules.Module):
         self.embedding_size = embedding_size
         self.dictionary_size = dictionary_size
         self.label_to_ignore = ignore_label
-        self.datatype = lbann.DataType.FP16
+        self.datatype = lbann.DataType.FLOAT
         self.weights_datatype = lbann.DataType.FLOAT
 
         fc = lbann.modules.FullyConnectedModule
@@ -230,13 +230,16 @@ class MolVAE(lbann.modules.Module):
         z = lbann.Add([mu, (lbann.Multiply([lbann.Exp(lbann.WeightedSum(logvar,scaling_factors='0.5')),eps]))])
 
         # kl_loss = 0.5 * (logvar.exp() + mu ** 2 - 1 - logvar).sum(1).mean()
-        kl_loss = lbann.Reduction(lbann.WeightedSum(
-                                        [lbann.Exp(logvar),
-                                        lbann.Square(mu),
-                                        lbann.Constant(value=1.0, hint_layer=mu),
-                                        logvar],
-                                        scaling_factors='0.5 0.5 -0.5 -0.5'),
-                                        mode='sum')
+        kl_loss = lbann.Reduction(
+            lbann.WeightedSum(
+                lbann.Exp(logvar),
+                lbann.Square(mu),
+                self.constant(1, hint_layer=mu),
+                logvar,
+                scaling_factors='0.5 0.5 -0.5 -0.5',
+            ),
+            mode='sum',
+        )
 
         return z, kl_loss
 
@@ -307,17 +310,14 @@ class MolVAE(lbann.modules.Module):
         # Note: Ignored indices result in zero vectors
         ignore_mask = lbann.Equal(
             x,
-            lbann.Constant(value=self.label_to_ignore, hint_layer=x),
+            self.constant(self.label_to_ignore, hint_layer=x),
         )
         keep_mask = lbann.LogicalNot(ignore_mask)
         length = lbann.Reduction(keep_mask, mode='sum')
-        length = lbann.Max(
-            length,
-            lbann.Constant(value=1, num_neurons=str_list([1])),
-        )
+        length = lbann.Max(length, self.constant(1, [1]))
         x = lbann.Add(
             lbann.Multiply(keep_mask, x),
-            lbann.Multiply(ignore_mask, lbann.Constant(value=-1, hint_layer=x)),
+            lbann.Multiply(ignore_mask, self.constant(-1, hint_layer=x)),
         )
         x = lbann.Slice(x, slice_points=str_list(range(self.input_feature_dims)))
         x = [lbann.Identity(x) for _ in range(self.input_feature_dims-1)]
@@ -330,12 +330,18 @@ class MolVAE(lbann.modules.Module):
         #     x[:, 1:].contiguous().view(-1),
         #     ignore_index=self.pad
         # )
+        # Note: Ideally we'd shift y by y.max(-1) for numerical stability
+        shifts = lbann.MatMul(
+            lbann.Max(y, self.constant(0, hint_layer=y)),
+            self.constant(
+                1 / math.sqrt(self.dictionary_size),
+                [self.dictionary_size, self.dictionary_size],
+            ),
+        )
+        y = lbann.Subtract(y, shifts)
         z = lbann.MatMul(
             lbann.Exp(y),
-            lbann.Constant(
-                value=1,
-                num_neurons=str_list([self.dictionary_size, 1]),
-            ),
+            self.constant(1, [self.dictionary_size, 1]),
         )
         z = lbann.Log(z)
         z = lbann.MatMul(
@@ -343,12 +349,20 @@ class MolVAE(lbann.modules.Module):
             z,
         )
         recon_loss = lbann.MatMul(
-            lbann.Reshape(y, dims=str_list([-1, 1])),
-            lbann.Reshape(x, dims=str_list([-1, 1])),
-            transpose_a=True,
+            lbann.Reshape(y, dims=str_list([1, -1])),
+            lbann.Reshape(x, dims=str_list([1, -1])),
+            transpose_b=True,
         )
         recon_loss = lbann.Subtract(z, recon_loss)
         recon_loss = lbann.Reshape(recon_loss, dims=str_list([1]))
         recon_loss = lbann.Divide(recon_loss, length)
 
         return recon_loss
+
+    def constant(self, value, dims=[], datatype=None, hint_layer=None):
+        return lbann.Constant(
+            value=value,
+            num_neurons=str_list(dims),
+            datatype=datatype,
+            hint_layer=hint_layer,
+        )

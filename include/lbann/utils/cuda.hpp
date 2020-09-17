@@ -225,8 +225,9 @@ private:
 };
 
 // -------------------------------------------------------------
-// Helper functions for entrywise operations
+// Helper functions for tensor operations
 // -------------------------------------------------------------
+
 #ifdef __CUDACC__
 
 /** Apply an entry-wise unary operator to GPU data.
@@ -269,6 +270,16 @@ void apply_entrywise_binary_operator(
   El::AbstractDistMatrix<TensorDataType>& output);
 
 #endif // __CUDACC__
+
+/** Copy entries between GPU tensors. */
+template <typename TensorDataType>
+void copy_tensor(
+  cudaStream_t stream,
+  const std::vector<size_t>& dims,
+  const TensorDataType* input,
+  const std::vector<size_t>& input_strides,
+  TensorDataType* output,
+  const std::vector<size_t>& output_strides);
 
 // -------------------------------------------------------------
 // Utilities for Thrust
