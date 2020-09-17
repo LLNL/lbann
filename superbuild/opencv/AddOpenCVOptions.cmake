@@ -106,7 +106,8 @@ option(OPENCV_WITH_ITT "OpenCV: Include Intel ITT support" ON)
 
 # OpenCV build components
 option(OPENCV_BUILD_SHARED_LIBS
-  "OpenCV: Build shared libraries instead of static ones" ON)
+  "OpenCV: Build shared libraries instead of static ones"
+  ${BUILD_SHARED_LIBS})
 option(OPENCV_BUILD_opencv_apps
   "OpenCV: Build utility applications" OFF)
 option(OPENCV_BUILD_ANDROID_EXAMPLES

@@ -18,6 +18,10 @@ option(LBANN_SB_BUILD_PROTOBUF_HOST_VERSION
   "Build a protobuf that will run on the login/host node."
   OFF)
 
+option(PROTOBUF_BUILD_SHARED_LIBS
+  "Build protobuf with shared libraries."
+  ${BUILD_SHARED_LIBS})
+
 # Handle the clone mechanism. First URL
 option(PROTOBUF_CLONE_VIA_SSH
   "Clone PROTOBUF using SSH instead of HTTPS" ${LBANN_SB_CLONE_VIA_SSH})
@@ -84,6 +88,7 @@ ExternalProject_Add(PROTOBUF
   -DCMAKE_MACOSX_RPATH=ON
   -DCMAKE_POSITION_INDEPENDENT_CODE=ON
   -Dprotobuf_BUILD_TESTS=OFF
+  -DBUILD_SHARED_LIBS=${PROTOBUF_BUILD_SHARED_LIBS}
   )
 set(PROTOBUF_DIR ${PROTOBUF_CMAKE_INSTALL_PREFIX}
   CACHE INTERNAL "The install prefix of Protobuf.")

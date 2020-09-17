@@ -30,6 +30,9 @@ endif ()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
 
+option(BUILD_SHARED_LIBS
+  "Build as many packages as possible as shared libraries." ON)
+
 option(LBANN_SB_CLONE_VIA_SSH
   "Use SSH protocol instead of HTTPS for github." OFF)
 

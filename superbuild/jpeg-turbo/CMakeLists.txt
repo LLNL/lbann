@@ -2,8 +2,17 @@ enable_language(C)
 enable_language(CXX)
 enable_language(ASM_NASM)
 
+# I want to keep the pattern consistent.
+option(JPEG-TURBO_BUILD_SHARED_LIBS
+  "Build the jpeg-turbo library as a shared library."
+  ${BUILD_SHARED_LIBS})
+
 # Match the jpeg-turbo default
-option(JPEG-TURBO_ENABLE_STATIC "Enable the jpeg-turbo static linkage." ON)
+option(JPEG-TURBO_ENABLE_STATIC
+  "Enable the jpeg-turbo static linkage." ON)
+option(JPEG-TURBO_ENABLE_SHARED
+  "Enable the jpeg-turbo shared library."
+  ${JPEG-TURBO_BUILD_SHARED_LIBS})
 
 option(JPEG-TURBO_CLONE_VIA_SSH
   "Clone JPEG-TURBO using SSH instead of HTTPS" ${LBANN_SB_CLONE_VIA_SSH})
@@ -61,6 +70,7 @@ ExternalProject_Add(JPEG-TURBO
   -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
   -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
   -DENABLE_STATIC=${JPEG-TURBO_ENABLE_STATIC}
+  -DENABLE_SHARED=${JPEG-TURBO_ENABLE_SHARED}
   -DCMAKE_MACOSX_RPATH=ON
   )
 

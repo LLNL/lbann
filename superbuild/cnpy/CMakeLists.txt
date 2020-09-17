@@ -4,7 +4,10 @@
 enable_language(C)
 enable_language(CXX)
 
-# Match the CNPY default
+# Match the CNPY defaults
+option(CNPY_BUILD_SHARED_LIBS
+  "Build the CNPY shared library" ${BUILD_SHARED_LIBS})
+
 option(CNPY_ENABLE_STATIC "Enable the CNPY static linkage." ON)
 
 # Handle the clone mechanism. First URL
@@ -18,7 +21,6 @@ else ()
   set(CNPY_URL "https://github.com/rogersce/cnpy.git"
     CACHE STRING "The URL from which to clone CNPY")
 endif ()
-
 
 # ... then the tag.
 set(CNPY_TAG "4e8810b1a8637695171ed346ce68f6984e585ef4"
@@ -71,6 +73,7 @@ ExternalProject_Add(CNPY
   -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
   -DENABLE_STATIC=${CNPY_ENABLE_STATIC}
   -DCMAKE_MACOSX_RPATH=ON
+  -DBUILD_SHARED_LIBS=${CNPY_BUILD_SHARED_LIBS}
   )
 
 set(CNPY_DIR ${CNPY_CMAKE_INSTALL_PREFIX}

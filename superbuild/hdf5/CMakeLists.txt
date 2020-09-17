@@ -32,7 +32,7 @@ set(HDF5_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}"
 
 option(HDF5_BUILD_SHARED_LIBS
   "Whether HDF5 should build dynamically linked libraries."
-  ON)
+  ${BUILD_SHARED_LIBS})
 
 set(HDF5_CMAKE_COMMAND "${CMAKE_COMMAND}"
   CACHE FILEPATH

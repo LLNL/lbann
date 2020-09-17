@@ -1,9 +1,14 @@
 enable_language(CXX)
 
+option(LBANN_BUILD_SHARED_LIBS
+  "Build liblbann as a shared library."
+  ${BUILD_SHARED_LIBS})
+
 # Contrary to the top-level CMake, here we make warnings-as-errors the
 # default. This should *not* be the persistent norm, but may as well
 # save everyone some typing in the meantime.
-option(LBANN_WARNINGS_AS_ERRORS "Promote LBANN warnings to errors" ON)
+option(LBANN_WARNINGS_AS_ERRORS
+  "Promote LBANN warnings to errors" OFF)
 
 set(LBANN_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}"
   CACHE PATH "The installation destination of LBANN")
@@ -107,7 +112,8 @@ if (TARGET PROTOBUF)
   list(APPEND _LBANN_DEPENDS PROTOBUF)
   set(LBANN_SB_FWD_LBANN_PROTOBUF_DIR "${PROTOBUF_DIR}")
   set(LBANN_SB_FWD_LBANN_protobuf_MODULE_COMPATIBLE ON)
-  set(LBANN_SB_FWD_LBANN_protobuf_BUILD_SHARED_LIBS ON)
+  set(LBANN_SB_FWD_LBANN_protobuf_BUILD_SHARED_LIBS
+    ${PROTOBUF_BUILD_SHARED_LIBS})
 
   if (TARGET HOST-PROTOBUF)
     list(APPEND _LBANN_DEPENDS HOST-PROTOBUF)
@@ -136,6 +142,8 @@ endif ()
 # Get the list of LBANN variables
 get_property(LBANN_VARIABLES DIRECTORY PROPERTY VARIABLES)
 list(FILTER LBANN_VARIABLES INCLUDE REGEX "^LBANN_.*")
+list(FILTER LBANN_VARIABLES EXCLUDE REGEX
+  "LBANN_URL\|LBANN_TAG\|LBANN_CMAKE_GENERATOR\|LBANN_BUILD_SHARED_LIBS\|LBANN_CLONE_VIA_SSH")
 
 create_cmake_arguments(
   OUTPUT_VARIABLE LBANN_CMAKE_ARGS
@@ -199,6 +207,7 @@ ExternalProject_Add(LBANN
   CMAKE_ARGS
   -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
   -DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
+  -DBUILD_SHARED_LIBS=${LBANN_BUILD_SHARED_LIBS}
   ${LBANN_CMAKE_ARGS}
   )
 
