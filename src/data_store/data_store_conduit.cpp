@@ -765,7 +765,9 @@ const conduit::Node & data_store_conduit::get_random_node() const {
   }
 
   if (m_compacted_sample_size == 0) {
-    LBANN_ERROR("can't return random node since we have no valid size for data (set_conduit_node has never been called)");
+    LBANN_ERROR("can't return random node since we have no valid size for data ",
+                "(set_conduit_node has never been called): m_data.size()=",
+                m_data.size());
   }
   int retry_count = 0, MAX_RNG_SAMPLE_SELECTIONS = 10;
   do {
