@@ -119,6 +119,17 @@ option(LBANN_WITH_NVPROF
 option(LBANN_WITH_PYTHON
   "Install Python frontend and enable embedded Python" ON)
 
+option(LBANN_WITH_PYTHON_CXX
+  "Enable embedded Python" ${LBANN_WITH_PYTHON})
+
+if (LBANN_WITH_PYTHON_CXX AND NOT LBANN_WITH_PYTHON)
+  # (trb): This could also be an error.
+  message(WARNING
+    "Interesting combination of LBANN_WITH_PYTHON "
+    "and LBANN_WITH_PYTHON_CXX detected. This is just "
+    "to make sure you're aware.")
+endif (LBANN_WITH_PYTHON_CXX AND NOT LBANN_WITH_PYTHON)
+
 option(LBANN_WITH_TBINF "Include Tensorboard interface" ON)
 
 option(LBANN_WITH_VISION "Include vision processing components" ON)
@@ -418,10 +429,15 @@ if (LBANN_WITH_TBINF)
 endif ()
 
 # Find Python
-if (LBANN_WITH_PYTHON)
+if (LBANN_WITH_PYTHON OR LBANN_WITH_PYTHON_CXX)
   find_package(Python REQUIRED COMPONENTS Interpreter Development)
-  set(LBANN_HAS_PYTHON "${Python_FOUND}")
+  set(LBANN_HAS_PYTHON_FRONTEND "${Python_FOUND}")
+  if (LBANN_WITH_PYTHON_CXX AND Python_FOUND)
+    set(LBANN_HAS_PYTHON TRUE)
+  endif ()
+
   if (NOT Python_VERSION_MAJOR EQUAL 3)
+    set(LBANN_HAS_PYTHON_FRONTEND FALSE)
     set(LBANN_HAS_PYTHON FALSE)
     message(FATAL_ERROR "Python 2 is not supported.")
   endif ()
@@ -822,7 +838,7 @@ install(
 # We go for option 3 since it's simple and lightweight, but it runs
 # counter to the intent of setuptools. If we learn about any nicer
 # approaches, we should use them.
-if (LBANN_HAS_PYTHON)
+if (LBANN_HAS_PYTHON_FRONTEND)
 
   # Construct config file
   # NOTE (trb): python_config.ini is installed by setup.py
@@ -863,7 +879,7 @@ this package, be sure to add this directory to your PYTHONPATH, e.g.:
   install(CODE
     "execute_process(COMMAND ${CMAKE_COMMAND} -E echo \"${_PY_INSTALL_MSG}\")")
 
-endif (LBANN_HAS_PYTHON)
+endif (LBANN_HAS_PYTHON_FRONTEND)
 
 # Install contributor list, license, readme
 install(
@@ -943,6 +959,7 @@ append_str_tf(_str
   LBANN_HAS_ONEDNN_GPU
   LBANN_HAS_OPENCV
   LBANN_HAS_PROTOBUF
+  LBANN_HAS_PYTHON_FRONTEND
   LBANN_HAS_PYTHON
   LBANN_HAS_ROCM
   LBANN_HAS_TBINF
