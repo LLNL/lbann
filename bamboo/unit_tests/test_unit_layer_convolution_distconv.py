@@ -41,7 +41,7 @@ def make_random_array(shape, seed):
 
 # Data
 _num_samples = 23
-_sample_dims = [6,11,7]
+_sample_dims = [6,16,16]
 _sample_size = functools.reduce(operator.mul, _sample_dims)
 _samples = make_random_array([_num_samples] + _sample_dims, 7)
 
@@ -163,7 +163,6 @@ def construct_model(lbann):
     pads = (1, 1)
     dilations = (1, 1)
     kernel = make_random_array(kernel_dims, 11)
-    bias = make_random_array([kernel_dims[0]], 123)
 
     # Apply convolution
     kernel_weights = lbann.Weights(
@@ -171,22 +170,17 @@ def construct_model(lbann):
         initializer=lbann.ValueInitializer(values=tools.str_list(np.nditer(kernel))),
         name='kernel1'
     )
-    bias_weights = lbann.Weights(
-        optimizer=lbann.SGD(),
-        initializer=lbann.ValueInitializer(values=tools.str_list(np.nditer(bias))),
-        name='bias1'
-    )
     x = x_lbann
     y = lbann.Convolution(x,
-                          weights=(kernel_weights, bias_weights),
-                          num_dims=3,
+                          weights=(kernel_weights, ),
+                          num_dims=2,
                           num_output_channels=kernel_dims[0],
                           has_vectors=True,
                           conv_dims=tools.str_list(kernel_dims[2:]),
                           conv_strides=tools.str_list(strides),
                           conv_pads=tools.str_list(pads),
                           conv_dilations=tools.str_list(dilations),
-                          has_bias=True,
+                          has_bias=False,
                           parallel_strategy=create_parallel_strategy(4))
     z = lbann.L2Norm2(y)
     obj.append(z)
@@ -196,71 +190,16 @@ def construct_model(lbann):
     try:
         x = _samples
         y = pytorch_convolution(
-            x, kernel, bias=bias,
+            x, kernel,
             stride=strides, padding=pads, dilation=dilations
         )
         z = tools.numpy_l2norm2(y) / _num_samples
         val = z
     except:
         # Precomputed value
-        val = 153.84937996554953
+        val = 381.7401227915947
     tol = 8 * val * np.finfo(np.float32).eps
-    callbacks.append(lbann.CallbackCheckMetric(
-        metric=metrics[-1].name,
-        lower_bound=val-tol,
-        upper_bound=val+tol,
-        error_on_failure=True,
-        execution_modes='test'))
 
-    # ------------------------------------------
-    # 2x4 strided convolution
-    # ------------------------------------------
-
-    # Convolution settings
-    kernel_dims = (3, _sample_dims[0], 2, 4)
-    strides = (3, 1)
-    pads = (3, 0)
-    dilations = (1, 1)
-    num_groups = 1
-    kernel = make_random_array(kernel_dims, 19)
-
-    # Apply convolution
-    kernel_weights = lbann.Weights(
-        optimizer=lbann.SGD(),
-        initializer=lbann.ValueInitializer(values=tools.str_list(np.nditer(kernel))),
-        name='kernel2'
-    )
-    x = x_lbann
-    y = lbann.Convolution(x,
-                          weights=(kernel_weights),
-                          num_dims=3,
-                          num_output_channels=kernel_dims[0],
-                          has_vectors=True,
-                          conv_dims=tools.str_list(kernel_dims[2:]),
-                          conv_strides=tools.str_list(strides),
-                          conv_pads=tools.str_list(pads),
-                          conv_dilations=tools.str_list(dilations),
-                          num_groups=num_groups,
-                          has_bias=False,
-                          parallel_strategy=create_parallel_strategy(4))
-    z = lbann.L2Norm2(y)
-    obj.append(z)
-    metrics.append(lbann.Metric(z, name='2x4 convolution'))
-
-    # PyTorch implementation
-    try:
-        x = _samples
-        y = pytorch_convolution(
-            x, kernel, bias=None,
-            stride=strides, padding=pads,
-            dilation=dilations, groups=num_groups
-        )
-        z = tools.numpy_l2norm2(y) / _num_samples
-        val = z
-    except:
-        # Precomputed value
-        val = 19.24587403346207
-    tol = 8 * val * np.finfo(np.float32).eps
     callbacks.append(lbann.CallbackCheckMetric(
         metric=metrics[-1].name,
         lower_bound=val-tol,
@@ -272,7 +211,10 @@ def construct_model(lbann):
     # Gradient checking
     # ------------------------------------------
 
-    callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
+    callbacks.append(lbann.CallbackCheckGradients(
+        error_on_failure=True,
+        execution_modes="train", # TODO: Check in all modes.
+    ))
 
     # ------------------------------------------
     # Construct model
