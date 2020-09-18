@@ -59,6 +59,7 @@ def sample_dims():
 
 def pytorch_pooling(data,
                     kernel_dims,
+                    pool_mode,
                     stride=1,
                     padding=0):
     """Wrapper around PyTorch pooling.
@@ -76,21 +77,16 @@ def pytorch_pooling(data,
         data = data.astype(torch.float64)
 
     # Perform pooling with PyTorch
-    output = None
-    if len(kernel_dims) == 1:
-        output = torch.nn.functional.avg_pool1d(
-            data, kernel_dims, stride, padding,
-        )
-    if len(kernel_dims) == 2:
-        output = torch.nn.functional.avg_pool2d(
-            data, kernel_dims, stride, padding,
-        )
-    if len(kernel_dims) == 3:
-        output = torch.nn.functional.avg_pool3d(
-            data, kernel_dims, stride, padding,
-        )
-    if output is None:
+    if len(kernel_dims) not in [1, 2, 3]:
         raise ValueError('PyTorch only supports 1D, 2D, and 3D pooling')
+
+    func_name = "{}_pool{}d".format(
+        {"average": "avg", "max": "max"}[pool_mode],
+        len(kernel_dims),
+    )
+    output = getattr(torch.nn.functional, func_name)(
+        data, kernel_dims, stride, padding,
+    )
 
     # Return output as NumPy array
     return output.numpy()
@@ -139,93 +135,88 @@ def construct_model(lbann):
     callbacks = []
 
     # ------------------------------------------
-    # 3x3 average pooling
-    # ------------------------------------------
-    # 3x3 average pool, stride=1, pad=1, dilation=1, bias
-
-    # Pooling settings
-    kernel_dims = (5, _sample_dims[0], 3, 3)
-    strides = (1, 1)
-    pads = (1, 1)
-    pool_mode = "average"
-
-    # Apply pooling
-    x = x_lbann
-    y = lbann.Pooling(x,
-                      num_dims=2,
-                      has_vectors=True,
-                      pool_dims=tools.str_list(kernel_dims[2:]),
-                      pool_strides=tools.str_list(strides),
-                      pool_pads=tools.str_list(pads),
-                      pool_mode=pool_mode)
-    z = lbann.L2Norm2(y)
-    obj.append(z)
-    metrics.append(lbann.Metric(z, name='3x3 average pooling'))
-
-    # PyTorch implementation
-    try:
-        x = _samples
-        y = pytorch_pooling(
-            x,
-            kernel_dims[2:],
-            stride=strides, padding=pads,
-        )
-        z = tools.numpy_l2norm2(y) / _num_samples
-        val = z
-    except:
-        # Precomputed value
-        val = 10.44275178160873
-    tol = 8 * val * np.finfo(np.float32).eps
-    callbacks.append(lbann.CallbackCheckMetric(
-        metric=metrics[-1].name,
-        lower_bound=val-tol,
-        upper_bound=val+tol,
-        error_on_failure=True,
-        execution_modes='test'))
-
-    # ------------------------------------------
-    # 2x4 strided average pooling
+    # Pooling
     # ------------------------------------------
 
-    # Pooling settings
-    kernel_dims = (3, _sample_dims[0], 2, 4)
-    strides = (3, 1)
-    pads = (1, 0)
-    pool_mode = "average"
+    pool_configs = []
 
-    # Apply pooling
-    x = x_lbann
-    y = lbann.Pooling(x,
-                      num_dims=2,
-                      has_vectors=True,
-                      pool_dims=tools.str_list(kernel_dims[2:]),
-                      pool_strides=tools.str_list(strides),
-                      pool_pads=tools.str_list(pads),
-                      pool_mode=pool_mode)
-    z = lbann.L2Norm2(y)
-    obj.append(z)
-    metrics.append(lbann.Metric(z, name='2x4 average pooling'))
+    # 3x3 pooling with same padding
+    for mode, val in [("average", 10.44275178160873),
+                      ("max", 57.139962751295094)]:
+        pool_configs.append({
+            "name": "3x3 {} pooling".format(mode),
+            "kernel_dims": (3, 3),
+            "strides": (1, 1),
+            "pads": (1, 1),
+            "pool_mode": mode,
+            "val": val,
+        })
 
-    # PyTorch implementation
-    try:
-        x = _samples
-        y = pytorch_pooling(
-            x,
-            kernel_dims[2:],
-            stride=strides, padding=pads,
-        )
-        z = tools.numpy_l2norm2(y) / _num_samples
-        val = z
-    except:
-        # Precomputed value
-        val = 2.936493136591308
-    tol = 8 * val * np.finfo(np.float32).eps
-    callbacks.append(lbann.CallbackCheckMetric(
-        metric=metrics[-1].name,
-        lower_bound=val-tol,
-        upper_bound=val+tol,
-        error_on_failure=True,
-        execution_modes='test'))
+    # 2x2 strided pooling
+    for mode, val in [("average", 3.679837210617764),
+                      ("max", 8.836797848269207)]:
+        pool_configs.append({
+            "name": "2x2 {} pooling".format(mode),
+            "kernel_dims": (2, 2),
+            "strides": (2, 2),
+            "pads": (0, 0),
+            "pool_mode": mode,
+            "val": val,
+        })
+
+    # 2x4 pooling
+    for mode, val in [("average", 2.936493136591308),
+                      ("max", 10.950791583798338)]:
+        pool_configs.append({
+            "name": "2x4 {} pooling".format(mode),
+            "kernel_dims": (2, 4),
+            "strides": (3, 1),
+            "pads": (1, 0),
+            "pool_mode": mode,
+            "val": val,
+        })
+
+    for p in pool_configs:
+        # Apply pooling
+        x = x_lbann
+        y = lbann.Pooling(x,
+                          num_dims=2,
+                          has_vectors=True,
+                          pool_dims=tools.str_list(p["kernel_dims"]),
+                          pool_strides=tools.str_list(p["strides"]),
+                          pool_pads=tools.str_list(p["pads"]),
+                          pool_mode=p["pool_mode"])
+        z = lbann.L2Norm2(y)
+
+        # Since max pooling is not differentiable, we only use average pooling.
+        if p["pool_mode"] == "average":
+            obj.append(z)
+
+        metrics.append(lbann.Metric(z, name=p["name"]))
+
+        # PyTorch implementation
+        try:
+            x = _samples
+            y = pytorch_pooling(
+                x,
+                p["kernel_dims"],
+                p["pool_mode"],
+                stride=p["strides"],
+                padding=p["pads"],
+            )
+            z = tools.numpy_l2norm2(y) / _num_samples
+            val = z
+        except:
+            # Precomputed value
+            val = p["val"]
+        tol = 8 * val * np.finfo(np.float32).eps
+
+        callbacks.append(lbann.CallbackCheckMetric(
+            metric=metrics[-1].name,
+            lower_bound=val-tol,
+            upper_bound=val+tol,
+            error_on_failure=True,
+            execution_modes='test'))
 
     # ------------------------------------------
     # Gradient checking
