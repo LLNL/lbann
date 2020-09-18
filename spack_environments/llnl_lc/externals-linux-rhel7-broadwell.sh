@@ -68,6 +68,13 @@ EXTERNAL_PACKAGES=$(cat <<EOF
       variants: build_type=RelWithDebInfo ~calib3d+core~cuda~dnn~eigen+fast-math~features2d~flann~gtk+highgui+imgproc~ipp~ipp_iw~jasper~java+jpeg~lapack~ml~opencl~opencl_svm~openclamdblas~openclamdfft~openmp+png~powerpc~pthreads_pf~python~qt+shared~stitching~superres+tiff~ts~video~videoio~videostab~vsx~vtk+zlib
       version:
       - 4.1.0
+    perl::
+      buildable: False
+      version:
+        - 5.16.3
+      externals:
+      - spec: perl@5.16.3 arch=linux-rhel7-power9le
+        prefix: /usr/bin
     python::
       buildable: True
       variants: +shared ~readline ~zlib ~bz2 ~lzma ~pyexpat

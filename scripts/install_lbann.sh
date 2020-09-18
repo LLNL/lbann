@@ -69,6 +69,7 @@ VERBOSE=0
 LBANN_ENV=
 SPACK_INSTALL_ARGS=
 BUILD_LBANN_SW_STACK="TRUE"
+MERLIN_PACKAGES=
 
 ################################################################
 # Help message
@@ -90,6 +91,7 @@ Options:
   ${C}--half${N}               Enable support for HALF precision data types in Hydrogen and DiHydrogen
   ${C}--disable-gpus${N}       Disable GPUS
   ${C}-s | --superbuild${N}    Superbuild LBANN with dihydrogen, hydrogen, and aluminum
+  ${C}--merlin${N}             Include Merlin workflow manager in the environment
 EOF
 }
 
@@ -129,6 +131,12 @@ while :; do
             ;;
         -s|--superbuild)
             BUILD_LBANN_SW_STACK="FALSE"
+            ;;
+        --merlin)
+            MERLIN_PACKAGES=$(cat <<EOF
+  - py-merlin
+EOF
+)
             ;;
         -?*)
             # Unknown option
@@ -230,6 +238,7 @@ ${GPU_PACKAGES}
   - python
   - py-pytest
 ${COMPILER_PACKAGE}
+${MERLIN_PACKAGES}
 EOF
 )
     LBANN_ENV="${LBANN_ENV:-lbann-dev-${SPACK_ARCH_TARGET}}"
@@ -280,6 +289,13 @@ ${STD_PACKAGES}
       version:
       - develop
       ${DIHYDROGEN_VARIANTS}
+      providers: {}
+      compiler: []
+      target: []
+    py-merlin:
+      buildable: true
+      version:
+      - develop
       providers: {}
       compiler: []
       target: []
