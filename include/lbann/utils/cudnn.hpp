@@ -147,8 +147,14 @@ void copy_activation_desc(const cudnnActivationDescriptor_t& src,
 // Wrapper classes for cuDNN types
 ////////////////////////////////////////////////////////////
 
+template <typename T>
+using BackendHandleType = typename T::handle_type;
+
 /** @brief Wrapper around @c cudnnTensorDescriptor_t */
 class TensorDescriptor {
+public:
+
+  using handle_type = cudnnTensorDescriptor_t;
 
 public:
 
@@ -207,6 +213,9 @@ private:
 
 /** Wrapper around @c cudnnFilterDescriptor_t */
 class FilterDescriptor {
+public:
+
+  using handle_type = cudnnFilterDescriptor_t;
 
 public:
 
