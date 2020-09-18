@@ -42,6 +42,7 @@ def make_random_array(shape, seed):
 # Data
 _num_samples = 23
 _sample_dims = [6,11,7]
+_sample_dims_3d = [2,3,11,7]
 _sample_size = functools.reduce(operator.mul, _sample_dims)
 _samples = make_random_array([_num_samples] + _sample_dims, 7)
 
@@ -176,11 +177,26 @@ def construct_model(lbann):
             "val": val,
         })
 
+    # 2x2x2 3D pooling
+    for mode, val in [("average", 0.5709457972093812),
+                      ("max", 3.886491271066883)]:
+        pool_configs.append({
+            "name": "2x2x2 {} pooling".format(mode),
+            "kernel_dims": (2, 2, 2),
+            "strides": (2, 2, 2),
+            "pads": (0, 0, 0),
+            "pool_mode": mode,
+            "val": val,
+        })
+
     for p in pool_configs:
         # Apply pooling
         x = x_lbann
+        if len(p["kernel_dims"]) == 3:
+            x = lbann.Reshape(x, dims=tools.str_list(_sample_dims_3d))
+
         y = lbann.Pooling(x,
-                          num_dims=2,
+                          num_dims=len(p["kernel_dims"]),
                           has_vectors=True,
                           pool_dims=tools.str_list(p["kernel_dims"]),
                           pool_strides=tools.str_list(p["strides"]),
@@ -197,6 +213,9 @@ def construct_model(lbann):
         # PyTorch implementation
         try:
             x = _samples
+            if len(p["kernel_dims"]) == 3:
+                x = np.reshape(x, [_num_samples]+_sample_dims_3d)
+
             y = pytorch_pooling(
                 x,
                 p["kernel_dims"],
