@@ -24,6 +24,7 @@ def construct_lc_launcher_args():
     parser.add_argument("--partition", default=None)
     parser.add_argument("--account", default="hpcdl")
     parser.add_argument("--scheduler", type=str, default="slurm")
+    parser.add_argument("--reservation", type=None)
     parser.add_argument(
         "--data-module-file",
         default="dataset.py",
@@ -137,7 +138,7 @@ def construct_model(run_args):
                  lbann.CallbackTimer()]
 
     if(run_args.dump_weights_interval > 0):
-      callbacks.append(lbann.CallbackDumpWeights(directory=run_args.dump_weights_dir, 
+      callbacks.append(lbann.CallbackDumpWeights(directory=run_args.dump_weights_dir,
                                               epoch_interval=run_args.dump_weights_interval))
     if(run_args.ltfb):
       send_name = ('' if run_args.weights_to_send == 'All' else run_args.weights_to_send) #hack for Merlin empty string
@@ -257,6 +258,7 @@ def main():
         partition=run_args.partition,
         scheduler=run_args.scheduler,
         #account=run_args.account,
+        reservation=run_args.reservation,
         time_limit=run_args.time_limit,
         nodes=run_args.nodes,
         procs_per_node=ppn,
