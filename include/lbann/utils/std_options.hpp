@@ -22,32 +22,22 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// lbann_proto.cpp - prototext application
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <lbann/proto/proto_common.hpp>
-#include "lbann/utils/std_options.hpp"
-#include "lbann/utils/argument_parser.hpp"
-#include "lbann/utils/lbann_library.hpp"
 
-#include <iostream>
+#ifndef LBANN_STD_OPTIONS_HPP
+#define LBANN_STD_OPTIONS_HPP
 
-using namespace lbann;
+namespace lbann {
 
-int main(int argc, char *argv[]) {
-  auto& arg_parser = global_argument_parser();
-  construct_std_options();
+#define MAX_RNG_SEEDS_DISPLAY "RNG seeds per trainer to display"
+#define NUM_IO_THREADS "Num. IO threads"
+#define DATA_STORE_FAIL_ON_MISSING_SAMPLES "Data store fail on missing samples"
+#define SAMPLE_LIST_FAIL_ON_MISSING_FILES "Sample list fail on missing files"
+#define SAMPLE_LIST_FAIL_ON_UNREADABLE_FILES "Sample list fail on unreadable files"
 
-  try {
-    arg_parser.parse(argc, argv);
-  }
-  catch (std::exception const& e) {
-    std::cerr << "Error during argument parsing:\n\ne.what():\n\n  "
-              << e.what() << "\n\nProcess terminating."
-              << std::endl;
-    std::terminate();
-  }
-  print_help(std::cerr);
-  return EXIT_SUCCESS;
-}
+void construct_std_options();
+
+} // namespace lbann
+
+#endif // LBANN_STD_OPTIONS_HPP

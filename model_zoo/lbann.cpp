@@ -30,6 +30,7 @@
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/protobuf_utils.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
+#include "lbann/utils/std_options.hpp"
 #include "lbann/utils/argument_parser.hpp"
 #ifdef LBANN_HAS_CUDNN
 #include "lbann/utils/cudnn.hpp"

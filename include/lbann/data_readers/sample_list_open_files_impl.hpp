@@ -1,3 +1,29 @@
+////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
+// Written by the LBANN Research Team (B. Van Essen, et al.) listed in
+// the CONTRIBUTORS file. <lbann-dev@llnl.gov>
+//
+// LLNL-CODE-697807.
+// All rights reserved.
+//
+// This file is part of LBANN: Livermore Big Artificial Neural Network
+// Toolkit. For details, see http://software.llnl.gov/LBANN or
+// https://github.com/LLNL/LBANN.
+//
+// Licensed under the Apache License, Version 2.0 (the "Licensee"); you
+// may not use this file except in compliance with the License.  You may
+// obtain a copy of the License at:
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the license.
+////////////////////////////////////////////////////////////////////////////////
+
 namespace lbann {
 
 template <typename sample_name_t, typename file_handle_t>
@@ -112,7 +138,13 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
     const std::string file_path = add_delimiter(m_header.get_file_dir()) + filename;
 
     if (filename.empty() || !check_if_file_exists(file_path)) {
-      LBANN_ERROR(std::string{} + " :: data file '" + file_path + "' does not exist.");
+      auto& arg_parser = global_argument_parser();
+      bool fail_on_missing_files = arg_parser.get<bool>(SAMPLE_LIST_FAIL_ON_MISSING_FILES);
+      LBANN_WARN_ERROR_ON_FLAG(fail_on_missing_files,
+                               std::string{} + " :: data file '" + file_path + "' does not exist.");
+      if(!fail_on_missing_files) {
+        continue;
+      }
     }
 
     excluded_sample_indices.reserve(excluded_samples);
@@ -215,8 +247,13 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
     const std::string file_path = add_delimiter(m_header.get_file_dir()) + filename;
 
     if (filename.empty() || !check_if_file_exists(file_path)) {
-      throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
-                            + " :: data file '" + filename + "' does not exist.");
+      auto& arg_parser = global_argument_parser();
+      bool fail_on_missing_files = arg_parser.get<bool>(SAMPLE_LIST_FAIL_ON_MISSING_FILES);
+      LBANN_WARN_ERROR_ON_FLAG(fail_on_missing_files,
+                               std::string{} + " :: data file '" + file_path + "' does not exist.");
+      if(!fail_on_missing_files) {
+        continue;
+      }
     }
 
     file_handle_t file_hnd = open_file_handle(file_path);
@@ -556,7 +593,7 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
           LBANN_ERROR("mp.find(filename) == mp.end()");
         }
         index = search_result->second;
-      }  
+      }
       m_sample_list.emplace_back(std::make_pair(index, s.second));
     }
   }
@@ -655,14 +692,19 @@ inline file_handle_t sample_list_open_files<sample_name_t, file_handle_t>
     const std::string& file_name = get_samples_filename(id);
     const std::string& file_dir = this->get_samples_dirname();
     const std::string file_path = add_delimiter(file_dir) + file_name;
+    auto& arg_parser = global_argument_parser();
     if (file_name.empty() || !check_if_file_exists(file_path)) {
-      LBANN_ERROR(std::string{} + " :: data file '" + file_path + "' does not exist.");
+      bool fail_on_missing_files = arg_parser.get<bool>(SAMPLE_LIST_FAIL_ON_MISSING_FILES);
+      LBANN_WARN_ERROR_ON_FLAG(fail_on_missing_files,
+                               std::string{} + " :: data file '" + file_path + "' does not exist.");
     }
 
     h = open_file_handle(file_path);
 
     if (!is_file_handle_valid(h)) {
-      LBANN_ERROR(std::string{} + " :: data file '" + file_path + "' could not be opened.");
+      bool fail_on_unreadable_files = arg_parser.get<bool>(SAMPLE_LIST_FAIL_ON_UNREADABLE_FILES);
+      LBANN_WARN_ERROR_ON_FLAG(fail_on_unreadable_files,
+                               std::string{} + " :: data file '" + file_path + "' could not be opened.");
     }
     auto& e = m_file_id_stats_map[id];
     std::get<1>(e) = h;

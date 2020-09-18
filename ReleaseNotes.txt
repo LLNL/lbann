@@ -12,8 +12,28 @@ Performance optimizations:
 Model portability & usability:
 
 Internal features:
+ - Refactored standard command line arguments into independent
+   compilation unit
 
 I/O & data readers:
+ - Enabled the data store to substitute missing data samples with
+   valid samples already existing in the data store.  This feature
+   applies to both the JAG Conduit and SMILES data readers.  Should
+   generalize to others when they leverage the data store.
+ - New command line argument --ds_fail_on_missing_samples and paired
+   environment variable LBANN_DS_FAIL_ON_MISSING_SAMPLES that forces
+   LBANN to fail, rather than substitute, on missing samples.
+ - New command line argument --sl_fail_on_missing_files" and paired
+   environment variable LBANN_SL_FAIL_ON_MISSING_FILES Force the
+   sample list to fail on a missing file rather than skipping it
+   and working with a smaller data set or allowing the data store
+    to substitute random samples later.
+ - New command line argument --sl_fail_on_unreadable_files and paired
+   environment variable LBANN_SL_FAIL_ON_UNDREADABLE_FILES force the
+   sample list to fail on a files that cannot be opened rather than
+   skipping it and working with a smaller data set or allowing the
+   data store to substitute random samples later.
+
 
 Build system:
 

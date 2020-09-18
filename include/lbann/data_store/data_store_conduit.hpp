@@ -34,6 +34,7 @@
 #include "lbann/comm.hpp"
 #include "lbann/utils/exception.hpp"
 #include "conduit/conduit_node.hpp"
+#include "conduit/conduit.hpp"
 #include <unordered_map>
 #include <unordered_set>
 #include <mutex>
@@ -115,6 +116,8 @@ class data_store_conduit {
   void set_preloaded_conduit_node(int data_id, const conduit::Node &node);
 
   void spill_preloaded_conduit_node(int data_id, const conduit::Node &node);
+
+  const conduit::Node & get_random_data(int data_id, int& rand_data_id) const;
 
   const conduit::Node & get_random_node() const;
 
@@ -458,6 +461,8 @@ private :
    * in which rhs is const.
    */
   mutable std::unordered_map<int, conduit::Node> m_data;
+
+  mutable std::unordered_map<int, conduit::Node> m_surrogate_data_cache;
 
   /** @brief Contains a cache of the conduit nodes that are
    * "owned" by this rank
