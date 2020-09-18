@@ -119,16 +119,16 @@ option(LBANN_WITH_NVPROF
 option(LBANN_WITH_PYTHON
   "Install Python frontend and enable embedded Python" ON)
 
-option(LBANN_WITH_PYTHON_CXX
+option(LBANN_WITH_EMBEDDED_PYTHON
   "Enable embedded Python" ${LBANN_WITH_PYTHON})
 
-if (LBANN_WITH_PYTHON_CXX AND NOT LBANN_WITH_PYTHON)
+if (LBANN_WITH_EMBEDDED_PYTHON AND NOT LBANN_WITH_PYTHON)
   # (trb): This could also be an error.
   message(WARNING
     "Interesting combination of LBANN_WITH_PYTHON "
-    "and LBANN_WITH_PYTHON_CXX detected. This is just "
+    "and LBANN_WITH_EMBEDDED_PYTHON detected. This is just "
     "to make sure you're aware.")
-endif (LBANN_WITH_PYTHON_CXX AND NOT LBANN_WITH_PYTHON)
+endif (LBANN_WITH_EMBEDDED_PYTHON AND NOT LBANN_WITH_PYTHON)
 
 option(LBANN_WITH_TBINF "Include Tensorboard interface" ON)
 
@@ -429,10 +429,10 @@ if (LBANN_WITH_TBINF)
 endif ()
 
 # Find Python
-if (LBANN_WITH_PYTHON OR LBANN_WITH_PYTHON_CXX)
+if (LBANN_WITH_PYTHON OR LBANN_WITH_EMBEDDED_PYTHON)
   find_package(Python REQUIRED COMPONENTS Interpreter Development)
   set(LBANN_HAS_PYTHON_FRONTEND "${Python_FOUND}")
-  if (LBANN_WITH_PYTHON_CXX AND Python_FOUND)
+  if (LBANN_WITH_EMBEDDED_PYTHON AND Python_FOUND)
     set(LBANN_HAS_PYTHON TRUE)
   endif ()
 
@@ -451,7 +451,7 @@ if (LBANN_WITH_PYTHON OR LBANN_WITH_PYTHON_CXX)
     CACHE PATH
     "Relative path from PYTHON_INSTALL_PREFIX to the python package install")
 
-endif (LBANN_WITH_PYTHON OR LBANN_WITH_PYTHON_CXX)
+endif (LBANN_WITH_PYTHON OR LBANN_WITH_EMBEDDED_PYTHON)
 
 if (LBANN_WITH_VTUNE)
   find_package(VTune MODULE)
