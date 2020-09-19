@@ -70,8 +70,8 @@ END {
     epoch_min = min(epoch_min, mins[i]);
     epoch_max = max(epoch_max, maxs[i]);
   }
-  mean = epoch_sum / (trainers * epochs);
-  sqmean = epoch_sqsum / (trainers * epochs);
+  mean = epoch_sum / (trainers * (epochs-1));
+  sqmean = epoch_sqsum / (trainers * (epochs-1));
   print("All epochs (except 0) epoch time : mean=",mean,", stdev=",sqmean-mean*mean,", min=",epoch_min,", max=",epoch_max);
 
 }' \
