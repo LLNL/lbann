@@ -308,12 +308,10 @@ EvalType evaluate(model& m, const std::string& metric_name) {
 
   // Mark the data store as loading - Note that this is a temporary fix
   // for the current use of the tournament
-  // m.mark_data_store_explicitly_loading(execution_mode::validation); /// @todo RESTORE
-  m.mark_data_store_explicitly_loading(execution_mode::testing); /// @todo REMOVE
+  m.mark_data_store_explicitly_loading(execution_mode::validation);
 
   // Evaluate model on testing set
-  // c.get_trainer().evaluate(&m, execution_mode::validation); /// @todo RESTORE
-  c.get_trainer().evaluate(&m, execution_mode::testing); /// @todo REMOVE
+  c.get_trainer().evaluate(&m, execution_mode::validation);
 
   // Get metric value
   bool found_metric = false;
@@ -321,8 +319,7 @@ EvalType evaluate(model& m, const std::string& metric_name) {
   for (const auto& met : m.get_metrics()) {
     if (met->name() == metric_name) {
       found_metric = true;
-      // metric_value = met->get_mean_value(execution_mode::testing); /// @todo RESTORE
-      metric_value = met->get_mean_value(execution_mode::testing); /// @todo REMOVE
+      metric_value = met->get_mean_value(execution_mode::validation);
       break;
     }
   }
@@ -333,8 +330,7 @@ EvalType evaluate(model& m, const std::string& metric_name) {
 
   // Mark the data store as loaded - Note that this is a temporary fix
   // for the current use of the tournament
-  // m.make_data_store_preloaded(execution_mode::validation); /// @todo RESTORE
-  m.make_data_store_preloaded(execution_mode::testing); /// @todo REMOVE
+  m.make_data_store_preloaded(execution_mode::validation);
 
   // Clean up and return metric value
   m.reset_mode(c, original_mode);

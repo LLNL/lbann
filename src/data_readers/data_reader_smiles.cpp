@@ -95,7 +95,7 @@ void smiles_data_reader::load() {
 
   options *opts = options::get();
 
-  if (opts->get_bool("ltfb")) {
+  if (opts->get_bool("ltfb") && get_role() != "test") {
     opts->set_option("use_data_store", 1);
     opts->set_option("preload_data_store", 1);
   }
