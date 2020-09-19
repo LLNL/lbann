@@ -77,8 +77,8 @@ def construct_lc_launcher_args():
     parser.add_argument(
         "--lr",
         type=float,
-        default=3e-4,
-        help="optimizer learning rate to use for training",
+        default=0,
+        help="optimizer learning rate to use for training (default: 3e-4/512*batch_size)",
     )
     return parser.parse_args()
 
@@ -232,6 +232,10 @@ def main():
     )
     if not os.path.exists(experiment_dir):
         os.makedirs(experiment_dir)
+
+    # Default learning rate
+    if not run_args.lr:
+        run_args.lr = 3e-4 / 512 * run_args.batch_size
 
     # model and optimizer
     model = construct_model(run_args)
