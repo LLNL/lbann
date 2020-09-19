@@ -262,7 +262,7 @@ def main():
         time_limit=run_args.time_limit,
         nodes=run_args.nodes,
         procs_per_node=ppn,
-        #batch_job = True,
+        batch_job = True,
         #setup_only = True,
         job_name=run_args.job_name,
         experiment_dir=experiment_dir,
