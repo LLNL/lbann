@@ -66,6 +66,7 @@ def construct_lc_launcher_args():
     parser.add_argument("--ltfb", type=bool, default=False)
     parser.add_argument("--ltfb-batch-interval", type=int, default=100)
     parser.add_argument("--weights-to-send", type=str, default='')
+    parser.add_argument("--warmup", type=bool, default=True)
 
     # these are specific to the Trainer object
     parser.add_argument(
@@ -77,8 +78,8 @@ def construct_lc_launcher_args():
     parser.add_argument(
         "--lr",
         type=float,
-        default=0,
-        help="optimizer learning rate to use for training (default: 3e-4/512*batch_size)",
+        default=3e-4,
+        help="optimizer learning rate to use for training",
     )
     return parser.parse_args()
 
@@ -147,6 +148,12 @@ def construct_model(run_args):
       callbacks.append(lbann.CallbackLTFB(batch_interval=run_args.ltfb_batch_interval,metric='recon',
                                           weights = list2str(weights_to_ex),
                                           low_score_wins=True,exchange_hyperparameters=True))
+
+    if(run_args.warmup):
+        callbacks.append(
+            lbann.CallbackLinearGrowthLearningRate(
+                target=run_args.lr / 512 * run_args.batch_size, num_epochs=5))
+
     # Construct model
     return lbann.Model(run_args.num_epochs,
                        weights=weights,
@@ -232,10 +239,6 @@ def main():
     )
     if not os.path.exists(experiment_dir):
         os.makedirs(experiment_dir)
-
-    # Default learning rate
-    if not run_args.lr:
-        run_args.lr = 3e-4 / 512 * run_args.batch_size
 
     # model and optimizer
     model = construct_model(run_args)
