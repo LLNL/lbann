@@ -511,7 +511,9 @@ void ltfb::on_batch_begin(model *m) {
   El::Int tournament_winner = partner_trainer;
   if ((m_low_score_wins && local_score <= partner_score)
       || (!m_low_score_wins && local_score >= partner_score)
-      || (!std::isnan(local_score) && std::isnan(partner_score))) {
+      || (!std::isnan(local_score) && std::isnan(partner_score))
+      || (local_score != 0 && partner_score == 0) /** @todo REMOVE! */
+    ) {
     tournament_winner = local_trainer;
     switch (m_comm_algo) {
     case communication_algorithm::sendrecv_weights:
