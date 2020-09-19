@@ -1,0 +1,45 @@
+description:
+    name: 992M_scaling
+    description: train 4 different atom models in lbann.
+
+batch:
+    type: lsf
+    nodes: 16 # Not used for lsf
+    queue: pdebug
+
+env:
+    variables:
+        OUTPUT_PATH: ./XPScale
+        # /p/gpfs1/brainusr/datasets/atom/enamine1B/newEnamineFrom2020q1-2_train980mSMILES.csv
+        DATASETS: /p/gpfs1/brainusr/datasets/atom/enamine1B/
+        EPOCH: 100
+        WEIGHT_DIR: "weights"
+        LTFB: True
+        WEIGHT_INT: 10
+        PPT_LIST: "0"
+        ITER_PER_LTFB: 4096
+        TRAIN_SIZE: "newEnamineFrom2020q1-2_train992mSMILES.csv"
+        LBANN_ROOT: /g/g19/vanessen/DeepLearning/lbann.git/
+        LBANN_BUILD: $(LBANN_ROOT)/build/gnu.Release.lassen.llnl.gov
+        APP_ROOT: $(LBANN_ROOT)/applications/ATOM
+study:
+    - name: train_atom
+      description: train a list of models
+      run:
+          cmd: |
+              export SPACK_ROOT=/g/g19/vanessen/spack.git; . $SPACK_ROOT/share/spack/setup-env.sh
+              spack env activate -p lbann-dev-power9le
+              module use $(LBANN_BUILD)/install/etc/modulefiles
+              module load lbann-0.100.0
+              python3 $(APP_ROOT)/train_atom_vae.py --ltfb=$(LTFB) --ltfb-batch-interval=$(4LTFBBI) --dump-weights-dir=$(WEIGHT_DIR) --dump-weights-interval=$(WEIGHT_INT)  --job-name vae$(0TRIAL) --nodes=$(1NUM_NODES) --procs-per-trainer=$(3PPT) --batch-size=$(2BATCH_SIZE) --num-epochs=$(EPOCH) --sequence-length=100 --embedding-dim=40  --num-embeddings=40 --pad-index=38 --scheduler=lsf  --delimiter=0  --no-header=True --partition=pdebug  --account=ncov2019  --time-limit=10 --data-filedir=$(DATASETS) --data-filename=$(TRAIN_SIZE) --data-reader-prototext=$(APP_ROOT)/smiles_data_reader.prototext --vocab=/p/gpfs1/brainusr/datasets/atom/enamine1B/newEnamineFrom2020q1-2.vocab
+          task_queue: train_queue
+
+merlin:
+    resources:
+       task_server: celery
+       workers:
+         lbannworkers:
+           args: -l INFO --concurrency 4 --prefetch-multiplier 1 -Ofair
+           steps: [all]
+           batch:
+             type: local
