@@ -34,5 +34,5 @@ END {
   for (i=0;i<epochs;++i) {
     mean = sums[i]/trainers;
     sqmean = sqsums[i]/trainers;
-    print("Epoch ",i,", objective function : mean=",mean,", stdev=",sqmean-mean*mean,", min=",mins[i],", max=",maxs[i]);  }
+    print("Epoch ",i,", epoch time : mean=",mean,", stdev=",sqmean-mean*mean,", min=",mins[i],", max=",maxs[i]);  }
 }' \
