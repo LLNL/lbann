@@ -95,7 +95,7 @@ void smiles_data_reader::load() {
 
   options *opts = options::get();
 
-  if (opts->get_bool("ltfb") && get_role() != "test") {
+  if (opts->get_bool("ltfb")) {
     opts->set_option("use_data_store", 1);
     opts->set_option("preload_data_store", 1);
   }
@@ -138,7 +138,7 @@ void smiles_data_reader::load() {
   resize_shuffled_indices();
 
   // Optionally run "poor man's" LTFB
-  if (opts->get_bool("ltfb")) {
+  if (opts->get_bool("ltfb") && get_role() != "test") {
     if (is_master()) {
       std::cout << "running poor man's LTFB\n";
     }
