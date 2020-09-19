@@ -310,7 +310,7 @@ EvalType evaluate(model& m, const std::string& metric_name) {
   // for the current use of the tournament
   m.mark_data_store_explicitly_loading(execution_mode::validation);
 
-  // Evaluate model on testing set
+  // Evaluate model on validation set
   c.get_trainer().evaluate(&m, execution_mode::validation);
 
   // Get metric value
