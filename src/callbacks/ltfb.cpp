@@ -457,6 +457,7 @@ void ltfb::on_batch_begin(model *m) {
   }
   auto local_score = evaluate(*m, m_metric_name);
   if (local_score == 0) { local_score = std::nan(""); } /// @todo REMOVE!
+  if (std::isinf(local_score)) { local_score = std::nan(""); } /// @todo REMOVE!
 
   // Store local model data
   auto&& model_weights_tmp = m->get_weights();
@@ -507,6 +508,7 @@ void ltfb::on_batch_begin(model *m) {
   }
   auto partner_score = evaluate(*m, m_metric_name);
   if (partner_score == 0) { partner_score = std::nan(""); } /// @todo REMOVE!
+  if (std::isinf(partner_score)) { partner_score = std::nan(""); } /// @todo REMOVE!
 
   // Choose tournament winner
   // Note: restore local model data if it got a better score.
