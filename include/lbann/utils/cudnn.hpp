@@ -207,7 +207,7 @@ public:
 
 private:
 
-  cudnnTensorDescriptor_t desc_{nullptr};
+  cudnnTensorDescriptor_t desc_ = nullptr;
 
 };
 
@@ -269,7 +269,7 @@ public:
 
 private:
 
-  cudnnFilterDescriptor_t desc_{nullptr};
+  cudnnFilterDescriptor_t desc_ = nullptr;
 
 };
 
@@ -318,7 +318,7 @@ public:
 
 private:
 
-  cudnnDropoutDescriptor_t desc_{nullptr};
+  cudnnDropoutDescriptor_t desc_ = nullptr;
 
 };
 
@@ -377,7 +377,7 @@ public:
 
 private:
 
-  cudnnRNNDescriptor_t desc_{nullptr};
+  cudnnRNNDescriptor_t desc_ = nullptr;
 
 };
 
