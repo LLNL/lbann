@@ -3,11 +3,14 @@
 
 // File being tested
 #include <lbann/transforms/vision/random_affine.hpp>
+#include <lbann/utils/random_number_generators.hpp>
 #include "helper.hpp"
 
 // Note: This is *random* so we only do basic checks.
 TEST_CASE("Testing random affine preprocessing", "[preproc]") {
   lbann::utils::type_erased_matrix mat = lbann::utils::type_erased_matrix(El::Matrix<uint8_t>());
+  // Grab the necessary I/O RNG and lock it
+  lbann::locked_io_rng_ref io_rng = lbann::set_io_generators_local_index(0);
   // For simplicity, we'll only use a 3-channel matrix here.
   identity(mat.template get<uint8_t>(), 10, 10, 3);
   std::vector<size_t> dims = {3, 10, 10};

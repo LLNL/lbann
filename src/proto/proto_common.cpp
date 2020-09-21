@@ -183,6 +183,17 @@ void init_data_readers(
       reader_numpy_npz->set_has_responses(!readme.disable_responses());
       reader_numpy_npz->set_scaling_factor_int16(readme.scaling_factor_int16());
       reader = reader_numpy_npz;
+#ifdef LBANN_HAS_DISTCONV
+    } else if (name=="cosmoflow_hdf5") {
+      auto* reader_cosmo_hdf5 = new hdf5_reader(shuffle);
+      auto filedir = readme.data_filedir();
+      if(!endsWith(filedir, "/")) {
+        filedir = filedir + "/";
+      }
+      const auto paths = glob(filedir +readme.data_file_pattern());
+      reader_cosmo_hdf5->set_hdf5_paths(paths);
+      reader = reader_cosmo_hdf5;
+#endif // LBANN_HAS_DISTCONV
     } else if (name == "pilot2_molecular_reader") {
       pilot2_molecular_reader* reader_pilot2_molecular = new pilot2_molecular_reader(readme.num_neighbors(), readme.max_neighborhood(), shuffle);
       reader = reader_pilot2_molecular;
@@ -871,8 +882,6 @@ void print_help(std::ostream& os)
        "  --hydrogen_block_size=<int>\n"
        "  --procs_per_trainer=<int>\n"
        "  --num_parallel_readers=<int>\n"
-       "  --num_io_threads=<int>\n"
-       "      # of threads used for I/O by the data readers\n"
        "  --serialize_io=<bool>\n"
        "      force data readers to use a single thread for I/O\n"
        "  --disable_background_io_activity=<bool>\n"

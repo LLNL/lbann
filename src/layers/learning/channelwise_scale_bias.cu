@@ -204,7 +204,7 @@ void channelwise_scale_bias_layer<TensorDataType, T_layout, Dev>::fp_compute() {
     grid_dims.y = (local_width + block_size_y - 1) / block_size_y;
     grid_dims.z = num_channels;
     fp_kernel
-      <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
+      <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
         num_channels, channel_size, local_width,
         local_input.LockedBuffer(), local_input.LDim(),
         local_output.Buffer(), local_output.LDim(),
@@ -254,7 +254,7 @@ void channelwise_scale_bias_layer<TensorDataType, T_layout, Dev>::bp_compute() {
     grid_dims.y = (local_width + block_size_y - 1) / block_size_y;
     grid_dims.z = num_channels;
     bp_kernel<block_size_x, block_size_y>
-      <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
+      <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
         num_channels, channel_size, local_width,
         local_input.LockedBuffer(), local_input.LDim(),
         local_gradient_wrt_output.LockedBuffer(), local_gradient_wrt_output.LDim(),

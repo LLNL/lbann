@@ -103,6 +103,7 @@ message Layer {
     ChannelwiseScaleBias channelwise_scale_bias = 329;
     EntrywiseScaleBias entrywise_scale_bias = 330;
     ChannelwiseFullyConnected channelwise_fully_connected = 331;
+    GRU gru = 333;
 
     // Loss layers
     CrossEntropy cross_entropy = 60;
@@ -660,6 +661,28 @@ message Layer {
      *  @details Default: false
      */
     google.protobuf.BoolValue transpose = 3;
+  }
+
+  /** @brief Gated recurrent unit
+   *
+   *  Expects two inputs: a 2D input sequence (
+   *  @f$ \text{sequence\_length}\times\text{input\_size} @f$ )
+   *  and a 1D initial hidden state ( @f$ \text{hidden\_size} @f$ ).
+   *
+   *  Uses four weights: "ih\_matrix" (
+   *  @f$ 3 \text{hidden\_size}\times\text{input\_size} @f$ ),
+   *  "hh\_matrix" (
+   *  @f$ 3 \text{hidden\_size}\times\text{hidden\_size} @f$ ),
+   *  "ih_bias" ( @f$ 3 \text{hidden\_size} @f$ ),
+   *  "hh_bias" ( @f$ 3 \text{hidden\_size} @f$ ).
+   *
+   *  @todo Support CPU
+   *  @todo Support bidirectional RNNs
+   *  @todo Support stacked RNNs
+   */
+  message GRU {
+    /// Size of each hidden state and output vector
+    uint64 hidden_size = 1;
   }
 
   //////////////////

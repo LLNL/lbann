@@ -1,14 +1,17 @@
 #!/bin/sh
 
 COMPILER_ALL_PACKAGES=$(cat <<EOF
-      compiler: [clang@9.0.1 arch=darwin-mojave-skylake, clang@9.0.0 arch=darwin-mojave-skylake]
+      compiler:
+        - clang@9.0.1 arch=darwin-mojave-skylake
+        - clang@9.0.0 arch=darwin-mojave-skylake
 EOF
 )
 
 COMPILER_DEFINITIONS=$(cat <<EOF
   compilers:
   - compiler:
-      environment: {}
+      environment:
+        unset: []
       extra_rpaths: []
       flags: {}
       modules: []
@@ -21,7 +24,8 @@ COMPILER_DEFINITIONS=$(cat <<EOF
       spec: clang@9.0.1
       target: x86_64
   - compiler:
-      environment: {}
+      environment:
+        unset: []
       extra_rpaths: []
       flags: {}
       modules: []

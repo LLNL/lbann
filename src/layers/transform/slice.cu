@@ -192,7 +192,7 @@ void fp_compute_impl(
   const auto& input = l.get_prev_activations();
   const auto& local_input = dynamic_cast<const LocalMatrix&>(input.LockedMatrix());
   auto&& sync_info = El::SyncInfoFromMatrix(local_input);
-  auto&& stream = sync_info.stream_;
+  auto&& stream = sync_info.Stream();
 
   // Get dimensions and strides for each output tensor
   const size_t num_outputs = l.get_num_children();
@@ -341,7 +341,7 @@ void bp_compute_impl(
   auto& input_grad = l.get_error_signals();
   auto& local_input_grad = dynamic_cast<LocalMatrix&>(input_grad.Matrix());
   auto&& sync_info = El::SyncInfoFromMatrix(local_input_grad);
-  auto&& stream = sync_info.stream_;
+  auto&& stream = sync_info.Stream();
 
   // Get dimensions and strides for each output gradient tensor
   const size_t num_outputs = l.get_num_children();

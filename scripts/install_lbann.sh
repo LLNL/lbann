@@ -7,7 +7,7 @@ if [ -n "${SPACK_ROOT}" ]; then
 fi
 
 SPACK_VERSION=$(spack --version | sed 's/-.*//g')
-MIN_SPACK_VERSION=0.13.3
+MIN_SPACK_VERSION=0.15.4
 
 source $(dirname ${BASH_SOURCE})/utilities.sh
 
@@ -41,10 +41,15 @@ if [[ ${SYS} = "Darwin" ]]; then
     CENTER="osx"
 else
     CORI=$([[ $(hostname) =~ (cori|cgpu) ]] && echo 1 || echo 0)
+    DOMAINNAME=$(python -c 'import socket; domain = socket.getfqdn().split("."); print(domain[-2] + "." + domain[-1])')
     if [[ ${CORI} -eq 1 ]]; then
         CENTER="nersc"
         # Make sure to purge and setup the modules properly prior to finding the Spack architecture
         source ${SPACK_ENV_DIR}/${CENTER}/setup_modules.sh
+    elif [[ ${DOMAINNAME} = "ornl.gov" ]]; then
+        CENTER="olcf"
+    elif [[ ${DOMAINNAME} = "llnl.gov" ]]; then
+        CENTER="llnl_lc"
     else
         CENTER="llnl_lc"
     fi
@@ -56,7 +61,7 @@ SPACK_ARCH_TARGET=$(spack arch -t)
 SCRIPT=$(basename ${BASH_SOURCE})
 BUILD_DIR=${LBANN_HOME}/build/spack
 ENABLE_GPUS=ON
-GPU_VARIANTS="+gpu+nccl"
+GPU_VARIANTS="+cuda+nccl"
 ENABLE_HALF=OFF
 HALF_VARIANTS="~half"
 BUILD_TYPE=Release
@@ -158,12 +163,14 @@ DIHYDROGEN_VARIANTS="variants: +shared +al +openmp ${HALF_VARIANTS}"
 if [[ ${DEPS_ONLY} = "TRUE" ]]; then
     if [[ ${SYS} != "Darwin" ]]; then
         HYDROGEN_VARIANTS="${HYDROGEN_VARIANTS} +openmp_blas"
+        DIHYDROGEN_VARIANTS="${DIHYDROGEN_VARIANTS} +openmp_blas"
         COMPILER_PACKAGE=$(cat <<EOF
   - gcc
 EOF
 )
     else
         HYDROGEN_VARIANTS="${HYDROGEN_VARIANTS} blas=accelerate"
+        DIHYDROGEN_VARIANTS="${DIHYDROGEN_VARIANTS} blas=accelerate"
         COMPILER_PACKAGE=$(cat <<EOF
   - llvm
 EOF
@@ -174,7 +181,6 @@ EOF
     if [[ "${ENABLE_GPUS}" == "ON" ]]; then
         GPU_PACKAGES=$(cat <<EOF
   - cudnn
-  - cub
   - cuda
   - nccl
 EOF
@@ -237,7 +243,8 @@ fi
 
 AL_VARIANTS=
 if [[ "${ENABLE_GPUS}" == "ON" ]]; then
-    AL_VARIANTS="variants: +gpu+nccl+mpi_cuda"
+#    CUDA_ARCH="cuda_arch=60,61,62,70"
+    AL_VARIANTS="variants: +cuda +nccl +ht +cuda_rma"
     HYDROGEN_VARIANTS="${HYDROGEN_VARIANTS} +cuda"
     DIHYDROGEN_VARIANTS="${DIHYDROGEN_VARIANTS} +cuda +legacy"
 fi
@@ -250,41 +257,33 @@ ${BUILD_SPECS}
   packages:
 ${EXTERNAL_ALL_PACKAGES}
 ${COMPILER_ALL_PACKAGES}
-
 ${EXTERNAL_PACKAGES}
-
 ${STD_PACKAGES}
-
     aluminum:
       buildable: true
-      version: [0.3.3]
+      version:
+      - 0.4.0
       ${AL_VARIANTS}
       providers: {}
-      paths: {}
-      modules: {}
       compiler: []
       target: []
     hydrogen:
       buildable: true
-      version: [1.3.4]
+      version:
+      - 1.4.0
       ${HYDROGEN_VARIANTS}
       providers: {}
-      paths: {}
-      modules: {}
       compiler: []
       target: []
     dihydrogen:
       buildable: true
-      version: [master]
+      version:
+      - master
       ${DIHYDROGEN_VARIANTS}
       providers: {}
-      paths: {}
-      modules: {}
       compiler: []
       target: []
-
 ${COMPILER_DEFINITIONS}
-
 ${STD_MODULES}
   view: true
 EOF

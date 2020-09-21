@@ -58,7 +58,7 @@ void sync_layers::on_backward_prop_end(model *m, Layer *l) {
 void sync_layers::do_sync(Layer *l) {
   #ifdef LBANN_HAS_CUDNN
   if (m_sync_gpus) {
-    El::GPUManager::SynchronizeDevice();
+    hydrogen::gpu::SynchronizeDevice();
   }
   #endif
   if (m_sync_mpi) {

@@ -48,10 +48,10 @@ namespace {
 struct handle_wrapper {
   cudnnHandle_t handle;
   handle_wrapper() : handle(nullptr) {
-    CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
+    CHECK_CUDA(cudaSetDevice(hydrogen::gpu::DefaultDevice()));
     if (handle == nullptr) { CHECK_CUDNN(cudnnCreate(&handle)); }
     if (handle == nullptr) { LBANN_ERROR("failed to create cuDNN handle"); }
-    CHECK_CUDNN(cudnnSetStream(handle, El::GPUManager::Stream()));
+    CHECK_CUDNN(cudnnSetStream(handle, hydrogen::cuda::GetDefaultStream()));
   }
   handle_wrapper(const handle_wrapper&) = delete;
   handle_wrapper& operator=(const handle_wrapper&) = delete;
@@ -75,9 +75,9 @@ void destroy() {
 
 cudnnHandle_t& get_handle() {
   if (!handle_instance) { initialize(); }
-  CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
+  CHECK_CUDA(cudaSetDevice(hydrogen::gpu::DefaultDevice()));
   CHECK_CUDNN(cudnnSetStream(handle_instance->handle,
-                             El::GPUManager::Stream()));
+                             hydrogen::cuda::GetDefaultStream()));
   return handle_instance->handle;
 }
 
@@ -239,6 +239,446 @@ void copy_activation_desc(const cudnnActivationDescriptor_t& src,
                                                  relu_ceiling));
     }
 
+}
+
+////////////////////////////////////////////////////////////
+// Wrapper classes for cuDNN types
+////////////////////////////////////////////////////////////
+
+// -----------------------------
+// TensorDescriptor
+// -----------------------------
+
+TensorDescriptor::TensorDescriptor(cudnnTensorDescriptor_t desc)
+  : desc_{desc}
+{}
+
+TensorDescriptor::~TensorDescriptor() {
+  if (desc_) {
+    // Don't check status to avoid exceptions
+    cudnnDestroyTensorDescriptor(desc_);
+  }
+}
+
+TensorDescriptor::TensorDescriptor(const TensorDescriptor& other) {
+  if (other.desc_) {
+    cudnnDataType_t data_type;
+    int num_dims;
+    CHECK_CUDNN(
+      cudnnGetTensorNdDescriptor(
+        other.desc_,
+        0,          // nbDimsRequested
+        &data_type,
+        &num_dims,
+        nullptr,    // dimA
+        nullptr));  // strideA
+    std::vector<int> dims(num_dims), strides(num_dims);
+    CHECK_CUDNN(
+      cudnnGetTensorNdDescriptor(
+        other.desc_,
+        num_dims,
+        &data_type,
+        &num_dims,
+        dims.data(),
+        strides.data()));
+    set(data_type, dims, strides);
+  }
+}
+
+TensorDescriptor::TensorDescriptor(TensorDescriptor&& other)
+  : desc_{other.desc_} {
+  other.desc_ = nullptr;
+}
+
+TensorDescriptor& TensorDescriptor::operator=(TensorDescriptor other) {
+  swap(other, *this);
+  return *this;
+}
+
+void swap(TensorDescriptor& first, TensorDescriptor& second) {
+  std::swap(first.desc_, second.desc_);
+}
+
+void TensorDescriptor::reset(cudnnTensorDescriptor_t desc) {
+  if (desc_) {
+    CHECK_CUDNN(cudnnDestroyTensorDescriptor(desc_));
+  }
+  desc_ = desc;
+}
+
+cudnnTensorDescriptor_t TensorDescriptor::release() {
+  auto old_desc = desc_;
+  desc_ = nullptr;
+  return old_desc;
+}
+
+cudnnTensorDescriptor_t TensorDescriptor::get() const noexcept {
+  return desc_;
+}
+
+TensorDescriptor::operator cudnnTensorDescriptor_t() const noexcept {
+  return get();
+}
+
+void TensorDescriptor::create() {
+  if (!desc_) {
+    CHECK_CUDNN(cudnnCreateTensorDescriptor(&desc_));
+  }
+}
+
+void TensorDescriptor::set(
+  cudnnDataType_t data_type,
+  const std::vector<int>& dims,
+  std::vector<int> strides) {
+
+  // Check that arguments are valid
+  if (dims.empty()) {
+    LBANN_ERROR("attempted to set cuDNN tensor descriptor with no dimensions");
+  }
+  if (dims.size() < 3) {
+    // As of cuDNN 7.65, cuDNN does not support tensors with <3 dims
+    LBANN_ERROR(
+      "attempted to set cuDNN tensor descriptor with fewer than 3 dimensions");
+  }
+  if (!strides.empty() && dims.size() != strides.size()) {
+    LBANN_ERROR(
+      "attempted to set cuDNN tensor descriptor ",
+      "with mismatched dimensions (",dims.size(),") ",
+      "and strides (",strides.size(),")");
+  }
+
+  // Assume data is contiguous if no strides are provided
+  if (strides.empty()) {
+    strides.resize(dims.size(), 1);
+    for (int i=strides.size()-1; i>0; --i) {
+      strides[i-1] = strides[i] * dims[i];
+    }
+  }
+
+  // Set cuDNN object
+  create();
+  CHECK_CUDNN(
+    cudnnSetTensorNdDescriptor(
+      desc_,
+      data_type,
+      dims.size(),
+      dims.data(),
+      strides.data()));
+
+}
+
+// -----------------------------
+// FilterDescriptor
+// -----------------------------
+
+FilterDescriptor::FilterDescriptor(cudnnFilterDescriptor_t desc)
+  : desc_{desc}
+{}
+
+FilterDescriptor::~FilterDescriptor() {
+  if (desc_) {
+    // Don't check status to avoid exceptions
+    cudnnDestroyFilterDescriptor(desc_);
+  }
+}
+
+FilterDescriptor::FilterDescriptor(const FilterDescriptor& other) {
+  if (other.desc_) {
+    int num_dims;
+    cudnnDataType_t data_type;
+    cudnnTensorFormat_t format;
+    CHECK_CUDNN(
+      cudnnGetFilterNdDescriptor(
+        other.desc_,
+        0,          // nbDimsRequested
+        &data_type,
+        &format,
+        &num_dims,
+        nullptr));  // filterDimA
+    std::vector<int> dims(num_dims);
+    CHECK_CUDNN(
+      cudnnGetFilterNdDescriptor(
+        other.desc_,
+        num_dims,
+        &data_type,
+        &format,
+        &num_dims,
+        dims.data()));
+    set(data_type, format, dims);
+  }
+}
+
+FilterDescriptor::FilterDescriptor(FilterDescriptor&& other)
+  : desc_{other.desc_} {
+  other.desc_ = nullptr;
+}
+
+FilterDescriptor& FilterDescriptor::operator=(FilterDescriptor other) {
+  swap(other, *this);
+  return *this;
+}
+
+void swap(FilterDescriptor& first, FilterDescriptor& second) {
+  std::swap(first.desc_, second.desc_);
+}
+
+void FilterDescriptor::reset(cudnnFilterDescriptor_t desc) {
+  if (desc_) {
+    CHECK_CUDNN(cudnnDestroyFilterDescriptor(desc_));
+  }
+  desc_ = desc;
+}
+
+cudnnFilterDescriptor_t FilterDescriptor::release() {
+  auto old_desc = desc_;
+  desc_ = nullptr;
+  return old_desc;
+}
+
+cudnnFilterDescriptor_t FilterDescriptor::get() const noexcept {
+  return desc_;
+}
+
+FilterDescriptor::operator cudnnFilterDescriptor_t() const noexcept {
+  return get();
+}
+
+void FilterDescriptor::create() {
+  if (!desc_) {
+    CHECK_CUDNN(cudnnCreateFilterDescriptor(&desc_));
+  }
+}
+
+void FilterDescriptor::set(
+  cudnnDataType_t data_type,
+  cudnnTensorFormat_t format,
+  const std::vector<int>& dims) {
+  create();
+  CHECK_CUDNN(
+    cudnnSetFilterNdDescriptor(
+      desc_,
+      data_type,
+      format,
+      dims.size(),
+      dims.data()));
+}
+
+// -----------------------------
+// DropoutDescriptor
+// -----------------------------
+
+DropoutDescriptor::DropoutDescriptor(cudnnDropoutDescriptor_t desc)
+  : desc_{desc}
+{}
+
+DropoutDescriptor::~DropoutDescriptor() {
+  if (desc_) {
+    // Don't check status to avoid exceptions
+    cudnnDestroyDropoutDescriptor(desc_);
+  }
+}
+
+DropoutDescriptor::DropoutDescriptor(const DropoutDescriptor& other) {
+  if (other.desc_) {
+    float dropout;
+    void* states;
+    size_t states_size;
+    unsigned long long seed;
+    CHECK_CUDNN(cudnnDropoutGetStatesSize(get_handle(), &states_size));
+    CHECK_CUDNN(
+      cudnnGetDropoutDescriptor(
+        other.desc_,
+        get_handle(),
+        &dropout,
+        &states,
+        &seed));
+    set(dropout, states, states_size, seed);
+  }
+}
+
+DropoutDescriptor::DropoutDescriptor(DropoutDescriptor&& other)
+  : desc_{other.desc_} {
+  other.desc_ = nullptr;
+}
+
+DropoutDescriptor& DropoutDescriptor::operator=(DropoutDescriptor other) {
+  swap(other, *this);
+  return *this;
+}
+
+void swap(DropoutDescriptor& first, DropoutDescriptor& second) {
+  std::swap(first.desc_, second.desc_);
+}
+
+void DropoutDescriptor::reset(cudnnDropoutDescriptor_t desc) {
+  if (desc_) {
+    CHECK_CUDNN(cudnnDestroyDropoutDescriptor(desc_));
+  }
+  desc_ = desc;
+}
+
+cudnnDropoutDescriptor_t DropoutDescriptor::release() {
+  auto old_desc = desc_;
+  desc_ = nullptr;
+  return old_desc;
+}
+
+cudnnDropoutDescriptor_t DropoutDescriptor::get() const noexcept {
+  return desc_;
+}
+
+DropoutDescriptor::operator cudnnDropoutDescriptor_t() const noexcept {
+  return get();
+}
+
+void DropoutDescriptor::create() {
+  if (!desc_) {
+    CHECK_CUDNN(cudnnCreateDropoutDescriptor(&desc_));
+  }
+}
+
+void DropoutDescriptor::set(
+  float dropout,
+  void* states,
+  size_t states_size,
+  unsigned long long seed) {
+  create();
+  CHECK_CUDNN(
+    cudnnSetDropoutDescriptor(
+      desc_,
+      get_handle(),
+      dropout,
+      states,
+      states_size,
+      seed));
+}
+
+// -----------------------------
+// RNNDescriptor
+// -----------------------------
+
+RNNDescriptor::RNNDescriptor(cudnnRNNDescriptor_t desc)
+  : desc_{desc}
+{}
+
+RNNDescriptor::~RNNDescriptor() {
+  if (desc_) {
+    // Don't check status to avoid exceptions
+    cudnnDestroyRNNDescriptor(desc_);
+  }
+}
+
+RNNDescriptor::RNNDescriptor(const RNNDescriptor& other) {
+  if (other.desc_) {
+    int hidden_size, num_layers;
+    cudnnDropoutDescriptor_t dropout_desc;
+    cudnnRNNInputMode_t input_mode;
+    cudnnDirectionMode_t direction;
+    cudnnRNNMode_t mode;
+    cudnnRNNAlgo_t algo;
+    cudnnDataType_t math_precision;
+#if CUDNN_VERSION >= 8000
+    CHECK_CUDNN(
+      cudnnGetRNNDescriptor_v6(
+        get_handle(),
+        other.desc_,
+        &hidden_size,
+        &num_layers,
+        &dropout_desc,
+        &input_mode,
+        &direction,
+        &mode,
+        &algo,
+        &math_precision));
+#else // CUDNN_VERSION < 8000
+    CHECK_CUDNN(
+      cudnnGetRNNDescriptor(
+        get_handle(),
+        other.desc_,
+        &hidden_size,
+        &num_layers,
+        &dropout_desc,
+        &input_mode,
+        &direction,
+        &mode,
+        &algo,
+        &math_precision));
+#endif // CUDNN_VERSION >= 8000
+    set(
+      hidden_size,
+      num_layers,
+      dropout_desc,
+      input_mode,
+      direction,
+      mode,
+      algo,
+      math_precision);
+  }
+}
+
+RNNDescriptor::RNNDescriptor(RNNDescriptor&& other)
+  : desc_{other.desc_} {
+  other.desc_ = nullptr;
+}
+
+RNNDescriptor& RNNDescriptor::operator=(RNNDescriptor other) {
+  swap(other, *this);
+  return *this;
+}
+
+void swap(RNNDescriptor& first, RNNDescriptor& second) {
+  std::swap(first.desc_, second.desc_);
+}
+
+void RNNDescriptor::reset(cudnnRNNDescriptor_t desc) {
+  if (desc_) {
+    CHECK_CUDNN(cudnnDestroyRNNDescriptor(desc_));
+  }
+  desc_ = desc;
+}
+
+cudnnRNNDescriptor_t RNNDescriptor::release() {
+  auto old_desc = desc_;
+  desc_ = nullptr;
+  return old_desc;
+}
+
+cudnnRNNDescriptor_t RNNDescriptor::get() const noexcept {
+  return desc_;
+}
+
+RNNDescriptor::operator cudnnRNNDescriptor_t() const noexcept {
+  return get();
+}
+
+void RNNDescriptor::create() {
+  if (!desc_) {
+    CHECK_CUDNN(cudnnCreateRNNDescriptor(&desc_));
+  }
+}
+
+void RNNDescriptor::set(
+  size_t hidden_size,
+  size_t num_layers,
+  cudnnDropoutDescriptor_t dropout_desc,
+  cudnnRNNInputMode_t input_mode,
+  cudnnDirectionMode_t direction,
+  cudnnRNNMode_t mode,
+  cudnnRNNAlgo_t algo,
+  cudnnDataType_t math_precision) {
+  create();
+  CHECK_CUDNN(
+    cudnnSetRNNDescriptor_v6(
+      get_handle(),
+      desc_,
+      hidden_size,
+      num_layers,
+      dropout_desc,
+      input_mode,
+      direction,
+      mode,
+      algo,
+      math_precision));
 }
 
 ////////////////////////////////////////////////////////////

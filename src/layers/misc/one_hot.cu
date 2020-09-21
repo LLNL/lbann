@@ -75,7 +75,7 @@ void one_hot_layer<TensorDataType, Layout, Device>::fp_compute() {
     const size_t local_width = local_output.Width();
     constexpr size_t block_size = 64;
     const size_t grid_size = (local_width + block_size - 1) / block_size;
-    fp_kernel<<<grid_size, block_size, 0, El::GPUManager::Stream()>>>(
+    fp_kernel<<<grid_size, block_size, 0, hydrogen::cuda::GetDefaultStream()>>>(
         local_height,
         local_width,
         local_input.LockedBuffer(),

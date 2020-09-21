@@ -135,7 +135,7 @@ void embedding_layer<TensorDataType, T_layout, Dev>::fp_compute() {
     grid_dims.x = (this->m_embedding_dim + block_size - 1) / block_size;
     grid_dims.y = input_size;
     grid_dims.z = local_mini_batch_size;
-    fp_kernel<<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
+    fp_kernel<<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
       this->m_num_embeddings,
       this->m_embedding_dim,
       input_size,
@@ -177,7 +177,7 @@ void embedding_layer<TensorDataType, T_layout, Dev>::bp_compute() {
     grid_dims.x = (this->m_embedding_dim + block_size - 1) / block_size;
     grid_dims.y = input_size;
     grid_dims.z = local_mini_batch_size;
-    bp_kernel<<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
+    bp_kernel<<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
       this->m_num_embeddings,
       this->m_embedding_dim,
       input_size,

@@ -103,8 +103,8 @@ void fp_gpu(lbann_comm& comm,
   ones_d.SetMemoryMode(1); // Use CUB GPU memory pool
 #endif // HYDROGEN_HAVE_CUB
   sum_d.Resize(1, 1);
-  auto&& handle = El::GPUManager::cuBLASHandle();
-  auto&& stream = El::GPUManager::Stream();
+  auto&& handle = hydrogen::cublas::GetLibraryHandle();
+  auto&& stream = hydrogen::cuda::GetDefaultStream();
   CHECK_CUBLAS(cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE));
 
   // Compute sum of local input matrix entries
