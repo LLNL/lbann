@@ -263,7 +263,8 @@ void smiles_data_reader::do_preload_data_store() {
   // Sanity check
   if (sanity != valid_ids.size()) {
     LBANN_ERROR("sanity != valid_ids.size() (sanity=", sanity, "; valid_ids.size()=", valid_ids.size());
-  } 
+  }
+
   if (is_master()) {
     std::cout << " do_preload_data_store time: " << get_time() - tm1 << std::endl;
   }
