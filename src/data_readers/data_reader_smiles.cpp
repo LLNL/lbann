@@ -184,13 +184,8 @@ void smiles_data_reader::load() {
       std::cout << "time for setup_local_cache(): " << get_time()-tm4
                 << "; num samples: " << m_sample_lookup.size() << std::endl;
     }
-<<<<<<< HEAD
-    print_statistics();
-  }
-=======
   }
   print_statistics();
->>>>>>> 5d0b8ff18bafb02be87f2c3cb84dd35f0a5d3b67
 }
 
 void smiles_data_reader::do_preload_data_store() {
@@ -269,6 +264,7 @@ void smiles_data_reader::do_preload_data_store() {
   if (sanity != valid_ids.size()) {
     LBANN_ERROR("sanity != valid_ids.size() (sanity=", sanity, "; valid_ids.size()=", valid_ids.size());
   }
+  
   if (is_master()) {
     std::cout << " do_preload_data_store time: " << get_time() - tm1 << std::endl;
   }
@@ -479,14 +475,8 @@ void smiles_data_reader::encode_smiles(const char *smiles, short size, std::vect
           std::stringstream ss;
           ss << "world rank: " << m_comm->get_rank_in_world() << "; character not in vocab >>" << w << "<<; idx: " << j << "; data_id: " << data_id << "; string length: " << size << "; will use length: " << stop << "; vocab size: " << m_vocab.size() << std::endl;
           std::cerr << ss.str();
-
-          //XX
-          for (auto t : m_vocab) {
-            std::cerr << t.first << " -> " << t.second << "\n";
-          }
         }
       }
-LBANN_ERROR("ERROR!");
       data.push_back(m_unk);
     } else {
       data.push_back(m_vocab[w]);
@@ -789,7 +779,7 @@ void smiles_data_reader::get_delimiter() {
     }
   }
   if (is_master()) {
-    std::cout << "USING delimiter character: " << m_delimiter << std::endl;
+    std::cout << "USING delimiter character: (int)" <<(int)m_delimiter << std::endl;
   }
 }
 
