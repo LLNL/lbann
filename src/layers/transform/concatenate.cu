@@ -194,8 +194,9 @@ void fp_compute_impl(
   using LocalMatrix = El::Matrix<TensorDataType, El::Device::GPU>;
   auto& output = l.get_activations();
   auto& local_output = dynamic_cast<LocalMatrix&>(output.Matrix());
-  auto&& sync_info = El::SyncInfoFromMatrix(local_output);
-  auto&& stream = sync_info.Stream();
+  //auto&& sync_info = El::SyncInfoFromMatrix(local_output);
+  //auto&& stream = sync_info.Stream();
+  auto sync_info = gpu::get_sync_info(local_output);
 
   // Get dimensions and strides for each input tensor
   const size_t num_inputs = l.get_num_parents();
@@ -283,16 +284,22 @@ void fp_compute_impl(
   pos += sizeof(size_t) * output_offset_list.size();
 
   // Copy tensor data to GPU
-  hydrogen::simple_buffer<unsigned char, El::Device::GPU> device_workspace(
-    l.m_workspace.size(),
-    sync_info);
-  unsigned char* device_workspace_ptr = device_workspace.data();
-  cudaMemcpyAsync(device_workspace_ptr,
-                  l.m_workspace.data(),
-                  l.m_workspace.size(),
-                  cudaMemcpyHostToDevice,
-                  stream);
-  l.m_workspace_event.record(stream);
+  gpu_lib::thrust::vector<unsigned char> device_workspace(l.m_workspace.size());
+  unsigned char* device_workspace_ptr = device_workspace.data().get();
+  hydrogen::gpu::Copy1DToDevice(l.m_workspace.data(),
+                                device_workspace_ptr,
+                                l.m_workspace.size(),
+                                sync_info);
+  //hydrogen::simple_buffer<unsigned char, El::Device::GPU> device_workspace(
+  //  l.m_workspace.size(),
+  //  sync_info);
+  //unsigned char* device_workspace_ptr = device_workspace.data();
+  //cudaMemcpyAsync(device_workspace_ptr,
+  //                l.m_workspace.data(),
+  //                l.m_workspace.size(),
+  //                cudaMemcpyHostToDevice,
+  //                stream);
+  l.m_workspace_event.record(sync_info.Stream());
   pos = 0;
   auto&& device_input_buffer_list
     = reinterpret_cast<const TensorDataType**>(device_workspace_ptr+pos);
@@ -307,7 +314,7 @@ void fp_compute_impl(
     = reinterpret_cast<const size_t*>(device_workspace_ptr+pos);
   pos += sizeof(size_t) * output_offset_list.size();
 
-  // Launch CUDA kernel
+  // Launch GPU kernel
   const auto& max_input_size = (max_input_dims[0] * max_input_dims[1]
                                 * max_input_dims[2] * max_input_dims[3]);
   if (max_input_size > 0) {
@@ -317,7 +324,10 @@ void fp_compute_impl(
     grid_dims.x = (max_input_dims[3] + block_size - 1) / block_size;
     grid_dims.y = max_input_dims[2];
     grid_dims.z = max_input_dims[1];
-    concat4d_kernel<<<grid_dims, block_dims, 0, stream>>>(
+    hydrogen::gpu::LaunchKernel(
+      concat4d_kernel<TensorDataType>,
+      grid_dims, block_dims, 0, sync_info,
+    //concat4d_kernel<<<grid_dims, block_dims, 0, stream>>>(
       num_inputs,
       device_input_buffer_list,
       device_input_dims_list,
