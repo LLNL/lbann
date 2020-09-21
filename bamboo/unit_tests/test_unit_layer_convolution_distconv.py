@@ -40,7 +40,7 @@ def make_random_array(shape, seed):
     return x.reshape(shape).astype(np.float32)
 
 # Data
-_num_samples = 23
+_num_samples = 8
 _sample_dims = [6,16,16]
 _sample_size = functools.reduce(operator.mul, _sample_dims)
 _samples = make_random_array([_num_samples] + _sample_dims, 7)
@@ -197,7 +197,8 @@ def construct_model(lbann):
         val = z
     except:
         # Precomputed value
-        val = 381.7401227915947
+        val = 398.6956458317758 # _num_samples=8
+        # val = 381.7401227915947 # _num_samples=23
     tol = 8 * val * np.finfo(np.float32).eps
 
     callbacks.append(lbann.CallbackCheckMetric(
@@ -211,8 +212,7 @@ def construct_model(lbann):
     # Gradient checking
     # ------------------------------------------
 
-    # TODO: Make CallbackCheckGradients work with Distconv.
-    # callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
+    callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
 
     # ------------------------------------------
     # Construct model

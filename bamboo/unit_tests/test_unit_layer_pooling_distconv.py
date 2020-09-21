@@ -40,7 +40,7 @@ def make_random_array(shape, seed):
     return x.reshape(shape).astype(np.float32)
 
 # Data
-_num_samples = 23
+_num_samples = 8
 _sample_dims = [64,16,16]
 _sample_dims_3d = [4,16,16,16]
 _sample_size = functools.reduce(operator.mul, _sample_dims)
@@ -104,7 +104,7 @@ def setup_experiment(lbann):
 
     """
     mini_batch_size = num_samples() // 2
-    trainer = lbann.Trainer(mini_batch_size)
+    trainer = lbann.Trainer(mini_batch_size=mini_batch_size)
     model = construct_model(lbann)
     data_reader = construct_data_reader(lbann)
     optimizer = lbann.NoOptimizer()
@@ -145,8 +145,12 @@ def construct_model(lbann):
     pool_configs = []
 
     # 3x3 pooling with same padding
-    for mode, val in [("average", 830.2573008820838),
-                      ("max", 1167.667676299899)]:
+    for mode, val in [
+            ("average", 700.1066377082393), # _num_samples=8
+            ("max", 1255.4813455546334), # _num_samples=8
+            # ("average", 830.2573008820838), # _num_samples=23
+            # ("max", 1167.667676299899), # _num_samples=23
+    ]:
         pool_configs.append({
             "name": "3x3 {} pooling".format(mode),
             "kernel_dims": (3, 3),
@@ -157,8 +161,12 @@ def construct_model(lbann):
         })
 
     # 2x2 strided pooling
-    for mode, val in [("average", 293.61402789516825),
-                      ("max", 351.4916288366334)]:
+    for mode, val in [
+            ("average", 263.76437243059104), # _num_samples=23
+            ("max", 358.66104389177207), # _num_samples=23
+            # ("average", 293.61402789516825), # _num_samples=23
+            # ("max", 351.4916288366334), # _num_samples=23
+    ]:
         pool_configs.append({
             "name": "2x2 {} pooling".format(mode),
             "kernel_dims": (2, 2),
@@ -169,8 +177,12 @@ def construct_model(lbann):
         })
 
     # 2x2x2 3D pooling
-    for mode, val in [("average", 89.61246528381926),
-                      ("max", 198.65624293856985)]:
+    for mode, val in [
+            ("average", 59.3851451701403), # _num_samples=8
+            ("max", 216.75871475407558), # _num_samples=8
+            # ("average", 89.61246528381926), # _num_samples=23
+            # ("max", 198.65624293856985), # _num_samples=23
+    ]:
         pool_configs.append({
             "name": "2x2x2 {} pooling".format(mode),
             "kernel_dims": (2, 2, 2),
@@ -233,8 +245,10 @@ def construct_model(lbann):
     # Gradient checking
     # ------------------------------------------
 
-    # TODO: Make CallbackCheckGradients work with Distconv.
-    # callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
+    callbacks.append(lbann.CallbackCheckGradients(
+        error_on_failure=True,
+        step_size=10.0, # TODO: Use the default step size.
+    ))
 
     # ------------------------------------------
     # Construct model
