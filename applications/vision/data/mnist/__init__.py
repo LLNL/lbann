@@ -35,10 +35,14 @@ def download_data():
                 with open(data_file, 'wb') as out_file:
                     out_file.write(in_file.read())
 
-def make_data_reader():
+def make_data_reader(validation_percent=0.1):
     """Make Protobuf message for MNIST data reader.
 
     MNIST data is downloaded if needed.
+
+    Args:
+        validation_percent (float): The proportion of samples to be tested
+        as the validation dataset.
 
     """
 
@@ -51,6 +55,10 @@ def make_data_reader():
     with open(protobuf_file, 'r') as f:
         google.protobuf.text_format.Merge(f.read(), message)
     message = message.data_reader
+
+    if validation_percent is not None:
+        assert message.reader[0].role == "train"
+        message.reader[0].validation_percent = validation_percent
 
     # Set paths
     for reader in message.reader:
