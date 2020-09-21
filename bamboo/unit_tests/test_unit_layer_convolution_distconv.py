@@ -41,7 +41,8 @@ def make_random_array(shape, seed):
 
 # Data
 _num_samples = 8
-_sample_dims = [6,16,16]
+_sample_dims = [64,16,16]
+_sample_dims_3d = [4,16,16,16]
 _sample_size = functools.reduce(operator.mul, _sample_dims)
 _samples = make_random_array([_num_samples] + _sample_dims, 7)
 
@@ -153,66 +154,80 @@ def construct_model(lbann):
     callbacks = []
 
     # ------------------------------------------
-    # Basic 3x3 convolution
+    # Basic 3^n convolution
     # ------------------------------------------
-    # 3x3 conv, stride=1, pad=1, dilation=1, bias
+    # 3^n conv, stride=1, pad=1, dilation=1, bias
 
-    # Convolution settings
-    kernel_dims = (5, _sample_dims[0], 3, 3)
-    strides = (1, 1)
-    pads = (1, 1)
-    dilations = (1, 1)
-    kernel = make_random_array(kernel_dims, 11)
+    for num_dims, reference_val in [
+            (2, 11913.852660080756),
+            (3, 9952.365297083174),
+    ]:
+        # Convolution settings
+        kernel_dims = [5, _sample_dims[0] if num_dims == 2 else _sample_dims_3d[0],] + [3]*num_dims
+        strides = [1]*num_dims
+        pads = [1]*num_dims
+        dilations = [1]*num_dims
+        kernel = make_random_array(kernel_dims, 11)
 
-    # Apply convolution
-    kernel_weights = lbann.Weights(
-        optimizer=lbann.SGD(),
-        initializer=lbann.ValueInitializer(values=tools.str_list(np.nditer(kernel))),
-        name='kernel1'
-    )
-    x = x_lbann
-    y = lbann.Convolution(x,
-                          weights=(kernel_weights, ),
-                          num_dims=2,
-                          num_output_channels=kernel_dims[0],
-                          has_vectors=True,
-                          conv_dims=tools.str_list(kernel_dims[2:]),
-                          conv_strides=tools.str_list(strides),
-                          conv_pads=tools.str_list(pads),
-                          conv_dilations=tools.str_list(dilations),
-                          has_bias=False,
-                          parallel_strategy=create_parallel_strategy(4))
-    z = lbann.L2Norm2(y)
-    obj.append(z)
-    metrics.append(lbann.Metric(z, name='basic 3x3 convolution'))
-
-    # PyTorch implementation
-    try:
-        x = _samples
-        y = pytorch_convolution(
-            x, kernel,
-            stride=strides, padding=pads, dilation=dilations
+        # Apply convolution
+        kernel_weights = lbann.Weights(
+            optimizer=lbann.SGD(),
+            initializer=lbann.ValueInitializer(values=tools.str_list(np.nditer(kernel))),
+            name='kernel1_{}d'.format(num_dims)
         )
-        z = tools.numpy_l2norm2(y) / _num_samples
-        val = z
-    except:
-        # Precomputed value
-        val = 398.6956458317758 # _num_samples=8
-        # val = 381.7401227915947 # _num_samples=23
-    tol = 8 * val * np.finfo(np.float32).eps
+        x = x_lbann
+        if num_dims == 3:
+            x = lbann.Reshape(x, dims=tools.str_list(_sample_dims_3d))
 
-    callbacks.append(lbann.CallbackCheckMetric(
-        metric=metrics[-1].name,
-        lower_bound=val-tol,
-        upper_bound=val+tol,
-        error_on_failure=True,
-        execution_modes='test'))
+        y = lbann.Convolution(x,
+                              weights=(kernel_weights, ),
+                              num_dims=num_dims,
+                              num_output_channels=kernel_dims[0],
+                              has_vectors=True,
+                              conv_dims=tools.str_list(kernel_dims[2:]),
+                              conv_strides=tools.str_list(strides),
+                              conv_pads=tools.str_list(pads),
+                              conv_dilations=tools.str_list(dilations),
+                              has_bias=False,
+                              parallel_strategy=create_parallel_strategy(4))
+        z = lbann.L2Norm2(y)
+        obj.append(z)
+        metrics.append(lbann.Metric(z, name='basic {}D 3^n convolution'.format(num_dims)))
+
+        # PyTorch implementation
+        try:
+            x = _samples
+            if num_dims == 3:
+                x = np.reshape(x, [_num_samples]+_sample_dims_3d)
+
+            y = pytorch_convolution(
+                x, kernel,
+                stride=strides, padding=pads, dilation=dilations
+            )
+            z = tools.numpy_l2norm2(y) / _num_samples
+            val = z
+        except:
+            # Precomputed value
+            val = reference_val
+            # val = 398.6956458317758 # _num_samples=8, 6 channels
+            # val = 381.7401227915947 # _num_samples=23, 6 channels
+        tol = 8 * val * np.finfo(np.float32).eps
+
+        callbacks.append(lbann.CallbackCheckMetric(
+            metric=metrics[-1].name,
+            lower_bound=val-tol,
+            upper_bound=val+tol,
+            error_on_failure=True,
+            execution_modes='test'))
 
     # ------------------------------------------
     # Gradient checking
     # ------------------------------------------
 
-    callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
+    callbacks.append(lbann.CallbackCheckGradients(
+        error_on_failure=True,
+        step_size=20.0, # TODO: Use the default step size.
+    ))
 
     # ------------------------------------------
     # Construct model
