@@ -263,8 +263,7 @@ void smiles_data_reader::do_preload_data_store() {
   // Sanity check
   if (sanity != valid_ids.size()) {
     LBANN_ERROR("sanity != valid_ids.size() (sanity=", sanity, "; valid_ids.size()=", valid_ids.size());
-  }
-  
+  } 
   if (is_master()) {
     std::cout << " do_preload_data_store time: " << get_time() - tm1 << std::endl;
   }
@@ -779,7 +778,7 @@ void smiles_data_reader::get_delimiter() {
     }
   }
   if (is_master()) {
-    std::cout << "USING delimiter character: (int)" <<(int)m_delimiter << std::endl;
+    std::cout << "USING delimiter character: (int)" << (int)m_delimiter << std::endl;
   }
 }
 
