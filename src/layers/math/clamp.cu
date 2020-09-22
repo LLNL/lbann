@@ -133,9 +133,13 @@ void local_bp(TensorDataType min,
     grid_dim = std::numeric_limits<uint32_t>::max();
   }
 
-  // Launch CUDA kernel
+  // Launch GPU kernel
   if (grid_dim > 0) {
-    bp_kernel<<<grid_dim, block_dim, 0, hydrogen::cuda::GetDefaultStream()>>>(
+    auto multisync = El::MakeMultiSync(gpu::get_sync_info(gradient_wrt_output),
+                                       gpu::get_sync_info(gradient_wrt_input));
+    hydrogen::gpu::LaunchKernel(
+      bp_kernel<TensorDataType>,
+      grid_dim, block_dim, 0, multisync,
       min, max, height, width,
       input.LockedBuffer(), input.LDim(),
       gradient_wrt_output.LockedBuffer(), gradient_wrt_output.LDim(),
