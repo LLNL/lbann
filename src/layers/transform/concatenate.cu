@@ -194,8 +194,6 @@ void fp_compute_impl(
   using LocalMatrix = El::Matrix<TensorDataType, El::Device::GPU>;
   auto& output = l.get_activations();
   auto& local_output = dynamic_cast<LocalMatrix&>(output.Matrix());
-  //auto&& sync_info = El::SyncInfoFromMatrix(local_output);
-  //auto&& stream = sync_info.Stream();
   auto sync_info = gpu::get_sync_info(local_output);
 
   // Get dimensions and strides for each input tensor
@@ -290,15 +288,6 @@ void fp_compute_impl(
                                 device_workspace_ptr,
                                 l.m_workspace.size(),
                                 sync_info);
-  //hydrogen::simple_buffer<unsigned char, El::Device::GPU> device_workspace(
-  //  l.m_workspace.size(),
-  //  sync_info);
-  //unsigned char* device_workspace_ptr = device_workspace.data();
-  //cudaMemcpyAsync(device_workspace_ptr,
-  //                l.m_workspace.data(),
-  //                l.m_workspace.size(),
-  //                cudaMemcpyHostToDevice,
-  //                stream);
   l.m_workspace_event.record(sync_info.Stream());
   pos = 0;
   auto&& device_input_buffer_list
@@ -327,7 +316,6 @@ void fp_compute_impl(
     hydrogen::gpu::LaunchKernel(
       concat4d_kernel<TensorDataType>,
       grid_dims, block_dims, 0, sync_info,
-    //concat4d_kernel<<<grid_dims, block_dims, 0, stream>>>(
       num_inputs,
       device_input_buffer_list,
       device_input_dims_list,
@@ -357,8 +345,6 @@ void bp_compute_impl(
   using LocalMatrix = El::Matrix<TensorDataType, El::Device::GPU>;
   const auto& output_grad = l.get_prev_error_signals();
   auto& local_output_grad = dynamic_cast<const LocalMatrix&>(output_grad.LockedMatrix());
-  //auto&& sync_info = El::SyncInfoFromMatrix(local_output_grad);
-  //auto&& stream = sync_info.Stream();
   auto sync_info = gpu::get_sync_info(local_output_grad);
 
   // Get dimensions and strides for each input gradient tensor
@@ -453,15 +439,6 @@ void bp_compute_impl(
                                 device_workspace_ptr,
                                 l.m_workspace.size(),
                                 sync_info);
-  //hydrogen::simple_buffer<unsigned char, El::Device::GPU> device_workspace(
-  //  l.m_workspace.size(),
-  //  sync_info);
-  //unsigned char* device_workspace_ptr = device_workspace.data();
-  //cudaMemcpyAsync(device_workspace_ptr,
-  //                l.m_workspace.data(),
-  //                l.m_workspace.size(),
-  //                cudaMemcpyHostToDevice,
-  //                stream);
   l.m_workspace_event.record(sync_info.Stream());
   pos = 0;
   auto&& device_output_grad_offset_list
@@ -477,7 +454,7 @@ void bp_compute_impl(
     = reinterpret_cast<const dim4*>(device_workspace_ptr+pos);
   pos += sizeof(dim4) * input_grad_strides_list.size();
 
-  // Launch CUDA kernel
+  // Launch GPU kernel
   const auto& max_input_grad_size = (max_input_grad_dims[0]
                                      * max_input_grad_dims[1]
                                      * max_input_grad_dims[2]
@@ -492,7 +469,6 @@ void bp_compute_impl(
     hydrogen::gpu::LaunchKernel(
       slice4d_kernel<TensorDataType>,
       grid_dims, block_dims, 0, sync_info,
-    //slice4d_kernel<<<grid_dims, block_dims, 0, stream>>>(
       num_inputs,
       local_output_grad.LockedBuffer(),
       output_grad_strides,
