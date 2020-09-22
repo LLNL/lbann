@@ -119,12 +119,17 @@ void fp_impl(
     block_dims.y = block_size_y;
     grid_dims.x = (local_height + block_size_x - 1) / block_size_x;
     grid_dims.y = (local_width + block_size_y - 1) / block_size_y;
-    fp_kernel<<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
-        local_height, local_width,
-        local_input.LockedBuffer(), local_input.LDim(),
-        local_output.Buffer(), local_output.LDim(),
-        local_scale.LockedBuffer(),
-        local_bias.LockedBuffer());
+    auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_input),
+                                       gpu::get_sync_info(local_output),
+                                       gpu::get_sync_info(local_scale_bias));
+    hydrogen::gpu::LaunchKernel(
+      fp_kernel<TensorDataType>,
+      grid_dims, block_dims, 0, multisync,
+      local_height, local_width,
+      local_input.LockedBuffer(), local_input.LDim(),
+      local_output.Buffer(), local_output.LDim(),
+      local_scale.LockedBuffer(),
+      local_bias.LockedBuffer());
   }
 
 }
