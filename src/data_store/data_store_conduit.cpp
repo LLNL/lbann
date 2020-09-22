@@ -991,7 +991,7 @@ void data_store_conduit::get_image_sizes(map_is_t &file_sizes, std::vector<std::
   if (image_reader == nullptr) {
     LBANN_ERROR("data_reader_image *image_reader = dynamic_cast<data_reader_image*>(m_reader) failed");
   }
-  const std::vector<image_data_reader::sample_t> &image_list = image_reader->get_image_list();
+  const auto& sample_list = image_reader->get_sample_list();
   std::vector<size_t> my_image_sizes;
 
   // this block fires if we're exchanging cache data at the end
@@ -1008,10 +1008,12 @@ void data_store_conduit::get_image_sizes(map_is_t &file_sizes, std::vector<std::
     // get sizes of files for which I'm responsible
     for (size_t h=m_rank_in_trainer; h<m_shuffled_indices->size(); h += m_np_in_trainer) {
       ++m_my_num_indices;
-      const std::string fn = m_reader->get_file_dir() + '/' + image_list[(*m_shuffled_indices)[h]].first;
+      const auto file_id = sample_list[(*m_shuffled_indices)[h]].first;
+      const std::string fn = m_reader->get_file_dir() + '/'
+                           + sample_list.get_samples_filename(file_id);
       std::ifstream in(fn.c_str());
       if (!in) {
-        LBANN_ERROR("failed to open ", fn, " for reading; file_dir: ", m_reader->get_file_dir(), "  fn: ", image_list[h].first, "; role: ", m_reader->get_role());
+        LBANN_ERROR("failed to open ", fn, " for reading ", fn, "; role: " + m_reader->get_role());
       }
       in.seekg(0, std::ios::end);
       my_image_sizes.push_back((*m_shuffled_indices)[h]);
@@ -1036,7 +1038,7 @@ void data_store_conduit::get_image_sizes(map_is_t &file_sizes, std::vector<std::
     disp[h+1] = disp[h] + counts[h];
   }
 
-  std::vector<size_t> work(image_list.size()*2);
+  std::vector<size_t> work(sample_list.size()*2);
   m_comm->trainer_all_gather<size_t>(my_image_sizes, work, counts, disp);
   indices.resize(m_np_in_trainer);
   for (int h=0; h<m_np_in_trainer; h++) {
@@ -1211,7 +1213,7 @@ void data_store_conduit::read_files(std::vector<char> &work, map_is_t &sizes, st
 
   //get the list of images from the data reader
   image_data_reader *image_reader = dynamic_cast<image_data_reader*>(m_reader);
-  const std::vector<image_data_reader::sample_t> &image_list = image_reader->get_image_list();
+  const auto& sample_list = image_reader->get_sample_list();
 
   //read the images
   size_t offset = 0;
@@ -1219,7 +1221,9 @@ void data_store_conduit::read_files(std::vector<char> &work, map_is_t &sizes, st
   for (size_t j=0; j<indices.size(); ++j) {
     int idx = indices[j];
     size_t s = sizes[idx];
-    const std::string fn = m_reader->get_file_dir() + '/' + image_list[idx].first;
+    const auto file_id = sample_list[idx].first;
+    const std::string fn = m_reader->get_file_dir() + '/'
+                         + sample_list.get_samples_filename(file_id);
     std::ifstream in(fn, std::ios::in | std::ios::binary);
     in.read(work.data()+offset, s);
     in.close();
@@ -1229,10 +1233,10 @@ void data_store_conduit::read_files(std::vector<char> &work, map_is_t &sizes, st
 
 void data_store_conduit::build_conduit_nodes(map_is_t &sizes) {
   image_data_reader *image_reader = dynamic_cast<image_data_reader*>(m_reader);
-  const std::vector<image_data_reader::sample_t> &image_list = image_reader->get_image_list();
   for (auto t : sizes) {
     int data_id = t.first;
-    int label = image_list[data_id].second;
+    const auto sample = image_reader->get_sample(static_cast<size_t>(data_id));
+    const auto label = sample.second;
     if (m_image_offsets.find(data_id) == m_image_offsets.end()) {
       LBANN_ERROR("m_image_offsets.find(data_id) == m_image_offsets.end() for data_id: ", data_id);
     }
