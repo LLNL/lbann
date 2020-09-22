@@ -259,15 +259,22 @@ void channelwise_scale_bias_layer<TensorDataType, T_layout, Dev>::bp_compute() {
     grid_dims.x = (channel_size + block_size_x - 1) / block_size_x;
     grid_dims.y = (local_width + block_size_y - 1) / block_size_y;
     grid_dims.z = num_channels;
-    bp_kernel<block_size_x, block_size_y>
-      <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
-        num_channels, channel_size, local_width,
-        local_input.LockedBuffer(), local_input.LDim(),
-        local_gradient_wrt_output.LockedBuffer(), local_gradient_wrt_output.LDim(),
-        local_gradient_wrt_input.Buffer(), local_gradient_wrt_input.LDim(),
-        local_scale.LockedBuffer(),
-        local_gradient_wrt_scale.Buffer(),
-        local_gradient_wrt_bias.Buffer());
+    auto multisync = El::MakeMultiSync(
+      gpu::get_sync_info(local_input),
+      gpu::get_sync_info(local_gradient_wrt_output),
+      gpu::get_sync_info(local_gradient_wrt_input),
+      gpu::get_sync_info(local_gradient_wrt_weights),
+      gpu::get_sync_info(local_weights));
+    hydrogen::gpu::LaunchKernel(
+      bp_kernel<block_size_x, block_size_y, TensorDataType>,
+      grid_dims, block_dims, 0, multisync,
+      num_channels, channel_size, local_width,
+      local_input.LockedBuffer(), local_input.LDim(),
+      local_gradient_wrt_output.LockedBuffer(), local_gradient_wrt_output.LDim(),
+      local_gradient_wrt_input.Buffer(), local_gradient_wrt_input.LDim(),
+      local_scale.LockedBuffer(),
+      local_gradient_wrt_scale.Buffer(),
+      local_gradient_wrt_bias.Buffer());
   }
 
   // Update optimizer with gradient
