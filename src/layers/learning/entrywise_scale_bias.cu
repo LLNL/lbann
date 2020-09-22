@@ -159,7 +159,15 @@ void bp_impl(
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
     grid_dims.x = (local_height + block_size - 1) / block_size;
-    bp_kernel <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
+    auto multisync = El::MakeMultiSync(
+      gpu::get_sync_info(local_input),
+      gpu::get_sync_info(local_gradient_wrt_output),
+      gpu::get_sync_info(local_gradient_wrt_input),
+      gpu::get_sync_info(local_scale_bias),
+      gpu::get_sync_info(local_gradient_wrt_scale_bias));
+    hydrogen::gpu::LaunchKernel(
+      bp_kernel<TensorDataType>,
+      grid_dims, block_dims, 0, multisync,
       local_height, local_width,
       local_input.LockedBuffer(), local_input.LDim(),
       local_gradient_wrt_output.LockedBuffer(), local_gradient_wrt_output.LDim(),
