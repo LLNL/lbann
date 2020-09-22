@@ -207,8 +207,7 @@ void channelwise_scale_bias_layer<TensorDataType, T_layout, Dev>::fp_compute() {
     grid_dims.z = num_channels;
     auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_input),
                                        gpu::get_sync_info(local_output),
-                                       gpu::get_sync_info(local_scale),
-                                       gpu::get_sync_info(local_bias));
+                                       gpu::get_sync_info(local_weights));
     hydrogen::gpu::LaunchKernel(
       fp_kernel<TensorDataType>,
       grid_dims, block_dims, 0, multisync,
