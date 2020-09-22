@@ -178,14 +178,19 @@ void crop_layer<TensorDataType, T_layout, Dev>::fp_compute_3d() {
   const auto output_dims = this->get_output_dims();
   const auto& output_size = this->get_output_size();
 
-  // Launch CUDA kernel
+  // Launch GPU kernel
   if (!local_output.IsEmpty()) {
     const int block_size = 256;
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
     grid_dims.x = (output_size + block_size - 1) / block_size;
     grid_dims.y = local_width;
-    fp_compute_3d_kernel<<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
+    auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_output),
+                                       gpu::get_sync_info(local_input),
+                                       gpu::get_sync_info(local_crop_pos));
+    hydrogen::gpu::LaunchKernel(
+      fp_compute_3d_kernel<TensorDataType>,
+      grid_dims, block_dims, 0, multisync,
       input_dims[2], input_dims[1], input_dims[0],
       output_dims[2], output_dims[1], output_dims[0],
       local_width,
