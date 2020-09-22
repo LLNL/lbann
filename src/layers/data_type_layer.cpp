@@ -568,7 +568,7 @@ void data_type_layer<TensorDataType>::setup_matrices(const El::Grid& grid) {
     //create interprocess subgrid communicator
     if(childs[0]->get_parallel_strategy().enable_subgraph)
     {
-      this->setup_inter_subgrid_comm_based_on_childs(grid);
+      // this->setup_inter_subgrid_comm_based_on_childs(grid);
     }
     
   }
@@ -626,7 +626,7 @@ void data_type_layer<TensorDataType>::setup_matrices(const El::Grid& grid) {
 
   
     
-    this->setup_inter_subgrid_comm_based_on_parents(grid);
+    // this->setup_inter_subgrid_comm_based_on_parents(grid);
     
 
   }
@@ -1128,6 +1128,7 @@ void data_type_layer<TensorDataType>::setup_inter_subgrid_comm_based_on_childs(c
   const int posInSubGrid = childs[indexSubgrid]->mygrid->VCRank();
   const int posInGrid = grid.ViewingRank();
   auto& interSubgridComm = this->get_subgrid_comm();
+  // std::cout<<"Based on childs Split GRP posInSubGrid:"<<posInSubGrid<<" posInGrid:"<<posInGrid<<"\n";
   El::mpi::Split(this->get_comm()->get_trainer_comm(), posInSubGrid, posInGrid, interSubgridComm); 
 
   }
@@ -1148,6 +1149,7 @@ void data_type_layer<TensorDataType>::setup_inter_subgrid_comm_based_on_parents(
   const int posInSubGrid = parents[indexSubgrid]->mygrid->VCRank();
   const int posInGrid = grid.ViewingRank();
   auto& interSubgridComm = this->get_subgrid_comm();
+  // std::cout<<"Based on parents Split GRP posInSubGrid:"<<posInSubGrid<<" posInGrid:"<<posInGrid<<"\n";
   El::mpi::Split(this->get_comm()->get_trainer_comm(), posInSubGrid, posInGrid, interSubgridComm);
 
   }

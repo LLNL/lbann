@@ -842,11 +842,14 @@ void model::get_subgrids_order(std::vector<int> &ranks_order, int num_branches)
   std::sort(temp_ranks.begin(),temp_ranks.end());
   int rank = 0;
 
-
+  //parent grid has more ranks than subgrids but less than total number of ranks 
+  bool cond_parent_have_more_resources = (size_grid / (this->get_num_resources_branch_layers()/num_branches) ) > 1;
 
   //No need to order when parent's total resources are less than subgrids
   //Topology aware design for this case is implemented in get_input_resources and merge_resources layer 
-  if(this->get_subgrid_topology()==1 && (this->get_num_resources_non_branch_layers() > this->get_num_resources_branch_layers()))
+  if(this->get_subgrid_topology()==1 && 
+    (this->get_num_resources_non_branch_layers() == this->get_num_resources_branch_layers()
+      || cond_parent_have_more_resources))
   {
    
     int size_branch = size_grid / num_branches;
@@ -962,20 +965,20 @@ void model::get_resources_for_spliting_point(std::vector<int> &parent_ranks,
 {
   const auto& layers = this->get_layers();
 
-  if(this->get_num_resources_non_branch_layers() < this->get_num_resources_branch_layers())
+  if(this->get_num_resources_non_branch_layers() != this->get_num_resources_branch_layers())
   {
     //branch tag of first subgrid is 1 
     if(this->get_subgrid_topology()==1)
     {
       int sub_branch_tag = layers[layer_index]->get_parallel_strategy().sub_branch_tag -1;
-
+      int num_ranks = this->get_num_resources_branch_layers() / num_subgrids;
     
       subgrid_ranks.clear();
-      subgrid_ranks.resize(this->get_num_resources_non_branch_layers());
+      subgrid_ranks.resize(num_ranks);
 
       // int num_subgrids = this->get_num_resources_non_branch_layers() / number_ranks_in_grid; 
 
-      for(int rank=0; rank<this->get_num_resources_non_branch_layers(); ++rank)
+      for(int rank=0; rank<num_ranks; ++rank)
       {
         subgrid_ranks[rank] = (rank*num_subgrids)  + sub_branch_tag;
       }
@@ -984,12 +987,12 @@ void model::get_resources_for_spliting_point(std::vector<int> &parent_ranks,
     else
     {
       int sub_branch_tag = layers[layer_index]->get_parallel_strategy().sub_branch_tag -1;
-
-      const int start_rank = sub_branch_tag * this->get_num_resources_non_branch_layers();
+      int num_ranks = this->get_num_resources_branch_layers() / num_subgrids;
+      const int start_rank = sub_branch_tag * num_ranks;
       subgrid_ranks.clear();
-      subgrid_ranks.resize(this->get_num_resources_non_branch_layers());
+      subgrid_ranks.resize(num_ranks);
 
-      for(int rank=0; rank<this->get_num_resources_non_branch_layers(); ++rank)
+      for(int rank=0; rank<num_ranks; ++rank)
       {
         subgrid_ranks[rank] = rank+start_rank;
       }
@@ -1014,7 +1017,7 @@ void model::get_resources_for_merge_layers(std::set<int>& pooled_set, int child_
   std::vector<const Layer*>& parents = layers[child_index]->get_parent_layers();
 
 
-  if(this->get_num_resources_non_branch_layers() < this->get_num_resources_branch_layers()
+  if(this->get_num_resources_non_branch_layers() != this->get_num_resources_branch_layers()
       && *std::max_element((*layers[child_index]->parent_tags).begin(), (*layers[child_index]->parent_tags).end()) > 0)
   // Two level subgrid support only
   // subgrids in parent layers should be different 
@@ -1058,11 +1061,13 @@ void model::get_resources_for_input_layer(std::vector<int>& masterSubGrid, int n
 {
   masterSubGrid.resize(this->get_num_resources_non_branch_layers());
 
-  if(this->get_num_resources_non_branch_layers() < this->get_num_resources_branch_layers())
+  if(this->get_num_resources_non_branch_layers() != this->get_num_resources_branch_layers())
   {
     if(this->get_subgrid_topology()==1)
     {
-      for (int i = 0; i<this->get_num_resources_non_branch_layers(); ++i) masterSubGrid[i] = i*num_subgrids;
+      int ranks_per_grid = this->get_num_resources_branch_layers() / num_subgrids;
+      int offset = num_subgrids /  (this->get_num_resources_non_branch_layers() / ranks_per_grid); 
+      for (int i = 0; i<this->get_num_resources_non_branch_layers(); ++i) masterSubGrid[i] = i*offset;
     }
     else
     {
@@ -1074,6 +1079,58 @@ void model::get_resources_for_input_layer(std::vector<int>& masterSubGrid, int n
   {
      for (int i = 0; i<this->get_num_resources_non_branch_layers(); ++i) masterSubGrid[i] = i;
   }
+}
+
+void model::setup_subcommunicators()
+{
+  std::string one_index = "1";
+  
+  const auto& layers = this->get_layers();
+  const El::Int num_layers = layers.size();
+
+  for (El::Int node = 0; node < num_layers; ++node) {
+    if((layers[node]->get_type()=="slice" 
+        || layers[node]->get_type()=="split"
+        || layers[node]->get_type()=="concatenate"
+        || layers[node]->get_type()=="sum")
+      && layers[node]->get_parallel_strategy().enable_subgraph==1)
+    {
+      if(subCommunicatorsSubgrids.find(one_index) != subCommunicatorsSubgrids.end())
+      {
+        layers[node]->interSubGridVCComm = subCommunicatorsSubgrids[one_index];
+      }
+      else
+      {
+        subCommunicatorsSubgrids[one_index] = std::make_shared<El::mpi::Comm>();
+        auto& childs = layers[node]->get_child_layers();
+
+        int indexSubgrid = -1;
+        for(int child = 0 ; child < layers[node]->get_num_children(); ++child )
+        {
+          if(childs[child]->mygrid->InGrid())
+          
+          {
+            indexSubgrid = child;
+          }
+        }
+
+        const int posInSubGrid = childs[indexSubgrid]->mygrid->VCRank();
+        const int posInGrid = layers[node]->mygrid->ViewingRank();
+
+        std::cout<<"Setup Commmunicators posInGrid:"<<posInSubGrid<<" pos in grid:"<<posInGrid<<"\n";
+
+        El::mpi::Split(layers[node]->get_comm()->get_trainer_comm(), 
+                        posInSubGrid, 
+                        posInGrid, 
+                        *subCommunicatorsSubgrids[one_index]); 
+
+        layers[node]->interSubGridVCComm = subCommunicatorsSubgrids[one_index];
+
+
+      }
+    }
+  }
+
 }
 
 void  model::setup_subgrids(){
@@ -1094,7 +1151,7 @@ void  model::setup_subgrids(){
   if(this->get_subgraph_num_parent_resources()==0)
   {
     //does not matter resources for branch layer as long as it is smaller than non branch layers
-    this->set_num_resources_branch_layers(commSize -1);
+    this->set_num_resources_branch_layers(commSize);
     this->set_num_resources_non_branch_layers(commSize);
   }
   else
@@ -1394,11 +1451,18 @@ void  model::setup_subgrids(){
     }
 
   }
-  std::cout<<"Number of subgrids created:"<<grids.size()<<"\n";
-  for (auto const& pair: grids) {
-    std::cout << "{" << pair.first << ": "  << "}\n";
+
+
+  if(El::mpi::Rank()==0)
+  {
+    std::cout<<"Number of subgrids created:"<<grids.size()<<"\n";
+    for (auto const& pair: grids) {
+      std::cout << "{" << pair.first << ": "  << "}\n";
+    }
   }
+  
   this->setup_subgrid_layers_run_condition();
+  this->setup_subcommunicators();
 
 }
 

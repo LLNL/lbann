@@ -155,7 +155,7 @@ public:
    */
   void set_keep_error_signals(bool) override;
 
-  El::mpi::Comm& get_subgrid_comm() { return interSubGridVCComm; }
+  El::mpi::Comm& get_subgrid_comm() { return *interSubGridVCComm; }
 
 
 
@@ -395,7 +395,8 @@ private:
 
   /** Inter subgrids comm for STAR,VC distribution
   */
-  El::mpi::Comm interSubGridVCComm;
+  // El::mpi::Comm interSubGridVCComm;
+  // std::shared_ptr<El::mpi::Comm>  interSubGridVCComm;
 
 
 

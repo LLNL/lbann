@@ -195,6 +195,8 @@ public:
   El::Int num_spliting_groups=1;
 
   std::shared_ptr<El::Grid> mygrid;
+
+  std::shared_ptr<El::mpi::Comm>  interSubGridVCComm;
   
   Layer(lbann_comm *comm);
   Layer(const Layer& other);

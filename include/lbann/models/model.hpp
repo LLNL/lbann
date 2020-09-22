@@ -412,6 +412,8 @@ protected:
   virtual void get_resources_for_merge_layers(std::set<int>& pooled_set,int child_index, int num_subgrids);
 
   virtual void get_resources_for_input_layer(std::vector<int>& masterSubGrid, int num_subgrids);
+
+  virtual void setup_subcommunicators();
   
   /** @brief Set up layer execution order.
    *
@@ -509,6 +511,8 @@ public:
 public:	
   // map to store all distinct grids in the model
   std::unordered_map<std::string, std::shared_ptr<El::Grid>> grids; 
+
+  std::unordered_map<std::string, std::shared_ptr<El::mpi::Comm>> subCommunicatorsSubgrids; 
   // map to store all distinct mpi groups in the model (one to one mapping with grids)
   std::unordered_map<std::string, std::unique_ptr<El::mpi::Group>> grids_mpi_groups; 
 
