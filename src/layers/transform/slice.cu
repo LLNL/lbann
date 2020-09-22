@@ -32,7 +32,7 @@ namespace lbann {
 
 namespace {
 
-using dim4 = cuda::array<size_t, 4>;
+using dim4 = gpu_lib::array<size_t, 4>;
 
 /**
  *  Block dimensions: bsize x 1 x 1
@@ -191,8 +191,7 @@ void fp_compute_impl(
   using LocalMatrix = El::Matrix<TensorDataType, El::Device::GPU>;
   const auto& input = l.get_prev_activations();
   const auto& local_input = dynamic_cast<const LocalMatrix&>(input.LockedMatrix());
-  auto&& sync_info = El::SyncInfoFromMatrix(local_input);
-  auto&& stream = sync_info.Stream();
+  auto sync_info = gpu::get_sync_info(local_input);
 
   // Get dimensions and strides for each output tensor
   const size_t num_outputs = l.get_num_children();
@@ -276,16 +275,13 @@ void fp_compute_impl(
   pos += sizeof(dim4) * output_strides_list.size();
 
   // Copy tensor data to GPU
-  hydrogen::simple_buffer<unsigned char, El::Device::GPU> device_workspace(
-    l.m_workspace.size(),
-    sync_info);
-  unsigned char* device_workspace_ptr = device_workspace.data();
-  cudaMemcpyAsync(device_workspace_ptr,
-                  l.m_workspace.data(),
-                  l.m_workspace.size(),
-                  cudaMemcpyHostToDevice,
-                  stream);
-  l.m_workspace_event.record(stream);
+  gpu_lib::thrust::vector<unsigned char> device_workspace(l.m_workspace.size());
+  unsigned char* device_workspace_ptr = device_workspace.data().get();
+  hydrogen::gpu::Copy1DToDevice(l.m_workspace.data(),
+                                device_workspace_ptr,
+                                l.m_workspace.size(),
+                                sync_info);
+  l.m_workspace_event.record(sync_info.Stream());
   pos = 0;
   auto&& device_input_offset_list
     = reinterpret_cast<const size_t*>(device_workspace_ptr+pos);
@@ -300,7 +296,7 @@ void fp_compute_impl(
     = reinterpret_cast<const dim4*>(device_workspace_ptr+pos);
   pos += sizeof(dim4) * output_strides_list.size();
 
-  // Launch CUDA kernel
+  // Launch GPU kernel
   const auto& max_output_size = (max_output_dims[0] * max_output_dims[1]
                                  * max_output_dims[2] * max_output_dims[3]);
   if (max_output_size > 0) {
@@ -310,7 +306,9 @@ void fp_compute_impl(
     grid_dims.x = (max_output_dims[3] + block_size - 1) / block_size;
     grid_dims.y = max_output_dims[2];
     grid_dims.z = max_output_dims[1];
-    slice4d_kernel<<<grid_dims, block_dims, 0, stream>>>(
+    hydrogen::gpu::LaunchKernel(
+      slice4d_kernel<TensorDataType>,
+      grid_dims, block_dims, 0, sync_info,
       num_outputs,
       local_input.LockedBuffer(),
       input_strides,
