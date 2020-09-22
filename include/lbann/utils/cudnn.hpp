@@ -160,8 +160,8 @@ public:
 
   TensorDescriptor(cudnnTensorDescriptor_t desc=nullptr);
   template <typename... ArgTs>
-  TensorDescriptor(ArgTs... args) {
-    set(args...);
+  TensorDescriptor(ArgTs&&... args) {
+    set(std::forward<ArgTs>(args)...);
   }
 
   ~TensorDescriptor();
@@ -175,7 +175,7 @@ public:
   /** @brief Take ownership of cuDNN object */
   void reset(cudnnTensorDescriptor_t desc=nullptr);
   /** @brief Return cuDNN object and release ownership */
-  cudnnTensorDescriptor_t release();
+  cudnnTensorDescriptor_t release() noexcept;
   /** @brief Return cuDNN object without releasing ownership */
   cudnnTensorDescriptor_t get() const noexcept;
   /** @brief Return cuDNN object without releasing ownership */
@@ -211,7 +211,7 @@ private:
 
 };
 
-/** Wrapper around @c cudnnFilterDescriptor_t */
+/** @brief Wrapper around @c cudnnFilterDescriptor_t */
 class FilterDescriptor {
 public:
 
@@ -221,8 +221,8 @@ public:
 
   FilterDescriptor(cudnnFilterDescriptor_t desc=nullptr);
   template <typename... ArgTs>
-  FilterDescriptor(ArgTs... args) {
-    set(args...);
+  FilterDescriptor(ArgTs&&... args) {
+    set(std::forward<ArgTs>(args)...);
   }
 
   ~FilterDescriptor();
@@ -236,7 +236,7 @@ public:
   /** @brief Take ownership of cuDNN object */
   void reset(cudnnFilterDescriptor_t desc=nullptr);
   /** @brief Return cuDNN object and release ownership */
-  cudnnFilterDescriptor_t release();
+  cudnnFilterDescriptor_t release() noexcept;
   /** @brief Return cuDNN object without releasing ownership */
   cudnnFilterDescriptor_t get() const noexcept;
   /** @brief Return cuDNN object without releasing ownership */
@@ -273,15 +273,15 @@ private:
 
 };
 
-/** Wrapper around @c cudnnDropoutDescriptor_t */
+/** @brief Wrapper around @c cudnnDropoutDescriptor_t */
 class DropoutDescriptor {
 
 public:
 
   DropoutDescriptor(cudnnDropoutDescriptor_t desc=nullptr);
   template <typename... ArgTs>
-  DropoutDescriptor(ArgTs... args) {
-    set(args...);
+  DropoutDescriptor(ArgTs&&... args) {
+    set(std::forward<ArgTs>(args)...);
   }
 
   ~DropoutDescriptor();
@@ -295,7 +295,7 @@ public:
   /** @brief Take ownership of cuDNN object */
   void reset(cudnnDropoutDescriptor_t desc=nullptr);
   /** @brief Return cuDNN object and release ownership */
-  cudnnDropoutDescriptor_t release();
+  cudnnDropoutDescriptor_t release() noexcept;
   /** @brief Return cuDNN object without releasing ownership */
   cudnnDropoutDescriptor_t get() const noexcept;
   /** @brief Return cuDNN object without releasing ownership */
@@ -322,15 +322,15 @@ private:
 
 };
 
-/** Wrapper around @c cudnnRNNDescriptor_t */
+/** @brief Wrapper around @c cudnnRNNDescriptor_t */
 class RNNDescriptor {
 
 public:
 
   RNNDescriptor(cudnnRNNDescriptor_t desc=nullptr);
   template <typename... ArgTs>
-  RNNDescriptor(ArgTs... args) {
-    set(args...);
+  RNNDescriptor(ArgTs&&... args) {
+    set(std::forward<ArgTs>(args)...);
   }
 
   RNNDescriptor(const RNNDescriptor&) = delete;
@@ -344,7 +344,7 @@ public:
   /** @brief Take ownership of cuDNN object */
   void reset(cudnnRNNDescriptor_t desc=nullptr);
   /** @brief Return cuDNN object and release ownership */
-  cudnnRNNDescriptor_t release();
+  cudnnRNNDescriptor_t release() noexcept;
   /** @brief Return cuDNN object without releasing ownership */
   cudnnRNNDescriptor_t get() const noexcept;
   /** @brief Return cuDNN object without releasing ownership */
@@ -406,10 +406,7 @@ public:
   operator cudnnRNNDataDescriptor_t() const noexcept;
 
   /** Create cuDNN object
-   *
-   *  Does nothing if already created.
-   */
-  void create();
+
   /** Configure cuDNN object
    *
    *  Creates cuDNN object if needed.
@@ -428,6 +425,376 @@ private:
   cudnnRNNDataDescriptor_t desc_{nullptr};
 
 };
+
+/** @brief Wrapper around @c cudnnConvolutionDescriptor_t */
+class ConvolutionDescriptor
+{
+public:
+
+  /** @brief Descriptor handle from the implementation. */
+  using DescriptorHandle_t = cudnnConvolutionDescriptor_t;
+
+public:
+
+  /** @name Constructors and destructor */
+  ///@{
+
+  /** @brief Construct from an existing handle. */
+  ConvolutionDescriptor(DescriptorHandle_t desc=nullptr);
+
+  /** @brief Construct with the arguments to set.
+   *
+   *  A new handle will be allocated immediately.
+   */
+  template <typename... ArgTs>
+  ConvolutionDescriptor(ArgTs&&... args) {
+    set(std::forward<ArgTs>(args)...);
+  }
+
+  /** @brief Any handle resources will be freed. */
+  ~ConvolutionDescriptor();
+
+  /** @brief Copy constructor.
+   *
+   *  Constructs a new handle with identical features.
+   */
+  ConvolutionDescriptor(const ConvolutionDescriptor&);
+  /** @brief Move constructor */
+  ConvolutionDescriptor(ConvolutionDescriptor&&);
+
+  /** @brief Assignment operator. */
+  ConvolutionDescriptor& operator=(ConvolutionDescriptor);
+
+  ///@}
+  /** @name Accessors */
+  ///@{
+
+  /** @brief Return handle object and release ownership */
+  DescriptorHandle_t release() noexcept;
+  /** @brief Return handle object without releasing ownership */
+  DescriptorHandle_t get() const noexcept;
+  /** @brief Implicit conversion to handle object without releasing
+   *         ownership
+   */
+  operator DescriptorHandle_t() const noexcept;
+
+  ///@}
+  /** @name Modifiers */
+  ///@{
+
+  /** @brief Swap contents with another descriptor */
+  void swap(ConvolutionDescriptor& other);
+
+  /** @brief Take ownership of existing handle */
+  void reset(DescriptorHandle_t desc=nullptr);
+
+  /** @brief Allocate a new handle.
+   *
+   *  Does nothing if already created.
+   */
+  void create();
+
+  /** @brief Configure handle properties
+   *
+   *  Allocates a new handle if one doesn't already exist.
+   */
+  void set(
+    std::vector<int> const& pad,
+    std::vector<int> const& stride,
+    std::vector<int> const& dilation,
+    cudnnDataType_t data_type,
+    cudnnConvolutionMode_t mode = CUDNN_CROSS_CORRELATION);
+  void set(
+    size_t array_dim,
+    int const pad[],
+    int const stride[],
+    int const dilation[],
+    cudnnDataType_t data_type,
+    cudnnConvolutionMode_t mode = CUDNN_CROSS_CORRELATION);
+
+  /** @brief Set the math mode for this descriptor. */
+  void set_math_mode(cudnnMathType_t math_type);
+
+  /** @brief Set the group count for this descriptor. */
+  void set_group_count(int num_groups);
+
+  ///@}
+
+private:
+
+  DescriptorHandle_t desc_ = nullptr;
+
+};
+
+/** @brief Swap two convolution descriptors. */
+void swap(ConvolutionDescriptor& lhs, ConvolutionDescriptor& rhs);
+
+/** @brief Wrapper around @c cudnnActivationDescriptor_t */
+class ActivationDescriptor
+{
+public:
+
+  /** @brief Descriptor handle from the implementation. */
+  using DescriptorHandle_t = cudnnActivationDescriptor_t;
+
+public:
+
+  /** @name Constructors and destructor */
+  ///@{
+
+  /** @brief Construct from an existing handle. */
+  ActivationDescriptor(DescriptorHandle_t desc=nullptr);
+
+  /** @brief Construct with the arguments to set.
+   *
+   *  A new handle will be allocated immediately.
+   */
+  template <typename... ArgTs>
+  ActivationDescriptor(ArgTs&&... args) {
+    set(std::forward<ArgTs>(args)...);
+  }
+
+  /** @brief Any handle resources will be freed. */
+  ~ActivationDescriptor();
+
+  /** @brief Copy constructor.
+   *
+   *  Constructs a new handle with identical features.
+   */
+  ActivationDescriptor(const ActivationDescriptor&);
+  /** @brief Move constructor */
+  ActivationDescriptor(ActivationDescriptor&&);
+
+  /** @brief Assignment operator. */
+  ActivationDescriptor& operator=(ActivationDescriptor);
+
+  ///@}
+  /** @name Accessors */
+  ///@{
+
+  /** @brief Return handle object and release ownership */
+  DescriptorHandle_t release() noexcept;
+  /** @brief Return handle object without releasing ownership */
+  DescriptorHandle_t get() const noexcept;
+  /** @brief Implicit conversion to handle object without releasing
+   *         ownership
+   */
+  operator DescriptorHandle_t() const noexcept;
+
+  ///@}
+  /** @name Modifiers */
+  ///@{
+
+  /** @brief Swap contents with another descriptor */
+  void swap(ActivationDescriptor& other);
+
+  /** @brief Take ownership of existing handle */
+  void reset(DescriptorHandle_t desc=nullptr);
+
+  /** @brief Allocate a new handle.
+   *
+   *  Does nothing if already created.
+   */
+  void create();
+  /** @brief Configure handle properties
+   *
+   *  Allocates a new handle if one doesn't already exist.
+   */
+  void set(
+    cudnnActivationMode_t mode,
+    cudnnNanPropagation_t nan_prop,
+    double coeff);
+
+  ///@}
+
+private:
+
+  DescriptorHandle_t desc_ = nullptr;
+
+};
+
+/** @brief Swap two convolution descriptors. */
+void swap(ActivationDescriptor& lhs, ActivationDescriptor& rhs);
+
+/** @brief Wrapper around @c cudnnPoolingDescriptor_t */
+class PoolingDescriptor
+{
+public:
+
+  /** @brief Descriptor handle from the implementation. */
+  using DescriptorHandle_t = cudnnPoolingDescriptor_t;
+
+public:
+
+  /** @name Constructors and destructor */
+  ///@{
+
+  /** @brief Construct from an existing handle. */
+  PoolingDescriptor(DescriptorHandle_t desc=nullptr);
+
+  /** @brief Construct with the arguments to set.
+   *
+   *  A new handle will be allocated immediately.
+   */
+  template <typename... ArgTs>
+  PoolingDescriptor(ArgTs&&... args) {
+    set(std::forward<ArgTs>(args)...);
+  }
+
+  /** @brief Any handle resources will be freed. */
+  ~PoolingDescriptor();
+
+  /** @brief Copy constructor.
+   *
+   *  Constructs a new handle with identical features.
+   */
+  PoolingDescriptor(const PoolingDescriptor&);
+  /** @brief Move constructor */
+  PoolingDescriptor(PoolingDescriptor&&);
+
+  /** @brief Assignment operator. */
+  PoolingDescriptor& operator=(PoolingDescriptor);
+
+  ///@}
+  /** @name Accessors */
+  ///@{
+
+  /** @brief Return handle object and release ownership */
+  DescriptorHandle_t release() noexcept;
+  /** @brief Return handle object without releasing ownership */
+  DescriptorHandle_t get() const noexcept;
+  /** @brief Implicit conversion to handle object without releasing
+   *         ownership
+   */
+  operator DescriptorHandle_t() const noexcept;
+
+  ///@}
+  /** @name Modifiers */
+  ///@{
+
+  /** @brief Swap contents with another descriptor */
+  void swap(PoolingDescriptor& other);
+
+  /** @brief Take ownership of existing handle */
+  void reset(DescriptorHandle_t desc=nullptr);
+
+  /** @brief Allocate a new handle.
+   *
+   *  Does nothing if already created.
+   */
+  void create();
+  /** @brief Configure handle properties
+   *
+   *  Allocates a new handle if one doesn't already exist.
+   */
+  void set(
+    cudnnPoolingMode_t mode,
+    cudnnNanPropagation_t maxpoolingNanOpt,
+    std::vector<int> const& window_dims,
+    std::vector<int> const& padding,
+    std::vector<int> const& stride);
+  void set(
+    cudnnPoolingMode_t mode,
+    cudnnNanPropagation_t nan_prop,
+    int num_dims,
+    int const window_dims[],
+    int const padding[],
+    int const stride[]);
+
+  ///@}
+
+private:
+
+  DescriptorHandle_t desc_ = nullptr;
+
+};
+
+/** @brief Swap two convolution descriptors. */
+void swap(PoolingDescriptor& lhs, PoolingDescriptor& rhs);
+
+/** @brief Wrapper around @c cudnnLRNDescriptor_t */
+class LRNDescriptor
+{
+public:
+
+  /** @brief Descriptor handle from the implementation. */
+  using DescriptorHandle_t = cudnnLRNDescriptor_t;
+
+public:
+
+  /** @name Constructors and destructor */
+  ///@{
+
+  /** @brief Construct from an existing handle. */
+  LRNDescriptor(DescriptorHandle_t desc=nullptr);
+
+  /** @brief Construct with the arguments to set.
+   *
+   *  A new handle will be allocated immediately.
+   */
+  template <typename... ArgTs>
+  LRNDescriptor(ArgTs&&... args) {
+    set(std::forward<ArgTs>(args)...);
+  }
+
+  /** @brief Any handle resources will be freed. */
+  ~LRNDescriptor();
+
+  /** @brief Copy constructor.
+   *
+   *  Constructs a new handle with identical features.
+   */
+  LRNDescriptor(const LRNDescriptor&);
+  /** @brief Move constructor */
+  LRNDescriptor(LRNDescriptor&&);
+
+  /** @brief Assignment operator. */
+  LRNDescriptor& operator=(LRNDescriptor);
+
+  ///@}
+  /** @name Accessors */
+  ///@{
+
+  /** @brief Return handle object and release ownership */
+  DescriptorHandle_t release() noexcept;
+  /** @brief Return handle object without releasing ownership */
+  DescriptorHandle_t get() const noexcept;
+  /** @brief Implicit conversion to handle object without releasing
+   *         ownership
+   */
+  operator DescriptorHandle_t() const noexcept;
+
+  ///@}
+  /** @name Modifiers */
+  ///@{
+
+  /** @brief Swap contents with another descriptor */
+  void swap(LRNDescriptor& other);
+
+  /** @brief Take ownership of existing handle */
+  void reset(DescriptorHandle_t desc=nullptr);
+
+  /** @brief Allocate a new handle.
+   *
+   *  Does nothing if already created.
+   */
+  void create();
+  /** @brief Configure handle properties
+   *
+   *  Allocates a new handle if one doesn't already exist.
+   */
+  void set(unsigned n, double alpha, double beta, double k);
+
+  ///@}
+
+private:
+
+  DescriptorHandle_t desc_ = nullptr;
+
+};
+
+/** @brief Swap two convolution descriptors. */
+void swap(LRNDescriptor& lhs, LRNDescriptor& rhs);
 
 ////////////////////////////////////////////////////////////
 // cuDNN tensor managers

@@ -306,7 +306,7 @@ void TensorDescriptor::reset(cudnnTensorDescriptor_t desc) {
   desc_ = desc;
 }
 
-cudnnTensorDescriptor_t TensorDescriptor::release() {
+cudnnTensorDescriptor_t TensorDescriptor::release() noexcept {
   auto old_desc = desc_;
   desc_ = nullptr;
   return old_desc;
@@ -429,7 +429,7 @@ void FilterDescriptor::reset(cudnnFilterDescriptor_t desc) {
   desc_ = desc;
 }
 
-cudnnFilterDescriptor_t FilterDescriptor::release() {
+cudnnFilterDescriptor_t FilterDescriptor::release() noexcept {
   auto old_desc = desc_;
   desc_ = nullptr;
   return old_desc;
@@ -517,7 +517,7 @@ void DropoutDescriptor::reset(cudnnDropoutDescriptor_t desc) {
   desc_ = desc;
 }
 
-cudnnDropoutDescriptor_t DropoutDescriptor::release() {
+cudnnDropoutDescriptor_t DropoutDescriptor::release() noexcept {
   auto old_desc = desc_;
   desc_ = nullptr;
   return old_desc;
@@ -589,7 +589,7 @@ void RNNDescriptor::reset(cudnnRNNDescriptor_t desc) {
   desc_ = desc;
 }
 
-cudnnRNNDescriptor_t RNNDescriptor::release() {
+cudnnRNNDescriptor_t RNNDescriptor::release() noexcept {
   auto old_desc = desc_;
   desc_ = nullptr;
   return old_desc;
@@ -725,6 +725,478 @@ void RNNDataDescriptor::set(
       vector_size,
       seq_length_array,
       padding_fill));
+}
+
+// class ConvolutionDescriptor
+
+ConvolutionDescriptor::ConvolutionDescriptor(DescriptorHandle_t desc)
+  : desc_{desc}
+{}
+
+ConvolutionDescriptor::~ConvolutionDescriptor()
+{
+  try
+  {
+    this->reset();
+  }
+  catch (std::exception const& e)
+  {
+    std::cerr << "Caught exception in ~ConvolutionDescriptor(). Shutting down."
+              << std::endl;
+    std::terminate();
+  }
+}
+
+ConvolutionDescriptor::ConvolutionDescriptor(const ConvolutionDescriptor& rhs)
+{
+  // short-circuit
+  if (rhs.desc_ == nullptr)
+  {
+    desc_ = nullptr;
+    return;
+  }
+
+  cudnnMathType_t math_type;
+  cudnnConvolutionMode_t mode;
+  cudnnDataType_t data_type;
+  int num_dims, num_groups;
+  CHECK_CUDNN(cudnnGetConvolutionMathType(rhs.desc_, &math_type));
+  CHECK_CUDNN(cudnnGetConvolutionGroupCount(rhs.desc_, &num_groups));
+  // Get the mode, data type, and dims
+  CHECK_CUDNN(
+    cudnnGetConvolutionNdDescriptor(
+      rhs.desc_, 0, &num_dims,
+      nullptr, nullptr, nullptr,
+      &mode, &data_type));
+
+  // Get the padding, strides, and dilations
+  std::vector<int> pads(num_dims), strides(num_dims), dilations(num_dims);
+  CHECK_CUDNN(
+    cudnnGetConvolutionNdDescriptor(
+      rhs.desc_, num_dims, &num_dims,
+      pads.data(), strides.data(), dilations.data(),
+      &mode, &data_type));
+
+  // Now set up this one
+  this->set(
+    pads, strides, dilations, data_type, mode);
+  this->set_math_mode(math_type);
+  this->set_group_count(num_groups);
+}
+
+ConvolutionDescriptor::ConvolutionDescriptor(ConvolutionDescriptor&& rhs)
+  : desc_{rhs.desc_}
+{
+  rhs.desc_ = nullptr;
+}
+
+ConvolutionDescriptor&
+ConvolutionDescriptor::operator=(ConvolutionDescriptor rhs)
+{
+  this->swap(rhs);
+  return *this;
+}
+
+auto ConvolutionDescriptor::release() noexcept -> DescriptorHandle_t
+{
+  auto tmp = desc_;
+  desc_ = nullptr;
+  return tmp;
+}
+
+
+auto ConvolutionDescriptor::get() const noexcept -> DescriptorHandle_t
+{
+  return desc_;
+}
+
+ConvolutionDescriptor::operator DescriptorHandle_t() const noexcept
+{
+  return desc_;
+}
+
+void ConvolutionDescriptor::swap(ConvolutionDescriptor& other)
+{
+  std::swap(desc_, other.desc_);
+}
+
+void ConvolutionDescriptor::reset(DescriptorHandle_t desc)
+{
+  if (desc_)
+    CHECK_CUDNN(cudnnDestroyConvolutionDescriptor(desc_));
+
+  desc_ = desc;
+}
+
+void ConvolutionDescriptor::create()
+{
+  if (!desc_)
+    CHECK_CUDNN(cudnnCreateConvolutionDescriptor(&desc_));
+}
+
+void ConvolutionDescriptor::set(
+  std::vector<int> const& pad,
+  std::vector<int> const& stride,
+  std::vector<int> const& dilation,
+  cudnnDataType_t data_type,
+  cudnnConvolutionMode_t mode)
+{
+  LBANN_ASSERT(pad.size() == stride.size());
+  LBANN_ASSERT(pad.size() == dilation.size());
+  set(pad.size(), pad.data(), stride.data(), dilation.data(), data_type, mode);
+}
+
+void ConvolutionDescriptor::set(
+    size_t array_dim,
+    int const pad[],
+    int const stride[],
+    int const dilation[],
+    cudnnDataType_t data_type,
+    cudnnConvolutionMode_t mode)
+{
+  this->create();
+  CHECK_CUDNN(
+    cudnnSetConvolutionNdDescriptor(
+      desc_, array_dim, pad, stride, dilation,
+      mode, data_type));
+}
+
+void ConvolutionDescriptor::set_math_mode(cudnnMathType_t math_type)
+{
+  CHECK_CUDNN(
+    cudnnSetConvolutionMathType(desc_, math_type));
+}
+
+void ConvolutionDescriptor::set_group_count(int num_groups)
+{
+  CHECK_CUDNN(
+    cudnnSetConvolutionGroupCount(desc_, num_groups));
+}
+
+void swap(ConvolutionDescriptor& lhs, ConvolutionDescriptor& rhs)
+{
+  lhs.swap(rhs);
+}
+
+// class ActivationDescriptor
+
+ActivationDescriptor::ActivationDescriptor(DescriptorHandle_t desc)
+  : desc_{desc}
+{}
+
+ActivationDescriptor::~ActivationDescriptor()
+{
+  try
+  {
+    this->reset();
+  }
+  catch (std::exception const& e)
+  {
+    std::cerr << "Caught exception in ~ActivationDescriptor(). Shutting down."
+              << std::endl;
+    std::terminate();
+  }
+}
+
+ActivationDescriptor::ActivationDescriptor(const ActivationDescriptor& rhs)
+{
+  // Short-circuit
+  if (rhs.desc_ == nullptr)
+  {
+    desc_ = nullptr;
+    return;
+  }
+
+  cudnnActivationMode_t mode;
+  cudnnNanPropagation_t nan_prop;
+  double coeff;
+  CHECK_CUDNN(
+    cudnnGetActivationDescriptor(rhs.desc_, &mode, &nan_prop, &coeff));
+  this->set(mode, nan_prop, coeff);
+}
+
+ActivationDescriptor::ActivationDescriptor(ActivationDescriptor&& rhs)
+  : desc_{rhs.desc_}
+{
+  rhs.desc_ = nullptr;
+}
+
+ActivationDescriptor& ActivationDescriptor::operator=(ActivationDescriptor rhs)
+{
+  this->swap(rhs);
+  return *this;
+}
+
+auto ActivationDescriptor::release() noexcept -> DescriptorHandle_t
+{
+  auto tmp = desc_;
+  desc_ = nullptr;
+  return tmp;
+}
+
+auto ActivationDescriptor::get() const noexcept -> DescriptorHandle_t
+{
+  return desc_;
+}
+
+ActivationDescriptor::operator DescriptorHandle_t() const noexcept
+{
+  return desc_;
+}
+
+void ActivationDescriptor::swap(ActivationDescriptor& other)
+{
+  std::swap(desc_, other.desc_);
+}
+
+void ActivationDescriptor::reset(DescriptorHandle_t desc)
+{
+  if (desc_)
+    CHECK_CUDNN(cudnnDestroyActivationDescriptor(desc_));
+  desc_ = desc;
+}
+
+void ActivationDescriptor::create()
+{
+  if (!desc_)
+    CHECK_CUDNN(cudnnCreateActivationDescriptor(&desc_));
+}
+
+void ActivationDescriptor::set(
+    cudnnActivationMode_t mode,
+    cudnnNanPropagation_t nan_prop,
+    double coeff)
+{
+  this->create();
+  CHECK_CUDNN(
+    cudnnSetActivationDescriptor(desc_, mode, nan_prop, coeff));
+}
+
+/** @brief Swap two activation descriptors. */
+void swap(ActivationDescriptor& lhs, ActivationDescriptor& rhs)
+{
+  lhs.swap(rhs);
+}
+
+// class PoolingDescriptor
+
+PoolingDescriptor::PoolingDescriptor(DescriptorHandle_t desc)
+  : desc_{desc}
+{}
+
+PoolingDescriptor::~PoolingDescriptor()
+{
+  try
+  {
+    this->reset();
+  }
+  catch (std::exception const& e)
+  {
+    std::cerr << "Caught exception in ~ActivationDescriptor(). Shutting down."
+              << std::endl;
+    std::terminate();
+  }
+}
+
+PoolingDescriptor::PoolingDescriptor(const PoolingDescriptor& rhs)
+{
+  if (rhs.desc_ == nullptr)
+  {
+    desc_ = nullptr;
+    return;
+  }
+
+  cudnnPoolingMode_t mode;
+  cudnnNanPropagation_t nan_prop;
+  int num_dims;
+  CHECK_CUDNN(
+    cudnnGetPoolingNdDescriptor(
+      rhs.desc_, 0, &mode, &nan_prop, &num_dims,
+      nullptr, nullptr, nullptr));
+  std::vector<int> window_dims(num_dims), padding(num_dims), strides(num_dims);
+  CHECK_CUDNN(
+    cudnnGetPoolingNdDescriptor(
+      rhs.desc_, num_dims, &mode, &nan_prop, &num_dims,
+      window_dims.data(), padding.data(), strides.data()));
+  this->set(mode, nan_prop, window_dims, padding, strides);
+}
+
+PoolingDescriptor::PoolingDescriptor(PoolingDescriptor&& rhs)
+  : desc_{rhs.desc_}
+{
+  rhs.desc_ = nullptr;
+}
+
+PoolingDescriptor& PoolingDescriptor::operator=(PoolingDescriptor rhs)
+{
+  this->swap(rhs);
+  return *this;
+}
+
+auto PoolingDescriptor::release() noexcept -> DescriptorHandle_t
+{
+  auto tmp = desc_;
+  desc_ = nullptr;
+  return tmp;
+}
+
+auto PoolingDescriptor::get() const noexcept -> DescriptorHandle_t
+{
+  return desc_;
+}
+
+PoolingDescriptor::operator DescriptorHandle_t() const noexcept
+{
+  return desc_;
+}
+
+void PoolingDescriptor::swap(PoolingDescriptor& other)
+{
+  std::swap(desc_, other.desc_);
+}
+
+void PoolingDescriptor::reset(DescriptorHandle_t desc)
+{
+  if (desc_)
+    CHECK_CUDNN(cudnnDestroyPoolingDescriptor(desc_));
+  desc_ = desc;
+}
+
+void PoolingDescriptor::create()
+{
+  if (!desc_)
+    CHECK_CUDNN(
+      cudnnCreatePoolingDescriptor(&desc_));
+}
+
+void PoolingDescriptor::set(
+  cudnnPoolingMode_t mode,
+  cudnnNanPropagation_t nan_prop,
+  std::vector<int> const& window_dims,
+  std::vector<int> const& padding,
+  std::vector<int> const& stride)
+{
+  LBANN_ASSERT(window_dims.size() == padding.size());
+  LBANN_ASSERT(window_dims.size() == stride.size());
+  this->set(mode, nan_prop, window_dims.size(),
+            window_dims.data(), padding.data(), stride.data());
+}
+
+void PoolingDescriptor::set(
+  cudnnPoolingMode_t mode,
+  cudnnNanPropagation_t nan_prop,
+  int num_dims,
+  int const window_dims[],
+  int const padding[],
+  int const stride[])
+{
+  this->create();
+  CHECK_CUDNN(
+    cudnnSetPoolingNdDescriptor(
+      desc_, mode, nan_prop, num_dims, window_dims, padding, stride));
+}
+
+void swap(PoolingDescriptor& lhs, PoolingDescriptor& rhs)
+{
+  lhs.swap(rhs);
+}
+
+// class LRNDescriptor
+
+LRNDescriptor::LRNDescriptor(DescriptorHandle_t desc)
+  : desc_{desc}
+{}
+
+LRNDescriptor::~LRNDescriptor()
+{
+  try
+  {
+    this->reset();
+  }
+  catch (std::exception const& e)
+  {
+    std::cerr << "Caught exception in ~ActivationDescriptor(). Shutting down."
+              << std::endl;
+    std::terminate();
+  }
+}
+
+LRNDescriptor::LRNDescriptor(const LRNDescriptor& rhs)
+{
+  if (rhs.desc_ == nullptr)
+  {
+    desc_ = nullptr;
+    return;
+  }
+
+  unsigned n;
+  double alpha, beta, k;
+  CHECK_CUDNN(cudnnGetLRNDescriptor(desc_, &n, &alpha, &beta, &k));
+  this->set(n, alpha, beta, k);
+}
+
+LRNDescriptor::LRNDescriptor(LRNDescriptor&& rhs)
+  : desc_{rhs.desc_}
+{
+  rhs.desc_ = nullptr;
+}
+
+LRNDescriptor& LRNDescriptor::operator=(LRNDescriptor rhs)
+{
+  this->swap(rhs);
+  return *this;
+}
+
+auto LRNDescriptor::release() noexcept -> DescriptorHandle_t
+{
+  auto tmp = desc_;
+  desc_ = nullptr;
+  return tmp;
+}
+
+auto LRNDescriptor::get() const noexcept -> DescriptorHandle_t
+{
+  return desc_;
+}
+
+LRNDescriptor::operator DescriptorHandle_t() const noexcept
+{
+  return desc_;
+}
+
+void LRNDescriptor::swap(LRNDescriptor& other)
+{
+  std::swap(desc_, other.desc_);
+}
+
+void LRNDescriptor::reset(DescriptorHandle_t desc)
+{
+  if (desc_)
+    CHECK_CUDNN(cudnnDestroyLRNDescriptor(desc_));
+  desc_ = desc;
+}
+
+void LRNDescriptor::create()
+{
+  if (!desc_)
+    CHECK_CUDNN(cudnnCreateLRNDescriptor(&desc_));
+}
+
+void LRNDescriptor::set(unsigned n, double alpha, double beta, double k)
+{
+  LBANN_ASSERT(n >= CUDNN_LRN_MIN_N);
+  LBANN_ASSERT(n <= CUDNN_LRN_MAX_N);
+  LBANN_ASSERT(k >= CUDNN_LRN_MIN_K);
+  LBANN_ASSERT(beta >= CUDNN_LRN_MIN_BETA);
+
+  this->create();
+  CHECK_CUDNN(cudnnSetLRNDescriptor(desc_, n, alpha, beta, k));
+}
+
+/** @brief Swap two LRN descriptors. */
+void swap(LRNDescriptor& lhs, LRNDescriptor& rhs)
+{
+  lhs.swap(rhs);
 }
 
 ////////////////////////////////////////////////////////////
