@@ -99,9 +99,13 @@ void local_fp(TensorDataType min,
     grid_dim = std::numeric_limits<uint32_t>::max();
   }
 
-  // Launch CUDA kernel
+  // Launch GPU kernel
   if (grid_dim > 0) {
-    fp_kernel<<<grid_dim, block_dim, 0, hydrogen::cuda::GetDefaultStream()>>>(
+    auto multisync = El::MakeMultiSync(gpu::get_sync_info(input),
+                                       gpu::get_sync_info(output));
+    hydrogen::gpu::LaunchKernel(
+      fp_kernel<TensorDataType>,
+      grid_dim, block_dim, 0, multisync,
       min, max, height, width,
       input.LockedBuffer(), input.LDim(),
       output.Buffer(), output.LDim());
