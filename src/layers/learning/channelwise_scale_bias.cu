@@ -135,12 +135,12 @@ __global__ void bp_kernel(size_t num_channels,
     __syncthreads();
     const auto da = BlockReduce(workspace).Sum(private_da);
     if (tid == 0) {
-      cuda::atomic_add(&gradient_wrt_scale[channel], da);
+      gpu_lib::atomic_add(&gradient_wrt_scale[channel], da);
     }
     __syncthreads();
     const auto db = BlockReduce(workspace).Sum(private_db);
     if (tid == 0) {
-      cuda::atomic_add(&gradient_wrt_bias[channel], db);
+      gpu_lib::atomic_add(&gradient_wrt_bias[channel], db);
     }
 #else
     __shared__ TensorDataType workspace[bsizex*bsizey];
@@ -152,7 +152,7 @@ __global__ void bp_kernel(size_t num_channels,
       }
     }
     if (tid == 0) {
-      cuda::atomic_add(&gradient_wrt_scale[channel], workspace[0]);
+      gpu_lib::atomic_add(&gradient_wrt_scale[channel], workspace[0]);
     }
     workspace[tid] = private_db;
     for (size_t stride = bsizex*bsizey/2; stride > 0; stride /= 2) {
@@ -162,7 +162,7 @@ __global__ void bp_kernel(size_t num_channels,
       }
     }
     if (tid == 0) {
-      cuda::atomic_add(&gradient_wrt_bias[channel], workspace[0]);
+      gpu_lib::atomic_add(&gradient_wrt_bias[channel], workspace[0]);
     }
 #endif // HYDROGEN_HAVE_CUB
 
