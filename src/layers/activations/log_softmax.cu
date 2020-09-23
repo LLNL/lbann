@@ -37,7 +37,7 @@ template <class T>
 struct max_op {
   __device__ __forceinline__
   DataType operator()(const T& x1, const T& x2) const {
-    return cuda::max(x1, x2);
+    return gpu_lib::max(x1, x2);
   }
 };
 
@@ -72,15 +72,15 @@ __global__ void reduce_max_kernel(size_t height,
   for (size_t col = bidy; col < width; col += nblocksy) {
 
     // Find largest value for each thread
-    TensorDataType thread_max_val{-cuda::infinity<DataType>()};
+    TensorDataType thread_max_val{-gpu_lib::infinity<DataType>()};
     for (size_t row = gidx; row < height; row += nthreadsx) {
       const auto& val = values[row+col*values_ldim];
-      thread_max_val = cuda::max(thread_max_val, val);
+      thread_max_val = gpu_lib::max(thread_max_val, val);
     }
 
     // Find largest value for each block
     const TensorDataType block_max_val
-      = cuda::block_reduce<bsize,1,1,DataType,max_op<DataType>>(thread_max_val);
+      = gpu_lib::block_reduce<bsize,1,1,DataType,max_op<DataType>>(thread_max_val);
     if (tid == 0) {
       max_values[bidx+col*nblocksx] = block_max_val;
     }
@@ -121,9 +121,9 @@ __global__ void reduce_sum_kernel(size_t height,
     }
 
     // Compute sum for each block
-    const TensorDataType block_sum = cuda::block_reduce<bsize,1,1>(thread_sum);
+    const TensorDataType block_sum = gpu_lib::block_reduce<bsize,1,1>(thread_sum);
     if (tid == 0) {
-      cuda::atomic_add(&sums[col], block_sum);
+      gpu_lib::atomic_add(&sums[col], block_sum);
     }
 
   }
@@ -162,13 +162,13 @@ __global__ void fp_sumexp_kernel(size_t height,
     TensorDataType thread_sum{0};
     for (size_t row = gidx; row < height; row += nthreadsx) {
       const auto& x = input[row+col*input_ldim];
-      thread_sum += cuda::exp(x-shift);
+      thread_sum += gpu_lib::exp(x-shift);
     }
 
     // Compute sum for each block
-    const TensorDataType block_sum = cuda::block_reduce<bsize,1,1>(thread_sum);
+    const TensorDataType block_sum = gpu_lib::block_reduce<bsize,1,1>(thread_sum);
     if (tid == 0) {
-      cuda::atomic_add(&sums[col], block_sum);
+      gpu_lib::atomic_add(&sums[col], block_sum);
     }
 
   }
@@ -201,7 +201,7 @@ __global__ void fp_output_kernel(size_t height,
   const size_t nthreadsy = blockDim.y * gridDim.y;
   for (size_t col = gidy; col < width; col += nthreadsy) {
     const auto& shift = shifts[col];
-    const TensorDataType log_sum_exp = cuda::log(sums[col]);
+    const TensorDataType log_sum_exp = gpu_lib::log(sums[col]);
     for (size_t row = gidx; row < height; row += nthreadsx) {
       const auto& x = input[row+col*input_ldim];
       auto& y = output[row+col*output_ldim];
@@ -240,7 +240,7 @@ __global__ void bp_kernel(size_t height,
       const auto& y = output[row+col*output_ldim];
       const auto& dy = gradient_wrt_output[row+col*gradient_wrt_output_ldim];
       auto& dx = gradient_wrt_input[row+col*gradient_wrt_input_ldim];
-      dx = dy - cuda::exp(y) * sum;
+      dx = dy - gpu_lib::exp(y) * sum;
     }
   }
 }
@@ -306,7 +306,7 @@ void fp_compute_impl(log_softmax_layer<TensorDataType, data_layout::MODEL_PARALL
   El::SyncInfo<El::Device::GPU> sync_info{stream, event};
 
   // Find max value in each column
-  cuda::thrust::vector<TensorDataType> max_vals;
+  gpu_lib::thrust::vector<TensorDataType> max_vals;
   if (local_input.IsEmpty()) {
     max_vals.resize(local_width,
                     -std::numeric_limits<DataType>::infinity());
@@ -337,7 +337,7 @@ void fp_compute_impl(log_softmax_layer<TensorDataType, data_layout::MODEL_PARALL
     while (grid_dims.x > 1) {
       const size_t prev_height = grid_dims.x;
       grid_dims.x = (prev_height + block_size - 1) / block_size;
-      cuda::thrust::vector<TensorDataType> prev_vals(std::move(max_vals));
+      gpu_lib::thrust::vector<TensorDataType> prev_vals(std::move(max_vals));
       max_vals.resize(grid_dims.x * local_width);
       reduce_max_kernel<block_size><<<grid_dims, block_dims, 0, stream>>>(
         prev_height, local_width,
