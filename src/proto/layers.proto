@@ -316,7 +316,9 @@ message Layer {
   ///////////////////////
   // Loss layers //
   ///////////////////////
-  message CrossEntropy {}
+  message CrossEntropy {
+    bool use_labels = 1; //default: false
+  }
   message MeanSquaredError {}
   message MeanAbsoluteError {}
   message CategoricalAccuracy {}
@@ -397,7 +399,7 @@ message Layer {
   //////////////////
   message Input {
     string io_buffer = 2;         // Options: "partitioned" (default)
-    string target_mode = 3;       // Options: "classification" (default), "regression", "reconstruction", "N/A"
+    string target_mode = 3;       // Options: "classification" (default), "regression", "reconstruction", "label_reconstruction", "N/A"
   }
 
   //////////////////////
