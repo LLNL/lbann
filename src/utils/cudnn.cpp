@@ -97,150 +97,6 @@ template <> cudnnDataType_t get_data_type<fp16>() { return CUDNN_DATA_HALF; }
 template <> cudnnDataType_t get_data_type<float>() { return CUDNN_DATA_FLOAT; }
 template <> cudnnDataType_t get_data_type<double>() { return CUDNN_DATA_DOUBLE; }
 
-template <typename TensorDataType>
-void set_tensor_desc(cudnnTensorDescriptor_t& desc,
-                     std::vector<int> dims,
-                     std::vector<int> strides) {
-  std::stringstream err;
-  if (dims.empty()) {
-    LBANN_ERROR("attempted to set cuDNN tensor descriptor with no dimensions");
-  }
-
-  // Assume data is contiguous if no strides are provided
-  if (strides.empty()) {
-    strides.resize(dims.size());
-    strides.back() = 1;
-    for(int i = strides.size() - 1; i > 0; --i) {
-        strides[i-1] = strides[i] * dims[i];
-    }
-  }
-
-#ifdef LBANN_DEBUG
-  // Check that dimensions and strides are valid
-  if (strides.size() != dims.size()) {
-    err << "attempted to set cuDNN tensor descriptor "
-        << "with invalid strides (";
-    for (size_t i = 0; i < strides.size(); ++i) {
-      err << (i == 0 ? "" : ",") << strides[i];
-    }
-    err << ") for dimensions (";
-    for (size_t i = 0; i < dims.size(); ++i) {
-      err << (i == 0 ? "" : "x") << dims[i];
-    }
-    err << ")";
-    LBANN_ERROR(err.str());
-  }
-  for (size_t j = 0; j < dims.size(); ++j) {
-    if (dims[j] <= 0) {
-      err << "attempted to set cuDNN tensor descriptor "
-          << "with invalid dimensions (";
-      for (size_t i = 0; i < dims.size(); ++i) {
-        err << (i == 0 ? "" : "x") << dims[i];
-      }
-      err << ")";
-      LBANN_ERROR(err.str());
-    }
-    if (j > 0 && strides[j-1] < dims[j] * strides[j]) {
-      err << "attempted to set cuDNN tensor descriptor "
-          << "with invalid strides (";
-      for (size_t i = 0; i < strides.size(); ++i) {
-        err << (i == 0 ? "" : ",") << strides[i];
-      }
-      err << ") for dimensions (";
-      for (size_t i = 0; i < dims.size(); ++i) {
-        err << (i == 0 ? "" : "x") << dims[i];
-      }
-      err << ")";
-      LBANN_ERROR(err.str());
-    }
-  }
-#endif // LBANN_DEBUG
-
-  // Set cuDNN tensor descriptor
-  // Note: cuDNN tensors should have at least 4 dimensions
-  /// @todo Think about 1D convolution
-  while (dims.size() < 4) {
-    dims.push_back(1);
-    strides.push_back(1);
-  }
-  if (desc == nullptr) {
-    CHECK_CUDNN(cudnnCreateTensorDescriptor(&desc));
-  }
-  CHECK_CUDNN(cudnnSetTensorNdDescriptor(desc,
-                                         get_data_type<TensorDataType>(),
-                                         dims.size(),
-                                         dims.data(),
-                                         strides.data()));
-
-}
-
-void copy_tensor_desc(const cudnnTensorDescriptor_t& src,
-                      cudnnTensorDescriptor_t& dst) {
-
-    // Create or destroy descriptor if needed
-    if(src != nullptr && dst == nullptr) {
-        CHECK_CUDNN(cudnnCreateTensorDescriptor(&dst));
-    }
-    else if(src == nullptr && dst != nullptr) {
-        CHECK_CUDNN(cudnnDestroyTensorDescriptor(dst));
-        dst = nullptr;
-    }
-
-    // Copy descriptor data if needed
-    if(src != nullptr) {
-        cudnnDataType_t data_type;
-        int num_dims;
-        CHECK_CUDNN(cudnnGetTensorNdDescriptor(src,
-                                               0,
-                                               &data_type,
-                                               &num_dims,
-                                               nullptr,
-                                               nullptr));
-        std::vector<int> dims(num_dims), strides(num_dims);
-        CHECK_CUDNN(cudnnGetTensorNdDescriptor(src,
-                                               num_dims,
-                                               &data_type,
-                                               &num_dims,
-                                               dims.data(),
-                                               strides.data()));
-        CHECK_CUDNN(cudnnSetTensorNdDescriptor(dst,
-                                               data_type,
-                                               num_dims,
-                                               dims.data(),
-                                               strides.data()));
-    }
-
-}
-
-void copy_activation_desc(const cudnnActivationDescriptor_t& src,
-                          cudnnActivationDescriptor_t& dst) {
-
-    // Create or destroy descriptor if needed
-    if(src != nullptr && dst == nullptr) {
-        CHECK_CUDNN(cudnnCreateActivationDescriptor(&dst));
-    }
-    else if(src == nullptr && dst != nullptr) {
-        CHECK_CUDNN(cudnnDestroyActivationDescriptor(dst));
-        dst = nullptr;
-    }
-
-    // Copy descriptor data if needed
-    if(src != nullptr) {
-        cudnnActivationMode_t mode;
-        cudnnNanPropagation_t nan_propagation;
-        double relu_ceiling;
-        CHECK_CUDNN(cudnnGetActivationDescriptor(src,
-                                                 &mode,
-                                                 &nan_propagation,
-                                                 &relu_ceiling));
-        CHECK_CUDNN(cudnnSetActivationDescriptor(dst,
-                                                 mode,
-                                                 nan_propagation,
-                                                 relu_ceiling));
-    }
-
-}
-
 ////////////////////////////////////////////////////////////
 // Wrapper classes for cuDNN types
 ////////////////////////////////////////////////////////////
@@ -328,23 +184,35 @@ void TensorDescriptor::create() {
 
 void TensorDescriptor::set(
   cudnnDataType_t data_type,
-  const std::vector<int>& dims,
-  std::vector<int> strides) {
+  std::vector<int> dims_in,
+  std::vector<int> strides_in) {
 
   // Check that arguments are valid
-  if (dims.empty()) {
+  if (dims_in.empty()) {
     LBANN_ERROR("attempted to set cuDNN tensor descriptor with no dimensions");
   }
-  if (dims.size() < 3) {
-    // As of cuDNN 7.65, cuDNN does not support tensors with <3 dims
-    LBANN_ERROR(
-      "attempted to set cuDNN tensor descriptor with fewer than 3 dimensions");
-  }
-  if (!strides.empty() && dims.size() != strides.size()) {
+  if (!strides_in.empty() && dims_in.size() != strides_in.size()) {
     LBANN_ERROR(
       "attempted to set cuDNN tensor descriptor ",
-      "with mismatched dimensions (",dims.size(),") ",
-      "and strides (",strides.size(),")");
+      "with mismatched dimensions (", dims_in.size(), ") ",
+      "and strides (",strides_in.size(),")");
+  }
+
+  std::vector<int> dims, strides;
+  if (dims_in.size() < 3)
+  {
+    dims.resize(3, 1);
+    std::copy(dims_in.rbegin(), dims_in.rend(), dims.rbegin());
+    if (!strides_in.empty())
+    {
+      strides.resize(3, dims_in.front() * strides_in.front());
+      std::copy(strides_in.rbegin(), strides_in.rend(), strides.rbegin());
+    }
+  }
+  else
+  {
+    dims = std::move(dims_in);
+    strides = std::move(strides_in);
   }
 
   // Assume data is contiguous if no strides are provided
@@ -1210,74 +1078,6 @@ layer_tensor_manager<TensorDataType>::layer_tensor_manager(const data_type_layer
 }
 
 template <typename TensorDataType>
-layer_tensor_manager<TensorDataType>::layer_tensor_manager(const layer_tensor_manager<TensorDataType>& other)
-  : m_layer(other.m_layer),
-    m_prev_activations(other.m_prev_activations.size(), nullptr),
-    m_activations(other.m_activations.size(), nullptr),
-    m_prev_error_signals(other.m_prev_error_signals.size(), nullptr),
-    m_error_signals(other.m_error_signals.size(), nullptr) {
-  for (size_t i = 0; i < m_prev_activations.size(); ++i) {
-    copy_tensor_desc(other.m_prev_activations[i], m_prev_activations[i]);
-  }
-  for (size_t i = 0; i < m_activations.size(); ++i) {
-    copy_tensor_desc(other.m_activations[i], m_activations[i]);
-  }
-  for (size_t i = 0; i < m_prev_error_signals.size(); ++i) {
-    copy_tensor_desc(other.m_prev_error_signals[i], m_prev_error_signals[i]);
-  }
-  for (size_t i = 0; i < m_error_signals.size(); ++i) {
-    copy_tensor_desc(other.m_error_signals[i], m_error_signals[i]);
-  }
-}
-
-template <typename TensorDataType>
-layer_tensor_manager<TensorDataType>& layer_tensor_manager<TensorDataType>::operator=(const layer_tensor_manager<TensorDataType>& other) {
-
-  // Set layer being managed
-  m_layer = other.m_layer;
-
-  // Destroy tensor descriptors
-  set_num_parents(0);
-  set_num_children(0);
-
-  // Create copies of tensor descriptors
-  m_prev_activations.resize(other.m_prev_activations.size(), nullptr);
-  m_activations.resize(other.m_activations.size(), nullptr);
-  m_prev_error_signals.resize(other.m_prev_error_signals.size(), nullptr);
-  m_error_signals.resize(other.m_error_signals.size(), nullptr);
-  for (size_t i = 0; i < m_prev_activations.size(); ++i) {
-    copy_tensor_desc(other.m_prev_activations[i], m_prev_activations[i]);
-  }
-  for (size_t i = 0; i < m_activations.size(); ++i) {
-    copy_tensor_desc(other.m_activations[i], m_activations[i]);
-  }
-  for (size_t i = 0; i < m_prev_error_signals.size(); ++i) {
-    copy_tensor_desc(other.m_prev_error_signals[i], m_prev_error_signals[i]);
-  }
-  for (size_t i = 0; i < m_error_signals.size(); ++i) {
-    copy_tensor_desc(other.m_error_signals[i], m_error_signals[i]);
-  }
-
-  return *this;
-}
-
-template <typename TensorDataType>
-layer_tensor_manager<TensorDataType>::~layer_tensor_manager() {
-  for (auto&& desc : m_prev_activations) {
-    if (desc != nullptr) { cudnnDestroyTensorDescriptor(desc); }
-  }
-  for (auto&& desc : m_activations) {
-    if (desc != nullptr) { cudnnDestroyTensorDescriptor(desc); }
-  }
-  for (auto&& desc : m_prev_error_signals) {
-    if (desc != nullptr) { cudnnDestroyTensorDescriptor(desc); }
-  }
-  for (auto&& desc : m_error_signals) {
-    if (desc != nullptr) { cudnnDestroyTensorDescriptor(desc); }
-  }
-}
-
-template <typename TensorDataType>
 void layer_tensor_manager<TensorDataType>::set_layer(const data_type_layer<TensorDataType>* new_layer) {
   m_layer = new_layer;
   set_num_parents(this->m_layer == nullptr ? 0 : m_layer->get_num_parents());
@@ -1290,19 +1090,15 @@ void layer_tensor_manager<TensorDataType>::set_num_parents(int num_parents) {
   if (num_parents < 0) { LBANN_ERROR("negative number of parents"); }
 #endif // LBANN_DEBUG
   for (size_t i = num_parents; i < m_prev_activations.size(); ++i) {
-    if (m_prev_activations[i] != nullptr) {
-      CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_prev_activations[i]));
-      m_prev_activations[i] = nullptr;
-    }
+    if (m_prev_activations[i])
+      m_prev_activations[i].reset();
   }
   for (size_t i = num_parents; i < m_error_signals.size(); ++i) {
-    if (m_error_signals[i] != nullptr) {
-      CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_error_signals[i]));
-      m_error_signals[i] = nullptr;
-    }
+    if (m_error_signals[i])
+      m_error_signals[i].reset();
   }
-  m_prev_activations.resize(num_parents, nullptr);
-  m_error_signals.resize(num_parents, nullptr);
+  m_prev_activations.resize(num_parents);
+  m_error_signals.resize(num_parents);
 }
 
 template <typename TensorDataType>
@@ -1311,19 +1107,15 @@ void layer_tensor_manager<TensorDataType>::set_num_children(int num_children) {
   if (num_children < 0) { LBANN_ERROR("negative number of children"); }
 #endif // LBANN_DEBUG
   for (size_t i = num_children; i < m_activations.size(); ++i) {
-    if (m_activations[i] != nullptr) {
-      CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_activations[i]));
-      m_activations[i] = nullptr;
-    }
+    if (m_activations[i])
+      m_activations[i].reset();
   }
   for (size_t i = num_children; i < m_prev_error_signals.size(); ++i) {
-    if (m_prev_error_signals[i] != nullptr) {
-      CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_prev_error_signals[i]));
-      m_prev_error_signals[i] = nullptr;
-    }
+    if (m_prev_error_signals[i])
+      m_prev_error_signals[i].reset();
   }
-  m_activations.resize(num_children, nullptr);
-  m_prev_error_signals.resize(num_children, nullptr);
+  m_activations.resize(num_children);
+  m_prev_error_signals.resize(num_children);
 }
 
 ////////////////////////////////////////////////////////////
@@ -1340,7 +1132,7 @@ namespace {
 /** Set a cuDNN tensor descriptor for a data-parallel data layout.
  */
 template <typename TensorDataType>
-void set_data_parallel_tensor_desc(cudnnTensorDescriptor_t& desc,
+void set_data_parallel_tensor_desc(TensorDescriptor& desc,
                                    std::vector<int> dims,
                                    const El::AbstractMatrix<TensorDataType>& local_data) {
 #ifdef LBANN_DEBUG
@@ -1355,14 +1147,15 @@ void set_data_parallel_tensor_desc(cudnnTensorDescriptor_t& desc,
     }
     dims.insert(dims.begin(), local_data.Width());
     strides.insert(strides.begin(), local_data.LDim());
-    set_tensor_desc<TensorDataType>(desc, dims, strides);
+    desc.set(get_data_type<TensorDataType>(), dims, strides);
   }
 }
 
 } // namespace
 
 template <typename TensorDataType>
-cudnnTensorDescriptor_t& data_parallel_layer_tensor_manager<TensorDataType>::get_prev_activations(int parent_index) {
+TensorDescriptor&
+data_parallel_layer_tensor_manager<TensorDataType>::get_prev_activations(int parent_index) {
   if (this->m_layer == nullptr) {
     LBANN_ERROR("tensor manager is not managing a layer");
   }
@@ -1375,7 +1168,8 @@ cudnnTensorDescriptor_t& data_parallel_layer_tensor_manager<TensorDataType>::get
 }
 
 template <typename TensorDataType>
-cudnnTensorDescriptor_t& data_parallel_layer_tensor_manager<TensorDataType>::get_activations(int child_index) {
+TensorDescriptor&
+data_parallel_layer_tensor_manager<TensorDataType>::get_activations(int child_index) {
   if (this->m_layer == nullptr) {
     LBANN_ERROR("tensor manager is not managing a layer");
   }
@@ -1388,7 +1182,8 @@ cudnnTensorDescriptor_t& data_parallel_layer_tensor_manager<TensorDataType>::get
 }
 
 template <typename TensorDataType>
-cudnnTensorDescriptor_t& data_parallel_layer_tensor_manager<TensorDataType>::get_prev_error_signals(int child_index) {
+TensorDescriptor&
+data_parallel_layer_tensor_manager<TensorDataType>::get_prev_error_signals(int child_index) {
   if (this->m_layer == nullptr) {
     LBANN_ERROR("tensor manager is not managing a layer");
   }
@@ -1401,7 +1196,8 @@ cudnnTensorDescriptor_t& data_parallel_layer_tensor_manager<TensorDataType>::get
 }
 
 template <typename TensorDataType>
-cudnnTensorDescriptor_t& data_parallel_layer_tensor_manager<TensorDataType>::get_error_signals(int parent_index) {
+TensorDescriptor&
+data_parallel_layer_tensor_manager<TensorDataType>::get_error_signals(int parent_index) {
   if (this->m_layer == nullptr) {
     LBANN_ERROR("tensor manager is not managing a layer");
   }
@@ -1431,7 +1227,7 @@ namespace {
  *  and gets poor performance with 1D tensors and 2D tensors.
  */
 template <typename TensorDataType>
-void set_entrywise_tensor_desc(cudnnTensorDescriptor_t& desc,
+void set_entrywise_tensor_desc(TensorDescriptor& desc,
                                const El::AbstractMatrix<TensorDataType>& local_data) {
 #ifdef LBANN_DEBUG
   if (local_data.GetDevice() != El::Device::GPU) {
@@ -1452,9 +1248,9 @@ void set_entrywise_tensor_desc(cudnnTensorDescriptor_t& desc,
     }
 
     // Set cuDNN tensor descriptor with 4D tensor
-    set_tensor_desc<TensorDataType>(desc,
-                    {width, factors[2], factors[1], factors[0]},
-                    {ldim, factors[1]*factors[0], factors[0], 1});
+    desc.set(get_data_type<TensorDataType>(),
+             {width, factors[2], factors[1], factors[0]},
+             {ldim, factors[1]*factors[0], factors[0], 1});
 
   }
 }
@@ -1462,7 +1258,8 @@ void set_entrywise_tensor_desc(cudnnTensorDescriptor_t& desc,
 } // namespace
 
 template <typename TensorDataType>
-cudnnTensorDescriptor_t& entrywise_layer_tensor_manager<TensorDataType>::get_prev_activations(int parent_index) {
+TensorDescriptor&
+entrywise_layer_tensor_manager<TensorDataType>::get_prev_activations(int parent_index) {
   if (this->m_layer == nullptr) {
     LBANN_ERROR("tensor manager is not managing a layer");
   }
@@ -1474,7 +1271,8 @@ cudnnTensorDescriptor_t& entrywise_layer_tensor_manager<TensorDataType>::get_pre
 }
 
 template <typename TensorDataType>
-cudnnTensorDescriptor_t& entrywise_layer_tensor_manager<TensorDataType>::get_activations(int child_index) {
+TensorDescriptor&
+entrywise_layer_tensor_manager<TensorDataType>::get_activations(int child_index) {
   if (this->m_layer == nullptr) {
     LBANN_ERROR("tensor manager is not managing a layer");
   }
@@ -1486,7 +1284,7 @@ cudnnTensorDescriptor_t& entrywise_layer_tensor_manager<TensorDataType>::get_act
 }
 
 template <typename TensorDataType>
-cudnnTensorDescriptor_t& entrywise_layer_tensor_manager<TensorDataType>::get_prev_error_signals(int child_index) {
+TensorDescriptor& entrywise_layer_tensor_manager<TensorDataType>::get_prev_error_signals(int child_index) {
   if (this->m_layer == nullptr) {
     LBANN_ERROR("tensor manager is not managing a layer");
   }
@@ -1498,7 +1296,7 @@ cudnnTensorDescriptor_t& entrywise_layer_tensor_manager<TensorDataType>::get_pre
 }
 
 template <typename TensorDataType>
-cudnnTensorDescriptor_t& entrywise_layer_tensor_manager<TensorDataType>::get_error_signals(int parent_index) {
+TensorDescriptor& entrywise_layer_tensor_manager<TensorDataType>::get_error_signals(int parent_index) {
   if (this->m_layer == nullptr) {
     LBANN_ERROR("tensor manager is not managing a layer");
   }
@@ -1601,10 +1399,10 @@ AlgoType find_best_algorithm(
 
 cudnnConvolutionFwdAlgo_t get_fwd_algo_heuristic(
   bool deterministic,
-  const cudnnTensorDescriptor_t& input_desc,
-  const cudnnFilterDescriptor_t& kernel_desc,
-  const cudnnConvolutionDescriptor_t& conv_desc,
-  const cudnnTensorDescriptor_t& output_desc,
+  const TensorDescriptor& input_desc,
+  const FilterDescriptor& kernel_desc,
+  const ConvolutionDescriptor& conv_desc,
+  const TensorDescriptor& output_desc,
   size_t ws_size) {
   int num_algos;
   CHECK_CUDNN(cudnnGetConvolutionForwardAlgorithmMaxCount(
@@ -1620,10 +1418,10 @@ cudnnConvolutionFwdAlgo_t get_fwd_algo_heuristic(
 
 cudnnConvolutionBwdDataAlgo_t get_bwd_data_algo_heuristic(
   bool deterministic,
-  const cudnnFilterDescriptor_t& kernel_desc,
-  const cudnnTensorDescriptor_t& prev_error_signal_desc,
-  const cudnnConvolutionDescriptor_t& conv_desc,
-  const cudnnTensorDescriptor_t& error_signal_desc,
+  const FilterDescriptor& kernel_desc,
+  const TensorDescriptor& prev_error_signal_desc,
+  const ConvolutionDescriptor& conv_desc,
+  const TensorDescriptor& error_signal_desc,
   size_t ws_size) {
   int num_algos;
   CHECK_CUDNN(cudnnGetConvolutionBackwardDataAlgorithmMaxCount(
@@ -1640,10 +1438,10 @@ cudnnConvolutionBwdDataAlgo_t get_bwd_data_algo_heuristic(
 
 cudnnConvolutionBwdFilterAlgo_t get_bwd_filter_algo_heuristic(
   bool deterministic,
-  const cudnnTensorDescriptor_t& input_desc,
-  const cudnnTensorDescriptor_t& prev_error_signal_desc,
-  const cudnnConvolutionDescriptor_t& conv_desc,
-  const cudnnFilterDescriptor_t& kernel_gradient_desc,
+  const TensorDescriptor& input_desc,
+  const TensorDescriptor& prev_error_signal_desc,
+  const ConvolutionDescriptor& conv_desc,
+  const FilterDescriptor& kernel_gradient_desc,
   size_t ws_size) {
   int num_algos;
   CHECK_CUDNN(cudnnGetConvolutionBackwardFilterAlgorithmMaxCount(
@@ -1660,12 +1458,12 @@ cudnnConvolutionBwdFilterAlgo_t get_bwd_filter_algo_heuristic(
 
 cudnnConvolutionFwdAlgo_t get_fwd_algo_autotune(
   bool deterministic,
-  const cudnnTensorDescriptor_t& input_desc,
+  const TensorDescriptor& input_desc,
   const void* input,
-  const cudnnFilterDescriptor_t& kernel_desc,
+  const FilterDescriptor& kernel_desc,
   const void* kernel,
-  const cudnnConvolutionDescriptor_t& conv_desc,
-  const cudnnTensorDescriptor_t& output_desc,
+  const ConvolutionDescriptor& conv_desc,
+  const TensorDescriptor& output_desc,
   void* output,
   size_t ws_size,
   void* ws) {
@@ -1694,12 +1492,12 @@ cudnnConvolutionFwdAlgo_t get_fwd_algo_autotune(
 
 cudnnConvolutionBwdDataAlgo_t get_bwd_data_algo_autotune(
   bool deterministic,
-  const cudnnFilterDescriptor_t& kernel_desc,
+  const FilterDescriptor& kernel_desc,
   const void* kernel,
-  const cudnnTensorDescriptor_t& prev_error_signal_desc,
+  const TensorDescriptor& prev_error_signal_desc,
   const void* prev_error_signal,
-  const cudnnConvolutionDescriptor_t& conv_desc,
-  const cudnnTensorDescriptor_t& error_signal_desc,
+  const ConvolutionDescriptor& conv_desc,
+  const TensorDescriptor& error_signal_desc,
   void* error_signal,
   size_t ws_size,
   void* ws) {
@@ -1729,12 +1527,12 @@ cudnnConvolutionBwdDataAlgo_t get_bwd_data_algo_autotune(
 
 cudnnConvolutionBwdFilterAlgo_t get_bwd_filter_algo_autotune(
   bool deterministic,
-  const cudnnTensorDescriptor_t& input_desc,
+  const TensorDescriptor& input_desc,
   const void* input,
-  const cudnnTensorDescriptor_t& prev_error_signal_desc,
+  const TensorDescriptor& prev_error_signal_desc,
   const void* prev_error_signal,
-  const cudnnConvolutionDescriptor_t& conv_desc,
-  const cudnnFilterDescriptor_t& kernel_gradient_desc,
+  const ConvolutionDescriptor& conv_desc,
+  const FilterDescriptor& kernel_gradient_desc,
   void* kernel_gradient,
   size_t ws_size,
   void* ws) {
@@ -1767,12 +1565,12 @@ cudnnConvolutionBwdFilterAlgo_t get_bwd_filter_algo_autotune(
 cudnnConvolutionFwdAlgo_t get_fwd_algorithm(
   bool autotune,
   bool deterministic,
-  const cudnnTensorDescriptor_t& input_desc,
+  const TensorDescriptor& input_desc,
   const void* input,
-  const cudnnFilterDescriptor_t& kernel_desc,
+  const FilterDescriptor& kernel_desc,
   const void* kernel,
-  const cudnnConvolutionDescriptor_t& conv_desc,
-  const cudnnTensorDescriptor_t& output_desc,
+  const ConvolutionDescriptor& conv_desc,
+  const TensorDescriptor& output_desc,
   void* output,
   size_t ws_size,
   void* ws) {
@@ -1792,12 +1590,12 @@ cudnnConvolutionFwdAlgo_t get_fwd_algorithm(
 cudnnConvolutionBwdDataAlgo_t get_bwd_data_algorithm(
   bool autotune,
   bool deterministic,
-  const cudnnFilterDescriptor_t& kernel_desc,
+  const FilterDescriptor& kernel_desc,
   const void* kernel,
-  const cudnnTensorDescriptor_t& prev_error_signal_desc,
+  const TensorDescriptor& prev_error_signal_desc,
   const void* prev_error_signal,
-  const cudnnConvolutionDescriptor_t& conv_desc,
-  const cudnnTensorDescriptor_t& error_signal_desc,
+  const ConvolutionDescriptor& conv_desc,
+  const TensorDescriptor& error_signal_desc,
   void* error_signal,
   size_t ws_size,
   void* ws) {
@@ -1818,12 +1616,12 @@ cudnnConvolutionBwdDataAlgo_t get_bwd_data_algorithm(
 cudnnConvolutionBwdFilterAlgo_t get_bwd_filter_algorithm(
   bool autotune,
   bool deterministic,
-  const cudnnTensorDescriptor_t& input_desc,
+  const TensorDescriptor& input_desc,
   const void* input,
-  const cudnnTensorDescriptor_t& prev_error_signal_desc,
+  const TensorDescriptor& prev_error_signal_desc,
   const void* prev_error_signal,
-  const cudnnConvolutionDescriptor_t& conv_desc,
-  const cudnnFilterDescriptor_t& kernel_gradient_desc,
+  const ConvolutionDescriptor& conv_desc,
+  const FilterDescriptor& kernel_gradient_desc,
   void* kernel_gradient,
   size_t ws_size,
   void* ws) {
@@ -1855,9 +1653,8 @@ cudnnMathType_t get_default_convolution_math_type() noexcept
   return default_tensor_ops_mode;
 }
 
-#define PROTO(T)                                       \
-  template cudnnDataType_t get_data_type<T>();                   \
-  template void set_tensor_desc<T>(cudnnTensorDescriptor_t&, std::vector<int>, std::vector<int>); \
+#define PROTO(T)                                        \
+  template cudnnDataType_t get_data_type<T>();          \
   template class layer_tensor_manager<T>;               \
   template class data_parallel_layer_tensor_manager<T>; \
   template class entrywise_layer_tensor_manager<T>

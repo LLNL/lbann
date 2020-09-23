@@ -123,26 +123,6 @@ cudnnHandle_t& get_handle();
 template <typename TensorDataType>
 cudnnDataType_t get_data_type();
 
-/** Set cuDNN tensor descriptor.
- *  desc is created if necessary.
- */
-template <typename TensorDataType>
-void set_tensor_desc(cudnnTensorDescriptor_t& desc,
-                     std::vector<int> dims,
-                     std::vector<int> strides = {});
-
-/** Copy cuDNN tensor descriptor.
- *  dst is created or destroyed if needed.
- */
-void copy_tensor_desc(const cudnnTensorDescriptor_t& src,
-                      cudnnTensorDescriptor_t& dst);
-
-/** Copy cuDNN activation descriptor.
- *  dst is created or destroyed if needed.
- */
-void copy_activation_desc(const cudnnActivationDescriptor_t& src,
-                          cudnnActivationDescriptor_t& dst);
-
 ////////////////////////////////////////////////////////////
 // Wrapper classes for cuDNN types
 ////////////////////////////////////////////////////////////
@@ -158,11 +138,7 @@ public:
 
 public:
 
-  TensorDescriptor(cudnnTensorDescriptor_t desc=nullptr);
-  template <typename... ArgTs>
-  TensorDescriptor(ArgTs&&... args) {
-    set(std::forward<ArgTs>(args)...);
-  }
+  explicit TensorDescriptor(cudnnTensorDescriptor_t desc=nullptr);
 
   ~TensorDescriptor();
 
@@ -192,7 +168,7 @@ public:
    */
   void set(
     cudnnDataType_t data_type,
-    const std::vector<int>& dims,
+    std::vector<int> dims,
     std::vector<int> strides = {});
   /** @brief Configure cuDNN object
    *
@@ -219,11 +195,7 @@ public:
 
 public:
 
-  FilterDescriptor(cudnnFilterDescriptor_t desc=nullptr);
-  template <typename... ArgTs>
-  FilterDescriptor(ArgTs&&... args) {
-    set(std::forward<ArgTs>(args)...);
-  }
+  explicit FilterDescriptor(cudnnFilterDescriptor_t desc=nullptr);
 
   ~FilterDescriptor();
 
@@ -278,11 +250,7 @@ class DropoutDescriptor {
 
 public:
 
-  DropoutDescriptor(cudnnDropoutDescriptor_t desc=nullptr);
-  template <typename... ArgTs>
-  DropoutDescriptor(ArgTs&&... args) {
-    set(std::forward<ArgTs>(args)...);
-  }
+  explicit DropoutDescriptor(cudnnDropoutDescriptor_t desc=nullptr);
 
   ~DropoutDescriptor();
 
@@ -327,11 +295,7 @@ class RNNDescriptor {
 
 public:
 
-  RNNDescriptor(cudnnRNNDescriptor_t desc=nullptr);
-  template <typename... ArgTs>
-  RNNDescriptor(ArgTs&&... args) {
-    set(std::forward<ArgTs>(args)...);
-  }
+  explicit RNNDescriptor(cudnnRNNDescriptor_t desc=nullptr);
 
   RNNDescriptor(const RNNDescriptor&) = delete;
   ~RNNDescriptor();
@@ -440,16 +404,7 @@ public:
   ///@{
 
   /** @brief Construct from an existing handle. */
-  ConvolutionDescriptor(DescriptorHandle_t desc=nullptr);
-
-  /** @brief Construct with the arguments to set.
-   *
-   *  A new handle will be allocated immediately.
-   */
-  template <typename... ArgTs>
-  ConvolutionDescriptor(ArgTs&&... args) {
-    set(std::forward<ArgTs>(args)...);
-  }
+  explicit ConvolutionDescriptor(DescriptorHandle_t desc=nullptr);
 
   /** @brief Any handle resources will be freed. */
   ~ConvolutionDescriptor();
@@ -543,16 +498,7 @@ public:
   ///@{
 
   /** @brief Construct from an existing handle. */
-  ActivationDescriptor(DescriptorHandle_t desc=nullptr);
-
-  /** @brief Construct with the arguments to set.
-   *
-   *  A new handle will be allocated immediately.
-   */
-  template <typename... ArgTs>
-  ActivationDescriptor(ArgTs&&... args) {
-    set(std::forward<ArgTs>(args)...);
-  }
+  explicit ActivationDescriptor(DescriptorHandle_t desc=nullptr);
 
   /** @brief Any handle resources will be freed. */
   ~ActivationDescriptor();
@@ -630,16 +576,7 @@ public:
   ///@{
 
   /** @brief Construct from an existing handle. */
-  PoolingDescriptor(DescriptorHandle_t desc=nullptr);
-
-  /** @brief Construct with the arguments to set.
-   *
-   *  A new handle will be allocated immediately.
-   */
-  template <typename... ArgTs>
-  PoolingDescriptor(ArgTs&&... args) {
-    set(std::forward<ArgTs>(args)...);
-  }
+  explicit PoolingDescriptor(DescriptorHandle_t desc=nullptr);
 
   /** @brief Any handle resources will be freed. */
   ~PoolingDescriptor();
@@ -726,16 +663,7 @@ public:
   ///@{
 
   /** @brief Construct from an existing handle. */
-  LRNDescriptor(DescriptorHandle_t desc=nullptr);
-
-  /** @brief Construct with the arguments to set.
-   *
-   *  A new handle will be allocated immediately.
-   */
-  template <typename... ArgTs>
-  LRNDescriptor(ArgTs&&... args) {
-    set(std::forward<ArgTs>(args)...);
-  }
+  explicit LRNDescriptor(DescriptorHandle_t desc=nullptr);
 
   /** @brief Any handle resources will be freed. */
   ~LRNDescriptor();
@@ -807,9 +735,7 @@ public:
   using LayerType = data_type_layer<TensorDataType>;
 public:
   layer_tensor_manager(const LayerType* l = nullptr);
-  layer_tensor_manager(const layer_tensor_manager& other);
-  layer_tensor_manager& operator=(const layer_tensor_manager& other);
-  virtual ~layer_tensor_manager();
+  virtual ~layer_tensor_manager() = default;
 
   /** Get the layer being managed. */
   const LayerType* get_layer() const { return m_layer; }
@@ -817,15 +743,19 @@ public:
   void set_layer(const LayerType* l);
 
   /** Get cuDNN tensor descriptor for layer input. */
-  virtual cudnnTensorDescriptor_t& get_prev_activations(int parent_index = 0) = 0;
+  virtual TensorDescriptor& get_prev_activations(int parent_index = 0) = 0;
   /** Get cuDNN tensor descriptor for layer output. */
-  virtual cudnnTensorDescriptor_t& get_activations(int child_index = 0) = 0;
+  virtual TensorDescriptor& get_activations(int child_index = 0) = 0;
   /** Get cuDNN tensor descriptor for gradient w.r.t. layer output. */
-  virtual cudnnTensorDescriptor_t& get_prev_error_signals(int child_index = 0) = 0;
+  virtual TensorDescriptor& get_prev_error_signals(int child_index = 0) = 0;
   /** Get cuDNN tensor descriptor for gradient w.r.t. layer input. */
-  virtual cudnnTensorDescriptor_t& get_error_signals(int parent_index = 0) = 0;
+  virtual TensorDescriptor& get_error_signals(int parent_index = 0) = 0;
 
 protected:
+  layer_tensor_manager(const layer_tensor_manager&) = default;
+  layer_tensor_manager& operator=(const layer_tensor_manager&) = default;
+  layer_tensor_manager(layer_tensor_manager&&) = default;
+  layer_tensor_manager& operator=(layer_tensor_manager&&) = default;
 
   /** Set number of tensor descriptors corresponding to layer inputs. */
   void set_num_parents(int num_parents);
@@ -835,50 +765,60 @@ protected:
   /** Layer being managed. */
   const LayerType* m_layer;
   /** cuDNN tensor descriptors for layer inputs. */
-  std::vector<cudnnTensorDescriptor_t> m_prev_activations;
+  std::vector<TensorDescriptor> m_prev_activations;
   /** cuDNN tensor descriptors for layer outputs. */
-  std::vector<cudnnTensorDescriptor_t> m_activations;
+  std::vector<TensorDescriptor> m_activations;
   /** cuDNN tensor descriptors for gradients w.r.t. layer outputs. */
-  std::vector<cudnnTensorDescriptor_t> m_prev_error_signals;
+  std::vector<TensorDescriptor> m_prev_error_signals;
   /** cuDNN tensor descriptors for gradients w.r.t. layer inputs. */
-  std::vector<cudnnTensorDescriptor_t> m_error_signals;
+  std::vector<TensorDescriptor> m_error_signals;
 
 };
 
 /** Manager for a data-parallel layer's cuDNN tensor descriptors. */
 template <typename TensorDataType>
-class data_parallel_layer_tensor_manager : public layer_tensor_manager<TensorDataType> {
+class data_parallel_layer_tensor_manager
+  : public layer_tensor_manager<TensorDataType> {
 public:
   using LayerType = data_type_layer<TensorDataType>;
 public:
   data_parallel_layer_tensor_manager(const LayerType* l = nullptr);
   data_parallel_layer_tensor_manager(
-    const data_parallel_layer_tensor_manager& other) = default;
+    const data_parallel_layer_tensor_manager&) = default;
   data_parallel_layer_tensor_manager&
-    operator=(const data_parallel_layer_tensor_manager& other) = default;
+    operator=(const data_parallel_layer_tensor_manager&) = default;
+  data_parallel_layer_tensor_manager(
+    data_parallel_layer_tensor_manager&&) = default;
+  data_parallel_layer_tensor_manager&
+    operator=(data_parallel_layer_tensor_manager&&) = default;
   ~data_parallel_layer_tensor_manager() = default;
-  cudnnTensorDescriptor_t& get_prev_activations(int parent_index = 0) override;
-  cudnnTensorDescriptor_t& get_activations(int child_index = 0) override;
-  cudnnTensorDescriptor_t& get_prev_error_signals(int child_index = 0) override;
-  cudnnTensorDescriptor_t& get_error_signals(int parent_index = 0) override;
+  TensorDescriptor& get_prev_activations(int parent_index = 0) override;
+  TensorDescriptor& get_activations(int child_index = 0) override;
+  TensorDescriptor& get_prev_error_signals(int child_index = 0) override;
+  TensorDescriptor& get_error_signals(int parent_index = 0) override;
 };
 
 /** Manager for an entry-wise layer's cuDNN tensor descriptors. */
 template <typename TensorDataType>
-class entrywise_layer_tensor_manager : public layer_tensor_manager<TensorDataType> {
+class entrywise_layer_tensor_manager
+  : public layer_tensor_manager<TensorDataType> {
 public:
   using LayerType = data_type_layer<TensorDataType>;
 public:
   entrywise_layer_tensor_manager(const LayerType* l = nullptr);
   entrywise_layer_tensor_manager(
-    const entrywise_layer_tensor_manager& other) = default;
+    const entrywise_layer_tensor_manager&) = default;
   entrywise_layer_tensor_manager&
-    operator=(const entrywise_layer_tensor_manager& other) = default;
+    operator=(const entrywise_layer_tensor_manager&) = default;
+  entrywise_layer_tensor_manager(
+    entrywise_layer_tensor_manager&&) = default;
+  entrywise_layer_tensor_manager&
+    operator=(entrywise_layer_tensor_manager&&) = default;
   ~entrywise_layer_tensor_manager() = default;
-  cudnnTensorDescriptor_t& get_prev_activations(int parent_index = 0) override;
-  cudnnTensorDescriptor_t& get_activations(int child_index = 0) override;
-  cudnnTensorDescriptor_t& get_prev_error_signals(int child_index = 0) override;
-  cudnnTensorDescriptor_t& get_error_signals(int parent_index = 0) override;
+  TensorDescriptor& get_prev_activations(int parent_index = 0) override;
+  TensorDescriptor& get_activations(int child_index = 0) override;
+  TensorDescriptor& get_prev_error_signals(int child_index = 0) override;
+  TensorDescriptor& get_error_signals(int parent_index = 0) override;
 };
 
 ////////////////////////////////////////////////////////////
@@ -897,12 +837,12 @@ public:
 cudnnConvolutionFwdAlgo_t get_fwd_algorithm(
   bool autotune,
   bool deterministic,
-  const cudnnTensorDescriptor_t& input_desc,
+  const TensorDescriptor& input_desc,
   const void* input,
-  const cudnnFilterDescriptor_t& kernel_desc,
+  const FilterDescriptor& kernel_desc,
   const void* kernel,
-  const cudnnConvolutionDescriptor_t& conv_desc,
-  const cudnnTensorDescriptor_t& output_desc,
+  const ConvolutionDescriptor& conv_desc,
+  const TensorDescriptor& output_desc,
   void* output,
   size_t ws_size,
   void* ws);
@@ -918,12 +858,12 @@ cudnnConvolutionFwdAlgo_t get_fwd_algorithm(
 cudnnConvolutionBwdDataAlgo_t get_bwd_data_algorithm(
   bool autotune,
   bool deterministic,
-  const cudnnFilterDescriptor_t& kernel_desc,
+  const FilterDescriptor& kernel_desc,
   const void* kernel,
-  const cudnnTensorDescriptor_t& prev_error_signal_desc,
+  const TensorDescriptor& prev_error_signal_desc,
   const void* prev_error_signal,
-  const cudnnConvolutionDescriptor_t& conv_desc,
-  const cudnnTensorDescriptor_t& error_signal_desc,
+  const ConvolutionDescriptor& conv_desc,
+  const TensorDescriptor& error_signal_desc,
   void* error_signal,
   size_t ws_size,
   void* ws);
@@ -939,12 +879,12 @@ cudnnConvolutionBwdDataAlgo_t get_bwd_data_algorithm(
 cudnnConvolutionBwdFilterAlgo_t get_bwd_filter_algorithm(
   bool autotune,
   bool deterministic,
-  const cudnnTensorDescriptor_t& input_desc,
+  const TensorDescriptor& input_desc,
   const void* input,
-  const cudnnTensorDescriptor_t& prev_error_signal_desc,
+  const TensorDescriptor& prev_error_signal_desc,
   const void* prev_error_signal,
-  const cudnnConvolutionDescriptor_t& conv_desc,
-  const cudnnFilterDescriptor_t& kernel_gradient_desc,
+  const ConvolutionDescriptor& conv_desc,
+  const FilterDescriptor& kernel_gradient_desc,
   void* kernel_gradient,
   size_t ws_size,
   void* ws);

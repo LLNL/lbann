@@ -452,19 +452,20 @@ base_convolution_layer<TensorDataType,Device>
 
   // Convolution parameters
   std::vector<int> input_dims, output_dims;
-  cudnn::TensorDescriptor input_desc, output_desc;
   if (during_forward_prop) {
     input_dims = this->get_input_dims();
     output_dims = this->get_output_dims();
-    input_desc = m_tensors_cudnn_desc.get_prev_activations();
-    output_desc = m_tensors_cudnn_desc.get_activations();
   }
   else {
     input_dims = this->get_output_dims();
     output_dims = this->get_input_dims();
-    input_desc = m_tensors_cudnn_desc.get_prev_error_signals();
-    output_desc = m_tensors_cudnn_desc.get_error_signals();
   }
+  auto& input_desc = (during_forward_prop
+                      ? m_tensors_cudnn_desc.get_prev_activations()
+                      : m_tensors_cudnn_desc.get_prev_error_signals());
+  auto& output_desc = (during_forward_prop
+                       ? m_tensors_cudnn_desc.get_activations()
+                       : m_tensors_cudnn_desc.get_error_signals());
 
   // Perform convolution on the GPU
   // Determine convolution algorithm
@@ -532,43 +533,46 @@ apply_transposed_convolution_cudnn(bool during_forward_prop) {
 
   // Convolution transpose parameters
   std::vector<int> input_dims, output_dims;
-  cudnn::TensorDescriptor input_desc, output_desc;
   if (during_forward_prop) {
     input_dims = this->get_input_dims();
     output_dims = this->get_output_dims();
-    input_desc = m_tensors_cudnn_desc.get_prev_activations();
-    output_desc = m_tensors_cudnn_desc.get_activations();
   }
   else {
     input_dims = this->get_output_dims();
     output_dims = this->get_input_dims();
-    input_desc = m_tensors_cudnn_desc.get_prev_error_signals();
-    output_desc = m_tensors_cudnn_desc.get_error_signals();
   }
+  auto& input_desc = (during_forward_prop
+                      ? m_tensors_cudnn_desc.get_prev_activations()
+                      : m_tensors_cudnn_desc.get_prev_error_signals());
+  auto& output_desc = (during_forward_prop
+                       ? m_tensors_cudnn_desc.get_activations()
+                       : m_tensors_cudnn_desc.get_error_signals());
 
   // Perform transposed convolution on the GPU
   // Determine transposed convolution algorithm
-  cudnnConvolutionBwdDataAlgo_t transposed_convolution_cudnn_algorithm
-                       = get_backward_data_algo_cudnn(input.Width(),
-                                                      m_kernel_cudnn_desc, kernel.LockedBuffer(),
-                                                      input_desc, input.LockedBuffer(),
-                                                      m_convolution_cudnn_desc,
-                                                      output_desc, output.Buffer(),
-                                                      workspace_size, workspace.Buffer());
+  cudnnConvolutionBwdDataAlgo_t transposed_convolution_cudnn_algorithm =
+                       get_backward_data_algo_cudnn(
+                         input.Width(),
+                         m_kernel_cudnn_desc, kernel.LockedBuffer(),
+                         input_desc, input.LockedBuffer(),
+                         m_convolution_cudnn_desc,
+                         output_desc, output.Buffer(),
+                         workspace_size, workspace.Buffer());
   // Perform transposed convolution
-  CHECK_CUDNN(cudnnConvolutionBackwardData(cudnn::get_handle(),
-                                           &one,
-                                           m_kernel_cudnn_desc,
-                                           kernel.LockedBuffer(),
-                                           input_desc,
-                                           input.LockedBuffer(),
-                                           m_convolution_cudnn_desc,
-                                           transposed_convolution_cudnn_algorithm,
-                                           workspace.Buffer(),
-                                           workspace_size,
-                                           &zero,
-                                           output_desc,
-                                           output.Buffer()));
+  CHECK_CUDNN(
+    cudnnConvolutionBackwardData(cudnn::get_handle(),
+                                 &one,
+                                 m_kernel_cudnn_desc,
+                                 kernel.LockedBuffer(),
+                                 input_desc,
+                                 input.LockedBuffer(),
+                                 m_convolution_cudnn_desc,
+                                 transposed_convolution_cudnn_algorithm,
+                                 workspace.Buffer(),
+                                 workspace_size,
+                                 &zero,
+                                 output_desc,
+                                 output.Buffer()));
 
 
 #endif // LBANN_HAS_CUDNN
@@ -861,16 +865,16 @@ base_convolution_layer<TensorDataType,Device>
 
   // Apply bias to each output channel
   LBANN_OMP_PARALLEL_FOR
-  for (El::Int channel = 0; channel < num_output_channels; ++channel) {
-    const El::Int row_start = channel * num_per_output_channel;
-    const El::Int row_end = (channel+1) * num_per_output_channel;
-    const TensorDataType bias_term = TensorDataType(m_bias_scaling_factor) * local_bias(channel, 0);
-    for (El::Int col = 0; col < local_width; ++col) {
-      for (El::Int row = row_start; row < row_end; ++row) {
-        local_output(row, col) += bias_term;
+    for (El::Int channel = 0; channel < num_output_channels; ++channel) {
+      const El::Int row_start = channel * num_per_output_channel;
+      const El::Int row_end = (channel+1) * num_per_output_channel;
+      const TensorDataType bias_term = TensorDataType(m_bias_scaling_factor) * local_bias(channel, 0);
+      for (El::Int col = 0; col < local_width; ++col) {
+        for (El::Int row = row_start; row < row_end; ++row) {
+          local_output(row, col) += bias_term;
+        }
       }
     }
-  }
 }
 
 template <typename TensorDataType, El::Device Device>
@@ -906,23 +910,23 @@ void base_convolution_layer<TensorDataType,Device>
     if (has_local_data) {
       auto& local_bias_gradient = bias_gradient.Matrix();
       LBANN_OMP_PARALLEL_FOR
-      for (int channel = 0; channel < num_output_channels; ++channel) {
-        const El::Int row_start = channel * num_per_output_channel;
-        const El::Int row_end = (channel+1) * num_per_output_channel;
-        auto sum = El::TypeTraits<TensorDataType>::Zero();
-        auto correction = El::TypeTraits<TensorDataType>::Zero();
-        for (El::Int col = 0; col < local_width; ++col) {
-          for (El::Int row = row_start; row < row_end; ++row) {
-            TensorDataType term = local_gradient_wrt_output(row, col);
-            term += correction;
-            const TensorDataType next_sum = sum + term;
-            correction = term - (next_sum - sum);
-            sum = next_sum;
+        for (int channel = 0; channel < num_output_channels; ++channel) {
+          const El::Int row_start = channel * num_per_output_channel;
+          const El::Int row_end = (channel+1) * num_per_output_channel;
+          auto sum = El::TypeTraits<TensorDataType>::Zero();
+          auto correction = El::TypeTraits<TensorDataType>::Zero();
+          for (El::Int col = 0; col < local_width; ++col) {
+            for (El::Int row = row_start; row < row_end; ++row) {
+              TensorDataType term = local_gradient_wrt_output(row, col);
+              term += correction;
+              const TensorDataType next_sum = sum + term;
+              correction = term - (next_sum - sum);
+              sum = next_sum;
+            }
           }
+          local_bias_gradient(channel, 0) = dst_scale*local_bias_gradient(channel, 0)
+            + gradient_scale*sum;
         }
-        local_bias_gradient(channel, 0) = dst_scale*local_bias_gradient(channel, 0)
-          + gradient_scale*sum;
-      }
     } else {
       El::Scale(dst_scale, bias_gradient);
     }
@@ -1260,7 +1264,7 @@ void base_convolution_adapter<TensorDataType, Device>::bp_compute_convolution_fi
 }
 
 
-#define PROTO_DEVICE(T, Device)                                            \
+#define PROTO_DEVICE(T, Device)                         \
   template class base_convolution_adapter<T, Device>
 
 #include "lbann/macros/instantiate_device.hpp"
@@ -1268,7 +1272,7 @@ void base_convolution_adapter<TensorDataType, Device>::bp_compute_convolution_fi
 
 #endif // LBANN_HAS_DISTCONV
 
-#define PROTO_DEVICE(T, Device)                                            \
+#define PROTO_DEVICE(T, Device)                         \
   template class base_convolution_layer<T, Device>
 
 #include "lbann/macros/instantiate_device.hpp"
