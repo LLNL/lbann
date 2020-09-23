@@ -47,7 +47,7 @@ class input_distconv_adapter: public data_type_distconv_adapter<TensorDataType> 
   using TensorHost = dc::TensorHost<TensorDataType>;
   using TensorHostShuffler = dc::TensorHostShuffler<TensorDataType>;
 
-  input_distconv_adapter(Layer& layer);
+  input_distconv_adapter(Layer& layer, const bool shuffle_required);
   virtual ~input_distconv_adapter() = default;
 
   TensorHostShuffler &get_shuffler(const TensorHost &src, const TensorHost &dst,
@@ -78,7 +78,7 @@ class input_distconv_adapter: public data_type_distconv_adapter<TensorDataType> 
   std::vector<std::unique_ptr<TensorHost>> m_original_host_tensors;
   std::vector<std::unique_ptr<TensorHost>> m_host_tensors;
 
-  bool m_shuffle_required;
+  const bool m_shuffle_required;
   std::vector<std::array<std::unique_ptr<TensorHostShuffler>, 4>> m_shufflers;
   std::unique_ptr<TensorDataType> m_shuffler_src_buf;
   size_t m_shuffler_src_buf_size = 0;
@@ -142,8 +142,9 @@ class input_layer : public generic_input_layer<TensorDataType> {
   bool is_distconv_supported() const override {
     return Dev == El::Device::CPU && T_layout == data_layout::DATA_PARALLEL;
   }
-  void setup_distconv_adapter() override {
-    this->get_distconv_adapter_ptr() = make_unique<distconv_adapter_type>(*this);
+  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override {
+    this->get_distconv_adapter_ptr() = make_unique<distconv_adapter_type>(
+        *this, dr_metadata.shuffle_required);
   }
   distconv_adapter_type& get_distconv_adapter() override;
   const distconv_adapter_type& get_distconv_adapter() const override;

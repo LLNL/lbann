@@ -383,11 +383,11 @@ void fp_compute_impl(
   using ByteBuffer = hydrogen::simple_buffer<El::byte, El::Device::GPU>;
 
   // Matrices
-  const auto& local_input_sequence
+  const auto& input_sequence
     = dynamic_cast<const LocalMat&>(l.get_local_prev_activations(0));
-  const auto& local_init_hidden
+  const auto& init_hidden
     = dynamic_cast<const LocalMat&>(l.get_local_prev_activations(1));
-  auto& local_output_sequence
+  auto& output_sequence
     = dynamic_cast<LocalMat&>(l.get_local_activations());
   const auto& ih_matrix
     = dynamic_cast<const LocalMat&>(l.weights_values(0).LockedMatrix());
@@ -400,7 +400,7 @@ void fp_compute_impl(
 
   // Dimensions
   const size_t sequence_length = l.get_input_dims(0)[0];
-  const size_t mini_batch_size = local_input_sequence.Width();
+  const size_t mini_batch_size = input_sequence.Width();
   const size_t input_size = l.get_input_size(0) / sequence_length;
   const size_t hidden_size = l.m_hidden_size;
 
@@ -410,7 +410,8 @@ void fp_compute_impl(
   }
 
   // GPU objects
-  auto&& sync_info = local_input_sequence.GetSyncInfo();
+  auto&& sync_info = input_sequence.GetSyncInfo();
+  auto&& stream = sync_info.Stream();
   auto&& handle = cudnn::get_handle();
   const auto data_type = cudnn::get_data_type<TensorDataType>();
 
@@ -427,23 +428,19 @@ void fp_compute_impl(
 
   // Reorder input tensor dims
   // Note: cuDNN uses sequence_length x mini_batch_size x hidden_size
-  /// @todo Consider custom kernel
   LocalMat input_sequence_workspace, output_sequence_workspace;
   input_sequence_workspace.SetSyncInfo(sync_info);
   output_sequence_workspace.SetSyncInfo(sync_info);
   input_sequence_workspace.Resize(mini_batch_size*input_size, sequence_length);
   output_sequence_workspace.Resize(mini_batch_size*hidden_size, sequence_length);
-  for (size_t i=0; i<sequence_length; ++i) {
-    const auto input_sequence_view
-      = local_input_sequence(El::IR(i*input_size, (i+1)*input_size), El::ALL);
-    LocalMat input_sequence_workspace_view(
-      input_size,
-      mini_batch_size,
-      input_sequence_workspace.Buffer(0, i),
-      input_size);
-    input_sequence_workspace_view.SetSyncInfo(sync_info);
-    El::Copy(input_sequence_view, input_sequence_workspace_view);
-  }
+  constexpr size_t one{1};
+  cuda::copy_tensor(
+    stream,
+    {mini_batch_size, sequence_length, input_size},
+    input_sequence.LockedBuffer(),
+    {static_cast<size_t>(input_sequence.LDim()), input_size, one},
+    input_sequence_workspace.Buffer(),
+    {input_size, mini_batch_size*input_size, one});
 
   // Pack weights into workspace buffer
   auto packed_weights = pack_cudnn_rnn_weights(
@@ -488,7 +485,7 @@ void fp_compute_impl(
       input_desc_list.data(),
       input_sequence_workspace.LockedBuffer(),
       hidden_desc,
-      local_init_hidden.LockedBuffer(),
+      init_hidden.LockedBuffer(),
       hidden_desc,  // cxDesc
       nullptr,      // cx
       l.m_packed_weights_cudnn_desc,
@@ -506,18 +503,13 @@ void fp_compute_impl(
 
   // Reorder output tensor dims
   // Note: cuDNN uses sequence_length x mini_batch_size x hidden_size
-  /// @todo Consider custom kernel
-  for (size_t i=0; i<sequence_length; ++i) {
-    LocalMat output_sequence_workspace_view(
-      hidden_size,
-      mini_batch_size,
-      output_sequence_workspace.LockedBuffer(0, i),
-      hidden_size);
-    output_sequence_workspace_view.SetSyncInfo(sync_info);
-    auto output_sequence_view
-      = local_output_sequence(El::IR(i*hidden_size, (i+1)*hidden_size), El::ALL);
-    El::Copy(output_sequence_workspace_view, output_sequence_view);
-  }
+  cuda::copy_tensor(
+    stream,
+    {mini_batch_size, sequence_length, hidden_size},
+    output_sequence_workspace.LockedBuffer(),
+    {hidden_size, mini_batch_size*hidden_size, one},
+    output_sequence.Buffer(),
+    {static_cast<size_t>(output_sequence.LDim()), hidden_size, one});
 
 }
 #endif // LBANN_HAS_CUDNN
@@ -642,17 +634,17 @@ void bp_compute_impl(
   using ByteBuffer = hydrogen::simple_buffer<El::byte, El::Device::GPU>;
 
   // Matrices
-  const auto& local_input_sequence
+  const auto& input_sequence
     = dynamic_cast<const LocalMat&>(l.get_local_prev_activations(0));
-  const auto& local_init_hidden
+  const auto& init_hidden
     = dynamic_cast<const LocalMat&>(l.get_local_prev_activations(1));
-  const auto& local_output_sequence
+  const auto& output_sequence
     = dynamic_cast<const LocalMat&>(l.get_local_activations());
-  const auto& local_output_sequence_grad
+  const auto& output_sequence_grad
     = dynamic_cast<const LocalMat&>(l.get_local_prev_error_signals());
-  auto& local_input_sequence_grad
+  auto& input_sequence_grad
     = dynamic_cast<LocalMat&>(l.get_local_error_signals(0));
-  auto& local_init_hidden_grad
+  auto& init_hidden_grad
     = dynamic_cast<LocalMat&>(l.get_local_error_signals(1));
   const auto& ih_matrix
     = dynamic_cast<const LocalMat&>(l.weights_values(0).LockedMatrix());
@@ -665,12 +657,13 @@ void bp_compute_impl(
 
   // Dimensions
   const size_t sequence_length = l.get_input_dims(0)[0];
-  const size_t mini_batch_size = local_input_sequence.Width();
+  const size_t mini_batch_size = input_sequence.Width();
   const size_t input_size = l.get_input_size(0) / sequence_length;
   const size_t hidden_size = l.m_hidden_size;
 
   // GPU objects
-  auto&& sync_info = local_input_sequence.GetSyncInfo();
+  auto&& sync_info = input_sequence.GetSyncInfo();
+  auto&& stream = sync_info.Stream();
   auto&& handle = cudnn::get_handle();
 
   // Define closure to send weight gradients to optimizers
@@ -731,7 +724,6 @@ void bp_compute_impl(
 
   // Reorder tensor dims
   // Note: cuDNN uses sequence_length x mini_batch_size x size
-  /// @todo Consider custom kernel
   LocalMat input_sequence_workspace, output_sequence_workspace;
   LocalMat input_sequence_grad_workspace, output_sequence_grad_workspace;
   input_sequence_workspace.SetSyncInfo(sync_info);
@@ -742,39 +734,28 @@ void bp_compute_impl(
   output_sequence_workspace.Resize(mini_batch_size*hidden_size, sequence_length);
   input_sequence_grad_workspace.Resize(mini_batch_size*input_size, sequence_length);
   output_sequence_grad_workspace.Resize(mini_batch_size*hidden_size, sequence_length);
-  for (size_t i=0; i<sequence_length; ++i) {
-    const auto input_sequence_view
-      = local_input_sequence(El::IR(i*input_size, (i+1)*input_size), El::ALL);
-    LocalMat input_sequence_workspace_view(
-      input_size,
-      mini_batch_size,
-      input_sequence_workspace.Buffer(0, i),
-      input_size);
-    input_sequence_workspace_view.SetSyncInfo(sync_info);
-    El::Copy(input_sequence_view, input_sequence_workspace_view);
-  }
-  for (size_t i=0; i<sequence_length; ++i) {
-    const auto output_sequence_view
-      = local_output_sequence(El::IR(i*hidden_size, (i+1)*hidden_size), El::ALL);
-    LocalMat output_sequence_workspace_view(
-      hidden_size,
-      mini_batch_size,
-      output_sequence_workspace.Buffer(0, i),
-      hidden_size);
-    output_sequence_workspace_view.SetSyncInfo(sync_info);
-    El::Copy(output_sequence_view, output_sequence_workspace_view);
-  }
-  for (size_t i=0; i<sequence_length; ++i) {
-    const auto output_sequence_grad_view
-      = local_output_sequence_grad(El::IR(i*hidden_size, (i+1)*hidden_size), El::ALL);
-    LocalMat output_sequence_grad_workspace_view(
-      hidden_size,
-      mini_batch_size,
-      output_sequence_grad_workspace.Buffer(0, i),
-      hidden_size);
-    output_sequence_grad_workspace_view.SetSyncInfo(sync_info);
-    El::Copy(output_sequence_grad_view, output_sequence_grad_workspace_view);
-  }
+  constexpr size_t one{1};
+  cuda::copy_tensor(
+    stream,
+    {mini_batch_size, sequence_length, input_size},
+    input_sequence.LockedBuffer(),
+    {sequence_length*input_size, input_size, one},
+    input_sequence_workspace.Buffer(),
+    {input_size, mini_batch_size*input_size, one});
+  cuda::copy_tensor(
+    stream,
+    {mini_batch_size, sequence_length, hidden_size},
+    output_sequence.LockedBuffer(),
+    {sequence_length*hidden_size, hidden_size, one},
+    output_sequence_workspace.Buffer(),
+    {hidden_size, mini_batch_size*hidden_size, one});
+  cuda::copy_tensor(
+    stream,
+    {mini_batch_size, sequence_length, hidden_size},
+    output_sequence_grad.LockedBuffer(),
+    {sequence_length*hidden_size, hidden_size, one},
+    output_sequence_grad_workspace.Buffer(),
+    {hidden_size, mini_batch_size*hidden_size, one});
 
   // Pack weights into workspace buffer
   auto packed_weights = pack_cudnn_rnn_weights(
@@ -824,13 +805,13 @@ void bp_compute_impl(
       l.m_packed_weights_cudnn_desc,
       packed_weights.data(),
       hidden_desc,
-      local_init_hidden.LockedBuffer(),
+      init_hidden.LockedBuffer(),
       hidden_desc,  // cxDesc
       nullptr,
       input_desc_list.data(),
       input_sequence_grad_workspace.Buffer(),
       hidden_desc,
-      local_init_hidden_grad.Buffer(),
+      init_hidden_grad.Buffer(),
       hidden_desc,  // dcxDesc
       nullptr,
       cudnn_workspace.data(),
@@ -845,7 +826,7 @@ void bp_compute_impl(
       input_desc_list.data(),
       input_sequence_workspace.LockedBuffer(),
       hidden_desc,
-      local_init_hidden.LockedBuffer(),
+      init_hidden.LockedBuffer(),
       output_desc_list.data(),
       output_sequence_workspace.LockedBuffer(),
       cudnn_workspace.data(),
@@ -873,18 +854,13 @@ void bp_compute_impl(
 
   // Reorder input grad tensor dims
   // Note: cuDNN uses sequence_length x mini_batch_size x input_size
-  /// @todo Consider custom kernel
-  for (size_t i=0; i<sequence_length; ++i) {
-    LocalMat input_sequence_grad_workspace_view(
-      input_size,
-      mini_batch_size,
-      input_sequence_grad_workspace.LockedBuffer(0, i),
-      input_size);
-    input_sequence_grad_workspace_view.SetSyncInfo(sync_info);
-    auto input_sequence_grad_view
-      = local_input_sequence_grad(El::IR(i*input_size, (i+1)*input_size), El::ALL);
-    El::Copy(input_sequence_grad_workspace_view, input_sequence_grad_view);
-  }
+  cuda::copy_tensor(
+    stream,
+    {mini_batch_size, sequence_length, input_size},
+    input_sequence_grad_workspace.LockedBuffer(),
+    {input_size, mini_batch_size*input_size, one},
+    input_sequence_grad.Buffer(),
+    {sequence_length*input_size, input_size, one});
 
 }
 #endif // LBANN_HAS_CUDNN

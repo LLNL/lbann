@@ -37,6 +37,8 @@ std::string to_string(const data_reader_target_mode m) {
     return "regression";
   case data_reader_target_mode::RECONSTRUCTION:
     return "reconstruction";
+  case data_reader_target_mode::LABEL_RECONSTRUCTION:
+    return "label_reconstruction";
   case data_reader_target_mode::INPUT:
     return "input";
   case data_reader_target_mode::NA:
