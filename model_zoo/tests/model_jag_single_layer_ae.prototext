@@ -56,8 +56,8 @@ model {
   callback {
     check_metric {
       metric: "reconstr_loss",
-      lower_bound: 20.3956,
-      upper_bound: 22.3956,
+      lower_bound: 10.3956,
+      upper_bound: 12.3956,
       error_on_failure: true,
       execution_modes: "testing"
     }
