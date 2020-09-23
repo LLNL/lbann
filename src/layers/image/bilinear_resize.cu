@@ -69,12 +69,12 @@ __global__ void fp_kernel(El::Int num_samples,
     const auto& y = (TensorDataType(output_row) + half) * y_stride;
 
     // Find input pixels near interpolation point
-    const auto input_col = static_cast<El::Int>(cuda::floor(x - half));
-    const auto& input_col0 = cuda::max(input_col, El::Int(0));
-    const auto& input_col1 = cuda::min(input_col+1, input_width-1);
-    const auto input_row = static_cast<El::Int>(cuda::floor(y - half));
-    const auto& input_row0 = cuda::max(input_row, El::Int(0));
-    const auto& input_row1 = cuda::min(input_row+1, input_height-1);
+    const auto input_col = static_cast<El::Int>(gpu_lib::floor(x - half));
+    const auto& input_col0 = gpu_lib::max(input_col, El::Int(0));
+    const auto& input_col1 = gpu_lib::min(input_col+1, input_width-1);
+    const auto input_row = static_cast<El::Int>(gpu_lib::floor(y - half));
+    const auto& input_row0 = gpu_lib::max(input_row, El::Int(0));
+    const auto& input_row1 = gpu_lib::min(input_row+1, input_height-1);
 
     // Interpolation point relative to input pixel centers
     const auto& unit_x = x - (TensorDataType(input_col) + half);
@@ -144,15 +144,20 @@ void bilinear_resize_layer<TensorDataType, Layout, Device>::fp_compute() {
     grid_dim = std::numeric_limits<uint32_t>::max();
   }
 
-  // Launch CUDA kernel
+  // Launch GPU kernel
   if (grid_dim > 0) {
-    fp_kernel<block_dim>
-      <<<grid_dim, block_dim, 0, hydrogen::cuda::GetDefaultStream()>>>(
-        num_samples, num_channels,
-        input_height, input_width,
-        local_input.LockedBuffer(), local_input.LDim(),
-        this->m_height, this->m_width,
-        local_output.Buffer(), local_output.LDim());
+    auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_input),
+                                       gpu::get_sync_info(local_output));
+    hydrogen::gpu::LaunchKernel(
+      fp_kernel<block_dim, TensorDataType>,
+      grid_dim, block_dim, 0, multisync,
+    //fp_kernel<block_dim>
+    //  <<<grid_dim, block_dim, 0, hydrogen::cuda::GetDefaultStream()>>>(
+      num_samples, num_channels,
+      input_height, input_width,
+      local_input.LockedBuffer(), local_input.LDim(),
+      this->m_height, this->m_width,
+      local_output.Buffer(), local_output.LDim());
   }
 
 }
