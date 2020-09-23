@@ -91,8 +91,7 @@ base_convolution_layer<TensorDataType,Device>::base_convolution_layer(
 {
 #ifdef LBANN_HAS_CUDNN
   m_kernel_cudnn_desc = other.m_kernel_cudnn_desc;
-  copy_convolution_cudnn_desc(other.m_convolution_cudnn_desc,
-                              m_convolution_cudnn_desc);
+  m_convolution_cudnn_desc = other.m_convolution_cudnn_desc;
   if (other.m_bias_scaling_factor != El::TypeTraits<ScalingType>::Zero()) {
     m_bias_cudnn_desc = other.m_bias_cudnn_desc;
   }
@@ -118,8 +117,7 @@ base_convolution_layer<TensorDataType,Device>
   // Copy cuDNN objects
   m_convolution_math_type = other.m_convolution_math_type;
   m_kernel_cudnn_desc = other.m_kernel_cudnn_desc;
-  copy_convolution_cudnn_desc(other.m_convolution_cudnn_desc,
-                              m_convolution_cudnn_desc);
+  m_convolution_cudnn_desc = other.m_convolution_cudnn_desc;
   if (other.m_bias_scaling_factor != El::TypeTraits<ScalingType>::Zero()) {
     m_bias_cudnn_desc = other.m_bias_cudnn_desc;
   }
@@ -134,14 +132,7 @@ base_convolution_layer<TensorDataType,Device>
 }
 
 template <typename TensorDataType, El::Device Device>
-base_convolution_layer<TensorDataType,Device>
-::~base_convolution_layer() {
-#ifdef LBANN_HAS_CUDNN
-  if (m_convolution_cudnn_desc != nullptr) {
-    CHECK_CUDNN_DTOR(cudnnDestroyConvolutionDescriptor(m_convolution_cudnn_desc));
-  }
-#endif // LBANN_HAS_CUDNN
-}
+base_convolution_layer<TensorDataType,Device>::~base_convolution_layer() {}
 
 #ifdef LBANN_HAS_CUDNN
 template <typename TensorDataType, El::Device Device>
@@ -406,18 +397,11 @@ void base_convolution_layer<TensorDataType,Device>::setup_gpu() {
     kernel_dims);
 
   // Set convolution descriptor
-  CHECK_CUDNN(cudnnCreateConvolutionDescriptor(&m_convolution_cudnn_desc));
-  CHECK_CUDNN(cudnnSetConvolutionMathType(
-                m_convolution_cudnn_desc, m_convolution_math_type));
-  CHECK_CUDNN(cudnnSetConvolutionNdDescriptor(m_convolution_cudnn_desc,
-                                              m_pads.size(),
-                                              m_pads.data(),
-                                              m_strides.data(),
-                                              m_dilations.data(),
-                                              CUDNN_CROSS_CORRELATION,
-                                              cudnn::get_data_type<TensorDataType>()));
-  CHECK_CUDNN(cudnnSetConvolutionGroupCount(m_convolution_cudnn_desc,
-                                            m_groups));
+  m_convolution_cudnn_desc.set(m_pads, m_strides, m_dilations,
+                               cudnn::get_data_type<TensorDataType>(),
+                               CUDNN_CROSS_CORRELATION);
+  m_convolution_cudnn_desc.set_math_mode(m_convolution_math_type);
+  m_convolution_cudnn_desc.set_group_count(m_groups);
 
   // Set bias tensor descriptor
   if (m_bias_scaling_factor != El::TypeTraits<ScalingType>::Zero()) {
@@ -1004,62 +988,6 @@ void base_convolution_layer<TensorDataType,Device>
 
 #ifdef LBANN_HAS_CUDNN
 template <typename TensorDataType, El::Device Device>
-void
-base_convolution_layer<TensorDataType,Device>
-::copy_convolution_cudnn_desc(const cudnnConvolutionDescriptor_t& src,
-                              cudnnConvolutionDescriptor_t& dst) {
-
-  // Create or destroy descriptor if needed
-  if(src != nullptr && dst == nullptr) {
-    CHECK_CUDNN(cudnnCreateConvolutionDescriptor(&dst));
-  }
-  else if(src == nullptr && dst != nullptr) {
-    CHECK_CUDNN(cudnnDestroyConvolutionDescriptor(dst));
-    dst = nullptr;
-  }
-
-  // Copy descriptor data if needed
-  if(src != nullptr) {
-    cudnnConvolutionMode_t mode;
-    cudnnDataType_t data_type;
-    cudnnMathType_t math_type;
-    int num_dims;
-
-    CHECK_CUDNN(cudnnGetConvolutionMathType(src, &math_type));
-    CHECK_CUDNN(cudnnGetConvolutionNdDescriptor(src,
-                                                0,
-                                                &num_dims,
-                                                nullptr,
-                                                nullptr,
-                                                nullptr,
-                                                &mode,
-                                                &data_type));
-    std::vector<int> pads(num_dims), strides(num_dims), dilations(num_dims);
-    CHECK_CUDNN(cudnnGetConvolutionNdDescriptor(src,
-                                                num_dims,
-                                                &num_dims,
-                                                pads.data(),
-                                                strides.data(),
-                                                dilations.data(),
-                                                &mode,
-                                                &data_type));
-    int num_groups;
-    CHECK_CUDNN(cudnnGetConvolutionGroupCount(src,
-                                              &num_groups));
-    CHECK_CUDNN(cudnnSetConvolutionMathType(dst, math_type));
-    CHECK_CUDNN(cudnnSetConvolutionNdDescriptor(dst,
-                                                num_dims,
-                                                pads.data(),
-                                                strides.data(),
-                                                dilations.data(),
-                                                mode,
-                                                data_type));
-    CHECK_CUDNN(cudnnSetConvolutionGroupCount(dst,
-                                              num_groups));
-  }
-}
-
-template <typename TensorDataType, El::Device Device>
 cudnnConvolutionFwdAlgo_t
 base_convolution_layer<TensorDataType,Device>::get_forward_algo_cudnn(
   const int local_mini_batch_size,
@@ -1067,7 +995,7 @@ base_convolution_layer<TensorDataType,Device>::get_forward_algo_cudnn(
   const TensorDataType* input,
   const cudnn::FilterDescriptor& kernel_desc,
   const TensorDataType* kernel,
-  const cudnnConvolutionDescriptor_t& conv_desc,
+  const cudnn::ConvolutionDescriptor& conv_desc,
   const cudnn::TensorDescriptor& output_desc,
   TensorDataType* output,
   size_t ws_size,
@@ -1098,7 +1026,7 @@ base_convolution_layer<TensorDataType,Device>::get_backward_data_algo_cudnn(
   const TensorDataType* kernel,
   const cudnn::TensorDescriptor& prev_error_signal_desc,
   const TensorDataType* prev_error_signal,
-  const cudnnConvolutionDescriptor_t& conv_desc,
+  const cudnn::ConvolutionDescriptor& conv_desc,
   const cudnn::TensorDescriptor& error_signal_desc,
   TensorDataType* error_signal,
   size_t ws_size,
@@ -1129,7 +1057,7 @@ base_convolution_layer<TensorDataType,Device>::get_backward_filter_algo_cudnn(
   const TensorDataType* input,
   const cudnn::TensorDescriptor& prev_error_signal_desc,
   const TensorDataType* prev_error_signal,
-  const cudnnConvolutionDescriptor_t& conv_desc,
+  const cudnn::ConvolutionDescriptor& conv_desc,
   const cudnn::FilterDescriptor& kernel_gradient_desc,
   size_t ws_size,
   TensorDataType* ws) {
@@ -1170,8 +1098,8 @@ void base_convolution_layer<TensorDataType,Device>::setup_distconv_adapter(
 template <typename TensorDataType, El::Device Device>
 const base_convolution_adapter<TensorDataType, Device>&
 base_convolution_layer<TensorDataType, Device>::get_distconv_adapter() const {
-  return dynamic_cast<const base_convolution_adapter<
-    TensorDataType, Device>&>(data_type_layer<TensorDataType>::get_distconv_adapter());
+  return dynamic_cast<const base_convolution_adapter<TensorDataType, Device>&>(
+    data_type_layer<TensorDataType>::get_distconv_adapter());
 }
 
 template <typename TensorDataType, El::Device Device>

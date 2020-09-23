@@ -127,7 +127,7 @@ protected:
   /** Convolution kernel cuDNN descriptor. */
   cudnn::FilterDescriptor m_kernel_cudnn_desc;
   /** Convolution cuDNN descriptor. */
-  cudnnConvolutionDescriptor_t m_convolution_cudnn_desc = nullptr;
+  cudnn::ConvolutionDescriptor m_convolution_cudnn_desc;
   /** Bias tensor cuDNN descriptor. */
   cudnn::TensorDescriptor m_bias_cudnn_desc;
   /** Tensor cuDNN descriptors. */
@@ -202,11 +202,6 @@ private:
 
 #ifdef LBANN_HAS_CUDNN
 
-  /** Copy convolution cuDNN descriptor. */
-  static void copy_convolution_cudnn_desc(
-    const cudnnConvolutionDescriptor_t& src,
-    cudnnConvolutionDescriptor_t& dst);
-
   /** Get the cuDNN algorithm to use for forward prop. */
   cudnnConvolutionFwdAlgo_t get_forward_algo_cudnn(
     const int local_mini_batch_size,
@@ -214,7 +209,7 @@ private:
     const TensorDataType* input,
     const cudnn::FilterDescriptor& kernel_desc,
     const TensorDataType* kernel,
-    const cudnnConvolutionDescriptor_t& conv_desc,
+    const cudnn::ConvolutionDescriptor& conv_desc,
     const cudnn::TensorDescriptor& output_desc,
     TensorDataType* output,
     size_t ws_size,
@@ -227,7 +222,7 @@ private:
     const TensorDataType* kernel,
     const cudnn::TensorDescriptor& prev_error_signal_desc,
     const TensorDataType* prev_error_signal,
-    const cudnnConvolutionDescriptor_t& conv_desc,
+    const cudnn::ConvolutionDescriptor& conv_desc,
     const cudnn::TensorDescriptor& error_signal_desc,
     TensorDataType* error_signal,
     size_t ws_size,
@@ -243,7 +238,7 @@ private:
     const TensorDataType* input,
     const cudnn::TensorDescriptor& prev_error_signal_desc,
     const TensorDataType* prev_error_signal,
-    const cudnnConvolutionDescriptor_t& conv_desc,
+    const cudnn::ConvolutionDescriptor& conv_desc,
     const cudnn::FilterDescriptor& kernel_gradient_desc,
     size_t ws_size,
     TensorDataType* ws);
