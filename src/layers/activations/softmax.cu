@@ -37,7 +37,7 @@ namespace {
 template <typename TensorDataType>
 struct threshold_op {
   __forceinline__ __device__ TensorDataType operator()(const TensorDataType& y) const {
-    return cuda::max(y, cuda::sqrt(cuda::min<TensorDataType>()));
+    return gpu_lib::max(y, gpu_lib::sqrt(gpu_lib::min<TensorDataType>()));
   }
 };
 #endif // LBANN_ENABLE_SOFTMAX_THRESHOLD
@@ -47,7 +47,7 @@ template <class T>
 struct max_op {
   __device__ __forceinline__
   DataType operator()(const T& x1, const T& x2) const {
-    return cuda::max(x1, x2);
+    return gpu_lib::max(x1, x2);
   }
 };
 
@@ -83,15 +83,15 @@ __global__ void reduce_max_kernel(size_t height,
   for (size_t col = bidy; col < width; col += nblocksy) {
 
     // Find largest value for each thread
-    TensorDataType thread_max_val{-cuda::infinity<DataType>()};
+    TensorDataType thread_max_val{-gpu_lib::infinity<DataType>()};
     for (size_t row = gidx; row < height; row += nthreadsx) {
       const auto& val = values[row+col*values_ldim];
-      thread_max_val = cuda::max(thread_max_val, val);
+      thread_max_val = gpu_lib::max(thread_max_val, val);
     }
 
     // Find largest value for each block
     const TensorDataType block_max_val
-      = cuda::block_reduce<bsize,1,1,DataType,max_op<DataType>>(thread_max_val);
+      = gpu_lib::block_reduce<bsize,1,1,DataType,max_op<DataType>>(thread_max_val);
     if (tid == 0) {
       max_values[bidx+col*nblocksx] = block_max_val;
     }
@@ -133,14 +133,14 @@ __global__ void fp_exp_kernel(size_t height,
     for (size_t row = gidx; row < height; row += nthreadsx) {
       const auto& x = input[row+col*input_ldim];
       auto& y = output[row+col*output_ldim];
-      y = cuda::exp(x-shift);
+      y = gpu_lib::exp(x-shift);
       thread_sum += y;
     }
 
     // Compute sum for each block
-    const TensorDataType block_sum = cuda::block_reduce<bsize,1,1>(thread_sum);
+    const TensorDataType block_sum = gpu_lib::block_reduce<bsize,1,1>(thread_sum);
     if (tid == 0) {
-      cuda::atomic_add(&sums[col], block_sum);
+      gpu_lib::atomic_add(&sums[col], block_sum);
     }
 
   }
@@ -178,7 +178,7 @@ __global__ void fp_output_kernel(size_t height,
       auto& y = output[row+col*output_ldim];
       y /= denom;
 #ifdef LBANN_ENABLE_SOFTMAX_THRESHOLD
-      y = cuda::max(y, cuda::sqrt(cuda::min<TensorDataType>()));
+      y = gpu_lib::max(y, gpu_lib::sqrt(gpu_lib::min<TensorDataType>()));
 #endif // LBANN_ENABLE_SOFTMAX_THRESHOLD
     }
   }
@@ -219,9 +219,9 @@ __global__ void bp_dot_product_kernel(
 
     // Compute dot product contribution for each block
     const TensorDataType block_dot_product
-      = cuda::block_reduce<bsize,1,1>(thread_dot_product);
+      = gpu_lib::block_reduce<bsize,1,1>(thread_dot_product);
     if (tid == 0) {
-      cuda::atomic_add(&dot_products[col], block_dot_product);
+      gpu_lib::atomic_add(&dot_products[col], block_dot_product);
     }
 
   }
@@ -315,7 +315,7 @@ void fp_compute_impl(softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, E
                                     l.m_tensors_cudnn_desc.get_activations(),
                                     local_output.Buffer()));
 #ifdef LBANN_ENABLE_SOFTMAX_THRESHOLD
-    cuda::apply_entrywise_unary_operator<threshold_op>(local_output,
+    gpu_lib::apply_entrywise_unary_operator<threshold_op>(local_output,
                                                        local_output);
 #endif // LBANN_ENABLE_SOFTMAX_THRESHOLD
   }
@@ -382,7 +382,7 @@ void fp_compute_impl(softmax_layer<TensorDataType, data_layout::MODEL_PARALLEL, 
   El::SyncInfo<El::Device::GPU> sync_info{stream, event};
 
   // Find max value in each column
-  cuda::thrust::vector<TensorDataType> max_vals;
+  gpu_lib::thrust::vector<TensorDataType> max_vals;
   if (local_output.IsEmpty()) {
     max_vals.resize(local_width,
                     -std::numeric_limits<TensorDataType>::infinity());
@@ -401,7 +401,7 @@ void fp_compute_impl(softmax_layer<TensorDataType, data_layout::MODEL_PARALLEL, 
     while (grid_dims.x > 1) {
       const size_t prev_height = grid_dims.x;
       grid_dims.x = (prev_height + block_size - 1) / block_size;
-      cuda::thrust::vector<TensorDataType> prev_vals(std::move(max_vals));
+      gpu_lib::thrust::vector<TensorDataType> prev_vals(std::move(max_vals));
       max_vals.resize(grid_dims.x * local_width);
       reduce_max_kernel<block_size><<<grid_dims, block_dims, 0, stream>>>(
         prev_height, local_width,
