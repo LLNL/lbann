@@ -301,9 +301,15 @@ void fp_compute_impl(log_softmax_layer<TensorDataType, data_layout::MODEL_PARALL
   const auto& local_width = local_input.Width();
 
   // GPU objects
-  auto&& stream = hydrogen::cuda::GetDefaultStream();
-  auto&& event = hydrogen::cuda::GetDefaultEvent();
-  El::SyncInfo<El::Device::GPU> sync_info{stream, event};
+  //auto&& stream = hydrogen::cuda::GetDefaultStream();
+  //auto&& event = hydrogen::cuda::GetDefaultEvent();
+  //El::SyncInfo<El::Device::GPU> sync_info{stream, event};
+  auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_input),
+                                     gpu::get_sync_info(local_output),
+                                     gpu::get_sync_info(local_workspace));
+  // The comm templates will not convert the multisync, so cast the multisync
+  // and use sync_info for comms.
+  El::SyncInfo<El::Device::GPU> const& sync_info = multisync;
 
   // Find max value in each column
   gpu_lib::thrust::vector<TensorDataType> max_vals;
@@ -320,26 +326,21 @@ void fp_compute_impl(log_softmax_layer<TensorDataType, data_layout::MODEL_PARALL
     max_vals.resize(grid_dims.x * local_width);
 
     // Launch GPU Kernel
-    using GPUMatType = El::Matrix<TensorDataType, El::Device::GPU>;
-    auto const& local_input_gpu = static_cast<GPUMatType const&>(local_input);
-    //auto multisync = hydrogen::MakeMultiSync(
-    //                   El::SyncInfoFromMatrix(local_input_gpu));
     hydrogen::gpu::LaunchKernel(
-      reduce_max_kernel<block_size, TensorDataType>, grid_dims, block_dims, 0,
-      static_cast<El::SyncInfo<El::Device::GPU> const&>(El::SyncInfoFromMatrix(local_input_gpu)),
+      reduce_max_kernel<block_size, TensorDataType>,
+      grid_dims, block_dims, 0, multisync,
       local_height, local_width,
-      local_input_gpu.LockedBuffer(), local_input_gpu.LDim(),
+      local_input.LockedBuffer(), local_input.LDim(),
       max_vals.data().get());
-    //reduce_max_kernel<block_size><<<grid_dims, block_dims, 0, stream>>>(
-    //  local_height, local_width,
-    //  local_input.LockedBuffer(), local_input.LDim(),
-    //  max_vals.data().get());
     while (grid_dims.x > 1) {
       const size_t prev_height = grid_dims.x;
       grid_dims.x = (prev_height + block_size - 1) / block_size;
       gpu_lib::thrust::vector<TensorDataType> prev_vals(std::move(max_vals));
       max_vals.resize(grid_dims.x * local_width);
-      reduce_max_kernel<block_size><<<grid_dims, block_dims, 0, stream>>>(
+      hydrogen::gpu::LaunchKernel(
+        reduce_max_kernel<block_size, TensorDataType>,
+        grid_dims, block_dims, 0, multisync,
+      //reduce_max_kernel<block_size><<<grid_dims, block_dims, 0, stream>>>(
         prev_height, local_width,
         prev_vals.data().get(), prev_height,
         max_vals.data().get());
@@ -357,7 +358,10 @@ void fp_compute_impl(log_softmax_layer<TensorDataType, data_layout::MODEL_PARALL
     block_dims.x = block_size;
     grid_dims.x = (local_height + block_size - 1) / block_size;
     grid_dims.y = local_width;
-    fp_sumexp_kernel<block_size><<<grid_dims, block_dims, 0, stream>>>(
+    hydrogen::gpu::LaunchKernel(
+      fp_sumexp_kernel<block_size, TensorDataType>,
+      grid_dims, block_dims, 0, multisync,
+    //fp_sumexp_kernel<block_size><<<grid_dims, block_dims, 0, stream>>>(
       local_height, local_width,
       local_input.LockedBuffer(), local_input.LDim(),
       max_vals.data().get(),
@@ -373,7 +377,10 @@ void fp_compute_impl(log_softmax_layer<TensorDataType, data_layout::MODEL_PARALL
     block_dims.x = block_size;
     grid_dims.x = (local_height + block_size - 1) / block_size;
     grid_dims.y = local_width;
-    fp_output_kernel<<<grid_dims, block_dims, 0, stream>>>(
+    hydrogen::gpu::LaunchKernel(
+      fp_output_kernel<TensorDataType>,
+      grid_dims, block_dims, 0, multisync,
+    //fp_output_kernel<<<grid_dims, block_dims, 0, stream>>>(
       local_height, local_width,
       local_input.LockedBuffer(), local_input.LDim(),
       local_output.Buffer(), local_output.LDim(),
