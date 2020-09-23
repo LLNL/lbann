@@ -88,7 +88,7 @@ private:
 
 #ifdef LBANN_HAS_CUDNN
   /** Pooling descriptor. */
-  cudnnPoolingDescriptor_t m_pooling_cudnn_desc;
+  cudnn::PoolingDescriptor m_pooling_cudnn_desc;
   /** Tensor cuDNN descriptors. */
   cudnn::data_parallel_layer_tensor_manager<TensorDataType> m_tensors_cudnn_desc;
 #endif // LBANN_HAS_CUDNN
@@ -122,8 +122,7 @@ public:
       m_pads(pads),
       m_strides(strides)
 #ifdef LBANN_HAS_CUDNN
-    , m_pooling_cudnn_desc(nullptr),
-      m_tensors_cudnn_desc(this)
+    , m_tensors_cudnn_desc(this)
 #endif // LBANN_HAS_CUDNN
   {
     // Initialize input dimensions and pooling parameters
@@ -143,12 +142,11 @@ public:
       m_strides(other.m_strides),
       m_max_pool_indices(other.m_max_pool_indices)
 #ifdef LBANN_HAS_CUDNN
-    , m_pooling_cudnn_desc(nullptr),
+    , m_pooling_cudnn_desc(other.m_pooling_cudnn_desc),
       m_tensors_cudnn_desc(other.m_tensors_cudnn_desc)
 #endif // LBANN_HAS_CUDNN
   {
 #ifdef LBANN_HAS_CUDNN
-    copy_pooling_cudnn_desc(other.m_pooling_cudnn_desc, m_pooling_cudnn_desc);
     m_tensors_cudnn_desc.set_layer(this);
 #endif // LBANN_HAS_CUDNN
   }
@@ -162,20 +160,14 @@ public:
     m_strides = other.m_strides;
     m_max_pool_indices = other.m_max_pool_indices;
 #ifdef LBANN_HAS_CUDNN
-    copy_pooling_cudnn_desc(other.m_pooling_cudnn_desc, m_pooling_cudnn_desc);
+    m_pooling_cudnn_desc = other.m_pooling_cudnn_desc;
     m_tensors_cudnn_desc = other.m_tensors_cudnn_desc;
     m_tensors_cudnn_desc.set_layer(this);
 #endif // LBANN_HAS_CUDNN
     return *this;
   }
 
-  ~pooling_layer() {
-#ifdef LBANN_HAS_CUDNN
-    if (m_pooling_cudnn_desc != nullptr) {
-      cudnnDestroyPoolingDescriptor(m_pooling_cudnn_desc);
-    }
-#endif // LBANN_HAS_CUDNN
-  }
+  ~pooling_layer() override = default;
 
   pooling_layer* copy() const override { return new pooling_layer(*this); }
   std::string get_type() const override { return "pooling"; }
@@ -268,14 +260,12 @@ protected:
       LBANN_ERROR(err.str());
       cudnn_pool_mode = CUDNN_POOLING_MAX;
     }
-    CHECK_CUDNN(cudnnCreatePoolingDescriptor(&m_pooling_cudnn_desc));
-    CHECK_CUDNN(cudnnSetPoolingNdDescriptor(m_pooling_cudnn_desc,
-                                            cudnn_pool_mode,
-                                            CUDNN_PROPAGATE_NAN,
-                                            m_pool_dims.size(),
-                                            m_pool_dims.data(),
-                                            m_pads.data(),
-                                            m_strides.data()));
+    m_pooling_cudnn_desc.set(cudnn_pool_mode,
+                             CUDNN_PROPAGATE_NAN,
+                             m_pool_dims.size(),
+                             m_pool_dims.data(),
+                             m_pads.data(),
+                             m_strides.data());
 
 #endif // #ifndef LBANN_HAS_CUDNN
   }
