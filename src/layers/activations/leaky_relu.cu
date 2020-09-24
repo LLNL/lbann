@@ -31,7 +31,7 @@ namespace lbann {
 
 namespace {
 
-/** CUDA kernel for forward prop computation. */
+/** GPU kernel for forward prop computation. */
 template <typename TensorDataType>
 __global__ void fp_kernel(TensorDataType negative_slope,
                           El::Int height,
@@ -52,7 +52,7 @@ __global__ void fp_kernel(TensorDataType negative_slope,
   }
 }
 
-/** CUDA kernel for backprop computation. */
+/** GPU kernel for backprop computation. */
 template <typename TensorDataType>
 __global__ void bp_kernel(TensorDataType negative_slope,
                           El::Int height,
@@ -85,6 +85,7 @@ void local_fp(TensorDataType negative_slope,
   // Get CUDA grid dimensions
   // Note: Maximum CUDA grid dimension is 2^32-1
   // (https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#features-and-technical-specifications).
+  // TODO: HIP/ROCM notes
   const El::Int height = input.Height();
   const El::Int width = input.Width();
   const El::Int block_dim = 256;
@@ -122,6 +123,7 @@ void local_bp(TensorDataType negative_slope,
   // Get CUDA grid dimensions
   // Note: Maximum CUDA grid dimension is 2^32-1
   // (https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#features-and-technical-specifications).
+  // TODO: HIP/ROCM notes
   const El::Int height = input.Height();
   const El::Int width = input.Width();
   const El::Int block_dim = 256;
