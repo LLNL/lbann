@@ -473,9 +473,11 @@ void bp_compute_impl(softmax_layer<TensorDataType, data_layout::MODEL_PARALLEL, 
   const auto& local_width = local_output.Width();
 
   // GPU objects
-  auto&& stream = hydrogen::cuda::GetDefaultStream();
-  auto&& event = hydrogen::cuda::GetDefaultEvent();
-  El::SyncInfo<El::Device::GPU> sync_info{stream, event};
+  auto multisync = El::MakeMultiSync(
+    gpu::get_sync_info(local_output),
+    gpu::get_sync_info(local_gradient_wrt_output),
+    gpu::get_sync_info(local_gradient_wrt_input),
+    gpu::get_sync_info(local_workspace));
 
   // Compute dot(y,dy)
   El::Zero(local_workspace);
@@ -485,14 +487,15 @@ void bp_compute_impl(softmax_layer<TensorDataType, data_layout::MODEL_PARALLEL, 
     block_dims.x = block_size;
     grid_dims.x = (local_height + block_size - 1) / block_size;
     grid_dims.y = local_width;
-    bp_dot_product_kernel<block_size>
-      <<<grid_dims, block_dims, 0, stream>>>(
-        local_height, local_width,
-        local_output.LockedBuffer(),
-        local_output.LDim(),
-        local_gradient_wrt_output.LockedBuffer(),
-        local_gradient_wrt_output.LDim(),
-        local_workspace.Buffer());
+    hydrogen::gpu::LaunchKernel(
+      bp_dot_product_kernel<block_size, TensorDataType>,
+      grid_dims, block_dims, 0, multisync,
+      local_height, local_width,
+      local_output.LockedBuffer(),
+      local_output.LDim(),
+      local_gradient_wrt_output.LockedBuffer(),
+      local_gradient_wrt_output.LDim(),
+      local_workspace.Buffer());
   }
   El::AllReduce(*l.m_workspace, l.m_workspace->RedundantComm());
 
@@ -503,7 +506,9 @@ void bp_compute_impl(softmax_layer<TensorDataType, data_layout::MODEL_PARALLEL, 
     block_dims.x = block_size;
     grid_dims.x = (local_height + block_size - 1) / block_size;
     grid_dims.y = local_width;
-    bp_kernel<block_size><<<grid_dims, block_dims, 0, stream>>>(
+    hydrogen::gpu::LaunchKernel(
+      bp_kernel<block_size, TensorDataType>,
+      grid_dims, block_dims, 0, multisync,
       local_height, local_width,
       local_output.LockedBuffer(),
       local_output.LDim(),
