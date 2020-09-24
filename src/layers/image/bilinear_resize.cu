@@ -151,8 +151,6 @@ void bilinear_resize_layer<TensorDataType, Layout, Device>::fp_compute() {
     hydrogen::gpu::LaunchKernel(
       fp_kernel<block_dim, TensorDataType>,
       grid_dim, block_dim, 0, multisync,
-    //fp_kernel<block_dim>
-    //  <<<grid_dim, block_dim, 0, hydrogen::cuda::GetDefaultStream()>>>(
       num_samples, num_channels,
       input_height, input_width,
       local_input.LockedBuffer(), local_input.LDim(),
