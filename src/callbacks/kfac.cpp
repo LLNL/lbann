@@ -614,7 +614,7 @@ std::unique_ptr<callback_base>
 build_kfac_callback_from_pbuf(
     const google::protobuf::Message& proto_msg,
     const std::shared_ptr<lbann_summary>&) {
-  using MsgType = lbann_data::Callback::CallbackKFACTest;
+  using MsgType = lbann_data::Callback::CallbackKFAC;
   using CallbackType = kfac;
   const auto& params = dynamic_cast<const MsgType&>(proto_msg);
 

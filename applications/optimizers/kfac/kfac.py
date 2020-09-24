@@ -149,7 +149,7 @@ if args.kfac:
             args, "kfac_damping_{}".format(n)).replace(",", " ")
     if args.kfac_damping_warmup_steps > 0:
         kfac_args["damping_warmup_steps"] = args.kfac_damping_warmup_steps
-    callbacks.append(lbann.CallbackKFACTest(**kfac_args))
+    callbacks.append(lbann.CallbackKFAC(**kfac_args))
 
 # Setup model
 model = lbann.Model(

@@ -78,7 +78,7 @@ message Callback {
     CallbackLoadModel load_model = 46;
     CallbackSetWeightsValue set_weights_value = 47;
     CallbackSummarizeImages summarize_images = 48;
-    CallbackKFACTest kfac = 49;
+    CallbackKFAC kfac = 49;
   }
 
   message CallbackLTFB {
@@ -376,7 +376,7 @@ message Callback {
     uint64 epoch_interval = 3;
   }// message CallbackSummarizeImages
 
-  message CallbackKFACTest {
+  message CallbackKFAC {
     // Space-separated pairs of the initial and the target damping value.
     // If only one value is specified, it will be used throughout trainig.
     // default: "callback::kfac::damping_0_default"

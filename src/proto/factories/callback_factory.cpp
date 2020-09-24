@@ -191,7 +191,7 @@ void register_default_builders(factory_type& factory)
                            build_timer_callback_from_pbuf);
   factory.register_builder("CallbackSetWeightsValue",
                            build_set_weights_value_callback_from_pbuf);
-  factory.register_builder("CallbackKFACTest",
+  factory.register_builder("CallbackKFAC",
                            build_kfac_callback_from_pbuf);
 }
 
