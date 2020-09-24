@@ -89,6 +89,16 @@ void kfac::on_backward_prop_end(model *m) {
       m_damping_bn_act, m_damping_bn_act_params, m_damping_warmup_steps);
   m_damping_bn_err = get_next_damping(
       m_damping_bn_err, m_damping_bn_err_params, m_damping_warmup_steps);
+
+  if(m_update_intervals.size() == 1)
+    m_update_interval = m_update_intervals[0];
+  else {
+    const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
+    const auto num_steps = c.get_step();
+    m_update_interval = m_update_intervals[0]
+        + ((double) m_update_intervals[1]-m_update_intervals[0])
+        * std::min((double) num_steps/ m_update_interval_steps, 1.0);
+  }
 }
 
 void kfac::on_epoch_end(model *m) {
@@ -97,11 +107,12 @@ void kfac::on_epoch_end(model *m) {
     const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
     const auto epoch = c.get_epoch();
     std::ostringstream oss;
-    oss << "K-FAC callback: changing damping value to "
+    oss << "K-FAC callback: damping_value="
         << m_damping_act << " (act)"
         << ", " << m_damping_err << " (err)"
         << ", " << m_damping_bn_act << " (bn_act)"
         << ", " << m_damping_bn_err << " (bn_err)"
+        << ", update_interval=" << m_update_interval
         << " at " << epoch << " epochs"
         << std::endl;
     std::cout << oss.str();
@@ -123,6 +134,10 @@ void kfac::on_backward_prop_end(model *m, Layer *l) {
     const auto layer_it_in_list = std::find(layers.begin(), layers.end(), l);
     assert(layer_it_in_list != layers.end());
     const size_t layer_id = std::distance(layers.begin(), layer_it_in_list);
+    const auto& context = static_cast<const sgd_execution_context&>(m->get_execution_context());
+    const auto num_steps = context.get_step();
+    const bool is_update_required = (num_steps%m_update_interval_steps) == 0
+        || m_kronecker_inverse.find(layer_id) == m_kronecker_inverse.end();
 
     // Get activations, errors, and gradients
     if(l->get_num_parents() != 1 || l->get_num_children() != 1) {
@@ -165,88 +180,133 @@ void kfac::on_backward_prop_end(model *m, Layer *l) {
       auto* w_dto = dynamic_cast<data_type_optimizer<DataType>*>(w_optimizer);
       El::Matrix<DataType, El::Device::GPU> w_gradients = w_dto->get_gradient().Matrix();
 
-      // Compute Kronecker factors, assuming that local_errors are
-      // already multiplied by 1/N in the loss layer.
-      El::Matrix<DataType, El::Device::GPU> A, G;
-      if(is_fc) {
-        assert(local_activations.Height() == w_gradients.Width());
-        assert(local_errors.Height() == w_gradients.Height());
-        A = get_kronecker_factor_fc(local_activations, 1.0/mini_batch_size);
-        G = get_kronecker_factor_fc(local_errors, mini_batch_size);
-      } else {
+      if(is_update_required) {
+        // Compute Kronecker factors, assuming that local_errors are
+        // already multiplied by 1/N in the loss layer.
+        El::Matrix<DataType, El::Device::GPU> A, G;
+        if(is_fc) {
+          assert(local_activations.Height() == w_gradients.Width());
+          assert(local_errors.Height() == w_gradients.Height());
+          A = get_kronecker_factor_fc(local_activations, 1.0/mini_batch_size);
+          G = get_kronecker_factor_fc(local_errors, mini_batch_size);
+        } else {
 
-        const auto input_dims = l->get_input_dims(); // CHW
-        const auto output_dims = l->get_output_dims(); // KH'W'
+          const auto input_dims = l->get_input_dims(); // CHW
+          const auto output_dims = l->get_output_dims(); // KH'W'
 
-        if(input_dims.size() != 3 && input_dims.size() != 4) {
+          if(input_dims.size() != 3 && input_dims.size() != 4) {
+            std::stringstream err;
+            err << "The K-FAC callback only supports 2D or 3D tensors."
+                << " layer: " << l->get_name()
+                << ", input_dims: ";
+            for(auto i = input_dims.begin(); i != input_dims.end(); i++)
+              err << (std::distance(input_dims.begin(), i) > 0 ? "," : "") << *i;
+            LBANN_ERROR(err.str());
+          }
+
+          const size_t num_input_channels = input_dims[0];
+          const size_t num_output_channels = output_dims[0];
+          size_t spatial_input_prod = 1, spatial_output_prod = 1;
+          // std::accumulate might overflow for large 3D layers
+          std::vector<int> input_spatial_dims, output_spatial_dims;
+          for(auto i = input_dims.begin()+1; i != input_dims.end(); i++) {
+            spatial_input_prod *= *i;
+            input_spatial_dims.push_back(*i);
+          }
+          for(auto i = output_dims.begin()+1; i != output_dims.end(); i++) {
+            spatial_output_prod *= *i;
+            output_spatial_dims.push_back(*i);
+          }
+          assert((size_t) local_activations.Height() == num_input_channels*spatial_input_prod);
+          assert((size_t) local_errors.Height() == num_output_channels*spatial_output_prod);
+
+          A = get_kronecker_factor_conv(
+              local_activations, 1.0/mini_batch_size,
+              local_batch_size, num_input_channels, input_spatial_dims,
+              l_conv, true);
+          G = get_kronecker_factor_conv(
+              local_errors, DataType(mini_batch_size)/spatial_output_prod,
+              local_batch_size, num_output_channels, output_spatial_dims,
+              l_conv, false);
+        }
+
+        // TODO: Communicate only the lower triangulars
+        comm->allreduce((El::AbstractMatrix<DataType>&) A, comm->get_trainer_comm());
+        comm->allreduce((El::AbstractMatrix<DataType>&) G, comm->get_trainer_comm());
+
+        // Compute exponential moving average of the factors
+        if(m_kronecker_average.find(layer_id) == m_kronecker_average.end())
+          m_kronecker_average.emplace(layer_id, std::make_pair(A, G));
+        auto& AGave = (*m_kronecker_average.find(layer_id)).second;
+        auto& Aave = AGave.first;
+        auto& Gave = AGave.second;
+        update_kronecker_average(
+            Aave.Buffer(), A.Buffer(), A.Height()*A.Width(), m_kronecker_decay);
+        update_kronecker_average(
+            Gave.Buffer(), G.Buffer(), G.Height()*G.Width(), m_kronecker_decay);
+
+        // Compute the pi constant
+        const DataType pi = m_use_pi ? compute_pi(Aave, Gave) : 1.0;
+        if(m_kronecker_average.find(layer_id) == m_kronecker_average.end())
+          m_kronecker_average.emplace(layer_id, std::make_pair(A, G));
+
+        // Compute the inverse of the factors
+        const bool print_time = comm->am_trainer_master() && m_print_time;
+        // Since setting different damping constants for A and G is an
+        // alternative heuristics to pi, they should be the same if pi is used.
+        if(m_use_pi && m_damping_act != m_damping_err) {
           std::stringstream err;
-          err << "The K-FAC callback only supports 2D or 3D tensors."
+          err << "Damping values for activations and errors are different while the pi constant is used."
               << " layer: " << l->get_name()
-              << ", input_dims: ";
-          for(auto i = input_dims.begin(); i != input_dims.end(); i++)
-            err << (std::distance(input_dims.begin(), i) > 0 ? "," : "") << *i;
-          LBANN_ERROR(err.str());
+              << ", m_damping_act: " << m_damping_act
+              << ", m_damping_err: " << m_damping_err;
+          LBANN_WARNING(err.str());
+        }
+        const auto Ainv = get_matrix_inverse(Aave, print_time, DataType(m_damping_act*pi));
+        const auto Ginv = get_matrix_inverse(Gave, print_time, DataType(m_damping_err/pi));
+        const auto pair = std::make_pair(Ainv, Ginv);
+        if(m_kronecker_inverse.find(layer_id) == m_kronecker_inverse.end())
+          m_kronecker_inverse.emplace(layer_id, pair);
+        else
+          m_kronecker_inverse[layer_id] = pair;
+
+        // Damp matrices for debugging
+        if(comm->am_trainer_master() && m_print_matrix) {
+          if(comm->am_trainer_master()) {
+            std::cout << std::endl;
+            El::Print(A, "A");
+            std::cout << std::endl;
+            El::Print(G, "G");
+            std::cout << std::endl;
+            El::Print(Aave, "Aave");
+            std::cout << std::endl;
+            El::Print(Gave, "Gave");
+            std::cout << std::endl;
+          }
         }
 
-        const size_t num_input_channels = input_dims[0];
-        const size_t num_output_channels = output_dims[0];
-        size_t spatial_input_prod = 1, spatial_output_prod = 1;
-        // std::accumulate might overflow for large 3D layers
-        std::vector<int> input_spatial_dims, output_spatial_dims;
-        for(auto i = input_dims.begin()+1; i != input_dims.end(); i++) {
-          spatial_input_prod *= *i;
-          input_spatial_dims.push_back(*i);
+        // Dump L2 norm of matrices
+        if(comm->am_trainer_master() && m_print_matrix_summary) {
+          const auto &dtw = dynamic_cast<data_type_weights<DataType>*>(&weights);
+          const auto &w_values = dtw->get_values();
+          std::ostringstream oss;
+          oss << "K-FAC callback: L2 norm @ "<< l->get_name() << ": "
+              << get_matrix_stat(w_values.LockedMatrix(), "W")
+              << ", " << get_matrix_stat(local_activations, "acts")
+              << ", " << get_matrix_stat(local_errors, "errs")
+              << ", " << get_matrix_stat(A, "A")
+              << ", " << get_matrix_stat(G, "G")
+              << ", " << get_matrix_stat(Aave, "Aave")
+              << ", " << get_matrix_stat(Gave, "Gave")
+              << ", pi=" << pi
+              << std::endl;
+          std::cout << oss.str();
         }
-        for(auto i = output_dims.begin()+1; i != output_dims.end(); i++) {
-          spatial_output_prod *= *i;
-          output_spatial_dims.push_back(*i);
-        }
-        assert((size_t) local_activations.Height() == num_input_channels*spatial_input_prod);
-        assert((size_t) local_errors.Height() == num_output_channels*spatial_output_prod);
 
-        A = get_kronecker_factor_conv(
-            local_activations, 1.0/mini_batch_size,
-            local_batch_size, num_input_channels, input_spatial_dims,
-            l_conv, true);
-        G = get_kronecker_factor_conv(
-            local_errors, DataType(mini_batch_size)/spatial_output_prod,
-            local_batch_size, num_output_channels, output_spatial_dims,
-            l_conv, false);
       }
 
-      // TODO: Communicate only the lower triangulars
-      comm->allreduce((El::AbstractMatrix<DataType>&) A, comm->get_trainer_comm());
-      comm->allreduce((El::AbstractMatrix<DataType>&) G, comm->get_trainer_comm());
-
-      // Compute exponential moving average of the factors
-      if(m_kronecker_average.find(layer_id) == m_kronecker_average.end())
-        m_kronecker_average.emplace(layer_id, std::make_pair(A, G));
-      auto& AGave = (*m_kronecker_average.find(layer_id)).second;
-      auto& Aave = AGave.first;
-      auto& Gave = AGave.second;
-      update_kronecker_average(
-          Aave.Buffer(), A.Buffer(), A.Height()*A.Width(), m_kronecker_decay);
-      update_kronecker_average(
-          Gave.Buffer(), G.Buffer(), G.Height()*G.Width(), m_kronecker_decay);
-
-      // Compute the pi constant
-      const DataType pi = m_use_pi ? compute_pi(Aave, Gave) : 1.0;
-
-      // Compute the inverse of the factors
-      const bool print_time = comm->am_trainer_master() && m_print_time;
-      // Since setting different damping constants for A and G is an
-      // alternative heuristics to pi, they should be the same if pi is used.
-      if(m_use_pi && m_damping_act != m_damping_err) {
-        std::stringstream err;
-        err << "Damping values for activations and errors are different while the pi constant is used."
-            << " layer: " << l->get_name()
-            << ", m_damping_act: " << m_damping_act
-            << ", m_damping_err: " << m_damping_err;
-        LBANN_WARNING(err.str());
-      }
-      const auto Ainv = get_matrix_inverse(Aave, print_time, DataType(m_damping_act*pi));
-      const auto Ginv = get_matrix_inverse(Gave, print_time, DataType(m_damping_err/pi));
-
+      const auto &Ainv = m_kronecker_inverse[layer_id].first;
+      const auto &Ginv = m_kronecker_inverse[layer_id].second;
       if(is_conv) {
         const auto num_output_channels = l->get_output_dims()[0];
         assert(w_gradients.Width() == 1);
@@ -259,12 +319,12 @@ void kfac::on_backward_prop_end(model *m, Layer *l) {
       }
 
       // Compute preconditioned gradients
-      El::Matrix<DataType, El::Device::GPU> Gg(G.Height(), is_conv ? w_gradients.Height() : w_gradients.Width());
+      El::Matrix<DataType, El::Device::GPU> Gg(Ginv.Height(), is_conv ? w_gradients.Height() : w_gradients.Width());
       El::Gemm(
           El::NORMAL, is_conv ? El::TRANSPOSE : El::NORMAL,
           El::TypeTraits<DataType>::One(), Ginv, w_gradients,
           El::TypeTraits<DataType>::Zero(), Gg);
-      El::Matrix<DataType, El::Device::GPU> Fgrad(G.Height(), A.Width());
+      El::Matrix<DataType, El::Device::GPU> Fgrad(Ginv.Height(), Ainv.Width());
       El::Gemm(
           El::NORMAL, El::NORMAL,
           El::TypeTraits<DataType>::One(), Gg, Ainv,
@@ -286,17 +346,9 @@ void kfac::on_backward_prop_end(model *m, Layer *l) {
           dst_scale, gradient_scale, false);
       El::Copy(Fgrad, grad_buffer.Matrix());
 
-      // Damp matrices for debugging
+      // Dump matrices for debugging
       if(comm->am_trainer_master() && m_print_matrix) {
         if(comm->am_trainer_master()) {
-          std::cout << std::endl;
-          El::Print(A, "A");
-          std::cout << std::endl;
-          El::Print(G, "G");
-          std::cout << std::endl;
-          El::Print(Aave, "Aave");
-          std::cout << std::endl;
-          El::Print(Gave, "Gave");
           std::cout << std::endl;
           El::Print(Ainv, "Ainv");
           std::cout << std::endl;
@@ -309,27 +361,21 @@ void kfac::on_backward_prop_end(model *m, Layer *l) {
         }
       }
 
-      // dump L2 norm of matrices
+      // Dump L2 norm of matrices
       if(comm->am_trainer_master() && m_print_matrix_summary) {
         const auto &dtw = dynamic_cast<data_type_weights<DataType>*>(&weights);
         const auto &w_values = dtw->get_values();
         std::ostringstream oss;
         oss << "K-FAC callback: L2 norm @ "<< l->get_name() << ": "
             << get_matrix_stat(w_values.LockedMatrix(), "W")
-            << ", " << get_matrix_stat(local_activations, "acts")
-            << ", " << get_matrix_stat(local_errors, "errs")
-            << ", " << get_matrix_stat(A, "A")
-            << ", " << get_matrix_stat(G, "G")
-            << ", " << get_matrix_stat(Aave, "Aave")
-            << ", " << get_matrix_stat(Gave, "Gave")
             << ", " << get_matrix_stat(Ainv, "Ainv")
             << ", " << get_matrix_stat(Ginv, "Ginv")
             << ", " << get_matrix_stat(w_gradients, "grad")
             << ", " << get_matrix_stat(Fgrad, "Finvgrad")
-            << ", pi=" << pi
             << std::endl;
         std::cout << oss.str();
       }
+
     } else {
       assert(is_bn);
       const bool is_bn_after_fc =
@@ -375,30 +421,10 @@ void kfac::on_backward_prop_end(model *m, Layer *l) {
         for(auto i = input_dims.begin()+1; i != input_dims.end(); i++)
           spatial_prod *= *i;
       }
-
       assert(num_channels == (size_t) scale_values.Height());
       assert(num_channels == (size_t) scale_values.LocalHeight());
       assert(num_channels == (size_t) bias_values.Height());
       assert(num_channels == (size_t) bias_values.LocalHeight());
-
-      El::Matrix<DataType, El::Device::GPU> factor(num_channels*2, local_batch_size);
-      compute_bn_factor(
-          local_activations.LockedBuffer(),
-          local_errors.LockedBuffer(),
-          scale_values.LockedMatrix().LockedBuffer(),
-          bias_values.LockedMatrix().LockedBuffer(),
-          factor.Buffer(),
-          local_batch_size,
-          num_channels,
-          spatial_prod);
-
-      El::Matrix<DataType, El::Device::GPU> fisher_block(num_channels*2, num_channels*2);
-      const DataType alpha = mini_batch_size;
-      El::Gemm(
-          El::NORMAL, El::TRANSPOSE,
-          alpha, factor, factor,
-          El::TypeTraits<DataType>::Zero(), fisher_block);
-      comm->allreduce((El::AbstractMatrix<DataType>&) fisher_block, comm->get_trainer_comm());
 
       El::Matrix<DataType, El::Device::GPU> stacked_grads(num_channels*2, 1);
       // TODO: Better way to copy?
@@ -409,12 +435,43 @@ void kfac::on_backward_prop_end(model *m, Layer *l) {
           stacked_grads.Buffer()+num_channels, b_gradients.LockedBuffer(),
           num_channels*sizeof(DataType), cudaMemcpyDeviceToDevice));
 
-      const bool print_time = comm->am_trainer_master() && m_print_time;
-      const auto Finv = get_matrix_inverse(
-          fisher_block, print_time,
-          DataType(m_damping_bn_act),
-          DataType(m_damping_bn_err),
-          true);
+      if(is_update_required) {
+        El::Matrix<DataType, El::Device::GPU> factor(num_channels*2, local_batch_size);
+        compute_bn_factor(
+            local_activations.LockedBuffer(),
+            local_errors.LockedBuffer(),
+            scale_values.LockedMatrix().LockedBuffer(),
+            bias_values.LockedMatrix().LockedBuffer(),
+            factor.Buffer(),
+            local_batch_size,
+            num_channels,
+            spatial_prod);
+
+        El::Matrix<DataType, El::Device::GPU> fisher_block(num_channels*2, num_channels*2);
+        const DataType alpha = mini_batch_size;
+        El::Gemm(
+            El::NORMAL, El::TRANSPOSE,
+            alpha, factor, factor,
+            El::TypeTraits<DataType>::Zero(), fisher_block);
+        comm->allreduce((El::AbstractMatrix<DataType>&) fisher_block, comm->get_trainer_comm());
+
+        const bool print_time = comm->am_trainer_master() && m_print_time;
+        const auto Finv = get_matrix_inverse(
+            fisher_block, print_time,
+            DataType(m_damping_bn_act),
+            DataType(m_damping_bn_err),
+            true);
+
+        const auto pair = std::make_pair(
+            Finv,
+            El::Matrix<DataType, El::Device::GPU>(0, 0)); // dummy matrix.
+        if(m_kronecker_inverse.find(layer_id) == m_kronecker_inverse.end())
+          m_kronecker_inverse.emplace(layer_id, pair);
+        else
+          m_kronecker_inverse[layer_id] = pair;
+      }
+
+      const auto &Finv = m_kronecker_inverse[layer_id].first;
 
       El::Matrix<DataType, El::Device::GPU> Fgrad(num_channels*2, 1);
       El::Gemm(
@@ -446,6 +503,7 @@ void kfac::on_backward_prop_end(model *m, Layer *l) {
             << ", " << get_matrix_stat(local_errors, "errs")
             << ", " << get_matrix_stat(s_gradients, "scale_grad")
             << ", " << get_matrix_stat(b_gradients, "bias_grad")
+            << ", " << get_matrix_stat(Finv, "Finv")
             << ", " << get_matrix_stat(Fgrad, "Fgrad")
             << std::endl;
         std::cout << oss.str();
@@ -622,16 +680,32 @@ build_kfac_callback_from_pbuf(
       [](const std::string str) {
         if(str == "")
           return std::vector<double>({kfac::damping_0_default});
-        else
-          return parse_list<double>(str);
+        else {
+          const auto ret = parse_list<double>(str);
+          if(ret.size() > 2)
+            LBANN_ERROR("The length of damping vectors should be 1 or 2.");
+          return ret;
+        }
+      };
+
+  const auto parse_update_intervals =
+      [](const std::string str) {
+        if(str == "")
+          return std::vector<size_t>({1});
+        else {
+          const auto ret = parse_list<size_t>(str);
+          if(ret.size() > 2)
+            LBANN_ERROR("The length of update interval vectors should be 1 or 2.");
+          return ret;
+        }
       };
 
   const std::vector<double> damping_act_params = parse_damping_params(params.damping_act());
   const std::vector<double> damping_err_params = parse_damping_params(params.damping_err());
   const std::vector<double> damping_bn_act_params = parse_damping_params(params.damping_bn_act());
   const std::vector<double> damping_bn_err_params = parse_damping_params(params.damping_bn_err());
-  double damping_warmup_steps = params.damping_warmup_steps();
-  if(damping_warmup_steps == 0.0) damping_warmup_steps = kfac::damping_warmup_steps_default;
+  size_t damping_warmup_steps = params.damping_warmup_steps();
+  if(damping_warmup_steps == 0) damping_warmup_steps = kfac::damping_warmup_steps_default;
   double kronecker_decay = params.kronecker_decay();
   if(kronecker_decay == 0.0)
     kronecker_decay = kfac::kronecker_decay_default;
@@ -639,6 +713,8 @@ build_kfac_callback_from_pbuf(
   const bool print_matrix = params.print_matrix();
   const bool print_matrix_summary = params.print_matrix_summary();
   const bool use_pi = params.use_pi();
+  const std::vector<size_t> update_intervals = parse_update_intervals(params.update_intervals());
+  const size_t update_interval_steps = params.update_interval_steps();
   return make_unique<CallbackType>(
       damping_act_params,
       damping_err_params,
@@ -647,7 +723,8 @@ build_kfac_callback_from_pbuf(
       damping_warmup_steps,
       kronecker_decay,
       print_time, print_matrix, print_matrix_summary,
-      use_pi);
+      use_pi,
+      update_intervals, update_interval_steps);
 }
 
 } // namespace callback

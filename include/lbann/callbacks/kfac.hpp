@@ -55,15 +55,17 @@ class kfac : public callback_base {
 
   /** Constructor.
    */
-  kfac(std::vector<double> damping_act_params,
-       std::vector<double> damping_err_params,
-       std::vector<double> damping_bn_act_params,
-       std::vector<double> damping_bn_err_params,
-       double damping_warmup_steps,
-       double kronecker_decay,
-       bool print_time, bool print_matrix,
-       bool print_matrix_summary,
-       bool use_pi)
+  kfac(const std::vector<double> damping_act_params,
+       const std::vector<double> damping_err_params,
+       const std::vector<double> damping_bn_act_params,
+       const std::vector<double> damping_bn_err_params,
+       const size_t damping_warmup_steps,
+       const double kronecker_decay,
+       const bool print_time, const bool print_matrix,
+       const bool print_matrix_summary,
+       const bool use_pi,
+       const std::vector<size_t> update_intervals,
+       const size_t update_interval_steps)
       : callback_base(),
         m_damping_act_params(damping_act_params),
         m_damping_err_params(damping_err_params),
@@ -72,7 +74,9 @@ class kfac : public callback_base {
         m_kronecker_decay(kronecker_decay),
         m_print_time(print_time), m_print_matrix(print_matrix),
         m_print_matrix_summary(print_matrix_summary),
-        m_use_pi(use_pi) {
+        m_use_pi(use_pi),
+        m_update_intervals(update_intervals),
+        m_update_interval_steps(update_interval_steps) {
     m_damping_act = m_damping_act_params[0];
     m_damping_err = m_damping_err_params[0];
     m_damping_bn_act = m_damping_bn_act_params[0];
@@ -90,7 +94,7 @@ class kfac : public callback_base {
 
   /** @brief The default parameters of a Tikhonov damping technique. */
   constexpr static const double damping_0_default = 3e-2;
-  constexpr static const double damping_warmup_steps_default = 100;
+  constexpr static const size_t damping_warmup_steps_default = 100;
 
   /** @brief The default parameters of the decay factor. */
   constexpr static const double kronecker_decay_default = 0.99;
@@ -174,13 +178,13 @@ class kfac : public callback_base {
       const size_t spatial_prod);
 
   /** @brief Pairs of the initial and the target damping value.
-   *  If only one value is specified, it will be used throughout trainig.
+   *  If only one value is specified, it will be used throughout training.
    */
   const std::vector<double> m_damping_act_params, m_damping_err_params,
     m_damping_bn_act_params, m_damping_bn_err_params;
 
   /** @brief The number of warmup steps of the Tikhnov damping technique. */
-  const double m_damping_warmup_steps;
+  const size_t m_damping_warmup_steps;
 
   /** @brief The decay factor of kronecker factors. */
   const double m_kronecker_decay;
@@ -192,15 +196,33 @@ class kfac : public callback_base {
       constant. */
   const bool m_use_pi;
 
+  /** @brief Space-separated pairs of the initial and the target update intervals.
+   *If only one value is specified, it will be used throughout
+   *training.
+   */
+  const std::vector<size_t> m_update_intervals;
+
+  /** @brief The number of steps for changing the update interval. */
+  const size_t m_update_interval_steps;
+
   /** @brief The current damping values. */
   double m_damping_act, m_damping_err,
     m_damping_bn_act, m_damping_bn_err;
+
+  /** @brief The current update interval. */
+  size_t m_update_interval;
 
   /** @brief Exponential moving average of kronecker factors. */
   std::unordered_map<
     size_t,
     std::pair<El::Matrix<DataType, El::Device::GPU>,
               El::Matrix<DataType, El::Device::GPU>>> m_kronecker_average;
+
+  /** @brief Inverse of kronecker factors. */
+  std::unordered_map<
+    size_t,
+    std::pair<El::Matrix<DataType, El::Device::GPU>,
+              El::Matrix<DataType, El::Device::GPU>>> m_kronecker_inverse;
 
 };
 

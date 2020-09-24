@@ -378,19 +378,26 @@ message Callback {
 
   message CallbackKFAC {
     // Space-separated pairs of the initial and the target damping value.
-    // If only one value is specified, it will be used throughout trainig.
+    // If only one value is specified, it will be used throughout training.
     // default: "callback::kfac::damping_0_default"
     string damping_act = 1;
     string damping_err = 2;
     string damping_bn_act = 3;
     string damping_bn_err = 4;
 
-    double damping_warmup_steps = 5; // default: damping_warmup_steps_default
+    uint64 damping_warmup_steps = 5; // default: damping_warmup_steps_default
     double kronecker_decay = 6; // default: callback::kfac::kronecker_decay_default
+
     bool print_time = 7; // default: false
     bool print_matrix = 8; // default: false
     bool print_matrix_summary = 9; // default: false
+
     bool use_pi = 10; // default: false
+
+    // Space-separated pairs of the initial and the target update intervals.
+    // If only one value is specified, it will be used throughout training.
+    string update_intervals = 11; // default: "1"
+    uint64 update_interval_steps = 12; // default: 0
   }
 
 }
