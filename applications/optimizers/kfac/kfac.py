@@ -36,6 +36,12 @@ parser.add_argument("--kfac-use-pi", dest="kfac_use_pi",
 for n in DAMPING_PARAM_NAMES:
     parser.add_argument("--kfac-damping-{}".format(n), type=str, default="",
                         help="damping parameters for {}".format(n))
+parser.add_argument("--kfac-update-interval-init", type=int, default=1,
+                    help="the initial update interval of Kronecker factors")
+parser.add_argument("--kfac-update-interval-target", type=int, default=1,
+                    help="the target update interval of Kronecker factors")
+parser.add_argument("--kfac-update-interval-steps", type=int, default=1,
+                    help="the number of steps to interpolate -init and -target intervals")
 
 # Job configs.
 parser.add_argument("--job-name", action="store", default="lbann", type=str,
@@ -149,6 +155,13 @@ if args.kfac:
             args, "kfac_damping_{}".format(n)).replace(",", " ")
     if args.kfac_damping_warmup_steps > 0:
         kfac_args["damping_warmup_steps"] = args.kfac_damping_warmup_steps
+    if args.kfac_update_interval_init != 1 or args.kfac_update_interval_target != 1:
+        kfac_args["update_intervals"] = "{} {}".format(
+            args.kfac_update_interval_init,
+            args.kfac_update_interval_target,
+        )
+    if args.kfac_update_interval_steps != 1:
+        kfac_args["update_interval_steps"] = args.kfac_update_interval_steps
     callbacks.append(lbann.CallbackKFAC(**kfac_args))
 
 # Setup model
