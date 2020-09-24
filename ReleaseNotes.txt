@@ -21,6 +21,75 @@ Bug fixes:
 
 Retired features:
 
+============================== (Pending) Release Notes: v0.101 ==============================
+
+Support for new training algorithms:
+
+Support for new network structures:
+ - ATOM VAE model
+ - Graph neural networks
+ - Graph Convolutional Networks (GCN)
+ - 3D U-Net Model
+
+Support for new layers:
+ - Implemented optimized GRU layer using cuDNN kernel
+ - Graph Layers: GCN, GIN, Graph, GatedGraph
+
+Python front-end:
+ - Support for Graph and Graph Convolutional Networks
+ - Added support for OCLF data center (Summit)
+
+Performance optimizations:
+ - Optimize CUDA kernel for tensor reordering in GRU layer
+ - Enabled TensorCore optimization for GRU layer
+ - GCN and Graph layers also have a faster Dense variant which only utilizes Matrix Multiplication
+
+Model portability & usability:
+ - Added Users Quickstart section to documentation including PyTorch
+   to LBANN mini-tutorial
+ - Added section on callbacks with detailed instructions on summarize
+   images callback
+
+Internal features:
+ - Support for double data type in distributed embedding layer
+ - Support for large number of channels in GPU batchnorm layer
+ - Modified LTFB so that NaNs lose tournaments
+ - Improved numerical stability of reconstruction loss in ATOM VAE
+   model
+ - Skip bad gradients in Adam
+
+I/O & data readers:
+ - Added support for ImageNet data reader to use sample lists
+ - Refactored sample list code to be more flexible and generalize
+   beyond JAG data reader
+ - Added suppoort for slab-based I/O in HDF5 data reader required by
+   DistConv implementations of CosmoFlow 3D volumes
+ - Extended slab-based HDF5 data reader to support labels and
+   reconstruction modes for use with U-Net architecture
+
+Datasets:
+ - Added two graph datasets (MNIST, and PROTEINS)
+
+Build system and Dependent Libraries:
+ - Hydrogen 1.4.0
+ - Aluminum 0.4.0
+ - Spack v0.15.4+ (Requires new format for environments)
+ - cuDNN 8.0.2
+ - Require C++14
+ - Added Spack build support for OCLF data center (Summit)
+
+Bug fixes:
+ - Properly reset data coordinator after each LTFB round
+ - Fixed bug in weights proxy when weights buffer is reallocated
+ - Bugfix for smiles data reader bound checking and simple LTFB data
+   distribution
+ - Eliminated a race condition observed in VAE ATOM model with SMILES
+   data reader.  Added a barrier after each data store mini-batch
+   exchange -- avoid race between non-blocking sends and receives and
+   later GPU kernel communication.
+
+Retired features:
+
 ============================== Release Notes: v0.100 ==============================
 Support for new network structures:
  - 3D molecular generation models for Metal Organic Frameworks from the CoRE MOF Database.
