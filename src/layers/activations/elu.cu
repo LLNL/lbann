@@ -49,7 +49,7 @@ __global__ void fp_kernel(TensorDataType alpha,
     const auto& col = pos / height;
     const auto& x = input[row + col * input_ldim];
     auto& y = output[row + col * output_ldim];
-    y = (x > TensorDataType(0.0)) ? x : alpha * cuda::expm1(x);
+    y = (x > TensorDataType(0.0)) ? x : alpha * gpu_lib::expm1(x);
   }
 }
 
@@ -73,7 +73,7 @@ __global__ void bp_kernel(TensorDataType alpha,
     const auto& x = input[row + col * input_ldim];
     const auto& dy = gradient_wrt_output[row + col * gradient_wrt_output_ldim];
     auto& dx = gradient_wrt_input[row + col * gradient_wrt_input_ldim];
-    dx = (x > TensorDataType(0.0)) ? dy : dy * alpha * cuda::exp(x);
+    dx = (x > TensorDataType(0.0)) ? dy : dy * alpha * gpu_lib::exp(x);
   }
 }
 
