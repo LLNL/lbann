@@ -91,16 +91,21 @@ protected:
 
 private:
 
+  /** @brief  Size of each hidden state and output vector */
   size_t m_hidden_size;
 
 #ifdef LBANN_HAS_CUDNN
   using ByteBuffer = hydrogen::simple_buffer<El::byte, Device>;
   cudnn::RNNDescriptor m_rnn_cudnn_desc;
-  cudnn::TensorDescriptor m_input_cudnn_desc;
-  cudnn::TensorDescriptor m_output_cudnn_desc;
+  cudnn::DropoutDescriptor m_dropout_cudnn_desc;
+  cudnn::RNNDataDescriptor m_input_cudnn_desc;
+  cudnn::RNNDataDescriptor m_output_cudnn_desc;
   cudnn::TensorDescriptor m_hidden_cudnn_desc;
   cudnn::FilterDescriptor m_packed_weights_cudnn_desc;
   ByteBuffer m_cudnn_reserve_space;
+  hydrogen::simple_buffer<int32_t, El::Device::GPU> m_gpu_sequence_lengths;
+  cuda::ExecutableGraph m_graph_forward_prop;
+  cuda::ExecutableGraph m_graph_backward_prop;
 #endif // LBANN_HAS_CUDNN
 
   template <typename T>

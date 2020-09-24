@@ -293,18 +293,18 @@ void ExecutableGraph::update(cudaGraph_t graph) {
   reset();
 #else // >= 10.2
   if (graph_exec_) {
-    cudaGraphNode_t node;
-    cudaMemsetParams node_params;
-    auto status = cudaGraphExecUpdate(graph_exec_, graph, &node, &node_params);
+    cudaGraphNode_t error_node;
+    cudaGraphExecUpdateResult result;
+    auto status = cudaGraphExecUpdate(graph_exec_, graph, &error_node, &result);
     switch (status) {
     case cudaSuccess:
       break;
     case cudaErrorGraphExecUpdateFailure:
-      reset():
+      reset();
       break;
     default:
       CHECK_CUDA(status);
-      reset():
+      reset();
     }
   }
 #endif // CUDA version >= 10.02
