@@ -102,7 +102,7 @@ __global__ void bp_kernel(El::Int num_embeddings,
         if (0<=ind && ind<num_embeddings && ind!=padding_idx) {
           const auto& dy = output_grad[i+j*embedding_dim+k*output_grad_ldim];
           auto& dw = embeddings_grad[i+ind*embeddings_grad_ldim];
-          cuda::atomic_add(&dw, dy);
+          gpu_lib::atomic_add(&dw, dy);
         }
       }
     }
@@ -128,7 +128,7 @@ void embedding_layer<TensorDataType, T_layout, Dev>::fp_compute() {
   const auto& input_size = this->get_input_size();
   const auto& local_mini_batch_size = local_input.Width();
 
-  // Launch CUDA kernel
+  // Launch GPU kernel
   if (!local_input.IsEmpty()) {
     auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_output),
                                        gpu::get_sync_info(local_input),
@@ -174,7 +174,7 @@ void embedding_layer<TensorDataType, T_layout, Dev>::bp_compute() {
   const auto& input_size = this->get_input_size();
   const auto& local_mini_batch_size = local_input.Width();
 
-  // Launch CUDA kernel
+  // Launch GPU kernel
   El::Zero(local_embedding_grad);
   if (!local_input.IsEmpty()) {
     auto multisync =
