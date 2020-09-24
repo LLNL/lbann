@@ -301,9 +301,6 @@ void fp_compute_impl(log_softmax_layer<TensorDataType, data_layout::MODEL_PARALL
   const auto& local_width = local_input.Width();
 
   // GPU objects
-  //auto&& stream = hydrogen::cuda::GetDefaultStream();
-  //auto&& event = hydrogen::cuda::GetDefaultEvent();
-  //El::SyncInfo<El::Device::GPU> sync_info{stream, event};
   auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_input),
                                      gpu::get_sync_info(local_output),
                                      gpu::get_sync_info(local_workspace));
@@ -340,7 +337,6 @@ void fp_compute_impl(log_softmax_layer<TensorDataType, data_layout::MODEL_PARALL
       hydrogen::gpu::LaunchKernel(
         reduce_max_kernel<block_size, TensorDataType>,
         grid_dims, block_dims, 0, multisync,
-      //reduce_max_kernel<block_size><<<grid_dims, block_dims, 0, stream>>>(
         prev_height, local_width,
         prev_vals.data().get(), prev_height,
         max_vals.data().get());
@@ -361,7 +357,6 @@ void fp_compute_impl(log_softmax_layer<TensorDataType, data_layout::MODEL_PARALL
     hydrogen::gpu::LaunchKernel(
       fp_sumexp_kernel<block_size, TensorDataType>,
       grid_dims, block_dims, 0, multisync,
-    //fp_sumexp_kernel<block_size><<<grid_dims, block_dims, 0, stream>>>(
       local_height, local_width,
       local_input.LockedBuffer(), local_input.LDim(),
       max_vals.data().get(),
@@ -380,7 +375,6 @@ void fp_compute_impl(log_softmax_layer<TensorDataType, data_layout::MODEL_PARALL
     hydrogen::gpu::LaunchKernel(
       fp_output_kernel<TensorDataType>,
       grid_dims, block_dims, 0, multisync,
-    //fp_output_kernel<<<grid_dims, block_dims, 0, stream>>>(
       local_height, local_width,
       local_input.LockedBuffer(), local_input.LDim(),
       local_output.Buffer(), local_output.LDim(),
@@ -402,9 +396,6 @@ void bp_compute_impl(log_softmax_layer<TensorDataType, data_layout::MODEL_PARALL
   const auto& local_width = local_output.Width();
 
   // GPU objects
-  //auto&& stream = hydrogen::cuda::GetDefaultStream();
-  //auto&& event = hydrogen::cuda::GetDefaultEvent();
-  //El::SyncInfo<El::Device::GPU> sync_info{stream, event};
   auto multisync = El::MakeMultiSync(
     gpu::get_sync_info(local_output),
     gpu::get_sync_info(local_gradient_wrt_output),
@@ -422,7 +413,6 @@ void bp_compute_impl(log_softmax_layer<TensorDataType, data_layout::MODEL_PARALL
     hydrogen::gpu::LaunchKernel(
       reduce_sum_kernel<block_size, TensorDataType>,
       grid_dims, block_dims, 0, multisync,
-      //<<<grid_dims, block_dims, 0, stream>>>(
       local_height, local_width,
       local_gradient_wrt_output.LockedBuffer(),
       local_gradient_wrt_output.LDim(),
@@ -440,7 +430,6 @@ void bp_compute_impl(log_softmax_layer<TensorDataType, data_layout::MODEL_PARALL
     hydrogen::gpu::LaunchKernel(
       bp_kernel<TensorDataType>,
       grid_dims, block_dims, 0, multisync,
-      //<<<grid_dims, block_dims, 0, stream>>>(
       local_height, local_width,
       local_output.LockedBuffer(),
       local_output.LDim(),
