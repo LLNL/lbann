@@ -662,6 +662,7 @@ def assert_failure(return_code, expected_error, error_file_name):
 
 def create_tests(setup_func,
                  test_file,
+                 procs_per_node=None,
                  test_name_base=None,
                  **kwargs):
     """Create functions that can interact with PyTest
@@ -688,6 +689,10 @@ def create_tests(setup_func,
             lbann.reader_pb2.DataReader, lbann.Optimizer)`.
         test_file (str): Python script being run by PyTest. In most
             cases, use `__file__`.
+        procs_per_node (int or str, optional): The number of processes
+            per node to pass into `lbann.contrib.launcher.run`.
+            If "auto" is set, lbann.contrib.lc.systems.gpus_per_node()
+            is passed instead.
         test_name (str, optional): Descriptive name (default: test
             file name with '.py' removed).
         **kwargs: Keyword arguments to pass into
@@ -709,7 +714,7 @@ def create_tests(setup_func,
         # Make sure test name is prefixed with 'test_'
         test_name_base = 'test_' + test_name_base
 
-    def test_func(cluster, executables, dir_name, compiler_name):
+    def test_func(cluster, executables, dir_name, procs_per_node, compiler_name):
         """Function that can interact with PyTest.
 
         Returns a dict containing log files and other output data.
@@ -748,6 +753,19 @@ def create_tests(setup_func,
                                                'experiments',
                                                test_name)
 
+        # Setup the number of processes
+        if procs_per_node is not None:
+            assert 'procs_per_node' not in _kwargs.keys()
+            if procs_per_node == "auto":
+                procs_per_node = lbann.contrib.lc.systems.gpus_per_node()
+            _kwargs['procs_per_node'] = procs_per_node
+
+        # FIXME
+        if "procs_per_node" in _kwargs.keys():
+            print("procs_per_node={}".format(_kwargs["procs_per_node"]))
+        else:
+            print("no procs_per_node")
+
         # If the user provided a suffix for the work directory, append it
         if 'work_subdir' in _kwargs:
             _kwargs['work_dir'] = os.path.join(_kwargs['work_dir'], _kwargs['work_subdir'])
@@ -783,11 +801,11 @@ def create_tests(setup_func,
 
     # Specific test functions for different build configurations
     def test_func_clang6(cluster, exes, dirname):
-        return test_func(cluster, exes, dirname, 'clang6')
+        return test_func(cluster, exes, dirname, procs_per_node, 'clang6')
     def test_func_gcc7(cluster, exes, dirname):
-        return test_func(cluster, exes, dirname, 'gcc7')
+        return test_func(cluster, exes, dirname, procs_per_node, 'gcc7')
     def test_func_intel19(cluster, exes, dirname):
-        return test_func(cluster, exes, dirname, 'intel19')
+        return test_func(cluster, exes, dirname, procs_per_node, 'intel19')
     test_func_clang6.__name__ = '{}_clang6'.format(test_name_base)
     test_func_gcc7.__name__ = '{}_gcc7'.format(test_name_base)
     test_func_intel19.__name__ = '{}_intel19'.format(test_name_base)

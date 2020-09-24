@@ -205,7 +205,8 @@ def construct_model(lbann):
                           pool_strides=tools.str_list(p["strides"]),
                           pool_pads=tools.str_list(p["pads"]),
                           pool_mode=p["pool_mode"],
-                          parallel_strategy=create_parallel_strategy(4))
+                          parallel_strategy=create_parallel_strategy(
+                              lbann.contrib.lc.systems.gpus_per_node()))
         z = lbann.L2Norm2(y)
 
         # Since max pooling is not differentiable, we only use average pooling.
@@ -304,5 +305,5 @@ def construct_data_reader(lbann):
 # Create test functions that can interact with PyTest
 # Note: Create test name by removing ".py" from file name
 _test_name = os.path.splitext(os.path.basename(current_file))[0]
-for test in tools.create_tests(setup_experiment, _test_name, procs_per_node=4):
+for test in tools.create_tests(setup_experiment, _test_name, procs_per_node="auto"):
     globals()[test.__name__] = test
