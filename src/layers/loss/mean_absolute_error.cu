@@ -55,7 +55,7 @@ __global__ void fp_kernel(int global_height,
     for (int row = gidx; row < local_height; row += nthreadsx) {
       const auto& x = prediction[row + col * prediction_ldim];
       const auto& xhat = ground_truth[row + col * ground_truth_ldim];
-      private_contribution += cuda::abs(x - xhat);
+      private_contribution += gpu_lib::abs(x - xhat);
     }
 
     // Shared memory reduction to get contribution for each block
@@ -70,7 +70,7 @@ __global__ void fp_kernel(int global_height,
     }
     if (tid == 0) {
       shared_contribution[0] /= global_height;
-      cuda::atomic_add(&contribution[col], shared_contribution[0]);
+      gpu_lib::atomic_add(&contribution[col], shared_contribution[0]);
     }
 
   }

@@ -70,7 +70,7 @@ __global__ void fp_kernel(int global_height,
     }
     if (tid == 0) {
       shared_contribution[0] /= global_height;
-      cuda::atomic_add(&contribution[col], shared_contribution[0]);
+      gpu_lib::atomic_add(&contribution[col], shared_contribution[0]);
     }
 
   }

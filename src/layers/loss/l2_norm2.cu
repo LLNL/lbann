@@ -66,7 +66,7 @@ __global__ void fp_kernel(El::Int local_height,
       }
     }
     if (tid == 0) {
-      cuda::atomic_add(&contribution[col], shared_contribution[0]);
+      gpu_lib::atomic_add(&contribution[col], shared_contribution[0]);
     }
 
   }
