@@ -193,15 +193,11 @@ void gru_layer<TensorDataType, Layout, Device>::setup_gpu() {
   const size_t input_size = this->get_input_size(0) / sequence_length;
 
   // GPU objects
-  auto&& handle = cudnn::get_handle();
   auto data_type = cudnn::get_data_type<TensorDataType>();
 
   // RNN descriptor
-  size_t dropout_state_size;
-  CHECK_CUDNN(cudnnDropoutGetStatesSize(handle, &dropout_state_size));
-  // static hydrogen::simple_buffer<El::byte, El::Device::GPU> dummy_buffer(dropout_state_size);
-  // m_dropout_cudnn_desc.set(0, dummy_buffer.data(), dropout_state_size, 0);
-  m_dropout_cudnn_desc.set(0, nullptr, 0, 0);
+  static cudnn::DropoutDescriptor dropout_desc;
+  dropout_desc.set(0, nullptr, 0, 0);
   m_rnn_cudnn_desc.set(
     CUDNN_RNN_ALGO_STANDARD,
     CUDNN_GRU,
@@ -215,7 +211,7 @@ void gru_layer<TensorDataType, Layout, Device>::setup_gpu() {
     m_hidden_size,
     m_hidden_size,  // proj_size
     1,              // num_layers
-    m_dropout_cudnn_desc,
+    dropout_desc,
     CUDNN_RNN_PADDED_IO_ENABLED);
 
 }
@@ -380,36 +376,23 @@ void fp_compute_impl(
   auto& output_desc = l.m_output_cudnn_desc;
   auto& hidden_desc = l.m_hidden_cudnn_desc;
   std::vector<int> sequence_lengths(mini_batch_size, sequence_length);
-  static const TensorDataType zero{El::TypeTraits<TensorDataType>::Zero()};
   input_desc.set(
     data_type,
-    CUDNN_RNN_DATA_LAYOUT_SEQ_MAJOR_UNPACKED,
+    CUDNN_RNN_DATA_LAYOUT_BATCH_MAJOR_UNPACKED,
     sequence_length,
     mini_batch_size,
     input_size,
     sequence_lengths.data(),
-    const_cast<void*>(reinterpret_cast<const void*>(&zero)));
+    nullptr);
   output_desc.set(
     data_type,
-    CUDNN_RNN_DATA_LAYOUT_SEQ_MAJOR_UNPACKED,
+    CUDNN_RNN_DATA_LAYOUT_BATCH_MAJOR_UNPACKED,
     sequence_length,
     mini_batch_size,
     hidden_size,
     sequence_lengths.data(),
-    const_cast<void*>(reinterpret_cast<const void*>(&zero)));
+    nullptr);
   hidden_desc.set(data_type, 1, mini_batch_size, hidden_size);
-
-  // Pack weights into workspace buffer
-  auto packed_weights = pack_cudnn_rnn_weights(
-    handle,
-    rnn_desc,
-    sync_info,
-    input_size,
-    hidden_size,
-    ih_matrix,
-    hh_matrix,
-    ih_bias,
-    hh_bias);
 
   // Allocate cuDNN workspace buffers
   size_t cudnn_workspace_size, cudnn_reserve_space_size;
@@ -440,34 +423,42 @@ void fp_compute_impl(
     CHECK_CUDA(cudaStreamSynchronize(stream));
   }
 
-  // Make sure tensors are formatted correctly
-  // Note (tym 9/24/20): cuDNNDataDescriptor has an option for
-  // CUDNN_RNN_DATA_LAYOUT_BATCH_MAJOR_UNPACKED, but I haven't been
-  // able to get it to work with CUDA 10.2.89 and cuDNN 8.0.2.
-  LocalMat input_sequence_workspace, output_sequence_workspace;
-  LocalMat init_hidden_workspace;
+  // Make sure tensors are packed
+  LocalMat input_sequence_workspace, init_hidden_workspace;
   input_sequence_workspace.SetSyncInfo(sync_info);
-  output_sequence_workspace.SetSyncInfo(sync_info);
   init_hidden_workspace.SetSyncInfo(sync_info);
-  input_sequence_workspace.Resize(mini_batch_size*input_size, sequence_length);
-  output_sequence_workspace.Resize(mini_batch_size*hidden_size, sequence_length);
-  constexpr size_t one{1};
-  cuda::copy_tensor(
-    stream,
-    {mini_batch_size, sequence_length, input_size},
-    input_sequence.LockedBuffer(),
-    {static_cast<size_t>(input_sequence.LDim()), input_size, one},
-    input_sequence_workspace.Buffer(),
-    {input_size, mini_batch_size*input_size, one});
+  if (input_sequence.Contiguous()) {
+    El::LockedView(input_sequence_workspace, input_sequence);
+  }
+  else {
+    El::Copy(input_sequence, input_sequence_workspace);
+  }
   if (init_hidden.Contiguous()) {
     El::LockedView(init_hidden_workspace, init_hidden);
   }
   else {
     El::Copy(init_hidden, init_hidden_workspace);
   }
+  if (!output_sequence.Contiguous()) {
+    LBANN_ERROR(
+      l.get_type()," layer \"",l.get_name(),"\" ",
+      "has non-contiguous buffer for output");
+  }
+
+  // Pack weights into workspace buffer
+  auto packed_weights = pack_cudnn_rnn_weights(
+    handle,
+    rnn_desc,
+    sync_info,
+    input_size,
+    hidden_size,
+    ih_matrix,
+    hh_matrix,
+    ih_bias,
+    hh_bias);
 
   // Launch cuDNN GRU
-  cuda::Graph::begin_capture(stream);
+  // cuda::Graph::begin_capture(stream);
   CHECK_CUDNN(
     cudnnRNNForward(
       handle,
@@ -477,7 +468,7 @@ void fp_compute_impl(
       input_desc,
       input_sequence_workspace.LockedBuffer(),
       output_desc,
-      output_sequence_workspace.Buffer(),
+      output_sequence.Buffer(),
       hidden_desc,
       init_hidden_workspace.LockedBuffer(),
       nullptr,      // hy
@@ -490,21 +481,9 @@ void fp_compute_impl(
       cudnn_workspace.data(),
       l.m_cudnn_reserve_space.size(),
       l.m_cudnn_reserve_space.data()));
-  auto graph = cuda::Graph::end_capture(stream);
-  l.m_graph_forward_prop.update(graph);
-  l.m_graph_forward_prop.launch(stream);
-
-  // Reorder output tensor dims
-  // Note (tym 9/24/20): cuDNNDataDescriptor has an option for
-  // CUDNN_RNN_DATA_LAYOUT_BATCH_MAJOR_UNPACKED, but I haven't been
-  // able to get it to work with CUDA 10.2.89 and cuDNN 8.0.2.
-  cuda::copy_tensor(
-    stream,
-    {mini_batch_size, sequence_length, hidden_size},
-    output_sequence_workspace.LockedBuffer(),
-    {hidden_size, mini_batch_size*hidden_size, one},
-    output_sequence.Buffer(),
-    {static_cast<size_t>(output_sequence.LDim()), hidden_size, one});
+  // auto graph = cuda::Graph::end_capture(stream);
+  // l.m_graph_forward_prop.update(graph);
+  // l.m_graph_forward_prop.launch(stream);
 
 }
 #endif // LBANN_HAS_CUDNN
@@ -550,7 +529,7 @@ void unpack_cudnn_rnn_weights(
         handle,
         rnn_desc,
         0,  // pseudoLayer
-        packed_weights_size,
+        packed_weights_size * sizeof(TensorDataType),
         packed_weights_buffer,
         id,
         matrix_desc,
@@ -615,8 +594,6 @@ void bp_compute_impl(
   using LocalMat = El::Matrix<TensorDataType, El::Device::GPU>;
   using ByteBuffer = hydrogen::simple_buffer<El::byte, El::Device::GPU>;
 
-#if 0
-
   // Matrices
   const auto& input_sequence
     = dynamic_cast<const LocalMat&>(l.get_local_prev_activations(0));
@@ -649,6 +626,7 @@ void bp_compute_impl(
   auto&& sync_info = input_sequence.GetSyncInfo();
   auto&& stream = sync_info.Stream();
   auto&& handle = cudnn::get_handle();
+  auto&& rnn_desc = l.m_rnn_cudnn_desc;
 
   // Define closure to send weight gradients to optimizers
   LocalMat ih_matrix_grad, hh_matrix_grad, ih_bias_grad, hh_bias_grad;
@@ -702,49 +680,61 @@ void bp_compute_impl(
   auto& input_desc = l.m_input_cudnn_desc;
   auto& output_desc = l.m_output_cudnn_desc;
   auto& hidden_desc = l.m_hidden_cudnn_desc;
-  std::vector<cudnnTensorDescriptor_t>
-    input_desc_list(sequence_length, input_desc),
-    output_desc_list(sequence_length, output_desc);
 
-  // Reorder tensor dims
-  // Note: cuDNN uses sequence_length x mini_batch_size x size
-  LocalMat input_sequence_workspace, output_sequence_workspace;
-  LocalMat input_sequence_grad_workspace, output_sequence_grad_workspace;
-  input_sequence_workspace.SetSyncInfo(sync_info);
-  output_sequence_workspace.SetSyncInfo(sync_info);
-  input_sequence_grad_workspace.SetSyncInfo(sync_info);
-  output_sequence_grad_workspace.SetSyncInfo(sync_info);
-  input_sequence_workspace.Resize(mini_batch_size*input_size, sequence_length);
-  output_sequence_workspace.Resize(mini_batch_size*hidden_size, sequence_length);
-  input_sequence_grad_workspace.Resize(mini_batch_size*input_size, sequence_length);
-  output_sequence_grad_workspace.Resize(mini_batch_size*hidden_size, sequence_length);
-  constexpr size_t one{1};
-  cuda::copy_tensor(
-    stream,
-    {mini_batch_size, sequence_length, input_size},
-    input_sequence.LockedBuffer(),
-    {sequence_length*input_size, input_size, one},
-    input_sequence_workspace.Buffer(),
-    {input_size, mini_batch_size*input_size, one});
-  cuda::copy_tensor(
-    stream,
-    {mini_batch_size, sequence_length, hidden_size},
-    output_sequence.LockedBuffer(),
-    {sequence_length*hidden_size, hidden_size, one},
-    output_sequence_workspace.Buffer(),
-    {hidden_size, mini_batch_size*hidden_size, one});
-  cuda::copy_tensor(
-    stream,
-    {mini_batch_size, sequence_length, hidden_size},
-    output_sequence_grad.LockedBuffer(),
-    {sequence_length*hidden_size, hidden_size, one},
-    output_sequence_grad_workspace.Buffer(),
-    {hidden_size, mini_batch_size*hidden_size, one});
+  // Allocate cuDNN workspace buffers
+  // Note: Reserve space has already been allocated in forward prop
+  size_t cudnn_workspace_size, cudnn_reserve_space_size;
+  CHECK_CUDNN(
+    cudnnGetRNNTempSpaceSizes(
+      handle,
+      rnn_desc,
+      CUDNN_FWD_MODE_TRAINING,
+      input_desc,
+      &cudnn_workspace_size,
+      &cudnn_reserve_space_size));
+  ByteBuffer cudnn_workspace(cudnn_workspace_size, sync_info);
+
+  // Make sure tensors are packed
+  LocalMat input_sequence_workspace, init_hidden_workspace;
+  LocalMat output_sequence_grad_workspace;
+  if (input_sequence.Contiguous()) {
+    El::LockedView(input_sequence_workspace, input_sequence);
+  }
+  else {
+    El::Copy(input_sequence, input_sequence_workspace);
+  }
+  if (init_hidden.Contiguous()) {
+    El::LockedView(init_hidden_workspace, init_hidden);
+  }
+  else {
+    El::Copy(init_hidden, init_hidden_workspace);
+  }
+  if (!output_sequence.Contiguous()) {
+    LBANN_ERROR(
+      l.get_type()," layer \"",l.get_name(),"\" ",
+      "has non-contiguous buffer for output");
+  }
+  if (output_sequence_grad.Contiguous()) {
+    El::LockedView(output_sequence_grad_workspace, output_sequence_grad);
+  }
+  else {
+    El::Copy(output_sequence_grad, output_sequence_grad_workspace);
+  }
+  if (!input_sequence_grad.Contiguous()) {
+    LBANN_ERROR(
+      l.get_type()," layer \"",l.get_name(),"\" ",
+      "has non-contiguous buffer for gradient w.r.t. input");
+  }
+  if (!init_hidden_grad.Contiguous()) {
+    LBANN_ERROR(
+      l.get_type()," layer \"",l.get_name(),"\" ",
+      "has non-contiguous buffer for gradient w.r.t. initial hidden state");
+  }
 
   // Pack weights into workspace buffer
   auto packed_weights = pack_cudnn_rnn_weights(
     handle,
-    l.m_rnn_cudnn_desc,
+    rnn_desc,
     sync_info,
     input_size,
     hidden_size,
@@ -759,65 +749,50 @@ void bp_compute_impl(
     packed_weights.size() / sizeof(TensorDataType),
     1);
 
-  // Allocate cuDNN workspace buffers
-  size_t cudnn_workspace_size;
-  CHECK_CUDNN(
-    cudnnGetRNNWorkspaceSize(
-      handle,
-      l.m_rnn_cudnn_desc,
-      sequence_length,
-      input_desc_list.data(),
-      &cudnn_workspace_size));
-  ByteBuffer cudnn_workspace(cudnn_workspace_size, sync_info);
-
   // Launch cuDNN GRU backprop
   // cuda::Graph::begin_capture(stream);
   CHECK_CUDNN(
-    cudnnRNNBackwardData(
+    cudnnRNNBackwardData_v8(
       handle,
-      l.m_rnn_cudnn_desc,
-      sequence_length,
-      output_desc_list.data(),
-      output_sequence_workspace.LockedBuffer(),
-      output_desc_list.data(),
+      rnn_desc,
+      l.m_gpu_sequence_lengths.data(),
+      output_desc,
+      output_sequence.LockedBuffer(),
       output_sequence_grad_workspace.LockedBuffer(),
-      hidden_desc,  // dhyDesc
-      nullptr,
-      hidden_desc,  // dcyDesc
-      nullptr,
-      l.m_packed_weights_cudnn_desc,
-      packed_weights.data(),
+      input_desc,
+      input_sequence_grad.Buffer(),
       hidden_desc,
-      init_hidden.LockedBuffer(),
-      hidden_desc,  // cxDesc
-      nullptr,
-      input_desc_list.data(),
-      input_sequence_grad_workspace.Buffer(),
-      hidden_desc,
+      init_hidden_workspace.LockedBuffer(),
+      nullptr,      // dhy
       init_hidden_grad.Buffer(),
-      hidden_desc,  // dcxDesc
-      nullptr,
-      cudnn_workspace.data(),
+      hidden_desc,  // cDesc
+      nullptr,      // cx
+      nullptr,      // dcy
+      nullptr,      // dcx
+      packed_weights.size(),
+      packed_weights.data(),
       cudnn_workspace.size(),
-      l.m_cudnn_reserve_space.data(),
-      l.m_cudnn_reserve_space.size()));
+      cudnn_workspace.data(),
+      l.m_cudnn_reserve_space.size(),
+      l.m_cudnn_reserve_space.data()));
   CHECK_CUDNN(
-    cudnnRNNBackwardWeights(
+    cudnnRNNBackwardWeights_v8(
       handle,
-      l.m_rnn_cudnn_desc,
-      sequence_length,
-      input_desc_list.data(),
+      rnn_desc,
+      CUDNN_WGRAD_MODE_ADD,
+      l.m_gpu_sequence_lengths.data(),
+      input_desc,
       input_sequence_workspace.LockedBuffer(),
       hidden_desc,
-      init_hidden.LockedBuffer(),
-      output_desc_list.data(),
-      output_sequence_workspace.LockedBuffer(),
-      cudnn_workspace.data(),
-      cudnn_workspace.size(),
-      l.m_packed_weights_cudnn_desc,
+      init_hidden_workspace.LockedBuffer(),
+      output_desc,
+      output_sequence.LockedBuffer(),
+      packed_weights.size(),
       weights_grad_workspace.Buffer(),
-      l.m_cudnn_reserve_space.data(),
-      l.m_cudnn_reserve_space.size()));
+      cudnn_workspace.size(),
+      cudnn_workspace.data(),
+      l.m_cudnn_reserve_space.size(),
+      l.m_cudnn_reserve_space.data()));
   // auto graph = cuda::Graph::end_capture(stream);
   // l.m_graph_backward_prop.update(graph);
   // l.m_graph_backward_prop.launch(stream);
@@ -825,28 +800,17 @@ void bp_compute_impl(
   // Send gradients to optimizers
   unpack_cudnn_rnn_weights(
     handle,
-    l.m_rnn_cudnn_desc,
+    rnn_desc,
     sync_info,
     input_size,
     hidden_size,
     weights_grad_workspace.LockedBuffer(),
+    weights_grad_workspace.Height(),
     ih_matrix_grad,
     hh_matrix_grad,
     ih_bias_grad,
     hh_bias_grad);
   send_weight_grads_to_optimizers();
-
-  // Reorder input grad tensor dims
-  // Note: cuDNN uses sequence_length x mini_batch_size x input_size
-  cuda::copy_tensor(
-    stream,
-    {mini_batch_size, sequence_length, input_size},
-    input_sequence_grad_workspace.LockedBuffer(),
-    {input_size, mini_batch_size*input_size, one},
-    input_sequence_grad.Buffer(),
-    {sequence_length*input_size, input_size, one});
-
-#endif // 0
 
 }
 #endif // LBANN_HAS_CUDNN
