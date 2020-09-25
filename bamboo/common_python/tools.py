@@ -758,13 +758,11 @@ def create_tests(setup_func,
             assert 'procs_per_node' not in _kwargs.keys()
             if procs_per_node == "auto":
                 procs_per_node = lbann.contrib.lc.systems.gpus_per_node()
+                if procs_per_node == 0:
+                    e = 'this test requires GPUs.'
+                    print('Skip - ' + e)
+                    pytest.skip(e)
             _kwargs['procs_per_node'] = procs_per_node
-
-        # FIXME
-        if "procs_per_node" in _kwargs.keys():
-            print("procs_per_node={}".format(_kwargs["procs_per_node"]))
-        else:
-            print("no procs_per_node")
 
         # If the user provided a suffix for the work directory, append it
         if 'work_subdir' in _kwargs:
