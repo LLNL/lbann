@@ -85,7 +85,7 @@ __global__ void dense_matrix_to_sparse_vectors(El::Int local_vector_size,
       current_entry.value = local_matrix[local_row + local_col * local_matrix_ldim];
       current_entry.index = global_row;
     } else {
-      current_entry.value = -cuda::infinity<DataType>();
+      current_entry.value = -gpu_lib::infinity<DataType>();
       current_entry.index = global_matrix_height;
     }
   }
@@ -194,7 +194,7 @@ void fp_gpu(lbann_comm& comm,
   gpu_lib::thrust::allocator<> alloc(sync_info.Stream());
 
   // Find top-k entries in each column of local prediction matrix
-  cuda::thrust::vector<entry<TensorDataType>> top_entries(local_width * k);
+  gpu_lib::thrust::vector<entry<TensorDataType>> top_entries(local_width * k);
   {
     const auto& num_local_entries_per_col = std::max(local_height, k);
     const auto& num_local_entries = local_width * num_local_entries_per_col;
@@ -236,8 +236,8 @@ void fp_gpu(lbann_comm& comm,
     const auto& num_entries = col_comm_size * num_entries_per_rank;
     const auto& block_dim = 256;
     const auto& grid_dim = (num_entries + block_dim - 1) / block_dim;
-    cuda::thrust::vector<entry<TensorDataType>> global_top_entries(num_entries);
-    cuda::thrust::vector<El::Int> global_top_entries_cols(num_entries);
+    gpu_lib::thrust::vector<entry<TensorDataType>> global_top_entries(num_entries);
+    gpu_lib::thrust::vector<El::Int> global_top_entries_cols(num_entries);
     comm.all_gather(reinterpret_cast<El::byte*>(top_entries.data().get()),
                     top_entries.size() * sizeof(entry<TensorDataType>),
                     reinterpret_cast<El::byte*>(global_top_entries.data().get()),

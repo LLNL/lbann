@@ -32,7 +32,7 @@ namespace lbann {
 
 namespace {
 
-using dim4 = cuda::array<size_t, 4>;
+using dim4 = gpu_lib::array<size_t, 4>;
 
 /**
  *  Block dimensions: bsize x 1 x 1
