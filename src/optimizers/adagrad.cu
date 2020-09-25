@@ -51,7 +51,7 @@ __global__ void adagrad_kernel(size_t height,
     const auto& g = gradient[row + col * gradient_ldim];
     auto& c = cache[row + col * cache_ldim];
     c += g * g;
-    x -= learning_rate * g / (cuda::sqrt(c) + eps);
+    x -= learning_rate * g / (gpu_lib::sqrt(c) + eps);
   }
 }
 

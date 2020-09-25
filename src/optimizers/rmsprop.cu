@@ -52,7 +52,7 @@ __global__ void rmsprop_kernel(size_t height,
     auto& c = cache[row + col * cache_ldim];
     auto& x = values[row + col * values_ldim];
     c = decay_rate * c + (TensorDataType(1) - decay_rate) * g * g;
-    x -= learning_rate * g / (cuda::sqrt(c) + eps);
+    x -= learning_rate * g / (gpu_lib::sqrt(c) + eps);
   }
 }
 

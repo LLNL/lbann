@@ -59,7 +59,7 @@ __global__ void adam_noncontiguous_kernel(size_t height,
     auto& x = values[row + col * values_ldim];
     m1 = beta1 * m1 + (TensorDataType(1) - beta1) * g;
     m2 = beta2 * m2 + (TensorDataType(1) - beta2) * g * g;
-    x -= correction * m1 / (cuda::sqrt(m2) + eps);
+    x -= correction * m1 / (gpu_lib::sqrt(m2) + eps);
   }
 }
 
@@ -84,7 +84,7 @@ __global__ void adam_contiguous_kernel(size_t size,
     auto& x = values[gid];
     m1 = beta1 * m1 + (TensorDataType(1) - beta1) * g;
     m2 = beta2 * m2 + (TensorDataType(1) - beta2) * g * g;
-    x -= correction * m1 / (cuda::sqrt(m2) + eps);
+    x -= correction * m1 / (gpu_lib::sqrt(m2) + eps);
   }
 }
 
