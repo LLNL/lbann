@@ -82,7 +82,7 @@ void local_fp(TensorDataType negative_slope,
               const El::AbstractMatrix<TensorDataType>& input,
               El::AbstractMatrix<TensorDataType>& output) {
 
-  // Get CUDA grid dimensions
+  // Get GPUP grid dimensions
   // Note: Maximum CUDA grid dimension is 2^32-1
   // (https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#features-and-technical-specifications).
   // TODO: HIP/ROCM notes
@@ -120,7 +120,7 @@ void local_bp(TensorDataType negative_slope,
               const El::AbstractMatrix<TensorDataType>& gradient_wrt_output,
               El::AbstractMatrix<TensorDataType>& gradient_wrt_input) {
 
-  // Get CUDA grid dimensions
+  // Get GPU grid dimensions
   // Note: Maximum CUDA grid dimension is 2^32-1
   // (https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#features-and-technical-specifications).
   // TODO: HIP/ROCM notes
