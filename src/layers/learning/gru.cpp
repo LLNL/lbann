@@ -624,7 +624,7 @@ void bp_compute_impl(
 
   // GPU objects
   auto&& sync_info = input_sequence.GetSyncInfo();
-  auto&& stream = sync_info.Stream();
+  // auto&& stream = sync_info.Stream();
   auto&& handle = cudnn::get_handle();
   auto&& rnn_desc = l.m_rnn_cudnn_desc;
 

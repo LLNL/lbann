@@ -97,7 +97,6 @@ private:
 #ifdef LBANN_HAS_CUDNN
   using ByteBuffer = hydrogen::simple_buffer<El::byte, Device>;
   cudnn::RNNDescriptor m_rnn_cudnn_desc;
-  cudnn::DropoutDescriptor m_dropout_cudnn_desc;
   cudnn::RNNDataDescriptor m_input_cudnn_desc;
   cudnn::RNNDataDescriptor m_output_cudnn_desc;
   cudnn::TensorDescriptor m_hidden_cudnn_desc;
@@ -121,8 +120,8 @@ LBANN_DEFINE_LAYER_BUILDER(gru);
 // Explicit template instantiation
 #ifdef LBANN_HAS_CUDNN
 #ifndef LBANN_GRU_LAYER_INSTANTIATE
-#define PROTO(T)                                                        \
-  extern template class gru_layer<                                             \
+#define PROTO(T)                                        \
+  extern template class gru_layer<                      \
     T, data_layout::DATA_PARALLEL, El::Device::GPU>;
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"
