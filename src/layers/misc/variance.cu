@@ -69,8 +69,8 @@ __global__ void variance_contribution_kernel(El::Int height,
       }
     }
     if (tid == 0) {
-      cuda::atomic_add(&contribution[col],
-                       scale * shared_contribution[0]);
+      gpu_lib::atomic_add(&contribution[col],
+                          scale * shared_contribution[0]);
     }
 
   }

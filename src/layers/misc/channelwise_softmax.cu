@@ -32,14 +32,14 @@ namespace lbann {
 
 namespace {
 
-using Size3 = cuda::array<size_t,3>;
+using Size3 = gpu_lib::array<size_t,3>;
 
 /** @brief Max functor */
 template <class T>
 struct max_op {
   __device__ __forceinline__
   DataType operator()(const T& x1, const T& x2) const {
-    return cuda::max(x1, x2);
+    return gpu_lib::max(x1, x2);
   }
 };
 
@@ -87,16 +87,16 @@ __global__ void fp_max_kernel(
     for (size_t j = gidy; j < vals_dims[1]; j += nthreadsy) {
 
       // Find largest value for each thread
-      TensorDataType maxval{-cuda::infinity<TensorDataType>()};
+      TensorDataType maxval{-gpu_lib::infinity<TensorDataType>()};
       for (size_t i = gidx; i < vals_dims[2]; i += nthreadsx) {
         const auto& val = vals_buffer[k * vals_strides[0]
                                       + j * vals_strides[1]
                                       + i * vals_strides[2]];
-        maxval = cuda::max(maxval, val);
+        maxval = gpu_lib::max(maxval, val);
       }
 
       // Find largest value for each block
-      maxval = cuda::block_reduce<bdimx,bdimy,bdimz,TensorDataType,max_op<TensorDataType>>(maxval);
+      maxval = gpu_lib::block_reduce<bdimx,bdimy,bdimz,TensorDataType,max_op<TensorDataType>>(maxval);
       if (tid == 0) {
         const auto& pos = (k * maxvals_strides[0]
                            + j * maxvals_strides[1]
@@ -149,13 +149,13 @@ __global__ void fp_denom_kernel(
         const auto& x = input_buffer[k * input_strides[0]
                                      + j * input_strides[1]
                                      + i * input_strides[2]];
-        denom += cuda::exp(x-shift);
+        denom += gpu_lib::exp(x-shift);
       }
 
       // Compute contribution from each block
-      denom = cuda::block_reduce<bdimx,bdimy,bdimz>(denom);
+      denom = gpu_lib::block_reduce<bdimx,bdimy,bdimz>(denom);
       if (tid == 0) {
-        cuda::atomic_add(&denoms[j+k*input_dims[1]], denom);
+        gpu_lib::atomic_add(&denoms[j+k*input_dims[1]], denom);
       }
 
     }
@@ -201,7 +201,7 @@ __global__ void fp_output_kernel(
         auto& y = output_buffer[k * output_strides[0]
                                 + j * output_strides[1]
                                 + i * output_strides[2]];
-        y = cuda::exp(x-shift) / denom;
+        y = gpu_lib::exp(x-shift) / denom;
       }
     }
   }
@@ -367,9 +367,9 @@ __global__ void bp_y_dot_dy_kernel(
       }
 
       // Compute contribution from each block
-      _y_dot_dy = cuda::block_reduce<bdimx,bdimy,bdimz>(_y_dot_dy);
+      _y_dot_dy = gpu_lib::block_reduce<bdimx,bdimy,bdimz>(_y_dot_dy);
       if (tid == 0) {
-        cuda::atomic_add(&y_dot_dy[j+k*output_dims[1]], _y_dot_dy);
+        gpu_lib::atomic_add(&y_dot_dy[j+k*output_dims[1]], _y_dot_dy);
       }
 
     }

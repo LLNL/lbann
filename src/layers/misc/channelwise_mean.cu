@@ -71,7 +71,7 @@ __global__ void mean_kernel(El::Int num_channels,
         }
       }
       if (tid == 0) {
-        cuda::atomic_add(&output[channel + col * output_ldim],
+        gpu_lib::atomic_add(&output[channel + col * output_ldim],
                          shared_sums[0] / TensorDataType(channel_size));
       }
 
