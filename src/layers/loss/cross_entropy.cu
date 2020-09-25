@@ -56,7 +56,7 @@ __global__ void fp_kernel(int height, int width,
       const auto& xhat = ground_truth[row + col * ground_truth_ldim];
       if (xhat > TensorDataType(0.)){
         const auto& x = prediction[row + col * prediction_ldim];
-        private_contribution += - xhat * cuda::log(x);
+        private_contribution += - xhat * gpu_lib::log(x);
       }
     }
 
@@ -71,7 +71,7 @@ __global__ void fp_kernel(int height, int width,
       }
     }
     if (tid == 0) {
-      cuda::atomic_add(&contribution[col], shared_contribution[0]);
+      gpu_lib::atomic_add(&contribution[col], shared_contribution[0]);
     }
 
   }
@@ -130,7 +130,7 @@ __global__ void bp_kernel(int height, int width,
       auto& dx = gradient_wrt_prediction[row + col * gradient_wrt_prediction_ldim];
       auto& dxhat = gradient_wrt_ground_truth[row + col * gradient_wrt_ground_truth_ldim];
       dx = (xhat > TensorDataType(0.)) ? - dy * xhat / x : TensorDataType(0.);
-      dxhat = - dy * cuda::log(x);
+      dxhat = - dy * gpu_lib::log(x);
     }
   }
 
