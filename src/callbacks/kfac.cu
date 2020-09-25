@@ -127,7 +127,7 @@ void kfac::add_to_diagonal(
     const bool is_bn) {
   constexpr size_t block_size = 256;
   const size_t grid_size = (height + block_size - 1) / block_size;
-  auto&& stream =  hydrogen::cuda::GetDefaultStream();
+  auto&& stream = hydrogen::cuda::GetDefaultStream();
   kfac_add_to_diagonal_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
       A, height, damping,
       damping_bn_err, is_bn);

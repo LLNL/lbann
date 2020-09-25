@@ -135,7 +135,7 @@ void kfac::on_backward_prop_end(model *m, Layer *l) {
     assert(layer_it_in_list != layers.end());
     const size_t layer_id = std::distance(layers.begin(), layer_it_in_list);
     const auto& context = static_cast<const sgd_execution_context&>(m->get_execution_context());
-    const auto num_steps = context.get_step();
+    const size_t num_steps = context.get_step();
     const bool is_update_required = (num_steps%m_update_interval_steps) == 0
         || m_kronecker_inverse.find(layer_id) == m_kronecker_inverse.end();
 
@@ -154,9 +154,9 @@ void kfac::on_backward_prop_end(model *m, Layer *l) {
     const auto& dtl_child = dynamic_cast<const data_type_layer<DataType>&>(*child);
     const El::AbstractMatrix<DataType>& local_activations = dtl_parent.get_local_activations();
     const El::AbstractMatrix<DataType>& local_errors = dtl_child.get_local_error_signals();
-    const auto mini_batch_size = dtl_parent.get_activations().Width();
+    const size_t mini_batch_size = dtl_parent.get_activations().Width();
     assert(mini_batch_size == dtl_child.get_error_signals().Width());
-    const auto local_batch_size = local_activations.Width();
+    const size_t local_batch_size = local_activations.Width();
 
     if(local_activations.GetDevice() != El::Device::GPU
        || local_errors.GetDevice() != El::Device::GPU) {
@@ -178,7 +178,7 @@ void kfac::on_backward_prop_end(model *m, Layer *l) {
       auto& weights = l->get_weights(0);
       optimizer *w_optimizer = weights.get_optimizer();
       auto* w_dto = dynamic_cast<data_type_optimizer<DataType>*>(w_optimizer);
-      El::Matrix<DataType, El::Device::GPU> w_gradients = w_dto->get_gradient().Matrix();
+      El::Matrix<DataType, El::Device::GPU>& w_gradients = w_dto->get_gradient().Matrix();
 
       if(is_update_required) {
         // Compute Kronecker factors, assuming that local_errors are
@@ -187,8 +187,8 @@ void kfac::on_backward_prop_end(model *m, Layer *l) {
         if(is_fc) {
           assert(local_activations.Height() == w_gradients.Width());
           assert(local_errors.Height() == w_gradients.Height());
-          A = get_kronecker_factor_fc(local_activations, 1.0/mini_batch_size);
-          G = get_kronecker_factor_fc(local_errors, mini_batch_size);
+          get_kronecker_factor_fc(A, local_activations, 1.0/mini_batch_size);
+          get_kronecker_factor_fc(G, local_errors, mini_batch_size);
         } else {
 
           const auto input_dims = l->get_input_dims(); // CHW
@@ -220,11 +220,13 @@ void kfac::on_backward_prop_end(model *m, Layer *l) {
           assert((size_t) local_activations.Height() == num_input_channels*spatial_input_prod);
           assert((size_t) local_errors.Height() == num_output_channels*spatial_output_prod);
 
-          A = get_kronecker_factor_conv(
+          get_kronecker_factor_conv(
+              A,
               local_activations, 1.0/mini_batch_size,
               local_batch_size, num_input_channels, input_spatial_dims,
               l_conv, true);
-          G = get_kronecker_factor_conv(
+          get_kronecker_factor_conv(
+              G,
               local_errors, DataType(mini_batch_size)/spatial_output_prod,
               local_batch_size, num_output_channels, output_spatial_dims,
               l_conv, false);
@@ -237,19 +239,14 @@ void kfac::on_backward_prop_end(model *m, Layer *l) {
         // Compute exponential moving average of the factors
         if(m_kronecker_average.find(layer_id) == m_kronecker_average.end())
           m_kronecker_average.emplace(layer_id, std::make_pair(A, G));
-        auto& AGave = (*m_kronecker_average.find(layer_id)).second;
-        auto& Aave = AGave.first;
-        auto& Gave = AGave.second;
+        auto &Aave = m_kronecker_average[layer_id].first;
+        auto &Gave = m_kronecker_average[layer_id].second;
         update_kronecker_average(
             Aave.Buffer(), A.Buffer(), A.Height()*A.Width(), m_kronecker_decay);
         update_kronecker_average(
             Gave.Buffer(), G.Buffer(), G.Height()*G.Width(), m_kronecker_decay);
-
         // Compute the pi constant
         const DataType pi = m_use_pi ? compute_pi(Aave, Gave) : 1.0;
-        if(m_kronecker_average.find(layer_id) == m_kronecker_average.end())
-          m_kronecker_average.emplace(layer_id, std::make_pair(A, G));
-
         // Compute the inverse of the factors
         const bool print_time = comm->am_trainer_master() && m_print_time;
         // Since setting different damping constants for A and G is an
@@ -262,15 +259,17 @@ void kfac::on_backward_prop_end(model *m, Layer *l) {
               << ", m_damping_err: " << m_damping_err;
           LBANN_WARNING(err.str());
         }
-        const auto Ainv = get_matrix_inverse(Aave, print_time, DataType(m_damping_act*pi));
-        const auto Ginv = get_matrix_inverse(Gave, print_time, DataType(m_damping_err/pi));
-        const auto pair = std::make_pair(Ainv, Ginv);
-        if(m_kronecker_inverse.find(layer_id) == m_kronecker_inverse.end())
-          m_kronecker_inverse.emplace(layer_id, pair);
-        else
-          m_kronecker_inverse[layer_id] = pair;
 
-        // Damp matrices for debugging
+        if(m_kronecker_inverse.find(layer_id) == m_kronecker_inverse.end())
+          m_kronecker_inverse.emplace(layer_id, std::make_pair(
+              El::Matrix<DataType, El::Device::GPU>(),
+              El::Matrix<DataType, El::Device::GPU>()));
+        auto &Ainv = m_kronecker_inverse[layer_id].first;
+        auto &Ginv = m_kronecker_inverse[layer_id].second;
+        get_matrix_inverse(Ainv, Aave, print_time, DataType(m_damping_act*pi));
+        get_matrix_inverse(Ginv, Gave, print_time, DataType(m_damping_err/pi));
+
+        // Dump matrices for debugging
         if(comm->am_trainer_master() && m_print_matrix) {
           if(comm->am_trainer_master()) {
             std::cout << std::endl;
@@ -302,7 +301,6 @@ void kfac::on_backward_prop_end(model *m, Layer *l) {
               << std::endl;
           std::cout << oss.str();
         }
-
       }
 
       const auto &Ainv = m_kronecker_inverse[layer_id].first;
@@ -427,13 +425,14 @@ void kfac::on_backward_prop_end(model *m, Layer *l) {
       assert(num_channels == (size_t) bias_values.LocalHeight());
 
       El::Matrix<DataType, El::Device::GPU> stacked_grads(num_channels*2, 1);
-      // TODO: Better way to copy?
-      CHECK_CUDA(cudaMemcpy(
+      CHECK_CUDA(cudaMemcpyAsync(
           stacked_grads.Buffer(), s_gradients.LockedBuffer(),
-          num_channels*sizeof(DataType), cudaMemcpyDeviceToDevice));
-      CHECK_CUDA(cudaMemcpy(
+          num_channels*sizeof(DataType), cudaMemcpyDeviceToDevice,
+          hydrogen::cuda::GetDefaultStream()));
+      CHECK_CUDA(cudaMemcpyAsync(
           stacked_grads.Buffer()+num_channels, b_gradients.LockedBuffer(),
-          num_channels*sizeof(DataType), cudaMemcpyDeviceToDevice));
+          num_channels*sizeof(DataType), cudaMemcpyDeviceToDevice,
+          hydrogen::cuda::GetDefaultStream()));
 
       if(is_update_required) {
         El::Matrix<DataType, El::Device::GPU> factor(num_channels*2, local_batch_size);
@@ -455,20 +454,19 @@ void kfac::on_backward_prop_end(model *m, Layer *l) {
             El::TypeTraits<DataType>::Zero(), fisher_block);
         comm->allreduce((El::AbstractMatrix<DataType>&) fisher_block, comm->get_trainer_comm());
 
+        if(m_kronecker_inverse.find(layer_id) == m_kronecker_inverse.end())
+          m_kronecker_inverse.emplace(layer_id, std::make_pair(
+              El::Matrix<DataType, El::Device::GPU>(), // Finv
+              El::Matrix<DataType, El::Device::GPU>())); // dummy
+
+        auto& Finv = m_kronecker_inverse[layer_id].first;
         const bool print_time = comm->am_trainer_master() && m_print_time;
-        const auto Finv = get_matrix_inverse(
+        get_matrix_inverse(
+            Finv,
             fisher_block, print_time,
             DataType(m_damping_bn_act),
             DataType(m_damping_bn_err),
             true);
-
-        const auto pair = std::make_pair(
-            Finv,
-            El::Matrix<DataType, El::Device::GPU>(0, 0)); // dummy matrix.
-        if(m_kronecker_inverse.find(layer_id) == m_kronecker_inverse.end())
-          m_kronecker_inverse.emplace(layer_id, pair);
-        else
-          m_kronecker_inverse[layer_id] = pair;
       }
 
       const auto &Finv = m_kronecker_inverse[layer_id].first;
@@ -512,25 +510,27 @@ void kfac::on_backward_prop_end(model *m, Layer *l) {
   }
 }
 
-El::Matrix<DataType, El::Device::GPU> kfac::get_kronecker_factor_fc(
+void kfac::get_kronecker_factor_fc(
+    El::AbstractMatrix<DataType>& factor,
     const El::AbstractMatrix<DataType>& A,
     const DataType alpha) {
   assert(A.GetDevice() == El::Device::GPU);
-  El::Matrix<DataType, El::Device::GPU> factor(A.Height(), A.Height());
+  factor.Resize(A.Height(), A.Height());
   El::Gemm(
       El::NORMAL, El::TRANSPOSE,
       alpha, A, A,
       El::TypeTraits<DataType>::Zero(), factor);
-  return factor;
 }
 
-El::Matrix<DataType, El::Device::GPU> kfac::get_kronecker_factor_conv(
+void kfac::get_kronecker_factor_conv(
+    El::Matrix<DataType, El::Device::GPU>& factor,
     const El::Matrix<DataType, El::Device::GPU>& A,
     const DataType alpha,
     const size_t local_batch_size, const size_t num_channels,
     const std::vector<int> spatial_dims,
     const convolution_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU> *l_conv,
     const bool use_im2col) {
+  assert(factor.GetDevice() == El::Device::GPU);
   assert(A.GetDevice() == El::Device::GPU);
 
   const auto dilations = l_conv->get_dilations();
@@ -543,7 +543,7 @@ El::Matrix<DataType, El::Device::GPU> kfac::get_kronecker_factor_conv(
     }
 
   // The matrix size will be overwritten later.
-  El::Matrix<DataType, El::Device::GPU> Acol(1, 1);
+  El::Matrix<DataType, El::Device::GPU> Acol;
   if(use_im2col) {
     im2col(A, Acol,
            num_channels, spatial_dims.size(),
@@ -561,22 +561,23 @@ El::Matrix<DataType, El::Device::GPU> kfac::get_kronecker_factor_conv(
         local_batch_size, num_channels, spatial_prod);
   }
 
-  El::Matrix<DataType, El::Device::GPU> factor(Acol.Height(), Acol.Height());
+  factor.Resize(Acol.Height(), Acol.Height());
   El::Gemm(
       El::NORMAL, El::TRANSPOSE,
       alpha, Acol, Acol,
       El::TypeTraits<DataType>::Zero(), factor);
-  return factor;
 }
 
-El::Matrix<DataType, El::Device::GPU> kfac::get_matrix_inverse(
+void kfac::get_matrix_inverse(
+    El::Matrix<DataType, El::Device::GPU>& Ainv,
     const El::Matrix<DataType, El::Device::GPU>& A,
     const bool report_time,
     const DataType damping,
     const DataType damping_bn_err,
     const bool is_bn) {
   assert(A.Width() == A.Height());
-  El::Matrix<DataType, El::Device::GPU> Ainv(A);
+  Ainv.Resize(A.Height(), A.Width());
+  El::Copy(A, Ainv);
 
   const double t_start = get_time();
 
@@ -633,8 +634,6 @@ El::Matrix<DataType, El::Device::GPU> kfac::get_matrix_inverse(
               << ", t_fill=" << (t_fill-t_spotri)
               << std::endl;
   }
-
-  return Ainv;
 }
 
 double kfac::compute_pi(const El::Matrix<DataType, El::Device::GPU>& A,

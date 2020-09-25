@@ -102,12 +102,14 @@ class kfac : public callback_base {
  private:
 
   /** @brief Gets the Kronecker factor matrix of a FC layer. **/
-  static El::Matrix<DataType, El::Device::GPU> get_kronecker_factor_fc(
+  static void get_kronecker_factor_fc(
+      El::AbstractMatrix<DataType>& factor,
       const El::AbstractMatrix<DataType>& A,
       const DataType alpha);
 
   /** @brief Gets the Kronecker factor matrix of a convolutional layer. **/
-  static El::Matrix<DataType, El::Device::GPU> get_kronecker_factor_conv(
+  static void get_kronecker_factor_conv(
+      El::Matrix<DataType, El::Device::GPU>& factor,
       const El::Matrix<DataType, El::Device::GPU>& A,
       const DataType alpha,
       const size_t local_batch_size, const size_t num_channels,
@@ -116,7 +118,8 @@ class kfac : public callback_base {
       const bool use_im2col);
 
   /** @brief Gets the inverse matrix of A. **/
-  static El::Matrix<DataType, El::Device::GPU> get_matrix_inverse(
+  static void get_matrix_inverse(
+      El::Matrix<DataType, El::Device::GPU>& Ainv,
       const El::Matrix<DataType, El::Device::GPU>& A,
       const bool report_time=false,
       const DataType damping=0,
