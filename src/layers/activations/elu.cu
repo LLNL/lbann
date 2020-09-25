@@ -32,7 +32,7 @@ namespace lbann {
 
 namespace {
 
-/** CUDA kernel for forward prop computation. */
+/** GPU kernel for forward prop computation. */
 template <typename TensorDataType>
 __global__ void fp_kernel(TensorDataType alpha,
                           El::Int height,
@@ -53,7 +53,7 @@ __global__ void fp_kernel(TensorDataType alpha,
   }
 }
 
-/** CUDA kernel for backprop computation. */
+/** GPU kernel for backprop computation. */
 template <typename TensorDataType>
 __global__ void bp_kernel(TensorDataType alpha,
                           El::Int height,
@@ -83,9 +83,10 @@ void local_fp(TensorDataType alpha,
               const El::AbstractMatrix<TensorDataType>& input,
               El::AbstractMatrix<TensorDataType>& output) {
 
-  // Get CUDA grid dimensions
+  // Get GPU grid dimensions
   // Note: Maximum CUDA grid dimension is 2^32-1
   // (https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#features-and-technical-specifications).
+  // TODO: HIP/ROCM notes
   const El::Int height = input.Height();
   const El::Int width = input.Width();
   const El::Int block_dim = 256;
@@ -119,9 +120,10 @@ void local_bp(TensorDataType alpha,
               const El::AbstractMatrix<TensorDataType>& gradient_wrt_output,
               El::AbstractMatrix<TensorDataType>& gradient_wrt_input) {
 
-  // Get CUDA grid dimensions
+  // Get GPU grid dimensions
   // Note: Maximum CUDA grid dimension is 2^32-1
   // (https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#features-and-technical-specifications).
+  // TODO: HIP/ROCM notes
   const El::Int height = input.Height();
   const El::Int width = input.Width();
   const El::Int block_dim = 256;
