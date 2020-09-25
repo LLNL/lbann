@@ -192,7 +192,7 @@ template <typename TensorDataType>
 struct mod_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x1,
                                         const TensorDataType& x2) const {
-    return cuda::mod(x1, x2);
+    return gpu_lib::mod(x1, x2);
   }
   inline __device__ void operator()(const TensorDataType& x1,
                                     const TensorDataType& x2,
@@ -200,7 +200,7 @@ struct mod_op {
                                     TensorDataType& dx1,
                                     TensorDataType& dx2) const {
     dx1 = dy;
-    dx2 = -dy * cuda::floor(x1 / x2);
+    dx2 = -dy * gpu_lib::floor(x1 / x2);
   }
 };
 
@@ -209,7 +209,7 @@ template <typename TensorDataType>
 struct pow_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x1,
                                         const TensorDataType& x2) const {
-    return cuda::pow(x1, x2);
+    return gpu_lib::pow(x1, x2);
   }
   inline __device__ void operator()(const TensorDataType& x1,
                                     const TensorDataType& x2,
@@ -217,8 +217,8 @@ struct pow_op {
                                     TensorDataType& dx1,
                                     TensorDataType& dx2) const {
 
-    dx1 = dy * x2 * cuda::pow(x1, x2 - TensorDataType(1.0));
-    dx2 = dy * cuda::log(x1) * cuda::pow(x1, x2);
+    dx1 = dy * x2 * gpu_lib::pow(x1, x2 - TensorDataType(1.0));
+    dx2 = dy * gpu_lib::log(x1) * gpu_lib::pow(x1, x2);
   }
 };
 
@@ -231,7 +231,7 @@ struct safe_divide_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x1,
                                         const TensorDataType& x2) const {
     const auto& y = x1 / x2;
-    if (cuda::isfinite(y)) { return y; }
+    if (gpu_lib::isfinite(y)) { return y; }
     else             { return TensorDataType(0.0); }
   }
   inline __device__ void operator()(const TensorDataType& x1,
@@ -240,7 +240,7 @@ struct safe_divide_op {
                                     TensorDataType& dx1,
                                     TensorDataType& dx2) const {
     const auto& y = x1 / x2;
-    if (cuda::isfinite(y)) {
+    if (gpu_lib::isfinite(y)) {
       dx1 = dy / x2;
       dx2 = -dy * x1 / (x2*x2);
     } else {
@@ -273,7 +273,7 @@ template <typename TensorDataType>
 struct max_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x1,
                                         const TensorDataType& x2) const {
-    return cuda::max(x1, x2);
+    return gpu_lib::max(x1, x2);
   }
   inline __device__ void operator()(const TensorDataType& x1,
                                     const TensorDataType& x2,
@@ -298,7 +298,7 @@ template <typename TensorDataType>
 struct min_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x1,
                                         const TensorDataType& x2) const {
-    return cuda::min(x1, x2);
+    return gpu_lib::min(x1, x2);
   }
   inline __device__ void operator()(const TensorDataType& x1,
                                     const TensorDataType& x2,
@@ -425,8 +425,8 @@ template <typename TensorDataType>
 struct logical_and_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x1,
                                         const TensorDataType& x2) const {
-    const auto& b1 = x1 != TensorDataType(0.0) && !cuda::isnan(x1);
-    const auto& b2 = x2 != TensorDataType(0.0) && !cuda::isnan(x2);
+    const auto& b1 = x1 != TensorDataType(0.0) && !gpu_lib::isnan(x1);
+    const auto& b2 = x2 != TensorDataType(0.0) && !gpu_lib::isnan(x2);
     return (b1 && b2) ? TensorDataType(1.0) : TensorDataType(0.0);
   }
   inline __device__ void operator()(const TensorDataType& x1,
@@ -444,8 +444,8 @@ template <typename TensorDataType>
 struct logical_or_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x1,
                                         const TensorDataType& x2) const {
-    const auto& b1 = x1 != TensorDataType(0.0) && !cuda::isnan(x1);
-    const auto& b2 = x2 != TensorDataType(0.0) && !cuda::isnan(x2);
+    const auto& b1 = x1 != TensorDataType(0.0) && !gpu_lib::isnan(x1);
+    const auto& b2 = x2 != TensorDataType(0.0) && !gpu_lib::isnan(x2);
     return (b1 || b2) ? TensorDataType(1.0) : TensorDataType(0.0);
   }
   inline __device__ void operator()(const TensorDataType& x1,
@@ -463,8 +463,8 @@ template <typename TensorDataType>
 struct logical_xor_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x1,
                                         const TensorDataType& x2) const {
-    const auto& b1 = x1 != TensorDataType(0.0) && !cuda::isnan(x1);
-    const auto& b2 = x2 != TensorDataType(0.0) && !cuda::isnan(x2);
+    const auto& b1 = x1 != TensorDataType(0.0) && !gpu_lib::isnan(x1);
+    const auto& b2 = x2 != TensorDataType(0.0) && !gpu_lib::isnan(x2);
     return (b1 || b2) && !(b1 && b2) ? TensorDataType(1.0) : TensorDataType(0.0);
   }
   inline __device__ void operator()(const TensorDataType& x1,
@@ -483,7 +483,7 @@ struct logical_xor_op {
 #define DEFINE_COMPUTE_OPS(layer, op)                                   \
   template <typename TensorDataType, data_layout Layout, El::Device Device> \
   void layer<TensorDataType, Layout, Device>::fp_compute() {            \
-    cuda::apply_entrywise_binary_operator<op>(                          \
+    gpu_lib::apply_entrywise_binary_operator<op>(                          \
       this->get_prev_activations(0),                                    \
       this->get_prev_activations(1),                                    \
       this->get_activations());                                         \
