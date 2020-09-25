@@ -100,12 +100,12 @@ __global__ void fp_sums_kernel(
         sum_sqsum.first += x;
         sum_sqsum.second += x * x;
       }
-      sum_sqsum = cuda::block_reduce<bdimx,bdimy,bdimz,pair_t,pair_sum_t>(sum_sqsum);
+      sum_sqsum = gpu_lib::block_reduce<bdimx,bdimy,bdimz,pair_t,pair_sum_t>(sum_sqsum);
 
       // Output result to global memory
       if (tid == 0) {
-        cuda::atomic_add(&sums[j+k*sums_ldim], sum_sqsum.first);
-        cuda::atomic_add(&sqsums[j+k*sqsums_ldim], sum_sqsum.second);
+        gpu_lib::atomic_add(&sums[j+k*sums_ldim], sum_sqsum.first);
+        gpu_lib::atomic_add(&sqsums[j+k*sqsums_ldim], sum_sqsum.second);
       }
 
     }
@@ -154,8 +154,8 @@ __global__ void fp_output_kernel(
       const auto& mean = sum * mean_scale;
       const auto& sqmean = sqsum * mean_scale;
       auto var = (sqmean - mean*mean) * var_correction;
-      var = cuda::max(var, TensorDataType{0.});
-      const auto& inv_stdev = cuda::rsqrt(var + epsilon);
+      var = gpu_lib::max(var, TensorDataType{0.});
+      const auto& inv_stdev = gpu_lib::rsqrt(var + epsilon);
       for (size_t i = gidx; i < channel_size; i += nthreadsx) {
         const auto& x = input[i + j*channel_size + k*input_ldim];
         auto& y = output[i + j*channel_size + k*output_ldim];
@@ -318,8 +318,8 @@ __global__ void bp_statistics_grad_kernel(
       const auto& mean = sum * mean_scale;
       const auto& sqmean = sqsum * mean_scale;
       auto var = (sqmean - mean*mean) * var_correction;
-      var = cuda::max(var, TensorDataType{0.});
-      const auto& inv_stdev = cuda::rsqrt(var + epsilon);
+      var = gpu_lib::max(var, TensorDataType{0.});
+      const auto& inv_stdev = gpu_lib::rsqrt(var + epsilon);
 
       // Accumulate sums and perform block-wide reduction
       using pair_t = thrust::pair<TensorDataType,TensorDataType>;
@@ -331,14 +331,14 @@ __global__ void bp_statistics_grad_kernel(
         dmean_dvar.first += dy;
         dmean_dvar.second += dy * (x - mean);
       }
-      dmean_dvar = cuda::block_reduce<bdimx,bdimy,bdimz,pair_t,pair_sum_t>(dmean_dvar);
+      dmean_dvar = gpu_lib::block_reduce<bdimx,bdimy,bdimz,pair_t,pair_sum_t>(dmean_dvar);
 
       // Output result to global memory
       if (tid == 0) {
         const TensorDataType dmean = -dmean_dvar.first * inv_stdev;
         const TensorDataType dvar = -dmean_dvar.second * inv_stdev*inv_stdev*inv_stdev / 2;
-        cuda::atomic_add(&means_grad[j+k*means_grad_ldim], dmean);
-        cuda::atomic_add(&vars_grad[j+k*vars_grad_ldim], dvar);
+        gpu_lib::atomic_add(&means_grad[j+k*means_grad_ldim], dmean);
+        gpu_lib::atomic_add(&vars_grad[j+k*vars_grad_ldim], dvar);
       }
 
     }
@@ -394,8 +394,8 @@ __global__ void bp_input_grad_kernel(
       const auto& mean = sum * mean_scale;
       const auto& sqmean = sqsum * mean_scale;
       auto var = (sqmean - mean*mean) * var_correction;
-      var = cuda::max(var, TensorDataType{0.});
-      const auto& inv_stdev = cuda::rsqrt(var + epsilon);
+      var = gpu_lib::max(var, TensorDataType{0.});
+      const auto& inv_stdev = gpu_lib::rsqrt(var + epsilon);
       const auto& dmean = means_grad[j+k*means_grad_ldim];
       const auto& dvar = vars_grad[j+k*vars_grad_ldim];
       for (size_t i = gidx; i < channel_size; i += nthreadsx) {

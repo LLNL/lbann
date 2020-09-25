@@ -82,12 +82,12 @@ __global__ void fp_sums_kernel(
       sum_sqsum.first += x;
       sum_sqsum.second += x * x;
     }
-    sum_sqsum = cuda::block_reduce<bdimx,bdimy,bdimz,pair_t,pair_sum_t>(sum_sqsum);
+    sum_sqsum = gpu_lib::block_reduce<bdimx,bdimy,bdimz,pair_t,pair_sum_t>(sum_sqsum);
 
     // Output result to global memory
     if (tid == 0) {
-      cuda::atomic_add(&sums[i*sums_stride], sum_sqsum.first);
-      cuda::atomic_add(&sqsums[i*sqsums_stride], sum_sqsum.second);
+      gpu_lib::atomic_add(&sums[i*sums_stride], sum_sqsum.first);
+      gpu_lib::atomic_add(&sqsums[i*sqsums_stride], sum_sqsum.second);
     }
 
   }
@@ -126,7 +126,7 @@ __global__ void fp_statistics_kernel(
     const auto& sqmean = sqsum / sample_size_dt;
     const auto& var = (sqmean - mean*mean) * sample_size_dt / TensorDataType(sample_size-1);
     means[i*means_stride] = mean;
-    vars[i*vars_stride] = cuda::max(var, TensorDataType(0.0));
+    vars[i*vars_stride] = gpu_lib::max(var, TensorDataType(0.0));
   }
 
 }
@@ -160,7 +160,7 @@ __global__ void fp_output_kernel(
   for (size_t i = gidy; i < local_num_samples; i += nthreadsy) {
     const auto& mean = means[i*means_stride];
     const auto& var = vars[i*vars_stride];
-    const auto& inv_stdev = cuda::rsqrt(var + epsilon);
+    const auto& inv_stdev = gpu_lib::rsqrt(var + epsilon);
     for (size_t j = gidx; j < local_sample_size; j += nthreadsx) {
       const auto& x = input[i*input_ldim + j];
       auto& y = output[i*output_ldim + j];
@@ -307,16 +307,16 @@ __global__ void bp_statistics_grad_kernel(
       sums.first += dy;
       sums.second += dy * (x - mean);
     }
-    sums = cuda::block_reduce<bdimx,bdimy,bdimz,pair_t,pair_sum_t>(sums);
+    sums = gpu_lib::block_reduce<bdimx,bdimy,bdimz,pair_t,pair_sum_t>(sums);
 
     // Output result to global memory
     if (tid == 0) {
       const auto& var = vars[i*vars_stride];
-      const auto& inv_stdev = cuda::rsqrt(var + epsilon);
+      const auto& inv_stdev = gpu_lib::rsqrt(var + epsilon);
       const TensorDataType dmean = -sums.first * inv_stdev;
       const TensorDataType dvar = -sums.second * inv_stdev*inv_stdev*inv_stdev / TensorDataType(2);
-      cuda::atomic_add(&means_grad[i*means_grad_stride], dmean);
-      cuda::atomic_add(&vars_grad[i*vars_grad_stride], dvar);
+      gpu_lib::atomic_add(&means_grad[i*means_grad_stride], dmean);
+      gpu_lib::atomic_add(&vars_grad[i*vars_grad_stride], dvar);
     }
 
   }
@@ -361,7 +361,7 @@ __global__ void bp_input_grad_kernel(
   for (size_t i = gidy; i < local_num_samples; i += nthreadsy) {
     const auto& mean = means[i*means_stride];
     const auto& var = vars[i*vars_stride];
-    const auto& inv_stdev = cuda::rsqrt(var + epsilon);
+    const auto& inv_stdev = gpu_lib::rsqrt(var + epsilon);
     const auto& dmean = means_grad[i*means_grad_stride];
     const auto& dvar = vars_grad[i*vars_grad_stride];
     for (size_t j = gidx; j < local_sample_size; j += nthreadsx) {

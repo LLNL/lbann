@@ -37,7 +37,7 @@ namespace {
 template <typename T, size_t N>
 struct array_sum
 {
-  using ArrayType = cuda::array<T,N>;
+  using ArrayType = gpu_lib::array<T,N>;
   __device__ __forceinline__
   ArrayType operator()(const ArrayType& x, const ArrayType& y)
   {
@@ -79,7 +79,7 @@ __global__ void fp_sums_kernel(
   for (int channel = gidy; channel < num_channels; channel += nthreadsy) {
 
     // Accumulate sums and perform block-wide reduction
-    using array_t = cuda::array<TensorDataType,2>;
+    using array_t = gpu_lib::array<TensorDataType,2>;
     using array_sum_t = array_sum<TensorDataType,2>;
     array_t sum_sqsum;
     sum_sqsum[0] = TensorDataType(0);
@@ -91,12 +91,12 @@ __global__ void fp_sums_kernel(
         sum_sqsum[1] += x * x;
       }
     }
-    sum_sqsum = cuda::block_reduce<bdimx,bdimy,bdimz,array_t,array_sum_t>(sum_sqsum);
+    sum_sqsum = gpu_lib::block_reduce<bdimx,bdimy,bdimz,array_t,array_sum_t>(sum_sqsum);
 
     // Output result to global memory
     if (tid == 0) {
-      cuda::atomic_add(&sums[channel], sum_sqsum[0]);
-      cuda::atomic_add(&sqsums[channel], sum_sqsum[1]);
+      gpu_lib::atomic_add(&sums[channel], sum_sqsum[0]);
+      gpu_lib::atomic_add(&sqsums[channel], sum_sqsum[1]);
     }
 
   }
@@ -179,7 +179,7 @@ __global__ void fp_output_kernel(
   for (auto k = gidz; k < num_channels; k += nthreadsz) {
     const auto& mean = global_mean[k];
     const auto& var = global_var[k];
-    const auto& inv_stdev = cuda::rsqrt(var + epsilon);
+    const auto& inv_stdev = gpu_lib::rsqrt(var + epsilon);
     const auto& scale = global_scale[k];
     const auto& bias = global_bias[k];
     for (auto j = gidy; j < mini_batch_size; j += nthreadsy) {
@@ -245,11 +245,11 @@ __global__ void bp_statistics_grad_kernel(
     const auto& scale = global_scale[channel];
 
     // Compute useful constants
-    const auto& inv_stdev = cuda::rsqrt(var + epsilon);
+    const auto& inv_stdev = gpu_lib::rsqrt(var + epsilon);
     const auto& dvar_factor = inv_stdev * inv_stdev * inv_stdev * TensorDataType(0.5);
 
     // Accumulate sums and perform block-wide reduction
-    using array_t = cuda::array<TensorDataType,4>;
+    using array_t = gpu_lib::array<TensorDataType,4>;
     using array_sum_t = array_sum<TensorDataType,4>;
     array_t sums;
     sums[0] = TensorDataType(0);
@@ -270,14 +270,14 @@ __global__ void bp_statistics_grad_kernel(
         sums[3] -= dxhat * (x - mean) * dvar_factor;
       }
     }
-    sums = cuda::block_reduce<bdimx,bdimy,bdimz,array_t,array_sum_t>(sums);
+    sums = gpu_lib::block_reduce<bdimx,bdimy,bdimz,array_t,array_sum_t>(sums);
 
     // Output result to global memory
     if (tid == 0) {
-      cuda::atomic_add(&global_dscale[channel], sums[0]);
-      cuda::atomic_add(&global_dbias[channel], sums[1]);
-      cuda::atomic_add(&global_dmean[channel], sums[2]);
-      cuda::atomic_add(&global_dvar[channel], sums[3]);
+      gpu_lib::atomic_add(&global_dscale[channel], sums[0]);
+      gpu_lib::atomic_add(&global_dbias[channel], sums[1]);
+      gpu_lib::atomic_add(&global_dmean[channel], sums[2]);
+      gpu_lib::atomic_add(&global_dvar[channel], sums[3]);
     }
 
   }
@@ -324,7 +324,7 @@ __global__ void bp_input_grad_kernel(
   for (auto k = gidz; k < num_channels; k += nthreadsz) {
     const auto& mean = global_mean[k];
     const auto& var = global_var[k];
-    const auto& inv_stdev = cuda::rsqrt(var + epsilon);
+    const auto& inv_stdev = gpu_lib::rsqrt(var + epsilon);
     const auto& scale = global_scale[k];
     const auto& dmean = global_dmean[k];
     const auto& dvar = global_dvar[k];
