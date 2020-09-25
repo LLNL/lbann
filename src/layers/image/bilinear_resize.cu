@@ -133,9 +133,10 @@ void bilinear_resize_layer<TensorDataType, Layout, Device>::fp_compute() {
   const El::Int input_height = input_dims[num_dims-2];
   const El::Int input_width = input_dims[num_dims-1];
 
-  // Get CUDA grid dimensions
+  // Get GPU grid dimensions
   // Note: Maximum CUDA grid dimension is 2^32-1
   // (https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#features-and-technical-specifications).
+  // TODO: HIP/ROCM notes
   const El::Int size = local_output.Height() * local_output.Width();
   constexpr El::Int block_dim = 256;
   El::Int grid_dim = (size + block_dim - 1) / block_dim;
