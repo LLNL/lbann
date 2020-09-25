@@ -66,7 +66,7 @@ __global__ void accumulate_contribution_kernel(El::Int height,
     }
   }
   if (tid == 0) {
-    cuda::atomic_add(contribution, shared_contribution[0]);
+    gpu_lib::atomic_add(contribution, shared_contribution[0]);
   }
 
 }
