@@ -55,7 +55,7 @@ __global__ void fp_kernel(TensorDataType min,
   }
 }
 
-/** CUDA kernel for backprop computation. */
+/** GPU kernel for backprop computation. */
 template <typename TensorDataType>
 __global__ void bp_kernel(TensorDataType min,
                           TensorDataType max,
@@ -90,6 +90,7 @@ void local_fp(TensorDataType min,
   // Get CUDA grid dimensions
   // Note: Maximum CUDA grid dimension is 2^32-1
   // (https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#features-and-technical-specifications).
+  // TODO: HIP/ROCM notes
   const El::Int height = input.Height();
   const El::Int width = input.Width();
   const El::Int block_dim = 256;
@@ -124,6 +125,7 @@ void local_bp(TensorDataType min,
   // Get CUDA grid dimensions
   // Note: Maximum CUDA grid dimension is 2^32-1
   // (https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#features-and-technical-specifications).
+  // TODO: HIP/ROCM notes
   const El::Int height = input.Height();
   const El::Int width = input.Width();
   const El::Int block_dim = 256;
