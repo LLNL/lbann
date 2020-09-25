@@ -49,11 +49,6 @@ namespace lbann {
  *
  *  @todo Support CPU
  *  @todo Support bidirectional RNNs
- *  @todo Support stacked RNNs
- *
- *  @warning cuDNN 8 exposes a new RNN API and deprecates the old one.
- *  Consider reimplementing this layer once cuDNN 8 is the minimum
- *  version.
  */
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 class gru_layer
@@ -66,7 +61,8 @@ public:
 
   gru_layer(
     lbann_comm* comm,
-    size_t hidden_size);
+    size_t hidden_size,
+    size_t num_layers);
 
   gru_layer(const gru_layer& other);
   gru_layer& operator=(const gru_layer& other);
@@ -91,8 +87,9 @@ protected:
 
 private:
 
-  /** @brief  Size of each hidden state and output vector */
+  /** @brief Size of each hidden state and output vector */
   size_t m_hidden_size;
+  size_t m_num_layers;
 
 #ifdef LBANN_HAS_CUDNN
   using ByteBuffer = hydrogen::simple_buffer<El::byte, Device>;

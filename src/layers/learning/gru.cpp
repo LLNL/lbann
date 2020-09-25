@@ -38,16 +38,21 @@ namespace lbann {
 // ---------------------------------------------
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-gru_layer<TensorDataType, Layout, Device>::gru_layer(lbann_comm* comm, size_t hidden_size)
+gru_layer<TensorDataType, Layout, Device>::gru_layer(
+  lbann_comm* comm,
+  size_t hidden_size,
+  size_t num_layers)
   : data_type_layer<TensorDataType>(comm),
-    m_hidden_size{hidden_size} {
+    m_hidden_size{hidden_size},
+    m_num_layers{num_layers} {
   this->m_expected_num_parent_layers = 2;
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 gru_layer<TensorDataType, Layout, Device>::gru_layer(const gru_layer& other)
   : data_type_layer<TensorDataType>(other),
-    m_hidden_size{other.m_hidden_size}
+    m_hidden_size{other.m_hidden_size},
+    m_num_layers{other.m_num_layers}
 #ifdef LBANN_HAS_CUDNN
   , m_hidden_cudnn_desc{other.m_hidden_cudnn_desc}
 #endif // LBANN_HAS_CUDNN
@@ -62,6 +67,7 @@ gru_layer<TensorDataType, Layout, Device>& gru_layer<TensorDataType, Layout, Dev
 ::operator=(const gru_layer& other) {
   data_type_layer<TensorDataType>::operator=(other);
   m_hidden_size = other.m_hidden_size;
+  m_num_layers = other.m_num_layers;
 #ifdef LBANN_HAS_CUDNN
   m_hidden_cudnn_desc = other.m_hidden_cudnn_desc;
   /// @todo Copy cuDNN objects?
@@ -112,6 +118,7 @@ gru_layer<TensorDataType,Layout,Device>
 {
   auto desc = data_type_layer<TensorDataType>::get_description();
   desc.add("Hidden size", m_hidden_size);
+  desc.add("Num layers", m_num_layers);
   return desc;
 }
 
@@ -122,14 +129,54 @@ gru_layer<TensorDataType,Layout,Device>
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void gru_layer<TensorDataType, Layout, Device>::setup_dims(DataReaderMetaData& dr_metadata) {
   data_type_layer<TensorDataType>::setup_dims(dr_metadata);
-  const int sequence_length = this->get_input_dims(0)[0];
-  if (static_cast<size_t>(this->get_input_size(1)) != m_hidden_size) {
+
+  // Check parameters
+  if (m_hidden_size <= 0) {
     LBANN_ERROR(
       this->get_type()," layer \"",this->get_name(),"\" ",
-      "has an invalid input tensor for the initial hidden state");
+      "has an invalid hidden state size (",m_hidden_size,")");
   }
-  const std::vector<int> output_dims = {sequence_length, static_cast<int>(m_hidden_size)};
+  if (m_num_layers <= 0) {
+    LBANN_ERROR(
+      this->get_type()," layer \"",this->get_name(),"\" ",
+      "has an invalid number of layers (",m_num_layers,")");
+  }
+
+  // Check input dims
+  const auto& input0_dims = this->get_input_dims(0);
+  const auto& input1_dims = this->get_input_dims(1);
+  auto dims_to_str = [] (const std::vector<int>& dims) -> std::string {
+    std::ostringstream ss;
+    for (size_t i=0; i<dims.size(); ++i) {
+      if (i > 0) {
+        ss << " x ";
+      }
+      ss << dims[i];
+    }
+    return ss.str();
+  };
+  if (input0_dims.size() != 2) {
+    LBANN_ERROR(
+      this->get_type()," layer \"",this->get_name(),"\" ",
+      "expected a 2D input tensor for the input sequence, "
+      "but recieved a tensor with ",
+      "dimensions of ",dims_to_str(input0_dims));
+  }
+  if (input1_dims.size() != 2
+      || static_cast<size_t>(input1_dims[0]) != m_num_layers
+      || static_cast<size_t>(input1_dims[1]) != m_hidden_size) {
+    LBANN_ERROR(
+      this->get_type()," layer \"",this->get_name(),"\" ",
+      "expected a ",m_num_layers," x ",m_hidden_size," input tensor ",
+      "for the initial hidden state, ",
+      "but recieved a tensor with ",
+      "dimensions of ",dims_to_str(input1_dims));
+  }
+
+  // Set output dims
+  const std::vector<int> output_dims = {input0_dims[0], static_cast<int>(m_hidden_size)};
   this->set_output_dims(output_dims);
+
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -144,43 +191,52 @@ void gru_layer<TensorDataType, Layout, Device>
   if (!this->has_weights()) {
     const std::vector<std::string> weight_names
       = {"ih_matrix", "hh_matrix", "ih_bias", "hh_bias"};
-    this->set_num_weights(4);
+    this->set_num_weights(4*m_num_layers);
     const auto scale = El::To<TensorDataType>(1./std::sqrt(m_hidden_size));
-    for (size_t i=0; i<4; ++i) {
-      auto w = make_unique<data_type_weights<TensorDataType>>(this->get_comm());
-      auto init = make_unique<uniform_initializer<TensorDataType>>(-scale, scale);
-      auto opt = this->m_model->template create_optimizer<TensorDataType>();
-      w->set_name(this->get_name() + "_" + weight_names[i]);
-      w->set_initializer(std::move(init));
-      w->set_optimizer(std::move(opt));
-      this->set_weights(i, w.get());
-      this->m_model->add_weights(std::move(w));
+    for (size_t i=0; i<m_num_layers; ++i) {
+      for (size_t j=0; j<4; ++j) {
+        auto w = make_unique<data_type_weights<TensorDataType>>(this->get_comm());
+        auto init = make_unique<uniform_initializer<TensorDataType>>(-scale, scale);
+        auto opt = this->m_model->template create_optimizer<TensorDataType>();
+        w->set_name(lbann::build_string(this->get_name(),"_",weight_names[j],"_l",i));
+        w->set_initializer(std::move(init));
+        w->set_optimizer(std::move(opt));
+        this->set_weights(4*i+j, w.get());
+        this->m_model->add_weights(std::move(w));
+      }
     }
   }
-  if (this->num_weights() != 4) {
+  if (this->num_weights() != 4*m_num_layers) {
     LBANN_ERROR(
       "attempted to setup ",
       this->get_type()," layer \"",this->get_name(),"\" ",
       "with an invalid number of weights ",
-      "(expected 4, found ",this->num_weights(),")");
+      "(expected ",4*m_num_layers,", found ",this->num_weights(),")");
   }
 
   // Setup weight dimensions and distribution
-  auto& ih_matrix = this->get_weights(0);
-  auto& hh_matrix = this->get_weights(1);
-  auto& ih_bias = this->get_weights(2);
-  auto& hh_bias = this->get_weights(3);
-  ih_matrix.set_dims({static_cast<int>(3*m_hidden_size)}, {static_cast<int>(input_size)});
-  hh_matrix.set_dims({static_cast<int>(3*m_hidden_size)}, {static_cast<int>(m_hidden_size)});
-  ih_bias.set_dims({static_cast<int>(3*m_hidden_size)});
-  hh_bias.set_dims({static_cast<int>(3*m_hidden_size)});
-  auto dist = this->get_prev_activations().DistData();
-  dist.colDist = El::STAR;
-  dist.rowDist = El::STAR;
-  ih_matrix.set_matrix_distribution(dist);
-  hh_matrix.set_matrix_distribution(dist);
-  ih_bias.set_matrix_distribution(dist);
-  hh_bias.set_matrix_distribution(dist);
+  for (size_t i=0; i<m_num_layers; ++i) {
+    auto& ih_matrix = this->get_weights(4*i);
+    auto& hh_matrix = this->get_weights(4*i+1);
+    auto& ih_bias = this->get_weights(4*i+2);
+    auto& hh_bias = this->get_weights(4*i+3);
+
+    ih_matrix.set_dims(
+      {static_cast<int>(3*m_hidden_size)},
+      {static_cast<int>(i == 0 ? input_size : m_hidden_size)});
+    hh_matrix.set_dims(
+      {static_cast<int>(3*m_hidden_size)},
+      {static_cast<int>(m_hidden_size)});
+    ih_bias.set_dims({static_cast<int>(3*m_hidden_size)});
+    hh_bias.set_dims({static_cast<int>(3*m_hidden_size)});
+    auto dist = this->get_prev_activations().DistData();
+    dist.colDist = El::STAR;
+    dist.rowDist = El::STAR;
+    ih_matrix.set_matrix_distribution(dist);
+    hh_matrix.set_matrix_distribution(dist);
+    ih_bias.set_matrix_distribution(dist);
+    hh_bias.set_matrix_distribution(dist);
+  }
 
 }
 
@@ -192,9 +248,6 @@ void gru_layer<TensorDataType, Layout, Device>::setup_gpu() {
   const size_t sequence_length = this->get_input_dims(0)[0];
   const size_t input_size = this->get_input_size(0) / sequence_length;
 
-  // GPU objects
-  auto data_type = cudnn::get_data_type<TensorDataType>();
-
   // RNN descriptor
   static cudnn::DropoutDescriptor dropout_desc;
   dropout_desc.set(0, nullptr, 0, 0);
@@ -204,13 +257,13 @@ void gru_layer<TensorDataType, Layout, Device>::setup_gpu() {
     CUDNN_RNN_DOUBLE_BIAS,
     CUDNN_UNIDIRECTIONAL,
     CUDNN_LINEAR_INPUT,
-    data_type,
-    data_type,
+    cudnn::get_data_type<TensorDataType>(),
+    cudnn::get_data_type<TensorDataType>(),
     cudnn::get_default_convolution_math_type(),
     input_size,
     m_hidden_size,
     m_hidden_size,  // proj_size
-    1,              // num_layers
+    m_num_layers,
     dropout_desc,
     CUDNN_RNN_PADDED_IO_ENABLED);
 
@@ -235,10 +288,8 @@ hydrogen::simple_buffer<El::byte, El::Device::GPU> pack_cudnn_rnn_weights(
   const El::SyncInfo<El::Device::GPU>& sync_info,
   size_t input_size,
   size_t hidden_size,
-  const El::Matrix<TensorDataType,El::Device::GPU>& ih_matrix,
-  const El::Matrix<TensorDataType,El::Device::GPU>& hh_matrix,
-  const El::Matrix<TensorDataType,El::Device::GPU>& ih_bias,
-  const El::Matrix<TensorDataType,El::Device::GPU>& hh_bias) {
+  size_t num_layers,
+  const std::vector<const El::Matrix<TensorDataType,El::Device::GPU>*>& weights_list) {
 
   // Allocate buffer for packed weights
   size_t packed_weights_size;
@@ -256,7 +307,7 @@ hydrogen::simple_buffer<El::byte, El::Device::GPU> pack_cudnn_rnn_weights(
 
   // Function to get pointers in packed weights buffer
   using PtrPair = std::pair<TensorDataType*,TensorDataType*>;
-  auto get_ptrs = [&] (size_t id) -> PtrPair {
+  auto get_ptrs = [&] (size_t i, size_t id) -> PtrPair {
     PtrPair ptrs;
     matrix_desc.create();
     bias_desc.create();
@@ -264,7 +315,7 @@ hydrogen::simple_buffer<El::byte, El::Device::GPU> pack_cudnn_rnn_weights(
       cudnnGetRNNWeightParams(
         handle,
         rnn_desc,
-        0,  // pseudoLayer
+        i,
         packed_weights.size(),
         packed_weights.data(),
         id,
@@ -275,54 +326,62 @@ hydrogen::simple_buffer<El::byte, El::Device::GPU> pack_cudnn_rnn_weights(
     return ptrs;
   };
 
-  // Copy from ih_matrix
-  for (auto i : {0, 1, 2}) {
-    packed_weights_view.Attach(
-      input_size,
-      hidden_size,
-      get_ptrs(i).first,
-      input_size);
-    El::Transpose(
-      ih_matrix(El::IR(i*hidden_size, (i+1)*hidden_size), El::ALL),
-      packed_weights_view,
-      false);
-  }
+  for (size_t i=0; i<num_layers; ++i) {
 
-  // Copy from hh_matrix
-  for (auto i : {0, 1, 2}) {
-    packed_weights_view.Attach(
-      hidden_size,
-      hidden_size,
-      get_ptrs(3+i).first,
-      hidden_size);
-    El::Transpose(
-      hh_matrix(El::IR(i*hidden_size, (i+1)*hidden_size), El::ALL),
-      packed_weights_view,
-      false);
-  }
+    // Copy from ih_matrix
+    const auto& ih_matrix = *weights_list[4*i];
+    for (auto id : {0, 1, 2}) {
+      packed_weights_view.Attach(
+        i == 0 ? input_size : hidden_size,
+        hidden_size,
+        get_ptrs(i, id).first,
+        i == 0 ? input_size : hidden_size);
+      El::Transpose(
+        ih_matrix(El::IR(id*hidden_size, (id+1)*hidden_size), El::ALL),
+        packed_weights_view,
+        false);
+    }
 
-  // Copy from ih_bias
-  for (auto i : {0, 1, 2}) {
-    packed_weights_view.Attach(
-      hidden_size,
-      1,
-      get_ptrs(i).second,
-      hidden_size);
-    El::Copy(
-      ih_bias(El::IR(i*hidden_size, (i+1)*hidden_size), El::ALL),
-      packed_weights_view);
-  }
+    // Copy from hh_matrix
+    const auto& hh_matrix = *weights_list[4*i+1];
+    for (auto id : {0, 1, 2}) {
+      packed_weights_view.Attach(
+        hidden_size,
+        hidden_size,
+        get_ptrs(i, 3+id).first,
+        hidden_size);
+      El::Transpose(
+        hh_matrix(El::IR(id*hidden_size, (id+1)*hidden_size), El::ALL),
+        packed_weights_view,
+        false);
+    }
 
-  // Copy from hh_bias
-  for (auto i : {0, 1, 2}) {
-    packed_weights_view.Attach(
-      hidden_size,
-      1,
-      get_ptrs(3+i).second,
-      hidden_size);
-    El::Copy(
-      hh_bias(El::IR(i*hidden_size, (i+1)*hidden_size), El::ALL),
-      packed_weights_view);
+    // Copy from ih_bias
+    const auto& ih_bias = *weights_list[4*i+2];
+    for (auto id : {0, 1, 2}) {
+      packed_weights_view.Attach(
+        hidden_size,
+        1,
+        get_ptrs(i, id).second,
+        hidden_size);
+      El::Copy(
+        ih_bias(El::IR(id*hidden_size, (id+1)*hidden_size), El::ALL),
+        packed_weights_view);
+    }
+
+    // Copy from hh_bias
+    const auto& hh_bias = *weights_list[4*i+3];
+    for (auto id : {0, 1, 2}) {
+      packed_weights_view.Attach(
+        hidden_size,
+        1,
+        get_ptrs(i, 3+id).second,
+        hidden_size);
+      El::Copy(
+        hh_bias(El::IR(id*hidden_size, (id+1)*hidden_size), El::ALL),
+        packed_weights_view);
+    }
+
   }
 
   return packed_weights;
@@ -344,20 +403,13 @@ void fp_compute_impl(
     = dynamic_cast<const LocalMat&>(l.get_local_prev_activations(1));
   auto& output_sequence
     = dynamic_cast<LocalMat&>(l.get_local_activations());
-  const auto& ih_matrix
-    = dynamic_cast<const LocalMat&>(l.weights_values(0).LockedMatrix());
-  const auto& hh_matrix
-    = dynamic_cast<const LocalMat&>(l.weights_values(1).LockedMatrix());
-  const auto& ih_bias
-    = dynamic_cast<const LocalMat&>(l.weights_values(2).LockedMatrix());
-  const auto& hh_bias
-    = dynamic_cast<const LocalMat&>(l.weights_values(3).LockedMatrix());
 
   // Dimensions
   const size_t mini_batch_size = input_sequence.Width();
   const size_t sequence_length = l.get_input_dims(0)[0];
   const size_t input_size = l.get_input_size(0) / sequence_length;
   const size_t hidden_size = l.m_hidden_size;
+  const size_t num_layers = l.m_num_layers;
 
   // Return immediately if there is no local data
   if (mini_batch_size <= 0) {
@@ -392,7 +444,7 @@ void fp_compute_impl(
     hidden_size,
     sequence_lengths.data(),
     nullptr);
-  hidden_desc.set(data_type, 1, mini_batch_size, hidden_size);
+  hidden_desc.set(data_type, num_layers, mini_batch_size, hidden_size);
 
   // Allocate cuDNN workspace buffers
   size_t cudnn_workspace_size, cudnn_reserve_space_size;
@@ -423,22 +475,25 @@ void fp_compute_impl(
     CHECK_CUDA(cudaStreamSynchronize(stream));
   }
 
-  // Make sure tensors are packed
+  // Make sure tensors are in correct format
   LocalMat input_sequence_workspace, init_hidden_workspace;
   input_sequence_workspace.SetSyncInfo(sync_info);
   init_hidden_workspace.SetSyncInfo(sync_info);
+  init_hidden_workspace.Resize(mini_batch_size*hidden_size, num_layers);
+  constexpr size_t one{1};
   if (input_sequence.Contiguous()) {
     El::LockedView(input_sequence_workspace, input_sequence);
   }
   else {
     El::Copy(input_sequence, input_sequence_workspace);
   }
-  if (init_hidden.Contiguous()) {
-    El::LockedView(init_hidden_workspace, init_hidden);
-  }
-  else {
-    El::Copy(init_hidden, init_hidden_workspace);
-  }
+  cuda::copy_tensor(
+    stream,
+    {mini_batch_size, num_layers, hidden_size},
+    init_hidden.LockedBuffer(),
+    {static_cast<size_t>(init_hidden.LDim()), hidden_size, one},
+    init_hidden_workspace.Buffer(),
+    {hidden_size, mini_batch_size*hidden_size, one});
   if (!output_sequence.Contiguous()) {
     LBANN_ERROR(
       l.get_type()," layer \"",l.get_name(),"\" ",
@@ -446,16 +501,20 @@ void fp_compute_impl(
   }
 
   // Pack weights into workspace buffer
-  auto packed_weights = pack_cudnn_rnn_weights(
+  std::vector<const LocalMat*> weights_list;
+  for (size_t i=0; i<4*num_layers; ++i) {
+    const auto& w
+      = dynamic_cast<const LocalMat&>(l.weights_values(i).LockedMatrix());
+    weights_list.push_back(&w);
+  }
+  auto packed_weights = pack_cudnn_rnn_weights<TensorDataType>(
     handle,
     rnn_desc,
     sync_info,
     input_size,
     hidden_size,
-    ih_matrix,
-    hh_matrix,
-    ih_bias,
-    hh_bias);
+    num_layers,
+    weights_list);
 
   // Launch cuDNN GRU
   // cuda::Graph::begin_capture(stream);
@@ -512,6 +571,8 @@ void unpack_cudnn_rnn_weights(
   El::Matrix<TensorDataType,El::Device::GPU>& hh_matrix,
   El::Matrix<TensorDataType,El::Device::GPU>& ih_bias,
   El::Matrix<TensorDataType,El::Device::GPU>& hh_bias) {
+
+  return; /// @todo Implement
 
   // Construct objects
   static cudnn::TensorDescriptor matrix_desc, bias_desc;
@@ -591,6 +652,7 @@ void unpack_cudnn_rnn_weights(
 template <typename TensorDataType>
 void bp_compute_impl(
   gru_layer<TensorDataType,data_layout::DATA_PARALLEL,El::Device::GPU>& l) {
+#if 0
   using LocalMat = El::Matrix<TensorDataType, El::Device::GPU>;
   using ByteBuffer = hydrogen::simple_buffer<El::byte, El::Device::GPU>;
 
@@ -812,6 +874,7 @@ void bp_compute_impl(
     hh_bias_grad);
   send_weight_grads_to_optimizers();
 
+#endif // 0
 }
 #endif // LBANN_HAS_CUDNN
 
@@ -861,7 +924,10 @@ std::unique_ptr<Layer> build_gru_layer_from_pbuf(
   using BuilderType = Builder<TensorDataType, Layout, Device>;
   LBANN_ASSERT_MSG_HAS_FIELD(proto_layer, gru);
   const auto& params = proto_layer.gru();
-  return BuilderType::Build(comm, params.hidden_size());
+  const size_t num_layers = (params.has_num_layers()
+                             ? params.num_layers().value()
+                             : 1);
+  return BuilderType::Build(comm, params.hidden_size(), num_layers);
 }
 
 // ---------------------------------------------

@@ -24,7 +24,8 @@ _num_samples = 15
 _sequence_length = 5
 _input_size = 13
 _hidden_size = 7
-_sample_size = _sequence_length*_input_size + _hidden_size
+_num_layers = 3
+_sample_size = _sequence_length*_input_size + _num_layers*_hidden_size
 _samples = np.random.normal(size=(_num_samples,_sample_size)).astype(np.float32)
 
 # Sample access functions
@@ -39,37 +40,36 @@ def sample_dims():
 # NumPy implementation
 # ==============================================
 
-def numpy_gru(x, h, ih_matrix, hh_matrix, ih_bias, hh_bias):
+def numpy_gru(x, h, w):
 
     # Cast inputs to float64
-    if x.dtype is not np.float64:
-        x = x.astype(np.float64)
-    if h.dtype is not np.float64:
-        h = h.astype(np.float64)
-    if ih_matrix.dtype is not np.float64:
-        ih_matrix = ih_matrix.astype(np.float64)
-    if hh_matrix.dtype is not np.float64:
-        hh_matrix = hh_matrix.astype(np.float64)
-    if ih_bias.dtype is not np.float64:
-        ih_bias = ih_bias.astype(np.float64)
-    if hh_bias.dtype is not np.float64:
-        hh_bias = hh_bias.astype(np.float64)
+    def to_float64_list(a):
+        return [a_
+                if a_.dtype is np.float64
+                else a_.astype(np.float64)
+                for a_ in a]
+    x = to_float64_list(x)
+    h = to_float64_list(h)
+    w = to_float64_list(w)
 
     # Dimensions
-    sequence_length, input_size = x.shape
-    hidden_size = h.shape[0]
+    sequence_length = len(x)
+    input_size = x[0].size
+    num_layers = len(h)
+    hidden_size = h[0].size
+    assert len(w) == 4*num_layers, 'incorrect number of weights'
 
     # Unroll GRU
-    y = []
-    for t in range(sequence_length):
-        ih = np.matmul(ih_matrix, x[t]) + ih_bias
-        hh = np.matmul(hh_matrix, h) + hh_bias
-        r = scipy.special.expit(ih[:hidden_size] + hh[:hidden_size])
-        z = scipy.special.expit(ih[hidden_size:2*hidden_size] + hh[hidden_size:2*hidden_size])
-        n = np.tanh(ih[2*hidden_size:] + r*hh[2*hidden_size:])
-        h = (1-z)*n + z*h
-        y.append(h)
-    return np.stack(y)
+    for i in range(num_layers):
+        for j in range(sequence_length):
+            ih = np.matmul(w[4*i], x[j]) + w[4*i+2]
+            hh = np.matmul(w[4*i+1], h[i]) + w[4*i+3]
+            r = scipy.special.expit(ih[:hidden_size] + hh[:hidden_size])
+            z = scipy.special.expit(ih[hidden_size:2*hidden_size] + hh[hidden_size:2*hidden_size])
+            n = np.tanh(ih[2*hidden_size:] + r*hh[2*hidden_size:])
+            h[i] = (1-z)*n + z*h[i]
+            x[j] = h[i]
+    return np.stack(x)
 
 # ==============================================
 # Setup LBANN experiment
@@ -111,7 +111,7 @@ def construct_model(lbann):
     )
     x = lbann.Reshape(input_slice, dims=tools.str_list([_sequence_length,_input_size]))
     x = lbann.Sum(x, lbann.WeightsLayer(weights=x_weights, hint_layer=x))
-    h = lbann.Reshape(input_slice, dims=tools.str_list([_hidden_size]),)
+    h = lbann.Reshape(input_slice, dims=tools.str_list([_num_layers,_hidden_size]),)
     h = lbann.Sum(h, lbann.WeightsLayer(weights=h_weights, hint_layer=h))
     x_lbann = x
     h_lbann = h
@@ -122,26 +122,25 @@ def construct_model(lbann):
     callbacks = []
 
     # ------------------------------------------
-    # 1-layer, uni-directional GRU
+    # 3-layer, uni-directional GRU
     # ------------------------------------------
 
     # Weights
-    ih_matrix = np.random.normal(size=(3*_hidden_size,_input_size)).astype(np.float32)
-    hh_matrix = np.random.normal(size=(3*_hidden_size,_hidden_size)).astype(np.float32)
-    ih_bias = np.random.normal(size=(3*_hidden_size,)).astype(np.float32)
-    hh_bias = np.random.normal(size=(3*_hidden_size,)).astype(np.float32)
-    ih_matrix_weights = lbann.Weights(
-        initializer=lbann.ValueInitializer(
-            values=tools.str_list(np.nditer(ih_matrix, order='F'))))
-    hh_matrix_weights = lbann.Weights(
-        initializer=lbann.ValueInitializer(
-            values=tools.str_list(np.nditer(hh_matrix, order='F'))))
-    ih_bias_weights = lbann.Weights(
-        initializer=lbann.ValueInitializer(
-            values=tools.str_list(np.nditer(ih_bias))))
-    hh_bias_weights = lbann.Weights(
-        initializer=lbann.ValueInitializer(
-            values=tools.str_list(np.nditer(hh_bias))))
+    rnn_weights_numpy = []
+    for i in range(_num_layers):
+        input_size = _input_size if i == 0 else _hidden_size
+        ih_matrix = np.random.normal(size=(3*_hidden_size,input_size))
+        hh_matrix = np.random.normal(size=(3*_hidden_size,_hidden_size))
+        ih_bias = np.random.normal(size=(3*_hidden_size,))
+        hh_bias = np.random.normal(size=(3*_hidden_size,))
+        rnn_weights_numpy.extend([ih_matrix, hh_matrix, ih_bias, hh_bias])
+    rnn_weights_numpy = [w.astype(np.float32) for w in rnn_weights_numpy]
+    rnn_weights_lbann = [
+        lbann.Weights(
+            initializer=lbann.ValueInitializer(
+                values=tools.str_list(np.nditer(w, order='F'))))
+        for w in rnn_weights_numpy
+    ]
 
     # LBANN implementation
     x = x_lbann
@@ -150,19 +149,20 @@ def construct_model(lbann):
         x,
         h,
         hidden_size=_hidden_size,
-        weights=[ih_matrix_weights,hh_matrix_weights,ih_bias_weights,hh_bias_weights],
+        num_layers=_num_layers,
+        weights=rnn_weights_lbann,
     )
     z = lbann.L2Norm2(y)
     obj.append(z)
-    metrics.append(lbann.Metric(z, name='1-layer, unidirectional'))
+    metrics.append(lbann.Metric(z, name='3-layer, unidirectional'))
 
     # NumPy implementation
     vals = []
     for i in range(num_samples()):
         input_ = get_sample(i).astype(np.float64)
         x = input_[:_sequence_length*_input_size].reshape((_sequence_length,_input_size))
-        h = input_[_sequence_length*_input_size:]
-        y = numpy_gru(x, h, ih_matrix, hh_matrix, ih_bias, hh_bias)
+        h = input_[_sequence_length*_input_size:].reshape((_num_layers,_hidden_size))
+        y = numpy_gru(x, h, rnn_weights_numpy)
         z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)
@@ -178,7 +178,7 @@ def construct_model(lbann):
     # Gradient checking
     # ------------------------------------------
 
-    callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
+    # callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
 
     # ------------------------------------------
     # Construct model
@@ -232,5 +232,5 @@ def construct_data_reader(lbann):
 # ==============================================
 
 # Create test functions that can interact with PyTest
-# for test in tools.create_tests(setup_experiment, __file__):
-#     globals()[test.__name__] = test
+for test in tools.create_tests(setup_experiment, __file__):
+    globals()[test.__name__] = test
