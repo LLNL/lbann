@@ -596,11 +596,8 @@ void kfac::get_matrix_inverse(
 
   const double t_spotrf = get_time();
 
-  // TODO: El::Identity on GPU?
   El::Matrix<DataType, El::Device::GPU> Linv(Ainv.Height(), Ainv.Width());
-  El::Zeros(Linv, Linv.Height(), Linv.Width());
-  add_to_diagonal(Linv.Buffer(), Linv.Height(), DataType(1.0));
-
+  identity(Linv.Buffer(), Linv.Height());
   El::Trsm(
       El::LeftOrRightNS::LEFT,
       uplo,
@@ -610,7 +607,6 @@ void kfac::get_matrix_inverse(
       (const El::AbstractMatrix<DataType> &) Ainv,
       (El::AbstractMatrix<DataType> &) Linv,
       true);
-
   El::Gemm(
       El::TRANSPOSE, El::NORMAL,
       El::TypeTraits<DataType>::One(), Linv, Linv,

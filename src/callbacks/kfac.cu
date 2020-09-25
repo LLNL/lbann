@@ -116,6 +116,18 @@ __global__ void kfac_compute_bn_factor_kernel(
   }
 }
 
+template <typename TensorDataType>
+__global__ void kfac_identity_kernel(
+    TensorDataType * __restrict__ A,
+    const size_t height) {
+  const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
+  if(gid < height*height) {
+    const size_t row = gid%height;
+    const size_t col = gid/height;
+    A[gid] = (row == col ? 1.0 : 0.0);
+  }
+}
+
 } // namespace
 
 template <typename TensorDataType>
@@ -195,6 +207,19 @@ void kfac::compute_bn_factor(
           num_threads);
 }
 
+template <typename TensorDataType>
+void kfac::identity(
+    TensorDataType * __restrict__ A,
+    const size_t height) {
+  constexpr size_t block_size = 256;
+  const size_t num_threads = height*height;
+  const size_t grid_size = (num_threads + block_size - 1) / block_size;
+  auto&& stream =  hydrogen::cuda::GetDefaultStream();
+  kfac_identity_kernel<TensorDataType>
+      <<<grid_size, block_size, 0, stream>>>(
+          A, height);
+}
+
 #define PROTO(T)                                        \
   template void kfac::add_to_diagonal<T>(               \
       T* __restrict__ A,                                \
@@ -223,10 +248,14 @@ void kfac::compute_bn_factor(
       T * __restrict__ factor,                          \
       const size_t batch_size,                          \
       const size_t num_channels,                        \
-      const size_t spatial_prod)
+      const size_t spatial_prod);                       \
+  template void kfac::identity<T>(                      \
+      T * __restrict__ A,                               \
+      const size_t height)
+
 
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
 
-} // namespace callback
+        } // namespace callback
 } // namespace lbann

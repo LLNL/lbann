@@ -180,6 +180,14 @@ class kfac : public callback_base {
       const size_t num_channels,
       const size_t spatial_prod);
 
+  /** @brief Substitute the identity matrix.
+   *  TODO: Replace with El::Identity<El::Device::GPU>
+   *   once it gets supported. **/
+  template <typename TensorDataType>
+  static void identity(
+      TensorDataType * __restrict__ A,
+      const size_t height);
+
   /** @brief Pairs of the initial and the target damping value.
    *  If only one value is specified, it will be used throughout training.
    */
