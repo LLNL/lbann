@@ -55,7 +55,7 @@ class GRUModule(lbann.modules.Module):
         # Default initial hidden state
         self.zeros = lbann.Constant(
             value=0,
-            num_neurons=str(hidden_size),
+            num_neurons=str_list([num_layers, hidden_size]),
             name=f'{self.name}_zeros',
             device=self.device,
             datatype=self.datatype,
@@ -63,29 +63,19 @@ class GRUModule(lbann.modules.Module):
 
     def forward(self, x, h=None):
         self.instance += 1
-        name = f'{self.name}_instance{self.instance}'
-
-        # Initial hidden state
         if not h:
-            h = [self.zeros] * self.num_layers
-        if not isinstance(h, list) or len(h) != self.num_layers:
-            raise ValueError(
-                f'expected `h` to be a list with {self.num_layers} layers'
-            )
-
-        # Stacked GRU
-        ### @todo Replace with single GRU once LBANN supports stacked GRUs
-        for i in range(self.num_layers):
-            x = lbann.GRU(
-                x,
-                h[i],
-                hidden_size=self.hidden_size,
-                name=f'{name}_layer{i}',
-                weights=self.weights[4*i:4*(i+1)],
-                device=self.device,
-                datatype=self.datatype,
-            )
-        return x
+            h = self.zeros
+        y = lbann.GRU(
+            x,
+            h,
+            hidden_size=self.hidden_size,
+            num_layers=self.num_layers,
+            name=f'{self.name}_instance{self.instance}',
+            weights=self.weights,
+            device=self.device,
+            datatype=self.datatype,
+        )
+        return y
 
 class MolVAE(lbann.modules.Module):
     """Molecular VAE.
@@ -261,9 +251,12 @@ class MolVAE(lbann.modules.Module):
         x_input = lbann.Concatenation(x_emb, z_0, axis=1)
 
         h_0 = self.decoder_lat(z)
+        # h_0 = h_0.unsqueeze(0).repeat(self.decoder_rnn.num_layers, 1, 1)
+        h_0 = lbann.Reshape(h_0, dims=str_list([1, 512]))
+        h_0 = lbann.Tessellate(h_0, dims=str_list((3, 512)))
 
         # output, _ = self.decoder_rnn(x_input, h_0)
-        output = self.decoder_rnn(x_input, [h_0, h_0, h_0])
+        output = self.decoder_rnn(x_input, h_0)
 
         # y = self.decoder_fc(output)
         y = lbann.ChannelwiseFullyConnected(
