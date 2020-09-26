@@ -289,7 +289,7 @@ hydrogen::simple_buffer<El::byte, El::Device::GPU> pack_cudnn_rnn_weights(
   size_t input_size,
   size_t hidden_size,
   size_t num_layers,
-  const std::vector<const El::Matrix<TensorDataType,El::Device::GPU>*>& weights_list) {
+  const std::vector<El::Matrix<TensorDataType,El::Device::GPU>>& weights_list) {
 
   // Allocate buffer for packed weights
   size_t packed_weights_size;
@@ -329,7 +329,7 @@ hydrogen::simple_buffer<El::byte, El::Device::GPU> pack_cudnn_rnn_weights(
   for (size_t i=0; i<num_layers; ++i) {
 
     // Copy from ih_matrix
-    const auto& ih_matrix = *weights_list[4*i];
+    const auto& ih_matrix = weights_list[4*i];
     for (auto id : {0, 1, 2}) {
       packed_weights_view.Attach(
         i == 0 ? input_size : hidden_size,
@@ -343,7 +343,7 @@ hydrogen::simple_buffer<El::byte, El::Device::GPU> pack_cudnn_rnn_weights(
     }
 
     // Copy from hh_matrix
-    const auto& hh_matrix = *weights_list[4*i+1];
+    const auto& hh_matrix = weights_list[4*i+1];
     for (auto id : {0, 1, 2}) {
       packed_weights_view.Attach(
         hidden_size,
@@ -357,7 +357,7 @@ hydrogen::simple_buffer<El::byte, El::Device::GPU> pack_cudnn_rnn_weights(
     }
 
     // Copy from ih_bias
-    const auto& ih_bias = *weights_list[4*i+2];
+    const auto& ih_bias = weights_list[4*i+2];
     for (auto id : {0, 1, 2}) {
       packed_weights_view.Attach(
         hidden_size,
@@ -370,7 +370,7 @@ hydrogen::simple_buffer<El::byte, El::Device::GPU> pack_cudnn_rnn_weights(
     }
 
     // Copy from hh_bias
-    const auto& hh_bias = *weights_list[4*i+3];
+    const auto& hh_bias = weights_list[4*i+3];
     for (auto id : {0, 1, 2}) {
       packed_weights_view.Attach(
         hidden_size,
@@ -479,7 +479,6 @@ void fp_compute_impl(
   LocalMat input_sequence_workspace, init_hidden_workspace;
   input_sequence_workspace.SetSyncInfo(sync_info);
   init_hidden_workspace.SetSyncInfo(sync_info);
-  init_hidden_workspace.Resize(mini_batch_size*hidden_size, num_layers);
   constexpr size_t one{1};
   if (input_sequence.Contiguous()) {
     El::LockedView(input_sequence_workspace, input_sequence);
@@ -487,6 +486,7 @@ void fp_compute_impl(
   else {
     El::Copy(input_sequence, input_sequence_workspace);
   }
+  init_hidden_workspace.Resize(mini_batch_size*hidden_size, num_layers);
   cuda::copy_tensor(
     stream,
     {mini_batch_size, num_layers, hidden_size},
@@ -501,11 +501,11 @@ void fp_compute_impl(
   }
 
   // Pack weights into workspace buffer
-  std::vector<const LocalMat*> weights_list;
+  std::vector<LocalMat> weights_list;
   for (size_t i=0; i<4*num_layers; ++i) {
     const auto& w
       = dynamic_cast<const LocalMat&>(l.weights_values(i).LockedMatrix());
-    weights_list.push_back(&w);
+    weights_list.emplace_back(El::LockedView(w));
   }
   auto packed_weights = pack_cudnn_rnn_weights<TensorDataType>(
     handle,
@@ -565,14 +565,10 @@ void unpack_cudnn_rnn_weights(
   const El::SyncInfo<El::Device::GPU>& sync_info,
   size_t input_size,
   size_t hidden_size,
+  size_t num_layers,
   const TensorDataType* packed_weights_buffer,
   size_t packed_weights_size,
-  El::Matrix<TensorDataType,El::Device::GPU>& ih_matrix,
-  El::Matrix<TensorDataType,El::Device::GPU>& hh_matrix,
-  El::Matrix<TensorDataType,El::Device::GPU>& ih_bias,
-  El::Matrix<TensorDataType,El::Device::GPU>& hh_bias) {
-
-  return; /// @todo Implement
+  const std::vector<El::Matrix<TensorDataType,El::Device::GPU>>& weights_list) {
 
   // Construct objects
   static cudnn::TensorDescriptor matrix_desc, bias_desc;
@@ -581,7 +577,7 @@ void unpack_cudnn_rnn_weights(
 
   // Function to get pointers in packed weights buffer
   using PtrPair = std::pair<TensorDataType*,TensorDataType*>;
-  auto get_ptrs = [&] (size_t id) -> PtrPair {
+  auto get_ptrs = [&] (size_t i, size_t id) -> PtrPair {
     PtrPair ptrs;
     matrix_desc.create();
     bias_desc.create();
@@ -589,7 +585,7 @@ void unpack_cudnn_rnn_weights(
       cudnnGetRNNWeightParams(
         handle,
         rnn_desc,
-        0,  // pseudoLayer
+        i,
         packed_weights_size * sizeof(TensorDataType),
         packed_weights_buffer,
         id,
@@ -600,48 +596,56 @@ void unpack_cudnn_rnn_weights(
     return ptrs;
   };
 
-  // Copy from ih_matrix
-  for (auto i : {0, 1, 2}) {
-    packed_weights_view.LockedAttach(
-      input_size,
-      hidden_size,
-      get_ptrs(i).first,
-      input_size);
-    auto ih_matrix_view = ih_matrix(El::IR(i*hidden_size, (i+1)*hidden_size), El::ALL);
-    El::Transpose(packed_weights_view, ih_matrix_view, false);
-  }
+  for (size_t i=0; i<num_layers; ++i) {
 
-  // Copy from hh_matrix
-  for (auto i : {0, 1, 2}) {
-    packed_weights_view.LockedAttach(
-      hidden_size,
-      hidden_size,
-      get_ptrs(3+i).first,
-      hidden_size);
-    auto hh_matrix_view = hh_matrix(El::IR(i*hidden_size, (i+1)*hidden_size), El::ALL);
-    El::Transpose(packed_weights_view, hh_matrix_view, false);
-  }
+    // Copy to ih_matrix
+    auto& ih_matrix = weights_list[4*i];
+    for (auto id : {0, 1, 2}) {
+      packed_weights_view.LockedAttach(
+        i == 0 ? input_size : hidden_size,
+        hidden_size,
+        get_ptrs(i, id).first,
+        i == 0 ? input_size : hidden_size);
+      auto ih_matrix_view = ih_matrix(El::IR(id*hidden_size, (id+1)*hidden_size), El::ALL);
+      El::Transpose(packed_weights_view, ih_matrix_view, false);
+    }
 
-  // Copy from ih_bias
-  for (auto i : {0, 1, 2}) {
-    packed_weights_view.LockedAttach(
-      hidden_size,
-      1,
-      get_ptrs(i).second,
-      hidden_size);
-    auto ih_bias_view = ih_bias(El::IR(i*hidden_size, (i+1)*hidden_size), El::ALL);
-    El::Copy(packed_weights_view, ih_bias_view);
-  }
+    // Copy to hh_matrix
+    auto& hh_matrix = weights_list[4*i+1];
+    for (auto id : {0, 1, 2}) {
+      packed_weights_view.LockedAttach(
+        hidden_size,
+        hidden_size,
+        get_ptrs(i, 3+id).first,
+        hidden_size);
+      auto hh_matrix_view = hh_matrix(El::IR(id*hidden_size, (id+1)*hidden_size), El::ALL);
+      El::Transpose(packed_weights_view, hh_matrix_view, false);
+    }
 
-  // Copy from hh_bias
-  for (auto i : {0, 1, 2}) {
-    packed_weights_view.LockedAttach(
-      hidden_size,
-      1,
-      get_ptrs(3+i).second,
-      hidden_size);
-    auto hh_bias_view = hh_bias(El::IR(i*hidden_size, (i+1)*hidden_size), El::ALL);
-    El::Copy(packed_weights_view, hh_bias_view);
+    // Copy to ih_bias
+    auto& ih_bias = weights_list[4*i+2];
+    for (auto id : {0, 1, 2}) {
+      packed_weights_view.LockedAttach(
+        hidden_size,
+        1,
+        get_ptrs(i, id).second,
+        hidden_size);
+      auto ih_bias_view = ih_bias(El::IR(id*hidden_size, (id+1)*hidden_size), El::ALL);
+      El::Copy(packed_weights_view, ih_bias_view);
+    }
+
+    // Copy to hh_bias
+    auto& hh_bias = weights_list[4*i+3];
+    for (auto id : {0, 1, 2}) {
+      packed_weights_view.LockedAttach(
+        hidden_size,
+        1,
+        get_ptrs(i, 3+id).second,
+        hidden_size);
+      auto hh_bias_view = hh_bias(El::IR(id*hidden_size, (id+1)*hidden_size), El::ALL);
+      El::Copy(packed_weights_view, hh_bias_view);
+    }
+
   }
 
 }
@@ -652,7 +656,6 @@ void unpack_cudnn_rnn_weights(
 template <typename TensorDataType>
 void bp_compute_impl(
   gru_layer<TensorDataType,data_layout::DATA_PARALLEL,El::Device::GPU>& l) {
-#if 0
   using LocalMat = El::Matrix<TensorDataType, El::Device::GPU>;
   using ByteBuffer = hydrogen::simple_buffer<El::byte, El::Device::GPU>;
 
@@ -669,71 +672,50 @@ void bp_compute_impl(
     = dynamic_cast<LocalMat&>(l.get_local_error_signals(0));
   auto& init_hidden_grad
     = dynamic_cast<LocalMat&>(l.get_local_error_signals(1));
-  const auto& ih_matrix
-    = dynamic_cast<const LocalMat&>(l.weights_values(0).LockedMatrix());
-  const auto& hh_matrix
-    = dynamic_cast<const LocalMat&>(l.weights_values(1).LockedMatrix());
-  const auto& ih_bias
-    = dynamic_cast<const LocalMat&>(l.weights_values(2).LockedMatrix());
-  const auto& hh_bias
-    = dynamic_cast<const LocalMat&>(l.weights_values(3).LockedMatrix());
 
   // Dimensions
   const size_t sequence_length = l.get_input_dims(0)[0];
   const size_t mini_batch_size = input_sequence.Width();
   const size_t input_size = l.get_input_size(0) / sequence_length;
   const size_t hidden_size = l.m_hidden_size;
+  const size_t num_layers = l.m_num_layers;
 
   // GPU objects
   auto&& sync_info = input_sequence.GetSyncInfo();
-  // auto&& stream = sync_info.Stream();
+  auto&& stream = sync_info.Stream();
   auto&& handle = cudnn::get_handle();
   auto&& rnn_desc = l.m_rnn_cudnn_desc;
 
   // Define closure to send weight gradients to optimizers
-  LocalMat ih_matrix_grad, hh_matrix_grad, ih_bias_grad, hh_bias_grad;
-  ih_matrix_grad.SetSyncInfo(sync_info);
-  hh_matrix_grad.SetSyncInfo(sync_info);
-  ih_bias_grad.SetSyncInfo(sync_info);
-  hh_bias_grad.SetSyncInfo(sync_info);
-  ih_matrix_grad.Resize(3*hidden_size, input_size);
-  hh_matrix_grad.Resize(3*hidden_size, hidden_size);
-  ih_bias_grad.Resize(3*hidden_size, 1);
-  hh_bias_grad.Resize(3*hidden_size, 1);
+  std::vector<LocalMat> weights_grad_list(4*num_layers);
+  for (auto& dw : weights_grad_list) {
+    dw.SetSyncInfo(sync_info);
+  }
+  for (size_t i=0; i<num_layers; ++i) {
+    weights_grad_list[4*i].Resize(
+      3*hidden_size,
+      i == 0 ? input_size : hidden_size);
+    weights_grad_list[4*i+1].Resize(3*hidden_size, hidden_size);
+    weights_grad_list[4*i+2].Resize(3*hidden_size, 1);
+    weights_grad_list[4*i+3].Resize(3*hidden_size, 1);
+  }
   auto send_weight_grads_to_optimizers = [&] () {
     TensorDataType buf_scale, in_scale;
-    auto&& ih_matrix_opt = l.get_weights(0).get_optimizer();
-    auto&& hh_matrix_opt = l.get_weights(1).get_optimizer();
-    auto&& ih_bias_opt = l.get_weights(2).get_optimizer();
-    auto&& hh_bias_opt = l.get_weights(3).get_optimizer();
-    if (ih_matrix_opt != nullptr) {
-      auto& buf = ih_matrix_opt->get_gradient_buffer(buf_scale, in_scale, true);
-      El::Scale(buf_scale, buf);
-      El::Axpy(in_scale, ih_matrix_grad, buf.Matrix());
-    }
-    if (hh_matrix_opt != nullptr) {
-      auto& buf = hh_matrix_opt->get_gradient_buffer(buf_scale, in_scale, true);
-      El::Scale(buf_scale, buf);
-      El::Axpy(in_scale, hh_matrix_grad, buf.Matrix());
-    }
-    if (ih_bias_opt != nullptr) {
-      auto& buf = ih_bias_opt->get_gradient_buffer(buf_scale, in_scale, true);
-      El::Scale(buf_scale, buf);
-      El::Axpy(in_scale, ih_bias_grad, buf.Matrix());
-    }
-    if (hh_bias_opt != nullptr) {
-      auto& buf = hh_bias_opt->get_gradient_buffer(buf_scale, in_scale, true);
-      El::Scale(buf_scale, buf);
-      El::Axpy(in_scale, hh_bias_grad, buf.Matrix());
+    for (size_t i=0; i<4*num_layers; ++i) {
+      auto&& opt = l.get_weights(i).get_optimizer();
+      if (opt != nullptr) {
+        auto& buf = opt->get_gradient_buffer(buf_scale, in_scale, true);
+        El::Scale(buf_scale, buf);
+        El::Axpy(in_scale, weights_grad_list[i], buf.Matrix());
+      }
     }
   };
 
   // Return immediately if there is no local data
   if (mini_batch_size <= 0) {
-    El::Zero(ih_matrix_grad);
-    El::Zero(hh_matrix_grad);
-    El::Zero(ih_bias_grad);
-    El::Zero(hh_bias_grad);
+    for (auto& dw : weights_grad_list) {
+      El::Zero(dw);
+    }
     send_weight_grads_to_optimizers();
   }
 
@@ -756,21 +738,28 @@ void bp_compute_impl(
       &cudnn_reserve_space_size));
   ByteBuffer cudnn_workspace(cudnn_workspace_size, sync_info);
 
-  // Make sure tensors are packed
+  // Make sure tensors are in correct format
   LocalMat input_sequence_workspace, init_hidden_workspace;
-  LocalMat output_sequence_grad_workspace;
+  LocalMat output_sequence_grad_workspace, init_hidden_grad_workspace;
+  input_sequence_workspace.SetSyncInfo(sync_info);
+  init_hidden_workspace.SetSyncInfo(sync_info);
+  output_sequence_grad_workspace.SetSyncInfo(sync_info);
+  init_hidden_grad_workspace.SetSyncInfo(sync_info);
+  constexpr size_t one{1};
   if (input_sequence.Contiguous()) {
     El::LockedView(input_sequence_workspace, input_sequence);
   }
   else {
     El::Copy(input_sequence, input_sequence_workspace);
   }
-  if (init_hidden.Contiguous()) {
-    El::LockedView(init_hidden_workspace, init_hidden);
-  }
-  else {
-    El::Copy(init_hidden, init_hidden_workspace);
-  }
+  init_hidden_workspace.Resize(mini_batch_size*hidden_size, num_layers);
+  cuda::copy_tensor(
+    stream,
+    {mini_batch_size, num_layers, hidden_size},
+    init_hidden.LockedBuffer(),
+    {static_cast<size_t>(init_hidden.LDim()), hidden_size, one},
+    init_hidden_workspace.Buffer(),
+    {hidden_size, mini_batch_size*hidden_size, one});
   if (!output_sequence.Contiguous()) {
     LBANN_ERROR(
       l.get_type()," layer \"",l.get_name(),"\" ",
@@ -782,28 +771,23 @@ void bp_compute_impl(
   else {
     El::Copy(output_sequence_grad, output_sequence_grad_workspace);
   }
-  if (!input_sequence_grad.Contiguous()) {
-    LBANN_ERROR(
-      l.get_type()," layer \"",l.get_name(),"\" ",
-      "has non-contiguous buffer for gradient w.r.t. input");
-  }
-  if (!init_hidden_grad.Contiguous()) {
-    LBANN_ERROR(
-      l.get_type()," layer \"",l.get_name(),"\" ",
-      "has non-contiguous buffer for gradient w.r.t. initial hidden state");
-  }
+  init_hidden_grad_workspace.Resize(mini_batch_size*hidden_size, num_layers);
 
   // Pack weights into workspace buffer
-  auto packed_weights = pack_cudnn_rnn_weights(
+  std::vector<LocalMat> weights_list;
+  for (size_t i=0; i<4*num_layers; ++i) {
+    const auto& w
+      = dynamic_cast<const LocalMat&>(l.weights_values(i).LockedMatrix());
+    weights_list.emplace_back(El::LockedView(w));
+  }
+  auto packed_weights = pack_cudnn_rnn_weights<TensorDataType>(
     handle,
     rnn_desc,
     sync_info,
     input_size,
     hidden_size,
-    ih_matrix,
-    hh_matrix,
-    ih_bias,
-    hh_bias);
+    num_layers,
+    weights_list);
   LocalMat weights_grad_workspace;
   weights_grad_workspace.SetSyncInfo(sync_info);
   El::Zeros(
@@ -826,7 +810,7 @@ void bp_compute_impl(
       hidden_desc,
       init_hidden_workspace.LockedBuffer(),
       nullptr,      // dhy
-      init_hidden_grad.Buffer(),
+      init_hidden_grad_workspace.Buffer(),
       hidden_desc,  // cDesc
       nullptr,      // cx
       nullptr,      // dcy
@@ -866,15 +850,21 @@ void bp_compute_impl(
     sync_info,
     input_size,
     hidden_size,
+    num_layers,
     weights_grad_workspace.LockedBuffer(),
     weights_grad_workspace.Height(),
-    ih_matrix_grad,
-    hh_matrix_grad,
-    ih_bias_grad,
-    hh_bias_grad);
+    weights_grad_list);
   send_weight_grads_to_optimizers();
 
-#endif // 0
+  // Reorder init hidden state grad tensor
+  cuda::copy_tensor(
+    stream,
+    {mini_batch_size, num_layers, hidden_size},
+    init_hidden_grad_workspace.LockedBuffer(),
+    {hidden_size, mini_batch_size*hidden_size, one},
+    init_hidden_grad.Buffer(),
+    {static_cast<size_t>(init_hidden.LDim()), hidden_size, one});
+
 }
 #endif // LBANN_HAS_CUDNN
 
