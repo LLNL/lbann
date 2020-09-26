@@ -25,23 +25,24 @@ EXTERNAL_PACKAGES=$(cat <<EOF
         - cmake/3.18.0
     cuda::
       buildable: False
-      version: [10.1.168]
+      version: [11.0.2]
       externals:
-      - spec: cuda@10.1.168 arch=linux-rhel7-power9le
+      - spec: cuda@11.0.2 arch=linux-rhel7-power9le
         modules:
-        - cuda/10.1.168
+        - cuda/11.0.2
     cudnn::
       buildable: true
       version:
-      - 8.0.2.39-10.1-linux-ppc64le
+#      - 8.0.4-10.1-linux-ppc64le
+      - 8.0.3.33-11.0-linux-ppc64le
     gcc::
       buildable: False
       version:
-      - 7.3.1
+      - 8.3.1
       externals:
-      - spec: gcc@7.3.1 arch=linux-rhel7-power9le
+      - spec: gcc@8.3.1 arch=linux-rhel7-power9le
         modules:
-        - gcc/7.3.1
+        - gcc/8.3.1
     hwloc::
       buildable: False
       version:
@@ -87,7 +88,7 @@ EXTERNAL_PACKAGES=$(cat <<EOF
       version:
       - rolling-release
       externals:
-      - spec: spectrum-mpi@rolling-release %gcc@7.3.1 arch=linux-rhel7-power9le
-        prefix: /usr/tce/packages/spectrum-mpi/spectrum-mpi-rolling-release-gcc-7.3.1
+      - spec: spectrum-mpi@rolling-release %gcc@8.3.1 arch=linux-rhel7-power9le
+        prefix: /usr/tce/packages/spectrum-mpi/spectrum-mpi-rolling-release-gcc-8.3.1
 EOF
 )
