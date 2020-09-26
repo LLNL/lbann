@@ -38,11 +38,13 @@ namespace lbann {
  *
  *  Expects two inputs: a 2D input sequence (
  *  @f$ \text{sequence\_length}\times\text{input\_size} @f$ )
- *  and a 1D initial hidden state ( @f$ \text{hidden\_size} @f$ ).
+ *  and a 2D initial hidden state (
+ *  @f$ \text{num\_layers}times\text{hidden\_size} @f$ ).
  *
- *  Uses four weights: "ih\_matrix" (
- *  @f$ 3 \text{hidden\_size}\times\text{input\_size} @f$ ),
- *  "hh\_matrix" (
+ *  Uses four weights per layer: "ih\_matrix" (
+ *  @f$ 3 \text{hidden\_size}\times\text{input\_size} @f$ for layer 0
+ *  and @f$ 3 \text{hidden\_size}\times\text{hidden\_size} for other
+ *  layers), "hh\_matrix" (
  *  @f$ 3 \text{hidden\_size}\times\text{hidden\_size} @f$ ),
  *  "ih_bias" ( @f$ 3 \text{hidden\_size} @f$ ),
  *  "hh_bias" ( @f$ 3 \text{hidden\_size} @f$ ).
@@ -89,19 +91,30 @@ private:
 
   /** @brief Size of each hidden state and output vector */
   size_t m_hidden_size;
+  /** @brief Number of stacked GRU cells */
   size_t m_num_layers;
 
 #ifdef LBANN_HAS_CUDNN
   using ByteBuffer = hydrogen::simple_buffer<El::byte, Device>;
+  using LocalMat = El::Matrix<TensorDataType, El::Device::GPU>;
   cudnn::RNNDescriptor m_rnn_cudnn_desc;
   cudnn::RNNDataDescriptor m_input_cudnn_desc;
   cudnn::RNNDataDescriptor m_output_cudnn_desc;
   cudnn::TensorDescriptor m_hidden_cudnn_desc;
   cudnn::FilterDescriptor m_packed_weights_cudnn_desc;
+  LocalMat m_input_sequence_workspace;
+  LocalMat m_output_sequence_grad_workspace;
+  LocalMat m_init_hidden_workspace;
+  LocalMat m_init_hidden_grad_workspace;
+  ByteBuffer m_weights_cudnn_workspace;
+  ByteBuffer m_weights_grad_cudnn_workspace;
+  ByteBuffer m_cudnn_workspace;
   ByteBuffer m_cudnn_reserve_space;
   hydrogen::simple_buffer<int32_t, El::Device::GPU> m_gpu_sequence_lengths;
-  cuda::ExecutableGraph m_graph_forward_prop;
-  cuda::ExecutableGraph m_graph_backward_prop;
+  cuda::ExecutableGraph m_cuda_graph_forward_prop;
+  size_t m_cuda_graph_forward_prop_hash{0};
+  cuda::ExecutableGraph m_cuda_graph_backward_prop;
+  size_t m_cuda_graph_backward_prop_hash{0};
 #endif // LBANN_HAS_CUDNN
 
   template <typename T>

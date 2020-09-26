@@ -29,6 +29,7 @@
 #include "lbann/models/model.hpp"
 #include "lbann/weights/initializer.hpp"
 #include "lbann/proto/proto_common.hpp"
+#include "lbann/utils/hash.hpp"
 #include <layers.pb.h>
 
 namespace lbann {
@@ -248,6 +249,8 @@ void gru_layer<TensorDataType, Layout, Device>::setup_gpu() {
   const size_t sequence_length = this->get_input_dims(0)[0];
   const size_t input_size = this->get_input_size(0) / sequence_length;
 
+  auto&& handle = cudnn::get_handle();
+
   // RNN descriptor
   static cudnn::DropoutDescriptor dropout_desc;
   dropout_desc.set(0, nullptr, 0, 0);
@@ -267,6 +270,17 @@ void gru_layer<TensorDataType, Layout, Device>::setup_gpu() {
     dropout_desc,
     CUDNN_RNN_PADDED_IO_ENABLED);
 
+  // Allocate workspace for weights and weights gradient
+  /// @todo Handle synchronization
+  size_t weights_size;
+  CHECK_CUDNN(
+    cudnnGetRNNWeightSpaceSize(
+      handle,
+      m_rnn_cudnn_desc,
+      &weights_size));
+  m_weights_cudnn_workspace.allocate(weights_size);
+  m_weights_grad_cudnn_workspace.allocate(weights_size);
+
 }
 #endif // LBANN_HAS_CUDNN
 
@@ -282,23 +296,16 @@ void gru_layer<TensorDataType, Layout, Device>::fp_compute() {
 namespace {
 #ifdef LBANN_HAS_CUDNN
 template <typename TensorDataType>
-hydrogen::simple_buffer<El::byte, El::Device::GPU> pack_cudnn_rnn_weights(
+void pack_cudnn_rnn_weights(
   const cudnnHandle_t& handle,
   const cudnn::RNNDescriptor& rnn_desc,
   const El::SyncInfo<El::Device::GPU>& sync_info,
   size_t input_size,
   size_t hidden_size,
   size_t num_layers,
+  void* packed_weights_buffer,
+  size_t packed_weights_size,
   const std::vector<El::Matrix<TensorDataType,El::Device::GPU>>& weights_list) {
-
-  // Allocate buffer for packed weights
-  size_t packed_weights_size;
-  CHECK_CUDNN(
-    cudnnGetRNNWeightSpaceSize(
-      handle,
-      rnn_desc,
-      &packed_weights_size));
-  hydrogen::simple_buffer<El::byte, El::Device::GPU> packed_weights(packed_weights_size, sync_info);
 
   // Construct objects
   static cudnn::TensorDescriptor matrix_desc, bias_desc;
@@ -316,8 +323,8 @@ hydrogen::simple_buffer<El::byte, El::Device::GPU> pack_cudnn_rnn_weights(
         handle,
         rnn_desc,
         i,
-        packed_weights.size(),
-        packed_weights.data(),
+        packed_weights_size,
+        packed_weights_buffer,
         id,
         matrix_desc,
         reinterpret_cast<void**>(&ptrs.first),
@@ -384,7 +391,6 @@ hydrogen::simple_buffer<El::byte, El::Device::GPU> pack_cudnn_rnn_weights(
 
   }
 
-  return packed_weights;
 }
 #endif // LBANN_HAS_CUDNN
 } // namespace <anon>
@@ -393,10 +399,9 @@ hydrogen::simple_buffer<El::byte, El::Device::GPU> pack_cudnn_rnn_weights(
 template <typename TensorDataType>
 void fp_compute_impl(
   gru_layer<TensorDataType,data_layout::DATA_PARALLEL,El::Device::GPU>& l) {
-  using LocalMat = El::Matrix<TensorDataType, El::Device::GPU>;
-  using ByteBuffer = hydrogen::simple_buffer<El::byte, El::Device::GPU>;
 
   // Matrices
+  using LocalMat = El::Matrix<TensorDataType, El::Device::GPU>;
   const auto& input_sequence
     = dynamic_cast<const LocalMat&>(l.get_local_prev_activations(0));
   const auto& init_hidden
@@ -456,7 +461,10 @@ void fp_compute_impl(
       input_desc,
       &cudnn_workspace_size,
       &cudnn_reserve_space_size));
-  ByteBuffer cudnn_workspace(cudnn_workspace_size, sync_info);
+  if (l.m_cudnn_workspace.size() < cudnn_workspace_size) {
+    /// @todo Handle synchronization
+    l.m_cudnn_workspace.allocate(cudnn_workspace_size);
+  }
   if (l.m_cudnn_reserve_space.size() < cudnn_reserve_space_size) {
     /// @todo Handle synchronization
     l.m_cudnn_reserve_space.allocate(cudnn_reserve_space_size);
@@ -476,23 +484,22 @@ void fp_compute_impl(
   }
 
   // Make sure tensors are in correct format
-  LocalMat input_sequence_workspace, init_hidden_workspace;
-  input_sequence_workspace.SetSyncInfo(sync_info);
-  init_hidden_workspace.SetSyncInfo(sync_info);
+  l.m_input_sequence_workspace.SetSyncInfo(sync_info);
+  l.m_init_hidden_workspace.SetSyncInfo(sync_info);
   constexpr size_t one{1};
   if (input_sequence.Contiguous()) {
-    El::LockedView(input_sequence_workspace, input_sequence);
+    El::LockedView(l.m_input_sequence_workspace, input_sequence);
   }
   else {
-    El::Copy(input_sequence, input_sequence_workspace);
+    El::Copy(input_sequence, l.m_input_sequence_workspace);
   }
-  init_hidden_workspace.Resize(mini_batch_size*hidden_size, num_layers);
+  l.m_init_hidden_workspace.Resize(mini_batch_size*hidden_size, num_layers);
   cuda::copy_tensor(
     stream,
     {mini_batch_size, num_layers, hidden_size},
     init_hidden.LockedBuffer(),
     {static_cast<size_t>(init_hidden.LDim()), hidden_size, one},
-    init_hidden_workspace.Buffer(),
+    l.m_init_hidden_workspace.Buffer(),
     {hidden_size, mini_batch_size*hidden_size, one});
   if (!output_sequence.Contiguous()) {
     LBANN_ERROR(
@@ -507,42 +514,60 @@ void fp_compute_impl(
       = dynamic_cast<const LocalMat&>(l.weights_values(i).LockedMatrix());
     weights_list.emplace_back(El::LockedView(w));
   }
-  auto packed_weights = pack_cudnn_rnn_weights<TensorDataType>(
+  pack_cudnn_rnn_weights<TensorDataType>(
     handle,
     rnn_desc,
     sync_info,
     input_size,
     hidden_size,
     num_layers,
+    l.m_weights_cudnn_workspace.data(),
+    l.m_weights_cudnn_workspace.size(),
     weights_list);
 
-  // Launch cuDNN GRU
-  // cuda::Graph::begin_capture(stream);
-  CHECK_CUDNN(
-    cudnnRNNForward(
-      handle,
-      rnn_desc,
-      CUDNN_FWD_MODE_TRAINING,
-      l.m_gpu_sequence_lengths.data(),
-      input_desc,
-      input_sequence_workspace.LockedBuffer(),
-      output_desc,
-      output_sequence.Buffer(),
-      hidden_desc,
-      init_hidden_workspace.LockedBuffer(),
-      nullptr,      // hy
-      hidden_desc,  // cDesc
-      nullptr,      // cx
-      nullptr,      // cy
-      packed_weights.size(),
-      packed_weights.data(),
-      cudnn_workspace.size(),
-      cudnn_workspace.data(),
-      l.m_cudnn_reserve_space.size(),
-      l.m_cudnn_reserve_space.data()));
-  // auto graph = cuda::Graph::end_capture(stream);
-  // l.m_graph_forward_prop.update(graph);
-  // l.m_graph_forward_prop.launch(stream);
+  // Compute hash with cuDNN function arguments
+  size_t hash{0};
+  hash = hash_combine(hash, mini_batch_size);
+  hash = hash_combine(hash, l.m_gpu_sequence_lengths.data());
+  hash = hash_combine(hash, l.m_input_sequence_workspace.LockedBuffer());
+  hash = hash_combine(hash, l.m_init_hidden_workspace.LockedBuffer());
+  hash = hash_combine(hash, output_sequence.Buffer());
+  hash = hash_combine(hash, l.m_weights_cudnn_workspace.data());
+  hash = hash_combine(hash, l.m_cudnn_workspace.data());
+  hash = hash_combine(hash, l.m_cudnn_reserve_space.data());
+
+  // Update CUDA graph if cuDNN function arguments don't match
+  if (l.m_cuda_graph_forward_prop_hash != hash) {
+    l.m_cuda_graph_forward_prop_hash = hash;
+    cuda::Graph::begin_capture(stream);
+    CHECK_CUDNN(
+      cudnnRNNForward(
+        handle,
+        rnn_desc,
+        CUDNN_FWD_MODE_TRAINING,
+        l.m_gpu_sequence_lengths.data(),
+        input_desc,
+        l.m_input_sequence_workspace.LockedBuffer(),
+        output_desc,
+        output_sequence.Buffer(),
+        hidden_desc,
+        l.m_init_hidden_workspace.LockedBuffer(),
+        nullptr,        // hy
+        hidden_desc,    // cDesc
+        nullptr,        // cx
+        nullptr,        // cy
+        l.m_weights_cudnn_workspace.size(),
+        l.m_weights_cudnn_workspace.data(),
+        l.m_cudnn_workspace.size(),
+        l.m_cudnn_workspace.data(),
+        l.m_cudnn_reserve_space.size(),
+        l.m_cudnn_reserve_space.data()));
+    auto graph = cuda::Graph::end_capture(stream);
+    l.m_cuda_graph_forward_prop.update(graph);
+  }
+
+  // Launch CUDA graph with cuDNN kernels
+  l.m_cuda_graph_forward_prop.launch(stream);
 
 }
 #endif // LBANN_HAS_CUDNN
@@ -566,7 +591,7 @@ void unpack_cudnn_rnn_weights(
   size_t input_size,
   size_t hidden_size,
   size_t num_layers,
-  const TensorDataType* packed_weights_buffer,
+  const void* packed_weights_buffer,
   size_t packed_weights_size,
   const std::vector<El::Matrix<TensorDataType,El::Device::GPU>>& weights_list) {
 
@@ -586,7 +611,7 @@ void unpack_cudnn_rnn_weights(
         handle,
         rnn_desc,
         i,
-        packed_weights_size * sizeof(TensorDataType),
+        packed_weights_size,
         packed_weights_buffer,
         id,
         matrix_desc,
@@ -656,10 +681,9 @@ void unpack_cudnn_rnn_weights(
 template <typename TensorDataType>
 void bp_compute_impl(
   gru_layer<TensorDataType,data_layout::DATA_PARALLEL,El::Device::GPU>& l) {
-  using LocalMat = El::Matrix<TensorDataType, El::Device::GPU>;
-  using ByteBuffer = hydrogen::simple_buffer<El::byte, El::Device::GPU>;
 
   // Matrices
+  using LocalMat = El::Matrix<TensorDataType, El::Device::GPU>;
   const auto& input_sequence
     = dynamic_cast<const LocalMat&>(l.get_local_prev_activations(0));
   const auto& init_hidden
@@ -725,142 +749,115 @@ void bp_compute_impl(
   auto& output_desc = l.m_output_cudnn_desc;
   auto& hidden_desc = l.m_hidden_cudnn_desc;
 
-  // Allocate cuDNN workspace buffers
-  // Note: Reserve space has already been allocated in forward prop
-  size_t cudnn_workspace_size, cudnn_reserve_space_size;
-  CHECK_CUDNN(
-    cudnnGetRNNTempSpaceSizes(
-      handle,
-      rnn_desc,
-      CUDNN_FWD_MODE_TRAINING,
-      input_desc,
-      &cudnn_workspace_size,
-      &cudnn_reserve_space_size));
-  ByteBuffer cudnn_workspace(cudnn_workspace_size, sync_info);
-
   // Make sure tensors are in correct format
-  LocalMat input_sequence_workspace, init_hidden_workspace;
-  LocalMat output_sequence_grad_workspace, init_hidden_grad_workspace;
-  input_sequence_workspace.SetSyncInfo(sync_info);
-  init_hidden_workspace.SetSyncInfo(sync_info);
-  output_sequence_grad_workspace.SetSyncInfo(sync_info);
-  init_hidden_grad_workspace.SetSyncInfo(sync_info);
-  constexpr size_t one{1};
-  if (input_sequence.Contiguous()) {
-    El::LockedView(input_sequence_workspace, input_sequence);
-  }
-  else {
-    El::Copy(input_sequence, input_sequence_workspace);
-  }
-  init_hidden_workspace.Resize(mini_batch_size*hidden_size, num_layers);
-  cuda::copy_tensor(
-    stream,
-    {mini_batch_size, num_layers, hidden_size},
-    init_hidden.LockedBuffer(),
-    {static_cast<size_t>(init_hidden.LDim()), hidden_size, one},
-    init_hidden_workspace.Buffer(),
-    {hidden_size, mini_batch_size*hidden_size, one});
-  if (!output_sequence.Contiguous()) {
-    LBANN_ERROR(
-      l.get_type()," layer \"",l.get_name(),"\" ",
-      "has non-contiguous buffer for output");
-  }
+  // Note: m_input_sequence_workspace and m_init_hidden_workspace have
+  // already been setup in forward prop
+  l.m_output_sequence_grad_workspace.SetSyncInfo(sync_info);
+  l.m_init_hidden_grad_workspace.SetSyncInfo(sync_info);
   if (output_sequence_grad.Contiguous()) {
-    El::LockedView(output_sequence_grad_workspace, output_sequence_grad);
+    El::LockedView(l.m_output_sequence_grad_workspace, output_sequence_grad);
   }
   else {
-    El::Copy(output_sequence_grad, output_sequence_grad_workspace);
+    El::Copy(output_sequence_grad, l.m_output_sequence_grad_workspace);
   }
-  init_hidden_grad_workspace.Resize(mini_batch_size*hidden_size, num_layers);
+  l.m_init_hidden_grad_workspace.Resize(mini_batch_size*hidden_size, num_layers);
 
-  // Pack weights into workspace buffer
-  std::vector<LocalMat> weights_list;
-  for (size_t i=0; i<4*num_layers; ++i) {
-    const auto& w
-      = dynamic_cast<const LocalMat&>(l.weights_values(i).LockedMatrix());
-    weights_list.emplace_back(El::LockedView(w));
+  // Initialize workspace for weight gradients
+  // Note: Weights have already been packed in forward prop
+  CHECK_CUDA(
+    cudaMemsetAsync(
+      l.m_weights_grad_cudnn_workspace.data(),
+      0,
+      l.m_weights_grad_cudnn_workspace.size(),
+      stream));
+
+  // Compute hash with cuDNN function arguments
+  size_t hash{0};
+  hash = hash_combine(hash, mini_batch_size);
+  hash = hash_combine(hash, l.m_gpu_sequence_lengths.data());
+  hash = hash_combine(hash, l.m_input_sequence_workspace.LockedBuffer());
+  hash = hash_combine(hash, input_sequence_grad.Buffer());
+  hash = hash_combine(hash, l.m_init_hidden_workspace.LockedBuffer());
+  hash = hash_combine(hash, l.m_init_hidden_grad_workspace.Buffer());
+  hash = hash_combine(hash, output_sequence.LockedBuffer());
+  hash = hash_combine(hash, l.m_output_sequence_grad_workspace.LockedBuffer());
+  hash = hash_combine(hash, l.m_weights_cudnn_workspace.data());
+  hash = hash_combine(hash, l.m_weights_grad_cudnn_workspace.data());
+  hash = hash_combine(hash, l.m_cudnn_workspace.data());
+  hash = hash_combine(hash, l.m_cudnn_reserve_space.data());
+
+  // Update CUDA graph if cuDNN function arguments don't match
+  if (l.m_cuda_graph_backward_prop_hash != hash) {
+    l.m_cuda_graph_backward_prop_hash = hash;
+    cuda::Graph::begin_capture(stream);
+    CHECK_CUDNN(
+      cudnnRNNBackwardData_v8(
+        handle,
+        rnn_desc,
+        l.m_gpu_sequence_lengths.data(),
+        output_desc,
+        output_sequence.LockedBuffer(),
+        l.m_output_sequence_grad_workspace.LockedBuffer(),
+        input_desc,
+        input_sequence_grad.Buffer(),
+        hidden_desc,
+        l.m_init_hidden_workspace.LockedBuffer(),
+        nullptr,        // dhy
+        l.m_init_hidden_grad_workspace.Buffer(),
+        hidden_desc,    // cDesc
+        nullptr,        // cx
+        nullptr,        // dcy
+        nullptr,        // dcx
+        l.m_weights_cudnn_workspace.size(),
+        l.m_weights_cudnn_workspace.data(),
+        l.m_cudnn_workspace.size(),
+        l.m_cudnn_workspace.data(),
+        l.m_cudnn_reserve_space.size(),
+        l.m_cudnn_reserve_space.data()));
+    CHECK_CUDNN(
+      cudnnRNNBackwardWeights_v8(
+        handle,
+        rnn_desc,
+        CUDNN_WGRAD_MODE_ADD,
+        l.m_gpu_sequence_lengths.data(),
+        input_desc,
+        l.m_input_sequence_workspace.LockedBuffer(),
+        hidden_desc,
+        l.m_init_hidden_workspace.LockedBuffer(),
+        output_desc,
+        output_sequence.LockedBuffer(),
+        l.m_weights_grad_cudnn_workspace.size(),
+        l.m_weights_grad_cudnn_workspace.data(),
+        l.m_cudnn_workspace.size(),
+        l.m_cudnn_workspace.data(),
+        l.m_cudnn_reserve_space.size(),
+        l.m_cudnn_reserve_space.data()));
+    auto graph = cuda::Graph::end_capture(stream);
+    l.m_cuda_graph_backward_prop.update(graph);
   }
-  auto packed_weights = pack_cudnn_rnn_weights<TensorDataType>(
-    handle,
-    rnn_desc,
-    sync_info,
-    input_size,
-    hidden_size,
-    num_layers,
-    weights_list);
-  LocalMat weights_grad_workspace;
-  weights_grad_workspace.SetSyncInfo(sync_info);
-  El::Zeros(
-    weights_grad_workspace,
-    packed_weights.size() / sizeof(TensorDataType),
-    1);
 
-  // Launch cuDNN GRU backprop
-  // cuda::Graph::begin_capture(stream);
-  CHECK_CUDNN(
-    cudnnRNNBackwardData_v8(
-      handle,
-      rnn_desc,
-      l.m_gpu_sequence_lengths.data(),
-      output_desc,
-      output_sequence.LockedBuffer(),
-      output_sequence_grad_workspace.LockedBuffer(),
-      input_desc,
-      input_sequence_grad.Buffer(),
-      hidden_desc,
-      init_hidden_workspace.LockedBuffer(),
-      nullptr,      // dhy
-      init_hidden_grad_workspace.Buffer(),
-      hidden_desc,  // cDesc
-      nullptr,      // cx
-      nullptr,      // dcy
-      nullptr,      // dcx
-      packed_weights.size(),
-      packed_weights.data(),
-      cudnn_workspace.size(),
-      cudnn_workspace.data(),
-      l.m_cudnn_reserve_space.size(),
-      l.m_cudnn_reserve_space.data()));
-  CHECK_CUDNN(
-    cudnnRNNBackwardWeights_v8(
-      handle,
-      rnn_desc,
-      CUDNN_WGRAD_MODE_ADD,
-      l.m_gpu_sequence_lengths.data(),
-      input_desc,
-      input_sequence_workspace.LockedBuffer(),
-      hidden_desc,
-      init_hidden_workspace.LockedBuffer(),
-      output_desc,
-      output_sequence.LockedBuffer(),
-      packed_weights.size(),
-      weights_grad_workspace.Buffer(),
-      cudnn_workspace.size(),
-      cudnn_workspace.data(),
-      l.m_cudnn_reserve_space.size(),
-      l.m_cudnn_reserve_space.data()));
-  // auto graph = cuda::Graph::end_capture(stream);
-  // l.m_graph_backward_prop.update(graph);
-  // l.m_graph_backward_prop.launch(stream);
+  // Launch CUDA graph with cuDNN kernels
+  l.m_cuda_graph_backward_prop.launch(stream);
 
   // Send gradients to optimizers
-  unpack_cudnn_rnn_weights(
+  unpack_cudnn_rnn_weights<TensorDataType>(
     handle,
     rnn_desc,
     sync_info,
     input_size,
     hidden_size,
     num_layers,
-    weights_grad_workspace.LockedBuffer(),
-    weights_grad_workspace.Height(),
+    l.m_weights_grad_cudnn_workspace.data(),
+    l.m_weights_grad_cudnn_workspace.size(),
     weights_grad_list);
   send_weight_grads_to_optimizers();
 
   // Reorder init hidden state grad tensor
+  constexpr size_t one{1};
   cuda::copy_tensor(
     stream,
     {mini_batch_size, num_layers, hidden_size},
-    init_hidden_grad_workspace.LockedBuffer(),
+    l.m_init_hidden_grad_workspace.LockedBuffer(),
     {hidden_size, mini_batch_size*hidden_size, one},
     init_hidden_grad.Buffer(),
     {static_cast<size_t>(init_hidden.LDim()), hidden_size, one});

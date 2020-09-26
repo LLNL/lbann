@@ -21,10 +21,10 @@ import tools
 # Data
 np.random.seed(20200909)
 _num_samples = 15
-_sequence_length = 5
-_input_size = 13
-_hidden_size = 7
-_num_layers = 3
+_sequence_length = 13
+_input_size = 7
+_hidden_size = 5
+_num_layers = 2
 _sample_size = _sequence_length*_input_size + _num_layers*_hidden_size
 _samples = np.random.normal(size=(_num_samples,_sample_size)).astype(np.float32)
 

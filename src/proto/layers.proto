@@ -685,6 +685,7 @@ message Layer {
   message GRU {
     /// Size of each hidden state and output vector
     uint64 hidden_size = 1;
+    /// Number of stacked GRU cells (default: 1)
     google.protobuf.UInt64Value num_layers = 2;
   }
 
