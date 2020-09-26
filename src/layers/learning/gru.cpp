@@ -59,7 +59,11 @@ gru_layer<TensorDataType, Layout, Device>::gru_layer(const gru_layer& other)
 #endif // LBANN_HAS_CUDNN
 {
 #ifdef LBANN_HAS_CUDNN
-  /// @todo Copy cuDNN objects?
+  m_weights_cudnn_workspace.allocate(
+    other.m_weights_cudnn_workspace.size());
+  m_weights_grad_cudnn_workspace.allocate(
+    other.m_weights_grad_cudnn_workspace.size());
+  /// @todo Copy other cuDNN objects?
 #endif // LBANN_HAS_CUDNN
 }
 
@@ -71,7 +75,11 @@ gru_layer<TensorDataType, Layout, Device>& gru_layer<TensorDataType, Layout, Dev
   m_num_layers = other.m_num_layers;
 #ifdef LBANN_HAS_CUDNN
   m_hidden_cudnn_desc = other.m_hidden_cudnn_desc;
-  /// @todo Copy cuDNN objects?
+  m_weights_cudnn_workspace.allocate(
+    other.m_weights_cudnn_workspace.size());
+  m_weights_grad_cudnn_workspace.allocate(
+    other.m_weights_grad_cudnn_workspace.size());
+  /// @todo Copy other cuDNN objects?
 #endif // LBANN_HAS_CUDNN
   return *this;
 }
