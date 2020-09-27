@@ -102,6 +102,7 @@ private:
   cudnn::RNNDataDescriptor m_output_cudnn_desc;
   cudnn::TensorDescriptor m_hidden_cudnn_desc;
   LocalMat m_input_sequence_workspace;
+  LocalMat m_input_sequence_grad_workspace;
   LocalMat m_output_sequence_grad_workspace;
   LocalMat m_init_hidden_workspace;
   LocalMat m_init_hidden_grad_workspace;

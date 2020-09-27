@@ -59,10 +59,6 @@ gru_layer<TensorDataType, Layout, Device>::gru_layer(const gru_layer& other)
 #endif // LBANN_HAS_CUDNN
 {
 #ifdef LBANN_HAS_CUDNN
-  m_weights_cudnn_workspace.allocate(
-    other.m_weights_cudnn_workspace.size());
-  m_weights_grad_cudnn_workspace.allocate(
-    other.m_weights_grad_cudnn_workspace.size());
   /// @todo Copy other cuDNN objects?
 #endif // LBANN_HAS_CUDNN
 }
@@ -75,10 +71,6 @@ gru_layer<TensorDataType, Layout, Device>& gru_layer<TensorDataType, Layout, Dev
   m_num_layers = other.m_num_layers;
 #ifdef LBANN_HAS_CUDNN
   m_hidden_cudnn_desc = other.m_hidden_cudnn_desc;
-  m_weights_cudnn_workspace.allocate(
-    other.m_weights_cudnn_workspace.size());
-  m_weights_grad_cudnn_workspace.allocate(
-    other.m_weights_grad_cudnn_workspace.size());
   /// @todo Copy other cuDNN objects?
 #endif // LBANN_HAS_CUDNN
   return *this;
@@ -257,8 +249,6 @@ void gru_layer<TensorDataType, Layout, Device>::setup_gpu() {
   const size_t sequence_length = this->get_input_dims(0)[0];
   const size_t input_size = this->get_input_size(0) / sequence_length;
 
-  auto&& handle = cudnn::get_handle();
-
   // RNN descriptor
   static cudnn::DropoutDescriptor dropout_desc;
   dropout_desc.set(0, nullptr, 0, 0);
@@ -277,17 +267,6 @@ void gru_layer<TensorDataType, Layout, Device>::setup_gpu() {
     m_num_layers,
     dropout_desc,
     CUDNN_RNN_PADDED_IO_ENABLED);
-
-  // Allocate workspace for weights and weights gradient
-  /// @todo Handle synchronization
-  size_t weights_size;
-  CHECK_CUDNN(
-    cudnnGetRNNWeightSpaceSize(
-      handle,
-      m_rnn_cudnn_desc,
-      &weights_size));
-  m_weights_cudnn_workspace.allocate(weights_size);
-  m_weights_grad_cudnn_workspace.allocate(weights_size);
 
 }
 #endif // LBANN_HAS_CUDNN
@@ -516,6 +495,14 @@ void fp_compute_impl(
   }
 
   // Pack weights into workspace buffer
+  /// @todo Handle synchronization
+  size_t weights_size;
+  CHECK_CUDNN(
+    cudnnGetRNNWeightSpaceSize(
+      handle,
+      l.m_rnn_cudnn_desc,
+      &weights_size));
+  l.m_weights_cudnn_workspace.allocate(weights_size);
   std::vector<LocalMat> weights_list;
   for (size_t i=0; i<4*num_layers; ++i) {
     const auto& w
@@ -761,6 +748,7 @@ void bp_compute_impl(
   // Note: m_input_sequence_workspace and m_init_hidden_workspace have
   // already been setup in forward prop
   l.m_output_sequence_grad_workspace.SetSyncInfo(sync_info);
+  l.m_input_sequence_grad_workspace.SetSyncInfo(sync_info);
   l.m_init_hidden_grad_workspace.SetSyncInfo(sync_info);
   if (output_sequence_grad.Contiguous()) {
     El::LockedView(l.m_output_sequence_grad_workspace, output_sequence_grad);
@@ -768,10 +756,12 @@ void bp_compute_impl(
   else {
     El::Copy(output_sequence_grad, l.m_output_sequence_grad_workspace);
   }
+  l.m_input_sequence_grad_workspace.Resize(sequence_length*input_size, mini_batch_size);
   l.m_init_hidden_grad_workspace.Resize(mini_batch_size*hidden_size, num_layers);
 
   // Initialize workspace for weight gradients
   // Note: Weights have already been packed in forward prop
+  l.m_weights_grad_cudnn_workspace.allocate(l.m_weights_cudnn_workspace.size());
   CHECK_CUDA(
     cudaMemsetAsync(
       l.m_weights_grad_cudnn_workspace.data(),
@@ -784,7 +774,7 @@ void bp_compute_impl(
   hash = hash_combine(hash, mini_batch_size);
   hash = hash_combine(hash, l.m_gpu_sequence_lengths.data());
   hash = hash_combine(hash, l.m_input_sequence_workspace.LockedBuffer());
-  hash = hash_combine(hash, input_sequence_grad.Buffer());
+  hash = hash_combine(hash, l.m_input_sequence_grad_workspace.Buffer());
   hash = hash_combine(hash, l.m_init_hidden_workspace.LockedBuffer());
   hash = hash_combine(hash, l.m_init_hidden_grad_workspace.Buffer());
   hash = hash_combine(hash, output_sequence.LockedBuffer());
@@ -807,7 +797,7 @@ void bp_compute_impl(
         output_sequence.LockedBuffer(),
         l.m_output_sequence_grad_workspace.LockedBuffer(),
         input_desc,
-        input_sequence_grad.Buffer(),
+        l.m_input_sequence_grad_workspace.Buffer(),
         hidden_desc,
         l.m_init_hidden_workspace.LockedBuffer(),
         nullptr,        // dhy
@@ -860,8 +850,11 @@ void bp_compute_impl(
     weights_grad_list);
   send_weight_grads_to_optimizers();
 
-  // Reorder init hidden state grad tensor
+  // Gradients w.r.t. input tensors
+
+  // Note:
   constexpr size_t one{1};
+  El::LockedView(input_sequence_grad, l.m_input_sequence_grad_workspace);
   cuda::copy_tensor(
     stream,
     {mini_batch_size, num_layers, hidden_size},
