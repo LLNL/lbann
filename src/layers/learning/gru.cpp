@@ -53,14 +53,13 @@ template <typename TensorDataType, data_layout Layout, El::Device Device>
 gru_layer<TensorDataType, Layout, Device>::gru_layer(const gru_layer& other)
   : data_type_layer<TensorDataType>(other),
     m_hidden_size{other.m_hidden_size},
-    m_num_layers{other.m_num_layers}
-#ifdef LBANN_HAS_CUDNN
-  , m_hidden_cudnn_desc{other.m_hidden_cudnn_desc}
-#endif // LBANN_HAS_CUDNN
-{
-#ifdef LBANN_HAS_CUDNN
-  /// @todo Copy other cuDNN objects?
-#endif // LBANN_HAS_CUDNN
+    m_num_layers{other.m_num_layers} {
+#ifdef LBANN_GRU_LAYER_GPU_SUPPORTED
+  // No need to copy cuDNN tensor descriptors, cuDNN workspaces, or
+  // CUDA graphs. They are setup in forward and backward prop
+  // functions, as needed.
+  /// @todo Copy @c m_rnn_cudnn_desc
+#endif // LBANN_GRU_LAYER_GPU_SUPPORTED
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -69,10 +68,12 @@ gru_layer<TensorDataType, Layout, Device>& gru_layer<TensorDataType, Layout, Dev
   data_type_layer<TensorDataType>::operator=(other);
   m_hidden_size = other.m_hidden_size;
   m_num_layers = other.m_num_layers;
-#ifdef LBANN_HAS_CUDNN
-  m_hidden_cudnn_desc = other.m_hidden_cudnn_desc;
-  /// @todo Copy other cuDNN objects?
-#endif // LBANN_HAS_CUDNN
+#ifdef LBANN_GRU_LAYER_GPU_SUPPORTED
+  // No need to copy cuDNN tensor descriptors, cuDNN workspaces, or
+  // CUDA graphs. They are setup in forward and backward prop
+  // functions, as needed.
+  /// @todo Copy @c m_rnn_cudnn_desc
+#endif // LBANN_GRU_LAYER_GPU_SUPPORTED
   return *this;
 }
 
@@ -241,7 +242,7 @@ void gru_layer<TensorDataType, Layout, Device>
 
 }
 
-#ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_GRU_LAYER_GPU_SUPPORTED
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void gru_layer<TensorDataType, Layout, Device>::setup_gpu() {
 
@@ -269,7 +270,7 @@ void gru_layer<TensorDataType, Layout, Device>::setup_gpu() {
     CUDNN_RNN_PADDED_IO_ENABLED);
 
 }
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_GRU_LAYER_GPU_SUPPORTED
 
 // ---------------------------------------------
 // Forward prop
@@ -281,7 +282,7 @@ void gru_layer<TensorDataType, Layout, Device>::fp_compute() {
 }
 
 namespace {
-#ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_GRU_LAYER_GPU_SUPPORTED
 template <typename TensorDataType>
 void pack_cudnn_rnn_weights(
   const cudnnHandle_t& handle,
@@ -379,10 +380,10 @@ void pack_cudnn_rnn_weights(
   }
 
 }
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_GRU_LAYER_GPU_SUPPORTED
 } // namespace <anon>
 
-#ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_GRU_LAYER_GPU_SUPPORTED
 template <typename TensorDataType>
 void fp_compute_impl(
   gru_layer<TensorDataType,data_layout::DATA_PARALLEL,El::Device::GPU>& l) {
@@ -416,11 +417,8 @@ void fp_compute_impl(
   const auto data_type = cudnn::get_data_type<TensorDataType>();
 
   // Configure input and output tensor descriptors
-  auto& input_desc = l.m_input_cudnn_desc;
-  auto& output_desc = l.m_output_cudnn_desc;
-  auto& hidden_desc = l.m_hidden_cudnn_desc;
   std::vector<int> sequence_lengths(mini_batch_size, sequence_length);
-  input_desc.set(
+  l.m_input_cudnn_desc.set(
     data_type,
     CUDNN_RNN_DATA_LAYOUT_BATCH_MAJOR_UNPACKED,
     sequence_length,
@@ -428,7 +426,7 @@ void fp_compute_impl(
     input_size,
     sequence_lengths.data(),
     nullptr);
-  output_desc.set(
+  l.m_output_cudnn_desc.set(
     data_type,
     CUDNN_RNN_DATA_LAYOUT_BATCH_MAJOR_UNPACKED,
     sequence_length,
@@ -436,7 +434,7 @@ void fp_compute_impl(
     hidden_size,
     sequence_lengths.data(),
     nullptr);
-  hidden_desc.set(data_type, num_layers, mini_batch_size, hidden_size);
+  l.m_hidden_cudnn_desc.set(data_type, num_layers, mini_batch_size, hidden_size);
 
   // Allocate cuDNN workspace buffers
   size_t cudnn_workspace_size, cudnn_reserve_space_size;
@@ -445,7 +443,7 @@ void fp_compute_impl(
       handle,
       rnn_desc,
       CUDNN_FWD_MODE_TRAINING,
-      input_desc,
+      l.m_input_cudnn_desc,
       &cudnn_workspace_size,
       &cudnn_reserve_space_size));
   if (l.m_cudnn_workspace.size() < cudnn_workspace_size) {
@@ -541,16 +539,16 @@ void fp_compute_impl(
         rnn_desc,
         CUDNN_FWD_MODE_TRAINING,
         l.m_gpu_sequence_lengths.data(),
-        input_desc,
+        l.m_input_cudnn_desc,
         l.m_input_sequence_workspace.LockedBuffer(),
-        output_desc,
+        l.m_output_cudnn_desc,
         output_sequence.Buffer(),
-        hidden_desc,
+        l.m_hidden_cudnn_desc,
         l.m_init_hidden_workspace.LockedBuffer(),
-        nullptr,        // hy
-        hidden_desc,    // cDesc
-        nullptr,        // cx
-        nullptr,        // cy
+        nullptr,                // hy
+        l.m_hidden_cudnn_desc,  // cDesc
+        nullptr,                // cx
+        nullptr,                // cy
         l.m_weights_cudnn_workspace.size(),
         l.m_weights_cudnn_workspace.data(),
         l.m_cudnn_workspace.size(),
@@ -565,7 +563,7 @@ void fp_compute_impl(
   l.m_cuda_graph_forward_prop.launch(stream);
 
 }
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_GRU_LAYER_GPU_SUPPORTED
 
 // ---------------------------------------------
 // Back prop
@@ -577,7 +575,7 @@ void gru_layer<TensorDataType, Layout, Device>::bp_compute() {
 }
 
 namespace {
-#ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_GRU_LAYER_GPU_SUPPORTED
 template <typename TensorDataType>
 void unpack_cudnn_rnn_weights(
   const cudnnHandle_t& handle,
@@ -669,10 +667,10 @@ void unpack_cudnn_rnn_weights(
   }
 
 }
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_GRU_LAYER_GPU_SUPPORTED
 } // namespace <anon>
 
-#ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_GRU_LAYER_GPU_SUPPORTED
 template <typename TensorDataType>
 void bp_compute_impl(
   gru_layer<TensorDataType,data_layout::DATA_PARALLEL,El::Device::GPU>& l) {
@@ -738,12 +736,6 @@ void bp_compute_impl(
     send_weight_grads_to_optimizers();
   }
 
-  // Configure input and output tensor descriptors
-  // Note: Descriptor dims have already been set in forward prop
-  auto& input_desc = l.m_input_cudnn_desc;
-  auto& output_desc = l.m_output_cudnn_desc;
-  auto& hidden_desc = l.m_hidden_cudnn_desc;
-
   // Make sure tensors are in correct format
   // Note: m_input_sequence_workspace and m_init_hidden_workspace have
   // already been setup in forward prop
@@ -793,19 +785,19 @@ void bp_compute_impl(
         handle,
         rnn_desc,
         l.m_gpu_sequence_lengths.data(),
-        output_desc,
+        l.m_output_cudnn_desc,
         output_sequence.LockedBuffer(),
         l.m_output_sequence_grad_workspace.LockedBuffer(),
-        input_desc,
+        l.m_input_cudnn_desc,
         l.m_input_sequence_grad_workspace.Buffer(),
-        hidden_desc,
+        l.m_hidden_cudnn_desc,
         l.m_init_hidden_workspace.LockedBuffer(),
-        nullptr,        // dhy
+        nullptr,                // dhy
         l.m_init_hidden_grad_workspace.Buffer(),
-        hidden_desc,    // cDesc
-        nullptr,        // cx
-        nullptr,        // dcy
-        nullptr,        // dcx
+        l.m_hidden_cudnn_desc,  // cDesc
+        nullptr,                // cx
+        nullptr,                // dcy
+        nullptr,                // dcx
         l.m_weights_cudnn_workspace.size(),
         l.m_weights_cudnn_workspace.data(),
         l.m_cudnn_workspace.size(),
@@ -818,11 +810,11 @@ void bp_compute_impl(
         rnn_desc,
         CUDNN_WGRAD_MODE_ADD,
         l.m_gpu_sequence_lengths.data(),
-        input_desc,
+        l.m_input_cudnn_desc,
         l.m_input_sequence_workspace.LockedBuffer(),
-        hidden_desc,
+        l.m_hidden_cudnn_desc,
         l.m_init_hidden_workspace.LockedBuffer(),
-        output_desc,
+        l.m_output_cudnn_desc,
         output_sequence.LockedBuffer(),
         l.m_weights_grad_cudnn_workspace.size(),
         l.m_weights_grad_cudnn_workspace.data(),
@@ -851,8 +843,9 @@ void bp_compute_impl(
   send_weight_grads_to_optimizers();
 
   // Gradients w.r.t. input tensors
-
-  // Note:
+  // Note: We can't output directly to layer's input grad tensors
+  // since they are allocated every step from the memory pool,
+  // preventing us from reusing a CUDA graph.
   constexpr size_t one{1};
   El::LockedView(input_sequence_grad, l.m_input_sequence_grad_workspace);
   cuda::copy_tensor(
@@ -864,7 +857,7 @@ void bp_compute_impl(
     {static_cast<size_t>(init_hidden.LDim()), hidden_size, one});
 
 }
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_GRU_LAYER_GPU_SUPPORTED
 
 // ---------------------------------------------
 // Builder
@@ -888,7 +881,7 @@ struct Builder
   }
 };
 
-#ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_GPU
 template <typename TensorDataType>
 struct Builder<TensorDataType,data_layout::DATA_PARALLEL,El::Device::GPU>
 {
@@ -897,11 +890,20 @@ struct Builder<TensorDataType,data_layout::DATA_PARALLEL,El::Device::GPU>
   {
     constexpr auto Layout = data_layout::DATA_PARALLEL;
     constexpr auto Device = El::Device::GPU;
+#ifdef LBANN_GRU_LAYER_GPU_SUPPORTED
     using LayerType = gru_layer<TensorDataType,Layout,Device>;
     return make_unique<LayerType>(std::forward<Args>(args)...);
+#else
+    LBANN_ERROR(
+      "GPU gru_layer requires at least CUDA 11.0 and cuDNN 8.0.4 "
+      "(TensorDataType=",TypeName<TensorDataType>(),", ",
+      "Layout=",to_string(Layout),", ",
+      "Device=",to_string(Device),")");
+    return nullptr;
+#endif // LBANN_GRU_LAYER_GPU_SUPPORTED
   }
 };
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_GPU
 
 } // namespace <anon>
 
@@ -923,14 +925,14 @@ std::unique_ptr<Layer> build_gru_layer_from_pbuf(
 // ---------------------------------------------
 
 /// @todo CPU implementation
-#ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_GPU
 #define PROTO(T)                                                        \
   template class gru_layer<                                             \
     T, data_layout::DATA_PARALLEL, El::Device::GPU>;
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"
 #undef PROTO
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_GPU
 
 #define PROTO_DEVICE(T, Device)                 \
   LBANN_LAYER_BUILDER_ETI(gru, T, Device)
