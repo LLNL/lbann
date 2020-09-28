@@ -98,18 +98,15 @@ void local_fp(TensorDataType alpha,
 
   // Launch GPU kernel
   if (grid_dim > 0) {
-    using GPUMatType = El::Matrix<TensorDataType, El::Device::GPU>;
-    auto const& input_gpu = static_cast<GPUMatType const&>(input);
-    auto& output_gpu = static_cast<GPUMatType&>(output);
-    auto multisync = hydrogen::MakeMultiSync(
-                       El::SyncInfoFromMatrix(output_gpu),
-                       El::SyncInfoFromMatrix(input_gpu));
+    auto multisync = El::MakeMultiSync(
+      gpu::get_sync_info(output),
+      gpu::get_sync_info(input));
     hydrogen::gpu::LaunchKernel(
-      fp_kernel<TensorDataType>, grid_dim, block_dim, 0,
-      static_cast<El::SyncInfo<El::Device::GPU> const&>(multisync),
+      fp_kernel<TensorDataType>,
+      grid_dim, block_dim, 0, multisync,
       alpha, height, width,
-      input_gpu.LockedBuffer(), input_gpu.LDim(),
-      output_gpu.Buffer(), output_gpu.LDim());
+      input.LockedBuffer(), input.LDim(),
+      output.Buffer(), output.LDim());
   }
 }
 
@@ -135,23 +132,17 @@ void local_bp(TensorDataType alpha,
 
   // Launch GPU kernel
   if (grid_dim > 0) {
-    using GPUMatType = El::Matrix<TensorDataType, El::Device::GPU>;
-    auto const& input_gpu = static_cast<GPUMatType const&>(input);
-    auto const& gradient_wrt_output_gpu = static_cast<GPUMatType const&>
-                                            (gradient_wrt_output);
-    auto& gradient_wrt_input_gpu = static_cast<GPUMatType&>
-                                     (gradient_wrt_input);
     auto multisync = hydrogen::MakeMultiSync(
-                       El::SyncInfoFromMatrix(gradient_wrt_input_gpu),
-                       El::SyncInfoFromMatrix(gradient_wrt_output_gpu),
-                       El::SyncInfoFromMatrix(input_gpu));
+      gpu::get_sync_info(gradient_wrt_input),
+      gpu::get_sync_info(gradient_wrt_output),
+      gpu::get_sync_info(input));
     hydrogen::gpu::LaunchKernel(
-      bp_kernel<TensorDataType>, grid_dim, block_dim, 0,
-      static_cast<El::SyncInfo<El::Device::GPU> const&>(multisync),
+      bp_kernel<TensorDataType>,
+      grid_dim, block_dim, 0, multisync,
       alpha, height, width,
-      input_gpu.LockedBuffer(), input_gpu.LDim(),
-      gradient_wrt_output_gpu.LockedBuffer(), gradient_wrt_output_gpu.LDim(),
-      gradient_wrt_input_gpu.LockedBuffer(), gradient_wrt_input_gpu.LDim());
+      input.LockedBuffer(), input.LDim(),
+      gradient_wrt_output.LockedBuffer(), gradient_wrt_output.LDim(),
+      gradient_wrt_input.LockedBuffer(), gradient_wrt_input.LDim());
   }
 
 }
