@@ -98,9 +98,8 @@ void local_fp(TensorDataType alpha,
 
   // Launch GPU kernel
   if (grid_dim > 0) {
-    auto multisync = El::MakeMultiSync(
-      gpu::get_sync_info(output),
-      gpu::get_sync_info(input));
+    auto multisync = El::MakeMultiSync(gpu::get_sync_info(output),
+                                       gpu::get_sync_info(input));
     hydrogen::gpu::LaunchKernel(
       fp_kernel<TensorDataType>,
       grid_dim, block_dim, 0, multisync,
@@ -132,10 +131,9 @@ void local_bp(TensorDataType alpha,
 
   // Launch GPU kernel
   if (grid_dim > 0) {
-    auto multisync = hydrogen::MakeMultiSync(
-      gpu::get_sync_info(gradient_wrt_input),
-      gpu::get_sync_info(gradient_wrt_output),
-      gpu::get_sync_info(input));
+    auto multisync = El::MakeMultiSync(gpu::get_sync_info(gradient_wrt_input),
+                                       gpu::get_sync_info(gradient_wrt_output),
+                                       gpu::get_sync_info(input));
     hydrogen::gpu::LaunchKernel(
       bp_kernel<TensorDataType>,
       grid_dim, block_dim, 0, multisync,
