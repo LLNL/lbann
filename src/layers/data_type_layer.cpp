@@ -438,7 +438,7 @@ void data_type_layer<TensorDataType>::setup_matrices(const El::Grid& grid) {
   }
 
   // If no CUB, force persistent error signals:
-#if defined(HYDROGEN_HAVE_CUDA) && !defined(HYDROGEN_HAVE_CUB)
+#if defined(HYDROGEN_HAVE_GPU) && !defined(HYDROGEN_HAVE_CUB)
   if (this->get_device_allocation() == El::Device::GPU)
     m_persistent_error_signals = true;
 #endif
