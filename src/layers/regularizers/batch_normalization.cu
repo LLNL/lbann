@@ -452,10 +452,6 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute() {
 
   const bool is_training = this->m_model->get_execution_context().get_execution_mode() == execution_mode::training;
 
-  // CUDA objects
-  CHECK_CUDA(cudaSetDevice(hydrogen::gpu::DefaultDevice()));
-  auto&& stream = hydrogen::cuda::GetDefaultStream();
-
   // Matrices
   const auto& input = this->get_prev_activations();
   const auto& local_input = input.LockedMatrix();
@@ -593,10 +589,6 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_compute() {
 #endif // LBANN_HAS_DISTCONV
 
   const bool is_training = this->m_model->get_execution_context().get_execution_mode() == execution_mode::training;
-
-  // CUDA objects
-  CHECK_CUDA(cudaSetDevice(hydrogen::gpu::DefaultDevice()));
-  auto&& stream = hydrogen::cuda::GetDefaultStream();
 
   // Matrices
   const auto& local_scale = this->weights_values(0).LockedMatrix();
