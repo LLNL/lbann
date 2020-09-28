@@ -691,8 +691,7 @@ def create_tests(setup_func,
             cases, use `__file__`.
         procs_per_node (int or str, optional): The number of processes
             per node to pass into `lbann.contrib.launcher.run`.
-            If "auto" is set, lbann.contrib.lc.systems.gpus_per_node()
-            is passed instead.
+            If "auto" is set, gpus_per_node() is passed instead.
         test_name (str, optional): Descriptive name (default: test
             file name with '.py' removed).
         **kwargs: Keyword arguments to pass into
@@ -757,7 +756,7 @@ def create_tests(setup_func,
         if procs_per_node is not None:
             assert 'procs_per_node' not in _kwargs.keys()
             if procs_per_node == "auto":
-                procs_per_node = lbann.contrib.lc.systems.gpus_per_node()
+                procs_per_node = gpus_per_node(lbann)
                 if procs_per_node == 0:
                     e = 'this test requires GPUs.'
                     print('Skip - ' + e)
@@ -1003,3 +1002,12 @@ def print_diff_files(dcmp):
             all_warns.append(d)
 
     return any_files_differ, all_diffs, all_warns
+
+# Get the number of GPUs per compute node.
+# Return 0 if the system is unknown.
+def gpus_per_node(lbann):
+    compute_center = lbann.contrib.launcher.compute_center()
+    if compute_center != "unknown":
+        return getattr(lbann.contrib, compute_center).systems.gpus_per_node()
+    else:
+        return 0

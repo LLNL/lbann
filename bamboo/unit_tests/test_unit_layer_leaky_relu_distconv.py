@@ -91,7 +91,7 @@ def construct_model(lbann):
     y = lbann.LeakyRelu(x, negative_slope=0.01,
                         data_layout='data_parallel',
                         parallel_strategy=create_parallel_strategy(
-                            lbann.contrib.lc.systems.gpus_per_node()))
+                            tools.gpus_per_node(lbann)))
     y = lbann.Reshape(y, dims=str(sample_dims()))
     z = lbann.L2Norm2(y)
     obj.append(z)
@@ -123,7 +123,7 @@ def construct_model(lbann):
     y = lbann.LeakyRelu(x, negative_slope=2,
                         data_layout='model_parallel',
                         parallel_strategy=create_parallel_strategy(
-                            lbann.contrib.lc.systems.gpus_per_node()))
+                            tools.gpus_per_node(lbann)))
     y = lbann.Reshape(y, dims=str(sample_dims()))
     z = lbann.L2Norm2(y)
     obj.append(z)

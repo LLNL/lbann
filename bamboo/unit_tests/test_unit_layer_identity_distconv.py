@@ -4,6 +4,7 @@ import os
 import os.path
 import sys
 import numpy as np
+import pytest
 
 # Bamboo utilities
 current_file = os.path.realpath(__file__)
@@ -86,7 +87,7 @@ def construct_model(lbann):
     x = lbann.Reshape(x, dims="4 4 3")
     y = lbann.Identity(x, data_layout='data_parallel',
                        parallel_strategy=create_parallel_strategy(
-                           lbann.contrib.lc.systems.gpus_per_node()))
+                           tools.gpus_per_node(lbann)))
     x = lbann.Reshape(x, dims="48")
     z = lbann.L2Norm2(y)
     obj.append(z)

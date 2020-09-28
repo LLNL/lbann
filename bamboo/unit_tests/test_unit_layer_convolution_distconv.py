@@ -190,7 +190,7 @@ def construct_model(lbann):
                               conv_dilations=tools.str_list(dilations),
                               has_bias=False,
                               parallel_strategy=create_parallel_strategy(
-                                  lbann.contrib.lc.systems.gpus_per_node()))
+                                  tools.gpus_per_node(lbann)))
         z = lbann.L2Norm2(y)
         obj.append(z)
         metrics.append(lbann.Metric(z, name='basic {}D 3^n convolution'.format(num_dims)))

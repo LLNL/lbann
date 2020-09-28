@@ -206,7 +206,7 @@ def construct_model(lbann):
                           pool_pads=tools.str_list(p["pads"]),
                           pool_mode=p["pool_mode"],
                           parallel_strategy=create_parallel_strategy(
-                              lbann.contrib.lc.systems.gpus_per_node()))
+                              tools.gpus_per_node(lbann)))
         z = lbann.L2Norm2(y)
 
         # Since max pooling is not differentiable, we only use average pooling.
