@@ -86,10 +86,9 @@ void local_fp_gpu(El::Int height,
   const auto& local_height = local_prediction.Height();
   const auto& local_width = local_prediction.Width();
   if (local_height > 0 && local_width > 0) {
-    auto multisync =
-      El::MakeMultiSync(gpu::get_sync_info(local_contribution),
-                        gpu::get_sync_info(local_ground_truth),
-                        gpu::get_sync_info(local_prediction));
+    auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_contribution),
+                                       gpu::get_sync_info(local_ground_truth),
+                                       gpu::get_sync_info(local_prediction));
     const int block_size = 256;
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
@@ -157,12 +156,12 @@ void local_bp_gpu(El::Int height,
   const auto& local_height = local_prediction.Height();
   const auto& local_width = local_prediction.Width();
   if (local_height > 0 && local_width > 0) {
-    auto multisync =
-      El::MakeMultiSync(gpu::get_sync_info(local_gradient_wrt_prediction),
-                        gpu::get_sync_info(local_gradient_wrt_ground_truth),
-                        gpu::get_sync_info(local_gradient_wrt_output),
-                        gpu::get_sync_info(local_ground_truth),
-                        gpu::get_sync_info(local_prediction));
+    auto multisync = El::MakeMultiSync(
+      gpu::get_sync_info(local_gradient_wrt_prediction),
+      gpu::get_sync_info(local_gradient_wrt_ground_truth),
+      gpu::get_sync_info(local_gradient_wrt_output),
+      gpu::get_sync_info(local_ground_truth),
+      gpu::get_sync_info(local_prediction));
     const int block_size = 256;
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
