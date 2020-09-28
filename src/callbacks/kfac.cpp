@@ -154,9 +154,9 @@ void kfac::on_backward_prop_end(model *m, Layer *l) {
     const auto& dtl_child = dynamic_cast<const data_type_layer<DataType>&>(*child);
     const El::AbstractMatrix<DataType>& local_activations = dtl_parent.get_local_activations();
     const El::AbstractMatrix<DataType>& local_errors = dtl_child.get_local_error_signals();
-    const size_t mini_batch_size = dtl_parent.get_activations().Width();
+    const auto mini_batch_size = dtl_parent.get_activations().Width();
     assert(mini_batch_size == dtl_child.get_error_signals().Width());
-    const size_t local_batch_size = local_activations.Width();
+    const auto local_batch_size = local_activations.Width();
 
     if(local_activations.GetDevice() != El::Device::GPU
        || local_errors.GetDevice() != El::Device::GPU) {
