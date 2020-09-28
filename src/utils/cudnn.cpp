@@ -198,21 +198,12 @@ void TensorDescriptor::set(
       "and strides (",strides_in.size(),")");
   }
 
-  std::vector<int> dims, strides;
-  if (dims_in.size() < 3)
+  std::vector<int> dims=std::move(dims_in), strides=std::move(strides_in);
+  if (dims.size() < 3)
   {
     dims.resize(3, 1);
-    std::copy(dims_in.rbegin(), dims_in.rend(), dims.rbegin());
-    if (!strides_in.empty())
-    {
-      strides.resize(3, dims_in.front() * strides_in.front());
-      std::copy(strides_in.rbegin(), strides_in.rend(), strides.rbegin());
-    }
-  }
-  else
-  {
-    dims = std::move(dims_in);
-    strides = std::move(strides_in);
+    if (strides.size() < 3)
+      strides.resize(3, 1);
   }
 
   // Assume data is contiguous if no strides are provided
