@@ -64,7 +64,8 @@ void im2col(const El::Matrix<TensorDataType, El::Device::GPU>& im,
             const int * im_dims,
             const int * im_pads,
             const int * window_dims,
-            const int * window_strides);
+            const int * window_strides,
+            const cudaStream_t& stream);
 
 /// Rearrange matrix columns into image blocks
 /** This is approximately the inverse of im2col. The output tensor im

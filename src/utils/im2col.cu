@@ -93,7 +93,8 @@ void im2col(const El::Matrix<TensorDataType, El::Device::GPU>& im,
             const int * im_dims,
             const int * im_pads,
             const int * window_dims,
-            const int * window_strides) {
+            const int * window_strides,
+            const cudaStream_t& stream) {
 
   // Input and output parameters
   const size_t num_samples = im.Width();
@@ -125,7 +126,6 @@ void im2col(const El::Matrix<TensorDataType, El::Device::GPU>& im,
   if(im_num_dims == 2) {
     constexpr size_t block_size = 256;
     const size_t grid_size = (output_num + block_size - 1) / block_size;
-    auto&& stream = hydrogen::cuda::GetDefaultStream();
     im2col_2d_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
         im.LockedBuffer(), col.Buffer(),
         im_dims[0], im_dims[1],
@@ -152,7 +152,8 @@ void im2col(const El::Matrix<TensorDataType, El::Device::GPU>& im,
                           const int * im_dims,                          \
                           const int * im_pads,                          \
                           const int * window_dims,                      \
-                          const int * window_strides)
+                          const int * window_strides,                   \
+                          const cudaStream_t& stream)
 
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"

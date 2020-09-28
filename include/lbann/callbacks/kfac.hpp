@@ -115,16 +115,18 @@ class kfac : public callback_base {
       const size_t local_batch_size, const size_t num_channels,
       const std::vector<int> spatial_dims,
       const convolution_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU> *l_conv,
-      const bool use_im2col);
+      const bool use_im2col,
+      const cudaStream_t& stream);
 
   /** @brief Gets the inverse matrix of A. **/
   static void get_matrix_inverse(
       El::Matrix<DataType, El::Device::GPU>& Ainv,
       const El::Matrix<DataType, El::Device::GPU>& A,
-      const bool report_time=false,
-      const DataType damping=0,
-      const DataType damping_bn_err=0,
-      const bool is_bn=false);
+      const bool report_time,
+      const DataType damping,
+      const DataType damping_bn_err,
+      const bool is_bn,
+      const cudaStream_t& stream);
 
   /** @brief Returns the pi constant. **/
   static double compute_pi(
@@ -139,7 +141,8 @@ class kfac : public callback_base {
   /** @brief Perform all-reduce on the lower triangular of a symmetric matrix. **/
   static void allreduce_lower_tri(
       El::Matrix<DataType, El::Device::GPU>& A,
-      lbann_comm *comm);
+      lbann_comm *comm,
+      const cudaStream_t& stream);
 
   /** @brief Add the damping value to the diagonal elements of A. **/
   template <typename TensorDataType>
@@ -147,14 +150,16 @@ class kfac : public callback_base {
       TensorDataType * __restrict__ A,
       const size_t height,
       const TensorDataType value,
-      const TensorDataType value_bn_err=0,
-      const bool is_bn=false);
+      const TensorDataType value_bn_err,
+      const bool is_bn,
+      const cudaStream_t& stream);
 
   /** @brief Fill the upper trianglar with the lower trianglar. **/
   template <typename TensorDataType>
   static void fill_upper_tri(
       TensorDataType * __restrict__ A,
-      const size_t height);
+      const size_t height,
+      const cudaStream_t& stream);
 
   /** @brief Update a Kronecker factor matrix using decay.
    *
@@ -163,7 +168,8 @@ class kfac : public callback_base {
   static void update_kronecker_average(
       TensorDataType * __restrict__ Aave,
       const TensorDataType * __restrict__ A,
-      const size_t count, const DataType decay);
+      const size_t count, const DataType decay,
+      const cudaStream_t& stream);
 
   /** @brief Transpose NC(D)HW matrix to N(D)HWC. **/
   template <typename TensorDataType>
@@ -171,7 +177,8 @@ class kfac : public callback_base {
       const TensorDataType * __restrict__ activations,
       TensorDataType * __restrict__ act_columns,
       const size_t mini_batch_size, const size_t num_channels,
-      const size_t spatial_prod);
+      const size_t spatial_prod,
+      const cudaStream_t& stream);
 
   /** @brief Compute the factor of a batch-normalization layer. **/
   template <typename TensorDataType>
@@ -183,7 +190,8 @@ class kfac : public callback_base {
       TensorDataType * __restrict__ factor,
       const size_t batch_size,
       const size_t num_channels,
-      const size_t spatial_prod);
+      const size_t spatial_prod,
+      const cudaStream_t& stream);
 
   /** @brief Substitute the identity matrix.
    *  TODO: Replace with El::Identity<El::Device::GPU>
@@ -191,21 +199,24 @@ class kfac : public callback_base {
   template <typename TensorDataType>
   static void identity(
       TensorDataType * __restrict__ A,
-      const size_t height);
+      const size_t height,
+      const cudaStream_t& stream);
 
   /** @brief Pack the lower triangular of a symmetric matrix. **/
   template <typename TensorDataType>
   static void pack_lower_tri(
       TensorDataType * __restrict__ L,
       const TensorDataType * __restrict__ A,
-      const size_t height);
+      const size_t height,
+      const cudaStream_t& stream);
 
   /** @brief Unpack the lower triangular of a symmetric matrix. **/
   template <typename TensorDataType>
   static void unpack_lower_tri(
       TensorDataType * __restrict__ A,
       const TensorDataType * __restrict__ L,
-      const size_t height);
+      const size_t height,
+      const cudaStream_t& stream);
 
   /** @brief Pairs of the initial and the target damping value.
    *  If only one value is specified, it will be used throughout training.

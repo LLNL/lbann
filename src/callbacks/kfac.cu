@@ -166,10 +166,10 @@ void kfac::add_to_diagonal(
     const size_t height,
     const TensorDataType damping,
     const TensorDataType damping_bn_err,
-    const bool is_bn) {
+    const bool is_bn,
+    const cudaStream_t& stream) {
   constexpr size_t block_size = 256;
   const size_t grid_size = (height + block_size - 1) / block_size;
-  auto&& stream = hydrogen::cuda::GetDefaultStream();
   kfac_add_to_diagonal_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
       A, height, damping,
       damping_bn_err, is_bn);
@@ -178,11 +178,11 @@ void kfac::add_to_diagonal(
 template <typename TensorDataType>
 void kfac::fill_upper_tri(
     TensorDataType * __restrict__ A,
-    const size_t height) {
+    const size_t height,
+    const cudaStream_t& stream) {
   constexpr size_t block_size = 256;
   // TODO: Launch N^2/2 threads instead of N^2
   const size_t grid_size = (height*height + block_size - 1) / block_size;
-  auto&& stream =  hydrogen::cuda::GetDefaultStream();
   kfac_fill_upper_tri_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
       A, height);
 }
@@ -191,10 +191,10 @@ template <typename TensorDataType>
 void kfac::update_kronecker_average(
     TensorDataType * __restrict__ Aave,
     const TensorDataType * __restrict__ A,
-    const size_t count, const DataType decay) {
+    const size_t count, const DataType decay,
+    const cudaStream_t& stream) {
   constexpr size_t block_size = 256;
   const size_t grid_size = (count + block_size - 1) / block_size;
-  auto&& stream =  hydrogen::cuda::GetDefaultStream();
   kfac_update_kronecker_average_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
       Aave, A, count, decay);
 }
@@ -204,11 +204,11 @@ void kfac::conv_transpose(
     const TensorDataType * __restrict__ activations,
     TensorDataType * __restrict__ act_columns,
     const size_t mini_batch_size, const size_t num_channels,
-    const size_t spatial_prod) {
+    const size_t spatial_prod,
+    const cudaStream_t& stream) {
   constexpr size_t block_size = 256;
   const size_t num_elems = mini_batch_size*num_channels*spatial_prod;
   const size_t grid_size = (num_elems + block_size - 1) / block_size;
-  auto&& stream =  hydrogen::cuda::GetDefaultStream();
   kfac_conv_transpose_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
       activations, act_columns, mini_batch_size, num_channels, spatial_prod,
       num_elems);
@@ -223,11 +223,11 @@ void kfac::compute_bn_factor(
     TensorDataType * __restrict__ factor,
     const size_t batch_size,
     const size_t num_channels,
-    const size_t spatial_prod) {
+    const size_t spatial_prod,
+    const cudaStream_t& stream) {
   constexpr size_t block_size = 256;
   const size_t num_threads = batch_size * num_channels;
   const size_t grid_size = (num_threads + block_size - 1) / block_size;
-  auto&& stream =  hydrogen::cuda::GetDefaultStream();
   kfac_compute_bn_factor_kernel<TensorDataType>
       <<<grid_size, block_size, 0, stream>>>(
           activations, errors,
@@ -240,11 +240,11 @@ void kfac::compute_bn_factor(
 template <typename TensorDataType>
 void kfac::identity(
     TensorDataType * __restrict__ A,
-    const size_t height) {
+    const size_t height,
+    const cudaStream_t& stream) {
   constexpr size_t block_size = 256;
   const size_t num_threads = height*height;
   const size_t grid_size = (num_threads + block_size - 1) / block_size;
-  auto&& stream =  hydrogen::cuda::GetDefaultStream();
   kfac_identity_kernel<TensorDataType>
       <<<grid_size, block_size, 0, stream>>>(
           A, height);
@@ -254,11 +254,11 @@ template <typename TensorDataType>
 void kfac::pack_lower_tri(
     TensorDataType * __restrict__ L,
     const TensorDataType * __restrict__ A,
-    const size_t height) {
+    const size_t height,
+    const cudaStream_t& stream) {
   constexpr size_t block_size = 256;
   const size_t num_threads = height*height;
   const size_t grid_size = (num_threads + block_size - 1) / block_size;
-  auto&& stream =  hydrogen::cuda::GetDefaultStream();
   // TODO: Launch N^2/2 threads instead of N^2
   kfac_pack_lower_tri_kernel<TensorDataType>
       <<<grid_size, block_size, 0, stream>>>(
@@ -269,11 +269,11 @@ template <typename TensorDataType>
 void kfac::unpack_lower_tri(
     TensorDataType * __restrict__ A,
     const TensorDataType * __restrict__ L,
-    const size_t height) {
+    const size_t height,
+    const cudaStream_t& stream) {
   constexpr size_t block_size = 256;
   const size_t num_threads = height*height;
   const size_t grid_size = (num_threads + block_size - 1) / block_size;
-  auto&& stream =  hydrogen::cuda::GetDefaultStream();
   // TODO: Launch N^2/2 threads instead of N^2
   kfac_unpack_lower_tri_kernel<TensorDataType>
       <<<grid_size, block_size, 0, stream>>>(
@@ -286,20 +286,24 @@ void kfac::unpack_lower_tri(
       const size_t height,                              \
       const T value,                                    \
       const T value_bn_err,                             \
-      const bool is_bn);                                \
+      const bool is_bn,                                 \
+      const cudaStream_t& stream);                      \
   template void kfac::fill_upper_tri<T>(                \
       T * __restrict__ A,                               \
-      const size_t height);                             \
+      const size_t height,                              \
+      const cudaStream_t& stream);                      \
   template void kfac::update_kronecker_average<T>(      \
       T * __restrict__ Aave,                            \
       const T * __restrict__ A,                         \
-      const size_t count, const DataType decay);        \
+      const size_t count, const DataType decay,         \
+      const cudaStream_t& stream);                      \
   template void kfac::conv_transpose<T>(                \
       const T * __restrict__ activations,               \
       T * __restrict__ act_columns,                     \
       const size_t mini_batch_size,                     \
       const size_t num_channels,                        \
-      const size_t spatial_prod);                       \
+      const size_t spatial_prod,                        \
+      const cudaStream_t& stream);                      \
   template void kfac::compute_bn_factor<T>(             \
       const T * __restrict__ activations,               \
       const T * __restrict__ errors,                    \
@@ -308,19 +312,22 @@ void kfac::unpack_lower_tri(
       T * __restrict__ factor,                          \
       const size_t batch_size,                          \
       const size_t num_channels,                        \
-      const size_t spatial_prod);                       \
+      const size_t spatial_prod,                        \
+      const cudaStream_t& stream);                      \
   template void kfac::identity<T>(                      \
       T * __restrict__ A,                               \
-      const size_t height);                             \
+      const size_t height,                              \
+      const cudaStream_t& stream);                      \
   template void kfac::pack_lower_tri<T>(                \
       T * __restrict__ L,                               \
       const T * __restrict__ A,                         \
-      const size_t height);                             \
+      const size_t height,                              \
+      const cudaStream_t& stream);                      \
   template void kfac::unpack_lower_tri<T>(              \
       T * __restrict__ A,                               \
       const T * __restrict__ L,                         \
-      const size_t height)
-
+      const size_t height,                              \
+      const cudaStream_t& stream)
 
 
 #define LBANN_INSTANTIATE_GPU_HALF
