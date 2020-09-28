@@ -232,9 +232,8 @@ void kfac::on_backward_prop_end(model *m, Layer *l) {
               l_conv, false);
         }
 
-        // TODO: Communicate only the lower triangulars
-        comm->allreduce((El::AbstractMatrix<DataType>&) A, comm->get_trainer_comm());
-        comm->allreduce((El::AbstractMatrix<DataType>&) G, comm->get_trainer_comm());
+        allreduce_lower_tri(A, comm);
+        allreduce_lower_tri(G, comm);
 
         // Compute exponential moving average of the factors
         if(m_kronecker_average.find(layer_id) == m_kronecker_average.end())
@@ -452,7 +451,8 @@ void kfac::on_backward_prop_end(model *m, Layer *l) {
             El::NORMAL, El::TRANSPOSE,
             alpha, factor, factor,
             El::TypeTraits<DataType>::Zero(), fisher_block);
-        comm->allreduce((El::AbstractMatrix<DataType>&) fisher_block, comm->get_trainer_comm());
+
+        allreduce_lower_tri(fisher_block, comm);
 
         if(m_kronecker_inverse.find(layer_id) == m_kronecker_inverse.end())
           m_kronecker_inverse.emplace(layer_id, std::make_pair(
@@ -661,6 +661,15 @@ std::string kfac::get_matrix_stat(const El::Matrix<DataType, El::Device::GPU>& X
       << std::scientific
       << nrm2;
   return oss.str();
+}
+
+void kfac::allreduce_lower_tri(El::Matrix<DataType, El::Device::GPU>& A,
+                               lbann_comm *comm) {
+  assert(A.Height() == A.Width());
+  El::Matrix<DataType, El::Device::GPU> AL(A.Height()*(A.Height()+1)/2, 1);
+  pack_lower_tri(AL.Buffer(), A.LockedBuffer(), A.Height());
+  comm->allreduce((El::AbstractMatrix<DataType>&) AL, comm->get_trainer_comm());
+  unpack_lower_tri(A.Buffer(), AL.Buffer(), A.Height());
 }
 
 std::unique_ptr<callback_base>

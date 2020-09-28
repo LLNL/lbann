@@ -128,6 +128,36 @@ __global__ void kfac_identity_kernel(
   }
 }
 
+template <typename TensorDataType>
+__global__ void kfac_pack_lower_tri_kernel(
+    TensorDataType * __restrict__ L,
+    const TensorDataType * __restrict__ A,
+    const size_t height) {
+  const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
+  if(gid < height*height) {
+    const size_t row = gid%height;
+    const size_t col = gid/height;
+    if(row >= col) {
+      L[row+(2*height-(col-1))*col/2-col] = A[gid];
+    }
+  }
+}
+
+template <typename TensorDataType>
+__global__ void kfac_unpack_lower_tri_kernel(
+    TensorDataType * __restrict__ A,
+    const TensorDataType * __restrict__ L,
+    const size_t height) {
+  const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
+  if(gid < height*height) {
+    const size_t row = gid%height;
+    const size_t col = gid/height;
+    if(row >= col) {
+      A[gid] = A[col+row*height] = L[row+(2*height-(col-1))*col/2-col];
+    }
+  }
+}
+
 } // namespace
 
 template <typename TensorDataType>
@@ -220,6 +250,36 @@ void kfac::identity(
           A, height);
 }
 
+template <typename TensorDataType>
+void kfac::pack_lower_tri(
+    TensorDataType * __restrict__ L,
+    const TensorDataType * __restrict__ A,
+    const size_t height) {
+  constexpr size_t block_size = 256;
+  const size_t num_threads = height*height;
+  const size_t grid_size = (num_threads + block_size - 1) / block_size;
+  auto&& stream =  hydrogen::cuda::GetDefaultStream();
+  // TODO: Launch N^2/2 threads instead of N^2
+  kfac_pack_lower_tri_kernel<TensorDataType>
+      <<<grid_size, block_size, 0, stream>>>(
+          L, A, height);
+}
+
+template <typename TensorDataType>
+void kfac::unpack_lower_tri(
+    TensorDataType * __restrict__ A,
+    const TensorDataType * __restrict__ L,
+    const size_t height) {
+  constexpr size_t block_size = 256;
+  const size_t num_threads = height*height;
+  const size_t grid_size = (num_threads + block_size - 1) / block_size;
+  auto&& stream =  hydrogen::cuda::GetDefaultStream();
+  // TODO: Launch N^2/2 threads instead of N^2
+  kfac_unpack_lower_tri_kernel<TensorDataType>
+      <<<grid_size, block_size, 0, stream>>>(
+          A, L, height);
+}
+
 #define PROTO(T)                                        \
   template void kfac::add_to_diagonal<T>(               \
       T* __restrict__ A,                                \
@@ -251,11 +311,20 @@ void kfac::identity(
       const size_t spatial_prod);                       \
   template void kfac::identity<T>(                      \
       T * __restrict__ A,                               \
+      const size_t height);                             \
+  template void kfac::pack_lower_tri<T>(                \
+      T * __restrict__ L,                               \
+      const T * __restrict__ A,                         \
+      const size_t height);                             \
+  template void kfac::unpack_lower_tri<T>(              \
+      T * __restrict__ A,                               \
+      const T * __restrict__ L,                         \
       const size_t height)
+
 
 
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
 
-        } // namespace callback
+} // namespace callback
 } // namespace lbann

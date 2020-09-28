@@ -66,17 +66,17 @@ class kfac : public callback_base {
        const bool use_pi,
        const std::vector<size_t> update_intervals,
        const size_t update_interval_steps)
-      : callback_base(),
-        m_damping_act_params(damping_act_params),
-        m_damping_err_params(damping_err_params),
-        m_damping_bn_act_params(damping_bn_act_params), m_damping_bn_err_params(damping_bn_err_params),
-        m_damping_warmup_steps(damping_warmup_steps),
-        m_kronecker_decay(kronecker_decay),
-        m_print_time(print_time), m_print_matrix(print_matrix),
-        m_print_matrix_summary(print_matrix_summary),
-        m_use_pi(use_pi),
-        m_update_intervals(update_intervals),
-        m_update_interval_steps(update_interval_steps) {
+  : callback_base(),
+    m_damping_act_params(damping_act_params),
+    m_damping_err_params(damping_err_params),
+    m_damping_bn_act_params(damping_bn_act_params), m_damping_bn_err_params(damping_bn_err_params),
+    m_damping_warmup_steps(damping_warmup_steps),
+    m_kronecker_decay(kronecker_decay),
+    m_print_time(print_time), m_print_matrix(print_matrix),
+    m_print_matrix_summary(print_matrix_summary),
+    m_use_pi(use_pi),
+    m_update_intervals(update_intervals),
+    m_update_interval_steps(update_interval_steps) {
     m_damping_act = m_damping_act_params[0];
     m_damping_err = m_damping_err_params[0];
     m_damping_bn_act = m_damping_bn_act_params[0];
@@ -136,6 +136,11 @@ class kfac : public callback_base {
       const El::Matrix<DataType, El::Device::GPU>& X,
       const char *name);
 
+  /** @brief Perform all-reduce on the lower triangular of a symmetric matrix. **/
+  static void allreduce_lower_tri(
+      El::Matrix<DataType, El::Device::GPU>& A,
+      lbann_comm *comm);
+
   /** @brief Add the damping value to the diagonal elements of A. **/
   template <typename TensorDataType>
   static void add_to_diagonal(
@@ -186,6 +191,20 @@ class kfac : public callback_base {
   template <typename TensorDataType>
   static void identity(
       TensorDataType * __restrict__ A,
+      const size_t height);
+
+  /** @brief Pack the lower triangular of a symmetric matrix. **/
+  template <typename TensorDataType>
+  static void pack_lower_tri(
+      TensorDataType * __restrict__ L,
+      const TensorDataType * __restrict__ A,
+      const size_t height);
+
+  /** @brief Unpack the lower triangular of a symmetric matrix. **/
+  template <typename TensorDataType>
+  static void unpack_lower_tri(
+      TensorDataType * __restrict__ A,
+      const TensorDataType * __restrict__ L,
       const size_t height);
 
   /** @brief Pairs of the initial and the target damping value.
