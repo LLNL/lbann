@@ -85,7 +85,7 @@ template <typename TensorDataType, typename EvalDataType>
 void fp_gpu(lbann_comm& comm,
             const El::AbstractDistMatrix<TensorDataType>& input,
             EvalDataType& value,
-            cuda::event_wrapper& copy_event) {
+            gpu_lib::event_wrapper& copy_event) {
   const EvalDataType zero = El::TypeTraits<EvalDataType>::Zero();
   const EvalDataType one = El::TypeTraits<EvalDataType>::One();
 
@@ -170,7 +170,7 @@ template <typename EvalDataType>
 void fp_gpu(lbann_comm& comm,
             const El::AbstractDistMatrix<cpu_fp16>& input,
             EvalDataType& value,
-            cuda::event_wrapper& copy_event) {
+            gpu_lib::event_wrapper& copy_event) {
   LBANN_ERROR("This function is not supported with "
               "the CPU FP16 type on GPUs. "
               "A severe logic error has occured; please "
