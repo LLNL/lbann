@@ -128,10 +128,10 @@ void local_bp_gpu(const El::AbstractMatrix<TensorDataType>& local_input,
                   const El::AbstractMatrix<TensorDataType>& local_gradient_wrt_output,
                   El::AbstractMatrix<TensorDataType>& local_gradient_wrt_input) {
   if (!local_input.IsEmpty()) {
-    auto multisync =
-      El::MakeMultiSync(gpu::get_sync_info(local_gradient_wrt_input),
-                        gpu::get_sync_info(local_gradient_wrt_output),
-                        gpu::get_sync_info(local_input));
+    auto multisync = El::MakeMultiSync(
+      gpu::get_sync_info(local_gradient_wrt_input),
+      gpu::get_sync_info(local_gradient_wrt_output),
+      gpu::get_sync_info(local_input));
     const auto& local_height = local_input.Height();
     const auto& local_width = local_input.Width();
     const El::Int block_size = 256;
