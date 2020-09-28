@@ -89,7 +89,7 @@ class kfac : public callback_base {
   void setup(trainer *t) override {}
   void on_backward_prop_end(model *m) override;
   void on_epoch_end(model *m) override;
-  void on_backward_prop_end(model *m, Layer *l) override;
+  void on_backward_prop_end(model *m, Layer *l) override {}
   std::string name() const override { return "K-FAC test"; }
 
   /** @brief The default parameters of a Tikhonov damping technique. */
