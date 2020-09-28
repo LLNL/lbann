@@ -140,7 +140,7 @@ void local_bp(TensorDataType negative_slope,
       negative_slope, height, width,
       input.LockedBuffer(), input.LDim(),
       gradient_wrt_output.LockedBuffer(), gradient_wrt_output.LDim(),
-      gradient_wrt_input.LockedBuffer(), gradient_wrt_input.LDim());
+      gradient_wrt_input.Buffer(), gradient_wrt_input.LDim());
   }
 
 }
