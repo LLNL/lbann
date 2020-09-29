@@ -35,6 +35,18 @@
 namespace lbann {
 namespace callback {
 
+struct kfac_fc_conv_layer_metadata {
+  size_t layer_id;
+  convolution_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>* l_conv;
+  bool is_fc, is_conv;
+};
+
+struct kfac_bn_layer_metadata {
+  size_t layer_id;
+  size_t num_channels, spatial_prod;
+  bool is_after_fc, is_after_conv;
+};
+
 /** Callback hooks for the K-FAC method.
  *
  * Martens, James and Roger Grosse. "Optimizing neural networks with
