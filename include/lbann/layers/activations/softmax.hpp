@@ -30,6 +30,7 @@
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/utils/cudnn.hpp"
 #include "lbann/utils/distconv.hpp"
+#include "lbann/utils/dnn_lib/cudnn/softmax.hpp"
 
 // Threshold outputs to a minimum value.
 
@@ -41,28 +42,6 @@
 #define LBANN_ENABLE_SOFTMAX_THRESHOLD
 
 namespace lbann {
-
-/** @brief Which tensor dimensions to apply softmax over. */
-enum class softmax_mode {
-  INVALID,
-  /** @brief Sample-wise softmax.
-   *
-   *  Slice tensor along the sample dimension (assuming data in NCHW
-   *  format) and apply softmax independently to each slice (once per
-   *  sample).
-   */
-  INSTANCE,
-  /** @brief Position-wise softmax.
-   *
-   *  Split tensor along all but the channel dimension (assuming data
-   *  in NCHW format) and apply softmax independently to each piece
-   *  (once per spatial position per sample).
-   *
-   *  This is not to be confused with @c channelwise_softmax, which
-   *  slices along the sample and channel dimensions.
-   */
-  CHANNEL
-};
 
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
