@@ -122,7 +122,7 @@ void data_type_layer<TensorDataType>::forward_prop() {
 
 #if defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
   // Synchronize GPUs and check for errors
-  if (using_gpus()) { El::GPUManager::SynchronizeDevice(true); }
+  if (using_gpus()) { hydrogen::gpu::SynchronizeDevice(); }
 #endif // defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
 
 #ifdef LBANN_HAS_DISTCONV
@@ -143,7 +143,7 @@ void data_type_layer<TensorDataType>::forward_prop() {
 
 #if defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
   // Synchronize GPUs and check for errors
-  if (using_gpus()) { El::GPUManager::SynchronizeDevice(true); }
+  if (using_gpus()) { hydrogen::gpu::SynchronizeDevice(); }
 #endif // defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
 
   m_fp_time += get_time() - fp_start;
@@ -161,7 +161,7 @@ void data_type_layer<TensorDataType>::back_prop_impl_() {
 
 #if defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
   // Synchronize GPUs and check for errors
-  if (using_gpus()) { El::GPUManager::SynchronizeDevice(true); }
+  if (using_gpus()) { hydrogen::gpu::SynchronizeDevice(); }
 #endif // defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
 
 #ifdef LBANN_HAS_DISTCONV
@@ -182,7 +182,7 @@ void data_type_layer<TensorDataType>::back_prop_impl_() {
 
 #if defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
   // Synchronize GPUs and check for errors
-  if (using_gpus()) { El::GPUManager::SynchronizeDevice(true); }
+  if (using_gpus()) { hydrogen::gpu::SynchronizeDevice(); }
 #endif // defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
 
   m_bp_time += get_time() - bp_start;
@@ -860,7 +860,7 @@ void data_type_layer<TensorDataType>::bp_setup_gradient_wrt_inputs(
 
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType>
-void data_type_layer<TensorDataType>::setup_distconv_adapter() {
+void data_type_layer<TensorDataType>::setup_distconv_adapter(const DataReaderMetaData& dr_metadata) {
   this->get_distconv_adapter_ptr() = make_unique<data_type_distconv_adapter<TensorDataType>>(*this);
 }
 

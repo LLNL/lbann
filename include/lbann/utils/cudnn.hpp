@@ -144,6 +144,229 @@ void copy_activation_desc(const cudnnActivationDescriptor_t& src,
                           cudnnActivationDescriptor_t& dst);
 
 ////////////////////////////////////////////////////////////
+// Wrapper classes for cuDNN types
+////////////////////////////////////////////////////////////
+
+/** @brief Wrapper around @c cudnnTensorDescriptor_t */
+class TensorDescriptor {
+
+public:
+
+  TensorDescriptor(cudnnTensorDescriptor_t desc=nullptr);
+  template <typename... ArgTs>
+  TensorDescriptor(ArgTs... args) {
+    set(args...);
+  }
+
+  ~TensorDescriptor();
+
+  // Copy-and-swap idiom
+  TensorDescriptor(const TensorDescriptor&);
+  TensorDescriptor(TensorDescriptor&&);
+  TensorDescriptor& operator=(TensorDescriptor);
+  friend void swap(TensorDescriptor& first, TensorDescriptor& second);
+
+  /** @brief Take ownership of cuDNN object */
+  void reset(cudnnTensorDescriptor_t desc=nullptr);
+  /** @brief Return cuDNN object and release ownership */
+  cudnnTensorDescriptor_t release();
+  /** @brief Return cuDNN object without releasing ownership */
+  cudnnTensorDescriptor_t get() const noexcept;
+  /** @brief Return cuDNN object without releasing ownership */
+  operator cudnnTensorDescriptor_t() const noexcept;
+
+  /** @brief Create cuDNN object
+   *
+   *  Does nothing if already created.
+   */
+  void create();
+  /** @brief Configure cuDNN object
+   *
+   *  Creates cuDNN object if needed.
+   */
+  void set(
+    cudnnDataType_t data_type,
+    const std::vector<int>& dims,
+    std::vector<int> strides = {});
+  /** @brief Configure cuDNN object
+   *
+   *  Creates cuDNN object if needed.
+   */
+  template <typename... IntTs>
+  void set(
+    cudnnDataType_t data_type,
+    IntTs... dims) {
+    set(data_type, {static_cast<int>(dims)...});
+  }
+
+private:
+
+  cudnnTensorDescriptor_t desc_{nullptr};
+
+};
+
+/** Wrapper around @c cudnnFilterDescriptor_t */
+class FilterDescriptor {
+
+public:
+
+  FilterDescriptor(cudnnFilterDescriptor_t desc=nullptr);
+  template <typename... ArgTs>
+  FilterDescriptor(ArgTs... args) {
+    set(args...);
+  }
+
+  ~FilterDescriptor();
+
+  // Copy-and-swap idiom
+  FilterDescriptor(const FilterDescriptor&);
+  FilterDescriptor(FilterDescriptor&&);
+  FilterDescriptor& operator=(FilterDescriptor);
+  friend void swap(FilterDescriptor& first, FilterDescriptor& second);
+
+  /** @brief Take ownership of cuDNN object */
+  void reset(cudnnFilterDescriptor_t desc=nullptr);
+  /** @brief Return cuDNN object and release ownership */
+  cudnnFilterDescriptor_t release();
+  /** @brief Return cuDNN object without releasing ownership */
+  cudnnFilterDescriptor_t get() const noexcept;
+  /** @brief Return cuDNN object without releasing ownership */
+  operator cudnnFilterDescriptor_t() const noexcept;
+
+  /** Create cuDNN object
+   *
+   *  Does nothing if already created.
+   */
+  void create();
+  /** Configure cuDNN object
+   *
+   *  Creates cuDNN object if needed.
+   */
+  void set(
+    cudnnDataType_t data_type,
+    cudnnTensorFormat_t format,
+    const std::vector<int>& dims);
+  /** Configure cuDNN object
+   *
+   *  Creates cuDNN object if needed.
+   */
+  template <typename... IntTs>
+  void set(
+    cudnnDataType_t data_type,
+    cudnnTensorFormat_t format,
+    IntTs... dims) {
+    set(data_type, format, {static_cast<int>(dims)...});
+  }
+
+private:
+
+  cudnnFilterDescriptor_t desc_{nullptr};
+
+};
+
+/** Wrapper around @c cudnnDropoutDescriptor_t */
+class DropoutDescriptor {
+
+public:
+
+  DropoutDescriptor(cudnnDropoutDescriptor_t desc=nullptr);
+  template <typename... ArgTs>
+  DropoutDescriptor(ArgTs... args) {
+    set(args...);
+  }
+
+  ~DropoutDescriptor();
+
+  // Copy-and-swap idiom
+  DropoutDescriptor(const DropoutDescriptor&);
+  DropoutDescriptor(DropoutDescriptor&&);
+  DropoutDescriptor& operator=(DropoutDescriptor);
+  friend void swap(DropoutDescriptor& first, DropoutDescriptor& second);
+
+  /** @brief Take ownership of cuDNN object */
+  void reset(cudnnDropoutDescriptor_t desc=nullptr);
+  /** @brief Return cuDNN object and release ownership */
+  cudnnDropoutDescriptor_t release();
+  /** @brief Return cuDNN object without releasing ownership */
+  cudnnDropoutDescriptor_t get() const noexcept;
+  /** @brief Return cuDNN object without releasing ownership */
+  operator cudnnDropoutDescriptor_t() const noexcept;
+
+  /** Create cuDNN object
+   *
+   *  Does nothing if already created.
+   */
+  void create();
+  /** Configure cuDNN object
+   *
+   *  Creates cuDNN object if needed.
+   */
+  void set(
+    float dropout,
+    void* states,
+    size_t states_size,
+    unsigned long long seed);
+
+private:
+
+  cudnnDropoutDescriptor_t desc_{nullptr};
+
+};
+
+/** Wrapper around @c cudnnRNNDescriptor_t */
+class RNNDescriptor {
+
+public:
+
+  RNNDescriptor(cudnnRNNDescriptor_t desc=nullptr);
+  template <typename... ArgTs>
+  RNNDescriptor(ArgTs... args) {
+    set(args...);
+  }
+
+  ~RNNDescriptor();
+
+  // Copy-and-swap idiom
+  RNNDescriptor(const RNNDescriptor&);
+  RNNDescriptor(RNNDescriptor&&);
+  RNNDescriptor& operator=(RNNDescriptor);
+  friend void swap(RNNDescriptor& first, RNNDescriptor& second);
+
+  /** @brief Take ownership of cuDNN object */
+  void reset(cudnnRNNDescriptor_t desc=nullptr);
+  /** @brief Return cuDNN object and release ownership */
+  cudnnRNNDescriptor_t release();
+  /** @brief Return cuDNN object without releasing ownership */
+  cudnnRNNDescriptor_t get() const noexcept;
+  /** @brief Return cuDNN object without releasing ownership */
+  operator cudnnRNNDescriptor_t() const noexcept;
+
+  /** Create cuDNN object
+   *
+   *  Does nothing if already created.
+   */
+  void create();
+  /** Configure cuDNN object
+   *
+   *  Creates cuDNN object if needed.
+   */
+  void set(
+    size_t hidden_size,
+    size_t num_layers,
+    cudnnDropoutDescriptor_t dropout_desc,
+    cudnnRNNInputMode_t input_mode,
+    cudnnDirectionMode_t direction,
+    cudnnRNNMode_t mode,
+    cudnnRNNAlgo_t algo,
+    cudnnDataType_t math_precision);
+
+private:
+
+  cudnnRNNDescriptor_t desc_{nullptr};
+
+};
+
+////////////////////////////////////////////////////////////
 // cuDNN tensor managers
 ////////////////////////////////////////////////////////////
 

@@ -178,14 +178,16 @@ WRAP_UNARY_CUDA_MATH_FUNCTION(atanh)
 
 template <typename T> __device__ __forceinline__
 bool isfinite(T const& x) { return ::isfinite(x); }
-
+template <typename T> __device__ __forceinline__
+bool isinf(T const& x) { return ::isinf(x); }
 template <typename T> __device__ __forceinline__
 bool isnan(T const& x) { return ::isnan(x); }
 
 #if __CUDA_ARCH__ >= 530
 template <> __device__ __forceinline__
 bool isfinite(__half const& x) { return !(::__isnan(x) || ::__hisinf(x)); }
-
+template <> __device__ __forceinline__
+bool isinf(__half const& x) { return ::__hisinf(x); }
 template <> __device__ __forceinline__
 bool isnan(__half const& x) { return ::__hisnan(x); }
 
@@ -443,9 +445,9 @@ void apply_entrywise_unary_operator(
 
   // Launch CUDA kernel
   if (grid_dim > 0) {
-    CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
+    CHECK_CUDA(cudaSetDevice(hydrogen::gpu::DefaultDevice()));
     entrywise_unary_operator_kernel<UnaryOp>
-      <<<grid_dim, block_dim, 0, El::GPUManager::Stream()>>>(
+      <<<grid_dim, block_dim, 0, hydrogen::cuda::GetDefaultStream()>>>(
         height, width, input.LockedBuffer(), input.LDim(),
         output.Buffer(), output.LDim());
   }
@@ -493,9 +495,9 @@ void apply_entrywise_binary_operator(
 
   // Launch CUDA kernel
   if (grid_dim > 0) {
-    CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
+    CHECK_CUDA(cudaSetDevice(hydrogen::gpu::DefaultDevice()));
     entrywise_binary_operator_kernel<BinaryOp>
-      <<<grid_dim, block_dim, 0, El::GPUManager::Stream()>>>(
+      <<<grid_dim, block_dim, 0, hydrogen::cuda::GetDefaultStream()>>>(
         height, width,
         input1.LockedBuffer(), input1.LDim(),
         input2.LockedBuffer(), input2.LDim(),

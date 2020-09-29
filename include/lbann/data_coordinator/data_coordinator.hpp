@@ -35,7 +35,9 @@
 #include <cereal/types/vector.hpp>
 #include <cereal/archives/binary.hpp>
 #include <cereal/archives/xml.hpp>
-
+#ifdef LBANN_HAS_DISTCONV
+#include "lbann/data_readers/data_reader_hdf5.hpp"
+#endif // LBANN_HAS_DISTCONV
 
 namespace lbann {
 
@@ -147,6 +149,7 @@ class data_coordinator {
         map[data_reader_target_mode::CLASSIFICATION] = std::vector<int>(1, dr->get_num_labels());
         map[data_reader_target_mode::REGRESSION] = std::vector<int>(1, dr->get_num_responses());
         map[data_reader_target_mode::RECONSTRUCTION] = dr->get_data_dims();
+        map[data_reader_target_mode::LABEL_RECONSTRUCTION] = dr->get_data_dims();
         map[data_reader_target_mode::NA] = std::vector<int>(1, 0);
         return map;
       }
@@ -182,6 +185,10 @@ class data_coordinator {
     DataReaderMetaData drm;
     drm.data_dims = get_data_dims();
     drm.slice_points = get_slice_points();
+#ifdef LBANN_HAS_DISTCONV
+    const auto training_dr = m_data_readers[execution_mode::training];
+    drm.shuffle_required = training_dr->is_tensor_shuffle_required();
+#endif // LBANN_HAS_DISTCONV
     return drm;
   }
 

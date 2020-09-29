@@ -594,6 +594,7 @@ void model::setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata) {
   }
 
 #ifdef LBANN_HAS_DISTCONV
+  m_max_mini_batch_size_distconv = max_mini_batch_size;
   setup_distconv();
 #endif
 
@@ -1330,7 +1331,7 @@ bool model::load_from_checkpoint_shared(persist& p) {
     //  }
   p.set_restart_dir(trainer_dir);
 #ifdef LBANN_HAS_GPU
-  El::GPUManager::SynchronizeDevice();
+  hydrogen::gpu::SynchronizeDevice();
 #endif // LBANN_HAS_GPU
   return true;
 }

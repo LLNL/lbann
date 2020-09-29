@@ -158,6 +158,9 @@ void adam<TensorDataType>::step_compute_cpu(AbsDistMatrixType& values,
     for (size_t i = 0; i < local_size; ++i) {
       auto& x = values_buffer[i];
       const auto& g = gradient_buffer[i] + m_eps; // Avoid denormalized floats
+      if (std::isinf(g) || std::isnan(g)) {
+        continue;
+      }
       auto& m1 = moment1_buffer[i];
       auto& m2 = moment2_buffer[i];
       m1 = m_beta1 * m1 + (one - m_beta1) * g;
@@ -177,6 +180,9 @@ void adam<TensorDataType>::step_compute_cpu(AbsDistMatrixType& values,
       for (size_t row = 0; row < local_height; ++row) {
         auto& x = values_buffer[row+col*values_ldim];
         const auto& g = gradient_buffer[row+col*gradient_ldim] + m_eps; // Avoid denormalized floats
+        if (std::isinf(g) || std::isnan(g)) {
+          continue;
+        }
         auto& m1 = moment1_buffer[row+col*moment1_ldim];
         auto& m2 = moment2_buffer[row+col*moment2_ldim];
         m1 = m_beta1 * m1 + (one - m_beta1) * g;

@@ -55,13 +55,14 @@ class fetch_data_functor {
     case data_reader_target_mode::NA:
        throw lbann_exception("Invalid data reader target mode");
     case data_reader_target_mode::CLASSIFICATION:
+    case data_reader_target_mode::LABEL_RECONSTRUCTION:
     default:
       num_responses_fetched = data_reader->fetch_labels(responses);
     }
     if(num_samples_fetched != num_responses_fetched) {
-      std::string err = std::string("Number of samples: ") + std::to_string(num_samples_fetched)
-        + std::string(" does not match the number of responses: ") + std::to_string(num_responses_fetched);
-      throw lbann_exception(err);
+      LBANN_ERROR("Number of samples (",num_samples_fetched,") ",
+                  "does not match the ",
+                  "number of responses (",num_responses_fetched,")");
     }
     return num_samples_fetched;
   }
@@ -73,6 +74,7 @@ class fetch_data_functor {
     case data_reader_target_mode::REGRESSION:
     case data_reader_target_mode::RECONSTRUCTION:
     case data_reader_target_mode::CLASSIFICATION:
+    case data_reader_target_mode::LABEL_RECONSTRUCTION:
     default:
       throw lbann_exception("Invalid data reader target mode");
     }

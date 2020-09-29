@@ -542,7 +542,7 @@ private:
   friend class pooling_distconv_adapter<TensorDataType, T_layout, Dev>;
  protected:
   bool is_distconv_supported() const override;
-  void setup_distconv_adapter() override {
+  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override {
     this->get_distconv_adapter_ptr() = make_unique<
       pooling_distconv_adapter<TensorDataType, T_layout, Dev>>(*this);
   }
