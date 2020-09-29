@@ -122,81 +122,119 @@ void kfac::on_backward_prop_end(model *m) {
   // Get some configs
   const auto comm = m->get_comm();
   const auto&& stream = hydrogen::cuda::GetDefaultStream();
-  const size_t num_procs = comm->get_procs_per_trainer();
   const auto& context = static_cast<const sgd_execution_context&>(m->get_execution_context());
   const size_t num_steps = context.get_step();
-  const auto get_layer_assignment =
-      [num_procs](const size_t layer_id) {
-        return (int) (layer_id%num_procs);
-      };
+  const auto layers = m->get_layers();
 
   // List up layers to be updated
-  // TODO: List up only on start up
-  const auto layers = m->get_layers();
-  std::vector<kfac_fc_conv_layer_metadata> fc_conv_layers;
-  std::vector<kfac_bn_layer_metadata> bn_layers;
-  for(auto i_layer = layers.begin(); i_layer != layers.end(); i_layer++) {
-    const size_t layer_id = std::distance(layers.begin(), i_layer);
-    const auto &l = *i_layer;
-    const auto l_fc = dynamic_cast<fully_connected_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>*>(l);
-    const auto l_conv = dynamic_cast<convolution_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>*>(l);
-    const auto l_bn = dynamic_cast<batch_normalization_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>*>(l);
-    const bool is_fc = (l_fc != nullptr);
-    const bool is_conv = (l_conv != nullptr);
-    const bool is_bn = (l_bn != nullptr);
-    if(is_fc || is_conv) {
-      const struct kfac_fc_conv_layer_metadata metadata =
-          {layer_id, l_conv, is_fc, is_conv};
-      fc_conv_layers.push_back(metadata);
+  if(m_learnable_layers.size() == 0){
+    const size_t num_procs = comm->get_procs_per_trainer();
+    int proc_id = 0;
+    for(auto i_layer = layers.begin(); i_layer != layers.end(); i_layer++) {
+      const size_t layer_id = std::distance(layers.begin(), i_layer);
+      const auto &l = *i_layer;
+      const auto l_fc = dynamic_cast<fully_connected_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>*>(l);
+      const auto l_conv = dynamic_cast<convolution_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>*>(l);
+      const auto l_bn = dynamic_cast<batch_normalization_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>*>(l);
+      const bool is_fc = (l_fc != nullptr);
+      const bool is_conv = (l_conv != nullptr);
+      const bool is_bn = (l_bn != nullptr);
+      if(!(is_fc || is_conv || is_bn))
+        continue;
 
-    } else if(is_bn) {
+      // Check layer property
       const auto parent = l->get_parent_layers()[0];
+      const auto child = l->get_child_layers()[0];
       const auto& dtl_parent = dynamic_cast<const data_type_layer<DataType>&>(*parent);
+      const auto& dtl_child = dynamic_cast<const data_type_layer<DataType>&>(*child);
       const El::AbstractMatrix<DataType>& local_activations = dtl_parent.get_local_activations();
-      const bool is_bn_after_fc =
-          (dynamic_cast<const fully_connected_layer<DataType,
-           data_layout::DATA_PARALLEL, El::Device::GPU>*>(parent) != nullptr);
-      const bool is_bn_after_conv =
-          (dynamic_cast<const convolution_layer<DataType,
-           data_layout::DATA_PARALLEL, El::Device::GPU>*>(parent) != nullptr);
-      if(!is_bn_after_fc && !is_bn_after_conv) {
+      const El::AbstractMatrix<DataType>& local_errors = dtl_child.get_local_error_signals();
+      if(l->get_num_parents() != 1 || l->get_num_children() != 1) {
         std::stringstream err;
-        err << "The K-FAC callback only supports batch-normalization layers after "
-            << "fully-connected layers or convolutional layers."
+        err << "The K-FAC callback only supports layers who have exact one parent and child."
             << " layer: " << l->get_name()
-            << " parent type: " << parent->get_type();
+            << ", #parent: " << l->get_num_parents()
+            << ", #child: " << l->get_num_children();
+        LBANN_ERROR(err.str());
+      }
+      if(local_activations.GetDevice() != El::Device::GPU
+         || local_errors.GetDevice() != El::Device::GPU) {
+        std::stringstream err;
+        err << "The K-FAC callback only supports GPU layers."
+            << " layer: " << l->get_name();
         LBANN_ERROR(err.str());
       }
 
-      size_t num_channels;
-      size_t spatial_prod;
-      if(is_bn_after_fc) {
-        num_channels = local_activations.Height();
-        spatial_prod = 1;
-        assert(num_channels == (size_t) local_errors.Height());
-      } else {
-        const auto input_dims = l->get_input_dims(); // CHW
-        num_channels = input_dims[0];
-        spatial_prod = 1;
-        // std::accumulate might overflow for large 3D layers
-        for(auto i = input_dims.begin()+1; i != input_dims.end(); i++)
-          spatial_prod *= *i;
-      }
-      assert(num_channels == (size_t) scale_values.Height());
-      assert(num_channels == (size_t) scale_values.LocalHeight());
-      assert(num_channels == (size_t) bias_values.Height());
-      assert(num_channels == (size_t) bias_values.LocalHeight());
+      if(is_fc || is_conv) {
+        const struct kfac_layer_metadata metadata =
+            {layer_id, l_conv, is_fc, is_conv, false, false, 0, 0,
+             proc_id};
+        m_learnable_layers.push_back(metadata);
 
-      const struct kfac_bn_layer_metadata metadata = {
-        layer_id, num_channels, spatial_prod,
-        is_bn_after_fc, is_bn_after_conv};
-      bn_layers.push_back(metadata);
+      } else if(is_bn) {
+        const bool is_bn_after_fc =
+            (dynamic_cast<const fully_connected_layer<DataType,
+             data_layout::DATA_PARALLEL, El::Device::GPU>*>(parent) != nullptr);
+        const bool is_bn_after_conv =
+            (dynamic_cast<const convolution_layer<DataType,
+             data_layout::DATA_PARALLEL, El::Device::GPU>*>(parent) != nullptr);
+        if(!is_bn_after_fc && !is_bn_after_conv) {
+          std::stringstream err;
+          err << "The K-FAC callback only supports batch-normalization layers after "
+              << "fully-connected layers or convolutional layers."
+              << " layer: " << l->get_name()
+              << " parent type: " << parent->get_type();
+          LBANN_ERROR(err.str());
+        }
+
+        size_t num_channels;
+        size_t spatial_prod;
+        if(is_bn_after_fc) {
+          num_channels = local_activations.Height();
+          spatial_prod = 1;
+          assert(num_channels == (size_t) local_errors.Height());
+        } else {
+          const auto input_dims = l->get_input_dims(); // CHW
+          num_channels = input_dims[0];
+          spatial_prod = 1;
+          // std::accumulate might overflow for large 3D layers
+          for(auto i = input_dims.begin()+1; i != input_dims.end(); i++)
+            spatial_prod *= *i;
+        }
+        assert(num_channels == (size_t) scale_values.Height());
+        assert(num_channels == (size_t) scale_values.LocalHeight());
+        assert(num_channels == (size_t) bias_values.Height());
+        assert(num_channels == (size_t) bias_values.LocalHeight());
+
+        const struct kfac_layer_metadata metadata = {
+          layer_id, nullptr,
+          false, false, is_bn_after_fc, is_bn_after_conv,
+          num_channels, spatial_prod, proc_id};
+        m_learnable_layers.push_back(metadata);
+      }
+      proc_id = (proc_id+1)%num_procs;
+    }
+
+    if(comm->am_trainer_master()) {
+      for(const auto metadata : m_learnable_layers) {
+        std::cout << "K-FAC setup: "
+                  << "name=" << layers[metadata.layer_id]->get_name()
+                  << ", id=" << metadata.layer_id
+                  << ", is_fc=" << metadata.is_fc
+                  << ", is_conv=" << metadata.is_conv
+                  << ", is_bn_after_fc=" << metadata.is_bn_after_fc
+                  << ", is_bn_after_conv=" << metadata.is_bn_after_conv
+                  << ", proc_rank=" << metadata.proc_rank
+                  << std::endl;
+      }
     }
   }
 
   // Step 1: Ensure that each process has averaged Kronecker factors
   // for the model-parallel part.
-  for(const auto metadata : fc_conv_layers) {
+  for(const auto metadata : m_learnable_layers) {
+    if(!(metadata.is_fc || metadata.is_conv))
+      continue;
     const auto &l = layers[metadata.layer_id];
     auto& weights = l->get_weights(0);
     if(l->num_weights() != 1) {
@@ -209,19 +247,11 @@ void kfac::on_backward_prop_end(model *m) {
 
     const bool is_update_required = (num_steps%m_update_interval_steps) == 0
         || (m_kronecker_average.find(metadata.layer_id) == m_kronecker_average.end()
-            && comm->get_rank_in_trainer() == get_layer_assignment(metadata.layer_id));
+            && comm->get_rank_in_trainer() == metadata.proc_rank);
     if(!is_update_required)
       continue;
 
     // Get activations, errors, and gradients
-    if(l->get_num_parents() != 1 || l->get_num_children() != 1) {
-      std::stringstream err;
-      err << "The K-FAC callback only supports layers who have exact one parent and child."
-          << " layer: " << l->get_name()
-          << ", #parent: " << l->get_num_parents()
-          << ", #child: " << l->get_num_children();
-      LBANN_ERROR(err.str());
-    }
     const auto parent = l->get_parent_layers()[0];
     const auto child = l->get_child_layers()[0];
     const auto& dtl_parent = dynamic_cast<const data_type_layer<DataType>&>(*parent);
@@ -231,13 +261,6 @@ void kfac::on_backward_prop_end(model *m) {
     const auto mini_batch_size = dtl_parent.get_activations().Width();
     assert(mini_batch_size == dtl_child.get_error_signals().Width());
     const auto local_batch_size = local_activations.Width();
-    if(local_activations.GetDevice() != El::Device::GPU
-       || local_errors.GetDevice() != El::Device::GPU) {
-      std::stringstream err;
-      err << "The K-FAC callback only supports GPU layers."
-          << " layer: " << l->get_name();
-      LBANN_ERROR(err.str());
-    }
 
     // Compute Kronecker factors, assuming that local_errors are
     // already multiplied by 1/N in the loss layer.
@@ -336,8 +359,97 @@ void kfac::on_backward_prop_end(model *m) {
     CHECK_CUDA(cudaStreamSynchronize(stream));
   }
 
+  // Step 1 (BN)
+  for(const auto metadata : m_learnable_layers) {
+    if(!(metadata.is_bn_after_fc || metadata.is_bn_after_conv))
+      continue;
+    const auto &l = layers[metadata.layer_id];
+
+    // Get activations, errors, and gradients
+    const auto parent = l->get_parent_layers()[0];
+    const auto child = l->get_child_layers()[0];
+    const auto& dtl_parent = dynamic_cast<const data_type_layer<DataType>&>(*parent);
+    const auto& dtl_child = dynamic_cast<const data_type_layer<DataType>&>(*child);
+    const El::AbstractMatrix<DataType>& local_activations = dtl_parent.get_local_activations();
+    const El::AbstractMatrix<DataType>& local_errors = dtl_child.get_local_error_signals();
+    const auto mini_batch_size = dtl_parent.get_activations().Width();
+    assert(mini_batch_size == dtl_child.get_error_signals().Width());
+    const auto local_batch_size = local_activations.Width();
+
+    assert(l->num_weights() == 4); // scale, bias, r_mean, r_var
+    auto& scales = l->get_weights(0);
+    auto& biases = l->get_weights(1);
+    optimizer *s_optimizer = scales.get_optimizer();
+    optimizer *b_optimizer = biases.get_optimizer();
+    auto* s_dto = dynamic_cast<data_type_optimizer<DataType>*>(s_optimizer);
+    auto* b_dto = dynamic_cast<data_type_optimizer<DataType>*>(b_optimizer);
+    El::Matrix<DataType, El::Device::GPU> s_gradients = s_dto->get_gradient().Matrix();
+    El::Matrix<DataType, El::Device::GPU> b_gradients = b_dto->get_gradient().Matrix();
+    const auto &s_dtw = dynamic_cast<data_type_weights<DataType>*>(&scales);
+    const auto &b_dtw = dynamic_cast<data_type_weights<DataType>*>(&biases);
+    const auto &scale_values = s_dtw->get_values();
+    const auto &bias_values = b_dtw->get_values();
+
+    const bool is_update_required = (num_steps%m_update_interval_steps) == 0
+        || m_kronecker_inverse.find(metadata.layer_id) == m_kronecker_inverse.end();
+    if(is_update_required) {
+      El::Matrix<DataType, El::Device::GPU> factor(metadata.bn_num_channels*2, local_batch_size);
+      compute_bn_factor(
+          local_activations.LockedBuffer(),
+          local_errors.LockedBuffer(),
+          scale_values.LockedMatrix().LockedBuffer(),
+          bias_values.LockedMatrix().LockedBuffer(),
+          factor.Buffer(),
+          local_batch_size,
+          metadata.bn_num_channels,
+          metadata.bn_spatial_prod,
+          stream);
+
+      El::Matrix<DataType, El::Device::GPU> fisher_block(metadata.bn_num_channels*2, metadata.bn_num_channels*2);
+      const DataType alpha = mini_batch_size;
+      El::Gemm(
+          El::NORMAL, El::TRANSPOSE,
+          alpha, factor, factor,
+          El::TypeTraits<DataType>::Zero(), fisher_block);
+
+      allreduce_lower_tri(fisher_block, comm, stream);
+
+      // Update average Kronecker factors
+      // TODO: Each matrix is used only by one process, but fisher_block
+      // should be consumed within this scope.
+      if(m_kronecker_average.find(metadata.layer_id) == m_kronecker_average.end())
+        m_kronecker_average.emplace(
+            metadata.layer_id,
+            std::make_pair(fisher_block, El::Matrix<DataType, El::Device::GPU>()));
+      auto &Fave = m_kronecker_average[metadata.layer_id].first;
+      update_kronecker_average(
+          Fave.Buffer(), fisher_block.Buffer(),
+          fisher_block.Height()*fisher_block.Width(),
+          m_kronecker_decay, stream);
+
+      // TODO: Use persistent workspace instead of using local
+      // matrices to remove synchronization.
+      CHECK_CUDA(cudaStreamSynchronize(stream));
+    }
+
+    // dump L2 norm of matrices
+    if(comm->am_trainer_master() && m_print_matrix_summary) {
+      std::ostringstream oss;
+      oss << "K-FAC callback: L2 norm @ "<< l->get_name() << ": "
+          << get_matrix_stat(scale_values.LockedMatrix(), "scale")
+          << ", " << get_matrix_stat(bias_values.LockedMatrix(), "bias")
+          << ", " << get_matrix_stat(local_activations, "acts")
+          << ", " << get_matrix_stat(local_errors, "errs")
+          << std::endl;
+      std::cout << oss.str();
+    }
+
+  }
+
   // Step 2: Model-parallel inverse computation
-  for(const auto metadata : fc_conv_layers) {
+  for(const auto metadata : m_learnable_layers) {
+    if(!(metadata.is_fc || metadata.is_conv))
+      continue;
     const auto &l = layers[metadata.layer_id];
     auto& weights = l->get_weights(0);
     optimizer *w_optimizer = weights.get_optimizer();
@@ -347,7 +459,7 @@ void kfac::on_backward_prop_end(model *m) {
 
     const bool is_update_required = (num_steps%m_update_interval_steps) == 0
         || m_kronecker_inverse.find(metadata.layer_id) == m_kronecker_inverse.end();
-    if(is_update_required && comm->get_rank_in_trainer() == get_layer_assignment(metadata.layer_id)) {
+    if(is_update_required && comm->get_rank_in_trainer() == metadata.proc_rank) {
       const auto &Aave = m_kronecker_average[metadata.layer_id].first;
       const auto &Gave = m_kronecker_average[metadata.layer_id].second;
       // Compute the pi constant
@@ -392,7 +504,7 @@ void kfac::on_backward_prop_end(model *m) {
     auto& grad_buffer = w_optimizer->get_gradient_buffer(
         dst_scale, gradient_scale, false);
 
-    if(comm->get_rank_in_trainer() == get_layer_assignment(metadata.layer_id)) {
+    if(comm->get_rank_in_trainer() == metadata.proc_rank) {
       const auto &Ainv = m_kronecker_inverse[metadata.layer_id].first;
       const auto &Ginv = m_kronecker_inverse[metadata.layer_id].second;
       if(metadata.is_conv) {
@@ -463,123 +575,16 @@ void kfac::on_backward_prop_end(model *m) {
     }
   }
 
-  // Step 3: All-gather of each preconditioned gradient tensor
-  for(const auto metadata : fc_conv_layers) {
-    const auto &l = layers[metadata.layer_id];
-    auto& weights = l->get_weights(0);
-    optimizer *w_optimizer = weights.get_optimizer();
-    DataType dst_scale = El::TypeTraits<DataType>::Zero(),
-        gradient_scale = El::TypeTraits<DataType>::One();
-    // grad_buffer is already synchronized among processes,
-    // and won't be all-reduced later.
-    auto& grad_buffer = w_optimizer->get_gradient_buffer(
-        dst_scale, gradient_scale, false);
-    El::Broadcast(
-        grad_buffer.Matrix(), comm->get_trainer_comm(),
-        get_layer_assignment(metadata.layer_id));
-  }
-
-  // Step 1 (BN)
-  for(const auto metadata : bn_layers) {
-    const auto &l = layers[metadata.layer_id];
-
-    // Get activations, errors, and gradients
-    if(l->get_num_parents() != 1 || l->get_num_children() != 1) {
-      std::stringstream err;
-      err << "The K-FAC callback only supports layers who have exact one parent and child."
-          << " layer: " << l->get_name()
-          << ", #parent: " << l->get_num_parents()
-          << ", #child: " << l->get_num_children();
-      LBANN_ERROR(err.str());
-    }
-    const auto parent = l->get_parent_layers()[0];
-    const auto child = l->get_child_layers()[0];
-    const auto& dtl_parent = dynamic_cast<const data_type_layer<DataType>&>(*parent);
-    const auto& dtl_child = dynamic_cast<const data_type_layer<DataType>&>(*child);
-    const El::AbstractMatrix<DataType>& local_activations = dtl_parent.get_local_activations();
-    const El::AbstractMatrix<DataType>& local_errors = dtl_child.get_local_error_signals();
-    const auto mini_batch_size = dtl_parent.get_activations().Width();
-    assert(mini_batch_size == dtl_child.get_error_signals().Width());
-    const auto local_batch_size = local_activations.Width();
-
-    assert(l->num_weights() == 4); // scale, bias, r_mean, r_var
-    auto& scales = l->get_weights(0);
-    auto& biases = l->get_weights(1);
-    optimizer *s_optimizer = scales.get_optimizer();
-    optimizer *b_optimizer = biases.get_optimizer();
-    auto* s_dto = dynamic_cast<data_type_optimizer<DataType>*>(s_optimizer);
-    auto* b_dto = dynamic_cast<data_type_optimizer<DataType>*>(b_optimizer);
-    El::Matrix<DataType, El::Device::GPU> s_gradients = s_dto->get_gradient().Matrix();
-    El::Matrix<DataType, El::Device::GPU> b_gradients = b_dto->get_gradient().Matrix();
-    const auto &s_dtw = dynamic_cast<data_type_weights<DataType>*>(&scales);
-    const auto &b_dtw = dynamic_cast<data_type_weights<DataType>*>(&biases);
-    const auto &scale_values = s_dtw->get_values();
-    const auto &bias_values = b_dtw->get_values();
-
-    const bool is_update_required = (num_steps%m_update_interval_steps) == 0
-        || m_kronecker_inverse.find(metadata.layer_id) == m_kronecker_inverse.end();
-    if(is_update_required) {
-      El::Matrix<DataType, El::Device::GPU> factor(metadata.num_channels*2, local_batch_size);
-      compute_bn_factor(
-          local_activations.LockedBuffer(),
-          local_errors.LockedBuffer(),
-          scale_values.LockedMatrix().LockedBuffer(),
-          bias_values.LockedMatrix().LockedBuffer(),
-          factor.Buffer(),
-          local_batch_size,
-          metadata.num_channels,
-          metadata.spatial_prod,
-          stream);
-
-      El::Matrix<DataType, El::Device::GPU> fisher_block(metadata.num_channels*2, metadata.num_channels*2);
-      const DataType alpha = mini_batch_size;
-      El::Gemm(
-          El::NORMAL, El::TRANSPOSE,
-          alpha, factor, factor,
-          El::TypeTraits<DataType>::Zero(), fisher_block);
-
-      allreduce_lower_tri(fisher_block, comm, stream);
-
-      // Update average Kronecker factors
-      // TODO: Each matrix is used only by one process, but fisher_block
-      // should be consumed within this scope.
-      if(m_kronecker_average.find(metadata.layer_id) == m_kronecker_average.end())
-        m_kronecker_average.emplace(
-            metadata.layer_id,
-            std::make_pair(fisher_block, El::Matrix<DataType, El::Device::GPU>()));
-      auto &Fave = m_kronecker_average[metadata.layer_id].first;
-      update_kronecker_average(
-          Fave.Buffer(), fisher_block.Buffer(),
-          fisher_block.Height()*fisher_block.Width(),
-          m_kronecker_decay, stream);
-
-      // TODO: Use persistent workspace instead of using local
-      // matrices to remove synchronization.
-      CHECK_CUDA(cudaStreamSynchronize(stream));
-    }
-
-    // dump L2 norm of matrices
-    if(comm->am_trainer_master() && m_print_matrix_summary) {
-      std::ostringstream oss;
-      oss << "K-FAC callback: L2 norm @ "<< l->get_name() << ": "
-          << get_matrix_stat(scale_values.LockedMatrix(), "scale")
-          << ", " << get_matrix_stat(bias_values.LockedMatrix(), "bias")
-          << ", " << get_matrix_stat(local_activations, "acts")
-          << ", " << get_matrix_stat(local_errors, "errs")
-          << std::endl;
-      std::cout << oss.str();
-    }
-
-  }
-
   // Step 2 (BN)
-  for(const auto metadata : bn_layers) {
+  for(const auto metadata : m_learnable_layers) {
+    if(!(metadata.is_bn_after_fc || metadata.is_bn_after_conv))
+      continue;
     const auto &l = layers[metadata.layer_id];
 
     const bool is_update_required = (num_steps%m_update_interval_steps) == 0
         || m_kronecker_inverse.find(metadata.layer_id) == m_kronecker_inverse.end();
 
-    if(!(is_update_required && comm->get_rank_in_trainer() == get_layer_assignment(metadata.layer_id)))
+    if(!(is_update_required && comm->get_rank_in_trainer() == metadata.proc_rank))
       continue;
 
     if(m_kronecker_inverse.find(metadata.layer_id) == m_kronecker_inverse.end())
@@ -613,17 +618,17 @@ void kfac::on_backward_prop_end(model *m) {
     El::Matrix<DataType, El::Device::GPU> s_gradients = s_dto->get_gradient().Matrix();
     El::Matrix<DataType, El::Device::GPU> b_gradients = b_dto->get_gradient().Matrix();
 
-    El::Matrix<DataType, El::Device::GPU> stacked_grads(metadata.num_channels*2, 1);
+    El::Matrix<DataType, El::Device::GPU> stacked_grads(metadata.bn_num_channels*2, 1);
     CHECK_CUDA(cudaMemcpyAsync(
         stacked_grads.Buffer(), s_gradients.LockedBuffer(),
-        metadata.num_channels*sizeof(DataType), cudaMemcpyDeviceToDevice,
+        metadata.bn_num_channels*sizeof(DataType), cudaMemcpyDeviceToDevice,
         hydrogen::cuda::GetDefaultStream()));
     CHECK_CUDA(cudaMemcpyAsync(
-        stacked_grads.Buffer()+metadata.num_channels, b_gradients.LockedBuffer(),
-        metadata.num_channels*sizeof(DataType), cudaMemcpyDeviceToDevice,
+        stacked_grads.Buffer()+metadata.bn_num_channels, b_gradients.LockedBuffer(),
+        metadata.bn_num_channels*sizeof(DataType), cudaMemcpyDeviceToDevice,
         hydrogen::cuda::GetDefaultStream()));
 
-    El::Matrix<DataType, El::Device::GPU> Fgrad(metadata.num_channels*2, 1);
+    El::Matrix<DataType, El::Device::GPU> Fgrad(metadata.bn_num_channels*2, 1);
     El::Gemm(
         El::NORMAL, El::NORMAL,
         El::TypeTraits<DataType>::One(), Finv, stacked_grads,
@@ -638,10 +643,10 @@ void kfac::on_backward_prop_end(model *m) {
     // TODO: Better way to copy?
     CHECK_CUDA(cudaMemcpy(
         s_grad_buffer.Matrix().Buffer(), Fgrad.LockedBuffer(),
-        metadata.num_channels*sizeof(DataType), cudaMemcpyDeviceToDevice));
+        metadata.bn_num_channels*sizeof(DataType), cudaMemcpyDeviceToDevice));
     CHECK_CUDA(cudaMemcpy(
-        b_grad_buffer.Matrix().Buffer(), Fgrad.LockedBuffer()+metadata.num_channels,
-        metadata.num_channels*sizeof(DataType), cudaMemcpyDeviceToDevice));
+        b_grad_buffer.Matrix().Buffer(), Fgrad.LockedBuffer()+metadata.bn_num_channels,
+        metadata.bn_num_channels*sizeof(DataType), cudaMemcpyDeviceToDevice));
 
     // dump L2 norm of matrices
     if(comm->am_trainer_master() && m_print_matrix_summary) {
@@ -660,8 +665,28 @@ void kfac::on_backward_prop_end(model *m) {
     CHECK_CUDA(cudaStreamSynchronize(stream));
   }
 
+  // Step 3: All-gather of each preconditioned gradient tensor
+  for(const auto metadata : m_learnable_layers) {
+    if(!(metadata.is_fc || metadata.is_conv))
+      continue;
+    const auto &l = layers[metadata.layer_id];
+    auto& weights = l->get_weights(0);
+    optimizer *w_optimizer = weights.get_optimizer();
+    DataType dst_scale = El::TypeTraits<DataType>::Zero(),
+        gradient_scale = El::TypeTraits<DataType>::One();
+    // grad_buffer is already synchronized among processes,
+    // and won't be all-reduced later.
+    auto& grad_buffer = w_optimizer->get_gradient_buffer(
+        dst_scale, gradient_scale, false);
+    El::Broadcast(
+        grad_buffer.Matrix(), comm->get_trainer_comm(),
+        metadata.proc_rank);
+  }
+
   // Step 3 (BN)
-  for(const auto metadata : bn_layers) {
+  for(const auto metadata : m_learnable_layers) {
+    if(!(metadata.is_bn_after_fc || metadata.is_bn_after_conv))
+      continue;
     const auto &l = layers[metadata.layer_id];
     auto& scales = l->get_weights(0);
     auto& biases = l->get_weights(1);
@@ -675,10 +700,10 @@ void kfac::on_backward_prop_end(model *m) {
         dst_scale, gradient_scale, false);
     El::Broadcast(
         s_grad_buffer.Matrix(), comm->get_trainer_comm(),
-        get_layer_assignment(metadata.layer_id));
+        metadata.proc_rank);
     El::Broadcast(
         b_grad_buffer.Matrix(), comm->get_trainer_comm(),
-        get_layer_assignment(metadata.layer_id));
+        metadata.proc_rank);
   }
 
 }

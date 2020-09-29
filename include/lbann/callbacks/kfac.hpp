@@ -35,16 +35,12 @@
 namespace lbann {
 namespace callback {
 
-struct kfac_fc_conv_layer_metadata {
+struct kfac_layer_metadata {
   size_t layer_id;
   convolution_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>* l_conv;
-  bool is_fc, is_conv;
-};
-
-struct kfac_bn_layer_metadata {
-  size_t layer_id;
-  size_t num_channels, spatial_prod;
-  bool is_after_fc, is_after_conv;
+  bool is_fc, is_conv, is_bn_after_fc, is_bn_after_conv;
+  size_t bn_num_channels, bn_spatial_prod;
+  int proc_rank;
 };
 
 /** Callback hooks for the K-FAC method.
@@ -257,6 +253,9 @@ class kfac : public callback_base {
 
   /** @brief The number of steps for changing the update interval. */
   const size_t m_update_interval_steps;
+
+  /** @brief Metadata of all of the learnable layers (FC, conv, and BN). */
+  std::vector<kfac_layer_metadata> m_learnable_layers;
 
   /** @brief The current damping values. */
   double m_damping_act, m_damping_err,
