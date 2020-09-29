@@ -23,6 +23,7 @@ _system_params = {
     'lassen':   SystemParams(44, 4, 'lsf'),
     'ray':      SystemParams(40, 4, 'lsf'),
     'sierra':   SystemParams(44, 4, 'lsf'),
+    'rzansel':  SystemParams(44, 4, 'lsf'),
 }
 
 # Detect system

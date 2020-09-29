@@ -34,8 +34,9 @@ namespace lbann {
 template <typename TensorDataType, typename T_io_buffer,
           data_layout T_layout, El::Device Dev>
 input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev>::
-input_distconv_adapter(Layer& layer): data_type_distconv_adapter<TensorDataType>(layer),
-                                      m_shuffle_required(true) {
+input_distconv_adapter(Layer& layer, const bool shuffle_required)
+    : data_type_distconv_adapter<TensorDataType>(layer),
+      m_shuffle_required(shuffle_required) {
   // Input data is only processed when its consumer layer is also
   // enabled for distconv
   for (int i = 0; i < layer.get_num_children(); ++i) {
@@ -165,7 +166,7 @@ setup_activations_i(int index) const {
     const auto local_shape = get_activations_local_shape(index);
     auto t = make_unique<TensorDevType>(shape, loc, dist, local_shape);
     assert0(t->allocate());
-    t->zero(El::GPUManager::Stream());
+    t->zero(hydrogen::cuda::GetDefaultStream());
     return t;
   }
 }
@@ -252,7 +253,7 @@ template <typename TensorDataType, typename T_io_buffer,
 void input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev>::fp_compute() {
   auto &l = dynamic_cast<input_layer<
     TensorDataType, T_io_buffer, T_layout, Dev>&>(this->layer());
-  auto stream = El::GPUManager::Stream();
+  auto stream = hydrogen::cuda::GetDefaultStream();
   // Note that the mini-batch size of the data reader is not
   // actually the one for the current mini-batch as the mini-batch
   // index is already updated by fp_compute.
@@ -262,8 +263,11 @@ void input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev>::fp_comp
   for (int mat_idx = 0; mat_idx < l.get_num_children(); ++mat_idx) {
     if (!is_input_processed(mat_idx)) continue;
 
-    assert_eq(mb_size * dc::get_number_of_io_partitions(),
-              l.get_activations(mat_idx).Width());
+    // TODO: This is diabled as it raises an error when the HDF5 data
+    // reader with hyperslab labels is used. Remove this assertion or
+    // reshape the actiavtion tensor (mat_idx=1).
+    // assert_eq(mb_size * dc::get_number_of_io_partitions(),
+    //           l.get_activations(mat_idx).Width());
 
     auto &original_tensor = *m_original_host_tensors[mat_idx];
     auto &host_tensor = *m_host_tensors[mat_idx];

@@ -48,6 +48,7 @@
 #include "lbann/layers/learning/embedding.hpp"
 #include "lbann/layers/learning/entrywise_scale_bias.hpp"
 #include "lbann/layers/learning/fully_connected.hpp"
+#include "lbann/layers/learning/gru.hpp"
 #include "lbann/layers/learning/learning.hpp"
 #include "lbann/layers/loss/categorical_accuracy.hpp"
 #include "lbann/layers/loss/cross_entropy.hpp"
@@ -167,6 +168,7 @@ private:
     LBANN_REGISTER_BUILDER(Embedding, embedding);
     LBANN_REGISTER_BUILDER(EntrywiseScaleBias, entrywise_scale_bias);
     LBANN_REGISTER_BUILDER(FullyConnected, fully_connected);
+    LBANN_REGISTER_BUILDER(GRU, gru);
 
     // Math layers
     LBANN_REGISTER_DEFAULT_BUILDER(Abs, abs);
@@ -250,7 +252,6 @@ private:
     LBANN_REGISTER_DEFAULT_BUILDER(BooleanFalseNegative, boolean_false_negative);
     LBANN_REGISTER_DEFAULT_BUILDER(BooleanFalsePositive, boolean_false_positive);
     LBANN_REGISTER_DEFAULT_BUILDER(CategoricalAccuracy, categorical_accuracy);
-    LBANN_REGISTER_DEFAULT_BUILDER(CrossEntropy, cross_entropy);
     LBANN_REGISTER_DEFAULT_BUILDER(L1Norm, l1_norm);
     LBANN_REGISTER_DEFAULT_BUILDER(L2Norm2, l2_norm2);
     LBANN_REGISTER_DEFAULT_BUILDER(MeanAbsoluteError, mean_absolute_error);
@@ -328,6 +329,7 @@ std::unique_ptr<Layer> construct_layer_legacy(
     if (mode_str.empty() || mode_str == "classification") { target_mode = data_reader_target_mode::CLASSIFICATION; }
     if (mode_str == "regression")                         { target_mode = data_reader_target_mode::REGRESSION; }
     if (mode_str == "reconstruction")                     { target_mode = data_reader_target_mode::RECONSTRUCTION; }
+    if (mode_str == "label_reconstruction")               { target_mode = data_reader_target_mode::LABEL_RECONSTRUCTION; }
     if (mode_str == "na" || mode_str == "NA" || mode_str == "N/A") { target_mode = data_reader_target_mode::NA; }
     if (Layout != data_layout::DATA_PARALLEL) {
       LBANN_ERROR("input layer is only supported with "
@@ -655,6 +657,10 @@ std::unique_ptr<Layer> construct_layer_legacy(
   }
 
   // Loss layers
+  if (proto_layer.has_cross_entropy()) {
+    const auto& params = proto_layer.cross_entropy();
+    return lbann::make_unique<cross_entropy_layer<TensorDataType, Layout, Device>>(comm, params.use_labels());
+  }
   if (proto_layer.has_top_k_categorical_accuracy()) {
     const auto& params = proto_layer.top_k_categorical_accuracy();
     return lbann::make_unique<top_k_categorical_accuracy_layer<TensorDataType, Layout, Device>>(comm, params.k());

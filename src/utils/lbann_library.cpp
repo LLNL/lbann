@@ -194,8 +194,8 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
     std::vector<int> data_seq_random_seeds(comm->get_procs_in_world());
     comm->world_all_gather(data_seq_random_seed, data_seq_random_seeds);
 
-    // Update the index lists to accomodate multi-trainer / multi-model specification
-    customize_data_readers_index_list(*comm, pb);
+    // Update the sample lists to accomodate multi-trainer / multi-model specification
+    customize_data_readers_sample_list(*comm, pb);
 
     // Initialize data readers
     //@todo: code not in place for correctly handling image preprocessing
@@ -392,7 +392,7 @@ void print_lbann_configuration(lbann_comm *comm, int io_threads_per_process, int
             << "  I/O threads per process (+offset) : " << io_threads_per_process
             << " (+" << io_threads_offset << ")" << std::endl;
 #ifdef HYDROGEN_HAVE_CUDA
-  std::cout << "  GPUs on node               : " << El::GPUManager::NumDevices() << std::endl;
+  std::cout << "  GPUs on node               : " << hydrogen::gpu::DeviceCount() << std::endl;
 #endif // HYDROGEN_HAVE_CUDA
   std::cout << std::endl;
 

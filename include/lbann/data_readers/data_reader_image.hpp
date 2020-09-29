@@ -30,6 +30,7 @@
 #define IMAGE_DATA_READER_HPP
 
 #include "data_reader.hpp"
+#include "sample_list.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
 
 namespace lbann {
@@ -38,6 +39,10 @@ class image_data_reader : public generic_data_reader {
   using img_src_t = std::string;
   using label_t = int;
   using sample_t = std::pair<img_src_t, label_t>;
+  using sample_name_t = img_src_t;
+  using sample_list_t = sample_list<sample_name_t>;
+  using sample_idx_t = sample_list_t::sample_idx_t;
+  using labels_t = std::vector<label_t>;
 
   image_data_reader(bool shuffle = true);
   image_data_reader(const image_data_reader&);
@@ -78,21 +83,16 @@ class image_data_reader : public generic_data_reader {
     return {m_image_num_channels, m_image_height, m_image_width};
   }
 
-  /// Return the sample list of current minibatch
-  std::vector<sample_t> get_image_list_of_current_mb() const;
-
   /// Allow read-only access to the entire sample list
-  const std::vector<sample_t>& get_image_list() const {
-    return m_image_list;
+  const sample_list_t& get_sample_list() const {
+    return m_sample_list;
   }
 
   /**
    * Returns idx-th sample in the initial loading order.
    * The second argument is only to facilitate overloading, and not to be used by users.
    */
-  sample_t get_sample(const size_t idx) const {
-    return m_image_list.at(idx);
-  }
+  sample_t get_sample(const size_t idx) const;
 
   void do_preload_data_store() override;
 
@@ -106,15 +106,33 @@ class image_data_reader : public generic_data_reader {
   bool fetch_label(Mat& Y, int data_id, int mb_idx) override;
   void set_linearized_image_size();
 
+  /** Dump the image list file in which each line consists of the file name
+   *  and the label of a sample */
+  void dump_sample_label_list(const std::string& dump_file_name);
+  /// Rely on pre-determined list of samples.
+  void load_list_of_samples(const std::string filename);
+  /// Load the sample list from a serialized archive from another rank
+  void load_list_of_samples_from_archive(const std::string& sample_list_archive);
+  /// Use the imagenet image list file, and generate sample list header on-the-fly
+  void gen_list_of_samples();
+  /// Load the labels for samples
+  void load_labels(std::vector<char>& preloaded_buffer);
+  /// Read the labels from an open input stream
+  void read_labels(std::istream& istrm);
+  /// Return the number of lines in the input stream
+  size_t determine_num_of_samples(std::istream& istrm) const;
+
   std::string m_image_dir; ///< where images are stored
-  std::vector<sample_t> m_image_list; ///< list of image files and labels
   int m_image_width; ///< image width
   int m_image_height; ///< image height
   int m_image_num_channels; ///< number of image channels
   int m_image_linearized_size; ///< linearized image size
   int m_num_labels; ///< number of labels
 
-  bool  load_conduit_nodes_from_file(const std::unordered_set<int> &data_ids);
+  sample_list_t m_sample_list;
+  labels_t m_labels;
+
+  bool load_conduit_nodes_from_file(const std::unordered_set<int> &data_ids);
 
 };
 

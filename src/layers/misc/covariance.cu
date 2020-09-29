@@ -209,7 +209,7 @@ void fp_gpu(const El::AbstractDistMatrix<TensorDataType>& input0,
     grid_dims.y = local_width;
     const auto& scale = El::TypeTraits<TensorDataType>::One() / TensorDataType(height);
     mean_contribution_kernel<TensorDataType, block_size>
-      <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
+      <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
         local_height, local_width, scale,
         local_input0.LockedBuffer(), local_input0.LDim(),
         local_input1.LockedBuffer(), local_input1.LDim(),
@@ -229,7 +229,7 @@ void fp_gpu(const El::AbstractDistMatrix<TensorDataType>& input0,
     grid_dims.y = local_width;
     const auto& scale = El::TypeTraits<TensorDataType>::One() / (biased ? TensorDataType(height) : TensorDataType(height - 1));
     covariance_contribution_kernel<TensorDataType, block_size>
-      <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
+      <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
         local_height, local_width, scale,
         local_input0.LockedBuffer(), local_input0.LDim(),
         local_input1.LockedBuffer(), local_input1.LDim(),
@@ -276,7 +276,7 @@ void bp_gpu(const El::AbstractDistMatrix<TensorDataType>& input0,
   El::Int grid_size = (local_height * local_width + block_size - 1) / block_size;
   if (grid_size > 0) {
     covariance_backprop_kernel<TensorDataType>
-      <<<grid_size, block_size, 0, El::GPUManager::Stream()>>>(
+      <<<grid_size, block_size, 0, hydrogen::cuda::GetDefaultStream()>>>(
         local_height, local_width, scale,
         local_workspace.LockedBuffer(),
         local_input0.LockedBuffer(), local_input0.LDim(),

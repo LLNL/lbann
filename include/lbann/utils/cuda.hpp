@@ -167,6 +167,9 @@ template <typename T> __device__ __forceinline__ T tanh(const T& x);
 template <typename T> __device__ __forceinline__ T acosh(const T& x);
 template <typename T> __device__ __forceinline__ T asinh(const T& x);
 template <typename T> __device__ __forceinline__ T atanh(const T& x);
+template <typename T> __device__ __forceinline__ bool isfinite(const T& x);
+template <typename T> __device__ __forceinline__ bool isinf(const T& x);
+template <typename T> __device__ __forceinline__ bool isnan(const T& x);
 
 // Binary math functions
 template <typename T> __device__ __forceinline__ T min(const T& x, const T& y);
@@ -222,8 +225,9 @@ private:
 };
 
 // -------------------------------------------------------------
-// Helper functions for entrywise operations
+// Helper functions for tensor operations
 // -------------------------------------------------------------
+
 #ifdef __CUDACC__
 
 /** Apply an entry-wise unary operator to GPU data.
@@ -267,6 +271,16 @@ void apply_entrywise_binary_operator(
 
 #endif // __CUDACC__
 
+/** Copy entries between GPU tensors. */
+template <typename TensorDataType>
+void copy_tensor(
+  cudaStream_t stream,
+  const std::vector<size_t>& dims,
+  const TensorDataType* input,
+  const std::vector<size_t>& input_strides,
+  TensorDataType* output,
+  const std::vector<size_t>& output_strides);
+
 // -------------------------------------------------------------
 // Utilities for Thrust
 // -------------------------------------------------------------
@@ -303,7 +317,7 @@ public:
   typedef typename parent_class::system_type system_type;
 
   /** Default constructor. */
-  allocator(cudaStream_t stream = El::GPUManager::Stream());
+  allocator(cudaStream_t stream = hydrogen::cuda::GetDefaultStream());
   /** Allocate GPU buffer. */
   pointer allocate(size_type size);
   /** Deallocate GPU buffer.

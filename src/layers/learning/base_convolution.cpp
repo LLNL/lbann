@@ -1215,7 +1215,8 @@ base_convolution_layer<TensorDataType,Device>::get_backward_filter_algo_cudnn(
 
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, El::Device Device>
-void base_convolution_layer<TensorDataType,Device>::setup_distconv_adapter() {
+void base_convolution_layer<TensorDataType,Device>::setup_distconv_adapter(
+    const DataReaderMetaData& dr_metadata) {
   this->get_distconv_adapter_ptr() = make_unique<
     base_convolution_adapter<TensorDataType, Device>>(*this);
 }
@@ -1254,15 +1255,11 @@ void base_convolution_adapter<TensorDataType, Device>::setup_fp_tensors() {
   std::reverse(kernel_shape.begin(), kernel_shape.end());
   const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
   m_kernel = make_unique<TensorDevType>(kernel_shape, loc, shared_dist);
-  assert0(dc::tensor::View(
-            *m_kernel, layer.weights_values(0).LockedBuffer()));
 
   if (layer.m_bias_scaling_factor != TensorDataType(0)) {
     dc::Shape bias_shape(dc::get_num_dims(layer), 1);
     bias_shape[dc::get_channel_dim()] = layer.get_output_dims()[0];
     m_bias = make_unique<TensorDevType>(bias_shape, loc, shared_dist);
-    assert0(dc::tensor::View(
-              *m_bias, layer.weights_values(1).LockedBuffer()));
   }
 }
 
@@ -1280,13 +1277,14 @@ void base_convolution_adapter<TensorDataType, Device>::setup_bp_tensors() {
 
   m_kernel_gradient = make_unique<TensorDevType>(kernel_shape, loc, shared_dist);
   // Gradient buffer is needed for auto-tuning the bp filter algorithm
+  auto* kernel_optimizer = static_cast<data_type_optimizer<TensorDataType>*>(l.get_weights(0).get_optimizer());
   assert0(dc::tensor::View(
             *m_kernel_gradient,
-            l.get_weights(0).get_optimizer()->get_gradient().Buffer()));
+            kernel_optimizer->get_gradient().Buffer()));
 
   // Bias tensor. Shared by all procs
   if (l.m_bias_scaling_factor != TensorDataType(0)) {
-    auto* bias_optimizer = l.get_weights(1).get_optimizer();
+    auto* bias_optimizer = static_cast<data_type_optimizer<TensorDataType>*>(l.get_weights(1).get_optimizer());
     if (bias_optimizer != nullptr) {
       dc::Shape bias_shape(dc::get_num_dims(l), 1);
       bias_shape[dc::get_channel_dim()] = l.get_output_dims()[0];
@@ -1295,7 +1293,7 @@ void base_convolution_adapter<TensorDataType, Device>::setup_bp_tensors() {
       // which is set when its view is set.
       assert0(dc::tensor::View(
                 *m_bias_gradient,
-                l.get_weights(1).get_optimizer()->get_gradient().Buffer()));
+                bias_optimizer->get_gradient().Buffer()));
     }
   }
 }
@@ -1365,7 +1363,7 @@ void base_convolution_adapter<TensorDataType, Device>::bp_compute_convolution_fi
                             this->get_prev_error_signals(),
                             dst_scale, *m_bias_gradient, false);
     } else {
-      m_bias_gradient->scale(dst_scale, El::GPUManager::Stream());
+      m_bias_gradient->scale(dst_scale, hydrogen::cuda::GetDefaultStream());
     }
   }
 
@@ -1383,9 +1381,17 @@ void base_convolution_adapter<TensorDataType, Device>::bp_compute_convolution_fi
                             dst_scale,
                             *m_kernel_gradient, false);
   } else {
-    m_kernel_gradient->scale(dst_scale, El::GPUManager::Stream());
+    m_kernel_gradient->scale(dst_scale, hydrogen::cuda::GetDefaultStream());
   }
 }
+
+
+#define PROTO_DEVICE(T, Device)                                            \
+  template class base_convolution_adapter<T, Device>
+
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+
 #endif // LBANN_HAS_DISTCONV
 
 #define PROTO_DEVICE(T, Device)                                            \

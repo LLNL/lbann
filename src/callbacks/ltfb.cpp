@@ -339,7 +339,8 @@ EvalType evaluate(model& m, const std::string& metric_name) {
   m.make_data_store_preloaded(execution_mode::validation);
 
   // Clean up and return metric value
-  c.set_execution_mode(original_mode);
+  m.reset_mode(c, original_mode);
+  c.get_trainer().get_data_coordinator().reset_mode(c);
   return metric_value;
 
 }
@@ -514,8 +515,9 @@ void ltfb::on_batch_begin(model *m) {
   // Choose tournament winner
   // Note: restore local model data if it got a better score.
   El::Int tournament_winner = partner_trainer;
-  if ((m_low_score_wins && local_score <= partner_score) ||
-      (!m_low_score_wins && local_score >= partner_score)) {
+  if ((m_low_score_wins && local_score <= partner_score)
+      || (!m_low_score_wins && local_score >= partner_score)
+      || (!std::isnan(local_score) && std::isnan(partner_score))) {
     tournament_winner = local_trainer;
     switch (m_comm_algo) {
     case communication_algorithm::sendrecv_weights:

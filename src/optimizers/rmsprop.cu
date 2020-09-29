@@ -67,7 +67,7 @@ void rmsprop<TensorDataType>::step_compute_gpu(AbsDistMatrixType& values,
   if (local_size > 0) {
     constexpr size_t block_size = 256;
     const size_t grid_size = (local_size + block_size - 1) / block_size;
-    auto&& stream = El::GPUManager::Stream();
+    auto&& stream = hydrogen::cuda::GetDefaultStream();
     rmsprop_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
       local_height, local_width,
       this->get_learning_rate(), m_decay_rate, m_eps,

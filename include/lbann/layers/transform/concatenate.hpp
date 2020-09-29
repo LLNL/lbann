@@ -114,7 +114,7 @@ private:
     return Device == El::Device::GPU && Layout == data_layout::DATA_PARALLEL
         && m_concat_dim == 0;
   }
-  void setup_distconv_adapter() override {
+  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override {
     this->get_distconv_adapter_ptr() = make_unique<
       concatenate_distconv_adapter<TensorDataType, Layout, Device>>(*this);
   }
@@ -377,7 +377,7 @@ fp_compute() {
   dc::tensor::Concatenate(this->get_activations(0),
                           this->get_prev_activations(0),
                           this->get_prev_activations(1),
-                          El::GPUManager::Stream());
+                          hydrogen::cuda::GetDefaultStream());
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -386,7 +386,7 @@ bp_compute() {
   dc::tensor::Slice(this->get_error_signals(0),
                     this->get_error_signals(1),
                     this->get_prev_error_signals(0),
-                    El::GPUManager::Stream());
+                    hydrogen::cuda::GetDefaultStream());
 }
 #endif // LBANN_HAS_DISTCONV
 
