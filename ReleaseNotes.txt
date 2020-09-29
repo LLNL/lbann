@@ -62,7 +62,7 @@ I/O & data readers:
  - Added support for ImageNet data reader to use sample lists
  - Refactored sample list code to be more flexible and generalize
    beyond JAG data reader
- - Added suppoort for slab-based I/O in HDF5 data reader required by
+ - Added support for slab-based I/O in HDF5 data reader required by
    DistConv implementations of CosmoFlow 3D volumes
  - Extended slab-based HDF5 data reader to support labels and
    reconstruction modes for use with U-Net architecture
