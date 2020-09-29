@@ -21,7 +21,7 @@ Bug fixes:
 
 Retired features:
 
-============================== (Pending) Release Notes: v0.101 ==============================
+============================== Release Notes: v0.101 ==============================
 
 Support for new training algorithms:
 
