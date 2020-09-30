@@ -37,12 +37,18 @@ namespace lbann
 namespace cudnn
 {
 
-template <typename TensorDataType>
-void get_dropout_state_size(size_t& size,
-                            El::Matrix<TensorDataType, El::Device::GPU> m_states)
+inline size_t get_dropout_states_size()
 {
-  auto handle_manager = internal::make_default_handle_manager(gpu::get_sync_info(m_states));
-  CHECK_CUDNN(cudnnDropoutGetStatesSize(handle_manager.get(), &size));
+  size_t size;
+  CHECK_CUDNN(cudnnDropoutGetStatesSize(get_handle(), &size));
+  return size;
+}
+
+inline size_t get_dropout_reserve_space_size(TensorDescriptor xDesc)
+{
+  size_t size;
+  CHECK_CUDNN(cudnnDropoutGetReserveSpaceSize(xDesc, &size));
+  return size;
 }
 
 template <typename TensorDataType>
@@ -54,9 +60,6 @@ void dropout_forward(DropoutDescriptor dropoutDesc,
                      El::AbstractMatrix<TensorDataType>& workspace,
                      El::SyncInfo<El::Device::GPU> const& si)
 {
-  size_t size;
-  CHECK_CUDNN(cudnnDropoutGetReserveSpaceSize(xDesc, &size));
-  workspace.Resize((size + sizeof(TensorDataType) - 1) / sizeof(TensorDataType), 1);
   auto handle_manager = internal::make_default_handle_manager(si);
   CHECK_CUDNN(
     cudnnDropoutForward(handle_manager.get(),

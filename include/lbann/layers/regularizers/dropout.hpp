@@ -244,6 +244,8 @@ protected:
     // Initialize cuDNN objects
     auto&& input_desc = m_tensors_cudnn_desc.get_prev_activations();
     auto&& output_desc = m_tensors_cudnn_desc.get_activations();
+    size_t size = cudnn::get_dropout_reserve_space_size(input_desc);
+    m_reserve_space.Resize((size + sizeof(TensorDataType) - 1) / sizeof(TensorDataType), 1);
 
     // Apply dropout on the GPU
     cudnn::dropout_forward(m_dropout_cudnn_desc,
@@ -291,8 +293,7 @@ protected:
   void setup_dropout_cudnn_desc() {
 
     // Setup RNG state
-    size_t size;
-    cudnn::get_dropout_state_size(size, m_states);
+    size_t size = cudnn::get_dropout_states_size();
     m_states.Resize((size + sizeof(TensorDataType) - 1) / sizeof(TensorDataType), 1);
 
     // Setup dropout descriptor
