@@ -23,8 +23,8 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
-//#ifndef LBANN_UTILS_DNN_LIB_CUDNN_SOFTMAX_HPP_
-//#define LBANN_UTILS_DNN_LIB_CUDNN_SOFTMAX_HPP_
+#ifndef LBANN_UTILS_DNN_LIB_CUDNN_DROPOUT_HPP_
+#define LBANN_UTILS_DNN_LIB_CUDNN_DROPOUT_HPP_
 
 #include "lbann/utils/cudnn.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
@@ -120,4 +120,4 @@ void dropout_backward(DropoutDescriptor dropoutDesc,
 
 }// namespace cudnn
 }// namespace lbann
-//#endif // LBANN_UTILS_DNN_LIB_CUDNN_SOFTMAX_HPP_
+#endif // LBANN_UTILS_DNN_LIB_CUDNN_DROPOUT_HPP_
