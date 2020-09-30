@@ -158,7 +158,7 @@ private:
 LBANN_DEFINE_LAYER_BUILDER(gru);
 
 // Explicit template instantiation
-#ifdef LBANN_HAS_GPU
+#ifdef LBANN_GRU_LAYER_GPU_SUPPORTED
 #ifndef LBANN_GRU_LAYER_INSTANTIATE
 #define PROTO(T)                                        \
   extern template class gru_layer<                      \
@@ -167,7 +167,7 @@ LBANN_DEFINE_LAYER_BUILDER(gru);
 #include "lbann/macros/instantiate.hpp"
 #undef PROTO
 #endif // LBANN_GRU_LAYER_INSTANTIATE
-#endif // LBANN_HAS_GPU
+#endif // LBANN_GRU_LAYER_GPU_SUPPORTED
 
 } // namespace lbann
 

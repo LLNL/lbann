@@ -34,6 +34,7 @@
 
 namespace lbann {
 
+
 // ---------------------------------------------
 // Life cycle
 // ---------------------------------------------
@@ -281,8 +282,9 @@ void gru_layer<TensorDataType, Layout, Device>::fp_compute() {
   fp_compute_impl(*this);
 }
 
-namespace {
 #ifdef LBANN_GRU_LAYER_GPU_SUPPORTED
+
+namespace {
 template <typename TensorDataType>
 void pack_cudnn_rnn_weights(
   const cudnnHandle_t& handle,
@@ -380,10 +382,9 @@ void pack_cudnn_rnn_weights(
   }
 
 }
-#endif // LBANN_GRU_LAYER_GPU_SUPPORTED
+
 } // namespace <anon>
 
-#ifdef LBANN_GRU_LAYER_GPU_SUPPORTED
 template <typename TensorDataType>
 void fp_compute_impl(
   gru_layer<TensorDataType,data_layout::DATA_PARALLEL,El::Device::GPU>& l) {
@@ -563,6 +564,7 @@ void fp_compute_impl(
   l.m_cuda_graph_forward_prop.launch(stream);
 
 }
+
 #endif // LBANN_GRU_LAYER_GPU_SUPPORTED
 
 // ---------------------------------------------
@@ -574,8 +576,9 @@ void gru_layer<TensorDataType, Layout, Device>::bp_compute() {
   bp_compute_impl(*this);
 }
 
-namespace {
 #ifdef LBANN_GRU_LAYER_GPU_SUPPORTED
+
+namespace {
 template <typename TensorDataType>
 void unpack_cudnn_rnn_weights(
   const cudnnHandle_t& handle,
@@ -667,10 +670,8 @@ void unpack_cudnn_rnn_weights(
   }
 
 }
-#endif // LBANN_GRU_LAYER_GPU_SUPPORTED
 } // namespace <anon>
 
-#ifdef LBANN_GRU_LAYER_GPU_SUPPORTED
 template <typename TensorDataType>
 void bp_compute_impl(
   gru_layer<TensorDataType,data_layout::DATA_PARALLEL,El::Device::GPU>& l) {
@@ -857,6 +858,7 @@ void bp_compute_impl(
     {static_cast<size_t>(init_hidden.LDim()), hidden_size, one});
 
 }
+
 #endif // LBANN_GRU_LAYER_GPU_SUPPORTED
 
 // ---------------------------------------------
@@ -925,14 +927,14 @@ std::unique_ptr<Layer> build_gru_layer_from_pbuf(
 // ---------------------------------------------
 
 /// @todo CPU implementation
-#ifdef LBANN_HAS_GPU
+#ifdef LBANN_GRU_LAYER_GPU_SUPPORTED
 #define PROTO(T)                                                        \
   template class gru_layer<                                             \
     T, data_layout::DATA_PARALLEL, El::Device::GPU>;
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"
 #undef PROTO
-#endif // LBANN_HAS_GPU
+#endif // LBANN_GRU_LAYER_GPU_SUPPORTED
 
 #define PROTO_DEVICE(T, Device)                 \
   LBANN_LAYER_BUILDER_ETI(gru, T, Device)
