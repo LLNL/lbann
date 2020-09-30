@@ -119,22 +119,6 @@ def construct_model(lbann):
     obj.append(z)
     metrics.append(lbann.Metric(z, name='data-parallel layout'))
 
-    # NumPy implementation
-    # vals = []
-    # for i in range(num_samples()):
-    #     x = get_sample(i).astype(np.float64)
-    #     y = x
-    #     z = tools.numpy_l2norm2(y)
-    #     vals.append(z)
-    # val = np.mean(vals)
-    # tol = 8 * val * np.finfo(np.float32).eps
-    # callbacks.append(lbann.CallbackCheckMetric(
-    #     metric=metrics[-1].name,
-    #     lower_bound=val-tol,
-    #     upper_bound=val+tol,
-    #     error_on_failure=True,
-    #     execution_modes='test'))
-
     callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
 
     # ------------------------------------------

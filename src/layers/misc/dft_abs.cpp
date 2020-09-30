@@ -85,10 +85,9 @@ void Combine(
   }
   else
   {
-    EL_PARALLEL_FOR
+    EL_PARALLEL_FOR_COLLAPSE2
     for (Int j=0; j<n; ++j)
     {
-      EL_SIMD
       for (Int i=0; i<m; ++i)
       {
         BBuf[i+j*BLDim] = func(ABuf[i+j*ALDim], BBuf[i+j*BLDim]);

@@ -268,7 +268,7 @@ private:
                      return a.num_samples_ == num_samples;
                    });
     if (good_plan == cend(plans_))
-      LBANN_ERROR("No valid FFTW plan found.");
+      LBANN_ERROR("No valid cuFFT plan found.");
 
     // Setup the workspace
     ComplexBufferType workspace(good_plan->worksize_,

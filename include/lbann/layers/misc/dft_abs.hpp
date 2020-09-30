@@ -41,7 +41,7 @@ class dft_abs_impl;
 class lbann_comm;
 
 /** @class dft_abs_layer
- *  @brief Compute the DFT of the input data.
+ *  @brief Absolute value of discrete Fourier transform.
  *
  *  One-, two-, or three-dimensional data is allowed.
  *
@@ -72,7 +72,7 @@ public:
   dft_abs_layer(lbann_comm* const comm);
   ~dft_abs_layer();
   dft_abs_layer* copy() const override { return new dft_abs_layer(*this); }
-  std::string get_type() const override { return "fft"; }
+  std::string get_type() const override { return "DFT Abs"; }
   data_layout get_data_layout() const override {
     return Layout;
   }
