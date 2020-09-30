@@ -33,8 +33,7 @@ EXTERNAL_PACKAGES=$(cat <<EOF
     cudnn::
       buildable: true
       version:
-#      - 8.0.4-10.1-linux-ppc64le
-      - 8.0.3.33-11.0-linux-ppc64le
+      - 8.0.4-11.0-linux-ppc64le
     gcc::
       buildable: False
       version:

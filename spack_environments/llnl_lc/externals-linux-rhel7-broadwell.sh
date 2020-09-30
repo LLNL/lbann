@@ -27,23 +27,23 @@ EXTERNAL_PACKAGES=$(cat <<EOF
     cuda::
       buildable: False
       version:
-      - 10.1.168
+      - 10.2.89
       externals:
-      - spec: cuda@10.1.168 arch=linux-rhel7-broadwell
+      - spec: cuda@10.2.89 arch=linux-rhel7-broadwell
         modules:
-        - cuda/10.1.168
+        - cuda/10.2.89
     cudnn::
       buildable: true
       version:
-      - 8.0.2.39-10.1-linux-x64
+      - 8.0.4.30-10.2-linux-x64
     gcc::
       buildable: False
       version:
-      - 7.3.0
+      - 8.3.1
       externals:
-      - spec:  gcc@7.3.0 arch=linux-rhel7-broadwell
+      - spec:  gcc@8.3.1 arch=linux-rhel7-broadwell
         modules:
-        - gcc/7.3.0
+        - gcc/8.3.1
     hwloc::
       buildable: False
       version:
@@ -56,8 +56,8 @@ EXTERNAL_PACKAGES=$(cat <<EOF
       version:
       - 2.3
       externals:
-      - spec: mvapich2@2.3%gcc@7.3.0 arch=linux-rhel7-broadwell
-        prefix: /usr/tce/packages/mvapich2/mvapich2-2.3-gcc-7.3.0/
+      - spec: mvapich2@2.3%gcc@8.3.1 arch=linux-rhel7-broadwell
+        prefix: /usr/tce/packages/mvapich2/mvapich2-2.3-gcc-8.3.1/
     openblas::
       buildable: True
       variants: threads=openmp
