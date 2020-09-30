@@ -851,7 +851,7 @@ PoolingDescriptor::~PoolingDescriptor()
   }
   catch (std::exception const& e)
   {
-    std::cerr << "Caught exception in ~ActivationDescriptor(). Shutting down."
+    std::cerr << "Caught exception in ~PoolingDescriptor(). Shutting down."
               << std::endl;
     std::terminate();
   }
@@ -974,7 +974,7 @@ LRNDescriptor::~LRNDescriptor()
   }
   catch (std::exception const& e)
   {
-    std::cerr << "Caught exception in ~ActivationDescriptor(). Shutting down."
+    std::cerr << "Caught exception in ~LRNDescriptor(). Shutting down."
               << std::endl;
     std::terminate();
   }
