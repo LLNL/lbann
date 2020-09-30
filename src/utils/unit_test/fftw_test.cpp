@@ -132,7 +132,7 @@ bool assert_r2c_symmetry_2d(
           auto const conj_val = feat_map_mat[conj_idx];
 
           if ((Approx(El::RealPart(val)) != El::RealPart(conj_val))
-              || false)//(Approx(El::ImagPart(val)) != -El::ImagPart(conj_val)))
+              || (Approx(El::ImagPart(val)) != -El::ImagPart(conj_val)))
           {
             std::cout << "Error at (S,F,R,C,R',C') = ("
                       << sample << "," << feat_map << ","
