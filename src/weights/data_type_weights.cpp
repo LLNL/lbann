@@ -440,6 +440,8 @@ bool data_type_weights<TensorDataType>::load_from_save(std::string const& ckpt_d
     suffix = ".txt";
   }
   // create weight file name to match to weight list entry
+  // Note that the prefix model_ has to be explicitly appended since
+  // the persist class appends that string in the normal checkpoint functions
   auto l_name = El::BuildString("model_weights_", this->get_name(), "_",
                                 m_values->Height(), "x", m_values->Width(), suffix);
 
