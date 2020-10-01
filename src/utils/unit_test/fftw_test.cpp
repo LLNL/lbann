@@ -372,9 +372,6 @@ TEMPLATE_TEST_CASE("Testing FFTW wrapper (C2C-InPlace)",
   // Compute the forward transformation
   REQUIRE_NOTHROW(fftw.compute_forward(mat));
 
-  // Verify the results
-  REQUIRE(assert_r2c_symmetry(mat, dims));
-
   // Do the backward transformation
   REQUIRE_NOTHROW(fftw.compute_backward(mat));
 
