@@ -342,8 +342,7 @@ if (LBANN_HAS_CUDA)
   if (LBANN_HAS_GPU_FP16)
     set_property(TARGET cuda::toolkit PROPERTY
       INTERFACE_COMPILE_OPTIONS
-      $<$<COMPILE_LANGUAGE:CUDA>:-arch=sm_60>
-      $<$<TARGET_EXISTS:FFTW::FFTW>:--expt-extended-lambda>)
+      $<$<COMPILE_LANGUAGE:CUDA>:-arch=sm_60>)
   endif (LBANN_HAS_GPU_FP16)
 
   set(LBANN_HAS_CUDNN ${CUDNN_FOUND})
@@ -635,6 +634,11 @@ if (TARGET LBANN_CXX_FLAGS_werror)
 endif ()
 
 target_link_libraries(lbann PUBLIC ${DL_LIBRARY})
+
+if (LBANN_HAS_FFTW AND LBANN_HAS_CUDA)
+  target_compile_options(lbann PRIVATE
+    $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda>)
+endif (LBANN_HAS_FFTW AND LBANN_HAS_CUDA)
 
 # Fix the -g issue with Clang on OSX
 if (APPLE)
