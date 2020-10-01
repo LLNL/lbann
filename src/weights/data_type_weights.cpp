@@ -366,7 +366,7 @@ bool data_type_weights<TensorDataType>::save_to_checkpoint_shared(lbann::persist
 {
   // define name to store weight values
   char l_name[512];
-  sprintf(l_name, "weights_%s_%lldx%lld", this->get_name().c_str(), m_values->Height(), m_values->Width());
+  sprintf(l_name, "model_weights_%s_%lldx%lld", this->get_name().c_str(), m_values->Height(), m_values->Width());
   // write weights using persist call -- uses Elemental's write function.
   p.write_distmat(persist_type::model, l_name, m_values.get());
   // if saving training state, also write out state of optimizer
@@ -417,7 +417,7 @@ template <typename TensorDataType>
 bool data_type_weights<TensorDataType>::load_from_checkpoint_shared(lbann::persist& p)
 {
   // define filename containing saved weight values
-  auto f_name = El::BuildString("weights_", this->get_name(), "_",
+  auto f_name = El::BuildString("model_weights_", this->get_name(), "_",
                                 m_values->Height(), "x", m_values->Width(),
                                 ".bin");
   p.read_distmat(persist_type::model, f_name.c_str(), m_values.get());
@@ -430,10 +430,17 @@ bool data_type_weights<TensorDataType>::load_from_checkpoint_shared(lbann::persi
 
 template <typename TensorDataType>
 bool data_type_weights<TensorDataType>::load_from_save(std::string const& ckpt_dir,
-                                                       std::vector<std::string> const& weight_list){
+                                                       std::vector<std::string> const& weight_list,
+                                                       El::FileFormat el_mode){
+
+  std::string suffix = ".bin";
+  if(el_mode == El::ASCII) {
+    suffix = ".txt";
+  }
   // create weight file name to match to weight list entry
   auto l_name = El::BuildString("model_weights_", this->get_name(), "_",
-                                m_values->Height(), "x", m_values->Width(), ".bin");
+                                m_values->Height(), "x", m_values->Width(), suffix);
+
   auto it = std::find(weight_list.begin(),weight_list.end(),l_name);
   // If match is found read in weight values.
   if(it != weight_list.end()) {
@@ -447,15 +454,23 @@ bool data_type_weights<TensorDataType>::load_from_save(std::string const& ckpt_d
       throw lbann_exception(std::string("Failed to read weight matrix: ") + full_path);
       return false;
     }
-    El::Read(*m_values,full_path, El::BINARY, true);
+    El::Read(*m_values,full_path, el_mode, true);
   }
+  return true;
+}
+
+template <typename TensorDataType>
+bool data_type_weights<TensorDataType>::load_from_save(std::string const& ckpt_dir,
+                                                       std::vector<std::string> const& weight_list){
+  load_from_save(ckpt_dir, weight_list, El::BINARY);
+  load_from_save(ckpt_dir, weight_list, El::ASCII);
   return true;
 }
 
 template <typename TensorDataType>
 bool data_type_weights<TensorDataType>::save_to_checkpoint_distributed(lbann::persist& p){
   // Functions identically to shared checkpoint except weights and parameters are saved on a per rank basis
-  auto l_name = El::BuildString("weights_", this->get_name(),
+  auto l_name = El::BuildString("model_weights_", this->get_name(),
                                 "_", m_values->LocalHeight(),
                                 "x", m_values->LocalWidth(), ".bin");
   p.write_rank_distmat(persist_type::model, l_name.c_str(), *m_values);
@@ -468,7 +483,7 @@ bool data_type_weights<TensorDataType>::save_to_checkpoint_distributed(lbann::pe
 template <typename TensorDataType>
 bool data_type_weights<TensorDataType>::load_from_checkpoint_distributed(lbann::persist& p){
   // Functions identically to shared checkpoint except weights and parameters are loaded on a per rank basis
-  auto l_name = El::BuildString("weights_", this->get_name(),
+  auto l_name = El::BuildString("model_weights_", this->get_name(),
                                 "_", m_values->LocalHeight(),
                                 "x", m_values->LocalWidth(), ".bin");
   p.read_rank_distmat(persist_type::model, l_name.c_str(), *m_values);
