@@ -251,6 +251,13 @@ class DropoutDescriptor {
 public:
 
   explicit DropoutDescriptor(cudnnDropoutDescriptor_t desc=nullptr);
+  DropoutDescriptor(float dropout,
+                    void* states,
+                    size_t states_size,
+                    unsigned long long seed)
+  {
+    this->set(dropout, states, states_size, seed);
+  }
 
   ~DropoutDescriptor();
 
