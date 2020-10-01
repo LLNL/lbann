@@ -4,7 +4,9 @@ Support for new training algorithms:
 Support for new network structures:
 
 Support for new layers:
-
+ - "DFTAbs" layer that computes the absolute value of the channel-wise
+   DFT of the input data
+ 
 Python front-end:
 
 Performance optimizations:
@@ -12,10 +14,14 @@ Performance optimizations:
 Model portability & usability:
 
 Internal features:
+ - Elementary examples of using complex numbers
 
 I/O & data readers:
 
 Build system:
+ - Hydrogen v1.5.0
+ - Aluminum v0.5.0
+ - C++14 or newer standard with CUDA (CMake: "-DCMAKE_CUDA_STANDARD=14")
 
 Bug fixes:
 
