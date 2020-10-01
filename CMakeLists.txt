@@ -341,7 +341,9 @@ if (LBANN_HAS_CUDA)
 
   if (LBANN_HAS_GPU_FP16)
     set_property(TARGET cuda::toolkit PROPERTY
-      INTERFACE_COMPILE_OPTIONS $<$<COMPILE_LANGUAGE:CUDA>:-arch=sm_60>)
+      INTERFACE_COMPILE_OPTIONS
+      $<$<COMPILE_LANGUAGE:CUDA>:-arch=sm_60>
+      $<$<TARGET_EXISTS:FFTW::FFTW>:--expt-extended-lambda>)
   endif (LBANN_HAS_GPU_FP16)
 
   set(LBANN_HAS_CUDNN ${CUDNN_FOUND})
