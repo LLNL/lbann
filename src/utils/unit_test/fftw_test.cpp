@@ -57,6 +57,19 @@ auto get_ldim_offset()
   return 13;// because PRIME!
 }
 
+// The real-to-complex case reveals a certain symmetry in the DFT, but
+// it's an odd symmetry. The gist of it is:
+//
+//   A(i,j,k) = Conj(A(ni - i, nj - j, nk - k))
+//
+// where the indices are periodic. I've written it for 3d, but the
+// pattern is the same for arbitrary dimensions. The next few
+// functions check that symmetry and print out some info to stdout
+// when things go haywire.
+//
+// LBANN does not use the R2C case, and therefore these are left here
+// as useful information for the future, should we ever revisit the
+// R2C case.
 template <typename T>
 bool assert_r2c_symmetry_1d(
   El::Matrix<T, El::Device::CPU> const& full_output,
@@ -84,7 +97,7 @@ bool assert_r2c_symmetry_1d(
         auto const conj_ent = (ent == 0 ? 0 : num_entries-ent);
         auto const val = feat_map_mat[ent];
         auto const conj_val = feat_map_mat[conj_ent];
-        if (val != conj_val)
+        if (val != El::Conj(conj_val))
         {
           std::cout << "Error at (S,F,E,E') = ("
                     << sample << "," << feat_map << ","
@@ -175,6 +188,12 @@ bool assert_r2c_symmetry(
 }
 }// namespace <anon>
 
+// This is an early test that I wrote to consider the possibility of
+// doing a Real-to-Complex (forward) DFT. I think there are some
+// useful bits in here, namely understanding the conjugate symmetry
+// and the strange format that's used to store it. Thus, even though
+// this is not the case that's considered in LBANN, I have left it
+// here in case we ever go in this direction.
 TEMPLATE_TEST_CASE("Testing FFTW wrapper (R2C)",
                    "[fft][fftw][utilities]",
                    float, double)
