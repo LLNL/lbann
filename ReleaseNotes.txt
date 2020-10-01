@@ -8,10 +8,12 @@ Support for new layers:
 Python front-end:
 
 Performance optimizations:
+- Use cuDNN 8 RNN API and CUDA Graphs in GRU layer
 
 Model portability & usability:
 
 Internal features:
+- Wrapper classes for CUDA Graphs API
 
 I/O & data readers:
 
