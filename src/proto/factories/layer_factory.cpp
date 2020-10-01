@@ -65,6 +65,7 @@
 #include "lbann/layers/misc/channelwise_mean.hpp"
 #include "lbann/layers/misc/channelwise_softmax.hpp"
 #include "lbann/layers/misc/covariance.hpp"
+#include "lbann/layers/misc/dft_abs_builder.hpp"
 #include "lbann/layers/misc/mini_batch_index.hpp"
 #include "lbann/layers/misc/mini_batch_size.hpp"
 #include "lbann/layers/misc/variance.hpp"
@@ -264,6 +265,7 @@ private:
     LBANN_REGISTER_BUILDER(LocalResponseNormalization,
                            local_response_normalization);
     // Miscellaneous layers
+    LBANN_REGISTER_BUILDER(DFTAbs, dft_abs);
     LBANN_REGISTER_BUILDER(ChannelwiseSoftmax, channelwise_softmax);
     LBANN_REGISTER_DEFAULT_BUILDER(MiniBatchIndex, mini_batch_index);
     LBANN_REGISTER_DEFAULT_BUILDER(MiniBatchSize, mini_batch_size);

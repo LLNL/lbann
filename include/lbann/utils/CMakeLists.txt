@@ -8,6 +8,7 @@ set_full_path(THIS_DIR_HEADERS
   cudnn.hpp
   dataset.hpp
   description.hpp
+  dim_helpers.hpp
   entrywise_operator.hpp
   enum_iterator.hpp
   environment_variable.hpp

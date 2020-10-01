@@ -169,6 +169,7 @@ message Layer {
     LogicalXor logical_xor = 468;
     Clamp clamp = 469;
     MatMul matmul = 470;
+    DFTAbs dft_abs = 471;
 
     // Regularization layers
     BatchNormalization batch_normalization = 19;
@@ -263,6 +264,7 @@ message Layer {
     double min = 1;
     double max = 2;
   }
+  message DFTAbs {}
 
   /** @brief Matrix multiplication.
    *
