@@ -108,20 +108,21 @@ template <typename TensorDataType, typename ScalarParameterType>
 void convolution_forward(
   ScalarParameterType const& alpha_in,
   TensorDescriptor const& xDesc,
-  El::Matrix<TensorDataType, El::Device::GPU> const& x,
+  El::AbstractMatrix<TensorDataType> const& x,
   FilterDescriptor const& wDesc,
-  El::Matrix<TensorDataType, El::Device::GPU> const& w,
-  ConvolutionDescriptor convDesc,
-  fwd_conv_alg alg,
+  El::AbstractDistMatrix<TensorDataType> const& w,
+  ConvolutionDescriptor const& convDesc,
+  cudnnConvolutionFwdAlgo_t alg,
+  //fwd_conv_alg alg,
   El::Matrix<TensorDataType, El::Device::GPU>& workSpace,
   ScalarParameterType const& beta_in,
   TensorDescriptor const& yDesc,
-  El::Matrix<TensorDataType, El::Device::GPU>& y)
+  El::AbstractMatrix<TensorDataType>& y)
 {
   using LibScalingParamT = cudnn::ScalingParamType<TensorDataType>;
   auto multisync = El::MakeMultiSync(gpu::get_sync_info(x),
                                      gpu::get_sync_info(w),
-                                     gpu::get_sync_info(workspace),
+                                     gpu::get_sync_info(workSpace),
                                      gpu::get_sync_info(y));
   auto handle_manager = internal::make_default_handle_manager(multisync);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
@@ -129,14 +130,17 @@ void convolution_forward(
   CHECK_CUDNN(cudnnConvolutionForward(handle_manager.get(),
                                       &alpha,
                                       xDesc,
-                                      x,
+                                      x.LockedBuffer(),
+                                      wDesc,
+                                      w.LockedBuffer(),
                                       convDesc,
-                                      to_cudnn(alg),
-                                      workSpace,
+                                      alg,
+                                      //to_cudnn(alg),
+                                      workSpace.Buffer(),
                                       workSpace.Height() * sizeof(TensorDataType),
                                       &beta,
                                       yDesc,
-                                      y));
+                                      y.Buffer()));
 }
 
 }// namespace cudnn

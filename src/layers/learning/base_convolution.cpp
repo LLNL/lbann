@@ -34,6 +34,7 @@
 #include "lbann/utils/im2col.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/timer.hpp"
+#include "lbann/utils/dnn_lib/cudnn/base_convolution.hpp"
 #include "lbann/weights/initializer.hpp"
 #include "lbann/weights/variance_scaling_initializers.hpp"
 
@@ -423,6 +424,7 @@ base_convolution_layer<TensorDataType,Device>
 #else
 
   // Useful constants
+  using ScalingType = cudnn::ScalingParamType<TensorDataType>;
   const auto zero = El::TypeTraits<ScalingType>::Zero();
   const auto one = El::TypeTraits<ScalingType>::One();
 
@@ -477,19 +479,17 @@ base_convolution_layer<TensorDataType,Device>
                                                 workspace_size, workspace.Buffer());
 
   // Apply convolution
-  CHECK_CUDNN(cudnnConvolutionForward(cudnn::get_handle(),
-                                      &one,
-                                      input_desc,
-                                      input.LockedBuffer(),
-                                      m_kernel_cudnn_desc,
-                                      kernel.LockedBuffer(),
-                                      m_convolution_cudnn_desc,
-                                      convolution_cudnn_algorithm,
-                                      workspace.Buffer(),
-                                      workspace_size,
-                                      &zero,
-                                      output_desc,
-                                      output.Buffer()));
+  cudnn::convolution_forward(one,
+                             input_desc,
+                             input,
+                             m_kernel_cudnn_desc,
+                             kernel,
+                             m_convolution_cudnn_desc,
+                             convolution_cudnn_algorithm,
+                             workspace,
+                             zero,
+                             output_desc,
+                             output);
 
 #endif // LBANN_HAS_CUDNN
 }
