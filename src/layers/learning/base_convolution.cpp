@@ -586,13 +586,12 @@ void base_convolution_layer<TensorDataType,Device>::apply_bias_cudnn() {
       && local_output.Width() > 0) {
     const auto one = El::TypeTraits<ScalingType>::One();
     const auto& bias = this->weights_values(1);
-    CHECK_CUDNN(cudnnAddTensor(cudnn::get_handle(),
-                               &m_bias_scaling_factor,
-                               m_bias_cudnn_desc,
-                               bias.LockedBuffer(),
-                               &one,
-                               m_tensors_cudnn_desc.get_activations(),
-                               local_output.Buffer()));
+    cudnn::add_tensor(m_bias_scaling_factor,
+                      m_bias_cudnn_desc,
+                      bias,
+                      one,
+                      m_tensors_cudnn_desc.get_activations(),
+                      local_output);
   }
 #endif // LBANN_HAS_CUDNN
 }
@@ -624,6 +623,7 @@ base_convolution_layer<TensorDataType,Device>
       dst_scale_dt, gradient_scale_dt, true);
     if (has_local_data) {
       auto dst_scale = ScalingType(dst_scale_dt), gradient_scale = ScalingType(gradient_scale_dt);
+
       CHECK_CUDNN(cudnnConvolutionBackwardBias(
                     cudnn::get_handle(),
                     &gradient_scale,

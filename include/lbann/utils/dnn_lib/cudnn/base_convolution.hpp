@@ -207,6 +207,29 @@ void convolution_backward(
                                       dx.Buffer()));
 }
 
+template <typename TensorDataType, typename ScalarParameterType>
+void add_tensor(ScalarParameterType const& alpha_in,
+                TensorDescriptor const& aDesc,
+                El::AbstractDistMatrix<TensorDataType> const& A,
+                ScalarParameterType const& beta_in,
+                TensorDescriptor const& cDesc,
+                El::AbstractMatrix<TensorDataType>& C)
+{
+  using LibScalingParamT = cudnn::ScalingParamType<TensorDataType>;
+  auto multisync = El::MakeMultiSync(gpu::get_sync_info(A),
+                                     gpu::get_sync_info(C));
+  auto handle_manager = internal::make_default_handle_manager(multisync);
+  auto alpha = El::To<LibScalingParamT>(alpha_in);
+  auto beta = El::To<LibScalingParamT>(beta_in);
+  CHECK_CUDNN(cudnnAddTensor(handle_manager.get(),
+                             &alpha,
+                             aDesc,
+                             A.LockedBuffer(),
+                             &beta,
+                             cDesc,
+                             C.Buffer()));
+}
+
 }// namespace cudnn
 }// namespace lbann
 #endif // LBANN_UTILS_DNN_LIB_CUDNN_BASECONVOLUTION_HPP_
