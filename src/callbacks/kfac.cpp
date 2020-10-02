@@ -129,7 +129,7 @@ void kfac::on_backward_prop_end(model *m) {
   // List up layers to be updated
   if(m_learnable_layers.size() == 0){
     const size_t num_procs = comm->get_procs_per_trainer();
-    int proc_id = 0;
+    std::unordered_map<std::string, int> proc_ranks;
     for(auto i_layer = layers.begin(); i_layer != layers.end(); i_layer++) {
       const size_t layer_id = std::distance(layers.begin(), i_layer);
       const auto &l = *i_layer;
@@ -141,6 +141,13 @@ void kfac::on_backward_prop_end(model *m) {
       const bool is_bn = (l_bn != nullptr);
       if(!(is_fc || is_conv || is_bn))
         continue;
+
+      std::string proc_rank_key = "all";
+      if(m_inverse_strategy == EACH)
+        proc_rank_key = (is_fc ? "fc" : (is_conv ? "conv" : "bn"));
+      if(proc_ranks.find(proc_rank_key) == proc_ranks.end())
+        proc_ranks[proc_rank_key] = 0;
+      int& proc_rank = proc_ranks[proc_rank_key];
 
       // Check layer property
       const auto parent = l->get_parent_layers()[0];
@@ -168,7 +175,7 @@ void kfac::on_backward_prop_end(model *m) {
       if(is_fc || is_conv) {
         const struct kfac_layer_metadata metadata =
             {layer_id, l_conv, is_fc, is_conv, false, false, 0, 0,
-             proc_id};
+             proc_rank};
         m_learnable_layers.push_back(metadata);
 
       } else if(is_bn) {
@@ -209,15 +216,16 @@ void kfac::on_backward_prop_end(model *m) {
         const struct kfac_layer_metadata metadata = {
           layer_id, nullptr,
           false, false, is_bn_after_fc, is_bn_after_conv,
-          num_channels, spatial_prod, proc_id};
+          num_channels, spatial_prod, proc_rank};
         m_learnable_layers.push_back(metadata);
       }
-      proc_id = (proc_id+1)%num_procs;
+      if(m_inverse_strategy != ROOT)
+        proc_rank = (proc_rank+1)%num_procs;
     }
 
     if(comm->am_trainer_master()) {
       for(const auto metadata : m_learnable_layers) {
-        std::cout << "K-FAC setup: "
+        std::cout << "K-FAC callback setup: "
                   << "name=" << layers[metadata.layer_id]->get_name()
                   << ", id=" << metadata.layer_id
                   << ", is_fc=" << metadata.is_fc
@@ -929,6 +937,22 @@ build_kfac_callback_from_pbuf(
   const bool use_pi = params.use_pi();
   const std::vector<size_t> update_intervals = parse_update_intervals(params.update_intervals());
   const size_t update_interval_steps = params.update_interval_steps();
+
+  const std::string inverse_strategy_str = params.inverse_strategy();
+  kfac_inverse_strategy inverse_strategy;
+  if(inverse_strategy_str == "" || inverse_strategy_str == "all")
+    inverse_strategy = ALL;
+  else if(inverse_strategy_str == "each")
+    inverse_strategy = EACH;
+  else if(inverse_strategy_str == "root")
+    inverse_strategy = ROOT;
+  else {
+    std::stringstream err;
+    err << "Invalid inverse strategy type: "
+        << inverse_strategy_str;
+    LBANN_ERROR(err.str());
+  }
+
   return make_unique<CallbackType>(
       damping_act_params,
       damping_err_params,
@@ -938,7 +962,8 @@ build_kfac_callback_from_pbuf(
       kronecker_decay,
       print_time, print_matrix, print_matrix_summary,
       use_pi,
-      update_intervals, update_interval_steps);
+      update_intervals, update_interval_steps,
+      inverse_strategy);
 }
 
 } // namespace callback

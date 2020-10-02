@@ -398,6 +398,8 @@ message Callback {
     // If only one value is specified, it will be used throughout training.
     string update_intervals = 11; // default: "1"
     uint64 update_interval_steps = 12; // default: 0
+
+    string inverse_strategy = 13; // Options: all, each, root (default: all)
   }
 
 }

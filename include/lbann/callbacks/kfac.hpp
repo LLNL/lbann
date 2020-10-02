@@ -43,6 +43,13 @@ struct kfac_layer_metadata {
   int proc_rank;
 };
 
+enum kfac_inverse_strategy {
+  ALL,  // Apply round-robin assingment to all of the layers. may cause load imbalance.
+  EACH, // Apply round-robin assingment to every type of layers. may
+          // not work well for small networks.
+  ROOT, // Use only the root GPU. This is only for testing.
+};
+
 /** Callback hooks for the K-FAC method.
  *
  * Martens, James and Roger Grosse. "Optimizing neural networks with
@@ -73,7 +80,8 @@ class kfac : public callback_base {
        const bool print_matrix_summary,
        const bool use_pi,
        const std::vector<size_t> update_intervals,
-       const size_t update_interval_steps)
+       const size_t update_interval_steps,
+       const kfac_inverse_strategy inverse_strategy)
   : callback_base(),
     m_damping_act_params(damping_act_params),
     m_damping_err_params(damping_err_params),
@@ -84,7 +92,8 @@ class kfac : public callback_base {
     m_print_matrix_summary(print_matrix_summary),
     m_use_pi(use_pi),
     m_update_intervals(update_intervals),
-    m_update_interval_steps(update_interval_steps) {
+    m_update_interval_steps(update_interval_steps),
+    m_inverse_strategy(inverse_strategy) {
     m_damping_act = m_damping_act_params[0];
     m_damping_err = m_damping_err_params[0];
     m_damping_bn_act = m_damping_bn_act_params[0];
@@ -275,6 +284,9 @@ class kfac : public callback_base {
     size_t,
     std::pair<El::Matrix<DataType, El::Device::GPU>,
               El::Matrix<DataType, El::Device::GPU>>> m_kronecker_inverse;
+
+  /** @brief Assignment strategy for the model-parallel part. */
+  kfac_inverse_strategy m_inverse_strategy;
 
 };
 
