@@ -60,6 +60,16 @@ enum class fwd_conv_alg
   WINOGRAD_NONFUSED,
 };
 
+enum class bwd_conv_alg
+{
+  ALGO_0, // need a better name
+  ALGO_1, // need a better name
+  FFT,
+  FFT_TILING,
+  WINOGRAD,
+  WINOGRAD_NONFUSED,
+};
+
 namespace cudnn
 {
 
@@ -104,6 +114,21 @@ inline cudnnConvolutionFwdAlgo_t to_cudnn(fwd_conv_alg a)
   }
 }
 
+inline cudnnConvolutionBwdDataAlgo_t to_cudnn(bwd_conv_alg a)
+{
+  switch (a)
+  {
+  case bwd_conv_alg::ALGO_0: return CUDNN_CONVOLUTION_BWD_DATA_ALGO_0;
+  case bwd_conv_alg::ALGO_1: return CUDNN_CONVOLUTION_BWD_DATA_ALGO_1;
+  case bwd_conv_alg::FFT: return CUDNN_CONVOLUTION_BWD_DATA_ALGO_FFT;
+  case bwd_conv_alg::FFT_TILING: return CUDNN_CONVOLUTION_BWD_DATA_ALGO_FFT_TILING;
+  case bwd_conv_alg::WINOGRAD: return CUDNN_CONVOLUTION_BWD_DATA_ALGO_WINOGRAD;
+  case bwd_conv_alg::WINOGRAD_NONFUSED: return CUDNN_CONVOLUTION_BWD_DATA_ALGO_WINOGRAD_NONFUSED;
+  default:
+    LBANN_ERROR("Invalid backward convolution algorithm requested.");
+  }
+}
+
 template <typename TensorDataType, typename ScalarParameterType>
 void convolution_forward(
   ScalarParameterType const& alpha_in,
@@ -141,6 +166,45 @@ void convolution_forward(
                                       &beta,
                                       yDesc,
                                       y.Buffer()));
+}
+
+template <typename TensorDataType, typename ScalarParameterType>
+void convolution_backward(
+  ScalarParameterType const& alpha_in,
+  FilterDescriptor const& wDesc,
+  El::AbstractDistMatrix<TensorDataType> const& w,
+  TensorDescriptor const& dyDesc,
+  El::AbstractMatrix<TensorDataType> const& dy,
+  ConvolutionDescriptor const& convDesc,
+  cudnnConvolutionBwdDataAlgo_t alg,
+  //bwd_conv_alg alg,
+  El::Matrix<TensorDataType, El::Device::GPU>& workSpace,
+  ScalarParameterType const& beta_in,
+  TensorDescriptor const& dxDesc,
+  El::AbstractMatrix<TensorDataType>& dx)
+{
+  using LibScalingParamT = cudnn::ScalingParamType<TensorDataType>;
+  auto multisync = El::MakeMultiSync(gpu::get_sync_info(w),
+                                     gpu::get_sync_info(dy),
+                                     gpu::get_sync_info(workSpace),
+                                     gpu::get_sync_info(dx));
+  auto handle_manager = internal::make_default_handle_manager(multisync);
+  auto alpha = El::To<LibScalingParamT>(alpha_in);
+  auto beta = El::To<LibScalingParamT>(beta_in);
+  CHECK_CUDNN(cudnnConvolutionBackwardData(handle_manager.get(),
+                                      &alpha,
+                                      wDesc,
+                                      w.LockedBuffer(),
+                                      dyDesc,
+                                      dy.LockedBuffer(),
+                                      convDesc,
+                                      alg,
+                                      //to_cudnn(alg),
+                                      workSpace.Buffer(),
+                                      workSpace.Height() * sizeof(TensorDataType),
+                                      &beta,
+                                      dxDesc,
+                                      dx.Buffer()));
 }
 
 }// namespace cudnn

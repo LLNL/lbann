@@ -503,6 +503,7 @@ apply_transposed_convolution_cudnn(bool during_forward_prop) {
 #else
 
   // Useful constants
+  using ScalingType = cudnn::ScalingParamType<TensorDataType>;
   const auto zero = El::TypeTraits<ScalingType>::Zero();
   const auto one = El::TypeTraits<ScalingType>::One();
 
@@ -559,21 +560,17 @@ apply_transposed_convolution_cudnn(bool during_forward_prop) {
                          output_desc, output.Buffer(),
                          workspace_size, workspace.Buffer());
   // Perform transposed convolution
-  CHECK_CUDNN(
-    cudnnConvolutionBackwardData(cudnn::get_handle(),
-                                 &one,
-                                 m_kernel_cudnn_desc,
-                                 kernel.LockedBuffer(),
-                                 input_desc,
-                                 input.LockedBuffer(),
-                                 m_convolution_cudnn_desc,
-                                 transposed_convolution_cudnn_algorithm,
-                                 workspace.Buffer(),
-                                 workspace_size,
-                                 &zero,
-                                 output_desc,
-                                 output.Buffer()));
-
+  cudnn::convolution_backward(one,
+                              m_kernel_cudnn_desc,
+                              kernel,
+                              input_desc,
+                              input,
+                              m_convolution_cudnn_desc,
+                              transposed_convolution_cudnn_algorithm,
+                              workspace,
+                              zero,
+                              output_desc,
+                              output);
 
 #endif // LBANN_HAS_CUDNN
 }
