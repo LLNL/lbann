@@ -208,10 +208,6 @@ void kfac::on_backward_prop_end(model *m) {
           for(auto i = input_dims.begin()+1; i != input_dims.end(); i++)
             spatial_prod *= *i;
         }
-        assert(num_channels == (size_t) scale_values.Height());
-        assert(num_channels == (size_t) scale_values.LocalHeight());
-        assert(num_channels == (size_t) bias_values.Height());
-        assert(num_channels == (size_t) bias_values.LocalHeight());
 
         const struct kfac_layer_metadata metadata = {
           layer_id, nullptr,
@@ -397,6 +393,10 @@ void kfac::on_backward_prop_end(model *m) {
     const auto &b_dtw = dynamic_cast<data_type_weights<DataType>*>(&biases);
     const auto &scale_values = s_dtw->get_values();
     const auto &bias_values = b_dtw->get_values();
+    assert(metadata.bn_num_channels == (size_t) scale_values.Height());
+    assert(metadata.bn_num_channels == (size_t) scale_values.LocalHeight());
+    assert(metadata.bn_num_channels == (size_t) bias_values.Height());
+    assert(metadata.bn_num_channels == (size_t) bias_values.LocalHeight());
 
     const bool is_update_required = (num_steps%m_update_interval_steps) == 0
         || m_kronecker_inverse.find(metadata.layer_id) == m_kronecker_inverse.end();
