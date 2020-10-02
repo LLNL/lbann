@@ -5,6 +5,7 @@ import os
 import os.path
 import sys
 import numpy as np
+import pytest
 
 # Bamboo utilities
 current_file = os.path.realpath(__file__)
@@ -142,6 +143,12 @@ def construct_model(lbann):
     # Pooling
     # ------------------------------------------
 
+    num_height_groups = tools.gpus_per_node(lbann)
+    if num_height_groups == 0:
+        e = 'this test requires GPUs.'
+        print('Skip - ' + e)
+        pytest.skip(e)
+
     pool_configs = []
 
     # 3x3 pooling with same padding
@@ -206,7 +213,7 @@ def construct_model(lbann):
                           pool_pads=tools.str_list(p["pads"]),
                           pool_mode=p["pool_mode"],
                           parallel_strategy=create_parallel_strategy(
-                              tools.gpus_per_node(lbann)))
+                              num_height_groups))
         z = lbann.L2Norm2(y)
 
         # Since max pooling is not differentiable, we only use average pooling.
@@ -305,5 +312,5 @@ def construct_data_reader(lbann):
 # Create test functions that can interact with PyTest
 # Note: Create test name by removing ".py" from file name
 _test_name = os.path.splitext(os.path.basename(current_file))[0]
-for test in tools.create_tests(setup_experiment, _test_name, procs_per_node="auto"):
+for test in tools.create_tests(setup_experiment, _test_name):
     globals()[test.__name__] = test

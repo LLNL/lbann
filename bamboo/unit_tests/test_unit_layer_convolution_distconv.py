@@ -5,6 +5,7 @@ import os
 import os.path
 import sys
 import numpy as np
+import pytest
 
 # Bamboo utilities
 current_file = os.path.realpath(__file__)
@@ -158,10 +159,15 @@ def construct_model(lbann):
     # ------------------------------------------
     # 3^n conv, stride=1, pad=1, dilation=1, bias
 
+    num_height_groups = tools.gpus_per_node(lbann)
+    if num_height_groups == 0:
+        e = 'this test requires GPUs.'
+        print('Skip - ' + e)
+        pytest.skip(e)
+
     for num_dims, reference_val in [
             (2, 11913.852660080756),
-            (3, 9952.365297083174),
-    ]:
+            (3, 9952.365297083174)]:
         # Convolution settings
         kernel_dims = [5, _sample_dims[0] if num_dims == 2 else _sample_dims_3d[0],] + [3]*num_dims
         strides = [1]*num_dims
@@ -190,7 +196,7 @@ def construct_model(lbann):
                               conv_dilations=tools.str_list(dilations),
                               has_bias=False,
                               parallel_strategy=create_parallel_strategy(
-                                  tools.gpus_per_node(lbann)))
+                                  num_height_groups))
         z = lbann.L2Norm2(y)
         obj.append(z)
         metrics.append(lbann.Metric(z, name='basic {}D 3^n convolution'.format(num_dims)))
@@ -284,5 +290,5 @@ def construct_data_reader(lbann):
 # Create test functions that can interact with PyTest
 # Note: Create test name by removing ".py" from file name
 _test_name = os.path.splitext(os.path.basename(current_file))[0]
-for test in tools.create_tests(setup_experiment, _test_name, procs_per_node="auto"):
+for test in tools.create_tests(setup_experiment, _test_name):
     globals()[test.__name__] = test
