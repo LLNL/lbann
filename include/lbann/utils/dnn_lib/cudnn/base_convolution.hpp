@@ -232,6 +232,45 @@ void convolution_backward_bias(
 }
 
 template <typename TensorDataType, typename ScalarParameterType>
+void convolution_backward_filter(
+  ScalarParameterType const& alpha_in,
+  TensorDescriptor const& xDesc,
+  El::AbstractMatrix<TensorDataType> const& x,
+  TensorDescriptor const& dyDesc,
+  El::AbstractMatrix<TensorDataType> const& dy,
+  ConvolutionDescriptor const& convDesc,
+  cudnnConvolutionBwdFilterAlgo_t alg,
+  //bwd_conv_filter alg,
+  El::Matrix<TensorDataType, El::Device::GPU>& workSpace,
+  ScalarParameterType const& beta_in,
+  FilterDescriptor const& dwDesc,
+  El::AbstractDistMatrix<TensorDataType>& dw)
+{
+  using LibScalingParamT = cudnn::ScalingParamType<TensorDataType>;
+  auto multisync = El::MakeMultiSync(gpu::get_sync_info(dw),
+                                     gpu::get_sync_info(workSpace),
+                                     gpu::get_sync_info(dy),
+                                     gpu::get_sync_info(x));
+  auto handle_manager = internal::make_default_handle_manager(multisync);
+  auto alpha = El::To<LibScalingParamT>(alpha_in);
+  auto beta = El::To<LibScalingParamT>(beta_in);
+  CHECK_CUDNN(cudnnConvolutionBackwardFilter(handle_manager.get(),
+                                      &alpha,
+                                      xDesc,
+                                      x.LockedBuffer(),
+                                      dyDesc,
+                                      dy.LockedBuffer(),
+                                      convDesc,
+                                      alg,
+                                      //to_cudnn(alg),
+                                      workSpace.Buffer(),
+                                      workSpace.Height() * sizeof(TensorDataType),
+                                      &beta,
+                                      dwDesc,
+                                      dw.Buffer()));
+}
+
+template <typename TensorDataType, typename ScalarParameterType>
 void add_tensor(ScalarParameterType const& alpha_in,
                 TensorDescriptor const& aDesc,
                 El::AbstractDistMatrix<TensorDataType> const& A,

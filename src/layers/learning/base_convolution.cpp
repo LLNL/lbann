@@ -667,20 +667,18 @@ base_convolution_layer<TensorDataType,Device>
             m_convolution_cudnn_desc,
             m_kernel_cudnn_desc,
             workspace_size, workspace.Buffer());
-        CHECK_CUDNN(cudnnConvolutionBackwardFilter(
-                      cudnn::get_handle(),
-                      &gradient_scale,
-                      gradient_wrt_output_desc,
-                      local_gradient_wrt_output.LockedBuffer(),
-                      input_desc,
-                      local_input.LockedBuffer(),
-                      m_convolution_cudnn_desc,
-                      kernel_gradient_cudnn_algorithm,
-                      workspace.Buffer(),
-                      workspace_size,
-                      &dst_scale,
-                      m_kernel_cudnn_desc,
-                      kernel_gradient.Buffer()));
+        cudnn::convolution_backward_filter(
+          gradient_scale,
+          gradient_wrt_output_desc,
+          local_gradient_wrt_output,
+          input_desc,
+          local_input,
+          m_convolution_cudnn_desc,
+          kernel_gradient_cudnn_algorithm,
+          workspace,
+          dst_scale,
+          m_kernel_cudnn_desc,
+          kernel_gradient);
       } else {
         cudnnConvolutionBwdFilterAlgo_t kernel_gradient_cudnn_algorithm
           = get_backward_filter_algo_cudnn(
@@ -690,20 +688,18 @@ base_convolution_layer<TensorDataType,Device>
             m_convolution_cudnn_desc,
             m_kernel_cudnn_desc,
             workspace_size, workspace.Buffer());
-        CHECK_CUDNN(cudnnConvolutionBackwardFilter(
-                      cudnn::get_handle(),
-                      &gradient_scale,
-                      input_desc,
-                      local_input.LockedBuffer(),
-                      gradient_wrt_output_desc,
-                      local_gradient_wrt_output.LockedBuffer(),
-                      m_convolution_cudnn_desc,
-                      kernel_gradient_cudnn_algorithm,
-                      workspace.Buffer(),
-                      workspace_size,
-                      &dst_scale,
-                      m_kernel_cudnn_desc,
-                      kernel_gradient.Buffer()));
+        cudnn::convolution_backward_filter(
+          gradient_scale,
+          input_desc,
+          local_input,
+          gradient_wrt_output_desc,
+          local_gradient_wrt_output,
+          m_convolution_cudnn_desc,
+          kernel_gradient_cudnn_algorithm,
+          workspace,
+          dst_scale,
+          m_kernel_cudnn_desc,
+          kernel_gradient);
       }
     } else {
       El::Scale(dst_scale_dt, kernel_gradient);
