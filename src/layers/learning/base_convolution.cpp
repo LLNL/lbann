@@ -623,15 +623,13 @@ base_convolution_layer<TensorDataType,Device>
       dst_scale_dt, gradient_scale_dt, true);
     if (has_local_data) {
       auto dst_scale = ScalingType(dst_scale_dt), gradient_scale = ScalingType(gradient_scale_dt);
-
-      CHECK_CUDNN(cudnnConvolutionBackwardBias(
-                    cudnn::get_handle(),
-                    &gradient_scale,
-                    m_tensors_cudnn_desc.get_prev_error_signals(),
-                    local_gradient_wrt_output.LockedBuffer(),
-                    &dst_scale,
-                    m_bias_cudnn_desc,
-                    bias_gradient.Buffer()));
+      cudnn::convolution_backward_bias(
+        gradient_scale,
+        m_tensors_cudnn_desc.get_prev_error_signals(),
+        local_gradient_wrt_output,
+        dst_scale,
+        m_bias_cudnn_desc,
+        bias_gradient);
     } else {
       El::Scale(dst_scale_dt, bias_gradient);
     }

@@ -208,6 +208,30 @@ void convolution_backward(
 }
 
 template <typename TensorDataType, typename ScalarParameterType>
+void convolution_backward_bias(
+  ScalarParameterType const& alpha_in,
+  TensorDescriptor const& dyDesc,
+  El::AbstractMatrix<TensorDataType> const& dy,
+  ScalarParameterType const& beta_in,
+  TensorDescriptor const& dbDesc,
+  El::AbstractDistMatrix<TensorDataType>& db)
+{
+  using LibScalingParamT = cudnn::ScalingParamType<TensorDataType>;
+  auto multisync = El::MakeMultiSync(gpu::get_sync_info(dy),
+                                     gpu::get_sync_info(db));
+  auto handle_manager = internal::make_default_handle_manager(multisync);
+  auto alpha = El::To<LibScalingParamT>(alpha_in);
+  auto beta = El::To<LibScalingParamT>(beta_in);
+  CHECK_CUDNN(cudnnConvolutionBackwardBias(handle_manager.get(),
+                                           &alpha,
+                                           dyDesc,
+                                           dy.LockedBuffer(),
+                                           &beta,
+                                           dbDesc,
+                                           db.Buffer()));
+}
+
+template <typename TensorDataType, typename ScalarParameterType>
 void add_tensor(ScalarParameterType const& alpha_in,
                 TensorDescriptor const& aDesc,
                 El::AbstractDistMatrix<TensorDataType> const& A,
