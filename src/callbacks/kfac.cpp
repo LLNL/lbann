@@ -463,7 +463,8 @@ void kfac::on_backward_prop_end(model *m) {
     optimizer *w_optimizer = weights.get_optimizer();
     auto* w_dto = dynamic_cast<data_type_optimizer<DataType>*>(w_optimizer);
     // w_gradients is already synchronized among processes.
-    El::Matrix<DataType, El::Device::GPU>& w_gradients = w_dto->get_gradient().Matrix();
+    El::Matrix<DataType, El::Device::GPU> w_gradients;
+    El::Copy(w_dto->get_gradient().LockedMatrix(), w_gradients);
 
     const bool is_update_required = (num_steps%m_update_interval_steps) == 0
         || m_kronecker_inverse.find(metadata.layer_id) == m_kronecker_inverse.end();
@@ -520,10 +521,7 @@ void kfac::on_backward_prop_end(model *m) {
         assert(w_gradients.Width() == 1);
         assert((w_gradients.Height()%num_output_channels) == 0);
         const auto height_reshaped = w_gradients.Height()/num_output_channels;
-        w_gradients.Attach(height_reshaped,
-                           num_output_channels,
-                           w_gradients.Buffer(),
-                           height_reshaped);
+        w_gradients.Resize(height_reshaped, num_output_channels);
       }
 
       // Compute preconditioned gradients
@@ -541,9 +539,7 @@ void kfac::on_backward_prop_end(model *m) {
           El::TypeTraits<DataType>::Zero(), Fgrad);
 
       if(metadata.is_conv) {
-        Fgrad.Attach(Fgrad.Width()*Fgrad.Height(), 1,
-                     Fgrad.Buffer(),
-                     Fgrad.Width()*Fgrad.Height());
+        Fgrad.Resize(Fgrad.Width()*Fgrad.Height(), 1);
       } else {
         assert(Fgrad.Height() == w_gradients.Height());
         assert(Fgrad.Width() == w_gradients.Width());
