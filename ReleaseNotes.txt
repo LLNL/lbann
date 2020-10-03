@@ -6,15 +6,17 @@ Support for new network structures:
 Support for new layers:
  - "DFTAbs" layer that computes the absolute value of the channel-wise
    DFT of the input data
- 
+
 Python front-end:
 
 Performance optimizations:
+- Use cuDNN 8 RNN API and CUDA Graphs in GRU layer
 
 Model portability & usability:
 
 Internal features:
  - Elementary examples of using complex numbers
+- Wrapper classes for CUDA Graphs API
 
 I/O & data readers:
 

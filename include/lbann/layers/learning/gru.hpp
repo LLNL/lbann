@@ -32,28 +32,35 @@
 #include "lbann/utils/cudnn.hpp"
 #endif // LBANN_HAS_CUDNN
 
+/// GPU GRU layer requires CUDA 11.0 and cuDNN 8.0.4 or newer
+#ifdef LBANN_HAS_CUDNN
+#if CUDA_VERSION >= 11000 && CUDNN_VERSION >= 8004
+#define LBANN_GRU_LAYER_GPU_SUPPORTED
+#endif // CUDA_VERSION >= 11000 && CUDNN_VERSION >= 8004
+#endif // LBANN_HAS_CUDNN
+
 namespace lbann {
 
-/** @brief Gated recurrent unit
+/** @brief Stacked gated recurrent unit
  *
  *  Expects two inputs: a 2D input sequence (
  *  @f$ \text{sequence\_length}\times\text{input\_size} @f$ )
- *  and a 1D initial hidden state ( @f$ \text{hidden\_size} @f$ ).
+ *  and a 2D initial hidden state (
+ *  @f$ \text{num\_layers}times\text{hidden\_size} @f$ ).
  *
- *  Uses four weights: "ih\_matrix" (
- *  @f$ 3 \text{hidden\_size}\times\text{input\_size} @f$ ),
- *  "hh\_matrix" (
+ *  Uses four weights per GRU cell: "ih\_matrix" (
+ *  @f$ 3 \text{hidden\_size}\times\text{input\_size} @f$ for layer 0
+ *  and @f$ 3 \text{hidden\_size}\times\text{hidden\_size} for other
+ *  layers), "hh\_matrix" (
  *  @f$ 3 \text{hidden\_size}\times\text{hidden\_size} @f$ ),
  *  "ih_bias" ( @f$ 3 \text{hidden\_size} @f$ ),
  *  "hh_bias" ( @f$ 3 \text{hidden\_size} @f$ ).
  *
+ *  Currently only supported on GPU. Requires at least CUDA 11.0 and
+ *  cuDNN 8.0.4.
+ *
  *  @todo Support CPU
  *  @todo Support bidirectional RNNs
- *  @todo Support stacked RNNs
- *
- *  @warning cuDNN 8 exposes a new RNN API and deprecates the old one.
- *  Consider reimplementing this layer once cuDNN 8 is the minimum
- *  version.
  */
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 class gru_layer
@@ -66,7 +73,8 @@ public:
 
   gru_layer(
     lbann_comm* comm,
-    size_t hidden_size);
+    size_t hidden_size,
+    size_t num_layers);
 
   gru_layer(const gru_layer& other);
   gru_layer& operator=(const gru_layer& other);
@@ -82,26 +90,62 @@ protected:
 
   void setup_dims(DataReaderMetaData& dr_metadata) override;
   void setup_data(size_t max_mini_batch_size) override;
-#ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_GRU_LAYER_GPU_SUPPORTED
   void setup_gpu() override;
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_GRU_LAYER_GPU_SUPPORTED
 
   void fp_compute() override;
   void bp_compute() override;
 
 private:
 
+  /** @brief Size of each hidden state and output vector */
   size_t m_hidden_size;
+  /** @brief Number of stacked GRU cells */
+  size_t m_num_layers;
 
-#ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_GRU_LAYER_GPU_SUPPORTED
+
+  // Convenience typedefs
   using ByteBuffer = hydrogen::simple_buffer<El::byte, Device>;
+  using LocalMat = El::Matrix<TensorDataType, El::Device::GPU>;
+
+  // cuDNN descriptors
   cudnn::RNNDescriptor m_rnn_cudnn_desc;
-  cudnn::TensorDescriptor m_input_cudnn_desc;
-  cudnn::TensorDescriptor m_output_cudnn_desc;
+  cudnn::RNNDataDescriptor m_input_cudnn_desc;
+  cudnn::RNNDataDescriptor m_output_cudnn_desc;
   cudnn::TensorDescriptor m_hidden_cudnn_desc;
-  cudnn::FilterDescriptor m_packed_weights_cudnn_desc;
+
+  // cuDNN workspaces
+  LocalMat m_input_sequence_workspace;
+  LocalMat m_input_sequence_grad_workspace;
+  LocalMat m_output_sequence_grad_workspace;
+  LocalMat m_init_hidden_workspace;
+  LocalMat m_init_hidden_grad_workspace;
+  ByteBuffer m_weights_cudnn_workspace;
+  ByteBuffer m_weights_grad_cudnn_workspace;
+  ByteBuffer m_cudnn_workspace;
   ByteBuffer m_cudnn_reserve_space;
-#endif // LBANN_HAS_CUDNN
+  hydrogen::simple_buffer<int32_t, El::Device::GPU> m_gpu_sequence_lengths;
+
+  /** @brief CUDA graph for cuDNN forward prop function */
+  cuda::ExecutableGraph m_cuda_graph_forward_prop;
+  /** @brief Hash for @c m_cuda_graph_forward_prop
+   *
+   *  Hash is generated with input arguments to cuDNN function (mostly
+   *  workspace buffer pointers).
+   */
+  size_t m_cuda_graph_forward_prop_hash{0};
+  /** @brief CUDA graph for cuDNN backprop functions */
+  cuda::ExecutableGraph m_cuda_graph_backward_prop;
+  /** @brief Hash for @c m_cuda_graph_backward_prop
+   *
+   *  Hash is generated with input arguments to cuDNN functions (mostly
+   *  workspace buffer pointers).
+   */
+  size_t m_cuda_graph_backward_prop_hash{0};
+
+#endif // LBANN_GRU_LAYER_GPU_SUPPORTED
 
   template <typename T>
   friend void fp_compute_impl(gru_layer<T,Layout,Device>&);
@@ -114,16 +158,16 @@ private:
 LBANN_DEFINE_LAYER_BUILDER(gru);
 
 // Explicit template instantiation
-#ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_GRU_LAYER_GPU_SUPPORTED
 #ifndef LBANN_GRU_LAYER_INSTANTIATE
-#define PROTO(T)                                                        \
-  extern template class gru_layer<                                             \
+#define PROTO(T)                                        \
+  extern template class gru_layer<                      \
     T, data_layout::DATA_PARALLEL, El::Device::GPU>;
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"
 #undef PROTO
 #endif // LBANN_GRU_LAYER_INSTANTIATE
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_GRU_LAYER_GPU_SUPPORTED
 
 } // namespace lbann
 

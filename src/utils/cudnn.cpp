@@ -568,54 +568,6 @@ RNNDescriptor::~RNNDescriptor() {
   }
 }
 
-RNNDescriptor::RNNDescriptor(const RNNDescriptor& other) {
-  if (other.desc_) {
-    int hidden_size, num_layers;
-    cudnnDropoutDescriptor_t dropout_desc;
-    cudnnRNNInputMode_t input_mode;
-    cudnnDirectionMode_t direction;
-    cudnnRNNMode_t mode;
-    cudnnRNNAlgo_t algo;
-    cudnnDataType_t math_precision;
-#if CUDNN_VERSION >= 8000
-    CHECK_CUDNN(
-      cudnnGetRNNDescriptor_v6(
-        get_handle(),
-        other.desc_,
-        &hidden_size,
-        &num_layers,
-        &dropout_desc,
-        &input_mode,
-        &direction,
-        &mode,
-        &algo,
-        &math_precision));
-#else // CUDNN_VERSION < 8000
-    CHECK_CUDNN(
-      cudnnGetRNNDescriptor(
-        get_handle(),
-        other.desc_,
-        &hidden_size,
-        &num_layers,
-        &dropout_desc,
-        &input_mode,
-        &direction,
-        &mode,
-        &algo,
-        &math_precision));
-#endif // CUDNN_VERSION >= 8000
-    set(
-      hidden_size,
-      num_layers,
-      dropout_desc,
-      input_mode,
-      direction,
-      mode,
-      algo,
-      math_precision);
-  }
-}
-
 RNNDescriptor::RNNDescriptor(RNNDescriptor&& other)
   : desc_{other.desc_} {
   other.desc_ = nullptr;
@@ -658,27 +610,121 @@ void RNNDescriptor::create() {
 }
 
 void RNNDescriptor::set(
+  cudnnRNNAlgo_t algorithm,
+  cudnnRNNMode_t cell_mode,
+  cudnnRNNBiasMode_t bias_mode,
+  cudnnDirectionMode_t direction_mode,
+  cudnnRNNInputMode_t input_mode,
+  cudnnDataType_t data_type,
+  cudnnDataType_t math_precision,
+  cudnnMathType_t math_type,
+  size_t input_size,
   size_t hidden_size,
+  size_t proj_size,
   size_t num_layers,
   cudnnDropoutDescriptor_t dropout_desc,
-  cudnnRNNInputMode_t input_mode,
-  cudnnDirectionMode_t direction,
-  cudnnRNNMode_t mode,
-  cudnnRNNAlgo_t algo,
-  cudnnDataType_t math_precision) {
+  uint32_t aux_flags) {
   create();
+#if CUDNN_VERSION < 8000
+  LBANN_ERROR(
+    "cuDNN 8 or newer is required for RNN support ",
+    "(detected ",CUDNN_MAJOR,".",CUDNN_MINOR,".",CUDNN_PATCHLEVEL,")");
+#else // CUDNN_VERSION >= 8000
   CHECK_CUDNN(
-    cudnnSetRNNDescriptor_v6(
-      get_handle(),
+    cudnnSetRNNDescriptor_v8(
       desc_,
+      algorithm,
+      cell_mode,
+      bias_mode,
+      direction_mode,
+      input_mode,
+      data_type,
+      math_precision,
+      math_type,
+      input_size,
       hidden_size,
+      proj_size,
       num_layers,
       dropout_desc,
-      input_mode,
-      direction,
-      mode,
-      algo,
-      math_precision));
+      aux_flags));
+#endif // CUDNN_VERSION >= 8000
+}
+
+// -----------------------------
+// RNNDataDescriptor
+// -----------------------------
+
+RNNDataDescriptor::RNNDataDescriptor(cudnnRNNDataDescriptor_t desc)
+  : desc_{desc}
+{}
+
+RNNDataDescriptor::~RNNDataDescriptor() {
+  if (desc_) {
+    // Don't check status to avoid exceptions
+    cudnnDestroyRNNDataDescriptor(desc_);
+  }
+}
+
+RNNDataDescriptor::RNNDataDescriptor(RNNDataDescriptor&& other)
+  : desc_{other.desc_} {
+  other.desc_ = nullptr;
+}
+
+RNNDataDescriptor& RNNDataDescriptor::operator=(RNNDataDescriptor other) {
+  swap(other, *this);
+  return *this;
+}
+
+void swap(RNNDataDescriptor& first, RNNDataDescriptor& second) {
+  std::swap(first.desc_, second.desc_);
+}
+
+void RNNDataDescriptor::reset(cudnnRNNDataDescriptor_t desc) {
+  if (desc_) {
+    CHECK_CUDNN(cudnnDestroyRNNDataDescriptor(desc_));
+  }
+  desc_ = desc;
+}
+
+cudnnRNNDataDescriptor_t RNNDataDescriptor::release() {
+  auto old_desc = desc_;
+  desc_ = nullptr;
+  return old_desc;
+}
+
+cudnnRNNDataDescriptor_t RNNDataDescriptor::get() const noexcept {
+  return desc_;
+}
+
+RNNDataDescriptor::operator cudnnRNNDataDescriptor_t() const noexcept {
+  return get();
+}
+
+void RNNDataDescriptor::create() {
+  if (!desc_) {
+    CHECK_CUDNN(cudnnCreateRNNDataDescriptor(&desc_));
+  }
+}
+
+void RNNDataDescriptor::set(
+  cudnnDataType_t data_type,
+  cudnnRNNDataLayout_t layout,
+  size_t max_seq_length,
+  size_t batch_size,
+  size_t vector_size,
+  const int seq_length_array[],
+  void* padding_fill) {
+  create();
+  CHECK_CUDNN(
+    cudnnSetRNNDataDescriptor(
+      desc_,
+      data_type,
+      layout,
+      max_seq_length,
+      batch_size,
+      vector_size,
+      seq_length_array,
+      padding_fill));
 }
 
 ////////////////////////////////////////////////////////////
