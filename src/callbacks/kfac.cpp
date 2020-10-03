@@ -268,16 +268,29 @@ void kfac::on_backward_prop_end(model *m) {
 
     // Compute Kronecker factors, assuming that local_errors are
     // already multiplied by 1/N in the loss layer.
-    El::Matrix<DataType, El::Device::GPU> A, G;
+    const auto input_dims = l->get_input_dims(); // CHW
+    const auto output_dims = l->get_output_dims(); // KH'W'
+    const size_t num_input_channels = input_dims[0];
+    const size_t num_output_channels = output_dims[0];
+    size_t A_height = local_activations.Height();
+    if(metadata.is_conv) {
+      const auto conv_dims = metadata.l_conv->get_conv_dims();
+      A_height = num_input_channels
+          *std::accumulate(conv_dims.begin(), conv_dims.end(),
+                           1, std::multiplies<int>());
+    }
+    const size_t G_height = !metadata.is_conv ? local_errors.Height() : num_output_channels;
+    auto& A = get_workspace_matrix(
+        std::string("A_")+std::to_string(metadata.layer_id),
+        A_height, A_height);
+    auto& G = get_workspace_matrix(
+        std::string("G_")+std::to_string(metadata.layer_id),
+        G_height, G_height);
     if(!metadata.is_conv) {
       get_kronecker_factor_fc(A, local_activations, 1.0/mini_batch_size);
       get_kronecker_factor_fc(G, local_errors, mini_batch_size);
-
     } else {
-      const auto input_dims = l->get_input_dims(); // CHW
-      const auto output_dims = l->get_output_dims(); // KH'W'
-      const size_t num_input_channels = input_dims[0];
-      const size_t num_output_channels = output_dims[0];
+      // TODO: Move to metadata
       size_t spatial_input_prod = 1, spatial_output_prod = 1;
       // std::accumulate might overflow for large 3D layers
       std::vector<int> input_spatial_dims, output_spatial_dims;
@@ -302,21 +315,25 @@ void kfac::on_backward_prop_end(model *m) {
       assert((size_t) local_activations.Height() == num_input_channels*spatial_input_prod);
       assert((size_t) local_errors.Height() == num_output_channels*spatial_output_prod);
 
+      auto& Acol = get_workspace_matrix(std::string("Acol_")+std::to_string(metadata.layer_id));
+      auto& Gcol = get_workspace_matrix(std::string("Gcol_")+std::to_string(metadata.layer_id));
       get_kronecker_factor_conv(
-          A,
+          A, Acol,
           local_activations, 1.0/mini_batch_size,
           local_batch_size, num_input_channels, input_spatial_dims,
           metadata.l_conv, true, stream);
       get_kronecker_factor_conv(
-          G,
+          G, Gcol,
           local_errors, DataType(mini_batch_size)/spatial_output_prod,
           local_batch_size, num_output_channels, output_spatial_dims,
           metadata.l_conv, false, stream);
     }
 
     // Accumulate local Kronecker factors
-    allreduce_lower_tri(A, comm, stream);
-    allreduce_lower_tri(G, comm, stream);
+    auto& ALws = get_workspace_matrix(std::string("ALws_")+std::to_string(metadata.layer_id));
+    auto& GLws = get_workspace_matrix(std::string("GLws_")+std::to_string(metadata.layer_id));
+    allreduce_lower_tri(A, ALws, comm, stream);
+    allreduce_lower_tri(G, GLws, comm, stream);
 
     // Update average Kronecker factors
     // TODO: Each matrix is used only by one process, but A and G
@@ -357,10 +374,6 @@ void kfac::on_backward_prop_end(model *m) {
           << std::endl;
       std::cout << oss.str();
     }
-
-    // TODO: Use persistent workspace instead of using local
-    // matrices to remove synchronization.
-    CHECK_CUDA(cudaStreamSynchronize(stream));
   }
 
   // Step 1 (BN)
@@ -401,7 +414,8 @@ void kfac::on_backward_prop_end(model *m) {
     const bool is_update_required = (num_steps%m_update_interval_steps) == 0
         || m_kronecker_inverse.find(metadata.layer_id) == m_kronecker_inverse.end();
     if(is_update_required) {
-      El::Matrix<DataType, El::Device::GPU> cols(
+      auto& cols = get_workspace_matrix(
+          std::string("bn_cols_")+std::to_string(metadata.layer_id),
           metadata.bn_num_channels*2*local_batch_size,
           metadata.bn_spatial_prod);
       compute_bn_factor_data2col(
@@ -414,26 +428,32 @@ void kfac::on_backward_prop_end(model *m) {
           metadata.bn_num_channels,
           metadata.bn_spatial_prod,
           stream);
-      El::Matrix<DataType, El::Device::GPU> ones(
+
+      auto& ones = get_workspace_matrix(
+          std::string("bn_ones_")+std::to_string(metadata.layer_id),
           metadata.bn_spatial_prod, 1);
-      El::Matrix<DataType, El::Device::GPU> factor(
+      auto& factor = get_workspace_matrix(
+          std::string("bn_factor_")+std::to_string(metadata.layer_id),
           metadata.bn_num_channels*2*local_batch_size, 1);
       factor.Resize(cols.Height(), 1);
-      El::Ones(ones, ones.Height(), ones.Width());
+      El::Ones(ones, ones.Height(), ones.Width()); // TODO: Call once
       El::Gemm(
           El::NORMAL, El::NORMAL,
           El::TypeTraits<DataType>::One(), cols, ones,
           El::TypeTraits<DataType>::Zero(), factor);
       factor.Resize(metadata.bn_num_channels*2, local_batch_size);
 
-      El::Matrix<DataType, El::Device::GPU> fisher_block(metadata.bn_num_channels*2, metadata.bn_num_channels*2);
+      auto& fisher_block = get_workspace_matrix(
+          std::string("bn_fisher_block_")+std::to_string(metadata.layer_id),
+          metadata.bn_num_channels*2, metadata.bn_num_channels*2);
       const DataType alpha = mini_batch_size;
       El::Gemm(
           El::NORMAL, El::TRANSPOSE,
           alpha, factor, factor,
           El::TypeTraits<DataType>::Zero(), fisher_block);
 
-      allreduce_lower_tri(fisher_block, comm, stream);
+      auto& fisher_ws = get_workspace_matrix(std::string("bn_fisher_ws_")+std::to_string(metadata.layer_id));
+      allreduce_lower_tri(fisher_block, fisher_ws, comm, stream);
 
       // Update average Kronecker factors
       // TODO: Each matrix is used only by one process, but fisher_block
@@ -447,10 +467,6 @@ void kfac::on_backward_prop_end(model *m) {
           Fave.Buffer(), fisher_block.Buffer(),
           fisher_block.Height()*fisher_block.Width(),
           m_kronecker_decay, stream);
-
-      // TODO: Use persistent workspace instead of using local
-      // matrices to remove synchronization.
-      CHECK_CUDA(cudaStreamSynchronize(stream));
     }
 
     // dump L2 norm of matrices
@@ -475,9 +491,12 @@ void kfac::on_backward_prop_end(model *m) {
     auto& weights = l->get_weights(0);
     optimizer *w_optimizer = weights.get_optimizer();
     auto* w_dto = dynamic_cast<data_type_optimizer<DataType>*>(w_optimizer);
+    const auto& w_grads_orig = w_dto->get_gradient().LockedMatrix();
     // w_gradients is already synchronized among processes.
-    El::Matrix<DataType, El::Device::GPU> w_gradients;
-    El::Copy(w_dto->get_gradient().LockedMatrix(), w_gradients);
+    auto& w_gradients = get_workspace_matrix(
+        std::string("w_gradients_")+std::to_string(metadata.layer_id),
+        w_grads_orig.Height(), w_grads_orig.Width());
+    El::Copy(w_grads_orig, w_gradients);
 
     const bool is_update_required = (num_steps%m_update_interval_steps) == 0
         || m_kronecker_inverse.find(metadata.layer_id) == m_kronecker_inverse.end();
@@ -503,12 +522,16 @@ void kfac::on_backward_prop_end(model *m) {
         m_kronecker_inverse.emplace(metadata.layer_id, std::make_pair(
             El::Matrix<DataType, El::Device::GPU>(),
             El::Matrix<DataType, El::Device::GPU>()));
-      auto &Ainv = m_kronecker_inverse[metadata.layer_id].first;
-      auto &Ginv = m_kronecker_inverse[metadata.layer_id].second;
-      get_matrix_inverse(Ainv, Aave, print_time,
+      auto& Ainv = m_kronecker_inverse[metadata.layer_id].first;
+      auto& Ginv = m_kronecker_inverse[metadata.layer_id].second;
+      auto& ALinv = get_workspace_matrix(
+          std::string("ALinv_")+std::to_string(metadata.layer_id));
+      auto& GLinv = get_workspace_matrix(
+          std::string("GLinv_")+std::to_string(metadata.layer_id));
+      get_matrix_inverse(Ainv, ALinv, Aave, print_time,
                          DataType(m_damping_act*pi), 0,
                          false, stream);
-      get_matrix_inverse(Ginv, Gave, print_time,
+      get_matrix_inverse(Ginv, GLinv, Gave, print_time,
                          DataType(m_damping_err/pi), 0,
                          false, stream);
 
@@ -538,14 +561,17 @@ void kfac::on_backward_prop_end(model *m) {
       }
 
       // Compute preconditioned gradients
-      El::Matrix<DataType, El::Device::GPU> Gg(
+      auto& Gg = get_workspace_matrix(
+          std::string("Gg_")+std::to_string(metadata.layer_id),
           Ginv.Height(),
           metadata.is_conv ? w_gradients.Height() : w_gradients.Width());
       El::Gemm(
           El::NORMAL, metadata.is_conv ? El::TRANSPOSE : El::NORMAL,
           El::TypeTraits<DataType>::One(), Ginv, w_gradients,
           El::TypeTraits<DataType>::Zero(), Gg);
-      El::Matrix<DataType, El::Device::GPU> Fgrad(Ginv.Height(), Ainv.Width());
+      auto& Fgrad = get_workspace_matrix(
+          std::string("Fgrad_")+std::to_string(metadata.layer_id),
+          Ginv.Height(), Ainv.Width());
       El::Gemm(
           El::NORMAL, El::NORMAL,
           El::TypeTraits<DataType>::One(), Gg, Ainv,
@@ -584,11 +610,6 @@ void kfac::on_backward_prop_end(model *m) {
             << std::endl;
         std::cout << oss.str();
       }
-
-      // TODO: Use persistent workspace instead of using local
-      // matrices to remove synchronization.
-      CHECK_CUDA(cudaStreamSynchronize(stream));
-
     }
   }
 
@@ -612,8 +633,10 @@ void kfac::on_backward_prop_end(model *m) {
     const auto &Fave = m_kronecker_average[metadata.layer_id].first;
     auto& Finv = m_kronecker_inverse[metadata.layer_id].first;
     const bool print_time = comm->am_trainer_master() && m_print_time;
+    auto& FLinv = get_workspace_matrix(
+        std::string("bn_FLinv_")+std::to_string(metadata.layer_id));
     get_matrix_inverse(
-        Finv, Fave, print_time,
+        Finv, FLinv, Fave, print_time,
         DataType(m_damping_bn_act), DataType(m_damping_bn_err),
         true, stream);
 
@@ -635,7 +658,9 @@ void kfac::on_backward_prop_end(model *m) {
     El::Matrix<DataType, El::Device::GPU> s_gradients = s_dto->get_gradient().Matrix();
     El::Matrix<DataType, El::Device::GPU> b_gradients = b_dto->get_gradient().Matrix();
 
-    El::Matrix<DataType, El::Device::GPU> stacked_grads(metadata.bn_num_channels*2, 1);
+    auto& stacked_grads = get_workspace_matrix(
+        std::string("bn_stacked_grads_")+std::to_string(metadata.layer_id),
+        metadata.bn_num_channels*2, 1);
     CHECK_CUDA(cudaMemcpyAsync(
         stacked_grads.Buffer(), s_gradients.LockedBuffer(),
         metadata.bn_num_channels*sizeof(DataType), cudaMemcpyDeviceToDevice,
@@ -645,7 +670,9 @@ void kfac::on_backward_prop_end(model *m) {
         metadata.bn_num_channels*sizeof(DataType), cudaMemcpyDeviceToDevice,
         hydrogen::cuda::GetDefaultStream()));
 
-    El::Matrix<DataType, El::Device::GPU> Fgrad(metadata.bn_num_channels*2, 1);
+    auto& Fgrad = get_workspace_matrix(
+        std::string("bn_Fgrad_")+std::to_string(metadata.layer_id),
+        metadata.bn_num_channels*2, 1);
     El::Gemm(
         El::NORMAL, El::NORMAL,
         El::TypeTraits<DataType>::One(), Finv, stacked_grads,
@@ -676,10 +703,6 @@ void kfac::on_backward_prop_end(model *m) {
           << std::endl;
       std::cout << oss.str();
     }
-
-    // TODO: Use persistent workspace instead of using local
-    // matrices to remove synchronization.
-    CHECK_CUDA(cudaStreamSynchronize(stream));
   }
 
   // Step 3: All-gather of each preconditioned gradient tensor
@@ -730,7 +753,8 @@ void kfac::get_kronecker_factor_fc(
     const El::AbstractMatrix<DataType>& A,
     const DataType alpha) {
   assert(A.GetDevice() == El::Device::GPU);
-  factor.Resize(A.Height(), A.Height());
+  assert(factor.Height() == A.Height());
+  assert(factor.Width() == A.Height());
   El::Gemm(
       El::NORMAL, El::TRANSPOSE,
       alpha, A, A,
@@ -739,6 +763,7 @@ void kfac::get_kronecker_factor_fc(
 
 void kfac::get_kronecker_factor_conv(
     El::Matrix<DataType, El::Device::GPU>& factor,
+    El::Matrix<DataType, El::Device::GPU>& Acol,
     const El::Matrix<DataType, El::Device::GPU>& A,
     const DataType alpha,
     const size_t local_batch_size, const size_t num_channels,
@@ -758,8 +783,6 @@ void kfac::get_kronecker_factor_conv(
       LBANN_ERROR(err.str());
     }
 
-  // The matrix size will be overwritten later.
-  El::Matrix<DataType, El::Device::GPU> Acol;
   if(use_im2col) {
     im2col(A, Acol,
            num_channels, spatial_dims.size(),
@@ -779,17 +802,17 @@ void kfac::get_kronecker_factor_conv(
         stream);
   }
 
-  factor.Resize(Acol.Height(), Acol.Height());
+  assert(factor.Height() == Acol.Height());
+  assert(factor.Width() == Acol.Height());
   El::Gemm(
       El::NORMAL, El::TRANSPOSE,
       alpha, Acol, Acol,
       El::TypeTraits<DataType>::Zero(), factor);
-
-  CHECK_CUDA(cudaStreamSynchronize(stream));
 }
 
 void kfac::get_matrix_inverse(
     El::Matrix<DataType, El::Device::GPU>& Ainv,
+    El::Matrix<DataType, El::Device::GPU>& Linv,
     const El::Matrix<DataType, El::Device::GPU>& A,
     const bool report_time,
     const DataType damping,
@@ -818,7 +841,7 @@ void kfac::get_matrix_inverse(
 
   const double t_spotrf = get_time();
 
-  El::Matrix<DataType, El::Device::GPU> Linv(Ainv.Height(), Ainv.Width());
+  Linv.Resize(Ainv.Height(), Ainv.Width());
   identity(Linv.Buffer(), Linv.Height(), stream);
   El::Trsm(
       El::LeftOrRightNS::LEFT,
@@ -853,6 +876,7 @@ void kfac::get_matrix_inverse(
               << std::endl;
   }
 
+  // TODO: Check whether this is actually needed.
   CHECK_CUDA(cudaStreamSynchronize(stream));
 }
 
@@ -888,15 +912,15 @@ std::string kfac::get_matrix_stat(const El::Matrix<DataType, El::Device::GPU>& X
 }
 
 void kfac::allreduce_lower_tri(El::Matrix<DataType, El::Device::GPU>& A,
+                               El::Matrix<DataType, El::Device::GPU>& AL,
                                lbann_comm *comm,
                                const cudaStream_t& stream) {
   assert(A.Height() == A.Width());
-  El::Matrix<DataType, El::Device::GPU> AL(A.Height()*(A.Height()+1)/2, 1);
+  AL.Resize(A.Height()*(A.Height()+1)/2, 1);
   pack_lower_tri(AL.Buffer(), A.LockedBuffer(), A.Height(), stream);
   comm->allreduce((El::AbstractMatrix<DataType>&) AL,
                   comm->get_trainer_comm());
   unpack_lower_tri(A.Buffer(), AL.Buffer(), A.Height(), stream);
-  CHECK_CUDA(cudaStreamSynchronize(stream));
 }
 
 std::unique_ptr<callback_base>
@@ -973,6 +997,24 @@ build_kfac_callback_from_pbuf(
       use_pi,
       update_intervals, update_interval_steps,
       inverse_strategy);
+}
+
+El::Matrix<DataType, El::Device::GPU>& kfac::get_workspace_matrix(
+    const std::string key, const size_t height, const size_t width) {
+  if(m_workspace.find(key) == m_workspace.end()) {
+    m_workspace.emplace(
+        key, El::Matrix<DataType, El::Device::GPU>(height, width));
+#ifdef HYDROGEN_HAVE_CUB
+    m_workspace[key].SetMemoryMode(1); // Use CUB GPU memory pool if possible
+#endif // HYDROGEN_HAVE_CUB
+  }
+  auto& ret = m_workspace[key];
+  if(((size_t) ret.Height() != height || (size_t) ret.Width() != width)
+     && height != 0 && width != 0) {
+    assert(ret.Height()*ret.Width() == height*width);
+    ret.Resize(height, width);
+  }
+  return ret;
 }
 
 } // namespace callback

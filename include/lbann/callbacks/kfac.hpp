@@ -118,6 +118,13 @@ class kfac : public callback_base {
 
  private:
 
+  /** @brief Gets the Kronecker factor matrix of a FC layer. *
+   *  The same key is tied with the same matrix instance.
+   *  If height and width are zero, the shape of the returned matrix
+   *  is undetermined. */
+  El::Matrix<DataType, El::Device::GPU>& get_workspace_matrix(
+      const std::string key, const size_t height=0, const size_t width=0);
+
   /** @brief Gets the Kronecker factor matrix of a FC layer. **/
   static void get_kronecker_factor_fc(
       El::AbstractMatrix<DataType>& factor,
@@ -127,6 +134,7 @@ class kfac : public callback_base {
   /** @brief Gets the Kronecker factor matrix of a convolutional layer. **/
   static void get_kronecker_factor_conv(
       El::Matrix<DataType, El::Device::GPU>& factor,
+      El::Matrix<DataType, El::Device::GPU>& Acol,
       const El::Matrix<DataType, El::Device::GPU>& A,
       const DataType alpha,
       const size_t local_batch_size, const size_t num_channels,
@@ -138,6 +146,7 @@ class kfac : public callback_base {
   /** @brief Gets the inverse matrix of A. **/
   static void get_matrix_inverse(
       El::Matrix<DataType, El::Device::GPU>& Ainv,
+      El::Matrix<DataType, El::Device::GPU>& Linv,
       const El::Matrix<DataType, El::Device::GPU>& A,
       const bool report_time,
       const DataType damping,
@@ -158,6 +167,7 @@ class kfac : public callback_base {
   /** @brief Perform all-reduce on the lower triangular of a symmetric matrix. **/
   static void allreduce_lower_tri(
       El::Matrix<DataType, El::Device::GPU>& A,
+      El::Matrix<DataType, El::Device::GPU>& AL,
       lbann_comm *comm,
       const cudaStream_t& stream);
 
@@ -303,6 +313,8 @@ class kfac : public callback_base {
   /** @brief Assignment strategy for the model-parallel part. */
   kfac_inverse_strategy m_inverse_strategy;
 
+  std::unordered_map<std::string,
+                     El::Matrix<DataType, El::Device::GPU>> m_workspace;
 };
 
 // Builder function
