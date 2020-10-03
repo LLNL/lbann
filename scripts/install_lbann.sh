@@ -262,7 +262,7 @@ ${STD_PACKAGES}
     aluminum:
       buildable: true
       version:
-      - 0.4.0
+      - master
       ${AL_VARIANTS}
       providers: {}
       compiler: []
@@ -270,7 +270,7 @@ ${STD_PACKAGES}
     hydrogen:
       buildable: true
       version:
-      - 1.4.0
+      - develop
       ${HYDROGEN_VARIANTS}
       providers: {}
       compiler: []
@@ -278,7 +278,7 @@ ${STD_PACKAGES}
     dihydrogen:
       buildable: true
       version:
-      - master
+      - develop
       ${DIHYDROGEN_VARIANTS}
       providers: {}
       compiler: []
