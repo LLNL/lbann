@@ -1011,7 +1011,7 @@ El::Matrix<DataType, El::Device::GPU>& kfac::get_workspace_matrix(
   auto& ret = m_workspace[key];
   if(((size_t) ret.Height() != height || (size_t) ret.Width() != width)
      && height != 0 && width != 0) {
-    assert(ret.Height()*ret.Width() == height*width);
+    assert((size_t) ret.Height()*ret.Width() == height*width);
     ret.Resize(height, width);
   }
   return ret;
