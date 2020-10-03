@@ -50,8 +50,6 @@ namespace {
  */
 El::Int get_partner_trainer(lbann_comm& comm,
                             const std::string& message_prefix) {
-  if (comm.am_world_master()) { // Root process
-
     // Assign partner trainers
     // Note: The first trainer in 'trainers' is paired with the
     // second, the third with the fourth, and so on. If there are an
@@ -60,38 +58,43 @@ El::Int get_partner_trainer(lbann_comm& comm,
     const El::Int procs_per_trainer = comm.get_procs_per_trainer();
     std::vector<El::Int> trainers(num_trainers);
     std::iota(trainers.begin(), trainers.end(), 0);
-    std::shuffle(trainers.begin(), trainers.end(), get_fast_generator());
+    // Everyone use a special RNG that is only for LTFB so that they
+    // can all communicate the same pairs without communication
+    std::shuffle(trainers.begin(), trainers.end(), get_ltfb_generator());
 
-    // Print partner assignments to standard output
-    std::stringstream msg;
-    msg << message_prefix << "tournament partners -";
-    for (El::Int i = 0; i < num_trainers; i += 2) {
-      msg << (i > 0 ? "," : "")
-          << " {" << trainers[i];
-      if (i+1 < num_trainers) {
-        msg << "," << trainers[i+1];
+    if (comm.am_world_master()) { // Root process
+      // Print partner assignments to standard output
+      std::stringstream msg;
+      msg << message_prefix << "tournament partners -";
+      // msg << message_prefix << "[" << comm.get_trainer_rank() << "/"
+      //     << comm.get_rank_in_world() << "] tournament partners -";
+      for (El::Int i = 0; i < num_trainers; i += 2) {
+        msg << (i > 0 ? "," : "")
+            << " {" << trainers[i];
+        if (i+1 < num_trainers) {
+          msg << "," << trainers[i+1];
+        }
+        msg << "}";
       }
-      msg << "}";
+      msg << "\n";
+      std::cout << msg.str() << std::endl << std::flush;
     }
-    msg << "\n";
-    std::cout << msg.str();
 
-    // Send partner assignments to all processes
-    std::vector<El::Int> send_buffer(num_trainers * procs_per_trainer);
+    // Setup partner assignments for all processes
+    std::vector<El::Int> send_buffer(num_trainers);
     for (El::Int i = 0; i < num_trainers; i += 2) {
       const auto& trainer1 = trainers[i];
       const auto& trainer2 = (i+1 < num_trainers) ? trainers[i+1] : trainer1;
-      std::fill_n(&send_buffer[trainer1 * procs_per_trainer],
-                  procs_per_trainer, trainer2);
-      std::fill_n(&send_buffer[trainer2 * procs_per_trainer],
-                  procs_per_trainer, trainer1);
+      send_buffer[trainer1] = trainer2;
+      send_buffer[trainer2] = trainer1;
     }
-    return comm.scatter(send_buffer.data(), comm.get_world_comm());
-
-  } else { // Non-root process
-    return comm.scatter<El::Int>(comm.get_world_master(),
-                                 comm.get_world_comm());
-  }
+    // if (comm.am_world_master()) { // Root process
+    //   msg << " - partner " << send_buffer[comm.get_trainer_rank()];
+    //   //    msg << " - partner " << trainers[comm.get_trainer_rank()];
+    //   msg << "\n";
+    //   std::cout << msg.str() << std::endl << std::flush;
+    // }
+    return send_buffer[comm.get_trainer_rank()];
 }
 
 /// See @c lbann::callbacks::ltfb::communication_algorithm::sendrecv_weights
