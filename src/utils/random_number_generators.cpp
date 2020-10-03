@@ -38,6 +38,9 @@ lbann::rng_gen generator;
 
 lbann::fast_rng_gen fast_generator;
 #pragma omp threadprivate(fast_generator)
+
+lbann::fast_rng_gen ltfb_generator;
+#pragma omp threadprivate(ltfb_generator)
 #else
 // Random number generator, file-visible only.
 // Defined like this to work around a GCC problem with threadprivate objects:
@@ -49,10 +52,15 @@ lbann::rng_gen generator;
 extern lbann::fast_rng_gen fast_generator;
 #pragma omp threadprivate(fast_generator)
 lbann::fast_rng_gen fast_generator;
+
+extern lbann::fast_rng_gen ltfb_generator;
+#pragma omp threadprivate(ltfb_generator)
+lbann::fast_rng_gen ltfb_generator;
 #endif
 
 bool generator_inited = false;
 bool fast_generator_inited = false;
+bool ltfb_generator_inited = false;
 
 thread_local lbann::rng_gen data_seq_generator;
 thread_local bool data_seq_generator_inited = false;
@@ -75,6 +83,11 @@ rng_gen& get_generator() {
 fast_rng_gen& get_fast_generator() {
   if (!::fast_generator_inited) { LBANN_ERROR("Fast RNG seed not set"); }
   return ::fast_generator;
+}
+
+fast_rng_gen& get_ltfb_generator() {
+  if (!::ltfb_generator_inited) { LBANN_ERROR("LTFB RNG seed not set"); }
+  return ::ltfb_generator;
 }
 
 rng_gen& get_data_seq_generator() {
@@ -181,6 +194,17 @@ void init_data_seq_random(int seed) {
   ::data_seq_generator_seed_inited = true;
   /// Reset the init flag so that generator will reinitialize
   ::data_seq_generator_inited = false;
+}
+
+void init_ltfb_random(int seed) {
+  if (seed == -1) {
+    // Seed with a random value.
+    std::random_device rd;
+    seed = rd();
+  }
+
+  ltfb_generator_inited = true;
+  get_ltfb_generator().seed(seed);
 }
 
 void init_io_random(int seed, int num_io_RNGs) {
