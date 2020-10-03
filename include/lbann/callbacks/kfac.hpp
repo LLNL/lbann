@@ -128,14 +128,14 @@ class kfac : public callback_base {
   /** @brief Gets the Kronecker factor matrix of a FC layer. **/
   static void get_kronecker_factor_fc(
       El::AbstractMatrix<DataType>& factor,
-      const El::AbstractMatrix<DataType>& A,
+      const El::AbstractMatrix<DataType>& activations,
       const DataType alpha);
 
   /** @brief Gets the Kronecker factor matrix of a convolutional layer. **/
   static void get_kronecker_factor_conv(
       El::Matrix<DataType, El::Device::GPU>& factor,
       El::Matrix<DataType, El::Device::GPU>& Acol,
-      const El::Matrix<DataType, El::Device::GPU>& A,
+      const El::Matrix<DataType, El::Device::GPU>& activations,
       const DataType alpha,
       const size_t local_batch_size, const size_t num_channels,
       const std::vector<int> spatial_dims,

@@ -750,21 +750,21 @@ void kfac::on_backward_prop_end(model *m) {
 
 void kfac::get_kronecker_factor_fc(
     El::AbstractMatrix<DataType>& factor,
-    const El::AbstractMatrix<DataType>& A,
+    const El::AbstractMatrix<DataType>& activations,
     const DataType alpha) {
-  assert(A.GetDevice() == El::Device::GPU);
-  assert(factor.Height() == A.Height());
-  assert(factor.Width() == A.Height());
+  assert(activations.GetDevice() == El::Device::GPU);
+  assert(factor.Height() == activations.Height());
+  assert(factor.Width() == activations.Height());
   El::Gemm(
       El::NORMAL, El::TRANSPOSE,
-      alpha, A, A,
+      alpha, activations, activations,
       El::TypeTraits<DataType>::Zero(), factor);
 }
 
 void kfac::get_kronecker_factor_conv(
     El::Matrix<DataType, El::Device::GPU>& factor,
     El::Matrix<DataType, El::Device::GPU>& Acol,
-    const El::Matrix<DataType, El::Device::GPU>& A,
+    const El::Matrix<DataType, El::Device::GPU>& activations,
     const DataType alpha,
     const size_t local_batch_size, const size_t num_channels,
     const std::vector<int> spatial_dims,
@@ -772,7 +772,7 @@ void kfac::get_kronecker_factor_conv(
     const bool use_im2col,
     const cudaStream_t& stream) {
   assert(factor.GetDevice() == El::Device::GPU);
-  assert(A.GetDevice() == El::Device::GPU);
+  assert(activations.GetDevice() == El::Device::GPU);
 
   const auto dilations = l_conv->get_dilations();
   for(auto i = dilations.begin(); i != dilations.end(); i++)
@@ -784,7 +784,7 @@ void kfac::get_kronecker_factor_conv(
     }
 
   if(use_im2col) {
-    im2col(A, Acol,
+    im2col(activations, Acol,
            num_channels, spatial_dims.size(),
            &(spatial_dims[0]),
            &(l_conv->get_pads()[0]),
@@ -797,7 +797,7 @@ void kfac::get_kronecker_factor_conv(
       spatial_prod *= *i;
     Acol.Resize(num_channels, local_batch_size*spatial_prod);
     conv_transpose(
-        A.LockedBuffer(), Acol.Buffer(),
+        activations.LockedBuffer(), Acol.Buffer(),
         local_batch_size, num_channels, spatial_prod,
         stream);
   }
