@@ -66,8 +66,6 @@ El::Int get_partner_trainer(lbann_comm& comm,
       // Print partner assignments to standard output
       std::stringstream msg;
       msg << message_prefix << "tournament partners -";
-      // msg << message_prefix << "[" << comm.get_trainer_rank() << "/"
-      //     << comm.get_rank_in_world() << "] tournament partners -";
       for (El::Int i = 0; i < num_trainers; i += 2) {
         msg << (i > 0 ? "," : "")
             << " {" << trainers[i];
@@ -88,12 +86,6 @@ El::Int get_partner_trainer(lbann_comm& comm,
       send_buffer[trainer1] = trainer2;
       send_buffer[trainer2] = trainer1;
     }
-    // if (comm.am_world_master()) { // Root process
-    //   msg << " - partner " << send_buffer[comm.get_trainer_rank()];
-    //   //    msg << " - partner " << trainers[comm.get_trainer_rank()];
-    //   msg << "\n";
-    //   std::cout << msg.str() << std::endl << std::flush;
-    // }
     return send_buffer[comm.get_trainer_rank()];
 }
 
