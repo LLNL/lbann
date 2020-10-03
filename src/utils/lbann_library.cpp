@@ -55,6 +55,21 @@ void construct_std_options() {
                         "Number of threads available to both I/O and "
                         "initial data transformations for each rank.",
                         64);
+  arg_parser.add_option(NUM_TRAIN_SAMPLES,
+                        {"--num_train_samples"},
+                        utils::ENV("LBANN_NUM_TRAIN_SAMPLES"),
+                        "Set the number of training samples to ingest.",
+                        0);
+  arg_parser.add_option(NUM_VALIDATE_SAMPLES,
+                        {"--num_validate_samples"},
+                        utils::ENV("LBANN_NUM_VALIDATE_SAMPLES"),
+                        "Set the number of validate samples to ingest.",
+                        0);
+  arg_parser.add_option(NUM_TEST_SAMPLES,
+                        {"--num_test_samples"},
+                        utils::ENV("LBANN_NUM_TEST_SAMPLES"),
+                        "Set the number of testing samples to ingest.",
+                        0);
   arg_parser.add_flag(ALLOW_GLOBAL_STATISTICS,
                       {"--ltfb_allow_global_statistics"},
                       utils::ENV("LBANN_LTFB_ALLOW_GLOBAL_STATISTICS"),
