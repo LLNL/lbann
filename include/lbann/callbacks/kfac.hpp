@@ -46,7 +46,7 @@ struct kfac_layer_metadata {
 enum kfac_inverse_strategy {
   ALL,  // Apply round-robin assingment to all of the layers. may cause load imbalance.
   EACH, // Apply round-robin assingment to every type of layers. may
-          // not work well for small networks.
+  // not work well for small networks.
   ROOT, // Use only the root GPU. This is only for testing.
 };
 
@@ -197,7 +197,8 @@ class kfac : public callback_base {
       const size_t spatial_prod,
       const cudaStream_t& stream);
 
-  /** @brief Compute the factor of a batch-normalization layer. **/
+  /** @brief Compute the factor of a batch-normalization layer.
+   *  TODO: Remove as compute_bn_factor_data2col is used as default. **/
   template <typename TensorDataType>
   static void compute_bn_factor(
       const TensorDataType * __restrict__ activations,
@@ -205,6 +206,20 @@ class kfac : public callback_base {
       const TensorDataType * __restrict__ scales,
       const TensorDataType * __restrict__ biases,
       TensorDataType * __restrict__ factor,
+      const size_t batch_size,
+      const size_t num_channels,
+      const size_t spatial_prod,
+      const cudaStream_t& stream);
+
+  /** @brief The memory copy part of compute_bn_factor. Combined with
+   *  GEMM. **/
+  template <typename TensorDataType>
+  static void compute_bn_factor_data2col(
+      const TensorDataType * __restrict__ activations,
+      const TensorDataType * __restrict__ errors,
+      const TensorDataType * __restrict__ scales,
+      const TensorDataType * __restrict__ biases,
+      TensorDataType * __restrict__ cols,
       const size_t batch_size,
       const size_t num_channels,
       const size_t spatial_prod,

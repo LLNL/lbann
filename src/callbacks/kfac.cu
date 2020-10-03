@@ -117,6 +117,33 @@ __global__ void kfac_compute_bn_factor_kernel(
 }
 
 template <typename TensorDataType>
+__global__ void kfac_compute_bn_factor_data2col_kernel(
+    const TensorDataType * __restrict__ activations,
+    const TensorDataType * __restrict__ errors,
+    const TensorDataType * __restrict__ scales,
+    const TensorDataType * __restrict__ biases,
+    TensorDataType * __restrict__ cols,
+    const size_t batch_size,
+    const size_t num_channels,
+    const size_t spatial_prod,
+    const size_t num_threads) { // = batch_size*num_channels*spatial_prod
+  const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
+  if(gid < num_threads) {
+    const size_t i_c = gid%num_channels;
+    const size_t i_n = (gid/num_channels)%batch_size;
+    const size_t i_s = gid/num_channels/batch_size;
+    const auto scale = scales[i_c];
+    const auto bias = biases[i_c];
+    const auto i_act = i_s+i_c*spatial_prod+i_n*spatial_prod*num_channels;
+    const auto error = errors[i_act];
+    const auto act = (activations[i_act]-bias)/scale;
+    const auto i_out = i_c+i_n*num_channels*2 + i_s*(num_channels*2*batch_size);
+    cols[i_out] = error*act;
+    cols[i_out+num_channels] = error;
+  }
+}
+
+template <typename TensorDataType>
 __global__ void kfac_identity_kernel(
     TensorDataType * __restrict__ A,
     const size_t height) {
@@ -230,9 +257,30 @@ void kfac::compute_bn_factor(
   const size_t grid_size = (num_threads + block_size - 1) / block_size;
   kfac_compute_bn_factor_kernel<TensorDataType>
       <<<grid_size, block_size, 0, stream>>>(
-          activations, errors,
-          scales, biases,
+          activations, errors, scales, biases,
           factor,
+          batch_size, num_channels, spatial_prod,
+          num_threads);
+}
+
+template <typename TensorDataType>
+void kfac::compute_bn_factor_data2col(
+    const TensorDataType * __restrict__ activations,
+    const TensorDataType * __restrict__ errors,
+    const TensorDataType * __restrict__ scales,
+    const TensorDataType * __restrict__ biases,
+    TensorDataType * __restrict__ cols,
+    const size_t batch_size,
+    const size_t num_channels,
+    const size_t spatial_prod,
+    const cudaStream_t& stream) {
+  constexpr size_t block_size = 256;
+  const size_t num_threads = batch_size * num_channels * spatial_prod;
+  const size_t grid_size = (num_threads + block_size - 1) / block_size;
+  kfac_compute_bn_factor_data2col_kernel<TensorDataType>
+      <<<grid_size, block_size, 0, stream>>>(
+          activations, errors, scales, biases,
+          cols,
           batch_size, num_channels, spatial_prod,
           num_threads);
 }
@@ -300,7 +348,7 @@ void kfac::unpack_lower_tri(
   template void kfac::conv_transpose<T>(                \
       const T * __restrict__ activations,               \
       T * __restrict__ act_columns,                     \
-      const size_t mini_batch_size,                     \
+      const size_t batch_size,                          \
       const size_t num_channels,                        \
       const size_t spatial_prod,                        \
       const cudaStream_t& stream);                      \
@@ -310,6 +358,16 @@ void kfac::unpack_lower_tri(
       const T * __restrict__ scales,                    \
       const T * __restrict__ biases,                    \
       T * __restrict__ factor,                          \
+      const size_t batch_size,                          \
+      const size_t num_channels,                        \
+      const size_t spatial_prod,                        \
+      const cudaStream_t& stream);                      \
+  template void kfac::compute_bn_factor_data2col<T>(    \
+      const T * __restrict__ activations,               \
+      const T * __restrict__ errors,                    \
+      const T * __restrict__ scales,                    \
+      const T * __restrict__ biases,                    \
+      T * __restrict__ cols,                            \
       const size_t batch_size,                          \
       const size_t num_channels,                        \
       const size_t spatial_prod,                        \

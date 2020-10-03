@@ -401,17 +401,30 @@ void kfac::on_backward_prop_end(model *m) {
     const bool is_update_required = (num_steps%m_update_interval_steps) == 0
         || m_kronecker_inverse.find(metadata.layer_id) == m_kronecker_inverse.end();
     if(is_update_required) {
-      El::Matrix<DataType, El::Device::GPU> factor(metadata.bn_num_channels*2, local_batch_size);
-      compute_bn_factor(
+      El::Matrix<DataType, El::Device::GPU> cols(
+          metadata.bn_num_channels*2*local_batch_size,
+          metadata.bn_spatial_prod);
+      compute_bn_factor_data2col(
           local_activations.LockedBuffer(),
           local_errors.LockedBuffer(),
           scale_values.LockedMatrix().LockedBuffer(),
           bias_values.LockedMatrix().LockedBuffer(),
-          factor.Buffer(),
+          cols.Buffer(),
           local_batch_size,
           metadata.bn_num_channels,
           metadata.bn_spatial_prod,
           stream);
+      El::Matrix<DataType, El::Device::GPU> ones(
+          metadata.bn_spatial_prod, 1);
+      El::Matrix<DataType, El::Device::GPU> factor(
+          metadata.bn_num_channels*2*local_batch_size, 1);
+      factor.Resize(cols.Height(), 1);
+      El::Ones(ones, ones.Height(), ones.Width());
+      El::Gemm(
+          El::NORMAL, El::NORMAL,
+          El::TypeTraits<DataType>::One(), cols, ones,
+          El::TypeTraits<DataType>::Zero(), factor);
+      factor.Resize(metadata.bn_num_channels*2, local_batch_size);
 
       El::Matrix<DataType, El::Device::GPU> fisher_block(metadata.bn_num_channels*2, metadata.bn_num_channels*2);
       const DataType alpha = mini_batch_size;
