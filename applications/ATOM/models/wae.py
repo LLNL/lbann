@@ -92,9 +92,6 @@ class GRUModule(lbann.modules.Module):
 class MolWAE(lbann.modules.Module):
     """Molecular WAE.
 
-    See:
-    https://github.com/samadejacobs/moses/tree/master/moses/vae
-
     """
 
     global_count = 0  # Static counter, used for default names
