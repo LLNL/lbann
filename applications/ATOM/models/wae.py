@@ -105,6 +105,8 @@ class MolWAE(lbann.modules.Module):
             dictionary_size (int): vocabulary size
             embedding_size (int): embedding size
             ignore_label (int): padding index
+            save_output (bool, optional): save or not save predictions
+                (default: False).
             name (str, optional): Module name
                 (default: 'molvae_module<index>').
 
