@@ -200,7 +200,7 @@ void init_ltfb_random(int seed) {
   if (seed == -1) {
     // Seed with a random value.
     std::random_device rd;
-    seed = rd();
+    seed = 20201003;
   }
 
   ltfb_generator_inited = true;
