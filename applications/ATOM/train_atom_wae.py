@@ -20,7 +20,7 @@ def list2str(l):
 def construct_lc_launcher_args():
 
     # defaults correspond to the settings needed for training on the moses dataset
-    parser = argparse.ArgumentParser(prog="lbann ATOM VAE training")
+    parser = argparse.ArgumentParser(prog="lbann ATOM WAE training")
     parser.add_argument("--partition", default=None)
     parser.add_argument("--account", default="hpcdl")
     parser.add_argument("--scheduler", type=str, default="slurm")
@@ -43,7 +43,7 @@ def construct_lc_launcher_args():
         help="specified time limit in number of minutes",
     )
     parser.add_argument("--nodes", type=int, default=1)
-    parser.add_argument("--job-name", default="atom_vae")
+    parser.add_argument("--job-name", default="atom_wae")
     parser.add_argument("--embedding-dim", type=int, default=None)
     parser.add_argument("--num-embeddings", type=int, default=None)
     parser.add_argument("--batch-size", type=int, default=512)
@@ -56,6 +56,7 @@ def construct_lc_launcher_args():
     parser.add_argument("--dump-weights-dir", type=str, default="weights")
     parser.add_argument("--dump-weights-interval", type=int, default=10)
     parser.add_argument("--dump-outputs-dir", type=str, default=None)
+    parser.add_argument("--dump-outputs-interval", type=int, default=10)
     parser.add_argument("--dump-model-dir", type=str, default=None)
     parser.add_argument("--num-samples", type=int, default=None)
     parser.add_argument("--num-io-threads", type=int, default=11)
@@ -111,11 +112,14 @@ def construct_model(run_args):
     assert embedding_size is not None
     assert dictionary_size is not None
 
+    save_output = True if run_args.dump_outputs_dir else False
+
+    print("save output? ", save_output, "out dir ",  run_args.dump_outputs_dir)
     z = lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims="128")
     recon, d1_real, d1_fake, d_adv, arg_max  = molwae.MolWAE(input_feature_dims,
                                                            dictionary_size,
                                                            embedding_size,
-                                                           pad_index)(input_,z)
+                                                           pad_index,save_output)(input_,z)
 
 
 
@@ -183,8 +187,8 @@ def construct_model(run_args):
     #Dump output (activation) for post processing
     if(run_args.dump_outputs_dir):
       pred_tensor = lbann.Concatenation(arg_max, name='pred_tensor')
-      callbacks.append(lbann.CallbackDumpOutputs(batch_interval=100, execution_modes='test',
-                      directory=run_args.dump_outputs_dir,layers='inp pred_tensor'))
+      callbacks.append(lbann.CallbackDumpOutputs(batch_interval=run_args.dump_outputs_interval, 
+                       execution_modes='test', directory=run_args.dump_outputs_dir,layers='inp pred_tensor'))
     # Construct model
     return lbann.Model(run_args.num_epochs,
                        weights=weights,

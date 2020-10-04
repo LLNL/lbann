@@ -96,7 +96,8 @@ class MolWAE(lbann.modules.Module):
 
     global_count = 0  # Static counter, used for default names
 
-    def __init__(self, input_feature_dims,dictionary_size, embedding_size, ignore_label, name=None):
+    def __init__(self, input_feature_dims,dictionary_size, embedding_size, 
+                 ignore_label,save_output=False, name=None):
         """Initialize Molecular WAE.
 
         Args:
@@ -117,6 +118,7 @@ class MolWAE(lbann.modules.Module):
         self.embedding_size = embedding_size
         self.dictionary_size = dictionary_size
         self.label_to_ignore = ignore_label
+        self.save_output = save_output
         self.datatype = lbann.DataType.FLOAT
         self.weights_datatype = lbann.DataType.FLOAT
 
@@ -284,17 +286,19 @@ class MolWAE(lbann.modules.Module):
                     stack.append(parent)
                     in_stack[parent] = True
 
-        # Find argmax
-        y_slice = lbann.Slice(
-            y,
-            axis=0,
-            slice_points=str_list(range(self.input_feature_dims+1)),
-        )
-        y_slice = [lbann.Reshape(y_slice, dims='-1') for _ in range(self.input_feature_dims)]
-        arg_max = [lbann.Argmax(yi, device='CPU') for yi in y_slice]
+        # Find argmax 
+        if(self.save_output):
+          y_slice = lbann.Slice(
+              y,
+              axis=0,
+              slice_points=str_list(range(self.input_feature_dims+1)),
+          )
+          y_slice = [lbann.Reshape(y_slice, dims='-1') for _ in range(self.input_feature_dims)]
+          arg_max = [lbann.Argmax(yi, device='CPU') for yi in y_slice]
 
-        return y, arg_max
-        #return y
+          return y, arg_max
+        else:
+          return y, None
 
     def compute_loss(self, x, y):
 
