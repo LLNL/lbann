@@ -55,7 +55,7 @@ class GRUModule(lbann.modules.Module):
         # Default initial hidden state
         self.zeros = lbann.Constant(
             value=0,
-            num_neurons=str(hidden_size),
+            num_neurons=str_list([num_layers, hidden_size]),
             name=f'{self.name}_zeros',
             device=self.device,
             datatype=self.datatype,
@@ -63,31 +63,21 @@ class GRUModule(lbann.modules.Module):
 
     def forward(self, x, h=None):
         self.instance += 1
-        name = f'{self.name}_instance{self.instance}'
-
-        # Initial hidden state
         if not h:
-            h = [self.zeros] * self.num_layers
-        if not isinstance(h, list) or len(h) != self.num_layers:
-            raise ValueError(
-                f'expected `h` to be a list with {self.num_layers} layers'
-            )
-
-        # Stacked GRU
-        ### @todo Replace with single GRU once LBANN supports stacked GRUs
-        for i in range(self.num_layers):
-            x = lbann.GRU(
-                x,
-                h[i],
-                hidden_size=self.hidden_size,
-                name=f'{name}_layer{i}',
-                weights=self.weights[4*i:4*(i+1)],
-                device=self.device,
-                datatype=self.datatype,
-            )
+            h = self.zeros
+        y = lbann.GRU(
+            x,
+            h,
+            hidden_size=self.hidden_size,
+            num_layers=self.num_layers,
+            name=f'{self.name}_instance{self.instance}',
+            weights=self.weights,
+            device=self.device,
+            datatype=self.datatype,
+        )
             #if(i < self.num_layers-1):
             #    x = lbann.Dropout(x, keep_prob=0.5)
-        return x
+        return y
 
 class MolWAE(lbann.modules.Module):
     """Molecular WAE.
@@ -168,8 +158,8 @@ class MolWAE(lbann.modules.Module):
         self.d0_fc2 = fc(disc_neurons[2],name=self.name+'_disc0_fc2')
 
         #Discriminator2
-        #stacked_discriminator, this will be frozen, no optimizer, 
-        #layer has to be named for replace layer callback 
+        #stacked_discriminator, this will be frozen, no optimizer,
+        #layer has to be named for replace layer callback
         self.d1_fc0 = fc(disc_neurons[0],activation=lbann.Relu,name=self.name+'_disc1_fc0')
         self.d1_fc1 = fc(disc_neurons[1],activation=lbann.Relu,name=self.name+'_disc1_fc1')
         self.d1_fc2 = fc(disc_neurons[2],name=self.name+'_disc1_fc2')
@@ -209,7 +199,7 @@ class MolWAE(lbann.modules.Module):
             dims=str_list([self.input_feature_dims, 128]),
         )
 
-        d_real = self.discriminator0(lbann.Concatenation([x_emb,z_prior],axis=1))  
+        d_real = self.discriminator0(lbann.Concatenation([x_emb,z_prior],axis=1))
 
         z_sample0 = lbann.Tessellate(
             lbann.Reshape(z_sample, dims=str_list([1, 128])),
@@ -217,9 +207,9 @@ class MolWAE(lbann.modules.Module):
         )
         y_z_sample = lbann.Concatenation([x_emb,z_sample0],axis=1)
 
-        d_fake = self.discriminator0(lbann.StopGradient(y_z_sample)) 
+        d_fake = self.discriminator0(lbann.StopGradient(y_z_sample))
         d_adv = self.discriminator1(y_z_sample) #freeze
-   
+
         return recon_loss, d_real, d_fake, d_adv, arg_max
 
     def forward_encoder(self, x_emb):
@@ -240,7 +230,7 @@ class MolWAE(lbann.modules.Module):
             axis=0,
         )
         h = lbann.Identity(h)
-        
+
         z = self.q_mu(h)
         return z
 
@@ -262,9 +252,12 @@ class MolWAE(lbann.modules.Module):
         x_input = lbann.Concatenation(x_emb, z_0, axis=1)
 
         h_0 = self.decoder_lat(z)
+        # h_0 = h_0.unsqueeze(0).repeat(self.decoder_rnn.num_layers, 1, 1)
+        h_0 = lbann.Reshape(h_0, dims=str_list([1, 512]))
+        h_0 = lbann.Tessellate(h_0, dims=str_list((3, 512)))
 
         # output, _ = self.decoder_rnn(x_input, h_0)
-        output = self.decoder_rnn(x_input, [h_0, h_0, h_0])
+        output = self.decoder_rnn(x_input, h_0)
 
         # y = self.decoder_fc(output)
         y = lbann.ChannelwiseFullyConnected(
@@ -382,6 +375,6 @@ class MolWAE(lbann.modules.Module):
 
     def discriminator0(self,input):
         return self.d0_fc2(self.d0_fc1(self.d0_fc0(input)))
-        
+
     def discriminator1(self,input):
         return self.d1_fc2(self.d1_fc1(self.d1_fc0(input)))
