@@ -5,8 +5,8 @@ data_reader {
     shuffle: true
     percent_of_data_to_use: 1.0
     validation_percent: 0.01
-    data_filedir: "/p/gpfs1/brainusr/datasets/atom/enamine1B"
-    data_filename: "newEnamineFrom2020q1-2_train100kSMILES.csv"
+    data_filedir: "/p/gpfs1/brainusr/datasets/atom/combo_enamine1613M_mpro_inhib"
+    data_filename: "train_enamine_all2018q1_2020q1-2_mpro_inhib_kekulized_1613mSMILES.csv"
   }
 }
 data_reader {
