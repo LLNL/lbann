@@ -472,13 +472,9 @@ void fp_compute_impl(
   // Make sure tensors are in correct format
   l.m_input_sequence_workspace.SetSyncInfo(sync_info);
   l.m_init_hidden_workspace.SetSyncInfo(sync_info);
+  l.m_output_sequence_workspace.SetSyncInfo(sync_info);
   constexpr size_t one{1};
-  if (input_sequence.Contiguous()) {
-    El::LockedView(l.m_input_sequence_workspace, input_sequence);
-  }
-  else {
-    El::Copy(input_sequence, l.m_input_sequence_workspace);
-  }
+  El::Copy(input_sequence, l.m_input_sequence_workspace);
   l.m_init_hidden_workspace.Resize(mini_batch_size*hidden_size, num_layers);
   cuda::copy_tensor(
     stream,
@@ -487,11 +483,7 @@ void fp_compute_impl(
     {static_cast<size_t>(init_hidden.LDim()), hidden_size, one},
     l.m_init_hidden_workspace.Buffer(),
     {hidden_size, mini_batch_size*hidden_size, one});
-  if (!output_sequence.Contiguous()) {
-    LBANN_ERROR(
-      l.get_type()," layer \"",l.get_name(),"\" ",
-      "has non-contiguous buffer for output");
-  }
+  l.m_output_sequence_workspace.Resize(sequence_length*hidden_size, mini_batch_size);
 
   // Pack weights into workspace buffer
   /// @todo Handle synchronization
@@ -525,7 +517,7 @@ void fp_compute_impl(
   hash = hash_combine(hash, l.m_gpu_sequence_lengths.data());
   hash = hash_combine(hash, l.m_input_sequence_workspace.LockedBuffer());
   hash = hash_combine(hash, l.m_init_hidden_workspace.LockedBuffer());
-  hash = hash_combine(hash, output_sequence.Buffer());
+  hash = hash_combine(hash, l.m_output_sequence_workspace.Buffer());
   hash = hash_combine(hash, l.m_weights_cudnn_workspace.data());
   hash = hash_combine(hash, l.m_cudnn_workspace.data());
   hash = hash_combine(hash, l.m_cudnn_reserve_space.data());
@@ -543,7 +535,7 @@ void fp_compute_impl(
         l.m_input_cudnn_desc,
         l.m_input_sequence_workspace.LockedBuffer(),
         l.m_output_cudnn_desc,
-        output_sequence.Buffer(),
+        l.m_output_sequence_workspace.Buffer(),
         l.m_hidden_cudnn_desc,
         l.m_init_hidden_workspace.LockedBuffer(),
         nullptr,                // hy
@@ -562,6 +554,9 @@ void fp_compute_impl(
 
   // Launch CUDA graph with cuDNN kernels
   l.m_cuda_graph_forward_prop.launch(stream);
+
+  // Output tensor
+  El::LockedView(output_sequence, l.m_output_sequence_workspace);
 
 }
 
@@ -678,12 +673,6 @@ void bp_compute_impl(
 
   // Matrices
   using LocalMat = El::Matrix<TensorDataType, El::Device::GPU>;
-  const auto& input_sequence
-    = dynamic_cast<const LocalMat&>(l.get_local_prev_activations(0));
-  const auto& init_hidden
-    = dynamic_cast<const LocalMat&>(l.get_local_prev_activations(1));
-  const auto& output_sequence
-    = dynamic_cast<const LocalMat&>(l.get_local_activations());
   const auto& output_sequence_grad
     = dynamic_cast<const LocalMat&>(l.get_local_prev_error_signals());
   auto& input_sequence_grad
@@ -693,13 +682,13 @@ void bp_compute_impl(
 
   // Dimensions
   const size_t sequence_length = l.get_input_dims(0)[0];
-  const size_t mini_batch_size = input_sequence.Width();
+  const size_t mini_batch_size = output_sequence_grad.Width();
   const size_t input_size = l.get_input_size(0) / sequence_length;
   const size_t hidden_size = l.m_hidden_size;
   const size_t num_layers = l.m_num_layers;
 
   // GPU objects
-  auto&& sync_info = input_sequence.GetSyncInfo();
+  auto&& sync_info = output_sequence_grad.GetSyncInfo();
   auto&& stream = sync_info.Stream();
   auto&& handle = cudnn::get_handle();
   auto&& rnn_desc = l.m_rnn_cudnn_desc;
@@ -743,12 +732,7 @@ void bp_compute_impl(
   l.m_output_sequence_grad_workspace.SetSyncInfo(sync_info);
   l.m_input_sequence_grad_workspace.SetSyncInfo(sync_info);
   l.m_init_hidden_grad_workspace.SetSyncInfo(sync_info);
-  if (output_sequence_grad.Contiguous()) {
-    El::LockedView(l.m_output_sequence_grad_workspace, output_sequence_grad);
-  }
-  else {
-    El::Copy(output_sequence_grad, l.m_output_sequence_grad_workspace);
-  }
+  El::Copy(output_sequence_grad, l.m_output_sequence_grad_workspace);
   l.m_input_sequence_grad_workspace.Resize(sequence_length*input_size, mini_batch_size);
   l.m_init_hidden_grad_workspace.Resize(mini_batch_size*hidden_size, num_layers);
 
@@ -770,7 +754,7 @@ void bp_compute_impl(
   hash = hash_combine(hash, l.m_input_sequence_grad_workspace.Buffer());
   hash = hash_combine(hash, l.m_init_hidden_workspace.LockedBuffer());
   hash = hash_combine(hash, l.m_init_hidden_grad_workspace.Buffer());
-  hash = hash_combine(hash, output_sequence.LockedBuffer());
+  hash = hash_combine(hash, l.m_output_sequence_workspace.LockedBuffer());
   hash = hash_combine(hash, l.m_output_sequence_grad_workspace.LockedBuffer());
   hash = hash_combine(hash, l.m_weights_cudnn_workspace.data());
   hash = hash_combine(hash, l.m_weights_grad_cudnn_workspace.data());
@@ -787,7 +771,7 @@ void bp_compute_impl(
         rnn_desc,
         l.m_gpu_sequence_lengths.data(),
         l.m_output_cudnn_desc,
-        output_sequence.LockedBuffer(),
+        l.m_output_sequence_workspace.LockedBuffer(),
         l.m_output_sequence_grad_workspace.LockedBuffer(),
         l.m_input_cudnn_desc,
         l.m_input_sequence_grad_workspace.Buffer(),
@@ -816,7 +800,7 @@ void bp_compute_impl(
         l.m_hidden_cudnn_desc,
         l.m_init_hidden_workspace.LockedBuffer(),
         l.m_output_cudnn_desc,
-        output_sequence.LockedBuffer(),
+        l.m_output_sequence_workspace.LockedBuffer(),
         l.m_weights_grad_cudnn_workspace.size(),
         l.m_weights_grad_cudnn_workspace.data(),
         l.m_cudnn_workspace.size(),
@@ -855,7 +839,7 @@ void bp_compute_impl(
     l.m_init_hidden_grad_workspace.LockedBuffer(),
     {hidden_size, mini_batch_size*hidden_size, one},
     init_hidden_grad.Buffer(),
-    {static_cast<size_t>(init_hidden.LDim()), hidden_size, one});
+    {static_cast<size_t>(init_hidden_grad.LDim()), hidden_size, one});
 
 }
 

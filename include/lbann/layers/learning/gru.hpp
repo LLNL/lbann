@@ -118,6 +118,7 @@ private:
 
   // cuDNN workspaces
   LocalMat m_input_sequence_workspace;
+  LocalMat m_output_sequence_workspace;
   LocalMat m_input_sequence_grad_workspace;
   LocalMat m_output_sequence_grad_workspace;
   LocalMat m_init_hidden_workspace;
