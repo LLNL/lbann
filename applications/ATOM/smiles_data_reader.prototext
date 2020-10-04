@@ -15,7 +15,7 @@ data_reader {
     role: "test"
     shuffle: true
     percent_of_data_to_use: 1.0
-    data_filedir: "/p/gpfs1/brainusr/datasets/atom/enamine1B"
-    data_filename: "newEnamineFrom2020q1-2_test100kSMILES.csv"
+    data_filedir: "/p/gpfs1/brainusr/datasets/atom/combo_enamine1613M_mpro_inhib"
+    data_filename: "test_enamine_all2018q1_2020q1-2_mpro_inhib_kekulized_2010kSMILES.csv"
   }
 }
