@@ -30,6 +30,7 @@
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/commify.hpp"
 #include "lbann/utils/lbann_library.hpp"
+#include "lbann/utils/argument_parser.hpp"
 #include <mutex>
 #include <random>
 #include <time.h>
@@ -113,7 +114,20 @@ void smiles_data_reader::load() {
 
   // get the total number of samples in the file
   const std::string infile = get_file_dir() + "/" + get_data_filename();
-  int num_samples = get_num_lines(infile);
+  int num_samples = 0;
+  auto& arg_parser = global_argument_parser();
+  if (get_role() == "train") {
+    num_samples = arg_parser.get<int>(NUM_TRAIN_SAMPLES);
+  }
+  if (get_role() == "validate") {
+    num_samples = arg_parser.get<int>(NUM_VALIDATE_SAMPLES);
+  }
+  if (get_role() == "test") {
+    num_samples = arg_parser.get<int>(NUM_TEST_SAMPLES);
+  }
+  if(num_samples == 0) {
+    num_samples = get_num_lines(infile);
+  }
   if (m_has_header) {
     --num_samples;
   }
