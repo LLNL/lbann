@@ -389,6 +389,9 @@ void pack_cudnn_rnn_weights(
 
 } // namespace <anon>
 
+#define MIN_WORKSPACE_MINI_BATCH_SIZE 128
+size_t active_min_workspace_mini_batch_size = 0;
+
 template <typename TensorDataType>
 void fp_compute_impl(
   gru_layer<TensorDataType,data_layout::DATA_PARALLEL,El::Device::GPU>& l) {
@@ -418,7 +421,19 @@ void fp_compute_impl(
   if (mini_batch_size <= 0) {
     return;
   }
-  const size_t workspace_mini_batch_size = El::Max(mini_batch_size, 64);
+  // Note (BVE 10/3/20): Note that the bug seems to be triggered by
+  // switching mini-batch sizes when the last mini-batch is too small.
+  // This means that we need a lower bound, which is emperically
+  // tested to be 128 for WAE.  However, if the initial mini-batch
+  // size is less than 128 and it isn't changed, things seem to be
+  // okay.  So set the threshold to be the smaller of the initial
+  // mini-batch size or 128.
+  if(active_min_workspace_mini_batch_size == 0) {
+    // Set the minumum to the smaller of the initial mini-batch size
+    // or a predefined minumim
+    active_min_workspace_mini_batch_size = El::Min(mini_batch_size, MIN_WORKSPACE_MINI_BATCH_SIZE);
+  }
+  const size_t workspace_mini_batch_size = El::Max(mini_batch_size, active_min_workspace_mini_batch_size);
 
   // GPU objects
   auto&& sync_info = input_sequence.GetSyncInfo();
@@ -723,7 +738,7 @@ void bp_compute_impl(
   if (mini_batch_size <= 0) {
     return;
   }
-  const size_t workspace_mini_batch_size = El::Max(mini_batch_size, 64);
+  const size_t workspace_mini_batch_size = El::Max(mini_batch_size, active_min_workspace_mini_batch_size);
 
   // GPU objects
   auto&& sync_info = output_sequence_grad.GetSyncInfo();
