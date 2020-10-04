@@ -55,6 +55,11 @@ void construct_std_options() {
                         "Number of threads available to both I/O and "
                         "initial data transformations for each rank.",
                         64);
+  arg_parser.add_flag(ALLOW_GLOBAL_STATISTICS,
+                      {"--ltfb_allow_global_statistics"},
+                      utils::ENV("LBANN_LTFB_ALLOW_GLOBAL_STATISTICS"),
+                      "Allow the print_statistics callback to report "
+                      "global (inter-trainer) summary statistics.");
 }
 
 /// Construct a trainer that contains a lbann comm object and threadpool
