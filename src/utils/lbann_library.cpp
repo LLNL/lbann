@@ -70,6 +70,11 @@ void construct_std_options() {
                         utils::ENV("LBANN_NUM_TEST_SAMPLES"),
                         "Set the number of testing samples to ingest.",
                         0);
+  arg_parser.add_flag(ALLOW_GLOBAL_STATISTICS,
+                      {"--ltfb_allow_global_statistics"},
+                      utils::ENV("LBANN_LTFB_ALLOW_GLOBAL_STATISTICS"),
+                      "Allow the print_statistics callback to report "
+                      "global (inter-trainer) summary statistics.");
 }
 
 /// Construct a trainer that contains a lbann comm object and threadpool
