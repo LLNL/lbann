@@ -37,6 +37,9 @@ if (LBANN_HAS_HALF)
 endif (LBANN_HAS_HALF)
 
 if (LBANN_HAS_CUDA)
+  list(APPEND THIS_DIR_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/cufft_wrapper.cpp")
+
   # Add the CUDA source files for this directory
   set_full_path(THIS_DIR_CU_SOURCES
     cuda.cu
