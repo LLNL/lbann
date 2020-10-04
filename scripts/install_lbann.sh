@@ -293,7 +293,7 @@ echo "${SPACK_ENV}" > ${temp_file}
 
 if [[ $(spack env list | grep ${LBANN_ENV}) ]]; then
     echo "Spack environment ${LBANN_ENV} already exists... overwriting it"
-    CMD="spack env rm ${LBANN_ENV}"
+    CMD="spack env rm --yes-to-all ${LBANN_ENV}"
     echo ${CMD}
     ${CMD}
 fi

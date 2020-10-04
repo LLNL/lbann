@@ -32,7 +32,7 @@ namespace lbann {
 namespace cuda {
 
 // -------------------------------------------------------------
-// Utilities for CUDA events
+// event_wrapper
 // -------------------------------------------------------------
 
 event_wrapper::event_wrapper() : m_event(nullptr), m_stream(0) {
@@ -76,6 +76,245 @@ void event_wrapper::synchronize() {
 }
 
 cudaEvent_t& event_wrapper::get_event() { return m_event; }
+
+// -----------------------------
+// Graph
+// -----------------------------
+
+Graph::Graph(cudaGraph_t graph)
+  : graph_{graph}
+{}
+
+Graph::~Graph() {
+  if (graph_) {
+    // Don't check status to avoid exceptions
+    cudaGraphDestroy(graph_);
+  }
+}
+
+Graph::Graph(const Graph& other) {
+  if (other.graph_) {
+    CHECK_CUDA(cudaGraphClone(&graph_, other.graph_));
+  }
+}
+
+Graph::Graph(Graph&& other)
+  : graph_{other.graph_} {
+  other.graph_ = nullptr;
+}
+
+Graph& Graph::operator=(Graph other) {
+  swap(other, *this);
+  return *this;
+}
+
+void swap(Graph& first, Graph& second) {
+  std::swap(first.graph_, second.graph_);
+}
+
+void Graph::reset(cudaGraph_t graph) {
+  if (graph_) {
+    CHECK_CUDA(cudaGraphDestroy(graph_));
+  }
+  graph_ = graph;
+}
+
+cudaGraph_t Graph::release() {
+  auto old_graph = graph_;
+  graph_ = nullptr;
+  return old_graph;
+}
+
+cudaGraph_t Graph::get() const noexcept {
+  return graph_;
+}
+
+Graph::operator cudaGraph_t() const noexcept {
+  return get();
+}
+
+void Graph::create() {
+  if (!graph_) {
+    CHECK_CUDA(cudaGraphCreate(&graph_, 0));
+  }
+}
+
+void Graph::begin_capture(
+  cudaStream_t stream,
+  cudaStreamCaptureMode mode) {
+
+  // Check that stream is valid
+  // Note (tym 9/22/20): As of CUDA 11.0.3, support for stream capture
+  // on default stream is not supported.
+  if (stream == 0) {
+    LBANN_ERROR("attempting to capture default CUDA stream");
+  }
+
+  // Check whether CUDA stream is already being captured
+  cudaStreamCaptureStatus capture_status;
+  CHECK_CUDA(cudaStreamIsCapturing(stream, &capture_status));
+  switch (capture_status) {
+  case cudaStreamCaptureStatusNone:
+    break;
+  case cudaStreamCaptureStatusActive:
+    LBANN_ERROR("CUDA stream is already being captured");
+    break;
+  case cudaStreamCaptureStatusInvalidated:
+    {
+      cudaGraph_t graph;
+      CHECK_CUDA(cudaStreamEndCapture(stream, &graph));
+      Graph temp(graph);
+    }
+    break;
+  default:
+    LBANN_ERROR(
+      "unrecognized status for CUDA stream capture ",
+      "(",static_cast<int>(capture_status),")");
+  }
+
+  // Start capturing CUDA stream
+  CHECK_CUDA(cudaStreamBeginCapture(stream, mode));
+
+}
+
+Graph Graph::end_capture(cudaStream_t stream) {
+
+  // Check whether CUDA stream is already being captured
+  cudaStreamCaptureStatus capture_status;
+  CHECK_CUDA(cudaStreamIsCapturing(stream, &capture_status));
+  switch (capture_status) {
+  case cudaStreamCaptureStatusNone:
+    LBANN_ERROR("CUDA stream is not being captured");
+    break;
+  case cudaStreamCaptureStatusActive:
+    break;
+  case cudaStreamCaptureStatusInvalidated:
+    {
+      cudaGraph_t graph;
+      CHECK_CUDA(cudaStreamEndCapture(stream, &graph));
+      Graph temp(graph);
+      LBANN_ERROR("CUDA stream capture has failed");
+    }
+    break;
+  default:
+    LBANN_ERROR(
+      "unrecognized status for CUDA stream capture ",
+      "(",static_cast<int>(capture_status),")");
+  }
+
+  // Finish capturing CUDA stream
+  cudaGraph_t graph;
+  CHECK_CUDA(cudaStreamEndCapture(stream, &graph));
+  return Graph(graph);
+
+}
+
+// -----------------------------
+// ExecutableGraph
+// -----------------------------
+
+ExecutableGraph::ExecutableGraph(cudaGraphExec_t graph_exec)
+  : graph_exec_{graph_exec}
+{}
+
+ExecutableGraph::ExecutableGraph(cudaGraph_t graph) {
+  if (!graph) {
+    LBANN_ERROR("attempted to instantiate cudaGraphExec_t from null cudaGraph_t object");
+  }
+  constexpr size_t log_size = BUFSIZ;
+  char log_buffer[log_size];
+  const auto status
+    = cudaGraphInstantiate(&graph_exec_, graph, nullptr, log_buffer, log_size);
+  if (status != cudaSuccess && log_buffer[0] != '\0') {
+    log_buffer[log_size-1] = '\0';
+    LBANN_WARNING(log_buffer);
+  }
+  CHECK_CUDA(status);
+}
+
+ExecutableGraph::~ExecutableGraph() {
+  if (graph_exec_) {
+    // Don't check status to avoid exceptions
+    cudaGraphExecDestroy(graph_exec_);
+  }
+}
+
+ExecutableGraph::ExecutableGraph(ExecutableGraph&& other)
+  : graph_exec_{other.graph_exec_} {
+  other.graph_exec_ = nullptr;
+}
+
+ExecutableGraph& ExecutableGraph::operator=(ExecutableGraph other) {
+  swap(other, *this);
+  return *this;
+}
+
+void swap(ExecutableGraph& first, ExecutableGraph& second) {
+  std::swap(first.graph_exec_, second.graph_exec_);
+}
+
+void ExecutableGraph::reset(cudaGraphExec_t graph_exec) {
+  if (graph_exec_) {
+    CHECK_CUDA(cudaGraphExecDestroy(graph_exec_));
+  }
+  graph_exec_ = graph_exec;
+}
+
+cudaGraphExec_t ExecutableGraph::release() {
+  auto old_graph_exec = graph_exec_;
+  graph_exec_ = nullptr;
+  return old_graph_exec;
+}
+
+cudaGraphExec_t ExecutableGraph::get() const noexcept {
+  return graph_exec_;
+}
+
+ExecutableGraph::operator cudaGraphExec_t() const noexcept {
+  return get();
+}
+
+void ExecutableGraph::launch(cudaStream_t stream) const {
+  if (!graph_exec_) {
+    LBANN_ERROR("attempted to launch null cudaGraphExec_t");
+  }
+  CHECK_CUDA(cudaGraphLaunch(graph_exec_, stream));
+}
+
+void ExecutableGraph::update(cudaGraph_t graph) {
+
+  // Make sure CUDA graph is valid
+  if (!graph) {
+    LBANN_ERROR("attempting to update cudaGraphExec_t with null cudaGraph_t");
+  }
+
+  // Try updating executable CUDA graph
+#if (__CUDACC_VER_MAJOR__*100+__CUDACC_VER_MINOR__) < 1002 // < 10.2
+  reset();
+#else // >= 10.2
+  if (graph_exec_) {
+    cudaGraphNode_t error_node;
+    cudaGraphExecUpdateResult result;
+    auto status = cudaGraphExecUpdate(graph_exec_, graph, &error_node, &result);
+    switch (status) {
+    case cudaSuccess:
+      break;
+    case cudaErrorGraphExecUpdateFailure:
+      reset();
+      break;
+    default:
+      CHECK_CUDA(status);
+      reset();
+    }
+  }
+#endif // CUDA version >= 10.02
+
+  // If update failed, create new executable CUDA graph
+  if (!graph_exec_) {
+    *this = ExecutableGraph(graph);
+  }
+
+}
 
 // -------------------------------------------------------------
 // Helper functions for tensor operations
@@ -222,5 +461,4 @@ void copy_tensor<cpu_fp16>(
 
 } // namespace cuda
 } // namespace lbann
-
 #endif // LBANN_HAS_GPU

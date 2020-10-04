@@ -324,10 +324,10 @@ public:
     set(args...);
   }
 
+  RNNDescriptor(const RNNDescriptor&) = delete;
   ~RNNDescriptor();
 
   // Copy-and-swap idiom
-  RNNDescriptor(const RNNDescriptor&);
   RNNDescriptor(RNNDescriptor&&);
   RNNDescriptor& operator=(RNNDescriptor);
   friend void swap(RNNDescriptor& first, RNNDescriptor& second);
@@ -351,18 +351,72 @@ public:
    *  Creates cuDNN object if needed.
    */
   void set(
+    cudnnRNNAlgo_t algorithm,
+    cudnnRNNMode_t cell_mode,
+    cudnnRNNBiasMode_t bias_mode,
+    cudnnDirectionMode_t direction_mode,
+    cudnnRNNInputMode_t input_mode,
+    cudnnDataType_t data_type,
+    cudnnDataType_t math_precision,
+    cudnnMathType_t math_type,
+    size_t input_size,
     size_t hidden_size,
+    size_t proj_size,
     size_t num_layers,
     cudnnDropoutDescriptor_t dropout_desc,
-    cudnnRNNInputMode_t input_mode,
-    cudnnDirectionMode_t direction,
-    cudnnRNNMode_t mode,
-    cudnnRNNAlgo_t algo,
-    cudnnDataType_t math_precision);
+    uint32_t aux_flags);
 
 private:
 
   cudnnRNNDescriptor_t desc_{nullptr};
+
+};
+
+/** Wrapper around @c cudnnRNNDataDescriptor_t */
+class RNNDataDescriptor {
+
+public:
+
+  RNNDataDescriptor(cudnnRNNDataDescriptor_t desc=nullptr);
+
+  ~RNNDataDescriptor();
+
+  // Copy-and-swap idiom
+  RNNDataDescriptor(const RNNDataDescriptor&) = delete; /// @todo Implement
+  RNNDataDescriptor(RNNDataDescriptor&&);
+  RNNDataDescriptor& operator=(RNNDataDescriptor);
+  friend void swap(RNNDataDescriptor& first, RNNDataDescriptor& second);
+
+  /** @brief Take ownership of cuDNN object */
+  void reset(cudnnRNNDataDescriptor_t desc=nullptr);
+  /** @brief Return cuDNN object and release ownership */
+  cudnnRNNDataDescriptor_t release();
+  /** @brief Return cuDNN object without releasing ownership */
+  cudnnRNNDataDescriptor_t get() const noexcept;
+  /** @brief Return cuDNN object without releasing ownership */
+  operator cudnnRNNDataDescriptor_t() const noexcept;
+
+  /** Create cuDNN object
+   *
+   *  Does nothing if already created.
+   */
+  void create();
+  /** Configure cuDNN object
+   *
+   *  Creates cuDNN object if needed.
+   */
+  void set(
+    cudnnDataType_t data_type,
+    cudnnRNNDataLayout_t layout,
+    size_t max_seq_length,
+    size_t batch_size,
+    size_t vector_size,
+    const int seq_length_array[],
+    void* padding_fill);
+
+private:
+
+  cudnnRNNDataDescriptor_t desc_{nullptr};
 
 };
 
