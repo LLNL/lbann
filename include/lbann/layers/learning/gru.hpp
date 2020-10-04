@@ -41,20 +41,6 @@
 
 namespace lbann {
 
-#ifdef LBANN_GRU_LAYER_GPU_SUPPORTED
-struct cuda_graph_cache_t {
-  /** @brief CUDA graph for cuDNN forward prop function */
-  cuda::ExecutableGraph m_graph;
-  /** @brief Hash for @c m_cuda_graph_forward_prop
-   *
-   *  Hash is generated with input arguments to cuDNN function (mostly
-   *  workspace buffer pointers).
-   */
-  size_t m_hash{0};
-};
-typedef std::unordered_map<size_t, cuda_graph_cache_t> cuda_graph_cache_map_t;
-#endif // LBANN_GRU_LAYER_GPU_SUPPORTED
-
 /** @brief Stacked gated recurrent unit
  *
  *  Expects two inputs: a 2D input sequence (
@@ -143,10 +129,21 @@ private:
   ByteBuffer m_cudnn_reserve_space;
   hydrogen::simple_buffer<int32_t, El::Device::GPU> m_gpu_sequence_lengths;
 
-  /** @brief Cache of CUDA graphs for cuDNN forward prop function */
-  cuda_graph_cache_map_t m_cuda_graph_forward_prop_cache;
-  /** @brief Cache of CUDA graphs for cuDNN backprop functions */
-  cuda_graph_cache_map_t m_cuda_graph_backward_prop_cache;
+  using GraphCache = std::unordered_map<size_t, std::pair<size_t, cuda::ExecutableGraph>>;
+  /** @brief Cache of CUDA graphs for cuDNN forward prop function
+   *
+   *  The cache is a map from mini-batch sizes to (hash, graph) pairs.
+   *  The hash is generated from the cuDNN function arguments, mostly
+   *  pointers. The graph is a @c cuda::ExecutableGraph .
+   */
+  GraphCache m_cuda_graph_forward_prop_cache;
+  /** @brief Cache of CUDA graphs for cuDNN backprop functions
+   *
+   *  The cache is a map from mini-batch sizes to (hash, graph) pairs.
+   *  The hash is generated from the cuDNN function arguments, mostly
+   *  pointers. The graph is a @c cuda::ExecutableGraph .
+   */
+  GraphCache m_cuda_graph_backward_prop_cache;
 #endif // LBANN_GRU_LAYER_GPU_SUPPORTED
 
   template <typename T>

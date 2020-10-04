@@ -60,6 +60,8 @@ gru_layer<TensorDataType, Layout, Device>::gru_layer(const gru_layer& other)
   // CUDA graphs. They are setup in forward and backward prop
   // functions, as needed.
   /// @todo Copy @c m_rnn_cudnn_desc
+  m_cuda_graph_forward_prop_cache.clear();
+  m_cuda_graph_backward_prop_cache.clear();
 #endif // LBANN_GRU_LAYER_GPU_SUPPORTED
 }
 
@@ -74,6 +76,8 @@ gru_layer<TensorDataType, Layout, Device>& gru_layer<TensorDataType, Layout, Dev
   // CUDA graphs. They are setup in forward and backward prop
   // functions, as needed.
   /// @todo Copy @c m_rnn_cudnn_desc
+  m_cuda_graph_forward_prop_cache.clear();
+  m_cuda_graph_backward_prop_cache.clear();
 #endif // LBANN_GRU_LAYER_GPU_SUPPORTED
   return *this;
 }
@@ -513,7 +517,6 @@ void fp_compute_impl(
 
   // Compute hash with cuDNN function arguments
   size_t hash{0};
-  hash = hash_combine(hash, mini_batch_size);
   hash = hash_combine(hash, l.m_gpu_sequence_lengths.data());
   hash = hash_combine(hash, l.m_input_sequence_workspace.LockedBuffer());
   hash = hash_combine(hash, l.m_init_hidden_workspace.LockedBuffer());
@@ -522,12 +525,11 @@ void fp_compute_impl(
   hash = hash_combine(hash, l.m_cudnn_workspace.data());
   hash = hash_combine(hash, l.m_cudnn_reserve_space.data());
 
-  // Update CUDA graph if cuDNN function arguments don't match
-  cuda_graph_cache_map_t::const_iterator it = l.m_cuda_graph_forward_prop_cache.find(mini_batch_size);
+  // Update graph cache if cuDNN function arguments don't match
+  if (l.m_cuda_graph_forward_prop_cache.count(mini_batch_size) < 1
+      || l.m_cuda_graph_forward_prop_cache[mini_batch_size].first != hash) {
 
-  if (it == l.m_cuda_graph_forward_prop_cache.end() ||
-      l.m_cuda_graph_forward_prop_cache[mini_batch_size].m_hash != hash) {
-    l.m_cuda_graph_forward_prop_cache[mini_batch_size].m_hash = hash;
+    // Capture graph
     cuda::Graph::begin_capture(stream);
     CHECK_CUDNN(
       cudnnRNNForward(
@@ -552,11 +554,16 @@ void fp_compute_impl(
         l.m_cudnn_reserve_space.size(),
         l.m_cudnn_reserve_space.data()));
     auto graph = cuda::Graph::end_capture(stream);
-    l.m_cuda_graph_forward_prop_cache[mini_batch_size].m_graph.update(graph);
+
+    // Update cache
+    auto& cache_pair = l.m_cuda_graph_forward_prop_cache[mini_batch_size];
+    cache_pair.first = hash;
+    cache_pair.second.update(graph);
+
   }
 
   // Launch CUDA graph with cuDNN kernels
-  l.m_cuda_graph_forward_prop_cache[mini_batch_size].m_graph.launch(stream);
+  l.m_cuda_graph_forward_prop_cache[mini_batch_size].second.launch(stream);
 
   // Output tensor
   El::LockedView(output_sequence, l.m_output_sequence_workspace);
@@ -751,7 +758,6 @@ void bp_compute_impl(
 
   // Compute hash with cuDNN function arguments
   size_t hash{0};
-  hash = hash_combine(hash, mini_batch_size);
   hash = hash_combine(hash, l.m_gpu_sequence_lengths.data());
   hash = hash_combine(hash, l.m_input_sequence_workspace.LockedBuffer());
   hash = hash_combine(hash, l.m_input_sequence_grad_workspace.Buffer());
@@ -764,12 +770,11 @@ void bp_compute_impl(
   hash = hash_combine(hash, l.m_cudnn_workspace.data());
   hash = hash_combine(hash, l.m_cudnn_reserve_space.data());
 
-  // Update CUDA graph if cuDNN function arguments don't match
-  cuda_graph_cache_map_t::const_iterator it = l.m_cuda_graph_backward_prop_cache.find(mini_batch_size);
+  // Update graph cache if cuDNN function arguments don't match
+  if (l.m_cuda_graph_backward_prop_cache.count(mini_batch_size) < 1
+      || l.m_cuda_graph_backward_prop_cache[mini_batch_size].first != hash) {
 
-  if (it == l.m_cuda_graph_backward_prop_cache.end() ||
-      l.m_cuda_graph_backward_prop_cache[mini_batch_size].m_hash != hash) {
-    l.m_cuda_graph_backward_prop_cache[mini_batch_size].m_hash = hash;
+    // Capture graph
     cuda::Graph::begin_capture(stream);
     CHECK_CUDNN(
       cudnnRNNBackwardData_v8(
@@ -814,11 +819,16 @@ void bp_compute_impl(
         l.m_cudnn_reserve_space.size(),
         l.m_cudnn_reserve_space.data()));
     auto graph = cuda::Graph::end_capture(stream);
-    l.m_cuda_graph_backward_prop_cache[mini_batch_size].m_graph.update(graph);
+
+    // Update cache
+    auto& cache_pair = l.m_cuda_graph_backward_prop_cache[mini_batch_size];
+    cache_pair.first = hash;
+    cache_pair.second.update(graph);
+
   }
 
   // Launch CUDA graph with cuDNN kernels
-  l.m_cuda_graph_backward_prop_cache[mini_batch_size].m_graph.launch(stream);
+  l.m_cuda_graph_backward_prop_cache[mini_batch_size].second.launch(stream);
 
   // Send gradients to optimizers
   unpack_cudnn_rnn_weights<TensorDataType>(
