@@ -10,11 +10,12 @@ PPT="ppt:1"
 IPT="ipt:1"
 YAML=train_atom.yaml
 LR_SCALING="lr_scaling:False"
+VARS=
 
 usage() { echo "$0 usage:" && grep " .)\ #" $0; exit 0; }
 
 [ $# -eq 0 ] && usage
-while getopts ":hn:b:i:p:y:l:" arg; do
+while getopts ":hn:b:i:p:y:l:v:" arg; do
   case $arg in
     y) # Yaml file
       YAML=${OPTARG}
@@ -39,6 +40,10 @@ while getopts ":hn:b:i:p:y:l:" arg; do
     l) # lr_scaling (True or False)
       LR_SCALING="lr_scaling:${OPTARG}"
       echo $LR_SCALING
+      ;;
+    v) # Override YAML variables (e.g. "OUTPUT_PATH=blah EPOCH=4")
+      VARS="--vars ${OPTARG}"
+      echo $VARs
       ;;
     h | *) # Display help.
       usage
@@ -65,9 +70,9 @@ merlin stop-workers --spec ${YAML}
 merlin purge -f ${YAML}
 # Send all tasks to the broker
 # Use a custom generator to give good names to each test
-CMD="merlin run ${YAML} --pgen merlin_pgen_make_test_permutations.py --parg \"$NUM_NODES\" --parg \"$MB_SIZE\" --parg \"$PPT\" --parg \"$IPT\" --parg \"$LR_SCALING\""
+CMD="merlin run ${YAML} ${VARS} --pgen merlin_pgen_make_test_permutations.py --parg \"$NUM_NODES\" --parg \"$MB_SIZE\" --parg \"$PPT\" --parg \"$IPT\" --parg \"$LR_SCALING\""
 echo $CMD
-merlin run ${YAML} --pgen merlin_pgen_make_test_permutations.py --parg "$NUM_NODES" --parg "$MB_SIZE" --parg "$PPT" --parg "$IPT" --parg "$LR_SCALING"
+merlin run --dry ${YAML} ${VARS} --pgen merlin_pgen_make_test_permutations.py --parg "$NUM_NODES" --parg "$MB_SIZE" --parg "$PPT" --parg "$IPT" --parg "$LR_SCALING"
 
 # Show the workers command
 merlin run-workers ${YAML} --echo
