@@ -55,7 +55,6 @@ El::Int get_partner_trainer(lbann_comm& comm,
     // second, the third with the fourth, and so on. If there are an
     // odd number of trainers, the last one is partnered with itself.
     const El::Int num_trainers = comm.get_num_trainers();
-    const El::Int procs_per_trainer = comm.get_procs_per_trainer();
     std::vector<El::Int> trainers(num_trainers);
     std::iota(trainers.begin(), trainers.end(), 0);
     // Everyone use a special RNG that is only for LTFB so that they
