@@ -160,9 +160,9 @@ void bp_impl(
     block_dims.x = block_size;
     grid_dims.x = (local_height + block_size - 1) / block_size;
     auto multisync = El::MakeMultiSync(
+      gpu::get_sync_info(local_gradient_wrt_input),
       gpu::get_sync_info(local_input),
       gpu::get_sync_info(local_gradient_wrt_output),
-      gpu::get_sync_info(local_gradient_wrt_input),
       gpu::get_sync_info(local_scale_bias),
       gpu::get_sync_info(local_gradient_wrt_scale_bias));
     hydrogen::gpu::LaunchKernel(
