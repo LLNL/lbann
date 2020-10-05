@@ -1,10 +1,18 @@
 """WMT 2014 dataset for English-German translation."""
 import os.path
+import os
 import sys
 
 import numpy as np
 import torchnlp.datasets
 
+def env2int(env_list, default = -1):
+   for e in env_list:
+       val = int(os.environ.get(e, -1))
+       if val >= 0: return val
+   return default
+
+data_size = env2int(['DATA_SIZE'])
 # Local imports
 current_file = os.path.realpath(__file__)
 root_dir = os.path.dirname(os.path.dirname(current_file))
@@ -32,8 +40,12 @@ dataset_train, dataset_val = torchnlp.datasets.wmt_dataset(
     dev=True,
 )
 
-dataset_train = dataset_train[:1024*16]
-dataset_val = dataset_val[:1024]
+
+if(data_size!=-1):
+
+    dataset_train = dataset_train[:data_size]
+    dataset_val = dataset_val[:1024]
+
 # Load token vocabulary
 with open(os.path.join(data_dir, 'vocab.bpe.32000')) as f:
     tokens = f.read().splitlines()

@@ -153,7 +153,7 @@ class MultiheadAttention(Module):
         attentions = []
         tag=0
         for head in range(self.num_heads):
-            head_name = f'{name}_head{head}'
+            head_name = f'{name}_myattention_head{head}'
 
             # Attention inputs
             
@@ -182,8 +182,13 @@ class MultiheadAttention(Module):
                 scaling_factors=str(1 / math.sqrt(self.head_dim)),
                 name=f'{head_name}_scale',
             )
-            # if mask:
-            #      y = lbann.Sum([y, mask], name=f'{head_name}_mask')
+
+            if(ENABLE_SUBGRAPH):
+                if mask!=None:
+                    y = lbann.Sum([y, mask[tag]], name=f'{head_name}_mask')
+            else:
+                if mask:
+                    y = lbann.Sum([y, mask], name=f'{head_name}_mask')
             y = lbann.ChannelwiseSoftmax(y, name=f'{head_name}_softmax')
 
             # Attention output
