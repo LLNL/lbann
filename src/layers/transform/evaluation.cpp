@@ -135,7 +135,7 @@ void fp_gpu(lbann_comm& comm,
                             sum_d.Buffer(),
                             sync_info);
   } else {
-    El::Matrix<TensorDataType, El::Device::GPU> col_sums_d;
+    El::Matrix<EvalDataType, El::Device::GPU> col_sums_d;
     El::SetSyncInfo(col_sums_d, sync_info);
 #ifdef HYDROGEN_HAVE_CUB
     col_sums_d.SetMemoryMode(1);  // Use CUB GPU memory pool
