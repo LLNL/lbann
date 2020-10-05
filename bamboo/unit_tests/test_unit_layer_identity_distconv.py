@@ -200,5 +200,6 @@ def construct_data_reader(lbann):
 # ==============================================
 
 # Create test functions that can interact with PyTest
-for test in tools.create_tests(setup_experiment, __file__):
+for test in tools.create_tests(setup_experiment, __file__,
+                               environment=tools.get_distconv_environment()):
     globals()[test.__name__] = test
