@@ -491,7 +491,7 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute() {
       hydrogen::gpu::LaunchKernel(
         fp_sums_kernel<TensorDataType, block_size>,
         grid_dims, block_dims, 0, multisync,
-        channel_size, local_width,
+        local_width, num_channels, channel_size,
         local_input.LockedBuffer(), local_input.LDim(),
         local_mean.Buffer(), local_var.Buffer());
     }
