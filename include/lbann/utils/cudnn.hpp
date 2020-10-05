@@ -376,7 +376,11 @@ public:
   /** @brief Return cuDNN object without releasing ownership */
   operator cudnnRNNDataDescriptor_t() const noexcept;
 
-  /** Create cuDNN object
+  /** @brief Allocate a new handle.
+   *
+   *  Does nothing if already created.
+   */
+  void create();
 
   /** Configure cuDNN object
    *
