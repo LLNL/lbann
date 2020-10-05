@@ -446,10 +446,10 @@ void bp_impl(size_t num_channels,
   LocalMat local_y_dot_dy(num_channels, local_mini_batch_size);
   El::Zero(local_y_dot_dy);
 
-  auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_input_grad),
+  auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_y_dot_dy),
                                      gpu::get_sync_info(local_output_grad),
                                      gpu::get_sync_info(local_output),
-                                     gpu::get_sync_info(local_y_dot_dy));
+                                     gpu::get_sync_info(local_input_grad));
 
   if (!local_output.IsEmpty()) {
     constexpr size_t block_size = 256;
