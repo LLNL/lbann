@@ -90,7 +90,7 @@ void make_input_matrix(El::Matrix<El::Complex<T>, El::Device::CPU>& mat,
 }// namespace <anon>
 
 TEMPLATE_TEST_CASE("Testing cuFFT wrapper (C2C)",
-                   "[fft][cufft][gpu][cuda][utilities]",
+                   "[.cufft][fft][gpu][cuda][utilities][!nonportable]",
                    float, double)
 {
   using RealT = TestType;
@@ -181,7 +181,7 @@ TEMPLATE_TEST_CASE("Testing cuFFT wrapper (C2C)",
 }
 
 TEMPLATE_TEST_CASE("Testing cuFFT wrapper (C2C-InPlace)",
-                   "[fft][cufft][gpu][cuda][utilities]",
+                   "[.cufft][fft][gpu][cuda][utilities][!nonportable]",
                    float, double)
 {
   using RealT = TestType;

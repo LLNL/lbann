@@ -65,68 +65,43 @@ public:
     : regularizer_layer<TensorDataType>(comm),
       m_window_width(window_width), m_alpha(alpha), m_beta(beta), m_k(k)
 #ifdef LBANN_HAS_CUDNN
-    , m_lrn_cudnn_desc(nullptr),
-      m_tensors_cudnn_desc(this)
+    , m_tensors_cudnn_desc(this)
 #endif // LBANN_HAS_CUDNN
   { }
 
-  local_response_normalization_layer(const local_response_normalization_layer& other)
+  local_response_normalization_layer(
+    const local_response_normalization_layer& other)
     : regularizer_layer<TensorDataType>(other),
       m_window_width(other.m_window_width),
       m_alpha(other.m_alpha),
       m_beta(other.m_beta),
       m_k(other.m_k)
 #ifdef LBANN_HAS_CUDNN
-    , m_lrn_cudnn_desc(nullptr),
+    , m_lrn_cudnn_desc(other.m_lrn_cudnn_desc),
       m_tensors_cudnn_desc(other.m_tensors_cudnn_desc)
 #endif // LBANN_HAS_CUDNN
   {
 #ifdef LBANN_HAS_CUDNN
-    if (other.m_lrn_cudnn_desc != nullptr) {
-      unsigned n;
-      double alpha, beta, k;
-      CHECK_CUDNN(cudnnCreateLRNDescriptor(&m_lrn_cudnn_desc));
-      CHECK_CUDNN(cudnnGetLRNDescriptor(other.m_lrn_cudnn_desc, &n, &alpha, &beta, &k));
-      CHECK_CUDNN(cudnnSetLRNDescriptor(m_lrn_cudnn_desc, n, alpha, beta, k));
-    }
     m_tensors_cudnn_desc.set_layer(this);
 #endif // LBANN_HAS_CUDNN
   }
 
-  local_response_normalization_layer& operator=(const local_response_normalization_layer& other) {
+  local_response_normalization_layer& operator=(
+    const local_response_normalization_layer& other) {
     regularizer_layer<TensorDataType>::operator=(other);
     m_window_width = other.m_window_width;
     m_alpha = other.m_alpha;
     m_beta = other.m_beta;
     m_k = other.m_k;
 #ifdef LBANN_HAS_CUDNN
-    if (other.m_lrn_cudnn_desc != nullptr
-        && m_lrn_cudnn_desc == nullptr) {
-      CHECK_CUDNN(cudnnCreateLRNDescriptor(&m_lrn_cudnn_desc));
-    } else if (other.m_lrn_cudnn_desc == nullptr
-               && m_lrn_cudnn_desc != nullptr) {
-      CHECK_CUDNN(cudnnDestroyLRNDescriptor(m_lrn_cudnn_desc));
-      m_lrn_cudnn_desc = nullptr;
-    }
-    if (other.m_lrn_cudnn_desc != nullptr) {
-      unsigned n;
-      double alpha, beta, k;
-      CHECK_CUDNN(cudnnGetLRNDescriptor(other.m_lrn_cudnn_desc, &n, &alpha, &beta, &k));
-      CHECK_CUDNN(cudnnSetLRNDescriptor(m_lrn_cudnn_desc, n, alpha, beta, k));
-    }
+    m_lrn_cudnn_desc = other.m_lrn_cudnn_desc;
     m_tensors_cudnn_desc = other.m_tensors_cudnn_desc;
     m_tensors_cudnn_desc.set_layer(this);
 #endif // LBANN_HAS_CUDNN
     return *this;
   }
 
-  ~local_response_normalization_layer() override {
-#ifdef LBANN_HAS_CUDNN
-    if (m_lrn_cudnn_desc != nullptr) {
-      cudnnDestroyLRNDescriptor(m_lrn_cudnn_desc);
-    }
-#endif // LBANN_HAS_CUDNN
-  }
+  ~local_response_normalization_layer() override = default;
 
   local_response_normalization_layer* copy() const override {
     return new local_response_normalization_layer(*this);
@@ -156,19 +131,16 @@ protected:
 #ifndef LBANN_HAS_CUDNN
     LBANN_ERROR("cuDNN not detected");
 #else
-    CHECK_CUDNN(cudnnCreateLRNDescriptor(&m_lrn_cudnn_desc));
-    CHECK_CUDNN(cudnnSetLRNDescriptor(m_lrn_cudnn_desc,
-                                      (unsigned int) m_window_width,
-                                      (double) m_alpha,
-                                      (double) m_beta,
-                                      (double) m_k));
+    m_lrn_cudnn_desc.set(m_window_width,
+                         m_alpha, m_beta, m_k);
 #endif // #ifndef LBANN_HAS_CUDNN
   }
 
   void fp_compute() override {
     if (this->using_gpus()) {
       fp_compute_cudnn();
-    } else {
+    }
+    else {
       fp_compute_cpu();
     }
   }
@@ -176,7 +148,8 @@ protected:
   void bp_compute() override {
     if (this->using_gpus()) {
       bp_compute_cudnn();
-    } else {
+    }
+    else {
       bp_compute_cpu();
     }
   }
@@ -194,7 +167,7 @@ private:
 
 #ifdef LBANN_HAS_CUDNN
   /** LRN cuDNN descriptor. */
-  cudnnLRNDescriptor_t m_lrn_cudnn_desc;
+  cudnn::LRNDescriptor m_lrn_cudnn_desc;
   /** Tensor cuDNN descriptors. */
   cudnn::data_parallel_layer_tensor_manager<TensorDataType> m_tensors_cudnn_desc;
 #endif // LBANN_HAS_CUDNN

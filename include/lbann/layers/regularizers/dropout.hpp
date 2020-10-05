@@ -63,8 +63,7 @@ public:
     : regularizer_layer<TensorDataType>(comm),
       m_keep_prob(keep_prob)
 #ifdef LBANN_HAS_CUDNN
-    , m_dropout_cudnn_desc(nullptr),
-      m_tensors_cudnn_desc(this)
+    , m_tensors_cudnn_desc(this)
 #endif // LBANN_HAS_CUDNN
   {
 #if defined(LBANN_HAS_CUDNN) && defined(LBANN_DETERMINISTIC)
@@ -81,7 +80,7 @@ public:
       m_keep_prob(other.m_keep_prob),
       m_mask(other.m_mask ? other.m_mask->Copy() : nullptr)
 #ifdef LBANN_HAS_CUDNN
-    , m_dropout_cudnn_desc(nullptr),
+      ,
       m_tensors_cudnn_desc(other.m_tensors_cudnn_desc)
 #endif // LBANN_HAS_CUDNN
   {
@@ -106,21 +105,12 @@ public:
     m_reserve_space = other.m_reserve_space;
     if (other.m_dropout_cudnn_desc != nullptr) {
       setup_dropout_cudnn_desc();
-    } else {
-      CHECK_CUDNN(cudnnDestroyDropoutDescriptor(m_dropout_cudnn_desc));
-      m_dropout_cudnn_desc = nullptr;
     }
 #endif // LBANN_HAS_CUDNN
     return *this;
   }
 
-  ~dropout() override {
-#ifdef LBANN_HAS_CUDNN
-    if (m_dropout_cudnn_desc != nullptr) {
-      cudnnDestroyDropoutDescriptor(m_dropout_cudnn_desc);
-    }
-#endif // LBANN_HAS_CUDNN
-  }
+  ~dropout() override = default;
 
   dropout* copy() const override { return new dropout(*this); }
   std::string get_type() const override { return "dropout"; }
@@ -306,25 +296,16 @@ protected:
    */
   void setup_dropout_cudnn_desc() {
 
-    // Deallocate dropout descriptor if needed
-    if (m_dropout_cudnn_desc != nullptr) {
-      CHECK_CUDNN(cudnnDestroyDropoutDescriptor(m_dropout_cudnn_desc));
-    }
-    m_dropout_cudnn_desc = nullptr;
-
     // Setup RNG state
     size_t size;
     CHECK_CUDNN(cudnnDropoutGetStatesSize(cudnn::get_handle(), &size));
     m_states.Resize((size + sizeof(TensorDataType) - 1) / sizeof(TensorDataType), 1);
 
     // Setup dropout descriptor
-    CHECK_CUDNN(cudnnCreateDropoutDescriptor(&m_dropout_cudnn_desc));
-    CHECK_CUDNN(cudnnSetDropoutDescriptor(m_dropout_cudnn_desc,
-                                          cudnn::get_handle(),
-                                          float(1 - m_keep_prob),
-                                          m_states.Buffer(),
-                                          m_states.Height() * sizeof(TensorDataType),
-                                          get_generator()()));
+    m_dropout_cudnn_desc.set(float(1 - m_keep_prob),
+                             m_states.Buffer(),
+                             m_states.Height() * sizeof(TensorDataType),
+                             get_generator()());
 
   }
 #endif // LBANN_HAS_CUDNN
@@ -336,7 +317,7 @@ protected:
 
 #ifdef LBANN_HAS_CUDNN
   /** Dropout cuDNN descriptor. */
-  cudnnDropoutDescriptor_t m_dropout_cudnn_desc;
+  cudnn::DropoutDescriptor m_dropout_cudnn_desc;
   /** Tensor cuDNN descriptors. */
   cudnn::entrywise_layer_tensor_manager<TensorDataType> m_tensors_cudnn_desc;
   /** RNG state for cuDNN dropout. */

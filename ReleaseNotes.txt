@@ -6,7 +6,7 @@ Support for new network structures:
 Support for new layers:
  - "DFTAbs" layer that computes the absolute value of the channel-wise
    DFT of the input data
- 
+
 Python front-end:
 
 Performance optimizations:
@@ -18,6 +18,7 @@ Model portability & usability:
 Internal features:
  - Wrapper classes for CUDA Graphs API
  - Elementary examples of using complex numbers
+ - cuDNN handles are now wrapped in RAII management classes
 
 I/O & data readers:
 
