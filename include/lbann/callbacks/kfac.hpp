@@ -39,6 +39,8 @@ struct kfac_layer_metadata {
   size_t layer_id;
   convolution_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>* l_conv;
   bool is_fc, is_conv, is_bn_after_fc, is_bn_after_conv;
+  size_t conv_input_spatial_prod, conv_output_spatial_prod;
+  std::vector<int> conv_input_spatial_dims, conv_output_spatial_dims;
   size_t bn_num_channels, bn_spatial_prod;
   int proc_rank;
 };
@@ -118,12 +120,10 @@ class kfac : public callback_base {
 
  private:
 
-  /** @brief Gets the Kronecker factor matrix of a FC layer. *
-   *  The same key is tied with the same matrix instance.
-   *  If height and width are zero, the shape of the returned matrix
-   *  is undetermined. */
+  /** @brief Gets the Kronecker factor matrix of a FC layer.
+   *  The same key is tied with the same matrix instance. */
   El::Matrix<DataType, El::Device::GPU>& get_workspace_matrix(
-      const std::string key, const size_t height=0, const size_t width=0);
+      const std::string key, const size_t height, const size_t width);
 
   /** @brief Gets the Kronecker factor matrix of a FC layer. **/
   static void get_kronecker_factor_fc(
