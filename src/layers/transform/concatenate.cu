@@ -435,8 +435,10 @@ void bp_compute_impl(
   pos += sizeof(dim4) * input_grad_strides_list.size();
 
   // Copy tensor data to GPU
-  gpu_lib::thrust::vector<unsigned char> device_workspace(l.m_workspace.size());
-  unsigned char* device_workspace_ptr = device_workspace.data().get();
+  hydrogen::simple_buffer<unsigned char, El::Device::GPU> device_workspace(
+    l.m_workspace.size(),
+    sync_info);
+  unsigned char* device_workspace_ptr = device_workspace.data();
   hydrogen::gpu::Copy1DToDevice(l.m_workspace.data(),
                                 device_workspace_ptr,
                                 l.m_workspace.size(),
