@@ -119,8 +119,8 @@ void fp_impl(
     block_dims.y = block_size_y;
     grid_dims.x = (local_height + block_size_x - 1) / block_size_x;
     grid_dims.y = (local_width + block_size_y - 1) / block_size_y;
-    auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_input),
-                                       gpu::get_sync_info(local_output),
+    auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_output),
+                                       gpu::get_sync_info(local_input),
                                        gpu::get_sync_info(local_scale_bias));
     hydrogen::gpu::LaunchKernel(
       fp_kernel<TensorDataType>,
