@@ -338,8 +338,9 @@ void kfac::on_backward_prop_end(model *m) {
           &(metadata.l_conv->get_pads()[0]),
           &(metadata.l_conv->get_conv_dims()[0]),
           &(metadata.l_conv->get_strides()[0]));
-      auto& Acol = get_workspace_matrix(std::string("Acol_")+std::to_string(metadata.layer_id),
-                                        Acol_size.first, Acol_size.second);
+      auto& Acol = get_workspace_matrix(
+          std::string("Acol"), // im2col workspace is reused as it is huge.
+          Acol_size.first, Acol_size.second);
       auto& Gcol = get_workspace_matrix(
           std::string("Gcol_")+std::to_string(metadata.layer_id),
           num_output_channels, local_batch_size*metadata.conv_output_spatial_prod);
@@ -580,7 +581,7 @@ void kfac::on_backward_prop_end(model *m) {
     if(comm->get_rank_in_trainer() == metadata.proc_rank) {
       const auto &Ainv = m_kronecker_inverse[metadata.layer_id].first;
       const auto &Ginv = m_kronecker_inverse[metadata.layer_id].second;
-        const auto& w_grads_orig = w_dto->get_gradient().LockedMatrix();
+      const auto& w_grads_orig = w_dto->get_gradient().LockedMatrix();
       El::Matrix<DataType, El::Device::GPU> w_gradients;
       // w_gradients is already synchronized among processes.
       if(metadata.is_conv) {
@@ -1054,10 +1055,10 @@ El::Matrix<DataType, El::Device::GPU>& kfac::get_workspace_matrix(
   }
   auto& ret = m_workspace[key];
   if((size_t) ret.Height() != height || (size_t) ret.Width() != width) {
-    // assert((size_t) ret.Height()*ret.Width() == height*width);
+    // Make sure that no kernels are using this workspace.
+    CHECK_CUDA(cudaDeviceSynchronize());
     ret.Resize(height, width);
   }
-  ret.FixSize();
   return ret;
 }
 
