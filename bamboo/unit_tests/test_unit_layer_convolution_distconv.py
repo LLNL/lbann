@@ -231,10 +231,7 @@ def construct_model(lbann):
     # Gradient checking
     # ------------------------------------------
 
-    callbacks.append(lbann.CallbackCheckGradients(
-        error_on_failure=True,
-        step_size=20.0, # TODO: Use the default step size.
-    ))
+    callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
 
     # ------------------------------------------
     # Construct model
