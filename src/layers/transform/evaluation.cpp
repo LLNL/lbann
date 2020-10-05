@@ -160,7 +160,7 @@ void fp_gpu(lbann_comm& comm,
   // Compute average value across mini-batch
   El::Scale(one / El::To<TensorDataType>(mini_batch_size), sum_d);
   comm.allreduce(
-    static_cast<El::AbstractMatrix<TensorDataType>&>(sum_d), input.DistComm());
+    static_cast<El::AbstractMatrix<EvalDataType>&>(sum_d), input.DistComm());
   hydrogen::gpu::Copy1DToHost(sum_d.LockedBuffer(), &value, 1, sync_info);
   copy_event.record(sync_info.Stream());
 }
