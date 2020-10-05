@@ -72,7 +72,7 @@ merlin purge -f ${YAML}
 # Use a custom generator to give good names to each test
 CMD="merlin run ${YAML} ${VARS} --pgen merlin_pgen_make_test_permutations.py --parg \"$NUM_NODES\" --parg \"$MB_SIZE\" --parg \"$PPT\" --parg \"$IPT\" --parg \"$LR_SCALING\""
 echo $CMD
-merlin run --dry ${YAML} ${VARS} --pgen merlin_pgen_make_test_permutations.py --parg "$NUM_NODES" --parg "$MB_SIZE" --parg "$PPT" --parg "$IPT" --parg "$LR_SCALING"
+merlin run ${YAML} ${VARS} --pgen merlin_pgen_make_test_permutations.py --parg "$NUM_NODES" --parg "$MB_SIZE" --parg "$PPT" --parg "$IPT" --parg "$LR_SCALING"
 
 # Show the workers command
 merlin run-workers ${YAML} --echo
