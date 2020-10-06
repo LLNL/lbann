@@ -23,18 +23,26 @@ function min(x,y) {
   return x < y ? x : y;
 }
 {
-  sums[$2] += $3;
-  sqsums[$2] += $3*$3;
-  maxs[$2] = max($3,maxs[$2]);
-  mins[$2] = min($3,mins[$2]);
-  trainers = max(trainers,$1+1);
-  epochs = max(epochs,$2+1);
+  trainer = $1
+  epoch = $2
+  val = $3
+  if (val * 1 > 0) {
+    sums[epoch] += val;
+    sqsums[epoch] += val*val;
+    maxs[epoch] = max(val,maxs[epoch]);
+    mins[epoch] = min(val,mins[epoch]);
+    counts[epoch]++;
+    num_epochs = max(num_epochs,epoch+1);
+  }
 }
 END {
-  for (i=0;i<epochs;++i) {
-    mean = sums[i]/trainers;
-    sqmean = sqsums[i]/trainers;
-    print("Epoch ",i,", train recon : mean=",mean,", stdev=",sqmean-mean*mean,", min=",mins[i],", max=",maxs[i]);  }
+  for (epoch=0; epoch<num_epochs; ++epoch) {
+    mean = sums[epoch] / counts[epoch];
+    sqmean = sqsums[epoch] / counts[epoch];
+    print("Epoch ",epoch,", train recon : ",
+          "mean=",mean,", stdev=",sqmean-mean*mean,", ",
+          "min=",mins[epoch],", max=",maxs[epoch]);
+  }
 }'
 
 # Parse log file for test recon loss
@@ -53,18 +61,25 @@ function min(x,y) {
   return x < y ? x : y;
 }
 {
-  epoch = int(epochs[$1]);
-  epochs[$1]++;
-  sums[epoch] += $2;
-  sqsums[epoch] += $2*$2;
-  maxs[epoch] = max($2,maxs[epoch]);
-  mins[epoch] = min($2,mins[epoch]);
-  num_trainers = max(num_trainers,$1+1);
-  num_epochs = max(num_epochs,epoch+1);
+  trainer = $1
+  epoch = int(epochs[trainer]);
+  epochs[trainer]++;
+  val = $2
+  if (val * 1 > 0) {
+    sums[epoch] += val;
+    sqsums[epoch] += val*val;
+    maxs[epoch] = max(val,maxs[epoch]);
+    mins[epoch] = min(val,mins[epoch]);
+    counts[epoch]++;
+    num_epochs = max(num_epochs,epoch+1);
+  }
 }
 END {
-  for (i=0;i<num_epochs-1;++i) {
-    mean = sums[i]/num_trainers;
-    sqmean = sqsums[i]/num_trainers;
-    print("Epoch ",i,", test recon : mean=",mean,", stdev=",sqmean-mean*mean,", min=",mins[i],", max=",maxs[i]);  }
+  for (epoch=0; epoch<num_epochs; ++epoch) {
+    mean = sums[epoch] / counts[epoch];
+    sqmean = sqsums[epoch] / counts[epoch];
+    print("Epoch ",epoch,", train recon : ",
+          "mean=",mean,", stdev=",sqmean-mean*mean,", ",
+          "min=",mins[epoch],", max=",maxs[epoch]);
+  }
 }'
