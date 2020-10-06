@@ -114,6 +114,23 @@ inline cudnnConvolutionFwdAlgo_t to_cudnn(fwd_conv_alg a)
   }
 }
 
+inline fwd_conv_alg from_cudnn(cudnnConvolutionFwdAlgo_t a)
+{
+  switch (a)
+  {
+  case CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM: return fwd_conv_alg::IMPLICIT_GEMM;
+  case CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_PRECOMP_GEMM: return fwd_conv_alg::IMPLICIT_PRECOMP_GEMM;
+  case CUDNN_CONVOLUTION_FWD_ALGO_GEMM: return fwd_conv_alg::GEMM;
+  case CUDNN_CONVOLUTION_FWD_ALGO_DIRECT: return fwd_conv_alg::DIRECT;
+  case CUDNN_CONVOLUTION_FWD_ALGO_FFT: return fwd_conv_alg::FFT;
+  case CUDNN_CONVOLUTION_FWD_ALGO_FFT_TILING: return fwd_conv_alg::FFT_TILING;
+  case CUDNN_CONVOLUTION_FWD_ALGO_WINOGRAD: return fwd_conv_alg::WINOGRAD;
+  case CUDNN_CONVOLUTION_FWD_ALGO_WINOGRAD_NONFUSED: return fwd_conv_alg::WINOGRAD_NONFUSED;
+  default:
+    LBANN_ERROR("Invalid forward convolution algorithm requested.");
+  }
+}
+
 inline cudnnConvolutionBwdDataAlgo_t to_cudnn(bwd_conv_alg a)
 {
   switch (a)
@@ -137,8 +154,7 @@ void convolution_forward(
   FilterDescriptor const& wDesc,
   El::AbstractDistMatrix<TensorDataType> const& w,
   ConvolutionDescriptor const& convDesc,
-  cudnnConvolutionFwdAlgo_t alg,
-  //fwd_conv_alg alg,
+  fwd_conv_alg alg,
   El::Matrix<TensorDataType, El::Device::GPU>& workSpace,
   ScalarParameterType const& beta_in,
   TensorDescriptor const& yDesc,
@@ -159,10 +175,9 @@ void convolution_forward(
                                       wDesc,
                                       w.LockedBuffer(),
                                       convDesc,
-                                      alg,
-                                      //to_cudnn(alg),
+                                      to_cudnn(alg),
                                       workSpace.Buffer(),
-                                      workSpace.Height() * sizeof(TensorDataType),
+                                      workSpace.Height()*sizeof(TensorDataType),
                                       &beta,
                                       yDesc,
                                       y.Buffer()));

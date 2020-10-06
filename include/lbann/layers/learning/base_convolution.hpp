@@ -31,6 +31,7 @@
 #include "lbann/layers/layer.hpp"
 #include "lbann/utils/cudnn.hpp"
 #include "lbann/utils/memory.hpp"
+#include "lbann/utils/dnn_lib/cudnn/base_convolution.hpp"
 
 #include <vector>
 
@@ -133,7 +134,7 @@ protected:
   /** Tensor cuDNN descriptors. */
   cudnn::data_parallel_layer_tensor_manager<TensorDataType> m_tensors_cudnn_desc;
   /** Forward algorithm cache (mini-batch size -> algo). */
-  std::unordered_map<int, cudnnConvolutionFwdAlgo_t> m_fwd_cudnn_algos;
+  std::unordered_map<int, fwd_conv_alg> m_fwd_cudnn_algos;
   /** Backward data algorithm cache (mini-batch size -> algo). */
   std::unordered_map<int, cudnnConvolutionBwdDataAlgo_t> m_bwd_data_cudnn_algos;
   /** Backward filter algorithm cache (mini-batch size -> algo). */
@@ -203,7 +204,7 @@ private:
 #ifdef LBANN_HAS_CUDNN
 
   /** Get the cuDNN algorithm to use for forward prop. */
-  cudnnConvolutionFwdAlgo_t get_forward_algo_cudnn(
+  fwd_conv_alg get_forward_algo_cudnn(
     const int local_mini_batch_size,
     const cudnn::TensorDescriptor& input_desc,
     const TensorDataType* input,

@@ -471,12 +471,12 @@ base_convolution_layer<TensorDataType,Device>
 
   // Perform convolution on the GPU
   // Determine convolution algorithm
-  cudnnConvolutionFwdAlgo_t convolution_cudnn_algorithm
-                       = get_forward_algo_cudnn(input.Width(), input_desc, input.LockedBuffer(),
-                                                m_kernel_cudnn_desc, kernel.LockedBuffer(),
-                                                m_convolution_cudnn_desc,
-                                                output_desc, output.Buffer(),
-                                                workspace_size, workspace.Buffer());
+  fwd_conv_alg convolution_cudnn_algorithm
+    = get_forward_algo_cudnn(input.Width(), input_desc, input.LockedBuffer(),
+                             m_kernel_cudnn_desc, kernel.LockedBuffer(),
+                             m_convolution_cudnn_desc,
+                             output_desc, output.Buffer(),
+                             workspace_size, workspace.Buffer());
 
   // Apply convolution
   cudnn::convolution_forward(one,
@@ -983,7 +983,7 @@ void base_convolution_layer<TensorDataType,Device>
 
 #ifdef LBANN_HAS_CUDNN
 template <typename TensorDataType, El::Device Device>
-cudnnConvolutionFwdAlgo_t
+fwd_conv_alg
 base_convolution_layer<TensorDataType,Device>::get_forward_algo_cudnn(
   const int local_mini_batch_size,
   const cudnn::TensorDescriptor& input_desc,
@@ -1002,13 +1002,14 @@ base_convolution_layer<TensorDataType,Device>::get_forward_algo_cudnn(
     bool deterministic = false;
 #endif
     m_fwd_cudnn_algos[local_mini_batch_size] =
-      cudnn::get_fwd_algorithm(
-        true, deterministic,
-        input_desc, input,
-        kernel_desc, kernel,
-        conv_desc,
-        output_desc, output,
-        ws_size, ws);
+      cudnn::from_cudnn(
+        cudnn::get_fwd_algorithm(
+          true, deterministic,
+          input_desc, input,
+          kernel_desc, kernel,
+          conv_desc,
+          output_desc, output,
+          ws_size, ws));
   }
   return m_fwd_cudnn_algos[local_mini_batch_size];
 }
