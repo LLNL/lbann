@@ -60,9 +60,10 @@ public:
   }
   StreamManager(StreamManager const& other) = delete;
   StreamManager(StreamManager&& other)
-    : handle_{other.handle_}
+    : handle_{other.handle_}, old_stream_{other.old_stream_}
   {
     other.handle_ = nullptr;
+    other.old_stream = nullptr;
   }
   StreamManager& operator=(StreamManager const& other) = delete;
   StreamManager& operator=(StreamManager&& other) = delete;
