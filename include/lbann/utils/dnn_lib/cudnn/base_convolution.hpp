@@ -146,6 +146,21 @@ inline cudnnConvolutionBwdDataAlgo_t to_cudnn(bwd_conv_alg a)
   }
 }
 
+inline bwd_conv_alg from_cudnn(cudnnConvolutionBwdDataAlgo_t a)
+{
+  switch (a)
+  {
+  case CUDNN_CONVOLUTION_BWD_DATA_ALGO_0: return bwd_conv_alg::ALGO_0;
+  case CUDNN_CONVOLUTION_BWD_DATA_ALGO_1: return bwd_conv_alg::ALGO_1;
+  case CUDNN_CONVOLUTION_BWD_DATA_ALGO_FFT: return bwd_conv_alg::FFT;
+  case CUDNN_CONVOLUTION_BWD_DATA_ALGO_FFT_TILING: return bwd_conv_alg::FFT_TILING;
+  case CUDNN_CONVOLUTION_BWD_DATA_ALGO_WINOGRAD: return bwd_conv_alg::WINOGRAD;
+  case CUDNN_CONVOLUTION_BWD_DATA_ALGO_WINOGRAD_NONFUSED: return bwd_conv_alg::WINOGRAD_NONFUSED;
+  default:
+    LBANN_ERROR("Invalid backward convolution algorithm requested.");
+  }
+}
+
 template <typename TensorDataType, typename ScalarParameterType>
 void convolution_forward(
   ScalarParameterType const& alpha_in,
@@ -191,8 +206,7 @@ void convolution_backward(
   TensorDescriptor const& dyDesc,
   El::AbstractMatrix<TensorDataType> const& dy,
   ConvolutionDescriptor const& convDesc,
-  cudnnConvolutionBwdDataAlgo_t alg,
-  //bwd_conv_alg alg,
+  bwd_conv_alg alg,
   El::Matrix<TensorDataType, El::Device::GPU>& workSpace,
   ScalarParameterType const& beta_in,
   TensorDescriptor const& dxDesc,
@@ -213,8 +227,7 @@ void convolution_backward(
                                       dyDesc,
                                       dy.LockedBuffer(),
                                       convDesc,
-                                      alg,
-                                      //to_cudnn(alg),
+                                      to_cudnn(alg),
                                       workSpace.Buffer(),
                                       workSpace.Height() * sizeof(TensorDataType),
                                       &beta,

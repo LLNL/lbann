@@ -551,7 +551,7 @@ apply_transposed_convolution_cudnn(bool during_forward_prop) {
 
   // Perform transposed convolution on the GPU
   // Determine transposed convolution algorithm
-  cudnnConvolutionBwdDataAlgo_t transposed_convolution_cudnn_algorithm =
+  bwd_conv_alg transposed_convolution_cudnn_algorithm =
                        get_backward_data_algo_cudnn(
                          input.Width(),
                          m_kernel_cudnn_desc, kernel.LockedBuffer(),
@@ -1015,7 +1015,7 @@ base_convolution_layer<TensorDataType,Device>::get_forward_algo_cudnn(
 }
 
 template <typename TensorDataType, El::Device Device>
-cudnnConvolutionBwdDataAlgo_t
+bwd_conv_alg
 base_convolution_layer<TensorDataType,Device>::get_backward_data_algo_cudnn(
   const int local_mini_batch_size,
   const cudnn::FilterDescriptor& kernel_desc,
@@ -1034,13 +1034,14 @@ base_convolution_layer<TensorDataType,Device>::get_backward_data_algo_cudnn(
     bool deterministic = false;
 #endif
     m_bwd_data_cudnn_algos[local_mini_batch_size] =
-      cudnn::get_bwd_data_algorithm(
-        true, deterministic,
-        kernel_desc, kernel,
-        prev_error_signal_desc, prev_error_signal,
-        conv_desc,
-        error_signal_desc, error_signal,
-        ws_size, ws);
+      cudnn::from_cudnn(
+        cudnn::get_bwd_data_algorithm(
+          true, deterministic,
+          kernel_desc, kernel,
+          prev_error_signal_desc, prev_error_signal,
+          conv_desc,
+          error_signal_desc, error_signal,
+          ws_size, ws));
   }
   return m_bwd_data_cudnn_algos[local_mini_batch_size];
 }
