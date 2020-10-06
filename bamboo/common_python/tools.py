@@ -1011,3 +1011,20 @@ def print_diff_files(dcmp):
             all_warns.append(d)
 
     return any_files_differ, all_diffs, all_warns
+
+
+# Get the number of GPUs per compute node.
+# Return 0 if the system is unknown.
+def gpus_per_node(lbann):
+    compute_center = lbann.contrib.launcher.compute_center()
+    if compute_center != "unknown":
+        return getattr(lbann.contrib, compute_center).systems.gpus_per_node()
+    else:
+        return 0
+
+
+# Get the environment variables for Distconv.
+def get_distconv_environment():
+    # TODO: Use the default halo exchange and shuffle method. See https://github.com/LLNL/lbann/issues/1659
+    return {"LBANN_DISTCONV_HALO_EXCHANGE": "AL",
+            "LBANN_DISTCONV_TENSOR_SHUFFLER": "AL"}

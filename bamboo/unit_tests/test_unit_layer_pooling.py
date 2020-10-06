@@ -5,7 +5,6 @@ import os
 import os.path
 import sys
 import numpy as np
-import pytest
 
 # Bamboo utilities
 current_file = os.path.realpath(__file__)
@@ -41,9 +40,9 @@ def make_random_array(shape, seed):
     return x.reshape(shape).astype(np.float32)
 
 # Data
-_num_samples = 8
-_sample_dims = [64,16,16]
-_sample_dims_3d = [4,16,16,16]
+_num_samples = 23
+_sample_dims = [6,11,7]
+_sample_dims_3d = [2,3,11,7]
 _sample_size = functools.reduce(operator.mul, _sample_dims)
 _samples = make_random_array([_num_samples] + _sample_dims, 7)
 
@@ -56,17 +55,15 @@ def sample_dims():
     return (_sample_size,)
 
 # ==============================================
-# PyTorch convolution
+# PyTorch pooling
 # ==============================================
 
-def pytorch_convolution(data,
-                        kernel,
-                        bias=None,
-                        stride=1,
-                        padding=0,
-                        dilation=1,
-                        groups=1):
-    """Wrapper around PyTorch convolution.
+def pytorch_pooling(data,
+                    kernel_dims,
+                    pool_mode,
+                    stride=1,
+                    padding=0):
+    """Wrapper around PyTorch pooling.
 
     Input and output data are NumPy arrays.
 
@@ -77,33 +74,20 @@ def pytorch_convolution(data,
     import torch.nn.functional
     if type(data) is np.ndarray:
         data = torch.from_numpy(data)
-    if type(kernel) is np.ndarray:
-        kernel = torch.from_numpy(kernel)
-    if type(bias) is np.ndarray:
-        bias = torch.from_numpy(bias)
     if data.dtype is not torch.float64:
         data = data.astype(torch.float64)
-    if kernel.dtype is not torch.float64:
-        kernel = kernel.astype(torch.float64)
-    if bias.dtype is not torch.float64:
-        bias = bias.astype(torch.float64)
 
-    # Perform convolution with PyTorch
-    output = None
-    if len(kernel.shape) == 3:
-        output = torch.nn.functional.conv1d(
-            data, kernel, bias, stride, padding, dilation, groups
-        )
-    if len(kernel.shape) == 4:
-        output = torch.nn.functional.conv2d(
-            data, kernel, bias, stride, padding, dilation, groups
-        )
-    if len(kernel.shape) == 5:
-        output = torch.nn.functional.conv3d(
-            data, kernel, bias, stride, padding, dilation, groups
-        )
-    if output is None:
-        raise ValueError('PyTorch only supports 1D, 2D, and 3D convolution')
+    # Perform pooling with PyTorch
+    if len(kernel_dims) not in [1, 2, 3]:
+        raise ValueError('PyTorch only supports 1D, 2D, and 3D pooling')
+
+    func_name = "{}_pool{}d".format(
+        {"average": "avg", "max": "max"}[pool_mode],
+        len(kernel_dims),
+    )
+    output = getattr(torch.nn.functional, func_name)(
+        data, kernel_dims, stride, padding,
+    )
 
     # Return output as NumPy array
     return output.numpy()
@@ -120,14 +104,11 @@ def setup_experiment(lbann):
 
     """
     mini_batch_size = num_samples() // 2
-    trainer = lbann.Trainer(mini_batch_size=mini_batch_size)
+    trainer = lbann.Trainer(mini_batch_size)
     model = construct_model(lbann)
     data_reader = construct_data_reader(lbann)
     optimizer = lbann.NoOptimizer()
     return trainer, model, data_reader, optimizer
-
-def create_parallel_strategy(num_height_groups):
-    return {"height_groups": num_height_groups}
 
 def construct_model(lbann):
     """Construct LBANN model.
@@ -155,69 +136,98 @@ def construct_model(lbann):
     callbacks = []
 
     # ------------------------------------------
-    # Basic 3^n convolution
+    # Pooling
     # ------------------------------------------
-    # 3^n conv, stride=1, pad=1, dilation=1, bias
 
-    num_height_groups = tools.gpus_per_node(lbann)
-    if num_height_groups == 0:
-        e = 'this test requires GPUs.'
-        print('Skip - ' + e)
-        pytest.skip(e)
+    pool_configs = []
 
-    for num_dims, reference_val in [
-            (2, 11913.852660080756),
-            (3, 9952.365297083174)]:
-        # Convolution settings
-        kernel_dims = [5, _sample_dims[0] if num_dims == 2 else _sample_dims_3d[0],] + [3]*num_dims
-        strides = [1]*num_dims
-        pads = [1]*num_dims
-        dilations = [1]*num_dims
-        kernel = make_random_array(kernel_dims, 11)
+    # 3x3 pooling with same padding
+    for mode, val in [("average", 10.44275178160873),
+                      ("max", 57.139962751295094)]:
+        pool_configs.append({
+            "name": "3x3 {} pooling".format(mode),
+            "kernel_dims": (3, 3),
+            "strides": (1, 1),
+            "pads": (1, 1),
+            "pool_mode": mode,
+            "val": val,
+        })
 
-        # Apply convolution
-        kernel_weights = lbann.Weights(
-            optimizer=lbann.SGD(),
-            initializer=lbann.ValueInitializer(values=tools.str_list(np.nditer(kernel))),
-            name='kernel1_{}d'.format(num_dims)
-        )
+    # 2x2 strided pooling
+    for mode, val in [("average", 3.679837210617764),
+                      ("max", 8.836797848269207)]:
+        pool_configs.append({
+            "name": "2x2 {} pooling".format(mode),
+            "kernel_dims": (2, 2),
+            "strides": (2, 2),
+            "pads": (0, 0),
+            "pool_mode": mode,
+            "val": val,
+        })
+
+    # 2x4 pooling
+    for mode, val in [("average", 2.936493136591308),
+                      ("max", 10.950791583798338)]:
+        pool_configs.append({
+            "name": "2x4 {} pooling".format(mode),
+            "kernel_dims": (2, 4),
+            "strides": (3, 1),
+            "pads": (1, 0),
+            "pool_mode": mode,
+            "val": val,
+        })
+
+    # 2x2x2 3D pooling
+    for mode, val in [("average", 0.5709457972093812),
+                      ("max", 3.886491271066883)]:
+        pool_configs.append({
+            "name": "2x2x2 {} pooling".format(mode),
+            "kernel_dims": (2, 2, 2),
+            "strides": (2, 2, 2),
+            "pads": (0, 0, 0),
+            "pool_mode": mode,
+            "val": val,
+        })
+
+    for p in pool_configs:
+        # Apply pooling
         x = x_lbann
-        if num_dims == 3:
+        if len(p["kernel_dims"]) == 3:
             x = lbann.Reshape(x, dims=tools.str_list(_sample_dims_3d))
 
-        y = lbann.Convolution(x,
-                              weights=(kernel_weights, ),
-                              num_dims=num_dims,
-                              num_output_channels=kernel_dims[0],
-                              has_vectors=True,
-                              conv_dims=tools.str_list(kernel_dims[2:]),
-                              conv_strides=tools.str_list(strides),
-                              conv_pads=tools.str_list(pads),
-                              conv_dilations=tools.str_list(dilations),
-                              has_bias=False,
-                              parallel_strategy=create_parallel_strategy(
-                                  num_height_groups))
+        y = lbann.Pooling(x,
+                          num_dims=len(p["kernel_dims"]),
+                          has_vectors=True,
+                          pool_dims=tools.str_list(p["kernel_dims"]),
+                          pool_strides=tools.str_list(p["strides"]),
+                          pool_pads=tools.str_list(p["pads"]),
+                          pool_mode=p["pool_mode"])
         z = lbann.L2Norm2(y)
-        obj.append(z)
-        metrics.append(lbann.Metric(z, name='basic {}D 3^n convolution'.format(num_dims)))
+
+        # Since max pooling is not differentiable, we only use average pooling.
+        if p["pool_mode"] == "average":
+            obj.append(z)
+
+        metrics.append(lbann.Metric(z, name=p["name"]))
 
         # PyTorch implementation
         try:
             x = _samples
-            if num_dims == 3:
+            if len(p["kernel_dims"]) == 3:
                 x = np.reshape(x, [_num_samples]+_sample_dims_3d)
 
-            y = pytorch_convolution(
-                x, kernel,
-                stride=strides, padding=pads, dilation=dilations
+            y = pytorch_pooling(
+                x,
+                p["kernel_dims"],
+                p["pool_mode"],
+                stride=p["strides"],
+                padding=p["pads"],
             )
             z = tools.numpy_l2norm2(y) / _num_samples
             val = z
         except:
             # Precomputed value
-            val = reference_val
-            # val = 398.6956458317758 # _num_samples=8, 6 channels
-            # val = 381.7401227915947 # _num_samples=23, 6 channels
+            val = p["val"]
         tol = 8 * val * np.finfo(np.float32).eps
 
         callbacks.append(lbann.CallbackCheckMetric(
@@ -287,6 +297,5 @@ def construct_data_reader(lbann):
 # Create test functions that can interact with PyTest
 # Note: Create test name by removing ".py" from file name
 _test_name = os.path.splitext(os.path.basename(current_file))[0]
-for test in tools.create_tests(setup_experiment, _test_name,
-                               environment=tools.get_distconv_environment()):
+for test in tools.create_tests(setup_experiment, _test_name):
     globals()[test.__name__] = test
