@@ -659,7 +659,7 @@ base_convolution_layer<TensorDataType,Device>
 
       // Determine algorithm and compute kernel gradient
       if (using_transposed_convolution) {
-        cudnnConvolutionBwdFilterAlgo_t kernel_gradient_cudnn_algorithm
+        bwd_conv_filter kernel_gradient_cudnn_algorithm
           = get_backward_filter_algo_cudnn(
             local_input.Width(),
             gradient_wrt_output_desc, local_gradient_wrt_output.LockedBuffer(),
@@ -680,7 +680,7 @@ base_convolution_layer<TensorDataType,Device>
           m_kernel_cudnn_desc,
           kernel_gradient);
       } else {
-        cudnnConvolutionBwdFilterAlgo_t kernel_gradient_cudnn_algorithm
+        bwd_conv_filter kernel_gradient_cudnn_algorithm
           = get_backward_filter_algo_cudnn(
             local_input.Width(),
             input_desc, local_input.LockedBuffer(),
@@ -1047,7 +1047,7 @@ base_convolution_layer<TensorDataType,Device>::get_backward_data_algo_cudnn(
 }
 
 template <typename TensorDataType, El::Device Device>
-cudnnConvolutionBwdFilterAlgo_t
+bwd_conv_filter
 base_convolution_layer<TensorDataType,Device>::get_backward_filter_algo_cudnn(
   const int local_mini_batch_size,
   const cudnn::TensorDescriptor& input_desc,
@@ -1072,13 +1072,14 @@ base_convolution_layer<TensorDataType,Device>::get_backward_filter_algo_cudnn(
     kernel_gradient.Resize(this->get_weights(0).get_matrix_height(),
                            this->get_weights(0).get_matrix_width());
     m_bwd_filter_cudnn_algos[local_mini_batch_size] =
-      cudnn::get_bwd_filter_algorithm(
-        true, deterministic,
-        input_desc, input,
-        prev_error_signal_desc, prev_error_signal,
-        conv_desc,
-        kernel_gradient_desc, kernel_gradient.Buffer(),
-        ws_size, ws);
+      cudnn::from_cudnn(
+        cudnn::get_bwd_filter_algorithm(
+          true, deterministic,
+          input_desc, input,
+          prev_error_signal_desc, prev_error_signal,
+          conv_desc,
+          kernel_gradient_desc, kernel_gradient.Buffer(),
+          ws_size, ws));
   }
   return m_bwd_filter_cudnn_algos[local_mini_batch_size];
 }

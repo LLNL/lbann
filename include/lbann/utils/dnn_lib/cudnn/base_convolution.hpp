@@ -70,6 +70,16 @@ enum class bwd_conv_alg
   WINOGRAD_NONFUSED,
 };
 
+enum class bwd_conv_filter
+{
+  ALGO_0, // need a better name
+  ALGO_1, // need a better name
+  FFT,
+  ALGO_3, // need a better name
+  WINOGRAD_NONFUSED,
+  FFT_TILING,
+};
+
 namespace cudnn
 {
 
@@ -161,6 +171,36 @@ inline bwd_conv_alg from_cudnn(cudnnConvolutionBwdDataAlgo_t a)
   }
 }
 
+inline cudnnConvolutionBwdFilterAlgo_t to_cudnn(bwd_conv_filter a)
+{
+  switch (a)
+  {
+  case bwd_conv_filter::ALGO_0: return CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0;
+  case bwd_conv_filter::ALGO_1: return CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1;
+  case bwd_conv_filter::FFT: return CUDNN_CONVOLUTION_BWD_FILTER_ALGO_FFT;
+  case bwd_conv_filter::ALGO_3: return CUDNN_CONVOLUTION_BWD_FILTER_ALGO_3;
+  case bwd_conv_filter::WINOGRAD_NONFUSED: return CUDNN_CONVOLUTION_BWD_FILTER_ALGO_WINOGRAD_NONFUSED;
+  case bwd_conv_filter::FFT_TILING: return CUDNN_CONVOLUTION_BWD_FILTER_ALGO_FFT_TILING;
+  default:
+    LBANN_ERROR("Invalid backward convolution filter requested.");
+  }
+}
+
+inline bwd_conv_filter from_cudnn(cudnnConvolutionBwdFilterAlgo_t a)
+{
+  switch (a)
+  {
+  case CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0: return bwd_conv_filter::ALGO_0;
+  case CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1: return bwd_conv_filter::ALGO_1;
+  case CUDNN_CONVOLUTION_BWD_FILTER_ALGO_FFT: return bwd_conv_filter::FFT;
+  case CUDNN_CONVOLUTION_BWD_FILTER_ALGO_3: return bwd_conv_filter::ALGO_3;
+  case CUDNN_CONVOLUTION_BWD_FILTER_ALGO_WINOGRAD_NONFUSED: return bwd_conv_filter::WINOGRAD_NONFUSED;
+  case CUDNN_CONVOLUTION_BWD_FILTER_ALGO_FFT_TILING: return bwd_conv_filter::FFT_TILING;
+  default:
+    LBANN_ERROR("Invalid backward convolution filter requested.");
+  }
+}
+
 template <typename TensorDataType, typename ScalarParameterType>
 void convolution_forward(
   ScalarParameterType const& alpha_in,
@@ -229,7 +269,7 @@ void convolution_backward(
                                       convDesc,
                                       to_cudnn(alg),
                                       workSpace.Buffer(),
-                                      workSpace.Height() * sizeof(TensorDataType),
+                                      workSpace.Height()*sizeof(TensorDataType),
                                       &beta,
                                       dxDesc,
                                       dx.Buffer()));
@@ -267,8 +307,7 @@ void convolution_backward_filter(
   TensorDescriptor const& dyDesc,
   El::AbstractMatrix<TensorDataType> const& dy,
   ConvolutionDescriptor const& convDesc,
-  cudnnConvolutionBwdFilterAlgo_t alg,
-  //bwd_conv_filter alg,
+  bwd_conv_filter alg,
   El::Matrix<TensorDataType, El::Device::GPU>& workSpace,
   ScalarParameterType const& beta_in,
   FilterDescriptor const& dwDesc,
@@ -289,10 +328,9 @@ void convolution_backward_filter(
                                       dyDesc,
                                       dy.LockedBuffer(),
                                       convDesc,
-                                      alg,
-                                      //to_cudnn(alg),
+                                      to_cudnn(alg),
                                       workSpace.Buffer(),
-                                      workSpace.Height() * sizeof(TensorDataType),
+                                      workSpace.Height()*sizeof(TensorDataType),
                                       &beta,
                                       dwDesc,
                                       dw.Buffer()));
