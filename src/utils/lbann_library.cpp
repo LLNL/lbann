@@ -397,9 +397,9 @@ void print_lbann_configuration(lbann_comm *comm, int io_threads_per_process, int
             << "  OpenMP threads per process : " << omp_get_max_threads() << std::endl
             << "  I/O threads per process (+offset) : " << io_threads_per_process
             << " (+" << io_threads_offset << ")" << std::endl;
-#ifdef HYDROGEN_HAVE_CUDA
+#ifdef HYDROGEN_HAVE_GPU
   std::cout << "  GPUs on node               : " << hydrogen::gpu::DeviceCount() << std::endl;
-#endif // HYDROGEN_HAVE_CUDA
+#endif // HYDROGEN_HAVE_GPU
   std::cout << std::endl;
 
   // Report build settings
@@ -426,7 +426,7 @@ void print_lbann_configuration(lbann_comm *comm, int io_threads_per_process, int
 #else
   std::cout << "NOT detected" << std::endl;
 #endif // LBANN_HAS_ALUMINUM
-  std::cout << "  CUDA     : ";
+  std::cout << "  GPU     : ";
 #ifdef LBANN_HAS_GPU
   std::cout << "detected" << std::endl;
 #else

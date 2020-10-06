@@ -27,6 +27,7 @@
 #ifndef LBANN_UTILS_CUDA_HPP
 #define LBANN_UTILS_CUDA_HPP
 
+#include "lbann_config.hpp"
 #include "lbann/utils/exception.hpp"
 
 #ifdef LBANN_HAS_GPU

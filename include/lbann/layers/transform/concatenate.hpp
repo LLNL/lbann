@@ -96,7 +96,7 @@ private:
    *  Makes sure asynchronous GPU memory transfers are completed
    *  before modifying workspace buffer.
    */
-  cuda::event_wrapper m_workspace_event;
+  gpu_lib::event_wrapper m_workspace_event;
 #endif // LBANN_HAS_GPU
 
   template <typename U>

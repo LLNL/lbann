@@ -1241,7 +1241,7 @@ void base_convolution_adapter<TensorDataType, Device>::bp_compute_convolution_fi
                             this->get_prev_error_signals(),
                             dst_scale, *m_bias_gradient, false);
     } else {
-      m_bias_gradient->scale(dst_scale, hydrogen::cuda::GetDefaultStream());
+      m_bias_gradient->scale(dst_scale, gpu::get_sync_info(l).Stream());
     }
   }
 
@@ -1259,7 +1259,7 @@ void base_convolution_adapter<TensorDataType, Device>::bp_compute_convolution_fi
                             dst_scale,
                             *m_kernel_gradient, false);
   } else {
-    m_kernel_gradient->scale(dst_scale, hydrogen::cuda::GetDefaultStream());
+    m_kernel_gradient->scale(dst_scale, gpu::get_sync_info(l).Stream());
   }
 }
 

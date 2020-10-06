@@ -106,12 +106,15 @@ void sgd<TensorDataType>::momentum_step_gpu(AbsDistMatrixType& values,
   const size_t local_size = local_height * local_width;
   if (local_size <= 0) { return; }
 
-  // Launch CUDA kernels for momentum SGD or NAG
+  // Launch GPU kernels for momentum SGD or NAG
   constexpr size_t block_size = 256;
   const size_t grid_size = (local_size + block_size - 1) / block_size;
-  auto&& stream = hydrogen::cuda::GetDefaultStream();
+  auto multisync = El::MakeMultiSync(gpu::get_sync_info(values),
+                                     gpu::get_sync_info(gradient));
   if (m_nesterov) {
-    nesterov_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
+    hydrogen::gpu::LaunchKernel(
+      nesterov_kernel<TensorDataType>,
+      grid_size, block_size, 0, multisync,
       local_height, local_width,
       this->get_learning_rate(), m_momentum,
       values.Buffer(), values.LDim(),
@@ -120,11 +123,15 @@ void sgd<TensorDataType>::momentum_step_gpu(AbsDistMatrixType& values,
   } else {
     if (values.Contiguous() && gradient.Contiguous()
         && m_velocity->Contiguous()) {
-      momentum_contiguous_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
+      hydrogen::gpu::LaunchKernel(
+        momentum_contiguous_kernel<TensorDataType>,
+        grid_size, block_size, 0, multisync,
         local_size, this->get_learning_rate(), m_momentum,
         values.Buffer(), gradient.LockedBuffer(), m_velocity->Buffer());
     } else {
-      momentum_noncontiguous_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
+      hydrogen::gpu::LaunchKernel(
+        momentum_noncontiguous_kernel<TensorDataType>,
+        grid_size, block_size, 0, multisync,
         local_height, local_width,
         this->get_learning_rate(), m_momentum,
         values.Buffer(), values.LDim(),
