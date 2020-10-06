@@ -35,9 +35,6 @@
 #include "lbann/layers/regularizers/batch_normalization.hpp"
 #include "lbann/utils/im2col.hpp"
 
-#include "cblas.h"
-#include "lapacke.h"
-
 namespace lbann {
 namespace callback {
 
