@@ -28,7 +28,10 @@
 #define LBANN_UTILS_GPU_HELPERS_HPP_INCLUDED
 
 #include "lbann_config.hpp"
+
+#if defined LBANN_HAS_GPU
 #include "sync_info_helpers.hpp"
+#endif
 
 // Import the GPU __device__ function library
 #if defined LBANN_HAS_CUDA
