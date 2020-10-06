@@ -28,7 +28,9 @@
 #define LBANN_LAYERS_ACTIVATIONS_LOG_SOFTMAX_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#if defined LBANN_HAS_CUDNN
 #include "lbann/utils/cudnn.hpp"
+#endif
 
 namespace lbann {
 

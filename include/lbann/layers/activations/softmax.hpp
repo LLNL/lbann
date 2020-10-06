@@ -28,8 +28,10 @@
 #define LBANN_LAYERS_ACTIVATIONS_SOFTMAX_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
-#include "lbann/utils/cudnn.hpp"
 #include "lbann/utils/distconv.hpp"
+#if defined LBANN_HAS_CUDNN
+#include "lbann/utils/cudnn.hpp"
+#endif // defined LBANN_HAS_CUDNN
 #include "lbann/utils/dnn_lib/cudnn/softmax.hpp"
 
 // Threshold outputs to a minimum value.

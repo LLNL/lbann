@@ -28,6 +28,7 @@
 
 namespace lbann
 {
+#if defined LBANN_HAS_CUDNN
 namespace cudnn
 {
 namespace internal
@@ -63,7 +64,7 @@ public:
     : handle_{other.handle_}, old_stream_{other.old_stream_}
   {
     other.handle_ = nullptr;
-    other.old_stream = nullptr;
+    other.old_stream_ = nullptr;
   }
   StreamManager& operator=(StreamManager const& other) = delete;
   StreamManager& operator=(StreamManager&& other) = delete;
@@ -82,5 +83,6 @@ inline StreamManager make_default_handle_manager(
 
 }// namespace internal
 }// namespace cudnn
+#endif // defined LBANN_HAS_CUDNN
 }// namespace lbann
 #endif // LBANN_UTILS_DNN_LIB_CUDNN_UTILS_HPP_

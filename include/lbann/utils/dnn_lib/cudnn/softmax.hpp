@@ -28,7 +28,6 @@
 
 #include "lbann/utils/cudnn.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
-
 #include "utils.hpp"
 
 namespace lbann
@@ -64,6 +63,7 @@ enum class softmax_alg
   LOG,
 };// enum class softmax_alg
 
+#if defined LBANN_HAS_CUDNN
 namespace cudnn
 {
 
@@ -163,5 +163,6 @@ void softmax_backward(
 }
 
 }// namespace cudnn
+#endif // LBANN_HAS_CUDNN
 }// namespace lbann
 #endif // LBANN_UTILS_DNN_LIB_CUDNN_SOFTMAX_HPP_
