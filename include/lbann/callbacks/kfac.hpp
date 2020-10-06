@@ -85,12 +85,19 @@ class kfac : public callback_base {
   kfac(const kfac&) = default;
   kfac& operator=(const kfac&) = default;
   kfac* copy() const override { return new kfac(*this); }
+  std::string name() const override { return "K-FAC"; }
+
+#ifdef LBANN_HAS_GPU
   void setup(model *m) override;
   void setup(trainer *t) override {}
   void on_backward_prop_end(model *m) override;
   void on_epoch_end(model *m) override;
   void on_backward_prop_end(model *m, Layer *l) override;
-  std::string name() const override { return "K-FAC test"; }
+#else
+  void setup(model *m) override {
+    LBANN_ERROR("The K-FAC callback is available only on GPUs.");
+  }
+#endif // LBANN_HAS_GPU
 
   /** @brief The default parameters of a Tikhonov damping technique. */
   constexpr static const double damping_0_default = 3e-2;
@@ -101,6 +108,7 @@ class kfac : public callback_base {
 
  private:
 
+#ifdef LBANN_HAS_GPU
   /** @brief Gets the Kronecker factor matrix of a FC layer. **/
   static void get_kronecker_factor_fc(
       El::AbstractMatrix<DataType>& factor,
@@ -217,6 +225,7 @@ class kfac : public callback_base {
       const TensorDataType * __restrict__ L,
       const size_t height,
       const cudaStream_t& stream);
+#endif // LBANN_HAS_GPU
 
   /** @brief Pairs of the initial and the target damping value.
    *  If only one value is specified, it will be used throughout training.
@@ -253,6 +262,7 @@ class kfac : public callback_base {
   /** @brief The current update interval. */
   size_t m_update_interval;
 
+#ifdef LBANN_HAS_GPU
   /** @brief Exponential moving average of kronecker factors. */
   std::unordered_map<
     size_t,
@@ -264,6 +274,7 @@ class kfac : public callback_base {
     size_t,
     std::pair<El::Matrix<DataType, El::Device::GPU>,
               El::Matrix<DataType, El::Device::GPU>>> m_kronecker_inverse;
+#endif // LBANN_HAS_GPU
 
 };
 

@@ -56,6 +56,7 @@ void im2col(const CPUMatDT<TensorDataType>& im,
             const int * window_dims,
             const int * window_strides);
 
+#ifdef LBANN_HAS_GPU
 template <typename TensorDataType>
 void im2col(const El::Matrix<TensorDataType, El::Device::GPU>& im,
             El::Matrix<TensorDataType, El::Device::GPU>& col,
@@ -66,6 +67,7 @@ void im2col(const El::Matrix<TensorDataType, El::Device::GPU>& im,
             const int * window_dims,
             const int * window_strides,
             const cudaStream_t& stream);
+#endif // LBANN_HAS_GPU
 
 /// Rearrange matrix columns into image blocks
 /** This is approximately the inverse of im2col. The output tensor im
