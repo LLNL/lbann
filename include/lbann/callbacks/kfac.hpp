@@ -168,7 +168,7 @@ class kfac : public callback_base {
   static void update_kronecker_average(
       TensorDataType * __restrict__ Aave,
       const TensorDataType * __restrict__ A,
-      const size_t count, const DataType decay,
+      const size_t count, const double decay,
       const cudaStream_t& stream);
 
   /** @brief Transpose NC(D)HW matrix to N(D)HWC. **/
