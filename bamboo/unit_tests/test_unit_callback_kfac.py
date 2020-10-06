@@ -158,7 +158,7 @@ def construct_model(lbann):
     z = lbann.L2Norm2(y)
     obj.append(z)
 
-    callbacks.append(lbann.CallbackKFACTest(
+    callbacks.append(lbann.CallbackKFAC(
         damping_act="1e-2",
         damping_err="2e-2 2e-3",
         damping_bn_act="3e-2",
