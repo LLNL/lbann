@@ -31,7 +31,7 @@
 #include "lbann/layers/layer.hpp"
 #include "lbann/utils/cudnn.hpp"
 #include "lbann/utils/memory.hpp"
-#include "lbann/utils/dnn_lib/cudnn/base_convolution.hpp"
+#include "lbann/utils/dnn_lib/cudnn/convolution.hpp"
 
 #include <vector>
 

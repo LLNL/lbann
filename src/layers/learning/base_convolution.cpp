@@ -34,7 +34,7 @@
 #include "lbann/utils/im2col.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/timer.hpp"
-#include "lbann/utils/dnn_lib/cudnn/base_convolution.hpp"
+#include "lbann/utils/dnn_lib/cudnn/convolution.hpp"
 #include "lbann/weights/initializer.hpp"
 #include "lbann/weights/variance_scaling_initializers.hpp"
 
