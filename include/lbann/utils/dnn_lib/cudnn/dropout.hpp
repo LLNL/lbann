@@ -78,7 +78,7 @@ void dropout_forward(DropoutDescriptor dropoutDesc,
                      El::AbstractMatrix<TensorDataType> const& x,
                      TensorDescriptor yDesc,
                      El::AbstractMatrix<TensorDataType>& y,
-                     El::AbstractMatrix<TensorDataType>& workspace)
+                     El::AbstractMatrix<TensorDataType>& workSpace)
 {
   auto multisync = El::MakeMultiSync(gpu::get_sync_info(workSpace),
                                      gpu::get_sync_info(y),
