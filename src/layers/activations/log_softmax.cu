@@ -26,7 +26,7 @@
 
 #define LBANN_LOG_SOFTMAX_LAYER_INSTANTIATE
 #include "lbann/layers/activations/log_softmax.hpp"
-#include "lbann/utils/gpu/helpers.hpp"
+#include "lbann/utils/dnn_lib/cudnn/softmax.hpp"
 
 namespace lbann {
 
@@ -253,17 +253,14 @@ void fp_compute_impl(log_softmax_layer<TensorDataType, data_layout::DATA_PARALLE
   const TensorDataType one = 1;
   const auto& local_input = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_prev_activations());
   auto& local_output = dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_activations());
-  if (!local_input.IsEmpty()) {
-    CHECK_CUDNN(cudnnSoftmaxForward(cudnn::get_handle(),
-                                    CUDNN_SOFTMAX_LOG,
-                                    CUDNN_SOFTMAX_MODE_INSTANCE,
-                                    &one,
-                                    l.m_tensors_cudnn_desc.get_prev_activations(),
-                                    local_input.LockedBuffer(),
-                                    &zero,
-                                    l.m_tensors_cudnn_desc.get_activations(),
-                                    local_output.Buffer()));
-  }
+  cudnn::softmax_forward(one,
+                         l.m_tensors_cudnn_desc.get_prev_activations(),
+                         local_input,
+                         zero,
+                         l.m_tensors_cudnn_desc.get_activations(),
+                         local_output,
+                         softmax_mode::INSTANCE,
+                         softmax_alg::LOG);
 }
 
 template <typename TensorDataType>
@@ -274,19 +271,16 @@ void bp_compute_impl(log_softmax_layer<TensorDataType, data_layout::DATA_PARALLE
   const auto& local_output = dynamic_cast<const GPUMatType&>(l.get_local_activations());
   const auto& local_gradient_wrt_output = dynamic_cast<const GPUMatType&>(l.get_local_prev_error_signals());
   auto& local_gradient_wrt_input = dynamic_cast<GPUMatType&>(l.get_local_error_signals());
-  if (!local_output.IsEmpty()) {
-    CHECK_CUDNN(cudnnSoftmaxBackward(cudnn::get_handle(),
-                                     CUDNN_SOFTMAX_LOG,
-                                     CUDNN_SOFTMAX_MODE_INSTANCE,
-                                     &one,
-                                     l.m_tensors_cudnn_desc.get_activations(),
-                                     local_output.LockedBuffer(),
-                                     l.m_tensors_cudnn_desc.get_prev_error_signals(),
-                                     local_gradient_wrt_output.LockedBuffer(),
-                                     &zero,
-                                     l.m_tensors_cudnn_desc.get_error_signals(),
-                                     local_gradient_wrt_input.Buffer()));
-  }
+  cudnn::softmax_backward(one,
+                          l.m_tensors_cudnn_desc.get_activations(),
+                          local_output,
+                          l.m_tensors_cudnn_desc.get_prev_error_signals(),
+                          local_gradient_wrt_output,
+                          zero,
+                          l.m_tensors_cudnn_desc.get_error_signals(),
+                          local_gradient_wrt_input,
+                          softmax_mode::INSTANCE,
+                          softmax_alg::LOG);
 }
 
 template <typename TensorDataType>
