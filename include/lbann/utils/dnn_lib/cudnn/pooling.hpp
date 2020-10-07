@@ -123,10 +123,10 @@ void pooling_backward(PoolingDescriptor poolingDesc,
                       TensorDescriptor const& dxDesc,
                       El::AbstractMatrix<TensorDataType>& dx)
 {
-  auto multisync = El::MakeMultiSync(gpu::get_sync_info(y),
-                                     gpu::get_sync_info(dy),
+  auto multisync = El::MakeMultiSync(gpu::get_sync_info(dx),
                                      gpu::get_sync_info(x),
-                                     gpu::get_sync_info(dx));
+                                     gpu::get_sync_info(dy),
+                                     gpu::get_sync_info(y));
   pooling_backward(poolingDesc,
                    alpha_in, yDesc, y, dyDesc, dy,
                    xDesc, x, beta_in, dxDesc, dx,
