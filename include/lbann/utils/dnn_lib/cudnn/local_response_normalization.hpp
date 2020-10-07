@@ -94,8 +94,8 @@ void lrn_cross_channel_forward(LRNDescriptor normDesc,
                                lrn_mode mode = lrn_mode::CROSS_CHANNEL_DIM1)
 {
 
-  auto multisync = El::MakeMultiSync(gpu::get_sync_info(x),
-                                     gpu::get_sync_info(y));
+  auto multisync = El::MakeMultiSync(gpu::get_sync_info(y),
+                                     gpu::get_sync_info(x));
   lrn_cross_channel_forward(normDesc,
                             alpha_in, xDesc, x,
                             beta_in, yDesc, y,
@@ -152,10 +152,10 @@ void lrn_cross_channel_backward(LRNDescriptor normDesc,
                                 lrn_mode mode = lrn_mode::CROSS_CHANNEL_DIM1)
 {
 
-  auto multisync = El::MakeMultiSync(gpu::get_sync_info(y),
-                                     gpu::get_sync_info(dy),
+  auto multisync = El::MakeMultiSync(gpu::get_sync_info(dx),
                                      gpu::get_sync_info(x),
-                                     gpu::get_sync_info(dx));
+                                     gpu::get_sync_info(dy),
+                                     gpu::get_sync_info(y));
   lrn_cross_channel_backward(normDesc,
                              alpha_in, yDesc, y, dyDesc, dy,
                              xDesc, x, beta_in, dxDesc, dx,
