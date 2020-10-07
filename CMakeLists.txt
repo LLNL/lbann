@@ -200,10 +200,6 @@ endif ()
 message(STATUS "Found Hydrogen: ${Hydrogen_DIR}")
 set(LBANN_HAS_HYDROGEN ${Hydrogen_FOUND})
 
-if (_HYDROGEN_HAVE_ROCM)
-  message(FATAL_ERROR "ROCm not yet supported in LBANN.")
-endif ()
-
 # DiHydrogen and Distconv
 if (LBANN_WITH_DISTCONV AND NOT LBANN_WITH_DIHYDROGEN)
   message(FATAL_ERROR "Distconv requires DiHydrogen. Enable DiHydrogen to use Distconv.")
@@ -265,12 +261,18 @@ endif ()
 message(STATUS "Found OpenCV: ${OpenCV_DIR}")
 set(LBANN_HAS_OPENCV ${OpenCV_FOUND})
 
-# CUDA-ness of LBANN is 1:1 with Hydrogen. Iff Hydrogen has CUDA, LBANN gets CUDA.
+# CUDA-ness of LBANN is 1:1 with Hydrogen. Iff Hydrogen has CUDA,
+# LBANN gets CUDA.
 set(LBANN_HAS_CUDA ${_HYDROGEN_HAVE_CUDA})
 set(LBANN_WITH_CUDA ${LBANN_HAS_CUDA})
 
+set(LBANN_HAS_ROCM ${_HYDROGEN_HAVE_ROCM})
+if (LBANN_HAS_CUDA OR LBANN_HAS_ROCM)
+  set(LBANN_HAS_GPU TRUE)
+endif ()
+
 # Only used if have GPU and have CPU half.
-if (LBANN_HAS_CUDA AND LBANN_HAS_HALF)
+if (LBANN_HAS_GPU AND LBANN_HAS_HALF)
   set(LBANN_HAS_GPU_FP16 ${HYDROGEN_GPU_USE_FP16})
 endif ()
 
@@ -363,6 +365,16 @@ if (LBANN_HAS_CUDA)
   set(LBANN_HAS_NVSHMEM "${NVSHMEM_FOUND}")
 
 endif (LBANN_HAS_CUDA)
+
+if (LBANN_HAS_ROCM)
+  list(APPEND CMAKE_MODULE_PATH "/opt/rocm/hip/cmake")
+  find_package(HIP MODULE REQUIRED)
+  find_package(MIOpen CONFIG REQUIRED)
+  set(LBANN_HAS_MIOPEN TRUE)
+  if (LBANN_HAS_FFTW)
+    find_package(rocFFT CONFIG REQUIRED)
+  endif ()
+endif (LBANN_HAS_ROCM)
 
 # This shouldn't be here, but is ok for now. This will occasionally be
 # part of another TPL's libraries (e.g., MKL), but it's no
@@ -571,7 +583,12 @@ configure_file(
   @ONLY)
 
 # Create the LBANN library
-add_library(lbann ${LBANN_SOURCES} ${LBANN_HEADERS} ${LBANN_CUDA_SOURCES})
+if (LBANN_HAS_HIP)
+  hip_add_library(
+    lbann ${LBANN_SOURCES} ${LBANN_HEADERS} ${LBANN_GPU_SOURCES})
+else ()
+  add_library(lbann ${LBANN_SOURCES} ${LBANN_HEADERS} ${LBANN_GPU_SOURCES})
+endif ()
 
 target_include_directories(lbann PUBLIC
   $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}>
@@ -591,26 +608,22 @@ target_link_libraries(lbann PUBLIC ${OpenCV_LIBRARIES})
 target_link_libraries(lbann PUBLIC ${CONDUIT_LIBRARIES})
 
 target_link_libraries(lbann PUBLIC
+  $<TARGET_NAME_IF_EXISTS:LBANN_CXX_FLAGS_werror>
+  $<TARGET_NAME_IF_EXISTS:TBinf>
+  
   $<TARGET_NAME_IF_EXISTS:H2::H2Meta>
   $<TARGET_NAME_IF_EXISTS:H2::H2Patterns>
+  $<TARGET_NAME_IF_EXISTS:H2::H2DistConv>
+
+  $<TARGET_NAME_IF_EXISTS:CNPY::CNPY>
   $<TARGET_NAME_IF_EXISTS:FFTW::FFTW>
+  $<TARGET_NAME_IF_EXISTS:HWLOC::hwloc>
+  $<TARGET_NAME_IF_EXISTS:Python::Python>
+  
+  $<TARGET_NAME_IF_EXISTS:MIOpen>
+  $<TARGET_NAME_IF_EXISTS:roc::rocfft>
+
   )
-
-if (LBANN_WITH_DISTCONV)
-  target_link_libraries(lbann PUBLIC H2::H2DistConv)
-endif ()
-
-if (LBANN_HAS_TBINF)
-  target_link_libraries(lbann PUBLIC TBinf)
-endif ()
-
-if (LBANN_HAS_CNPY)
-  target_link_libraries(lbann PUBLIC CNPY::CNPY)
-endif ()
-
-if (LBANN_TOPO_AWARE)
-  target_link_libraries(lbann PUBLIC HWLOC::hwloc)
-endif ()
 
 if (LBANN_HAS_ALUMINUM)
   target_link_libraries(lbann PUBLIC ${Aluminum_LIBRARIES})
@@ -620,17 +633,9 @@ if (LBANN_HAS_VTUNE)
   target_link_libraries(lbann PUBLIC ${VTUNE_STATIC_LIB})
 endif ()
 
-if (LBANN_HAS_PYTHON)
-  target_link_libraries(lbann PUBLIC Python::Python)
-endif ()
-
 if (LBANN_HAS_NVSHMEM)
   set_property(TARGET lbann PROPERTY CUDA_SEPARABLE_COMPILATION ON)
   target_link_libraries(lbann PUBLIC NVSHMEM::NVSHMEM)
-endif ()
-
-if (TARGET LBANN_CXX_FLAGS_werror)
-  target_link_libraries(lbann PUBLIC LBANN_CXX_FLAGS_werror)
 endif ()
 
 target_link_libraries(lbann PUBLIC ${DL_LIBRARY})
@@ -890,6 +895,7 @@ append_str_tf(_str
   LBANN_HAS_OPENCV
   LBANN_HAS_PROTOBUF
   LBANN_HAS_PYTHON
+  LBANN_HAS_ROCM
   LBANN_HAS_TBINF
   LBANN_HAS_VTUNE
   LBANN_NVPROF
