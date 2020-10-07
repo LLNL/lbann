@@ -57,7 +57,7 @@ void dropout_forward(DropoutDescriptor dropoutDesc,
                      El::AbstractMatrix<TensorDataType> const& x,
                      TensorDescriptor yDesc,
                      El::AbstractMatrix<TensorDataType>& y,
-                     El::AbstractMatrix<TensorDataType>& workspace,
+                     El::AbstractMatrix<TensorDataType>& workSpace,
                      El::SyncInfo<El::Device::GPU> const& si)
 {
   auto handle_manager = internal::make_default_handle_manager(si);
@@ -68,8 +68,8 @@ void dropout_forward(DropoutDescriptor dropoutDesc,
                         x.LockedBuffer(),
                         yDesc,
                         y.Buffer(),
-                        workspace.Buffer(),
-                        workspace.Height() * sizeof(TensorDataType)));
+                        workSpace.Buffer(),
+                        workSpace.Height() * sizeof(TensorDataType)));
 }
 
 template <typename TensorDataType>
@@ -80,10 +80,10 @@ void dropout_forward(DropoutDescriptor dropoutDesc,
                      El::AbstractMatrix<TensorDataType>& y,
                      El::AbstractMatrix<TensorDataType>& workspace)
 {
-  auto multisync = El::MakeMultiSync(gpu::get_sync_info(y),
-                                     gpu::get_sync_info(x),
-                                     gpu::get_sync_info(workspace));
-  dropout_forward(dropoutDesc, xDesc, x, yDesc, y, workspace, multisync);
+  auto multisync = El::MakeMultiSync(gpu::get_sync_info(workSpace),
+                                     gpu::get_sync_info(y),
+                                     gpu::get_sync_info(x));
+  dropout_forward(dropoutDesc, xDesc, x, yDesc, y, workSpace, multisync);
 }
 
 template <typename TensorDataType>
@@ -92,7 +92,7 @@ void dropout_backward(DropoutDescriptor dropoutDesc,
                       El::AbstractMatrix<TensorDataType> const& y,
                       TensorDescriptor xDesc,
                       El::AbstractMatrix<TensorDataType>& x,
-                      El::AbstractMatrix<TensorDataType>& workspace,
+                      El::AbstractMatrix<TensorDataType>& workSpace,
                       El::SyncInfo<El::Device::GPU> const& si)
 {
   auto handle_manager = internal::make_default_handle_manager(si);
@@ -103,8 +103,8 @@ void dropout_backward(DropoutDescriptor dropoutDesc,
                          y.LockedBuffer(),
                          xDesc,
                          x.Buffer(),
-                         workspace.Buffer(),
-                         workspace.Height() * sizeof(TensorDataType)));
+                         workSpace.Buffer(),
+                         workSpace.Height() * sizeof(TensorDataType)));
 }
 
 template <typename TensorDataType>
@@ -113,12 +113,12 @@ void dropout_backward(DropoutDescriptor dropoutDesc,
                       El::AbstractMatrix<TensorDataType> const& y,
                       TensorDescriptor xDesc,
                       El::AbstractMatrix<TensorDataType>& x,
-                      El::AbstractMatrix<TensorDataType>& workspace)
+                      El::AbstractMatrix<TensorDataType>& workSpace)
 {
-  auto multisync = El::MakeMultiSync(gpu::get_sync_info(y),
+  auto multisync = El::MakeMultiSync(gpu::get_sync_info(workSpace),
                                      gpu::get_sync_info(x),
-                                     gpu::get_sync_info(workspace));
-  dropout_backward(dropoutDesc, yDesc, y, xDesc, x, workspace, multisync);
+                                     gpu::get_sync_info(y));
+  dropout_backward(dropoutDesc, yDesc, y, xDesc, x, workSpace, multisync);
 }
 
 }// namespace cudnn
