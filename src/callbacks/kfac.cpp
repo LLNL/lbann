@@ -708,14 +708,12 @@ void kfac::on_backward_prop_end(model *m) {
     auto& stacked_grads = get_workspace_matrix(
         std::string("bn_stacked_grads_")+std::to_string(metadata.layer_id),
         metadata.bn_num_channels*2, 1);
-    CHECK_CUDA(cudaMemcpyAsync(
-        stacked_grads.Buffer(), s_gradients.LockedBuffer(),
-        metadata.bn_num_channels*sizeof(DataType), cudaMemcpyDeviceToDevice,
-        hydrogen::cuda::GetDefaultStream()));
-    CHECK_CUDA(cudaMemcpyAsync(
-        stacked_grads.Buffer()+metadata.bn_num_channels, b_gradients.LockedBuffer(),
-        metadata.bn_num_channels*sizeof(DataType), cudaMemcpyDeviceToDevice,
-        hydrogen::cuda::GetDefaultStream()));
+    auto stacked_grads_scale = El::View(
+        stacked_grads, El::IR(0, metadata.bn_num_channels), El::ALL);
+    auto stacked_grads_bias = El::View(
+        stacked_grads, El::IR(metadata.bn_num_channels, metadata.bn_num_channels*2), El::ALL);
+    El::Copy(s_gradients, stacked_grads_scale);
+    El::Copy(b_gradients, stacked_grads_bias);
 
     auto& Fgrad = get_workspace_matrix(
         std::string("bn_Fgrad_")+std::to_string(metadata.layer_id),
@@ -725,19 +723,16 @@ void kfac::on_backward_prop_end(model *m) {
         El::TypeTraits<DataType>::One(), Finv, stacked_grads,
         El::TypeTraits<DataType>::Zero(), Fgrad);
 
+    const auto Fgrad_scale = El::View(Fgrad, El::IR(0, metadata.bn_num_channels), El::ALL);
+    const auto Fgrad_bias = El::View(Fgrad, El::IR(metadata.bn_num_channels, metadata.bn_num_channels*2), El::ALL);
     DataType dst_scale = El::TypeTraits<DataType>::Zero(),
         gradient_scale = El::TypeTraits<DataType>::One();
     auto& s_grad_buffer = s_optimizer->get_gradient_buffer(
         dst_scale, gradient_scale, false);
     auto& b_grad_buffer = b_optimizer->get_gradient_buffer(
         dst_scale, gradient_scale, false);
-    // TODO: Better way to copy?
-    CHECK_CUDA(cudaMemcpy(
-        s_grad_buffer.Matrix().Buffer(), Fgrad.LockedBuffer(),
-        metadata.bn_num_channels*sizeof(DataType), cudaMemcpyDeviceToDevice));
-    CHECK_CUDA(cudaMemcpy(
-        b_grad_buffer.Matrix().Buffer(), Fgrad.LockedBuffer()+metadata.bn_num_channels,
-        metadata.bn_num_channels*sizeof(DataType), cudaMemcpyDeviceToDevice));
+    El::Copy(Fgrad_scale, s_grad_buffer.Matrix());
+    El::Copy(Fgrad_bias, b_grad_buffer.Matrix());
 
     // dump L2 norm of matrices
     if(comm->am_trainer_master() && m_print_matrix_summary) {
