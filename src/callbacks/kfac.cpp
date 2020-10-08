@@ -531,7 +531,13 @@ void kfac::on_backward_prop_end(model *m) {
       const auto &Aave = m_kronecker_average[metadata.layer_id].first;
       const auto &Gave = m_kronecker_average[metadata.layer_id].second;
       // Compute the pi constant
-      const DataType pi = m_use_pi ? compute_pi(Aave, Gave) : 1.0;
+      DataType pi = 1.0;
+      if(m_use_pi) {
+        auto& ws = get_workspace_matrix(
+            std::string("pi_ws_")+std::to_string(metadata.layer_id),
+            std::max(Aave.Height(), Gave.Height())*2+1, 1);
+        pi = compute_pi(Aave, Gave, ws, stream);
+      }
       // Compute the inverse of the factors
       const bool print_time = m_print_time;
       // Since setting different damping constants for A and G is an
@@ -925,17 +931,28 @@ void kfac::get_matrix_inverse(
 }
 
 double kfac::compute_pi(const El::Matrix<DataType, El::Device::GPU>& A,
-                        const El::Matrix<DataType, El::Device::GPU>& G) {
-  // TODO: El::Trace is defined but not implemented yet.
+                        const El::Matrix<DataType, El::Device::GPU>& G,
+                        El::Matrix<DataType, El::Device::GPU>& ws,
+                        const cudaStream_t& stream) {
+  assert(ws.Height() >= A.Height()*2+1);
+  assert(ws.Height() >= G.Height()*2+1);
+  // TODO: Replace with El::Trace once GPU matrices get supported.
   const auto get_trace =
-      [](const El::Matrix<DataType, El::Device::GPU> X) {
-        const El::Matrix<DataType> XCPU(X);
-        DataType s = 0.0;
-        for(int i = 0; i < XCPU.Height(); i++)
-          s += XCPU(i, i);
-        return (double) s;
+      [](const El::Matrix<DataType, El::Device::GPU>& X,
+         El::Matrix<DataType, El::Device::GPU>& w,
+         const cudaStream_t& s) {
+        auto diag = El::View(w, El::IR(0, X.Height()), El::ALL);
+        auto ones = El::View(w, El::IR(X.Height(), X.Height()*2), El::ALL);
+        auto ret = El::View(w, El::IR(X.Height()*2, X.Height()*2+1), El::ALL);
+        get_diagonal(diag.Buffer(), X.LockedBuffer(), X.Height(), s);
+        El::Ones(ones, ones.Height(), ones.Width());
+        El::Gemm(
+            El::TRANSPOSE, El::NORMAL,
+            El::TypeTraits<DataType>::One(), diag, ones,
+            El::TypeTraits<DataType>::Zero(), ret);
+        return El::Matrix<DataType>(ret)(0, 0);
       };
-  return sqrt((get_trace(A)/A.Height())/(get_trace(G)/G.Height()));
+  return sqrt((get_trace(A, ws, stream)/A.Height())/(get_trace(G, ws, stream)/G.Height()));
 }
 
 std::string kfac::get_matrix_stat(const El::Matrix<DataType, El::Device::GPU>& X,

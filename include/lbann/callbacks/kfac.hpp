@@ -157,7 +157,9 @@ class kfac : public callback_base {
   /** @brief Returns the pi constant. **/
   static double compute_pi(
       const El::Matrix<DataType, El::Device::GPU>& A,
-      const El::Matrix<DataType, El::Device::GPU>& G);
+      const El::Matrix<DataType, El::Device::GPU>& G,
+      El::Matrix<DataType, El::Device::GPU>& ws,
+      const cudaStream_t& stream);
 
   /** @brief Gets statistics of a given matrix. **/
   static std::string get_matrix_stat(
@@ -257,6 +259,14 @@ class kfac : public callback_base {
   static void unpack_lower_tri(
       TensorDataType * __restrict__ A,
       const TensorDataType * __restrict__ L,
+      const size_t height,
+      const cudaStream_t& stream);
+
+  /** @brief Get diagonal elements of a matrix. **/
+  template <typename TensorDataType>
+  static void get_diagonal(
+      TensorDataType * __restrict__ diag,
+      const TensorDataType * __restrict__ A,
       const size_t height,
       const cudaStream_t& stream);
 

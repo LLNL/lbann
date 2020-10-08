@@ -185,6 +185,16 @@ __global__ void kfac_unpack_lower_tri_kernel(
   }
 }
 
+template <typename TensorDataType>
+__global__ void kfac_get_diagonal_kernel(
+    TensorDataType * __restrict__ diag,
+    const TensorDataType * __restrict__ A,
+    const size_t height) {
+  const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
+  if(gid < height)
+    diag[gid] = A[gid+gid*height];
+}
+
 } // namespace
 
 template <typename TensorDataType>
@@ -328,6 +338,20 @@ void kfac::unpack_lower_tri(
           A, L, height);
 }
 
+template <typename TensorDataType>
+void kfac::get_diagonal(
+    TensorDataType * __restrict__ diag,
+    const TensorDataType * __restrict__ A,
+    const size_t height,
+    const cudaStream_t& stream) {
+  constexpr size_t block_size = 256;
+  const size_t num_threads = height;
+  const size_t grid_size = (num_threads + block_size - 1) / block_size;
+  kfac_get_diagonal_kernel<TensorDataType>
+      <<<grid_size, block_size, 0, stream>>>(
+          diag, A, height);
+}
+
 #define PROTO(T)                                        \
   template void kfac::add_to_diagonal<T>(               \
       T* __restrict__ A,                                \
@@ -385,7 +409,12 @@ void kfac::unpack_lower_tri(
       T * __restrict__ A,                               \
       const T * __restrict__ L,                         \
       const size_t height,                              \
-      const cudaStream_t& stream)
+      const cudaStream_t& stream);                      \
+  template void kfac::get_diagonal<T>(                  \
+      T * __restrict__ diag,                            \
+      const T * __restrict__ A,                         \
+      const size_t height,                              \
+      const cudaStream_t& stream);
 
 
 #define LBANN_INSTANTIATE_GPU_HALF
