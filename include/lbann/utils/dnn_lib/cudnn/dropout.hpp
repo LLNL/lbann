@@ -34,6 +34,7 @@
 namespace lbann
 {
 
+#if defined LBANN_HAS_CUDNN
 namespace cudnn
 {
 
@@ -122,5 +123,7 @@ void dropout_backward(DropoutDescriptor dropoutDesc,
 }
 
 }// namespace cudnn
+#endif // LBANN_HAS_CUDNN
+  
 }// namespace lbann
 #endif // LBANN_UTILS_DNN_LIB_CUDNN_DROPOUT_HPP_
