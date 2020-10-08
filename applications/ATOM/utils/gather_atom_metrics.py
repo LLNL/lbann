@@ -7,14 +7,16 @@ import re
 #for each log file
 for num in range(len(sys.argv)-1):
   inp = sys.argv[num+1]
-  print(" File# ", num , " ", inp)
+  print("File#", num , " ", inp)
   total_time = 0
+  total_train_time = 0
   trainer_metrics = dict()
   results = {}
   partial_results = {}
   current_epoch = {} # Dict for each trainer to track the current epoch
   ds_times = {}
   active_ds_mode = ''
+  sync_time = 0
   # Patterns for key metrics
   p_train_time = re.compile('\w+\s+\(instance ([0-9]*)\) training epoch ([0-9]*) run time : ([0-9.]+)')
   p_test_time = re.compile('\w+\s+\(instance ([0-9]*)\) test run time : ([0-9.]+)')
@@ -22,8 +24,11 @@ for num in range(len(sys.argv)-1):
   # Patterns for secondary metrics
   p_train_mb_time = re.compile('\w+\s+\(instance ([0-9]*)\) training epoch ([0-9]*) mini-batch time statistics : ([0-9.]+)s mean')
   # p_train_recon = re.compile('\w+\s+\(instance ([0-9]*)\) training epoch ([0-9]*) recon : ([0-9.]+)')
+  # Capture the time required to load the data
   p_preload_data_store_mode = re.compile('starting do_preload_data_store.*num indices:\s+([0-9,]+) for role: (\w+)')
   p_preload_data_store_time = re.compile('\s+do_preload_data_store time:\s+([0-9.]+)')
+  # Find the line with time to synchronize trainers
+  p_sync_time = re.compile('synchronizing trainers... ([0-9.]+)s')
   with open(inp) as ifile1:
     for line in ifile1:
       m_time = p_train_time.match(line)
@@ -97,6 +102,10 @@ for num in range(len(sys.argv)-1):
         time = float(m_ds_time.group(1))
         ds_times[active_mode]['load_time'] = time
 
+      m_sync_time = p_sync_time.match(line)
+      if (m_sync_time):
+        sync_time = float(m_sync_time.group(1))
+
       # m_train_recon = p_train_recon.match(line)
       # if (m_train_recon):
       #     tid = m_train_recon.group(1)
@@ -130,8 +139,11 @@ for num in range(len(sys.argv)-1):
       partial_total_time = (mean_epoch_train_time + mean_epoch_test_time)
       partial_results[e] = { 'epoch' : e,
                              'total_time' : total_time + partial_total_time,
+                             'total_train_time' : total_train_time,
                              'mean_train_time' : partial_mean_epoch_train_time,
                              'std_train_time' : np.std(np.array(train_times)),
+                             'min_train_time' : np.amin(np.array(train_times)),
+                             'max_train_time' : np.amax(np.array(train_times)),
                              'recon_min' : np.amin(np.array(test_recons)),
                              'recon_max' : np.amax(np.array(test_recons)),
                              'recon_mean' : np.mean(np.array(test_recons)),
@@ -153,10 +165,14 @@ for num in range(len(sys.argv)-1):
       mean_epoch_train_time = np.mean(np.array(train_times))
       mean_epoch_test_time = np.mean(np.array(test_times))
       total_time += (mean_epoch_train_time + mean_epoch_test_time)
+      total_train_time += mean_epoch_train_time
       results[e] = { 'epoch' : e,
                      'total_time' : total_time,
+                     'total_train_time' : total_train_time,
                      'mean_train_time' : mean_epoch_train_time,
                      'std_train_time' : np.std(np.array(train_times)),
+                     'min_train_time' : np.amin(np.array(train_times)),
+                     'max_train_time' : np.amax(np.array(train_times)),
                      'recon_min' : np.amin(np.array(test_recons)),
                      'recon_max' : np.amax(np.array(test_recons)),
                      'recon_mean' : np.mean(np.array(test_recons)),
@@ -175,9 +191,11 @@ for num in range(len(sys.argv)-1):
     r = results[e]
     print('Epoch ' + r['epoch']
           + ' {:7.1f}s'.format(r['total_time'])
-          + ' training = {:6.2f}s +- {:3.2f}'.format(r['mean_train_time'], r['std_train_time'])
-          + ' :: reconstruction min = {:6.3f} / max = {:6.3f} / avg = {:6.3f} +- {:3.2f}'.
-          format(r['recon_min'], r['recon_max'], r['recon_mean'], r['recon_std'])
+          + ' / {:7.1f}s'.format(r['total_train_time'])
+          + ' training = {:6.2f}s +- {:3.2f} / min = {:6.3f} / max = {:6.3f}'.format(
+            r['mean_train_time'], r['std_train_time'], r['min_train_time'], r['max_train_time'])
+          + ' :: reconstruction min = {:6.3f} / max = {:6.3f} / avg = {:6.3f} +- {:3.2f}'.format(
+            r['recon_min'], r['recon_max'], r['recon_mean'], r['recon_std'])
           + ' :: test time = {:6.3f}s +- {:3.2f}'.format(r['mean_test_time'], r['std_test_time'])
           + ' :: train MB time = {:5.3f}s +- {:3.2f}'.format(r['mean_train_mb_time'], r['std_train_mb_time'])
           + ' :: ' + str(r['num_trainers']) + ' trainers')
@@ -199,6 +217,7 @@ for num in range(len(sys.argv)-1):
   print('Time to load data:')
   for k,v in ds_times.items():
     print('Loading {:12s}'.format(k) + ' data set with {:9d} samples'.format(v['samples']) + ' took {:6.2f}s'.format(v['load_time']))
+  print('Time to synchronize the trainers: {:12.6f}s'.format(sync_time))
 
   for e in sorted(partial_results.keys()):
     r = partial_results[e]
@@ -206,9 +225,10 @@ for num in range(len(sys.argv)-1):
     print('Results for epochs with only some trainers reporting')
     print('Epoch ' + r['epoch']
           + ' {:7.1f}s'.format(r['total_time'])
-          + ' training = {:6.2f}s +- {:3.2f}'.format(r['mean_train_time'], r['std_train_time'])
-          + ' :: reconstruction min = {:6.3f} / max = {:6.3f} / avg = {:6.3f} +- {:3.2f}'.
-          format(r['recon_min'], r['recon_max'], r['recon_mean'], r['recon_std'])
+          + ' training = {:6.2f}s +- {:3.2f} / min = {:6.3f} / max = {:6.3f}'.format(
+            r['mean_train_time'], r['std_train_time'], r['min_train_time'], r['max_train_time'])
+          + ' :: reconstruction min = {:6.3f} / max = {:6.3f} / avg = {:6.3f} +- {:3.2f}'.format(
+            r['recon_min'], r['recon_max'], r['recon_mean'], r['recon_std'])
           + ' :: test time = {:6.3f}s +- {:3.2f}'.format(r['mean_test_time'], r['std_test_time'])
           + ' :: train MB time = {:5.3f}s +- {:3.2f}'.format(r['mean_train_mb_time'], r['std_train_mb_time'])
           + ' :: ' + str(r['num_trainers']) + ' trainers')
