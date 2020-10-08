@@ -13,6 +13,8 @@ for num in range(len(sys.argv)-1):
   results = {}
   partial_results = {}
   current_epoch = {} # Dict for each trainer to track the current epoch
+  ds_times = {}
+  active_ds_mode = ''
   # Patterns for key metrics
   p_train_time = re.compile('\w+\s+\(instance ([0-9]*)\) training epoch ([0-9]*) run time : ([0-9.]+)')
   p_test_time = re.compile('\w+\s+\(instance ([0-9]*)\) test run time : ([0-9.]+)')
@@ -20,6 +22,8 @@ for num in range(len(sys.argv)-1):
   # Patterns for secondary metrics
   p_train_mb_time = re.compile('\w+\s+\(instance ([0-9]*)\) training epoch ([0-9]*) mini-batch time statistics : ([0-9.]+)s mean')
   # p_train_recon = re.compile('\w+\s+\(instance ([0-9]*)\) training epoch ([0-9]*) recon : ([0-9.]+)')
+  p_preload_data_store_mode = re.compile('starting do_preload_data_store.*num indices:\s+([0-9,]+) for role: (\w+)')
+  p_preload_data_store_time = re.compile('\s+do_preload_data_store time:\s+([0-9.]+)')
   with open(inp) as ifile1:
     for line in ifile1:
       m_time = p_train_time.match(line)
@@ -44,18 +48,27 @@ for num in range(len(sys.argv)-1):
           tid = m_test_recon.group(1)
           e = current_epoch[tid]
           r = m_test_recon.group(2)
-          if 'test_recon' in trainer_metrics[e][tid].keys():
-            print('How did I get here - test recon: e ' + e + ' existing = ' +  trainer_metrics[e][tid]['test_recon'] + ' new value ' + r)
-          trainer_metrics[e][tid]['test_recon'] = r
+          if not 'test_recon' in trainer_metrics[e][tid].keys():
+            trainer_metrics[e][tid]['test_recon'] = r
+          else:
+            print('@epoch ' + e
+                  + ' - duplicate test reconstruction metric found - existing = '
+                  +  trainer_metrics[e][tid]['test_recon']
+                  + ' discarding ' + r + ' (ran test twice???)')
+
 
       m_test_time = p_test_time.match(line)
       if (m_test_time):
           tid = m_test_time.group(1)
           e = current_epoch[tid]
           r = m_test_time.group(2)
-          if 'test_time' in trainer_metrics[e][tid].keys():
-            print('How did I get here - test time')
-          trainer_metrics[e][tid]['test_time'] = r
+          if not 'test_time' in trainer_metrics[e][tid].keys():
+            trainer_metrics[e][tid]['test_time'] = r
+          else:
+            print('@epoch ' + e
+                  + ' - duplicate test time found                  - existing = '
+                  +  trainer_metrics[e][tid]['test_time']
+                  + ' discarding ' + r + ' (ran test twice???)')
 
       m_train_mb_time = p_train_mb_time.match(line)
       if (m_train_mb_time):
@@ -64,9 +77,25 @@ for num in range(len(sys.argv)-1):
           if not e == m_train_mb_time.group(2):
             assert('Epoch mismatch')
           r = m_train_mb_time.group(3)
-          if 'train_mb_time' in trainer_metrics[e][tid].keys():
-            print('How did I get here train_mb_time')
-          trainer_metrics[e][tid]['train_mb_time'] = r
+          if not 'train_mb_time' in trainer_metrics[e][tid].keys():
+            trainer_metrics[e][tid]['train_mb_time'] = r
+          else:
+            print('@epoch ' + e
+                  + ' - duplicate train mb time found - existing = '
+                  +  trainer_metrics[e][tid]['train_mb_time']
+                  + ' discarding ' + r + ' (abort)')
+            exit(-1)
+
+      m_ds_mode = p_preload_data_store_mode.match(line)
+      if (m_ds_mode):
+        active_mode = m_ds_mode.group(2)
+        samples = int(m_ds_mode.group(1).replace(',', ''))
+        ds_times[active_mode] = {'samples' : samples }
+
+      m_ds_time = p_preload_data_store_time.match(line)
+      if (m_ds_time):
+        time = float(m_ds_time.group(1))
+        ds_times[active_mode]['load_time'] = time
 
       # m_train_recon = p_train_recon.match(line)
       # if (m_train_recon):
@@ -165,6 +194,11 @@ for num in range(len(sys.argv)-1):
         + ' +- {:3.2f}'.format(np.std(np.array(total_train_times_not_first_epoch)))
         + ' min={:6.2f}s'.format(np.amin(np.array(total_train_times_not_first_epoch)))
         + ' max={:6.2f}s'.format(np.amax(np.array(total_train_times_not_first_epoch))))
+
+  print('--------------------------------------------------------------------------------')
+  print('Time to load data:')
+  for k,v in ds_times.items():
+    print('Loading {:12s}'.format(k) + ' data set with {:9d} samples'.format(v['samples']) + ' took {:6.2f}s'.format(v['load_time']))
 
   for e in sorted(partial_results.keys()):
     r = partial_results[e]
