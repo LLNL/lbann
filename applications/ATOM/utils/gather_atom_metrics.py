@@ -11,6 +11,7 @@ for num in range(len(sys.argv)-1):
   total_time = 0
   trainer_metrics = dict()
   results = {}
+  partial_results = {}
   current_epoch = {} # Dict for each trainer to track the current epoch
   # Patterns for key metrics
   p_train_time = re.compile('\w+\s+\(instance ([0-9]*)\) training epoch ([0-9]*) run time : ([0-9.]+)')
@@ -43,6 +44,8 @@ for num in range(len(sys.argv)-1):
           tid = m_test_recon.group(1)
           e = current_epoch[tid]
           r = m_test_recon.group(2)
+          if 'test_recon' in trainer_metrics[e][tid].keys():
+            print('How did I get here - test recon: e ' + e + ' existing = ' +  trainer_metrics[e][tid]['test_recon'] + ' new value ' + r)
           trainer_metrics[e][tid]['test_recon'] = r
 
       m_test_time = p_test_time.match(line)
@@ -50,6 +53,8 @@ for num in range(len(sys.argv)-1):
           tid = m_test_time.group(1)
           e = current_epoch[tid]
           r = m_test_time.group(2)
+          if 'test_time' in trainer_metrics[e][tid].keys():
+            print('How did I get here - test time')
           trainer_metrics[e][tid]['test_time'] = r
 
       m_train_mb_time = p_train_mb_time.match(line)
@@ -59,6 +64,8 @@ for num in range(len(sys.argv)-1):
           if not e == m_train_mb_time.group(2):
             assert('Epoch mismatch')
           r = m_train_mb_time.group(3)
+          if 'train_mb_time' in trainer_metrics[e][tid].keys():
+            print('How did I get here train_mb_time')
           trainer_metrics[e][tid]['train_mb_time'] = r
 
       # m_train_recon = p_train_recon.match(line)
@@ -72,41 +79,68 @@ for num in range(len(sys.argv)-1):
 
   total_train_times = []
   total_train_times_not_first_epoch = []
+  # For each epoch, gather data from all trainers
   for e, data in trainer_metrics.items():
     train_times = []
     test_recons = []
     test_times = []
     train_mb_times = []
     # train_recon = []
+    num_trainers = len(data)
+    # For each trainer in the epoch
     for k, v in data.items():
-      train_times.append(float(v['train_time']))
-      test_recons.append(float(v['test_recon']))
-      test_times.append(float(v['test_time']))
-      train_mb_times.append(float(v['train_mb_time']))
-      # train_recons.append(float(v['train_recon']))
+      if v.keys() == { 'train_time', 'test_recon', 'test_time', 'train_mb_time' }:
+        train_times.append(float(v['train_time']))
+        test_recons.append(float(v['test_recon']))
+        test_times.append(float(v['test_time']))
+        train_mb_times.append(float(v['train_mb_time']))
 
-    total_train_times.append(train_times)
-    if e != '0':
-      total_train_times_not_first_epoch.append(train_times)
-    mean_epoch_train_time = np.mean(np.array(train_times))
-    mean_epoch_test_time = np.mean(np.array(test_times))
-    total_time += (mean_epoch_train_time + mean_epoch_test_time)
-    results[e] = { 'epoch' : e,
-                   'total_time' : total_time,
-                   'mean_train_time' : mean_epoch_train_time,
-                   'std_train_time' : np.std(np.array(train_times)),
-                   'recon_min' : np.amin(np.array(test_recons)),
-                   'recon_max' : np.amax(np.array(test_recons)),
-                   'recon_mean' : np.mean(np.array(test_recons)),
-                   'recon_std' : np.std(np.array(test_recons)),
-                   'mean_test_time' : mean_epoch_test_time,
-                   'std_test_time' : np.std(np.array(test_times)),
-                   'mean_train_mb_time' : np.mean(np.array(train_mb_times)),
-                   'std_train_mb_time' : np.std(np.array(train_mb_times))}
-                   # 'train_recon_min' : np.amin(np.array(train_recons)),
-                   # 'train_recon_max' : np.amax(np.array(train_recons)),
-                   # 'train_recon_mean' : np.mean(np.array(train_recons)),
-                   # 'train_recon_std' : np.std(np.array(train_recons))
+    if num_trainers != len(train_times):
+      partial_mean_epoch_train_time = np.mean(np.array(train_times))
+      partial_mean_epoch_test_time = np.mean(np.array(test_times))
+      partial_total_time = (mean_epoch_train_time + mean_epoch_test_time)
+      partial_results[e] = { 'epoch' : e,
+                             'total_time' : total_time + partial_total_time,
+                             'mean_train_time' : partial_mean_epoch_train_time,
+                             'std_train_time' : np.std(np.array(train_times)),
+                             'recon_min' : np.amin(np.array(test_recons)),
+                             'recon_max' : np.amax(np.array(test_recons)),
+                             'recon_mean' : np.mean(np.array(test_recons)),
+                             'recon_std' : np.std(np.array(test_recons)),
+                             'mean_test_time' : partial_mean_epoch_test_time,
+                             'std_test_time' : np.std(np.array(test_times)),
+                             'mean_train_mb_time' : np.mean(np.array(train_mb_times)),
+                             'std_train_mb_time' : np.std(np.array(train_mb_times)),
+                             'num_trainers': len(train_times)}
+                     # 'train_recon_min' : np.amin(np.array(train_recons)),
+                     # 'train_recon_max' : np.amax(np.array(train_recons)),
+                     # 'train_recon_mean' : np.mean(np.array(train_recons)),
+                     # 'train_recon_std' : np.std(np.array(train_recons))
+      continue
+    else:
+      total_train_times.append(train_times)
+      if e != '0':
+        total_train_times_not_first_epoch.append(train_times)
+      mean_epoch_train_time = np.mean(np.array(train_times))
+      mean_epoch_test_time = np.mean(np.array(test_times))
+      total_time += (mean_epoch_train_time + mean_epoch_test_time)
+      results[e] = { 'epoch' : e,
+                     'total_time' : total_time,
+                     'mean_train_time' : mean_epoch_train_time,
+                     'std_train_time' : np.std(np.array(train_times)),
+                     'recon_min' : np.amin(np.array(test_recons)),
+                     'recon_max' : np.amax(np.array(test_recons)),
+                     'recon_mean' : np.mean(np.array(test_recons)),
+                     'recon_std' : np.std(np.array(test_recons)),
+                     'mean_test_time' : mean_epoch_test_time,
+                     'std_test_time' : np.std(np.array(test_times)),
+                     'mean_train_mb_time' : np.mean(np.array(train_mb_times)),
+                     'std_train_mb_time' : np.std(np.array(train_mb_times)),
+                     'num_trainers': len(train_times)}
+                     # 'train_recon_min' : np.amin(np.array(train_recons)),
+                     # 'train_recon_max' : np.amax(np.array(train_recons)),
+                     # 'train_recon_mean' : np.mean(np.array(train_recons)),
+                     # 'train_recon_std' : np.std(np.array(train_recons))
 
   for e in sorted(results.keys()):
     r = results[e]
@@ -116,7 +150,8 @@ for num in range(len(sys.argv)-1):
           + ' :: reconstruction min = {:6.3f} / max = {:6.3f} / avg = {:6.3f} +- {:3.2f}'.
           format(r['recon_min'], r['recon_max'], r['recon_mean'], r['recon_std'])
           + ' :: test time = {:6.3f}s +- {:3.2f}'.format(r['mean_test_time'], r['std_test_time'])
-          + ' :: train MB time = {:5.3f}s +- {:3.2f}'.format(r['mean_train_mb_time'], r['std_train_mb_time']))
+          + ' :: train MB time = {:5.3f}s +- {:3.2f}'.format(r['mean_train_mb_time'], r['std_train_mb_time'])
+          + ' :: ' + str(r['num_trainers']) + ' trainers')
           # + ' :: train reconstruction min = {:6.3f} / max = {:6.3f} / avg = {:6.3f} +- {:3.2f}'.
           # format(r['train_recon_min'], r['train_recon_max'], r['train_recon_mean'], r['train_recon_std']))
 
@@ -130,6 +165,21 @@ for num in range(len(sys.argv)-1):
         + ' +- {:3.2f}'.format(np.std(np.array(total_train_times_not_first_epoch)))
         + ' min={:6.2f}s'.format(np.amin(np.array(total_train_times_not_first_epoch)))
         + ' max={:6.2f}s'.format(np.amax(np.array(total_train_times_not_first_epoch))))
+
+  for e in sorted(partial_results.keys()):
+    r = partial_results[e]
+    print('--------------------------------------------------------------------------------')
+    print('Results for epochs with only some trainers reporting')
+    print('Epoch ' + r['epoch']
+          + ' {:7.1f}s'.format(r['total_time'])
+          + ' training = {:6.2f}s +- {:3.2f}'.format(r['mean_train_time'], r['std_train_time'])
+          + ' :: reconstruction min = {:6.3f} / max = {:6.3f} / avg = {:6.3f} +- {:3.2f}'.
+          format(r['recon_min'], r['recon_max'], r['recon_mean'], r['recon_std'])
+          + ' :: test time = {:6.3f}s +- {:3.2f}'.format(r['mean_test_time'], r['std_test_time'])
+          + ' :: train MB time = {:5.3f}s +- {:3.2f}'.format(r['mean_train_mb_time'], r['std_train_mb_time'])
+          + ' :: ' + str(r['num_trainers']) + ' trainers')
+          # + ' :: train reconstruction min = {:6.3f} / max = {:6.3f} / avg = {:6.3f} +- {:3.2f}'.
+          # format(r['train_recon_min'], r['train_recon_max'], r['train_recon_mean'], r['train_recon_std']))
 
   ifile1.close()
 
