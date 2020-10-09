@@ -142,40 +142,51 @@ T block_reduce(T val) {
 }
 
 // Unary math functions
-#define WRAP_UNARY_CUDA_MATH_FUNCTION(func)                     \
-  template <> __device__ __forceinline__                        \
-  float func<float>(const float& x) { return ::func##f(x); }    \
-  template <> __device__ __forceinline__                        \
-  double func<double>(const double& x) { return ::func(x); }
+#define WRAP_UNARY_MATH_FUNCTION(func)                     \
+  __device__ __forceinline__                        \
+  float func(const float& x) { return ::func##f(x); }    \
+  __device__ __forceinline__                        \
+  double func(const double& x) { return ::func(x); }
+
 template <typename T> __device__ __forceinline__
 T abs(const T& x) { return x >= static_cast<T>(0) ? x : -x; }
-template <> __device__ __forceinline__
-float abs<float>(const float& x) { return ::fabsf(x); }
-template <> __device__ __forceinline__
-double abs<double>(const double& x) { return ::fabs(x); }
-WRAP_UNARY_CUDA_MATH_FUNCTION(round)
-WRAP_UNARY_CUDA_MATH_FUNCTION(ceil)
-WRAP_UNARY_CUDA_MATH_FUNCTION(floor)
-WRAP_UNARY_CUDA_MATH_FUNCTION(sqrt)
-WRAP_UNARY_CUDA_MATH_FUNCTION(rsqrt)
-WRAP_UNARY_CUDA_MATH_FUNCTION(exp)
-WRAP_UNARY_CUDA_MATH_FUNCTION(expm1)
-WRAP_UNARY_CUDA_MATH_FUNCTION(log)
-WRAP_UNARY_CUDA_MATH_FUNCTION(log1p)
-WRAP_UNARY_CUDA_MATH_FUNCTION(cos)
-WRAP_UNARY_CUDA_MATH_FUNCTION(sin)
-WRAP_UNARY_CUDA_MATH_FUNCTION(tan)
-WRAP_UNARY_CUDA_MATH_FUNCTION(acos)
-WRAP_UNARY_CUDA_MATH_FUNCTION(asin)
-WRAP_UNARY_CUDA_MATH_FUNCTION(atan)
-WRAP_UNARY_CUDA_MATH_FUNCTION(cosh)
-WRAP_UNARY_CUDA_MATH_FUNCTION(sinh)
-WRAP_UNARY_CUDA_MATH_FUNCTION(tanh)
-WRAP_UNARY_CUDA_MATH_FUNCTION(acosh)
-WRAP_UNARY_CUDA_MATH_FUNCTION(asinh)
-WRAP_UNARY_CUDA_MATH_FUNCTION(atanh)
-#undef WRAP_UNARY_CUDA_MATH_FUNCTION
+__device__ __forceinline__
+float abs(const float& x) { return ::fabsf(x); }
+__device__ __forceinline__
+double abs(const double& x) { return ::fabs(x); }
 
+WRAP_UNARY_MATH_FUNCTION(round)
+WRAP_UNARY_MATH_FUNCTION(ceil)
+WRAP_UNARY_MATH_FUNCTION(floor)
+WRAP_UNARY_MATH_FUNCTION(sqrt)
+WRAP_UNARY_MATH_FUNCTION(rsqrt)
+WRAP_UNARY_MATH_FUNCTION(exp)
+WRAP_UNARY_MATH_FUNCTION(expm1)
+WRAP_UNARY_MATH_FUNCTION(log)
+WRAP_UNARY_MATH_FUNCTION(log1p)
+WRAP_UNARY_MATH_FUNCTION(cos)
+WRAP_UNARY_MATH_FUNCTION(sin)
+WRAP_UNARY_MATH_FUNCTION(tan)
+WRAP_UNARY_MATH_FUNCTION(acos)
+WRAP_UNARY_MATH_FUNCTION(asin)
+WRAP_UNARY_MATH_FUNCTION(atan)
+WRAP_UNARY_MATH_FUNCTION(cosh)
+WRAP_UNARY_MATH_FUNCTION(sinh)
+WRAP_UNARY_MATH_FUNCTION(tanh)
+WRAP_UNARY_MATH_FUNCTION(acosh)
+WRAP_UNARY_MATH_FUNCTION(asinh)
+WRAP_UNARY_MATH_FUNCTION(atanh)
+#undef WRAP_UNARY_MATH_FUNCTION
+
+
+//#define WRAP_BOOL_MATH_FUNCTION(func)                     \
+//  __device__ __forceinline__                        \
+//  bool func(const float& x) { return ::func(x); }    \
+//  __device__ __forceinline__                        \
+//  bool func(const double& x) { return ::func(x); }
+//WRAP_BOOL_MATH_FUNCTION(isfinite)
+//WRAP_BOOL_MATH_FUNCTION(isinf)
+//WRAP_BOOL_MATH_FUNCTION(isnan)
 template <typename T> __device__ __forceinline__
 bool isfinite(T const& x) { return ::isfinite(x); }
 template <typename T> __device__ __forceinline__
@@ -184,24 +195,24 @@ template <typename T> __device__ __forceinline__
 bool isnan(T const& x) { return ::isnan(x); }
 
 #if __CUDA_ARCH__ >= 530
-template <> __device__ __forceinline__
+__device__ __forceinline__
 bool isfinite(__half const& x) { return !(::__isnan(x) || ::__hisinf(x)); }
-template <> __device__ __forceinline__
+__device__ __forceinline__
 bool isinf(__half const& x) { return ::__hisinf(x); }
-template <> __device__ __forceinline__
+__device__ __forceinline__
 bool isnan(__half const& x) { return ::__hisnan(x); }
 
 // This support is far from complete!
 #define WRAP_UNARY_CUDA_HALF_MATH_FUNCTION(func)              \
-  template <> __device__ __forceinline__                      \
-  __half func<__half>(__half const& x) { return ::h##func(x); }
+  __device__ __forceinline__                      \
+  __half func(__half const& x) { return ::h##func(x); }
 
 // FIXME (trb): This is maybe not the best long-term solution, but it
 // might be the best we can do without really digging into
 // half-precision implementation.
 #define WRAP_UNARY_CUDA_HALF_CAST_TO_FLOAT_MATH_FUNCTION(func) \
-  template <> __device__ __forceinline__                       \
-  __half func<__half>(__half const& x) { return func(float(x)); }
+  __device__ __forceinline__                       \
+  __half func(__half const& x) { return func(float(x)); }
 
 WRAP_UNARY_CUDA_HALF_CAST_TO_FLOAT_MATH_FUNCTION(round)
 WRAP_UNARY_CUDA_HALF_MATH_FUNCTION(ceil)
@@ -213,8 +224,8 @@ WRAP_UNARY_CUDA_HALF_MATH_FUNCTION(exp)
 //
 // FIXME (trb): This is not going to be as accurate as a native expm1
 // implementation could be:
-template <> __device__ __forceinline__
-__half expm1<__half>(__half const& x) {
+__device__ __forceinline__
+__half expm1(__half const& x) {
     return ::__hsub(::hexp(x), ::__float2half(1.f));
 }
 
@@ -227,8 +238,8 @@ WRAP_UNARY_CUDA_HALF_MATH_FUNCTION(sin)
 //
 // FIXME (trb): This just uses the trig identity. Probably less
 // accurate than a native implementation.
-template <> __device__ __forceinline__
-__half tan<__half>(__half const& x) { return ::__hdiv(::hsin(x), ::hcos(x)); }
+__device__ __forceinline__
+__half tan(__half const& x) { return ::__hdiv(::hsin(x), ::hcos(x)); }
 
 WRAP_UNARY_CUDA_HALF_CAST_TO_FLOAT_MATH_FUNCTION(acos)
 WRAP_UNARY_CUDA_HALF_CAST_TO_FLOAT_MATH_FUNCTION(asin)
@@ -245,50 +256,52 @@ WRAP_UNARY_CUDA_HALF_CAST_TO_FLOAT_MATH_FUNCTION(atanh)
 
 // Binary math functions
 #define WRAP_BINARY_CUDA_MATH_FUNCTION(func)                    \
-  template <> __device__ __forceinline__                        \
-  float func<float>(const float& x, const float& y) {           \
+  __device__ __forceinline__                        \
+  float func(const float& x, const float& y) {           \
     return ::func##f(x,y);                                      \
   }                                                             \
-  template <> __device__ __forceinline__                        \
-  double func<double>(const double& x, const double& y) {       \
+  __device__ __forceinline__                        \
+  double func(const double& x, const double& y) {       \
     return ::func(x,y);                                         \
   }
 template <typename T> __device__ __forceinline__
 T min(const T& x, const T& y) { return y < x ? y : x; }
-template <> __device__ __forceinline__
-float min<float>(const float& x, const float& y) { return ::fminf(x,y); }
-template <> __device__ __forceinline__
-double min<double>(const double& x, const double& y) { return ::fmin(x,y); }
+__device__ __forceinline__
+float min(const float& x, const float& y) { return ::fminf(x,y); }
+__device__ __forceinline__
+double min(const double& x, const double& y) { return ::fmin(x,y); }
+
 template <typename T> __device__ __forceinline__
 T max(const T& x, const T& y) { return y > x ? y : x; }
-template <> __device__ __forceinline__
-float max<float>(const float& x, const float& y) { return ::fmaxf(x,y); }
-template <> __device__ __forceinline__
-double max<double>(const double& x, const double& y) { return ::fmax(x,y); }
+__device__ __forceinline__
+float max(const float& x, const float& y) { return ::fmaxf(x,y); }
+__device__ __forceinline__
+double max(const double& x, const double& y) { return ::fmax(x,y); }
+
 template <typename T> __device__ __forceinline__
 T mod(const T& x, const T& y) { return x % y; }
-template <> __device__ __forceinline__
-float mod<float>(const float& x, const float& y) { return ::fmodf(x,y); }
-template <> __device__ __forceinline__
-double mod<double>(const double& x, const double& y) { return ::fmod(x,y); }
+__device__ __forceinline__
+float mod(const float& x, const float& y) { return ::fmodf(x,y); }
+__device__ __forceinline__
+double mod(const double& x, const double& y) { return ::fmod(x,y); }
 WRAP_BINARY_CUDA_MATH_FUNCTION(pow)
 #undef WRAP_BINARY_CUDA_MATH_FUNCTION
 
-template <> __device__ __forceinline__
-__half pow<__half>(const __half& x, const __half& y)
+__device__ __forceinline__
+__half pow(const __half& x, const __half& y)
 { return pow(float(x), float(y)); }
 
-template <> __device__ __forceinline__
-__half mod<__half>(const __half& x, const __half& y)
+__device__ __forceinline__
+__half mod(const __half& x, const __half& y)
 { return mod(float(x), float(y)); }
 
 #if __CUDA_ARCH__ >= 530
-template <> __device__ __forceinline__
-__half min<__half>(const __half& x, const __half& y)
+__device__ __forceinline__
+__half min(const __half& x, const __half& y)
 { return ::__hle(x, y) ? x : y; }
 
-template <> __device__ __forceinline__
-__half max<__half>(const __half& x, const __half& y)
+ __device__ __forceinline__
+__half max(const __half& x, const __half& y)
 { return ::__hle(x, y) ? y : x; }
 #endif // __CUDA_ARCH__ >= 530
 
