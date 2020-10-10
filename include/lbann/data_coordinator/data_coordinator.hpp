@@ -30,8 +30,6 @@
 #include "lbann/data_coordinator/data_coordinator_metadata.hpp"
 #include "lbann/utils/dataset.hpp"
 #include "lbann/execution_contexts/execution_context.hpp"
-#include "lbann/io/data_buffers/generic_io_buffer.hpp"
-#include "lbann/io/data_buffers/partitioned_io_buffer.hpp"
 #ifdef LBANN_HAS_DISTCONV
 #include "lbann/data_readers/data_reader_hdf5.hpp"
 #endif // LBANN_HAS_DISTCONV
