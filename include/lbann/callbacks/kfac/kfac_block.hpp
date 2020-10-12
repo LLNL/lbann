@@ -30,7 +30,6 @@
 #define LBANN_CALLBACKS_CALLBACK_KFAC_BLOCK_HPP_INCLUDED
 
 #include "lbann/callbacks/kfac.hpp"
-#include "lbann/callbacks/kfac/kfac_metadata.hpp"
 
 namespace lbann {
 namespace callback {
@@ -48,10 +47,12 @@ class kfac_block {
    */
   kfac_block(Layer *layer,
              kfac *callback,
-             const struct kfac_layer_metadata metadata)
+             const size_t layer_id,
+             const size_t inverse_proc_rank)
       : m_layer(layer),
         m_callback(callback),
-        m_metadata(metadata) {
+        m_layer_id(layer_id),
+        m_inverse_proc_rank(inverse_proc_rank) {
     m_has_kronecker_inverse = false;
   }
   virtual ~kfac_block() = default;
@@ -76,14 +77,22 @@ class kfac_block {
   virtual void update_preconditioned_grads(
       lbann_comm* comm) = 0;
 
-  // TODO: Remove this.
-  const struct kfac_layer_metadata& get_metadata() const {
-    return m_metadata;
-  }
-
   /** @brief Return whether this block already has an inverse history. */
   bool has_kronecker_inverse() const {
     return m_has_kronecker_inverse;
+  }
+
+  virtual std::string get_info() const {
+    std::ostringstream oss;
+    oss << "name=" << m_layer->get_name()
+        << ", id=" << m_layer_id
+        << ", type=" << m_layer->get_type()
+        << ", inverse_proc_rank=" << m_inverse_proc_rank;
+    return oss.str();
+  }
+
+  size_t get_inverse_proc_rank() const {
+    return m_inverse_proc_rank;
   }
 
  protected:
@@ -100,9 +109,11 @@ class kfac_block {
    * TODO: Use its own workspace and remove this pointer. */
   kfac *m_callback;
 
-  /** @brief Metadata of the layer.
-      TODO: merge with this block class. */
-  const struct kfac_layer_metadata m_metadata;
+  /** @brief The layer ID in the model.
+      TODO: Remove this. */
+  const size_t m_layer_id;
+
+  const int m_inverse_proc_rank;
 
   /** @brief Whether this block already has an inverse history. */
   bool m_has_kronecker_inverse;

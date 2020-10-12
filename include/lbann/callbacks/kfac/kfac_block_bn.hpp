@@ -30,7 +30,6 @@
 #define LBANN_CALLBACKS_CALLBACK_KFAC_BLOCK_BN_HPP_INCLUDED
 
 #include "lbann/callbacks/kfac/kfac_block.hpp"
-#include "lbann/callbacks/kfac/kfac_metadata.hpp"
 
 namespace lbann {
 namespace callback {
@@ -43,9 +42,14 @@ class kfac_block_bn: public kfac_block {
   /** Constructor.
    */
   kfac_block_bn(Layer *layer,
-             kfac *callback,
-             const struct kfac_layer_metadata metadata)
-      : kfac_block(layer, callback, metadata) {
+                kfac *callback,
+                const size_t layer_id,
+                const size_t inverse_proc_rank,
+                const bool is_after_conv,
+                const size_t num_channels, const size_t spatial_prod)
+      : kfac_block(layer, callback, layer_id, inverse_proc_rank),
+        m_is_after_conv(is_after_conv),
+        m_num_channels(num_channels), m_spatial_prod(spatial_prod) {
   }
   kfac_block_bn(const kfac_block_bn&) = default;
   kfac_block_bn& operator=(const kfac_block_bn&) = default;
@@ -66,6 +70,13 @@ class kfac_block_bn: public kfac_block {
 
   void update_preconditioned_grads(
       lbann_comm* comm) override;
+
+  std::string get_info() const override {
+    std::ostringstream oss;
+    oss << kfac_block::get_info()
+        << ", is_after_conv=" << m_is_after_conv;
+    return oss.str();
+  }
 
  private:
 
@@ -96,6 +107,9 @@ class kfac_block_bn: public kfac_block {
       const size_t num_channels,
       const size_t spatial_prod,
       const cudaStream_t& stream);
+
+  const bool m_is_after_conv;
+  const size_t m_num_channels, m_spatial_prod;
 
   /** @brief Exponential moving average of the Fisher matrix. */
   El::Matrix<DataType, El::Device::GPU>

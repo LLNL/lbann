@@ -3,7 +3,6 @@ set_full_path(THIS_DIR_HEADERS
   kfac_block.hpp
   kfac_block_bn.hpp
   kfac_block_fc_conv.hpp
-  kfac_metadata.hpp
   )
 
 # Propagate the files up the tree

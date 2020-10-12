@@ -31,10 +31,16 @@
 
 #include "lbann/callbacks/callback.hpp"
 #include "lbann/callbacks/kfac/kfac_block.hpp"
-#include "lbann/callbacks/kfac/kfac_metadata.hpp"
 
 namespace lbann {
 namespace callback {
+
+enum kfac_inverse_strategy {
+  ALL,  // Apply round-robin assingment to all of the layers. may cause load imbalance.
+  EACH, // Apply round-robin assingment to every type of layers. may
+  // not work well for small networks.
+  ROOT, // Use only the root GPU. This is only for testing.
+};
 
 // Forward declarations
 // TODO: Remove if kfac_block no longer refers kfac
@@ -215,9 +221,6 @@ class kfac : public callback_base {
 
   /** @brief The number of steps for changing the update interval. */
   const size_t m_update_interval_steps;
-
-  // /** @brief Metadata of all of the learnable layers (FC, conv, and BN). */
-  // std::vector<kfac_layer_metadata> m_learnable_layers;
 
   /** @brief The current damping values. */
   double m_damping_act, m_damping_err,

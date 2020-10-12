@@ -26,7 +26,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/kfac/kfac_block_bn.hpp"
-#include "lbann/utils/im2col.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
 namespace callback {
@@ -37,9 +37,7 @@ void kfac_block_bn::update_kronecker_factors(
     const bool print_matrix,
     const bool print_matrix_summary) {
 
-  assert(m_metadata.is_bn_after_fc || m_metadata.is_bn_after_conv);
-
-  const auto&& stream = hydrogen::cuda::GetDefaultStream();
+  const auto stream = get_stream();
 
   const auto parent = m_layer->get_parent_layers()[0];
   const auto child = m_layer->get_child_layers()[0];
@@ -64,15 +62,15 @@ void kfac_block_bn::update_kronecker_factors(
   const auto &b_dtw = dynamic_cast<data_type_weights<DataType>*>(&biases);
   const auto &scale_values = s_dtw->get_values();
   const auto &bias_values = b_dtw->get_values();
-  assert(m_metadata.bn_num_channels == (size_t) scale_values.Height());
-  assert(m_metadata.bn_num_channels == (size_t) scale_values.LocalHeight());
-  assert(m_metadata.bn_num_channels == (size_t) bias_values.Height());
-  assert(m_metadata.bn_num_channels == (size_t) bias_values.LocalHeight());
+  assert(m_num_channels == (size_t) scale_values.Height());
+  assert(m_num_channels == (size_t) scale_values.LocalHeight());
+  assert(m_num_channels == (size_t) bias_values.Height());
+  assert(m_num_channels == (size_t) bias_values.LocalHeight());
 
   auto& cols = m_callback->get_workspace_matrix(
-      std::string("bn_cols_")+std::to_string(m_metadata.layer_id),
-      m_metadata.bn_num_channels*2*local_batch_size,
-      m_metadata.bn_spatial_prod);
+      std::string("bn_cols_")+std::to_string(m_layer_id),
+      m_num_channels*2*local_batch_size,
+      m_spatial_prod);
   compute_bn_factor_data2col(
       local_activations.LockedBuffer(),
       local_errors.LockedBuffer(),
@@ -80,16 +78,16 @@ void kfac_block_bn::update_kronecker_factors(
       bias_values.LockedMatrix().LockedBuffer(),
       cols.Buffer(),
       local_batch_size,
-      m_metadata.bn_num_channels,
-      m_metadata.bn_spatial_prod,
+      m_num_channels,
+      m_spatial_prod,
       stream);
 
   auto& ones = m_callback->get_workspace_matrix(
-      std::string("bn_ones_")+std::to_string(m_metadata.layer_id),
-      m_metadata.bn_spatial_prod, 1);
+      std::string("bn_ones_")+std::to_string(m_layer_id),
+      m_spatial_prod, 1);
   auto& factor_v = m_callback->get_workspace_matrix(
-      std::string("bn_factor_v_")+std::to_string(m_metadata.layer_id),
-      m_metadata.bn_num_channels*2*local_batch_size, 1);
+      std::string("bn_factor_v_")+std::to_string(m_layer_id),
+      m_num_channels*2*local_batch_size, 1);
   El::Ones(ones, ones.Height(), ones.Width()); // TODO: Call once
   El::Gemm(
       El::NORMAL, El::NORMAL,
@@ -97,12 +95,12 @@ void kfac_block_bn::update_kronecker_factors(
       El::TypeTraits<DataType>::Zero(), factor_v);
 
   El::Matrix<DataType, El::Device::GPU> factor;
-  factor.LockedAttach(m_metadata.bn_num_channels*2, local_batch_size,
+  factor.LockedAttach(m_num_channels*2, local_batch_size,
                       factor_v.LockedBuffer(),
-                      m_metadata.bn_num_channels*2);
+                      m_num_channels*2);
   auto& fisher_block = m_callback->get_workspace_matrix(
-      std::string("bn_fisher_block_")+std::to_string(m_metadata.layer_id),
-      m_metadata.bn_num_channels*2, m_metadata.bn_num_channels*2);
+      std::string("bn_fisher_block_")+std::to_string(m_layer_id),
+      m_num_channels*2, m_num_channels*2);
   const DataType alpha = mini_batch_size;
   El::Gemm(
       El::NORMAL, El::TRANSPOSE,
@@ -110,7 +108,7 @@ void kfac_block_bn::update_kronecker_factors(
       El::TypeTraits<DataType>::Zero(), fisher_block);
 
   auto& fisher_ws = m_callback->get_workspace_matrix(
-      std::string("bn_fisher_ws_")+std::to_string(m_metadata.layer_id),
+      std::string("bn_fisher_ws_")+std::to_string(m_layer_id),
       fisher_block.Height()*(fisher_block.Height()+1)/2, 1);
   kfac::allreduce_lower_tri(fisher_block, fisher_ws, comm, stream);
 
@@ -146,8 +144,6 @@ void kfac_block_bn::update_kronecker_inverse(
     const bool print_matrix_summary,
     const bool print_time) {
 
-  assert(m_metadata.is_bn_after_fc || m_metadata.is_bn_after_conv);
-
   const auto stream = get_stream();
 
   const auto &Fave = m_fisher_average;
@@ -158,7 +154,7 @@ void kfac_block_bn::update_kronecker_inverse(
   // TODO: Refactoring
   auto& Finv = m_fisher_inverse;
   auto& FLinv = m_callback->get_workspace_matrix(
-      std::string("bn_FLinv_")+std::to_string(m_metadata.layer_id),
+      std::string("bn_FLinv_")+std::to_string(m_layer_id),
       Fave.Height(), Fave.Height());
   kfac::get_matrix_inverse(
       Finv, FLinv, Fave, comm->am_trainer_master() && print_time,
@@ -184,25 +180,25 @@ void kfac_block_bn::update_kronecker_inverse(
   El::Matrix<DataType, El::Device::GPU> b_gradients = b_dto->get_gradient().Matrix();
 
   auto& stacked_grads = m_callback->get_workspace_matrix(
-      std::string("bn_stacked_grads_")+std::to_string(m_metadata.layer_id),
-      m_metadata.bn_num_channels*2, 1);
+      std::string("bn_stacked_grads_")+std::to_string(m_layer_id),
+      m_num_channels*2, 1);
   auto stacked_grads_scale = El::View(
-      stacked_grads, El::IR(0, m_metadata.bn_num_channels), El::ALL);
+      stacked_grads, El::IR(0, m_num_channels), El::ALL);
   auto stacked_grads_bias = El::View(
-      stacked_grads, El::IR(m_metadata.bn_num_channels, m_metadata.bn_num_channels*2), El::ALL);
+      stacked_grads, El::IR(m_num_channels, m_num_channels*2), El::ALL);
   El::Copy(s_gradients, stacked_grads_scale);
   El::Copy(b_gradients, stacked_grads_bias);
 
   auto& Fgrad = m_callback->get_workspace_matrix(
-      std::string("bn_Fgrad_")+std::to_string(m_metadata.layer_id),
-      m_metadata.bn_num_channels*2, 1);
+      std::string("bn_Fgrad_")+std::to_string(m_layer_id),
+      m_num_channels*2, 1);
   El::Gemm(
       El::NORMAL, El::NORMAL,
       El::TypeTraits<DataType>::One(), Finv, stacked_grads,
       El::TypeTraits<DataType>::Zero(), Fgrad);
 
-  const auto Fgrad_scale = El::View(Fgrad, El::IR(0, m_metadata.bn_num_channels), El::ALL);
-  const auto Fgrad_bias = El::View(Fgrad, El::IR(m_metadata.bn_num_channels, m_metadata.bn_num_channels*2), El::ALL);
+  const auto Fgrad_scale = El::View(Fgrad, El::IR(0, m_num_channels), El::ALL);
+  const auto Fgrad_bias = El::View(Fgrad, El::IR(m_num_channels, m_num_channels*2), El::ALL);
   DataType dst_scale = El::TypeTraits<DataType>::Zero(),
       gradient_scale = El::TypeTraits<DataType>::One();
   auto& s_grad_buffer = s_optimizer->get_gradient_buffer(
@@ -226,8 +222,7 @@ void kfac_block_bn::update_kronecker_inverse(
 }
 
 void kfac_block_bn::update_preconditioned_grads(
-    lbann_comm* comm){
-  assert(m_metadata.is_bn_after_fc || m_metadata.is_bn_after_conv);
+    lbann_comm* comm) {
 
   auto& scales = m_layer->get_weights(0);
   auto& biases = m_layer->get_weights(1);
@@ -241,10 +236,10 @@ void kfac_block_bn::update_preconditioned_grads(
       dst_scale, gradient_scale, false);
   El::Broadcast(
       s_grad_buffer.Matrix(), comm->get_trainer_comm(),
-      m_metadata.proc_rank);
+      m_inverse_proc_rank);
   El::Broadcast(
       b_grad_buffer.Matrix(), comm->get_trainer_comm(),
-      m_metadata.proc_rank);
+      m_inverse_proc_rank);
 }
 
 } // namespace callback

@@ -26,6 +26,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/kfac/kfac_block_fc_conv.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 #include "lbann/utils/im2col.hpp"
 
 namespace lbann {
@@ -36,8 +37,6 @@ void kfac_block_fc_conv::update_kronecker_factors(
     const DataType kronecker_decay,
     const bool print_matrix,
     const bool print_matrix_summary) {
-
-  assert(m_metadata.is_fc || m_metadata.is_conv);
 
   const auto stream = get_stream();
 
@@ -58,55 +57,55 @@ void kfac_block_fc_conv::update_kronecker_factors(
   const size_t num_input_channels = input_dims[0];
   const size_t num_output_channels = output_dims[0];
   size_t A_height = local_activations.Height();
-  if(m_metadata.is_conv) {
-    const auto conv_dims = m_metadata.l_conv->get_conv_dims();
+  if(m_is_conv) {
+    const auto conv_dims = get_conv_layer()->get_conv_dims();
     A_height = num_input_channels
         *std::accumulate(conv_dims.begin(), conv_dims.end(),
                          1, std::multiplies<int>());
   }
-  const size_t G_height = !m_metadata.is_conv ? local_errors.Height() : num_output_channels;
+  const size_t G_height = !m_is_conv ? local_errors.Height() : num_output_channels;
   auto& A = m_callback->get_workspace_matrix(
-      std::string("A_")+std::to_string(m_metadata.layer_id),
+      std::string("A_")+std::to_string(m_layer_id),
       A_height, A_height);
   auto& G = m_callback->get_workspace_matrix(
-      std::string("G_")+std::to_string(m_metadata.layer_id),
+      std::string("G_")+std::to_string(m_layer_id),
       G_height, G_height);
-  if(!m_metadata.is_conv) {
+  if(!m_is_conv) {
     get_kronecker_factor_fc(A, local_activations, 1.0/mini_batch_size);
     get_kronecker_factor_fc(G, local_errors, mini_batch_size);
   } else {
-    assert((size_t) local_activations.Height() == num_input_channels*m_metadata.conv_input_spatial_prod);
-    assert((size_t) local_errors.Height() == num_output_channels*m_metadata.conv_output_spatial_prod);
+    assert((size_t) local_activations.Height() == num_input_channels*m_conv_input_spatial_prod);
+    assert((size_t) local_errors.Height() == num_output_channels*m_conv_output_spatial_prod);
 
     const auto Acol_size = get_im2col_output_size(
         local_batch_size,
-        num_input_channels, m_metadata.conv_input_spatial_dims.size(),
-        &(m_metadata.conv_input_spatial_dims[0]),
-        &(m_metadata.l_conv->get_pads()[0]),
-        &(m_metadata.l_conv->get_conv_dims()[0]),
-        &(m_metadata.l_conv->get_strides()[0]));
+        num_input_channels, m_conv_input_spatial_dims.size(),
+        &(m_conv_input_spatial_dims[0]),
+        &(get_conv_layer()->get_pads()[0]),
+        &(get_conv_layer()->get_conv_dims()[0]),
+        &(get_conv_layer()->get_strides()[0]));
     auto& Acol = m_callback->get_workspace_matrix(
         std::string("Acol"), // im2col workspace is reused as it is huge.
         Acol_size.first, Acol_size.second);
     auto& Gcol = m_callback->get_workspace_matrix(
-        std::string("Gcol_")+std::to_string(m_metadata.layer_id),
-        num_output_channels, local_batch_size*m_metadata.conv_output_spatial_prod);
+        std::string("Gcol_")+std::to_string(m_layer_id),
+        num_output_channels, local_batch_size*m_conv_output_spatial_prod);
     get_kronecker_factor_conv(
         A, Acol,
         local_activations, 1.0/mini_batch_size,
-        local_batch_size, num_input_channels, m_metadata.conv_input_spatial_dims,
-        m_metadata.l_conv, true, stream);
+        local_batch_size, num_input_channels, m_conv_input_spatial_dims,
+        get_conv_layer(), true, stream);
     get_kronecker_factor_conv(
         G, Gcol,
-        local_errors, DataType(mini_batch_size)/m_metadata.conv_output_spatial_prod,
-        local_batch_size, num_output_channels, m_metadata.conv_output_spatial_dims,
-        m_metadata.l_conv, false, stream);
+        local_errors, DataType(mini_batch_size)/m_conv_output_spatial_prod,
+        local_batch_size, num_output_channels, m_conv_output_spatial_dims,
+        get_conv_layer(), false, stream);
   }
 
   // Accumulate local Kronecker factors
-  auto& ALws = m_callback->get_workspace_matrix(std::string("ALws_")+std::to_string(m_metadata.layer_id),
+  auto& ALws = m_callback->get_workspace_matrix(std::string("ALws_")+std::to_string(m_layer_id),
                                                 A.Height()*(A.Height()+1)/2, 1);
-  auto& GLws = m_callback->get_workspace_matrix(std::string("GLws_")+std::to_string(m_metadata.layer_id),
+  auto& GLws = m_callback->get_workspace_matrix(std::string("GLws_")+std::to_string(m_layer_id),
                                                 G.Height()*(G.Height()+1)/2, 1);
   kfac::allreduce_lower_tri(A, ALws, comm, stream);
   kfac::allreduce_lower_tri(G, GLws, comm, stream);
@@ -162,8 +161,6 @@ void kfac_block_fc_conv::update_kronecker_inverse(
     const bool print_matrix_summary,
     const bool print_time) {
 
-  assert(m_metadata.is_fc || m_metadata.is_conv);
-
   const auto stream = get_stream();
 
   auto& weights = m_layer->get_weights(0);
@@ -177,7 +174,7 @@ void kfac_block_fc_conv::update_kronecker_inverse(
   DataType pi = 1.0;
   if(use_pi) {
     auto& ws = m_callback->get_workspace_matrix(
-        std::string("pi_ws_")+std::to_string(m_metadata.layer_id),
+        std::string("pi_ws_")+std::to_string(m_layer_id),
         std::max(Aave.Height(), Gave.Height())*2+1, 1);
     pi = compute_pi(Aave, Gave, ws, stream);
   }
@@ -202,10 +199,10 @@ void kfac_block_fc_conv::update_kronecker_inverse(
   auto& Ainv = m_kronecker_inverse_A;
   auto& Ginv = m_kronecker_inverse_G;
   auto& ALinv = m_callback->get_workspace_matrix(
-      std::string("ALinv_")+std::to_string(m_metadata.layer_id),
+      std::string("ALinv_")+std::to_string(m_layer_id),
       Aave.Height(), Aave.Height());
   auto& GLinv = m_callback->get_workspace_matrix(
-      std::string("GLinv_")+std::to_string(m_metadata.layer_id),
+      std::string("GLinv_")+std::to_string(m_layer_id),
       Gave.Height(), Gave.Height());
   kfac::get_matrix_inverse(
       Ainv, ALinv, Aave, comm->am_trainer_master() && print_time,
@@ -232,7 +229,7 @@ void kfac_block_fc_conv::update_kronecker_inverse(
   const auto& w_grads_orig = w_dto->get_gradient().LockedMatrix();
   El::Matrix<DataType, El::Device::GPU> w_gradients;
   // w_gradients is already synchronized among processes.
-  if(m_metadata.is_conv) {
+  if(m_is_conv) {
     const auto num_output_channels = m_layer->get_output_dims()[0];
     assert((w_grads_orig.Height()%num_output_channels) == 0);
     const auto height = w_grads_orig.Height()/num_output_channels;
@@ -247,22 +244,22 @@ void kfac_block_fc_conv::update_kronecker_inverse(
 
   // Compute preconditioned gradients
   auto& Gg = m_callback->get_workspace_matrix(
-      std::string("Gg_")+std::to_string(m_metadata.layer_id),
+      std::string("Gg_")+std::to_string(m_layer_id),
       Ginv.Height(),
-      m_metadata.is_conv ? w_gradients.Height() : w_gradients.Width());
+      m_is_conv ? w_gradients.Height() : w_gradients.Width());
   El::Gemm(
-      El::NORMAL, m_metadata.is_conv ? El::TRANSPOSE : El::NORMAL,
+      El::NORMAL, m_is_conv ? El::TRANSPOSE : El::NORMAL,
       El::TypeTraits<DataType>::One(), Ginv, w_gradients,
       El::TypeTraits<DataType>::Zero(), Gg);
   auto& Fgrad = m_callback->get_workspace_matrix(
-      std::string("Fgrad_")+std::to_string(m_metadata.layer_id),
+      std::string("Fgrad_")+std::to_string(m_layer_id),
       Ginv.Height(), Ainv.Width());
   El::Gemm(
       El::NORMAL, El::NORMAL,
       El::TypeTraits<DataType>::One(), Gg, Ainv,
       El::TypeTraits<DataType>::Zero(), Fgrad);
 
-  if(m_metadata.is_conv) {
+  if(m_is_conv) {
     El::Matrix<DataType, El::Device::GPU> Fgrad_v;
     Fgrad_v.LockedAttach(Fgrad.Width()*Fgrad.Height(), 1,
                          Fgrad.LockedBuffer(),
@@ -303,7 +300,6 @@ void kfac_block_fc_conv::update_kronecker_inverse(
 
 void kfac_block_fc_conv::update_preconditioned_grads(
     lbann_comm* comm) {
-  assert(m_metadata.is_fc || m_metadata.is_conv);
 
   auto& weights = m_layer->get_weights(0);
   optimizer *w_optimizer = weights.get_optimizer();
@@ -315,7 +311,7 @@ void kfac_block_fc_conv::update_preconditioned_grads(
       dst_scale, gradient_scale, false);
   El::Broadcast(
       grad_buffer.Matrix(), comm->get_trainer_comm(),
-      m_metadata.proc_rank);
+      m_inverse_proc_rank);
 }
 
 void kfac_block_fc_conv::get_kronecker_factor_fc(

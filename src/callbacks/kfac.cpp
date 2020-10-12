@@ -173,16 +173,11 @@ void kfac::on_backward_prop_end(model *m) {
         LBANN_ERROR(err.str());
       }
 
-      struct kfac_layer_metadata metadata;
-      metadata.layer_id = layer_id;
-      metadata.is_fc = false;
-      metadata.is_conv = false;
-      metadata.is_bn_after_fc = false;
-      metadata.is_bn_after_conv = false;
-      metadata.proc_rank = proc_rank;
-
+      kfac_block* block;
       if(is_fc) {
-        metadata.is_fc = true;
+        block = new kfac_block_fc_conv(
+            l, this, layer_id, proc_rank,
+            false, 0, 0, {}, {});
 
       } else if(is_conv) {
         size_t spatial_input_prod = 1, spatial_output_prod = 1;
@@ -209,12 +204,11 @@ void kfac::on_backward_prop_end(model *m) {
           LBANN_ERROR(err.str());
         }
 
-        metadata.l_conv = l_conv;
-        metadata.is_conv = true;
-        metadata.conv_input_spatial_prod = spatial_input_prod;
-        metadata.conv_output_spatial_prod = spatial_output_prod;
-        metadata.conv_input_spatial_dims = input_spatial_dims;
-        metadata.conv_output_spatial_dims = output_spatial_dims;
+        block = new kfac_block_fc_conv(
+            l, this, layer_id, proc_rank,
+            true,
+            spatial_input_prod, spatial_output_prod,
+            input_spatial_dims, output_spatial_dims);
 
       } else if(is_bn) {
         const bool is_bn_after_fc =
@@ -247,36 +241,21 @@ void kfac::on_backward_prop_end(model *m) {
             spatial_prod *= *i;
         }
 
-        metadata.is_bn_after_fc = is_bn_after_fc;
-        metadata.is_bn_after_conv = is_bn_after_conv;
-        metadata.bn_num_channels = num_channels;
-        metadata.bn_spatial_prod = spatial_prod;
+        block = new kfac_block_bn(
+            l, this, layer_id, proc_rank,
+            is_bn_after_conv,
+            num_channels, spatial_prod);
       }
 
-      kfac_block* block;
-      if(metadata.is_fc || metadata.is_conv)
-        block = new kfac_block_fc_conv(l, this, metadata);
-      else
-        block = new kfac_block_bn(l, this, metadata);
       m_blocks.push_back(std::shared_ptr<kfac_block>(block));
       if(m_inverse_strategy != ROOT)
         proc_rank = (proc_rank+1)%num_procs;
     }
 
-    if(comm->am_trainer_master()) {
-      for(const auto& block : m_blocks) {
-        const auto& metadata = block->get_metadata();
+    if(comm->am_trainer_master())
+      for(const auto& block : m_blocks)
         std::cout << "K-FAC callback setup: "
-                  << "name=" << layers[metadata.layer_id]->get_name()
-                  << ", id=" << metadata.layer_id
-                  << ", is_fc=" << metadata.is_fc
-                  << ", is_conv=" << metadata.is_conv
-                  << ", is_bn_after_fc=" << metadata.is_bn_after_fc
-                  << ", is_bn_after_conv=" << metadata.is_bn_after_conv
-                  << ", proc_rank=" << metadata.proc_rank
-                  << std::endl;
-      }
-    }
+                  << block->get_info() << std::endl;
   }
 
   // Step 1: Ensure that each process has averaged Kronecker factors
@@ -295,17 +274,19 @@ void kfac::on_backward_prop_end(model *m) {
 
   // Step 2: Model-parallel inverse computation
   for(auto& block : m_blocks) {
-    const auto& metadata = block->get_metadata();
     const bool is_update_required =
         ((num_steps%m_update_interval_steps) == 0
          || !block->has_kronecker_inverse())
-        && comm->get_rank_in_trainer() == metadata.proc_rank;
+        && (size_t) comm->get_rank_in_trainer() == block->get_inverse_proc_rank();
     if(!is_update_required)
       continue;
+
+    // TODO: Add kfac_block::is_bn?
+    const bool is_bn = dynamic_cast<kfac_block_bn*>(block.get()) != nullptr;
     block->update_kronecker_inverse(
         comm, m_use_pi,
-        metadata.is_fc || metadata.is_conv ? m_damping_act : m_damping_bn_act,
-        metadata.is_fc || metadata.is_conv ? m_damping_err : m_damping_bn_err,
+        is_bn ? m_damping_bn_act : m_damping_act,
+        is_bn ? m_damping_bn_err : m_damping_err,
         m_print_matrix, m_print_matrix_summary,
         m_print_time);
   }

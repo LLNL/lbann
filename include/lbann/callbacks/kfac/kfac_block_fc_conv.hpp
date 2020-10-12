@@ -30,12 +30,13 @@
 #define LBANN_CALLBACKS_CALLBACK_KFAC_BLOCK_FC_CONV_HPP_INCLUDED
 
 #include "lbann/callbacks/kfac/kfac_block.hpp"
-#include "lbann/callbacks/kfac/kfac_metadata.hpp"
+#include "lbann/layers/learning/convolution.hpp"
 
 namespace lbann {
 namespace callback {
 
 /** An FC/conv building block for K-FAC.
+ * TODO: Split into kfac_block_fc and kfac_block_conv.
  */
 class kfac_block_fc_conv: public kfac_block {
  public:
@@ -43,9 +44,20 @@ class kfac_block_fc_conv: public kfac_block {
   /** Constructor.
    */
   kfac_block_fc_conv(Layer *layer,
-             kfac *callback,
-             const struct kfac_layer_metadata metadata)
-      : kfac_block(layer, callback, metadata) {
+                     kfac *callback,
+                     const size_t layer_id,
+                     const size_t inverse_proc_rank,
+                     const bool is_conv,
+                     const size_t conv_input_spatial_prod,
+                     const size_t conv_output_spatial_prod,
+                     const std::vector<int> conv_input_spatial_dims,
+                     const std::vector<int> conv_output_spatial_dims)
+  : kfac_block(layer, callback, layer_id, inverse_proc_rank),
+        m_is_conv(is_conv),
+        m_conv_input_spatial_prod(conv_input_spatial_prod),
+        m_conv_output_spatial_prod(conv_output_spatial_prod),
+        m_conv_input_spatial_dims(conv_input_spatial_dims),
+        m_conv_output_spatial_dims(conv_output_spatial_dims) {
   }
   kfac_block_fc_conv(const kfac_block_fc_conv&) = default;
   kfac_block_fc_conv& operator=(const kfac_block_fc_conv&) = default;
@@ -66,6 +78,13 @@ class kfac_block_fc_conv: public kfac_block {
 
   void update_preconditioned_grads(
       lbann_comm* comm) override;
+
+  std::string get_info() const override {
+    std::ostringstream oss;
+    oss << kfac_block::get_info()
+        << ", is_conv=" << m_is_conv;
+    return oss.str();
+  }
 
  private:
 
@@ -110,6 +129,15 @@ class kfac_block_fc_conv: public kfac_block {
       const size_t mini_batch_size, const size_t num_channels,
       const size_t spatial_prod,
       const cudaStream_t& stream);
+
+  convolution_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>*
+  get_conv_layer() {
+    return dynamic_cast<convolution_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>*>(m_layer);
+  }
+
+  const bool m_is_conv;
+  const size_t m_conv_input_spatial_prod, m_conv_output_spatial_prod;
+  const std::vector<int> m_conv_input_spatial_dims, m_conv_output_spatial_dims;
 
   /** @brief Exponential moving average of Kronecker factors. */
   El::Matrix<DataType, El::Device::GPU>
