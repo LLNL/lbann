@@ -575,9 +575,13 @@ void apply_entrywise_binary_operator(
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
 namespace thrust {
-
+#ifdef LBANN_HAS_CUDA
+using stream_t = cudaStream_t;
+#elif defined LBANN_HAS_ROCM
+using stream_t = hipStream_t;
+#endif
 template <typename T>
-allocator<T>::allocator(cudaStream_t stream)
+allocator<T>::allocator(stream_t stream)
   : m_stream(stream),
     m_system(stream) {}
 
