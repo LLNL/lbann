@@ -37,12 +37,13 @@
 
 namespace lbann {
 namespace cuda {
+//namespace gpu_lib {
+//  using namespace cuda;
 
 // -------------------------------------------------------------
 // Device functions
 // -------------------------------------------------------------
 #ifdef __CUDACC__
-
 // Atomic add function
 #if __CUDA_ARCH__ >= 530
 template <> __device__ __forceinline__
@@ -184,7 +185,7 @@ template <typename T> __device__ __forceinline__
 bool isinf(T const& x) { return ::isinf(x); }
 template <typename T> __device__ __forceinline__
 bool isnan(T const& x) { return ::isnan(x); }
-
+/*
 #if __CUDA_ARCH__ >= 530
 __device__ __forceinline__
 bool isfinite(__half const& x) { return !(::__isnan(x) || ::__hisinf(x)); }
@@ -244,6 +245,7 @@ WRAP_UNARY_CUDA_HALF_CAST_TO_FLOAT_MATH_FUNCTION(atanh)
 
 #undef WRAP_UNARY_CUDA_HALF_MATH_FUNCTION
 #endif // __CUDA_ARCH__ >= 530
+*/
 
 // Binary math functions
 #define WRAP_BINARY_CUDA_MATH_FUNCTION(func)                    \
@@ -285,7 +287,7 @@ __half pow(const __half& x, const __half& y)
 __device__ __forceinline__
 __half mod(const __half& x, const __half& y)
 { return mod(float(x), float(y)); }
-
+/*
 #if __CUDA_ARCH__ >= 530
 __device__ __forceinline__
 __half min(const __half& x, const __half& y)
@@ -295,6 +297,7 @@ __half min(const __half& x, const __half& y)
 __half max(const __half& x, const __half& y)
 { return ::__hle(x, y) ? y : x; }
 #endif // __CUDA_ARCH__ >= 530
+
 
 // Numeric limits
 #ifdef __CUDACC_RELAXED_CONSTEXPR__
@@ -328,6 +331,7 @@ SPECIFIERS float infinity<float>()   { return CUDART_INF_F; }
 SPECIFIERS double infinity<double>() { return CUDART_INF;   }
 #undef SPECIFIERS
 #endif // __CUDACC_RELAXED_CONSTEXPR__
+*/
 
 // FIXME (TRB): I think this is right? Borrowed the values from the
 // sourceforge half library.

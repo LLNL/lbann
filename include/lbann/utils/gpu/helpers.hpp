@@ -36,12 +36,13 @@
 // Import the GPU __device__ function library
 #if defined LBANN_HAS_CUDA
 
-#include "cuda.hpp"
 #include "gpu_lib.hpp"
+#include "cuda.hpp"
 namespace lbann {
-namespace gpu_lib {
-  using namespace cuda;
-}// namespace gpu_lib
+namespace gpu_lib = ::lbann::cuda;
+//namespace gpu_lib {
+//  using namespace cuda;
+//}// namespace gpu_lib
 }// namespace lbann
 
 #elif defined LBANN_HAS_ROCM

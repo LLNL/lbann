@@ -101,12 +101,13 @@
 
 namespace lbann {
 namespace cuda {
+//namespace gpu_lib {
+//  using namespace cuda;
 
 // -------------------------------------------------------------
 // Device functions
 // -------------------------------------------------------------
 #ifdef __CUDACC__
-
 // Atomic add
 template <typename T> __device__ __forceinline__
 T atomic_add(T* address, T val);
@@ -451,6 +452,7 @@ using vector = ::thrust::device_vector<T, allocator<T>>;
 
 // Header implementations
 #include "lbann/utils/impl/gpu_lib.hpp"
+#include "lbann/utils/impl/cuda.hpp"
 
 #endif // LBANN_HAS_GPU
 #endif // LBANN_UTILS_CUDA_HPP
