@@ -86,8 +86,8 @@ namespace lbann {
 class model;
 namespace callback {
 class sync_layers;
-class kfac;
-class kfac_block;
+class kfac_block_fc_conv;
+class kfac_block_bn;
 } // namespace callback
 
 /** Represents a parallel strategy for a layer. */
@@ -176,8 +176,8 @@ inline std::ostream &operator<<(std::ostream &os,
  */
 class Layer {
   friend class callback::sync_layers;
-  friend class callback::kfac;
-  friend class callback::kfac_block;
+  friend class callback::kfac_block_fc_conv;
+  friend class callback::kfac_block_bn;
 
 public:
 

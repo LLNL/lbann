@@ -69,81 +69,6 @@ __global__ void kfac_update_kronecker_average_kernel(
 }
 
 template <typename TensorDataType>
-__global__ void kfac_conv_transpose_kernel(
-    const TensorDataType * __restrict__ A,
-    TensorDataType * __restrict__ Acol,
-    const size_t mini_batch_size, const size_t num_channels,
-    const size_t spatial_prod, const size_t num_elems) {
-  const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
-  if(gid < num_elems) {
-    const auto i_spatial = gid%spatial_prod;
-    const auto i_c = (gid/spatial_prod)%num_channels;
-    const auto i_n = (gid/spatial_prod/num_channels);
-    Acol[i_c+i_spatial*num_channels+i_n*num_channels*spatial_prod] = A[gid];
-  }
-}
-
-template <typename TensorDataType>
-__global__ void kfac_compute_bn_factor_kernel(
-    const TensorDataType * __restrict__ activations,
-    const TensorDataType * __restrict__ errors,
-    const TensorDataType * __restrict__ scales,
-    const TensorDataType * __restrict__ biases,
-    TensorDataType * __restrict__ factor,
-    const size_t batch_size,
-    const size_t num_channels,
-    const size_t spatial_prod,
-    const size_t num_threads) { // = batch_size*num_channels
-  const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
-  if(gid < num_threads) {
-    const size_t i_c = gid%num_channels;
-    const size_t i_n = gid/num_channels;
-
-    const auto scale = scales[i_c];
-    const auto bias = biases[i_c];
-
-    TensorDataType sum_ea = 0.0, sum_e = 0.0;
-    // TODO: This loop would be slow in large (3D) CNNs
-    for(size_t i_s = 0; i_s < spatial_prod; i_s++) {
-      const auto i_act = i_s+gid*spatial_prod;
-      const auto error = errors[i_act];
-      const auto act = (activations[i_act]-bias)/scale;
-      sum_ea += error * act;
-      sum_e += error;
-    }
-    factor[i_c+i_n*num_channels*2] = sum_ea;
-    factor[i_c+num_channels+i_n*num_channels*2] = sum_e;
-  }
-}
-
-template <typename TensorDataType>
-__global__ void kfac_compute_bn_factor_data2col_kernel(
-    const TensorDataType * __restrict__ activations,
-    const TensorDataType * __restrict__ errors,
-    const TensorDataType * __restrict__ scales,
-    const TensorDataType * __restrict__ biases,
-    TensorDataType * __restrict__ cols,
-    const size_t batch_size,
-    const size_t num_channels,
-    const size_t spatial_prod,
-    const size_t num_threads) { // = batch_size*num_channels*spatial_prod
-  const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
-  if(gid < num_threads) {
-    const size_t i_c = gid%num_channels;
-    const size_t i_n = (gid/num_channels)%batch_size;
-    const size_t i_s = gid/num_channels/batch_size;
-    const auto scale = scales[i_c];
-    const auto bias = biases[i_c];
-    const auto i_act = i_s+i_c*spatial_prod+i_n*spatial_prod*num_channels;
-    const auto error = errors[i_act];
-    const auto act = (activations[i_act]-bias)/scale;
-    const auto i_out = i_c+i_n*num_channels*2 + i_s*(num_channels*2*batch_size);
-    cols[i_out] = error*act;
-    cols[i_out+num_channels] = error;
-  }
-}
-
-template <typename TensorDataType>
 __global__ void kfac_identity_kernel(
     TensorDataType * __restrict__ A,
     const size_t height) {
@@ -185,16 +110,6 @@ __global__ void kfac_unpack_lower_tri_kernel(
   }
 }
 
-template <typename TensorDataType>
-__global__ void kfac_get_diagonal_kernel(
-    TensorDataType * __restrict__ diag,
-    const TensorDataType * __restrict__ A,
-    const size_t height) {
-  const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
-  if(gid < height)
-    diag[gid] = A[gid+gid*height];
-}
-
 } // namespace
 
 template <typename TensorDataType>
@@ -234,65 +149,6 @@ void kfac::update_kronecker_average(
   const size_t grid_size = (count + block_size - 1) / block_size;
   kfac_update_kronecker_average_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
       Aave, A, count, decay);
-}
-
-template <typename TensorDataType>
-void kfac::conv_transpose(
-    const TensorDataType * __restrict__ activations,
-    TensorDataType * __restrict__ act_columns,
-    const size_t mini_batch_size, const size_t num_channels,
-    const size_t spatial_prod,
-    const cudaStream_t& stream) {
-  constexpr size_t block_size = 256;
-  const size_t num_elems = mini_batch_size*num_channels*spatial_prod;
-  const size_t grid_size = (num_elems + block_size - 1) / block_size;
-  kfac_conv_transpose_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
-      activations, act_columns, mini_batch_size, num_channels, spatial_prod,
-      num_elems);
-}
-
-template <typename TensorDataType>
-void kfac::compute_bn_factor(
-    const TensorDataType * __restrict__ activations,
-    const TensorDataType * __restrict__ errors,
-    const TensorDataType * __restrict__ scales,
-    const TensorDataType * __restrict__ biases,
-    TensorDataType * __restrict__ factor,
-    const size_t batch_size,
-    const size_t num_channels,
-    const size_t spatial_prod,
-    const cudaStream_t& stream) {
-  constexpr size_t block_size = 256;
-  const size_t num_threads = batch_size * num_channels;
-  const size_t grid_size = (num_threads + block_size - 1) / block_size;
-  kfac_compute_bn_factor_kernel<TensorDataType>
-      <<<grid_size, block_size, 0, stream>>>(
-          activations, errors, scales, biases,
-          factor,
-          batch_size, num_channels, spatial_prod,
-          num_threads);
-}
-
-template <typename TensorDataType>
-void kfac::compute_bn_factor_data2col(
-    const TensorDataType * __restrict__ activations,
-    const TensorDataType * __restrict__ errors,
-    const TensorDataType * __restrict__ scales,
-    const TensorDataType * __restrict__ biases,
-    TensorDataType * __restrict__ cols,
-    const size_t batch_size,
-    const size_t num_channels,
-    const size_t spatial_prod,
-    const cudaStream_t& stream) {
-  constexpr size_t block_size = 256;
-  const size_t num_threads = batch_size * num_channels * spatial_prod;
-  const size_t grid_size = (num_threads + block_size - 1) / block_size;
-  kfac_compute_bn_factor_data2col_kernel<TensorDataType>
-      <<<grid_size, block_size, 0, stream>>>(
-          activations, errors, scales, biases,
-          cols,
-          batch_size, num_channels, spatial_prod,
-          num_threads);
 }
 
 template <typename TensorDataType>
@@ -338,20 +194,6 @@ void kfac::unpack_lower_tri(
           A, L, height);
 }
 
-template <typename TensorDataType>
-void kfac::get_diagonal(
-    TensorDataType * __restrict__ diag,
-    const TensorDataType * __restrict__ A,
-    const size_t height,
-    const cudaStream_t& stream) {
-  constexpr size_t block_size = 256;
-  const size_t num_threads = height;
-  const size_t grid_size = (num_threads + block_size - 1) / block_size;
-  kfac_get_diagonal_kernel<TensorDataType>
-      <<<grid_size, block_size, 0, stream>>>(
-          diag, A, height);
-}
-
 #define PROTO(T)                                        \
   template void kfac::add_to_diagonal<T>(               \
       T* __restrict__ A,                                \
@@ -369,33 +211,6 @@ void kfac::get_diagonal(
       const T * __restrict__ A,                         \
       const size_t count, const DataType decay,         \
       const cudaStream_t& stream);                      \
-  template void kfac::conv_transpose<T>(                \
-      const T * __restrict__ activations,               \
-      T * __restrict__ act_columns,                     \
-      const size_t batch_size,                          \
-      const size_t num_channels,                        \
-      const size_t spatial_prod,                        \
-      const cudaStream_t& stream);                      \
-  template void kfac::compute_bn_factor<T>(             \
-      const T * __restrict__ activations,               \
-      const T * __restrict__ errors,                    \
-      const T * __restrict__ scales,                    \
-      const T * __restrict__ biases,                    \
-      T * __restrict__ factor,                          \
-      const size_t batch_size,                          \
-      const size_t num_channels,                        \
-      const size_t spatial_prod,                        \
-      const cudaStream_t& stream);                      \
-  template void kfac::compute_bn_factor_data2col<T>(    \
-      const T * __restrict__ activations,               \
-      const T * __restrict__ errors,                    \
-      const T * __restrict__ scales,                    \
-      const T * __restrict__ biases,                    \
-      T * __restrict__ cols,                            \
-      const size_t batch_size,                          \
-      const size_t num_channels,                        \
-      const size_t spatial_prod,                        \
-      const cudaStream_t& stream);                      \
   template void kfac::identity<T>(                      \
       T * __restrict__ A,                               \
       const size_t height,                              \
@@ -408,11 +223,6 @@ void kfac::get_diagonal(
   template void kfac::unpack_lower_tri<T>(              \
       T * __restrict__ A,                               \
       const T * __restrict__ L,                         \
-      const size_t height,                              \
-      const cudaStream_t& stream);                      \
-  template void kfac::get_diagonal<T>(                  \
-      T * __restrict__ diag,                            \
-      const T * __restrict__ A,                         \
       const size_t height,                              \
       const cudaStream_t& stream);
 

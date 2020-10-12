@@ -29,12 +29,15 @@
 #ifndef LBANN_CALLBACKS_CALLBACK_KFAC_BLOCK_HPP_INCLUDED
 #define LBANN_CALLBACKS_CALLBACK_KFAC_BLOCK_HPP_INCLUDED
 
-#include "lbann/callbacks/callback.hpp"
 #include "lbann/callbacks/kfac.hpp"
 #include "lbann/callbacks/kfac/kfac_metadata.hpp"
 
 namespace lbann {
 namespace callback {
+
+// Forward declarations
+// TODO: Remove if kfac_block no longer refers kfac
+class kfac;
 
 /** A building block for K-FAC.
  */
@@ -51,47 +54,27 @@ class kfac_block {
         m_metadata(metadata) {
     m_has_kronecker_inverse = false;
   }
-
-  /** @brief Update the average Kronecker factors.
-   * TODO: Split into sub-classes. */
-  void update_kronecker_factors_fc_conv(
-      lbann_comm* comm,
-      const DataType kronecker_decay,
-      const bool print_matrix,
-      const bool print_matrix_summary);
+  virtual ~kfac_block() = default;
 
   /** @brief Update the average Kronecker factors. */
-  void update_kronecker_factors_bn(
+  virtual void update_kronecker_factors(
       lbann_comm* comm,
       const DataType kronecker_decay,
       const bool print_matrix,
-      const bool print_matrix_summary);
+      const bool print_matrix_summary) = 0;
 
   /** @brief Compute the inverse of the average Kronecker factors. */
-  void update_kronecker_inverse_fc_conv(
+  virtual void update_kronecker_inverse(
       lbann_comm* comm,
       const bool use_pi,
       const DataType damping_act, const DataType damping_err,
       const bool print_matrix,
       const bool print_matrix_summary,
-      const bool print_time);
-
-  /** @brief Compute the inverse of the average Kronecker factors. */
-  void update_kronecker_inverse_bn(
-      lbann_comm* comm,
-      const bool use_pi,
-      const DataType damping_act, const DataType damping_err,
-      const bool print_matrix,
-      const bool print_matrix_summary,
-      const bool print_time);
+      const bool print_time) = 0;
 
   /** @brief Scatter preconditioned gradients. */
-  void update_preconditioned_grads_fc_conv(
-      lbann_comm* comm);
-
-  /** @brief Scatter preconditioned gradients. */
-  void update_preconditioned_grads_bn(
-      lbann_comm* comm);
+  virtual void update_preconditioned_grads(
+      lbann_comm* comm) = 0;
 
   // TODO: Remove this.
   const struct kfac_layer_metadata& get_metadata() const {
@@ -103,7 +86,7 @@ class kfac_block {
     return m_has_kronecker_inverse;
   }
 
- private:
+ protected:
 
   /** @brief Return the default stream that may used in update functions. */
   cudaStream_t get_stream() {
@@ -124,13 +107,6 @@ class kfac_block {
   /** @brief Whether this block already has an inverse history. */
   bool m_has_kronecker_inverse;
 
-  /** @brief Exponential moving average of Kronecker factors. */
-  El::Matrix<DataType, El::Device::GPU>
-  m_kronecker_average_A, m_kronecker_average_G;
-
-  /** @brief Inverse of the average Kronecker factors. */
-  El::Matrix<DataType, El::Device::GPU>
-  m_kronecker_inverse_A, m_kronecker_inverse_G;
 };
 
 } // namespace callback

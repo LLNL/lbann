@@ -36,6 +36,10 @@
 namespace lbann {
 namespace callback {
 
+// Forward declarations
+// TODO: Remove if kfac_block no longer refers kfac
+class kfac_block;
+
 /** Callback hooks for the K-FAC method.
  *
  * Martens, James and Roger Grosse. "Optimizing neural networks with
@@ -100,24 +104,6 @@ class kfac : public callback_base {
   El::Matrix<DataType, El::Device::GPU>& get_workspace_matrix(
       const std::string key, const size_t height, const size_t width);
 
-  /** @brief Gets the Kronecker factor matrix of a FC layer. **/
-  static void get_kronecker_factor_fc(
-      El::AbstractMatrix<DataType>& factor,
-      const El::AbstractMatrix<DataType>& activations,
-      const DataType alpha);
-
-  /** @brief Gets the Kronecker factor matrix of a convolutional layer. **/
-  static void get_kronecker_factor_conv(
-      El::Matrix<DataType, El::Device::GPU>& factor,
-      El::Matrix<DataType, El::Device::GPU>& Acol,
-      const El::Matrix<DataType, El::Device::GPU>& activations,
-      const DataType alpha,
-      const size_t local_batch_size, const size_t num_channels,
-      const std::vector<int> spatial_dims,
-      const convolution_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU> *l_conv,
-      const bool use_im2col,
-      const cudaStream_t& stream);
-
   /** @brief Gets the inverse matrix of A. **/
   static void get_matrix_inverse(
       El::Matrix<DataType, El::Device::GPU>& Ainv,
@@ -127,13 +113,6 @@ class kfac : public callback_base {
       const DataType damping,
       const DataType damping_bn_err,
       const bool is_bn,
-      const cudaStream_t& stream);
-
-  /** @brief Returns the pi constant. **/
-  static double compute_pi(
-      const El::Matrix<DataType, El::Device::GPU>& A,
-      const El::Matrix<DataType, El::Device::GPU>& G,
-      El::Matrix<DataType, El::Device::GPU>& ws,
       const cudaStream_t& stream);
 
   /** @brief Gets statistics of a given matrix. **/
@@ -175,43 +154,6 @@ class kfac : public callback_base {
       const size_t count, const DataType decay,
       const cudaStream_t& stream);
 
-  /** @brief Transpose NC(D)HW matrix to N(D)HWC. **/
-  template <typename TensorDataType>
-  static void conv_transpose(
-      const TensorDataType * __restrict__ activations,
-      TensorDataType * __restrict__ act_columns,
-      const size_t mini_batch_size, const size_t num_channels,
-      const size_t spatial_prod,
-      const cudaStream_t& stream);
-
-  /** @brief Compute the factor of a batch-normalization layer.
-   *  TODO: Remove as compute_bn_factor_data2col is used as default. **/
-  template <typename TensorDataType>
-  static void compute_bn_factor(
-      const TensorDataType * __restrict__ activations,
-      const TensorDataType * __restrict__ errors,
-      const TensorDataType * __restrict__ scales,
-      const TensorDataType * __restrict__ biases,
-      TensorDataType * __restrict__ factor,
-      const size_t batch_size,
-      const size_t num_channels,
-      const size_t spatial_prod,
-      const cudaStream_t& stream);
-
-  /** @brief The memory copy part of compute_bn_factor. Combined with
-   *  GEMM. **/
-  template <typename TensorDataType>
-  static void compute_bn_factor_data2col(
-      const TensorDataType * __restrict__ activations,
-      const TensorDataType * __restrict__ errors,
-      const TensorDataType * __restrict__ scales,
-      const TensorDataType * __restrict__ biases,
-      TensorDataType * __restrict__ cols,
-      const size_t batch_size,
-      const size_t num_channels,
-      const size_t spatial_prod,
-      const cudaStream_t& stream);
-
   /** @brief Substitute the identity matrix.
    *  TODO: Replace with El::Identity<El::Device::GPU>
    *   once it gets supported. **/
@@ -234,14 +176,6 @@ class kfac : public callback_base {
   static void unpack_lower_tri(
       TensorDataType * __restrict__ A,
       const TensorDataType * __restrict__ L,
-      const size_t height,
-      const cudaStream_t& stream);
-
-  /** @brief Get diagonal elements of a matrix. **/
-  template <typename TensorDataType>
-  static void get_diagonal(
-      TensorDataType * __restrict__ diag,
-      const TensorDataType * __restrict__ A,
       const size_t height,
       const cudaStream_t& stream);
 
@@ -293,7 +227,7 @@ class kfac : public callback_base {
   size_t m_update_interval;
 
   /** @brief K-FAC per-layer blocks. */
-  std::vector<kfac_block> m_blocks;
+  std::vector<std::shared_ptr<kfac_block>> m_blocks;
 
   /** @brief Assignment strategy for the model-parallel part. */
   kfac_inverse_strategy m_inverse_strategy;

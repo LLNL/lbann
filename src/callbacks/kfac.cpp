@@ -29,6 +29,8 @@
 #include <sstream>
 
 #include "lbann/callbacks/kfac.hpp"
+#include "lbann/callbacks/kfac/kfac_block_fc_conv.hpp"
+#include "lbann/callbacks/kfac/kfac_block_bn.hpp"
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/layers/learning/fully_connected.hpp"
 #include "lbann/layers/learning/convolution.hpp"
@@ -251,14 +253,19 @@ void kfac::on_backward_prop_end(model *m) {
         metadata.bn_spatial_prod = spatial_prod;
       }
 
-      m_blocks.emplace_back(l, this, metadata);
+      kfac_block* block;
+      if(metadata.is_fc || metadata.is_conv)
+        block = new kfac_block_fc_conv(l, this, metadata);
+      else
+        block = new kfac_block_bn(l, this, metadata);
+      m_blocks.push_back(std::shared_ptr<kfac_block>(block));
       if(m_inverse_strategy != ROOT)
         proc_rank = (proc_rank+1)%num_procs;
     }
 
     if(comm->am_trainer_master()) {
       for(const auto& block : m_blocks) {
-        const auto& metadata = block.get_metadata();
+        const auto& metadata = block->get_metadata();
         std::cout << "K-FAC callback setup: "
                   << "name=" << layers[metadata.layer_id]->get_name()
                   << ", id=" << metadata.layer_id
@@ -275,119 +282,39 @@ void kfac::on_backward_prop_end(model *m) {
   // Step 1: Ensure that each process has averaged Kronecker factors
   // for the model-parallel part.
   for(auto& block : m_blocks) {
-    const auto& metadata = block.get_metadata();
     const bool is_update_required =
         ((num_steps%m_update_interval_steps) == 0
-         || !block.has_kronecker_inverse());
+         || !block->has_kronecker_inverse());
     if(!is_update_required)
       continue;
-    if(metadata.is_fc || metadata.is_conv)
-      block.update_kronecker_factors_fc_conv(
-          comm,
-          m_kronecker_decay,
-          m_print_matrix, m_print_matrix_summary);
-    else
-      block.update_kronecker_factors_bn(
-          comm,
-          m_kronecker_decay,
-          m_print_matrix, m_print_matrix_summary);
+    block->update_kronecker_factors(
+        comm,
+        m_kronecker_decay,
+        m_print_matrix, m_print_matrix_summary);
   }
 
   // Step 2: Model-parallel inverse computation
   for(auto& block : m_blocks) {
-    const auto& metadata = block.get_metadata();
+    const auto& metadata = block->get_metadata();
     const bool is_update_required =
         ((num_steps%m_update_interval_steps) == 0
-         || !block.has_kronecker_inverse())
+         || !block->has_kronecker_inverse())
         && comm->get_rank_in_trainer() == metadata.proc_rank;
     if(!is_update_required)
       continue;
-    if(metadata.is_fc || metadata.is_conv)
-      block.update_kronecker_inverse_fc_conv(
-          comm, m_use_pi,
-          m_damping_act, m_damping_err,
-          m_print_matrix, m_print_matrix_summary,
-          m_print_time);
-    else
-      block.update_kronecker_inverse_bn(
-          comm, m_use_pi,
-          m_damping_bn_act, m_damping_bn_err,
-          m_print_matrix, m_print_matrix_summary,
-          m_print_time);
+    block->update_kronecker_inverse(
+        comm, m_use_pi,
+        metadata.is_fc || metadata.is_conv ? m_damping_act : m_damping_bn_act,
+        metadata.is_fc || metadata.is_conv ? m_damping_err : m_damping_bn_err,
+        m_print_matrix, m_print_matrix_summary,
+        m_print_time);
   }
 
   // Step 3: All-gather of each preconditioned gradient tensor
   for(auto& block : m_blocks) {
-    const auto& metadata = block.get_metadata();
-    if(metadata.is_fc || metadata.is_conv)
-      block.update_preconditioned_grads_fc_conv(comm);
-    else
-      block.update_preconditioned_grads_bn(comm);
+    block->update_preconditioned_grads(comm);
   }
 
-}
-
-void kfac::get_kronecker_factor_fc(
-    El::AbstractMatrix<DataType>& factor,
-    const El::AbstractMatrix<DataType>& activations,
-    const DataType alpha) {
-  assert(activations.GetDevice() == El::Device::GPU);
-  assert(factor.Height() == activations.Height());
-  assert(factor.Width() == activations.Height());
-  El::Gemm(
-      El::NORMAL, El::TRANSPOSE,
-      alpha, activations, activations,
-      El::TypeTraits<DataType>::Zero(), factor);
-}
-
-void kfac::get_kronecker_factor_conv(
-    El::Matrix<DataType, El::Device::GPU>& factor,
-    El::Matrix<DataType, El::Device::GPU>& Acol,
-    const El::Matrix<DataType, El::Device::GPU>& activations,
-    const DataType alpha,
-    const size_t local_batch_size, const size_t num_channels,
-    const std::vector<int> spatial_dims,
-    const convolution_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU> *l_conv,
-    const bool use_im2col,
-    const cudaStream_t& stream) {
-  assert(factor.GetDevice() == El::Device::GPU);
-  assert(activations.GetDevice() == El::Device::GPU);
-
-  const auto dilations = l_conv->get_dilations();
-  for(auto i = dilations.begin(); i != dilations.end(); i++)
-    if(*i != 1) {
-      std::stringstream err;
-      err << "The K-FAC callback onky supports dilation width of 1."
-          << " layer: " << l_conv->get_name();
-      LBANN_ERROR(err.str());
-    }
-
-  if(use_im2col) {
-    im2col(activations, Acol,
-           num_channels, spatial_dims.size(),
-           &(spatial_dims[0]),
-           &(l_conv->get_pads()[0]),
-           &(l_conv->get_conv_dims()[0]),
-           &(l_conv->get_strides()[0]),
-           stream);
-  } else {
-    size_t spatial_prod = 1;
-    for(auto i = spatial_dims.begin(); i != spatial_dims.end(); i++)
-      spatial_prod *= *i;
-    assert((size_t) Acol.Height() == num_channels);
-    assert((size_t) Acol.Width() == local_batch_size*spatial_prod);
-    conv_transpose(
-        activations.LockedBuffer(), Acol.Buffer(),
-        local_batch_size, num_channels, spatial_prod,
-        stream);
-  }
-
-  assert(factor.Height() == Acol.Height());
-  assert(factor.Width() == Acol.Height());
-  El::Gemm(
-      El::NORMAL, El::TRANSPOSE,
-      alpha, Acol, Acol,
-      El::TypeTraits<DataType>::Zero(), factor);
 }
 
 void kfac::get_matrix_inverse(
@@ -460,31 +387,6 @@ void kfac::get_matrix_inverse(
 
   // TODO: Check whether this is actually needed.
   CHECK_CUDA(cudaStreamSynchronize(stream));
-}
-
-double kfac::compute_pi(const El::Matrix<DataType, El::Device::GPU>& A,
-                        const El::Matrix<DataType, El::Device::GPU>& G,
-                        El::Matrix<DataType, El::Device::GPU>& ws,
-                        const cudaStream_t& stream) {
-  assert(ws.Height() >= A.Height()*2+1);
-  assert(ws.Height() >= G.Height()*2+1);
-  // TODO: Replace with El::Trace once GPU matrices get supported.
-  const auto get_trace =
-      [](const El::Matrix<DataType, El::Device::GPU>& X,
-         El::Matrix<DataType, El::Device::GPU>& w,
-         const cudaStream_t& s) {
-        auto diag = El::View(w, El::IR(0, X.Height()), El::ALL);
-        auto ones = El::View(w, El::IR(X.Height(), X.Height()*2), El::ALL);
-        auto ret = El::View(w, El::IR(X.Height()*2, X.Height()*2+1), El::ALL);
-        get_diagonal(diag.Buffer(), X.LockedBuffer(), X.Height(), s);
-        El::Ones(ones, ones.Height(), ones.Width());
-        El::Gemm(
-            El::TRANSPOSE, El::NORMAL,
-            El::TypeTraits<DataType>::One(), diag, ones,
-            El::TypeTraits<DataType>::Zero(), ret);
-        return El::Matrix<DataType>(ret)(0, 0);
-      };
-  return sqrt((get_trace(A, ws, stream)/A.Height())/(get_trace(G, ws, stream)/G.Height()));
 }
 
 std::string kfac::get_matrix_stat(const El::Matrix<DataType, El::Device::GPU>& X,

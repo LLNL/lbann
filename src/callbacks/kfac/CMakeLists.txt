@@ -1,7 +1,16 @@
 # Add the source files for this directory
 set_full_path(THIS_DIR_SOURCES
-  kfac_block.cpp
+  kfac_block_bn.cpp
+  kfac_block_fc_conv.cpp
 )
+
+if (LBANN_HAS_CUDA)
+  # Add the CUDA source files for this directory
+  set_full_path(THIS_DIR_CU_SOURCES
+    kfac_block_fc_conv.cu
+    kfac_block_bn.cu
+    )
+endif ()
 
 # Propagate the files up the tree
 set(SOURCES "${SOURCES}" "${THIS_DIR_SOURCES}" PARENT_SCOPE)
