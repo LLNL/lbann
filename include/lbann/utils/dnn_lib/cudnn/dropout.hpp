@@ -45,7 +45,7 @@ inline size_t get_dropout_states_size()
   return size;
 }
 
-inline size_t get_dropout_reserve_space_size(TensorDescriptor xDesc)
+inline size_t get_dropout_reserve_space_size(TensorDescriptor const& xDesc)
 {
   size_t size;
   CHECK_CUDNN(cudnnDropoutGetReserveSpaceSize(xDesc, &size));
@@ -53,10 +53,10 @@ inline size_t get_dropout_reserve_space_size(TensorDescriptor xDesc)
 }
 
 template <typename TensorDataType>
-void dropout_forward(DropoutDescriptor dropoutDesc,
-                     TensorDescriptor xDesc,
+void dropout_forward(DropoutDescriptor const& dropoutDesc,
+                     TensorDescriptor const& xDesc,
                      El::AbstractMatrix<TensorDataType> const& x,
-                     TensorDescriptor yDesc,
+                     TensorDescriptor const& yDesc,
                      El::AbstractMatrix<TensorDataType>& y,
                      El::AbstractMatrix<TensorDataType>& workSpace,
                      El::SyncInfo<El::Device::GPU> const& si)
@@ -74,25 +74,25 @@ void dropout_forward(DropoutDescriptor dropoutDesc,
 }
 
 template <typename TensorDataType>
-void dropout_forward(DropoutDescriptor dropoutDesc,
-                     TensorDescriptor xDesc,
+void dropout_forward(DropoutDescriptor const& dropoutDesc,
+                     TensorDescriptor const& xDesc,
                      El::AbstractMatrix<TensorDataType> const& x,
-                     TensorDescriptor yDesc,
+                     TensorDescriptor const& yDesc,
                      El::AbstractMatrix<TensorDataType>& y,
                      El::AbstractMatrix<TensorDataType>& workSpace)
 {
-  auto multisync = El::MakeMultiSync(gpu::get_sync_info(workSpace),
-                                     gpu::get_sync_info(y),
+  auto multisync = El::MakeMultiSync(gpu::get_sync_info(y),
+                                     gpu::get_sync_info(workSpace),
                                      gpu::get_sync_info(x));
   dropout_forward(dropoutDesc, xDesc, x, yDesc, y, workSpace, multisync);
 }
 
 template <typename TensorDataType>
-void dropout_backward(DropoutDescriptor dropoutDesc,
-                      TensorDescriptor yDesc,
-                      El::AbstractMatrix<TensorDataType> const& y,
-                      TensorDescriptor xDesc,
-                      El::AbstractMatrix<TensorDataType>& x,
+void dropout_backward(DropoutDescriptor const& dropoutDesc,
+                      TensorDescriptor const& dyDesc,
+                      El::AbstractMatrix<TensorDataType> const& dy,
+                      TensorDescriptor const& dxDesc,
+                      El::AbstractMatrix<TensorDataType>& dx,
                       El::AbstractMatrix<TensorDataType>& workSpace,
                       El::SyncInfo<El::Device::GPU> const& si)
 {
@@ -100,25 +100,25 @@ void dropout_backward(DropoutDescriptor dropoutDesc,
   CHECK_CUDNN(
     cudnnDropoutBackward(handle_manager.get(),
                          dropoutDesc,
-                         yDesc,
-                         y.LockedBuffer(),
-                         xDesc,
-                         x.Buffer(),
+                         dyDesc,
+                         dy.LockedBuffer(),
+                         dxDesc,
+                         dx.Buffer(),
                          workSpace.Buffer(),
                          workSpace.Height() * sizeof(TensorDataType)));
 }
 
 template <typename TensorDataType>
-void dropout_backward(DropoutDescriptor dropoutDesc,
-                      TensorDescriptor yDesc,
-                      El::AbstractMatrix<TensorDataType> const& y,
-                      TensorDescriptor xDesc,
-                      El::AbstractMatrix<TensorDataType>& x,
+void dropout_backward(DropoutDescriptor const& dropoutDesc,
+                      TensorDescriptor const& dyDesc,
+                      El::AbstractMatrix<TensorDataType> const& dy,
+                      TensorDescriptor const& dxDesc,
+                      El::AbstractMatrix<TensorDataType>& dx,
                       El::AbstractMatrix<TensorDataType>& workSpace)
 {
-  auto multisync = El::MakeMultiSync(gpu::get_sync_info(workSpace),
-                                     gpu::get_sync_info(x),
-                                     gpu::get_sync_info(y));
+  auto multisync = El::MakeMultiSync(gpu::get_sync_info(dx),
+                                     gpu::get_sync_info(dy),
+                                     gpu::get_sync_info(workSpace));
   dropout_backward(dropoutDesc, yDesc, y, xDesc, x, workSpace, multisync);
 }
 
