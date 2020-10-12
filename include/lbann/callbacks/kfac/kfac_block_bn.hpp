@@ -108,6 +108,7 @@ class kfac_block_bn: public kfac_block {
       const size_t spatial_prod,
       const cudaStream_t& stream);
 
+  /** @brief Information to perform its computation. **/
   const bool m_is_after_conv;
   const size_t m_num_channels, m_spatial_prod;
 

@@ -110,81 +110,6 @@ class kfac : public callback_base {
   El::Matrix<DataType, El::Device::GPU>& get_workspace_matrix(
       const std::string key, const size_t height, const size_t width);
 
-  /** @brief Gets the inverse matrix of A. **/
-  static void get_matrix_inverse(
-      El::Matrix<DataType, El::Device::GPU>& Ainv,
-      El::Matrix<DataType, El::Device::GPU>& Linv,
-      const El::Matrix<DataType, El::Device::GPU>& A,
-      const bool report_time,
-      const DataType damping,
-      const DataType damping_bn_err,
-      const bool is_bn,
-      const cudaStream_t& stream);
-
-  /** @brief Gets statistics of a given matrix. **/
-  static std::string get_matrix_stat(
-      const El::Matrix<DataType, El::Device::GPU>& X,
-      const char *name);
-
-  /** @brief Perform all-reduce on the lower triangular of a symmetric matrix. **/
-  static void allreduce_lower_tri(
-      El::Matrix<DataType, El::Device::GPU>& A,
-      El::Matrix<DataType, El::Device::GPU>& AL,
-      lbann_comm *comm,
-      const cudaStream_t& stream);
-
-  /** @brief Add the damping value to the diagonal elements of A. **/
-  template <typename TensorDataType>
-  static void add_to_diagonal(
-      TensorDataType * __restrict__ A,
-      const size_t height,
-      const TensorDataType value,
-      const TensorDataType value_bn_err,
-      const bool is_bn,
-      const cudaStream_t& stream);
-
-  /** @brief Fill the upper trianglar with the lower trianglar. **/
-  template <typename TensorDataType>
-  static void fill_upper_tri(
-      TensorDataType * __restrict__ A,
-      const size_t height,
-      const cudaStream_t& stream);
-
-  /** @brief Update a Kronecker factor matrix using decay.
-   *
-   * Aave = Aave * decay + A * (1-decay) **/
-  template <typename TensorDataType>
-  static void update_kronecker_average(
-      TensorDataType * __restrict__ Aave,
-      const TensorDataType * __restrict__ A,
-      const size_t count, const DataType decay,
-      const cudaStream_t& stream);
-
-  /** @brief Substitute the identity matrix.
-   *  TODO: Replace with El::Identity<El::Device::GPU>
-   *   once it gets supported. **/
-  template <typename TensorDataType>
-  static void identity(
-      TensorDataType * __restrict__ A,
-      const size_t height,
-      const cudaStream_t& stream);
-
-  /** @brief Pack the lower triangular of a symmetric matrix. **/
-  template <typename TensorDataType>
-  static void pack_lower_tri(
-      TensorDataType * __restrict__ L,
-      const TensorDataType * __restrict__ A,
-      const size_t height,
-      const cudaStream_t& stream);
-
-  /** @brief Unpack the lower triangular of a symmetric matrix. **/
-  template <typename TensorDataType>
-  static void unpack_lower_tri(
-      TensorDataType * __restrict__ A,
-      const TensorDataType * __restrict__ L,
-      const size_t height,
-      const cudaStream_t& stream);
-
   /** @brief The default parameters of a Tikhonov damping technique. */
   constexpr static const double damping_0_default = 3e-2;
   constexpr static const size_t damping_warmup_steps_default = 100;
@@ -222,6 +147,9 @@ class kfac : public callback_base {
   /** @brief The number of steps for changing the update interval. */
   const size_t m_update_interval_steps;
 
+  /** @brief Assignment strategy for the model-parallel part. */
+  const kfac_inverse_strategy m_inverse_strategy;
+
   /** @brief The current damping values. */
   double m_damping_act, m_damping_err,
     m_damping_bn_act, m_damping_bn_err;
@@ -232,9 +160,7 @@ class kfac : public callback_base {
   /** @brief K-FAC per-layer blocks. */
   std::vector<std::shared_ptr<kfac_block>> m_blocks;
 
-  /** @brief Assignment strategy for the model-parallel part. */
-  kfac_inverse_strategy m_inverse_strategy;
-
+  /** @brief Workspace matrices that are used by m_blocks. */
   std::unordered_map<std::string,
                      El::Matrix<DataType, El::Device::GPU>> m_workspace;
 };

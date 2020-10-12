@@ -26,6 +26,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/kfac/kfac_block_fc_conv.hpp"
+#include "lbann/callbacks/kfac/kfac_util.hpp"
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/utils/im2col.hpp"
 
@@ -107,8 +108,8 @@ void kfac_block_fc_conv::update_kronecker_factors(
                                                 A.Height()*(A.Height()+1)/2, 1);
   auto& GLws = m_callback->get_workspace_matrix(std::string("GLws_")+std::to_string(m_layer_id),
                                                 G.Height()*(G.Height()+1)/2, 1);
-  kfac::allreduce_lower_tri(A, ALws, comm, stream);
-  kfac::allreduce_lower_tri(G, GLws, comm, stream);
+  kfac_util::allreduce_lower_tri(A, ALws, comm, stream);
+  kfac_util::allreduce_lower_tri(G, GLws, comm, stream);
 
   // Update average Kronecker factors
   if(!m_has_kronecker_inverse) {
@@ -117,9 +118,9 @@ void kfac_block_fc_conv::update_kronecker_factors(
   }
   auto &Aave = m_kronecker_average_A;
   auto &Gave = m_kronecker_average_G;
-  kfac::update_kronecker_average(
+  kfac_util::update_kronecker_average(
       Aave.Buffer(), A.Buffer(), A.Height()*A.Width(), kronecker_decay, stream);
-  kfac::update_kronecker_average(
+  kfac_util::update_kronecker_average(
       Gave.Buffer(), G.Buffer(), G.Height()*G.Width(), kronecker_decay, stream);
 
   // Dump matrices for debugging
@@ -140,14 +141,14 @@ void kfac_block_fc_conv::update_kronecker_factors(
     // const auto &w_values = dtw->get_values();
     std::ostringstream oss;
     oss << "K-FAC callback: L2 norm @ "<< m_layer->get_name() << ": "
-        // << kfac::get_matrix_stat(w_values.LockedMatrix(), "W")
+        // << kfac_util::get_matrix_stat(w_values.LockedMatrix(), "W")
         // << ", "
-        << kfac::get_matrix_stat(local_activations, "acts")
-        << ", " << kfac::get_matrix_stat(local_errors, "errs")
-        << ", " << kfac::get_matrix_stat(A, "A")
-        << ", " << kfac::get_matrix_stat(G, "G")
-        << ", " << kfac::get_matrix_stat(Aave, "Aave")
-        << ", " << kfac::get_matrix_stat(Gave, "Gave")
+        << kfac_util::get_matrix_stat(local_activations, "acts")
+        << ", " << kfac_util::get_matrix_stat(local_errors, "errs")
+        << ", " << kfac_util::get_matrix_stat(A, "A")
+        << ", " << kfac_util::get_matrix_stat(G, "G")
+        << ", " << kfac_util::get_matrix_stat(Aave, "Aave")
+        << ", " << kfac_util::get_matrix_stat(Gave, "Gave")
         << std::endl;
     std::cout << oss.str();
   }
@@ -204,11 +205,11 @@ void kfac_block_fc_conv::update_kronecker_inverse(
   auto& GLinv = m_callback->get_workspace_matrix(
       std::string("GLinv_")+std::to_string(m_layer_id),
       Gave.Height(), Gave.Height());
-  kfac::get_matrix_inverse(
+  kfac_util::get_matrix_inverse(
       Ainv, ALinv, Aave, comm->am_trainer_master() && print_time,
       DataType(damping_act*pi), 0,
       false, stream);
-  kfac::get_matrix_inverse(
+  kfac_util::get_matrix_inverse(
       Ginv, GLinv, Gave, comm->am_trainer_master() && print_time,
       DataType(damping_err/pi), 0,
       false, stream);
@@ -288,11 +289,11 @@ void kfac_block_fc_conv::update_kronecker_inverse(
     const auto &w_values = dtw->get_values();
     std::ostringstream oss;
     oss << "K-FAC callback: L2 norm @ "<< m_layer->get_name() << ": "
-        << kfac::get_matrix_stat(w_values.LockedMatrix(), "W")
-        << ", " << kfac::get_matrix_stat(Ainv, "Ainv")
-        << ", " << kfac::get_matrix_stat(Ginv, "Ginv")
-        << ", " << kfac::get_matrix_stat(w_gradients, "grad")
-        << ", " << kfac::get_matrix_stat(Fgrad, "Finvgrad")
+        << kfac_util::get_matrix_stat(w_values.LockedMatrix(), "W")
+        << ", " << kfac_util::get_matrix_stat(Ainv, "Ainv")
+        << ", " << kfac_util::get_matrix_stat(Ginv, "Ginv")
+        << ", " << kfac_util::get_matrix_stat(w_gradients, "grad")
+        << ", " << kfac_util::get_matrix_stat(Fgrad, "Finvgrad")
         << std::endl;
     std::cout << oss.str();
   }

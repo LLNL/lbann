@@ -82,6 +82,7 @@ class kfac_block {
     return m_has_kronecker_inverse;
   }
 
+  /** @brief Get block's information in one line. */
   virtual std::string get_info() const {
     std::ostringstream oss;
     oss << "name=" << m_layer->get_name()
@@ -113,6 +114,7 @@ class kfac_block {
       TODO: Remove this. */
   const size_t m_layer_id;
 
+  /** @brief The process ID which perform inverse on Kronecker. */
   const int m_inverse_proc_rank;
 
   /** @brief Whether this block already has an inverse history. */

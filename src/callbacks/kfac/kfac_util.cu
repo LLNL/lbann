@@ -25,11 +25,11 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/callbacks/kfac.hpp"
-
+#include "lbann/callbacks/kfac/kfac_util.hpp"
 
 namespace lbann {
 namespace callback {
+namespace kfac_util {
 
 namespace {
 
@@ -113,7 +113,7 @@ __global__ void kfac_unpack_lower_tri_kernel(
 } // namespace
 
 template <typename TensorDataType>
-void kfac::add_to_diagonal(
+void add_to_diagonal(
     TensorDataType * __restrict__ A,
     const size_t height,
     const TensorDataType damping,
@@ -128,7 +128,7 @@ void kfac::add_to_diagonal(
 }
 
 template <typename TensorDataType>
-void kfac::fill_upper_tri(
+void fill_upper_tri(
     TensorDataType * __restrict__ A,
     const size_t height,
     const cudaStream_t& stream) {
@@ -140,7 +140,7 @@ void kfac::fill_upper_tri(
 }
 
 template <typename TensorDataType>
-void kfac::update_kronecker_average(
+void update_kronecker_average(
     TensorDataType * __restrict__ Aave,
     const TensorDataType * __restrict__ A,
     const size_t count, const DataType decay,
@@ -152,7 +152,7 @@ void kfac::update_kronecker_average(
 }
 
 template <typename TensorDataType>
-void kfac::identity(
+void identity(
     TensorDataType * __restrict__ A,
     const size_t height,
     const cudaStream_t& stream) {
@@ -165,7 +165,7 @@ void kfac::identity(
 }
 
 template <typename TensorDataType>
-void kfac::pack_lower_tri(
+void pack_lower_tri(
     TensorDataType * __restrict__ L,
     const TensorDataType * __restrict__ A,
     const size_t height,
@@ -180,7 +180,7 @@ void kfac::pack_lower_tri(
 }
 
 template <typename TensorDataType>
-void kfac::unpack_lower_tri(
+void unpack_lower_tri(
     TensorDataType * __restrict__ A,
     const TensorDataType * __restrict__ L,
     const size_t height,
@@ -194,41 +194,42 @@ void kfac::unpack_lower_tri(
           A, L, height);
 }
 
-#define PROTO(T)                                        \
-  template void kfac::add_to_diagonal<T>(               \
-      T* __restrict__ A,                                \
-      const size_t height,                              \
-      const T value,                                    \
-      const T value_bn_err,                             \
-      const bool is_bn,                                 \
-      const cudaStream_t& stream);                      \
-  template void kfac::fill_upper_tri<T>(                \
-      T * __restrict__ A,                               \
-      const size_t height,                              \
-      const cudaStream_t& stream);                      \
-  template void kfac::update_kronecker_average<T>(      \
-      T * __restrict__ Aave,                            \
-      const T * __restrict__ A,                         \
-      const size_t count, const DataType decay,         \
-      const cudaStream_t& stream);                      \
-  template void kfac::identity<T>(                      \
-      T * __restrict__ A,                               \
-      const size_t height,                              \
-      const cudaStream_t& stream);                      \
-  template void kfac::pack_lower_tri<T>(                \
-      T * __restrict__ L,                               \
-      const T * __restrict__ A,                         \
-      const size_t height,                              \
-      const cudaStream_t& stream);                      \
-  template void kfac::unpack_lower_tri<T>(              \
-      T * __restrict__ A,                               \
-      const T * __restrict__ L,                         \
-      const size_t height,                              \
+#define PROTO(T)                                \
+  template void add_to_diagonal<T>(             \
+      T* __restrict__ A,                        \
+      const size_t height,                      \
+      const T value,                            \
+      const T value_bn_err,                     \
+      const bool is_bn,                         \
+      const cudaStream_t& stream);              \
+  template void fill_upper_tri<T>(              \
+      T * __restrict__ A,                       \
+      const size_t height,                      \
+      const cudaStream_t& stream);              \
+  template void update_kronecker_average<T>(    \
+      T * __restrict__ Aave,                    \
+      const T * __restrict__ A,                 \
+      const size_t count, const DataType decay, \
+      const cudaStream_t& stream);              \
+  template void identity<T>(                    \
+      T * __restrict__ A,                       \
+      const size_t height,                      \
+      const cudaStream_t& stream);              \
+  template void pack_lower_tri<T>(              \
+      T * __restrict__ L,                       \
+      const T * __restrict__ A,                 \
+      const size_t height,                      \
+      const cudaStream_t& stream);              \
+  template void unpack_lower_tri<T>(            \
+      T * __restrict__ A,                       \
+      const T * __restrict__ L,                 \
+      const size_t height,                      \
       const cudaStream_t& stream);
 
 
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
 
+} // namespace kfac_util
 } // namespace callback
 } // namespace lbann

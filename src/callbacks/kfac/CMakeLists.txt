@@ -2,6 +2,7 @@
 set_full_path(THIS_DIR_SOURCES
   kfac_block_bn.cpp
   kfac_block_fc_conv.cpp
+  kfac_util.cpp
 )
 
 if (LBANN_HAS_CUDA)
@@ -9,6 +10,7 @@ if (LBANN_HAS_CUDA)
   set_full_path(THIS_DIR_CU_SOURCES
     kfac_block_fc_conv.cu
     kfac_block_bn.cu
+    kfac_util.cu
     )
 endif ()
 

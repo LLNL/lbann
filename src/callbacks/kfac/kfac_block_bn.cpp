@@ -26,6 +26,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/kfac/kfac_block_bn.hpp"
+#include "lbann/callbacks/kfac/kfac_util.hpp"
 #include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
@@ -110,14 +111,14 @@ void kfac_block_bn::update_kronecker_factors(
   auto& fisher_ws = m_callback->get_workspace_matrix(
       std::string("bn_fisher_ws_")+std::to_string(m_layer_id),
       fisher_block.Height()*(fisher_block.Height()+1)/2, 1);
-  kfac::allreduce_lower_tri(fisher_block, fisher_ws, comm, stream);
+  kfac_util::allreduce_lower_tri(fisher_block, fisher_ws, comm, stream);
 
   // Update average Kronecker factors
   if(!m_has_kronecker_inverse) {
     El::Copy(fisher_block, m_fisher_average);
   }
   auto &Fave = m_fisher_average;
-  kfac::update_kronecker_average(
+  kfac_util::update_kronecker_average(
       Fave.Buffer(), fisher_block.Buffer(),
       fisher_block.Height()*fisher_block.Width(),
       kronecker_decay, stream);
@@ -126,10 +127,10 @@ void kfac_block_bn::update_kronecker_factors(
   if(comm->am_trainer_master() && print_matrix_summary) {
     std::ostringstream oss;
     oss << "K-FAC callback: L2 norm @ "<< m_layer->get_name() << ": "
-        << kfac::get_matrix_stat(scale_values.LockedMatrix(), "scale")
-        << ", " << kfac::get_matrix_stat(bias_values.LockedMatrix(), "bias")
-        << ", " << kfac::get_matrix_stat(local_activations, "acts")
-        << ", " << kfac::get_matrix_stat(local_errors, "errs")
+        << kfac_util::get_matrix_stat(scale_values.LockedMatrix(), "scale")
+        << ", " << kfac_util::get_matrix_stat(bias_values.LockedMatrix(), "bias")
+        << ", " << kfac_util::get_matrix_stat(local_activations, "acts")
+        << ", " << kfac_util::get_matrix_stat(local_errors, "errs")
         << std::endl;
     std::cout << oss.str();
   }
@@ -156,7 +157,7 @@ void kfac_block_bn::update_kronecker_inverse(
   auto& FLinv = m_callback->get_workspace_matrix(
       std::string("bn_FLinv_")+std::to_string(m_layer_id),
       Fave.Height(), Fave.Height());
-  kfac::get_matrix_inverse(
+  kfac_util::get_matrix_inverse(
       Finv, FLinv, Fave, comm->am_trainer_master() && print_time,
       DataType(damping_act), DataType(damping_err),
       true, stream);
@@ -165,7 +166,7 @@ void kfac_block_bn::update_kronecker_inverse(
   if(comm->am_trainer_master() && print_matrix_summary) {
     std::ostringstream oss;
     oss << "K-FAC callback: L2 norm @ "<< m_layer->get_name() << ": "
-        << kfac::get_matrix_stat(Fave, "Fave")
+        << kfac_util::get_matrix_stat(Fave, "Fave")
         << std::endl;
     std::cout << oss.str();
   }
@@ -212,10 +213,10 @@ void kfac_block_bn::update_kronecker_inverse(
   if(comm->am_trainer_master() && print_matrix_summary) {
     std::ostringstream oss;
     oss << "K-FAC callback: L2 norm @ "<< m_layer->get_name() << ": "
-        << ", " << kfac::get_matrix_stat(Finv, "Finv")
-        << ", " << kfac::get_matrix_stat(Fgrad, "Fgrad")
-        << ", " << kfac::get_matrix_stat(s_gradients, "scale_grad")
-        << ", " << kfac::get_matrix_stat(b_gradients, "bias_grad")
+        << ", " << kfac_util::get_matrix_stat(Finv, "Finv")
+        << ", " << kfac_util::get_matrix_stat(Fgrad, "Fgrad")
+        << ", " << kfac_util::get_matrix_stat(s_gradients, "scale_grad")
+        << ", " << kfac_util::get_matrix_stat(b_gradients, "bias_grad")
         << std::endl;
     std::cout << oss.str();
   }
