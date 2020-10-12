@@ -54,6 +54,8 @@ class kfac_block_bn: public kfac_block {
   kfac_block_bn(const kfac_block_bn&) = default;
   kfac_block_bn& operator=(const kfac_block_bn&) = default;
 
+#ifdef LBANN_HAS_GPU
+
   void update_kronecker_factors(
       lbann_comm* comm,
       const DataType kronecker_decay,
@@ -71,6 +73,8 @@ class kfac_block_bn: public kfac_block {
   void update_preconditioned_grads(
       lbann_comm* comm) override;
 
+#endif // LBANN_HAS_GPU
+
   std::string get_info() const override {
     std::ostringstream oss;
     oss << kfac_block::get_info()
@@ -79,6 +83,8 @@ class kfac_block_bn: public kfac_block {
   }
 
  private:
+
+#ifdef LBANN_HAS_GPU
 
   /** @brief Compute the factor of a batch-normalization layer.
    *  TODO: Remove as compute_bn_factor_data2col is used as default. **/
@@ -108,9 +114,13 @@ class kfac_block_bn: public kfac_block {
       const size_t spatial_prod,
       const cudaStream_t& stream);
 
+#endif // LBANN_HAS_GPU
+
   /** @brief Information to perform its computation. **/
   const bool m_is_after_conv;
   const size_t m_num_channels, m_spatial_prod;
+
+#ifdef LBANN_HAS_GPU
 
   /** @brief Exponential moving average of the Fisher matrix. */
   El::Matrix<DataType, El::Device::GPU>
@@ -119,6 +129,8 @@ class kfac_block_bn: public kfac_block {
   /** @brief Inverse of the average Fisher matrix. */
   El::Matrix<DataType, El::Device::GPU>
   m_fisher_inverse;
+
+#endif // LBANN_HAS_GPU
 
 };
 

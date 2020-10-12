@@ -296,6 +296,24 @@ void kfac::on_backward_prop_end(model *m) {
 
 }
 
+El::Matrix<DataType, El::Device::GPU>& kfac::get_workspace_matrix(
+    const std::string key, const size_t height, const size_t width) {
+  if(m_workspace.find(key) == m_workspace.end()) {
+    m_workspace.emplace(
+        key, El::Matrix<DataType, El::Device::GPU>(height, width));
+#ifdef HYDROGEN_HAVE_CUB
+    m_workspace[key].SetMemoryMode(1); // Use CUB GPU memory pool if possible
+#endif // HYDROGEN_HAVE_CUB
+  }
+  auto& ret = m_workspace[key];
+  if((size_t) ret.Height() != height || (size_t) ret.Width() != width) {
+    // Make sure that no kernels are using this workspace.
+    CHECK_CUDA(cudaDeviceSynchronize());
+    ret.Resize(height, width);
+  }
+  return ret;
+}
+
 #endif // LBANN_HAS_GPU
 
 std::unique_ptr<callback_base>
@@ -372,24 +390,6 @@ build_kfac_callback_from_pbuf(
       use_pi,
       update_intervals, update_interval_steps,
       inverse_strategy);
-}
-
-El::Matrix<DataType, El::Device::GPU>& kfac::get_workspace_matrix(
-    const std::string key, const size_t height, const size_t width) {
-  if(m_workspace.find(key) == m_workspace.end()) {
-    m_workspace.emplace(
-        key, El::Matrix<DataType, El::Device::GPU>(height, width));
-#ifdef HYDROGEN_HAVE_CUB
-    m_workspace[key].SetMemoryMode(1); // Use CUB GPU memory pool if possible
-#endif // HYDROGEN_HAVE_CUB
-  }
-  auto& ret = m_workspace[key];
-  if((size_t) ret.Height() != height || (size_t) ret.Width() != width) {
-    // Make sure that no kernels are using this workspace.
-    CHECK_CUDA(cudaDeviceSynchronize());
-    ret.Resize(height, width);
-  }
-  return ret;
 }
 
 } // namespace callback

@@ -62,7 +62,9 @@ class kfac_block {
       lbann_comm* comm,
       const DataType kronecker_decay,
       const bool print_matrix,
-      const bool print_matrix_summary) = 0;
+      const bool print_matrix_summary) {
+    LBANN_ERROR("this function should be called via a sub-class.");
+  }
 
   /** @brief Compute the inverse of the average Kronecker factors. */
   virtual void update_kronecker_inverse(
@@ -71,11 +73,15 @@ class kfac_block {
       const DataType damping_act, const DataType damping_err,
       const bool print_matrix,
       const bool print_matrix_summary,
-      const bool print_time) = 0;
+      const bool print_time) {
+    LBANN_ERROR("this function should be called via a sub-class.");
+  }
 
   /** @brief Scatter preconditioned gradients. */
   virtual void update_preconditioned_grads(
-      lbann_comm* comm) = 0;
+      lbann_comm* comm) {
+    LBANN_ERROR("this function should be called via a sub-class.");
+  }
 
   /** @brief Return whether this block already has an inverse history. */
   bool has_kronecker_inverse() const {
@@ -98,10 +104,14 @@ class kfac_block {
 
  protected:
 
+#ifdef LBANN_HAS_GPU
+
   /** @brief Return the default stream that may used in update functions. */
   cudaStream_t get_stream() {
     return hydrogen::cuda::GetDefaultStream();
   }
+
+#endif // LBANN_HAS_GPU
 
   /** @brief The target layer. */
   Layer *m_layer;

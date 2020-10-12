@@ -62,6 +62,8 @@ class kfac_block_fc_conv: public kfac_block {
   kfac_block_fc_conv(const kfac_block_fc_conv&) = default;
   kfac_block_fc_conv& operator=(const kfac_block_fc_conv&) = default;
 
+#ifdef LBANN_HAS_GPU
+
   void update_kronecker_factors(
       lbann_comm* comm,
       const DataType kronecker_decay,
@@ -79,6 +81,8 @@ class kfac_block_fc_conv: public kfac_block {
   void update_preconditioned_grads(
       lbann_comm* comm) override;
 
+#endif // LBANN_HAS_GPU
+
   std::string get_info() const override {
     std::ostringstream oss;
     oss << kfac_block::get_info()
@@ -87,6 +91,8 @@ class kfac_block_fc_conv: public kfac_block {
   }
 
  private:
+
+#ifdef LBANN_HAS_GPU
 
   /** @brief Gets the Kronecker factor matrix of a FC layer. **/
   static void get_kronecker_factor_fc(
@@ -136,10 +142,14 @@ class kfac_block_fc_conv: public kfac_block {
     return dynamic_cast<convolution_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>*>(m_layer);
   }
 
+#endif // LBANN_HAS_GPU
+
   /** @brief Information to perform its computation. **/
   const bool m_is_conv;
   const size_t m_conv_input_spatial_prod, m_conv_output_spatial_prod;
   const std::vector<int> m_conv_input_spatial_dims, m_conv_output_spatial_dims;
+
+#ifdef LBANN_HAS_GPU
 
   /** @brief Exponential moving average of Kronecker factors. */
   El::Matrix<DataType, El::Device::GPU>
@@ -148,6 +158,8 @@ class kfac_block_fc_conv: public kfac_block {
   /** @brief Inverse of the average Kronecker factors. */
   El::Matrix<DataType, El::Device::GPU>
   m_kronecker_inverse_A, m_kronecker_inverse_G;
+
+#endif // LBANN_HAS_GPU
 
 };
 

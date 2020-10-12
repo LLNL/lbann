@@ -37,6 +37,8 @@ namespace lbann {
 namespace callback {
 namespace kfac_util {
 
+#ifdef LBANN_HAS_GPU
+
 void get_matrix_inverse(
     El::Matrix<DataType, El::Device::GPU>& Ainv,
     El::Matrix<DataType, El::Device::GPU>& Linv,
@@ -138,6 +140,8 @@ void allreduce_lower_tri(El::Matrix<DataType, El::Device::GPU>& A,
                   comm->get_trainer_comm());
   unpack_lower_tri(A.Buffer(), AL.Buffer(), A.Height(), stream);
 }
+
+#endif // LBANN_HAS_GPU
 
 } // namespace kfac_util
 } // namespace callback

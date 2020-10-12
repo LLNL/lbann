@@ -106,16 +106,17 @@ class kfac : public callback_base {
   void on_backward_prop_end(model *m) override;
   void on_epoch_end(model *m) override;
   void on_backward_prop_end(model *m, Layer *l) override {}
-#else
-  void setup(model *m) override {
-    LBANN_ERROR("The K-FAC callback is available only on GPUs.");
-  }
-#endif // LBANN_HAS_GPU
 
   /** @brief Gets the Kronecker factor matrix of a FC layer.
    *  The same key is tied with the same matrix instance. */
   El::Matrix<DataType, El::Device::GPU>& get_workspace_matrix(
       const std::string key, const size_t height, const size_t width);
+
+#else
+  void setup(model *m) override {
+    LBANN_ERROR("The K-FAC callback is available only on GPUs.");
+  }
+#endif // LBANN_HAS_GPU
 
   /** @brief The default parameters of a Tikhonov damping technique. */
   constexpr static const double damping_0_default = 3e-2;

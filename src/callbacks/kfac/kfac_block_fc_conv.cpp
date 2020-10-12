@@ -33,6 +33,8 @@
 namespace lbann {
 namespace callback {
 
+#ifdef LBANN_HAS_GPU
+
 void kfac_block_fc_conv::update_kronecker_factors(
     lbann_comm* comm,
     const DataType kronecker_decay,
@@ -403,6 +405,8 @@ double kfac_block_fc_conv::compute_pi(
       };
   return sqrt((get_trace(A, ws, stream)/A.Height())/(get_trace(G, ws, stream)/G.Height()));
 }
+
+#endif // LBANN_HAS_GPU
 
 } // namespace callback
 } // namespace lbann

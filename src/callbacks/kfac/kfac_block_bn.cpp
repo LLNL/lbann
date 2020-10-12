@@ -32,6 +32,8 @@
 namespace lbann {
 namespace callback {
 
+#ifdef LBANN_HAS_GPU
+
 void kfac_block_bn::update_kronecker_factors(
     lbann_comm* comm,
     const DataType kronecker_decay,
@@ -242,6 +244,8 @@ void kfac_block_bn::update_preconditioned_grads(
       b_grad_buffer.Matrix(), comm->get_trainer_comm(),
       m_inverse_proc_rank);
 }
+
+#endif // LBANN_HAS_GPU
 
 } // namespace callback
 } // namespace lbann

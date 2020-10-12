@@ -35,6 +35,8 @@ namespace lbann {
 namespace callback {
 namespace kfac_util {
 
+#ifdef LBANN_HAS_GPU
+
 /** @brief Gets the inverse matrix of A. **/
 void get_matrix_inverse(
     El::Matrix<DataType, El::Device::GPU>& Ainv,
@@ -110,6 +112,8 @@ void unpack_lower_tri(
     const TensorDataType * __restrict__ L,
     const size_t height,
     const cudaStream_t& stream);
+
+#endif // LBANN_HAS_GPU
 
 } // namespace kfac_util
 } // namespace callback
