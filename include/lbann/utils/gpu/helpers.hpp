@@ -36,7 +36,7 @@
 // Import the GPU __device__ function library
 #if defined LBANN_HAS_CUDA
 
-#include "cuda.hpp"
+#include "gpu_lib.hpp"
 namespace lbann {
 namespace gpu_lib = ::lbann::cuda;
 }// namespace lbann
