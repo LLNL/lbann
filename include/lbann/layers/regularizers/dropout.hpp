@@ -31,6 +31,7 @@
 #include "lbann/models/model.hpp"
 #include "lbann/utils/cudnn.hpp"
 #include "lbann/utils/random_number_generators.hpp"
+#include "lbann/utils/dnn_lib/cudnn/dropout.hpp"
 
 namespace lbann {
 
@@ -243,19 +244,16 @@ protected:
     // Initialize cuDNN objects
     auto&& input_desc = m_tensors_cudnn_desc.get_prev_activations();
     auto&& output_desc = m_tensors_cudnn_desc.get_activations();
-    size_t size;
-    CHECK_CUDNN(cudnnDropoutGetReserveSpaceSize(input_desc, &size));
+    size_t size = cudnn::get_dropout_reserve_space_size(input_desc);
     m_reserve_space.Resize((size + sizeof(TensorDataType) - 1) / sizeof(TensorDataType), 1);
 
     // Apply dropout on the GPU
-    CHECK_CUDNN(cudnnDropoutForward(cudnn::get_handle(),
-                                    m_dropout_cudnn_desc,
-                                    input_desc,
-                                    local_input.LockedBuffer(),
-                                    output_desc,
-                                    local_output.Buffer(),
-                                    m_reserve_space.Buffer(),
-                                    m_reserve_space.Height() * sizeof(TensorDataType)));
+    cudnn::dropout_forward(m_dropout_cudnn_desc,
+                           input_desc,
+                           local_input,
+                           output_desc,
+                           local_output,
+                           m_reserve_space);
 
 #endif // LBANN_HAS_CUDNN
   }
@@ -278,14 +276,12 @@ protected:
     } else {
       if (local_gradient_wrt_input.Height() > 0
           && local_gradient_wrt_input.Width() > 0) {
-        CHECK_CUDNN(cudnnDropoutBackward(cudnn::get_handle(),
-                                         m_dropout_cudnn_desc,
-                                         m_tensors_cudnn_desc.get_prev_error_signals(),
-                                         local_gradient_wrt_output.LockedBuffer(),
-                                         m_tensors_cudnn_desc.get_error_signals(),
-                                         local_gradient_wrt_input.Buffer(),
-                                         m_reserve_space.Buffer(),
-                                         m_reserve_space.Height() * sizeof(TensorDataType)));
+        cudnn::dropout_backward(m_dropout_cudnn_desc,
+                                m_tensors_cudnn_desc.get_prev_error_signals(),
+                                local_gradient_wrt_output,
+                                m_tensors_cudnn_desc.get_error_signals(),
+                                local_gradient_wrt_input,
+                                m_reserve_space);
       }
     }
 #endif // LBANN_HAS_CUDNN
@@ -297,8 +293,7 @@ protected:
   void setup_dropout_cudnn_desc() {
 
     // Setup RNG state
-    size_t size;
-    CHECK_CUDNN(cudnnDropoutGetStatesSize(cudnn::get_handle(), &size));
+    size_t size = cudnn::get_dropout_states_size();
     m_states.Resize((size + sizeof(TensorDataType) - 1) / sizeof(TensorDataType), 1);
 
     // Setup dropout descriptor
