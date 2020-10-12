@@ -119,7 +119,7 @@ void dropout_backward(DropoutDescriptor const& dropoutDesc,
   auto multisync = El::MakeMultiSync(gpu::get_sync_info(dx),
                                      gpu::get_sync_info(dy),
                                      gpu::get_sync_info(workSpace));
-  dropout_backward(dropoutDesc, yDesc, y, xDesc, x, workSpace, multisync);
+  dropout_backward(dropoutDesc, dyDesc, dy, dxDesc, dx, workSpace, multisync);
 }
 
 }// namespace cudnn
