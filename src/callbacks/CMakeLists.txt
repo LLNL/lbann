@@ -51,6 +51,9 @@ if (LBANN_HAS_CUDA)
     )
 endif ()
 
+# Add the subdirectories
+add_subdirectory(kfac)
+
 # Propagate the files up the tree
 set(SOURCES "${SOURCES}" "${THIS_DIR_SOURCES}" PARENT_SCOPE)
 set(CUDA_SOURCES "${CUDA_SOURCES}" "${THIS_DIR_CU_SOURCES}" PARENT_SCOPE)

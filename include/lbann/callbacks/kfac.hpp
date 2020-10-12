@@ -30,27 +30,11 @@
 #define LBANN_CALLBACKS_CALLBACK_KFAC_HPP_INCLUDED
 
 #include "lbann/callbacks/callback.hpp"
-#include "lbann/layers/learning/convolution.hpp"
+#include "lbann/callbacks/kfac/kfac_block.hpp"
+#include "lbann/callbacks/kfac/kfac_metadata.hpp"
 
 namespace lbann {
 namespace callback {
-
-struct kfac_layer_metadata {
-  size_t layer_id;
-  convolution_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>* l_conv;
-  bool is_fc, is_conv, is_bn_after_fc, is_bn_after_conv;
-  size_t conv_input_spatial_prod, conv_output_spatial_prod;
-  std::vector<int> conv_input_spatial_dims, conv_output_spatial_dims;
-  size_t bn_num_channels, bn_spatial_prod;
-  int proc_rank;
-};
-
-enum kfac_inverse_strategy {
-  ALL,  // Apply round-robin assingment to all of the layers. may cause load imbalance.
-  EACH, // Apply round-robin assingment to every type of layers. may
-  // not work well for small networks.
-  ROOT, // Use only the root GPU. This is only for testing.
-};
 
 /** Callback hooks for the K-FAC method.
  *
@@ -110,15 +94,6 @@ class kfac : public callback_base {
   void on_epoch_end(model *m) override;
   void on_backward_prop_end(model *m, Layer *l) override {}
   std::string name() const override { return "K-FAC test"; }
-
-  /** @brief The default parameters of a Tikhonov damping technique. */
-  constexpr static const double damping_0_default = 3e-2;
-  constexpr static const size_t damping_warmup_steps_default = 100;
-
-  /** @brief The default parameters of the decay factor. */
-  constexpr static const double kronecker_decay_default = 0.99;
-
- private:
 
   /** @brief Gets the Kronecker factor matrix of a FC layer.
    *  The same key is tied with the same matrix instance. */
@@ -270,6 +245,15 @@ class kfac : public callback_base {
       const size_t height,
       const cudaStream_t& stream);
 
+  /** @brief The default parameters of a Tikhonov damping technique. */
+  constexpr static const double damping_0_default = 3e-2;
+  constexpr static const size_t damping_warmup_steps_default = 100;
+
+  /** @brief The default parameters of the decay factor. */
+  constexpr static const double kronecker_decay_default = 0.99;
+
+ private:
+
   /** @brief Pairs of the initial and the target damping value.
    *  If only one value is specified, it will be used throughout training.
    */
@@ -298,8 +282,8 @@ class kfac : public callback_base {
   /** @brief The number of steps for changing the update interval. */
   const size_t m_update_interval_steps;
 
-  /** @brief Metadata of all of the learnable layers (FC, conv, and BN). */
-  std::vector<kfac_layer_metadata> m_learnable_layers;
+  // /** @brief Metadata of all of the learnable layers (FC, conv, and BN). */
+  // std::vector<kfac_layer_metadata> m_learnable_layers;
 
   /** @brief The current damping values. */
   double m_damping_act, m_damping_err,
@@ -308,17 +292,8 @@ class kfac : public callback_base {
   /** @brief The current update interval. */
   size_t m_update_interval;
 
-  /** @brief Exponential moving average of kronecker factors. */
-  std::unordered_map<
-    size_t,
-    std::pair<El::Matrix<DataType, El::Device::GPU>,
-              El::Matrix<DataType, El::Device::GPU>>> m_kronecker_average;
-
-  /** @brief Inverse of kronecker factors. */
-  std::unordered_map<
-    size_t,
-    std::pair<El::Matrix<DataType, El::Device::GPU>,
-              El::Matrix<DataType, El::Device::GPU>>> m_kronecker_inverse;
+  /** @brief K-FAC per-layer blocks. */
+  std::vector<kfac_block> m_blocks;
 
   /** @brief Assignment strategy for the model-parallel part. */
   kfac_inverse_strategy m_inverse_strategy;
