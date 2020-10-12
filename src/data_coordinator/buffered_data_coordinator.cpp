@@ -59,6 +59,8 @@ void buffered_data_coordinator<TensorDataType>::setup(thread_pool& io_thread_poo
 #endif // LBANN_HAS_DISTCONV
   auto data_dims = get_data_dims();
 
+  /// @todo BVE This is where we are going to have to limit how many
+  /// ranks are participating in I/O
   El::Int local_mini_batch_size = max_mini_batch_size / this->m_comm->get_procs_per_trainer();
   El::Int partial_mini_batch_size = max_mini_batch_size % this->m_comm->get_procs_per_trainer();
 #ifdef LBANN_HAS_DISTCONV
@@ -92,7 +94,7 @@ int buffered_data_coordinator<TensorDataType>::fetch_to_local_matrix(data_buffer
   int num_parallel_readers = data_reader->get_num_parallel_readers();
 
   prof_region_begin("fetch_to_local_matrix", prof_colors[2], false);
-  /// Coordinate all available readers so that the perform I/O in the same step
+  /// Coordinate all available readers so that they perform I/O in the same step
   /// Check to make sure that the local matrix has space for data
   data_buffer<IODataType>& buf = get_data_buffer(buffer_map, mode);
   buf.m_num_samples_fetched = 0;

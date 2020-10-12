@@ -112,7 +112,7 @@ class input_layer : public data_type_layer<TensorDataType> {
 
   /// @todo make the map and vector references
   input_layer(lbann_comm *comm,
-              data_reader_target_mode dr_mode = data_reader_target_mode::CLASSIFICATION)
+              data_reader_target_mode dr_mode = data_reader_target_mode::NA)
     : data_type_layer<TensorDataType>(comm),
     m_data_reader_mode(dr_mode) {
 

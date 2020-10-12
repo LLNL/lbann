@@ -396,7 +396,7 @@ message Layer {
   // Input layers //
   //////////////////
   message Input {
-    string target_mode = 3;       // Options: "classification" (default), "regression", "reconstruction", "label_reconstruction", "N/A"
+    string target_mode = 3;       // Options: "classification", "regression", "reconstruction", "label_reconstruction", "N/A" (default)
   }
 
   //////////////////////

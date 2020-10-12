@@ -170,6 +170,9 @@ protected:
  protected:
 
 public:
+  /**
+   * Map from execution context to the index of the active data buffer
+   */
   io_buffer_map_t m_active_buffer;
 
   /** Vector of input data buffers

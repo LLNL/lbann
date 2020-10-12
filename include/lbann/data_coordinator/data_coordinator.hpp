@@ -269,6 +269,7 @@ class data_coordinator {
   long get_linearized_data_size() const {
     long linearized_data_size = -1;
 
+    // @todo BVE fix this to iterate over all exection modes
     generic_data_reader *dr;
     dr = get_data_reader(execution_mode::training);
     if (dr != nullptr) {
@@ -303,6 +304,7 @@ class data_coordinator {
     //   return static_cast<long>(1);
     // }
     long linearized_label_size = -1;
+    // @todo BVE fix this to iterate over all exection modes
     generic_data_reader *dr;
     dr = get_data_reader(execution_mode::training);
     if (dr != nullptr) {
