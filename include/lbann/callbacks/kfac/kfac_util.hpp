@@ -82,7 +82,8 @@ template <typename TensorDataType>
 void update_kronecker_average(
     TensorDataType * __restrict__ Aave,
     const TensorDataType * __restrict__ A,
-    const size_t count, const DataType decay,
+    const size_t count,
+    const double decay,
     const cudaStream_t& stream);
 
 /** @brief Substitute the identity matrix.

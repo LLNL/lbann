@@ -98,12 +98,19 @@ class kfac : public callback_base {
   kfac(const kfac&) = default;
   kfac& operator=(const kfac&) = default;
   kfac* copy() const override { return new kfac(*this); }
+  std::string name() const override { return "K-FAC"; }
+
+#ifdef LBANN_HAS_GPU
   void setup(model *m) override;
   void setup(trainer *t) override {}
   void on_backward_prop_end(model *m) override;
   void on_epoch_end(model *m) override;
   void on_backward_prop_end(model *m, Layer *l) override {}
-  std::string name() const override { return "K-FAC test"; }
+#else
+  void setup(model *m) override {
+    LBANN_ERROR("The K-FAC callback is available only on GPUs.");
+  }
+#endif // LBANN_HAS_GPU
 
   /** @brief Gets the Kronecker factor matrix of a FC layer.
    *  The same key is tied with the same matrix instance. */
@@ -160,9 +167,12 @@ class kfac : public callback_base {
   /** @brief K-FAC per-layer blocks. */
   std::vector<std::shared_ptr<kfac_block>> m_blocks;
 
+#ifdef LBANN_HAS_GPU
   /** @brief Workspace matrices that are used by m_blocks. */
   std::unordered_map<std::string,
                      El::Matrix<DataType, El::Device::GPU>> m_workspace;
+#endif // LBANN_HAS_GPU
+
 };
 
 // Builder function

@@ -61,12 +61,27 @@ template <typename TensorDataType>
 __global__ void kfac_update_kronecker_average_kernel(
     TensorDataType * __restrict__ Aave,
     const TensorDataType * __restrict__ A,
-    const size_t count, const DataType decay) {
+    const size_t count,
+    const double decay) {
   const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
   if(gid < count) {
-    Aave[gid] = Aave[gid]*decay + A[gid]*(DataType(1.0)-decay);
+    Aave[gid] = Aave[gid]*decay + A[gid]*(1.0-decay);
   }
 }
+
+#ifdef LBANN_HAS_HALF
+template <>
+__global__ void kfac_update_kronecker_average_kernel<__half>(
+    __half * __restrict__ Aave,
+    const __half * __restrict__ A,
+    const size_t count,
+    const double decay) {
+  const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
+  if(gid < count) {
+    Aave[gid] = (float) Aave[gid]*decay + (float) A[gid]*(1.0-decay);
+  }
+}
+#endif // LBANN_HAS_HALF
 
 template <typename TensorDataType>
 __global__ void kfac_identity_kernel(
@@ -143,7 +158,7 @@ template <typename TensorDataType>
 void update_kronecker_average(
     TensorDataType * __restrict__ Aave,
     const TensorDataType * __restrict__ A,
-    const size_t count, const DataType decay,
+    const size_t count, const double decay,
     const cudaStream_t& stream) {
   constexpr size_t block_size = 256;
   const size_t grid_size = (count + block_size - 1) / block_size;
@@ -209,7 +224,8 @@ void unpack_lower_tri(
   template void update_kronecker_average<T>(    \
       T * __restrict__ Aave,                    \
       const T * __restrict__ A,                 \
-      const size_t count, const DataType decay, \
+      const size_t count,                       \
+      const double decay,                       \
       const cudaStream_t& stream);              \
   template void identity<T>(                    \
       T * __restrict__ A,                       \
@@ -225,7 +241,6 @@ void unpack_lower_tri(
       const T * __restrict__ L,                 \
       const size_t height,                      \
       const cudaStream_t& stream);
-
 
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"

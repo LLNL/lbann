@@ -5,6 +5,7 @@ import os
 import os.path
 import sys
 import numpy as np
+import pytest
 
 # Bamboo utilities
 current_file = os.path.realpath(__file__)
@@ -79,6 +80,12 @@ def construct_model(lbann):
         lbann (module): Module for LBANN Python frontend
 
     """
+
+    gpus_per_node = tools.gpus_per_node(lbann)
+    if gpus_per_node == 0:
+        e = 'this test requires GPUs.'
+        print('Skip - ' + e)
+        pytest.skip(e)
 
     # Input data
     # Note: Sum with a weights layer so that gradient checking will
@@ -158,7 +165,7 @@ def construct_model(lbann):
     z = lbann.L2Norm2(y)
     obj.append(z)
 
-    callbacks.append(lbann.CallbackKFACTest(
+    callbacks.append(lbann.CallbackKFAC(
         damping_act="1e-2",
         damping_err="2e-2 2e-3",
         damping_bn_act="3e-2",

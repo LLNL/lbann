@@ -39,6 +39,8 @@
 namespace lbann {
 namespace callback {
 
+#ifdef LBANN_HAS_GPU
+
 void kfac::setup(model *m) {
   const auto v2s =
       [](const std::vector<double> v) {
@@ -293,6 +295,8 @@ void kfac::on_backward_prop_end(model *m) {
   }
 
 }
+
+#endif // LBANN_HAS_GPU
 
 std::unique_ptr<callback_base>
 build_kfac_callback_from_pbuf(
