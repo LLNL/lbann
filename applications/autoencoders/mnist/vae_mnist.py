@@ -31,6 +31,11 @@ import lbann.contrib.args
 import lbann.contrib.models.wide_resnet
 import lbann.contrib.launcher
 
+# Get relative path to data
+current_file = os.path.realpath(__file__)
+current_dir = os.path.dirname(current_file)
+sys.path.insert(0, os.path.join(os.path.dirname(current_dir), 'data'))
+import mnist
 
 # Command-line arguments
 desc = ('An LBANN implementation of MNIST VAE in Doersch\'s autoencoder tutorial. '
@@ -38,24 +43,20 @@ desc = ('An LBANN implementation of MNIST VAE in Doersch\'s autoencoder tutorial
 parser = argparse.ArgumentParser(description=desc)
 lbann.contrib.args.add_scheduler_arguments(parser)
 parser.add_argument(
-    '--job-name', action='store', default='lbann_image_ae', type=str,
+    '--job-name', action='store', default='lbann_vae_mnist', type=str,
     help='scheduler job name (default: lbann_vae_mnist)')
 parser.add_argument(
-    '--mini-batch-size', action='store', default=128, type=int,
+    '--mini-batch-size', action='store', default=100, type=int,
     help='mini-batch size (default: 100)', metavar='NUM')
 parser.add_argument(
-    '--num-epochs', action='store', default=90, type=int,
+    '--num-epochs', action='store', default=50, type=int,
     help='number of epochs (default: 50)', metavar='NUM')
-parser.add_argument(
-    '--num-classes', action='store', default=1000, type=int,
-    help='number of ImageNet classes (default: 1000)', metavar='NUM')
 parser.add_argument(
     '--random-seed', action='store', default=0, type=int,
     help='random seed for LBANN RNGs', metavar='NUM')
 parser.add_argument(
-    '--data-reader', action='store',
-    default='../../data_readers/data_reader_mnist.prototext', type=str,
-    help='scheduler job name (default: ../../data_readers/data_reader_mnist.prototext)')
+    '--data-reader', action='store', default='default', type=str,
+    help='Data reader options: \"numpy_npz_int16\", or \"mnist\" (default: data_reader_mnist.prototext)')
 lbann.contrib.args.add_optimizer_arguments(parser, default_learning_rate=0.1)
 args = parser.parse_args()
 
@@ -190,11 +191,15 @@ model = lbann.Model(args.num_epochs,
 opt = lbann.contrib.args.create_optimizer(args)
 
 # Setup data reader
-data_reader_file = args.data_reader
-data_reader_proto = lbann.lbann_pb2.LbannPB()
-with open(data_reader_file, 'r') as f:
-    txtf.Merge(f.read(), data_reader_proto)
-data_reader_proto = data_reader_proto.data_reader
+data_reader_prefix = 'data_reader_candle_mnist'
+if args.data_reader == "default" or args.data_reader == "mnist":
+  data_reader_file = data_reader_prefix + '.prototext'
+elif args.data_reader == "numpy_npz_int16":
+  data_reader_file = data_reader_prefix + '_numpy_npz_int16.prototext'
+else:
+  raise InvalidOption('Data reader selection \"' + args.data_reader + '\" is invalid. Use \"numpy_npz_int16\", or \"mnist\". Default is data_reader_mnist.prototext.')
+
+data_reader = pilot1.make_data_reader(data_reader_file)
 
 
 # Setup trainer
@@ -203,6 +208,6 @@ trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size)
 # Run experiment
 kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
 
-lbann.contrib.launcher.run(trainer, model, data_reader_proto, opt,
+lbann.contrib.launcher.run(trainer, model, data_reader, opt,
                            job_name=args.job_name,
                            **kwargs)
