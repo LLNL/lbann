@@ -31,17 +31,16 @@
 
 #if defined LBANN_HAS_GPU
 #include "sync_info_helpers.hpp"
-#include "gpu_lib.hpp"
 #endif
 
 // Import the GPU __device__ function library
 #if defined LBANN_HAS_CUDA
-//#include "cuda.hpp"
+#include "cuda.hpp"
 namespace lbann {
-namespace gpu_lib = ::lbann::cuda;
-//namespace gpu_lib {
-//  using namespace cuda;
-//}// namespace gpu_lib
+//namespace gpu_lib = ::lbann::cuda;
+namespace gpu_lib {
+  using namespace cuda;
+}// namespace gpu_lib
 }// namespace lbann
 
 #elif defined LBANN_HAS_ROCM
@@ -53,4 +52,9 @@ namespace gpu_lib = ::lbann::hip;
 }// namespace lbann
 
 #endif // LBANN_HAS_CUDA
+
+#if defined LBANN_HAS_GPU
+#include "gpu_lib.hpp"
+#endif // LBANN_HAS_GPU
+
 #endif // LBANN_UTILS_GPU_HELPERS_HPP_INCLUDED

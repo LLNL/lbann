@@ -39,26 +39,26 @@
 #include <thrust/system/cuda/detail/par.h>
 #include <thrust/device_vector.h>
 
-#if defined LBANN_HAS_CUDA
-#include "cuda.hpp"
-#else
-#include "rocm.hpp"
-#endif // LBANN_HAS_CUDA
-
-
 namespace lbann {
-namespace cuda {
-//namespace gpu_lib {
-//  using namespace cuda;
+//namespace cuda {
+namespace gpu_lib {
+  using namespace cuda;
 
 // -------------------------------------------------------------
 // Device functions
 // -------------------------------------------------------------
 #ifdef __CUDACC__
+__device__ __forceinline__
+__half atomic_add(__half* address, __half val);
+__device__ __forceinline__
+float atomic_add(float* address, float val);
+__device__ __forceinline__
+double atomic_add(double* address, double val);
+  /*
 // Atomic add
 template <typename T> __device__ __forceinline__
 T atomic_add(T* address, T val);
-
+*/
 /** @brief Sum over threads in CUDA block
  *
  *  Every thread in a CUDA block must enter this function. The sum is
@@ -228,7 +228,11 @@ void copy_tensor(
 
 // Header implementations
 #include "lbann/utils/impl/gpu_lib.hpp"
+#if defined LBANN_HAS_CUDA
 #include "lbann/utils/impl/cuda.hpp"
+#else
+#include "lbann/utils/impl/rocm.hpp"
+#endif // LBANN_HAS_CUDA
 
 #endif // LBANN_HAS_GPU
 #endif // LBANN_UTILS_GPU_LIB_HPP

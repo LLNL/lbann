@@ -36,7 +36,6 @@
 #endif // __CUDACC__
 
 namespace lbann {
-namespace cuda {
 
 // -------------------------------------------------------------
 // Device functions
@@ -44,8 +43,10 @@ namespace cuda {
 #ifdef __CUDACC__
 // Atomic add function
 #if __CUDA_ARCH__ >= 530
-template <> __device__ __forceinline__
-__half atomic_add<__half>(__half* address, __half val) {
+//template <> __device__ __forceinline__
+//__half gpu_lib::atomic_add<__half>(__half* address, __half val) {
+__device__ __forceinline__
+__half gpu_lib::atomic_add(__half* address, __half val) {
 #if __CUDA_ARCH__ >= 700 || !defined(__CUDA_ARCH__)
   return atomicAdd(address, val);
 #else
@@ -65,12 +66,16 @@ __half atomic_add<__half>(__half* address, __half val) {
 #endif // __CUDA_ARCH__ >= 700 || !defined(__CUDA_ARCH__)
 }
 #endif // __CUDA_ARCH__ >= 530
-template <> __device__ __forceinline__
-float atomic_add<float>(float* address, float val) {
+//template <> __device__ __forceinline__
+//float gpu_lib::atomic_add<float>(float* address, float val) {
+__device__ __forceinline__
+float gpu_lib::atomic_add(float* address, float val) {
   return atomicAdd(address, val);
 }
-template <> __device__ __forceinline__
-double atomic_add<double>(double* address, double val) {
+//template <> __device__ __forceinline__
+//double gpu_lib::atomic_add<double>(double* address, double val) {
+__device__ __forceinline__
+double gpu_lib::atomic_add(double* address, double val) {
 #if __CUDA_ARCH__ >= 600
   return atomicAdd(address, val);
 #else
@@ -90,23 +95,23 @@ double atomic_add<double>(double* address, double val) {
 // Unary math functions
 #if __CUDA_ARCH__ >= 530
 __device__ __forceinline__
-bool isfinite(__half const& x) { return !(::__isnan(x) || ::__hisinf(x)); }
+bool gpu_lib::isfinite(__half const& x) { return !(::__isnan(x) || ::__hisinf(x)); }
 __device__ __forceinline__
-bool isinf(__half const& x) { return ::__hisinf(x); }
+bool gpu_lib::isinf(__half const& x) { return ::__hisinf(x); }
 __device__ __forceinline__
-bool isnan(__half const& x) { return ::__hisnan(x); }
+bool gpu_lib::isnan(__half const& x) { return ::__hisnan(x); }
 
 // This support is far from complete!
 #define WRAP_UNARY_CUDA_HALF_MATH_FUNCTION(func)              \
   __device__ __forceinline__                      \
-  __half func(__half const& x) { return ::h##func(x); }
+  __half gpu_lib::func(__half const& x) { return ::h##func(x); }
 
 // FIXME (trb): This is maybe not the best long-term solution, but it
 // might be the best we can do without really digging into
 // half-precision implementation.
 #define WRAP_UNARY_CUDA_HALF_CAST_TO_FLOAT_MATH_FUNCTION(func) \
   __device__ __forceinline__                       \
-  __half func(__half const& x) { return func(float(x)); }
+  __half gpu_lib::func(__half const& x) { return ::func(float(x)); }
 
 WRAP_UNARY_CUDA_HALF_CAST_TO_FLOAT_MATH_FUNCTION(round)
 WRAP_UNARY_CUDA_HALF_MATH_FUNCTION(ceil)
@@ -119,7 +124,7 @@ WRAP_UNARY_CUDA_HALF_MATH_FUNCTION(exp)
 // FIXME (trb): This is not going to be as accurate as a native expm1
 // implementation could be:
 __device__ __forceinline__
-__half expm1(__half const& x) {
+__half gpu_lib::expm1(__half const& x) {
     return ::__hsub(::hexp(x), ::__float2half(1.f));
 }
 
@@ -132,7 +137,7 @@ WRAP_UNARY_CUDA_HALF_MATH_FUNCTION(sin)
 // FIXME (trb): This just uses the trig identity. Probably less
 // accurate than a native implementation.
 __device__ __forceinline__
-__half tan(__half const& x) { return ::__hdiv(::hsin(x), ::hcos(x)); }
+__half gpu_lib::tan(__half const& x) { return ::__hdiv(::hsin(x), ::hcos(x)); }
 
 WRAP_UNARY_CUDA_HALF_CAST_TO_FLOAT_MATH_FUNCTION(acos)
 WRAP_UNARY_CUDA_HALF_CAST_TO_FLOAT_MATH_FUNCTION(asin)
@@ -146,48 +151,51 @@ WRAP_UNARY_CUDA_HALF_CAST_TO_FLOAT_MATH_FUNCTION(atanh)
 #undef WRAP_UNARY_CUDA_HALF_MATH_FUNCTION
 
 __device__ __forceinline__
-__half min(const __half& x, const __half& y)
+__half gpu_lib::min(const __half& x, const __half& y)
 { return ::__hle(x, y) ? x : y; }
 
  __device__ __forceinline__
-__half max(const __half& x, const __half& y)
+__half gpu_lib::max(const __half& x, const __half& y)
 { return ::__hle(x, y) ? y : x; }
 #endif // __CUDA_ARCH__ >= 530
 
 // Numeric limits
 #ifdef __CUDACC_RELAXED_CONSTEXPR__
-template <typename T> constexpr __device__ __forceinline__ T min() {
+template <typename T> constexpr __device__ __forceinline__ T gpu_lib::min() {
   return std::numeric_limits<T>::min();
 }
-template <typename T> constexpr __device__ __forceinline__ T max() {
+template <typename T> constexpr __device__ __forceinline__ T gpu_lib::max() {
   return std::numeric_limits<T>::min();
 }
-template <typename T> constexpr __device__ __forceinline__ T epsilon() {
+template <typename T> constexpr __device__ __forceinline__ T gpu_lib::epsilon() {
   return std::numeric_limits<T>::epsilon();
 }
-template <typename T> __device__ __forceinline__ T infinity() {
+template <typename T> __device__ __forceinline__ T gpu_lib::infinity() {
   return std::numeric_limits<T>::infinity();
 }
 #else // __CUDACC_RELAXED_CONSTEXPR__
 #define SPECIFIERS template <> __device__ __forceinline__
-SPECIFIERS constexpr float min<float>()                 { return FLT_MIN;   }
-SPECIFIERS constexpr double min<double>()               { return DBL_MIN;   }
-SPECIFIERS constexpr int min<int>()                     { return INT_MIN;   }
-SPECIFIERS constexpr long int min<long int>()           { return LONG_MIN;  }
-SPECIFIERS constexpr long long int min<long long int>() { return LLONG_MIN; }
-SPECIFIERS constexpr float max<float>()                 { return FLT_MAX;   }
-SPECIFIERS constexpr double max<double>()               { return DBL_MAX;   }
-SPECIFIERS constexpr int max<int>()                     { return INT_MAX;   }
-SPECIFIERS constexpr long int max<long int>()           { return LONG_MAX;  }
-SPECIFIERS constexpr long long int max<long long int>() { return LLONG_MAX; }
-SPECIFIERS constexpr float epsilon<float>()   { return FLT_EPSILON; }
-SPECIFIERS constexpr double epsilon<double>() { return DBL_EPSILON; }
-SPECIFIERS float infinity<float>()   { return CUDART_INF_F; }
-SPECIFIERS double infinity<double>() { return CUDART_INF;   }
+SPECIFIERS constexpr float gpu_lib::min<float>()                 { return FLT_MIN;   }
+SPECIFIERS constexpr double gpu_lib::min<double>()               { return DBL_MIN;   }
+SPECIFIERS constexpr int gpu_lib::min<int>()                     { return INT_MIN;   }
+SPECIFIERS constexpr long int gpu_lib::min<long int>()           { return LONG_MIN;  }
+SPECIFIERS constexpr long long int gpu_lib::min<long long int>() { return LLONG_MIN; }
+SPECIFIERS constexpr float gpu_lib::max<float>()                 { return FLT_MAX;   }
+SPECIFIERS constexpr double gpu_lib::max<double>()               { return DBL_MAX;   }
+SPECIFIERS constexpr int gpu_lib::max<int>()                     { return INT_MAX;   }
+SPECIFIERS constexpr long int gpu_lib::max<long int>()           { return LONG_MAX;  }
+SPECIFIERS constexpr long long int gpu_lib::max<long long int>() { return LLONG_MAX; }
+SPECIFIERS constexpr float gpu_lib::epsilon<float>()   { return FLT_EPSILON; }
+SPECIFIERS constexpr double gpu_lib::epsilon<double>() { return DBL_EPSILON; }
+SPECIFIERS float gpu_lib::infinity<float>()   { return CUDART_INF_F; }
+SPECIFIERS double gpu_lib::infinity<double>() { return CUDART_INF;   }
 #undef SPECIFIERS
 #endif // __CUDACC_RELAXED_CONSTEXPR__
 
 #endif // __CUDACC__
+
+namespace cuda {
+
 
 // -------------------------------------------------------------
 // Utilities for Thrust

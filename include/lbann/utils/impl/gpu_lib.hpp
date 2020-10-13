@@ -36,9 +36,9 @@
 #endif // __CUDACC__
 
 namespace lbann {
-namespace cuda {
-//namespace gpu_lib {
-//  using namespace cuda;
+//namespace cuda {
+namespace gpu_lib {
+  using namespace cuda;
 
 // -------------------------------------------------------------
 // Device functions
