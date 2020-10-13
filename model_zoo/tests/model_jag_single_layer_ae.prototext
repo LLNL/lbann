@@ -4,6 +4,8 @@
 # srun --nodes=16 --ntasks=32  build/gnu.Release.catalyst.llnl.gov/lbann/build/model_zoo/lbann --model=model_zoo/tests/model_jag_single_layer_ae.prototext --optimizer=model_zoo/optimizers/opt_adam.prototext --reader=model_zoo/data_readers/data_reader_jag.prototext --metadata=model_zoo/models/jag/wae_cycle_gan/jag_100M_metadata.prototext
 trainer {
   mini_batch_size: 128
+  serialize_io: true
+  num_parallel_readers: 1
   shareable_training_data_reader:false
 
   ###################################################
@@ -17,7 +19,6 @@ trainer {
 }
 model {
   name: "ae_model"
-  serialize_io: true
   data_layout: "data_parallel"
   num_epochs: 4
 
