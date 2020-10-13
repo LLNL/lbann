@@ -52,6 +52,7 @@ message Trainer {
   // These threads are typically used to perform data ingestion in the
   // background.
   int64 num_parallel_readers = 3;
+  bool  serialize_io = 101;
 
   repeated Callback callback = 20;
   int64 mini_batch_size = 12;

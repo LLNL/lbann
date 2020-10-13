@@ -814,7 +814,7 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
     trainer->set_random_seed(opts->get_int("random_seed"));
   }
   if(opts->get_bool("serialize_io")) {
-    model->set_serialize_io(opts->get_bool("serialize_io"));
+    trainer->set_serialize_io(opts->get_bool("serialize_io"));
   }
 
 }
@@ -854,7 +854,7 @@ void print_parameters(const lbann_comm& comm,
             << "  hydrogen_block_size:        " << t.hydrogen_block_size()  << std::endl
             << "  procs_per_trainer:          " << t.procs_per_trainer()  << std::endl
             << "  num_parallel_readers:       " << t.num_parallel_readers()  << std::endl
-            << "  serialize_io:               " << m.serialize_io()  << std::endl
+            << "  serialize_io:               " << t.serialize_io()  << std::endl
             << "  cuda:                       " << (disable_cuda ? "disabled" : "enabled") << std::endl
             << "  cudnn:                      " << (disable_cudnn ? "disabled" : "enabled") << std::endl;
   auto& arg_parser = global_argument_parser();

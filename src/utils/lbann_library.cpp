@@ -86,6 +86,15 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
     // after calling split_trainers()
     // set_num_parallel_readers(*comm, pb);
 
+    // Check to see if the model wants to reduce the I/O parallelism
+    // if(pb_trainer->serialize_io() && io_thread_pool.get_num_threads() != 1) {
+    //   if(master) {
+    //     std::cout << "Model " << pb_trainer->name() << " serialized the I/O threads" << std::endl;
+    //   }
+    //   io_thread_pool.relaunch_pinned_threads(1);
+    // }
+
+
     // Initalize a per-trainer I/O thread pool
     std::unique_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(comm, opts);
 
@@ -282,15 +291,7 @@ std::unique_ptr<model> build_model_from_prototext(
 
   std::ostringstream err;
 
-  lbann_data::Model *pb_model = pb.mutable_model();
-
-  // Check to see if the model wants to reduce the I/O parallelism
-  if(pb_model->serialize_io() && io_thread_pool.get_num_threads() != 1) {
-    if(master) {
-      std::cout << "Model " << pb_model->name() << " serialized the I/O threads" << std::endl;
-    }
-    io_thread_pool.relaunch_pinned_threads(1);
-  }
+  //lbann_data::Model *pb_model = pb.mutable_model();
 
   // Save info to file; this includes the complete prototext (with any over-rides
   // from the cmd line) and various other info
