@@ -159,6 +159,7 @@ hwloc_cpuset_t get_local_cpuset_for_current_thread(hwloc_topology_t topo) {
   hwloc_cudart_get_device_cpuset(topo, hydrogen::gpu::DefaultDevice(), local_cpuset);
 #else
   hwloc_const_cpuset_t allowed_cpuset = hwloc_topology_get_allowed_cpuset(topo);
+  hwloc_bitmap_free(local_cpuset);
   local_cpuset = hwloc_bitmap_dup(allowed_cpuset);
   //  hwloc_bitmap_free(allowed_cpuset);
 #endif // LBANN_HAS_GPU
