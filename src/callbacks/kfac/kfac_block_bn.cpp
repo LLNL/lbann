@@ -34,9 +34,8 @@ namespace callback {
 
 #ifdef LBANN_HAS_GPU
 
-void kfac_block_bn::update_kronecker_factors(
+void kfac_block_bn::compute_local_kronecker_factors(
     lbann_comm* comm,
-    const DataType kronecker_decay,
     const bool print_matrix,
     const bool print_matrix_summary) {
 
@@ -110,20 +109,10 @@ void kfac_block_bn::update_kronecker_factors(
       alpha, factor, factor,
       El::TypeTraits<DataType>::Zero(), fisher_block);
 
-  auto& fisher_ws = m_callback->get_workspace_matrix(
-      std::string("bn_fisher_ws_")+std::to_string(m_layer_id),
-      fisher_block.Height()*(fisher_block.Height()+1)/2, 1);
-  kfac_util::allreduce_lower_tri(fisher_block, fisher_ws, comm, stream);
-
-  // Update average Kronecker factors
-  if(!m_has_kronecker_inverse) {
-    El::Copy(fisher_block, m_fisher_average);
-  }
-  auto &Fave = m_fisher_average;
-  kfac_util::update_kronecker_average(
-      Fave.Buffer(), fisher_block.Buffer(),
-      fisher_block.Height()*fisher_block.Width(),
-      kronecker_decay, stream);
+  m_fisher_buf.Resize(fisher_block.Height()*(fisher_block.Height()+1)/2, 1);
+  kfac_util::pack_lower_tri(
+      m_fisher_buf.Buffer(), fisher_block.LockedBuffer(),
+      fisher_block.Height(), stream);
 
   // dump L2 norm of matrices
   if(comm->am_trainer_master() && print_matrix_summary) {
@@ -136,6 +125,33 @@ void kfac_block_bn::update_kronecker_factors(
         << std::endl;
     std::cout << oss.str();
   }
+
+}
+
+void kfac_block_bn::update_kronecker_average(
+    lbann_comm* comm,
+    const DataType kronecker_decay,
+    const bool print_matrix,
+    const bool print_matrix_summary) {
+
+  const auto stream = get_stream();
+
+  auto& fisher_block = m_callback->get_workspace_matrix(
+      std::string("bn_fisher_block_")+std::to_string(m_layer_id),
+      m_num_channels*2, m_num_channels*2);
+  kfac_util::unpack_lower_tri(
+      fisher_block.Buffer(), m_fisher_buf.LockedBuffer(),
+      fisher_block.Height(), stream);
+
+  // Update average Kronecker factors
+  if(!m_has_kronecker_inverse) {
+    El::Copy(fisher_block, m_fisher_average);
+  }
+  auto &Fave = m_fisher_average;
+  kfac_util::update_kronecker_average(
+      Fave.Buffer(), fisher_block.Buffer(),
+      fisher_block.Height()*fisher_block.Width(),
+      kronecker_decay, stream);
 
 }
 
@@ -224,9 +240,8 @@ void kfac_block_bn::update_kronecker_inverse(
   }
 }
 
-void kfac_block_bn::update_preconditioned_grads(
-    lbann_comm* comm) {
-
+const std::vector<El::AbstractMatrix<DataType>*>
+kfac_block_bn::get_preconditioned_grad_buffers() {
   auto& scales = m_layer->get_weights(0);
   auto& biases = m_layer->get_weights(1);
   optimizer *s_optimizer = scales.get_optimizer();
@@ -237,12 +252,9 @@ void kfac_block_bn::update_preconditioned_grads(
       dst_scale, gradient_scale, false);
   auto& b_grad_buffer = b_optimizer->get_gradient_buffer(
       dst_scale, gradient_scale, false);
-  El::Broadcast(
-      s_grad_buffer.Matrix(), comm->get_trainer_comm(),
-      m_inverse_proc_rank);
-  El::Broadcast(
-      b_grad_buffer.Matrix(), comm->get_trainer_comm(),
-      m_inverse_proc_rank);
+  std::vector<El::AbstractMatrix<DataType>*>
+      ret = {&s_grad_buffer.Matrix(), &b_grad_buffer.Matrix()};
+  return ret;
 }
 
 #endif // LBANN_HAS_GPU

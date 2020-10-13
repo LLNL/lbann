@@ -35,9 +35,8 @@ namespace callback {
 
 #ifdef LBANN_HAS_GPU
 
-void kfac_block_fc_conv::update_kronecker_factors(
+void kfac_block_fc_conv::compute_local_kronecker_factors(
     lbann_comm* comm,
-    const DataType kronecker_decay,
     const bool print_matrix,
     const bool print_matrix_summary) {
 
@@ -59,20 +58,20 @@ void kfac_block_fc_conv::update_kronecker_factors(
   const auto output_dims = m_layer->get_output_dims(); // KH'W'
   const size_t num_input_channels = input_dims[0];
   const size_t num_output_channels = output_dims[0];
-  size_t A_height = local_activations.Height();
+  m_height_A = local_activations.Height();
   if(m_is_conv) {
     const auto conv_dims = get_conv_layer()->get_conv_dims();
-    A_height = num_input_channels
+    m_height_A = num_input_channels
         *std::accumulate(conv_dims.begin(), conv_dims.end(),
                          1, std::multiplies<int>());
   }
-  const size_t G_height = !m_is_conv ? local_errors.Height() : num_output_channels;
+  m_height_G = !m_is_conv ? local_errors.Height() : num_output_channels;
   auto& A = m_callback->get_workspace_matrix(
       std::string("A_")+std::to_string(m_layer_id),
-      A_height, A_height);
+      m_height_A, m_height_A);
   auto& G = m_callback->get_workspace_matrix(
       std::string("G_")+std::to_string(m_layer_id),
-      G_height, G_height);
+      m_height_G, m_height_G);
   if(!m_is_conv) {
     get_kronecker_factor_fc(A, local_activations, 1.0/mini_batch_size);
     get_kronecker_factor_fc(G, local_errors, mini_batch_size);
@@ -105,13 +104,50 @@ void kfac_block_fc_conv::update_kronecker_factors(
         get_conv_layer(), false, stream);
   }
 
-  // Accumulate local Kronecker factors
-  auto& ALws = m_callback->get_workspace_matrix(std::string("ALws_")+std::to_string(m_layer_id),
-                                                A.Height()*(A.Height()+1)/2, 1);
-  auto& GLws = m_callback->get_workspace_matrix(std::string("GLws_")+std::to_string(m_layer_id),
-                                                G.Height()*(G.Height()+1)/2, 1);
-  kfac_util::allreduce_lower_tri(A, ALws, comm, stream);
-  kfac_util::allreduce_lower_tri(G, GLws, comm, stream);
+  m_kronecker_factor_buf_A.Resize(A.Height()*(A.Height()+1)/2, 1);
+  m_kronecker_factor_buf_G.Resize(G.Height()*(G.Height()+1)/2, 1);
+  kfac_util::pack_lower_tri(m_kronecker_factor_buf_A.Buffer(),
+                            A.LockedBuffer(), A.Height(), stream);
+  kfac_util::pack_lower_tri(m_kronecker_factor_buf_G.Buffer(),
+                            G.LockedBuffer(), G.Height(), stream);
+
+  // Dump L2 norm of matrices
+  if(comm->am_trainer_master() && print_matrix_summary) {
+    // TODO: Show weights' stats
+    // const auto &dtw = dynamic_cast<data_type_weights<DataType>*>(&weights);
+    // const auto &w_values = dtw->get_values();
+    std::ostringstream oss;
+    oss << "K-FAC callback: L2 norm @ "<< m_layer->get_name() << ": "
+        // << kfac_util::get_matrix_stat(w_values.LockedMatrix(), "W")
+        << kfac_util::get_matrix_stat(local_activations, "acts")
+        << ", " << kfac_util::get_matrix_stat(local_errors, "errs")
+        << ", " << kfac_util::get_matrix_stat(A, "A")
+        << ", " << kfac_util::get_matrix_stat(G, "G")
+        << std::endl;
+    std::cout << oss.str();
+  }
+
+}
+
+void kfac_block_fc_conv::update_kronecker_average(
+    lbann_comm* comm,
+    const DataType kronecker_decay,
+    const bool print_matrix,
+    const bool print_matrix_summary) {
+
+  const auto stream = get_stream();
+
+  auto& A = m_callback->get_workspace_matrix(
+      std::string("A_")+std::to_string(m_layer_id),
+      m_height_A, m_height_A);
+  auto& G = m_callback->get_workspace_matrix(
+      std::string("G_")+std::to_string(m_layer_id),
+      m_height_G, m_height_G);
+
+  kfac_util::unpack_lower_tri(
+      A.Buffer(), m_kronecker_factor_buf_A.LockedBuffer(), m_height_A, stream);
+  kfac_util::unpack_lower_tri(
+      G.Buffer(), m_kronecker_factor_buf_G.LockedBuffer(), m_height_G, stream);
 
   // Update average Kronecker factors
   if(!m_has_kronecker_inverse) {
@@ -138,22 +174,14 @@ void kfac_block_fc_conv::update_kronecker_factors(
 
   // Dump L2 norm of matrices
   if(comm->am_trainer_master() && print_matrix_summary) {
-    // TODO: Show weights's stats
-    // const auto &dtw = dynamic_cast<data_type_weights<DataType>*>(&weights);
-    // const auto &w_values = dtw->get_values();
     std::ostringstream oss;
     oss << "K-FAC callback: L2 norm @ "<< m_layer->get_name() << ": "
-        // << kfac_util::get_matrix_stat(w_values.LockedMatrix(), "W")
-        // << ", "
-        << kfac_util::get_matrix_stat(local_activations, "acts")
-        << ", " << kfac_util::get_matrix_stat(local_errors, "errs")
-        << ", " << kfac_util::get_matrix_stat(A, "A")
-        << ", " << kfac_util::get_matrix_stat(G, "G")
-        << ", " << kfac_util::get_matrix_stat(Aave, "Aave")
+        << kfac_util::get_matrix_stat(Aave, "Aave")
         << ", " << kfac_util::get_matrix_stat(Gave, "Gave")
         << std::endl;
     std::cout << oss.str();
   }
+
 }
 
 void kfac_block_fc_conv::update_kronecker_inverse(
@@ -301,9 +329,8 @@ void kfac_block_fc_conv::update_kronecker_inverse(
   }
 }
 
-void kfac_block_fc_conv::update_preconditioned_grads(
-    lbann_comm* comm) {
-
+const std::vector<El::AbstractMatrix<DataType>*>
+kfac_block_fc_conv::get_preconditioned_grad_buffers() {
   auto& weights = m_layer->get_weights(0);
   optimizer *w_optimizer = weights.get_optimizer();
   DataType dst_scale = El::TypeTraits<DataType>::Zero(),
@@ -312,9 +339,9 @@ void kfac_block_fc_conv::update_preconditioned_grads(
   // and won't be all-reduced later.
   auto& grad_buffer = w_optimizer->get_gradient_buffer(
       dst_scale, gradient_scale, false);
-  El::Broadcast(
-      grad_buffer.Matrix(), comm->get_trainer_comm(),
-      m_inverse_proc_rank);
+  std::vector<El::AbstractMatrix<DataType>*>
+      ret = {&grad_buffer.Matrix()};
+  return ret;
 }
 
 void kfac_block_fc_conv::get_kronecker_factor_fc(

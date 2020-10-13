@@ -57,8 +57,22 @@ class kfac_block {
   }
   virtual ~kfac_block() = default;
 
+  /** @brief Compute Kronecker factors. */
+  virtual void compute_local_kronecker_factors(
+      lbann_comm* comm,
+      const bool print_matrix,
+      const bool print_matrix_summary) {
+    LBANN_ERROR("this function should be called via a sub-class.");
+  }
+
+  /** @brief Get buffers of Kronecker factors for reduce-scatter. */
+  virtual const std::vector<El::AbstractMatrix<DataType>*>
+  get_local_kronecker_buffers() {
+    LBANN_ERROR("this function should be called via a sub-class.");
+  }
+
   /** @brief Update the average Kronecker factors. */
-  virtual void update_kronecker_factors(
+  virtual void update_kronecker_average(
       lbann_comm* comm,
       const DataType kronecker_decay,
       const bool print_matrix,
@@ -77,9 +91,9 @@ class kfac_block {
     LBANN_ERROR("this function should be called via a sub-class.");
   }
 
-  /** @brief Scatter preconditioned gradients. */
-  virtual void update_preconditioned_grads(
-      lbann_comm* comm) {
+  /** @brief Get buffers of preconditioned parameter gradients. */
+  virtual const std::vector<El::AbstractMatrix<DataType>*>
+  get_preconditioned_grad_buffers() {
     LBANN_ERROR("this function should be called via a sub-class.");
   }
 

@@ -258,27 +258,33 @@ void kfac::on_backward_prop_end(model *m) {
 
   // Step 1: Ensure that each process has averaged Kronecker factors
   // for the model-parallel part.
-  for(auto& block : m_blocks) {
+  {
+    const bool has_kronecker_inverse = m_blocks[0]->has_kronecker_inverse();
     const bool is_update_required =
-        ((num_steps%m_update_interval_steps) == 0
-         || !block->has_kronecker_inverse());
-    if(!is_update_required)
-      continue;
-    block->update_kronecker_factors(
-        comm,
-        m_kronecker_decay,
-        m_print_matrix, m_print_matrix_summary);
+        ((num_steps%m_update_interval_steps) == 0 || !has_kronecker_inverse);
+    if(is_update_required) {
+      for(auto& block : m_blocks)
+        block->compute_local_kronecker_factors(
+            comm,
+            m_print_matrix, m_print_matrix_summary);
+      for(auto& block : m_blocks)
+        for(auto L : block->get_local_kronecker_buffers())
+          comm->allreduce(*L, comm->get_trainer_comm());
+      for(auto& block : m_blocks)
+        block->update_kronecker_average(
+            comm,
+            m_kronecker_decay,
+            m_print_matrix, m_print_matrix_summary);
+    }
   }
 
   // Step 2: Model-parallel inverse computation
   for(auto& block : m_blocks) {
     const bool is_update_required =
-        ((num_steps%m_update_interval_steps) == 0
-         || !block->has_kronecker_inverse())
+        ((num_steps%m_update_interval_steps) == 0 || !block->has_kronecker_inverse())
         && (size_t) comm->get_rank_in_trainer() == block->get_inverse_proc_rank();
     if(!is_update_required)
       continue;
-
     // TODO: Add kfac_block::is_bn?
     const bool is_bn = dynamic_cast<kfac_block_bn*>(block.get()) != nullptr;
     block->update_kronecker_inverse(
@@ -290,9 +296,11 @@ void kfac::on_backward_prop_end(model *m) {
   }
 
   // Step 3: All-gather of each preconditioned gradient tensor
-  for(auto& block : m_blocks) {
-    block->update_preconditioned_grads(comm);
-  }
+  for(auto& block : m_blocks)
+    for(auto grads : block->get_preconditioned_grad_buffers())
+      El::Broadcast(
+          *grads, comm->get_trainer_comm(),
+          block->get_inverse_proc_rank());
 
 }
 

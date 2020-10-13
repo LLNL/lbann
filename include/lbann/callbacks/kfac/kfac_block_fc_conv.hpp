@@ -64,7 +64,19 @@ class kfac_block_fc_conv: public kfac_block {
 
 #ifdef LBANN_HAS_GPU
 
-  void update_kronecker_factors(
+  void compute_local_kronecker_factors(
+      lbann_comm* comm,
+      const bool print_matrix,
+      const bool print_matrix_summary) override;
+
+  const std::vector<El::AbstractMatrix<DataType>*>
+  get_local_kronecker_buffers() {
+    std::vector<El::AbstractMatrix<DataType>*> ret =
+        {&m_kronecker_factor_buf_A, &m_kronecker_factor_buf_G};
+    return ret;
+  }
+
+  void update_kronecker_average(
       lbann_comm* comm,
       const DataType kronecker_decay,
       const bool print_matrix,
@@ -78,8 +90,8 @@ class kfac_block_fc_conv: public kfac_block {
       const bool print_matrix_summary,
       const bool print_time) override;
 
-  void update_preconditioned_grads(
-      lbann_comm* comm) override;
+  const std::vector<El::AbstractMatrix<DataType>*>
+  get_preconditioned_grad_buffers() override;
 
 #endif // LBANN_HAS_GPU
 
@@ -150,6 +162,13 @@ class kfac_block_fc_conv: public kfac_block {
   const std::vector<int> m_conv_input_spatial_dims, m_conv_output_spatial_dims;
 
 #ifdef LBANN_HAS_GPU
+
+  /** @brief Lower triangle buffers of Kronecker factors. */
+  El::Matrix<DataType, El::Device::GPU>
+  m_kronecker_factor_buf_A, m_kronecker_factor_buf_G;
+
+  /** @brief The heights of the Kronecker factors. */
+  size_t m_height_A, m_height_G;
 
   /** @brief Exponential moving average of Kronecker factors. */
   El::Matrix<DataType, El::Device::GPU>
