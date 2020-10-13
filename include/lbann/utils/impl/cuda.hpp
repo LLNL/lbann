@@ -196,7 +196,6 @@ SPECIFIERS double gpu_lib::infinity<double>() { return CUDART_INF;   }
 
 namespace cuda {
 
-
 // -------------------------------------------------------------
 // Utilities for Thrust
 // -------------------------------------------------------------

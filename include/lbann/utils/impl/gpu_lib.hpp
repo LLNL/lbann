@@ -24,7 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <thrust/system/cuda/execution_policy.h>
+//#include <thrust/system/cuda/execution_policy.h>
 
 // Headers for NVCC
 #ifdef __CUDACC__
@@ -35,8 +35,16 @@
 #include <cuda_fp16.h>
 #endif // __CUDACC__
 
+// Headers for HIP
+#ifdef __HIPCC__
+#ifdef HYDROGEN_HAVE_CUB
+#include "cub/block/block_reduce.cuh"
+#endif // HYDROGEN_HAVE_CUB
+#include <math_constants.h>
+#include <hip_fp16.h>
+#endif // __HIPCC__
+
 namespace lbann {
-//namespace cuda {
 namespace gpu_lib {
 #if defined LBANN_HAS_CUDA
   using namespace cuda;
@@ -44,10 +52,10 @@ namespace gpu_lib {
   using namespace rocm;
 #endif // LBANN_HAS_CUDA
 
+#if defined __CUDACC__ || defined __HIPCC__
 // -------------------------------------------------------------
 // Device functions
 // -------------------------------------------------------------
-#ifdef __CUDACC__
 
 // Block reduction
 template <size_t bdimx, size_t bdimy, size_t bdimz, class T>
@@ -219,14 +227,11 @@ const T& array<T,N>::operator[](size_t i) const {
   return vals[i];
 }
 
-#endif // __CUDACC__
-
 // -------------------------------------------------------------
 // Helper functions for entrywise operations
 // -------------------------------------------------------------
-#ifdef __CUDACC__
 
-/** CUDA kernel to apply an entry-wise unary operator. */
+/** GPU kernel to apply an entry-wise unary operator. */
 template <template <typename> class UnaryOperator, typename TensorDataType>
 __global__
 void entrywise_unary_operator_kernel(El::Int height, El::Int width,
@@ -247,7 +252,7 @@ void entrywise_unary_operator_kernel(El::Int height, El::Int width,
   }
 }
 
-/** CUDA kernel to apply an entry-wise binary operator. */
+/** GPU kernel to apply an entry-wise binary operator. */
 template <template <typename> class BinaryOperator, typename TensorDataType>
 __global__
 void entrywise_binary_operator_kernel(El::Int height, El::Int width,
@@ -293,7 +298,7 @@ void apply_entrywise_unary_operator(
                 "(", output.Height(), " x ", output.Width(), ")");
   }
 
-  // Get CUDA grid dimensions
+  // Get GPU grid dimensions
   // Note: Maximum CUDA grid dimension is 2^32-1
   // (https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#features-and-technical-specifications).
   const El::Int height = input.Height();
@@ -305,7 +310,7 @@ void apply_entrywise_unary_operator(
     grid_dim = std::numeric_limits<uint32_t>::max();
   }
 
-  // Launch CUDA kernel
+  // Launch GPU kernel
   if (grid_dim > 0) {
     auto multisync = El::MakeMultiSync(gpu::get_sync_info(output),
                                        gpu::get_sync_info(input));
@@ -345,7 +350,7 @@ void apply_entrywise_binary_operator(
                 "(", output.Height(), " x ", output.Width(), ")");
   }
 
-  // Get CUDA grid dimensions
+  // Get GPU grid dimensions
   // Note: Maximum CUDA grid dimension is 2^32-1
   // (https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#features-and-technical-specifications).
   const El::Int height = input1.Height();
@@ -357,7 +362,7 @@ void apply_entrywise_binary_operator(
     grid_dim = std::numeric_limits<uint32_t>::max();
   }
 
-  // Launch CUDA kernel
+  // Launch GPU kernel
   if (grid_dim > 0) {
     auto multisync = El::MakeMultiSync(gpu::get_sync_info(output),
                                        gpu::get_sync_info(input1),
@@ -421,7 +426,7 @@ void apply_entrywise_binary_operator(
                                                   output.Matrix());
 }
 
-#endif // __CUDACC__
+#endif // __CUDACC__ || __HIPCC__
 
 
 } // namespace cuda

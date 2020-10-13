@@ -101,10 +101,6 @@
 
 namespace lbann {
 namespace cuda {
-#ifdef __CUDACC__
-
-#endif // __CUDACC__
-
 // -------------------------------------------------------------
 // Wrapper classes
 // -------------------------------------------------------------
@@ -291,9 +287,6 @@ using vector = ::thrust::device_vector<T, allocator<T>>;
 } // namespace thrust
 } // namespace cuda
 } // namespace lbann
-
-// Header implementations
-//#include "lbann/utils/impl/cuda.hpp"
 
 #endif // LBANN_HAS_GPU
 #endif // LBANN_UTILS_CUDA_HPP
