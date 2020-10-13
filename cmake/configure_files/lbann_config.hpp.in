@@ -41,13 +41,13 @@
 #cmakedefine LBANN_HAS_CUDNN
 #ifdef LBANN_HAS_CUDA
 #cmakedefine LBANN_HAS_NVSHMEM
+#cmakedefine LBANN_NVPROF
 #endif
 
 #cmakedefine LBANN_HAS_HALF
 #cmakedefine LBANN_HAS_GPU_FP16
 
 #cmakedefine LBANN_VTUNE
-#cmakedefine LBANN_NVPROF
 
 #cmakedefine LBANN_SYS_SENDFILE_OK
 
