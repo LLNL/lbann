@@ -42,6 +42,7 @@ enum class lrn_mode
   CROSS_CHANNEL_DIM1,
 };// enum class lrn_mode
 
+#ifdef LBANN_HAS_CUDNN
 namespace cudnn
 {
 
@@ -163,5 +164,6 @@ void lrn_cross_channel_backward(LRNDescriptor normDesc,
 }
 
 }// namespace cudnn
+#endif // LBANN_HAS_CUDNN
 }// namespace lbann
 #endif // LBANN_UTILS_DNN_LIB_CUDNN_LRN_HPP_
