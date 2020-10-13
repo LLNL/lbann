@@ -26,6 +26,7 @@
 
 #define LBANN_RELU_LAYER_INSTANTIATE
 #include "lbann/layers/activations/relu.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 
 namespace lbann {
 
@@ -78,7 +79,7 @@ void relu_layer<TensorDataType, Layout, Device>::fp_compute() {
     return;
   }
 #endif // LBANN_HAS_DISTCONV
-  cuda::apply_entrywise_unary_operator<op, TensorDataType>(
+  gpu_lib::apply_entrywise_unary_operator<op, TensorDataType>(
       this->get_prev_activations(),
       this->get_activations());
 }
@@ -91,7 +92,7 @@ void relu_layer<TensorDataType, Layout, Device>::bp_compute() {
     return;
   }
 #endif // LBANN_HAS_DISTCONV
-  cuda::apply_entrywise_binary_operator<op_backprop, TensorDataType>(
+  gpu_lib::apply_entrywise_binary_operator<op_backprop, TensorDataType>(
       this->get_prev_activations(), this->get_prev_error_signals(),
       this->get_error_signals());
 }

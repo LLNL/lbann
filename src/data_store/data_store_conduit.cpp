@@ -32,6 +32,7 @@
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/options.hpp"
 #include "lbann/utils/timer.hpp"
+#include "lbann/utils/distconv.hpp"
 #include "lbann/utils/file_utils.hpp"
 #include "lbann/utils/commify.hpp"
 #include <unordered_set>
@@ -61,11 +62,20 @@ data_store_conduit::data_store_conduit(
     LBANN_ERROR("m_comm is nullptr");
   }
 
+#ifdef LBANN_HAS_DISTCONV
+  int num_io_parts = dc::get_number_of_io_partitions();
+#else
+  int num_io_parts = 1;
+#endif // LBANN_HAS_DISTCONV
+
   m_world_master = m_comm->am_world_master();
   m_trainer_master = m_comm->am_trainer_master();
   m_rank_in_trainer = m_comm->get_rank_in_trainer();
   m_rank_in_world = m_comm->get_rank_in_world();
+  m_partition_in_trainer = m_rank_in_trainer/num_io_parts; // needs a better name  which group you are in
+  m_offset_in_partition = m_rank_in_trainer%num_io_parts;
   m_np_in_trainer = m_comm->get_procs_per_trainer();
+  m_num_partitions_in_trainer = m_np_in_trainer/num_io_parts; // rename this m_num_io_groups_in_trainer
 
   open_informational_files();
 
@@ -183,7 +193,11 @@ void data_store_conduit::copy_members(const data_store_conduit& rhs) {
   m_world_master = rhs.m_world_master;
   m_trainer_master = rhs.m_trainer_master;
   m_rank_in_trainer = rhs.m_rank_in_trainer;
+  m_rank_in_world = rhs.m_rank_in_world;
+  m_partition_in_trainer = rhs.m_partition_in_trainer;
+  m_offset_in_partition = rhs.m_offset_in_partition;
   m_np_in_trainer = rhs.m_np_in_trainer;
+  m_num_partitions_in_trainer = rhs.m_num_partitions_in_trainer;
   m_owner = rhs.m_owner;
   m_shuffled_indices = rhs.m_shuffled_indices;
   m_sample_sizes = rhs.m_sample_sizes;
@@ -380,7 +394,8 @@ void data_store_conduit::set_conduit_node(int data_id, const conduit::Node &node
       {
     //    std::lock_guard<std::mutex> lock(m_mutex);
         LBANN_ERROR("NOT YET IMPLEMENTED");
-        m_owner[data_id] = m_rank_in_trainer;
+        auto key = std::make_pair(data_id, m_offset_in_partition);
+        m_owner[key] = m_rank_in_trainer;
         m_sample_sizes[data_id] = n2.total_bytes_compact();
         spill_conduit_node(node, data_id);
         m_spilled_nodes[data_id] = m_cur_spill_dir_integer;
@@ -388,13 +403,14 @@ void data_store_conduit::set_conduit_node(int data_id, const conduit::Node &node
     }
 
     else {
-      {
-      //  std::lock_guard<std::mutex> lock(m_mutex);
-        m_owner[data_id] = m_rank_in_trainer;
-        build_node_for_sending(node, m_data[data_id]);
-        m_sample_sizes[data_id] = m_data[data_id].total_bytes_compact();
-      }
+      //      m_mutex.lock();
+      DEBUG_DS("set_conduit_node : rank_in_trainer=", m_rank_in_trainer, " and partition_in_trainer=", m_partition_in_trainer, " offset in partition=", m_offset_in_partition, " with num_partitions=", m_num_partitions_in_trainer);
+      auto key = std::make_pair(data_id, m_offset_in_partition);
+      m_owner[key] = m_rank_in_trainer;
+      build_node_for_sending(node, m_data[data_id]);
+      m_sample_sizes[data_id] = m_data[data_id].total_bytes_compact();
       error_check_compacted_node(m_data[data_id], data_id);
+      //      m_mutex.unlock();
     }
   }
 }
@@ -616,8 +632,14 @@ int data_store_conduit::build_indices_i_will_recv(int current_pos, int mb_size) 
   int k = 0;
   for (int i=current_pos; i< current_pos + mb_size; ++i) {
     auto index = (*m_shuffled_indices)[i];
-    if ((i % m_owner_map_mb_size) % m_np_in_trainer == m_rank_in_trainer) {
-      int owner = m_owner[index];
+#ifdef LBANN_HAS_DISTCONV
+    int num_ranks_in_partition = dc::get_number_of_io_partitions();
+#else
+    int num_ranks_in_partition = 1;
+#endif // LBANN_HAS_DISTCONV
+    if ((((i % m_owner_map_mb_size) % m_num_partitions_in_trainer) * num_ranks_in_partition + m_offset_in_partition) == m_rank_in_trainer) {
+      auto key = std::make_pair(index, m_offset_in_partition);
+      int owner = m_owner[key];
       m_indices_to_recv[owner].insert(index);
       k++;
     }
@@ -640,11 +662,17 @@ int data_store_conduit::build_indices_i_will_send(int current_pos, int mb_size) 
       is_mine = true;
     }
     if (is_mine) {
-      m_indices_to_send[(i % m_owner_map_mb_size) % m_np_in_trainer].insert(index);
+#ifdef LBANN_HAS_DISTCONV
+      int num_ranks_in_partition = dc::get_number_of_io_partitions();
+#else
+      int num_ranks_in_partition = 1;
+#endif // LBANN_HAS_DISTCONV
+      m_indices_to_send[(((i % m_owner_map_mb_size) % m_num_partitions_in_trainer) * num_ranks_in_partition + m_offset_in_partition)].insert(index);
 
       // Sanity check
-      if (m_owner[index] != m_rank_in_trainer) {
-        LBANN_ERROR( "error for i: ", i, " index: ", index, " m_owner: ", m_owner[index], " me: ", m_rank_in_trainer);
+      auto key = std::make_pair(index, m_offset_in_partition);
+      if (m_owner[key] != m_rank_in_trainer) {
+        LBANN_ERROR( "error for i: ", i, " index: ", index, " m_owner: ", m_owner[key], " me: ", m_rank_in_trainer);
       }
       k++;
     }
@@ -663,7 +691,8 @@ void data_store_conduit::build_preloaded_owner_map(const std::vector<int>& per_r
       ++owning_rank;
       per_rank_list_range_start += per_rank_list_size;
     }
-    m_owner[(*m_shuffled_indices)[i]] = owning_rank;
+    auto key = std::make_pair((*m_shuffled_indices)[i], m_offset_in_partition);
+    m_owner[key] = owning_rank;
   }
 PROFILE("build_preloaded_owner_map; m_owner_maps_were_exchanged = true");
   m_owner_maps_were_exchanged = true;
@@ -710,10 +739,11 @@ void data_store_conduit::compact_nodes() {
 }
 
 int data_store_conduit::get_index_owner(int idx) {
-  if (m_owner.find(idx) == m_owner.end()) {
+  auto key = std::make_pair(idx, m_offset_in_partition);
+  if (m_owner.find(key) == m_owner.end()) {
     LBANN_ERROR(" idx: ", idx, " was not found in the m_owner map; map size: ", m_owner.size());
   }
-  return m_owner[idx];
+  return m_owner[key];
 }
 
 void data_store_conduit::check_mem_capacity(lbann_comm *comm, const std::string sample_list_file, size_t stride, size_t offset) {
@@ -961,7 +991,7 @@ void data_store_conduit::get_image_sizes(map_is_t &file_sizes, std::vector<std::
   if (image_reader == nullptr) {
     LBANN_ERROR("data_reader_image *image_reader = dynamic_cast<data_reader_image*>(m_reader) failed");
   }
-  const std::vector<image_data_reader::sample_t> &image_list = image_reader->get_image_list();
+  const auto& sample_list = image_reader->get_sample_list();
   std::vector<size_t> my_image_sizes;
 
   // this block fires if we're exchanging cache data at the end
@@ -978,10 +1008,12 @@ void data_store_conduit::get_image_sizes(map_is_t &file_sizes, std::vector<std::
     // get sizes of files for which I'm responsible
     for (size_t h=m_rank_in_trainer; h<m_shuffled_indices->size(); h += m_np_in_trainer) {
       ++m_my_num_indices;
-      const std::string fn = m_reader->get_file_dir() + '/' + image_list[(*m_shuffled_indices)[h]].first;
+      const auto file_id = sample_list[(*m_shuffled_indices)[h]].first;
+      const std::string fn = m_reader->get_file_dir() + '/'
+                           + sample_list.get_samples_filename(file_id);
       std::ifstream in(fn.c_str());
       if (!in) {
-        LBANN_ERROR("failed to open ", fn, " for reading; file_dir: ", m_reader->get_file_dir(), "  fn: ", image_list[h].first, "; role: ", m_reader->get_role());
+        LBANN_ERROR("failed to open ", fn, " for reading ", fn, "; role: " + m_reader->get_role());
       }
       in.seekg(0, std::ios::end);
       my_image_sizes.push_back((*m_shuffled_indices)[h]);
@@ -1006,7 +1038,7 @@ void data_store_conduit::get_image_sizes(map_is_t &file_sizes, std::vector<std::
     disp[h+1] = disp[h] + counts[h];
   }
 
-  std::vector<size_t> work(image_list.size()*2);
+  std::vector<size_t> work(sample_list.size()*2);
   m_comm->trainer_all_gather<size_t>(my_image_sizes, work, counts, disp);
   indices.resize(m_np_in_trainer);
   for (int h=0; h<m_np_in_trainer; h++) {
@@ -1181,7 +1213,7 @@ void data_store_conduit::read_files(std::vector<char> &work, map_is_t &sizes, st
 
   //get the list of images from the data reader
   image_data_reader *image_reader = dynamic_cast<image_data_reader*>(m_reader);
-  const std::vector<image_data_reader::sample_t> &image_list = image_reader->get_image_list();
+  const auto& sample_list = image_reader->get_sample_list();
 
   //read the images
   size_t offset = 0;
@@ -1189,7 +1221,9 @@ void data_store_conduit::read_files(std::vector<char> &work, map_is_t &sizes, st
   for (size_t j=0; j<indices.size(); ++j) {
     int idx = indices[j];
     size_t s = sizes[idx];
-    const std::string fn = m_reader->get_file_dir() + '/' + image_list[idx].first;
+    const auto file_id = sample_list[idx].first;
+    const std::string fn = m_reader->get_file_dir() + '/'
+                         + sample_list.get_samples_filename(file_id);
     std::ifstream in(fn, std::ios::in | std::ios::binary);
     in.read(work.data()+offset, s);
     in.close();
@@ -1199,10 +1233,10 @@ void data_store_conduit::read_files(std::vector<char> &work, map_is_t &sizes, st
 
 void data_store_conduit::build_conduit_nodes(map_is_t &sizes) {
   image_data_reader *image_reader = dynamic_cast<image_data_reader*>(m_reader);
-  const std::vector<image_data_reader::sample_t> &image_list = image_reader->get_image_list();
   for (auto t : sizes) {
     int data_id = t.first;
-    int label = image_list[data_id].second;
+    const auto sample = image_reader->get_sample(static_cast<size_t>(data_id));
+    const auto label = sample.second;
     if (m_image_offsets.find(data_id) == m_image_offsets.end()) {
       LBANN_ERROR("m_image_offsets.find(data_id) == m_image_offsets.end() for data_id: ", data_id);
     }
@@ -1324,31 +1358,52 @@ void data_store_conduit::exchange_owner_maps() {
   m_comm->all_gather(&my_count, 1, all_counts.data(), 1,  m_comm->get_trainer_comm());
 
   std::vector<size_t> my_sizes(m_my_num_indices);
+  std::vector<std::pair<size_t,size_t>> nodes_i_own(m_owner.size());
   size_t j = 0;
   for (auto t : m_owner) {
-    my_sizes[j++] = t.first;
+    auto slab_id = std::make_pair(t.first.first, t.first.second);
+    nodes_i_own[j++] = slab_id;
+    DEBUG_DS("I am building the size vector from the owner map for ", t.first.first, ".", t.first.second, " and ", t.second);
   }
 
-  std::vector<size_t> others;
+  std::vector<std::pair<size_t,size_t>> other_ranks_nodes;
   for (int k=0; k<m_np_in_trainer; k++) {
-    others.resize(all_counts[k]);
+    other_ranks_nodes.resize(all_counts[k]);
     if (m_rank_in_trainer == k) {
-      m_comm->broadcast<size_t>(k, my_sizes.data(), all_counts[k],  m_comm->get_trainer_comm());
+      m_comm->broadcast<std::pair<size_t,size_t>>(k, nodes_i_own.data(), all_counts[k],  m_comm->get_trainer_comm());
+      if(m_debug) {
+        int c = 0;
+        for(auto i : nodes_i_own) {
+          DEBUG_DS("k=", k,  ": nodes_i_own[", c, "]=", i.first, ".", i.second);
+          c++;
+        }
+      }
     } else {
-      m_comm->broadcast<size_t>(k, others.data(), all_counts[k],  m_comm->get_trainer_comm());
-      for (size_t i=0; i<others.size(); ++i) {
-        if (m_owner.find(others[i]) != m_owner.end()) {
+      m_comm->broadcast<std::pair<size_t,size_t>>(k, other_ranks_nodes.data(), all_counts[k],  m_comm->get_trainer_comm());
+      if(m_debug) {
+        int c = 0;
+        for(auto i : other_ranks_nodes) {
+          DEBUG_DS("k=", k,  ": other_ranks_nodes[", c, "]=", i.first, ".", i.second);
+          c++;
+        }
+      }
+      for (size_t i=0; i<other_ranks_nodes.size(); ++i) {
+        auto key = other_ranks_nodes[i];
+        // Check to make sure that I don't own this
+        if (m_owner.find(key) != m_owner.end()) {
 
           if (m_debug) {
-            DEBUG_DS("data_store_conduit::exchange_owner_maps, duplicate data_id: ", others[i], "; k= ", k, "\nmy current m_owner map: ");
-            for (auto t : m_owner) DEBUG_DS("data_id: ", t.first, " owner: ", t.second);
-            DEBUG_DS("\nowner map (partial or whole) from P_", k);
-            for (auto t : others) DEBUG_DS(t, " ");
+            auto slab_id = other_ranks_nodes[i];
+            DEBUG_DS("data_store_conduit::exchange_owner_maps, duplicate data_id: ", slab_id.first, ".", slab_id.second, "; k= ", k, "\nm_owner:\n");
+            for (auto t : m_owner) DEBUG_DS("data_id: ", t.first.first, " / ", t.first.second, " owner: ", t.second);
+            DEBUG_DS("\nother_ranks_nodes[k]: ");
+            for (auto t : other_ranks_nodes) DEBUG_DS(t.first, ".", t.second, " ");
           }
 
-          LBANN_ERROR("duplicate data_id: ", others[i], " role: ", m_reader->get_role(), "; m_owner[", others[i],"] = ", m_owner[others[i]], " for role: ", m_reader->get_role(), " m_owner.size: ", m_owner.size(), " m_data.size(): ", m_data.size());
+          LBANN_ERROR("duplicate data_id: ", other_ranks_nodes[i].first, ".",
+                      other_ranks_nodes[i].second, " role: ", m_reader->get_role(), "; m_owner[",other_ranks_nodes[i].first, ".", other_ranks_nodes[i].second,"] = ", m_owner[key]);
         }
-        m_owner[others[i]] = k;
+        m_owner[key] = k;
       }
     }
 
@@ -1533,9 +1588,9 @@ void data_store_conduit::test_checkpoint(const std::string &checkpoint_dir) {
   //check that the owner map was correctly loaded
   for (auto t : m_owner) {
     if (sanity.find(t.first) == sanity.end()) {
-      LBANN_ERROR("sanity.find(t.first) == sanity.end() for t.first= ", t.first);
+      LBANN_ERROR("sanity.find(t.first) == sanity.end() for t.first= ", t.first.first, ":", t.first.second);
     } else if (sanity[t.first] != m_owner[t.first]) {
-      LBANN_ERROR("sanity[t.first] != m_owner[t.first] for t.first= ", t.first, " and m_owner[t.first]= ", m_owner[t.first]);
+      LBANN_ERROR("sanity[t.first] != m_owner[t.first] for t.first= ", t.first.first, ":", t.first.second, " and m_owner[t.first]= ", m_owner[t.first]);
     }
   }
 
@@ -1663,6 +1718,12 @@ void data_store_conduit::load_checkpoint(std::string dir_name, generic_data_read
            m_owner, m_sample_sizes);
 
   if (reader != nullptr) {
+#ifdef LBANN_HAS_DISTCONV
+    int num_io_parts = dc::get_number_of_io_partitions();
+#else
+    int num_io_parts = 1;
+#endif // LBANN_HAS_DISTCONV
+
     m_reader = reader;
     m_comm = m_reader->get_comm();
     m_shuffled_indices = &(m_reader->get_shuffled_indices());
@@ -1670,7 +1731,10 @@ void data_store_conduit::load_checkpoint(std::string dir_name, generic_data_read
     m_trainer_master = m_comm->am_trainer_master();
     m_rank_in_trainer = m_comm->get_rank_in_trainer();
     m_rank_in_world = m_comm->get_rank_in_world();
+    m_partition_in_trainer = m_rank_in_trainer/num_io_parts; // needs a better name  which group you are in
+    m_offset_in_partition = m_rank_in_trainer%num_io_parts;
     m_np_in_trainer = m_comm->get_procs_per_trainer();
+    m_num_partitions_in_trainer = m_np_in_trainer/num_io_parts; // rename this m_num_io_groups_in_trainer
   }
 
   // Open metadata filename; this is in index re, checkpointed conduit filenames
@@ -1804,14 +1868,14 @@ void data_store_conduit::open_informational_files() {
 }
 
 void data_store_conduit::print_partial_owner_map(int n) {
-   std::cout << "\nHere is part of the owner map; m_owner.size(): " << m_owner.size() << std::endl;
-  std::map<int,int> m;
+  std::cout << "\nHere is part of the owner map; m_owner.size(): " << m_owner.size() << std::endl;
+  std::map<std::pair<size_t,size_t>, int> m;
   for (auto t : m_owner) {
     m[t.first] = t.second;
   }
   int j = 0;
   for (auto t : m) {
-    std::cout << "  sample_id: " << t.first << " owner: " << t.second << std::endl;
+    std::cout << "  sample_id: " << t.first.first << ":" << t.first.second << " owner: " << t.second << std::endl;
     if (j++ >= 10) break;
   }
 }

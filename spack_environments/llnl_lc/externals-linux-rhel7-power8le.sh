@@ -8,7 +8,7 @@ EXTERNAL_ALL_PACKAGES=$(cat <<EOF
         lapack:
           - openblas threads=openmp
         blas:
-          - openblas threasd=openmp
+          - openblas threads=openmp
       buildable: true
       version: []
 EOF
@@ -29,18 +29,18 @@ EXTERNAL_PACKAGES=$(cat <<EOF
       version:
       - 10.2.89
       externals:
-      - spec: cuda@10.2.89 arch=linux-rhel7-power8le
+      - spec: cuda@10.1.168 arch=linux-rhel7-power8le
         modules:
-        - cuda/10.2.89
+        - cuda/10.1.168
     cudnn::
       buildable: true
       version:
       - 7.6.5.32-10.1-linux-ppc64le
     gcc::
-       buildable: False
-       version:
+      buildable: False
+      version:
       - 7.3.1
-       externals:
+      externals:
       - spec:  gcc@7.3.1 arch=linux-rhel7-power8le
         modules:
         - gcc/7.3.1

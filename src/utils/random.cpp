@@ -101,6 +101,13 @@ bool save_rng_to_checkpoint(persist& p, lbann_comm* comm, bool is_distributed) {
     if(!rng_fast) { LBANN_ERROR("Failed to open ", rng_name); }
     rng_fast << get_fast_generator();
     rng_fast.close();
+
+    rng_name = dirname + "/rng_ltfb_generator_" + rank_in_trainer + "_"
+             + std::to_string(omp_get_thread_num());
+    std::ofstream rng_ltfb(rng_name);
+    if(!rng_ltfb) { LBANN_ERROR("Failed to open ", rng_name); }
+    rng_ltfb << get_ltfb_generator();
+    rng_ltfb.close();
   }
 #else
     rng_name = dirname + "/rng_generator_" + rank_in_trainer;
@@ -114,6 +121,12 @@ bool save_rng_to_checkpoint(persist& p, lbann_comm* comm, bool is_distributed) {
     if(!rng_fast) { LBANN_ERROR("Failed to open ", rng_name); }
     rng_fast << get_fast_generator();
     rng_fast.close();
+
+    rng_name = dirname + "/rng_ltfb_generator_" + rank_in_trainer;
+    std::ofstream rng_ltfb(rng_name);
+    if(!rng_ltfb) { LBANN_ERROR("Failed to open ", rng_name); }
+    rng_ltfb << get_ltfb_generator();
+    rng_ltfb.close();
 #endif
 
    return true;
@@ -182,6 +195,12 @@ bool load_rng_from_checkpoint(persist& p, const lbann_comm* comm) {
     std::ifstream rng_fast(rng_name);
     if(!rng_fast) { LBANN_ERROR("Failed to open ", rng_name); }
     rng_fast >> get_fast_generator();
+
+    rng_name = dirname + "/rng_ltfb_generator_" + rank_in_trainer + "_"
+             + std::to_string(omp_get_thread_num());
+    std::ifstream rng_ltfb(rng_name);
+    if(!rng_ltfb) { LBANN_ERROR("Failed to open ", rng_name); }
+    rng_ltfb >> get_ltfb_generator();
    }
 #else
     rng_name = dirname + "/rng_generator_" + rank_in_trainer;
@@ -193,6 +212,11 @@ bool load_rng_from_checkpoint(persist& p, const lbann_comm* comm) {
     std::ifstream rng_fast(rng_name);
     if(!rng_fast) { LBANN_ERROR("Failed to open ", rng_name); }
     rng_fast >> get_fast_generator();
+
+    rng_name = dirname + "/rng_ltfb_generator_" + rank_in_trainer;
+    std::ifstream rng_ltfb(rng_name);
+    if(!rng_ltfb) { LBANN_ERROR("Failed to open ", rng_name); }
+    rng_ltfb >> get_ltfb_generator();
    }
 #endif
   return true;

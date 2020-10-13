@@ -70,7 +70,7 @@ bool check_if_dir_exists(const std::string& dirname);
 /** @todo Deprecated. Use @c lbann::file::make_directory instead. */
 bool create_dir(const std::string output_dir);
 
-bool load_file(const std::string filename, std::vector<char>& buf);
+bool load_file(const std::string filename, std::vector<char>& buf, bool append = false);
 
 inline void __swapEndianInt(unsigned int& ui) {
   ui = ((ui >> 24) | ((ui<<8) & 0x00FF0000) | ((ui>>8) & 0x0000FF00) | (ui << 24));

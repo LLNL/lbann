@@ -27,6 +27,7 @@
 #ifndef LBANN_UTILS_CUDA_HPP
 #define LBANN_UTILS_CUDA_HPP
 
+#include "lbann_config.hpp"
 #include "lbann/utils/exception.hpp"
 
 #ifdef LBANN_HAS_GPU
@@ -167,6 +168,9 @@ template <typename T> __device__ __forceinline__ T tanh(const T& x);
 template <typename T> __device__ __forceinline__ T acosh(const T& x);
 template <typename T> __device__ __forceinline__ T asinh(const T& x);
 template <typename T> __device__ __forceinline__ T atanh(const T& x);
+template <typename T> __device__ __forceinline__ bool isfinite(const T& x);
+template <typename T> __device__ __forceinline__ bool isinf(const T& x);
+template <typename T> __device__ __forceinline__ bool isnan(const T& x);
 
 // Binary math functions
 template <typename T> __device__ __forceinline__ T min(const T& x, const T& y);
@@ -192,7 +196,7 @@ struct array {
 #endif // __CUDACC__
 
 // -------------------------------------------------------------
-// Utilities for CUDA events
+// Wrapper classes
 // -------------------------------------------------------------
 
 /** Wrapper class for a CUDA event. */
@@ -221,9 +225,92 @@ private:
   cudaStream_t m_stream;
 };
 
+/** Wrapper around @c cudaGraph_t */
+class Graph {
+
+public:
+
+  Graph(cudaGraph_t graph=nullptr);
+  ~Graph();
+
+  // Copy-and-swap idiom
+  Graph(const Graph&);
+  Graph(Graph&&);
+  Graph& operator=(Graph);
+  friend void swap(Graph& first, Graph& second);
+
+  /** @brief Take ownership of CUDA object */
+  void reset(cudaGraph_t graph=nullptr);
+  /** @brief Return CUDA object and release ownership */
+  cudaGraph_t release();
+  /** @brief Return CUDA object without releasing ownership */
+  cudaGraph_t get() const noexcept;
+  /** @brief Return CUDA object without releasing ownership */
+  operator cudaGraph_t() const noexcept;
+
+  /** @brief Create CUDA object
+   *
+   *  Does nothing if already created.
+   */
+  void create();
+
+  /** @begin Begin stream capture */
+  static void begin_capture(
+    cudaStream_t stream,
+    cudaStreamCaptureMode mode=cudaStreamCaptureModeGlobal);
+  /** @begin End stream capture and return the resulting CUDA graph */
+  static Graph end_capture(cudaStream_t stream);
+
+private:
+
+  cudaGraph_t graph_{nullptr};
+
+};
+
+/** Wrapper around @c cudaGraphExec_t */
+class ExecutableGraph {
+
+public:
+
+  ExecutableGraph(cudaGraphExec_t graph_exec=nullptr);
+  ExecutableGraph(cudaGraph_t graph);
+  ~ExecutableGraph();
+
+  // Copy-and-swap idiom
+  ExecutableGraph(const ExecutableGraph&) = delete;
+  ExecutableGraph(ExecutableGraph&&);
+  ExecutableGraph& operator=(ExecutableGraph);
+  friend void swap(ExecutableGraph& first, ExecutableGraph& second);
+
+  /** @brief Take ownership of CUDA object */
+  void reset(cudaGraphExec_t graph=nullptr);
+  /** @brief Return CUDA object and release ownership */
+  cudaGraphExec_t release();
+  /** @brief Return CUDA object without releasing ownership */
+  cudaGraphExec_t get() const noexcept;
+  /** @brief Return CUDA object without releasing ownership */
+  operator cudaGraphExec_t() const noexcept;
+
+  /** @brief Execute CUDA graph */
+  void launch(cudaStream_t stream) const;
+
+  /** @brief Update CUDA graph
+   *
+   *  Creates new executable graph if it has not already been created
+   *  or if update fails.
+   */
+  void update(cudaGraph_t graph);
+
+private:
+
+  cudaGraphExec_t graph_exec_{nullptr};
+
+};
+
 // -------------------------------------------------------------
-// Helper functions for entrywise operations
+// Helper functions for tensor operations
 // -------------------------------------------------------------
+
 #ifdef __CUDACC__
 
 /** Apply an entry-wise unary operator to GPU data.
@@ -266,6 +353,16 @@ void apply_entrywise_binary_operator(
   El::AbstractDistMatrix<TensorDataType>& output);
 
 #endif // __CUDACC__
+
+/** Copy entries between GPU tensors. */
+template <typename TensorDataType>
+void copy_tensor(
+  cudaStream_t stream,
+  const std::vector<size_t>& dims,
+  const TensorDataType* input,
+  const std::vector<size_t>& input_strides,
+  TensorDataType* output,
+  const std::vector<size_t>& output_strides);
 
 // -------------------------------------------------------------
 // Utilities for Thrust

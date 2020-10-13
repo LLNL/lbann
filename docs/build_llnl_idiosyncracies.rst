@@ -24,7 +24,7 @@ this guide.
 
 Pre-installed Binary Packages
 ------------------------------
-
+.. comment:: need to update this section with newer versions or perhaps remove if this method is no longer used by developers
 The LC machines have many instances of cuDNN and NCCL installed in
 locations shared by the :code:`brain` group. These may be consistently
 detected by CMake by :code:`export`-ing their locations into the

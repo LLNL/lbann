@@ -27,7 +27,7 @@
 #include "lbann/objective_functions/weight_regularization/l2.hpp"
 #include "lbann/models/model.hpp"
 #ifdef LBANN_HAS_GPU
-#include "lbann/utils/cublas.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 #endif // LBANN_HAS_GPU
 #include "lbann/optimizers/data_type_optimizer.hpp"
 #include "lbann/weights/data_type_weights.hpp"
@@ -119,11 +119,11 @@ void l2_weight_regularization::start_evaluation() {
 #ifdef LBANN_HAS_GPU
   // Compute contributions from GPU weights
   if (m_contributions.count(El::Device::GPU) > 0) {
-    auto&& stream = hydrogen::cuda::GetDefaultStream();
     DMatType<El::Device::GPU> contribution;
 #ifdef HYDROGEN_HAVE_CUB
     contribution.SetMemoryMode(1); // CUB GPU memory pool
 #endif // HYDROGEN_HAVE_CUB
+    auto sync_info = gpu::get_sync_info(contribution);
     El::Zeros(contribution, 1, 1);
     for (El::Int i = 0; i < num_weights; ++i) {
       const auto& vals = dynamic_cast<WeightsType*>(m_weights[i])->get_values();
@@ -137,12 +137,11 @@ void l2_weight_regularization::start_evaluation() {
     }
     get_comm().allreduce(static_cast<El::AbstractMatrix<AccumulateDataType>&>(contribution),
                          get_comm().get_trainer_comm());
-    CHECK_CUDA(cudaMemcpyAsync(m_contributions[El::Device::GPU].Buffer(),
-                               contribution.LockedBuffer(),
-                               sizeof(DataType),
-                               cudaMemcpyDeviceToHost,
-                               stream));
-    m_copy_event.record(stream);
+    ::hydrogen::gpu::Copy1DToHost(contribution.LockedBuffer(),
+                                  m_contributions[El::Device::GPU].Buffer(),
+                                  1,
+                                  sync_info);
+    m_copy_event.record(sync_info.Stream());
   }
 #endif // LBANN_HAS_GPU
 
