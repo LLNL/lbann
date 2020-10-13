@@ -29,6 +29,7 @@
 #
 ################################################################################
 
+import os.path
 import sys
 import argparse
 import lbann
@@ -36,7 +37,12 @@ import lbann.models
 import lbann.contrib.args
 import lbann.contrib.models.wide_resnet
 import lbann.contrib.launcher
-import data.pilot1 as pilot1
+
+# Get relative path to data
+current_file = os.path.realpath(__file__)
+current_dir = os.path.dirname(current_file)
+sys.path.insert(0, os.path.join(os.path.dirname(current_dir), 'data'))
+import pilot1
 
 
 # Command-line arguments
@@ -222,9 +228,10 @@ elif args.data_reader == "gdc":
   data_reader_file = data_reader_prefix + '_gdc.prototext'
 elif args.data_reader == "growth":
   data_reader_file = data_reader_prefix + '_growth.prototext'
-else
+else:
   raise InvalidOption('Data reader selection \"' + args.data_reader + '\" is invalid. Use \"combo\", \"gdc\", or \"growth\". Default is data_reader_candle_pilot1.prototext.')
-pilot1.make_data_reader(data_reader_file)
+
+data_reader = pilot1.make_data_reader(data_reader_file)
 
 # Setup trainer
 trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size)
@@ -232,6 +239,6 @@ trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size)
 # Run experiment
 kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
 
-lbann.contrib.launcher.run(trainer, model, data_reader_proto, opt,
+lbann.contrib.launcher.run(trainer, model, data_reader, opt,
                            job_name=args.job_name,
                            **kwargs)
