@@ -39,6 +39,11 @@
 namespace lbann {
 namespace callback {
 
+enum kfac_kronecker_factor_sync_mode {
+  ALLREDUCE,
+  REDUCE_SCATTER
+};
+
 #ifdef LBANN_HAS_GPU
 
 void kfac::setup(model *m) {
@@ -265,11 +270,77 @@ void kfac::on_backward_prop_end(model *m) {
     if(is_update_required) {
       for(auto& block : m_blocks)
         block->compute_local_kronecker_factors(
-            comm,
-            m_print_matrix, m_print_matrix_summary);
+            comm, m_print_matrix, m_print_matrix_summary);
+
+      // List-up buffers to synchronize.
+      std::vector<std::pair<size_t, El::AbstractMatrix<DataType>*>> buffers;
+      int send_size = 0, rs_recv_size = 0;
       for(auto& block : m_blocks)
-        for(auto L : block->get_local_kronecker_buffers())
-          comm->allreduce(*L, comm->get_trainer_comm());
+        for(auto L : block->get_local_kronecker_buffers()) {
+          const size_t rank = block->get_inverse_proc_rank();
+          buffers.emplace_back(rank, L);
+          assert(L.Width() == 1);
+          send_size += L->Height();
+          if(rank == (size_t) comm->get_rank_in_trainer())
+            rs_recv_size += L->Height();
+        }
+      std::sort(buffers.begin(), buffers.end(),
+                [](const std::pair<size_t, El::AbstractMatrix<DataType>*>& lhs,
+                   const std::pair<size_t, El::AbstractMatrix<DataType>*>& rhs) {
+                  return lhs.first < rhs.first;
+                });
+
+      // Prepare send/recv buffer.
+      El::Matrix<DataType, El::Device::GPU>& buffer_matrix =
+          get_workspace_matrix("allreduce_buffer", send_size, 1);
+      {
+        size_t offset = 0;
+        for(auto& buffer : buffers) {
+          auto view = El::View(buffer_matrix, El::IR(offset, offset+buffer.second->Height()), El::ALL);
+          El::Copy(*buffer.second, view);
+          offset += buffer.second->Height();
+        }
+      }
+
+      const kfac_kronecker_factor_sync_mode mode = ALLREDUCE;
+      // Perform reduce-scatter.
+      if(mode == ALLREDUCE) {
+        comm->allreduce(
+            (El::AbstractMatrix<DataType>&) buffer_matrix,
+            comm->get_trainer_comm());
+      } else {
+        const auto syncinfo = El::SyncInfoFromMatrix(buffer_matrix);
+        // TODO: Do only once
+        std::vector<int> rs_recv_sizes;
+        rs_recv_sizes.resize(comm->get_procs_per_trainer());
+        comm->all_gather(&rs_recv_size, 1,
+                         &rs_recv_sizes[0], comm->get_procs_per_trainer(),
+                         comm->get_trainer_comm());
+        // TODO: In-place reduce-scatter
+        El::Matrix<DataType, El::Device::GPU>& recv_matrix =
+            get_workspace_matrix("reduce_scatter_recv_buffer", rs_recv_size, 1);
+        El::mpi::ReduceScatter(
+            buffer_matrix.LockedBuffer(), recv_matrix.Buffer(),
+            &rs_recv_sizes[0],
+            comm->get_trainer_comm(),
+            syncinfo);
+        auto v = El::View(buffer_matrix, El::IR(0, rs_recv_size), El::ALL);
+        El::Copy(recv_matrix, v);
+      }
+
+      // Apply aggregated Kronecker factros to each block.
+      {
+        size_t offset = 0;
+        for(auto& buffer : buffers) {
+          if(mode == ALLREDUCE ||
+             buffer.first == (size_t) comm->get_rank_in_trainer()) {
+            auto view = El::View(buffer_matrix, El::IR(offset, offset+buffer.second->Height()), El::ALL);
+            El::Copy(view, *buffer.second);
+            offset += buffer.second->Height();
+          }
+        }
+      }
+
       for(auto& block : m_blocks)
         block->update_kronecker_average(
             comm,
