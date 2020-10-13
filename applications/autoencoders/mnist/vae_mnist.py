@@ -191,7 +191,7 @@ model = lbann.Model(args.num_epochs,
 opt = lbann.contrib.args.create_optimizer(args)
 
 # Setup data reader
-data_reader_prefix = 'data_reader_candle_mnist'
+data_reader_prefix = 'data_reader_mnist'
 if args.data_reader == "default" or args.data_reader == "mnist":
   data_reader_file = data_reader_prefix + '.prototext'
 elif args.data_reader == "numpy_npz_int16":
@@ -199,7 +199,7 @@ elif args.data_reader == "numpy_npz_int16":
 else:
   raise InvalidOption('Data reader selection \"' + args.data_reader + '\" is invalid. Use \"numpy_npz_int16\", or \"mnist\". Default is data_reader_mnist.prototext.')
 
-data_reader = pilot1.make_data_reader(data_reader_file)
+data_reader = mnist.make_data_reader(data_reader_file)
 
 
 # Setup trainer
