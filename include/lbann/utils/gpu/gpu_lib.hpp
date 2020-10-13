@@ -27,17 +27,7 @@
 #ifndef LBANN_UTILS_GPU_LIB_HPP
 #define LBANN_UTILS_GPU_LIB_HPP
 
-#include "lbann_config.hpp"
-#include "lbann/utils/exception.hpp"
-
 #ifdef LBANN_HAS_GPU
-
-//#include <cuda.h>
-#include <thrust/memory.h>
-#include <thrust/version.h>
-#include <thrust/detail/allocator/tagged_allocator.h>
-#include <thrust/system/cuda/detail/par.h>
-#include <thrust/device_vector.h>
 
 namespace lbann {
 //namespace cuda {
@@ -51,18 +41,16 @@ namespace gpu_lib {
 // -------------------------------------------------------------
 // Device functions
 // -------------------------------------------------------------
-#ifdef __CUDACC__
+#if defined __CUDACC__ || defined __HIPCC__
+
+// Atomic add
 __device__ __forceinline__
 __half atomic_add(__half* address, __half val);
 __device__ __forceinline__
 float atomic_add(float* address, float val);
 __device__ __forceinline__
 double atomic_add(double* address, double val);
-  /*
-// Atomic add
-template <typename T> __device__ __forceinline__
-T atomic_add(T* address, T val);
-*/
+
 /** @brief Sum over threads in CUDA block
  *
  *  Every thread in a CUDA block must enter this function. The sum is
@@ -100,9 +88,9 @@ T block_reduce(T val);
 // Unary math functions
 #define DECLARE_UNARY_MATH_FUNC_WITH_TYPE(func, type)    \
   __device__ __forceinline__ type name(type const&)
-#define DECLARE_UNARY_MATH_FUNC(func)                \
-  DECLARE_UNARY_MATH_FUNC_WITH_TYPE(func, __half);   \
-  DECLARE_UNARY_MATH_FUNC_WITH_TYPE(func, float);    \
+#define DECLARE_UNARY_MATH_FUNC(func)                 \
+  DECLARE_UNARY_MATH_FUNC_WITH_TYPE(func, __half);    \
+  DECLARE_UNARY_MATH_FUNC_WITH_TYPE(func, float);     \
   DECLARE_UNARY_MATH_FUNC_WITH_TYPE(func, double)
 template <typename T> __device__ __forceinline__ T abs(const T& x);
 DECLARE_UNARY_MATH_FUNC(abs);
@@ -138,11 +126,11 @@ template <typename T> __device__ __forceinline__ T min(const T& x, const T& y);
 template <typename T> __device__ __forceinline__ T max(const T& x, const T& y);
 template <typename T> __device__ __forceinline__ T mod(const T& x, const T& y);
 template <typename T> __device__ __forceinline__ T pow(const T& x, const T& y);
-#define DECLARE_UNARY_MATH_BINARY_FUNC_WITH_TYPE(func, type)    \
+#define DECLARE_UNARY_MATH_BINARY_FUNC_WITH_TYPE(func, type)            \
   __device__ __forceinline__ type name(type const& x, type const& y)
-#define DECLARE_UNARY_MATH_BINARY_FUNC(func)                \
-  DECLARE_UNARY_MATH_BINARY_FUNC_WITH_TYPE(func, __half);   \
-  DECLARE_UNARY_MATH_BINARY_FUNC_WITH_TYPE(func, float);    \
+#define DECLARE_UNARY_MATH_BINARY_FUNC(func)                 \
+  DECLARE_UNARY_MATH_BINARY_FUNC_WITH_TYPE(func, __half);    \
+  DECLARE_UNARY_MATH_BINARY_FUNC_WITH_TYPE(func, float);     \
   DECLARE_UNARY_MATH_BINARY_FUNC_WITH_TYPE(func, double)
 DECLARE_UNARY_MATH_BINARY_FUNC(min);
 DECLARE_UNARY_MATH_BINARY_FUNC(max);
@@ -167,13 +155,9 @@ struct array {
   __host__ __device__ __forceinline__ const T& operator[](size_t i) const;
 };
 
-#endif // __CUDACC__
-
 // -------------------------------------------------------------
 // Helper functions for tensor operations
 // -------------------------------------------------------------
-
-#ifdef __CUDACC__
 
 /** Apply an entry-wise unary operator to GPU data.
  *  The input and output data must be on GPU and must have the same
@@ -214,13 +198,14 @@ void apply_entrywise_binary_operator(
   const El::AbstractDistMatrix<TensorDataType>& input2,
   El::AbstractDistMatrix<TensorDataType>& output);
 
-#endif // __CUDACC__
+#endif // __CUDACC__ || __HIPCC__
 
-} // namespace cuda
+} // namespace gpu_lib
 } // namespace lbann
 
 // Header implementations
 #include "lbann/utils/impl/gpu_lib.hpp"
+
 #if defined LBANN_HAS_CUDA
 #include "lbann/utils/impl/cuda.hpp"
 #else
