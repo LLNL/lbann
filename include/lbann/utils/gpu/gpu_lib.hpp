@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_UTILS_CUDA_HPP
-#define LBANN_UTILS_CUDA_HPP
+#ifndef LBANN_UTILS_GPU_LIB_HPP
+#define LBANN_UTILS_GPU_LIB_HPP
 
 #include "lbann_config.hpp"
 #include "lbann/utils/exception.hpp"
@@ -39,65 +39,12 @@
 #include <thrust/system/cuda/detail/par.h>
 #include <thrust/device_vector.h>
 
-// -------------------------------------------------------------
-// Error utility macros
-// -------------------------------------------------------------
-#define LBANN_CUDA_SYNC(async)                                  \
-  do {                                                          \
-    /* Synchronize GPU and check for errors. */                 \
-    cudaError_t status_CUDA_SYNC = cudaDeviceSynchronize();     \
-    if (status_CUDA_SYNC == cudaSuccess)                        \
-      status_CUDA_SYNC = cudaGetLastError();                    \
-    if (status_CUDA_SYNC != cudaSuccess) {                      \
-      cudaDeviceReset();                                        \
-      std::stringstream err_CUDA_SYNC;                          \
-      if (async) { err_CUDA_SYNC << "Asynchronous "; }          \
-      err_CUDA_SYNC << "CUDA error ("                           \
-                    << cudaGetErrorString(status_CUDA_SYNC)     \
-                    << ")";                                     \
-      LBANN_ERROR(err_CUDA_SYNC.str());                         \
-    }                                                           \
-  } while (0)
-#define LBANN_CUDA_CHECK_LAST_ERROR(async)                              \
-  do {                                                                  \
-    cudaError_t status = cudaGetLastError();                            \
-    if (status != cudaSuccess) {                                        \
-      cudaDeviceReset();                                                \
-      std::stringstream err_CUDA_CHECK_LAST_ERROR;                      \
-      if (async) { err_CUDA_CHECK_LAST_ERROR << "Asynchronous "; }      \
-      err_CUDA_CHECK_LAST_ERROR << "CUDA error ("                       \
-                                << cudaGetErrorString(status)           \
-                                << ")";                                 \
-      LBANN_ERROR(err_CUDA_CHECK_LAST_ERROR.str());                     \
-    }                                                                   \
-  } while (0)
-#define FORCE_CHECK_CUDA(cuda_call)                             \
-  do {                                                          \
-    /* Call CUDA API routine, synchronizing before and */       \
-    /* after to check for errors. */                            \
-    LBANN_CUDA_SYNC(true);                                      \
-    cudaError_t status_CHECK_CUDA = (cuda_call);                \
-    if (status_CHECK_CUDA != cudaSuccess) {                     \
-      LBANN_ERROR(std::string("CUDA error (")                   \
-                  + cudaGetErrorString(status_CHECK_CUDA)       \
-                  + std::string(")"));                          \
-    }                                                           \
-    LBANN_CUDA_SYNC(false);                                     \
-  } while (0)
-#define FORCE_CHECK_CUDA_NOSYNC(cuda_call)                      \
-  do {                                                          \
-    cudaError_t status_CHECK_CUDA = (cuda_call);                \
-    if (status_CHECK_CUDA != cudaSuccess) {                     \
-      LBANN_ERROR(std::string("CUDA error (")                   \
-                  + cudaGetErrorString(status_CHECK_CUDA)       \
-                  + std::string(")"));                          \
-    }                                                           \
-  } while (0)
-#ifdef LBANN_DEBUG
-#define CHECK_CUDA(cuda_call) FORCE_CHECK_CUDA(cuda_call);
+#if defined LBANN_HAS_CUDA
+#include "cuda.hpp"
 #else
-#define CHECK_CUDA(cuda_call) FORCE_CHECK_CUDA_NOSYNC(cuda_call)
-#endif // #ifdef LBANN_DEBUG
+#include "rocm.hpp"
+#endif // LBANN_HAS_CUDA
+
 
 namespace lbann {
 namespace cuda {
@@ -455,4 +402,4 @@ using vector = ::thrust::device_vector<T, allocator<T>>;
 #include "lbann/utils/impl/cuda.hpp"
 
 #endif // LBANN_HAS_GPU
-#endif // LBANN_UTILS_CUDA_HPP
+#endif // LBANN_UTILS_GPU_LIB_HPP

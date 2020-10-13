@@ -569,59 +569,6 @@ void apply_entrywise_binary_operator(
 
 #endif // __CUDACC__
 
-// -------------------------------------------------------------
-// Utilities for Thrust
-// -------------------------------------------------------------
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-
-namespace thrust {
-#ifdef LBANN_HAS_CUDA
-using stream_t = cudaStream_t;
-#elif defined LBANN_HAS_ROCM
-using stream_t = hipStream_t;
-#endif
-template <typename T>
-allocator<T>::allocator(stream_t stream)
-  : m_stream(stream),
-    m_system(stream) {}
-
-template <typename T>
-typename allocator<T>::pointer allocator<T>::allocate(allocator<T>::size_type size) {
-  value_type* buffer = nullptr;
-  if (size > 0) {
-#ifdef HYDROGEN_HAVE_CUB
-    auto& memory_pool = El::cub::MemoryPool();
-    CHECK_CUDA(memory_pool.DeviceAllocate(reinterpret_cast<void**>(&buffer),
-                                          size * sizeof(value_type),
-                                          m_stream));
-#else
-    CHECK_CUDA(cudaMalloc(&buffer, size * sizeof(value_type)));
-#endif // HYDROGEN_HAVE_CUB
-  }
-  return pointer(buffer);
-}
-
-template <typename T>
-void allocator<T>::deallocate(allocator<T>::pointer buffer,
-                              allocator<T>::size_type size) {
-  auto&& ptr = buffer.get();
-  if (ptr != nullptr) {
-#ifdef HYDROGEN_HAVE_CUB
-    auto& memory_pool = El::cub::MemoryPool();
-    CHECK_CUDA(memory_pool.DeviceFree(ptr));
-#else
-    CHECK_CUDA(cudaFree(ptr));
-#endif // HYDROGEN_HAVE_CUB
-  }
-}
-
-template <typename T>
-typename allocator<T>::system_type& allocator<T>::system() {
-  return m_system;
-}
-
-} // namespace thrust
-#endif // !DOXYGEN_SHOULD_SKIP_THIS
 
 } // namespace cuda
 } // namespace lbann
