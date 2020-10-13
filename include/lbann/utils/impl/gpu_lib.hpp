@@ -38,7 +38,11 @@
 namespace lbann {
 //namespace cuda {
 namespace gpu_lib {
+#if defined LBANN_HAS_CUDA
   using namespace cuda;
+#else
+  using namespace rocm;
+#endif // LBANN_HAS_CUDA
 
 // -------------------------------------------------------------
 // Device functions

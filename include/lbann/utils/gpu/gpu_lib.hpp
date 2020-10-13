@@ -32,7 +32,7 @@
 
 #ifdef LBANN_HAS_GPU
 
-#include <cuda.h>
+//#include <cuda.h>
 #include <thrust/memory.h>
 #include <thrust/version.h>
 #include <thrust/detail/allocator/tagged_allocator.h>
@@ -42,7 +42,11 @@
 namespace lbann {
 //namespace cuda {
 namespace gpu_lib {
+#if defined LBANN_HAS_CUDA
   using namespace cuda;
+#else
+  using namespace rocm;
+#endif // LBANN_HAS_CUDA
 
 // -------------------------------------------------------------
 // Device functions
@@ -211,17 +215,6 @@ void apply_entrywise_binary_operator(
   El::AbstractDistMatrix<TensorDataType>& output);
 
 #endif // __CUDACC__
-
-/** Copy entries between GPU tensors. */
-template <typename TensorDataType>
-void copy_tensor(
-  cudaStream_t stream,
-  const std::vector<size_t>& dims,
-  const TensorDataType* input,
-  const std::vector<size_t>& input_strides,
-  TensorDataType* output,
-  const std::vector<size_t>& output_strides);
-
 
 } // namespace cuda
 } // namespace lbann
