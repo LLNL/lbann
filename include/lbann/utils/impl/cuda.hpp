@@ -38,8 +38,56 @@
 namespace lbann {
 namespace cuda {
 
+// -------------------------------------------------------------
+// Device functions
+// -------------------------------------------------------------
 #ifdef __CUDACC__
+// Atomic add function
+#if __CUDA_ARCH__ >= 530
+template <> __device__ __forceinline__
+__half atomic_add<__half>(__half* address, __half val) {
+#if __CUDA_ARCH__ >= 700 || !defined(__CUDA_ARCH__)
+  return atomicAdd(address, val);
+#else
+  unsigned int* address_as_uint = (unsigned int*) address;
+  unsigned int old = *address_as_uint;
+  __half* old_as_half = (__half*) &old;
+  unsigned int assumed;
+  unsigned int updated;
+  __half* updated_as_half = (__half*) &updated;
+  do {
+    assumed = old;
+    updated = old;
+    *updated_as_half += val;
+    old = atomicCAS(address_as_uint, assumed, updated);
+  } while (assumed != old);
+  return *old_as_half;
+#endif // __CUDA_ARCH__ >= 700 || !defined(__CUDA_ARCH__)
+}
+#endif // __CUDA_ARCH__ >= 530
+template <> __device__ __forceinline__
+float atomic_add<float>(float* address, float val) {
+  return atomicAdd(address, val);
+}
+template <> __device__ __forceinline__
+double atomic_add<double>(double* address, double val) {
+#if __CUDA_ARCH__ >= 600
+  return atomicAdd(address, val);
+#else
+  unsigned long long int* address_as_ull =
+    (unsigned long long int*)address;
+  unsigned long long int old = *address_as_ull, assumed;
+  do {
+    assumed = old;
+    old = atomicCAS(address_as_ull, assumed,
+                    __double_as_longlong(val +
+                                         __longlong_as_double(assumed)));
+  } while (assumed != old);
+  return __longlong_as_double(old);
+#endif // __CUDA_ARCH__ < 600
+}
 
+// Unary math functions
 #if __CUDA_ARCH__ >= 530
 __device__ __forceinline__
 bool isfinite(__half const& x) { return !(::__isnan(x) || ::__hisinf(x)); }
