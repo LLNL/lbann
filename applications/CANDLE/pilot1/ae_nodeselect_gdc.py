@@ -64,7 +64,7 @@ parser.add_argument(
     help='random seed for LBANN RNGs', metavar='NUM')
 parser.add_argument(
     '--data-reader', action='store', default='default', type=str,
-    help='Data reader options: \"combo\", \"gdc\", or \"growth\" (default: data_reader_candle_pilot1.prototext)')
+    help='Data reader options: \"combo\", \"gdc\", \"growth\", or \"pilot1\" (default: data_reader_candle_pilot1.prototext)')
 lbann.contrib.args.add_optimizer_arguments(parser, default_learning_rate=0.1)
 args = parser.parse_args()
 
@@ -159,7 +159,7 @@ opt = lbann.contrib.args.create_optimizer(args)
 
 # Setup data reader
 data_reader_prefix = 'data_reader_candle_pilot1'
-if args.data_reader == "default":
+if args.data_reader == "default" or args.data_reader == "pilot1":
   data_reader_file = data_reader_prefix + '.prototext'
 elif args.data_reader == "combo":
   data_reader_file = data_reader_prefix + '_combo.prototext'
@@ -168,7 +168,7 @@ elif args.data_reader == "gdc":
 elif args.data_reader == "growth":
   data_reader_file = data_reader_prefix + '_growth.prototext'
 else
-  raise InvalidOption('Data reader selection \"' + args.data_reader + '\" is invalid. Use \"combo\", \"gdc\", or \"growth\". Default is data_reader_candle_pilot1.prototext.')
+  raise InvalidOption('Data reader selection \"' + args.data_reader + '\" is invalid. Use \"combo\", \"gdc\", \"growth\", or \"pilot1\". Default is data_reader_candle_pilot1.prototext.')
 pilot1.make_data_reader(data_reader_file)
 
 # Setup trainer
