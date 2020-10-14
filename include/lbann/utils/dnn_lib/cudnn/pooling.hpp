@@ -38,7 +38,7 @@ namespace cudnn
 {
 
 template <typename TensorDataType, typename ScalarParameterType>
-void pooling_forward(PoolingDescriptor poolingDesc,
+void pooling_forward(PoolingDescriptor const& poolingDesc,
                      ScalarParameterType const& alpha_in,
                      TensorDescriptor const& xDesc,
                      El::AbstractMatrix<TensorDataType> const& x,
@@ -62,7 +62,7 @@ void pooling_forward(PoolingDescriptor poolingDesc,
 }
 
 template <typename TensorDataType, typename ScalarParameterType>
-void pooling_forward(PoolingDescriptor poolingDesc,
+void pooling_forward(PoolingDescriptor const& poolingDesc,
                      ScalarParameterType const& alpha_in,
                      TensorDescriptor const& xDesc,
                      El::AbstractMatrix<TensorDataType> const& x,
@@ -79,7 +79,7 @@ void pooling_forward(PoolingDescriptor poolingDesc,
 }
 
 template <typename TensorDataType, typename ScalarParameterType>
-void pooling_backward(PoolingDescriptor poolingDesc,
+void pooling_backward(PoolingDescriptor const& poolingDesc,
                       ScalarParameterType const& alpha_in,
                       TensorDescriptor const& yDesc,
                       El::AbstractMatrix<TensorDataType> const& y,
@@ -111,7 +111,7 @@ void pooling_backward(PoolingDescriptor poolingDesc,
 }
 
 template <typename TensorDataType, typename ScalarParameterType>
-void pooling_backward(PoolingDescriptor poolingDesc,
+void pooling_backward(PoolingDescriptor const& poolingDesc,
                       ScalarParameterType const& alpha_in,
                       TensorDescriptor const& yDesc,
                       El::AbstractMatrix<TensorDataType> const& y,
