@@ -102,6 +102,8 @@ void init_data_readers(
       set_transform_pipeline = false;
     } else if ((name == "imagenet")) {
       init_image_data_reader(readme, pb_metadata, master, reader);
+      reader->set_data_sample_list(readme.sample_list());
+      reader->keep_sample_order(readme.sample_list_keep_order());
       set_transform_pipeline = false;
     } else if (name == "jag_conduit") {
       init_image_data_reader(readme, pb_metadata, master, reader);
@@ -110,9 +112,10 @@ void init_data_readers(
       const lbann_data::Model& pb_model = p.model();
       const lbann_data::Trainer& pb_trainer = p.trainer();
       reader->set_mini_batch_size(static_cast<int>(pb_trainer.mini_batch_size()));
-      reader->set_data_index_list(readme.index_list());
-      reader_jag_conduit->set_list_per_trainer(readme.index_list_per_trainer());
-      reader_jag_conduit->set_list_per_model(readme.index_list_per_model());
+      reader->set_data_sample_list(readme.sample_list());
+      reader_jag_conduit->set_list_per_trainer(readme.sample_list_per_trainer());
+      reader_jag_conduit->set_list_per_model(readme.sample_list_per_model());
+      reader_jag_conduit->keep_sample_order(readme.sample_list_keep_order());
 
       /// Allow the prototext to control if the data readers is
       /// shareable for each phase training, validation, or testing
@@ -184,15 +187,28 @@ void init_data_readers(
       reader_numpy_npz->set_scaling_factor_int16(readme.scaling_factor_int16());
       reader = reader_numpy_npz;
 #ifdef LBANN_HAS_DISTCONV
-    } else if (name=="cosmoflow_hdf5") {
-      auto* reader_cosmo_hdf5 = new hdf5_reader(shuffle);
+    } else if (name == "cosmoflow_hdf5" || name == "hdf5") {
+      if(name == "cosmoflow_hdf5") {
+        LBANN_WARNING("The \"cosmoflow_hdf5\" data reader is deprecated. Use \"hdf5\" instead.");
+      }
+      const auto key_data = readme.hdf5_key_data();
+      const auto key_labels = readme.hdf5_key_labels();
+      const auto key_responses = readme.hdf5_key_responses();
+      const auto hyperslab_labels = readme.hdf5_hyperslab_labels();
+      auto* reader_hdf5 = new hdf5_reader<DataType>(shuffle, key_data,
+                                                          key_labels,
+                                                          key_responses,
+                                                          hyperslab_labels);
+      reader_hdf5->set_has_labels(!readme.disable_labels());
+      reader_hdf5->set_has_responses(!readme.disable_responses());
+      reader_hdf5->set_num_responses(readme.num_responses());
       auto filedir = readme.data_filedir();
       if(!endsWith(filedir, "/")) {
         filedir = filedir + "/";
       }
       const auto paths = glob(filedir +readme.data_file_pattern());
-      reader_cosmo_hdf5->set_hdf5_paths(paths);
-      reader = reader_cosmo_hdf5;
+      reader_hdf5->set_hdf5_paths(paths);
+      reader = reader_hdf5;
 #endif // LBANN_HAS_DISTCONV
     } else if (name == "pilot2_molecular_reader") {
       pilot2_molecular_reader* reader_pilot2_molecular = new pilot2_molecular_reader(readme.num_neighbors(), readme.max_neighborhood(), shuffle);
@@ -656,18 +672,18 @@ void set_data_readers_filenames(
   }
 }
 
-void set_data_readers_index_list(
+void set_data_readers_sample_list(
   const std::string& which, lbann_data::LbannPB& p)
 {
   options *opts = options::get();
   lbann_data::DataReader *readers = p.mutable_data_reader();
   int size = readers->reader_size();
-  const std::string key_role = "index_list_" + which;
+  const std::string key_role = "sample_list_" + which;
 
   for (int j=0; j<size; j++) {
     lbann_data::Reader *r = readers->mutable_reader(j);
     if (r->role() == which) {
-      r->set_index_list(opts->get_string(key_role));
+      r->set_sample_list(opts->get_string(key_role));
     }
   }
 }
@@ -690,7 +706,7 @@ void set_data_readers_percent(lbann_data::LbannPB& p)
   }
 }
 
-void customize_data_readers_index_list(const lbann_comm& comm, lbann_data::LbannPB& p)
+void customize_data_readers_sample_list(const lbann_comm& comm, lbann_data::LbannPB& p)
 {
   lbann_data::DataReader *readers = p.mutable_data_reader();
   const lbann_data::Model& pb_model = p.model();
@@ -698,17 +714,26 @@ void customize_data_readers_index_list(const lbann_comm& comm, lbann_data::Lbann
   for (int j=0; j<size; j++) {
     lbann_data::Reader *r = readers->mutable_reader(j);
     std::ostringstream s;
-    std::string basename = get_basename_without_ext(r->index_list());
-    std::string ext = get_ext_name(r->index_list());
-    if(r->index_list_per_model()) {
+    std::string basename = get_basename_without_ext(r->sample_list());
+    std::string ext = get_ext_name(r->sample_list());
+    std::string dir = lbann::file::extract_parent_directory(r->sample_list());
+    if ((r->sample_list()).empty()) {
+      continue;
+    }
+    if (dir.empty()) {
+      dir = ".";
+    }
+
+    s << dir << '/';
+    if(r->sample_list_per_model()) {
       s << pb_model.name() << "_";
     }
-    if(r->index_list_per_trainer()) {
+    if(r->sample_list_per_trainer()) {
       s << "t" << comm.get_trainer_rank() << "_";
     }
     s << basename;
     s << "." << ext;
-    r->set_index_list(s.str());
+    r->set_sample_list(s.str());
   }
 }
 
@@ -738,16 +763,25 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
     set_data_readers_filenames("train", p);
   }
   if (opts->has_string("data_filedir")
+      or opts->has_string("data_filedir_validate")
+      or opts->has_string("data_filename_validate")
+      or opts->has_string("label_filename_validate")) {
+    set_data_readers_filenames("validate", p);
+  }
+  if (opts->has_string("data_filedir")
       or opts->has_string("data_filedir_test")
       or opts->has_string("data_filename_test")
       or opts->has_string("label_filename_test")) {
     set_data_readers_filenames("test", p);
   }
-  if (opts->has_string("index_list_train")) {
-    set_data_readers_index_list("train", p);
+  if (opts->has_string("sample_list_train")) {
+    set_data_readers_sample_list("train", p);
   }
-  if (opts->has_string("index_list_test")) {
-    set_data_readers_index_list("test", p);
+  if (opts->has_string("sample_list_validate")) {
+    set_data_readers_sample_list("validate", p);
+  }
+  if (opts->has_string("sample_list_test")) {
+    set_data_readers_sample_list("test", p);
   }
   if (opts->has_string("data_reader_percent")) {
     set_data_readers_percent(p);
@@ -928,7 +962,7 @@ void print_help(std::ostream& os)
        "      sets the file directory for train and test data\n"
        "  --data_filedir_train=<string>   --data_filedir_test=<string>\n"
        "  --data_filename_train=<string>  --data_filename_test=<string>\n"
-       "  --index_list_train=<string>     --index_list_test=<string>\n"
+       "  --sample_list_train=<string>    --sample_list_test=<string>\n"
        "  --label_filename_train=<string> --label_filename_test=<string>\n"
        "  --data_reader_percent=<float>\n"
        "  --share_testing_data_readers=<bool:[0|1]>\n"

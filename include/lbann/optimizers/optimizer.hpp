@@ -32,7 +32,7 @@
 #include "lbann/utils/cloneable.hpp"
 #include "lbann/utils/compiler_control.hpp"
 #ifdef LBANN_HAS_GPU
-#include "lbann/utils/cuda.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 #endif // LBANN_HAS_GPU
 #include "lbann/utils/description.hpp"
 #include "lbann/utils/exception.hpp"

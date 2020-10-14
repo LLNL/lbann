@@ -36,6 +36,7 @@ const int lbann_default_random_seed = 42;
 
 #define MAX_RNG_SEEDS_DISPLAY "RNG seeds per trainer to display"
 #define NUM_IO_THREADS "Num. IO threads"
+#define ALLOW_GLOBAL_STATISTICS "LTFB Allow global statistics"
 
 void construct_std_options();
 

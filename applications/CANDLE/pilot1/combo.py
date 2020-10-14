@@ -367,7 +367,7 @@ opt = lbann.contrib.args.create_optimizer(args)
 
 # Setup data reader
 data_reader_prefix = 'data_reader_candle_pilot1'
-if args.data_reader == "default":
+if args.data_reader == "default" or args.data_reader == "pilot1":
   data_reader_file = data_reader_prefix + '.prototext'
 elif args.data_reader == "combo":
   data_reader_file = data_reader_prefix + '_combo.prototext'

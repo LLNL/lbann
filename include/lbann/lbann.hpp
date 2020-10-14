@@ -54,6 +54,7 @@
 #include "lbann/layers/learning/embedding.hpp"
 #include "lbann/layers/learning/channelwise_scale_bias.hpp"
 #include "lbann/layers/learning/entrywise_scale_bias.hpp"
+#include "lbann/layers/learning/gru.hpp"
 
 /// Loss layers
 #include "lbann/layers/loss/categorical_accuracy.hpp"

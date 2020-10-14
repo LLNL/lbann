@@ -29,6 +29,7 @@ Users are advised to view `the Doxygen API Documentation
    :maxdepth: 2
    :caption: Getting Started
 
+   quick_start
    building_lbann
    running_lbann
    callbacks

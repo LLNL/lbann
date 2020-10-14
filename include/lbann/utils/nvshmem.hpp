@@ -29,7 +29,7 @@
 
 #include "lbann/base.hpp"
 #ifdef LBANN_HAS_NVSHMEM
-#include "lbann/utils/cuda.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 #include "lbann/utils/exception.hpp"
 #include <mpi.h>
 #include <nvshmem.h>

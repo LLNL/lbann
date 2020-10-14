@@ -26,10 +26,17 @@
 
 #define LBANN_SORT_LAYER_INSTANTIATE
 #include "lbann/layers/transform/sort.hpp"
-#include "lbann/utils/cuda.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 
+#if defined LBANN_HAS_CUDA
 #include <thrust/system/cuda/execution_policy.h>
+namespace thrust_gpu = thrust::cuda;
+#elif defined LBANN_HAS_ROCM
+#include <thrust/system/hip/execution_policy.h>
+namespace thrust_gpu = thrust::hip;
+#endif
 #include <thrust/sequence.h>
 #include <thrust/sort.h>
 #include <thrust/scatter.h>
@@ -48,22 +55,25 @@ void sort_layer<TensorDataType, T_layout, Dev>::fp_compute() {
   const auto& local_width = local_input.Width();
 
   // GPU objects
-  auto&& stream = hydrogen::cuda::GetDefaultStream();
-  cuda::thrust::allocator<> alloc(stream);
+  auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_output),
+                                     gpu::get_sync_info(local_input));
+  El::SyncInfo<El::Device::GPU> const& sync_info = multisync;
+  auto&& stream = sync_info.Stream();
+  gpu_lib::thrust::allocator<> alloc(stream);
 
   // Sort each matrix column
   El::Copy(local_input, local_output);
   for (El::Int col = 0; col < local_width; ++col) {
     ::thrust::device_ptr<TensorDataType> vals(local_output.Buffer(0, col));
     ::thrust::device_ptr<El::Int> inds(local_indices.Buffer(0, col));
-    ::thrust::sequence(thrust::cuda::par(alloc).on(stream),
+    ::thrust::sequence(thrust_gpu::par(alloc).on(stream),
                        inds, inds + local_height);
     if (this->m_descending) {
-      ::thrust::sort_by_key(thrust::cuda::par(alloc).on(stream),
+      ::thrust::sort_by_key(thrust_gpu::par(alloc).on(stream),
                             vals, vals + local_height, inds,
                             ::thrust::greater<TensorDataType>());
     } else {
-      ::thrust::sort_by_key(thrust::cuda::par(alloc).on(stream),
+      ::thrust::sort_by_key(thrust_gpu::par(alloc).on(stream),
                             vals, vals + local_height, inds,
                             ::thrust::less<TensorDataType>());
     }
@@ -82,15 +92,19 @@ void sort_layer<TensorDataType, T_layout, Dev>::bp_compute() {
   const auto& local_width = local_gradient_wrt_input.Width();
 
   // GPU objects
-  auto&& stream = hydrogen::cuda::GetDefaultStream();
-  cuda::thrust::allocator<> alloc(stream);
+  auto multisync =
+    El::MakeMultiSync(gpu::get_sync_info(local_gradient_wrt_input),
+                      gpu::get_sync_info(local_gradient_wrt_output));
+  El::SyncInfo<El::Device::GPU> const& sync_info = multisync;
+  auto&& stream = sync_info.Stream();
+  gpu_lib::thrust::allocator<> alloc(stream);
 
   // Scatter gradients based on sorted indices
   for (El::Int col = 0; col < local_width; ++col) {
     const ::thrust::device_ptr<const El::Int> inds(this->m_indices->LockedBuffer(0, col));
     const ::thrust::device_ptr<const TensorDataType> grad_wrt_out(local_gradient_wrt_output.LockedBuffer(0, col));
     ::thrust::device_ptr<TensorDataType> grad_wrt_in(local_gradient_wrt_input.Buffer(0, col));
-    ::thrust::scatter(thrust::cuda::par(alloc).on(stream),
+    ::thrust::scatter(thrust_gpu::par(alloc).on(stream),
                       grad_wrt_out, grad_wrt_out + local_height, inds,
                       grad_wrt_in);
   }

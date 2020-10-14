@@ -27,7 +27,7 @@
 #include "lbann/layers/misc/dist_embedding.hpp"
 #ifdef LBANN_HAS_NVSHMEM
 
-#include "lbann/utils/cuda.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 #include "lbann/utils/nvshmem.hpp"
 
 namespace lbann
@@ -36,7 +36,7 @@ namespace
 {
 
 // Typedefs
-using Size2 = cuda::array<size_t, 2>;
+using Size2 = gpu_lib::array<size_t, 2>;
 template <typename T>
 using VectorMetadata = typename dist_embedding_layer<T,data_layout::DATA_PARALLEL,El::Device::GPU>::vector_metadata;
 
@@ -245,14 +245,14 @@ __global__ void request_embeddings_kernel(
 
   const size_t i_per_block = (input_dims[1] + nblocksx - 1) / nblocksx;
   const size_t i_start = bidx * i_per_block;
-  const size_t i_end = cuda::min((bidx+1) * i_per_block, input_dims[1]);
+  const size_t i_end = gpu_lib::min((bidx+1) * i_per_block, input_dims[1]);
   for (size_t j = bidy; j < input_dims[0]; j += nblocksy) {
     for (size_t i = i_start; i < i_end; ++i) {
       const auto& global_j = distmat_global_index(j, input_rowshift, input_rowstride);
 
       // Get embedding vector index
       const auto& global_index_float = input[i*input_strides[1] + j*input_strides[0]];
-      const auto& global_index = static_cast<size_t>(cuda::floor(global_index_float));
+      const auto& global_index = static_cast<size_t>(gpu_lib::floor(global_index_float));
 
       // Figure out which process owns embedding vector
       __shared__ unsigned char metadata_shared[sizeof(VectorMetadata<T>)];
@@ -306,7 +306,7 @@ __global__ void copy_embeddings_kernel(
 
   const size_t i_per_block = (input_dims[1] + nblocksx - 1) / nblocksx;
   const size_t i_start = bidx * i_per_block;
-  const size_t i_end = cuda::min((bidx+1) * i_per_block, input_dims[1]);
+  const size_t i_end = gpu_lib::min((bidx+1) * i_per_block, input_dims[1]);
   for (size_t j = bidy; j < input_dims[0]; j += nblocksy) {
     for (size_t i = i_start; i < i_end; ++i) {
       const auto& global_j = distmat_global_index(j, input_rowshift, input_rowstride);
@@ -479,7 +479,7 @@ __global__ void send_gradients_kernel(
   // Assign metadata to CUDA blocks
   const size_t i_per_block = (input_dims[1] + nblocksx - 1) / nblocksx;
   const size_t i_start = bidx * i_per_block;
-  const size_t i_end = cuda::min((bidx+1) * i_per_block, input_dims[1]);
+  const size_t i_end = gpu_lib::min((bidx+1) * i_per_block, input_dims[1]);
 
   // Send gradients to owner processes
   for (size_t j = bidy; j < input_dims[0]; j += nblocksy) {
@@ -627,7 +627,7 @@ __global__ void sgd_kernel(
   // Assign requests to CUDA blocks
   const size_t gradients_per_block = (num_gradients + nblocks - 1) / nblocks;
   const size_t i_start = bid * gradients_per_block;
-  const size_t i_end = cuda::min((bid+1) * gradients_per_block, num_gradients);
+  const size_t i_end = gpu_lib::min((bid+1) * gradients_per_block, num_gradients);
 
   for (size_t i = i_start; i < i_end; ++i) {
     const auto& m = metadata[i];
@@ -637,7 +637,7 @@ __global__ void sgd_kernel(
       const auto* __restrict__ dw = &embeddings_grad[m.target_index * embeddings_grad_strides[0]];
       auto* __restrict__ w = &embeddings[m.source_index * embeddings_strides[0]];
       for (size_t k = tid; k < embedding_dim; k += warp_size) {
-        cuda::atomic_add(&w[k], -learning_rate * dw[k]);
+        gpu_lib::atomic_add(&w[k], -learning_rate * dw[k]);
       }
 
     }

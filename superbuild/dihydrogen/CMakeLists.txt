@@ -11,7 +11,7 @@ else ()
     CACHE STRING "The URL from which to clone DiHydrogen")
 endif ()
 
-set(DIHYDROGEN_TAG "master"
+set(DIHYDROGEN_TAG "develop"
   CACHE STRING "The git tag to checkout for DiHydrogen")
 
 set(DIHYDROGEN_CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}"

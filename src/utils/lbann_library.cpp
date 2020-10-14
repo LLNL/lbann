@@ -55,6 +55,11 @@ void construct_std_options() {
                         "Number of threads available to both I/O and "
                         "initial data transformations for each rank.",
                         64);
+  arg_parser.add_flag(ALLOW_GLOBAL_STATISTICS,
+                      {"--ltfb_allow_global_statistics"},
+                      utils::ENV("LBANN_LTFB_ALLOW_GLOBAL_STATISTICS"),
+                      "Allow the print_statistics callback to report "
+                      "global (inter-trainer) summary statistics.");
 }
 
 /// Construct a trainer that contains a lbann comm object and threadpool
@@ -184,6 +189,7 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
     // Initialize the general RNGs and the data sequence RNGs
     init_random(random_seed, io_threads_per_process);
     init_data_seq_random(data_seq_random_seed);
+    init_ltfb_random(root_random_seed);
     trainer->set_random_seeds(root_random_seed, random_seed, data_seq_random_seed);
 
     // Collect everyone's random seeds
@@ -194,8 +200,8 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
     std::vector<int> data_seq_random_seeds(comm->get_procs_in_world());
     comm->world_all_gather(data_seq_random_seed, data_seq_random_seeds);
 
-    // Update the index lists to accomodate multi-trainer / multi-model specification
-    customize_data_readers_index_list(*comm, pb);
+    // Update the sample lists to accomodate multi-trainer / multi-model specification
+    customize_data_readers_sample_list(*comm, pb);
 
     // Initialize data readers
     //@todo: code not in place for correctly handling image preprocessing
@@ -391,9 +397,9 @@ void print_lbann_configuration(lbann_comm *comm, int io_threads_per_process, int
             << "  OpenMP threads per process : " << omp_get_max_threads() << std::endl
             << "  I/O threads per process (+offset) : " << io_threads_per_process
             << " (+" << io_threads_offset << ")" << std::endl;
-#ifdef HYDROGEN_HAVE_CUDA
+#ifdef HYDROGEN_HAVE_GPU
   std::cout << "  GPUs on node               : " << hydrogen::gpu::DeviceCount() << std::endl;
-#endif // HYDROGEN_HAVE_CUDA
+#endif // HYDROGEN_HAVE_GPU
   std::cout << std::endl;
 
   // Report build settings
@@ -420,7 +426,7 @@ void print_lbann_configuration(lbann_comm *comm, int io_threads_per_process, int
 #else
   std::cout << "NOT detected" << std::endl;
 #endif // LBANN_HAS_ALUMINUM
-  std::cout << "  CUDA     : ";
+  std::cout << "  GPU     : ";
 #ifdef LBANN_HAS_GPU
   std::cout << "detected" << std::endl;
 #else
