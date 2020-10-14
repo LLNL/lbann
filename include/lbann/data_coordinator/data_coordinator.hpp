@@ -264,6 +264,38 @@ class data_coordinator {
   }
 
   /**
+   * Check to see if the data readers have labels
+   */
+  bool has_labels() {
+    bool flag = false;
+    generic_data_reader *dr;
+    for(auto mode : execution_mode_iterator()) {
+      dr = get_data_reader(mode);
+      if (dr != nullptr) {
+        flag = dr->has_labels();
+        if(flag) { return flag; }
+      }
+    }
+    return flag;
+  }
+
+  /**
+   * Check to see if the data readers have responses
+   */
+  bool has_responses() {
+    bool flag = false;
+    generic_data_reader *dr;
+    for(auto mode : execution_mode_iterator()) {
+      dr = get_data_reader(mode);
+      if (dr != nullptr) {
+        flag = dr->has_responses();
+        if(flag) { return flag; }
+      }
+    }
+    return flag;
+  }
+
+  /**
    * Get the linearized size of the underlying data.
    */
   long get_linearized_data_size() const {

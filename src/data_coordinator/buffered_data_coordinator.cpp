@@ -57,7 +57,6 @@ void buffered_data_coordinator<TensorDataType>::setup(thread_pool& io_thread_poo
     max_mini_batch_size *= dc::get_number_of_io_partitions();
   }
 #endif // LBANN_HAS_DISTCONV
-  auto data_dims = get_data_dims();
 
   /// @todo BVE This is where we are going to have to limit how many
   /// ranks are participating in I/O
@@ -79,7 +78,12 @@ void buffered_data_coordinator<TensorDataType>::setup(thread_pool& io_thread_poo
       observer_ptr<data_buffer<IODataType>> data_buffer = b.second.get();
       // for(auto idt : input_data_type_iterator()) {
       data_buffer->m_input_buffers[input_data_type::SAMPLES]->Resize(num_neurons/*get_linearized_data_size()*/, max_mini_batch_size);
-      data_buffer->m_input_buffers[input_data_type::LABELS]->Resize(get_linearized_label_size(), max_mini_batch_size);
+      if(has_labels()) {
+        data_buffer->m_input_buffers[input_data_type::LABELS]->Resize(get_linearized_label_size(), max_mini_batch_size);
+      }
+      if(has_responses()){
+        data_buffer->m_input_buffers[input_data_type::RESPONSES]->Resize(get_linearized_response_size(), max_mini_batch_size);
+      }
       /// The amount of space needed will vary based on input layer type,
       /// but the batch size is the maximum space necessary
       El::Zeros_seq(data_buffer->m_indices_fetched_per_mb, local_mini_batch_size, 1);
@@ -99,7 +103,7 @@ int buffered_data_coordinator<TensorDataType>::fetch_to_local_matrix(data_buffer
   data_buffer<IODataType>& buf = get_data_buffer(buffer_map, mode);
   buf.m_num_samples_fetched = 0;
   if (this->m_comm->get_rank_in_trainer() < num_parallel_readers
-      && (buf.m_input_buffers[input_data_type::SAMPLES]->Height() != 0 && buf.m_input_buffers[input_data_type::SAMPLES]->Width() != 0)) {
+      && (buf.m_input_buffers[input_data_type::SAMPLES]->LocalHeight() != 0 && buf.m_input_buffers[input_data_type::SAMPLES]->LocalWidth() != 0)) {
     /// Create a map of the local matrices to pass into the data reader
     std::map<input_data_type, CPUMat*> local_input_buffers;
     for(auto& b : buf.m_input_buffers) {
