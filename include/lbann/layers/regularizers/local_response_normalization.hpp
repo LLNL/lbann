@@ -210,12 +210,12 @@ private:
       cudnn::lrn_cross_channel_backward(
         m_lrn_cudnn_desc,
         one,
-        m_tensors_cudnn_desc.get_prev_activations(),
-        local_input,
-        m_tensors_cudnn_desc.get_prev_error_signals(),
-        local_gradient_wrt_output,
         m_tensors_cudnn_desc.get_activations(),
         local_output,
+        m_tensors_cudnn_desc.get_prev_error_signals(),
+        local_gradient_wrt_output,
+        m_tensors_cudnn_desc.get_prev_activations(),
+        local_input,
         zero,
         m_tensors_cudnn_desc.get_error_signals(),
         local_gradient_wrt_input);

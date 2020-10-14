@@ -58,7 +58,7 @@ inline cudnnLRNMode_t to_cudnn(lrn_mode mode)
 }
 
 template <typename TensorDataType, typename ScalarParameterType>
-void lrn_cross_channel_forward(LRNDescriptor normDesc,
+void lrn_cross_channel_forward(LRNDescriptor const& normDesc,
                                ScalarParameterType const& alpha_in,
                                TensorDescriptor const& xDesc,
                                El::AbstractMatrix<TensorDataType> const& x,
@@ -85,7 +85,7 @@ void lrn_cross_channel_forward(LRNDescriptor normDesc,
 }
 
 template <typename TensorDataType, typename ScalarParameterType>
-void lrn_cross_channel_forward(LRNDescriptor normDesc,
+void lrn_cross_channel_forward(LRNDescriptor const& normDesc,
                                ScalarParameterType const& alpha_in,
                                TensorDescriptor const& xDesc,
                                El::AbstractMatrix<TensorDataType> const& x,
@@ -104,7 +104,7 @@ void lrn_cross_channel_forward(LRNDescriptor normDesc,
 }
 
 template <typename TensorDataType, typename ScalarParameterType>
-void lrn_cross_channel_backward(LRNDescriptor normDesc,
+void lrn_cross_channel_backward(LRNDescriptor const& normDesc,
                                 ScalarParameterType const& alpha_in,
                                 TensorDescriptor const& yDesc,
                                 El::AbstractMatrix<TensorDataType> const& y,
@@ -139,7 +139,7 @@ void lrn_cross_channel_backward(LRNDescriptor normDesc,
 }
 
 template <typename TensorDataType, typename ScalarParameterType>
-void lrn_cross_channel_backward(LRNDescriptor normDesc,
+void lrn_cross_channel_backward(LRNDescriptor const& normDesc,
                                 ScalarParameterType const& alpha_in,
                                 TensorDescriptor const& yDesc,
                                 El::AbstractMatrix<TensorDataType> const& y,
