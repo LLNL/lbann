@@ -5,8 +5,7 @@ import os.path as osp
 from CNN3D.model import CNN3D
 import lbann.contrib.launcher
 import lbann.contrib.args
-
-from lbann.util import str_list
+from data_util import slice_3D_data
 
 desc = ("Training SGCNN on a Protein-ligand graphs using LBANN")
 parser = argparse.ArgumentParser(description=desc)
@@ -52,13 +51,7 @@ def make_model(num_epochs):
 
     data = lbann.Identity(input_)
 
-    num_elements = (48 * 48 * 48 * 19)
-
-    slice_points = str_list([0, num_elements, num_elements + 1])
-    sliced_data = lbann.Slice(data, slice_points=slice_points)
-    x = lbann.Identity(sliced_data, name="sata_sample")
-    y = lbann.Identity(sliced_data, name="target")
-    x = lbann.Reshape(x, dims="19 48 48 48")
+    x, y = slice_3D_data(data)
 
     cnn_model = CNN3D()
 
