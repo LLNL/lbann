@@ -138,10 +138,10 @@ private:
 
   /** CPU implementation of momentum or Nesterov step. */
   void momentum_step_cpu(AbsDistMatrixType& values, const AbsDistMatrixType& gradient);
-#ifdef LBANN_HAS_CUDA
+#ifdef LBANN_HAS_GPU
   /** GPU implementation of momentum or Nesterov step. */
   void momentum_step_gpu(AbsDistMatrixType& values, const AbsDistMatrixType& gradient);
-#endif // LBANN_HAS_CUDA
+#endif // LBANN_HAS_GPU
 
   /** @name Checkpointing */
   ///@{

@@ -68,9 +68,9 @@ void adagrad<TensorDataType>::step_compute(AbsDistMatrixType& values,
                                            const AbsDistMatrixType& gradient) {
   switch (values.GetLocalDevice()) {
   case El::Device::CPU: step_compute_cpu(values, gradient); break;
-#ifdef LBANN_HAS_CUDA
+#ifdef LBANN_HAS_GPU
   case El::Device::GPU: step_compute_gpu(values, gradient); break;
-#endif // LBANN_HAS_CUDA
+#endif // LBANN_HAS_GPU
   default:
     std::ostringstream err;
     err << "unsupported device type "
