@@ -2,6 +2,7 @@ import argparse
 import lbann
 import lbann.contrib.launcher
 import lbann.contrib.args
+from lbann.utils import str_list
 from model import SGCNN
 import os
 import os.path as osp
@@ -43,10 +44,66 @@ def make_data_reader(module_name='SimDataset',
 
     return reader
 
-def slice_data(input_layer):
+def slice_data(input_layer,
+               num_nodes=50,
+               node_features=19,
+               edge_features=1):
+    # Slice points for node features 
+    node_fts = [i * node_features for range(num_nodes)]
+    node_ft_end = node_fts[-1]
+    # Slice points for covalent adj matrix
+    cov_adj_mat_end = node_ft_end + (num_nodes **2)
+    cov_adj_mat =[node_ft_end, cov_adj_mat_end]
+    # Slice points for noncovalent adj matrix 
+    noncov_adj_mat_end = cov_adj_mat_end + (num_nodes **2)
+    noncov_adj_mat = [cov_adj_mat_end, noncov_adj_mat_end]
+    # Slice points for edge features 
+    num_edges = int( num_nodes * (num_nodes - 1) / 2)
+    edge_fts = [(noncov_adj_mat_end+(i+1)*edge_features) for i in range(num_edges)]
+    edge_ft_end = edge_fts[-1]
+    # Slice points for edge_adjacencies
+    # This should be num_nodes * (num_nodes ** 2)
+    prev_end = edge_ft_end
+    edge_adj_list = []
+    for node in range(num_nodes):
+        edge_adj = [(prev_end + (i+1)*num_nodes) for i range(num_nodes)]
+        prev_end = edge_adj[-1]
+        edge_adj_list.extend(edge_adj)
+    # Slice points for ligand_only mat 
+    edge_adj_end = edge_adj_list[-1]
+    ligand_only_end = edge_adj_end + (num_nodes **2)
+    ligand_only = [edge_adj_end, ligand_only_end]
+    # Slice for binding energy target
+    target_end = ligand_only_end + 1
+    target = [ligand_only, target_end] 
+    slice_points = []
+    slice_points.extend(node_fts)
+    slice_points.extend(cov_adj_mat)
+    slice_points.extend(noncov_adj_mat)
+    slice_points.extend(edge_fts)
+    slice_points.extend(ligand_only)
+    slice_points.extend(target)
+    
+    sliced_input = lbann.Slice(input_layer, slice_points=str_list(slice_points))
+    
+    node_fts = [lbann.Identity(sliced_input, name="Node_".format(i)) for i in range(num_nodes)]
+    cov_adj_mat = lbann.Identity(sliced_input, name="Covalent_Adj")
+    noncov_adj_mat = lbann.Identity(sliced_input, name="NonCovalent_Adj")
+    edge_features = [lbann.Identity(sliced_input, name="Edge_{}".format(i)) for i in range(num_edges)]
+    edge_adj = [lbann.Identity(sliced_input, name="Adj_Mat_{}".format(i)) for i in range(num_nodes)]
+    ligand_ID = lbann.Identiy(sliced_input, name="Ligand_only_nodes")
+    target = lbann.Identity(sliced_input, name="Target")
+
+    return node_fts, cov_adj_mat, noncov_adj_mat, edge_features, edge_adj, ligand_ID, target
     
 
-def make_model():
+def make_model(num_epochs):
     sgcnn_model = SGCNN()
 
     input_ = lbann.Input(target_mode = 'N/A')
+    X, cov_adj, noncov_adj, edge_ft, edge_adj, ligand_only, target = slice_data(input_)
+
+    predicted = sgcnn_model(X, cov_adj, noncov_adj, edge_ft, adge_adj, ligand_only)
+    
+    loss = lbann.MeanSquaredError(predicted, target)
+    layers = lbann.traverse_layer_graph(input_)

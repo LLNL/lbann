@@ -28,8 +28,8 @@ class SimDataset(object):
     def sample_size(self):
         number_edges = int((self.num_nodes*(self.num_nodes-1))/2)
         node_feat_mat = self.num_nodes * self.node_features
-        edge_feat_mat = number_edges ** self.edge_features
-        edge_adj = (number_edges ** 2) * self.num_nodes
+        edge_feat_mat = number_edges * self.edge_features
+        edge_adj =  self.num_nodes **3
         covalent_mat = self.num_nodes ** 2
         non_covalent_mat = self.num_nodes ** 2
         ligand_only_mat = self.num_nodes ** 2
