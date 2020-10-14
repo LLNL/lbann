@@ -77,7 +77,7 @@ void buffered_data_coordinator<TensorDataType>::setup(thread_pool& io_thread_poo
     for (const auto& b : buffer_map) {
       observer_ptr<data_buffer<IODataType>> data_buffer = b.second.get();
       // for(auto idt : input_data_type_iterator()) {
-      data_buffer->m_input_buffers[input_data_type::SAMPLES]->Resize(num_neurons/*get_linearized_data_size()*/, max_mini_batch_size);
+      data_buffer->m_input_buffers[input_data_type::SAMPLES]->Resize(num_neurons, max_mini_batch_size);
       if(has_labels()) {
         data_buffer->m_input_buffers[input_data_type::LABELS]->Resize(get_linearized_label_size(), max_mini_batch_size);
       }

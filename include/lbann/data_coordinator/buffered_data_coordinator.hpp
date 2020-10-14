@@ -62,7 +62,7 @@ class buffered_data_coordinator : public data_coordinator {
     for(size_t i = 0; i < m_data_buffers.size(); i++) {
       for(auto m : execution_mode_iterator()) {
         if(m != execution_mode::invalid) {
-          m_data_buffers[i][m] = make_unique<data_buffer<IODataType>>(comm, 2/*num_child_layers*/);
+          m_data_buffers[i][m] = make_unique<data_buffer<IODataType>>(comm);
         }
       }
     }

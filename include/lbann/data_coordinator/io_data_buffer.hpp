@@ -63,12 +63,13 @@ public:
   /// 1-D Matrix of which indices were fetched in this mini-batch
   El::Matrix<El::Int> m_indices_fetched_per_mb;
 
-  data_buffer(lbann_comm *comm, int num_child_layers) :
+  data_buffer(lbann_comm *comm) :
     m_num_samples_fetched(0), m_fetch_data_in_background(false)
   {
     m_input_buffers.clear();
-    //    m_input_buffers.resize(num_child_layers);
-    //    for(int i = 0; i < num_child_layers; i++) {
+    // Create an empty buffer for each type of input data
+    // @todo BVE this should be tailored to only create buffers needed
+    //    by the data reader
     for(auto idt : input_data_type_iterator()) {
       m_input_buffers[idt].reset(new StarVCMatDT<TensorDataType, El::Device::CPU>(comm->get_trainer_grid()));
     }
