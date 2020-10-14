@@ -69,6 +69,7 @@ enum class bwd_conv_filter
   FFT_TILING,
 };// enum class bwd_conv_filter
 
+#ifdef LBANN_HAS_CUDNN  
 namespace cudnn
 {
 
@@ -422,5 +423,6 @@ void add_tensor(ScalarParameterType const& alpha_in,
 }
 
 }// namespace cudnn
+#endif // LBANN_HAS_CUDNN
 }// namespace lbann
 #endif // LBANN_UTILS_DNN_LIB_CUDNN_CONVOLUTION_HPP_
