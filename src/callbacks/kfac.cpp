@@ -270,24 +270,20 @@ void kfac::on_backward_prop_end(model *m) {
 
       // List-up buffers to synchronize.
       std::vector<std::pair<size_t, El::AbstractMatrix<DataType>*>> buffers;
-      int global_buffer_size = 0, local_buffer_siez = 0;
+      size_t global_buffer_size = 0;
       for(auto& block : m_blocks)
         for(auto L : block->get_local_kronecker_buffers()) {
           const size_t rank = block->get_inverse_proc_rank();
           buffers.emplace_back(rank, L);
           assert(L.Width() == 1);
           global_buffer_size += L->Height();
-          if(rank == (size_t) comm->get_rank_in_trainer())
-            local_buffer_siez += L->Height();
         }
 
       // Perform reduce-scatter.
       El::Matrix<DataType, El::Device::GPU>& global_buffer =
           get_workspace_matrix("reduce_scatter_send_buffer", global_buffer_size, 1);
-      El::Matrix<DataType, El::Device::GPU>& local_buffer =
-          get_workspace_matrix("reduce_scatter_recv_buffer", local_buffer_siez, 1);
       kfac_util::reduce_scatter_blocks(
-          buffers, global_buffer, local_buffer, comm, m_reduce_scatter_mode);
+          buffers, global_buffer, comm, m_reduce_scatter_mode);
 
       for(auto& block : m_blocks)
         block->update_kronecker_average(

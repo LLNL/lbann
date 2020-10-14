@@ -65,7 +65,6 @@ void allreduce_lower_tri(
 void reduce_scatter_blocks(
     std::vector<std::pair<size_t, El::AbstractMatrix<DataType>*>> blocks,
     El::Matrix<DataType, El::Device::GPU>& global_buffer,
-    El::Matrix<DataType, El::Device::GPU>& local_buffer,
     lbann_comm *comm,
     const kfac_reduce_scatter_mode mode);
 

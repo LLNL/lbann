@@ -144,7 +144,6 @@ void allreduce_lower_tri(El::Matrix<DataType, El::Device::GPU>& A,
 void reduce_scatter_blocks(
     std::vector<std::pair<size_t, El::AbstractMatrix<DataType>*>> blocks,
     El::Matrix<DataType, El::Device::GPU>& global_buffer,
-    El::Matrix<DataType, El::Device::GPU>& local_buffer,
     lbann_comm *comm,
     const kfac_reduce_scatter_mode mode) {
 
@@ -187,7 +186,7 @@ void reduce_scatter_blocks(
     for(auto& block : blocks)
       recv_sizes[block.first] += block.second->Height();
     ::Al::Reduce_scatterv<::Al::NCCLBackend>(
-         global_buffer.LockedBuffer(), local_buffer.Buffer(),
+         global_buffer.Buffer(),
          recv_sizes,
          ::Al::ReductionOperator::sum,
          comm->get_trainer_comm().template GetComm<::Al::NCCLBackend>(El::SyncInfoFromMatrix(global_buffer)));
@@ -196,11 +195,10 @@ void reduce_scatter_blocks(
   // Apply aggregated Kronecker factros to each block.
   {
     size_t offset = 0;
-    const auto& buffer = (mode == kfac_reduce_scatter_mode::ALLREDUCE ? global_buffer : local_buffer);
     for(auto& block : blocks) {
       const bool is_my_block = (block.first == (size_t) comm->get_rank_in_trainer());
       if(is_my_block) {
-        const auto view = El::LockedView(buffer, El::IR(offset, offset+block.second->Height()), El::ALL);
+        const auto view = El::LockedView(global_buffer, El::IR(offset, offset+block.second->Height()), El::ALL);
         El::Copy(view, *block.second);
       }
       if(mode == kfac_reduce_scatter_mode::ALLREDUCE || is_my_block) {
