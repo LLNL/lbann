@@ -8,24 +8,6 @@ import lbann
 from lbann.util import make_iterable, str_list
 
 
-class Reader(abc.ABC):
-    """Base class for data reader modules. 
-
-    A reader generates a specific type of data reader. The reader
-    creates the data reader to be passed on to the trainers. The 
-    reader also validates and adds human readable errors for the data
-    readers.
-    """
-
-    def generate_reader(self, *args, **kwargs):
-      raise NotImplementedError
-
-    def __call__(self, *args, **kwargs):
-        """Apply mode reader that returns the reader that's 
-        passed onto the trainer
-        """
-      return self.generate_reader(*args, **kwargs)
-
 class Module(abc.ABC):
     """Base class for neural network modules.
 
