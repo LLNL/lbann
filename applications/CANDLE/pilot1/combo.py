@@ -63,7 +63,7 @@ parser.add_argument(
     help='random seed for LBANN RNGs', metavar='NUM')
 parser.add_argument(
     '--data-reader', action='store', default='default', type=str,
-    help='Data reader options: \"combo\", \"gdc\", or \"growth\" (default: data_reader_candle_pilot1.prototext)')
+    help='Data reader options: \"combo\", \"gdc\", \"growth\", or \"pilot1\" (default: data_reader_candle_pilot1.prototext)')
 lbann.contrib.args.add_optimizer_arguments(parser, default_learning_rate=0.1)
 args = parser.parse_args()
 
@@ -375,9 +375,10 @@ elif args.data_reader == "gdc":
   data_reader_file = data_reader_prefix + '_gdc.prototext'
 elif args.data_reader == "growth":
   data_reader_file = data_reader_prefix + '_growth.prototext'
-else
-  raise InvalidOption('Data reader selection \"' + args.data_reader + '\" is invalid. Use \"combo\", \"gdc\", or \"growth\". Default is data_reader_candle_pilot1.prototext.')
-pilot1.make_data_reader(data_reader_file)
+else:
+  raise InvalidOption('Data reader selection \"' + args.data_reader + '\" is invalid. Use \"combo\", \"gdc\", \"growth\", or \"pilot1\". Default is data_reader_candle_pilot1.prototext.')
+
+data_reader = pilot1.make_data_reader(data_reader_file)
 
 # Setup trainer
 trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size)
@@ -385,6 +386,6 @@ trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size)
 # Run experiment
 kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
 
-lbann.contrib.launcher.run(trainer, model, data_reader_proto, opt,
+lbann.contrib.launcher.run(trainer, model, data_reader, opt,
                            job_name=args.job_name,
                            **kwargs)
