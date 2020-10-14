@@ -35,11 +35,23 @@
 namespace lbann {
 namespace callback {
 
-enum kfac_inverse_strategy {
+enum class kfac_inverse_strategy {
   ALL,  // Apply round-robin assingment to all of the layers. may cause load imbalance.
   EACH, // Apply round-robin assingment to every type of layers. may
   // not work well for small networks.
   ROOT, // Use only the root GPU. This is only for testing.
+};
+
+enum class kfac_reduce_scatter_mode {
+  ALLREDUCE, // Use lbann_comm::allreduce
+  REDUCE_SCATTER, // Use El::ReduceScatter
+  REDUCE, // Use El::Reduce for each block
+};
+
+enum class kfac_allgather_mode {
+  ALLREDUCE, // Use lbann_comm::allreduce
+  ALLGATHER, // Use El::ReduceScatter
+  BROADCAST // Use El::Broadcast for each block
 };
 
 // Forward declarations
@@ -77,7 +89,9 @@ class kfac : public callback_base {
        const bool use_pi,
        const std::vector<size_t> update_intervals,
        const size_t update_interval_steps,
-       const kfac_inverse_strategy inverse_strategy)
+       const kfac_inverse_strategy inverse_strategy,
+       const kfac_reduce_scatter_mode reduce_scatter_mode,
+       const kfac_allgather_mode allgather_mode)
   : callback_base(),
     m_damping_act_params(damping_act_params),
     m_damping_err_params(damping_err_params),
@@ -89,7 +103,9 @@ class kfac : public callback_base {
     m_use_pi(use_pi),
     m_update_intervals(update_intervals),
     m_update_interval_steps(update_interval_steps),
-    m_inverse_strategy(inverse_strategy) {
+    m_inverse_strategy(inverse_strategy),
+    m_reduce_scatter_mode(reduce_scatter_mode),
+    m_allgather_mode(allgather_mode) {
     m_damping_act = m_damping_act_params[0];
     m_damping_err = m_damping_err_params[0];
     m_damping_bn_act = m_damping_bn_act_params[0];
@@ -157,6 +173,10 @@ class kfac : public callback_base {
 
   /** @brief Assignment strategy for the model-parallel part. */
   const kfac_inverse_strategy m_inverse_strategy;
+
+  /** @brief Collective communication algorithms. */
+  const kfac_reduce_scatter_mode m_reduce_scatter_mode;
+  const kfac_allgather_mode m_allgather_mode;
 
   /** @brief The current damping values. */
   double m_damping_act, m_damping_err,

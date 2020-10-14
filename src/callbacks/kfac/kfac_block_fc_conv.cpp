@@ -339,9 +339,22 @@ kfac_block_fc_conv::get_preconditioned_grad_buffers() {
   // and won't be all-reduced later.
   auto& grad_buffer = w_optimizer->get_gradient_buffer(
       dst_scale, gradient_scale, false);
-  std::vector<El::AbstractMatrix<DataType>*>
-      ret = {&grad_buffer.Matrix()};
-  return ret;
+  if(m_is_conv) {
+    std::vector<El::AbstractMatrix<DataType>*>
+        ret = {&grad_buffer.Matrix()};
+    return ret;
+  } else {
+    // Returns the vectorized version of the matrix.
+    auto& mat = grad_buffer.Matrix();
+    if(mat.Buffer() != m_grad_buffer_v.Buffer())
+      m_grad_buffer_v.Attach(
+          mat.Height()*mat.Width(), 1,
+          mat.Buffer(),
+          mat.Height()*mat.Width());
+    std::vector<El::AbstractMatrix<DataType>*>
+        ret = {&m_grad_buffer_v};
+    return ret;
+  }
 }
 
 void kfac_block_fc_conv::get_kronecker_factor_fc(

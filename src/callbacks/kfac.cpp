@@ -29,6 +29,7 @@
 #include <sstream>
 
 #include "lbann/callbacks/kfac.hpp"
+#include "lbann/callbacks/kfac/kfac_util.hpp"
 #include "lbann/callbacks/kfac/kfac_block_fc_conv.hpp"
 #include "lbann/callbacks/kfac/kfac_block_bn.hpp"
 #include "lbann/layers/data_type_layer.hpp"
@@ -38,11 +39,6 @@
 
 namespace lbann {
 namespace callback {
-
-enum kfac_kronecker_factor_sync_mode {
-  ALLREDUCE,
-  REDUCE_SCATTER
-};
 
 #ifdef LBANN_HAS_GPU
 
@@ -147,7 +143,7 @@ void kfac::on_backward_prop_end(model *m) {
         continue;
 
       std::string proc_rank_key = "all";
-      if(m_inverse_strategy == EACH)
+      if(m_inverse_strategy == kfac_inverse_strategy::EACH)
         proc_rank_key = (is_fc ? "fc" : (is_conv ? "conv" : "bn"));
       if(proc_ranks.find(proc_rank_key) == proc_ranks.end())
         proc_ranks[proc_rank_key] = 0;
@@ -251,7 +247,7 @@ void kfac::on_backward_prop_end(model *m) {
       }
 
       m_blocks.push_back(std::shared_ptr<kfac_block>(block));
-      if(m_inverse_strategy != ROOT)
+      if(m_inverse_strategy != kfac_inverse_strategy::ROOT)
         proc_rank = (proc_rank+1)%num_procs;
     }
 
@@ -274,72 +270,24 @@ void kfac::on_backward_prop_end(model *m) {
 
       // List-up buffers to synchronize.
       std::vector<std::pair<size_t, El::AbstractMatrix<DataType>*>> buffers;
-      int send_size = 0, rs_recv_size = 0;
+      int global_buffer_size = 0, local_buffer_siez = 0;
       for(auto& block : m_blocks)
         for(auto L : block->get_local_kronecker_buffers()) {
           const size_t rank = block->get_inverse_proc_rank();
           buffers.emplace_back(rank, L);
           assert(L.Width() == 1);
-          send_size += L->Height();
+          global_buffer_size += L->Height();
           if(rank == (size_t) comm->get_rank_in_trainer())
-            rs_recv_size += L->Height();
+            local_buffer_siez += L->Height();
         }
-      std::sort(buffers.begin(), buffers.end(),
-                [](const std::pair<size_t, El::AbstractMatrix<DataType>*>& lhs,
-                   const std::pair<size_t, El::AbstractMatrix<DataType>*>& rhs) {
-                  return lhs.first < rhs.first;
-                });
 
-      // Prepare send/recv buffer.
-      El::Matrix<DataType, El::Device::GPU>& buffer_matrix =
-          get_workspace_matrix("allreduce_buffer", send_size, 1);
-      {
-        size_t offset = 0;
-        for(auto& buffer : buffers) {
-          auto view = El::View(buffer_matrix, El::IR(offset, offset+buffer.second->Height()), El::ALL);
-          El::Copy(*buffer.second, view);
-          offset += buffer.second->Height();
-        }
-      }
-
-      const kfac_kronecker_factor_sync_mode mode = ALLREDUCE;
       // Perform reduce-scatter.
-      if(mode == ALLREDUCE) {
-        comm->allreduce(
-            (El::AbstractMatrix<DataType>&) buffer_matrix,
-            comm->get_trainer_comm());
-      } else {
-        const auto syncinfo = El::SyncInfoFromMatrix(buffer_matrix);
-        // TODO: Do only once
-        std::vector<int> rs_recv_sizes;
-        rs_recv_sizes.resize(comm->get_procs_per_trainer());
-        comm->all_gather(&rs_recv_size, 1,
-                         &rs_recv_sizes[0], comm->get_procs_per_trainer(),
-                         comm->get_trainer_comm());
-        // TODO: In-place reduce-scatter
-        El::Matrix<DataType, El::Device::GPU>& recv_matrix =
-            get_workspace_matrix("reduce_scatter_recv_buffer", rs_recv_size, 1);
-        El::mpi::ReduceScatter(
-            buffer_matrix.LockedBuffer(), recv_matrix.Buffer(),
-            &rs_recv_sizes[0],
-            comm->get_trainer_comm(),
-            syncinfo);
-        auto v = El::View(buffer_matrix, El::IR(0, rs_recv_size), El::ALL);
-        El::Copy(recv_matrix, v);
-      }
-
-      // Apply aggregated Kronecker factros to each block.
-      {
-        size_t offset = 0;
-        for(auto& buffer : buffers) {
-          if(mode == ALLREDUCE ||
-             buffer.first == (size_t) comm->get_rank_in_trainer()) {
-            auto view = El::View(buffer_matrix, El::IR(offset, offset+buffer.second->Height()), El::ALL);
-            El::Copy(view, *buffer.second);
-            offset += buffer.second->Height();
-          }
-        }
-      }
+      El::Matrix<DataType, El::Device::GPU>& global_buffer =
+          get_workspace_matrix("reduce_scatter_send_buffer", global_buffer_size, 1);
+      El::Matrix<DataType, El::Device::GPU>& local_buffer =
+          get_workspace_matrix("reduce_scatter_recv_buffer", local_buffer_siez, 1);
+      kfac_util::reduce_scatter_blocks(
+          buffers, global_buffer, local_buffer, comm, m_reduce_scatter_mode);
 
       for(auto& block : m_blocks)
         block->update_kronecker_average(
@@ -367,11 +315,29 @@ void kfac::on_backward_prop_end(model *m) {
   }
 
   // Step 3: All-gather of each preconditioned gradient tensor
-  for(auto& block : m_blocks)
-    for(auto grads : block->get_preconditioned_grad_buffers())
-      El::Broadcast(
-          *grads, comm->get_trainer_comm(),
-          block->get_inverse_proc_rank());
+  {
+    // List-up buffers to synchronize.
+    std::vector<std::pair<size_t, El::AbstractMatrix<DataType>*>> buffers;
+    int local_buffer_size = 0, global_buffer_size = 0;
+    for(auto& block : m_blocks)
+      for(auto L : block->get_preconditioned_grad_buffers()) {
+        const size_t rank = block->get_inverse_proc_rank();
+        buffers.emplace_back(rank, L);
+        assert(L.Width() == 1);
+        if(rank == (size_t) comm->get_rank_in_trainer())
+          local_buffer_size += L->Height();
+        global_buffer_size += L->Height();
+      }
+
+    // Perform reduce-scatter.
+    El::Matrix<DataType, El::Device::GPU>& local_buffer =
+        get_workspace_matrix("allgather_send_buffer", local_buffer_size, 1);
+    El::Matrix<DataType, El::Device::GPU>& global_buffer =
+        get_workspace_matrix("allgather_recv_buffer", global_buffer_size, 1);
+    kfac_util::allgather_blocks(
+        buffers, local_buffer, global_buffer, comm, m_allgather_mode);
+
+  }
 
 }
 
@@ -446,15 +412,45 @@ build_kfac_callback_from_pbuf(
   const std::string inverse_strategy_str = params.inverse_strategy();
   kfac_inverse_strategy inverse_strategy;
   if(inverse_strategy_str == "" || inverse_strategy_str == "all")
-    inverse_strategy = ALL;
+    inverse_strategy = kfac_inverse_strategy::ALL;
   else if(inverse_strategy_str == "each")
-    inverse_strategy = EACH;
+    inverse_strategy = kfac_inverse_strategy::EACH;
   else if(inverse_strategy_str == "root")
-    inverse_strategy = ROOT;
+    inverse_strategy = kfac_inverse_strategy::ROOT;
   else {
     std::stringstream err;
     err << "Invalid inverse strategy type: "
         << inverse_strategy_str;
+    LBANN_ERROR(err.str());
+  }
+
+  const std::string reduce_scatter_mode_str = params.reduce_scatter_mode();
+  kfac_reduce_scatter_mode reduce_scatter_mode;
+  if(reduce_scatter_mode_str == "" || reduce_scatter_mode_str == "allreduce")
+    reduce_scatter_mode = kfac_reduce_scatter_mode::ALLREDUCE;
+  else if(reduce_scatter_mode_str == "reduce-scatter")
+    reduce_scatter_mode = kfac_reduce_scatter_mode::REDUCE_SCATTER;
+  else if(reduce_scatter_mode_str == "reduce")
+    reduce_scatter_mode = kfac_reduce_scatter_mode::REDUCE;
+  else {
+    std::stringstream err;
+    err << "Invalid reduce-scatter mode: "
+        << reduce_scatter_mode_str;
+    LBANN_ERROR(err.str());
+  }
+
+  const std::string allgather_mode_str = params.allgather_mode();
+  kfac_allgather_mode allgather_mode;
+  if(allgather_mode_str == "" || allgather_mode_str == "allreduce")
+    allgather_mode = kfac_allgather_mode::ALLREDUCE;
+  else if(allgather_mode_str == "allgather")
+    allgather_mode = kfac_allgather_mode::ALLGATHER;
+  else if(allgather_mode_str == "broadcast")
+    allgather_mode = kfac_allgather_mode::BROADCAST;
+  else {
+    std::stringstream err;
+    err << "Invalid allgather mode: "
+        << allgather_mode_str;
     LBANN_ERROR(err.str());
   }
 
@@ -468,7 +464,8 @@ build_kfac_callback_from_pbuf(
       print_time, print_matrix, print_matrix_summary,
       use_pi,
       update_intervals, update_interval_steps,
-      inverse_strategy);
+      inverse_strategy,
+      reduce_scatter_mode, allgather_mode);
 }
 
 } // namespace callback

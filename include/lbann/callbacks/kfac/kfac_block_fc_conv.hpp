@@ -178,6 +178,10 @@ class kfac_block_fc_conv: public kfac_block {
   El::Matrix<DataType, El::Device::GPU>
   m_kronecker_inverse_A, m_kronecker_inverse_G;
 
+  /** @brief Vectorized gradient buffer (only for fully-connecter layers). */
+  El::Matrix<DataType, El::Device::GPU>
+  m_grad_buffer_v;
+
 #endif // LBANN_HAS_GPU
 
 };

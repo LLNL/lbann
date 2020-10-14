@@ -400,6 +400,9 @@ message Callback {
     uint64 update_interval_steps = 12; // default: 0
 
     string inverse_strategy = 13; // Options: all, each, root (default: all)
+
+    string reduce_scatter_mode = 14; // Options: allreduce, reduce-scatter (default: allreduce)
+    string allgather_mode = 15; // Options: allreduce, allgather, broadcast (default: allreduce)
   }
 
 }

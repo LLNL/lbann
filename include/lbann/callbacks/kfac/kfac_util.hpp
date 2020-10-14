@@ -30,6 +30,7 @@
 #define LBANN_CALLBACKS_CALLBACK_KFAC_UTIL_HPP_INCLUDED
 
 #include "lbann/base.hpp"
+#include "lbann/callbacks/kfac.hpp"
 
 namespace lbann {
 namespace callback {
@@ -59,6 +60,22 @@ void allreduce_lower_tri(
     El::Matrix<DataType, El::Device::GPU>& AL,
     lbann_comm *comm,
     const cudaStream_t& stream);
+
+/** @brief Perform reduce-scatter on one or more blocks. **/
+void reduce_scatter_blocks(
+    std::vector<std::pair<size_t, El::AbstractMatrix<DataType>*>> blocks,
+    El::Matrix<DataType, El::Device::GPU>& global_buffer,
+    El::Matrix<DataType, El::Device::GPU>& local_buffer,
+    lbann_comm *comm,
+    const kfac_reduce_scatter_mode mode);
+
+/** @brief Perform reduce-scatter on one or more blocks. **/
+void allgather_blocks(
+    std::vector<std::pair<size_t, El::AbstractMatrix<DataType>*>> blocks,
+    El::Matrix<DataType, El::Device::GPU>& send_buffer,
+    El::Matrix<DataType, El::Device::GPU>& recv_buffer,
+    lbann_comm *comm,
+    const kfac_allgather_mode mode);
 
 /** @brief Add the damping value to the diagonal elements of A. **/
 template <typename TensorDataType>
