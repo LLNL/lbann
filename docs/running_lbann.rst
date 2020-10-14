@@ -338,7 +338,7 @@ A simple example
     # ----------------------------------
 
     # Input data
-    input = lbann.Input()
+    input = lbann.Input(target_mode = 'classification')
     image = lbann.Identity(input)
     label = lbann.Identity(input)
 
