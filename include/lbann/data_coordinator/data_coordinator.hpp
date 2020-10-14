@@ -186,20 +186,8 @@ class data_coordinator {
 
   generic_data_reader *get_data_reader(const execution_mode mode) const {
     generic_data_reader *data_reader = nullptr;
-
     auto it = m_data_readers.find(mode);
     if (it != m_data_readers.end()) data_reader = it->second;
-
-    switch(mode) {
-    case execution_mode::training:
-      break;
-    case execution_mode::validation:
-      break;
-    case execution_mode::testing:
-      break;
-    default:
-      LBANN_ERROR("generic data distribution: invalid execution phase");
-    }
     return data_reader;
   }
 
@@ -300,29 +288,18 @@ class data_coordinator {
    */
   long get_linearized_data_size() const {
     long linearized_data_size = -1;
-
-    // @todo BVE fix this to iterate over all exection modes
     generic_data_reader *dr;
-    dr = get_data_reader(execution_mode::training);
-    if (dr != nullptr) {
-      linearized_data_size = dr->get_linearized_data_size();
-    }
-
-    dr = get_data_reader(execution_mode::validation);
-    if (dr != nullptr) {
-      long tmp_data_size = dr->get_linearized_data_size();
-      if (linearized_data_size != -1 && linearized_data_size != tmp_data_size) {
-        LBANN_ERROR("lbann_io_layer: validation data set size does not "
-                              "match the currently established data set size");
-      }
-    }
-
-    dr = get_data_reader(execution_mode::testing);
-    if (dr != nullptr) {
-      long tmp_data_size = dr->get_linearized_data_size();
-      if (linearized_data_size != -1 && linearized_data_size != tmp_data_size) {
-        LBANN_ERROR("lbann_io_layer: testing data set size does not "
-                              "match the currently established data set size");
+    for(auto mode : execution_mode_iterator()) {
+      dr = get_data_reader(mode);
+      if (dr != nullptr) {
+        long tmp_data_size = dr->get_linearized_data_size();
+        if (linearized_data_size != -1 && linearized_data_size != tmp_data_size) {
+          LBANN_ERROR("data_coordinator: ", to_string(mode),
+                      " data set size (", std::to_string(tmp_data_size),
+                      ") does not match the currently established data set size (",
+                      std::to_string(linearized_data_size), ")");
+        }
+        linearized_data_size = tmp_data_size;
       }
     }
     return linearized_data_size;
@@ -332,58 +309,41 @@ class data_coordinator {
    * Get the linearized size of the labels for the underlying data.
    */
   long get_linearized_label_size() const {
-    // if (this->is_for_regression()) {
-    //   return static_cast<long>(1);
-    // }
     long linearized_label_size = -1;
-    // @todo BVE fix this to iterate over all exection modes
     generic_data_reader *dr;
-    dr = get_data_reader(execution_mode::training);
-    if (dr != nullptr) {
-      linearized_label_size = dr->get_linearized_label_size();
-    }
-    dr = get_data_reader(execution_mode::validation);
-    if (dr != nullptr) {
-      long tmp_label_size = dr->get_linearized_label_size();
-      if (linearized_label_size != -1 && linearized_label_size != tmp_label_size) {
-        LBANN_ERROR("lbann_io_layer: validation label set size (" + std::to_string(tmp_label_size) + ") does not match the currently established data set size (" + std::to_string(linearized_label_size) + ")");
-      }
-    }
-    dr = get_data_reader(execution_mode::testing);
-    if (dr != nullptr) {
-      long tmp_label_size = dr->get_linearized_label_size();
-      if (linearized_label_size != -1 && linearized_label_size != tmp_label_size) {
-        LBANN_ERROR("lbann_io_layer: testing label set size does not "
-                              "match the currently established data set size");
+    for(auto mode : execution_mode_iterator()) {
+      dr = get_data_reader(mode);
+      if (dr != nullptr) {
+        long tmp_label_size = dr->get_linearized_label_size();
+        if (linearized_label_size != -1 && linearized_label_size != tmp_label_size) {
+          LBANN_ERROR("data_coordinator: ", to_string(mode),
+                      " label set size (", std::to_string(tmp_label_size),
+                      ") does not match the currently established data set size (",
+                      std::to_string(linearized_label_size), ")");
+        }
+        linearized_label_size = tmp_label_size;
       }
     }
     return linearized_label_size;
   }
 
+  /**
+   * Get the linearized size of the responses for the underlying data.
+   */
   long get_linearized_response_size() const {
-    // if (!this->is_for_regression()) {
-    //   return static_cast<long>(1);
-    // }
     long linearized_response_size = -1;
     generic_data_reader *dr;
-    dr = get_data_reader(execution_mode::training);
-    if (dr != nullptr) {
-      linearized_response_size = dr->get_linearized_response_size();
-    }
-    dr = get_data_reader(execution_mode::validation);
-    if (dr != nullptr) {
-      long tmp_response_size = dr->get_linearized_response_size();
-      if (linearized_response_size != -1 && linearized_response_size != tmp_response_size) {
-        LBANN_ERROR("lbann_io_layer: validation response set size does not "
-                              "match the currently established data set size");
-      }
-    }
-    dr = get_data_reader(execution_mode::testing);
-    if (dr != nullptr) {
-      long tmp_response_size = dr->get_linearized_response_size();
-      if (linearized_response_size != -1 && linearized_response_size != tmp_response_size) {
-        LBANN_ERROR("lbann_io_layer: testing response set size does not "
-                              "match the currently established data set size");
+    for(auto mode : execution_mode_iterator()) {
+      dr = get_data_reader(mode);
+      if (dr != nullptr) {
+        long tmp_response_size = dr->get_linearized_response_size();
+        if (linearized_response_size != -1 && linearized_response_size != tmp_response_size) {
+          LBANN_ERROR("data_coordinator: ", to_string(mode),
+                      " response set size (", std::to_string(tmp_response_size),
+                      ") does not match the currently established data set size (",
+                      std::to_string(linearized_response_size), ")");
+          linearized_response_size = tmp_response_size;
+        }
       }
     }
     return linearized_response_size;
