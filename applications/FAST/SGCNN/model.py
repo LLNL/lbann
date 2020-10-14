@@ -285,7 +285,8 @@ class SGCNN(Module):
                 non_covalent_adj,
                 edge_features,
                 edge_adjacencies,
-                ligand_id_matrix):
+                ligand_id_matrix,
+                fused=False):
         x_cov = self.covalent_propagation(x,
                                           covalent_adj,
                                           edge_features,
@@ -299,5 +300,8 @@ class SGCNN(Module):
         x = x.get_mat()
         ligand_only = lbann.MatMul(ligand_id_matrix, x)
         x = self.gap(ligand_only)
-        x = self.fully_connected_mlp(x)
-        return x
+        if(fused):
+            return x
+        else:
+            x = self.fully_connected_mlp(x)
+            return x
