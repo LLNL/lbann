@@ -34,6 +34,7 @@
 namespace lbann
 {
 
+#ifdef LBANN_HAS_CUDNN
 namespace cudnn
 {
 
@@ -134,5 +135,6 @@ void pooling_backward(PoolingDescriptor const& poolingDesc,
 }
 
 }// namespace cudnn
+#endif // LBANN_HAS_CUDNN
 }// namespace lbann
 #endif // LBANN_UTILS_DNN_LIB_CUDNN_POOLING_HPP_
