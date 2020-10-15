@@ -34,6 +34,7 @@
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/im2col.hpp"
 #include "lbann/utils/distconv.hpp"
+#include "lbann/utils/dnn_lib/cudnn/pooling.hpp"
 
 namespace lbann {
 
@@ -311,14 +312,13 @@ private:
     if (local_input.Height() > 0 && local_input.Width() > 0) {
       const auto zero = El::TypeTraits<ScalingType>::Zero();
       const auto one = El::TypeTraits<ScalingType>::One();
-      CHECK_CUDNN(cudnnPoolingForward(cudnn::get_handle(),
-                                      m_pooling_cudnn_desc,
-                                      &one,
-                                      m_tensors_cudnn_desc.get_prev_activations(),
-                                      local_input.LockedBuffer(),
-                                      &zero,
-                                      m_tensors_cudnn_desc.get_activations(),
-                                      local_output.Buffer()));
+      cudnn::pooling_forward(m_pooling_cudnn_desc,
+                             one,
+                             m_tensors_cudnn_desc.get_prev_activations(),
+                             local_input,
+                             zero,
+                             m_tensors_cudnn_desc.get_activations(),
+                             local_output);
     }
 #endif // #ifndef LBANN_HAS_CUDNN
   }
@@ -340,19 +340,17 @@ private:
       const auto zero = El::TypeTraits<ScalingType>::Zero();
 
       // Perform backprop on GPU
-      CHECK_CUDNN(cudnnPoolingBackward(cudnn::get_handle(),
-                                       m_pooling_cudnn_desc,
-                                       &one,
-                                       m_tensors_cudnn_desc.get_activations(),
-                                       local_output.LockedBuffer(),
-                                       m_tensors_cudnn_desc.get_prev_error_signals(),
-                                       local_gradient_wrt_output.LockedBuffer(),
-                                       m_tensors_cudnn_desc.get_prev_activations(),
-                                       local_input.LockedBuffer(),
-                                       &zero,
-                                       m_tensors_cudnn_desc.get_error_signals(),
-                                       local_gradient_wrt_input.Buffer()));
-
+      cudnn::pooling_backward(m_pooling_cudnn_desc,
+                              one,
+                              m_tensors_cudnn_desc.get_activations(),
+                              local_output,
+                              m_tensors_cudnn_desc.get_prev_error_signals(),
+                              local_gradient_wrt_output,
+                              m_tensors_cudnn_desc.get_prev_activations(),
+                              local_input,
+                              zero,
+                              m_tensors_cudnn_desc.get_error_signals(),
+                              local_gradient_wrt_input);
     }
 #endif // #ifndef LBANN_HAS_CUDNN
   }
