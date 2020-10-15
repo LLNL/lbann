@@ -46,9 +46,11 @@ namespace gpu_lib {
 #elif defined LBANN_HAS_ROCM
 
 // For now, this is placeholder.
-#include "hip.hpp"
+#include "rocm.hpp"
 namespace lbann {
-namespace gpu_lib = ::lbann::hip;
+namespace gpu_lib {
+  using namespace rocm;
+}// namespace gpu_lib
 }// namespace lbann
 
 #endif // LBANN_HAS_CUDA
