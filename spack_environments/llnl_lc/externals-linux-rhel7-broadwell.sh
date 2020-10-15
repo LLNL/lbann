@@ -73,7 +73,7 @@ EXTERNAL_PACKAGES=$(cat <<EOF
       version:
         - 5.16.3
       externals:
-      - spec: perl@5.16.3 arch=linux-rhel7-power9le
+      - spec: perl@5.16.3 arch=linux-rhel7-broadwell
         prefix: /usr/bin
     python::
       buildable: True
