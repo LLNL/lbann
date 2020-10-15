@@ -3,9 +3,9 @@
 
 #include <El/hydrogen_config.h>
 
-#ifdef HYDROGEN_HAVE_CUDA
+#ifdef HYDROGEN_HAVE_GPU
 #define LBANN_HAS_GPU
-#endif // HYDROGEN_HAVE_CUDA
+#endif // HYDROGEN_HAVE_GUP
 
 #ifdef HYDROGEN_HAVE_OMP_TASKLOOP
 #define LBANN_HAVE_OMP_TASKLOOP
@@ -42,6 +42,9 @@
 #ifdef LBANN_HAS_CUDA
 #cmakedefine LBANN_HAS_NVSHMEM
 #endif
+
+#cmakedefine LBANN_HAS_ROCM
+#cmakedefine LBANN_HAS_MIOPEN
 
 #cmakedefine LBANN_HAS_HALF
 #cmakedefine LBANN_HAS_GPU_FP16

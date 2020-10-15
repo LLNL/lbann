@@ -1,6 +1,7 @@
 enable_language(CXX)
 
 option(Hydrogen_ENABLE_CUDA "Enable CUDA support in Hydrogen" OFF)
+option(Hydrogen_ENABLE_ROCM "Enable ROCM support in Hydrogen" OFF)
 
 option(Hydrogen_ENABLE_OPENMP "Hydrogen use OpenMP threading." ON)
 option(Hydrogen_ENABLE_OMP_TASKLOOP "Hydrogen use OpenMP taskloops for parallel regions." OFF)
@@ -49,7 +50,11 @@ if (TARGET ALUMINUM)
     set(_hydrogen_depends_tag DEPENDS)
     list(APPEND _HYDROGEN_DEPENDS ALUMINUM)
 
-    if (ALUMINUM_ENABLE_CUDA OR ALUMINUM_ENABLE_MPI_CUDA OR ALUMINUM_ENABLE_NCCL)
+    if (ALUMINUM_ENABLE_ROCM)
+      set(Hydrogen_ENABLE_ROCM ON)
+    elseif (ALUMINUM_ENABLE_CUDA
+        OR ALUMINUM_ENABLE_MPI_CUDA
+        OR ALUMINUM_ENABLE_NCCL)
       set(Hydrogen_ENABLE_CUDA ON)
     endif ()
   endif (Hydrogen_ENABLE_ALUMINUM)
@@ -64,8 +69,6 @@ if (TARGET CUB)
 
     set(_hydrogen_depends_tag DEPENDS)
     list(APPEND _HYDROGEN_DEPENDS CUB)
-
-    set(Hydrogen_ENABLE_CUDA ON)
   endif ()
 endif (TARGET CUB)
 
@@ -154,3 +157,4 @@ ExternalProject_Add(HYDROGEN
 
 set(HYDROGEN_DIR ${HYDROGEN_CMAKE_INSTALL_PREFIX}
   CACHE INTERNAL "The install prefix of Hydrogen.")
+
