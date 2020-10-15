@@ -31,6 +31,7 @@
 #include "lbann/layers/regularizers/regularizer.hpp"
 #include "lbann/utils/cudnn.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/dnn_lib/cudnn/local_response_normalization.hpp"
 
 namespace lbann {
 
@@ -182,15 +183,14 @@ private:
     if (local_input.Height() > 0 && local_input.Width() > 0) {
       const ScalingType zero = El::TypeTraits<ScalingType>::Zero();
       const ScalingType one = El::TypeTraits<ScalingType>::One();
-      CHECK_CUDNN(cudnnLRNCrossChannelForward(cudnn::get_handle(),
-                                              m_lrn_cudnn_desc,
-                                              CUDNN_LRN_CROSS_CHANNEL_DIM1,
-                                              &one,
-                                              m_tensors_cudnn_desc.get_prev_activations(),
-                                              local_input.LockedBuffer(),
-                                              &zero,
-                                              m_tensors_cudnn_desc.get_activations(),
-                                              local_output.Buffer()));
+      cudnn::lrn_cross_channel_forward(
+        m_lrn_cudnn_desc,
+        one,
+        m_tensors_cudnn_desc.get_prev_activations(),
+        local_input,
+        zero,
+        m_tensors_cudnn_desc.get_activations(),
+        local_output);
     }
 #endif // LBANN_HAS_CUDNN
   }
@@ -207,19 +207,18 @@ private:
     if (local_input.Height() > 0 && local_input.Width() > 0) {
       const ScalingType zero = El::TypeTraits<ScalingType>::Zero();
       const ScalingType one = El::TypeTraits<ScalingType>::One();
-      CHECK_CUDNN(cudnnLRNCrossChannelBackward(cudnn::get_handle(),
-                                               m_lrn_cudnn_desc,
-                                               CUDNN_LRN_CROSS_CHANNEL_DIM1,
-                                               &one,
-                                               m_tensors_cudnn_desc.get_prev_activations(),
-                                               local_input.LockedBuffer(),
-                                               m_tensors_cudnn_desc.get_prev_error_signals(),
-                                               local_gradient_wrt_output.LockedBuffer(),
-                                               m_tensors_cudnn_desc.get_activations(),
-                                               local_output.LockedBuffer(),
-                                               &zero,
-                                               m_tensors_cudnn_desc.get_error_signals(),
-                                               local_gradient_wrt_input.Buffer()));
+      cudnn::lrn_cross_channel_backward(
+        m_lrn_cudnn_desc,
+        one,
+        m_tensors_cudnn_desc.get_activations(),
+        local_output,
+        m_tensors_cudnn_desc.get_prev_error_signals(),
+        local_gradient_wrt_output,
+        m_tensors_cudnn_desc.get_prev_activations(),
+        local_input,
+        zero,
+        m_tensors_cudnn_desc.get_error_signals(),
+        local_gradient_wrt_input);
     }
 #endif // LBANN_HAS_CUDNN
   }
