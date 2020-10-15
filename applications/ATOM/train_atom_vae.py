@@ -66,7 +66,7 @@ def construct_lc_launcher_args():
     parser.add_argument("--ltfb", type=bool, default=False)
     parser.add_argument("--ltfb-batch-interval", type=int, default=100)
     parser.add_argument("--weights-to-send", type=str, default='')
-    parser.add_argument("--warmup", type=bool, default=True)
+    parser.add_argument("--warmup", type=bool, default=False)
 
     # these are specific to the Trainer object
     parser.add_argument(
