@@ -386,7 +386,7 @@ protected:
   bool is_distconv_supported() const override {
     return Dev == El::Device::GPU && T_layout == data_layout::DATA_PARALLEL;
   }
-  void setup_distconv_adapter() override {
+  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override {
     this->get_distconv_adapter_ptr() = make_unique<
       batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>>(*this);
   }

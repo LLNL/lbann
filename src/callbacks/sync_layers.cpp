@@ -56,11 +56,11 @@ void sync_layers::on_backward_prop_end(model *m, Layer *l) {
 }
 
 void sync_layers::do_sync(Layer *l) {
-  #ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_GPU
   if (m_sync_gpus) {
     hydrogen::gpu::SynchronizeDevice();
   }
-  #endif
+#endif
   if (m_sync_mpi) {
     l->get_comm()->global_barrier();
   }

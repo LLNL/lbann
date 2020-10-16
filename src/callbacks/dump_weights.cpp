@@ -27,6 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/dump_weights.hpp"
+#include "lbann/callbacks/checkpoint.hpp" // Reuse the checkpoint naming scheme
 #include "lbann/utils/memory.hpp"
 #include "lbann/weights/data_type_weights.hpp"
 //#include "lbann/utils/file_utils.hpp"
@@ -53,18 +54,32 @@ void dump_weights::do_dump_weights(const model& m, std::string s) {
   if(c.get_epoch() % m_epoch_interval != 0)  return;
 
   // Create directory
-  const std::string root_file_path = get_multi_trainer_model_path(m, m_directory);
-  file::trainer_master_make_directory(root_file_path, m.get_comm());
+  auto& t = c.get_trainer();
+  std::string epochdir = El::BuildString(get_shared_checkpoint_dirname(t.get_name(),
+                                                                       c.get_training_algorithm().get_name(),
+                                                                       m_directory.c_str(),
+                                                                       c.get_execution_mode(),
+                                                                       c.get_epoch(),
+                                                                       c.get_step()),
 
-  //  makedir(m_directory.c_str());
+                                         m.get_name(), '/');
+  file::trainer_master_make_directory(epochdir, m.get_comm());
   for (weights *w : m.get_weights()) {
-    const std::string file = (root_file_path
-                              + c.get_state_string()
-                              + "-" + w->get_name()
-                              + "-Weights");
+    // create weight file name to match to weight list entry
     const auto* dtw = dynamic_cast<const data_type_weights<DataType>*>(w);
+    auto file = El::BuildString(epochdir, "model_weights_", w->get_name(), "_",
+                                dtw->get_values().Height(), "x",
+                                dtw->get_values().Width());
+
     El::Write(dtw->get_values(), file, El::ASCII);
   }
+  if (m.get_comm()->am_trainer_master()) {
+    auto latest_file = get_last_shared_checkpoint_filename(t.get_name(),
+                                                           c.get_training_algorithm().get_name(),
+                                                           m_directory.c_str());
+    write_latest(latest_file, c.get_execution_mode(), c.get_epoch(), c.get_step());
+  }
+
 }
 
 std::unique_ptr<callback_base>

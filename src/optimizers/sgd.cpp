@@ -94,9 +94,9 @@ void sgd<TensorDataType>::step_compute(AbsDistMatrixType& values, const AbsDistM
     // Momentum or Nesterov SGD
     switch (values.GetLocalDevice()) {
     case El::Device::CPU: momentum_step_cpu(values, gradient); break;
-#ifdef LBANN_HAS_CUDA
+#ifdef LBANN_HAS_GPU
     case El::Device::GPU: momentum_step_gpu(values, gradient); break;
-#endif // LBANN_HAS_CUDA
+#endif // LBANN_HAS_GPU
     default:
       std::ostringstream err;
       err << "unsupported device type "

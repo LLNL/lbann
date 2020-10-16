@@ -27,7 +27,7 @@
 #define LBANN_MATMUL_LAYER_INSTANTIATE
 #include "lbann/layers/math/matmul.hpp"
 #ifdef LBANN_HAS_GPU
-#include "lbann/utils/cublas.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 #endif // LBANN_HAS_GPU
 
 namespace lbann {
@@ -173,21 +173,25 @@ void fp_compute_impl(matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,El:
   // Compute matrix multiplication for each mini-batch sample
   // Note: cuBLAS expects matrices in Fortran layout while LBANN
   // tensors are in C layout.
-  auto&& handle = hydrogen::cublas::GetLibraryHandle();
-  cublas::gemm_strided_batched(
-    handle,
-    transpose_input1 ? CUBLAS_OP_T : CUBLAS_OP_N,
-    transpose_input0 ? CUBLAS_OP_T : CUBLAS_OP_N,
-    output_width,
-    output_height,
-    transpose_input0 ? input0_height : input0_width,
-    El::TypeTraits<TensorDataType>::One(),
-    local_input1.LockedBuffer(), input1_width, local_input1.LDim(),
-    local_input0.LockedBuffer(), input0_width, local_input0.LDim(),
-    El::TypeTraits<TensorDataType>::Zero(),
-    local_output.Buffer(), output_width, local_output.LDim(),
-    local_mini_batch_size);
-
+  {
+    using namespace hydrogen;
+    auto multisync = MakeMultiSync(gpu::get_sync_info(local_output),
+                                   gpu::get_sync_info(local_input0),
+                                   gpu::get_sync_info(local_input1));
+    gpu_blas::GemmStridedBatched(
+      transpose_input1 ? TransposeMode::TRANSPOSE : TransposeMode::NORMAL,
+      transpose_input0 ? TransposeMode::TRANSPOSE : TransposeMode::NORMAL,
+      output_width,
+      output_height,
+      transpose_input0 ? input0_height : input0_width,
+      El::TypeTraits<TensorDataType>::One(),
+      local_input1.LockedBuffer(), input1_width, local_input1.LDim(),
+      local_input0.LockedBuffer(), input0_width, local_input0.LDim(),
+      El::TypeTraits<TensorDataType>::Zero(),
+      local_output.Buffer(), output_width, local_output.LDim(),
+      local_mini_batch_size,
+      multisync);
+  }
 }
 #endif // LBANN_HAS_GPU
 
@@ -223,60 +227,73 @@ void bp_compute_impl(matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,El:
   // Compute gradients for each mini-batch sample
   // Note: cuBLAS expects matrices in Fortran layout while LBANN
   // tensors are in C layout.
-  auto&& handle = hydrogen::cublas::GetLibraryHandle();
-  if (transpose_input0) {
-    cublas::gemm_strided_batched(
-      handle,
-      CUBLAS_OP_T,
-      transpose_input1 ? CUBLAS_OP_T : CUBLAS_OP_N,
-      input0_width, input0_height, output_width,
-      El::TypeTraits<TensorDataType>::One(),
-      local_output_grad.LockedBuffer(), output_width, local_output_grad.LDim(),
-      local_input1.LockedBuffer(), input1_width, local_input1.LDim(),
-      El::TypeTraits<TensorDataType>::Zero(),
-      local_input0_grad.Buffer(), input0_width, local_input0_grad.LDim(),
-      local_mini_batch_size);
-  }
-  else {
-    cublas::gemm_strided_batched(
-      handle,
-      transpose_input1 ? CUBLAS_OP_N : CUBLAS_OP_T,
-      CUBLAS_OP_N,
-      input0_width, input0_height, output_width,
-      El::TypeTraits<TensorDataType>::One(),
-      local_input1.LockedBuffer(), input1_width, local_input1.LDim(),
-      local_output_grad.LockedBuffer(), output_width, local_output_grad.LDim(),
-      El::TypeTraits<TensorDataType>::Zero(),
-      local_input0_grad.Buffer(), input0_width, local_input0_grad.LDim(),
-      local_mini_batch_size);
-  }
-  if (transpose_input1) {
-    cublas::gemm_strided_batched(
-      handle,
-      transpose_input0 ? CUBLAS_OP_T : CUBLAS_OP_N,
-      CUBLAS_OP_T,
-      input1_width, input1_height, output_height,
-      El::TypeTraits<TensorDataType>::One(),
-      local_input0.LockedBuffer(), input0_width, local_input0.LDim(),
-      local_output_grad.LockedBuffer(), output_width, local_output_grad.LDim(),
-      El::TypeTraits<TensorDataType>::Zero(),
-      local_input1_grad.Buffer(), input1_width, local_input1_grad.LDim(),
-      local_mini_batch_size);
-  }
-  else {
-    cublas::gemm_strided_batched(
-      handle,
-      CUBLAS_OP_N,
-      transpose_input0 ? CUBLAS_OP_N : CUBLAS_OP_T,
-      input1_width, input1_height, output_height,
-      El::TypeTraits<TensorDataType>::One(),
-      local_output_grad.LockedBuffer(), output_width, local_output_grad.LDim(),
-      local_input0.LockedBuffer(), input0_width, local_input0.LDim(),
-      El::TypeTraits<TensorDataType>::Zero(),
-      local_input1_grad.Buffer(), input1_width, local_input1_grad.LDim(),
-      local_mini_batch_size);
-  }
+  {
+    using namespace hydrogen;
+    // The SyncInfo of the C matrix leads the way!
+    auto multisync = MakeMultiSync(gpu::get_sync_info(local_input0_grad),
+                                   gpu::get_sync_info(local_input1),
+                                   gpu::get_sync_info(local_output_grad));
 
+    if (transpose_input0) {
+      gpu_blas::GemmStridedBatched(
+        TransposeMode::TRANSPOSE,
+        transpose_input1 ? TransposeMode::TRANSPOSE : TransposeMode::NORMAL,
+        input0_width, input0_height, output_width,
+        El::TypeTraits<TensorDataType>::One(),
+        local_output_grad.LockedBuffer(), output_width, local_output_grad.LDim(),
+        local_input1.LockedBuffer(), input1_width, local_input1.LDim(),
+        El::TypeTraits<TensorDataType>::Zero(),
+        local_input0_grad.Buffer(), input0_width, local_input0_grad.LDim(),
+        local_mini_batch_size,
+        multisync);
+    }
+    else {
+      gpu_blas::GemmStridedBatched(
+        transpose_input1 ? TransposeMode::NORMAL : TransposeMode::TRANSPOSE,
+        TransposeMode::NORMAL,
+        input0_width, input0_height, output_width,
+        El::TypeTraits<TensorDataType>::One(),
+        local_input1.LockedBuffer(), input1_width, local_input1.LDim(),
+        local_output_grad.LockedBuffer(), output_width, local_output_grad.LDim(),
+        El::TypeTraits<TensorDataType>::Zero(),
+        local_input0_grad.Buffer(), input0_width, local_input0_grad.LDim(),
+        local_mini_batch_size,
+        multisync);
+    }
+  }
+  {
+    using namespace hydrogen;
+    // The SyncInfo of the C matrix leads the way!
+    auto multisync = MakeMultiSync(gpu::get_sync_info(local_input1_grad),
+                                   gpu::get_sync_info(local_input0),
+                                   gpu::get_sync_info(local_output_grad));
+    if (transpose_input1) {
+      gpu_blas::GemmStridedBatched(
+        transpose_input0 ? TransposeMode::TRANSPOSE : TransposeMode::NORMAL,
+        TransposeMode::TRANSPOSE,
+        input1_width, input1_height, output_height,
+        El::TypeTraits<TensorDataType>::One(),
+        local_input0.LockedBuffer(), input0_width, local_input0.LDim(),
+        local_output_grad.LockedBuffer(), output_width, local_output_grad.LDim(),
+        El::TypeTraits<TensorDataType>::Zero(),
+        local_input1_grad.Buffer(), input1_width, local_input1_grad.LDim(),
+        local_mini_batch_size,
+        multisync);
+    }
+    else {
+      gpu_blas::GemmStridedBatched(
+        TransposeMode::NORMAL,
+        transpose_input0 ? TransposeMode::NORMAL : TransposeMode::TRANSPOSE,
+        input1_width, input1_height, output_height,
+        El::TypeTraits<TensorDataType>::One(),
+        local_output_grad.LockedBuffer(), output_width, local_output_grad.LDim(),
+        local_input0.LockedBuffer(), input0_width, local_input0.LDim(),
+        El::TypeTraits<TensorDataType>::Zero(),
+        local_input1_grad.Buffer(), input1_width, local_input1_grad.LDim(),
+        local_mini_batch_size,
+        multisync);
+    }
+  }
 }
 #endif // LBANN_HAS_GPU
 
