@@ -44,7 +44,19 @@ namespace lbann {
 // Atomic add function
 __device__ __forceinline__
 __half gpu_lib::atomic_add(__half* address, __half val) {
-  return atomicAdd(address, val);
+  unsigned int* address_as_uint = (unsigned int*) address;
+  unsigned int old = *address_as_uint;
+  __half* old_as_half = (__half*) &old;
+  unsigned int assumed;
+  unsigned int updated;
+  __half* updated_as_half = (__half*) &updated;
+  do {
+    assumed = old;
+    updated = old;
+    *updated_as_half += val;
+    old = atomicCAS(address_as_uint, assumed, updated);
+  } while (assumed != old);
+  return *old_as_half;
 }
 __device__ __forceinline__
 float gpu_lib::atomic_add(float* address, float val) {
@@ -53,6 +65,59 @@ float gpu_lib::atomic_add(float* address, float val) {
 __device__ __forceinline__
 double gpu_lib::atomic_add(double* address, double val) {
   return atomicAdd(address, val);
+}
+
+// Block reduction
+template <size_t bdimx, size_t bdimy, size_t bdimz, class T>
+__device__ __forceinline__
+T block_reduce(T val) {
+#ifdef HYDROGEN_HAVE_CUB
+  constexpr auto reduce_algo = hipcub::BLOCK_REDUCE_WARP_REDUCTIONS;
+  using BlockReduce = hipcub::BlockReduce<T, bdimx, reduce_algo, bdimy, bdimz>;
+  __shared__ typename BlockReduce::TempStorage workspace;
+  val = BlockReduce(workspace).Sum(val);
+#else
+  const size_t tid = threadIdx.x + threadIdx.y*bdimx + threadIdx.z*bdimx*bdimy;
+  constexpr size_t bsize = bdimx * bdimy * bdimz;
+  __shared__ DataType shared_max_vals[bsize];
+  shared_max_vals[tid] = val;
+  for (size_t stride = bsize/2; stride > 0; stride /= 2) {
+    __syncthreads();
+    if (tid < stride) {
+      shared_max_vals[tid] = shared_max_vals[tid] + shared_max_vals[tid+stride];
+    }
+  }
+  if (tid == 0) {
+    val = shared_max_vals[0];
+  }
+#endif // HYDROGEN_HAVE_CUB
+  return val;
+}
+template <size_t bdimx, size_t bdimy, size_t bdimz, class T, class Op>
+__device__ __forceinline__
+T block_reduce(T val) {
+#ifdef HYDROGEN_HAVE_CUB
+  constexpr auto reduce_algo = hipcub::BLOCK_REDUCE_WARP_REDUCTIONS;
+  using BlockReduce = hipcub::BlockReduce<T, bdimx, reduce_algo, bdimy, bdimz>;
+  __shared__ typename BlockReduce::TempStorage workspace;
+  val = BlockReduce(workspace).Reduce(val, Op());
+#else
+  Op op;
+  const size_t tid = threadIdx.x + threadIdx.y*bdimx + threadIdx.z*bdimx*bdimy;
+  constexpr size_t bsize = bdimx * bdimy * bdimz;
+  __shared__ DataType shared_max_vals[bsize];
+  shared_max_vals[tid] = val;
+  for (size_t stride = bsize/2; stride > 0; stride /= 2) {
+    __syncthreads();
+    if (tid < stride) {
+      shared_max_vals[tid] = op(shared_max_vals[tid], shared_max_vals[tid+stride]);
+    }
+  }
+  if (tid == 0) {
+    val = shared_max_vals[0];
+  }
+#endif // HYDROGEN_HAVE_CUB
+  return val;
 }
 
 // This support is far from complete!
@@ -150,7 +215,7 @@ typename allocator<T>::pointer allocator<T>::allocate(allocator<T>::size_type si
   value_type* buffer = nullptr;
   if (size > 0) {
 #ifdef HYDROGEN_HAVE_CUB
-    auto& memory_pool = El::hipcub::MemoryPool();
+    auto& memory_pool = El::cub::MemoryPool();
     CHECK_CUDA(memory_pool.DeviceAllocate(reinterpret_cast<void**>(&buffer),
                                           size * sizeof(value_type),
                                           m_stream));
@@ -167,7 +232,7 @@ void allocator<T>::deallocate(allocator<T>::pointer buffer,
   auto&& ptr = buffer.get();
   if (ptr != nullptr) {
 #ifdef HYDROGEN_HAVE_CUB
-    auto& memory_pool = El::hipcub::MemoryPool();
+    auto& memory_pool = El::cub::MemoryPool();
     CHECK_CUDA(memory_pool.DeviceFree(ptr));
 #else
     CHECK_CUDA(hipFree(ptr));

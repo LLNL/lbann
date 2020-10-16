@@ -53,62 +53,6 @@ namespace gpu_lib {
 #endif // LBANN_HAS_CUDA
 
 #if defined __CUDACC__ || defined __HIPCC__
-// -------------------------------------------------------------
-// Device functions
-// -------------------------------------------------------------
-
-// Block reduction
-template <size_t bdimx, size_t bdimy, size_t bdimz, class T>
-__device__ __forceinline__
-T block_reduce(T val) {
-#ifdef HYDROGEN_HAVE_CUB
-  constexpr auto reduce_algo = cub::BLOCK_REDUCE_WARP_REDUCTIONS;
-  using BlockReduce = cub::BlockReduce<T, bdimx, reduce_algo, bdimy, bdimz>;
-  __shared__ typename BlockReduce::TempStorage workspace;
-  val = BlockReduce(workspace).Sum(val);
-#else
-  const size_t tid = threadIdx.x + threadIdx.y*bdimx + threadIdx.z*bdimx*bdimy;
-  constexpr size_t bsize = bdimx * bdimy * bdimz;
-  __shared__ DataType shared_max_vals[bsize];
-  shared_max_vals[tid] = val;
-  for (size_t stride = bsize/2; stride > 0; stride /= 2) {
-    __syncthreads();
-    if (tid < stride) {
-      shared_max_vals[tid] = shared_max_vals[tid] + shared_max_vals[tid+stride];
-    }
-  }
-  if (tid == 0) {
-    val = shared_max_vals[0];
-  }
-#endif // HYDROGEN_HAVE_CUB
-  return val;
-}
-template <size_t bdimx, size_t bdimy, size_t bdimz, class T, class Op>
-__device__ __forceinline__
-T block_reduce(T val) {
-#ifdef HYDROGEN_HAVE_CUB
-  constexpr auto reduce_algo = cub::BLOCK_REDUCE_WARP_REDUCTIONS;
-  using BlockReduce = cub::BlockReduce<T, bdimx, reduce_algo, bdimy, bdimz>;
-  __shared__ typename BlockReduce::TempStorage workspace;
-  val = BlockReduce(workspace).Reduce(val, Op());
-#else
-  Op op;
-  const size_t tid = threadIdx.x + threadIdx.y*bdimx + threadIdx.z*bdimx*bdimy;
-  constexpr size_t bsize = bdimx * bdimy * bdimz;
-  __shared__ DataType shared_max_vals[bsize];
-  shared_max_vals[tid] = val;
-  for (size_t stride = bsize/2; stride > 0; stride /= 2) {
-    __syncthreads();
-    if (tid < stride) {
-      shared_max_vals[tid] = op(shared_max_vals[tid], shared_max_vals[tid+stride]);
-    }
-  }
-  if (tid == 0) {
-    val = shared_max_vals[0];
-  }
-#endif // HYDROGEN_HAVE_CUB
-  return val;
-}
 
 // Unary math functions
 #define WRAP_UNARY_MATH_FUNCTION(func)                     \

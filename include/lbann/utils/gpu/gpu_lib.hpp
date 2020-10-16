@@ -38,11 +38,11 @@ namespace gpu_lib {
   using namespace rocm;
 #endif // LBANN_HAS_CUDA
 
+#if defined __CUDACC__ || defined __HIPCC__
+
 // -------------------------------------------------------------
 // Device functions
 // -------------------------------------------------------------
-#if defined __CUDACC__ || defined __HIPCC__
-
 // Atomic add
 __device__ __forceinline__
 __half atomic_add(__half* address, __half val);
@@ -87,7 +87,7 @@ T block_reduce(T val);
 
 // Unary math functions
 #define DECLARE_UNARY_MATH_FUNC_WITH_TYPE(func, type)    \
-  __device__ __forceinline__ type name(type const&)
+  __device__ __forceinline__ type func(type const& x)
 #define DECLARE_UNARY_MATH_FUNC(func)                 \
   DECLARE_UNARY_MATH_FUNC_WITH_TYPE(func, __half);    \
   DECLARE_UNARY_MATH_FUNC_WITH_TYPE(func, float);     \
