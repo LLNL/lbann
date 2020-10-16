@@ -232,7 +232,7 @@ void image_data_reader::do_preload_data_store() {
     if (is_master()) {
       std::cout << "mode: data_store_thread\n";
     }
-    std::shared_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(m_comm, opts);
+    std::shared_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(m_comm, opts, false);
     int num_threads = static_cast<int>(io_thread_pool->get_num_threads());
 
     std::vector<std::unordered_set<int>> data_ids(num_threads);
