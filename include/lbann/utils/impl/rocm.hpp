@@ -213,11 +213,11 @@ typename allocator<T>::pointer allocator<T>::allocate(allocator<T>::size_type si
   if (size > 0) {
 #ifdef HYDROGEN_HAVE_CUB
     auto& memory_pool = El::cub::MemoryPool();
-    CHECK_CUDA(memory_pool.DeviceAllocate(reinterpret_cast<void**>(&buffer),
+    CHECK_ROCM(memory_pool.DeviceAllocate(reinterpret_cast<void**>(&buffer),
                                           size * sizeof(value_type),
                                           m_stream));
 #else
-    CHECK_CUDA(hipMalloc(&buffer, size * sizeof(value_type)));
+    CHECK_ROCM(hipMalloc(&buffer, size * sizeof(value_type)));
 #endif // HYDROGEN_HAVE_CUB
   }
   return pointer(buffer);
@@ -230,9 +230,9 @@ void allocator<T>::deallocate(allocator<T>::pointer buffer,
   if (ptr != nullptr) {
 #ifdef HYDROGEN_HAVE_CUB
     auto& memory_pool = El::cub::MemoryPool();
-    CHECK_CUDA(memory_pool.DeviceFree(ptr));
+    CHECK_ROCM(memory_pool.DeviceFree(ptr));
 #else
-    CHECK_CUDA(hipFree(ptr));
+    CHECK_ROCM(hipFree(ptr));
 #endif // HYDROGEN_HAVE_CUB
   }
 }

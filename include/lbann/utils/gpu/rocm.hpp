@@ -39,6 +39,66 @@
 #include <thrust/system/hip/detail/par.h>
 #include <thrust/device_vector.h>
 
+// -------------------------------------------------------------
+// Error utility macros
+// -------------------------------------------------------------
+#define LBANN_ROCM_SYNC(async)                                  \
+  do {                                                          \
+    /* Synchronize GPU and check for errors. */                 \
+    hipError_t status_ROCM_SYNC = hipDeviceSynchronize();       \
+    if (status_ROCM_SYNC == hipSuccess)                         \
+      status_CUDA_SYNC = cudaGetLastError();                    \
+    if (status_ROCM_SYNC != hipSuccess) {                       \
+      hipDeviceReset();                                         \
+      std::stringstream err_ROCM_SYNC;                          \
+      if (async) { err_ROCM_SYNC << "Asynchronous "; }          \
+      err_ROCM_SYNC << "ROCm error ("                           \
+                    << hipGetErrorString(status_ROCM_SYNC)      \
+                    << ")";                                     \
+      LBANN_ERROR(err_ROCM_SYNC.str());                         \
+    }                                                           \
+  } while (0)
+#define LBANN_ROCM_CHECK_LAST_ERROR(async)                              \
+  do {                                                                  \
+    hipError_t status = hipGetLastError();                              \
+    if (status != hipSuccess) {                                         \
+      hipDeviceReset();                                                 \
+      std::stringstream err_ROCM_CHECK_LAST_ERROR;                      \
+      if (async) { err_ROCM_CHECK_LAST_ERROR << "Asynchronous "; }      \
+      err_ROCM_CHECK_LAST_ERROR << "ROCm error ("                       \
+                                << hipGetErrorString(status)            \
+                                << ")";                                 \
+      LBANN_ERROR(err_ROCM_CHECK_LAST_ERROR.str());                     \
+    }                                                                   \
+  } while (0)
+#define FORCE_CHECK_ROCM(rocm_call)                             \
+  do {                                                          \
+    /* Call ROCM API routine, synchronizing before and */       \
+    /* after to check for errors. */                            \
+    LBANN_ROCM_SYNC(true);                                      \
+    hipError_t status_CHECK_ROCM = (rocm_call);                 \
+    if (status_CHECK_ROCM != hipSuccess) {                      \
+      LBANN_ERROR(std::string("ROCm error (")                   \
+                  + hipGetErrorString(status_CHECK_ROCM)        \
+                  + std::string(")"));                          \
+    }                                                           \
+    LBANN_ROCM_SYNC(false);                                     \
+  } while (0)
+#define FORCE_CHECK_ROCM_NOSYNC(rocm_call)                      \
+  do {                                                          \
+    hipError_t status_CHECK_ROCM = (rocm_call);                 \
+    if (status_CHECK_ROCM != hipSuccess) {                      \
+      LBANN_ERROR(std::string("ROCm error (")                   \
+                  + hipGetErrorString(status_CHECK_ROCM)        \
+                  + std::string(")"));                          \
+    }                                                           \
+  } while (0)
+#ifdef LBANN_DEBUG
+#define CHECK_ROCM(rocm_call) FORCE_CHECK_ROCM(rocm_call);
+#else
+#define CHECK_ROCM(rocm_call) FORCE_CHECK_ROCM_NOSYNC(rocm_call)
+#endif // #ifdef LBANN_DEBUG
+
 namespace lbann {
 namespace rocm {
 // -------------------------------------------------------------
