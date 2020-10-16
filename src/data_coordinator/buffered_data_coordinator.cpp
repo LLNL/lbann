@@ -197,6 +197,9 @@ template <typename TensorDataType>
 bool buffered_data_coordinator<TensorDataType>::epoch_complete(execution_mode mode) {
   m_data_set_processed = update_data_set(get_data_reader(mode), mode);
 
+  // Kick off background I/O once the forward prop phase is complete.
+  // This is because the data reader has state about the current step
+  // in epoch.  In a future PR this state should be moved to the data coordinator
   if(!m_data_set_processed && m_trainer->background_io_activity_allowed()) {
     int next_active_buffer = this->get_active_buffer_idx(mode) + 1;
     std::future<void> background_fetch_done = get_io_thread_pool().submit_job(
