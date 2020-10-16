@@ -24,14 +24,14 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <thrust/system/cuda/execution_policy.h>
+#include <thrust/system/hip/execution_policy.h>
 
 // Headers for HIP
 #ifdef __HIPCC__
 #ifdef HYDROGEN_HAVE_CUB
-#include "cub/block/block_reduce.cuh"
+#include "hipcub/block/block_reduce.hpp"
 #endif // HYDROGEN_HAVE_CUB
-#include <math_constants.h>
+#include <limits>
 #include <hip/hip_fp16.h>
 #endif // __HIPCC__
 
@@ -54,14 +54,6 @@ __device__ __forceinline__
 double gpu_lib::atomic_add(double* address, double val) {
   return atomicAdd(address, val);
 }
-
-// Unary math functions
-__device__ __forceinline__
-bool gpu_lib::isfinite(__half const& x) { return !(::__isnan(x) || ::__hisinf(x)); }
-__device__ __forceinline__
-bool gpu_lib::isinf(__half const& x) { return ::__hisinf(x); }
-__device__ __forceinline__
-bool gpu_lib::isnan(__half const& x) { return ::__hisnan(x); }
 
 // This support is far from complete!
 #define WRAP_UNARY_ROCM_HALF_MATH_FUNCTION(func)              \
@@ -134,8 +126,8 @@ SPECIFIERS constexpr long int gpu_lib::max<long int>()           { return LONG_M
 SPECIFIERS constexpr long long int gpu_lib::max<long long int>() { return LLONG_MAX; }
 SPECIFIERS constexpr float gpu_lib::epsilon<float>()   { return FLT_EPSILON; }
 SPECIFIERS constexpr double gpu_lib::epsilon<double>() { return DBL_EPSILON; }
-SPECIFIERS float gpu_lib::infinity<float>()   { return CUDART_INF_F; }
-SPECIFIERS double gpu_lib::infinity<double>() { return CUDART_INF;   }
+SPECIFIERS float gpu_lib::infinity<float>()   { return HIPRT_INF_F; }
+SPECIFIERS double gpu_lib::infinity<double>() { return HIPRT_INF;   }
 #undef SPECIFIERS
 
 #endif // __HIPCC__

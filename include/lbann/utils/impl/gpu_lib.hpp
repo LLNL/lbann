@@ -38,10 +38,10 @@
 // Headers for HIP
 #ifdef __HIPCC__
 #ifdef HYDROGEN_HAVE_CUB
-#include "cub/block/block_reduce.cuh"
+#include "hipcub/block/block_reduce.hpp"
 #endif // HYDROGEN_HAVE_CUB
-#include <math_constants.h>
-#include <hip_fp16.h>
+#include <limits>
+#include <hip/hip_fp16.h>
 #endif // __HIPCC__
 
 namespace lbann {

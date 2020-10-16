@@ -36,7 +36,7 @@
 #include <thrust/memory.h>
 #include <thrust/version.h>
 #include <thrust/detail/allocator/tagged_allocator.h>
-#include <thrust/system/cuda/detail/par.h>
+#include <thrust/system/hip/detail/par.h>
 #include <thrust/device_vector.h>
 
 namespace lbann {
@@ -92,9 +92,9 @@ namespace thrust {
 /** Thrust execution policy. */
 using execute_on_stream
 #if THRUST_MAJOR_VERSION > 1 || THRUST_MINOR_VERSION >= 9
-  = ::thrust::cuda_cub::execute_on_stream; // >= 1.9.1
+  = ::thrust::hip_rocprim::execute_on_stream; // >= 1.9.1
 #elif THRUST_MAJOR_VERSION == 1 && THRUST_MINOR_VERSION == 8
-  = ::thrust::system::cuda::detail::execute_on_stream;
+  = ::thrust::system::hip::detail::execute_on_stream;
 #else
   = std::nullptr_t;
   static_assert(false, "Thrust 1.8 or newer is required");
