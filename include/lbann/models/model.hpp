@@ -109,6 +109,68 @@ public:
    */
   void set_name(std::string name);
 
+  void set_subgrid_communication_type(int type)
+  {
+    vector_communication_subgraph =type;
+  }
+
+  int get_subgrid_communication_type()
+  {
+    return vector_communication_subgraph;
+  }
+
+  void set_subgraph_num_parent_resources(int num_resources)
+  {
+    subgraph_num_resources_parent = num_resources;
+  }
+
+  int get_subgraph_num_parent_resources()
+  {
+    return subgraph_num_resources_parent;
+  }
+
+  void set_subgrid_topology(int type)
+  {
+    subgraph_topology = type;
+  }
+
+  int get_subgrid_topology()
+  {
+    return subgraph_topology;
+  }
+
+  void enable_subgraph_parallelism()
+  {
+    apply_subgraph_parallelism = true;
+  }
+
+  bool is_subgraph_parallelism_enabled()
+  {
+    return apply_subgraph_parallelism;
+  }
+
+  int get_num_resources_non_branch_layers()
+  {
+    return num_resources_non_branch_layers;
+  }
+
+  int get_num_resources_branch_layers()
+  {
+    return num_resources_branch_layers;
+  }
+
+  void set_num_resources_non_branch_layers(int num)
+  {
+    num_resources_non_branch_layers = num;
+  }
+
+  void set_num_resources_branch_layers(int num)
+  {
+    num_resources_branch_layers = num;
+  }
+
+
+
   /** @brief Human-readable description. */
   virtual description get_description() const;
 
@@ -324,10 +386,40 @@ protected:
    *  relationships between layers are reciprocated.
    */
   virtual void setup_layer_topology();
+
+  /** setup sub grids for the sub graph parallelism	
+
+  */	
+  virtual void setup_subgrids();	
+
+  virtual void get_subgrids_order(std::vector<int> &ranks_order, int num_branches);
+
+  virtual int get_max_subgraph_branches();
+
+  virtual void check_subgraph_parallelism();
+
+  virtual void setup_subgrid_layers_run_condition();
+
+  virtual void get_parent_subgrid_tags(int layer_index );
+
+  virtual void get_subgraph_subgrids_ranks(std::vector<int> &parent_ranks, std::vector<int> &subgrid_ranks, int layer_index,int number_ranks_in_grid);
+
+  virtual void get_resources_for_spliting_point(std::vector<int> &parent_ranks, 
+                  std::vector<int> &subgrid_ranks, 
+                  int layer_index,
+                  int number_ranks_in_grid,
+                  int num_subgrids);
+  virtual void get_resources_for_merge_layers(std::set<int>& pooled_set,int child_index, int num_subgrids);
+
+  virtual void get_resources_for_input_layer(std::vector<int>& masterSubGrid, int num_subgrids);
+
+  virtual void setup_subcommunicators();
+  
   /** @brief Set up layer execution order.
    *
    *  Called in setup function.
    */
+
   virtual void setup_layer_execution_order();
   /** @brief Set up layers.
    *
@@ -415,10 +507,22 @@ public:
   /** @brief Execute callbacks at the end of weight optimization. */
   virtual void do_weight_optimize_end_cbs(weights *w);
 
+
 #ifdef LBANN_HAS_DISTCONV
   /* @brief Return the maximum mini-batch size used by Distconv. */
   size_t get_max_mini_batch_size_distconv() const { return m_max_mini_batch_size_distconv; }
 #endif
+
+	
+public:	
+  // map to store all distinct grids in the model
+  std::unordered_map<std::string, std::shared_ptr<El::Grid>> grids; 
+
+  std::unordered_map<std::string, std::shared_ptr<El::mpi::Comm>> subCommunicatorsSubgrids; 
+  // map to store all distinct mpi groups in the model (one to one mapping with grids)
+  std::unordered_map<std::string, std::unique_ptr<El::mpi::Group>> grids_mpi_groups; 
+
+
 
 private:
 
@@ -428,6 +532,31 @@ private:
   /** @brief LBANN communicator. */
   lbann_comm* m_comm;
 
+  /*experimental code for Sub graph*/
+  /** Enable vector communication for the subgraph parallelism */
+  //0: send-recv based subgrid communication
+  //1: collective based subgrid communication without optimization that requires specific assumptions like subgrids should have same size
+  //2: collective based subgrid communication with optimization
+
+  int vector_communication_subgraph = 0;
+
+  //Number of resources for parent (common) grid
+  //0: use all resources (default) 
+  int subgraph_num_resources_parent = 0;
+
+  //0: no topology aware design
+  //1: master grid in round robin manner of nodes (GPUs per node 4)  1 3 5 7, 2 4 6 8     
+  int subgraph_topology = 0;
+
+  // whether subgraph parallelism is enabled or not for the model 
+  bool apply_subgraph_parallelism = false;
+
+  // total number of resources / ranks for branch (subgrid) layers
+  int num_resources_branch_layers;
+
+  // total number of resources / ranks for common/seq layers
+  int num_resources_non_branch_layers;
+  
   /** @brief Model instance's name.
    *  @details Each model in a trainer should have a unique,
    *  preferably human-readable, name.

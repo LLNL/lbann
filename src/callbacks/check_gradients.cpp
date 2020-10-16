@@ -51,11 +51,29 @@ EvalType compute_objective_function(model& m) {
   const auto& c = static_cast<sgd_execution_context&>(m.get_execution_context());
 
   // Forward prop, skipping input layers
-  for (auto&& l : m.get_layers()) {
-    if (dynamic_cast<generic_input_layer<DataType>*>(l) == nullptr) {
-      l->forward_prop();
+
+  if(m.is_subgraph_parallelism_enabled())
+  {
+    for (auto&& l : m.get_layers()) {
+      if (dynamic_cast<generic_input_layer<DataType>*>(l) == nullptr && l->get_run_layer_in_subgraph()) {
+        l->forward_prop();
+          
+      }
     }
   }
+  else//subgrpah parallelism not enabled
+  {
+    for (auto&& l : m.get_layers()) {
+      if (dynamic_cast<generic_input_layer<DataType>*>(l) == nullptr) {
+        
+        l->forward_prop();
+      }
+    }
+
+  }
+
+
+  
 
   // Get objective function value
   auto&& obj = m.get_objective_function();
@@ -217,11 +235,27 @@ void check_gradients::do_check_gradients(model& m) const {
   }
 
   // Load data in input layers
-  for (auto&& l : m.get_layers()) {
-    if (dynamic_cast<generic_input_layer<DataType>*>(l) != nullptr) {
-      l->forward_prop();
+  //checking subgrpah parallelism 
+  if(m.is_subgraph_parallelism_enabled())
+  {
+    for (auto&& l : m.get_layers()) {
+      if (dynamic_cast<generic_input_layer<DataType>*>(l) != nullptr && l->get_run_layer_in_subgraph()) {
+        l->forward_prop();
+      }
     }
+
   }
+  else
+  {
+    for (auto&& l : m.get_layers()) {
+      if (dynamic_cast<generic_input_layer<DataType>*>(l) != nullptr) {
+        l->forward_prop();
+      }
+    }
+
+  }
+
+  
 
   // Compute objective function
   const EvalType objective = compute_objective_function(m);
@@ -249,9 +283,27 @@ void check_gradients::do_check_gradients(model& m) const {
   // Compute gradients
   m.get_objective_function()->differentiate();
   m.get_objective_function()->compute_weight_regularization();
-  for (El::Int i = layers.size()-1; i >= 0; --i) {
-    layers[i]->back_prop();
+
+  //checking subgraph parallelism 
+  if(m.is_subgraph_parallelism_enabled())
+  {
+    for (El::Int i = layers.size()-1; i >= 0; --i) {
+      if(layers[i]->get_run_layer_in_subgraph())
+      {
+        layers[i]->back_prop();
+      }
+      
+    }
+
   }
+  else
+  {
+    for (El::Int i = layers.size()-1; i >= 0; --i) {
+      layers[i]->back_prop();
+    }
+
+  }
+  
 
   // Print objective function value
   if (comm.am_world_master()) {

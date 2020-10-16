@@ -28,6 +28,8 @@ class MultiheadAttention(Module):
     def __init__(self,
                  embed_dim,
                  num_heads,
+                 branches,
+                 d_kv = None,
                  name=None):
         super().__init__()
         MultiheadAttention.global_count += 1
@@ -36,6 +38,20 @@ class MultiheadAttention(Module):
         self.embed_dim = embed_dim
         self.num_heads = num_heads
         self.head_dim = embed_dim // num_heads
+
+        if(d_kv == None):
+            self.inner_dim = embed_dim
+            self.head_dim = embed_dim // num_heads
+        else:
+            self.inner_dim = d_kv * num_heads
+            self.head_dim = d_kv
+
+        if(branches==0):
+            self.ENABLE_SUBGRAPH=0
+            self.BRANCHES=0
+        else:
+            self.ENABLE_SUBGRAPH=1
+            self.BRANCHES = branches
 
         # Module name
         self.name = name
@@ -88,6 +104,11 @@ class MultiheadAttention(Module):
                 length is the same as `queries`.
 
         """
+        ENABLE_SUBGRAPH = self.ENABLE_SUBGRAPH
+        BRANCHES = self.BRANCHES
+        if(ENABLE_SUBGRAPH):
+            if(self.num_heads%BRANCHES!=0):
+                raise ValueError('Num heads should be divisible by BRANCHES')
         self.instance += 1
         name = f'{self.name}_instance{self.instance}'
 
@@ -95,19 +116,19 @@ class MultiheadAttention(Module):
         queries_fc = lbann.ChannelwiseFullyConnected(
             queries,
             weights=self.query_weights,
-            output_channel_dims=[self.embed_dim],
+            output_channel_dims=[self.inner_dim],
             name=f'{name}_queries_fc',
         )
         keys_fc = lbann.ChannelwiseFullyConnected(
             keys,
             weights=self.key_weights,
-            output_channel_dims=[self.embed_dim],
+            output_channel_dims=[self.inner_dim],
             name=f'{name}_keys_fc',
         )
         values_fc = lbann.ChannelwiseFullyConnected(
             values,
             weights=self.value_weights,
-            output_channel_dims=[self.embed_dim],
+            output_channel_dims=[self.inner_dim],
             name=f'{name}_values_fc',
         )
 
@@ -119,29 +140,43 @@ class MultiheadAttention(Module):
             axis=1,
             slice_points=slice_points,
             name=f'{name}_queries_slice',
+            parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':ENABLE_SUBGRAPH}
         )
         keys_slice = lbann.Slice(
             keys_fc,
             axis=1,
             slice_points=slice_points,
             name=f'{name}_keys_slice',
+            parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':ENABLE_SUBGRAPH}
         )
         values_slice = lbann.Slice(
             values_fc,
             axis=1,
             slice_points=slice_points,
             name=f'{name}_values_slice',
+            parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':ENABLE_SUBGRAPH}
         )
 
         # Compute scaled dot-product attention for each head
         attentions = []
+        tag=0
         for head in range(self.num_heads):
-            head_name = f'{name}_head{head}'
+            head_name = f'{name}_myattention_head{head}'
 
             # Attention inputs
-            q = lbann.Identity(queries_slice)
-            k = lbann.Identity(keys_slice)
-            v = lbann.Identity(values_slice)
+            
+            if(ENABLE_SUBGRAPH):
+                if(head%int(self.num_heads/BRANCHES)==0):
+                    tag+=1
+
+                q = lbann.Identity(queries_slice, parallel_strategy = {'sub_branch_tag':tag,'enable_subgraph':ENABLE_SUBGRAPH})
+                k = lbann.Identity(keys_slice, parallel_strategy = {'sub_branch_tag':tag,'enable_subgraph':ENABLE_SUBGRAPH})
+                v = lbann.Identity(values_slice, parallel_strategy = {'sub_branch_tag':tag,'enable_subgraph':ENABLE_SUBGRAPH})
+            else:
+                q = lbann.Identity(queries_slice)
+                k = lbann.Identity(keys_slice)
+                v = lbann.Identity(values_slice)
+
 
             # Multiply queries and keys
             # Note: num_queries x num_keys
@@ -155,8 +190,13 @@ class MultiheadAttention(Module):
                 scaling_factors=str(1 / math.sqrt(self.head_dim)),
                 name=f'{head_name}_scale',
             )
-            if mask:
-                y = lbann.Add(y, mask, name=f'{head_name}_mask')
+
+            if(ENABLE_SUBGRAPH):
+                if mask!=None:
+                    y = lbann.Sum([y, mask[tag]], name=f'{head_name}_mask')
+            else:
+                if mask:
+                    y = lbann.Sum([y, mask], name=f'{head_name}_mask')
             y = lbann.ChannelwiseSoftmax(y, name=f'{head_name}_softmax')
 
             # Attention output
@@ -164,11 +204,19 @@ class MultiheadAttention(Module):
             attentions.append(lbann.MatMul(y, v, name=head_name))
 
         # Concatenate heads and apply fully-connected layer
-        attentions = lbann.Concatenation(
-            attentions,
-            axis=1,
-            name=f'{name}_heads_concat'
-        )
+        if(ENABLE_SUBGRAPH):
+            attentions = lbann.Concatenation(
+                attentions,
+                axis=1,
+                name=f'{name}_heads_concat',parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':ENABLE_SUBGRAPH}
+            )
+        else:
+            attentions = lbann.Concatenation(
+                attentions,
+                axis=1,
+                name=f'{name}_heads_concat',
+            )
+
         outputs_fc = lbann.ChannelwiseFullyConnected(
             attentions,
             weights=self.output_weights,

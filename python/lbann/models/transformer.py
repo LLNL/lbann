@@ -37,10 +37,12 @@ class TransformerEncoderLayer(lbann.modules.Module):
 
     def __init__(
         self,
+        branches,
         embed_dim=512,
         num_heads=8,
         feedforward_dim=2048,
         dropout=0.1,
+        d_kv=None,
         name=None,
     ):
         TransformerEncoderLayer.global_count += 1
@@ -58,6 +60,8 @@ class TransformerEncoderLayer(lbann.modules.Module):
         self.attention = lbann.modules.transformer.MultiheadAttention(
             self.embed_dim,
             num_heads,
+            branches=branches,
+            d_kv = d_kv,
             name=f'{self.name}_attention'
         )
 
@@ -154,10 +158,12 @@ class TransformerDecoderLayer(lbann.modules.Module):
 
     def __init__(
         self,
+        branches,
         embed_dim=512,
         num_heads=8,
         feedforward_dim=2048,
         dropout=0.1,
+        d_kv = None,
         name=None,
     ):
         TransformerDecoderLayer.global_count += 1
@@ -175,11 +181,15 @@ class TransformerDecoderLayer(lbann.modules.Module):
         self.attention1 = lbann.modules.transformer.MultiheadAttention(
             embed_dim,
             num_heads,
+            branches=branches,
+            d_kv = d_kv,
             name=f'{self.name}_attention1'
         )
         self.attention2 = lbann.modules.transformer.MultiheadAttention(
             embed_dim,
             num_heads,
+            branches=branches,
+            d_kv = d_kv,
             name=f'{self.name}_attention2'
         )
 
@@ -299,12 +309,14 @@ class Transformer(lbann.modules.Module):
 
     def __init__(
         self,
+        branches,
         hidden_size=512,
         num_heads=8,
         num_encoder_layers=6,
         num_decoder_layers=6,
         filter_size=2048,
         dropout=0.1,
+        d_kv = None,
         name=None,
     ):
         Transformer.global_count += 1
@@ -323,24 +335,29 @@ class Transformer(lbann.modules.Module):
         # Encoder and decoder stacks
         self.encoder = [
             TransformerEncoderLayer(
+                branches,
                 embed_dim=hidden_size,
                 num_heads=num_heads,
                 feedforward_dim=filter_size,
                 dropout=dropout,
+                d_kv = d_kv,
                 name=f'{self.name}_encoder{i}',
             )
             for i in range(num_encoder_layers)
         ]
         self.decoder = [
             TransformerDecoderLayer(
+                branches,
                 embed_dim=hidden_size,
                 num_heads=num_heads,
                 feedforward_dim=filter_size,
                 dropout=dropout,
+                d_kv = d_kv,
                 name=f'{self.name}_decoder{i}',
             )
             for i in range(num_decoder_layers)
         ]
+        self.branches = branches
 
     def _positional_encoding(self, sequence_length):
         """Positional encodings corresponding to a sequence length.
@@ -425,9 +442,9 @@ class Transformer(lbann.modules.Module):
 
         # Encoder stack
         # Note: Add positional encoding to input
-        x = lbann.Add(
+        x = lbann.Sum([
             source,
-            self._positional_encoding(source_length),
+            self._positional_encoding(source_length)],
             name=f'{self.name}_instance{self.instance}_positional_source',
         )
         for encoder_layer in self.encoder:
@@ -436,16 +453,36 @@ class Transformer(lbann.modules.Module):
 
         # Decoder stack
         # Note: Add positional encoding to input
-        x = lbann.Add(
-            target,
-            self._positional_encoding(target_length),
+        x = lbann.Sum(
+            [target,
+            self._positional_encoding(target_length)],
             name=f'{self.name}_instance{self.instance}_positional_target',
         )
-        for decoder_layer in self.decoder:
-            x = decoder_layer(
-                x,
-                memory,
-                tgt_mask=self._subsequent_mask(target_length),
-            )
+
+        subgraph_masks = {}
+
+
+        if(self.branches>0):
+            for i in range(self.branches):
+                subgraph_masks[i+1] = lbann.Identity(self._subsequent_mask(target_length),name="mylayer"+str(i) ,
+                                    parallel_strategy = {'sub_branch_tag':i+1,'enable_subgraph':1})
+                subgraph_masks[i+1] = lbann.Identity(subgraph_masks[i+1])
+            
+
+        if(self.branches>0):
+            for decoder_layer in self.decoder:
+                x = decoder_layer(
+                    x,
+                    memory,
+                    tgt_mask=subgraph_masks,
+                )
+
+        else:
+            for decoder_layer in self.decoder:
+                x = decoder_layer(
+                    x,
+                    memory,
+                    tgt_mask=self._subsequent_mask(target_length),
+                )
 
         return x

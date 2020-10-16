@@ -116,6 +116,20 @@ public:
   /** Get error signal tensor corresponding to parent layer. */
   const BaseDistMat& get_error_signals(const Layer& parent) const override;
 
+  /** Get temp Grad Tensor. */
+  AbsDistMatrixType& get_temp_grad() ;
+  /** Get transfered input for each branch tag **/
+  AbsDistMatrixType& get_branch_tag_input(int tag) ;
+
+  std::vector<std::unique_ptr<AbsDistMatrixType>>& get_branch_tag_input_vector() ;
+
+  /** return all activations/errors for a layer
+      Used in subgraph parallelism to implement collective communication in split, sum, ... layers*/
+  std::vector<std::unique_ptr<AbsDistMatrixType>>& get_all_activations() ;
+  std::vector<std::unique_ptr<AbsDistMatrixType>>& get_all_prev_activations() ;
+  std::vector<std::unique_ptr<AbsDistMatrixType>>& get_all_prev_error_signals() ;
+  std::vector<std::unique_ptr<AbsDistMatrixType>>& get_all_error_signals() ;
+
   /** Get activation tensor. */
   AbsDistMatrixType& get_activations(int child_index = 0);
   /** Get error signal tensor. */
@@ -140,6 +154,11 @@ public:
    *  false means to dynamically reallocate them.
    */
   void set_keep_error_signals(bool) override;
+
+  El::mpi::Comm& get_subgrid_comm() { return *interSubGridVCComm; }
+
+
+
 
 protected:
 
@@ -235,6 +254,10 @@ protected:
     return get_weights(idx);
   }
 
+  void setup_inter_subgrid_comm_based_on_childs(const El::Grid& grid);
+  void setup_inter_subgrid_comm_based_on_parents(const El::Grid& grid);
+
+
 private:
 
   void setup_weights(size_t idx, weights& w) override;
@@ -316,6 +339,8 @@ private:
    */
   void back_prop_impl_() final;
 
+
+
   // ===========================================================
   // Private class members
   // ===========================================================
@@ -351,12 +376,32 @@ private:
    */
   std::vector<std::unique_ptr<AbsDistMatrixType>> m_gradient_wrt_inputs;
 
+  /** Temp grad tensor for Split Layer
+   *  Each matrix column corresponds to a flattened mini-batch sample.
+   */
+  std::vector<std::unique_ptr<AbsDistMatrixType>> m_temp_grad;
+
+  /** For Split layer create a tensor for each branch_tag (opt for not transfering data for each branch)
+   *  Each matrix column corresponds to a flattened mini-batch sample.
+   */
+  std::vector<std::unique_ptr<AbsDistMatrixType>> m_subgrid_tensors_split;
+
   /** @brief Whether to keep persistent error signals or dynamically
    *         allocate/deallocate them.
    *
    *  The default behavior is dynamic allocation.
    */
   bool m_persistent_error_signals = false;
+
+  /** Inter subgrids comm for STAR,VC distribution
+  */
+  // El::mpi::Comm interSubGridVCComm;
+  // std::shared_ptr<El::mpi::Comm>  interSubGridVCComm;
+
+
+
+
+  
 
 #ifdef LBANN_HAS_DISTCONV
   friend class data_type_distconv_adapter<TensorDataType>;

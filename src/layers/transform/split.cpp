@@ -56,4 +56,6 @@ void split_distconv_adapter<TensorDataType, Layout, Dev>::bp_compute() {
 #include "lbann/macros/instantiate.hpp"
 #endif // LBANN_HAS_DISTCONV
 
+
+
 }// namespace lbann

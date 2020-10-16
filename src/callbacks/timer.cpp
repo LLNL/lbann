@@ -71,6 +71,7 @@ void timer::timing_end(model& m) {
   EvalType batch_time_mean = std::nan("");
   EvalType batch_time_min = std::nan("");
   EvalType batch_time_max = std::nan("");
+  EvalType batch_time_median = std::nan("");
   EvalType batch_time_stdev = std::nan("");
   if (num_batches > 0) {
     batch_time_mean = std::accumulate(batch_times.begin(),
@@ -80,6 +81,18 @@ void timer::timing_end(model& m) {
                                        batch_times.end());
     batch_time_max = *std::max_element(batch_times.begin(),
                                        batch_times.end());
+    std::vector<EvalType> sorted_times(batch_times.begin(),
+                                       batch_times.end());
+    std::sort(sorted_times.begin(),
+              sorted_times.end());
+    if(num_batches%2==0)
+    {
+      batch_time_median = sorted_times[num_batches/2];
+    }
+    else
+    {
+      batch_time_median = (sorted_times[(num_batches-1)/2] + sorted_times[num_batches/2] ) / 2;
+    }
   }
   if (num_batches > 1) {
     batch_time_stdev = zero;
@@ -138,6 +151,7 @@ void timer::timing_end(model& m) {
         comm.intertrainer_gather(batch_time_stdev, world_master);
       }
 
+
       // Print results
       if (comm.am_world_master()) {
         for (El::Int i = 0; i < num_trainers; ++i) {
@@ -154,6 +168,7 @@ void timer::timing_end(model& m) {
             std::cout << mean_list[i] << "s";
           }
           std::cout << " mean, ";
+          std::cout << batch_time_median<< "s median, ";
           if (std::isnan(max_list[i])) {
             std::cout << "N/A";
           } else {

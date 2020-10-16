@@ -824,4 +824,7 @@ message ParallelStrategy {
   int64 procs_per_replica = 12;
   int64 depth_groups = 13;
   int64 depth_splits = 14;
+  int64 sub_branch_tag = 15;	
+  int64 sub_branch_resource_percentage = 16;	
+  int64 enable_subgraph = 17;
 }

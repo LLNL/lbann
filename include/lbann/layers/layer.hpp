@@ -116,6 +116,12 @@ struct ParallelStrategy {
   int filter_splits = 0;
   /** Number of times the layer is replicated (for FC layers right now). */
   int replications = 0;
+      /** Enable subgraph for the layer. */ 
+  int enable_subgraph = 0;  
+  /** Branch number in the sub graph. */  
+  int sub_branch_tag = 0; 
+  /** percentage of parent resources to be allocated to this branch. */ 
+  int sub_branch_resource_percentage = 0;
   bool operator==(const ParallelStrategy &ps) const {
     return sample_groups == ps.sample_groups &&
         sample_splits == ps.sample_splits &&
@@ -129,7 +135,10 @@ struct ParallelStrategy {
         channel_splits == ps.channel_splits &&
         filter_groups == ps.filter_groups &&
         filter_splits == ps.filter_splits &&
-        replications == ps.replications;
+        replications == ps.replications &&  
+        sub_branch_tag == ps.sub_branch_tag &&  
+        sub_branch_resource_percentage == ps.sub_branch_resource_percentage &&  
+        enable_subgraph == ps.enable_subgraph;
   }
   bool operator!=(const ParallelStrategy &ps) const {
     return !(*this == ps);
@@ -151,6 +160,9 @@ inline std::ostream &operator<<(std::ostream &os,
      << ", " << ps.filter_groups
      << "/" << ps.filter_splits
      << ", " << ps.replications
+     << "/" << ps.sub_branch_tag  
+     << "," << ps.sub_branch_resource_percentage  
+     << "/" << ps.enable_subgraph
      << "}";
   return os;
 }
@@ -176,7 +188,16 @@ class Layer {
   friend class callback::sync_layers;
 
 public:
+  /** Ranks in grid for the sub-graph */  
+  std::unique_ptr<std::set <int>> subgrid_ranks; 
+  std::unique_ptr<std::vector<int>> parent_tags;
+  std::string subgrid_index="";
+  El::Int num_spliting_groups=1;
 
+  std::shared_ptr<El::Grid> mygrid;
+
+  std::shared_ptr<El::mpi::Comm>  interSubGridVCComm;
+  
   Layer(lbann_comm *comm);
   Layer(const Layer& other);
   Layer& operator=(const Layer& other);
@@ -206,9 +227,54 @@ public:
   inline void set_name(const std::string name) { m_name = name; }
   /** Get a string representing the layer datatype
    */
+
+  void set_communication_flag(int type)
+  {
+    enable_vector_copy = type;
+
+  }
+
+  int get_communication_flag()
+  {
+    return enable_vector_copy;
+
+  }
+
+  void enable_subgraph_parallelism()
+  {
+    apply_subgraph_parallelism = true;
+  }
+  //model wide sub graph parallelism enabled 
+  bool is_subgraph_parallelism_enabled()
+  {
+    return apply_subgraph_parallelism;
+  }
+
+  void set_run_layer_in_subgraph()
+  {
+    run_layer_in_subgraph = true;
+  }
+
+  bool get_run_layer_in_subgraph()
+  {
+    return run_layer_in_subgraph;
+  }
+
   virtual std::string get_datatype_name() const {
     return TypeName<DataType>();
   };
+
+  void set_num_spliting_groups(int num_grps)
+  {
+    num_spliting_groups = num_grps;
+  }
+  //enable subgraph parallelism for this layer 
+  //to set variable for ssplit layer
+  void set_enable_subgraph_variable()
+  {
+    m_parallel_strategy.enable_subgraph=1;
+  }
+
 
   /** Human-readable description. */
   virtual description get_description() const;
@@ -250,7 +316,7 @@ public:
    *  assumed that pointers to parent/child layers have already been
    *  initialized.
    */
-  virtual void setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata);
+  virtual void setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata,const El::Grid& grid);
   /** Check that the setup is reasonable. */
   virtual void check_setup();
 
@@ -611,6 +677,12 @@ protected:
    *  human-readable, name.
    */
   std::string m_name;
+
+  int enable_vector_copy = 0;
+
+  bool apply_subgraph_parallelism = false;
+
+  bool run_layer_in_subgraph = false;
 
 private:
 
