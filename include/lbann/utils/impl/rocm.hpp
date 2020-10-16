@@ -170,30 +170,27 @@ WRAP_UNARY_ROCM_HALF_CAST_TO_FLOAT_MATH_FUNCTION(atanh)
 #undef WRAP_UNARY_ROCM_HALF_MATH_FUNCTION
 
 __device__ __forceinline__
-__half gpu_lib::min(const __half& x, const __half& y)
-{ return ::__hle(x, y) ? x : y; }
+__half gpu_lib::min(const __half& x, const __half& y) { return ::__hle(x, y) ? x : y; }
+//__half gpu_lib::min(const __half& x, const __half& y)
+//{ return ::__hle(x, y) ? x : y; }
 
- __device__ __forceinline__
-__half gpu_lib::max(const __half& x, const __half& y)
-{ return ::__hle(x, y) ? y : x; }
+//__device__ __forceinline__
+//__half gpu_lib::max(const __half& x, const __half& y)
+//{ return ::__hle(x, y) ? y : x; }
 
 // Numeric limits
-#define SPECIFIERS template <> __device__ __forceinline__
-SPECIFIERS constexpr float gpu_lib::min<float>()                 { return FLT_MIN;   }
-SPECIFIERS constexpr double gpu_lib::min<double>()               { return DBL_MIN;   }
-SPECIFIERS constexpr int gpu_lib::min<int>()                     { return INT_MIN;   }
-SPECIFIERS constexpr long int gpu_lib::min<long int>()           { return LONG_MIN;  }
-SPECIFIERS constexpr long long int gpu_lib::min<long long int>() { return LLONG_MIN; }
-SPECIFIERS constexpr float gpu_lib::max<float>()                 { return FLT_MAX;   }
-SPECIFIERS constexpr double gpu_lib::max<double>()               { return DBL_MAX;   }
-SPECIFIERS constexpr int gpu_lib::max<int>()                     { return INT_MAX;   }
-SPECIFIERS constexpr long int gpu_lib::max<long int>()           { return LONG_MAX;  }
-SPECIFIERS constexpr long long int gpu_lib::max<long long int>() { return LLONG_MAX; }
-SPECIFIERS constexpr float gpu_lib::epsilon<float>()   { return FLT_EPSILON; }
-SPECIFIERS constexpr double gpu_lib::epsilon<double>() { return DBL_EPSILON; }
-SPECIFIERS float gpu_lib::infinity<float>()   { return HIPRT_INF_F; }
-SPECIFIERS double gpu_lib::infinity<double>() { return HIPRT_INF;   }
-#undef SPECIFIERS
+template <typename T> constexpr __device__ __forceinline__ T gpu_lib::min() {
+  return std::numeric_limits<T>::min();
+}
+template <typename T> constexpr __device__ __forceinline__ T gpu_lib::max() {
+  return std::numeric_limits<T>::max();
+}
+template <typename T> constexpr __device__ __forceinline__ T gpu_lib::epsilon() {
+  return std::numeric_limits<T>::epsilon();
+}
+template <typename T> __device__ __forceinline__ T gpu_lib::infinity() {
+  return std::numeric_limits<T>::infinity();
+}
 
 #endif // __HIPCC__
 

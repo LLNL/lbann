@@ -115,7 +115,7 @@ DECLARE_UNARY_MATH_FUNC(tanh);
 DECLARE_UNARY_MATH_FUNC(acosh);
 DECLARE_UNARY_MATH_FUNC(asinh);
 DECLARE_UNARY_MATH_FUNC(atanh);
-// Must remain templates because cannot overload ony return type only
+
 template <typename T> __device__ __forceinline__ bool isfinite(const T& x);
 template <typename T> __device__ __forceinline__ bool isinf(const T& x);
 template <typename T> __device__ __forceinline__ bool isnan(const T& x);
@@ -128,7 +128,7 @@ template <typename T> __device__ __forceinline__ T max(const T& x, const T& y);
 template <typename T> __device__ __forceinline__ T mod(const T& x, const T& y);
 template <typename T> __device__ __forceinline__ T pow(const T& x, const T& y);
 #define DECLARE_UNARY_MATH_BINARY_FUNC_WITH_TYPE(func, type)            \
-  __device__ __forceinline__ type name(type const& x, type const& y)
+  __device__ __forceinline__ type func(type const& x, type const& y)
 #define DECLARE_UNARY_MATH_BINARY_FUNC(func)                 \
   DECLARE_UNARY_MATH_BINARY_FUNC_WITH_TYPE(func, __half);    \
   DECLARE_UNARY_MATH_BINARY_FUNC_WITH_TYPE(func, float);     \
@@ -139,7 +139,6 @@ DECLARE_UNARY_MATH_BINARY_FUNC(mod);
 DECLARE_UNARY_MATH_BINARY_FUNC(pow);
 #undef DECLARE_UNARY_MATH_BINARY_FUNC
 #undef DECLARE_UNARY_MATH_BINARY_FUNC_WITH_TYPE
-
 
 // Numeric limits
 template <typename T> constexpr __device__ __forceinline__ T min();
