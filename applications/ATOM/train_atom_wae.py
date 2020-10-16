@@ -24,6 +24,7 @@ def construct_lc_launcher_args():
     parser.add_argument("--partition", default=None)
     parser.add_argument("--account", default="hpcdl")
     parser.add_argument("--scheduler", type=str, default="slurm")
+    parser.add_argument("--reservation", type=None)
     parser.add_argument(
         "--data-module-file",
         default="dataset.py",
@@ -68,6 +69,7 @@ def construct_lc_launcher_args():
     parser.add_argument("--ltfb", type=bool, default=False)
     parser.add_argument("--ltfb-batch-interval", type=int, default=100)
     parser.add_argument("--weights-to-send", type=str, default='')
+    parser.add_argument("--warmup", type=bool, default=False)
 
     # these are specific to the Trainer object
     parser.add_argument(
@@ -191,6 +193,12 @@ def construct_model(run_args):
       pred_tensor = lbann.Concatenation(arg_max, name='pred_tensor')
       callbacks.append(lbann.CallbackDumpOutputs(batch_interval=run_args.dump_outputs_interval,
                        execution_modes='test', directory=run_args.dump_outputs_dir,layers='inp pred_tensor'))
+
+    if(run_args.warmup):
+        callbacks.append(
+            lbann.CallbackLinearGrowthLearningRate(
+                target=run_args.lr / 512 * run_args.batch_size, num_epochs=5))
+
     # Construct model
     return lbann.Model(run_args.num_epochs,
                        weights=weights,
@@ -302,6 +310,7 @@ def main():
         partition=run_args.partition,
         scheduler=run_args.scheduler,
         account=run_args.account,
+        reservation=run_args.reservation,
         time_limit=run_args.time_limit,
         nodes=run_args.nodes,
         procs_per_node=ppn,

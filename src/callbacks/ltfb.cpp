@@ -455,7 +455,8 @@ void ltfb::on_batch_begin(model *m) {
   if (comm.am_world_master()) {
     std::cout << message_prefix + "evaluating local model...\n";
   }
-  const auto local_score = evaluate(*m, m_metric_name);
+  auto local_score = evaluate(*m, m_metric_name);
+  if (std::isinf(local_score)) { local_score = std::nan(""); }
 
   // Store local model data
   auto&& model_weights_tmp = m->get_weights();
@@ -504,7 +505,8 @@ void ltfb::on_batch_begin(model *m) {
   if (comm.am_world_master()) {
     std::cout << message_prefix + "evaluating partner model...\n";
   }
-  const auto& partner_score = evaluate(*m, m_metric_name);
+  auto partner_score = evaluate(*m, m_metric_name);
+  if (std::isinf(partner_score)) { partner_score = std::nan(""); }
 
   // Choose tournament winner
   // Note: restore local model data if it got a better score.
@@ -512,6 +514,7 @@ void ltfb::on_batch_begin(model *m) {
   if ((m_low_score_wins && local_score <= partner_score)
       || (!m_low_score_wins && local_score >= partner_score)
       || (!std::isnan(local_score) && std::isnan(partner_score))) {
+
     tournament_winner = local_trainer;
     switch (m_comm_algo) {
     case communication_algorithm::sendrecv_weights:
@@ -537,7 +540,7 @@ void ltfb::on_batch_begin(model *m) {
         << "= " << local_score << ", "
         << "trainer " << partner_trainer << " score "
         << "= " << partner_score << ")" << "\n";
-    std::cout << msg.str();
+    std::cout << msg.str() << std::flush;
   }
 }
 

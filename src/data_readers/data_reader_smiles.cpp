@@ -138,7 +138,7 @@ void smiles_data_reader::load() {
   resize_shuffled_indices();
 
   // Optionally run "poor man's" LTFB
-  if (opts->get_bool("ltfb")) {
+  if (opts->get_bool("ltfb") && get_role() != "test") {
     if (is_master()) {
       std::cout << "running poor man's LTFB\n";
     }
