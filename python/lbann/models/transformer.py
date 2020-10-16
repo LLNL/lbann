@@ -42,6 +42,7 @@ class TransformerEncoderLayer(lbann.modules.Module):
         num_heads=8,
         feedforward_dim=2048,
         dropout=0.1,
+        d_kv=None,
         name=None,
     ):
         TransformerEncoderLayer.global_count += 1
@@ -60,6 +61,7 @@ class TransformerEncoderLayer(lbann.modules.Module):
             self.embed_dim,
             num_heads,
             branches=branches,
+            d_kv = d_kv,
             name=f'{self.name}_attention'
         )
 
@@ -161,6 +163,7 @@ class TransformerDecoderLayer(lbann.modules.Module):
         num_heads=8,
         feedforward_dim=2048,
         dropout=0.1,
+        d_kv = None,
         name=None,
     ):
         TransformerDecoderLayer.global_count += 1
@@ -179,12 +182,14 @@ class TransformerDecoderLayer(lbann.modules.Module):
             embed_dim,
             num_heads,
             branches=branches,
+            d_kv = d_kv,
             name=f'{self.name}_attention1'
         )
         self.attention2 = lbann.modules.transformer.MultiheadAttention(
             embed_dim,
             num_heads,
             branches=branches,
+            d_kv = d_kv,
             name=f'{self.name}_attention2'
         )
 
@@ -311,6 +316,7 @@ class Transformer(lbann.modules.Module):
         num_decoder_layers=6,
         filter_size=2048,
         dropout=0.1,
+        d_kv = None,
         name=None,
     ):
         Transformer.global_count += 1
@@ -334,6 +340,7 @@ class Transformer(lbann.modules.Module):
                 num_heads=num_heads,
                 feedforward_dim=filter_size,
                 dropout=dropout,
+                d_kv = d_kv,
                 name=f'{self.name}_encoder{i}',
             )
             for i in range(num_encoder_layers)
@@ -345,6 +352,7 @@ class Transformer(lbann.modules.Module):
                 num_heads=num_heads,
                 feedforward_dim=filter_size,
                 dropout=dropout,
+                d_kv = d_kv,
                 name=f'{self.name}_decoder{i}',
             )
             for i in range(num_decoder_layers)

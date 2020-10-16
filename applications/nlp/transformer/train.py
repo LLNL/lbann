@@ -32,6 +32,7 @@ def make_model(
     num_encoder_layers,
     num_decoder_layers,
     filter_size,
+    d_kv,
     subgraph_num_common_resources,
 ):
     #branches = 4
@@ -80,6 +81,7 @@ def make_model(
         num_heads=num_heads,
         num_encoder_layers = num_encoder_layers,
         num_decoder_layers = num_decoder_layers,
+        d_kv = d_kv,
         name='transformer',
     )
     result = transformer(
@@ -147,7 +149,7 @@ def make_model(
     layers = list(lbann.traverse_layer_graph(input_))
     print("Subgrpah subgraph_topology",subgraph_topology)
 
-    include_heads = 32
+    include_heads = -1
     string_heads = []
     if(include_heads==-1):
         include_heads = num_heads

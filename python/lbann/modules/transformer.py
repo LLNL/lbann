@@ -29,6 +29,7 @@ class MultiheadAttention(Module):
                  embed_dim,
                  num_heads,
                  branches,
+                 d_kv = None,
                  name=None):
         super().__init__()
         MultiheadAttention.global_count += 1
@@ -37,6 +38,13 @@ class MultiheadAttention(Module):
         self.embed_dim = embed_dim
         self.num_heads = num_heads
         self.head_dim = embed_dim // num_heads
+
+        if(d_kv == None):
+            self.inner_dim = embed_dim
+            self.head_dim = embed_dim // num_heads
+        else:
+            self.inner_dim = d_kv * num_heads
+            self.head_dim = d_kv
 
         if(branches==0):
             self.ENABLE_SUBGRAPH=0
@@ -108,19 +116,19 @@ class MultiheadAttention(Module):
         queries_fc = lbann.ChannelwiseFullyConnected(
             queries,
             weights=self.query_weights,
-            output_channel_dims=[self.embed_dim],
+            output_channel_dims=[self.inner_dim],
             name=f'{name}_queries_fc',
         )
         keys_fc = lbann.ChannelwiseFullyConnected(
             keys,
             weights=self.key_weights,
-            output_channel_dims=[self.embed_dim],
+            output_channel_dims=[self.inner_dim],
             name=f'{name}_keys_fc',
         )
         values_fc = lbann.ChannelwiseFullyConnected(
             values,
             weights=self.value_weights,
-            output_channel_dims=[self.embed_dim],
+            output_channel_dims=[self.inner_dim],
             name=f'{name}_values_fc',
         )
 

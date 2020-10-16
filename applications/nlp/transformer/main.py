@@ -41,6 +41,10 @@ parser.add_argument(
     help='embedding space dimensions (default: 512)', metavar='NUM')
 
 parser.add_argument(
+    '--dkv', action='store', default=0, type=int,
+    help='D_kv dimension per head (default: 0 == embed_dim/num_heads )', metavar='NUM')
+
+parser.add_argument(
     '--encoder-layers', action='store', default=6, type=int,
     help='Number of encoder layers (default: 6)', metavar='NUM')
 
@@ -92,6 +96,11 @@ os.makedirs(work_dir, exist_ok=True)
 trainer_params = {
     'mini_batch_size': args.mini_batch_size,
 }
+
+if(args.dkv==0):
+    d_kv = None
+else:
+    d_kv = args.dkv
 model_params = {
     'num_epochs': args.num_epochs,
     'embed_dim': args.embed_dim,
@@ -102,7 +111,8 @@ model_params = {
     'subgraph_num_common_resources': args.subgraph_parent_resources,
     'num_encoder_layers':args.encoder_layers,
     'num_decoder_layers':args.decoder_layers,
-    'filter_size':args.filter_size
+    'filter_size':args.filter_size,
+    'd_kv': d_kv,
 }
 script_params = lbann.contrib.args.get_scheduler_kwargs(args)
 script_params['work_dir'] = work_dir
