@@ -108,8 +108,12 @@ namespace cuda {
 #ifdef __CUDACC__
 
 // Atomic add
-template <typename T> __device__ __forceinline__
-T atomic_add(T* address, T val);
+__device__ __forceinline__
+__half atomic_add(__half* address, __half val);
+__device__ __forceinline__
+float atomic_add(float* address, float val);
+__device__ __forceinline__
+double atomic_add(double* address, double val);
 
 /** @brief Sum over threads in CUDA block
  *
@@ -146,39 +150,59 @@ __device__ __forceinline__
 T block_reduce(T val);
 
 // Unary math functions
+#define DECLARE_UNARY_MATH_FUNC_WITH_TYPE(func, type)    \
+  __device__ __forceinline__ type func(type const& x)
+#define DECLARE_UNARY_MATH_FUNC(func)                 \
+  DECLARE_UNARY_MATH_FUNC_WITH_TYPE(func, __half);    \
+  DECLARE_UNARY_MATH_FUNC_WITH_TYPE(func, float);     \
+  DECLARE_UNARY_MATH_FUNC_WITH_TYPE(func, double)
 template <typename T> __device__ __forceinline__ T abs(const T& x);
-template <typename T> __device__ __forceinline__ T round(const T& x);
-template <typename T> __device__ __forceinline__ T ceil(const T& x);
-template <typename T> __device__ __forceinline__ T floor(const T& x);
-template <typename T> __device__ __forceinline__ T sqrt(const T& x);
-template <typename T> __device__ __forceinline__ T rsqrt(const T& x);
-template <typename T> __device__ __forceinline__ T exp(const T& x);
-template <typename T> __device__ __forceinline__ T expm1(const T& x);
-template <typename T> __device__ __forceinline__ T log(const T& x);
-template <typename T> __device__ __forceinline__ T log1p(const T& x);
-template <typename T> __device__ __forceinline__ T cos(const T& x);
-template <typename T> __device__ __forceinline__ T sin(const T& x);
-template <typename T> __device__ __forceinline__ T tan(const T& x);
-template <typename T> __device__ __forceinline__ T acos(const T& x);
-template <typename T> __device__ __forceinline__ T asin(const T& x);
-template <typename T> __device__ __forceinline__ T atan(const T& x);
-template <typename T> __device__ __forceinline__ T cosh(const T& x);
-template <typename T> __device__ __forceinline__ T sinh(const T& x);
-template <typename T> __device__ __forceinline__ T tanh(const T& x);
-template <typename T> __device__ __forceinline__ T acosh(const T& x);
-template <typename T> __device__ __forceinline__ T asinh(const T& x);
-template <typename T> __device__ __forceinline__ T atanh(const T& x);
-template <typename T> __device__ __forceinline__ T erf(const T& x);
-template <typename T> __device__ __forceinline__ T erfinv(const T& x);
+__device__ __forceinline__ float abs(float const& x);
+__device__ __forceinline__ double abs(double const& x);
+DECLARE_UNARY_MATH_FUNC(round);
+DECLARE_UNARY_MATH_FUNC(ceil);
+DECLARE_UNARY_MATH_FUNC(floor);
+DECLARE_UNARY_MATH_FUNC(sqrt);
+DECLARE_UNARY_MATH_FUNC(rsqrt);
+DECLARE_UNARY_MATH_FUNC(exp);
+DECLARE_UNARY_MATH_FUNC(expm1);
+DECLARE_UNARY_MATH_FUNC(log);
+DECLARE_UNARY_MATH_FUNC(log1p);
+DECLARE_UNARY_MATH_FUNC(cos);
+DECLARE_UNARY_MATH_FUNC(sin);
+DECLARE_UNARY_MATH_FUNC(tan);
+DECLARE_UNARY_MATH_FUNC(acos);
+DECLARE_UNARY_MATH_FUNC(asin);
+DECLARE_UNARY_MATH_FUNC(atan);
+DECLARE_UNARY_MATH_FUNC(cosh);
+DECLARE_UNARY_MATH_FUNC(sinh);
+DECLARE_UNARY_MATH_FUNC(tanh);
+DECLARE_UNARY_MATH_FUNC(acosh);
+DECLARE_UNARY_MATH_FUNC(asinh);
+DECLARE_UNARY_MATH_FUNC(atanh);
 template <typename T> __device__ __forceinline__ bool isfinite(const T& x);
 template <typename T> __device__ __forceinline__ bool isinf(const T& x);
 template <typename T> __device__ __forceinline__ bool isnan(const T& x);
+#undef DECLARE_UNARY_MATH_FUNC
+#undef DECLARE_UNARY_MATH_FUNC_WITH_TYPE
 
 // Binary math functions
+#define DECLARE_BINARY_UNARY_MATH_FUNC_WITH_TYPE(func, type)            \
+  __device__ __forceinline__ type func(type const& x, type const& y)
+#define DECLARE_BINARY_UNARY_MATH_FUNC(func)                 \
+  DECLARE_BINARY_UNARY_MATH_FUNC_WITH_TYPE(func, __half);    \
+  DECLARE_BINARY_UNARY_MATH_FUNC_WITH_TYPE(func, float);     \
+  DECLARE_BINARY_UNARY_MATH_FUNC_WITH_TYPE(func, double)
 template <typename T> __device__ __forceinline__ T min(const T& x, const T& y);
+DECLARE_BINARY_UNARY_MATH_FUNC(min);
 template <typename T> __device__ __forceinline__ T max(const T& x, const T& y);
+DECLARE_BINARY_UNARY_MATH_FUNC(max);
 template <typename T> __device__ __forceinline__ T mod(const T& x, const T& y);
+DECLARE_BINARY_UNARY_MATH_FUNC(mod);
 template <typename T> __device__ __forceinline__ T pow(const T& x, const T& y);
+DECLARE_BINARY_UNARY_MATH_FUNC(pow);
+#undef DECLARE_BINARY_UNARY_MATH_FUNC
+#undef DECLARE_BINARY_UNARY_MATH_FUNC_WITH_TYPE
 
 // Numeric limits
 template <typename T> constexpr __device__ __forceinline__ T min();
