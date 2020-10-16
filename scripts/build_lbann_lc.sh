@@ -648,11 +648,10 @@ if [ "${WITH_CUDA}" == "ON" ]; then
 
     # NCCL
     if [[ -z $NCCL_DIR ]]; then
-        # Subsequent 2.4.X versions are known to have a performance
-        # regression. See the release notes.
-        NCCL_VER=${NCCL_VER:-2.4.2-1}
-        NCCL_DIR=/usr/WS1/jain8/internship/elemental_patch/new_aluminum/new_nccl/nccl/build/
-        # NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_${NCCL_VER}+cuda${CUDA_TOOLKIT_VERSION}_${ARCH}
+
+        NCCL_VER=${NCCL_VER:-2.7.8-1}
+        NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_${NCCL_VER}+cuda${CUDA_TOOLKIT_VERSION}_${ARCH}
+
     fi
     if [[ ! -d $NCCL_DIR ]]; then
         echo "Could not find NCCL at $NCCL_DIR"

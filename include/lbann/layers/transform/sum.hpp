@@ -279,7 +279,7 @@ protected:
   bool is_distconv_supported() const override {
     return Dev == El::Device::GPU && T_layout == data_layout::DATA_PARALLEL;
   }
-  void setup_distconv_adapter() override {
+  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override {
     this->get_distconv_adapter_ptr() = make_unique<sum_distconv_adapter<TensorDataType, T_layout, Dev>>(*this);
   }
   sum_distconv_adapter<TensorDataType, T_layout, Dev>& get_distconv_adapter() override;

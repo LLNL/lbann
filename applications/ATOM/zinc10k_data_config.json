@@ -1,0 +1,10 @@
+{
+
+  "pad_index": 27,
+  "sequence_length": 56,
+  "max_seq_len": 56,
+  "data_path" : "/p/gscratchr/brainusr/datasets/zinc/moses_zinc_train10K.npy",
+  "embedding_dim": 29,
+  "num_embeddings": 29
+
+}

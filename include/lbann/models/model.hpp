@@ -507,6 +507,12 @@ public:
   /** @brief Execute callbacks at the end of weight optimization. */
   virtual void do_weight_optimize_end_cbs(weights *w);
 
+
+#ifdef LBANN_HAS_DISTCONV
+  /* @brief Return the maximum mini-batch size used by Distconv. */
+  size_t get_max_mini_batch_size_distconv() const { return m_max_mini_batch_size_distconv; }
+#endif
+
 	
 public:	
   // map to store all distinct grids in the model
@@ -515,6 +521,7 @@ public:
   std::unordered_map<std::string, std::shared_ptr<El::mpi::Comm>> subCommunicatorsSubgrids; 
   // map to store all distinct mpi groups in the model (one to one mapping with grids)
   std::unordered_map<std::string, std::unique_ptr<El::mpi::Group>> grids_mpi_groups; 
+
 
 
 private:
@@ -631,6 +638,12 @@ private:
   void setup_distconv();
   void setup_distributions();
   void print_distributions() const;
+
+  /** @brief The maximum mini-batch size used by Distconv.
+   *  @details This should be set before setup_distconv() is called.
+   */
+  size_t m_max_mini_batch_size_distconv;
+
 #endif // LBANN_HAS_DISTCONV
 };
 

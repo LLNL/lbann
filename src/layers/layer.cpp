@@ -405,7 +405,7 @@ void Layer::setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata, c
   //setup_matrices(m_comm->get_trainer_grid()); 
   setup_matrices(grid);
 #ifdef LBANN_HAS_DISTCONV
-  prepare_distconv();
+  prepare_distconv(dr_metadata);
 #endif // LBANN_HAS_DISTCONV
   setup_data(max_mini_batch_size);
   if (using_gpus()) { setup_gpu(); }
@@ -651,9 +651,9 @@ void Layer::set_layer_pointers(std::vector<Layer*> layers) {
 }
 
 #ifdef LBANN_HAS_DISTCONV
-void Layer::prepare_distconv() {
+void Layer::prepare_distconv(const DataReaderMetaData& dr_metadata) {
   if (distconv_enabled()) {
-    setup_distconv_adapter();
+    setup_distconv_adapter(dr_metadata);
   }
 }
 

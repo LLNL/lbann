@@ -26,6 +26,7 @@
 
 #include <lbann/data_coordinator/data_coordinator.hpp>
 #include <lbann/trainers/trainer.hpp>
+#include <lbann/utils/distconv.hpp>
 
 namespace lbann {
 
@@ -94,13 +95,27 @@ void data_coordinator::calculate_num_iterations_per_epoch(int max_mini_batch_siz
       " :: generic_data_distribution: number of parallel readers is zero");
   }
 
+#ifdef LBANN_HAS_DISTCONV
+  if (dc::is_cosmoflow_parallel_io_enabled()) {
+    // #trainers is assumed to be 1.
+    assert_eq(this->m_comm->get_num_trainers(), 1);
+  }
+#endif
+
   /// Set the basic parameters for stride and offset of the data reader
   int batch_stride = max_mini_batch_size;
   int base_offset  = this->m_comm->get_rank_in_trainer();
+#ifdef LBANN_HAS_DISTCONV
+  base_offset  = dc::get_input_rank(*(this->m_comm)) / dc::get_number_of_io_partitions();
+#endif
   /// Set mini-batch size and stride
   data_reader->set_mini_batch_size(max_mini_batch_size);
   data_reader->set_stride_to_next_mini_batch(batch_stride);
+#ifdef LBANN_HAS_DISTCONV
+  data_reader->set_sample_stride(num_parallel_readers_per_model / dc::get_number_of_io_partitions());
+#else
   data_reader->set_sample_stride(num_parallel_readers_per_model);
+#endif
   data_reader->set_iteration_stride(1);
   /// Set data reader base offset and model offset
   data_reader->set_base_offset(base_offset);
@@ -116,7 +131,6 @@ void data_coordinator::calculate_num_iterations_per_epoch(int max_mini_batch_siz
   data_reader->set_num_iterations_per_epoch(num_iterations_per_epoch);
   data_reader->set_last_mini_batch_size(last_mini_batch_size);
   data_reader->set_stride_to_last_mini_batch(data_reader->get_stride_to_next_mini_batch());
-
   data_reader->set_global_mini_batch_size(max_mini_batch_size);
   data_reader->set_global_last_mini_batch_size(last_mini_batch_size);
   return;

@@ -1,14 +1,19 @@
 #!/bin/sh
 
 COMPILER_ALL_PACKAGES=$(cat <<EOF
-      compiler: [gcc@7.3.0 arch=linux-rhel7-broadwell, gcc@7.3.0 arch=linux-rhel7-haswell, gcc@7.3.1 arch=linux-rhel7-power9le, gcc@7.3.1 arch=linux-rhel7-power8le]
+      compiler:
+        - gcc@7.3.0 arch=linux-rhel7-broadwell
+        - gcc@7.3.0 arch=linux-rhel7-haswell
+        - gcc@7.3.1 arch=linux-rhel7-power9le
+        - gcc@7.3.1 arch=linux-rhel7-power8le
 EOF
 )
 
 COMPILER_DEFINITIONS=$(cat <<EOF
   compilers:
   - compiler:
-      environment: {}
+      environment:
+        unset: []
       extra_rpaths: []
       flags: {}
       modules: []

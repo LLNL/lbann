@@ -4,6 +4,7 @@ import os
 import os.path
 import sys
 import numpy as np
+import pytest
 
 # Bamboo utilities
 current_file = os.path.realpath(__file__)
@@ -85,12 +86,19 @@ def construct_model(lbann):
     # Data-parallel layout
     # ------------------------------------------
 
+    num_height_groups = tools.gpus_per_node(lbann)
+    if num_height_groups == 0:
+        e = 'this test requires GPUs.'
+        print('Skip - ' + e)
+        pytest.skip(e)
+
     # LBANN implementation
     x = x_lbann
     x = lbann.Reshape(x, dims="4 2 6")
     y = lbann.LeakyRelu(x, negative_slope=0.01,
                         data_layout='data_parallel',
-                        parallel_strategy=create_parallel_strategy(4))
+                        parallel_strategy=create_parallel_strategy(
+                            num_height_groups))
     y = lbann.Reshape(y, dims=str(sample_dims()))
     z = lbann.L2Norm2(y)
     obj.append(z)
@@ -121,7 +129,8 @@ def construct_model(lbann):
     x = lbann.Reshape(x, dims="4 2 6")
     y = lbann.LeakyRelu(x, negative_slope=2,
                         data_layout='model_parallel',
-                        parallel_strategy=create_parallel_strategy(4))
+                        parallel_strategy=create_parallel_strategy(
+                            num_height_groups))
     y = lbann.Reshape(y, dims=str(sample_dims()))
     z = lbann.L2Norm2(y)
     obj.append(z)
@@ -201,5 +210,6 @@ def construct_data_reader(lbann):
 # ==============================================
 
 # Create test functions that can interact with PyTest
-for test in tools.create_tests(setup_experiment, __file__, procs_per_node=4):
+for test in tools.create_tests(setup_experiment, __file__,
+                               environment=tools.get_distconv_environment()):
     globals()[test.__name__] = test

@@ -48,7 +48,6 @@ template <typename sample_name_t, typename file_handle_t>
 inline void sample_list_open_files<sample_name_t, file_handle_t>
 ::copy_members(const sample_list_open_files& rhs) {
   sample_list<sample_name_t>::copy_members(rhs);
-  m_sample_list = rhs.m_sample_list;
   m_file_map = rhs.m_file_map;
   m_max_open_files = rhs.m_max_open_files;
 
@@ -71,7 +70,7 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
 template <typename sample_name_t, typename file_handle_t>
 inline size_t sample_list_open_files<sample_name_t, file_handle_t>
 ::size() const {
-  return m_sample_list.size();
+  return this->m_sample_list.size();
 }
 
 template <typename sample_name_t, typename file_handle_t>
@@ -111,7 +110,7 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
 
     const std::string file_path = add_delimiter(m_header.get_file_dir()) + filename;
 
-    if (filename.empty() || !check_if_file_exists(file_path)) {
+    if (filename.empty() || (this->m_check_data_file && !check_if_file_exists(file_path))) {
       LBANN_ERROR(std::string{} + " :: data file '" + file_path + "' does not exist.");
     }
 
@@ -159,7 +158,7 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
       if (found != excluded_sample_indices.cend()) {
         continue;
       }
-      m_sample_list.emplace_back(index, to_sample_name_t<sample_name_t>(s));
+      this->m_sample_list.emplace_back(index, to_sample_name_t<sample_name_t>(s));
       valid_sample_count++;
     }
 
@@ -173,7 +172,7 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
 
   if (m_header.get_num_files() != cnt_files) {
     LBANN_ERROR(std::string("Sample list ")
-                + m_header.get_sample_list_filename()
+                + m_header.get_sample_list_name()
                 + std::string(": number of files requested ")
                 + std::to_string(m_header.get_num_files())
                 + std::string(" does not equal number of files loaded ")
@@ -214,7 +213,7 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
 
     const std::string file_path = add_delimiter(m_header.get_file_dir()) + filename;
 
-    if (filename.empty() || !check_if_file_exists(file_path)) {
+    if (filename.empty() || (this->m_check_data_file && !check_if_file_exists(file_path))) {
       throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
                             + " :: data file '" + filename + "' does not exist.");
     }
@@ -236,7 +235,7 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
     while(!sstr.eof()) {
       std::string sample_name_str;
       sstr >> sample_name_str;
-      m_sample_list.emplace_back(index, to_sample_name_t<sample_name_t>(sample_name_str));
+      this->m_sample_list.emplace_back(index, to_sample_name_t<sample_name_t>(sample_name_str));
 #ifdef VALIDATE_SAMPLE_LIST
       sample_names.emplace_back(sample_name_str);
 #endif
@@ -296,7 +295,7 @@ void sample_list_open_files<sample_name_t, file_handle_t>
   for(auto&& e : m_file_id_stats_map) {
     file_stats.emplace_back(std::make_tuple(std::get<0>(e), std::get<2>(e)));
   }
-  ar(m_header, m_sample_list, file_stats);
+  ar(m_header, this->m_sample_list, file_stats);
 }
 
 template <typename sample_name_t, typename file_handle_t>
@@ -305,7 +304,7 @@ void sample_list_open_files<sample_name_t, file_handle_t>
 ::load( Archive & ar ) {
   using ar_file_stats_t = std::tuple<std::string, std::deque<std::pair<int,int>>>;
   std::vector<ar_file_stats_t> file_stats;
-  ar(m_header, m_sample_list, file_stats);
+  ar(m_header, this->m_sample_list, file_stats);
   m_file_id_stats_map.reserve(file_stats.size());
   for(auto&& e : file_stats) {
     //m_file_id_stats_map.emplace_back(std::make_tuple(std::get<0>(e), uninitialized_file_handle<file_handle_t>(), std::deque<std::pair<int,int>>{}));
@@ -318,15 +317,28 @@ template <typename sample_name_t, typename file_handle_t>
 inline bool sample_list_open_files<sample_name_t, file_handle_t>
 ::to_string(std::string& sstr) const {
   std::map<std::string, std::template vector<sample_name_t>> tmp_file_map;
-  for (const auto& s : m_sample_list) {
+  for (const auto& s : this->m_sample_list) {
     const std::string& filename = get_samples_filename(s.first);
     tmp_file_map[filename].emplace_back(s.second);
   }
 
   sstr.clear();
 
-  // reserve the string to hold the entire sample lit
-  size_t estimated_len = 30 + 42 + m_header.get_file_dir().size() + 1;
+  static const size_t max_type_len
+    = std::max(std::max(multi_sample_exclusion.size(),
+                        multi_sample_inclusion.size()),
+               single_sample.size());
+
+  static const size_t max_num_len
+    = std::to_string(std::numeric_limits<size_t>::max()).size();
+
+  // reserve the string to hold the entire sample list
+  size_t estimated_len = max_type_len
+                       + max_num_len * 3 + 2
+                       + m_header.get_file_dir().size()
+                       + m_header.get_label_filename().size()
+                       + 4;
+
   for (const auto& f : tmp_file_map) {
     estimated_len += f.first.size()
                    + std::to_string(f.second.size()).size()
@@ -368,18 +380,6 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
   }
   included = size();
   excluded = total - included;
-}
-
-template <typename sample_name_t, typename file_handle_t>
-inline const typename sample_list_open_files<sample_name_t, file_handle_t>::samples_t&
-sample_list_open_files<sample_name_t, file_handle_t>::get_list() const {
-  return m_sample_list;
-}
-
-template <typename sample_name_t, typename file_handle_t>
-inline const typename sample_list_open_files<sample_name_t, file_handle_t>::sample_t&
-sample_list_open_files<sample_name_t, file_handle_t>::operator[](size_t idx) const {
-  return m_sample_list[idx];
 }
 
 template <typename sample_name_t, typename file_handle_t>
@@ -522,14 +522,14 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
   }
   m_open_fd_pq.clear();
 
-  size_t num_samples = this->all_gather_field(m_sample_list, per_rank_samples, comm);
+  size_t num_samples = this->all_gather_field(this->m_sample_list, per_rank_samples, comm);
   size_t num_ids = this->all_gather_field(my_files, per_rank_files, comm);
   size_t num_files = this->all_gather_field(m_file_map, per_rank_file_map, comm);
 
-  m_sample_list.clear();
+  this->m_sample_list.clear();
   m_file_id_stats_map.clear();
 
-  m_sample_list.reserve(num_samples);
+  this->m_sample_list.reserve(num_samples);
   m_file_id_stats_map.reserve(num_ids);
   m_file_map.reserve(num_files);
 
@@ -557,10 +557,16 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
         }
         index = search_result->second;
       }  
-      m_sample_list.emplace_back(std::make_pair(index, s.second));
+      this->m_sample_list.emplace_back(std::make_pair(index, s.second));
     }
   }
 
+  if (this->m_keep_order) {
+    this->reorder();
+  }
+
+  // For multi-sample per file case, sample names are read from the sample list
+  // file.
   return;
 }
 
@@ -579,7 +585,7 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
   m_open_fd_pq.clear();
   for (size_t i = 0; i < shuffled_indices.size(); i++) {
     int idx = shuffled_indices[i];
-    const auto& s = m_sample_list[idx];
+    const auto& s = this->m_sample_list[idx];
     sample_file_id_t index = s.first;
 
     if((i % mini_batch_size) % comm.get_procs_per_trainer() == static_cast<size_t>(comm.get_rank_in_trainer())) {
@@ -648,7 +654,7 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
 template <typename sample_name_t, typename file_handle_t>
 inline file_handle_t sample_list_open_files<sample_name_t, file_handle_t>
 ::open_samples_file_handle(const size_t i, bool pre_open_fd) {
-  const sample_t& s = m_sample_list[i];
+  const sample_t& s = this->m_sample_list[i];
   sample_file_id_t id = s.first;
   file_handle_t h = get_samples_file_handle(id);
   if (!is_file_handle_valid(h)) {
@@ -675,7 +681,7 @@ inline file_handle_t sample_list_open_files<sample_name_t, file_handle_t>
 template <typename sample_name_t, typename file_handle_t>
 inline void sample_list_open_files<sample_name_t, file_handle_t>
 ::close_if_done_samples_file_handle(const size_t i) {
-  const sample_t& s = m_sample_list[i];
+  const sample_t& s = this->m_sample_list[i];
   sample_file_id_t id = s.first;
   auto h = get_samples_file_handle(id);
   if (!is_file_handle_valid(h)) {

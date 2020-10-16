@@ -79,7 +79,7 @@ def make_batch_script(
     set_environment('MV2_USE_RDMA_CM', 0)
 
     # Optimizations for Sierra-like systems
-    if system in ('sierra', 'lassen'):
+    if system in ('sierra', 'lassen', 'rzansel'):
 
         # Set thread affinity
         # Note: Aluminum's default thread affinity is incorrect since

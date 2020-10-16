@@ -34,6 +34,7 @@
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/im2col.hpp"
 #include "lbann/utils/distconv.hpp"
+#include "lbann/utils/dnn_lib/cudnn/pooling.hpp"
 
 namespace lbann {
 
@@ -88,7 +89,7 @@ private:
 
 #ifdef LBANN_HAS_CUDNN
   /** Pooling descriptor. */
-  cudnnPoolingDescriptor_t m_pooling_cudnn_desc;
+  cudnn::PoolingDescriptor m_pooling_cudnn_desc;
   /** Tensor cuDNN descriptors. */
   cudnn::data_parallel_layer_tensor_manager<TensorDataType> m_tensors_cudnn_desc;
 #endif // LBANN_HAS_CUDNN
@@ -122,8 +123,7 @@ public:
       m_pads(pads),
       m_strides(strides)
 #ifdef LBANN_HAS_CUDNN
-    , m_pooling_cudnn_desc(nullptr),
-      m_tensors_cudnn_desc(this)
+    , m_tensors_cudnn_desc(this)
 #endif // LBANN_HAS_CUDNN
   {
     // Initialize input dimensions and pooling parameters
@@ -143,12 +143,11 @@ public:
       m_strides(other.m_strides),
       m_max_pool_indices(other.m_max_pool_indices)
 #ifdef LBANN_HAS_CUDNN
-    , m_pooling_cudnn_desc(nullptr),
+    , m_pooling_cudnn_desc(other.m_pooling_cudnn_desc),
       m_tensors_cudnn_desc(other.m_tensors_cudnn_desc)
 #endif // LBANN_HAS_CUDNN
   {
 #ifdef LBANN_HAS_CUDNN
-    copy_pooling_cudnn_desc(other.m_pooling_cudnn_desc, m_pooling_cudnn_desc);
     m_tensors_cudnn_desc.set_layer(this);
 #endif // LBANN_HAS_CUDNN
   }
@@ -162,20 +161,14 @@ public:
     m_strides = other.m_strides;
     m_max_pool_indices = other.m_max_pool_indices;
 #ifdef LBANN_HAS_CUDNN
-    copy_pooling_cudnn_desc(other.m_pooling_cudnn_desc, m_pooling_cudnn_desc);
+    m_pooling_cudnn_desc = other.m_pooling_cudnn_desc;
     m_tensors_cudnn_desc = other.m_tensors_cudnn_desc;
     m_tensors_cudnn_desc.set_layer(this);
 #endif // LBANN_HAS_CUDNN
     return *this;
   }
 
-  ~pooling_layer() {
-#ifdef LBANN_HAS_CUDNN
-    if (m_pooling_cudnn_desc != nullptr) {
-      cudnnDestroyPoolingDescriptor(m_pooling_cudnn_desc);
-    }
-#endif // LBANN_HAS_CUDNN
-  }
+  ~pooling_layer() override = default;
 
   pooling_layer* copy() const override { return new pooling_layer(*this); }
   std::string get_type() const override { return "pooling"; }
@@ -268,14 +261,12 @@ protected:
       LBANN_ERROR(err.str());
       cudnn_pool_mode = CUDNN_POOLING_MAX;
     }
-    CHECK_CUDNN(cudnnCreatePoolingDescriptor(&m_pooling_cudnn_desc));
-    CHECK_CUDNN(cudnnSetPoolingNdDescriptor(m_pooling_cudnn_desc,
-                                            cudnn_pool_mode,
-                                            CUDNN_PROPAGATE_NAN,
-                                            m_pool_dims.size(),
-                                            m_pool_dims.data(),
-                                            m_pads.data(),
-                                            m_strides.data()));
+    m_pooling_cudnn_desc.set(cudnn_pool_mode,
+                             CUDNN_PROPAGATE_NAN,
+                             m_pool_dims.size(),
+                             m_pool_dims.data(),
+                             m_pads.data(),
+                             m_strides.data());
 
 #endif // #ifndef LBANN_HAS_CUDNN
   }
@@ -321,14 +312,13 @@ private:
     if (local_input.Height() > 0 && local_input.Width() > 0) {
       const auto zero = El::TypeTraits<ScalingType>::Zero();
       const auto one = El::TypeTraits<ScalingType>::One();
-      CHECK_CUDNN(cudnnPoolingForward(cudnn::get_handle(),
-                                      m_pooling_cudnn_desc,
-                                      &one,
-                                      m_tensors_cudnn_desc.get_prev_activations(),
-                                      local_input.LockedBuffer(),
-                                      &zero,
-                                      m_tensors_cudnn_desc.get_activations(),
-                                      local_output.Buffer()));
+      cudnn::pooling_forward(m_pooling_cudnn_desc,
+                             one,
+                             m_tensors_cudnn_desc.get_prev_activations(),
+                             local_input,
+                             zero,
+                             m_tensors_cudnn_desc.get_activations(),
+                             local_output);
     }
 #endif // #ifndef LBANN_HAS_CUDNN
   }
@@ -350,19 +340,17 @@ private:
       const auto zero = El::TypeTraits<ScalingType>::Zero();
 
       // Perform backprop on GPU
-      CHECK_CUDNN(cudnnPoolingBackward(cudnn::get_handle(),
-                                       m_pooling_cudnn_desc,
-                                       &one,
-                                       m_tensors_cudnn_desc.get_activations(),
-                                       local_output.LockedBuffer(),
-                                       m_tensors_cudnn_desc.get_prev_error_signals(),
-                                       local_gradient_wrt_output.LockedBuffer(),
-                                       m_tensors_cudnn_desc.get_prev_activations(),
-                                       local_input.LockedBuffer(),
-                                       &zero,
-                                       m_tensors_cudnn_desc.get_error_signals(),
-                                       local_gradient_wrt_input.Buffer()));
-
+      cudnn::pooling_backward(m_pooling_cudnn_desc,
+                              one,
+                              m_tensors_cudnn_desc.get_activations(),
+                              local_output,
+                              m_tensors_cudnn_desc.get_prev_error_signals(),
+                              local_gradient_wrt_output,
+                              m_tensors_cudnn_desc.get_prev_activations(),
+                              local_input,
+                              zero,
+                              m_tensors_cudnn_desc.get_error_signals(),
+                              local_gradient_wrt_input);
     }
 #endif // #ifndef LBANN_HAS_CUDNN
   }
@@ -542,7 +530,7 @@ private:
   friend class pooling_distconv_adapter<TensorDataType, T_layout, Dev>;
  protected:
   bool is_distconv_supported() const override;
-  void setup_distconv_adapter() override {
+  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override {
     this->get_distconv_adapter_ptr() = make_unique<
       pooling_distconv_adapter<TensorDataType, T_layout, Dev>>(*this);
   }

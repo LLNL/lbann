@@ -77,7 +77,7 @@ private:
   Al::request m_allreduce_req;
 #ifdef LBANN_HAS_GPU
   /** CUDA event after a non-blocking GPU-CPU memory copy. */
-  cuda::event_wrapper m_copy_event;
+  gpu_lib::event_wrapper m_copy_event;
 #endif // LBANN_HAS_GPU
 
 };

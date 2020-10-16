@@ -26,9 +26,9 @@ if (NOT DEFINED BUILD_SHARED_LIBS)
   set(BUILD_SHARED_LIBS ON)
 endif ()
 
-# Build with at least C++11 standard; allow newer standards.
+# Build with at least C++14 standard; allow newer standards.
 if (NOT CMAKE_CXX_STANDARD OR CMAKE_CXX_STANDARD EQUAL 98)
-  set(CMAKE_CXX_STANDARD 11)
+  set(CMAKE_CXX_STANDARD 14)
   set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 endif ()
 
@@ -48,7 +48,7 @@ endif ()
 #
 
 set(LBANN_VERSION_MAJOR 0)
-set(LBANN_VERSION_MINOR 100)
+set(LBANN_VERSION_MINOR 102)
 set(LBANN_VERSION_PATCH 0)
 
 set(LBANN_VERSION "${LBANN_VERSION_MAJOR}.${LBANN_VERSION_MINOR}.${LBANN_VERSION_PATCH}")
@@ -117,6 +117,8 @@ if (LBANN_WITH_DISTCONV)
     "There is no stable interface. "
     "Use caution before using any features.")
 endif (LBANN_WITH_DISTCONV)
+
+option(LBANN_WITH_FFT "Build the FFT layer (requires FFTW)" OFF)
 
 option(LBANN_WITH_HWLOC
   "Enable topology-aware optimizations" ON)
@@ -240,6 +242,18 @@ include(SetupOpenMP)
 include(SetupMPI)
 include(SetupProtobuf)
 
+# Setup FFTW
+if (LBANN_WITH_FFT)
+  find_package(FFTW 3.3 REQUIRED)
+  set(LBANN_HAS_FFTW ${FFTW_FOUND})
+  if (TARGET FFTW::FFTW_FLOAT)
+    set(LBANN_HAS_FFTW_FLOAT TRUE)
+  endif ()
+  if (TARGET FFTW::FFTW_DOUBLE)
+    set(LBANN_HAS_FFTW_DOUBLE TRUE)
+  endif ()
+endif (LBANN_WITH_FFT)
+
 # OpenCV installs a CMake configure file we can exploit
 find_package(OpenCV NO_MODULE QUIET
   HINTS ${OpenCV_DIR} ${OPENCV_DIR} $ENV{OpenCV_DIR} $ENV{OPENCV_DIR}
@@ -264,7 +278,7 @@ if (LBANN_HAS_CUDA)
   enable_language(CUDA)
 
   if (NOT CMAKE_CUDA_STANDARD OR CMAKE_CUDA_STANDARD EQUAL 98)
-    set(CMAKE_CUDA_STANDARD 11)
+    set(CMAKE_CUDA_STANDARD 14)
   endif ()
 
   set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
@@ -275,13 +289,13 @@ if (LBANN_WITH_ALUMINUM)
   if (NOT Aluminum_FOUND)
     message(WARNING
       "Using Aluminum without Hydrogen support may not be well-supported.")
-    find_package(Aluminum 0.4.0 NO_MODULE QUIET
+    find_package(Aluminum 0.5.0 NO_MODULE QUIET
       HINTS ${Aluminum_DIR} ${ALUMINUM_DIR} ${AL_DIR}
       $ENV{Aluminum_DIR} $ENV{ALUMINUM_DIR} $ENV{AL_DIR}
       PATH_SUFFIXES lib64/cmake/aluminum lib/cmake/aluminum
       NO_DEFAULT_PATH)
     if (NOT Aluminum_FOUND)
-      find_package(Aluminum 0.4.0 NO_MODULE QUIET)
+      find_package(Aluminum 0.5.0 NO_MODULE QUIET)
     endif ()
   endif ()
   set(LBANN_HAS_ALUMINUM ${Aluminum_FOUND})
@@ -327,7 +341,8 @@ if (LBANN_HAS_CUDA)
 
   if (LBANN_HAS_GPU_FP16)
     set_property(TARGET cuda::toolkit PROPERTY
-      INTERFACE_COMPILE_OPTIONS $<$<COMPILE_LANGUAGE:CUDA>:-arch=sm_60>)
+      INTERFACE_COMPILE_OPTIONS
+      $<$<COMPILE_LANGUAGE:CUDA>:-arch=sm_60>)
   endif (LBANN_HAS_GPU_FP16)
 
   set(LBANN_HAS_CUDNN ${CUDNN_FOUND})
@@ -578,6 +593,7 @@ target_link_libraries(lbann PUBLIC ${CONDUIT_LIBRARIES})
 target_link_libraries(lbann PUBLIC
   $<TARGET_NAME_IF_EXISTS:H2::H2Meta>
   $<TARGET_NAME_IF_EXISTS:H2::H2Patterns>
+  $<TARGET_NAME_IF_EXISTS:FFTW::FFTW>
   )
 
 if (LBANN_WITH_DISTCONV)
@@ -618,6 +634,11 @@ if (TARGET LBANN_CXX_FLAGS_werror)
 endif ()
 
 target_link_libraries(lbann PUBLIC ${DL_LIBRARY})
+
+if (LBANN_HAS_FFTW AND LBANN_HAS_CUDA)
+  target_compile_options(lbann PRIVATE
+    $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda>)
+endif (LBANN_HAS_FFTW AND LBANN_HAS_CUDA)
 
 # Fix the -g issue with Clang on OSX
 if (APPLE)
@@ -854,23 +875,25 @@ string(APPEND _str "\n")
 #Print the true/false guys
 append_str_tf(_str
   LBANN_GNU_LINUX
-  LBANN_HAS_DIHYDROGEN
-  LBANN_HAS_DISTCONV
-  LBANN_HAS_HYDROGEN
-  LBANN_HAS_OPENCV
+  LBANN_HAS_ALUMINUM
   LBANN_HAS_CEREAL
+  LBANN_HAS_CNPY
   LBANN_HAS_CUDA
   LBANN_HAS_CUDNN
+  LBANN_HAS_DIHYDROGEN
+  LBANN_HAS_DISTCONV
+  LBANN_HAS_DOXYGEN
+  LBANN_HAS_FFTW
+  LBANN_HAS_HYDROGEN
+  LBANN_HAS_LBANN_PROTO
   LBANN_HAS_NCCL2
+  LBANN_HAS_OPENCV
   LBANN_HAS_PROTOBUF
-  LBANN_HAS_CNPY
+  LBANN_HAS_PYTHON
   LBANN_HAS_TBINF
   LBANN_HAS_VTUNE
   LBANN_NVPROF
-  LBANN_HAS_DOXYGEN
-  LBANN_HAS_LBANN_PROTO
-  LBANN_HAS_ALUMINUM
-  LBANN_HAS_PYTHON)
+  )
 string(APPEND _str
   "\n== End LBANN Configuration Summary ==\n")
 

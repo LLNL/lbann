@@ -74,6 +74,7 @@ bool data_reader_synthetic::fetch_label(CPUMat& Y, int data_id, int mb_idx) {
   if (m_num_labels == 0) {
     LBANN_ERROR("Synthetic data reader does not have labels");
   }
+  auto io_rng = set_io_generators_local_index(0);
   Y.Set(fast_rand_int(get_fast_io_generator(), m_num_labels), mb_idx, 1);
   return true;
 }
