@@ -50,16 +50,14 @@ void dump_minibatch_sample_indices::dump_to_file(model *m, Layer *l, int64_t ste
     return;
   }
 
-  std::ostringstream s;
-  s << "mkdir -p " << m_basename;
-  const int dir= system(s.str().c_str());
-  if (dir< 0) {
-    LBANN_ERROR("callback_dump_minibatch_sample_indices is unable to create the target director");
-  }
-
+  const std::string path = get_multi_trainer_path(*m, m_basename);
+  makedir(path.c_str());
   const std::string file
-    = (get_multi_trainer_path(*m, m_basename)
+    = (path
        + to_string(c.get_execution_mode())
+       + "_e" + std::to_string(c.get_epoch())
+       + "_s" + std::to_string(c.get_step())
+       + "_r" + std::to_string(c.get_comm().get_rank_in_trainer())
        + "-MB_Sample_Indices");
   El::Write(*indices, file, El::ASCII);
 }

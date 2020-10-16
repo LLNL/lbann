@@ -262,7 +262,7 @@ const El::Matrix<El::Int>* buffered_data_coordinator<TensorDataType>::get_sample
 
 template <typename TensorDataType>
 El::Matrix<El::Int>* buffered_data_coordinator<TensorDataType>::get_sample_indices_per_mb(execution_mode mode) {
-  return const_cast<El::Matrix<El::Int>*>(static_cast<const buffered_data_coordinator>(*this).get_sample_indices_per_mb(mode));
+  return const_cast<El::Matrix<El::Int>*>(static_cast<const buffered_data_coordinator &>(*this).get_sample_indices_per_mb(mode));
 }
 
 template <typename TensorDataType>
