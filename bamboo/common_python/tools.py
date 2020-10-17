@@ -245,10 +245,9 @@ def get_command(cluster,
                 resources_per_node = 4
                 if num_nodes is None:
                     num_nodes = math.ceil(float(num_processes)/4)
-                else:
-                    if disable_cuda == True:
-                        # When CUDA is disabled, allow the number of resources per node to be overridden
-                        resources_per_node = math.ceil(float(num_processes)/num_nodes)
+            if disable_cuda:
+                # When CUDA is disabled, allow the number of resources per node to be overridden
+                resources_per_node = math.ceil(float(num_processes)/num_nodes)
                 # The "option_num_processes" is a misnomer for the LSF case. Rather than
                 # changing the rest of the code, set it to be the number of nodes. Within
                 # JSRUN, the correct number of processes will be obtained when combined
