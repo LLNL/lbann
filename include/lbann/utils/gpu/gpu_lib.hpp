@@ -31,12 +31,16 @@
 
 namespace lbann {
 namespace gpu_lib {
-using namespace cuda;
+#if defined LBANN_HAS_CUDA
+  using namespace cuda;
+#elif defined LBANN_HAS_ROCM
+  using namespace rocm;
+#endif // LBANN_HAS_CUDA
 
 // -------------------------------------------------------------
 // Device functions
 // -------------------------------------------------------------
-#ifdef __CUDACC__
+#if defined __CUDACC__ || defined __HIPCC__
 
 // Atomic add
 __device__ __forceinline__
@@ -150,13 +154,13 @@ struct array {
   __host__ __device__ __forceinline__ const T& operator[](size_t i) const;
 };
 
-#endif // __CUDACC__
+#endif // __CUDACC__ || __HIPCC__
 
 // -------------------------------------------------------------
 // Helper functions for tensor operations
 // -------------------------------------------------------------
 
-#ifdef __CUDACC__
+#if defined __CUDACC__ || __HIPCC__
 
 /** Apply an entry-wise unary operator to GPU data.
  *  The input and output data must be on GPU and must have the same
@@ -197,13 +201,17 @@ void apply_entrywise_binary_operator(
   const El::AbstractDistMatrix<TensorDataType>& input2,
   El::AbstractDistMatrix<TensorDataType>& output);
 
-#endif // __CUDACC__
+#endif // __CUDACC__ || __HIPCC__
 
 } // namespace gpu_lib
 } // namespace lbann
 
 // Header implementations
+#if defined LBANN_HAS_CUDA
 #include "lbann/utils/impl/cuda.hpp"
+#elif defined LBANN_HAS_ROCM
+#include "lbann/utils/impl/rocm.hpp"
+#endif // LBANN_HAS_CUDA
 #include "lbann/utils/impl/gpu_lib.hpp"
 
 #endif // LBANN_HAS_GPU

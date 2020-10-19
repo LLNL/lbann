@@ -135,6 +135,7 @@ private:
 // -------------------------------------------------------------
 // Helper functions for tensor operations
 // -------------------------------------------------------------
+
 /** Copy entries between GPU tensors. */
 template <typename TensorDataType>
 void copy_tensor(
@@ -209,4 +210,3 @@ using vector = ::thrust::device_vector<T, allocator<T>>;
 
 #endif // LBANN_HAS_GPU
 #endif // LBANN_UTILS_ROCM_HPP
-
