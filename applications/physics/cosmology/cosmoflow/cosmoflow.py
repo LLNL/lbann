@@ -235,7 +235,7 @@ def create_cosmoflow_data_reader(
 
     reader_args = [
         {"role": "train", "data_filename": train_path},
-        {"role": "val", "data_filename": val_path},
+        {"role": "validate", "data_filename": val_path},
         {"role": "test", "data_filename": test_path},
     ]
 
