@@ -26,12 +26,16 @@
 
 namespace lbann {
 namespace gpu_lib {
-using namespace cuda;
+#if defined LBANN_HAS_CUDA
+  using namespace cuda;
+#elif defined LBANN_HAS_ROCM
+  using namespace rocm;
+#endif // LBANN_HAS_CUDA
 
 // -------------------------------------------------------------
 // Device functions
 // -------------------------------------------------------------
-#ifdef __CUDACC__
+#if defined __CUDACC__ || defined __HIPCC__
 
 // Unary math functions
 #define WRAP_UNARY_MATH_FUNCTION(func)              \
@@ -146,12 +150,12 @@ const T& array<T,N>::operator[](size_t i) const {
   return vals[i];
 }
 
-#endif // __CUDACC__
+#endif // __CUDACC__ || __HIPCC__
 
 // -------------------------------------------------------------
 // Helper functions for entrywise operations
 // -------------------------------------------------------------
-#ifdef __CUDACC__
+#if defined __CUDACC__ || defined __HIPCC__
 
 /** GPU kernel to apply an entry-wise unary operator. */
 template <template <typename> class UnaryOperator, typename TensorDataType>
@@ -348,7 +352,7 @@ void apply_entrywise_binary_operator(
                                                   output.Matrix());
 }
 
-#endif // __CUDACC__
+#endif // __CUDACC__ || __HIPCC__
 
 } // namespace cuda
 } // namespace lbann

@@ -179,7 +179,7 @@ __half gpu_lib::min(const __half& x, const __half& y)
 { return ::__hle(x, y) ? x : y; }
 
 __device__ __forceinline__
-__half gpu_lib::min(const __half& x, const __half& y)
+__half gpu_lib::max(const __half& x, const __half& y)
 { return ::__hle(x, y) ? y : x; }
 
 // Numeric limits
