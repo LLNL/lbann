@@ -26,7 +26,7 @@
 
 #define LBANN_UNIFORM_HASH_LAYER_INSTANTIATE
 #include "lbann/layers/misc/uniform_hash.hpp"
-#include "lbann/utils/cuda.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 
 // ---------------------------------------------
 // MD5 hash function
@@ -260,7 +260,7 @@ struct uniform_hash_op {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void uniform_hash_layer<TensorDataType, Layout, Device>::fp_compute() {
-  cuda::apply_entrywise_unary_operator<uniform_hash_op>(
+  gpu_lib::apply_entrywise_unary_operator<uniform_hash_op>(
     this->get_prev_activations(),
     this->get_activations());
 }
