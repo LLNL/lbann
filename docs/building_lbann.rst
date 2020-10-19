@@ -137,8 +137,9 @@ CMake flags known to LBANN's "Superbuild" build system.
     :code:`-e` flag. A full list of options can be viewed with the
     :code:`-h` flag.
 
-2.  Setup the LBANN CMake environment using the Spack environment for
-    the dependencies.
+2.  Setup the LBANN CMake environment using the Spack environment for the
+    dependencies.  If you used a custom Spack environment name in the step
+    above, be sure to specify that with the :code:`-e` option:
 
     .. code-block:: bash
 

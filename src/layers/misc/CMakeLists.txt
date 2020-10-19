@@ -5,6 +5,7 @@ set_full_path(THIS_DIR_SOURCES
   channelwise_mean.cpp
   channelwise_softmax.cpp
   covariance.cpp
+  dft_abs_builder.cpp
   dist_embedding.cpp
   mini_batch_index.cpp
   mini_batch_size.cpp
@@ -12,6 +13,10 @@ set_full_path(THIS_DIR_SOURCES
   uniform_hash.cpp
   variance.cpp
   )
+
+if (LBANN_HAS_FFTW)
+  list(APPEND THIS_DIR_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/dft_abs.cpp")
+endif ()
 
 if (LBANN_HAS_CUDA)
   # Add the CUDA source files for this directory
@@ -24,6 +29,9 @@ if (LBANN_HAS_CUDA)
     one_hot.cu
     uniform_hash.cu
     )
+  if (LBANN_HAS_FFTW)
+    list(APPEND THIS_DIR_CU_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/dft_abs.cu")
+  endif ()
 endif ()
 
 # Propagate the files up the tree

@@ -114,6 +114,7 @@ void thread_pool::launch_pinned_threads(
                             this, cnt, ht_topo, ht_cpuset);
     }
     hwloc_bitmap_free(iot_cpuset);
+    hwloc_bitmap_free(excluded_cpuset);
     hwloc_bitmap_free(allocated_cpuset);
   }
   catch(...)

@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/optimizers/adam.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 
 namespace lbann {
 
@@ -50,12 +51,15 @@ __global__ void adam_noncontiguous_kernel(size_t height,
     const auto& row = gid % height;
     const auto& col = gid / height;
     const auto& g = gradient[row + col * gradient_ldim] + eps;
+    if (cuda::isinf(g) || cuda::isnan(g)) {
+      return;
+    }
     auto& m1 = moment1[row + col * moment1_ldim];
     auto& m2 = moment2[row + col * moment2_ldim];
     auto& x = values[row + col * values_ldim];
     m1 = beta1 * m1 + (TensorDataType(1) - beta1) * g;
     m2 = beta2 * m2 + (TensorDataType(1) - beta2) * g * g;
-    x -= correction * m1 / (cuda::sqrt(m2) + eps);
+    x -= correction * m1 / (gpu_lib::sqrt(m2) + eps);
   }
 }
 
@@ -72,12 +76,15 @@ __global__ void adam_contiguous_kernel(size_t size,
   const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
   if (gid < size) {
     const auto& g = gradient[gid] + eps;
+    if (cuda::isinf(g) || cuda::isnan(g)) {
+      return;
+    }
     auto& m1 = moment1[gid];
     auto& m2 = moment2[gid];
     auto& x = values[gid];
     m1 = beta1 * m1 + (TensorDataType(1) - beta1) * g;
     m2 = beta2 * m2 + (TensorDataType(1) - beta2) * g * g;
-    x -= correction * m1 / (cuda::sqrt(m2) + eps);
+    x -= correction * m1 / (gpu_lib::sqrt(m2) + eps);
   }
 }
 
@@ -93,18 +100,23 @@ void adam<TensorDataType>::step_compute_gpu(AbsDistMatrixType& values,
   const size_t local_size = local_height * local_width;
   if (local_size <= 0) { return; }
 
-  // Launch CUDA kernel
+  // Launch GPU kernel
   constexpr size_t block_size = 256;
   const size_t grid_size = (local_size + block_size - 1) / block_size;
-  auto&& stream = hydrogen::cuda::GetDefaultStream();
+  auto multisync = El::MakeMultiSync(gpu::get_sync_info(values),
+                                     gpu::get_sync_info(gradient));
   if (values.Contiguous() && gradient.Contiguous()
       && m_moment1->Contiguous() && m_moment2->Contiguous()) {
-    adam_contiguous_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
+    hydrogen::gpu::LaunchKernel(
+      adam_contiguous_kernel<TensorDataType>,
+      grid_size, block_size, 0, multisync,
       local_size, correction, m_eps, m_beta1, m_beta2,
       values.Buffer(), gradient.LockedBuffer(),
       m_moment1->Buffer(), m_moment2->Buffer());
   } else {
-    adam_noncontiguous_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
+    hydrogen::gpu::LaunchKernel(
+      adam_noncontiguous_kernel<TensorDataType>,
+      grid_size, block_size, 0, multisync,
       local_height, local_width, correction, m_eps, m_beta1, m_beta2,
       values.Buffer(), values.LDim(),
       gradient.LockedBuffer(), gradient.LDim(),

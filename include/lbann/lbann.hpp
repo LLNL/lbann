@@ -54,6 +54,7 @@
 #include "lbann/layers/learning/embedding.hpp"
 #include "lbann/layers/learning/channelwise_scale_bias.hpp"
 #include "lbann/layers/learning/entrywise_scale_bias.hpp"
+#include "lbann/layers/learning/gru.hpp"
 
 /// Loss layers
 #include "lbann/layers/loss/categorical_accuracy.hpp"
@@ -136,6 +137,9 @@
 #include "lbann/data_readers/data_reader_pilot2_molecular.hpp"
 #include "lbann/data_readers/data_reader_mesh.hpp"
 #include "lbann/data_readers/data_reader_python.hpp"
+#ifdef LBANN_HAS_DISTCONV
+#include "lbann/data_readers/data_reader_hdf5.hpp"
+#endif // LBANN_HAS_DISTCONV
 #include "lbann/data_readers/data_reader_smiles.hpp"
 #include "lbann/data_readers/data_reader_node2vec.hpp"
 

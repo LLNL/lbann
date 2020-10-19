@@ -44,7 +44,7 @@ message Reader {
   string data_local_filedir = 50; //to support data_store
   string data_filename = 6;
   string label_filename = 7;
-  string index_list = 8;
+  string sample_list = 8;
   double validation_percent = 9;
   int64 absolute_sample_count = 11;
   int64 first_n = 200;
@@ -84,15 +84,26 @@ message Reader {
        // 2 - there's a set of overlap indices that are common to all models
   //------------- end of only for partitioned data sets ------------------
 
-  //------------- start of only for index lists ------------------
-  bool index_list_per_trainer = 400;
-  bool index_list_per_model   = 401;
-  //------------- end of only for index lists ------------------
+  //------------- start of only for sample lists ------------------
+  bool sample_list_per_trainer = 400;
+  bool sample_list_per_model   = 401;
+  // For testing and validation, keep the loaded sample order same as that in the file
+  bool sample_list_keep_order  = 402;
+  //------------- end of only for sample lists ------------------
 
   PythonDataReader python = 501;
   Node2VecDataReader node2vec = 502;
 
   repeated Transform transforms = 600;  // Ordered list of transforms to apply.
+
+  //------------- start of only for HDF5 data reader ------------------
+  string hdf5_key_data      = 700;
+  string hdf5_key_labels    = 701;
+  string hdf5_key_responses = 702;
+  bool hdf5_hyperslab_labels = 703;
+  int32 num_responses = 704;
+  //------------- end of only for HDF5 data reader ------------------
+
 }
 
 message PythonDataReader {

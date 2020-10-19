@@ -26,7 +26,7 @@
 
 #define LBANN_UNARY_LAYER_INSTANTIATE
 #include "lbann/layers/math/unary.hpp"
-#include "lbann/utils/cuda.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 
 namespace lbann {
 
@@ -44,7 +44,7 @@ namespace {
 template <typename TensorDataType>
 struct logical_not_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
-    const auto& b = x != TensorDataType(0.0) && !cuda::isnan(x);
+    const auto& b = x != TensorDataType(0.0) && !gpu_lib::isnan(x);
     return !b ? TensorDataType(1.0) : TensorDataType(0.0);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
@@ -56,7 +56,7 @@ struct logical_not_op {
 template <typename TensorDataType>
 struct abs_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
-    return cuda::abs(x);
+    return gpu_lib::abs(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
     const TensorDataType zero = 0.;
@@ -96,7 +96,7 @@ struct sign_op {
 template <typename TensorDataType>
 struct round_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
-    return cuda::round(x);
+    return gpu_lib::round(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
     return TensorDataType(0.0);
@@ -107,7 +107,7 @@ struct round_op {
 template <typename TensorDataType>
 struct ceil_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
-    return cuda::ceil(x);
+    return gpu_lib::ceil(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
     return TensorDataType(0.0);
@@ -118,7 +118,7 @@ struct ceil_op {
 template <typename TensorDataType>
 struct floor_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
-    return cuda::floor(x);
+    return gpu_lib::floor(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
     return TensorDataType(0.0);
@@ -154,10 +154,10 @@ struct square_op {
 template <typename TensorDataType>
 struct sqrt_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
-    return cuda::sqrt(x);
+    return gpu_lib::sqrt(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return dy / (TensorDataType(2.) * cuda::sqrt(x));
+    return dy / (TensorDataType(2.) * gpu_lib::sqrt(x));
   }
 };
 
@@ -165,10 +165,10 @@ struct sqrt_op {
 template <typename TensorDataType>
 struct rsqrt_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
-    return cuda::rsqrt(x);
+    return gpu_lib::rsqrt(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    const auto& s = cuda::sqrt(x);
+    const auto& s = gpu_lib::sqrt(x);
     return - dy / (TensorDataType(2.) * x * s);
   }
 };
@@ -181,12 +181,12 @@ template <typename TensorDataType>
 struct safe_reciprocal_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
     const auto& y = TensorDataType(1.) / x;
-    if (cuda::isfinite(y)) { return y; }
+    if (gpu_lib::isfinite(y)) { return y; }
     else             { return TensorDataType(0.0); }
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
     const auto& y = TensorDataType(1.) / x;
-    if (cuda::isfinite(y)) { return - dy * y*y; }
+    if (gpu_lib::isfinite(y)) { return - dy * y*y; }
     else             { return TensorDataType(0.0); }
   }
 };
@@ -195,10 +195,10 @@ struct safe_reciprocal_op {
 template <typename TensorDataType>
 struct exp_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
-    return cuda::exp(x);
+    return gpu_lib::exp(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return dy * cuda::exp(x);
+    return dy * gpu_lib::exp(x);
   }
 };
 
@@ -206,10 +206,10 @@ struct exp_op {
 template <typename TensorDataType>
 struct expm1_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
-    return cuda::expm1(x);
+    return gpu_lib::expm1(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return dy * cuda::exp(x);
+    return dy * gpu_lib::exp(x);
   }
 };
 
@@ -217,7 +217,7 @@ struct expm1_op {
 template <typename TensorDataType>
 struct log_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
-    return cuda::log(x);
+    return gpu_lib::log(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
     return dy / x;
@@ -228,7 +228,7 @@ struct log_op {
 template <typename TensorDataType>
 struct log1p_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
-    return cuda::log1p(x);
+    return gpu_lib::log1p(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
     return dy / (x + TensorDataType(1.0));
@@ -239,10 +239,10 @@ struct log1p_op {
 template <typename TensorDataType>
 struct cos_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
-    return cuda::cos(x);
+    return gpu_lib::cos(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return -dy * cuda::sin(x);
+    return -dy * gpu_lib::sin(x);
   }
 };
 
@@ -250,10 +250,10 @@ struct cos_op {
 template <typename TensorDataType>
 struct sin_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
-    return cuda::sin(x);
+    return gpu_lib::sin(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return dy * cuda::cos(x);
+    return dy * gpu_lib::cos(x);
   }
 };
 
@@ -261,10 +261,10 @@ struct sin_op {
 template <typename TensorDataType>
 struct tan_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
-    return cuda::tan(x);
+    return gpu_lib::tan(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    const auto& c = cuda::cos(x);
+    const auto& c = gpu_lib::cos(x);
     return dy / (c*c);
   }
 };
@@ -273,10 +273,10 @@ struct tan_op {
 template <typename TensorDataType>
 struct acos_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
-    return cuda::acos(x);
+    return gpu_lib::acos(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return -dy / cuda::sqrt(TensorDataType(1.0) - x*x);
+    return -dy / gpu_lib::sqrt(TensorDataType(1.0) - x*x);
   }
 };
 
@@ -284,10 +284,10 @@ struct acos_op {
 template <typename TensorDataType>
 struct asin_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
-    return cuda::asin(x);
+    return gpu_lib::asin(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return dy / cuda::sqrt(TensorDataType(1.0) - x*x);
+    return dy / gpu_lib::sqrt(TensorDataType(1.0) - x*x);
   }
 };
 
@@ -295,7 +295,7 @@ struct asin_op {
 template <typename TensorDataType>
 struct atan_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
-    return cuda::atan(x);
+    return gpu_lib::atan(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
     return dy / (TensorDataType(1.0) + x*x);
@@ -306,10 +306,10 @@ struct atan_op {
 template <typename TensorDataType>
 struct cosh_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
-    return cuda::cosh(x);
+    return gpu_lib::cosh(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return dy * cuda::sinh(x);
+    return dy * gpu_lib::sinh(x);
   }
 };
 
@@ -317,10 +317,10 @@ struct cosh_op {
 template <typename TensorDataType>
 struct sinh_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
-    return cuda::sinh(x);
+    return gpu_lib::sinh(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return dy * cuda::cosh(x);
+    return dy * gpu_lib::cosh(x);
   }
 };
 
@@ -328,10 +328,10 @@ struct sinh_op {
 template <typename TensorDataType>
 struct tanh_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
-    return cuda::tanh(x);
+    return gpu_lib::tanh(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    const auto& c = cuda::cosh(x);
+    const auto& c = gpu_lib::cosh(x);
     return dy / (c*c);
   }
 };
@@ -340,10 +340,10 @@ struct tanh_op {
 template <typename TensorDataType>
 struct acosh_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
-    return cuda::acosh(x);
+    return gpu_lib::acosh(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return -dy / (cuda::sqrt(x - TensorDataType(1.0)) * cuda::sqrt(x + TensorDataType(1.0)));
+    return -dy / (gpu_lib::sqrt(x - TensorDataType(1.0)) * gpu_lib::sqrt(x + TensorDataType(1.0)));
   }
 };
 
@@ -351,10 +351,10 @@ struct acosh_op {
 template <typename TensorDataType>
 struct asinh_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
-    return cuda::asinh(x);
+    return gpu_lib::asinh(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return dy / cuda::sqrt(TensorDataType(1.0) + x*x);
+    return dy / gpu_lib::sqrt(TensorDataType(1.0) + x*x);
   }
 };
 
@@ -362,7 +362,7 @@ struct asinh_op {
 template <typename TensorDataType>
 struct atanh_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
-    return cuda::atanh(x);
+    return gpu_lib::atanh(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
     return dy / (TensorDataType(1.0) - x*x);
@@ -400,13 +400,13 @@ struct erfinv_op {
 #define DEFINE_COMPUTE_OPS(layer, op)                                   \
   template <typename TensorDataType, data_layout Layout, El::Device Device> \
   void layer<TensorDataType, Layout, Device>::fp_compute() {            \
-    cuda::apply_entrywise_unary_operator<op>(                           \
+    gpu_lib::apply_entrywise_unary_operator<op>(                           \
       this->get_prev_activations(),                                     \
       this->get_activations());                                         \
   }                                                                     \
   template <typename TensorDataType, data_layout Layout, El::Device Device> \
   void layer<TensorDataType, Layout, Device>::bp_compute() {            \
-    cuda::apply_entrywise_binary_operator<op>(                          \
+    gpu_lib::apply_entrywise_binary_operator<op>(                          \
       this->get_prev_activations(),                                     \
       this->get_prev_error_signals(),                                   \
       this->get_error_signals());                                       \

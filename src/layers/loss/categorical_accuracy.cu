@@ -26,7 +26,7 @@
 
 #define LBANN_CATEGORICAL_ACCURACY_LAYER_INSTANTIATE
 #include "lbann/layers/loss/categorical_accuracy.hpp"
-#include "lbann/utils/cuda.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 
 namespace lbann {
 
@@ -80,8 +80,8 @@ __global__ void reduce_max_entries_kernel(El::Int height, El::Int width,
   for (El::Int col = bidy; col < width; col += gridDim.y) {
 
     // Find largest entry for each thread
-    TensorDataType private_max_val = -cuda::infinity<TensorDataType>();
-    El::Int private_max_ind = cuda::max<El::Int>();
+    TensorDataType private_max_val = -gpu_lib::infinity<TensorDataType>();
+    El::Int private_max_ind = gpu_lib::max<El::Int>();
     for (El::Int row = gidx; row < height; row += nthreadsx) {
       const auto& val = values[row * values_row_stride
                                + col * values_col_stride];
@@ -132,7 +132,7 @@ __global__ void compute_accuracy_kernel(El::Int local_width,
                                         El::Int loss_ldim) {
   const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int nthreads = blockDim.x * gridDim.x;
-  constexpr El::Int max_ind = cuda::max<El::Int>();
+  constexpr El::Int max_ind = gpu_lib::max<El::Int>();
   for (El::Int col = gid; col < local_width; col += nthreads) {
     const auto& prediction = prediction_indices[col];
     const auto& label = label_indices[col];
@@ -166,9 +166,12 @@ void fp_gpu(lbann_comm& comm,
   const auto& col_comm_root = loss.RowOwner(0);
 
   // GPU objects
-  auto&& stream = hydrogen::cuda::GetDefaultStream();
-  auto&& event = hydrogen::cuda::GetDefaultEvent();
-  El::SyncInfo<El::Device::GPU> sync_info{stream, event};
+  auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_loss),
+                                     gpu::get_sync_info(local_predictions),
+                                     gpu::get_sync_info(local_labels));
+  // The comm templates will not convert the multisync, so cast the multisync
+  // and use sync_info for comms.
+  El::SyncInfo<El::Device::GPU> const& sync_info = multisync;
 
   // Initialize CUDA threads/blocks for reduction kernel
   // Note: reduce_max_entries_kernel uses a 2D thread distribution
@@ -179,11 +182,12 @@ void fp_gpu(lbann_comm& comm,
   grid_dims.y = local_width;
 
   // Get indices for all input entries
-  cuda::thrust::vector<El::Int> full_inds(local_height * local_width);
+  gpu_lib::thrust::vector<El::Int> full_inds(local_height * local_width);
   if (full_inds.size() > 0) {
     const El::Int grid_size = (full_inds.size() + block_size - 1) / block_size;
-    fill_indices_kernel<TensorDataType>
-        <<<grid_size, block_size, 0, stream>>>(
+    hydrogen::gpu::LaunchKernel(
+      fill_indices_kernel<TensorDataType>,
+      grid_size, block_size, 0, multisync,
       local_height, local_width,
       predictions.ColShift(),
       predictions.ColStride(),
@@ -193,36 +197,38 @@ void fp_gpu(lbann_comm& comm,
   // Find largest prediction entries in local data
   grid_dims.x = (local_height + block_size - 1) / block_size;
   if (grid_dims.x < 1) { grid_dims.x = 1; }
-  cuda::thrust::vector<TensorDataType> prediction_vals(grid_dims.x * local_width);
-  cuda::thrust::vector<El::Int> prediction_inds(grid_dims.x * local_width);
-  reduce_max_entries_kernel<block_size>
-    <<<grid_dims, block_dims, 0, stream>>>(
-      local_height, local_width,
-      local_predictions.LockedBuffer(), 1, local_predictions.LDim(),
-      full_inds.data().get(), 1, local_height,
-      prediction_vals.data().get(),
-      prediction_inds.data().get());
+  gpu_lib::thrust::vector<TensorDataType> prediction_vals(grid_dims.x * local_width);
+  gpu_lib::thrust::vector<El::Int> prediction_inds(grid_dims.x * local_width);
+  hydrogen::gpu::LaunchKernel(
+    reduce_max_entries_kernel<block_size, TensorDataType>,
+    grid_dims, block_dims, 0, multisync,
+    local_height, local_width,
+    local_predictions.LockedBuffer(), 1, local_predictions.LDim(),
+    full_inds.data().get(), 1, local_height,
+    prediction_vals.data().get(),
+    prediction_inds.data().get());
   while (grid_dims.x > 1) {
     const El::Int prev_height = grid_dims.x;
     grid_dims.x = (prev_height + block_size - 1) / block_size;
-    cuda::thrust::vector<TensorDataType> prev_vals(std::move(prediction_vals));
-    cuda::thrust::vector<El::Int> prev_inds(std::move(prediction_inds));
+    gpu_lib::thrust::vector<TensorDataType> prev_vals(std::move(prediction_vals));
+    gpu_lib::thrust::vector<El::Int> prev_inds(std::move(prediction_inds));
     prediction_vals.resize(grid_dims.x * local_width);
     prediction_inds.resize(grid_dims.x * local_width);
-    reduce_max_entries_kernel<block_size>
-      <<<grid_dims, block_dims, 0, stream>>>(
-        prev_height, local_width,
-        prev_vals.data().get(), 1, prev_height,
-        prev_inds.data().get(), 1, prev_height,
-        prediction_vals.data().get(),
-        prediction_inds.data().get());
+    hydrogen::gpu::LaunchKernel(
+      reduce_max_entries_kernel<block_size, TensorDataType>,
+      grid_dims, block_dims, 0, multisync,
+      prev_height, local_width,
+      prev_vals.data().get(), 1, prev_height,
+      prev_inds.data().get(), 1, prev_height,
+      prediction_vals.data().get(),
+      prediction_inds.data().get());
   }
 
   // Gather large prediction entries
   /// @todo Non-blocking gather
   Al::request prediction_vals_req, prediction_inds_req;
-  cuda::thrust::vector<TensorDataType> gathered_prediction_vals;
-  cuda::thrust::vector<El::Int> gathered_prediction_inds;
+  gpu_lib::thrust::vector<TensorDataType> gathered_prediction_vals;
+  gpu_lib::thrust::vector<El::Int> gathered_prediction_inds;
   if (col_comm_size > 1) {
     if (col_comm_rank != col_comm_root) {
       comm.gather(prediction_vals.data().get(), prediction_vals.size(),
@@ -244,36 +250,38 @@ void fp_gpu(lbann_comm& comm,
   // Find largest label entries in local data
   grid_dims.x = (local_height + block_size - 1) / block_size;
   if (grid_dims.x < 1) { grid_dims.x = 1; }
-  cuda::thrust::vector<TensorDataType> label_vals(grid_dims.x * local_width);
-  cuda::thrust::vector<El::Int> label_inds(grid_dims.x * local_width);
-  reduce_max_entries_kernel<block_size>
-    <<<grid_dims, block_dims, 0, stream>>>(
-      local_height, local_width,
-      local_labels.LockedBuffer(), 1, local_labels.LDim(),
-      full_inds.data().get(), 1, local_height,
-      label_vals.data().get(),
-      label_inds.data().get());
+  gpu_lib::thrust::vector<TensorDataType> label_vals(grid_dims.x * local_width);
+  gpu_lib::thrust::vector<El::Int> label_inds(grid_dims.x * local_width);
+  hydrogen::gpu::LaunchKernel(
+    reduce_max_entries_kernel<block_size, TensorDataType>,
+    grid_dims, block_dims, 0, multisync,
+    local_height, local_width,
+    local_labels.LockedBuffer(), 1, local_labels.LDim(),
+    full_inds.data().get(), 1, local_height,
+    label_vals.data().get(),
+    label_inds.data().get());
   while (grid_dims.x > 1) {
     const El::Int prev_height = grid_dims.x;
     grid_dims.x = (prev_height + block_size - 1) / block_size;
-    cuda::thrust::vector<TensorDataType> prev_vals(std::move(label_vals));
-    cuda::thrust::vector<El::Int> prev_inds(std::move(label_inds));
+    gpu_lib::thrust::vector<TensorDataType> prev_vals(std::move(label_vals));
+    gpu_lib::thrust::vector<El::Int> prev_inds(std::move(label_inds));
     label_vals.resize(grid_dims.x * local_width);
     label_inds.resize(grid_dims.x * local_width);
-    reduce_max_entries_kernel<block_size>
-      <<<grid_dims, block_dims, 0, stream>>>(
-        prev_height, local_width,
-        prev_vals.data().get(), 1, prev_height,
-        prev_inds.data().get(), 1, prev_height,
-        label_vals.data().get(),
-        label_inds.data().get());
+    hydrogen::gpu::LaunchKernel(
+      reduce_max_entries_kernel<block_size, TensorDataType>,
+      grid_dims, block_dims, 0, multisync,
+      prev_height, local_width,
+      prev_vals.data().get(), 1, prev_height,
+      prev_inds.data().get(), 1, prev_height,
+      label_vals.data().get(),
+      label_inds.data().get());
   }
 
   // Gather large label entries
   /// @todo Non-blocking gather
   Al::request label_vals_req, label_inds_req;
-  cuda::thrust::vector<TensorDataType> gathered_label_vals;
-  cuda::thrust::vector<El::Int> gathered_label_inds;
+  gpu_lib::thrust::vector<TensorDataType> gathered_label_vals;
+  gpu_lib::thrust::vector<El::Int> gathered_label_inds;
   if (col_comm_size > 1) {
     if (col_comm_rank != col_comm_root) {
       comm.gather(label_vals.data().get(), label_vals.size(),
@@ -303,27 +311,29 @@ void fp_gpu(lbann_comm& comm,
     if (grid_dims.x < 1) { grid_dims.x = 1; }
     prediction_vals.resize(grid_dims.x * local_width);
     prediction_inds.resize(grid_dims.x * local_width);
-    reduce_max_entries_kernel<block_size>
-      <<<grid_dims, block_dims, 0, stream>>>(
-        col_comm_size, local_width,
-        gathered_prediction_vals.data().get(), col_comm_size, 1,
-        gathered_prediction_inds.data().get(), col_comm_size, 1,
-        prediction_vals.data().get(),
-        prediction_inds.data().get());
+    hydrogen::gpu::LaunchKernel(
+      reduce_max_entries_kernel<block_size, TensorDataType>,
+      grid_dims, block_dims, 0, multisync,
+      col_comm_size, local_width,
+      gathered_prediction_vals.data().get(), col_comm_size, 1,
+      gathered_prediction_inds.data().get(), col_comm_size, 1,
+      prediction_vals.data().get(),
+      prediction_inds.data().get());
     while (grid_dims.x > 1) {
       const El::Int prev_height = grid_dims.x;
       grid_dims.x = (prev_height + block_size - 1) / block_size;
-      cuda::thrust::vector<TensorDataType> prev_vals(std::move(prediction_vals));
-      cuda::thrust::vector<El::Int> prev_inds(std::move(prediction_inds));
+      gpu_lib::thrust::vector<TensorDataType> prev_vals(std::move(prediction_vals));
+      gpu_lib::thrust::vector<El::Int> prev_inds(std::move(prediction_inds));
       prediction_vals.resize(grid_dims.x * local_width);
       prediction_inds.resize(grid_dims.x * local_width);
-      reduce_max_entries_kernel<block_size>
-        <<<grid_dims, block_dims, 0, stream>>>(
-          prev_height, local_width,
-          prev_vals.data().get(), 1, prev_height,
-          prev_inds.data().get(), 1, prev_height,
-          prediction_vals.data().get(),
-          prediction_inds.data().get());
+      hydrogen::gpu::LaunchKernel(
+        reduce_max_entries_kernel<block_size, TensorDataType>,
+        grid_dims, block_dims, 0, multisync,
+        prev_height, local_width,
+        prev_vals.data().get(), 1, prev_height,
+        prev_inds.data().get(), 1, prev_height,
+        prediction_vals.data().get(),
+        prediction_inds.data().get());
     }
   }
 
@@ -335,34 +345,38 @@ void fp_gpu(lbann_comm& comm,
     if (grid_dims.x < 1) { grid_dims.x = 1; }
     label_vals.resize(grid_dims.x * local_width);
     label_inds.resize(grid_dims.x * local_width);
-    reduce_max_entries_kernel<block_size>
-      <<<grid_dims, block_dims, 0, stream>>>(
-        col_comm_size, local_width,
-        gathered_label_vals.data().get(), col_comm_size, 1,
-        gathered_label_inds.data().get(), col_comm_size, 1,
-        label_vals.data().get(),
-        label_inds.data().get());
+    hydrogen::gpu::LaunchKernel(
+      reduce_max_entries_kernel<block_size, TensorDataType>,
+      grid_dims, block_dims, 0, multisync,
+      col_comm_size, local_width,
+      gathered_label_vals.data().get(), col_comm_size, 1,
+      gathered_label_inds.data().get(), col_comm_size, 1,
+      label_vals.data().get(),
+      label_inds.data().get());
     while (grid_dims.x > 1) {
       const El::Int prev_height = grid_dims.x;
       grid_dims.x = (prev_height + block_size - 1) / block_size;
-      cuda::thrust::vector<TensorDataType> prev_vals(std::move(label_vals));
-      cuda::thrust::vector<El::Int> prev_inds(std::move(label_inds));
+      gpu_lib::thrust::vector<TensorDataType> prev_vals(std::move(label_vals));
+      gpu_lib::thrust::vector<El::Int> prev_inds(std::move(label_inds));
       label_vals.resize(grid_dims.x * local_width);
       label_inds.resize(grid_dims.x * local_width);
-      reduce_max_entries_kernel<block_size>
-        <<<grid_dims, block_dims, 0, stream>>>(
-          prev_height, local_width,
-          prev_vals.data().get(), 1, prev_height,
-          prev_inds.data().get(), 1, prev_height,
-          label_vals.data().get(),
-          label_inds.data().get());
+      hydrogen::gpu::LaunchKernel(
+        reduce_max_entries_kernel<block_size, TensorDataType>,
+        grid_dims, block_dims, 0, multisync,
+        prev_height, local_width,
+        prev_vals.data().get(), 1, prev_height,
+        prev_inds.data().get(), 1, prev_height,
+        label_vals.data().get(),
+        label_inds.data().get());
     }
   }
 
   // Compute categorical accuracy
   if (col_comm_rank == col_comm_root) {
     const El::Int grid_size = (local_width + block_size - 1) / block_size;
-    compute_accuracy_kernel<<<grid_size, block_size, 0, stream>>>(
+    hydrogen::gpu::LaunchKernel(
+      compute_accuracy_kernel< TensorDataType>,
+      grid_size, block_size, 0, multisync,
       local_width,
       prediction_inds.data().get(), label_inds.data().get(),
       local_loss.Buffer(), local_loss.LDim());

@@ -623,17 +623,20 @@ std::string generic_data_reader::get_local_file_dir() const {
   return m_local_file_dir;
 }
 
-void generic_data_reader::set_data_index_list(std::string s) {
-  m_data_index_list = s;
+void generic_data_reader::set_data_sample_list(std::string s) {
+  m_data_sample_list = s;
 }
 
-std::string generic_data_reader::get_data_index_list() const {
-  if (m_data_index_list == "") {
-    throw lbann_exception(
-      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: you apparently did not call set_data_index_list; error!");
-  }
-  return m_data_index_list;
+std::string generic_data_reader::get_data_sample_list() const {
+  return m_data_sample_list;
+}
+
+void generic_data_reader::keep_sample_order(bool same_order) {
+  // The sample_list::keep_sample_order() should be called using this
+  // flag. By doing so, it will add additional step to re-shuffle the
+  // sample order to restore it to the original before the loading
+  // with interleaving accesses by multiple ranks in a trainer.
+  m_keep_sample_order = same_order;
 }
 
 void generic_data_reader::set_data_filename(std::string s) {
@@ -866,7 +869,7 @@ void generic_data_reader::print_get_methods(const std::string filename) {
 
   out << "get_file_dir " << get_file_dir() << std::endl;
   out << "get_local_file_dir " << get_local_file_dir() << std::endl;
-  out << "get_data_index_list " << get_data_index_list() << std::endl;
+  out << "get_data_sample_list " << get_data_sample_list() << std::endl;
   out << "get_data_filename " << get_data_filename()  << std::endl;
   out << "get_label_filename " << get_label_filename() << std::endl;
   out << "get_role " << get_role() << std::endl;

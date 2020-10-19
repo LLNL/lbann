@@ -124,9 +124,9 @@ void adam<TensorDataType>::step_compute(AbsDistMatrixType& values,
 
   switch (values.GetLocalDevice()) {
   case El::Device::CPU: step_compute_cpu(values, gradient, correction); break;
-#ifdef LBANN_HAS_CUDA
+#ifdef LBANN_HAS_GPU
   case El::Device::GPU: step_compute_gpu(values, gradient, correction); break;
-#endif // LBANN_HAS_CUDA
+#endif // LBANN_HAS_GPU
   default:
     std::ostringstream err;
     err << "unsupported device type "
@@ -158,6 +158,9 @@ void adam<TensorDataType>::step_compute_cpu(AbsDistMatrixType& values,
     for (size_t i = 0; i < local_size; ++i) {
       auto& x = values_buffer[i];
       const auto& g = gradient_buffer[i] + m_eps; // Avoid denormalized floats
+      if (std::isinf(g) || std::isnan(g)) {
+        continue;
+      }
       auto& m1 = moment1_buffer[i];
       auto& m2 = moment2_buffer[i];
       m1 = m_beta1 * m1 + (one - m_beta1) * g;
@@ -177,6 +180,9 @@ void adam<TensorDataType>::step_compute_cpu(AbsDistMatrixType& values,
       for (size_t row = 0; row < local_height; ++row) {
         auto& x = values_buffer[row+col*values_ldim];
         const auto& g = gradient_buffer[row+col*gradient_ldim] + m_eps; // Avoid denormalized floats
+        if (std::isinf(g) || std::isnan(g)) {
+          continue;
+        }
         auto& m1 = moment1_buffer[row+col*moment1_ldim];
         auto& m2 = moment2_buffer[row+col*moment2_ldim];
         m1 = m_beta1 * m1 + (one - m_beta1) * g;

@@ -172,7 +172,7 @@ bool create_dir(const std::string dirname) {
 }
 
 /// Load a file into a buffer
-bool load_file(const std::string filename, std::vector<char>& buf) {
+bool load_file(const std::string filename, std::vector<char>& buf, bool append) {
   std::ifstream file(filename, std::ios::binary);
   if (!file.good()) {
     return false;
@@ -181,13 +181,17 @@ bool load_file(const std::string filename, std::vector<char>& buf) {
   file.unsetf(std::ios::skipws);
 
   file.seekg(0, std::ios::end);
-  const std::streampos file_size = file.tellg();
+  const std::streamsize file_size = static_cast<std::streamsize>(file.tellg());
 
   file.seekg(0, std::ios::beg);
 
-  buf.resize(file_size);
+  if (!append) {
+    buf.clear();
+  }
+  const size_t cur_size = buf.size();
+  buf.resize(static_cast<size_t>(file_size) + cur_size);
 
-  file.read(buf.data(), file_size);
+  file.read(buf.data() + cur_size, file_size);
 
   return true;
 }

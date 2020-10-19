@@ -95,7 +95,7 @@ private:
   Al::request m_allreduce_req;
 #ifdef LBANN_HAS_GPU
   /** For non-blocking GPU-CPU memory copies. */
-  cuda::event_wrapper m_copy_event;
+  gpu_lib::event_wrapper m_copy_event;
 #endif // LBANN_HAS_GPU
 
   /** Add the sum of squares of @c vals to @c contribution.
