@@ -39,8 +39,13 @@ namespace lbann {
  */
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 class uniform_hash_layer : public data_type_layer<TensorDataType> {
+#ifdef LBANN_HAS_GPU
   static_assert(Device == El::Device::GPU,
                 "uniform_hash_layer only supports GPU");
+#else
+  static_assert(Device != El::Device::CPU, /** @todo Make nicer */
+                "uniform_hash_layer only supports GPU");
+#endif // LBANN_HAS_GPU
 
 public:
 
@@ -105,6 +110,7 @@ void uniform_hash_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMeta
 // Explicit template instantiation
 // ---------------------------------------------
 
+#ifdef LBANN_HAS_GPU
 #ifndef LBANN_UNIFORM_HASH_LAYER_INSTANTIATE
 #define PROTO(T)                                        \
   extern template class uniform_hash_layer<             \
@@ -114,6 +120,7 @@ void uniform_hash_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMeta
 #include "lbann/macros/instantiate.hpp"
 #undef PROTO
 #endif // LBANN_UNIFORM_HASH_LAYER_INSTANTIATE
+#endif // LBANN_HAS_GPU
 
 } // namespace lbann
 

@@ -52,6 +52,7 @@ struct Builder
   }
 };
 
+#ifdef LBANN_HAS_GPU
 template <data_layout Layout>
 struct Builder<float,Layout,El::Device::GPU>
 {
@@ -64,7 +65,9 @@ struct Builder<float,Layout,El::Device::GPU>
     return make_unique<LayerType>(std::forward<Args>(args)...);
   }
 };
+#endif // LBANN_HAS_GPU
 
+#ifdef LBANN_HAS_GPU
 template <data_layout Layout>
 struct Builder<double,Layout,El::Device::GPU>
 {
@@ -77,6 +80,7 @@ struct Builder<double,Layout,El::Device::GPU>
     return make_unique<LayerType>(std::forward<Args>(args)...);
   }
 };
+#endif // LBANN_HAS_GPU
 
 } // namespace <anon>
 
@@ -91,6 +95,16 @@ std::unique_ptr<Layer> build_uniform_hash_layer_from_pbuf(
 // ---------------------------------------------
 // Explicit template instantiation
 // ---------------------------------------------
+
+#ifdef LBANN_HAS_GPU
+#define PROTO(T)                                        \
+  template class uniform_hash_layer<             \
+    T, data_layout::DATA_PARALLEL, El::Device::GPU>;    \
+  template class uniform_hash_layer<             \
+    T, data_layout::MODEL_PARALLEL, El::Device::GPU>
+#include "lbann/macros/instantiate.hpp"
+#undef PROTO
+#endif // LBANN_HAS_GPU
 
 #define PROTO_DEVICE(T, Device) \
   LBANN_LAYER_BUILDER_ETI(uniform_hash, T, Device)
