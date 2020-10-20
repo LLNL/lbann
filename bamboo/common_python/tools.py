@@ -242,14 +242,19 @@ def get_command(cluster,
                 option_launch_distribution = ' --launch_distribution packed'
                 # Avoid `nrs (32) should not be greater than rs_per_host (1) * number of servers available (16).`
                 if num_nodes is None:
-                    num_nodes = 1
+                    num_nodes = math.ceil(float(num_processes)/4)
+                # By default there should be 4 prcesses per node (especially when using GPUs)
+                resources_per_node = 4
+                if disable_cuda:
+                    # When CUDA is disabled, allow the number of resources per node to be overridden
+                    resources_per_node = math.ceil(float(num_processes)/num_nodes)
                 # The "option_num_processes" is a misnomer for the LSF case. Rather than
                 # changing the rest of the code, set it to be the number of nodes. Within
                 # JSRUN, the correct number of processes will be obtained when combined
                 # with "option_tasks_per_resource".
                 option_num_processes = ' --nrs {n}'.format(n=num_nodes)
                 option_resources_per_host = ' --rs_per_host 1'
-                option_tasks_per_resource = ' --tasks_per_rs 4'
+                option_tasks_per_resource = ' --tasks_per_rs {n}'.format(n=resources_per_node)
                 if (num_processes%num_nodes) is not 0:
                     raise Exception('num_processes %s, is not divisible by num_nodes %d'
                                     % (num_processes, num_nodes))
