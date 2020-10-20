@@ -240,14 +240,14 @@ def get_command(cluster,
                 option_cpu_per_resource = ' --cpu_per_rs ALL_CPUS'
                 option_gpu_per_resource = ' --gpu_per_rs ALL_GPUS'
                 option_launch_distribution = ' --launch_distribution packed'
-                # Avoid `nrs (32) should not be greater than rs_per_host (1) * number of servers available (16).`
-                if num_nodes is None:
-                    num_nodes = math.ceil(float(num_processes)/4)
                 # By default there should be 4 prcesses per node (especially when using GPUs)
                 resources_per_node = 4
                 if disable_cuda:
                     # When CUDA is disabled, allow the number of resources per node to be overridden
                     resources_per_node = math.ceil(float(num_processes)/num_nodes)
+                # Avoid `nrs (32) should not be greater than rs_per_host (1) * number of servers available (16).`
+                if num_nodes is None:
+                    num_nodes = math.ceil(float(num_processes)/resources_per_node)
                 # The "option_num_processes" is a misnomer for the LSF case. Rather than
                 # changing the rest of the code, set it to be the number of nodes. Within
                 # JSRUN, the correct number of processes will be obtained when combined
