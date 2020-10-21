@@ -65,6 +65,29 @@ def get_scheduler_kwargs(args):
     if args.setup_only: kwargs['setup_only'] = True
     return kwargs
 
+def get_distconv_environment(parallel_io=False, num_io_partitions=1):
+    """Return recommended Distconv variables.
+
+    Args:
+        parallel_io (bool):
+            Whether to read a single sample in parallel.
+        num_io_partitions (int):
+            The number of processes to read a single sample.
+    """
+
+    return {
+        'DISTCONV_WS_CAPACITY_FACTOR': 0.8,
+        'DISTCONV_OVERLAP_HALO_EXCHANGE': 1,
+        'LBANN_DISTCONV_HALO_EXCHANGE': 'HYBRID',
+        'LBANN_DISTCONV_TENSOR_SHUFFLER': 'HYBRID',
+        'LBANN_DISTCONV_CONVOLUTION_FWD_ALGORITHM': 'AUTOTUNE',
+        'LBANN_DISTCONV_CONVOLUTION_BWD_DATA_ALGORITHM': 'AUTOTUNE',
+        'LBANN_DISTCONV_CONVOLUTION_BWD_FILTER_ALGORITHM': 'AUTOTUNE',
+        'LBANN_DISTCONV_RANK_STRIDE': 1,
+        'LBANN_DISTCONV_COSMOFLOW_PARALLEL_IO': parallel_io,
+        'LBANN_DISTCONV_NUM_IO_PARTITIONS': num_io_partitions,
+    }
+
 def add_optimizer_arguments(parser, default_optimizer='momentum',
                             default_learning_rate=0.01):
     """Add command-line arguments for optimizers.
