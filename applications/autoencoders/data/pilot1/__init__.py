@@ -4,12 +4,6 @@ import os.path
 import google.protobuf.text_format
 import lbann
 
-# Paths
-data_dir = os.path.dirname(os.path.realpath(__file__))
-
-# FIXME: Should I add anything to check paths like in cifar10, or
-# download anything like in mnist?
-
 def make_data_reader(data_reader_file='data_reader_candle_pilot1.prototext'):
 
     # Load Protobuf message from file
