@@ -60,9 +60,6 @@ parser.add_argument(
     '--mini-batch-size', action='store', default=128, type=int,
     help='mini-batch size (default: 128)', metavar='NUM')
 parser.add_argument(
-    '--random-seed', action='store', default=0, type=int,
-    help='random seed for LBANN RNGs', metavar='NUM')
-parser.add_argument(
     '--data-reader', action='store', default='default', type=str,
     help='Data reader options: \"combo\", \"gdc\", \"growth\", or \"pilot1\" (default: data_reader_candle_pilot1.prototext)')
 lbann.contrib.args.add_optimizer_arguments(parser, default_learning_rate=0.1)
