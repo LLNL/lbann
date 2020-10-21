@@ -542,7 +542,7 @@ void kfac::get_kronecker_factor_conv(
     const El::Matrix<DataType, El::Device::GPU>& A,
     const DataType alpha,
     const size_t local_batch_size, const size_t num_channels,
-    const std::vector<int> spatial_dims,
+    const std::vector<int>& spatial_dims,
     const convolution_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU> *l_conv,
     const bool use_im2col,
     const cudaStream_t& stream) {
