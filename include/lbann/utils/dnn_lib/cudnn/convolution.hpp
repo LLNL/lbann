@@ -48,10 +48,10 @@ enum class fwd_conv_alg
 };// enum class fwd_conv_alg
 
 /** @brief Which backward convolution algorithm to use. */
-enum class bwd_conv_alg
+enum class bwd_data_conv_alg
 {
-  GEMM, // "ALGO_0" in cuDNN (are the renamed correct?)
-  DIRECT, // "ALGO_1" in cuDNN
+  CUDNN_ALGO_0,
+  CUDNN_ALGO_1,
   FFT,
   FFT_TILING,
   WINOGRAD,
@@ -59,12 +59,12 @@ enum class bwd_conv_alg
 };// enum class bwd_conv_alg
 
 /** @brief Which backward convolution filter algorithm to use. */
-enum class bwd_conv_filter
+enum class bwd_filter_conv_alg
 {
-  ALGO_0, // need a better name
-  ALGO_1, // need a better name
+  CUDNN_ALGO_0,
+  CUDNN_ALGO_1,
   FFT,
-  ALGO_3, // need a better name
+  CUDNN_ALGO_3,
   WINOGRAD_NONFUSED,
   FFT_TILING,
 };// enum class bwd_conv_filter
@@ -236,7 +236,7 @@ void convolution_forward(
 }
 
 template <typename TensorDataType, typename ScalarParameterType>
-void convolution_backward(
+void convolution_backward_data(
   ScalarParameterType const& alpha_in,
   FilterDescriptor const& wDesc,
   El::AbstractDistMatrix<TensorDataType> const& w,
@@ -270,7 +270,7 @@ void convolution_backward(
 }
 
 template <typename TensorDataType, typename ScalarParameterType>
-void convolution_backward(
+void convolution_backward_data(
   ScalarParameterType const& alpha_in,
   FilterDescriptor const& wDesc,
   El::AbstractDistMatrix<TensorDataType> const& w,
