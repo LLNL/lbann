@@ -43,10 +43,10 @@ class kfac_block_bn: public kfac_block {
    */
   kfac_block_bn(Layer *layer,
                 kfac *callback,
-                const size_t layer_id,
-                const size_t inverse_proc_rank,
-                const bool is_after_conv,
-                const size_t num_channels, const size_t spatial_prod)
+                size_t layer_id,
+                size_t inverse_proc_rank,
+                bool is_after_conv,
+                size_t num_channels, size_t spatial_prod)
       : kfac_block(layer, callback, layer_id, inverse_proc_rank),
         m_is_after_conv(is_after_conv),
         m_num_channels(num_channels), m_spatial_prod(spatial_prod) {
@@ -58,8 +58,8 @@ class kfac_block_bn: public kfac_block {
 
   void compute_local_kronecker_factors(
       lbann_comm* comm,
-      const bool print_matrix,
-      const bool print_matrix_summary) override;
+      bool print_matrix,
+      bool print_matrix_summary) override;
 
   const std::vector<El::AbstractMatrix<DataType>*>
   get_local_kronecker_buffers() {
@@ -69,17 +69,17 @@ class kfac_block_bn: public kfac_block {
 
   void update_kronecker_average(
       lbann_comm* comm,
-      const DataType kronecker_decay,
-      const bool print_matrix,
-      const bool print_matrix_summary) override;
+      DataType kronecker_decay,
+      bool print_matrix,
+      bool print_matrix_summary) override;
 
   void update_kronecker_inverse(
       lbann_comm* comm,
-      const bool use_pi,
-      const DataType damping_act, const DataType damping_err,
-      const bool print_matrix,
-      const bool print_matrix_summary,
-      const bool print_time) override;
+      bool use_pi,
+      DataType damping_act, DataType damping_err,
+      bool print_matrix,
+      bool print_matrix_summary,
+      bool print_time) override;
 
   const std::vector<El::AbstractMatrix<DataType>*>
   get_preconditioned_grad_buffers() override;
@@ -106,9 +106,9 @@ class kfac_block_bn: public kfac_block {
       const TensorDataType * __restrict__ scales,
       const TensorDataType * __restrict__ biases,
       TensorDataType * __restrict__ factor,
-      const size_t batch_size,
-      const size_t num_channels,
-      const size_t spatial_prod,
+      size_t batch_size,
+      size_t num_channels,
+      size_t spatial_prod,
       const cudaStream_t& stream);
 
   /** @brief The memory copy part of compute_bn_factor. Combined with
@@ -120,9 +120,9 @@ class kfac_block_bn: public kfac_block {
       const TensorDataType * __restrict__ scales,
       const TensorDataType * __restrict__ biases,
       TensorDataType * __restrict__ cols,
-      const size_t batch_size,
-      const size_t num_channels,
-      const size_t spatial_prod,
+      size_t batch_size,
+      size_t num_channels,
+      size_t spatial_prod,
       const cudaStream_t& stream);
 
 #endif // LBANN_HAS_GPU

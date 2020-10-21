@@ -142,25 +142,27 @@ void allreduce_lower_tri(El::Matrix<DataType, El::Device::GPU>& A,
 }
 
 void reduce_scatter_blocks(
-    std::vector<std::pair<size_t, El::AbstractMatrix<DataType>*>> blocks,
+    const std::vector<std::pair<size_t, El::AbstractMatrix<DataType>*>>& blocks,
     El::Matrix<DataType, El::Device::GPU>& global_buffer,
     lbann_comm *comm,
     const kfac_reduce_scatter_mode mode) {
 
   if(mode == kfac_reduce_scatter_mode::REDUCE) {
     for(auto& block : blocks)
-    ::Al::Reduce<::Al::NCCLBackend>(
-         block.second->Buffer(),
-         block.second->Height(),
-         ::Al::ReductionOperator::sum,
-         block.first,
-         comm->get_trainer_comm().template GetComm<::Al::NCCLBackend>(El::SyncInfoFromMatrix(global_buffer)));
+      ::Al::Reduce<::Al::NCCLBackend>(
+           block.second->Buffer(),
+           block.second->Height(),
+           ::Al::ReductionOperator::sum,
+           block.first,
+           comm->get_trainer_comm().template GetComm<::Al::NCCLBackend>(El::SyncInfoFromMatrix(global_buffer)));
     return;
   }
 
   // Sort blocks so that received blocks per process become contiguous.
+  std::vector<std::pair<size_t, El::AbstractMatrix<DataType>*>> sorted_blocks(blocks.size());
+  std::copy(blocks.begin(), blocks.end(), sorted_blocks.begin());
   if(mode == kfac_reduce_scatter_mode::REDUCE_SCATTER)
-    std::sort(blocks.begin(), blocks.end(),
+    std::sort(sorted_blocks.begin(), sorted_blocks.end(),
               [](const std::pair<size_t, El::AbstractMatrix<DataType>*>& lhs,
                  const std::pair<size_t, El::AbstractMatrix<DataType>*>& rhs) {
                 return lhs.first < rhs.first;
@@ -169,7 +171,7 @@ void reduce_scatter_blocks(
   // Copy blocks to the send buffer.
   {
     size_t offset = 0;
-    for(auto& block : blocks) {
+    for(auto& block : sorted_blocks) {
       auto view = El::View(global_buffer, El::IR(offset, offset+block.second->Height()), El::ALL);
       El::Copy(*block.second, view);
       offset += block.second->Height();
@@ -183,7 +185,7 @@ void reduce_scatter_blocks(
   } else {
     std::vector<size_t> recv_sizes;
     recv_sizes.resize(comm->get_procs_per_trainer());
-    for(auto& block : blocks)
+    for(auto& block : sorted_blocks)
       recv_sizes[block.first] += block.second->Height();
     ::Al::Reduce_scatterv<::Al::NCCLBackend>(
          global_buffer.Buffer(),
@@ -195,7 +197,7 @@ void reduce_scatter_blocks(
   // Apply aggregated Kronecker factros to each block.
   {
     size_t offset = 0;
-    for(auto& block : blocks) {
+    for(auto& block : sorted_blocks) {
       const bool is_my_block = (block.first == (size_t) comm->get_rank_in_trainer());
       if(is_my_block) {
         const auto view = El::LockedView(global_buffer, El::IR(offset, offset+block.second->Height()), El::ALL);
@@ -210,7 +212,7 @@ void reduce_scatter_blocks(
 }
 
 void allgather_blocks(
-    std::vector<std::pair<size_t, El::AbstractMatrix<DataType>*>> blocks,
+    const std::vector<std::pair<size_t, El::AbstractMatrix<DataType>*>>& blocks,
     El::Matrix<DataType, El::Device::GPU>& local_buffer,
     El::Matrix<DataType, El::Device::GPU>& global_buffer,
     lbann_comm *comm,
@@ -226,8 +228,10 @@ void allgather_blocks(
 
   // Sort blocks so that received blocks per process become
   // contiguous.
+  std::vector<std::pair<size_t, El::AbstractMatrix<DataType>*>> sorted_blocks(blocks.size());
+  std::copy(blocks.begin(), blocks.end(), sorted_blocks.begin());
   if(mode == kfac_allgather_mode::ALLGATHER)
-    std::sort(blocks.begin(), blocks.end(),
+    std::sort(sorted_blocks.begin(), sorted_blocks.end(),
               [](const std::pair<size_t, El::AbstractMatrix<DataType>*>& lhs,
                  const std::pair<size_t, El::AbstractMatrix<DataType>*>& rhs) {
                 return lhs.first < rhs.first;
@@ -240,7 +244,7 @@ void allgather_blocks(
     if(mode == kfac_allgather_mode::ALLREDUCE)
       El::Zeros(buffer, buffer.Height(), buffer.Width());
     size_t offset = 0;
-    for(auto& block : blocks) {
+    for(auto& block : sorted_blocks) {
       const bool is_my_block = (block.first == (size_t) comm->get_rank_in_trainer());
       if(is_my_block) {
         auto view = El::View(buffer, El::IR(offset, offset+block.second->Height()), El::ALL);
@@ -258,7 +262,7 @@ void allgather_blocks(
   } else {
     std::vector<size_t> recv_sizes;
     recv_sizes.resize(comm->get_procs_per_trainer());
-    for(auto& block : blocks)
+    for(auto& block : sorted_blocks)
       recv_sizes[block.first] += block.second->Height();
     std::vector<size_t> recv_offsets;
     recv_offsets.resize(recv_sizes.size()+1);
@@ -274,7 +278,7 @@ void allgather_blocks(
   // Copy blocks from the buffer.
   {
     size_t offset = 0;
-    for(auto& block : blocks) {
+    for(auto& block : sorted_blocks) {
       if(block.first != (size_t) comm->get_rank_in_trainer()) {
         const auto view = El::LockedView(global_buffer, El::IR(offset, offset+block.second->Height()), El::ALL);
         El::Copy(view, *block.second);

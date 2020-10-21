@@ -47,8 +47,8 @@ class kfac_block {
    */
   kfac_block(Layer *layer,
              kfac *callback,
-             const size_t layer_id,
-             const size_t inverse_proc_rank)
+             size_t layer_id,
+             size_t inverse_proc_rank)
       : m_layer(layer),
         m_callback(callback),
         m_layer_id(layer_id),
@@ -60,8 +60,8 @@ class kfac_block {
   /** @brief Compute Kronecker factors. */
   virtual void compute_local_kronecker_factors(
       lbann_comm* comm,
-      const bool print_matrix,
-      const bool print_matrix_summary) {
+      bool print_matrix,
+      bool print_matrix_summary) {
     LBANN_ERROR("this function should be called via a sub-class.");
   }
 
@@ -74,20 +74,20 @@ class kfac_block {
   /** @brief Update the average Kronecker factors. */
   virtual void update_kronecker_average(
       lbann_comm* comm,
-      const DataType kronecker_decay,
-      const bool print_matrix,
-      const bool print_matrix_summary) {
+      DataType kronecker_decay,
+      bool print_matrix,
+      bool print_matrix_summary) {
     LBANN_ERROR("this function should be called via a sub-class.");
   }
 
   /** @brief Compute the inverse of the average Kronecker factors. */
   virtual void update_kronecker_inverse(
       lbann_comm* comm,
-      const bool use_pi,
-      const DataType damping_act, const DataType damping_err,
-      const bool print_matrix,
-      const bool print_matrix_summary,
-      const bool print_time) {
+      bool use_pi,
+      DataType damping_act, DataType damping_err,
+      bool print_matrix,
+      bool print_matrix_summary,
+      bool print_time) {
     LBANN_ERROR("this function should be called via a sub-class.");
   }
 

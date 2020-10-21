@@ -125,7 +125,8 @@ class kfac : public callback_base {
   /** @brief Gets the Kronecker factor matrix of a FC layer.
    *  The same key is tied with the same matrix instance. */
   El::Matrix<DataType, El::Device::GPU>& get_workspace_matrix(
-      const std::string key, const size_t height, const size_t width);
+      const std::string& key,
+      size_t height, size_t width);
 
 #else
   void setup(model *m) override {

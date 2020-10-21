@@ -338,7 +338,7 @@ void kfac::on_backward_prop_end(model *m) {
 }
 
 El::Matrix<DataType, El::Device::GPU>& kfac::get_workspace_matrix(
-    const std::string key, const size_t height, const size_t width) {
+    const std::string& key, const size_t height, const size_t width) {
   if(m_workspace.find(key) == m_workspace.end()) {
     m_workspace.emplace(
         key, El::Matrix<DataType, El::Device::GPU>(height, width));

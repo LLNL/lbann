@@ -43,10 +43,10 @@ void get_matrix_inverse(
     El::Matrix<DataType, El::Device::GPU>& Ainv,
     El::Matrix<DataType, El::Device::GPU>& Linv,
     const El::Matrix<DataType, El::Device::GPU>& A,
-    const bool report_time,
-    const DataType damping,
-    const DataType damping_bn_err,
-    const bool is_bn,
+    bool report_time,
+    DataType damping,
+    DataType damping_bn_err,
+    bool is_bn,
     const cudaStream_t& stream);
 
 /** @brief Gets statistics of a given matrix. **/
@@ -63,34 +63,34 @@ void allreduce_lower_tri(
 
 /** @brief Perform reduce-scatter on one or more blocks. **/
 void reduce_scatter_blocks(
-    std::vector<std::pair<size_t, El::AbstractMatrix<DataType>*>> blocks,
+    const std::vector<std::pair<size_t, El::AbstractMatrix<DataType>*>>& blocks,
     El::Matrix<DataType, El::Device::GPU>& global_buffer,
     lbann_comm *comm,
-    const kfac_reduce_scatter_mode mode);
+    kfac_reduce_scatter_mode mode);
 
 /** @brief Perform reduce-scatter on one or more blocks. **/
 void allgather_blocks(
-    std::vector<std::pair<size_t, El::AbstractMatrix<DataType>*>> blocks,
+    const std::vector<std::pair<size_t, El::AbstractMatrix<DataType>*>>& blocks,
     El::Matrix<DataType, El::Device::GPU>& send_buffer,
     El::Matrix<DataType, El::Device::GPU>& recv_buffer,
     lbann_comm *comm,
-    const kfac_allgather_mode mode);
+    kfac_allgather_mode mode);
 
 /** @brief Add the damping value to the diagonal elements of A. **/
 template <typename TensorDataType>
 void add_to_diagonal(
     TensorDataType * __restrict__ A,
-    const size_t height,
-    const TensorDataType value,
-    const TensorDataType value_bn_err,
-    const bool is_bn,
+    size_t height,
+    TensorDataType value,
+    TensorDataType value_bn_err,
+    bool is_bn,
     const cudaStream_t& stream);
 
 /** @brief Fill the upper trianglar with the lower trianglar. **/
 template <typename TensorDataType>
 void fill_upper_tri(
     TensorDataType * __restrict__ A,
-    const size_t height,
+    size_t height,
     const cudaStream_t& stream);
 
 /** @brief Update a Kronecker factor matrix using decay.
@@ -100,8 +100,8 @@ template <typename TensorDataType>
 void update_kronecker_average(
     TensorDataType * __restrict__ Aave,
     const TensorDataType * __restrict__ A,
-    const size_t count,
-    const double decay,
+    size_t count,
+    double decay,
     const cudaStream_t& stream);
 
 /** @brief Substitute the identity matrix.
@@ -110,7 +110,7 @@ void update_kronecker_average(
 template <typename TensorDataType>
 void identity(
     TensorDataType * __restrict__ A,
-    const size_t height,
+    size_t height,
     const cudaStream_t& stream);
 
 /** @brief Pack the lower triangular of a symmetric matrix. **/
@@ -118,7 +118,7 @@ template <typename TensorDataType>
 void pack_lower_tri(
     TensorDataType * __restrict__ L,
     const TensorDataType * __restrict__ A,
-    const size_t height,
+    size_t height,
     const cudaStream_t& stream);
 
 /** @brief Unpack the lower triangular of a symmetric matrix. **/
@@ -126,7 +126,7 @@ template <typename TensorDataType>
 void unpack_lower_tri(
     TensorDataType * __restrict__ A,
     const TensorDataType * __restrict__ L,
-    const size_t height,
+    size_t height,
     const cudaStream_t& stream);
 
 #endif // LBANN_HAS_GPU
