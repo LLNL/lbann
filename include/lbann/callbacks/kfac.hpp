@@ -59,24 +59,23 @@ class kfac : public callback_base {
        const std::vector<double>& damping_err_params,
        const std::vector<double>& damping_bn_act_params,
        const std::vector<double>& damping_bn_err_params,
-       const size_t damping_warmup_steps,
-       const double kronecker_decay,
-       const bool print_time, const bool print_matrix,
-       const bool print_matrix_summary,
-       const bool use_pi,
+       size_t damping_warmup_steps,
+       double kronecker_decay,
+       bool print_time, bool print_matrix, bool print_matrix_summary,
+       bool use_pi,
        const std::vector<size_t>& update_intervals,
-       const size_t update_interval_steps)
-  : callback_base(),
-    m_damping_act_params(damping_act_params),
-    m_damping_err_params(damping_err_params),
-    m_damping_bn_act_params(damping_bn_act_params), m_damping_bn_err_params(damping_bn_err_params),
-    m_damping_warmup_steps(damping_warmup_steps),
-    m_kronecker_decay(kronecker_decay),
-    m_print_time(print_time), m_print_matrix(print_matrix),
-    m_print_matrix_summary(print_matrix_summary),
-    m_use_pi(use_pi),
-    m_update_intervals(update_intervals),
-    m_update_interval_steps(update_interval_steps) {
+       size_t update_interval_steps)
+      : callback_base(),
+        m_damping_act_params(damping_act_params),
+        m_damping_err_params(damping_err_params),
+        m_damping_bn_act_params(damping_bn_act_params), m_damping_bn_err_params(damping_bn_err_params),
+        m_damping_warmup_steps(damping_warmup_steps),
+        m_kronecker_decay(kronecker_decay),
+        m_print_time(print_time), m_print_matrix(print_matrix),
+        m_print_matrix_summary(print_matrix_summary),
+        m_use_pi(use_pi),
+        m_update_intervals(update_intervals),
+        m_update_interval_steps(update_interval_steps) {
     m_damping_act = m_damping_act_params[0];
     m_damping_err = m_damping_err_params[0];
     m_damping_bn_act = m_damping_bn_act_params[0];
@@ -113,27 +112,27 @@ class kfac : public callback_base {
   static void get_kronecker_factor_fc(
       El::AbstractMatrix<DataType>& factor,
       const El::AbstractMatrix<DataType>& A,
-      const DataType alpha);
+      DataType alpha);
 
   /** @brief Gets the Kronecker factor matrix of a convolutional layer. **/
   static void get_kronecker_factor_conv(
       El::Matrix<DataType, El::Device::GPU>& factor,
       const El::Matrix<DataType, El::Device::GPU>& A,
-      const DataType alpha,
-      const size_t local_batch_size, const size_t num_channels,
+      DataType alpha,
+      size_t local_batch_size, size_t num_channels,
       const std::vector<int>& spatial_dims,
       const convolution_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU> *l_conv,
-      const bool use_im2col,
+      bool use_im2col,
       const cudaStream_t& stream);
 
   /** @brief Gets the inverse matrix of A. **/
   static void get_matrix_inverse(
       El::Matrix<DataType, El::Device::GPU>& Ainv,
       const El::Matrix<DataType, El::Device::GPU>& A,
-      const bool report_time,
-      const DataType damping,
-      const DataType damping_bn_err,
-      const bool is_bn,
+      bool report_time,
+      DataType damping,
+      DataType damping_bn_err,
+      bool is_bn,
       const cudaStream_t& stream);
 
   /** @brief Returns the pi constant. **/
@@ -156,17 +155,17 @@ class kfac : public callback_base {
   template <typename TensorDataType>
   static void add_to_diagonal(
       TensorDataType * __restrict__ A,
-      const size_t height,
-      const TensorDataType value,
-      const TensorDataType value_bn_err,
-      const bool is_bn,
+      size_t height,
+      TensorDataType value,
+      TensorDataType value_bn_err,
+      bool is_bn,
       const cudaStream_t& stream);
 
   /** @brief Fill the upper trianglar with the lower trianglar. **/
   template <typename TensorDataType>
   static void fill_upper_tri(
       TensorDataType * __restrict__ A,
-      const size_t height,
+      size_t height,
       const cudaStream_t& stream);
 
   /** @brief Update a Kronecker factor matrix using decay.
@@ -176,7 +175,7 @@ class kfac : public callback_base {
   static void update_kronecker_average(
       TensorDataType * __restrict__ Aave,
       const TensorDataType * __restrict__ A,
-      const size_t count, const double decay,
+      size_t count, double decay,
       const cudaStream_t& stream);
 
   /** @brief Transpose NC(D)HW matrix to N(D)HWC. **/
@@ -184,8 +183,8 @@ class kfac : public callback_base {
   static void conv_transpose(
       const TensorDataType * __restrict__ activations,
       TensorDataType * __restrict__ act_columns,
-      const size_t mini_batch_size, const size_t num_channels,
-      const size_t spatial_prod,
+      size_t mini_batch_size, size_t num_channels,
+      size_t spatial_prod,
       const cudaStream_t& stream);
 
   /** @brief Compute the factor of a batch-normalization layer. **/
@@ -196,9 +195,9 @@ class kfac : public callback_base {
       const TensorDataType * __restrict__ scales,
       const TensorDataType * __restrict__ biases,
       TensorDataType * __restrict__ factor,
-      const size_t batch_size,
-      const size_t num_channels,
-      const size_t spatial_prod,
+      size_t batch_size,
+      size_t num_channels,
+      size_t spatial_prod,
       const cudaStream_t& stream);
 
   /** @brief Substitute the identity matrix.
@@ -207,7 +206,7 @@ class kfac : public callback_base {
   template <typename TensorDataType>
   static void identity(
       TensorDataType * __restrict__ A,
-      const size_t height,
+      size_t height,
       const cudaStream_t& stream);
 
   /** @brief Pack the lower triangular of a symmetric matrix. **/
@@ -215,7 +214,7 @@ class kfac : public callback_base {
   static void pack_lower_tri(
       TensorDataType * __restrict__ L,
       const TensorDataType * __restrict__ A,
-      const size_t height,
+      size_t height,
       const cudaStream_t& stream);
 
   /** @brief Unpack the lower triangular of a symmetric matrix. **/
@@ -223,7 +222,7 @@ class kfac : public callback_base {
   static void unpack_lower_tri(
       TensorDataType * __restrict__ A,
       const TensorDataType * __restrict__ L,
-      const size_t height,
+      size_t height,
       const cudaStream_t& stream);
 #endif // LBANN_HAS_GPU
 
