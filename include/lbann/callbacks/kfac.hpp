@@ -78,20 +78,19 @@ class kfac : public callback_base {
 
   /** Constructor.
    */
-  kfac(const std::vector<double> damping_act_params,
-       const std::vector<double> damping_err_params,
-       const std::vector<double> damping_bn_act_params,
-       const std::vector<double> damping_bn_err_params,
-       const size_t damping_warmup_steps,
-       const double kronecker_decay,
-       const bool print_time, const bool print_matrix,
-       const bool print_matrix_summary,
-       const bool use_pi,
-       const std::vector<size_t> update_intervals,
-       const size_t update_interval_steps,
-       const kfac_inverse_strategy inverse_strategy,
-       const kfac_reduce_scatter_mode reduce_scatter_mode,
-       const kfac_allgather_mode allgather_mode)
+  kfac(const std::vector<double>& damping_act_params,
+       const std::vector<double>& damping_err_params,
+       const std::vector<double>& damping_bn_act_params,
+       const std::vector<double>& damping_bn_err_params,
+       size_t damping_warmup_steps,
+       double kronecker_decay,
+       bool print_time,  bool print_matrix, bool print_matrix_summary,
+       bool use_pi,
+       const std::vector<size_t>& update_intervals,
+       size_t update_interval_steps,
+       kfac_inverse_strategy inverse_strategy,
+       kfac_reduce_scatter_mode reduce_scatter_mode,
+       kfac_allgather_mode allgather_mode)
   : callback_base(),
     m_damping_act_params(damping_act_params),
     m_damping_err_params(damping_err_params),
