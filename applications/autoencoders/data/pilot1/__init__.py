@@ -19,8 +19,4 @@ def make_data_reader(data_reader_file='data_reader_candle_pilot1.prototext'):
         google.protobuf.text_format.Merge(f.read(), message)
     message = message.data_reader
 
-    # Set paths
-    for reader in message.reader:
-        reader.data_filedir = data_dir
-
     return message
