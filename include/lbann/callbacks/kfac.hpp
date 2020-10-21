@@ -55,16 +55,16 @@ class kfac : public callback_base {
 
   /** Constructor.
    */
-  kfac(const std::vector<double> damping_act_params,
-       const std::vector<double> damping_err_params,
-       const std::vector<double> damping_bn_act_params,
-       const std::vector<double> damping_bn_err_params,
+  kfac(const std::vector<double>& damping_act_params,
+       const std::vector<double>& damping_err_params,
+       const std::vector<double>& damping_bn_act_params,
+       const std::vector<double>& damping_bn_err_params,
        const size_t damping_warmup_steps,
        const double kronecker_decay,
        const bool print_time, const bool print_matrix,
        const bool print_matrix_summary,
        const bool use_pi,
-       const std::vector<size_t> update_intervals,
+       const std::vector<size_t>& update_intervals,
        const size_t update_interval_steps)
   : callback_base(),
     m_damping_act_params(damping_act_params),
@@ -121,7 +121,7 @@ class kfac : public callback_base {
       const El::Matrix<DataType, El::Device::GPU>& A,
       const DataType alpha,
       const size_t local_batch_size, const size_t num_channels,
-      const std::vector<int> spatial_dims,
+      const std::vector<int>& spatial_dims,
       const convolution_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU> *l_conv,
       const bool use_im2col,
       const cudaStream_t& stream);
