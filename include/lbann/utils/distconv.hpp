@@ -199,9 +199,9 @@ bool is_cosmoflow_parallel_io_enabled();
 p2p::P2P &get_p2p();
 #endif // DISTCONV_HAS_P2P
 
-/** Get Aluminum MPI-CUDA backend
+/** Get Aluminum host-transfer backend
  */
-Al::mpicuda_backend::comm_type &get_mpicuda();
+Al::hosttransfer_backend::comm_type &get_hosttransfer();
 
 /** Get Distconv backend handle.
  */

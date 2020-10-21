@@ -42,7 +42,7 @@ MPI_Comm mpi_comm = MPI_COMM_NULL;
 #ifdef DISTCONV_HAS_P2P
 p2p::P2P *p2p_instance = nullptr;
 #endif // DISTCONV_HAS_P2P
-Al::mpicuda_backend::comm_type *mpicuda_comm_instance = nullptr;
+Al::hosttransfer_backend::comm_type *hosttransfer_comm_instance = nullptr;
 Backend *backend_instance = nullptr;
 
 bool options_set = false;
@@ -288,7 +288,7 @@ void initialize(MPI_Comm comm) {
 #ifdef DISTCONV_HAS_P2P
   p2p_instance = new p2p::P2P(mpi_comm);
 #endif // DISTCONV_HAS_P2P
-  mpicuda_comm_instance = new Al::mpicuda_backend::comm_type(
+  hosttransfer_comm_instance = new Al::hosttransfer_backend::comm_type(
       mpi_comm, hydrogen::cuda::GetDefaultStream());
   ::distconv::cudnn::Options backend_opts;
   backend_opts.m_deterministic = opt_deterministic;
@@ -372,8 +372,8 @@ bool is_cosmoflow_parallel_io_enabled() {
   return opt_cosmoflow_parallel_io;
 }
 
-Al::mpicuda_backend::comm_type &get_mpicuda() {
-  return *mpicuda_comm_instance;
+Al::hosttransfer_backend::comm_type &get_hosttransfer() {
+  return *hosttransfer_comm_instance;
 }
 
 Backend &get_backend() {
@@ -388,12 +388,12 @@ template <typename TensorDataType>
 TensorShuffler<TensorDataType> *get_tensor_shuffler(const TensorDev<TensorDataType> &src,
                                                     const TensorDev<TensorDataType> &dst) {
   if (opt_tensor_shuffler == ShuffleMethod::AL) {
-    return new TensorShufflerAL<TensorDataType>(src, dst, get_mpicuda());
+    return new TensorShufflerAL<TensorDataType>(src, dst, get_hosttransfer());
   } else if (opt_tensor_shuffler == ShuffleMethod::MPI) {
     return new TensorShuffler<TensorDataType>(src, dst);
 #ifdef DISTCONV_HAS_P2P
   } else if (opt_tensor_shuffler == ShuffleMethod::HYBRID) {
-    return new TensorShufflerHybrid<TensorDataType>(src, dst, *p2p_instance, get_mpicuda(),
+    return new TensorShufflerHybrid<TensorDataType>(src, dst, *p2p_instance, get_hosttransfer(),
                                                     get_shuffler_src_buf(src),
                                                     get_shuffler_dst_buf(dst));
   } else if (opt_tensor_shuffler == ShuffleMethod::P2P) {
