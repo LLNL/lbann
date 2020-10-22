@@ -69,7 +69,7 @@ enum class bwd_filter_conv_alg
   FFT_TILING,
 };// enum class bwd_conv_filter
 
-#ifdef LBANN_HAS_CUDNN  
+#ifdef LBANN_HAS_CUDNN
 namespace cudnn
 {
 
@@ -113,16 +113,16 @@ inline fwd_conv_alg from_cudnn(cudnnConvolutionFwdAlgo_t a)
 
 /** @brief Convert a LBANN backward convolution algorithm to the cuDNN
  * equivalent value. */
-inline cudnnConvolutionBwdDataAlgo_t to_cudnn(bwd_conv_alg a)
+inline cudnnConvolutionBwdDataAlgo_t to_cudnn(bwd_data_conv_alg a)
 {
   switch (a)
   {
-  case bwd_conv_alg::CUDNN_ALGO_0: return CUDNN_CONVOLUTION_BWD_DATA_ALGO_0;
-  case bwd_conv_alg::CUDNN_ALGO_1: return CUDNN_CONVOLUTION_BWD_DATA_ALGO_1;
-  case bwd_conv_alg::FFT: return CUDNN_CONVOLUTION_BWD_DATA_ALGO_FFT;
-  case bwd_conv_alg::FFT_TILING: return CUDNN_CONVOLUTION_BWD_DATA_ALGO_FFT_TILING;
-  case bwd_conv_alg::WINOGRAD: return CUDNN_CONVOLUTION_BWD_DATA_ALGO_WINOGRAD;
-  case bwd_conv_alg::WINOGRAD_NONFUSED: return CUDNN_CONVOLUTION_BWD_DATA_ALGO_WINOGRAD_NONFUSED;
+  case bwd_data_conv_alg::CUDNN_ALGO_0: return CUDNN_CONVOLUTION_BWD_DATA_ALGO_0;
+  case bwd_data_conv_alg::CUDNN_ALGO_1: return CUDNN_CONVOLUTION_BWD_DATA_ALGO_1;
+  case bwd_data_conv_alg::FFT: return CUDNN_CONVOLUTION_BWD_DATA_ALGO_FFT;
+  case bwd_data_conv_alg::FFT_TILING: return CUDNN_CONVOLUTION_BWD_DATA_ALGO_FFT_TILING;
+  case bwd_data_conv_alg::WINOGRAD: return CUDNN_CONVOLUTION_BWD_DATA_ALGO_WINOGRAD;
+  case bwd_data_conv_alg::WINOGRAD_NONFUSED: return CUDNN_CONVOLUTION_BWD_DATA_ALGO_WINOGRAD_NONFUSED;
   default:
     LBANN_ERROR("Invalid backward convolution algorithm requested.");
   }
@@ -130,16 +130,16 @@ inline cudnnConvolutionBwdDataAlgo_t to_cudnn(bwd_conv_alg a)
 
 /** @brief Convert a cuDNN backward convolution algorithm to the LBANN
  * equivalent value. */
-inline bwd_conv_alg from_cudnn(cudnnConvolutionBwdDataAlgo_t a)
+inline bwd_data_conv_alg from_cudnn(cudnnConvolutionBwdDataAlgo_t a)
 {
   switch (a)
   {
-  case CUDNN_CONVOLUTION_BWD_DATA_ALGO_0: return bwd_conv_alg::CUDNN_ALGO_0;
-  case CUDNN_CONVOLUTION_BWD_DATA_ALGO_1: return bwd_conv_alg::CUDNN_ALGO_1;
-  case CUDNN_CONVOLUTION_BWD_DATA_ALGO_FFT: return bwd_conv_alg::FFT;
-  case CUDNN_CONVOLUTION_BWD_DATA_ALGO_FFT_TILING: return bwd_conv_alg::FFT_TILING;
-  case CUDNN_CONVOLUTION_BWD_DATA_ALGO_WINOGRAD: return bwd_conv_alg::WINOGRAD;
-  case CUDNN_CONVOLUTION_BWD_DATA_ALGO_WINOGRAD_NONFUSED: return bwd_conv_alg::WINOGRAD_NONFUSED;
+  case CUDNN_CONVOLUTION_BWD_DATA_ALGO_0: return bwd_data_conv_alg::CUDNN_ALGO_0;
+  case CUDNN_CONVOLUTION_BWD_DATA_ALGO_1: return bwd_data_conv_alg::CUDNN_ALGO_1;
+  case CUDNN_CONVOLUTION_BWD_DATA_ALGO_FFT: return bwd_data_conv_alg::FFT;
+  case CUDNN_CONVOLUTION_BWD_DATA_ALGO_FFT_TILING: return bwd_data_conv_alg::FFT_TILING;
+  case CUDNN_CONVOLUTION_BWD_DATA_ALGO_WINOGRAD: return bwd_data_conv_alg::WINOGRAD;
+  case CUDNN_CONVOLUTION_BWD_DATA_ALGO_WINOGRAD_NONFUSED: return bwd_data_conv_alg::WINOGRAD_NONFUSED;
   default:
     LBANN_ERROR("Invalid backward convolution algorithm requested.");
   }
@@ -147,16 +147,16 @@ inline bwd_conv_alg from_cudnn(cudnnConvolutionBwdDataAlgo_t a)
 
 /** @brief Convert a LBANN backward convolution filter algorithm to the cuDNN
  * equivalent value. */
-inline cudnnConvolutionBwdFilterAlgo_t to_cudnn(bwd_conv_filter a)
+inline cudnnConvolutionBwdFilterAlgo_t to_cudnn(bwd_filter_conv_alg a)
 {
   switch (a)
   {
-  case bwd_conv_filter::CUDNN_ALGO_0: return CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0;
-  case bwd_conv_filter::CUDNN_ALGO_1: return CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1;
-  case bwd_conv_filter::FFT: return CUDNN_CONVOLUTION_BWD_FILTER_ALGO_FFT;
-  case bwd_conv_filter::CUDNN_ALGO_3: return CUDNN_CONVOLUTION_BWD_FILTER_ALGO_3;
-  case bwd_conv_filter::WINOGRAD_NONFUSED: return CUDNN_CONVOLUTION_BWD_FILTER_ALGO_WINOGRAD_NONFUSED;
-  case bwd_conv_filter::FFT_TILING: return CUDNN_CONVOLUTION_BWD_FILTER_ALGO_FFT_TILING;
+  case bwd_filter_conv_alg::CUDNN_ALGO_0: return CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0;
+  case bwd_filter_conv_alg::CUDNN_ALGO_1: return CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1;
+  case bwd_filter_conv_alg::FFT: return CUDNN_CONVOLUTION_BWD_FILTER_ALGO_FFT;
+  case bwd_filter_conv_alg::CUDNN_ALGO_3: return CUDNN_CONVOLUTION_BWD_FILTER_ALGO_3;
+  case bwd_filter_conv_alg::WINOGRAD_NONFUSED: return CUDNN_CONVOLUTION_BWD_FILTER_ALGO_WINOGRAD_NONFUSED;
+  case bwd_filter_conv_alg::FFT_TILING: return CUDNN_CONVOLUTION_BWD_FILTER_ALGO_FFT_TILING;
   default:
     LBANN_ERROR("Invalid backward convolution filter requested.");
   }
@@ -164,16 +164,16 @@ inline cudnnConvolutionBwdFilterAlgo_t to_cudnn(bwd_conv_filter a)
 
 /** @brief Convert a cuDNN backward convolution filter algorithm to the LBANN
  * equivalent value. */
-inline bwd_conv_filter from_cudnn(cudnnConvolutionBwdFilterAlgo_t a)
+inline bwd_filter_conv_alg from_cudnn(cudnnConvolutionBwdFilterAlgo_t a)
 {
   switch (a)
   {
-  case CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0: return bwd_conv_filter::CUDNN_ALGO_0;
-  case CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1: return bwd_conv_filter::CUDNN_ALGO_1;
-  case CUDNN_CONVOLUTION_BWD_FILTER_ALGO_FFT: return bwd_conv_filter::FFT;
-  case CUDNN_CONVOLUTION_BWD_FILTER_ALGO_3: return bwd_conv_filter::CUDNN_ALGO_3;
-  case CUDNN_CONVOLUTION_BWD_FILTER_ALGO_WINOGRAD_NONFUSED: return bwd_conv_filter::WINOGRAD_NONFUSED;
-  case CUDNN_CONVOLUTION_BWD_FILTER_ALGO_FFT_TILING: return bwd_conv_filter::FFT_TILING;
+  case CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0: return bwd_filter_conv_alg::CUDNN_ALGO_0;
+  case CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1: return bwd_filter_conv_alg::CUDNN_ALGO_1;
+  case CUDNN_CONVOLUTION_BWD_FILTER_ALGO_FFT: return bwd_filter_conv_alg::FFT;
+  case CUDNN_CONVOLUTION_BWD_FILTER_ALGO_3: return bwd_filter_conv_alg::CUDNN_ALGO_3;
+  case CUDNN_CONVOLUTION_BWD_FILTER_ALGO_WINOGRAD_NONFUSED: return bwd_filter_conv_alg::WINOGRAD_NONFUSED;
+  case CUDNN_CONVOLUTION_BWD_FILTER_ALGO_FFT_TILING: return bwd_filter_conv_alg::FFT_TILING;
   default:
     LBANN_ERROR("Invalid backward convolution filter requested.");
   }
@@ -243,7 +243,7 @@ void convolution_backward_data(
   TensorDescriptor const& dyDesc,
   El::AbstractMatrix<TensorDataType> const& dy,
   ConvolutionDescriptor const& convDesc,
-  bwd_conv_alg alg,
+  bwd_data_conv_alg alg,
   El::Matrix<TensorDataType, El::Device::GPU>& workSpace,
   ScalarParameterType const& beta_in,
   TensorDescriptor const& dxDesc,
@@ -277,7 +277,7 @@ void convolution_backward_data(
   TensorDescriptor const& dyDesc,
   El::AbstractMatrix<TensorDataType> const& dy,
   ConvolutionDescriptor const& convDesc,
-  bwd_conv_alg alg,
+  bwd_data_conv_alg alg,
   El::Matrix<TensorDataType, El::Device::GPU>& workSpace,
   ScalarParameterType const& beta_in,
   TensorDescriptor const& dxDesc,
@@ -287,8 +287,8 @@ void convolution_backward_data(
                                      gpu::get_sync_info(workSpace),
                                      gpu::get_sync_info(dy),
                                      gpu::get_sync_info(w));
-  convolution_backward(alpha_in, wDesc, w, dyDesc, dy, convDesc, alg,
-                       workSpace, beta_in, dxDesc, dx, multisync);
+  convolution_backward_data(alpha_in, wDesc, w, dyDesc, dy, convDesc, alg,
+                            workSpace, beta_in, dxDesc, dx, multisync);
 
 }
 
@@ -339,7 +339,7 @@ void convolution_backward_filter(
   TensorDescriptor const& dyDesc,
   El::AbstractMatrix<TensorDataType> const& dy,
   ConvolutionDescriptor const& convDesc,
-  bwd_conv_filter alg,
+  bwd_filter_conv_alg alg,
   El::Matrix<TensorDataType, El::Device::GPU>& workSpace,
   ScalarParameterType const& beta_in,
   FilterDescriptor const& dwDesc,
@@ -373,7 +373,7 @@ void convolution_backward_filter(
   TensorDescriptor const& dyDesc,
   El::AbstractMatrix<TensorDataType> const& dy,
   ConvolutionDescriptor const& convDesc,
-  bwd_conv_filter alg,
+  bwd_filter_conv_alg alg,
   El::Matrix<TensorDataType, El::Device::GPU>& workSpace,
   ScalarParameterType const& beta_in,
   FilterDescriptor const& dwDesc,

@@ -136,9 +136,9 @@ protected:
   /** Forward algorithm cache (mini-batch size -> algo). */
   std::unordered_map<int, fwd_conv_alg> m_fwd_cudnn_algos;
   /** Backward data algorithm cache (mini-batch size -> algo). */
-  std::unordered_map<int, bwd_conv_alg> m_bwd_data_cudnn_algos;
+  std::unordered_map<int, bwd_data_conv_alg> m_bwd_data_cudnn_algos;
   /** Backward filter algorithm cache (mini-batch size -> algo). */
-  std::unordered_map<int, bwd_conv_filter> m_bwd_filter_cudnn_algos;
+  std::unordered_map<int, bwd_filter_conv_alg> m_bwd_filter_cudnn_algos;
 
 #endif // LBANN_HAS_CUDNN
 
@@ -217,7 +217,7 @@ private:
     TensorDataType* ws);
 
   /** Get the cuDNN algorithm to use for backward-data. */
-  bwd_conv_alg get_backward_data_algo_cudnn(
+  bwd_data_conv_alg get_backward_data_algo_cudnn(
     const int local_mini_batch_size,
     const cudnn::FilterDescriptor& kernel_desc,
     const TensorDataType* kernel,
@@ -233,7 +233,7 @@ private:
    * Get the cuDNN algorithm to use for backward-filter.
    * Buffer space for kernel_gradient is allocated via temporary workspace.
    */
-  bwd_conv_filter get_backward_filter_algo_cudnn(
+  bwd_filter_conv_alg get_backward_filter_algo_cudnn(
     const int local_mini_batch_size,
     const cudnn::TensorDescriptor& input_desc,
     const TensorDataType* input,

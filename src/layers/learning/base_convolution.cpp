@@ -551,7 +551,7 @@ apply_transposed_convolution_cudnn(bool during_forward_prop) {
 
   // Perform transposed convolution on the GPU
   // Determine transposed convolution algorithm
-  bwd_conv_alg transposed_convolution_cudnn_algorithm =
+  bwd_data_conv_alg transposed_convolution_cudnn_algorithm =
                        get_backward_data_algo_cudnn(
                          input.Width(),
                          m_kernel_cudnn_desc, kernel.LockedBuffer(),
@@ -560,17 +560,17 @@ apply_transposed_convolution_cudnn(bool during_forward_prop) {
                          output_desc, output.Buffer(),
                          workspace_size, workspace.Buffer());
   // Perform transposed convolution
-  cudnn::convolution_backward(one,
-                              m_kernel_cudnn_desc,
-                              kernel,
-                              input_desc,
-                              input,
-                              m_convolution_cudnn_desc,
-                              transposed_convolution_cudnn_algorithm,
-                              workspace,
-                              zero,
-                              output_desc,
-                              output);
+  cudnn::convolution_backward_data(one,
+                                   m_kernel_cudnn_desc,
+                                   kernel,
+                                   input_desc,
+                                   input,
+                                   m_convolution_cudnn_desc,
+                                   transposed_convolution_cudnn_algorithm,
+                                   workspace,
+                                   zero,
+                                   output_desc,
+                                   output);
 
 #endif // LBANN_HAS_CUDNN
 }
@@ -659,7 +659,7 @@ base_convolution_layer<TensorDataType,Device>
 
       // Determine algorithm and compute kernel gradient
       if (using_transposed_convolution) {
-        bwd_conv_filter kernel_gradient_cudnn_algorithm
+        bwd_filter_conv_alg kernel_gradient_cudnn_algorithm
           = get_backward_filter_algo_cudnn(
             local_input.Width(),
             gradient_wrt_output_desc, local_gradient_wrt_output.LockedBuffer(),
@@ -680,7 +680,7 @@ base_convolution_layer<TensorDataType,Device>
           m_kernel_cudnn_desc,
           kernel_gradient);
       } else {
-        bwd_conv_filter kernel_gradient_cudnn_algorithm
+        bwd_filter_conv_alg kernel_gradient_cudnn_algorithm
           = get_backward_filter_algo_cudnn(
             local_input.Width(),
             input_desc, local_input.LockedBuffer(),
@@ -1015,7 +1015,7 @@ base_convolution_layer<TensorDataType,Device>::get_forward_algo_cudnn(
 }
 
 template <typename TensorDataType, El::Device Device>
-bwd_conv_alg
+bwd_data_conv_alg
 base_convolution_layer<TensorDataType,Device>::get_backward_data_algo_cudnn(
   const int local_mini_batch_size,
   const cudnn::FilterDescriptor& kernel_desc,
@@ -1047,7 +1047,7 @@ base_convolution_layer<TensorDataType,Device>::get_backward_data_algo_cudnn(
 }
 
 template <typename TensorDataType, El::Device Device>
-bwd_conv_filter
+bwd_filter_conv_alg
 base_convolution_layer<TensorDataType,Device>::get_backward_filter_algo_cudnn(
   const int local_mini_batch_size,
   const cudnn::TensorDescriptor& input_desc,
