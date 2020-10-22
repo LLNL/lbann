@@ -108,7 +108,7 @@ void softmax_forward(
   if (x.IsEmpty())
     return;
 
-  using LibScalingParamT = cudnn::ScalingParamType<TensorDataType>;
+  using LibScalingParamT = dnn_lib::ScalingParamType<TensorDataType>;
   auto multisync = El::MakeMultiSync(gpu::get_sync_info(y),
                                      gpu::get_sync_info(x));
   auto handle_manager = internal::make_default_handle_manager(multisync);
@@ -142,7 +142,7 @@ void softmax_backward(
   if (y.IsEmpty())
     return;
 
-  using LibScalingParamT = cudnn::ScalingParamType<TensorDataType>;
+  using LibScalingParamT = dnn_lib::ScalingParamType<TensorDataType>;
   auto multisync = El::MakeMultiSync(gpu::get_sync_info(dx),
                                      gpu::get_sync_info(y),
                                      gpu::get_sync_info(dy));

@@ -48,7 +48,7 @@ void pooling_forward(PoolingDescriptor const& poolingDesc,
                      El::AbstractMatrix<TensorDataType>& y,
                      El::SyncInfo<El::Device::GPU> const& si)
 {
-  using LibScalingParamT = cudnn::ScalingParamType<TensorDataType>;
+  using LibScalingParamT = dnn_lib::ScalingParamType<TensorDataType>;
   auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
   auto beta = El::To<LibScalingParamT>(beta_in);
@@ -93,7 +93,7 @@ void pooling_backward(PoolingDescriptor const& poolingDesc,
                       El::AbstractMatrix<TensorDataType>& dx,
                       El::SyncInfo<El::Device::GPU> const& si)
 {
-  using LibScalingParamT = cudnn::ScalingParamType<TensorDataType>;
+  using LibScalingParamT = dnn_lib::ScalingParamType<TensorDataType>;
   auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
   auto beta = El::To<LibScalingParamT>(beta_in);

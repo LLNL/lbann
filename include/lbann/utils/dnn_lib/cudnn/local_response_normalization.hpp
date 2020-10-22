@@ -69,7 +69,7 @@ void lrn_cross_channel_forward(LRNDescriptor const& normDesc,
                                lrn_mode mode = lrn_mode::CROSS_CHANNEL_DIM1)
 {
 
-  using LibScalingParamT = cudnn::ScalingParamType<TensorDataType>;
+  using LibScalingParamT = dnn_lib::ScalingParamType<TensorDataType>;
   auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
   auto beta = El::To<LibScalingParamT>(beta_in);
@@ -119,7 +119,7 @@ void lrn_cross_channel_backward(LRNDescriptor const& normDesc,
                                 lrn_mode mode = lrn_mode::CROSS_CHANNEL_DIM1)
 {
 
-  using LibScalingParamT = cudnn::ScalingParamType<TensorDataType>;
+  using LibScalingParamT = dnn_lib::ScalingParamType<TensorDataType>;
   auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
   auto beta = El::To<LibScalingParamT>(beta_in);

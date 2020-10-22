@@ -26,7 +26,7 @@
 #ifndef LBANN_UTILS_DNN_LIB_CUDNN_CONVOLUTION_HPP_
 #define LBANN_UTILS_DNN_LIB_CUDNN_CONVOLUTION_HPP_
 
-#include "lbann/utils/dnn_lib/cudnn.hpp"
+#include "lbann/utils/dnn_lib/helpers.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
 
 #include "utils.hpp"
@@ -194,7 +194,7 @@ void convolution_forward(
   El::AbstractMatrix<TensorDataType>& y,
   El::SyncInfo<El::Device::GPU> const& si)
 {
-  using LibScalingParamT = cudnn::ScalingParamType<TensorDataType>;
+  using LibScalingParamT = dnn_lib::ScalingParamType<TensorDataType>;
   auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
   auto beta = El::To<LibScalingParamT>(beta_in);
@@ -250,7 +250,7 @@ void convolution_backward_data(
   El::AbstractMatrix<TensorDataType>& dx,
   El::SyncInfo<El::Device::GPU> const& si)
 {
-  using LibScalingParamT = cudnn::ScalingParamType<TensorDataType>;
+  using LibScalingParamT = dnn_lib::ScalingParamType<TensorDataType>;
   auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
   auto beta = El::To<LibScalingParamT>(beta_in);
@@ -302,7 +302,7 @@ void convolution_backward_bias(
   El::AbstractDistMatrix<TensorDataType>& db,
   El::SyncInfo<El::Device::GPU> const& si)
 {
-  using LibScalingParamT = cudnn::ScalingParamType<TensorDataType>;
+  using LibScalingParamT = dnn_lib::ScalingParamType<TensorDataType>;
   auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
   auto beta = El::To<LibScalingParamT>(beta_in);
@@ -346,7 +346,7 @@ void convolution_backward_filter(
   El::AbstractDistMatrix<TensorDataType>& dw,
   El::SyncInfo<El::Device::GPU> const& si)
 {
-  using LibScalingParamT = cudnn::ScalingParamType<TensorDataType>;
+  using LibScalingParamT = dnn_lib::ScalingParamType<TensorDataType>;
   auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
   auto beta = El::To<LibScalingParamT>(beta_in);
@@ -396,7 +396,7 @@ void add_tensor(ScalarParameterType const& alpha_in,
                 El::AbstractMatrix<TensorDataType>& C,
                 El::SyncInfo<El::Device::GPU> const& si)
 {
-  using LibScalingParamT = cudnn::ScalingParamType<TensorDataType>;
+  using LibScalingParamT = dnn_lib::ScalingParamType<TensorDataType>;
   auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
   auto beta = El::To<LibScalingParamT>(beta_in);

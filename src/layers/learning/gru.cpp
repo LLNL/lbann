@@ -256,7 +256,7 @@ void gru_layer<TensorDataType, Layout, Device>::setup_gpu() {
   const size_t input_size = this->get_input_size(0) / sequence_length;
 
   // RNN descriptor
-  static cudnn::DropoutDescriptor dropout_desc;
+  static dnn_lib::DropoutDescriptor dropout_desc;
   dropout_desc.set(0, nullptr, 0, 0);
   m_rnn_cudnn_desc.set(
     CUDNN_RNN_ALGO_STANDARD,
@@ -264,9 +264,9 @@ void gru_layer<TensorDataType, Layout, Device>::setup_gpu() {
     CUDNN_RNN_DOUBLE_BIAS,
     CUDNN_UNIDIRECTIONAL,
     CUDNN_LINEAR_INPUT,
-    cudnn::get_data_type<TensorDataType>(),
-    cudnn::get_data_type<TensorDataType>(),
-    cudnn::get_default_convolution_math_type(),
+    dnn_lib::get_data_type<TensorDataType>(),
+    dnn_lib::get_data_type<TensorDataType>(),
+    dnn_lib::get_default_convolution_math_type(),
     input_size,
     m_hidden_size,
     m_hidden_size,  // proj_size
@@ -292,7 +292,7 @@ namespace {
 template <typename TensorDataType>
 void pack_cudnn_rnn_weights(
   const cudnnHandle_t& handle,
-  const cudnn::RNNDescriptor& rnn_desc,
+  const dnn_lib::RNNDescriptor& rnn_desc,
   const El::SyncInfo<El::Device::GPU>& sync_info,
   size_t input_size,
   size_t hidden_size,
@@ -302,7 +302,7 @@ void pack_cudnn_rnn_weights(
   const std::vector<El::Matrix<TensorDataType,El::Device::GPU>>& weights_list) {
 
   // Construct objects
-  static cudnn::TensorDescriptor matrix_desc, bias_desc;
+  static dnn_lib::TensorDescriptor matrix_desc, bias_desc;
   El::Matrix<TensorDataType,El::Device::GPU> packed_weights_view;
   packed_weights_view.SetSyncInfo(sync_info);
 
@@ -438,9 +438,9 @@ void fp_compute_impl(
   // GPU objects
   auto&& sync_info = input_sequence.GetSyncInfo();
   auto&& stream = sync_info.Stream();
-  auto&& handle = cudnn::get_handle();
+  auto&& handle = dnn_lib::get_handle();
   auto&& rnn_desc = l.m_rnn_cudnn_desc;
-  const auto data_type = cudnn::get_data_type<TensorDataType>();
+  const auto data_type = dnn_lib::get_data_type<TensorDataType>();
 
   // Configure input and output tensor descriptors
   std::vector<int> sequence_lengths(workspace_mini_batch_size, sequence_length);
@@ -620,7 +620,7 @@ namespace {
 template <typename TensorDataType>
 void unpack_cudnn_rnn_weights(
   const cudnnHandle_t& handle,
-  const cudnn::RNNDescriptor& rnn_desc,
+  const dnn_lib::RNNDescriptor& rnn_desc,
   const El::SyncInfo<El::Device::GPU>& sync_info,
   size_t input_size,
   size_t hidden_size,
@@ -630,7 +630,7 @@ void unpack_cudnn_rnn_weights(
   const std::vector<El::Matrix<TensorDataType,El::Device::GPU>>& weights_list) {
 
   // Construct objects
-  static cudnn::TensorDescriptor matrix_desc, bias_desc;
+  static dnn_lib::TensorDescriptor matrix_desc, bias_desc;
   El::Matrix<TensorDataType,El::Device::GPU> packed_weights_view;
   packed_weights_view.SetSyncInfo(sync_info);
 
@@ -743,7 +743,7 @@ void bp_compute_impl(
   // GPU objects
   auto&& sync_info = output_sequence_grad.GetSyncInfo();
   auto&& stream = sync_info.Stream();
-  auto&& handle = cudnn::get_handle();
+  auto&& handle = dnn_lib::get_handle();
   auto&& rnn_desc = l.m_rnn_cudnn_desc;
 
   // Define closure to send weight gradients to optimizers

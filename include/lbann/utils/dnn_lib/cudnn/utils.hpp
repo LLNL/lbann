@@ -53,7 +53,7 @@ public:
         CHECK_CUDNN(cudnnSetStream(handle_, old_stream_));
     }
     catch (std::exception const& e) {
-      std::cerr << "Caught error in ~cudnn::StreamManager().\n\n  e.what(): "
+      std::cerr << "Caught error in ~dnn_lib::StreamManager().\n\n  e.what(): "
                 << e.what() << "\n\nCalling std::terminate()."
                 << std::endl;
       std::terminate();
