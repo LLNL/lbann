@@ -294,7 +294,19 @@ fi
 
 ${BUILD_COMMAND} install
 
-echo "To rebuild the environment:"
+LBANN_VERSION=`grep "LBANN_VERSION" ${LBANN_INSTALL_DIR}/include/lbann_config.hpp \
+        | sed "s/^.*LBANN_VERSION \([0-9\.]*\)/\1/"`
+
+echo ""
+echo "If you need to rebuild LBANN you can activate the environment and re-run ${BUILD_COMMAND}:"
 echo "    ${SPACK_ENV_CMD}"
 echo "    cd ${LBANN_BUILD_DIR}"
 echo "    ${BUILD_COMMAND} install"
+echo ""
+echo "LBANN was installed in the following directory:"
+echo "    ${LBANN_INSTALL_DIR}"
+echo ""
+echo "To run with LBANN you need to load the spack environment (to get the correct dependencies) and load the LBANN module"
+echo "    ${SPACK_ENV_CMD}"
+echo "    module use ${LBANN_INSTALL_DIR}/etc/modulefiles"
+echo "    module load lbann-${LBANN_VERSION}"
