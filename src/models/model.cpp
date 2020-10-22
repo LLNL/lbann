@@ -29,7 +29,7 @@
 #include "lbann/callbacks/callback.hpp"
 #include "lbann/callbacks/save_model.hpp"
 #include "lbann/io/persist.hpp"
-#include "lbann/layers/io/input/generic_input_layer.hpp"
+#include "lbann/layers/io/input_layer.hpp"
 #include "lbann/layers/transform/dummy.hpp"
 #include "lbann/layers/transform/split.hpp"
 #include "lbann/layers/transform/evaluation.hpp"
@@ -342,16 +342,6 @@ const std::vector<weights*> model::get_weights() const {
   return weights_list;
 }
 
-size_t model::get_num_iterations_per_epoch(execution_mode mode) const {
-  for (El::Int i = 0; i < get_num_layers(); ++i) {
-    const auto* input = dynamic_cast<const generic_input_layer<DataType>*>(&get_layer(i));
-    if (input != nullptr) {
-      return input->get_num_iterations_per_epoch(mode);
-    }
-  }
-  return 0;
-}
-
 // =============================================
 // Model specification
 // =============================================
@@ -465,16 +455,6 @@ void model::copy_trained_weights_from(std::vector<weights*>& new_weights) {
        }
      }
    }
-}
-
-bool model::is_execution_mode_valid(execution_mode mode) const {
-  for (El::Int i = 0; i < get_num_layers(); ++i) {
-    const auto* input = dynamic_cast<const generic_input_layer<DataType>*>(&get_layer(i));
-    if (input != nullptr && !input->is_execution_mode_valid(mode)) {
-      return false;
-    }
-  }
-  return true;
 }
 
 void model::reorder_layers(const std::vector<El::Int>& gather_indices) {
@@ -663,7 +643,7 @@ void model::setup_layer_execution_order() {
   // Find input layers
   std::vector<El::Int> input_layers, other_layers;
   for (El::Int i = 0; i < get_num_layers(); ++i) {
-    if (dynamic_cast<generic_input_layer<DataType>*>(&get_layer(i)) != nullptr) {
+    if (dynamic_cast<input_layer<DataType>*>(&get_layer(i)) != nullptr) {
       input_layers.push_back(i);
     } else {
       other_layers.push_back(i);
@@ -919,29 +899,15 @@ void model::add_split_layers(std::unordered_set<std::string>& layer_names) {
 // =============================================
 // Execution
 // =============================================
-
-void model::collect_background_data_fetch(execution_mode mode) {
-  for (El::Int i = 0; i < get_num_layers(); ++i) {
-    auto *input = dynamic_cast<generic_input_layer<DataType>*>(&get_layer(i));
-    if (input != nullptr) {
-      input->collect_background_data_fetch(mode);
-    }
-  }
-}
-
 // only used in callbacks/ltfb.cpp; from that file:
 // "Note that this is a temporary fix
 // for the current use of the tournament"
 void model::make_data_store_preloaded(execution_mode mode) {
-  for (El::Int i = 0; i < get_num_layers(); ++i) {
-    auto *input = dynamic_cast<generic_input_layer<DataType>*>(&get_layer(i));
-    if (input != nullptr) {
-      auto *data_store = input->get_data_reader(mode)->get_data_store_ptr();
-      if(data_store != nullptr && !data_store->is_fully_loaded()) {
-        input->get_data_reader(mode)->get_data_store_ptr()->set_loading_is_complete();
-        input->get_data_reader(mode)->get_data_store_ptr()->set_is_explicitly_loading(false);
-      }
-    }
+  data_coordinator& dc = get_execution_context().get_trainer().get_data_coordinator();
+  auto *data_store = dc.get_data_reader(mode)->get_data_store_ptr();
+  if(data_store != nullptr && !data_store->is_fully_loaded()) {
+    dc.get_data_reader(mode)->get_data_store_ptr()->set_loading_is_complete();
+    dc.get_data_reader(mode)->get_data_store_ptr()->set_is_explicitly_loading(false);
   }
 }
 
@@ -949,14 +915,10 @@ void model::make_data_store_preloaded(execution_mode mode) {
 // "Note that this is a temporary fix
 // for the current use of the tournament"
 void model::mark_data_store_explicitly_loading(execution_mode mode) {
-  for (El::Int i = 0; i < get_num_layers(); ++i) {
-    auto *input = dynamic_cast<generic_input_layer<DataType>*>(&get_layer(i));
-    if (input != nullptr) {
-      auto *data_store = input->get_data_reader(mode)->get_data_store_ptr();
-      if(data_store != nullptr && !data_store->is_fully_loaded()) {
-        input->get_data_reader(mode)->get_data_store_ptr()->set_is_explicitly_loading(true);
-      }
-    }
+  data_coordinator& dc = get_execution_context().get_trainer().get_data_coordinator();
+  auto *data_store = dc.get_data_reader(mode)->get_data_store_ptr();
+  if(data_store != nullptr && !data_store->is_fully_loaded()) {
+    dc.get_data_reader(mode)->get_data_store_ptr()->set_is_explicitly_loading(true);
   }
 }
 

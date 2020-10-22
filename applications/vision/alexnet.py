@@ -33,7 +33,7 @@ args = parser.parse_args()
 imagenet_labels = 1000
 
 # Construct layer graph
-input_ = lbann.Input()
+input_ = lbann.Input(target_mode='classification')
 images = lbann.Identity(input_)
 labels = lbann.Identity(input_)
 preds = lbann.models.AlexNet(imagenet_labels)(images)

@@ -21,7 +21,7 @@ args = parser.parse_args()
 # ----------------------------------
 
 # Input data
-input_ = lbann.Input()
+input_ = lbann.Input(target_mode='classification')
 images = lbann.Identity(input_)
 labels = lbann.Identity(input_)
 

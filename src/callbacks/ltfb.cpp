@@ -31,6 +31,7 @@
 #include "lbann/optimizers/adam.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/weights/data_type_weights.hpp"
+#include "lbann/data_coordinator/data_coordinator.hpp"
 
 #include <callbacks.pb.h>
 
@@ -304,7 +305,8 @@ EvalType evaluate(model& m, const std::string& metric_name) {
   auto& c = m.get_execution_context();
   // Make sure data readers finish asynchronous work
   const auto original_mode = c.get_execution_mode();
-  m.collect_background_data_fetch(original_mode);
+  data_coordinator& dc = m.get_execution_context().get_trainer().get_data_coordinator();
+  dc.collect_background_data_fetch(original_mode);
 
   // Mark the data store as loading - Note that this is a temporary fix
   // for the current use of the tournament

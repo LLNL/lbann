@@ -9,6 +9,7 @@ if (LBANN_HAS_PROTOBUF)
   set_full_path(PROTO_INPUTS
     lbann.proto
     callbacks.proto
+    datatype.proto
     layers.proto
     metrics.proto
     model.proto

@@ -228,8 +228,6 @@ public:
   /** @brief Are background I/O activities enabled by the input layers */
   bool background_io_activity_allowed() { return m_background_io_allowed; }
 
-  size_t get_num_iterations_per_epoch(execution_mode mode) const;
-
   // ===========================================
   // Setup
   // ===========================================
@@ -351,14 +349,6 @@ public:
   virtual void reset_mode(execution_context& context, execution_mode mode);
   /** @brief Reset model statistics for an epoch. */
   virtual void reset_epoch_statistics(execution_mode mode);
-
-  /** @brief Check if the trainer execution mode is valid for this model.
-    @todo this should be moved to the trainer when the data readers move. */
-  virtual bool is_execution_mode_valid(execution_mode mode) const;
-
-  /** @brief Complete any background I/O data fetch for the execution
-      mode requested */
-  virtual void collect_background_data_fetch(execution_mode mode);
 
   /** @brief Forward propagation step. */
   virtual void forward_prop(execution_mode mode);

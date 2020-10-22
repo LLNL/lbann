@@ -26,8 +26,8 @@
 
 syntax = "proto3";
 
+import "datatype.proto";
 import "optimizers.proto";
-import "layers.proto";
 
 package lbann_data;
 

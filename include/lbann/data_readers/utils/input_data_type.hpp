@@ -24,39 +24,14 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-syntax = "proto3";
+#ifndef LBANN_INPUT_DATA_TYPE_HPP_INCLUDED
+#define LBANN_INPUT_DATA_TYPE_HPP_INCLUDED
 
-package lbann_data;
+namespace lbann {
 
-import "callbacks.proto";
-import "layers.proto";
-import "metrics.proto";
-import "objective_functions.proto";
-import "weights.proto";
+enum class input_data_type {SAMPLES, LABELS, RESPONSES};
+using input_data_type_iterator = enum_iterator<input_data_type, input_data_type::SAMPLES, input_data_type::RESPONSES>;
 
-message Model {
-  message Summarizer {
-    string dir = 1;
-  }
-
-  string type = 1;
-  string name = 3;
-  ObjectiveFunction objective_function = 2;
-  repeated Metric metric = 5;
-  string data_layout = 6;
-
-  int64 num_epochs = 4;
-  int64 super_steps = 121; //multiple steps/epochs currently use in GAN
-  int64 num_batches = 122; //multiple batches/sub epoch
-  int64 evaluation_frequency = 54;
-
-  bool disable_cuda = 8;
-
-  repeated Layer layer = 10;
-
-  repeated Weights weights = 11;
-
-  repeated Callback callback = 20;
-
-  Summarizer summarizer = 32;
 }
+
+#endif // LBANN_INPUT_DATA_TYPE_HPP_INCLUDED

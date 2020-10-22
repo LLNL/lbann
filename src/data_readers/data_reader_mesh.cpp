@@ -33,7 +33,9 @@
 namespace lbann {
 
 mesh_reader::mesh_reader(bool shuffle)
-  : generic_data_reader(shuffle) {}
+  : generic_data_reader(shuffle) {
+  m_supported_input_types[input_data_type::RESPONSES] = true;
+}
 
 void mesh_reader::load() {
   if (m_data_height == 0 || m_data_width == 0) {

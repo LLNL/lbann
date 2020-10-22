@@ -444,7 +444,7 @@ def main():
     # Construct layer graph
     # ----------------------------------
 
-    input_node = lbann.Input()
+    input_node = lbann.Input(target_mode='classification')
     # Start counting cumulative layers at 1.
     cumulative_layer_num = 1
     log('Input. cumulative_layer_num={n}'.format(n=cumulative_layer_num))

@@ -16,7 +16,7 @@ else ()
     CACHE STRING "The URL from which to clone CONDUIT")
 endif ()
 
-set(CONDUIT_TAG "v0.4.0"
+set(CONDUIT_TAG "v0.5.1"
   CACHE STRING "The git tag to checkout for CONDUIT")
 
 set(CONDUIT_CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}"

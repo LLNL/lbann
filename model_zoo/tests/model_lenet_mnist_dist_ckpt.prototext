@@ -78,7 +78,9 @@ model {
     name: "data"
     children: "image label"
     data_layout: "data_parallel"
-    input {}
+    input {
+      target_mode: "classification"
+    }
   }
   layer {
     parents: "data"
