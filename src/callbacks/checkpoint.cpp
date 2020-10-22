@@ -55,13 +55,7 @@ void checkpoint::setup(trainer *t) {
 void checkpoint::on_train_begin(model *m) {
   auto& p = get_active_trainer().get_persist_obj();
   p.set_cb_type(callback_type::full_checkpoint);
-  /*auto flag =*/restart(m);
-  // m->get_comm()->trainer_barrier();
-  // if(flag) {
-  //   m_checkpoint_shared = true;
-  //   m_checkpoint_dist = false;
-  //   do_checkpoint(m);
-  // }
+  restart(m);
 }
 
 // Interval defined with checkpoint_epochs or ckpt_dist_epochs

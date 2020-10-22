@@ -144,7 +144,7 @@ bool sgd_training_algorithm::train_mini_batch(sgd_execution_context& c,
 
   // Update step
   model.update_weights();
-  /*finished = */model.update_layers();
+  model.update_layers();
 #if defined(LBANN_HAVE_OMP_TASKLOOP)
     }
   }

@@ -79,6 +79,7 @@ class buffered_data_coordinator : public data_coordinator {
   // Data Coordinators copy their data readers.
   buffered_data_coordinator(const buffered_data_coordinator& other)
     : data_coordinator(other) {
+    m_data_buffers.resize(other.m_data_buffers.size());
     for (size_t i = 0; i < other.m_data_buffers.size(); i++) {
       data_buffer_map_t& buffer_map = m_data_buffers[i];
       const data_buffer_map_t& other_buffer_map = other.m_data_buffers[i];
@@ -92,6 +93,8 @@ class buffered_data_coordinator : public data_coordinator {
 
   buffered_data_coordinator& operator=(const buffered_data_coordinator& other) {
     data_coordinator::operator=(other);
+    m_data_buffers.clear();
+    m_data_buffers.resize(other.m_data_buffers.size());
     for (size_t i = 0; i < other.m_data_buffers.size(); i++) {
       data_buffer_map_t& buffer_map = m_data_buffers[i];
       const data_buffer_map_t& other_buffer_map = other.m_data_buffers[i];
