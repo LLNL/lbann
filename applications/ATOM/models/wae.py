@@ -230,7 +230,6 @@ class MolWAE(lbann.modules.Module):
             axis=0,
         )
         h = lbann.Identity(h)
-
         z = self.q_mu(h)
         return z
 
@@ -375,6 +374,6 @@ class MolWAE(lbann.modules.Module):
 
     def discriminator0(self,input):
         return self.d0_fc2(self.d0_fc1(self.d0_fc0(input)))
-
+        
     def discriminator1(self,input):
         return self.d1_fc2(self.d1_fc1(self.d1_fc0(input)))
