@@ -393,13 +393,13 @@ void base_convolution_layer<TensorDataType,Device>::setup_gpu() {
 
   // Set kernel descriptor
   m_kernel_cudnn_desc.set(
-    cudnn::get_data_type<TensorDataType>(),
+    dnn_lib::get_data_type<TensorDataType>(),
     CUDNN_TENSOR_NCHW,
     kernel_dims);
 
   // Set convolution descriptor
   m_convolution_cudnn_desc.set(m_pads, m_strides, m_dilations,
-                               cudnn::get_data_type<TensorDataType>(),
+                               dnn_lib::get_data_type<TensorDataType>(),
                                CUDNN_CROSS_CORRELATION);
   m_convolution_cudnn_desc.set_math_mode(m_convolution_math_type);
   m_convolution_cudnn_desc.set_group_count(m_groups);
@@ -409,7 +409,7 @@ void base_convolution_layer<TensorDataType,Device>::setup_gpu() {
     std::vector<int> bias_dims(output_dims.size() + 1, 1);
     bias_dims[1] = output_dims[0];
     m_bias_cudnn_desc.set(
-      cudnn::get_data_type<TensorDataType>(), bias_dims);
+      dnn_lib::get_data_type<TensorDataType>(), bias_dims);
   }
 
 #endif // LBANN_HAS_CUDNN
@@ -424,7 +424,7 @@ base_convolution_layer<TensorDataType,Device>
 #else
 
   // Useful constants
-  using ScalingType = cudnn::ScalingParamType<TensorDataType>;
+  using ScalingType = dnn_lib::ScalingParamType<TensorDataType>;
   const auto zero = El::TypeTraits<ScalingType>::Zero();
   const auto one = El::TypeTraits<ScalingType>::One();
 
@@ -479,7 +479,7 @@ base_convolution_layer<TensorDataType,Device>
                              workspace_size, workspace.Buffer());
 
   // Apply convolution
-  cudnn::convolution_forward(one,
+  dnn_lib::convolution_forward(one,
                              input_desc,
                              input,
                              m_kernel_cudnn_desc,
@@ -503,7 +503,7 @@ apply_transposed_convolution_cudnn(bool during_forward_prop) {
 #else
 
   // Useful constants
-  using ScalingType = cudnn::ScalingParamType<TensorDataType>;
+  using ScalingType = dnn_lib::ScalingParamType<TensorDataType>;
   const auto zero = El::TypeTraits<ScalingType>::Zero();
   const auto one = El::TypeTraits<ScalingType>::One();
 
@@ -560,7 +560,7 @@ apply_transposed_convolution_cudnn(bool during_forward_prop) {
                          output_desc, output.Buffer(),
                          workspace_size, workspace.Buffer());
   // Perform transposed convolution
-  cudnn::convolution_backward_data(one,
+  dnn_lib::convolution_backward_data(one,
                                    m_kernel_cudnn_desc,
                                    kernel,
                                    input_desc,
@@ -586,7 +586,7 @@ void base_convolution_layer<TensorDataType,Device>::apply_bias_cudnn() {
       && local_output.Width() > 0) {
     const auto one = El::TypeTraits<ScalingType>::One();
     const auto& bias = this->weights_values(1);
-    cudnn::add_tensor(m_bias_scaling_factor,
+    dnn_lib::add_tensor(m_bias_scaling_factor,
                       m_bias_cudnn_desc,
                       bias,
                       one,
@@ -623,7 +623,7 @@ base_convolution_layer<TensorDataType,Device>
       dst_scale_dt, gradient_scale_dt, true);
     if (has_local_data) {
       auto dst_scale = ScalingType(dst_scale_dt), gradient_scale = ScalingType(gradient_scale_dt);
-      cudnn::convolution_backward_bias(
+      dnn_lib::convolution_backward_bias(
         gradient_scale,
         m_tensors_cudnn_desc.get_prev_error_signals(),
         local_gradient_wrt_output,
@@ -667,7 +667,7 @@ base_convolution_layer<TensorDataType,Device>
             m_convolution_cudnn_desc,
             m_kernel_cudnn_desc,
             workspace_size, workspace.Buffer());
-        cudnn::convolution_backward_filter(
+        dnn_lib::convolution_backward_filter(
           gradient_scale,
           gradient_wrt_output_desc,
           local_gradient_wrt_output,
@@ -688,7 +688,7 @@ base_convolution_layer<TensorDataType,Device>
             m_convolution_cudnn_desc,
             m_kernel_cudnn_desc,
             workspace_size, workspace.Buffer());
-        cudnn::convolution_backward_filter(
+        dnn_lib::convolution_backward_filter(
           gradient_scale,
           input_desc,
           local_input,
@@ -986,12 +986,12 @@ template <typename TensorDataType, El::Device Device>
 fwd_conv_alg
 base_convolution_layer<TensorDataType,Device>::get_forward_algo_cudnn(
   const int local_mini_batch_size,
-  const cudnn::TensorDescriptor& input_desc,
+  const dnn_lib::TensorDescriptor& input_desc,
   const TensorDataType* input,
-  const cudnn::FilterDescriptor& kernel_desc,
+  const dnn_lib::FilterDescriptor& kernel_desc,
   const TensorDataType* kernel,
-  const cudnn::ConvolutionDescriptor& conv_desc,
-  const cudnn::TensorDescriptor& output_desc,
+  const dnn_lib::ConvolutionDescriptor& conv_desc,
+  const dnn_lib::TensorDescriptor& output_desc,
   TensorDataType* output,
   size_t ws_size,
   TensorDataType* ws) {
@@ -1002,8 +1002,8 @@ base_convolution_layer<TensorDataType,Device>::get_forward_algo_cudnn(
     bool deterministic = false;
 #endif
     m_fwd_cudnn_algos[local_mini_batch_size] =
-      cudnn::from_cudnn(
-        cudnn::get_fwd_algorithm(
+      dnn_lib::from_cudnn(
+        dnn_lib::get_fwd_algorithm(
           true, deterministic,
           input_desc, input,
           kernel_desc, kernel,
@@ -1018,12 +1018,12 @@ template <typename TensorDataType, El::Device Device>
 bwd_data_conv_alg
 base_convolution_layer<TensorDataType,Device>::get_backward_data_algo_cudnn(
   const int local_mini_batch_size,
-  const cudnn::FilterDescriptor& kernel_desc,
+  const dnn_lib::FilterDescriptor& kernel_desc,
   const TensorDataType* kernel,
-  const cudnn::TensorDescriptor& prev_error_signal_desc,
+  const dnn_lib::TensorDescriptor& prev_error_signal_desc,
   const TensorDataType* prev_error_signal,
-  const cudnn::ConvolutionDescriptor& conv_desc,
-  const cudnn::TensorDescriptor& error_signal_desc,
+  const dnn_lib::ConvolutionDescriptor& conv_desc,
+  const dnn_lib::TensorDescriptor& error_signal_desc,
   TensorDataType* error_signal,
   size_t ws_size,
   TensorDataType* ws) {
@@ -1034,8 +1034,8 @@ base_convolution_layer<TensorDataType,Device>::get_backward_data_algo_cudnn(
     bool deterministic = false;
 #endif
     m_bwd_data_cudnn_algos[local_mini_batch_size] =
-      cudnn::from_cudnn(
-        cudnn::get_bwd_data_algorithm(
+      dnn_lib::from_cudnn(
+        dnn_lib::get_bwd_data_algorithm(
           true, deterministic,
           kernel_desc, kernel,
           prev_error_signal_desc, prev_error_signal,
@@ -1050,12 +1050,12 @@ template <typename TensorDataType, El::Device Device>
 bwd_filter_conv_alg
 base_convolution_layer<TensorDataType,Device>::get_backward_filter_algo_cudnn(
   const int local_mini_batch_size,
-  const cudnn::TensorDescriptor& input_desc,
+  const dnn_lib::TensorDescriptor& input_desc,
   const TensorDataType* input,
-  const cudnn::TensorDescriptor& prev_error_signal_desc,
+  const dnn_lib::TensorDescriptor& prev_error_signal_desc,
   const TensorDataType* prev_error_signal,
-  const cudnn::ConvolutionDescriptor& conv_desc,
-  const cudnn::FilterDescriptor& kernel_gradient_desc,
+  const dnn_lib::ConvolutionDescriptor& conv_desc,
+  const dnn_lib::FilterDescriptor& kernel_gradient_desc,
   size_t ws_size,
   TensorDataType* ws) {
   if (m_bwd_filter_cudnn_algos.count(local_mini_batch_size) == 0) {
@@ -1072,8 +1072,8 @@ base_convolution_layer<TensorDataType,Device>::get_backward_filter_algo_cudnn(
     kernel_gradient.Resize(this->get_weights(0).get_matrix_height(),
                            this->get_weights(0).get_matrix_width());
     m_bwd_filter_cudnn_algos[local_mini_batch_size] =
-      cudnn::from_cudnn(
-        cudnn::get_bwd_filter_algorithm(
+      dnn_lib::from_cudnn(
+        dnn_lib::get_bwd_filter_algorithm(
           true, deterministic,
           input_desc, input,
           prev_error_signal_desc, prev_error_signal,
