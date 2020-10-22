@@ -424,6 +424,7 @@ base_convolution_layer<TensorDataType,Device>
 #else
 
   // Useful constants
+  using ScalingType = cudnn::ScalingParamType<TensorDataType>;
   const auto zero = El::TypeTraits<ScalingType>::Zero();
   const auto one = El::TypeTraits<ScalingType>::One();
 
@@ -502,6 +503,7 @@ apply_transposed_convolution_cudnn(bool during_forward_prop) {
 #else
 
   // Useful constants
+  using ScalingType = cudnn::ScalingParamType<TensorDataType>;
   const auto zero = El::TypeTraits<ScalingType>::Zero();
   const auto one = El::TypeTraits<ScalingType>::One();
 
@@ -1233,7 +1235,7 @@ void base_convolution_adapter<TensorDataType, Device>::bp_compute_convolution_fi
                             this->get_prev_error_signals(),
                             dst_scale, *m_bias_gradient, false);
     } else {
-      m_bias_gradient->scale(dst_scale, gpu::get_sync_info(bias_gradient).Stream());
+      m_bias_gradient->scale(dst_scale, gpu::get_sync_info(l).Stream());
     }
   }
 
@@ -1251,7 +1253,7 @@ void base_convolution_adapter<TensorDataType, Device>::bp_compute_convolution_fi
                             dst_scale,
                             *m_kernel_gradient, false);
   } else {
-    m_kernel_gradient->scale(dst_scale, gpu::get_sync_info(kernel_gradient).Stream());
+    m_kernel_gradient->scale(dst_scale, gpu::get_sync_info(l).Stream());
   }
 }
 

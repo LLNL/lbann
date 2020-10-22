@@ -26,7 +26,7 @@
 #ifndef LBANN_UTILS_DNN_LIB_CUDNN_CONVOLUTION_HPP_
 #define LBANN_UTILS_DNN_LIB_CUDNN_CONVOLUTION_HPP_
 
-#include "lbann/utils/cudnn.hpp"
+#include "lbann/utils/dnn_lib/cudnn.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
 
 #include "utils.hpp"
