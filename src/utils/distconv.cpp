@@ -26,7 +26,7 @@
 
 #define LBANN_UTILS_DISTCONV_INSTANTIATE
 #include "lbann/utils/distconv.hpp"
-#include "lbann/utils/cudnn.hpp"
+#include "lbann/utils/dnn_lib/helpers.hpp"
 #include "lbann/layers/layer.hpp"
 #include <cstdlib>
 

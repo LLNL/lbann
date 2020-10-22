@@ -32,7 +32,7 @@
 #include "lbann/data_store/data_store_conduit.hpp"
 #include "lbann/utils/argument_parser.hpp"
 #ifdef LBANN_HAS_CUDNN
-#include "lbann/utils/cudnn.hpp"
+#include "lbann/utils/dnn_lib/cudnn.hpp"
 #endif // LBANN_HAS_CUDNN
 
 #include <lbann.pb.h>

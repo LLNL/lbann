@@ -45,7 +45,7 @@
 #include "lbann/utils/stack_trace.hpp"
 
 #ifdef LBANN_HAS_CUDNN
-#include "lbann/utils/cudnn.hpp"
+#include "lbann/utils/dnn_lib/helpers.hpp"
 #endif
 #ifdef LBANN_HAS_PYTHON
 #include "lbann/utils/python.hpp"

@@ -26,7 +26,7 @@
 #ifndef LBANN_UTILS_DNN_LIB_CUDNN_SOFTMAX_HPP_
 #define LBANN_UTILS_DNN_LIB_CUDNN_SOFTMAX_HPP_
 
-#include "lbann/utils/cudnn.hpp"
+#include "lbann/utils/dnn_lib/helpers.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
 #include "utils.hpp"
 

@@ -29,7 +29,7 @@
 
 #include <vector>
 #include "lbann/layers/regularizers/regularizer.hpp"
-#include "lbann/utils/cudnn.hpp"
+#include "lbann/utils/dnn_lib/helpers.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/dnn_lib/cudnn/local_response_normalization.hpp"
 

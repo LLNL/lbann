@@ -24,7 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/utils/cudnn.hpp"
+#include "lbann/utils/dnn_lib/cudnn.hpp"
 #include "lbann/utils/number_theory.hpp"
 
 #include "El.hpp"
