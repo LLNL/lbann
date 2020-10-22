@@ -31,6 +31,7 @@
 #include "lbann/layers/layer.hpp"
 #include "lbann/utils/dnn_lib/helpers.hpp"
 #include "lbann/utils/memory.hpp"
+#include "lbann/utils/dnn_lib/cudnn/convolution.hpp"
 
 #include <vector>
 
@@ -133,11 +134,11 @@ protected:
   /** Tensor cuDNN descriptors. */
   cudnn::data_parallel_layer_tensor_manager<TensorDataType> m_tensors_cudnn_desc;
   /** Forward algorithm cache (mini-batch size -> algo). */
-  std::unordered_map<int, cudnnConvolutionFwdAlgo_t> m_fwd_cudnn_algos;
+  std::unordered_map<int, fwd_conv_alg> m_fwd_cudnn_algos;
   /** Backward data algorithm cache (mini-batch size -> algo). */
-  std::unordered_map<int, cudnnConvolutionBwdDataAlgo_t> m_bwd_data_cudnn_algos;
+  std::unordered_map<int, bwd_data_conv_alg> m_bwd_data_cudnn_algos;
   /** Backward filter algorithm cache (mini-batch size -> algo). */
-  std::unordered_map<int, cudnnConvolutionBwdFilterAlgo_t> m_bwd_filter_cudnn_algos;
+  std::unordered_map<int, bwd_filter_conv_alg> m_bwd_filter_cudnn_algos;
 
 #endif // LBANN_HAS_CUDNN
 
@@ -203,7 +204,7 @@ private:
 #ifdef LBANN_HAS_CUDNN
 
   /** Get the cuDNN algorithm to use for forward prop. */
-  cudnnConvolutionFwdAlgo_t get_forward_algo_cudnn(
+  fwd_conv_alg get_forward_algo_cudnn(
     const int local_mini_batch_size,
     const cudnn::TensorDescriptor& input_desc,
     const TensorDataType* input,
@@ -216,7 +217,7 @@ private:
     TensorDataType* ws);
 
   /** Get the cuDNN algorithm to use for backward-data. */
-  cudnnConvolutionBwdDataAlgo_t get_backward_data_algo_cudnn(
+  bwd_data_conv_alg get_backward_data_algo_cudnn(
     const int local_mini_batch_size,
     const cudnn::FilterDescriptor& kernel_desc,
     const TensorDataType* kernel,
@@ -232,7 +233,7 @@ private:
    * Get the cuDNN algorithm to use for backward-filter.
    * Buffer space for kernel_gradient is allocated via temporary workspace.
    */
-  cudnnConvolutionBwdFilterAlgo_t get_backward_filter_algo_cudnn(
+  bwd_filter_conv_alg get_backward_filter_algo_cudnn(
     const int local_mini_batch_size,
     const cudnn::TensorDescriptor& input_desc,
     const TensorDataType* input,
