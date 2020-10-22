@@ -289,12 +289,12 @@ void fp_compute_impl(softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, E
   }
 #endif // LBANN_HAS_DISTCONV
 
-  const cudnn::ScalingParamType<TensorDataType> zero = 0.;
-  const cudnn::ScalingParamType<TensorDataType> one = 1.;
+  const dnn_lib::ScalingParamType<TensorDataType> zero = 0.;
+  const dnn_lib::ScalingParamType<TensorDataType> one = 1.;
   const auto& local_input = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_prev_activations());
   auto& local_output = dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_activations());
   if (!local_input.IsEmpty()) {
-    cudnn::softmax_forward(one,
+    dnn_lib::softmax_forward(one,
                            l.m_tensors_cudnn_desc.get_prev_activations(),
                            local_input,
                            zero,
@@ -317,12 +317,12 @@ void bp_compute_impl(softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, E
   }
 #endif // LBANN_HAS_DISTCONV
 
-  const cudnn::ScalingParamType<TensorDataType> zero = 0.;
-  const cudnn::ScalingParamType<TensorDataType> one = 1.;
+  const dnn_lib::ScalingParamType<TensorDataType> zero = 0.;
+  const dnn_lib::ScalingParamType<TensorDataType> one = 1.;
   const auto& local_output = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_activations());
   const auto& local_gradient_wrt_output = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_prev_error_signals());
   auto& local_gradient_wrt_input = dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_error_signals());
-  cudnn::softmax_backward(one,
+  dnn_lib::softmax_backward(one,
                           l.m_tensors_cudnn_desc.get_activations(),
                           local_output,
                           l.m_tensors_cudnn_desc.get_prev_error_signals(),
