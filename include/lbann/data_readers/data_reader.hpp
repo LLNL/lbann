@@ -306,7 +306,7 @@ class generic_data_reader {
 
   /** @brief Fetch a mini-batch worth of data, including samples, labels, responses (as appropriate) */
   int fetch(std::map<data_field_type, CPUMat*>& input_buffers,
-            El::Matrix<El::Int>& indices_fetched);
+            El::Matrix<El::Int>& indices_fetched, size_t mb_size);
 
   /** @brief Check to see if the data reader supports this specific data field
    */
@@ -836,6 +836,7 @@ class generic_data_reader {
   /// Shuffle indices and profide a random number generator
   virtual void shuffle_indices(rng_gen& gen);
 
+public:
   int m_mini_batch_size;
   int m_current_pos;
   /// Batch Stride is typically batch_size, but may be a multiple of batch size if there are multiple readers

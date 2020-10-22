@@ -1425,16 +1425,6 @@ bool data_reader_jag_conduit::fetch(CPUMat& X, int data_id, conduit::Node& sampl
   return true;
 }
 
-
-
-
-
-
-
-
-
-
-
 bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
   int tid = m_io_thread_pool->get_local_thread_id();
   std::vector<size_t> sizes = get_linearized_data_sizes();

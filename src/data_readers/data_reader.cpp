@@ -85,7 +85,8 @@ void generic_data_reader::setup(int num_io_threads, observer_ptr<thread_pool> io
 
 int lbann::generic_data_reader::fetch(
   std::map<data_field_type, CPUMat*>& input_buffers,
-  El::Matrix<El::Int>& indices_fetched)
+  El::Matrix<El::Int>& indices_fetched,
+  size_t mb_size)
 {
   // Check to make sure that a valid map was passed
   if (input_buffers.empty()) {
@@ -134,11 +135,12 @@ int lbann::generic_data_reader::fetch(
 
   int loaded_batch_size = get_loaded_mini_batch_size();
 
-  const int end_pos = std::min(static_cast<size_t>(m_current_pos+loaded_batch_size), m_shuffled_indices.size());
-  const int mb_size =
-    std::min(El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) /
-                     m_sample_stride},
-             buffer_width);
+  /// Make sure that every rank participates in the data store prior
+  /// to seeing if the local rank's position is valid.  Note that
+  /// every rank will hold data that may be used in the last mini-batch
+  if (data_store_active()) {
+    m_data_store->exchange_mini_batch_data(m_current_pos-m_base_offset-m_model_offset, loaded_batch_size);
+  }
 
   if(!position_valid()) {
     if(position_is_overrun()) {
