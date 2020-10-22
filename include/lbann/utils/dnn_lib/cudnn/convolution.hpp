@@ -117,8 +117,8 @@ inline cudnnConvolutionBwdDataAlgo_t to_cudnn(bwd_conv_alg a)
 {
   switch (a)
   {
-  case bwd_conv_alg::GEMM: return CUDNN_CONVOLUTION_BWD_DATA_ALGO_0;
-  case bwd_conv_alg::DIRECT: return CUDNN_CONVOLUTION_BWD_DATA_ALGO_1;
+  case bwd_conv_alg::CUDNN_ALGO_0: return CUDNN_CONVOLUTION_BWD_DATA_ALGO_0;
+  case bwd_conv_alg::CUDNN_ALGO_1: return CUDNN_CONVOLUTION_BWD_DATA_ALGO_1;
   case bwd_conv_alg::FFT: return CUDNN_CONVOLUTION_BWD_DATA_ALGO_FFT;
   case bwd_conv_alg::FFT_TILING: return CUDNN_CONVOLUTION_BWD_DATA_ALGO_FFT_TILING;
   case bwd_conv_alg::WINOGRAD: return CUDNN_CONVOLUTION_BWD_DATA_ALGO_WINOGRAD;
@@ -134,8 +134,8 @@ inline bwd_conv_alg from_cudnn(cudnnConvolutionBwdDataAlgo_t a)
 {
   switch (a)
   {
-  case CUDNN_CONVOLUTION_BWD_DATA_ALGO_0: return bwd_conv_alg::GEMM;
-  case CUDNN_CONVOLUTION_BWD_DATA_ALGO_1: return bwd_conv_alg::DIRECT;
+  case CUDNN_CONVOLUTION_BWD_DATA_ALGO_0: return bwd_conv_alg::CUDNN_ALGO_0;
+  case CUDNN_CONVOLUTION_BWD_DATA_ALGO_1: return bwd_conv_alg::CUDNN_ALGO_1;
   case CUDNN_CONVOLUTION_BWD_DATA_ALGO_FFT: return bwd_conv_alg::FFT;
   case CUDNN_CONVOLUTION_BWD_DATA_ALGO_FFT_TILING: return bwd_conv_alg::FFT_TILING;
   case CUDNN_CONVOLUTION_BWD_DATA_ALGO_WINOGRAD: return bwd_conv_alg::WINOGRAD;
@@ -151,10 +151,10 @@ inline cudnnConvolutionBwdFilterAlgo_t to_cudnn(bwd_conv_filter a)
 {
   switch (a)
   {
-  case bwd_conv_filter::ALGO_0: return CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0;
-  case bwd_conv_filter::ALGO_1: return CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1;
+  case bwd_conv_filter::CUDNN_ALGO_0: return CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0;
+  case bwd_conv_filter::CUDNN_ALGO_1: return CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1;
   case bwd_conv_filter::FFT: return CUDNN_CONVOLUTION_BWD_FILTER_ALGO_FFT;
-  case bwd_conv_filter::ALGO_3: return CUDNN_CONVOLUTION_BWD_FILTER_ALGO_3;
+  case bwd_conv_filter::CUDNN_ALGO_3: return CUDNN_CONVOLUTION_BWD_FILTER_ALGO_3;
   case bwd_conv_filter::WINOGRAD_NONFUSED: return CUDNN_CONVOLUTION_BWD_FILTER_ALGO_WINOGRAD_NONFUSED;
   case bwd_conv_filter::FFT_TILING: return CUDNN_CONVOLUTION_BWD_FILTER_ALGO_FFT_TILING;
   default:
@@ -168,10 +168,10 @@ inline bwd_conv_filter from_cudnn(cudnnConvolutionBwdFilterAlgo_t a)
 {
   switch (a)
   {
-  case CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0: return bwd_conv_filter::ALGO_0;
-  case CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1: return bwd_conv_filter::ALGO_1;
+  case CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0: return bwd_conv_filter::CUDNN_ALGO_0;
+  case CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1: return bwd_conv_filter::CUDNN_ALGO_1;
   case CUDNN_CONVOLUTION_BWD_FILTER_ALGO_FFT: return bwd_conv_filter::FFT;
-  case CUDNN_CONVOLUTION_BWD_FILTER_ALGO_3: return bwd_conv_filter::ALGO_3;
+  case CUDNN_CONVOLUTION_BWD_FILTER_ALGO_3: return bwd_conv_filter::CUDNN_ALGO_3;
   case CUDNN_CONVOLUTION_BWD_FILTER_ALGO_WINOGRAD_NONFUSED: return bwd_conv_filter::WINOGRAD_NONFUSED;
   case CUDNN_CONVOLUTION_BWD_FILTER_ALGO_FFT_TILING: return bwd_conv_filter::FFT_TILING;
   default:
