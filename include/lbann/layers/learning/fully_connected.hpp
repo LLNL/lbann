@@ -29,13 +29,8 @@
 
 #include "lbann/layers/learning/learning.hpp"
 #include "lbann/models/model.hpp"
-#include "lbann/weights/initializer.hpp"
-#include "lbann/weights/variance_scaling_initializers.hpp"
-
-#include <layers.pb.h>
 
 #include <string>
-#include <sstream>
 
 namespace lbann {
 
@@ -76,50 +71,13 @@ public:
                         int output_size,
                         bool transpose = false,
                         WeightsType* weight = nullptr,
-                        bool has_bias = true)
-    : learning_layer<TensorDataType>(comm),
-      m_bias_gradient(nullptr),
-      m_transpose(transpose) {
+                        bool has_bias = true);
 
-    // Initialize output tensor dimensions
-    this->set_output_dims({output_size});
+  fully_connected_layer(const fully_connected_layer& other);
 
-    // Initialize bias
-    m_bias_scaling_factor = has_bias ? El::TypeTraits<TensorDataType>::One() : El::TypeTraits<TensorDataType>::Zero();
+  fully_connected_layer& operator=(const fully_connected_layer& other);
 
-  }
-
-  fully_connected_layer(const fully_connected_layer& other) :
-    learning_layer<TensorDataType>(other),
-    m_bias_scaling_factor(other.m_bias_scaling_factor),
-    m_transpose(other.m_transpose) {
-
-    // Deep matrix copies
-    m_bias_gradient = other.m_bias_gradient;
-    if (m_bias_gradient != nullptr) {
-      m_bias_gradient = m_bias_gradient->Copy();
-    }
-
-  }
-
-  fully_connected_layer& operator=(const fully_connected_layer& other) {
-    learning_layer<TensorDataType>::operator=(other);
-    m_bias_scaling_factor = other.m_bias_scaling_factor;
-    m_transpose = other.m_transpose;
-
-    // Deep matrix copies
-    deallocate_matrices();
-    m_bias_gradient = other.m_bias_gradient;
-    if (m_bias_gradient != nullptr) {
-      m_bias_gradient = m_bias_gradient->Copy();
-    }
-
-    return *this;
-  }
-
-  ~fully_connected_layer() override {
-    deallocate_matrices();
-  }
+  ~fully_connected_layer() override;
 
   fully_connected_layer* copy() const override {
     return new fully_connected_layer(*this);
@@ -129,105 +87,12 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-  description get_description() const override {
-    auto desc = learning_layer<TensorDataType>::get_description();
-    const auto& bias_str = (m_bias_scaling_factor == El::TypeTraits<TensorDataType>::Zero() ?
-                            "disabled" : "enabled");
-    desc.add("Bias", bias_str);
-    return desc;
-  }
+  description get_description() const override;
 
 protected:
 
   void setup_matrices(const El::Grid& grid) override;
-
-  void setup_data() override {
-    learning_layer<TensorDataType>::setup_data();
-
-    // Initialize default weights if none are provided
-    if (this->num_weights() > 2) {
-      LBANN_ERROR("attempted to setup ", this->get_name(), " with an invalid number of weights");
-    }
-    if (m_bias_scaling_factor != El::TypeTraits<TensorDataType>::Zero()) {
-      this->set_num_data_type_weights(2);
-    } else {
-      this->set_num_data_type_weights(1);
-    }
-    if (!this->has_data_type_weights(0)) {
-      auto w = make_unique<WeightsType>(this->get_comm());
-      auto init = make_unique<he_initializer<TensorDataType>>(probability_distribution::gaussian);
-      auto opt = this->m_model->template create_optimizer<TensorDataType>();
-      w->set_name(this->get_name() + "_linearity_weights");
-      w->set_initializer(std::move(init));
-      w->set_optimizer(std::move(opt));
-      this->set_data_type_weights(0, w.get());
-      this->m_model->add_weights(std::move(w));
-    }
-    auto& linearity_weights = this->get_data_type_weights(0);
-
-    // Initialize variance scaling initialization
-    auto* cast_initializer
-      = dynamic_cast<variance_scaling_initializer<TensorDataType>*>(linearity_weights.get_initializer());
-    if (cast_initializer != nullptr) {
-      cast_initializer->set_fan_in(this->get_input_size());
-      cast_initializer->set_fan_out(this->get_output_size());
-    }
-
-    // Setup linearity weights
-    auto linearity_dist = this->get_prev_activations().DistData();
-    if (linearity_dist.colDist != El::MC
-        || linearity_dist.rowDist != El::MR) {
-      linearity_dist.colDist = El::STAR;
-      linearity_dist.rowDist = El::STAR;
-    }
-    if (m_transpose) {
-      linearity_weights.set_dims(this->get_input_dims(), this->get_output_dims());
-    } else {
-      linearity_weights.set_dims(this->get_output_dims(), this->get_input_dims());
-    }
-    linearity_weights.set_matrix_distribution(linearity_dist);
-
-    // Set up bias if needed.
-    if (m_bias_scaling_factor != El::TypeTraits<TensorDataType>::Zero()) {
-      if (!this->has_data_type_weights(1)) {
-        auto w = make_unique<WeightsType>(this->get_comm());
-        auto opt = this->m_model->template create_optimizer<TensorDataType>();
-        w->set_name(this->get_name() + "_bias_weights");
-        w->set_optimizer(std::move(opt));
-        this->set_data_type_weights(1, w.get());
-        this->m_model->add_weights(std::move(w));
-      }
-      auto& bias_weights = this->get_data_type_weights(1);
-      // Setup bias weights
-      auto bias_dist = this->get_activations().DistData();
-      bias_dist.rowDist = El::STAR;
-      bias_weights.set_dims(this->get_output_dims());
-      bias_weights.set_matrix_distribution(bias_dist);
-      if (this->m_bias_gradient != nullptr) {
-        El::Zeros(*this->m_bias_gradient,
-                  bias_weights.get_matrix_height(),
-                  bias_weights.get_matrix_width());
-      }
-    }
-
-    // Initialize freeze state
-    for (auto&& w : this->get_data_type_weights()) {
-      if (this->is_frozen()) {
-        w->freeze();
-      } else {
-        w->unfreeze();
-      }
-    }
-    for (auto&& w : this->get_data_type_weights()) {
-      if (w->is_frozen() != this->is_frozen()) {
-        LBANN_ERROR((this->is_frozen() ? "" : "un"), "frozen ",
-                    "layer \"", this->get_name(), "\" has ",
-                    (w->is_frozen() ? "" : "un"), "frozen ",
-                    "weights \"", w->get_name(), "\"");
-      }
-    }
-
-  }
+  void setup_data(size_t max_mini_batch_size) override;
 
   void fp_compute() override;
   void bp_compute() override;

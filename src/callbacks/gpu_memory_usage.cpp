@@ -70,22 +70,20 @@ void gpu_memory_usage::on_epoch_begin(model *m) {
     double used_median = get_median(used_list) / 1024.0 / 1024.0 / 1024.0;
     double used_max = get_max(used_list) / 1024.0 / 1024.0 / 1024.0;
     double used_min = get_min(used_list) / 1024.0 / 1024.0 / 1024.0;
-    std::stringstream ss;
-    ss << "Model " << m->get_comm()->get_trainer_rank()
-       << " GPU memory usage statistics : "
-       << std::setprecision(3)
-       << used_mean  << " GiB mean, "
-       << std::setprecision(3)
-       << used_median  << " GiB median, "
-       << std::setprecision(3)
-       << used_max  << " GiB max, "
-       << std::setprecision(3)
-       << used_min  << " GiB min "
-       << "("
-       << std::setprecision(3)
-       << (total / 1024.0 / 1024.0 / 1024.0)
-       << " GiB total)" << std::endl;
-    std::cout << ss.str();
+    std::cout << "Model " << m->get_comm()->get_trainer_rank()
+              << " GPU memory usage statistics : "
+              << std::setprecision(3)
+              << used_mean  << " GiB mean, "
+              << std::setprecision(3)
+              << used_median  << " GiB median, "
+              << std::setprecision(3)
+              << used_max  << " GiB max, "
+              << std::setprecision(3)
+              << used_min  << " GiB min "
+              << "("
+              << std::setprecision(3)
+              << (total / 1024.0 / 1024.0 / 1024.0)
+              << " GiB total)" << std::endl;
   } else {
     comm->trainer_gather(used, comm->get_trainer_master());
   }

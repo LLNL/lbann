@@ -56,8 +56,7 @@ void test_jag(string filename);
 #define MAX_SAMPLES 10000
 
 int main(int argc, char *argv[]) {
-  int random_seed = lbann_default_random_seed;
-  world_comm_ptr comm = initialize(argc, argv, random_seed);
+  world_comm_ptr comm = initialize(argc, argv);
 
   options *opts = options::get();
   opts->init(argc, argv);
@@ -70,7 +69,7 @@ int main(int argc, char *argv[]) {
     test_jag(opts->get_string("filelist"));
   } else {
     test_hydra(opts->get_string("filelist"));
-  }  
+  }
   return EXIT_SUCCESS;
 }
 
@@ -211,7 +210,7 @@ void test_hydra(string filename) {
               double v = tmp.value();
               total += v;
               bytes += sizeof(double);
-            }  
+            }
 
             sample_size += sizeof(double) + scalar_names.size();
             for (size_t h=0; h<scalar_names.size(); h++) {
@@ -220,7 +219,7 @@ void test_hydra(string filename) {
               double v = tmp.value();
               total += v;
               bytes += sizeof(double);
-            }  
+            }
 
             for (size_t h=0; h<image_names.size(); h++) {
               key = cnames[i] + "/images/" + image_names[h];
@@ -324,7 +323,7 @@ cout << "starting test_jag; filename: " << filename << endl;
               double v = tmp.value();
               total += v;
               bytes += sizeof(double);
-            }  
+            }
 
             sample_size += sizeof(double)*scalar_names.size();
             for (size_t h=0; h<scalar_names.size(); h++) {
@@ -333,7 +332,7 @@ cout << "starting test_jag; filename: " << filename << endl;
               double v = tmp.value();
               total += v;
               bytes += sizeof(double);
-            }  
+            }
 
             for (size_t h=0; h<image_names.size(); h++) {
               key = cnames[i] + "/outputs/images/" + image_names[h];
@@ -366,7 +365,7 @@ cout << "starting test_jag; filename: " << filename << endl;
       }
     }
 
-FINISHED: 
+FINISHED:
 
     double tm2 = get_time();
     cout << "========================================================\n"

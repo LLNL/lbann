@@ -35,10 +35,12 @@
 #define HWLOC_OBJ_NUMANODE HWLOC_OBJ_NODE
 #endif
 #endif
+#ifdef LBANN_HAS_SHMEM
+#include <shmem.h>
+#endif // LBANN_HAS_SHMEM
 
 #include "lbann/comm.hpp"
 #include "lbann/utils/exception.hpp"
-#include "lbann/utils/random.hpp"
 #include "lbann/utils/omp_diagnostics.hpp"
 #include "lbann/utils/stack_trace.hpp"
 
@@ -47,6 +49,12 @@
 #endif
 #ifdef LBANN_HAS_PYTHON
 #include "lbann/utils/python.hpp"
+#endif
+#ifdef LBANN_HAS_NVSHMEM
+#include "lbann/utils/nvshmem.hpp"
+#endif
+#ifdef LBANN_HAS_DISTCONV
+#include "lbann/utils/distconv.hpp"
 #endif
 
 #include <iostream>
@@ -57,9 +65,10 @@ namespace lbann {
 
 MPI_Errhandler err_handle;
 
-world_comm_ptr initialize(int& argc, char**& argv, int seed) {
+world_comm_ptr initialize(int& argc, char**& argv) {
   // Initialize Elemental.
   El::Initialize(argc, argv);
+
   // Create a new comm object.
   // Initial creation with every process in one model.
   auto comm = world_comm_ptr{new lbann_comm(0), &lbann::finalize };
@@ -84,7 +93,7 @@ world_comm_ptr initialize(int& argc, char**& argv, int seed) {
   // We can adjust that later when we better understand the threaded perf.
   int ppn = comm->get_procs_per_node();
   if (num_numa_nodes > ppn) {
-    if (comm->get_rank_in_node() == 0) {
+    if (comm->get_rank_in_world() == 0) {
       std::cout << comm->get_rank_in_world() <<
                 ": WARNING: node has " << num_numa_nodes <<
                 " NUMA nodes but you have " << ppn << " processes per node" <<
@@ -93,21 +102,45 @@ world_comm_ptr initialize(int& argc, char**& argv, int seed) {
   }
   hwloc_topology_destroy(topo);
 #endif
-  // Initialize local random number generators.
-  init_random(seed);
-  init_data_seq_random(seed);
+
+#ifdef LBANN_HAS_SHMEM
+  // Initialize SHMEM
+  {
+    int threading_level = SHMEM_THREAD_MULTIPLE;
+    int status = shmem_init_thread(threading_level, &threading_level);
+    if (status != 0 || threading_level != SHMEM_THREAD_MULTIPLE) {
+      LBANN_ERROR("error initializing OpenSHMEM");
+    }
+  }
+#endif // LBANN_HAS_SHMEM
+
+#ifdef LBANN_HAS_DISTCONV
+  dc::initialize(MPI_COMM_WORLD);
+#endif // LBANN_HAS_DISTCONV
 
   return comm;
 }
 
 void finalize(lbann_comm* comm) {
+#ifdef LBANN_HAS_NVSHMEM
+  nvshmem::finalize();
+#endif // LBANN_HAS_NVSHMEM
   MPI_Errhandler_free( &err_handle );
+#ifdef LBANN_HAS_DISTCONV
+  dc::finalize();
+#endif
 #ifdef LBANN_HAS_CUDNN
   cudnn::destroy();
 #endif
 #ifdef LBANN_HAS_PYTHON
   python::finalize();
 #endif
+#ifdef LBANN_HAS_NVSHMEM
+  nvshmem::finalize();
+#endif // LBANN_HAS_SHMEM
+#ifdef LBANN_HAS_SHMEM
+  shmem_finalize();
+#endif // LBANN_HAS_SHMEM
   if (comm != nullptr) {
     delete comm;
   }

@@ -35,12 +35,12 @@ adam<TensorDataType>::adam(TensorDataType learning_rate,
                            TensorDataType beta1,
                            TensorDataType beta2,
                            TensorDataType eps)
-  : OptimizerType(learning_rate),
+  : BaseType(learning_rate),
     m_beta1(beta1), m_beta2(beta2), m_eps(eps) {}
 
 template <typename TensorDataType>
 adam<TensorDataType>::adam(const adam& other)
-  : OptimizerType(other),
+  : BaseType(other),
     m_beta1(other.m_beta1),
     m_beta2(other.m_beta2),
     m_eps(other.m_eps),
@@ -124,9 +124,9 @@ void adam<TensorDataType>::step_compute(AbsDistMatrixType& values,
 
   switch (values.GetLocalDevice()) {
   case El::Device::CPU: step_compute_cpu(values, gradient, correction); break;
-#ifdef LBANN_HAS_CUDA
+#ifdef LBANN_HAS_GPU
   case El::Device::GPU: step_compute_gpu(values, gradient, correction); break;
-#endif // LBANN_HAS_CUDA
+#endif // LBANN_HAS_GPU
   default:
     std::ostringstream err;
     err << "unsupported device type "
@@ -158,6 +158,9 @@ void adam<TensorDataType>::step_compute_cpu(AbsDistMatrixType& values,
     for (size_t i = 0; i < local_size; ++i) {
       auto& x = values_buffer[i];
       const auto& g = gradient_buffer[i] + m_eps; // Avoid denormalized floats
+      if (std::isinf(g) || std::isnan(g)) {
+        continue;
+      }
       auto& m1 = moment1_buffer[i];
       auto& m2 = moment2_buffer[i];
       m1 = m_beta1 * m1 + (one - m_beta1) * g;
@@ -177,6 +180,9 @@ void adam<TensorDataType>::step_compute_cpu(AbsDistMatrixType& values,
       for (size_t row = 0; row < local_height; ++row) {
         auto& x = values_buffer[row+col*values_ldim];
         const auto& g = gradient_buffer[row+col*gradient_ldim] + m_eps; // Avoid denormalized floats
+        if (std::isinf(g) || std::isnan(g)) {
+          continue;
+        }
         auto& m1 = moment1_buffer[row+col*moment1_ldim];
         auto& m2 = moment2_buffer[row+col*moment2_ldim];
         m1 = m_beta1 * m1 + (one - m_beta1) * g;
@@ -195,10 +201,8 @@ void adam<TensorDataType>::step_compute_cpu(AbsDistMatrixType& values,
 
 template <typename TensorDataType>
 bool adam<TensorDataType>::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
-  OptimizerType::save_to_checkpoint_shared(p, name_prefix);
-
   if (this->get_comm().am_trainer_master()) {
-    pack_scalars(p);
+    write_cereal_archive(*this, p, "adam.xml");
   }
 
   char l_name[512];
@@ -213,15 +217,7 @@ bool adam<TensorDataType>::save_to_checkpoint_shared(persist& p, std::string nam
 
 template <typename TensorDataType>
 bool adam<TensorDataType>::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
-  OptimizerType::load_from_checkpoint_shared(p, name_prefix);
-  struct packing_header header;
-  if (this->get_comm().am_trainer_master()) {
-    unpack_scalars(p, &header);
-  }
-
-  this->get_comm().trainer_broadcast(0, header);
-
-  unpack_header(header);
+  load_from_shared_cereal_archive(*this, p, this->get_comm(), "adam.xml");
 
   char l_name[512];
   sprintf(l_name, "%s_optimizer_adam_moment1_%lldx%lld.bin", name_prefix.c_str(), m_moment1->Height(), m_moment2->Width());
@@ -235,9 +231,7 @@ bool adam<TensorDataType>::load_from_checkpoint_shared(persist& p, std::string n
 
 template <typename TensorDataType>
 bool adam<TensorDataType>::save_to_checkpoint_distributed(persist& p, std::string name_prefix) {
-  OptimizerType::save_to_checkpoint_distributed(p, name_prefix);
-
-  pack_scalars(p);
+  write_cereal_archive(*this, p, "adam.xml");
 
   char l_name[512];
   sprintf(l_name, "%s_optimizer_adam_moment1_%lldx%lld", name_prefix.c_str(), m_moment1->Height(), m_moment2->Width());
@@ -251,9 +245,7 @@ bool adam<TensorDataType>::save_to_checkpoint_distributed(persist& p, std::strin
 
 template <typename TensorDataType>
 bool adam<TensorDataType>::load_from_checkpoint_distributed(persist& p, std::string name_prefix) {
-  OptimizerType::load_from_checkpoint_distributed(p, name_prefix);
-  struct packing_header header;
-  unpack_scalars(p, &header);
+  read_cereal_archive(*this, p, "adam.xml");
 
   char l_name[512];
   sprintf(l_name, "%s_optimizer_adam_moment1_%lldx%lld", name_prefix.c_str(), m_moment1->Height(), m_moment2->Width());

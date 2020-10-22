@@ -44,7 +44,8 @@ public:
 class sgd_execution_context final : public execution_context {
 public:
   /** Constructor. */
-  sgd_execution_context(observer_ptr<trainer> trainer, lbann_comm *comm, execution_mode mode, size_t mini_batch_size);
+  sgd_execution_context(trainer& trainer, training_algorithm& training_alg,
+                        lbann_comm *comm, execution_mode mode, size_t mini_batch_size);
   /** Destructor. */
   virtual ~sgd_execution_context() = default;
 
@@ -65,6 +66,12 @@ public:
        CEREAL_NVP(m_epoch),
        CEREAL_NVP(m_current_mini_batch_size),
        CEREAL_NVP(m_effective_mini_batch_size));
+  }
+
+  /** @brief Return the state of the execution context as a string */
+  std::string get_state_string() const noexcept override {
+    return build_string("sgd.", to_string(get_execution_mode()),
+                        ".epoch.", get_epoch(), ".step.", get_step());
   }
 
   /** Number of times the training set has been traversed. */

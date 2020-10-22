@@ -51,6 +51,8 @@ public:
   /** Copy training_algorithm. */
   //  virtual sgd_training_algorithm* copy() const = default;
 
+  std::string get_name() const { return "sgd"; }
+
   // ===========================================
   // Execution
   // ===========================================
@@ -59,25 +61,28 @@ public:
       context and execution mode */
   void apply(execution_context& c,
              model& model,
+             data_coordinator& dc,
              execution_mode mode,
              termination_criteria const& term_criteria) override;
 
   /** Train a model using an iterative SGD solver. */
   void train(sgd_execution_context& c,
              model& model,
+             data_coordinator& dc,
              size_t num_epochs, size_t num_batches=0);
 
   /** Evaluate a model using the forward pass of an SGD solver. */
   void evaluate(sgd_execution_context& c,
                 model& model,
+                data_coordinator& dc,
                 execution_mode mode, size_t num_batches=0);
 
 protected:
   /** Train model on one step / mini-batch of an SGD forward pass */
-  virtual bool train_mini_batch(sgd_execution_context& c, model& model);
+  virtual bool train_mini_batch(sgd_execution_context& c, model& model, data_coordinator& dc);
 
   /** Evaluate model on one step / mini-batch of an SGD forward pass */
-  virtual bool evaluate_mini_batch(sgd_execution_context& c, model& model, execution_mode mode);
+  virtual bool evaluate_mini_batch(sgd_execution_context& c, model& model, data_coordinator& dc, execution_mode mode);
 
   ////////////////////////////////////////////////////////////
   // Callbacks

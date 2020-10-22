@@ -108,8 +108,8 @@ public:
 
   El::Device get_device_allocation() const override { return Dev; }
 
-  void setup_dims() override {
-    regularizer_layer<TensorDataType>::setup_dims();
+  void setup_dims(DataReaderMetaData& dr_metadata) override {
+    regularizer_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims(this->get_input_dims());
   }
 

@@ -15,13 +15,16 @@ set_full_path(THIS_DIR_SOURCES
   data_reader_numpy_npz.cpp
   data_reader_pilot2_molecular.cpp
   data_reader_synthetic.cpp
-  data_reader_multi_images.cpp
-  data_reader_multihead_siamese.cpp
   data_reader_python.cpp
-  offline_patches_npz.cpp
   data_reader_numpy_npz_conduit.cpp
   data_reader_npz_ras_lipid.cpp
+  data_reader_smiles.cpp
   )
+
+if (LBANN_HAS_DISTCONV)
+  list(APPEND THIS_DIR_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/data_reader_hdf5.cpp")
+endif ()
 
 # Propagate the files up the tree
 set(SOURCES "${SOURCES}" "${THIS_DIR_SOURCES}" PARENT_SCOPE)

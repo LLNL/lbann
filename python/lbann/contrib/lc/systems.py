@@ -8,24 +8,23 @@ import re
 
 class SystemParams:
     """Simple data structure to describe an LC system."""
-    def __init__(self,
-                 cores_per_node, gpus_per_node,
-                 scheduler, partition, account):
+    def __init__(self, cores_per_node, gpus_per_node, scheduler):
         self.cores_per_node = cores_per_node
         self.gpus_per_node = gpus_per_node
         self.scheduler = scheduler
-        self.partition = partition
-        self.account = account
 
 # Supported LC systems
-_system_params = {'catalyst': SystemParams(24, 0, 'slurm', 'pbatch', 'brain'),
-                  'corona':  SystemParams(24, 0, 'slurm', 'pbatch', None),
-                  'pascal':   SystemParams(36, 2, 'slurm', 'pbatch', 'lc'),
-                  'quartz':   SystemParams(36, 0, 'slurm', 'pbatch', 'brain'),
-                  'surface':  SystemParams(16, 2, 'slurm', 'pbatch', 'hpclearn'),
-                  'lassen':   SystemParams(44, 4, 'lsf', 'pbatch', None),
-                  'ray':      SystemParams(40, 4, 'lsf', 'pbatch', None),
-                  'sierra':   SystemParams(44, 4, 'lsf', 'pbatch', None)}
+_system_params = {
+    'catalyst': SystemParams(24, 0, 'slurm'),
+    'corona':   SystemParams(24, 0, 'slurm'),
+    'pascal':   SystemParams(36, 2, 'slurm'),
+    'quartz':   SystemParams(36, 0, 'slurm'),
+    'surface':  SystemParams(16, 2, 'slurm'),
+    'lassen':   SystemParams(44, 4, 'lsf'),
+    'ray':      SystemParams(40, 4, 'lsf'),
+    'sierra':   SystemParams(44, 4, 'lsf'),
+    'rzansel':  SystemParams(44, 4, 'lsf'),
+}
 
 # Detect system
 _system = re.sub(r'\d+', '', socket.gethostname())
@@ -70,21 +69,11 @@ def scheduler(system = system()):
         raise RuntimeError('unknown system (' + system + ')')
     return _system_params[system].scheduler
 
-def partition(system = system()):
-    """Default scheduler partition."""
-    if not is_lc_system(system):
-        raise RuntimeError('unknown system (' + system + ')')
-    return _system_params[system].partition
-
-def account(system = system()):
-    """Default scheduler account."""
-    if not is_lc_system(system):
-        raise RuntimeError('unknown system (' + system + ')')
-    return _system_params[system].account
-
 def procs_per_node(system = system()):
     """Default number of processes per node."""
     if has_gpu(system):
         return gpus_per_node(system)
     else:
+        # Catalyst and Quartz have 2 sockets per node
+        ### @todo Think of a smarter heuristic
         return 2

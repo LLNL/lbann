@@ -7,6 +7,7 @@ set_full_path(THIS_DIR_SOURCES
 
 # Add the subdirectories
 add_subdirectory(callbacks)
+add_subdirectory(data_coordinator)
 add_subdirectory(data_readers)
 add_subdirectory(data_store)
 add_subdirectory(execution_contexts)
@@ -30,4 +31,4 @@ endif ()
 # Propagate the files up the tree
 set(LBANN_HEADERS "${HEADERS}" "${THIS_DIR_HEADERS}" PARENT_SCOPE)
 set(LBANN_SOURCES "${SOURCES}" "${THIS_DIR_SOURCES}" PARENT_SCOPE)
-set(LBANN_CUDA_SOURCES "${CUDA_SOURCES}" "${THIS_DIR_CU_SOURCES}" PARENT_SCOPE)
+set(LBANN_GPU_SOURCES "${GPU_SOURCES}" "${THIS_DIR_CU_SOURCES}" PARENT_SCOPE)

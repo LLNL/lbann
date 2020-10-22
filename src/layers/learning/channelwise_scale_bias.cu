@@ -26,6 +26,8 @@
 
 #define LBANN_CHANNELWISE_SCALE_BIAS_LAYER_INSTANTIATE
 #include "lbann/layers/learning/channelwise_scale_bias.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
+
 #ifdef HYDROGEN_HAVE_CUB
 #include "cub/block/block_reduce.cuh"
 #endif // HYDROGEN_HAVE_CUB
@@ -133,12 +135,12 @@ __global__ void bp_kernel(size_t num_channels,
     __syncthreads();
     const auto da = BlockReduce(workspace).Sum(private_da);
     if (tid == 0) {
-      cuda::atomic_add(&gradient_wrt_scale[channel], da);
+      gpu_lib::atomic_add(&gradient_wrt_scale[channel], da);
     }
     __syncthreads();
     const auto db = BlockReduce(workspace).Sum(private_db);
     if (tid == 0) {
-      cuda::atomic_add(&gradient_wrt_bias[channel], db);
+      gpu_lib::atomic_add(&gradient_wrt_bias[channel], db);
     }
 #else
     __shared__ TensorDataType workspace[bsizex*bsizey];
@@ -150,7 +152,7 @@ __global__ void bp_kernel(size_t num_channels,
       }
     }
     if (tid == 0) {
-      cuda::atomic_add(&gradient_wrt_scale[channel], workspace[0]);
+      gpu_lib::atomic_add(&gradient_wrt_scale[channel], workspace[0]);
     }
     workspace[tid] = private_db;
     for (size_t stride = bsizex*bsizey/2; stride > 0; stride /= 2) {
@@ -160,7 +162,7 @@ __global__ void bp_kernel(size_t num_channels,
       }
     }
     if (tid == 0) {
-      cuda::atomic_add(&gradient_wrt_bias[channel], workspace[0]);
+      gpu_lib::atomic_add(&gradient_wrt_bias[channel], workspace[0]);
     }
 #endif // HYDROGEN_HAVE_CUB
 
@@ -177,7 +179,7 @@ void channelwise_scale_bias_layer<TensorDataType, T_layout, Dev>::fp_compute() {
   // Local matrices
   const auto& local_input = dynamic_cast<const GPUMatType&>(this->get_local_prev_activations());
   auto& local_output = dynamic_cast<GPUMatType&>(this->get_local_activations());
-  const auto& local_weights = dynamic_cast<const GPUMatType&>(this->get_data_type_weights(0).get_values().LockedMatrix());
+  const auto& local_weights = dynamic_cast<const GPUMatType&>(this->weights_values(0).LockedMatrix());
   const auto local_scale = El::LockedView(local_weights,
                                           El::ALL, El::IR(0));
   const auto local_bias = El::LockedView(local_weights,
@@ -203,13 +205,17 @@ void channelwise_scale_bias_layer<TensorDataType, T_layout, Dev>::fp_compute() {
     grid_dims.x = (channel_size + block_size_x - 1) / block_size_x;
     grid_dims.y = (local_width + block_size_y - 1) / block_size_y;
     grid_dims.z = num_channels;
-    fp_kernel
-      <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
-        num_channels, channel_size, local_width,
-        local_input.LockedBuffer(), local_input.LDim(),
-        local_output.Buffer(), local_output.LDim(),
-        local_scale.LockedBuffer(),
-        local_bias.LockedBuffer());
+    auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_input),
+                                       gpu::get_sync_info(local_output),
+                                       gpu::get_sync_info(local_weights));
+    hydrogen::gpu::LaunchKernel(
+      fp_kernel<TensorDataType>,
+      grid_dims, block_dims, 0, multisync,
+      num_channels, channel_size, local_width,
+      local_input.LockedBuffer(), local_input.LDim(),
+      local_output.Buffer(), local_output.LDim(),
+      local_scale.LockedBuffer(),
+      local_bias.LockedBuffer());
   }
 
 }
@@ -223,7 +229,7 @@ void channelwise_scale_bias_layer<TensorDataType, T_layout, Dev>::bp_compute() {
   const auto& local_input = dynamic_cast<const GPUMatType&>(this->get_local_prev_activations());
   const auto& local_gradient_wrt_output = dynamic_cast<const GPUMatType&>(this->get_local_prev_error_signals());
   auto& local_gradient_wrt_input = dynamic_cast<GPUMatType&>(this->get_local_error_signals());
-  const auto& local_weights = dynamic_cast<const GPUMatType&>(this->get_data_type_weights(0).get_values().LockedMatrix());
+  const auto& local_weights = dynamic_cast<const GPUMatType&>(this->weights_values(0).LockedMatrix());
   auto& local_gradient_wrt_weights = dynamic_cast<GPUMatType&>(this->m_weights_gradient->Matrix());
   const auto local_scale = El::LockedView(local_weights,
                                           El::ALL, El::IR(0));
@@ -253,19 +259,26 @@ void channelwise_scale_bias_layer<TensorDataType, T_layout, Dev>::bp_compute() {
     grid_dims.x = (channel_size + block_size_x - 1) / block_size_x;
     grid_dims.y = (local_width + block_size_y - 1) / block_size_y;
     grid_dims.z = num_channels;
-    bp_kernel<block_size_x, block_size_y>
-      <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
-        num_channels, channel_size, local_width,
-        local_input.LockedBuffer(), local_input.LDim(),
-        local_gradient_wrt_output.LockedBuffer(), local_gradient_wrt_output.LDim(),
-        local_gradient_wrt_input.Buffer(), local_gradient_wrt_input.LDim(),
-        local_scale.LockedBuffer(),
-        local_gradient_wrt_scale.Buffer(),
-        local_gradient_wrt_bias.Buffer());
+    auto multisync = El::MakeMultiSync(
+      gpu::get_sync_info(local_input),
+      gpu::get_sync_info(local_gradient_wrt_output),
+      gpu::get_sync_info(local_gradient_wrt_input),
+      gpu::get_sync_info(local_gradient_wrt_weights),
+      gpu::get_sync_info(local_weights));
+    hydrogen::gpu::LaunchKernel(
+      bp_kernel<block_size_x, block_size_y, TensorDataType>,
+      grid_dims, block_dims, 0, multisync,
+      num_channels, channel_size, local_width,
+      local_input.LockedBuffer(), local_input.LDim(),
+      local_gradient_wrt_output.LockedBuffer(), local_gradient_wrt_output.LDim(),
+      local_gradient_wrt_input.Buffer(), local_gradient_wrt_input.LDim(),
+      local_scale.LockedBuffer(),
+      local_gradient_wrt_scale.Buffer(),
+      local_gradient_wrt_bias.Buffer());
   }
 
   // Update optimizer with gradient
-  auto* opt = this->get_data_type_weights(0).get_optimizer();
+  auto* opt = this->get_weights(0).get_optimizer();
   if (opt != nullptr) {
     opt->add_to_gradient(*this->m_weights_gradient, El::TypeTraits<TensorDataType>::One(), true);
   }

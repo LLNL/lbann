@@ -23,7 +23,6 @@ pad_index = dataset.pad_index
 # ----------------------------------------------
 
 def make_model(
-    mini_batch_size,
     num_epochs,
     embed_dim,
     num_heads,
@@ -136,7 +135,6 @@ def make_model(
     metrics = []
     callbacks = [lbann.CallbackPrint(), lbann.CallbackTimer()]
     return lbann.Model(
-        mini_batch_size,
         num_epochs,
         layers=lbann.traverse_layer_graph(input_),
         objective_function=loss,
@@ -166,10 +164,10 @@ def make_data_reader():
 # Batch script
 # ----------------------------------------------
 
-def make_batch_script(model_params, script_params):
+def make_batch_script(trainer_params, model_params, script_params):
 
     # Create LBANN objects
-    trainer = lbann.Trainer()
+    trainer = lbann.Trainer(mini_batch_size=trainer_params.mini_batch_size)
     model = make_model(**model_params)
     reader = make_data_reader()
 
@@ -192,7 +190,7 @@ def make_batch_script(model_params, script_params):
     )
 
     # Checkpoint after every epoch
-    model.callbacks.append(
+    trainer.callbacks.append(
         lbann.CallbackCheckpoint(
             checkpoint_dir=os.path.join(script_params['work_dir'], 'checkpoint'),
             checkpoint_epochs=1,

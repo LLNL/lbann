@@ -29,12 +29,13 @@
 
 #include "lbann/base.hpp"
 #include "lbann/execution_contexts/execution_context.hpp"
+#include "lbann/models/model.hpp"
+#include "lbann/data_coordinator/data_coordinator.hpp"
 
 namespace lbann {
 
 // Forward-declare this.
 class execution_context;
-class model;
 
 /** Base class for LBANN training_algorithms. */
 class training_algorithm {
@@ -55,10 +56,16 @@ public:
   /** Copy training_algorithm. */
   //  virtual training_algorithm* copy() const = default;
 
+  virtual std::string get_name() const = 0;
+
   virtual void apply(execution_context& context,
                      model& model,
+                     data_coordinator& dc,
                      execution_mode mode,
                      termination_criteria const& term_criteria) = 0;
+
+  void setup_models(std::vector<observer_ptr<model>> models, size_t max_mini_batch_size, DataReaderMetaData& dr_metadata);
+
 };
 
 }  // namespace lbann

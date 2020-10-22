@@ -55,13 +55,14 @@ class fetch_data_functor {
     case data_reader_target_mode::NA:
        throw lbann_exception("Invalid data reader target mode");
     case data_reader_target_mode::CLASSIFICATION:
+    case data_reader_target_mode::LABEL_RECONSTRUCTION:
     default:
       num_responses_fetched = data_reader->fetch_labels(responses);
     }
     if(num_samples_fetched != num_responses_fetched) {
-      std::string err = std::string("Number of samples: ") + std::to_string(num_samples_fetched)
-        + std::string(" does not match the number of responses: ") + std::to_string(num_responses_fetched);
-      throw lbann_exception(err);
+      LBANN_ERROR("Number of samples (",num_samples_fetched,") ",
+                  "does not match the ",
+                  "number of responses (",num_responses_fetched,")");
     }
     return num_samples_fetched;
   }
@@ -73,6 +74,7 @@ class fetch_data_functor {
     case data_reader_target_mode::REGRESSION:
     case data_reader_target_mode::RECONSTRUCTION:
     case data_reader_target_mode::CLASSIFICATION:
+    case data_reader_target_mode::LABEL_RECONSTRUCTION:
     default:
       throw lbann_exception("Invalid data reader target mode");
     }
@@ -105,7 +107,7 @@ public:
   ///@}
 
 public:
-  generic_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers);
+  generic_io_buffer(lbann_comm *comm, int num_parallel_readers);
   generic_io_buffer(
     const generic_io_buffer&);
   generic_io_buffer& operator=(
@@ -135,11 +137,6 @@ public:
   virtual int num_samples_ready(execution_mode mode) = 0;
   virtual void set_data_fetch_future(std::future<void> future, execution_mode mode) = 0;
   virtual std::future<void> get_data_fetch_future(execution_mode mode) = 0;
-
-  virtual void calculate_num_iterations_per_epoch_spanning_models(int max_mini_batch_size, generic_data_reader *data_reader) = 0;
-  virtual void calculate_num_iterations_per_epoch_single_model(int max_mini_batch_size, generic_data_reader *data_reader) = 0;
-
-  virtual int compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers) const = 0;
 
   // protected:
  public:

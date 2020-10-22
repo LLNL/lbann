@@ -38,7 +38,10 @@ namespace lbann {
  *  @todo Dedicated optimizers for momentum or Nesterov SGD.
  */
 template <typename TensorDataType>
-class sgd : public data_type_optimizer<TensorDataType> {
+class sgd : public Cloneable<sgd<TensorDataType>,
+                             data_type_optimizer<TensorDataType>> {
+  using BaseType = Cloneable<sgd<TensorDataType>,
+                             data_type_optimizer<TensorDataType>>;
 
 public:
   /** @name Public Types */
@@ -66,8 +69,12 @@ public:
   sgd(const sgd& other);
   sgd& operator=(const sgd& other);
   ~sgd() override = default;
-  sgd* copy() const override { return new sgd(*this); }
 
+  /** Archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar) {
+    ar(cereal::base_class<data_type_optimizer<TensorDataType>>(this),
+       CEREAL_NVP(m_momentum));
+  }
   ///@}
 
   /** @name Descriptions */
@@ -131,36 +138,13 @@ private:
 
   /** CPU implementation of momentum or Nesterov step. */
   void momentum_step_cpu(AbsDistMatrixType& values, const AbsDistMatrixType& gradient);
-#ifdef LBANN_HAS_CUDA
+#ifdef LBANN_HAS_GPU
   /** GPU implementation of momentum or Nesterov step. */
   void momentum_step_gpu(AbsDistMatrixType& values, const AbsDistMatrixType& gradient);
-#endif // LBANN_HAS_CUDA
+#endif // LBANN_HAS_GPU
 
   /** @name Checkpointing */
   ///@{
-
-  struct packing_header {
-    TensorDataType momentum;
-  };
-
-  bool pack_scalars(persist& p) {
-    p.write_datatype(persist_type::train, "momentum", m_momentum);
-    return true;
-  }
-
-  bool unpack_scalars(persist& p, struct packing_header *header){
-    p.read_datatype(persist_type::train, "momentum",  &m_momentum);
-
-    if(header != nullptr){
-      header->momentum = m_momentum;
-    }
-
-  return true;
-  }
-
-  void unpack_header(struct packing_header& header){
-    m_momentum = header.momentum;
-  }
 
   bool save_to_checkpoint_shared(persist& p, std::string m_name) override;
   bool load_from_checkpoint_shared(persist& p, std::string m_name) override;

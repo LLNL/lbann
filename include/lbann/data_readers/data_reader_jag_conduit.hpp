@@ -169,9 +169,9 @@ class data_reader_jag_conduit : public generic_data_reader {
   void check_image_data();
 #endif // _JAG_OFFLINE_TOOL_MODE_
 
-  /// Set every reader instances in a trainer to have an independent index list
+  /// Set every reader instances in a trainer to have an independent sample list
   void set_list_per_trainer(bool flag) { m_list_per_trainer = flag; };
-  /// Set every reader instances in a model to have an independent index list
+  /// Set every reader instances in a model to have an independent sample list
   void set_list_per_model(bool flag) { m_list_per_model = flag; };
 
   bool has_list_per_model() const override { return m_list_per_model; }
@@ -208,15 +208,13 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Return the dimension of data
   const std::vector<int> get_data_dims() const override;
 
-  /// Return the slice points for linearized independent variables
-  std::vector<El::Int> get_slice_points_independent() const;
-  /// Return the slice points for linearized dependent variables
-  std::vector<El::Int> get_slice_points_dependent() const;
-
   int get_num_data() const override;
   int get_num_labels() const override;
   int get_linearized_label_size() const override;
   int get_linearized_size(const std::string& desc) const override;
+
+  std::vector<El::Int> get_slice_points(const slice_points_mode var_category,
+                                        bool& is_supported) override;
 
   void set_split_image_channels();
   void unset_split_image_channels();
@@ -274,7 +272,12 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Return the dimension of a particular JAG variable type
   const std::vector<int> get_dims(const variable_t t) const;
   /// Return the slice points for linearized data or responses
-  std::vector<El::Int> get_slice_points(const std::vector< std::vector<data_reader_jag_conduit::variable_t> >& var) const;
+  std::vector<El::Int> get_slice_points_impl(const std::vector< std::vector<data_reader_jag_conduit::variable_t> >& var) const;
+  /// Return the slice points for linearized independent variables
+  std::vector<El::Int> get_slice_points_independent() const;
+  /// Return the slice points for linearized dependent variables
+  std::vector<El::Int> get_slice_points_dependent() const;
+
   /// A utility function to make a string to show all the variable types
   static std::string to_string(const std::vector<variable_t>& vec);
   /// A utility function to make a string to show all the groups of variable types
@@ -313,8 +316,10 @@ class data_reader_jag_conduit : public generic_data_reader {
    * the number of models and the mini batch size.
    */
   bool check_num_parallel_readers(long data_set_size);
+  /// Check the consistency of the schema of the first sample
+  void sample_schema_check(const bool check_data);
   /// Rely on pre-determined list of samples.
-  void load_list_of_samples(const std::string filename, size_t stride=1, size_t offset=0);
+  void load_list_of_samples(const std::string filename);
   /// Load the sample list from a serialized archive from another rank
   void load_list_of_samples_from_archive(const std::string& sample_list_archive);
 
@@ -464,7 +469,7 @@ class data_reader_jag_conduit : public generic_data_reader {
   bool m_list_per_trainer;
   bool m_list_per_model;
 
-  void preload_helper(const hid_t& h, const std::string &sample_name, const std::string &field_name, int data_id, conduit::Node &node); 
+  void preload_helper(const hid_t& h, const std::string &sample_name, const std::string &field_name, int data_id, conduit::Node &node);
 };
 
 /**

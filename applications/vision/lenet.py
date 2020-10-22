@@ -1,6 +1,8 @@
 import argparse
 import lbann
 import data.mnist
+import lbann.contrib.args
+import lbann.contrib.launcher
 
 # ----------------------------------
 # Command-line arguments
@@ -8,12 +10,10 @@ import data.mnist
 
 desc = ('Train LeNet on MNIST data using LBANN.')
 parser = argparse.ArgumentParser(description=desc)
+lbann.contrib.args.add_scheduler_arguments(parser)
 parser.add_argument(
-    '--partition', action='store', type=str,
-    help='scheduler partition', metavar='NAME')
-parser.add_argument(
-    '--account', action='store', type=str,
-    help='scheduler account', metavar='NAME')
+    '--job-name', action='store', default='lbann_lenet', type=str,
+    help='scheduler job name (default: lbann_lenet)')
 args = parser.parse_args()
 
 # ----------------------------------
@@ -72,8 +72,7 @@ acc = lbann.CategoricalAccuracy(probs, labels)
 # Setup model
 mini_batch_size = 64
 num_epochs = 20
-model = lbann.Model(mini_batch_size,
-                    num_epochs,
+model = lbann.Model(num_epochs,
                     layers=lbann.traverse_layer_graph(input_),
                     objective_function=loss,
                     metrics=[lbann.Metric(acc, name='accuracy', unit='%')],
@@ -88,15 +87,12 @@ opt = lbann.SGD(learn_rate=0.01, momentum=0.9)
 data_reader = data.mnist.make_data_reader()
 
 # Setup trainer
-trainer = lbann.Trainer()
+trainer = lbann.Trainer(mini_batch_size=mini_batch_size)
 
 # ----------------------------------
 # Run experiment
 # ----------------------------------
-# Note: Use `lbann.contrib.launcher.run` instead for optimized
-# defaults.
-
-kwargs = {}
-if args.partition: kwargs['partition'] = args.partition
-if args.account: kwargs['account'] = args.account
-lbann.run(trainer, model, data_reader, opt, **kwargs)
+kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
+lbann.contrib.launcher.run(trainer, model, data_reader, opt,
+                           job_name=args.job_name,
+                           **kwargs)

@@ -36,6 +36,17 @@ enum DataType {
   FP16 = 2;
 }
 
+// Lives here because it's used by both Convolution and
+// Deconvolution.
+enum ConvTensorOpsMode {
+  // Use the global default.
+  DEFAULT_TENSOR_OPS = 0;
+  // Explicitly disable tensor ops.
+  NO_TENSOR_OPS = 1;
+  // Use tensor ops -- allows conversion FP32->FP16
+  USE_TENSOR_OPS = 2;
+}
+
 message Layer {
   string name = 50;
   string parents = 151;
@@ -47,6 +58,7 @@ message Layer {
   bool num_neurons_from_data_reader = 53;
   bool freeze = 5;
   string hint_layer = 56;
+  ParallelStrategy parallel_strategy = 58;
 
   repeated WeightsData weights_data = 153;
   string top = 154;
@@ -91,6 +103,7 @@ message Layer {
     ChannelwiseScaleBias channelwise_scale_bias = 329;
     EntrywiseScaleBias entrywise_scale_bias = 330;
     ChannelwiseFullyConnected channelwise_fully_connected = 331;
+    GRU gru = 333;
 
     // Loss layers
     CrossEntropy cross_entropy = 60;
@@ -156,6 +169,7 @@ message Layer {
     LogicalXor logical_xor = 468;
     Clamp clamp = 469;
     MatMul matmul = 470;
+    DFTAbs dft_abs = 471;
 
     // Regularization layers
     BatchNormalization batch_normalization = 19;
@@ -192,6 +206,7 @@ message Layer {
     Argmin argmin = 606;
     OneHot one_hot = 607;
     ChannelwiseSoftmax channelwise_softmax = 608;
+    DistEmbedding dist_embedding = 609;
 
   }
 
@@ -249,6 +264,7 @@ message Layer {
     double min = 1;
     double max = 2;
   }
+  message DFTAbs {}
 
   /** @brief Matrix multiplication.
    *
@@ -302,7 +318,9 @@ message Layer {
   ///////////////////////
   // Loss layers //
   ///////////////////////
-  message CrossEntropy {}
+  message CrossEntropy {
+    bool use_labels = 1; //default: false
+  }
   message MeanSquaredError {}
   message MeanAbsoluteError {}
   message CategoricalAccuracy {}
@@ -382,9 +400,8 @@ message Layer {
   // Input layers //
   //////////////////
   message Input {
-    bool data_set_per_model = 1;  // Default: false
     string io_buffer = 2;         // Options: "partitioned" (default)
-    string target_mode = 3;       // Options: "classification" (default), "regression", "reconstruction", "N/A"
+    string target_mode = 3;       // Options: "classification" (default), "regression", "reconstruction", "label_reconstruction", "N/A"
   }
 
   //////////////////////
@@ -562,6 +579,9 @@ message Layer {
     bool has_bias = 10;                   //default: true
     double bias_initial_value = 11;       //default: 0
     double l2_regularization_factor = 12; //default: 0
+
+    // This field is ignored for non-GPU layers.
+    ConvTensorOpsMode conv_tensor_op_mode = 13;
   }
 
   message Deconvolution {
@@ -587,6 +607,9 @@ message Layer {
     bool has_bias = 10;                   //default: true
     double bias_initial_value = 11;       //default: 0
     double l2_regularization_factor = 12; //default: 0
+
+    // This field is ignored for non-GPU layers.
+    ConvTensorOpsMode conv_tensor_op_mode = 13;
   }
 
   /** @brief Lookup table to embedding vectors.
@@ -644,6 +667,34 @@ message Layer {
     google.protobuf.BoolValue transpose = 3;
   }
 
+  /** @brief Stacked gated recurrent unit
+   *
+   *  Expects two inputs: a 2D input sequence (
+   *  @f$ \text{sequence\_length}\times\text{input\_size} @f$ )
+   *  and a 2D initial hidden state (
+   *  @f$ \text{num\_layers}times\text{hidden\_size} @f$ ).
+   *
+   *  Uses four weights per GRU cell: "ih\_matrix" (
+   *  @f$ 3 \text{hidden\_size}\times\text{input\_size} @f$ for layer
+   *  0 and @f$ 3 \text{hidden\_size}\times\text{hidden\_size} for
+   *  other layers), "hh\_matrix" (
+   *  @f$ 3 \text{hidden\_size}\times\text{hidden\_size} @f$ ),
+   *  "ih_bias" ( @f$ 3 \text{hidden\_size} @f$ ),
+   *  "hh_bias" ( @f$ 3 \text{hidden\_size} @f$ ).
+   *
+   *  Currently only supported on GPU. Requires at least CUDA 11.0 and
+   *  cuDNN 8.0.4.
+   *
+   *  @todo Support CPU
+   *  @todo Support bidirectional RNNs
+   */
+  message GRU {
+    /// Size of each hidden state and output vector
+    uint64 hidden_size = 1;
+    /// Number of stacked GRU cells (default: 1)
+    google.protobuf.UInt64Value num_layers = 2;
+  }
+
   //////////////////
   // Image layers //
   //////////////////
@@ -691,6 +742,40 @@ message Layer {
 
   message ChannelwiseSoftmax {}
 
+  /** @brief Embedding layer with distributed weights.
+   *
+   *  @warning This is extremely experimental.
+   */
+  message DistEmbedding {
+
+    /** Size of dictionary of embeddings. */
+    int64 num_embeddings = 1;
+    /** Size of embedding vectors. */
+    int64 embedding_dim = 2;
+
+    /** Perform sparse SGD during backprop.
+     *
+     *  Bypasses optimizer class.
+     */
+    bool sparse_sgd = 3;
+    /** SGD learning rate. */
+    double learning_rate = 4;
+
+    /** Perform a blocking barrier at the beginning of forward prop.
+     *
+     *  This layer performs synchronization with non-blocking barriers
+     *  to ensure the correctness of asynchronous communication.
+     *  However, gradient checking changes the embedding values without
+     *  performing any synchronization. The quickest fix is to do a
+     *  blocking barrier at the beginning of forward prop to make sure
+     *  that all the embeddings are ready to be accessed.
+     *
+     *  @todo Think of a way to avoid this synchronization.
+     */
+    bool barrier_in_forward_prop = 5;
+
+  }
+
 } // message Layer
 
 //note: I'd like to put this enum inside of Layer, but if I do the enum values
@@ -718,4 +803,25 @@ message WeightsData {
   repeated float data = 4 [packed=true];
 
   Imcomm imcomm = 55;
+}
+
+//========================================================================
+// Parallel strategies for generalized layer-wise parallelism
+//========================================================================
+message ParallelStrategy {
+  int64 sample_groups = 1;
+  int64 sample_splits = 2;
+  int64 height_groups = 3;
+  int64 height_splits = 4;
+  int64 width_groups = 5;
+  int64 width_splits = 6;
+  int64 channel_groups = 7;
+  int64 channel_splits = 8;
+  int64 filter_groups = 9;
+  int64 filter_splits = 10;
+  // For fully-connected layers.
+  int64 replications = 11;
+  int64 procs_per_replica = 12;
+  int64 depth_groups = 13;
+  int64 depth_splits = 14;
 }

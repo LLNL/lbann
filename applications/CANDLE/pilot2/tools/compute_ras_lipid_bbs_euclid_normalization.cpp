@@ -37,11 +37,10 @@
 
 using namespace lbann;
 
-void read_file(const std::string &filename, std::vector<float> &data); 
+void read_file(const std::string &filename, std::vector<float> &data);
 
 int main(int argc, char *argv[]) {
-  int random_seed = 0;
-  world_comm_ptr comm = initialize(argc, argv, random_seed);
+  world_comm_ptr comm = initialize(argc, argv);
   bool master = comm->am_world_master();
 
 
@@ -103,7 +102,7 @@ int main(int argc, char *argv[]) {
                   << filenames.size() << " processed\n";
       }
     }
-      
+
     //==================================================================
 
     // Collect and report global min/max/mean/std-dev values
@@ -114,7 +113,7 @@ int main(int argc, char *argv[]) {
     double max_all;
     double min_all;
     double total_all;
-    double n_samples_all; 
+    double n_samples_all;
 
     // only master needs to know min and max
     MPI_Reduce(&max, &max_all, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
@@ -162,8 +161,8 @@ int main(int argc, char *argv[]) {
       double std_dev;
       double v3 = all_minus_mean_squared / n_samples_all;
       std_dev = sqrt(v3);
-      
-      std::cout << "\nmax: " << max_all << std::endl; 
+
+      std::cout << "\nmax: " << max_all << std::endl;
       std::cout << "min: " << min_all << std::endl;
       std::cout << "mean: " << mean << std::endl;
       std::cout << "std dev: " << std_dev << std::endl;

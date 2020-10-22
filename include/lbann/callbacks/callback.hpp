@@ -83,8 +83,12 @@ public:
   /** @name Modifiers */
   ///@{
 
-  /** @brief Called once to set up the callback (after all layers are
-   *         set up).
+  /** @brief Called once to set up the callback on the trainer
+   */
+  virtual void setup(trainer *t) {};
+
+  /** @brief Called once to set up the callback on the model
+   *         (after all layers are set up).
    */
   virtual void setup(model *m) {};
 
@@ -182,6 +186,38 @@ public:
   virtual description get_description() const;
 
   ///@}
+
+  /** @brief Build a standard directory hierachy including trainer,
+   * execution context, and model information (in that order).
+   */
+  inline std::string get_multi_trainer_ec_model_path(const model& m,
+                                                     const std::string& root_dir) {
+    std::string dir = root_dir;
+    if (dir.empty()) { dir = "./"; }
+    if (dir.back() != '/') { dir += "/"; }
+
+    const auto& c = static_cast<const sgd_execution_context&>(m.get_execution_context());
+    return build_string(dir,
+                        c.get_trainer().get_name(), '/',
+                        c.get_state_string(), '/',
+                        m.get_name(), '/');
+  }
+
+  /** @brief Build a standard directory hierachy including trainer,
+   * model information in that order.
+   */
+  inline std::string get_multi_trainer_model_path(const model& m,
+                                                  const std::string& root_dir) {
+    std::string dir = root_dir;
+    if (dir.empty()) { dir = "./"; }
+    if (dir.back() != '/') { dir += "/"; }
+
+    const auto& c = static_cast<const sgd_execution_context&>(m.get_execution_context());
+    return build_string(dir,
+                        c.get_trainer().get_name(), '/',
+                        m.get_name(), '/');
+  }
+
 
 protected:
 

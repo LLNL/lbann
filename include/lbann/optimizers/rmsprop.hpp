@@ -40,7 +40,10 @@ namespace lbann {
  *  https://www.cs.toronto.edu/~tijmen/csc321/slides/lecture_slides_lec6.pdf.
  */
 template <typename TensorDataType>
-class rmsprop : public data_type_optimizer<TensorDataType> {
+class rmsprop : public Cloneable<rmsprop<TensorDataType>,
+                                 data_type_optimizer<TensorDataType>> {
+  using BaseType = Cloneable<rmsprop<TensorDataType>,
+                             data_type_optimizer<TensorDataType>>;
 public:
   /** @name Public Types */
   ///@{
@@ -64,7 +67,12 @@ public:
   rmsprop(const rmsprop& other);
   rmsprop& operator=(const rmsprop& other);
   ~rmsprop() override = default;
-  rmsprop* copy() const override { return new rmsprop(*this); }
+
+  /** Archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar) {
+    ar(cereal::base_class<data_type_optimizer<TensorDataType>>(this),
+       CEREAL_NVP(m_decay_rate));
+  }
 
   /** Human-readable type name. */
   std::string get_type() const override { return "RMSprop"; }
@@ -90,37 +98,14 @@ private:
 
   /** CPU implementation of optimization step. */
   void step_compute_cpu(AbsDistMatrixType& values, const AbsDistMatrixType& gradient);
-#ifdef LBANN_HAS_CUDA
+#ifdef LBANN_HAS_GPU
   /** GPU implementation of optimization step. */
   void step_compute_gpu(AbsDistMatrixType& values, const AbsDistMatrixType& gradient);
-#endif // LBANN_HAS_CUDA
+#endif // LBANN_HAS_GPU
 
   // ===========================================
   // Checkpointing
   // ===========================================
-
-  struct packing_header {
-    TensorDataType decay_rate;
-  };
-
-  bool pack_scalars(persist& p) {
-    p.write_datatype(persist_type::train, "decay_rate", m_decay_rate);
-    return true;
-  }
-
-  bool unpack_scalars(persist& p, struct packing_header *header){
-    p.read_datatype(persist_type::train, "momentum",  &m_decay_rate);
-
-    if(header != nullptr){
-      header->decay_rate = m_decay_rate;
-    }
-
-  return true;
-  }
-
-  void unpack_header(struct packing_header& header){
-    m_decay_rate = header.decay_rate;
-  }
 
   bool save_to_checkpoint_shared(persist& p, std::string m_name) override;
   bool load_from_checkpoint_shared(persist& p, std::string m_name) override;

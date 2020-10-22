@@ -32,10 +32,12 @@
 
 namespace lbann {
 
-sgd_execution_context::sgd_execution_context(observer_ptr<trainer> trainer, lbann_comm *comm,
+sgd_execution_context::sgd_execution_context(trainer& trainer,
+                                             training_algorithm& training_alg,
+                                             lbann_comm *comm,
                                              execution_mode mode,
                                              size_t mini_batch_size)
-  : execution_context(trainer, comm, mode),
+  : execution_context(trainer, training_alg, comm, mode),
     m_current_mini_batch_size(mini_batch_size),
     m_effective_mini_batch_size(mini_batch_size) {}
 

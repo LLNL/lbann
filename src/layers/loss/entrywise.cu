@@ -26,13 +26,13 @@
 
 #define LBANN_ENTRYWISE_LAYER_INSTANTIATE
 #include "lbann/layers/loss/entrywise.hpp"
-#include "lbann/utils/cuda.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 
 namespace lbann {
 
 namespace {
 
-/** CUDA kernel to apply an binary backprop operator. */
+/** GPU kernel to apply an binary backprop operator. */
 template <template <typename> class BinaryBackPropOperator,
           typename TensorDataType>
 __global__
@@ -81,6 +81,7 @@ void apply_binary_backprop_operator(
   // Get CUDA grid dimensions
   // Note: Maximum CUDA grid dimension is 2^32-1
   // (https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#features-and-technical-specifications).
+  // TODO: HIP/ROCM notes
   const El::Int height = x1.Height();
   const El::Int width = x1.Width();
   const El::Int block_dim = 256;
@@ -90,17 +91,22 @@ void apply_binary_backprop_operator(
     grid_dim = std::numeric_limits<uint32_t>::max();
   }
 
-  // Launch CUDA kernel
+  //Launch GPU kernel
   if (grid_dim > 0) {
-    CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
-    binary_backprop_operator_kernel<Op>
-      <<<grid_dim, block_dim, 0, El::GPUManager::Stream()>>>(
-        height, width,
-        x1.LockedBuffer(), x1.LDim(),
-        x2.LockedBuffer(), x2.LDim(),
-        dy.LockedBuffer(), dy.LDim(),
-        dx1.Buffer(), dx1.LDim(),
-        dx2.Buffer(), dx2.LDim());
+    auto multisync = El::MakeMultiSync(gpu::get_sync_info(dx2),
+                                       gpu::get_sync_info(dx1),
+                                       gpu::get_sync_info(dy),
+                                       gpu::get_sync_info(x2),
+                                       gpu::get_sync_info(x1));
+    hydrogen::gpu::LaunchKernel(
+      binary_backprop_operator_kernel<Op, TensorDataType>,
+      grid_dim, block_dim, 0, multisync,
+      height, width,
+      x1.LockedBuffer(), x1.LDim(),
+      x2.LockedBuffer(), x2.LDim(),
+      dy.LockedBuffer(), dy.LDim(),
+      dx1.Buffer(), dx1.LDim(),
+      dx2.Buffer(), dx2.LDim());
   }
 
 }
@@ -121,8 +127,8 @@ struct binary_cross_entropy_op {
     const TensorDataType zero = 0.;
     const TensorDataType one = 1.;
     TensorDataType y = zero;
-    if (x2 > zero) { y += -x2 * cuda::log(x1); }
-    if (x2 < one)  { y += -(one-x2) * cuda::log(one-x1); }
+    if (x2 > zero) { y += -x2 * gpu_lib::log(x1); }
+    if (x2 < one)  { y += -(one-x2) * gpu_lib::log(one-x1); }
     return y;
   }
   inline __device__ void operator()(const TensorDataType& x1,
@@ -137,11 +143,11 @@ struct binary_cross_entropy_op {
     if (dy == zero) { return; }
     if (x2 > zero) {
       dx1 += -x2 / x1 * dy;
-      dx2 += -cuda::log(x1) * dy;
+      dx2 += -gpu_lib::log(x1) * dy;
     }
     if (x2 < one)  {
       dx1 += (one-x2) / (one-x1) * dy;
-      dx2 += cuda::log(one-x1) * dy;
+      dx2 += gpu_lib::log(one-x1) * dy;
     }
   }
 };
@@ -158,11 +164,11 @@ struct sigmoid_binary_cross_entropy_op {
                                         const TensorDataType& x2) const {
     const TensorDataType zero = 0.;
     const TensorDataType one = 1.;
-    const auto& z = cuda::max(zero, cuda::min(x2, one));
+    const auto& z = gpu_lib::max(zero, gpu_lib::min(x2, one));
     if (x1 > zero) {
-      return (one - z) * x1 + cuda::log1p(cuda::exp(-x1));
+      return (one - z) * x1 + gpu_lib::log1p(gpu_lib::exp(-x1));
     } else {
-      return - x1 * z + cuda::log1p(cuda::exp(x1));
+      return - x1 * z + gpu_lib::log1p(gpu_lib::exp(x1));
     }
   }
   inline __device__ void operator()(const TensorDataType& x1,
@@ -172,11 +178,11 @@ struct sigmoid_binary_cross_entropy_op {
                                     TensorDataType& dx2) const {
     const TensorDataType zero = 0.;
     const TensorDataType one = 1.;
-    const auto& z = cuda::max(zero, cuda::min(x2, one));
+    const auto& z = gpu_lib::max(zero, gpu_lib::min(x2, one));
     if (x1 > zero) {
-      dx1 = -z + one / (one + cuda::exp(-x1));
+      dx1 = -z + one / (one + gpu_lib::exp(-x1));
     } else {
-      dx1 = one - z - one / (one + cuda::exp(x1));
+      dx1 = one - z - one / (one + gpu_lib::exp(x1));
     }
     dx1 *= dy;
     dx2 = (x2 == z) ? -x1 * dy : zero;
@@ -246,7 +252,7 @@ struct boolean_false_positive_op {
 #define DEFINE_COMPUTE_OPS(layer, op)                                   \
   template <typename TensorDataType, data_layout Layout, El::Device Device> \
   void layer<TensorDataType, Layout, Device>::fp_compute() {            \
-    cuda::apply_entrywise_binary_operator<op>(                          \
+    gpu_lib::apply_entrywise_binary_operator<op>(                          \
       this->get_prev_activations(0),                                    \
       this->get_prev_activations(1),                                    \
       this->get_activations());                                         \

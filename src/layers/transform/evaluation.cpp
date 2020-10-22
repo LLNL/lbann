@@ -29,8 +29,9 @@
 #include "lbann/models/model.hpp"
 #include "lbann/execution_contexts/sgd_execution_context.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/hydrogen_utils.hpp"
 #ifdef LBANN_HAS_GPU
-#include "lbann/utils/cublas.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 #endif // LBANN_HAS_GPU
 
 namespace lbann {
@@ -38,16 +39,16 @@ namespace lbann {
 namespace {
 
 /** CPU implementation of evaluation layer forward prop. */
-template <typename TensorDataType>
+template <typename TensorDataType, typename EvalDataType>
 void fp_cpu(lbann_comm& comm,
             const El::AbstractDistMatrix<TensorDataType>& input,
-            TensorDataType& value,
+            EvalDataType& value,
             Al::request& req) {
   const auto& local_input = input.LockedMatrix();
   const auto& local_height = local_input.Height();
   const auto& local_width = local_input.Width();
   const auto& mini_batch_size = input.Width();
-  value = El::TypeTraits<TensorDataType>::Zero();
+  value = El::TypeTraits<EvalDataType>::Zero();
   LBANN_OMP_PARALLEL_FOR_ARGS(reduction(+:value) collapse(2))
   for (El::Int col = 0; col < local_width; ++col) {
     for (El::Int row = 0; row < local_height; ++row) {
@@ -59,18 +60,20 @@ void fp_cpu(lbann_comm& comm,
 }
 
 #ifdef LBANN_HAS_HALF
+template <typename EvalDataType>
 void fp_cpu(lbann_comm& comm,
             const El::AbstractDistMatrix<cpu_fp16>& input,
-            cpu_fp16& value,
+            EvalDataType& value,
             Al::request& req) {
     LBANN_ERROR("This function is not supported in FP16 on CPUs");
 }
 #endif // LBANN_HAS_HALF
 
 #ifdef LBANN_HAS_GPU_FP16
+template <typename EvalDataType>
 void fp_cpu(lbann_comm& comm,
             const El::AbstractDistMatrix<fp16>& input,
-            fp16& value,
+            EvalDataType& value,
             Al::request& req) {
     LBANN_ERROR("This function is not supported in FP16 on CPUs");
 }
@@ -78,88 +81,96 @@ void fp_cpu(lbann_comm& comm,
 
 #ifdef LBANN_HAS_GPU
 /** GPU implementation of evaluation layer forward prop. */
-template <typename TensorDataType>
+template <typename TensorDataType, typename EvalDataType>
 void fp_gpu(lbann_comm& comm,
             const El::AbstractDistMatrix<TensorDataType>& input,
-            TensorDataType& value,
-            cuda::event_wrapper& copy_event) {
-  const TensorDataType zero = El::TypeTraits<TensorDataType>::Zero();
-  const TensorDataType one = El::TypeTraits<TensorDataType>::One();
+            EvalDataType& value,
+            gpu_lib::event_wrapper& copy_event) {
+  const EvalDataType zero = El::TypeTraits<EvalDataType>::Zero();
+  const EvalDataType one = El::TypeTraits<EvalDataType>::One();
 
   // Local matrix
-  const auto& local_input = input.LockedMatrix();
-  const auto& local_height = local_input.Height();
-  const auto& local_width = local_input.Width();
+  const auto& local_tdf_input = input.LockedMatrix();
+  const auto local_input = ViewIfPossibleOrCopy<TensorDataType, EvalDataType>::get(local_tdf_input);
+  const auto& local_height = local_input->Height();
+  const auto& local_width = local_input->Width();
   const auto& mini_batch_size = input.Width();
 
   // GPU objects
-  El::Matrix<TensorDataType, El::Device::GPU> sum_d, ones_d;
+  El::Matrix<EvalDataType, El::Device::GPU> sum_d, ones_d;
 #ifdef HYDROGEN_HAVE_CUB
   sum_d.SetMemoryMode(1);  // Use CUB GPU memory pool
   ones_d.SetMemoryMode(1); // Use CUB GPU memory pool
 #endif // HYDROGEN_HAVE_CUB
   sum_d.Resize(1, 1);
-  auto&& handle = El::GPUManager::cuBLASHandle();
-  auto&& stream = El::GPUManager::Stream();
-  CHECK_CUBLAS(cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE));
+
+  // Sync object
+  auto multisync = El::MakeMultiSync(gpu::get_sync_info(sum_d),
+                                     gpu::get_sync_info(ones_d),
+                                     gpu::get_sync_info(*local_input));
+  El::SyncInfo<El::Device::GPU> const& sync_info = multisync;
+
+  // Setup GPU_BLAS to be in Device pointer mode
+  hydrogen::gpu_blas::SetPointerMode(hydrogen::PointerMode::DEVICE);
 
   // Compute sum of local input matrix entries
-  if (local_input.IsEmpty()) {
+  static constexpr El::Int int_one = 1;
+  if (local_input->IsEmpty()) {
     El::Zero(sum_d);
-  } else if (local_input.Contiguous()) {
+  } else if (local_input->Contiguous()) {
     ones_d.Resize(local_height * local_width, 1);
     El::Fill(ones_d, one);
-    cublas::dot(handle,
-                local_height * local_width,
-                local_input.LockedBuffer(), 1,
-                ones_d.LockedBuffer(), 1,
-                sum_d.Buffer());
+    hydrogen::gpu_blas::Dot(local_height * local_width,
+                            local_input->LockedBuffer(), int_one,
+                            ones_d.LockedBuffer(), int_one,
+                            sum_d.Buffer(),
+                            sync_info);
   } else if (local_height == 1) {
     ones_d.Resize(local_width, 1);
     El::Fill(ones_d, one);
-    cublas::dot(handle,
-                local_width,
-                local_input.LockedBuffer(), local_input.LDim(),
-                ones_d.LockedBuffer(), 1,
-                sum_d.Buffer());
+    hydrogen::gpu_blas::Dot(local_width,
+                            local_input->LockedBuffer(),
+                            local_input->LDim(),
+                            ones_d.LockedBuffer(), int_one,
+                            sum_d.Buffer(),
+                            sync_info);
   } else {
-    El::Matrix<TensorDataType, El::Device::GPU> col_sums_d;
+    El::Matrix<EvalDataType, El::Device::GPU> col_sums_d;
+    El::SetSyncInfo(col_sums_d, sync_info);
 #ifdef HYDROGEN_HAVE_CUB
     col_sums_d.SetMemoryMode(1);  // Use CUB GPU memory pool
 #endif // HYDROGEN_HAVE_CUB
     col_sums_d.Resize(local_width, 1);
     ones_d.Resize(local_height, 1);
     El::Fill(ones_d, one);
-    El::Gemv(El::TRANSPOSE, one, local_input, ones_d, zero, col_sums_d);
+    El::Gemv(El::TRANSPOSE, one, *local_input, ones_d, zero, col_sums_d);
     if (local_width > local_height) {
       ones_d.Resize(local_width, 1);
       El::Fill(ones_d, one);
     }
-    cublas::dot(handle,
-                local_width,
-                col_sums_d.LockedBuffer(), 1,
-                ones_d.LockedBuffer(), 1,
-                sum_d.Buffer());
+    hydrogen::gpu_blas::Dot(local_width,
+                            col_sums_d.LockedBuffer(), int_one,
+                            ones_d.LockedBuffer(), int_one,
+                            sum_d.Buffer(),
+                            sync_info);
   }
-  CHECK_CUBLAS(cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_HOST));
+  // Restore the host pointer mode
+  hydrogen::gpu_blas::SetPointerMode(hydrogen::PointerMode::HOST);
 
   // Compute average value across mini-batch
-  El::Scale(one / El::To<TensorDataType>(mini_batch_size), sum_d);
-  comm.allreduce(static_cast<El::AbstractMatrix<TensorDataType>&>(sum_d), input.DistComm());
-  CHECK_CUDA(cudaMemcpyAsync(&value,
-                             sum_d.LockedBuffer(),
-                             sizeof(TensorDataType),
-                             cudaMemcpyDeviceToHost,
-                             stream));
-  copy_event.record(stream);
-
+  El::Scale(one / El::To<EvalDataType>(mini_batch_size), sum_d);
+  comm.allreduce(
+    static_cast<El::AbstractMatrix<EvalDataType>&>(sum_d), input.DistComm());
+  hydrogen::gpu::Copy1DToHost(sum_d.LockedBuffer(), &value, 1, sync_info);
+  copy_event.record(sync_info.Stream());
 }
 
 #ifdef LBANN_HAS_GPU_FP16
+template <typename EvalDataType>
 void fp_gpu(lbann_comm& comm,
             const El::AbstractDistMatrix<cpu_fp16>& input,
-            cpu_fp16& value,
-            cuda::event_wrapper& copy_event) {
+            EvalDataType& value,
+            gpu_lib::event_wrapper& copy_event) {
   LBANN_ERROR("This function is not supported with "
               "the CPU FP16 type on GPUs. "
               "A severe logic error has occured; please "
@@ -180,7 +191,7 @@ EvalType abstract_evaluation_layer<TensorDataType>::get_value(bool scaled) {
 #endif // LBANN_HAS_GPU
   default: LBANN_ERROR("invalid device");
   }
-  if (scaled) { return m_scale * El::To<EvalType>(m_value(0,0)); }
+  if (scaled) { return El::To<EvalDataType>(m_scale) * El::To<EvalDataType>(m_value(0,0)); }
   else        { return m_value(0,0); }
 }
 
@@ -191,8 +202,8 @@ abstract_evaluation_layer<TensorDataType>::abstract_evaluation_layer(lbann_comm 
 }
 
 template <typename TensorDataType>
-void abstract_evaluation_layer<TensorDataType>::setup_dims() {
-  transform_layer<TensorDataType>::setup_dims();
+void abstract_evaluation_layer<TensorDataType>::setup_dims(DataReaderMetaData& dr_metadata) {
+  transform_layer<TensorDataType>::setup_dims(dr_metadata);
   if (this->get_input_size() != 1) {
     std::stringstream err;
     const auto& dims = this->get_input_dims();
@@ -208,8 +219,8 @@ void abstract_evaluation_layer<TensorDataType>::setup_dims() {
 }
 
 template <typename TensorDataType>
-void abstract_evaluation_layer<TensorDataType>::setup_data() {
-  transform_layer<TensorDataType>::setup_data();
+void abstract_evaluation_layer<TensorDataType>::setup_data(size_t max_mini_batch_size) {
+  transform_layer<TensorDataType>::setup_data(max_mini_batch_size);
 #ifdef LBANN_HAS_GPU
   m_value.SetMemoryMode(1); // Use pinned memory on host
 #endif // LBANN_HAS_GPU

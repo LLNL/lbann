@@ -32,11 +32,11 @@ namespace lbann {
 
 template <typename TensorDataType>
 adagrad<TensorDataType>::adagrad(TensorDataType learning_rate, TensorDataType eps)
-  : OptimizerType(learning_rate), m_eps(eps) {}
+  : BaseType(learning_rate), m_eps(eps) {}
 
 template <typename TensorDataType>
 adagrad<TensorDataType>::adagrad(const adagrad<TensorDataType>& other)
-  : OptimizerType(other),
+  : BaseType(other),
     m_eps(other.m_eps),
     m_cache(other.m_cache ? other.m_cache->Copy() : nullptr) {}
 
@@ -68,9 +68,9 @@ void adagrad<TensorDataType>::step_compute(AbsDistMatrixType& values,
                                            const AbsDistMatrixType& gradient) {
   switch (values.GetLocalDevice()) {
   case El::Device::CPU: step_compute_cpu(values, gradient); break;
-#ifdef LBANN_HAS_CUDA
+#ifdef LBANN_HAS_GPU
   case El::Device::GPU: step_compute_gpu(values, gradient); break;
-#endif // LBANN_HAS_CUDA
+#endif // LBANN_HAS_GPU
   default:
     std::ostringstream err;
     err << "unsupported device type "
@@ -114,7 +114,9 @@ void adagrad<TensorDataType>::step_compute_cpu(AbsDistMatrixType& values,
 
 template <typename TensorDataType>
 bool adagrad<TensorDataType>::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
-  OptimizerType::save_to_checkpoint_shared(p, name_prefix);
+  if (this->get_comm().am_trainer_master()) {
+    write_cereal_archive(*this, p, "adagrad.xml");
+  }
 
   char l_name[512];
   sprintf(l_name, "%s_optimizer_cache_%lldx%lld", name_prefix.c_str(), m_cache->Height(), m_cache->Width());
@@ -125,9 +127,9 @@ bool adagrad<TensorDataType>::save_to_checkpoint_shared(persist& p, std::string 
 
 template <typename TensorDataType>
 bool adagrad<TensorDataType>::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
-  OptimizerType::load_from_checkpoint_shared(p, name_prefix);
-  char l_name[512];
+  load_from_shared_cereal_archive(*this, p, this->get_comm(), "adagrad.xml");
 
+  char l_name[512];
   sprintf(l_name, "%s_optimizer_cache_%lldx%lld.bin", name_prefix.c_str(), m_cache->Height(), m_cache->Width());
   p.read_distmat(persist_type::train, l_name, m_cache.get());
 
@@ -136,7 +138,7 @@ bool adagrad<TensorDataType>::load_from_checkpoint_shared(persist& p, std::strin
 
 template <typename TensorDataType>
 bool adagrad<TensorDataType>::save_to_checkpoint_distributed(persist& p, std::string name_prefix) {
-  OptimizerType::save_to_checkpoint_distributed(p, name_prefix);
+  write_cereal_archive(*this, p, "adagrad.xml");
 
   char l_name[512];
   sprintf(l_name, "%s_optimizer_cache_%lldx%lld", name_prefix.c_str(), m_cache->Height(), m_cache->Width());
@@ -147,9 +149,9 @@ bool adagrad<TensorDataType>::save_to_checkpoint_distributed(persist& p, std::st
 
 template <typename TensorDataType>
 bool adagrad<TensorDataType>::load_from_checkpoint_distributed(persist& p, std::string name_prefix) {
-  OptimizerType::load_from_checkpoint_distributed(p, name_prefix);
-  char l_name[512];
+  read_cereal_archive(*this, p, "adagrad.xml");
 
+  char l_name[512];
   sprintf(l_name, "%s_optimizer_cache_%lldx%lld", name_prefix.c_str(), m_cache->Height(), m_cache->Width());
   p.read_rank_distmat(persist_type::train, l_name, *m_cache);
 

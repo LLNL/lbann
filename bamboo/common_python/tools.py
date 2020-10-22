@@ -6,7 +6,9 @@ import re
 import sys
 import numpy as np
 import pytest
-
+import shutil
+import subprocess
+from filecmp import cmp
 
 def check_list(substrings, strings):
     errors = []
@@ -28,6 +30,8 @@ def get_command(cluster,
                 ckpt_dir=None,
                 disable_cuda=None,
                 dir_name=None,
+                sample_list_train_default=None,
+                sample_list_test_default=None,
                 data_filedir_default=None,
                 data_filedir_train_default=None,
                 data_filename_train_default=None,
@@ -64,7 +68,9 @@ def get_command(cluster,
         # Allocation/Run Parameters
         num_nodes, num_processes, partition, time_limit,
         # LBANN Parameters
-        ckpt_dir, dir_name, data_filedir_default, data_filedir_train_default,
+        ckpt_dir, dir_name,
+        sample_list_train_default, sample_list_test_default,
+        data_filedir_default, data_filedir_train_default,
         data_filename_train_default, data_filedir_test_default,
         data_filename_test_default, data_reader_name, data_reader_path,
         data_reader_percent, exit_after_setup, metadata, mini_batch_size,
@@ -99,10 +105,6 @@ def get_command(cluster,
             time_limit = DEFAULT_TIME
     if time_limit > MAX_TIME:
         time_limit = MAX_TIME
-
-    # Check executable existence
-    if check_executable_existence:
-        process_executable_existence(executable, skip_no_exe)
 
     # Determine scheduler
     if cluster in ['catalyst', 'corona', 'pascal']:
@@ -234,20 +236,25 @@ def get_command(cluster,
         option_tasks_per_resource = ''
         if num_processes is not None:
             if cluster == 'lassen':
-                option_bind = ' -b "packed:10"'
-                option_cpu_per_resource = ' -c 40'
-                option_gpu_per_resource = ' -g 4'
-                option_launch_distribution = ' -d packed'
+                option_bind = ' -b "packed:8"'
+                option_cpu_per_resource = ' --cpu_per_rs ALL_CPUS'
+                option_gpu_per_resource = ' --gpu_per_rs ALL_GPUS'
+                option_launch_distribution = ' --launch_distribution packed'
+                # By default there should be 4 prcesses per node (especially when using GPUs)
+                resources_per_node = 4
+                if disable_cuda:
+                    # When CUDA is disabled, allow the number of resources per node to be overridden
+                    resources_per_node = math.ceil(float(num_processes)/num_nodes)
                 # Avoid `nrs (32) should not be greater than rs_per_host (1) * number of servers available (16).`
                 if num_nodes is None:
-                    num_nodes = 1
+                    num_nodes = math.ceil(float(num_processes)/resources_per_node)
                 # The "option_num_processes" is a misnomer for the LSF case. Rather than
                 # changing the rest of the code, set it to be the number of nodes. Within
                 # JSRUN, the correct number of processes will be obtained when combined
                 # with "option_tasks_per_resource".
-                option_num_processes = ' -n {n}'.format(n=num_nodes)
-                option_resources_per_host = ' -r 1'
-                option_tasks_per_resource = ' -a %d' % (num_processes/num_nodes)
+                option_num_processes = ' --nrs {n}'.format(n=num_nodes)
+                option_resources_per_host = ' --rs_per_host 1'
+                option_tasks_per_resource = ' --tasks_per_rs {n}'.format(n=resources_per_node)
                 if (num_processes%num_nodes) is not 0:
                     raise Exception('num_processes %s, is not divisible by num_nodes %d'
                                     % (num_processes, num_nodes))
@@ -272,6 +279,8 @@ def get_command(cluster,
     option_ckpt_dir = ''
     option_disable_cuda = ''
     option_data_filedir = ''
+    option_sample_list_train = ''
+    option_sample_list_test = ''
     option_data_filedir_train = ''
     option_data_filename_train = ''
     option_data_filedir_test = ''
@@ -336,6 +345,8 @@ def get_command(cluster,
                             data_filename_train_default,
                             data_filedir_test_default,
                             data_filename_test_default]
+    sample_list_parameters = [sample_list_train_default,
+                              sample_list_test_default]
     # Determine data file paths
     # If there is no regex match, then re.sub keeps the original string
     if data_filedir_default is not None:
@@ -348,6 +359,20 @@ def get_command(cluster,
         elif cluster == 'ray':
             option_data_filedir = ' --data_filedir=%s' % re.sub(
                 '[a-z]scratch[a-z]', 'gscratchr', data_filedir_default)
+    elif not sample_list_parameters == [None, None]:
+        if cluster in ['catalyst', 'corona', 'pascal',]:
+            # option_data_filedir = data_filedir_default # lscratchh, presumably
+            pass  # No need to pass in a parameter
+        elif cluster == 'lassen':
+            option_sample_list_train = ' --sample_list_train=%s' % re.sub(
+                'lustre[0-9]', 'gpfs1', sample_list_train_default)
+            option_sample_list_test = ' --sample_list_test=%s' % re.sub(
+                'lustre[0-9]', 'gpfs1', sample_list_test_default)
+        elif cluster == 'ray':
+            option_sample_list_train = ' --sample_list_train=%s' % re.sub(
+                'lustre[0-9]', 'gscratchr', sample_list_train_default)
+            option_sample_list_test = ' --sample_list_test=%s' % re.sub(
+                'lustre[0-9]', 'gscratchr', sample_list_test_default)
     elif not data_file_parameters == [None, None, None, None]:
         # Any of the data_file_parameters has a non-None value.
         if cluster in ['catalyst', 'corona', 'pascal']:
@@ -390,10 +415,11 @@ def get_command(cluster,
             # else: only data_filedir_default is set
         else:
             # if None in data_file_parameters: # If any are None
-            if data_file_parameters == [None, None, None, None]: # If all are None
+            if data_file_parameters == [None, None, None, None] and sample_list_parameters == [None, None]: # If all are None
                 if data_reader_name != 'synthetic':
                     lbann_errors.append(
                         ('data_reader_name or data_reader_path is set but not'
+                         ' sample_list_[train|test]_default or'
                          ' data_filedir_default. If a data reader is provided,'
                          ' the default filedir must be set. This allows for'
                          ' determining what the filedir should be on each'
@@ -494,8 +520,8 @@ def get_command(cluster,
                 # 'data_filedir_test',
                 # 'data_filename_train',
                 # 'data_filename_test',
-                'index_list_train',
-                'index_list_test',
+                'sample_list_train',
+                'sample_list_test',
                 'label_filename_train',
                 'label_filename_test',
                 # 'data_reader_percent',
@@ -523,8 +549,9 @@ def get_command(cluster,
     if lbann_errors != []:
         print('lbann_errors={lbann_errors}.'.format(lbann_errors=lbann_errors))
         raise Exception('Invalid Usage: ' + ' , '.join(lbann_errors))
-    command_lbann = '%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s' % (
+    command_lbann = '%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s' % (
         executable, option_ckpt_dir, option_disable_cuda,
+        option_sample_list_train, option_sample_list_test,
         option_data_filedir,
         option_data_filedir_train, option_data_filename_train,
         option_data_filedir_test, option_data_filename_test,
@@ -553,18 +580,6 @@ def get_command(cluster,
         return command_string
 
 
-def process_executable_existence(executable, skip_no_exe=True):
-    executable_exists = os.path.exists(executable)
-    if not executable_exists:
-        error_string = 'Executable does not exist: %s' % executable
-        if skip_no_exe:
-            print('Skip - ' + error_string)
-            import pytest
-            pytest.skip(error_string)
-        else:
-            raise Exception(error_string)
-
-
 def process_executable(name, compiler_name, executables):
     if compiler_name not in executables:
         e = '{n}: default_exes[{c}] does not exist'.format(
@@ -574,7 +589,6 @@ def process_executable(name, compiler_name, executables):
         pytest.skip(e)
     executable_path = executables[compiler_name]
     print('{n}: executable_path={e}'.format(n=name, e=executable_path))
-    process_executable_existence(executable_path)
 
 
 def get_spack_exes(default_dirname, cluster):
@@ -762,6 +776,16 @@ def create_tests(setup_func,
             _kwargs['work_dir'] = os.path.join(os.path.dirname(test_file),
                                                'experiments',
                                                test_name)
+
+        # If the user provided a suffix for the work directory, append it
+        if 'work_subdir' in _kwargs:
+            _kwargs['work_dir'] = os.path.join(_kwargs['work_dir'], _kwargs['work_subdir'])
+            del _kwargs['work_subdir']
+
+        # Delete the work directory
+        if os.path.isdir(_kwargs['work_dir']):
+            shutil.rmtree(_kwargs['work_dir'])
+
         if 'job_name' not in _kwargs:
             _kwargs['job_name'] = f'lbann_{test_name}'
         if 'overwrite_script' not in _kwargs:
@@ -840,6 +864,7 @@ def create_python_data_reader(lbann,
     reader = lbann.reader_pb2.Reader()
     reader.name = 'python'
     reader.role = execution_mode
+    reader.shuffle = False
     reader.percent_of_data_to_use = 1.0
     reader.python.module = module_name
     reader.python.module_dir = dir_name
@@ -878,3 +903,133 @@ def make_iterable(obj):
 def str_list(it):
     """Convert an iterable object to a space-separated string"""
     return ' '.join([str(i) for i in make_iterable(it)])
+
+# Define evaluation function
+def collect_metrics_from_log_func(log_file, key):
+    metrics = []
+    with open(log_file) as f:
+        for line in f:
+            match = re.search(key + ' : ([0-9.]+)', line)
+            if match:
+                metrics.append(float(match.group(1)))
+    return metrics
+
+def compare_metrics(baseline_metrics, test_metrics):
+    assert len(baseline_metrics) == len(test_metrics), \
+        'baseline and test experiments did not run for same number of epochs'
+    for i in range(len(baseline_metrics)):
+        x = baseline_metrics[i]
+        xhat = test_metrics[i]
+        assert x == xhat, \
+            'found discrepancy in metrics for baseline {b} and test {t}'.format(b=x, t=xhat)
+
+
+# Perform a diff across a directoy where not all of the subdirectories will exist in
+# the test directory.  Return a list of unchecked subdirectories, the running error code
+# and the list of failed directories
+def multidir_diff(baseline, test, fileList):
+    tmpList = []
+    err_msg = ""
+    err = 0
+    # Iterate over the list of filepaths & remove each file.
+    for filePath in fileList:
+        d = os.path.basename(filePath)
+        t = os.path.basename(os.path.dirname(filePath))
+        c = os.path.join(test, t, d)
+        if os.path.exists(c):
+            ret = subprocess.run('diff -rq {baseline} {test}'.format(
+                baseline=filePath, test=c), capture_output=True, shell=True, text=True)
+            if ret.returncode != 0:
+                err_msg += 'diff -rq {baseline} {test} failed {dt}\n'.format(
+                    dt=ret.returncode, baseline=filePath, test=c)
+                err_msg += ret.stdout
+            err += ret.returncode
+        else:
+            tmpList.append(filePath)
+
+    return tmpList, err, err_msg
+
+# Perform a line by line difference of an xml file and look for any floating point values
+# For each floating point value, check to see if it is close-enough and log a warning if it
+# is within a threshhold.
+def approx_diff_xml_files(file1, file2, rel_tol):
+    f1 = open(file1, 'r')
+    f2 = open(file2, 'r')
+    files_differ = False
+    diff_list = []
+    near_diff_list = []
+    for l1 in f1:
+        l2 = next(f2)
+        if l1 != l2:
+            try:
+                v1 = float(re.sub(r'\s*<\w*>(\S*)<\/\w*>\s*', r'\1', l1))
+                v2 = float(re.sub(r'\s*<\w*>(\S*)<\/\w*>\s*', r'\1', l2))
+                close = math.isclose(v1, v2, rel_tol=rel_tol, abs_tol=0.0)
+                if not close:
+                    err = ('lines: %s and %s differ: %.13f != %.13f (+/- %.1e)' % (l1.rstrip(), l2.rstrip(), v1, v2, rel_tol))
+                    diff_list.append(err)
+                    files_differ = True
+                else:
+                    warn = ('lines: %s and %s are close: %.13f ~= %.13f (+/- %.1e)' % (l1.rstrip(), l2.rstrip(), v1, v2, rel_tol))
+                    near_diff_list.append(warn)
+            except ValueError:
+                # Non-numerical diff.
+                err = ('lines: %s and %s differ' % (l1.rstrip(), l2.rstrip()))
+                diff_list.append(err)
+                files_differ = True
+    return files_differ, diff_list, near_diff_list
+
+# Given a recursive python diff from dircmp, perform a recursive exploration of any files
+# with differences.  For files with differences, if check any XML files for approximate equivalence
+# which can be seen in some of the floating point recorded values
+def print_diff_files(dcmp):
+    any_files_differ = False
+    all_diffs = []
+    all_warns = []
+    for name in dcmp.diff_files:
+        from pprint import pprint
+        err = f'Files {os.path.join(dcmp.left, name)} and {os.path.join(dcmp.right, name)} differ'
+        if re.search('.xml', name):
+            files_differ, diff_list, warn_list = approx_diff_xml_files(
+                os.path.join(dcmp.left, name), os.path.join(dcmp.right, name), 1e-6)
+            if files_differ:
+                any_files_differ = True
+                all_diffs.append(err)
+                for d in diff_list:
+                    all_diffs.append(d)
+            if len(warn_list) > 0:
+                warn = f'Files {os.path.join(dcmp.left, name)} and {os.path.join(dcmp.right, name)} have a near difference'
+                all_warns.append(warn)
+                for w in warn_list:
+                    all_warns.append(w)
+        else:
+            any_files_differ = True
+            all_diffs.append(err)
+
+    for sub_dcmp in dcmp.subdirs.values():
+        files_differ, diff_list, warn_list = print_diff_files(sub_dcmp)
+        if files_differ:
+            any_files_differ = True
+            for d in diff_list:
+                all_diffs.append(d)
+        for d in warn_list:
+            all_warns.append(d)
+
+    return any_files_differ, all_diffs, all_warns
+
+
+# Get the number of GPUs per compute node.
+# Return 0 if the system is unknown.
+def gpus_per_node(lbann):
+    compute_center = lbann.contrib.launcher.compute_center()
+    if compute_center != "unknown":
+        return getattr(lbann.contrib, compute_center).systems.gpus_per_node()
+    else:
+        return 0
+
+
+# Get the environment variables for Distconv.
+def get_distconv_environment():
+    # TODO: Use the default halo exchange and shuffle method. See https://github.com/LLNL/lbann/issues/1659
+    return {"LBANN_DISTCONV_HALO_EXCHANGE": "AL",
+            "LBANN_DISTCONV_TENSOR_SHUFFLER": "AL"}

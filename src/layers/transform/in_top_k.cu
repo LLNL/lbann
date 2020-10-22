@@ -26,8 +26,8 @@
 
 #define LBANN_IN_TOP_K_LAYER_INSTANTIATE
 #include "lbann/layers/transform/in_top_k.hpp"
-#include "lbann/utils/cuda.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 
 #include <thrust/sort.h>
 #include <thrust/device_ptr.h>
@@ -85,7 +85,7 @@ __global__ void dense_matrix_to_sparse_vectors(El::Int local_vector_size,
       current_entry.value = local_matrix[local_row + local_col * local_matrix_ldim];
       current_entry.index = global_row;
     } else {
-      current_entry.value = -cuda::infinity<DataType>();
+      current_entry.value = -gpu_lib::infinity<DataType>();
       current_entry.index = global_matrix_height;
     }
   }
@@ -188,25 +188,30 @@ void fp_gpu(lbann_comm& comm,
   const auto& col_comm_size = El::mpi::Size(col_comm);
 
   // GPU objects
-  auto&& stream = El::GPUManager::Stream();
-  auto&& event = El::GPUManager::Event();
-  cuda::thrust::allocator<> alloc(stream);
+  auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_output),
+                                     gpu::get_sync_info(local_input));
+  El::SyncInfo<El::Device::GPU> sync_info = multisync;
+  gpu_lib::thrust::allocator<> alloc(sync_info.Stream());
 
   // Find top-k entries in each column of local prediction matrix
-  cuda::thrust::vector<entry<TensorDataType>> top_entries(local_width * k);
+  gpu_lib::thrust::vector<entry<TensorDataType>> top_entries(local_width * k);
   {
     const auto& num_local_entries_per_col = std::max(local_height, k);
     const auto& num_local_entries = local_width * num_local_entries_per_col;
     const auto& block_dim = 256;
     const auto& grid_dim = (num_local_entries + block_dim - 1) / block_dim;
-    cuda::thrust::vector<entry<TensorDataType>> local_entries(num_local_entries);
-    cuda::thrust::vector<El::Int> local_entries_cols(num_local_entries);
-    dense_matrix_to_sparse_vectors<<<grid_dim, block_dim, 0, stream>>>(
+    gpu_lib::thrust::vector<entry<TensorDataType>> local_entries(num_local_entries);
+    gpu_lib::thrust::vector<El::Int> local_entries_cols(num_local_entries);
+    hydrogen::gpu::LaunchKernel(
+      dense_matrix_to_sparse_vectors<TensorDataType>,
+      grid_dim, block_dim, 0, sync_info,
       num_local_entries_per_col, local_height, local_width, height,
       input.ColShift(), input.ColStride(),
       local_input.LockedBuffer(), local_input.LDim(),
       local_entries.data().get(), num_local_entries_per_col);
-    fill_with_tensor_index<TensorDataType><<<grid_dim, block_dim, 0, stream>>>(
+    hydrogen::gpu::LaunchKernel(
+      fill_with_tensor_index<TensorDataType>,
+      grid_dim, block_dim, 0, sync_info,
       num_local_entries, local_width, num_local_entries_per_col,
       local_entries_cols.data().get());
     ::thrust::sort_by_key(alloc.system(),
@@ -218,14 +223,11 @@ void fp_gpu(lbann_comm& comm,
                                  local_entries_cols.begin(),
                                  local_entries_cols.end(),
                                  local_entries.begin());
-    CHECK_CUDA(cudaMemcpy2DAsync(top_entries.data().get(),
-                                 k * sizeof(entry<TensorDataType>),
-                                 local_entries.data().get(),
-                                 num_local_entries_per_col * sizeof(entry<TensorDataType>),
-                                 k * sizeof(entry<TensorDataType>),
-                                 local_width,
-                                 cudaMemcpyDeviceToDevice,
-                                 stream));
+    hydrogen::gpu::Copy2DIntraDevice(
+      local_entries.data().get(), num_local_entries_per_col,
+      top_entries.data().get(), k,
+      k, local_width,
+      sync_info);
   }
 
   // Find top-k entries in each column of global prediction matrix
@@ -234,14 +236,16 @@ void fp_gpu(lbann_comm& comm,
     const auto& num_entries = col_comm_size * num_entries_per_rank;
     const auto& block_dim = 256;
     const auto& grid_dim = (num_entries + block_dim - 1) / block_dim;
-    cuda::thrust::vector<entry<TensorDataType>> global_top_entries(num_entries);
-    cuda::thrust::vector<El::Int> global_top_entries_cols(num_entries);
+    gpu_lib::thrust::vector<entry<TensorDataType>> global_top_entries(num_entries);
+    gpu_lib::thrust::vector<El::Int> global_top_entries_cols(num_entries);
     comm.all_gather(reinterpret_cast<El::byte*>(top_entries.data().get()),
                     top_entries.size() * sizeof(entry<TensorDataType>),
                     reinterpret_cast<El::byte*>(global_top_entries.data().get()),
                     top_entries.size() * sizeof(entry<TensorDataType>),
-                    col_comm, El::SyncInfo<El::Device::GPU>{stream, event});
-    fill_with_tensor_index<TensorDataType><<<grid_dim, block_dim, 0, stream>>>(
+                    col_comm, sync_info);
+    hydrogen::gpu::LaunchKernel(
+      fill_with_tensor_index<TensorDataType>,
+      grid_dim, block_dim, 0, sync_info,
       num_entries, local_width, k, global_top_entries_cols.data().get());
     ::thrust::sort_by_key(alloc.system(),
                           global_top_entries.begin(),
@@ -252,14 +256,11 @@ void fp_gpu(lbann_comm& comm,
                                  global_top_entries_cols.begin(),
                                  global_top_entries_cols.end(),
                                  global_top_entries.begin());
-    CHECK_CUDA(cudaMemcpy2DAsync(top_entries.data().get(),
-                                 k * sizeof(entry<TensorDataType>),
-                                 global_top_entries.data().get(),
-                                 col_comm_size * k * sizeof(entry<TensorDataType>),
-                                 k * sizeof(entry<TensorDataType>),
-                                 local_width,
-                                 cudaMemcpyDeviceToDevice,
-                                 stream));
+    hydrogen::gpu::Copy2DIntraDevice(
+      global_top_entries.data().get(), col_comm_size * k,
+      top_entries.data().get(), k,
+      k, local_width,
+      sync_info);
   }
 
   // Indicate output entries corresponding to top-k input entries
@@ -268,7 +269,9 @@ void fp_gpu(lbann_comm& comm,
     const auto& num_entries = local_width * k;
     const auto& block_dim = 256;
     const auto& grid_dim = (num_entries + block_dim - 1) / block_dim;
-    indicate_matrix_entries<<<grid_dim, block_dim, 0, stream>>>(
+    hydrogen::gpu::LaunchKernel(
+      indicate_matrix_entries<TensorDataType>,
+      grid_dim, block_dim, 0, sync_info,
       k, height, local_height, local_width,
       output.ColRank(), output.ColAlign(),
       output.ColShift(), output.ColStride(),

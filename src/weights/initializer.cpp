@@ -94,9 +94,9 @@ void value_initializer<TensorDataType>::fill(AbsDistMatrixType& matrix) {
   }
   if (matrix.GetLocalDevice() != El::Device::CPU) {
     El::Copy(matrix_cpu, matrix.Matrix());
-#ifdef HYDROGEN_HAVE_CUDA
-    El::GPUManager::SynchronizeStream(); /// @todo Use new Hydrogen synchronization semantics when available
-#endif // HYDROGEN_HAVE_CUDA
+#ifdef HYDROGEN_HAVE_GPU
+    Synchronize(hydrogen::gpu::DefaultSyncInfo()); /// @todo Use new Hydrogen synchronization semantics when available
+#endif // HYDROGEN_HAVE_GPU
   }
 
 }

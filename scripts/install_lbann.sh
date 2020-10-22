@@ -7,7 +7,7 @@ if [ -n "${SPACK_ROOT}" ]; then
 fi
 
 SPACK_VERSION=$(spack --version | sed 's/-.*//g')
-MIN_SPACK_VERSION=0.13.3
+MIN_SPACK_VERSION=0.15.4
 
 source $(dirname ${BASH_SOURCE})/utilities.sh
 
@@ -41,10 +41,15 @@ if [[ ${SYS} = "Darwin" ]]; then
     CENTER="osx"
 else
     CORI=$([[ $(hostname) =~ (cori|cgpu) ]] && echo 1 || echo 0)
+    DOMAINNAME=$(python -c 'import socket; domain = socket.getfqdn().split("."); print(domain[-2] + "." + domain[-1])')
     if [[ ${CORI} -eq 1 ]]; then
         CENTER="nersc"
         # Make sure to purge and setup the modules properly prior to finding the Spack architecture
         source ${SPACK_ENV_DIR}/${CENTER}/setup_modules.sh
+    elif [[ ${DOMAINNAME} = "ornl.gov" ]]; then
+        CENTER="olcf"
+    elif [[ ${DOMAINNAME} = "llnl.gov" ]]; then
+        CENTER="llnl_lc"
     else
         CENTER="llnl_lc"
     fi
@@ -56,12 +61,15 @@ SPACK_ARCH_TARGET=$(spack arch -t)
 SCRIPT=$(basename ${BASH_SOURCE})
 BUILD_DIR=${LBANN_HOME}/build/spack
 ENABLE_GPUS=ON
-GPU_VARIANTS="+gpu+nccl"
+GPU_VARIANTS="+cuda+nccl"
+ENABLE_HALF=OFF
+HALF_VARIANTS="~half"
 BUILD_TYPE=Release
 VERBOSE=0
 LBANN_ENV=
 SPACK_INSTALL_ARGS=
 BUILD_LBANN_SW_STACK="TRUE"
+MERLIN_PACKAGES=
 
 ################################################################
 # Help message
@@ -80,8 +88,10 @@ Options:
   ${C}--verbose${N}            Verbose output.
   ${C}-d | -deps-only)${N}     Only install the lbann dependencies
   ${C}-e | --env${N}           Build and install LBANN in the spack environment provided.
+  ${C}--half${N}               Enable support for HALF precision data types in Hydrogen and DiHydrogen
   ${C}--disable-gpus${N}       Disable GPUS
-  ${C}-s | --superbuild${N}    Superbuild LBANN with hydrogen and aluminum
+  ${C}-s | --superbuild${N}    Superbuild LBANN with dihydrogen, hydrogen, and aluminum
+  ${C}--merlin${N}             Include Merlin workflow manager in the environment
 EOF
 }
 
@@ -111,12 +121,22 @@ while :; do
                 exit 1
             fi
             ;;
+        --half)
+            ENABLE_HALF=ON
+            HALF_VARIANTS="+half"
+            ;;
         --disable-gpus)
             ENABLE_GPUS=OFF
             GPU_VARIANTS=
             ;;
         -s|--superbuild)
             BUILD_LBANN_SW_STACK="FALSE"
+            ;;
+        --merlin)
+            MERLIN_PACKAGES=$(cat <<EOF
+  - py-merlin
+EOF
+)
             ;;
         -?*)
             # Unknown option
@@ -146,16 +166,19 @@ if [[ ${SYS} = "Darwin" ]]; then
 fi
 
 BUILD_SPECS=
-HYDROGEN_VARIANTS="variants: +shared +int64 +al"
+HYDROGEN_VARIANTS="variants: +shared +int64 +al ${HALF_VARIANTS}"
+DIHYDROGEN_VARIANTS="variants: +shared +al +openmp ${HALF_VARIANTS}"
 if [[ ${DEPS_ONLY} = "TRUE" ]]; then
     if [[ ${SYS} != "Darwin" ]]; then
         HYDROGEN_VARIANTS="${HYDROGEN_VARIANTS} +openmp_blas"
+        DIHYDROGEN_VARIANTS="${DIHYDROGEN_VARIANTS} +openmp_blas"
         COMPILER_PACKAGE=$(cat <<EOF
   - gcc
 EOF
 )
     else
         HYDROGEN_VARIANTS="${HYDROGEN_VARIANTS} blas=accelerate"
+        DIHYDROGEN_VARIANTS="${DIHYDROGEN_VARIANTS} blas=accelerate"
         COMPILER_PACKAGE=$(cat <<EOF
   - llvm
 EOF
@@ -166,8 +189,16 @@ EOF
     if [[ "${ENABLE_GPUS}" == "ON" ]]; then
         GPU_PACKAGES=$(cat <<EOF
   - cudnn
-  - cub
+  - cuda
   - nccl
+EOF
+)
+    fi
+
+    HALF_PACKAGES=
+    if [[ "${ENABLE_HALF}" == "ON" ]]; then
+        HALF_PACKAGES=$(cat <<EOF
+  - half
 EOF
 )
     fi
@@ -177,6 +208,7 @@ EOF
         SUPERBUILD_SPECS=$(cat <<EOF
   - aluminum
   - hydrogen
+  - dihydrogen
 EOF
 )
     fi
@@ -189,7 +221,7 @@ ${SUPERBUILD_SPECS}
   - clara
   - cnpy
   - conduit
-  - half
+${HALF_PACKAGES}
   - hwloc
   - opencv
   - zlib
@@ -197,13 +229,16 @@ ${GPU_PACKAGES}
   - py-numpy
   - py-protobuf
   - py-setuptools
+  - mpi
 
 # These are required
   - catch2
   - cmake
   - ninja
+  - python
   - py-pytest
 ${COMPILER_PACKAGE}
+${MERLIN_PACKAGES}
 EOF
 )
     LBANN_ENV="${LBANN_ENV:-lbann-dev-${SPACK_ARCH_TARGET}}"
@@ -217,8 +252,10 @@ fi
 
 AL_VARIANTS=
 if [[ "${ENABLE_GPUS}" == "ON" ]]; then
-    AL_VARIANTS="variants: +gpu+nccl~mpi_cuda"
+#    CUDA_ARCH="cuda_arch=60,61,62,70"
+    AL_VARIANTS="variants: +cuda +nccl +ht +cuda_rma"
     HYDROGEN_VARIANTS="${HYDROGEN_VARIANTS} +cuda"
+    DIHYDROGEN_VARIANTS="${DIHYDROGEN_VARIANTS} +cuda +legacy"
 fi
 
 SPACK_ENV=$(cat <<EOF
@@ -229,32 +266,40 @@ ${BUILD_SPECS}
   packages:
 ${EXTERNAL_ALL_PACKAGES}
 ${COMPILER_ALL_PACKAGES}
-
 ${EXTERNAL_PACKAGES}
-
 ${STD_PACKAGES}
-
     aluminum:
       buildable: true
-      version: [master]
+      version:
+      - master
       ${AL_VARIANTS}
       providers: {}
-      paths: {}
-      modules: {}
       compiler: []
       target: []
     hydrogen:
       buildable: true
-      version: [develop]
+      version:
+      - develop
       ${HYDROGEN_VARIANTS}
       providers: {}
-      paths: {}
-      modules: {}
       compiler: []
       target: []
-
+    dihydrogen:
+      buildable: true
+      version:
+      - develop
+      ${DIHYDROGEN_VARIANTS}
+      providers: {}
+      compiler: []
+      target: []
+    py-merlin:
+      buildable: true
+      version:
+      - develop
+      providers: {}
+      compiler: []
+      target: []
 ${COMPILER_DEFINITIONS}
-
 ${STD_MODULES}
   view: true
 EOF
@@ -264,7 +309,7 @@ echo "${SPACK_ENV}" > ${temp_file}
 
 if [[ $(spack env list | grep ${LBANN_ENV}) ]]; then
     echo "Spack environment ${LBANN_ENV} already exists... overwriting it"
-    CMD="spack env rm ${LBANN_ENV}"
+    CMD="spack env rm --yes-to-all ${LBANN_ENV}"
     echo ${CMD}
     ${CMD}
 fi
@@ -292,8 +337,9 @@ else
         # Reactivate the spack environment since a clean installation will note setup the modules properly
         CMD=". $SPACK_ROOT/share/spack/setup-env.sh"
         ${CMD}
-        CMD="spack env loads"
-        ${CMD}
+        # It is no longer necessary to load modules
+        # CMD="spack env loads"
+        # ${CMD}
 
         echo "Build LBANN from source using the spack environment ${LBANN_ENV}, using the build script:"
         echo "  ${SCRIPTS_DIR}/build_lbann_from_source.sh -e ${LBANN_ENV}"

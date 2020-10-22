@@ -84,7 +84,8 @@ El::Matrix<uint8_t> get_uint8_t_image(const CPUMat& image,
  * @returns std::string Returns image in std::string format
  */
 std::string encode_image(const El::Matrix<uint8_t>& image,
-                         const std::vector<size_t>& dims);
+                         const std::vector<size_t>& dims,
+                         std::string const& img_format);
 
 }  // namespace lbann
 

@@ -76,6 +76,8 @@ message Callback {
     CallbackTimeline timeline = 44;
     CallbackPrintModelDescription print_model_description = 45;
     CallbackLoadModel load_model = 46;
+    CallbackSetWeightsValue set_weights_value = 47;
+    CallbackSummarizeImages summarize_images = 48;
   }
 
   message CallbackLTFB {
@@ -129,7 +131,7 @@ message Callback {
   }
 
   message CallbackDumpWeights {
-    string basename = 1;
+    string directory = 1;
     int64  epoch_interval = 2;
   }
 
@@ -247,6 +249,7 @@ message Callback {
 
   message CallbackCheckpoint {
     string checkpoint_dir = 1;
+    string restart_dir = 8;
     int64 checkpoint_epochs = 2;
     int64 checkpoint_steps = 3;
     double checkpoint_secs = 4;
@@ -332,5 +335,44 @@ message Callback {
   // and callbacks.
   message CallbackPrintModelDescription {
   }
+
+  /** @brief Set values in a weights object at a given training step */
+  message CallbackSetWeightsValue {
+    string weights = 1;
+    double value = 2;
+    uint64 step = 3;
+  }
+
+  message CallbackSummarizeImages {
+
+    message SelectionStrategy {
+
+      oneof strategy_type {
+        CategoricalAccuracyStrategy categorical_accuracy = 1;
+        TrackSampleIDsStrategy track_sample_ids = 2;
+      }
+
+      message CategoricalAccuracyStrategy {
+        enum MatchType{
+          NOMATCH = 0;//NOMATCH = dump failed categorization
+          MATCH = 1;//MATCH = dump successful categorization
+          ALL = 2;//ALL = dump all
+        }
+        string accuracy_layer_name = 1;
+        MatchType match_type = 2;
+        uint64 num_images_per_epoch = 3;
+      }
+
+      message TrackSampleIDsStrategy {
+        string input_layer_name = 1;
+        uint64 num_tracked_images = 2;
+      }
+
+    }// message SelectionStrategy
+
+    SelectionStrategy selection_strategy = 1;
+    string image_source_layer_name = 2;
+    uint64 epoch_interval = 3;
+  }// message CallbackSummarizeImages
 
 }

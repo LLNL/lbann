@@ -25,7 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/optimizers/rmsprop.hpp"
-#include "lbann/utils/cuda.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 
 namespace lbann {
 
@@ -52,7 +52,7 @@ __global__ void rmsprop_kernel(size_t height,
     auto& c = cache[row + col * cache_ldim];
     auto& x = values[row + col * values_ldim];
     c = decay_rate * c + (TensorDataType(1) - decay_rate) * g * g;
-    x -= learning_rate * g / (cuda::sqrt(c) + eps);
+    x -= learning_rate * g / (gpu_lib::sqrt(c) + eps);
   }
 }
 
@@ -67,8 +67,11 @@ void rmsprop<TensorDataType>::step_compute_gpu(AbsDistMatrixType& values,
   if (local_size > 0) {
     constexpr size_t block_size = 256;
     const size_t grid_size = (local_size + block_size - 1) / block_size;
-    auto&& stream = El::GPUManager::Stream();
-    rmsprop_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
+    auto multisync = El::MakeMultiSync(gpu::get_sync_info(values),
+                                       gpu::get_sync_info(gradient));
+    hydrogen::gpu::LaunchKernel(
+      rmsprop_kernel<TensorDataType>,
+      grid_size, block_size, 0, multisync,
       local_height, local_width,
       this->get_learning_rate(), m_decay_rate, m_eps,
       values.Buffer(), values.LDim(),

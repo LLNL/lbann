@@ -59,6 +59,29 @@
               << std::endl;                                     \
   } while (0)
 
+// Macro to print a message to standard cout stream.
+#define LBANN_MSG(...)                                          \
+  do {                                                          \
+    const int rank_LBANN_MSG = lbann::get_rank_in_world();      \
+    if(rank_LBANN_MSG == 0) {                                   \
+      std::cout << lbann::build_string(                         \
+      "LBANN message",                                          \
+      (rank_LBANN_MSG >= 0                                      \
+       ? " on rank " + std::to_string(rank_LBANN_MSG)           \
+       : std::string()),                                        \
+      " (", __FILE__, ":", __LINE__, "): ", __VA_ARGS__)        \
+              << std::endl;                                     \
+    }                                                           \
+  } while (0)
+
+#define LBANN_ASSERT(cond)                              \
+  if (!(cond))                                          \
+    LBANN_ERROR("The assertion " #cond " failed.")
+
+#define LBANN_ASSERT_WARNING(cond)                      \
+  if (!(cond))                                          \
+    LBANN_WARNING("The assertion " #cond " failed.")
+
 namespace lbann {
 
 /** Exception.

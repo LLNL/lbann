@@ -36,7 +36,7 @@
 #include "nvToolsExtCudaRt.h"
 #include "cuda_runtime.h"
 #include "cuda_profiler_api.h"
-#include "lbann/utils/cuda.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 #endif
 
 namespace {
@@ -73,7 +73,7 @@ void prof_stop() {
 void prof_region_begin(const char *s, int c, bool sync) {
   if (!profiling_started) return;
   if (sync) {
-    El::GPUManager::SynchronizeDevice();
+    hydrogen::gpu::SynchronizeDevice();
   }
   // Doesn't work with gcc 4.9
   // nvtxEventAttributes_t ev = {0};
@@ -90,7 +90,7 @@ void prof_region_begin(const char *s, int c, bool sync) {
 void prof_region_end(const char *, bool sync) {
   if (!profiling_started) return;
   if (sync) {
-    El::GPUManager::SynchronizeDevice();
+    hydrogen::gpu::SynchronizeDevice();
   }
   nvtxRangePop();
 }

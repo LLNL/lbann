@@ -27,14 +27,18 @@
 #ifndef LBANN_BASE_HPP_INCLUDED
 #define LBANN_BASE_HPP_INCLUDED
 
-#include "El.hpp"
+#include <El.hpp>
+
+// Defines, among other things, DataType.
+#include "lbann_config.hpp"
+
 #include "lbann/Elemental_extensions.hpp"
 #include "lbann/utils/cyg_profile.hpp"
 #include "lbann/utils/file_utils.hpp"
 #include "lbann/utils/enum_iterator.hpp"
-
-// Defines, among other things, DataType.
-#include "lbann_config.hpp"
+#ifdef LBANN_HAS_HALF
+#include "lbann/utils/serialization.hpp"
+#endif // LBANN_HAS_HALF
 
 // Support for OpenMP macros
 #include "lbann/utils/omp_pragma.hpp"
@@ -70,7 +74,7 @@ using world_comm_ptr =
  *  @param seed RNG seed.
  *  @return     LBANN communicator corresponding to MPI_COMM_WORLD.
  */
-world_comm_ptr initialize(int& argc, char**& argv, int seed = -1);
+world_comm_ptr initialize(int& argc, char**& argv);
 
 /** Destroy LBANN communicator.
  *
@@ -180,9 +184,6 @@ enum class pool_mode {invalid, max, average, average_no_pad};
 
 /** returns a string representation of the pool_mode */
 std::string get_pool_mode_name(pool_mode m);
-
-// NA - Not applicable, used for input layers that don't produce a second output
-enum class data_reader_target_mode {CLASSIFICATION, REGRESSION, RECONSTRUCTION, NA};
 
 /*
  * endsWith: http://thispointer.com/c-how-to-check-if-a-string-ends-with-an-another-given-string/

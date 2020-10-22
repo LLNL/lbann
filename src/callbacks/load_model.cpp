@@ -27,7 +27,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/load_model.hpp"
-#include "lbann/callbacks/checkpoint.hpp" 
+#include "lbann/callbacks/checkpoint.hpp"
+#include "lbann/training_algorithms/training_algorithm.hpp"
 
 #include <callbacks.pb.h>
 #include <model.pb.h>
@@ -45,30 +46,47 @@ namespace callback {
 
 
 void load_model::on_train_begin(model *m) {
-  for (const auto& d : m_dirs) {
-    load_model_weights(d, m, true);
+  if(!m_loaded) {
+    for (const auto& d : m_dirs) {
+      m_loaded = load_model_weights(d, "", m, true);
+      if(!m_loaded)  LBANN_ERROR("Unable to reload model on train begin");
+    }
+  }
+}
+
+void load_model::on_test_begin(model *m) {
+  if(!m_loaded) {
+    for (const auto& d : m_dirs) {
+      m_loaded = load_model_weights(d, "", m, true);
+      if(!m_loaded)  LBANN_ERROR("Unable to reload model on test begin");
+    }
   }
 }
 
 
-bool load_model::load_model_weights(std::string ckpt_dir, model * m, bool ckptdir_is_fullpath) {
+bool load_model::load_model_weights(const std::string& ckpt_dir,
+                                    const std::string& alg_name,
+                                    model *m,
+                                    bool ckptdir_is_fullpath) {
   std::vector<std::string> weight_list = std::vector<std::string>();
   std::string active_ckpt_dir;
   if(ckptdir_is_fullpath) {
-    active_ckpt_dir = ckpt_dir;
+    active_ckpt_dir = add_delimiter(ckpt_dir);
   }else {
     size_t epochLast = std::numeric_limits<size_t>::max();;
     size_t stepLast = std::numeric_limits<size_t>::max();;
     execution_mode mode = execution_mode::invalid;
-    active_ckpt_dir = get_last_shared_checkpoint_filename(m, ckpt_dir);
+    active_ckpt_dir = get_last_shared_checkpoint_filename(alg_name, ckpt_dir);
 
     // get last epoch and step saved.
     int success = read_latest(active_ckpt_dir, &mode, &epochLast, &stepLast);
     if(!success) {
+      LBANN_WARNING("Unable to find the latest checkpoint ", active_ckpt_dir);
       return false;
     }
-    active_ckpt_dir = get_shared_checkpoint_dirname(m, ckpt_dir, mode, epochLast, stepLast);
+    active_ckpt_dir = get_shared_checkpoint_dirname(alg_name, ckpt_dir, mode, epochLast, stepLast) + m->get_name() + '/';
   }
+
   lbann_comm *comm = m->get_comm();
   if(comm->am_trainer_master()) {
     std::cout << "Loading model weights from " << active_ckpt_dir << std::endl;
@@ -77,7 +95,7 @@ bool load_model::load_model_weights(std::string ckpt_dir, model * m, bool ckptdi
   DIR *weight_dir = opendir(active_ckpt_dir.c_str());
   if(weight_dir == nullptr)
   {
-    std::cout << "error opening " << active_ckpt_dir << "\n";
+    LBANN_WARNING("error opening ",  active_ckpt_dir);
     return false;
   }
   // Populate weight list

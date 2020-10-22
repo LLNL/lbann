@@ -96,8 +96,8 @@ public:
 protected:
 
   void setup_matrices(const El::Grid& grid) override;
-  void setup_dims() override;
-  void setup_data() override;
+  void setup_dims(DataReaderMetaData& dr_metadata) override;
+  void setup_data(size_t max_mini_batch_size) override;
 
   void fp_compute() override;
   void bp_compute() override;
@@ -188,16 +188,16 @@ description embedding_layer<TensorDataType,Layout,Device>::get_description() con
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void embedding_layer<TensorDataType,Layout,Device>::setup_dims() {
-  data_type_layer<TensorDataType>::setup_dims();
+void embedding_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& dr_metadata) {
+  data_type_layer<TensorDataType>::setup_dims(dr_metadata);
   auto dims = this->get_input_dims();
   dims.push_back(static_cast<int>(m_embedding_dim));
   this->set_output_dims(dims);
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void embedding_layer<TensorDataType,Layout,Device>::setup_data() {
-  data_type_layer<TensorDataType>::setup_data();
+void embedding_layer<TensorDataType,Layout,Device>::setup_data(size_t max_mini_batch_size) {
+  data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
 
   // Construct default weights if needed
   // Note: Randomly drawn from normal distribution with mean 0 and
@@ -221,7 +221,7 @@ void embedding_layer<TensorDataType,Layout,Device>::setup_data() {
   }
 
   // Initialize dictionary
-  auto& embeddings = this->get_data_type_weights(0);
+  auto& embeddings = this->get_weights(0);
   auto matrix_dist = this->get_prev_activations().DistData();
   matrix_dist.colDist = El::STAR;
   matrix_dist.rowDist = El::STAR;
@@ -233,7 +233,11 @@ void embedding_layer<TensorDataType,Layout,Device>::setup_data() {
   // Zero out embedding vector for padding index
   if (0 <= m_padding_idx
       && m_padding_idx < static_cast<El::Int>(m_embedding_dim)) {
-    auto& embedding_values = embeddings.get_values();
+    // FIXME (trb 06/01/2020): Assuming embedding values have data
+    // type that matches this layer. In future, we should abstract
+    // this or dynamically dispatch it.
+    auto& embedding_values =
+      dynamic_cast<AbsDistMatrixType&>(embeddings.get_values());
     std::unique_ptr<AbsDistMatrixType> pad_embedding(
       embedding_values.Construct(embedding_values.Grid(),
                                  embedding_values.Root()));

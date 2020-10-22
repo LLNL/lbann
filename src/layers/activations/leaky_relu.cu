@@ -31,7 +31,7 @@ namespace lbann {
 
 namespace {
 
-/** CUDA kernel for forward prop computation. */
+/** GPU kernel for forward prop computation. */
 template <typename TensorDataType>
 __global__ void fp_kernel(TensorDataType negative_slope,
                           El::Int height,
@@ -52,7 +52,7 @@ __global__ void fp_kernel(TensorDataType negative_slope,
   }
 }
 
-/** CUDA kernel for backprop computation. */
+/** GPU kernel for backprop computation. */
 template <typename TensorDataType>
 __global__ void bp_kernel(TensorDataType negative_slope,
                           El::Int height,
@@ -82,9 +82,10 @@ void local_fp(TensorDataType negative_slope,
               const El::AbstractMatrix<TensorDataType>& input,
               El::AbstractMatrix<TensorDataType>& output) {
 
-  // Get CUDA grid dimensions
+  // Get GPU grid dimensions
   // Note: Maximum CUDA grid dimension is 2^32-1
   // (https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#features-and-technical-specifications).
+  // TODO: HIP/ROCM notes
   const El::Int height = input.Height();
   const El::Int width = input.Width();
   const El::Int block_dim = 256;
@@ -94,9 +95,13 @@ void local_fp(TensorDataType negative_slope,
     grid_dim = std::numeric_limits<uint32_t>::max();
   }
 
-  // Launch CUDA kernel
+  // Launch GPU kernel
   if (grid_dim > 0) {
-    fp_kernel<<<grid_dim, block_dim, 0, El::GPUManager::Stream()>>>(
+    auto multisync = El::MakeMultiSync(gpu::get_sync_info(output),
+                                       gpu::get_sync_info(input));
+    hydrogen::gpu::LaunchKernel(
+      fp_kernel<TensorDataType>,
+      grid_dim, block_dim, 0, multisync,
       negative_slope, height, width,
       input.LockedBuffer(), input.LDim(),
       output.Buffer(), output.LDim());
@@ -111,9 +116,10 @@ void local_bp(TensorDataType negative_slope,
               const El::AbstractMatrix<TensorDataType>& gradient_wrt_output,
               El::AbstractMatrix<TensorDataType>& gradient_wrt_input) {
 
-  // Get CUDA grid dimensions
+  // Get GPU grid dimensions
   // Note: Maximum CUDA grid dimension is 2^32-1
   // (https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#features-and-technical-specifications).
+  // TODO: HIP/ROCM notes
   const El::Int height = input.Height();
   const El::Int width = input.Width();
   const El::Int block_dim = 256;
@@ -123,9 +129,14 @@ void local_bp(TensorDataType negative_slope,
     grid_dim = std::numeric_limits<uint32_t>::max();
   }
 
-  // Launch CUDA kernel
+  // Launch GPU kernel
   if (grid_dim > 0) {
-    bp_kernel<<<grid_dim, block_dim, 0, El::GPUManager::Stream()>>>(
+    auto multisync = El::MakeMultiSync(gpu::get_sync_info(gradient_wrt_input),
+                                       gpu::get_sync_info(gradient_wrt_output),
+                                       gpu::get_sync_info(input));
+    hydrogen::gpu::LaunchKernel(
+      bp_kernel<TensorDataType>,
+      grid_dim, block_dim, 0, multisync,
       negative_slope, height, width,
       input.LockedBuffer(), input.LDim(),
       gradient_wrt_output.LockedBuffer(), gradient_wrt_output.LDim(),
@@ -134,16 +145,48 @@ void local_bp(TensorDataType negative_slope,
 
 }
 
+#ifdef LBANN_HAS_DISTCONV
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void fp_compute_distconv(leaky_relu_distconv_adapter<TensorDataType, Layout, Device> &dc,
+                         TensorDataType negative_slope) {
+  assert_always(Layout == data_layout::DATA_PARALLEL);
+  dc.m_leaky_relu->forward(dc.get_prev_activations(), negative_slope,
+                           dc.get_activations());
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void bp_compute_distconv(leaky_relu_distconv_adapter<TensorDataType, Layout, Device> &dc,
+                         TensorDataType negative_slope) {
+  assert_always(Layout == data_layout::DATA_PARALLEL);
+  dc.m_leaky_relu->backward(dc.get_prev_activations(),
+                            dc.get_prev_error_signals(),
+                            negative_slope,
+                            dc.get_error_signals());
+}
+#endif // LBANN_HAS_DISTCONV
+
 } // namespace
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void leaky_relu_layer<TensorDataType, Layout, Device>::fp_compute() {
+#ifdef LBANN_HAS_DISTCONV
+  if (this->distconv_enabled()) {
+    fp_compute_distconv(get_distconv_adapter(), m_negative_slope);
+    return;
+  }
+#endif // LBANN_HAS_DISTCONV
   local_fp(this->m_negative_slope,
            this->get_local_prev_activations(),
            this->get_local_activations());
 }
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void leaky_relu_layer<TensorDataType, Layout, Device>::bp_compute() {
+#ifdef LBANN_HAS_DISTCONV
+  if (this->distconv_enabled()) {
+    bp_compute_distconv(get_distconv_adapter(), m_negative_slope);
+    return;
+  }
+#endif // LBANN_HAS_DISTCONV
   local_bp(this->m_negative_slope,
            this->get_local_prev_activations(),
            this->get_local_prev_error_signals(),

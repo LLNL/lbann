@@ -86,27 +86,4 @@ void metric::set_layer_pointers(std::vector<Layer*> layers) {
   }
 }
 
-bool metric::save_to_checkpoint_shared(persist& p) {
-  // write out fields we need to save for model
-  if (m_comm->am_trainer_master()) {
-    write_cereal_archive<metric>(*this, p, persist_type::metrics, ".xml");
-  }
-  return true;
-}
-
-bool metric::load_from_checkpoint_shared(persist& p) {
-  load_from_shared_cereal_archive<metric>(*this, p, persist_type::metrics, *m_comm, ".xml");
-  return true;
-}
-
-bool metric::save_to_checkpoint_distributed(persist& p) {
-  write_cereal_archive<metric>(*this, p, persist_type::metrics, ".xml");
-  return true;
-}
-
-bool metric::load_from_checkpoint_distributed(persist& p) {
-  read_cereal_archive<metric>(*this, p, persist_type::metrics, ".xml");
-  return true;
-}
-
 }  // namespace lbann

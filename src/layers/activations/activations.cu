@@ -26,7 +26,7 @@
 
 #define LBANN_ACTIVATIONS_LAYER_INSTANTIATE
 #include "lbann/layers/activations/activations.hpp"
-#include "lbann/utils/cuda.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 
 namespace lbann {
 
@@ -45,13 +45,13 @@ template <typename TensorDataType>
 struct log_sigmoid_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
     if (x >= TensorDataType(0.0)) {
-      return -cuda::log1p(cuda::exp(-x));
+      return -gpu_lib::log1p(gpu_lib::exp(-x));
     } else {
-      return x - cuda::log1p(cuda::exp(x));
+      return x - gpu_lib::log1p(gpu_lib::exp(x));
     }
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return dy / (TensorDataType(1.0) + cuda::exp(x));
+    return dy / (TensorDataType(1.0) + gpu_lib::exp(x));
   }
 };
 
@@ -59,7 +59,7 @@ struct log_sigmoid_op {
 template <typename TensorDataType>
 struct relu_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
-    return cuda::max(x, TensorDataType(0.0));
+    return gpu_lib::max(x, TensorDataType(0.0));
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
     return x > TensorDataType(0.0) ? dy : TensorDataType(0.0);
@@ -74,14 +74,14 @@ struct selu_op {
     const TensorDataType scale = 1.0507009873554804934193349852946;
     return (x > TensorDataType(0.0) ?
             scale * x :
-            scale * alpha * cuda::expm1(x));
+            scale * alpha * gpu_lib::expm1(x));
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
     const TensorDataType alpha = 1.6732632423543772848170429916717;
     const TensorDataType scale = 1.0507009873554804934193349852946;
     return (x > TensorDataType(0.0) ?
             dy * scale :
-            dy * scale * alpha * cuda::exp(x));
+            dy * scale * alpha * gpu_lib::exp(x));
   }
 };
 
@@ -90,9 +90,9 @@ template <typename TensorDataType>
 struct sigmoid_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
     const TensorDataType one = 1.;
-    const auto& y = one / (one + cuda::exp(-x));
+    const auto& y = one / (one + gpu_lib::exp(-x));
 #ifdef LBANN_ENABLE_SIGMOID_CUTOFF
-    const auto eps = cuda::epsilon<TensorDataType>();
+    const auto eps = gpu_lib::epsilon<TensorDataType>();
     if (y <= eps) { return eps; }
     else if (y >= one - eps) { return one - eps; }
 #endif // LBANN_ENABLE_SIGMOID_CUTOFF
@@ -100,9 +100,9 @@ struct sigmoid_op {
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
     const TensorDataType one = 1.;
-    const auto& y = one / (one + cuda::exp(-x));
+    const auto& y = one / (one + gpu_lib::exp(-x));
 #ifdef LBANN_ENABLE_SIGMOID_CUTOFF
-    const auto eps = cuda::epsilon<TensorDataType>();
+    const auto eps = gpu_lib::epsilon<TensorDataType>();
     if (y <= eps || y >= one - eps) { return TensorDataType(0.0); }
 #endif // LBANN_ENABLE_SIGMOID_CUTOFF
     return dy * y * (one - y);
@@ -114,13 +114,13 @@ template <typename TensorDataType>
 struct softplus_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
     if (x > TensorDataType(0.0)) {
-      return cuda::log1p(cuda::exp(-x)) + x;
+      return gpu_lib::log1p(gpu_lib::exp(-x)) + x;
     } else {
-      return cuda::log1p(cuda::exp(x));
+      return gpu_lib::log1p(gpu_lib::exp(x));
     }
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return dy / (TensorDataType(1.0) + cuda::exp(-x));
+    return dy / (TensorDataType(1.0) + gpu_lib::exp(-x));
   }
 };
 
@@ -128,10 +128,10 @@ struct softplus_op {
 template <typename TensorDataType>
 struct softsign_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
-    return x / (TensorDataType(1.0) + cuda::abs(x));
+    return x / (TensorDataType(1.0) + gpu_lib::abs(x));
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    const auto& denom = TensorDataType(1.0) + cuda::abs(x);
+    const auto& denom = TensorDataType(1.0) + gpu_lib::abs(x);
     return dy / (denom * denom);
   }
 };
@@ -142,20 +142,19 @@ struct softsign_op {
 #define DEFINE_COMPUTE_OPS(layer, op)                                   \
   template <typename TensorDataType, data_layout Layout, El::Device Device> \
   void layer<TensorDataType, Layout, Device>::fp_compute() {            \
-    cuda::apply_entrywise_unary_operator<op>(                           \
+    gpu_lib::apply_entrywise_unary_operator<op>(                        \
       this->get_prev_activations(),                                     \
       this->get_activations());                                         \
   }                                                                     \
   template <typename TensorDataType, data_layout Layout, El::Device Device> \
   void layer<TensorDataType, Layout, Device>::bp_compute() {            \
-    cuda::apply_entrywise_binary_operator<op>(                          \
+    gpu_lib::apply_entrywise_binary_operator<op>(                       \
       this->get_prev_activations(),                                     \
       this->get_prev_error_signals(),                                   \
       this->get_error_signals());                                       \
   }
 
 DEFINE_COMPUTE_OPS(log_sigmoid_layer, log_sigmoid_op)
-DEFINE_COMPUTE_OPS(relu_layer, relu_op)
 DEFINE_COMPUTE_OPS(selu_layer, selu_op)
 DEFINE_COMPUTE_OPS(sigmoid_layer, sigmoid_op)
 DEFINE_COMPUTE_OPS(softplus_layer, softplus_op)
@@ -163,7 +162,6 @@ DEFINE_COMPUTE_OPS(softsign_layer, softsign_op)
 
 #define PROTO(T) \
   UNARY_ETI_INST_MACRO_DEV_DT(log_sigmoid_layer, T, El::Device::GPU); \
-  UNARY_ETI_INST_MACRO_DEV_DT(relu_layer, T, El::Device::GPU);        \
   UNARY_ETI_INST_MACRO_DEV_DT(selu_layer, T, El::Device::GPU);        \
   UNARY_ETI_INST_MACRO_DEV_DT(sigmoid_layer, T, El::Device::GPU);     \
   UNARY_ETI_INST_MACRO_DEV_DT(softplus_layer, T, El::Device::GPU);    \

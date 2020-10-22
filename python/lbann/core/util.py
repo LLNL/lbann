@@ -172,6 +172,12 @@ def _generate_class(message_descriptor,
                         field.value = val
                     elif field_descriptor.label == google.protobuf.descriptor.FieldDescriptor.LABEL_REPEATED:
                         field.extend(make_iterable(val))
+                    elif isinstance(val, google.protobuf.message.Message):
+                        getattr(message, field_name).MergeFrom(val)
+                    elif callable(getattr(val, "export_proto", None)):
+                        # 'val' is (hopefully) an LBANN class
+                        # representation of a protobuf message.
+                        getattr(message, field_name).MergeFrom(val.export_proto())
                     else:
                         setattr(message, field_name, val)
                 except:
@@ -243,3 +249,30 @@ def generate_classes_from_protobuf_message(message,
                                            base_kwargs,
                                            base_has_export_proto))
     return classes
+
+def get_parallel_strategy_args(**kwargs):
+    """A wrapper function to create parallel_strategy arguments for
+    Distconv-enabled layers.
+
+    Args:
+        {sample, depth, height, width, channel, filter}_groups (int):
+            The number of processes for the corresponding dimension.
+    """
+
+    dimension_names = [
+        "sample",
+        "depth",
+        "height",
+        "width",
+        "channel",
+        "filter",
+    ]
+    group_names = ["{}_groups".format(x) for x in dimension_names]
+    assert len(set(kwargs.keys())-set(group_names)) == 0
+
+    parallel_strategy = {}
+    for group_name in group_names:
+        parallel_strategy[group_name] = kwargs[group_name] \
+            if group_name in kwargs.keys() else 1
+
+    return parallel_strategy

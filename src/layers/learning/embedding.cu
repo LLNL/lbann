@@ -26,6 +26,7 @@
 
 #define LBANN_EMBEDDING_LAYER_INSTANTIATE
 #include "lbann/layers/learning/embedding.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 
 namespace lbann {
 
@@ -101,7 +102,7 @@ __global__ void bp_kernel(El::Int num_embeddings,
         if (0<=ind && ind<num_embeddings && ind!=padding_idx) {
           const auto& dy = output_grad[i+j*embedding_dim+k*output_grad_ldim];
           auto& dw = embeddings_grad[i+ind*embeddings_grad_ldim];
-          cuda::atomic_add(&dw, dy);
+          gpu_lib::atomic_add(&dw, dy);
         }
       }
     }
@@ -121,21 +122,26 @@ void embedding_layer<TensorDataType, T_layout, Dev>::fp_compute() {
   using MatType = El::Matrix<TensorDataType, El::Device::GPU>;
 
   // Local data
-  const auto& local_embeddings = dynamic_cast<const MatType&>(this->get_data_type_weights(0).get_values().LockedMatrix());
+  const auto& local_embeddings = dynamic_cast<const MatType&>(this->weights_values(0).LockedMatrix());
   const auto& local_input = dynamic_cast<const MatType&>(this->get_local_prev_activations());
   auto& local_output = dynamic_cast<MatType&>(this->get_local_activations());
   const auto& input_size = this->get_input_size();
   const auto& local_mini_batch_size = local_input.Width();
 
-  // Launch CUDA kernel
+  // Launch GPU kernel
   if (!local_input.IsEmpty()) {
+    auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_output),
+                                       gpu::get_sync_info(local_input),
+                                       gpu::get_sync_info(local_embeddings));
     constexpr size_t block_size = 256;
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
     grid_dims.x = (this->m_embedding_dim + block_size - 1) / block_size;
     grid_dims.y = input_size;
     grid_dims.z = local_mini_batch_size;
-    fp_kernel<<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
+    hydrogen::gpu::LaunchKernel(
+      fp_kernel<TensorDataType>,
+      grid_dims, block_dims, 0, multisync,
       this->m_num_embeddings,
       this->m_embedding_dim,
       input_size,
@@ -158,8 +164,8 @@ void embedding_layer<TensorDataType, T_layout, Dev>::bp_compute() {
   El::Zero(this->get_error_signals());
 
   // Nothing to be done if embeddings are not being optimized
-  if (this->get_data_type_weights(0).get_optimizer() == nullptr) { return; }
-  auto& opt = *this->get_data_type_weights(0).get_optimizer();
+  if (this->get_weights(0).get_optimizer() == nullptr) { return; }
+  auto& opt = *this->get_weights(0).get_optimizer();
 
   // Local data
   const auto& local_input = dynamic_cast<const MatType&>(this->get_local_prev_activations());
@@ -168,16 +174,22 @@ void embedding_layer<TensorDataType, T_layout, Dev>::bp_compute() {
   const auto& input_size = this->get_input_size();
   const auto& local_mini_batch_size = local_input.Width();
 
-  // Launch CUDA kernel
+  // Launch GPU kernel
   El::Zero(local_embedding_grad);
   if (!local_input.IsEmpty()) {
+    auto multisync =
+      El::MakeMultiSync(gpu::get_sync_info(local_embedding_grad),
+                        gpu::get_sync_info(local_output_grad),
+                        gpu::get_sync_info(local_input));
     constexpr size_t block_size = 256;
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
     grid_dims.x = (this->m_embedding_dim + block_size - 1) / block_size;
     grid_dims.y = input_size;
     grid_dims.z = local_mini_batch_size;
-    bp_kernel<<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
+    hydrogen::gpu::LaunchKernel(
+      bp_kernel<TensorDataType>,
+      grid_dims, block_dims, 0, multisync,
       this->m_num_embeddings,
       this->m_embedding_dim,
       input_size,
@@ -190,8 +202,9 @@ void embedding_layer<TensorDataType, T_layout, Dev>::bp_compute() {
       local_embedding_grad.Buffer(),
       local_embedding_grad.LDim());
   }
-  opt.add_to_gradient(*this->m_embeddings_grad, El::TypeTraits<TensorDataType>::One(), true);
-
+  opt.add_to_gradient(*this->m_embeddings_grad,
+                      El::TypeTraits<TensorDataType>::One(),
+                      true);
 }
 
 // Explicit instantiation

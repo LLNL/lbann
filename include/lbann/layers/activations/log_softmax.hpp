@@ -28,7 +28,9 @@
 #define LBANN_LAYERS_ACTIVATIONS_LOG_SOFTMAX_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#if defined LBANN_HAS_CUDNN
 #include "lbann/utils/cudnn.hpp"
+#endif
 
 namespace lbann {
 
@@ -87,8 +89,8 @@ public:
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
 
-  void setup_dims() override {
-    data_type_layer<TensorDataType>::setup_dims();
+  void setup_dims(DataReaderMetaData& dr_metadata) override {
+    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims(this->get_input_dims());
   }
 

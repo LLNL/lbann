@@ -1,18 +1,83 @@
 import os, os.path
-from lbann import lbann_exe
+import socket
+import lbann
 import lbann.launcher
-import lbann.contrib.lc.launcher
-import lbann.contrib.lc.systems
 from lbann.util import make_iterable
+
+# ==============================================
+# Detect the current compute center
+# ==============================================
+
+def is_lc_center():
+    """Current system is operated by Livermore Computing at Lawrence
+    Livermore National Laboratory.
+
+    Checks whether the domain name ends with ".llnl.gov".
+
+    """
+    domain = socket.getfqdn().split('.')
+    return (len(domain) > 2
+            and domain[-2] == 'llnl'
+            and domain[-1] == 'gov')
+
+def is_nersc_center():
+    """Current system is operated by the National Energy Research
+    Scientific Computing Center at Lawrence Berkeley National
+    Laboratory.
+
+    Checks whether the environment variable NERSC_HOST is set.
+
+    """
+    return bool(os.getenv('NERSC_HOST'))
+
+def is_olcf_center():
+    """Current system is operated by the Oak Ridge Leadership
+    Computing Facility at Oak Ridge National Laboratory.
+
+    Checks whether the domain name ends with ".ornl.gov".
+    Checks whether the environment variable OLCF_MODULEPATH_ROOT is set.
+
+    """
+    domain = socket.getfqdn().split('.')
+    return (len(domain) > 2
+            and domain[-2] == 'ornl'
+            and domain[-1] == 'gov')
+#    return bool(os.getenv('OLCF_MODULEPATH_ROOT'))
+
+# Detect compute center and choose launcher
+_center = 'unknown'
+launcher = lbann.launcher
+if is_lc_center():
+    _center = 'lc'
+    import lbann.contrib.lc.launcher
+    launcher = lbann.contrib.lc.launcher
+elif is_nersc_center():
+    _center = 'nersc'
+    import lbann.contrib.nersc.launcher
+    launcher = lbann.contrib.nersc.launcher
+elif is_olcf_center():
+    _center = 'olcf'
+    import lbann.contrib.olcf.launcher
+    launcher = lbann.contrib.olcf.launcher
+
+def compute_center():
+    """Name of organization that operates current system."""
+    return _center
+
+# ==============================================
+# Launcher functions
+# ==============================================
 
 def run(
     trainer,
     model,
     data_reader,
     optimizer,
+    lbann_exe=lbann.lbann_exe(),
     lbann_args=[],
     overwrite_script=False,
     setup_only=False,
+    batch_job=False,
     *args,
     **kwargs,
 ):
@@ -27,18 +92,11 @@ def run(
     # Create batch script generator
     script = make_batch_script(*args, **kwargs)
 
-    # Check for an existing job allocation
-    has_allocation = False
-    if isinstance(script, lbann.launcher.slurm.SlurmBatchScript):
-        has_allocation = 'SLURM_JOB_ID' in os.environ
-    if isinstance(script, lbann.launcher.lsf.LSFBatchScript):
-        has_allocation = 'LSB_JOBID' in os.environ
-
     # Batch script prints start time
     script.add_command('echo "Started at $(date)"')
 
     # Batch script invokes LBANN
-    lbann_command = [lbann.lbann_exe()]
+    lbann_command = [lbann_exe]
     lbann_command.extend(make_iterable(lbann_args))
     prototext_file = os.path.join(script.work_dir, 'experiment.prototext')
     lbann.proto.save_prototext(prototext_file,
@@ -58,10 +116,10 @@ def run(
     status = 0
     if setup_only:
         script.write(overwrite=overwrite_script)
-    elif has_allocation:
-        status = script.run(overwrite=overwrite_script)
-    else:
+    elif batch_job:
         status = script.submit(overwrite=overwrite_script)
+    else:
+        status = script.run(overwrite=overwrite_script)
     return status
 
 def make_batch_script(*args, **kwargs):
@@ -72,10 +130,4 @@ def make_batch_script(*args, **kwargs):
     optimizations for the current system.
 
     """
-
-    # Livermore Computing
-    if lbann.contrib.lc.systems.is_lc_system():
-        return lbann.contrib.lc.launcher.make_batch_script(*args, **kwargs)
-
-    # Default launcher
-    return lbann.launcher.make_batch_script(*args, **kwargs)
+    return launcher.make_batch_script(*args, **kwargs)

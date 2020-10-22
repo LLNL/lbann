@@ -83,7 +83,7 @@ include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(
   Python
   REQUIRED_VARS Python_EXECUTABLE Python_INCLUDE_DIRS Python_LIBRARIES
-  Python_VERSION_MAJOR Python_VERSION_MINOR Python_VERSION_PATCH
+  Python_VERSION
   VERSION_VAR Python_VERSION)
 
 # Build the imported target

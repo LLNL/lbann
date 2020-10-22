@@ -110,9 +110,9 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void
 channelwise_fully_connected_layer<TensorDataType,Layout,Device>
-::setup_dims()
+::setup_dims(DataReaderMetaData& dr_metadata)
 {
-  data_type_layer<TensorDataType>::setup_dims();
+  data_type_layer<TensorDataType>::setup_dims(dr_metadata);
 
   // Make sure input and output dimensions are valid
   const auto& input_dims = this->get_input_dims();
@@ -140,9 +140,9 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void
 channelwise_fully_connected_layer<TensorDataType,Layout,Device>
-::setup_data()
+::setup_data(size_t max_mini_batch_size)
 {
-  data_type_layer<TensorDataType>::setup_data();
+  data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
 
   // Tensor dimensions
   const auto& input_dims = this->get_input_dims();
@@ -168,23 +168,23 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
       "with an invalid number of weights ",
       "(",this->num_weights(),")");
   }
-  this->set_num_data_type_weights(m_has_bias ? 2 : 1);
+  this->set_num_weights(m_has_bias ? 2 : 1);
 
   // Create default linearity weights if needed
-  if (!this->has_data_type_weights(0)) {
+  if (!this->has_weights(0)) {
     auto w = make_unique<WeightsType>(this->get_comm());
     auto init = make_unique<he_initializer<TensorDataType>>(probability_distribution::gaussian);
     auto opt = this->m_model->template create_optimizer<TensorDataType>();
     w->set_name(this->get_name() + "_linearity_weights");
     w->set_initializer(std::move(init));
     w->set_optimizer(std::move(opt));
-    this->set_data_type_weights(0, w.get());
+    this->set_weights(0, w.get());
     this->m_model->add_weights(std::move(w));
   }
 
   // Setup linearity weights
   {
-    auto& linearity_weights = this->get_data_type_weights(0);
+    auto& linearity_weights = this->get_weights(0);
     auto dist = this->get_prev_activations().DistData();
     dist.colDist = El::STAR;
     dist.rowDist = El::STAR;
@@ -204,25 +204,27 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
     auto dist = this->get_prev_activations().DistData();
     dist.colDist = El::STAR;
     dist.rowDist = El::STAR;
-    if (!this->has_data_type_weights(1)) {
+    if (!this->has_weights(1)) {
       auto w = make_unique<WeightsType>(this->get_comm());
       auto opt = this->m_model->template create_optimizer<TensorDataType>();
       w->set_name(this->get_name() + "_bias_weights");
       w->set_optimizer(std::move(opt));
-      this->set_data_type_weights(1, w.get());
+      this->set_weights(1, w.get());
       this->m_model->add_weights(std::move(w));
     }
-    auto& bias_weights = this->get_data_type_weights(1);
+    auto& bias_weights = this->get_weights(1);
     bias_weights.set_dims(output_channel_dims);
     bias_weights.set_matrix_distribution(dist);
   }
 
   // Initialize freeze state
-  for (auto&& w : this->get_data_type_weights()) {
-    if (this->is_frozen()) {
-      w->freeze();
+  auto const num_weights = this->num_weights();
+  for (size_t ii = 0; ii < num_weights; ++ii) {
+    auto& w = this->get_weights(ii);
+    if (this->m_frozen) {
+      w.freeze();
     } else {
-      w->unfreeze();
+      w.unfreeze();
     }
   }
 
@@ -237,8 +239,8 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
   const auto& one = El::TypeTraits<TensorDataType>::One();
 
   // Data tensors
-  using LocalMat = El::Matrix<TensorDataType,Device>;
-  const auto& linearity = this->get_data_type_weights(0).get_values();
+  using LocalMat = El::Matrix<TensorDataType, Device>;
+  const auto& linearity = this->weights_values(0);
   const auto& local_input = dynamic_cast<const LocalMat&>(this->get_local_prev_activations());
   auto& local_output = dynamic_cast<LocalMat&>(this->get_local_activations());
   const auto& local_linearity = dynamic_cast<const LocalMat&>(linearity.LockedMatrix());
@@ -292,7 +294,7 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
 
   // Apply bias
   if (m_has_bias) {
-    const auto& bias = this->get_data_type_weights(1).get_values();
+    const auto& bias = this->weights_values(1);
     LocalMat ones(local_mini_batch_size * num_channels, 1);
     El::Fill(ones, one);
     El::Gemm(
@@ -311,12 +313,9 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
   const auto& zero = El::TypeTraits<TensorDataType>::Zero();
   const auto& one = El::TypeTraits<TensorDataType>::One();
 
-  // Weights
-  auto& linearity_weights = this->get_data_type_weights(0);
-
   // Data tensors
   using LocalMat = El::Matrix<TensorDataType,Device>;
-  const auto& linearity = linearity_weights.get_values();
+  const auto& linearity = this->weights_values(0);
   const auto& local_input = dynamic_cast<const LocalMat&>(this->get_local_prev_activations());
   const auto& local_output_grad = dynamic_cast<const LocalMat&>(this->get_local_prev_error_signals());
   auto& local_input_grad = dynamic_cast<LocalMat&>(this->get_local_error_signals());
@@ -383,7 +382,7 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
     zero, reinterpret_cast<LocalMat&>(local_input_grad_reshaped));
 
   // Compute gradient w.r.t. linearity
-  auto* linearity_optimizer = linearity_weights.get_optimizer();
+  auto* linearity_optimizer = this->get_weights(0).get_optimizer();
   if (linearity_optimizer != nullptr) {
     TensorDataType dst_scale, gradient_scale;
     auto& linearity_gradient = linearity_optimizer->get_gradient_buffer(
@@ -404,7 +403,7 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
 
   // Compute gradient w.r.t. bias
   if (m_has_bias) {
-    auto& bias_weights = this->get_data_type_weights(1);
+    auto& bias_weights = this->get_weights(1);
     auto* bias_optimizer = bias_weights.get_optimizer();
     if (bias_optimizer != nullptr) {
       TensorDataType dst_scale, gradient_scale;

@@ -75,6 +75,7 @@ Layer::Layer(const Layer& other) :
   m_bp_compute_time(other.m_bp_compute_time),
   m_update_time(other.m_update_time),
   m_name(other.m_name),
+  m_weights(other.m_weights),
   m_output_dims_list(other.m_output_dims_list),
   m_hint_layer(other.m_hint_layer) {
 }
@@ -95,6 +96,7 @@ Layer& Layer::operator=(const Layer& other) {
   m_bp_compute_time = other.m_bp_compute_time;
   m_update_time = other.m_update_time;
   m_name = other.m_name;
+  m_weights = other.m_weights;
   m_output_dims_list = other.m_output_dims_list;
   m_hint_layer = other.m_hint_layer;
 
@@ -155,7 +157,7 @@ description Layer::get_description() const {
   }
 
   // Weights
-  const auto weights_list = get_weights();
+  const auto weights_list = m_weights;
   if (!weights_list.empty()) {
     ss.str(std::string{});
     ss.clear();
@@ -238,7 +240,7 @@ void Layer::summarize_stats(lbann_summary& summarizer, int step) {
   reset_counters();
   // Combine the optimizer step time from all the weights.
   double step_time = 0.0;
-  for (auto const& w : get_weights()) {
+  for (auto const& w : m_weights) {
     optimizer *opt = w->get_optimizer();
     if (opt) {
       step_time += opt->get_step_time();
@@ -341,34 +343,67 @@ void Layer::set_output_dims(std::vector<int> dims, int output_index) {
   m_output_dims_list[output_index] = dims;
 }
 
+// FIXME (trb 05/28/2020): IMO, this function name is somewhat
+// misleading. It's not "replacing" anything -- it's overwriting the
+// weights values of "this" with the weights values of "other_layer",
+// which is left intact.
+//
+// ALSO, really what it does is copies the first "number of weights
+// 'this' expects to have" and ignores any others that might be
+// present in "other_layer".
+//
+// The use-cases of this function are outside the scope of my current
+// work, so I'm "refactoring in-place" and leaving this documentation
+// for a future refactor.
+void Layer::replace_weights(Layer const& other_layer) {
+
+  auto const other_num_weights = other_layer.num_weights();
+  auto const my_num_weights = this->num_weights();
+
+  // Minimal sanity check; see longer note above.
+  if (other_num_weights < my_num_weights)
+    LBANN_ERROR("Expected at least ", my_num_weights, " weights in layer \"",
+                other_layer.get_name(), "\" but found ", other_num_weights);
+
+  using IdxT = typename std::decay<decltype(my_num_weights)>::type;
+  for (IdxT ii = 0; ii < my_num_weights; ++ii) {
+    auto const& other_layer_weights = other_layer.get_weights(ii);
+    this->get_weights(ii).set_values(other_layer_weights.get_values());
+  }
+}
+
 void Layer::freeze() {
   m_frozen = true;
-  for(auto& w : get_weights()) {
+  for(auto& w : m_weights) {
     w->freeze();
   }
 }
 
 void Layer::unfreeze() {
   m_frozen = false;
-  for(auto& w : get_weights()) {
+  for(auto& w : m_weights) {
     w->unfreeze();
   }
 }
 
 bool Layer::is_frozen() const {
-  for(auto& w : get_weights()) {
+  for(auto& w : m_weights) {
     if (w->is_frozen() != m_frozen) {
-      LBANN_ERROR("layer and weights of them are inconsistently frozen");
+      LBANN_ERROR("layer ", get_name(), " and weight ", w->get_name(), \
+                  " of it are inconsistently frozen");
     }
   }
   return m_frozen;
 }
 
-void Layer::setup() {
+void Layer::setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata) {
   setup_pointers();
-  setup_dims();
+  setup_dims(dr_metadata);
   setup_matrices(m_comm->get_trainer_grid());
-  setup_data();
+#ifdef LBANN_HAS_DISTCONV
+  prepare_distconv(dr_metadata);
+#endif // LBANN_HAS_DISTCONV
+  setup_data(max_mini_batch_size);
   if (using_gpus()) { setup_gpu(); }
 }
 
@@ -449,7 +484,7 @@ void Layer::setup_pointers() {
 
 }
 
-void Layer::setup_dims() {
+void Layer::setup_dims(DataReaderMetaData& dr_metadata) {
   m_output_dims_list.resize(get_num_children());
   if (m_hint_layer != nullptr) {
     const auto& hint_dims = m_hint_layer->get_output_dims();
@@ -510,6 +545,14 @@ void Layer::check_setup() {
   }
 }
 
+void Layer::back_prop() {
+  allocate_new_gradients_();
+  back_prop_impl_();
+  propagate_error_signals_to_parents_();
+  clear_prev_error_signals_();
+}
+
+
 bool Layer::save_to_checkpoint_shared(persist& p) const {
   return true;
 }
@@ -533,7 +576,7 @@ void Layer::write_proto(lbann_data::Layer* proto) const {
   if(!m_parent_layers.empty()) proto->set_bottom(m_parent_layers.front()->get_name());
   proto->set_top(get_name());
   //Add weights
-  for (auto const& w : get_weights()) {
+  for (auto const& w : m_weights) {
     auto weight_proto = proto->add_weights_data();
     w->write_proto(weight_proto);
   }
@@ -601,5 +644,68 @@ void Layer::set_layer_pointers(std::vector<Layer*> layers) {
   m_hint_layer = layers[pos];
   pos++;
 }
+
+#ifdef LBANN_HAS_DISTCONV
+void Layer::prepare_distconv(const DataReaderMetaData& dr_metadata) {
+  if (distconv_enabled()) {
+    setup_distconv_adapter(dr_metadata);
+  }
+}
+
+bool Layer::distconv_enabled() const {
+  if (!m_distconv_enabled_set) {
+    // Distconv is disabled if no parallel strategy is defined. When no
+    // strategy is defined, the layer has the default strategy of all
+    // zeros, which is invalid, thus should not be used when distconv is
+    // used.
+    const auto &ps = get_parallel_strategy();
+    ParallelStrategy default_zero_ps;
+    if (ps == default_zero_ps) {
+      dc::MPIRootPrintStreamDebug()
+          << "Disable " << get_name()
+          << " as it does not have a parallel strategy.";
+      m_distconv_enabled = false;
+      m_distconv_enabled_set = true;
+    }
+  }
+
+  if (!m_distconv_enabled_set) {
+    // Finally, check whether a layer is supported by distconv.
+    m_distconv_enabled = is_distconv_supported();
+    m_distconv_enabled_set = true;
+  }
+
+  return m_distconv_enabled;
+}
+
+bool Layer::keep_original_inputs(int index) const {
+  return !(distconv_enabled() && !get_distconv_adapter().parent_copy_required(index));
+}
+
+bool Layer::keep_original_outputs(int index) const {
+  return !(distconv_enabled() && !get_distconv_adapter().child_copy_required(index));
+}
+
+bool Layer::keep_original_gradient_wrt_outputs(int index) const {
+  return keep_original_outputs(index);
+}
+
+bool Layer::keep_original_gradient_wrt_inputs(int index) const {
+  return keep_original_inputs(index);
+}
+
+distconv_adapter& Layer::get_distconv_adapter() {
+  return const_cast<distconv_adapter&>(
+      static_cast<const Layer&>(*this).get_distconv_adapter());
+}
+
+const distconv_adapter& Layer::get_distconv_adapter() const {
+  if (m_dc == nullptr) {
+    LBANN_ERROR("Trying to access distconv adapter for layer, ",
+                get_name(), ", without setting up");
+  }
+  return *m_dc;
+}
+#endif // LBANN_HAS_DISTCONV
 
 }  // namespace lbann

@@ -1,8 +1,19 @@
 trainer {
+  mini_batch_size: 64
+
+  ###################################################
+  # Callbacks
+  ###################################################
+  callback {
+    checkpoint {
+      checkpoint_dir: "ckpt"
+      checkpoint_epochs: 1
+      checkpoint_steps: 845
+    }
+  }
 }
 model {
   data_layout: "data_parallel"
-  mini_batch_size: 64
   num_epochs: 20
   disable_cuda: true
   ###################################################
@@ -43,13 +54,6 @@ model {
     }
   }
 
-  callback {
-    checkpoint {
-      checkpoint_dir: "ckpt"
-      checkpoint_epochs: 1
-      checkpoint_steps: 845
-    }
-  }
   callback {
     adaptive_learning_rate {
       patience: 4

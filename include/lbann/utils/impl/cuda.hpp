@@ -101,15 +101,15 @@ T block_reduce(T val) {
   const size_t tid = threadIdx.x + threadIdx.y*bdimx + threadIdx.z*bdimx*bdimy;
   constexpr size_t bsize = bdimx * bdimy * bdimz;
   __shared__ DataType shared_max_vals[bsize];
-  shared_vals[tid] = val;
+  shared_max_vals[tid] = val;
   for (size_t stride = bsize/2; stride > 0; stride /= 2) {
     __syncthreads();
     if (tid < stride) {
-      shared_vals[tid] = shared_vals[tid] + shared_vals[tid+stride];
+      shared_max_vals[tid] = shared_max_vals[tid] + shared_max_vals[tid+stride];
     }
   }
   if (tid == 0) {
-    val = shared_vals[0];
+    val = shared_max_vals[0];
   }
 #endif // HYDROGEN_HAVE_CUB
   return val;
@@ -127,15 +127,15 @@ T block_reduce(T val) {
   const size_t tid = threadIdx.x + threadIdx.y*bdimx + threadIdx.z*bdimx*bdimy;
   constexpr size_t bsize = bdimx * bdimy * bdimz;
   __shared__ DataType shared_max_vals[bsize];
-  shared_vals[tid] = val;
+  shared_max_vals[tid] = val;
   for (size_t stride = bsize/2; stride > 0; stride /= 2) {
     __syncthreads();
     if (tid < stride) {
-      shared_vals[tid] = op(shared_vals[tid], shared_vals[tid+stride]);
+      shared_max_vals[tid] = op(shared_max_vals[tid], shared_max_vals[tid+stride]);
     }
   }
   if (tid == 0) {
-    val = shared_vals[0];
+    val = shared_max_vals[0];
   }
 #endif // HYDROGEN_HAVE_CUB
   return val;
@@ -178,14 +178,16 @@ WRAP_UNARY_CUDA_MATH_FUNCTION(atanh)
 
 template <typename T> __device__ __forceinline__
 bool isfinite(T const& x) { return ::isfinite(x); }
-
+template <typename T> __device__ __forceinline__
+bool isinf(T const& x) { return ::isinf(x); }
 template <typename T> __device__ __forceinline__
 bool isnan(T const& x) { return ::isnan(x); }
 
 #if __CUDA_ARCH__ >= 530
 template <> __device__ __forceinline__
 bool isfinite(__half const& x) { return !(::__isnan(x) || ::__hisinf(x)); }
-
+template <> __device__ __forceinline__
+bool isinf(__half const& x) { return ::__hisinf(x); }
 template <> __device__ __forceinline__
 bool isnan(__half const& x) { return ::__hisnan(x); }
 
@@ -443,11 +445,13 @@ void apply_entrywise_unary_operator(
 
   // Launch CUDA kernel
   if (grid_dim > 0) {
-    CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
-    entrywise_unary_operator_kernel<UnaryOp>
-      <<<grid_dim, block_dim, 0, El::GPUManager::Stream()>>>(
-        height, width, input.LockedBuffer(), input.LDim(),
-        output.Buffer(), output.LDim());
+    auto multisync = El::MakeMultiSync(gpu::get_sync_info(output),
+                                       gpu::get_sync_info(input));
+    hydrogen::gpu::LaunchKernel(
+      entrywise_unary_operator_kernel<UnaryOp, TensorDataType>,
+      grid_dim, block_dim, 0, multisync,
+      height, width, input.LockedBuffer(), input.LDim(),
+      output.Buffer(), output.LDim());
   }
 
 }
@@ -493,13 +497,16 @@ void apply_entrywise_binary_operator(
 
   // Launch CUDA kernel
   if (grid_dim > 0) {
-    CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
-    entrywise_binary_operator_kernel<BinaryOp>
-      <<<grid_dim, block_dim, 0, El::GPUManager::Stream()>>>(
-        height, width,
-        input1.LockedBuffer(), input1.LDim(),
-        input2.LockedBuffer(), input2.LDim(),
-        output.Buffer(), output.LDim());
+    auto multisync = El::MakeMultiSync(gpu::get_sync_info(output),
+                                       gpu::get_sync_info(input1),
+                                       gpu::get_sync_info(input2));
+    hydrogen::gpu::LaunchKernel(
+      entrywise_binary_operator_kernel<BinaryOp, TensorDataType>,
+      grid_dim, block_dim, 0, multisync,
+      height, width,
+      input1.LockedBuffer(), input1.LDim(),
+      input2.LockedBuffer(), input2.LDim(),
+      output.Buffer(), output.LDim());
   }
 
 }

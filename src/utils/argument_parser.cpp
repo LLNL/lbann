@@ -33,97 +33,76 @@
 #include <iostream>
 #include <string>
 
+namespace
+{
+/** @brief Check a raw argument for a given token.
+ *
+ *  Returns "true" when EITHER:
+ *
+ *    - testtoken == rawargument is true.
+ *    - rawargument has an equals sign and the substring up to (but not
+ *      including) the equals sign compares equal to testtoken.
+ */
+bool token_match(std::string const& testtoken,
+                 std::string const& rawargument)
+{
+  return (rawargument.compare(0, rawargument.find('='), testtoken) == 0);
+}
+}// namespace <anon>
+
 namespace lbann
 {
 namespace utils
 {
-
-argument_parser::argument_parser()
+void strict_parsing::handle_error(
+  clara::detail::InternalParseResult result,
+  clara::Parser&,
+  std::vector<char const*>&)
 {
-  params_["print help"] = false;
-  parser_ |= clara::ExeName(exe_name_);
-  parser_ |= clara::Help(utils::any_cast<bool&>(params_["print help"]));
-
-  // Work around a bug in Clara logic
-  parser_.m_exeName.set(exe_name_);
+  throw parse_error(
+    lbann::build_string(
+      "Arguments could not be parsed.\n\nMessage: ",
+      result.errorMessage()));
 }
 
-void argument_parser::parse(int argc, char const* const argv[])
+void allow_extra_parameters::handle_error(
+  clara::detail::InternalParseResult parse_result,
+  clara::Parser& parser_,
+  std::vector<char const*>& newargv)
 {
-  parse_no_finalize(argc, argv);
-  finalize();
-}
-
-void argument_parser::parse_no_finalize(int argc, char const* const argv[])
-{
-
-  auto parse_result = parser_.parse(clara::Args(argc, argv));
-  if (!parse_result)
-    throw parse_error(
-      lbann::build_string(
-        "Arguments could not be parsed.\n\nMessage: ",
-        parse_result.errorMessage()));
-}
-
-void argument_parser::finalize() const
-{
-  if (!help_requested() && required_.size())
-    throw missing_required_arguments(required_);
-}
-
-auto argument_parser::add_flag(
-  std::string const& name,
-  std::initializer_list<std::string> cli_flags,
-  std::string const& description)
-  -> readonly_reference<bool>
-{
-  return add_flag_impl_(name, std::move(cli_flags), description, false);
-}
-
-std::string const& argument_parser::get_exe_name() const noexcept
-{
-  return exe_name_;
-}
-
-bool argument_parser::help_requested() const
-{
-  return utils::any_cast<bool>(params_.at("print help"));
-}
-
-void argument_parser::print_help(std::ostream& out) const
-{
-  out << parser_ << std::endl;
-}
-
-auto argument_parser::add_flag_impl_(
-  std::string const& name,
-  std::initializer_list<std::string> cli_flags,
-  std::string const& description,
-  bool default_value)
-  -> readonly_reference<bool>
-{
-  params_[name] = default_value;
-  auto& param_ref = any_cast<bool&>(params_[name]);
-  clara::Opt option(param_ref);
-  for (auto const& f : cli_flags)
-    option[f];
-  parser_ |= option(description).optional();
-  return param_ref;
+  do
+  {
+    std::string const base_text = "Unrecognised token: ";
+    std::string const err_text = parse_result.errorMessage();
+    if ((err_text.size() > base_text.size())
+        && (err_text.substr(0, base_text.size()).compare(base_text) == 0))
+    {
+      auto const token = err_text.substr(base_text.size());
+      auto iter = std::find_if(newargv.cbegin(), newargv.cend(),
+                               [&token](char const* str)
+                               {
+                                 return token_match(token, str);
+                               });
+      newargv.erase(newargv.cbegin() + 1,
+                    (iter == newargv.cend() ? iter : iter + 1));
+      parse_result = parser_.parse(clara::Args(newargv.size(), newargv.data()));
+    }
+    else
+    {
+      throw parse_error(
+        lbann::build_string(
+          "Arguments could not be parsed.\n\nMessage: ",
+          parse_result.errorMessage()));
+    }
+  } while (!parse_result);
 }
 
 }// namespace utils
 
-utils::argument_parser& global_argument_parser()
+default_arg_parser_type& global_argument_parser()
 {
-  static utils::argument_parser args;
+  static default_arg_parser_type args;
   return args;
 }
 
 }// namespace lbann
-
-std::ostream& operator<<(std::ostream& os,
-                         lbann::utils::argument_parser const& parser)
-{
-  parser.print_help(os);
-  return os;
-}

@@ -11,7 +11,7 @@ else ()
     CACHE STRING "The URL from which to clone Aluminum")
 endif ()
 
-set(ALUMINUM_TAG "v0.3.3"
+set(ALUMINUM_TAG "master"
   CACHE STRING "The git tag to checkout for Aluminum")
 
 set(ALUMINUM_CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}"
@@ -26,7 +26,8 @@ option(ALUMINUM_ENABLE_CUDA "Enable CUDA support." OFF)
 option(ALUMINUM_ENABLE_MPI_CUDA "Enable MPI-CUDA support." OFF)
 option(ALUMINUM_ENABLE_NCCL "Enable NCCL support." OFF)
 
-if (ALUMINUM_ENABLE_CUDA OR ALUMINUM_ENABLE_MPI_CUDA OR ALUMINUM_ENABLE_NCCL)
+if (ALUMINUM_ENABLE_CUDA OR ALUMINUM_ENABLE_MPI_CUDA OR ALUMINUM_ENABLE_NCCL
+    AND NOT ALUMINUM_ENABLE_ROCM)
   enable_language(CUDA)
 endif ()
 

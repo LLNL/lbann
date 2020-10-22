@@ -29,7 +29,8 @@
 #include "lbann/data_readers/data_reader.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
 #include "lbann/utils/omp_pragma.hpp"
-#include "lbann/models/model.hpp"
+#include "lbann/utils/threads/thread_pool.hpp"
+#include "lbann/trainers/trainer.hpp"
 #include <omp.h>
 #include <future>
 #include "lbann/io/persist.hpp"
@@ -54,6 +55,7 @@ void generic_data_reader::shuffle_indices(rng_gen& gen) {
   }
 }
 
+  /// @todo BVE FIXME
 void generic_data_reader::setup(int num_io_threads, observer_ptr<thread_pool> io_thread_pool) {
   m_base_offset = 0;
   m_sample_stride = 1;
@@ -77,18 +79,19 @@ void generic_data_reader::setup(int num_io_threads, observer_ptr<thread_pool> io
 }
 
 
-bool lbann::generic_data_reader::fetch_data_block(CPUMat& X, El::Int thread_id, El::Int mb_size, El::Matrix<El::Int>& indices_fetched) {
-  std::string error_message;
-  for (int s = thread_id; s < mb_size; s+=m_io_thread_pool->get_num_threads()) {
+bool lbann::generic_data_reader::fetch_data_block(CPUMat& X, El::Int block_offset, El::Int block_stride, El::Int mb_size, El::Matrix<El::Int>& indices_fetched) {
+  locked_io_rng_ref io_rng = set_io_generators_local_index(block_offset);
+
+  for (int s = block_offset; s < mb_size; s+=block_stride) {
     int n = m_current_pos + (s * m_sample_stride);
     int index = m_shuffled_indices[n];
     bool valid = fetch_datum(X, index, s);
     if (!valid) {
-      error_message = "invalid datum (index " + std::to_string(index) + ")";
+      LBANN_ERROR("invalid datum (index ", std::to_string(index), ")");
     }
-    if (!error_message.empty()) { LBANN_ERROR(error_message); }
     indices_fetched.Set(s, 0, index);
   }
+
   return true;
 }
 
@@ -96,7 +99,7 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X, El::Matrix<El::Int>& indic
   #ifdef DEBUG
   if (m_current_pos == 0) {
     if (is_master()) {
-      std::cout << "role: " << get_role() << " model: " << m_model->get_name()
+      std::cout << "role: " << get_role() << " model: " << m_trainer->get_name()
                 << " shuffled indices: ";
       for (size_t j=0; j<15; j++) {
         std::cout << m_shuffled_indices[j] << " ";
@@ -144,6 +147,8 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X, El::Matrix<El::Int>& indic
     set_jag_variables(mb_size);
   }
 
+  // Fetch data is executed by the thread pool so it has to dispatch
+  // work to other threads in the thread pool and do some work locally
   for (int t = 0; t < static_cast<int>(m_io_thread_pool->get_num_threads()); t++) {
     // Queue up work into other threads and then finish off the
     // mini-batch in the active thread
@@ -152,10 +157,15 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X, El::Matrix<El::Int>& indic
     }else {
       m_io_thread_pool->submit_job_to_work_group(
         std::bind(&generic_data_reader::fetch_data_block, this, std::ref(X), t,
+                  m_io_thread_pool->get_num_threads(),
                   mb_size, std::ref(indices_fetched)));
     }
   }
-  fetch_data_block(X, m_io_thread_pool->get_local_thread_id(), mb_size, indices_fetched);
+  fetch_data_block(X,
+                   m_io_thread_pool->get_local_thread_id(),
+                   m_io_thread_pool->get_num_threads(),
+                   mb_size,
+                   indices_fetched);
 
   // Wait for all of the threads to finish
   m_io_thread_pool->finish_work_group();
@@ -613,17 +623,20 @@ std::string generic_data_reader::get_local_file_dir() const {
   return m_local_file_dir;
 }
 
-void generic_data_reader::set_data_index_list(std::string s) {
-  m_data_index_list = s;
+void generic_data_reader::set_data_sample_list(std::string s) {
+  m_data_sample_list = s;
 }
 
-std::string generic_data_reader::get_data_index_list() const {
-  if (m_data_index_list == "") {
-    throw lbann_exception(
-      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: you apparently did not call set_data_index_list; error!");
-  }
-  return m_data_index_list;
+std::string generic_data_reader::get_data_sample_list() const {
+  return m_data_sample_list;
+}
+
+void generic_data_reader::keep_sample_order(bool same_order) {
+  // The sample_list::keep_sample_order() should be called using this
+  // flag. By doing so, it will add additional step to re-shuffle the
+  // sample order to restore it to the original before the loading
+  // with interleaving accesses by multiple ranks in a trainer.
+  m_keep_sample_order = same_order;
 }
 
 void generic_data_reader::set_data_filename(std::string s) {
@@ -753,7 +766,7 @@ bool generic_data_reader::data_store_active() const {
     return true;
   }
 
-  const auto& c = static_cast<const sgd_execution_context&>(m_model->get_execution_context());
+  const auto& c = static_cast<const sgd_execution_context&>(m_trainer->get_data_coordinator().get_execution_context());
   /// Use the data store for all modes except testing
   /// i.e. training, validation, tournament
   return (m_data_store != nullptr
@@ -764,7 +777,7 @@ bool generic_data_reader::data_store_active() const {
 }
 
 bool generic_data_reader::priming_data_store() const {
-  const auto& c = static_cast<const sgd_execution_context&>(m_model->get_execution_context());
+  const auto& c = static_cast<const sgd_execution_context&>(m_trainer->get_data_coordinator().get_execution_context());
   if (m_data_store != nullptr && m_data_store->is_fully_loaded()) {
     return false;
   }
@@ -819,8 +832,8 @@ void generic_data_reader::preload_data_store() {
   if (m_data_store->is_local_cache()) {
     m_data_store->set_profile_msg("generic_data_reader::preload_data_store() calling m_data_store->preload_local_cache()");
     m_data_store->preload_local_cache();
-  } 
-  
+  }
+
   else {
     std::vector<int> local_list_sizes;
     int np = m_comm->get_procs_per_trainer();
@@ -856,7 +869,7 @@ void generic_data_reader::print_get_methods(const std::string filename) {
 
   out << "get_file_dir " << get_file_dir() << std::endl;
   out << "get_local_file_dir " << get_local_file_dir() << std::endl;
-  out << "get_data_index_list " << get_data_index_list() << std::endl;
+  out << "get_data_sample_list " << get_data_sample_list() << std::endl;
   out << "get_data_filename " << get_data_filename()  << std::endl;
   out << "get_label_filename " << get_label_filename() << std::endl;
   out << "get_role " << get_role() << std::endl;

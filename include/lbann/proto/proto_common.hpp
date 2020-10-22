@@ -46,19 +46,19 @@ class Trainer;
 
 namespace lbann {
 
-/** @brief Customize the name of the index list
+/** @brief Customize the name of the sample list
  *
  *  The following options are available
  *   - trainer ID
  *   - model name
  *
  *  The format for the naming convention if the provided name is
- *  \<index list\> is:
+ *  \<sample list\> is:
  *  @verbatim
-    <index list> == <basename>.<extension>
+    <sample list> == <basename>.<extension>
     <model name>_t<ID>_<basename>.<extension> @endverbatim
  */
-void customize_data_readers_index_list(const lbann_comm& comm,
+void customize_data_readers_sample_list(const lbann_comm& comm,
                                        ::lbann_data::LbannPB& p);
 
 /** @brief instantiates one or more generic_data_readers and inserts
@@ -79,7 +79,11 @@ void set_num_parallel_readers(const lbann_comm& comm, ::lbann_data::LbannPB& p);
 void get_cmdline_overrides(const lbann_comm& comm, ::lbann_data::LbannPB& p);
 
 /** @brief print various params (learn_rate, etc) to cout */
-void print_parameters(const lbann_comm& comm, ::lbann_data::LbannPB& p);
+void print_parameters(const lbann_comm& comm,
+                      ::lbann_data::LbannPB& p,
+                      std::vector<int>& root_random_seeds,
+                      std::vector<int>& random_seeds,
+                      std::vector<int>& data_seq_random_seeds);
 
 /** @brief prints usage information */
 void print_help(const lbann_comm& comm);
@@ -169,6 +173,7 @@ std::set<T> parse_set(std::string const& str) {
     return details::parse_set_impl<T>(trim_str);
   return {};
 }
+
 } // namespace lbann
 
 #endif // LBANN_PROTO_PROTO_COMMON_HPP_INCLUDED

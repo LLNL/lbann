@@ -28,7 +28,11 @@
 #define LBANN_LAYERS_ACTIVATIONS_SOFTMAX_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/utils/distconv.hpp"
+#if defined LBANN_HAS_CUDNN
 #include "lbann/utils/cudnn.hpp"
+#endif // defined LBANN_HAS_CUDNN
+#include "lbann/utils/dnn_lib/cudnn/softmax.hpp"
 
 // Threshold outputs to a minimum value.
 
@@ -41,27 +45,21 @@
 
 namespace lbann {
 
-/** @brief Which tensor dimensions to apply softmax over. */
-enum class softmax_mode {
-  INVALID,
-  /** @brief Sample-wise softmax.
-   *
-   *  Slice tensor along the sample dimension (assuming data in NCHW
-   *  format) and apply softmax independently to each slice (once per
-   *  sample).
-   */
-  INSTANCE,
-  /** @brief Position-wise softmax.
-   *
-   *  Split tensor along all but the channel dimension (assuming data
-   *  in NCHW format) and apply softmax independently to each piece
-   *  (once per spatial position per sample).
-   *
-   *  This is not to be confused with @c channelwise_softmax, which
-   *  slices along the sample and channel dimensions.
-   */
-  CHANNEL
+#ifdef LBANN_HAS_DISTCONV
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+class softmax_distconv_adapter: public data_type_distconv_adapter<TensorDataType> {
+ public:
+  using TensorDevType = typename data_type_distconv_adapter<TensorDataType>::TensorDevType;
+
+  softmax_distconv_adapter(Layer& layer): data_type_distconv_adapter<TensorDataType>(layer) {}
+  virtual ~softmax_distconv_adapter() = default;
+
+  void setup_distributions(tensor_overlap_constraints &constraints) override;
+  void setup_layer(size_t workspace_capacity) override;
+
+  std::unique_ptr<dc::Softmax> m_softmax;
 };
+#endif // LBANN_HAS_DISTCONV
 
 /**
  *  @f[ \text{softmax}(x)_i = \frac{e^{x_i}}{\sum_j e^{x_j}} @f]
@@ -113,8 +111,8 @@ public:
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
 
-  void setup_dims() override {
-    data_type_layer<TensorDataType>::setup_dims();
+  void setup_dims(DataReaderMetaData& dr_metadata) override {
+    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims(this->get_input_dims());
   }
 
@@ -166,7 +164,77 @@ private:
   const TensorDataType threshold_val = El::TypeTraits<TensorDataType>::Zero();
 #endif // LBANN_ENABLE_SOFTMAX_THRESHOLD
 
+#ifdef LBANN_HAS_DISTCONV
+  friend class softmax_distconv_adapter<TensorDataType, Layout, Device>;
+ protected:
+  bool is_distconv_supported() const override {
+    return Device == El::Device::GPU && Layout == data_layout::DATA_PARALLEL;
+  }
+  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override {
+    this->get_distconv_adapter_ptr() = make_unique<softmax_distconv_adapter<
+      TensorDataType, Layout, Device>>(*this);
+  }
+  softmax_distconv_adapter<TensorDataType, Layout, Device>& get_distconv_adapter() override;
+  const softmax_distconv_adapter<TensorDataType, Layout, Device>& get_distconv_adapter() const override;
+#endif // LBANN_HAS_DISTCONV
 };
+
+#ifdef LBANN_HAS_DISTCONV
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+softmax_distconv_adapter<TensorDataType, T_layout, Dev>&
+softmax_layer<TensorDataType, T_layout, Dev>::get_distconv_adapter() {
+  return const_cast<softmax_distconv_adapter<TensorDataType, T_layout, Dev>&>(
+      static_cast<const softmax_layer<TensorDataType, T_layout, Dev>&>(*this).get_distconv_adapter());
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+const softmax_distconv_adapter<TensorDataType, T_layout, Dev>&
+softmax_layer<TensorDataType, T_layout, Dev>::get_distconv_adapter() const {
+  return dynamic_cast<const softmax_distconv_adapter<TensorDataType, T_layout, Dev>&>(
+      data_type_layer<TensorDataType>::get_distconv_adapter());
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void softmax_distconv_adapter<TensorDataType, T_layout, Dev>::
+setup_distributions(tensor_overlap_constraints &constraints) {
+  data_type_distconv_adapter<TensorDataType>::setup_distributions(
+      constraints);
+  // No overlap supported yet
+  for (auto &d: this->m_prev_activations_dists) {
+    d.clear_overlap();
+    constraints.mark_updated(d);
+    constraints.mark_invariant(d);
+  }
+  for (auto &d: this->m_activations_dists) {
+    d.clear_overlap();
+    constraints.mark_updated(d);
+    constraints.mark_invariant(d);
+  }
+  for (auto &d: this->m_prev_error_signals_dists) {
+    d.clear_overlap();
+    constraints.mark_updated(d);
+    constraints.mark_invariant(d);
+  }
+  for (auto &d: this->m_error_signals_dists) {
+    d.clear_overlap();
+    constraints.mark_updated(d);
+    constraints.mark_invariant(d);
+  }
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void softmax_distconv_adapter<TensorDataType, T_layout, Dev>::setup_layer(
+    size_t workspace_capacity) {
+  auto &l = dynamic_cast<softmax_layer<TensorDataType, T_layout, Dev>&>(
+      this->layer());
+  m_softmax = make_unique<dc::Softmax>(dc::get_backend());
+  auto mode = l.m_mode == softmax_mode::INSTANCE ?
+                          ::distconv::SoftmaxMode::INSTANCE :
+      ::distconv::SoftmaxMode::CHANNEL;
+  m_softmax->setup(this->get_prev_activations(), mode);
+}
+#endif // LBANN_HAS_DISTCONV
+
 
 LBANN_DEFINE_LAYER_BUILDER(softmax);
 

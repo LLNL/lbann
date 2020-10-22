@@ -55,7 +55,7 @@ __global__ void fp_kernel(TensorDataType min,
   }
 }
 
-/** CUDA kernel for backprop computation. */
+/** GPU kernel for backprop computation. */
 template <typename TensorDataType>
 __global__ void bp_kernel(TensorDataType min,
                           TensorDataType max,
@@ -90,6 +90,7 @@ void local_fp(TensorDataType min,
   // Get CUDA grid dimensions
   // Note: Maximum CUDA grid dimension is 2^32-1
   // (https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#features-and-technical-specifications).
+  // TODO: HIP/ROCM notes
   const El::Int height = input.Height();
   const El::Int width = input.Width();
   const El::Int block_dim = 256;
@@ -99,9 +100,13 @@ void local_fp(TensorDataType min,
     grid_dim = std::numeric_limits<uint32_t>::max();
   }
 
-  // Launch CUDA kernel
+  // Launch GPU kernel
   if (grid_dim > 0) {
-    fp_kernel<<<grid_dim, block_dim, 0, El::GPUManager::Stream()>>>(
+    auto multisync = El::MakeMultiSync(gpu::get_sync_info(input),
+                                       gpu::get_sync_info(output));
+    hydrogen::gpu::LaunchKernel(
+      fp_kernel<TensorDataType>,
+      grid_dim, block_dim, 0, multisync,
       min, max, height, width,
       input.LockedBuffer(), input.LDim(),
       output.Buffer(), output.LDim());
@@ -120,6 +125,7 @@ void local_bp(TensorDataType min,
   // Get CUDA grid dimensions
   // Note: Maximum CUDA grid dimension is 2^32-1
   // (https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#features-and-technical-specifications).
+  // TODO: HIP/ROCM notes
   const El::Int height = input.Height();
   const El::Int width = input.Width();
   const El::Int block_dim = 256;
@@ -129,9 +135,13 @@ void local_bp(TensorDataType min,
     grid_dim = std::numeric_limits<uint32_t>::max();
   }
 
-  // Launch CUDA kernel
+  // Launch GPU kernel
   if (grid_dim > 0) {
-    bp_kernel<<<grid_dim, block_dim, 0, El::GPUManager::Stream()>>>(
+    auto multisync = El::MakeMultiSync(gpu::get_sync_info(gradient_wrt_output),
+                                       gpu::get_sync_info(gradient_wrt_input));
+    hydrogen::gpu::LaunchKernel(
+      bp_kernel<TensorDataType>,
+      grid_dim, block_dim, 0, multisync,
       min, max, height, width,
       input.LockedBuffer(), input.LDim(),
       gradient_wrt_output.LockedBuffer(), gradient_wrt_output.LDim(),

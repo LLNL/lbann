@@ -13,7 +13,9 @@ CORAL=$([[ $(hostname) =~ (sierra|lassen|ray) ]] && echo 1 || echo 0)
 COMPILER=gnu
 if [ "${CLUSTER}" == "surface" -o "${CLUSTER}" == "pascal" ]; then
     module load gcc/7.3.0
-elif [ "${CLUSTER}" == "sierra" -o "${CLUSTER}" == "lassen" ]; then
+elif [ "${CORAL}" -eq 1 ]; then
+    # Make sure module commands available
+    . /usr/share/lmod/lmod/init/bash
     module load gcc/7.3.1
 fi
 if [ "${ARCH}" == "x86_64" ]; then
@@ -44,6 +46,7 @@ fi
 
 C_FLAGS=
 CXX_FLAGS=-DLBANN_SET_EL_RNG
+CUDA_FLAGS=
 Fortran_FLAGS=
 CLEAN_BUILD=0
 DATATYPE=float
@@ -59,7 +62,6 @@ INSTALL_DIR=
 BUILD_SUFFIX=
 DETERMINISTIC=OFF
 WITH_CUDA=
-WITH_CUDA_2=ON
 WITH_TOPO_AWARE=ON
 INSTRUMENT=
 WITH_ALUMINUM=
@@ -67,6 +69,8 @@ ALUMINUM_WITH_MPI_CUDA=OFF
 ALUMINUM_WITH_NCCL=
 WITH_CONDUIT=ON
 WITH_TBINF=OFF
+WITH_DIHYDROGEN=OFF
+WITH_DISTCONV=OFF
 RECONFIGURE=0
 USE_NINJA=0
 # In case that autoconf fails during on-demand buid on surface, try the newer
@@ -75,6 +79,8 @@ USE_NINJA=0
 # by enabling LIBJPEG_TURBO_DIR
 WITH_LIBJPEG_TURBO=ON
 #LIBJPEG_TURBO_DIR="/p/lscratchh/brainusr/libjpeg-turbo-1.5.2"
+WITH_NVSHMEM=0
+NVSHMEM_DIR=
 
 function version_gt() { test "$(printf '%s\n' "$@" | sort -V | head -n 1)" != "$1"; }
 
@@ -126,6 +132,7 @@ Options:
   ${C}--with-conduit              Build with conduit interface
   ${C}--ninja                     Generate ninja files instead of makefiles
   ${C}--ninja-processes${N} <val> Number of parallel processes for ninja.
+  ${C}--nvshmem${N}               Enable NVSHMEM
 EOF
 }
 
@@ -246,7 +253,6 @@ while :; do
             ;;
         --disable-cuda)
             WITH_CUDA=OFF
-            WITH_CUDA_2=OFF
             ;;
         --disable-topo-aware)
             WITH_TOPO_AWARE=OFF
@@ -269,6 +275,20 @@ while :; do
             ;;
         --reconfigure)
             RECONFIGURE=1
+            ;;
+        --nvshmem)
+            WITH_NVSHMEM=1
+            ;;
+        --with-dihydrogen)
+            WITH_DIHYDROGEN=ON
+            ;;
+        --with-distconv)
+            WITH_DISTCONV=ON
+            WITH_DIHYDROGEN=ON
+            # CUDA is required for Distconv
+            WITH_CUDA=ON
+            # MPI-CUDA backend is required for Distconv
+            ALUMINUM_WITH_MPI_CUDA=ON
             ;;
         -?*)
             # Unknown option
@@ -310,7 +330,7 @@ fi
 # Load packages
 if [ ${USE_MODULES} -ne 0 ]; then
     module load git
-    module load cmake/3.14.5
+    module load cmake/3.16.8
 else
     use git
 fi
@@ -442,6 +462,16 @@ fi
 CXX_FLAGS="${CXX_FLAGS} -ldl"
 C_FLAGS="${CXX_FLAGS}"
 
+# Hacks to build with NVSHMEM
+if [ ${WITH_NVSHMEM} -ne 0 ]; then
+    if [ "${CLUSTER}" == "lassen" ]; then
+        NVSHMEM_DIR=/usr/workspace/wsb/brain/nvshmem/nvshmem_0.3.3/cuda-10.1_ppc64le
+        CUDA_FLAGS="-gencode=arch=compute_70,code=sm_70"
+    else
+        echo "NVSHMEM is currently only supported on Lassen"
+        exit 1
+    fi
+fi
 
 # Set environment variables
 CC=${C_COMPILER}
@@ -617,9 +647,7 @@ if [ "${WITH_CUDA}" == "ON" ]; then
 
     # NCCL
     if [[ -z $NCCL_DIR ]]; then
-        # Subsequent 2.4.X versions are known to have a performance
-        # regression. See the release notes.
-        NCCL_VER=${NCCL_VER:-2.4.2-1}
+        NCCL_VER=${NCCL_VER:-2.7.8-1}
         NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_${NCCL_VER}+cuda${CUDA_TOOLKIT_VERSION}_${ARCH}
     fi
     if [[ ! -d $NCCL_DIR ]]; then
@@ -782,6 +810,7 @@ cmake \
 -D LBANN_SB_BUILD_LBANN=ON \
 -D CMAKE_CXX_FLAGS="${CXX_FLAGS}" \
 -D CMAKE_C_FLAGS="${C_FLAGS}" \
+-D CMAKE_CUDA_FLAGS="${CUDA_FLAGS}" \
 -D CMAKE_C_COMPILER=${C_COMPILER} \
 -D CMAKE_CXX_COMPILER=${CXX_COMPILER} \
 -D CMAKE_Fortran_COMPILER=${Fortran_COMPILER} \
@@ -798,6 +827,12 @@ cmake \
 -D LBANN_CONDUIT_DIR=${CONDUIT_DIR} \
 -D LBANN_BUILT_WITH_SPECTRUM=${WITH_SPECTRUM} \
 -D OPENBLAS_ARCH_COMMAND=${OPENBLAS_ARCH} \
+-D LBANN_WITH_NVSHMEM=${WITH_NVSHMEM} \
+-D LBANN_SB_FWD_LBANN_NVSHMEM_DIR=${NVSHMEM_DIR} \
+-D LBANN_SB_BUILD_DIHYDROGEN=${WITH_DIHYDROGEN} \
+-D DIHYDROGEN_ENABLE_DISTCONV_LEGACY=${WITH_DISTCONV} \
+-D LBANN_WITH_DIHYDROGEN=${WITH_DIHYDROGEN} \
+-D LBANN_WITH_DISTCONV=${WITH_DISTCONV} \
 ${SUPERBUILD_DIR}
 EOF
 )

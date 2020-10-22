@@ -56,7 +56,10 @@ namespace lbann {
  *  Caffe parameters.
  */
 template <typename TensorDataType>
-class data_type_weights : public weights {
+class data_type_weights
+  : public Cloneable<data_type_weights<TensorDataType>, weights> {
+  using BaseType = Cloneable<data_type_weights<TensorDataType>, weights>;
+
 public:
   /** @name Public Types */
   ///@{
@@ -81,27 +84,11 @@ public:
   data_type_weights& operator=(const data_type_weights& other);
   virtual ~data_type_weights() = default;
 
-  /** Create a copy of the weights.
-   *  This function dynamically allocates memory for a weights
-   *  instance and instantiates a copy. The caller is responsible for
-   *  deallocating the instance.
-   */
-  data_type_weights* copy() const override { return new data_type_weights(*this); }
-
-  /** Human-readable description. */
-  description get_description() const override;
-
   bool has_optimizer() const override { return m_optimizer != nullptr; }
 
   // -----------------------------------------------
   // Dimension accessors
   // -----------------------------------------------
-  void set_dims(std::vector<int> matrix_height_dims,
-                std::vector<int> matrix_width_dims = std::vector<int>()) override;
-  /** Set weight tensor dimensions as a 1D tensor. */
-  void set_dims(int size) override { set_dims({size}, {}); }
-
-
   // -----------------------------------------------
   // Initializer accessors
   // -----------------------------------------------
@@ -131,18 +118,13 @@ public:
   void set_optimizer(std::unique_ptr<optimizer>&& opt) override;
 
   // -----------------------------------------------
-  // Setup
-  // -----------------------------------------------
-  void setup() override;
-
-  // -----------------------------------------------
   // Weight matrix accessors
   // -----------------------------------------------
 
   /** Get the weight matrix. */
-  AbsDistMatrixType& get_values();
+  AbsDistMatrixType& get_values() override;
   /** Get the weight matrix. */
-  const AbsDistMatrixType& get_values() const;
+  const AbsDistMatrixType& get_values() const override;
   /** Set the weight matrix. */
   void set_values(const AbsDistMatrixType& values);
 
@@ -169,6 +151,7 @@ public:
   // -----------------------------------------------
   bool save_to_checkpoint_shared(persist& p) override;
   bool load_from_checkpoint_shared(persist& p) override;
+  bool load_from_save(std::string const& ckpt_dir, std::vector<std::string> const& weight_list, El::FileFormat el_mode);
   bool load_from_save(std::string const& ckpt_dir, std::vector<std::string> const& weight_list) override;
   bool save_to_checkpoint_distributed(persist& p) override;
   bool load_from_checkpoint_distributed(persist& p) override;
@@ -176,6 +159,11 @@ public:
   /** Write weights to proto file */
   void write_proto(lbann_data::WeightsData* proto) const override;
 
+private:
+  void do_augment_description_(description&) const override;
+  void do_setup_() override;
+  void do_set_dims_(std::vector<int> const& matrix_height_dims,
+                    std::vector<int> const& matrix_width_dims) override;
 private:
 
   /** Weight matrix. */

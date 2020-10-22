@@ -29,14 +29,20 @@
 
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
-#include "lbann/utils/summary.hpp"
-#include "lbann/optimizers/optimizer.hpp"
-#include "lbann/utils/exception.hpp"
-#include "lbann/utils/timer.hpp"
-#include "lbann/utils/description.hpp"
+#include "lbann/data_coordinator/data_coordinator_metadata.hpp"
 #include "lbann/io/persist.hpp"
+#include "lbann/optimizers/optimizer.hpp"
+#include "lbann/utils/description.hpp"
+#include "lbann/utils/distconv.hpp"
+#include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
+#include "lbann/utils/summary.hpp"
+#include "lbann/utils/timer.hpp"
 #include "lbann/utils/typename.hpp"
+#include "lbann/weights/weights.hpp"
+#ifdef LBANN_HAS_DISTCONV
+#include "lbann/layers/distconv_adapter.hpp"
+#endif // LBANN_HAS_DISTCONV
 #include <string>
 #include <vector>
 
@@ -78,10 +84,76 @@ namespace lbann {
 
 // Forward declarations
 class model;
-class weights;
 namespace callback {
 class sync_layers;
 } // namespace callback
+
+/** Represents a parallel strategy for a layer. */
+struct ParallelStrategy {
+  /** Number of process groups the sample dimension is split over. */
+  int sample_groups = 0;
+  /** Number of groups the sample dimension is split over. */
+  int sample_splits = 0;
+  /** Number of process groups the depth dimension is split over. */
+  int depth_groups = 0;
+  /** Number of groups the depth dimension is split over. */
+  int depth_splits = 0;
+  /** Number of process groups the height dimension is split over. */
+  int height_groups = 0;
+  /** Number of groups the height dimension is split over. */
+  int height_splits = 0;
+  /** Number of process groups the width dimension is split over. */
+  int width_groups = 0;
+  /** Number of groups the width dimension is split over. */
+  int width_splits = 0;
+  /** Number of process groups the channel dimension is split over. */
+  int channel_groups = 0;
+  /** Number of groups the channel dimension is split over. */
+  int channel_splits = 0;
+  /** Number of process groups the filter dimension is split over. */
+  int filter_groups = 0;
+  /** Number of groups the filter dimension is split over. */
+  int filter_splits = 0;
+  /** Number of times the layer is replicated (for FC layers right now). */
+  int replications = 0;
+  bool operator==(const ParallelStrategy &ps) const {
+    return sample_groups == ps.sample_groups &&
+        sample_splits == ps.sample_splits &&
+        depth_groups == ps.depth_groups &&
+        depth_splits == ps.depth_splits &&
+        height_groups == ps.height_groups &&
+        height_splits == ps.height_splits &&
+        width_groups == ps.width_groups &&
+        width_splits == ps.width_splits &&
+        channel_groups == ps.channel_groups &&
+        channel_splits == ps.channel_splits &&
+        filter_groups == ps.filter_groups &&
+        filter_splits == ps.filter_splits &&
+        replications == ps.replications;
+  }
+  bool operator!=(const ParallelStrategy &ps) const {
+    return !(*this == ps);
+  }
+};
+
+inline std::ostream &operator<<(std::ostream &os,
+                                const ParallelStrategy &ps) {
+  os << "{" << ps.sample_groups
+     << "/" << ps.sample_splits
+     << ", " << ps.depth_groups
+     << "/" << ps.depth_splits
+     << ", " << ps.height_groups
+     << "/" << ps.height_splits
+     << ", " << ps.width_groups
+     << "/" << ps.width_splits
+     << ", " << ps.channel_groups
+     << "/" << ps.channel_splits
+     << ", " << ps.filter_groups
+     << "/" << ps.filter_splits
+     << ", " << ps.replications
+     << "}";
+  return os;
+}
 
 /**
  * @brief Neural network tensor operation.
@@ -141,6 +213,15 @@ public:
   /** Human-readable description. */
   virtual description get_description() const;
 
+  /** Get the parallel strategy for the layer. */
+  inline ParallelStrategy& get_parallel_strategy() {
+    return m_parallel_strategy;
+  }
+  /** Get the parallel strategy for the layer. */
+  const ParallelStrategy& get_parallel_strategy() const {
+    return m_parallel_strategy;
+  }
+
   /** Forward propagation step.
    *  Apply a mathematical operation to input tensors to obtain output
    *  tensors.
@@ -152,7 +233,8 @@ public:
    *  w.r.t. the weights. This is essentially an application of the
    *  chain rule.
    */
-  virtual void back_prop() {};
+  void back_prop();
+
   /** Update step.
    *  Update the layer's internal members. Note that the optimization
    *  step for the weights happens elsewhere.
@@ -168,7 +250,7 @@ public:
    *  assumed that pointers to parent/child layers have already been
    *  initialized.
    */
-  virtual void setup();
+  virtual void setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata);
   /** Check that the setup is reasonable. */
   virtual void check_setup();
 
@@ -291,9 +373,12 @@ public:
   // ===========================================================
 
   /** Set list of pointers to weights. */
-  virtual void set_weights(std::vector<weights*>& w) = 0;
+  void set_weights(std::vector<weights*> const& w) {
+    m_weights = w;
+  }
+
   /** Replace weights with another Layer's weights*/
-  virtual void replace_weights(Layer* other_layer) = 0;
+  void replace_weights(Layer const& other_layer);
 
   // ===========================================================
   // Tensor access functions
@@ -346,7 +431,62 @@ public:
   void unfreeze();
   bool is_frozen() const;
 
+  /** @brief Set whether to keep or dynamically reallocate error signals.
+   *
+   *  Passing a value of @c true means to keep the error signals; @c
+   *  false means to dynamically reallocate them.
+   */
+  virtual void set_keep_error_signals(bool) = 0;
+
 protected:
+
+  /** @name Weights-related accessors */
+  ///@{
+  void add_weights(weights* w) {
+    m_weights.push_back(w);
+  }
+  size_t num_weights() const noexcept { return m_weights.size(); }
+  bool has_weights() const noexcept { return num_weights() > 0; }
+  bool has_weights(size_t idx) const noexcept {
+    return ((idx < this->num_weights()) && (m_weights[idx]));
+  }
+  void set_num_weights(size_t n) { m_weights.resize(n, nullptr); }
+  void set_weights(size_t idx, weights* w) {
+    m_weights.at(idx) = w;
+  }
+  weights const& get_weights(size_t idx) const {
+    if (idx >= num_weights()) {
+      LBANN_ERROR("Asked for weights index \"", idx, "\"; "
+                  "however, this layer has ", num_weights(),
+                  " weights associated with it.");
+    }
+    if (m_weights[idx] == nullptr) {
+      LBANN_ERROR("Logic error: Detected an in-bounds null weights pointer.");
+    }
+    return *(m_weights[idx]);
+  }
+
+  weights& get_weights(size_t idx) {
+    return const_cast<weights&>(
+      static_cast<Layer const&>(*this).get_weights(idx));
+  }
+
+  void add_as_gradient_source()
+  {
+    for (auto&& w : this->m_weights) {
+      optimizer* opt = w->get_optimizer();
+      if (opt != nullptr) { opt->add_gradient_source(this); }
+    }
+  }
+
+  void remove_as_gradient_source()
+  {
+    for (auto&& w : this->m_weights) {
+      auto&& opt = w->get_optimizer();
+      if (opt != nullptr) { opt->remove_gradient_source(this); }
+    }
+  }
+  ///@}
 
   // ===========================================================
   // Setup helper functions
@@ -362,7 +502,7 @@ protected:
    *  the base method sets all uninitialized output tensor dimensions
    *  equal to the first input tensor dimensions.
    */
-  virtual void setup_dims();
+  virtual void setup_dims(DataReaderMetaData& dr_metadata);
   /** Setup distributed matrices.
    *  Called by the 'setup' function. Each column of these distributed
    *  matrices is interpreted as the flattened tensor for a mini-batch
@@ -375,7 +515,7 @@ protected:
    *  Called by the 'setup' function. Memory is allocated for
    *  distributed matrices.
    */
-  virtual void setup_data() {};
+  virtual void setup_data(size_t max_mini_batch_size) {};
   /** Setup GPU objects.
    *  Called by the 'setup' function if the layer is on GPUs.
    */
@@ -406,12 +546,6 @@ protected:
   // Back prop step helper functions
   // ===========================================================
 
-  /** Setup gradient w.r.t. output tensors.
-   *  Called by the 'back_prop' function. Each gradient w.r.t. output
-   *  tensor is setup as a view or copy of the corresponding child
-   *  layer's gradient w.r.t. input tensor.
-   */
-  virtual void bp_setup_gradient_wrt_outputs(El::Int mini_batch_size) = 0;
   /** Setup gradient w.r.t. input tensors.
    *  Called by the 'back_prop' function. Each gradient w.r.t. input
    *  tensor is resized to match the mini-batch size.
@@ -480,17 +614,116 @@ protected:
 
 private:
 
-  // ===========================================================
-  // Private access functions
-  // ===========================================================
-  /** Get references to weights. */
-  virtual std::vector<weights*> get_weights() = 0;
-  /** Get references to weights. (const) */
-  virtual std::vector<weights const*> get_weights() const = 0;
+  virtual void setup_weights(size_t idx, weights& w) = 0;
+
+  /** @name Implementation details of back-prop. */
+  ///@{
+
+  /** @brief Move error signals from a child to its parent.
+   *
+   *  This is a hacky workaround to C++ rules for protected member
+   *  functions. No error-checking is done, e.g., to assert that the
+   *  two layers actually have a parent-child relationship because
+   *  this is just an implementation detail. The symbol is never
+   *  exposed to the public API.
+   *
+   *  @param parent The parent layer, into which the signal is moved
+   *  @param child  The child layer, from which the signal is moved
+   *  @param signal The now-released error signal from the child layer
+   */
+  friend void attempt_move_error_signal(
+    Layer& parent, Layer const& child,
+    std::unique_ptr<BaseDistMat> signals);
+  friend void attempt_view_error_signal(
+    Layer& parent, Layer const& child,
+    const BaseDistMat& signals);
+  friend void deep_copy_error_signal(
+    Layer& parent, Layer const& child,
+    const BaseDistMat& signals);
+
+  /** @brief Computes the core back-prop steps. */
+  virtual void back_prop_impl_() = 0;
+
+  /** @brief Allocates new storage for the gradients that this layer
+   *         will compute.
+   *
+   *  If the layer has persistent error signal information, this will
+   *  simply clear the gradients.
+   */
+  virtual void allocate_new_gradients_() = 0;
+
+  /** @brief Moves all error signals to their respective parents.
+   *
+   *  Error signals from this instances either are directly moved into
+   *  the parent layer or, in cases in which a direct move is not
+   *  possible, are deep-copied into a new tensor in the parent layer
+   *  (e.g., into a different data type or data distribution).
+   */
+  virtual void propagate_error_signals_to_parents_() = 0;
+
+  /** @brief Releases the error signals propagated from the child
+   *         layers.
+   *
+   *  At the conclusion of back-prop, the error signals propagated
+   *  from the child layers are no longer needed. This ensures that
+   *  the memory is released.
+   *
+   *  This function may do other work, but must respect the persistent
+   *  error signal flag.
+   */
+  virtual void clear_prev_error_signals_() = 0;
+
+  /** @brief Assumes ownership of the error signals from the specified
+   *         child layer.
+   *
+   *  This is a simple pointer move when possible; otherwise it is a
+   *  deep-copy of the signal data.
+   *
+   *  @param child The layer whence the signal is coming.
+   *  @param signal The error signals being sent to this layer.
+   */
+  virtual void move_or_copy_prev_error_signal_(
+    const Layer& child,
+    std::unique_ptr<El::BaseDistMatrix> signal) = 0;
+
+  /** @brief Attempts to view the error signals from the specified
+   *         child layer.
+   *
+   *  This is a simple data view when possible; otherwise it is a
+   *  deep-copy of the signal data.
+   *
+   *  @param child The layer whence the signal is coming.
+   *  @param signal The error signals being sent to this layer.
+   */
+  virtual void view_or_copy_prev_error_signal_(
+    const Layer& child,
+    const El::BaseDistMatrix& signal) = 0;
+
+  /** @brief Deep-copy the error signals from the specified child
+   *         layer.
+   *
+   *  @param child The layer whence the signal is coming.
+   *  @param signal The error signals being sent to this layer.
+   */
+  virtual void deep_copy_prev_error_signal_(
+    const Layer& child,
+    const El::BaseDistMatrix& signal) = 0;
+
+  ///@}
 
   // ===========================================================
   // Private class members
   // ===========================================================
+
+  /** @brief References to layer weights.
+   *
+   *  These are references to the base weights objects. The tensor
+   *  data type for weights storage might differ from the tensor data
+   *  type of this layer's tensors. To ensure consistency, we must
+   *  only access weights values through the WeightsProxy class during
+   *  training.
+   */
+  std::vector<weights*> m_weights;
 
   /** Dimensions of output tensors. */
   std::vector<std::vector<int>> m_output_dims_list;
@@ -502,17 +735,58 @@ private:
    */
   const Layer* m_hint_layer = nullptr;
 
+  /** Parallel strategy for the layer. */
+  ParallelStrategy m_parallel_strategy;
+
 private:
   friend std::vector<const weights*> extract_weights(Layer const& l);
   friend std::vector<weights*> extract_weights(Layer& l);
+
+#ifdef LBANN_HAS_DISTCONV
+  friend class distconv_adapter;
+ public:
+  /** Indicate whether distconv is enabled. */
+  bool distconv_enabled() const;
+  /** Indicate whether original input matrices need to be set up. */
+  virtual bool keep_original_inputs(int index) const;
+  /** Indicate whether original output matrices need to be set up. */
+  virtual bool keep_original_outputs(int index) const;
+  /** Indicate whether original gradient wrt input matrices need to be set up. */
+  virtual bool keep_original_gradient_wrt_inputs(int index) const;
+  /** Indicate whether original gradient wrt output matrices need to be set up. */
+  virtual bool keep_original_gradient_wrt_outputs(int index) const;
+  /** Retrievs distconv adapter. */
+  virtual const distconv_adapter& get_distconv_adapter() const;
+  /** Retrievs distconv adapter. */
+  virtual distconv_adapter& get_distconv_adapter();
+
+ protected:
+  /** Indicate whether distconv is supported. */
+  virtual bool is_distconv_supported() const { return false; }
+  /** Pre-initialize distconv attributes needed for setup_data(). */
+  void prepare_distconv(const DataReaderMetaData& dr_metadata);
+  virtual void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) = 0;
+  std::unique_ptr<distconv_adapter>& get_distconv_adapter_ptr() {
+    return m_dc; };
+  const std::unique_ptr<distconv_adapter>& get_distconv_adapter_ptr() const {
+    return m_dc; };
+
+ private:
+  mutable bool m_distconv_enabled = false;
+  mutable bool m_distconv_enabled_set = false;
+  std::unique_ptr<distconv_adapter> m_dc;
+#endif // LBANN_HAS_DISTCONV
 };
 
+// FIXME (trb 05/28/2020): These should go away. They're used in
+// "model.cpp" and "model_factory.cpp" but could be refactored
+// out. Outside the scope of current PR.
 inline std::vector<weights*> extract_weights(Layer& l) {
-  return l.get_weights();
+  return l.m_weights;
 }
 
 inline std::vector<const weights*> extract_weights(Layer const& l) {
-  return l.get_weights();
+  return {l.m_weights.cbegin(), l.m_weights.cend()};
 }
 
 } // namespace lbann

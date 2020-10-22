@@ -26,6 +26,7 @@
 
 #define LBANN_ONE_HOT_LAYER_INSTANTIATE
 #include "lbann/layers/misc/one_hot.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 
 namespace lbann {
 
@@ -75,13 +76,17 @@ void one_hot_layer<TensorDataType, Layout, Device>::fp_compute() {
     const size_t local_width = local_output.Width();
     constexpr size_t block_size = 64;
     const size_t grid_size = (local_width + block_size - 1) / block_size;
-    fp_kernel<<<grid_size, block_size, 0, El::GPUManager::Stream()>>>(
-        local_height,
-        local_width,
-        local_input.LockedBuffer(),
-        local_input.LDim(),
-        local_output.Buffer(),
-        local_output.LDim());
+    auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_input),
+                                       gpu::get_sync_info(local_output));
+    hydrogen::gpu::LaunchKernel(
+      fp_kernel<TensorDataType>,
+      grid_size, block_size, 0, multisync,
+      local_height,
+      local_width,
+      local_input.LockedBuffer(),
+      local_input.LDim(),
+      local_output.Buffer(),
+      local_output.LDim());
   }
 
 }

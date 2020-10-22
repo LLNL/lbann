@@ -28,9 +28,16 @@
 #define LBANN_LAYERS_DATA_TYPE_LAYER_HPP_INCLUDED
 
 #include "lbann/layers/layer.hpp"
-#include "lbann/weights/data_type_weights.hpp"
+#include "lbann/weights/weights_proxy.hpp"
 
 #include "lbann/utils/h2_tmp.hpp"
+
+#ifdef LBANN_HAS_DISTCONV
+#include "lbann/layers/data_type_distconv_adapter.hpp"
+#include <set>
+#include <map>
+#include <array>
+#endif // LBANN_HAS_DISTCONV
 
 namespace lbann {
 
@@ -67,8 +74,8 @@ public:
   /** @brief The local tensor type expected in this object. */
   using AbsMatrixType = El::AbstractMatrix<TensorDataType>;
 
-  /** @brief The concrete weights type used by this object. */
-  using WeightsType = data_type_weights<TensorDataType>;
+  /** @brief The proxy type for weights used by this object. */
+  using WeightsProxyType = weights_proxy<TensorDataType>;
 
   ///@}
 
@@ -77,7 +84,8 @@ public:
     h2::meta::tlist::MemberV<TensorDataType, supported_layer_data_type>(),
     "Must use a supported type.");
 
-  data_type_layer(lbann_comm *comm) : Layer(comm) {}
+  data_type_layer(lbann_comm *comm, bool persistent_error_signals=false)
+    : Layer(comm), m_persistent_error_signals{persistent_error_signals} {}
   data_type_layer(const data_type_layer<TensorDataType>& other);
   data_type_layer& operator=(const data_type_layer<TensorDataType>& other);
   virtual ~data_type_layer() = default;
@@ -92,37 +100,12 @@ public:
    *  Apply a mathematical operation to input tensors to obtain output
    *  tensors.
    */
-  void forward_prop() override;
-  /** Backward propagation step.
-   *  Given the objective function gradients w.r.t. the output
-   *  tensors, compute the gradients w.r.t. the input tensors and
-   *  w.r.t. the weights. This is essentially an application of the
-   *  chain rule.
-   */
-  void back_prop() override;
+  void forward_prop() final;
 
   void summarize_matrices(lbann_summary& summarizer, int step) override;
 
   /** Check that the setup is reasonable. */
   void check_setup() override;
-
-  // ===========================================================
-  // Weights access functions
-  // ===========================================================
-
-  /** @brief Set list of pointers to weights. */
-  void set_weights(std::vector<weights*>& w) override {
-    m_weights.resize(w.size());
-    std::transform(begin(w), end(w), begin(m_weights),
-                   [](weights* wptr) {
-                     return (wptr
-                             ? &(dynamic_cast<WeightsType&>(*wptr))
-                             : nullptr);
-                   });
-  }
-
-  /** @brief Replace weights with another Layer's weights*/
-  void replace_weights(Layer* other_layer) override;
 
   // ===========================================================
   // Public Tensor access functions
@@ -150,6 +133,13 @@ public:
   const AbsMatrixType& get_local_activations(int child_index = 0) const;
   /** Get local portion of error signal tensor. */
   const AbsMatrixType& get_local_error_signals(int parent_index = 0) const;
+
+  /** @brief Set whether to keep or dynamically reallocate error signals.
+   *
+   *  Passing a value of @c true means to keep the error signals; @c
+   *  false means to dynamically reallocate them.
+   */
+  void set_keep_error_signals(bool) override;
 
 protected:
 
@@ -181,19 +171,12 @@ protected:
    *  setup, they are destroyed and reinstantiated.
    */
   void setup_matrices(const El::Grid& grid) override;
-  /** Construct distributed matrix.
-   *  Called by the 'setup_matrices' function. 'type' is one of the
-   *  following: "input", "output", "gradient_wrt_output",
-   *  "gradient_wrt_input".
-   */
-  virtual std::unique_ptr<AbsDistMatrixType> construct_matrix(const El::Grid& grid,
-                                                       std::string type,
-                                                       El::Int index);
+
   /** Setup layer data.
    *  Called by the 'setup' function. Memory is allocated for
    *  distributed matrices.
    */
-  void setup_data() override;
+  void setup_data(size_t max_mini_batch_size) override;
 
   // ===========================================================
   // Forward prop step helper functions
@@ -215,12 +198,6 @@ protected:
   // Back prop step helper functions
   // ===========================================================
 
-  /** Setup gradient w.r.t. output tensors.
-   *  Called by the 'back_prop' function. Each gradient w.r.t. output
-   *  tensor is setup as a view or copy of the corresponding child
-   *  layer's gradient w.r.t. input tensor.
-   */
-  void bp_setup_gradient_wrt_outputs(El::Int mini_batch_size) override;
   /** Setup gradient w.r.t. input tensors.
    *  Called by the 'back_prop' function. Each gradient w.r.t. input
    *  tensor is resized to match the mini-batch size.
@@ -238,63 +215,124 @@ protected:
   // Protected Weights access functions
   // ===========================================================
 
-  /** Get references to weights. */
-  std::vector<WeightsType*>& get_data_type_weights() { return m_weights; }
-  /** Get references to weights. (const) */
-  const std::vector<WeightsType*>& get_data_type_weights() const {
-    return m_weights;
+  /** @brief Get the values matrix for a specific weights object */
+  AbsDistMatrixType const& weights_values(size_t idx) const {
+    if (idx >= m_weights_proxy.size())
+      LBANN_ERROR("Bad index ", idx, " "
+                  "(size=" , m_weights_proxy.size(), ")");
+    return m_weights_proxy[idx].values();
   }
 
-  /** @brief Get a specific weights object */
-  WeightsType& get_data_type_weights(size_t idx) {
-    return *(m_weights.at(idx));
+  /** @brief Get a specific master weights object.
+   *
+   *  This is sufficient for setting or accessing metadata about the
+   *  weights class.
+   */
+  weights& master_weights(size_t idx) {
+    return get_weights(idx);
   }
-  WeightsType const& get_data_type_weights(size_t idx) const {
-    return *(m_weights.at(idx));
+  weights const& master_weights(size_t idx) const {
+    return get_weights(idx);
   }
-
-  bool has_data_type_weights(size_t idx) const noexcept {
-    return (idx < m_weights.size() && m_weights[idx] != nullptr);
-  }
-
-  void set_num_data_type_weights(size_t num_weights) {
-    m_weights.resize(num_weights, nullptr);
-  }
-
-  void set_data_type_weights(size_t idx, WeightsType* w) {
-    m_weights.at(idx) = w;
-  }
-
-  /** Set list of pointers to weights. */
-  void set_data_type_weights(std::vector<WeightsType*> w) { m_weights = w; }
-  /** Replace weights with another Layer's weights*/
-  //void replace_weights(Layer* other_layer) override;
-
-  void add_weights(WeightsType* w) { m_weights.push_back(w); }
-  size_t num_weights() const noexcept { return m_weights.size(); }
-  bool has_weights() const noexcept { return num_weights() > 0; }
 
 private:
-  // ===========================================================
-  // Private access functions
-  // ===========================================================
 
-  /** @brief Get references to weights. */
-  std::vector<weights*> get_weights() override {
-    return std::vector<weights*>(begin(m_weights), end(m_weights));
-  }
+  void setup_weights(size_t idx, weights& w) override;
 
-  /** @brief Get references to weights. (const) */
-  std::vector<weights const*> get_weights() const override {
-    return std::vector<weights const*>(begin(m_weights), end(m_weights));
-  }
+  /** @brief Attempt to take ownership of the previous error signal.
+   *
+   *  If the underlying matrix has the right datatype and
+   *  distribution, the signal is moved explicitly. Otherwise a deep
+   *  copy is made so that it has the correct datatype and
+   *  distribution.
+   *
+   *  This is valid if the child layer does not have persistent error
+   *  signals.
+   *
+   *  @param child The layer from which the error signal has come.
+   *  @param signal The error signal from the layer.
+   */
+  void move_or_copy_prev_error_signal_(
+    const Layer& child,
+    std::unique_ptr<El::BaseDistMatrix> signal) final;
+
+  /** @brief Attempt to view the previous error signal.
+   *
+   *  If the underlying matrix has the right datatype and
+   *  distribution, the signal can be viewed directly. Otherwise a
+   *  deep copy is made so that it has the correct datatype and
+   *  distribution.
+   *
+   *  This is only valid if the child layer has persistent error
+   *  signals. Otherwise, the viewed data my be invalidated.
+   *
+   *  @param child The layer from which the error signal has come.
+   *  @param signal The error signal from the layer.
+   */
+  void view_or_copy_prev_error_signal_(
+    const Layer& child,
+    const El::BaseDistMatrix& signal) final;
+
+  /** @brief Deep copy the error signal.
+   *
+   *  In some cases, it can be determined that neither viewing nor
+   *  moving is a possibility. In these cases, we must do a deep copy.
+   *
+   *  @param child The layer from which the error signal has come.
+   *  @param signal The error signal from the layer.
+   */
+  void deep_copy_prev_error_signal_(
+    const Layer& child,
+    const El::BaseDistMatrix& signal) final;
+
+  /** @brief Ensure that gradient matrices exist.
+   *
+   *  This step is performed immediately prior to the bp_compute()
+   *  work.
+   */
+  void allocate_new_gradients_() final;
+
+  /** @brief Send error signals computed by this layer to their
+   *         respective parents.
+   *
+   *  This step is performed immediately after the bp_compute() work
+   *  and prior to clearing the previous error signals. This ordering
+   *  is necessary in case this layer's error signals are views into
+   *  the previous error signals.
+   */
+  void propagate_error_signals_to_parents_() final;
+
+  /** @brief Free previous error signals, if possible.
+   *
+   *  This step is performed at the end of a layer's backprop phase.
+   */
+  void clear_prev_error_signals_() final;
+
+  /** Backward propagation step.
+   *  Given the objective function gradients w.r.t. the output
+   *  tensors, compute the gradients w.r.t. the input tensors and
+   *  w.r.t. the weights. This is essentially an application of the
+   *  chain rule.
+   */
+  void back_prop_impl_() final;
 
   // ===========================================================
   // Private class members
   // ===========================================================
 
-  /** References to layer weights. */
-  std::vector<WeightsType*> m_weights;
+  /** @brief Persistent, read-only, proxied views of the weights
+   *         values matrix.
+   *
+   *  @note (trb 05/28/2020): These are kept as members out of
+   *  consideration for the case where accessing them could require a
+   *  deep copy. This is more out of my own concern about ways in
+   *  which derived classes could abuse weights; in theory, I believe,
+   *  you could just create these on the fly once during FP and once
+   *  during BP. Then the question is: does the performance cost of
+   *  (potentially) two(ish) copies or the memory cost of storing an
+   *  additional copy of the weights hurt more?
+   */
+  std::vector<WeightsProxyType> m_weights_proxy;
 
   /** Input tensors.
    *  Each matrix column corresponds to a flattened mini-batch sample.
@@ -312,6 +350,23 @@ private:
    *  Each matrix column corresponds to a flattened mini-batch sample.
    */
   std::vector<std::unique_ptr<AbsDistMatrixType>> m_gradient_wrt_inputs;
+
+  /** @brief Whether to keep persistent error signals or dynamically
+   *         allocate/deallocate them.
+   *
+   *  The default behavior is dynamic allocation.
+   */
+  bool m_persistent_error_signals = false;
+
+#ifdef LBANN_HAS_DISTCONV
+  friend class data_type_distconv_adapter<TensorDataType>;
+ public:
+  data_type_distconv_adapter<TensorDataType>& get_distconv_adapter() override;
+  const data_type_distconv_adapter<TensorDataType>& get_distconv_adapter() const override;
+
+ protected:
+  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override;
+#endif // LBANN_HAS_DISTCONV
 
 #ifdef LBANN_HAS_CUDA
   template <typename U>

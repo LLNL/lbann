@@ -79,31 +79,12 @@ public:
   weights_layer(const weights_layer& other)
     : transform_layer<TensorDataType>(other),
       m_gradient(other.m_gradient ? other.m_gradient->Copy() : nullptr) {
-    if (other.m_workspace) {
-      switch (other.m_workspace->GetDevice()) {
-      case El::Device::CPU: m_workspace.reset(new CPUMatType); break;
-#ifdef LBANN_HAS_GPU
-      case El::Device::GPU: m_workspace.reset(new GPUMatType); break;
-#endif // LBANN_HAS_GPU
-      default: LBANN_ERROR("unknown device type");
-      }
-      m_workspace->SetMemoryMode(other.m_workspace->MemoryMode());
-    }
+    m_workspace.SetMemoryMode(other.m_workspace.MemoryMode());
   }
   weights_layer& operator=(const weights_layer& other){
     transform_layer<TensorDataType>::operator=(other);
     m_gradient.reset(other.m_gradient ? other.m_gradient->Copy() : nullptr);
-    m_workspace.reset();
-    if (other.m_workspace) {
-      switch (other.m_workspace->GetDevice()) {
-      case El::Device::CPU: m_workspace.reset(new CPUMatType); break;
-#ifdef LBANN_HAS_GPU
-      case El::Device::GPU: m_workspace.reset(new GPUMatType); break;
-#endif // LBANN_HAS_GPU
-      default: LBANN_ERROR("unknown device type");
-      }
-      m_workspace->SetMemoryMode(other.m_workspace->MemoryMode());
-    }
+    m_workspace.SetMemoryMode(other.m_workspace.MemoryMode());
     return *this;
   }
   weights_layer* copy() const override { return new weights_layer(*this); }
@@ -122,23 +103,14 @@ public:
     m_gradient.reset(AbsDistMatrixType::Instantiate(dist));
 
     // Initialize workspace
-    switch (Dev) {
-    case El::Device::CPU: m_workspace.reset(new CPUMatType); break;
-#ifdef LBANN_HAS_GPU
-    case El::Device::GPU:
-      m_workspace.reset(new GPUMatType);
-#ifdef HYDROGEN_HAVE_CUB
-      m_workspace->SetMemoryMode(1); // Use CUB GPU memory pool if possible
-#endif // HYDROGEN_HAVE_CUB
-      break;
-#endif // LBANN_HAS_GPU
-    default: LBANN_ERROR("unknown device type");
-    }
-
+#if defined HYDROGEN_HAVE_CUB
+    if (Dev == El::Device::GPU)
+      m_workspace.SetMemoryMode(1); // Use CUB GPU memory pool if possible
+#endif // defined HYDROGEN_HAVE_CUB
   }
 
-  void setup_data() override {
-    transform_layer<TensorDataType>::setup_data();
+  void setup_data(size_t max_mini_batch_size) override {
+    transform_layer<TensorDataType>::setup_data(max_mini_batch_size);
 
     // Initialize default weights if none are provided
     if (!this->has_weights()) {
@@ -162,17 +134,17 @@ public:
     // Setup weights and weights gradient
     m_gradient->AlignWith(this->get_activations());
     m_gradient->Resize(this->get_output_size(), 1);
-    this->get_data_type_weights(0).set_dims(this->get_output_dims());
-    this->get_data_type_weights(0).set_matrix_distribution(m_gradient->DistData());
+    this->get_weights(0).set_dims(this->get_output_dims());
+    this->get_weights(0).set_matrix_distribution(m_gradient->DistData());
 
     // Initialize freeze state
-    if (this->m_frozen) { this->get_data_type_weights(0).freeze(); }
-    else                { this->get_data_type_weights(0).unfreeze(); }
-    if (this->get_data_type_weights(0).is_frozen() != this->m_frozen) {
+    if (this->m_frozen) { this->get_weights(0).freeze(); }
+    else                { this->get_weights(0).unfreeze(); }
+    if (this->get_weights(0).is_frozen() != this->m_frozen) {
       LBANN_ERROR((this->m_frozen ? "" : "un"),"frozen ",
                   "layer \"",this->get_name(),"\" has ",
-                  (this->get_data_type_weights(0).is_frozen() ? "" : "un"),"frozen ",
-                  "weights \"",this->get_data_type_weights(0).get_name(),"\"");
+                  (this->get_weights(0).is_frozen() ? "" : "un"),"frozen ",
+                  "weights \"",this->get_weights(0).get_name(),"\"");
     }
 
   }
@@ -180,18 +152,17 @@ public:
   void fp_compute() override {
 
     // Matrices
-    const auto& local_weights = this->get_data_type_weights(0).get_values().LockedMatrix();
+    const auto& local_weights = this->weights_values(0).LockedMatrix();
     auto& local_output = this->get_local_activations();
-    m_workspace->Resize(local_output.Width(), 1);
-    El::Fill(*m_workspace, El::TypeTraits<TensorDataType>::One());
+    El::Ones(m_workspace, local_output.Width(), 1);
 
     // Duplicate weights across matrix columns
     El::Gemm(El::NORMAL, El::TRANSPOSE,
-             El::TypeTraits<TensorDataType>::One(), local_weights, *m_workspace,
+             El::TypeTraits<TensorDataType>::One(), local_weights, m_workspace,
              El::TypeTraits<TensorDataType>::Zero(), local_output);
 
     // Clean up
-    m_workspace->Empty();
+    m_workspace.Empty();
 
   }
 
@@ -199,21 +170,25 @@ public:
 
     // Get optimizer
     // Note: Nothing needs to be done if there is no optimizer
-    auto* opt = this->get_data_type_weights(0).get_optimizer();
+    auto* opt = this->get_weights(0).get_optimizer();
     if (opt == nullptr) { return; }
 
     // Matrices
     const auto& local_gradient_wrt_output = this->get_local_prev_error_signals();
-    m_workspace->Resize(local_gradient_wrt_output.Width(), 1);
-    El::Fill(*m_workspace, El::TypeTraits<TensorDataType>::One());
+    El::Ones(m_workspace, local_gradient_wrt_output.Width(), 1);
 
     El::Gemv(El::NORMAL,
-             El::TypeTraits<TensorDataType>::One(), local_gradient_wrt_output, *m_workspace,
-             El::TypeTraits<TensorDataType>::Zero(), m_gradient->Matrix());
-    opt->add_to_gradient(*m_gradient, El::TypeTraits<TensorDataType>::One(), true);
+             El::TypeTraits<TensorDataType>::One(),
+             local_gradient_wrt_output, m_workspace,
+             El::TypeTraits<TensorDataType>::Zero(),
+             m_gradient->Matrix());
+
+    opt->add_to_gradient(*m_gradient,
+                         El::TypeTraits<TensorDataType>::One(),
+                         true);
 
     // Clean up
-    m_workspace->Empty();
+    m_workspace.Empty();
 
   }
 
@@ -222,8 +197,7 @@ public:
   /** Weights gradient. */
   std::unique_ptr<AbsDistMatrixType> m_gradient;
   /** Workspace. */
-  std::unique_ptr<AbsMatrixType> m_workspace;
-
+  El::Matrix<TensorDataType, Dev> m_workspace;
 };
 
 LBANN_DEFINE_LAYER_BUILDER(weights);
