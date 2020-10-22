@@ -28,7 +28,7 @@
 #define LBANN_LAYER_LOCAL_RESPONSE_NORMALIZATION_HPP_INCLUDED
 
 #include <vector>
-#include "lbann/utils/cudnn.hpp"
+#include "lbann/utils/dnn_lib/helpers.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/dnn_lib/cudnn/local_response_normalization.hpp"
 

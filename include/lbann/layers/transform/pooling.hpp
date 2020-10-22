@@ -30,7 +30,7 @@
 #include <utility>
 #include <vector>
 #include "lbann/layers/data_type_layer.hpp"
-#include "lbann/utils/cudnn.hpp"
+#include "lbann/utils/dnn_lib/helpers.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/im2col.hpp"
 #include "lbann/utils/distconv.hpp"

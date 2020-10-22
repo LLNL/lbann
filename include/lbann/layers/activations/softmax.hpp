@@ -30,7 +30,7 @@
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/utils/distconv.hpp"
 #if defined LBANN_HAS_CUDNN
-#include "lbann/utils/cudnn.hpp"
+#include "lbann/utils/dnn_lib/helpers.hpp"
 #endif // defined LBANN_HAS_CUDNN
 #include "lbann/utils/dnn_lib/cudnn/softmax.hpp"
 

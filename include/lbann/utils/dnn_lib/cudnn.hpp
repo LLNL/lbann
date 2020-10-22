@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_UTILS_CUDNN_HPP
-#define LBANN_UTILS_CUDNN_HPP
+#ifndef LBANN_UTILS_DNN_LIB_CUDNN_HPP
+#define LBANN_UTILS_DNN_LIB_CUDNN_HPP
 
 #include "lbann/base.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
@@ -915,4 +915,4 @@ cudnnMathType_t get_default_convolution_math_type() noexcept;
 } // namespace lbann
 
 #endif // LBANN_HAS_CUDNN
-#endif // LBANN_UTILS_CUDNN_HPP
+#endif // LBANN_UTILS_DNN_LIB_CUDNN_HPP

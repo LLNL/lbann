@@ -29,7 +29,7 @@
 
 #include "lbann/layers/data_type_layer.hpp"
 #ifdef LBANN_HAS_CUDNN
-#include "lbann/utils/cudnn.hpp"
+#include "lbann/utils/dnn_lib/helpers.hpp"
 #endif // LBANN_HAS_CUDNN
 
 /// GPU GRU layer requires CUDA 11.0 and cuDNN 8.0.4 or newer

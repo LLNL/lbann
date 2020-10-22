@@ -28,7 +28,7 @@
 #include "lbann/layers/layer.hpp"
 #include "lbann/layers/learning/base_convolution.hpp"
 #include "lbann/models/model.hpp"
-#include "lbann/utils/cudnn.hpp"
+#include "lbann/utils/dnn_lib/helpers.hpp"
 #include "lbann/utils/distconv.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/im2col.hpp"

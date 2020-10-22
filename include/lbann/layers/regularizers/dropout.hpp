@@ -28,7 +28,7 @@
 #define LBANN_LAYER_REGULARIZER_DROPOUT_HPP_INCLUDED
 
 #include "lbann/models/model.hpp"
-#include "lbann/utils/cudnn.hpp"
+#include "lbann/utils/dnn_lib/helpers.hpp"
 #include "lbann/utils/random_number_generators.hpp"
 #include "lbann/utils/dnn_lib/cudnn/dropout.hpp"
 
