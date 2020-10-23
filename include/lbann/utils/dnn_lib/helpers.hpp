@@ -37,7 +37,9 @@
 #if defined LBANN_HAS_CUDNN
 #include "cudnn.hpp"
 namespace lbann {
-namespace dnn_lib = ::lbann::cudnn;
+namespace dnn_lib {
+using namespace cuda;
+}// namespace dnn_lib
 }// namespace lbann
 
 #elif defined LBANN_HAS_MIOPEN

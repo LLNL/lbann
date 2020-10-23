@@ -29,8 +29,9 @@
 #ifdef LBANN_HAS_DNN_LIB
 
 namespace lbann {
-//namespace dnn_lib {
-//} // namespace dnn_lib
+namespace dnn_lib {
+using namespace cudnn;
+} // namespace dnn_lib
 } // namespace lbann
 #endif // LBANN_HAS_MIOPEN
 #endif // LBANN_UTILS_DNN_LIB_DNN_LIB_HPP
