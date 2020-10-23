@@ -244,11 +244,11 @@ protected:
     // Initialize cuDNN objects
     auto&& input_desc = m_tensors_cudnn_desc.get_prev_activations();
     auto&& output_desc = m_tensors_cudnn_desc.get_activations();
-    size_t size = cudnn::get_dropout_reserve_space_size(input_desc);
+    size_t size = dnn_lib::get_dropout_reserve_space_size(input_desc);
     m_reserve_space.Resize((size + sizeof(TensorDataType) - 1) / sizeof(TensorDataType), 1);
 
     // Apply dropout on the GPU
-    cudnn::dropout_forward(m_dropout_cudnn_desc,
+    dnn_lib::dropout_forward(m_dropout_cudnn_desc,
                            input_desc,
                            local_input,
                            output_desc,
@@ -276,7 +276,7 @@ protected:
     } else {
       if (local_gradient_wrt_input.Height() > 0
           && local_gradient_wrt_input.Width() > 0) {
-        cudnn::dropout_backward(m_dropout_cudnn_desc,
+        dnn_lib::dropout_backward(m_dropout_cudnn_desc,
                                 m_tensors_cudnn_desc.get_prev_error_signals(),
                                 local_gradient_wrt_output,
                                 m_tensors_cudnn_desc.get_error_signals(),
@@ -293,7 +293,7 @@ protected:
   void setup_dropout_cudnn_desc() {
 
     // Setup RNG state
-    size_t size = cudnn::get_dropout_states_size();
+    size_t size = dnn_lib::get_dropout_states_size();
     m_states.Resize((size + sizeof(TensorDataType) - 1) / sizeof(TensorDataType), 1);
 
     // Setup dropout descriptor
@@ -312,9 +312,9 @@ protected:
 
 #ifdef LBANN_HAS_CUDNN
   /** Dropout cuDNN descriptor. */
-  cudnn::DropoutDescriptor m_dropout_cudnn_desc;
+  dnn_lib::DropoutDescriptor m_dropout_cudnn_desc;
   /** Tensor cuDNN descriptors. */
-  cudnn::entrywise_layer_tensor_manager<TensorDataType> m_tensors_cudnn_desc;
+  dnn_lib::entrywise_layer_tensor_manager<TensorDataType> m_tensors_cudnn_desc;
   /** RNG state for cuDNN dropout. */
   El::Matrix<TensorDataType, El::Device::GPU> m_states;
   /** Work space for cuDNN dropout. */

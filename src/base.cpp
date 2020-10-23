@@ -130,7 +130,7 @@ void finalize(lbann_comm* comm) {
   dc::finalize();
 #endif
 #ifdef LBANN_HAS_CUDNN
-  cudnn::destroy();
+  dnn_lib::destroy();
 #endif
 #ifdef LBANN_HAS_PYTHON
   python::finalize();
