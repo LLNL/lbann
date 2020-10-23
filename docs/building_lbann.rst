@@ -164,12 +164,15 @@ CMake flags known to LBANN's "Superbuild" build system.
                 specification, the initial build of all of the
                 standard packages in Spack can take a long time.
 
-3.  Once the installation has completed, you can load the module file
-    for LBANN with the following command
+3.  Once the installation has completed, to run LBANN you will want to
+    activate the spack environment to setup the depedencies
+    correctly, and then you can load the module file
+    for LBANN with the following command:
 
     .. code-block:: console
 
-        ml use <path to installation>/etc/modulefiles
+        spack env activate -p <name of the spack environment>
+        ml use <path to installation of lbann executable>/etc/modulefiles
         ml load lbann-0.99.0
 
 
