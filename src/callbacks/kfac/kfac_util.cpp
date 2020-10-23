@@ -162,11 +162,12 @@ void reduce_scatter_blocks(
   std::vector<std::pair<size_t, El::AbstractMatrix<DataType>*>> sorted_blocks(blocks.size());
   std::copy(blocks.begin(), blocks.end(), sorted_blocks.begin());
   if(mode == kfac_reduce_scatter_mode::REDUCE_SCATTER)
-    std::sort(sorted_blocks.begin(), sorted_blocks.end(),
-              [](const std::pair<size_t, El::AbstractMatrix<DataType>*>& lhs,
-                 const std::pair<size_t, El::AbstractMatrix<DataType>*>& rhs) {
-                return lhs.first < rhs.first;
-              });
+    std::stable_sort(
+        sorted_blocks.begin(), sorted_blocks.end(),
+        [](const std::pair<size_t, El::AbstractMatrix<DataType>*>& lhs,
+           const std::pair<size_t, El::AbstractMatrix<DataType>*>& rhs) {
+          return lhs.first < rhs.first;
+        });
 
   // Copy blocks to the send buffer.
   {
@@ -231,11 +232,12 @@ void allgather_blocks(
   std::vector<std::pair<size_t, El::AbstractMatrix<DataType>*>> sorted_blocks(blocks.size());
   std::copy(blocks.begin(), blocks.end(), sorted_blocks.begin());
   if(mode == kfac_allgather_mode::ALLGATHER)
-    std::sort(sorted_blocks.begin(), sorted_blocks.end(),
-              [](const std::pair<size_t, El::AbstractMatrix<DataType>*>& lhs,
-                 const std::pair<size_t, El::AbstractMatrix<DataType>*>& rhs) {
-                return lhs.first < rhs.first;
-              });
+    std::stable_sort(
+        sorted_blocks.begin(), sorted_blocks.end(),
+        [](const std::pair<size_t, El::AbstractMatrix<DataType>*>& lhs,
+           const std::pair<size_t, El::AbstractMatrix<DataType>*>& rhs) {
+          return lhs.first < rhs.first;
+        });
 
   // Copy blocks to the send buffer.
   {
