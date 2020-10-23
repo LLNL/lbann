@@ -48,7 +48,7 @@ template <typename TensorDataType,
           El::Device Dev = El::Device::CPU>
 class local_response_normalization_layer : public data_type_layer<TensorDataType> {
 #ifdef LBANN_HAS_CUDNN
-  using ScalingType = cudnn::ScalingParamType<TensorDataType>;
+  using ScalingType = dnn_lib::ScalingParamType<TensorDataType>;
 #else
   using ScalingType = TensorDataType;
 #endif // LBANN_HAS_CUDNN
@@ -167,9 +167,9 @@ private:
 
 #ifdef LBANN_HAS_CUDNN
   /** LRN cuDNN descriptor. */
-  cudnn::LRNDescriptor m_lrn_cudnn_desc;
+  dnn_lib::LRNDescriptor m_lrn_cudnn_desc;
   /** Tensor cuDNN descriptors. */
-  cudnn::data_parallel_layer_tensor_manager<TensorDataType> m_tensors_cudnn_desc;
+  dnn_lib::data_parallel_layer_tensor_manager<TensorDataType> m_tensors_cudnn_desc;
 #endif // LBANN_HAS_CUDNN
 
   /// GPU implementation of forward propagation
@@ -182,7 +182,7 @@ private:
     if (local_input.Height() > 0 && local_input.Width() > 0) {
       const ScalingType zero = El::TypeTraits<ScalingType>::Zero();
       const ScalingType one = El::TypeTraits<ScalingType>::One();
-      cudnn::lrn_cross_channel_forward(
+      dnn_lib::lrn_cross_channel_forward(
         m_lrn_cudnn_desc,
         one,
         m_tensors_cudnn_desc.get_prev_activations(),
@@ -206,7 +206,7 @@ private:
     if (local_input.Height() > 0 && local_input.Width() > 0) {
       const ScalingType zero = El::TypeTraits<ScalingType>::Zero();
       const ScalingType one = El::TypeTraits<ScalingType>::One();
-      cudnn::lrn_cross_channel_backward(
+      dnn_lib::lrn_cross_channel_backward(
         m_lrn_cudnn_desc,
         one,
         m_tensors_cudnn_desc.get_activations(),

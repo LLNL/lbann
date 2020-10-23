@@ -86,7 +86,7 @@ public:
   using DMatDT = El::Matrix<TensorDataType, D>;
 
 #ifdef LBANN_HAS_CUDNN
-  using ScalingType = cudnn::ScalingParamType<TensorDataType>;
+  using ScalingType = dnn_lib::ScalingParamType<TensorDataType>;
 #else
   using ScalingType = TensorDataType;
 #endif // LBANN_HAS_CUDNN
@@ -124,15 +124,15 @@ protected:
    *  @details Must be cached since it isn't used until setup.
    */
   cudnnMathType_t m_convolution_math_type =
-    cudnn::get_default_convolution_math_type();
+    dnn_lib::get_default_convolution_math_type();
   /** Convolution kernel cuDNN descriptor. */
-  cudnn::FilterDescriptor m_kernel_cudnn_desc;
+  dnn_lib::FilterDescriptor m_kernel_cudnn_desc;
   /** Convolution cuDNN descriptor. */
-  cudnn::ConvolutionDescriptor m_convolution_cudnn_desc;
+  dnn_lib::ConvolutionDescriptor m_convolution_cudnn_desc;
   /** Bias tensor cuDNN descriptor. */
-  cudnn::TensorDescriptor m_bias_cudnn_desc;
+  dnn_lib::TensorDescriptor m_bias_cudnn_desc;
   /** Tensor cuDNN descriptors. */
-  cudnn::data_parallel_layer_tensor_manager<TensorDataType> m_tensors_cudnn_desc;
+  dnn_lib::data_parallel_layer_tensor_manager<TensorDataType> m_tensors_cudnn_desc;
   /** Forward algorithm cache (mini-batch size -> algo). */
   std::unordered_map<int, fwd_conv_alg> m_fwd_cudnn_algos;
   /** Backward data algorithm cache (mini-batch size -> algo). */
@@ -206,12 +206,12 @@ private:
   /** Get the cuDNN algorithm to use for forward prop. */
   fwd_conv_alg get_forward_algo_cudnn(
     const int local_mini_batch_size,
-    const cudnn::TensorDescriptor& input_desc,
+    const dnn_lib::TensorDescriptor& input_desc,
     const TensorDataType* input,
-    const cudnn::FilterDescriptor& kernel_desc,
+    const dnn_lib::FilterDescriptor& kernel_desc,
     const TensorDataType* kernel,
-    const cudnn::ConvolutionDescriptor& conv_desc,
-    const cudnn::TensorDescriptor& output_desc,
+    const dnn_lib::ConvolutionDescriptor& conv_desc,
+    const dnn_lib::TensorDescriptor& output_desc,
     TensorDataType* output,
     size_t ws_size,
     TensorDataType* ws);
@@ -219,12 +219,12 @@ private:
   /** Get the cuDNN algorithm to use for backward-data. */
   bwd_data_conv_alg get_backward_data_algo_cudnn(
     const int local_mini_batch_size,
-    const cudnn::FilterDescriptor& kernel_desc,
+    const dnn_lib::FilterDescriptor& kernel_desc,
     const TensorDataType* kernel,
-    const cudnn::TensorDescriptor& prev_error_signal_desc,
+    const dnn_lib::TensorDescriptor& prev_error_signal_desc,
     const TensorDataType* prev_error_signal,
-    const cudnn::ConvolutionDescriptor& conv_desc,
-    const cudnn::TensorDescriptor& error_signal_desc,
+    const dnn_lib::ConvolutionDescriptor& conv_desc,
+    const dnn_lib::TensorDescriptor& error_signal_desc,
     TensorDataType* error_signal,
     size_t ws_size,
     TensorDataType* ws);
@@ -235,12 +235,12 @@ private:
    */
   bwd_filter_conv_alg get_backward_filter_algo_cudnn(
     const int local_mini_batch_size,
-    const cudnn::TensorDescriptor& input_desc,
+    const dnn_lib::TensorDescriptor& input_desc,
     const TensorDataType* input,
-    const cudnn::TensorDescriptor& prev_error_signal_desc,
+    const dnn_lib::TensorDescriptor& prev_error_signal_desc,
     const TensorDataType* prev_error_signal,
-    const cudnn::ConvolutionDescriptor& conv_desc,
-    const cudnn::FilterDescriptor& kernel_gradient_desc,
+    const dnn_lib::ConvolutionDescriptor& conv_desc,
+    const dnn_lib::FilterDescriptor& kernel_gradient_desc,
     size_t ws_size,
     TensorDataType* ws);
 #endif // LBANN_HAS_CUDNN

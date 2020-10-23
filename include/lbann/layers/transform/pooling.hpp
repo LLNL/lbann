@@ -89,9 +89,9 @@ private:
 
 #ifdef LBANN_HAS_CUDNN
   /** Pooling descriptor. */
-  cudnn::PoolingDescriptor m_pooling_cudnn_desc;
+  dnn_lib::PoolingDescriptor m_pooling_cudnn_desc;
   /** Tensor cuDNN descriptors. */
-  cudnn::data_parallel_layer_tensor_manager<TensorDataType> m_tensors_cudnn_desc;
+  dnn_lib::data_parallel_layer_tensor_manager<TensorDataType> m_tensors_cudnn_desc;
 #endif // LBANN_HAS_CUDNN
 
   friend class unpooling_layer<TensorDataType, T_layout, Dev>;
@@ -306,13 +306,13 @@ private:
 #ifndef LBANN_HAS_CUDNN
     LBANN_ERROR("cuDNN not detected");
 #else
-    using ScalingType = cudnn::ScalingParamType<TensorDataType>;
+    using ScalingType = dnn_lib::ScalingParamType<TensorDataType>;
     const auto& local_input = this->get_local_prev_activations();
     auto& local_output = this->get_local_activations();
     if (local_input.Height() > 0 && local_input.Width() > 0) {
       const auto zero = El::TypeTraits<ScalingType>::Zero();
       const auto one = El::TypeTraits<ScalingType>::One();
-      cudnn::pooling_forward(m_pooling_cudnn_desc,
+      dnn_lib::pooling_forward(m_pooling_cudnn_desc,
                              one,
                              m_tensors_cudnn_desc.get_prev_activations(),
                              local_input,
@@ -328,7 +328,7 @@ private:
 #ifndef LBANN_HAS_CUDNN
     LBANN_ERROR("cuDNN not detected");
 #else
-    using ScalingType = cudnn::ScalingParamType<TensorDataType>;
+    using ScalingType = dnn_lib::ScalingParamType<TensorDataType>;
     const auto& local_input = this->get_local_prev_activations();
     const auto& local_output = this->get_local_activations();
     const auto& local_gradient_wrt_output = this->get_local_prev_error_signals();
@@ -340,7 +340,7 @@ private:
       const auto zero = El::TypeTraits<ScalingType>::Zero();
 
       // Perform backprop on GPU
-      cudnn::pooling_backward(m_pooling_cudnn_desc,
+      dnn_lib::pooling_backward(m_pooling_cudnn_desc,
                               one,
                               m_tensors_cudnn_desc.get_activations(),
                               local_output,

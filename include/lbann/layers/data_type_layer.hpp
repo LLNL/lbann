@@ -39,8 +39,10 @@
 #include <array>
 #endif // LBANN_HAS_DISTCONV
 
+
 namespace lbann {
 
+// TODO: find a way put these in cudnn.hpp
 // Forward declarations
 namespace cudnn {
 template <typename U>

@@ -154,7 +154,7 @@ private:
 
 #ifdef LBANN_HAS_CUDNN
   /** Tensor cuDNN descriptors. */
-  cudnn::data_parallel_layer_tensor_manager<TensorDataType> m_tensors_cudnn_desc;
+  dnn_lib::data_parallel_layer_tensor_manager<TensorDataType> m_tensors_cudnn_desc;
 #endif // LBANN_HAS_CUDNN
 
 // Minimum output value to avoid denormalized floats
