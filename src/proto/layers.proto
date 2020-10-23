@@ -30,11 +30,7 @@ package lbann_data;
 
 import "google/protobuf/wrappers.proto";
 
-enum DataType {
-  FLOAT = 0;
-  DOUBLE = 1;
-  FP16 = 2;
-}
+import "datatype.proto";
 
 // Lives here because it's used by both Convolution and
 // Deconvolution.
@@ -405,8 +401,7 @@ message Layer {
   // Input layers //
   //////////////////
   message Input {
-    string io_buffer = 2;         // Options: "partitioned" (default)
-    string target_mode = 3;       // Options: "classification" (default), "regression", "reconstruction", "label_reconstruction", "N/A"
+    string target_mode = 3;       // Options: "classification", "regression", "reconstruction", "label_reconstruction", "N/A" (default)
   }
 
   //////////////////////

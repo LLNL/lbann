@@ -74,7 +74,7 @@ def construct_model(lbann):
     import lbann.models
 
     # Layer graph
-    input_ = lbann.Input()
+    input_ = lbann.Input(target_mode='classification')
     images = lbann.Identity(input_)
     labels = lbann.Identity(input_)
     x = lbann.models.AlexNet(1000)(images)

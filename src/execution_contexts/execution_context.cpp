@@ -70,11 +70,6 @@ thread_pool& execution_context::get_io_thread_pool() const {
   return m_trainer.get_io_thread_pool();
 }
 
-/** Are background I/O activities enabled by the input layers */
-bool execution_context::background_io_activity_allowed() {
-  return m_trainer.background_io_activity_allowed();
-}
-
 ////////////////////////////////////////////////////////////
 // Checkpointing
 ////////////////////////////////////////////////////////////

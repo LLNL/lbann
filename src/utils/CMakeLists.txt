@@ -35,7 +35,7 @@ if (LBANN_HAS_HALF)
     ${CMAKE_CURRENT_SOURCE_DIR}/serialization.cpp)
 endif (LBANN_HAS_HALF)
 
-if (LBANN_HAS_CUDA)
+if (LBANN_HAS_GPU)
   list(APPEND THIS_DIR_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/cufft_wrapper.cpp")
 
@@ -54,4 +54,4 @@ add_subdirectory(threads)
 
 # Propagate the files up the tree
 set(SOURCES "${SOURCES}" "${THIS_DIR_SOURCES}" PARENT_SCOPE)
-set(CUDA_SOURCES "${CUDA_SOURCES}" "${THIS_DIR_CU_SOURCES}" PARENT_SCOPE)
+set(GPU_SOURCES "${GPU_SOURCES}" "${THIS_DIR_CU_SOURCES}" PARENT_SCOPE)

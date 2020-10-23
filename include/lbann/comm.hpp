@@ -77,6 +77,11 @@ using mpicuda_backend = ::Al::MPICUDABackend;
 #else
 using mpicuda_backend = lbann::Al::dummy_backend;
 #endif  // defined(LBANN_HAS_ALUMINUM) && defined(AL_HAS_MPI_CUDA)
+#if defined(LBANN_HAS_ALUMINUM) && defined(AL_HAS_HOST_TRANSFER)
+using hosttransfer_backend = ::Al::HostTransferBackend;
+#else
+using hosttransfer_backend = lbann::Al::dummy_backend;
+#endif  // defined(LBANN_HAS_ALUMINUM) && defined(AL_HAS_HOST_TRANSFER)
 using mpicuda_req_type = mpicuda_backend::req_type;
 static const mpicuda_req_type mpicuda_null_req = mpicuda_backend::null_req;
 

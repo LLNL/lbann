@@ -98,7 +98,7 @@ else:
     exit()
 
 # Construct layer graph
-input_ = lbann.Input(name='input')
+input_ = lbann.Input(name='input', target_mode='classification')
 image = lbann.Identity(input_, name='images')
 dummy = lbann.Dummy(input_, name='labels')
 

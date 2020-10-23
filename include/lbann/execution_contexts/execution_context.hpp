@@ -127,9 +127,6 @@ public:
     return *m_comm;
   };
 
-  /** Are background I/O activities enabled by the input layers */
-  bool background_io_activity_allowed();
-
   /** Checkpoint training_algorithm to given file descriptor */
   virtual void save_to_checkpoint_shared(persist& p);
   /** Restore training_algorithm by reading checkpoint from given file descriptor */

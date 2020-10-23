@@ -28,7 +28,7 @@
 
 #include "lbann/callbacks/print_statistics.hpp"
 
-#include "lbann/layers/io/input/generic_input_layer.hpp"
+#include "lbann/data_coordinator/data_coordinator.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/argument_parser.hpp"
 #include "lbann/utils/lbann_library.hpp"
@@ -56,70 +56,62 @@ void print_statistics::setup(model *m) {
 
 void print_statistics::on_epoch_begin(model *m) {
   const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
+  data_coordinator& dc = m->get_execution_context().get_trainer().get_data_coordinator();
   lbann_comm *comm = m->get_comm();
   if (comm->am_world_master()) {
-
-    // Get first input layer in model
-    generic_input_layer<DataType>* input = nullptr;
-    for (auto&& l : m->get_layers()) {
-      input = dynamic_cast<generic_input_layer<DataType>*>(l);
-      if (input != nullptr) { break; }
-    }
-    if (input == nullptr) { LBANN_ERROR("could not get input layer"); }
-
     // Print message
     std::cout << "--------------------------------------------------------------------------------"
               << std::endl;
     std::cout << "[" << c.get_epoch() << "] Epoch : stats formated [tr/v/te]"
               << " iter/epoch ="
               << " ["
-              << input->get_num_iterations_per_epoch(execution_mode::training)
+              << dc.get_num_iterations_per_epoch(execution_mode::training)
               << "/"
-              << input->get_num_iterations_per_epoch(execution_mode::validation)
+              << dc.get_num_iterations_per_epoch(execution_mode::validation)
               << "/"
-              << input->get_num_iterations_per_epoch(execution_mode::testing)
+              << dc.get_num_iterations_per_epoch(execution_mode::testing)
               << "]"
               << std::endl;
     std::cout << std::setfill(' ') << std::setw(23)
               << " global MB ="
               << " ["
-              << std::setw(4) << input->get_global_mini_batch_size(execution_mode::training)
+              << std::setw(4) << dc.get_global_mini_batch_size(execution_mode::training)
               << "/"
-              << std::setw(4) << input->get_global_mini_batch_size(execution_mode::validation)
+              << std::setw(4) << dc.get_global_mini_batch_size(execution_mode::validation)
               << "/"
-              << std::setw(4) << input->get_global_mini_batch_size(execution_mode::testing)
+              << std::setw(4) << dc.get_global_mini_batch_size(execution_mode::testing)
               << "]"
               << " global last MB ="
               << " ["
-              << std::setw(4) << input->get_global_last_mini_batch_size(execution_mode::training)
+              << std::setw(4) << dc.get_global_last_mini_batch_size(execution_mode::training)
               << std::setw(2) << " "
               << "/"
-              << std::setw(4) << input->get_global_last_mini_batch_size(execution_mode::validation)
+              << std::setw(4) << dc.get_global_last_mini_batch_size(execution_mode::validation)
               << std::setw(2) << " "
               << "/"
-              << std::setw(4) << input->get_global_last_mini_batch_size(execution_mode::testing)
+              << std::setw(4) << dc.get_global_last_mini_batch_size(execution_mode::testing)
               << std::setw(2) << " "
               << "]"
               << std::endl;
     std::cout << std::setfill(' ') << std::setw(23)
               << "  local MB ="
               << " ["
-              << std::setw(4) << input->get_mini_batch_size(execution_mode::training)
+              << std::setw(4) << dc.get_mini_batch_size(execution_mode::training)
               << "/"
-              << std::setw(4) << input->get_mini_batch_size(execution_mode::validation)
+              << std::setw(4) << dc.get_mini_batch_size(execution_mode::validation)
               << "/"
-              << std::setw(4) << input->get_mini_batch_size(execution_mode::testing)
+              << std::setw(4) << dc.get_mini_batch_size(execution_mode::testing)
               << "]"
               << "  local last MB ="
               << " ["
-              << std::setw(4) << input->get_last_mini_batch_size(execution_mode::training)
-              << "+" << input->get_world_master_mini_batch_adjustment(execution_mode::training)
+              << std::setw(4) << dc.get_last_mini_batch_size(execution_mode::training)
+              << "+" << dc.get_world_master_mini_batch_adjustment(execution_mode::training)
               << "/"
-              << std::setw(4) << input->get_last_mini_batch_size(execution_mode::validation)
-              << "+" << input->get_world_master_mini_batch_adjustment(execution_mode::validation)
+              << std::setw(4) << dc.get_last_mini_batch_size(execution_mode::validation)
+              << "+" << dc.get_world_master_mini_batch_adjustment(execution_mode::validation)
               << "/"
-              << std::setw(4) << input->get_last_mini_batch_size(execution_mode::testing)
-              << "+" << input->get_world_master_mini_batch_adjustment(execution_mode::testing)
+              << std::setw(4) << dc.get_last_mini_batch_size(execution_mode::testing)
+              << "+" << dc.get_world_master_mini_batch_adjustment(execution_mode::testing)
               << "]"
               << std::endl;
     std::cout << "--------------------------------------------------------------------------------"

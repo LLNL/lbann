@@ -27,6 +27,8 @@ if (LBANN_HAS_FFTW)
     ${CMAKE_CURRENT_SOURCE_DIR}/fftw_test.cpp)
 endif (LBANN_HAS_FFTW)
 
+# This is actually CUDA-specific. rocFFT will get a new test when we
+# port that over.
 if (LBANN_HAS_CUDA)
   list(APPEND THIS_DIR_SEQ_CATCH2_TEST_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/cufft_test.cpp)

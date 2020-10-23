@@ -42,9 +42,9 @@ the :ref:`CMake install <build-with-cmake>`.
         spack install lbann <customization options>
 
     A complete list of LBANN install options can be found with:
-    
+
     .. code-block:: bash
-    
+
         spack info lbann
 
     For users new to Spack, LBANN provides a script that will perform some
@@ -275,7 +275,7 @@ Using LBANN, that same neural network can be built with:
 
     .. code-block:: python
 
-        input_ = lbann.Input()
+        input_ = lbann.Input(target_mode = 'classification')
         images = lbann.Identity(input_)
         labels = lbann.Identity(input_)
 

@@ -26,7 +26,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"
-#include "lbann/io/data_buffers/partitioned_io_buffer.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/execution_contexts/sgd_execution_context.hpp"
@@ -88,10 +87,6 @@ const std::set<std::string> data_reader_jag_conduit::non_numeric_vars = {
   "solver_mode"
 };
 
-void data_reader_jag_conduit::set_io_buffer_type(const std::string io_buffer) {
-  m_io_buffer_type = io_buffer;
-}
-
 void data_reader_jag_conduit::set_local_id(const std::string role) {
   m_local_reader_id = m_num_local_readers[role]++;
 }
@@ -118,18 +113,8 @@ void data_reader_jag_conduit::shuffle_indices(rng_gen& gen) {
 }
 
 int data_reader_jag_conduit::compute_max_num_parallel_readers() {
-  if (m_io_buffer_type == "partitioned") {
-#if 0
-    // @todo BVE FIXME - Why are we doing this here
-    set_num_parallel_readers(partitioned_io_buffer<DataType>::compute_max_num_parallel_readers(
-                             0, get_mini_batch_size(),
-                             get_num_parallel_readers(), get_comm()));
-#endif
-    set_sample_stride(get_num_parallel_readers());
-    set_iteration_stride(1);
-  } else {
-    LBANN_ERROR(get_type() + ":: unknown io_buffer type: " + m_io_buffer_type);
-  }
+  set_sample_stride(get_num_parallel_readers());
+  set_iteration_stride(1);
   return get_num_parallel_readers();
 }
 
@@ -168,7 +153,6 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
   m_scalar_prefix_filter = rhs.m_scalar_prefix_filter;
   m_input_filter = rhs.m_input_filter;
   m_input_prefix_filter = rhs.m_input_prefix_filter;
-  m_io_buffer_type = rhs.m_io_buffer_type;
   m_local_reader_id = rhs.m_local_reader_id;
   //TODO: need  to make sure this is what we want
   m_leading_reader = rhs.m_leading_reader;
@@ -243,7 +227,6 @@ void data_reader_jag_conduit::set_defaults() {
   m_scalar_prefix_filter.clear();
   m_input_filter.clear();
   m_input_prefix_filter.clear();
-  m_io_buffer_type = "";
   m_local_reader_id = 0;
   m_leading_reader = this;
   m_cached_data_mb_size = 0;
@@ -257,6 +240,9 @@ void data_reader_jag_conduit::set_defaults() {
   //m_sample_list.clear();
   m_list_per_trainer = false;
   m_list_per_model = false;
+
+  m_supported_input_types[input_data_type::LABELS] = true;
+  m_supported_input_types[input_data_type::RESPONSES] = true;
 }
 
 void data_reader_jag_conduit::setup(int num_io_threads, observer_ptr<thread_pool> io_thread_pool) {
