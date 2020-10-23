@@ -61,12 +61,18 @@ void allreduce_lower_tri(
     lbann_comm *comm,
     const cudaStream_t& stream);
 
+/** @brief Get whether a global buffer is needed. **/
+bool is_reduce_scatter_buffer_required(kfac_reduce_scatter_mode mode);
+
 /** @brief Perform reduce-scatter on one or more blocks. **/
 void reduce_scatter_blocks(
     const std::vector<std::pair<size_t, El::AbstractMatrix<DataType>*>>& blocks,
     El::Matrix<DataType, El::Device::GPU>& global_buffer,
     lbann_comm *comm,
     kfac_reduce_scatter_mode mode);
+
+/** @brief Get whether local and global buffers are needed. **/
+std::pair<bool, bool> is_allgather_buffer_required(kfac_allgather_mode mode);
 
 /** @brief Perform reduce-scatter on one or more blocks. **/
 void allgather_blocks(

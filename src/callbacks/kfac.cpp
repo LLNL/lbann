@@ -281,7 +281,10 @@ void kfac::on_backward_prop_end(model *m) {
 
       // Perform reduce-scatter.
       El::Matrix<DataType, El::Device::GPU>& global_buffer =
-          get_workspace_matrix("reduce_scatter_send_buffer", global_buffer_size, 1);
+          get_workspace_matrix(
+              "reduce_scatter_send_buffer",
+              kfac_util::is_reduce_scatter_buffer_required(m_reduce_scatter_mode) ? global_buffer_size : 0,
+              1);
       kfac_util::reduce_scatter_blocks(
           buffers, global_buffer, comm, m_reduce_scatter_mode);
 
@@ -326,10 +329,17 @@ void kfac::on_backward_prop_end(model *m) {
       }
 
     // Perform reduce-scatter.
+    const auto is_buffer_needed = kfac_util::is_allgather_buffer_required(m_allgather_mode);
     El::Matrix<DataType, El::Device::GPU>& local_buffer =
-        get_workspace_matrix("allgather_send_buffer", local_buffer_size, 1);
+        get_workspace_matrix(
+            "allgather_send_buffer",
+            is_buffer_needed.first ? local_buffer_size : 0,
+            1);
     El::Matrix<DataType, El::Device::GPU>& global_buffer =
-        get_workspace_matrix("allgather_recv_buffer", global_buffer_size, 1);
+        get_workspace_matrix(
+            "allgather_recv_buffer",
+            is_buffer_needed.second ? global_buffer_size : 0,
+            1);
     kfac_util::allgather_blocks(
         buffers, local_buffer, global_buffer, comm, m_allgather_mode);
 

@@ -141,6 +141,16 @@ void allreduce_lower_tri(El::Matrix<DataType, El::Device::GPU>& A,
   unpack_lower_tri(A.Buffer(), AL.Buffer(), A.Height(), stream);
 }
 
+bool is_reduce_scatter_buffer_required(const kfac_reduce_scatter_mode mode) {
+  if(mode == kfac_reduce_scatter_mode::ALLREDUCE)
+    return true;
+  else if(mode == kfac_reduce_scatter_mode::REDUCE_SCATTER)
+    return true;
+  else if(mode == kfac_reduce_scatter_mode::REDUCE)
+    return false;
+  LBANN_ERROR("Invalid reduce-scatter mode");
+}
+
 void reduce_scatter_blocks(
     const std::vector<std::pair<size_t, El::AbstractMatrix<DataType>*>>& blocks,
     El::Matrix<DataType, El::Device::GPU>& global_buffer,
@@ -210,6 +220,17 @@ void reduce_scatter_blocks(
     }
   }
 
+}
+
+/** @brief Get whether local and global buffers are needed. **/
+std::pair<bool, bool> is_allgather_buffer_required(const kfac_allgather_mode mode) {
+  if(mode == kfac_allgather_mode::ALLREDUCE)
+    return std::make_pair(false, true);
+  else if(mode == kfac_allgather_mode::ALLGATHER)
+    return std::make_pair(true, true);
+  else if(mode == kfac_allgather_mode::BROADCAST)
+    return std::make_pair(false, false);
+  LBANN_ERROR("Invalid allgather mode");
 }
 
 void allgather_blocks(
