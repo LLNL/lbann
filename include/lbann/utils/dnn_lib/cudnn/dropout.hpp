@@ -35,8 +35,10 @@ namespace lbann
 {
 
 #if defined LBANN_HAS_CUDNN
-namespace cudnn
+namespace dnn_lib
 {
+
+using namespace cudnn;
 
 inline size_t get_dropout_states_size()
 {

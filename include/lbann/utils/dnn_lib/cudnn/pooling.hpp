@@ -35,8 +35,10 @@ namespace lbann
 {
 
 #ifdef LBANN_HAS_CUDNN
-namespace cudnn
+namespace dnn_lib
 {
+
+using namespace cudnn;
 
 template <typename TensorDataType, typename ScalarParameterType>
 void pooling_forward(PoolingDescriptor const& poolingDesc,

@@ -44,7 +44,7 @@ namespace lbann {
 
 // TODO: find a way put these in cudnn.hpp
 // Forward declarations
-namespace cudnn {
+namespace dnn_lib {
 template <typename U>
 class data_parallel_layer_tensor_manager;
 template <typename U>
@@ -372,9 +372,9 @@ private:
 
 #ifdef LBANN_HAS_CUDA
   template <typename U>
-  friend class cudnn::data_parallel_layer_tensor_manager;
+  friend class dnn_lib::data_parallel_layer_tensor_manager;
   template <typename U>
-  friend class cudnn::entrywise_layer_tensor_manager;
+  friend class dnn_lib::entrywise_layer_tensor_manager;
 #endif // LBANN_HAS_CUDA
 };
 

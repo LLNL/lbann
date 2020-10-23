@@ -70,8 +70,10 @@ enum class bwd_filter_conv_alg
 };// enum class bwd_conv_filter
 
 #ifdef LBANN_HAS_CUDNN
-namespace cudnn
+namespace dnn_lib
 {
+
+using namespace cudnn;
 
 /** @brief Convert a LBANN forward convolution algorithm to the cuDNN
  * equivalent value. */

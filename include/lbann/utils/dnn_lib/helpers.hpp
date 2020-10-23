@@ -38,7 +38,7 @@
 #include "cudnn.hpp"
 namespace lbann {
 namespace dnn_lib {
-using namespace cuda;
+using namespace cudnn;
 }// namespace dnn_lib
 }// namespace lbann
 

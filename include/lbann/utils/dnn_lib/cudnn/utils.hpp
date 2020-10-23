@@ -29,8 +29,11 @@
 namespace lbann
 {
 #if defined LBANN_HAS_CUDNN
-namespace cudnn
+namespace dnn_lib
 {
+
+using namespace cudnn;
+
 namespace internal
 {
 

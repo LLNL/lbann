@@ -64,8 +64,10 @@ enum class softmax_alg
 };// enum class softmax_alg
 
 #if defined LBANN_HAS_CUDNN
-namespace cudnn
+namespace dnn_lib
 {
+
+using namespace cudnn;
 
 /** @brief Convert an LBANN softmax_mode to the cuDNN equivalent value. */
 inline cudnnSoftmaxMode_t to_cudnn(softmax_mode m)

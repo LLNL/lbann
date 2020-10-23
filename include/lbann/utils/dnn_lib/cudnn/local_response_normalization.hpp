@@ -43,8 +43,10 @@ enum class lrn_mode
 };// enum class lrn_mode
 
 #ifdef LBANN_HAS_CUDNN
-namespace cudnn
+namespace dnn_lib
 {
+
+using namespace cudnn;
 
 /** @brief Convert an LBANN lrn_mode to the cuDNN equivalent value. */
 inline cudnnLRNMode_t to_cudnn(lrn_mode mode)

@@ -24,7 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/utils/dnn_lib/cudnn.hpp"
+#include "lbann/utils/dnn_lib/helpers.hpp"
 #include "lbann/utils/number_theory.hpp"
 
 #include "El.hpp"
@@ -36,7 +36,9 @@
 #ifdef LBANN_HAS_CUDNN
 
 namespace lbann {
-namespace cudnn {
+namespace dnn_lib {
+
+using namespace cudnn;
 
 ////////////////////////////////////////////////////////////
 // Global cuDNN objects
