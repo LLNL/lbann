@@ -269,8 +269,6 @@ __device__ __forceinline__
 float max(const float& x, const float& y) { return ::fmaxf(x,y); }
 __device__ __forceinline__
 double max(const double& x, const double& y) { return ::fmax(x,y); }
-template <typename T> __device__ __forceinline__
-T mod(const T& x, const T& y) { return x % y; }
 __device__ __forceinline__
 float mod(const float& x, const float& y) { return ::fmodf(x,y); }
 __device__ __forceinline__

@@ -197,9 +197,7 @@ template <typename T> __device__ __forceinline__ T min(const T& x, const T& y);
 DECLARE_BINARY_UNARY_MATH_FUNC(min);
 template <typename T> __device__ __forceinline__ T max(const T& x, const T& y);
 DECLARE_BINARY_UNARY_MATH_FUNC(max);
-template <typename T> __device__ __forceinline__ T mod(const T& x, const T& y);
 DECLARE_BINARY_UNARY_MATH_FUNC(mod);
-template <typename T> __device__ __forceinline__ T pow(const T& x, const T& y);
 DECLARE_BINARY_UNARY_MATH_FUNC(pow);
 #undef DECLARE_BINARY_UNARY_MATH_FUNC
 #undef DECLARE_BINARY_UNARY_MATH_FUNC_WITH_TYPE
