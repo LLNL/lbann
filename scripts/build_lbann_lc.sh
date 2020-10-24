@@ -5,7 +5,6 @@ CLUSTER=$(hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g')
 TOSS=$(uname -r | sed 's/\([0-9][0-9]*\.*\)\-.*/\1/g')
 ARCH=$(uname -m)
 CORAL=$([[ $(hostname) =~ (sierra|lassen|ray) ]] && echo 1 || echo 0)
-ROOT_DIR=$(realpath $(dirname $0)/..)
 
 ################################################################
 # Default options
@@ -463,32 +462,16 @@ fi
 CXX_FLAGS="${CXX_FLAGS} -ldl"
 C_FLAGS="${CXX_FLAGS}"
 
-# Hacks to build with OpenSHMEM
-WITH_SHMEM=0
-if [ ${WITH_SHMEM} -ne 0 ]; then
-    if [ "${CLUSTER}" == "lassen" ]; then
-        CXX_FLAGS="${CXX_FLAGS} -L/usr/tce/packages/spectrum-mpi/ibm/spectrum-mpi-rolling-release/lib -loshmem"
-    else
-        echo "OpenSHMEM is currently only supported on Lassen"
-        exit 1
-    fi
-fi
-
 # Hacks to build with NVSHMEM
 if [ ${WITH_NVSHMEM} -ne 0 ]; then
     if [ "${CLUSTER}" == "lassen" ]; then
-        NVSHMEM_DIR=/usr/workspace/wsb/brain/nvshmem/nvshmem_1.0.1/cuda-10.1_ppc64le
+        NVSHMEM_DIR=/usr/workspace/wsb/brain/nvshmem/nvshmem_0.3.3/cuda-10.1_ppc64le
         CUDA_FLAGS="-gencode=arch=compute_70,code=sm_70"
     else
         echo "NVSHMEM is currently only supported on Lassen"
         exit 1
     fi
 fi
-
-# Hacks to build with largescale_node2vec and HavoqGT
-WITH_LARGESCALE_NODE2VEC=0
-CXX_FLAGS="${CXX_FLAGS} -isystem ${ROOT_DIR}/applications/graph/node2vec/largescale_node2vec/include -isystem ${ROOT_DIR}/applications/graph/node2vec/havoqgt/include"
-C_FLAGS="${CXX_FLAGS}"
 
 # Set environment variables
 CC=${C_COMPILER}
@@ -498,6 +481,9 @@ CXX=${CXX_COMPILER}
 ################################################################
 # Initialize directories
 ################################################################
+
+# Get LBANN root directory
+ROOT_DIR=$(realpath $(dirname $0)/..)
 
 # Initialize build directory
 if [ -z "${BUILD_DIR}" ]; then
@@ -841,20 +827,16 @@ cmake \
 -D LBANN_CONDUIT_DIR=${CONDUIT_DIR} \
 -D LBANN_BUILT_WITH_SPECTRUM=${WITH_SPECTRUM} \
 -D OPENBLAS_ARCH_COMMAND=${OPENBLAS_ARCH} \
--D LBANN_HAS_SHMEM=${WITH_SHMEM} \
 -D LBANN_WITH_NVSHMEM=${WITH_NVSHMEM} \
 -D LBANN_SB_FWD_LBANN_NVSHMEM_DIR=${NVSHMEM_DIR} \
 -D LBANN_SB_BUILD_DIHYDROGEN=${WITH_DIHYDROGEN} \
 -D DIHYDROGEN_ENABLE_DISTCONV_LEGACY=${WITH_DISTCONV} \
 -D LBANN_WITH_DIHYDROGEN=${WITH_DIHYDROGEN} \
 -D LBANN_WITH_DISTCONV=${WITH_DISTCONV} \
--D CMAKE_CXX_STANDARD=17 \
--D LBANN_SB_FWD_LBANN_CMAKE_CXX_STANDARD=17 \
--D LBANN_SB_FWD_LBANN_CMAKE_CUDA_STANDARD=14 \
--D LBANN_HAS_LARGESCALE_NODE2VEC=${WITH_LARGESCALE_NODE2VEC} \
 ${SUPERBUILD_DIR}
 EOF
 )
+
 
 if [ ${VERBOSE} -ne 0 ]; then
     echo "${CONFIGURE_COMMAND}" |& tee cmake_superbuild_invocation.txt
