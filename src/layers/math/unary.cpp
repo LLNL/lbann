@@ -377,7 +377,7 @@ struct erf_op {
     return El::To<TensorDataType>(std::erf(El::To<double>(x)));
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    constexpr TensorDataType two_rsqrt_pi(1.12837916709551257389);
+    const auto two_rsqrt_pi = El::To<TensorDataType>(1.12837916709551257389);
     return dy * two_rsqrt_pi * El::Exp(-x*x);
   }
 };
@@ -389,7 +389,7 @@ struct erfinv_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
 
     // Trivial cases
-    constexpr TensorDataType inf = std::numeric_limits<TensorDataType>::infinity();
+    const TensorDataType inf = std::numeric_limits<TensorDataType>::infinity();
     if (x <= -El::TypeTraits<TensorDataType>::One()) {
       return -inf;
     }
@@ -419,7 +419,7 @@ struct erfinv_op {
       return El::TypeTraits<TensorDataType>::Zero();
     }
     else {
-      constexpr TensorDataType half_sqrt_pi(0.88622692545275801364);
+      const auto half_sqrt_pi = El::To<TensorDataType>(0.88622692545275801364);
       const auto y = (*this)(x);
       return dy * half_sqrt_pi * El::Exp(y*y);
     }

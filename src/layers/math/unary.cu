@@ -376,7 +376,7 @@ struct erf_op {
     return cuda::erf(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    constexpr TensorDataType two_rsqrt_pi(1.12837916709551257389);
+    const TensorDataType two_rsqrt_pi(1.12837916709551257389);
     return dy * two_rsqrt_pi * cuda::exp(-x*x);
   }
 };
@@ -388,7 +388,7 @@ struct erfinv_op {
     return cuda::erfinv(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    constexpr TensorDataType half_sqrt_pi(0.88622692545275801364);
+    const TensorDataType half_sqrt_pi(0.88622692545275801364);
     const auto& y = cuda::erfinv(x);
     return dy * half_sqrt_pi * cuda::exp(y*y);
   }
