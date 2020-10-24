@@ -9,6 +9,7 @@ set_full_path(THIS_DIR_HEADERS
   mini_batch_index.hpp
   mini_batch_size.hpp
   one_hot.hpp
+  uniform_hash.hpp
   variance.hpp
   )
 

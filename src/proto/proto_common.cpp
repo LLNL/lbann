@@ -334,6 +334,21 @@ void init_data_readers(
       LBANN_ERROR("attempted to construct Python data reader, "
                   "but LBANN is not built with Python/C API");
 #endif // LBANN_HAS_PYTHON
+    } else if (name == "node2vec") {
+#ifdef LBANN_HAS_LARGESCALE_NODE2VEC
+      const auto& params = readme.node2vec();
+      reader = new node2vec_reader(
+        params.graph_file(),
+        params.epoch_size(),
+        params.walk_length(),
+        params.return_param(),
+        params.inout_param(),
+        params.num_negative_samples());
+#else
+      LBANN_ERROR("attempted to construct node2vec data reader, "
+                  "but LBANN is not built with "
+                  "largescale_node2vec or HavoqGT");
+#endif // LBANN_HAS_LARGESCALE_NODE2VEC
     } else {
         err << __FILE__ << " " << __LINE__ << " :: unknown name for data reader: "
             << name;

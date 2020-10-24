@@ -72,6 +72,7 @@
 #include "lbann/layers/misc/argmin.hpp"
 #include "lbann/layers/misc/one_hot.hpp"
 #include "lbann/layers/misc/dist_embedding.hpp"
+#include "lbann/layers/misc/uniform_hash.hpp"
 #include "lbann/layers/regularizers/batch_normalization.hpp"
 #include "lbann/layers/regularizers/dropout.hpp"
 #include "lbann/layers/regularizers/local_response_normalization.hpp"
@@ -189,6 +190,8 @@ private:
     LBANN_REGISTER_DEFAULT_BUILDER(Floor, floor);
     LBANN_REGISTER_DEFAULT_BUILDER(Greater, greater);
     LBANN_REGISTER_DEFAULT_BUILDER(GreaterEqual, greater_equal);
+    LBANN_REGISTER_DEFAULT_BUILDER(Erf, erf);
+    LBANN_REGISTER_DEFAULT_BUILDER(ErfInv, erfinv);
     LBANN_REGISTER_DEFAULT_BUILDER(Less, less);
     LBANN_REGISTER_DEFAULT_BUILDER(LessEqual, less_equal);
     LBANN_REGISTER_DEFAULT_BUILDER(Log, log);
@@ -269,6 +272,7 @@ private:
     LBANN_REGISTER_DEFAULT_BUILDER(MiniBatchIndex, mini_batch_index);
     LBANN_REGISTER_DEFAULT_BUILDER(MiniBatchSize, mini_batch_size);
     LBANN_REGISTER_BUILDER(DistEmbedding, dist_embedding);
+    LBANN_REGISTER_BUILDER(UniformHash, uniform_hash);
 
   }
 

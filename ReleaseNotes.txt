@@ -21,6 +21,8 @@ Internal features:
  - cuDNN handles are now wrapped in RAII management classes
 
 I/O & data readers:
+ - Experimental data reader that generates graph random walks with
+   HavoqGT
 
 Build system:
  - Hydrogen v1.5.0

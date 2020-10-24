@@ -666,6 +666,14 @@ if (APPLE)
   endforeach ()
 endif ()
 
+# Fix linking error with CUDA when building LBANN as static library
+# Note: CMake usually defers linking to device symbols when building
+# static libraries. However, the Catch2 executables don't correctly
+# link to CUDA objects, leading to linking errors.
+if (LBANN_HAS_CUDA AND NOT BUILD_SHARED_LIBS)
+  set_property(TARGET lbann PROPERTY CUDA_RESOLVE_DEVICE_SYMBOLS ON)
+endif ()
+
 # Clean things up
 include(LBANNDebugUtilities)
 lbann_remove_default_include_paths_from_all_subtargets(lbann)

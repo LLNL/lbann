@@ -92,6 +92,7 @@ message Reader {
   //------------- end of only for sample lists ------------------
 
   PythonDataReader python = 501;
+  Node2VecDataReader node2vec = 502;
 
   repeated Transform transforms = 600;  // Ordered list of transforms to apply.
 
@@ -111,6 +112,15 @@ message PythonDataReader {
   string sample_function = 3;       // Function that gets data sample
   string num_samples_function = 4;  // Function that gets number of data samples
   string sample_dims_function = 5;  // Function that gets dimensions of data sample
+}
+
+message Node2VecDataReader {
+  string graph_file = 1;
+  uint64 epoch_size = 2;
+  uint64 walk_length = 3;
+  double return_param = 4;
+  double inout_param = 5;
+  uint64 num_negative_samples = 6;
 }
 
 message DataSetMetaData {

@@ -4,51 +4,71 @@ SNAP is the Stanford Network Analysis Platform. See
 https://snap.stanford.edu.
 
 """
+import gzip
 import os
 import os.path
-import urllib.request
-import gzip
 import subprocess
+import urllib.request
+import numpy as np
 
 # Root directory for LBANN graph application
 _root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
 
-def download_graph(name='ego-Facebook',
-                   graph_file=None):
+def download_graph(name='youtube',
+                   graph_file=None,
+                   reorder_indices=True):
     """Download graph edgelist file from SNAP website.
+
+    Returns immediately if graph has already been downloaded.
 
     Args:
         name (str): Name of graph.
         graph_file (str, optional): File where uncompressed edge list
-            will be saved (default: in 'data' directory).
+            will be saved (default: in 'data/graphs' directory).
 
     Returns:
         str: Uncompressed edge list file.
 
     """
 
-    # Graphs from SNAP
+    # Return immediately if graph is already downloaded
+    if not graph_file:
+        graph_file = os.path.join(_root_dir, 'data', 'graphs', name, 'graph.txt')
+    if os.path.exists(graph_file):
+        return graph_file
+    graph_file = os.path.realpath(graph_file)
+
+    # Graphs URLs
     download_urls = {
-        'ego-Facebook': 'http://snap.stanford.edu/data/facebook_combined.txt.gz',
+        'facebook': 'http://snap.stanford.edu/data/facebook_combined.txt.gz',
+        'youtube': 'https://snap.stanford.edu/data/bigdata/communities/com-youtube.ungraph.txt.gz',
+        'friendster': 'https://snap.stanford.edu/data/bigdata/communities/com-friendster.ungraph.txt.gz',
     }
 
     # Paths
-    if not graph_file:
-        graph_file = os.path.join(_root_dir, 'data', name, 'graph.txt')
     data_dir = os.path.dirname(graph_file)
     if not os.path.isdir(data_dir):
         os.makedirs(data_dir)
     data_dir = os.path.realpath(data_dir)
-    graph_file = os.path.realpath(graph_file)
     compressed_file = graph_file + '.gz'
 
     # Download and uncompress graph file
     urllib.request.urlretrieve(download_urls[name],
                                filename=compressed_file)
-    with gzip.open(compressed_file, 'rb') as in_file:
-        with open(graph_file, 'wb') as out_file:
-            out_file.write(in_file.read())
+    if reorder_indices:
+        edges = np.loadtxt(compressed_file, dtype=np.uint64)
+        index_map = {}
+        for v in np.nditer(edges):
+            v = v[()]
+            if v not in index_map:
+                index_map[v] = np.uint64(len(index_map))
+        edges = np.vectorize(index_map.get)(edges)
+        np.savetxt(graph_file, edges, fmt='%u', delimiter='\t')
+    else:
+        with gzip.open(compressed_file, 'rb') as in_file:
+            with open(graph_file, 'wb') as out_file:
+                out_file.write(in_file.read())
 
     return graph_file
 

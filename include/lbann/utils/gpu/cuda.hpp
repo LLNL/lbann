@@ -168,6 +168,8 @@ template <typename T> __device__ __forceinline__ T tanh(const T& x);
 template <typename T> __device__ __forceinline__ T acosh(const T& x);
 template <typename T> __device__ __forceinline__ T asinh(const T& x);
 template <typename T> __device__ __forceinline__ T atanh(const T& x);
+template <typename T> __device__ __forceinline__ T erf(const T& x);
+template <typename T> __device__ __forceinline__ T erfinv(const T& x);
 template <typename T> __device__ __forceinline__ bool isfinite(const T& x);
 template <typename T> __device__ __forceinline__ bool isinf(const T& x);
 template <typename T> __device__ __forceinline__ bool isnan(const T& x);

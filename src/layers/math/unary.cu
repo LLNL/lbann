@@ -369,6 +369,31 @@ struct atanh_op {
   }
 };
 
+/** Error function operator. */
+template <typename TensorDataType>
+struct erf_op {
+  inline __device__ TensorDataType operator()(const TensorDataType& x) const {
+    return cuda::erf(x);
+  }
+  inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
+    const TensorDataType two_rsqrt_pi(1.12837916709551257389);
+    return dy * two_rsqrt_pi * cuda::exp(-x*x);
+  }
+};
+
+/** Inverse error function operator. */
+template <typename TensorDataType>
+struct erfinv_op {
+  inline __device__ TensorDataType operator()(const TensorDataType& x) const {
+    return cuda::erfinv(x);
+  }
+  inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
+    const TensorDataType half_sqrt_pi(0.88622692545275801364);
+    const auto& y = cuda::erfinv(x);
+    return dy * half_sqrt_pi * cuda::exp(y*y);
+  }
+};
+
 } // namespace
 
 // Template instantiation
@@ -415,6 +440,8 @@ DEFINE_COMPUTE_OPS(tanh_layer, tanh_op)
 DEFINE_COMPUTE_OPS(acosh_layer, acosh_op)
 DEFINE_COMPUTE_OPS(asinh_layer, asinh_op)
 DEFINE_COMPUTE_OPS(atanh_layer, atanh_op)
+DEFINE_COMPUTE_OPS(erf_layer, erf_op)
+DEFINE_COMPUTE_OPS(erfinv_layer, erfinv_op)
 
 #define PROTO(T) \
   UNARY_ETI_INST_MACRO_DEV_DT(logical_not_layer, T, El::Device::GPU); \
@@ -444,7 +471,9 @@ DEFINE_COMPUTE_OPS(atanh_layer, atanh_op)
   UNARY_ETI_INST_MACRO_DEV_DT(tanh_layer, T, El::Device::GPU);        \
   UNARY_ETI_INST_MACRO_DEV_DT(acosh_layer, T, El::Device::GPU);       \
   UNARY_ETI_INST_MACRO_DEV_DT(asinh_layer, T, El::Device::GPU);       \
-  UNARY_ETI_INST_MACRO_DEV_DT(atanh_layer, T, El::Device::GPU)
+  UNARY_ETI_INST_MACRO_DEV_DT(atanh_layer, T, El::Device::GPU);       \
+  UNARY_ETI_INST_MACRO_DEV_DT(erf_layer, T, El::Device::GPU);         \
+  UNARY_ETI_INST_MACRO_DEV_DT(erfinv_layer, T, El::Device::GPU)
 
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
