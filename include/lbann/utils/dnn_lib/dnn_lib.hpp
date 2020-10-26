@@ -426,14 +426,14 @@ public:
     std::vector<int> const& stride,
     std::vector<int> const& dilation,
     dnnDataType_t data_type,
-    dnnConvolutionMode_t mode = CUDNN_CROSS_CORRELATION);
+    dnnConvolutionMode_t mode = DNN_CROSS_CORRELATION);
   void set(
     size_t array_dim,
     int const pad[],
     int const stride[],
     int const dilation[],
     dnnDataType_t data_type,
-    dnnConvolutionMode_t mode = CUDNN_CROSS_CORRELATION);
+    dnnConvolutionMode_t mode = DNN_CROSS_CORRELATION);
 
   /** @brief Set the math mode for this descriptor. */
   void set_math_mode(dnnMathType_t math_type);

@@ -34,11 +34,33 @@
 namespace lbann
 {
 
+/** @brief Which pooling mode to use. */
+enum class pooling_mode
+{
+  MAX,
+  AVERAGE_COUNT_INCLUDE_PADDING,
+  AVERAGE_COUNT_EXCLUDE_PADDING,
+  MAX_DETERMINISTIC,
+}; // enum class pooling_mode
+
 #ifdef LBANN_HAS_CUDNN
 namespace dnn_lib
 {
 
 using namespace cudnn;
+
+inline cudnnPoolingMode_t to_cudnn(pooling_mode m)
+{
+  switch(m)
+  {
+  case pooling_mode::MAX: return CUDNN_POOLING_MAX;
+  case pooling_mode::AVERAGE_COUNT_INCLUDE_PADDING: return CUDNN_POOLING_AVERAGE_COUNT_INCLUDE_PADDING;
+  case pooling_mode::AVERAGE_COUNT_EXCLUDE_PADDING: return CUDNN_POOLING_AVERAGE_COUNT_EXCLUDE_PADDING;
+  case pooling_mode::MAX_DETERMINISTIC: return CUDNN_POOLING_MAX_DETERMINISTIC;
+  default:
+    LBANN_ERROR("Invalid pooling mode requested");
+  }
+}
 
 template <typename TensorDataType, typename ScalarParameterType>
 void pooling_forward(PoolingDescriptor const& poolingDesc,

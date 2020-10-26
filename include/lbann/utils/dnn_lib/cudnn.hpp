@@ -104,6 +104,9 @@ using dnnConvolutionFwdAlgo_t = cudnnConvolutionFwdAlgo_t;
 using dnnConvolutionBwdDataAlgo_t = cudnnConvolutionBwdDataAlgo_t;
 using dnnConvolutionBwdFilterAlgo_t = cudnnConvolutionBwdFilterAlgo_t;
 
+extern dnnConvolutionMode_t DNN_CROSS_CORRELATION;
+//dnnConvolutionMode_t DNN_CROSS_CORRELATION = CUDNN_CROSS_CORRELATION;
+
 } // namespace cudnn
 } // namespace lbann
 
