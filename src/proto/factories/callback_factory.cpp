@@ -66,7 +66,7 @@
 #include "lbann/callbacks/timer.hpp"
 #include "lbann/callbacks/variable_minibatch.hpp"
 #include "lbann/callbacks/set_weights_value.hpp"
-#include "lbann/callbacks/kfac.hpp"
+#include "lbann/callbacks/kfac/kfac.hpp"
 
 #include "lbann/proto/factories.hpp"
 #include "lbann/proto/helpers.hpp"

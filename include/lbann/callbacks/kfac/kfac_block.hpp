@@ -29,7 +29,7 @@
 #ifndef LBANN_CALLBACKS_CALLBACK_KFAC_BLOCK_HPP_INCLUDED
 #define LBANN_CALLBACKS_CALLBACK_KFAC_BLOCK_HPP_INCLUDED
 
-#include "lbann/callbacks/kfac.hpp"
+#include "lbann/callbacks/kfac/kfac.hpp"
 
 namespace lbann {
 namespace callback {

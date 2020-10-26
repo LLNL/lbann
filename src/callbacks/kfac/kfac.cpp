@@ -28,7 +28,7 @@
 #include <iomanip>
 #include <sstream>
 
-#include "lbann/callbacks/kfac.hpp"
+#include "lbann/callbacks/kfac/kfac.hpp"
 #include "lbann/callbacks/kfac/kfac_util.hpp"
 #include "lbann/callbacks/kfac/kfac_block_fc_conv.hpp"
 #include "lbann/callbacks/kfac/kfac_block_bn.hpp"

@@ -30,7 +30,7 @@
 #define LBANN_CALLBACKS_CALLBACK_KFAC_UTIL_HPP_INCLUDED
 
 #include "lbann/base.hpp"
-#include "lbann/callbacks/kfac.hpp"
+#include "lbann/callbacks/kfac/kfac.hpp"
 
 namespace lbann {
 namespace callback {
