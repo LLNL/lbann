@@ -29,7 +29,7 @@ class Sim_GCNN_Dataset(object):
         number_edges = int((self.num_nodes*(self.num_nodes-1))/2)
         node_feat_mat = self.num_nodes * self.node_features
         edge_feat_mat = number_edges * self.edge_features
-        edge_adj = self.num_nodes ** 3
+        edge_adj = self.num_nodes * (self.num_nodes ** 2)
         covalent_mat = self.num_nodes ** 2
         non_covalent_mat = self.num_nodes ** 2
         ligand_only_mat = self.num_nodes ** 2
@@ -37,7 +37,7 @@ class Sim_GCNN_Dataset(object):
             + non_covalent_mat + ligand_only_mat + 1
 
 
-dataset = Sim_GCNN_Dataset(100, 50, 19, 1)
+dataset = Sim_GCNN_Dataset(100, 100, 19, 1)
 
 
 def get_train(index):
@@ -50,3 +50,19 @@ def num_train_samples():
 
 def sample_dims():
     return (dataset.sample_size(),)
+
+if __name__ == '__main__':
+    import sys
+    dataset = Sim_GCNN_Dataset(1,4,2,1)
+    print(len(dataset[0]))
+    # print("10: ",sys.getsizeof(dataset[0]) / (1024**2))
+    # dataset = Sim_GCNN_Dataset(1,20,19,1)
+    # print("20: ",sys.getsizeof(dataset[0]) / (1024**2))
+    # dataset = Sim_GCNN_Dataset(1,30,19,1)
+    # print("30: ",sys.getsizeof(dataset[0]) / (1024**2))
+    # dataset = Sim_GCNN_Dataset(1,50,19,1)
+    # print("50: ",sys.getsizeof(dataset[0]) / (1024**2))
+    # dataset = Sim_GCNN_Dataset(1,75,19,1)
+    # print("75: ",sys.getsizeof(dataset[0]) / (1024**2))
+    # dataset = Sim_GCNN_Dataset(1,100,19,1)
+    # print("100: ",sys.getsizeof(dataset[0]) / (1024**2))

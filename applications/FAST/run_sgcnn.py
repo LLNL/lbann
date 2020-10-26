@@ -48,11 +48,14 @@ def make_data_reader(module_name='SIM_SGCNN_Dataset',
 
 
 def make_model(num_epochs):
-    sgcnn_model = SGCNN()
+    num_nodes = 100
+    sgcnn_model = SGCNN(
+                  num_nodes=num_nodes)
 
     input_ = lbann.Input(target_mode='N/A')
     X, cov_adj, noncov_adj, edge_ft, edge_adj, ligand_only, target = \
-        slice_graph_data(input_)
+        slice_graph_data(input_,
+                         num_nodes=num_nodes)
 
     predicted = sgcnn_model(X,
                             cov_adj,
@@ -71,7 +74,7 @@ def make_model(num_epochs):
                                           print_global_stat_only=False)
     gpu_usage = lbann.CallbackGPUMemoryUsage()
     timer = lbann.CallbackTimer()
-    callbacks = [print_model, training_output, gpu_usage, timer]
+    callbacks = [training_output, gpu_usage, timer]
     model = lbann.Model(num_epochs,
                         layers=layers,
                         objective_function=loss,

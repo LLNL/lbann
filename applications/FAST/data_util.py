@@ -1,20 +1,20 @@
 import lbann
-from lbann.utils import str_list
-
+from lbann.util import str_list
+from lbann.modules import GraphVertexData
 
 def slice_graph_data(input_layer,
-                     num_nodes=50,
+                     num_nodes=4,
                      node_features=19,
                      edge_features=1):
     # Slice points for node features
     node_fts = [i * node_features for i in range(num_nodes)]
-    node_ft_end = node_fts[-1]
+    node_ft_end = node_fts[-1] + node_features
     # Slice points for covalent adj matrix
     cov_adj_mat_end = node_ft_end + (num_nodes ** 2)
     cov_adj_mat = [node_ft_end, cov_adj_mat_end]
     # Slice points for noncovalent adj matrix
     noncov_adj_mat_end = cov_adj_mat_end + (num_nodes ** 2)
-    noncov_adj_mat = [cov_adj_mat_end, noncov_adj_mat_end]
+    noncov_adj_mat = [noncov_adj_mat_end]
     # Slice points for edge features
     num_edges = int(num_nodes * (num_nodes - 1) / 2)
     edge_fts = \
@@ -23,23 +23,21 @@ def slice_graph_data(input_layer,
     # Slice points for edge_adjacencies
     # This should be num_nodes * (num_nodes ** 2)
     prev_end = edge_ft_end
-    edge_adj_list = []
-    for node in range(num_nodes):
-        edge_adj = [(prev_end+(i+1)*num_nodes) for i in range(num_nodes)]
-        prev_end = edge_adj[-1]
-        edge_adj_list.extend(edge_adj)
+    edge_adj = [(prev_end+(i+1)*(num_nodes**2)) for i in range(num_nodes)]
+    prev_end = edge_adj[-1]
     # Slice points for ligand_only mat
-    edge_adj_end = edge_adj_list[-1]
+    edge_adj_end = edge_adj[-1]
     ligand_only_end = edge_adj_end + (num_nodes ** 2)
-    ligand_only = [edge_adj_end, ligand_only_end]
+    ligand_only = [ligand_only_end]
     # Slice for binding energy target
     target_end = ligand_only_end + 1
-    target = [ligand_only, target_end]
+    target = [target_end]
     slice_points = []
     slice_points.extend(node_fts)
     slice_points.extend(cov_adj_mat)
     slice_points.extend(noncov_adj_mat)
     slice_points.extend(edge_fts)
+    slice_points.extend(edge_adj)
     slice_points.extend(ligand_only)
     slice_points.extend(target)
 
@@ -62,7 +60,7 @@ def slice_graph_data(input_layer,
         [lbann.Identity(sliced_input, name="Adj_Mat_{}".format(i))
          for i in range(num_nodes)]
 
-    ligand_ID = lbann.Identiy(sliced_input, name="Ligand_only_nodes")
+    ligand_ID = lbann.Identity(sliced_input, name="Ligand_only_nodes")
 
     target = lbann.Identity(sliced_input, name="Target")
 
@@ -82,11 +80,12 @@ def slice_graph_data(input_layer,
         [lbann.Reshape(i, dims=str_list([num_nodes, num_nodes]))
          for i in edge_adj]
     ligand_only = \
-        lbann.Reshape(ligand_only, dims=str_list([num_nodes, num_nodes]))
+        lbann.Reshape(ligand_ID, dims=str_list([num_nodes, num_nodes]))
     target = lbann.Reshape(target, dims="1")
 
+    node_fts = GraphVertexData(node_fts, node_features)
     return node_fts, cov_adj_mat, noncov_adj_mat, \
-        edge_features, edge_adj, ligand_ID, target
+        edge_features, edge_adj, ligand_only, target
 
 
 def slice_3D_data(data,
