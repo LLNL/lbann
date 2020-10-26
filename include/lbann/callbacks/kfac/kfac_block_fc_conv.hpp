@@ -45,20 +45,39 @@ class kfac_block_fc_conv: public kfac_block {
    */
   kfac_block_fc_conv(Layer *layer,
                      kfac *callback,
-                     size_t layer_id,
-                     size_t inverse_proc_rank,
-                     bool is_conv,
-                     size_t conv_input_spatial_prod,
-                     size_t conv_output_spatial_prod,
-                     const std::vector<int>& conv_input_spatial_dims,
-                     const std::vector<int>& conv_output_spatial_dims)
+                     const size_t layer_id,
+                     const size_t inverse_proc_rank,
+                     const bool is_conv)
       : kfac_block(layer, callback, layer_id, inverse_proc_rank),
-        m_is_conv(is_conv),
-        m_conv_input_spatial_prod(conv_input_spatial_prod),
-        m_conv_output_spatial_prod(conv_output_spatial_prod),
-        m_conv_input_spatial_dims(conv_input_spatial_dims),
-        m_conv_output_spatial_dims(conv_output_spatial_dims) {
+        m_is_conv(is_conv) {
+
+    if(m_is_conv) {
+      m_conv_input_spatial_prod = 1;
+      const auto input_dims = layer->get_input_dims();
+      for(auto i = input_dims.begin()+1; i != input_dims.end(); i++) {
+        m_conv_input_spatial_prod *= *i;
+        m_conv_input_spatial_dims.push_back(*i);
+      }
+
+      m_conv_output_spatial_prod = 1;
+      const auto output_dims = layer->get_output_dims();
+      for(auto i = output_dims.begin()+1; i != output_dims.end(); i++) {
+        m_conv_output_spatial_prod *= *i;
+        m_conv_output_spatial_dims.push_back(*i);
+      }
+
+      if(input_dims.size() != 3 && input_dims.size() != 4) {
+        std::stringstream err;
+        err << "The K-FAC callback only supports 2D or 3D tensors."
+            << " layer: " << layer->get_name()
+            << ", input_dims: ";
+        for(auto i = input_dims.begin(); i != input_dims.end(); i++)
+          err << (std::distance(input_dims.begin(), i) > 0 ? "," : "") << *i;
+        LBANN_ERROR(err.str());
+      }
+    }
   }
+
   kfac_block_fc_conv(const kfac_block_fc_conv&) = default;
   kfac_block_fc_conv& operator=(const kfac_block_fc_conv&) = default;
 
@@ -158,8 +177,8 @@ class kfac_block_fc_conv: public kfac_block {
 
   /** @brief Information to perform its computation. **/
   const bool m_is_conv;
-  const size_t m_conv_input_spatial_prod, m_conv_output_spatial_prod;
-  const std::vector<int> m_conv_input_spatial_dims, m_conv_output_spatial_dims;
+  size_t m_conv_input_spatial_prod, m_conv_output_spatial_prod;
+  std::vector<int> m_conv_input_spatial_dims, m_conv_output_spatial_dims;
 
 #ifdef LBANN_HAS_GPU
 

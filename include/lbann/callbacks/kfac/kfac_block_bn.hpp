@@ -30,6 +30,8 @@
 #define LBANN_CALLBACKS_CALLBACK_KFAC_BLOCK_BN_HPP_INCLUDED
 
 #include "lbann/callbacks/kfac/kfac_block.hpp"
+#include "lbann/layers/learning/fully_connected.hpp"
+#include "lbann/layers/learning/convolution.hpp"
 
 namespace lbann {
 namespace callback {
@@ -44,12 +46,40 @@ class kfac_block_bn: public kfac_block {
   kfac_block_bn(Layer *layer,
                 kfac *callback,
                 size_t layer_id,
-                size_t inverse_proc_rank,
-                bool is_after_conv,
-                size_t num_channels, size_t spatial_prod)
-      : kfac_block(layer, callback, layer_id, inverse_proc_rank),
-        m_is_after_conv(is_after_conv),
-        m_num_channels(num_channels), m_spatial_prod(spatial_prod) {
+                size_t inverse_proc_rank)
+      : kfac_block(layer, callback, layer_id, inverse_proc_rank) {
+
+    const auto parent = layer->get_parent_layers()[0];
+    const bool is_after_fc =
+        (dynamic_cast<const fully_connected_layer<DataType,
+         data_layout::DATA_PARALLEL, El::Device::GPU>*>(parent) != nullptr);
+    m_is_after_conv =
+        (dynamic_cast<const convolution_layer<DataType,
+         data_layout::DATA_PARALLEL, El::Device::GPU>*>(parent) != nullptr);
+    if(!is_after_fc && !m_is_after_conv) {
+      std::stringstream err;
+      err << "The K-FAC callback only supports batch-normalization layers after "
+          << "fully-connected layers or convolutional layers."
+          << " layer: " << layer->get_name()
+          << " parent type: " << parent->get_type();
+      LBANN_ERROR(err.str());
+    }
+
+    if(is_after_fc) {
+      const auto& dtl_parent = dynamic_cast<const data_type_layer<DataType>&>(*parent);
+      const El::AbstractMatrix<DataType>& local_activations = dtl_parent.get_local_activations();
+      m_num_channels = local_activations.Height();
+      m_spatial_prod = 1;
+      assert(m_num_channels == (size_t) local_errors.Height());
+    } else {
+      const auto input_dims = layer->get_input_dims();
+      m_num_channels = input_dims[0];
+      m_spatial_prod = 1;
+      // std::accumulate might overflow for large 3D layers
+      for(auto i = input_dims.begin()+1; i != input_dims.end(); i++)
+        m_spatial_prod *= *i;
+    }
+
   }
   kfac_block_bn(const kfac_block_bn&) = default;
   kfac_block_bn& operator=(const kfac_block_bn&) = default;
@@ -128,8 +158,8 @@ class kfac_block_bn: public kfac_block {
 #endif // LBANN_HAS_GPU
 
   /** @brief Information to perform its computation. **/
-  const bool m_is_after_conv;
-  const size_t m_num_channels, m_spatial_prod;
+  bool m_is_after_conv;
+  size_t m_num_channels, m_spatial_prod;
 
 #ifdef LBANN_HAS_GPU
 

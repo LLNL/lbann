@@ -173,77 +173,11 @@ void kfac::on_backward_prop_end(model *m) {
       }
 
       kfac_block* block;
-      if(is_fc) {
+      if(is_fc || is_conv) {
         block = new kfac_block_fc_conv(
-            l, this, layer_id, proc_rank,
-            false, 0, 0, {}, {});
-
-      } else if(is_conv) {
-        size_t spatial_input_prod = 1, spatial_output_prod = 1;
-        // std::accumulate might overflow on huge 3D layers
-        std::vector<int> input_spatial_dims, output_spatial_dims;
-        const auto input_dims = l->get_input_dims();
-        for(auto i = input_dims.begin()+1; i != input_dims.end(); i++) {
-          spatial_input_prod *= *i;
-          input_spatial_dims.push_back(*i);
-        }
-        const auto output_dims = l->get_output_dims();
-        for(auto i = output_dims.begin()+1; i != output_dims.end(); i++) {
-          spatial_output_prod *= *i;
-          output_spatial_dims.push_back(*i);
-        }
-
-        if(input_dims.size() != 3 && input_dims.size() != 4) {
-          std::stringstream err;
-          err << "The K-FAC callback only supports 2D or 3D tensors."
-              << " layer: " << l->get_name()
-              << ", input_dims: ";
-          for(auto i = input_dims.begin(); i != input_dims.end(); i++)
-            err << (std::distance(input_dims.begin(), i) > 0 ? "," : "") << *i;
-          LBANN_ERROR(err.str());
-        }
-
-        block = new kfac_block_fc_conv(
-            l, this, layer_id, proc_rank,
-            true,
-            spatial_input_prod, spatial_output_prod,
-            input_spatial_dims, output_spatial_dims);
-
+            l, this, layer_id, proc_rank, is_conv);
       } else if(is_bn) {
-        const bool is_bn_after_fc =
-            (dynamic_cast<const fully_connected_layer<DataType,
-             data_layout::DATA_PARALLEL, El::Device::GPU>*>(parent) != nullptr);
-        const bool is_bn_after_conv =
-            (dynamic_cast<const convolution_layer<DataType,
-             data_layout::DATA_PARALLEL, El::Device::GPU>*>(parent) != nullptr);
-        if(!is_bn_after_fc && !is_bn_after_conv) {
-          std::stringstream err;
-          err << "The K-FAC callback only supports batch-normalization layers after "
-              << "fully-connected layers or convolutional layers."
-              << " layer: " << l->get_name()
-              << " parent type: " << parent->get_type();
-          LBANN_ERROR(err.str());
-        }
-
-        size_t num_channels;
-        size_t spatial_prod;
-        if(is_bn_after_fc) {
-          num_channels = local_activations.Height();
-          spatial_prod = 1;
-          assert(num_channels == (size_t) local_errors.Height());
-        } else {
-          const auto input_dims = l->get_input_dims();
-          num_channels = input_dims[0];
-          spatial_prod = 1;
-          // std::accumulate might overflow for large 3D layers
-          for(auto i = input_dims.begin()+1; i != input_dims.end(); i++)
-            spatial_prod *= *i;
-        }
-
-        block = new kfac_block_bn(
-            l, this, layer_id, proc_rank,
-            is_bn_after_conv,
-            num_channels, spatial_prod);
+        block = new kfac_block_bn(l, this, layer_id, proc_rank);
       }
 
       m_blocks.push_back(std::shared_ptr<kfac_block>(block));
