@@ -209,7 +209,7 @@ void kfac::on_backward_prop_end(model *m) {
         for(auto L : block->get_local_kronecker_buffers()) {
           const size_t rank = block->get_inverse_proc_rank();
           buffers.emplace_back(rank, L);
-          assert(L.Width() == 1);
+          assert(L->Width() == 1);
           global_buffer_size += L->Height();
         }
 
@@ -256,7 +256,7 @@ void kfac::on_backward_prop_end(model *m) {
       for(auto L : block->get_preconditioned_grad_buffers()) {
         const size_t rank = block->get_inverse_proc_rank();
         buffers.emplace_back(rank, L);
-        assert(L.Width() == 1);
+        assert(L->Width() == 1);
         if(rank == (size_t) comm->get_rank_in_trainer())
           local_buffer_size += L->Height();
         global_buffer_size += L->Height();

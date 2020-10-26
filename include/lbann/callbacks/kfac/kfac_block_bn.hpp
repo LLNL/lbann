@@ -70,7 +70,6 @@ class kfac_block_bn: public kfac_block {
       const El::AbstractMatrix<DataType>& local_activations = dtl_parent.get_local_activations();
       m_num_channels = local_activations.Height();
       m_spatial_prod = 1;
-      assert(m_num_channels == (size_t) local_errors.Height());
     } else {
       const auto input_dims = layer->get_input_dims();
       m_num_channels = input_dims[0];
