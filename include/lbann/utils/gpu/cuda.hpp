@@ -180,6 +180,8 @@ DECLARE_UNARY_MATH_FUNC(tanh);
 DECLARE_UNARY_MATH_FUNC(acosh);
 DECLARE_UNARY_MATH_FUNC(asinh);
 DECLARE_UNARY_MATH_FUNC(atanh);
+DECLARE_UNARY_MATH_FUNC(erf);
+DECLARE_UNARY_MATH_FUNC(erfinv);
 template <typename T> __device__ __forceinline__ bool isfinite(const T& x);
 template <typename T> __device__ __forceinline__ bool isinf(const T& x);
 template <typename T> __device__ __forceinline__ bool isnan(const T& x);
