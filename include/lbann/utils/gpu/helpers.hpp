@@ -38,9 +38,10 @@
 
 #include "cuda.hpp"
 namespace lbann {
-namespace gpu_lib = ::lbann::cuda;
+namespace gpu_lib {
+using namespace cuda;
+}// namespace gpu_lib
 }// namespace lbann
-
 #elif defined LBANN_HAS_ROCM
 
 // For now, this is placeholder.
@@ -48,6 +49,11 @@ namespace gpu_lib = ::lbann::cuda;
 namespace lbann {
 namespace gpu_lib = ::lbann::hip;
 }// namespace lbann
-
 #endif // LBANN_HAS_CUDA
+
+// Include gpu arch-independent stuff
+#if defined LBANN_HAS_GPU
+#include "gpu_lib.hpp"
+#endif // LBANN_HAS_GPU
+
 #endif // LBANN_UTILS_GPU_HELPERS_HPP_INCLUDED
