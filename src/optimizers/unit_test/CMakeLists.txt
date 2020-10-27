@@ -1,4 +1,5 @@
 set_full_path(THIS_DIR_SEQ_CATCH2_TEST_FILES
+  test_adam.cpp
   test_sgd.cpp
   )
 

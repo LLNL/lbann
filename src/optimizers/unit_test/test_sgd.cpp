@@ -46,7 +46,7 @@ struct SGDBuilder
       /*momentum=*/TensorDataType(0.0f),
       /*nesterov=*/false);
   }
-};// struct OptBuilder<lbann::sgd<TensorDataType>>
+};// struct SGDBuilder
 
 // Now that we can build optimizer objects, we need a way to compare
 // two such objects. For this example, we just compare the metadata,
@@ -103,7 +103,7 @@ struct TestSGD : TestOptimizer<lbann::sgd<DataType>,
 // has decided upon.
 
 TEMPLATE_PRODUCT_TEST_CASE(
-  "Optimizer serialization",
+  "SGD Optimizer serialization",
   "[optimizer][serialize]",
   TestSGD,
   TEMPLATE_ARG_LIST)
