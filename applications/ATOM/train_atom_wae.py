@@ -59,9 +59,9 @@ def construct_lc_launcher_args():
     parser.add_argument("--dump-outputs-dir", type=str, default=None)
     parser.add_argument("--dump-outputs-interval", type=int, default=10)
     parser.add_argument("--dump-model-dir", type=str, default=None)
-    parser.add_argument("--num_samples", type=int, default=None)
-    parser.add_argument("--num_train_samples", type=int, default=None)
-    parser.add_argument("--num_test_samples", type=int, default=None)
+    parser.add_argument("--num_samples", type=int, default=10000)
+    parser.add_argument("--num_train_samples", type=int, default=10000)
+    parser.add_argument("--num_test_samples", type=int, default=1000)
     parser.add_argument("--num-io-threads", type=int, default=11)
     parser.add_argument("--vocab", default=None)
     parser.add_argument("--delimiter", default="c")
@@ -117,6 +117,7 @@ def construct_model(run_args):
     assert dictionary_size is not None
 
     save_output = True if run_args.dump_outputs_dir else False
+    save_output = False
 
     print("save output? ", save_output, "out dir ",  run_args.dump_outputs_dir)
     z = lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims="128")
@@ -310,11 +311,11 @@ def main():
         partition=run_args.partition,
         scheduler=run_args.scheduler,
         account=run_args.account,
-        reservation=run_args.reservation,
+        #reservation=run_args.reservation,
         time_limit=run_args.time_limit,
         nodes=run_args.nodes,
         procs_per_node=ppn,
-        batch_job = True,
+        #batch_job = True,
         #setup_only = True,
         job_name=run_args.job_name,
         experiment_dir=experiment_dir,
