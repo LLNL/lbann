@@ -26,6 +26,7 @@
 #ifndef LBANN_UTILS_DNN_LIB_CUDNN_CONVOLUTION_HPP_
 #define LBANN_UTILS_DNN_LIB_CUDNN_CONVOLUTION_HPP_
 
+#include "lbann/utils/ml_enums.hpp"
 #include "lbann/utils/dnn_lib/helpers.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
 
@@ -33,41 +34,6 @@
 
 namespace lbann
 {
-
-/** @brief Which forward convolution algorithm to use. */
-enum class fwd_conv_alg
-{
-  IMPLICIT_GEMM,
-  IMPLICIT_PRECOMP_GEMM,
-  GEMM,
-  DIRECT,
-  FFT,
-  FFT_TILING,
-  WINOGRAD,
-  WINOGRAD_NONFUSED,
-};// enum class fwd_conv_alg
-
-/** @brief Which backward convolution algorithm to use. */
-enum class bwd_data_conv_alg
-{
-  CUDNN_ALGO_0,
-  CUDNN_ALGO_1,
-  FFT,
-  FFT_TILING,
-  WINOGRAD,
-  WINOGRAD_NONFUSED,
-};// enum class bwd_conv_alg
-
-/** @brief Which backward convolution filter algorithm to use. */
-enum class bwd_filter_conv_alg
-{
-  CUDNN_ALGO_0,
-  CUDNN_ALGO_1,
-  FFT,
-  CUDNN_ALGO_3,
-  WINOGRAD_NONFUSED,
-  FFT_TILING,
-};// enum class bwd_conv_filter
 
 #ifdef LBANN_HAS_CUDNN
 namespace dnn_lib

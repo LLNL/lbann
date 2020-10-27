@@ -26,6 +26,7 @@
 #ifndef LBANN_UTILS_DNN_LIB_CUDNN_DROPOUT_HPP_
 #define LBANN_UTILS_DNN_LIB_CUDNN_DROPOUT_HPP_
 
+#include "lbann/utils/ml_enums.hpp"
 #include "lbann/utils/dnn_lib/helpers.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
 

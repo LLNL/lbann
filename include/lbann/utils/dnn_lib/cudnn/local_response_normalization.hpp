@@ -26,6 +26,7 @@
 #ifndef LBANN_UTILS_DNN_LIB_CUDNN_LRN_HPP_
 #define LBANN_UTILS_DNN_LIB_CUDNN_LRN_HPP_
 
+#include "lbann/utils/ml_enums.hpp"
 #include "lbann/utils/dnn_lib/helpers.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
 
@@ -33,14 +34,6 @@
 
 namespace lbann
 {
-
-/** @brief Internal LBANN names for supported LRN layer modes.  */
-// Only one implemented in cudnn currently:
-// https://docs.nvidia.com/deeplearning/cudnn/api/index.html#cudnnLRNCrossChannelForward
-enum class lrn_mode
-{
-  CROSS_CHANNEL_DIM1,
-};// enum class lrn_mode
 
 #ifdef LBANN_HAS_CUDNN
 namespace dnn_lib

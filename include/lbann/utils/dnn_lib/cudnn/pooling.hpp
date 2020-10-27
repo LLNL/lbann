@@ -26,6 +26,7 @@
 #ifndef LBANN_UTILS_DNN_LIB_CUDNN_POOLING_HPP_
 #define LBANN_UTILS_DNN_LIB_CUDNN_POOLING_HPP_
 
+#include "lbann/utils/ml_enums.hpp"
 #include "lbann/utils/dnn_lib/helpers.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
 
@@ -33,15 +34,6 @@
 
 namespace lbann
 {
-
-/** @brief Which pooling mode to use. */
-enum class pooling_mode
-{
-  MAX,
-  AVERAGE_COUNT_INCLUDE_PADDING,
-  AVERAGE_COUNT_EXCLUDE_PADDING,
-  MAX_DETERMINISTIC,
-}; // enum class pooling_mode
 
 #ifdef LBANN_HAS_CUDNN
 namespace dnn_lib

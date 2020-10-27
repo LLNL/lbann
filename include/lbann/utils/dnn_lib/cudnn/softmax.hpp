@@ -26,42 +26,13 @@
 #ifndef LBANN_UTILS_DNN_LIB_CUDNN_SOFTMAX_HPP_
 #define LBANN_UTILS_DNN_LIB_CUDNN_SOFTMAX_HPP_
 
+#include "lbann/utils/ml_enums.hpp"
 #include "lbann/utils/dnn_lib/helpers.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
 #include "utils.hpp"
 
 namespace lbann
 {
-/** @brief Which tensor dimensions to apply softmax over. */
-enum class softmax_mode
-{
-  INVALID,
-  /** @brief Sample-wise softmax.
-   *
-   *  Slice tensor along the sample dimension (assuming data in NCHW
-   *  format) and apply softmax independently to each slice (once per
-   *  sample).
-   */
-  INSTANCE,
-  /** @brief Position-wise softmax.
-   *
-   *  Split tensor along all but the channel dimension (assuming data
-   *  in NCHW format) and apply softmax independently to each piece
-   *  (once per spatial position per sample).
-   *
-   *  This is not to be confused with @c channelwise_softmax, which
-   *  slices along the sample and channel dimensions.
-   */
-  CHANNEL
-};// enum class softmax_mode
-
-/** @brief Internal LBANN names for supported softmax algorithms. */
-enum class softmax_alg
-{
-  FAST,
-  ACCURATE,
-  LOG,
-};// enum class softmax_alg
 
 #if defined LBANN_HAS_CUDNN
 namespace dnn_lib
