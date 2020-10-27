@@ -193,50 +193,46 @@ void kfac::on_backward_prop_end(model *m) {
 
   // Step 1: Ensure that each process has averaged Kronecker factors
   // for the model-parallel part.
-  {
-    const bool has_kronecker_inverse = m_blocks[0]->has_kronecker_inverse();
-    const bool is_update_required =
-        ((num_steps%m_update_interval_steps) == 0 || !has_kronecker_inverse);
-    if(is_update_required) {
-      for(auto& block : m_blocks)
-        block->compute_local_kronecker_factors(
-            comm, m_print_matrix, m_print_matrix_summary);
+  const bool is_kronecker_update_required =
+      ((num_steps%m_update_interval) == 0 || !m_has_kronecker_inverse);
+  if(is_kronecker_update_required) {
 
-      // List-up buffers to synchronize.
-      std::vector<std::pair<size_t, El::AbstractMatrix<DataType>*>> buffers;
-      size_t global_buffer_size = 0;
-      for(auto& block : m_blocks)
-        for(auto L : block->get_local_kronecker_buffers()) {
-          const size_t rank = block->get_inverse_proc_rank();
-          buffers.emplace_back(rank, L);
-          assert(L->Width() == 1);
-          global_buffer_size += L->Height();
-        }
+    for(auto& block : m_blocks)
+      block->compute_local_kronecker_factors(
+          comm, m_print_matrix, m_print_matrix_summary);
 
-      // Perform reduce-scatter.
-      El::Matrix<DataType, El::Device::GPU>& global_buffer =
-          get_workspace_matrix(
-              "reduce_scatter_send_buffer",
-              kfac_util::is_reduce_scatter_buffer_required(m_reduce_scatter_mode) ? global_buffer_size : 0,
-              1);
-      kfac_util::reduce_scatter_blocks(
-          buffers, global_buffer, comm, m_reduce_scatter_mode);
+    // List-up buffers to synchronize.
+    std::vector<std::pair<size_t, El::AbstractMatrix<DataType>*>> buffers;
+    size_t global_buffer_size = 0;
+    for(auto& block : m_blocks)
+      for(auto L : block->get_local_kronecker_buffers()) {
+        const size_t rank = block->get_inverse_proc_rank();
+        buffers.emplace_back(rank, L);
+        assert(L->Width() == 1);
+        global_buffer_size += L->Height();
+      }
 
-      for(auto& block : m_blocks)
-        block->update_kronecker_average(
-            comm,
-            m_kronecker_decay,
-            m_print_matrix, m_print_matrix_summary);
-    }
+    // Perform reduce-scatter.
+    El::Matrix<DataType, El::Device::GPU>& global_buffer =
+        get_workspace_matrix(
+            "reduce_scatter_send_buffer",
+            kfac_util::is_reduce_scatter_buffer_required(m_reduce_scatter_mode) ? global_buffer_size : 0,
+            1);
+    kfac_util::reduce_scatter_blocks(
+        buffers, global_buffer, comm, m_reduce_scatter_mode);
+
+    for(auto& block : m_blocks)
+      block->update_kronecker_average(
+          comm,
+          m_kronecker_decay,
+          m_print_matrix, m_print_matrix_summary);
   }
 
   // Step 2: Model-parallel inverse computation
   for(auto& block : m_blocks) {
-    const bool is_update_required =
-        ((num_steps%m_update_interval_steps) == 0 || !block->has_kronecker_inverse())
-        && (size_t) comm->get_rank_in_trainer() == block->get_inverse_proc_rank();
-    if(!is_update_required)
+    if(!is_kronecker_update_required || (size_t) comm->get_rank_in_trainer() != block->get_inverse_proc_rank())
       continue;
+
     // TODO: Add kfac_block::is_bn?
     const bool is_bn = dynamic_cast<kfac_block_bn*>(block.get()) != nullptr;
     block->update_kronecker_inverse(
@@ -246,6 +242,7 @@ void kfac::on_backward_prop_end(model *m) {
         m_print_matrix, m_print_matrix_summary,
         m_print_time);
   }
+  m_has_kronecker_inverse = true;
 
   // Step 3: All-gather of each preconditioned gradient tensor
   {
@@ -262,7 +259,7 @@ void kfac::on_backward_prop_end(model *m) {
         global_buffer_size += L->Height();
       }
 
-    // Perform reduce-scatter.
+    // Perform allgather.
     const auto is_buffer_needed = kfac_util::is_allgather_buffer_required(m_allgather_mode);
     El::Matrix<DataType, El::Device::GPU>& local_buffer =
         get_workspace_matrix(

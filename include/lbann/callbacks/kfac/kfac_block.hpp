@@ -97,11 +97,6 @@ class kfac_block {
     LBANN_ERROR("this function should be called via a sub-class.");
   }
 
-  /** @brief Return whether this block already has an inverse history. */
-  bool has_kronecker_inverse() const {
-    return m_has_kronecker_inverse;
-  }
-
   /** @brief Get block's information in one line. */
   virtual std::string get_info() const {
     std::ostringstream oss;

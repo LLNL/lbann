@@ -105,6 +105,7 @@ class kfac : public callback_base {
     m_inverse_strategy(inverse_strategy),
     m_reduce_scatter_mode(reduce_scatter_mode),
     m_allgather_mode(allgather_mode) {
+    m_has_kronecker_inverse = false;
     m_damping_act = m_damping_act_params[0];
     m_damping_err = m_damping_err_params[0];
     m_damping_bn_act = m_damping_bn_act_params[0];
@@ -177,6 +178,9 @@ class kfac : public callback_base {
   /** @brief Collective communication algorithms. */
   const kfac_reduce_scatter_mode m_reduce_scatter_mode;
   const kfac_allgather_mode m_allgather_mode;
+
+  /** @brief Whether inverse of Kronecker factors are available. */
+  bool m_has_kronecker_inverse;
 
   /** @brief The current damping values. */
   double m_damping_act, m_damping_err,
