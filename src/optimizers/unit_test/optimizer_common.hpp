@@ -10,6 +10,16 @@
 // is fine.
 using namespace h2::meta;
 
+// Get the description out as a string. Useful for comparing objects
+// that might not expose accessor functions for all metadata.
+template <typename ObjectType>
+std::string desc_string(ObjectType const& opt)
+{
+  std::ostringstream desc;
+  desc << opt.get_description();
+  return desc.str();
+}
+
 // Simple groups of Output/Input archive types. The car is the output
 // archive, the cadr is the input archive. Accessor metafunctions are
 // defined below.
