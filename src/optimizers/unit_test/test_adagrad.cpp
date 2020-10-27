@@ -48,7 +48,7 @@ struct TestAdagrad : TestOptimizer<lbann::adagrad<DataType>,
 }// namespace <anon>
 
 TEMPLATE_PRODUCT_TEST_CASE(
-  "Adagrad Optimizer serialization",
+  "Optimizer serialization",
   "[optimizer][serialize]",
   TestAdagrad,
   TEMPLATE_ARG_LIST)
@@ -65,7 +65,8 @@ TEMPLATE_PRODUCT_TEST_CASE(
   OptimizerType opt_restore = BuilderType::Default();
 
   // Verify that the optimizers differ in the first place.
-  CHECK_FALSE(CompareMetadata(opt, opt_restore));
+  CHECK_FALSE(opt.get_learning_rate() == opt_restore.get_learning_rate());
+  CHECK_FALSE(desc_string(opt) == desc_string(opt_restore));
 
   {
     OutputArchiveType oarchive(ss);
@@ -77,5 +78,6 @@ TEMPLATE_PRODUCT_TEST_CASE(
     CHECK_NOTHROW(iarchive(opt_restore));
   }
 
-  CHECK(CompareMetadata(opt, opt_restore));
+  CHECK(opt.get_learning_rate() == opt_restore.get_learning_rate());
+  CHECK(desc_string(opt) == desc_string(opt_restore));
 }

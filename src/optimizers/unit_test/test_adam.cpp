@@ -14,11 +14,17 @@ template <typename TensorDataType>
 struct AdamBuilder
 {
   static lbann::adam<TensorDataType> Stateful() {
-    return lbann::adam<TensorDataType>(
+    lbann::adam<TensorDataType> ret(
       /*learning_rate=*/TensorDataType(3.f),
       /*beta1=*/TensorDataType(1.f),
       /*beta2=*/TensorDataType(4.f),
       /*eps=*/TensorDataType(2.f));
+
+    // These probably shouldn't be set here, but let's pretend
+    // something's happened to perturb the state.
+    ret.set_current_beta1(TensorDataType(5.f));
+    ret.set_current_beta2(TensorDataType(6.f));
+    return ret;
   }
 
   static lbann::adam<TensorDataType> Default() {
@@ -52,7 +58,7 @@ struct TestAdam : TestOptimizer<lbann::adam<DataType>,
 }// namespace <anon>
 
 TEMPLATE_PRODUCT_TEST_CASE(
-  "Adam Optimizer serialization",
+  "Optimizer serialization",
   "[optimizer][serialize]",
   TestAdam,
   TEMPLATE_ARG_LIST)
@@ -69,7 +75,12 @@ TEMPLATE_PRODUCT_TEST_CASE(
   OptimizerType opt_restore = BuilderType::Default();
 
   // Verify that the optimizers differ in the first place.
-  CHECK_FALSE(CompareMetadata(opt, opt_restore));
+  CHECK_FALSE(opt.get_learning_rate() == opt_restore.get_learning_rate());
+  CHECK_FALSE(opt.get_beta1() == opt_restore.get_beta1());
+  CHECK_FALSE(opt.get_beta2() == opt_restore.get_beta2());
+  CHECK_FALSE(opt.get_current_beta1() == opt_restore.get_current_beta1());
+  CHECK_FALSE(opt.get_current_beta2() == opt_restore.get_current_beta2());
+  CHECK_FALSE(opt.get_eps() == opt_restore.get_eps());
 
   {
     OutputArchiveType oarchive(ss);
@@ -81,5 +92,10 @@ TEMPLATE_PRODUCT_TEST_CASE(
     CHECK_NOTHROW(iarchive(opt_restore));
   }
 
-  CHECK(CompareMetadata(opt, opt_restore));
+  CHECK(opt.get_learning_rate() == opt_restore.get_learning_rate());
+  CHECK(opt.get_beta1() == opt_restore.get_beta1());
+  CHECK(opt.get_beta2() == opt_restore.get_beta2());
+  CHECK(opt.get_current_beta1() == opt_restore.get_current_beta1());
+  CHECK(opt.get_current_beta2() == opt_restore.get_current_beta2());
+  CHECK(opt.get_eps() == opt_restore.get_eps());
 }

@@ -26,6 +26,13 @@ namespace
 // the TensorDataType. Since there are no optimzer classes with common
 // construction arguments, we do this on an optimizer-specific basis.
 //
+// An important note here is that safely serializable values are more
+// important than "realistic values" for this sort of test. Obviously
+// for "binary" mode, any serialization/deserialization should be
+// exact. But for the text modes, there's no guarantee they will be
+// serialized and deserialized to any precision. We don't want the
+// test to fail because of rounding of ASCII-read string-to-numbers.
+//
 // If it would be better to save/load from
 // "unique/shared-pointer-to-base" instead, these functors could
 // easily be modified to accommodate that instead.
@@ -47,26 +54,6 @@ struct SGDBuilder
       /*nesterov=*/false);
   }
 };// struct SGDBuilder
-
-// Now that we can build optimizer objects, we need a way to compare
-// two such objects. For this example, we just compare the metadata,
-// and name our overloaded function suitably. This could be a simple
-// template, were operator==(OptT const&, OptT const&) defined for
-// every optimizer.
-
-template <typename TensorDataType>
-bool CompareMetadata(
-  lbann::sgd<TensorDataType> const& original,
-  lbann::sgd<TensorDataType> const& restored)
-{
-  // Compare objects
-  int original_nesterov = original.using_nesterov();
-  int restored_nesterov = restored.using_nesterov();
-
-  return ((original.get_learning_rate() == restored.get_learning_rate())
-          && (original.get_momentum() == restored.get_momentum())
-          && (original_nesterov == restored_nesterov));
-}
 
 template <typename DataType, typename ArchiveTypes>
 struct TestSGD : TestOptimizer<lbann::sgd<DataType>,
@@ -103,7 +90,7 @@ struct TestSGD : TestOptimizer<lbann::sgd<DataType>,
 // has decided upon.
 
 TEMPLATE_PRODUCT_TEST_CASE(
-  "SGD Optimizer serialization",
+  "Optimizer serialization",
   "[optimizer][serialize]",
   TestSGD,
   TEMPLATE_ARG_LIST)
@@ -120,7 +107,9 @@ TEMPLATE_PRODUCT_TEST_CASE(
   OptimizerType opt_restore = BuilderType::Default();
 
   // Verify that the optimizers differ in the first place.
-  CHECK_FALSE(CompareMetadata(opt, opt_restore));
+  CHECK_FALSE(opt.get_learning_rate() == opt_restore.get_learning_rate());
+  CHECK_FALSE(opt.get_momentum() == opt_restore.get_momentum());
+  CHECK_FALSE(opt.using_nesterov() == opt_restore.using_nesterov());
 
   {
     OutputArchiveType oarchive(ss);
@@ -132,5 +121,9 @@ TEMPLATE_PRODUCT_TEST_CASE(
     CHECK_NOTHROW(iarchive(opt_restore));
   }
 
-  CHECK(CompareMetadata(opt, opt_restore));
+  // Verify that the restoration was successful.
+  CHECK(opt.get_learning_rate() == opt_restore.get_learning_rate());
+  CHECK(opt.get_momentum() == opt_restore.get_momentum());
+  CHECK(opt.using_nesterov() == opt_restore.using_nesterov());
+
 }
