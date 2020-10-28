@@ -243,25 +243,25 @@ protected:
 #else
 
     // Set pooling descriptor
-    cudnnPoolingMode_t cudnn_pool_mode;
+    pooling_mode cudnn_pool_mode;
     switch(m_pool_mode) {
     case pool_mode::max:
     #ifndef LBANN_DETERMINISTIC
-      cudnn_pool_mode = CUDNN_POOLING_MAX; break;
+      cudnn_pool_mode = pooling_mode::MAX; break;
     #else
-      cudnn_pool_mode = CUDNN_POOLING_MAX_DETERMINISTIC; break;
+      cudnn_pool_mode = pooling_mode::MAX_DETERMINISTIC; break;
     #endif
     case pool_mode::average:
-      cudnn_pool_mode = CUDNN_POOLING_AVERAGE_COUNT_INCLUDE_PADDING; break;
+      cudnn_pool_mode = pooling_mode::AVERAGE_COUNT_INCLUDE_PADDING; break;
     case pool_mode::average_no_pad:
-      cudnn_pool_mode = CUDNN_POOLING_AVERAGE_COUNT_EXCLUDE_PADDING; break;
+      cudnn_pool_mode = pooling_mode::AVERAGE_COUNT_EXCLUDE_PADDING; break;
     default:
       std::stringstream err;
       err << "no GPU implementation for pooling mode " << static_cast<int>(m_pool_mode);
       LBANN_ERROR(err.str());
-      cudnn_pool_mode = CUDNN_POOLING_MAX;
+      cudnn_pool_mode = pooling_mode::MAX;
     }
-    m_pooling_cudnn_desc.set(cudnn_pool_mode,
+    m_pooling_cudnn_desc.set(dnn_lib::to_cudnn(cudnn_pool_mode),
                              CUDNN_PROPAGATE_NAN,
                              m_pool_dims.size(),
                              m_pool_dims.data(),
