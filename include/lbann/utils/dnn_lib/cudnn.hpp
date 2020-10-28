@@ -27,6 +27,8 @@
 #ifndef LBANN_UTILS_DNN_LIB_CUDNN_HPP
 #define LBANN_UTILS_DNN_LIB_CUDNN_HPP
 
+#include "lbann/utils/exception.hpp"
+
 #ifdef LBANN_HAS_CUDNN
 
 #include <cudnn.h>
@@ -105,6 +107,116 @@ using dnnConvolutionBwdDataAlgo_t = cudnnConvolutionBwdDataAlgo_t;
 using dnnConvolutionBwdFilterAlgo_t = cudnnConvolutionBwdFilterAlgo_t;
 
 constexpr dnnConvolutionMode_t DNN_CROSS_CORRELATION = CUDNN_CROSS_CORRELATION;
+
+////////////////////////////////////////////////////////////
+// Functions for to/from cuDNN types conversion
+////////////////////////////////////////////////////////////
+
+/** @brief Convert a LBANN forward convolution algorithm to the cuDNN
+ * equivalent value. */
+inline cudnnConvolutionFwdAlgo_t to_cudnn(fwd_conv_alg a)
+{
+  switch (a)
+  {
+  case fwd_conv_alg::IMPLICIT_GEMM: return CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM;
+  case fwd_conv_alg::IMPLICIT_PRECOMP_GEMM: return CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_PRECOMP_GEMM;
+  case fwd_conv_alg::GEMM: return CUDNN_CONVOLUTION_FWD_ALGO_GEMM;
+  case fwd_conv_alg::DIRECT: return CUDNN_CONVOLUTION_FWD_ALGO_DIRECT;
+  case fwd_conv_alg::FFT: return CUDNN_CONVOLUTION_FWD_ALGO_FFT;
+  case fwd_conv_alg::FFT_TILING: return CUDNN_CONVOLUTION_FWD_ALGO_FFT_TILING;
+  case fwd_conv_alg::WINOGRAD: return CUDNN_CONVOLUTION_FWD_ALGO_WINOGRAD;
+  case fwd_conv_alg::WINOGRAD_NONFUSED: return CUDNN_CONVOLUTION_FWD_ALGO_WINOGRAD_NONFUSED;
+  default:
+    LBANN_ERROR("Invalid forward convolution algorithm requested.");
+  }
+}
+
+/** @brief Convert a cuDNN forward convolution algorithm to the LBANN
+ * equivalent value. */
+inline fwd_conv_alg from_cudnn(cudnnConvolutionFwdAlgo_t a)
+{
+  switch (a)
+  {
+  case CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM: return fwd_conv_alg::IMPLICIT_GEMM;
+  case CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_PRECOMP_GEMM: return fwd_conv_alg::IMPLICIT_PRECOMP_GEMM;
+  case CUDNN_CONVOLUTION_FWD_ALGO_GEMM: return fwd_conv_alg::GEMM;
+  case CUDNN_CONVOLUTION_FWD_ALGO_DIRECT: return fwd_conv_alg::DIRECT;
+  case CUDNN_CONVOLUTION_FWD_ALGO_FFT: return fwd_conv_alg::FFT;
+  case CUDNN_CONVOLUTION_FWD_ALGO_FFT_TILING: return fwd_conv_alg::FFT_TILING;
+  case CUDNN_CONVOLUTION_FWD_ALGO_WINOGRAD: return fwd_conv_alg::WINOGRAD;
+  case CUDNN_CONVOLUTION_FWD_ALGO_WINOGRAD_NONFUSED: return fwd_conv_alg::WINOGRAD_NONFUSED;
+  default:
+    LBANN_ERROR("Invalid forward convolution algorithm requested.");
+  }
+}
+
+/** @brief Convert a LBANN backward convolution algorithm to the cuDNN
+ * equivalent value. */
+inline cudnnConvolutionBwdDataAlgo_t to_cudnn(bwd_data_conv_alg a)
+{
+  switch (a)
+  {
+  case bwd_data_conv_alg::CUDNN_ALGO_0: return CUDNN_CONVOLUTION_BWD_DATA_ALGO_0;
+  case bwd_data_conv_alg::CUDNN_ALGO_1: return CUDNN_CONVOLUTION_BWD_DATA_ALGO_1;
+  case bwd_data_conv_alg::FFT: return CUDNN_CONVOLUTION_BWD_DATA_ALGO_FFT;
+  case bwd_data_conv_alg::FFT_TILING: return CUDNN_CONVOLUTION_BWD_DATA_ALGO_FFT_TILING;
+  case bwd_data_conv_alg::WINOGRAD: return CUDNN_CONVOLUTION_BWD_DATA_ALGO_WINOGRAD;
+  case bwd_data_conv_alg::WINOGRAD_NONFUSED: return CUDNN_CONVOLUTION_BWD_DATA_ALGO_WINOGRAD_NONFUSED;
+  default:
+    LBANN_ERROR("Invalid backward convolution algorithm requested.");
+  }
+}
+
+/** @brief Convert a cuDNN backward convolution algorithm to the LBANN
+ * equivalent value. */
+inline bwd_data_conv_alg from_cudnn(cudnnConvolutionBwdDataAlgo_t a)
+{
+  switch (a)
+  {
+  case CUDNN_CONVOLUTION_BWD_DATA_ALGO_0: return bwd_data_conv_alg::CUDNN_ALGO_0;
+  case CUDNN_CONVOLUTION_BWD_DATA_ALGO_1: return bwd_data_conv_alg::CUDNN_ALGO_1;
+  case CUDNN_CONVOLUTION_BWD_DATA_ALGO_FFT: return bwd_data_conv_alg::FFT;
+  case CUDNN_CONVOLUTION_BWD_DATA_ALGO_FFT_TILING: return bwd_data_conv_alg::FFT_TILING;
+  case CUDNN_CONVOLUTION_BWD_DATA_ALGO_WINOGRAD: return bwd_data_conv_alg::WINOGRAD;
+  case CUDNN_CONVOLUTION_BWD_DATA_ALGO_WINOGRAD_NONFUSED: return bwd_data_conv_alg::WINOGRAD_NONFUSED;
+  default:
+    LBANN_ERROR("Invalid backward convolution algorithm requested.");
+  }
+}
+
+/** @brief Convert a LBANN backward convolution filter algorithm to the cuDNN
+ * equivalent value. */
+inline cudnnConvolutionBwdFilterAlgo_t to_cudnn(bwd_filter_conv_alg a)
+{
+  switch (a)
+  {
+  case bwd_filter_conv_alg::CUDNN_ALGO_0: return CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0;
+  case bwd_filter_conv_alg::CUDNN_ALGO_1: return CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1;
+  case bwd_filter_conv_alg::FFT: return CUDNN_CONVOLUTION_BWD_FILTER_ALGO_FFT;
+  case bwd_filter_conv_alg::CUDNN_ALGO_3: return CUDNN_CONVOLUTION_BWD_FILTER_ALGO_3;
+  case bwd_filter_conv_alg::WINOGRAD_NONFUSED: return CUDNN_CONVOLUTION_BWD_FILTER_ALGO_WINOGRAD_NONFUSED;
+  case bwd_filter_conv_alg::FFT_TILING: return CUDNN_CONVOLUTION_BWD_FILTER_ALGO_FFT_TILING;
+  default:
+    LBANN_ERROR("Invalid backward convolution filter requested.");
+  }
+}
+
+/** @brief Convert a cuDNN backward convolution filter algorithm to the LBANN
+ * equivalent value. */
+inline bwd_filter_conv_alg from_cudnn(cudnnConvolutionBwdFilterAlgo_t a)
+{
+  switch (a)
+  {
+  case CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0: return bwd_filter_conv_alg::CUDNN_ALGO_0;
+  case CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1: return bwd_filter_conv_alg::CUDNN_ALGO_1;
+  case CUDNN_CONVOLUTION_BWD_FILTER_ALGO_FFT: return bwd_filter_conv_alg::FFT;
+  case CUDNN_CONVOLUTION_BWD_FILTER_ALGO_3: return bwd_filter_conv_alg::CUDNN_ALGO_3;
+  case CUDNN_CONVOLUTION_BWD_FILTER_ALGO_WINOGRAD_NONFUSED: return bwd_filter_conv_alg::WINOGRAD_NONFUSED;
+  case CUDNN_CONVOLUTION_BWD_FILTER_ALGO_FFT_TILING: return bwd_filter_conv_alg::FFT_TILING;
+  default:
+    LBANN_ERROR("Invalid backward convolution filter requested.");
+  }
+}
 
 } // namespace cudnn
 } // namespace lbann

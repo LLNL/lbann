@@ -28,6 +28,7 @@
 #define LBANN_UTILS_DNN_LIB_HELPERS_HPP
 
 #include "lbann_config.hpp"
+#include "lbann/utils/ml_enums.hpp"
 
 #if defined LBANN_HAS_CUDNN || defined LBANN_HAS_MIOPEN
 #define LBANN_HAS_DNN_LIB
