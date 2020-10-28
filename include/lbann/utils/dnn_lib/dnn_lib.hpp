@@ -753,7 +753,7 @@ public:
  * @param autotune True to attempt all DNN library algorithms and select the fastest.
  * @param deterministic True to require deterministic algorithms.
  */
-dnnConvolutionFwdAlgo_t get_fwd_algorithm(
+fwd_conv_alg get_fwd_algorithm(
   bool autotune,
   bool deterministic,
   const TensorDescriptor& input_desc,
@@ -774,7 +774,7 @@ dnnConvolutionFwdAlgo_t get_fwd_algorithm(
  * @param autotune True to attempt all DNN library algorithms and select the fastest.
  * @param deterministic True to require deterministic algorithms.
  */
-dnnConvolutionBwdDataAlgo_t get_bwd_data_algorithm(
+bwd_data_conv_alg get_bwd_data_algorithm(
   bool autotune,
   bool deterministic,
   const FilterDescriptor& kernel_desc,

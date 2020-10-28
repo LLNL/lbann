@@ -1004,14 +1004,13 @@ base_convolution_layer<TensorDataType,Device>::get_forward_algo_dnn(
     bool deterministic = false;
 #endif
     m_fwd_dnn_algos[local_mini_batch_size] =
-      cudnn::from_cudnn(
-        dnn_lib::get_fwd_algorithm(
-          true, deterministic,
-          input_desc, input,
-          kernel_desc, kernel,
-          conv_desc,
-          output_desc, output,
-          ws_size, ws));
+      dnn_lib::get_fwd_algorithm(
+        true, deterministic,
+        input_desc, input,
+        kernel_desc, kernel,
+        conv_desc,
+        output_desc, output,
+        ws_size, ws);
   }
   return m_fwd_dnn_algos[local_mini_batch_size];
 }
@@ -1036,14 +1035,13 @@ base_convolution_layer<TensorDataType,Device>::get_backward_data_algo_dnn(
     bool deterministic = false;
 #endif
     m_bwd_data_dnn_algos[local_mini_batch_size] =
-      cudnn::from_cudnn(
-        dnn_lib::get_bwd_data_algorithm(
-          true, deterministic,
-          kernel_desc, kernel,
-          prev_error_signal_desc, prev_error_signal,
-          conv_desc,
-          error_signal_desc, error_signal,
-          ws_size, ws));
+      dnn_lib::get_bwd_data_algorithm(
+        true, deterministic,
+        kernel_desc, kernel,
+        prev_error_signal_desc, prev_error_signal,
+        conv_desc,
+        error_signal_desc, error_signal,
+        ws_size, ws);
   }
   return m_bwd_data_dnn_algos[local_mini_batch_size];
 }
