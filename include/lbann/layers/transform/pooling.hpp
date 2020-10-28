@@ -538,54 +538,6 @@ private:
   const pooling_distconv_adapter<TensorDataType, T_layout, Dev>& get_distconv_adapter() const override;
 #endif // LBANN_HAS_DISTCONV
 
-#ifdef LBANN_HAS_CUDNN
-  /** Copy pooling cuDNN descriptor. */
-  static void copy_pooling_cudnn_desc(const cudnnPoolingDescriptor_t& src,
-                                      cudnnPoolingDescriptor_t& dst) {
-
-    // Create or destroy descriptor if needed
-    if(src != nullptr && dst == nullptr) {
-        CHECK_CUDNN(cudnnCreatePoolingDescriptor(&dst));
-    }
-    else if(src == nullptr && dst != nullptr) {
-        CHECK_CUDNN(cudnnDestroyPoolingDescriptor(dst));
-        dst = nullptr;
-    }
-
-    // Copy descriptor data if needed
-    if(src != nullptr) {
-        cudnnPoolingMode_t mode;
-        cudnnNanPropagation_t nan_propagation;
-        int num_dims;
-        CHECK_CUDNN(cudnnGetPoolingNdDescriptor(src,
-                                                0,
-                                                &mode,
-                                                &nan_propagation,
-                                                &num_dims,
-                                                nullptr,
-                                                nullptr,
-                                                nullptr));
-        std::vector<int> dims(num_dims), pads(num_dims), strides(num_dims);
-        CHECK_CUDNN(cudnnGetPoolingNdDescriptor(src,
-                                                num_dims,
-                                                &mode,
-                                                &nan_propagation,
-                                                &num_dims,
-                                                dims.data(),
-                                                pads.data(),
-                                                strides.data()));
-        CHECK_CUDNN(cudnnSetPoolingNdDescriptor(dst,
-                                                mode,
-                                                nan_propagation,
-                                                num_dims,
-                                                dims.data(),
-                                                pads.data(),
-                                                strides.data()));
-    }
-
-  }
-#endif // LBANN_HAS_CUDNN
-
 };
 
 #ifdef LBANN_HAS_DISTCONV
