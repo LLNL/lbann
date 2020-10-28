@@ -1,5 +1,8 @@
 """Learn embedding weights with LBANN."""
 import argparse
+import configparser
+import datetime
+import os
 import os.path
 import numpy as np
 
@@ -16,19 +19,22 @@ import utils.snap
 root_dir = os.path.dirname(os.path.realpath(__file__))
 
 # ----------------------------------
-# Options
+# Command-line arguments
 # ----------------------------------
 
-# Command-line arguments
+# Parse command-line arguments
 parser = argparse.ArgumentParser()
 lbann.contrib.args.add_scheduler_arguments(parser)
 parser.add_argument(
     '--job-name', action='store', default='lbann_node2vec', type=str,
     help='job name', metavar='NAME')
 parser.add_argument(
-    '--graph', action='store', default='youtube', type=str,
-    help='graph name (see utils.snap.download_graph) or edgelist file',
-    metavar='NAME')
+    '--config', action='store', default=None, type=str,
+    help='data config file', metavar='FILE')
+parser.add_argument(
+    '--graph', action='store', default=None, type=str,
+    help='edgelist file',
+    metavar='FILE')
 parser.add_argument(
     '--mini-batch-size', action='store', default=256, type=int,
     help='mini-batch size (default: 256)', metavar='NUM')
@@ -62,36 +68,82 @@ args = parser.parse_args()
 if args.learning_rate < 0:
     args.learning_rate = 0.25 * args.mini_batch_size
 
-# Random walk options
-epoch_size = 100 * args.mini_batch_size
-walk_length = 100
-return_param = 0.25
-inout_param = 0.25
-num_negative_samples = 20
+# Default work directory
+# Note: Timestamped directory in cwd
+if not args.work_dir:
+    timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+    args.work_dir = os.path.join(os.getcwd(), f'{timestamp}_{args.job_name}')
+args.work_dir = os.path.realpath(args.work_dir)
+
+# ----------------------------------
+# Configuration file
+# ----------------------------------
+
+# Parse config file
+config = configparser.ConfigParser()
+config.read(os.path.join(root_dir, 'default.config'))
+config_file = args.config
+if not config_file:
+    config_file = os.getenv('LBANN_NODE2VEC_CONFIG_FILE')
+if config_file:
+    config.read(config_file)
+
+# Command-line overrides
+if args.graph:
+    graph_file = config.set('Graph', 'file', graph_file)
+
+# Resolve absolute paths
+graph_file = config.get('Graph', 'file', fallback=None)
+walk_file = config.get('Walks', 'file', fallback=None)
+if graph_file:
+    config.set('Graph', 'file', os.path.realpath(graph_file))
+if walk_file:
+    config.set('Walks', 'file', os.path.realpath(walk_file))
+
+# Get number of graph vertices
+num_vertices = config.getint('Graph', 'num_vertices', fallback=0)
+graph_file = config.get('Graph', 'file', fallback=None)
+walk_file = config.get('Walks', 'file', fallback=None)
+if not num_vertices and graph_file:
+    num_vertices = utils.graph.max_vertex_index(graph_file) + 1
+if not num_vertices and walk_file:
+    num_vertices = np.loadtxt(walk_file, dtype=np.int64).max() + 1
+if not num_vertices:
+    raise RuntimeError('Number of graph vertices not provided in config file')
+config.set('Graph', 'num_vertices', str(num_vertices))
+
+# Write config file to work directory
+config_file = os.path.join(args.work_dir, 'experiment.config')
+with open(config_file, 'w') as f:
+    config.write(f)
+os.environ['LBANN_NODE2VEC_CONFIG_FILE'] = config_file
+
+# Get options
+graph_file = config.get('Graph', 'file', fallback=None)
+num_vertices = config.getint('Graph', 'num_vertices')
+walk_file = config.get('Walks', 'file', fallback=None)
+walk_length = config.getint('Walks', 'walk_length')
+return_param = config.getfloat('Walks', 'return_param')
+inout_param = config.getfloat('Walks', 'inout_param')
+num_negative_samples = config.getint('Skip-gram', 'num_negative_samples')
 
 # ----------------------------------
 # Create data reader
 # ----------------------------------
 
-# Download graph if needed
-if os.path.exists(args.graph):
-    graph_file = args.graph
-else:
-    graph_file = utils.snap.download_graph(args.graph)
-
 # Construct data reader
 if args.offline_walks:
-    # Note: Graph and walk parameters are fully specified in module
-    # for offline walks
-    import data.offline_walks
-    graph_file = data.offline_walks.graph_file
-    epoch_size = data.offline_walks.num_samples()
-    walk_length = data.offline_walks.walk_length
-    return_param = data.offline_walks.return_param
-    inout_param = data.offline_walks.inout_param
-    num_negative_samples = data.offline_walks.num_negative_samples
+    assert walk_file, 'Walk file must be specified for offline node2vec'
+    # Note: Train one epoch if epoch size isn't provided
+    epoch_size = config.getint(
+        'Walks',
+        'num_walks',
+        fallback=args.num_iterations*args.mini_batch_size,
+    )
     reader = data.data_readers.make_offline_data_reader()
 else:
+    epoch_size = 100 * args.mini_batch_size
+    assert graph_file, 'Graph file must be specified for online node2vec'
     # Note: Preprocess graph with HavoqGT and store in shared memory
     # before starting LBANN.
     distributed_graph_file = '/dev/shm/graph'
@@ -103,11 +155,6 @@ else:
         inout_param=inout_param,
         num_negative_samples=num_negative_samples,
     )
-
-sample_size = num_negative_samples + walk_length
-
-# Parse graph file to get number of vertices
-num_vertices = utils.graph.max_vertex_index(graph_file) + 1
 
 # ----------------------------------
 # Construct layer graph
@@ -153,7 +200,7 @@ else:
 embeddings_slice = lbann.Slice(
     embeddings,
     axis=0,
-    slice_points=utils.str_list([0, num_negative_samples, sample_size]),
+    slice_points=utils.str_list([0, num_negative_samples, num_negative_samples+walk_length]),
 )
 negative_samples_embeddings = lbann.Identity(embeddings_slice)
 walk_embeddings = lbann.Identity(embeddings_slice)
@@ -207,6 +254,7 @@ kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
 script = lbann.contrib.launcher.make_batch_script(
     job_name=args.job_name,
     work_dir=args.work_dir,
+    environment={'LBANN_NODE2VEC_CONFIG_FILE' : config_file},
     **kwargs,
 )
 

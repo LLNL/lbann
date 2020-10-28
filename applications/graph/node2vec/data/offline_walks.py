@@ -6,65 +6,70 @@ Skip-Gram algorithm. Data samples consists of a random walk and
 negative samples.
 
 """
+import configparser
+import os
 import os.path
-import sys
 import numpy as np
 
-# Local imports
-root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-sys.path.append(root_dir)
-import utils.snap
+# Load config file
+config_file = os.getenv('LBANN_NODE2VEC_CONFIG_FILE')
+if not config_file:
+    raise RuntimeError(
+        'No configuration file provided in '
+        'LBANN_NODE2VEC_CONFIG_FILE environment variable')
+if not os.path.exists(config_file):
+    raise FileNotFoundError(f'Could not find config file at {config_file}')
+config = configparser.ConfigParser()
+config.read(config_file)
 
-# Graph options
-graph_name = 'facebook'
-directed = False
-weighted = False
+# Options from config file
+num_vertices = config.getint('Graph', 'num_vertices', fallback=0)
+walk_file = config.get('Walks', 'file', fallback=None)
+walk_length = config.getint('Walks', 'walk_length', fallback=0)
+num_walks = config.getint('Walks', 'num_walks', fallback=0)
+num_negative_samples = config.getint('Skip-gram', 'num_negative_samples')
+noise_distribution_exp = config.getfloat('Skip-gram', 'noise_distribution_exp')
 
-# Random walk options
-walk_length = 80        # Length of each random walk
-walks_per_node = 10     # Number of random walks starting on each node
-return_param = 1.0      # p-parameter
-inout_param = 1.0       # q-parameter
-
-# Negative sampling options
-num_negative_samples = 5
-noise_distribution_exp = 0.75   # Exponent to convert unigram
-                                # distribution to noise distribution
-
-# Download graph and perform random walk, if needed
-graph_file = utils.snap.download_graph(graph_name)
-data_dir = os.path.dirname(graph_file)
-walk_file = os.path.join(data_dir, 'walk.txt')
-if not os.path.isfile(walk_file):
-    utils.snap.node2vec_walk(
-        graph_file,
-        walk_file,
-        walk_length,
-        walks_per_node,
-        return_param,
-        inout_param,
-        directed,
-        weighted)
-
-# Load random walks from file
-walks = np.loadtxt(walk_file, dtype=int)
+# Load walks from file
+### @todo Pandas
+### @todo Partial read on each MPI rank
+if not walk_file:
+    raise RuntimeError(f'No walk file specified in {config_file}')
+walks = np.loadtxt(walk_file, dtype=np.int64)
+if not num_walks:
+    num_walks = walks.shape[0]
+if not walk_length:
+    walk_length = walks.shape[1]
+if not num_vertices:
+    num_vertices = np.amax(walks) + 1
+assert walks.shape[0] == num_walks, \
+    f'Found {walks.shape[0]} walks in {walk_file}, ' \
+    f'but expected {num_walks}'
 assert walks.shape[1] == walk_length, \
-    ('Random walks in {} have length {}, but expected a walk length of {}'
-     .format(walk_file, walks.shape[1], walk_length))
+    f'Found walks of length {walks.shape[1]} in {walk_file}, ' \
+    f'but expected a walk length of {walk_length}'
+assert num_vertices > 0, \
+    f'Random walks in {walk_file} have invalid vertex indices'
 
-# Generate noise distribution for negative sampling, if needed
-unigram_distribution_file = os.path.join(data_dir, 'unigram_distribution.npy')
-noise_distribution_cdf_file = os.path.join(data_dir, 'noise_distribution_cdf.npy')
-if os.path.isfile(noise_distribution_cdf_file):
-    noise_distribution_cdf = np.load(noise_distribution_cdf_file)
-else:
-    counts = np.bincount(walks.reshape(-1))
-    unigram_distribution = counts / walks.size
-    noise_counts = counts ** noise_distribution_exp
-    noise_distribution_cdf = np.cumsum(noise_counts)
-    noise_distribution_cdf /= noise_distribution_cdf[-1]
-    np.save(unigram_distribution_file, unigram_distribution)
-    np.save(noise_distribution_cdf_file, noise_distribution_cdf)
+# Noise distribution for negative sampling
+# Note: We count the number of times each vertex has been visited and
+# periodically recompute the noise distribution.
+visit_counts = np.ones(num_vertices, dtype=np.int64)
+total_visit_count = num_vertices
+noise_cdf = np.zeros(num_vertices, dtype=np.float64)
+noise_visit_count = 0
+def update_noise_distribution():
+    global noise_cdf, noise_visit_count
+    np.float_power(
+        visit_counts,
+        noise_distribution_exp,
+        out=noise_cdf,
+        dtype=np.float64,
+    )
+    np.cumsum(noise_cdf, out=noise_cdf)
+    noise_cdf *= np.float64(1 / noise_cdf[-1])
+    noise_visit_count = total_visit_count
+update_noise_distribution()
 
 # Need to reseed RNG after forking processes
 need_to_seed_rng = True
@@ -83,15 +88,26 @@ def get_sample(index):
         np.random.seed()
         need_to_seed_rng = False
 
+    # Count number of times each vertex is visited
+    # Note: Update noise distribution if there are enough visits.
+    global visit_counts, total_visit_count
+    for vertex in walks[index]:
+        visit_counts[vertex] += np.int64(1)
+    total_visit_count += len(walks[index])
+    if total_visit_count > 2*noise_visit_count:
+        update_noise_distribution()
+
     # Return negative samples and walk
-    negative_samples = np.searchsorted(noise_distribution_cdf,
-                                       np.random.rand(num_negative_samples))
+    negative_samples = np.searchsorted(
+        noise_cdf,
+        np.random.rand(num_negative_samples),
+    )
     return np.concatenate((negative_samples, walks[index]))
 
 def num_samples():
     """Number of samples in dataset."""
-    return walks.shape[0]
+    return num_walks
 
 def sample_dims():
     """Dimensions of a data sample."""
-    return (walk_length + num_negative_samples,)
+    return (num_negative_samples + walk_length,)
