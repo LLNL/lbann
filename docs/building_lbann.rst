@@ -137,8 +137,9 @@ CMake flags known to LBANN's "Superbuild" build system.
     :code:`-e` flag. A full list of options can be viewed with the
     :code:`-h` flag.
 
-2.  Setup the LBANN CMake environment using the Spack environment for
-    the dependencies.
+2.  Setup the LBANN CMake environment using the Spack environment for the
+    dependencies.  If you used a custom Spack environment name in the step
+    above, be sure to specify that with the :code:`-e` option:
 
     .. code-block:: bash
 
@@ -163,12 +164,15 @@ CMake flags known to LBANN's "Superbuild" build system.
                 specification, the initial build of all of the
                 standard packages in Spack can take a long time.
 
-3.  Once the installation has completed, you can load the module file
-    for LBANN with the following command
+3.  Once the installation has completed, to run LBANN you will want to
+    activate the spack environment to setup the depedencies
+    correctly, and then you can load the module file
+    for LBANN with the following command:
 
     .. code-block:: console
 
-        ml use <path to installation>/etc/modulefiles
+        spack env activate -p <name of the spack environment>
+        ml use <path to installation of lbann executable>/etc/modulefiles
         ml load lbann-0.99.0
 
 

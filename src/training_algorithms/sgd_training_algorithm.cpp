@@ -92,7 +92,7 @@ void sgd_training_algorithm::train(sgd_execution_context& c,
     auto& evaluation_context = static_cast<sgd_execution_context&>(c.get_trainer().get_execution_context(key));
     // Check to make sure that the model has a valid execution mode
     // before trying to do inference
-    if (model.is_execution_mode_valid(execution_mode::validation)) {
+    if (dc.is_execution_mode_valid(execution_mode::validation)) {
       evaluate(evaluation_context, model, dc, execution_mode::validation);
     }
   }
@@ -112,6 +112,8 @@ bool sgd_training_algorithm::train_mini_batch(sgd_execution_context& c,
 
   bool finished;
 
+  dc.fetch_data(execution_mode::training);
+
 #if defined(LBANN_HAVE_OMP_TASKLOOP)
   LBANN_OMP_PARALLEL
   {
@@ -121,6 +123,10 @@ bool sgd_training_algorithm::train_mini_batch(sgd_execution_context& c,
   // Forward prop step
   model.clear_gradients();
   model.forward_prop(execution_mode::training);
+  // check if the data coordinator has finished the epoch and kickoff
+  // background I/O
+  finished = dc.epoch_complete(execution_mode::training);
+
   // Result is not needed until the end of the mini-batch.
   model.get_objective_function()->start_evaluation(execution_mode::training,
                                                     c.get_current_mini_batch_size());
@@ -138,7 +144,7 @@ bool sgd_training_algorithm::train_mini_batch(sgd_execution_context& c,
 
   // Update step
   model.update_weights();
-  finished = model.update_layers();
+  model.update_layers();
 #if defined(LBANN_HAVE_OMP_TASKLOOP)
     }
   }
@@ -164,7 +170,7 @@ void sgd_training_algorithm::evaluate(sgd_execution_context& c,
   // Ensure that the data coordinator has the right execution context
   dc.reset_mode(c);
   // Return early if execution mode is invalid
-  if (!model.is_execution_mode_valid(mode)) return;
+  if (!dc.is_execution_mode_valid(mode)) return;
   if (mode != execution_mode::validation
       && mode != execution_mode::testing) {
     std::stringstream err;
@@ -191,11 +197,16 @@ bool sgd_training_algorithm::evaluate_mini_batch(sgd_execution_context& c,
   model.reset_mode(c, mode);
   dc.reset_mode(c);
   do_batch_begin_cbs(model, mode);
+  dc.fetch_data(mode);
   model.forward_prop(mode);
+  // check if the data coordinator has finished the epoch and kickoff
+  // background I/O
+  const bool finished = dc.epoch_complete(mode);
+
   model.get_objective_function()->start_evaluation(mode, c.get_current_mini_batch_size());
   model.get_objective_function()->finish_evaluation(mode, c.get_current_mini_batch_size());
   model.evaluate_metrics(mode, c.get_current_mini_batch_size());
-  const bool finished = model.update_layers();
+  model.update_layers();
   c.inc_step();
   do_batch_end_cbs(model, mode);
   return finished;

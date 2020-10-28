@@ -228,8 +228,6 @@ public:
   /** @brief Are background I/O activities enabled by the input layers */
   bool background_io_activity_allowed() { return m_background_io_allowed; }
 
-  size_t get_num_iterations_per_epoch(execution_mode mode) const;
-
   // ===========================================
   // Setup
   // ===========================================
@@ -352,14 +350,6 @@ public:
   /** @brief Reset model statistics for an epoch. */
   virtual void reset_epoch_statistics(execution_mode mode);
 
-  /** @brief Check if the trainer execution mode is valid for this model.
-    @todo this should be moved to the trainer when the data readers move. */
-  virtual bool is_execution_mode_valid(execution_mode mode) const;
-
-  /** @brief Complete any background I/O data fetch for the execution
-      mode requested */
-  virtual void collect_background_data_fetch(execution_mode mode);
-
   /** @brief Forward propagation step. */
   virtual void forward_prop(execution_mode mode);
   /** @brief Backward propagation step. */
@@ -414,6 +404,11 @@ public:
   virtual void do_weight_optimize_begin_cbs(weights *w);
   /** @brief Execute callbacks at the end of weight optimization. */
   virtual void do_weight_optimize_end_cbs(weights *w);
+
+#ifdef LBANN_HAS_DISTCONV
+  /* @brief Return the maximum mini-batch size used by Distconv. */
+  size_t get_max_mini_batch_size_distconv() const { return m_max_mini_batch_size_distconv; }
+#endif
 
 private:
 
@@ -504,6 +499,12 @@ private:
   void setup_distconv();
   void setup_distributions();
   void print_distributions() const;
+
+  /** @brief The maximum mini-batch size used by Distconv.
+   *  @details This should be set before setup_distconv() is called.
+   */
+  size_t m_max_mini_batch_size_distconv;
+
 #endif // LBANN_HAS_DISTCONV
 };
 

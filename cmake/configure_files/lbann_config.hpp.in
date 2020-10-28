@@ -3,9 +3,9 @@
 
 #include <El/hydrogen_config.h>
 
-#ifdef HYDROGEN_HAVE_CUDA
+#ifdef HYDROGEN_HAVE_GPU
 #define LBANN_HAS_GPU
-#endif // HYDROGEN_HAVE_CUDA
+#endif // HYDROGEN_HAVE_GPU
 
 #ifdef HYDROGEN_HAVE_OMP_TASKLOOP
 #define LBANN_HAVE_OMP_TASKLOOP
@@ -41,13 +41,16 @@
 #cmakedefine LBANN_HAS_CUDNN
 #ifdef LBANN_HAS_CUDA
 #cmakedefine LBANN_HAS_NVSHMEM
+#cmakedefine LBANN_NVPROF
 #endif
+
+#cmakedefine LBANN_HAS_ROCM
+#cmakedefine LBANN_HAS_MIOPEN
 
 #cmakedefine LBANN_HAS_HALF
 #cmakedefine LBANN_HAS_GPU_FP16
 
 #cmakedefine LBANN_VTUNE
-#cmakedefine LBANN_NVPROF
 
 #cmakedefine LBANN_SYS_SENDFILE_OK
 
@@ -58,6 +61,10 @@
 #cmakedefine LBANN_HAS_PTHREAD_AFFINITY_SUPPORT
 
 #cmakedefine LBANN_HAS_DISTCONV
+
+#cmakedefine LBANN_HAS_FFTW
+#cmakedefine LBANN_HAS_FFTW_FLOAT
+#cmakedefine LBANN_HAS_FFTW_DOUBLE
 
 // Define the LBANN datatype
 namespace lbann

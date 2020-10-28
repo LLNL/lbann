@@ -18,7 +18,7 @@ def setup(data_reader_file,
           checkpoint_interval=None):
 
     # Setup input data
-    input = lbann.Input()
+    input = lbann.Input(target_mode = 'classification')
     images = lbann.Identity(input)
     labels = lbann.Identity(input)
 

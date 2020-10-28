@@ -29,8 +29,8 @@
 
 #include <lbann_config.hpp>
 #include "lbann/callbacks/summarize_images.hpp"
+#include "lbann/layers/io/input_layer.hpp"
 
-#include <lbann/layers/io/input/generic_input_layer.hpp>
 #include <lbann/proto/helpers.hpp>
 #include <lbann/utils/factory.hpp>
 #include <lbann/utils/image.hpp>
@@ -180,18 +180,17 @@ build_categorical_accuracy_strategy_from_pbuf(google::protobuf::Message const& m
 std::vector<std::pair<size_t, El::Int>>
 autoencoder_strategy::get_image_indices(model const& m) const {
 
-  // Find the input layer
-  auto const& input_layer = dynamic_cast<generic_input_layer<DataType> const&>(
-    get_layer_by_name(m, m_input_layer_name));
+  // Grab the data coordinator
+  auto const& dc = m.get_execution_context().get_trainer().get_data_coordinator();
 
   // Grab the data reader
   auto const& data_reader =
-    *(input_layer.get_data_reader(m.get_execution_context().get_execution_mode()));
+    *(dc.get_data_reader(m.get_execution_context().get_execution_mode()));
 
   // Get the indices for this minibatch
   bool const i_am_root = m.get_comm()->am_trainer_master();
   auto const& exe_mode = m.get_execution_context().get_execution_mode();
-  auto const& total_steps = m.get_num_iterations_per_epoch(exe_mode);
+  auto const& total_steps = dc.get_num_iterations_per_epoch(exe_mode);
   auto const& current_step = ((m.get_execution_context().get_step() - 1) % total_steps) + 1;
   bool const last_mb = (current_step == total_steps);
   size_t const mb_size =
@@ -214,8 +213,7 @@ autoencoder_strategy::get_image_indices(model const& m) const {
   size_t const minibatch_end_index =
     std::min(minibatch_start_index + mb_size, shuffled_indices.size());
 
-  auto* sample_indices =
-    const_cast<generic_input_layer<DataType>&>(input_layer).get_sample_indices_per_mb();
+  auto* sample_indices = dc.get_sample_indices_per_mb(exe_mode);
   if (sample_indices == nullptr)
     LBANN_ERROR("Sample indices is NULL.");
 

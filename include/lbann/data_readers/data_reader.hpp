@@ -32,12 +32,15 @@
 #include "lbann/base.hpp"
 #include "lbann/data_coordinator/data_coordinator_metadata.hpp"
 #include "lbann/utils/random_number_generators.hpp"
+#include "lbann/data_readers/utils/input_data_type.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/comm.hpp"
 #include "lbann/io/file_io.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/utils/options.hpp"
 #include "lbann/transforms/transform_pipeline.hpp"
+#include "lbann/utils/distconv.hpp"
+
 #include <cassert>
 #include <algorithm>
 #include <string>
@@ -91,7 +94,7 @@ class generic_data_reader {
     m_world_master_mini_batch_adjustment(0),
     m_num_parallel_readers(0), m_rank_in_model(0),
     m_max_files_to_load(0),
-    m_file_dir(""), m_data_index_list(""), m_data_fn(""), m_label_fn(""),
+    m_file_dir(""), m_data_sample_list(""), m_data_fn(""), m_label_fn(""),
     m_shuffle(shuffle), m_absolute_sample_count(0), m_validation_percent(0.0),
     m_use_percent(1.0),
     m_master(false),
@@ -103,9 +106,15 @@ class generic_data_reader {
     m_procs_per_partition(1),
     m_io_thread_pool(nullptr),
     m_jag_partitioned(false),
+    m_keep_sample_order(false),
     m_trainer(nullptr),
     m_issue_warning(true)
   {
+    // By default only support fetching input samples
+    for(auto i : input_data_type_iterator()) {
+      m_supported_input_types[i] = false;
+    }
+    m_supported_input_types[input_data_type::SAMPLES] = true;
   }
   generic_data_reader(const generic_data_reader&) = default;
   generic_data_reader& operator=(const generic_data_reader&) = default;
@@ -117,7 +126,8 @@ class generic_data_reader {
   template <class Archive> void serialize( Archive & ar ) {
     ar(CEREAL_NVP(m_current_mini_batch_idx),
        CEREAL_NVP(m_current_pos),
-       CEREAL_NVP(m_shuffled_indices));
+       CEREAL_NVP(m_shuffled_indices),
+       CEREAL_NVP(m_supported_input_types));
   }
 
   /// set the comm object
@@ -165,16 +175,22 @@ class generic_data_reader {
   std::string get_local_file_dir() const;
 
   /**
-   * Set the index list for your data (images, etc).
-   * The index lists contains an enumeration of all samples in the
+   * Set the sample list for your data (images, etc).
+   * The sample lists contains an enumeration of all samples in the
    * data set.
    */
-  void set_data_index_list(std::string s);
+  void set_data_sample_list(std::string s);
 
   /**
-   * Returns the complete index list for your data set.
+   * Returns the complete sample list for your data set.
    */
-  std::string get_data_index_list() const;
+  std::string get_data_sample_list() const;
+
+  /**
+   * To facilictate the testing, maintain the order of loaded samples
+   * in the sample list as it is in the list file.
+   */
+  void keep_sample_order(bool same_order = false);
 
   /**
    * Set the filename for your data (images, etc).
@@ -290,12 +306,17 @@ class generic_data_reader {
   /** Return this data_reader's type */
   virtual std::string get_type() const = 0;
 
+  /** @brief Fetch a mini-batch worth of data, including samples, labels, responses (as appropriate) */
+  int fetch(std::map<input_data_type, CPUMat*>& input_buffers, El::Matrix<El::Int>& indices_fetched);
   /// Fetch this mini-batch's samples into X.
   virtual int fetch_data(CPUMat& X, El::Matrix<El::Int>& indices_fetched);
   /// Fetch this mini-batch's labels into Y.
   virtual int fetch_labels(CPUMat& Y);
   /// Fetch this mini-batch's responses into Y.
   virtual int fetch_responses(CPUMat& Y);
+
+  virtual bool has_labels() { return m_supported_input_types[input_data_type::LABELS]; }
+  virtual bool has_responses() { return m_supported_input_types[input_data_type::RESPONSES]; }
 
   /**
    * During the network's update phase, the data reader will
@@ -596,9 +617,9 @@ class generic_data_reader {
   /// returns true if the data set is partitioned
   bool is_partitioned() const { return m_is_partitioned; }
 
-  /// Does the data reader have a unqiue index list per model
+  /// Does the data reader have a unqiue sample list per model
   virtual bool has_list_per_model() const { return false; }
-  /// Does the data reader have a unqiue index list per trainer
+  /// Does the data reader have a unqiue sample list per trainer
   virtual bool has_list_per_trainer() const { return false; }
 
 
@@ -662,6 +683,14 @@ class generic_data_reader {
   void set_transform_pipeline(transform::transform_pipeline&& tp) {
     m_transform_pipeline = std::move(tp);
   }
+
+#ifdef LBANN_HAS_DISTCONV
+  /**
+   * Returns whether shuffle (which refers to input data shuffling for
+   * Distconv but not random sample shuffling) is required.
+   */
+  virtual bool is_tensor_shuffle_required() const { return true; }
+#endif // LBANN_HAS_DISTCONV
 
  protected:
 
@@ -782,7 +811,7 @@ class generic_data_reader {
   size_t m_max_files_to_load;
   std::string m_file_dir;
   std::string m_local_file_dir;
-  std::string m_data_index_list;
+  std::string m_data_sample_list;
   std::string m_data_fn;
   std::string m_label_fn;
   bool m_shuffle;
@@ -818,6 +847,10 @@ private:
   }
 
  protected :
+  /** @brief Holds a true value for each input data type that is supported.
+   *  Use an ordered map so that checkpoints are stable. */
+  std::map<input_data_type, bool> m_supported_input_types;
+
   //var to support GAN
   bool m_gan_labelling; //boolean flag of whether its GAN binary label, default is false
   int m_gan_label_value; //zero(0) or 1 label value for discriminator, default is 0
@@ -854,6 +887,10 @@ private:
   /// special handling for 1B jag; each reader
   /// owns a unique subset of the data
   bool m_jag_partitioned;
+
+  /** Whether to keep the order of loaded samples same as it is in the
+   *  file to make testing and validation easier */
+  bool m_keep_sample_order;
 
   /// called by fetch_data a single time if m_jag_partitioned = true;
   /// this sets various member variables (num_iterations, m_reset_mini_batch_index,

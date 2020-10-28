@@ -47,7 +47,7 @@ def construct_model():
     fc2 = fc(20, name='fc2')
     fc3 = fc(num_classes, name='fc3')
     # Layer graph
-    input = lbann.Input(name='inp_tensor')
+    input = lbann.Input(name='inp_tensor', target_mode = 'classification')
     inp_slice = lbann.Slice(input, axis=0, slice_points=str_list([0, dims-1, dims]),name='inp_slice')
     xdata = lbann.Identity(inp_slice)
     ylabel = lbann.Identity(inp_slice, name='gt_y')

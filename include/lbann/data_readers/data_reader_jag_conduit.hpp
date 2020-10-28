@@ -149,8 +149,6 @@ class data_reader_jag_conduit : public generic_data_reader {
 #ifndef _JAG_OFFLINE_TOOL_MODE_
   /// Load data and do data reader's chores.
   void load() override;
-  /// Set the type of io_buffer that will rely on this reader
-  void set_io_buffer_type(const std::string io_buffer);
 
   /// Set the id of this local instance
   void set_local_id(const std::string role);
@@ -169,9 +167,9 @@ class data_reader_jag_conduit : public generic_data_reader {
   void check_image_data();
 #endif // _JAG_OFFLINE_TOOL_MODE_
 
-  /// Set every reader instances in a trainer to have an independent index list
+  /// Set every reader instances in a trainer to have an independent sample list
   void set_list_per_trainer(bool flag) { m_list_per_trainer = flag; };
-  /// Set every reader instances in a model to have an independent index list
+  /// Set every reader instances in a model to have an independent sample list
   void set_list_per_model(bool flag) { m_list_per_model = flag; };
 
   bool has_list_per_model() const override { return m_list_per_model; }
@@ -316,8 +314,10 @@ class data_reader_jag_conduit : public generic_data_reader {
    * the number of models and the mini batch size.
    */
   bool check_num_parallel_readers(long data_set_size);
+  /// Check the consistency of the schema of the first sample
+  void sample_schema_check(const bool check_data);
   /// Rely on pre-determined list of samples.
-  void load_list_of_samples(const std::string filename, size_t stride=1, size_t offset=0);
+  void load_list_of_samples(const std::string filename);
   /// Load the sample list from a serialized archive from another rank
   void load_list_of_samples_from_archive(const std::string& sample_list_archive);
 
@@ -432,12 +432,6 @@ class data_reader_jag_conduit : public generic_data_reader {
   std::set<std::string> m_input_filter;
   /// The list of input key prefixes to filter out
   std::vector<prefix_t> m_input_prefix_filter;
-
-  /**
-   * io_buffer type that will rely on this reader.
-   * e.g. distributed_io_buffer, partitioned_io_buffer
-   */
-  std::string m_io_buffer_type;
 
   /// The number of local instances of this reader type
   static std::unordered_map<std::string, int> m_num_local_readers;

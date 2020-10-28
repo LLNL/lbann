@@ -34,9 +34,6 @@
 #ifdef LBANN_HAS_CUDNN
 #include "lbann/utils/cudnn.hpp"
 #endif // LBANN_HAS_CUDNN
-#ifdef LBANN_HAS_CUDA
-#include "lbann/utils/cublas.hpp"
-#endif // LBANN_HAS_CUDA
 
 #include <lbann.pb.h>
 #include <model.pb.h>
@@ -135,7 +132,7 @@ int main(int argc, char *argv[]) {
 #endif // LBANN_HAS_CUDNN
 #ifdef LBANN_HAS_CUDA
     if (use_cublas_tensor_ops)
-      cublas::default_to_tensor_ops();
+      El::gpu_blas::RequestTensorOperations();
 #endif // LBANN_HAS_CUDA
 
     //this must be called after call to opts->init();

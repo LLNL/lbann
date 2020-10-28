@@ -36,7 +36,7 @@
 #include "nvToolsExtCudaRt.h"
 #include "cuda_runtime.h"
 #include "cuda_profiler_api.h"
-#include "lbann/utils/cuda.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 #endif
 
 namespace {

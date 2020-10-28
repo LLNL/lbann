@@ -30,6 +30,8 @@ def get_command(cluster,
                 ckpt_dir=None,
                 disable_cuda=None,
                 dir_name=None,
+                sample_list_train_default=None,
+                sample_list_test_default=None,
                 data_filedir_default=None,
                 data_filedir_train_default=None,
                 data_filename_train_default=None,
@@ -66,7 +68,9 @@ def get_command(cluster,
         # Allocation/Run Parameters
         num_nodes, num_processes, partition, time_limit,
         # LBANN Parameters
-        ckpt_dir, dir_name, data_filedir_default, data_filedir_train_default,
+        ckpt_dir, dir_name,
+        sample_list_train_default, sample_list_test_default,
+        data_filedir_default, data_filedir_train_default,
         data_filename_train_default, data_filedir_test_default,
         data_filename_test_default, data_reader_name, data_reader_path,
         data_reader_percent, exit_after_setup, metadata, mini_batch_size,
@@ -232,20 +236,25 @@ def get_command(cluster,
         option_tasks_per_resource = ''
         if num_processes is not None:
             if cluster == 'lassen':
-                option_bind = ' -b "packed:10"'
-                option_cpu_per_resource = ' -c 40'
-                option_gpu_per_resource = ' -g 4'
-                option_launch_distribution = ' -d packed'
+                option_bind = ' -b "packed:8"'
+                option_cpu_per_resource = ' --cpu_per_rs ALL_CPUS'
+                option_gpu_per_resource = ' --gpu_per_rs ALL_GPUS'
+                option_launch_distribution = ' --launch_distribution packed'
+                # By default there should be 4 prcesses per node (especially when using GPUs)
+                resources_per_node = 4
+                if disable_cuda:
+                    # When CUDA is disabled, allow the number of resources per node to be overridden
+                    resources_per_node = math.ceil(float(num_processes)/num_nodes)
                 # Avoid `nrs (32) should not be greater than rs_per_host (1) * number of servers available (16).`
                 if num_nodes is None:
-                    num_nodes = 1
+                    num_nodes = math.ceil(float(num_processes)/resources_per_node)
                 # The "option_num_processes" is a misnomer for the LSF case. Rather than
                 # changing the rest of the code, set it to be the number of nodes. Within
                 # JSRUN, the correct number of processes will be obtained when combined
                 # with "option_tasks_per_resource".
-                option_num_processes = ' -n {n}'.format(n=num_nodes)
-                option_resources_per_host = ' -r 1'
-                option_tasks_per_resource = ' -a %d' % (num_processes/num_nodes)
+                option_num_processes = ' --nrs {n}'.format(n=num_nodes)
+                option_resources_per_host = ' --rs_per_host 1'
+                option_tasks_per_resource = ' --tasks_per_rs {n}'.format(n=resources_per_node)
                 if (num_processes%num_nodes) is not 0:
                     raise Exception('num_processes %s, is not divisible by num_nodes %d'
                                     % (num_processes, num_nodes))
@@ -270,6 +279,8 @@ def get_command(cluster,
     option_ckpt_dir = ''
     option_disable_cuda = ''
     option_data_filedir = ''
+    option_sample_list_train = ''
+    option_sample_list_test = ''
     option_data_filedir_train = ''
     option_data_filename_train = ''
     option_data_filedir_test = ''
@@ -334,6 +345,8 @@ def get_command(cluster,
                             data_filename_train_default,
                             data_filedir_test_default,
                             data_filename_test_default]
+    sample_list_parameters = [sample_list_train_default,
+                              sample_list_test_default]
     # Determine data file paths
     # If there is no regex match, then re.sub keeps the original string
     if data_filedir_default is not None:
@@ -346,6 +359,20 @@ def get_command(cluster,
         elif cluster == 'ray':
             option_data_filedir = ' --data_filedir=%s' % re.sub(
                 '[a-z]scratch[a-z]', 'gscratchr', data_filedir_default)
+    elif not sample_list_parameters == [None, None]:
+        if cluster in ['catalyst', 'corona', 'pascal',]:
+            # option_data_filedir = data_filedir_default # lscratchh, presumably
+            pass  # No need to pass in a parameter
+        elif cluster == 'lassen':
+            option_sample_list_train = ' --sample_list_train=%s' % re.sub(
+                'lustre[0-9]', 'gpfs1', sample_list_train_default)
+            option_sample_list_test = ' --sample_list_test=%s' % re.sub(
+                'lustre[0-9]', 'gpfs1', sample_list_test_default)
+        elif cluster == 'ray':
+            option_sample_list_train = ' --sample_list_train=%s' % re.sub(
+                'lustre[0-9]', 'gscratchr', sample_list_train_default)
+            option_sample_list_test = ' --sample_list_test=%s' % re.sub(
+                'lustre[0-9]', 'gscratchr', sample_list_test_default)
     elif not data_file_parameters == [None, None, None, None]:
         # Any of the data_file_parameters has a non-None value.
         if cluster in ['catalyst', 'corona', 'pascal']:
@@ -388,10 +415,11 @@ def get_command(cluster,
             # else: only data_filedir_default is set
         else:
             # if None in data_file_parameters: # If any are None
-            if data_file_parameters == [None, None, None, None]: # If all are None
+            if data_file_parameters == [None, None, None, None] and sample_list_parameters == [None, None]: # If all are None
                 if data_reader_name != 'synthetic':
                     lbann_errors.append(
                         ('data_reader_name or data_reader_path is set but not'
+                         ' sample_list_[train|test]_default or'
                          ' data_filedir_default. If a data reader is provided,'
                          ' the default filedir must be set. This allows for'
                          ' determining what the filedir should be on each'
@@ -492,8 +520,8 @@ def get_command(cluster,
                 # 'data_filedir_test',
                 # 'data_filename_train',
                 # 'data_filename_test',
-                'index_list_train',
-                'index_list_test',
+                'sample_list_train',
+                'sample_list_test',
                 'label_filename_train',
                 'label_filename_test',
                 # 'data_reader_percent',
@@ -521,8 +549,9 @@ def get_command(cluster,
     if lbann_errors != []:
         print('lbann_errors={lbann_errors}.'.format(lbann_errors=lbann_errors))
         raise Exception('Invalid Usage: ' + ' , '.join(lbann_errors))
-    command_lbann = '%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s' % (
+    command_lbann = '%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s' % (
         executable, option_ckpt_dir, option_disable_cuda,
+        option_sample_list_train, option_sample_list_test,
         option_data_filedir,
         option_data_filedir_train, option_data_filename_train,
         option_data_filedir_test, option_data_filename_test,
@@ -987,3 +1016,20 @@ def print_diff_files(dcmp):
             all_warns.append(d)
 
     return any_files_differ, all_diffs, all_warns
+
+
+# Get the number of GPUs per compute node.
+# Return 0 if the system is unknown.
+def gpus_per_node(lbann):
+    compute_center = lbann.contrib.launcher.compute_center()
+    if compute_center != "unknown":
+        return getattr(lbann.contrib, compute_center).systems.gpus_per_node()
+    else:
+        return 0
+
+
+# Get the environment variables for Distconv.
+def get_distconv_environment():
+    # TODO: Use the default halo exchange and shuffle method. See https://github.com/LLNL/lbann/issues/1659
+    return {"LBANN_DISTCONV_HALO_EXCHANGE": "AL",
+            "LBANN_DISTCONV_TENSOR_SHUFFLER": "AL"}

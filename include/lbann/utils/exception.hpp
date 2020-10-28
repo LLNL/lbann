@@ -74,6 +74,14 @@
     }                                                           \
   } while (0)
 
+#define LBANN_ASSERT(cond)                              \
+  if (!(cond))                                          \
+    LBANN_ERROR("The assertion " #cond " failed.")
+
+#define LBANN_ASSERT_WARNING(cond)                      \
+  if (!(cond))                                          \
+    LBANN_WARNING("The assertion " #cond " failed.")
+
 namespace lbann {
 
 /** Exception.

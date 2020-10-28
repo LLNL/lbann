@@ -93,7 +93,7 @@ world_comm_ptr initialize(int& argc, char**& argv) {
   // We can adjust that later when we better understand the threaded perf.
   int ppn = comm->get_procs_per_node();
   if (num_numa_nodes > ppn) {
-    if (comm->get_rank_in_node() == 0) {
+    if (comm->get_rank_in_world() == 0) {
       std::cout << comm->get_rank_in_world() <<
                 ": WARNING: node has " << num_numa_nodes <<
                 " NUMA nodes but you have " << ppn << " processes per node" <<

@@ -13,6 +13,7 @@
 #include <memory>
 #include <type_traits>
 #include <limits>
+#include <algorithm>
 
 #include <cereal/archives/binary.hpp>
 #include <unistd.h>
@@ -76,13 +77,79 @@ template<> inline std::string to_sample_name_t<std::string>(const std::string& s
 //------------------------
 
 inline sample_list_header::sample_list_header()
-  : m_is_exclusive(false), m_included_sample_count(0u),
-    m_excluded_sample_count(0u), m_num_files(0u),
-    m_file_dir("") {
+  : m_is_multi_sample(false), m_is_exclusive(false), m_no_label_header(false),
+    m_included_sample_count(0u), m_excluded_sample_count(0u), m_num_files(0u),
+    m_file_dir(""), m_sample_list_name(""), m_label_filename("") {
+}
+
+inline void sample_list_header::set_sample_list_type(const std::string& line1) {
+  std::stringstream header1(line1);
+  std::string sample_list_type;
+  header1 >> sample_list_type;
+
+  std::for_each(sample_list_type.begin(), sample_list_type.end(),
+                [](char& c){ c = std::toupper(c); });
+
+  m_is_multi_sample = false;
+  m_is_exclusive = false;
+  m_no_label_header = false;
+
+  if (sample_list_type == single_sample) {
+  } else if (sample_list_type == multi_sample_inclusion) {
+    m_is_multi_sample = true;
+    m_is_exclusive = false;
+  } else if (sample_list_type == multi_sample_exclusion) {
+    m_is_multi_sample = true;
+    m_is_exclusive = true;
+  } else if (sample_list_type == "CONDUIT_HDF5_INCLUSION") {
+    // For backward compatibility
+    m_is_multi_sample = true;
+    m_is_exclusive = false;
+    m_no_label_header = true; // old format does not use a line for label file
+  } else if (sample_list_type == "CONDUIT_HDF5_EXCLUSION") {
+    // For backward compatibility
+    m_is_multi_sample = true;
+    m_is_exclusive = true;
+    m_no_label_header = true;
+  } else {
+    LBANN_ERROR("Unknown sample list type: ", sample_list_type);
+  }
+}
+
+inline void sample_list_header::set_sample_count(const std::string& line2) {
+  std::stringstream header2(line2);
+  if (m_is_multi_sample) {
+    header2 >> m_included_sample_count;
+    header2 >> m_excluded_sample_count;
+  }
+  header2 >> m_num_files;
+
+  if (!m_is_multi_sample) {
+    m_included_sample_count = m_num_files;
+    m_excluded_sample_count = 0ul;
+  }
+}
+
+inline void sample_list_header::set_data_file_dir(const std::string& line3) {
+  std::stringstream header3(line3);
+  header3 >> m_file_dir;
+}
+
+inline void sample_list_header::set_label_filename(const std::string& line4) {
+  std::stringstream header4(line4);
+  header4 >> m_label_filename;
+}
+
+inline bool sample_list_header::is_multi_sample() const {
+  return m_is_multi_sample;
 }
 
 inline bool sample_list_header::is_exclusive() const {
   return m_is_exclusive;
+}
+
+inline bool sample_list_header::use_label_header() const {
+  return !m_no_label_header;
 }
 
 inline size_t sample_list_header::get_sample_count() const {
@@ -93,12 +160,20 @@ inline size_t sample_list_header::get_num_files() const {
   return m_num_files;
 }
 
-inline const std::string& sample_list_header::get_sample_list_filename() const {
-  return m_sample_list_filename;
-}
-
 inline const std::string& sample_list_header::get_file_dir() const {
   return m_file_dir;
+}
+
+inline const std::string& sample_list_header::get_sample_list_name() const {
+  return m_sample_list_name;
+}
+
+inline void sample_list_header::set_sample_list_name(const std::string& n) {
+  m_sample_list_name = n;
+}
+
+inline const std::string& sample_list_header::get_label_filename() const {
+  return m_label_filename;
 }
 
 //------------------
@@ -106,7 +181,8 @@ inline const std::string& sample_list_header::get_file_dir() const {
 //------------------
 
 template <typename sample_name_t>
-inline sample_list<sample_name_t>::sample_list() {
+inline sample_list<sample_name_t>::sample_list()
+: m_stride(1ul), m_keep_order(true), m_check_data_file(false) {
 }
 
 template <typename sample_name_t>
@@ -149,6 +225,9 @@ template <typename sample_name_t>
 inline void sample_list<sample_name_t>
 ::copy_members(const sample_list& rhs) {
   m_header = rhs.m_header;
+  m_stride = rhs.m_stride;
+  m_keep_order = rhs.m_keep_order;
+  m_check_data_file = rhs.m_check_data_file;
   m_sample_list = rhs.m_sample_list;
 
   /// Keep track of existing filenames
@@ -157,25 +236,53 @@ inline void sample_list<sample_name_t>
 
 template <typename sample_name_t>
 inline void sample_list<sample_name_t>
-::load(const std::string& samplelist_file,
+::load(std::istream& istrm,
        size_t stride, size_t offset) {
-  std::ifstream istr(samplelist_file);
-  get_samples_per_file(istr, samplelist_file, stride, offset);
-  istr.close();
+  m_stride = stride;
+  get_samples_per_file(istrm, stride, offset);
 }
 
 template <typename sample_name_t>
-inline sample_list_header sample_list<sample_name_t>
-::load_header(const std::string& samplelist_file) const {
-  std::ifstream istr(samplelist_file);
-  return read_header(istr, samplelist_file);
+inline void sample_list<sample_name_t>
+::load(const std::string& samplelist_file,
+       const lbann_comm& comm,
+       bool interleave) {
+  m_header.set_sample_list_name(samplelist_file);
+  std::ifstream istrm(samplelist_file);
+  load(istrm, comm, interleave);
+  istrm.close();
+}
+
+template <typename sample_name_t>
+inline void sample_list<sample_name_t>
+::load(std::istream& istrm,
+       const lbann_comm& comm,
+       bool interleave) {
+  const size_t stride = interleave? comm.get_procs_per_trainer() : 1ul;
+  const size_t offset = interleave? comm.get_rank_in_trainer() : 0ul;
+  load(istrm, stride, offset);
+}
+
+template <typename sample_name_t>
+inline void sample_list<sample_name_t>
+::load(const sample_list_header& header,
+       std::istream& istrm,
+       const lbann_comm& comm,
+       bool interleave) {
+  m_header = header;
+  const size_t stride = interleave? comm.get_procs_per_trainer() : 1ul;
+  const size_t offset = interleave? comm.get_rank_in_trainer() : 0ul;
+
+  m_stride = stride;
+  read_sample_list(istrm, stride, offset);
 }
 
 template <typename sample_name_t>
 inline void sample_list<sample_name_t>
 ::load_from_string(const std::string& samplelist) {
-  std::istringstream istr(samplelist);
-  get_samples_per_file(istr, "<LOAD_FROM_STRING>", 1, 0);
+  m_header.set_sample_list_name("<LOAD_FROM_STRING>");
+  std::istringstream istrm(samplelist);
+  load(istrm, 1ul, 0ul);
 }
 
 template <typename sample_name_t>
@@ -199,11 +306,11 @@ inline bool sample_list<sample_name_t>
 template <typename sample_name_t>
 inline std::string sample_list<sample_name_t>
 ::read_header_line(std::istream& istrm,
-                   const std::string& filename,
-                   const std::string& info) const {
+                   const std::string& listname,
+                   const std::string& info) {
   if (!istrm.good()) {
     throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
-                          + " :: unable to read the header line of sample list " + filename + " for " + info);
+                          + " :: unable to read the header line of sample list " + listname + " for " + info);
   }
 
   std::string line;
@@ -211,7 +318,7 @@ inline std::string sample_list<sample_name_t>
 
   if (line.empty()) {
     throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
-                          + " :: unable to read the header line of sample list " + filename + " for " + info
+                          + " :: unable to read the header line of sample list " + listname + " for " + info
                           + " -- the line was empty");
   }
   return line;
@@ -219,47 +326,27 @@ inline std::string sample_list<sample_name_t>
 
 
 template <typename sample_name_t>
-inline sample_list_header sample_list<sample_name_t>
-::read_header(std::istream& istrm,
-              const std::string& filename) const {
-  sample_list_header hdr;
+inline void sample_list<sample_name_t>
+::read_header(std::istream& istrm) {
+  const std::string listname = m_header.get_sample_list_name();
 
-  hdr.m_sample_list_filename = filename;
+  std::string line1 = read_header_line(istrm, listname, "the exclusiveness\n");
+  std::string line2 = read_header_line(istrm, listname, "the number of samples and the number of files\n");
+  std::string line3 = read_header_line(istrm, listname, "the data file directory\n");
 
-  std::string line1 = read_header_line(istrm, filename, "the exclusiveness");
-  std::stringstream header1(line1);
+  m_header.set_sample_list_type(line1);
+  m_header.set_sample_count(line2);
+  m_header.set_data_file_dir(line3);
 
-  std::string line2 = read_header_line(istrm, filename, "the number of samples and the number of files");
-  std::stringstream header2(line2);
-
-  std::string line3 = read_header_line(istrm, filename, "the data file directory");
-  std::stringstream header3(line3);
-
-  std::string sample_list_type;
-  header1 >> sample_list_type;
-  std::for_each(sample_list_type.begin(), sample_list_type.end(), [](char& c){ c = std::toupper(c); });
-
-  const std::string type_exclusive = sample_exclusion_list;
-  size_t found = sample_list_type.find(type_exclusive);
-
-  if (found != std::string::npos) {
-    hdr.m_is_exclusive = true;
-  } else {
-    hdr.m_is_exclusive = false;
+  if (m_header.use_label_header()) {
+    std::string line4 = read_header_line(istrm, listname, "the path to label/response file\n");
+    m_header.set_label_filename(line4);
   }
 
-  header2 >> hdr.m_included_sample_count;
-  header2 >> hdr.m_excluded_sample_count;
-  header2 >> hdr.m_num_files;
-
-  header3 >> hdr.m_file_dir;
-
-  if (hdr.get_file_dir().empty() || !check_if_dir_exists(hdr.get_file_dir())) {
-    LBANN_ERROR(std::string{} + "file " + filename
-                 + " :: data root directory '" + hdr.get_file_dir() + "' does not exist.");
+  if (m_header.get_file_dir().empty() || !check_if_dir_exists(m_header.get_file_dir())) {
+    LBANN_ERROR(std::string{} + "file " + listname
+                 + " :: data root directory '" + m_header.get_file_dir() + "' does not exist.");
   }
-
-  return hdr;
 }
 
 
@@ -293,9 +380,9 @@ inline void sample_list<sample_name_t>
 
     const std::string file_path = add_delimiter(m_header.get_file_dir()) + filename;
 
-    if (filename.empty() || !check_if_file_exists(file_path)) {
+    if (filename.empty() || (m_check_data_file && !check_if_file_exists(file_path))) {
       throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
-                            + " :: data file '" + filename + "' does not exist.");
+                            + " :: data file '" + file_path + "' does not exist.");
     }
 
     const sample_file_id_t index = m_file_id_stats_map.size();
@@ -323,10 +410,10 @@ inline void sample_list<sample_name_t>
 template <typename sample_name_t>
 inline size_t sample_list<sample_name_t>
 ::get_samples_per_file(std::istream& istrm,
-                       const std::string& filename,
                        size_t stride, size_t offset) {
-  m_header = read_header(istrm, filename);
+  read_header(istrm);
 
+  m_stride = stride;
   read_sample_list(istrm, stride, offset);
 
   return size();
@@ -412,7 +499,7 @@ inline void sample_list<sample_name_t>
   for (auto t : packed_sizes) {
     g += t;
   }
-  if (!me) {
+  if (me == comm.get_trainer_master()) {
     std::cout << "global archive size: " << g << std::endl;
   }
 
@@ -420,7 +507,7 @@ inline void sample_list<sample_name_t>
     gathered_archive[p].resize(packed_sizes[p]);
     if (me == p) {
       gathered_archive[p] = archive;
-    } 
+    }
     int sz = packed_sizes[p];
     char *data = const_cast<char*>(gathered_archive[p].data());
     comm.trainer_broadcast<char>(p, data, sz);
@@ -509,23 +596,34 @@ template <class Archive>
 void sample_list<sample_name_t>
 ::serialize( Archive & ar ) {
   ar(m_header, m_sample_list, m_file_id_stats_map);
+  // The member variables that are only meaningful during initial loading
+  // are not included here.
+  // e.g., m_stride, m_keep_order, m_check_data_file
 }
 
 template <typename sample_name_t>
 inline void sample_list<sample_name_t>
 ::write_header(std::string& sstr, size_t num_files) const {
-  // The first line indicate if the list is exclusive or inclusive
-  // The next line contains the number of samples (included and excluded),
-  // as well as the number of files, which are the same in this caes
-  // The next line contains the root data file directory
+  // The first line indicate if the list is single-sample-per-file type,
+  // multi-sample-exclusive or multi-sample-inclusive.
+  // The second line contains the number of samples (included and excluded
+  // when applicable), as well as the number of files.
+  // The third line contains the root data file directory.
+  // The fourth line contains the path to the label file when applicable
 
-  sstr += (m_header.is_exclusive()? sample_exclusion_list + "\n" : sample_inclusion_list + "\n");
-  size_t total, included, excluded;
-  get_num_samples(total, included, excluded);
-  /// TODO: clarify the comment below
-  /// Include the number of invalid samples, which for an inclusive index list is always 0
-  sstr += std::to_string(included) + ' '  + std::to_string(excluded) + ' '  + std::to_string(num_files) + '\n';
+  if (m_header.is_multi_sample()) {
+    sstr += (m_header.is_exclusive()? multi_sample_exclusion + "\n" : multi_sample_inclusion + "\n");
+
+    size_t total, included, excluded;
+    get_num_samples(total, included, excluded);
+
+    sstr += std::to_string(included) + ' '  + std::to_string(excluded) + ' '  + std::to_string(num_files) + '\n';
+  } else {
+    sstr += single_sample + "\n";
+    sstr += std::to_string(num_files) + '\n';
+  }
   sstr += m_header.get_file_dir() + '\n';
+  sstr += m_header.get_label_filename() + '\n';
 }
 
 template <typename sample_name_t>
@@ -547,8 +645,21 @@ inline bool sample_list<sample_name_t>
 
   sstr.clear();
 
-  // reserve the string to hold the entire sample lit
-  size_t estimated_len = 30 + 42 + m_header.get_file_dir().size() + 1 + total_len + 1000;
+  static const size_t max_type_len
+    = std::max(std::max(multi_sample_exclusion.size(),
+                        multi_sample_inclusion.size()),
+               single_sample.size());
+
+  static const size_t max_num_len
+    = std::to_string(std::numeric_limits<size_t>::max()).size();
+
+  // reserve the string to hold the entire sample list
+  size_t estimated_len = max_type_len
+                       + max_num_len + 2
+                       + m_header.get_file_dir().size()
+                       + m_header.get_label_filename().size()
+                       + 4 // sizeof('\n') * 4
+                       + total_len + 1000;
   sstr.reserve(estimated_len);
 
   // write the list header
@@ -614,9 +725,15 @@ inline const std::string& sample_list<sample_name_t>
 }
 
 template <typename sample_name_t>
-inline   const std::string& sample_list<sample_name_t>
+inline const std::string& sample_list<sample_name_t>
 ::get_samples_dirname() const {
   return m_header.get_file_dir();
+}
+
+template <typename sample_name_t>
+inline const std::string& sample_list<sample_name_t>
+::get_label_filename() const {
+  return m_header.get_label_filename();
 }
 
 template <typename sample_name_t>
@@ -637,7 +754,7 @@ inline void sample_list<sample_name_t>
     }
   } else if constexpr (std::is_same<std::string, sample_name_t>::value) {
     for (auto& s: m_sample_list) {
-      s.second = s.first;
+      s.second = get_samples_filename(s.first);
     }
   } else {
     LBANN_ERROR(std::string{} + " :: base class does not implement this method"
@@ -674,7 +791,7 @@ template<> inline void sample_list<size_t>
 template<> inline void sample_list<std::string>
 ::assign_samples_name() {
   for (auto& s: m_sample_list) {
-    s.second = s.first;
+    s.second = get_samples_filename(s.first);
   }
 }
 
@@ -739,9 +856,92 @@ inline void sample_list<sample_name_t>
     }
   }
 
+  if (m_keep_order) {
+    reorder();
+  }
+
   assign_samples_name();
 
   return;
+}
+
+template <typename sample_name_t>
+inline void sample_list<sample_name_t>
+::reorder() {
+  if (m_stride > 1ul) { // undo interleaving
+    const size_t sz = m_sample_list.size();
+    const size_t s = sz/m_stride;
+    const size_t s_more = (sz + m_stride - 1ul)/m_stride;
+    const size_t n_more = sz - s * m_stride;
+
+    samples_t tmp_sample_list;
+    tmp_sample_list.reserve(s_more * m_stride);
+
+    for (size_t i = 0ul; i < s_more; ++i) {
+      for (size_t j = i, k = 0ul; j < sz; ++k) {
+        tmp_sample_list.push_back(m_sample_list[j]);
+        //if (tmp_sample_list.size() == sz) break;
+        j += ((k < n_more)? s_more : s);
+      }
+    }
+    tmp_sample_list.resize(sz);
+    std::swap(m_sample_list, tmp_sample_list);
+    m_stride = 1ul;
+  }
+}
+
+template <typename sample_name_t>
+inline void sample_list<sample_name_t>
+::build_sample_map_from_name_to_index() {
+  m_map_name_to_idx.clear();
+  for (size_t i = 0ul; i < m_sample_list.size(); ++i) {
+    m_map_name_to_idx.insert(std::make_pair(m_sample_list[i].second, i));
+  }
+}
+
+template <typename sample_name_t>
+inline void sample_list<sample_name_t>
+::clear_sample_map_from_name_to_index() {
+  m_map_name_to_idx.clear();
+  m_map_name_to_idx.rehash(0);
+  sample_map_t tmp;
+  tmp.rehash(0);
+  tmp.swap(m_map_name_to_idx);
+}
+
+template <typename sample_name_t>
+inline typename sample_list<sample_name_t>::sample_idx_t sample_list<sample_name_t>
+::get_sample_index(const sample_name_t& sn) {
+  typename sample_map_t::const_iterator it = m_map_name_to_idx.find(sn);
+  if (it == m_map_name_to_idx.cend()) {
+    return size();
+    //LBANN_ERROR(" :: cannot find the sample name ", lbann::to_string(sn));
+  }
+  return it->second;
+}
+
+template <typename sample_name_t>
+inline void sample_list<sample_name_t>
+::keep_sample_order(bool keep) {
+  m_keep_order = keep;
+}
+
+template <typename sample_name_t>
+inline void sample_list<sample_name_t>
+::set_sample_list_name(const std::string& n) {
+  m_header.set_sample_list_name(n);
+}
+
+template <typename sample_name_t>
+inline void sample_list<sample_name_t>
+::set_data_file_check() {
+  m_check_data_file = true;
+}
+
+template <typename sample_name_t>
+inline void sample_list<sample_name_t>
+::unset_data_file_check() {
+  m_check_data_file = false;
 }
 
 } // end of namespace lbann
