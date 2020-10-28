@@ -1074,14 +1074,13 @@ base_convolution_layer<TensorDataType,Device>::get_backward_filter_algo_dnn(
     kernel_gradient.Resize(this->get_weights(0).get_matrix_height(),
                            this->get_weights(0).get_matrix_width());
     m_bwd_filter_dnn_algos[local_mini_batch_size] =
-      cudnn::from_cudnn(
-        dnn_lib::get_bwd_filter_algorithm(
-          true, deterministic,
-          input_desc, input,
-          prev_error_signal_desc, prev_error_signal,
-          conv_desc,
-          kernel_gradient_desc, kernel_gradient.Buffer(),
-          ws_size, ws));
+      dnn_lib::get_bwd_filter_algorithm(
+        true, deterministic,
+        input_desc, input,
+        prev_error_signal_desc, prev_error_signal,
+        conv_desc,
+        kernel_gradient_desc, kernel_gradient.Buffer(),
+        ws_size, ws);
   }
   return m_bwd_filter_dnn_algos[local_mini_batch_size];
 }

@@ -1610,7 +1610,7 @@ cudnnConvolutionBwdDataAlgo_t get_bwd_data_algorithm(
   }
 }
 
-cudnnConvolutionBwdFilterAlgo_t get_bwd_filter_algorithm(
+bwd_filter_conv_alg get_bwd_filter_algorithm(
   bool autotune,
   bool deterministic,
   const TensorDescriptor& input_desc,
@@ -1622,18 +1622,20 @@ cudnnConvolutionBwdFilterAlgo_t get_bwd_filter_algorithm(
   void* kernel_gradient,
   size_t ws_size,
   void* ws) {
+  cudnnConvolutionBwdFilterAlgo_t a;
   if (autotune) {
-    return get_bwd_filter_algo_autotune(deterministic,
+    a = get_bwd_filter_algo_autotune(deterministic,
                                         input_desc, input,
                                         prev_error_signal_desc, prev_error_signal,
                                         conv_desc,
                                         kernel_gradient_desc, kernel_gradient,
                                         ws_size, ws);
   } else {
-    return get_bwd_filter_algo_heuristic(deterministic, input_desc,
+    a = get_bwd_filter_algo_heuristic(deterministic, input_desc,
                                          prev_error_signal_desc, conv_desc,
                                          kernel_gradient_desc, ws_size);
   }
+  return from_cudnn(a);
 }
 
 namespace {
