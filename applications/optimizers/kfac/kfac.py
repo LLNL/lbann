@@ -84,9 +84,9 @@ data_reader = data.mnist.make_data_reader(validation_percent=0)
 num_classes = 10
 
 # Input data
-input_ = lbann.Input()
-images = lbann.Split(input_)
-labels = lbann.Split(input_)
+input_ = lbann.Input(target_mode='classification')
+images = lbann.Identity(input_)
+labels = lbann.Identity(input_)
 has_bias = False
 x = images
 
