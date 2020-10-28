@@ -55,6 +55,26 @@ void construct_std_options() {
                         "Number of threads available to both I/O and "
                         "initial data transformations for each rank.",
                         64);
+  arg_parser.add_option(NUM_TRAIN_SAMPLES,
+                        {"--num_train_samples"},
+                        utils::ENV("LBANN_NUM_TRAIN_SAMPLES"),
+                        "Set the number of training samples to ingest.",
+                        0);
+  arg_parser.add_option(NUM_VALIDATE_SAMPLES,
+                        {"--num_validate_samples"},
+                        utils::ENV("LBANN_NUM_VALIDATE_SAMPLES"),
+                        "Set the number of validate samples to ingest.",
+                        0);
+  arg_parser.add_option(NUM_TEST_SAMPLES,
+                        {"--num_test_samples"},
+                        utils::ENV("LBANN_NUM_TEST_SAMPLES"),
+                        "Set the number of testing samples to ingest.",
+                        0);
+  arg_parser.add_flag(ALLOW_GLOBAL_STATISTICS,
+                      {"--ltfb_allow_global_statistics"},
+                      utils::ENV("LBANN_LTFB_ALLOW_GLOBAL_STATISTICS"),
+                      "Allow the print_statistics callback to report "
+                      "global (inter-trainer) summary statistics.");
 }
 
 /// Construct a trainer that contains a lbann comm object and threadpool
@@ -81,8 +101,15 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
     // after calling split_trainers()
     // set_num_parallel_readers(*comm, pb);
 
+    // Check to see if the model wants to reduce the I/O parallelism
+    bool serialized_io = false;
+    if(pb_trainer->serialize_io()) {
+      std::cout << "Trainer " << pb_trainer->name() << " serialized the I/O threads" << std::endl;
+      serialized_io = true;
+    }
+
     // Initalize a per-trainer I/O thread pool
-    std::unique_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(comm, opts);
+    std::unique_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(comm, opts, serialized_io);
 
     // Setup I/O threads
     auto io_threads_per_process = io_thread_pool->get_num_threads();
@@ -184,6 +211,7 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
     // Initialize the general RNGs and the data sequence RNGs
     init_random(random_seed, io_threads_per_process);
     init_data_seq_random(data_seq_random_seed);
+    init_ltfb_random(root_random_seed);
     trainer->set_random_seeds(root_random_seed, random_seed, data_seq_random_seed);
 
     // Collect everyone's random seeds
@@ -194,8 +222,8 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
     std::vector<int> data_seq_random_seeds(comm->get_procs_in_world());
     comm->world_all_gather(data_seq_random_seed, data_seq_random_seeds);
 
-    // Update the index lists to accomodate multi-trainer / multi-model specification
-    customize_data_readers_index_list(*comm, pb);
+    // Update the sample lists to accomodate multi-trainer / multi-model specification
+    customize_data_readers_sample_list(*comm, pb);
 
     // Initialize data readers
     //@todo: code not in place for correctly handling image preprocessing
@@ -238,8 +266,12 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
 }
 
 /// Setup I/O thread pool that is shared across all models
-std::unique_ptr<thread_pool> construct_io_thread_pool(lbann_comm *comm, options *opts) {
+  std::unique_ptr<thread_pool> construct_io_thread_pool(lbann_comm *comm, options *opts, bool serialized_io) {
   int max_io_threads = num_free_cores_per_process(comm);
+  // Allow the trainer to override the command-line option or environment variable
+  if(serialized_io) {
+    max_io_threads = 1;
+  }
 
   auto& arg_parser = global_argument_parser();
   int req_io_threads = arg_parser.get<int>(NUM_IO_THREADS);
@@ -275,16 +307,6 @@ std::unique_ptr<model> build_model_from_prototext(
   }
 
   std::ostringstream err;
-
-  lbann_data::Model *pb_model = pb.mutable_model();
-
-  // Check to see if the model wants to reduce the I/O parallelism
-  if(pb_model->serialize_io() && io_thread_pool.get_num_threads() != 1) {
-    if(master) {
-      std::cout << "Model " << pb_model->name() << " serialized the I/O threads" << std::endl;
-    }
-    io_thread_pool.relaunch_pinned_threads(1);
-  }
 
   // Save info to file; this includes the complete prototext (with any over-rides
   // from the cmd line) and various other info
@@ -391,9 +413,9 @@ void print_lbann_configuration(lbann_comm *comm, int io_threads_per_process, int
             << "  OpenMP threads per process : " << omp_get_max_threads() << std::endl
             << "  I/O threads per process (+offset) : " << io_threads_per_process
             << " (+" << io_threads_offset << ")" << std::endl;
-#ifdef HYDROGEN_HAVE_CUDA
+#ifdef HYDROGEN_HAVE_GPU
   std::cout << "  GPUs on node               : " << hydrogen::gpu::DeviceCount() << std::endl;
-#endif // HYDROGEN_HAVE_CUDA
+#endif // HYDROGEN_HAVE_GPU
   std::cout << std::endl;
 
   // Report build settings
@@ -420,7 +442,7 @@ void print_lbann_configuration(lbann_comm *comm, int io_threads_per_process, int
 #else
   std::cout << "NOT detected" << std::endl;
 #endif // LBANN_HAS_ALUMINUM
-  std::cout << "  CUDA     : ";
+  std::cout << "  GPU     : ";
 #ifdef LBANN_HAS_GPU
   std::cout << "detected" << std::endl;
 #else

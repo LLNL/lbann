@@ -10,12 +10,11 @@ class Model:
     def __init__(self, epochs,
                  layers=[], weights=[], objective_function=None,
                  metrics=[], callbacks=[],
-                 summary_dir=None,serialize_io=False):
+                 summary_dir=None):
 
         # Scalar fields
         self.epochs = epochs
         self.summary_dir = summary_dir
-        self.serialize_io = serialize_io
         # Get connected layers
         self.layers = list(lbann.core.layer.traverse_layer_graph(layers))
 
@@ -44,7 +43,6 @@ class Model:
         model.num_epochs = self.epochs
         if self.summary_dir is not None:
             model.summarizer.dir = self.summary_dir
-        model.serialize_io = self.serialize_io
         # Add model components
         model.layer.extend([l.export_proto() for l in self.layers])
         model.weights.extend([w.export_proto() for w in self.weights])

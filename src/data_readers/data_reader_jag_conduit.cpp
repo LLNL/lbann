@@ -26,7 +26,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"
-#include "lbann/io/data_buffers/partitioned_io_buffer.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/execution_contexts/sgd_execution_context.hpp"
@@ -54,6 +53,7 @@
 
 #include <cereal/archives/binary.hpp>
 #include <sstream>
+#include <fstream>
 
 // This comes after all the headers, and is only visible within the current implementation file.
 // To make sure, we put '#undef _CN_' at the end of this file
@@ -87,10 +87,6 @@ const std::set<std::string> data_reader_jag_conduit::non_numeric_vars = {
   "solver_mode"
 };
 
-void data_reader_jag_conduit::set_io_buffer_type(const std::string io_buffer) {
-  m_io_buffer_type = io_buffer;
-}
-
 void data_reader_jag_conduit::set_local_id(const std::string role) {
   m_local_reader_id = m_num_local_readers[role]++;
 }
@@ -117,18 +113,8 @@ void data_reader_jag_conduit::shuffle_indices(rng_gen& gen) {
 }
 
 int data_reader_jag_conduit::compute_max_num_parallel_readers() {
-  if (m_io_buffer_type == "partitioned") {
-#if 0
-    // @todo BVE FIXME - Why are we doing this here
-    set_num_parallel_readers(partitioned_io_buffer<DataType>::compute_max_num_parallel_readers(
-                             0, get_mini_batch_size(),
-                             get_num_parallel_readers(), get_comm()));
-#endif
-    set_sample_stride(get_num_parallel_readers());
-    set_iteration_stride(1);
-  } else {
-    LBANN_ERROR(get_type() + ":: unknown io_buffer type: " + m_io_buffer_type);
-  }
+  set_sample_stride(get_num_parallel_readers());
+  set_iteration_stride(1);
   return get_num_parallel_readers();
 }
 
@@ -167,7 +153,6 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
   m_scalar_prefix_filter = rhs.m_scalar_prefix_filter;
   m_input_filter = rhs.m_input_filter;
   m_input_prefix_filter = rhs.m_input_prefix_filter;
-  m_io_buffer_type = rhs.m_io_buffer_type;
   m_local_reader_id = rhs.m_local_reader_id;
   //TODO: need  to make sure this is what we want
   m_leading_reader = rhs.m_leading_reader;
@@ -242,7 +227,6 @@ void data_reader_jag_conduit::set_defaults() {
   m_scalar_prefix_filter.clear();
   m_input_filter.clear();
   m_input_prefix_filter.clear();
-  m_io_buffer_type = "";
   m_local_reader_id = 0;
   m_leading_reader = this;
   m_cached_data_mb_size = 0;
@@ -256,6 +240,9 @@ void data_reader_jag_conduit::set_defaults() {
   //m_sample_list.clear();
   m_list_per_trainer = false;
   m_list_per_model = false;
+
+  m_supported_input_types[input_data_type::LABELS] = true;
+  m_supported_input_types[input_data_type::RESPONSES] = true;
 }
 
 void data_reader_jag_conduit::setup(int num_io_threads, observer_ptr<thread_pool> io_thread_pool) {
@@ -786,58 +773,15 @@ void data_reader_jag_conduit::load() {
   if(is_master()) {
     std::cout << "data_reader_jag_conduit - starting load" << std::endl;
   }
-  const std::string data_dir = add_delimiter(get_file_dir());
-  const std::string sample_list_file = data_dir + get_data_index_list();
+  const std::string sample_list_file = get_data_sample_list();
+
+  if (sample_list_file.empty()) {
+    LBANN_ERROR("sample list is not specified.");
+  }
+
+  load_list_of_samples(sample_list_file);
 
   options *opts = options::get();
-  bool check_data = opts->get_bool("check_data");
-
-  /// The use of these flags need to be updated to properly separate
-  /// how index lists are used between trainers and models
-  /// @todo m_list_per_trainer || m_list_per_model
-  double tm2 = get_time();
-  load_list_of_samples(sample_list_file, m_comm->get_procs_per_trainer(), m_comm->get_rank_in_trainer());
-  if(is_master()) {
-      std::cout << "Finished loading sample list; time: " << get_time() - tm2 << std::endl;
-    if (!check_data) {
-      std::cout << "Skipping check data" << std::endl;
-    }
-  }
-
-  /// Check the data that each rank loaded
-  if (!m_is_data_loaded && !m_sample_list.empty()) {
-    m_is_data_loaded = true;
-
-    /// Open the first sample to make sure that all of the fields are correct
-    m_sample_list.open_samples_file_handle(0, true);
-
-    if (m_scalar_keys.size() == 0u) {
-      set_all_scalar_choices(); // use all by default if none is specified
-    }
-    if (check_data) {
-      check_scalar_keys();
-    }
-
-    if (m_input_keys.size() == 0u) {
-      set_all_input_choices(); // use all by default if none is specified
-    }
-    if (check_data) {
-      check_input_keys();
-    }
-
-    if (check_data) {
-      check_image_data();
-    }
-
-    m_sample_list.close_if_done_samples_file_handle(0);
-  }
-  if(is_master()) {
-    std::cout << "Done with data checking" << std::endl;
-  }
-
-  /// Merge all of the sample lists
-  tm2 = get_time();
-  m_sample_list.all_gather_packed_lists(*m_comm);
   if (opts->has_string("write_sample_list") && m_comm->am_trainer_master()) {
     {
       const std::string msg = " writing sample list " + sample_list_file;
@@ -849,17 +793,11 @@ void data_reader_jag_conduit::load() {
     s << basename << "." << ext;
     m_sample_list.write(s.str());
   }
-  if (is_master()) {
-    std::cout << "time for all_gather_packed_lists: " << get_time() - tm2 << std::endl;
-  }
 
+  m_shuffled_indices.clear();
   m_shuffled_indices.resize(m_sample_list.size());
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
   resize_shuffled_indices();
-
-  if(is_master()) {
-    std::cout << "Lists have been gathered" << std::endl;
-  }
 
   instantiate_data_store();
   select_subset_of_data();
@@ -926,14 +864,103 @@ void data_reader_jag_conduit::do_preload_data_store() {
   }
 }
 
-void data_reader_jag_conduit::load_list_of_samples(const std::string sample_list_file, size_t stride, size_t offset) {
+void data_reader_jag_conduit::sample_schema_check(const bool check_data) {
+  /// Check the data that each rank loaded
+  if (!m_is_data_loaded && !m_sample_list.empty()) {
+    m_is_data_loaded = true;
+
+    /// Open the first sample to make sure that all of the fields are correct
+    m_sample_list.open_samples_file_handle(0, true);
+
+    if (m_scalar_keys.size() == 0u) {
+      set_all_scalar_choices(); // use all by default if none is specified
+    }
+    if (check_data) {
+      check_scalar_keys();
+    }
+
+    if (m_input_keys.size() == 0u) {
+      set_all_input_choices(); // use all by default if none is specified
+    }
+    if (check_data) {
+      check_input_keys();
+    }
+
+    if (check_data) {
+      check_image_data();
+    }
+
+    m_sample_list.close_if_done_samples_file_handle(0);
+  }
+}
+
+template<typename CharT, typename Traits = std::char_traits<CharT> >
+class vectorwrapbuf : public std::basic_streambuf<CharT, Traits> {
+public:
+    vectorwrapbuf(std::vector<CharT> &vec) {
+        this->setg(vec.data(), vec.data(), vec.data() + vec.size());
+    }
+};
+
+void data_reader_jag_conduit::load_list_of_samples(const std::string sample_list_file) {
   // load the sample list
   double tm1 = get_time();
-  m_sample_list.load(sample_list_file, stride, offset);
+
+  options *opts = options::get();
+
+  if (this->m_keep_sample_order || opts->has_string("keep_sample_order")) {
+    m_sample_list.keep_sample_order(true);
+  } else {
+    m_sample_list.keep_sample_order(false);
+  }
+
+  const bool check_data = opts->get_bool("check_data");
+
+  if (check_data) {
+    m_sample_list.set_data_file_check();
+  }
+
+  std::vector<char> buffer;
+
+  if (opts->has_string("load_full_sample_list_once")) {
+    if (m_comm->am_trainer_master()) {
+      load_file(sample_list_file, buffer);
+    }
+    m_comm->trainer_broadcast(m_comm->get_trainer_master(), buffer);
+
+    vectorwrapbuf<char> strmbuf(buffer);
+    std::istream iss(&strmbuf);
+
+    m_sample_list.set_sample_list_name(sample_list_file);
+    m_sample_list.load(iss, *(this->m_comm), true);
+  } else {
+    m_sample_list.load(sample_list_file, *(this->m_comm), true);
+  }
+
   double tm2 = get_time();
 
   if (is_master()) {
-    std::cout << "Time to load sample list: " << tm2 - tm1 << std::endl;
+    std::cout << "Time to load sample list '" << sample_list_file << "': " << tm2 - tm1 << std::endl;
+  }
+
+  sample_schema_check(check_data);
+
+  double tm3 = get_time();
+  if (is_master()) {
+    if (!check_data) {
+      std::cout << "Skip data checking" << std::endl;
+    } else {
+      std::cout << "Time to check sample data: " << tm3 - tm2 << std::endl;
+    }
+  }
+
+  /// Merge all of the sample lists
+  m_sample_list.all_gather_packed_lists(*m_comm);
+  set_file_dir(m_sample_list.get_samples_dirname());
+
+  double tm4 = get_time();
+  if(is_master()) {
+    std::cout << "Time to gather sample list '" << sample_list_file << "': " << tm4 - tm3 << std::endl;
   }
 }
 

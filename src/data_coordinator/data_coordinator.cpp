@@ -26,10 +26,18 @@
 
 #include <lbann/data_coordinator/data_coordinator.hpp>
 #include <lbann/trainers/trainer.hpp>
+#include <lbann/utils/distconv.hpp>
+#include <cereal/types/utility.hpp>
+#include <cereal/types/unordered_map.hpp>
+#include <cereal/types/vector.hpp>
+#include <cereal/archives/binary.hpp>
+#include <cereal/archives/xml.hpp>
 
 namespace lbann {
 
-void data_coordinator::setup(int max_mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers) {
+void data_coordinator::setup(thread_pool& io_thread_pool, int max_mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers) {
+  m_io_thread_pool = &io_thread_pool;
+
   m_data_readers = data_readers;
 
   if(m_data_readers[execution_mode::training] != nullptr) {
@@ -49,8 +57,8 @@ void data_coordinator::setup(int max_mini_batch_size, std::map<execution_mode, g
   // Setup data readers
   for(auto&& dr: m_data_readers) {
     if (!dr.second) continue;
-    dr.second->setup(m_trainer->get_io_thread_pool().get_num_threads(),
-                     &(m_trainer->get_io_thread_pool()));
+    dr.second->setup(m_io_thread_pool->get_num_threads(),
+                     m_io_thread_pool);
     dr.second->set_rank(m_comm->get_rank_in_trainer());
   }
 
@@ -70,7 +78,7 @@ void data_coordinator::setup(int max_mini_batch_size, std::map<execution_mode, g
     }
     for (auto&& r : m_data_readers) {
       if (!r.second) continue;
-      r.second->setup_data_store(m_trainer->get_max_mini_batch_size());
+      r.second->setup_data_store(max_mini_batch_size);
     }
   }
 }
@@ -94,13 +102,27 @@ void data_coordinator::calculate_num_iterations_per_epoch(int max_mini_batch_siz
       " :: generic_data_distribution: number of parallel readers is zero");
   }
 
+#ifdef LBANN_HAS_DISTCONV
+  if (dc::is_cosmoflow_parallel_io_enabled()) {
+    // #trainers is assumed to be 1.
+    assert_eq(this->m_comm->get_num_trainers(), 1);
+  }
+#endif
+
   /// Set the basic parameters for stride and offset of the data reader
   int batch_stride = max_mini_batch_size;
   int base_offset  = this->m_comm->get_rank_in_trainer();
+#ifdef LBANN_HAS_DISTCONV
+  base_offset  = dc::get_input_rank(*(this->m_comm)) / dc::get_number_of_io_partitions();
+#endif
   /// Set mini-batch size and stride
   data_reader->set_mini_batch_size(max_mini_batch_size);
   data_reader->set_stride_to_next_mini_batch(batch_stride);
+#ifdef LBANN_HAS_DISTCONV
+  data_reader->set_sample_stride(num_parallel_readers_per_model / dc::get_number_of_io_partitions());
+#else
   data_reader->set_sample_stride(num_parallel_readers_per_model);
+#endif
   data_reader->set_iteration_stride(1);
   /// Set data reader base offset and model offset
   data_reader->set_base_offset(base_offset);
@@ -116,7 +138,6 @@ void data_coordinator::calculate_num_iterations_per_epoch(int max_mini_batch_siz
   data_reader->set_num_iterations_per_epoch(num_iterations_per_epoch);
   data_reader->set_last_mini_batch_size(last_mini_batch_size);
   data_reader->set_stride_to_last_mini_batch(data_reader->get_stride_to_next_mini_batch());
-
   data_reader->set_global_mini_batch_size(max_mini_batch_size);
   data_reader->set_global_last_mini_batch_size(last_mini_batch_size);
   return;
@@ -162,6 +183,165 @@ int data_coordinator::compute_max_num_parallel_readers(long data_set_size, int m
   }
 #endif
   return num_parallel_readers;
+}
+
+size_t data_coordinator::get_num_iterations_per_epoch(execution_mode mode) const {
+  const generic_data_reader *data_reader = get_data_reader(mode);
+  return (data_reader != nullptr) ? data_reader->get_num_iterations_per_epoch() : 0;
+}
+
+int data_coordinator::get_current_step_in_epoch(execution_mode mode) const {
+  const generic_data_reader *data_reader = get_data_reader(mode);
+  return (data_reader != nullptr) ? data_reader->get_current_step_in_epoch() : 0;
+}
+
+int data_coordinator::get_mini_batch_size(execution_mode mode) const {
+  const generic_data_reader *data_reader = get_data_reader(mode);
+  return (data_reader != nullptr) ? data_reader->get_mini_batch_size() : 0;
+}
+
+int data_coordinator::get_last_mini_batch_size(execution_mode mode) const {
+  const generic_data_reader *data_reader = get_data_reader(mode);
+  return (data_reader != nullptr) ? data_reader->get_last_mini_batch_size() : 0;
+}
+
+int data_coordinator::get_current_mini_batch_size(execution_mode mode) const {
+  const generic_data_reader *data_reader = get_data_reader(mode);
+  return (data_reader != nullptr) ? data_reader->get_current_mini_batch_size() : 0;
+}
+
+int data_coordinator::get_global_mini_batch_size(execution_mode mode) const {
+  const generic_data_reader *data_reader = get_data_reader(mode);
+  return (data_reader != nullptr) ? data_reader->get_global_mini_batch_size() : 0;
+}
+
+int data_coordinator::get_current_global_mini_batch_size(execution_mode mode) const {
+  const generic_data_reader *data_reader = get_data_reader(mode);
+  return (data_reader != nullptr) ? data_reader->get_current_global_mini_batch_size() : 0;
+}
+
+int data_coordinator::get_global_last_mini_batch_size(execution_mode mode) const {
+  const generic_data_reader *data_reader = get_data_reader(mode);
+  return (data_reader != nullptr) ? data_reader->get_global_last_mini_batch_size() : 0;
+}
+
+int data_coordinator::get_world_master_mini_batch_adjustment(execution_mode mode) const {
+  const generic_data_reader *data_reader = get_data_reader(mode);
+  return (data_reader != nullptr) ? data_reader->get_world_master_mini_batch_adjustment() : 0;
+}
+
+int data_coordinator::get_current_world_master_mini_batch_adjustment(execution_mode mode, int model_rank) const {
+  const generic_data_reader *data_reader = get_data_reader(mode);
+  return (data_reader != nullptr) ? data_reader->get_current_world_master_mini_batch_adjustment(model_rank) : 0;
+}
+
+// save state of IO to a checkpoint
+bool data_coordinator::save_to_checkpoint_shared(persist& p) const {
+  // save state of data readers from input layer
+  data_reader_map_t::const_iterator it;
+  if(p.get_cb_type() == callback_type::execution_context_only
+     || p.get_cb_type() == callback_type::full_checkpoint){
+
+    it = this->m_data_readers.find(execution_mode::training);
+    if ((it != this->m_data_readers.end()) && it->second) {
+      (it->second)->save_to_checkpoint_shared(p, execution_mode::training);
+    }
+    it = this->m_data_readers.find(execution_mode::testing);
+    if ((it != this->m_data_readers.end()) && it->second) {
+      (it->second)->save_to_checkpoint_shared(p, execution_mode::testing);
+    }
+    it = this->m_data_readers.find(execution_mode::validation);
+    if ((it != this->m_data_readers.end()) && it->second) {
+      (it->second)->save_to_checkpoint_shared(p, execution_mode::validation);
+    }
+
+    // if (this->m_comm->am_trainer_master()) {
+    //   write_cereal_archive<const data_coordinator>(*this, p, execution_mode::training, "_dc.xml");
+    // }
+  }
+  return true;
+}
+
+// reload state of IO from a checkpoint
+bool data_coordinator::load_from_checkpoint_shared(persist& p) {
+  // save state of data readers from input layer
+  data_reader_map_t::const_iterator it;
+  if(p.get_cb_type() == callback_type::execution_context_only
+     || p.get_cb_type() == callback_type::full_checkpoint){
+
+    it = this->m_data_readers.find(execution_mode::training);
+    if ((it != this->m_data_readers.end()) && it->second) {
+      (it->second)->load_from_checkpoint_shared(p, execution_mode::training);
+    }
+    it = this->m_data_readers.find(execution_mode::testing);
+    if ((it != this->m_data_readers.end()) && it->second) {
+      (it->second)->load_from_checkpoint_shared(p, execution_mode::testing);
+    }
+    it = this->m_data_readers.find(execution_mode::validation);
+    if ((it != this->m_data_readers.end()) && it->second) {
+      (it->second)->load_from_checkpoint_shared(p, execution_mode::validation);
+    }
+
+    // std::string buf;
+    // if (this->m_comm->am_trainer_master()) {
+    //   read_cereal_archive<data_coordinator>(*this, p, execution_mode::training, "_dc.xml");
+    //   buf = create_cereal_archive_binary_string<data_coordinator>(*this);
+    // }
+
+    // // TODO: this assumes homogeneous processors
+    // // broadcast state from rank 0
+    // this->m_comm->trainer_broadcast(0, buf);
+
+    // if (!this->m_comm->am_trainer_master()) {
+    //   unpack_cereal_archive_binary_string<data_coordinator>(*this, buf);
+    // }
+  }
+
+  return true;
+}
+
+bool data_coordinator::save_to_checkpoint_distributed(persist& p) const {
+  // save state of data readers from input layer
+  data_reader_map_t::const_iterator it;
+  if(p.get_cb_type() == callback_type::execution_context_only
+     || p.get_cb_type() == callback_type::full_checkpoint) {
+
+    it = this->m_data_readers.find(execution_mode::training);
+    if ((it != this->m_data_readers.end()) && it->second) {
+      (it->second)->save_to_checkpoint_distributed(p, execution_mode::training);
+    }
+    it = this->m_data_readers.find(execution_mode::testing);
+    if ((it != this->m_data_readers.end()) && it->second) {
+      (it->second)->save_to_checkpoint_distributed(p, execution_mode::testing);
+    }
+    it = this->m_data_readers.find(execution_mode::validation);
+    if ((it != this->m_data_readers.end()) && it->second) {
+      (it->second)->save_to_checkpoint_distributed(p, execution_mode::validation);
+    }
+
+    // write_cereal_archive<const data_coordinator>(*this, p, execution_mode::training, "_dc.xml");
+  }
+  return true;
+}
+
+bool data_coordinator::load_from_checkpoint_distributed(persist& p) {
+  // save state of data readers from input layer
+  data_reader_map_t::const_iterator it;
+  it = this->m_data_readers.find(execution_mode::training);
+  if ((it != this->m_data_readers.end()) && it->second) {
+    (it->second)->load_from_checkpoint_distributed(p, execution_mode::training);
+  }
+  it = this->m_data_readers.find(execution_mode::testing);
+  if ((it != this->m_data_readers.end()) && it->second) {
+    (it->second)->load_from_checkpoint_distributed(p, execution_mode::testing);
+  }
+  it = this->m_data_readers.find(execution_mode::validation);
+  if ((it != this->m_data_readers.end()) && it->second) {
+    (it->second)->load_from_checkpoint_distributed(p, execution_mode::validation);
+  }
+
+  // read_cereal_archive<data_coordinator>(*this, p, execution_mode::training, "_dc.xml");
+  return true;
 }
 
 } // namespace lbann

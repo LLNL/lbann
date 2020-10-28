@@ -78,6 +78,40 @@ void generic_data_reader::setup(int num_io_threads, observer_ptr<thread_pool> io
   m_io_thread_pool = io_thread_pool;
 }
 
+int lbann::generic_data_reader::fetch(std::map<input_data_type, CPUMat*>& input_buffers, El::Matrix<El::Int>& indices_fetched) {
+  // Fetch sample
+  auto buf = input_buffers[input_data_type::SAMPLES];
+  if(buf == nullptr || buf->Height() == 0 || buf->Width() == 0) {
+    LBANN_ERROR("fetch function called with invalid buffer: h=", buf->Height(), " x ", buf->Width());
+  }
+  int num_samples_fetched = fetch_data(*(buf), indices_fetched);
+  // Fetch label is applicable
+  buf = input_buffers[input_data_type::LABELS];
+  if(has_labels() && buf != nullptr && buf->Height() != 0 && buf->Width() != 0) {
+    if(input_buffers[input_data_type::LABELS] == nullptr) {
+      LBANN_ERROR("LABELS is not defined");
+    }
+    int num_labels_fetched = fetch_labels(*(input_buffers[input_data_type::LABELS]));
+    if(num_labels_fetched != num_samples_fetched) {
+      LBANN_ERROR("Number of samples: ",
+                  std::to_string(num_samples_fetched),
+                  " does not match the number of labels: ",
+                  std::to_string(num_labels_fetched));
+    }
+  }
+  // Fetch response is applicable
+  buf = input_buffers[input_data_type::RESPONSES];
+  if(has_responses() && buf != nullptr && buf->Height() != 0 && buf->Width() != 0) {
+    int num_responses_fetched = fetch_responses(*(input_buffers[input_data_type::RESPONSES]));
+    if(num_responses_fetched != num_samples_fetched) {
+      LBANN_ERROR("Number of samples: ",
+                  std::to_string(num_samples_fetched),
+                  " does not match the number of responses: ",
+                  std::to_string(num_responses_fetched));
+    }
+  }
+  return num_samples_fetched;
+}
 
 bool lbann::generic_data_reader::fetch_data_block(CPUMat& X, El::Int block_offset, El::Int block_stride, El::Int mb_size, El::Matrix<El::Int>& indices_fetched) {
   locked_io_rng_ref io_rng = set_io_generators_local_index(block_offset);
@@ -623,17 +657,20 @@ std::string generic_data_reader::get_local_file_dir() const {
   return m_local_file_dir;
 }
 
-void generic_data_reader::set_data_index_list(std::string s) {
-  m_data_index_list = s;
+void generic_data_reader::set_data_sample_list(std::string s) {
+  m_data_sample_list = s;
 }
 
-std::string generic_data_reader::get_data_index_list() const {
-  if (m_data_index_list == "") {
-    throw lbann_exception(
-      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: you apparently did not call set_data_index_list; error!");
-  }
-  return m_data_index_list;
+std::string generic_data_reader::get_data_sample_list() const {
+  return m_data_sample_list;
+}
+
+void generic_data_reader::keep_sample_order(bool same_order) {
+  // The sample_list::keep_sample_order() should be called using this
+  // flag. By doing so, it will add additional step to re-shuffle the
+  // sample order to restore it to the original before the loading
+  // with interleaving accesses by multiple ranks in a trainer.
+  m_keep_sample_order = same_order;
 }
 
 void generic_data_reader::set_data_filename(std::string s) {
@@ -866,7 +903,7 @@ void generic_data_reader::print_get_methods(const std::string filename) {
 
   out << "get_file_dir " << get_file_dir() << std::endl;
   out << "get_local_file_dir " << get_local_file_dir() << std::endl;
-  out << "get_data_index_list " << get_data_index_list() << std::endl;
+  out << "get_data_sample_list " << get_data_sample_list() << std::endl;
   out << "get_data_filename " << get_data_filename()  << std::endl;
   out << "get_label_filename " << get_label_filename() << std::endl;
   out << "get_role " << get_role() << std::endl;

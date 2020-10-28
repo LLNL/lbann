@@ -14,7 +14,7 @@ endif ()
 # Add the subdirectories
 add_subdirectory(activations)
 add_subdirectory(image)
-add_subdirectory(io/input)
+add_subdirectory(io)
 add_subdirectory(learning)
 add_subdirectory(loss)
 add_subdirectory(math)
@@ -24,4 +24,4 @@ add_subdirectory(transform)
 
 # Propagate the files up the tree
 set(SOURCES "${SOURCES}" "${THIS_DIR_SOURCES}" PARENT_SCOPE)
-set(CUDA_SOURCES "${CUDA_SOURCES}" "${THIS_DIR_CU_SOURCES}" PARENT_SCOPE)
+set(GPU_SOURCES "${GPU_SOURCES}" "${THIS_DIR_CU_SOURCES}" PARENT_SCOPE)

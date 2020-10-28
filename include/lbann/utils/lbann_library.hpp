@@ -36,6 +36,10 @@ const int lbann_default_random_seed = 42;
 
 #define MAX_RNG_SEEDS_DISPLAY "RNG seeds per trainer to display"
 #define NUM_IO_THREADS "Num. IO threads"
+#define NUM_TRAIN_SAMPLES "Num train samples"
+#define NUM_VALIDATE_SAMPLES "Num validate samples"
+#define NUM_TEST_SAMPLES "Num test samples"
+#define ALLOW_GLOBAL_STATISTICS "LTFB Allow global statistics"
 
 void construct_std_options();
 
@@ -44,7 +48,7 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
                                            lbann_data::LbannPB &pb,
                                            options *opts);
 
-std::unique_ptr<thread_pool> construct_io_thread_pool(lbann_comm *comm, options *opts);
+  std::unique_ptr<thread_pool> construct_io_thread_pool(lbann_comm *comm, options *opts, bool serialized_io);
 
 std::unique_ptr<model> build_model_from_prototext(
     int argc, char **argv,

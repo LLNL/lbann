@@ -69,17 +69,17 @@ class DefaultMemoryMatrixBuilder : public MatrixBuilder<T>
                      El::DistMatrix<T, El::STAR, El::VC, El::ELEMENT, D>,
                      El::DistMatrix<T, El::MC  , El::MR, El::ELEMENT, D>>;
 
-#if defined(HYDROGEN_HAVE_CUDA) && defined(HYDROGEN_HAVE_CUB)
+#if defined(HYDROGEN_HAVE_GPU) && defined(HYDROGEN_HAVE_CUB)
   // Pinned host memory; memory-pooled device memory
   static constexpr unsigned memory_mode_ = 1U;
-#elif defined(HYDROGEN_HAVE_CUDA)
+#elif defined(HYDROGEN_HAVE_GPU)
   // Pinned host memory; default-allocated device memory
   static constexpr unsigned memory_mode_ = (D == El::Device::CPU ? 1U : 0U);
 #else
   // Default memory
   static constexpr unsigned memory_mode_ =
     El::DefaultMemoryMode<El::Device::CPU>();
-#endif // defined(HYDROGEN_HAVE_CUDA) && defined(HYDROGEN_HAVE_CUB)
+#endif // defined(HYDROGEN_HAVE_GPU) && defined(HYDROGEN_HAVE_CUB)
 
 public:
   using size_type = typename base_type::size_type;

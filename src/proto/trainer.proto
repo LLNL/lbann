@@ -28,6 +28,8 @@ syntax = "proto3";
 
 package lbann_data;
 
+import "datatype.proto";
+
 import "callbacks.proto";
 
 message Trainer {
@@ -50,6 +52,7 @@ message Trainer {
   // These threads are typically used to perform data ingestion in the
   // background.
   int64 num_parallel_readers = 3;
+  bool  serialize_io = 101;
 
   repeated Callback callback = 20;
   int64 mini_batch_size = 12;
@@ -71,4 +74,11 @@ message Trainer {
 
   // Algorithmic block size for Hydrogen
   int64 hydrogen_block_size = 100;
+
+  DataCoordinator data_coordinator = 200;
+
+  message DataCoordinator {
+    DataType datatype = 1;
+    string io_buffer = 2;         // Options: "partitioned" (default)
+  }
 }

@@ -766,8 +766,8 @@ private:
   /** Indicate whether distconv is supported. */
   virtual bool is_distconv_supported() const { return false; }
   /** Pre-initialize distconv attributes needed for setup_data(). */
-  void prepare_distconv();
-  virtual void setup_distconv_adapter() = 0;
+  void prepare_distconv(const DataReaderMetaData& dr_metadata);
+  virtual void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) = 0;
   std::unique_ptr<distconv_adapter>& get_distconv_adapter_ptr() {
     return m_dc; };
   const std::unique_ptr<distconv_adapter>& get_distconv_adapter_ptr() const {

@@ -28,7 +28,7 @@
 
 #include "lbann/callbacks/sync_layers.hpp"
 
-#include "lbann/layers/io/input/generic_input_layer.hpp"
+#include "lbann/layers/io/input_layer.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/timer.hpp"
 
@@ -38,7 +38,7 @@ namespace lbann {
 namespace callback {
 
 void sync_layers::on_forward_prop_end(model *m, Layer *l) {
-  if (m_only_input && dynamic_cast<generic_input_layer<DataType>*>(l) == nullptr) {
+  if (m_only_input && dynamic_cast<input_layer<DataType>*>(l) == nullptr) {
     return;  // Skip non-input layers.
   }
   double start = get_time();
@@ -56,11 +56,11 @@ void sync_layers::on_backward_prop_end(model *m, Layer *l) {
 }
 
 void sync_layers::do_sync(Layer *l) {
-  #ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_GPU
   if (m_sync_gpus) {
     hydrogen::gpu::SynchronizeDevice();
   }
-  #endif
+#endif
   if (m_sync_mpi) {
     l->get_comm()->global_barrier();
   }

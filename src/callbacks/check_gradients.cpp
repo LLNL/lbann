@@ -26,7 +26,7 @@
 
 #include "lbann/callbacks/check_gradients.hpp"
 #include "lbann/data_readers/data_reader.hpp"
-#include "lbann/layers/io/input/generic_input_layer.hpp"
+#include "lbann/layers/io/input_layer.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/memory.hpp"
 
@@ -52,7 +52,7 @@ EvalType compute_objective_function(model& m) {
 
   // Forward prop, skipping input layers
   for (auto&& l : m.get_layers()) {
-    if (dynamic_cast<generic_input_layer<DataType>*>(l) == nullptr) {
+    if (dynamic_cast<input_layer<DataType>*>(l) == nullptr) {
       l->forward_prop();
     }
   }
@@ -198,7 +198,7 @@ check_gradients::check_gradients(std::set<execution_mode> modes,
 void check_gradients::do_check_gradients(model& m) const {
 
   // Get objects from model
-  const auto& c = static_cast<sgd_execution_context&>(m.get_execution_context());
+  auto& c = static_cast<sgd_execution_context&>(m.get_execution_context());
   auto& comm = *m.get_comm();
   const auto mode = c.get_execution_mode();
   const auto& layers = m.get_layers();
@@ -217,8 +217,10 @@ void check_gradients::do_check_gradients(model& m) const {
   }
 
   // Load data in input layers
+  data_coordinator& dc = c.get_trainer().get_data_coordinator();
+  dc.fetch_data(mode);
   for (auto&& l : m.get_layers()) {
-    if (dynamic_cast<generic_input_layer<DataType>*>(l) != nullptr) {
+    if (dynamic_cast<input_layer<DataType>*>(l) != nullptr) {
       l->forward_prop();
     }
   }
@@ -288,14 +290,8 @@ void check_gradients::do_check_gradients(model& m) const {
   }
 
   // Clean up
-  /// @todo tym: I'm not sure if data readers are properly reset
-  for (auto&& l : m.get_layers()) {
-    auto&& input = dynamic_cast<generic_input_layer<DataType>*>(l);
-    if (input != nullptr) {
-      auto&& reader = input->get_data_reader(mode);
-      reader->set_initial_position();
-    }
-  }
+  auto&& reader = dc.get_data_reader(mode);
+  reader->set_initial_position();
   m.get_objective_function()->reset_statistics(mode);
   for (auto&& met : m.get_metrics()) {
     met->reset_statistics(mode);

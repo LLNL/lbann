@@ -30,11 +30,7 @@ package lbann_data;
 
 import "google/protobuf/wrappers.proto";
 
-enum DataType {
-  FLOAT = 0;
-  DOUBLE = 1;
-  FP16 = 2;
-}
+import "datatype.proto";
 
 // Lives here because it's used by both Convolution and
 // Deconvolution.
@@ -103,6 +99,7 @@ message Layer {
     ChannelwiseScaleBias channelwise_scale_bias = 329;
     EntrywiseScaleBias entrywise_scale_bias = 330;
     ChannelwiseFullyConnected channelwise_fully_connected = 331;
+    GRU gru = 333;
 
     // Loss layers
     CrossEntropy cross_entropy = 60;
@@ -147,6 +144,8 @@ message Layer {
     Acosh acosh = 426;
     Asinh asinh = 427;
     Atanh atanh = 428;
+    Erf erf = 429;
+    ErfInv erfinv = 430;
     Add add = 450;
     Subtract subtract = 451;
     Multiply multiply = 452;
@@ -168,6 +167,7 @@ message Layer {
     LogicalXor logical_xor = 468;
     Clamp clamp = 469;
     MatMul matmul = 470;
+    DFTAbs dft_abs = 471;
 
     // Regularization layers
     BatchNormalization batch_normalization = 19;
@@ -205,6 +205,7 @@ message Layer {
     OneHot one_hot = 607;
     ChannelwiseSoftmax channelwise_softmax = 608;
     DistEmbedding dist_embedding = 609;
+    UniformHash uniform_hash = 610;
 
   }
 
@@ -239,6 +240,8 @@ message Layer {
   message Acosh {}
   message Asinh {}
   message Atanh {}
+  message Erf {}
+  message ErfInv {}
   message Add {}
   message Subtract {}
   message Multiply {}
@@ -262,6 +265,7 @@ message Layer {
     double min = 1;
     double max = 2;
   }
+  message DFTAbs {}
 
   /** @brief Matrix multiplication.
    *
@@ -315,7 +319,9 @@ message Layer {
   ///////////////////////
   // Loss layers //
   ///////////////////////
-  message CrossEntropy {}
+  message CrossEntropy {
+    bool use_labels = 1; //default: false
+  }
   message MeanSquaredError {}
   message MeanAbsoluteError {}
   message CategoricalAccuracy {}
@@ -395,8 +401,7 @@ message Layer {
   // Input layers //
   //////////////////
   message Input {
-    string io_buffer = 2;         // Options: "partitioned" (default)
-    string target_mode = 3;       // Options: "classification" (default), "regression", "reconstruction", "N/A"
+    string target_mode = 3;       // Options: "classification", "regression", "reconstruction", "label_reconstruction", "N/A" (default)
   }
 
   //////////////////////
@@ -662,6 +667,34 @@ message Layer {
     google.protobuf.BoolValue transpose = 3;
   }
 
+  /** @brief Stacked gated recurrent unit
+   *
+   *  Expects two inputs: a 2D input sequence (
+   *  @f$ \text{sequence\_length}\times\text{input\_size} @f$ )
+   *  and a 2D initial hidden state (
+   *  @f$ \text{num\_layers}times\text{hidden\_size} @f$ ).
+   *
+   *  Uses four weights per GRU cell: "ih\_matrix" (
+   *  @f$ 3 \text{hidden\_size}\times\text{input\_size} @f$ for layer
+   *  0 and @f$ 3 \text{hidden\_size}\times\text{hidden\_size} for
+   *  other layers), "hh\_matrix" (
+   *  @f$ 3 \text{hidden\_size}\times\text{hidden\_size} @f$ ),
+   *  "ih_bias" ( @f$ 3 \text{hidden\_size} @f$ ),
+   *  "hh_bias" ( @f$ 3 \text{hidden\_size} @f$ ).
+   *
+   *  Currently only supported on GPU. Requires at least CUDA 11.0 and
+   *  cuDNN 8.0.4.
+   *
+   *  @todo Support CPU
+   *  @todo Support bidirectional RNNs
+   */
+  message GRU {
+    /// Size of each hidden state and output vector
+    uint64 hidden_size = 1;
+    /// Number of stacked GRU cells (default: 1)
+    google.protobuf.UInt64Value num_layers = 2;
+  }
+
   //////////////////
   // Image layers //
   //////////////////
@@ -742,6 +775,14 @@ message Layer {
     bool barrier_in_forward_prop = 5;
 
   }
+
+  /** @brief Apply a hash function to get uniformly distributed values
+   *
+   *  Each input entry is hashed with MD5 and scaled to [0,1).
+   *
+   *  @warning Currently only supported on GPU.
+   */
+  message UniformHash {}
 
 } // message Layer
 

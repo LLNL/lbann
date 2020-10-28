@@ -11,11 +11,13 @@ class Trainer:
                  procs_per_trainer=None,
                  num_parallel_readers=None,
                  random_seed=None,
+                 serialize_io=None,
                  callbacks=[]):
         self.name = name
         self.procs_per_trainer = procs_per_trainer
         self.num_parallel_readers = num_parallel_readers
         self.random_seed = random_seed
+        self.serialize_io = serialize_io
         self.mini_batch_size = mini_batch_size
         self.hydrogen_block_size = None
         # Callbacks
@@ -37,6 +39,8 @@ class Trainer:
             trainer.mini_batch_size = self.mini_batch_size
         if self.hydrogen_block_size is not None:
             trainer.hydrogen_block_size = self.hydrogen_block_size
+        if self.serialize_io is not None:
+            trainer.serialize_io = self.serialize_io
 
         # Add trainer components
         trainer.callback.extend([c.export_proto() for c in self.callbacks])

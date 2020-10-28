@@ -115,7 +115,7 @@ protected:
 #ifdef LBANN_HAS_DISTCONV
   friend class convolution_distconv_adapter<TensorDataType, Layout, Device>;
  protected:
-  void setup_distconv_adapter() override;
+  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override;
   bool is_distconv_supported() const override;
 #endif // LBANN_HAS_DISTCONV
 };

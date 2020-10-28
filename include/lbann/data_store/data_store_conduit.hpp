@@ -48,6 +48,16 @@ namespace lbann {
 
 class generic_data_reader;
 
+/** Create a hash function for hashing a std::pair type */
+struct size_t_pair_hash
+{
+  template <class T1, class T2>
+  std::size_t operator() (const std::pair<T1, T2> &pair) const
+  {
+    return std::hash<T1>()(pair.first) ^ std::hash<T2>()(pair.second);
+  }
+};
+
 class data_store_conduit {
 
  public:
@@ -55,6 +65,9 @@ class data_store_conduit {
   // need to quickly change from unordered_map to map for debugging
   using map_ii_t = std::unordered_map<int,int>;
   using map_is_t = std::unordered_map<int,size_t>;
+
+  // Hash map for tracking the node and hyperslab partition ID
+  using map_pssi_t = std::unordered_map<std::pair<size_t,size_t>,int,size_t_pair_hash>;
 
   // not currently used; will be in the future
   using map_ss_t = std::unordered_map<size_t,size_t>;
@@ -113,13 +126,13 @@ class data_store_conduit {
   //=================================================================
   // methods for setting and querying the data store's mode
   //=================================================================
-  /** @brief Returns true if preloading is turned on 
+  /** @brief Returns true if preloading is turned on
    *
    * See notes in: is_explicitly_loading()
    */
   bool is_preloading() const { return m_preloading; }
 
-  /** @brief Returns true if explicitly loading is turned on 
+  /** @brief Returns true if explicitly loading is turned on
    *
    * 'explicitly loading' means that the data that will be owned
    * by each rank is passed into the data store during the first epoch.
@@ -130,7 +143,7 @@ class data_store_conduit {
    */
   bool is_explicitly_loading() const { return m_explicitly_loading; }
 
-  /** @brief Returns true if all loading has been completed 
+  /** @brief Returns true if all loading has been completed
    *
    * See notes in: set_loading_is_complete()
    */
@@ -143,35 +156,34 @@ class data_store_conduit {
    * but part of the set may be spilled to disk if memory is
    * insufficient. Local cache mode is activated via the cmd line
    * flag: --data_store_cache
-   */ 
+   */
   bool is_local_cache() const { return m_is_local_cache; }
 
-  /** @brief Turn preloading on or off */ 
+  /** @brief Turn preloading on or off */
   void set_is_preloading(bool flag);
 
-  /** @brief Turn on explicit loading */ 
+  /** @brief Turn on explicit loading */
   void set_is_explicitly_loading(bool flag);
 
   /** @brief Marks the data_store as fully loaded
    *
    * Fully loaded means that each rank has all the data that it
    * is intended to own. When not running in local cache mode, this
-   * occurs (1) at the conclusion of preloading, prior to the beginning of 
-   * the first epoch, or (2) at the conclusion of the first epoch, if 
-   * explicitly loading. When running in local cache mode, this occurs 
-   * (1) at the conclusion of preload_local_cache(), which is called prior 
+   * occurs (1) at the conclusion of preloading, prior to the beginning of
+   * the first epoch, or (2) at the conclusion of the first epoch, if
+   * explicitly loading. When running in local cache mode, this occurs
+   * (1) at the conclusion of preload_local_cache(), which is called prior
    * to the first epoch, or (2) at the conclusion of exchange_local_caches(),
    * at th conclusion of the first epoch, if explicitly loading.
    */
-  void set_loading_is_complete(); 
-
+  void set_loading_is_complete();
 
   /** @brief turns local cache mode on of off */
   void set_is_local_cache(bool flag = true) { m_is_local_cache = flag; }
 
   /** @brief Check that explicit loading, preloading, and fully loaded flags are consistent */
   void check_query_flags() const;
-   
+
   //=================================================================
   // END methods for setting and querying the data store's mode
   //=================================================================
@@ -184,15 +196,23 @@ class data_store_conduit {
   void build_preloaded_owner_map(const std::vector<int>& per_rank_list_sizes);
 
   /// fills in m_owner, which maps index -> owning processor
-  void set_preloaded_owner_map(const std::unordered_map<int,int> &owner) { m_owner = owner; }
+  void set_preloaded_owner_map(const std::unordered_map<int,int> &owner) {
+    for(auto&& i : owner) {
+      m_owner[std::make_pair(i.first, m_offset_in_partition)] = i.second;
+    }
+  }
 
   /** @brief Special hanling for ras_lipid_conduit_data_reader; may go away in the future */
   void clear_owner_map();
 
-  void set_owner_map(const std::unordered_map<int, int> &m) { m_owner = m; }
+  void set_owner_map(const std::unordered_map<int, int> &m) {
+    for(auto&& i : m) {
+      m_owner[std::make_pair(i.first, m_offset_in_partition)] = i.second;
+    }
+  }
 
   /** @brief Special handling for ras_lipid_conduit_data_reader; may go away in the future */
-  void add_owner(int data_id, int owner) { m_owner[data_id] = owner; }
+  void add_owner(int data_id, int owner) { m_owner[std::make_pair(data_id, m_offset_in_partition)] = owner; }
 
   /** @brief Special handling for ras_lipid_conduit_data_reader; may go away in the future */
   void set_finished_building_map() { m_owner_maps_were_exchanged = true; }
@@ -213,7 +233,7 @@ class data_store_conduit {
    */
   void preload_local_cache();
 
-  void exchange_mini_batch_data(size_t current_pos, size_t mb_size); 
+  void exchange_mini_batch_data(size_t current_pos, size_t mb_size);
 
   void set_node_sizes_vary() { m_node_sizes_vary = true; }
 
@@ -235,17 +255,17 @@ class data_store_conduit {
    *
    * Debug logging is enabled on all ranks via the cmd line flag: --data_store_debug
    */
-  void flush_debug_file(); 
+  void flush_debug_file();
 
   /** @brief Closes then reopens the profile logging file
    *
    * Profile logging is enabled on P_0 via the cmd line flag: --data_store_profile
    */
-  void flush_profile_file() const; 
+  void flush_profile_file() const;
 
   /** @brief Writes object's state to file */
   void write_checkpoint(std::string dir_name);
-  
+
   /** @brief Loads object's state from file */
   void load_checkpoint(std::string dir_name, generic_data_reader *reader = nullptr);
 
@@ -260,7 +280,7 @@ class data_store_conduit {
    * @param n is the maximum number of samples to test; set to -1 to test all
    * @return true, if all samples read from file match those constructed from
    *               the local shared memory segment (aka, cache)
-   */ 
+   */
   bool test_local_cache_imagenet(int n);
 
   void test_imagenet_node(int sample_id, bool dereference = true);
@@ -298,7 +318,7 @@ private :
   /** @brief Used to form the directory path for spilling conduit nodes */
   int m_cur_spill_dir_integer = -1;
 
-  /** @brief @brief Current directory for spilling (writing to file) conduit nodes 
+  /** @brief @brief Current directory for spilling (writing to file) conduit nodes
    *
    * m_cur_spill_dir = m_spill_dir_base/<m_cur_spill_dir_integer>
    */
@@ -360,14 +380,14 @@ private :
   double m_rebuild_time = 0;
 
   // total time for exchange_mini_batch_data
-  double m_exchange_time = 0; 
+  double m_exchange_time = 0;
 
-  // sanity check: 
+  // sanity check:
   //   m_start_snd_rcv_time + m_wait_all_time + m_rebuild_time
   // should be only slightly less than m_exchange_time;
   // Note that, for imagenet, the first call to exchange_data_by_sample
   // involves additional communication for exchanging sample sizes
- 
+
   //===========================================================
   // END: timers for profiling exchange_data
   //===========================================================
@@ -380,7 +400,7 @@ private :
   /** @brief True, if we are in preload mode */
   bool m_preloading = false;
 
-  /** @brief True, if we are in explicit loading mode 
+  /** @brief True, if we are in explicit loading mode
    *
    * There is some redundancy here: m_preloading and m_explicitly_loading
    * can not both be true, but both may be false. When m_loading_is_complete
@@ -412,22 +432,35 @@ private :
   bool m_world_master;
   bool m_trainer_master;
   int  m_rank_in_trainer;
-  int  m_rank_in_world = -1; // -1 for debugging 
-  int  m_np_in_trainer;
+  int  m_rank_in_world = -1; // -1 for debugging
+  int  m_partition_in_trainer;
+  int  m_offset_in_partition;
 
-  /** @brief Maps an index to the processor that owns the associated data */ 
-  map_ii_t m_owner;
+  /// number of procs in the trainer; convenience handle
+  int  m_np_in_trainer;
+  int  m_num_partitions_in_trainer;
+
+  /** @brief Maps an index to the processor that owns the associated data
+   * First value of index is the sample ID and second value is the partiton ID
+   *
+   * Must be mutable since rhs.m_owner may be modified in copy_members,
+   * in which rhs is const.
+   */
+  mutable map_pssi_t m_owner;
 
   /// convenience handle
   const std::vector<int> *m_shuffled_indices;
 
   /** @brief Contains the conduit nodes that are "owned" by this rank
    *
-   * Maps data_id -> conduit::Node.
-   */ 
-  std::unordered_map<int, conduit::Node> m_data;
+   * Map data_id -> conduit::Node.
+   * Must be mutable since rhs.m_owner may be modified in copy_members,
+   * in which rhs is const.
+   */
+  mutable std::unordered_map<int, conduit::Node> m_data;
 
-  /** @brief Contains the conduit nodes that are "owned" by this rank
+  /** @brief Contains a cache of the conduit nodes that are
+   * "owned" by this rank
    *
    * This differs from m_data in that this holds temporarily,
    * during the first epoch, if we're running in local cache mode
@@ -452,11 +485,11 @@ private :
   std::vector<size_t> m_outgoing_msg_sizes;
   std::vector<size_t> m_incoming_msg_sizes;
 
-  /** @brief Maps a data_id to its image size 
+  /** @brief Maps a data_id to its image size
    *
    * Used when conduit Nodes have non-uniform size, e.g, imagenet;
    * see: set_node_sizes_vary()
-   */ 
+   */
   map_is_t m_sample_sizes;
 
   /** @brief Maps a data_id to the image location in a shared memory segment */
@@ -472,7 +505,7 @@ private :
   std::vector<std::unordered_set<int>> m_indices_to_recv;
 
   //=========================================================================
-  // methods follow 
+  // methods follow
   //=========================================================================
 
   void exchange_data_by_sample(size_t current_pos, size_t mb_size);
@@ -512,29 +545,27 @@ private :
   void compute_image_offsets(map_is_t &image_sizes, std::vector<std::vector<int>> &indices);
 
   /// for use in local cache mode
-  void exchange_images(std::vector<char> &work, map_is_t &image_sizes, std::vector<std::vector<int>> &indices); 
+  void exchange_images(std::vector<char> &work, map_is_t &image_sizes, std::vector<std::vector<int>> &indices);
 
-  /// for use in local cache mode
   void build_conduit_nodes(map_is_t &sizes);
-
 
   /// for use in local cache mode
   void fillin_shared_images(char* images, size_t size, size_t offset);
 
   /** @brief For testing during development
    *
-   * At the beginning of the 2nd epoch, calls write_checkpoint(), 
-   * clears some variables, calls load_checkpoint then continues. 
+   * At the beginning of the 2nd epoch, calls write_checkpoint(),
+   * clears some variables, calls load_checkpoint then continues.
    * To activate this test use cmd flag: --data_store_test_checkpoint=
-   */ 
+   */
   void test_checkpoint(const std::string&);
 
   /** @brief Called by test_checkpoint */
   void print_variables();
 
-  /** @brief Called by test_checkpoint 
+  /** @brief Called by test_checkpoint
    *
-   * For testing and development. Prints the first 'n' entries from 
+   * For testing and development. Prints the first 'n' entries from
    * the owner map * (which maps sample_id -> owning rank) to std::cout
    */
   void print_partial_owner_map(int n);
@@ -544,7 +575,7 @@ private :
   std::string get_metadata_fn() const;
 
   /** @brief Creates the directory if it does not already exist */
-  void make_dir_if_it_doesnt_exist(const std::string &dir); 
+  void make_dir_if_it_doesnt_exist(const std::string &dir);
 
   /** @brief Writes conduit node to file */
   void spill_conduit_node(const conduit::Node &node, int data_id);
@@ -554,8 +585,8 @@ private :
 
   /** @brief Creates directory structure, opens metadata file for output, etc
    *
-   * This method is called for both --data_store_spill and 
-   * --data_store_test_checkpoint 
+   * This method is called for both --data_store_spill and
+   * --data_store_test_checkpoint
    */
   void setup_spill(std::string dir);
 
@@ -572,7 +603,7 @@ private :
    * files are opened if the cmd flag --data_store_debug is passed.
    * A profiling file is opened only be <world_master, data reader role>
    * pairs; files are opened if the cmd flag --data_store_profile is passed.
-   */ 
+   */
   void open_informational_files();
 
   /** @brief Creates a directory for spilling conduit nodes */
@@ -591,11 +622,11 @@ private :
   // functions and templates for optional profiling and debug files follow
   //=========================================================================
 
-  void PROFILE() const { 
+  void PROFILE() const {
     if (!m_profile) {
       return;
     }
-    (*m_profile) << std::endl; 
+    (*m_profile) << std::endl;
     flush_profile_file();
   }
 
@@ -612,11 +643,11 @@ private :
     flush_profile_file();
   }
 
-  void DEBUG_DS() { 
+  void DEBUG_DS() {
     if (!m_debug) {
       return;
     }
-    (*m_debug) << std::endl; 
+    (*m_debug) << std::endl;
     flush_debug_file();
   }
 

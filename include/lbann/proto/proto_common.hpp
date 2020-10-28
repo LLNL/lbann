@@ -46,19 +46,19 @@ class Trainer;
 
 namespace lbann {
 
-/** @brief Customize the name of the index list
+/** @brief Customize the name of the sample list
  *
  *  The following options are available
  *   - trainer ID
  *   - model name
  *
  *  The format for the naming convention if the provided name is
- *  \<index list\> is:
+ *  \<sample list\> is:
  *  @verbatim
-    <index list> == <basename>.<extension>
+    <sample list> == <basename>.<extension>
     <model name>_t<ID>_<basename>.<extension> @endverbatim
  */
-void customize_data_readers_index_list(const lbann_comm& comm,
+void customize_data_readers_sample_list(const lbann_comm& comm,
                                        ::lbann_data::LbannPB& p);
 
 /** @brief instantiates one or more generic_data_readers and inserts

@@ -101,7 +101,7 @@ else:
         width=args.width)
 
 # Construct layer graph
-input_ = lbann.Input()
+input_ = lbann.Input(target_mode='classification')
 images = lbann.Identity(input_)
 labels = lbann.Identity(input_)
 preds = resnet(images)

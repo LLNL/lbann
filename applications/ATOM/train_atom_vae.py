@@ -7,13 +7,15 @@ import sys
 from google.protobuf import text_format as txtf
 import json
 import numpy as np
-import vae as molvae
+import models.vae as molvae
 
 import lbann
 import lbann.contrib.launcher
 import lbann.modules
 from lbann.util import str_list
 
+def list2str(l):
+    return ' '.join(l)
 
 def construct_lc_launcher_args():
 
@@ -22,6 +24,7 @@ def construct_lc_launcher_args():
     parser.add_argument("--partition", default=None)
     parser.add_argument("--account", default="hpcdl")
     parser.add_argument("--scheduler", type=str, default="slurm")
+    parser.add_argument("--reservation", type=None)
     parser.add_argument(
         "--data-module-file",
         default="dataset.py",
@@ -47,14 +50,23 @@ def construct_lc_launcher_args():
     parser.add_argument("--batch-size", type=int, default=512)
     parser.add_argument("--num-epochs", type=int, default=20)
     parser.add_argument("--data-reader-prototext", default=None)
+    parser.add_argument("--data-filedir", default=None)
+    parser.add_argument("--data-filename", default=None)
     parser.add_argument("--pad-index", type=int, default=None)
     parser.add_argument("--sequence-length", type=int, default=None)
-    parser.add_argument("--dump_weights_dir", type=str, default="weights")
-    parser.add_argument("--num-samples", type=int, default=None)
+    parser.add_argument("--dump-weights-dir", type=str, default="weights")
+    parser.add_argument("--dump-weights-interval", type=int, default=10)
+    parser.add_argument("--num_samples", type=int, default=None)
+    parser.add_argument("--num_train_samples", type=int, default=None)
+    parser.add_argument("--num_test_samples", type=int, default=None)
     parser.add_argument("--num-io-threads", type=int, default=11)
     parser.add_argument("--vocab", default=None)
     parser.add_argument("--delimiter", default="c")
     parser.add_argument("--no-header", type=bool, default=True)
+    parser.add_argument("--ltfb", type=bool, default=False)
+    parser.add_argument("--ltfb-batch-interval", type=int, default=100)
+    parser.add_argument("--weights-to-send", type=str, default='')
+    parser.add_argument("--warmup", type=bool, default=False)
 
     # these are specific to the Trainer object
     parser.add_argument(
@@ -92,7 +104,7 @@ def construct_model(run_args):
     print("sequence length is {}".format(sequence_length))
     data_layout = "data_parallel"
     # Layer graph
-    input_ = lbann.Identity(lbann.Input(name='inp'), name='inp1')
+    input_ = lbann.Identity(lbann.Input(name='inp',target_mode="N/A"), name='inp1')
     vae_loss= []
     input_feature_dims = sequence_length
 
@@ -101,16 +113,14 @@ def construct_model(run_args):
     assert embedding_size is not None
     assert dictionary_size is not None
 
-    kl, recon, arg_max = molvae.MolVAE(input_feature_dims,
-                                       dictionary_size,
-                                       embedding_size,
-                                       pad_index)(input_)
+    kl, recon = molvae.MolVAE(input_feature_dims,
+                              dictionary_size,
+                              embedding_size,
+                              pad_index)(input_)
 
     vae_loss.append(kl)
     vae_loss.append(recon)
     print("LEN vae loss ", len(vae_loss))
-    #metric layers
-    pred_tensor = lbann.Concatenation(arg_max[:-1], name='pred_tensor')
 
     layers = list(lbann.traverse_layer_graph(input_))
     # Setup objective function
@@ -126,9 +136,23 @@ def construct_model(run_args):
                 ]
 
     callbacks = [lbann.CallbackPrint(),
-                 lbann.CallbackTimer(),
-                 lbann.CallbackDumpWeights(directory=run_args.dump_weights_dir, epoch_interval=10)]
+                 lbann.CallbackTimer()]
 
+    if(run_args.dump_weights_interval > 0):
+      callbacks.append(lbann.CallbackDumpWeights(directory=run_args.dump_weights_dir,
+                                              epoch_interval=run_args.dump_weights_interval))
+    if(run_args.ltfb):
+      send_name = ('' if run_args.weights_to_send == 'All' else run_args.weights_to_send) #hack for Merlin empty string
+      weights_to_ex = [w.name for w in weights if send_name in w.name]
+      print("LTFB Weights to exchange ", weights_to_ex)
+      callbacks.append(lbann.CallbackLTFB(batch_interval=run_args.ltfb_batch_interval,metric='recon',
+                                          weights = list2str(weights_to_ex),
+                                          low_score_wins=True,exchange_hyperparameters=True))
+
+    if(run_args.warmup):
+        callbacks.append(
+            lbann.CallbackLinearGrowthLearningRate(
+                target=run_args.lr / 512 * run_args.batch_size, num_epochs=5))
 
     # Construct model
     return lbann.Model(run_args.num_epochs,
@@ -227,21 +251,33 @@ def main():
       import torch
       torch.save(run_args, "{}/{}_config.pt".format(experiment_dir, run_args.job_name))
 
+    m_lbann_args=f"--vocab={run_args.vocab} --data_filedir={run_args.data_filedir} --data_filename_train={run_args.data_filename} --num_samples={run_args.num_samples} --sequence_length={run_args.sequence_length}  --num_io_threads={run_args.num_io_threads} --no_header={run_args.no_header} --delimiter={run_args.delimiter} --num_train_samples={run_args.num_train_samples} --num_test_samples={run_args.num_test_samples}"
+    if(run_args.data_reader_prototext):
+      m_lbann_args = " ".join((m_lbann_args, " --use_data_store --preload_data_store "))
+    if(run_args.ltfb):
+      m_lbann_args = " ".join((m_lbann_args, "--ltfb"))
+
     status = lbann.contrib.launcher.run(
         trainer,
         model,
         data_reader,
         opt,
-        #partition=run_args.partition,
+        partition=run_args.partition,
         scheduler=run_args.scheduler,
         #account=run_args.account,
+        reservation=run_args.reservation,
         time_limit=run_args.time_limit,
         nodes=run_args.nodes,
         procs_per_node=ppn,
         batch_job = True,
+        #setup_only = True,
         job_name=run_args.job_name,
         experiment_dir=experiment_dir,
-        lbann_args=f"--vocab={run_args.vocab} --num_samples={run_args.num_samples} --sequence_length={run_args.sequence_length}  --num_io_threads={run_args.num_io_threads} --no_header={run_args.no_header} --delimiter={run_args.delimiter}",
+        lbann_args = m_lbann_args,
+        environment = {
+            'LBANN_USE_CUBLAS_TENSOR_OPS' : 1,
+            'LBANN_USE_CUDNN_TENSOR_OPS' : 1,
+        },
     )
 
     print("LBANN launcher status:\n" + str(status))
