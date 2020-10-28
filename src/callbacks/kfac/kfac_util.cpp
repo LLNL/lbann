@@ -27,7 +27,6 @@
 
 #include "lbann/callbacks/kfac/kfac_util.hpp"
 #include "lbann/base.hpp"
-#include "lbann/utils/cuda.hpp"
 #include "lbann/utils/timer.hpp"
 
 #include <cassert>
