@@ -472,7 +472,7 @@ base_convolution_layer<TensorDataType,Device>
   // Perform convolution on the GPU
   // Determine convolution algorithm
   fwd_conv_alg convolution_cudnn_algorithm
-    = get_forward_algo_cudnn(input.Width(), input_desc, input.LockedBuffer(),
+    = get_forward_algo(input.Width(), input_desc, input.LockedBuffer(),
                              m_kernel_cudnn_desc, kernel.LockedBuffer(),
                              m_convolution_cudnn_desc,
                              output_desc, output.Buffer(),
@@ -552,7 +552,7 @@ apply_transposed_convolution_cudnn(bool during_forward_prop) {
   // Perform transposed convolution on the GPU
   // Determine transposed convolution algorithm
   bwd_data_conv_alg transposed_convolution_cudnn_algorithm =
-                       get_backward_data_algo_cudnn(
+                       get_backward_data_algo(
                          input.Width(),
                          m_kernel_cudnn_desc, kernel.LockedBuffer(),
                          input_desc, input.LockedBuffer(),
@@ -660,7 +660,7 @@ base_convolution_layer<TensorDataType,Device>
       // Determine algorithm and compute kernel gradient
       if (using_transposed_convolution) {
         bwd_filter_conv_alg kernel_gradient_cudnn_algorithm
-          = get_backward_filter_algo_cudnn(
+          = get_backward_filter_algo(
             local_input.Width(),
             gradient_wrt_output_desc, local_gradient_wrt_output.LockedBuffer(),
             input_desc, local_input.LockedBuffer(),
@@ -681,7 +681,7 @@ base_convolution_layer<TensorDataType,Device>
           kernel_gradient);
       } else {
         bwd_filter_conv_alg kernel_gradient_cudnn_algorithm
-          = get_backward_filter_algo_cudnn(
+          = get_backward_filter_algo(
             local_input.Width(),
             input_desc, local_input.LockedBuffer(),
             gradient_wrt_output_desc, local_gradient_wrt_output.LockedBuffer(),
@@ -984,7 +984,7 @@ void base_convolution_layer<TensorDataType,Device>
 #ifdef LBANN_HAS_CUDNN
 template <typename TensorDataType, El::Device Device>
 fwd_conv_alg
-base_convolution_layer<TensorDataType,Device>::get_forward_algo_cudnn(
+base_convolution_layer<TensorDataType,Device>::get_forward_algo(
   const int local_mini_batch_size,
   const dnn_lib::TensorDescriptor& input_desc,
   const TensorDataType* input,
@@ -1002,21 +1002,20 @@ base_convolution_layer<TensorDataType,Device>::get_forward_algo_cudnn(
     bool deterministic = false;
 #endif
     m_fwd_cudnn_algos[local_mini_batch_size] =
-      dnn_lib::from_cudnn(
-        dnn_lib::get_fwd_algorithm(
-          true, deterministic,
-          input_desc, input,
-          kernel_desc, kernel,
-          conv_desc,
-          output_desc, output,
-          ws_size, ws));
+      dnn_lib::get_fwd_algorithm(
+        true, deterministic,
+        input_desc, input,
+        kernel_desc, kernel,
+        conv_desc,
+        output_desc, output,
+        ws_size, ws);
   }
   return m_fwd_cudnn_algos[local_mini_batch_size];
 }
 
 template <typename TensorDataType, El::Device Device>
 bwd_data_conv_alg
-base_convolution_layer<TensorDataType,Device>::get_backward_data_algo_cudnn(
+base_convolution_layer<TensorDataType,Device>::get_backward_data_algo(
   const int local_mini_batch_size,
   const dnn_lib::FilterDescriptor& kernel_desc,
   const TensorDataType* kernel,
@@ -1034,21 +1033,20 @@ base_convolution_layer<TensorDataType,Device>::get_backward_data_algo_cudnn(
     bool deterministic = false;
 #endif
     m_bwd_data_cudnn_algos[local_mini_batch_size] =
-      dnn_lib::from_cudnn(
-        dnn_lib::get_bwd_data_algorithm(
-          true, deterministic,
-          kernel_desc, kernel,
-          prev_error_signal_desc, prev_error_signal,
-          conv_desc,
-          error_signal_desc, error_signal,
-          ws_size, ws));
+      dnn_lib::get_bwd_data_algorithm(
+        true, deterministic,
+        kernel_desc, kernel,
+        prev_error_signal_desc, prev_error_signal,
+        conv_desc,
+        error_signal_desc, error_signal,
+        ws_size, ws);
   }
   return m_bwd_data_cudnn_algos[local_mini_batch_size];
 }
 
 template <typename TensorDataType, El::Device Device>
 bwd_filter_conv_alg
-base_convolution_layer<TensorDataType,Device>::get_backward_filter_algo_cudnn(
+base_convolution_layer<TensorDataType,Device>::get_backward_filter_algo(
   const int local_mini_batch_size,
   const dnn_lib::TensorDescriptor& input_desc,
   const TensorDataType* input,

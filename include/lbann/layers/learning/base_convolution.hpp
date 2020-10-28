@@ -204,7 +204,7 @@ private:
 #ifdef LBANN_HAS_CUDNN
 
   /** Get the cuDNN algorithm to use for forward prop. */
-  fwd_conv_alg get_forward_algo_cudnn(
+  fwd_conv_alg get_forward_algo(
     const int local_mini_batch_size,
     const dnn_lib::TensorDescriptor& input_desc,
     const TensorDataType* input,
@@ -217,7 +217,7 @@ private:
     TensorDataType* ws);
 
   /** Get the cuDNN algorithm to use for backward-data. */
-  bwd_data_conv_alg get_backward_data_algo_cudnn(
+  bwd_data_conv_alg get_backward_data_algo(
     const int local_mini_batch_size,
     const dnn_lib::FilterDescriptor& kernel_desc,
     const TensorDataType* kernel,
@@ -233,7 +233,7 @@ private:
    * Get the cuDNN algorithm to use for backward-filter.
    * Buffer space for kernel_gradient is allocated via temporary workspace.
    */
-  bwd_filter_conv_alg get_backward_filter_algo_cudnn(
+  bwd_filter_conv_alg get_backward_filter_algo(
     const int local_mini_batch_size,
     const dnn_lib::TensorDescriptor& input_desc,
     const TensorDataType* input,
