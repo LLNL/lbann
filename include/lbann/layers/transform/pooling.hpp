@@ -40,6 +40,20 @@
 
 namespace lbann {
 
+inline pooling_mode to_pool_mode(std::string m)
+{
+#ifndef LBANN_DETERMINISTIC
+  if (m == "max")            return pooling_mode::MAX;
+#else
+  if (m == "max")            return pooling_mode::MAX_DETERMINISTIC;
+#endif // LBANN_DETERMINISTIC
+  if (m == "average")        return pooling_mode::AVERAGE_COUNT_INCLUDE_PADDING;
+  if (m == "average_no_pad") return pooling_mode::AVERAGE_COUNT_EXCLUDE_PADDING;
+  else {
+    LBANN_ERROR("Invalid pooling mode requested.");
+  }
+}
+
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
@@ -71,7 +85,7 @@ class pooling_layer : public data_type_layer<TensorDataType> {
 private:
 
   /** Pooling mode. */
-  pool_mode m_pool_mode;
+  pooling_mode m_pool_mode;
 
   /** Pooling window dimensions. */
   std::vector<int> m_pool_dims;
@@ -105,7 +119,7 @@ public:
                 int pool_dim,
                 int pad,
                 int stride,
-                pool_mode mode)
+                pooling_mode mode)
     : pooling_layer(comm,
                     num_data_dims,
                     std::vector<int>(num_data_dims, pool_dim),
@@ -118,7 +132,7 @@ public:
                 std::vector<int> pool_dims,
                 std::vector<int> pads,
                 std::vector<int> strides,
-                pool_mode mode)
+                pooling_mode mode)
     : data_type_layer<TensorDataType>(comm),
       m_pool_mode(mode),
       m_pool_dims(pool_dims),
@@ -185,10 +199,14 @@ public:
     ss.str(std::string{});
     ss.clear();
     switch (m_pool_mode) {
-    case pool_mode::max:            ss << "max";              break;
-    case pool_mode::average:        ss << "average";          break;
-    case pool_mode::average_no_pad: ss << "average (no pad)"; break;
-    case pool_mode::invalid:
+    case pooling_mode::MAX:
+      ss << "max"; break;
+    case pooling_mode::MAX_DETERMINISTIC:
+      ss << "max (deterministic)"; break;
+    case pooling_mode::AVERAGE_COUNT_INCLUDE_PADDING:
+      ss << "average"; break;
+    case pooling_mode::AVERAGE_COUNT_EXCLUDE_PADDING:
+      ss << "average (no pad)"; break;
     default:
       ss << "invalid";
     }
@@ -245,26 +263,8 @@ protected:
 #else
 
     // Set pooling descriptor
-    cudnnPoolingMode_t dnn_pool_mode;
-    switch(m_pool_mode) {
-    case pool_mode::max:
-    #ifndef LBANN_DETERMINISTIC
-      dnn_pool_mode = CUDNN_POOLING_MAX; break;
-    #else
-      dnn_pool_mode = CUDNN_POOLING_MAX_DETERMINISTIC; break;
-    #endif
-    case pool_mode::average:
-      dnn_pool_mode = CUDNN_POOLING_AVERAGE_COUNT_INCLUDE_PADDING; break;
-    case pool_mode::average_no_pad:
-      dnn_pool_mode = CUDNN_POOLING_AVERAGE_COUNT_EXCLUDE_PADDING; break;
-    default:
-      std::stringstream err;
-      err << "no GPU implementation for pooling mode " << static_cast<int>(m_pool_mode);
-      LBANN_ERROR(err.str());
-      dnn_pool_mode = CUDNN_POOLING_MAX;
-    }
-    m_pooling_dnn_desc.set(dnn_pool_mode,
-                           CUDNN_PROPAGATE_NAN,
+    m_pooling_dnn_desc.set(dnn_lib::to_cudnn(m_pool_mode),
+                           dnn_lib::DNN_PROPAGATE_NAN,
                            m_pool_dims.size(),
                            m_pool_dims.data(),
                            m_pads.data(),
@@ -359,7 +359,7 @@ private:
 
   /// Pooling forward propagation with im2col
   void fp_compute_im2col() {
-    if(m_pool_mode != pool_mode::max && m_pool_mode != pool_mode::average) {
+    if(m_pool_mode != pooling_mode::MAX && m_pool_mode != pooling_mode::MAX_DETERMINISTIC && m_pool_mode != pooling_mode::AVERAGE_COUNT_INCLUDE_PADDING) {
       LBANN_ERROR("CPU pooling layer only supports max and average pooling");
     }
 
@@ -374,7 +374,7 @@ private:
     const int num_per_output_channel = this->get_output_size() / num_channels;
 
     // Initialize max pool indices if needed
-    if(m_pool_mode == pool_mode::max) {
+    if(m_pool_mode == pooling_mode::MAX || m_pool_mode == pooling_mode::MAX_DETERMINISTIC) {
       m_max_pool_indices.assign(this->get_output_size() * local_width, 0);
     }
 
@@ -397,7 +397,7 @@ private:
              m_pool_dims.data(),
              m_strides.data());
 
-      if(m_pool_mode == pool_mode::max) {
+      if(m_pool_mode == pooling_mode::MAX || m_pool_mode == pooling_mode::MAX_DETERMINISTIC) {
         // Apply max pooling
         TensorDataType *output_buffer = local_output.Buffer(0, sample);
         int *indices_buffer = &m_max_pool_indices[sample * this->get_output_size()];
@@ -421,7 +421,7 @@ private:
         }
       }
 
-      if(m_pool_mode == pool_mode::average) {
+      if(m_pool_mode == pooling_mode::AVERAGE_COUNT_INCLUDE_PADDING) {
         // Apply average pooling
         TensorDataType *output_buffer = local_output.Buffer(0, sample);
         LBANN_OMP_PARALLEL_FOR
@@ -447,7 +447,7 @@ private:
   /// Pooling forward propagation with im2col
   void bp_compute_im2col() {
     using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
-    if(m_pool_mode != pool_mode::max && m_pool_mode != pool_mode::average) {
+    if(m_pool_mode != pooling_mode::MAX && m_pool_mode != pooling_mode::MAX_DETERMINISTIC && m_pool_mode != pooling_mode::AVERAGE_COUNT_INCLUDE_PADDING) {
       LBANN_ERROR("CPU pooling layer only supports max and average pooling");
     }
 
@@ -469,7 +469,7 @@ private:
     for(int sample = 0; sample < local_width; ++sample) {
 
       // Compute gradient w.r.t. im2col matrix for max pooling
-      if(m_pool_mode == pool_mode::max) {
+      if(m_pool_mode == pooling_mode::MAX || m_pool_mode == pooling_mode::MAX_DETERMINISTIC) {
 
         // Clear im2col matrix
         El::Zero(im2col_mat);
@@ -494,7 +494,7 @@ private:
       }
 
       // Compute gradient w.r.t. im2col matrix for average pooling
-      if(m_pool_mode == pool_mode::average) {
+      if(m_pool_mode == pooling_mode::AVERAGE_COUNT_INCLUDE_PADDING) {
         const TensorDataType *gradient_wrt_output_buffer
           = local_gradient_wrt_output.LockedBuffer(0, sample);
         LBANN_OMP_PARALLEL_FOR
@@ -671,11 +671,13 @@ setup_layer(size_t workspace_capacity) {
 
   std::string mode;
   switch(l.m_pool_mode) {
-    case pool_mode::max:
+    case pooling_mode::MAX:
       mode = "MAX"; break;
-    case pool_mode::average:
+    case pooling_mode::MAX_DETERMINISTIC:
+      mode = "MAX"; break;
+    case pooling_mode::AVERAGE_COUNT_INCLUDE_PADDING:
       mode = "AVERAGE"; break;
-    case pool_mode::average_no_pad:
+    case pooling_mode::AVERAGE_COUNT_EXCLUDE_PADDING:
       mode = "AVERAGE_NO_PAD"; break;
     default:
       LBANN_ERROR("pooling_layer: no DISTCONV implementation for pooling mode");
