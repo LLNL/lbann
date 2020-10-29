@@ -66,7 +66,8 @@ class unpooling_layer : public transform_layer<TensorDataType> {
     if(m_pooling_layer == nullptr) {
       throw lbann_exception("unpooling_layer: no paired pooling layer");
     }
-    if(m_pooling_layer->m_pool_mode != pool_mode::max) {
+    if(m_pooling_layer->m_pool_mode != pooling_mode::MAX &&
+       m_pooling_layer->m_pool_mode != pooling_mode::MAX_DETERMINISTIC) {
       throw lbann_exception("unpooling_layer: currently only max unpooling layer is implemented");
     }
     if(m_pooling_layer->using_gpus()) {
