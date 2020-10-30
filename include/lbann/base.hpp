@@ -176,12 +176,6 @@ execution_mode exec_mode_from_string(std::string const& str);
 /** @brief Extract an execution_mode from a stream. */
 std::istream& operator>>(std::istream& os, execution_mode& e);
 
-/** Pooling layer mode */
-enum class pool_mode {invalid, max, average, average_no_pad};
-
-/** returns a string representation of the pool_mode */
-std::string get_pool_mode_name(pool_mode m);
-
 /*
  * endsWith: http://thispointer.com/c-how-to-check-if-a-string-ends-with-an-another-given-string/
  * Case Sensitive Implementation of endsWith()
