@@ -34,7 +34,10 @@
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/im2col.hpp"
 #include "lbann/utils/distconv.hpp"
+
+#ifdef LBANN_HAS_CUDNN
 #include "lbann/utils/dnn_lib/cudnn/pooling.hpp"
+#endif // LBANN_HAS_CUDNN
 
 namespace lbann {
 
@@ -300,7 +303,7 @@ protected:
         return;
       }
 #endif // LBANN_HAS_DISTCONV
-      fp_compute_cudnn();
+      fp_compute_dnn();
     } else {
       fp_compute_im2col();
     }
@@ -314,7 +317,7 @@ protected:
         return;
       }
 #endif // LBANN_HAS_DISTCONV
-      bp_compute_cudnn();
+      bp_compute_dnn();
     } else {
       bp_compute_im2col();
     }
@@ -323,7 +326,7 @@ protected:
 private:
 
   /// Pooling forward propagation with cuDNN
-  void fp_compute_cudnn() {
+  void fp_compute_dnn() {
 #ifndef LBANN_HAS_DNN_LIB
     LBANN_ERROR("DNN Library not detected");
 #else
@@ -345,7 +348,7 @@ private:
   }
 
   /// Pooling backward propagation with cuDNN
-  void bp_compute_cudnn() {
+  void bp_compute_dnn() {
 #ifndef LBANN_HAS_DNN_LIB
     LBANN_ERROR("DNN Library not detected");
 #else
