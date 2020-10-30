@@ -107,6 +107,7 @@ using dnnConvolutionBwdDataAlgo_t = cudnnConvolutionBwdDataAlgo_t;
 using dnnConvolutionBwdFilterAlgo_t = cudnnConvolutionBwdFilterAlgo_t;
 
 constexpr dnnConvolutionMode_t DNN_CROSS_CORRELATION = CUDNN_CROSS_CORRELATION;
+constexpr dnnNanPropagation_t DNN_PROPAGATE_NAN = CUDNN_PROPAGATE_NAN;
 
 ////////////////////////////////////////////////////////////
 // Functions for to/from cuDNN types conversion
