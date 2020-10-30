@@ -54,6 +54,27 @@ inline pooling_mode to_pool_mode(std::string m)
   }
 }
 
+#ifdef LBANN_HAS_DNN_LIB
+namespace dnn_lib {
+
+inline dnnPoolingMode_t to_dnn_lib(pooling_mode m)
+{
+  switch(m)
+  {
+#ifdef LBANN_HAS_CUDNN
+  case pooling_mode::MAX: return CUDNN_POOLING_MAX;
+  case pooling_mode::MAX_DETERMINISTIC: return CUDNN_POOLING_MAX_DETERMINISTIC;
+  case pooling_mode::AVERAGE_COUNT_INCLUDE_PADDING: return CUDNN_POOLING_AVERAGE_COUNT_INCLUDE_PADDING;
+  case pooling_mode::AVERAGE_COUNT_EXCLUDE_PADDING: return CUDNN_POOLING_AVERAGE_COUNT_EXCLUDE_PADDING;
+#endif // LBANN_HAS_CUDNN
+  default:
+    LBANN_ERROR("Invalid pooling mode requested");
+  }
+}
+
+} // namespace dnn_lib
+#endif // LBANN_HAS_DNN_LIB
+
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
@@ -263,7 +284,7 @@ protected:
 #else
 
     // Set pooling descriptor
-    m_pooling_dnn_desc.set(dnn_lib::to_cudnn(m_pool_mode),
+    m_pooling_dnn_desc.set(dnn_lib::to_dnn_lib(m_pool_mode),
                            dnn_lib::DNN_PROPAGATE_NAN,
                            m_pool_dims.size(),
                            m_pool_dims.data(),
