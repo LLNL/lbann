@@ -23,8 +23,9 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
-#ifndef LBANN_UTILS_SERIALIZATION_HPP_INCLUDED
-#define LBANN_UTILS_SERIALIZATION_HPP_INCLUDED
+#pragma once
+#ifndef LBANN_UTILS_SERIALIZATION_SERIALIZE_HALF_HPP_INCLUDED
+#define LBANN_UTILS_SERIALIZATION_SERIALIZE_HALF_HPP_INCLUDED
 
 /** @file
  *
@@ -109,4 +110,4 @@ void load(JSONInputArchive&, half_float::half&);
 #endif // LBANN_HAS_HALF
 }// namespace cereal
 
-#endif // LBANN_UTILS_SERIALIZATION_HPP_INCLUDED
+#endif // LBANN_UTILS_SERIALIZATION_SERIALIZE_HALF_HPP_INCLUDED

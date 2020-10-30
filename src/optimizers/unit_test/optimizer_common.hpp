@@ -5,6 +5,11 @@
 #include <lbann_config.hpp>
 #include <lbann/base.hpp>
 #include <lbann/utils/h2_tmp.hpp>
+#include <lbann/utils/serialize.hpp>
+
+#include <cereal/archives/binary.hpp>
+#include <cereal/archives/json.hpp>
+#include <cereal/archives/xml.hpp>
 
 // This header should only be used in the unit testing code, so this
 // is fine.

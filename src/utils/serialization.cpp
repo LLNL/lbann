@@ -30,7 +30,7 @@
  *  Cereal's Binary, JSON, and XML archives are provided.
  */
 
-#include "lbann/utils/serialization.hpp"
+#include "lbann/utils/serialize.hpp"
 
 #include <cereal/archives/binary.hpp>
 #include <cereal/archives/json.hpp>
