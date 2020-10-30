@@ -176,7 +176,6 @@ bool load_file(const std::string filename, std::vector<char>& buf, bool append) 
   std::ifstream file(filename, std::ios::binary);
   if (!file.good()) {
     LBANN_ERROR("!file.good() for filename: ", filename);
-    return false;
   }
 
   file.unsetf(std::ios::skipws);
