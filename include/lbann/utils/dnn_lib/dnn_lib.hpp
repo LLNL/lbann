@@ -38,8 +38,11 @@
 
 namespace lbann {
 namespace dnn_lib {
-
-using namespace cudnn;
+#if defined LBANN_HAS_CUDNN
+  using namespace cudnn;
+#elif defined LBANN_HAS_MIOPEN
+  using namespace miopen;
+#endif // LBANN_HAS_CUDNN
 
 template <typename T>
 struct ScalingParameterT

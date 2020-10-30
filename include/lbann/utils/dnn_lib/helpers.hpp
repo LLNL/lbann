@@ -45,10 +45,11 @@ using namespace cudnn;
 
 #elif defined LBANN_HAS_MIOPEN
 
-// For now, this is placeholder.
 #include "miopen.hpp"
 namespace lbann {
-namespace dnn_lib = ::lbann::miopen;
+namespace dnn_lib {
+using namespace miopen;
+}// namespace dnn_lib
 }// namespace lbann
 
 #endif // LBANN_HAS_CUDnn
