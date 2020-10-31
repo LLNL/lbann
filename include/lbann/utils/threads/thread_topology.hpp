@@ -42,8 +42,10 @@ namespace lbann {
 #if defined(LBANN_TOPO_AWARE)
   void hwloc_print_topo();
 
+#if HWLOC_API_VERSION < 0x00020000
+  // This function is implemented in HWLOC 2.1
   int hwloc_bitmap_singlify_per_core(hwloc_topology_t topology, hwloc_bitmap_t cpuset, unsigned which);
-
+#endif
 
   hwloc_cpuset_t get_local_cpuset_for_current_thread(hwloc_topology_t topo);
 
