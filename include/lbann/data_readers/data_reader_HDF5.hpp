@@ -78,7 +78,8 @@ private:
   std::string m_useme_schema_filename = "";
 
   /** P_0 reads and bcasts the schema */
-  void load_useme_schema();
+  void load_schema(std::string fn, conduit::Schema &schema);
+  void load_schema_from_data();
 
   std::unordered_set<std::string> m_useme_pathnames;
   std::unordered_set<std::string> m_data_pathnames;
@@ -86,6 +87,8 @@ private:
   //=========================================================================
   // private methods follow
   //=========================================================================
+
+  void do_preload_data_store() override;
 
   /** Verify the useme schema is a subset of the complete schema */
   void validate_useme_schema();

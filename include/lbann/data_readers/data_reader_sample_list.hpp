@@ -52,6 +52,7 @@ class data_reader_sample_list : public generic_data_reader {
   using sample_list_t = sample_list_hdf5<sample_name_t>;
 #endif
   using sample_t = std::pair<sample_list_t::sample_file_id_t, sample_name_t>;
+  using sample_file_id_t = sample_list_t::sample_file_id_t;
 
   data_reader_sample_list(bool shuffle = true);
   data_reader_sample_list(const data_reader_sample_list&);
@@ -64,9 +65,13 @@ class data_reader_sample_list : public generic_data_reader {
     return "data_reader_sample_list";
   }
 
+  void open_file(size_t index_in, hid_t& file_handle_out, std::string& sample_name_out);
+  void close_file(size_t index_in);
+
+
   /** Developer's note: derived classes that override load() should
    * explicitly call data_reader_sample_list::load() at the
-   * beginning of their method
+   * beginning of their method load() method
    */
   void load() override;
 

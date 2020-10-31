@@ -25,6 +25,7 @@
 //
 /////////////////////////////////////////////////////////////////////////////////
 #include "lbann/data_readers/data_reader_HDF5.hpp"
+#include "lbann/data_store/data_store_conduit.hpp"
 #include "conduit/conduit_schema.hpp"
 #include "lbann/utils/timer.hpp"
 
@@ -56,20 +57,28 @@ void hdf5_data_reader::copy_members(const hdf5_data_reader &rhs) {
 }
 
 
-void hdf5_data_reader::load_useme_schema() {
-  if (m_useme_schema_filename == "") {
-    LBANN_ERROR("you must call hdf5_data_reader::set_schema_filename(), which you apparently did not do");
-  }
-
+void hdf5_data_reader::load_schema(std::string filename, conduit::Schema &schema) {
   std::vector<char> schema_str;
   if (is_master()) {
-    load_file(m_useme_schema_filename, schema_str, false);
+      load_file(filename, schema_str);
   }
-  m_comm->world_broadcast(m_comm->get_trainer_master(), schema_str);
+  m_comm->world_broadcast(m_comm->get_world_master(), schema_str);
   std::string json_str(schema_str.begin(), schema_str.end());
-  m_useme_schema = json_str;
+  schema = json_str;
 }
 
+void hdf5_data_reader::load_schema_from_data() {
+  std::string json;
+  if (is_master()) {
+    conduit::Node node;
+    std::string bundle_filename = ""; //XX TODO: get from sample_list
+    conduit::relay::io::load(bundle_filename, "hdf5", node);
+    const conduit::Schema &schema = node.schema();
+    json = schema.to_json(); 
+  }  
+  m_comm->broadcast<std::string>(0, json, m_comm->get_world_comm());
+  m_data_schema = json;
+}
 
 void hdf5_data_reader::load() {
   data_reader_sample_list::load();
@@ -78,12 +87,14 @@ void hdf5_data_reader::load() {
     std::cout << "hdf5_data_reader - starting load" << std::endl;
   }
 
-  load_useme_schema();
-  get_datum_pathnames(m_useme_schema, m_useme_pathnames);
+  load_schema(m_useme_schema_filename, m_useme_schema);
+  load_schema_from_data();
 
-  //TODO: m_data_schema: P_0 loads a file; grabs the schema, and bcasts to others
-#if 0
+  // fills in: m_data_schema
+  load_schema_from_data();
+
   get_datum_pathnames(m_data_schema, m_data_pathnames);
+  get_datum_pathnames(m_useme_schema, m_useme_pathnames);
 
   validate_useme_schema();
 
@@ -93,7 +104,7 @@ void hdf5_data_reader::load() {
   resize_shuffled_indices();
   instantiate_data_store();
   select_subset_of_data();
-#endif
+
   if (is_master()) {
     std::cout << "hdf5_data_reader::load() time: " << (get_time() - tm1) << std::endl;
   }
@@ -130,14 +141,12 @@ void hdf5_data_reader::validate_useme_schema() {
       LBANN_ERROR("you requested use of the key '", *t, ",' but that does not appear in the data's schema");
     }
 
-    std::string ss(*t);
-    conduit::Schema &data_s = m_data_schema.fetch_child(ss);
+    conduit::Schema &data_s = m_data_schema.fetch_child(*t);
     conduit::Schema &use_s = m_data_schema.fetch_child(*t);
-//    const conduit::Schema &data_s = m_data_schema.fetch_existing(ss);
- //   const conduit::Schema &use_s = m_data_schema.fetch_existing(ss);
 
     conduit::index_t data_s_id = data_s.dtype().id();
     conduit::index_t use_s_id = data_s.dtype().id();
+
     if (data_s_id != use_s_id) {
       LBANN_ERROR("data type IDs don't match");
     }
@@ -145,6 +154,49 @@ void hdf5_data_reader::validate_useme_schema() {
     if (!success) {
       LBANN_ERROR("data for this path is incompatible: ", *t);
     }
+  }
+}
+
+void hdf5_data_reader::do_preload_data_store() {
+  options *opts = options::get();
+  double tm1 = get_time();
+
+  // TODO: construct a more efficient owner mapping, and set it in the data store.
+
+  hid_t file_handle;
+  std::string sample_name;
+  for (size_t idx=0; idx < m_shuffled_indices.size(); idx++) {
+    int index = m_shuffled_indices[idx];
+    if(m_data_store->get_index_owner(index) != m_rank_in_model) {
+      continue;
+    }
+    try {
+      open_file(index, file_handle, sample_name);
+      conduit::Node & node = m_data_store->get_empty_node(index);
+      for (std::unordered_set<std::string>::const_iterator t = m_useme_pathnames.begin(); t != m_useme_pathnames.end(); t++) {
+        if (t->find(m_metadata_field_name) == t->npos) {
+      //?? TODO preload_helper(h, sample_name, m_output_scalar_prefix, index, node);
+        }
+      }
+      m_data_store->set_preloaded_conduit_node(index, node);
+    } catch (conduit::Error const& e) {
+      LBANN_ERROR(" :: trying to load the node ", index, " and caught conduit error: ", e.what());
+    }
+  }
+  /// Once all of the data has been preloaded, close all of the file handles
+  for (size_t idx=0; idx < m_shuffled_indices.size(); idx++) {
+    int index = m_shuffled_indices[idx];
+    if(m_data_store->get_index_owner(index) != m_rank_in_model) {
+      continue;
+    }
+    close_file(index);
+  }
+
+  if (get_comm()->am_world_master() ||
+      (opts->get_bool("ltfb_verbose") && get_comm()->am_trainer_master())) {
+    std::stringstream msg;
+    msg << " loading data for role: " << get_role() << " took " << get_time() - tm1 << "s";
+    LBANN_WARNING(msg.str());
   }
 }
 

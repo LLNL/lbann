@@ -132,6 +132,20 @@ void data_reader_sample_list::load_list_of_samples_from_archive(const std::strin
     std::cout << "Time to load sample list from archive: " << tm2 - tm1 << std::endl;
   }
 }
+void data_reader_sample_list::open_file(
+    size_t index_in,
+    hid_t& file_handle_out, 
+    std::string& sample_name_out) {
+  const sample_t& s = m_sample_list[index_in];
+  sample_name_out = s.second;
+  sample_file_id_t id = s.first;
+  m_sample_list.open_samples_file_handle(index_in, true);
+  file_handle_out = m_sample_list.get_samples_file_handle(id);
+}
+
+void data_reader_sample_list::close_file(size_t index) {
+  m_sample_list.close_if_done_samples_file_handle(index);
+}
 
 } // end of namespace lbann
 
