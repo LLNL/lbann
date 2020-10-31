@@ -72,6 +72,8 @@ public:
   template <class Archive> void serialize(Archive & ar) {
     ar(cereal::base_class<data_type_optimizer<TensorDataType>>(this),
        CEREAL_NVP(m_eps));
+    if (m_cache)
+      ar(::cereal::make_nvp("cache", *m_cache));
   }
 
   /** Human-readable type name. */
