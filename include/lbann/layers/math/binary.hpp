@@ -54,7 +54,7 @@ namespace lbann {
         std::stringstream err;                                              \
         err << this->get_type() << " layer \"" << this->get_name() << "\" " \
             << "has input tensors with different dimensions (";             \
-        for (size_t i = 0; i < this->get_num_parents(); ++i) {              \
+        for (int i = 0; i < this->get_num_parents(); ++i) {                 \
           const auto& dims = this->get_input_dims(i);                       \
           err << (i > 0 ? ", " : "")                                        \
               << "layer \"" << parents[i]->get_name() << "\" outputs ";     \

@@ -331,7 +331,7 @@ auto data_type_layer<TensorDataType>::get_activations(const Layer& child) const 
   if (this->get_num_children() <= 0) {
     LBANN_ERROR("This layer has no children");
   }
-  const auto child_index = find_child_layer_index(child);
+  const int child_index = find_child_layer_index(child);
   if (child_index >= get_num_children()) {
     std::stringstream err;
     err << "attempted to get activation tensor of "
@@ -344,7 +344,7 @@ auto data_type_layer<TensorDataType>::get_activations(const Layer& child) const 
 }
 template <typename TensorDataType>
 auto data_type_layer<TensorDataType>::get_error_signals(const Layer& parent) const -> const BaseDistMat& {
-  const auto parent_index = find_parent_layer_index(parent);
+  const int parent_index = find_parent_layer_index(parent);
   if (parent_index >= get_num_parents()) {
     LBANN_ERROR("attempted to get error signal tensor of "
                 "layer \"", get_name(), "\" "
@@ -484,7 +484,7 @@ void data_type_layer<TensorDataType>::setup_data(size_t max_mini_batch_size) {
 
 template <typename TensorDataType>
 void data_type_layer<TensorDataType>::bp_compute() {
-  for (size_t i = 0; i < get_num_parents(); ++i) {
+  for (int i = 0; i < get_num_parents(); ++i) {
     El::Zero(get_error_signals(i));
   }
 }
@@ -513,21 +513,21 @@ void data_type_layer<TensorDataType>::check_setup() {
   }
 
   // Check that tensors are initialized
-  for (size_t i = 0; i < get_num_parents(); ++i) {
+  for (int i = 0; i < get_num_parents(); ++i) {
     if (m_inputs[i] == nullptr) {
       err << "layer \"" << get_name() << "\" has an "
           << "uninitialized input tensor (index " << i << ")";
       LBANN_ERROR(err.str());
     }
   }
-  for (size_t i = 0; i < get_num_children(); ++i) {
+  for (int i = 0; i < get_num_children(); ++i) {
     if (m_outputs[i] == nullptr) {
       err << "layer \"" << get_name() << "\" has an "
           << "uninitialized output tensor (index " << i << ")";
       LBANN_ERROR(err.str());
     }
   }
-  for (size_t i = 0; i < get_num_children(); ++i) {
+  for (int i = 0; i < get_num_children(); ++i) {
     if (!m_gradient_wrt_outputs[i]) {
       err << "layer \"" << get_name() << "\" has an "
           << "uninitialized gradient w.r.t. output tensor "
@@ -535,7 +535,7 @@ void data_type_layer<TensorDataType>::check_setup() {
       LBANN_ERROR(err.str());
     }
   }
-  for (size_t i = 0; i < get_num_parents(); ++i) {
+  for (int i = 0; i < get_num_parents(); ++i) {
     if (!m_gradient_wrt_inputs[i]) {
       err << "layer \"" << get_name() << "\" has an "
           << "uninitialized gradient w.r.t. input tensor "
@@ -553,7 +553,7 @@ void data_type_layer<TensorDataType>::fp_setup_inputs(El::Int mini_batch_size) {
   const auto& alignment_dist = get_parent_layer().get_activations(*this).DistData();
 
   // Iterate through input tensors
-  for (size_t i = 0; i < get_num_parents(); ++i) {
+  for (int i = 0; i < get_num_parents(); ++i) {
 #ifdef LBANN_HAS_DISTCONV
     if (!keep_original_inputs(i)) continue;
 #endif // LBANN_HAS_DISTCONV
@@ -611,7 +611,7 @@ void data_type_layer<TensorDataType>::fp_setup_outputs(El::Int mini_batch_size) 
                                 get_activations().DistData());
 
   // Initialize output tensors
-  for (size_t i = 0; i < get_num_children(); ++i) {
+  for (int i = 0; i < get_num_children(); ++i) {
 #ifdef LBANN_HAS_DISTCONV
     if (!keep_original_outputs(i)) continue;
 #endif // LBANN_HAS_DISTCONV
@@ -786,7 +786,7 @@ void deep_copy_error_signal(
 // etc is OK.
 template <typename TensorDataType>
 void data_type_layer<TensorDataType>::propagate_error_signals_to_parents_() {
-  for (size_t i=0; i<get_num_parents(); ++i) {
+  for (int i=0; i<get_num_parents(); ++i) {
     auto& parent = const_cast<Layer&>(get_parent_layer(i));
 
     // If my error signals persist, my parent can always view them,
@@ -806,7 +806,7 @@ void data_type_layer<TensorDataType>::propagate_error_signals_to_parents_() {
 
 template <typename TensorDataType>
 void data_type_layer<TensorDataType>::allocate_new_gradients_() {
-  for (size_t i = 0; i < get_num_parents(); ++i) {
+  for (int i = 0; i < get_num_parents(); ++i) {
 #ifdef LBANN_HAS_DISTCONV
     if (!keep_original_gradient_wrt_inputs(i)) continue;
 #endif // LBANN_HAS_DISTCONV
@@ -827,7 +827,7 @@ template <typename TensorDataType>
 void data_type_layer<TensorDataType>::bp_setup_gradient_wrt_inputs(
   El::Int mini_batch_size)
 {
-  for (size_t i = 0; i < get_num_parents(); ++i) {
+  for (int i = 0; i < get_num_parents(); ++i) {
 #ifdef LBANN_HAS_DISTCONV
     if (!keep_original_gradient_wrt_inputs(i)) continue;
 #endif // LBANN_HAS_DISTCONV

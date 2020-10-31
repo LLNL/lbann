@@ -627,10 +627,10 @@ void model::setup_layer_topology() {
 
   // Make sure parent/child relationships are reciprocated
   for (auto& l : m_layers) {
-    for (size_t i=0; i<l->get_num_parents(); ++i) {
+    for (int i=0; i<l->get_num_parents(); ++i) {
       const_cast<Layer&>(l->get_parent_layer(i)).add_child_layer(l);
     }
-    for (size_t i=0; i<l->get_num_children(); ++i) {
+    for (int i=0; i<l->get_num_children(); ++i) {
       const_cast<Layer&>(l->get_child_layer(i)).add_parent_layer(l);
     }
   }
@@ -801,7 +801,7 @@ void model::add_evaluation_layers(std::unordered_set<Layer*>& layer_set,
 
 void model::add_dummy_layers(std::unordered_set<std::string>& layer_names) {
   for (auto& l : m_layers) {
-    while ((int) l->get_num_children() < l->get_expected_num_child_layers()) {
+    while (l->get_num_children() < l->get_expected_num_child_layers()) {
 
       // Create dummy layer
       OwningLayerPtr dummy;
@@ -896,7 +896,7 @@ void model::add_split_layers(std::unordered_set<std::string>& layer_names) {
       ps = orig_ps;
 
       // Setup relationships between split layer and child layers
-      for (size_t i=0; i<l->get_num_children(); ++i) {
+      for (int i=0; i<l->get_num_children(); ++i) {
         auto& child = const_cast<Layer&>(l->get_child_layer(i));
         split->add_child_layer(l->get_child_layer_pointer(i));
         child.replace_parent_layer(split, child.find_parent_layer_index(*l));
