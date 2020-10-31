@@ -83,10 +83,40 @@ class Layer;
 namespace lbann {
 
 // Forward declarations
+class Layer;
 class model;
 namespace callback {
 class sync_layers;
 } // namespace callback
+
+/** @brief Smart pointer to manage ownership of a layer object
+ *
+ *  This should be treated @b exactly like a @c std::unique_ptr<Layer>
+ *  , i.e. there should be exactly one instance per pointer and the
+ *  copy constructor and copy-assignment operators should never be
+ *  used. Using this like a @c std::shared_ptr may lead to unexpected
+ *  behavior.
+ *
+ *  The @b only reason this is not a @c std::unique_ptr is because
+ *  Cereal cannot natively serialize raw pointers, making it hard to
+ *  serialize the layer graph. However, it can accommodate @c
+ *  std::weak_ptr . In an ideal world, Cereal would support a
+ *  non-owning smart pointer to an object in @c std::unique_ptr
+ *  (possibly the experimental @c observer_ptr ), but we can make do
+ *  by managing layers with @c std::shared_ptr .
+ *
+ *  @todo Replace with @c std::unique_ptr<Layer> when C++ and Cereal
+ *  support @c std::observer_ptr.
+ */
+using OwningLayerPtr = std::shared_ptr<Layer>;
+/** @brief Smart pointer to reference a layer object
+ *
+ *  See @c OwningLayerPtr
+ *
+ *  @todo Replace with @c std::observer_ptr<Layer*> when supported by
+ *  C++ and Cereal.
+ */
+using ViewingLayerPtr = std::weak_ptr<Layer>;
 
 /** Represents a parallel strategy for a layer. */
 struct ParallelStrategy {
@@ -306,67 +336,58 @@ public:
   /** Write layer to proto file */
   virtual void write_proto(lbann_data::Layer* proto) const;
 
-  /** Get parent layers. */
-  inline std::vector<const Layer*>& get_parent_layers() { return m_parent_layers; }
-  /** Get parent layers. (const) */
-  inline const std::vector<const Layer*>& get_parent_layers() const { return m_parent_layers; }
-  /** Get child layers. */
-  inline std::vector<const Layer*>& get_child_layers() { return m_child_layers; }
-  /** Get child layers. (const) */
-  inline const std::vector<const Layer*>& get_child_layers() const { return m_child_layers; }
+  const Layer& get_parent_layer(size_t index=0) const;
+  const Layer& get_child_layer(size_t index=0) const;
 
-  inline int find_child_layer_index(const Layer* l) const {
-    return std::distance(m_child_layers.begin(),
-                         std::find(m_child_layers.begin(),
-                                   m_child_layers.end(),
-                                   l));
-  }
+  std::vector<const Layer*> get_parent_layers() const;
+  std::vector<const Layer*> get_child_layers() const;
 
-  inline int find_parent_layer_index(const Layer* l) const {
-    return std::distance(m_parent_layers.begin(),
-                         std::find(m_parent_layers.begin(),
-                                   m_parent_layers.end(),
-                                   l));
-  }
+  size_t find_parent_layer_index(const Layer& l) const;
+  size_t find_child_layer_index(const Layer& l) const;
 
   /** Get number of parent layers. */
-  inline int get_num_parents() const { return get_parent_layers().size(); }
+  size_t get_num_parents() const { return get_parent_layers().size(); }
   /** Get number of child layers. */
-  inline int get_num_children() const { return get_child_layers().size(); }
+  size_t get_num_children() const { return get_child_layers().size(); }
 
-  /** Get names in a particular list of layers */
-  static std::string get_layer_names(const std::vector<const Layer*>& list);
-  std::string get_child_names() const { return get_layer_names(m_child_layers); }
-  std::string get_parent_names() const { return get_layer_names(m_parent_layers); }
+  std::string get_parent_names() const;
+  std::string get_child_names() const;
 
   // ===========================================================
   // Layer pointer manipulation functions
   // ===========================================================
 
-  /** Add a parent layer.
+  /** @brief Add a parent layer
+   *
    *  Does nothing if parent is a null pointer, the same layer, or
    *  already a parent.
    */
-  void add_parent_layer(const Layer* parent);
-  /** Add a child layer.
+  void add_parent_layer(ViewingLayerPtr parent);
+  /** @brief Add a child layer
+   *
    *  Does nothing if child is a null pointer, the same layer, or
    *  already a child.
    */
-  void add_child_layer(const Layer* child);
+  void add_child_layer(ViewingLayerPtr child);
 
-  /** Remove all parent layers.
-   *  Parent layers are not deallocated.
-   */
+  void replace_parent_layer(ViewingLayerPtr l, size_t index);
+  void replace_child_layer(ViewingLayerPtr l, size_t index);
+
+  /** @brief Remove pointers to parent layers */
   void clear_parent_layers() { get_parent_layers().clear(); }
-  /** Remove all child layers.
-   *  Child layers are not deallocated.
-   */
+  /** @brief Remove pointers to child layers */
   void clear_child_layers() { get_child_layers().clear(); }
 
-  /** Get list of pointers to other layers. */
-  virtual std::vector<Layer*> get_layer_pointers();
-  /** Set list of pointers to other layers. */
-  virtual void set_layer_pointers(std::vector<Layer*> layers);
+  ViewingLayerPtr get_parent_layer_pointer(size_t index) const;
+  ViewingLayerPtr get_child_layer_pointer(size_t index) const;
+
+  /** @brief List of pointers to other layers */
+  virtual std::vector<ViewingLayerPtr> get_layer_pointers();
+  /** @brief Set list of pointers to other layers
+   *
+   *  Input should match output of @c get_layer_pointers .
+   */
+  virtual void set_layer_pointers(std::vector<ViewingLayerPtr> layers);
 
   // ===========================================================
   // Weights access functions
@@ -394,16 +415,16 @@ public:
   // ===========================================================
 
   /** Get input tensor dimensions. */
-  std::vector<int> get_input_dims(int input_index = 0) const;
+  std::vector<int> get_input_dims(size_t input_index = 0) const;
   /** Get input tensor size. */
-  int get_input_size(int input_index = 0) const;
+  int get_input_size(size_t input_index = 0) const;
   /** Get output tensor dimensions. */
-  std::vector<int> get_output_dims(int output_index = 0) const;
+  std::vector<int> get_output_dims(size_t output_index = 0) const;
   /** Get output tensor size. */
-  int get_output_size(int output_index = 0) const;
+  int get_output_size(size_t output_index = 0) const;
 
   /** Set output tensor dimensions. */
-  void set_output_dims(std::vector<int> dims, int output_index = 0);
+  void set_output_dims(std::vector<int> dims, size_t output_index = 0);
 
 
   /** Get reference to LBANN communicator. */
@@ -414,14 +435,15 @@ public:
   // ===========================================================
 
   /** Set hint layer.
+   *
    *  Properties of the hint layer are used during the setup
    *  phase. For instance, the output tensor dimensions are set to
    *  match the hint layer's first output tensor.
    */
-  void set_hint_layer(const Layer* l) { m_hint_layer = l; }
+  void set_hint_layer(ViewingLayerPtr l);
 
   /** Get hint layer. */
-  const Layer* get_hint_layer() const { return m_hint_layer; }
+  const Layer* get_hint_layer() const;
 
   // ===========================================================
   // Freeze management functions
@@ -575,11 +597,6 @@ protected:
   /** Reference to LBANN communicator. */
   lbann_comm *m_comm;
 
-  /** References to parent layers. */
-  std::vector<const Layer*> m_parent_layers;
-  /** References to child layers. */
-  std::vector<const Layer*> m_child_layers;
-
   /** Expected number of parent layers.
    *  A negative value indicates no limit.
    */
@@ -715,6 +732,11 @@ private:
   // Private class members
   // ===========================================================
 
+  /** @brief References to parent layers */
+  std::vector<ViewingLayerPtr> m_parent_layers;
+  /** @brief References to child layers */
+  std::vector<ViewingLayerPtr> m_child_layers;
+
   /** @brief References to layer weights.
    *
    *  These are references to the base weights objects. The tensor
@@ -733,7 +755,7 @@ private:
    *  first output tensor of the hint layer. Derived classes may do
    *  more elaborate setup based on the hint layer.
    */
-  const Layer* m_hint_layer = nullptr;
+  ViewingLayerPtr m_hint_layer;
 
   /** Parallel strategy for the layer. */
   ParallelStrategy m_parallel_strategy;

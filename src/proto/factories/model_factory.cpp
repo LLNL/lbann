@@ -75,18 +75,18 @@ instantiate_model(lbann_comm* comm,
  *  Layer terms require pointers to layers.
  */
 void assign_layers_to_objective_function(
-  const std::vector<std::unique_ptr<Layer>>& layer_list,
+  const std::vector<OwningLayerPtr>& layer_list,
   objective_function& obj,
   const lbann_data::ObjectiveFunction& proto_obj) {
 
   // Construct map from layer names to layers
-  std::unordered_map<std::string, Layer*> names_to_layers;
-  for (auto&& l : layer_list) {
+  std::unordered_map<std::string, ViewingLayerPtr> names_to_layers;
+  for (const auto& l : layer_list) {
     const auto& name = l->get_name();
     if (names_to_layers.count(name) > 0) {
       LBANN_ERROR("layer name \"", name, "\" is not unique");
     }
-    names_to_layers[name] = l.get();
+    names_to_layers[name] = l;
   }
 
   // Assign layers to layer terms in objective function
@@ -97,13 +97,13 @@ void assign_layers_to_objective_function(
     if (term != nullptr) {
       ++num_layer_terms;
       const auto& params = proto_obj.layer_term(num_layer_terms-1);
-      auto* l = names_to_layers[params.layer()];
-      if (l == nullptr) {
+      const auto& l = names_to_layers[params.layer()];
+      if (l.expired()) {
         LBANN_ERROR("attempted to set objective function layer term ",
                     "to correspond to layer \"", params.layer(), "\", ",
                     "but no such layer exists");
       }
-      term->set_layer(*l);
+      term->set_layer(*l.lock());
     }
   }
 
@@ -116,18 +116,18 @@ void assign_layers_to_objective_function(
 }
 
 void assign_layers_to_metrics(
-  const std::vector<std::unique_ptr<Layer>>& layer_list,
+  const std::vector<OwningLayerPtr>& layer_list,
   std::vector<std::unique_ptr<metric>>& metric_list,
   const lbann_data::Model& proto_model) {
 
   // Construct map from layer names to layers
-  std::unordered_map<std::string, Layer*> names_to_layers;
+  std::unordered_map<std::string, ViewingLayerPtr> names_to_layers;
   for (auto&& l : layer_list) {
     const auto& name = l->get_name();
     if (names_to_layers.count(name) > 0) {
       LBANN_ERROR("layer name \"", name, "\" is not unique");
     }
-    names_to_layers[name] = l.get();
+    names_to_layers[name] = l;
   }
 
   // Assign layers to layer metrics
@@ -135,14 +135,14 @@ void assign_layers_to_metrics(
     auto&& m = dynamic_cast<layer_metric*>(metric_list[i].get());
     if (m != nullptr) {
       const auto& params = proto_model.metric(i).layer_metric();
-      auto* l = names_to_layers[params.layer()];
-      if (l == nullptr) {
+      const auto& l = names_to_layers[params.layer()];
+      if (l.expired()) {
         LBANN_ERROR("attempted to set layer metric "
                     "\"", m->name(), "\" "
                     "to correspond to layer \"", params.layer(), "\", "
                     "but no such layer exists");
       }
-      m->set_layer(*l);
+      m->set_layer(*l.lock());
     }
   }
 
@@ -150,7 +150,7 @@ void assign_layers_to_metrics(
 
 /** Setup pointers from layers to weights. */
 void assign_weights_to_layers(
-  const std::vector<std::unique_ptr<Layer>>& layer_list,
+  const std::vector<OwningLayerPtr>& layer_list,
   std::vector<std::unique_ptr<weights>>& weights_list,
   const lbann_data::Model& proto_model) {
 
@@ -242,10 +242,10 @@ std::unique_ptr<model> construct_model(
   const lbann_data::Model& proto_model) {
 
   // Construct layer graph
-  auto&& layer_list = construct_layer_graph(comm,
-                                            training_dr_linearized_data_size,
-                                            proto_trainer,
-                                            proto_model);
+  auto layer_list = construct_layer_graph(comm,
+                                          training_dr_linearized_data_size,
+                                          proto_trainer,
+                                          proto_model);
 
   // Construct objective function
   const auto& proto_obj = proto_model.objective_function();

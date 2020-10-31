@@ -37,7 +37,7 @@ template <typename TensorDataType,
 void input_layer<TensorDataType, T_layout, Dev>::
 setup_dims(DataReaderMetaData& dr_metadata) {
   data_type_layer<TensorDataType>::setup_dims(dr_metadata);
-  for (int i = 0; i < this->get_num_children(); ++i) {
+  for (size_t i = 0; i < this->get_num_children(); ++i) {
     this->set_output_dims(get_data_dims(dr_metadata, i), i);
   }
 }
@@ -49,7 +49,7 @@ void input_layer<TensorDataType, T_layout, Dev>::setup_data(size_t max_mini_batc
   data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
 
   // Resize output to maximum mini-batch size
-  for (int i = 0; i < this->get_num_children(); ++i) {
+  for (size_t i = 0; i < this->get_num_children(); ++i) {
     auto& output = this->get_activations(i);
     output.Resize(output.Height(), max_mini_batch_size);
   }
@@ -213,7 +213,7 @@ input_distconv_adapter(Layer& layer, const bool shuffle_required)
   m_shuffle_required(shuffle_required) {
   // Input data is only processed when its consumer layer is also
   // enabled for distconv
-  for (int i = 0; i < layer.get_num_children(); ++i) {
+  for (size_t i = 0; i < layer.get_num_children(); ++i) {
     m_is_input_processed.push_back(layer.get_child_layers()[i]->distconv_enabled());
   }
   if (m_shuffle_required) {
@@ -263,7 +263,7 @@ template <typename TensorDataType,
 void input_distconv_adapter<TensorDataType, T_layout, Dev>::setup_fp_tensors() {
   const auto sample_dist = dc::get_hydrogen_data_parallel_distribution(
       dc::get_num_dims(this->layer()));
-  for (int mat_idx = 0; mat_idx < this->layer().get_num_children(); ++mat_idx) {
+  for (size_t mat_idx = 0; mat_idx < this->layer().get_num_children(); ++mat_idx) {
     if (!is_input_processed(mat_idx)) continue;
 
     const auto shape = this->get_activations_shape(mat_idx);
@@ -434,7 +434,7 @@ void input_distconv_adapter<TensorDataType, T_layout, Dev>::fp_compute() {
   const int mb_size = static_cast<sgd_execution_context&>(
       l.get_model()->get_execution_context()).get_current_mini_batch_size();
 
-  for (int mat_idx = 0; mat_idx < l.get_num_children(); ++mat_idx) {
+  for (size_t mat_idx = 0; mat_idx < l.get_num_children(); ++mat_idx) {
     if (!is_input_processed(mat_idx)) continue;
 
     // TODO: This is diabled as it raises an error when the HDF5 data

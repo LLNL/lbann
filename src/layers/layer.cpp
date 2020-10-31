@@ -63,8 +63,6 @@ Layer::Layer(lbann_comm *comm)
 
 Layer::Layer(const Layer& other) :
   m_comm(other.m_comm),
-  m_parent_layers(other.m_parent_layers),
-  m_child_layers(other.m_child_layers),
   m_expected_num_parent_layers(other.m_expected_num_parent_layers),
   m_expected_num_child_layers(other.m_expected_num_child_layers),
   m_model(other.m_model),
@@ -75,6 +73,8 @@ Layer::Layer(const Layer& other) :
   m_bp_compute_time(other.m_bp_compute_time),
   m_update_time(other.m_update_time),
   m_name(other.m_name),
+  m_parent_layers(other.m_parent_layers),
+  m_child_layers(other.m_child_layers),
   m_weights(other.m_weights),
   m_output_dims_list(other.m_output_dims_list),
   m_hint_layer(other.m_hint_layer) {
@@ -84,8 +84,6 @@ Layer& Layer::operator=(const Layer& other) {
 
   // Shallow copies
   m_comm = other.m_comm;
-  m_parent_layers = other.m_parent_layers;
-  m_child_layers = other.m_child_layers;
   m_expected_num_parent_layers = other.m_expected_num_parent_layers;
   m_expected_num_child_layers = other.m_expected_num_child_layers;
   m_model = other.m_model;
@@ -96,6 +94,8 @@ Layer& Layer::operator=(const Layer& other) {
   m_bp_compute_time = other.m_bp_compute_time;
   m_update_time = other.m_update_time;
   m_name = other.m_name;
+  m_parent_layers = other.m_parent_layers;
+  m_child_layers = other.m_child_layers;
   m_weights = other.m_weights;
   m_output_dims_list = other.m_output_dims_list;
   m_hint_layer = other.m_hint_layer;
@@ -255,46 +255,13 @@ void Layer::summarize_stats(lbann_summary& summarizer, int step) {
 // Tensor dimension access functions
 // ===================================================================
 
-std::vector<int> Layer::get_input_dims(int input_index) const {
-
-  // Get parent layer
-  const auto& num_inputs = get_num_parents();
-  if (input_index < 0 || input_index >= num_inputs) {
-    std::stringstream err;
-    err << "attempted to access dimensions of invalid input tensor "
-        << "in layer \"" << get_name() << "\" "
-        << "(requested index " << input_index << ", but there are "
-        << num_inputs << " input tensors)";
-    LBANN_ERROR(err.str());
-  } else if (m_parent_layers[input_index] == nullptr) {
-    std::stringstream err;
-    err << "layer \"" << get_name() << "\" "
-        << "has a null pointer to parent layer "
-        << "(index " << input_index << ")";
-    LBANN_ERROR(err.str());
-  }
-  const auto& parent = *m_parent_layers[input_index];
-
-  // Get dimensions of corresponding output tensor in parent layer
-  const auto num_parent_outputs = parent.get_num_children();
-  const int parent_output_index = parent.find_child_layer_index(this);
-  if (parent_output_index >= num_parent_outputs) {
-    std::stringstream err;
-    err << "layer \"" << parent.get_name() << "\" is a parent of "
-        << "layer \"" << get_name() << "\", but "
-        << "\"" << get_name() << "\" is not a child of "
-        << "\"" << parent.get_name() << "\"";
-    LBANN_ERROR(err.str());
-  }
+std::vector<int> Layer::get_input_dims(size_t input_index) const {
+  const auto& parent = get_parent_layer(input_index);
+  const auto parent_output_index = parent.find_child_layer_index(*this);
   return parent.get_output_dims(parent_output_index);
-
 }
 
-// ===========================================================
-// Tensor dimension access functions
-// ===========================================================
-
-int Layer::get_input_size(int input_index) const {
+int Layer::get_input_size(size_t input_index) const {
   const auto& dims = get_input_dims(input_index);
   if (dims.empty()) {
     return 0;
@@ -304,15 +271,15 @@ int Layer::get_input_size(int input_index) const {
   }
 }
 
-std::vector<int> Layer::get_output_dims(int output_index) const {
+std::vector<int> Layer::get_output_dims(size_t output_index) const {
   const auto num_outputs = get_num_children();
-  if ((int) m_output_dims_list.size() != num_outputs) {
+  if (m_output_dims_list.size() != num_outputs) {
     std::stringstream err;
     err << "attempted to access dimensions of output tensor "
         << "in layer \"" << get_name() << "\" "
         << "before they are initialized";
     LBANN_ERROR(err.str());
-  } else if (output_index < 0 || output_index >= num_outputs) {
+  } else if (output_index >= num_outputs) {
     std::stringstream err;
     err << "attempted to access dimensions of invalid output tensor "
         << "in layer \"" << get_name() << "\" "
@@ -323,7 +290,7 @@ std::vector<int> Layer::get_output_dims(int output_index) const {
   return m_output_dims_list[output_index];
 }
 
-int Layer::get_output_size(int output_index) const {
+int Layer::get_output_size(size_t output_index) const {
   const auto& dims = get_output_dims(output_index);
   if (dims.empty()) {
     return 0;
@@ -333,9 +300,9 @@ int Layer::get_output_size(int output_index) const {
   }
 }
 
-void Layer::set_output_dims(std::vector<int> dims, int output_index) {
-  if ((int) m_output_dims_list.size() != get_num_children()
-      || (int) m_output_dims_list.size() <= output_index) {
+void Layer::set_output_dims(std::vector<int> dims, size_t output_index) {
+  if (m_output_dims_list.size() != get_num_children()
+      || m_output_dims_list.size() <= output_index) {
     // Handles case where dims are set before child layers are set
     m_output_dims_list.resize(std::max(get_num_children(),
                                        output_index + 1));
@@ -370,6 +337,14 @@ void Layer::replace_weights(Layer const& other_layer) {
     auto const& other_layer_weights = other_layer.get_weights(ii);
     this->get_weights(ii).set_values(other_layer_weights.get_values());
   }
+}
+
+void Layer::set_hint_layer(ViewingLayerPtr l) {
+  m_hint_layer = std::move(l);
+}
+
+const Layer* Layer::get_hint_layer() const {
+  return m_hint_layer.lock().get();
 }
 
 void Layer::freeze() {
@@ -408,90 +383,59 @@ void Layer::setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata) {
 }
 
 void Layer::setup_pointers() {
-  std::stringstream err;
 
   // Check that the parent pointers are valid
-  for (size_t i = 0; i < m_parent_layers.size(); ++i) {
-    const auto* parent = m_parent_layers[i];
-    if (parent == nullptr) {
-      err << "layer \"" << get_name() << "\" "
-          << "has a null pointer to parent layer " << i;
-      LBANN_ERROR(err.str());
-    }
-    const auto& parent_children = parent->m_child_layers;
-    if (std::find(parent_children.begin(), parent_children.end(), this)
-        == parent_children.end()) {
-      err << "layer \"" << parent->get_name() << "\" is a parent of "
-          << "layer \"" << get_name() << "\", but "
-          << "\"" << get_name() << "\" is not a child of "
-          << "\"" << parent->get_name() << "\"";
-      LBANN_ERROR(err.str());
+  for (size_t i = 0; i < get_num_parents(); ++i) {
+    const auto& parent = get_parent_layer(i);
+    const auto index_in_parent = parent.find_child_layer_index(*this);
+    if (index_in_parent >= parent.get_num_children()) {
+      LBANN_ERROR(
+        parent.get_type()," layer \"",parent.get_name(),"\" ",
+        "is a parent of ",get_type()," layer \"",get_name(),"\", ",
+        "but \"",get_name(),"\" is not a child of \"",parent.get_name(),"\"");
     }
   }
 
   // Check that the child pointers are valid
-  for (size_t i = 0; i < m_child_layers.size(); ++i) {
-    const auto* child = m_child_layers[i];
-    if (child == nullptr) {
-      err << "layer \"" << get_name() << "\" "
-          << "has a null pointer to child layer " << i;
-      LBANN_ERROR(err.str());
-    }
-    const auto& child_parents = child->m_parent_layers;
-    if (std::find(child_parents.begin(), child_parents.end(), this)
-        == child_parents.end()) {
-      err << "layer \"" << child->get_name() << "\" is a child of "
-          << "layer \"" << get_name() << "\", but "
-          << "\"" << get_name() << "\" is not a parent of "
-          << "\"" << child->get_name() << "\"";
-      LBANN_ERROR(err.str());
+  for (size_t i = 0; i < get_num_children(); ++i) {
+    const auto& child = get_child_layer(i);
+    const auto index_in_child = child.find_parent_layer_index(*this);
+    if (index_in_child >= child.get_num_parents()) {
+      LBANN_ERROR(
+        child.get_type()," layer \"",child.get_name(),"\" ",
+        "is a child of ",get_type()," layer \"",get_name(),"\", ",
+        "but \"",get_name(),"\" is not a parent of \"",child.get_name(),"\"");
     }
   }
 
   // Check that the number of parents/children are valid
-  if(m_expected_num_parent_layers >= 0
-     && get_num_parents() != m_expected_num_parent_layers) {
-    err << get_type() << " layer \"" << get_name() << "\" "
-        << "expects " << m_expected_num_parent_layers << " "
-        << "parent layer" << (m_expected_num_parent_layers != 1 ? "s" : "")
-        << ", but found " << get_num_parents();
-    if (get_num_parents() > 0) {
-      err << " (";
-      for (int i = 0; i < get_num_parents(); ++i) {
-        err << (i > 0 ? ", " : "")
-            << "\"" << m_parent_layers[i]->get_name() << "\"";
-      }
-      err << ")";
-    }
-    LBANN_ERROR(err.str());
+  if (m_expected_num_parent_layers >= 0
+      && get_num_parents()!= static_cast<size_t>(m_expected_num_parent_layers)) {
+    LBANN_ERROR(
+      get_type()," layer \"",get_name(),"\" "
+      "expects ",m_expected_num_parent_layers," parent layers, ",
+      "but found ",get_num_parents()," (",get_parent_names(),")");
   }
-  if(m_expected_num_child_layers >= 0
-     && get_num_children() != m_expected_num_child_layers) {
-    err << get_type() << " layer \"" << get_name() << "\" "
-        << "expects " << m_expected_num_child_layers << " "
-        << "child layer" << (m_expected_num_child_layers != 1 ? "s" : "")
-        << ", but found " << get_num_children();
-    if (get_num_children() > 0) {
-      err << " (";
-      for (int i = 0; i < get_num_children(); ++i) {
-        err << (i > 0 ? ", " : "")
-            << "\"" << m_child_layers[i]->get_name() << "\"";
-      }
-      err << ")";
-    }
-    LBANN_ERROR(err.str());
+  if (m_expected_num_child_layers >= 0
+      && get_num_children() != static_cast<size_t>(m_expected_num_child_layers)) {
+    LBANN_ERROR(
+      get_type()," layer \"",get_name(),"\" "
+      "expects ",m_expected_num_child_layers," child layers, ",
+      "but found ",get_num_children()," (",get_child_names(),")");
   }
 
 }
 
 void Layer::setup_dims(DataReaderMetaData& dr_metadata) {
   m_output_dims_list.resize(get_num_children());
-  if (m_hint_layer != nullptr) {
-    const auto& hint_dims = m_hint_layer->get_output_dims();
+  const auto* hint_layer = get_hint_layer();
+  if (hint_layer != nullptr) {
+    const auto& hint_dims = hint_layer->get_output_dims();
     for (auto& output_dims : m_output_dims_list) {
       output_dims = hint_dims;
     }
-  } else if (get_num_parents() > 0) {
+  }
+  else if (get_num_parents() > 0) {
     const auto& input_dims = get_input_dims();
     for (auto& output_dims : m_output_dims_list) {
       if (output_dims.empty()) {
@@ -505,7 +449,7 @@ void Layer::check_setup() {
   std::stringstream err;
 
   // Check tensor dimensions
-  for (int i = 0; i < get_num_parents(); ++i) {
+  for (size_t i = 0; i < get_num_parents(); ++i) {
     const auto& dims = get_input_dims(i);
     if (dims.empty()) {
       err << "layer \"" << get_name() << "\" has "
@@ -524,7 +468,7 @@ void Layer::check_setup() {
       LBANN_ERROR(err.str());
     }
   }
-  for (int i = 0; i < get_num_children(); ++i) {
+  for (size_t i = 0; i < get_num_children(); ++i) {
     const auto& dims = get_output_dims(i);
     if (dims.empty()) {
       err << "layer \"" << get_name() << "\" has "
@@ -573,7 +517,9 @@ void Layer::write_proto(lbann_data::Layer* proto) const {
   proto->Clear();
   proto->set_name(get_name());
   proto->set_type(get_type());
-  if(!m_parent_layers.empty()) proto->set_bottom(m_parent_layers.front()->get_name());
+  if (get_num_parents() > 0) {
+    proto->set_bottom(get_parent_layer(0).get_name());
+  }
   proto->set_top(get_name());
   //Add weights
   for (auto const& w : m_weights) {
@@ -582,50 +528,189 @@ void Layer::write_proto(lbann_data::Layer* proto) const {
   }
 }
 
-std::string Layer::get_layer_names(const std::vector<const Layer*>& list) {
-  std::string layer_names = ((list.size()==0u || !list[0])? "" : list[0]->get_name());
-
-  for (size_t i=1u; i < list.size(); ++i) {
-    if (list[i]) layer_names += ", " + list[i]->get_name();
+const Layer& Layer::get_parent_layer(size_t index) const {
+  if (index >= m_parent_layers.size()) {
+    LBANN_ERROR(
+      "attempted to access invalid parent layer of ",
+      get_type()," layer \"",get_name(),"\" ",
+      "(requested index ",index,", but there are ",
+      m_parent_layers.size()," parents)");
   }
-  return layer_names;
+  const auto l = m_parent_layers[index].lock().get();
+  if (l == nullptr) {
+    LBANN_ERROR(
+      get_type()," layer \"",get_name(),"\"",
+      "has an invalid reference to parent layer ",index);
+  }
+  return *l;
 }
 
-void Layer::add_parent_layer(const Layer* parent) {
-  const auto parent_pos = std::find(m_parent_layers.begin(),
-                                    m_parent_layers.end(),
-                                    parent);
-  if (parent != nullptr
-      && parent != this
-      && parent_pos == m_parent_layers.end()) {
-    m_parent_layers.push_back(parent);
+const Layer& Layer::get_child_layer(size_t index) const {
+  if (index >= m_child_layers.size()) {
+    LBANN_ERROR(
+      "attempted to access invalid child layer of ",
+      get_type()," layer \"",get_name(),"\" ",
+      "(requested index ",index,", but there are ",
+      m_child_layers.size()," children)");
   }
+  const auto l = m_child_layers[index].lock().get();
+  if (l == nullptr) {
+    LBANN_ERROR(
+      get_type()," layer \"",get_name(),"\"",
+      "has an invalid reference to child layer ",index);
+  }
+  return *l;
 }
 
-void Layer::add_child_layer(const Layer* child) {
-  const auto child_pos = std::find(m_child_layers.begin(),
-                                   m_child_layers.end(),
-                                   child);
-  if (child != nullptr
-      && child != this
-      && child_pos == m_child_layers.end()) {
-    m_child_layers.push_back(child);
+std::vector<const Layer*> Layer::get_parent_layers() const {
+  std::vector<const Layer*> list;
+  for (size_t i=0; i<get_num_parents(); ++i) {
+    list.push_back(&get_parent_layer(i));
   }
+  return list;
 }
 
-std::vector<Layer*> Layer::get_layer_pointers() {
-  std::vector<Layer*> layers;
-  for (const auto* parent: m_parent_layers) {
-    layers.push_back(const_cast<Layer*>(parent));
+std::vector<const Layer*> Layer::get_child_layers() const {
+  std::vector<const Layer*> list;
+  for (size_t i=0; i<get_num_children(); ++i) {
+    list.push_back(&get_child_layer(i));
   }
-  for (const auto* child: m_child_layers) {
-    layers.push_back(const_cast<Layer*>(child));
+  return list;
+}
+
+size_t Layer::find_parent_layer_index(const Layer& l) const {
+  for (size_t i=0; i<get_num_parents(); ++i) {
+    if (&get_parent_layer(i) == &l) {
+      return i;
+    }
   }
-  layers.push_back(const_cast<Layer*>(m_hint_layer));
+  LBANN_ERROR(
+    l.get_type()," layer \"",l.get_name(),"\" ",
+    "is not a parent layer of ",
+    this->get_type()," layer \"",this->get_name(),"\"");
+  return get_num_parents();
+}
+
+size_t Layer::find_child_layer_index(const Layer& l) const {
+  for (size_t i=0; i<get_num_children(); ++i) {
+    if (&get_child_layer(i) == &l) {
+      return i;
+    }
+  }
+  LBANN_ERROR(
+    l.get_type()," layer \"",l.get_name(),"\" ",
+    "is not a child layer of ",
+    this->get_type()," layer \"",this->get_name(),"\"");
+  return get_num_children();
+}
+
+std::string Layer::get_parent_names() const {
+  std::ostringstream ss;
+  for (size_t i=0; i<get_num_parents(); ++i) {
+    ss << (i>0 ? ", " : "") << get_parent_layer(i).get_name();
+  }
+  return ss.str();
+}
+
+std::string Layer::get_child_names() const {
+  std::ostringstream ss;
+  for (size_t i=0; i<get_num_children(); ++i) {
+    ss << (i>0 ? ", " : "") << get_child_layer(i).get_name();
+  }
+  return ss.str();
+}
+
+void Layer::add_parent_layer(ViewingLayerPtr l) {
+  const auto* l_ptr = l.lock().get();
+  if (l_ptr == nullptr || l_ptr == this) {
+    return;
+  }
+  for (size_t i=0; i<get_num_parents(); ++i) {
+    if (l_ptr == &get_parent_layer(i)) {
+      return;
+    }
+  }
+  m_parent_layers.emplace_back(std::move(l));
+}
+
+void Layer::add_child_layer(ViewingLayerPtr l) {
+  const auto* l_ptr = l.lock().get();
+  if (l_ptr == nullptr || l_ptr == this) {
+    return;
+  }
+  for (size_t i=0; i<get_num_children(); ++i) {
+    if (l_ptr == &get_child_layer(i)) {
+      return;
+    }
+  }
+  m_child_layers.emplace_back(std::move(l));
+}
+
+void Layer::replace_parent_layer(ViewingLayerPtr l, size_t index) {
+  if (l.expired()) {
+    LBANN_ERROR(
+      "attempted to replace parent ",index," of ",
+      get_type()," layer \"",get_name(),"\" ",
+      "with an invalid layer pointer");
+  }
+  if (index >= m_parent_layers.size()) {
+    LBANN_ERROR(
+      "attempted to replace parent ",index," of ",
+      get_type()," layer \"",get_name(),"\", ",
+      "which only has ",m_parent_layers.size()," parents");
+  }
+  m_parent_layers[index] = std::move(l);
+}
+
+void Layer::replace_child_layer(ViewingLayerPtr l, size_t index) {
+  if (l.expired()) {
+    LBANN_ERROR(
+      "attempted to replace child ",index," of ",
+      get_type()," layer \"",get_name(),"\" ",
+      "with an invalid layer pointer");
+  }
+  if (index >= m_child_layers.size()) {
+    LBANN_ERROR(
+      "attempted to replace child ",index," of ",
+      get_type()," layer \"",get_name(),"\", ",
+      "which only has ",m_child_layers.size()," children");
+  }
+  m_child_layers[index] = std::move(l);
+}
+
+ViewingLayerPtr Layer::get_parent_layer_pointer(size_t index) const {
+  if (index >= m_child_layers.size()) {
+    LBANN_ERROR(
+      "attempted to get pointer to parent ",index," of ",
+      get_type()," layer \"",get_name(),"\", ",
+      "which only has ",m_parent_layers.size()," parents");
+  }
+  return m_parent_layers[index];
+}
+
+ViewingLayerPtr Layer::get_child_layer_pointer(size_t index) const {
+  if (index >= m_child_layers.size()) {
+    LBANN_ERROR(
+      "attempted to get pointer to child ",index," of ",
+      get_type()," layer \"",get_name(),"\", ",
+      "which only has ",m_child_layers.size()," children");
+  }
+  return m_child_layers[index];
+}
+
+std::vector<ViewingLayerPtr> Layer::get_layer_pointers() {
+  std::vector<ViewingLayerPtr> layers;
+  for (const auto& l: m_parent_layers) {
+    layers.push_back(l);
+  }
+  for (const auto& l: m_child_layers) {
+    layers.push_back(l);
+  }
+  layers.push_back(m_hint_layer);
   return layers;
 }
 
-void Layer::set_layer_pointers(std::vector<Layer*> layers) {
+void Layer::set_layer_pointers(std::vector<ViewingLayerPtr> layers) {
   const size_t expected_size = (m_parent_layers.size()
                                 + m_child_layers.size()
                                 + 1);
@@ -634,11 +719,11 @@ void Layer::set_layer_pointers(std::vector<Layer*> layers) {
   }
   size_t pos = 0;
   for (auto& parent: m_parent_layers) {
-    parent = static_cast<const Layer*>(layers[pos]);
+    parent = layers[pos];
     pos++;
   }
   for (auto& child: m_child_layers) {
-    child = static_cast<const Layer*>(layers[pos]);
+    child = layers[pos];
     pos++;
   }
   m_hint_layer = layers[pos];
