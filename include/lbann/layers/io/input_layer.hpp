@@ -183,7 +183,6 @@ class input_layer : public data_type_layer<TensorDataType> {
 #ifdef LBANN_HAS_DISTCONV
   /** @brief Extensions for distributed convolutions */
 ///{@
-  void fp_compute () override;
   using distconv_adapter_type = input_distconv_adapter<TensorDataType, T_layout, Dev>;
   friend distconv_adapter_type;
  protected:
