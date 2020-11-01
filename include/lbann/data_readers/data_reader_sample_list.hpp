@@ -53,6 +53,7 @@ class data_reader_sample_list : public generic_data_reader {
 #endif
   using sample_t = std::pair<sample_list_t::sample_file_id_t, sample_name_t>;
   using sample_file_id_t = sample_list_t::sample_file_id_t;
+  using file_handle_t = sample_list_t::file_handle_t;
 
   data_reader_sample_list(bool shuffle = true);
   data_reader_sample_list(const data_reader_sample_list&);

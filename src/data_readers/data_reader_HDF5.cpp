@@ -58,6 +58,9 @@ void hdf5_data_reader::copy_members(const hdf5_data_reader &rhs) {
 
 
 void hdf5_data_reader::load_schema(std::string filename, conduit::Schema &schema) {
+  if (filename == "") {
+    LBANN_ERROR("load_schema was passed an empty filename; did you call set_schema_filename?");
+  }
   std::vector<char> schema_str;
   if (is_master()) {
       load_file(filename, schema_str);
@@ -70,8 +73,12 @@ void hdf5_data_reader::load_schema(std::string filename, conduit::Schema &schema
 void hdf5_data_reader::load_schema_from_data() {
   std::string json;
   if (is_master()) {
+    // Load a node, then grab the schema. This can be done better if
+    // it's annoyingly slow
     conduit::Node node;
-    std::string bundle_filename = ""; //XX TODO: get from sample_list
+    const sample_t& s = m_sample_list[0];
+    sample_file_id_t id = s.first;
+    const std::string& bundle_filename = m_sample_list.get_samples_filename(id);
     conduit::relay::io::load(bundle_filename, "hdf5", node);
     const conduit::Schema &schema = node.schema();
     json = schema.to_json(); 
@@ -81,25 +88,42 @@ void hdf5_data_reader::load_schema_from_data() {
 }
 
 void hdf5_data_reader::load() {
-  data_reader_sample_list::load();
-  double tm1 = get_time();
   if(is_master()) {
     std::cout << "hdf5_data_reader - starting load" << std::endl;
   }
+  double tm1 = get_time();
 
+  data_reader_sample_list::load();
+
+  options *opts = options::get();
+  if (!opts->has_string("schema_fn")) {
+    LBANN_ERROR("you must include --schema_fn=<string>");
+  }
+  set_schema_filename(opts->get_string("schema_fn"));
+
+  // load the user's schema (i.e, specifies which data to load)
   load_schema(m_useme_schema_filename, m_useme_schema);
-  load_schema_from_data();
 
+  //XX debug:
+  m_useme_schema.print();
+
+  get_datum_pathnames(m_useme_schema, m_useme_pathnames);
+
+
+#if 0
+std::cerr << "calling lioad_schema_from_data" << std::endl;
   // fills in: m_data_schema
   load_schema_from_data();
+std::cerr << "DONE! calling lioad_schema_from_data" << std::endl;
 
   get_datum_pathnames(m_data_schema, m_data_pathnames);
   get_datum_pathnames(m_useme_schema, m_useme_pathnames);
-
   validate_useme_schema();
+#endif
 
-  // Boilerplate
+  // the usual boilerplate ...
   m_shuffled_indices.clear();
+  m_shuffled_indices.resize(m_sample_list.size());
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
   resize_shuffled_indices();
   instantiate_data_store();
@@ -107,6 +131,7 @@ void hdf5_data_reader::load() {
 
   if (is_master()) {
     std::cout << "hdf5_data_reader::load() time: " << (get_time() - tm1) << std::endl;
+    std::cout << "XX num samples: " << m_shuffled_indices.size() << std::endl;
   }
 }
 
@@ -171,11 +196,18 @@ void hdf5_data_reader::do_preload_data_store() {
       continue;
     }
     try {
-      open_file(index, file_handle, sample_name);
+      data_reader_sample_list::open_file(index, file_handle, sample_name);
       conduit::Node & node = m_data_store->get_empty_node(index);
-      for (std::unordered_set<std::string>::const_iterator t = m_useme_pathnames.begin(); t != m_useme_pathnames.end(); t++) {
-        if (t->find(m_metadata_field_name) == t->npos) {
-      //?? TODO preload_helper(h, sample_name, m_output_scalar_prefix, index, node);
+      for (const auto &pathname : m_useme_pathnames) {
+        if (pathname.find(m_metadata_field_name) == std::string::npos) {
+          if (!(
+                m_sample_list.is_file_handle_valid(file_handle) 
+                &&
+                conduit::relay::io::hdf5_has_path(file_handle, pathname)
+                )) {
+            LBANN_ERROR("failed to read input data; either file handle is invalid, or conduit says there's no path to the data.");
+          }
+          conduit::relay::io::hdf5_read(file_handle, pathname, node);
         }
       }
       m_data_store->set_preloaded_conduit_node(index, node);
@@ -199,5 +231,14 @@ void hdf5_data_reader::do_preload_data_store() {
     LBANN_WARNING(msg.str());
   }
 }
+
+int hdf5_data_reader::get_linearized_size(const std::string &key) const {
+  if (m_data_pathnames.find(key) == m_data_pathnames.end()) {
+    LBANN_ERROR("requested key: ", key, " is not in the schema");
+  }
+  conduit::DataType dt = m_data_schema.dtype();
+  return dt.number_of_elements();
+}
+
 
 } // namespace lbann

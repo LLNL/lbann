@@ -55,6 +55,11 @@ int main(int argc, char *argv[]) {
   world_comm_ptr comm = initialize(argc, argv);
   const bool master = comm->am_world_master();
 
+  int random_seed = 10;
+  int io_threads_per_process = 1;
+  init_random(random_seed, io_threads_per_process);
+  init_data_seq_random(random_seed+1); // is this needed?
+
   try {
     options *opts = options::get();
     opts->init(argc, argv);
@@ -67,7 +72,10 @@ int main(int argc, char *argv[]) {
     std::map<execution_mode, generic_data_reader *> data_readers;
     bool is_shared_training_data_reader = false;
     bool is_shared_testing_data_reader = false;
+
+    std::cerr << "calling init_data_readers" << std::endl;
     init_data_readers(comm.get(), pb, data_readers, is_shared_training_data_reader, is_shared_testing_data_reader);
+    std::cerr << "DONE! calling init_data_readers" << std::endl;
     generic_data_reader *testme;
     for (std::map<execution_mode, generic_data_reader *>::iterator iter = data_readers.begin(); iter != data_readers.end(); iter++) {
       testme = iter->second;

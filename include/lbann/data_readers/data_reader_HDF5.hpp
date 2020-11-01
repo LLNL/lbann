@@ -34,8 +34,6 @@ public:
     return "hdf5_data_reader";
   }
 
-  void load() override;
-
   /** Set the pathname to the schema specifying which fields from the data
    * to use.  This schema should be a subset of the complete schema,
    * except that it may contain one additional branch, rooted at the top
@@ -48,12 +46,16 @@ public:
     m_useme_schema_filename = fn;
   }
 
+  void load() override;
+
   /** sets the level at which the passed useme schema begins wrt the
    * complete schema. The intention here is to discard top level(s) 
    * that contain unique sample IDs. (Default is 2 for JAG data)
    * (this will need to be re-thought)
    */
-  void set_schema_starting_level(int level) { m_schema_starting_level = level; }
+  void set_schema_starting_level(int level = 2) { m_schema_starting_level = level; }
+
+  int get_linearized_size(const std::string &key) const override;
 
 private:
 
@@ -90,6 +92,13 @@ private:
 
   void do_preload_data_store() override;
 
+  // may go away soon!
+  void preload_helper(
+    const hid_t& h, 
+    const std::string &sample_name, 
+    const std::string &field_name, 
+    int data_id, conduit::Node &node);
+
   /** Verify the useme schema is a subset of the complete schema */
   void validate_useme_schema();
 
@@ -99,29 +108,6 @@ private:
     std::unordered_set<std::string> &output,
     int n = 0,
     std::string path = "");
-
-#if 0
-  int get_linearized_data_size() const override {
-    return m_num_features;
-  }
-  int get_linearized_label_size() const override {
-    if(!m_has_labels) {
-      return generic_data_reader::get_linearized_label_size();
-    }
-    // This data reader currently assumes that the shape of the label
-    // tensor is the same to the data tensor.
-    return m_num_features;
-  }
-  int get_linearized_response_size() const override {
-    if(!m_has_responses) {
-      return generic_data_reader::get_linearized_response_size();
-    }
-    return m_all_responses.size();
-  }
-  const std::vector<int> get_data_dims() const override {
-    return m_data_dims;
-  }
-#endif
 };
 
 }
