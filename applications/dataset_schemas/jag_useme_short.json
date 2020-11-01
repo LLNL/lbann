@@ -1,0 +1,37 @@
+{
+    "inputs": 
+    {
+      "shape_model_initial_modes:(4,3)": {},
+      "betti_prl15_trans_u": {},
+      "betti_prl15_trans_v": {},
+      "shape_model_initial_modes:(2,1)": {},
+      "shape_model_initial_modes:(1,0)": {}
+    },
+    "outputs": 
+    {
+      "scalars": 
+      {
+        "BWx": {},
+        "BT": {},
+        "tMAXt": {},
+        "BWn": {},
+        "MAXpressure": {},
+        "tMAXpressure": {},
+        "BAt": {},
+        "Yn": {},
+        "Ye": {},
+        "Yx": {},
+        "BTx": {},
+        "MAXt": {}
+        "BApressure": {},
+        "tMINradius": {},
+        "MINradius": {},
+      },
+      "images": 
+      {
+        "(0.0, 0.0)": { "0.0": { "emi": {} } },
+        "(90.0, 0.0)": { "0.0": { "emi": {} }},
+        "(90.0, 78.0)": { "0.0": { "emi": {}}}
+      }
+    }
+}
