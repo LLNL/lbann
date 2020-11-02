@@ -60,6 +60,7 @@ enum class bwd_filter_conv_alg
   CUDNN_ALGO_1,
   FFT,
   CUDNN_ALGO_3,
+  WINOGRAD,
   WINOGRAD_NONFUSED,
   FFT_TILING,
 };// enum class bwd_conv_filter

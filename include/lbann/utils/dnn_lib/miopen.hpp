@@ -31,16 +31,16 @@
 
 #ifdef LBANN_HAS_MIOPEN
 
-#include <hipDNN.h>
+#include <miopen/miopen.h>
 
 // Error utility macros
 #define CHECK_MIOPEN_NODEBUG(cudnn_call)                          \
   do {                                                            \
-    const hipdnnStatus_t status_CHECK_MIOPEN = (miopen_call);     \
+    const miopenStatus_t status_CHECK_MIOPEN = (miopen_call);     \
     if (status_CHECK_MIOPEN != HIPDNN_STATUS_SUCCESS) {           \
       hipDeviceReset();                                           \
       LBANN_ERROR(std::string("MIOpen error (")                   \
-                  + hipdnnGetErrorString(status_CHECK_MIOPEN)     \
+                  + miopenGetErrorString(status_CHECK_MIOPEN)     \
                   + std::string(")"));                            \
     }                                                             \
   } while (0)
@@ -79,141 +79,126 @@ class Layer;
 
 namespace miopen {
 
-using dnnHandle_t = hipdnnHandle_t;
-using dnnDataType_t = hipdnnDataType_t;
-using dnnTensorDescriptor_t = hipdnnTensorDescriptor_t;
-using dnnFilterDescriptor_t = hipdnnFilterDescriptor_t;
-using dnnTensorFormat_t = hipdnnTensorFormat_t;
-using dnnDropoutDescriptor_t = hipdnnDropoutDescriptor_t;
-using dnnRNNDescriptor_t = hipdnnRNNDescriptor_t;
-using dnnRNNAlgo_t = hipdnnRNNAlgo_t;
-using dnnRNNMode_t = hipdnnRNNMode_t;
-using dnnRNNBiasMode_t = hipdnnRNNBiasMode_t;
-using dnnDirectionMode_t = hipdnnDirectionMode_t;
-using dnnRNNInputMode_t = hipdnnRNNInputMode_t;
-using dnnMathType_t = hipdnnMathType_t;
+using dnnHandle_t = miopenHandle_t;
+using dnnDataType_t = miopenDataType_t;
+using dnnTensorDescriptor_t = miopenTensorDescriptor_t;
+using dnnFilterDescriptor_t = miopenFilterDescriptor_t;
+using dnnTensorFormat_t = miopenTensorFormat_t;
+using dnnDropoutDescriptor_t = miopenDropoutDescriptor_t;
+using dnnRNNDescriptor_t = miopenRNNDescriptor_t;
+using dnnRNNAlgo_t = miopenRNNAlgo_t;
+using dnnRNNMode_t = miopenRNNMode_t;
+using dnnRNNBiasMode_t = miopenRNNBiasMode_t;
+using dnnDirectionMode_t = miopenDirectionMode_t;
+using dnnRNNInputMode_t = miopenRNNInputMode_t;
+using dnnMathType_t = miopenMathType_t;
 //using dnnRNNDataDescriptor_t = cudnnRNNDataDescriptor_t;
 //using dnnRNNDataLayout_t = cudnnRNNDataLayout_t;
-using dnnConvolutionDescriptor_t = hipdnnConvolutionDescriptor_t;
-using dnnConvolutionMode_t = hipdnnConvolutionMode_t;
-using dnnActivationDescriptor_t = hipdnnActivationDescriptor_t;
-using dnnActivationMode_t = hipdnnActivationMode_t;
-using dnnNanPropagation_t = hipdnnNanPropagation_t;
-using dnnPoolingDescriptor_t = hipdnnPoolingDescriptor_t;
-using dnnPoolingMode_t = hipdnnPoolingMode_t;
-using dnnLRNDescriptor_t = hipdnnLRNDescriptor_t;
-using dnnConvolutionFwdAlgo_t = hipdnnConvolutionFwdAlgo_t;
-using dnnConvolutionBwdDataAlgo_t = hipdnnConvolutionBwdDataAlgo_t;
-using dnnConvolutionBwdFilterAlgo_t = hipdnnConvolutionBwdFilterAlgo_t;
+using dnnConvolutionDescriptor_t = miopenConvolutionDescriptor_t;
+using dnnConvolutionMode_t = miopenConvolutionMode_t;
+using dnnActivationDescriptor_t = miopenActivationDescriptor_t;
+using dnnActivationMode_t = miopenActivationMode_t;
+using dnnNanPropagation_t = miopenNanPropagation_t;
+using dnnPoolingDescriptor_t = miopenPoolingDescriptor_t;
+using dnnPoolingMode_t = miopenPoolingMode_t;
+using dnnLRNDescriptor_t = miopenLRNDescriptor_t;
+using dnnConvolutionFwdAlgo_t = miopenConvFwdAlgorithm_t;
+using dnnConvolutionBwdDataAlgo_t = miopenConvBwdDataAlgorithm_t;
+using dnnConvolutionBwdFilterAlgo_t = miopenConvBwdWeightsAlgorithm_t;
 
 constexpr dnnConvolutionMode_t DNN_CROSS_CORRELATION = HIPDNN_CROSS_CORRELATION;
 constexpr dnnNanPropagation_t DNN_PROPAGATE_NAN = HIPDNN_PROPAGATE_NAN;
 
 ////////////////////////////////////////////////////////////
-// Functions for to/from cuDNN types conversion
+// Functions for to/from MIOpen types conversion
 ////////////////////////////////////////////////////////////
 
-/** @brief Convert a LBANN forward convolution algorithm to the cuDNN
+/** @brief Convert a LBANN forward convolution algorithm to the MIOpen
  * equivalent value. */
-inline hipdnnConvolutionFwdAlgo_t to_cudnn(fwd_conv_alg a)
+inline miopenConvFwdAlgorithm_t to_miopen(fwd_conv_alg a)
 {
   switch (a)
   {
-  case fwd_conv_alg::IMPLICIT_GEMM: return HIPDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM;
-  case fwd_conv_alg::IMPLICIT_PRECOMP_GEMM: return HIPDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_PRECOMP_GEMM;
-  case fwd_conv_alg::GEMM: return HIPDNN_CONVOLUTION_FWD_ALGO_GEMM;
-  case fwd_conv_alg::DIRECT: return HIPDNN_CONVOLUTION_FWD_ALGO_DIRECT;
-  case fwd_conv_alg::FFT: return HIPDNN_CONVOLUTION_FWD_ALGO_FFT;
-  case fwd_conv_alg::FFT_TILING: return HIPDNN_CONVOLUTION_FWD_ALGO_FFT_TILING;
-  case fwd_conv_alg::WINOGRAD: return HIPDNN_CONVOLUTION_FWD_ALGO_WINOGRAD;
-  case fwd_conv_alg::WINOGRAD_NONFUSED: return HIPDNN_CONVOLUTION_FWD_ALGO_WINOGRAD_NONFUSED;
+  case fwd_conv_alg::IMPLICIT_GEMM: return miopenConvolutionFwdAlgoGEMM;
+  case fwd_conv_alg::GEMM: return miopenConvolutionFwdAlgoGEMM;
+  case fwd_conv_alg::DIRECT: return miopenConvolutionFwdAlgoDirect;
+  case fwd_conv_alg::FFT: return miopenConvolutionFwdAlgoFFT;
+  case fwd_conv_alg::WINOGRAD: return miopenConvolutionFwdAlgoWinograd;
   default:
     LBANN_ERROR("Invalid forward convolution algorithm requested.");
   }
 }
 
-/** @brief Convert a cuDNN forward convolution algorithm to the LBANN
+/** @brief Convert a MIOpen forward convolution algorithm to the LBANN
  * equivalent value. */
-inline fwd_conv_alg from_cudnn(hipdnnConvolutionFwdAlgo_t a)
+inline fwd_conv_alg from_miopen(miopenConvFwdAlgorithm_t a)
 {
   switch (a)
   {
-  case HIPDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM: return fwd_conv_alg::IMPLICIT_GEMM;
-  case HIPDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_PRECOMP_GEMM: return fwd_conv_alg::IMPLICIT_PRECOMP_GEMM;
-  case HIPDNN_CONVOLUTION_FWD_ALGO_GEMM: return fwd_conv_alg::GEMM;
-  case HIPDNN_CONVOLUTION_FWD_ALGO_DIRECT: return fwd_conv_alg::DIRECT;
-  case HIPDNN_CONVOLUTION_FWD_ALGO_FFT: return fwd_conv_alg::FFT;
-  case HIPDNN_CONVOLUTION_FWD_ALGO_FFT_TILING: return fwd_conv_alg::FFT_TILING;
-  case HIPDNN_CONVOLUTION_FWD_ALGO_WINOGRAD: return fwd_conv_alg::WINOGRAD;
-  case HIPDNN_CONVOLUTION_FWD_ALGO_WINOGRAD_NONFUSED: return fwd_conv_alg::WINOGRAD_NONFUSED;
+  case miopenConvolutionFwdAlgoGEMM: return fwd_conv_alg::GEMM;
+  case miopenConvolutionFwdAlgoDirect: return fwd_conv_alg::DIRECT;
+  case miopenConvolutionFwdAlgoFFT: return fwd_conv_alg::FFT;
+  case miopenConvolutionFwdAlgoWinograd: return fwd_conv_alg::WINOGRAD;
   default:
     LBANN_ERROR("Invalid forward convolution algorithm requested.");
   }
 }
 
-/** @brief Convert a LBANN backward convolution algorithm to the cuDNN
+/** @brief Convert a LBANN backward convolution algorithm to the MIOpen
  * equivalent value. */
-inline hipdnnConvolutionBwdDataAlgo_t to_cudnn(bwd_data_conv_alg a)
+inline miopenConvBwdDataAlgorithm_t to_miopen(bwd_data_conv_alg a)
 {
   switch (a)
   {
-  case bwd_data_conv_alg::CUDNN_ALGO_0: return HIPDNN_CONVOLUTION_BWD_DATA_ALGO_0;
-  case bwd_data_conv_alg::CUDNN_ALGO_1: return HIPDNN_CONVOLUTION_BWD_DATA_ALGO_1;
-  case bwd_data_conv_alg::FFT: return HIPDNN_CONVOLUTION_BWD_DATA_ALGO_FFT;
-  case bwd_data_conv_alg::FFT_TILING: return HIPDNN_CONVOLUTION_BWD_DATA_ALGO_FFT_TILING;
-  case bwd_data_conv_alg::WINOGRAD: return HIPDNN_CONVOLUTION_BWD_DATA_ALGO_WINOGRAD;
-  case bwd_data_conv_alg::WINOGRAD_NONFUSED: return HIPDNN_CONVOLUTION_BWD_DATA_ALGO_WINOGRAD_NONFUSED;
+  case bwd_data_conv_alg::CUDNN_ALGO_0: return miopenConvolutionBwdDataAlgoGEMM;
+  case bwd_data_conv_alg::CUDNN_ALGO_1: return miopenConvolutionBwdDataAlgoDirect;
+  case bwd_data_conv_alg::FFT: return miopenConvolutionBwdDataAlgoFFT;
+  case bwd_data_conv_alg::WINOGRAD: return miopenConvolutionBwdDataAlgoWinograd;
+  case bwd_data_conv_alg::WINOGRAD_NONFUSED: return miopenConvolutionBwdDataAlgoWinograd;
   default:
     LBANN_ERROR("Invalid backward convolution algorithm requested.");
   }
 }
 
-/** @brief Convert a cuDNN backward convolution algorithm to the LBANN
+/** @brief Convert a MIOpen backward convolution algorithm to the LBANN
  * equivalent value. */
-inline bwd_data_conv_alg from_cudnn(hipdnnConvolutionBwdDataAlgo_t a)
+inline bwd_data_conv_alg from_miopen(miopenConvBwdDataAlgorithm_t a)
 {
   switch (a)
   {
-  case HIPDNN_CONVOLUTION_BWD_DATA_ALGO_0: return bwd_data_conv_alg::CUDNN_ALGO_0;
-  case HIPDNN_CONVOLUTION_BWD_DATA_ALGO_1: return bwd_data_conv_alg::CUDNN_ALGO_1;
-  case HIPDNN_CONVOLUTION_BWD_DATA_ALGO_FFT: return bwd_data_conv_alg::FFT;
-  case HIPDNN_CONVOLUTION_BWD_DATA_ALGO_FFT_TILING: return bwd_data_conv_alg::FFT_TILING;
-  case HIPDNN_CONVOLUTION_BWD_DATA_ALGO_WINOGRAD: return bwd_data_conv_alg::WINOGRAD;
-  case HIPDNN_CONVOLUTION_BWD_DATA_ALGO_WINOGRAD_NONFUSED: return bwd_data_conv_alg::WINOGRAD_NONFUSED;
+  case miopenConvolutionBwdDataAlgoGEMM: return bwd_data_conv_alg::CUDNN_ALGO_0;
+  case miopenConvolutionBwdDataAlgoDirect: return bwd_data_conv_alg::CUDNN_ALGO_1;
+  case miopenConvolutionBwdDataAlgoFFT: return bwd_data_conv_alg::FFT;
+  case miopenConvolutionBwdDataAlgoWinograd: return bwd_data_conv_alg::WINOGRAD;
   default:
     LBANN_ERROR("Invalid backward convolution algorithm requested.");
   }
 }
 
-/** @brief Convert a LBANN backward convolution filter algorithm to the cuDNN
- * equivalent value. */
-inline hipdnnConvolutionBwdFilterAlgo_t to_cudnn(bwd_filter_conv_alg a)
+/** @brief Convert a LBANN backward convolution filter algorithm to the MIOpen
+ * equivalent value.
+ * https://github.com/ROCmSoftwarePlatform/hipDNN/blob/44df79868ebc5b7bc7deb9b24b03da92d6bd30dc/library/src/hcc_detail/hipdnn_miopen.cpp#L517*/
+inline miopenConvBwdWeightsAlgorithm_t to_miopen(bwd_filter_conv_alg a)
 {
   switch (a)
   {
-  case bwd_filter_conv_alg::CUDNN_ALGO_0: return HIPDNN_CONVOLUTION_BWD_FILTER_ALGO_0;
-  case bwd_filter_conv_alg::CUDNN_ALGO_1: return HIPDNN_CONVOLUTION_BWD_FILTER_ALGO_1;
-  case bwd_filter_conv_alg::FFT: return HIPDNN_CONVOLUTION_BWD_FILTER_ALGO_FFT;
-  case bwd_filter_conv_alg::CUDNN_ALGO_3: return HIPDNN_CONVOLUTION_BWD_FILTER_ALGO_3;
-  case bwd_filter_conv_alg::WINOGRAD_NONFUSED: return HIPDNN_CONVOLUTION_BWD_FILTER_ALGO_WINOGRAD_NONFUSED;
-  case bwd_filter_conv_alg::FFT_TILING: return HIPDNN_CONVOLUTION_BWD_FILTER_ALGO_FFT_TILING;
+  case bwd_filter_conv_alg::CUDNN_ALGO_0: return miopenConvolutionBwdWeightsAlgoGEMM;
+  case bwd_filter_conv_alg::CUDNN_ALGO_1: return miopenConvolutionBwdWeightsAlgoDirect;
+  case bwd_filter_conv_alg::WINOGRAD: return miopenConvolutionBwdWeightsAlgoWinograd;
   default:
     LBANN_ERROR("Invalid backward convolution filter requested.");
   }
 }
 
-/** @brief Convert a cuDNN backward convolution filter algorithm to the LBANN
+/** @brief Convert a MIOpen backward convolution filter algorithm to the LBANN
  * equivalent value. */
-inline bwd_filter_conv_alg from_cudnn(hipdnnConvolutionBwdFilterAlgo_t a)
+inline bwd_filter_conv_alg from_miopen(miopenConvBwdWeightsAlgorithm_t a)
 {
   switch (a)
   {
-  case HIPDNN_CONVOLUTION_BWD_FILTER_ALGO_0: return bwd_filter_conv_alg::CUDNN_ALGO_0;
-  case HIPDNN_CONVOLUTION_BWD_FILTER_ALGO_1: return bwd_filter_conv_alg::CUDNN_ALGO_1;
-  case HIPDNN_CONVOLUTION_BWD_FILTER_ALGO_FFT: return bwd_filter_conv_alg::FFT;
-  case HIPDNN_CONVOLUTION_BWD_FILTER_ALGO_3: return bwd_filter_conv_alg::CUDNN_ALGO_3;
-  case HIPDNN_CONVOLUTION_BWD_FILTER_ALGO_WINOGRAD_NONFUSED: return bwd_filter_conv_alg::WINOGRAD_NONFUSED;
-  case HIPDNN_CONVOLUTION_BWD_FILTER_ALGO_FFT_TILING: return bwd_filter_conv_alg::FFT_TILING;
+  case miopenConvolutionBwdWeightsAlgoGEMM: return bwd_filter_conv_alg::CUDNN_ALGO_0;
+  case miopenConvolutionBwdWeightsAlgoDirect: return bwd_filter_conv_alg::CUDNN_ALGO_1;
+  case miopenConvolutionBwdWeightsAlgoWinograd: return bwd_filter_conv_alg::WINOGRAD;
   default:
     LBANN_ERROR("Invalid backward convolution filter requested.");
   }
