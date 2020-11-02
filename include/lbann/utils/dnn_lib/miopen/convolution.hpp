@@ -23,8 +23,8 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
-#ifndef LBANN_UTILS_DNN_LIB_CUDNN_CONVOLUTION_HPP_
-#define LBANN_UTILS_DNN_LIB_CUDNN_CONVOLUTION_HPP_
+#ifndef LBANN_UTILS_DNN_LIB_MIOPEN_CONVOLUTION_HPP_
+#define LBANN_UTILS_DNN_LIB_MIOPEN_CONVOLUTION_HPP_
 
 #include "lbann/utils/ml_enums.hpp"
 #include "lbann/utils/dnn_lib/helpers.hpp"
@@ -35,11 +35,11 @@
 namespace lbann
 {
 
-#ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_MIOPEN
 namespace dnn_lib
 {
 
-using namespace cudnn;
+using namespace miopen;
 
 template <typename TensorDataType, typename ScalarParameterType>
 void convolution_forward(
@@ -60,19 +60,19 @@ void convolution_forward(
   auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
   auto beta = El::To<LibScalingParamT>(beta_in);
-  CHECK_CUDNN(hipdnnConvolutionForward(handle_manager.get(),
-                                      &alpha,
-                                      xDesc,
-                                      x.LockedBuffer(),
-                                      wDesc,
-                                      w.LockedBuffer(),
-                                      convDesc,
-                                      cudnn::to_cudnn(alg),
-                                      workSpace.Buffer(),
-                                      workSpace.Height()*sizeof(TensorDataType),
-                                      &beta,
-                                      yDesc,
-                                      y.Buffer()));
+  CHECK_MIOPEN(miopenConvolutionForward(handle_manager.get(),
+                                        &alpha,
+                                        xDesc,
+                                        x.LockedBuffer(),
+                                        wDesc,
+                                        w.LockedBuffer(),
+                                        convDesc,
+                                        miopen::to_miopen(alg),
+                                        &beta,
+                                        yDesc,
+                                        y.Buffer(),
+                                        workSpace.Buffer(),
+                                        workSpace.Height()*sizeof(TensorDataType)));
 }
 
 template <typename TensorDataType, typename ScalarParameterType>
@@ -116,19 +116,19 @@ void convolution_backward_data(
   auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
   auto beta = El::To<LibScalingParamT>(beta_in);
-  CHECK_CUDNN(hipdnnConvolutionBackwardData(handle_manager.get(),
-                                      &alpha,
-                                      wDesc,
-                                      w.LockedBuffer(),
-                                      dyDesc,
-                                      dy.LockedBuffer(),
-                                      convDesc,
-                                      cudnn::to_cudnn(alg),
-                                      workSpace.Buffer(),
-                                      workSpace.Height()*sizeof(TensorDataType),
-                                      &beta,
-                                      dxDesc,
-                                      dx.Buffer()));
+  CHECK_MIOPEN(miopenConvolutionBackwardData(handle_manager.get(),
+                                             &alpha,
+                                             dyDesc,
+                                             dy.LockedBuffer(),
+                                             wDesc,
+                                             w.LockedBuffer(),
+                                             convDesc,
+                                             miopen::to_miopen(alg),
+                                             &beta,
+                                             dxDesc,
+                                             dx.Buffer(),
+                                             workSpace.Buffer(),
+                                             workSpace.Height()*sizeof(TensorDataType)));
 }
 
 template <typename TensorDataType, typename ScalarParameterType>
@@ -168,13 +168,13 @@ void convolution_backward_bias(
   auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
   auto beta = El::To<LibScalingParamT>(beta_in);
-  CHECK_CUDNN(hipdnnConvolutionBackwardBias(handle_manager.get(),
-                                           &alpha,
-                                           dyDesc,
-                                           dy.LockedBuffer(),
-                                           &beta,
-                                           dbDesc,
-                                           db.Buffer()));
+  CHECK_MIOPEN(miopenConvolutionBackwardBias(handle_manager.get(),
+                                             &alpha,
+                                             dyDesc,
+                                             dy.LockedBuffer(),
+                                             &beta,
+                                             dbDesc,
+                                             db.Buffer()));
 }
 
 template <typename TensorDataType, typename ScalarParameterType>
@@ -212,19 +212,19 @@ void convolution_backward_filter(
   auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
   auto beta = El::To<LibScalingParamT>(beta_in);
-  CHECK_CUDNN(hipdnnConvolutionBackwardFilter(handle_manager.get(),
-                                      &alpha,
-                                      xDesc,
-                                      x.LockedBuffer(),
-                                      dyDesc,
-                                      dy.LockedBuffer(),
-                                      convDesc,
-                                      cudnn::to_cudnn(alg),
-                                      workSpace.Buffer(),
-                                      workSpace.Height()*sizeof(TensorDataType),
-                                      &beta,
-                                      dwDesc,
-                                      dw.Buffer()));
+  CHECK_MIOPEN(miopenConvolutionBackwardWeights(handle_manager.get(),
+                                                &alpha,
+                                                dyDesc,
+                                                dy.LockedBuffer(),
+                                                xDesc,
+                                                x.LockedBuffer(),
+                                                convDesc,
+                                                miopen::to_miopen(alg),
+                                                &beta,
+                                                dwDesc,
+                                                dw.Buffer(),
+                                                workSpace.Buffer(),
+                                                workSpace.Height()*sizeof(TensorDataType)));
 }
 
 template <typename TensorDataType, typename ScalarParameterType>
@@ -262,13 +262,17 @@ void add_tensor(ScalarParameterType const& alpha_in,
   auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
   auto beta = El::To<LibScalingParamT>(beta_in);
-  CHECK_CUDNN(hipdnnAddTensor(handle_manager.get(),
-                             &alpha,
-                             aDesc,
-                             A.LockedBuffer(),
-                             &beta,
-                             cDesc,
-                             C.Buffer()));
+  CHECK_MIOPEN(miopenOpTensor(handle_manager.get(),
+                              miopenTensorOpAdd,
+                              &alpha,
+                              cDesc,
+                              C.Buffer(),
+                              &alpha,
+                              aDesc,
+                              A.LockedBuffer(),
+                              &beta,
+                              cDesc,
+                              C.Buffer()));
 }
 
 template <typename TensorDataType, typename ScalarParameterType>
@@ -284,7 +288,7 @@ void add_tensor(ScalarParameterType const& alpha_in,
   add_tensor(alpha_in, aDesc, A, beta_in, cDesc, C, multisync);
 }
 
-}// namespace cudnn
-#endif // LBANN_HAS_CUDNN
+}// namespace dnn_lib
+#endif // LBANN_HAS_MIOPEN
 }// namespace lbann
-#endif // LBANN_UTILS_DNN_LIB_CUDNN_CONVOLUTION_HPP_
+#endif // LBANN_UTILS_DNN_LIB_MIOPEN_CONVOLUTION_HPP_
