@@ -91,8 +91,7 @@ def get_sample(index):
     # Count number of times each vertex is visited
     # Note: Update noise distribution if there are enough visits.
     global visit_counts, total_visit_count
-    for vertex in walks[index]:
-        visit_counts[vertex] += np.int64(1)
+    visit_counts[walks[index]] += 1
     total_visit_count += len(walks[index])
     if total_visit_count > 2*noise_visit_count:
         update_noise_distribution()
