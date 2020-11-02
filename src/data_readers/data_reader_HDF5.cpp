@@ -73,15 +73,26 @@ void hdf5_data_reader::load_schema(std::string filename, conduit::Schema &schema
 void hdf5_data_reader::load_schema_from_data() {
   std::string json;
   if (is_master()) {
+std::cout << "XX starting hdf5_data_reader::load_schema_from_data\n";
     // Load a node, then grab the schema. This can be done better if
     // it's annoyingly slow
     conduit::Node node;
     const sample_t& s = m_sample_list[0];
     sample_file_id_t id = s.first;
-    const std::string& bundle_filename = m_sample_list.get_samples_filename(id);
-    conduit::relay::io::load(bundle_filename, "hdf5", node);
+    std::stringstream ss;
+    ss << m_sample_list.get_samples_dirname() << "/" 
+       << m_sample_list.get_samples_filename(id);
+    conduit::relay::io::load(ss.str(), "hdf5", node);
     const conduit::Schema &schema = node.schema();
     json = schema.to_json(); 
+
+    // For the love of all that is holy, beware! Hack for JAG
+    // follows. 
+    if (schema.number_of_children() < 1) {
+      LBANN_ERROR("schema.number_of_chilren() < 1");
+    }
+    const conduit::Schema &schema2 = schema.child(0);
+    json = schema2.to_json(); 
   }  
   m_comm->broadcast<std::string>(0, json, m_comm->get_world_comm());
   m_data_schema = json;
@@ -104,24 +115,15 @@ void hdf5_data_reader::load() {
   // load the user's schema (i.e, specifies which data to load)
   load_schema(m_useme_schema_filename, m_useme_schema);
 
-  //XX debug:
-  m_useme_schema.print();
-
-  get_datum_pathnames(m_useme_schema, m_useme_pathnames);
-
-
-#if 0
-std::cerr << "calling lioad_schema_from_data" << std::endl;
   // fills in: m_data_schema
   load_schema_from_data();
-std::cerr << "DONE! calling lioad_schema_from_data" << std::endl;
 
+  // get two sets of strings, check that one is a subset of the other
   get_datum_pathnames(m_data_schema, m_data_pathnames);
   get_datum_pathnames(m_useme_schema, m_useme_pathnames);
   validate_useme_schema();
-#endif
 
-  // the usual boilerplate ...
+  // the usual boilerplate (we should wrap this in a function)
   m_shuffled_indices.clear();
   m_shuffled_indices.resize(m_sample_list.size());
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
@@ -143,7 +145,6 @@ void hdf5_data_reader::get_datum_pathnames(
 
   int n_children = schema.number_of_children();
   if (n_children == 0) {
-  std::cout << "inserting path: " << path << std::endl;
     output.insert(path);
   } 
   
@@ -161,23 +162,32 @@ void hdf5_data_reader::get_datum_pathnames(
 }
 
 void hdf5_data_reader::validate_useme_schema() {
+  options *opts = options::get();
+  bool go_deep = opts->get_bool("schema_deep_verify");
   for (std::unordered_set<std::string>::const_iterator t = m_useme_pathnames.begin(); t != m_useme_pathnames.end(); t++) {
     if (m_data_pathnames.find(*t) == m_data_pathnames.end()) {
       LBANN_ERROR("you requested use of the key '", *t, ",' but that does not appear in the data's schema");
     }
 
-    conduit::Schema &data_s = m_data_schema.fetch_child(*t);
-    conduit::Schema &use_s = m_data_schema.fetch_child(*t);
+    // The following is broken (at least, I think so). 
+    // Anyway, unsure if we need this level of verification;
+    // if we go with using the "short" schema version, this
+    // check should always fail
+    go_deep = false; //TODO
+    if (go_deep) {
+      conduit::Schema &data_s = m_data_schema.fetch_child(*t);
+      conduit::Schema &use_s = m_data_schema.fetch_child(*t);
 
-    conduit::index_t data_s_id = data_s.dtype().id();
-    conduit::index_t use_s_id = data_s.dtype().id();
+      conduit::index_t data_s_id = data_s.dtype().id();
+      conduit::index_t use_s_id = data_s.dtype().id();
 
-    if (data_s_id != use_s_id) {
-      LBANN_ERROR("data type IDs don't match");
-    }
-    bool success = data_s.compatible(use_s);
-    if (!success) {
-      LBANN_ERROR("data for this path is incompatible: ", *t);
+      if (data_s_id != use_s_id) {
+        LBANN_ERROR("data type IDs don't match");
+      }
+      bool success = data_s.compatible(use_s);
+      if (!success) {
+        LBANN_ERROR("data for this path is incompatible: ", *t);
+      }
     }
   }
 }
@@ -185,6 +195,9 @@ void hdf5_data_reader::validate_useme_schema() {
 void hdf5_data_reader::do_preload_data_store() {
   options *opts = options::get();
   double tm1 = get_time();
+  if (is_master()) {
+    std::cout << "starting hdf5_data_reader::do_preload_data_store()\n";
+  }
 
   // TODO: construct a more efficient owner mapping, and set it in the data store.
 

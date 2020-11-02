@@ -73,15 +73,16 @@ int main(int argc, char *argv[]) {
     bool is_shared_training_data_reader = false;
     bool is_shared_testing_data_reader = false;
 
-    std::cerr << "calling init_data_readers" << std::endl;
     init_data_readers(comm.get(), pb, data_readers, is_shared_training_data_reader, is_shared_testing_data_reader);
-    std::cerr << "DONE! calling init_data_readers" << std::endl;
-    generic_data_reader *testme;
-    for (std::map<execution_mode, generic_data_reader *>::iterator iter = data_readers.begin(); iter != data_readers.end(); iter++) {
-      testme = iter->second;
 
-      //run tests here
-      
+    // exercise a bit of the reader's API functionality
+    for (std::map<execution_mode, generic_data_reader *>::iterator iter = data_readers.begin(); iter != data_readers.end(); iter++) {
+      generic_data_reader *base_reader = iter->second;
+      std::cerr << "main: calling preload_data_store()" << std::endl;
+      base_reader->preload_data_store();
+      std::cerr << "DONE! main: calling preload_data_store()" << std::endl;
+      // hdf5_data_reader* hdf5
+      // ...
     }
   } catch (exception& e) {
     El::ReportException(e);
