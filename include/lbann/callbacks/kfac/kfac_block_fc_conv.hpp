@@ -76,6 +76,13 @@ class kfac_block_fc_conv: public kfac_block {
         LBANN_ERROR(err.str());
       }
     }
+
+    if(layer->num_weights() > 1) {
+      std::stringstream err;
+      err << "The K-FAC callback does not currently support biases."
+          << " layer: " << layer->get_name();
+      LBANN_ERROR(err.str());
+    }
   }
 
   kfac_block_fc_conv(const kfac_block_fc_conv&) = default;
