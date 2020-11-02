@@ -65,6 +65,9 @@ void kfac_block_fc_conv::compute_local_kronecker_factors(
         *std::accumulate(conv_dims.begin(), conv_dims.end(),
                          1, std::multiplies<int>());
   }
+  if(m_has_bias)
+    m_height_A++;
+
   m_height_G = !m_is_conv ? local_errors.Height() : num_output_channels;
   auto& A = m_callback->get_workspace_matrix(
       std::string("A_")+std::to_string(m_layer_id),
@@ -73,8 +76,26 @@ void kfac_block_fc_conv::compute_local_kronecker_factors(
       std::string("G_")+std::to_string(m_layer_id),
       m_height_G, m_height_G);
   if(!m_is_conv) {
-    get_kronecker_factor_fc(A, local_activations, 1.0/mini_batch_size);
+    if(m_has_bias) {
+      auto& local_activations_with_ones = m_callback->get_workspace_matrix(
+          std::string("local_activations_with_ones_")+std::to_string(m_layer_id),
+          local_activations.Height()+1, local_activations.Width());
+      auto local_activations_dst = El::View(
+          local_activations_with_ones,
+          El::IR(0, local_activations.Height()),
+          El::ALL);
+      El::Copy(local_activations, local_activations_dst);
+      auto local_activations_ones = El::View(
+          local_activations_with_ones,
+          El::IR(local_activations.Height(), local_activations.Height()+1),
+          El::ALL);
+      El::Ones(local_activations_ones, 1, local_activations.Width());
+      get_kronecker_factor_fc(A, local_activations_with_ones, 1.0/mini_batch_size);
+    } else {
+      get_kronecker_factor_fc(A, local_activations, 1.0/mini_batch_size);
+    }
     get_kronecker_factor_fc(G, local_errors, mini_batch_size);
+
   } else {
     assert((size_t) local_activations.Height() == num_input_channels*m_conv_input_spatial_prod);
     assert((size_t) local_errors.Height() == num_output_channels*m_conv_output_spatial_prod);
@@ -268,9 +289,32 @@ void kfac_block_fc_conv::update_kronecker_inverse(
                              w_grads_orig.LockedBuffer(),
                              height);
   } else {
-    w_gradients.LockedAttach(w_grads_orig.Height(), w_grads_orig.Width(),
-                             w_grads_orig.LockedBuffer(),
-                             w_grads_orig.Height());
+    if(m_has_bias) {
+      auto& w_grads_concat = m_callback->get_workspace_matrix(
+          std::string("A_")+std::to_string(m_layer_id),
+          w_grads_orig.Height(), w_grads_orig.Width()+1);
+
+      auto w_grads_concat_weights = El::View(
+          w_grads_concat, El::ALL, El::IR(0, w_grads_orig.Width()));
+      auto w_grads_concat_biases = El::View(
+          w_grads_concat, El::ALL, El::IR(w_grads_orig.Width(), w_grads_orig.Width()+1));
+
+      auto& biases = m_layer->get_weights(1);
+      optimizer *b_optimizer = biases.get_optimizer();
+      auto* b_dto = dynamic_cast<data_type_optimizer<DataType>*>(b_optimizer);
+      const auto& b_grads_orig = b_dto->get_gradient().LockedMatrix();
+
+      El::Copy(w_grads_orig, w_grads_concat_weights);
+      El::Copy(b_grads_orig, w_grads_concat_biases);
+
+      w_gradients.LockedAttach(w_grads_concat.Height(), w_grads_concat.Width(),
+                               w_grads_concat.LockedBuffer(),
+                               w_grads_concat.Height());
+    } else {
+      w_gradients.LockedAttach(w_grads_orig.Height(), w_grads_orig.Width(),
+                               w_grads_orig.LockedBuffer(),
+                               w_grads_orig.Height());
+    }
   }
 
   // Compute preconditioned gradients
@@ -278,6 +322,7 @@ void kfac_block_fc_conv::update_kronecker_inverse(
       std::string("Gg_")+std::to_string(m_layer_id),
       Ginv.Height(),
       m_is_conv ? w_gradients.Height() : w_gradients.Width());
+
   El::Gemm(
       El::NORMAL, m_is_conv ? El::TRANSPOSE : El::NORMAL,
       El::TypeTraits<DataType>::One(), Ginv, w_gradients,
@@ -299,10 +344,23 @@ void kfac_block_fc_conv::update_kronecker_inverse(
   } else {
     assert(Fgrad.Height() == w_gradients.Height());
     assert(Fgrad.Width() == w_gradients.Width());
-    El::Copy(Fgrad, grad_buffer.Matrix());
-  }
 
-  // Apply preconditioned grads
+    if(m_has_bias) {
+      auto& biases = m_layer->get_weights(1);
+      optimizer *b_optimizer = biases.get_optimizer();
+      auto& grad_buffer_biases = b_optimizer->get_gradient_buffer(
+          dst_scale, gradient_scale, false);
+      auto Fgrad_weights = El::View(
+          Fgrad, El::ALL, El::IR(0, grad_buffer.Width()));
+      auto Fgrad_biases = El::View(
+          Fgrad, El::ALL, El::IR(grad_buffer.Width(), grad_buffer.Width()+1));
+      El::Copy(Fgrad_weights, grad_buffer.Matrix());
+      El::Copy(Fgrad_biases, grad_buffer_biases.Matrix());
+
+    } else {
+      El::Copy(Fgrad, grad_buffer.Matrix());
+    }
+  }
 
   // Dump matrices for debugging
   if(print_matrix) {
@@ -367,7 +425,8 @@ void kfac_block_fc_conv::get_kronecker_factor_fc(
   El::Gemm(
       El::NORMAL, El::TRANSPOSE,
       alpha, activations, activations,
-      El::TypeTraits<DataType>::Zero(), factor);
+      El::TypeTraits<DataType>::Zero(),
+      factor);
 }
 
 void kfac_block_fc_conv::get_kronecker_factor_conv(

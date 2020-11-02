@@ -49,7 +49,7 @@ class kfac_block_fc_conv: public kfac_block {
                      const size_t inverse_proc_rank,
                      const bool is_conv)
       : kfac_block(layer, callback, layer_id, inverse_proc_rank),
-        m_is_conv(is_conv) {
+        m_is_conv(is_conv), m_has_bias(layer->num_weights() > 1) {
 
     if(m_is_conv) {
       m_conv_input_spatial_prod = 1;
@@ -77,12 +77,13 @@ class kfac_block_fc_conv: public kfac_block {
       }
     }
 
-    if(layer->num_weights() > 1) {
+    if(m_is_conv && m_has_bias) {
       std::stringstream err;
-      err << "The K-FAC callback does not currently support biases."
+      err << "The K-FAC callback does not currently support biases for convolutional layers."
           << " layer: " << layer->get_name();
       LBANN_ERROR(err.str());
     }
+
   }
 
   kfac_block_fc_conv(const kfac_block_fc_conv&) = default;
@@ -183,7 +184,7 @@ class kfac_block_fc_conv: public kfac_block {
 #endif // LBANN_HAS_GPU
 
   /** @brief Information to perform its computation. **/
-  const bool m_is_conv;
+  const bool m_is_conv, m_has_bias;
   size_t m_conv_input_spatial_prod, m_conv_output_spatial_prod;
   std::vector<int> m_conv_input_spatial_dims, m_conv_output_spatial_dims;
 

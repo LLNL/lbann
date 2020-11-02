@@ -110,7 +110,9 @@ def construct_model(lbann):
     dilations = (1, 1)
     kernel = make_random_array(kernel_dims, 11)
     fc_input_size = kernel_dims[0] * np.prod(_sample_dims[1:])
-    linearity = make_random_array((_output_size, fc_input_size), 13)
+    linearity1 = make_random_array((_output_size, fc_input_size), 13)
+    linearity2 = make_random_array((_output_size, _output_size), 17)
+    biases = make_random_array((_output_size, ), 19)
 
     # Weight values
     kernel_weights = lbann.Weights(
@@ -119,10 +121,22 @@ def construct_model(lbann):
             values=tools.str_list(np.nditer(kernel))),
         name='kernel1'
     )
-    linearity_weights = lbann.Weights(
+    linearity1_weights = lbann.Weights(
         optimizer=lbann.SGD(),
         initializer=lbann.ValueInitializer(
-            values=tools.str_list(np.nditer(linearity, order='F'))
+            values=tools.str_list(np.nditer(linearity1, order='F'))
+        )
+    )
+    linearity2_weights = lbann.Weights(
+        optimizer=lbann.SGD(),
+        initializer=lbann.ValueInitializer(
+            values=tools.str_list(np.nditer(linearity2, order='F'))
+        )
+    )
+    biases_weights = lbann.Weights(
+        optimizer=lbann.SGD(),
+        initializer=lbann.ValueInitializer(
+            values=tools.str_list(np.nditer(biases, order='F'))
         )
     )
 
@@ -153,15 +167,26 @@ def construct_model(lbann):
     y = lbann.BatchNormalization(
         y,
         weights=create_bn_weights("bn1", kernel_dims[0]))
+    y = lbann.Relu(y)
     y = lbann.FullyConnected(
         y,
-        weights=(linearity_weights, ),
+        weights=(linearity1_weights, ),
         data_layout='data_parallel',
         num_neurons=_output_size,
         has_bias=False)
     y = lbann.BatchNormalization(
         y,
         weights=create_bn_weights("bn2", _output_size))
+    y = lbann.Relu(y)
+    y = lbann.FullyConnected(
+        y,
+        weights=(linearity2_weights, biases_weights),
+        data_layout='data_parallel',
+        num_neurons=_output_size,
+        has_bias=True)
+    y = lbann.BatchNormalization(
+        y,
+        weights=create_bn_weights("bn3", _output_size))
     z = lbann.L2Norm2(y)
     obj.append(z)
 
