@@ -64,44 +64,45 @@ using supported_layer_data_type = h2::meta::TL<
 #endif
   float, double>;
 
-template <typename TensorDataType>
+template <typename InputTensorDataType,
+          typename OutputTensorDataType = InputTensorDataType>
 class data_type_layer : public Layer {
 public:
   /** @name Public Types */
   ///@{
 
   /** @brief The tensor type expected in this object. */
-  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+  using AbsDistMatrixType = El::AbstractDistMatrix<InputTensorDataType>;
 
   /** @brief The proxy tensor type expected in this object. */
   template <El::Device D>
-  using AbsDistMatReadProxyType = El::AbstractDistMatrixReadDeviceProxy<TensorDataType, D>;
+  using AbsDistMatReadProxyType = El::AbstractDistMatrixReadDeviceProxy<InputTensorDataType, D>;
 
   /** @brief The local tensor type expected in this object. */
-  using AbsMatrixType = El::AbstractMatrix<TensorDataType>;
+  using AbsMatrixType = El::AbstractMatrix<InputTensorDataType>;
 
   /** @brief The proxy type for weights used by this object. */
-  using WeightsProxyType = weights_proxy<TensorDataType>;
+  using WeightsProxyType = weights_proxy<InputTensorDataType>;
 
   ///@}
 
 public:
   static_assert(
-    h2::meta::tlist::MemberV<TensorDataType, supported_layer_data_type>(),
+    h2::meta::tlist::MemberV<InputTensorDataType, supported_layer_data_type>(),
     "Must use a supported type.");
 
   data_type_layer(lbann_comm* /*comm*/, bool persistent_error_signals=false)
     : Layer(),
       m_persistent_error_signals{persistent_error_signals}
   {}
-  data_type_layer(const data_type_layer<TensorDataType>& other);
-  data_type_layer& operator=(const data_type_layer<TensorDataType>& other);
+  data_type_layer(const data_type_layer<InputTensorDataType>& other);
+  data_type_layer& operator=(const data_type_layer<InputTensorDataType>& other);
   virtual ~data_type_layer() = default;
 
   /** Get a string representing the layer datatype
    */
   std::string get_datatype_name() const override {
-    return TypeName<TensorDataType>();
+    return TypeName<OutputTensorDataType>();
   };
 
   /** Forward propagation step.
@@ -373,10 +374,10 @@ private:
   bool m_persistent_error_signals = false;
 
 #ifdef LBANN_HAS_DISTCONV
-  friend class data_type_distconv_adapter<TensorDataType>;
+  friend class data_type_distconv_adapter<InputTensorDataType>;
  public:
-  data_type_distconv_adapter<TensorDataType>& get_distconv_adapter() override;
-  const data_type_distconv_adapter<TensorDataType>& get_distconv_adapter() const override;
+  data_type_distconv_adapter<InputTensorDataType>& get_distconv_adapter() override;
+  const data_type_distconv_adapter<InputTensorDataType& get_distconv_adapter() const override;
 
  protected:
   void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override;
