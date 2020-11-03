@@ -50,7 +50,6 @@ hdf5_data_reader& hdf5_data_reader::operator=(const hdf5_data_reader& rhs) {
 }
 
 void hdf5_data_reader::copy_members(const hdf5_data_reader &rhs) {
-  m_schema_starting_level = rhs.m_schema_starting_level;
   m_data_schema = rhs.m_data_schema;
   m_useme_schema = rhs.m_useme_schema;
   m_useme_schema_filename = rhs.m_useme_schema_filename;
@@ -73,7 +72,6 @@ void hdf5_data_reader::load_schema(std::string filename, conduit::Schema &schema
 void hdf5_data_reader::load_schema_from_data() {
   std::string json;
   if (is_master()) {
-std::cout << "XX starting hdf5_data_reader::load_schema_from_data\n";
     // Load a node, then grab the schema. This can be done better if
     // it's annoyingly slow
     conduit::Node node;
@@ -85,17 +83,16 @@ std::cout << "XX starting hdf5_data_reader::load_schema_from_data\n";
     conduit::relay::io::load(ss.str(), "hdf5", node);
     const conduit::Schema &schema = node.schema();
     json = schema.to_json(); 
-
-    // For the love of all that is holy, beware! Hack for JAG
-    // follows. 
-    if (schema.number_of_children() < 1) {
-      LBANN_ERROR("schema.number_of_chilren() < 1");
-    }
-    const conduit::Schema &schema2 = schema.child(0);
-    json = schema2.to_json(); 
-  }  
+  }
   m_comm->broadcast<std::string>(0, json, m_comm->get_world_comm());
-  m_data_schema = json;
+
+  // WARNING! CAUTION! the following is specialized for JAG;
+  // may need to revisit for other data sources
+  conduit::Schema schema(json);
+  if (schema.number_of_children() < 1) {
+      LBANN_ERROR("schema.number_of_children() < 1");
+  }
+  m_data_schema = schema.child(0);
 }
 
 void hdf5_data_reader::load() {
@@ -123,6 +120,9 @@ void hdf5_data_reader::load() {
   get_datum_pathnames(m_useme_schema, m_useme_pathnames);
   validate_useme_schema();
 
+  // May go away
+  opts->set_option("use_data_store", true);
+
   // the usual boilerplate (we should wrap this in a function)
   m_shuffled_indices.clear();
   m_shuffled_indices.resize(m_sample_list.size());
@@ -132,8 +132,8 @@ void hdf5_data_reader::load() {
   select_subset_of_data();
 
   if (is_master()) {
-    std::cout << "hdf5_data_reader::load() time: " << (get_time() - tm1) << std::endl;
-    std::cout << "XX num samples: " << m_shuffled_indices.size() << std::endl;
+    std::cout << "hdf5_data_reader::load() time: " << (get_time() - tm1) 
+              << " num samples: " << m_shuffled_indices.size() << std::endl;
   }
 }
 
@@ -166,6 +166,16 @@ void hdf5_data_reader::validate_useme_schema() {
   bool go_deep = opts->get_bool("schema_deep_verify");
   for (std::unordered_set<std::string>::const_iterator t = m_useme_pathnames.begin(); t != m_useme_pathnames.end(); t++) {
     if (m_data_pathnames.find(*t) == m_data_pathnames.end()) {
+
+std::cout << "\nm_data keys:\n";
+for (auto &t2 : m_data_pathnames){
+  std::cout << "  " << t2 << std::endl;
+}
+std::cout << "\nm_useme keys:\n";
+for (auto &t3 : m_useme_pathnames){
+  std::cout << "  " << t3 << std::endl;
+}
+
       LBANN_ERROR("you requested use of the key '", *t, ",' but that does not appear in the data's schema");
     }
 
@@ -193,7 +203,6 @@ void hdf5_data_reader::validate_useme_schema() {
 }
 
 void hdf5_data_reader::do_preload_data_store() {
-  options *opts = options::get();
   double tm1 = get_time();
   if (is_master()) {
     std::cout << "starting hdf5_data_reader::do_preload_data_store()\n";
@@ -201,28 +210,14 @@ void hdf5_data_reader::do_preload_data_store() {
 
   // TODO: construct a more efficient owner mapping, and set it in the data store.
 
-  hid_t file_handle;
-  std::string sample_name;
-  for (size_t idx=0; idx < m_shuffled_indices.size(); idx++) {
+ for (size_t idx=0; idx < m_shuffled_indices.size(); idx++) {
     int index = m_shuffled_indices[idx];
     if(m_data_store->get_index_owner(index) != m_rank_in_model) {
       continue;
     }
     try {
-      data_reader_sample_list::open_file(index, file_handle, sample_name);
       conduit::Node & node = m_data_store->get_empty_node(index);
-      for (const auto &pathname : m_useme_pathnames) {
-        if (pathname.find(m_metadata_field_name) == std::string::npos) {
-          if (!(
-                m_sample_list.is_file_handle_valid(file_handle) 
-                &&
-                conduit::relay::io::hdf5_has_path(file_handle, pathname)
-                )) {
-            LBANN_ERROR("failed to read input data; either file handle is invalid, or conduit says there's no path to the data.");
-          }
-          conduit::relay::io::hdf5_read(file_handle, pathname, node);
-        }
-      }
+      load_sample(node, index);
       m_data_store->set_preloaded_conduit_node(index, node);
     } catch (conduit::Error const& e) {
       LBANN_ERROR(" :: trying to load the node ", index, " and caught conduit error: ", e.what());
@@ -237,11 +232,8 @@ void hdf5_data_reader::do_preload_data_store() {
     close_file(index);
   }
 
-  if (get_comm()->am_world_master() ||
-      (opts->get_bool("ltfb_verbose") && get_comm()->am_trainer_master())) {
-    std::stringstream msg;
-    msg << " loading data for role: " << get_role() << " took " << get_time() - tm1 << "s";
-    LBANN_WARNING(msg.str());
+  if (is_master()) {
+    std::cout << "loading data for role: " << get_role() << " took " << get_time() - tm1 << "s" << std::endl;
   }
 }
 
@@ -253,5 +245,37 @@ int hdf5_data_reader::get_linearized_size(const std::string &key) const {
   return dt.number_of_elements();
 }
 
+void hdf5_data_reader::load_sample(conduit::Node &node, size_t index) {
+  hid_t file_handle;
+  std::string sample_name;
+  data_reader_sample_list::open_file(index, file_handle, sample_name);
+  for (const auto &pathname : m_useme_pathnames) {
+
+    // filter out nodes that contain instructions to lbann
+    if (pathname.find(m_metadata_field_name) == std::string::npos) {
+
+      std::stringstream ss;
+      ss << sample_name << '/' << pathname;
+      const std::string p(ss.str());
+      ss.clear();
+      ss.str("");
+      ss << LBANN_DATA_ID_STR(index) << '/' << pathname;
+      const std::string p2(ss.str());
+
+      if (!m_sample_list.is_file_handle_valid(file_handle)) {
+        LBANN_ERROR("file handle is invalid");
+      }
+      if (!conduit::relay::io::hdf5_has_path(file_handle, p)) {
+        LBANN_ERROR("hdf5_has_path failed for path: ", p);
+      }
+      conduit::relay::io::hdf5_read(file_handle, p, node[p2]);
+    }
+  }
+}
+
+int hdf5_data_reader::fetch_data(CPUMat& X, El::Matrix<El::Int>& indices_fetched) {
+  // TODO
+  return 0;
+}
 
 } // namespace lbann

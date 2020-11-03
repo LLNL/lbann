@@ -48,19 +48,19 @@ public:
 
   void load() override;
 
-  /** sets the level at which the passed useme schema begins wrt the
-   * complete schema. The intention here is to discard top level(s) 
-   * that contain unique sample IDs. (Default is 2 for JAG data)
-   * (this will need to be re-thought)
-   */
-  void set_schema_starting_level(int level = 2) { m_schema_starting_level = level; }
-
   int get_linearized_size(const std::string &key) const override;
 
-private:
+  int fetch_data(CPUMat& X, El::Matrix<El::Int>& indices_fetched) override;
 
-  /** the level at which the passed useme schema begins wrt the complete schema */
-  int m_schema_starting_level = 2;
+  int fetch_responses(CPUMat& Y) override {
+    LBANN_ERROR("fetch_response() is not implemented");
+  }
+
+  int fetch_labels(CPUMat& Y) override {
+    LBANN_ERROR("fetch_labels() is not implemented");
+  }
+
+private:
 
   /** Name of a special branch in the schemas that may exist, in addition
    * to metada for the actual data; if present, contains information for
@@ -91,6 +91,9 @@ private:
   //=========================================================================
 
   void do_preload_data_store() override;
+
+
+  void load_sample(conduit::Node &node, size_t index); 
 
   // may go away soon!
   void preload_helper(
