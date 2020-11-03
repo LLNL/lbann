@@ -92,3 +92,53 @@ void load(JSONInputArchive& iarchive, half_float::half& val)
 #endif // LBANN_HAS_HALF
 
 }// namespace cereal
+
+#include <stack>
+
+namespace lbann
+{
+namespace utils
+{
+namespace
+{
+std::stack<El::Grid const*> grid_stack_;
+
+void push_grid_(El::Grid const& g)
+{
+  grid_stack_.push(&g);
+}
+
+void pop_grid_()
+{
+  grid_stack_.pop();
+}
+
+// This is done this way to ensure the warning is only emitted at most
+// once per rank per run, if and only if the default grid is actually
+// returned. Outside of testing, it should never be used.
+El::Grid const& get_default_grid_() noexcept
+{
+  El::Grid const& default_grid_ = El::Grid::Default();
+  return default_grid_;
+}
+}// namespace <anon>
+
+El::Grid const& get_current_grid() noexcept
+{
+  if (grid_stack_.empty())
+    return get_default_grid_();
+  return *grid_stack_.top();
+}
+
+grid_manager::grid_manager(El::Grid const& g)
+{
+  push_grid_(g);
+}
+
+grid_manager::~grid_manager()
+{
+  pop_grid_();
+}
+
+}// namespace utils
+}// namespace lbann

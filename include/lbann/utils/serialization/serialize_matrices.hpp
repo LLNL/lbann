@@ -10,6 +10,7 @@
 #include <cereal/archives/binary.hpp>
 #include <cereal/archives/json.hpp>
 #include <cereal/archives/xml.hpp>
+#include <cereal/types/polymorphic.hpp>
 
 #include <stdexcept>
 
@@ -228,4 +229,118 @@ void load(ArchiveT& ar, El::AbstractDistMatrix<T>& mat)
 
 }// namespace cereal
 
+// Dealing with smart pointers and object construction
+
+namespace lbann
+{
+namespace utils
+{
+
+/** @brief RAII grid management.
+ *
+ *  Instantiate a new one of these at every distinct deserialization
+ *  scope (trainer, subgraph, whatever). Ensure it's destroyed when
+ *  deserialization at that scope is complete.
+ */
+struct grid_manager
+{
+  grid_manager(Grid const& g);
+  ~grid_manager();
+};
+
+/** @brief Get the current grid being used for deserialization.
+ *
+ *  If not in a deserialization scope, this will return the default
+ *  grid (and generate a warning from Hydrogen).
+ */
+Grid const& get_current_grid() noexcept;
+
+}// namespace utils
+}// namespace lbann
+
+namespace cereal
+{
+
+template <typename DataT,
+          El::Dist CDist,
+          El::Dist RDist,
+          El::DistWrap Wrap,
+          El::Device D>
+struct LoadAndConstruct<El::DistMatrix<DataT, CDist, RDist, Wrap, D>>
+{
+  using DistMatrixType = El::DistMatrix<DataT, CDist, RDist, Wrap, D>;
+  using CircMatrixType = El::DistMatrix<DataT,
+                                        El::CIRC, El::CIRC,
+                                        Wrap,
+                                        El::Device::CPU>;
+
+  template <typename ArchiveT,
+            lbann::utils::WhenTextArchive<ArchiveT> = 1>
+  static void load_and_construct(
+    ArchiveT & ar, cereal::construct<DistMatrixType> & construct)
+  {
+    El::Grid const& g = lbann::utils::get_current_grid();
+    El::Int height, width;
+    if (g.Rank() == 0)
+      ar(height, width);
+    El::mpi::Broadcast(height, /*root=*/0, g.Comm(),
+                       El::SyncInfo<El::Device::CPU>{});
+    El::mpi::Broadcast(width, /*root=*/0, g.Comm(),
+                       El::SyncInfo<El::Device::CPU>{});
+    construct(height, width,
+              lbann::utils::get_current_grid(), /*root=*/0);
+  }
+
+  template <typename ArchiveT,
+            lbann::utils::WhenNotTextArchive<ArchiveT> = 1>
+  static void load_and_construct(
+    ArchiveT & ar, cereal::construct<DistMatrixType> & construct)
+  {
+    // I think this should actually create a CircCirc matrix, but we'll see.
+    CircMatrixType cmat(lbann::utils::get_current_grid(), /*root=*/0);
+    ar(cmat);
+    construct(cmat);
+  }
+};
+}// namespace cereal
+
+// Register types outside Cereal's namespace.
+#define LBANN_COMMA ,
+
+#define REGISTER_DISTMATRIX(TYPE, CDIST, RDIST, DEVICE)                 \
+  CEREAL_REGISTER_TYPE_WITH_NAME(                                       \
+    El::DistMatrix<TYPE LBANN_COMMA El::CDIST LBANN_COMMA El::RDIST LBANN_COMMA El::ELEMENT LBANN_COMMA El::Device::DEVICE>, \
+    "DistMatrix<" #TYPE "," #CDIST "," #RDIST "," #DEVICE ">")          \
+  CEREAL_REGISTER_POLYMORPHIC_RELATION(                                 \
+    El::AbstractDistMatrix<TYPE>,                                       \
+    El::DistMatrix<TYPE LBANN_COMMA El::CDIST LBANN_COMMA El::RDIST LBANN_COMMA El::ELEMENT LBANN_COMMA El::Device::DEVICE>)
+
+#define REGISTER_ALL_DISTMATRIX(TYPE, DEVICE)     \
+  REGISTER_DISTMATRIX(TYPE, CIRC, CIRC, DEVICE)   \
+  REGISTER_DISTMATRIX(TYPE, MC  , MR  , DEVICE)   \
+  REGISTER_DISTMATRIX(TYPE, MC  , STAR, DEVICE)   \
+  REGISTER_DISTMATRIX(TYPE, MD  , STAR, DEVICE)   \
+  REGISTER_DISTMATRIX(TYPE, MR  , MC  , DEVICE)   \
+  REGISTER_DISTMATRIX(TYPE, MR  , STAR, DEVICE)   \
+  REGISTER_DISTMATRIX(TYPE, STAR, MC  , DEVICE)   \
+  REGISTER_DISTMATRIX(TYPE, STAR, MD  , DEVICE)   \
+  REGISTER_DISTMATRIX(TYPE, STAR, MR  , DEVICE)   \
+  REGISTER_DISTMATRIX(TYPE, STAR, STAR, DEVICE)   \
+  REGISTER_DISTMATRIX(TYPE, STAR, VC  , DEVICE)   \
+  REGISTER_DISTMATRIX(TYPE, STAR, VR  , DEVICE)   \
+  REGISTER_DISTMATRIX(TYPE, VC  , STAR, DEVICE)   \
+  REGISTER_DISTMATRIX(TYPE, VR  , STAR, DEVICE)
+
+REGISTER_ALL_DISTMATRIX(float, CPU)
+REGISTER_ALL_DISTMATRIX(double, CPU)
+
+// Don't forget about the locals:
+CEREAL_REGISTER_TYPE_WITH_NAME(
+  El::Matrix<float LBANN_COMMA El::Device::CPU>,
+  "Matrix<float, CPU>")
+CEREAL_REGISTER_TYPE_WITH_NAME(
+  El::Matrix<double LBANN_COMMA El::Device::CPU>,
+  "Matrix<float, CPU>")
+
+#undef LBANN_COMMA
 #endif // LBANN_UTILS_SERIALIZATION_SERIALIZE_MATRICES_HPP_

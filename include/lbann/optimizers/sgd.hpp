@@ -74,9 +74,8 @@ public:
   template <class Archive> void serialize(Archive & ar) {
     ar(cereal::base_class<data_type_optimizer<TensorDataType>>(this),
        CEREAL_NVP(m_momentum),
-       CEREAL_NVP(m_nesterov));
-    if (m_velocity)
-      ar(cereal::make_nvp("velocity", *m_velocity));
+       CEREAL_NVP(m_nesterov),
+       CEREAL_NVP(m_velocity));
   }
   ///@}
 

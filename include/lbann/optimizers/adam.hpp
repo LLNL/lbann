@@ -85,11 +85,9 @@ public:
        CEREAL_NVP(m_beta2),
        CEREAL_NVP(m_eps),
        CEREAL_NVP(m_current_beta1),
-       CEREAL_NVP(m_current_beta2));
-    if (m_moment1)
-      ar(::cereal::make_nvp("moment1", *m_moment1));
-    if (m_moment2)
-      ar(::cereal::make_nvp("moment2", *m_moment2));
+       CEREAL_NVP(m_current_beta2),
+       CEREAL_NVP(m_moment1),
+       CEREAL_NVP(m_moment2));
   }
   ///@}
 
