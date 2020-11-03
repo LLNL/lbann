@@ -23,8 +23,8 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
-#ifndef LBANN_UTILS_DNN_LIB_CUDNN_DROPOUT_HPP_
-#define LBANN_UTILS_DNN_LIB_CUDNN_DROPOUT_HPP_
+#ifndef LBANN_UTILS_DNN_LIB_MIOPEN_DROPOUT_HPP_
+#define LBANN_UTILS_DNN_LIB_MIOPEN_DROPOUT_HPP_
 
 #include "lbann/utils/ml_enums.hpp"
 #include "lbann/utils/dnn_lib/helpers.hpp"
@@ -35,23 +35,23 @@
 namespace lbann
 {
 
-#if defined LBANN_HAS_CUDNN
+#if defined LBANN_HAS_MIOPEN
 namespace dnn_lib
 {
 
-using namespace cudnn;
+using namespace miopen;
 
 inline size_t get_dropout_states_size()
 {
   size_t size;
-  CHECK_CUDNN(hipdnnDropoutGetStatesSize(get_handle(), &size));
+  CHECK_MIOPEN(miopenDropoutGetStatesSize(get_handle(), &size));
   return size;
 }
 
 inline size_t get_dropout_reserve_space_size(TensorDescriptor const& xDesc)
 {
   size_t size;
-  CHECK_CUDNN(cudnnDropoutGetReserveSpaceSize(xDesc, &size));
+  CHECK_MIOPEN(miopenDropoutGetReserveSpaceSize(xDesc, &size));
   return size;
 }
 
@@ -65,15 +65,18 @@ void dropout_forward(DropoutDescriptor const& dropoutDesc,
                      El::SyncInfo<El::Device::GPU> const& si)
 {
   auto handle_manager = internal::make_default_handle_manager(si);
-  CHECK_CUDNN(
-    cudnnDropoutForward(handle_manager.get(),
-                        dropoutDesc,
-                        xDesc,
-                        x.LockedBuffer(),
-                        yDesc,
-                        y.Buffer(),
-                        workSpace.Buffer(),
-                        workSpace.Height() * sizeof(TensorDataType)));
+  TensorDescriptor noise_shape; // This input is not used:
+  // https://rocmsoftwareplatform.github.io/MIOpen/doc/html/dropout.html?highlight=dropoutgetreserve#miopendropoutforward
+  CHECK_MIOPEN(
+    miopenDropoutForward(handle_manager.get(),
+                         dropoutDesc,
+                         noise_shape,
+                         xDesc,
+                         x.LockedBuffer(),
+                         yDesc,
+                         y.Buffer(),
+                         workSpace.Buffer(),
+                         workSpace.Height() * sizeof(TensorDataType)));
 }
 
 template <typename TensorDataType>
@@ -100,9 +103,11 @@ void dropout_backward(DropoutDescriptor const& dropoutDesc,
                       El::SyncInfo<El::Device::GPU> const& si)
 {
   auto handle_manager = internal::make_default_handle_manager(si);
-  CHECK_CUDNN(
-    cudnnDropoutBackward(handle_manager.get(),
+  TensorDescriptor noise_shape; // This input is not used
+  CHECK_MIOPEN(
+    miopenDropoutBackward(handle_manager.get(),
                          dropoutDesc,
+                         noise_shape,
                          dyDesc,
                          dy.LockedBuffer(),
                          dxDesc,
@@ -125,8 +130,8 @@ void dropout_backward(DropoutDescriptor const& dropoutDesc,
   dropout_backward(dropoutDesc, dyDesc, dy, dxDesc, dx, workSpace, multisync);
 }
 
-}// namespace cudnn
-#endif // LBANN_HAS_CUDNN
-  
+}// namespace dnn_lib
+#endif // LBANN_HAS_MIOPEN
+
 }// namespace lbann
-#endif // LBANN_UTILS_DNN_LIB_CUDNN_DROPOUT_HPP_
+#endif // LBANN_UTILS_DNN_LIB_MIOPEN_DROPOUT_HPP_

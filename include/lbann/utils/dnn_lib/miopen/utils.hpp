@@ -23,16 +23,16 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
-#ifndef LBANN_UTILS_DNN_LIB_CUDNN_UTILS_HPP_
-#define LBANN_UTILS_DNN_LIB_CUDNN_UTILS_HPP_
+#ifndef LBANN_UTILS_DNN_LIB_MIOPEN_UTILS_HPP_
+#define LBANN_UTILS_DNN_LIB_MIOPEN_UTILS_HPP_
 
 namespace lbann
 {
-#if defined LBANN_HAS_CUDNN
+#if defined LBANN_HAS_MIOPEN
 namespace dnn_lib
 {
 
-using namespace cudnn;
+using namespace miopen;
 
 namespace internal
 {
@@ -42,18 +42,18 @@ namespace internal
 class StreamManager
 {
 public:
-  StreamManager(hipdnnHandle_t handle, hipStream_t stream)
+  StreamManager(miopenHandle_t handle, hipStream_t stream)
     : handle_(handle)
   {
-    CHECK_CUDNN(hipdnnGetStream(handle_, &old_stream_));
-    CHECK_CUDNN(hipdnnSetStream(handle_, stream));
+    CHECK_MIOPEN(miopenGetStream(handle_, &old_stream_));
+    CHECK_MIOPEN(miopenSetStream(handle_, stream));
   }
 
   ~StreamManager()
   {
     try {
       if (handle_)
-        CHECK_CUDNN(hipdnnSetStream(handle_, old_stream_));
+        CHECK_MIOPEN(miopenSetStream(handle_, old_stream_));
     }
     catch (std::exception const& e) {
       std::cerr << "Caught error in ~dnn_lib::StreamManager().\n\n  e.what(): "
@@ -72,9 +72,9 @@ public:
   StreamManager& operator=(StreamManager const& other) = delete;
   StreamManager& operator=(StreamManager&& other) = delete;
 
-  hipdnnHandle_t get() const noexcept { return handle_; }
+  miopenHandle_t get() const noexcept { return handle_; }
 private:
-  hipdnnHandle_t handle_;
+  miopenHandle_t handle_;
   hipStream_t old_stream_;
 };// struct StreamManager
 
@@ -85,7 +85,7 @@ inline StreamManager make_default_handle_manager(
 }
 
 }// namespace internal
-}// namespace cudnn
-#endif // defined LBANN_HAS_CUDNN
+}// namespace miopen
+#endif // defined LBANN_HAS_MIOPEN
 }// namespace lbann
-#endif // LBANN_UTILS_DNN_LIB_CUDNN_UTILS_HPP_
+#endif // LBANN_UTILS_DNN_LIB_MIOPEN_UTILS_HPP_

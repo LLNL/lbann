@@ -23,8 +23,8 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
-#ifndef LBANN_UTILS_DNN_LIB_CUDNN_LRN_HPP_
-#define LBANN_UTILS_DNN_LIB_CUDNN_LRN_HPP_
+#ifndef LBANN_UTILS_DNN_LIB_MIOPEN_LRN_HPP_
+#define LBANN_UTILS_DNN_LIB_MIOPEN_LRN_HPP_
 
 #include "lbann/utils/ml_enums.hpp"
 #include "lbann/utils/dnn_lib/helpers.hpp"
@@ -35,22 +35,14 @@
 namespace lbann
 {
 
-#ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_MIOPEN
 namespace dnn_lib
 {
 
-using namespace cudnn;
+using namespace miopen;
 
-/** @brief Convert an LBANN lrn_mode to the cuDNN equivalent value. */
-inline hipdnnLRNMode_t to_cudnn(lrn_mode mode)
-{
-  switch (mode)
-  {
-  case lrn_mode::CROSS_CHANNEL_DIM1: return HIPDNN_LRN_CROSS_CHANNEL;
-  default:
-    LBANN_ERROR("Invalid LRN layer mode requested.");
-  }
-}
+static std::map<miopenTensorDescriptor_t, std::pair<int8_t *, size_t>>
+  sDescToWorkspaceLRN;  // device pointers
 
 template <typename TensorDataType, typename ScalarParameterType>
 void lrn_cross_channel_forward(LRNDescriptor const& normDesc,
@@ -68,9 +60,9 @@ void lrn_cross_channel_forward(LRNDescriptor const& normDesc,
   auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
   auto beta = El::To<LibScalingParamT>(beta_in);
-  CHECK_CUDNN(hipdnnLRNCrossChannelForward(handle_manager.get(),
+  CHECK_MIOPEN(hipdnnLRNCrossChannelForward(handle_manager.get(),
                                           normDesc,
-                                          to_cudnn(mode),
+                                          miopen::to_miopen(mode),
                                           &alpha,
                                           xDesc,
                                           x.LockedBuffer(),
@@ -118,9 +110,9 @@ void lrn_cross_channel_backward(LRNDescriptor const& normDesc,
   auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
   auto beta = El::To<LibScalingParamT>(beta_in);
-  CHECK_CUDNN(hipdnnLRNCrossChannelBackward(handle_manager.get(),
+  CHECK_MIOPEN(hipdnnLRNCrossChannelBackward(handle_manager.get(),
                                            normDesc,
-                                           to_cudnn(mode),
+                                           miopen::to_miopen(mode),
                                            &alpha,
                                            yDesc,
                                            y.LockedBuffer(),
@@ -158,7 +150,7 @@ void lrn_cross_channel_backward(LRNDescriptor const& normDesc,
                              multisync, mode);
 }
 
-}// namespace cudnn
-#endif // LBANN_HAS_CUDNN
+}// namespace dnn_lib
+#endif // LBANN_HAS_MIOPEN
 }// namespace lbann
-#endif // LBANN_UTILS_DNN_LIB_CUDNN_LRN_HPP_
+#endif // LBANN_UTILS_DNN_LIB_MIOPEN_LRN_HPP_

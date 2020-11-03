@@ -23,8 +23,8 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
-#ifndef LBANN_UTILS_DNN_LIB_CUDNN_POOLING_HPP_
-#define LBANN_UTILS_DNN_LIB_CUDNN_POOLING_HPP_
+#ifndef LBANN_UTILS_DNN_LIB_MIOPEN_POOLING_HPP_
+#define LBANN_UTILS_DNN_LIB_MIOPEN_POOLING_HPP_
 
 #include "lbann/utils/ml_enums.hpp"
 #include "lbann/utils/dnn_lib/helpers.hpp"
@@ -35,24 +35,11 @@
 namespace lbann
 {
 
-#ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_MIOPEN
 namespace dnn_lib
 {
 
-using namespace cudnn;
-
-inline hipdnnPoolingMode_t to_cudnn(pooling_mode m)
-{
-  switch(m)
-  {
-  case pooling_mode::MAX: return HIPDNN_POOLING_MAX;
-  case pooling_mode::AVERAGE_COUNT_INCLUDE_PADDING: return HIPDNN_POOLING_AVERAGE_COUNT_INCLUDE_PADDING;
-  case pooling_mode::AVERAGE_COUNT_EXCLUDE_PADDING: return HIPDNN_POOLING_AVERAGE_COUNT_EXCLUDE_PADDING;
-  case pooling_mode::MAX_DETERMINISTIC: return HIPDNN_POOLING_MAX_DETERMINISTIC;
-  default:
-    LBANN_ERROR("Invalid pooling mode requested");
-  }
-}
+using namespace miopen;
 
 template <typename TensorDataType, typename ScalarParameterType>
 void pooling_forward(PoolingDescriptor const& poolingDesc,
@@ -68,7 +55,7 @@ void pooling_forward(PoolingDescriptor const& poolingDesc,
   auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
   auto beta = El::To<LibScalingParamT>(beta_in);
-  CHECK_CUDNN(hipdnnPoolingForward(handle_manager.get(),
+  CHECK_MIOPEN(hipdnnPoolingForward(handle_manager.get(),
                                   poolingDesc,
                                   &alpha,
                                   xDesc,
@@ -113,7 +100,7 @@ void pooling_backward(PoolingDescriptor const& poolingDesc,
   auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
   auto beta = El::To<LibScalingParamT>(beta_in);
-  CHECK_CUDNN(hipdnnPoolingBackward(handle_manager.get(),
+  CHECK_MIOPEN(hipdnnPoolingBackward(handle_manager.get(),
                                    poolingDesc,
                                    &alpha,
                                    yDesc,
@@ -151,6 +138,6 @@ void pooling_backward(PoolingDescriptor const& poolingDesc,
 }
 
 }// namespace cudnn
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_MIOPEN
 }// namespace lbann
-#endif // LBANN_UTILS_DNN_LIB_CUDNN_POOLING_HPP_
+#endif // LBANN_UTILS_DNN_LIB_MIOPEN_POOLING_HPP_

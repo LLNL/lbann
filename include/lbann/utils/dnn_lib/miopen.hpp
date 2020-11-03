@@ -204,6 +204,57 @@ inline bwd_filter_conv_alg from_miopen(miopenConvBwdWeightsAlgorithm_t a)
   }
 }
 
+/** @brief Convert an LBANN lrn_mode to the MIOpen equivalent value. */
+inline miopenLRNMode_t to_miopen(lrn_mode m)
+{
+  switch (m)
+  {
+  case lrn_mode::CROSS_CHANNEL_DIM1: return miopenLRNCrossChannel;
+  default:
+    LBANN_ERROR("Invalid LRN layer mode requested.");
+  }
+}
+
+/** @brief Convert an LBANN pooling_mode to the MIOpen equivalent value. */
+inline miopenPoolingMode_t to_miopen(pooling_mode m)
+{
+  switch(m)
+  {
+  case pooling_mode::MAX: return miopenPoolingMax;
+  case pooling_mode::AVERAGE_COUNT_INCLUDE_PADDING: return miopenPoolingAverageInclusive;
+  case pooling_mode::AVERAGE_COUNT_EXCLUDE_PADDING: return miopenPoolingAverage;
+  case pooling_mode::MAX_DETERMINISTIC: return miopenPoolingMax;
+  default:
+    LBANN_ERROR("Invalid pooling mode requested");
+  }
+}
+
+/** @brief Convert an LBANN softmax_mode to the MIOpen equivalent value. */
+inline miopenSoftmaxMode_t to_miopen(softmax_mode m)
+{
+  switch (m)
+  {
+  case softmax_mode::INSTANCE: return MIOPEN_SOFTMAX_MODE_INSTANCE;
+  case softmax_mode::CHANNEL: return MIOPEN_SOFTMAX_MODE_CHANNEL;
+  case softmax_mode::INVALID:
+  default:
+    LBANN_ERROR("Invalid softmax mode requested.");
+  }
+}
+
+/** @brief Convert an LBANN softmax_alg to the MIOpen equivalent value. */
+inline miopenSoftmaxAlgorithm_t to_miopen(softmax_alg alg)
+{
+  switch (alg)
+  {
+  case softmax_alg::FAST: return MIOPEN_SOFTMAX_FAST;
+  case softmax_alg::ACCURATE: return MIOPEN_SOFTMAX_ACCURATE;
+  case softmax_alg::LOG: return MIOPEN_SOFTMAX_LOG;
+  default:
+    LBANN_ERROR("Invalid softmax algorithm requested.");
+  }
+}
+
 } // namespace miopen
 } // namespace lbann
 

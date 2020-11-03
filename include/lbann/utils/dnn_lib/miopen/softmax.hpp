@@ -23,8 +23,8 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
-#ifndef LBANN_UTILS_DNN_LIB_CUDNN_SOFTMAX_HPP_
-#define LBANN_UTILS_DNN_LIB_CUDNN_SOFTMAX_HPP_
+#ifndef LBANN_UTILS_DNN_LIB_MIOPEN_SOFTMAX_HPP_
+#define LBANN_UTILS_DNN_LIB_MIOPEN_SOFTMAX_HPP_
 
 #include "lbann/utils/ml_enums.hpp"
 #include "lbann/utils/dnn_lib/helpers.hpp"
@@ -34,37 +34,11 @@
 namespace lbann
 {
 
-#if defined LBANN_HAS_CUDNN
+#if defined LBANN_HAS_MIOPEN
 namespace dnn_lib
 {
 
-using namespace cudnn;
-
-/** @brief Convert an LBANN softmax_mode to the cuDNN equivalent value. */
-inline hipdnnSoftmaxMode_t to_cudnn(softmax_mode m)
-{
-  switch (m)
-  {
-  case softmax_mode::INSTANCE: return HIPDNN_SOFTMAX_MODE_INSTANCE;
-  case softmax_mode::CHANNEL: return HIPDNN_SOFTMAX_MODE_CHANNEL;
-  case softmax_mode::INVALID:
-  default:
-    LBANN_ERROR("Invalid softmax mode requested.");
-  }
-}
-
-/** @brief Convert an LBANN softmax_alg to the cuDNN equivalent value. */
-inline hipdnnSoftmaxAlgorithm_t to_cudnn(softmax_alg alg)
-{
-  switch (alg)
-  {
-  case softmax_alg::FAST: return HIPDNN_SOFTMAX_FAST;
-  case softmax_alg::ACCURATE: return HIPDNN_SOFTMAX_ACCURATE;
-  case softmax_alg::LOG: return HIPDNN_SOFTMAX_LOG;
-  default:
-    LBANN_ERROR("Invalid softmax algorithm requested.");
-  }
-}
+using namespace miopen;
 
 template <typename TensorDataType, typename ScalarParameterType>
 void softmax_forward(
@@ -87,15 +61,15 @@ void softmax_forward(
   auto handle_manager = internal::make_default_handle_manager(multisync);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
   auto beta = El::To<LibScalingParamT>(beta_in);
-  CHECK_CUDNN(hipdnnSoftmaxForward(handle_manager.get(),
-                                  to_cudnn(alg),
-                                  to_cudnn(mode),
-                                  &alpha,
-                                  xDesc,
-                                  x.LockedBuffer(),
-                                  &beta,
-                                  yDesc,
-                                  y.Buffer()));
+  CHECK_MIOPEN(miopenSoftmaxForward_V2(handle_manager.get(),
+                                      &alpha,
+                                       xDesc,
+                                       x.LockedBuffer(),
+                                       &beta,
+                                       yDesc,
+                                       y.Buffer(),
+                                       miopen::to_miopen(alg),
+                                       miopen::to_miopen(mode)));
 }
 
 template <typename TensorDataType, typename ScalarParameterType>
@@ -122,20 +96,20 @@ void softmax_backward(
   auto handle_manager = internal::make_default_handle_manager(multisync);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
   auto beta = El::To<LibScalingParamT>(beta_in);
-  CHECK_CUDNN(hipdnnSoftmaxBackward(handle_manager.get(),
-                                   to_cudnn(alg),
-                                   to_cudnn(mode),
-                                   &alpha,
-                                   yDesc,
-                                   y.LockedBuffer(),
-                                   dyDesc,
-                                   dy.LockedBuffer(),
-                                   &beta,
-                                   dxDesc,
-                                   dx.Buffer()));
+  CHECK_MIOPEN(miopenSoftmaxBackward_V2(handle_manager.get(),
+                                        &alpha,
+                                        yDesc,
+                                        y.LockedBuffer(),
+                                        dyDesc,
+                                        dy.LockedBuffer(),
+                                        &beta,
+                                        dxDesc,
+                                        dx.Buffer(),
+                                        miopen::to_miopen(alg),
+                                        miopen::to_miopen(mode));
 }
 
-}// namespace cudnn
-#endif // LBANN_HAS_CUDNN
+}// namespace miopen
+#endif // LBANN_HAS_MIOPEN
 }// namespace lbann
-#endif // LBANN_UTILS_DNN_LIB_CUDNN_SOFTMAX_HPP_
+#endif // LBANN_UTILS_DNN_LIB_MIOPEN_SOFTMAX_HPP_
