@@ -346,9 +346,9 @@ public:
   size_t find_child_layer_index(const Layer& l) const;
 
   /** Get number of parent layers. */
-  int get_num_parents() const { return get_parent_layers().size(); }
+  int get_num_parents() const { return m_parent_layers.size(); }
   /** Get number of child layers. */
-  int get_num_children() const { return get_child_layers().size(); }
+  int get_num_children() const { return m_child_layers.size(); }
 
   std::string get_parent_names() const;
   std::string get_child_names() const;
