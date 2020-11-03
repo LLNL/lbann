@@ -109,7 +109,7 @@ void softmax_backward(
                                         miopen::to_miopen(mode));
 }
 
-}// namespace miopen
+} // namespace dnn_lib
 #endif // LBANN_HAS_MIOPEN
-}// namespace lbann
+} // namespace lbann
 #endif // LBANN_UTILS_DNN_LIB_MIOPEN_SOFTMAX_HPP_

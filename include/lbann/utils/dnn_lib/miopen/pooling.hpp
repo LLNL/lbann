@@ -49,20 +49,39 @@ void pooling_forward(PoolingDescriptor const& poolingDesc,
                      ScalarParameterType const& beta_in,
                      TensorDescriptor const& yDesc,
                      El::AbstractMatrix<TensorDataType>& y,
+                     El::Matrix<TensorDataType, El::Device::GPU>& workSpace,
                      El::SyncInfo<El::Device::GPU> const& si)
 {
   using LibScalingParamT = dnn_lib::ScalingParamType<TensorDataType>;
   auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
   auto beta = El::To<LibScalingParamT>(beta_in);
-  CHECK_MIOPEN(hipdnnPoolingForward(handle_manager.get(),
-                                  poolingDesc,
-                                  &alpha,
-                                  xDesc,
-                                  x.LockedBuffer(),
-                                  &beta,
-                                  yDesc,
-                                  y.Buffer()));
+  if (workspace.Height() == 0 || workspace.Width() == 0) { // Training use-case
+    CHECK_MIOPEN(miopenPoolingForward(handle_manager.get(),
+                                      poolingDesc,
+                                      &alpha,
+                                      xDesc,
+                                      x.LockedBuffer(),
+                                      &beta,
+                                      yDesc,
+                                      y.Buffer(),
+                                      true,
+                                      workSpace.Buffer(),
+                                      workSpace.Height()*sizeof(TensorDataType)));
+  }
+  else {                                                  // Inference use-case
+    CHECK_MIOPEN(miopenPoolingForward(handle_manager.get(),
+                                      poolingDesc,
+                                      &alpha,
+                                      xDesc,
+                                      x.LockedBuffer(),
+                                      &beta,
+                                      yDesc,
+                                      y.Buffer(),
+                                      false,
+                                      nullptr,
+                                      0UL));
+  }
 }
 
 template <typename TensorDataType, typename ScalarParameterType>
@@ -72,13 +91,16 @@ void pooling_forward(PoolingDescriptor const& poolingDesc,
                      El::AbstractMatrix<TensorDataType> const& x,
                      ScalarParameterType const& beta_in,
                      TensorDescriptor const& yDesc,
-                     El::AbstractMatrix<TensorDataType>& y)
+                     El::AbstractMatrix<TensorDataType>& y,
+                     El::Matrix<TensorDataType, El::Device::GPU>& workSpace)
 {
-  auto multisync = El::MakeMultiSync(gpu::get_sync_info(y),
+  auto multisync = El::MakeMultiSync(gpu::get_sync_info(workSpace),
+                                     gpu::get_sync_info(y),
                                      gpu::get_sync_info(x));
   pooling_forward(poolingDesc,
                   alpha_in, xDesc, x,
                   beta_in, yDesc, y,
+                  workspace,
                   multisync);
 }
 
@@ -94,24 +116,47 @@ void pooling_backward(PoolingDescriptor const& poolingDesc,
                       ScalarParameterType const& beta_in,
                       TensorDescriptor const& dxDesc,
                       El::AbstractMatrix<TensorDataType>& dx,
+                      El::Matrix<TensorDataType, El::Device::GPU>& workSpace,
                       El::SyncInfo<El::Device::GPU> const& si)
 {
   using LibScalingParamT = dnn_lib::ScalingParamType<TensorDataType>;
   auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
   auto beta = El::To<LibScalingParamT>(beta_in);
-  CHECK_MIOPEN(hipdnnPoolingBackward(handle_manager.get(),
-                                   poolingDesc,
-                                   &alpha,
-                                   yDesc,
-                                   y.LockedBuffer(),
-                                   dyDesc,
-                                   dy.LockedBuffer(),
-                                   xDesc,
-                                   x.LockedBuffer(),
-                                   &beta,
-                                   dxDesc,
-                                   dx.Buffer()));
+  if (workspace.Height() == 0 || workspace.Width() == 0) { // Training use-case
+    CHECK_MIOPEN(miopenPoolingBackward(handle_manager.get(),
+                                       poolingDesc,
+                                       &alpha,
+                                       yDesc,
+                                       y.LockedBuffer(),
+                                       dyDesc,
+                                       dy.LockedBuffer(),
+                                       xDesc,
+                                       x.LockedBuffer(),
+                                       &beta,
+                                       dxDesc,
+                                       dx.Buffer(),
+                                       true,
+                                       workSpace.Buffer(),
+                                       workSpace.Height()*sizeof(TensorDataType)));
+  }
+  else {                                                  // Inference use-case
+    CHECK_MIOPEN(miopenPoolingBackward(handle_manager.get(),
+                                       poolingDesc,
+                                       &alpha,
+                                       yDesc,
+                                       y.LockedBuffer(),
+                                       dyDesc,
+                                       dy.LockedBuffer(),
+                                       xDesc,
+                                       x.LockedBuffer(),
+                                       &beta,
+                                       dxDesc,
+                                       dx.Buffer(),
+                                       false,
+                                       nullptr,
+                                       0UL));
+  }
 }
 
 template <typename TensorDataType, typename ScalarParameterType>
@@ -125,19 +170,22 @@ void pooling_backward(PoolingDescriptor const& poolingDesc,
                       El::AbstractMatrix<TensorDataType> const& x,
                       ScalarParameterType const& beta_in,
                       TensorDescriptor const& dxDesc,
-                      El::AbstractMatrix<TensorDataType>& dx)
+                      El::AbstractMatrix<TensorDataType>& dx,
+                      El::Matrix<TensorDataType, El::Device::GPU>& workSpace)
 {
-  auto multisync = El::MakeMultiSync(gpu::get_sync_info(dx),
+  auto multisync = El::MakeMultiSync(gpu::get_sync_info(workSpace),
+                                     gpu::get_sync_info(dx),
                                      gpu::get_sync_info(x),
                                      gpu::get_sync_info(dy),
                                      gpu::get_sync_info(y));
   pooling_backward(poolingDesc,
                    alpha_in, yDesc, y, dyDesc, dy,
                    xDesc, x, beta_in, dxDesc, dx,
+                   workSpace,
                    multisync);
 }
 
-}// namespace cudnn
+}// namespace dnn_lib
 #endif // LBANN_HAS_MIOPEN
 }// namespace lbann
 #endif // LBANN_UTILS_DNN_LIB_MIOPEN_POOLING_HPP_

@@ -41,9 +41,6 @@ namespace dnn_lib
 
 using namespace miopen;
 
-static std::map<miopenTensorDescriptor_t, std::pair<int8_t *, size_t>>
-  sDescToWorkspaceLRN;  // device pointers
-
 template <typename TensorDataType, typename ScalarParameterType>
 void lrn_cross_channel_forward(LRNDescriptor const& normDesc,
                                ScalarParameterType const& alpha_in,
@@ -53,6 +50,7 @@ void lrn_cross_channel_forward(LRNDescriptor const& normDesc,
                                TensorDescriptor const& yDesc,
                                El::AbstractMatrix<TensorDataType>& y,
                                El::SyncInfo<El::Device::GPU> const& si,
+                               El::Matrix<TensorDataType, El::Device::GPU>& workSpace,
                                lrn_mode mode = lrn_mode::CROSS_CHANNEL_DIM1)
 {
 
@@ -60,15 +58,32 @@ void lrn_cross_channel_forward(LRNDescriptor const& normDesc,
   auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
   auto beta = El::To<LibScalingParamT>(beta_in);
-  CHECK_MIOPEN(hipdnnLRNCrossChannelForward(handle_manager.get(),
-                                          normDesc,
-                                          miopen::to_miopen(mode),
-                                          &alpha,
-                                          xDesc,
-                                          x.LockedBuffer(),
-                                          &beta,
-                                          yDesc,
-                                          y.Buffer()));
+  if (workspace.Height() == 0 || workspace.Width() == 0) { // Training use-case
+    CHECK_MIOPEN(miopenLRNForward(handle_manager.get(),
+                                  normDesc,
+                                  //miopen::to_miopen(mode),
+                                  &alpha,
+                                  xDesc,
+                                  x.LockedBuffer(),
+                                  &beta,
+                                  yDesc,
+                                  y.Buffer(),
+                                  true,
+                                  workSpace.Buffer()));
+  }
+  else {                                                  // Inference use-case
+    CHECK_MIOPEN(miopenLRNForward(handle_manager.get(),
+                                  normDesc,
+                                  //miopen::to_miopen(mode),
+                                  &alpha,
+                                  xDesc,
+                                  x.LockedBuffer(),
+                                  &beta,
+                                  yDesc,
+                                  y.Buffer(),
+                                  false,
+                                  nullptr));
+  }
 }
 
 template <typename TensorDataType, typename ScalarParameterType>
@@ -79,14 +94,17 @@ void lrn_cross_channel_forward(LRNDescriptor const& normDesc,
                                ScalarParameterType const& beta_in,
                                TensorDescriptor const& yDesc,
                                El::AbstractMatrix<TensorDataType>& y,
+                               El::Matrix<TensorDataType, El::Device::GPU>& workSpace,
                                lrn_mode mode = lrn_mode::CROSS_CHANNEL_DIM1)
 {
 
-  auto multisync = El::MakeMultiSync(gpu::get_sync_info(y),
+  auto multisync = El::MakeMultiSync(gpu::get_sync_info(workSpace),
+                                     gpu::get_sync_info(y),
                                      gpu::get_sync_info(x));
   lrn_cross_channel_forward(normDesc,
                             alpha_in, xDesc, x,
                             beta_in, yDesc, y,
+                            workSpace,
                             multisync, mode);
 }
 
@@ -102,6 +120,7 @@ void lrn_cross_channel_backward(LRNDescriptor const& normDesc,
                                 ScalarParameterType const& beta_in,
                                 TensorDescriptor const& dxDesc,
                                 El::AbstractMatrix<TensorDataType>& dx,
+                                El::Matrix<TensorDataType, El::Device::GPU>& workSpace,
                                 El::SyncInfo<El::Device::GPU> const& si,
                                 lrn_mode mode = lrn_mode::CROSS_CHANNEL_DIM1)
 {
@@ -110,19 +129,38 @@ void lrn_cross_channel_backward(LRNDescriptor const& normDesc,
   auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
   auto beta = El::To<LibScalingParamT>(beta_in);
-  CHECK_MIOPEN(hipdnnLRNCrossChannelBackward(handle_manager.get(),
-                                           normDesc,
-                                           miopen::to_miopen(mode),
-                                           &alpha,
-                                           yDesc,
-                                           y.LockedBuffer(),
-                                           dyDesc,
-                                           dy.LockedBuffer(),
-                                           xDesc,
-                                           x.LockedBuffer(),
-                                           &beta,
-                                           dxDesc,
-                                           dx.Buffer()));
+  if (workspace.Height() == 0 || workspace.Width() == 0) { // Training use-case
+    CHECK_MIOPEN(miopenLRNBackward(handle_manager.get(),
+                                   normDesc,
+                                   //miopen::to_miopen(mode),
+                                   &alpha,
+                                   yDesc,
+                                   y.LockedBuffer(),
+                                   dyDesc,
+                                   dy.LockedBuffer(),
+                                   xDesc,
+                                   x.LockedBuffer(),
+                                   &beta,
+                                   dxDesc,
+                                   dx.Buffer(),
+                                   workSpace.Buffer()));
+  }
+  else {                                                  // Inference use-case
+    CHECK_MIOPEN(miopenLRNBackward(handle_manager.get(),
+                                   normDesc,
+                                   //miopen::to_miopen(mode),
+                                   &alpha,
+                                   yDesc,
+                                   y.LockedBuffer(),
+                                   dyDesc,
+                                   dy.LockedBuffer(),
+                                   xDesc,
+                                   x.LockedBuffer(),
+                                   &beta,
+                                   dxDesc,
+                                   dx.Buffer(),
+                                   nullptr));
+  }
 }
 
 template <typename TensorDataType, typename ScalarParameterType>
@@ -137,16 +175,19 @@ void lrn_cross_channel_backward(LRNDescriptor const& normDesc,
                                 ScalarParameterType const& beta_in,
                                 TensorDescriptor const& dxDesc,
                                 El::AbstractMatrix<TensorDataType>& dx,
+                                El::Matrix<TensorDataType, El::Device::GPU>& workSpace,
                                 lrn_mode mode = lrn_mode::CROSS_CHANNEL_DIM1)
 {
 
-  auto multisync = El::MakeMultiSync(gpu::get_sync_info(dx),
+  auto multisync = El::MakeMultiSync(gpu::get_sync_info(workSpace),
+                                     gpu::get_sync_info(dx),
                                      gpu::get_sync_info(x),
                                      gpu::get_sync_info(dy),
                                      gpu::get_sync_info(y));
   lrn_cross_channel_backward(normDesc,
                              alpha_in, yDesc, y, dyDesc, dy,
                              xDesc, x, beta_in, dxDesc, dx,
+                             workSpace,
                              multisync, mode);
 }
 

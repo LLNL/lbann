@@ -106,14 +106,14 @@ void dropout_backward(DropoutDescriptor const& dropoutDesc,
   TensorDescriptor noise_shape; // This input is not used
   CHECK_MIOPEN(
     miopenDropoutBackward(handle_manager.get(),
-                         dropoutDesc,
-                         noise_shape,
-                         dyDesc,
-                         dy.LockedBuffer(),
-                         dxDesc,
-                         dx.Buffer(),
-                         workSpace.Buffer(),
-                         workSpace.Height() * sizeof(TensorDataType)));
+                          dropoutDesc,
+                          noise_shape,
+                          dyDesc,
+                          dy.LockedBuffer(),
+                          dxDesc,
+                          dx.Buffer(),
+                          workSpace.Buffer(),
+                          workSpace.Height() * sizeof(TensorDataType)));
 }
 
 template <typename TensorDataType>

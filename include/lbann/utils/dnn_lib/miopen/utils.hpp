@@ -84,8 +84,8 @@ inline StreamManager make_default_handle_manager(
   return StreamManager(get_handle(), si.Stream());
 }
 
-}// namespace internal
-}// namespace miopen
+} // namespace internal
+} // namespace dnn_lib
 #endif // defined LBANN_HAS_MIOPEN
-}// namespace lbann
+} // namespace lbann
 #endif // LBANN_UTILS_DNN_LIB_MIOPEN_UTILS_HPP_
