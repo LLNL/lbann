@@ -48,17 +48,17 @@ namespace {
 
 /** Wrapper for cuDNN handle. */
 struct handle_wrapper {
-  hipdnnHandle_t handle;
+  miopenHandle_t handle;
   handle_wrapper() : handle(nullptr) {
     CHECK_MIOPEN(hipSetDevice(hydrogen::gpu::DefaultDevice()));
-    if (handle == nullptr) { CHECK_MIOPEN(hipdnnCreate(&handle)); }
+    if (handle == nullptr) { CHECK_MIOPEN(miopenCreate(&handle)); }
     if (handle == nullptr) { LBANN_ERROR("failed to create MIOpen handle"); }
-    CHECK_MIOPEN(hipdnnSetStream(handle, hydrogen::gpu::GetDefaultStream()));
+    CHECK_MIOPEN(miopenSetStream(handle, hydrogen::gpu::GetDefaultStream()));
   }
   handle_wrapper(const handle_wrapper&) = delete;
   handle_wrapper& operator=(const handle_wrapper&) = delete;
   ~handle_wrapper() {
-    if (handle != nullptr) { hipdnnDestroy(handle); }
+    if (handle != nullptr) { miopenDestroy(handle); }
   }
 };
 
@@ -75,10 +75,10 @@ void destroy() {
   handle_instance.reset();
 }
 
-hipdnnHandle_t& get_handle() {
+miopenHandle_t& get_handle() {
   if (!handle_instance) { initialize(); }
   CHECK_MIOPEN(hipSetDevice(hydrogen::gpu::DefaultDevice()));
-  CHECK_MIOPEN(hipdnnSetStream(handle_instance->handle,
+  CHECK_MIOPEN(miopenSetStream(handle_instance->handle,
                              hydrogen::gpu::GetDefaultStream()));
   return handle_instance->handle;
 }
@@ -88,16 +88,16 @@ hipdnnHandle_t& get_handle() {
 ////////////////////////////////////////////////////////////
 
 template <typename TensorDataType>
-hipdnnDataType_t get_data_type() {
+miopenDataType_t get_data_type() {
   LBANN_ERROR("invalid data type for MIOpen");
   return HIPDNN_DATA_FLOAT;
 }
 
 #ifdef LBANN_HAS_GPU_FP16
-template <> hipdnnDataType_t get_data_type<fp16>() { return HIPDNN_DATA_HALF; }
+template <> miopenDataType_t get_data_type<fp16>() { return miopenHalf; }
 #endif // LBANN_HAS_GPU_FP16
-template <> hipdnnDataType_t get_data_type<float>() { return HIPDNN_DATA_FLOAT; }
-template <> hipdnnDataType_t get_data_type<double>() { return HIPDNN_DATA_DOUBLE; }
+template <> miopenDataType_t get_data_type<float>() { return miopenFloat; }
+template <> miopenDataType_t get_data_type<double>() { return miopenDouble; }
 
 ////////////////////////////////////////////////////////////
 // Wrapper classes for cuDNN types
@@ -107,23 +107,23 @@ template <> hipdnnDataType_t get_data_type<double>() { return HIPDNN_DATA_DOUBLE
 // TensorDescriptor
 // -----------------------------
 
-TensorDescriptor::TensorDescriptor(hipdnnTensorDescriptor_t desc)
+TensorDescriptor::TensorDescriptor(miopenTensorDescriptor_t desc)
   : desc_{desc}
 {}
 
 TensorDescriptor::~TensorDescriptor() {
   if (desc_) {
     // Don't check status to avoid exceptions
-    hipdnnDestroyTensorDescriptor(desc_);
+    miopenDestroyTensorDescriptor(desc_);
   }
 }
 
 TensorDescriptor::TensorDescriptor(const TensorDescriptor& other) {
   if (other.desc_) {
-    hipdnnDataType_t data_type;
+    miopenDataType_t data_type;
     int num_dims;
-    CHECK_CUDNN(
-      hipdnnGetTensorNdDescriptor(
+    CHECK_MIOPEN(
+      miopenGetTensorNdDescriptor(
         other.desc_,
         0,          // nbDimsRequested
         &data_type,
@@ -131,8 +131,8 @@ TensorDescriptor::TensorDescriptor(const TensorDescriptor& other) {
         nullptr,    // dimA
         nullptr));  // strideA
     std::vector<int> dims(num_dims), strides(num_dims);
-    CHECK_CUDNN(
-      hipdnnGetTensorNdDescriptor(
+    CHECK_MIOPEN(
+      miopenGetTensorNdDescriptor(
         other.desc_,
         num_dims,
         &data_type,
@@ -157,35 +157,35 @@ void swap(TensorDescriptor& first, TensorDescriptor& second) {
   std::swap(first.desc_, second.desc_);
 }
 
-void TensorDescriptor::reset(hipdnnTensorDescriptor_t desc) {
+void TensorDescriptor::reset(miopenTensorDescriptor_t desc) {
   if (desc_) {
-    CHECK_CUDNN(hipdnnDestroyTensorDescriptor(desc_));
+    CHECK_MIOPEN(miopenDestroyTensorDescriptor(desc_));
   }
   desc_ = desc;
 }
 
-hipdnnTensorDescriptor_t TensorDescriptor::release() noexcept {
+miopenTensorDescriptor_t TensorDescriptor::release() noexcept {
   auto old_desc = desc_;
   desc_ = nullptr;
   return old_desc;
 }
 
-hipdnnTensorDescriptor_t TensorDescriptor::get() const noexcept {
+miopenTensorDescriptor_t TensorDescriptor::get() const noexcept {
   return desc_;
 }
 
-TensorDescriptor::operator hipdnnTensorDescriptor_t() const noexcept {
+TensorDescriptor::operator miopenTensorDescriptor_t() const noexcept {
   return get();
 }
 
 void TensorDescriptor::create() {
   if (!desc_) {
-    CHECK_CUDNN(hipdnnCreateTensorDescriptor(&desc_));
+    CHECK_MIOPEN(miopenCreateTensorDescriptor(&desc_));
   }
 }
 
 void TensorDescriptor::set(
-  hipdnnDataType_t data_type,
+  miopenDataType_t data_type,
   std::vector<int> dims_in,
   std::vector<int> strides_in) {
 
@@ -218,8 +218,8 @@ void TensorDescriptor::set(
 
   // Set cuDNN object
   create();
-  CHECK_CUDNN(
-    hipdnnSetTensorNdDescriptor(
+  CHECK_MIOPEN(
+    miopenSetTensorNdDescriptor(
       desc_,
       data_type,
       dims.size(),
@@ -232,24 +232,24 @@ void TensorDescriptor::set(
 // FilterDescriptor
 // -----------------------------
 
-FilterDescriptor::FilterDescriptor(hipdnnFilterDescriptor_t desc)
+FilterDescriptor::FilterDescriptor(miopenFilterDescriptor_t desc)
   : desc_{desc}
 {}
 
 FilterDescriptor::~FilterDescriptor() {
   if (desc_) {
     // Don't check status to avoid exceptions
-    hipdnnDestroyFilterDescriptor(desc_);
+    miopenDestroyFilterDescriptor(desc_);
   }
 }
 
 FilterDescriptor::FilterDescriptor(const FilterDescriptor& other) {
   if (other.desc_) {
     int num_dims;
-    hipdnnDataType_t data_type;
-    hipdnnTensorFormat_t format;
-    CHECK_CUDNN(
-      hipdnnGetFilterNdDescriptor(
+    miopenDataType_t data_type;
+    miopenTensorFormat_t format;
+    CHECK_MIOPEN(
+      miopenGetFilterNdDescriptor(
         other.desc_,
         0,          // nbDimsRequested
         &data_type,
@@ -257,8 +257,8 @@ FilterDescriptor::FilterDescriptor(const FilterDescriptor& other) {
         &num_dims,
         nullptr));  // filterDimA
     std::vector<int> dims(num_dims);
-    CHECK_CUDNN(
-      hipdnnGetFilterNdDescriptor(
+    CHECK_MIOPEN(
+      miopenGetFilterNdDescriptor(
         other.desc_,
         num_dims,
         &data_type,
@@ -283,40 +283,40 @@ void swap(FilterDescriptor& first, FilterDescriptor& second) {
   std::swap(first.desc_, second.desc_);
 }
 
-void FilterDescriptor::reset(hipdnnFilterDescriptor_t desc) {
+void FilterDescriptor::reset(miopenFilterDescriptor_t desc) {
   if (desc_) {
-    CHECK_CUDNN(hipdnnDestroyFilterDescriptor(desc_));
+    CHECK_MIOPEN(miopenDestroyFilterDescriptor(desc_));
   }
   desc_ = desc;
 }
 
-hipdnnFilterDescriptor_t FilterDescriptor::release() noexcept {
+miopenFilterDescriptor_t FilterDescriptor::release() noexcept {
   auto old_desc = desc_;
   desc_ = nullptr;
   return old_desc;
 }
 
-hipdnnFilterDescriptor_t FilterDescriptor::get() const noexcept {
+miopenFilterDescriptor_t FilterDescriptor::get() const noexcept {
   return desc_;
 }
 
-FilterDescriptor::operator hipdnnFilterDescriptor_t() const noexcept {
+FilterDescriptor::operator miopenFilterDescriptor_t() const noexcept {
   return get();
 }
 
 void FilterDescriptor::create() {
   if (!desc_) {
-    CHECK_CUDNN(hipdnnCreateFilterDescriptor(&desc_));
+    CHECK_MIOPEN(miopenCreateFilterDescriptor(&desc_));
   }
 }
 
 void FilterDescriptor::set(
-  hipdnnDataType_t data_type,
-  hipdnnTensorFormat_t format,
+  miopenDataType_t data_type,
+  miopenTensorFormat_t format,
   const std::vector<int>& dims) {
   create();
-  CHECK_CUDNN(
-    hipdnnSetFilterNdDescriptor(
+  CHECK_MIOPEN(
+    miopenSetFilterNdDescriptor(
       desc_,
       data_type,
       format,
@@ -328,14 +328,14 @@ void FilterDescriptor::set(
 // DropoutDescriptor
 // -----------------------------
 
-DropoutDescriptor::DropoutDescriptor(hipdnnDropoutDescriptor_t desc)
+DropoutDescriptor::DropoutDescriptor(miopenDropoutDescriptor_t desc)
   : desc_{desc}
 {}
 
 DropoutDescriptor::~DropoutDescriptor() {
   if (desc_) {
     // Don't check status to avoid exceptions
-    hipdnnDestroyDropoutDescriptor(desc_);
+    miopenDestroyDropoutDescriptor(desc_);
   }
 }
 
@@ -345,8 +345,8 @@ DropoutDescriptor::DropoutDescriptor(const DropoutDescriptor& other) {
     void* states;
     size_t states_size;
     unsigned long long seed;
-    CHECK_CUDNN(hipdnnDropoutGetStatesSize(get_handle(), &states_size));
-    CHECK_CUDNN(
+    CHECK_MIOPEN(miopenDropoutGetStatesSize(get_handle(), &states_size));
+    CHECK_MIOPEN(
       cudnnGetDropoutDescriptor(
         other.desc_,
         get_handle(),
@@ -371,30 +371,30 @@ void swap(DropoutDescriptor& first, DropoutDescriptor& second) {
   std::swap(first.desc_, second.desc_);
 }
 
-void DropoutDescriptor::reset(hipdnnDropoutDescriptor_t desc) {
+void DropoutDescriptor::reset(miopenDropoutDescriptor_t desc) {
   if (desc_) {
-    CHECK_CUDNN(hipdnnDestroyDropoutDescriptor(desc_));
+    CHECK_MIOPEN(miopenDestroyDropoutDescriptor(desc_));
   }
   desc_ = desc;
 }
 
-hipdnnDropoutDescriptor_t DropoutDescriptor::release() noexcept {
+miopenDropoutDescriptor_t DropoutDescriptor::release() noexcept {
   auto old_desc = desc_;
   desc_ = nullptr;
   return old_desc;
 }
 
-hipdnnDropoutDescriptor_t DropoutDescriptor::get() const noexcept {
+miopenDropoutDescriptor_t DropoutDescriptor::get() const noexcept {
   return desc_;
 }
 
-DropoutDescriptor::operator hipdnnDropoutDescriptor_t() const noexcept {
+DropoutDescriptor::operator miopenDropoutDescriptor_t() const noexcept {
   return get();
 }
 
 void DropoutDescriptor::create() {
   if (!desc_) {
-    CHECK_CUDNN(hipdnnCreateDropoutDescriptor(&desc_));
+    CHECK_MIOPEN(miopenCreateDropoutDescriptor(&desc_));
   }
 }
 
@@ -404,8 +404,8 @@ void DropoutDescriptor::set(
   size_t states_size,
   unsigned long long seed) {
   create();
-  CHECK_CUDNN(
-    hipdnnSetDropoutDescriptor(
+  CHECK_MIOPEN(
+    miopenSetDropoutDescriptor(
       desc_,
       get_handle(),
       dropout,
@@ -418,14 +418,14 @@ void DropoutDescriptor::set(
 // RNNDescriptor
 // -----------------------------
 
-RNNDescriptor::RNNDescriptor(hipdnnRNNDescriptor_t desc)
+RNNDescriptor::RNNDescriptor(miopenRNNDescriptor_t desc)
   : desc_{desc}
 {}
 
 RNNDescriptor::~RNNDescriptor() {
   if (desc_) {
     // Don't check status to avoid exceptions
-    hipdnnDestroyRNNDescriptor(desc_);
+    miopenDestroyRNNDescriptor(desc_);
   }
 }
 
@@ -443,55 +443,55 @@ void swap(RNNDescriptor& first, RNNDescriptor& second) {
   std::swap(first.desc_, second.desc_);
 }
 
-void RNNDescriptor::reset(hipdnnRNNDescriptor_t desc) {
+void RNNDescriptor::reset(miopenRNNDescriptor_t desc) {
   if (desc_) {
-    CHECK_CUDNN(hipdnnDestroyRNNDescriptor(desc_));
+    CHECK_MIOPEN(miopenDestroyRNNDescriptor(desc_));
   }
   desc_ = desc;
 }
 
-hipdnnRNNDescriptor_t RNNDescriptor::release() noexcept {
+miopenRNNDescriptor_t RNNDescriptor::release() noexcept {
   auto old_desc = desc_;
   desc_ = nullptr;
   return old_desc;
 }
 
-hipdnnRNNDescriptor_t RNNDescriptor::get() const noexcept {
+miopenRNNDescriptor_t RNNDescriptor::get() const noexcept {
   return desc_;
 }
 
-RNNDescriptor::operator hipdnnRNNDescriptor_t() const noexcept {
+RNNDescriptor::operator miopenRNNDescriptor_t() const noexcept {
   return get();
 }
 
 void RNNDescriptor::create() {
   if (!desc_) {
-    CHECK_CUDNN(hipdnnCreateRNNDescriptor(&desc_));
+    CHECK_MIOPEN(miopenCreateRNNDescriptor(&desc_));
   }
 }
 
 void RNNDescriptor::set(
-  hipdnnRNNAlgo_t algorithm,
-  hipdnnRNNMode_t cell_mode,
-  hipdnnRNNBiasMode_t bias_mode,
-  hipdnnDirectionMode_t direction_mode,
-  hipdnnRNNInputMode_t input_mode,
-  hipdnnDataType_t data_type,
-  hipdnnDataType_t math_precision,
-  hipdnnMathType_t math_type,
+  miopenRNNAlgo_t algorithm,
+  miopenRNNMode_t cell_mode,
+  miopenRNNBiasMode_t bias_mode,
+  miopenDirectionMode_t direction_mode,
+  miopenRNNInputMode_t input_mode,
+  miopenDataType_t data_type,
+  miopenDataType_t math_precision,
+  miopenMathType_t math_type,
   size_t input_size,
   size_t hidden_size,
   size_t proj_size,
   size_t num_layers,
-  hipdnnDropoutDescriptor_t dropout_desc,
+  miopenDropoutDescriptor_t dropout_desc,
   uint32_t aux_flags) {
   create();
 #if HIPDNN_VERSION < 8000
   LBANN_ERROR(
     "cuDNN 8 or newer is required for RNN support ",
-    "(detected ",CUDNN_MAJOR,".",CUDNN_MINOR,".",CUDNN_PATCHLEVEL,")");
+    "(detected ",MIOPEN_MAJOR,".",MIOPEN_MINOR,".",MIOPEN_PATCHLEVEL,")");
 #else // HIPDNN_VERSION >= 8000
-  CHECK_CUDNN(
+  CHECK_MIOPEN(
     cudnnSetRNNDescriptor_v8(
       desc_,
       algorithm,
@@ -542,7 +542,7 @@ void swap(RNNDataDescriptor& first, RNNDataDescriptor& second) {
 
 void RNNDataDescriptor::reset(cudnnRNNDataDescriptor_t desc) {
   if (desc_) {
-    CHECK_CUDNN(cudnnDestroyRNNDataDescriptor(desc_));
+    CHECK_MIOPEN(cudnnDestroyRNNDataDescriptor(desc_));
   }
   desc_ = desc;
 }
@@ -563,12 +563,12 @@ RNNDataDescriptor::operator cudnnRNNDataDescriptor_t() const noexcept {
 
 void RNNDataDescriptor::create() {
   if (!desc_) {
-    CHECK_CUDNN(cudnnCreateRNNDataDescriptor(&desc_));
+    CHECK_MIOPEN(cudnnCreateRNNDataDescriptor(&desc_));
   }
 }
 
 void RNNDataDescriptor::set(
-  hipdnnDataType_t data_type,
+  miopenDataType_t data_type,
   cudnnRNNDataLayout_t layout,
   size_t max_seq_length,
   size_t batch_size,
@@ -576,7 +576,7 @@ void RNNDataDescriptor::set(
   const int seq_length_array[],
   void* padding_fill) {
   create();
-  CHECK_CUDNN(
+  CHECK_MIOPEN(
     cudnnSetRNNDataDescriptor(
       desc_,
       data_type,
@@ -617,14 +617,14 @@ ConvolutionDescriptor::ConvolutionDescriptor(const ConvolutionDescriptor& rhs)
     return;
   }
 
-  hipdnnMathType_t math_type;
-  hipdnnConvolutionMode_t mode;
-  hipdnnDataType_t data_type;
+  miopenMathType_t math_type;
+  miopenConvolutionMode_t mode;
+  miopenDataType_t data_type;
   int num_dims, num_groups;
-  CHECK_CUDNN(cudnnGetConvolutionMathType(rhs.desc_, &math_type));
-  CHECK_CUDNN(cudnnGetConvolutionGroupCount(rhs.desc_, &num_groups));
+  CHECK_MIOPEN(cudnnGetConvolutionMathType(rhs.desc_, &math_type));
+  CHECK_MIOPEN(cudnnGetConvolutionGroupCount(rhs.desc_, &num_groups));
   // Get the mode, data type, and dims
-  CHECK_CUDNN(
+  CHECK_MIOPEN(
     cudnnGetConvolutionNdDescriptor(
       rhs.desc_, 0, &num_dims,
       nullptr, nullptr, nullptr,
@@ -632,7 +632,7 @@ ConvolutionDescriptor::ConvolutionDescriptor(const ConvolutionDescriptor& rhs)
 
   // Get the padding, strides, and dilations
   std::vector<int> pads(num_dims), strides(num_dims), dilations(num_dims);
-  CHECK_CUDNN(
+  CHECK_MIOPEN(
     cudnnGetConvolutionNdDescriptor(
       rhs.desc_, num_dims, &num_dims,
       pads.data(), strides.data(), dilations.data(),
@@ -684,7 +684,7 @@ void ConvolutionDescriptor::swap(ConvolutionDescriptor& other)
 void ConvolutionDescriptor::reset(DescriptorHandle_t desc)
 {
   if (desc_)
-    CHECK_CUDNN(hipdnnDestroyConvolutionDescriptor(desc_));
+    CHECK_MIOPEN(miopenDestroyConvolutionDescriptor(desc_));
 
   desc_ = desc;
 }
@@ -692,15 +692,15 @@ void ConvolutionDescriptor::reset(DescriptorHandle_t desc)
 void ConvolutionDescriptor::create()
 {
   if (!desc_)
-    CHECK_CUDNN(hipdnnCreateConvolutionDescriptor(&desc_));
+    CHECK_MIOPEN(miopenCreateConvolutionDescriptor(&desc_));
 }
 
 void ConvolutionDescriptor::set(
   std::vector<int> const& pad,
   std::vector<int> const& stride,
   std::vector<int> const& dilation,
-  hipdnnDataType_t data_type,
-  hipdnnConvolutionMode_t mode)
+  miopenDataType_t data_type,
+  miopenConvolutionMode_t mode)
 {
   LBANN_ASSERT(pad.size() == stride.size());
   LBANN_ASSERT(pad.size() == dilation.size());
@@ -712,26 +712,26 @@ void ConvolutionDescriptor::set(
     int const pad[],
     int const stride[],
     int const dilation[],
-    hipdnnDataType_t data_type,
-    hipdnnConvolutionMode_t mode)
+    miopenDataType_t data_type,
+    miopenConvolutionMode_t mode)
 {
   this->create();
-  CHECK_CUDNN(
-    hipdnnSetConvolutionNdDescriptor(
+  CHECK_MIOPEN(
+    miopenSetConvolutionNdDescriptor(
       desc_, array_dim, pad, stride, dilation,
       mode, data_type));
 }
 
-void ConvolutionDescriptor::set_math_mode(hipdnnMathType_t math_type)
+void ConvolutionDescriptor::set_math_mode(miopenMathType_t math_type)
 {
-  CHECK_CUDNN(
-    hipdnnSetConvolutionMathType(desc_, math_type));
+  CHECK_MIOPEN(
+    miopenSetConvolutionMathType(desc_, math_type));
 }
 
 void ConvolutionDescriptor::set_group_count(int num_groups)
 {
-  CHECK_CUDNN(
-    hipdnnSetConvolutionGroupCount(desc_, num_groups));
+  CHECK_MIOPEN(
+    miopenSetConvolutionGroupCount(desc_, num_groups));
 }
 
 void swap(ConvolutionDescriptor& lhs, ConvolutionDescriptor& rhs)
@@ -768,11 +768,11 @@ ActivationDescriptor::ActivationDescriptor(const ActivationDescriptor& rhs)
     return;
   }
 
-  hipdnnActivationMode_t mode;
-  hipdnnNanPropagation_t nan_prop;
+  miopenActivationMode_t mode;
+  miopenNanPropagation_t nan_prop;
   double coeff;
-  CHECK_CUDNN(
-    hipdnnGetActivationDescriptor(rhs.desc_, &mode, &nan_prop, &coeff));
+  CHECK_MIOPEN(
+    miopenGetActivationDescriptor(rhs.desc_, &mode, &nan_prop, &coeff));
   this->set(mode, nan_prop, coeff);
 }
 
@@ -813,24 +813,24 @@ void ActivationDescriptor::swap(ActivationDescriptor& other)
 void ActivationDescriptor::reset(DescriptorHandle_t desc)
 {
   if (desc_)
-    CHECK_CUDNN(hipdnnDestroyActivationDescriptor(desc_));
+    CHECK_MIOPEN(miopenDestroyActivationDescriptor(desc_));
   desc_ = desc;
 }
 
 void ActivationDescriptor::create()
 {
   if (!desc_)
-    CHECK_CUDNN(hipdnnCreateActivationDescriptor(&desc_));
+    CHECK_MIOPEN(miopenCreateActivationDescriptor(&desc_));
 }
 
 void ActivationDescriptor::set(
-    hipdnnActivationMode_t mode,
-    hipdnnNanPropagation_t nan_prop,
+    miopenActivationMode_t mode,
+    miopenNanPropagation_t nan_prop,
     double coeff)
 {
   this->create();
-  CHECK_CUDNN(
-    hipdnnSetActivationDescriptor(desc_, mode, nan_prop, coeff));
+  CHECK_MIOPEN(
+    miopenSetActivationDescriptor(desc_, mode, nan_prop, coeff));
 }
 
 /** @brief Swap two activation descriptors. */
@@ -867,15 +867,15 @@ PoolingDescriptor::PoolingDescriptor(const PoolingDescriptor& rhs)
     return;
   }
 
-  hipdnnPoolingMode_t mode;
-  hipdnnNanPropagation_t nan_prop;
+  miopenPoolingMode_t mode;
+  miopenNanPropagation_t nan_prop;
   int num_dims;
-  CHECK_CUDNN(
+  CHECK_MIOPEN(
     cudnnGetPoolingNdDescriptor(
       rhs.desc_, 0, &mode, &nan_prop, &num_dims,
       nullptr, nullptr, nullptr));
   std::vector<int> window_dims(num_dims), padding(num_dims), strides(num_dims);
-  CHECK_CUDNN(
+  CHECK_MIOPEN(
     cudnnGetPoolingNdDescriptor(
       rhs.desc_, num_dims, &mode, &nan_prop, &num_dims,
       window_dims.data(), padding.data(), strides.data()));
@@ -919,20 +919,20 @@ void PoolingDescriptor::swap(PoolingDescriptor& other)
 void PoolingDescriptor::reset(DescriptorHandle_t desc)
 {
   if (desc_)
-    CHECK_CUDNN(hipdnnDestroyPoolingDescriptor(desc_));
+    CHECK_MIOPEN(miopenDestroyPoolingDescriptor(desc_));
   desc_ = desc;
 }
 
 void PoolingDescriptor::create()
 {
   if (!desc_)
-    CHECK_CUDNN(
-      hipdnnCreatePoolingDescriptor(&desc_));
+    CHECK_MIOPEN(
+      miopenCreatePoolingDescriptor(&desc_));
 }
 
 void PoolingDescriptor::set(
-  hipdnnPoolingMode_t mode,
-  hipdnnNanPropagation_t nan_prop,
+  miopenPoolingMode_t mode,
+  miopenNanPropagation_t nan_prop,
   std::vector<int> const& window_dims,
   std::vector<int> const& padding,
   std::vector<int> const& stride)
@@ -944,16 +944,16 @@ void PoolingDescriptor::set(
 }
 
 void PoolingDescriptor::set(
-  hipdnnPoolingMode_t mode,
-  hipdnnNanPropagation_t nan_prop,
+  miopenPoolingMode_t mode,
+  miopenNanPropagation_t nan_prop,
   int num_dims,
   int const window_dims[],
   int const padding[],
   int const stride[])
 {
   this->create();
-  CHECK_CUDNN(
-    hipdnnSetPoolingNdDescriptor(
+  CHECK_MIOPEN(
+    miopenSetPoolingNdDescriptor(
       desc_, mode, nan_prop, num_dims, window_dims, padding, stride));
 }
 
@@ -992,7 +992,7 @@ LRNDescriptor::LRNDescriptor(const LRNDescriptor& rhs)
 
   unsigned n;
   double alpha, beta, k;
-  CHECK_CUDNN(hipdnnGetLRNDescriptor(desc_, &n, &alpha, &beta, &k));
+  CHECK_MIOPEN(miopenGetLRNDescriptor(desc_, &n, &alpha, &beta, &k));
   this->set(n, alpha, beta, k);
 }
 
@@ -1033,25 +1033,25 @@ void LRNDescriptor::swap(LRNDescriptor& other)
 void LRNDescriptor::reset(DescriptorHandle_t desc)
 {
   if (desc_)
-    CHECK_CUDNN(hipdnnDestroyLRNDescriptor(desc_));
+    CHECK_MIOPEN(miopenDestroyLRNDescriptor(desc_));
   desc_ = desc;
 }
 
 void LRNDescriptor::create()
 {
   if (!desc_)
-    CHECK_CUDNN(hipdnnCreateLRNDescriptor(&desc_));
+    CHECK_MIOPEN(miopenCreateLRNDescriptor(&desc_));
 }
 
 void LRNDescriptor::set(unsigned n, double alpha, double beta, double k)
 {
-  LBANN_ASSERT(n >= CUDNN_LRN_MIN_N);
-  LBANN_ASSERT(n <= CUDNN_LRN_MAX_N);
-  LBANN_ASSERT(k >= CUDNN_LRN_MIN_K);
-  LBANN_ASSERT(beta >= CUDNN_LRN_MIN_BETA);
+  LBANN_ASSERT(n >= MIOPEN_LRN_MIN_N);
+  LBANN_ASSERT(n <= MIOPEN_LRN_MAX_N);
+  LBANN_ASSERT(k >= MIOPEN_LRN_MIN_K);
+  LBANN_ASSERT(beta >= MIOPEN_LRN_MIN_BETA);
 
   this->create();
-  CHECK_CUDNN(hipdnnSetLRNDescriptor(desc_, n, alpha, beta, k));
+  CHECK_MIOPEN(miopenSetLRNDescriptor(desc_, n, alpha, beta, k));
 }
 
 /** @brief Swap two LRN descriptors. */
@@ -1307,11 +1307,11 @@ TensorDescriptor& entrywise_layer_tensor_manager<TensorDataType>::get_error_sign
 namespace {
 
 // Non-deterministic algorithms.
-std::vector<hipdnnConvolutionFwdAlgo_t> nondet_fwd_algos = {};
-std::vector<hipdnnConvolutionBwdDataAlgo_t> nondet_bwd_data_algos = {
+std::vector<miopenConvolutionFwdAlgo_t> nondet_fwd_algos = {};
+std::vector<miopenConvolutionBwdDataAlgo_t> nondet_bwd_data_algos = {
   HIPDNN_CONVOLUTION_BWD_DATA_ALGO_0
 };
-std::vector<hipdnnConvolutionBwdFilterAlgo_t> nondet_bwd_filter_algos = {
+std::vector<miopenConvolutionBwdFilterAlgo_t> nondet_bwd_filter_algos = {
   HIPDNN_CONVOLUTION_BWD_FILTER_ALGO_0,
   HIPDNN_CONVOLUTION_BWD_FILTER_ALGO_3
 };
@@ -1390,7 +1390,7 @@ AlgoType find_best_algorithm(
   return best_algo;
 }
 
-hipdnnConvolutionFwdAlgo_t get_fwd_algo_heuristic(
+miopenConvolutionFwdAlgo_t get_fwd_algo_heuristic(
   bool deterministic,
   const TensorDescriptor& input_desc,
   const FilterDescriptor& kernel_desc,
@@ -1398,18 +1398,18 @@ hipdnnConvolutionFwdAlgo_t get_fwd_algo_heuristic(
   const TensorDescriptor& output_desc,
   size_t ws_size) {
   int num_algos;
-  CHECK_CUDNN(cudnnGetConvolutionForwardAlgorithmMaxCount(
+  CHECK_MIOPEN(cudnnGetConvolutionForwardAlgorithmMaxCount(
                 get_handle(), &num_algos));
-  std::vector<hipdnnConvolutionFwdAlgoPerf_t> perf_results(num_algos);
+  std::vector<miopenConvolutionFwdAlgoPerf_t> perf_results(num_algos);
   int num_tested_algos;
-  CHECK_CUDNN(cudnnGetConvolutionForwardAlgorithm_v7(
+  CHECK_MIOPEN(cudnnGetConvolutionForwardAlgorithm_v7(
                 get_handle(), input_desc, kernel_desc, conv_desc, output_desc,
                 num_algos, &num_tested_algos, perf_results.data()));
   return find_best_heuristic_algorithm(perf_results, nondet_fwd_algos,
                                        deterministic, ws_size);
 }
 
-hipdnnConvolutionBwdDataAlgo_t get_bwd_data_algo_heuristic(
+miopenConvolutionBwdDataAlgo_t get_bwd_data_algo_heuristic(
   bool deterministic,
   const FilterDescriptor& kernel_desc,
   const TensorDescriptor& prev_error_signal_desc,
@@ -1417,11 +1417,11 @@ hipdnnConvolutionBwdDataAlgo_t get_bwd_data_algo_heuristic(
   const TensorDescriptor& error_signal_desc,
   size_t ws_size) {
   int num_algos;
-  CHECK_CUDNN(cudnnGetConvolutionBackwardDataAlgorithmMaxCount(
+  CHECK_MIOPEN(cudnnGetConvolutionBackwardDataAlgorithmMaxCount(
                 get_handle(), &num_algos));
-  std::vector<hipdnnConvolutionBwdDataAlgoPerf_t> perf_results(num_algos);
+  std::vector<miopenConvolutionBwdDataAlgoPerf_t> perf_results(num_algos);
   int num_tested_algos;
-  CHECK_CUDNN(cudnnGetConvolutionBackwardDataAlgorithm_v7(
+  CHECK_MIOPEN(cudnnGetConvolutionBackwardDataAlgorithm_v7(
                 get_handle(), kernel_desc, prev_error_signal_desc, conv_desc,
                 error_signal_desc, num_algos, &num_tested_algos,
                 perf_results.data()));
@@ -1429,7 +1429,7 @@ hipdnnConvolutionBwdDataAlgo_t get_bwd_data_algo_heuristic(
                                        deterministic, ws_size);
 }
 
-hipdnnConvolutionBwdFilterAlgo_t get_bwd_filter_algo_heuristic(
+miopenConvolutionBwdFilterAlgo_t get_bwd_filter_algo_heuristic(
   bool deterministic,
   const TensorDescriptor& input_desc,
   const TensorDescriptor& prev_error_signal_desc,
@@ -1437,11 +1437,11 @@ hipdnnConvolutionBwdFilterAlgo_t get_bwd_filter_algo_heuristic(
   const FilterDescriptor& kernel_gradient_desc,
   size_t ws_size) {
   int num_algos;
-  CHECK_CUDNN(cudnnGetConvolutionBackwardFilterAlgorithmMaxCount(
+  CHECK_MIOPEN(cudnnGetConvolutionBackwardFilterAlgorithmMaxCount(
                 get_handle(), &num_algos));
-  std::vector<hipdnnConvolutionBwdFilterAlgoPerf_t> perf_results(num_algos);
+  std::vector<miopenConvolutionBwdFilterAlgoPerf_t> perf_results(num_algos);
   int num_tested_algos;
-  CHECK_CUDNN(cudnnGetConvolutionBackwardFilterAlgorithm_v7(
+  CHECK_MIOPEN(cudnnGetConvolutionBackwardFilterAlgorithm_v7(
                 get_handle(), input_desc, prev_error_signal_desc, conv_desc,
                 kernel_gradient_desc, num_algos, &num_tested_algos,
                 perf_results.data()));
@@ -1449,7 +1449,7 @@ hipdnnConvolutionBwdFilterAlgo_t get_bwd_filter_algo_heuristic(
                                        deterministic, ws_size);
 }
 
-hipdnnConvolutionFwdAlgo_t get_fwd_algo_autotune(
+miopenConvolutionFwdAlgo_t get_fwd_algo_autotune(
   bool deterministic,
   const TensorDescriptor& input_desc,
   const void* input,
@@ -1463,13 +1463,13 @@ hipdnnConvolutionFwdAlgo_t get_fwd_algo_autotune(
   constexpr int num_trials = 3;
   constexpr int num_skip = 1;
   int num_algos;
-  CHECK_CUDNN(cudnnGetConvolutionForwardAlgorithmMaxCount(
+  CHECK_MIOPEN(cudnnGetConvolutionForwardAlgorithmMaxCount(
                 get_handle(), &num_algos));
-  std::vector<hipdnnConvolutionFwdAlgoPerf_t> perf_results_all;
-  std::vector<hipdnnConvolutionFwdAlgoPerf_t> perf_results(num_algos);
+  std::vector<miopenConvolutionFwdAlgoPerf_t> perf_results_all;
+  std::vector<miopenConvolutionFwdAlgoPerf_t> perf_results(num_algos);
   for (int trial = 0; trial < num_trials + num_skip; ++trial) {
     int num_tested_algos;
-    CHECK_CUDNN(hipdnnFindConvolutionForwardAlgorithmEx(
+    CHECK_MIOPEN(miopenFindConvolutionForwardAlgorithmEx(
                   get_handle(), input_desc, input, kernel_desc, kernel,
                   conv_desc, output_desc, output, num_algos, &num_tested_algos,
                   perf_results.data(), ws, ws_size));
@@ -1483,7 +1483,7 @@ hipdnnConvolutionFwdAlgo_t get_fwd_algo_autotune(
                              deterministic, ws_size);
 }
 
-hipdnnConvolutionBwdDataAlgo_t get_bwd_data_algo_autotune(
+miopenConvolutionBwdDataAlgo_t get_bwd_data_algo_autotune(
   bool deterministic,
   const FilterDescriptor& kernel_desc,
   const void* kernel,
@@ -1497,13 +1497,13 @@ hipdnnConvolutionBwdDataAlgo_t get_bwd_data_algo_autotune(
   constexpr int num_trials = 3;
   constexpr int num_skip = 1;
   int num_algos;
-  CHECK_CUDNN(cudnnGetConvolutionBackwardDataAlgorithmMaxCount(
+  CHECK_MIOPEN(cudnnGetConvolutionBackwardDataAlgorithmMaxCount(
                 get_handle(), &num_algos));
-  std::vector<hipdnnConvolutionBwdDataAlgoPerf_t> perf_results_all;
-  std::vector<hipdnnConvolutionBwdDataAlgoPerf_t> perf_results(num_algos);
+  std::vector<miopenConvolutionBwdDataAlgoPerf_t> perf_results_all;
+  std::vector<miopenConvolutionBwdDataAlgoPerf_t> perf_results(num_algos);
   for (int trial = 0; trial < num_trials + num_skip; ++trial) {
     int num_tested_algos;
-    CHECK_CUDNN(hipdnnFindConvolutionBackwardDataAlgorithmEx(
+    CHECK_MIOPEN(miopenFindConvolutionBackwardDataAlgorithmEx(
                   get_handle(), kernel_desc, kernel,
                   prev_error_signal_desc, prev_error_signal,
                   conv_desc, error_signal_desc, error_signal, num_algos,
@@ -1518,7 +1518,7 @@ hipdnnConvolutionBwdDataAlgo_t get_bwd_data_algo_autotune(
                              deterministic, ws_size);
 }
 
-hipdnnConvolutionBwdFilterAlgo_t get_bwd_filter_algo_autotune(
+miopenConvolutionBwdFilterAlgo_t get_bwd_filter_algo_autotune(
   bool deterministic,
   const TensorDescriptor& input_desc,
   const void* input,
@@ -1532,13 +1532,13 @@ hipdnnConvolutionBwdFilterAlgo_t get_bwd_filter_algo_autotune(
   constexpr int num_trials = 3;
   constexpr int num_skip = 1;
   int num_algos;
-  CHECK_CUDNN(cudnnGetConvolutionBackwardFilterAlgorithmMaxCount(
+  CHECK_MIOPEN(cudnnGetConvolutionBackwardFilterAlgorithmMaxCount(
                 get_handle(), &num_algos));
-  std::vector<hipdnnConvolutionBwdFilterAlgoPerf_t> perf_results_all;
-  std::vector<hipdnnConvolutionBwdFilterAlgoPerf_t> perf_results(num_algos);
+  std::vector<miopenConvolutionBwdFilterAlgoPerf_t> perf_results_all;
+  std::vector<miopenConvolutionBwdFilterAlgoPerf_t> perf_results(num_algos);
   for (int trial = 0; trial < num_trials + num_skip; ++trial) {
     int num_tested_algos;
-    CHECK_CUDNN(hipdnnFindConvolutionBackwardFilterAlgorithmEx(
+    CHECK_MIOPEN(miopenFindConvolutionBackwardFilterAlgorithmEx(
                   get_handle(), input_desc, input,
                   prev_error_signal_desc, prev_error_signal,
                   conv_desc, kernel_gradient_desc, kernel_gradient, num_algos,
@@ -1567,7 +1567,7 @@ fwd_conv_alg get_fwd_algorithm(
   void* output,
   size_t ws_size,
   void* ws) {
-  hipdnnConvolutionFwdAlgo_t a;
+  miopenConvolutionFwdAlgo_t a;
   if (autotune) {
     a = get_fwd_algo_autotune(deterministic,
                               input_desc, input,
@@ -1594,7 +1594,7 @@ bwd_data_conv_alg get_bwd_data_algorithm(
   void* error_signal,
   size_t ws_size,
   void* ws) {
-  hipdnnConvolutionBwdDataAlgo_t a;
+  miopenConvolutionBwdDataAlgo_t a;
   if (autotune) {
     a = get_bwd_data_algo_autotune(deterministic,
                                    kernel_desc, kernel,
@@ -1622,7 +1622,7 @@ bwd_filter_conv_alg get_bwd_filter_algorithm(
   void* kernel_gradient,
   size_t ws_size,
   void* ws) {
-  hipdnnConvolutionBwdFilterAlgo_t a;
+  miopenConvolutionBwdFilterAlgo_t a;
   if (autotune) {
     a = get_bwd_filter_algo_autotune(deterministic,
                                      input_desc, input,
@@ -1639,21 +1639,21 @@ bwd_filter_conv_alg get_bwd_filter_algorithm(
 }
 
 namespace {
-hipdnnMathType_t default_tensor_ops_mode = HIPDNN_DEFAULT_MATH;
+miopenMathType_t default_tensor_ops_mode = HIPDNN_DEFAULT_MATH;
 }
 
 void default_to_tensor_ops() noexcept
 {
-  default_tensor_ops_mode = CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION;
+  default_tensor_ops_mode = MIOPEN_TENSOR_OP_MATH_ALLOW_CONVERSION;
 }
 
-hipdnnMathType_t get_default_convolution_math_type() noexcept
+miopenMathType_t get_default_convolution_math_type() noexcept
 {
   return default_tensor_ops_mode;
 }
 
 #define PROTO(T)                                        \
-  template hipdnnDataType_t get_data_type<T>();          \
+  template miopenDataType_t get_data_type<T>();          \
   template class layer_tensor_manager<T>;               \
   template class data_parallel_layer_tensor_manager<T>; \
   template class entrywise_layer_tensor_manager<T>
@@ -1662,7 +1662,7 @@ hipdnnMathType_t get_default_convolution_math_type() noexcept
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
 
-} // namespace cudnn
+} // namespace dnn_lib
 } // namespace lbann
 
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_MIOPEN
