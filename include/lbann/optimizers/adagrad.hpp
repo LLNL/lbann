@@ -95,10 +95,10 @@ private:
 
   /** CPU implementation of optimization step. */
   void step_compute_cpu(AbsDistMatrixType& values, const AbsDistMatrixType& gradient);
-#ifdef LBANN_HAS_DNN_LIB
+#ifdef LBANN_HAS_GPU
   /** GPU implementation of optimization step. */
   void step_compute_gpu(AbsDistMatrixType& values, const AbsDistMatrixType& gradient);
-#endif // LBANN_HAS_DNN_LIB
+#endif // LBANN_HAS_GPU
 
   // ===========================================
   // Checkpointing

@@ -35,7 +35,7 @@ if (LBANN_HAS_HALF)
     ${CMAKE_CURRENT_SOURCE_DIR}/serialization.cpp)
 endif (LBANN_HAS_HALF)
 
-if (LBANN_HAS_GPU)
+if (LBANN_HAS_CUDA)
   list(APPEND THIS_DIR_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/cufft_wrapper.cpp")
 
