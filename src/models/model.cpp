@@ -810,7 +810,14 @@ void model::add_evaluation_layers(std::unordered_set<Layer*>& layer_set,
 }
 
 void model::add_dummy_layers(std::unordered_set<std::string>& layer_names) {
-  for (auto& l : m_layers) {
+  for (size_t i=0; i<m_layers.size(); ++i) {
+    auto& l = m_layers[i];
+    if (l == nullptr) {
+      LBANN_ERROR(
+        "model \"",get_name(),"\" ",
+        "has a null pointer in its list of layers");
+    }
+
     while (l->get_num_children() < l->get_expected_num_child_layers()) {
 
       // Create dummy layer
@@ -855,11 +862,18 @@ void model::add_dummy_layers(std::unordered_set<std::string>& layer_names) {
       add_layer(std::move(dummy));
 
     }
+
   }
 }
 
 void model::add_split_layers(std::unordered_set<std::string>& layer_names) {
-  for (auto& l : m_layers) {
+  for (size_t i=0; i<m_layers.size(); ++i) {
+    auto& l = m_layers[i];
+    if (l == nullptr) {
+      LBANN_ERROR(
+        "model \"",get_name(),"\" ",
+        "has a null pointer in its list of layers");
+    }
 
     // Add split layer if layer expects one child but has multiple
     if (l->get_expected_num_child_layers() == 1 && l->get_num_children() != 1) {
@@ -906,9 +920,9 @@ void model::add_split_layers(std::unordered_set<std::string>& layer_names) {
       ps = orig_ps;
 
       // Setup relationships between split layer and child layers
-      for (int i=0; i<l->get_num_children(); ++i) {
-        auto& child = const_cast<Layer&>(l->get_child_layer(i));
-        split->add_child_layer(l->get_child_layer_pointer(i));
+      for (int j=0; j<l->get_num_children(); ++j) {
+        auto& child = const_cast<Layer&>(l->get_child_layer(j));
+        split->add_child_layer(l->get_child_layer_pointer(j));
         child.replace_parent_layer(split, child.find_parent_layer_index(*l));
       }
 
