@@ -714,6 +714,11 @@ void model::add_evaluation_layers(std::unordered_set<Layer*>& layer_set,
             break;
           }
         }
+        if (l_view_ptr.lock().get() == nullptr) {
+          LBANN_ERROR(
+            get_name()," could not get viewing pointer for ",
+            l_raw_ptr->get_name()," layer \"",l_raw_ptr->get_name(),"\"");
+        }
 
         // Create evaluation layer
         OwningLayerPtr eval(
@@ -765,6 +770,11 @@ void model::add_evaluation_layers(std::unordered_set<Layer*>& layer_set,
             l_view_ptr = l;
             break;
           }
+        }
+        if (l_view_ptr.lock().get() == nullptr) {
+          LBANN_ERROR(
+            get_name()," could not get viewing pointer for ",
+            l_raw_ptr->get_name()," layer \"",l_raw_ptr->get_name(),"\"");
         }
 
         // Create evaluation layer

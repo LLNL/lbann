@@ -374,9 +374,9 @@ public:
   void replace_child_layer(ViewingLayerPtr l, size_t index);
 
   /** @brief Remove pointers to parent layers */
-  void clear_parent_layers() { get_parent_layers().clear(); }
+  void clear_parent_layers() { m_parent_layers.clear(); }
   /** @brief Remove pointers to child layers */
-  void clear_child_layers() { get_child_layers().clear(); }
+  void clear_child_layers() { m_child_layers.clear(); }
 
   ViewingLayerPtr get_parent_layer_pointer(size_t index) const;
   ViewingLayerPtr get_child_layer_pointer(size_t index) const;
