@@ -33,10 +33,13 @@
 #include <fftw3.h>
 #include <lbann/utils/fftw_wrapper.hpp>
 
-#if defined LBANN_HAS_CUDA
+#if defined LBANN_HAS_CUDNN
 #include <cufft.h>
 #include <lbann/utils/cufft_wrapper.hpp>
-#endif // defined LBANN_HAS_CUDA
+#elif defined LBANN_HAS_ROCM
+#include <rocfft.h>
+#include <lbann/utils/rocfft_wrapper.hpp>
+#endif // defined LBANN_HAS_CUDNN
 
 namespace
 {

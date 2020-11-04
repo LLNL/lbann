@@ -29,7 +29,12 @@
 
 #include <lbann/base.hpp>
 #include <lbann/utils/exception.hpp>
+
+#ifdef LBANN_HAS_CUDNN
 #include <lbann/utils/cufft_wrapper.hpp>
+#elif defined LBANN_HAS_MIOPEN
+#include <lbann/utils/rocfft_wrapper.hpp>
+#endif // LBANN_HAS_CUDNN
 
 #include <cmath>
 #include <complex>
