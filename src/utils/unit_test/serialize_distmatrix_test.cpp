@@ -41,15 +41,27 @@ TEMPLATE_LIST_TEST_CASE("DistMatrix serialization",
   std::stringstream ss;
   DistMatType mat(12,16), mat_restore;
 
+  SECTION("XML archive")
+  {
+    {
+      cereal::XMLOutputArchive oarchive(ss);
+      CHECK_NOTHROW(oarchive(mat));
+    }
+    {
+      cereal::XMLInputArchive iarchive(ss);
+      CHECK_NOTHROW(iarchive(mat_restore));
+    }
+
+    CHECK(mat.Height() == mat_restore.Height());
+    CHECK(mat.Width() == mat_restore.Width());
+  }
+
   SECTION("JSON archive")
   {
     {
       cereal::JSONOutputArchive oarchive(ss);
       CHECK_NOTHROW(oarchive(mat));
     }
-
-    std::cout << ss.str() << std::endl;
-
     {
       cereal::JSONInputArchive iarchive(ss);
       CHECK_NOTHROW(iarchive(mat_restore));
@@ -66,7 +78,6 @@ TEMPLATE_LIST_TEST_CASE("DistMatrix serialization",
     {
       cereal::BinaryOutputArchive oarchive(ss);
       CHECK_NOTHROW(oarchive(mat));
-
     }
     {
       cereal::BinaryInputArchive iarchive(ss);
@@ -103,15 +114,28 @@ TEMPLATE_LIST_TEST_CASE(
   std::unique_ptr<AbsDistMatType> mat, mat_restore;
   mat = std::make_unique<DistMatType>(12, 16);
 
+  SECTION("XML archive")
+  {
+    {
+      cereal::XMLOutputArchive oarchive(ss);
+      CHECK_NOTHROW(oarchive(mat));
+    }
+    {
+      cereal::XMLInputArchive iarchive(ss);
+      CHECK_NOTHROW(iarchive(mat_restore));
+    }
+
+    REQUIRE((check_valid_ptr) mat_restore);
+    CHECK(mat->Height() == mat_restore->Height());
+    CHECK(mat->Width() == mat_restore->Width());
+  }
+
   SECTION("JSON archive")
   {
     {
       cereal::JSONOutputArchive oarchive(ss);
       CHECK_NOTHROW(oarchive(mat));
     }
-
-    std::cout << ss.str() << std::endl;
-
     {
       cereal::JSONInputArchive iarchive(ss);
       CHECK_NOTHROW(iarchive(mat_restore));

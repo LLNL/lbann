@@ -143,8 +143,8 @@ void save(ArchiveT& ar, El::AbstractDistMatrix<T> const& mat)
   LBANN_ASSERT(!mat.Viewing());
 
   if (mat.DistRank() == mat.Root())
-    ar(make_nvp("global height", mat.Height()),
-       make_nvp("global width", mat.Width()));
+    ar(make_nvp("global_height", mat.Height()),
+       make_nvp("global_width", mat.Width()));
 }
 
 template <typename ArchiveT, typename T,
