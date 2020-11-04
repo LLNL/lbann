@@ -61,7 +61,7 @@ SPACK_ARCH_TARGET=$(spack arch -t)
 SCRIPT=$(basename ${BASH_SOURCE})
 BUILD_DIR=${LBANN_HOME}/build/spack
 ENABLE_GPUS=ON
-GPU_VARIANTS="+cuda+nccl"
+GPU_VARIANTS="+cuda"
 ENABLE_HALF=OFF
 HALF_VARIANTS="~half"
 BUILD_TYPE=Release
@@ -245,7 +245,7 @@ EOF
 else
     LBANN_ENV="${LBANN_ENV:-lbann-${SPACK_ARCH_TARGET}}"
     BUILD_SPECS=$(cat <<EOF
-  - lbann@develop${GPU_VARIANTS}
+  - lbann@develop${GPU_VARIANTS}+dihydrogen+distconv
 EOF
 )
 fi
