@@ -31,7 +31,11 @@
 #include "lbann/layers/regularizers/regularizer.hpp"
 #include "lbann/utils/dnn_lib/helpers.hpp"
 #include "lbann/utils/exception.hpp"
+#ifdef LBANN_HAS_CUDNN
 #include "lbann/utils/dnn_lib/cudnn/local_response_normalization.hpp"
+#elif define LBANN_HAS_MIOPEN
+#include "lbann/utils/dnn_lib/cudnn/local_response_normalization.hpp"
+#endif // LBANN_HAS_CUDNN
 
 namespace lbann {
 

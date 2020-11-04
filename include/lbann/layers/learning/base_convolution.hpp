@@ -31,7 +31,11 @@
 #include "lbann/layers/layer.hpp"
 #include "lbann/utils/dnn_lib/helpers.hpp"
 #include "lbann/utils/memory.hpp"
+#ifdef LBANN_HAS_CUDNN
 #include "lbann/utils/dnn_lib/cudnn/convolution.hpp"
+#elif defined LBANN_HAS_MIOPEN
+#include "lbann/utils/dnn_lib/miopen/convolution.hpp"
+#endif // LBANN_HAS_CUDNN
 
 #include <vector>
 
@@ -85,11 +89,11 @@ public:
   template <El::Device D>
   using DMatDT = El::Matrix<TensorDataType, D>;
 
-#ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_DNN_LIB
   using ScalingType = dnn_lib::ScalingParamType<TensorDataType>;
 #else
   using ScalingType = TensorDataType;
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_DNN_LIB
 
   ///@}
 
@@ -118,13 +122,15 @@ protected:
    */
   ScalingType m_bias_scaling_factor;
 
-#ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_DNN_LIB
 
   /** @brief Math type to use inside cuDNN.
    *  @details Must be cached since it isn't used until setup.
    */
+#ifdef LBANN_HAS_CUDNN
   cudnnMathType_t m_convolution_math_type =
     dnn_lib::get_default_convolution_math_type();
+#endif // LBANN_HAS_CUDNN
   /** Convolution kernel cuDNN descriptor. */
   dnn_lib::FilterDescriptor m_kernel_cudnn_desc;
   /** Convolution cuDNN descriptor. */
@@ -140,7 +146,7 @@ protected:
   /** Backward filter algorithm cache (mini-batch size -> algo). */
   std::unordered_map<int, bwd_filter_conv_alg> m_bwd_filter_cudnn_algos;
 
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_DNN_LIB
 
 public:
   /** @todo Remove num_data_dims from arg list */
@@ -201,7 +207,7 @@ protected:
 
 private:
 
-#ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_DNN_LIB
 
   /** Get the cuDNN algorithm to use for forward prop. */
   fwd_conv_alg get_forward_algo(
@@ -243,7 +249,7 @@ private:
     const dnn_lib::FilterDescriptor& kernel_gradient_desc,
     size_t ws_size,
     TensorDataType* ws);
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_DNN_LIB
 
 #ifdef LBANN_HAS_DISTCONV
   friend class base_convolution_adapter<TensorDataType, Device>;

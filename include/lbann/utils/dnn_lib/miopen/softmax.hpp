@@ -106,7 +106,7 @@ void softmax_backward(
                                         dxDesc,
                                         dx.Buffer(),
                                         miopen::to_miopen(alg),
-                                        miopen::to_miopen(mode));
+                                        miopen::to_miopen(mode)));
 }
 
 } // namespace dnn_lib

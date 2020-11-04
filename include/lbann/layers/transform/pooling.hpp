@@ -62,17 +62,18 @@ namespace dnn_lib {
 
 inline dnnPoolingMode_t to_dnn_lib(pooling_mode m)
 {
+#ifdef LBANN_HAS_CUDNN
   switch(m)
   {
-#ifdef LBANN_HAS_CUDNN
   case pooling_mode::MAX: return CUDNN_POOLING_MAX;
   case pooling_mode::MAX_DETERMINISTIC: return CUDNN_POOLING_MAX_DETERMINISTIC;
   case pooling_mode::AVERAGE_COUNT_INCLUDE_PADDING: return CUDNN_POOLING_AVERAGE_COUNT_INCLUDE_PADDING;
   case pooling_mode::AVERAGE_COUNT_EXCLUDE_PADDING: return CUDNN_POOLING_AVERAGE_COUNT_EXCLUDE_PADDING;
-#endif // LBANN_HAS_CUDNN
   default:
     LBANN_ERROR("Invalid pooling mode requested");
   }
+#endif // LBANN_HAS_CUDNN
+  return miopen::to_miopen(m);
 }
 
 } // namespace dnn_lib

@@ -29,7 +29,11 @@
 #include "lbann/layers/learning/base_convolution.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/dnn_lib/helpers.hpp"
+#ifdef LBANN_HAS_CUDNN
 #include "lbann/utils/dnn_lib/cudnn/convolution.hpp"
+#elif defined LBANN_HAS_MIOPEN
+#include "lbann/utils/dnn_lib/miopen/convolution.hpp"
+#endif // LBANN_HAS_CUDNN
 #include "lbann/utils/distconv.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/im2col.hpp"
@@ -67,9 +71,9 @@ base_convolution_layer<TensorDataType,Device>::base_convolution_layer(
   m_bias_scaling_factor(has_bias
                         ? El::TypeTraits<ScalingType>::One()
                         : El::TypeTraits<ScalingType>::Zero())
-#ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_DNN_LIB
   , m_tensors_cudnn_desc(this)
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_DNN_LIB
 {}
 template <typename TensorDataType, El::Device Device>
 base_convolution_layer<TensorDataType,Device>::base_convolution_layer(
@@ -82,22 +86,24 @@ base_convolution_layer<TensorDataType,Device>::base_convolution_layer(
   m_dilations(other.m_dilations),
   m_groups(other.m_groups),
   m_bias_scaling_factor(other.m_bias_scaling_factor)
+#ifdef LBANN_HAS_DNN_LIB
 #ifdef LBANN_HAS_CUDNN
-  , m_convolution_math_type(other.m_convolution_math_type),
-  m_tensors_cudnn_desc(other.m_tensors_cudnn_desc),
+  , m_convolution_math_type(other.m_convolution_math_type)
+#endif // LBANN_HAS_CUDNN
+  , m_tensors_cudnn_desc(other.m_tensors_cudnn_desc),
   m_fwd_cudnn_algos(other.m_fwd_cudnn_algos),
   m_bwd_data_cudnn_algos(other.m_bwd_data_cudnn_algos),
   m_bwd_filter_cudnn_algos(other.m_bwd_filter_cudnn_algos)
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_DNN_LIB
 {
-#ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_DNN_LIB
   m_kernel_cudnn_desc = other.m_kernel_cudnn_desc;
   m_convolution_cudnn_desc = other.m_convolution_cudnn_desc;
   if (other.m_bias_scaling_factor != El::TypeTraits<ScalingType>::Zero()) {
     m_bias_cudnn_desc = other.m_bias_cudnn_desc;
   }
   m_tensors_cudnn_desc.set_layer(this);
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_DNN_LIB
 }
 
 template <typename TensorDataType, El::Device Device>
@@ -114,9 +120,11 @@ base_convolution_layer<TensorDataType,Device>
   m_groups = other.m_groups;
   m_bias_scaling_factor = other.m_bias_scaling_factor;
 
-#ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_DNN_LIB
   // Copy cuDNN objects
+#ifdef LBANN_HAS_CUDNN
   m_convolution_math_type = other.m_convolution_math_type;
+#endif // LBANN_HAS_CUDNN
   m_kernel_cudnn_desc = other.m_kernel_cudnn_desc;
   m_convolution_cudnn_desc = other.m_convolution_cudnn_desc;
   if (other.m_bias_scaling_factor != El::TypeTraits<ScalingType>::Zero()) {
@@ -127,7 +135,7 @@ base_convolution_layer<TensorDataType,Device>
   m_fwd_cudnn_algos = other.m_fwd_cudnn_algos;
   m_bwd_data_cudnn_algos = other.m_bwd_data_cudnn_algos;
   m_bwd_filter_cudnn_algos = other.m_bwd_filter_cudnn_algos;
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_DNN_LIB
 
   return *this;
 }
@@ -384,8 +392,8 @@ base_convolution_layer<TensorDataType,Device>
 template <typename TensorDataType, El::Device Device>
 void base_convolution_layer<TensorDataType,Device>::setup_gpu() {
   data_type_layer<TensorDataType>::setup_gpu();
-#ifndef LBANN_HAS_CUDNN
-  LBANN_ERROR("cuDNN not detected");
+#ifndef LBANN_HAS_DNN_LIB
+  LBANN_ERROR("DNN library not detected");
 #else
 
   const auto& output_dims = this->get_output_dims();
@@ -394,14 +402,16 @@ void base_convolution_layer<TensorDataType,Device>::setup_gpu() {
   // Set kernel descriptor
   m_kernel_cudnn_desc.set(
     dnn_lib::get_data_type<TensorDataType>(),
-    CUDNN_TENSOR_NCHW,
+    //CUDNN_TENSOR_NCHW, //TODO:FIXME
     kernel_dims);
 
   // Set convolution descriptor
   m_convolution_cudnn_desc.set(m_pads, m_strides, m_dilations,
                                dnn_lib::get_data_type<TensorDataType>(),
-                               CUDNN_CROSS_CORRELATION);
+                               dnn_lib::DNN_CROSS_CORRELATION);
+#ifdef LBANN_HAS_CUDNN
   m_convolution_cudnn_desc.set_math_mode(m_convolution_math_type);
+#endif // LBANN_HAS_CUDNN
   m_convolution_cudnn_desc.set_group_count(m_groups);
 
   // Set bias tensor descriptor
