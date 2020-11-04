@@ -34,10 +34,10 @@
 #include <miopen/miopen.h>
 
 // Error utility macros
-#define CHECK_MIOPEN_NODEBUG(cudnn_call)                          \
+#define CHECK_MIOPEN_NODEBUG(miopen_call)                         \
   do {                                                            \
     const miopenStatus_t status_CHECK_MIOPEN = (miopen_call);     \
-    if (status_CHECK_MIOPEN != HIPDNN_STATUS_SUCCESS) {           \
+    if (status_CHECK_MIOPEN != miopenStatusSuccess) {           \
       hipDeviceReset();                                           \
       LBANN_ERROR(std::string("MIOpen error (")                   \
                   + miopenGetErrorString(status_CHECK_MIOPEN)     \
@@ -47,7 +47,7 @@
 #define CHECK_MIOPEN_DEBUG(miopen_call)                           \
   do {                                                            \
     LBANN_ROCM_CHECK_LAST_ERROR(true);                            \
-    CHECK_MIOPEN_NODEBUG(cudnn_call);                             \
+    CHECK_MIOPEN_NODEBUG(miopen_call);                            \
   } while (0)
 #ifdef LBANN_DEBUG
 #define CHECK_MIOPEN(miopen_call) CHECK_MIOPEN_DEBUG(miopen_call)
@@ -82,16 +82,16 @@ namespace miopen {
 using dnnHandle_t = miopenHandle_t;
 using dnnDataType_t = miopenDataType_t;
 using dnnTensorDescriptor_t = miopenTensorDescriptor_t;
-using dnnFilterDescriptor_t = miopenFilterDescriptor_t;
-using dnnTensorFormat_t = miopenTensorFormat_t;
+using dnnFilterDescriptor_t = miopenTensorDescriptor_t;
+//using dnnTensorFormat_t = miopenTensorFormat_t;
 using dnnDropoutDescriptor_t = miopenDropoutDescriptor_t;
 using dnnRNNDescriptor_t = miopenRNNDescriptor_t;
 using dnnRNNAlgo_t = miopenRNNAlgo_t;
 using dnnRNNMode_t = miopenRNNMode_t;
 using dnnRNNBiasMode_t = miopenRNNBiasMode_t;
-using dnnDirectionMode_t = miopenDirectionMode_t;
+using dnnDirectionMode_t = miopenRNNDirectionMode_t;
 using dnnRNNInputMode_t = miopenRNNInputMode_t;
-using dnnMathType_t = miopenMathType_t;
+//using dnnMathType_t = miopenMathType_t;
 //using dnnRNNDataDescriptor_t = cudnnRNNDataDescriptor_t;
 //using dnnRNNDataLayout_t = cudnnRNNDataLayout_t;
 using dnnConvolutionDescriptor_t = miopenConvolutionDescriptor_t;
@@ -106,8 +106,8 @@ using dnnConvolutionFwdAlgo_t = miopenConvFwdAlgorithm_t;
 using dnnConvolutionBwdDataAlgo_t = miopenConvBwdDataAlgorithm_t;
 using dnnConvolutionBwdFilterAlgo_t = miopenConvBwdWeightsAlgorithm_t;
 
-constexpr dnnConvolutionMode_t DNN_CROSS_CORRELATION = HIPDNN_CROSS_CORRELATION;
-constexpr dnnNanPropagation_t DNN_PROPAGATE_NAN = HIPDNN_PROPAGATE_NAN;
+constexpr dnnConvolutionMode_t DNN_CROSS_CORRELATION = miopenConvolution;
+constexpr dnnNanPropagation_t DNN_PROPAGATE_NAN = MIOPEN_PROPAGATE_NAN;
 
 ////////////////////////////////////////////////////////////
 // Functions for to/from MIOpen types conversion

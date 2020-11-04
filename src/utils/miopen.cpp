@@ -247,7 +247,7 @@ FilterDescriptor::FilterDescriptor(const FilterDescriptor& other) {
   if (other.desc_) {
     int num_dims;
     miopenDataType_t data_type;
-    miopenTensorFormat_t format;
+    //miopenTensorFormat_t format; TODO: fix this (only NCHW supported by MIO)
     CHECK_MIOPEN(
       miopenGetFilterNdDescriptor(
         other.desc_,
@@ -257,6 +257,7 @@ FilterDescriptor::FilterDescriptor(const FilterDescriptor& other) {
         &num_dims,
         nullptr));  // filterDimA
     std::vector<int> dims(num_dims);
+    /*
     CHECK_MIOPEN(
       miopenGetFilterNdDescriptor(
         other.desc_,
@@ -266,6 +267,7 @@ FilterDescriptor::FilterDescriptor(const FilterDescriptor& other) {
         &num_dims,
         dims.data()));
     set(data_type, format, dims);
+    */
   }
 }
 
@@ -312,9 +314,10 @@ void FilterDescriptor::create() {
 
 void FilterDescriptor::set(
   miopenDataType_t data_type,
-  miopenTensorFormat_t format,
+  //miopenTensorFormat_t format,
   const std::vector<int>& dims) {
   create();
+  /*
   CHECK_MIOPEN(
     miopenSetFilterNdDescriptor(
       desc_,
@@ -322,6 +325,7 @@ void FilterDescriptor::set(
       format,
       dims.size(),
       dims.data()));
+    */
 }
 
 // -----------------------------
@@ -478,7 +482,7 @@ void RNNDescriptor::set(
   miopenRNNInputMode_t input_mode,
   miopenDataType_t data_type,
   miopenDataType_t math_precision,
-  miopenMathType_t math_type,
+  //miopenMathType_t math_type,
   size_t input_size,
   size_t hidden_size,
   size_t proj_size,
@@ -486,106 +490,18 @@ void RNNDescriptor::set(
   miopenDropoutDescriptor_t dropout_desc,
   uint32_t aux_flags) {
   create();
-#if HIPDNN_VERSION < 8000
-  LBANN_ERROR(
-    "cuDNN 8 or newer is required for RNN support ",
-    "(detected ",MIOPEN_MAJOR,".",MIOPEN_MINOR,".",MIOPEN_PATCHLEVEL,")");
-#else // HIPDNN_VERSION >= 8000
   CHECK_MIOPEN(
-    cudnnSetRNNDescriptor_v8(
+    miopenSetRNNDescriptor_V2(
       desc_,
-      algorithm,
-      cell_mode,
-      bias_mode,
-      direction_mode,
-      input_mode,
-      data_type,
-      math_precision,
-      math_type,
-      input_size,
       hidden_size,
-      proj_size,
       num_layers,
       dropout_desc,
-      aux_flags));
-#endif // HIPDNN_VERSION >= 8000
-}
-
-// -----------------------------
-// RNNDataDescriptor
-// -----------------------------
-
-RNNDataDescriptor::RNNDataDescriptor(cudnnRNNDataDescriptor_t desc)
-  : desc_{desc}
-{}
-
-RNNDataDescriptor::~RNNDataDescriptor() {
-  if (desc_) {
-    // Don't check status to avoid exceptions
-    cudnnDestroyRNNDataDescriptor(desc_);
-  }
-}
-
-RNNDataDescriptor::RNNDataDescriptor(RNNDataDescriptor&& other)
-  : desc_{other.desc_} {
-  other.desc_ = nullptr;
-}
-
-RNNDataDescriptor& RNNDataDescriptor::operator=(RNNDataDescriptor other) {
-  swap(other, *this);
-  return *this;
-}
-
-void swap(RNNDataDescriptor& first, RNNDataDescriptor& second) {
-  std::swap(first.desc_, second.desc_);
-}
-
-void RNNDataDescriptor::reset(cudnnRNNDataDescriptor_t desc) {
-  if (desc_) {
-    CHECK_MIOPEN(cudnnDestroyRNNDataDescriptor(desc_));
-  }
-  desc_ = desc;
-}
-
-cudnnRNNDataDescriptor_t RNNDataDescriptor::release() {
-  auto old_desc = desc_;
-  desc_ = nullptr;
-  return old_desc;
-}
-
-cudnnRNNDataDescriptor_t RNNDataDescriptor::get() const noexcept {
-  return desc_;
-}
-
-RNNDataDescriptor::operator cudnnRNNDataDescriptor_t() const noexcept {
-  return get();
-}
-
-void RNNDataDescriptor::create() {
-  if (!desc_) {
-    CHECK_MIOPEN(cudnnCreateRNNDataDescriptor(&desc_));
-  }
-}
-
-void RNNDataDescriptor::set(
-  miopenDataType_t data_type,
-  cudnnRNNDataLayout_t layout,
-  size_t max_seq_length,
-  size_t batch_size,
-  size_t vector_size,
-  const int seq_length_array[],
-  void* padding_fill) {
-  create();
-  CHECK_MIOPEN(
-    cudnnSetRNNDataDescriptor(
-      desc_,
-      data_type,
-      layout,
-      max_seq_length,
-      batch_size,
-      vector_size,
-      seq_length_array,
-      padding_fill));
+      input_mode,
+      direction_mode,
+      cell_mode,
+      bias_mode,
+      algorithm,
+      data_type));
 }
 
 // class ConvolutionDescriptor
@@ -617,11 +533,11 @@ ConvolutionDescriptor::ConvolutionDescriptor(const ConvolutionDescriptor& rhs)
     return;
   }
 
-  miopenMathType_t math_type;
+  //miopenMathType_t math_type;
   miopenConvolutionMode_t mode;
   miopenDataType_t data_type;
   int num_dims, num_groups;
-  CHECK_MIOPEN(cudnnGetConvolutionMathType(rhs.desc_, &math_type));
+  //CHECK_MIOPEN(cudnnGetConvolutionMathType(rhs.desc_, &math_type));
   CHECK_MIOPEN(cudnnGetConvolutionGroupCount(rhs.desc_, &num_groups));
   // Get the mode, data type, and dims
   CHECK_MIOPEN(
@@ -641,7 +557,7 @@ ConvolutionDescriptor::ConvolutionDescriptor(const ConvolutionDescriptor& rhs)
   // Now set up this one
   this->set(
     pads, strides, dilations, data_type, mode);
-  this->set_math_mode(math_type);
+  //this->set_math_mode(math_type);
   this->set_group_count(num_groups);
 }
 
@@ -722,11 +638,11 @@ void ConvolutionDescriptor::set(
       mode, data_type));
 }
 
-void ConvolutionDescriptor::set_math_mode(miopenMathType_t math_type)
-{
-  CHECK_MIOPEN(
-    miopenSetConvolutionMathType(desc_, math_type));
-}
+//void ConvolutionDescriptor::set_math_mode(miopenMathType_t math_type)
+//{
+//  CHECK_MIOPEN(
+//    miopenSetConvolutionMathType(desc_, math_type));
+//}
 
 void ConvolutionDescriptor::set_group_count(int num_groups)
 {
@@ -1647,10 +1563,10 @@ void default_to_tensor_ops() noexcept
   default_tensor_ops_mode = MIOPEN_TENSOR_OP_MATH_ALLOW_CONVERSION;
 }
 
-miopenMathType_t get_default_convolution_math_type() noexcept
-{
-  return default_tensor_ops_mode;
-}
+//miopenMathType_t get_default_convolution_math_type() noexcept
+//{
+//  return default_tensor_ops_mode;
+//}
 
 #define PROTO(T)                                        \
   template miopenDataType_t get_data_type<T>();          \

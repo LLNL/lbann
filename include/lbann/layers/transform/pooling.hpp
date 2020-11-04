@@ -37,6 +37,8 @@
 
 #ifdef LBANN_HAS_CUDNN
 #include "lbann/utils/dnn_lib/cudnn/pooling.hpp"
+#elif defined LBANN_HAS_MIOPEN
+#include "lbann/utils/dnn_lib/miopen/pooling.hpp"
 #endif // LBANN_HAS_CUDNN
 
 namespace lbann {
@@ -286,11 +288,11 @@ protected:
 
     // Set pooling descriptor
     m_pooling_dnn_desc.set(dnn_lib::to_dnn_lib(m_pool_mode),
-                             dnn_lib::DNN_PROPAGATE_NAN,
-                             m_pool_dims.size(),
-                             m_pool_dims.data(),
-                             m_pads.data(),
-                             m_strides.data());
+                           dnn_lib::DNN_PROPAGATE_NAN,
+                           m_pool_dims.size(),
+                           m_pool_dims.data(),
+                           m_pads.data(),
+                           m_strides.data());
 
 #endif // #ifndef LBANN_HAS_DNN_LIB
   }
@@ -330,6 +332,15 @@ private:
 #ifndef LBANN_HAS_DNN_LIB
     LBANN_ERROR("DNN Library not detected");
 #else
+    // Initialize GPU workspace
+    El::Matrix<TensorDataType, El::Device::GPU> workspace;
+#ifdef HYDROGEN_HAVE_CUB
+    workspace.SetMemoryMode(1);
+#endif // HYDROGEN_HAVE_CUB
+    size_t workspace_size = dnn_lib::get_pooling_ws_size(m_pooling_dnn_desc,
+                                                         m_tensors_dnn_desc.get_activations());
+    workspace.Resize(workspace_size / sizeof(TensorDataType), 1);
+
     using ScalingType = dnn_lib::ScalingParamType<TensorDataType>;
     const auto& local_input = this->get_local_prev_activations();
     auto& local_output = this->get_local_activations();
@@ -337,12 +348,13 @@ private:
       const auto zero = El::TypeTraits<ScalingType>::Zero();
       const auto one = El::TypeTraits<ScalingType>::One();
       dnn_lib::pooling_forward(m_pooling_dnn_desc,
-                             one,
-                             m_tensors_dnn_desc.get_prev_activations(),
-                             local_input,
-                             zero,
-                             m_tensors_dnn_desc.get_activations(),
-                             local_output);
+                               one,
+                               m_tensors_dnn_desc.get_prev_activations(),
+                               local_input,
+                               zero,
+                               m_tensors_dnn_desc.get_activations(),
+                               local_output,
+                               workspace);
     }
 #endif // #ifndef LBANN_HAS_DNN_LIB
   }
@@ -352,6 +364,15 @@ private:
 #ifndef LBANN_HAS_DNN_LIB
     LBANN_ERROR("DNN Library not detected");
 #else
+    // Initialize GPU workspace
+    El::Matrix<TensorDataType, El::Device::GPU> workspace;
+#ifdef HYDROGEN_HAVE_CUB
+    workspace.SetMemoryMode(1);
+#endif // HYDROGEN_HAVE_CUB
+    size_t workspace_size = dnn_lib::get_pooling_ws_size(m_pooling_dnn_desc,
+                                                         m_tensors_dnn_desc.get_activations());
+    workspace.Resize(workspace_size / sizeof(TensorDataType), 1);
+
     using ScalingType = dnn_lib::ScalingParamType<TensorDataType>;
     const auto& local_input = this->get_local_prev_activations();
     const auto& local_output = this->get_local_activations();
@@ -365,16 +386,17 @@ private:
 
       // Perform backprop on GPU
       dnn_lib::pooling_backward(m_pooling_dnn_desc,
-                              one,
-                              m_tensors_dnn_desc.get_activations(),
-                              local_output,
-                              m_tensors_dnn_desc.get_prev_error_signals(),
-                              local_gradient_wrt_output,
-                              m_tensors_dnn_desc.get_prev_activations(),
-                              local_input,
-                              zero,
-                              m_tensors_dnn_desc.get_error_signals(),
-                              local_gradient_wrt_input);
+                                one,
+                                m_tensors_dnn_desc.get_activations(),
+                                local_output,
+                                m_tensors_dnn_desc.get_prev_error_signals(),
+                                local_gradient_wrt_output,
+                                m_tensors_dnn_desc.get_prev_activations(),
+                                local_input,
+                                zero,
+                                m_tensors_dnn_desc.get_error_signals(),
+                                local_gradient_wrt_input,
+                                workspace);
     }
 #endif // #ifndef LBANN_HAS_DNN_LIB
   }

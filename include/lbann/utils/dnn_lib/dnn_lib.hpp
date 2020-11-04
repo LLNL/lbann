@@ -185,7 +185,7 @@ public:
    */
   void set(
     dnnDataType_t data_type,
-    dnnTensorFormat_t format,
+    //dnnTensorFormat_t format, TODO:Make this cuDNN only!
     const std::vector<int>& dims);
   /** Configure cuDNN object
    *
@@ -194,9 +194,10 @@ public:
   template <typename... IntTs>
   void set(
     dnnDataType_t data_type,
-    dnnTensorFormat_t format,
+    //dnnTensorFormat_t format,
     IntTs... dims) {
-    set(data_type, format, {static_cast<int>(dims)...});
+    set(data_type, {static_cast<int>(dims)...}); // TODO
+    //set(data_type, format, {static_cast<int>(dims)...}); // TODO
   }
 
 private:
@@ -298,7 +299,7 @@ public:
     dnnRNNInputMode_t input_mode,
     dnnDataType_t data_type,
     dnnDataType_t math_precision,
-    dnnMathType_t math_type,
+    //dnnMathType_t math_type,
     size_t input_size,
     size_t hidden_size,
     size_t proj_size,
@@ -309,55 +310,6 @@ public:
 private:
 
   dnnRNNDescriptor_t desc_ = nullptr;
-
-};
-
-/** Wrapper around @c cudnnRNNDataDescriptor_t */
-class RNNDataDescriptor {
-
-public:
-
-  RNNDataDescriptor(dnnRNNDataDescriptor_t desc=nullptr);
-
-  ~RNNDataDescriptor();
-
-  // Copy-and-swap idiom
-  RNNDataDescriptor(const RNNDataDescriptor&) = delete; /// @todo Implement
-  RNNDataDescriptor(RNNDataDescriptor&&);
-  RNNDataDescriptor& operator=(RNNDataDescriptor);
-  friend void swap(RNNDataDescriptor& first, RNNDataDescriptor& second);
-
-  /** @brief Take ownership of cuDNN object */
-  void reset(dnnRNNDataDescriptor_t desc=nullptr);
-  /** @brief Return cuDNN object and release ownership */
-  dnnRNNDataDescriptor_t release();
-  /** @brief Return cuDNN object without releasing ownership */
-  dnnRNNDataDescriptor_t get() const noexcept;
-  /** @brief Return cuDNN object without releasing ownership */
-  operator dnnRNNDataDescriptor_t() const noexcept;
-
-  /** @brief Allocate a new handle.
-   *
-   *  Does nothing if already created.
-   */
-  void create();
-
-  /** Configure cuDNN object
-   *
-   *  Creates cuDNN object if needed.
-   */
-  void set(
-    dnnDataType_t data_type,
-    dnnRNNDataLayout_t layout,
-    size_t max_seq_length,
-    size_t batch_size,
-    size_t vector_size,
-    const int seq_length_array[],
-    void* padding_fill);
-
-private:
-
-  dnnRNNDataDescriptor_t desc_{nullptr};
 
 };
 
@@ -439,7 +391,7 @@ public:
     dnnConvolutionMode_t mode = DNN_CROSS_CORRELATION);
 
   /** @brief Set the math mode for this descriptor. */
-  void set_math_mode(dnnMathType_t math_type);
+  //void set_math_mode(dnnMathType_t math_type);
 
   /** @brief Set the group count for this descriptor. */
   void set_group_count(int num_groups);
@@ -869,7 +821,7 @@ void default_to_tensor_ops() noexcept;
  *
  *  Will query the command-line args.
  */
-dnnMathType_t get_default_convolution_math_type() noexcept;
+//dnnMathType_t get_default_convolution_math_type() noexcept;
 
 } // namespace dnn_lib
 } // namespace lbann

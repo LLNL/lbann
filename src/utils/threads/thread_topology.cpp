@@ -29,17 +29,21 @@
 
 #if defined(LBANN_TOPO_AWARE)
 #include <hwloc.h>
-#ifdef LBANN_HAS_GPU
+#ifdef LBANN_HAS_CUDA
 #include <hwloc/cudart.h>
-#endif // LBANN_HAS_GPU
+#elif defined LBANN_HAS_ROCM
+#include <hwloc/rsmi.h>
+#endif // LBANN_HAS_CUDA
 #if defined(HWLOC_API_VERSION) && (HWLOC_API_VERSION < 0x00010b00)
 #define HWLOC_OBJ_NUMANODE HWLOC_OBJ_NODE
 #endif
 #endif
 
-#ifdef LBANN_HAS_GPU
+#ifdef LBANN_HAS_CUDA
 #include <hydrogen/device/gpu/CUDA.hpp>
-#endif // LBANN_HAS_GPU
+#elif defined LBANN_HAS_ROCM
+#include <hydrogen/device/gpu/HIP.hpp>
+#endif // LBANN_HAS_CUDA
 
 #include <iostream>
 
