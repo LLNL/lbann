@@ -811,19 +811,13 @@ void model::add_evaluation_layers(std::unordered_set<Layer*>& layer_set,
 
 void model::add_dummy_layers(std::unordered_set<std::string>& layer_names) {
   for (size_t i=0; i<m_layers.size(); ++i) {
-    auto& l = m_layers[i];
-    if (l == nullptr) {
-      LBANN_ERROR(
-        "model \"",get_name(),"\" ",
-        "has a null pointer in its list of layers");
-    }
-
-    while (l->get_num_children() < l->get_expected_num_child_layers()) {
+    auto& l = get_layer(i);
+    while (l.get_num_children() < l.get_expected_num_child_layers()) {
 
       // Create dummy layer
       OwningLayerPtr dummy;
       using args_tuple = std::tuple<data_layout,El::Device>;
-      args_tuple args(l->get_data_layout(), l->get_device_allocation());
+      args_tuple args(l.get_data_layout(), l.get_device_allocation());
       if (args == args_tuple(data_layout::DATA_PARALLEL, El::Device::CPU)) {
         dummy.reset(new dummy_layer<DataType, data_layout::DATA_PARALLEL, El::Device::CPU>(m_comm));
       }
@@ -841,47 +835,41 @@ void model::add_dummy_layers(std::unordered_set<std::string>& layer_names) {
       if (dummy == nullptr) {
         std::stringstream err;
         err << "could not construct dummy layer corresponding to "
-            << "layer \"" << l->get_name() << "\" "
+            << "layer \"" << l.get_name() << "\" "
             << "in model \"" << get_name() << "\"";
         LBANN_ERROR(err.str());
       }
 
       // Set dummy layer name
       El::Int name_index = 1;
-      std::string name = l->get_name() + "_dummy";
+      std::string name = l.get_name() + "_dummy";
       while (layer_names.count(name) > 0) {
         name_index++;
-        name = l->get_name() + "_dummy" + std::to_string(name_index);
+        name = l.get_name() + "_dummy" + std::to_string(name_index);
       }
       dummy->set_name(name);
       layer_names.insert(name);
 
       // Add dummy layer to model
-      l->add_child_layer(dummy);
-      dummy->add_parent_layer(l);
+      l.add_child_layer(dummy);
+      dummy->add_parent_layer(m_layers[i]);
       add_layer(std::move(dummy));
 
     }
-
   }
 }
 
 void model::add_split_layers(std::unordered_set<std::string>& layer_names) {
   for (size_t i=0; i<m_layers.size(); ++i) {
-    auto& l = m_layers[i];
-    if (l == nullptr) {
-      LBANN_ERROR(
-        "model \"",get_name(),"\" ",
-        "has a null pointer in its list of layers");
-    }
+    auto& l = get_layer(i);
 
     // Add split layer if layer expects one child but has multiple
-    if (l->get_expected_num_child_layers() == 1 && l->get_num_children() != 1) {
+    if (l.get_expected_num_child_layers() == 1 && l.get_num_children() != 1) {
 
       // Create split layer
       OwningLayerPtr split;
       using args_tuple = std::tuple<data_layout,El::Device>;
-      args_tuple args(l->get_data_layout(), l->get_device_allocation());
+      args_tuple args(l.get_data_layout(), l.get_device_allocation());
       if (args == args_tuple(data_layout::DATA_PARALLEL, El::Device::CPU)) {
         split.reset(new split_layer<DataType, data_layout::DATA_PARALLEL, El::Device::CPU>(m_comm));
       }
@@ -899,37 +887,37 @@ void model::add_split_layers(std::unordered_set<std::string>& layer_names) {
       if (split == nullptr) {
         std::stringstream err;
         err << "could not construct split layer corresponding to "
-            << "layer \"" << l->get_name() << "\" "
+            << "layer \"" << l.get_name() << "\" "
             << "in model \"" << get_name() << "\"";
         LBANN_ERROR(err.str());
       }
 
       // Set split layer name
       El::Int name_index = 1;
-      std::string name = l->get_name() + "_split";
+      std::string name = l.get_name() + "_split";
       while (layer_names.count(name) > 0) {
         name_index++;
-        name = l->get_name() + "_split" + std::to_string(name_index);
+        name = l.get_name() + "_split" + std::to_string(name_index);
       }
       split->set_name(name);
       layer_names.insert(name);
 
       // Copy parallel strategy from parent.
       ParallelStrategy& ps = split->get_parallel_strategy();
-      ParallelStrategy& orig_ps = l->get_parallel_strategy();
+      ParallelStrategy& orig_ps = l.get_parallel_strategy();
       ps = orig_ps;
 
       // Setup relationships between split layer and child layers
-      for (int j=0; j<l->get_num_children(); ++j) {
-        auto& child = const_cast<Layer&>(l->get_child_layer(j));
-        split->add_child_layer(l->get_child_layer_pointer(j));
-        child.replace_parent_layer(split, child.find_parent_layer_index(*l));
+      for (int j=0; j<l.get_num_children(); ++j) {
+        auto& child = const_cast<Layer&>(l.get_child_layer(j));
+        split->add_child_layer(l.get_child_layer_pointer(j));
+        child.replace_parent_layer(split, child.find_parent_layer_index(l));
       }
 
       // Setup relationship between current layer and split layer
-      l->clear_child_layers();
-      l->add_child_layer(split);
-      split->add_parent_layer(l);
+      l.clear_child_layers();
+      l.add_child_layer(split);
+      split->add_parent_layer(m_layers[i]);
 
       // Add split layer to layer list
       add_layer(std::move(split));
