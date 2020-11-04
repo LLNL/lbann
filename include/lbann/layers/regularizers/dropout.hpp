@@ -31,7 +31,11 @@
 #include "lbann/models/model.hpp"
 #include "lbann/utils/dnn_lib/helpers.hpp"
 #include "lbann/utils/random_number_generators.hpp"
+#ifdef LBANN_HAS_CUDNN
 #include "lbann/utils/dnn_lib/cudnn/dropout.hpp"
+#elif defined LBANN_HAS_MIOPEN
+#include "lbann/utils/dnn_lib/miopen/dropout.hpp"
+#endif
 
 namespace lbann {
 
@@ -63,43 +67,43 @@ public:
           EvalType keep_prob = EvalType(0.5))
     : regularizer_layer<TensorDataType>(comm),
       m_keep_prob(keep_prob)
-#ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_DNN_LIB
     , m_tensors_cudnn_desc(this)
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_DNN_LIB
   {
-#if defined(LBANN_HAS_CUDNN) && defined(LBANN_DETERMINISTIC)
+#if defined(LBANN_HAS_DNN_LIB) && defined(LBANN_DETERMINISTIC)
     /// @todo GPU implementation of dropout with sequential consistency
     if (Dev == El::Device::GPU && this->get_comm()->am_trainer_master()) {
       std::cerr << "Warning: GPU dropout currently does not guarantee "
                 << "sequential consistency" << std::endl;
     }
-#endif // defined(LBANN_HAS_CUDNN) && defined(LBANN_DETERMINISTIC)
+#endif // defined(LBANN_HAS_DNN_LIB) && defined(LBANN_DETERMINISTIC)
   }
 
   dropout(const dropout& other)
     : regularizer_layer<TensorDataType>(other),
       m_keep_prob(other.m_keep_prob),
       m_mask(other.m_mask ? other.m_mask->Copy() : nullptr)
-#ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_DNN_LIB
       ,
       m_tensors_cudnn_desc(other.m_tensors_cudnn_desc)
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_DNN_LIB
   {
-#ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_DNN_LIB
     m_tensors_cudnn_desc.set_layer(this);
     m_states = other.m_states;
     m_reserve_space = other.m_reserve_space;
     if (other.m_dropout_cudnn_desc != nullptr) {
       setup_dropout_cudnn_desc();
     }
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_DNN_LIB
   }
 
   dropout& operator=(const dropout& other) {
     regularizer_layer<TensorDataType>::operator=(other);
     m_keep_prob = other.m_keep_prob;
     m_mask = other.m_mask ? std::unique_ptr<AbsDistMatrixType>(other.m_mask->Copy()) : nullptr;
-#ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_DNN_LIB
     m_tensors_cudnn_desc = other.m_tensors_cudnn_desc;
     m_tensors_cudnn_desc.set_layer(this);
     m_states = other.m_states;
@@ -107,7 +111,7 @@ public:
     if (other.m_dropout_cudnn_desc != nullptr) {
       setup_dropout_cudnn_desc();
     }
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_DNN_LIB
     return *this;
   }
 
@@ -146,14 +150,14 @@ protected:
 
   void setup_gpu() override {
     regularizer_layer<TensorDataType>::setup_gpu();
-#ifndef LBANN_HAS_CUDNN
-    LBANN_ERROR("cuDNN not detected");
+#ifndef LBANN_HAS_DNN_LIB
+    LBANN_ERROR("DNN Library not detected");
 #else
 
     // Initialize cuDNN objects
     setup_dropout_cudnn_desc();
 
-#endif // LBANN_HAVE_CUDNN
+#endif // LBANN_HAVE_DNN_LIB
   }
 
   void fp_compute () override {
@@ -223,8 +227,8 @@ protected:
   }
 
   void fp_compute_gpu() {
-#ifndef LBANN_HAS_CUDNN
-    LBANN_ERROR("cuDNN not detected");
+#ifndef LBANN_HAS_DNN_LIB
+    LBANN_ERROR("DNN Library not detected");
 #else
 
     // Matrices
@@ -255,12 +259,12 @@ protected:
                            local_output,
                            m_reserve_space);
 
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_DNN_LIB
   }
 
   void bp_compute_gpu() {
-#ifndef LBANN_HAS_CUDNN
-    LBANN_ERROR("cuDNN not detected");
+#ifndef LBANN_HAS_DNN_LIB
+    LBANN_ERROR("DNN Library not detected");
 #else
 
     // Matrices
@@ -284,10 +288,10 @@ protected:
                                 m_reserve_space);
       }
     }
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_DNN_LIB
   }
 
-#ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_DNN_LIB
   /** Setup cuDNN dropout descriptor and RNG state.
    */
   void setup_dropout_cudnn_desc() {
@@ -303,14 +307,14 @@ protected:
                              get_generator()());
 
   }
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_DNN_LIB
 
   /** Probability of keeping each unit. */
   EvalType m_keep_prob;
   /** Current dropout mask (a scaled Bernoulli random matrix). */
   std::unique_ptr<AbsDistMatrixType> m_mask;
 
-#ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_DNN_LIB
   /** Dropout cuDNN descriptor. */
   dnn_lib::DropoutDescriptor m_dropout_cudnn_desc;
   /** Tensor cuDNN descriptors. */
@@ -319,7 +323,7 @@ protected:
   El::Matrix<TensorDataType, El::Device::GPU> m_states;
   /** Work space for cuDNN dropout. */
   El::Matrix<TensorDataType, El::Device::GPU> m_reserve_space;
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_DNN_LIB
 
 };
 
