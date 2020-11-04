@@ -16,6 +16,8 @@
 
 namespace cereal
 {
+bool doing_catch_testing() noexcept;
+void set_catch_testing() noexcept;
 
 /** @brief Save a CPU matrix to a text-based archive.
  *
@@ -141,10 +143,12 @@ template <typename ArchiveT, typename T,
 void save(ArchiveT& ar, El::AbstractDistMatrix<T> const& mat)
 {
   LBANN_ASSERT(!mat.Viewing());
-
-  if (mat.DistRank() == mat.Root())
-    ar(make_nvp("global_height", mat.Height()),
-       make_nvp("global_width", mat.Width()));
+  if (doing_catch_testing())
+  {
+    if (mat.DistRank() == mat.Root())
+      ar(make_nvp("global_height", mat.Height()),
+         make_nvp("global_width", mat.Width()));
+  }
 }
 
 template <typename ArchiveT, typename T,
@@ -165,14 +169,17 @@ template <typename ArchiveT, typename T,
           lbann::utils::WhenTextArchive<ArchiveT> = 1>
 void load(ArchiveT& ar, El::AbstractDistMatrix<T>& mat)
 {
-  El::Int height, width;
-  if (mat.DistRank() == mat.Root())
-    ar(height, width);
-  El::mpi::Broadcast(height, mat.Root(), mat.DistComm(),
-                     El::SyncInfo<El::Device::CPU>{});
-  El::mpi::Broadcast(width, mat.Root(), mat.DistComm(),
-                     El::SyncInfo<El::Device::CPU>{});
-  mat.Resize(height, width);
+  if (doing_catch_testing())
+  {
+    El::Int height, width;
+    if (mat.DistRank() == mat.Root())
+      ar(height, width);
+    El::mpi::Broadcast(height, mat.Root(), mat.DistComm(),
+                       El::SyncInfo<El::Device::CPU>{});
+    El::mpi::Broadcast(width, mat.Root(), mat.DistComm(),
+                       El::SyncInfo<El::Device::CPU>{});
+    mat.Resize(height, width);
+  }
 }
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -296,7 +303,6 @@ struct LoadAndConstruct<El::DistMatrix<DataT, CDist, RDist, Wrap, D>>
   static void load_and_construct(
     ArchiveT & ar, cereal::construct<DistMatrixType> & construct)
   {
-    // I think this should actually create a CircCirc matrix, but we'll see.
     CircMatrixType cmat(lbann::utils::get_current_grid(), /*root=*/0);
     ar(cmat);
     construct(cmat);

@@ -91,6 +91,18 @@ void load(JSONInputArchive& iarchive, half_float::half& val)
 
 #endif // LBANN_HAS_HALF
 
+namespace
+{
+bool doing_catch_testing_ = false;
+}
+bool doing_catch_testing() noexcept
+{
+  return doing_catch_testing_;
+}
+void set_catch_testing() noexcept
+{
+  doing_catch_testing_ = true;
+}
 }// namespace cereal
 
 #include <stack>

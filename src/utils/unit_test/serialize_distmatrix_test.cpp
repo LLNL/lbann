@@ -36,6 +36,9 @@ TEMPLATE_LIST_TEST_CASE("DistMatrix serialization",
                         "[serialize][utils][distmatrix][mpi]",
                         AllDistMatrixTypes)
 {
+  cereal::set_catch_testing();
+  REQUIRE(cereal::doing_catch_testing());
+
   using DistMatType = TestType;
 
   std::stringstream ss;
@@ -107,6 +110,9 @@ TEMPLATE_LIST_TEST_CASE(
   "[serialize][utils][distmatrix][mpi][smartptr]",
   AllDistMatrixTypes)
 {
+  cereal::set_catch_testing();
+  REQUIRE(cereal::doing_catch_testing());
+
   using DistMatType = TestType;
   using AbsDistMatType = typename TestType::absType;
 
