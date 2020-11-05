@@ -103,7 +103,7 @@ void assign_layers_to_objective_function(
                     "to correspond to layer \"", params.layer(), "\", ",
                     "but no such layer exists");
       }
-      term->set_layer(*l.lock());
+      term->set_layer(l);
     }
   }
 
@@ -142,7 +142,7 @@ void assign_layers_to_metrics(
                     "to correspond to layer \"", params.layer(), "\", "
                     "but no such layer exists");
       }
-      m->set_layer(*l.lock());
+      m->set_layer(l);
     }
   }
 

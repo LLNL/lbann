@@ -497,9 +497,10 @@ void model::remap_pointers(
   // Fix pointers in objective function
   if (m_objective_function != nullptr) {
     auto layer_pointers = m_objective_function->get_layer_pointers();
-    for (auto& layer_pointer : layer_pointers) {
-      if (layer_map.count(layer_pointer) > 0) {
-        layer_pointer = layer_map.at(layer_pointer).lock().get();
+    for (auto& ptr : layer_pointers) {
+      auto* raw_ptr = ptr.lock().get();
+      if (layer_map.count(raw_ptr) > 0) {
+        ptr = layer_map.at(raw_ptr);
       }
     }
     m_objective_function->set_layer_pointers(layer_pointers);
@@ -515,9 +516,10 @@ void model::remap_pointers(
   // Fix pointers in metrics
   for (const auto& m : m_metrics) {
     auto layer_pointers = m->get_layer_pointers();
-    for (auto& layer_pointer : layer_pointers) {
-      if (layer_map.count(layer_pointer) > 0) {
-        layer_pointer = layer_map.at(layer_pointer).lock().get();
+    for (auto& ptr : layer_pointers) {
+      auto* raw_ptr = ptr.lock().get();
+      if (layer_map.count(raw_ptr) > 0) {
+        ptr = layer_map.at(raw_ptr);
       }
     }
     m->set_layer_pointers(layer_pointers);
@@ -743,7 +745,7 @@ void model::add_evaluation_layers(std::unordered_set<Layer*>& layer_set,
         // Add evaluation layer to model
         l_raw_ptr->add_child_layer(eval);
         eval->add_parent_layer(l_view_ptr);
-        term->set_layer(*eval);
+        term->set_layer(eval);
         add_layer(std::move(eval));
 
       }
@@ -800,7 +802,7 @@ void model::add_evaluation_layers(std::unordered_set<Layer*>& layer_set,
         // Add evaluation layer to model
         l_raw_ptr->add_child_layer(eval);
         eval->add_parent_layer(l_view_ptr);
-        met->set_layer(*eval);
+        met->set_layer(eval);
         add_layer(std::move(eval));
 
       }

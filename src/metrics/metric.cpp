@@ -71,11 +71,11 @@ int metric::get_statistics_num_samples(execution_mode mode) const {
   }
 }
 
-std::vector<Layer*> metric::get_layer_pointers() const {
+std::vector<ViewingLayerPtr> metric::get_layer_pointers() const {
   return {};
 }
 
-void metric::set_layer_pointers(std::vector<Layer*> layers) {
+void metric::set_layer_pointers(std::vector<ViewingLayerPtr> layers) {
   if (!layers.empty()) {
     std::stringstream err;
     err << "attempted to set layer pointers for "
