@@ -14,6 +14,7 @@ set_full_path(THIS_DIR_SOURCES
   image.cpp
   jag_common.cpp
   lbann_library.cpp
+  miopen.cpp
   number_theory.cpp
   omp_diagnostics.cpp
   options.cpp

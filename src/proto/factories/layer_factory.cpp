@@ -113,6 +113,8 @@
 
 #ifdef LBANN_HAS_CUDNN
 #include <cudnn.h>
+#elif define LBANN_HAS_MIOPEN
+#include <miopen/miopen.h>
 #endif // LBANN_HAS_CUDNN
 
 namespace lbann {

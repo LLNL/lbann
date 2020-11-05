@@ -53,7 +53,7 @@ struct handle_wrapper {
     CHECK_MIOPEN(hipSetDevice(hydrogen::gpu::DefaultDevice()));
     if (handle == nullptr) { CHECK_MIOPEN(miopenCreate(&handle)); }
     if (handle == nullptr) { LBANN_ERROR("failed to create MIOpen handle"); }
-    CHECK_MIOPEN(miopenSetStream(handle, hydrogen::gpu::GetDefaultStream()));
+    CHECK_MIOPEN(miopenSetStream(handle, hydrogen::rocm::GetDefaultStream()));
   }
   handle_wrapper(const handle_wrapper&) = delete;
   handle_wrapper& operator=(const handle_wrapper&) = delete;
@@ -77,9 +77,9 @@ void destroy() {
 
 miopenHandle_t& get_handle() {
   if (!handle_instance) { initialize(); }
-  CHECK_MIOPEN(hipSetDevice(hydrogen::gpu::DefaultDevice()));
+  CHECK_MIOPEN(hipSetDevice(hydrogen::rocm::DefaultDevice()));
   CHECK_MIOPEN(miopenSetStream(handle_instance->handle,
-                             hydrogen::gpu::GetDefaultStream()));
+                             hydrogen::rocm::GetDefaultStream()));
   return handle_instance->handle;
 }
 
@@ -90,7 +90,7 @@ miopenHandle_t& get_handle() {
 template <typename TensorDataType>
 miopenDataType_t get_data_type() {
   LBANN_ERROR("invalid data type for MIOpen");
-  return HIPDNN_DATA_FLOAT;
+  return miopenFloat;
 }
 
 #ifdef LBANN_HAS_GPU_FP16
