@@ -112,6 +112,12 @@ if not num_vertices:
     raise RuntimeError('Number of graph vertices not provided in config file')
 config.set('Graph', 'num_vertices', str(num_vertices))
 
+# Get epoch size
+epoch_size = config.getint('Skip-gram', 'epoch_size', fallback=0)
+if not epoch_size:
+    epoch_size = 100 * args.mini_batch_size
+config.set('Skip-gram', 'epoch_size', str(epoch_size))
+
 # Write config file to work directory
 config_file = os.path.join(args.work_dir, 'experiment.config')
 with open(config_file, 'w') as f:
@@ -125,6 +131,7 @@ walk_file = config.get('Walks', 'file', fallback=None)
 walk_length = config.getint('Walks', 'walk_length')
 return_param = config.getfloat('Walks', 'return_param')
 inout_param = config.getfloat('Walks', 'inout_param')
+epoch_size = config.getint('Skip-gram', 'epoch_size')
 num_negative_samples = config.getint('Skip-gram', 'num_negative_samples')
 
 # ----------------------------------
@@ -134,15 +141,8 @@ num_negative_samples = config.getint('Skip-gram', 'num_negative_samples')
 # Construct data reader
 if args.offline_walks:
     assert walk_file, 'Walk file must be specified for offline node2vec'
-    # Note: Train one epoch if epoch size isn't provided
-    epoch_size = config.getint(
-        'Walks',
-        'num_walks',
-        fallback=args.num_iterations*args.mini_batch_size,
-    )
     reader = data.data_readers.make_offline_data_reader()
 else:
-    epoch_size = 100 * args.mini_batch_size
     assert graph_file, 'Graph file must be specified for online node2vec'
     # Note: Preprocess graph with HavoqGT and store in shared memory
     # before starting LBANN.

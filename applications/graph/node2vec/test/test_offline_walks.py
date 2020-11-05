@@ -23,7 +23,6 @@ def test_dataset():
     # Check number of samples
     num_samples = offline_walks.num_samples()
     assert num_samples >= 0, 'Invalid number of data samples'
-    assert num_samples != 0, 'Dataset has no data samples'
 
     # Check sample dimensions
     sample_dims = offline_walks.sample_dims()
@@ -31,11 +30,8 @@ def test_dataset():
     assert sample_dims[0] > 0, 'Invalid dimensions for data sample'
 
     # Check samples
-    indices = [random.randrange(num_samples) for _ in range(1000)]
-    indices.append(0)
-    indices.append(num_samples-1)
-    for index in indices:
-        sample = offline_walks.get_sample(index)
+    for _ in range(1000):
+        sample = offline_walks.get_sample(0)
         assert sample.shape == sample_dims, 'Unexpected dimensions for data sample'
         for node in sample:
             assert 0 <= node < num_vertices, \
@@ -53,11 +49,9 @@ def profile_dataset():
     import offline_walks
     output_file = os.path.join(root_dir, 'benchmark_dataset.prof')
     num_iters = 1000
-    num_samples = offline_walks.num_samples()
-    indices = [random.randrange(num_samples) for _ in range(num_iters)]
     def func():
-        for i in indices:
-            offline_walks.get_sample(i)
+        for _ in range(1000):
+            offline_walks.get_sample(0)
     cProfile.runctx('func()', globals(), locals(), filename=output_file)
 
 if __name__ == '__main__':
