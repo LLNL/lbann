@@ -10,6 +10,7 @@ import configparser
 import os
 import os.path
 import numpy as np
+import pandas as pd
 
 # Load config file
 config_file = os.getenv('LBANN_NODE2VEC_CONFIG_FILE')
@@ -31,11 +32,11 @@ num_negative_samples = config.getint('Skip-gram', 'num_negative_samples')
 noise_distribution_exp = config.getfloat('Skip-gram', 'noise_distribution_exp')
 
 # Load walks from file
-### @todo Pandas
 ### @todo Partial read on each MPI rank
 if not walk_file:
     raise RuntimeError(f'No walk file specified in {config_file}')
-walks = np.loadtxt(walk_file, dtype=np.int64)
+walks = pd.read_csv(walk_file, delimiter=' ', header=None, dtype=np.int64)
+walks = walks.to_numpy()
 if not num_walks:
     num_walks = walks.shape[0]
 if not walk_length:
