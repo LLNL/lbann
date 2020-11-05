@@ -1,21 +1,39 @@
 #include <catch2/catch.hpp>
 #include <lbann/base.hpp>
 #include <lbann/utils/serialize.hpp>
-#include <El.hpp>
+#include <lbann/utils/h2_tmp.hpp>
 
-#include <cereal/archives/binary.hpp>
-#include <cereal/archives/json.hpp>
-#include <cereal/archives/xml.hpp>
-#include <cereal/types/polymorphic.hpp>
+using MatrixTypes =
+  h2::meta::TL<
+  El::Matrix<float, El::Device::CPU>
+#ifdef LBANN_HAS_GPU
+  , El::Matrix<float, El::Device::GPU>
+#endif
+  >;
 
-#include <lbann/utils/exception.hpp>
-#include <stdexcept>
-
-TEST_CASE("Matrix serialization",
-          "[serialize][utils][matrix][seq]")
+TEMPLATE_LIST_TEST_CASE("Matrix serialization",
+                        "[serialize][utils][matrix][seq]",
+                        MatrixTypes)
 {
+  using MatrixType = TestType;
   std::stringstream ss;
-  El::Matrix<float, El::Device::CPU> mat(5,7), mat_restore;
+  MatrixType mat(13,17), mat_restore;
+
+  SECTION("XML archive")
+  {
+    {
+      cereal::XMLOutputArchive oarchive(ss);
+      CHECK_NOTHROW(oarchive(mat));
+    }
+
+    {
+      cereal::XMLInputArchive iarchive(ss);
+      CHECK_NOTHROW(iarchive(mat_restore));
+    }
+
+    CHECK(mat.Height() == mat_restore.Height());
+    CHECK(mat.Width() == mat_restore.Width());
+  }
 
   SECTION("JSON archive")
   {
@@ -55,7 +73,7 @@ TEST_CASE("Matrix serialization",
       for (El::Int row = 0; row < mat.Height(); ++row)
       {
         INFO("(Row,Col) = (" << row << "," << col << ")");
-        CHECK(mat.CRef(row, col) == mat_restore.CRef(row, col));
+        CHECK(mat.Get(row, col) == mat_restore.Get(row, col));
       }
     }
   }
@@ -81,7 +99,7 @@ TEST_CASE("Matrix serialization",
       for (El::Int row = 0; row < mat_noncontig.Height(); ++row)
       {
         INFO("(Row,Col) = (" << row << "," << col << ")");
-        CHECK(mat_noncontig.CRef(row, col) == mat_restore.CRef(row, col));
+        CHECK(mat_noncontig.Get(row, col) == mat_restore.Get(row, col));
       }
     }
 
@@ -91,7 +109,7 @@ TEST_CASE("Matrix serialization",
   {
     auto mat_view = El::View(mat);
     {
-      cereal::JSONOutputArchive oarchive(ss);
+      cereal::XMLOutputArchive oarchive(ss);
       CHECK_THROWS(oarchive(mat_view));
     }
 
@@ -104,14 +122,31 @@ TEST_CASE("Matrix serialization",
 
 using check_valid_ptr = bool;
 
-TEST_CASE("Matrix smart-pointer-to-concrete serialization",
-          "[serialize][utils][matrix][seq][smartptr]")
+TEMPLATE_LIST_TEST_CASE("Matrix smart-pointer-to-concrete serialization",
+                        "[serialize][utils][matrix][seq][smartptr]",
+                        MatrixTypes)
 {
-  using MatrixType = El::Matrix<float, El::Device::CPU>;
+  using MatrixType = TestType;
 
   std::stringstream ss;
   std::unique_ptr<MatrixType> mat, mat_restore;
   mat = std::make_unique<MatrixType>(16, 12);
+
+  SECTION("XML Archive")
+  {
+    {
+      cereal::XMLOutputArchive oarchive(ss);
+      CHECK_NOTHROW(oarchive(mat));
+    }
+    {
+      cereal::XMLInputArchive iarchive(ss);
+      CHECK_NOTHROW(iarchive(mat_restore));
+    }
+
+    REQUIRE((check_valid_ptr) mat_restore);
+    CHECK(mat->Height() == mat_restore->Height());
+    CHECK(mat->Width() == mat_restore->Width());
+  }
 
   SECTION("JSON Archive")
   {
@@ -149,7 +184,7 @@ TEST_CASE("Matrix smart-pointer-to-concrete serialization",
       for (El::Int row = 0; row < mat->Height(); ++row)
       {
         INFO("(Row,Col) = (" << row << "," << col << ")");
-        CHECK(mat->CRef(row, col) == mat_restore->CRef(row, col));
+        CHECK(mat->Get(row, col) == mat_restore->Get(row, col));
       }
     }
   }

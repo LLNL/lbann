@@ -1,14 +1,18 @@
 #include <catch2/catch.hpp>
 #include <lbann/base.hpp>
+#include <lbann/utils/h2_tmp.hpp>
 #include <lbann/utils/serialize.hpp>
-
-#include <El.hpp>
 
 // Enumerate all DistMatrix types. Start by getting all the
 // distributions.
 template <typename T, El::Device D>
 using DistMatrixTypesWithDevice = h2::meta::TL<
-  El::DistMatrix<T, El::CIRC, El::CIRC, El::ELEMENT, D>,
+  // There is currently a known bug where copying
+  // (CIRC,CIRC,CPU)->(CIRC,CIRC,GPU) results in an infinite recursion
+  // in Hydrogen. Since we don't actually use this in our code, ignore
+  // this case for now.
+  //
+  // El::DistMatrix<T, El::CIRC, El::CIRC, El::ELEMENT, D>,
   El::DistMatrix<T, El::MC  , El::MR  , El::ELEMENT, D>,
   El::DistMatrix<T, El::MC  , El::STAR, El::ELEMENT, D>,
   El::DistMatrix<T, El::MD  , El::STAR, El::ELEMENT, D>,
@@ -25,7 +29,14 @@ using DistMatrixTypesWithDevice = h2::meta::TL<
 
 // Now get all the devices. For now, just do CPU testing.
 template <typename T>
-using DistMatrixTypes = DistMatrixTypesWithDevice<T, El::Device::CPU>;
+using DistMatrixTypes =
+#if defined LBANN_HAS_GPU
+  h2::meta::tlist::Append<
+  DistMatrixTypesWithDevice<T, El::Device::CPU>,
+  DistMatrixTypesWithDevice<T, El::Device::GPU>>;
+#else
+  DistMatrixTypesWithDevice<T, El::Device::CPU>;
+#endif // defined LBANN_HAS_GPU
 
 // Finally, enumerate all data types.
 using AllDistMatrixTypes = h2::meta::tlist::Append<
@@ -36,9 +47,6 @@ TEMPLATE_LIST_TEST_CASE("DistMatrix serialization",
                         "[serialize][utils][distmatrix][mpi]",
                         AllDistMatrixTypes)
 {
-  cereal::set_catch_testing();
-  REQUIRE(cereal::doing_catch_testing());
-
   using DistMatType = TestType;
 
   std::stringstream ss;
@@ -110,9 +118,6 @@ TEMPLATE_LIST_TEST_CASE(
   "[serialize][utils][distmatrix][mpi][smartptr]",
   AllDistMatrixTypes)
 {
-  cereal::set_catch_testing();
-  REQUIRE(cereal::doing_catch_testing());
-
   using DistMatType = TestType;
   using AbsDistMatType = typename TestType::absType;
 

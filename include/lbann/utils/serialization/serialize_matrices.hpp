@@ -16,10 +16,7 @@
 
 namespace cereal
 {
-bool doing_catch_testing() noexcept;
-void set_catch_testing() noexcept;
-
-/** @brief Save a CPU matrix to a text-based archive.
+/** @brief Save a matrix to a text-based archive.
  *
  *  For these text-based archives (XML and JSON), this will just
  *  output the matrix metadata. Thus, a true deserialization will not
@@ -41,9 +38,9 @@ void set_catch_testing() noexcept;
  *  @throws lbann::exception Thrown when the matrix is actually a view.
  *  @ingroup serialization
  */
-template <typename ArchiveT, typename T,
+template <typename ArchiveT, typename T, El::Device D,
           lbann::utils::WhenTextArchive<ArchiveT> = 1>
-void save(ArchiveT& archive, El::Matrix<T, El::Device::CPU> const& mat)
+void save(ArchiveT& archive, El::Matrix<T, D> const& mat)
 {
   LBANN_ASSERT(!mat.Viewing());
   archive(make_nvp("height", mat.Height()),
@@ -86,6 +83,33 @@ void save(ArchiveT& archive,
   }
 }
 
+#if defined LBANN_HAS_GPU
+/** @brief Save a GPU matrix to a non-text-based archive.
+ *
+ *  @warning It is the caller's responsibility to ensure that the
+ *           matrix to be serialized is actually a data-owning
+ *           matrix. Serializing views is not supported, and, in the
+ *           context of LBANN, should be unnecessary as the views will
+ *           be reestablished when setup() is called on the
+ *           deserialized objects.
+ *
+ *  @tparam ArchiveT (Inferred) The Cereal archive type to use.
+ *  @tparam T (Inferred) The data type of the matrix.
+ *  @param archive The Cereal archive into which the matrix will be written.
+ *  @param mat The matrix to serialize.
+ *  @throws lbann::exception Thrown when the matrix is actually a view.
+ *  @ingroup serialization
+ */
+template <typename ArchiveT, typename T,
+          lbann::utils::WhenNotTextArchive<ArchiveT> = 1>
+void save(ArchiveT& archive, El::Matrix<T, El::Device::GPU> const& mat)
+{
+  LBANN_ASSERT(!mat.Viewing());
+  El::Matrix<T, El::Device::CPU> cpu_mat(mat);
+  archive(cpu_mat);
+}
+#endif // defined LBANN_HAS_GPU
+
 /** @brief "Load" a CPU Matrix from a text-based archive.
  *
  *  The "text-based" ("human-readable") archives (XML and JSON) will
@@ -104,9 +128,9 @@ void save(ArchiveT& archive,
  *  @todo Perhaps it's better to throw an exception for these archives?
  *  @ingroup serialization
  */
-template <typename ArchiveT, typename T,
+template <typename ArchiveT, typename T, El::Device D,
           lbann::utils::WhenTextArchive<ArchiveT> = 1>
-void load(ArchiveT& archive, El::Matrix<T, El::Device::CPU>& mat)
+void load(ArchiveT& archive, El::Matrix<T, D>& mat)
 {
   LBANN_ASSERT(!mat.Viewing());
   El::Int height, width;
@@ -136,27 +160,81 @@ void load(ArchiveT& archive,
                       mat.Height()*mat.Width()*sizeof(T)));
 }
 
+#if defined LBANN_HAS_GPU
+/** @brief Load a GPU Matrix from a non-text archive.
+ *
+ *  @tparam ArchiveT (Inferred) The Cereal archive type to use.
+ *  @tparam T (Inferred) The data type of the matrix.
+ *  @param archive The Cereal archive from which the matrix will be read.
+ *  @param mat The target matrix to deserialize.
+ *  @throws lbann::exception The input matrix is already setup as a view.
+ *  @ingroup serialization
+ */
+template <typename ArchiveT, typename T,
+          lbann::utils::WhenNotTextArchive<ArchiveT> = 1>
+void load(ArchiveT& archive,
+          El::Matrix<T, El::Device::GPU>& mat)
+{
+  LBANN_ASSERT(!mat.Viewing());
+  El::Matrix<T, El::Device::CPU> cpu_mat;
+  archive(cpu_mat);
+  El::Copy(cpu_mat, mat);
+}
+#endif // defined LBANN_HAS_GPU
+
 // DistMatrix
 
+/** @brief Save a distributed matrix to a text-based archive.
+ *
+ *  For these text-based archives (XML and JSON), this will just
+ *  output the matrix metadata. Thus, a true deserialization will not
+ *  be possible. Since these archive types are primarily intended for
+ *  debugging, this should not be a problem. If it is, open an issue
+ *  and it will be remedied.
+ *
+ *  @warning It is the caller's responsibility to ensure that the
+ *           matrix to be serialized is actually a data-owning
+ *           matrix. Serializing views is not supported, and, in the
+ *           context of LBANN, should be unnecessary as the views will
+ *           be reestablished when setup() is called on the
+ *           deserialized objects.
+ *
+ *  There's a current "feature" in the application side of LBANN in
+ *  which only the trainer root serializes the model to XML. However,
+ *  we want to maintain testing in the "real" mode of operation, in
+ *  which all processes participate in the serialization calls, so for
+ *  now we only do the serialization when testing.
+ *
+ *  @tparam ArchiveT (Inferred) The Cereal archive type to use.
+ *  @tparam T (Inferred) The data type of the matrix.
+ *  @param archive The Cereal archive into which the matrix will be written.
+ *  @param mat The distributed matrix to serialize.
+ *  @throws lbann::exception Thrown when the matrix is actually a view.
+ *  @ingroup serialization
+ */
 template <typename ArchiveT, typename T,
           lbann::utils::WhenTextArchive<ArchiveT> = 1>
 void save(ArchiveT& ar, El::AbstractDistMatrix<T> const& mat)
 {
   LBANN_ASSERT(!mat.Viewing());
-  if (doing_catch_testing())
-  {
-    if (mat.DistRank() == mat.Root())
-      ar(make_nvp("global_height", mat.Height()),
-         make_nvp("global_width", mat.Width()));
-  }
+  if (mat.DistRank() == mat.Root())
+    ar(make_nvp("global_height", mat.Height()),
+       make_nvp("global_width", mat.Width()));
 }
 
+/** @brief Save a distributed matrix to a non-text (binary) archive.
+ *  @tparam ArchiveT (Inferred) The Cereal archive type to use.
+ *  @tparam T (Inferred) The data type of the matrix.
+ *  @param archive The Cereal archive into which the matrix will be written.
+ *  @param mat The distributed matrix to serialize.
+ *  @throws lbann::exception Thrown when the matrix is actually a view.
+ *  @ingroup serialization
+ */
 template <typename ArchiveT, typename T,
           lbann::utils::WhenNotTextArchive<ArchiveT> = 1>
 void save(ArchiveT& ar, El::AbstractDistMatrix<T> const& mat)
 {
   LBANN_ASSERT(!mat.Viewing());
-
   using CircMatType =
     El::DistMatrix<T,El::CIRC,El::CIRC,El::ELEMENT,El::Device::CPU>;
   CircMatType circ_mat(mat);
@@ -165,25 +243,32 @@ void save(ArchiveT& ar, El::AbstractDistMatrix<T> const& mat)
     ar(mat.Height(), mat.Width(), circ_mat.LockedMatrix());
 }
 
+/** @brief Load a DistMatrix from a text-based archive.
+ *
+ *  @tparam ArchiveT (Inferred) The Cereal archive type to use.
+ *  @tparam T (Inferred) The data type of the matrix.
+ *  @param archive The Cereal archive from which the matrix will be read.
+ *  @param mat The target matrix to deserialize into.
+ *  @throws lbann::exception The input matrix is already setup as a view.
+ *  @ingroup serialization
+ */
 template <typename ArchiveT, typename T,
           lbann::utils::WhenTextArchive<ArchiveT> = 1>
 void load(ArchiveT& ar, El::AbstractDistMatrix<T>& mat)
 {
-  if (doing_catch_testing())
-  {
-    El::Int height, width;
-    if (mat.DistRank() == mat.Root())
-      ar(height, width);
-    El::mpi::Broadcast(height, mat.Root(), mat.DistComm(),
-                       El::SyncInfo<El::Device::CPU>{});
-    El::mpi::Broadcast(width, mat.Root(), mat.DistComm(),
-                       El::SyncInfo<El::Device::CPU>{});
-    mat.Resize(height, width);
-  }
+  El::Int height, width;
+  if (mat.DistRank() == mat.Root())
+    ar(height, width);
+  El::mpi::Broadcast(height, mat.Root(), mat.DistComm(),
+                     El::SyncInfo<El::Device::CPU>{});
+  El::mpi::Broadcast(width, mat.Root(), mat.DistComm(),
+                     El::SyncInfo<El::Device::CPU>{});
+  mat.Resize(height, width);
 }
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-// CIRC-CIRC matrix loading.
+// CIRC-CIRC matrix loading. Implementation detail of save/load for
+// AbstractDistMatrix objects.
 template <typename ArchiveT, typename T,
           lbann::utils::WhenNotTextArchive<ArchiveT> = 1>
 void load(
@@ -268,6 +353,7 @@ Grid const& get_current_grid() noexcept;
 namespace cereal
 {
 
+/** @brief Construct DistMatrix object from Cereal archives. */
 template <typename DataT,
           El::Dist CDist,
           El::Dist RDist,
@@ -303,11 +389,14 @@ struct LoadAndConstruct<El::DistMatrix<DataT, CDist, RDist, Wrap, D>>
   static void load_and_construct(
     ArchiveT & ar, cereal::construct<DistMatrixType> & construct)
   {
+    // Build a Circ matrix on the right grid.
     CircMatrixType cmat(lbann::utils::get_current_grid(), /*root=*/0);
+    // Reload the binary
     ar(cmat);
+    // Construct by copying the Circ mat to the right type.
     construct(cmat);
   }
-};
+};// struct LoadAndConstruct<El::DistMatrix<DataT, CDist, RDist, Wrap, D>>
 }// namespace cereal
 
 #endif // LBANN_UTILS_SERIALIZATION_SERIALIZE_MATRICES_HPP_
