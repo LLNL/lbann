@@ -471,8 +471,9 @@ public:
    */
   void set(
     dnnActivationMode_t mode,
-    dnnNanPropagation_t nan_prop,
-    double coeff);
+    double activAlpha,
+    double activBeta,
+    double activGamma);
 
   ///@}
 
@@ -549,15 +550,13 @@ public:
    */
   void set(
     dnnPoolingMode_t mode,
-    dnnNanPropagation_t maxpoolingNanOpt,
     std::vector<int> const& window_dims,
     std::vector<int> const& padding,
     std::vector<int> const& stride);
   void set(
     dnnPoolingMode_t mode,
-    dnnNanPropagation_t nan_prop,
     int num_dims,
-    int const window_dims[],
+    int window_dims[], // MIOpen complains when const
     int const padding[],
     int const stride[]);
 

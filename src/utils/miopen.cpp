@@ -67,6 +67,10 @@ std::unique_ptr<handle_wrapper> handle_instance;
 
 } // namespace
 
+/** Memoization variables */
+static std::map<miopenConvolutionDescriptor_t, int *>
+  sDescTo3DConvolution;  // To bookkeep 3D depth information
+
 void initialize() {
   handle_instance.reset(new handle_wrapper());
 }
@@ -235,7 +239,7 @@ void TensorDescriptor::set(
 // FilterDescriptor
 // -----------------------------
 
-FilterDescriptor::FilterDescriptor(miopenFilterDescriptor_t desc)
+FilterDescriptor::FilterDescriptor(miopenTensorDescriptor_t desc)
   : desc_{desc}
 {}
 
@@ -288,24 +292,24 @@ void swap(FilterDescriptor& first, FilterDescriptor& second) {
   std::swap(first.desc_, second.desc_);
 }
 
-void FilterDescriptor::reset(miopenFilterDescriptor_t desc) {
+void FilterDescriptor::reset(miopenTesnorDescriptor_t desc) {
   if (desc_) {
     CHECK_MIOPEN(miopenDestroyFilterDescriptor(desc_));
   }
   desc_ = desc;
 }
 
-miopenFilterDescriptor_t FilterDescriptor::release() noexcept {
+miopenTensorDescriptor_t FilterDescriptor::release() noexcept {
   auto old_desc = desc_;
   desc_ = nullptr;
   return old_desc;
 }
 
-miopenFilterDescriptor_t FilterDescriptor::get() const noexcept {
+miopenTensorDescriptor_t FilterDescriptor::get() const noexcept {
   return desc_;
 }
 
-FilterDescriptor::operator miopenFilterDescriptor_t() const noexcept {
+FilterDescriptor::operator miopenTensorDescriptor_t() const noexcept {
   return get();
 }
 
@@ -354,7 +358,7 @@ DropoutDescriptor::DropoutDescriptor(const DropoutDescriptor& other) {
     unsigned long long seed;
     CHECK_MIOPEN(miopenDropoutGetStatesSize(get_handle(), &states_size));
     CHECK_MIOPEN(
-      cudnnGetDropoutDescriptor(
+      miopenGetDropoutDescriptor(
         other.desc_,
         get_handle(),
         &dropout,
@@ -418,7 +422,10 @@ void DropoutDescriptor::set(
       dropout,
       states,
       states_size,
-      seed));
+      seed,
+      false,
+      false,
+      MIOPEN_RNG_PSEUDO_XORWOW));
 }
 
 // -----------------------------
@@ -481,7 +488,7 @@ void RNNDescriptor::set(
   miopenRNNAlgo_t algorithm,
   miopenRNNMode_t cell_mode,
   miopenRNNBiasMode_t bias_mode,
-  miopenDirectionMode_t direction_mode,
+  miopenRNNDirectionMode_t direction_mode,
   miopenRNNInputMode_t input_mode,
   miopenDataType_t data_type,
   miopenDataType_t math_precision,
@@ -541,21 +548,21 @@ ConvolutionDescriptor::ConvolutionDescriptor(const ConvolutionDescriptor& rhs)
   miopenDataType_t data_type;
   int num_dims, num_groups;
   //CHECK_MIOPEN(cudnnGetConvolutionMathType(rhs.desc_, &math_type));
-  CHECK_MIOPEN(cudnnGetConvolutionGroupCount(rhs.desc_, &num_groups));
+  //CHECK_MIOPEN(cudnnGetConvolutionGroupCount(rhs.desc_, &num_groups));
   // Get the mode, data type, and dims
   CHECK_MIOPEN(
-    cudnnGetConvolutionNdDescriptor(
+    miopenGetConvolutionNdDescriptor(
       rhs.desc_, 0, &num_dims,
       nullptr, nullptr, nullptr,
-      &mode, &data_type));
+      &mode));
 
   // Get the padding, strides, and dilations
   std::vector<int> pads(num_dims), strides(num_dims), dilations(num_dims);
   CHECK_MIOPEN(
-    cudnnGetConvolutionNdDescriptor(
+    miopenGetConvolutionNdDescriptor(
       rhs.desc_, num_dims, &num_dims,
       pads.data(), strides.data(), dilations.data(),
-      &mode, &data_type));
+      &mode));
 
   // Now set up this one
   this->set(
@@ -635,10 +642,28 @@ void ConvolutionDescriptor::set(
     miopenConvolutionMode_t mode)
 {
   this->create();
-  CHECK_MIOPEN(
+  /*CHECK_MIOPEN(
     miopenSetConvolutionNdDescriptor(
       desc_, array_dim, pad, stride, dilation,
       mode, data_type));
+  */
+  if (array_dim == 2) {
+    int pad_h, pad_w, u, v, d_h, d_w;
+    pad_h = pad[0];
+    pad_w = pad[1];
+    u = stride[0];
+    v = stride[1];
+    d_h = dilation[0];
+    d_w = dilation[1];
+    CHECK_MIOPEN(
+      miopenInitConvolutionDescriptor(
+        desc_, mode, pad_h, pad_w, u, v, d_h, d_w));
+  }
+  else {
+    CHECK_MIOPEN(
+      miopenInitConvolutionNdDescriptor(
+        desc_, array_dim, pad, stride, dilation, mode));
+  }
 }
 
 //void ConvolutionDescriptor::set_math_mode(miopenMathType_t math_type)
@@ -688,11 +713,12 @@ ActivationDescriptor::ActivationDescriptor(const ActivationDescriptor& rhs)
   }
 
   miopenActivationMode_t mode;
-  miopenNanPropagation_t nan_prop;
-  double coeff;
+  //miopenNanPropagation_t nan_prop;
+  double activAlpha, activBeta, activGamma;
   CHECK_MIOPEN(
-    miopenGetActivationDescriptor(rhs.desc_, &mode, &nan_prop, &coeff));
-  this->set(mode, nan_prop, coeff);
+    miopenGetActivationDescriptor(rhs.desc_, &mode,
+                                  &activAlpha, &activBeta, &activGamma));
+  this->set(mode, activAlpha, activBeta, activGamma);
 }
 
 ActivationDescriptor::ActivationDescriptor(ActivationDescriptor&& rhs)
@@ -744,12 +770,14 @@ void ActivationDescriptor::create()
 
 void ActivationDescriptor::set(
     miopenActivationMode_t mode,
-    miopenNanPropagation_t nan_prop,
-    double coeff)
+    double activAlpha,
+    double activBeta,
+    double activGamma)
 {
   this->create();
   CHECK_MIOPEN(
-    miopenSetActivationDescriptor(desc_, mode, nan_prop, coeff));
+    miopenSetActivationDescriptor(desc_, mode,
+                                  activAlpha, activBeta, activGamma));
 }
 
 /** @brief Swap two activation descriptors. */
@@ -787,18 +815,18 @@ PoolingDescriptor::PoolingDescriptor(const PoolingDescriptor& rhs)
   }
 
   miopenPoolingMode_t mode;
-  miopenNanPropagation_t nan_prop;
+  //miopenNanPropagation_t nan_prop;
   int num_dims;
   CHECK_MIOPEN(
-    cudnnGetPoolingNdDescriptor(
-      rhs.desc_, 0, &mode, &nan_prop, &num_dims,
+    miopenGetNdPoolingDescriptor(
+      rhs.desc_, 0, &mode, &num_dims,
       nullptr, nullptr, nullptr));
   std::vector<int> window_dims(num_dims), padding(num_dims), strides(num_dims);
   CHECK_MIOPEN(
-    cudnnGetPoolingNdDescriptor(
-      rhs.desc_, num_dims, &mode, &nan_prop, &num_dims,
+    miopenGetNdPoolingDescriptor(
+      rhs.desc_, num_dims, &mode, &num_dims,
       window_dims.data(), padding.data(), strides.data()));
-  this->set(mode, nan_prop, window_dims, padding, strides);
+  this->set(mode, window_dims, padding, strides);
 }
 
 PoolingDescriptor::PoolingDescriptor(PoolingDescriptor&& rhs)
@@ -851,29 +879,27 @@ void PoolingDescriptor::create()
 
 void PoolingDescriptor::set(
   miopenPoolingMode_t mode,
-  miopenNanPropagation_t nan_prop,
   std::vector<int> const& window_dims,
   std::vector<int> const& padding,
   std::vector<int> const& stride)
 {
   LBANN_ASSERT(window_dims.size() == padding.size());
   LBANN_ASSERT(window_dims.size() == stride.size());
-  this->set(mode, nan_prop, window_dims.size(),
+  this->set(mode, window_dims.size(),
             window_dims.data(), padding.data(), stride.data());
 }
 
 void PoolingDescriptor::set(
   miopenPoolingMode_t mode,
-  miopenNanPropagation_t nan_prop,
   int num_dims,
-  int const window_dims[],
+  int window_dims[], // when const, MIOpen complains
   int const padding[],
   int const stride[])
 {
   this->create();
   CHECK_MIOPEN(
-    miopenSetPoolingNdDescriptor(
-      desc_, mode, nan_prop, num_dims, window_dims, padding, stride));
+    miopenSetNdPoolingDescriptor(
+      desc_, mode, num_dims, window_dims, padding, stride));
 }
 
 void swap(PoolingDescriptor& lhs, PoolingDescriptor& rhs)
@@ -964,10 +990,11 @@ void LRNDescriptor::create()
 
 void LRNDescriptor::set(unsigned n, double alpha, double beta, double k)
 {
-  LBANN_ASSERT(n >= MIOPEN_LRN_MIN_N);
-  LBANN_ASSERT(n <= MIOPEN_LRN_MAX_N);
-  LBANN_ASSERT(k >= MIOPEN_LRN_MIN_K);
-  LBANN_ASSERT(beta >= MIOPEN_LRN_MIN_BETA);
+  //TODO: find MIOpen equivalent
+  //LBANN_ASSERT(n >= MIOPEN_LRN_MIN_N);
+  //LBANN_ASSERT(n <= MIOPEN_LRN_MAX_N);
+  //LBANN_ASSERT(k >= MIOPEN_LRN_MIN_K);
+  //LBANN_ASSERT(beta >= MIOPEN_LRN_MIN_BETA);
 
   this->create();
   CHECK_MIOPEN(miopenSetLRNDescriptor(desc_, n, alpha, beta, k));
@@ -1226,13 +1253,13 @@ TensorDescriptor& entrywise_layer_tensor_manager<TensorDataType>::get_error_sign
 namespace {
 
 // Non-deterministic algorithms.
-std::vector<miopenConvolutionFwdAlgo_t> nondet_fwd_algos = {};
-std::vector<miopenConvolutionBwdDataAlgo_t> nondet_bwd_data_algos = {
-  HIPDNN_CONVOLUTION_BWD_DATA_ALGO_0
+std::vector<miopenConvFwdAlgorithm_t> nondet_fwd_algos = {};
+std::vector<miopenConvBwdDataAlgorithm_t> nondet_bwd_data_algos = {
+  miopenConvolutionBwdDataAlgoGEMM
 };
-std::vector<miopenConvolutionBwdFilterAlgo_t> nondet_bwd_filter_algos = {
-  HIPDNN_CONVOLUTION_BWD_FILTER_ALGO_0,
-  HIPDNN_CONVOLUTION_BWD_FILTER_ALGO_3
+std::vector<miopenConvBwdWeightsAlgorithm_t> nondet_bwd_filter_algos = {
+  miopenConvolutionBwdWeightsAlgoGEMM
+  //HIPDNN_CONVOLUTION_BWD_FILTER_ALGO_3
 };
 
 template <typename AlgoType, typename PerfType>
@@ -1243,7 +1270,7 @@ AlgoType find_best_heuristic_algorithm(
   size_t max_ws_size) {
   std::vector<AlgoType> algos;
   for (const auto& p : perf_results) {
-    if (p.status != HIPDNN_STATUS_SUCCESS) {
+    if (p.status != miopenStatusSuccess) {
       continue;
     }
     if (deterministic &&
@@ -1270,7 +1297,7 @@ AlgoType find_best_algorithm(
   size_t max_ws_size) {
   std::map<AlgoType, float> time_map;
   for (const auto& p : perf_results) {
-    if (p.status != HIPDNN_STATUS_SUCCESS) {
+    if (p.status != miopenStatusSuccess) {
       // If an algorithm fails, we still add it in case the failure is
       // nondeterministic.
       time_map[p.algo] = std::numeric_limits<float>::max();
@@ -1309,41 +1336,55 @@ AlgoType find_best_algorithm(
   return best_algo;
 }
 
-miopenConvolutionFwdAlgo_t get_fwd_algo_heuristic(
+miopenConvFwdAlgorithm_t get_fwd_algo_heuristic(
   bool deterministic,
   const TensorDescriptor& input_desc,
+  const void* input,
   const FilterDescriptor& kernel_desc,
+  const void* kernel,
   const ConvolutionDescriptor& conv_desc,
   const TensorDescriptor& output_desc,
-  size_t ws_size) {
-  int num_algos;
-  CHECK_MIOPEN(cudnnGetConvolutionForwardAlgorithmMaxCount(
-                get_handle(), &num_algos));
-  std::vector<miopenConvolutionFwdAlgoPerf_t> perf_results(num_algos);
+  void* output,
+  size_t ws_size,
+  void* ws) {
+  int num_algos = 5; //TODO: find smarter way to get algo count
+  //CHECK_MIOPEN(cudnnGetConvolutionForwardAlgorithmMaxCount(
+  //              get_handle(), &num_algos));
+  std::vector<miopenConvAlgoPerf_t> perf_results(num_algos);
   int num_tested_algos;
-  CHECK_MIOPEN(cudnnGetConvolutionForwardAlgorithm_v7(
-                get_handle(), input_desc, kernel_desc, conv_desc, output_desc,
-                num_algos, &num_tested_algos, perf_results.data()));
+  CHECK_MIOPEN(miopenFindConvolutionForwardAlgorithm(
+                get_handle(), input_desc, input, kernel_desc, kernel, conv_desc, output_desc, output,
+                num_algos, &num_tested_algos, perf_results.data(), ws, ws_size, true));
   return find_best_heuristic_algorithm(perf_results, nondet_fwd_algos,
                                        deterministic, ws_size);
 }
 
-miopenConvolutionBwdDataAlgo_t get_bwd_data_algo_heuristic(
+miopenConvBwdDataAlgorithm_t get_bwd_data_algo_heuristic(
   bool deterministic,
   const FilterDescriptor& kernel_desc,
+  const void* kernel,
   const TensorDescriptor& prev_error_signal_desc,
+  const void* prev_error_signal,
   const ConvolutionDescriptor& conv_desc,
   const TensorDescriptor& error_signal_desc,
-  size_t ws_size) {
-  int num_algos;
-  CHECK_MIOPEN(cudnnGetConvolutionBackwardDataAlgorithmMaxCount(
-                get_handle(), &num_algos));
-  std::vector<miopenConvolutionBwdDataAlgoPerf_t> perf_results(num_algos);
+  void* error_signal,
+  size_t ws_size,
+  void* ws) {
+  int num_algos = 4; //TODO
+  //CHECK_MIOPEN(cudnnGetConvolutionBackwardDataAlgorithmMaxCount(
+  //              get_handle(), &num_algos));
+  std::vector<miopenConvAlgoPerf_t> perf_results(num_algos);
   int num_tested_algos;
-  CHECK_MIOPEN(cudnnGetConvolutionBackwardDataAlgorithm_v7(
-                get_handle(), kernel_desc, prev_error_signal_desc, conv_desc,
-                error_signal_desc, num_algos, &num_tested_algos,
-                perf_results.data()));
+  CHECK_MIOPEN(miopenFindConvolutionBackwardDataAlgorithm(
+                get_handle(),
+                prev_error_signal_desc, prev_error_signal,
+                kernel_desc, kernel,
+                conv_desc,
+                error_signal_desc, error_signal,
+                num_algos, &num_tested_algos,
+                perf_results.data(),
+                ws, ws_size,
+                true));
   return find_best_heuristic_algorithm(perf_results, nondet_bwd_data_algos,
                                        deterministic, ws_size);
 }
@@ -1495,8 +1536,12 @@ fwd_conv_alg get_fwd_algorithm(
                               output_desc, output,
                               ws_size, ws);
   } else {
-    a = get_fwd_algo_heuristic(deterministic, input_desc, kernel_desc,
-                               conv_desc, output_desc, ws_size);
+    a = get_fwd_algo_heuristic(deterministic,
+                               input_desc, input,
+                               kernel_desc, kernel,
+                               conv_desc,
+                               output_desc, output,
+                               ws_size, ws);
   }
   return from_cudnn(a);
 }
@@ -1522,9 +1567,12 @@ bwd_data_conv_alg get_bwd_data_algorithm(
                                    error_signal_desc, error_signal,
                                    ws_size, ws);
   } else {
-    a = get_bwd_data_algo_heuristic(deterministic, kernel_desc,
-                                    prev_error_signal_desc, conv_desc,
-                                    error_signal_desc, ws_size);
+    a = get_bwd_data_algo_heuristic(deterministic,
+                                    kernel_desc, kernel,
+                                    prev_error_signal_desc, prev_error_signal,
+                                    conv_desc,
+                                    error_signal_desc, error_signal,
+                                    ws_size, ws);
   }
   return from_cudnn(a);
 }
@@ -1558,7 +1606,8 @@ bwd_filter_conv_alg get_bwd_filter_algorithm(
 }
 
 namespace {
-miopenMathType_t default_tensor_ops_mode = HIPDNN_DEFAULT_MATH;
+//TODO:
+//miopenMathType_t default_tensor_ops_mode = HIPDNN_DEFAULT_MATH;
 }
 
 void default_to_tensor_ops() noexcept
