@@ -48,9 +48,8 @@ def profile_dataset():
     import cProfile
     import offline_walks
     output_file = os.path.join(root_dir, 'benchmark_dataset.prof')
-    num_iters = 1000
     def func():
-        for _ in range(1000):
+        for _ in range(5000):
             offline_walks.get_sample(0)
     cProfile.runctx('func()', globals(), locals(), filename=output_file)
 
