@@ -370,12 +370,12 @@ private:
   void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override;
 #endif // LBANN_HAS_DISTCONV
 
-#ifdef LBANN_HAS_CUDA
+#ifdef LBANN_HAS_GPU
   template <typename U>
   friend class dnn_lib::data_parallel_layer_tensor_manager;
   template <typename U>
   friend class dnn_lib::entrywise_layer_tensor_manager;
-#endif // LBANN_HAS_CUDA
+#endif // LBANN_HAS_GPU
 };
 
 #ifndef LBANN_DATA_TYPE_LAYER_INSTANTIATE

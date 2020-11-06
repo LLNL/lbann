@@ -814,7 +814,7 @@ bwd_filter_conv_alg get_bwd_filter_algorithm(
 /** @brief Set the default to use tensor core operations, allowing
  *         FP32->FP16 conversions.
  */
-void default_to_tensor_ops() noexcept;
+//void default_to_tensor_ops() noexcept;
 
 /** @brief Get the default math type.
  *
