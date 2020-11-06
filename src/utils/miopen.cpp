@@ -50,7 +50,7 @@ namespace {
 struct handle_wrapper {
   miopenHandle_t handle;
   handle_wrapper() : handle(nullptr) {
-    CHECK_MIOPEN(hipSetDevice(hydrogen::gpu::DefaultDevice()));
+    CHECK_ROCM(hipSetDevice(hydrogen::gpu::DefaultDevice()));
     if (handle == nullptr) { CHECK_MIOPEN(miopenCreate(&handle)); }
     if (handle == nullptr) { LBANN_ERROR("failed to create MIOpen handle"); }
     CHECK_MIOPEN(miopenSetStream(handle, hydrogen::rocm::GetDefaultStream()));
@@ -81,7 +81,7 @@ void destroy() {
 
 miopenHandle_t& get_handle() {
   if (!handle_instance) { initialize(); }
-  CHECK_MIOPEN(hipSetDevice(hydrogen::rocm::DefaultDevice()));
+  CHECK_ROCM(hipSetDevice(hydrogen::gpu::DefaultDevice()));
   CHECK_MIOPEN(miopenSetStream(handle_instance->handle,
                              hydrogen::rocm::GetDefaultStream()));
   return handle_instance->handle;
@@ -101,10 +101,10 @@ miopenDataType_t get_data_type() {
 template <> miopenDataType_t get_data_type<fp16>() { return miopenHalf; }
 #endif // LBANN_HAS_GPU_FP16
 template <> miopenDataType_t get_data_type<float>() { return miopenFloat; }
-template <> miopenDataType_t get_data_type<double>() {
-  LBANN_ERROR("Double is not supported in MIOpen");
-  return miopenFloat; // silence compiler warning about no return
-}
+//template <> miopenDataType_t get_data_type<double>() {
+//  LBANN_ERROR("Double is not supported in MIOpen");
+//  return miopenFloat; // silence compiler warning about no return
+//}
 
 ////////////////////////////////////////////////////////////
 // Wrapper classes for cuDNN types
@@ -130,6 +130,7 @@ TensorDescriptor::TensorDescriptor(const TensorDescriptor& other) {
     miopenDataType_t data_type;
     int num_dims;
     CHECK_MIOPEN(
+      /**
       miopenGetTensorNdDescriptor(
         other.desc_,
         0,          // nbDimsRequested
@@ -137,13 +138,31 @@ TensorDescriptor::TensorDescriptor(const TensorDescriptor& other) {
         &num_dims,
         nullptr,    // dimA
         nullptr));  // strideA
+      */
+      miopenGetTensorDescriptor(
+        other.desc_,
+        &data_type,
+        nullptr,    // dimA
+        nullptr));  // strideA
+    CHECK_MIOPEN(
+      miopenGetTensorDescriptorSize(
+        other.desc_,
+        &num_dims));
     std::vector<int> dims(num_dims), strides(num_dims);
+    /**
     CHECK_MIOPEN(
       miopenGetTensorNdDescriptor(
         other.desc_,
         num_dims,
         &data_type,
         &num_dims,
+        dims.data(),
+        strides.data()));
+    */
+    CHECK_MIOPEN(
+      miopenGetTensorDescriptor(
+        other.desc_,
+        &data_type,
         dims.data(),
         strides.data()));
     set(data_type, dims, strides);
@@ -226,7 +245,7 @@ void TensorDescriptor::set(
   // Set cuDNN object
   create();
   CHECK_MIOPEN(
-    miopenSetTensorNdDescriptor(
+    miopenSetTensorDescriptor(
       desc_,
       data_type,
       dims.size(),
@@ -246,7 +265,7 @@ FilterDescriptor::FilterDescriptor(miopenTensorDescriptor_t desc)
 FilterDescriptor::~FilterDescriptor() {
   if (desc_) {
     // Don't check status to avoid exceptions
-    miopenDestroyFilterDescriptor(desc_);
+    miopenDestroyTensorDescriptor(desc_);
   }
 }
 
@@ -254,7 +273,9 @@ FilterDescriptor::FilterDescriptor(const FilterDescriptor& other) {
   if (other.desc_) {
     int num_dims;
     miopenDataType_t data_type;
+
     //miopenTensorFormat_t format; TODO: fix this (only NCHW supported by MIO)
+    /**
     CHECK_MIOPEN(
       miopenGetFilterNdDescriptor(
         other.desc_,
@@ -263,8 +284,20 @@ FilterDescriptor::FilterDescriptor(const FilterDescriptor& other) {
         &format,
         &num_dims,
         nullptr));  // filterDimA
+    */
+    CHECK_MIOPEN(
+      miopenGetTensorDescriptor(
+        other.desc_,
+        &data_type,
+        nullptr, // filterDimA
+        nullptr)); // strideDimA
+    CHECK_MIOPEN(
+      miopenGetTensorDescriptorSize(
+        other.desc_,
+        &num_dims));
+
     std::vector<int> dims(num_dims);
-    /*
+    /**
     CHECK_MIOPEN(
       miopenGetFilterNdDescriptor(
         other.desc_,
@@ -273,8 +306,19 @@ FilterDescriptor::FilterDescriptor(const FilterDescriptor& other) {
         &format,
         &num_dims,
         dims.data()));
-    set(data_type, format, dims);
     */
+    int strideDimA[num_dims];
+    CHECK_MIOPEN(
+      miopenGetTensorDescriptor(
+        other.desc_,
+        &data_type,
+        dims.data(), // filterDimA
+        strideDimA));
+    CHECK_MIOPEN(
+      miopenGetTensorDescriptorSize(
+        other.desc_,
+        &num_dims));
+    set(data_type, dims);
   }
 }
 
@@ -292,9 +336,9 @@ void swap(FilterDescriptor& first, FilterDescriptor& second) {
   std::swap(first.desc_, second.desc_);
 }
 
-void FilterDescriptor::reset(miopenTesnorDescriptor_t desc) {
+void FilterDescriptor::reset(miopenTensorDescriptor_t desc) {
   if (desc_) {
-    CHECK_MIOPEN(miopenDestroyFilterDescriptor(desc_));
+    CHECK_MIOPEN(miopenDestroyTensorDescriptor(desc_));
   }
   desc_ = desc;
 }
@@ -315,14 +359,14 @@ FilterDescriptor::operator miopenTensorDescriptor_t() const noexcept {
 
 void FilterDescriptor::create() {
   if (!desc_) {
-    CHECK_MIOPEN(miopenCreateFilterDescriptor(&desc_));
+    CHECK_MIOPEN(miopenCreateTensorDescriptor(&desc_));
   }
 }
 
 void FilterDescriptor::set(
   miopenDataType_t data_type,
   //miopenTensorFormat_t format,
-  const std::vector<int>& dims) {
+  std::vector<int>& dims) {
   create();
   /*
   CHECK_MIOPEN(
@@ -333,6 +377,23 @@ void FilterDescriptor::set(
       dims.size(),
       dims.data()));
     */
+  int nbDims = dims.size();
+  int strideA[nbDims];
+  for (int k = nbDims - 1; k >= 0; k--) {
+    strideA[k] = (k != nbDims - 1) ? strideA[k + 1] * dims.data()[k + 1] : 1;
+  }
+  int strideDimA[nbDims - 1];
+  for (int k = nbDims - 1; k >= 0; k--) {
+    strideDimA[k] =
+      (k != nbDims - 1) ? strideDimA[k + 1] * dims.data()[k + 1] : 1;
+  }
+  CHECK_MIOPEN(
+    miopenSetTensorDescriptor(
+      desc_,
+      data_type,
+      nbDims,
+      dims.data(),
+      strideDimA));
 }
 
 // -----------------------------
@@ -356,6 +417,8 @@ DropoutDescriptor::DropoutDescriptor(const DropoutDescriptor& other) {
     void* states;
     size_t states_size;
     unsigned long long seed;
+    bool use_mask, state_evo;
+    miopenRNGType_t rng_mode;
     CHECK_MIOPEN(miopenDropoutGetStatesSize(get_handle(), &states_size));
     CHECK_MIOPEN(
       miopenGetDropoutDescriptor(
@@ -363,8 +426,11 @@ DropoutDescriptor::DropoutDescriptor(const DropoutDescriptor& other) {
         get_handle(),
         &dropout,
         &states,
-        &seed));
-    set(dropout, states, states_size, seed);
+        &seed,
+        &use_mask,
+        &state_evo,
+        &rng_mode));
+    set(dropout, states, states_size, seed, use_mask, state_evo, rng_mode);
   }
 }
 
@@ -413,7 +479,10 @@ void DropoutDescriptor::set(
   float dropout,
   void* states,
   size_t states_size,
-  unsigned long long seed) {
+  unsigned long long seed,
+  bool use_mask,
+  bool state_evo,
+  miopenRNGType_t rng_mode) {
   create();
   CHECK_MIOPEN(
     miopenSetDropoutDescriptor(
@@ -423,9 +492,9 @@ void DropoutDescriptor::set(
       states,
       states_size,
       seed,
-      false,
-      false,
-      MIOPEN_RNG_PSEUDO_XORWOW));
+      use_mask,
+      state_evo,
+      rng_mode));
 }
 
 // -----------------------------
@@ -622,9 +691,9 @@ void ConvolutionDescriptor::create()
 }
 
 void ConvolutionDescriptor::set(
-  std::vector<int> const& pad,
-  std::vector<int> const& stride,
-  std::vector<int> const& dilation,
+  std::vector<int>& pad,
+  std::vector<int>& stride,
+  std::vector<int>& dilation,
   miopenDataType_t data_type,
   miopenConvolutionMode_t mode)
 {
@@ -635,9 +704,9 @@ void ConvolutionDescriptor::set(
 
 void ConvolutionDescriptor::set(
     size_t array_dim,
-    int const pad[],
-    int const stride[],
-    int const dilation[],
+    int pad[],
+    int stride[],
+    int dilation[],
     miopenDataType_t data_type,
     miopenConvolutionMode_t mode)
 {
@@ -879,9 +948,9 @@ void PoolingDescriptor::create()
 
 void PoolingDescriptor::set(
   miopenPoolingMode_t mode,
-  std::vector<int> const& window_dims,
-  std::vector<int> const& padding,
-  std::vector<int> const& stride)
+  std::vector<int>& window_dims,
+  std::vector<int>& padding,
+  std::vector<int>& stride)
 {
   LBANN_ASSERT(window_dims.size() == padding.size());
   LBANN_ASSERT(window_dims.size() == stride.size());
@@ -893,8 +962,8 @@ void PoolingDescriptor::set(
   miopenPoolingMode_t mode,
   int num_dims,
   int window_dims[], // when const, MIOpen complains
-  int const padding[],
-  int const stride[])
+  int padding[],
+  int stride[])
 {
   this->create();
   CHECK_MIOPEN(
@@ -937,8 +1006,9 @@ LRNDescriptor::LRNDescriptor(const LRNDescriptor& rhs)
 
   unsigned n;
   double alpha, beta, k;
-  CHECK_MIOPEN(miopenGetLRNDescriptor(desc_, &n, &alpha, &beta, &k));
-  this->set(n, alpha, beta, k);
+  miopenLRNMode_t mode;
+  CHECK_MIOPEN(miopenGetLRNDescriptor(desc_, &mode, &n, &alpha, &beta, &k));
+  this->set(mode, n, alpha, beta, k);
 }
 
 LRNDescriptor::LRNDescriptor(LRNDescriptor&& rhs)
@@ -988,7 +1058,7 @@ void LRNDescriptor::create()
     CHECK_MIOPEN(miopenCreateLRNDescriptor(&desc_));
 }
 
-void LRNDescriptor::set(unsigned n, double alpha, double beta, double k)
+void LRNDescriptor::set(miopenLRNMode_t mode, unsigned n, double alpha, double beta, double k)
 {
   //TODO: find MIOpen equivalent
   //LBANN_ASSERT(n >= MIOPEN_LRN_MIN_N);
@@ -997,7 +1067,7 @@ void LRNDescriptor::set(unsigned n, double alpha, double beta, double k)
   //LBANN_ASSERT(beta >= MIOPEN_LRN_MIN_BETA);
 
   this->create();
-  CHECK_MIOPEN(miopenSetLRNDescriptor(desc_, n, alpha, beta, k));
+  CHECK_MIOPEN(miopenSetLRNDescriptor(desc_, mode, n, alpha, beta, k));
 }
 
 /** @brief Swap two LRN descriptors. */

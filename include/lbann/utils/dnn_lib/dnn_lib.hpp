@@ -186,7 +186,7 @@ public:
   void set(
     dnnDataType_t data_type,
     //dnnTensorFormat_t format, TODO:Make this cuDNN only!
-    const std::vector<int>& dims);
+    std::vector<int>& dims);
   /** Configure cuDNN object
    *
    *  Creates cuDNN object if needed.
@@ -215,9 +215,12 @@ public:
   DropoutDescriptor(float dropout,
                     void* states,
                     size_t states_size,
-                    unsigned long long seed)
+                    unsigned long long seed,
+                    bool use_mask,
+                    bool state_evo,
+                    miopenRNGType_t rng_mode)
   {
-    this->set(dropout, states, states_size, seed);
+    this->set(dropout, states, states_size, seed, use_mask, state_evo, rng_mode);
   }
 
   ~DropoutDescriptor();
@@ -250,7 +253,10 @@ public:
     float dropout,
     void* states,
     size_t states_size,
-    unsigned long long seed);
+    unsigned long long seed,
+    bool use_mask,
+    bool state_evo,
+    miopenRNGType_t rng_mode);
 
 private:
 
@@ -377,16 +383,16 @@ public:
    *  Allocates a new handle if one doesn't already exist.
    */
   void set(
-    std::vector<int> const& pad,
-    std::vector<int> const& stride,
-    std::vector<int> const& dilation,
+    std::vector<int>& pad,
+    std::vector<int>& stride,
+    std::vector<int>& dilation,
     dnnDataType_t data_type,
     dnnConvolutionMode_t mode = DNN_CROSS_CORRELATION);
   void set(
     size_t array_dim,
-    int const pad[],
-    int const stride[],
-    int const dilation[],
+    int pad[],
+    int stride[],
+    int dilation[],
     dnnDataType_t data_type,
     dnnConvolutionMode_t mode = DNN_CROSS_CORRELATION);
 
@@ -550,15 +556,15 @@ public:
    */
   void set(
     dnnPoolingMode_t mode,
-    std::vector<int> const& window_dims,
-    std::vector<int> const& padding,
-    std::vector<int> const& stride);
+    std::vector<int>& window_dims,
+    std::vector<int>& padding,
+    std::vector<int>& stride);
   void set(
     dnnPoolingMode_t mode,
     int num_dims,
     int window_dims[], // MIOpen complains when const
-    int const padding[],
-    int const stride[]);
+    int padding[],
+    int stride[]);
 
   ///@}
 
@@ -633,7 +639,7 @@ public:
    *
    *  Allocates a new handle if one doesn't already exist.
    */
-  void set(unsigned n, double alpha, double beta, double k);
+  void set(dnnLRNMode_t mode, unsigned n, double alpha, double beta, double k);
 
   ///@}
 

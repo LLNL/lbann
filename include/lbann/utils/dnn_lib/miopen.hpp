@@ -102,6 +102,7 @@ using dnnNanPropagation_t = miopenNanPropagation_t;
 using dnnPoolingDescriptor_t = miopenPoolingDescriptor_t;
 using dnnPoolingMode_t = miopenPoolingMode_t;
 using dnnLRNDescriptor_t = miopenLRNDescriptor_t;
+using dnnLRNMode_t = miopenLRNMode_t;
 using dnnConvolutionFwdAlgo_t = miopenConvFwdAlgorithm_t;
 using dnnConvolutionBwdDataAlgo_t = miopenConvBwdDataAlgorithm_t;
 using dnnConvolutionBwdFilterAlgo_t = miopenConvBwdWeightsAlgorithm_t;
