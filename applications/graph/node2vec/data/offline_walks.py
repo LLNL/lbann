@@ -111,30 +111,6 @@ assert walks.shape[1] == walk_length, \
 assert num_vertices > 0, \
     f'Walks in {walk_file} have invalid vertex indices'
 
-# Randomly sample local walks
-walk_index_cache = []
-walk_index_cache_pos = 0
-def choose_walk():
-    """Randomly choose one of the local walks.
-
-    Random numbers are generated in batches to amortize Python
-    overheads.
-
-    """
-    global walk_index_cache, walk_index_cache_pos
-    if walk_index_cache_pos >= len(walk_index_cache):
-        initialize_rng()
-        walk_index_cache_pos = 0
-        walk_index_cache = np.random.randint(
-            local_num_walks,
-            size=1024,
-            dtype=np.int64,
-        )
-        record_walk_visits(walks[walk_index_cache])
-    index = walk_index_cache[walk_index_cache_pos]
-    walk_index_cache_pos += 1
-    return walks[index]
-
 # ----------------------------------------------
 # Negative sampling
 # ----------------------------------------------
@@ -144,11 +120,7 @@ def choose_walk():
 visit_counts = np.ones(num_vertices, dtype=np.int64)
 total_visit_count = num_vertices
 def record_walk_visits(walks):
-    """Record visits to vertices in a graph walk.
-
-    Recomputes negative sampling distribution
-
-    """
+    """Record visits to vertices in a graph walk."""
     global visit_counts, total_visit_count
     visit_counts[walks] += np.int64(1)
     total_visit_count += len(walks) * walk_length
@@ -166,11 +138,6 @@ def update_noise_distribution():
     global noise_visit_count
     if total_visit_count > 2*noise_visit_count:
 
-        # Reset negative samples
-        global negative_samples_cache_pos, negative_samples_cache
-        negative_samples_cache = []
-        negative_samples_cache_pos = 0
-
         # Update noise distribution if there are enough new visits
         global noise_cdf
         np.float_power(
@@ -186,42 +153,9 @@ def update_noise_distribution():
 # Initial negative sampling distribution is uniform
 update_noise_distribution()
 
-# Generate negative sampling
-negative_samples_cache = []
-negative_samples_cache_pos = 0
-def generate_negative_samples():
-    """Generate negative samples.
-
-    Returns an array with num_negative_samples entries. Negative
-    samples are generated in batches to amortize Python overheads.
-
-    """
-    global negative_samples_cache, negative_samples_cache_pos
-    if negative_samples_cache_pos >= len(negative_samples_cache):
-        initialize_rng()
-        rands = np.random.uniform(size=1024*num_negative_samples)
-        negative_samples_cache_pos = 0
-        negative_samples_cache = np.searchsorted(noise_cdf, rands)
-    pos_start = negative_samples_cache_pos
-    pos_end = negative_samples_cache_pos + num_negative_samples
-    negative_samples_cache_pos = pos_end
-    return negative_samples_cache[pos_start:pos_end]
-
 # ----------------------------------------------
 # Sample access functions
 # ----------------------------------------------
-
-def get_sample(*args):
-    """Get a single data sample.
-
-    A data sample consists of a graph walk and several negative
-    samples. Input arguments are ignored.
-
-    """
-    walk = choose_walk()
-    update_noise_distribution()
-    negative_samples = generate_negative_samples()
-    return np.concatenate((negative_samples, walk))
 
 def num_samples():
     """Number of samples per "epoch".
@@ -236,3 +170,48 @@ def num_samples():
 def sample_dims():
     """Dimensions of a data sample."""
     return (num_negative_samples + walk_length,)
+
+sample_batch_size = 512
+sample_batch = np.zeros(
+    (sample_batch_size, sample_dims()[0]),
+    dtype=np.float32,
+)
+sample_batch_pos = 0
+def generate_sample_batch():
+    """Generate a batch of data samples."""
+    global sample_batch, sample_batch_pos
+    initialize_rng()
+    sample_batch_pos = 0
+
+    # Randomly choose local walks
+    indices = np.random.randint(
+        local_num_walks,
+        size=sample_batch_size,
+        dtype=np.int64,
+    )
+    sample_walks = walks[indices]
+    sample_batch[:,-walk_length:] = sample_walks
+
+    # Update negative sampling distribution
+    record_walk_visits(sample_walks)
+    update_noise_distribution()
+
+    # Generate negative samples
+    rands = np.random.uniform(size=(sample_batch_size, num_negative_samples))
+    negative_samples = np.searchsorted(noise_cdf, rands)
+    sample_batch[:,:num_negative_samples] = negative_samples
+
+def get_sample(*args):
+    """Get a single data sample.
+
+    A data sample consists of a graph walk and several negative
+    samples. Input arguments are ignored.
+
+    """
+    global sample_batch_pos
+    if sample_batch_pos >= sample_batch_size:
+        generate_sample_batch()
+        sample_batch_pos = 0
+    sample = sample_batch[sample_batch_pos]
+    sample_batch_pos += 1
+    return sample
