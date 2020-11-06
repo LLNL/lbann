@@ -289,7 +289,7 @@ protected:
 
     // Set pooling descriptor
     m_pooling_dnn_desc.set(dnn_lib::to_dnn_lib(m_pool_mode),
-                           dnn_lib::DNN_PROPAGATE_NAN,
+                           //dnn_lib::DNN_PROPAGATE_NAN,
                            m_pool_dims.size(),
                            m_pool_dims.data(),
                            m_pads.data(),

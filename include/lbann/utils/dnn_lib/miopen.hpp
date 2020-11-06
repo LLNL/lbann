@@ -85,6 +85,7 @@ using dnnTensorDescriptor_t = miopenTensorDescriptor_t;
 using dnnFilterDescriptor_t = miopenTensorDescriptor_t;
 //using dnnTensorFormat_t = miopenTensorFormat_t;
 using dnnDropoutDescriptor_t = miopenDropoutDescriptor_t;
+using dnnRNGType_t = miopenRNGType_t;
 using dnnRNNDescriptor_t = miopenRNNDescriptor_t;
 using dnnRNNAlgo_t = miopenRNNAlgo_t;
 using dnnRNNMode_t = miopenRNNMode_t;
@@ -109,6 +110,7 @@ using dnnConvolutionBwdFilterAlgo_t = miopenConvBwdWeightsAlgorithm_t;
 
 constexpr dnnConvolutionMode_t DNN_CROSS_CORRELATION = miopenConvolution;
 constexpr dnnNanPropagation_t DNN_PROPAGATE_NAN = MIOPEN_PROPAGATE_NAN;
+constexpr dnnRNGType_t DNN_RNG_PSEUDO_XORWOW = MIOPEN_RNG_PSEUDO_XORWOW;
 
 ////////////////////////////////////////////////////////////
 // Functions for to/from MIOpen types conversion

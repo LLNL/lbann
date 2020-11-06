@@ -304,7 +304,7 @@ protected:
     m_dropout_cudnn_desc.set(float(1 - m_keep_prob),
                              m_states.Buffer(),
                              m_states.Height() * sizeof(TensorDataType),
-                             get_generator()());
+                             get_generator()(), false, false, dnn_lib::DNN_RNG_PSEUDO_XORWOW);
 
   }
 #endif // LBANN_HAS_DNN_LIB

@@ -186,7 +186,7 @@ public:
   void set(
     dnnDataType_t data_type,
     //dnnTensorFormat_t format, TODO:Make this cuDNN only!
-    std::vector<int>& dims);
+    const std::vector<int>& dims);
   /** Configure cuDNN object
    *
    *  Creates cuDNN object if needed.

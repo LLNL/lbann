@@ -366,7 +366,7 @@ void FilterDescriptor::create() {
 void FilterDescriptor::set(
   miopenDataType_t data_type,
   //miopenTensorFormat_t format,
-  std::vector<int>& dims) {
+  const std::vector<int>& dims) {
   create();
   /*
   CHECK_MIOPEN(
@@ -377,22 +377,23 @@ void FilterDescriptor::set(
       dims.size(),
       dims.data()));
     */
-  int nbDims = dims.size();
+  std::vector<int> local_dims = dims;
+  int nbDims = local_dims.size();
   int strideA[nbDims];
   for (int k = nbDims - 1; k >= 0; k--) {
-    strideA[k] = (k != nbDims - 1) ? strideA[k + 1] * dims.data()[k + 1] : 1;
+    strideA[k] = (k != nbDims - 1) ? strideA[k + 1] * local_dims.data()[k + 1] : 1;
   }
   int strideDimA[nbDims - 1];
   for (int k = nbDims - 1; k >= 0; k--) {
     strideDimA[k] =
-      (k != nbDims - 1) ? strideDimA[k + 1] * dims.data()[k + 1] : 1;
+      (k != nbDims - 1) ? strideDimA[k + 1] * local_dims.data()[k + 1] : 1;
   }
   CHECK_MIOPEN(
     miopenSetTensorDescriptor(
       desc_,
       data_type,
       nbDims,
-      dims.data(),
+      local_dims.data(),
       strideDimA));
 }
 
