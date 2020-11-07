@@ -745,16 +745,16 @@ setup_layer(size_t workspace_capacity) {
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void pooling_distconv_adapter<TensorDataType, Layout, Device>::
 fp_compute() {
-  m_pooling->forward(TensorDataType{1}, this->get_prev_activations(),
-                     TensorDataType{0}, this->get_activations());
+  m_pooling->forward(El::To<TensorDataType>(1), this->get_prev_activations(),
+                     El::To<TensorDataType>(0), this->get_activations());
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void pooling_distconv_adapter<TensorDataType, Layout, Device>::
 bp_compute() {
-  m_pooling->backward(TensorDataType{1}, this->get_activations(),
+  m_pooling->backward(El::To<TensorDataType>(1), this->get_activations(),
                       this->get_prev_error_signals(),
-                      this->get_prev_activations(), TensorDataType{0},
+                      this->get_prev_activations(), El::To<TensorDataType>(0),
                       this->get_error_signals());
 }
 #endif // LBANN_HAS_DISTCONV

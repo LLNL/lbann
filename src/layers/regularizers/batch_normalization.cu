@@ -427,11 +427,11 @@ void batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>::bp_com
 
   auto* scale_optimizer = l.get_weights(0).get_optimizer();
   if (scale_optimizer != nullptr) {
-    scale_optimizer->add_to_gradient(*l.m_scale_gradient, TensorDataType{1}, true);
+    scale_optimizer->add_to_gradient(*l.m_scale_gradient, El::To<TensorDataType>(1), true);
   }
   auto* bias_optimizer = l.get_weights(1).get_optimizer();
   if (bias_optimizer != nullptr) {
-    bias_optimizer->add_to_gradient(*l.m_bias_gradient, TensorDataType{1}, true);
+    bias_optimizer->add_to_gradient(*l.m_bias_gradient, El::To<TensorDataType>(1), true);
   }
 
   m_bn->backward_stage2(this->get_prev_activations(), this->get_prev_error_signals(),
