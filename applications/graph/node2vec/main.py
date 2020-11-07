@@ -74,6 +74,7 @@ if not args.work_dir:
     timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
     args.work_dir = os.path.join(os.getcwd(), f'{timestamp}_{args.job_name}')
 args.work_dir = os.path.realpath(args.work_dir)
+os.makedirs(args.work_dir, exist_ok=True)
 
 # ----------------------------------
 # Configuration file
@@ -90,7 +91,7 @@ if config_file:
 
 # Command-line overrides
 if args.graph:
-    graph_file = config.set('Graph', 'file', graph_file)
+    graph_file = config.set('Graph', 'file', args.graph)
 
 # Resolve absolute paths
 graph_file = config.get('Graph', 'file', fallback=None)
