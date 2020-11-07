@@ -1225,7 +1225,7 @@ void base_convolution_adapter<TensorDataType, Device>::bp_compute_convolution_fi
   if (l.m_bias_scaling_factor != El::To<TensorDataType>(0)
       && l.get_weights(1).get_optimizer() != nullptr) {
     auto* bias_optimizer = l.get_weights(1).get_optimizer();
-    TensorDataType dst_scale{0}, gradient_scale{0};
+    TensorDataType dst_scale{El::To<TensorDataType>(0)}, gradient_scale{El::To<TensorDataType>(0)};
     auto& bias_gradient = bias_optimizer->get_gradient_buffer(
       dst_scale, gradient_scale, true);
     assert0(dc::tensor::View(*m_bias_gradient,
@@ -1241,7 +1241,7 @@ void base_convolution_adapter<TensorDataType, Device>::bp_compute_convolution_fi
 
   auto* kernel_optimizer = l.get_weights(0).get_optimizer();
   if (kernel_optimizer == nullptr) return;
-  TensorDataType dst_scale{0}, gradient_scale{0};
+  TensorDataType dst_scale{El::To<TensorDataType>(0)}, gradient_scale{El::To<TensorDataType>(0)};
   auto& kernel_gradient = kernel_optimizer->get_gradient_buffer(
     dst_scale, gradient_scale, true);
   assert0(dc::tensor::View(

@@ -245,7 +245,7 @@ EOF
 else
     LBANN_ENV="${LBANN_ENV:-lbann-${SPACK_ARCH_TARGET}}"
     BUILD_SPECS=$(cat <<EOF
-  - lbann@develop${GPU_VARIANTS}+dihydrogen+distconv
+  - lbann@test${GPU_VARIANTS}+dihydrogen+distconv${HALF_VARIANTS}
 EOF
 )
 fi
