@@ -53,6 +53,11 @@ def setup_experiment(lbann):
         lbann (module): Module for LBANN Python frontend
 
     """
+    if tools.system(lbann) != 'lassen':
+      message = f'{os.path.basename(__file__)} is only supported on lassen system'
+      print('Skip - ' + message)
+      pytest.skip(message)
+
     trainer = lbann.Trainer(mini_batch_size=mini_batch_size)
     model = construct_model(lbann)
 
