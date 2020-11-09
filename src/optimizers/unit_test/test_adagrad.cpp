@@ -27,18 +27,6 @@ struct AdagradBuilder
   }
 };// struct AdagradBuilder
 
-template <typename TensorDataType>
-bool CompareMetadata(
-  lbann::adagrad<TensorDataType> const& original,
-  lbann::adagrad<TensorDataType> const& restored)
-{
-  std::ostringstream original_desc, restored_desc;
-  original_desc << original.get_description();
-  restored_desc << restored.get_description();
-  return ((original.get_learning_rate() == restored.get_learning_rate())
-          && (original_desc.str() == restored_desc.str()));
-}
-
 template <typename DataType, typename ArchiveTypes>
 struct TestAdagrad : TestOptimizer<lbann::adagrad<DataType>,
                                    AdagradBuilder<DataType>,

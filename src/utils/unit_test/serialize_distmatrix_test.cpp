@@ -27,7 +27,6 @@ using DistMatrixTypesWithDevice = h2::meta::TL<
   El::DistMatrix<T, El::VC  , El::STAR, El::ELEMENT, D>,
   El::DistMatrix<T, El::VR  , El::STAR, El::ELEMENT, D>>;
 
-// Now get all the devices. For now, just do CPU testing.
 template <typename T>
 using DistMatrixTypes =
 #if defined LBANN_HAS_GPU

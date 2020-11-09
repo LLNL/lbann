@@ -36,19 +36,6 @@ struct AdamBuilder
   }
 };// struct AdamBuilder
 
-template <typename TensorDataType>
-bool CompareMetadata(
-  lbann::adam<TensorDataType> const& original,
-  lbann::adam<TensorDataType> const& restored)
-{
-  return ((original.get_learning_rate() == restored.get_learning_rate())
-          && (original.get_beta1() == restored.get_beta1())
-          && (original.get_beta2() == restored.get_beta2())
-          && (original.get_current_beta1() == restored.get_current_beta1())
-          && (original.get_current_beta2() == restored.get_current_beta2())
-          && (original.get_eps() == restored.get_eps()));
-}
-
 template <typename DataType, typename ArchiveTypes>
 struct TestAdam : TestOptimizer<lbann::adam<DataType>,
                                 AdamBuilder<DataType>,
