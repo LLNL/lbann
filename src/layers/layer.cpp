@@ -679,7 +679,7 @@ void Layer::replace_child_layer(ViewingLayerPtr l, size_t index) {
 }
 
 ViewingLayerPtr Layer::get_parent_layer_pointer(size_t index) const {
-  if (index >= m_child_layers.size()) {
+  if (index >= m_parent_layers.size()) {
     LBANN_ERROR(
       "attempted to get pointer to parent ",index," of ",
       get_type()," layer \"",get_name(),"\", ",
