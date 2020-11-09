@@ -173,7 +173,10 @@ def augment_test_func(test_func):
     test_name = test_func.__name__
 
     # Define test function
-    def func(cluster, exes, dirname):
+    def func(cluster, exes, dirname,weekly):
+
+        if not weekly:
+            pytest.skip('This app runs {} with weekly builds only'.format(test_name))
 
         # Run LBANN experiment
         experiment_output = test_func(cluster, exes, dirname)
