@@ -3,6 +3,8 @@
 #include <lbann/utils/h2_tmp.hpp>
 #include <lbann/utils/serialize.hpp>
 
+#include "MPITestHelpers.hpp"
+
 // Enumerate all DistMatrix types. Start by getting all the
 // distributions.
 template <typename T, El::Device D>
@@ -48,8 +50,13 @@ TEMPLATE_LIST_TEST_CASE("DistMatrix serialization",
 {
   using DistMatType = TestType;
 
+  // Setup the grid stack
+  auto& comm = ::unit_test::utilities::current_world_comm();
+  lbann::utils::grid_manager mgr(comm.get_trainer_grid());
+
   std::stringstream ss;
-  DistMatType mat(12,16), mat_restore;
+  DistMatType mat(12,16, lbann::utils::get_current_grid()),
+    mat_restore(lbann::utils::get_current_grid());
 
   SECTION("XML archive")
   {
@@ -120,9 +127,13 @@ TEMPLATE_LIST_TEST_CASE(
   using DistMatType = TestType;
   using AbsDistMatType = typename TestType::absType;
 
+  // Setup the grid stack
+  auto& comm = ::unit_test::utilities::current_world_comm();
+  lbann::utils::grid_manager mgr(comm.get_trainer_grid());
+
   std::stringstream ss;
   std::unique_ptr<AbsDistMatType> mat, mat_restore;
-  mat = std::make_unique<DistMatType>(12, 16);
+  mat = std::make_unique<DistMatType>(12, 16, lbann::utils::get_current_grid());
 
   SECTION("XML archive")
   {
