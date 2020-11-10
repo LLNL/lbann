@@ -44,7 +44,7 @@
 #include "lbann/utils/omp_diagnostics.hpp"
 #include "lbann/utils/stack_trace.hpp"
 
-#ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_DNN_LIB
 #include "lbann/utils/dnn_lib/helpers.hpp"
 #endif
 #ifdef LBANN_HAS_PYTHON

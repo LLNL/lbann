@@ -41,6 +41,14 @@ namespace dnn_lib
 
 using namespace miopen;
 
+inline size_t get_lrn_ws_size(TensorDescriptor const& yDesc)
+{
+  size_t size;
+  CHECK_MIOPEN(miopenLRNGetWorkSpaceSize(yDesc,
+                                         &size));
+  return size;
+}
+
 template <typename TensorDataType, typename ScalarParameterType>
 void lrn_cross_channel_forward(LRNDescriptor const& normDesc,
                                ScalarParameterType const& alpha_in,
@@ -49,8 +57,8 @@ void lrn_cross_channel_forward(LRNDescriptor const& normDesc,
                                ScalarParameterType const& beta_in,
                                TensorDescriptor const& yDesc,
                                El::AbstractMatrix<TensorDataType>& y,
-                               El::SyncInfo<El::Device::GPU> const& si,
                                El::Matrix<TensorDataType, El::Device::GPU>& workSpace,
+                               El::SyncInfo<El::Device::GPU> const& si,
                                lrn_mode mode = lrn_mode::CROSS_CHANNEL_DIM1)
 {
 
@@ -58,7 +66,7 @@ void lrn_cross_channel_forward(LRNDescriptor const& normDesc,
   auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
   auto beta = El::To<LibScalingParamT>(beta_in);
-  if (workspace.Height() == 0 || workspace.Width() == 0) { // Training use-case
+  if (workSpace.Height() == 0 || workSpace.Width() == 0) { // Training use-case
     CHECK_MIOPEN(miopenLRNForward(handle_manager.get(),
                                   normDesc,
                                   //miopen::to_miopen(mode),
@@ -129,7 +137,7 @@ void lrn_cross_channel_backward(LRNDescriptor const& normDesc,
   auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
   auto beta = El::To<LibScalingParamT>(beta_in);
-  if (workspace.Height() == 0 || workspace.Width() == 0) { // Training use-case
+  if (workSpace.Height() == 0 || workSpace.Width() == 0) { // Training use-case
     CHECK_MIOPEN(miopenLRNBackward(handle_manager.get(),
                                    normDesc,
                                    //miopen::to_miopen(mode),

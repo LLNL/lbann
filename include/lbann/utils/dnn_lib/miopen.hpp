@@ -107,10 +107,12 @@ using dnnLRNMode_t = miopenLRNMode_t;
 using dnnConvolutionFwdAlgo_t = miopenConvFwdAlgorithm_t;
 using dnnConvolutionBwdDataAlgo_t = miopenConvBwdDataAlgorithm_t;
 using dnnConvolutionBwdFilterAlgo_t = miopenConvBwdWeightsAlgorithm_t;
+using dnnLRNMode_t = miopenLRNMode_t;
 
 constexpr dnnConvolutionMode_t DNN_CROSS_CORRELATION = miopenConvolution;
 constexpr dnnNanPropagation_t DNN_PROPAGATE_NAN = MIOPEN_PROPAGATE_NAN;
 constexpr dnnRNGType_t DNN_RNG_PSEUDO_XORWOW = MIOPEN_RNG_PSEUDO_XORWOW;
+constexpr dnnLRNMode_t DNN_LRN_MODE = miopenLRNWithinChannel;
 
 ////////////////////////////////////////////////////////////
 // Functions for to/from MIOpen types conversion

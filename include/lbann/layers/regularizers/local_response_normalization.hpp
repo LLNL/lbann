@@ -33,8 +33,8 @@
 #include "lbann/utils/exception.hpp"
 #ifdef LBANN_HAS_CUDNN
 #include "lbann/utils/dnn_lib/cudnn/local_response_normalization.hpp"
-#elif define LBANN_HAS_MIOPEN
-#include "lbann/utils/dnn_lib/cudnn/local_response_normalization.hpp"
+#elif defined LBANN_HAS_MIOPEN
+#include "lbann/utils/dnn_lib/miopen/local_response_normalization.hpp"
 #endif // LBANN_HAS_CUDNN
 
 namespace lbann {
@@ -52,7 +52,7 @@ template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
 class local_response_normalization_layer : public regularizer_layer<TensorDataType> {
-#ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_DNN_LIB
   using ScalingType = dnn_lib::ScalingParamType<TensorDataType>;
 #else
   using ScalingType = TensorDataType;
@@ -69,8 +69,8 @@ public:
                                      TensorDataType k)
     : regularizer_layer<TensorDataType>(comm),
       m_window_width(window_width), m_alpha(alpha), m_beta(beta), m_k(k)
-#ifdef LBANN_HAS_CUDNN
-    , m_tensors_cudnn_desc(this)
+#ifdef LBANN_HAS_DNN_LIB
+    , m_tensors_dnn_desc(this)
 #endif // LBANN_HAS_CUDNN
   { }
 
@@ -81,13 +81,13 @@ public:
       m_alpha(other.m_alpha),
       m_beta(other.m_beta),
       m_k(other.m_k)
-#ifdef LBANN_HAS_CUDNN
-    , m_lrn_cudnn_desc(other.m_lrn_cudnn_desc),
-      m_tensors_cudnn_desc(other.m_tensors_cudnn_desc)
+#ifdef LBANN_HAS_DNN_LIB
+    , m_lrn_dnn_desc(other.m_lrn_dnn_desc),
+      m_tensors_dnn_desc(other.m_tensors_dnn_desc)
 #endif // LBANN_HAS_CUDNN
   {
-#ifdef LBANN_HAS_CUDNN
-    m_tensors_cudnn_desc.set_layer(this);
+#ifdef LBANN_HAS_DNN_LIB
+    m_tensors_dnn_desc.set_layer(this);
 #endif // LBANN_HAS_CUDNN
   }
 
@@ -98,10 +98,10 @@ public:
     m_alpha = other.m_alpha;
     m_beta = other.m_beta;
     m_k = other.m_k;
-#ifdef LBANN_HAS_CUDNN
-    m_lrn_cudnn_desc = other.m_lrn_cudnn_desc;
-    m_tensors_cudnn_desc = other.m_tensors_cudnn_desc;
-    m_tensors_cudnn_desc.set_layer(this);
+#ifdef LBANN_HAS_DNN_LIB
+    m_lrn_dnn_desc = other.m_lrn_dnn_desc;
+    m_tensors_dnn_desc = other.m_tensors_dnn_desc;
+    m_tensors_dnn_desc.set_layer(this);
 #endif // LBANN_HAS_CUDNN
     return *this;
   }
@@ -133,17 +133,17 @@ protected:
   /// Initialize GPU objects
   void setup_gpu() override {
     regularizer_layer<TensorDataType>::setup_gpu();
-#ifndef LBANN_HAS_CUDNN
-    LBANN_ERROR("cuDNN not detected");
+#ifndef LBANN_HAS_DNN_LIB
+    LBANN_ERROR("DNN library not detected");
 #else
-    m_lrn_cudnn_desc.set(m_window_width,
+    m_lrn_dnn_desc.set(dnn_lib::DNN_LRN_MODE, m_window_width,
                          m_alpha, m_beta, m_k);
 #endif // #ifndef LBANN_HAS_CUDNN
   }
 
   void fp_compute() override {
     if (this->using_gpus()) {
-      fp_compute_cudnn();
+      fp_compute_dnn();
     }
     else {
       fp_compute_cpu();
@@ -152,7 +152,7 @@ protected:
 
   void bp_compute() override {
     if (this->using_gpus()) {
-      bp_compute_cudnn();
+      bp_compute_dnn();
     }
     else {
       bp_compute_cpu();
@@ -170,40 +170,57 @@ private:
   /** LRN k parameter. */
   TensorDataType m_k;
 
-#ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_DNN_LIB
   /** LRN cuDNN descriptor. */
-  dnn_lib::LRNDescriptor m_lrn_cudnn_desc;
+  dnn_lib::LRNDescriptor m_lrn_dnn_desc;
   /** Tensor cuDNN descriptors. */
-  dnn_lib::data_parallel_layer_tensor_manager<TensorDataType> m_tensors_cudnn_desc;
+  dnn_lib::data_parallel_layer_tensor_manager<TensorDataType> m_tensors_dnn_desc;
 #endif // LBANN_HAS_CUDNN
 
   /// GPU implementation of forward propagation
-  void fp_compute_cudnn() {
-#ifndef LBANN_HAS_CUDNN
-    LBANN_ERROR("cuDNN not detected");
+  void fp_compute_dnn() {
+#ifndef LBANN_HAS_DNN_LIB
+    LBANN_ERROR("DNN library not detected");
 #else
+    // Initialize GPU workspace
+    El::Matrix<TensorDataType, El::Device::GPU> workspace;
+#ifdef HYDROGEN_HAVE_CUB
+    workspace.SetMemoryMode(1);
+#endif // HYDROGEN_HAVE_CUB
+    size_t workspace_size = dnn_lib::get_lrn_ws_size(m_tensors_dnn_desc.get_activations());
+    workspace.Resize(workspace_size / sizeof(TensorDataType), 1);
+
     const auto& local_input = this->get_local_prev_activations();
     auto& local_output = this->get_local_activations();
     if (local_input.Height() > 0 && local_input.Width() > 0) {
       const ScalingType zero = El::TypeTraits<ScalingType>::Zero();
       const ScalingType one = El::TypeTraits<ScalingType>::One();
       dnn_lib::lrn_cross_channel_forward(
-        m_lrn_cudnn_desc,
+        m_lrn_dnn_desc,
         one,
-        m_tensors_cudnn_desc.get_prev_activations(),
+        m_tensors_dnn_desc.get_prev_activations(),
         local_input,
         zero,
-        m_tensors_cudnn_desc.get_activations(),
-        local_output);
+        m_tensors_dnn_desc.get_activations(),
+        local_output,
+        workspace);
     }
 #endif // LBANN_HAS_CUDNN
   }
 
   /// GPU implementation of backward propagation
-  void bp_compute_cudnn() {
-#ifndef LBANN_HAS_CUDNN
-    LBANN_ERROR("cuDNN not detected");
+  void bp_compute_dnn() {
+#ifndef LBANN_HAS_DNN_LIB
+    LBANN_ERROR("DNN library not detected");
 #else
+    // Initialize GPU workspace
+    El::Matrix<TensorDataType, El::Device::GPU> workspace;
+#ifdef HYDROGEN_HAVE_CUB
+    workspace.SetMemoryMode(1);
+#endif // HYDROGEN_HAVE_CUB
+    size_t workspace_size = dnn_lib::get_lrn_ws_size(m_tensors_dnn_desc.get_activations());
+    workspace.Resize(workspace_size / sizeof(TensorDataType), 1);
+
     const auto& local_input = this->get_local_prev_activations();
     const auto& local_output = this->get_local_activations();
     const auto& local_gradient_wrt_output = this->get_local_prev_error_signals();
@@ -212,17 +229,18 @@ private:
       const ScalingType zero = El::TypeTraits<ScalingType>::Zero();
       const ScalingType one = El::TypeTraits<ScalingType>::One();
       dnn_lib::lrn_cross_channel_backward(
-        m_lrn_cudnn_desc,
+        m_lrn_dnn_desc,
         one,
-        m_tensors_cudnn_desc.get_activations(),
+        m_tensors_dnn_desc.get_activations(),
         local_output,
-        m_tensors_cudnn_desc.get_prev_error_signals(),
+        m_tensors_dnn_desc.get_prev_error_signals(),
         local_gradient_wrt_output,
-        m_tensors_cudnn_desc.get_prev_activations(),
+        m_tensors_dnn_desc.get_prev_activations(),
         local_input,
         zero,
-        m_tensors_cudnn_desc.get_error_signals(),
-        local_gradient_wrt_input);
+        m_tensors_dnn_desc.get_error_signals(),
+        local_gradient_wrt_input,
+        workspace);
     }
 #endif // LBANN_HAS_CUDNN
   }

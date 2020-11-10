@@ -37,8 +37,8 @@
 #include <cufft.h>
 #include <lbann/utils/cufft_wrapper.hpp>
 #elif defined LBANN_HAS_ROCM
-#include <rocfft.h>
-#include <lbann/utils/rocfft_wrapper.hpp>
+//#include <rocfft.h>
+//#include <lbann/utils/rocfft_wrapper.hpp>
 #endif // defined LBANN_HAS_CUDNN
 
 namespace
