@@ -12,7 +12,7 @@ LBANN_FWD_CMD=$(cat << EOF
 EOF
 )
 LBANN_COMPILER_CMD=$(cat << EOF
-  -D CMAKE_CXX_COMPILER=$(which clang++) \
+  -D CMAKE_CXX_COMPILER=/opt/rocm-3.8.0/hip/bin/hipcc \
   -D CMAKE_C_COMPILER=$(which clang)
 EOF
 )
@@ -22,6 +22,8 @@ fi
 CONFIGURE_COMMAND=$(cat << EOF
 cmake \
   -G Ninja \
+  -D CMAKE_CXX_COMPILER=/opt/rocm-3.8.0/hip/bin/hipcc \
+  -D CMAKE_MPI_CXX_COMPILER=/opt/rocm-3.8.0/hip/bin/hipcc \
   -D CMAKE_BUILD_TYPE:STRING=${BUILD_TYPE} \
   -D CMAKE_INSTALL_PREFIX:PATH=${LBANN_INSTALL_DIR} \
   -D CMAKE_CXX_FLAGS="${CXX_FLAGS}" \

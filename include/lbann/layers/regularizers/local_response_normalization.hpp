@@ -56,7 +56,7 @@ class local_response_normalization_layer : public regularizer_layer<TensorDataTy
   using ScalingType = dnn_lib::ScalingParamType<TensorDataType>;
 #else
   using ScalingType = TensorDataType;
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_DNN_LIB
 
   static_assert(T_layout == data_layout::DATA_PARALLEL,
                 "local_response_normalization only supports DATA_PARALLEL");
@@ -71,7 +71,7 @@ public:
       m_window_width(window_width), m_alpha(alpha), m_beta(beta), m_k(k)
 #ifdef LBANN_HAS_DNN_LIB
     , m_tensors_dnn_desc(this)
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_DNN_LIB
   { }
 
   local_response_normalization_layer(
@@ -84,11 +84,11 @@ public:
 #ifdef LBANN_HAS_DNN_LIB
     , m_lrn_dnn_desc(other.m_lrn_dnn_desc),
       m_tensors_dnn_desc(other.m_tensors_dnn_desc)
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_DNN_LIB
   {
 #ifdef LBANN_HAS_DNN_LIB
     m_tensors_dnn_desc.set_layer(this);
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_DNN_LIB
   }
 
   local_response_normalization_layer& operator=(
@@ -102,7 +102,7 @@ public:
     m_lrn_dnn_desc = other.m_lrn_dnn_desc;
     m_tensors_dnn_desc = other.m_tensors_dnn_desc;
     m_tensors_dnn_desc.set_layer(this);
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_DNN_LIB
     return *this;
   }
 
@@ -138,7 +138,7 @@ protected:
 #else
     m_lrn_dnn_desc.set(dnn_lib::DNN_LRN_MODE, m_window_width,
                          m_alpha, m_beta, m_k);
-#endif // #ifndef LBANN_HAS_CUDNN
+#endif // #ifndef LBANN_HAS_DNN_LIB
   }
 
   void fp_compute() override {
@@ -175,7 +175,7 @@ private:
   dnn_lib::LRNDescriptor m_lrn_dnn_desc;
   /** Tensor cuDNN descriptors. */
   dnn_lib::data_parallel_layer_tensor_manager<TensorDataType> m_tensors_dnn_desc;
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_DNN_LIB
 
   /// GPU implementation of forward propagation
   void fp_compute_dnn() {
@@ -205,7 +205,7 @@ private:
         local_output,
         workspace);
     }
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_DNN_LIB
   }
 
   /// GPU implementation of backward propagation
@@ -242,7 +242,7 @@ private:
         local_gradient_wrt_input,
         workspace);
     }
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_DNN_LIB
   }
 
   /// CPU implementation of forward propagation

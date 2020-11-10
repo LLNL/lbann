@@ -138,7 +138,7 @@ protected:
   /** Bias tensor cuDNN descriptor. */
   dnn_lib::TensorDescriptor m_bias_cudnn_desc;
   /** Tensor cuDNN descriptors. */
-  dnn_lib::data_parallel_layer_tensor_manager<TensorDataType> m_tensors_cudnn_desc;
+  dnn_lib::data_parallel_layer_tensor_manager<TensorDataType> m_tensors_dnn_desc;
   /** Forward algorithm cache (mini-batch size -> algo). */
   std::unordered_map<int, fwd_conv_alg> m_fwd_cudnn_algos;
   /** Backward data algorithm cache (mini-batch size -> algo). */

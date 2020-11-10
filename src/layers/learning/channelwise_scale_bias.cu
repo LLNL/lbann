@@ -29,7 +29,7 @@
 #include "lbann/utils/gpu/helpers.hpp"
 
 #ifdef HYDROGEN_HAVE_CUB
-#include "cub/block/block_reduce.cuh"
+#include "hipcub/block/block_reduce.hpp" //TODO HIP/CUDA ifdef
 #endif // HYDROGEN_HAVE_CUB
 
 namespace lbann {
@@ -129,8 +129,8 @@ __global__ void bp_kernel(size_t num_channels,
 
     // Accumulate gradient contributions for block and add to result
 #ifdef HYDROGEN_HAVE_CUB
-    constexpr auto reduce_algo = cub::BLOCK_REDUCE_WARP_REDUCTIONS;
-    using BlockReduce = cub::BlockReduce<TensorDataType, bsizex, reduce_algo, bsizey>;
+    constexpr auto reduce_algo = hipcub::BLOCK_REDUCE_WARP_REDUCTIONS;
+    using BlockReduce = hipcub::BlockReduce<TensorDataType, bsizex, reduce_algo, bsizey>;
     __shared__ typename BlockReduce::TempStorage workspace;
     __syncthreads();
     const auto da = BlockReduce(workspace).Sum(private_da);

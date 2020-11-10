@@ -72,7 +72,7 @@ base_convolution_layer<TensorDataType,Device>::base_convolution_layer(
                         ? El::TypeTraits<ScalingType>::One()
                         : El::TypeTraits<ScalingType>::Zero())
 #ifdef LBANN_HAS_DNN_LIB
-  , m_tensors_cudnn_desc(this)
+  , m_tensors_dnn_desc(this)
 #endif // LBANN_HAS_DNN_LIB
 {}
 template <typename TensorDataType, El::Device Device>
@@ -90,7 +90,7 @@ base_convolution_layer<TensorDataType,Device>::base_convolution_layer(
 #ifdef LBANN_HAS_CUDNN
   , m_convolution_math_type(other.m_convolution_math_type)
 #endif // LBANN_HAS_CUDNN
-  , m_tensors_cudnn_desc(other.m_tensors_cudnn_desc),
+  , m_tensors_dnn_desc(other.m_tensors_dnn_desc),
   m_fwd_cudnn_algos(other.m_fwd_cudnn_algos),
   m_bwd_data_cudnn_algos(other.m_bwd_data_cudnn_algos),
   m_bwd_filter_cudnn_algos(other.m_bwd_filter_cudnn_algos)
@@ -102,7 +102,7 @@ base_convolution_layer<TensorDataType,Device>::base_convolution_layer(
   if (other.m_bias_scaling_factor != El::TypeTraits<ScalingType>::Zero()) {
     m_bias_cudnn_desc = other.m_bias_cudnn_desc;
   }
-  m_tensors_cudnn_desc.set_layer(this);
+  m_tensors_dnn_desc.set_layer(this);
 #endif // LBANN_HAS_DNN_LIB
 }
 
@@ -130,8 +130,8 @@ base_convolution_layer<TensorDataType,Device>
   if (other.m_bias_scaling_factor != El::TypeTraits<ScalingType>::Zero()) {
     m_bias_cudnn_desc = other.m_bias_cudnn_desc;
   }
-  m_tensors_cudnn_desc = other.m_tensors_cudnn_desc;
-  m_tensors_cudnn_desc.set_layer(this);
+  m_tensors_dnn_desc = other.m_tensors_dnn_desc;
+  m_tensors_dnn_desc.set_layer(this);
   m_fwd_cudnn_algos = other.m_fwd_cudnn_algos;
   m_bwd_data_cudnn_algos = other.m_bwd_data_cudnn_algos;
   m_bwd_filter_cudnn_algos = other.m_bwd_filter_cudnn_algos;
@@ -473,11 +473,11 @@ base_convolution_layer<TensorDataType,Device>
     output_dims = this->get_input_dims();
   }
   auto& input_desc = (during_forward_prop
-                      ? m_tensors_cudnn_desc.get_prev_activations()
-                      : m_tensors_cudnn_desc.get_prev_error_signals());
+                      ? m_tensors_dnn_desc.get_prev_activations()
+                      : m_tensors_dnn_desc.get_prev_error_signals());
   auto& output_desc = (during_forward_prop
-                       ? m_tensors_cudnn_desc.get_activations()
-                       : m_tensors_cudnn_desc.get_error_signals());
+                       ? m_tensors_dnn_desc.get_activations()
+                       : m_tensors_dnn_desc.get_error_signals());
 
   // Perform convolution on the GPU
   // Determine convolution algorithm
@@ -553,11 +553,11 @@ apply_transposed_convolution_cudnn(bool during_forward_prop) {
     output_dims = this->get_input_dims();
   }
   auto& input_desc = (during_forward_prop
-                      ? m_tensors_cudnn_desc.get_prev_activations()
-                      : m_tensors_cudnn_desc.get_prev_error_signals());
+                      ? m_tensors_dnn_desc.get_prev_activations()
+                      : m_tensors_dnn_desc.get_prev_error_signals());
   auto& output_desc = (during_forward_prop
-                       ? m_tensors_cudnn_desc.get_activations()
-                       : m_tensors_cudnn_desc.get_error_signals());
+                       ? m_tensors_dnn_desc.get_activations()
+                       : m_tensors_dnn_desc.get_error_signals());
 
   // Perform transposed convolution on the GPU
   // Determine transposed convolution algorithm
@@ -600,7 +600,7 @@ void base_convolution_layer<TensorDataType,Device>::apply_bias_cudnn() {
                       m_bias_cudnn_desc,
                       bias,
                       one,
-                      m_tensors_cudnn_desc.get_activations(),
+                      m_tensors_dnn_desc.get_activations(),
                       local_output);
   }
 #endif // LBANN_HAS_CUDNN
@@ -635,7 +635,7 @@ base_convolution_layer<TensorDataType,Device>
       auto dst_scale = ScalingType(dst_scale_dt), gradient_scale = ScalingType(gradient_scale_dt);
       dnn_lib::convolution_backward_bias(
         gradient_scale,
-        m_tensors_cudnn_desc.get_prev_error_signals(),
+        m_tensors_dnn_desc.get_prev_error_signals(),
         local_gradient_wrt_output,
         dst_scale,
         m_bias_cudnn_desc,
@@ -662,8 +662,8 @@ base_convolution_layer<TensorDataType,Device>
       workspace_size = workspace.Height() * sizeof(TensorDataType);
 
       // Initialize cuDNN objects
-      auto&& input_desc = m_tensors_cudnn_desc.get_prev_activations();
-      auto&& gradient_wrt_output_desc = m_tensors_cudnn_desc.get_prev_error_signals();
+      auto&& input_desc = m_tensors_dnn_desc.get_prev_activations();
+      auto&& gradient_wrt_output_desc = m_tensors_dnn_desc.get_prev_error_signals();
 
       auto dst_scale = ScalingType(dst_scale_dt), gradient_scale = ScalingType(gradient_scale_dt);
 
