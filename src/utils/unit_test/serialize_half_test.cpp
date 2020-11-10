@@ -1,7 +1,7 @@
 #include <catch2/catch.hpp>
 
 #include <lbann/base.hpp> // half stuff is here.
-#include <lbann/utils/serialization.hpp>
+#include <lbann/utils/serialize.hpp>
 
 #include <cereal/archives/binary.hpp>
 #include <cereal/archives/json.hpp>

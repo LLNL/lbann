@@ -36,9 +36,6 @@
 #include "lbann/utils/cyg_profile.hpp"
 #include "lbann/utils/file_utils.hpp"
 #include "lbann/utils/enum_iterator.hpp"
-#ifdef LBANN_HAS_HALF
-#include "lbann/utils/serialization.hpp"
-#endif // LBANN_HAS_HALF
 
 // Support for OpenMP macros
 #include "lbann/utils/omp_pragma.hpp"

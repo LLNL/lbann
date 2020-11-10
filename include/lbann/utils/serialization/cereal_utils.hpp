@@ -23,18 +23,40 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
+#pragma once
+#ifndef LBANN_UTILS_SERIALIZATION_CEREAL_UTILS_HPP_
+#define LBANN_UTILS_SERIALIZATION_CEREAL_UTILS_HPP_
 
-PROTO(float);
-PROTO(double);
+#include <cereal/details/traits.hpp>
 
-#ifdef LBANN_HAS_HALF
-#ifdef LBANN_INSTANTIATE_CPU_HALF
-PROTO(::lbann::cpu_fp16);
-#endif // LBANN_INSTANTIATE_CPU_HALF
-#endif // LBANN_HAS_HALF
+#include <lbann/utils/h2_tmp.hpp>
 
-#ifdef LBANN_HAS_GPU_FP16
-#ifdef LBANN_INSTANTIATE_GPU_HALF
-PROTO(::lbann::fp16);
-#endif // LBANN_INSTANTIATE_GPU_HALF
-#endif // LBANN_HAS_GPU_FP16
+namespace lbann
+{
+namespace utils
+{
+
+using namespace ::cereal::traits;
+using namespace ::h2::meta;
+
+/** @brief Variable template for checking that an archive type is
+ *         marked as a text archive in Cereal.
+ */
+template <typename ArchiveT>
+constexpr bool IsTextArchive = is_text_archive<ArchiveT>::value;
+
+/** @brief SFINAE helper for splitting text-based and non-text-based
+ *         serialization functions.
+ */
+template <typename ArchiveT, typename ResultT=int>
+using WhenTextArchive = EnableWhen<IsTextArchive<ArchiveT>, ResultT>;
+
+/** @brief SFINAE helper for splitting text-based and non-text-based
+ *         serialization functions.
+ */
+template <typename ArchiveT, typename ResultT=int>
+using WhenNotTextArchive = EnableUnless<IsTextArchive<ArchiveT>, ResultT>;
+
+}// namespace utils
+}// namespace lbann
+#endif // LBANN_UTILS_SERIALIZATION_CEREAL_UTILS_HPP_
