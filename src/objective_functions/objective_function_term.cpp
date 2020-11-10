@@ -40,4 +40,12 @@ void objective_function_term::setup(model& m) {
   m_comm = m.get_comm();
 }
 
+std::vector<ViewingLayerPtr> objective_function_term::get_layer_pointers() const {
+  return m_layers;
+}
+
+void objective_function_term::set_layer_pointers(std::vector<ViewingLayerPtr> layers) {
+  m_layers = std::move(layers);
+}
+
 }  // namespace lbann

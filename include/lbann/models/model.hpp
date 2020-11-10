@@ -183,7 +183,7 @@ public:
   // ===========================================
 
   /** @brief Add layer to model. */
-  virtual void add_layer(std::unique_ptr<Layer> l);
+  virtual void add_layer(OwningLayerPtr&& l);
 
   /** @brief Add weights to model. */
   void add_weights(std::unique_ptr<weights> w);
@@ -299,8 +299,9 @@ protected:
    *  maps. If a pointer is not a key in the corresponding map, the
    *  pointer is not changed.
    */
-  virtual void remap_pointers(const std::unordered_map<Layer*,Layer*>& layer_map,
-                              const std::unordered_map<weights*,weights*>& weights_map);
+  virtual void remap_pointers(
+    const std::unordered_map<Layer*,ViewingLayerPtr>& layer_map,
+    const std::unordered_map<weights*,weights*>& weights_map);
 
   /** @brief
    *
@@ -427,7 +428,7 @@ private:
   /** @brief Tensor operations.
    *  @details The list is in execution order for forward propagation.
    */
-  std::vector<std::unique_ptr<Layer>> m_layers;
+  std::vector<OwningLayerPtr> m_layers;
 
   /** @brief Trainable parameters. */
   std::vector<std::unique_ptr<weights>> m_weights;

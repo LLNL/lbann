@@ -112,9 +112,9 @@ class objective_function {
   int get_statistics_num_samples(execution_mode mode) const;
 
   /** Get list of pointers to layers. */
-  std::vector<Layer*> get_layer_pointers() const;
+  std::vector<ViewingLayerPtr> get_layer_pointers() const;
   /** Set list of pointers to layers. */
-  void set_layer_pointers(std::vector<Layer*> layers);
+  void set_layer_pointers(std::vector<ViewingLayerPtr> layers);
   /** Get list of pointers to weights. */
   std::vector<weights*> get_weights_pointers() const;
   /** Set list of pointers to weights. */

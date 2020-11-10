@@ -53,16 +53,16 @@ class layer_metric : public metric {
   }
 
   /** Set corresponding layer. */
-  void set_layer(Layer& l);
+  void set_layer(ViewingLayerPtr l);
   /** Get corresponding layer. */
   Layer& get_layer();
   /** Get corresponding layer (const). */
   const Layer& get_layer() const;
 
   /** Get list of pointers to layers. */
-  std::vector<Layer*> get_layer_pointers() const override;
+  std::vector<ViewingLayerPtr> get_layer_pointers() const override;
   /** Set list of pointers to layers. */
-  void set_layer_pointers(std::vector<Layer*> layers) override;
+  void set_layer_pointers(std::vector<ViewingLayerPtr> layers) override;
 
     /** Save metric state to checkpoint. */
   bool save_to_checkpoint_shared(persist& p);
@@ -96,7 +96,7 @@ class layer_metric : public metric {
    */
   std::string m_unit;
   /** Corresponding layer. */
-  Layer* m_layer;
+  ViewingLayerPtr m_layer;
 
   /** Get corresponding evaluation layer. */
   /*abstract_evaluation_*/Layer& get_evaluation_layer();
