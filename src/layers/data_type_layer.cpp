@@ -38,7 +38,8 @@
 namespace lbann {
 
 template <typename InputTensorDataType, typename OutputTensorDataType>
-data_type_layer<InputTensorDataType>::data_type_layer(const data_type_layer<InputTensorDataType>& other) :
+data_type_layer<InputTensorDataType, OutputTensorDataType>::
+data_type_layer(const data_type_layer<InputTensorDataType, OutputTensorDataType>& other) :
   Layer(other),
   m_persistent_error_signals(other.m_persistent_error_signals) {
 
@@ -61,8 +62,10 @@ data_type_layer<InputTensorDataType>::data_type_layer(const data_type_layer<Inpu
   }
 }
 
-template <typename InputTensorDataType>
-data_type_layer<InputTensorDataType>& data_type_layer<InputTensorDataType>::operator=(const data_type_layer<InputTensorDataType>& other) {
+template <typename InputTensorDataType, typename OutputTensorDataType>
+data_type_layer<InputTensorDataType, OutputTensorDataType>&
+data_type_layer<InputTensorDataType, OutputTensorDataType>::
+operator=(const data_type_layer<InputTensorDataType, OutputTensorDataType>& other) {
   Layer::operator=(other);
 
   // Deep matrix copies
@@ -90,16 +93,17 @@ data_type_layer<InputTensorDataType>& data_type_layer<InputTensorDataType>::oper
   return *this;
 }
 
-template <typename InputTensorDataType>
-void data_type_layer<InputTensorDataType>::setup_weights(size_t idx, weights& w) {
+template <typename InputTensorDataType, typename OutputTensorDataType>
+void data_type_layer<InputTensorDataType, OutputTensorDataType>::
+setup_weights(size_t idx, weights& w) {
   if (idx >= m_weights_proxy.size()) {
     m_weights_proxy.resize(idx+1);
   }
   m_weights_proxy[idx].setup(w);
 }
 
-template <typename InputTensorDataType>
-void data_type_layer<InputTensorDataType>::forward_prop() {
+template <typename InputTensorDataType, typename OutputTensorDataType>
+void data_type_layer<InputTensorDataType, OutputTensorDataType>::forward_prop() {
   const auto fp_start = get_time();
 
   // Setup weights proxies
@@ -151,8 +155,8 @@ void data_type_layer<InputTensorDataType>::forward_prop() {
   m_fp_time += get_time() - fp_start;
 }
 
-template <typename InputTensorDataType>
-void data_type_layer<InputTensorDataType>::back_prop_impl_() {
+template <typename InputTensorDataType, typename OutputTensorDataType>
+void data_type_layer<InputTensorDataType, OutputTensorDataType>::back_prop_impl_() {
   const auto bp_start = get_time();
 
   // Setup tensors
@@ -190,8 +194,9 @@ void data_type_layer<InputTensorDataType>::back_prop_impl_() {
   m_bp_time += get_time() - bp_start;
 }
 
-template <typename InputTensorDataType>
-void data_type_layer<InputTensorDataType>::summarize_matrices(lbann_summary& summarizer, int step) {
+template <typename InputTensorDataType, typename OutputTensorDataType>
+void data_type_layer<InputTensorDataType, OutputTensorDataType>::
+summarize_matrices(lbann_summary& summarizer, int step) {
 
   // Summarize activation matrices
   const int num_children = get_num_children();
@@ -228,8 +233,9 @@ void data_type_layer<InputTensorDataType>::summarize_matrices(lbann_summary& sum
 // ===================================================================
 
 // Accessing distributed matrices
-template <typename InputTensorDataType>
-auto data_type_layer<InputTensorDataType>::get_prev_activations(int parent_index) const -> const AbsDistMatrixType& {
+template <typename InputTensorDataType, typename OutputTensorDataType>
+auto data_type_layer<InputTensorDataType, OutputTensorDataType>::
+get_prev_activations(int parent_index) const -> const InputAbsDistMatrixType& {
   if (parent_index < 0 || parent_index >= (int) m_inputs.size()) {
     std::stringstream err;
     err << "attempted to access invalid previous activation matrix "
@@ -242,7 +248,8 @@ auto data_type_layer<InputTensorDataType>::get_prev_activations(int parent_index
 }
 
 template <typename OutputTensorDataType>
-auto data_type_layer<OutputTensorDataType>::get_activations(int child_index) const -> const AbsDistMatrixType& {
+auto data_type_layer<InputTensorDataType, OutputTensorDataType>::
+get_activations(int child_index) const -> const OutputAbsDistMatrixType& {
   if (child_index < 0 || child_index >= (int) m_outputs.size()) {
     std::stringstream err;
     err << "attempted to access invalid activation matrix "
@@ -255,7 +262,8 @@ auto data_type_layer<OutputTensorDataType>::get_activations(int child_index) con
 }
 
 template <typename OutputTensorDataType>
-auto data_type_layer<OutputTensorDataType>::get_prev_error_signals(int child_index) const -> const AbsDistMatrixType& {
+auto data_type_layer<InputTensorDataType, OutputTensorDataType>::
+get_prev_error_signals(int child_index) const -> const OutputAbsDistMatrixType& {
   if (child_index < 0 || child_index >= (int) m_gradient_wrt_outputs.size()) {
     LBANN_ERROR(
       "Attempted to access invalid previous error signal matrix "
@@ -270,9 +278,10 @@ auto data_type_layer<OutputTensorDataType>::get_prev_error_signals(int child_ind
   return *m_gradient_wrt_outputs[child_index];
 }
 
-template <typename InputTensorDataType>
-auto data_type_layer<InputTensorDataType>::get_error_signals(int parent_index) const
-  -> const AbsDistMatrixType& {
+template <typename InputTensorDataType, typename OutputTensorDataType>
+auto data_type_layer<InputTensorDataType, OutputTensorDataType>::
+get_error_signals(int parent_index) const
+  -> const InputAbsDistMatrixType& {
   if (parent_index < 0 || parent_index >= (int) m_gradient_wrt_inputs.size()) {
     LBANN_ERROR("Attempted to access invalid error signal matrix "
                 "from ", m_name, ". Requested index ", parent_index, ", "
@@ -292,44 +301,56 @@ auto data_type_layer<InputTensorDataType>::get_error_signals(int parent_index) c
 // Note: Using idiom from Item 3, p. 23 in "Effective C++", 3rd ed.,
 // by Scott Meyers.
 template <typename OutputTensorDataType>
-auto data_type_layer<OutputTensorDataType>::get_activations(int child_index) -> AbsDistMatrixType& {
-  return const_cast<AbsDistMatrixType&>(static_cast<const data_type_layer<InputTensorDataType>&>(*this).get_activations(child_index));
+auto data_type_layer<InputTensorDataType, OutputTensorDataType>::
+get_activations(int child_index) -> OutputAbsDistMatrixType& {
+  return const_cast<OutputAbsDistMatrixType&>(static_cast<const data_type_layer<
+                                        InputTensorDataType, OutputTensorDataType>&>
+                                        (*this).get_activations(child_index));
 }
 
-template <typename InputTensorDataType>
-auto data_type_layer<InputTensorDataType>::get_error_signals(int parent_index) -> AbsDistMatrixType& {
-  return const_cast<AbsDistMatrixType&>(static_cast<const data_type_layer<InputTensorDataType>&>(*this).get_error_signals(parent_index));
+template <typename InputTensorDataType, typename OutputTensorDataType>
+auto data_type_layer<InputTensorDataType, OutputTensorDataType>::
+get_error_signals(int parent_index) -> InputAbsDistMatrixType& {
+  return const_cast<AbsDistMatrixType&>(static_cast<const data_type_layer<InputTensorDataType,
+                                        OutputTensorDataType>&>(*this).get_error_signals(parent_index));
 }
 
 // Accessing local matrices
 template <typename OutputTensorDataType>
-auto data_type_layer<OutputTensorDataType>::get_local_activations(int child_index) -> AbsMatrixType& {
+auto data_type_layer<InputTensorDataType, OutputTensorDataType>::
+get_local_activations(int child_index) -> OutputAbsMatrixType& {
   return get_activations(child_index).Matrix();
 }
-template <typename InputTensorDataType>
-auto data_type_layer<InputTensorDataType>::get_local_error_signals(int parent_index) -> AbsMatrixType& {
+template <typename InputTensorDataType, typename OutputTensorDataType>
+auto data_type_layer<InputTensorDataType, OutputTensorDataType>::
+get_local_error_signals(int parent_index) -> InputAbsMatrixType& {
   return get_error_signals(parent_index).Matrix();
 }
 template <typename OutputTensorDataType>
-auto data_type_layer<OutputTensorDataType>::get_local_prev_activations(int parent_index) const -> const AbsMatrixType&{
+auto data_type_layer<InputTensorDataType, OutputTensorDataType>::
+get_local_prev_activations(int parent_index) const -> const InputAbsMatrixType&{
   return get_prev_activations(parent_index).LockedMatrix();
 }
 template <typename OutputTensorDataType>
-auto data_type_layer<OutputTensorDataType>::get_local_activations(int child_index) const -> const AbsMatrixType& {
+auto data_type_layer<InputTensorDataType, OutputTensorDataType>::
+get_local_activations(int child_index) const -> const OutputAbsMatrixType& {
   return get_activations(child_index).LockedMatrix();
 }
 template <typename OutputTensorDataType>
-auto data_type_layer<OutputTensorDataType>::get_local_prev_error_signals(int child_index) const -> const AbsMatrixType& {
+auto data_type_layer<InputTensorDataType, OutputTensorDataType>::
+get_local_prev_error_signals(int child_index) const -> const OutputAbsMatrixType& {
   return get_prev_error_signals(child_index).LockedMatrix();
 }
-template <typename InputTensorDataType>
-auto data_type_layer<InputTensorDataType>::get_local_error_signals(int parent_index) const -> const AbsMatrixType& {
+template <typename InputTensorDataType, typename OutputTensorDataType>
+auto data_type_layer<InputTensorDataType, OutputTensorDataType>::
+get_local_error_signals(int parent_index) const -> const InputAbsMatrixType& {
   return get_error_signals(parent_index).LockedMatrix();
 }
 
 // Accessing matrices corresponding to parent/child layer
 template <typename OutputTensorDataType>
-auto data_type_layer<OutputTensorDataType>::get_activations(const Layer& child) const -> const BaseDistMat& {
+auto data_type_layer<InputTensorDataType, OutputTensorDataType>::
+get_activations(const Layer& child) const -> const BaseDistMat& {
   if (this->get_num_children() <= 0) {
     LBANN_ERROR("This layer has no children");
   }
@@ -344,8 +365,9 @@ auto data_type_layer<OutputTensorDataType>::get_activations(const Layer& child) 
   }
   return get_activations(child_index);
 }
-template <typename InputTensorDataType>
-auto data_type_layer<InputTensorDataType>::get_error_signals(const Layer& parent) const -> const BaseDistMat& {
+template <typename InputTensorDataType, typename OutputTensorDataType>
+auto data_type_layer<InputTensorDataType, OutputTensorDataType>::
+get_error_signals(const Layer& parent) const -> const BaseDistMat& {
   const int parent_index = find_parent_layer_index(parent);
   if (parent_index >= get_num_parents()) {
     LBANN_ERROR("attempted to get error signal tensor of "
@@ -356,8 +378,9 @@ auto data_type_layer<InputTensorDataType>::get_error_signals(const Layer& parent
   return get_error_signals(parent_index);
 }
 
-template <typename InputTensorDataType>
-void data_type_layer<InputTensorDataType>::set_keep_error_signals(bool flag)
+template <typename InputTensorDataType, typename OutputTensorDataType>
+void data_type_layer<InputTensorDataType, OutputTensorDataType>::
+set_keep_error_signals(bool flag)
 {
   m_persistent_error_signals = flag;
 }
@@ -425,8 +448,9 @@ auto MakeMatBuilder(data_layout const layout, El::Device const device)
 
 }// namespace <anon>
 
-template <typename InputTensorDataType>
-void data_type_layer<InputTensorDataType>::setup_matrices(const El::Grid& grid) {
+template <typename InputTensorDataType, typename OutputTensorDataType>
+void data_type_layer<InputTensorDataType, OutputTensorDataType>::
+setup_matrices(const El::Grid& grid) {
 
   using MatrixBuilderType = details::MatrixBuilder<InputTensorDataType>;
 
@@ -475,8 +499,9 @@ void data_type_layer<InputTensorDataType>::setup_matrices(const El::Grid& grid) 
   }
 }
 
-template <typename InputTensorDataType>
-void data_type_layer<InputTensorDataType>::setup_data(size_t max_mini_batch_size) {
+template <typename InputTensorDataType, typename OutputTensorDataType>
+void data_type_layer<InputTensorDataType, OutputTensorDataType>::
+setup_data(size_t max_mini_batch_size) {
   Layer::setup_data(max_mini_batch_size);
 
   // Initialize input and output tensors
@@ -484,15 +509,15 @@ void data_type_layer<InputTensorDataType>::setup_data(size_t max_mini_batch_size
   fp_setup_outputs(max_mini_batch_size);
 }
 
-template <typename InputTensorDataType>
-void data_type_layer<InputTensorDataType>::bp_compute() {
+template <typename InputTensorDataType, typename OutputTensorDataType>
+void data_type_layer<InputTensorDataType, OutputTensorDataType>::bp_compute() {
   for (int i = 0; i < get_num_parents(); ++i) {
     El::Zero(get_error_signals(i));
   }
 }
 
-template <typename InputTensorDataType>
-void data_type_layer<InputTensorDataType>::check_setup() {
+template <typename InputTensorDataType, typename OutputTensorDataType>
+void data_type_layer<InputTensorDataType, OutputTensorDataType>::check_setup() {
   Layer::check_setup();
   std::stringstream err;
 
@@ -547,8 +572,9 @@ void data_type_layer<InputTensorDataType>::check_setup() {
   }
 }
 
-template <typename InputTensorDataType>
-void data_type_layer<InputTensorDataType>::fp_setup_inputs(El::Int mini_batch_size) {
+template <typename InputTensorDataType, typename OutputTensorDataType>
+void data_type_layer<InputTensorDataType, OutputTensorDataType>::
+fp_setup_inputs(El::Int mini_batch_size) {
   if (get_num_parents() < 1) { return; }
 
   // Determine distributed matrix alignment
@@ -584,8 +610,9 @@ void data_type_layer<InputTensorDataType>::fp_setup_inputs(El::Int mini_batch_si
 
 }
 
-template <typename InputTensorDataType>
-void data_type_layer<InputTensorDataType>::fp_setup_outputs(El::Int mini_batch_size) {
+template <typename OutputTensorDataType>
+void data_type_layer<InputTensorDataType, OutputTensorDataType>::
+fp_setup_outputs(El::Int mini_batch_size) {
   if (get_num_children() < 1) { return; }
 
   // Determine distributed matrix alignment
@@ -627,8 +654,9 @@ void assert_tensor_size(const BaseDistMat& mat,
 
 }// namespace <anon>
 
-template <typename InputTensorDataType>
-void data_type_layer<InputTensorDataType>::view_or_copy_prev_error_signal_(
+template <typename InputTensorDataType, typename OutputTensorDataType>
+void data_type_layer<InputTensorDataType, OutputTensorDataType>::
+view_or_copy_prev_error_signal_(
   const Layer& child, const BaseDistMat& signal)
 {
   auto layer_idx = find_child_layer_index(child);
@@ -647,8 +675,9 @@ void data_type_layer<InputTensorDataType>::view_or_copy_prev_error_signal_(
   view_or_copy_tensor(signal, prev_error_sig);
 }
 
-template <typename InputTensorDataType>
-void data_type_layer<InputTensorDataType>::move_or_copy_prev_error_signal_(
+template <typename InputTensorDataType, typename OutputTensorDataType>
+void data_type_layer<InputTensorDataType, OutputTensorDataType>::
+move_or_copy_prev_error_signal_(
   const Layer& child, std::unique_ptr<BaseDistMat> signal_in)
 {
     auto layer_idx = find_child_layer_index(child);
@@ -688,8 +717,9 @@ void data_type_layer<InputTensorDataType>::move_or_copy_prev_error_signal_(
   }
 }
 
-template <typename InputTensorDataType>
-void data_type_layer<InputTensorDataType>::deep_copy_prev_error_signal_(
+template <typename InputTensorDataType, typename OutputTensorDataType>
+void data_type_layer<InputTensorDataType, OutputTensorDataType>::
+deep_copy_prev_error_signal_(
   const Layer& child, const BaseDistMat& signal)
 {
   auto layer_idx = find_child_layer_index(child);
@@ -708,8 +738,9 @@ void data_type_layer<InputTensorDataType>::deep_copy_prev_error_signal_(
   do_tensor_copy(signal, prev_error_sig);
 }
 
-template <typename InputTensorDataType>
-void data_type_layer<InputTensorDataType>::clear_prev_error_signals_() {
+template <typename InputTensorDataType, typename OutputTensorDataType>
+void data_type_layer<InputTensorDataType, OutputTensorDataType>::
+clear_prev_error_signals_() {
   if (!m_persistent_error_signals) {
     for (auto& es : m_gradient_wrt_outputs)
       es->Empty(true);
@@ -738,8 +769,9 @@ void deep_copy_error_signal(
 // signals" and my new error signals will be persistent. So my parents
 // can simply setup views into my error signals, if layout, alignment,
 // etc is OK.
-template <typename InputTensorDataType>
-void data_type_layer<InputTensorDataType>::propagate_error_signals_to_parents_() {
+template <typename InputTensorDataType, typename OutputTensorDataType>
+void data_type_layer<InputTensorDataType, OutputTensorDataType>::
+propagate_error_signals_to_parents_() {
   for (int i=0; i<get_num_parents(); ++i) {
     auto& parent = const_cast<Layer&>(get_parent_layer(i));
 
@@ -758,8 +790,9 @@ void data_type_layer<InputTensorDataType>::propagate_error_signals_to_parents_()
   }
 }
 
-template <typename InputTensorDataType>
-void data_type_layer<InputTensorDataType>::allocate_new_gradients_() {
+template <typename InputTensorDataType, typename OutputTensorDataType>
+void data_type_layer<InputTensorDataType, OutputTensorDataType>::
+allocate_new_gradients_() {
   for (int i = 0; i < get_num_parents(); ++i) {
 #ifdef LBANN_HAS_DISTCONV
     if (!keep_original_gradient_wrt_inputs(i)) continue;
@@ -777,8 +810,9 @@ void data_type_layer<InputTensorDataType>::allocate_new_gradients_() {
   }
 }
 
-template <typename InputTensorDataType>
-void data_type_layer<InputTensorDataType>::bp_setup_gradient_wrt_inputs(
+template <typename InputTensorDataType, typename OutputTensorDataType>
+void data_type_layer<InputTensorDataType, OutputTensorDataType>::
+bp_setup_gradient_wrt_inputs(
   El::Int mini_batch_size)
 {
   for (int i = 0; i < get_num_parents(); ++i) {
@@ -793,20 +827,28 @@ void data_type_layer<InputTensorDataType>::bp_setup_gradient_wrt_inputs(
 }
 
 #ifdef LBANN_HAS_DISTCONV
-template <typename InputTensorDataType>
-void data_type_layer<InputTensorDataType>::setup_distconv_adapter(const DataReaderMetaData& dr_metadata) {
-  this->get_distconv_adapter_ptr() = make_unique<data_type_distconv_adapter<InputTensorDataType>>(*this);
+template <typename InputTensorDataType, typename OutputTensorDataType>
+void data_type_layer<InputTensorDataType, OutputTensorDataType>::
+setup_distconv_adapter(const DataReaderMetaData& dr_metadata) {
+  this->get_distconv_adapter_ptr() = make_unique<data_type_distconv_adapter
+                                                 <InputTensorDataType>>(*this);
 }
 
-template <typename InputTensorDataType>
-data_type_distconv_adapter<InputTensorDataType>& data_type_layer<InputTensorDataType>::get_distconv_adapter() {
+template <typename InputTensorDataType, typename OutputTensorDataType>
+data_type_distconv_adapter<InputTensorDataType>&
+data_type_layer<InputTensorDataType, OutputTensorDataType>::
+get_distconv_adapter() {
   return const_cast<data_type_distconv_adapter<InputTensorDataType>&>(
-      static_cast<const data_type_layer<InputTensorDataType>&>(*this).get_distconv_adapter());
+      static_cast<const data_type_layer<InputTensorDataType, OutputTensorDataType>&>
+      (*this).get_distconv_adapter());
 }
 
-template <typename InputTensorDataType>
-const data_type_distconv_adapter<InputTensorDataType>& data_type_layer<InputTensorDataType>::get_distconv_adapter() const {
-  return dynamic_cast<const data_type_distconv_adapter<InputTensorDataType>&>(*get_distconv_adapter_ptr());
+template <typename InputTensorDataType, typename OutputTensorDataType>
+const data_type_distconv_adapter<InputTensorDataType>&
+data_type_layer<InputTensorDataType, OutputTensorDataType>::
+get_distconv_adapter() const {
+  return dynamic_cast<const data_type_distconv_adapter<InputTensorDataType>&>
+    (*get_distconv_adapter_ptr());
 }
 #endif // LBANN_HAS_DISTCONV
 

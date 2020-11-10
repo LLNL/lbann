@@ -73,6 +73,8 @@ public:
 
   /** @brief The tensor type expected in this object. */
   using AbsDistMatrixType = El::AbstractDistMatrix<InputTensorDataType>;
+  using InputAbsDistMatrixType = El::AbstractDistMatrix<InputTensorDataType>;
+  using OutputAbsDistMatrixType = El::AbstractDistMatrix<OutputTensorDataType>;
 
   /** @brief The proxy tensor type expected in this object. */
   template <El::Device D>
@@ -95,8 +97,8 @@ public:
     : Layer(),
       m_persistent_error_signals{persistent_error_signals}
   {}
-  data_type_layer(const data_type_layer<InputTensorDataType>& other);
-  data_type_layer& operator=(const data_type_layer<InputTensorDataType>& other);
+  data_type_layer(const data_type_layer<InputTensorDataType, OutputTensorDataType>& other);
+  data_type_layer& operator=(const data_type_layer<InputTensorDataType, OutputTensorDataType>& other);
   virtual ~data_type_layer() = default;
 
   /** Get a string representing the layer datatype
@@ -126,22 +128,22 @@ public:
   const BaseDistMat& get_error_signals(const Layer& parent) const override;
 
   /** Get activation tensor. */
-  AbsDistMatrixType& get_activations(int child_index = 0);
+  OutputAbsDistMatrixType& get_activations(int child_index = 0);
   /** Get error signal tensor. */
-  AbsDistMatrixType& get_error_signals(int parent_index = 0);
+  InputAbsDistMatrixType& get_error_signals(int parent_index = 0);
   /** Get activation tensor. */
-  const AbsDistMatrixType& get_activations(int child_index = 0) const;
+  const OutputAbsDistMatrixType& get_activations(int child_index = 0) const;
   /** Get error signal tensor. */
-  const AbsDistMatrixType& get_error_signals(int parent_index = 0) const;
+  const InputAbsDistMatrixType& get_error_signals(int parent_index = 0) const;
 
   /** Get local portion of activation tensor. */
-  AbsMatrixType& get_local_activations(int child_index = 0);
+  OutputAbsMatrixType& get_local_activations(int child_index = 0);
   /** Get local portion of error signal tensor. */
-  AbsMatrixType& get_local_error_signals(int parent_index = 0);
+  InputAbsMatrixType& get_local_error_signals(int parent_index = 0);
   /** Get local portion of activation tensor. */
-  const AbsMatrixType& get_local_activations(int child_index = 0) const;
+  const OutputAbsMatrixType& get_local_activations(int child_index = 0) const;
   /** Get local portion of error signal tensor. */
-  const AbsMatrixType& get_local_error_signals(int parent_index = 0) const;
+  const InputAbsMatrixType& get_local_error_signals(int parent_index = 0) const;
 
   /** @brief Set whether to keep or dynamically reallocate error signals.
    *
@@ -165,9 +167,9 @@ protected:
   // ===========================================================
 
   /** Get previous activation tensor. */
-  const AbsDistMatrixType& get_prev_activations(int parent_index = 0) const;
+  const InputAbsDistMatrixType& get_prev_activations(int parent_index = 0) const;
   /** Get previous error signal tensor. */
-  const AbsDistMatrixType& get_prev_error_signals(int child_index = 0) const;
+  const OutputAbsDistMatrixType& get_prev_error_signals(int child_index = 0) const;
 
   /** Get local portion of previous activation tensor. */
   const AbsMatrixType& get_local_prev_activations(int parent_index = 0) const;
@@ -352,19 +354,19 @@ private:
   /** Input tensors.
    *  Each matrix column corresponds to a flattened mini-batch sample.
    */
-  std::vector<std::unique_ptr<AbsDistMatrixType>> m_inputs;
+  std::vector<std::unique_ptr<InputAbsDistMatrixType>> m_inputs;
   /** Output tensors.
    *  Each matrix column corresponds to a flattened mini-batch sample.
    */
-  std::vector<std::unique_ptr<AbsDistMatrixType>> m_outputs;
+  std::vector<std::unique_ptr<OutputAbsDistMatrixType>> m_outputs;
   /** Objective function gradients w.r.t. the output tensors.
    *  Each matrix column corresponds to a flattened mini-batch sample.
    */
-  std::vector<std::unique_ptr<AbsDistMatrixType>> m_gradient_wrt_outputs;
+  std::vector<std::unique_ptr<OutputAbsDistMatrixType>> m_gradient_wrt_outputs;
   /** Objective function gradients w.r.t. the input tensors.
    *  Each matrix column corresponds to a flattened mini-batch sample.
    */
-  std::vector<std::unique_ptr<AbsDistMatrixType>> m_gradient_wrt_inputs;
+  std::vector<std::unique_ptr<InputAbsDistMatrixType>> m_gradient_wrt_inputs;
 
   /** @brief Whether to keep persistent error signals or dynamically
    *         allocate/deallocate them.
