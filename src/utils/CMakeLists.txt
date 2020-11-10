@@ -22,6 +22,8 @@ set_full_path(THIS_DIR_SOURCES
   python.cpp
   random.cpp
   random_number_generators.cpp
+  serialization.cpp
+  serialize_matrices.cpp
   stack_profiler.cpp
   stack_trace.cpp
   statistics.cpp
@@ -29,11 +31,6 @@ set_full_path(THIS_DIR_SOURCES
   system_info.cpp
   trainer_file_utils.cpp
 )
-
-if (LBANN_HAS_HALF)
-  list(APPEND THIS_DIR_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/serialization.cpp)
-endif (LBANN_HAS_HALF)
 
 if (LBANN_HAS_GPU)
   list(APPEND THIS_DIR_SOURCES

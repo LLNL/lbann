@@ -23,18 +23,14 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
+#pragma once
+#ifndef LBANN_UTILS_SERIALIZE_HPP_
+#define LBANN_UTILS_SERIALIZE_HPP_
 
-PROTO(float);
-PROTO(double);
-
+#include "serialization/cereal_utils.hpp"
 #ifdef LBANN_HAS_HALF
-#ifdef LBANN_INSTANTIATE_CPU_HALF
-PROTO(::lbann::cpu_fp16);
-#endif // LBANN_INSTANTIATE_CPU_HALF
+#include "serialization/serialize_half.hpp"
 #endif // LBANN_HAS_HALF
+#include "serialization/serialize_matrices.hpp"
 
-#ifdef LBANN_HAS_GPU_FP16
-#ifdef LBANN_INSTANTIATE_GPU_HALF
-PROTO(::lbann::fp16);
-#endif // LBANN_INSTANTIATE_GPU_HALF
-#endif // LBANN_HAS_GPU_FP16
+#endif // LBANN_UTILS_SERIALIZE_HPP_

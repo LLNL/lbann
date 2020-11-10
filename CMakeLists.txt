@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.17)
 
 project(LBANN CXX)
 
@@ -24,12 +24,6 @@ endif ()
 
 if (NOT DEFINED BUILD_SHARED_LIBS)
   set(BUILD_SHARED_LIBS ON)
-endif ()
-
-# Build with at least C++14 standard; allow newer standards.
-if (NOT CMAKE_CXX_STANDARD OR CMAKE_CXX_STANDARD EQUAL 98)
-  set(CMAKE_CXX_STANDARD 14)
-  set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 endif ()
 
 # Convenience defines
@@ -556,6 +550,7 @@ if (LBANN_WITH_UNIT_TESTING)
   include(CTest)
   include(Catch)
   add_subdirectory(src/proto/unit_test)
+  add_subdirectory(src/optimizers/unit_test)
   add_subdirectory(src/utils/unit_test)
   add_subdirectory(src/weights/unit_test)
   add_subdirectory(src/transforms/unit_test)
@@ -595,6 +590,9 @@ target_include_directories(lbann PUBLIC
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}>)
 
+# The max of CXX_STANDARD and this value will be used.
+target_compile_features(lbann PUBLIC cxx_std_17)
+
 # Use the IMPORTED targets when possible.
 target_link_libraries(lbann PUBLIC LbannProto)
 target_link_libraries(lbann PUBLIC Threads::Threads)
@@ -610,7 +608,7 @@ target_link_libraries(lbann PUBLIC ${CONDUIT_LIBRARIES})
 target_link_libraries(lbann PUBLIC
   $<TARGET_NAME_IF_EXISTS:LBANN_CXX_FLAGS_werror>
   $<TARGET_NAME_IF_EXISTS:TBinf>
-  
+
   $<TARGET_NAME_IF_EXISTS:H2::H2Meta>
   $<TARGET_NAME_IF_EXISTS:H2::H2Patterns>
   $<TARGET_NAME_IF_EXISTS:H2::H2DistConv>
@@ -619,7 +617,7 @@ target_link_libraries(lbann PUBLIC
   $<TARGET_NAME_IF_EXISTS:FFTW::FFTW>
   $<TARGET_NAME_IF_EXISTS:HWLOC::hwloc>
   $<TARGET_NAME_IF_EXISTS:Python::Python>
-  
+
   $<TARGET_NAME_IF_EXISTS:MIOpen>
   $<TARGET_NAME_IF_EXISTS:roc::rocfft>
 
