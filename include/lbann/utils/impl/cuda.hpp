@@ -24,10 +24,9 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <thrust/system/cuda/execution_policy.h>
-
 // Headers for NVCC
 #ifdef __CUDACC__
+#include <thrust/system/cuda/execution_policy.h>
 #ifdef HYDROGEN_HAVE_CUB
 #include "cub/block/block_reduce.cuh"
 #endif // HYDROGEN_HAVE_CUB
@@ -296,7 +295,8 @@ typename allocator<T>::system_type& allocator<T>::system() {
 } // namespace thrust
 #endif // !DOXYGEN_SHOULD_SKIP_THIS
 
+} // namespace cuda
+
 #endif // __CUDACC__
 
-} // namespace cuda
 } // namespace lbann

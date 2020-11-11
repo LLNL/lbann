@@ -152,15 +152,7 @@ void copy_tensor(
 namespace thrust {
 
 /** Thrust execution policy. */
-using execute_on_stream
-#if THRUST_MAJOR_VERSION > 1 || THRUST_MINOR_VERSION >= 9
-  = ::thrust::hip_rocprim::execute_on_stream; // >= 1.9.1
-#elif THRUST_MAJOR_VERSION == 1 && THRUST_MINOR_VERSION == 8
-  = ::thrust::system::hip::detail::execute_on_stream;
-#else
-  = std::nullptr_t;
-  static_assert(false, "Thrust 1.8 or newer is required");
-#endif
+using execute_on_stream = ::thrust::hip_rocprim::execute_on_stream;
 
 /** GPU memory allocator that can interact with Thrust.
  *  Operations are performed on a provided CUDA stream. Uses

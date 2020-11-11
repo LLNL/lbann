@@ -24,10 +24,9 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <thrust/system/hip/execution_policy.h>
-
 // Headers for HIP
 #ifdef __HIPCC__
+#include <thrust/system/hip/execution_policy.h>
 #ifdef HYDROGEN_HAVE_CUB
 #include "hipcub/block/block_reduce.hpp"
 #endif // HYDROGEN_HAVE_CUB
@@ -257,7 +256,8 @@ typename allocator<T>::system_type& allocator<T>::system() {
 } // namespace thrust
 #endif // !DOXYGEN_SHOULD_SKIP_THIS
 
+} // namespace rocm
+
 #endif // __HIPCC__
 
-} // namespace rocm
 } // namespace lbann
