@@ -578,7 +578,7 @@ configure_file(
   @ONLY)
 
 # Create the LBANN library
-if (LBANN_HAS_HIP)
+if (LBANN_HAS_ROCM)
   hip_add_library(
     lbann ${LBANN_SOURCES} ${LBANN_HEADERS} ${LBANN_GPU_SOURCES})
 else ()
