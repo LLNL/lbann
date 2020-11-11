@@ -78,6 +78,7 @@ class WeightsProxy
   using ValuesType = El::AbstractDistMatrix<TensorDataType>;
   /** @brief Convenience typedef for poitners to weights values. */
   using ValuesPtrType = std::unique_ptr<ValuesType>;
+
 public:
 
   /** @name Constructors */
@@ -120,8 +121,9 @@ public:
   WeightsProxy(WeightsProxy<T> const& other)
     : WeightsProxy()
   {
-    if (!other.master_weights_.expired()) {
-      this->setup(other.master_weights_);
+    auto ptr = other.master_weights_pointer();
+    if (!ptr.expired()) {
+      this->setup(ptr);
     }
   }
 
@@ -253,10 +255,16 @@ public:
    *  valid if not empty(). Users are expected to ensure this
    *  contract.
    */
-  weights const& master_weights() const noexcept(!LBANN_IN_DEBUG_MODE)
+  weights const& master_weights() const
   {
-    LBANN_DEBUG_ASSERT_POINTER(master_weights_);
+    LBANN_DEBUG_ASSERT_POINTER(master_weights_.lock());
     return *master_weights_.lock();
+  }
+
+  ViewingWeightsPtr master_weights_pointer() const noexcept(!LBANN_IN_DEBUG_MODE)
+  {
+    LBANN_DEBUG_ASSERT_POINTER(master_weights_.lock());
+    return master_weights_;
   }
 
   ///@}
