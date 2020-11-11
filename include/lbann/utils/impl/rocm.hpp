@@ -71,7 +71,7 @@ double gpu_lib::atomic_add(double* address, double val) {
 // Block reduction
 template <size_t bdimx, size_t bdimy, size_t bdimz, class T>
 __device__ __forceinline__
-T block_reduce(T val) {
+T gpu_lib::block_reduce(T val) {
 #ifdef HYDROGEN_HAVE_CUB
   constexpr auto reduce_algo = hipcub::BLOCK_REDUCE_WARP_REDUCTIONS;
   using BlockReduce = hipcub::BlockReduce<T, bdimx, reduce_algo, bdimy, bdimz>;
@@ -96,7 +96,7 @@ T block_reduce(T val) {
 }
 template <size_t bdimx, size_t bdimy, size_t bdimz, class T, class Op>
 __device__ __forceinline__
-T block_reduce(T val) {
+T gpu_lib::block_reduce(T val) {
 #ifdef HYDROGEN_HAVE_CUB
   constexpr auto reduce_algo = hipcub::BLOCK_REDUCE_WARP_REDUCTIONS;
   using BlockReduce = hipcub::BlockReduce<T, bdimx, reduce_algo, bdimy, bdimz>;
