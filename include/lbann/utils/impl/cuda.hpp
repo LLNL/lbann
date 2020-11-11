@@ -244,8 +244,6 @@ SPECIFIERS double gpu_lib::infinity<double>() { return CUDART_INF;   }
 #undef SPECIFIERS
 #endif // __CUDACC_RELAXED_CONSTEXPR__
 
-#endif // __CUDACC__
-
 namespace cuda {
 
 // -------------------------------------------------------------
@@ -297,6 +295,8 @@ typename allocator<T>::system_type& allocator<T>::system() {
 
 } // namespace thrust
 #endif // !DOXYGEN_SHOULD_SKIP_THIS
+
+#endif // __CUDACC__
 
 } // namespace cuda
 } // namespace lbann

@@ -65,7 +65,16 @@ float gpu_lib::atomic_add(float* address, float val) {
 }
 __device__ __forceinline__
 double gpu_lib::atomic_add(double* address, double val) {
-  return atomicAdd(address, val);
+  unsigned long long int* address_as_ull = (unsigned long long int*)address;
+  unsigned long long int old = *address_as_ull, assumed;
+  do {
+    assumed = old;
+    old = atomicCAS(address_as_ull, assumed,
+                    __double_as_longlong(val + __longlong_as_double(assumed)));
+
+    // Note: uses integer comparison to avoid hang in case of NaN (since NaN != NaN)
+    } while (assumed != old);
+  return __longlong_as_double(old);
 }
 
 // Block reduction
@@ -196,8 +205,6 @@ template <typename T> __device__ __forceinline__ T gpu_lib::infinity() {
   return std::numeric_limits<T>::infinity();
 }
 
-#endif // __HIPCC__
-
 namespace rocm {
 
 // -------------------------------------------------------------
@@ -249,6 +256,8 @@ typename allocator<T>::system_type& allocator<T>::system() {
 
 } // namespace thrust
 #endif // !DOXYGEN_SHOULD_SKIP_THIS
+
+#endif // __HIPCC__
 
 } // namespace rocm
 } // namespace lbann
