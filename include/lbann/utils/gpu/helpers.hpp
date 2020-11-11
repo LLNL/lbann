@@ -52,8 +52,6 @@ namespace gpu_lib = ::lbann::hip;
 #endif // LBANN_HAS_CUDA
 
 // Include gpu arch-independent stuff
-#if defined LBANN_HAS_GPU
 #include "gpu_lib.hpp"
-#endif // LBANN_HAS_GPU
 
 #endif // LBANN_UTILS_GPU_HELPERS_HPP_INCLUDED
