@@ -80,7 +80,7 @@ public:
         std::unique_ptr<lbann_data::Optimizer> default_optimizer_msg = nullptr);
   model(const model& other);
   model& operator=(const model& other);
-  virtual ~model();
+  virtual ~model() = default;
   virtual std::unique_ptr<model> copy_model() const = 0;
 
   /** Archive for checkpoint and restart */
@@ -118,9 +118,7 @@ public:
   }
 
   /** @brief Return the model's metrics. */
-  virtual const std::vector<metric*>& get_metrics() const {
-    return m_metrics;
-  }
+  std::vector<metric*> get_metrics() const;
 
   /** @brief Size of model's list of layers. */
   El::Int get_num_layers() const noexcept;
@@ -195,7 +193,7 @@ public:
   //  void add_callbacks(std::vector<std::shared_ptr<callback_base>>& cb);
 
   /** @brief Register a new metric for the model. */
-  void add_metric(metric *m);
+  void add_metric(std::unique_ptr<metric> m);
 
   /** @brief Replace the model's weights. */
   void replace_weights(std::vector<weights *>& w);
@@ -446,7 +444,7 @@ private:
   /** @brief Numerical quantities to evaluate model performance.
    *  @details Does not affect training.
    */
-  std::vector<metric*> m_metrics;
+  std::vector<std::unique_ptr<metric>> m_metrics;
 
   /** @brief Current callbacks to process. */
   std::vector<std::shared_ptr<callback_base>> m_callbacks;
