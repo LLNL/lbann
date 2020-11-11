@@ -46,6 +46,13 @@ if (LBANN_HAS_CUDA)
     )
 endif ()
 
+if (LBANN_HAS_ROCM)
+  # Add the ROCM source files for this directory
+  set_full_path(THIS_DIR_CU_SOURCES
+    rocm.cpp
+    )
+endif ()
+
 if (LBANN_HAS_DISTCONV)
   list(APPEND THIS_DIR_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/distconv.cpp")
 endif ()
