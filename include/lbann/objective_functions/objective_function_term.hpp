@@ -85,9 +85,9 @@ class objective_function_term {
   /** Set list of pointers to layers. */
   void set_layer_pointers(std::vector<ViewingLayerPtr> layers);
   /** Get list of pointers to weights. */
-  std::vector<weights*> get_weights_pointers() const { return m_weights; }
+  std::vector<ViewingWeightsPtr> get_weights_pointers() const;
   /** Set list of pointers to weights. */
-  void set_weights_pointers(std::vector<weights*> w) { m_weights = w; }
+  void set_weights_pointers(std::vector<ViewingWeightsPtr> w);
 
  protected:
 
@@ -97,7 +97,7 @@ class objective_function_term {
   /** Layers used to compute objective function term. */
   std::vector<ViewingLayerPtr> m_layers;
   /** Weights used to compute objective function term. */
-  std::vector<weights*> m_weights;
+  std::vector<ViewingWeightsPtr> m_weights;
 
   /** Get LBANN communicator. */
   lbann_comm& get_comm() { return *m_comm; }
