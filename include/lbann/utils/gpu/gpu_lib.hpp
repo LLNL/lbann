@@ -207,11 +207,8 @@ void apply_entrywise_binary_operator(
 } // namespace lbann
 
 // Header implementations
-#if defined LBANN_HAS_CUDA
 #include "lbann/utils/impl/cuda.hpp"
-#elif defined LBANN_HAS_ROCM
 #include "lbann/utils/impl/rocm.hpp"
-#endif // LBANN_HAS_CUDA
 #include "lbann/utils/impl/gpu_lib.hpp"
 
 #endif // LBANN_HAS_GPU

@@ -30,7 +30,7 @@
 #include "lbann_config.hpp"
 #include "lbann/utils/exception.hpp"
 
-#ifdef LBANN_HAS_GPU
+#ifdef LBANN_HAS_CUDA
 
 #include <cuda.h>
 #include <thrust/memory.h>
@@ -290,5 +290,5 @@ using vector = ::thrust::device_vector<T, allocator<T>>;
 } // namespace cuda
 } // namespace lbann
 
-#endif // LBANN_HAS_GPU
+#endif // LBANN_HAS_CUDA
 #endif // LBANN_UTILS_CUDA_HPP

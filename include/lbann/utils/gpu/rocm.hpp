@@ -30,7 +30,7 @@
 #include "lbann_config.hpp"
 #include "lbann/utils/exception.hpp"
 
-#ifdef LBANN_HAS_GPU
+#ifdef LBANN_HAS_ROCM
 
 #include <hip/hip_runtime.h>
 #include <thrust/memory.h>
@@ -47,7 +47,7 @@
     /* Synchronize GPU and check for errors. */                 \
     hipError_t status_ROCM_SYNC = hipDeviceSynchronize();       \
     if (status_ROCM_SYNC == hipSuccess)                         \
-      status_CUDA_SYNC = cudaGetLastError();                    \
+      status_ROCM_SYNC = hipGetLastError();                     \
     if (status_ROCM_SYNC != hipSuccess) {                       \
       hipDeviceReset();                                         \
       std::stringstream err_ROCM_SYNC;                          \
@@ -208,5 +208,5 @@ using vector = ::thrust::device_vector<T, allocator<T>>;
 } // namespace rocm
 } // namespace lbann
 
-#endif // LBANN_HAS_GPU
+#endif // LBANN_HAS_ROCM
 #endif // LBANN_UTILS_ROCM_HPP
