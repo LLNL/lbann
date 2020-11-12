@@ -82,6 +82,8 @@ public:
 
   /** @brief The local tensor type expected in this object. */
   using AbsMatrixType = El::AbstractMatrix<InputTensorDataType>;
+  using InputAbsMatrixType = El::AbstractMatrix<InputTensorDataType>;
+  using OutputAbsMatrixType = El::AbstractMatrix<OutputTensorDataType>;
 
   /** @brief The proxy type for weights used by this object. */
   using WeightsProxyType = weights_proxy<InputTensorDataType>;
@@ -172,9 +174,9 @@ protected:
   const OutputAbsDistMatrixType& get_prev_error_signals(int child_index = 0) const;
 
   /** Get local portion of previous activation tensor. */
-  const AbsMatrixType& get_local_prev_activations(int parent_index = 0) const;
+  const InputAbsMatrixType& get_local_prev_activations(int parent_index = 0) const;
   /** Get local portion of previous error signal tensor. */
-  const AbsMatrixType& get_local_prev_error_signals(int child_index = 0) const;
+  const OutputAbsMatrixType& get_local_prev_error_signals(int child_index = 0) const;
 
 protected:
 
