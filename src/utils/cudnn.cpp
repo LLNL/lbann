@@ -24,9 +24,9 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifdef LBANN_HAS_DNN_LIB
+//#ifdef LBANN_HAS_DNN_LIB
 #include "lbann/utils/dnn_lib/helpers.hpp"
-#endif // LBANN_HAS_DNN_LIB
+//#endif // LBANN_HAS_DNN_LIB
 #include "lbann/utils/number_theory.hpp"
 
 #include "El.hpp"

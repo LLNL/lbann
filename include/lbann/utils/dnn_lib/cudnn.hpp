@@ -109,55 +109,6 @@ using dnnConvolutionBwdFilterAlgo_t = cudnnConvolutionBwdFilterAlgo_t;
 constexpr dnnConvolutionMode_t DNN_CROSS_CORRELATION = CUDNN_CROSS_CORRELATION;
 constexpr dnnNanPropagation_t DNN_PROPAGATE_NAN = CUDNN_PROPAGATE_NAN;
 
-/** Wrapper around @c cudnnRNNDataDescriptor_t */
-class RNNDataDescriptor {
-
-public:
-
-  RNNDataDescriptor(dnnRNNDataDescriptor_t desc=nullptr);
-
-  ~RNNDataDescriptor();
-
-  // Copy-and-swap idiom
-  RNNDataDescriptor(const RNNDataDescriptor&) = delete; /// @todo Implement
-  RNNDataDescriptor(RNNDataDescriptor&&);
-  RNNDataDescriptor& operator=(RNNDataDescriptor);
-  friend void swap(RNNDataDescriptor& first, RNNDataDescriptor& second);
-
-  /** @brief Take ownership of cuDNN object */
-  void reset(dnnRNNDataDescriptor_t desc=nullptr);
-  /** @brief Return cuDNN object and release ownership */
-  dnnRNNDataDescriptor_t release();
-  /** @brief Return cuDNN object without releasing ownership */
-  dnnRNNDataDescriptor_t get() const noexcept;
-  /** @brief Return cuDNN object without releasing ownership */
-  operator dnnRNNDataDescriptor_t() const noexcept;
-
-  /** @brief Allocate a new handle.
-   *
-   *  Does nothing if already created.
-   */
-  void create();
-
-  /** Configure cuDNN object
-   *
-   *  Creates cuDNN object if needed.
-   */
-  void set(
-    dnnDataType_t data_type,
-    dnnRNNDataLayout_t layout,
-    size_t max_seq_length,
-    size_t batch_size,
-    size_t vector_size,
-    const int seq_length_array[],
-    void* padding_fill);
-
-private:
-
-  dnnRNNDataDescriptor_t desc_{nullptr};
-
-};
-
 ////////////////////////////////////////////////////////////
 // Functions for to/from cuDNN types conversion
 ////////////////////////////////////////////////////////////
@@ -319,6 +270,62 @@ inline cudnnSoftmaxAlgorithm_t to_cudnn(softmax_alg alg)
 }
 
 } // namespace cudnn
+
+namespace dnn_lib {
+
+using namespace cudnn;
+
+/** Wrapper around @c cudnnRNNDataDescriptor_t */
+class RNNDataDescriptor {
+
+public:
+
+  RNNDataDescriptor(dnnRNNDataDescriptor_t desc=nullptr);
+
+  ~RNNDataDescriptor();
+
+  // Copy-and-swap idiom
+  RNNDataDescriptor(const RNNDataDescriptor&) = delete; /// @todo Implement
+  RNNDataDescriptor(RNNDataDescriptor&&);
+  RNNDataDescriptor& operator=(RNNDataDescriptor);
+  friend void swap(RNNDataDescriptor& first, RNNDataDescriptor& second);
+
+  /** @brief Take ownership of cuDNN object */
+  void reset(dnnRNNDataDescriptor_t desc=nullptr);
+  /** @brief Return cuDNN object and release ownership */
+  dnnRNNDataDescriptor_t release();
+  /** @brief Return cuDNN object without releasing ownership */
+  dnnRNNDataDescriptor_t get() const noexcept;
+  /** @brief Return cuDNN object without releasing ownership */
+  operator dnnRNNDataDescriptor_t() const noexcept;
+
+  /** @brief Allocate a new handle.
+   *
+   *  Does nothing if already created.
+   */
+  void create();
+
+  /** Configure cuDNN object
+   *
+   *  Creates cuDNN object if needed.
+   */
+  void set(
+    dnnDataType_t data_type,
+    dnnRNNDataLayout_t layout,
+    size_t max_seq_length,
+    size_t batch_size,
+    size_t vector_size,
+    const int seq_length_array[],
+    void* padding_fill);
+
+private:
+
+  dnnRNNDataDescriptor_t desc_{nullptr};
+
+};
+
+} // namespace dnn_lib
+
 } // namespace lbann
 
 #endif // LBANN_HAS_CUDNN
