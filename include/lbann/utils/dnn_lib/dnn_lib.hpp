@@ -59,29 +59,29 @@ struct ScalingParameterT<fp16>
 #endif // LBANN_USE_GPU_FP16
 
 ////////////////////////////////////////////////////////////
-// Global cuDNN objects
+// Global DNN library objects
 ////////////////////////////////////////////////////////////
 
-/** Initialize global cuDNN objects. */
+/** Initialize global DNN library objects. */
 void initialize();
-/** Destroy global cuDNN objects. */
+/** Destroy global DNN library objects. */
 void destroy();
-/** Get cuDNN handle.
- *  This resets the active CUDA device and stream to the Hydrogen
- *  defaults. The cuDNN handle is initialized if needed.
+/** Get DNN library handle.
+ *  This resets the active GPU device and stream to the Hydrogen
+ *  defaults. The DNN library handle is initialized if needed.
  */
 dnnHandle_t& get_handle();
 
 ////////////////////////////////////////////////////////////
-// Helper functions for cuDNN types
+// Helper functions for DNN library types
 ////////////////////////////////////////////////////////////
 
-/** Get cuDNN data type associated with DataType. */
+/** Get DNN library data type associated with DataType. */
 template <typename TensorDataType>
 dnnDataType_t get_data_type();
 
 ////////////////////////////////////////////////////////////
-// Wrapper classes for cuDNN types
+// Wrapper classes for DNN library types
 ////////////////////////////////////////////////////////////
 
 template <typename T>
@@ -105,31 +105,31 @@ public:
   TensorDescriptor& operator=(TensorDescriptor);
   friend void swap(TensorDescriptor& first, TensorDescriptor& second);
 
-  /** @brief Take ownership of cuDNN object */
+  /** @brief Take ownership of DNN library object */
   void reset(dnnTensorDescriptor_t desc=nullptr);
-  /** @brief Return cuDNN object and release ownership */
+  /** @brief Return DNN library object and release ownership */
   dnnTensorDescriptor_t release() noexcept;
-  /** @brief Return cuDNN object without releasing ownership */
+  /** @brief Return DNN library object without releasing ownership */
   dnnTensorDescriptor_t get() const noexcept;
-  /** @brief Return cuDNN object without releasing ownership */
+  /** @brief Return DNN library object without releasing ownership */
   operator dnnTensorDescriptor_t() const noexcept;
 
-  /** @brief Create cuDNN object
+  /** @brief Create DNN library object
    *
    *  Does nothing if already created.
    */
   void create();
-  /** @brief Configure cuDNN object
+  /** @brief Configure DNN library object
    *
-   *  Creates cuDNN object if needed.
+   *  Creates DNN library object if needed.
    */
   void set(
     dnnDataType_t data_type,
     std::vector<int> dims,
     std::vector<int> strides = {});
-  /** @brief Configure cuDNN object
+  /** @brief Configure DNN library object
    *
-   *  Creates cuDNN object if needed.
+   *  Creates DNN library object if needed.
    */
   template <typename... IntTs>
   void set(
@@ -162,31 +162,31 @@ public:
   FilterDescriptor& operator=(FilterDescriptor);
   friend void swap(FilterDescriptor& first, FilterDescriptor& second);
 
-  /** @brief Take ownership of cuDNN object */
+  /** @brief Take ownership of DNN library object */
   void reset(dnnFilterDescriptor_t desc=nullptr);
-  /** @brief Return cuDNN object and release ownership */
+  /** @brief Return DNN library object and release ownership */
   dnnFilterDescriptor_t release() noexcept;
-  /** @brief Return cuDNN object without releasing ownership */
+  /** @brief Return DNN library object without releasing ownership */
   dnnFilterDescriptor_t get() const noexcept;
-  /** @brief Return cuDNN object without releasing ownership */
+  /** @brief Return DNN library object without releasing ownership */
   operator dnnFilterDescriptor_t() const noexcept;
 
-  /** Create cuDNN object
+  /** Create DNN library object
    *
    *  Does nothing if already created.
    */
   void create();
-  /** Configure cuDNN object
+  /** Configure DNN library object
    *
-   *  Creates cuDNN object if needed.
+   *  Creates DNN library object if needed.
    */
   void set(
     dnnDataType_t data_type,
     dnnTensorFormat_t format,
     const std::vector<int>& dims);
-  /** Configure cuDNN object
+  /** Configure DNN library object
    *
-   *  Creates cuDNN object if needed.
+   *  Creates DNN library object if needed.
    */
   template <typename... IntTs>
   void set(
@@ -224,23 +224,23 @@ public:
   DropoutDescriptor& operator=(DropoutDescriptor);
   friend void swap(DropoutDescriptor& first, DropoutDescriptor& second);
 
-  /** @brief Take ownership of cuDNN object */
+  /** @brief Take ownership of DNN library object */
   void reset(dnnDropoutDescriptor_t desc=nullptr);
-  /** @brief Return cuDNN object and release ownership */
+  /** @brief Return DNN library object and release ownership */
   dnnDropoutDescriptor_t release() noexcept;
-  /** @brief Return cuDNN object without releasing ownership */
+  /** @brief Return DNN library object without releasing ownership */
   dnnDropoutDescriptor_t get() const noexcept;
-  /** @brief Return cuDNN object without releasing ownership */
+  /** @brief Return DNN library object without releasing ownership */
   operator dnnDropoutDescriptor_t() const noexcept;
 
-  /** Create cuDNN object
+  /** Create DNN library object
    *
    *  Does nothing if already created.
    */
   void create();
-  /** Configure cuDNN object
+  /** Configure DNN library object
    *
-   *  Creates cuDNN object if needed.
+   *  Creates DNN library object if needed.
    */
   void set(
     float dropout,
@@ -269,23 +269,23 @@ public:
   RNNDescriptor& operator=(RNNDescriptor);
   friend void swap(RNNDescriptor& first, RNNDescriptor& second);
 
-  /** @brief Take ownership of cuDNN object */
+  /** @brief Take ownership of DNN library object */
   void reset(dnnRNNDescriptor_t desc=nullptr);
-  /** @brief Return cuDNN object and release ownership */
+  /** @brief Return DNN library object and release ownership */
   dnnRNNDescriptor_t release() noexcept;
-  /** @brief Return cuDNN object without releasing ownership */
+  /** @brief Return DNN library object without releasing ownership */
   dnnRNNDescriptor_t get() const noexcept;
-  /** @brief Return cuDNN object without releasing ownership */
+  /** @brief Return DNN library object without releasing ownership */
   operator dnnRNNDescriptor_t() const noexcept;
 
-  /** Create cuDNN object
+  /** Create DNN library object
    *
    *  Does nothing if already created.
    */
   void create();
-  /** Configure cuDNN object
+  /** Configure DNN library object
    *
-   *  Creates cuDNN object if needed.
+   *  Creates DNN library object if needed.
    */
   void set(
     dnnRNNAlgo_t algorithm,
@@ -644,10 +644,10 @@ private:
 void swap(LRNDescriptor& lhs, LRNDescriptor& rhs);
 
 ////////////////////////////////////////////////////////////
-// cuDNN tensor managers
+// DNN library tensor managers
 ////////////////////////////////////////////////////////////
 
-/** Manager for a layer's cuDNN tensor descriptors. */
+/** Manager for a layer's DNN library tensor descriptors. */
 template <typename TensorDataType>
 class layer_tensor_manager {
 public:
@@ -661,13 +661,13 @@ public:
   /** Set the layer being managed. */
   void set_layer(const LayerType* l);
 
-  /** Get cuDNN tensor descriptor for layer input. */
+  /** Get DNN library tensor descriptor for layer input. */
   virtual TensorDescriptor& get_prev_activations(int parent_index = 0) = 0;
-  /** Get cuDNN tensor descriptor for layer output. */
+  /** Get DNN library tensor descriptor for layer output. */
   virtual TensorDescriptor& get_activations(int child_index = 0) = 0;
-  /** Get cuDNN tensor descriptor for gradient w.r.t. layer output. */
+  /** Get DNN library tensor descriptor for gradient w.r.t. layer output. */
   virtual TensorDescriptor& get_prev_error_signals(int child_index = 0) = 0;
-  /** Get cuDNN tensor descriptor for gradient w.r.t. layer input. */
+  /** Get DNN library tensor descriptor for gradient w.r.t. layer input. */
   virtual TensorDescriptor& get_error_signals(int parent_index = 0) = 0;
 
 protected:
@@ -683,18 +683,18 @@ protected:
 
   /** Layer being managed. */
   const LayerType* m_layer;
-  /** cuDNN tensor descriptors for layer inputs. */
+  /** DNN library tensor descriptors for layer inputs. */
   std::vector<TensorDescriptor> m_prev_activations;
-  /** cuDNN tensor descriptors for layer outputs. */
+  /** DNN library tensor descriptors for layer outputs. */
   std::vector<TensorDescriptor> m_activations;
-  /** cuDNN tensor descriptors for gradients w.r.t. layer outputs. */
+  /** DNN library tensor descriptors for gradients w.r.t. layer outputs. */
   std::vector<TensorDescriptor> m_prev_error_signals;
-  /** cuDNN tensor descriptors for gradients w.r.t. layer inputs. */
+  /** DNN library tensor descriptors for gradients w.r.t. layer inputs. */
   std::vector<TensorDescriptor> m_error_signals;
 
 };
 
-/** Manager for a data-parallel layer's cuDNN tensor descriptors. */
+/** Manager for a data-parallel layer's DNN library tensor descriptors. */
 template <typename TensorDataType>
 class data_parallel_layer_tensor_manager
   : public layer_tensor_manager<TensorDataType> {
@@ -717,7 +717,7 @@ public:
   TensorDescriptor& get_error_signals(int parent_index = 0) override;
 };
 
-/** Manager for an entry-wise layer's cuDNN tensor descriptors. */
+/** Manager for an entry-wise layer's DNN library tensor descriptors. */
 template <typename TensorDataType>
 class entrywise_layer_tensor_manager
   : public layer_tensor_manager<TensorDataType> {
@@ -741,16 +741,16 @@ public:
 };
 
 ////////////////////////////////////////////////////////////
-// cuDNN algorithm selection
+// DNN library algorithm selection
 ////////////////////////////////////////////////////////////
 
 /**
  * Select a forward convolution algorithm.
  *
- * If autotuning, memory for cuDNN algorithm runs is needed and should be
+ * If autotuning, memory for DNN library algorithm runs is needed and should be
  * provided via the pointer arguments.
  *
- * @param autotune True to attempt all cuDNN algorithms and select the fastest.
+ * @param autotune True to attempt all DNN library algorithms and select the fastest.
  * @param deterministic True to require deterministic algorithms.
  */
 dnnConvolutionFwdAlgo_t get_fwd_algorithm(
@@ -768,10 +768,10 @@ dnnConvolutionFwdAlgo_t get_fwd_algorithm(
 
 /** Select a backward data convolution algorithm.
  *
- * If autotuning, memory for cuDNN algorithm runs is needed and should be
+ * If autotuning, memory for DNN library algorithm runs is needed and should be
  * provided via the pointer arguments.
  *
- * @param autotune True to attempt all cuDNN algorithms and select the fastest.
+ * @param autotune True to attempt all DNN library algorithms and select the fastest.
  * @param deterministic True to require deterministic algorithms.
  */
 dnnConvolutionBwdDataAlgo_t get_bwd_data_algorithm(
@@ -789,10 +789,10 @@ dnnConvolutionBwdDataAlgo_t get_bwd_data_algorithm(
 
 /** Select a backward filter convolution algorithm.
  *
- * If autotuning, memory for cuDNN algorithm runs is needed and should be
+ * If autotuning, memory for DNN library algorithm runs is needed and should be
  * provided via the pointer arguments.
  *
- * @param autotune True to attempt all cuDNN algorithms and select the fastest.
+ * @param autotune True to attempt all DNN library algorithms and select the fastest.
  * @param deterministic True to require deterministic algorithms.
  */
 dnnConvolutionBwdFilterAlgo_t get_bwd_filter_algorithm(

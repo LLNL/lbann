@@ -153,7 +153,7 @@ private:
   std::unique_ptr<AbsDistMatrixType> m_workspace;
 
 #ifdef LBANN_HAS_DNN_LIB
-  /** Tensor cuDNN descriptors. */
+  /** Tensor DNN library descriptors. */
   dnn_lib::data_parallel_layer_tensor_manager<TensorDataType> m_tensors_dnn_desc;
 #endif // LBANN_HAS_DNN_LIB
 

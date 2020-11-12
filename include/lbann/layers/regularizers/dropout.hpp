@@ -149,10 +149,10 @@ protected:
   void setup_gpu() override {
     regularizer_layer<TensorDataType>::setup_gpu();
 #ifndef LBANN_HAS_DNN_LIB
-    LBANN_ERROR("cuDNN not detected");
+    LBANN_ERROR("DNN library not detected");
 #else
 
-    // Initialize cuDNN objects
+    // Initialize DNN library objects
     setup_dropout_dnn_desc();
 
 #endif // LBANN_HAS_DNN_LIB
@@ -226,7 +226,7 @@ protected:
 
   void fp_compute_gpu() {
 #ifndef LBANN_HAS_DNN_LIB
-    LBANN_ERROR("cuDNN not detected");
+    LBANN_ERROR("DNN library not detected");
 #else
 
     // Matrices
@@ -243,7 +243,7 @@ protected:
     }
     if (local_input.Height() < 1 || local_input.Width() < 1) { return; }
 
-    // Initialize cuDNN objects
+    // Initialize DNN library objects
     auto&& input_desc = m_tensors_dnn_desc.get_prev_activations();
     auto&& output_desc = m_tensors_dnn_desc.get_activations();
     size_t size = dnn_lib::get_dropout_reserve_space_size(input_desc);
@@ -262,7 +262,7 @@ protected:
 
   void bp_compute_gpu() {
 #ifndef LBANN_HAS_DNN_LIB
-    LBANN_ERROR("cuDNN not detected");
+    LBANN_ERROR("DNN library not detected");
 #else
 
     // Matrices
@@ -290,7 +290,7 @@ protected:
   }
 
 #ifdef LBANN_HAS_DNN_LIB
-  /** Setup cuDNN dropout descriptor and RNG state.
+  /** Setup DNN library dropout descriptor and RNG state.
    */
   void setup_dropout_dnn_desc() {
 
@@ -313,13 +313,13 @@ protected:
   std::unique_ptr<AbsDistMatrixType> m_mask;
 
 #ifdef LBANN_HAS_DNN_LIB
-  /** Dropout cuDNN descriptor. */
+  /** Dropout DNN library descriptor. */
   dnn_lib::DropoutDescriptor m_dropout_dnn_desc;
-  /** Tensor cuDNN descriptors. */
+  /** Tensor DNN library descriptors. */
   dnn_lib::entrywise_layer_tensor_manager<TensorDataType> m_tensors_dnn_desc;
-  /** RNG state for cuDNN dropout. */
+  /** RNG state for DNN library dropout. */
   El::Matrix<TensorDataType, El::Device::GPU> m_states;
-  /** Work space for cuDNN dropout. */
+  /** Work space for DNN library dropout. */
   El::Matrix<TensorDataType, El::Device::GPU> m_reserve_space;
 #endif // LBANN_HAS_DNN_LIB
 

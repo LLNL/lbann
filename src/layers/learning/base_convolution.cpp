@@ -117,7 +117,7 @@ base_convolution_layer<TensorDataType,Device>
   m_bias_scaling_factor = other.m_bias_scaling_factor;
 
 #ifdef LBANN_HAS_DNN_LIB
-  // Copy cuDNN objects
+  // Copy DNN library objects
   m_convolution_math_type = other.m_convolution_math_type;
   m_kernel_dnn_desc = other.m_kernel_dnn_desc;
   m_convolution_dnn_desc = other.m_convolution_dnn_desc;
@@ -387,7 +387,7 @@ template <typename TensorDataType, El::Device Device>
 void base_convolution_layer<TensorDataType,Device>::setup_gpu() {
   data_type_layer<TensorDataType>::setup_gpu();
 #ifndef LBANN_HAS_DNN_LIB
-  LBANN_ERROR("cuDNN not detected");
+  LBANN_ERROR("DNN library not detected");
 #else
 
   const auto& output_dims = this->get_output_dims();
@@ -653,7 +653,7 @@ base_convolution_layer<TensorDataType,Device>
       workspace.Resize(workspace_size / sizeof(TensorDataType), 1);
       workspace_size = workspace.Height() * sizeof(TensorDataType);
 
-      // Initialize cuDNN objects
+      // Initialize DNN library objects
       auto&& input_desc = m_tensors_dnn_desc.get_prev_activations();
       auto&& gradient_wrt_output_desc = m_tensors_dnn_desc.get_prev_error_signals();
 

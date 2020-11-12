@@ -92,7 +92,7 @@ private:
 #ifdef LBANN_HAS_DNN_LIB
   /** Pooling descriptor. */
   dnn_lib::PoolingDescriptor m_pooling_dnn_desc;
-  /** Tensor cuDNN descriptors. */
+  /** Tensor DNN library descriptors. */
   dnn_lib::data_parallel_layer_tensor_manager<TensorDataType> m_tensors_dnn_desc;
 #endif // LBANN_HAS_DNN_LIB
 
@@ -241,7 +241,7 @@ protected:
   void setup_gpu() override {
     transform_layer<TensorDataType>::setup_gpu();
 #ifndef LBANN_HAS_DNN_LIB
-    LBANN_ERROR("cuDNN not detected");
+    LBANN_ERROR("DNN library not detected");
 #else
 
     // Set pooling descriptor
@@ -303,10 +303,10 @@ protected:
 
 private:
 
-  /// Pooling forward propagation with cuDNN
+  /// Pooling forward propagation with DNN library
   void fp_compute_dnn() {
 #ifndef LBANN_HAS_DNN_LIB
-    LBANN_ERROR("cuDNN not detected");
+    LBANN_ERROR("DNN library not detected");
 #else
     using ScalingType = dnn_lib::ScalingParamType<TensorDataType>;
     const auto& local_input = this->get_local_prev_activations();
@@ -325,10 +325,10 @@ private:
 #endif // #ifndef LBANN_HAS_DNN_LIB
   }
 
-  /// Pooling backward propagation with cuDNN
+  /// Pooling backward propagation with DNN library
   void bp_compute_dnn() {
 #ifndef LBANN_HAS_DNN_LIB
-    LBANN_ERROR("cuDNN not detected");
+    LBANN_ERROR("DNN library not detected");
 #else
     using ScalingType = dnn_lib::ScalingParamType<TensorDataType>;
     const auto& local_input = this->get_local_prev_activations();

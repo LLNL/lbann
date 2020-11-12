@@ -110,13 +110,13 @@ private:
   using ByteBuffer = hydrogen::simple_buffer<El::byte, Device>;
   using LocalMat = El::Matrix<TensorDataType, El::Device::GPU>;
 
-  // cuDNN descriptors
+  // DNN library descriptors
   dnn_lib::RNNDescriptor m_rnn_cudnn_desc;
   dnn_lib::RNNDataDescriptor m_input_cudnn_desc;
   dnn_lib::RNNDataDescriptor m_output_cudnn_desc;
   dnn_lib::TensorDescriptor m_hidden_cudnn_desc;
 
-  // cuDNN workspaces
+  // DNN library workspaces
   LocalMat m_input_sequence_workspace;
   LocalMat m_output_sequence_workspace;
   LocalMat m_input_sequence_grad_workspace;

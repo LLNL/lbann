@@ -127,10 +127,10 @@ private:
   /** Workspace for column-wise reductions. */
   std::unique_ptr<AbsDistMatrixType> m_workspace;
 
-#ifdef LBANN_HAS_CUDNN
-  /** Tensor cuDNN descriptors. */
+#ifdef LBANN_HAS_DNN_LIB
+  /** Tensor DNN library descriptors. */
   dnn_lib::data_parallel_layer_tensor_manager<TensorDataType> m_tensors_dnn_desc;
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_DNN_LIB
 
 };
 
