@@ -1,4 +1,3 @@
-#include "hip/hip_runtime.h"
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
