@@ -151,8 +151,8 @@ void deconvolution_layer<TensorDataType,Layout,Device>::fp_compute() {
       return;
     }
 #endif // LBANN_HAS_DISTCONV
-    BaseConvLayer::apply_transposed_convolution_cudnn(true);
-    BaseConvLayer::apply_bias_cudnn();
+    BaseConvLayer::apply_transposed_convolution_dnn(true);
+    BaseConvLayer::apply_bias_dnn();
   } else {
     BaseConvLayer::apply_transposed_convolution_im2col(true);
     BaseConvLayer::apply_bias_cpu();
@@ -174,8 +174,8 @@ void deconvolution_layer<TensorDataType,Layout,Device>::bp_compute() {
       return;
     }
 #endif // LBANN_HAS_DISTCONV
-    BaseConvLayer::compute_gradients_cudnn(true);
-    BaseConvLayer::apply_convolution_cudnn(false);
+    BaseConvLayer::compute_gradients_dnn(true);
+    BaseConvLayer::apply_convolution_dnn(false);
   } else {
     BaseConvLayer::compute_gradients_im2col(true);
     BaseConvLayer::apply_convolution_im2col(false);

@@ -28,9 +28,9 @@
 #define LBANN_LAYERS_LEARNING_GRU_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
-#ifdef LBANN_HAS_CUDNN
-#include "lbann/utils/cudnn.hpp"
-#endif // LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_DNN_LIB
+#include "lbann/utils/dnn_lib/helpers.hpp"
+#endif // LBANN_HAS_DNN_LIB
 
 /// GPU GRU layer requires CUDA 11.0 and cuDNN 8.0.4 or newer
 #ifdef LBANN_HAS_CUDNN

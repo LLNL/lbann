@@ -31,9 +31,9 @@
 #include "lbann/utils/protobuf_utils.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
 #include "lbann/utils/argument_parser.hpp"
-#ifdef LBANN_HAS_CUDNN
-#include "lbann/utils/cudnn.hpp"
-#endif // LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_DNN_LIB
+#include "lbann/utils/dnn_lib/helpers.hpp"
+#endif // LBANN_DNN_LIB
 
 #include <lbann.pb.h>
 #include <model.pb.h>
@@ -126,10 +126,10 @@ int main(int argc, char *argv[]) {
                 << "using tensor core math." << "\n"
                 << std::endl;
     }
-#ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_DNN_LIB
     if (use_cudnn_tensor_ops)
-      cudnn::default_to_tensor_ops();
-#endif // LBANN_HAS_CUDNN
+      dnn_lib::default_to_tensor_ops();
+#endif // LBANN_HAS_DNN_LIB
 #ifdef LBANN_HAS_CUDA
     if (use_cublas_tensor_ops)
       El::gpu_blas::RequestTensorOperations();

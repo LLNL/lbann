@@ -27,7 +27,9 @@
 #define LBANN_SOFTMAX_LAYER_INSTANTIATE
 #include "lbann/layers/activations/softmax.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
-#include "lbann/utils/dnn_lib/cudnn/softmax.hpp"
+#ifdef LBANN_HAS_DNN_LIB
+#include "lbann/utils/dnn_lib/softmax.hpp"
+#endif // LBANN_HAS_DNN_LIB
 
 namespace lbann {
 
@@ -289,18 +291,18 @@ void fp_compute_impl(softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, E
   }
 #endif // LBANN_HAS_DISTCONV
 
-  const cudnn::ScalingParamType<TensorDataType> zero = 0.;
-  const cudnn::ScalingParamType<TensorDataType> one = 1.;
+  const dnn_lib::ScalingParamType<TensorDataType> zero = 0.;
+  const dnn_lib::ScalingParamType<TensorDataType> one = 1.;
   const auto& local_input = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_prev_activations());
   auto& local_output = dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_activations());
   if (!local_input.IsEmpty()) {
-    cudnn::softmax_forward(one,
-                           l.m_tensors_cudnn_desc.get_prev_activations(),
-                           local_input,
-                           zero,
-                           l.m_tensors_cudnn_desc.get_activations(),
-                           local_output,
-                           l.m_mode);
+    dnn_lib::softmax_forward(one,
+                             l.m_tensors_dnn_desc.get_prev_activations(),
+                             local_input,
+                             zero,
+                             l.m_tensors_dnn_desc.get_activations(),
+                             local_output,
+                             l.m_mode);
 #ifdef LBANN_ENABLE_SOFTMAX_THRESHOLD
     gpu_lib::apply_entrywise_unary_operator<threshold_op>(local_output,
                                                        local_output);
@@ -317,20 +319,20 @@ void bp_compute_impl(softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, E
   }
 #endif // LBANN_HAS_DISTCONV
 
-  const cudnn::ScalingParamType<TensorDataType> zero = 0.;
-  const cudnn::ScalingParamType<TensorDataType> one = 1.;
+  const dnn_lib::ScalingParamType<TensorDataType> zero = 0.;
+  const dnn_lib::ScalingParamType<TensorDataType> one = 1.;
   const auto& local_output = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_activations());
   const auto& local_gradient_wrt_output = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_prev_error_signals());
   auto& local_gradient_wrt_input = dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_error_signals());
-  cudnn::softmax_backward(one,
-                          l.m_tensors_cudnn_desc.get_activations(),
-                          local_output,
-                          l.m_tensors_cudnn_desc.get_prev_error_signals(),
-                          local_gradient_wrt_output,
-                          zero,
-                          l.m_tensors_cudnn_desc.get_error_signals(),
-                          local_gradient_wrt_input,
-                          l.m_mode);
+  dnn_lib::softmax_backward(one,
+                            l.m_tensors_dnn_desc.get_activations(),
+                            local_output,
+                            l.m_tensors_dnn_desc.get_prev_error_signals(),
+                            local_gradient_wrt_output,
+                            zero,
+                            l.m_tensors_dnn_desc.get_error_signals(),
+                            local_gradient_wrt_input,
+                            l.m_mode);
 }
 
 template <typename TensorDataType>
