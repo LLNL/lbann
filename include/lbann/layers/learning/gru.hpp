@@ -111,10 +111,10 @@ private:
   using LocalMat = El::Matrix<TensorDataType, El::Device::GPU>;
 
   // cuDNN descriptors
-  cudnn::RNNDescriptor m_rnn_cudnn_desc;
-  cudnn::RNNDataDescriptor m_input_cudnn_desc;
-  cudnn::RNNDataDescriptor m_output_cudnn_desc;
-  cudnn::TensorDescriptor m_hidden_cudnn_desc;
+  dnn_lib::RNNDescriptor m_rnn_cudnn_desc;
+  dnn_lib::RNNDataDescriptor m_input_cudnn_desc;
+  dnn_lib::RNNDataDescriptor m_output_cudnn_desc;
+  dnn_lib::TensorDescriptor m_hidden_cudnn_desc;
 
   // cuDNN workspaces
   LocalMat m_input_sequence_workspace;
