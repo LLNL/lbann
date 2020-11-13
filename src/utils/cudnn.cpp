@@ -1656,6 +1656,23 @@ cudnnMathType_t get_default_convolution_math_type() noexcept
   return default_tensor_ops_mode;
 }
 
+using ProtoTensorOpEnumType = decltype(lbann_data::DEFAULT_TENSOR_OPS);
+cudnnMathType_t convert_to_dnn_math_type(ProtoTensorOpEnumType mt)
+{
+  switch (mt)
+  {
+  case lbann_data::DEFAULT_TENSOR_OPS:
+    return dnn_lib::get_default_convolution_math_type();
+  case lbann_data::NO_TENSOR_OPS:
+    return CUDNN_DEFAULT_MATH;
+  case lbann_data::USE_TENSOR_OPS:
+    return CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION;
+  default:
+    LBANN_ERROR("Bad math type value.");
+  }
+  return CUDNN_DEFAULT_MATH;
+}
+
 #define PROTO(T)                                        \
   template cudnnDataType_t get_data_type<T>();          \
   template class layer_tensor_manager<T>;               \

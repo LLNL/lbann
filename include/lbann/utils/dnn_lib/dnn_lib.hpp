@@ -34,6 +34,8 @@
 #include "lbann/layers/data_type_layer.hpp"
 #include <vector>
 
+#include <layers.pb.h>
+
 #ifdef LBANN_HAS_DNN_LIB
 
 namespace lbann {
@@ -818,6 +820,10 @@ void default_to_tensor_ops() noexcept;
  *  Will query the command-line args.
  */
 dnnMathType_t get_default_convolution_math_type() noexcept;
+
+using ProtoTensorOpEnumType = decltype(lbann_data::DEFAULT_TENSOR_OPS);
+/** @brief Converts from lbann_data to DNN library math type. */
+dnnMathType_t convert_to_dnn_math_type(ProtoTensorOpEnumType mt);
 
 } // namespace dnn_lib
 } // namespace lbann

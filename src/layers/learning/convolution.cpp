@@ -291,25 +291,6 @@ void convolution_distconv_adapter<TensorDataType, Layout, Device>::setup_layer(
 // Builder helper stuff
 namespace {
 
-#ifdef LBANN_HAS_DNN_LIB
-using ProtoTensorOpEnumType = decltype(lbann_data::DEFAULT_TENSOR_OPS);
-cudnnMathType_t convert_to_dnn_math_type(ProtoTensorOpEnumType mt)
-{
-  switch (mt)
-  {
-  case lbann_data::DEFAULT_TENSOR_OPS:
-    return dnn_lib::get_default_convolution_math_type();
-  case lbann_data::NO_TENSOR_OPS:
-    return CUDNN_DEFAULT_MATH;
-  case lbann_data::USE_TENSOR_OPS:
-    return CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION;
-  default:
-    LBANN_ERROR("Bad math type value.");
-  }
-  return CUDNN_DEFAULT_MATH;
-}
-#endif // LBANN_HAS_DNN_LIB
-
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 struct ConvLayerBuilder
 {
@@ -337,7 +318,7 @@ struct ConvLayerBuilder
         comm, dims.size(), num_output_channels,
         dims, pads, strides, dilations, num_groups, bias);
       ret->set_dnn_math_mode(
-        convert_to_dnn_math_type(params.conv_tensor_op_mode()));
+        dnn_lib::convert_to_dnn_math_type(params.conv_tensor_op_mode()));
       return ret;
 #else
       return lbann::make_unique<convolution_layer<TensorDataType, Layout, Device>>(
@@ -359,7 +340,7 @@ struct ConvLayerBuilder
         comm, num_dims, num_output_channels,
         dim, pad, stride, dilation, num_groups, bias);
       ret->set_dnn_math_mode(
-        convert_to_dnn_math_type(params.conv_tensor_op_mode()));
+        dnn_lib::convert_to_dnn_math_type(params.conv_tensor_op_mode()));
       return ret;
 #else
       return lbann::make_unique<convolution_layer<TensorDataType, Layout, Device>>(

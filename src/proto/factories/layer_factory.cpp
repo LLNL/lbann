@@ -113,7 +113,8 @@
 #include <layers.pb.h>
 
 #ifdef LBANN_HAS_DNN_LIB
-#include <cudnn.h>
+//#include <cudnn.h>
+#include "lbann/utils/dnn_lib/helpers.hpp"
 #endif // LBANN_HAS_DNN_LIB
 
 namespace lbann {
@@ -290,28 +291,6 @@ factory_type const& get_layer_factory() noexcept
   return factory_mgr_.get();
 }
 
-// Some cuDNN stuff -- copied from convolution.cpp. To what common
-// location should this go?? The problem is it's the confluence of two
-// evils: protobuf and cudnn. I'd rather they never meet, but whatdya
-// gonna do.
-#ifdef LBANN_HAS_DNN_LIB
-using ProtoTensorOpEnumType = decltype(lbann_data::DEFAULT_TENSOR_OPS);
-cudnnMathType_t convert_to_dnn_math_type(ProtoTensorOpEnumType mt)
-{
-  switch (mt)
-  {
-  case lbann_data::DEFAULT_TENSOR_OPS:
-    return dnn_lib::get_default_convolution_math_type();
-  case lbann_data::NO_TENSOR_OPS:
-    return CUDNN_DEFAULT_MATH;
-  case lbann_data::USE_TENSOR_OPS:
-    return CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION;
-  default:
-    LBANN_ERROR("Bad math type value.");
-  }
-  return CUDNN_DEFAULT_MATH;
-}
-#endif // LBANN_HAS_DNN_LIB
 } // namespace
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -389,7 +368,7 @@ std::unique_ptr<Layer> construct_layer_legacy(
         comm, dims.size(), num_output_channels,
         dims, pads, strides, dilations, num_groups, bias);
       ret->set_dnn_math_mode(
-        convert_to_dnn_math_type(params.conv_tensor_op_mode()));
+        dnn_lib::convert_to_dnn_math_type(params.conv_tensor_op_mode()));
       return ret;
 #else
       return lbann::make_unique<deconvolution_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(
@@ -411,7 +390,7 @@ std::unique_ptr<Layer> construct_layer_legacy(
         comm, num_dims, num_output_channels,
         dim, pad, stride, dilation, num_groups, bias);
       ret->set_dnn_math_mode(
-        convert_to_dnn_math_type(params.conv_tensor_op_mode()));
+        dnn_lib::convert_to_dnn_math_type(params.conv_tensor_op_mode()));
       return ret;
 #else
       return lbann::make_unique<deconvolution_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(
