@@ -795,7 +795,7 @@ bwd_data_conv_alg get_bwd_data_algorithm(
  * @param autotune True to attempt all DNN library algorithms and select the fastest.
  * @param deterministic True to require deterministic algorithms.
  */
-dnnConvolutionBwdFilterAlgo_t get_bwd_filter_algorithm(
+bwd_filter_conv_alg get_bwd_filter_algorithm(
   bool autotune,
   bool deterministic,
   const TensorDescriptor& input_desc,
