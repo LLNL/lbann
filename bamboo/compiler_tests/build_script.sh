@@ -53,10 +53,8 @@ then
 
     BRAIN_DIR=/usr/workspace/wsb/brain
 
-    # CUDA-y things (Use the newest)
-    ARCH=$(uname -i)
-    export NCCL_DIR=$(ls -d --color=no ${BRAIN_DIR}/nccl2/*cuda11*${ARCH} | tail -n1)
     # Use the latest cuDNN 8
+    ARCH=$(uname -i)
     export CUDNN_DIR=$(find ${BRAIN_DIR}/cudnn -maxdepth 2 -type d | grep "cudnn-8.*/cuda-11.*_${ARCH}" | sort -r | head -1)
 
     # Unit testing framework
