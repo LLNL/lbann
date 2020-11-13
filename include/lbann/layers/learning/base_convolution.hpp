@@ -125,7 +125,7 @@ protected:
   /** @brief Math type to use inside DNN library.
    *  @details Must be cached since it isn't used until setup.
    */
-  cudnnMathType_t m_convolution_math_type =
+  dnn_lib::dnnMathType_t m_convolution_math_type =
     dnn_lib::get_default_convolution_math_type();
   /** Convolution kernel DNN library descriptor. */
   dnn_lib::FilterDescriptor m_kernel_dnn_desc;

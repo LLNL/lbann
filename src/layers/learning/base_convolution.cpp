@@ -196,8 +196,8 @@ base_convolution_layer<TensorDataType,Device>::get_description() const {
 
 #ifdef LBANN_HAS_DNN_LIB
   if (Device == El::Device::GPU) {
-    desc.add("cuDNN Math Mode",
-             (m_convolution_math_type == CUDNN_DEFAULT_MATH
+    desc.add("DNN Math Mode",
+             (m_convolution_math_type == dnn_lib::DNN_DEFAULT_MATH
               ? "NO tensor cores."
               : "USE tensor cores."));
   }
@@ -396,13 +396,13 @@ void base_convolution_layer<TensorDataType,Device>::setup_gpu() {
   // Set kernel descriptor
   m_kernel_dnn_desc.set(
     dnn_lib::get_data_type<TensorDataType>(),
-    CUDNN_TENSOR_NCHW,
+    dnn_lib::DNN_TENSOR_NCHW,
     kernel_dims);
 
   // Set convolution descriptor
   m_convolution_dnn_desc.set(m_pads, m_strides, m_dilations,
                              dnn_lib::get_data_type<TensorDataType>(),
-                             CUDNN_CROSS_CORRELATION);
+                             dnn_lib::DNN_CROSS_CORRELATION);
   m_convolution_dnn_desc.set_math_mode(m_convolution_math_type);
   m_convolution_dnn_desc.set_group_count(m_groups);
 
