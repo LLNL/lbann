@@ -71,10 +71,6 @@ std::unique_ptr<Layer> build_pooling_layer_from_pbuf(
 
   const auto& mode_str = params.pool_mode();
   pooling_mode mode = to_pool_mode(mode_str);
-  //pool_mode mode = pool_mode::invalid;
-  //if (mode_str == "max" )            { mode = pool_mode::max; }
-  //if (mode_str == "average" )        { mode = pool_mode::average; }
-  //if (mode_str == "average_no_pad" ) { mode = pool_mode::average_no_pad; }
   if (params.has_vectors()) {
     const auto& dims = parse_list<int>(params.pool_dims());
     const auto& pads = parse_list<int>(params.pool_pads());

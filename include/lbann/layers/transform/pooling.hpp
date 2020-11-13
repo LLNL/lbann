@@ -30,6 +30,7 @@
 #include <utility>
 #include <vector>
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/utils/dnn_enums.hpp"
 #ifdef LBANN_HAS_DNN_LIB
 #include "lbann/utils/dnn_lib/helpers.hpp"
 #include "lbann/utils/dnn_lib/pooling.hpp"
@@ -42,10 +43,10 @@ namespace lbann {
 
 inline pooling_mode to_pool_mode(std::string m)
 {
-#ifndef LBANN_DETERMINISTIC
-  if (m == "max")            return pooling_mode::MAX;
-#else
+#ifdef LBANN_DETERMINISTIC
   if (m == "max")            return pooling_mode::MAX_DETERMINISTIC;
+#else
+  if (m == "max")            return pooling_mode::MAX;
 #endif // LBANN_DETERMINISTIC
   if (m == "average")        return pooling_mode::AVERAGE_COUNT_INCLUDE_PADDING;
   if (m == "average_no_pad") return pooling_mode::AVERAGE_COUNT_EXCLUDE_PADDING;
@@ -53,27 +54,6 @@ inline pooling_mode to_pool_mode(std::string m)
     LBANN_ERROR("Invalid pooling mode requested.");
   }
 }
-
-#ifdef LBANN_HAS_DNN_LIB
-namespace dnn_lib {
-
-inline dnnPoolingMode_t to_dnn_lib(pooling_mode m)
-{
-  switch(m)
-  {
-#ifdef LBANN_HAS_CUDNN
-  case pooling_mode::MAX: return CUDNN_POOLING_MAX;
-  case pooling_mode::MAX_DETERMINISTIC: return CUDNN_POOLING_MAX_DETERMINISTIC;
-  case pooling_mode::AVERAGE_COUNT_INCLUDE_PADDING: return CUDNN_POOLING_AVERAGE_COUNT_INCLUDE_PADDING;
-  case pooling_mode::AVERAGE_COUNT_EXCLUDE_PADDING: return CUDNN_POOLING_AVERAGE_COUNT_EXCLUDE_PADDING;
-#endif // LBANN_HAS_CUDNN
-  default:
-    LBANN_ERROR("Invalid pooling mode requested");
-  }
-}
-
-} // namespace dnn_lib
-#endif // LBANN_HAS_DNN_LIB
 
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType,
@@ -284,7 +264,7 @@ protected:
 #else
 
     // Set pooling descriptor
-    m_pooling_dnn_desc.set(dnn_lib::to_dnn_lib(m_pool_mode),
+    m_pooling_dnn_desc.set(m_pool_mode,
                            dnn_lib::DNN_PROPAGATE_NAN,
                            m_pool_dims.size(),
                            m_pool_dims.data(),
@@ -380,7 +360,9 @@ private:
 
   /// Pooling forward propagation with im2col
   void fp_compute_im2col() {
-    if(m_pool_mode != pooling_mode::MAX && m_pool_mode != pooling_mode::MAX_DETERMINISTIC && m_pool_mode != pooling_mode::AVERAGE_COUNT_INCLUDE_PADDING) {
+    if(m_pool_mode != pooling_mode::MAX &&
+       m_pool_mode != pooling_mode::MAX_DETERMINISTIC &&
+       m_pool_mode != pooling_mode::AVERAGE_COUNT_INCLUDE_PADDING) {
       LBANN_ERROR("CPU pooling layer only supports max and average pooling");
     }
 
@@ -395,7 +377,8 @@ private:
     const int num_per_output_channel = this->get_output_size() / num_channels;
 
     // Initialize max pool indices if needed
-    if(m_pool_mode == pooling_mode::MAX || m_pool_mode == pooling_mode::MAX_DETERMINISTIC) {
+    if(m_pool_mode == pooling_mode::MAX ||
+       m_pool_mode == pooling_mode::MAX_DETERMINISTIC) {
       m_max_pool_indices.assign(this->get_output_size() * local_width, 0);
     }
 
@@ -418,7 +401,8 @@ private:
              m_pool_dims.data(),
              m_strides.data());
 
-      if(m_pool_mode == pooling_mode::MAX || m_pool_mode == pooling_mode::MAX_DETERMINISTIC) {
+      if(m_pool_mode == pooling_mode::MAX ||
+         m_pool_mode == pooling_mode::MAX_DETERMINISTIC) {
         // Apply max pooling
         TensorDataType *output_buffer = local_output.Buffer(0, sample);
         int *indices_buffer = &m_max_pool_indices[sample * this->get_output_size()];
@@ -468,7 +452,9 @@ private:
   /// Pooling forward propagation with im2col
   void bp_compute_im2col() {
     using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
-    if(m_pool_mode != pooling_mode::MAX && m_pool_mode != pooling_mode::MAX_DETERMINISTIC && m_pool_mode != pooling_mode::AVERAGE_COUNT_INCLUDE_PADDING) {
+    if(m_pool_mode != pooling_mode::MAX &&
+       m_pool_mode != pooling_mode::MAX_DETERMINISTIC &&
+       m_pool_mode != pooling_mode::AVERAGE_COUNT_INCLUDE_PADDING) {
       LBANN_ERROR("CPU pooling layer only supports max and average pooling");
     }
 
@@ -490,7 +476,8 @@ private:
     for(int sample = 0; sample < local_width; ++sample) {
 
       // Compute gradient w.r.t. im2col matrix for max pooling
-      if(m_pool_mode == pooling_mode::MAX || m_pool_mode == pooling_mode::MAX_DETERMINISTIC) {
+      if(m_pool_mode == pooling_mode::MAX ||
+         m_pool_mode == pooling_mode::MAX_DETERMINISTIC) {
 
         // Clear im2col matrix
         El::Zero(im2col_mat);

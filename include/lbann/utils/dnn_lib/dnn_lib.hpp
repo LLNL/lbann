@@ -546,13 +546,13 @@ public:
    *  Allocates a new handle if one doesn't already exist.
    */
   void set(
-    dnnPoolingMode_t mode,
+    pooling_mode mode,
     dnnNanPropagation_t maxpoolingNanOpt,
     std::vector<int> const& window_dims,
     std::vector<int> const& padding,
     std::vector<int> const& stride);
   void set(
-    dnnPoolingMode_t mode,
+    pooling_mode mode,
     dnnNanPropagation_t nan_prop,
     int num_dims,
     int const window_dims[],
