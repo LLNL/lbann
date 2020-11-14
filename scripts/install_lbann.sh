@@ -58,8 +58,9 @@ fi
 SPACK_ARCH=$(spack arch)
 SPACK_ARCH_TARGET=$(spack arch -t)
 SPACK_ARCH_PLATFORM=$(spack arch -p)
+SPACK_ARCH_GENERIC_TARGET=$(spack python -c "import archspec.cpu as cpu; print(str(cpu.host().family))")
 # Create a modified spack arch with generic target architecture
-SPACK_ARCH_PLATFORM_GENERIC_TARGET="${SPACK_ARCH_PLATFORM}-${ARCH}"
+SPACK_ARCH_PLATFORM_GENERIC_TARGET="${SPACK_ARCH_PLATFORM}-${SPACK_ARCH_GENERIC_TARGET}"
 
 SCRIPT=$(basename ${BASH_SOURCE})
 BUILD_DIR=${LBANN_HOME}/build/spack
@@ -169,12 +170,14 @@ temp_file=$(mktemp)
 source ${SPACK_ENV_DIR}/std_versions_and_variants.sh
 # Defines EXTERNAL_ALL_PACKAGES and EXTERNAL_PACKAGES
 for arch in ${SPACK_ARCH} ${SPACK_ARCH_PLATFORM_GENERIC_TARGET}; do
-    echo "Checking ${arch}"
+    echo -e "Checking for externals in ${arch} \c"
     file="${SPACK_ENV_DIR}/${CENTER}/externals-${arch}.sh"
     if [[ -e ${file} ]]; then
-        echo "${file}"
+        echo "... found ${file}"
         source ${file}
         break
+    else
+        echo "... not found"
     fi
 done
 
