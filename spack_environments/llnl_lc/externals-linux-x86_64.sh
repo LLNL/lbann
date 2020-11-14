@@ -4,7 +4,7 @@ EXTERNAL_ALL_PACKAGES=$(cat <<EOF
     all:
       providers:
         mpi:
-          - mvapich2@2.3 arch=linux-rhel7-broadwell
+          - mvapich2@2.3 arch=${SPACK_ARCH}
         lapack:
           - openblas threads=openmp
         blas:
@@ -21,7 +21,7 @@ EXTERNAL_PACKAGES=$(cat <<EOF
       version:
       - 3.18.0
       externals:
-      - spec: cmake@3.18.0 arch=linux-rhel7-broadwell
+      - spec: cmake@3.18.0 arch=${SPACK_ARCH}
         modules:
         -  cmake/3.18.0
     cuda::
@@ -29,7 +29,7 @@ EXTERNAL_PACKAGES=$(cat <<EOF
       version:
       - 10.2.89
       externals:
-      - spec: cuda@10.2.89 arch=linux-rhel7-broadwell
+      - spec: cuda@10.2.89 arch=${SPACK_ARCH}
         modules:
         - cuda/10.2.89
     cudnn::
@@ -41,7 +41,7 @@ EXTERNAL_PACKAGES=$(cat <<EOF
       version:
       - 8.3.1
       externals:
-      - spec:  gcc@8.3.1 arch=linux-rhel7-broadwell
+      - spec:  gcc@8.3.1 arch=${SPACK_ARCH}
         modules:
         - gcc/8.3.1
     hwloc::
@@ -49,14 +49,14 @@ EXTERNAL_PACKAGES=$(cat <<EOF
       version:
       - 1.11.13
       externals:
-      - spec: hwloc@1.11.13 arch=linux-rhel7-broadwell
+      - spec: hwloc@1.11.13 arch=${SPACK_ARCH}
         prefix: /usr/lib64/libhwloc.so
     mvapich2::
       buildable: True
       version:
       - 2.3
       externals:
-      - spec: mvapich2@2.3%gcc@8.3.1 arch=linux-rhel7-broadwell
+      - spec: mvapich2@2.3%gcc@8.3.1 arch=${SPACK_ARCH}
         prefix: /usr/tce/packages/mvapich2/mvapich2-2.3-gcc-8.3.1/
     openblas::
       buildable: True
@@ -73,7 +73,7 @@ EXTERNAL_PACKAGES=$(cat <<EOF
       version:
         - 5.16.3
       externals:
-      - spec: perl@5.16.3 arch=linux-rhel7-broadwell
+      - spec: perl@5.16.3 arch=${SPACK_ARCH}
         prefix: /usr/bin
     python::
       buildable: True
@@ -81,7 +81,7 @@ EXTERNAL_PACKAGES=$(cat <<EOF
       version:
       - 3.7.2
       externals:
-      - spec: python@3.7.2 arch=linux-rhel7-broadwell
+      - spec: python@3.7.2 arch=${SPACK_ARCH}
         modules:
         - python/3.7.2
     rdma-core::
@@ -89,7 +89,7 @@ EXTERNAL_PACKAGES=$(cat <<EOF
       version:
       - 20
       externals:
-      - spec: rdma-core@20 arch=linux-rhel7-broadwell
+      - spec: rdma-core@20 arch=${SPACK_ARCH}
         prefix: /usr
 EOF
 )

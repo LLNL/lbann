@@ -58,6 +58,8 @@ fi
 SPACK_ARCH=$(spack arch)
 SPACK_ARCH_TARGET=$(spack arch -t)
 SPACK_ARCH_PLATFORM=$(spack arch -p)
+# Create a modified spack arch with generic target architecture
+SPACK_ARCH_PLATFORM_GENERIC_TARGET="${SPACK_ARCH_PLATFORM}-${ARCH}"
 
 SCRIPT=$(basename ${BASH_SOURCE})
 BUILD_DIR=${LBANN_HOME}/build/spack
@@ -166,7 +168,7 @@ temp_file=$(mktemp)
 # Defines STD_PACKAGES and STD_MODULES
 source ${SPACK_ENV_DIR}/std_versions_and_variants.sh
 # Defines EXTERNAL_ALL_PACKAGES and EXTERNAL_PACKAGES
-for arch in ${SPACK_ARCH} ${SPACK_ARCH_PLATFORM}; do
+for arch in ${SPACK_ARCH} ${SPACK_ARCH_PLATFORM_GENERIC_TARGET}; do
     echo "Checking ${arch}"
     file="${SPACK_ENV_DIR}/${CENTER}/externals-${arch}.sh"
     if [[ -e ${file} ]]; then
