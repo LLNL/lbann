@@ -57,6 +57,7 @@ fi
 
 SPACK_ARCH=$(spack arch)
 SPACK_ARCH_TARGET=$(spack arch -t)
+SPACK_ARCH_PLATFORM=$(spack arch -p)
 
 SCRIPT=$(basename ${BASH_SOURCE})
 BUILD_DIR=${LBANN_HOME}/build/spack
@@ -70,6 +71,7 @@ LBANN_ENV=
 SPACK_INSTALL_ARGS=
 BUILD_LBANN_SW_STACK="TRUE"
 MERLIN_PACKAGES=
+DOCS_PACKAGES=
 
 ################################################################
 # Help message
@@ -92,6 +94,7 @@ Options:
   ${C}--disable-gpus${N}       Disable GPUS
   ${C}-s | --superbuild${N}    Superbuild LBANN with dihydrogen, hydrogen, and aluminum
   ${C}--merlin${N}             Include Merlin workflow manager in the environment
+  ${C}--docs${N}               Include packages necessary for installing documentation
 EOF
 }
 
@@ -138,6 +141,14 @@ while :; do
 EOF
 )
             ;;
+        --docs)
+            DOCS_PACKAGES=$(cat <<EOF
+  - py-breathe
+  - py-m2r
+  - py-sphinx-rtd-theme
+EOF
+)
+            ;;
         -?*)
             # Unknown option
             echo "Unknown option (${1})" >&2
@@ -155,7 +166,16 @@ temp_file=$(mktemp)
 # Defines STD_PACKAGES and STD_MODULES
 source ${SPACK_ENV_DIR}/std_versions_and_variants.sh
 # Defines EXTERNAL_ALL_PACKAGES and EXTERNAL_PACKAGES
-source ${SPACK_ENV_DIR}/${CENTER}/externals-${SPACK_ARCH}.sh
+for arch in ${SPACK_ARCH} ${SPACK_ARCH_PLATFORM}; do
+    echo "Checking ${arch}"
+    file="${SPACK_ENV_DIR}/${CENTER}/externals-${arch}.sh"
+    if [[ -e ${file} ]]; then
+        echo "${file}"
+        source ${file}
+        break
+    fi
+done
+
 # Defines COMPILER_ALL_PACKAGES and COMPILER_DEFINITIONS
 source ${SPACK_ENV_DIR}/${CENTER}/compilers.sh
 
@@ -239,6 +259,7 @@ ${GPU_PACKAGES}
   - py-pytest
 ${COMPILER_PACKAGE}
 ${MERLIN_PACKAGES}
+${DOCS_PACKAGES}
 EOF
 )
     LBANN_ENV="${LBANN_ENV:-lbann-dev-${SPACK_ARCH_TARGET}}"
