@@ -8,9 +8,7 @@ Publications about or related to using LBANN:
   CNN Training" <https://dl.acm.org/doi/10.1145/3295500.3356207>`_, in
   *SC '19: Proceedings of the International Conference for High
   Performance Computing, Networking, Storage and Analysis*, November 2019
-  Article No. 10, Pages 1-20,
-  `https://doi.org/10.1145/3295500.3356207 <https://dl.acm.org/doi/10.1145/3295500.3356207>`_
-  :ref:`BibTex <bib/dryden2019.rst>`
+  Article No. 10, Pages 1-20, `https://doi.org/10.1145/3295500.3356207 <https://dl.acm.org/doi/10.1145/3295500.3356207>`_ :doc:`BibTex <bib/dryden2019>`.
 
 + Sam Ade Jacobs, Brian Van Essen, David Hysom, Jae Seung Yeom, Tim
   Moon, Rushil Anirudh, Jayaraman Thiagaranjan, Shusen Liu, Jim
@@ -21,7 +19,8 @@ Publications about or related to using LBANN:
   IEEE International Conference on Cluster Computing
   (CLUSTER)* <https://clustercomp.org/2019/program/>`_, Albuquerque,
   NM, USA, 2019, pp. 1-10, doi:
-  `10.1109/CLUSTER.2019.8891012<https://doi.org/10.1109/CLUSTER.2019.8891012>_`.::
+  `10.1109/CLUSTER.2019.8891012<https://doi.org/10.1109/CLUSTER.2019.8891012>_`.
+  ::
 
     @INPROCEEDINGS{8891012,
       author={S. A. {Jacobs} and B. {Van Essen} and D. {Hysom}
@@ -132,4 +131,4 @@ Posters about LBANN and its core algorthms and features:
    :maxdepth: 1
    :hidden:
 
-   bib/dryden2019.rst
+   bib/dryden2019

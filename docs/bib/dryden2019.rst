@@ -1,4 +1,8 @@
-::
+Channel and filter parallelism for large-scale {CNN} training
+=================================================================
+
+.. code-block:: bibtex
+                
    @inproceedings{DBLP:conf/sc/DrydenMMBSE19,
       author    = {Nikoli Dryden and
                    Naoya Maruyama and
