@@ -4,16 +4,40 @@ Papers, Presentations, and Posters
 Publications about or related to using LBANN:
 
 + Nikoli Dryden, Naoya Maruyama, Tom Benson, Tim Moon, Marc Snir,
-  Brian Van Essen. "Channel and Filter Parallelism for Large-Scale
-  CNN Training", to appear in *International Conference for High
-  Performance Computing, Networking, Storage and Analysis (SC'19)*, 2019.
+  Brian Van Essen. `"Channel and Filter Parallelism for Large-Scale
+  CNN Training" <https://dl.acm.org/doi/10.1145/3295500.3356207>`_, in
+  *SC '19: Proceedings of the International Conference for High
+  Performance Computing, Networking, Storage and Analysis*, November 2019
+  Article No. 10, Pages 1-20,
+  `https://doi.org/10.1145/3295500.3356207 <https://dl.acm.org/doi/10.1145/3295500.3356207>`_
+  :ref:`BibTex <bib/dryden2019.rst>`
 
-+ Sam Ade Jacobs, Brian Van Essen, Tim Moon, Jae Seung Yeom, David
-  Hysom, Brian Spears, Rushil Anirudh, Jayaraman Thiagaranjan, Shusen
-  Liu, Jim Gaffney, Peer-Timo Bremer, Tom Benson, Peter Robinson, and
-  Luc Peterson, "Parallelizing Training of Deep Generative Models on
-  Massive Scientific Datasets", to appear in *Proceedings of Cluster
-  Computing*, 2019
++ Sam Ade Jacobs, Brian Van Essen, David Hysom, Jae Seung Yeom, Tim
+  Moon, Rushil Anirudh, Jayaraman Thiagaranjan, Shusen Liu, Jim
+  Gaffney, Peer-Timo Bremer, Tom Benson, Peter Robinson, and Luc
+  Peterson, Brian Spears, `"Parallelizing Training of Deep Generative
+  Models on Massive Scientific
+  Datasets" <https://doi.org/10.1109/CLUSTER.2019.8891012>`_, in `*2019
+  IEEE International Conference on Cluster Computing
+  (CLUSTER)* <https://clustercomp.org/2019/program/>`_, Albuquerque,
+  NM, USA, 2019, pp. 1-10, doi:
+  `10.1109/CLUSTER.2019.8891012<https://doi.org/10.1109/CLUSTER.2019.8891012>_`.::
+
+    @INPROCEEDINGS{8891012,
+      author={S. A. {Jacobs} and B. {Van Essen} and D. {Hysom}
+      and J. {Yeom} and T. {Moon} and R. {Anirudh}
+      and J. J. {Thiagaranjan} and S. {Liu} and P. {Bremer}
+      and J. {Gaffney} and T. {Benson} and P. {Robinson} and L. {Peterson}
+      and B. {Spears}},
+      booktitle={2019 IEEE International Conference on Cluster Computing
+      (CLUSTER)},
+      title={Parallelizing Training of Deep Generative Models on Massive
+      Scientific Datasets},
+      year={2019},
+      volume={},
+      number={},
+      pages={1-10},
+      doi={10.1109/CLUSTER.2019.8891012}}
 
 + Shusen Liu, Di Wang, Dan Maljovec, Rushil Anirudh,
   Jayaraman J. Thiagarajan, Sam Ade Jacobs, Brian C. Van Essen, David
@@ -21,8 +45,24 @@ Publications about or related to using LBANN:
   Harsh Bhatia, Valerio Pascucci, Brian K. Spears, Peer-Timo Bremer.
   `"Scalable Topological Data Analysis and Visualization for
   Evaluating Data-Driven Models in Scientific Applications"
-  <https://arxiv.org/abs/1907.08325>`_, to appear in *IEEE Transactions
-  on Visualization and Computer Graphics*, 2019
+  <https://ieeexplore.ieee.org/document/8820172>`_, in *IEEE Transactions
+  on Visualization and Computer Graphics*, 2019::
+
+    @ARTICLE{8820172,
+      author={S. {Liu} and D. {Wang} and D. {Maljovec} and R. {Anirudh}
+      and J. J. {Thiagarajan} and S. A. {Jacobs} and B. C. {Van Essen}
+      and D. {Hysom} and J. -S. {Yeom} and J. {Gaffney} and L. {Peterson}
+      and P. B. {Robinson} and H. {Bhatia} and V. {Pascucci}
+      and B. K. {Spears} and P. -T. {Bremer}},
+      journal={IEEE Transactions on Visualization and Computer Graphics},
+      title={Scalable Topological Data Analysis and Visualization for
+      Evaluating Data-Driven Models in Scientific Applications},
+      year={2020},
+      volume={26},
+      number={1},
+      pages={291-300},
+      doi={10.1109/TVCG.2019.2934594}}
+
 
 + Nikoli Dryden, Naoya Maruyama, Tom Benson, Tim Moon, Marc Snir,
   Brian Van Essen. `"Improving Strong-Scaling of CNN Training by
@@ -87,3 +127,9 @@ Posters about LBANN and its core algorthms and features:
   <http://learningsys.org/nips18/assets/papers/85CameraReadySubmissionsysforml-abs.pdf>`_
 
   + `Systems for ML 2018 <http://learningsys.org/nips18/acceptedpapers.html>`_
+
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+
+   bib/dryden2019.rst
