@@ -213,9 +213,12 @@ public:
   DropoutDescriptor(float dropout,
                     void* states,
                     size_t states_size,
-                    unsigned long long seed)
+                    unsigned long long seed,
+                    bool use_mask,
+                    bool state_evo,
+                    dnnRNGType_t rng_mode)
   {
-    this->set(dropout, states, states_size, seed);
+    this->set(dropout, states, states_size, seed, use_mask, state_evo, rng_mode);
   }
 
   ~DropoutDescriptor();
@@ -248,7 +251,10 @@ public:
     float dropout,
     void* states,
     size_t states_size,
-    unsigned long long seed);
+    unsigned long long seed,
+    bool use_mask,
+    bool state_evo,
+    dnnRNGType_t rng_mode);
 
 private:
 
@@ -406,82 +412,82 @@ private:
 void swap(ConvolutionDescriptor& lhs, ConvolutionDescriptor& rhs);
 
 /** @brief Wrapper around @c cudnnActivationDescriptor_t */
-class ActivationDescriptor
-{
-public:
+//class ActivationDescriptor
+//{
+//public:
 
   /** @brief Descriptor handle from the implementation. */
-  using DescriptorHandle_t = dnnActivationDescriptor_t;
+//  using DescriptorHandle_t = dnnActivationDescriptor_t;
 
-public:
+//public:
 
   /** @name Constructors and destructor */
   ///@{
 
   /** @brief Construct from an existing handle. */
-  explicit ActivationDescriptor(DescriptorHandle_t desc=nullptr);
+//  explicit ActivationDescriptor(DescriptorHandle_t desc=nullptr);
 
   /** @brief Any handle resources will be freed. */
-  ~ActivationDescriptor();
+//  ~ActivationDescriptor();
 
   /** @brief Copy constructor.
    *
    *  Constructs a new handle with identical features.
    */
-  ActivationDescriptor(const ActivationDescriptor&);
+//  ActivationDescriptor(const ActivationDescriptor&);
   /** @brief Move constructor */
-  ActivationDescriptor(ActivationDescriptor&&);
+//  ActivationDescriptor(ActivationDescriptor&&);
 
   /** @brief Assignment operator. */
-  ActivationDescriptor& operator=(ActivationDescriptor);
+//  ActivationDescriptor& operator=(ActivationDescriptor);
 
   ///@}
   /** @name Accessors */
   ///@{
 
   /** @brief Return handle object and release ownership */
-  DescriptorHandle_t release() noexcept;
+//  DescriptorHandle_t release() noexcept;
   /** @brief Return handle object without releasing ownership */
-  DescriptorHandle_t get() const noexcept;
+//  DescriptorHandle_t get() const noexcept;
   /** @brief Implicit conversion to handle object without releasing
    *         ownership
    */
-  operator DescriptorHandle_t() const noexcept;
+//  operator DescriptorHandle_t() const noexcept;
 
   ///@}
   /** @name Modifiers */
   ///@{
 
   /** @brief Swap contents with another descriptor */
-  void swap(ActivationDescriptor& other);
+//  void swap(ActivationDescriptor& other);
 
   /** @brief Take ownership of existing handle */
-  void reset(DescriptorHandle_t desc=nullptr);
+//  void reset(DescriptorHandle_t desc=nullptr);
 
   /** @brief Allocate a new handle.
    *
    *  Does nothing if already created.
    */
-  void create();
+//  void create();
   /** @brief Configure handle properties
    *
    *  Allocates a new handle if one doesn't already exist.
    */
-  void set(
-    dnnActivationMode_t mode,
-    dnnNanPropagation_t nan_prop,
-    double coeff);
+//  void set(
+//    dnnActivationMode_t mode,
+//    dnnNanPropagation_t nan_prop,
+//    double coeff);
 
   ///@}
 
-private:
+//private:
 
-  DescriptorHandle_t desc_ = nullptr;
+//  DescriptorHandle_t desc_ = nullptr;
 
-};
+//};
 
 /** @brief Swap two convolution descriptors. */
-void swap(ActivationDescriptor& lhs, ActivationDescriptor& rhs);
+//void swap(ActivationDescriptor& lhs, ActivationDescriptor& rhs);
 
 /** @brief Wrapper around @c cudnnPoolingDescriptor_t */
 class PoolingDescriptor
@@ -632,7 +638,7 @@ public:
    *
    *  Allocates a new handle if one doesn't already exist.
    */
-  void set(unsigned n, double alpha, double beta, double k);
+  void set(dnnLRNMode_t mode, unsigned n, double alpha, double beta, double k);
 
   ///@}
 

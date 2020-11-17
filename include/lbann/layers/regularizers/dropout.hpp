@@ -314,6 +314,7 @@ protected:
     m_states.Resize((size + sizeof(TensorDataType) - 1) / sizeof(TensorDataType), 1);
 
     // Setup dropout descriptor
+    // TODO: how to set extra MIOpen variables?
     m_dropout_dnn_desc.set(float(1 - m_keep_prob),
                              m_states.Buffer(),
                              m_states.Height() * sizeof(TensorDataType),
