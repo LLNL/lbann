@@ -409,9 +409,9 @@ void DropoutDescriptor::set(
   void* states,
   size_t states_size,
   unsigned long long seed,
-  bool use_mask,
-  bool state_evo,
-  int rng_mode) {
+  bool use_mask = false,
+  bool state_evo = false,
+  int rng_mode = 0) {
   create();
   CHECK_CUDNN(
     cudnnSetDropoutDescriptor(
