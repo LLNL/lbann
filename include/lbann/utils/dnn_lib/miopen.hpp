@@ -112,6 +112,8 @@ constexpr dnnConvolutionMode_t DNN_CROSS_CORRELATION = miopenConvolution;
 constexpr dnnNanPropagation_t DNN_PROPAGATE_NAN = MIOPEN_PROPAGATE_NAN;
 constexpr dnnMathType_t DNN_DEFAULT_MATH = 0;
 constexpr dnnTensorFormat_t DNN_TENSOR_NCHW = 0;
+constexpr dnnRNGType_t DNN_RNG_PSEUDO_XORWOW = MIOPEN_RNG_PSEUDO_XORWOW;
+constexpr dnnLRNMode_t DNN_LRN_CROSS_CHANNEL = miopenLRNCrossChannel;
 
 ////////////////////////////////////////////////////////////
 // Functions for to/from MIOpen types conversion
@@ -205,17 +207,6 @@ inline bwd_filter_conv_alg from_miopen(miopenConvBwdWeightsAlgorithm_t a)
   case miopenConvolutionBwdWeightsAlgoWinograd: return bwd_filter_conv_alg::WINOGRAD;
   default:
     LBANN_ERROR("Invalid backward convolution filter requested.");
-  }
-}
-
-/** @brief Convert an LBANN lrn_mode to the MIOpen equivalent value. */
-inline miopenLRNMode_t to_miopen(lrn_mode m)
-{
-  switch (m)
-  {
-  case lrn_mode::CROSS_CHANNEL_DIM1: return miopenLRNCrossChannel;
-  default:
-    LBANN_ERROR("Invalid LRN layer mode requested.");
   }
 }
 

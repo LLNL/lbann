@@ -103,7 +103,7 @@ using dnnNanPropagation_t = cudnnNanPropagation_t;
 using dnnPoolingDescriptor_t = cudnnPoolingDescriptor_t;
 using dnnPoolingMode_t = cudnnPoolingMode_t;
 using dnnLRNDescriptor_t = cudnnLRNDescriptor_t;
-using dnnLRNMode_t = int;
+using dnnLRNMode_t = cudnnLRNMode_t;
 using dnnConvolutionFwdAlgo_t = cudnnConvolutionFwdAlgo_t;
 using dnnConvolutionBwdDataAlgo_t = cudnnConvolutionBwdDataAlgo_t;
 using dnnConvolutionBwdFilterAlgo_t = cudnnConvolutionBwdFilterAlgo_t;
@@ -112,6 +112,8 @@ constexpr dnnConvolutionMode_t DNN_CROSS_CORRELATION = CUDNN_CROSS_CORRELATION;
 constexpr dnnNanPropagation_t DNN_PROPAGATE_NAN = CUDNN_PROPAGATE_NAN;
 constexpr dnnMathType_t DNN_DEFAULT_MATH = CUDNN_DEFAULT_MATH;
 constexpr dnnTensorFormat_t DNN_TENSOR_NCHW = CUDNN_TENSOR_NCHW;
+constexpr dnnRNGType_t DNN_RNG_PSEUDO_XORWOW = 0;
+constexpr dnnLRNMode_t DNN_LRN_CROSS_CHANNEL = CUDNN_LRN_CROSS_CHANNEL_DIM1;
 
 ////////////////////////////////////////////////////////////
 // Functions for to/from cuDNN types conversion
@@ -220,17 +222,6 @@ inline bwd_filter_conv_alg from_cudnn(cudnnConvolutionBwdFilterAlgo_t a)
   case CUDNN_CONVOLUTION_BWD_FILTER_ALGO_FFT_TILING: return bwd_filter_conv_alg::FFT_TILING;
   default:
     LBANN_ERROR("Invalid backward convolution filter requested.");
-  }
-}
-
-/** @brief Convert an LBANN lrn_mode to the cuDNN equivalent value. */
-inline cudnnLRNMode_t to_cudnn(lrn_mode mode)
-{
-  switch (mode)
-  {
-  case lrn_mode::CROSS_CHANNEL_DIM1: return CUDNN_LRN_CROSS_CHANNEL_DIM1;
-  default:
-    LBANN_ERROR("Invalid LRN layer mode requested.");
   }
 }
 

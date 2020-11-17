@@ -59,7 +59,7 @@ void lrn_cross_channel_forward(LRNDescriptor const& normDesc,
                                El::AbstractMatrix<TensorDataType>& y,
                                El::Matrix<TensorDataType, El::Device::GPU>& workSpace,
                                El::SyncInfo<El::Device::GPU> const& si,
-                               lrn_mode mode = lrn_mode::CROSS_CHANNEL_DIM1)
+                               dnnLRNMode_t mode = DNN_LRN_CROSS_CHANNEL)
 {
 
   using LibScalingParamT = dnn_lib::ScalingParamType<TensorDataType>;
@@ -69,7 +69,6 @@ void lrn_cross_channel_forward(LRNDescriptor const& normDesc,
   if (workSpace.Height() == 0 || workSpace.Width() == 0) { // Training use-case
     CHECK_MIOPEN(miopenLRNForward(handle_manager.get(),
                                   normDesc,
-                                  //miopen::to_miopen(mode),
                                   &alpha,
                                   xDesc,
                                   x.LockedBuffer(),
@@ -82,7 +81,6 @@ void lrn_cross_channel_forward(LRNDescriptor const& normDesc,
   else {                                                  // Inference use-case
     CHECK_MIOPEN(miopenLRNForward(handle_manager.get(),
                                   normDesc,
-                                  //miopen::to_miopen(mode),
                                   &alpha,
                                   xDesc,
                                   x.LockedBuffer(),
@@ -103,7 +101,7 @@ void lrn_cross_channel_forward(LRNDescriptor const& normDesc,
                                TensorDescriptor const& yDesc,
                                El::AbstractMatrix<TensorDataType>& y,
                                El::Matrix<TensorDataType, El::Device::GPU>& workSpace,
-                               lrn_mode mode = lrn_mode::CROSS_CHANNEL_DIM1)
+                               dnnLRNMode_t mode = DNN_LRN_CROSS_CHANNEL)
 {
 
   auto multisync = El::MakeMultiSync(gpu::get_sync_info(workSpace),
@@ -130,7 +128,7 @@ void lrn_cross_channel_backward(LRNDescriptor const& normDesc,
                                 El::AbstractMatrix<TensorDataType>& dx,
                                 El::Matrix<TensorDataType, El::Device::GPU>& workSpace,
                                 El::SyncInfo<El::Device::GPU> const& si,
-                                lrn_mode mode = lrn_mode::CROSS_CHANNEL_DIM1)
+                                dnnLRNMode_t mode = DNN_LRN_CROSS_CHANNEL)
 {
 
   using LibScalingParamT = dnn_lib::ScalingParamType<TensorDataType>;
@@ -140,7 +138,6 @@ void lrn_cross_channel_backward(LRNDescriptor const& normDesc,
   if (workSpace.Height() == 0 || workSpace.Width() == 0) { // Training use-case
     CHECK_MIOPEN(miopenLRNBackward(handle_manager.get(),
                                    normDesc,
-                                   //miopen::to_miopen(mode),
                                    &alpha,
                                    yDesc,
                                    y.LockedBuffer(),
@@ -156,7 +153,6 @@ void lrn_cross_channel_backward(LRNDescriptor const& normDesc,
   else {                                                  // Inference use-case
     CHECK_MIOPEN(miopenLRNBackward(handle_manager.get(),
                                    normDesc,
-                                   //miopen::to_miopen(mode),
                                    &alpha,
                                    yDesc,
                                    y.LockedBuffer(),
@@ -184,7 +180,7 @@ void lrn_cross_channel_backward(LRNDescriptor const& normDesc,
                                 TensorDescriptor const& dxDesc,
                                 El::AbstractMatrix<TensorDataType>& dx,
                                 El::Matrix<TensorDataType, El::Device::GPU>& workSpace,
-                                lrn_mode mode = lrn_mode::CROSS_CHANNEL_DIM1)
+                                dnnLRNMode_t mode = DNN_LRN_CROSS_CHANNEL)
 {
 
   auto multisync = El::MakeMultiSync(gpu::get_sync_info(workSpace),

@@ -349,8 +349,6 @@ DropoutDescriptor::DropoutDescriptor(const DropoutDescriptor& other) {
     void* states;
     size_t states_size;
     unsigned long long seed;
-    bool use_mask, state_evo; // Placeholder variables
-    int rng_mode; // Placeholder variables
     CHECK_CUDNN(cudnnDropoutGetStatesSize(get_handle(), &states_size));
     CHECK_CUDNN(
       cudnnGetDropoutDescriptor(
@@ -359,7 +357,7 @@ DropoutDescriptor::DropoutDescriptor(const DropoutDescriptor& other) {
         &dropout,
         &states,
         &seed));
-    set(dropout, states, states_size, seed, use_mask, state_evo, rng_mode);
+    set(dropout, states, states_size, seed);
   }
 }
 
@@ -409,9 +407,9 @@ void DropoutDescriptor::set(
   void* states,
   size_t states_size,
   unsigned long long seed,
-  bool use_mask = false,
-  bool state_evo = false,
-  int rng_mode = 0) {
+  bool use_mask, // these 3 unused for cuDNN
+  bool state_evo,
+  int rng_mode) {
   create();
   CHECK_CUDNN(
     cudnnSetDropoutDescriptor(
@@ -1012,9 +1010,8 @@ LRNDescriptor::LRNDescriptor(const LRNDescriptor& rhs)
 
   unsigned n;
   double alpha, beta, k;
-  int mode; // placeholder
   CHECK_CUDNN(cudnnGetLRNDescriptor(desc_, &n, &alpha, &beta, &k));
-  this->set(mode, n, alpha, beta, k);
+  this->set(n, alpha, beta, k);
 }
 
 LRNDescriptor::LRNDescriptor(LRNDescriptor&& rhs)
@@ -1064,7 +1061,8 @@ void LRNDescriptor::create()
     CHECK_CUDNN(cudnnCreateLRNDescriptor(&desc_));
 }
 
-void LRNDescriptor::set(int mode, unsigned n, double alpha, double beta, double k)
+void LRNDescriptor::set(unsigned n, double alpha, double beta,
+                        double k, cudnnLRNMode_t mode)
 {
   LBANN_ASSERT(n >= CUDNN_LRN_MIN_N);
   LBANN_ASSERT(n <= CUDNN_LRN_MAX_N);

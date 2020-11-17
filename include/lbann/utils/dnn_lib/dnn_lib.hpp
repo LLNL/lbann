@@ -252,9 +252,9 @@ public:
     void* states,
     size_t states_size,
     unsigned long long seed,
-    bool use_mask,
-    bool state_evo,
-    dnnRNGType_t rng_mode);
+    bool use_mask = false,
+    bool state_evo = false,
+    dnnRNGType_t rng_mode = DNN_RNG_PSEUDO_XORWOW);
 
 private:
 
@@ -638,7 +638,8 @@ public:
    *
    *  Allocates a new handle if one doesn't already exist.
    */
-  void set(dnnLRNMode_t mode, unsigned n, double alpha, double beta, double k);
+  void set(unsigned n, double alpha, double beta, double k,
+           dnnLRNMode_t mode = DNN_LRN_CROSS_CHANNEL);
 
   ///@}
 

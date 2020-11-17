@@ -958,7 +958,7 @@ LRNDescriptor::LRNDescriptor(const LRNDescriptor& rhs)
   double alpha, beta, k;
   miopenLRNMode_t mode;
   CHECK_MIOPEN(miopenGetLRNDescriptor(desc_, &mode, &n, &alpha, &beta, &k));
-  this->set(mode, n, alpha, beta, k);
+  this->set(n, alpha, beta, k, mode);
 }
 
 LRNDescriptor::LRNDescriptor(LRNDescriptor&& rhs)
@@ -1008,7 +1008,8 @@ void LRNDescriptor::create()
     CHECK_MIOPEN(miopenCreateLRNDescriptor(&desc_));
 }
 
-void LRNDescriptor::set(miopenLRNMode_t mode, unsigned n, double alpha, double beta, double k)
+void LRNDescriptor::set(unsigned n, double alpha, double beta,
+                        double k, miopenLRNMode_t mode)
 {
   //TODO: verify equivalent to CUDNN version
   LBANN_ASSERT(n >= 1);
