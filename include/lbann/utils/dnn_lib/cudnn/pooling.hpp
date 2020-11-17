@@ -41,6 +41,12 @@ namespace dnn_lib
 
 using namespace cudnn;
 
+inline size_t get_pooling_ws_size(PoolingDescriptor const& poolingDesc,
+                                  TensorDescriptor const& yDesc)
+{
+  return 0UL;
+}
+
 template <typename TensorDataType, typename ScalarParameterType>
 void pooling_forward(PoolingDescriptor const& poolingDesc,
                      ScalarParameterType const& alpha_in,

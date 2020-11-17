@@ -41,6 +41,12 @@ namespace dnn_lib
 
 using namespace cudnn;
 
+inline size_t get_lrn_ws_size(TensorDescriptor const& yDesc)
+{
+  return 0UL;
+}
+
+
 template <typename TensorDataType, typename ScalarParameterType>
 void lrn_cross_channel_forward(LRNDescriptor const& normDesc,
                                ScalarParameterType const& alpha_in,

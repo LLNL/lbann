@@ -336,6 +336,15 @@ private:
 #ifndef LBANN_HAS_DNN_LIB
     LBANN_ERROR("DNN library not detected");
 #else
+    // Initialize GPU workspace
+    El::Matrix<TensorDataType, El::Device::GPU> workspace;
+#ifdef HYDROGEN_HAVE_CUB
+    workspace.SetMemoryMode(1);
+#endif // HYDROGEN_HAVE_CUB
+    size_t workspace_size = dnn_lib::get_pooling_ws_size(m_pooling_dnn_desc,
+                                                         m_tensors_dnn_desc.get_activations());
+    workspace.Resize(workspace_size / sizeof(TensorDataType), 1);
+
     using ScalingType = dnn_lib::ScalingParamType<TensorDataType>;
     const auto& local_input = this->get_local_prev_activations();
     auto& local_output = this->get_local_activations();
@@ -348,7 +357,8 @@ private:
                                local_input,
                                zero,
                                m_tensors_dnn_desc.get_activations(),
-                               local_output);
+                               local_output,
+                               workspace);
     }
 #endif // #ifndef LBANN_HAS_DNN_LIB
   }
@@ -358,6 +368,15 @@ private:
 #ifndef LBANN_HAS_DNN_LIB
     LBANN_ERROR("DNN library not detected");
 #else
+    // Initialize GPU workspace
+    El::Matrix<TensorDataType, El::Device::GPU> workspace;
+#ifdef HYDROGEN_HAVE_CUB
+    workspace.SetMemoryMode(1);
+#endif // HYDROGEN_HAVE_CUB
+    size_t workspace_size = dnn_lib::get_pooling_ws_size(m_pooling_dnn_desc,
+                                                         m_tensors_dnn_desc.get_activations());
+    workspace.Resize(workspace_size / sizeof(TensorDataType), 1);
+
     using ScalingType = dnn_lib::ScalingParamType<TensorDataType>;
     const auto& local_input = this->get_local_prev_activations();
     const auto& local_output = this->get_local_activations();
@@ -380,7 +399,8 @@ private:
                                 local_input,
                                 zero,
                                 m_tensors_dnn_desc.get_error_signals(),
-                                local_gradient_wrt_input);
+                                local_gradient_wrt_input,
+                                workspace);
     }
 #endif // #ifndef LBANN_HAS_DNN_LIB
   }

@@ -29,7 +29,12 @@
 #include "lbann/utils/gpu/helpers.hpp"
 
 #ifdef HYDROGEN_HAVE_CUB
+#ifdef LBANN_HAS_CUDA
 #include "cub/block/block_reduce.cuh"
+#elif LBANN_HAS_ROCM
+#include "hipcub/block/block_reduce.hpp"
+namespace cub = hipcub;
+#endif // LBANN_HAS_CUDA
 #endif // HYDROGEN_HAVE_CUB
 
 namespace lbann {

@@ -42,7 +42,7 @@ namespace dnn_lib
 using namespace miopen;
 
 inline size_t get_pooling_ws_size(PoolingDescriptor const& poolingDesc,
-                           TensorDescriptor const& yDesc)
+                                  TensorDescriptor const& yDesc)
 {
   size_t size;
   CHECK_MIOPEN(miopenPoolingGetWorkSpaceSizeV2(poolingDesc,
