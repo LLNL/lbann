@@ -58,13 +58,11 @@ bool save_rng_to_checkpoint(persist& p, lbann_comm* comm, bool is_distributed) {
     rng_seq << get_data_seq_generator();
     rng_seq.close();
 
-#ifdef LBANN_SET_EL_RNG
     rng_name = dirname + "/EL_generator";
     std::ofstream rng_EL(rng_name);
     if(!rng_EL) { LBANN_ERROR("Failed to open ", rng_name); }
     rng_EL << El::Generator();
     rng_EL.close();
-#endif
   }
 
   for(int i = 0; i < get_num_io_generators(); i++) {
@@ -151,12 +149,10 @@ bool load_rng_from_checkpoint(persist& p, const lbann_comm* comm) {
   if(!rng_seq) { LBANN_ERROR("Failed to open ", rng_name); }
   rng_seq >> get_data_seq_generator();
 
-#ifdef LBANN_SET_EL_RNG
   rng_name = dirname + "/EL_generator";
   std::ifstream rng_EL(rng_name);
   if(!rng_EL) { LBANN_ERROR("Failed to open ", rng_name); }
   rng_EL >> El::Generator();
-#endif
 
   std::string rank_in_trainer;
   if (comm == nullptr) {
