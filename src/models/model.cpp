@@ -101,7 +101,7 @@ model::model(const model& other) :
   }
 
   // Copy layers
-  std::unordered_map<Layer*,Layer*> layer_map;
+  std::unordered_map<Layer*,ViewingLayerPtr> layer_map;
   m_layers.reserve(other.m_layers.size());
   for (const auto& other_layer : other.m_layers) {
     if (other_layer == nullptr) {
@@ -110,7 +110,7 @@ model::model(const model& other) :
     }
     m_layers.emplace_back(other_layer->copy());
     m_layers.back()->set_model(this);
-    layer_map[other_layer.get()] = m_layers.back().get();
+    layer_map[other_layer.get()] = m_layers.back();
   }
 
   // Copy weights
@@ -156,7 +156,7 @@ model& model::operator=(const model& other) {
   }
 
   // Copy layers
-  std::unordered_map<Layer*,Layer*> layer_map;
+  std::unordered_map<Layer*,ViewingLayerPtr> layer_map;
   m_layers.clear();
   m_layers.reserve(other.m_layers.size());
   for (const auto& other_layer : other.m_layers) {
@@ -166,7 +166,7 @@ model& model::operator=(const model& other) {
     }
     m_layers.emplace_back(other_layer->copy());
     m_layers.back()->set_model(this);
-    layer_map[other_layer.get()] = m_layers.back().get();
+    layer_map[other_layer.get()] = m_layers.back();
   }
 
   // Copy weights
@@ -346,7 +346,7 @@ const std::vector<weights*> model::get_weights() const {
 // Model specification
 // =============================================
 
-void model::add_layer(std::unique_ptr<Layer> ptr) {
+void model::add_layer(OwningLayerPtr&& ptr) {
 
   // Check for null pointer
   if (ptr == nullptr) {
@@ -429,7 +429,7 @@ void model::replace_weights(std::vector<weights*>& new_weights) {
 
   // Replace weights in list
   std::unordered_map<weights*,weights*> weights_map;
-  std::unordered_map<Layer*,Layer*> layer_map;
+  std::unordered_map<Layer*,ViewingLayerPtr> layer_map;
   for (size_t i = 0; i < new_weights.size(); ++i) {
     weights_map[m_weights[i].get()] = new_weights[i];
     m_weights[i].reset(new_weights[i]);
@@ -473,7 +473,7 @@ void model::reorder_layers(const std::vector<El::Int>& gather_indices) {
   }
 
   // Reorder layers
-  std::vector<std::unique_ptr<Layer>> reordered_layers(gather_indices.size());
+  std::vector<OwningLayerPtr> reordered_layers(gather_indices.size());
   for (size_t i = 0; i < gather_indices.size(); ++i) {
     reordered_layers[i] = std::move(m_layers[gather_indices[i]]);
   }
@@ -490,15 +490,17 @@ void model::reorder_layers(const std::vector<El::Int>& gather_indices) {
 
 }
 
-void model::remap_pointers(const std::unordered_map<Layer*,Layer*>& layer_map,
-                           const std::unordered_map<weights*,weights*>& weights_map) {
+void model::remap_pointers(
+  const std::unordered_map<Layer*,ViewingLayerPtr>& layer_map,
+  const std::unordered_map<weights*,weights*>& weights_map) {
 
   // Fix pointers in objective function
   if (m_objective_function != nullptr) {
     auto layer_pointers = m_objective_function->get_layer_pointers();
-    for (auto& layer_pointer : layer_pointers) {
-      if (layer_map.count(layer_pointer) > 0) {
-        layer_pointer = layer_map.at(layer_pointer);
+    for (auto& ptr : layer_pointers) {
+      auto* raw_ptr = ptr.lock().get();
+      if (layer_map.count(raw_ptr) > 0) {
+        ptr = layer_map.at(raw_ptr);
       }
     }
     m_objective_function->set_layer_pointers(layer_pointers);
@@ -514,9 +516,10 @@ void model::remap_pointers(const std::unordered_map<Layer*,Layer*>& layer_map,
   // Fix pointers in metrics
   for (const auto& m : m_metrics) {
     auto layer_pointers = m->get_layer_pointers();
-    for (auto& layer_pointer : layer_pointers) {
-      if (layer_map.count(layer_pointer) > 0) {
-        layer_pointer = layer_map.at(layer_pointer);
+    for (auto& ptr : layer_pointers) {
+      auto* raw_ptr = ptr.lock().get();
+      if (layer_map.count(raw_ptr) > 0) {
+        ptr = layer_map.at(raw_ptr);
       }
     }
     m->set_layer_pointers(layer_pointers);
@@ -528,8 +531,9 @@ void model::remap_pointers(const std::unordered_map<Layer*,Layer*>& layer_map,
     auto layer_pointers = l.get_layer_pointers();
     auto weights_pointers = extract_weights(l);
     for (auto& ptr : layer_pointers) {
-      if (layer_map.count(ptr) > 0) {
-        ptr = layer_map.at(ptr);
+      auto* raw_ptr = ptr.lock().get();
+      if (layer_map.count(raw_ptr) > 0) {
+        ptr = layer_map.at(raw_ptr);
       }
     }
     for (auto& ptr : weights_pointers) {
@@ -585,7 +589,6 @@ void model::setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata) {
 }
 
 void model::setup_layer_topology() {
-  std::stringstream err;
 
   // Check that layer list is valid
   // Note: Throws an exception if the layer list contains two layers
@@ -596,9 +599,9 @@ void model::setup_layer_topology() {
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     auto& l = get_layer(i);
     if (layer_names.count(l.get_name()) > 0) {
-      err << "model \"" << get_name() << "\" "
-          << "has multiple layers named \"" << l.get_name() << "\"";
-      LBANN_ERROR(err.str());
+      LBANN_ERROR(
+        "model \"",get_name(),"\" "
+        "has multiple layers named \"",l.get_name(),"\"");
     }
     layer_set.insert(&l);
     layer_names.insert(l.get_name());
@@ -606,28 +609,31 @@ void model::setup_layer_topology() {
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     auto& l = get_layer(i);
     for (const auto& ptr : l.get_layer_pointers()) {
-      if (ptr != nullptr && layer_set.count(ptr) == 0) {
-        err << "layer \"" << l.get_name() << "\" "
-            << "(in model \"" << get_name() << "\") "
-            << "has a pointer to layer " << ptr->get_name() << "\" ";
-        if (ptr->get_model() == nullptr) {
-          err << "(not in a model)";
-        } else {
-          err << "(in model \"" << ptr->get_model()->get_name() << "\")";
+      auto* raw_ptr = ptr.lock().get();
+      if (raw_ptr != nullptr && layer_set.count(raw_ptr) == 0) {
+        auto message = build_string(
+          l.get_type()," layer \"",l.get_name(),"\" ",
+          "(in model \"",get_name(),"\") has a pointer to ",
+          raw_ptr->get_type()," layer \"",raw_ptr->get_name(),"\" ");
+        if (raw_ptr->get_model() == nullptr) {
+          message += "(not in a model)";
         }
-        LBANN_ERROR(err.str());
+        else {
+          message += build_string(
+            "(in model \"",raw_ptr->get_model()->get_name(),"\")");
+        }
+        LBANN_ERROR(message);
       }
     }
   }
 
   // Make sure parent/child relationships are reciprocated
-  for (El::Int i = 0; i < get_num_layers(); ++i) {
-    auto& l = get_layer(i);
-    for (auto* parent : l.get_parent_layers()) {
-      const_cast<Layer*>(parent)->add_child_layer(&l);
+  for (auto& l : m_layers) {
+    for (int i=0; i<l->get_num_parents(); ++i) {
+      const_cast<Layer&>(l->get_parent_layer(i)).add_child_layer(l);
     }
-    for (auto* child : l.get_child_layers()) {
-      const_cast<Layer*>(child)->add_parent_layer(&l);
+    for (int i=0; i<l->get_num_children(); ++i) {
+      const_cast<Layer&>(l->get_child_layer(i)).add_parent_layer(l);
     }
   }
 
@@ -692,28 +698,43 @@ void model::add_evaluation_layers(std::unordered_set<Layer*>& layer_set,
   for (auto* t : m_objective_function->get_terms()) {
     auto* term = dynamic_cast<layer_term*>(t);
     if (term != nullptr) {
-      auto& l = term->get_layer();
-      if (layer_set.count(&l) == 0) {
+      auto* l_raw_ptr = &term->get_layer();
+      if (layer_set.count(l_raw_ptr) == 0) {
         err << "model \"" << get_name() << "\" "
             << "has an objective function layer term corresponding to "
-            << "layer \"" << l.get_name() << "\", "
+            << "layer \"" << l_raw_ptr->get_name() << "\", "
             << "which isn't in the model's list of layers";
         LBANN_ERROR(err.str());
       }
-      if (dynamic_cast<abstract_evaluation_layer<DataType>*>(&l) == nullptr) {
+      if (dynamic_cast<abstract_evaluation_layer<DataType>*>(l_raw_ptr) == nullptr) {
+
+        // Get viewing pointer to layer
+        ViewingLayerPtr l_view_ptr;
+        for (auto& l : m_layers) {
+          if (l.get() == l_raw_ptr) {
+            l_view_ptr = l;
+            break;
+          }
+        }
+        if (l_view_ptr.lock().get() == nullptr) {
+          LBANN_ERROR(
+            get_name()," could not get viewing pointer for ",
+            l_raw_ptr->get_name()," layer \"",l_raw_ptr->get_name(),"\"");
+        }
 
         // Create evaluation layer
-        std::unique_ptr<Layer> eval(abstract_evaluation_layer<DataType>::construct(
-                                      l.get_comm(),
-                                      l.get_data_layout(),
-                                      l.get_device_allocation()));
+        OwningLayerPtr eval(
+          abstract_evaluation_layer<DataType>::construct(
+            l_raw_ptr->get_comm(),
+            l_raw_ptr->get_data_layout(),
+            l_raw_ptr->get_device_allocation()));
 
         // Set evaluation layer name
         El::Int name_index = 1;
-        std::string name = l.get_name() + "_eval";
+        std::string name = l_raw_ptr->get_name() + "_eval";
         while (layer_names.count(name) > 0) {
           name_index++;
-          name = l.get_name() + "_eval" + std::to_string(name_index);
+          name = l_raw_ptr->get_name() + "_eval" + std::to_string(name_index);
         }
         eval->set_name(name);
 
@@ -722,9 +743,9 @@ void model::add_evaluation_layers(std::unordered_set<Layer*>& layer_set,
         layer_names.insert(eval->get_name());
 
         // Add evaluation layer to model
-        l.add_child_layer(eval.get());
-        eval->add_parent_layer(&l);
-        term->set_layer(*eval);
+        l_raw_ptr->add_child_layer(eval);
+        eval->add_parent_layer(l_view_ptr);
+        term->set_layer(eval);
         add_layer(std::move(eval));
 
       }
@@ -735,27 +756,42 @@ void model::add_evaluation_layers(std::unordered_set<Layer*>& layer_set,
   for (auto* m : m_metrics) {
     auto* met = dynamic_cast<layer_metric*>(m);
     if (met != nullptr) {
-      auto& l = met->get_layer();
-      if (layer_set.count(&l) == 0) {
+      auto* l_raw_ptr = &met->get_layer();
+      if (layer_set.count(l_raw_ptr) == 0) {
         err << "layer metric \"" << met->name() << "\" "
-            << "corresponds to layer \"" << l.get_name() << "\", "
+            << "corresponds to layer \"" << l_raw_ptr->get_name() << "\", "
             << "which is not in model \"" << get_name() << "\"";
         LBANN_ERROR(err.str());
       }
-      if (dynamic_cast<abstract_evaluation_layer<DataType>*>(&l) == nullptr) {
+      if (dynamic_cast<abstract_evaluation_layer<DataType>*>(l_raw_ptr) == nullptr) {
+
+        // Get viewing pointer to layer
+        ViewingLayerPtr l_view_ptr;
+        for (auto& l : m_layers) {
+          if (l.get() == l_raw_ptr) {
+            l_view_ptr = l;
+            break;
+          }
+        }
+        if (l_view_ptr.lock().get() == nullptr) {
+          LBANN_ERROR(
+            get_name()," could not get viewing pointer for ",
+            l_raw_ptr->get_name()," layer \"",l_raw_ptr->get_name(),"\"");
+        }
 
         // Create evaluation layer
-        std::unique_ptr<Layer> eval(abstract_evaluation_layer<DataType>::construct(
-                                      l.get_comm(),
-                                      l.get_data_layout(),
-                                      l.get_device_allocation()));
+        OwningLayerPtr eval(
+          abstract_evaluation_layer<DataType>::construct(
+            l_raw_ptr->get_comm(),
+            l_raw_ptr->get_data_layout(),
+            l_raw_ptr->get_device_allocation()));
 
         // Set evaluation layer name
         El::Int name_index = 1;
-        std::string name = l.get_name() + "_eval";
+        std::string name = l_raw_ptr->get_name() + "_eval";
         while (layer_names.count(name) > 0) {
           name_index++;
-          name = l.get_name() + "_eval" + std::to_string(name_index);
+          name = l_raw_ptr->get_name() + "_eval" + std::to_string(name_index);
         }
         eval->set_name(name);
 
@@ -764,9 +800,9 @@ void model::add_evaluation_layers(std::unordered_set<Layer*>& layer_set,
         layer_names.insert(eval->get_name());
 
         // Add evaluation layer to model
-        l.add_child_layer(eval.get());
-        eval->add_parent_layer(&l);
-        met->set_layer(*eval);
+        l_raw_ptr->add_child_layer(eval);
+        eval->add_parent_layer(l_view_ptr);
+        met->set_layer(eval);
         add_layer(std::move(eval));
 
       }
@@ -776,12 +812,12 @@ void model::add_evaluation_layers(std::unordered_set<Layer*>& layer_set,
 }
 
 void model::add_dummy_layers(std::unordered_set<std::string>& layer_names) {
-  for (El::Int i = 0; i < get_num_layers(); ++i) {
+  for (size_t i=0; i<m_layers.size(); ++i) {
     auto& l = get_layer(i);
     while (l.get_num_children() < l.get_expected_num_child_layers()) {
 
       // Create dummy layer
-      std::unique_ptr<Layer> dummy;
+      OwningLayerPtr dummy;
       using args_tuple = std::tuple<data_layout,El::Device>;
       args_tuple args(l.get_data_layout(), l.get_device_allocation());
       if (args == args_tuple(data_layout::DATA_PARALLEL, El::Device::CPU)) {
@@ -817,8 +853,8 @@ void model::add_dummy_layers(std::unordered_set<std::string>& layer_names) {
       layer_names.insert(name);
 
       // Add dummy layer to model
-      l.add_child_layer(dummy.get());
-      dummy->add_parent_layer(&l);
+      l.add_child_layer(dummy);
+      dummy->add_parent_layer(m_layers[i]);
       add_layer(std::move(dummy));
 
     }
@@ -826,15 +862,14 @@ void model::add_dummy_layers(std::unordered_set<std::string>& layer_names) {
 }
 
 void model::add_split_layers(std::unordered_set<std::string>& layer_names) {
-  for (El::Int i = 0; i < get_num_layers(); ++i) {
+  for (size_t i=0; i<m_layers.size(); ++i) {
     auto& l = get_layer(i);
 
     // Add split layer if layer expects one child but has multiple
-    auto& children = l.get_child_layers();
-    if (l.get_expected_num_child_layers() == 1 && children.size() != 1) {
+    if (l.get_expected_num_child_layers() == 1 && l.get_num_children() != 1) {
 
       // Create split layer
-      std::unique_ptr<Layer> split;
+      OwningLayerPtr split;
       using args_tuple = std::tuple<data_layout,El::Device>;
       args_tuple args(l.get_data_layout(), l.get_device_allocation());
       if (args == args_tuple(data_layout::DATA_PARALLEL, El::Device::CPU)) {
@@ -875,18 +910,16 @@ void model::add_split_layers(std::unordered_set<std::string>& layer_names) {
       ps = orig_ps;
 
       // Setup relationships between split layer and child layers
-      for (auto&& const_child : children) {
-        auto* child = const_cast<Layer*>(const_child);
-        split->add_child_layer(child);
-        auto& child_parents = child->get_parent_layers();
-        std::replace(child_parents.begin(), child_parents.end(),
-                     &l, split.get());
+      for (int j=0; j<l.get_num_children(); ++j) {
+        auto& child = const_cast<Layer&>(l.get_child_layer(j));
+        split->add_child_layer(l.get_child_layer_pointer(j));
+        child.replace_parent_layer(split, child.find_parent_layer_index(l));
       }
 
       // Setup relationship between current layer and split layer
-      children.clear();
-      l.add_child_layer(split.get());
-      split->add_parent_layer(&l);
+      l.clear_child_layers();
+      l.add_child_layer(split);
+      split->add_parent_layer(m_layers[i]);
 
       // Add split layer to layer list
       add_layer(std::move(split));

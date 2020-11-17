@@ -424,7 +424,6 @@ base_convolution_layer<TensorDataType,Device>
 #else
 
   // Useful constants
-  using ScalingType = cudnn::ScalingParamType<TensorDataType>;
   const auto zero = El::TypeTraits<ScalingType>::Zero();
   const auto one = El::TypeTraits<ScalingType>::One();
 
@@ -503,7 +502,6 @@ apply_transposed_convolution_cudnn(bool during_forward_prop) {
 #else
 
   // Useful constants
-  using ScalingType = cudnn::ScalingParamType<TensorDataType>;
   const auto zero = El::TypeTraits<ScalingType>::Zero();
   const auto one = El::TypeTraits<ScalingType>::One();
 

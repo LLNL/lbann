@@ -104,9 +104,15 @@ void hwloc_print_topo()
   {
     hwloc_obj_t core0 = hwloc_get_obj_by_type(topo, HWLOC_OBJ_CORE, 0);
     hwloc_obj_t parent = core0;
+#if HWLOC_API_VERSION >= 0x00020000
+    while (parent && !parent->attr->numanode.local_memory)
+      parent = parent->parent;
+    printf("%llu bytes\n", (unsigned long long) parent->attr->numanode.local_memory);
+#else
     while (parent && !parent->memory.local_memory)
       parent = parent->parent;
     printf("%llu bytes\n", (unsigned long long) parent->memory.local_memory);
+#endif
   }
 
   {
@@ -123,6 +129,7 @@ void hwloc_print_topo()
   return;
 }
 
+#if HWLOC_API_VERSION < 0x00020100
 // This function is implemented in HWLOC 2.1
 int hwloc_bitmap_singlify_per_core(hwloc_topology_t topology, hwloc_bitmap_t cpuset, unsigned which)
 {
@@ -151,6 +158,7 @@ int hwloc_bitmap_singlify_per_core(hwloc_topology_t topology, hwloc_bitmap_t cpu
   }
   return 0;
 }
+#endif
 
 hwloc_cpuset_t get_local_cpuset_for_current_thread(hwloc_topology_t topo) {
   hwloc_cpuset_t local_cpuset = hwloc_bitmap_alloc();

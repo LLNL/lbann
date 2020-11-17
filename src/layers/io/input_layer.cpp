@@ -113,6 +113,11 @@ void input_layer<TensorDataType, T_layout, Dev>::fp_compute() {
   //   LBANN_ERROR("could not fp_compute for I/O layers : encoutered generic_io_buffer type");
   // }
 
+#ifdef LBANN_HAS_DISTCONV
+  if (this->distconv_enabled()) {
+    get_distconv_adapter().fp_compute();
+  }
+#endif // LBANN_HAS_DISTCONV
 }
 
 template <typename TensorDataType,
@@ -509,17 +514,6 @@ keep_original_outputs(int index) const {
   // The original output matrices are always needed as we copy them
   // into distconv tensors.
   return true;
-}
-
-template <typename TensorDataType,
-          data_layout T_layout,
-          El::Device Dev>
-void input_layer<TensorDataType, T_layout, Dev>::
-fp_compute() {
-  generic_input_layer<TensorDataType>::fp_compute();
-  if (this->distconv_enabled()) {
-    get_distconv_adapter().fp_compute();
-  }
 }
 #endif // LBANN_HAS_DISTCONV
 

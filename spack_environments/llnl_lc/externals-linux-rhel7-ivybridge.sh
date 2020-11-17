@@ -47,9 +47,9 @@ EXTERNAL_PACKAGES=$(cat <<EOF
     hwloc::
       buildable: False
       version:
-      - 2.0.2
+      - 1.11.13
       externals:
-      - spec: hwloc@2.0.2 arch=linux-rhel7-ivybridge
+      - spec: hwloc@1.11.13 arch=linux-rhel7-ivybridge
         prefix: /usr/lib64/libhwloc.so
     mvapich2::
       buildable: True

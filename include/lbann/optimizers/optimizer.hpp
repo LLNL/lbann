@@ -39,7 +39,7 @@
 #include "lbann/utils/memory.hpp"
 #include "lbann/weights/weights.hpp"
 
-#include <cereal/types/utility.hpp>
+#include "lbann/utils/serialize.hpp"
 
 #include <memory>
 #include <string>

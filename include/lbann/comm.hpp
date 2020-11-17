@@ -27,17 +27,20 @@
 #ifndef LBANN_COMM_HPP_INCLUDED
 #define LBANN_COMM_HPP_INCLUDED
 
-#include <vector>
-#include <map>
-#include <typeindex>
 #include "base.hpp"
+
 #ifdef LBANN_HAS_CUDA
 #include <cuda_runtime.h>
 #endif // LBANN_HAS_CUDA
 #ifdef LBANN_HAS_ALUMINUM
 #include <Al.hpp>
 #endif // LBANN_HAS_ALUMINUM
+
 #include "detect_El_mpi.hpp"
+
+#include <vector>
+#include <map>
+#include <typeindex>
 
 namespace lbann {
 
@@ -204,11 +207,11 @@ class lbann_comm {
     return get_rank_in_world() == get_world_master();
   }
   /** Return a grid to use for this trainer. */
-  inline Grid& get_trainer_grid() {
+  inline El::Grid& get_trainer_grid() {
     return *grid;
   }
   /** Return a read-only grid to use for this trainer. */
-  inline const Grid& get_trainer_grid() const {
+  inline const El::Grid& get_trainer_grid() const {
     return *grid;
   }
   /** Return the total number of trainers. */

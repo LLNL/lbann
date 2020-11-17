@@ -146,20 +146,20 @@ int objective_function::get_statistics_num_samples(execution_mode mode) const {
   }
 }
 
-std::vector<Layer*> objective_function::get_layer_pointers() const {
-  std::vector<Layer*> layers;
+std::vector<ViewingLayerPtr> objective_function::get_layer_pointers() const {
+  std::vector<ViewingLayerPtr> layers;
   for (objective_function_term *term : m_terms) {
-    std::vector<Layer*> term_layers = term->get_layer_pointers();
+    auto term_layers = term->get_layer_pointers();
     layers.insert(layers.end(), term_layers.begin(), term_layers.end());
   }
   return layers;
 }
 
-void objective_function::set_layer_pointers(std::vector<Layer*> layers) {
+void objective_function::set_layer_pointers(std::vector<ViewingLayerPtr> layers) {
   auto it = layers.begin();
   for (objective_function_term *term : m_terms) {
     const size_t num_layers = term->get_layer_pointers().size();
-    std::vector<Layer*> term_layers(it, it + num_layers);
+    std::vector<ViewingLayerPtr> term_layers(it, it + num_layers);
     term->set_layer_pointers(term_layers);
     it += num_layers;
   }
