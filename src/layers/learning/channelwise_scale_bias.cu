@@ -31,7 +31,7 @@
 #ifdef HYDROGEN_HAVE_CUB
 #ifdef LBANN_HAS_CUDA
 #include "cub/block/block_reduce.cuh"
-#elif LBANN_HAS_ROCM
+#elif defined LBANN_HAS_ROCM
 #include "hipcub/block/block_reduce.hpp"
 namespace cub = hipcub;
 #endif // LBANN_HAS_CUDA
