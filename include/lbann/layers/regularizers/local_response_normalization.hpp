@@ -28,7 +28,6 @@
 #define LBANN_LAYER_LOCAL_RESPONSE_NORMALIZATION_HPP_INCLUDED
 
 #include <vector>
-#include "lbann/layers/regularizers/regularizer.hpp"
 #include "lbann/utils/cudnn.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/dnn_lib/cudnn/local_response_normalization.hpp"
@@ -47,7 +46,7 @@ namespace lbann {
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class local_response_normalization_layer : public regularizer_layer<TensorDataType> {
+class local_response_normalization_layer : public data_type_layer<TensorDataType> {
 #ifdef LBANN_HAS_CUDNN
   using ScalingType = cudnn::ScalingParamType<TensorDataType>;
 #else
@@ -63,7 +62,7 @@ public:
                                      TensorDataType alpha,
                                      TensorDataType beta,
                                      TensorDataType k)
-    : regularizer_layer<TensorDataType>(comm),
+    : data_type_layer<TensorDataType>(comm),
       m_window_width(window_width), m_alpha(alpha), m_beta(beta), m_k(k)
 #ifdef LBANN_HAS_CUDNN
     , m_tensors_cudnn_desc(this)
@@ -72,7 +71,7 @@ public:
 
   local_response_normalization_layer(
     const local_response_normalization_layer& other)
-    : regularizer_layer<TensorDataType>(other),
+    : data_type_layer<TensorDataType>(other),
       m_window_width(other.m_window_width),
       m_alpha(other.m_alpha),
       m_beta(other.m_beta),
@@ -89,7 +88,7 @@ public:
 
   local_response_normalization_layer& operator=(
     const local_response_normalization_layer& other) {
-    regularizer_layer<TensorDataType>::operator=(other);
+    data_type_layer<TensorDataType>::operator=(other);
     m_window_width = other.m_window_width;
     m_alpha = other.m_alpha;
     m_beta = other.m_beta;
@@ -112,7 +111,7 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
   description get_description() const override {
-    auto desc = regularizer_layer<TensorDataType>::get_description();
+    auto desc = data_type_layer<TensorDataType>::get_description();
     desc.add("alpha", m_alpha);
     desc.add("beta", m_beta);
     desc.add("k", m_k);
@@ -122,13 +121,13 @@ public:
 protected:
 
   void setup_dims(DataReaderMetaData& dr_metadata) override {
-    regularizer_layer<TensorDataType>::setup_dims(dr_metadata);
+    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims(this->get_input_dims());
   }
 
   /// Initialize GPU objects
   void setup_gpu() override {
-    regularizer_layer<TensorDataType>::setup_gpu();
+    data_type_layer<TensorDataType>::setup_gpu();
 #ifndef LBANN_HAS_CUDNN
     LBANN_ERROR("cuDNN not detected");
 #else

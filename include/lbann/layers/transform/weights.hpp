@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYER_WEIGHTS_HPP_INCLUDED
 #define LBANN_LAYER_WEIGHTS_HPP_INCLUDED
 
-#include "lbann/layers/transform/transform.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 #include "lbann/models/model.hpp"
 
 namespace lbann {
@@ -39,7 +39,7 @@ namespace lbann {
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class weights_layer : public transform_layer<TensorDataType> {
+class weights_layer : public data_type_layer<TensorDataType> {
 
 public:
   /** @name Public Types */
@@ -69,7 +69,7 @@ public:
 
  public:
   weights_layer(lbann_comm *comm, std::vector<El::Int> dims)
-    : transform_layer<TensorDataType>(comm) {
+    : data_type_layer<TensorDataType>(comm) {
     std::vector<int> dims_;
     for (const auto& d : dims) { dims_.push_back(d); }
     this->set_output_dims(dims_);
@@ -77,12 +77,12 @@ public:
   }
 
   weights_layer(const weights_layer& other)
-    : transform_layer<TensorDataType>(other),
+    : data_type_layer<TensorDataType>(other),
       m_gradient(other.m_gradient ? other.m_gradient->Copy() : nullptr) {
     m_workspace.SetMemoryMode(other.m_workspace.MemoryMode());
   }
   weights_layer& operator=(const weights_layer& other){
-    transform_layer<TensorDataType>::operator=(other);
+    data_type_layer<TensorDataType>::operator=(other);
     m_gradient.reset(other.m_gradient ? other.m_gradient->Copy() : nullptr);
     m_workspace.SetMemoryMode(other.m_workspace.MemoryMode());
     return *this;
@@ -95,7 +95,7 @@ public:
  protected:
 
   void setup_matrices(const El::Grid& grid) override {
-    transform_layer<TensorDataType>::setup_matrices(grid);
+    data_type_layer<TensorDataType>::setup_matrices(grid);
 
     // Initialize weights gradient
     auto dist = this->get_activations().DistData();
@@ -110,7 +110,7 @@ public:
   }
 
   void setup_data(size_t max_mini_batch_size) override {
-    transform_layer<TensorDataType>::setup_data(max_mini_batch_size);
+    data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
 
     // Initialize default weights if none are provided
     if (!this->has_weights()) {

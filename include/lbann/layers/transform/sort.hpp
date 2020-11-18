@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYER_SORT_HPP_INCLUDED
 #define LBANN_LAYER_SORT_HPP_INCLUDED
 
-#include "lbann/layers/transform/transform.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
 
@@ -35,16 +35,16 @@ namespace lbann {
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class sort_layer : public transform_layer<TensorDataType> {
+class sort_layer : public data_type_layer<TensorDataType> {
   static_assert(T_layout == data_layout::DATA_PARALLEL,
                 "sort layer only supports DATA_PARALLEL");
  public:
 
   sort_layer(lbann_comm *comm, bool descending = false)
-    : transform_layer<TensorDataType>(comm), m_descending(descending) {
+    : data_type_layer<TensorDataType>(comm), m_descending(descending) {
   }
   sort_layer(const sort_layer& other)
-    : transform_layer<TensorDataType>(other),
+    : data_type_layer<TensorDataType>(other),
       m_descending(other.m_descending) {
     if (other.m_indices) {
       switch (other.m_indices->GetDevice()) {
@@ -62,7 +62,7 @@ class sort_layer : public transform_layer<TensorDataType> {
     }
   }
   sort_layer& operator=(const sort_layer& other) {
-    transform_layer<TensorDataType>::operator=(other);
+    data_type_layer<TensorDataType>::operator=(other);
     m_descending = other.m_descending;
     if (!other.m_indices) {
       m_indices.reset(nullptr);
@@ -89,7 +89,7 @@ class sort_layer : public transform_layer<TensorDataType> {
   El::Device get_device_allocation() const override { return Dev; }
 
   description get_description() const override {
-    auto desc = transform_layer<TensorDataType>::get_description();
+    auto desc = data_type_layer<TensorDataType>::get_description();
     desc.add("Descending", m_descending);
     return desc;
   }
@@ -97,12 +97,12 @@ class sort_layer : public transform_layer<TensorDataType> {
  protected:
 
   void setup_dims(DataReaderMetaData& dr_metadata) override {
-    transform_layer<TensorDataType>::setup_dims(dr_metadata);
+    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims(this->get_input_dims());
   }
 
   void setup_matrices(const El::Grid& grid) override {
-    transform_layer<TensorDataType>::setup_matrices(grid);
+    data_type_layer<TensorDataType>::setup_matrices(grid);
     const auto& dist = this->get_activations().DistData();
     switch (dist.device) {
     case El::Device::CPU:
@@ -119,7 +119,7 @@ class sort_layer : public transform_layer<TensorDataType> {
   }
 
   void fp_setup_outputs(El::Int mini_batch_size) override {
-    transform_layer<TensorDataType>::fp_setup_outputs(mini_batch_size);
+    data_type_layer<TensorDataType>::fp_setup_outputs(mini_batch_size);
     const auto& output = this->get_activations();
     m_indices->Resize(output.LocalHeight(), output.LocalWidth());
   }

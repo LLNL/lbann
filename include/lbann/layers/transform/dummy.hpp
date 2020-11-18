@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYER_DUMMY_HPP_INCLUDED
 #define LBANN_LAYER_DUMMY_HPP_INCLUDED
 
-#include "lbann/layers/transform/transform.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
 
@@ -39,9 +39,9 @@ namespace lbann {
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class dummy_layer : public transform_layer<TensorDataType> {
+class dummy_layer : public data_type_layer<TensorDataType> {
 public:
-  dummy_layer(lbann_comm *comm) : transform_layer<TensorDataType>(comm) {
+  dummy_layer(lbann_comm *comm) : data_type_layer<TensorDataType>(comm) {
     this->m_expected_num_child_layers = 0;
   }
   dummy_layer* copy() const override { return new dummy_layer(*this); }
