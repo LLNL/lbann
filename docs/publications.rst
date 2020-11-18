@@ -3,6 +3,30 @@ Papers, Presentations, and Posters
 
 Publications about or related to using LBANN:
 
++ Sam Ade Jacobs, Tim Moon, Kevin McLoughlin, Derek Jones, David
+  Hysom, Dong H. Ahn, John Gyllenhaal, Pythagoras Watson,
+  Felice C. Lightstone, Jonathan E. Allen, Ian Karlin, Brian Van
+  Essen. "Enabling Rapid COVID-19 Small Molecule Drug Design Through Scalable
+  Deep Learning of Generative Models", to appear as finalist
+  for the 2020 Gordon Bell Special Prize in the The International
+  Journal of High Performance Computing Applications (IJHPCA),
+  Nov. 2020.
+
++ Arpan Jain, Tim Moon, Tom Benson, Hari Subramoni, Sam Ad́e
+  Jacobs, Dhabaleswar K Panda, Brian Van Essen. "SUPER: SUb-Graph
+  Parallelism for TransformERs", in submission to 35th IEEE
+  International Parallel & Distributed Processing Symposium (IPDPS),
+  May 17-21, 2021.
+
++ Yosuke Oyama, Naoya Maruyama, Nikoli Dryden, Erin McCarthy, Peter
+  Harrington, Jan Balewski, Satoshi Matsuoka, Peter Nugent, Brian Van
+  Essen. "The Case for Strong Scaling in Deep Learning: Training Large
+  3D CNNs with Hybrid Parallelism", under review for Special Session
+  on Parallel and Distributed Computing Techniques for AI, ML and DL
+  in Transactions on Parallel and Distributed Systems, July 2020.
+
+  + `arXiv.org link <https://arxiv.org/abs/2007.12856>`_
+
 + Nikoli Dryden, Naoya Maruyama, Tom Benson, Tim Moon, Marc Snir,
   Brian Van Essen. `"Channel and Filter Parallelism for Large-Scale
   CNN Training" <https://dl.acm.org/doi/10.1145/3295500.3356207>`_, in
@@ -25,6 +49,7 @@ Publications about or related to using LBANN:
   `10.1109/CLUSTER.2019.8891012 <https://doi.org/10.1109/CLUSTER.2019.8891012>`_.
 
   + :doc:`BibTex <bib/Jacobs2019>`
+  + `arXiv.org link <https://arxiv.org/abs/1910.02270>`_
 
 + Shusen Liu, Di Wang, Dan Maljovec, Rushil Anirudh,
   Jayaraman J. Thiagarajan, Sam Ade Jacobs, Brian C. Van Essen, David
@@ -36,6 +61,7 @@ Publications about or related to using LBANN:
   on Visualization and Computer Graphics*, 2019.
 
   + :doc:`BibTex <bib/Liu2019>`
+  + `arXiv.org link <https://arxiv.org/abs/1907.08325>`_
 
 + Nikoli Dryden, Naoya Maruyama, Tom Benson, Tim Moon, Marc Snir,
   Brian Van Essen. `"Improving Strong-Scaling of CNN Training by
@@ -45,6 +71,7 @@ Publications about or related to using LBANN:
   <http://www.ipdps.org/ipdps2019/2019-advance-program.html>`_, 2019.
 
   + :doc:`BibTex <bib/Dryden2019spatial>`
+  + `arXiv.org link <https://arxiv.org/abs/1903.06681>`_
 
 + Nikoli Dryden, Naoya Maruyama, Tim Moon, Tom Benson, Andy Yoo, Marc
   Snir, Brian Van Essen. `"Aluminum: An Asynchronous, GPU-Aware
