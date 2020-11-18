@@ -30,6 +30,7 @@ Build system:
  - C++14 or newer standard with CUDA (CMake: "-DCMAKE_CUDA_STANDARD=14")
 
 Bug fixes:
+ - Fixed a bug where LBANN didn't set the Hydrogen RNG seed
 
 Retired features:
 
