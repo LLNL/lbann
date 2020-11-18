@@ -286,9 +286,9 @@ std::unique_ptr<model> construct_model(
 
   // Instantiate model
   auto m = instantiate_model(comm, std::move(obj), proto_opt, proto_model);
-  for (auto&& l   : layer_list   ) { m->add_layer(std::move(l));    }
-  for (auto&& w   : weights_list ) { m->add_weights(std::move(w));  }
-  for (auto&& met : metric_list  ) { m->add_metric(met.release());  }
+  for (auto&& l   : layer_list   ) { m->add_layer(std::move(l)); }
+  for (auto&& w   : weights_list ) { m->add_weights(std::move(w)); }
+  for (auto&& met : metric_list  ) { m->add_metric(std::move(met)); }
   for (auto&& cb  : callback_list) { m->add_callback(std::move(cb)); }
   const auto& name = proto_model.name();
   if (!name.empty()) {

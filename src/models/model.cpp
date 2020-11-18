@@ -91,13 +91,11 @@ model::model(const model& other) :
   m_objective_function = (other.m_objective_function
                           ? make_unique<objective_function>(*other.m_objective_function)
                           : nullptr);
-  m_metrics = other.m_metrics;
-  m_callbacks = other.m_callbacks;
-  for (auto& m : m_metrics) {
-    m = m->copy();
+  for (const auto& m : other.m_metrics) {
+    m_metrics.emplace_back(m ? m->copy() : nullptr);
   }
-  for (auto& cb : m_callbacks) {
-    cb.reset(cb->copy());
+  for (const auto& cb : other.m_callbacks) {
+    m_callbacks.emplace_back(cb ? cb->copy() : nullptr);
   }
 
   // Copy layers
@@ -134,7 +132,6 @@ model& model::operator=(const model& other) {
 
   // Delete objects
   if (m_execution_context  != nullptr) { delete m_execution_context; } /// @todo BVE FIXME what do we do with smart pointers here
-  for (const auto& m : m_metrics)      { delete m; }
 
   // Shallow copies
   m_comm = other.m_comm;
@@ -146,13 +143,13 @@ model& model::operator=(const model& other) {
   m_objective_function = (other.m_objective_function
                           ? make_unique<objective_function>(*other.m_objective_function)
                           : nullptr);
-  m_metrics            = other.m_metrics;
-  m_callbacks          = other.m_callbacks;
-  for (auto& m : m_metrics) {
-    m = m->copy();
+  m_metrics.clear();
+  for (const auto& m : other.m_metrics) {
+    m_metrics.emplace_back(m ? m->copy() : nullptr);
   }
-  for (auto& cb : m_callbacks) {
-    cb.reset(cb->copy());
+  m_callbacks.clear();
+  for (const auto& cb : other.m_callbacks) {
+    m_callbacks.emplace_back(cb ? cb->copy() : nullptr);
   }
 
   // Copy layers
@@ -186,10 +183,6 @@ model& model::operator=(const model& other) {
   remap_pointers(layer_map, weights_map);
 
   return *this;
-}
-
-model::~model() {
-  for (const auto& m : m_metrics)      { delete m; }
 }
 
 // =============================================
@@ -286,6 +279,14 @@ description model::get_description() const {
   // Result
   return desc;
 
+}
+
+std::vector<metric*> model::get_metrics() const {
+  std::vector<metric*> ptrs;
+  for (const auto& ptr : m_metrics) {
+    ptrs.push_back(ptr.get());
+  }
+  return ptrs;
 }
 
 El::Int model::get_num_layers() const noexcept {
@@ -411,16 +412,20 @@ void model::add_weights(OwningWeightsPtr&& ptr) {
 
 void model::add_callback(std::shared_ptr<callback_base> cb) {
   if (cb == nullptr) {
-    throw lbann_exception("model: Attempted to add null pointer as a callback.");
+    LBANN_ERROR(
+      "attempted to add a null pointer as callback to ",
+      "model \"",get_name(),"\"");
   }
-  m_callbacks.push_back(std::move(cb));
+  m_callbacks.emplace_back(std::move(cb));
 }
 
-void model::add_metric(metric *m) {
+void model::add_metric(std::unique_ptr<metric> m) {
   if (m == nullptr) {
-    throw lbann_exception("model: Attempted to add null pointer as a metric.");
+    LBANN_ERROR(
+      "attempted to add a null pointer as a metric to ",
+      "model \"",get_name(),"\"");
   }
-  m_metrics.push_back(m);
+  m_metrics.emplace_back(std::move(m));
 }
 
 void model::copy_trained_weights_from(std::vector<weights*>& new_weights) {
@@ -740,8 +745,8 @@ void model::add_evaluation_layers(std::unordered_set<Layer*>& layer_set,
   }
 
   // Add evaluation layers corresponding to layer metrics
-  for (auto* m : m_metrics) {
-    auto* met = dynamic_cast<layer_metric*>(m);
+  for (auto& ptr : m_metrics) {
+    auto* met = dynamic_cast<layer_metric*>(ptr.get());
     if (met != nullptr) {
       auto* l_raw_ptr = &met->get_layer();
       if (layer_set.count(l_raw_ptr) == 0) {
