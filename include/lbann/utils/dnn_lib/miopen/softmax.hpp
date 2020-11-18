@@ -26,7 +26,7 @@
 #ifndef LBANN_UTILS_DNN_LIB_MIOPEN_SOFTMAX_HPP_
 #define LBANN_UTILS_DNN_LIB_MIOPEN_SOFTMAX_HPP_
 
-#include "lbann/utils/ml_enums.hpp"
+#include "lbann/utils/dnn_enums.hpp"
 #include "lbann/utils/dnn_lib/helpers.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
 #include "utils.hpp"
