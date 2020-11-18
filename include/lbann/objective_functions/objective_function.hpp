@@ -44,7 +44,7 @@ class objective_function {
   /** Copy assignment operator. */
   objective_function& operator=(const objective_function& other);
   /** Destructor. */
-  ~objective_function();
+  ~objective_function() = default;
   /** Copy function. */
   objective_function* copy() const { return new objective_function(*this); }
 
@@ -59,13 +59,10 @@ class objective_function {
     }
   }
 
-  /** Add a term to the objective function.
-   *  The objective function takes ownership of the objective function
-   *  term and deallocates it during destruction.
-   */
-  void add_term(objective_function_term* term) { m_terms.push_back(term); }
+  /** Add a term to the objective function. */
+  void add_term(std::unique_ptr<objective_function_term> term);
   /** Get list of objective function terms. */
-  std::vector<objective_function_term*> get_terms() { return m_terms; }
+  std::vector<objective_function_term*> get_terms();
 
   /** Setup objective function. */
   void setup(model& m);
@@ -133,7 +130,7 @@ class objective_function {
  private:
 
   /** List of objective function terms. */
-  std::vector<objective_function_term*> m_terms;
+  std::vector<std::unique_ptr<objective_function_term>> m_terms;
 
   /** Objective funciton statistics. */
   std::map<execution_mode,metric_statistics> m_statistics;
