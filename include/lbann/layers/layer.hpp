@@ -106,14 +106,14 @@ class sync_layers;
  *  by managing layers with @c std::shared_ptr .
  *
  *  @todo Replace with @c std::unique_ptr<Layer> when C++ and Cereal
- *  support @c std::observer_ptr.
+ *  support @c std::observer_ptr .
  */
 using OwningLayerPtr = std::shared_ptr<Layer>;
 /** @brief Smart pointer to reference a layer object
  *
  *  See @c OwningLayerPtr
  *
- *  @todo Replace with @c std::observer_ptr<Layer*> when supported by
+ *  @todo Replace with @c std::observer_ptr<Layer> when supported by
  *  C++ and Cereal.
  */
 using ViewingLayerPtr = std::weak_ptr<Layer>;
@@ -393,10 +393,10 @@ public:
   // Weights access functions
   // ===========================================================
 
-  /** Set list of pointers to weights. */
-  void set_weights(std::vector<weights*> const& w) {
-    m_weights = w;
-  }
+  /** @brief List of pointers to weights */
+  std::vector<ViewingWeightsPtr> get_weights_pointers() const;
+  /** @brief Set list of pointers to weights */
+  void set_weights_pointers(std::vector<ViewingWeightsPtr> ptrs);
 
   /** Replace weights with another Layer's weights*/
   void replace_weights(Layer const& other_layer);
@@ -464,28 +464,33 @@ protected:
 
   /** @name Weights-related accessors */
   ///@{
-  void add_weights(weights* w) {
-    m_weights.push_back(w);
+  void add_weights(ViewingWeightsPtr w) {
+    m_weights.emplace_back(std::move(w));
   }
   size_t num_weights() const noexcept { return m_weights.size(); }
   bool has_weights() const noexcept { return num_weights() > 0; }
   bool has_weights(size_t idx) const noexcept {
-    return ((idx < this->num_weights()) && (m_weights[idx]));
+    return ((idx < m_weights.size()) && (!m_weights[idx].expired()));
   }
-  void set_num_weights(size_t n) { m_weights.resize(n, nullptr); }
-  void set_weights(size_t idx, weights* w) {
-    m_weights.at(idx) = w;
+  void set_num_weights(size_t n) { m_weights.resize(n); }
+  void set_weights(size_t idx, ViewingWeightsPtr w) {
+    m_weights.at(idx) = std::move(w);
   }
   weights const& get_weights(size_t idx) const {
-    if (idx >= num_weights()) {
-      LBANN_ERROR("Asked for weights index \"", idx, "\"; "
-                  "however, this layer has ", num_weights(),
-                  " weights associated with it.");
+    if (idx >= m_weights.size()) {
+      LBANN_ERROR(
+        "attempted to access invalid weights object of ",
+        get_type()," layer \"",get_name(),"\" ",
+        "(requested index ",idx,", but there are ",
+        num_weights()," weights objects)");
     }
-    if (m_weights[idx] == nullptr) {
-      LBANN_ERROR("Logic error: Detected an in-bounds null weights pointer.");
+    const auto w = m_weights[idx].lock().get();
+    if (w == nullptr) {
+      LBANN_ERROR(
+        get_type()," layer \"",get_name(),"\"",
+        "has an invalid reference to weights ",idx);
     }
-    return *(m_weights[idx]);
+    return *w;
   }
 
   weights& get_weights(size_t idx) {
@@ -495,16 +500,18 @@ protected:
 
   void add_as_gradient_source()
   {
-    for (auto&& w : this->m_weights) {
-      optimizer* opt = w->get_optimizer();
+    for (size_t i=0; i<num_weights(); ++i) {
+      auto& w = get_weights(i);
+      auto* opt = w.get_optimizer();
       if (opt != nullptr) { opt->add_gradient_source(this); }
     }
   }
 
   void remove_as_gradient_source()
   {
-    for (auto&& w : this->m_weights) {
-      auto&& opt = w->get_optimizer();
+    for (size_t i=0; i<num_weights(); ++i) {
+      auto& w = get_weights(i);
+      auto* opt = w.get_optimizer();
       if (opt != nullptr) { opt->remove_gradient_source(this); }
     }
   }
@@ -631,8 +638,6 @@ protected:
 
 private:
 
-  virtual void setup_weights(size_t idx, weights& w) = 0;
-
   /** @name Implementation details of back-prop. */
   ///@{
 
@@ -745,7 +750,7 @@ private:
    *  only access weights values through the WeightsProxy class during
    *  training.
    */
-  std::vector<weights*> m_weights;
+  std::vector<ViewingWeightsPtr> m_weights;
 
   /** Dimensions of output tensors. */
   std::vector<std::vector<int>> m_output_dims_list;
@@ -760,11 +765,8 @@ private:
   /** Parallel strategy for the layer. */
   ParallelStrategy m_parallel_strategy;
 
-private:
-  friend std::vector<const weights*> extract_weights(Layer const& l);
-  friend std::vector<weights*> extract_weights(Layer& l);
-
 #ifdef LBANN_HAS_DISTCONV
+ private:
   friend class distconv_adapter;
  public:
   /** Indicate whether distconv is enabled. */
@@ -799,17 +801,6 @@ private:
   std::unique_ptr<distconv_adapter> m_dc;
 #endif // LBANN_HAS_DISTCONV
 };
-
-// FIXME (trb 05/28/2020): These should go away. They're used in
-// "model.cpp" and "model_factory.cpp" but could be refactored
-// out. Outside the scope of current PR.
-inline std::vector<weights*> extract_weights(Layer& l) {
-  return l.m_weights;
-}
-
-inline std::vector<const weights*> extract_weights(Layer const& l) {
-  return {l.m_weights.cbegin(), l.m_weights.cend()};
-}
 
 } // namespace lbann
 

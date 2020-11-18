@@ -116,9 +116,9 @@ class objective_function {
   /** Set list of pointers to layers. */
   void set_layer_pointers(std::vector<ViewingLayerPtr> layers);
   /** Get list of pointers to weights. */
-  std::vector<weights*> get_weights_pointers() const;
+  std::vector<ViewingWeightsPtr> get_weights_pointers() const;
   /** Set list of pointers to weights. */
-  void set_weights_pointers(std::vector<weights*> w);
+  void set_weights_pointers(std::vector<ViewingWeightsPtr> w);
 
   /** Get the time spent evaluating the objective function. */
   EvalType get_evaluation_time() const { return m_evaluation_time; }
