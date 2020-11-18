@@ -169,20 +169,20 @@ void objective_function::set_layer_pointers(std::vector<ViewingLayerPtr> layers)
   }
 }
 
-std::vector<weights*> objective_function::get_weights_pointers() const {
-  std::vector<weights*> w;
+std::vector<ViewingWeightsPtr> objective_function::get_weights_pointers() const {
+  std::vector<ViewingWeightsPtr> w;
   for (const auto& term : m_terms) {
-    std::vector<weights*> term_weights = term->get_weights_pointers();
+    auto term_weights = term->get_weights_pointers();
     w.insert(w.end(), term_weights.begin(), term_weights.end());
   }
   return w;
 }
 
-void objective_function::set_weights_pointers(std::vector<weights*> w) {
+void objective_function::set_weights_pointers(std::vector<ViewingWeightsPtr> w) {
   auto it = w.begin();
   for (auto&& term : m_terms) {
     const size_t num_weights = term->get_weights_pointers().size();
-    std::vector<weights*> term_weights(it, it + num_weights);
+    std::vector<ViewingWeightsPtr> term_weights(it, it + num_weights);
     term->set_weights_pointers(term_weights);
     it += num_weights;
   }

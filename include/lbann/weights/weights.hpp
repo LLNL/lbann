@@ -44,8 +44,37 @@ class WeightsData;
 namespace lbann {
 
 // Forward declaration
+class weights;
 class weights_initializer;
 class optimizer;
+
+/** @brief Smart pointer to manage ownership of a weights object
+ *
+ *  This should be treated @b exactly like a @c
+ *  std::unique_ptr<weights> , i.e. there should be exactly one
+ *  instance per pointer and the copy constructor and copy-assignment
+ *  operators should never be used. Using this like a @c
+ *  std::shared_ptr may lead to unexpected behavior.
+ *
+ *  The @b only reason this is not a @c std::unique_ptr is because
+ *  Cereal cannot natively serialize raw pointers. However, it can
+ *  accommodate @c std::weak_ptr . In an ideal world, Cereal would
+ *  support a non-owning smart pointer to an object in @c
+ *  std::unique_ptr (possibly the experimental @c observer_ptr ), but
+ *  we can make do by managing weights with @c std::shared_ptr .
+ *
+ *  @todo Replace with @c std::unique_ptr<weights> when C++ and Cereal
+ *  support @c std::observer_ptr .
+ */
+using OwningWeightsPtr = std::shared_ptr<weights>;
+/** @brief Smart pointer to reference a weights object
+ *
+ *  See @c OwningWeightsPtr
+ *
+ *  @todo Replace with @c std::observer_ptr<Weights> when supported by
+ *  C++ and Cereal.
+ */
+using ViewingWeightsPtr = std::weak_ptr<weights>;
 
 /** Neural network weights.
  *  Weights are tensors that act as trainable parameters for a neural

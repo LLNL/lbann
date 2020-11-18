@@ -319,14 +319,14 @@ base_convolution_layer<TensorDataType,Device>
     this->set_num_weights(1);
   }
   if (!this->has_weights(0)) {
-    auto w = make_unique<WeightsType>(this->get_comm());
+    auto w = std::make_shared<WeightsType>(this->get_comm());
     auto init = make_unique<he_initializer<TensorDataType>>(probability_distribution::gaussian);
     auto opt = this->m_model->template create_optimizer<TensorDataType>();
 
     w->set_name(this->get_name() + "_kernel");
     w->set_initializer(std::move(init));
     w->set_optimizer(std::move(opt));
-    this->set_weights(0, w.get());
+    this->set_weights(0, w);
     this->m_model->add_weights(std::move(w));
   }
   auto& kernel_weights = this->get_weights(0);
@@ -347,11 +347,11 @@ base_convolution_layer<TensorDataType,Device>
   // Set up bias if needed.
   if (m_bias_scaling_factor != El::TypeTraits<ScalingType>::Zero()) {
     if (!this->has_weights(1)) {
-      auto w = make_unique<WeightsType>(this->get_comm());
+      auto w = std::make_shared<WeightsType>(this->get_comm());
       auto opt = this->m_model->template create_optimizer<TensorDataType>();
       w->set_name(this->get_name() + "_bias");
       w->set_optimizer(std::move(opt));
-      this->set_weights(1, w.get());
+      this->set_weights(1, w);
       this->m_model->add_weights(std::move(w));
     }
     auto& bias_weights = this->get_weights(1);
@@ -424,7 +424,6 @@ base_convolution_layer<TensorDataType,Device>
 #else
 
   // Useful constants
-  using ScalingType = cudnn::ScalingParamType<TensorDataType>;
   const auto zero = El::TypeTraits<ScalingType>::Zero();
   const auto one = El::TypeTraits<ScalingType>::One();
 
@@ -503,7 +502,6 @@ apply_transposed_convolution_cudnn(bool during_forward_prop) {
 #else
 
   // Useful constants
-  using ScalingType = cudnn::ScalingParamType<TensorDataType>;
   const auto zero = El::TypeTraits<ScalingType>::Zero();
   const auto one = El::TypeTraits<ScalingType>::One();
 

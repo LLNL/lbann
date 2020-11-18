@@ -237,8 +237,6 @@ protected:
 
 private:
 
-  void setup_weights(size_t idx, weights& w) override;
-
   /** @brief Attempt to take ownership of the previous error signal.
    *
    *  If the underlying matrix has the right datatype and
