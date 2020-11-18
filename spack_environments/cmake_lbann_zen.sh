@@ -26,8 +26,8 @@ cmake \
   -D CMAKE_MPI_CXX_COMPILER=/opt/rocm-3.8.0/hip/bin/hipcc \
   -D CMAKE_BUILD_TYPE:STRING=${BUILD_TYPE} \
   -D CMAKE_INSTALL_PREFIX:PATH=${LBANN_INSTALL_DIR} \
-  -D CMAKE_CXX_FLAGS="${CXX_FLAGS} -g -fPIC -shared -fno-gpu-rdc -Wno-deprecated-declarations -Wno-unused-command-line-argument" \
-  -D CMAKE_C_FLAGS="${C_FLAGS} -fPIC" \
+  -D CMAKE_CXX_FLAGS="${CXX_FLAGS} -g -fPIC -shared -fsized-deallocation -std=c++17 -fno-gpu-rdc -Wno-deprecated-declarations -Wno-unused-command-line-argument" \
+  -D CMAKE_C_FLAGS="${C_FLAGS} -fPIC -fsized-deallocation" \
   -D HIP_HIPCC_FLAGS="-fPIC -shared -fsized-deallocation -std=c++17" \
   \
   -D LBANN_DATATYPE:STRING=float \

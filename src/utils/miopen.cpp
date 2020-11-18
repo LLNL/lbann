@@ -430,9 +430,9 @@ void DropoutDescriptor::set(
   void* states,
   size_t states_size,
   unsigned long long seed,
-  bool use_mask = false,
-  bool state_evo = false,
-  miopenRNGType_t rng_mode = MIOPEN_RNG_PSEUDO_XORWOW) {
+  bool use_mask,
+  bool state_evo,
+  miopenRNGType_t rng_mode) {
   create();
   CHECK_MIOPEN(
     miopenSetDropoutDescriptor(
@@ -664,9 +664,9 @@ void ConvolutionDescriptor::set(
     miopenConvolutionMode_t mode)
 {
   this->create();
-  std::vector<int> local_pad = pad;
-  std::vector<int> local_stride = stride;
-  std::vector<int> local_dilation = dilation;
+  int *local_pad = const_cast<int*>(pad);
+  int *local_stride = const_cast<int*>(stride);
+  int *local_dilation = const_cast<int*>(dilation);
   CHECK_MIOPEN(
     miopenInitConvolutionNdDescriptor(
       desc_, array_dim, local_pad, local_stride, local_dilation, mode));
@@ -889,7 +889,7 @@ void PoolingDescriptor::create()
 }
 
 void PoolingDescriptor::set(
-  miopenPoolingMode_t mode,
+  pooling_mode mode,
   miopenNanPropagation_t nan_prop, // placeholder
   std::vector<int> const& window_dims,
   std::vector<int> const& padding,
@@ -897,12 +897,12 @@ void PoolingDescriptor::set(
 {
   LBANN_ASSERT(window_dims.size() == padding.size());
   LBANN_ASSERT(window_dims.size() == stride.size());
-  this->set(mode, window_dims.size(),
+  this->set(mode, nan_prop, window_dims.size(),
             window_dims.data(), padding.data(), stride.data());
 }
 
 void PoolingDescriptor::set(
-  miopenPoolingMode_t mode,
+  pooling_mode mode,
   miopenNanPropagation_t nan_prop, // placeholder
   int num_dims,
   int const window_dims[],
@@ -910,9 +910,9 @@ void PoolingDescriptor::set(
   int const stride[])
 {
   this->create();
-  std::vector<int> local_window_dims = window_dims;
-  std::vector<int> local_padding = padding;
-  std::vector<int> local_stride = stride;
+  int *local_window_dims = const_cast<int*>(window_dims);
+  int *local_padding = const_cast<int*>(padding);
+  int *local_stride = const_cast<int*>(stride);
   CHECK_MIOPEN(
     miopenSetNdPoolingDescriptor(
       desc_, miopen::to_miopen(mode),
