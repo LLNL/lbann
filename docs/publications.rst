@@ -129,3 +129,16 @@ Posters about LBANN and its core algorthms and features:
   <http://learningsys.org/nips18/assets/papers/85CameraReadySubmissionsysforml-abs.pdf>`_
 
   + `Systems for ML 2018 <http://learningsys.org/nips18/acceptedpapers.html>`_
+
+.. toctree::
+   :hidden:
+   :maxdepth: 1
+
+   bib/Dryden2019channel
+   bib/Jacobs2019
+   bib/Liu2019
+   bib/Dryden2019spatial
+   bib/Dryden2018
+   bib/Jacobs2017
+   bib/Dryden2016
+   bib/VanEssen2015
