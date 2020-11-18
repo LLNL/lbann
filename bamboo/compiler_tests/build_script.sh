@@ -43,9 +43,8 @@ then
             MPI_MODULE=$(echo ${MPI_LIBRARY} | sed -e 's|-|/|g')
         fi
 
-        # Use the latest CUDA 10, since it's compatible with other
-        # CUDA 10.* libraries
-        CUDA_MODULE=$(ml --terse avail cuda |& sed -n '/\/10\./p' | tail -n1)
+        # Use the latest CUDA 11
+        CUDA_MODULE=$(ml --terse avail cuda |& sed -n '/\/11\./p' | tail -n1)
 
         # Load up the appropriate modules
         module load ${COMPILER_MODULE} ${MPI_MODULE} ${CUDA_MODULE} cmake/3.14.5
@@ -54,11 +53,9 @@ then
 
     BRAIN_DIR=/usr/workspace/wsb/brain
 
-    # CUDA-y things (Use the newest)
+    # Use the latest cuDNN 8
     ARCH=$(uname -i)
-    export NCCL_DIR=$(ls -d --color=no ${BRAIN_DIR}/nccl2/*cuda10*${ARCH} | tail -n1)
-    # Right now, we only support cuDNN 7 versions.
-    export CUDNN_DIR=$(find ${BRAIN_DIR}/cudnn -maxdepth 2 -type d | grep "cudnn-7.*/cuda-10.*_${ARCH}" | sort -r | head -1)
+    export CUDNN_DIR=$(find ${BRAIN_DIR}/cudnn -maxdepth 2 -type d | grep "cudnn-8.*/cuda-11.*_${ARCH}" | sort -r | head -1)
 
     # Unit testing framework
     export CLARA_DIR=${WORKSPACE_DIR}/stable_dependencies/clara
