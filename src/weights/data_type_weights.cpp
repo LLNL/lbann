@@ -68,7 +68,7 @@ std::string get_dims_string(const std::vector<int>& matrix_height_dims,
 namespace lbann {
 
 template <typename TensorDataType>
-data_type_weights<TensorDataType>::data_type_weights(lbann_comm* comm)
+data_type_weights<TensorDataType>::data_type_weights(lbann_comm& comm)
   : BaseType(comm) {}
 
 template <typename TensorDataType>
@@ -499,11 +499,12 @@ bool data_type_weights<TensorDataType>::load_from_checkpoint_distributed(lbann::
   return true;
 }
 
-#define PROTO(T)                     \
-  template class data_type_weights<T>
+}  // namespace lbann
+
+#define PROTO(T)                                                        \
+  template class lbann::data_type_weights<T>;                           \
+  CEREAL_REGISTER_TYPE_WITH_NAME(lbann::data_type_weights<T>, "dtw(" #T ")")
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
-
-}  // namespace lbann

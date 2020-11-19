@@ -71,34 +71,12 @@ weights::weights()
   num_weights++;
 }
 
-weights::weights(lbann_comm* comm)
+weights::weights(lbann_comm& comm)
   : weights() {
 
-  m_comm = comm;
-  if(comm == nullptr) { LBANN_ERROR("Unable to construct weights with null comm ptr"); }
+  m_comm = &comm;
 
   setup_default_matrix_distribution();
-}
-
-weights::weights(const weights& other)
-  : m_name(other.m_name),
-    m_comm(other.m_comm),
-    m_matrix_height_dims(other.m_matrix_height_dims),
-    m_matrix_width_dims(other.m_matrix_width_dims),
-    m_matrix_dist(other.m_matrix_dist),
-    m_frozen(other.m_frozen) {
-
-}
-
-weights& weights::operator=(const weights& other) {
-  m_name = other.m_name;
-  m_comm = other.m_comm;
-  m_matrix_height_dims = other.m_matrix_height_dims;
-  m_matrix_width_dims = other.m_matrix_width_dims;
-  m_matrix_dist = other.m_matrix_dist;
-  m_frozen = other.m_frozen;
-
-  return *this;
 }
 
 description weights::get_description() const {

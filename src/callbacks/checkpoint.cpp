@@ -453,6 +453,7 @@ bool checkpoint::reload_model(model *m) {
       return flag;
     });
 
+  lbann::utils::grid_manager grid_raii(m->get_comm()->get_trainer_grid());
 
   auto flag = open_latest_checkpoint(*(m->get_comm()),
                                      "Reloading Model " + m->get_name(),

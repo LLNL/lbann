@@ -203,7 +203,7 @@ void embedding_layer<TensorDataType,Layout,Device>::setup_data(size_t max_mini_b
   // Note: Randomly drawn from normal distribution with mean 0 and
   // standard deviation 1.
   if (!this->has_weights()) {
-    auto w = std::make_shared<WeightsType>(this->get_comm());
+    auto w = std::make_shared<WeightsType>(*this->get_comm());
     auto init = make_unique<normal_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::Zero(),
                                                                 El::TypeTraits<TensorDataType>::One());
     auto opt = this->m_model->template create_optimizer<TensorDataType>();

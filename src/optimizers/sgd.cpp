@@ -229,13 +229,20 @@ build_sgd_optimizer_from_pbuf(
                                           params.nesterov());
 }
 
-#define PROTO(T)                                \
-  template class sgd<T>;                        \
-  template std::unique_ptr<optimizer>           \
-  build_sgd_optimizer_from_pbuf<T>(             \
+#define PROTO(T)                                                \
+  template class sgd<T>;                                        \
+  template std::unique_ptr<optimizer>                           \
+  build_sgd_optimizer_from_pbuf<T>(                             \
     google::protobuf::Message const&)
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
 } // namespace lbann
+
+#undef PROTO
+#define PROTO(T)                                                \
+  CEREAL_REGISTER_TYPE_WITH_NAME(lbann::sgd<T>, "sgd<" #T ">")
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"

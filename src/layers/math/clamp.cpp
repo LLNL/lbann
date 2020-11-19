@@ -97,3 +97,6 @@ void clamp_layer<TensorDataType, Layout, Device>::bp_compute() {
 #include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann
+
+#define LBANN_LAYER_NAME clamp_layer
+#include "lbann/macros/register_layer_with_cereal.hpp"

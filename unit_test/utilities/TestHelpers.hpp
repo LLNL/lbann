@@ -23,19 +23,19 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
-#pragma once
-#ifndef LBANN_UTILS_SERIALIZE_HPP_
-#define LBANN_UTILS_SERIALIZE_HPP_
 
-// Serialization code is only valid in C++ code.
-#if !(defined __CUDACC__ || defined __HIPCC__)
+#include <lbann/utils/memory.hpp>
 
-#include "serialization/cereal_utils.hpp"
-#include "serialization/rooted_archive_adaptor.hpp"
-#ifdef LBANN_HAS_HALF
-#include "serialization/serialize_half.hpp"
-#endif // LBANN_HAS_HALF
-#include "serialization/serialize_matrices.hpp"
+namespace unit_test
+{
+namespace utilities
+{
 
-#endif // !(defined __CUDACC__ || defined __HIPCC__)
-#endif // LBANN_UTILS_SERIALIZE_HPP_
+template <typename T>
+bool IsValidPtr(std::unique_ptr<T> const& ptr) noexcept
+{
+  return static_cast<bool>(ptr);
+}
+
+} // namespace utilities
+} // namespace unit_test

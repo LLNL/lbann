@@ -56,10 +56,7 @@
 #include "lbann/layers/loss/mean_absolute_error.hpp"
 #include "lbann/layers/loss/mean_squared_error.hpp"
 #include "lbann/layers/loss/top_k_categorical_accuracy.hpp"
-#include "lbann/layers/math/binary.hpp"
-#include "lbann/layers/math/clamp.hpp"
-#include "lbann/layers/math/matmul.hpp"
-#include "lbann/layers/math/unary.hpp"
+#include "lbann/layers/math/math_builders.hpp"
 #include "lbann/layers/misc/channelwise_mean.hpp"
 #include "lbann/layers/misc/channelwise_softmax.hpp"
 #include "lbann/layers/misc/covariance.hpp"
@@ -152,6 +149,13 @@ private:
 #define LBANN_REGISTER_DEFAULT_BUILDER(KEY, LAYER_NAME)                 \
     factory_.register_builder(                                          \
       #KEY,                                                             \
+      [](lbann_comm*,                                                   \
+         lbann_data::Layer const&){                                     \
+        return lbann::make_unique<LAYER_NAME##_layer<T,L,D>>();         \
+      })
+#define LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(KEY, LAYER_NAME)       \
+    factory_.register_builder(                                          \
+      #KEY,                                                             \
       [](lbann_comm* comm,                                              \
          lbann_data::Layer const&){                                     \
         return lbann::make_unique<LAYER_NAME##_layer<T,L,D>>(comm);     \
@@ -170,55 +174,56 @@ private:
     LBANN_REGISTER_BUILDER(GRU, gru);
 
     // Math layers
-    LBANN_REGISTER_DEFAULT_BUILDER(Abs, abs);
-    LBANN_REGISTER_DEFAULT_BUILDER(Acos, acos);
-    LBANN_REGISTER_DEFAULT_BUILDER(Acosh, acosh);
-    LBANN_REGISTER_DEFAULT_BUILDER(Add, add);
-    LBANN_REGISTER_DEFAULT_BUILDER(Asin, asin);
-    LBANN_REGISTER_DEFAULT_BUILDER(Asinh, asinh);
-    LBANN_REGISTER_DEFAULT_BUILDER(Atan, atan);
-    LBANN_REGISTER_DEFAULT_BUILDER(Atanh, atanh);
-    LBANN_REGISTER_DEFAULT_BUILDER(Ceil, ceil);
-    LBANN_REGISTER_DEFAULT_BUILDER(Cos, cos);
-    LBANN_REGISTER_DEFAULT_BUILDER(Cosh, cosh);
-    LBANN_REGISTER_DEFAULT_BUILDER(Divide, divide);
-    LBANN_REGISTER_DEFAULT_BUILDER(Equal, equal);
-    LBANN_REGISTER_DEFAULT_BUILDER(Exp, exp);
-    LBANN_REGISTER_DEFAULT_BUILDER(Expm1, expm1);
-    LBANN_REGISTER_DEFAULT_BUILDER(Floor, floor);
-    LBANN_REGISTER_DEFAULT_BUILDER(Greater, greater);
-    LBANN_REGISTER_DEFAULT_BUILDER(GreaterEqual, greater_equal);
-    LBANN_REGISTER_DEFAULT_BUILDER(Erf, erf);
-    LBANN_REGISTER_DEFAULT_BUILDER(ErfInv, erfinv);
-    LBANN_REGISTER_DEFAULT_BUILDER(Less, less);
-    LBANN_REGISTER_DEFAULT_BUILDER(LessEqual, less_equal);
-    LBANN_REGISTER_DEFAULT_BUILDER(Log, log);
-    LBANN_REGISTER_DEFAULT_BUILDER(Log1p, log1p);
-    LBANN_REGISTER_DEFAULT_BUILDER(LogicalAnd, logical_and);
-    LBANN_REGISTER_DEFAULT_BUILDER(LogicalNot, logical_not);
-    LBANN_REGISTER_DEFAULT_BUILDER(LogicalOr, logical_or);
-    LBANN_REGISTER_DEFAULT_BUILDER(LogicalXor, logical_xor);
-    LBANN_REGISTER_DEFAULT_BUILDER(Max, max);
-    LBANN_REGISTER_DEFAULT_BUILDER(Min, min);
-    LBANN_REGISTER_DEFAULT_BUILDER(Mod, mod);
-    LBANN_REGISTER_DEFAULT_BUILDER(Multiply, multiply);
-    LBANN_REGISTER_DEFAULT_BUILDER(Negative, negative);
-    LBANN_REGISTER_DEFAULT_BUILDER(NotEqual, not_equal);
-    LBANN_REGISTER_DEFAULT_BUILDER(Pow, pow);
-    LBANN_REGISTER_DEFAULT_BUILDER(Reciprocal, reciprocal);
-    LBANN_REGISTER_DEFAULT_BUILDER(Round, round);
-    LBANN_REGISTER_DEFAULT_BUILDER(Rsqrt, rsqrt);
-    LBANN_REGISTER_DEFAULT_BUILDER(SafeDivide, safe_divide);
-    LBANN_REGISTER_DEFAULT_BUILDER(SafeReciprocal, safe_reciprocal);
-    LBANN_REGISTER_DEFAULT_BUILDER(Sign, sign);
-    LBANN_REGISTER_DEFAULT_BUILDER(Sin, sin);
-    LBANN_REGISTER_DEFAULT_BUILDER(Sinh, sinh);
-    LBANN_REGISTER_DEFAULT_BUILDER(Sqrt, sqrt);
-    LBANN_REGISTER_DEFAULT_BUILDER(Square, square);
-    LBANN_REGISTER_DEFAULT_BUILDER(SquaredDifference, squared_difference);
-    LBANN_REGISTER_DEFAULT_BUILDER(Subtract, subtract);
-    LBANN_REGISTER_DEFAULT_BUILDER(Tan, tan);
-    LBANN_REGISTER_DEFAULT_BUILDER(Tanh, tanh);
+    LBANN_REGISTER_BUILDER(Abs, abs);
+    LBANN_REGISTER_BUILDER(Acos, acos);
+    LBANN_REGISTER_BUILDER(Acosh, acosh);
+    LBANN_REGISTER_BUILDER(Add, add);
+    LBANN_REGISTER_BUILDER(Asin, asin);
+    LBANN_REGISTER_BUILDER(Asinh, asinh);
+    LBANN_REGISTER_BUILDER(Atan, atan);
+    LBANN_REGISTER_BUILDER(Atanh, atanh);
+    LBANN_REGISTER_BUILDER(Ceil, ceil);
+    LBANN_REGISTER_BUILDER(Cos, cos);
+    LBANN_REGISTER_BUILDER(Cosh, cosh);
+    LBANN_REGISTER_BUILDER(Divide, divide);
+    LBANN_REGISTER_BUILDER(Equal, equal);
+    LBANN_REGISTER_BUILDER(Exp, exp);
+    LBANN_REGISTER_BUILDER(Expm1, expm1);
+    LBANN_REGISTER_BUILDER(Floor, floor);
+    LBANN_REGISTER_BUILDER(Greater, greater);
+    LBANN_REGISTER_BUILDER(GreaterEqual, greater_equal);
+    LBANN_REGISTER_BUILDER(Erf, erf);
+    LBANN_REGISTER_BUILDER(ErfInv, erfinv);
+    LBANN_REGISTER_BUILDER(Less, less);
+    LBANN_REGISTER_BUILDER(LessEqual, less_equal);
+    LBANN_REGISTER_BUILDER(Log, log);
+    LBANN_REGISTER_BUILDER(Log1p, log1p);
+    LBANN_REGISTER_BUILDER(LogicalAnd, logical_and);
+    LBANN_REGISTER_BUILDER(LogicalNot, logical_not);
+    LBANN_REGISTER_BUILDER(LogicalOr, logical_or);
+    LBANN_REGISTER_BUILDER(LogicalXor, logical_xor);
+    LBANN_REGISTER_BUILDER(MatMul, matmul);
+    LBANN_REGISTER_BUILDER(Max, max);
+    LBANN_REGISTER_BUILDER(Min, min);
+    LBANN_REGISTER_BUILDER(Mod, mod);
+    LBANN_REGISTER_BUILDER(Multiply, multiply);
+    LBANN_REGISTER_BUILDER(Negative, negative);
+    LBANN_REGISTER_BUILDER(NotEqual, not_equal);
+    LBANN_REGISTER_BUILDER(Pow, pow);
+    LBANN_REGISTER_BUILDER(Reciprocal, reciprocal);
+    LBANN_REGISTER_BUILDER(Round, round);
+    LBANN_REGISTER_BUILDER(Rsqrt, rsqrt);
+    LBANN_REGISTER_BUILDER(SafeDivide, safe_divide);
+    LBANN_REGISTER_BUILDER(SafeReciprocal, safe_reciprocal);
+    LBANN_REGISTER_BUILDER(Sign, sign);
+    LBANN_REGISTER_BUILDER(Sin, sin);
+    LBANN_REGISTER_BUILDER(Sinh, sinh);
+    LBANN_REGISTER_BUILDER(Sqrt, sqrt);
+    LBANN_REGISTER_BUILDER(Square, square);
+    LBANN_REGISTER_BUILDER(SquaredDifference, squared_difference);
+    LBANN_REGISTER_BUILDER(Subtract, subtract);
+    LBANN_REGISTER_BUILDER(Tan, tan);
+    LBANN_REGISTER_BUILDER(Tanh, tanh);
 
     // Transform layers
     LBANN_REGISTER_BUILDER(Bernoulli, bernoulli);
@@ -238,26 +243,26 @@ private:
 
     // Activations
     LBANN_REGISTER_DEFAULT_BUILDER(Identity, identity);
-    LBANN_REGISTER_DEFAULT_BUILDER(LogSigmoid, log_sigmoid);
-    LBANN_REGISTER_DEFAULT_BUILDER(LogSoftmax, log_softmax);
-    LBANN_REGISTER_DEFAULT_BUILDER(Relu, relu);
-    LBANN_REGISTER_DEFAULT_BUILDER(Selu, selu);
-    LBANN_REGISTER_DEFAULT_BUILDER(Sigmoid, sigmoid);
+    LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(LogSigmoid, log_sigmoid);
+    LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(LogSoftmax, log_softmax);
+    LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(Relu, relu);
+    LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(Selu, selu);
+    LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(Sigmoid, sigmoid);
     LBANN_REGISTER_BUILDER(Softmax, softmax);
-    LBANN_REGISTER_DEFAULT_BUILDER(Softplus, softplus);
-    LBANN_REGISTER_DEFAULT_BUILDER(Softsign, softsign);
+    LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(Softplus, softplus);
+    LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(Softsign, softsign);
 
     // Loss Layers
-    LBANN_REGISTER_DEFAULT_BUILDER(BinaryCrossEntropy, binary_cross_entropy);
-    LBANN_REGISTER_DEFAULT_BUILDER(BooleanAccuracy, boolean_accuracy);
-    LBANN_REGISTER_DEFAULT_BUILDER(BooleanFalseNegative, boolean_false_negative);
-    LBANN_REGISTER_DEFAULT_BUILDER(BooleanFalsePositive, boolean_false_positive);
-    LBANN_REGISTER_DEFAULT_BUILDER(CategoricalAccuracy, categorical_accuracy);
-    LBANN_REGISTER_DEFAULT_BUILDER(L1Norm, l1_norm);
-    LBANN_REGISTER_DEFAULT_BUILDER(L2Norm2, l2_norm2);
-    LBANN_REGISTER_DEFAULT_BUILDER(MeanAbsoluteError, mean_absolute_error);
-    LBANN_REGISTER_DEFAULT_BUILDER(MeanSquaredError, mean_squared_error);
-    LBANN_REGISTER_DEFAULT_BUILDER(SigmoidBinaryCrossEntropy, sigmoid_binary_cross_entropy);
+    LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(BinaryCrossEntropy, binary_cross_entropy);
+    LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(BooleanAccuracy, boolean_accuracy);
+    LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(BooleanFalseNegative, boolean_false_negative);
+    LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(BooleanFalsePositive, boolean_false_positive);
+    LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(CategoricalAccuracy, categorical_accuracy);
+    LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(L1Norm, l1_norm);
+    LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(L2Norm2, l2_norm2);
+    LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(MeanAbsoluteError, mean_absolute_error);
+    LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(MeanSquaredError, mean_squared_error);
+    LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(SigmoidBinaryCrossEntropy, sigmoid_binary_cross_entropy);
 
     // Regularizer layers
     LBANN_REGISTER_BUILDER(Dropout, dropout);
@@ -267,8 +272,8 @@ private:
     // Miscellaneous layers
     LBANN_REGISTER_BUILDER(DFTAbs, dft_abs);
     LBANN_REGISTER_BUILDER(ChannelwiseSoftmax, channelwise_softmax);
-    LBANN_REGISTER_DEFAULT_BUILDER(MiniBatchIndex, mini_batch_index);
-    LBANN_REGISTER_DEFAULT_BUILDER(MiniBatchSize, mini_batch_size);
+    LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(MiniBatchIndex, mini_batch_index);
+    LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(MiniBatchSize, mini_batch_size);
     LBANN_REGISTER_BUILDER(DistEmbedding, dist_embedding);
     LBANN_REGISTER_BUILDER(UniformHash, uniform_hash);
 
@@ -276,6 +281,7 @@ private:
 
   // Just to be clear/safe.
 #undef LBANN_REGISTER_DEFAULT_BUILDER
+#undef LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM
 
 private:
   factory_type factory_;
@@ -590,23 +596,6 @@ std::unique_ptr<Layer> construct_layer_legacy(
                             ? params.epsilon().value()
                             : 1e-5);
     return lbann::make_unique<layer_norm_layer<TensorDataType, Layout, Device>>(comm, epsilon);
-  }
-
-  if (proto_layer.has_clamp()) {
-    const auto& params = proto_layer.clamp();
-    return lbann::make_unique<clamp_layer<TensorDataType, Layout, Device>>(comm, params.min(), params.max());
-  }
-  if (proto_layer.has_matmul()) {
-    if (Layout == data_layout::DATA_PARALLEL) {
-      const auto& params = proto_layer.matmul();
-      return lbann::make_unique<matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,Device>>(
-               comm,
-               params.transpose_a(),
-               params.transpose_b());
-    } else {
-      LBANN_ERROR("matrix multiply layer is only supported with "
-                  "a data-parallel layout");
-    }
   }
 
   // Activation layers

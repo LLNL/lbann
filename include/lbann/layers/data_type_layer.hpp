@@ -84,8 +84,10 @@ public:
     h2::meta::tlist::MemberV<TensorDataType, supported_layer_data_type>(),
     "Must use a supported type.");
 
-  data_type_layer(lbann_comm *comm, bool persistent_error_signals=false)
-    : Layer(comm), m_persistent_error_signals{persistent_error_signals} {}
+  data_type_layer(lbann_comm* /*comm*/, bool persistent_error_signals=false)
+    : Layer(),
+      m_persistent_error_signals{persistent_error_signals}
+  {}
   data_type_layer(const data_type_layer<TensorDataType>& other);
   data_type_layer& operator=(const data_type_layer<TensorDataType>& other);
   virtual ~data_type_layer() = default;
@@ -140,6 +142,25 @@ public:
    *  false means to dynamically reallocate them.
    */
   void set_keep_error_signals(bool) override;
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar)
+  {
+    ar(::cereal::make_nvp("BaseLayer",
+                          ::cereal::base_class<Layer>(this)),
+       CEREAL_NVP(m_persistent_error_signals));
+    // Members not serialized:
+    //   m_weights_proxy
+    //   m_inputs
+    //   m_outputs
+    //   m_gradient_wrt_outputs
+    //   m_gradient_wrt_inputs;
+  }
+
+  ///@}
 
 protected:
 

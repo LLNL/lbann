@@ -27,6 +27,10 @@
 #ifndef LBANN_UTILS_SERIALIZATION_CEREAL_UTILS_HPP_
 #define LBANN_UTILS_SERIALIZATION_CEREAL_UTILS_HPP_
 
+#include <cereal/archives/binary.hpp>
+#include <cereal/archives/json.hpp>
+#include <cereal/archives/portable_binary.hpp>
+#include <cereal/archives/xml.hpp>
 #include <cereal/details/traits.hpp>
 
 #include <lbann/utils/h2_tmp.hpp>
@@ -39,23 +43,82 @@ namespace utils
 using namespace ::cereal::traits;
 using namespace ::h2::meta;
 
+namespace details
+{
+/** @class IsBuiltinArchiveT
+ *  @brief Predicate for testing if the given type is a built-in
+ *         Cereal archive.
+ */
+template <typename ArchiveT>
+struct IsBuiltinArchiveT;
+
+#if !(defined DOXYGEN_SHOULD_SKIP_THIS)
+
+template <typename ArchiveT>
+struct IsBuiltinArchiveT
+  : std::false_type
+{};
+
+// Add all the builtin types
+template <>
+struct IsBuiltinArchiveT<cereal::BinaryInputArchive> : std::true_type {};
+template <>
+struct IsBuiltinArchiveT<cereal::JSONInputArchive> : std::true_type {};
+template <>
+struct IsBuiltinArchiveT<cereal::PortableBinaryInputArchive> : std::true_type {};
+template <>
+struct IsBuiltinArchiveT<cereal::XMLInputArchive> : std::true_type {};
+template <>
+struct IsBuiltinArchiveT<cereal::BinaryOutputArchive> : std::true_type {};
+template <>
+struct IsBuiltinArchiveT<cereal::JSONOutputArchive> : std::true_type {};
+template <>
+struct IsBuiltinArchiveT<cereal::PortableBinaryOutputArchive>
+  : std::true_type {};
+template <>
+struct IsBuiltinArchiveT<cereal::XMLOutputArchive> : std::true_type {};
+#endif // defined DOXYGEN_SHOULD_SKIP_THIS
+}// namespace details
+
+/** @brief Variable template for checking that an archive is a default
+ *         Cereal archive type.
+*/
+template <typename ArchiveT>
+constexpr bool IsBuiltinArchive = details::IsBuiltinArchiveT<ArchiveT>::value;
+
 /** @brief Variable template for checking that an archive type is
  *         marked as a text archive in Cereal.
  */
 template <typename ArchiveT>
 constexpr bool IsTextArchive = is_text_archive<ArchiveT>::value;
 
-/** @brief SFINAE helper for splitting text-based and non-text-based
- *         serialization functions.
+/** @brief Variable template for checking that an archive type is an
+ *         "Input" archive.
  */
-template <typename ArchiveT, typename ResultT=int>
-using WhenTextArchive = EnableWhen<IsTextArchive<ArchiveT>, ResultT>;
+template <typename ArchiveT>
+constexpr bool IsInputArchive =
+  std::is_base_of_v<cereal::detail::InputArchiveBase, ArchiveT>;
+
+/** @brief Variable template for checking that an archive type is an
+ *         "Output" archive.
+ */
+template <typename ArchiveT>
+constexpr bool IsOutputArchive =
+  std::is_base_of_v<cereal::detail::OutputArchiveBase, ArchiveT>;
 
 /** @brief SFINAE helper for splitting text-based and non-text-based
  *         serialization functions.
  */
 template <typename ArchiveT, typename ResultT=int>
-using WhenNotTextArchive = EnableUnless<IsTextArchive<ArchiveT>, ResultT>;
+using WhenTextArchive =
+  EnableWhen<IsTextArchive<ArchiveT> && IsBuiltinArchive<ArchiveT>,
+             ResultT>;
+
+/** @brief SFINAE helper for splitting text-based and non-text-based
+ *         serialization functions.
+ */
+template <typename ArchiveT, typename ResultT=int>
+using WhenNotTextArchive = EnableWhen<!IsTextArchive<ArchiveT> && IsBuiltinArchive<ArchiveT>, ResultT>;
 
 }// namespace utils
 }// namespace lbann

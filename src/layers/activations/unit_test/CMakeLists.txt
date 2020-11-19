@@ -1,6 +1,5 @@
 set_full_path(THIS_DIR_MPI_CATCH2_TEST_FILES
-  weights_test.cpp
-  weights_proxy_test.cpp
+  identity_test.cpp
   )
 
 set(LBANN_MPI_CATCH2_TEST_FILES

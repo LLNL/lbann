@@ -30,6 +30,7 @@
 #include "lbann/weights/weights.hpp"
 #include "lbann/weights/initializer.hpp"
 #include "lbann/optimizers/data_type_optimizer.hpp"
+#include "lbann/utils/serialize.hpp"
 
 namespace lbann_data {
 class WeightsData;
@@ -79,7 +80,7 @@ public:
   ///@}
 
 public:
-  data_type_weights(lbann_comm* comm);
+  data_type_weights(lbann_comm& comm);
   data_type_weights(const data_type_weights& other);
   data_type_weights& operator=(const data_type_weights& other);
   virtual ~data_type_weights() = default;
@@ -158,6 +159,39 @@ public:
 
   /** Write weights to proto file */
   void write_proto(lbann_data::WeightsData* proto) const override;
+
+  /** @name Serialization */
+  ///@{
+
+  /** @brief Serialize the weights object to the archive.
+   *  @tparam ArchiveT (Inferred.) The archive type.
+   *  @param ar[in,out] The archive to which to write or from which to
+   *                    read.
+   */
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar)
+  {
+    ar(cereal::base_class<weights>(this),
+       CEREAL_NVP(m_values),
+       CEREAL_NVP(m_optimizer));
+
+    // What about:
+    //   m_initializer
+  }
+
+  template <typename ArchiveT>
+  static void load_and_construct(
+    ArchiveT & ar, cereal::construct<WeightsType> & construct)
+#ifndef __CUDACC__
+  {
+    // Construct the matrix on the right grid.
+    construct(utils::get_current_comm());
+  }
+#else
+  ;
+#endif
+
+  ///@}
 
 private:
   void do_augment_description_(description&) const override;

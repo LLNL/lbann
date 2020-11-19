@@ -47,7 +47,7 @@
 
 namespace lbann {
 
-Layer::Layer(lbann_comm *comm)
+Layer::Layer()
   : m_frozen(false) {
 
   // Initialize layer name

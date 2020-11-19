@@ -72,8 +72,8 @@ public:
   template <class Archive> void serialize(Archive & ar) {
     ar(cereal::base_class<data_type_optimizer<TensorDataType>>(this),
        CEREAL_NVP(m_decay_rate),
-       CEREAL_NVP(m_eps));
-    // CEREAL_NVP(m_cache));
+       CEREAL_NVP(m_eps),
+       CEREAL_NVP(m_cache));
   }
 
   /** Human-readable type name. */
@@ -84,6 +84,16 @@ public:
   void setup(WeightsType* w = nullptr) override;
 
 protected:
+
+  /** @brief Default constructor.
+   *  @details This constructor exists as an implementation detail of
+   *  the serialization code. It is not for general use.
+   */
+  rmsprop()
+    : rmsprop(El::To<TensorDataType>(1.f),
+              El::To<TensorDataType>(1.f),
+              El::To<TensorDataType>(1e-8))
+  {}
 
   /** Computation for an optimization step. */
   void step_compute(AbsDistMatrixType& values,

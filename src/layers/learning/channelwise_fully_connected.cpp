@@ -172,7 +172,7 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
 
   // Create default linearity weights if needed
   if (!this->has_weights(0)) {
-    auto w = std::make_shared<WeightsType>(this->get_comm());
+    auto w = std::make_shared<WeightsType>(*this->get_comm());
     auto init = make_unique<he_initializer<TensorDataType>>(probability_distribution::gaussian);
     auto opt = this->m_model->template create_optimizer<TensorDataType>();
     w->set_name(this->get_name() + "_linearity_weights");
@@ -205,7 +205,7 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
     dist.colDist = El::STAR;
     dist.rowDist = El::STAR;
     if (!this->has_weights(1)) {
-      auto w = std::make_shared<WeightsType>(this->get_comm());
+      auto w = std::make_shared<WeightsType>(*this->get_comm());
       auto opt = this->m_model->template create_optimizer<TensorDataType>();
       w->set_name(this->get_name() + "_bias_weights");
       w->set_optimizer(std::move(opt));

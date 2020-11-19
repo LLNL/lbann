@@ -73,3 +73,6 @@ setup_error_signals_i(int index) const {
 #include "lbann/macros/instantiate_device.hpp"
 
 }// namespace lbann
+
+#define LBANN_LAYER_NAME identity_layer
+#include "lbann/macros/register_layer_with_cereal.hpp"

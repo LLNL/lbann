@@ -85,9 +85,9 @@ public:
        CEREAL_NVP(m_beta2),
        CEREAL_NVP(m_eps),
        CEREAL_NVP(m_current_beta1),
-       CEREAL_NVP(m_current_beta2));
-    // CEREAL_NVP(m_moment1),
-    // CEREAL_NVP(m_moment2));
+       CEREAL_NVP(m_current_beta2),
+       CEREAL_NVP(m_moment1),
+       CEREAL_NVP(m_moment2));
   }
   ///@}
 
@@ -153,6 +153,17 @@ public:
   ///@}
 
 protected:
+
+  /** @brief Default constructor.
+   *  @details This constructor exists as an implementation detail of
+   *  the serialization code. It is not for general use.
+   */
+  adam()
+    : adam(El::To<TensorDataType>(1.f),
+           El::To<TensorDataType>(0.9),
+           El::To<TensorDataType>(0.99),
+           El::To<TensorDataType>(1e-8))
+  {}
 
   /** Computation for an optimization step. */
   void step_compute(AbsDistMatrixType& values,

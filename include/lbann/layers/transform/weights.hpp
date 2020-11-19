@@ -114,7 +114,7 @@ public:
 
     // Initialize default weights if none are provided
     if (!this->has_weights()) {
-      auto w = std::make_shared<WeightsType>(this->get_comm());
+      auto w = std::make_shared<WeightsType>(*this->get_comm());
       auto init = make_unique<constant_initializer<DataType>>(DataType(0));
       auto opt = this->m_model->template create_optimizer<TensorDataType>();
       w->set_name(this->get_name() + "_weights");

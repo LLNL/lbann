@@ -100,7 +100,7 @@ private:
   void setup_default_matrix_distribution();
 
 public:
-  weights(lbann_comm* comm);
+  weights(lbann_comm& comm);
   virtual ~weights() = default;
 
   /** Set weights name.
@@ -112,7 +112,6 @@ public:
   std::string get_name() const { return m_name; }
 
   lbann_comm& get_comm() const {
-    if(m_comm == nullptr) { LBANN_ERROR("weights class has null comm pointer"); }
     return *m_comm;
   }
 
@@ -263,10 +262,34 @@ public:
   /** Write weights to proto file */
   virtual void write_proto(lbann_data::WeightsData* proto) const = 0;
 
+  /** @name Serialization */
+  ///@{
+
+  /** @brief Serialize the weights object to the archive.
+   *  @tparam ArchiveT (Inferred.) The archive type.
+   *  @param ar[in,out] The archive to which to write or from which to
+   *                    read.
+   */
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar)
+  {
+    int frozen = m_frozen;
+    ar(CEREAL_NVP(m_name),
+       CEREAL_NVP(frozen));
+    m_frozen = frozen;
+
+    // What about:
+    //   m_matrix_height_dims
+    //   m_matrix_width_dims
+    //   m_matrix_dist
+  }
+
+  ///@}
+
 protected:
 
-  weights(const weights& other);
-  weights& operator=(const weights& other);
+  weights(const weights& other) = default;
+  weights& operator=(const weights& other) = default;
 
 private:
   virtual void do_augment_description_(description&) const = 0;

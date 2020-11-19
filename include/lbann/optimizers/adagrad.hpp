@@ -71,8 +71,8 @@ public:
   /** Archive for checkpoint and restart */
   template <class Archive> void serialize(Archive & ar) {
     ar(cereal::base_class<data_type_optimizer<TensorDataType>>(this),
-       CEREAL_NVP(m_eps));
-    // CEREAL_NVP(m_cache)
+       CEREAL_NVP(m_eps),
+       CEREAL_NVP(m_cache));
   }
 
   /** Human-readable type name. */
@@ -84,8 +84,18 @@ public:
 
 protected:
 
+  /** @brief Default constructor.
+   *  @details This constructor exists as an implementation detail of
+   *  the serialization code. It is not for general use.
+   */
+  adagrad()
+    : adagrad(El::To<TensorDataType>(1.f),
+              El::To<TensorDataType>(1e-8))
+  {}
+
   /** Computation for an optimization step. */
-  void step_compute(AbsDistMatrixType& values, const AbsDistMatrixType& gradient) override;
+  void step_compute(AbsDistMatrixType& values,
+                    const AbsDistMatrixType& gradient) override;
 
 private:
 
