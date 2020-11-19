@@ -322,7 +322,7 @@ void ExecutableGraph::update(cudaGraph_t graph) {
 
 namespace {
 
-using int4 = cuda::array<int, 4>;
+using int4 = gpu_lib::array<int, 4>;
 
 /**
  *  Block dimensions: bdimx x bdimy x bdimz

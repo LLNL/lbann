@@ -373,11 +373,11 @@ struct atanh_op {
 template <typename TensorDataType>
 struct erf_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
-    return cuda::erf(x);
+    return gpu_lib::erf(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
     const TensorDataType two_rsqrt_pi(1.12837916709551257389);
-    return dy * two_rsqrt_pi * cuda::exp(-x*x);
+    return dy * two_rsqrt_pi * gpu_lib::exp(-x*x);
   }
 };
 
@@ -385,12 +385,12 @@ struct erf_op {
 template <typename TensorDataType>
 struct erfinv_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
-    return cuda::erfinv(x);
+    return gpu_lib::erfinv(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
     const TensorDataType half_sqrt_pi(0.88622692545275801364);
-    const auto& y = cuda::erfinv(x);
-    return dy * half_sqrt_pi * cuda::exp(y*y);
+    const auto& y = gpu_lib::erfinv(x);
+    return dy * half_sqrt_pi * gpu_lib::exp(y*y);
   }
 };
 
