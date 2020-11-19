@@ -194,7 +194,7 @@ protected:
 
     // Accumulate local error signals, if needed
     if (m_input_v->DistData() != gradient_wrt_input.DistData()) {
-      this->m_comm->allreduce(*m_input_v, m_input_v->RedundantComm());
+      this->get_comm()->allreduce(*m_input_v, m_input_v->RedundantComm());
       El::Copy(*m_input_v, gradient_wrt_input);
     }
 
