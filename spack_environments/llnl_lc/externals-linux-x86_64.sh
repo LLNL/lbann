@@ -1,5 +1,9 @@
 #!/bin/sh
 
+if [[ ${GPU_ARCH_VARIANTS} ]]; then
+    GLOBAL_GPU_ARCH_VARIANTS="variants: ${GPU_ARCH_VARIANTS}"
+fi
+
 EXTERNAL_ALL_PACKAGES=$(cat <<EOF
     all:
       providers:
@@ -11,6 +15,7 @@ EXTERNAL_ALL_PACKAGES=$(cat <<EOF
           - openblas threasd=openmp
       buildable: true
       version: []
+      ${GLOBAL_GPU_ARCH_VARIANTS}
 EOF
 )
 
@@ -27,15 +32,15 @@ EXTERNAL_PACKAGES=$(cat <<EOF
     cuda::
       buildable: False
       version:
-      - 10.2.89
+      - 11.1.0
       externals:
-      - spec: cuda@10.2.89 arch=${SPACK_ARCH}
+      - spec: cuda@11.1.0 arch=${SPACK_ARCH}
         modules:
-        - cuda/10.2.89
+        - cuda/11.1.0
     cudnn::
       buildable: true
       version:
-      - 8.0.4.30-10.2-linux-x64
+      - 8.0.4.30-11.1
     gcc::
       buildable: False
       version:

@@ -41,31 +41,9 @@ CENTER=
 # String to identify the default compiler - DON'T use this for picking a compiler
 COMPILER=
 BUILD_SUFFIX=
-if [[ ${SYS} = "Darwin" ]]; then
-    CENTER="osx"
-    COMPILER="clang"
-    BUILD_SUFFIX=llnl.gov
-else
-    CORI=$([[ $(hostname) =~ (cori|cgpu) ]] && echo 1 || echo 0)
-    DOMAINNAME=$(python -c 'import socket; domain = socket.getfqdn().split("."); print(domain[-2] + "." + domain[-1])')
-    if [[ ${CORI} -eq 1 ]]; then
-        CENTER="nersc"
-        # Make sure to purge and setup the modules properly prior to finding the Spack architecture
-        source ${SPACK_ENV_DIR}/${CENTER}/setup_modules.sh
-        BUILD_SUFFIX=nersc.gov
-    elif [[ ${DOMAINNAME} = "ornl.gov" ]]; then
-        CENTER="olcf"
-        BUILD_SUFFIX=${DOMAINNAME}
-        NINJA_NUM_PROCESSES=16 # Don't let OLCF kill build jobs
-    elif [[ ${DOMAINNAME} = "llnl.gov" ]]; then
-        CENTER="llnl_lc"
-        BUILD_SUFFIX=${DOMAINNAME}
-    else
-        CENTER="llnl_lc"
-        BUILD_SUFFIX=llnl.gov
-    fi
-    COMPILER="gnu"
-fi
+# Customize the build based on the center
+source $(dirname ${BASH_SOURCE})/customize_build_env.sh
+set_center_specific_fields 
 
 SPACK_ARCH=$(spack arch)
 SPACK_ARCH_TARGET=$(spack arch -t)
@@ -252,6 +230,13 @@ ${CMD}
 CMD="mkdir -p ${INSTALL_DIR}"
 echo ${CMD}
 ${CMD}
+
+if [[ ${ENABLE_GPUS} == ON ]]; then
+    # Define the CMAEK_GPU_ARCH field
+    GPU_ARCH_FLAGS=
+    set_center_specific_gpu_arch ${CENTER} ${SPACK_ARCH_TARGET}
+    GPU_ARCH_FLAGS="-D CMAKE_CUDA_ARCHITECTURES=${CMAKE_GPU_ARCH}"
+fi
 
 SUPERBUILD="${SUPERBUILD:-cmake_lbann.sh}"
 if [[ ${SYS} = "Darwin" ]]; then

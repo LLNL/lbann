@@ -37,23 +37,9 @@ SPACK_ENV_DIR=${LBANN_HOME}/spack_environments
 
 # Identify the center that we are running at
 CENTER=
-if [[ ${SYS} = "Darwin" ]]; then
-    CENTER="osx"
-else
-    CORI=$([[ $(hostname) =~ (cori|cgpu) ]] && echo 1 || echo 0)
-    DOMAINNAME=$(python -c 'import socket; domain = socket.getfqdn().split("."); print(domain[-2] + "." + domain[-1])')
-    if [[ ${CORI} -eq 1 ]]; then
-        CENTER="nersc"
-        # Make sure to purge and setup the modules properly prior to finding the Spack architecture
-        source ${SPACK_ENV_DIR}/${CENTER}/setup_modules.sh
-    elif [[ ${DOMAINNAME} = "ornl.gov" ]]; then
-        CENTER="olcf"
-    elif [[ ${DOMAINNAME} = "llnl.gov" ]]; then
-        CENTER="llnl_lc"
-    else
-        CENTER="llnl_lc"
-    fi
-fi
+# Customize the build based on the center
+source $(dirname ${BASH_SOURCE})/customize_build_env.sh
+set_center_specific_fields 
 
 SPACK_ARCH=$(spack arch)
 SPACK_ARCH_TARGET=$(spack arch -t)
@@ -75,6 +61,11 @@ SPACK_INSTALL_ARGS=
 BUILD_LBANN_SW_STACK="TRUE"
 MERLIN_PACKAGES=
 DOCS_PACKAGES=
+
+# Define the GPU_ARCH_VARIANTS field
+GPU_ARCH_VARIANTS=
+set_center_specific_gpu_arch ${CENTER} ${SPACK_ARCH_TARGET}
+GPU_VARIANTS+=" ${GPU_ARCH_VARIANTS}"
 
 ################################################################
 # Help message
@@ -279,9 +270,9 @@ fi
 AL_VARIANTS=
 if [[ "${ENABLE_GPUS}" == "ON" ]]; then
 #    CUDA_ARCH="cuda_arch=60,61,62,70"
-    AL_VARIANTS="variants: +cuda +nccl +ht +cuda_rma"
-    HYDROGEN_VARIANTS="${HYDROGEN_VARIANTS} +cuda"
-    DIHYDROGEN_VARIANTS="${DIHYDROGEN_VARIANTS} +cuda +legacy"
+    AL_VARIANTS="variants: ${GPU_VARIANTS} +nccl +ht +cuda_rma"
+    HYDROGEN_VARIANTS="${HYDROGEN_VARIANTS} ${GPU_VARIANTS}"
+    DIHYDROGEN_VARIANTS="${DIHYDROGEN_VARIANTS} ${GPU_VARIANTS} +legacy"
 fi
 
 SPACK_ENV=$(cat <<EOF
