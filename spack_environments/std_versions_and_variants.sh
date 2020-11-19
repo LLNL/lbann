@@ -9,7 +9,7 @@ STD_PACKAGES=$(cat <<EOF
       buildable: true
       variants: ~doc~doxygen+hdf5~hdf5_compat+mpi+python+shared~silo
       version:
-        - 0.5.1
+        - master
     cnpy::
       buildable: true
       variants: build_type=RelWithDebInfo

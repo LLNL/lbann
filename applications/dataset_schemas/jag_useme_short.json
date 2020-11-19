@@ -1,4 +1,22 @@
 {
+    "lbann_metadata":
+    {
+      "pack":
+      {
+        "datum": 
+        {
+          "inputs": {},
+          "scalars": {},
+          "images": {}
+        },
+        "label" :
+        {
+        },
+        "response" :
+        {
+        }
+      }
+    },
     "inputs": 
     {
       "shape_model_initial_modes:(4,3)": {},

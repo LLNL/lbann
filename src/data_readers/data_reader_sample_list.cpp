@@ -141,6 +141,9 @@ void data_reader_sample_list::open_file(
   sample_file_id_t id = s.first;
   m_sample_list.open_samples_file_handle(index_in, true);
   file_handle_out = m_sample_list.get_samples_file_handle(id);
+  if (!m_sample_list.is_file_handle_valid(file_handle_out)) {
+    LBANN_ERROR("file handle is invalid");
+  }
 }
 
 void data_reader_sample_list::close_file(size_t index) {
