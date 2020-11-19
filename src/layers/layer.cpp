@@ -48,8 +48,7 @@
 namespace lbann {
 
 Layer::Layer(lbann_comm *comm)
-  : m_comm(comm),
-    m_frozen(false) {
+  : m_frozen(false) {
 
   // Initialize layer name
   static int num_layers = 0;
@@ -62,7 +61,6 @@ Layer::Layer(lbann_comm *comm)
 }
 
 Layer::Layer(const Layer& other) :
-  m_comm(other.m_comm),
   m_expected_num_parent_layers(other.m_expected_num_parent_layers),
   m_expected_num_child_layers(other.m_expected_num_child_layers),
   m_model(other.m_model),
@@ -83,7 +81,6 @@ Layer::Layer(const Layer& other) :
 Layer& Layer::operator=(const Layer& other) {
 
   // Shallow copies
-  m_comm = other.m_comm;
   m_expected_num_parent_layers = other.m_expected_num_parent_layers;
   m_expected_num_child_layers = other.m_expected_num_child_layers;
   m_model = other.m_model;
@@ -206,6 +203,16 @@ description Layer::get_description() const {
   }
 
   return desc;
+}
+
+lbann_comm* Layer::get_comm() const {
+  if (m_model == nullptr) {
+    LBANN_ERROR(
+      "attempted to get communicator from ",
+      get_type()," layer \"",get_name(),"\" ",
+      "before it was configured");
+  }
+  return m_model->get_comm();
 }
 
 bool Layer::update() {
@@ -380,7 +387,7 @@ bool Layer::is_frozen() const {
 void Layer::setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata) {
   setup_pointers();
   setup_dims(dr_metadata);
-  setup_matrices(m_comm->get_trainer_grid());
+  setup_matrices(get_comm()->get_trainer_grid());
 #ifdef LBANN_HAS_DISTCONV
   prepare_distconv(dr_metadata);
 #endif // LBANN_HAS_DISTCONV

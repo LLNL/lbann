@@ -207,6 +207,7 @@ class Layer {
 
 public:
 
+  /// @todo Remove lbann_comm* argument
   Layer(lbann_comm *comm);
   Layer(const Layer& other);
   Layer& operator=(const Layer& other);
@@ -428,7 +429,7 @@ public:
 
 
   /** Get reference to LBANN communicator. */
-  lbann_comm* get_comm() const { return m_comm; }
+  lbann_comm* get_comm() const;
 
   // ===========================================================
   // Hint layer access functions
@@ -600,9 +601,6 @@ protected:
   // ===========================================================
   // Protected class members
   // ===========================================================
-
-  /** Reference to LBANN communicator. */
-  lbann_comm *m_comm;
 
   /** Expected number of parent layers.
    *  A negative value indicates no limit.
