@@ -25,7 +25,7 @@ Publications about or related to using LBANN:
   on Parallel and Distributed Computing Techniques for AI, ML and DL
   in Transactions on Parallel and Distributed Systems, July 2020.
 
-  + `arXiv.org link <https://arxiv.org/abs/2007.12856>`_
+  + `arXiv.org/abs/2007.12856 <https://arxiv.org/abs/2007.12856>`_
 
 + Nikoli Dryden, Naoya Maruyama, Tom Benson, Tim Moon, Marc Snir,
   Brian Van Essen. `"Channel and Filter Parallelism for Large-Scale
@@ -49,7 +49,7 @@ Publications about or related to using LBANN:
   `10.1109/CLUSTER.2019.8891012 <https://doi.org/10.1109/CLUSTER.2019.8891012>`_.
 
   + :doc:`BibTex <bib/Jacobs2019>`
-  + `arXiv.org link <https://arxiv.org/abs/1910.02270>`_
+  + `arXiv.org/abs/1910.02270 <https://arxiv.org/abs/1910.02270>`_
 
 + Shusen Liu, Di Wang, Dan Maljovec, Rushil Anirudh,
   Jayaraman J. Thiagarajan, Sam Ade Jacobs, Brian C. Van Essen, David
@@ -61,7 +61,7 @@ Publications about or related to using LBANN:
   on Visualization and Computer Graphics*, 2019.
 
   + :doc:`BibTex <bib/Liu2019>`
-  + `arXiv.org link <https://arxiv.org/abs/1907.08325>`_
+  + `arXiv.org/abs/1907.08325 <https://arxiv.org/abs/1907.08325>`_
 
 + Nikoli Dryden, Naoya Maruyama, Tom Benson, Tim Moon, Marc Snir,
   Brian Van Essen. `"Improving Strong-Scaling of CNN Training by
@@ -71,7 +71,7 @@ Publications about or related to using LBANN:
   <http://www.ipdps.org/ipdps2019/2019-advance-program.html>`_, 2019.
 
   + :doc:`BibTex <bib/Dryden2019spatial>`
-  + `arXiv.org link <https://arxiv.org/abs/1903.06681>`_
+  + `arXiv.org/abs/1903.06681 <https://arxiv.org/abs/1903.06681>`_
 
 + Nikoli Dryden, Naoya Maruyama, Tim Moon, Tom Benson, Andy Yoo, Marc
   Snir, Brian Van Essen. `"Aluminum: An Asynchronous, GPU-Aware
