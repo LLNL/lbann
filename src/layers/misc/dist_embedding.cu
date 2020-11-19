@@ -42,13 +42,24 @@ using VectorMetadata = typename dist_embedding_layer<T,data_layout::DATA_PARALLE
 
 /** Copy between two device buffers, using all threads in a warp. */
 template <typename T> __device__ __forceinline__
-T* memcpy_warp(T* __restrict__ dest, const T* __restrict__ src, size_t n) {
-  constexpr size_t warp_size = 32;
-  for (size_t i = threadIdx.x; i < n; i += warp_size) {
+T* memcpy_warp(T* __restrict__ dest, const T* __restrict__ src, int n) {
+  constexpr int warp_size = 32;
+  for (int i = threadIdx.x; i < n; i += warp_size) {
     dest[i] = src[i];
   }
   __syncwarp();
   return dest;
+}
+
+/** Set device buffer, using all threads in a warp. */
+template <typename T> __device__ __forceinline__
+T* memset_warp(T* buf, T val, int n) {
+  constexpr int warp_size = 32;
+  for (int i = threadIdx.x; i < n; i += warp_size) {
+    buf[i] = val;
+  }
+  __syncwarp();
+  return buf;
 }
 
 /** See El::AbstractDistMatrix::ColOwner. */
@@ -73,31 +84,6 @@ size_t distmat_local_index(size_t global_index, size_t rank, size_t align, size_
   else {
     return 0;
   }
-}
-
-/** Launch a CUDA kernel.
- *
- *  @todo Check that argument types match kernel signature.
- */
-template <typename Kernel, typename... Args>
-inline void launch_cuda_kernel(
-  const Kernel& kernel,
-  dim3 grid_dims,
-  dim3 block_dims,
-  size_t shared_mem,
-  cudaStream_t stream,
-  Args... args) {
-  void* arg_list[] = {
-    const_cast<void*>(reinterpret_cast<const void*>(&args))...
-  };
-  CHECK_CUDA(
-    cudaLaunchKernel(
-      reinterpret_cast<const void*>(&kernel),
-      grid_dims,
-      block_dims,
-      arg_list,
-      shared_mem,
-      stream));
 }
 
 /** Launch a collective NVSHMEM kernel.
@@ -221,6 +207,7 @@ namespace
  */
 template <typename T>
 __global__ void request_embeddings_kernel(
+  size_t num_embeddings,
   size_t embedding_dim,
   Size2 input_dims,
   const T* __restrict__ input,
@@ -252,27 +239,39 @@ __global__ void request_embeddings_kernel(
 
       // Get embedding vector index
       const auto& global_index_float = input[i*input_strides[1] + j*input_strides[0]];
-      const auto& global_index = static_cast<size_t>(gpu_lib::floor(global_index_float));
+      const El::Int global_index = static_cast<El::Int>(gpu_lib::floor(global_index_float));
 
       // Figure out which process owns embedding vector
       __shared__ unsigned char metadata_shared[sizeof(VectorMetadata<T>)];
       auto& m = *reinterpret_cast<VectorMetadata<T>*>(metadata_shared);
       if (threadIdx.x == 0) {
-        m.source_rank = distmat_index_owner(global_index, embeddings_rowalign, embeddings_rowstride);
-        m.source_index = distmat_local_index(global_index, m.source_rank, embeddings_rowalign, embeddings_rowstride);
+        m = VectorMetadata<T>();
         m.target_rank = rank;
         m.target_index = i + global_j*input_dims[1];
-        m.is_active = true;
+        if (0 <= global_index
+            && global_index < static_cast<El::Int>(num_embeddings)) {
+          m.source_rank = distmat_index_owner(global_index, embeddings_rowalign, embeddings_rowstride);
+          m.source_index = distmat_local_index(global_index, m.source_rank, embeddings_rowalign, embeddings_rowstride);
+          m.is_active = true;
+        }
         metadata[i*metadata_strides[1] + global_j*metadata_strides[0]] = m;
       }
       __syncwarp();
 
       // Get embedding vector from owner process
-      nvshmemx_getmem_nbi_warp(
-        &workspace[m.target_index * workspace_strides[0]],
-        &embeddings[m.source_index * embeddings_strides[0]],
-        embedding_dim*sizeof(T),
-        m.source_rank);
+      if (m.is_active) {
+        nvshmemx_getmem_nbi_warp(
+          &workspace[m.target_index * workspace_strides[0]],
+          &embeddings[m.source_index * embeddings_strides[0]],
+          embedding_dim*sizeof(T),
+          m.source_rank);
+      }
+      else {
+        memset_warp(
+          &workspace[m.target_index * workspace_strides[0]],
+          T{0},
+          embedding_dim);
+      }
 
     }
   }
@@ -341,7 +340,11 @@ void dist_embedding_layer<TensorDataType,Layout,Device>::fp_compute() {
   const size_t local_mini_batch_size = local_input.Width();
 
   // GPU objects
-  auto&& stream = hydrogen::cuda::GetDefaultStream();
+  auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_output),
+                                     gpu::get_sync_info(local_input),
+                                     gpu::get_sync_info(embeddings));
+  const El::SyncInfo<El::Device::GPU>& sync_info = multisync;
+  auto&& stream = sync_info.Stream();
   nvshmem::initialize();
 
   // Barrier to handle gradient checking
@@ -374,6 +377,7 @@ void dist_embedding_layer<TensorDataType,Layout,Device>::fp_compute() {
     m_metadata_buffer = nvshmem::realloc(m_metadata_buffer,
                                          m_metadata_buffer_size);
   }
+  /// @todo Use generic GPU API
   CHECK_CUDA(
     cudaMemsetAsync(
       m_metadata_buffer,
@@ -389,12 +393,10 @@ void dist_embedding_layer<TensorDataType,Layout,Device>::fp_compute() {
     block_dims.x = block_size;
     grid_dims.x = input_size;
     grid_dims.y = local_mini_batch_size;
-    launch_cuda_kernel(
+    hydrogen::gpu::LaunchKernel(
       request_embeddings_kernel<TensorDataType>,
-      grid_dims,
-      block_dims,
-      0,
-      stream,
+      grid_dims, block_dims, 0, multisync,
+      m_num_embeddings,
       m_embedding_dim,
       Size2{local_mini_batch_size, input_size},
       local_input.LockedBuffer(),
@@ -405,11 +407,11 @@ void dist_embedding_layer<TensorDataType,Layout,Device>::fp_compute() {
       Size2{input_size, 1},
       workspace.Buffer(),
       Size2{size_t(workspace.LDim()), 1},
-      size_t(rank),
-      size_t(input.RowShift()),
-      size_t(input.RowStride()),
-      size_t(embeddings.RowAlign()),
-      size_t(embeddings.RowStride()));
+      rank,
+      input.RowShift(),
+      input.RowStride(),
+      embeddings.RowAlign(),
+      embeddings.RowStride());
   }
   nvshmemx_quiet_on_stream(stream);
 
@@ -420,12 +422,9 @@ void dist_embedding_layer<TensorDataType,Layout,Device>::fp_compute() {
     block_dims.x = block_size;
     grid_dims.x = input_size;
     grid_dims.y = local_mini_batch_size;
-    launch_cuda_kernel(
+    hydrogen::gpu::LaunchKernel(
       copy_embeddings_kernel<TensorDataType>,
-      grid_dims,
-      block_dims,
-      0,
-      stream,
+      grid_dims, block_dims, 0, multisync,
       m_embedding_dim,
       Size2{local_mini_batch_size, input_size},
       m_metadata_buffer,
@@ -434,8 +433,8 @@ void dist_embedding_layer<TensorDataType,Layout,Device>::fp_compute() {
       Size2{size_t(workspace.LDim()), 1},
       local_output.Buffer(),
       Size2{size_t(local_output.LDim()), 1},
-      size_t(input.RowShift()),
-      size_t(input.RowStride()));
+      input.RowShift(),
+      input.RowStride());
   }
 
   // Non-blocking barrier
@@ -486,22 +485,24 @@ __global__ void send_gradients_kernel(
     for (size_t i = i_start; i < i_end; ++i) {
       const auto& global_j = distmat_global_index(j, input_rowshift, input_rowstride);
       auto& m = metadata[i*metadata_strides[1] + global_j*metadata_strides[0]];
-      auto* workspace_ptr = &workspace[m.target_index * workspace_strides[0]];
-      memcpy_warp(
-        workspace_ptr,
-        &output_grad[i*embedding_dim + j*output_grad_strides[0]],
-        embedding_dim);
-      if (m.source_rank != m.target_rank) {
-        nvshmemx_putmem_nbi_warp(
+      if (m.is_active) {
+        auto* workspace_ptr = &workspace[m.target_index * workspace_strides[0]];
+        memcpy_warp(
           workspace_ptr,
-          workspace_ptr,
-          embedding_dim*sizeof(T),
-          m.source_rank);
-        nvshmemx_putmem_nbi_warp(
-          &m,
-          &m,
-          sizeof(VectorMetadata<T>),
-          m.source_rank);
+          &output_grad[i*embedding_dim + j*output_grad_strides[0]],
+          embedding_dim);
+        if (m.source_rank != m.target_rank) {
+          nvshmemx_putmem_nbi_warp(
+            workspace_ptr,
+            workspace_ptr,
+            embedding_dim*sizeof(T),
+            m.source_rank);
+          nvshmemx_putmem_nbi_warp(
+            &m,
+            &m,
+            sizeof(VectorMetadata<T>),
+            m.source_rank);
+        }
       }
     }
   }
@@ -523,7 +524,10 @@ void dist_embedding_layer<TensorDataType,Layout,Device>::bp_compute() {
   const size_t local_mini_batch_size = local_output_grad.Width();
 
   // GPU objects
-  auto&& stream = hydrogen::cuda::GetDefaultStream();
+  auto multisync = El::MakeMultiSync(gpu::get_sync_info(input),
+                                     gpu::get_sync_info(local_output_grad));
+  const El::SyncInfo<El::Device::GPU>& sync_info = multisync;
+  auto&& stream = sync_info.Stream();
 
   // Synchronize non-blocking barrier
   // Note: Make sure NVSHMEM workspaces are ready to recieve gradients.
@@ -544,12 +548,9 @@ void dist_embedding_layer<TensorDataType,Layout,Device>::bp_compute() {
     block_dims.x = block_size;
     grid_dims.x = input_size;
     grid_dims.y = local_mini_batch_size;
-    launch_cuda_kernel(
+    hydrogen::gpu::LaunchKernel(
       send_gradients_kernel<TensorDataType>,
-      grid_dims,
-      block_dims,
-      0,
-      stream,
+      grid_dims, block_dims, 0, multisync,
       m_embedding_dim,
       Size2{local_mini_batch_size, input_size},
       local_output_grad.LockedBuffer(),
@@ -558,8 +559,8 @@ void dist_embedding_layer<TensorDataType,Layout,Device>::bp_compute() {
       Size2{input_size, 1},
       workspace.Buffer(),
       Size2{size_t(workspace.LDim()), 1},
-      size_t(input.RowShift()),
-      size_t(input.RowStride()));
+      input.RowShift(),
+      input.RowStride());
   }
   nvshmemx_quiet_on_stream(stream);
 
@@ -653,7 +654,7 @@ void dist_embedding_layer<TensorDataType,Layout,Device>::apply_sparse_sgd_step(
   LocalMat& local_embeddings) {
 
   // GPU objects
-  auto&& stream = hydrogen::cuda::GetDefaultStream();
+  auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_embeddings));
 
   // Synchronize non-blocking barrier
   // Note: Make sure gradients have been received.
@@ -671,12 +672,9 @@ void dist_embedding_layer<TensorDataType,Layout,Device>::apply_sparse_sgd_step(
   const size_t rank = comm.get_rank_in_trainer();
   constexpr size_t block_size = 32;
   const size_t grid_size = num_gradients;
-  launch_cuda_kernel(
+  hydrogen::gpu::LaunchKernel(
     sgd_kernel<TensorDataType>,
-    grid_size,
-    block_size,
-    0,
-    stream,
+    grid_size, block_size, 0, multisync,
     m_learning_rate,
     m_embedding_dim,
     num_gradients,
