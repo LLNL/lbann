@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYER_REGULARIZER_SELU_DROPOUT_HPP_INCLUDED
 #define LBANN_LAYER_REGULARIZER_SELU_DROPOUT_HPP_INCLUDED
 
-#include "lbann/layers/regularizers/regularizer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 #include "lbann/models/model.hpp"
 
 namespace lbann {
@@ -41,7 +41,7 @@ namespace lbann {
  *  Neural Information Processing Systems, pp. 971-980. 2017.
  */
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-class selu_dropout : public regularizer_layer<TensorDataType> {
+class selu_dropout : public data_type_layer<TensorDataType> {
 public:
   /** @name Public Types */
   ///@{
@@ -60,7 +60,7 @@ public:
                TensorDataType keep_prob = TensorDataType(0.95f),
                TensorDataType alpha = TensorDataType(1.6732632423543772848170429916717),
                TensorDataType scale = TensorDataType(1.0507009873554804934193349852946)) :
-    regularizer_layer<TensorDataType>(comm),
+    data_type_layer<TensorDataType>(comm),
     m_keep_prob(keep_prob),
     m_mask(nullptr) {
 #ifdef LBANN_DETERMINISTIC
@@ -75,7 +75,7 @@ public:
   }
 
   selu_dropout(const selu_dropout& other) :
-    regularizer_layer<TensorDataType>(other),
+    data_type_layer<TensorDataType>(other),
     m_alpha_prime(other.m_alpha_prime),
     m_a(other.m_a),
     m_b(other.m_b),
@@ -85,7 +85,7 @@ public:
   }
 
   selu_dropout& operator=(const selu_dropout& other) {
-    regularizer_layer<TensorDataType>::operator=(other);
+    data_type_layer<TensorDataType>::operator=(other);
     m_alpha_prime = other.m_alpha_prime;
     m_a = other.m_a;
     m_b = other.m_b;
@@ -109,12 +109,12 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
   void setup_dims(DataReaderMetaData& dr_metadata) override {
-    regularizer_layer<TensorDataType>::setup_dims(dr_metadata);
+    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims(this->get_input_dims());
   }
 
   void setup_matrices(const El::Grid& grid) override {
-    regularizer_layer<TensorDataType>::setup_matrices(grid);
+    data_type_layer<TensorDataType>::setup_matrices(grid);
     if (m_mask != nullptr) { delete m_mask; }
     m_mask = this->get_activations().Copy();
   }

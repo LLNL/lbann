@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYER_SUM_HPP_INCLUDED
 #define LBANN_LAYER_SUM_HPP_INCLUDED
 
-#include "lbann/layers/transform/transform.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/distconv.hpp"
 
@@ -48,11 +48,11 @@ class sum_distconv_adapter: public data_type_distconv_adapter<TensorDataType> {
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class sum_layer : public transform_layer<TensorDataType> {
+class sum_layer : public data_type_layer<TensorDataType> {
 public:
 
   sum_layer(lbann_comm *comm)
-    : transform_layer<TensorDataType>(comm) {
+    : data_type_layer<TensorDataType>(comm) {
     this->m_expected_num_parent_layers = -1; // No limit on parents
   }
 
@@ -64,7 +64,7 @@ public:
 protected:
 
   void setup_pointers() override {
-    transform_layer<TensorDataType>::setup_pointers();
+    data_type_layer<TensorDataType>::setup_pointers();
     if (this->get_num_parents() < 1) {
       std::stringstream err;
       err << get_type() << " layer \"" << this->get_name() << "\" "
@@ -74,7 +74,7 @@ protected:
   }
 
   void setup_dims(DataReaderMetaData& dr_metadata) override {
-    transform_layer<TensorDataType>::setup_dims(dr_metadata);
+    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims(this->get_input_dims());
 
     // Check that input dimensions match

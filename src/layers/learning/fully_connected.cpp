@@ -44,7 +44,7 @@ fully_connected_layer<TensorDataType, T_layout, Dev>::fully_connected_layer(
   bool transpose,
   WeightsType* weight,
   bool has_bias)
-  : learning_layer<TensorDataType>(comm),
+  : data_type_layer<TensorDataType>(comm),
   m_bias_gradient(nullptr),
   m_transpose(transpose) {
 
@@ -60,7 +60,7 @@ fully_connected_layer<TensorDataType, T_layout, Dev>::fully_connected_layer(
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 fully_connected_layer<TensorDataType, T_layout, Dev>::fully_connected_layer(
   const fully_connected_layer& other)
-  : learning_layer<TensorDataType>(other),
+  : data_type_layer<TensorDataType>(other),
   m_bias_scaling_factor(other.m_bias_scaling_factor),
   m_transpose(other.m_transpose) {
 
@@ -74,7 +74,7 @@ fully_connected_layer<TensorDataType, T_layout, Dev>::fully_connected_layer(
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 auto fully_connected_layer<TensorDataType, T_layout, Dev>::operator=(
   const fully_connected_layer& other) -> fully_connected_layer& {
-  learning_layer<TensorDataType>::operator=(other);
+  data_type_layer<TensorDataType>::operator=(other);
   m_bias_scaling_factor = other.m_bias_scaling_factor;
   m_transpose = other.m_transpose;
 
@@ -96,7 +96,7 @@ fully_connected_layer<TensorDataType, T_layout, Dev>::~fully_connected_layer() {
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 description
 fully_connected_layer<TensorDataType, T_layout, Dev>::get_description() const {
-  auto desc = learning_layer<TensorDataType>::get_description();
+  auto desc = data_type_layer<TensorDataType>::get_description();
   const auto& bias_str = (m_bias_scaling_factor == El::TypeTraits<TensorDataType>::Zero()
                           ? "disabled"
                           : "enabled");
@@ -107,7 +107,7 @@ fully_connected_layer<TensorDataType, T_layout, Dev>::get_description() const {
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void fully_connected_layer<TensorDataType, T_layout, Dev>
 ::setup_matrices(const El::Grid& grid) {
-  learning_layer<TensorDataType>::setup_matrices(grid);
+  data_type_layer<TensorDataType>::setup_matrices(grid);
   deallocate_matrices();
   if(Dev == El::Device::CPU) {
     if(T_layout == data_layout::MODEL_PARALLEL) {
@@ -131,7 +131,7 @@ void fully_connected_layer<TensorDataType, T_layout, Dev>
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void fully_connected_layer<TensorDataType, T_layout, Dev>
 ::setup_data(size_t max_mini_batch_size) {
-  learning_layer<TensorDataType>::setup_data(max_mini_batch_size);
+  data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
 
   // Initialize default weights if none are provided
   if (this->num_weights() > 2) {
