@@ -31,6 +31,7 @@
 
 namespace lbann {
 namespace gpu_lib {
+
 #if defined LBANN_HAS_CUDA
   using namespace cuda;
 #elif defined LBANN_HAS_ROCM
@@ -40,6 +41,7 @@ namespace gpu_lib {
 // -------------------------------------------------------------
 // Device functions
 // -------------------------------------------------------------
+
 #if defined __CUDACC__ || defined __HIPCC__
 
 // Atomic add

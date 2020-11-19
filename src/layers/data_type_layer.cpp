@@ -89,14 +89,6 @@ data_type_layer<TensorDataType>& data_type_layer<TensorDataType>::operator=(cons
 }
 
 template <typename TensorDataType>
-void data_type_layer<TensorDataType>::setup_weights(size_t idx, weights& w) {
-  if (idx >= m_weights_proxy.size()) {
-    m_weights_proxy.resize(idx+1);
-  }
-  m_weights_proxy[idx].setup(w);
-}
-
-template <typename TensorDataType>
 void data_type_layer<TensorDataType>::forward_prop() {
   const auto fp_start = get_time();
 
@@ -105,9 +97,9 @@ void data_type_layer<TensorDataType>::forward_prop() {
     if ((m_weights_proxy.size() == 0) || m_weights_proxy[0].empty()) {
       auto const num_weights = this->num_weights();
       m_weights_proxy.resize(num_weights);
+      const auto ptrs = this->get_weights_pointers();
       for (size_t ii = 0; ii < num_weights; ++ii) {
-        auto& w = this->get_weights(ii);
-        m_weights_proxy[ii].setup(w);
+        m_weights_proxy[ii].setup(ptrs[ii]);
       }
     }
     for (auto& wp : m_weights_proxy)

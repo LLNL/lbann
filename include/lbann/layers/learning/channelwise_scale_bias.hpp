@@ -146,7 +146,7 @@ void channelwise_scale_bias_layer<TensorDataType, Layout, Dev>
   // Construct default weights if needed
   // Note: Scale is initialized to 1 and bias to 0
   if (!this->has_weights()) {
-    auto w = make_unique<WeightsType>(this->get_comm());
+    auto w = std::make_shared<WeightsType>(this->get_comm());
     std::vector<TensorDataType> vals(2*num_channels,
                                      El::TypeTraits<TensorDataType>::Zero());
     std::fill(vals.begin(), vals.begin()+num_channels,
@@ -156,7 +156,7 @@ void channelwise_scale_bias_layer<TensorDataType, Layout, Dev>
     w->set_name(this->get_name() + "_weights");
     w->set_initializer(std::move(init));
     w->set_optimizer(std::move(opt));
-    this->add_weights(w.get());
+    this->add_weights(w);
     this->m_model->add_weights(std::move(w));
   }
   if (this->num_weights() != 1) {

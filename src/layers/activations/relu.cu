@@ -36,7 +36,7 @@ namespace {
 template <typename TensorDataType>
 struct op {
   inline __device__ TensorDataType operator()(TensorDataType x) const {
-    return x > TensorDataType{0} ? x : TensorDataType{0};
+    return x > TensorDataType{0.f} ? x : TensorDataType{0.f};
   }
 };
 
@@ -48,7 +48,7 @@ struct op {
 template <typename TensorDataType>
 struct op_backprop {
   inline __device__ TensorDataType operator()(TensorDataType x, TensorDataType dy) const {
-    return x > TensorDataType{0} ? dy : TensorDataType{0};
+    return x > TensorDataType{0.f} ? dy : TensorDataType{0.f};
   }
 };
 
@@ -56,17 +56,17 @@ struct op_backprop {
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void fp_compute_distconv(relu_distconv_adapter<TensorDataType, Layout, Device> &dc) {
   assert_always(Layout == data_layout::DATA_PARALLEL);
-  dc.m_relu->forward(TensorDataType{1}, dc.get_prev_activations(),
-                     TensorDataType{0}, dc.get_activations());
+  dc.m_relu->forward(TensorDataType{1.f}, dc.get_prev_activations(),
+                     TensorDataType{0.f}, dc.get_activations());
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void bp_compute_distconv(relu_distconv_adapter<TensorDataType, Layout, Device> &dc) {
   assert_always(Layout == data_layout::DATA_PARALLEL);
-  dc.m_relu->backward(TensorDataType{1}, dc.get_activations(),
+  dc.m_relu->backward(TensorDataType{1.f}, dc.get_activations(),
                       dc.get_prev_error_signals(),
                       dc.get_prev_activations(),
-                      TensorDataType{0}, dc.get_error_signals());
+                      TensorDataType{0.f}, dc.get_error_signals());
 }
 #endif // LBANN_HAS_DISTCONV
 } // namespace

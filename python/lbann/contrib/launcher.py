@@ -49,16 +49,22 @@ _center = 'unknown'
 launcher = lbann.launcher
 if is_lc_center():
     _center = 'lc'
-    import lbann.contrib.lc.launcher
-    launcher = lbann.contrib.lc.launcher
+    import lbann.contrib.lc.systems
+    if lbann.contrib.lc.systems.is_lc_system():
+        import lbann.contrib.lc.launcher
+        launcher = lbann.contrib.lc.launcher
 elif is_nersc_center():
     _center = 'nersc'
-    import lbann.contrib.nersc.launcher
-    launcher = lbann.contrib.nersc.launcher
+    import lbann.contrib.nersc.systems
+    if lbann.contrib.nersc.systems.is_nersc_system():
+        import lbann.contrib.nersc.launcher
+        launcher = lbann.contrib.nersc.launcher
 elif is_olcf_center():
     _center = 'olcf'
-    import lbann.contrib.olcf.launcher
-    launcher = lbann.contrib.olcf.launcher
+    import lbann.contrib.olcf.systems
+    if lbann.contrib.olcf.systems.is_olcf_system():
+        import lbann.contrib.olcf.launcher
+        launcher = lbann.contrib.olcf.launcher
 
 def compute_center():
     """Name of organization that operates current system."""

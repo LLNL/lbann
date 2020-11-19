@@ -27,7 +27,6 @@
 #ifndef LBANN_LAYER_REGULARIZER_DROPOUT_HPP_INCLUDED
 #define LBANN_LAYER_REGULARIZER_DROPOUT_HPP_INCLUDED
 
-#include "lbann/layers/regularizers/regularizer.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/cudnn.hpp"
 #include "lbann/utils/random_number_generators.hpp"
@@ -47,7 +46,7 @@ namespace lbann {
  *  Learning Research 15, no. 1 (2014): 1929-1958.
  */
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-class dropout : public regularizer_layer<TensorDataType> {
+class dropout : public data_type_layer<TensorDataType> {
 public:
   /** @name Public Types */
   ///@{
@@ -61,7 +60,7 @@ public:
   /** Keep units with probabiliy keep_prob. */
   dropout(lbann_comm *comm,
           EvalType keep_prob = EvalType(0.5))
-    : regularizer_layer<TensorDataType>(comm),
+    : data_type_layer<TensorDataType>(comm),
       m_keep_prob(keep_prob)
 #ifdef LBANN_HAS_CUDNN
     , m_tensors_cudnn_desc(this)
@@ -77,7 +76,7 @@ public:
   }
 
   dropout(const dropout& other)
-    : regularizer_layer<TensorDataType>(other),
+    : data_type_layer<TensorDataType>(other),
       m_keep_prob(other.m_keep_prob),
       m_mask(other.m_mask ? other.m_mask->Copy() : nullptr)
 #ifdef LBANN_HAS_CUDNN
@@ -96,7 +95,7 @@ public:
   }
 
   dropout& operator=(const dropout& other) {
-    regularizer_layer<TensorDataType>::operator=(other);
+    data_type_layer<TensorDataType>::operator=(other);
     m_keep_prob = other.m_keep_prob;
     m_mask = other.m_mask ? std::unique_ptr<AbsDistMatrixType>(other.m_mask->Copy()) : nullptr;
 #ifdef LBANN_HAS_CUDNN
@@ -119,7 +118,7 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
   description get_description() const override {
-    auto desc = regularizer_layer<TensorDataType>::get_description();
+    auto desc = data_type_layer<TensorDataType>::get_description();
     desc.add("Keep probability", m_keep_prob);
     return desc;
   }
@@ -135,17 +134,17 @@ public:
 protected:
 
   void setup_dims(DataReaderMetaData& dr_metadata) override {
-    regularizer_layer<TensorDataType>::setup_dims(dr_metadata);
+    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims(this->get_input_dims());
   }
 
   void setup_matrices(const El::Grid& grid) override {
-    regularizer_layer<TensorDataType>::setup_matrices(grid);
+    data_type_layer<TensorDataType>::setup_matrices(grid);
     m_mask = std::unique_ptr<AbsDistMatrixType>(this->get_activations().Copy());
   }
 
   void setup_gpu() override {
-    regularizer_layer<TensorDataType>::setup_gpu();
+    data_type_layer<TensorDataType>::setup_gpu();
 #ifndef LBANN_HAS_CUDNN
     LBANN_ERROR("cuDNN not detected");
 #else

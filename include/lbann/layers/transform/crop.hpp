@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYER_CROP_HPP_INCLUDED
 #define LBANN_LAYER_CROP_HPP_INCLUDED
 
-#include "lbann/layers/transform/transform.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 #include "lbann/utils/exception.hpp"
 
 namespace lbann {
@@ -43,7 +43,7 @@ namespace lbann {
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class crop_layer : public transform_layer<TensorDataType> {
+class crop_layer : public data_type_layer<TensorDataType> {
   static_assert(T_layout == data_layout::DATA_PARALLEL,
                 "crop layer only supports DATA_PARALLEL");
 #ifdef LBANN_HAS_GPU_FP16
@@ -64,13 +64,13 @@ public:
 
   crop_layer(lbann_comm *comm,
              std::vector<int> dims)
-    : transform_layer<TensorDataType>(comm) {
+    : data_type_layer<TensorDataType>(comm) {
     this->set_output_dims(dims);
     this->m_expected_num_parent_layers = 2;
   }
 
   crop_layer(const crop_layer& other)
-    : transform_layer<TensorDataType>(other),
+    : data_type_layer<TensorDataType>(other),
       m_input_v(other.m_input_v ?
                 other.m_input_v->Copy() : nullptr),
       m_output_v(other.m_output_v ?
@@ -78,7 +78,7 @@ public:
       m_crop_pos_v(other.m_crop_pos_v ?
                    other.m_crop_pos_v->Copy() : nullptr){}
   crop_layer& operator=(const crop_layer& other) {
-    transform_layer<TensorDataType>::operator=(other);
+    data_type_layer<TensorDataType>::operator=(other);
     m_input_v.reset(other.m_input_v ?
                     other.m_input_v->Copy() : nullptr);
     m_output_v.reset(other.m_output_v ?
@@ -94,7 +94,7 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
   void setup_matrices(const El::Grid& grid) override {
-    transform_layer<TensorDataType>::setup_matrices(grid);
+    data_type_layer<TensorDataType>::setup_matrices(grid);
     const auto& input = this->get_prev_activations();
     const auto& dist = input.DistData();
     m_input_v.reset(input.Construct(input.Grid(), input.Root()));
@@ -112,7 +112,7 @@ public:
   }
 
   void setup_dims(DataReaderMetaData& dr_metadata) override {
-    transform_layer<TensorDataType>::setup_dims(dr_metadata);
+    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     std::stringstream err;
 
     // Make sure input tensors have valid dimensions

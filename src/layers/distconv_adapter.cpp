@@ -214,7 +214,7 @@ void distconv_adapter::adjust_parallel_strategy() {
       ps.depth_groups : 1;
   auto h = ps.height_groups != 0 ? ps.height_groups : 1;
   auto w = ps.width_groups != 0 ? ps.width_groups : 1;
-  auto np = layer().m_comm->get_procs_per_trainer();
+  auto np = layer().get_comm()->get_procs_per_trainer();
 
   const auto spatial_prod = d * h * w;
 

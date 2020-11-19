@@ -91,13 +91,11 @@ model::model(const model& other) :
   m_objective_function = (other.m_objective_function
                           ? make_unique<objective_function>(*other.m_objective_function)
                           : nullptr);
-  m_metrics = other.m_metrics;
-  m_callbacks = other.m_callbacks;
-  for (auto& m : m_metrics) {
-    m = m->copy();
+  for (const auto& m : other.m_metrics) {
+    m_metrics.emplace_back(m ? m->copy() : nullptr);
   }
-  for (auto& cb : m_callbacks) {
-    cb.reset(cb->copy());
+  for (const auto& cb : other.m_callbacks) {
+    m_callbacks.emplace_back(cb ? cb->copy() : nullptr);
   }
 
   // Copy layers
@@ -114,15 +112,15 @@ model::model(const model& other) :
   }
 
   // Copy weights
-  std::unordered_map<weights*,weights*> weights_map;
+  std::unordered_map<weights*,ViewingWeightsPtr> weights_map;
   m_weights.reserve(other.m_weights.size());
   for (const auto& other_weights : other.m_weights) {
     if (other_weights == nullptr) {
       LBANN_ERROR("model \"",other.get_name(),"\" ",
                   "has a null pointer in its list of weights");
     }
-    m_weights.emplace_back(make_unique<data_type_weights<DataType>>(dynamic_cast<data_type_weights<DataType>&>(*other_weights)));
-    weights_map[other_weights.get()] = m_weights.back().get();
+    m_weights.emplace_back(std::make_shared<data_type_weights<DataType>>(dynamic_cast<data_type_weights<DataType>&>(*other_weights)));
+    weights_map[other_weights.get()] = m_weights.back();
   }
 
   // Fix pointers
@@ -134,7 +132,6 @@ model& model::operator=(const model& other) {
 
   // Delete objects
   if (m_execution_context  != nullptr) { delete m_execution_context; } /// @todo BVE FIXME what do we do with smart pointers here
-  for (const auto& m : m_metrics)      { delete m; }
 
   // Shallow copies
   m_comm = other.m_comm;
@@ -146,13 +143,13 @@ model& model::operator=(const model& other) {
   m_objective_function = (other.m_objective_function
                           ? make_unique<objective_function>(*other.m_objective_function)
                           : nullptr);
-  m_metrics            = other.m_metrics;
-  m_callbacks          = other.m_callbacks;
-  for (auto& m : m_metrics) {
-    m = m->copy();
+  m_metrics.clear();
+  for (const auto& m : other.m_metrics) {
+    m_metrics.emplace_back(m ? m->copy() : nullptr);
   }
-  for (auto& cb : m_callbacks) {
-    cb.reset(cb->copy());
+  m_callbacks.clear();
+  for (const auto& cb : other.m_callbacks) {
+    m_callbacks.emplace_back(cb ? cb->copy() : nullptr);
   }
 
   // Copy layers
@@ -170,7 +167,7 @@ model& model::operator=(const model& other) {
   }
 
   // Copy weights
-  std::unordered_map<weights*,weights*> weights_map;
+  std::unordered_map<weights*,ViewingWeightsPtr> weights_map;
   m_weights.clear();
   m_weights.reserve(other.m_weights.size());
   for (const auto& other_weights : other.m_weights) {
@@ -179,17 +176,13 @@ model& model::operator=(const model& other) {
                   "has a null pointer in its list of weights");
     }
     m_weights.emplace_back(make_unique<data_type_weights<DataType>>(dynamic_cast<data_type_weights<DataType>&>(*other_weights)));
-    weights_map[other_weights.get()] = m_weights.back().get();
+    weights_map[other_weights.get()] = m_weights.back();
   }
 
   // Fix pointers
   remap_pointers(layer_map, weights_map);
 
   return *this;
-}
-
-model::~model() {
-  for (const auto& m : m_metrics)      { delete m; }
 }
 
 // =============================================
@@ -288,6 +281,14 @@ description model::get_description() const {
 
 }
 
+std::vector<metric*> model::get_metrics() const {
+  std::vector<metric*> ptrs;
+  for (const auto& ptr : m_metrics) {
+    ptrs.push_back(ptr.get());
+  }
+  return ptrs;
+}
+
 El::Int model::get_num_layers() const noexcept {
   return m_layers.size();
 }
@@ -342,6 +343,14 @@ const std::vector<weights*> model::get_weights() const {
   return weights_list;
 }
 
+std::vector<ViewingWeightsPtr> model::get_weights_pointers() const {
+  std::vector<ViewingWeightsPtr> ptrs;
+  for (const auto& w : m_weights) {
+    ptrs.emplace_back(w);
+  }
+  return ptrs;
+}
+
 // =============================================
 // Model specification
 // =============================================
@@ -374,7 +383,7 @@ void model::add_layer(OwningLayerPtr&& ptr) {
 
 }
 
-void model::add_weights(std::unique_ptr<weights> ptr) {
+void model::add_weights(OwningWeightsPtr&& ptr) {
 
   // Check for null pointer
   if (ptr == nullptr) {
@@ -403,39 +412,20 @@ void model::add_weights(std::unique_ptr<weights> ptr) {
 
 void model::add_callback(std::shared_ptr<callback_base> cb) {
   if (cb == nullptr) {
-    throw lbann_exception("model: Attempted to add null pointer as a callback.");
+    LBANN_ERROR(
+      "attempted to add a null pointer as callback to ",
+      "model \"",get_name(),"\"");
   }
-  m_callbacks.push_back(std::move(cb));
+  m_callbacks.emplace_back(std::move(cb));
 }
 
-void model::add_metric(metric *m) {
+void model::add_metric(std::unique_ptr<metric> m) {
   if (m == nullptr) {
-    throw lbann_exception("model: Attempted to add null pointer as a metric.");
+    LBANN_ERROR(
+      "attempted to add a null pointer as a metric to ",
+      "model \"",get_name(),"\"");
   }
-  m_metrics.push_back(m);
-}
-
-void model::replace_weights(std::vector<weights*>& new_weights) {
-  /// @todo tym (9/9/19): This function isn't used anywhere. It's
-  /// probably safe to delete?
-
-  // Check that number of weights is valid
-  if (new_weights.size() > m_weights.size()) {
-    LBANN_ERROR("attempted to replace weights with ",
-                "an invalid number of weights ",
-                "(expected at most ",m_weights.size(),", ",
-                "found ",new_weights.size(),")");
-  }
-
-  // Replace weights in list
-  std::unordered_map<weights*,weights*> weights_map;
-  std::unordered_map<Layer*,ViewingLayerPtr> layer_map;
-  for (size_t i = 0; i < new_weights.size(); ++i) {
-    weights_map[m_weights[i].get()] = new_weights[i];
-    m_weights[i].reset(new_weights[i]);
-  }
-  remap_pointers(layer_map, weights_map);
-
+  m_metrics.emplace_back(std::move(m));
 }
 
 void model::copy_trained_weights_from(std::vector<weights*>& new_weights) {
@@ -492,7 +482,7 @@ void model::reorder_layers(const std::vector<El::Int>& gather_indices) {
 
 void model::remap_pointers(
   const std::unordered_map<Layer*,ViewingLayerPtr>& layer_map,
-  const std::unordered_map<weights*,weights*>& weights_map) {
+  const std::unordered_map<weights*,ViewingWeightsPtr>& weights_map) {
 
   // Fix pointers in objective function
   if (m_objective_function != nullptr) {
@@ -505,9 +495,10 @@ void model::remap_pointers(
     }
     m_objective_function->set_layer_pointers(layer_pointers);
     auto weights_pointers = m_objective_function->get_weights_pointers();
-    for (auto& weights_pointer : weights_pointers) {
-      if (weights_map.count(weights_pointer) > 0) {
-        weights_pointer = weights_map.at(weights_pointer);
+    for (auto& ptr : weights_pointers) {
+      auto* raw_ptr = ptr.lock().get();
+      if (weights_map.count(raw_ptr) > 0) {
+        ptr = weights_map.at(raw_ptr);
       }
     }
     m_objective_function->set_weights_pointers(weights_pointers);
@@ -529,7 +520,7 @@ void model::remap_pointers(
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     auto& l = get_layer(i);
     auto layer_pointers = l.get_layer_pointers();
-    auto weights_pointers = extract_weights(l);
+    auto weights_pointers = l.get_weights_pointers();
     for (auto& ptr : layer_pointers) {
       auto* raw_ptr = ptr.lock().get();
       if (layer_map.count(raw_ptr) > 0) {
@@ -537,12 +528,13 @@ void model::remap_pointers(
       }
     }
     for (auto& ptr : weights_pointers) {
-      if (weights_map.count(ptr) > 0) {
-        ptr = weights_map.at(ptr);
+      auto* raw_ptr = ptr.lock().get();
+      if (weights_map.count(raw_ptr) > 0) {
+        ptr = weights_map.at(raw_ptr);
       }
     }
     l.set_layer_pointers(layer_pointers);
-    l.set_weights(weights_pointers);
+    l.set_weights_pointers(weights_pointers);
   }
 
 }
@@ -680,8 +672,8 @@ void model::setup_weights() {
   // Sort weights by name
   // Note: For run-to-run consistency. Names are assumed to be unique.
   std::sort(m_weights.begin(), m_weights.end(),
-            [] (const std::unique_ptr<weights>& x,
-                const std::unique_ptr<weights>& y) {
+            [] (const OwningWeightsPtr& x,
+                const OwningWeightsPtr& y) {
               return x->get_name().compare(y->get_name()) < 0;
             });
 
@@ -753,8 +745,8 @@ void model::add_evaluation_layers(std::unordered_set<Layer*>& layer_set,
   }
 
   // Add evaluation layers corresponding to layer metrics
-  for (auto* m : m_metrics) {
-    auto* met = dynamic_cast<layer_metric*>(m);
+  for (auto& ptr : m_metrics) {
+    auto* met = dynamic_cast<layer_metric*>(ptr.get());
     if (met != nullptr) {
       auto* l_raw_ptr = &met->get_layer();
       if (layer_set.count(l_raw_ptr) == 0) {

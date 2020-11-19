@@ -156,14 +156,13 @@ std::vector<OwningLayerPtr> construct_layer_graph(
       if (proto_datatype == TypeToProtoDataType<TensorDataType>::value  \
           && layout == T_layout                                         \
           && device == T_device) {                                      \
-        auto l_ = construct_layer<TensorDataType, T_layout, T_device>(  \
+        l = construct_layer<TensorDataType, T_layout, T_device>(        \
           comm,                                                         \
           training_dr_linearized_data_size,                             \
           num_parallel_readers,                                         \
           proto_layer);                                                 \
-        l.reset(l_.release());                                          \
-      }                                                                 \
-    } while (0)
+  }                                                                     \
+} while (0)
 
 #define PROTO_DEVICE(T, Device) \
     TEMPLATE_INSTANTIATION(T, data_layout::DATA_PARALLEL, Device); \

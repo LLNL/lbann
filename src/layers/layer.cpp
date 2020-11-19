@@ -48,8 +48,7 @@
 namespace lbann {
 
 Layer::Layer(lbann_comm *comm)
-  : m_comm(comm),
-    m_frozen(false) {
+  : m_frozen(false) {
 
   // Initialize layer name
   static int num_layers = 0;
@@ -62,7 +61,6 @@ Layer::Layer(lbann_comm *comm)
 }
 
 Layer::Layer(const Layer& other) :
-  m_comm(other.m_comm),
   m_expected_num_parent_layers(other.m_expected_num_parent_layers),
   m_expected_num_child_layers(other.m_expected_num_child_layers),
   m_model(other.m_model),
@@ -83,7 +81,6 @@ Layer::Layer(const Layer& other) :
 Layer& Layer::operator=(const Layer& other) {
 
   // Shallow copies
-  m_comm = other.m_comm;
   m_expected_num_parent_layers = other.m_expected_num_parent_layers;
   m_expected_num_child_layers = other.m_expected_num_child_layers;
   m_model = other.m_model;
@@ -157,22 +154,18 @@ description Layer::get_description() const {
   }
 
   // Weights
-  const auto weights_list = m_weights;
-  if (!weights_list.empty()) {
+  if (has_weights()) {
     ss.str(std::string{});
     ss.clear();
-    for (size_t i = 0; i < weights_list.size(); ++i) {
+    for (size_t i=0; i<num_weights(); ++i) {
+      const auto& w = get_weights(i);
       ss << (i > 0 ? ", " : "");
-      if (weights_list[i] == nullptr) {
-        ss << "unknown weights";
-      } else {
-        const auto& dims = weights_list[i]->get_dims();
-        ss << weights_list[i]->get_name() << " (";
-        for (size_t j = 0; j < dims.size(); ++j) {
-          ss << (j > 0 ? "x" : "") << dims[j];
-        }
-        ss << ")";
+      const auto& dims = w.get_dims();
+      ss << w.get_name() << " (";
+      for (size_t j = 0; j < dims.size(); ++j) {
+        ss << (j > 0 ? "x" : "") << dims[j];
       }
+      ss << ")";
     }
     desc.add("Weights", ss.str());
   }
@@ -212,6 +205,16 @@ description Layer::get_description() const {
   return desc;
 }
 
+lbann_comm* Layer::get_comm() const {
+  if (m_model == nullptr) {
+    LBANN_ERROR(
+      "attempted to get communicator from ",
+      get_type()," layer \"",get_name(),"\" ",
+      "before it was configured");
+  }
+  return m_model->get_comm();
+}
+
 bool Layer::update() {
   if (m_frozen) { return true; }
   // Apply any updates.
@@ -240,8 +243,9 @@ void Layer::summarize_stats(lbann_summary& summarizer, int step) {
   reset_counters();
   // Combine the optimizer step time from all the weights.
   double step_time = 0.0;
-  for (auto const& w : m_weights) {
-    optimizer *opt = w->get_optimizer();
+  for (size_t i=0; i<num_weights(); ++i) {
+    auto& w = get_weights(i);
+    auto* opt = w.get_optimizer();
     if (opt) {
       step_time += opt->get_step_time();
       opt->reset_counters();
@@ -310,6 +314,14 @@ void Layer::set_output_dims(std::vector<int> dims, size_t output_index) {
   m_output_dims_list[output_index] = dims;
 }
 
+std::vector<ViewingWeightsPtr> Layer::get_weights_pointers() const {
+  return m_weights;
+}
+
+void Layer::set_weights_pointers(std::vector<ViewingWeightsPtr> ptrs) {
+  m_weights = std::move(ptrs);
+}
+
 // FIXME (trb 05/28/2020): IMO, this function name is somewhat
 // misleading. It's not "replacing" anything -- it's overwriting the
 // weights values of "this" with the weights values of "other_layer",
@@ -349,22 +361,23 @@ const Layer* Layer::get_hint_layer() const {
 
 void Layer::freeze() {
   m_frozen = true;
-  for(auto& w : m_weights) {
-    w->freeze();
+  for (size_t i=0; i<num_weights(); ++i) {
+    get_weights(i).freeze();
   }
 }
 
 void Layer::unfreeze() {
   m_frozen = false;
-  for(auto& w : m_weights) {
-    w->unfreeze();
+  for (size_t i=0; i<num_weights(); ++i) {
+    get_weights(i).unfreeze();
   }
 }
 
 bool Layer::is_frozen() const {
-  for(auto& w : m_weights) {
-    if (w->is_frozen() != m_frozen) {
-      LBANN_ERROR("layer ", get_name(), " and weight ", w->get_name(), \
+  for (size_t i=0; i<num_weights(); ++i) {
+    const auto& w = get_weights(i);
+    if (w.is_frozen() != m_frozen) {
+      LBANN_ERROR("layer ", get_name(), " and weight ", w.get_name(), \
                   " of it are inconsistently frozen");
     }
   }
@@ -374,7 +387,7 @@ bool Layer::is_frozen() const {
 void Layer::setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata) {
   setup_pointers();
   setup_dims(dr_metadata);
-  setup_matrices(m_comm->get_trainer_grid());
+  setup_matrices(get_comm()->get_trainer_grid());
 #ifdef LBANN_HAS_DISTCONV
   prepare_distconv(dr_metadata);
 #endif // LBANN_HAS_DISTCONV
@@ -522,9 +535,9 @@ void Layer::write_proto(lbann_data::Layer* proto) const {
   }
   proto->set_top(get_name());
   //Add weights
-  for (auto const& w : m_weights) {
+  for (size_t i=0; i<num_weights(); ++i) {
     auto weight_proto = proto->add_weights_data();
-    w->write_proto(weight_proto);
+    get_weights(i).write_proto(weight_proto);
   }
 }
 

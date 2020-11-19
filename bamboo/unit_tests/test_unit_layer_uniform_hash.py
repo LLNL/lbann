@@ -5,6 +5,7 @@ import os
 import os.path
 import sys
 import numpy as np
+import pytest
 
 # Bamboo utilities
 current_file = os.path.realpath(__file__)
@@ -53,6 +54,13 @@ def setup_experiment(lbann):
         lbann (module): Module for LBANN Python frontend
 
     """
+
+    # Skip test on non-GPU systems
+    if not tools.gpus_per_node(lbann):
+        message = f'{os.path.basename(__file__)} requires GPUs'
+        print('Skip - ' + message)
+        pytest.skip(message)
+
     mini_batch_size = num_samples() // 2
     trainer = lbann.Trainer(mini_batch_size)
     model = construct_model(lbann)
@@ -155,8 +163,5 @@ def construct_data_reader(lbann):
 # ==============================================
 
 # Create test functions that can interact with PyTest
-# Note (tym 7/17/20): Tests are disabled for now since the uniform
-# hash layer is only supported on GPU. Restore these tests when it is
-# supported on CPU.
-# for test in tools.create_tests(setup_experiment, __file__):
-#     globals()[test.__name__] = test
+for test in tools.create_tests(setup_experiment, __file__):
+    globals()[test.__name__] = test

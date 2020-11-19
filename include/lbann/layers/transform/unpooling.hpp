@@ -43,7 +43,7 @@ namespace lbann {
  */
 template <typename TensorDataType, data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class unpooling_layer : public transform_layer<TensorDataType> {
+class unpooling_layer : public data_type_layer<TensorDataType> {
   static_assert(T_layout == data_layout::DATA_PARALLEL,
                 "unpooling only supports DATA_PARALLEL");
   static_assert(Dev == El::Device::CPU,
@@ -56,7 +56,7 @@ class unpooling_layer : public transform_layer<TensorDataType> {
  public:
 
   unpooling_layer(lbann_comm *comm)
-    : transform_layer<TensorDataType>(comm) { }
+    : data_type_layer<TensorDataType>(comm) { }
 
   unpooling_layer* copy() const override { return new unpooling_layer(*this); }
   std::string get_type() const override { return "unpooling"; }
@@ -64,7 +64,7 @@ class unpooling_layer : public transform_layer<TensorDataType> {
   El::Device get_device_allocation() const override { return Dev; }
 
   void setup_pointers() override {
-    transform_layer<TensorDataType>::setup_pointers();
+    data_type_layer<TensorDataType>::setup_pointers();
 
     // Check that pooling layer is valid
     const auto* hint_layer
@@ -83,7 +83,7 @@ class unpooling_layer : public transform_layer<TensorDataType> {
   }
 
   void setup_dims(DataReaderMetaData& dr_metadata) override {
-    transform_layer<TensorDataType>::setup_dims(dr_metadata);
+    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
 
     // Check that input tensor is valid
     const auto* hint_layer = this->get_hint_layer();
