@@ -1,0 +1,55 @@
+# Add the source files for this directory
+set_full_path(THIS_DIR_SOURCES
+  abs.cpp
+  acos.cpp
+  acosh.cpp
+  add.cpp
+  asin.cpp
+  asinh.cpp
+  atan.cpp
+  atanh.cpp
+  ceil.cpp
+  cos.cpp
+  cosh.cpp
+  divide.cpp
+  equal.cpp
+  erf.cpp
+  erfinv.cpp
+  exp.cpp
+  expm1.cpp
+  floor.cpp
+  greater.cpp
+  greater_equal.cpp
+  less.cpp
+  less_equal.cpp
+  log.cpp
+  log1p.cpp
+  logical_and.cpp
+  logical_not.cpp
+  logical_or.cpp
+  logical_xor.cpp
+  max.cpp
+  min.cpp
+  mod.cpp
+  multiply.cpp
+  negative.cpp
+  not_equal.cpp
+  pow.cpp
+  reciprocal.cpp
+  round.cpp
+  rsqrt.cpp
+  safe_divide.cpp
+  safe_reciprocal.cpp
+  sign.cpp
+  sin.cpp
+  sinh.cpp
+  sqrt.cpp
+  square.cpp
+  squared_difference.cpp
+  subtract.cpp
+  tan.cpp
+  tanh.cpp
+  )
+
+# Propagate the files up the tree
+set(SOURCES "${SOURCES}" "${THIS_DIR_SOURCES}" PARENT_SCOPE)
