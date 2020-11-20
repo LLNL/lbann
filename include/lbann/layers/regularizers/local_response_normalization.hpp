@@ -28,6 +28,7 @@
 #define LBANN_LAYER_LOCAL_RESPONSE_NORMALIZATION_HPP_INCLUDED
 
 #include <vector>
+#include "lbann/layers/data_type_layer.hpp"
 #if defined LBANN_HAS_DNN_LIB
 #include "lbann/utils/dnn_lib/helpers.hpp"
 #include "lbann/utils/dnn_lib/local_response_normalization.hpp"
