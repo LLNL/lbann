@@ -64,14 +64,7 @@ public:
     return node[ss.str()].as_unsigned_char_ptr();
   }
 
-  /** Returns a raw pointer to the data. 
-   * The data fields that are returned are determined by the "field_names" 
-   * vector, which may contain names of leaf and/or internal nodes; for
-   * internal nodes, the values returned come from the leaves of the subtree
-   * rooted at the named node(s)
-   */
-//  const unsigned char* get_raw_data(const size_t sample_id, std::vector<std::string> &field_names, size_t &num_bytes) const { /* TODO */ }
-
+  /** Returns a raw pointer to the data.  */
   const DataType* get_data(const size_t sample_id, const std::string &field_name, size_t &num_bytes) const {
   #if 0
     const conduit::Node &node = m_data_store->get_conduit_node(sample_id);
@@ -134,7 +127,7 @@ private:
   /** Contains pointers to nodes in the Schema supplied by the user
    *  (excludes nodes from the lbann_metadata subtree)
    */
-  std::unordered_map<std::string, conduit::Schema*> m_user_schema_nodes;
+  std::unordered_map<std::string, conduit::Schema*> m_useme_schema_nodes;
 
   /** Contains pointers to nodes in the user supplied Schema for the
    *  (possibly empty) lbann_metadata subtree
