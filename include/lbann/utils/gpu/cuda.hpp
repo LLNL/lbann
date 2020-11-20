@@ -291,4 +291,5 @@ using vector = ::thrust::device_vector<T, allocator<T>>;
 } // namespace lbann
 
 #endif // LBANN_HAS_CUDA
+
 #endif // LBANN_UTILS_CUDA_HPP

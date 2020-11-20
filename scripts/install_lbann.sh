@@ -7,7 +7,7 @@ if [ -n "${SPACK_ROOT}" ]; then
 fi
 
 SPACK_VERSION=$(spack --version | sed 's/-.*//g')
-MIN_SPACK_VERSION=0.15.4
+MIN_SPACK_VERSION=0.16.0
 
 source $(dirname ${BASH_SOURCE})/utilities.sh
 
@@ -37,26 +37,16 @@ SPACK_ENV_DIR=${LBANN_HOME}/spack_environments
 
 # Identify the center that we are running at
 CENTER=
-if [[ ${SYS} = "Darwin" ]]; then
-    CENTER="osx"
-else
-    CORI=$([[ $(hostname) =~ (cori|cgpu) ]] && echo 1 || echo 0)
-    DOMAINNAME=$(python -c 'import socket; domain = socket.getfqdn().split("."); print(domain[-2] + "." + domain[-1])')
-    if [[ ${CORI} -eq 1 ]]; then
-        CENTER="nersc"
-        # Make sure to purge and setup the modules properly prior to finding the Spack architecture
-        source ${SPACK_ENV_DIR}/${CENTER}/setup_modules.sh
-    elif [[ ${DOMAINNAME} = "ornl.gov" ]]; then
-        CENTER="olcf"
-    elif [[ ${DOMAINNAME} = "llnl.gov" ]]; then
-        CENTER="llnl_lc"
-    else
-        CENTER="llnl_lc"
-    fi
-fi
+# Customize the build based on the center
+source $(dirname ${BASH_SOURCE})/customize_build_env.sh
+set_center_specific_fields 
 
 SPACK_ARCH=$(spack arch)
 SPACK_ARCH_TARGET=$(spack arch -t)
+SPACK_ARCH_PLATFORM=$(spack arch -p)
+SPACK_ARCH_GENERIC_TARGET=$(spack python -c "import archspec.cpu as cpu; print(str(cpu.host().family))")
+# Create a modified spack arch with generic target architecture
+SPACK_ARCH_PLATFORM_GENERIC_TARGET="${SPACK_ARCH_PLATFORM}-${SPACK_ARCH_GENERIC_TARGET}"
 
 SCRIPT=$(basename ${BASH_SOURCE})
 BUILD_DIR=${LBANN_HOME}/build/spack
@@ -70,6 +60,12 @@ LBANN_ENV=
 SPACK_INSTALL_ARGS=
 BUILD_LBANN_SW_STACK="TRUE"
 MERLIN_PACKAGES=
+DOCS_PACKAGES=
+
+# Define the GPU_ARCH_VARIANTS field
+GPU_ARCH_VARIANTS=
+set_center_specific_gpu_arch ${CENTER} ${SPACK_ARCH_TARGET}
+GPU_VARIANTS+=" ${GPU_ARCH_VARIANTS}"
 
 ################################################################
 # Help message
@@ -92,6 +88,7 @@ Options:
   ${C}--disable-gpus${N}       Disable GPUS
   ${C}-s | --superbuild${N}    Superbuild LBANN with dihydrogen, hydrogen, and aluminum
   ${C}--merlin${N}             Include Merlin workflow manager in the environment
+  ${C}--docs${N}               Include packages necessary for installing documentation
 EOF
 }
 
@@ -138,6 +135,14 @@ while :; do
 EOF
 )
             ;;
+        --docs)
+            DOCS_PACKAGES=$(cat <<EOF
+  - py-breathe
+  - py-m2r
+  - py-sphinx-rtd-theme
+EOF
+)
+            ;;
         -?*)
             # Unknown option
             echo "Unknown option (${1})" >&2
@@ -155,7 +160,18 @@ temp_file=$(mktemp)
 # Defines STD_PACKAGES and STD_MODULES
 source ${SPACK_ENV_DIR}/std_versions_and_variants.sh
 # Defines EXTERNAL_ALL_PACKAGES and EXTERNAL_PACKAGES
-source ${SPACK_ENV_DIR}/${CENTER}/externals-${SPACK_ARCH}.sh
+for arch in ${SPACK_ARCH} ${SPACK_ARCH_PLATFORM_GENERIC_TARGET}; do
+    echo -e "Checking for externals in ${arch} \c"
+    file="${SPACK_ENV_DIR}/${CENTER}/externals-${arch}.sh"
+    if [[ -e ${file} ]]; then
+        echo "... found ${file}"
+        source ${file}
+        break
+    else
+        echo "... not found"
+    fi
+done
+
 # Defines COMPILER_ALL_PACKAGES and COMPILER_DEFINITIONS
 source ${SPACK_ENV_DIR}/${CENTER}/compilers.sh
 
@@ -239,13 +255,14 @@ ${GPU_PACKAGES}
   - py-pytest
 ${COMPILER_PACKAGE}
 ${MERLIN_PACKAGES}
+${DOCS_PACKAGES}
 EOF
 )
     LBANN_ENV="${LBANN_ENV:-lbann-dev-${SPACK_ARCH_TARGET}}"
 else
     LBANN_ENV="${LBANN_ENV:-lbann-${SPACK_ARCH_TARGET}}"
     BUILD_SPECS=$(cat <<EOF
-  - lbann@develop${GPU_VARIANTS}+dihydrogen+distconv
+  - lbann@test${GPU_VARIANTS}+dihydrogen+distconv${HALF_VARIANTS}
 EOF
 )
 fi
@@ -253,9 +270,9 @@ fi
 AL_VARIANTS=
 if [[ "${ENABLE_GPUS}" == "ON" ]]; then
 #    CUDA_ARCH="cuda_arch=60,61,62,70"
-    AL_VARIANTS="variants: +cuda +nccl +ht +cuda_rma"
-    HYDROGEN_VARIANTS="${HYDROGEN_VARIANTS} +cuda"
-    DIHYDROGEN_VARIANTS="${DIHYDROGEN_VARIANTS} +cuda +legacy"
+    AL_VARIANTS="variants: ${GPU_VARIANTS} +nccl +ht +cuda_rma"
+    HYDROGEN_VARIANTS="${HYDROGEN_VARIANTS} ${GPU_VARIANTS}"
+    DIHYDROGEN_VARIANTS="${DIHYDROGEN_VARIANTS} ${GPU_VARIANTS} +legacy"
 fi
 
 SPACK_ENV=$(cat <<EOF

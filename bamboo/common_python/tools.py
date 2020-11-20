@@ -3,6 +3,7 @@ import copy
 import math
 import os
 import re
+import socket
 import sys
 import numpy as np
 import pytest
@@ -1016,6 +1017,15 @@ def print_diff_files(dcmp):
             all_warns.append(d)
 
     return any_files_differ, all_diffs, all_warns
+
+
+def system(lbann):
+    """Name of compute system."""
+    compute_center = lbann.contrib.launcher.compute_center()
+    if compute_center != "unknown":
+        return getattr(lbann.contrib, compute_center).systems.system()
+    else:
+        return re.sub(r'\d+', '', socket.gethostname())
 
 
 # Get the number of GPUs per compute node.

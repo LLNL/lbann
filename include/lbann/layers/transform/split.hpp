@@ -28,7 +28,7 @@
 #define LBANN_LAYER_SPLIT_HPP_INCLUDED
 
 #include <vector>
-#include "lbann/layers/transform/transform.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/distconv.hpp"
 
@@ -52,10 +52,10 @@ class split_distconv_adapter: public data_type_distconv_adapter<TensorDataType> 
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class split_layer : public transform_layer<TensorDataType> {
+class split_layer : public data_type_layer<TensorDataType> {
 public:
 
-  split_layer(lbann_comm *comm) : transform_layer<TensorDataType>(comm) {
+  split_layer(lbann_comm *comm) : data_type_layer<TensorDataType>(comm) {
     this->m_expected_num_child_layers = -1; // No limit on children
   }
 

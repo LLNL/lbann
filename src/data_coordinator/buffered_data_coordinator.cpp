@@ -184,12 +184,12 @@ void buffered_data_coordinator<TensorDataType>::fetch_data(execution_mode mode) 
   //  int num_samples_in_batch = 0;
   if(active_buffer.num_samples_ready() > 0) {
     /*num_samples_in_batch = */active_buffer.num_samples_ready();
-  }else {
-      if(!get_data_reader(mode)->position_is_overrun()) {
-        std::stringstream err;
-        err << "I/O buffer does not contain valid samples ("/*<< num_samples_in_batch << ")"*/;
-        LBANN_ERROR(err.str());
-      }
+  // }else {
+  //     if(!get_data_reader(mode)->position_is_overrun()) {
+  //       std::stringstream err;
+  //       err << "I/O buffer does not contain valid samples ("/*<< num_samples_in_batch << ")"*/;
+  //       LBANN_ERROR(err.str());
+  //     }
   }
 }
 

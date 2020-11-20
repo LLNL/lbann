@@ -80,7 +80,7 @@ public:
         std::unique_ptr<lbann_data::Optimizer> default_optimizer_msg = nullptr);
   model(const model& other);
   model& operator=(const model& other);
-  virtual ~model();
+  virtual ~model() = default;
   virtual std::unique_ptr<model> copy_model() const = 0;
 
   /** Archive for checkpoint and restart */
@@ -118,9 +118,7 @@ public:
   }
 
   /** @brief Return the model's metrics. */
-  virtual const std::vector<metric*>& get_metrics() const {
-    return m_metrics;
-  }
+  std::vector<metric*> get_metrics() const;
 
   /** @brief Size of model's list of layers. */
   El::Int get_num_layers() const noexcept;
@@ -138,8 +136,8 @@ public:
   const std::vector<Layer*> get_layers() const;
 
   const std::vector<weights*> get_weights() const;
-
   std::vector<weights*> get_weights();
+  std::vector<ViewingWeightsPtr> get_weights_pointers() const;
 
   /** @brief Get the list of callbacks for the model. */
   virtual std::vector<observer_ptr<callback_base>> get_callbacks() {
@@ -186,7 +184,7 @@ public:
   virtual void add_layer(OwningLayerPtr&& l);
 
   /** @brief Add weights to model. */
-  void add_weights(std::unique_ptr<weights> w);
+  void add_weights(OwningWeightsPtr&& w);
 
   /** @brief Register a new callback for the model. */
   void add_callback(std::shared_ptr<callback_base> cb);
@@ -195,10 +193,7 @@ public:
   //  void add_callbacks(std::vector<std::shared_ptr<callback_base>>& cb);
 
   /** @brief Register a new metric for the model. */
-  void add_metric(metric *m);
-
-  /** @brief Replace the model's weights. */
-  void replace_weights(std::vector<weights *>& w);
+  void add_metric(std::unique_ptr<metric> m);
 
   /** @brief Copy trained weights from input parameter w.
    *
@@ -301,7 +296,7 @@ protected:
    */
   virtual void remap_pointers(
     const std::unordered_map<Layer*,ViewingLayerPtr>& layer_map,
-    const std::unordered_map<weights*,weights*>& weights_map);
+    const std::unordered_map<weights*,ViewingWeightsPtr>& weights_map);
 
   /** @brief
    *
@@ -431,7 +426,7 @@ private:
   std::vector<OwningLayerPtr> m_layers;
 
   /** @brief Trainable parameters. */
-  std::vector<std::unique_ptr<weights>> m_weights;
+  std::vector<OwningWeightsPtr> m_weights;
 
   /** @details If a layer needs to construct an optimizer during
    *  setup, it will make a copy of the default optimizer. This object
@@ -446,7 +441,7 @@ private:
   /** @brief Numerical quantities to evaluate model performance.
    *  @details Does not affect training.
    */
-  std::vector<metric*> m_metrics;
+  std::vector<std::unique_ptr<metric>> m_metrics;
 
   /** @brief Current callbacks to process. */
   std::vector<std::shared_ptr<callback_base>> m_callbacks;

@@ -29,7 +29,7 @@
 
 #include <utility>
 #include <vector>
-#include "lbann/layers/transform/transform.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 #ifdef LBANN_HAS_DNN_LIB
 #include "lbann/utils/dnn_lib/helpers.hpp"
 #include "lbann/utils/dnn_lib/pooling.hpp"
@@ -65,7 +65,7 @@ class unpooling_layer;
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class pooling_layer : public transform_layer<TensorDataType> {
+class pooling_layer : public data_type_layer<TensorDataType> {
   static_assert(T_layout == data_layout::DATA_PARALLEL,
                 "pooling only supports DATA_PARALLEL");
 private:
@@ -119,7 +119,7 @@ public:
                 std::vector<int> pads,
                 std::vector<int> strides,
                 pool_mode mode)
-    : transform_layer<TensorDataType>(comm),
+    : data_type_layer<TensorDataType>(comm),
       m_pool_mode(mode),
       m_pool_dims(pool_dims),
       m_pads(pads),
@@ -137,7 +137,7 @@ public:
   }
 
   pooling_layer(const pooling_layer& other)
-    : transform_layer<TensorDataType>(other),
+    : data_type_layer<TensorDataType>(other),
       m_pool_mode(other.m_pool_mode),
       m_pool_dims(other.m_pool_dims),
       m_pool_size(other.m_pool_size),
@@ -155,7 +155,7 @@ public:
   }
 
   pooling_layer& operator=(const pooling_layer& other){
-    transform_layer<TensorDataType>::operator=(other);
+    data_type_layer<TensorDataType>::operator=(other);
     m_pool_mode = other.m_pool_mode;
     m_pool_dims = other.m_pool_dims;
     m_pool_size = other.m_pool_size;
@@ -178,7 +178,7 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
   description get_description() const override {
-    auto desc = transform_layer<TensorDataType>::get_description();
+    auto desc = data_type_layer<TensorDataType>::get_description();
     std::stringstream ss;
 
     // Pool mode
@@ -226,7 +226,7 @@ public:
 protected:
 
   void setup_dims(DataReaderMetaData& dr_metadata) override {
-    transform_layer<TensorDataType>::setup_dims(dr_metadata);
+    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     const auto& input_dims = this->get_input_dims();
     auto output_dims = input_dims;
     for(size_t i = 0; i < output_dims.size() - 1; ++i) {
@@ -239,7 +239,7 @@ protected:
 
   /// Initialize GPU objects
   void setup_gpu() override {
-    transform_layer<TensorDataType>::setup_gpu();
+    data_type_layer<TensorDataType>::setup_gpu();
 #ifndef LBANN_HAS_DNN_LIB
     LBANN_ERROR("DNN library not detected");
 #else
@@ -699,16 +699,16 @@ setup_layer(size_t workspace_capacity) {
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void pooling_distconv_adapter<TensorDataType, Layout, Device>::
 fp_compute() {
-  m_pooling->forward(TensorDataType{1}, this->get_prev_activations(),
-                     TensorDataType{0}, this->get_activations());
+  m_pooling->forward(El::To<TensorDataType>(1), this->get_prev_activations(),
+                     El::To<TensorDataType>(0), this->get_activations());
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void pooling_distconv_adapter<TensorDataType, Layout, Device>::
 bp_compute() {
-  m_pooling->backward(TensorDataType{1}, this->get_activations(),
+  m_pooling->backward(El::To<TensorDataType>(1), this->get_activations(),
                       this->get_prev_error_signals(),
-                      this->get_prev_activations(), TensorDataType{0},
+                      this->get_prev_activations(), El::To<TensorDataType>(0),
                       this->get_error_signals());
 }
 #endif // LBANN_HAS_DISTCONV

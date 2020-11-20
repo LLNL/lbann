@@ -129,7 +129,7 @@ void hwloc_print_topo()
   return;
 }
 
-#if HWLOC_API_VERSION < 0x00020000
+#if HWLOC_API_VERSION < 0x00020100
 // This function is implemented in HWLOC 2.1
 int hwloc_bitmap_singlify_per_core(hwloc_topology_t topology, hwloc_bitmap_t cpuset, unsigned which)
 {

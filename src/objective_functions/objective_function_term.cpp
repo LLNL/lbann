@@ -48,4 +48,12 @@ void objective_function_term::set_layer_pointers(std::vector<ViewingLayerPtr> la
   m_layers = std::move(layers);
 }
 
+std::vector<ViewingWeightsPtr> objective_function_term::get_weights_pointers() const {
+  return m_weights;
+}
+
+void objective_function_term::set_weights_pointers(std::vector<ViewingWeightsPtr> w) {
+  m_weights = std::move(w);
+}
+
 }  // namespace lbann

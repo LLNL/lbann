@@ -285,13 +285,13 @@ void dist_embedding_layer<TensorDataType,Layout,Device>::setup_data(size_t max_m
   // Note: Randomly drawn from normal distribution with mean 0 and
   // standard deviation 1.
   if (!this->has_weights()) {
-    auto w = make_unique<data_type_weights<TensorDataType>>(&comm);
+    auto w = std::make_shared<data_type_weights<TensorDataType>>(&comm);
     auto init = make_unique<normal_initializer<TensorDataType>>(0,1);
     auto opt = this->m_model->template create_optimizer<TensorDataType>();
     w->set_name(this->get_name() + "_weights");
     w->set_initializer(std::move(init));
     w->set_optimizer(std::move(opt));
-    this->add_weights(w.get());
+    this->add_weights(w);
     this->m_model->add_weights(std::move(w));
   }
   if (this->num_weights() != 1) {
@@ -322,14 +322,14 @@ void dist_embedding_layer<TensorDataType,Layout,Device>::setup_data(size_t max_m
   // with no entries.
   if (m_sparse_sgd) {
     embeddings.set_optimizer(nullptr);
-    auto w = make_unique<data_type_weights<TensorDataType>>(&comm);
+    auto w = std::make_shared<data_type_weights<TensorDataType>>(&comm);
     auto opt = make_unique<sgd<TensorDataType>>(0.);
     w->set_name(this->get_name() + "_dummy_weights");
     w->set_optimizer(std::move(opt));
     w->set_dims(1);
     w->set_matrix_distribution(embeddings.get_matrix_distribution());
     w->setup();
-    this->add_weights(w.get());
+    this->add_weights(w);
     this->m_model->add_weights(std::move(w));
   }
 

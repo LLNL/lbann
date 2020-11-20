@@ -45,13 +45,13 @@ construct_objective_function(const lbann_data::ObjectiveFunction& proto_obj) {
   // Weight regularization terms
   for (int i=0; i<proto_obj.l2_weight_regularization_size(); ++i) {
     const auto& params = proto_obj.l2_weight_regularization(i);
-    obj->add_term(new l2_weight_regularization(params.scale_factor()));
+    obj->add_term(make_unique<l2_weight_regularization>(params.scale_factor()));
   }
 
   // Layer terms
   for (int i=0; i<proto_obj.layer_term_size(); ++i) {
     const auto& params = proto_obj.layer_term(i);
-    obj->add_term(new layer_term(params.scale_factor()));
+    obj->add_term(make_unique<layer_term>(params.scale_factor()));
   }
 
   // Return objective function

@@ -89,8 +89,8 @@ __global__ void compute_statistics_kernel(size_t size,
     mean = sum / statistics_count_dt;
     const auto sqmean = sqsum / statistics_count_dt;
     var = (sqmean - mean * mean) * statistics_count_dt / TensorDataType(statistics_count - 1);
-    _running_mean = decay * _running_mean + (TensorDataType{1} - decay) * mean;
-    _running_var = decay * _running_var + (TensorDataType{1} - decay) * var;
+    _running_mean = decay * _running_mean + (TensorDataType{1.f} - decay) * mean;
+    _running_var = decay * _running_var + (TensorDataType{1.f} - decay) * var;
   }
 }
 

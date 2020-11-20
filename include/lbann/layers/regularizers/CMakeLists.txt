@@ -5,7 +5,6 @@ set_full_path(THIS_DIR_HEADERS
   entrywise_batch_normalization.hpp
   layer_norm.hpp
   local_response_normalization.hpp
-  regularizer.hpp
   selu_dropout.hpp
   )
 
