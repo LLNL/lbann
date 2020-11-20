@@ -65,15 +65,7 @@ public:
 #ifdef LBANN_HAS_CUDNN
     , m_tensors_cudnn_desc(this)
 #endif // LBANN_HAS_CUDNN
-  {
-#if defined(LBANN_HAS_CUDNN) && defined(LBANN_DETERMINISTIC)
-    /// @todo GPU implementation of dropout with sequential consistency
-    if (Dev == El::Device::GPU && this->get_comm()->am_trainer_master()) {
-      std::cerr << "Warning: GPU dropout currently does not guarantee "
-                << "sequential consistency" << std::endl;
-    }
-#endif // defined(LBANN_HAS_CUDNN) && defined(LBANN_DETERMINISTIC)
-  }
+  {}
 
   dropout(const dropout& other)
     : data_type_layer<TensorDataType>(other),
@@ -148,6 +140,15 @@ protected:
 #ifndef LBANN_HAS_CUDNN
     LBANN_ERROR("cuDNN not detected");
 #else
+
+#ifdef LBANN_DETERMINISTIC
+    /// @todo GPU implementation of dropout with sequential consistency
+    if (this->get_comm()->am_trainer_master()) {
+      LBANN_WARNING(
+        this->get_type()," layer \"",this->get_name(),"\" ",
+        "does not guarantee sequential consistency");
+    }
+#endif // LBANN_DETERMINISTIC
 
     // Initialize cuDNN objects
     setup_dropout_cudnn_desc();
