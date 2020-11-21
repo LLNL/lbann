@@ -370,6 +370,12 @@ if (LBANN_HAS_ROCM)
   endif ()
 endif (LBANN_HAS_ROCM)
 
+if (LBANN_HAS_CUDNN OR LBANN_HAS_MIOPEN)
+  set(LBANN_HAS_DNN_LIB TRUE)
+else ()
+  set(LBANN_HAS_DNN_LIB FALSE)
+endif ()
+
 # This shouldn't be here, but is ok for now. This will occasionally be
 # part of another TPL's libraries (e.g., MKL), but it's no
 # guarantee. There's no harm including it multiple times.

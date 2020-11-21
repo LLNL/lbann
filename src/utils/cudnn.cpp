@@ -24,7 +24,11 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/utils/cudnn.hpp"
+#include "lbann_config.hpp"
+
+#ifdef LBANN_HAS_CUDNN
+#include "lbann/utils/dnn_lib/helpers.hpp"
+#endif // LBANN_HAS_CUDNN
 #include "lbann/utils/number_theory.hpp"
 
 #include "El.hpp"
@@ -36,7 +40,9 @@
 #ifdef LBANN_HAS_CUDNN
 
 namespace lbann {
-namespace cudnn {
+namespace dnn_lib {
+
+using namespace cudnn;
 
 ////////////////////////////////////////////////////////////
 // Global cuDNN objects
@@ -1553,7 +1559,7 @@ cudnnConvolutionBwdFilterAlgo_t get_bwd_filter_algo_autotune(
 
 }  // namespace
 
-cudnnConvolutionFwdAlgo_t get_fwd_algorithm(
+fwd_conv_alg get_fwd_algorithm(
   bool autotune,
   bool deterministic,
   const TensorDescriptor& input_desc,
@@ -1565,20 +1571,22 @@ cudnnConvolutionFwdAlgo_t get_fwd_algorithm(
   void* output,
   size_t ws_size,
   void* ws) {
+  cudnnConvolutionFwdAlgo_t a;
   if (autotune) {
-    return get_fwd_algo_autotune(deterministic,
-                                 input_desc, input,
-                                 kernel_desc, kernel,
-                                 conv_desc,
-                                 output_desc, output,
-                                 ws_size, ws);
+    a = get_fwd_algo_autotune(deterministic,
+                              input_desc, input,
+                              kernel_desc, kernel,
+                              conv_desc,
+                              output_desc, output,
+                              ws_size, ws);
   } else {
-    return get_fwd_algo_heuristic(deterministic, input_desc, kernel_desc,
-                                  conv_desc, output_desc, ws_size);
+    a = get_fwd_algo_heuristic(deterministic, input_desc, kernel_desc,
+                               conv_desc, output_desc, ws_size);
   }
+  return from_cudnn(a);
 }
 
-cudnnConvolutionBwdDataAlgo_t get_bwd_data_algorithm(
+bwd_data_conv_alg get_bwd_data_algorithm(
   bool autotune,
   bool deterministic,
   const FilterDescriptor& kernel_desc,
@@ -1590,21 +1598,23 @@ cudnnConvolutionBwdDataAlgo_t get_bwd_data_algorithm(
   void* error_signal,
   size_t ws_size,
   void* ws) {
+  cudnnConvolutionBwdDataAlgo_t a;
   if (autotune) {
-    return get_bwd_data_algo_autotune(deterministic,
-                                      kernel_desc, kernel,
-                                      prev_error_signal_desc, prev_error_signal,
-                                      conv_desc,
-                                      error_signal_desc, error_signal,
-                                      ws_size, ws);
+    a = get_bwd_data_algo_autotune(deterministic,
+                                   kernel_desc, kernel,
+                                   prev_error_signal_desc, prev_error_signal,
+                                   conv_desc,
+                                   error_signal_desc, error_signal,
+                                   ws_size, ws);
   } else {
-    return get_bwd_data_algo_heuristic(deterministic, kernel_desc,
-                                       prev_error_signal_desc, conv_desc,
-                                       error_signal_desc, ws_size);
+    a = get_bwd_data_algo_heuristic(deterministic, kernel_desc,
+                                    prev_error_signal_desc, conv_desc,
+                                    error_signal_desc, ws_size);
   }
+  return from_cudnn(a);
 }
 
-cudnnConvolutionBwdFilterAlgo_t get_bwd_filter_algorithm(
+bwd_filter_conv_alg get_bwd_filter_algorithm(
   bool autotune,
   bool deterministic,
   const TensorDescriptor& input_desc,
@@ -1616,18 +1626,20 @@ cudnnConvolutionBwdFilterAlgo_t get_bwd_filter_algorithm(
   void* kernel_gradient,
   size_t ws_size,
   void* ws) {
+  cudnnConvolutionBwdFilterAlgo_t a;
   if (autotune) {
-    return get_bwd_filter_algo_autotune(deterministic,
-                                        input_desc, input,
-                                        prev_error_signal_desc, prev_error_signal,
-                                        conv_desc,
-                                        kernel_gradient_desc, kernel_gradient,
-                                        ws_size, ws);
+    a = get_bwd_filter_algo_autotune(deterministic,
+                                     input_desc, input,
+                                     prev_error_signal_desc, prev_error_signal,
+                                     conv_desc,
+                                     kernel_gradient_desc, kernel_gradient,
+                                     ws_size, ws);
   } else {
-    return get_bwd_filter_algo_heuristic(deterministic, input_desc,
-                                         prev_error_signal_desc, conv_desc,
-                                         kernel_gradient_desc, ws_size);
+    a = get_bwd_filter_algo_heuristic(deterministic, input_desc,
+                                      prev_error_signal_desc, conv_desc,
+                                      kernel_gradient_desc, ws_size);
   }
+  return from_cudnn(a);
 }
 
 namespace {
@@ -1642,6 +1654,23 @@ void default_to_tensor_ops() noexcept
 cudnnMathType_t get_default_convolution_math_type() noexcept
 {
   return default_tensor_ops_mode;
+}
+
+using ProtoTensorOpEnumType = decltype(lbann_data::DEFAULT_TENSOR_OPS);
+cudnnMathType_t convert_to_dnn_math_type(ProtoTensorOpEnumType mt)
+{
+  switch (mt)
+  {
+  case lbann_data::DEFAULT_TENSOR_OPS:
+    return dnn_lib::get_default_convolution_math_type();
+  case lbann_data::NO_TENSOR_OPS:
+    return CUDNN_DEFAULT_MATH;
+  case lbann_data::USE_TENSOR_OPS:
+    return CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION;
+  default:
+    LBANN_ERROR("Bad math type value.");
+  }
+  return CUDNN_DEFAULT_MATH;
 }
 
 #define PROTO(T)                                        \

@@ -28,9 +28,9 @@
 #define LBANN_LAYERS_LEARNING_GRU_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
-#ifdef LBANN_HAS_CUDNN
-#include "lbann/utils/cudnn.hpp"
-#endif // LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_DNN_LIB
+#include "lbann/utils/dnn_lib/helpers.hpp"
+#endif // LBANN_HAS_DNN_LIB
 
 /// GPU GRU layer requires CUDA 11.0 and cuDNN 8.0.4 or newer
 #ifdef LBANN_HAS_CUDNN
@@ -110,13 +110,13 @@ private:
   using ByteBuffer = hydrogen::simple_buffer<El::byte, Device>;
   using LocalMat = El::Matrix<TensorDataType, El::Device::GPU>;
 
-  // cuDNN descriptors
-  cudnn::RNNDescriptor m_rnn_cudnn_desc;
-  cudnn::RNNDataDescriptor m_input_cudnn_desc;
-  cudnn::RNNDataDescriptor m_output_cudnn_desc;
-  cudnn::TensorDescriptor m_hidden_cudnn_desc;
+  // DNN library descriptors
+  dnn_lib::RNNDescriptor m_rnn_cudnn_desc;
+  dnn_lib::RNNDataDescriptor m_input_cudnn_desc;
+  dnn_lib::RNNDataDescriptor m_output_cudnn_desc;
+  dnn_lib::TensorDescriptor m_hidden_cudnn_desc;
 
-  // cuDNN workspaces
+  // DNN library workspaces
   LocalMat m_input_sequence_workspace;
   LocalMat m_output_sequence_workspace;
   LocalMat m_input_sequence_grad_workspace;

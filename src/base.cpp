@@ -44,9 +44,9 @@
 #include "lbann/utils/omp_diagnostics.hpp"
 #include "lbann/utils/stack_trace.hpp"
 
-#ifdef LBANN_HAS_CUDNN
-#include "lbann/utils/cudnn.hpp"
-#endif
+#ifdef LBANN_HAS_DNN_LIB
+#include "lbann/utils/dnn_lib/helpers.hpp"
+#endif // LBANN_HAS_DNN_LIB
 #ifdef LBANN_HAS_PYTHON
 #include "lbann/utils/python.hpp"
 #endif
@@ -129,8 +129,8 @@ void finalize(lbann_comm* comm) {
 #ifdef LBANN_HAS_DISTCONV
   dc::finalize();
 #endif
-#ifdef LBANN_HAS_CUDNN
-  cudnn::destroy();
+#ifdef LBANN_HAS_DNN_LIB
+  dnn_lib::destroy();
 #endif
 #ifdef LBANN_HAS_PYTHON
   python::finalize();
