@@ -357,27 +357,6 @@ void data_type_weights<TensorDataType>::reconcile_values(Al::request& req) {
   }
 }
 
-// -----------------------------------------------
-// Checkpointing
-// -----------------------------------------------
-
-template <typename TensorDataType>
-bool data_type_weights<TensorDataType>::save_to_checkpoint_shared(lbann::persist& p)
-{
-  // define name to store weight values
-  char l_name[512];
-  // Note that the string model_ will be prepended to the string
-  sprintf(l_name, "weights_%s_%lldx%lld", this->get_name().c_str(), m_values->Height(), m_values->Width());
-  // write weights using persist call -- uses Elemental's write function.
-  p.write_distmat(persist_type::model, l_name, m_values.get());
-  // if saving training state, also write out state of optimizer
-  if (m_optimizer != nullptr && (p.get_cb_type() != callback_type::weights_only)) {
-    m_optimizer->save_to_checkpoint_shared(p, this->get_name());
-  }
-
-  return true;
-}
-
 template <typename TensorDataType>
 void data_type_weights<TensorDataType>::write_proto(lbann_data::WeightsData* proto) const {
 
@@ -412,22 +391,6 @@ void data_type_weights<TensorDataType>::write_proto(lbann_data::WeightsData* pro
     }
   }
 
-}
-
-template <typename TensorDataType>
-bool data_type_weights<TensorDataType>::load_from_checkpoint_shared(lbann::persist& p)
-{
-  // define filename containing saved weight values
-  // Note that the string model_ will be prepended to the string
-  auto f_name = El::BuildString("weights_", this->get_name(), "_",
-                                m_values->Height(), "x", m_values->Width(),
-                                ".bin");
-  p.read_distmat(persist_type::model, f_name.c_str(), m_values.get());
-  if (m_optimizer != nullptr) {
-    m_optimizer->load_from_checkpoint_shared(p, this->get_name());
-  }
-
-  return true;
 }
 
 template <typename TensorDataType>
@@ -468,34 +431,6 @@ bool data_type_weights<TensorDataType>::load_from_save(std::string const& ckpt_d
                                                        std::vector<std::string> const& weight_list){
   load_from_save(ckpt_dir, weight_list, El::BINARY);
   load_from_save(ckpt_dir, weight_list, El::ASCII);
-  return true;
-}
-
-template <typename TensorDataType>
-bool data_type_weights<TensorDataType>::save_to_checkpoint_distributed(lbann::persist& p){
-  // Functions identically to shared checkpoint except weights and parameters are saved on a per rank basis
-  // Note that the string model_ will be prepended to the string
-  auto l_name = El::BuildString("weights_", this->get_name(),
-                                "_", m_values->LocalHeight(),
-                                "x", m_values->LocalWidth(), ".bin");
-  p.write_rank_distmat(persist_type::model, l_name.c_str(), *m_values);
-  if (m_optimizer != nullptr) {
-    m_optimizer->save_to_checkpoint_distributed(p, this->get_name());
-  }
-  return true;
-}
-
-template <typename TensorDataType>
-bool data_type_weights<TensorDataType>::load_from_checkpoint_distributed(lbann::persist& p){
-  // Functions identically to shared checkpoint except weights and parameters are loaded on a per rank basis
-  // Note that the string model_ will be prepended to the string
-  auto l_name = El::BuildString("weights_", this->get_name(),
-                                "_", m_values->LocalHeight(),
-                                "x", m_values->LocalWidth(), ".bin");
-  p.read_rank_distmat(persist_type::model, l_name.c_str(), *m_values);
-  if (m_optimizer != nullptr) {
-    m_optimizer->load_from_checkpoint_distributed(p, this->get_name());
-  }
   return true;
 }
 

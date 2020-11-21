@@ -147,15 +147,8 @@ public:
    */
   void reconcile_values(Al::request& req) override;
 
-  // -----------------------------------------------
-  // Checkpointing
-  // -----------------------------------------------
-  bool save_to_checkpoint_shared(persist& p) override;
-  bool load_from_checkpoint_shared(persist& p) override;
   bool load_from_save(std::string const& ckpt_dir, std::vector<std::string> const& weight_list, El::FileFormat el_mode);
   bool load_from_save(std::string const& ckpt_dir, std::vector<std::string> const& weight_list) override;
-  bool save_to_checkpoint_distributed(persist& p) override;
-  bool load_from_checkpoint_distributed(persist& p) override;
 
   /** Write weights to proto file */
   void write_proto(lbann_data::WeightsData* proto) const override;
