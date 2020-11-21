@@ -134,15 +134,6 @@ private:
   /** @brief Gradient estimate from the prior step (for hypergradient). */
   std::unique_ptr<AbsDistMatrixType> m_old_gradient;
 
-  // ===========================================
-  // Checkpointing
-  // ===========================================
-
-  bool save_to_checkpoint_shared(persist& p, std::string m_name) override;
-  bool load_from_checkpoint_shared(persist& p, std::string m_name) override;
-  bool save_to_checkpoint_distributed(persist& p, std::string m_name) override;
-  bool load_from_checkpoint_distributed(persist& p, std::string m_name) override;
-
 };
 
 template <typename TensorDataType>

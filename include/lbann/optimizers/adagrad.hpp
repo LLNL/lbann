@@ -111,15 +111,6 @@ private:
   void step_compute_gpu(AbsDistMatrixType& values, const AbsDistMatrixType& gradient);
 #endif // LBANN_HAS_DNN_LIB
 
-  // ===========================================
-  // Checkpointing
-  // ===========================================
-
-  bool save_to_checkpoint_shared(persist& p, std::string m_name) override;
-  bool load_from_checkpoint_shared(persist& p, std::string m_name) override;
-  bool save_to_checkpoint_distributed(persist& p, std::string m_name) override;
-  bool load_from_checkpoint_distributed(persist& p, std::string m_name) override;
-
 };
 
 template <typename TensorDataType>
