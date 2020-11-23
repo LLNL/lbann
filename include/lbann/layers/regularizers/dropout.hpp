@@ -27,6 +27,7 @@
 #ifndef LBANN_LAYER_REGULARIZER_DROPOUT_HPP_INCLUDED
 #define LBANN_LAYER_REGULARIZER_DROPOUT_HPP_INCLUDED
 
+#include "lbann/layers/data_type_layer.hpp"
 #include "lbann/models/model.hpp"
 #ifdef LBANN_HAS_DNN_LIB
 #include "lbann/utils/dnn_lib/helpers.hpp"
