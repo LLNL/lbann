@@ -65,12 +65,12 @@ class layer_metric : public metric {
   void set_layer_pointers(std::vector<ViewingLayerPtr> layers) override;
 
     /** Save metric state to checkpoint. */
-  bool save_to_checkpoint_shared(persist& p);
+  bool save_to_checkpoint_shared(persist& p) override;
   /** Load metric state from checkpoint. */
-  bool load_from_checkpoint_shared(persist& p);
+  bool load_from_checkpoint_shared(persist& p) override;
 
-  bool save_to_checkpoint_distributed(persist& p);
-  bool load_from_checkpoint_distributed(persist& p);
+  bool save_to_checkpoint_distributed(persist& p) override;
+  bool load_from_checkpoint_distributed(persist& p) override;
 
  protected:
 

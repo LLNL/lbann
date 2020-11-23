@@ -299,6 +299,8 @@ class data_reader_jag_conduit : public generic_data_reader {
   bool fetch_label(CPUMat& X, int data_id, int mb_idx) override;
 
 #ifndef _JAG_OFFLINE_TOOL_MODE_
+  using generic_data_reader::shuffle_indices;
+
   /// Shuffle sammple indices using a different RNG
   void shuffle_indices(rng_gen& gen) override;
 

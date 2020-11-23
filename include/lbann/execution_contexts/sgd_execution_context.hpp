@@ -58,7 +58,9 @@ public:
   /** Move assignment operator. */
   sgd_execution_context& operator=(sgd_execution_context&& other) = default;
   /** Copy sgd_execution_context. */
-  virtual std::unique_ptr<execution_context> copy_execution_context() const { return make_unique<sgd_execution_context>(*this); }
+  std::unique_ptr<execution_context> copy_execution_context() const override {
+    return make_unique<sgd_execution_context>(*this);
+  }
 
   /** Archive for checkpoint and restart */
   template <class Archive> void serialize( Archive & ar ) {
@@ -101,11 +103,11 @@ public:
   }
 
   /** Checkpoint training_algorithm to given file descriptor  */
-  virtual void save_to_checkpoint_shared(persist& p);
+  void save_to_checkpoint_shared(persist& p) override;
   /** Restore training_algorithm by reading checkpoint from given file descriptor */
-  virtual void load_from_checkpoint_shared(persist& p);
-  virtual void save_to_checkpoint_distributed(persist& p);
-  virtual void load_from_checkpoint_distributed(persist& p);
+  void load_from_checkpoint_shared(persist& p) override;
+  void save_to_checkpoint_distributed(persist& p) override;
+  void load_from_checkpoint_distributed(persist& p) override;
 
 private:
   /** Number of times the training data set has been traversed. */

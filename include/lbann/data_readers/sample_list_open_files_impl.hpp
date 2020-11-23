@@ -375,7 +375,7 @@ template <typename sample_name_t, typename file_handle_t>
 inline void sample_list_open_files<sample_name_t, file_handle_t>
 ::get_num_samples(size_t& total, size_t& included, size_t& excluded) const {
   total = 0u;
-  for ( const auto f: m_file_map) {
+  for (const auto& f: m_file_map) {
     total += f.second;
   }
   included = size();
@@ -556,7 +556,7 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
           LBANN_ERROR("mp.find(filename) == mp.end()");
         }
         index = search_result->second;
-      }  
+      }
       this->m_sample_list.emplace_back(std::make_pair(index, s.second));
     }
   }

@@ -1674,7 +1674,6 @@ cudnnMathType_t convert_to_dnn_math_type(ProtoTensorOpEnumType mt)
 }
 
 #define PROTO(T)                                        \
-  template cudnnDataType_t get_data_type<T>();          \
   template class layer_tensor_manager<T>;               \
   template class data_parallel_layer_tensor_manager<T>; \
   template class entrywise_layer_tensor_manager<T>

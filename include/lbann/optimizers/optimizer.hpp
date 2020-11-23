@@ -283,7 +283,7 @@ protected:
                     "(" + to_string(this->get_status()) + ")");
       }
     }
-    void clear() {
+    void clear() override {
       this->set_status(optimizer_gradient_status::cleared);
     }
   private:

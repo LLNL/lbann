@@ -105,7 +105,7 @@ public:
 
   /** Grab the trainer from the execution context */
   const trainer& get_trainer() const {
-    return m_trainer;
+    return *m_trainer;
   }
 
   trainer& get_trainer() {
@@ -113,7 +113,7 @@ public:
   }
 
   const training_algorithm& get_training_algorithm() const {
-    return m_training_algorithm;
+    return *m_training_algorithm;
   }
 
   training_algorithm& get_training_algorithm() {
@@ -146,9 +146,9 @@ protected:
 
 private:
   /** Pointer to the training context (execution environment) for the training algorithm */
-  trainer& m_trainer;
+  trainer* m_trainer;
 
-  training_algorithm& m_training_algorithm;
+  training_algorithm* m_training_algorithm;
 
   /** LBANN communicator. */
   observer_ptr<lbann_comm> m_comm;
