@@ -202,7 +202,7 @@ void gru_layer<TensorDataType, Layout, Device>
     const auto scale = El::To<TensorDataType>(1./std::sqrt(m_hidden_size));
     for (size_t i=0; i<m_num_layers; ++i) {
       for (size_t j=0; j<4; ++j) {
-        auto w = std::make_shared<data_type_weights<TensorDataType>>(this->get_comm());
+        auto w = std::make_shared<data_type_weights<TensorDataType>>(*this->get_comm());
         auto init = make_unique<uniform_initializer<TensorDataType>>(-scale, scale);
         auto opt = this->m_model->template create_optimizer<TensorDataType>();
         w->set_name(lbann::build_string(this->get_name(),"_",weight_names[j],"_l",i));

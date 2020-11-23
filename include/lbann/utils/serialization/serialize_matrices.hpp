@@ -290,6 +290,24 @@ void load(ArchiveT& archive, El::Matrix<T, D>& mat)
   mat.Resize(height, width);
 }
 
+template <typename ArchiveT, typename T,
+          lbann::utils::WhenNotTextArchive<ArchiveT> = 1>
+void load(ArchiveT& archive, El::AbstractMatrix<T>& mat)
+{
+  switch (mat.GetDevice())
+  {
+  case El::Device::CPU:
+    load(archive, static_cast<El::Matrix<T,El::Device::CPU>&>(mat));
+    break;
+#ifdef LBANN_HAS_GPU
+  case El::Device::GPU:
+    load(archive, static_cast<El::Matrix<T,El::Device::GPU>&>(mat));
+    break;
+#endif // LBANN_HAS_GPU
+  default:
+    LBANN_ERROR("Unknown device.");
+  }
+}
 /** @brief Load a CPU Matrix from a non-text archive.
  *
  *  @tparam ArchiveT (Inferred) The Cereal archive type to use.
