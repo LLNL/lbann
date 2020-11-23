@@ -147,9 +147,9 @@ class input_layer : public data_type_layer<TensorDataType> {
   El::Device get_device_allocation() const override { return Dev; }
 
 
-  void setup_dims(DataReaderMetaData& dr_metadata);
+  void setup_dims(DataReaderMetaData& dr_metadata) override;
 
-  void setup_data(size_t max_mini_batch_size);
+  void setup_data(size_t max_mini_batch_size) override;
 
   /** Setup output tensors.
    *  Sets up the effective (global) mini-batch size.

@@ -1299,7 +1299,7 @@ std::vector<data_reader_jag_conduit::scalar_t> data_reader_jag_conduit::get_scal
 
   auto tr = m_scalar_normalization_params.cbegin();
 
-  for(const auto key: m_scalar_keys) {
+  for(const auto& key: m_scalar_keys) {
     std::string conduit_field = m_output_scalar_prefix + key;
     std::string conduit_obj = '/' + LBANN_DATA_ID_STR(sample_id) + '/' + conduit_field;
     if(sample[conduit_obj].schema().dtype().is_empty()) {
@@ -1334,7 +1334,7 @@ std::vector<data_reader_jag_conduit::input_t> data_reader_jag_conduit::get_input
   // automatically determine which method to use based on if all the variables are of input_t
   if (m_uniform_input_type) {
     // avoid some overhead by taking advantage of the fact that all the variables are of the same type
-    for(const auto key: m_input_keys) {
+    for(const auto& key: m_input_keys) {
       const std::string conduit_field = m_input_prefix + key;
       const std::string conduit_obj = '/' + LBANN_DATA_ID_STR(sample_id) + '/' + conduit_field;
       if(sample[conduit_obj].schema().dtype().is_empty()) {
@@ -1356,7 +1356,7 @@ std::vector<data_reader_jag_conduit::input_t> data_reader_jag_conduit::get_input
       tr ++;
     }
   } else {
-    for(const auto key: m_input_keys) {
+    for(const auto& key: m_input_keys) {
       const std::string conduit_field = m_input_prefix + key;
       const std::string conduit_obj = '/' + LBANN_DATA_ID_STR(sample_id) + '/' + conduit_field;
       if(sample[conduit_obj].schema().dtype().is_empty()) {
