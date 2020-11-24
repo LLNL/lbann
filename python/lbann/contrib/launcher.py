@@ -84,6 +84,7 @@ def run(
     overwrite_script=False,
     setup_only=False,
     batch_job=False,
+    proto_file_name='experiment.prototext',
     *args,
     **kwargs,
 ):
@@ -104,7 +105,7 @@ def run(
     # Batch script invokes LBANN
     lbann_command = [lbann_exe]
     lbann_command.extend(make_iterable(lbann_args))
-    prototext_file = os.path.join(script.work_dir, 'experiment.prototext')
+    prototext_file = os.path.join(script.work_dir, proto_file_name)
     lbann.proto.save_prototext(prototext_file,
                                trainer=trainer,
                                model=model,

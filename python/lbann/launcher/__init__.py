@@ -13,6 +13,7 @@ from lbann.util import make_iterable
 
 def run(trainer, model, data_reader, optimizer,
         work_dir=None,
+        proto_file_name='experiment.prototext',
         nodes=1,
         procs_per_node=1,
         time_limit=None,
@@ -81,6 +82,7 @@ def run(trainer, model, data_reader, optimizer,
     if not work_dir:
         work_dir = experiment_dir
     script = make_batch_script(work_dir=work_dir,
+                               proto_file_name=proto_file_name,
                                nodes=nodes,
                                procs_per_node=procs_per_node,
                                time_limit=time_limit,
@@ -98,7 +100,7 @@ def run(trainer, model, data_reader, optimizer,
     # Batch script invokes LBANN
     lbann_command = [lbann_exe]
     lbann_command.extend(make_iterable(lbann_args))
-    prototext_file = os.path.join(script.work_dir, 'experiment.prototext')
+    prototext_file = os.path.join(script.work_dir, proto_file_name)
     lbann.proto.save_prototext(prototext_file,
                                trainer=trainer,
                                model=model,
@@ -124,6 +126,7 @@ def run(trainer, model, data_reader, optimizer,
 
 def make_batch_script(script_file=None,
                       work_dir=None,
+                      proto_file_name='experiment.prototext',
                       nodes=1,
                       procs_per_node=1,
                       time_limit=None,
