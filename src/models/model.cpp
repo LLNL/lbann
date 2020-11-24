@@ -1276,15 +1276,6 @@ bool model::save_to_checkpoint_shared(persist& p) {
     write_cereal_archive(*this, p, "model.xml");
   }
 
-  for (auto&& w : m_weights) {
-    w->save_to_checkpoint_shared(p);
-  }
-
-  for (El::Int i = 0; i < get_num_layers(); ++i) {
-    if (!get_layer(i).save_to_checkpoint_shared(p)) {
-      LBANN_ERROR("Unable to save layer[",i,"]=", get_layer(i).get_name());
-    }
-  }
   for (const auto& m : m_metrics) {
     m->save_to_checkpoint_shared(p);
   }
@@ -1299,16 +1290,6 @@ bool model::load_from_checkpoint_shared(persist& p) {
 
   load_from_shared_cereal_archive(*this, p, *get_comm(), "model.xml");
 
-  for (auto&& w : m_weights) {
-    w->load_from_checkpoint_shared(p);
-  }
-
-  // read in each layer
-  for (El::Int i = 0; i < get_num_layers(); ++i) {
-    if (!get_layer(i).load_from_checkpoint_shared(p)) {
-      LBANN_ERROR("Unable to load layer[",i,"]=", get_layer(i).get_name());
-    }
-  }
   /// @todo FIXME BVE why are we only reloading the metrics if there
   //  has been validation iterations?
   //  if(get_num_iterations_per_epoch(execution_mode::validation) != 0){
@@ -1332,15 +1313,7 @@ bool model::save_to_checkpoint_distributed(persist& p){
   write_cereal_archive(*this, p, "model.xml");
 
   // for each execution context write out them out
-  for (auto&& w : m_weights) {
-    w->save_to_checkpoint_distributed(p);
-  }
 
-  for (El::Int i = 0; i < get_num_layers(); ++i) {
-    if (!get_layer(i).save_to_checkpoint_distributed(p)) {
-      LBANN_ERROR("Unable to save layer[",i,"]=", get_layer(i).get_name());
-    }
-  }
   for (const auto& m : m_metrics) {
     m->save_to_checkpoint_distributed(p);
   }
@@ -1355,15 +1328,6 @@ bool model::load_from_checkpoint_distributed(persist& p){
 
   read_cereal_archive(*this, p, "model.xml");
 
-  for (auto&& w : m_weights) {
-    w->load_from_checkpoint_distributed(p);
-  }
-
-  for (El::Int i = 0; i < get_num_layers(); ++i) {
-    if (!get_layer(i).load_from_checkpoint_distributed(p)) {
-      LBANN_ERROR("Unable to load layer[",i,"]=", get_layer(i).get_name());
-    }
-  }
   for (const auto& m : m_metrics) {
     m->load_from_checkpoint_distributed(p);
   }
@@ -1380,17 +1344,17 @@ void model::write_proto(lbann_data::Model* proto) {
 
 bool model::save_weights(persist& p) {
   // write out fields we need to save a model's weights
-  for (auto&& w : m_weights) {
-    w->save_to_checkpoint_shared(p);
-  }
+  // for (auto&& w : m_weights) {
+  //   w->save_to_checkpoint_shared(p);
+  // }
   return true;
 }
 
 bool model::reload_weights(const std::string latest, const std::vector<std::string>& weight_list) {
   // load weights that appear in weight list.
-  for(auto&& w : m_weights) {
-    w->load_from_save(latest,weight_list);
-  }
+  // for(auto&& w : m_weights) {
+  //   w->load_from_save(latest,weight_list);
+  // }
   return true;
 }
 

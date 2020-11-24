@@ -509,23 +509,6 @@ void Layer::back_prop() {
   clear_prev_error_signals_();
 }
 
-
-bool Layer::save_to_checkpoint_shared(persist& p) const {
-  return true;
-}
-
-bool Layer::load_from_checkpoint_shared(persist& p) {
-  return true;
-}
-
-bool Layer::save_to_checkpoint_distributed(persist& p) const {
-  return true;
-}
-
-bool Layer::load_from_checkpoint_distributed(persist& p) {
-  return true;
-}
-
 void Layer::write_proto(lbann_data::Layer* proto) const {
   proto->Clear();
   proto->set_name(get_name());

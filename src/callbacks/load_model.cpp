@@ -107,7 +107,11 @@ bool load_model::load_model_weights(const std::string& ckpt_dir,
   closedir(weight_dir);
 
   // load weights that appear in weight list.
-  m->reload_weights(active_ckpt_dir, weight_list);
+  // load weights that appear in weight list.
+  // for(auto&& w : m_weights) {
+  //   w->load_from_save(latest,weight_list);
+  // }
+  //  m->reload_weights(active_ckpt_dir, weight_list);
   return true;
 }
 
