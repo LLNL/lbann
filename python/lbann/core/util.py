@@ -6,7 +6,7 @@ from Protobuf messages.
 """
 import google.protobuf.descriptor
 import google.protobuf.wrappers_pb2
-from lbann import lbann_pb2, callbacks_pb2, layers_pb2, metrics_pb2, model_pb2, objective_functions_pb2, optimizers_pb2, weights_pb2
+from lbann import lbann_pb2, callbacks_pb2, datatype_pb2, layers_pb2, metrics_pb2, model_pb2, objective_functions_pb2, optimizers_pb2, weights_pb2
 from lbann.util import make_iterable
 
 # Each field in a Protobuf message is labeled as 'optional',
