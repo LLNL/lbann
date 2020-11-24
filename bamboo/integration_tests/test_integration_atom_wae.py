@@ -13,8 +13,11 @@ current_file = os.path.realpath(__file__)
 current_dir = os.path.dirname(current_file)
 sys.path.insert(0, os.path.join(os.path.dirname(current_dir), 'common_python'))
 import tools
-import data.atom
-import models.atom.wae as molwae
+
+# ATOM application directory
+root_dir = os.path.dirname(os.path.dirname(current_dir))
+atom_dir = os.path.join(root_dir, 'applications', 'ATOM')
+sys.path.append(atom_dir)
 
 # ==============================================
 # Options
@@ -61,19 +64,20 @@ def setup_experiment(lbann):
     trainer = lbann.Trainer(mini_batch_size=mini_batch_size)
     model = construct_model(lbann)
 
+    import data.atom
     data_reader = data.atom.make_data_reader(lbann)
 
     opt = lbann.Adam(learn_rate=3e-4, beta1=0.9, beta2=0.99, eps=1e-8)
     return trainer, model, data_reader, opt
 
-def construct_model(run_args):
+def construct_model(lbann):
     """Construct LBANN model.
     Args:
         lbann (module): Module for LBANN Python frontend
 
     """
 
-    import lbann
+    import models.atom.wae as molwae
 
     pad_index = 40
 
