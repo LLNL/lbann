@@ -81,13 +81,13 @@ class objective_function_term {
   virtual void compute_weight_regularization() = 0;
 
   /** Get list of pointers to layers. */
-  std::vector<Layer*> get_layer_pointers() const { return m_layers; }
+  std::vector<ViewingLayerPtr> get_layer_pointers() const;
   /** Set list of pointers to layers. */
-  void set_layer_pointers(std::vector<Layer*> layers) { m_layers = layers; }
+  void set_layer_pointers(std::vector<ViewingLayerPtr> layers);
   /** Get list of pointers to weights. */
-  std::vector<weights*> get_weights_pointers() const { return m_weights; }
+  std::vector<ViewingWeightsPtr> get_weights_pointers() const;
   /** Set list of pointers to weights. */
-  void set_weights_pointers(std::vector<weights*> w) { m_weights = w; }
+  void set_weights_pointers(std::vector<ViewingWeightsPtr> w);
 
  protected:
 
@@ -95,9 +95,9 @@ class objective_function_term {
   EvalType m_scale_factor;
 
   /** Layers used to compute objective function term. */
-  std::vector<Layer*> m_layers;
+  std::vector<ViewingLayerPtr> m_layers;
   /** Weights used to compute objective function term. */
-  std::vector<weights*> m_weights;
+  std::vector<ViewingWeightsPtr> m_weights;
 
   /** Get LBANN communicator. */
   lbann_comm& get_comm() { return *m_comm; }

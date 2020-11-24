@@ -76,13 +76,14 @@ void l2_weight_regularization::setup(model& m) {
   }
 
   // Add all weights in model if no weights pointers are provided
-  if (m_weights.empty()) {
-    m_weights = m.get_weights();
+  if (get_weights_pointers().empty()) {
+    set_weights_pointers(m.get_weights_pointers());
   }
 
   // Construct accumulation variables for each device
-  for (auto* w : m_weights) {
-    const auto& device = dynamic_cast<WeightsType*>(w)->get_values().GetLocalDevice();
+  for (const auto& ptr : get_weights_pointers()) {
+    const auto& w = dynamic_cast<const WeightsType&>(*ptr.lock());
+    const auto& device = w.get_values().GetLocalDevice();
     if (m_contributions.count(device) == 0) {
 #ifdef LBANN_HAS_GPU
       m_contributions[device].SetMemoryMode(1); // Pinned memory
@@ -102,7 +103,8 @@ void l2_weight_regularization::start_evaluation() {
     auto& contribution = m_contributions[El::Device::CPU];
     contribution(0, 0) = DataType(0);
     for (El::Int i = 0; i < num_weights; ++i) {
-      const auto& vals = dynamic_cast<WeightsType*>(m_weights[i])->get_values();
+      auto& w = dynamic_cast<WeightsType&>(*m_weights[i].lock());
+      const auto& vals = w.get_values();
       if (vals.GetLocalDevice() == El::Device::CPU
           && vals.Participating()
           && vals.RedundantRank() == i % vals.RedundantSize()) {
@@ -126,7 +128,8 @@ void l2_weight_regularization::start_evaluation() {
     auto sync_info = gpu::get_sync_info(contribution);
     El::Zeros(contribution, 1, 1);
     for (El::Int i = 0; i < num_weights; ++i) {
-      const auto& vals = dynamic_cast<WeightsType*>(m_weights[i])->get_values();
+      auto& w = dynamic_cast<WeightsType&>(*m_weights[i].lock());
+      const auto& vals = w.get_values();
       if (vals.GetLocalDevice() == El::Device::GPU
           && vals.Participating()
           && vals.RedundantRank() == i % vals.RedundantSize()) {
@@ -206,10 +209,11 @@ using DispatcherType =
 
 void l2_weight_regularization::compute_weight_regularization() {
   if (m_scale_factor == EvalType(0)) { return; }
-  for (auto* w : m_weights) {
-    auto* opt = w->get_optimizer();
+  for (auto&& ptr : m_weights) {
+    auto& w = *ptr.lock();
+    auto* opt = w.get_optimizer();
     if (opt != nullptr) {
-      DispatcherType::Exec(AddToGrad(*opt, m_scale_factor), w->get_values());
+      DispatcherType::Exec(AddToGrad(*opt, m_scale_factor), w.get_values());
     }
   }
 }

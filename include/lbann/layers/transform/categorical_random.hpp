@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYER_CATEGORICAL_RANDOM_HPP_INCLUDED
 #define LBANN_LAYER_CATEGORICAL_RANDOM_HPP_INCLUDED
 
-#include "lbann/layers/transform/transform.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/random.hpp"
 
@@ -44,7 +44,7 @@ namespace lbann {
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class categorical_random_layer : public transform_layer<TensorDataType> {
+class categorical_random_layer : public data_type_layer<TensorDataType> {
   static_assert(Dev == El::Device::CPU,
                 "categorical random layer currently only supports CPU");
   static_assert(T_layout == data_layout::DATA_PARALLEL,
@@ -52,7 +52,7 @@ class categorical_random_layer : public transform_layer<TensorDataType> {
                 "supports DATA_PARALLEL");
  public:
   categorical_random_layer(lbann_comm *comm)
-    : transform_layer<TensorDataType>(comm) {
+    : data_type_layer<TensorDataType>(comm) {
   }
   categorical_random_layer* copy() const override { return new categorical_random_layer(*this); }
   std::string get_type() const override { return "categorical random"; }

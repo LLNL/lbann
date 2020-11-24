@@ -29,8 +29,11 @@
 namespace lbann
 {
 #if defined LBANN_HAS_CUDNN
-namespace cudnn
+namespace dnn_lib
 {
+
+using namespace cudnn;
+
 namespace internal
 {
 
@@ -53,7 +56,7 @@ public:
         CHECK_CUDNN(cudnnSetStream(handle_, old_stream_));
     }
     catch (std::exception const& e) {
-      std::cerr << "Caught error in ~cudnn::StreamManager().\n\n  e.what(): "
+      std::cerr << "Caught error in ~dnn_lib::StreamManager().\n\n  e.what(): "
                 << e.what() << "\n\nCalling std::terminate()."
                 << std::endl;
       std::terminate();
@@ -82,7 +85,7 @@ inline StreamManager make_default_handle_manager(
 }
 
 }// namespace internal
-}// namespace cudnn
+}// namespace dnn_lib
 #endif // defined LBANN_HAS_CUDNN
 }// namespace lbann
 #endif // LBANN_UTILS_DNN_LIB_CUDNN_UTILS_HPP_

@@ -7,7 +7,6 @@ set_full_path(THIS_DIR_HEADERS
   split.hpp
   sum.hpp
   weighted_sum.hpp
-  transform.hpp
   unpooling.hpp
   constant.hpp
   dummy.hpp

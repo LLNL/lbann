@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYER_DISCRETE_RANDOM_HPP_INCLUDED
 #define LBANN_LAYER_DISCRETE_RANDOM_HPP_INCLUDED
 
-#include "lbann/layers/transform/transform.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/random.hpp"
 
@@ -43,7 +43,7 @@ namespace lbann {
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class discrete_random_layer : public transform_layer<TensorDataType> {
+class discrete_random_layer : public data_type_layer<TensorDataType> {
   static_assert(Dev == El::Device::CPU,
                 "discrete random layer currently only supports CPU");
   static_assert(T_layout == data_layout::DATA_PARALLEL,
@@ -57,7 +57,7 @@ class discrete_random_layer : public transform_layer<TensorDataType> {
   discrete_random_layer(lbann_comm *comm,
                         std::vector<DataType> values,
                         std::vector<int> dims)
-    : transform_layer<TensorDataType>(comm),
+    : data_type_layer<TensorDataType>(comm),
       m_values(values) {
     this->set_output_dims(dims);
   }
@@ -69,7 +69,7 @@ class discrete_random_layer : public transform_layer<TensorDataType> {
  protected:
 
   void setup_dims(DataReaderMetaData& dr_metadata) override {
-    transform_layer<TensorDataType>::setup_dims(dr_metadata);
+    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     if (this->get_input_size() != (int) m_values.size()) {
       LBANN_ERROR("input tensor dimensions don't match number of "
                   "values in discrete distribution");

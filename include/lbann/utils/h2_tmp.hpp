@@ -29,11 +29,6 @@
 
 #include <lbann_config.hpp>
 
-// Disable C++17 features.
-#ifndef H2_NO_CXX17
-#define H2_NO_CXX17
-#endif // H2_NO_CXX17
-
 #ifdef LBANN_HAS_DIHYDROGEN
 
 #include <h2/meta/Core.hpp>
@@ -181,11 +176,9 @@ inline constexpr bool IsInvocableV()
     return IsInvocableVT<F, Args...>::value;
 }
 
-#ifndef H2_NO_CXX17
 /** @brief Test whether F can be invoked with the given arguments. */
 template <typename F, typename... Args>
 inline constexpr bool IsInvocable = IsInvocableV<F, Args...>();
-#endif // H2_NO_CXX17
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
@@ -460,6 +453,51 @@ struct CdrT<Empty>
 }// namespace h2
 #endif // H2_META_TYPELIST_LISPACCESSORS_HPP_
 
+#ifndef H2_META_TYPELIST_APPEND_HPP_
+#define H2_META_TYPELIST_APPEND_HPP_
+
+namespace h2
+{
+namespace meta
+{
+namespace tlist
+{
+/** @brief Join multiple lists into one. */
+template <typename... Lists>
+struct AppendT;
+
+/** @brief Join multiple lists into one */
+template <typename... Lists>
+using Append = Force<AppendT<Lists...>>;
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+
+// Single list
+template <typename... ListTs>
+struct AppendT<TL<ListTs...>>
+{
+    using type = TL<ListTs...>;
+};
+
+// Two lists
+template <typename... ListOneTs, typename... ListTwoTs>
+struct AppendT<TypeList<ListOneTs...>, TypeList<ListTwoTs...>>
+{
+    using type = TL<ListOneTs..., ListTwoTs...>;
+};
+
+// Many lists
+template <typename FirstList, typename... OtherLists>
+struct AppendT<FirstList, OtherLists...>
+    : AppendT<FirstList, Append<OtherLists...>>
+{};
+
+#endif // DOXYGEN_SHOULD_SKIP_THIS
+} // namespace tlist
+} // namespace meta
+} // namespace h2
+#endif // H2_META_TYPELIST_APPEND_HPP_
+
 #ifndef H2_META_TYPELIST_EXPAND_HPP_
 #define H2_META_TYPELIST_EXPAND_HPP_
 
@@ -528,10 +566,8 @@ struct MemberVT;
 template <typename T, typename List>
 constexpr bool MemberV() { return MemberVT<T, List>::value; }
 
-#ifdef H2_USE_CXX17
 template <typename T, typename List>
 inline constexpr bool Member = MemberV<T,List>();
-#endif // TOM_USE_CXX17
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 

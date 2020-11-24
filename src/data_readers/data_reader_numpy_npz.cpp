@@ -87,7 +87,7 @@ namespace lbann {
     npyLoadList.push_back(std::forward_as_tuple(true,            NPZ_KEY_DATA,      m_data));
     npyLoadList.push_back(std::forward_as_tuple(m_has_labels,    NPZ_KEY_LABELS,    m_labels));
     npyLoadList.push_back(std::forward_as_tuple(m_has_responses, NPZ_KEY_RESPONSES, m_responses));
-    for(const auto npyLoad : npyLoadList) {
+    for(const auto& npyLoad : npyLoadList) {
       // Check whether the tensor have to be loaded.
       if(!std::get<0>(npyLoad)) {
         continue;

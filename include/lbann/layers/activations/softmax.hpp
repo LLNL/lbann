@@ -29,10 +29,11 @@
 
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/utils/distconv.hpp"
-#if defined LBANN_HAS_CUDNN
-#include "lbann/utils/cudnn.hpp"
-#endif // defined LBANN_HAS_CUDNN
-#include "lbann/utils/dnn_lib/cudnn/softmax.hpp"
+#include "lbann/utils/dnn_enums.hpp"
+#if defined LBANN_HAS_DNN_LIB
+#include "lbann/utils/dnn_lib/helpers.hpp"
+#include "lbann/utils/dnn_lib/softmax.hpp"
+#endif // defined LBANN_HAS_DNN_LIB
 
 // Threshold outputs to a minimum value.
 
@@ -81,9 +82,9 @@ public:
                 softmax_mode mode)
     : data_type_layer<TensorDataType>(comm),
       m_mode(mode)
-#ifdef LBANN_HAS_CUDNN
-    , m_tensors_cudnn_desc(this)
-#endif // LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_DNN_LIB
+    , m_tensors_dnn_desc(this)
+#endif // LBANN_HAS_DNN_LIB
   {
     if(mode == softmax_mode::INVALID) {
       LBANN_ERROR("invalid softmax mode");
@@ -95,13 +96,13 @@ public:
       m_mode(other.m_mode),
       m_workspace(other.m_workspace ?
                   other.m_workspace->Copy() : nullptr)
-#ifdef LBANN_HAS_CUDNN
-    , m_tensors_cudnn_desc(other.m_tensors_cudnn_desc)
-#endif // LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_DNN_LIB
+    , m_tensors_dnn_desc(other.m_tensors_dnn_desc)
+#endif // LBANN_HAS_DNN_LIB
   {
-#ifdef LBANN_HAS_CUDNN
-    m_tensors_cudnn_desc.set_layer(this);
-#endif // LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_DNN_LIB
+    m_tensors_dnn_desc.set_layer(this);
+#endif // LBANN_HAS_DNN_LIB
   }
 
   ~softmax_layer() = default;
@@ -152,10 +153,10 @@ private:
   /** Workspace for column-wise reductions. */
   std::unique_ptr<AbsDistMatrixType> m_workspace;
 
-#ifdef LBANN_HAS_CUDNN
-  /** Tensor cuDNN descriptors. */
-  cudnn::data_parallel_layer_tensor_manager<TensorDataType> m_tensors_cudnn_desc;
-#endif // LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_DNN_LIB
+  /** Tensor DNN library descriptors. */
+  dnn_lib::data_parallel_layer_tensor_manager<TensorDataType> m_tensors_dnn_desc;
+#endif // LBANN_HAS_DNN_LIB
 
 // Minimum output value to avoid denormalized floats
 #ifdef LBANN_ENABLE_SOFTMAX_THRESHOLD

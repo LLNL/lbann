@@ -114,7 +114,10 @@ class buffered_data_coordinator : public data_coordinator {
        /*CEREAL_NVP(m_data_buffers)*/);
   }
 
-  void setup(thread_pool& io_thread_pool, int max_mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers);
+  void setup(
+    thread_pool& io_thread_pool,
+    int max_mini_batch_size,
+    std::map<execution_mode, generic_data_reader *> data_readers) override;
 
   void fp_setup_data(data_buffer_map_t& buffer_map, El::Int cur_mini_batch_size);
 
@@ -131,9 +134,9 @@ class buffered_data_coordinator : public data_coordinator {
 
   /** @brief Complete any background I/O data fetch for the execution
       mode requested */
-  void collect_background_data_fetch(execution_mode mode);
+  void collect_background_data_fetch(execution_mode mode) override;
 
-  bool epoch_complete(execution_mode mode);
+  bool epoch_complete(execution_mode mode) override;
 
   const data_buffer<IODataType>& get_data_buffer(const data_buffer_map_t& buffer_map, const execution_mode mode) const;
   data_buffer<IODataType>& get_data_buffer(data_buffer_map_t& buffer_map, const execution_mode mode);
@@ -161,18 +164,17 @@ protected:
   //************************************************************************
 
   // save state of IO to a checkpoint
-  bool save_to_checkpoint_shared(persist& p) const;
+  bool save_to_checkpoint_shared(persist& p) const override;
 
   // reload state of IO from a checkpoint
-  bool load_from_checkpoint_shared(persist& p);
+  bool load_from_checkpoint_shared(persist& p) override;
 
-  bool save_to_checkpoint_distributed(persist& p) const;
+  bool save_to_checkpoint_distributed(persist& p) const override;
 
-  bool load_from_checkpoint_distributed(persist& p);
+  bool load_from_checkpoint_distributed(persist& p) override;
 
- protected:
+protected:
 
-public:
   /**
    * Map from execution context to the index of the active data buffer
    */

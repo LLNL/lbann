@@ -28,12 +28,15 @@ Building with `Spack <https://github.com/llnl/spack>`_
 Setup Spack
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-1.  Download and install `Spack <https://github.com/llnl/spack>`_.
+1.  Download and install `Spack <https://github.com/llnl/spack>`_
+    using the following commands.
     Additionally setup shell support as discussed
     `here <https://spack.readthedocs.io/en/latest/module_file_support.html#id2>`_.
 
     .. code-block:: bash
 
+        git clone https://github.com/spack/spack.git spack.git
+        export SPACK_ROOT=<path to installation>/spack.git
         source ${SPACK_ROOT}/share/spack/setup-env.sh
 
 

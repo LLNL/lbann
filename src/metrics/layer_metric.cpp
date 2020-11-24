@@ -31,44 +31,45 @@ namespace lbann {
 layer_metric::layer_metric(lbann_comm *comm, std::string name_, std::string unit)
   : metric(comm),
     m_name(name_),
-    m_unit(unit),
-    m_layer(nullptr) {}
+    m_unit(unit) {}
 
 std::string layer_metric::name() const {
   if (!m_name.empty()) {
     return m_name;
-  } else if (m_layer != nullptr) {
-    return m_layer->get_name();
-  } else {
+  }
+  else if (m_layer.expired()) {
     return "uninitialized layer metric";
+  }
+  else {
+    return m_layer.lock()->get_name();
   }
 }
 
-void layer_metric::set_layer(Layer& l) { m_layer = &l; }
+void layer_metric::set_layer(ViewingLayerPtr l) { m_layer = std::move(l); }
 Layer& layer_metric::get_layer() {
   // Idiom from Item 3, p. 23 in "Effective C++", 3rd ed., by Scott Meyers.
   return *(const_cast<Layer*>(&static_cast<const layer_metric&>(*this).get_layer()));
 }
 const Layer& layer_metric::get_layer() const {
-  if (m_layer == nullptr) {
+  if (m_layer.expired()) {
     std::stringstream err;
     err << "attempted to get the layer corresponding to "
         << "layer metric \"" << name() << "\", "
         << "but no such layer has been set";
     LBANN_ERROR(err.str());
   }
-  return *m_layer;
+  return *m_layer.lock();
 }
 
-std::vector<Layer*> layer_metric::get_layer_pointers() const {
+std::vector<ViewingLayerPtr> layer_metric::get_layer_pointers() const {
   auto layer_pointers = metric::get_layer_pointers();
   layer_pointers.push_back(m_layer);
   return layer_pointers;
 }
 
-void layer_metric::set_layer_pointers(std::vector<Layer*> layers) {
-  metric::set_layer_pointers(std::vector<Layer*>(layers.begin(),
-                                                 layers.end() - 1));
+void layer_metric::set_layer_pointers(std::vector<ViewingLayerPtr> layers) {
+  metric::set_layer_pointers(
+    std::vector<ViewingLayerPtr>(layers.begin(), layers.end()-1));
   m_layer = layers.back();
 }
 

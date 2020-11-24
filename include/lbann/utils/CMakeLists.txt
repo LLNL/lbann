@@ -32,7 +32,7 @@ set_full_path(THIS_DIR_HEADERS
   python.hpp
   random.hpp
   random_number_generators.hpp
-  serialization.hpp
+  serialize.hpp
   statistics.hpp
   summary.hpp
   summary_impl.hpp
@@ -44,7 +44,7 @@ set_full_path(THIS_DIR_HEADERS
 
 if (LBANN_HAS_HALF)
   list(APPEND THIS_DIR_HEADERS
-    ${CMAKE_CURRENT_SOURCE_DIR}/serialization.hpp)
+    ${CMAKE_CURRENT_SOURCE_DIR}/serialize.hpp)
 endif (LBANN_HAS_HALF)
 
 if (LBANN_HAS_DISTCONV)

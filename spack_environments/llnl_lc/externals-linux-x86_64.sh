@@ -1,16 +1,21 @@
 #!/bin/sh
 
+if [[ ${GPU_ARCH_VARIANTS} ]]; then
+    GLOBAL_GPU_ARCH_VARIANTS="variants: ${GPU_ARCH_VARIANTS}"
+fi
+
 EXTERNAL_ALL_PACKAGES=$(cat <<EOF
     all:
       providers:
         mpi:
-          - mvapich2@2.3 arch=linux-rhel7-haswell
+          - mvapich2@2.3 arch=${SPACK_ARCH}
         lapack:
           - openblas threads=openmp
         blas:
           - openblas threasd=openmp
       buildable: true
       version: []
+      ${GLOBAL_GPU_ARCH_VARIANTS}
 EOF
 )
 
@@ -21,43 +26,43 @@ EXTERNAL_PACKAGES=$(cat <<EOF
       version:
       - 3.18.0
       externals:
-      - spec: cmake@3.18.0 arch=linux-rhel7-haswell
+      - spec: cmake@3.18.0 arch=${SPACK_ARCH}
         modules:
         -  cmake/3.18.0
     cuda::
       buildable: False
       version:
-      - 10.2.89
+      - 11.1.0
       externals:
-      - spec: cuda@10.2.89 arch=linux-rhel7-haswell
+      - spec: cuda@11.1.0 arch=${SPACK_ARCH}
         modules:
-        - cuda/10.2.89
+        - cuda/11.1.0
     cudnn::
       buildable: true
       version:
-      - 7.6.5.32-10.2-linux-x64
+      - 8.0.4.30-11.1
     gcc::
       buildable: False
       version:
-      - 7.3.0
+      - 8.3.1
       externals:
-      - spec: gcc@7.3.0 arch=linux-rhel7-haswell
+      - spec:  gcc@8.3.1 arch=${SPACK_ARCH}
         modules:
-        - gcc/7.3.0
+        - gcc/8.3.1
     hwloc::
       buildable: False
       version:
-      - 2.0.2
+      - 1.11.13
       externals:
-      - spec: hwloc@2.0.2 arch=linux-rhel7-haswell
+      - spec: hwloc@1.11.13 arch=${SPACK_ARCH}
         prefix: /usr/lib64/libhwloc.so
     mvapich2::
       buildable: True
       version:
       - 2.3
       externals:
-      - spec: mvapich2@2.3%gcc@7.3.0 arch=linux-rhel7-haswell
-        prefix: /usr/tce/packages/mvapich2/mvapich2-2.3-gcc-7.3.0/
+      - spec: mvapich2@2.3%gcc@8.3.1 arch=${SPACK_ARCH}
+        prefix: /usr/tce/packages/mvapich2/mvapich2-2.3-gcc-8.3.1/
     openblas::
       buildable: True
       variants: threads=openmp
@@ -68,13 +73,20 @@ EXTERNAL_PACKAGES=$(cat <<EOF
       variants: build_type=RelWithDebInfo ~calib3d+core~cuda~dnn~eigen+fast-math~features2d~flann~gtk+highgui+imgproc~ipp~ipp_iw~jasper~java+jpeg~lapack~ml~opencl~opencl_svm~openclamdblas~openclamdfft~openmp+png~powerpc~pthreads_pf~python~qt+shared~stitching~superres+tiff~ts~video~videoio~videostab~vsx~vtk+zlib
       version:
       - 4.1.0
+    perl::
+      buildable: False
+      version:
+        - 5.16.3
+      externals:
+      - spec: perl@5.16.3 arch=${SPACK_ARCH}
+        prefix: /usr/bin
     python::
       buildable: True
       variants: +shared ~readline ~zlib ~bz2 ~lzma ~pyexpat
       version:
       - 3.7.2
       externals:
-      - spec: python@3.7.2 arch=linux-rhel7-haswell
+      - spec: python@3.7.2 arch=${SPACK_ARCH}
         modules:
         - python/3.7.2
     rdma-core::
@@ -82,7 +94,7 @@ EXTERNAL_PACKAGES=$(cat <<EOF
       version:
       - 20
       externals:
-      - spec: rdma-core@20 arch=linux-rhel7-haswell
+      - spec: rdma-core@20 arch=${SPACK_ARCH}
         prefix: /usr
 EOF
 )

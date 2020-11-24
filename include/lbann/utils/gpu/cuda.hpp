@@ -30,7 +30,7 @@
 #include "lbann_config.hpp"
 #include "lbann/utils/exception.hpp"
 
-#ifdef LBANN_HAS_GPU
+#ifdef LBANN_HAS_CUDA
 
 #include <cuda.h>
 #include <thrust/memory.h>
@@ -101,101 +101,6 @@
 
 namespace lbann {
 namespace cuda {
-
-// -------------------------------------------------------------
-// Device functions
-// -------------------------------------------------------------
-#ifdef __CUDACC__
-
-// Atomic add
-template <typename T> __device__ __forceinline__
-T atomic_add(T* address, T val);
-
-/** @brief Sum over threads in CUDA block
- *
- *  Every thread in a CUDA block must enter this function. The sum is
- *  returned on thread 0.
- *
- *  @tparam bdimx   x-dimension of CUDA block
- *  @tparam bdimy   y-dimension of CUDA block
- *  @tparam bdimz   z-dimension of CUDA block
- *  @tparam T       Data type
- *  @param  val     Contribution from thread
- *  @returns On thread 0, the sum. Not meaningful on other threads.
- */
-template <size_t bdimx, size_t bdimy, size_t bdimz, class T>
-__device__ __forceinline__
-T block_reduce(T val);
-
-/** @brief Reduction over threads in CUDA block
- *
- *  Every thread in a CUDA block must enter this function. The reduced
- *  value is returned on thread 0.
- *
- *  @tparam bdimx   x-dimension of CUDA block
- *  @tparam bdimy   y-dimension of CUDA block
- *  @tparam bdimz   z-dimension of CUDA block
- *  @tparam T       Data type
- *  @tparam Op      Functor for reduction operation
- *  @param  val     Contribution from each thread
- *  @returns On thread 0, the reduced value. Not meaningful on other
- *  threads.
- */
-template <size_t bdimx, size_t bdimy, size_t bdimz, class T, class Op>
-__device__ __forceinline__
-T block_reduce(T val);
-
-// Unary math functions
-template <typename T> __device__ __forceinline__ T abs(const T& x);
-template <typename T> __device__ __forceinline__ T round(const T& x);
-template <typename T> __device__ __forceinline__ T ceil(const T& x);
-template <typename T> __device__ __forceinline__ T floor(const T& x);
-template <typename T> __device__ __forceinline__ T sqrt(const T& x);
-template <typename T> __device__ __forceinline__ T rsqrt(const T& x);
-template <typename T> __device__ __forceinline__ T exp(const T& x);
-template <typename T> __device__ __forceinline__ T expm1(const T& x);
-template <typename T> __device__ __forceinline__ T log(const T& x);
-template <typename T> __device__ __forceinline__ T log1p(const T& x);
-template <typename T> __device__ __forceinline__ T cos(const T& x);
-template <typename T> __device__ __forceinline__ T sin(const T& x);
-template <typename T> __device__ __forceinline__ T tan(const T& x);
-template <typename T> __device__ __forceinline__ T acos(const T& x);
-template <typename T> __device__ __forceinline__ T asin(const T& x);
-template <typename T> __device__ __forceinline__ T atan(const T& x);
-template <typename T> __device__ __forceinline__ T cosh(const T& x);
-template <typename T> __device__ __forceinline__ T sinh(const T& x);
-template <typename T> __device__ __forceinline__ T tanh(const T& x);
-template <typename T> __device__ __forceinline__ T acosh(const T& x);
-template <typename T> __device__ __forceinline__ T asinh(const T& x);
-template <typename T> __device__ __forceinline__ T atanh(const T& x);
-template <typename T> __device__ __forceinline__ T erf(const T& x);
-template <typename T> __device__ __forceinline__ T erfinv(const T& x);
-template <typename T> __device__ __forceinline__ bool isfinite(const T& x);
-template <typename T> __device__ __forceinline__ bool isinf(const T& x);
-template <typename T> __device__ __forceinline__ bool isnan(const T& x);
-
-// Binary math functions
-template <typename T> __device__ __forceinline__ T min(const T& x, const T& y);
-template <typename T> __device__ __forceinline__ T max(const T& x, const T& y);
-template <typename T> __device__ __forceinline__ T mod(const T& x, const T& y);
-template <typename T> __device__ __forceinline__ T pow(const T& x, const T& y);
-
-// Numeric limits
-template <typename T> constexpr __device__ __forceinline__ T min();
-template <typename T> constexpr __device__ __forceinline__ T max();
-template <typename T> constexpr __device__ __forceinline__ T epsilon();
-template <typename T> __device__ __forceinline__ T infinity();
-
-/** @brief Array with fixed type and size. */
-template <typename T, size_t N>
-struct array {
-  T vals[N];
-  __host__ __device__ __forceinline__ size_t size() const;
-  __host__ __device__ __forceinline__ T& operator[](size_t i);
-  __host__ __device__ __forceinline__ const T& operator[](size_t i) const;
-};
-
-#endif // __CUDACC__
 
 // -------------------------------------------------------------
 // Wrapper classes
@@ -313,49 +218,6 @@ private:
 // Helper functions for tensor operations
 // -------------------------------------------------------------
 
-#ifdef __CUDACC__
-
-/** Apply an entry-wise unary operator to GPU data.
- *  The input and output data must be on GPU and must have the same
- *  dimensions.
- */
-template <template <typename> class UnaryOperator, typename TensorDataType>
-void apply_entrywise_unary_operator(
-  const El::AbstractMatrix<TensorDataType>& input,
-  El::AbstractMatrix<TensorDataType>& output);
-
-/** Apply an entry-wise binary operator to GPU data.
- *  The input and output data must be on GPU and must have the same
- *  dimensions.
- */
-template <template <typename> class BinaryOperator, typename TensorDataType>
-void apply_entrywise_binary_operator(
-  const El::AbstractMatrix<TensorDataType>& input1,
-  const El::AbstractMatrix<TensorDataType>& input2,
-  El::AbstractMatrix<TensorDataType>& output);
-
-
-/** Apply an entry-wise unary operator to GPU data.
- *  The input and output data must be on GPU, have the same
- *  dimensions, and be aligned.
- */
-template <template <typename> class UnaryOperator, typename TensorDataType>
-void apply_entrywise_unary_operator(
-  const El::AbstractDistMatrix<TensorDataType>& input,
-  El::AbstractDistMatrix<TensorDataType>& output);
-
-/** Apply an entry-wise binary operator to GPU data.
- *  The input and output data must be on GPU, have the same
- *  dimensions, and be aligned.
- */
-template <template <typename> class BinaryOperator, typename TensorDataType>
-void apply_entrywise_binary_operator(
-  const El::AbstractDistMatrix<TensorDataType>& input1,
-  const El::AbstractDistMatrix<TensorDataType>& input2,
-  El::AbstractDistMatrix<TensorDataType>& output);
-
-#endif // __CUDACC__
-
 /** Copy entries between GPU tensors. */
 template <typename TensorDataType>
 void copy_tensor(
@@ -425,12 +287,9 @@ template <typename T>
 using vector = ::thrust::device_vector<T, allocator<T>>;
 
 } // namespace thrust
-
 } // namespace cuda
 } // namespace lbann
 
-// Header implementations
-#include "lbann/utils/impl/cuda.hpp"
+#endif // LBANN_HAS_CUDA
 
-#endif // LBANN_HAS_GPU
 #endif // LBANN_UTILS_CUDA_HPP

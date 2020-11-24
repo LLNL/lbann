@@ -48,7 +48,6 @@
 #include "lbann/layers/learning/entrywise_scale_bias.hpp"
 #include "lbann/layers/learning/fully_connected.hpp"
 #include "lbann/layers/learning/gru.hpp"
-#include "lbann/layers/learning/learning.hpp"
 #include "lbann/layers/loss/categorical_accuracy.hpp"
 #include "lbann/layers/loss/cross_entropy.hpp"
 #include "lbann/layers/loss/entrywise.hpp"
@@ -76,7 +75,6 @@
 #include "lbann/layers/regularizers/batch_normalization.hpp"
 #include "lbann/layers/regularizers/dropout.hpp"
 #include "lbann/layers/regularizers/local_response_normalization.hpp"
-#include "lbann/layers/regularizers/regularizer.hpp"
 #include "lbann/layers/regularizers/selu_dropout.hpp"
 #include "lbann/layers/regularizers/entrywise_batch_normalization.hpp"
 #include "lbann/layers/regularizers/layer_norm.hpp"
@@ -101,7 +99,6 @@
 #include "lbann/layers/transform/stop_gradient.hpp"
 #include "lbann/layers/transform/sum.hpp"
 #include "lbann/layers/transform/tessellate.hpp"
-#include "lbann/layers/transform/transform.hpp"
 #include "lbann/layers/transform/uniform.hpp"
 #include "lbann/layers/transform/unpooling.hpp"
 #include "lbann/layers/transform/weighted_sum.hpp"
@@ -112,9 +109,10 @@
 
 #include <layers.pb.h>
 
-#ifdef LBANN_HAS_CUDNN
-#include <cudnn.h>
-#endif // LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_DNN_LIB
+//#include <cudnn.h>
+#include "lbann/utils/dnn_lib/helpers.hpp"
+#endif // LBANN_HAS_DNN_LIB
 
 namespace lbann {
 namespace proto {
@@ -290,28 +288,6 @@ factory_type const& get_layer_factory() noexcept
   return factory_mgr_.get();
 }
 
-// Some cuDNN stuff -- copied from convolution.cpp. To what common
-// location should this go?? The problem is it's the confluence of two
-// evils: protobuf and cudnn. I'd rather they never meet, but whatdya
-// gonna do.
-#ifdef LBANN_HAS_CUDNN
-using ProtoTensorOpEnumType = decltype(lbann_data::DEFAULT_TENSOR_OPS);
-cudnnMathType_t convert_to_cudnn_math_type(ProtoTensorOpEnumType mt)
-{
-  switch (mt)
-  {
-  case lbann_data::DEFAULT_TENSOR_OPS:
-    return cudnn::get_default_convolution_math_type();
-  case lbann_data::NO_TENSOR_OPS:
-    return CUDNN_DEFAULT_MATH;
-  case lbann_data::USE_TENSOR_OPS:
-    return CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION;
-  default:
-    LBANN_ERROR("Bad math type value.");
-  }
-  return CUDNN_DEFAULT_MATH;
-}
-#endif // LBANN_HAS_CUDNN
 } // namespace
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -384,18 +360,18 @@ std::unique_ptr<Layer> construct_layer_legacy(
       if (dilations.empty()) {
         dilations.resize(dims.size(), 1);
       }
-#ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_DNN_LIB
       auto ret = lbann::make_unique<deconvolution_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(
         comm, dims.size(), num_output_channels,
         dims, pads, strides, dilations, num_groups, bias);
-      ret->set_cudnn_math_mode(
-        convert_to_cudnn_math_type(params.conv_tensor_op_mode()));
+      ret->set_dnn_math_mode(
+        dnn_lib::convert_to_dnn_math_type(params.conv_tensor_op_mode()));
       return ret;
 #else
       return lbann::make_unique<deconvolution_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(
                comm, dims.size(), num_output_channels,
                dims, pads, strides, dilations, num_groups, bias);
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_DNN_LIB
 
     } else {
       const auto& num_dims = params.num_dims();
@@ -406,18 +382,18 @@ std::unique_ptr<Layer> construct_layer_legacy(
       if (dilation == 0) {
         dilation = 1;
       }
-#ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_DNN_LIB
       auto ret = lbann::make_unique<deconvolution_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(
         comm, num_dims, num_output_channels,
         dim, pad, stride, dilation, num_groups, bias);
-      ret->set_cudnn_math_mode(
-        convert_to_cudnn_math_type(params.conv_tensor_op_mode()));
+      ret->set_dnn_math_mode(
+        dnn_lib::convert_to_dnn_math_type(params.conv_tensor_op_mode()));
       return ret;
 #else
       return lbann::make_unique<deconvolution_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(
         comm, num_dims, num_output_channels,
         dim, pad, stride, dilation, num_groups, bias);
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_DNN_LIB
     }
   }
 

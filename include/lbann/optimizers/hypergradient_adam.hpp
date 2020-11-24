@@ -95,6 +95,9 @@ public:
        CEREAL_NVP(m_eps),
        CEREAL_NVP(m_current_beta1),
        CEREAL_NVP(m_current_beta2));
+    // CEREAL_NVP(m_moment1),
+    // CEREAL_NVP(m_moment2),
+    // CEREAL_NVP(m_old_gradient));
   }
 
   /** @brief Human-readable type name. */

@@ -39,7 +39,7 @@ public:
   std::string name() const override { return "evaluation layer term"; }
 
   /** Set corresponding layer. */
-  void set_layer(Layer& l);
+  void set_layer(ViewingLayerPtr l);
   /** Get corresponding layer. */
   Layer& get_layer();
   /** Get corresponding layer (const). */

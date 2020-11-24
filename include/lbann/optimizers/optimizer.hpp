@@ -39,7 +39,7 @@
 #include "lbann/utils/memory.hpp"
 #include "lbann/weights/weights.hpp"
 
-#include <cereal/types/utility.hpp>
+#include "lbann/utils/serialize.hpp"
 
 #include <memory>
 #include <string>
@@ -283,7 +283,7 @@ protected:
                     "(" + to_string(this->get_status()) + ")");
       }
     }
-    void clear() {
+    void clear() override {
       this->set_status(optimizer_gradient_status::cleared);
     }
   private:

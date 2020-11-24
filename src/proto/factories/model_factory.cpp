@@ -75,18 +75,18 @@ instantiate_model(lbann_comm* comm,
  *  Layer terms require pointers to layers.
  */
 void assign_layers_to_objective_function(
-  const std::vector<std::unique_ptr<Layer>>& layer_list,
+  const std::vector<OwningLayerPtr>& layer_list,
   objective_function& obj,
   const lbann_data::ObjectiveFunction& proto_obj) {
 
   // Construct map from layer names to layers
-  std::unordered_map<std::string, Layer*> names_to_layers;
-  for (auto&& l : layer_list) {
+  std::unordered_map<std::string, ViewingLayerPtr> names_to_layers;
+  for (const auto& l : layer_list) {
     const auto& name = l->get_name();
     if (names_to_layers.count(name) > 0) {
       LBANN_ERROR("layer name \"", name, "\" is not unique");
     }
-    names_to_layers[name] = l.get();
+    names_to_layers[name] = l;
   }
 
   // Assign layers to layer terms in objective function
@@ -97,13 +97,13 @@ void assign_layers_to_objective_function(
     if (term != nullptr) {
       ++num_layer_terms;
       const auto& params = proto_obj.layer_term(num_layer_terms-1);
-      auto* l = names_to_layers[params.layer()];
-      if (l == nullptr) {
+      const auto& l = names_to_layers[params.layer()];
+      if (l.expired()) {
         LBANN_ERROR("attempted to set objective function layer term ",
                     "to correspond to layer \"", params.layer(), "\", ",
                     "but no such layer exists");
       }
-      term->set_layer(*l);
+      term->set_layer(l);
     }
   }
 
@@ -116,18 +116,18 @@ void assign_layers_to_objective_function(
 }
 
 void assign_layers_to_metrics(
-  const std::vector<std::unique_ptr<Layer>>& layer_list,
+  const std::vector<OwningLayerPtr>& layer_list,
   std::vector<std::unique_ptr<metric>>& metric_list,
   const lbann_data::Model& proto_model) {
 
   // Construct map from layer names to layers
-  std::unordered_map<std::string, Layer*> names_to_layers;
+  std::unordered_map<std::string, ViewingLayerPtr> names_to_layers;
   for (auto&& l : layer_list) {
     const auto& name = l->get_name();
     if (names_to_layers.count(name) > 0) {
       LBANN_ERROR("layer name \"", name, "\" is not unique");
     }
-    names_to_layers[name] = l.get();
+    names_to_layers[name] = l;
   }
 
   // Assign layers to layer metrics
@@ -135,14 +135,14 @@ void assign_layers_to_metrics(
     auto&& m = dynamic_cast<layer_metric*>(metric_list[i].get());
     if (m != nullptr) {
       const auto& params = proto_model.metric(i).layer_metric();
-      auto* l = names_to_layers[params.layer()];
-      if (l == nullptr) {
+      const auto& l = names_to_layers[params.layer()];
+      if (l.expired()) {
         LBANN_ERROR("attempted to set layer metric "
                     "\"", m->name(), "\" "
                     "to correspond to layer \"", params.layer(), "\", "
                     "but no such layer exists");
       }
-      m->set_layer(*l);
+      m->set_layer(l);
     }
   }
 
@@ -150,41 +150,43 @@ void assign_layers_to_metrics(
 
 /** Setup pointers from layers to weights. */
 void assign_weights_to_layers(
-  const std::vector<std::unique_ptr<Layer>>& layer_list,
-  std::vector<std::unique_ptr<weights>>& weights_list,
+  const std::vector<OwningLayerPtr>& layer_list,
+  std::vector<OwningWeightsPtr>& weights_list,
   const lbann_data::Model& proto_model) {
 
   // Construct map from weights names to weights
-  std::unordered_map<std::string, weights*> names_to_weights;
+  std::unordered_map<std::string, ViewingWeightsPtr> names_to_weights;
   for (auto&& w : weights_list) {
     const auto& name = w->get_name();
     if (names_to_weights.count(name) > 0) {
       LBANN_ERROR("weights name \"", name, "\" is not unique");
     }
-    names_to_weights[name] = w.get();
+    names_to_weights[name] = w;
   }
 
   // Find weights assigned to each layer
   for (int i=0; i<proto_model.layer_size(); ++i) {
     const auto& proto_layer = proto_model.layer(i);
-    auto layer_weights = extract_weights(*layer_list[i]);
+    auto layer_weights = layer_list[i]->get_weights_pointers();
     const bool is_frozen = layer_list[i]->is_frozen();
     for (auto&& name : parse_list<std::string>(proto_layer.weights())) {
-      auto&& w = names_to_weights[name];
-      if (!w) {
+      if (names_to_weights.count(name) < 1) {
         LBANN_ERROR("could not find weights named "
                     "\"", name, "\", "
                     "which are expected by layer ",
                     layer_list[i]->get_name());
       }
+      auto& ptr = names_to_weights[name];
+      auto& w = *ptr.lock();
       if (is_frozen) {
-        w->freeze();
-      } else if (w->is_frozen()) {
-        w->unfreeze();
+        w.freeze();
       }
-      layer_weights.push_back(w);
+      else if (w.is_frozen()) {
+        w.unfreeze();
+      }
+      layer_weights.push_back(ptr);
     }
-    layer_list[i]->set_weights(layer_weights);
+    layer_list[i]->set_weights_pointers(layer_weights);
   }
 
 }
@@ -194,18 +196,18 @@ void assign_weights_to_layers(
  *  L2 weight regularization requires pointers to weights.
  */
 void assign_weights_to_objective_function(
-  const std::vector<std::unique_ptr<weights>>& weights_list,
+  const std::vector<OwningWeightsPtr>& weights_list,
   objective_function& obj,
   const lbann_data::ObjectiveFunction& proto_obj) {
 
   // Construct map from weights names to weights
-  std::unordered_map<std::string, weights*> names_to_weights;
+  std::unordered_map<std::string,ViewingWeightsPtr> names_to_weights;
   for (auto&& w : weights_list) {
     const auto& name = w->get_name();
     if (names_to_weights.count(name) > 0) {
       LBANN_ERROR("weights name \"", name, "\" is not unique");
     }
-    names_to_weights[name] = w.get();
+    names_to_weights[name] = w;
   }
 
   // Setup weights with L2 regularization
@@ -216,10 +218,10 @@ void assign_weights_to_objective_function(
     if (term != nullptr) {
       ++num_l2_weight_regularization_terms;
       const auto& params = proto_obj.l2_weight_regularization(num_l2_weight_regularization_terms-1);
-      std::vector<weights*> term_weights;
+      std::vector<ViewingWeightsPtr> term_weights;
       for (auto&& weights_name : parse_list<std::string>(params.weights())) {
         auto&& w = names_to_weights[weights_name];
-        if (!w) {
+        if (w.expired()) {
           LBANN_ERROR("attempted to apply L2 weight regularization to "
                       "weights \"", weights_name, "\", "
                       "but no such weights exists");
@@ -242,10 +244,10 @@ std::unique_ptr<model> construct_model(
   const lbann_data::Model& proto_model) {
 
   // Construct layer graph
-  auto&& layer_list = construct_layer_graph(comm,
-                                            training_dr_linearized_data_size,
-                                            proto_trainer,
-                                            proto_model);
+  auto layer_list = construct_layer_graph(comm,
+                                          training_dr_linearized_data_size,
+                                          proto_trainer,
+                                          proto_model);
 
   // Construct objective function
   const auto& proto_obj = proto_model.objective_function();
@@ -253,12 +255,13 @@ std::unique_ptr<model> construct_model(
   assign_layers_to_objective_function(layer_list, *obj, proto_obj);
 
   // Construct weights
-  std::vector<std::unique_ptr<weights>> weights_list;
+  std::vector<OwningWeightsPtr> weights_list;
   for (int i=0; i<proto_model.weights_size(); i++) {
-    weights_list.push_back(
-      construct_weights(comm,
-                        proto_opt,
-                        proto_model.weights(i)));
+    auto w = construct_weights(
+      comm,
+      proto_opt,
+      proto_model.weights(i));
+    weights_list.push_back(std::move(w));
   }
   assign_weights_to_layers(layer_list, weights_list, proto_model);
   assign_weights_to_objective_function(weights_list, *obj, proto_obj);
@@ -283,9 +286,9 @@ std::unique_ptr<model> construct_model(
 
   // Instantiate model
   auto m = instantiate_model(comm, std::move(obj), proto_opt, proto_model);
-  for (auto&& l   : layer_list   ) { m->add_layer(std::move(l));    }
-  for (auto&& w   : weights_list ) { m->add_weights(std::move(w));  }
-  for (auto&& met : metric_list  ) { m->add_metric(met.release());  }
+  for (auto&& l   : layer_list   ) { m->add_layer(std::move(l)); }
+  for (auto&& w   : weights_list ) { m->add_weights(std::move(w)); }
+  for (auto&& met : metric_list  ) { m->add_metric(std::move(met)); }
   for (auto&& cb  : callback_list) { m->add_callback(std::move(cb)); }
   const auto& name = proto_model.name();
   if (!name.empty()) {

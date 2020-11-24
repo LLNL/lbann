@@ -147,9 +147,9 @@ class input_layer : public data_type_layer<TensorDataType> {
   El::Device get_device_allocation() const override { return Dev; }
 
 
-  void setup_dims(DataReaderMetaData& dr_metadata);
+  void setup_dims(DataReaderMetaData& dr_metadata) override;
 
-  void setup_data(size_t max_mini_batch_size);
+  void setup_data(size_t max_mini_batch_size) override;
 
   /** Setup output tensors.
    *  Sets up the effective (global) mini-batch size.
@@ -183,7 +183,6 @@ class input_layer : public data_type_layer<TensorDataType> {
 #ifdef LBANN_HAS_DISTCONV
   /** @brief Extensions for distributed convolutions */
 ///{@
-  void fp_compute () override;
   using distconv_adapter_type = input_distconv_adapter<TensorDataType, T_layout, Dev>;
   friend distconv_adapter_type;
  protected:

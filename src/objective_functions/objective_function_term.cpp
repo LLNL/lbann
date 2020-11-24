@@ -40,4 +40,20 @@ void objective_function_term::setup(model& m) {
   m_comm = m.get_comm();
 }
 
+std::vector<ViewingLayerPtr> objective_function_term::get_layer_pointers() const {
+  return m_layers;
+}
+
+void objective_function_term::set_layer_pointers(std::vector<ViewingLayerPtr> layers) {
+  m_layers = std::move(layers);
+}
+
+std::vector<ViewingWeightsPtr> objective_function_term::get_weights_pointers() const {
+  return m_weights;
+}
+
+void objective_function_term::set_weights_pointers(std::vector<ViewingWeightsPtr> w) {
+  m_weights = std::move(w);
+}
+
 }  // namespace lbann
