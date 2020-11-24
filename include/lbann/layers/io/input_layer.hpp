@@ -175,19 +175,6 @@ class input_layer : public data_type_layer<TensorDataType> {
     return (m_data_reader_mode == data_reader_target_mode::REGRESSION);
   }
 
-  /** @brief Checkpoint and restore functions */
-///{@
-  // save state of IO to a checkpoint
-  bool save_to_checkpoint_shared(persist& p) const override;
-
-  // reload state of IO from a checkpoint
-  bool load_from_checkpoint_shared(persist& p) override;
-
-  bool save_to_checkpoint_distributed(persist& p) const override;
-
-  bool load_from_checkpoint_distributed(persist& p) override;
-///@}
-
 #ifdef LBANN_HAS_DISTCONV
   /** @brief Extensions for distributed convolutions */
 ///{@

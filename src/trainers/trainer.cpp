@@ -313,7 +313,10 @@ bool trainer::load_from_checkpoint_shared(model& m, execution_context& c) {
       }
     }
   }
-  return true;
+
+  auto flag = get_data_coordinator().load_from_checkpoint_shared(get_persist_obj());
+
+  return flag;
 }
 
 bool trainer::save_to_checkpoint_distributed(){
@@ -322,12 +325,14 @@ bool trainer::save_to_checkpoint_distributed(){
   };
   for_each_execution_context(save_checkpoint);
   save_rng_to_checkpoint_distributed(get_persist_obj(), m_comm);
-  return true;
+  auto flag = get_data_coordinator().save_to_checkpoint_shared(get_persist_obj());
+  return flag;
 }
 
 bool trainer::load_from_checkpoint_distributed(persist& p){
   read_cereal_archive(*this, p, "trainer.xml");
-  return false;
+  auto flag = get_data_coordinator().load_from_checkpoint_distributed(p);
+  return flag;
 }
 
 bool trainer::load_from_checkpoint_distributed(model& m, execution_context& c){
@@ -357,7 +362,8 @@ bool trainer::load_from_checkpoint_distributed(model& m, execution_context& c){
       }
     }
   }
-  return true;
+  auto flag = get_data_coordinator().load_from_checkpoint_distributed(get_persist_obj());
+  return flag;
 }
 
 void trainer::write_proto(lbann_data::Trainer* proto) {
