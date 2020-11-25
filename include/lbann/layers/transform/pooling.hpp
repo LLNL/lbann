@@ -244,6 +244,11 @@ public:
 
 protected:
 
+  friend class cereal::access;
+  pooling_layer()
+    : pooling_layer(nullptr, 1, 1, 1, 1, pool_mode::max)
+  {}
+
   void setup_dims(DataReaderMetaData& dr_metadata) override {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     const auto& input_dims = this->get_input_dims();

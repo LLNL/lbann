@@ -3,10 +3,8 @@ set_full_path(THIS_DIR_SOURCES
   bernoulli.cpp
   categorical_random.cpp
   concatenate.cpp
-  concatenate_builder.cpp
   constant.cpp
   crop.cpp
-  crop_builder.cpp
   discrete_random.cpp
   dummy.cpp
   evaluation.cpp
@@ -30,4 +28,3 @@ set_full_path(THIS_DIR_SOURCES
 
 # Propagate the files up the tree
 set(SOURCES "${SOURCES}" "${THIS_DIR_SOURCES}" PARENT_SCOPE)
-
