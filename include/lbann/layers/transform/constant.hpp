@@ -47,6 +47,20 @@ public:
   }
 
   constant_layer* copy() const override { return new constant_layer(*this); }
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar)
+  {
+    using DataTypeLayer = data_type_layer<TensorDataType>;
+    ar(::cereal::make_nvp("DataTypeLayer",
+                          ::cereal::base_class<DataTypeLayer>(this)));
+  }
+
+  ///@}
+
   std::string get_type() const override { return "constant"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
@@ -58,6 +72,12 @@ public:
   }
 
 protected:
+
+  friend class cereal::access;
+  constant_layer()
+    : constant_layer(nullptr, 0, { 1 } )
+  {}
+
 
   void fp_compute() override {
     if (m_value == EvalType(0)) {
