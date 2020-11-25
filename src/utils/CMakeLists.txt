@@ -1,4 +1,3 @@
-
 # Add the source files for this directory
 set_full_path(THIS_DIR_SOURCES
   argument_parser.cpp
@@ -23,7 +22,6 @@ set_full_path(THIS_DIR_SOURCES
   random.cpp
   random_number_generators.cpp
   serialization.cpp
-  serialize_matrices.cpp
   stack_profiler.cpp
   stack_trace.cpp
   statistics.cpp
@@ -54,6 +52,7 @@ if (LBANN_HAS_DISTCONV)
   list(APPEND THIS_DIR_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/distconv.cpp")
 endif ()
 
+add_subdirectory(serialize_matrices)
 add_subdirectory(threads)
 
 # Propagate the files up the tree

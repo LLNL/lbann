@@ -28,6 +28,7 @@
 #include "lbann/layers/io/input_layer.hpp"
 #include "lbann/utils/profiling.hpp"
 #include "lbann/callbacks/imcomm.hpp"
+#include "lbann/utils/serialize.hpp"
 
 namespace lbann {
 

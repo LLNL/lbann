@@ -115,7 +115,10 @@ class input_layer : public data_type_layer<TensorDataType> {
   ///@}
  protected:
   data_reader_target_mode m_data_reader_mode;
-
+  input_layer(data_reader_target_mode dr_mode = data_reader_target_mode::NA)
+    : input_layer(nullptr, dr_mode)
+  {}
+  friend class cereal::access;
  public:
 
   /// @todo make the map and vector references
@@ -139,11 +142,6 @@ class input_layer : public data_type_layer<TensorDataType> {
   input_layer& operator=(const input_layer&) = default;
   input_layer* copy() const override {
     return new input_layer(*this);
-  }
-
-  /** Archive for checkpoint and restart */
-  template <class Archive> void serialize( Archive & ar ) {
-    ar(CEREAL_NVP(m_data_reader_mode));
   }
 
   std::string get_type() const override { return "input"; }
@@ -174,6 +172,21 @@ class input_layer : public data_type_layer<TensorDataType> {
   bool is_for_regression() const {
     return (m_data_reader_mode == data_reader_target_mode::REGRESSION);
   }
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar)
+  {
+    using DataTypeLayer = data_type_layer<TensorDataType>;
+    ar(::cereal::make_nvp("DataTypeLayer",
+                          ::cereal::base_class<DataTypeLayer>(this)));
+    // FIXME -- need to handle enums in rooted archives
+    //CEREAL_NVP(m_data_reader_mode));
+  }
+
+  ///@}
 
 #ifdef LBANN_HAS_DISTCONV
   /** @brief Extensions for distributed convolutions */
