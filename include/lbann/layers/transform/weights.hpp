@@ -88,11 +88,30 @@ public:
     return *this;
   }
   weights_layer* copy() const override { return new weights_layer(*this); }
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar)
+  {
+    using DataTypeLayer = data_type_layer<TensorDataType>;
+    ar(::cereal::make_nvp("DataTypeLayer",
+                          ::cereal::base_class<DataTypeLayer>(this)));
+  }
+
+  ///@}
+
   std::string get_type() const override { return "weights"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
  protected:
+
+  friend class cereal::access;
+  weights_layer()
+    : weights_layer(nullptr, { 1 } )
+  {}
 
   void setup_matrices(const El::Grid& grid) override {
     data_type_layer<TensorDataType>::setup_matrices(grid);

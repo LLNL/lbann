@@ -80,6 +80,11 @@ public:
 
 protected:
 
+  friend class cereal::access;
+  slice_layer()
+    : slice_layer(nullptr)
+  {}
+
   void setup_dims(DataReaderMetaData& dr_metadata) override;
 
   void fp_setup_outputs(El::Int mini_batch_size) override;

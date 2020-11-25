@@ -52,6 +52,20 @@ public:
   }
 
   weighted_sum_layer* copy() const override { return new weighted_sum_layer(*this); }
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar)
+  {
+    using DataTypeLayer = data_type_layer<TensorDataType>;
+    ar(::cereal::make_nvp("DataTypeLayer",
+                          ::cereal::base_class<DataTypeLayer>(this)));
+  }
+
+  ///@}
+
   std::string get_type() const override { return "weighted sum"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
@@ -67,6 +81,11 @@ public:
   }
 
 protected:
+
+  friend class cereal::access;
+  weighted_sum_layer()
+    : weighted_sum_layer(nullptr, { 1 } )
+  {}
 
   void setup_pointers() override {
     data_type_layer<TensorDataType>::setup_pointers();
