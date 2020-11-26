@@ -155,11 +155,10 @@ public:
    *  @param statistics_group_size Number of processors to aggregate
    *         statistics over. Defaults to 1 (i.e. local aggregation).
    */
-  batch_normalization_layer(lbann_comm *comm,
-                            TensorDataType decay=0.9,
+  batch_normalization_layer(TensorDataType decay=0.9,
                             TensorDataType epsilon=1e-5,
                             int statistics_group_size=1)
-    : data_type_layer<TensorDataType>(comm),
+    : data_type_layer<TensorDataType>(nullptr),
       m_decay(decay),
       m_epsilon(epsilon),
       m_statistics_group_size(statistics_group_size) {
@@ -230,6 +229,22 @@ public:
     desc.add("Statistics group size", m_statistics_group_size);
     return desc;
   }
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar)
+  {
+    using DataTypeLayer = data_type_layer<TensorDataType>;
+    ar(::cereal::make_nvp("DataTypeLayer",
+                          ::cereal::base_class<DataTypeLayer>(this)),
+       CEREAL_NVP(m_decay),
+       CEREAL_NVP(m_epsilon),
+       CEREAL_NVP(m_statistics_group_size));
+  }
+
+  ///@}
 
 protected:
 
@@ -393,6 +408,7 @@ protected:
   batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>& get_distconv_adapter() override;
   const batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>& get_distconv_adapter() const override;
 #endif // LBANN_HAS_DISTCONV
+
 };
 
 #ifdef LBANN_HAS_DISTCONV

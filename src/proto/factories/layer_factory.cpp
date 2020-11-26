@@ -566,7 +566,6 @@ std::unique_ptr<Layer> construct_layer_legacy(
         epsilon = 1e-5;
       }
       return lbann::make_unique<batch_normalization_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(
-        comm,
         decay,
         epsilon,
         statistics_group_size);
