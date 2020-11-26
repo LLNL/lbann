@@ -36,7 +36,6 @@ std::unique_ptr<Layer> build_dropout_layer_from_pbuf(
 {
   const auto& params = layer_msg.dropout();
   return lbann::make_unique<dropout_layer<TensorDataType, layout, device>>(
-    comm,
     params.keep_prob());
 }
 
@@ -53,3 +52,6 @@ std::unique_ptr<Layer> build_dropout_layer_from_pbuf(
 #include "lbann/macros/instantiate_device.hpp"
 
 }// namespace lbann
+
+#define LBANN_LAYER_NAME dropout_layer
+#include "lbann/macros/register_layer_with_cereal.hpp"

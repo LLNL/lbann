@@ -61,10 +61,9 @@ public:
 
 public:
 
-  entrywise_batch_normalization_layer(lbann_comm* comm,
-                                      TensorDataType decay=0.9,
-                                      TensorDataType epsilon=1e-5)
-    : data_type_layer<TensorDataType>(comm), m_decay(decay), m_epsilon(epsilon) {}
+  entrywise_batch_normalization_layer(TensorDataType decay=El::To<TensorDataType>(0.9),
+                                      TensorDataType epsilon=El::To<TensorDataType>(1e-5))
+    : data_type_layer<TensorDataType>(nullptr), m_decay(decay), m_epsilon(epsilon) {}
 
   entrywise_batch_normalization_layer(const entrywise_batch_normalization_layer& other)
     : data_type_layer<TensorDataType>(other),
@@ -101,6 +100,21 @@ public:
     desc.add("Epsilon", m_epsilon);
     return desc;
   }
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar)
+  {
+    using DataTypeLayer = data_type_layer<TensorDataType>;
+    ar(::cereal::make_nvp("DataTypeLayer",
+                          ::cereal::base_class<DataTypeLayer>(this)),
+       CEREAL_NVP(m_decay),
+       CEREAL_NVP(m_epsilon));
+  }
+
+  ///@}
 
 protected:
 

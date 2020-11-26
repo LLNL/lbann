@@ -61,9 +61,8 @@ public:
 
 public:
   /** Keep units with probabiliy keep_prob. */
-  dropout(lbann_comm *comm,
-          EvalType keep_prob = EvalType(0.5))
-    : data_type_layer<TensorDataType>(comm),
+  dropout(EvalType keep_prob = EvalType(0.5))
+    : data_type_layer<TensorDataType>(nullptr),
       m_keep_prob(keep_prob)
 #ifdef LBANN_HAS_DNN_LIB
     , m_tensors_dnn_desc(this)
@@ -126,6 +125,20 @@ public:
   void set_keep_prob(EvalType keep_prob) {
     m_keep_prob = keep_prob;
   }
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar)
+  {
+    using DataTypeLayer = data_type_layer<TensorDataType>;
+    ar(::cereal::make_nvp("DataTypeLayer",
+                          ::cereal::base_class<DataTypeLayer>(this)),
+       CEREAL_NVP(m_keep_prob));
+  }
+
+  ///@}
 
 protected:
 

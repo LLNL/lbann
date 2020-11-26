@@ -23,19 +23,26 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
+#include <lbann/layers/regularizers/layer_norm.hpp>
+#include <cereal/types/polymorphic.hpp>
 
-#define LBANN_SELU_DROPOUT_LAYER_INSTANTIATE
-#include "lbann/layers/regularizers/selu_dropout.hpp"
+#define LBANN_LAYER_NAME layer_norm_layer
+#define LBANN_COMMA ,
+#define LBANN_REGISTER_LAYER_WITH_CEREAL_BASE(NAME, TYPE, LAYOUT, DEVICE) \
+  CEREAL_REGISTER_TYPE_WITH_NAME(                                       \
+    ::lbann::NAME<TYPE LBANN_COMMA ::lbann::data_layout::LAYOUT LBANN_COMMA DEVICE>, \
+    #NAME "(" #TYPE "," #LAYOUT "," #DEVICE ")")
 
-namespace lbann {
+#define LBANN_REGISTER_LAYER_WITH_CEREAL(NAME, TYPE, DEVICE)            \
+  LBANN_REGISTER_LAYER_WITH_CEREAL_BASE(                                \
+    NAME, TYPE, DATA_PARALLEL, DEVICE);
 
-#define PROTO_DEVICE(T, Device) \
-  template class selu_dropout<T, data_layout::DATA_PARALLEL, Device>; \
-  template class selu_dropout<T, data_layout::MODEL_PARALLEL, Device>
+#define PROTO_DEVICE(T, D)                              \
+  LBANN_REGISTER_LAYER_WITH_CEREAL(LBANN_LAYER_NAME, T, D)
 
-#include "lbann/macros/instantiate_device.hpp"
-
-}// namespace lbann
-
-#define LBANN_LAYER_NAME selu_dropout
-#include "lbann/macros/register_layer_with_cereal_data_parallel_only.hpp"
+PROTO_DEVICE(float, El::Device::CPU)
+PROTO_DEVICE(double, El::Device::CPU)
+#ifdef LBANN_HAS_GPU
+PROTO_DEVICE(float, El::Device::GPU)
+PROTO_DEVICE(double, El::Device::GPU)
+#endif // LBANN_HAS_GPU

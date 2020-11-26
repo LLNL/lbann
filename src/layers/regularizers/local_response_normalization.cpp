@@ -44,7 +44,6 @@ struct lrn_builder<TensorDataType, data_layout::DATA_PARALLEL, device> {
                                         lbann_data::Layer const& layer_msg) {
     const auto& params = layer_msg.local_response_normalization();
     return lbann::make_unique<LayerType>(
-      comm,
       params.window_width(),
       El::To<TensorDataType>(params.lrn_alpha()),
       El::To<TensorDataType>(params.lrn_beta()),
@@ -86,3 +85,6 @@ std::unique_ptr<Layer> build_local_response_normalization_layer_from_pbuf(
 #include "lbann/macros/instantiate_device.hpp"
 
 }// namespace lbann
+
+#define LBANN_LAYER_NAME local_response_normalization_layer
+#include "lbann/macros/register_layer_with_cereal_data_parallel_only.hpp"

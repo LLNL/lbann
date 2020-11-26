@@ -60,12 +60,11 @@ class local_response_normalization_layer : public data_type_layer<TensorDataType
                 "local_response_normalization only supports DATA_PARALLEL");
 public:
 
-  local_response_normalization_layer(lbann_comm *comm,
-                                     int window_width,
+  local_response_normalization_layer(int window_width,
                                      TensorDataType alpha,
                                      TensorDataType beta,
                                      TensorDataType k)
-    : data_type_layer<TensorDataType>(comm),
+    : data_type_layer<TensorDataType>(nullptr),
       m_window_width(window_width), m_alpha(alpha), m_beta(beta), m_k(k)
 #ifdef LBANN_HAS_DNN_LIB
     , m_tensors_dnn_desc(this)
@@ -121,7 +120,33 @@ public:
     return desc;
   }
 
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar)
+  {
+    using DataTypeLayer = data_type_layer<TensorDataType>;
+    ar(::cereal::make_nvp("DataTypeLayer",
+                          ::cereal::base_class<DataTypeLayer>(this)),
+       CEREAL_NVP(m_window_width),
+       CEREAL_NVP(m_alpha),
+       CEREAL_NVP(m_beta),
+       CEREAL_NVP(m_k));
+  }
+
+  ///@}
+
 protected:
+
+  friend class cereal::access;
+  local_response_normalization_layer()
+    : local_response_normalization_layer(
+      5,
+      El::To<TensorDataType>(0.0001),
+      El::To<TensorDataType>(0.75),
+      El::To<TensorDataType>(2))
+  {}
 
   void setup_dims(DataReaderMetaData& dr_metadata) override {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);

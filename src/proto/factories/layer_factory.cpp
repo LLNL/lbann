@@ -269,6 +269,7 @@ private:
     LBANN_REGISTER_BUILDER(InstanceNorm, instance_norm);
     LBANN_REGISTER_BUILDER(LocalResponseNormalization,
                            local_response_normalization);
+
     // Miscellaneous layers
     LBANN_REGISTER_BUILDER(DFTAbs, dft_abs);
     LBANN_REGISTER_BUILDER(ChannelwiseSoftmax, channelwise_softmax);
@@ -580,21 +581,21 @@ std::unique_ptr<Layer> construct_layer_legacy(
     const auto& alpha = params.alpha();
     const auto& scale = params.scale();
     if (alpha != 0.0 && scale != 0.0) {
-      return lbann::make_unique<selu_dropout<TensorDataType, Layout, Device>>(comm, keep_prob, alpha, scale);
+      return lbann::make_unique<selu_dropout<TensorDataType, Layout, Device>>(keep_prob, alpha, scale);
     } else {
-      return lbann::make_unique<selu_dropout<TensorDataType, Layout, Device>>(comm, keep_prob);
+      return lbann::make_unique<selu_dropout<TensorDataType, Layout, Device>>(keep_prob);
     }
   }
   if (proto_layer.has_entrywise_batch_normalization()) {
     const auto& params = proto_layer.entrywise_batch_normalization();
-    return lbann::make_unique<entrywise_batch_normalization_layer<TensorDataType, Layout, Device>>(comm, params.decay(), params.epsilon());
+    return lbann::make_unique<entrywise_batch_normalization_layer<TensorDataType, Layout, Device>>(params.decay(), params.epsilon());
   }
   if (proto_layer.has_layer_norm()) {
     const auto& params = proto_layer.layer_norm();
     const double epsilon = (params.has_epsilon()
                             ? params.epsilon().value()
                             : 1e-5);
-    return lbann::make_unique<layer_norm_layer<TensorDataType, Layout, Device>>(comm, epsilon);
+    return lbann::make_unique<layer_norm_layer<TensorDataType, Layout, Device>>(epsilon);
   }
 
   // Activation layers
