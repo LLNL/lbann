@@ -76,7 +76,7 @@ protected:
 
   friend class cereal::access;
   constant_layer()
-    : constant_layer(nullptr, 0, { 1 } )
+    : constant_layer(nullptr, El::To<TensorDataType>(0), { 1 } )
   {}
 
 
