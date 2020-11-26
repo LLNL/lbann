@@ -145,8 +145,15 @@ int main(int argc, char *argv[]) {
     //to activate, must specify --st_on on cmd line
     stack_profiler::get()->activate(comm->get_rank_in_world());
 
-    // Load the prototexts specificed on the command line
-    auto pbs = protobuf_utils::load_prototext(master, argc, argv);
+    //Get procs per trainer from command line 
+    int trainer_rank = 0;
+    auto ppt = opts->get_int("procs_per_trainer");
+    if(ppt != 0) {
+      comm->split_trainers(ppt);
+      trainer_rank = comm->get_trainer_rank();
+    }
+    // Load the (per_trainer) prototexts specificed on the command line
+    auto pbs = protobuf_utils::load_prototext(master, argc, argv,trainer_rank);
     // Optionally over-ride some values in the prototext for each model
     for(size_t i = 0; i < pbs.size(); i++) {
       get_cmdline_overrides(*comm, *(pbs[i]));
@@ -165,7 +172,6 @@ int main(int argc, char *argv[]) {
     if(dr != nullptr) {
       training_dr_linearized_data_size = dr->get_linearized_data_size();
     }
-
     lbann_data::Model *pb_model = pb.mutable_model();
 
     auto model = build_model_from_prototext(argc, argv, pb_trainer, pb,
