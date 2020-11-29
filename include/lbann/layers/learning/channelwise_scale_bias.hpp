@@ -75,7 +75,7 @@ public:
 
 public:
 
-  channelwise_scale_bias_layer(lbann_comm *comm);
+  channelwise_scale_bias_layer(lbann_comm *comm=nullptr);
   channelwise_scale_bias_layer(const channelwise_scale_bias_layer& other);
   channelwise_scale_bias_layer& operator=(
     const channelwise_scale_bias_layer& other);
@@ -90,6 +90,14 @@ public:
 
   void setup_matrices(const El::Grid& grid) override;
   void setup_data(size_t max_mini_batch_size) override;
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
 
 protected:
 
@@ -176,6 +184,17 @@ void channelwise_scale_bias_layer<TensorDataType, Layout, Dev>
   // Setup gradient w.r.t. weights
   m_weights_gradient->AlignWith(dist);
   m_weights_gradient->Resize(num_channels, 2);
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+template <typename ArchiveT>
+void
+channelwise_scale_bias_layer<TensorDataType,Layout,Device>
+::serialize(ArchiveT& ar)
+{
+  using DataTypeLayer = data_type_layer<TensorDataType>;
+  ar(::cereal::make_nvp("DataTypeLayer",
+                        ::cereal::base_class<DataTypeLayer>(this)));
 }
 
 LBANN_DEFINE_LAYER_BUILDER(channelwise_scale_bias);

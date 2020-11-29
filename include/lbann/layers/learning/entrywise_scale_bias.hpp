@@ -70,7 +70,7 @@ public:
 
 public:
 
-  entrywise_scale_bias_layer(lbann_comm *comm);
+  entrywise_scale_bias_layer(lbann_comm *comm=nullptr);
   entrywise_scale_bias_layer(const entrywise_scale_bias_layer& other);
   entrywise_scale_bias_layer& operator=(
     const entrywise_scale_bias_layer& other);
@@ -82,6 +82,14 @@ public:
   std::string get_type() const override { return "entry-wise scale/bias"; }
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
 
   void setup_matrices(const El::Grid& grid) override;
   void setup_data(size_t max_mini_batch_size) override;
@@ -101,7 +109,7 @@ private:
 
 };
 
-// Implementation
+// Template implementation
 template <typename TensorDataType, data_layout Layout, El::Device Dev>
 entrywise_scale_bias_layer<TensorDataType, Layout, Dev>
 ::entrywise_scale_bias_layer(lbann_comm *comm)
@@ -125,6 +133,17 @@ auto entrywise_scale_bias_layer<TensorDataType, Layout, Dev>
                            other.m_weights_gradient->Copy() :
                            nullptr);
   return *this;
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+template <typename ArchiveT>
+void
+entrywise_scale_bias_layer<TensorDataType,Layout,Device>
+::serialize(ArchiveT& ar)
+{
+  using DataTypeLayer = data_type_layer<TensorDataType>;
+  ar(::cereal::make_nvp("DataTypeLayer",
+                        ::cereal::base_class<DataTypeLayer>(this)));
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Dev>

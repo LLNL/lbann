@@ -41,11 +41,10 @@ namespace lbann
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 channelwise_fully_connected_layer<TensorDataType,Layout,Device>
 ::channelwise_fully_connected_layer(
-  lbann_comm* comm,
   std::vector<size_t> output_channel_dims,
   bool bias,
   bool transpose)
-  : data_type_layer<TensorDataType>(comm),
+  : data_type_layer<TensorDataType>(nullptr),
     m_has_bias{bias},
     m_transpose{transpose}
 {
@@ -63,6 +62,12 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
   this->set_output_dims(output_dims);
 
 }
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+channelwise_fully_connected_layer<TensorDataType,Layout,Device>
+::channelwise_fully_connected_layer()
+  : channelwise_fully_connected_layer({}, false, false)
+{}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 channelwise_fully_connected_layer<TensorDataType,Layout,Device>*
@@ -477,7 +482,7 @@ std::unique_ptr<Layer> build_channelwise_fully_connected_layer_from_pbuf(
   const bool transpose = (params.has_transpose()
                           ? params.transpose().value()
                           : false);
-  return BuilderType::Build(comm, output_channel_dims, has_bias, transpose);
+  return BuilderType::Build(output_channel_dims, has_bias, transpose);
 }
 
 // =========================================================
@@ -491,3 +496,6 @@ std::unique_ptr<Layer> build_channelwise_fully_connected_layer_from_pbuf(
 #include "lbann/macros/instantiate_device.hpp"
 
 } // namespace lbann
+
+#define LBANN_LAYER_NAME channelwise_fully_connected_layer
+#include "lbann/macros/register_layer_with_cereal_data_parallel_only.hpp"

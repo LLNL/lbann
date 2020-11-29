@@ -41,14 +41,18 @@ namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 gru_layer<TensorDataType, Layout, Device>::gru_layer(
-  lbann_comm* comm,
   size_t hidden_size,
   size_t num_layers)
-  : data_type_layer<TensorDataType>(comm),
+  : data_type_layer<TensorDataType>(nullptr),
     m_hidden_size{hidden_size},
     m_num_layers{num_layers} {
   this->m_expected_num_parent_layers = 2;
 }
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+gru_layer<TensorDataType, Layout, Device>::gru_layer()
+  : gru_layer(0, 0)
+{}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 gru_layer<TensorDataType, Layout, Device>::gru_layer(const gru_layer& other)
@@ -973,7 +977,7 @@ std::unique_ptr<Layer> build_gru_layer_from_pbuf(
   const size_t num_layers = (params.has_num_layers()
                              ? params.num_layers().value()
                              : 1);
-  return BuilderType::Build(comm, params.hidden_size(), num_layers);
+  return BuilderType::Build(params.hidden_size(), num_layers);
 }
 
 // ---------------------------------------------
