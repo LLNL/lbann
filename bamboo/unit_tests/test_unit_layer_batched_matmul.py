@@ -21,9 +21,9 @@ import tools
 np.random.seed(20191111)
 _m = 2
 _n = 3
-_k = 2
+_k = 4
 _N = 5
-_samples = np.random.normal(size=(16,_N*(_m*_k)+_N*(_k*_n))).astype(np.float32)
+_samples = np.random.normal(size=(32,_N*(_m*_k)+_N*(_k*_n))).astype(np.float32)
 
 # Sample access functions
 def get_sample(index):

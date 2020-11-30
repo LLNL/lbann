@@ -197,12 +197,19 @@ void fp_compute_impl(matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,El:
 
   const El::Int input0_height = *(input0_dims.rbegin()+1);
   const El::Int input0_width = *(input0_dims.rbegin());
+  const El::Int input1_height = *(input1_dims.rbegin()+1);
   const El::Int input1_width = *(input1_dims.rbegin());
   const El::Int output_height = *(output_dims.rbegin()+1);
   const El::Int output_width = *(output_dims.rbegin());
 
   const auto num_matrices = mat_depth * local_mini_batch_size;
-  
+  const auto input0_stride = input0_height * input0_width;
+  const auto input1_stride = input1_height * input1_width; 
+  const auto output_stride = output_height * output_width;
+
+  // Compute gradients for each mini-batch sample
+  // Note: cuBLAS expects matrices in Fortran layout while LBANN
+  // tensors are in C layout.
   {
     using namespace hydrogen;
     auto multisync = MakeMultiSync(gpu::get_sync_info(local_output),
@@ -216,10 +223,10 @@ void fp_compute_impl(matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,El:
       output_height,
       transpose_input0 ? input0_height : input0_width,
       El::TypeTraits<TensorDataType>::One(),
-      local_input1.LockedBuffer(), input1_width, local_input1.LDim() / mat_depth,
-      local_input0.LockedBuffer(), input0_width, local_input0.LDim() / mat_depth,
+      local_input1.LockedBuffer(), input1_width, input1_stride,
+      local_input0.LockedBuffer(), input0_width, input0_stride,
       El::TypeTraits<TensorDataType>::Zero(),
-      local_output.Buffer(), output_width, local_output.LDim() / mat_depth,
+      local_output.Buffer(), output_width, output_stride,
       num_matrices,
       multisync);
   }
@@ -248,6 +255,7 @@ void bp_compute_impl(matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,El:
   const auto input0_dims = l.get_input_dims(0);
   const auto input1_dims = l.get_input_dims(1);
   const auto output_dims = l.get_output_dims();
+
   // Check if matrix is 3D or 2D 
   const El::Int mat_depth =   (input0_dims.size()>2) ? *(input0_dims.rbegin()+2) : 1;
 
@@ -259,7 +267,14 @@ void bp_compute_impl(matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,El:
   const El::Int output_width = *(output_dims.rbegin());
 
   const auto num_matrices = mat_depth * local_mini_batch_size;
-  
+  const auto input0_stride = input0_height * input0_width;
+  const auto input1_stride = input1_height * input1_width; 
+  const auto output_stride = output_height * output_width;
+
+  const auto input0_grad_stride = input0_stride; 
+  const auto input1_grad_stride = input1_stride; 
+  const auto output_grad_stride = output_stride; 
+
   // Compute gradients for each mini-batch sample
   // Note: cuBLAS expects matrices in Fortran layout while LBANN
   // tensors are in C layout.
@@ -277,10 +292,10 @@ void bp_compute_impl(matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,El:
         transpose_input1 ? TransposeMode::TRANSPOSE : TransposeMode::NORMAL,
         input0_width, input0_height, output_width,
         El::TypeTraits<TensorDataType>::One(),
-        local_output_grad.LockedBuffer(), output_width, local_output_grad.LDim() / mat_depth,
-        local_input1.LockedBuffer(), input1_width, local_input1.LDim() / mat_depth,
+        local_output_grad.LockedBuffer(), output_width, output_grad_stride,
+        local_input1.LockedBuffer(), input1_width, input1_stride,
         El::TypeTraits<TensorDataType>::Zero(),
-        local_input0_grad.Buffer(), input0_width, local_input0_grad.LDim() / mat_depth,
+        local_input0_grad.Buffer(), input0_width, input0_grad_stride,
         num_matrices,
         multisync);
     }
@@ -290,10 +305,10 @@ void bp_compute_impl(matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,El:
         TransposeMode::NORMAL,
         input0_width, input0_height, output_width,
         El::TypeTraits<TensorDataType>::One(),
-        local_input1.LockedBuffer(), input1_width, local_input1.LDim() / mat_depth,
-        local_output_grad.LockedBuffer(), output_width, local_output_grad.LDim() / mat_depth,
+        local_input1.LockedBuffer(), input1_width, input1_stride,
+        local_output_grad.LockedBuffer(), output_width, output_grad_stride,
         El::TypeTraits<TensorDataType>::Zero(),
-        local_input0_grad.Buffer(), input0_width, local_input0_grad.LDim() / mat_depth,
+        local_input0_grad.Buffer(), input0_width, input0_grad_stride,
         num_matrices,
         multisync);
     }
@@ -310,10 +325,10 @@ void bp_compute_impl(matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,El:
         TransposeMode::TRANSPOSE,
         input1_width, input1_height, output_height,
         El::TypeTraits<TensorDataType>::One(),
-        local_input0.LockedBuffer(), input0_width, local_input0.LDim() / mat_depth,
-        local_output_grad.LockedBuffer(), output_width, local_output_grad.LDim() / mat_depth,
+        local_input0.LockedBuffer(), input0_width, input0_stride,
+        local_output_grad.LockedBuffer(), output_width, output_grad_stride,
         El::TypeTraits<TensorDataType>::Zero(),
-        local_input1_grad.Buffer(), input1_width, local_input1_grad.LDim() / mat_depth,
+        local_input1_grad.Buffer(), input1_width, input1_grad_stride,
         num_matrices,
         multisync);
     }
@@ -323,10 +338,10 @@ void bp_compute_impl(matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,El:
         transpose_input0 ? TransposeMode::NORMAL : TransposeMode::TRANSPOSE,
         input1_width, input1_height, output_height,
         El::TypeTraits<TensorDataType>::One(),
-        local_output_grad.LockedBuffer(), output_width, local_output_grad.LDim() / mat_depth,
-        local_input0.LockedBuffer(), input0_width, local_input0.LDim() / mat_depth,
+        local_output_grad.LockedBuffer(), output_width, output_grad_stride,
+        local_input0.LockedBuffer(), input0_width, input0_stride,
         El::TypeTraits<TensorDataType>::Zero(),
-        local_input1_grad.Buffer(), input1_width, local_input1_grad.LDim() / mat_depth,
+        local_input1_grad.Buffer(), input1_width, input1_grad_stride,
         num_matrices,
         multisync);
     }
