@@ -14,11 +14,6 @@ current_dir = os.path.dirname(current_file)
 sys.path.insert(0, os.path.join(os.path.dirname(current_dir), 'common_python'))
 import tools
 
-# ATOM application directory
-root_dir = os.path.dirname(os.path.dirname(current_dir))
-atom_dir = os.path.join(root_dir, 'applications', 'ATOM')
-sys.path.append(atom_dir)
-
 # ==============================================
 # Options
 # ==============================================
