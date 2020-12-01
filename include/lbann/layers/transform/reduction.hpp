@@ -47,7 +47,7 @@ class reduction_layer : public data_type_layer<TensorDataType> {
 private:
 
   /** Reduction mode. */
-  const reduction_mode m_mode;
+  /*const*/ reduction_mode m_mode;
 
   /** Vector composed of ones. */
   El::Matrix<TensorDataType, Dev> m_ones;
@@ -73,7 +73,11 @@ public:
   {
     using DataTypeLayer = data_type_layer<TensorDataType>;
     ar(::cereal::make_nvp("DataTypeLayer",
-                          ::cereal::base_class<DataTypeLayer>(this)));
+                          ::cereal::base_class<DataTypeLayer>(this)),
+       CEREAL_NVP(m_mode));
+    // Members that aren't serialized
+    //  m_ones
+
   }
 
   ///@}

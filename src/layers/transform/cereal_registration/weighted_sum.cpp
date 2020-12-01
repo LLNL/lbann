@@ -26,4 +26,4 @@
 #include <lbann/layers/transform/weighted_sum.hpp>
 
 #define LBANN_LAYER_NAME weighted_sum_layer
-#include <lbann/macros/register_layer_with_cereal_data_parallel_cpu_only.hpp>
+#include <lbann/macros/register_layer_with_cereal.hpp>

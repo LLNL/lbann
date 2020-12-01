@@ -61,7 +61,8 @@ public:
   {
     using DataTypeLayer = data_type_layer<TensorDataType>;
     ar(::cereal::make_nvp("DataTypeLayer",
-                          ::cereal::base_class<DataTypeLayer>(this)));
+                          ::cereal::base_class<DataTypeLayer>(this)),
+       CEREAL_NVP(m_scaling_factors));
   }
 
   ///@}
