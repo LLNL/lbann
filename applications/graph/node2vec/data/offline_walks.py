@@ -107,12 +107,9 @@ class SampleIterator:
         self.batch_size = batch_size
 
         # Cache for batched sample generation
-        self.batch = np.zeros(
-            (self.batch_size, sample_dims()[0]),
-            dtype=np.float32,
-        )
-        self.walk_batches = iter(())
+        self.batch = np.zeros((self.batch_size, sample_dims()[0]), dtype=np.float32)
         self.batch_pos_list = []
+        self.walk_batches = iter(())
 
         # Negative sampling distribution
         self.noise_cdf = np.zeros(num_vertices, dtype=np.float64)
@@ -126,18 +123,21 @@ class SampleIterator:
 
     def __next__(self):
         if not self.batch_pos_list:
-            self._generate_batch()
+            batch_size = self._generate_batch(out=self.batch)
+            self.batch_pos_list = list(range(batch_size))
+            np.random.shuffle(self.batch_pos_list)
         return self.batch[self.batch_pos_list.pop()]
 
     def __bool__(self):
         return True
 
-    def _generate_batch(self):
+    def _generate_batch(self, out):
         """Produce a batch of data samples."""
+        initialize_rng()
 
         # Read walks from file
         try:
-            walk_batch = next(self.walk_batches)
+            walks = next(self.walk_batches)
         except StopIteration:
             self.walk_batches = pd.read_csv(
                 self.walk_file,
@@ -149,30 +149,34 @@ class SampleIterator:
                 chunksize=self.batch_size,
                 compression=None,
             )
-            walk_batch = next(self.walk_batches)
-        walk_batch = walk_batch.to_numpy()
-        batch_size = walk_batch.shape[0]
-        assert walk_batch.shape[0], \
+            walks = next(self.walk_batches)
+        walks = walks.to_numpy()
+        batch_size = min(walks.shape[0], out.shape[0])
+        assert walks.shape[0] > 0, \
             f'Did not load any walks from {walk_file}'
-        assert walk_batch.shape[1] == self.walk_length, \
-            f'Found walks of length {walk_batch.shape[1]} in {walk_file}, ' \
+        assert walks.shape[1] == self.walk_length, \
+            f'Found walks of length {walks.shape[1]} in {walk_file}, ' \
             f'but expected a walk length of {self.walk_length}'
 
         # Update negative sampling distribution, if needed
-        self._record_walk_visits(walk_batch)
+        self._record_walk_visits(walks)
         if self.total_visit_count > 2*self.noise_visit_count:
             self._update_noise_distribution()
 
         # Generate negative samples
-        initialize_rng()
         rands = np.random.uniform(size=(batch_size, self.num_negative_samples))
         negative_samples = np.searchsorted(self.noise_cdf, rands)
 
-        # Cache samples
-        self.batch[:batch_size,:self.num_negative_samples] = negative_samples
-        self.batch[:batch_size,-self.walk_length:] = walk_batch
-        self.batch_pos_list = list(range(batch_size))
-        np.random.shuffle(self.batch_pos_list)
+        # Construct data samples
+        np.random.shuffle(walks)
+        if out is None:
+            out = np.zeros((batch_size, sample_dims()[0]), dtype=np.float32)
+        pos0 = 0
+        pos1 = self.num_negative_samples
+        pos2 = self.num_negative_samples + self.walk_length
+        out[:batch_size,pos0:pos1] = negative_samples
+        out[:batch_size,pos1:pos2] = walks[:batch_size]
+        return batch_size
 
     def _record_walk_visits(self, walks):
         """Record visits to vertices in a graph walk."""
