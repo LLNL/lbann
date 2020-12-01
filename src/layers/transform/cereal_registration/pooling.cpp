@@ -26,4 +26,4 @@
 #include <lbann/layers/transform/pooling.hpp>
 
 #define LBANN_LAYER_NAME pooling_layer
-#include <lbann/macros/register_layer_with_cereal_data_parallel_cpu_only.hpp>
+#include <lbann/macros/register_layer_with_cereal_data_parallel_only.hpp>

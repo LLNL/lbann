@@ -54,6 +54,21 @@ class in_top_k_layer : public data_type_layer<TensorDataType> {
   }
 
   in_top_k_layer* copy() const override { return new in_top_k_layer(*this); }
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar)
+  {
+    using DataTypeLayer = data_type_layer<TensorDataType>;
+    ar(::cereal::make_nvp("DataTypeLayer",
+                          ::cereal::base_class<DataTypeLayer>(this)),
+       CEREAL_NVP(m_k));
+  }
+
+  ///@}
+
   std::string get_type() const override { return "in_top_k"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
@@ -81,7 +96,7 @@ class in_top_k_layer : public data_type_layer<TensorDataType> {
  private:
 
   /** Parameter for top-k search. */
-  const El::Int m_k;
+  /*const*/ El::Int m_k;
 
 };
 

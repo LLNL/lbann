@@ -26,4 +26,4 @@
 #include <lbann/layers/transform/crop.hpp>
 
 #define LBANN_LAYER_NAME crop_layer
-#include <lbann/macros/register_layer_with_cereal_data_parallel_cpu_only.hpp>
+#include <lbann/macros/register_layer_with_cereal_data_parallel_only.hpp>

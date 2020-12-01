@@ -26,4 +26,4 @@
 #include <lbann/layers/transform/concatenate.hpp>
 
 #define LBANN_LAYER_NAME concatenate_layer
-#include <lbann/macros/register_layer_with_cereal_data_parallel_cpu_only.hpp>
+#include <lbann/macros/register_layer_with_cereal.hpp>
