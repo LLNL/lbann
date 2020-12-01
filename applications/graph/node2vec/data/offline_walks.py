@@ -7,9 +7,9 @@ corresponding to a graph walk and negative samples.
 
 """
 import configparser
+import threading
 import os
 import os.path
-import subprocess
 import sys
 import warnings
 import numpy as np
@@ -84,7 +84,8 @@ class SampleIterator:
     """Iterator class to produces data samples.
 
     A data sample consists of a graph walk and several negative
-    samples.
+    samples. Data samples are produced in batches to amortize Python
+    and I/O overheads.
 
     """
 
@@ -106,10 +107,14 @@ class SampleIterator:
         self.noise_distribution_exp = noise_distribution_exp
         self.batch_size = batch_size
 
+        # Cache for walk data
+        self.walk_batches = iter(())
+        self.next_walk_batch = None
+        self.next_walk_batch_thread = None
+
         # Cache for batched sample generation
         self.batch = np.zeros((self.batch_size, sample_dims()[0]), dtype=np.float32)
-        self.batch_pos_list = []
-        self.walk_batches = iter(())
+        self.batch_rows = []
 
         # Negative sampling distribution
         self.noise_cdf = np.zeros(num_vertices, dtype=np.float64)
@@ -122,18 +127,20 @@ class SampleIterator:
         return self
 
     def __next__(self):
-        if not self.batch_pos_list:
-            batch_size = self._generate_batch(out=self.batch)
-            self.batch_pos_list = list(range(batch_size))
-            np.random.shuffle(self.batch_pos_list)
-        return self.batch[self.batch_pos_list.pop()]
+        if not self.batch_rows:
+            self._generate_batch(
+                out=self.batch,
+                rows=self.batch_rows,
+            )
+        return self.batch[self.batch_rows.pop()]
 
-    def __bool__(self):
-        return True
+    def _read_walks(self):
+        """Read walk data from walks file.
 
-    def _generate_batch(self, out):
-        """Produce a batch of data samples."""
-        initialize_rng()
+        Results are stored in `self.next_walk_batch`. Each MPI process
+        reads a different subset of the file.
+
+        """
 
         # Read walks from file
         try:
@@ -145,18 +152,47 @@ class SampleIterator:
                 header=None,
                 dtype=np.int64,
                 skiprows=(lambda row : (row + mpi_rank) % mpi_size),
+                keep_default_na=False,
                 iterator=True,
                 chunksize=self.batch_size,
                 compression=None,
+                memory_map=True,
             )
             walks = next(self.walk_batches)
-        walks = walks.to_numpy()
-        batch_size = min(walks.shape[0], out.shape[0])
+        walks = walks.to_numpy(dtype=np.int64)
+
+        # Check that walks are valid
         assert walks.shape[0] > 0, \
             f'Did not load any walks from {walk_file}'
         assert walks.shape[1] == self.walk_length, \
             f'Found walks of length {walks.shape[1]} in {walk_file}, ' \
             f'but expected a walk length of {self.walk_length}'
+
+        # Store walks in member variable
+        self.next_walk_batch = walks
+
+    def _generate_batch(self, out, rows):
+        """Produce a batch of data samples.
+
+        Batch data is output to `out` and valid matrix rows are output
+        to `rows`. `out` should be a `np.ndarray` with type
+        `np.float32` and dimensions `batch_size` x `sample_size`.
+        `rows` should be a `list`.
+
+        Walk data is read from the walk file in a background thread.
+
+        """
+        initialize_rng()
+
+        # Get walks and start reading next batch in background
+        if self.next_walk_batch_thread is None:
+            self._read_walks()
+        else:
+            self.next_walk_batch_thread.join()
+        walks = self.next_walk_batch
+        batch_size = min(walks.shape[0], out.shape[0])
+        self.next_walk_batch_thread = threading.Thread(target=self._read_walks)
+        self.next_walk_batch_thread.start()
 
         # Update negative sampling distribution, if needed
         self._record_walk_visits(walks)
@@ -167,16 +203,17 @@ class SampleIterator:
         rands = np.random.uniform(size=(batch_size, self.num_negative_samples))
         negative_samples = np.searchsorted(self.noise_cdf, rands)
 
-        # Construct data samples
-        np.random.shuffle(walks)
-        if out is None:
-            out = np.zeros((batch_size, sample_dims()[0]), dtype=np.float32)
-        pos0 = 0
-        pos1 = self.num_negative_samples
-        pos2 = self.num_negative_samples + self.walk_length
-        out[:batch_size,pos0:pos1] = negative_samples
-        out[:batch_size,pos1:pos2] = walks[:batch_size]
-        return batch_size
+        # Populate output matrix with data samples
+        col0 = 0
+        col1 = self.num_negative_samples
+        col2 = self.num_negative_samples + self.walk_length
+        out[:batch_size,col0:col1] = negative_samples
+        out[:batch_size,col1:col2] = walks[:batch_size]
+
+        # Construct list of valid rows in output matrix
+        rows.clear()
+        rows.extend(range(batch_size))
+        np.random.shuffle(rows)
 
     def _record_walk_visits(self, walks):
         """Record visits to vertices in a graph walk."""
@@ -224,7 +261,7 @@ def get_sample(*args):
 
     """
     global samples
-    if not samples:
+    if samples is None:
         samples = SampleIterator(
             walk_file=walk_file,
             walk_length=walk_length,
