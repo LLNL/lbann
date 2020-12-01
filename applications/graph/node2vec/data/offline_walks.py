@@ -40,10 +40,16 @@ config.read(config_file)
 num_vertices = config.getint('Graph', 'num_vertices', fallback=0)
 walk_file = config.get('Walks', 'file', fallback=None)
 walk_length = config.getint('Walks', 'walk_length', fallback=0)
-num_walks = config.getint('Walks', 'num_walks', fallback=0)
 epoch_size = config.getint('Skip-gram', 'epoch_size')
 num_negative_samples = config.getint('Skip-gram', 'num_negative_samples')
 noise_distribution_exp = config.getfloat('Skip-gram', 'noise_distribution_exp')
+
+# Check options
+if not walk_file:
+    raise RuntimeError(f'No walk file specified in {config_file}')
+assert num_negative_samples > 0, \
+    f'Invalid number of negative samples ({num_negative_samples})'
+assert num_vertices > 0, f'Invalid number of vertices ({num_vertices})'
 
 # Configure RNG
 rng_pid = None
@@ -69,47 +75,6 @@ if 'OMPI_COMM_WORLD_RANK' not in os.environ:
     )
 mpi_rank = int(os.getenv('OMPI_COMM_WORLD_RANK', default=0))
 mpi_size = int(os.getenv('OMPI_COMM_WORLD_SIZE', default=1))
-
-# ----------------------------------------------
-# Walks
-# ----------------------------------------------
-
-# Load walks from file
-# Note: Each MPI rank loads a subset of the walk file
-if not walk_file:
-    raise RuntimeError(f'No walk file specified in {config_file}')
-if not num_walks:
-    with open(walk_file, 'r') as f:
-        result = subprocess.run(['wc','-l'], stdin=f, stdout=subprocess.PIPE)
-    num_walks = int(result.stdout.decode('utf-8'))
-local_num_walks = utils.ceildiv(num_walks, mpi_size)
-start_walk = local_num_walks * mpi_rank
-end_walk = min(local_num_walks * (mpi_rank + 1), num_walks)
-local_num_walks = end_walk - start_walk
-walks = pd.read_csv(
-    walk_file,
-    delimiter=' ',
-    header=None,
-    dtype=np.int64,
-    skiprows=start_walk,
-    nrows=local_num_walks,
-)
-walks = walks.to_numpy()
-
-# Check that walk data is valid
-if not walk_length:
-    walk_length = walks.shape[1]
-if not num_vertices:
-    num_vertices = np.amax(walks) + 1
-assert walks.shape[0] > 0, f'Did not load any walks from {walk_file}'
-assert walks.shape[0] == local_num_walks, \
-    f'Read {walks.shape[0]} walks from {walk_file}, ' \
-    f'but expected to read {local_num_walks}'
-assert walks.shape[1] == walk_length, \
-    f'Found walks of length {walks.shape[1]} in {walk_file}, ' \
-    f'but expected a walk length of {walk_length}'
-assert num_vertices > 0, \
-    f'Walks in {walk_file} have invalid vertex indices'
 
 # ----------------------------------------------
 # Negative sampling
@@ -171,36 +136,7 @@ def sample_dims():
     """Dimensions of a data sample."""
     return (num_negative_samples + walk_length,)
 
-sample_batch_size = 512
-sample_batch = np.zeros(
-    (sample_batch_size, sample_dims()[0]),
-    dtype=np.float32,
-)
-sample_batch_pos = 0
-def generate_sample_batch():
-    """Generate a batch of data samples."""
-    global sample_batch, sample_batch_pos
-    initialize_rng()
-    sample_batch_pos = 0
-
-    # Randomly choose local walks
-    indices = np.random.randint(
-        local_num_walks,
-        size=sample_batch_size,
-        dtype=np.int64,
-    )
-    sample_walks = walks[indices]
-    sample_batch[:,-walk_length:] = sample_walks
-
-    # Update negative sampling distribution
-    record_walk_visits(sample_walks)
-    update_noise_distribution()
-
-    # Generate negative samples
-    rands = np.random.uniform(size=(sample_batch_size, num_negative_samples))
-    negative_samples = np.searchsorted(noise_cdf, rands)
-    sample_batch[:,:num_negative_samples] = negative_samples
-
+samples = None
 def get_sample(*args):
     """Get a single data sample.
 
@@ -208,10 +144,86 @@ def get_sample(*args):
     samples. Input arguments are ignored.
 
     """
-    global sample_batch_pos
-    if sample_batch_pos >= sample_batch_size:
-        generate_sample_batch()
-        sample_batch_pos = 0
-    sample = sample_batch[sample_batch_pos]
-    sample_batch_pos += 1
-    return sample
+    global samples
+    if not samples:
+        samples = SampleIterator(
+            walk_file=walk_file,
+            walk_length=walk_length,
+            num_negative_samples=num_negative_samples,
+            batch_size=4096,
+        )
+    return next(samples)
+
+class SampleIterator:
+
+    def __init__(
+        self,
+        walk_file,
+        walk_length,
+        num_negative_samples,
+        batch_size,
+    ):
+
+        # Options
+        self.walk_file = walk_file
+        self.walk_length = walk_length
+        self.num_negative_samples = num_negative_samples
+        self.batch_size = batch_size
+
+        # Cache for batched sample generation
+        self.batch = np.zeros(
+            (self.batch_size, sample_dims()[0]),
+            dtype=np.float32,
+        )
+        self.walk_batches = iter(())
+        self.batch_pos_list = []
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if not self.batch_pos_list:
+            self._generate_batch()
+        return self.batch[self.batch_pos_list.pop()]
+
+    def __bool__(self):
+        return True
+
+    def _generate_batch(self):
+
+        # Read walks from file
+        try:
+            walk_batch = next(self.walk_batches)
+        except StopIteration:
+            self.walk_batches = pd.read_csv(
+                self.walk_file,
+                delimiter=' ',
+                header=None,
+                dtype=np.int64,
+                skiprows=(lambda row : (row + mpi_rank) % mpi_size),
+                iterator=True,
+                chunksize=self.batch_size,
+            )
+            walk_batch = next(self.walk_batches)
+        walk_batch = walk_batch.to_numpy()
+        batch_size = walk_batch.shape[0]
+        assert walk_batch.shape[0], \
+            f'Did not load any walks from {walk_file}'
+        assert walk_batch.shape[1] == self.walk_length, \
+            f'Found walks of length {walk_batch.shape[1]} in {walk_file}, ' \
+            f'but expected a walk length of {self.walk_length}'
+
+        # Update negative sampling distribution
+        record_walk_visits(walk_batch)
+        update_noise_distribution()
+
+        # Generate negative samples
+        initialize_rng()
+        rands = np.random.uniform(size=(batch_size, self.num_negative_samples))
+        negative_samples = np.searchsorted(noise_cdf, rands)
+
+        # Cache samples
+        self.batch[:batch_size,:self.num_negative_samples] = negative_samples
+        self.batch[:batch_size,-self.walk_length:] = walk_batch
+        self.batch_pos_list = list(range(batch_size))
+        np.random.shuffle(self.batch_pos_list)
