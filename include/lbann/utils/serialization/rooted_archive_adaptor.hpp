@@ -304,15 +304,15 @@ CEREAL_REGISTER_ARCHIVE(
 CEREAL_REGISTER_ARCHIVE(
   lbann::RootedOutputArchiveAdaptor<cereal::XMLOutputArchive>);
 
-// CEREAL_SETUP_ARCHIVE_TRAITS(
-//   RootedInputArchiveAdaptor<cereal::BinaryInputArchive>,
-//   RootedOutputArchiveAdaptor<cereal::BinaryOutputArchive>);
-// CEREAL_SETUP_ARCHIVE_TRAITS(
-//   RootedInputArchiveAdaptor<cereal::JSONInputArchive>,
-//   RootedOutputArchiveAdaptor<cereal::JSONOutputArchive>);
-// CEREAL_SETUP_ARCHIVE_TRAITS(
-//   RootedInputArchiveAdaptor<cereal::XMLInputArchive>,
-//   RootedOutputArchiveAdaptor<cereal::XMLOutputArchive>);
+CEREAL_SETUP_ARCHIVE_TRAITS(
+  lbann::RootedInputArchiveAdaptor<cereal::BinaryInputArchive>,
+  lbann::RootedOutputArchiveAdaptor<cereal::BinaryOutputArchive>);
+CEREAL_SETUP_ARCHIVE_TRAITS(
+  lbann::RootedInputArchiveAdaptor<cereal::JSONInputArchive>,
+  lbann::RootedOutputArchiveAdaptor<cereal::JSONOutputArchive>);
+CEREAL_SETUP_ARCHIVE_TRAITS(
+  lbann::RootedInputArchiveAdaptor<cereal::XMLInputArchive>,
+  lbann::RootedOutputArchiveAdaptor<cereal::XMLOutputArchive>);
 
 #endif // __CUDACC__
 #endif // LBANN_UTILS_SERIALIZATION_ROOTED_ARCHIVE_ADAPTOR_HPP_
