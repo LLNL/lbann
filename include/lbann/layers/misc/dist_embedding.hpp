@@ -84,6 +84,30 @@ public:
   ~dist_embedding_layer();
 
   dist_embedding_layer* copy() const override;
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar)
+  {
+    using DataTypeLayer = data_type_layer<TensorDataType>;
+    ar(::cereal::make_nvp("DataTypeLayer",
+                          ::cereal::base_class<DataTypeLayer>(this)),
+       CEREAL_NVP(m_num_embedings),
+       CEREAL_NVP(m_embedding_dim),
+       CEREAL_NVP(m_sparse_sgd),
+       CEREAL_NVP(m_learning_rate),
+       CEREAL_NVP(m_barrier_in_forward_prop));
+    // Members that aren't serialized
+    //   m_embeddings_buffer
+    //   m_workspace_buffer_size
+    //   m_metadata_buffer_size
+    //   m_nb_barrier_request
+  }
+
+  ///@}
+
   std::string get_type() const override;
   data_layout get_data_layout() const override;
   El::Device get_device_allocation() const override;
@@ -91,6 +115,11 @@ public:
   description get_description() const override;
 
 protected:
+
+  friend class cereal::access;
+  dist_embedding_layer()
+    : dist_embedding_layer(nullptr, 1, 1, false, El::To<DataType>(1), false)
+  {}
 
   void setup_dims(DataReaderMetaData& dr_metadata) override;
   void setup_data(size_t max_mini_batch_size) override;
