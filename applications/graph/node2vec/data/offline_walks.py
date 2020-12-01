@@ -77,46 +77,121 @@ mpi_rank = int(os.getenv('OMPI_COMM_WORLD_RANK', default=0))
 mpi_size = int(os.getenv('OMPI_COMM_WORLD_SIZE', default=1))
 
 # ----------------------------------------------
-# Negative sampling
+# Sample generator
 # ----------------------------------------------
 
-# Keep track how often we visit each vertex
-# Note: Start with one visit per vertex for Laplace smoothing.
-visit_counts = np.ones(num_vertices, dtype=np.int64)
-total_visit_count = num_vertices
-def record_walk_visits(walks):
-    """Record visits to vertices in a graph walk."""
-    global visit_counts, total_visit_count
-    visit_counts[walks] += np.int64(1)
-    total_visit_count += len(walks) * walk_length
+class SampleIterator:
+    """Iterator class to produces data samples.
 
-# Probability distribution for negative sampling
-noise_cdf = np.zeros(num_vertices, dtype=np.float64)
-noise_visit_count = 0
-def update_noise_distribution():
-    """Recomputes negative sampling probability distribution, if needed.
-
-    The distribution is recomputed if enough new vertices have been
-    visited.
+    A data sample consists of a graph walk and several negative
+    samples.
 
     """
-    global noise_visit_count
-    if total_visit_count > 2*noise_visit_count:
 
-        # Update noise distribution if there are enough new visits
-        global noise_cdf
-        np.float_power(
-            visit_counts,
+    def __init__(
+            self,
+            walk_file,
+            walk_length,
+            num_vertices,
+            num_negative_samples,
             noise_distribution_exp,
-            out=noise_cdf,
+            batch_size,
+        ):
+
+        # Options
+        self.walk_file = walk_file
+        self.walk_length = walk_length
+        self.num_vertices = num_vertices
+        self.num_negative_samples = num_negative_samples
+        self.noise_distribution_exp = noise_distribution_exp
+        self.batch_size = batch_size
+
+        # Cache for batched sample generation
+        self.batch = np.zeros(
+            (self.batch_size, sample_dims()[0]),
+            dtype=np.float32,
+        )
+        self.walk_batches = iter(())
+        self.batch_pos_list = []
+
+        # Negative sampling distribution
+        self.noise_cdf = np.zeros(num_vertices, dtype=np.float64)
+        self.noise_visit_count = 0
+        self.visit_counts = np.ones(self.num_vertices, dtype=np.int64)
+        self.total_visit_count = self.num_vertices
+        self._update_noise_distribution()
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if not self.batch_pos_list:
+            self._generate_batch()
+        return self.batch[self.batch_pos_list.pop()]
+
+    def __bool__(self):
+        return True
+
+    def _generate_batch(self):
+        """Produce a batch of data samples."""
+
+        # Read walks from file
+        try:
+            walk_batch = next(self.walk_batches)
+        except StopIteration:
+            self.walk_batches = pd.read_csv(
+                self.walk_file,
+                delimiter=' ',
+                header=None,
+                dtype=np.int64,
+                skiprows=(lambda row : (row + mpi_rank) % mpi_size),
+                iterator=True,
+                chunksize=self.batch_size,
+                compression=None,
+            )
+            walk_batch = next(self.walk_batches)
+        walk_batch = walk_batch.to_numpy()
+        batch_size = walk_batch.shape[0]
+        assert walk_batch.shape[0], \
+            f'Did not load any walks from {walk_file}'
+        assert walk_batch.shape[1] == self.walk_length, \
+            f'Found walks of length {walk_batch.shape[1]} in {walk_file}, ' \
+            f'but expected a walk length of {self.walk_length}'
+
+        # Update negative sampling distribution, if needed
+        self._record_walk_visits(walk_batch)
+        if self.total_visit_count > 2*self.noise_visit_count:
+            self._update_noise_distribution()
+
+        # Generate negative samples
+        initialize_rng()
+        rands = np.random.uniform(size=(batch_size, self.num_negative_samples))
+        negative_samples = np.searchsorted(self.noise_cdf, rands)
+
+        # Cache samples
+        self.batch[:batch_size,:self.num_negative_samples] = negative_samples
+        self.batch[:batch_size,-self.walk_length:] = walk_batch
+        self.batch_pos_list = list(range(batch_size))
+        np.random.shuffle(self.batch_pos_list)
+
+    def _record_walk_visits(self, walks):
+        """Record visits to vertices in a graph walk."""
+        # Note: Doesn't correctly handle case where vertex is visited
+        # multiple times
+        self.visit_counts[walks] += np.int64(1)
+        self.total_visit_count += walks.size
+
+    def _update_noise_distribution(self):
+        """Recomputes negative sampling probability distribution."""
+        np.float_power(
+            self.visit_counts,
+            self.noise_distribution_exp,
+            out=self.noise_cdf,
             dtype=np.float64,
         )
-        np.cumsum(noise_cdf, out=noise_cdf)
-        noise_cdf *= np.float64(1 / noise_cdf[-1])
-        noise_visit_count = total_visit_count
-
-# Initial negative sampling distribution is uniform
-update_noise_distribution()
+        np.cumsum(self.noise_cdf, out=self.noise_cdf)
+        self.noise_cdf *= np.float64(1 / self.noise_cdf[-1])
+        self.noise_visit_count = self.total_visit_count
 
 # ----------------------------------------------
 # Sample access functions
@@ -149,81 +224,9 @@ def get_sample(*args):
         samples = SampleIterator(
             walk_file=walk_file,
             walk_length=walk_length,
+            num_vertices=num_vertices,
             num_negative_samples=num_negative_samples,
+            noise_distribution_exp=noise_distribution_exp,
             batch_size=4096,
         )
     return next(samples)
-
-class SampleIterator:
-
-    def __init__(
-        self,
-        walk_file,
-        walk_length,
-        num_negative_samples,
-        batch_size,
-    ):
-
-        # Options
-        self.walk_file = walk_file
-        self.walk_length = walk_length
-        self.num_negative_samples = num_negative_samples
-        self.batch_size = batch_size
-
-        # Cache for batched sample generation
-        self.batch = np.zeros(
-            (self.batch_size, sample_dims()[0]),
-            dtype=np.float32,
-        )
-        self.walk_batches = iter(())
-        self.batch_pos_list = []
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        if not self.batch_pos_list:
-            self._generate_batch()
-        return self.batch[self.batch_pos_list.pop()]
-
-    def __bool__(self):
-        return True
-
-    def _generate_batch(self):
-
-        # Read walks from file
-        try:
-            walk_batch = next(self.walk_batches)
-        except StopIteration:
-            self.walk_batches = pd.read_csv(
-                self.walk_file,
-                delimiter=' ',
-                header=None,
-                dtype=np.int64,
-                skiprows=(lambda row : (row + mpi_rank) % mpi_size),
-                iterator=True,
-                chunksize=self.batch_size,
-            )
-            walk_batch = next(self.walk_batches)
-        walk_batch = walk_batch.to_numpy()
-        batch_size = walk_batch.shape[0]
-        assert walk_batch.shape[0], \
-            f'Did not load any walks from {walk_file}'
-        assert walk_batch.shape[1] == self.walk_length, \
-            f'Found walks of length {walk_batch.shape[1]} in {walk_file}, ' \
-            f'but expected a walk length of {self.walk_length}'
-
-        # Update negative sampling distribution
-        record_walk_visits(walk_batch)
-        update_noise_distribution()
-
-        # Generate negative samples
-        initialize_rng()
-        rands = np.random.uniform(size=(batch_size, self.num_negative_samples))
-        negative_samples = np.searchsorted(noise_cdf, rands)
-
-        # Cache samples
-        self.batch[:batch_size,:self.num_negative_samples] = negative_samples
-        self.batch[:batch_size,-self.walk_length:] = walk_batch
-        self.batch_pos_list = list(range(batch_size))
-        np.random.shuffle(self.batch_pos_list)
