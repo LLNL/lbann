@@ -107,7 +107,11 @@ void bp_compute_impl(matmul_layer<TensorDataType,data_layout::DATA_PARALLEL,El::
   auto& local_input0_grad = dynamic_cast<LocalMat&>(l.get_local_error_signals(0));
   auto& local_input1_grad = dynamic_cast<LocalMat&>(l.get_local_error_signals(1));
   const auto& local_mini_batch_size = local_input0.Width();
-
+  if (!local_input0.Contiguous() || !local_input1.Contiguous() || !local_output_grad.Contiguous() 
+      || !local_input0_grad.Contiguous() || !local_input1_grad.Contiguous()) {
+    LBANN_ERROR(l.get_type()," layer \"",l.get_name(),"\" ",
+            "has non-contiguous data buffers");
+  }
   // Matrix dimensions
   const auto input0_dims = l.get_input_dims(0);
   const auto input1_dims = l.get_input_dims(1);
@@ -258,7 +262,12 @@ void bp_compute_impl(matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,El:
 
   // Return immediately if nothing needs to be done
   if (local_mini_batch_size < 1) { return; }
-
+  
+  if (!local_input0.Contiguous() || !local_input1.Contiguous() || !local_output_grad.Contiguous() 
+      || !local_input0_grad.Contiguous() || !local_input1_grad.Contiguous()) {
+    LBANN_ERROR(l.get_type()," layer \"",l.get_name(),"\" ",
+            "has non-contiguous data buffers");
+  }
   // Matrix dimensions
   const auto input0_dims = l.get_input_dims(0);
   const auto input1_dims = l.get_input_dims(1);
