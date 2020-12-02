@@ -24,6 +24,23 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 #include <lbann/layers/misc/dft_abs.hpp>
+#include <cereal/types/polymorphic.hpp>
 
-#define LBANN_LAYER_NAME dft_abs_layer
-#include <lbann/macros/register_layer_with_cereal_data_parallel_only.hpp>
+#define LBANN_COMMA ,
+#define PROTO_DEVICE(TYPE, DEVICE)                      \
+  CEREAL_REGISTER_TYPE_WITH_NAME(                       \
+    ::lbann::dft_abs_layer<TYPE LBANN_COMMA DEVICE>,    \
+    "dft_abs_layer (" #TYPE "," #DEVICE ")");
+
+#ifdef LBANN_HAS_FFTW
+#ifdef LBANN_HAS_FFTW_FLOAT
+PROTO_DEVICE(float, El::Device::CPU)
+#endif // LBANN_HAS_FFTW_FLOAT
+#ifdef LBANN_HAS_FFTW_DOUBLE
+PROTO_DEVICE(double, El::Device::CPU)
+#endif // LBANN_HAS_FFTW_DOUBLE
+#ifdef LBANN_HAS_GPU
+PROTO_DEVICE(float, El::Device::GPU)
+PROTO_DEVICE(double, El::Device::GPU)
+#endif // LBANN_HAS_GPU
+#endif // LBANN_HAS_FFTW
