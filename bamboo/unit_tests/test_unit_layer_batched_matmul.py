@@ -19,10 +19,11 @@ import tools
 
 # Data
 np.random.seed(20191111)
-_m = 11
+_m = 2
 _n = 3
-_k = 5
-_samples = np.random.normal(size=(2,_m*_k+_k*_n)).astype(np.float32)
+_k = 4
+_N = 5
+_samples = np.random.normal(size=(32,_N*(_m*_k)+_N*(_k*_n))).astype(np.float32)
 
 # Sample access functions
 def get_sample(index):
@@ -68,11 +69,11 @@ def construct_model(lbann):
                                initializer=lbann.ConstantInitializer(value=0.0),
                                name='input1_weights')
     x_slice = lbann.Slice(lbann.Input(),
-                          slice_points=tools.str_list([0, _m*_k, _m*_k+_k*_n]))
+                          slice_points=tools.str_list([0, _N*_m*_k, _N*_m*_k+_N*_k*_n]))
     x0 = lbann.Sum(x_slice,
-                   lbann.WeightsLayer(weights=x0_weights, dims=str(_m*_k)))
+                   lbann.WeightsLayer(weights=x0_weights, dims=str(_N*_m*_k)))
     x1 = lbann.Sum(x_slice,
-                   lbann.WeightsLayer(weights=x1_weights, dims=str(_k*_n)))
+                   lbann.WeightsLayer(weights=x1_weights, dims=str(_N*_k*_n)))
     x0_lbann = x0
     x1_lbann = x1
 
@@ -86,8 +87,8 @@ def construct_model(lbann):
     # ------------------------------------------
 
     # LBANN implementation
-    x0 = lbann.Reshape(x0_lbann, dims=tools.str_list([_m, _k]))
-    x1 = lbann.Reshape(x1_lbann, dims=tools.str_list([_k, _n]))
+    x0 = lbann.Reshape(x0_lbann, dims=tools.str_list([_N, _m, _k]))
+    x1 = lbann.Reshape(x1_lbann, dims=tools.str_list([_N, _k, _n]))
     y = lbann.MatMul(x0, x1, data_layout='data_parallel')
     z = lbann.L2Norm2(y)
     obj.append(z)
@@ -97,8 +98,8 @@ def construct_model(lbann):
     vals = []
     for i in range(num_samples()):
         x = get_sample(i).astype(np.float64)
-        x0 = x[:_m*_k].reshape([_m,_k])
-        x1 = x[_m*_k:].reshape([_k,_n])
+        x0 = x[:_N*_m*_k].reshape([_N,_m,_k])
+        x1 = x[_N*_m*_k:].reshape([_N,_k,_n])
         y = np.matmul(x0, x1)
         z = tools.numpy_l2norm2(y)
         vals.append(z)
@@ -116,8 +117,8 @@ def construct_model(lbann):
     # ------------------------------------------
 
     # LBANN implementation
-    x0 = lbann.Reshape(x0_lbann, dims=tools.str_list([_k, _m]))
-    x1 = lbann.Reshape(x1_lbann, dims=tools.str_list([_k, _n]))
+    x0 = lbann.Reshape(x0_lbann, dims=tools.str_list([_N, _k, _m]))
+    x1 = lbann.Reshape(x1_lbann, dims=tools.str_list([_N, _k, _n]))
     y = lbann.MatMul(x0, x1, transpose_a=True, data_layout='data_parallel')
     z = lbann.L2Norm2(y)
     obj.append(z)
@@ -127,9 +128,9 @@ def construct_model(lbann):
     vals = []
     for i in range(num_samples()):
         x = get_sample(i).astype(np.float64)
-        x0 = x[:_m*_k].reshape([_k,_m])
-        x1 = x[_m*_k:].reshape([_k,_n])
-        y = np.matmul(x0.transpose(), x1)
+        x0 = x[:_N*_m*_k].reshape([_N,_k,_m])
+        x1 = x[_N*_m*_k:].reshape([_N,_k,_n])
+        y = np.matmul(x0.transpose((0,2,1)), x1)
         z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)
@@ -146,8 +147,8 @@ def construct_model(lbann):
     # ------------------------------------------
 
     # LBANN implementation
-    x0 = lbann.Reshape(x0_lbann, dims=tools.str_list([_m, _k]))
-    x1 = lbann.Reshape(x1_lbann, dims=tools.str_list([_n, _k]))
+    x0 = lbann.Reshape(x0_lbann, dims=tools.str_list([_N, _m, _k]))
+    x1 = lbann.Reshape(x1_lbann, dims=tools.str_list([_N, _n, _k]))
     y = lbann.MatMul(x0, x1, transpose_b=True, data_layout='data_parallel')
     z = lbann.L2Norm2(y)
     obj.append(z)
@@ -157,9 +158,10 @@ def construct_model(lbann):
     vals = []
     for i in range(num_samples()):
         x = get_sample(i).astype(np.float64)
-        x0 = x[:_m*_k].reshape([_m,_k])
-        x1 = x[_m*_k:].reshape([_n,_k])
-        y = np.matmul(x0, x1.transpose())
+        x0 = x[:_N*_m*_k].reshape([_N, _m,_k])
+        x1 = x[_N*_m*_k:].reshape([_N, _n,_k])
+        x1 = np.transpose(x1, (0, 2, 1))
+        y = np.matmul(x0, x1)
         z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)
@@ -176,8 +178,8 @@ def construct_model(lbann):
     # ------------------------------------------
 
     # LBANN implementation
-    x0 = lbann.Reshape(x0_lbann, dims=tools.str_list([_k, _m]))
-    x1 = lbann.Reshape(x1_lbann, dims=tools.str_list([_n, _k]))
+    x0 = lbann.Reshape(x0_lbann, dims=tools.str_list([_N, _k, _m]))
+    x1 = lbann.Reshape(x1_lbann, dims=tools.str_list([_N, _n, _k]))
     y = lbann.MatMul(x0, x1, transpose_a=True, transpose_b=True,
                      data_layout='data_parallel')
     z = lbann.L2Norm2(y)
@@ -188,9 +190,9 @@ def construct_model(lbann):
     vals = []
     for i in range(num_samples()):
         x = get_sample(i).astype(np.float64)
-        x0 = x[:_m*_k].reshape([_k,_m])
-        x1 = x[_m*_k:].reshape([_n,_k])
-        y = np.matmul(x0.transpose(), x1.transpose())
+        x0 = x[:(_N*_m*_k)].reshape([_N,_k,_m]) 
+        x1 = x[_N*_m*_k:].reshape([_N,_n,_k])
+        y = np.matmul(x0.transpose((0,2,1)), x1.transpose((0,2,1)))
         z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)

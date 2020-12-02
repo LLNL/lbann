@@ -29,7 +29,7 @@
 #ifdef LBANN_HAS_GPU
 #include "lbann/utils/gpu/helpers.hpp"
 #endif // LBANN_HAS_GPU
-
+#include<iostream>
 namespace lbann {
 
 template <typename TensorDataType>
@@ -44,10 +44,17 @@ void fp_compute_impl(matmul_layer<TensorDataType,data_layout::DATA_PARALLEL,El::
   auto& local_output = dynamic_cast<LocalMat&>(l.get_local_activations());
   const auto& local_mini_batch_size = local_input0.Width();
 
+  if (!local_input0.Contiguous() || !local_input1.Contiguous() || !local_output.Contiguous()) {
+    LBANN_ERROR(l.get_type()," layer \"",l.get_name(),"\" ",
+            "has non-contiguous data buffers");
+  }
   // Matrix dimensions
   const auto input0_dims = l.get_input_dims(0);
   const auto input1_dims = l.get_input_dims(1);
   const auto output_dims = l.get_output_dims();
+  // Check if matrix is 3D or 2D 
+  const El::Int mat_depth = (input0_dims.size()>2) ? *(input0_dims.rbegin()+2) : 1;
+
   const El::Int input0_height = *(input0_dims.rbegin()+1);
   const El::Int input0_width = *(input0_dims.rbegin());
   const El::Int input1_height = *(input1_dims.rbegin()+1);
@@ -55,22 +62,34 @@ void fp_compute_impl(matmul_layer<TensorDataType,data_layout::DATA_PARALLEL,El::
   const El::Int output_height = *(output_dims.rbegin()+1);
   const El::Int output_width = *(output_dims.rbegin());
 
+
   // Compute matrix multiplication for each mini-batch sample
   // Note: Elemental matrices are in Fortran layout while LBANN
   // tensors are in C layout.
+  
+  // Calculate stride for each matrix depending on the depth 
+  const auto input0_stride = input0_height * input0_width;
+  const auto input1_stride = input1_height * input1_width;
+  const auto output_stride = output_height * output_width;
+
   LBANN_OMP_PARALLEL_FOR
-  for (El::Int i = 0; i < local_mini_batch_size; ++i) {
-    LocalMat input0_v, input1_v, output_v;
-    input0_v.LockedAttach(input0_width, input0_height,
-                          local_input0.LockedBuffer(0,i), input0_width);
-    input1_v.LockedAttach(input1_width, input1_height,
-                          local_input1.LockedBuffer(0,i), input1_width);
-    output_v.Attach(output_width, output_height,
-                    local_output.Buffer(0,i), output_width);
-    El::Gemm(transpose_input1 ? El::TRANSPOSE : El::NORMAL,
-             transpose_input0 ? El::TRANSPOSE : El::NORMAL,
-             El::TypeTraits<TensorDataType>::One(), input1_v, input0_v,
-             El::TypeTraits<TensorDataType>::Zero(), output_v);
+  for (El::Int j = 0; j < mat_depth; ++j){
+      auto input0_buffer_start = j * input0_stride;
+      auto input1_buffer_start = j * input1_stride;
+      auto output_buffer_start = j * output_stride;
+    for (El::Int i = 0; i < local_mini_batch_size; ++i) {
+      LocalMat input0_v, input1_v, output_v;
+      input0_v.LockedAttach(input0_width, input0_height,
+                            local_input0.LockedBuffer(input0_buffer_start,i), input0_width);
+      input1_v.LockedAttach(input1_width, input1_height,
+                            local_input1.LockedBuffer(input1_buffer_start,i), input1_width);
+      output_v.Attach(output_width, output_height,
+                      local_output.Buffer(output_buffer_start,i), output_width);
+      El::Gemm(transpose_input1 ? El::TRANSPOSE : El::NORMAL,
+               transpose_input0 ? El::TRANSPOSE : El::NORMAL,
+               El::TypeTraits<TensorDataType>::One(), input1_v, input0_v,
+               El::TypeTraits<TensorDataType>::Zero(), output_v);
+    }
   }
 
 }
@@ -88,11 +107,18 @@ void bp_compute_impl(matmul_layer<TensorDataType,data_layout::DATA_PARALLEL,El::
   auto& local_input0_grad = dynamic_cast<LocalMat&>(l.get_local_error_signals(0));
   auto& local_input1_grad = dynamic_cast<LocalMat&>(l.get_local_error_signals(1));
   const auto& local_mini_batch_size = local_input0.Width();
-
+  if (!local_input0.Contiguous() || !local_input1.Contiguous() || !local_output_grad.Contiguous() 
+      || !local_input0_grad.Contiguous() || !local_input1_grad.Contiguous()) {
+    LBANN_ERROR(l.get_type()," layer \"",l.get_name(),"\" ",
+            "has non-contiguous data buffers");
+  }
   // Matrix dimensions
   const auto input0_dims = l.get_input_dims(0);
   const auto input1_dims = l.get_input_dims(1);
   const auto output_dims = l.get_output_dims();
+  // Check if matrix is 3D or 2D 
+  const El::Int mat_depth = (input0_dims.size()>2) ? *(input0_dims.rbegin()+2) : 1;
+
   const El::Int input0_height = *(input0_dims.rbegin()+1);
   const El::Int input0_width = *(input0_dims.rbegin());
   const El::Int input1_height = *(input1_dims.rbegin()+1);
@@ -103,45 +129,55 @@ void bp_compute_impl(matmul_layer<TensorDataType,data_layout::DATA_PARALLEL,El::
   // Compute gradients for each mini-batch sample
   // Note: Elemental matrices are in Fortran layout while LBANN
   // tensors are in C layout.
-  LBANN_OMP_PARALLEL_FOR
-  for (El::Int i = 0; i < local_mini_batch_size; ++i) {
-    LocalMat input0_v, input1_v, output_grad_v, input0_grad_v, input1_grad_v;
-    input0_v.LockedAttach(input0_width, input0_height,
-                          local_input0.LockedBuffer(0,i), input0_width);
-    input1_v.LockedAttach(input1_width, input1_height,
-                          local_input1.LockedBuffer(0,i), input1_width);
-    output_grad_v.LockedAttach(output_width, output_height,
-                               local_output_grad.LockedBuffer(0,i), output_width);
-    input0_grad_v.Attach(input0_width, input0_height,
-                         local_input0_grad.Buffer(0,i), input0_width);
-    input1_grad_v.Attach(input1_width, input1_height,
-                         local_input1_grad.Buffer(0,i), input1_width);
-    if (transpose_input0) {
-      El::Gemm(El::TRANSPOSE,
-               transpose_input1 ? El::TRANSPOSE : El::NORMAL,
-               El::TypeTraits<TensorDataType>::One(), output_grad_v, input1_v,
-               El::TypeTraits<TensorDataType>::Zero(), input0_grad_v);
-    }
-    else {
-      El::Gemm(transpose_input1 ? El::NORMAL : El::TRANSPOSE,
-               El::NORMAL,
-               El::TypeTraits<TensorDataType>::One(), input1_v, output_grad_v,
-               El::TypeTraits<TensorDataType>::Zero(), input0_grad_v);
-    }
-    if (transpose_input1) {
-      El::Gemm(transpose_input0 ? El::TRANSPOSE : El::NORMAL,
-               El::TRANSPOSE,
-               El::TypeTraits<TensorDataType>::One(), input0_v, output_grad_v,
-               El::TypeTraits<TensorDataType>::Zero(), input1_grad_v);
-    }
-    else {
-      El::Gemm(El::NORMAL,
-               transpose_input0 ? El::NORMAL : El::TRANSPOSE,
-               El::TypeTraits<TensorDataType>::One(), output_grad_v, input0_v,
-               El::TypeTraits<TensorDataType>::Zero(), input1_grad_v);
-    }
-  }
 
+  // Calculate stride for each matrix depending on the depth 
+  const auto input0_stride = input0_height * input0_width;
+  const auto input1_stride = input1_height * input1_width;
+  const auto output_stride = output_height * output_width;
+
+  LBANN_OMP_PARALLEL_FOR
+  for (El::Int j = 0; j < mat_depth; ++j){
+    auto input0_buffer_start = j * input0_stride;
+    auto input1_buffer_start = j * input1_stride;
+    auto output_buffer_start = j * output_stride;
+    for (El::Int i = 0; i < local_mini_batch_size; ++i) {
+      LocalMat input0_v, input1_v, output_grad_v, input0_grad_v, input1_grad_v;
+      input0_v.LockedAttach(input0_width, input0_height,
+                            local_input0.LockedBuffer(input0_buffer_start,i), input0_width);
+      input1_v.LockedAttach(input1_width, input1_height,
+                            local_input1.LockedBuffer(input1_buffer_start,i), input1_width);
+      output_grad_v.LockedAttach(output_width, output_height,
+                                 local_output_grad.LockedBuffer(output_buffer_start,i), output_width);
+      input0_grad_v.Attach(input0_width, input0_height,
+                           local_input0_grad.Buffer(input0_buffer_start,i), input0_width);
+      input1_grad_v.Attach(input1_width, input1_height,
+                           local_input1_grad.Buffer(input1_buffer_start,i), input1_width);
+      if (transpose_input0) {
+        El::Gemm(El::TRANSPOSE,
+                 transpose_input1 ? El::TRANSPOSE : El::NORMAL,
+                 El::TypeTraits<TensorDataType>::One(), output_grad_v, input1_v,
+                 El::TypeTraits<TensorDataType>::Zero(), input0_grad_v);
+      }
+      else {
+        El::Gemm(transpose_input1 ? El::NORMAL : El::TRANSPOSE,
+                 El::NORMAL,
+                 El::TypeTraits<TensorDataType>::One(), input1_v, output_grad_v,
+                 El::TypeTraits<TensorDataType>::Zero(), input0_grad_v);
+      }
+      if (transpose_input1) {
+        El::Gemm(transpose_input0 ? El::TRANSPOSE : El::NORMAL,
+                 El::TRANSPOSE,
+                 El::TypeTraits<TensorDataType>::One(), input0_v, output_grad_v,
+                 El::TypeTraits<TensorDataType>::Zero(), input1_grad_v);
+      }
+      else {
+        El::Gemm(El::NORMAL,
+                 transpose_input0 ? El::NORMAL : El::TRANSPOSE,
+                 El::TypeTraits<TensorDataType>::One(), output_grad_v, input0_v,
+                 El::TypeTraits<TensorDataType>::Zero(), input1_grad_v);
+      }
+    }    
+  }
 }
 
 #ifdef LBANN_HAS_GPU
@@ -156,7 +192,11 @@ void fp_compute_impl(matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,El:
   const auto& local_input1 = dynamic_cast<const LocalMat&>(l.get_local_prev_activations(1));
   auto& local_output = dynamic_cast<LocalMat&>(l.get_local_activations());
   const auto& local_mini_batch_size = local_input0.Width();
-
+  
+  if (!local_input0.Contiguous() || !local_input1.Contiguous() || !local_output.Contiguous()) {
+    LBANN_ERROR(l.get_type()," layer \"",l.get_name(),"\" ",
+            "has non-contiguous data buffers");
+  }
   // Return immediately if nothing needs to be done
   if (local_mini_batch_size < 1) { return; }
 
@@ -164,13 +204,22 @@ void fp_compute_impl(matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,El:
   const auto input0_dims = l.get_input_dims(0);
   const auto input1_dims = l.get_input_dims(1);
   const auto output_dims = l.get_output_dims();
+  // Check if matrix is 3D or 2D 
+  const El::Int mat_depth =   (input0_dims.size()>2) ? *(input0_dims.rbegin()+2) : 1;
+
   const El::Int input0_height = *(input0_dims.rbegin()+1);
   const El::Int input0_width = *(input0_dims.rbegin());
+  const El::Int input1_height = *(input1_dims.rbegin()+1);
   const El::Int input1_width = *(input1_dims.rbegin());
   const El::Int output_height = *(output_dims.rbegin()+1);
   const El::Int output_width = *(output_dims.rbegin());
 
-  // Compute matrix multiplication for each mini-batch sample
+  const auto num_matrices = mat_depth * local_mini_batch_size;
+  const auto input0_stride = input0_height * input0_width;
+  const auto input1_stride = input1_height * input1_width; 
+  const auto output_stride = output_height * output_width;
+
+  // Compute gradients for each mini-batch sample
   // Note: cuBLAS expects matrices in Fortran layout while LBANN
   // tensors are in C layout.
   {
@@ -178,6 +227,7 @@ void fp_compute_impl(matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,El:
     auto multisync = MakeMultiSync(gpu::get_sync_info(local_output),
                                    gpu::get_sync_info(local_input0),
                                    gpu::get_sync_info(local_input1));
+
     gpu_blas::GemmStridedBatched(
       transpose_input1 ? TransposeMode::TRANSPOSE : TransposeMode::NORMAL,
       transpose_input0 ? TransposeMode::TRANSPOSE : TransposeMode::NORMAL,
@@ -185,11 +235,11 @@ void fp_compute_impl(matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,El:
       output_height,
       transpose_input0 ? input0_height : input0_width,
       El::TypeTraits<TensorDataType>::One(),
-      local_input1.LockedBuffer(), input1_width, local_input1.LDim(),
-      local_input0.LockedBuffer(), input0_width, local_input0.LDim(),
+      local_input1.LockedBuffer(), input1_width, input1_stride,
+      local_input0.LockedBuffer(), input0_width, input0_stride,
       El::TypeTraits<TensorDataType>::Zero(),
-      local_output.Buffer(), output_width, local_output.LDim(),
-      local_mini_batch_size,
+      local_output.Buffer(), output_width, output_stride,
+      num_matrices,
       multisync);
   }
 }
@@ -212,17 +262,35 @@ void bp_compute_impl(matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,El:
 
   // Return immediately if nothing needs to be done
   if (local_mini_batch_size < 1) { return; }
-
+  
+  if (!local_input0.Contiguous() || !local_input1.Contiguous() || !local_output_grad.Contiguous() 
+      || !local_input0_grad.Contiguous() || !local_input1_grad.Contiguous()) {
+    LBANN_ERROR(l.get_type()," layer \"",l.get_name(),"\" ",
+            "has non-contiguous data buffers");
+  }
   // Matrix dimensions
   const auto input0_dims = l.get_input_dims(0);
   const auto input1_dims = l.get_input_dims(1);
   const auto output_dims = l.get_output_dims();
+
+  // Check if matrix is 3D or 2D 
+  const El::Int mat_depth =   (input0_dims.size()>2) ? *(input0_dims.rbegin()+2) : 1;
+
   const El::Int input0_height = *(input0_dims.rbegin()+1);
   const El::Int input0_width = *(input0_dims.rbegin());
   const El::Int input1_height = *(input1_dims.rbegin()+1);
   const El::Int input1_width = *(input1_dims.rbegin());
   const El::Int output_height = *(output_dims.rbegin()+1);
   const El::Int output_width = *(output_dims.rbegin());
+
+  const auto num_matrices = mat_depth * local_mini_batch_size;
+  const auto input0_stride = input0_height * input0_width;
+  const auto input1_stride = input1_height * input1_width; 
+  const auto output_stride = output_height * output_width;
+
+  const auto input0_grad_stride = input0_stride; 
+  const auto input1_grad_stride = input1_stride; 
+  const auto output_grad_stride = output_stride; 
 
   // Compute gradients for each mini-batch sample
   // Note: cuBLAS expects matrices in Fortran layout while LBANN
@@ -233,6 +301,7 @@ void bp_compute_impl(matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,El:
     auto multisync = MakeMultiSync(gpu::get_sync_info(local_input0_grad),
                                    gpu::get_sync_info(local_input1),
                                    gpu::get_sync_info(local_output_grad));
+    
 
     if (transpose_input0) {
       gpu_blas::GemmStridedBatched(
@@ -240,11 +309,11 @@ void bp_compute_impl(matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,El:
         transpose_input1 ? TransposeMode::TRANSPOSE : TransposeMode::NORMAL,
         input0_width, input0_height, output_width,
         El::TypeTraits<TensorDataType>::One(),
-        local_output_grad.LockedBuffer(), output_width, local_output_grad.LDim(),
-        local_input1.LockedBuffer(), input1_width, local_input1.LDim(),
+        local_output_grad.LockedBuffer(), output_width, output_grad_stride,
+        local_input1.LockedBuffer(), input1_width, input1_stride,
         El::TypeTraits<TensorDataType>::Zero(),
-        local_input0_grad.Buffer(), input0_width, local_input0_grad.LDim(),
-        local_mini_batch_size,
+        local_input0_grad.Buffer(), input0_width, input0_grad_stride,
+        num_matrices,
         multisync);
     }
     else {
@@ -253,11 +322,11 @@ void bp_compute_impl(matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,El:
         TransposeMode::NORMAL,
         input0_width, input0_height, output_width,
         El::TypeTraits<TensorDataType>::One(),
-        local_input1.LockedBuffer(), input1_width, local_input1.LDim(),
-        local_output_grad.LockedBuffer(), output_width, local_output_grad.LDim(),
+        local_input1.LockedBuffer(), input1_width, input1_stride,
+        local_output_grad.LockedBuffer(), output_width, output_grad_stride,
         El::TypeTraits<TensorDataType>::Zero(),
-        local_input0_grad.Buffer(), input0_width, local_input0_grad.LDim(),
-        local_mini_batch_size,
+        local_input0_grad.Buffer(), input0_width, input0_grad_stride,
+        num_matrices,
         multisync);
     }
   }
@@ -273,11 +342,11 @@ void bp_compute_impl(matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,El:
         TransposeMode::TRANSPOSE,
         input1_width, input1_height, output_height,
         El::TypeTraits<TensorDataType>::One(),
-        local_input0.LockedBuffer(), input0_width, local_input0.LDim(),
-        local_output_grad.LockedBuffer(), output_width, local_output_grad.LDim(),
+        local_input0.LockedBuffer(), input0_width, input0_stride,
+        local_output_grad.LockedBuffer(), output_width, output_grad_stride,
         El::TypeTraits<TensorDataType>::Zero(),
-        local_input1_grad.Buffer(), input1_width, local_input1_grad.LDim(),
-        local_mini_batch_size,
+        local_input1_grad.Buffer(), input1_width, input1_grad_stride,
+        num_matrices,
         multisync);
     }
     else {
@@ -286,11 +355,11 @@ void bp_compute_impl(matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,El:
         transpose_input0 ? TransposeMode::NORMAL : TransposeMode::TRANSPOSE,
         input1_width, input1_height, output_height,
         El::TypeTraits<TensorDataType>::One(),
-        local_output_grad.LockedBuffer(), output_width, local_output_grad.LDim(),
-        local_input0.LockedBuffer(), input0_width, local_input0.LDim(),
+        local_output_grad.LockedBuffer(), output_width, output_grad_stride,
+        local_input0.LockedBuffer(), input0_width, input0_stride,
         El::TypeTraits<TensorDataType>::Zero(),
-        local_input1_grad.Buffer(), input1_width, local_input1_grad.LDim(),
-        local_mini_batch_size,
+        local_input1_grad.Buffer(), input1_width, input1_grad_stride,
+        num_matrices,
         multisync);
     }
   }
