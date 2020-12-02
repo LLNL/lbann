@@ -50,7 +50,6 @@ namespace lbann {
 
 template <typename TensorDataType, El::Device Device>
 base_convolution_layer<TensorDataType,Device>::base_convolution_layer(
-  lbann_comm* comm,
   int num_data_dims,
   int output_channels,
   std::vector<int> conv_dims,
@@ -59,7 +58,7 @@ base_convolution_layer<TensorDataType,Device>::base_convolution_layer(
   std::vector<int> dilations,
   int groups,
   bool has_bias)
-  : data_type_layer<TensorDataType>(comm),
+  : data_type_layer<TensorDataType>(nullptr),
   m_output_channels(output_channels),
   m_conv_dims(std::move(conv_dims)),
   m_pads(std::move(pads)),

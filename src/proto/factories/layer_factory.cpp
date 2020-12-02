@@ -370,14 +370,14 @@ std::unique_ptr<Layer> construct_layer_legacy(
       }
 #ifdef LBANN_HAS_DNN_LIB
       auto ret = lbann::make_unique<deconvolution_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(
-        comm, dims.size(), num_output_channels,
+        dims.size(), num_output_channels,
         dims, pads, strides, dilations, num_groups, bias);
       ret->set_dnn_math_mode(
         dnn_lib::convert_to_dnn_math_type(params.conv_tensor_op_mode()));
       return ret;
 #else
       return lbann::make_unique<deconvolution_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(
-               comm, dims.size(), num_output_channels,
+               dims.size(), num_output_channels,
                dims, pads, strides, dilations, num_groups, bias);
 #endif // LBANN_HAS_DNN_LIB
 
@@ -392,14 +392,14 @@ std::unique_ptr<Layer> construct_layer_legacy(
       }
 #ifdef LBANN_HAS_DNN_LIB
       auto ret = lbann::make_unique<deconvolution_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(
-        comm, num_dims, num_output_channels,
+        num_dims, num_output_channels,
         dim, pad, stride, dilation, num_groups, bias);
       ret->set_dnn_math_mode(
         dnn_lib::convert_to_dnn_math_type(params.conv_tensor_op_mode()));
       return ret;
 #else
       return lbann::make_unique<deconvolution_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(
-        comm, num_dims, num_output_channels,
+        num_dims, num_output_channels,
         dim, pad, stride, dilation, num_groups, bias);
 #endif // LBANN_HAS_DNN_LIB
     }
