@@ -98,8 +98,12 @@ int allocate_trainer_resources(lbann_comm *comm) {
     procs_per_trainer = comm->get_procs_in_world();
   }
 
-  // Set up the communicator and split the grid if necessary
-  comm->split_trainers(procs_per_trainer);
+  // Set up the communicator and get the grid based on the commandline spec.
+  // We do not currently support splitting different trainers in different ways,
+  // as this implies different grids.
+  if (procs_per_trainer != comm->get_procs_per_trainer()) {
+    comm->split_trainers(procs_per_trainer);
+  }
 
   return procs_per_trainer;
 }
@@ -137,13 +141,6 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
     if (pb_trainer->hydrogen_block_size() > 0) {
       El::SetBlocksize(pb_trainer->hydrogen_block_size());
     }
-
-    // Set up the communicator and get the grid based on the trainers' spec.
-    // We do not currently support splitting different trainers in different ways,
-    // as this implies different grids.
-    // if (procs_per_trainer != comm->get_procs_per_trainer()) {
-    //   comm->split_trainers(procs_per_trainer);
-    // }
 
     // Display how the OpenMP threads are provisioned
     // if (opts->has_string("print_affinity")) {
