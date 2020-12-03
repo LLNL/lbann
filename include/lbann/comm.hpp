@@ -858,6 +858,11 @@ public:
     return is_sendable(dist_mat.LockedMatrix());
   }
 
+  /** Developer's note: to get the raw MPI communicator, which may be needed
+   *  when working with external libraries, by example:
+   *     comm->get_intertrainer_comm().GetMPIComm()
+   */
+
   /** Return the intertrainer communicator. */
   const El::mpi::Comm& get_intertrainer_comm() const noexcept
   {
