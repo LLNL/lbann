@@ -56,12 +56,9 @@ def construct_lc_launcher_args():
     parser.add_argument("--sequence-length", type=int, default=None)
     parser.add_argument("--dump-weights-dir", type=str, default="weights")
     parser.add_argument("--dump-weights-interval", type=int, default=10)
-    parser.add_argument("--dump-outputs-dir", type=str, default=None)
+    parser.add_argument("--dump-outputs-dir", type=str, default="outputs")
     parser.add_argument("--dump-outputs-interval", type=int, default=10)
-    parser.add_argument("--dump-model-dir", type=str, default=None)
-    parser.add_argument("--num_samples", type=int, default=None)
-    parser.add_argument("--num_train_samples", type=int, default=None)
-    parser.add_argument("--num_test_samples", type=int, default=None)
+    parser.add_argument("--dump-model-dir", type=str, default="models")
     parser.add_argument("--num-io-threads", type=int, default=11)
     parser.add_argument("--vocab", default=None)
     parser.add_argument("--delimiter", default="c")
@@ -108,7 +105,6 @@ def construct_model(run_args):
     data_layout = "data_parallel"
     # Layer graph
     input_ = lbann.Identity(lbann.Input(name='inp',target_mode="N/A"), name='inp1')
-    vae_loss= []
     input_feature_dims = sequence_length
 
     embedding_size = run_args.embedding_dim
@@ -134,7 +130,7 @@ def construct_model(run_args):
     d1_fake_bce = lbann.SigmoidBinaryCrossEntropy([d1_fake,zero],name='d1_fake_bce')
     d_adv_bce = lbann.SigmoidBinaryCrossEntropy([d_adv,one],name='d_adv_bce')
 
-    vae_loss.append(recon)
+    #vae_loss.append(recon)
 
     layers = list(lbann.traverse_layer_graph(input_))
     # Setup objective function
@@ -152,21 +148,16 @@ def construct_model(run_args):
       weights.update(l.weights)
     l2_reg = lbann.L2WeightRegularization(weights=weights, scale=1e-4)
 
-    vae_loss.append(d1_real_bce)
-    vae_loss.append(d_adv_bce)
-    vae_loss.append(d1_fake_bce)
-    vae_loss.append(l2_reg)
-    print("LEN vae loss ", len(vae_loss))
+    d_adv_bce = lbann.LayerTerm(d_adv_bce,scale=0.01)
 
-    obj = lbann.ObjectiveFunction(vae_loss)
+    obj = lbann.ObjectiveFunction([d1_real_bce,d1_fake_bce,d_adv_bce,recon,l2_reg])
 
     # Initialize check metric callback
-    metrics = [lbann.Metric(d_adv_bce, name='adv_loss'),
+    metrics = [
                lbann.Metric(recon, name='recon')
                 ]
 
     callbacks = [lbann.CallbackPrint(),
-                 #lbann.CallbackStepLearningRate(step=10, amt=0.5),
                  lbann.CallbackTimer()]
 
     if(run_args.dump_weights_interval > 0):
@@ -296,7 +287,7 @@ def main():
       import torch
       torch.save(run_args, "{}/{}_config.pt".format(experiment_dir, run_args.job_name))
 
-    m_lbann_args=f"--vocab={run_args.vocab} --data_filedir={run_args.data_filedir} --data_filename_train={run_args.data_filename} --num_samples={run_args.num_samples} --sequence_length={run_args.sequence_length}  --num_io_threads={run_args.num_io_threads} --no_header={run_args.no_header} --delimiter={run_args.delimiter} --num_train_samples={run_args.num_train_samples} --num_test_samples={run_args.num_test_samples}"
+    m_lbann_args=f"--vocab={run_args.vocab} --data_filedir={run_args.data_filedir} --data_filename_train={run_args.data_filename} --sequence_length={run_args.sequence_length}  --num_io_threads={run_args.num_io_threads} --no_header={run_args.no_header} --delimiter={run_args.delimiter}"
     if(run_args.data_reader_prototext):
       m_lbann_args = " ".join((m_lbann_args, " --use_data_store --preload_data_store "))
     if(run_args.ltfb):
@@ -310,7 +301,7 @@ def main():
         partition=run_args.partition,
         scheduler=run_args.scheduler,
         account=run_args.account,
-        reservation=run_args.reservation,
+        #reservation=run_args.reservation,
         time_limit=run_args.time_limit,
         nodes=run_args.nodes,
         procs_per_node=ppn,

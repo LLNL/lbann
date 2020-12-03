@@ -29,6 +29,7 @@
 
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/utils/distconv.hpp"
+#include "lbann/utils/dnn_enums.hpp"
 #if defined LBANN_HAS_DNN_LIB
 #include "lbann/utils/dnn_lib/helpers.hpp"
 #include "lbann/utils/dnn_lib/softmax.hpp"
