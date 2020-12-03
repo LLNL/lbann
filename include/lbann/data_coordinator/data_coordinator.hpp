@@ -203,9 +203,13 @@ class data_coordinator {
         map[data_reader_target_mode::INPUT] = dr->get_data_dims();
         if(dr->has_labels()) {
           map[data_reader_target_mode::CLASSIFICATION] = std::vector<int>(1, dr->get_num_labels());
+        }else {
+          map[data_reader_target_mode::CLASSIFICATION] = std::vector<int>(1, 0);
         }
         if(dr->has_responses()) {
           map[data_reader_target_mode::REGRESSION] = std::vector<int>(1, dr->get_num_responses());
+        }else {
+          map[data_reader_target_mode::REGRESSION] = std::vector<int>(1, 0);
         }
         map[data_reader_target_mode::RECONSTRUCTION] = dr->get_data_dims();
         map[data_reader_target_mode::LABEL_RECONSTRUCTION] = dr->get_data_dims();
