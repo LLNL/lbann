@@ -76,8 +76,8 @@ void construct_std_options() {
                       "Allow the print_statistics callback to report "
                       "global (inter-trainer) summary statistics.");
   arg_parser.add_option(PROCS_PER_TRAINER,
-                        {"--ltfb_procs_per_trainer"},
-                        utils::ENV("LBANN_LTFB_PROCS_PER_TRAINER"),
+                        {"--procs_per_trainer"},
+                        utils::ENV("LBANN_PROCS_PER_TRAINER"),
                         "Number of MPI ranks per LBANN trainer, "
                         "If the field is not set (or set to 0) then "
                         " all MPI ranks are assigned to one trainer."

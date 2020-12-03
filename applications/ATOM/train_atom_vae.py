@@ -255,7 +255,7 @@ def main():
       m_lbann_args = " ".join((m_lbann_args, " --use_data_store --preload_data_store "))
     if(run_args.ltfb):
       m_lbann_args = " ".join((m_lbann_args, "--ltfb"))
-    if(run_args.procs_per_trainer)
+    if(run_args.procs_per_trainer):
       m_lbann_args = " ".join((m_lbann_args, f"--procs_per_trainer={run_args.procs_per_trainer}"))
 
     status = lbann.contrib.launcher.run(

@@ -278,7 +278,7 @@ def main():
     m_lbann_args=f"--load_model_weights_dir_is_complete --load_model_weights_dir={run_args.dump_model_dir} --vocab={run_args.vocab} --num_samples={run_args.num_samples} --sequence_length={run_args.sequence_length}  --num_io_threads={run_args.num_io_threads} --no_header={run_args.no_header} --delimiter={run_args.delimiter}"
     if(run_args.data_reader_prototext):
       m_lbann_args = " ".join((m_lbann_args, " --use_data_store --preload_data_store "))
-    if(run_args.procs_per_trainer)
+    if(run_args.procs_per_trainer):
       m_lbann_args = " ".join((m_lbann_args, f"--procs_per_trainer={run_args.procs_per_trainer}"))
 
     status = lbann.contrib.launcher.run(

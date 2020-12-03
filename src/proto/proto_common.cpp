@@ -924,7 +924,6 @@ void print_help(std::ostream& os)
        "  --mini_batch_size=<int>\n"
        "  --num_epochs=<int>\n"
        "  --hydrogen_block_size=<int>\n"
-       "  --procs_per_trainer=<int>\n"
        "  --num_parallel_readers=<int>\n"
        "  --serialize_io=<bool>\n"
        "      force data readers to use a single thread for I/O\n"
