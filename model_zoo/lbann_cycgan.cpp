@@ -92,6 +92,9 @@ int main(int argc, char *argv[]) {
   }
 
   try {
+    // Split MPI into trainers
+    int procs_per_trainer = allocate_trainer_resources(comm.get());
+
     // Initialize options db (this parses the command line)
     options *opts = options::get();
     opts->init(argc, argv);
@@ -122,7 +125,7 @@ int main(int argc, char *argv[]) {
     lbann_data::Trainer *pb_trainer = pb.mutable_trainer();
 
     // Construct the trainer
-    std::unique_ptr<trainer> trainer = construct_trainer(comm.get(), pb_trainer, *(pbs[0]), opts);
+    std::unique_ptr<trainer> trainer = construct_trainer(comm.get(), pb_trainer, *(pbs[0]), opts, procs_per_trainer);
 
     thread_pool& io_thread_pool = trainer->get_io_thread_pool();
 

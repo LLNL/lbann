@@ -75,24 +75,43 @@ void construct_std_options() {
                       utils::ENV("LBANN_LTFB_ALLOW_GLOBAL_STATISTICS"),
                       "Allow the print_statistics callback to report "
                       "global (inter-trainer) summary statistics.");
+  arg_parser.add_option(PROCS_PER_TRAINER,
+                        {"--ltfb_procs_per_trainer"},
+                        utils::ENV("LBANN_LTFB_PROCS_PER_TRAINER"),
+                        "Number of MPI ranks per LBANN trainer, "
+                        "If the field is not set (or set to 0) then "
+                        " all MPI ranks are assigned to one trainer."
+                        " The number of processes per trainer must "
+                        " evenly divide the total number of MPI ranks. "
+                        " The number of resulting trainers is "
+                        " num_procs / procs_per_trainer.",
+                        0);
+}
+
+/// Split the MPI communicator into trainers
+/// Return the
+int allocate_trainer_resources(lbann_comm *comm) {
+  auto& arg_parser = global_argument_parser();
+  int procs_per_trainer = arg_parser.get<int>(PROCS_PER_TRAINER);
+
+  if (procs_per_trainer == 0) {
+    procs_per_trainer = comm->get_procs_in_world();
+    //    arg_parser.<int>(PROCS_PER_TRAINER) = comm->get_procs_in_world();;
+  }
+
+  // Set up the communicator and split the grid if necessary
+  comm->split_trainers(procs_per_trainer);
+
+  return procs_per_trainer;
 }
 
 /// Construct a trainer that contains a lbann comm object and threadpool
 std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
                                            lbann_data::Trainer* pb_trainer,
                                            lbann_data::LbannPB &pb,
-                                           options *opts) {
+                                           options *opts,
+                                           int procs_per_trainer) {
   try {
-    int procs_per_trainer = 0;
-    if(pb_trainer->procs_per_trainer() > 0) {
-      procs_per_trainer = pb_trainer->procs_per_trainer();
-    }
-    if (procs_per_trainer == 0) {
-      procs_per_trainer = comm->get_procs_in_world();
-    }
-
-    // Set up the communicator and split the grid if necessary
-    comm->split_trainers(procs_per_trainer);
     if (pb_trainer->num_parallel_readers() > procs_per_trainer) {
       pb_trainer->set_num_parallel_readers(procs_per_trainer);
     }
@@ -123,9 +142,9 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
     // Set up the communicator and get the grid based on the trainers' spec.
     // We do not currently support splitting different trainers in different ways,
     // as this implies different grids.
-    if (procs_per_trainer != comm->get_procs_per_trainer()) {
-      comm->split_trainers(procs_per_trainer);
-    }
+    // if (procs_per_trainer != comm->get_procs_per_trainer()) {
+    //   comm->split_trainers(procs_per_trainer);
+    // }
 
     // Display how the OpenMP threads are provisioned
     // if (opts->has_string("print_affinity")) {
@@ -252,7 +271,7 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
                 << std::endl;
 
       // User feedback
-      print_parameters(*comm, pb, root_random_seeds, random_seeds, data_seq_random_seeds);
+      print_parameters(*comm, pb, root_random_seeds, random_seeds, data_seq_random_seeds, procs_per_trainer);
     }
 
     return trainer;
