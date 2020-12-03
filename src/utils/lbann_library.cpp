@@ -96,7 +96,6 @@ int allocate_trainer_resources(lbann_comm *comm) {
 
   if (procs_per_trainer == 0) {
     procs_per_trainer = comm->get_procs_in_world();
-    //    arg_parser.<int>(PROCS_PER_TRAINER) = comm->get_procs_in_world();;
   }
 
   // Set up the communicator and split the grid if necessary
