@@ -1688,7 +1688,7 @@ int get_default_convolution_math_type() noexcept
 using ProtoTensorOpEnumType = decltype(lbann_data::DEFAULT_TENSOR_OPS);
 int convert_to_dnn_math_type(ProtoTensorOpEnumType mt)
 {
-  LBANN_ERROR("MIOpen only supports one math type.");
+  // MIOpen only supports one math type, so this is just a placeholder function
   return 0;
 }
 
