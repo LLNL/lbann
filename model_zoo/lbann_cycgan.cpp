@@ -92,6 +92,9 @@ int main(int argc, char *argv[]) {
   }
 
   try {
+    // Split MPI into trainers
+    allocate_trainer_resources(comm.get());
+
     // Initialize options db (this parses the command line)
     options *opts = options::get();
     opts->init(argc, argv);
