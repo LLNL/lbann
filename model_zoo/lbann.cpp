@@ -146,7 +146,7 @@ int main(int argc, char *argv[]) {
     stack_profiler::get()->activate(comm->get_rank_in_world());
 
     // Split MPI into trainers
-    int procs_per_trainer = allocate_trainer_resources(comm.get());
+    allocate_trainer_resources(comm.get());
 
     // Load the prototexts specificed on the command line
     auto pbs = protobuf_utils::load_prototext(master, argc, argv);
@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
     lbann_data::Trainer *pb_trainer = pb.mutable_trainer();
 
     // Construct the trainer
-    std::unique_ptr<trainer> trainer = construct_trainer(comm.get(), pb_trainer, pb, opts, procs_per_trainer);
+    std::unique_ptr<trainer> trainer = construct_trainer(comm.get(), pb_trainer, pb, opts);
 
     thread_pool& io_thread_pool = trainer->get_io_thread_pool();
 

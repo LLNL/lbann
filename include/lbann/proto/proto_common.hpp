@@ -83,8 +83,7 @@ void print_parameters(const lbann_comm& comm,
                       ::lbann_data::LbannPB& p,
                       std::vector<int>& root_random_seeds,
                       std::vector<int>& random_seeds,
-                      std::vector<int>& data_seq_random_seeds,
-                      int procs_per_trainer);
+                      std::vector<int>& data_seq_random_seeds);
 
 /** @brief prints usage information */
 void print_help(const lbann_comm& comm);

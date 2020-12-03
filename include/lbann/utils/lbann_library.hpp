@@ -49,8 +49,7 @@ int allocate_trainer_resources(lbann_comm *comm);
 std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
                                            lbann_data::Trainer* pb_trainer,
                                            lbann_data::LbannPB &pb,
-                                           options *opts,
-                                           int procs_per_trainer);
+                                           options *opts);
 
 std::unique_ptr<thread_pool> construct_io_thread_pool(lbann_comm *comm, options *opts, bool serialized_io);
 

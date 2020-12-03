@@ -112,11 +112,10 @@ int allocate_trainer_resources(lbann_comm *comm) {
 std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
                                            lbann_data::Trainer* pb_trainer,
                                            lbann_data::LbannPB &pb,
-                                           options *opts,
-                                           int procs_per_trainer) {
+                                           options *opts) {
   try {
-    if (pb_trainer->num_parallel_readers() > procs_per_trainer) {
-      pb_trainer->set_num_parallel_readers(procs_per_trainer);
+    if (pb_trainer->num_parallel_readers() > comm->get_procs_per_trainer()) {
+      pb_trainer->set_num_parallel_readers(comm->get_procs_per_trainer());
     }
 
     // Adjust the number of parallel readers; this may be adjusted
@@ -267,7 +266,7 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
                 << std::endl;
 
       // User feedback
-      print_parameters(*comm, pb, root_random_seeds, random_seeds, data_seq_random_seeds, procs_per_trainer);
+      print_parameters(*comm, pb, root_random_seeds, random_seeds, data_seq_random_seeds);
     }
 
     return trainer;
