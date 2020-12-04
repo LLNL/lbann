@@ -47,6 +47,9 @@ int main(int argc, char *argv[]) {
               << std::endl;
     std::terminate();
   }
+  // Output help message from the arg_parser
+  std::cout << arg_parser << std::endl;
+  // Output manual help message
   print_help(std::cerr);
   return EXIT_SUCCESS;
 }

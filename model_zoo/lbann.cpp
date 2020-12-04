@@ -145,19 +145,11 @@ int main(int argc, char *argv[]) {
     //to activate, must specify --st_on on cmd line
     stack_profiler::get()->activate(comm->get_rank_in_world());
 
-    //Get procs per trainer from command line 
-    int trainer_rank = 0;
-    if(opts->get_bool("generate_multi_proto")) {
-      auto ppt = opts->get_int("procs_per_trainer");
-      if(ppt <= 0 || ppt == comm->get_procs_in_world()) {
-        LBANN_ERROR("Generating per trainer proto file requires setting procs_per_trainer flag to apppropriate value");
-      }else {
-        comm->split_trainers(ppt);
-        trainer_rank = comm->get_trainer_rank();
-      }
-    }
-    // Load the (per_trainer) prototexts specificed on the command line
-    auto pbs = protobuf_utils::load_prototext(master, argc, argv,trainer_rank);
+    // Split MPI into trainers
+    allocate_trainer_resources(comm.get());
+
+    // Load the prototexts specificed on the command line
+    auto pbs = protobuf_utils::load_prototext(master, argc, argv);
     // Optionally over-ride some values in the prototext for each model
     for(size_t i = 0; i < pbs.size(); i++) {
       get_cmdline_overrides(*comm, *(pbs[i]));
