@@ -346,8 +346,8 @@ class data_coordinator {
                       " response set size (", std::to_string(tmp_response_size),
                       ") does not match the currently established data set size (",
                       std::to_string(linearized_response_size), ")");
-          linearized_response_size = tmp_response_size;
         }
+        linearized_response_size = tmp_response_size;
       }
     }
     return linearized_response_size;
