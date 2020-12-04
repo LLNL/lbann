@@ -24,18 +24,20 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_INPUT_DATA_TYPE_HPP_INCLUDED
-#define LBANN_INPUT_DATA_TYPE_HPP_INCLUDED
-
-#include "lbann/utils/enum_iterator.hpp"
-#include <string>
+#include <lbann/data_readers/utils/input_data_type.hpp>
 
 namespace lbann {
 
-enum class input_data_type {SAMPLES, LABELS, RESPONSES};
-using input_data_type_iterator = enum_iterator<input_data_type, input_data_type::SAMPLES, input_data_type::RESPONSES>;
-std::string to_string(input_data_type const& idt);
-
+std::string to_string(input_data_type const& idl) {
+  switch (idl) {
+  case input_data_type::SAMPLES:
+    return "samples";
+  case input_data_type::LABELS:
+    return "labels";
+  case input_data_type::RESPONSES:
+    return "responses";
+  }
+  return "invalid input_data_type";
 }
 
-#endif // LBANN_INPUT_DATA_TYPE_HPP_INCLUDED
+}
