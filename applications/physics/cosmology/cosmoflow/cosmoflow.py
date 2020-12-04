@@ -334,7 +334,6 @@ if __name__ == "__main__":
 
     # Construct layer graph
     input = lbann.Input(
-        io_buffer='partitioned',
         target_mode='regression')
     universes = lbann.Split(input)
     secrets = lbann.Split(input)
