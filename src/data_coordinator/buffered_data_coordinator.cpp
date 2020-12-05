@@ -122,14 +122,13 @@ int buffered_data_coordinator<TensorDataType>::fetch_to_local_matrix(data_buffer
 }
 
 template <typename TensorDataType>
-void buffered_data_coordinator<TensorDataType>::fp_setup_data(data_buffer_map_t& buffer_map, El::Int cur_mini_batch_size) {
+void buffered_data_coordinator<TensorDataType>::fp_setup_data(data_buffer<IODataType>& buffer, El::Int cur_mini_batch_size) {
 #ifdef LBANN_HAS_DISTCONV
   cur_mini_batch_size *= dc::get_number_of_io_partitions();
 #endif
   for(auto idt : input_data_type_iterator()) {
-    for (auto& buf : buffer_map) {
-      buf.second->m_input_buffers[idt]->Resize(buf.second->m_input_buffers[idt]->Height(), cur_mini_batch_size);
-    }
+    auto& mat = *buffer.m_input_buffers[idt];
+    mat.Resize(mat.Height(), cur_mini_batch_size);
   }
 }
 
@@ -139,7 +138,7 @@ void buffered_data_coordinator<TensorDataType>::fetch_data_in_background(int fut
   data_buffer_map_t& buffer_map = m_data_buffers[active_buffer_idx];
   std::lock_guard<std::mutex> guard(dr_mutex);
   int mini_batch_size = get_current_mini_batch_size(mode);
-  fp_setup_data(buffer_map, mini_batch_size);
+  fp_setup_data(*buffer_map[mode], mini_batch_size);
   fetch_to_local_matrix(buffer_map, mode);
   return;
 }

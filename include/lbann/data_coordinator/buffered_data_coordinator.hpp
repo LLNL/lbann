@@ -119,7 +119,7 @@ class buffered_data_coordinator : public data_coordinator {
     int max_mini_batch_size,
     std::map<execution_mode, generic_data_reader *> data_readers) override;
 
-  void fp_setup_data(data_buffer_map_t& buffer_map, El::Int cur_mini_batch_size);
+  void fp_setup_data(data_buffer<IODataType>& buffer, El::Int cur_mini_batch_size);
 
   void fetch_data(execution_mode mode) override;
 
