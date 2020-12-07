@@ -319,7 +319,7 @@ if __name__ == "__main__":
 
     parser.add_argument(
         '--dynamically-reclaim-error-signals', action='store_true',
-        help='Allow DiHydrogen to reclaim error signals buffers (default: False)')
+        help='Allow LBANN to reclaim error signals buffers (default: False)')
 
     parser.add_argument(
         '--batch-job', action='store_true',
