@@ -65,6 +65,8 @@ WITH_CUDA=
 WITH_TOPO_AWARE=ON
 INSTRUMENT=
 WITH_ALUMINUM=
+ALUMINUM_WITH_CUDA=OFF
+ALUMINUM_WITH_HOST_TRANSFER=OFF
 ALUMINUM_WITH_MPI_CUDA=OFF
 ALUMINUM_WITH_NCCL=
 WITH_CONDUIT=ON
@@ -81,6 +83,7 @@ WITH_LIBJPEG_TURBO=ON
 #LIBJPEG_TURBO_DIR="/p/lscratchh/brainusr/libjpeg-turbo-1.5.2"
 WITH_NVSHMEM=0
 NVSHMEM_DIR=
+CUB_DIR=
 
 function version_gt() { test "$(printf '%s\n' "$@" | sort -V | head -n 1)" != "$1"; }
 
@@ -262,6 +265,7 @@ while :; do
             ;;
         --aluminum-with-mpi-cuda)
             WITH_ALUMINUM=ON
+            ALUMINUM_WITH_CUDA=ON
             ALUMINUM_WITH_MPI_CUDA=ON
             ;;
         --disable-aluminum-with-nccl)
@@ -288,6 +292,8 @@ while :; do
             # CUDA is required for Distconv
             WITH_CUDA=ON
             # MPI-CUDA backend is required for Distconv
+            ALUMINUM_WITH_CUDA=ON
+            ALUMINUM_WITH_HOST_TRANSFER=ON
             ALUMINUM_WITH_MPI_CUDA=ON
             ;;
         -?*)
@@ -330,7 +336,7 @@ fi
 # Load packages
 if [ ${USE_MODULES} -ne 0 ]; then
     module load git
-    module load cmake/3.16.8
+    module load cmake/3.18.1
 else
     use git
 fi
@@ -596,7 +602,7 @@ if [ "${CLUSTER}" == "surface" -o "${CORAL}" -eq 1 -o "${CLUSTER}" == "pascal" ]
     ALUMINUM_WITH_NCCL=${ALUMINUM_WITH_NCCL:-ON}
 	if [[ ${CORAL} -eq 1 ]]; then
 		module del cuda
-		CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda/10.1.243}
+		CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda/11.1.0}
 	fi
 
     # Hack for surface
@@ -636,7 +642,7 @@ if [ "${WITH_CUDA}" == "ON" ]; then
 
 	# CUDNN
 	if [[ -z $CUDNN_DIR ]]; then
-        CUDNN_VER=${CUDNN_VER:-7.6.4}
+        CUDNN_VER=${CUDNN_VER:-8.0.4}
 		CUDNN_DIR=/usr/workspace/wsb/brain/cudnn/cudnn-${CUDNN_VER}/cuda-${CUDA_TOOLKIT_VERSION}_${ARCH}
 	fi
 	if [[ ! -d $CUDNN_DIR ]]; then
@@ -644,6 +650,16 @@ if [ "${WITH_CUDA}" == "ON" ]; then
 		exit 1
 	fi
 	export CUDNN_DIR
+
+	# CUB
+	CUB_DIR_IN_CUDA=${CUDA_TOOLKIT_ROOT_DIR}/include/cub
+	if [[ -d $CUB_DIR_IN_CUDA ]]; then
+		CUB_DIR=${CUB_DIR_IN_CUDA}
+		if [ $WITH_CUB == ON ]; then
+			# CUB build is disabled as it is included in the CUDA toolkit
+			WITH_CUB=OFF
+		fi
+	fi
 
     # NCCL
     if [[ -z $NCCL_DIR ]]; then
@@ -660,6 +676,8 @@ else
     WITH_CUDA=${WITH_CUDA:-OFF}
     WITH_CUDNN=OFF
     WITH_CUB=OFF
+    ALUMINUM_WITH_CUDA=OFF
+    ALUMINUM_WITH_HOST_TRANSFER=OFF
     ALUMINUM_WITH_NCCL=OFF
     ALUMINUM_WITH_MPI_CUDA=OFF
 fi
@@ -803,6 +821,8 @@ cmake \
 -D LBANN_SB_BUILD_PROTOBUF=ON \
 -D LBANN_SB_BUILD_CUB=${WITH_CUB} \
 -D LBANN_SB_BUILD_ALUMINUM=${WITH_ALUMINUM} \
+-D ALUMINUM_ENABLE_CUDA_CUDA=${ALUMINUM_WITH_CUDA} \
+-D ALUMINUM_ENABLE_HOST_TRANSFER=${ALUMINUM_WITH_HOST_TRANSFER} \
 -D ALUMINUM_ENABLE_MPI_CUDA=${ALUMINUM_WITH_MPI_CUDA} \
 -D ALUMINUM_ENABLE_NCCL=${ALUMINUM_WITH_NCCL} \
 -D LBANN_SB_BUILD_CONDUIT=${WITH_CONDUIT} \
@@ -833,6 +853,7 @@ cmake \
 -D DIHYDROGEN_ENABLE_DISTCONV_LEGACY=${WITH_DISTCONV} \
 -D LBANN_WITH_DIHYDROGEN=${WITH_DIHYDROGEN} \
 -D LBANN_WITH_DISTCONV=${WITH_DISTCONV} \
+-D CUB_DIR=${CUB_DIR} \
 ${SUPERBUILD_DIR}
 EOF
 )
