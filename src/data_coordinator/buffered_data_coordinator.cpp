@@ -282,27 +282,29 @@ bool buffered_data_coordinator<TensorDataType>::update_data_set(generic_data_rea
 }
 
 template <typename TensorDataType>
-void buffered_data_coordinator<TensorDataType>::distribute_from_local_matrix(execution_mode mode, AbsDistMatrixType& sample, AbsDistMatrixType& response) {
+void buffered_data_coordinator<TensorDataType>::distribute_from_local_matrix(execution_mode mode, std::map<input_data_type, AbsDistMatrixType*>& input_buffers) {
   prof_region_begin("distribute_from_local_matrix", prof_colors[3], false);
   data_buffer<IODataType>& buf = get_active_buffer(mode);
-  El::Copy(*buf.m_input_buffers[input_data_type::SAMPLES], sample);
-  El::Copy(*buf.m_input_buffers[input_data_type::LABELS], response);
+  for(auto idt : input_data_type_iterator()) {
+    if(buf.m_input_buffers.count(idt)) {
+      if(input_buffers.count(idt)) {
+        El::Copy(*buf.m_input_buffers[idt], *input_buffers[idt]);
+      }
+    }else {
+      if(input_buffers.count(idt)) {
+        LBANN_ERROR("Requested input data of type ", to_string(idt), " - no data in data coordinator");
+      }
+    }
+  }
 #ifdef LBANN_HAS_DISTCONV
-  if (dc::is_cosmoflow_parallel_io_enabled()) {
+  if (dc::is_cosmoflow_parallel_io_enabled() && input_buffers.count(input_data_type::RESPONSES)) {
+    auto& response = *(input_buffers[input_data_type::RESPONSES]);
     response.Resize(response.Height(), response.Width() /
                     dc::get_number_of_io_partitions());
   }
 #endif
   buf.m_num_samples_fetched = 0;
   prof_region_end("distribute_from_local_matrix", false);
-  return;
-}
-
-template <typename TensorDataType>
-void buffered_data_coordinator<TensorDataType>::distribute_from_local_matrix(execution_mode mode, AbsDistMatrixType& sample) {
-  data_buffer<IODataType>& buf = get_active_buffer(mode);
-  El::Copy(*buf.m_input_buffers[input_data_type::SAMPLES], sample);
-  buf.m_num_samples_fetched = 0;
   return;
 }
 

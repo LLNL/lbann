@@ -58,14 +58,16 @@ class hdf5_reader : public generic_data_reader {
   void load() override;
   void set_hdf5_paths(const std::vector<std::string> hdf5_paths) {m_file_paths = hdf5_paths;}
 
-  void set_has_labels(const bool b) { m_has_labels = b; }
-  void set_has_responses(const bool b) { m_has_responses = b; }
+  /// Whether to fetch a label from the last column.
+  void set_has_labels(const bool b) { m_supported_input_types[input_data_type::LABELS] = b; }
+  /// Whether to fetch a response from the last column.
+  void set_has_responses(const bool b) { m_supported_input_types[input_data_type::RESPONSES] = b; }
   void set_num_responses(const size_t num_responses) {
     m_all_responses.resize(num_responses);
   }
 
   int get_num_labels() const override {
-    if(!m_has_labels) {
+    if(!this->has_labels()) {
       return generic_data_reader::get_num_labels();
     }
     // This data reader currently assumes that the shape of the label
@@ -73,7 +75,7 @@ class hdf5_reader : public generic_data_reader {
     return m_num_features;
   }
   int get_num_responses() const override {
-    if(!m_has_responses) {
+    if(!this->has_responses()) {
       return generic_data_reader::get_num_responses();
     }
     return get_linearized_response_size();
@@ -82,7 +84,7 @@ class hdf5_reader : public generic_data_reader {
     return m_num_features;
   }
   int get_linearized_label_size() const override {
-    if(!m_has_labels) {
+    if(!this->has_labels()) {
       return generic_data_reader::get_linearized_label_size();
     }
     // This data reader currently assumes that the shape of the label
@@ -90,7 +92,7 @@ class hdf5_reader : public generic_data_reader {
     return m_num_features;
   }
   int get_linearized_response_size() const override {
-    if(!m_has_responses) {
+    if(!this->has_responses()) {
       return generic_data_reader::get_linearized_response_size();
     }
     return m_all_responses.size();
@@ -116,10 +118,6 @@ class hdf5_reader : public generic_data_reader {
   hid_t get_hdf5_data_type() const;
   conduit::DataType get_conduit_data_type(conduit::index_t num_elements) const;
 
-  /// Whether to fetch a label from the last column.
-  bool m_has_labels = false;
-  /// Whether to fetch a response from the last column.
-  bool m_has_responses = false;
   int m_image_depth = 0;
   size_t m_num_features;
   std::vector<float> m_all_responses;

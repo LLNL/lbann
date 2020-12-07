@@ -104,14 +104,17 @@ void input_layer<TensorDataType, T_layout, Dev>::fp_compute() {
   int num_samples_in_batch = dc.get_current_mini_batch_size(mode);
 
   dc.update_num_samples_processed(mode, num_samples_in_batch);
-  if(this->m_expected_num_child_layers == 1) {
-    dc.distribute_from_local_matrix(mode, this->get_activations(0));
-  }else {
-    dc.distribute_from_local_matrix(mode, this->get_activations(0), this->get_activations(1));
+  std::map<input_data_type, AbsDistMatrixType*> input_buffers;
+  input_buffers[input_data_type::SAMPLES] = &(this->get_activations(0));
+  if(this->m_expected_num_child_layers > 1) {
+    if(is_for_regression()) {
+      input_buffers[input_data_type::RESPONSES] = &(this->get_activations(1));
+    }else {
+      input_buffers[input_data_type::LABELS] = &(this->get_activations(1));
+    }
   }
-  // }else {
-  //   LBANN_ERROR("could not fp_compute for I/O layers : encoutered generic_io_buffer type");
-  // }
+
+  dc.distribute_from_local_matrix(mode, input_buffers);
 
 #ifdef LBANN_HAS_DISTCONV
   if (this->distconv_enabled()) {

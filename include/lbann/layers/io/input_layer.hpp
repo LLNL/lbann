@@ -105,6 +105,14 @@ template <typename TensorDataType,
 class input_layer : public data_type_layer<TensorDataType> {
   static_assert(T_layout == data_layout::DATA_PARALLEL,
                 "input layer only supports DATA_PARALLEL data layout");
+ public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+  ///@}
  protected:
   data_reader_target_mode m_data_reader_mode;
 
