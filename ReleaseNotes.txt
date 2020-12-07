@@ -32,6 +32,12 @@ Build system:
 
 Bug fixes:
  - Fixed a bug where LBANN didn't set the Hydrogen RNG seed
+ - Fixed both CosmoFlow and UNet models PFE as well as addressed
+   issues in the data reader and data coordinator.
+ - Fixed the HDF5 data reader to properly specify the supported I/O
+   types
+ - Fixed calculation of the linearized response size
+ - Fixed the data coordinator's interface to input_layer
 
 Retired features:
 
