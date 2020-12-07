@@ -148,8 +148,12 @@ int main(int argc, char *argv[]) {
     // Split MPI into trainers
     allocate_trainer_resources(comm.get());
 
+    int trainer_rank = 0;
+    if(opts->get_bool("generate_multi_proto")) {
+        trainer_rank = comm->get_trainer_rank();
+    }
     // Load the prototexts specificed on the command line
-    auto pbs = protobuf_utils::load_prototext(master, argc, argv);
+    auto pbs = protobuf_utils::load_prototext(master, argc, argv,trainer_rank);
     // Optionally over-ride some values in the prototext for each model
     for(size_t i = 0; i < pbs.size(); i++) {
       get_cmdline_overrides(*comm, *(pbs[i]));
