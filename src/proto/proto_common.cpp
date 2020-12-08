@@ -378,8 +378,6 @@ void init_data_readers(
 
       reader->set_gan_labelling(readme.gan_labelling());
       reader->set_gan_label_value(readme.gan_label_value());
-
-      reader->set_partitioned(readme.is_partitioned(), readme.partition_overlap(), readme.partition_mode());
     }
 
     if (readme.role() == "train") {

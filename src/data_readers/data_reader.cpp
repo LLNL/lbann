@@ -406,11 +406,6 @@ void generic_data_reader::error_check_counts() const {
   if (!(count == 0 or use_percent == 0.0)) {
       LBANN_ERROR("get_use_percent() and get_absolute_sample_count() are both non-zero; exactly one must be zero");
   }
-  if (m_is_partitioned && !(m_partition_mode == 1 || m_partition_mode == 2)) {
-    LBANN_ERROR("overlap mode must be 1 or 2\n"
-      " 1 - share overlap data with one neighboring models;\n"
-      " 2 - a set of overlap indices is common to (is shared by) all models");
-  }
   if (count != 0) {
     if(count > static_cast<size_t>(get_num_data())) {
       LBANN_ERROR("absolute_sample_count=" +
@@ -418,123 +413,6 @@ void generic_data_reader::error_check_counts() const {
         std::to_string(get_num_data()));
     }
   }
-}
-
-void generic_data_reader::select_subset_of_data_partitioned() {
-#if 0
-  std::vector<int> common_pool;
-  //case where there's an overlap set that is common to all models
-  if (m_partition_overlap && m_partition_mode == 2) {
-    // Let x be the percent of indices from shuffled_indices that will be
-    //   assigned to the common pool.
-    // Let p be the number of models.
-    // Let v be the requested percent overlap.
-    // Let n = m_shuffled_indices.size(). Then each  model will have
-    //  xn + n(1-x)/p indices, and we want:
-    //   xn / ( xn + n(1-x)/p ) = v solving for x:
-    //
-    //         x = v / (-pv+p+v)
-    //
-    double v = m_partition_overlap;
-    double p = m_num_partitions;
-    double x = v / (-p*v + p + v);
-    int x1 = x*(m_shuffled_indices.size() - get_validation_percent()*m_shuffled_indices.size());
-    if (x1 < 1) {
-      x1 = 1;
-    }
-    int x3 = m_shuffled_indices.size() - x1;
-    common_pool.resize(x1);
-    std::copy(
-      m_shuffled_indices.begin() + x3,
-      m_shuffled_indices.end(),
-      common_pool.begin());
-    m_shuffled_indices.resize(x3);
-  }
-
-  // hack: possibly drop a few indices to avoid dealing with edge cases;
-  // number dropped is less than the number of models
-  size_t partition_size = m_shuffled_indices.size() / m_num_partitions;
-  if (partition_size*m_num_partitions < m_shuffled_indices.size() && is_master()) {
-    std::cout
-      << "select_subset_of_data_partitioned; data set is partitioned; dropping "
-      << m_shuffled_indices.size() - (partition_size*m_num_partitions)
-      << " to avoid dealing with edge cases (hack)\n";
-  }
-
-  // make temp copy of indices; need this to compute overlap for mode 1 (below)
-  std::vector<int> s_indices = m_shuffled_indices;
-
-  //partition the data
-  if (m_my_partition > 0) {
-    std::copy(
-      m_shuffled_indices.begin() + partition_size*m_my_partition,
-      m_shuffled_indices.begin() + partition_size*(m_my_partition+1),
-      m_shuffled_indices.begin());
-  }
-  m_shuffled_indices.resize(partition_size);
-
-  //pull out validation set; note that we pull the validation set from
-  //the end of the index vector
-  long unused = get_validation_percent()*get_num_data();
-  long use_me = get_num_data() - unused;
-  if (unused > 0) {
-      m_unused_indices=std::vector<int>(m_shuffled_indices.begin() + use_me, m_shuffled_indices.end());
-      m_shuffled_indices.resize(use_me);
-  }
-
-  int shared_index_count = common_pool.size();
-  if (m_partition_overlap > 0.) {
-    if (m_partition_overlap > 1.) {
-      throw lbann_exception(
-        std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-        " :: generic_data_reader - overlap must be >= 0 and <= 1");
-    }
-
-    if (m_partition_mode == 2) {
-      int s = m_shuffled_indices.size();
-      m_shuffled_indices.resize(s + common_pool.size());
-      std::copy(common_pool.begin(), common_pool.end(), m_shuffled_indices.begin() + s);
-    }
-
-    else { //m_partition_mode = 1 or 3
-
-      double x = m_partition_overlap / (1-m_partition_overlap);
-      size_t overlap_count = x*use_me;
-
-      //ensure there's at least one overlap at each end of a proc's partition;
-      //this is only needed to ensure that, when testing with smallish data sets,
-      //rounding error doesn't set overlap to 0.
-      if (overlap_count < 2) {
-        overlap_count = 2;
-      }
-      //we exchange 1/2 of the overlap with left & right nabore
-      overlap_count /= 2;
-
-      size_t start_of_prior_partition = (m_my_partition-1)*partition_size;
-      if (m_my_partition == 0) {
-        start_of_prior_partition = (m_num_partitions-1)*partition_size;
-      }
-      size_t start_of_next_partition = (m_my_partition+1)*partition_size;
-      if (m_my_partition == m_num_partitions-1) {
-        start_of_next_partition = 0;
-      }
-
-      shared_index_count = 0;
-      for (size_t j = 0; j<overlap_count; j++) {
-        m_shuffled_indices.push_back(s_indices[start_of_prior_partition+j]);
-        ++shared_index_count;
-      }
-      for (size_t j = 0; j<overlap_count; j++) {
-        m_shuffled_indices.push_back(s_indices[start_of_next_partition+j]);
-        ++shared_index_count;
-      }
-    }
-    if (is_master()) {
-      double s = 100.0 * shared_index_count / m_shuffled_indices.size();
-      std::cout << "Actual overlap percentage: " << s << "%\n";
-    }
-  }
-#endif
 }
 
 size_t generic_data_reader::get_num_indices_to_use() const {
@@ -571,12 +449,6 @@ void generic_data_reader::resize_shuffled_indices() {
 }
 
 void generic_data_reader::select_subset_of_data() {
-  // optionally partition data set amongst the models
-  // if (m_is_partitioned) {
-  //   select_subset_of_data_partitioned();
-  //   return ;
-  // }
-
   for(auto m : execution_mode_iterator()) {
     double split_percent = get_execution_mode_split_percent(m);
 
@@ -852,20 +724,6 @@ void generic_data_reader::set_data_store(data_store_conduit *g) {
       delete m_data_store;
     }
     m_data_store = g;
-}
-
-void generic_data_reader::set_partitioned(bool partitioned_yes, double overlap, int mode) {
-  if (m_comm->get_num_trainers() == 1 || m_comm->get_procs_in_world() == 1) {
-    m_is_partitioned  = false;
-    return;
-  }
-  m_is_partitioned = partitioned_yes;
-  //n.b. the following params have no affect if m_is_partitioned is false
-  m_partition_overlap = overlap;
-  m_partition_mode = mode;
-  m_procs_per_partition = m_comm->get_procs_per_trainer();
-  m_num_partitions = m_comm->get_num_trainers();
-  m_my_partition = m_comm->get_trainer_rank();
 }
 
 void generic_data_reader::set_mini_batch_size(const int s) {

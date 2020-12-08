@@ -101,10 +101,6 @@ class generic_data_reader {
     m_master(false),
     m_gan_labelling(false), //default, not GAN
     m_gan_label_value(0),  //If GAN, default for fake label, discriminator model
-    m_is_partitioned(false),
-    m_partition_overlap(0),
-    m_partition_mode(0),
-    m_procs_per_partition(1),
     m_io_thread_pool(nullptr),
     m_jag_partitioned(false),
     m_keep_sample_order(false),
@@ -617,20 +613,11 @@ class generic_data_reader {
    */
   void select_subset_of_data();
 
-  /// called by select_subset_of_data() if data set is partitioned
-  void select_subset_of_data_partitioned();
-
   /**
    * Replaced the shuffled index set with the unused index set, empying the
    * unused set.
    */
   virtual void use_unused_index_set(execution_mode m);
-
-  /// partition the dataset amongst the models
-  void set_partitioned(bool is_partitioned=true, double overlap=0.0, int mode=0);
-
-  /// returns true if the data set is partitioned
-  bool is_partitioned() const { return m_is_partitioned; }
 
   /// Does the data reader have a unqiue sample list per model
   virtual bool has_list_per_model() const { return false; }
@@ -870,31 +857,6 @@ private:
   //var to support GAN
   bool m_gan_labelling; //boolean flag of whether its GAN binary label, default is false
   int m_gan_label_value; //zero(0) or 1 label value for discriminator, default is 0
-
-   /// if true, dataset is partitioned amongst several models,
-   /// with options overlap (yeah, I know, if there's overlap its
-   /// not technically a partition)
-   bool m_is_partitioned;
-
-   /// if m_is_partitioned, this determines the amount of overlap
-   /// Has no effect if m_is_partitioned = false
-   double m_partition_overlap;
-
-   /// mode = 1: share overlap_percent/2 with left and right nabors
-   /// mode = 2: there's a set of overlap indices common to all models
-   int m_partition_mode;
-
-   /// only relevant if m_is_partitioned = true.  Currently this is same as
-   /// comm->num_models()
-   int m_num_partitions;
-
-   /// only relevant if m_is_partitioned = true.  Currently this is same as
-   /// comm->get_trainer_rank())
-   int m_my_partition;
-
-   /// only relevant if m_is_partitioned = true.  Currently this is same as
-   /// comm->get_procs_per_trainer)
-   int m_procs_per_partition;
 
   std::vector<std::vector<char>> m_thread_buffer;
 
