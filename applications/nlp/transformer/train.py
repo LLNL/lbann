@@ -81,6 +81,7 @@ def make_model(
         num_heads=num_heads,
         num_encoder_layers = num_encoder_layers,
         num_decoder_layers = num_decoder_layers,
+        filter_size = filter_size,
         d_kv = d_kv,
         name='transformer',
     )
@@ -149,34 +150,7 @@ def make_model(
     layers = list(lbann.traverse_layer_graph(input_))
     print("Subgrpah subgraph_topology",subgraph_topology)
 
-    include_heads = -1
-    string_heads = []
-    if(include_heads==-1):
-        include_heads = num_heads
 
-    for i in range(include_heads):
-        string_heads.append("head"+str(i))
-
-    for l in layers:
-        name = l.name
-        if("_myattention_head" in name):
-            split_name = l.name.split("_")
-            head_name = split_name[split_name.index("myattention")+1]
-
-            found = False
-            for i in range(include_heads):
-                if (string_heads[i] == head_name):
-                    found = True
-
-
-            if(found == False):
-
-                for idx in range(len(l.weights)):
-                    l.weights[idx].optimizer = lbann.NoOptimizer()
-
-    for l in layers:
-        for idx in range(len(l.weights)):
-            l.weights[idx].optimizer = lbann.NoOptimizer()
     # for l in layers:
     #     l.device = "GPU"
     return lbann.Model(

@@ -202,6 +202,7 @@ void timer::timing_end(model& m) {
         report << batch_time_mean << "s";
       }
       report << " mean, ";
+      std::cout << batch_time_median<< "s median, ";
       if (std::isnan(batch_time_max)) {
         report << "N/A";
       } else {
