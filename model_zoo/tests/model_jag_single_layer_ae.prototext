@@ -6,7 +6,6 @@ trainer {
   mini_batch_size: 128
   serialize_io: true
   num_parallel_readers: 1
-  shareable_training_data_reader:false
 
   ###################################################
   # Callbacks
