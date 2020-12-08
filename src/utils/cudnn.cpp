@@ -883,7 +883,7 @@ PoolingDescriptor::PoolingDescriptor(const PoolingDescriptor& rhs)
     cudnnGetPoolingNdDescriptor(
       rhs.desc_, num_dims, &mode, &nan_prop, &num_dims,
       window_dims.data(), padding.data(), strides.data()));
-  this->set(mode, nan_prop, window_dims, padding, strides);
+  this->set(cudnn::from_cudnn(mode), nan_prop, window_dims, padding, strides);
 }
 
 PoolingDescriptor::PoolingDescriptor(PoolingDescriptor&& rhs)
@@ -935,7 +935,7 @@ void PoolingDescriptor::create()
 }
 
 void PoolingDescriptor::set(
-  cudnnPoolingMode_t mode,
+  pooling_mode mode,
   cudnnNanPropagation_t nan_prop,
   std::vector<int> const& window_dims,
   std::vector<int> const& padding,
@@ -948,7 +948,7 @@ void PoolingDescriptor::set(
 }
 
 void PoolingDescriptor::set(
-  cudnnPoolingMode_t mode,
+  pooling_mode mode,
   cudnnNanPropagation_t nan_prop,
   int num_dims,
   int const window_dims[],
@@ -958,7 +958,8 @@ void PoolingDescriptor::set(
   this->create();
   CHECK_CUDNN(
     cudnnSetPoolingNdDescriptor(
-      desc_, mode, nan_prop, num_dims, window_dims, padding, stride));
+      desc_, cudnn::to_cudnn(mode), nan_prop,
+      num_dims, window_dims, padding, stride));
 }
 
 void swap(PoolingDescriptor& lhs, PoolingDescriptor& rhs)

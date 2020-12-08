@@ -236,12 +236,30 @@ inline cudnnPoolingMode_t to_cudnn(pooling_mode m)
 {
   switch(m)
   {
-  case pooling_mode::MAX: return CUDNN_POOLING_MAX;
+  case pooling_mode::MAX:
+#ifdef LBANN_DETERMINISTIC
+    return CUDNN_POOLING_MAX_DETERMINISTIC;
+#else
+    return CUDNN_POOLING_MAX;
+#endif // LBANN_DETERMINISTIC
   case pooling_mode::AVERAGE_COUNT_INCLUDE_PADDING: return CUDNN_POOLING_AVERAGE_COUNT_INCLUDE_PADDING;
   case pooling_mode::AVERAGE_COUNT_EXCLUDE_PADDING: return CUDNN_POOLING_AVERAGE_COUNT_EXCLUDE_PADDING;
   case pooling_mode::MAX_DETERMINISTIC: return CUDNN_POOLING_MAX_DETERMINISTIC;
   default:
-    LBANN_ERROR("Invalid pooling mode requested");
+    LBANN_ERROR("Invalid pooling mode requested.");
+  }
+}
+
+inline pooling_mode from_cudnn(cudnnPoolingMode_t m)
+{
+  switch(m)
+  {
+  case CUDNN_POOLING_MAX: return pooling_mode::MAX;
+  case CUDNN_POOLING_AVERAGE_COUNT_INCLUDE_PADDING: return pooling_mode::AVERAGE_COUNT_INCLUDE_PADDING;
+  case CUDNN_POOLING_AVERAGE_COUNT_EXCLUDE_PADDING: return pooling_mode::AVERAGE_COUNT_EXCLUDE_PADDING;
+  case CUDNN_POOLING_MAX_DETERMINISTIC: return pooling_mode::MAX_DETERMINISTIC;
+  default:
+    LBANN_ERROR("Invalid pooling mode requested.");
   }
 }
 

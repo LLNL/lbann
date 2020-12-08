@@ -147,17 +147,6 @@ void finalize(lbann_comm* comm) {
   El::Finalize();
 }
 
-/** hack to avoid long switch/case statement; users should ignore; of interest to developers */
-static std::vector<std::string> pool_mode_names = { "invalid", "max", "average", "average_no_pad" };
-
-/** returns a string representation of the pool_mode */
-std::string get_pool_mode_name(pool_mode m) {
-  if ((int)m < 1 or (int)m >= (int)pool_mode_names.size()) {
-    LBANN_ERROR("Invalid pool_mode");
-  }
-  return pool_mode_names[(int)m];
-}
-
 matrix_format data_layout_to_matrix_format(data_layout layout) {
   matrix_format format;
   switch(layout) {

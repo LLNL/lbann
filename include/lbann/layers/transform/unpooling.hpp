@@ -74,7 +74,8 @@ class unpooling_layer : public data_type_layer<TensorDataType> {
         this->get_type()," layer \"",this->get_name(),"\" "
         "does not have a valid pooling layer as a hint layer");
     }
-    if (hint_layer->m_pool_mode != pool_mode::max) {
+    if(hint_layer->m_pool_mode != pooling_mode::MAX &&
+       hint_layer->m_pool_mode != pooling_mode::MAX_DETERMINISTIC) {
       LBANN_ERROR("unpooling layer is only supported with max pooling");
     }
     if (hint_layer->using_gpus()) {
