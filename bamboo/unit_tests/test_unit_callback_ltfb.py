@@ -109,8 +109,6 @@ def construct_data_reader(lbann):
 
     """
 
-    # Note: The training data reader should be removed when
-    # https://github.com/LLNL/lbann/issues/1098 is resolved.
     message = lbann.reader_pb2.DataReader()
     message.reader.extend([
         tools.create_python_data_reader(
@@ -128,6 +126,14 @@ def construct_data_reader(lbann):
             'num_samples',
             'sample_dims',
             'validate',
+        ),
+        tools.create_python_data_reader(
+            lbann,
+            current_file,
+            'get_sample',
+            'num_samples',
+            'sample_dims',
+            'tournament',
         ),
     ])
     return message
@@ -195,6 +201,15 @@ def augment_test_func(test_func):
                     partner = int(match.group(3))
                     ltfb_partners[trainer].append(partner)
                     ltfb_winners[trainer].append(winner)
+
+                # Metric value on tournament set
+                match = re.search(
+                    'model0 \\(instance ([0-9]+)\\) tournament weight : '
+                    '([0-9.]+)',
+                    line)
+                if match:
+                    trainer = int(match.group(1))
+                    metric_values[trainer].append(float(match.group(2)))
 
                 # Metric value on validation set
                 match = re.search(

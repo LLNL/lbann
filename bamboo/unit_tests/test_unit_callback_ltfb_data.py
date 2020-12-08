@@ -129,8 +129,6 @@ def construct_data_reader(lbann):
 
     """
 
-    # Note: The training data reader should be removed when
-    # https://github.com/LLNL/lbann/issues/1098 is resolved.
     message = lbann.reader_pb2.DataReader()
     message.reader.extend([
         tools.create_python_data_reader(
@@ -148,6 +146,14 @@ def construct_data_reader(lbann):
             'num_val_samples',
             'sample_dims',
             'validate',
+        ),
+        tools.create_python_data_reader(
+            lbann,
+            current_file,
+            'get_val_sample',
+            'num_val_samples',
+            'sample_dims',
+            'tournament',
         ),
         tools.create_python_data_reader(
             lbann,
