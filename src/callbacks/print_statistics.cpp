@@ -60,7 +60,7 @@ void print_statistics::on_epoch_begin(model *m) {
   lbann_comm *comm = m->get_comm();
   if (comm->am_world_master()) {
     // Print message
-    std::cout << "--------------------------------------------------------------------------------"
+    std::cout << "--------------------------------------------------------------------------------------------"
               << std::endl;
     std::cout << "[" << c.get_epoch() << "] Epoch : stats formated [tr/v/te/to]"
               << " iter/epoch ="
@@ -126,7 +126,7 @@ void print_statistics::on_epoch_begin(model *m) {
               << "+" << dc.get_world_master_mini_batch_adjustment(execution_mode::tournament)
               << "]"
               << std::endl;
-    std::cout << "--------------------------------------------------------------------------------"
+    std::cout << "--------------------------------------------------------------------------------------------"
               << std::endl;
   }
 }
