@@ -38,18 +38,6 @@ public:
     return "hdf5_data_reader";
   }
 
-  /** Set the pathname to the schema specifying which fields from the data
-   * to use.  This schema should be a subset of the complete schema,
-   * except that it may contain one additional branch, rooted at the top
-   * level, and titled "lbann_metadata."
-   *
-   * Developer's note: you must call this method, and you must call it
-   * before load() is called
-   */
-  void set_schema_filename(std::string fn) {
-    m_useme_schema_filename = fn;
-  }
-
   void load() override;
 
   /** Returns a raw pointer to the data. 
@@ -99,14 +87,6 @@ char *x = "asdf";
     LBANN_ERROR("fetch_labels() is not implemented");
   }
 
-  /** Returns the set of data fields that the user specified in their
-   * supplied schema. Excludes fields than include the "lbann_metadata"
-   * substring. This method is primarily implemented for testing purposes.
-   */
-  const std::unordered_set<std::string> &get_field_names() const {
-    return m_useme_pathnames;
-  }
-
   /** returns true if the field_name is a float or float* */
   bool is_float(const std::string &field_name) const {
     conduit::DataType dtype = m_data_schema[field_name].dtype();
@@ -121,119 +101,68 @@ char *x = "asdf";
 
 private:
 
-  /** Contains pointers to nodes in the Schema obtained from data (on disk) */
-  std::unordered_map<std::string, conduit::Schema*> m_data_schema_nodes;
+///  std::unordered_map<std::string, std::unordered_map<std::string, lbann::DataType>> m_normailzation;
 
-  /** Contains pointers to nodes in the Schema supplied by the user
-   *  (excludes nodes from the lbann_metadata subtree)
+  /** Contains pointers to Nodes that contain the complete schemas
+   *  for the data on disk, and additionally contain normalization data.
    */
-  std::unordered_map<std::string, conduit::Schema*> m_useme_schema_nodes;
+  std::unordered_map<std::string, conduit::Node*> m_data_schema_nodes;
 
-  /** Contains pointers to nodes in the user supplied Schema for the
-   *  (possibly empty) lbann_metadata subtree
+  /** Contains pointers to nodes that specify which data fields are
+   * to be used for the current experiment
    */
-  std::unordered_map<std::string, conduit::Schema*> m_metadata_schema_nodes;
+  std::unordered_map<std::string, conduit::Node*> m_experiment_schema_nodes;
 
   /** Name of a (possibly empty) top-level branch in the useme schema that 
    *  contains instructions on normalizing and packing data, etc.
    */
-  const std::string m_metadata_field_name = "lbann_metadata";
+  const std::string m_metadata_field_name = "metadata";
 
-  /** The complete Schema (the schema that is constructed and/or read by conduit) */
-  conduit::Schema m_data_schema;
-
-  /** The Schema specifying the data fields to use in an experiment;
-   *  a subset of the complete schema, with optional additional metadata 
+  /** Schema supplied by the user; this should contain the smae information
+   *  (sans data) as is on disk, and may additionally contain normalization
+   *  data, etc; supplied by the user
    */
-  conduit::Schema m_useme_schema;
+  conduit::Node m_data_schema;
 
-  /** A possibly empty subset of m_useme_schema */
-  conduit::Schema m_metadata_schema;
-
-  /** Pathnames to schema files */
-  std::string m_useme_schema_filename = "";
+  /** The Schema specifying the data fields to use in an experiment */
+  conduit::Node m_experiment_schema;
 
   /** P_0 reads and bcasts the schema */
-  void load_schema(std::string fn, conduit::Schema &schema);
-  void load_schema_from_data();
+  void load_schema(std::string fn, conduit::Node &schema);
 
-  /** contains all pathnames, from root to leaves, for the
-   *  schema that is supplied by the user; excludes branches
-   *  that include m_metadata_field_name
-   */
-  std::unordered_set<std::string> m_useme_pathnames;
 
-  /** contains all pathnames, from root to leaves, for the
-   *  schema that is read from the data; excludes branches
-   *  that include m_metadata_field_name
+  /** Next few are used for "packing" data. 
+   *  'name' would be datum, label, response, or other (the user can choose
+   *  any names they like; I'm using datum, etc for backwards compatibility)
    */
-  std::unordered_set<std::string> m_data_pathnames;
-
-  /** Next few are for "packing" data. 
-   *  'name' would be datum, label, or response
-   */
-  std::unordered_map<std::string, std::unordered_set<std::string>> m_packed_to_field_names_map;
+  std::unordered_map<std::string, std::vector<std::string>> m_packed_to_field_names_map;
   std::unordered_map<std::string, std::string> m_field_name_to_packed_map;
 
-  std::unordered_map<std::string, size_t> m_field_name_to_bytes;
-  std::unordered_map<std::string, size_t> m_packed_name_to_bytes;
+  std::unordered_map<std::string, size_t> m_field_name_to_num_elts;
+  std::unordered_map<std::string, size_t> m_packed_name_to_num_elts;
 
-  //=========================================================================
-  // private methods follow
-  //=========================================================================
 
-  //-------------------------------------------------------------------------
-  // --------- START of experimental prototype for parsing metadata ---------
-  //-------------------------------------------------------------------------
-  
-  /** experimental; may decide to do something else. For now, here's
-   * a loosely defined language, by example. Be aware that the parser,
-   * for now, does no to minimal sanity checking.
-   *
-   * There should be a single branch beginning at a node lableled
-   * m_metadata_field_name.
-   *
-   * subnodes should be labled per the following:
-   *
-   *   fetch - data
-   *         - label
-   *         - response
-   *
-   *   pack  - data
-   *         - label
-   *         - response
-   *
-   *   cast - field_name_j - data_type
-   *
-   *   normalize - field_name_j
-   *
-   * Comments: any pathname that contains the '#' character
-   *           any place in the string is considered a comment
+  std::unordered_set<const conduit::Node*> m_all_exp_leaves;
+
+  /** Fills in various data structures (m_packed_to_field_names_map, 
+   *  m_packed_name_to_num_elts, etc) using data from the schema for
+   *  the actual data from disk, and the metadata schemas supplied by
+   *  the user
    */
-  void parse_metadata();
+  void parse_schemas();
 
-  /** Fills in: m_packed_name_to_bytes and m_field_name_to_bytes */
+  /** Fills in: m_packed_name_to_num_elts and m_field_name_to_num_elts */
   void tabulate_packing_memory_requirements();
 
-  /** On return, schema_name_map contains the names of all nodes in the schema.
-   *  WARNING: assumes each node's name is unique (name, not full path);
-   *           this should be relooked and relaxed in the future
+  /** get pointers to all nodes in the subtree rooted at the 'starting_node;'
+   *  keys are the pathnames; recursive.
    */
-  void get_schema_ptrs(conduit::Schema* schema, std::unordered_map<std::string, conduit::Schema*> &schema_name_map);
+  void get_schema_ptrs(conduit::Node* starting_node, std::unordered_map<std::string, conduit::Node*> &schema_name_map);
 
   /** Returns, in leaves, the schemas for all leaf noodes in the tree 
    *  rooted at 'schema_in'
-   *  WARNING: assumes each node's name is unique (name, not full path);
-   *           this should be relooked and relaxed in the future
    */
-  void get_leaves(const conduit::Schema* schema_in, std::vector<const conduit::Schema*> &leaves);
-
-  std::vector<conduit::Schema*> get_children(conduit::Schema *schema);
-  std::vector<conduit::Schema*> get_grand_children(conduit::Schema *schema);
-
-  //-------------------------------------------------------------------------
-  // ---------- END of experimental prototype for parsing metadata ----------
-  // ------------------------------------------------------------------------
+  void get_leaves(const conduit::Node* node_in, std::vector<const conduit::Node*> &leaves, std::string ignore_child_branch="metadata");
 
   void do_preload_data_store() override;
 
@@ -244,15 +173,8 @@ private:
   /** Performs packing, normalization, etc. Called by load_sample. */
   void munge_data(conduit::Node &node_in_out);
 
-  /** Verify the useme schema is a subset of the complete schema */
-  void validate_useme_schema();
-
-  /** Returns, in "output," the pathnames to all leaves in the schema */
-  void get_datum_pathnames(
-    const conduit::Schema &schema, 
-    std::unordered_set<std::string> &output,
-    int n = 0,
-    std::string path = "");
+  /** Loads a conduit::Node, then pulls out the Schema */
+  void load_schema_from_data(conduit::Schema &schema);
 };
 
 } // namespace lbann 

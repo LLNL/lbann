@@ -87,36 +87,8 @@ int main(int argc, char *argv[]) {
       if (reader == nullptr) {
         LBANN_ERROR("reader == nullptr");
       }
-      const std::unordered_set<std::string> &field_names = reader->get_field_names();
-//XX
-      for (auto t : field_names) {
-        std::cout << "next field: " << t << std::endl;
-      }
-
-      for (auto pathname : field_names) {
-        if (true) {
-        //if (pathname.find("emi") == std::string::npos) {
-//          size_t num_elts;
-          //const conduit::char_array data = reader->get_data2(0, pathname, num_elts);
-//          std::cout << "NUM_ELTS: " << num_elts << std::endl;
-//        const conduit::char_array hdf5_data_reader::get_data2(const size_t sample_id, const std::string &field_name, size_t &num_elts) const {
-
-        /*
-          if (reader->is_double(pathname)) {
-            double *xx;
-            reader->get_data<double>(0, pathname, xx, n_elts);
-//            std::cout << pathname << " " << *x << std::endl;
-          } else if (reader->is_float(pathname)) {
-            float *xxx;
-            reader->get_data<float>(0, pathname, xxx, n_elts);
-//            std::cout << pathname << " " << *x << std::endl;
-          } else {
-            LBANN_ERROR("not float or double!");
-          }
-          */
-        }
-      }
     }
+
   } catch (exception& e) {
     El::ReportException(e);
     El::mpi::Abort(El::mpi::COMM_WORLD, EXIT_FAILURE);
