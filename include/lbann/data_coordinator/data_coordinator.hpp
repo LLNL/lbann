@@ -56,6 +56,7 @@ namespace lbann {
 
 class data_coordinator {
  public:
+  using dataset_map_t = std::unordered_map<execution_mode, dataset>;
   using data_reader_map_t = std::map<execution_mode, generic_data_reader *>;
   using io_buffer_map_t = std::map<execution_mode, std::atomic<int>>;
 
@@ -84,9 +85,7 @@ class data_coordinator {
   // Data Coordinators copy their data readers.
   data_coordinator(const data_coordinator& other)
     : m_comm(other.m_comm),
-      m_training_dataset(other.m_training_dataset),
-      m_testing_dataset(other.m_testing_dataset),
-      m_validation_dataset(other.m_validation_dataset),
+      m_datasets(other.m_datasets),
       m_data_readers(other.m_data_readers),
       m_data_set_processed(other.m_data_set_processed),
       m_execution_context(other.m_execution_context) {
@@ -105,9 +104,7 @@ class data_coordinator {
   /** Archive for checkpoint and restart */
   template <class Archive> void serialize( Archive & ar ) {
     ar(/*CEREAL_NVP(m_io_buffer),*/
-       CEREAL_NVP(m_training_dataset),
-       CEREAL_NVP(m_testing_dataset),
-       CEREAL_NVP(m_validation_dataset)/*,
+       CEREAL_NVP(m_datasets)/*,
        CEREAL_NVP(m_data_readers),
        CEREAL_NVP(m_data_set_processed)*/);
   }
@@ -363,34 +360,18 @@ class data_coordinator {
 ///@{
    /** @brief Return the dataset for the given execution mode. */
   dataset& get_dataset(execution_mode m) {
-    switch(m) {
-    case execution_mode::training:
-      return m_training_dataset;
-      break;
-    case execution_mode::validation:
-      return m_validation_dataset;
-      break;
-    case execution_mode::testing:
-      return m_testing_dataset;
-      break;
-    default:
+    if(m_datasets.count(m)) {
+      return m_datasets.at(m);
+    }else {
       LBANN_ERROR("get_dataset: invalid execution mode");
     }
   }
 
   const dataset& get_dataset(execution_mode m) const {
-    switch(m) {
-    case execution_mode::training:
-      return m_training_dataset;
-      break;
-    case execution_mode::validation:
-      return m_validation_dataset;
-      break;
-    case execution_mode::testing:
-      return m_testing_dataset;
-      break;
-    default:
-       LBANN_ERROR("get_dataset: invalid execution mode");
+    if(m_datasets.count(m)) {
+      return m_datasets.at(m);
+    }else {
+      LBANN_ERROR("get_dataset: invalid execution mode");
     }
   }
 
@@ -399,28 +380,28 @@ class data_coordinator {
    * Returns null if none are valid.
    */
   dataset* select_first_valid_dataset() {
-    if (m_data_readers[execution_mode::training]) {
-      return &m_training_dataset;
-    } else if (m_data_readers[execution_mode::validation]) {
-      return &m_validation_dataset;
-    } else if (m_data_readers[execution_mode::testing]) {
-      return &m_testing_dataset;
-    } else {
-      return nullptr;
+    for(auto m : execution_mode_iterator()) {
+      if(m_datasets.count(m)) {
+        return &m_datasets.at(m);
+      }
     }
+    return nullptr;
   }
 
-  long get_num_samples_trained() const {
-    return m_training_dataset.get_num_samples_processed();
+
+  long get_num_samples(execution_mode m) const {
+    if(m_datasets.count(m)) {
+      return m_datasets.at(m).get_num_samples_processed();
+    }else {
+      return 0;
+    }
   }
-  long get_num_samples_tested() const {
-    return m_testing_dataset.get_num_samples_processed();
-  }
-  long get_total_num_training_samples() const {
-    return m_training_dataset.get_total_samples();
-  }
-  long get_total_num_testing_samples() const {
-    return m_testing_dataset.get_total_samples();
+  long get_total_num_samples(execution_mode m) const {
+    if(m_datasets.count(m)) {
+      return m_datasets.at(m).get_total_samples();
+    }else {
+      return 0;
+    }
   }
 
   /**
@@ -480,9 +461,7 @@ class data_coordinator {
   /** Pointer to LBANN communicator. */
   lbann_comm *m_comm;
 
-  dataset m_training_dataset;
-  dataset m_testing_dataset;
-  dataset m_validation_dataset;
+  dataset_map_t m_datasets;
 
   data_reader_map_t m_data_readers;
  //  std::map<execution_mode, dataset_stats> m_dataset_stats;

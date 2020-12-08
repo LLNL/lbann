@@ -224,6 +224,8 @@ std::string to_string(execution_mode m) {
     return "testing";
   case execution_mode::prediction:
     return "prediction";
+  case execution_mode::tournament:
+    return "tournament";
   case execution_mode::invalid:
     return "invalid";
   default:
@@ -240,6 +242,8 @@ execution_mode exec_mode_from_string(std::string const& str) {
     return execution_mode::testing;
   else if (str == "prediction" || str == "predict")
     return execution_mode::prediction;
+  else if (str == "tournament")
+    return execution_mode::tournament;
   else if (str == "invalid")
     return execution_mode::invalid;
   else

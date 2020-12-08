@@ -421,7 +421,7 @@ void generic_data_reader::error_check_counts() const {
 }
 
 void generic_data_reader::select_subset_of_data_partitioned() {
-
+#if 0
   std::vector<int> common_pool;
   //case where there's an overlap set that is common to all models
   if (m_partition_overlap && m_partition_mode == 2) {
@@ -534,6 +534,7 @@ void generic_data_reader::select_subset_of_data_partitioned() {
       std::cout << "Actual overlap percentage: " << s << "%\n";
     }
   }
+#endif
 }
 
 size_t generic_data_reader::get_num_indices_to_use() const {
@@ -571,39 +572,56 @@ void generic_data_reader::resize_shuffled_indices() {
 
 void generic_data_reader::select_subset_of_data() {
   // optionally partition data set amongst the models
-  if (m_is_partitioned) {
-    select_subset_of_data_partitioned();
-    return ;
-  }
+  // if (m_is_partitioned) {
+  //   select_subset_of_data_partitioned();
+  //   return ;
+  // }
 
-  if (get_validation_percent() == 0.) {
-    return;
-  }
+  for(auto m : execution_mode_iterator()) {
+    double split_percent = get_execution_mode_split_percent(m);
 
-  long unused = get_validation_percent()*get_num_data();
-  if (unused == 0) {
-    LBANN_ERROR("validation % of ", get_validation_percent(), " was requested, but the number of validation indices was computed as zero. Probably: % validation requested is too small wrt num_indices (aka, num samples)");
-  }
-  long use_me = get_num_data() - unused;
-  if (unused > 0) {
-      m_unused_indices=std::vector<int>(m_shuffled_indices.begin() + use_me, m_shuffled_indices.end());
+    if (split_percent == 0.) {
+      continue;
+    }
+
+    long unused = split_percent*get_num_data();
+    if (unused == 0) {
+      LBANN_ERROR(to_string(m),
+                  " % of ",
+                  split_percent,
+                  " was requested, but the number of validation indices was computed as zero. Probably: % ",
+                  to_string(m),
+                  " requested is too small wrt num_indices (aka, num samples)");
+    }
+    long use_me = get_num_data() - unused;
+    if (unused > 0) {
+      m_unused_indices[m]=std::vector<int>(m_shuffled_indices.begin() + use_me, m_shuffled_indices.end());
       m_shuffled_indices.resize(use_me);
+    }
   }
 
   if(!m_shuffle) {
     std::sort(m_shuffled_indices.begin(), m_shuffled_indices.end());
-    std::sort(m_unused_indices.begin(), m_unused_indices.end());
+    for(auto m : execution_mode_iterator()) {
+      if(m_unused_indices.count(m)) {
+        std::sort(m_unused_indices[m].begin(), m_unused_indices[m].end());
+      }
+    }
   }
 }
 
-void generic_data_reader::use_unused_index_set() {
-  m_shuffled_indices.swap(m_unused_indices);
+void generic_data_reader::use_unused_index_set(execution_mode m) {
+  if(m_unused_indices.count(m) == 0) {
+    LBANN_ERROR("Invalid execution mode ", to_string(m), " for unused indices");
+  }
+
+  m_shuffled_indices.swap(m_unused_indices[m]);
   if(m_data_store != nullptr) {
     /// Update the data store's pointer to the shuffled indices
     m_data_store->set_shuffled_indices(&m_shuffled_indices);
   }
-  m_unused_indices.clear();
-  std::vector<int>().swap(m_unused_indices); // Trick to force memory reallocation
+  m_unused_indices[m].clear();
+  std::vector<int>().swap(m_unused_indices[m]); // Trick to force memory reallocation
 }
 
 /** \brief Given directory to store checkpoint files, write state to file and add to number of bytes written */
@@ -711,19 +729,23 @@ size_t generic_data_reader::get_absolute_sample_count() const {
 }
 
 
-void generic_data_reader::set_validation_percent(double s) {
+void generic_data_reader::set_execution_mode_split_percent(execution_mode m, double s) {
   if (s < 0 or s > 1.0) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
       " :: set_validation_percent() - must be: s >= 0, s <= 1.0; you passed: " +
       std::to_string(s));
   }
-  m_validation_percent = s;
+  m_execution_mode_split_percentage[m] = s;
 }
 
 
-double generic_data_reader::get_validation_percent() const {
-  return m_validation_percent;
+double generic_data_reader::get_execution_mode_split_percent(execution_mode m) const {
+  if(m_execution_mode_split_percentage.count(m)) {
+    return m_execution_mode_split_percentage.at(m);
+  }else {
+    return 0;
+  }
 }
 
 void generic_data_reader::set_use_percent(double s) {
@@ -910,7 +932,10 @@ void generic_data_reader::print_get_methods(const std::string filename) {
   out << "get_num_data " << get_num_data() << std::endl;
   out << "get_absolute_sample_count" << get_absolute_sample_count() << std::endl;
   out << "get_use_percent " << get_use_percent() << std::endl;
-  out << "get_validation_percent " << get_validation_percent() << std::endl;
+  for(auto m : execution_mode_iterator()) {
+    out << "get_execution_mode_split_percent[" << to_string(m) << "] "
+        << get_execution_mode_split_percent(m) << std::endl;
+  }
   out.close();
 }
 

@@ -242,12 +242,7 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
     // Initialize data readers
     //@todo: code not in place for correctly handling image preprocessing
     std::map<execution_mode, generic_data_reader *> data_readers;
-    bool is_shared_training_data_reader = pb_trainer->shareable_training_data_reader();
-    bool is_shared_testing_data_reader = pb_trainer->shareable_testing_data_reader();
-    if (opts->has_string("share_testing_data_readers")) {
-      is_shared_testing_data_reader = opts->get_bool("share_testing_data_readers");
-    }
-    init_data_readers(comm, pb, data_readers, is_shared_training_data_reader, is_shared_testing_data_reader);
+    init_data_readers(comm, pb, data_readers);
 
     trainer->setup(std::move(io_thread_pool), data_readers);
 

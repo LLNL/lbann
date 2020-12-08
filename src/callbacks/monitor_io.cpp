@@ -43,9 +43,9 @@ void monitor_io::on_epoch_end(model *m) {
   lbann_comm *comm = m->get_comm();
   std::cout << "Rank " << comm->get_trainer_rank() << "."
             << comm->get_rank_in_trainer() << " processed "
-            << dc.get_num_samples_trained() << " training samples of "
-            << dc.get_total_num_training_samples() << " ("
-            << dc.get_num_samples_trained() / c.get_epoch() << " per epoch)" << std::endl;
+            << dc.get_num_samples(execution_mode::training) << " training samples of "
+            << dc.get_total_num_samples(execution_mode::training) << " ("
+            << dc.get_num_samples(execution_mode::training) / c.get_epoch() << " per epoch)" << std::endl;
 }
 
 void monitor_io::on_test_end(model *m) {
@@ -54,9 +54,9 @@ void monitor_io::on_test_end(model *m) {
   lbann_comm *comm = m->get_comm();
   std::cout << "Rank " << comm->get_trainer_rank() << "."
             << comm->get_rank_in_trainer() << " processed "
-            << dc.get_num_samples_tested() << " test samples of "
-            << dc.get_total_num_testing_samples() << " ("
-            << dc.get_num_samples_tested() / c.get_epoch()
+            << dc.get_num_samples(execution_mode::testing) << " test samples of "
+            << dc.get_total_num_samples(execution_mode::testing) << " ("
+            << dc.get_num_samples(execution_mode::testing) / c.get_epoch()
             << " per epoch)" << std::endl;
 }
 

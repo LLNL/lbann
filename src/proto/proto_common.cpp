@@ -54,12 +54,8 @@ int get_requested_num_parallel_readers(
 
 void init_data_readers(
   lbann_comm* comm, const lbann_data::LbannPB& p,
-  std::map<execution_mode, generic_data_reader *>& data_readers,
-  bool is_shareable_training_data_reader,
-  bool is_shareable_testing_data_reader,
-  bool is_shareable_validation_data_reader)
+  std::map<execution_mode, generic_data_reader *>& data_readers)
 {
-  static std::unordered_map<std::string, data_reader_jag_conduit*> leading_reader_jag_conduit;
   const bool master = comm->am_world_master();
   std::ostringstream err;
 
@@ -72,15 +68,20 @@ void init_data_readers(
 
   const lbann_data::DataSetMetaData& pb_metadata = p.data_set_metadata();
 
-  // A separate explicit validation set is created only if a reader with role "validate"
+  // A separate explicit validation/tournament set is created only if a reader with role "validate/tournament"
   // is found in the list of data readers. Otherwise, a validation set is created as a
   // percentage of data from the train set.
   bool separate_validation = false;
+  bool separate_tournament = false;
   for (int j=0; j<size; j++) {
     const lbann_data::Reader& readme = d_reader.reader(j);
     if (readme.role() == "validate") {
         separate_validation = true;
-        break;
+        continue;
+    }
+    if (readme.role() == "tournament") {
+        separate_tournament = true;
+        continue;
     }
   }
 
@@ -92,7 +93,6 @@ void init_data_readers(
     const bool shuffle = readme.shuffle();
 
     generic_data_reader *reader = nullptr;
-    generic_data_reader *reader_validation = nullptr;
 
     // This is a hack that should be fixed when we clean up data reader setup.
     bool set_transform_pipeline = true;
@@ -116,20 +116,6 @@ void init_data_readers(
       reader_jag_conduit->set_list_per_trainer(readme.sample_list_per_trainer());
       reader_jag_conduit->set_list_per_model(readme.sample_list_per_model());
       reader_jag_conduit->keep_sample_order(readme.sample_list_keep_order());
-
-      /// Allow the prototext to control if the data readers is
-      /// shareable for each phase training, validation, or testing
-      if((is_shareable_training_data_reader && readme.role() == "train")
-         || (is_shareable_testing_data_reader && readme.role() == "test")
-         || (is_shareable_validation_data_reader && readme.role() == "validation")) {
-        if (!peek_map(leading_reader_jag_conduit, readme.role())) {
-          leading_reader_jag_conduit[readme.role()] = reader_jag_conduit;
-        } else {
-          const auto leader = peek_map(leading_reader_jag_conduit, readme.role());
-          *reader_jag_conduit = *leader;
-          reader_jag_conduit->set_leading_reader(leader);
-        }
-      }
 
       for (int i=0; i < pb_model.layer_size(); ++i) {
         const auto& proto_layer = pb_model.layer(i);
@@ -402,14 +388,21 @@ void init_data_readers(
       reader->set_role("test");
     } else if (readme.role() == "validate") {
       reader->set_role("validate");
+    } else if (readme.role() == "tournament") {
+      reader->set_role("tournament");
     } else {
       reader->set_role("error");
     }
     if (readme.role() == "train") {
       if (create_tarball || separate_validation) {
-        reader->set_validation_percent( 0. );
+        reader->set_execution_mode_split_percent(execution_mode::validation, 0. );
       } else {
-        reader->set_validation_percent( readme.validation_percent() );
+        reader->set_execution_mode_split_percent(execution_mode::validation, readme.validation_percent() );
+      }
+      if (create_tarball || separate_tournament) {
+        reader->set_execution_mode_split_percent(execution_mode::tournament, 0. );
+      } else {
+        reader->set_execution_mode_split_percent(execution_mode::tournament, readme.tournament_percent() );
       }
     }
 
@@ -421,123 +414,109 @@ void init_data_readers(
       data_readers[execution_mode::training] = reader;
     } else if (readme.role() == "test") {
       // While the default validation_percent is 0.0, this line is added to be consistent with the case of "train"
-      reader->set_validation_percent( 0. );
+      reader->set_execution_mode_split_percent(execution_mode::validation,  0. );
       data_readers[execution_mode::testing] = reader;
     } else if (readme.role() == "validate") {
-      reader->set_validation_percent( 0. );
+      reader->set_execution_mode_split_percent(execution_mode::validation, 0. );
       data_readers[execution_mode::validation] = reader;
+    } else if (readme.role() == "tournament") {
+      reader->set_execution_mode_split_percent(execution_mode::tournament, 0. );
+      data_readers[execution_mode::tournament] = reader;
     }
 
-    if (readme.role() == "train" && readme.validation_percent() > 0. && !create_tarball && !separate_validation) {
-      if (name == "mnist") {
-        reader_validation = new mnist_reader(shuffle);
-        (*(mnist_reader *)reader_validation) = (*(mnist_reader *)reader);
-      } else if (name == "numpy_npz_conduit_reader") {
-        reader_validation = new numpy_npz_conduit_reader(*dynamic_cast<const numpy_npz_conduit_reader*>(reader));
-      } else if (name == "imagenet") {
-        reader_validation = new imagenet_reader(*dynamic_cast<const imagenet_reader*>(reader));
-      } else if (name == "smiles") {
-        reader_validation = new smiles_data_reader(*dynamic_cast<const smiles_data_reader*>(reader));
-      } else if (name == "jag_conduit") {
-        /// If the training data reader was shared and the validate reader is split from it, then the validation data reader
-        /// is also shared
-        if(is_shareable_training_data_reader) {
-          const std::string role = "validate";
-          if (!peek_map(leading_reader_jag_conduit, role)) {
-            reader_validation = new data_reader_jag_conduit(*dynamic_cast<const data_reader_jag_conduit*>(reader));
-            auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(reader_validation);
-            reader_jag_conduit->set_leading_reader(reader_jag_conduit);
+    if (readme.role() == "train" && !create_tarball) {
+      for(auto m : execution_mode_iterator()) {
+        if((m == execution_mode::validation && readme.validation_percent() > 0. && !separate_validation)
+           || (m == execution_mode::tournament && readme.tournament_percent() > 0. && !separate_tournament)) {
+          generic_data_reader *split_reader = nullptr;
+
+          if (name == "mnist") {
+            split_reader = new mnist_reader(shuffle);
+            (*(mnist_reader *)split_reader) = (*(mnist_reader *)reader);
+          } else if (name == "numpy_npz_conduit_reader") {
+            split_reader = new numpy_npz_conduit_reader(*dynamic_cast<const numpy_npz_conduit_reader*>(reader));
+          } else if (name == "imagenet") {
+            split_reader = new imagenet_reader(*dynamic_cast<const imagenet_reader*>(reader));
+          } else if (name == "smiles") {
+            split_reader = new smiles_data_reader(*dynamic_cast<const smiles_data_reader*>(reader));
+          } else if (name == "jag_conduit") {
+            split_reader = new data_reader_jag_conduit(*dynamic_cast<const data_reader_jag_conduit*>(reader));
+            const std::string role = "validate";
+            auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(split_reader);
             reader_jag_conduit->set_role(role);
-            leading_reader_jag_conduit[role] = reader_jag_conduit;
-          } else {
-            // Copy construct the leading validation reader into another validation reader.
-            // We do not copy the train reader as the subset of data may already have been
-            // assigned to validation reader when validation percent is set.
-            // Thus, we need to avoid taking a subset of a subset.
-            const auto leader = peek_map(leading_reader_jag_conduit, role);
-            reader_validation = new data_reader_jag_conduit(*leader);
-            auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(reader_validation);
-            reader_jag_conduit->set_leading_reader(leader);
-          }
-        } else {
-          reader_validation = new data_reader_jag_conduit(*dynamic_cast<const data_reader_jag_conduit*>(reader));
-          const std::string role = "validate";
-          auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(reader_validation);
-          reader_jag_conduit->set_leading_reader(reader_jag_conduit);
-          reader_jag_conduit->set_role(role);
-          leading_reader_jag_conduit[role] = reader_jag_conduit;
-        }
-      } else if (name == "ras_lipid") {
-        auto *ras_lipid = new ras_lipid_conduit_data_reader(shuffle);
-        ras_lipid->set_num_labels(readme.num_labels());
-        reader_validation = ras_lipid;
-        (*(ras_lipid_conduit_data_reader *)reader_validation) = (*(ras_lipid_conduit_data_reader *)reader);
-      } else if (name == "nci") {
-        reader_validation = new data_reader_nci(shuffle);
-        (*(data_reader_nci *)reader_validation) = (*(data_reader_nci *)reader);
-      } else if (name == "csv") {
-        reader_validation = new csv_reader(shuffle);
-        (*(csv_reader *)reader_validation) = (*(csv_reader *)reader);
-      } else if (name == "numpy") {
-        reader_validation = new numpy_reader(shuffle);
-        (*(numpy_reader *)reader_validation) = (*(numpy_reader *)reader);
-      } else if (name == "merge_samples") {
-        reader_validation = new data_reader_merge_samples(*(data_reader_merge_samples *)reader);
-      } else if (name == "merge_features") {
-        reader_validation = new data_reader_merge_features(*(data_reader_merge_features *)reader);
-      } else if (name == "cifar10") {
-        reader_validation = new cifar10_reader(shuffle);
-        (*(cifar10_reader *)reader_validation) = (*(cifar10_reader *)reader);
-      } else if (name == "synthetic") {
-        reader_validation = new data_reader_synthetic(*(data_reader_synthetic *)reader);
-        (*(data_reader_synthetic *) reader_validation) = (*(data_reader_synthetic *)reader);
-      } else if (name == "mesh") {
-        reader_validation = new mesh_reader(shuffle);
-        (*(mesh_reader *)reader_validation) = (*(mesh_reader *)reader);
-      } else if (name == "python") {
+          } else if (name == "ras_lipid") {
+            auto *ras_lipid = new ras_lipid_conduit_data_reader(shuffle);
+            ras_lipid->set_num_labels(readme.num_labels());
+            split_reader = ras_lipid;
+            (*(ras_lipid_conduit_data_reader *)split_reader) = (*(ras_lipid_conduit_data_reader *)reader);
+          } else if (name == "nci") {
+            split_reader = new data_reader_nci(shuffle);
+            (*(data_reader_nci *)split_reader) = (*(data_reader_nci *)reader);
+          } else if (name == "csv") {
+            split_reader = new csv_reader(shuffle);
+            (*(csv_reader *)split_reader) = (*(csv_reader *)reader);
+          } else if (name == "numpy") {
+            split_reader = new numpy_reader(shuffle);
+            (*(numpy_reader *)split_reader) = (*(numpy_reader *)reader);
+          } else if (name == "merge_samples") {
+            split_reader = new data_reader_merge_samples(*(data_reader_merge_samples *)reader);
+          } else if (name == "merge_features") {
+            split_reader = new data_reader_merge_features(*(data_reader_merge_features *)reader);
+          } else if (name == "cifar10") {
+            split_reader = new cifar10_reader(shuffle);
+            (*(cifar10_reader *)split_reader) = (*(cifar10_reader *)reader);
+          } else if (name == "synthetic") {
+            split_reader = new data_reader_synthetic(*(data_reader_synthetic *)reader);
+            (*(data_reader_synthetic *) split_reader) = (*(data_reader_synthetic *)reader);
+          } else if (name == "mesh") {
+            split_reader = new mesh_reader(shuffle);
+            (*(mesh_reader *)split_reader) = (*(mesh_reader *)reader);
+          } else if (name == "python") {
 #ifdef LBANN_HAS_PYTHON
-        const auto& params = readme.python();
-        reader_validation = new python_reader(params.module(),
-                                              params.module_dir(),
-                                              params.sample_function(),
-                                              params.num_samples_function(),
-                                              params.sample_dims_function(),
-                                              shuffle);
-        (*(python_reader *)reader_validation) = (*(python_reader *)reader);
+            const auto& params = readme.python();
+            split_reader = new python_reader(params.module(),
+                                             params.module_dir(),
+                                             params.sample_function(),
+                                             params.num_samples_function(),
+                                             params.sample_dims_function(),
+                                             shuffle);
+            (*(python_reader *)split_reader) = (*(python_reader *)reader);
 #else
-        LBANN_ERROR("attempted to construct Python data reader, "
-                    "but LBANN is not built with Python/C API");
+            LBANN_ERROR("attempted to construct Python data reader, "
+                        "but LBANN is not built with Python/C API");
 #endif // LBANN_HAS_PYTHON
-      }
+          }
 
-      reader_validation->set_role("validate");
-      reader_validation->use_unused_index_set();
-      data_store_conduit *store = reader_validation->get_data_store_ptr();
-      if (store != nullptr) {
-        store->set_data_reader_ptr(reader_validation);
-        reader_validation->get_data_store_ptr()->compact_nodes();
-      }
+          if(m == execution_mode::validation) {
+            split_reader->set_role("validate");
+          }else if(m == execution_mode::tournament) {
+            split_reader->set_role("tournament");
+          }
+          split_reader->use_unused_index_set(m);
+          data_store_conduit *store = split_reader->get_data_store_ptr();
+          if (store != nullptr) {
+            store->set_data_reader_ptr(split_reader);
+            split_reader->get_data_store_ptr()->compact_nodes();
+          }
 
-      size_t ntrain = reader->get_num_data();
-      if (ntrain == 0) {
-        LBANN_ERROR("num train samples = 0; something is wrong");
-      }
+          size_t ntrain = reader->get_num_data();
+          if (ntrain == 0) {
+            LBANN_ERROR("num train samples = 0; something is wrong");
+          }
 
-      if (master) {
-        size_t num_train = reader->get_num_data();
-        size_t num_validate = reader_validation->get_num_data();
-        double validate_percent = ((double) num_validate / (double) (num_train+num_validate))*100.0;
-        double train_percent = ((double) num_train / (double) (num_train+num_validate))*100.0;
-        std::cout << "Training using " << train_percent << "% of the training data set, which is " << reader->get_num_data() << " samples." << std::endl
-                  << "Validating training using " << validate_percent << "% of the training data set, which is " << reader_validation->get_num_data() << " samples.";
-        if (name == "jag_conduit") {
-          std::cout << " jag conduit leading reader " << dynamic_cast<data_reader_jag_conduit*>(reader)->get_leading_reader()
-                    << " of " << (is_shareable_training_data_reader? "shared" : "unshared") << " reader " << reader << " for " << reader->get_role() << std::endl;
+          if (master) {
+            size_t num_train = reader->get_num_data();
+            size_t num_split = split_reader->get_num_data();
+            double validate_percent = ((double) num_split / (double) (num_train+num_split))*100.0;
+            double train_percent = ((double) num_train / (double) (num_train+num_split))*100.0;
+            std::cout << "Training using " << train_percent << "% of the training data set, which is " << reader->get_num_data() << " samples." << std::endl
+                      << to_string(m) << " training using " << validate_percent << "% of the training data set, which is " << split_reader->get_num_data() << " samples.";
+            std::cout << std::endl;
+          }
+
+          data_readers[m] = split_reader;
         }
-        std::cout << std::endl;
       }
-
-      data_readers[execution_mode::validation] = reader_validation;
     }
   }
 

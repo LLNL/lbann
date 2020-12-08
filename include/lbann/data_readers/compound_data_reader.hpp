@@ -76,12 +76,12 @@ class generic_compound_data_reader : public generic_data_reader {
   //************************************************************************
   /// Apply operations to subsidiary data readers
   //************************************************************************
-  void set_validation_percent(double s) override {
-    generic_data_reader::set_validation_percent(s);
+  void set_execution_mode_split_percent(execution_mode m, double s) override {
+    generic_data_reader::set_execution_mode_split_percent(m, s);
     /// Don't propagate the validation percentage to subsidiary readers
     /// The percentage is applied at the top level
     for (auto&& reader : m_data_readers) {
-      reader->set_validation_percent(0);
+      reader->set_execution_mode_split_percent(m, 0);
     }
   }
 
