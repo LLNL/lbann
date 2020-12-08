@@ -415,8 +415,7 @@ class data_coordinator {
 
   /** @brief Check if the execution mode is valid (i.e. has data). */
   bool is_execution_mode_valid(execution_mode mode) const {
-    const dataset& ds = get_dataset(mode);
-    return (ds.get_total_samples() != static_cast<long>(0));
+    return (get_total_num_samples(mode) != static_cast<long>(0));
   }
 ///@}
 
