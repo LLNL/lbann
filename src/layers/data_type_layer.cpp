@@ -247,7 +247,7 @@ get_prev_activations(int parent_index) const -> const InputAbsDistMatrixType& {
   return *m_inputs[parent_index];
 }
 
-template <typename OutputTensorDataType>
+template <typename InputTensorDataType, typename OutputTensorDataType>
 auto data_type_layer<InputTensorDataType, OutputTensorDataType>::
 get_activations(int child_index) const -> const OutputAbsDistMatrixType& {
   if (child_index < 0 || child_index >= (int) m_outputs.size()) {
@@ -261,7 +261,7 @@ get_activations(int child_index) const -> const OutputAbsDistMatrixType& {
   return *m_outputs[child_index];
 }
 
-template <typename OutputTensorDataType>
+template <typename InputTensorDataType, typename OutputTensorDataType>
 auto data_type_layer<InputTensorDataType, OutputTensorDataType>::
 get_prev_error_signals(int child_index) const -> const OutputAbsDistMatrixType& {
   if (child_index < 0 || child_index >= (int) m_gradient_wrt_outputs.size()) {
@@ -300,7 +300,7 @@ get_error_signals(int parent_index) const
 // Accessing non-const distributed matrices
 // Note: Using idiom from Item 3, p. 23 in "Effective C++", 3rd ed.,
 // by Scott Meyers.
-template <typename OutputTensorDataType>
+template <typename InputTensorDataType, typename OutputTensorDataType>
 auto data_type_layer<InputTensorDataType, OutputTensorDataType>::
 get_activations(int child_index) -> OutputAbsDistMatrixType& {
   return const_cast<OutputAbsDistMatrixType&>(static_cast<const data_type_layer<
@@ -316,7 +316,7 @@ get_error_signals(int parent_index) -> InputAbsDistMatrixType& {
 }
 
 // Accessing local matrices
-template <typename OutputTensorDataType>
+template <typename InputTensorDataType, typename OutputTensorDataType>
 auto data_type_layer<InputTensorDataType, OutputTensorDataType>::
 get_local_activations(int child_index) -> OutputAbsMatrixType& {
   return get_activations(child_index).Matrix();
@@ -326,17 +326,17 @@ auto data_type_layer<InputTensorDataType, OutputTensorDataType>::
 get_local_error_signals(int parent_index) -> InputAbsMatrixType& {
   return get_error_signals(parent_index).Matrix();
 }
-template <typename OutputTensorDataType>
+template <typename InputTensorDataType, typename OutputTensorDataType>
 auto data_type_layer<InputTensorDataType, OutputTensorDataType>::
 get_local_prev_activations(int parent_index) const -> const InputAbsMatrixType&{
   return get_prev_activations(parent_index).LockedMatrix();
 }
-template <typename OutputTensorDataType>
+template <typename InputTensorDataType, typename OutputTensorDataType>
 auto data_type_layer<InputTensorDataType, OutputTensorDataType>::
 get_local_activations(int child_index) const -> const OutputAbsMatrixType& {
   return get_activations(child_index).LockedMatrix();
 }
-template <typename OutputTensorDataType>
+template <typename InputTensorDataType, typename OutputTensorDataType>
 auto data_type_layer<InputTensorDataType, OutputTensorDataType>::
 get_local_prev_error_signals(int child_index) const -> const OutputAbsMatrixType& {
   return get_prev_error_signals(child_index).LockedMatrix();
@@ -348,7 +348,11 @@ get_local_error_signals(int parent_index) const -> const InputAbsMatrixType& {
 }
 
 // Accessing matrices corresponding to parent/child layer
+<<<<<<< HEAD
 template <typename OutputTensorDataType>
+=======
+template <typename InputTensorDataType, typename OutputTensorDataType>
+>>>>>>> 0ebfb47de (changes to data_type_layer)
 auto data_type_layer<InputTensorDataType, OutputTensorDataType>::
 get_activations(const Layer& child) const -> const BaseDistMat& {
   if (this->get_num_children() <= 0) {
@@ -610,7 +614,7 @@ fp_setup_inputs(El::Int mini_batch_size) {
 
 }
 
-template <typename OutputTensorDataType>
+template <typename InputTensorDataType, typename OutputTensorDataType>
 void data_type_layer<InputTensorDataType, OutputTensorDataType>::
 fp_setup_outputs(El::Int mini_batch_size) {
   if (get_num_children() < 1) { return; }
@@ -769,6 +773,7 @@ void deep_copy_error_signal(
 // signals" and my new error signals will be persistent. So my parents
 // can simply setup views into my error signals, if layout, alignment,
 // etc is OK.
+
 template <typename InputTensorDataType, typename OutputTensorDataType>
 void data_type_layer<InputTensorDataType, OutputTensorDataType>::
 propagate_error_signals_to_parents_() {
