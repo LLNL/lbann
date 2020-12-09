@@ -141,8 +141,13 @@ private:
   std::unordered_map<std::string, size_t> m_field_name_to_num_elts;
   std::unordered_map<std::string, size_t> m_packed_name_to_num_elts;
 
-
+  /** all leaves from the user's experiment-schema specification */
   std::unordered_set<const conduit::Node*> m_all_exp_leaves;
+
+  /** keys in this map are the pathnames of quasi-leaf nodes, excluding
+   *  the "metadata" named child; the values are the metadata nodes.
+   */
+  std::unordered_map<std::string, const conduit::Node*> m_metadata_nodes;
 
   /** Fills in various data structures (m_packed_to_field_names_map, 
    *  m_packed_name_to_num_elts, etc) using data from the schema for
@@ -162,7 +167,7 @@ private:
   /** Returns, in leaves, the schemas for all leaf noodes in the tree 
    *  rooted at 'schema_in'
    */
-  void get_leaves(const conduit::Node* node_in, std::vector<const conduit::Node*> &leaves, std::string ignore_child_branch="metadata");
+  void get_leaves(const conduit::Node* node_in, std::vector<const conduit::Node*> &leaves, std::string ignore_child_branch="metadata", int indent = 2);
 
   void do_preload_data_store() override;
 
@@ -175,6 +180,16 @@ private:
 
   /** Loads a conduit::Node, then pulls out the Schema */
   void load_schema_from_data(conduit::Schema &schema);
+
+  /** Returns a pointer to the child named 'metadata' if it exists,
+   *  else returns nullptr
+   */
+  const conduit::Node* get_metadata_node(const conduit::Node* node);
+
+  /** Fills in m_metadata_nodes */
+  void get_metadata_node_ptrs();
+
+  void transform(DataType* vals, size_t num_elts, const std::string &field_name); 
 };
 
 } // namespace lbann 

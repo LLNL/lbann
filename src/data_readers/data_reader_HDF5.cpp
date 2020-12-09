@@ -153,12 +153,9 @@ void hdf5_data_reader::do_preload_data_store() {
   }
 }
 
-// TODO: does this work? maybe not ...
 int hdf5_data_reader::get_linearized_size(const std::string &key) const {
-LBANN_ERROR("FIXME!");
 #if 0
-XX
-  if (m_data_pathnames.find(key) == m_data_pathnames.end()) {
+  if (m_all_exp_leaveXXs.find(key) == m_data_pathnames.end()) {
     LBANN_ERROR("requested key: ", key, " is not in the schema");
   }
   conduit::DataType dt = m_data_schema.dtype();
@@ -167,10 +164,18 @@ XX
   return 0;
 }
 
+
 // Loads the fields that are specified in the user supplied schema.
 // On entry, 'node,' which was obtained from the data_store, contains a 
 // single top-level node which is the sample_id.
 void hdf5_data_reader::load_sample(conduit::Node &node, size_t index) {
+
+
+cout<<"\nmetadata_node keys:\n";
+for (auto t : m_metadata_nodes) cout << t.first<< " :: " << t.second->name() << endl;
+
+
+exit(0);
   // get file handle
   hid_t file_handle;
   std::string sample_name;
@@ -222,18 +227,18 @@ void hdf5_data_reader::munge_data(conduit::Node &node) {
   }
 
 
-  // Case #1: there is no user-supplied metadata (from the user-supplied schema)
+  // Case #1: there is no user-supplied metadata 
+  // (I don't think this is a useful case ... or even possible?)
   if (m_packed_to_field_names_map.size() == 0) { 
     return;
   }
 
-  // TODO: Case #X: normalize, etc.
-  
-  // Case #2: pack some or all of data
+  // Case #2: pack some or all of the data
   std::unordered_set<std::string> used_field_names;
   std::vector<lbann::DataType> tmp_data; //temporary storage
 
   for (const auto t : m_packed_to_field_names_map) {
+    size_t offset = 0; // wrt tmp_data
 
     // allocate storage for packing data
     const std::string &packed_name = t.first;
@@ -274,6 +279,9 @@ void hdf5_data_reader::munge_data(conduit::Node &node) {
           LBANN_ERROR("Please contact Dave Hysom, or other developer, to add support for your data type: ", dt);
         }
 
+        transform(tmp_data.data()+offset, num_elts, field_name);
+        offset += num_elts;
+
       } catch (conduit::Error const& e) {
         LBANN_ERROR("lbann caught conduit exception: ", e.what());
       }
@@ -294,8 +302,6 @@ void hdf5_data_reader::munge_data(conduit::Node &node) {
 
 void hdf5_data_reader::parse_schemas() {
 
-std::cout << "\nXX starting ::parse_schemas\n\n";
-
   // Get the pathnames for the fields that the user specified are
   // to be used in the current experiment. 
   //
@@ -306,6 +312,7 @@ std::cout << "\nXX starting ::parse_schemas\n\n";
   // then trace them to the leaves in the m_data_schema (which is never
   // pruned)
   std::vector<const conduit::Node*> leaves_exp;
+
   get_leaves(&m_experiment_schema, leaves_exp);
 
   for (auto node : leaves_exp) {
@@ -329,6 +336,7 @@ std::cout << "\nXX starting ::parse_schemas\n\n";
     }
   }
 
+  get_metadata_node_ptrs();
   tabulate_packing_memory_requirements();
 }
 
@@ -355,9 +363,16 @@ void hdf5_data_reader::get_schema_ptrs(conduit::Node* schema, std::unordered_map
   }
 }
 
+#undef DEBUGME
+#define DEBUGME
 
 // recursive
-void hdf5_data_reader::get_leaves(const conduit::Node* schema_in, std::vector<const conduit::Node*> &leaves, std::string ignore_child_branch) {
+void hdf5_data_reader::get_leaves(const conduit::Node* schema_in, std::vector<const conduit::Node*> &leaves, std::string ignore_child_branch, int indent) {
+
+  #ifdef DEBUGME
+  for (int j=0; j<indent; j++) std::cout << " ";
+  std::cout << schema_in->path() << std::endl;
+  #endif 
 
   // nursery rhyme
   int n = schema_in->number_of_children();
@@ -421,6 +436,86 @@ void hdf5_data_reader::load_schema_from_data(conduit::Schema &schema) {
   m_comm->broadcast<std::string>(0, json, m_comm->get_world_comm());
   conduit::Schema data_schema(json);
   schema = data_schema.child(0);
+}
+
+const conduit::Node* hdf5_data_reader::get_metadata_node(const conduit::Node* node) {
+  const conduit::Node *r = nullptr;
+  int n = node->number_of_children();
+  for (int j=0; j<n; j++) {
+    if (node->child(j).name() == m_metadata_field_name) {
+      r = &(node->child(j));
+    }
+  }
+  return r;
+}
+
+void hdf5_data_reader::transform(DataType* vals, size_t num_elts, const std::string &field_name) {
+
+static bool verbose = true;
+
+  // TODO: currently I'm parsing conduit::Node* to get transform values;
+  // would be more efficient to cache these, if time savings warrented
+
+  // get this field's metadata node, if it exists
+  auto iter = m_metadata_nodes.find(field_name);
+  if (iter == m_metadata_nodes.end()) {
+    return;
+  }
+  const conduit::Node* metadata = iter->second;
+
+cout << "field: "<<field_name<<" num elts: " <<m_field_name_to_num_elts[field_name]<<endl;
+
+  // Assumption: the only thing we'll ever do with scalars is to
+  // normalize them using scale and bias; TODO relook if needed
+  if (m_field_name_to_num_elts[field_name] == 1) {
+    double scale = 0;
+    double bias = 0;
+    if (metadata->has_child("scale")) {
+      scale = static_cast<double>(metadata->child("scale").value());
+    }
+    if (metadata->has_child("bias")) {
+      bias = static_cast<double>(metadata->child("bias").value());
+    }
+    vals[0] = (vals[0] * scale + bias);
+  } 
+  
+  // Assumption: this is a 2D matrix
+  else {
+    //TODO: cache these!
+    try {
+      const conduit::float64_array &bias = metadata->child("bias").value();
+      const conduit::float64_array &scale = metadata->child("scale").value();
+      const int num_channels = metadata->child("channels").value();
+      const conduit::int64_array &dims = metadata->child("dims").value();
+      const conduit::int64_array &xdims = metadata->child("xdims").value();
+      bool hwc = false;
+      if (metadata->has_child("hwc")) {
+        hwc = true;
+      }
+      cout << "TEST: " << metadata->has_child("xdims") << " :: " << metadata->has_child("dims")<<endl;
+      
+    } catch (conduit::Error const& e) {
+      LBANN_ERROR(" :: running transform pipeline on  matrix and caught conduit exception: ", e.what());
+    }
+  }
+}
+
+void hdf5_data_reader::get_metadata_node_ptrs() {
+  for (const auto &node : m_all_exp_leaves) {
+    const std::string path = node->path();
+    const conduit::Node* nd2 = node;
+    while (true) {
+      if (nd2->has_child("metadata")) {
+//        m_metadata_nodes[path] = nd2;
+        m_metadata_nodes[path] = nd2->fetch_ptr("metadata");
+        break;
+      }
+      nd2 = nd2->parent();
+      if (nd2->path() == "") {
+        break;
+      }
+    }  
+  }
 }
 
 } // namespace lbann
