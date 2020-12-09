@@ -23,11 +23,7 @@ EXTERNAL_PACKAGES=$(cat <<EOF
     cmake::
       buildable: True
       variants: ~openssl ~ncurses
-      version: [3.18.0]
-      externals:
-      - spec: cmake@3.18.0 arch=${SPACK_ARCH}
-        modules:
-        - cmake/3.18.0
+      version: [3.18.2]
     cuda::
       buildable: False
       version: [11.0.2]
