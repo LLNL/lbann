@@ -544,7 +544,7 @@ class generic_data_reader {
   /// Get the number of unused samples in this dataset.
   int get_num_unused_data(execution_mode m) const {
     if(m_unused_indices.count(m)) {
-      return (int)m_unused_indices.size();
+      return (int)m_unused_indices.at(m).size();
     }else {
       LBANN_ERROR("Invalid execution mode ", to_string(m), " for unused indices");
     }
