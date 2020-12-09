@@ -36,6 +36,10 @@
 namespace lbann {
 namespace callback {
 
+dump_gradients::dump_gradients()
+  : dump_gradients("", 0)
+{}
+
 void dump_gradients::on_backward_prop_end(model *m) {
   const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
   for (weights *w : m->get_weights()) {
@@ -65,3 +69,7 @@ build_dump_gradients_callback_from_pbuf(
 
 } // namespace callback
 } // namespace lbann
+
+CEREAL_REGISTER_TYPE_WITH_NAME(
+  ::lbann::callback::dump_gradients,
+  "callback::dump_gradients")

@@ -84,6 +84,19 @@ class load_model : public callback_base {
 
   std::string name() const override { return "load model"; }
 
+  /** @name Checkpointing */
+  ///@{
+
+  /** @brief Store state to archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar) {
+    ar(cereal::base_class<callback_base>(this),
+       CEREAL_NVP(m_dirs),
+       CEREAL_NVP(m_extension),
+       CEREAL_NVP(m_loaded));
+  }
+
+  ///@}
+
  protected:
   friend class lbann::model;
 

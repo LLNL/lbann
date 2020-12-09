@@ -54,7 +54,27 @@ class early_stopping : public callback_base {
   /** Update validation score and check for early stopping. */
   void on_validation_end(model *m) override;
   std::string name() const override { return "early stopping"; }
+
+  /** @name Checkpointing */
+  ///@{
+
+  /** @brief Store state to archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar) {
+    ar(::cereal::make_nvp(
+         "BaseCallback",
+         ::cereal::base_class<callback_base>(this)),
+       CEREAL_NVP(m_patience),
+       CEREAL_NVP(m_last_score),
+       CEREAL_NVP(m_wait));
+  }
+
+  ///@}
+
  private:
+
+  friend class cereal::access;
+  early_stopping();
+
   /** Number of epochs to wait for improvements. */
   int64_t m_patience;
   /** Last recorded score. */

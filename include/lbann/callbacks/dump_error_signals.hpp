@@ -53,6 +53,19 @@ class dump_error_signals : public callback_base {
   /** Write error signals to file after each backward prop step. */
   void on_backward_prop_end(model *m, Layer *l) override;
 
+  /** @name Checkpointing */
+  ///@{
+
+  /** @brief Store state to archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar) {
+    ar(::cereal::make_nvp(
+         "BaseCallback",
+         ::cereal::base_class<callback_base>(this)),
+       CEREAL_NVP(m_basename));
+  }
+
+  ///@}
+
  private:
   /** Basename for output files. */
   std::string m_basename;

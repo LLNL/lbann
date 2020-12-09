@@ -66,3 +66,7 @@ build_dump_error_signals_callback_from_pbuf(
 
 } // namespace callback
 } // namespace lbann
+
+CEREAL_REGISTER_TYPE_WITH_NAME(
+  ::lbann::callback::dump_error_signals,
+  "callback::dump_error_signals")

@@ -39,6 +39,10 @@
 namespace lbann {
 namespace callback {
 
+dump_minibatch_sample_indices::dump_minibatch_sample_indices()
+  : dump_minibatch_sample_indices("", 0)
+{}
+
 void dump_minibatch_sample_indices::dump_to_file(model *m, Layer *l, int64_t step) {
   const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
   // Print minibatch sample indices of the data coordinator
@@ -84,3 +88,7 @@ build_dump_mb_indices_callback_from_pbuf(
 
 } // namespace callback
 } // namespace lbann
+
+CEREAL_REGISTER_TYPE_WITH_NAME(
+  ::lbann::callback::dump_minibatch_sample_indices,
+  "callback::dump_minibatch_sample_indices")

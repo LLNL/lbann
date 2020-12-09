@@ -39,6 +39,10 @@ perturb_dropout::perturb_dropout(EvalType keep_prob_factor,
     m_keep_prob_factor(keep_prob_factor),
     m_layer_names(std::move(layer_names)) {}
 
+perturb_dropout::perturb_dropout()
+  : perturb_dropout(0, {})
+{}
+
 void perturb_dropout::setup(model* m) {
   perturb(*m);
 }
@@ -132,3 +136,7 @@ build_perturb_dropout_callback_from_pbuf(
 
 } // namespace callback
 } // namespace lbann
+
+CEREAL_REGISTER_TYPE_WITH_NAME(
+  ::lbann::callback::perturb_dropout,
+  "callback::perturb_dropout")

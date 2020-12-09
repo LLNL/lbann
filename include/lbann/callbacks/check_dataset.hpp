@@ -27,8 +27,10 @@
 #ifndef LBANN_CALLBACKS_CALLBACK_CHECK_DATASET_HPP_INCLUDED
 #define LBANN_CALLBACKS_CALLBACK_CHECK_DATASET_HPP_INCLUDED
 
-#include <set>
 #include "lbann/callbacks/callback.hpp"
+
+#include <cereal/types/set.hpp>
+#include <set>
 
 namespace lbann {
 namespace callback {
@@ -60,6 +62,23 @@ class check_dataset : public callback_base {
   void add_to_set(model *m, Layer *l, int64_t step, std::set<long> &set);
 
   std::string name() const override { return "check data set indices"; }
+
+  /** @name Checkpointing */
+  ///@{
+
+  /** @brief Store state to archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar) {
+    ar(::cereal::make_nvp(
+         "BaseCallback",
+         ::cereal::base_class<callback_base>(this)),
+       CEREAL_NVP(m_basename),
+       CEREAL_NVP(training_set),
+       CEREAL_NVP(validation_set),
+       CEREAL_NVP(testing_set));
+  }
+
+  ///@}
+
  private:
   /** @brief Basename for writing files. */
   std::string m_basename;

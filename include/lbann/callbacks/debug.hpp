@@ -29,6 +29,9 @@
 
 #include "lbann/callbacks/callback.hpp"
 
+#include <cereal/types/set.hpp>
+#include <set>
+
 namespace lbann {
 namespace callback {
 
@@ -50,7 +53,7 @@ class debug : public callback_base {
    *  If modes is empty, status updates will be printed for all
    *  execution modes.
    */
-  debug(std::set<execution_mode> modes) :
+  debug(std::set<execution_mode> modes={}) :
     m_modes(std::move(modes)) {}
   debug(const debug&) = default;
   debug& operator=(const debug&) = default;
@@ -90,6 +93,19 @@ class debug : public callback_base {
   void on_optimize_begin(model *m, weights *w) override;
   /** @brief Print that a weights' optimization step is ending. */
   void on_optimize_end(model *m, weights *w) override;
+
+  /** @name Checkpointing */
+  ///@{
+
+  /** @brief Store state to archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar) {
+    ar(::cereal::make_nvp(
+         "BaseCallback",
+         ::cereal::base_class<callback_base>(this)),
+       CEREAL_NVP(m_modes));
+  }
+
+  ///@}
 
  private:
 

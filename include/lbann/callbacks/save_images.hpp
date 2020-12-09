@@ -59,6 +59,19 @@ public:
   void on_test_end(model *m) override;
   std::string name() const override { return "save images"; }
 
+  /** @name Checkpointing */
+  ///@{
+
+  /** @brief Store state to archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar) {
+    ar(cereal::base_class<callback_base>(this),
+       CEREAL_NVP(m_layer_names),
+       CEREAL_NVP(m_image_format),
+       CEREAL_NVP(m_image_prefix));
+  }
+
+  ///@}
+
 private:
 
   /** List of layer names to save as images. */

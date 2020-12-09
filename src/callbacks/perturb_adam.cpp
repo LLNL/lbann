@@ -56,6 +56,10 @@ perturb_adam::perturb_adam(DataType learning_rate_factor,
     m_perturb_during_training(perturb_during_training),
     m_weights_names(std::move(weights_names)) {}
 
+perturb_adam::perturb_adam()
+  : perturb_adam(0, 0, 0, 0, false, 0)
+{}
+
 void perturb_adam::setup(model* m) {
   perturb(*m);
 }
@@ -183,3 +187,7 @@ build_perturb_adam_callback_from_pbuf(
 
 } // namespace callback
 } // namespace lbann
+
+CEREAL_REGISTER_TYPE_WITH_NAME(
+  ::lbann::callback::perturb_adam,
+  "callback::perturb_adam")

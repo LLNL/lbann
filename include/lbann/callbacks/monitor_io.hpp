@@ -33,7 +33,9 @@
 
 #include <google/protobuf/message.h>
 
+#include <cereal/types/unordered_set.hpp>
 #include <string>
+#include <set>
 #include <vector>
 
 namespace lbann {
@@ -58,6 +60,20 @@ class monitor_io : public callback_base {
   void on_epoch_end(model *m) override;
   void on_test_end(model *m) override;
   std::string name() const override { return "monitor_io"; }
+
+  /** @name Checkpointing */
+  ///@{
+
+  /** @brief Store state to archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar) {
+    ar(::cereal::make_nvp(
+         "BaseCallback",
+         ::cereal::base_class<callback_base>(this)),
+       CEREAL_NVP(m_layers));
+  }
+
+  ///@}
+
  private:
   /** Indicies of layers to monitor. */
   std::unordered_set<std::string> m_layers;

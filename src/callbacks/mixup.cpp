@@ -39,6 +39,10 @@
 namespace lbann {
 namespace callback {
 
+mixup::mixup()
+  : mixup({}, 0)
+{}
+
 void mixup::on_forward_prop_end(model *m, Layer *l) {
   if (!m_layers.count(l->get_name())) {
     return;
@@ -115,3 +119,7 @@ build_mixup_callback_from_pbuf(
 
 } // namespace callback
 } // namespace lbann
+
+CEREAL_REGISTER_TYPE_WITH_NAME(
+  ::lbann::callback::mixup,
+  "callback::mixup")
