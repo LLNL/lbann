@@ -243,7 +243,7 @@ class ConvolutionModule(Module):
         kwargs['name'] = (name+convtype if self.activation else name)
         kwargs['num_dims'] = self.num_dims
         kwargs['num_output_channels'] = self.out_channels
-        kwargs['has_bias'] = self.has_bias
+        kwargs['has_bias'] = self.bias
         kwargs['num_groups'] = self.groups
         kwargs['parallel_strategy'] = self.parallel_strategy
         kwargs['has_vectors'] = self.has_vectors
