@@ -56,7 +56,7 @@ namespace lbann {
 
 class data_coordinator {
  public:
-  using dataset_map_t = std::unordered_map<execution_mode, dataset>;
+  using dataset_map_t = std::map<execution_mode, dataset>;
   using data_reader_map_t = std::map<execution_mode, generic_data_reader *>;
   using io_buffer_map_t = std::map<execution_mode, std::atomic<int>>;
 
