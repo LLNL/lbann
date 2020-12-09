@@ -92,7 +92,7 @@ operator=(const data_type_layer<InputTensorDataType, OutputTensorDataType>& othe
   m_persistent_error_signals = other.m_persistent_error_signals;
   return *this;
 }
-
+/*
 template <typename InputTensorDataType, typename OutputTensorDataType>
 void data_type_layer<InputTensorDataType, OutputTensorDataType>::
 setup_weights(size_t idx, weights& w) {
@@ -101,7 +101,7 @@ setup_weights(size_t idx, weights& w) {
   }
   m_weights_proxy[idx].setup(w);
 }
-
+*/
 template <typename InputTensorDataType, typename OutputTensorDataType>
 void data_type_layer<InputTensorDataType, OutputTensorDataType>::forward_prop() {
   const auto fp_start = get_time();
@@ -864,7 +864,7 @@ get_distconv_adapter() const {
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
 
-template class data_type_layer<float, double>;
-template class data_type_layer<double, float>;
+//template class data_type_layer<float, double>;
+//template class data_type_layer<double, float>;
 
 } // namespace lbann
