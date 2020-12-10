@@ -81,7 +81,7 @@ void convolution_forward(
   TensorDescriptor const& xDesc,
   El::AbstractMatrix<TensorDataType> const& x,
   FilterDescriptor const& wDesc,
-  El::AbstractDistMatrix<TensorDataType> const& w,
+  El::AbstractMatrix<TensorDataType> const& w,
   ConvolutionDescriptor const& convDesc,
   fwd_conv_alg alg,
   El::Matrix<TensorDataType, El::Device::GPU>& workSpace,
@@ -101,7 +101,7 @@ template <typename TensorDataType, typename ScalarParameterType>
 void convolution_backward_data(
   ScalarParameterType const& alpha_in,
   FilterDescriptor const& wDesc,
-  El::AbstractDistMatrix<TensorDataType> const& w,
+  El::AbstractMatrix<TensorDataType> const& w,
   TensorDescriptor const& dyDesc,
   El::AbstractMatrix<TensorDataType> const& dy,
   ConvolutionDescriptor const& convDesc,
@@ -135,7 +135,7 @@ template <typename TensorDataType, typename ScalarParameterType>
 void convolution_backward_data(
   ScalarParameterType const& alpha_in,
   FilterDescriptor const& wDesc,
-  El::AbstractDistMatrix<TensorDataType> const& w,
+  El::AbstractMatrix<TensorDataType> const& w,
   TensorDescriptor const& dyDesc,
   El::AbstractMatrix<TensorDataType> const& dy,
   ConvolutionDescriptor const& convDesc,
@@ -161,7 +161,7 @@ void convolution_backward_bias(
   El::AbstractMatrix<TensorDataType> const& dy,
   ScalarParameterType const& beta_in,
   TensorDescriptor const& dbDesc,
-  El::AbstractDistMatrix<TensorDataType>& db,
+  El::AbstractMatrix<TensorDataType>& db,
   El::SyncInfo<El::Device::GPU> const& si)
 {
   using LibScalingParamT = dnn_lib::ScalingParamType<TensorDataType>;
@@ -184,7 +184,7 @@ void convolution_backward_bias(
   El::AbstractMatrix<TensorDataType> const& dy,
   ScalarParameterType const& beta_in,
   TensorDescriptor const& dbDesc,
-  El::AbstractDistMatrix<TensorDataType>& db)
+  El::AbstractMatrix<TensorDataType>& db)
 {
   auto multisync = El::MakeMultiSync(gpu::get_sync_info(db),
                                      gpu::get_sync_info(dy));
@@ -205,7 +205,7 @@ void convolution_backward_filter(
   El::Matrix<TensorDataType, El::Device::GPU>& workSpace,
   ScalarParameterType const& beta_in,
   FilterDescriptor const& dwDesc,
-  El::AbstractDistMatrix<TensorDataType>& dw,
+  El::AbstractMatrix<TensorDataType>& dw,
   El::SyncInfo<El::Device::GPU> const& si)
 {
   using LibScalingParamT = dnn_lib::ScalingParamType<TensorDataType>;
@@ -239,7 +239,7 @@ void convolution_backward_filter(
   El::Matrix<TensorDataType, El::Device::GPU>& workSpace,
   ScalarParameterType const& beta_in,
   FilterDescriptor const& dwDesc,
-  El::AbstractDistMatrix<TensorDataType>& dw)
+  El::AbstractMatrix<TensorDataType>& dw)
 {
   auto multisync = El::MakeMultiSync(gpu::get_sync_info(dw),
                                      gpu::get_sync_info(workSpace),
@@ -252,7 +252,7 @@ void convolution_backward_filter(
 template <typename TensorDataType, typename ScalarParameterType>
 void add_tensor(ScalarParameterType const& alpha_in,
                 TensorDescriptor const& aDesc,
-                El::AbstractDistMatrix<TensorDataType> const& A,
+                El::AbstractMatrix<TensorDataType> const& A,
                 ScalarParameterType const& beta_in,
                 TensorDescriptor const& cDesc,
                 El::AbstractMatrix<TensorDataType>& C,
@@ -278,7 +278,7 @@ void add_tensor(ScalarParameterType const& alpha_in,
 template <typename TensorDataType, typename ScalarParameterType>
 void add_tensor(ScalarParameterType const& alpha_in,
                 TensorDescriptor const& aDesc,
-                El::AbstractDistMatrix<TensorDataType> const& A,
+                El::AbstractMatrix<TensorDataType> const& A,
                 ScalarParameterType const& beta_in,
                 TensorDescriptor const& cDesc,
                 El::AbstractMatrix<TensorDataType>& C)
