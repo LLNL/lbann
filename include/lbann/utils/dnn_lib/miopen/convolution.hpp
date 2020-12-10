@@ -47,7 +47,7 @@ void convolution_forward(
   TensorDescriptor const& xDesc,
   El::AbstractMatrix<TensorDataType> const& x,
   FilterDescriptor const& wDesc,
-  El::AbstractDistMatrix<TensorDataType> const& w,
+  El::AbstractMatrix<TensorDataType> const& w,
   ConvolutionDescriptor const& convDesc,
   fwd_conv_alg alg,
   El::Matrix<TensorDataType, El::Device::GPU>& workSpace,
