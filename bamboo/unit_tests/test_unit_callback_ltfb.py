@@ -40,7 +40,7 @@ def initialize_rng():
 
 # Sample access functions
 _mini_batch_size = 2
-_num_epochs = 3
+_num_epochs = 5
 def get_sample(index):
     initialize_rng()
     return (random.gauss(0,1),)
