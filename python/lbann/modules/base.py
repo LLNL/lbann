@@ -50,7 +50,6 @@ class FullyConnectedModule(Module):
                  weights=[],
                  activation=None,
                  name=None,
-                 channelwise=False,
                  data_layout='data_parallel',
                  parallel_strategy={}):
         """Initialize fully-connected module.
@@ -77,17 +76,12 @@ class FullyConnectedModule(Module):
         self.size = size
         self.bias = bias
         self.transpose = transpose
-        self.channelwise = channelwise
         self.data_layout = data_layout
         self.parallel_strategy = parallel_strategy
 
-        base_name = ('channelwiseFCmodule{0}' 
-                     if self.channelwise
-                     else 'fcmodule{0}')
-
         self.name = (name
                      if name
-                     else base_name.format(FullyConnectedModule.global_count))
+                     else 'fcmodule{0}'.format(FullyConnectedModule.global_count))
 
         # Initialize weights
         # Note: If weights are not provided, matrix weights are
@@ -120,24 +114,14 @@ class FullyConnectedModule(Module):
     def forward(self, x):
         self.instance += 1
         name = '{0}_instance{1}'.format(self.name, self.instance)
-        if (self.channelwise):
-          y = lbann.ChannelwiseFullyConnected(x,
-                                              weights=self.weights,
-                                              name=(name+'_fc' if self.activation else name),
-                                              data_layout=self.data_layout,
-                                              num_neurons=self.size,
-                                              has_bias=self.bias,
-                                              transpose=self.transpose,
-                                              parallel_strategy=self.parallel_strategy)
-        else:
-          y = lbann.FullyConnected(x,
-                                   weights=self.weights,
-                                   name=(name+'_fc' if self.activation else name),
-                                   data_layout=self.data_layout,
-                                   num_neurons=self.size,
-                                   has_bias=self.bias,
-                                   transpose=self.transpose,
-                                   parallel_strategy=self.parallel_strategy)
+        y = lbann.FullyConnected(x,
+                                 weights=self.weights,
+                                 name=(name+'_fc' if self.activation else name),
+                                 data_layout=self.data_layout,
+                                 num_neurons=self.size,
+                                 has_bias=self.bias,
+                                 transpose=self.transpose,
+                                 parallel_strategy=self.parallel_strategy)
         if self.activation:
             return self.activation(y,
                                    name=name+'_activation',
@@ -145,6 +129,94 @@ class FullyConnectedModule(Module):
                                    parallel_strategy=self.parallel_strategy)
         else:
             return y
+
+class ChannelwiseFCModule(Module):
+  """Basic block for channelwise fully-connected neural networks.
+
+    Applies a dense linearity channelwise and a nonlinear activation function.
+  
+  """
+
+  global_count = 0
+
+  def __init__(self,
+               size,
+               bias=False,
+               weights=[],
+               activation=None,
+               transpose=False,
+               name=None,
+               data_layout='data_parallel',
+               parallel_strategy={}):
+    """Initalize channelwise fully connected module
+
+    Args:
+        size (int): Size of output tensor.
+        bias (bool): Whether to apply bias after linearity.
+        transpose (bool): Whether to apply transpose of weights
+                matrix.
+        weights (`Weights` or iterator of `Weights`): Weights in
+                fully-connected layer. There are at most two: the
+                matrix and the bias. If weights are not provided, the
+                matrix will be initialized with He normal
+                initialization and the bias with zeros.
+        activation (type): Layer class for activation function.
+        name (str): Default name is in the form 'fcmodule<index>'.
+        data_layout (str): Data layout.
+        parallel_strategy (dict): Data partitioning scheme.
+    """
+    super().__init__()
+    ChannelwiseFCModule.global_count += 1
+    self.instance = 0
+    self.size = size
+    self.bias = bias
+    self.transpose = transpose
+    self.name = (name
+                 if name
+                 else 'channelwisefc{0}'.format(ChannelwiseFCModule.global_count))
+    self.data_layout = data_layout
+    self.parallel_strategy = parallel_strategy
+
+    self.weights = list(make_iterable(weights))
+    if len(self.weights) > 2:
+        raise ValueError('`FullyConnectedModule` has '
+                         'at most two weights, '
+                         'but got {0}'.format(len(self.weights)))
+    if len(self.weights) == 0:
+        self.weights.append(
+            lbann.Weights(initializer=lbann.HeNormalInitializer(),
+                          name=self.name+'_matrix'))
+    if len(self.weights) == 1:
+        self.weights.append(
+            lbann.Weights(initializer=lbann.ConstantInitializer(value=0.0),
+                          name=self.name+'_bias'))
+    self.activation = None
+    if activation:
+        if isinstance(activation, type):
+            self.activation = activation
+        else:
+            self.activation = type(activation)
+        if not issubclass(self.activation, lbann.Layer):
+            raise ValueError('activation must be a layer')
+
+  def forward(self, x):
+    self.instance += 1
+    name = '{0}_instance{1}'.format(self.name, self.instance)
+    y = lbann.ChannelwiseFullyConnected(x,
+                                        weights=self.weights,
+                                        name=(name+'_fc' if self.activation else name),
+                                        data_layout=self.data_layout,
+                                        output_channel_dims=self.size,
+                                        bias=self.bias,
+                                        transpose=self.transpose,
+                                        parallel_strategy=self.parallel_strategy)
+    if self.activation:
+        return self.activation(y,
+                               name=name+'_activation',
+                               data_layout=self.data_layout,
+                               parallel_strategy=self.parallel_strategy)
+    else:
+        return y
 
 
 class ConvolutionModule(Module):
@@ -168,6 +240,8 @@ class ConvolutionModule(Module):
             out_channels (int): Number of output channels, i.e. number
                 of filters.
             kernel_size (int): Size of convolution kernel.
+            has_vector (bool): If true then call with non-square kernel
+              padding, stride, dilation, and padding
             stride (int): Convolution stride.
             padding (int): Convolution padding.
             dilation (int): Convolution dilation.
