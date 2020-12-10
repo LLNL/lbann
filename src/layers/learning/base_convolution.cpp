@@ -484,7 +484,7 @@ base_convolution_layer<TensorDataType,Device>
                                input_desc,
                                input,
                                m_kernel_dnn_desc,
-                               kernel,
+                               kernel.LockedMatrix(),
                                m_convolution_dnn_desc,
                                convolution_dnn_algorithm,
                                workspace,
@@ -562,7 +562,7 @@ apply_transposed_convolution_dnn(bool during_forward_prop) {
   // Perform transposed convolution
   dnn_lib::convolution_backward_data(one,
                                      m_kernel_dnn_desc,
-                                     kernel,
+                                     kernel.LockedMatrix(),
                                      input_desc,
                                      input,
                                      m_convolution_dnn_desc,
@@ -588,7 +588,7 @@ void base_convolution_layer<TensorDataType,Device>::apply_bias_dnn() {
     const auto& bias = this->weights_values(1);
     dnn_lib::add_tensor(m_bias_scaling_factor,
                         m_bias_dnn_desc,
-                        bias,
+                        bias.LockedMatrix(),
                         one,
                         m_tensors_dnn_desc.get_activations(),
                         local_output);
@@ -629,7 +629,7 @@ base_convolution_layer<TensorDataType,Device>
         local_gradient_wrt_output,
         dst_scale,
         m_bias_dnn_desc,
-        bias_gradient);
+        bias_gradient.Matrix());
     } else {
       El::Scale(dst_scale_dt, bias_gradient);
     }
@@ -678,7 +678,7 @@ base_convolution_layer<TensorDataType,Device>
           workspace,
           dst_scale,
           m_kernel_dnn_desc,
-          kernel_gradient);
+          kernel_gradient.Matrix());
       } else {
         bwd_filter_conv_alg kernel_gradient_dnn_algorithm
           = get_backward_filter_algo_dnn(
@@ -699,7 +699,7 @@ base_convolution_layer<TensorDataType,Device>
           workspace,
           dst_scale,
           m_kernel_dnn_desc,
-          kernel_gradient);
+          kernel_gradient.Matrix());
       }
     } else {
       El::Scale(dst_scale_dt, kernel_gradient);
