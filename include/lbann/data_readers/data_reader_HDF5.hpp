@@ -101,8 +101,6 @@ char *x = "asdf";
 
 private:
 
-///  std::unordered_map<std::string, std::unordered_map<std::string, lbann::DataType>> m_normailzation;
-
   /** Contains pointers to Nodes that contain the complete schemas
    *  for the data on disk, and additionally contain normalization data.
    */
@@ -130,7 +128,6 @@ private:
   /** P_0 reads and bcasts the schema */
   void load_schema(std::string fn, conduit::Node &schema);
 
-
   /** Next few are used for "packing" data. 
    *  'name' would be datum, label, response, or other (the user can choose
    *  any names they like; I'm using datum, etc for backwards compatibility)
@@ -144,10 +141,21 @@ private:
   /** all leaves from the user's experiment-schema specification */
   std::unordered_set<const conduit::Node*> m_all_exp_leaves;
 
-  /** keys in this map are the pathnames of quasi-leaf nodes, excluding
-   *  the "metadata" named child; the values are the metadata nodes.
+  /** keys in this map are the pathnames of quasi-leaf nodes, where a
+   * "quasi-leaf" is a node that has a single child named "metadata;"
+   * the pathnames exclude the terminating "/metadata." 
+   * The values are the corresponding metadata nodes.
    */
   std::unordered_map<std::string, const conduit::Node*> m_metadata_nodes;
+
+#if 0
+TODO
+  /** next few are for caching normalization values, so we don't have 
+   * to parse them from the conduit::Nodes each time load_sample is called
+   */
+  std:unordered_map<std::string, double> m_scale;
+  std:unordered_map<std::string, double> m_scale;
+#endif
 
   /** Fills in various data structures (m_packed_to_field_names_map, 
    *  m_packed_name_to_num_elts, etc) using data from the schema for
@@ -176,7 +184,7 @@ private:
   void load_sample(conduit::Node &node, size_t index); 
 
   /** Performs packing, normalization, etc. Called by load_sample. */
-  void munge_data(conduit::Node &node_in_out);
+  void pack_data(conduit::Node &node_in_out);
 
   /** Loads a conduit::Node, then pulls out the Schema */
   void load_schema_from_data(conduit::Schema &schema);
@@ -189,7 +197,9 @@ private:
   /** Fills in m_metadata_nodes */
   void get_metadata_node_ptrs();
 
-  void transform(DataType* vals, size_t num_elts, const std::string &field_name); 
+  void transform(conduit::Node& node); 
+
+  const std::string strip_sample_id(const std::string &s);
 };
 
 } // namespace lbann 
