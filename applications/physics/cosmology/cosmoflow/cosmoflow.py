@@ -1,4 +1,6 @@
 import argparse
+import math
+
 import numpy as np
 
 import lbann
@@ -311,8 +313,8 @@ if __name__ == "__main__":
         '--depth-groups', action='store', type=int, default=4,
         help='the number of processes for the depth dimension (default: 4)')
     parser.add_argument(
-        '--depth-splits-pooling-id', action='store', type=int, default=5,
-        help='the number of pooling layers from which depth_split is set (default: 5)')
+        '--depth-splits-pooling-id', action='store', type=int, default=None,
+        help='the number of pooling layers from which depth_split is set (default: None)')
     parser.add_argument(
         '--gather-dropout-id', action='store', type=int, default=1,
         help='the number of dropout layers from which the network is gathered (default: 1)')
@@ -360,7 +362,13 @@ if __name__ == "__main__":
         layer_name = layer.__class__.__name__
         if layer_name == 'Pooling':
             pooling_id += 1
-            if pooling_id == args.depth_splits_pooling_id:
+
+            depth_splits_pooling_id = args.depth_splits_pooling_id
+            if depth_splits_pooling_id is None:
+                assert 2**math.log2(args.depth_groups) == args.depth_groups
+                depth_splits_pooling_id = 5-(math.log2(args.depth_groups)-2)
+
+            if pooling_id == depth_splits_pooling_id:
                 parallel_strategy = dict(parallel_strategy.items())
                 parallel_strategy['depth_splits'] = 1
 

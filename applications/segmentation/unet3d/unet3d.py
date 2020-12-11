@@ -290,7 +290,6 @@ if __name__ == '__main__':
 
     # Construct layer graph
     input = lbann.Input(
-        io_buffer='partitioned',
         target_mode='label_reconstruction')
     volume = lbann.Split(input)
     output = UNet3D()(volume)
