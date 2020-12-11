@@ -469,6 +469,7 @@ public:
        CEREAL_NVP(m_parent_layers),
        CEREAL_NVP(m_child_layers),
        CEREAL_NVP(m_weights),
+       CEREAL_NVP(m_output_dims_list),
        CEREAL_NVP(m_hint_layer));
     // Members that aren't serialized:
     //   m_model
@@ -477,7 +478,6 @@ public:
     //   m_bp_time
     //   m_bp_compute_time
     //   m_update_time
-    //   m_output_dims
     //   m_parallel_strategy
   }
   ///@}

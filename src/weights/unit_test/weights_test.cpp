@@ -120,7 +120,6 @@ TEST_CASE("Serializing weights", "[mpi][weights][serialize]")
       REQUIRE_NOTHROW(oarchive(dtw_src));
       REQUIRE_NOTHROW(oarchive(dtw_src_ptr));
     }
-
     {
       cereal::JSONInputArchive iarchive(ss);
       REQUIRE_NOTHROW(iarchive(dtw_tgt));
@@ -136,7 +135,6 @@ TEST_CASE("Serializing weights", "[mpi][weights][serialize]")
       REQUIRE_NOTHROW(oarchive(dtw_src));
       REQUIRE_NOTHROW(oarchive(dtw_src_ptr));
     }
-
     {
       cereal::XMLInputArchive iarchive(ss);
       REQUIRE_NOTHROW(iarchive(dtw_tgt));
@@ -168,7 +166,6 @@ TEST_CASE("Serializing weights", "[mpi][weights][serialize]")
       REQUIRE_NOTHROW(oarchive(dtw_src));
       REQUIRE_NOTHROW(oarchive(dtw_src_ptr));
     }
-
     {
       lbann::RootedJSONInputArchive iarchive(ss, g);
       REQUIRE_NOTHROW(iarchive(dtw_tgt));
@@ -184,7 +181,6 @@ TEST_CASE("Serializing weights", "[mpi][weights][serialize]")
       REQUIRE_NOTHROW(oarchive(dtw_src));
       REQUIRE_NOTHROW(oarchive(dtw_src_ptr));
     }
-
     {
       lbann::RootedXMLInputArchive iarchive(ss, g);
       REQUIRE_NOTHROW(iarchive(dtw_tgt));
@@ -200,7 +196,6 @@ TEST_CASE("Serializing weights", "[mpi][weights][serialize]")
       REQUIRE_NOTHROW(oarchive(dtw_src));
       REQUIRE_NOTHROW(oarchive(dtw_src_ptr));
     }
-
     {
       lbann::RootedBinaryInputArchive iarchive(ss, g);
       REQUIRE_NOTHROW(iarchive(dtw_tgt));

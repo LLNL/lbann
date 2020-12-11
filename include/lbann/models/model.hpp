@@ -85,7 +85,22 @@ public:
 
   /** Archive for checkpoint and restart */
   template <class Archive> void serialize(Archive & ar) {
-    ar(CEREAL_NVP(*m_objective_function));
+    ar(
+      //CEREAL_NVP(m_execution_context),
+      CEREAL_NVP(m_name),
+      //CEREAL_NVP(m_comm),
+      CEREAL_NVP(m_layers),
+      CEREAL_NVP(m_weights),
+      //CEREAL_NVP(m_default_optimizer_msg),
+      CEREAL_NVP(m_objective_function),
+      CEREAL_NVP(m_metrics),
+      //CEREAL_NVP(m_callbacks),
+      CEREAL_NVP(m_background_io_allowed)
+      //CEREAL_NVP(m_model_is_setup)
+#ifdef LBANN_HAS_DISTCONV
+      , CEREAL_NVP(m_max_mini_batch_size_distconv)
+#endif // LBANN_HAS_DISTCONV
+      );
   }
 
   // ===========================================

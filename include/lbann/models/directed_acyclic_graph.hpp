@@ -47,7 +47,20 @@ public:
   std::unique_ptr<model> copy_model() const override { return make_unique<directed_acyclic_graph_model>(*this); }
   std::string get_type() const override { return "directed acyclic graph"; }
 
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar)
+  {
+    ar(::cereal::make_nvp("ActualModel",
+                          ::cereal::base_class<model>(this)));
+  }
+
 protected:
+
+  friend cereal::access;
+  directed_acyclic_graph_model()
+    : directed_acyclic_graph_model(
+      &utils::get_current_comm(), nullptr, nullptr)
+  {}
 
   /** Set up layer execution order.
    *

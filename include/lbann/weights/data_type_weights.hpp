@@ -172,21 +172,17 @@ public:
     //   m_initializer
   }
 
-  template <typename ArchiveT>
-  static void load_and_construct(
-    ArchiveT & ar, cereal::construct<WeightsType> & construct)
+  ///@}
+
+private:
+  friend cereal::access;
+  data_type_weights()
 #ifndef __CUDACC__
-  {
-    // Construct the matrix on the right grid.
-    construct(utils::get_current_comm());
-  }
+    : data_type_weights(utils::get_current_comm()) {}
 #else
   ;
 #endif
 
-  ///@}
-
-private:
   void do_augment_description_(description&) const override;
   void do_setup_() override;
   void do_set_dims_(std::vector<int> const& matrix_height_dims,

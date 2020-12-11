@@ -21,6 +21,7 @@ set_full_path(THIS_DIR_SEQ_CATCH2_TEST_FILES
 set_full_path(THIS_DIR_MPI_CATCH2_TEST_FILES
   rooted_archive_test.cpp
   serialize_distmatrix_test.cpp
+  serialize_enum_test.cpp
   )
 
 if (LBANN_HAS_HALF)

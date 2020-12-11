@@ -181,9 +181,8 @@ class input_layer : public data_type_layer<TensorDataType> {
   {
     using DataTypeLayer = data_type_layer<TensorDataType>;
     ar(::cereal::make_nvp("DataTypeLayer",
-                          ::cereal::base_class<DataTypeLayer>(this)));
-    // FIXME -- need to handle enums in rooted archives
-    //CEREAL_NVP(m_data_reader_mode));
+                          ::cereal::base_class<DataTypeLayer>(this)),
+       CEREAL_NVP(m_data_reader_mode));
   }
 
   ///@}

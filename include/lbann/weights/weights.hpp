@@ -266,10 +266,8 @@ public:
   template <typename ArchiveT>
   void serialize(ArchiveT& ar)
   {
-    int frozen = m_frozen;
     ar(CEREAL_NVP(m_name),
-       CEREAL_NVP(frozen));
-    m_frozen = frozen;
+       CEREAL_NVP(m_frozen));
 
     // What about:
     //   m_matrix_height_dims

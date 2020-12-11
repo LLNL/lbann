@@ -35,7 +35,7 @@ namespace lbann {
 class layer_metric : public metric {
 
  public:
-  layer_metric(lbann_comm *comm,
+  layer_metric(lbann_comm *comm = nullptr,
                std::string name = "",
                std::string unit = "");
   layer_metric(const layer_metric& other) = default;
@@ -49,7 +49,11 @@ class layer_metric : public metric {
 
   /** Archive for checkpoint and restart */
   template <class Archive> void serialize( Archive & ar ) {
-    ar(cereal::base_class<metric>(this), CEREAL_NVP(m_name), CEREAL_NVP(m_unit));
+    ar(::cereal::make_nvp("Metric",
+                          ::cereal::base_class<metric>(this)),
+       CEREAL_NVP(m_name),
+       CEREAL_NVP(m_unit),
+       CEREAL_NVP(m_layer));
   }
 
   /** Set corresponding layer. */
@@ -104,5 +108,7 @@ class layer_metric : public metric {
 };
 
 }  // namespace lbann
+
+CEREAL_REGISTER_TYPE(lbann::layer_metric);
 
 #endif  // LBANN_METRIC_LAYER_METRIC_HPP

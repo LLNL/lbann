@@ -42,120 +42,10 @@
 
 #include <stdexcept>
 
-namespace lbann
+// These really belong in Elemental; let's just extend that.
+namespace El
 {
-namespace details
-{
-// Semantic sugar
-template <typename T, El::Device D>
-std::pair<El::Int, El::Int> size(El::Matrix<T,D> const& m)
-{
-  return std::make_pair(m.Height(), m.Width());
-}
-}
 
-template <typename ArchiveT, typename T, El::Device D>
-void save(lbann::RootedOutputArchiveAdaptor<ArchiveT>& ar,
-          El::Matrix<T,D> const& mat)
-{
-  LBANN_ASSERT(!mat.Viewing());
-  // Forward to the underlying archive on Root.
-  ar.save_on_root(mat);
-}
-
-template <typename ArchiveT, typename T, El::Device D>
-void load(lbann::RootedInputArchiveAdaptor<ArchiveT>& ar,
-          El::Matrix<T,D>& mat)
-{
-  LBANN_ASSERT(!mat.Viewing());
-
-  // Restore the local matrix, then handle the Bcast
-  ar.load_on_root(mat);
-
-  // First broadcast the size information.
-  auto [height,width] = details::size(mat);
-  El::mpi::Broadcast(height, ar.root(), ar.grid().Comm(),
-                     El::SyncInfo<El::Device::CPU>{});
-  El::mpi::Broadcast(width, ar.root(), ar.grid().Comm(),
-                     El::SyncInfo<El::Device::CPU>{});
-  // Resize _should_ be a no-op if the size doesn't change, but I'm
-  // not actually 100% sure.
-  if (!ar.am_root())
-    mat.Resize(height, width);
-
-  // Finally the matrix data.
-  El::Broadcast(
-    static_cast<El::AbstractMatrix<T>&>(mat),
-    ar.grid().Comm(), ar.root());
-}
-
-template <typename ArchiveT, typename T>
-void save(lbann::RootedOutputArchiveAdaptor<ArchiveT>& ar,
-          El::AbstractDistMatrix<T> const& mat)
-{
-  using CircMatType =
-    El::DistMatrix<T,El::CIRC,El::CIRC,El::ELEMENT,El::Device::CPU>;
-  LBANN_ASSERT(!mat.Viewing());
-  LBANN_ASSERT(mat.Grid() == ar.grid());
-  LBANN_ASSERT(mat.Root() == ar.root());
-  CircMatType circ_mat(mat);
-  ar(circ_mat);
-}
-
-template <typename ArchiveT, typename T>
-void load(lbann::RootedInputArchiveAdaptor<ArchiveT>& ar,
-          El::AbstractDistMatrix<T>& mat)
-{
-  using CircMatType =
-    El::DistMatrix<T,El::CIRC,El::CIRC,El::ELEMENT,El::Device::CPU>;
-  LBANN_ASSERT(!mat.Viewing());
-  LBANN_ASSERT(mat.Grid() == ar.grid());
-  LBANN_ASSERT(mat.Root() == ar.root());
-
-  // Do the root process read.
-  CircMatType circ_mat(mat.Grid(), mat.Root());
-  ar(circ_mat);
-
-  // Distribute the data
-  El::Copy(circ_mat, mat);
-}
-
-template <typename ArchiveT, typename T>
-void save(lbann::RootedOutputArchiveAdaptor<ArchiveT>& ar,
-          El::DistMatrix<T,El::CIRC,El::CIRC> const& mat)
-{
-  LBANN_ASSERT(!mat.Viewing());
-  LBANN_ASSERT(mat.Grid() == ar.grid());
-  LBANN_ASSERT(mat.Root() == ar.root());
-  ar(::cereal::make_nvp("global_height", mat.Height()),
-     ::cereal::make_nvp("global_width", mat.Width()),
-     ::cereal::make_nvp("matrix_data", mat.LockedMatrix()));
-}
-
-template <typename ArchiveT, typename T>
-void load(lbann::RootedInputArchiveAdaptor<ArchiveT>& ar,
-          El::DistMatrix<T,El::CIRC,El::CIRC>& mat)
-{
-  LBANN_ASSERT(!mat.Viewing());
-  LBANN_ASSERT(mat.Grid() == ar.grid());
-  LBANN_ASSERT(mat.Root() == ar.root());
-
-  // Restore the height/width using the usual mechanism, but WAIT on
-  // the matrix, since the local matrix of CIRC,CIRC matrix is not
-  // Bcast.
-  El::Int height, width;
-  ar(::cereal::make_nvp("global_height", height),
-     ::cereal::make_nvp("global_width", width));
-
-  // Restore the matrix data on the root process.
-  mat.Resize(height, width);
-  ar.set_next_name("matrix_data");
-  ar.load_on_root(mat.Matrix());
-}
-}// namespace lbann
-
-namespace cereal
-{
 /** @brief Save a matrix to a text-based archive.
  *
  *  For these text-based archives (XML and JSON), this will just
@@ -178,13 +68,31 @@ namespace cereal
  *  @throws lbann::exception Thrown when the matrix is actually a view.
  *  @ingroup serialization
  */
-template <typename ArchiveT, typename T,
+template <typename ArchiveT, typename T>
+void save(ArchiveT& ar, ::El::AbstractMatrix<T> const& mat)
+{
+  switch (mat.GetDevice())
+  {
+  case ::El::Device::CPU:
+    save(ar, static_cast<::El::Matrix<T,::El::Device::CPU> const&>(mat));
+    break;
+#ifdef LBANN_HAS_GPU
+  case ::El::Device::GPU:
+    save(ar, static_cast<::El::Matrix<T,::El::Device::GPU> const&>(mat));
+    break;
+#endif // LBANN_HAS_GPU
+  default:
+    LBANN_ERROR("Unknown device.");
+  }
+}
+
+template <typename ArchiveT, typename T, ::El::Device D,
           lbann::utils::WhenTextArchive<ArchiveT> = 1>
-void save(ArchiveT& ar, El::AbstractMatrix<T> const& mat)
+void save(ArchiveT& ar, ::El::Matrix<T,D> const& mat)
 {
   LBANN_ASSERT(!mat.Viewing());
-  ar(make_nvp("height", mat.Height()),
-     make_nvp("width", mat.Width()));
+  ar(::cereal::make_nvp("height", mat.Height()),
+     ::cereal::make_nvp("width", mat.Width()));
 }
 
 namespace details
@@ -208,58 +116,72 @@ namespace details
 template <typename ArchiveT, typename T,
           lbann::utils::WhenNotTextArchive<ArchiveT> = 1>
 void do_save(ArchiveT& ar,
-             El::Matrix<T, El::Device::CPU> const& mat)
+             ::El::Matrix<T, ::El::Device::CPU> const& mat)
 {
   LBANN_ASSERT(!mat.Viewing());
   ar(mat.Height(), mat.Width());
   if (mat.Contiguous())
   {
-    ar(binary_data(mat.LockedBuffer(),
-                   mat.LDim()*mat.Width()*sizeof(T)));
+    ar(::cereal::binary_data(mat.LockedBuffer(),
+                             mat.LDim()*mat.Width()*sizeof(T)));
   }
   else
   {
-    for (El::Int col = 0; col < mat.Width(); ++col)
-      ar(binary_data(mat.LockedBuffer() + col*mat.LDim(),
-                     mat.Height()*sizeof(T)));
+    for (::El::Int col = 0; col < mat.Width(); ++col)
+      ar(::cereal::binary_data(mat.LockedBuffer() + col*mat.LDim(),
+                               mat.Height()*sizeof(T)));
   }
 }
+
+#ifdef LBANN_HAS_GPU
+template <typename ArchiveT, typename T,
+          lbann::utils::WhenNotTextArchive<ArchiveT> = 1>
+void do_save(ArchiveT& ar,
+             ::El::Matrix<T, ::El::Device::GPU> const& mat)
+{
+  ::El::Matrix<T, ::El::Device::CPU> cpu_mat(mat);
+  do_save(ar, cpu_mat);
+}
+#endif // LBANN_HAS_GPU
 }// namespace details
 
 /** @brief Save a matrix to a binary archive. */
-template <typename ArchiveT, typename T,
+template <typename ArchiveT, typename T, ::El::Device D,
           lbann::utils::WhenNotTextArchive<ArchiveT> = 1>
-void save(ArchiveT& ar, El::AbstractMatrix<T> const& mat)
+void save(ArchiveT& ar, ::El::Matrix<T, D> const& mat)
 {
   LBANN_ASSERT(!mat.Viewing());
-  El::AbstractMatrixReadDeviceProxy<T, El::Device::CPU> proxy(mat);
-  details::do_save(ar, proxy.GetLocked());
+  details::do_save(ar, mat);
 }
 
-template <typename ArchiveT,
-          typename CharT, typename TraitsT, typename AllocT>
+// Special treatment for the rooted archive.
+template <typename ArchiveT, typename T, ::El::Device D>
 void save(lbann::RootedOutputArchiveAdaptor<ArchiveT>& ar,
-          std::basic_string<CharT, TraitsT, AllocT> const& str)
+          ::El::Matrix<T,D> const& mat)
 {
-  ar.save_on_root(str);
+  LBANN_ASSERT(!mat.Viewing());
+  // Forward to the underlying archive on Root.
+  ar.save_on_root(mat);
 }
 
-template <typename ArchiveT,
-          typename CharT, typename TraitsT, typename AllocT>
-void load(lbann::RootedInputArchiveAdaptor<ArchiveT>& ar,
-          std::basic_string<CharT, TraitsT, AllocT>& str)
+
+template <typename ArchiveT, typename T,
+          lbann::utils::WhenNotTextArchive<ArchiveT> = 1>
+void load(ArchiveT& archive, ::El::AbstractMatrix<T>& mat)
 {
-  ar.load_on_root(str);
-  auto str_len = str.size();
-  El::mpi::Broadcast(str_len, ar.root(), ar.grid().Comm(),
-                     El::SyncInfo<El::Device::CPU>{});
-  str.resize(str_len);
-  // I was seeing an undefined reference if using plain ol' char. I
-  // fear the day someone uses a wstring in here.
-  El::mpi::Broadcast(reinterpret_cast<El::byte*>(str.data()),
-                     str_len*sizeof(CharT),
-                     ar.root(), ar.grid().Comm(),
-                     El::SyncInfo<El::Device::CPU>{});
+  switch (mat.GetDevice())
+  {
+  case ::El::Device::CPU:
+    load(archive, static_cast<::El::Matrix<T,::El::Device::CPU>&>(mat));
+    break;
+#ifdef LBANN_HAS_GPU
+  case ::El::Device::GPU:
+    load(archive, static_cast<::El::Matrix<T,::El::Device::GPU>&>(mat));
+    break;
+#endif // LBANN_HAS_GPU
+  default:
+    LBANN_ERROR("Unknown device.");
+  }
 }
 
 /** @brief "Load" a CPU Matrix from a text-based archive.
@@ -280,34 +202,16 @@ void load(lbann::RootedInputArchiveAdaptor<ArchiveT>& ar,
  *  @todo Perhaps it's better to throw an exception for these archives?
  *  @ingroup serialization
  */
-template <typename ArchiveT, typename T, El::Device D,
+template <typename ArchiveT, typename T, ::El::Device D,
           lbann::utils::WhenTextArchive<ArchiveT> = 1>
-void load(ArchiveT& archive, El::Matrix<T, D>& mat)
+void load(ArchiveT& archive, ::El::Matrix<T, D>& mat)
 {
   LBANN_ASSERT(!mat.Viewing());
-  El::Int height, width;
-  archive(height, width);
+  ::El::Int height, width;
+  archive(CEREAL_NVP(height), CEREAL_NVP(width));
   mat.Resize(height, width);
 }
 
-template <typename ArchiveT, typename T,
-          lbann::utils::WhenNotTextArchive<ArchiveT> = 1>
-void load(ArchiveT& archive, El::AbstractMatrix<T>& mat)
-{
-  switch (mat.GetDevice())
-  {
-  case El::Device::CPU:
-    load(archive, static_cast<El::Matrix<T,El::Device::CPU>&>(mat));
-    break;
-#ifdef LBANN_HAS_GPU
-  case El::Device::GPU:
-    load(archive, static_cast<El::Matrix<T,El::Device::GPU>&>(mat));
-    break;
-#endif // LBANN_HAS_GPU
-  default:
-    LBANN_ERROR("Unknown device.");
-  }
-}
 /** @brief Load a CPU Matrix from a non-text archive.
  *
  *  @tparam ArchiveT (Inferred) The Cereal archive type to use.
@@ -320,14 +224,14 @@ void load(ArchiveT& archive, El::AbstractMatrix<T>& mat)
 template <typename ArchiveT, typename T,
           lbann::utils::WhenNotTextArchive<ArchiveT> = 1>
 void load(ArchiveT& archive,
-          El::Matrix<T, El::Device::CPU>& mat)
+          ::El::Matrix<T, ::El::Device::CPU>& mat)
 {
   LBANN_ASSERT(!mat.Viewing());
-  El::Int height, width;
-  archive(height, width);
+  ::El::Int height, width;
+  archive(CEREAL_NVP(height), CEREAL_NVP(width));
   mat.Resize(height, width);
-  archive(binary_data(mat.Buffer(),
-                      mat.Height()*mat.Width()*sizeof(T)));
+  archive(::cereal::binary_data(mat.Buffer(),
+                                mat.Height()*mat.Width()*sizeof(T)));
 }
 
 #if defined LBANN_HAS_GPU
@@ -343,14 +247,41 @@ void load(ArchiveT& archive,
 template <typename ArchiveT, typename T,
           lbann::utils::WhenNotTextArchive<ArchiveT> = 1>
 void load(ArchiveT& archive,
-          El::Matrix<T, El::Device::GPU>& mat)
+          ::El::Matrix<T, ::El::Device::GPU>& mat)
 {
   LBANN_ASSERT(!mat.Viewing());
-  El::Matrix<T, El::Device::CPU> cpu_mat;
-  archive(cpu_mat);
-  El::Copy(cpu_mat, mat);
+  ::El::Matrix<T, ::El::Device::CPU> cpu_mat;
+  load(archive, cpu_mat);
+  ::El::Copy(cpu_mat, mat);
 }
 #endif // defined LBANN_HAS_GPU
+
+template <typename ArchiveT, typename T, ::El::Device D>
+void load(lbann::RootedInputArchiveAdaptor<ArchiveT>& ar,
+          ::El::Matrix<T,D>& mat)
+{
+  LBANN_ASSERT(!mat.Viewing());
+
+  // Restore the local matrix, then handle the Bcast
+  ar.load_on_root(mat);
+
+  // First broadcast the size information.
+  auto height = mat.Height();
+  auto width = mat.Width();
+  ::El::mpi::Broadcast(height, ar.root(), ar.grid().Comm(),
+                     ::El::SyncInfo<::El::Device::CPU>{});
+  ::El::mpi::Broadcast(width, ar.root(), ar.grid().Comm(),
+                     ::El::SyncInfo<::El::Device::CPU>{});
+  // Resize _should_ be a no-op if the size doesn't change, but I'm
+  // not actually 100% sure.
+  if (!ar.am_root())
+    mat.Resize(height, width);
+
+  // Finally the matrix data.
+  ::El::Broadcast(
+    static_cast<::El::AbstractMatrix<T>&>(mat),
+    ar.grid().Comm(), ar.root());
+}
 
 // DistMatrix
 
@@ -378,11 +309,11 @@ void load(ArchiveT& archive,
  */
 template <typename ArchiveT, typename T,
           lbann::utils::WhenTextArchive<ArchiveT> = 1>
-void save(ArchiveT& ar, El::AbstractDistMatrix<T> const& mat)
+void save(ArchiveT& ar, ::El::AbstractDistMatrix<T> const& mat)
 {
   LBANN_ASSERT(!mat.Viewing());
-  ar(make_nvp("global_height", mat.Height()),
-     make_nvp("global_width", mat.Width()));
+  ar(::cereal::make_nvp("global_height", mat.Height()),
+     ::cereal::make_nvp("global_width", mat.Width()));
 }
 
 /** @brief Load a DistMatrix from a text-based archive.
@@ -396,10 +327,10 @@ void save(ArchiveT& ar, El::AbstractDistMatrix<T> const& mat)
  */
 template <typename ArchiveT, typename T,
           lbann::utils::WhenTextArchive<ArchiveT> = 1>
-void load(ArchiveT& ar, El::AbstractDistMatrix<T>& mat)
+void load(ArchiveT& ar, ::El::AbstractDistMatrix<T>& mat)
 {
   LBANN_ASSERT(!mat.Viewing());
-  El::Int global_height, global_width;
+  ::El::Int global_height, global_width;
   ar(::cereal::make_nvp("global_height", global_height),
      ::cereal::make_nvp("global_width", global_width));
   mat.Resize(global_height, global_width);
@@ -418,7 +349,7 @@ void load(ArchiveT& ar, El::AbstractDistMatrix<T>& mat)
  */
 template <typename ArchiveT, typename T,
           lbann::utils::WhenNotTextArchive<ArchiveT> = 1>
-void save(ArchiveT& ar, El::AbstractDistMatrix<T> const& mat)
+void save(ArchiveT& ar, ::El::AbstractDistMatrix<T> const& mat)
 {
   LBANN_ASSERT(!mat.Viewing());
   // Binary archives don't use NVPs, so there's no point in making
@@ -439,14 +370,14 @@ void save(ArchiveT& ar, El::AbstractDistMatrix<T> const& mat)
  */
 template <typename ArchiveT, typename T,
           lbann::utils::WhenNotTextArchive<ArchiveT> = 1>
-void load(ArchiveT& ar, El::AbstractDistMatrix<T>& mat)
+void load(ArchiveT& ar, ::El::AbstractDistMatrix<T>& mat)
 {
   LBANN_ASSERT(!mat.Viewing());
-  El::Int global_height, global_width;
+  ::El::Int global_height, global_width;
   ar(global_height, global_width);
   mat.Resize(global_height, global_width);
 #ifdef LBANN_DEBUG
-  El::Matrix<T, El::Device::CPU> mat_cpu;
+  ::El::Matrix<T, ::El::Device::CPU> mat_cpu;
   ar(mat_cpu);
   LBANN_ASSERT(mat_cpu.Height() == mat.LocalHeight());
   LBANN_ASSERT(mat_cpu.Width() == mat.LocalWidth());
@@ -456,7 +387,96 @@ void load(ArchiveT& ar, El::AbstractDistMatrix<T>& mat)
 #endif
 }
 
-}// namespace cereal
+
+template <typename ArchiveT, typename T,
+          lbann::utils::WhenTextArchive<ArchiveT> = 1>
+void save(lbann::RootedOutputArchiveAdaptor<ArchiveT>& ar,
+          ::El::AbstractDistMatrix<T> const& mat)
+{
+  ar(::cereal::make_nvp("global_height", mat.Height()),
+     ::cereal::make_nvp("global_width",  mat.Width()));
+}
+
+template <typename ArchiveT, typename T,
+          lbann::utils::WhenTextArchive<ArchiveT> = 1>
+void load(lbann::RootedInputArchiveAdaptor<ArchiveT>& ar,
+          ::El::AbstractDistMatrix<T>& mat)
+{
+  El::Int height, width;
+  ar(::cereal::make_nvp("global_height", height),
+     ::cereal::make_nvp("global_width",  width));
+  mat.Resize(height, width);
+}
+
+template <typename ArchiveT, typename T,
+          lbann::utils::WhenNotTextArchive<ArchiveT> = 1>
+void save(lbann::RootedOutputArchiveAdaptor<ArchiveT>& ar,
+          ::El::AbstractDistMatrix<T> const& mat)
+{
+  using CircMatType =
+    ::El::DistMatrix<T,::El::CIRC,::El::CIRC,::El::ELEMENT,::El::Device::CPU>;
+  LBANN_ASSERT(!mat.Viewing());
+  LBANN_ASSERT(mat.Grid() == ar.grid());
+  LBANN_ASSERT(mat.Root() == ar.root());
+  CircMatType circ_mat(mat);
+  save(ar, circ_mat);
+}
+
+template <typename ArchiveT, typename T,
+          lbann::utils::WhenNotTextArchive<ArchiveT> = 1>
+void load(lbann::RootedInputArchiveAdaptor<ArchiveT>& ar,
+          ::El::AbstractDistMatrix<T>& mat)
+{
+  using CircMatType =
+    ::El::DistMatrix<T,::El::CIRC,::El::CIRC,::El::ELEMENT,::El::Device::CPU>;
+  LBANN_ASSERT(!mat.Viewing());
+  LBANN_ASSERT(mat.Grid() == ar.grid());
+  LBANN_ASSERT(mat.Root() == ar.root());
+
+  // Do the root process read.
+  CircMatType circ_mat(mat.Grid(), mat.Root());
+  load(ar, circ_mat);
+
+  // Distribute the data
+  ::El::Copy(circ_mat, mat);
+}
+
+template <typename ArchiveT, typename T,
+          lbann::utils::WhenNotTextArchive<ArchiveT> = 1>
+void save(lbann::RootedOutputArchiveAdaptor<ArchiveT>& ar,
+          ::El::DistMatrix<T,::El::CIRC,::El::CIRC> const& mat)
+{
+  LBANN_ASSERT(!mat.Viewing());
+  LBANN_ASSERT(mat.Grid() == ar.grid());
+  LBANN_ASSERT(mat.Root() == ar.root());
+  ar(::cereal::make_nvp("global_height", mat.Height()),
+     ::cereal::make_nvp("global_width", mat.Width()));
+  save(ar, ::cereal::make_nvp("matrix_data", mat.LockedMatrix()));
+}
+
+template <typename ArchiveT, typename T,
+          lbann::utils::WhenNotTextArchive<ArchiveT> = 1>
+void load(lbann::RootedInputArchiveAdaptor<ArchiveT>& ar,
+          ::El::DistMatrix<T,::El::CIRC,::El::CIRC>& mat)
+{
+  LBANN_ASSERT(!mat.Viewing());
+  LBANN_ASSERT(mat.Grid() == ar.grid());
+  LBANN_ASSERT(mat.Root() == ar.root());
+
+  // Restore the height/width using the usual mechanism, but WAIT on
+  // the matrix, since the local matrix of CIRC,CIRC matrix is not
+  // Bcast.
+  ::El::Int height, width;
+  ar(::cereal::make_nvp("global_height", height),
+     ::cereal::make_nvp("global_width", width));
+
+  // Restore the matrix data on the root process.
+  mat.Resize(height, width);
+  ar.load_on_root(mat.Matrix());
+}
+
+}// namespace lbann
+
 
 // Dealing with smart pointers and object construction
 
@@ -493,24 +513,24 @@ namespace cereal
 
 /** @brief Construct DistMatrix object from Cereal archives. */
 template <typename DataT,
-          El::Dist CDist,
-          El::Dist RDist,
-          El::DistWrap Wrap,
-          El::Device D>
-struct LoadAndConstruct<El::DistMatrix<DataT, CDist, RDist, Wrap, D>>
+          ::El::Dist CDist,
+          ::El::Dist RDist,
+          ::El::DistWrap Wrap,
+          ::El::Device D>
+struct LoadAndConstruct<::El::DistMatrix<DataT, CDist, RDist, Wrap, D>>
 {
-  using DistMatrixType = El::DistMatrix<DataT, CDist, RDist, Wrap, D>;
-  using CircMatrixType = El::DistMatrix<DataT,
-                                        El::CIRC, El::CIRC,
+  using DistMatrixType = ::El::DistMatrix<DataT, CDist, RDist, Wrap, D>;
+  using CircMatrixType = ::El::DistMatrix<DataT,
+                                        ::El::CIRC, ::El::CIRC,
                                         Wrap,
-                                        El::Device::CPU>;
+                                        ::El::Device::CPU>;
 
   template <typename ArchiveT>
   static void load_and_construct(
     ArchiveT & ar, cereal::construct<DistMatrixType> & construct)
   {
     // Construct the matrix on the right grid.
-    El::Grid const& g = lbann::utils::get_current_grid();
+    ::El::Grid const& g = lbann::utils::get_current_grid();
     construct(g, /*root=*/0);
 
     // Use the regular load function to restore its state. NOTE: do
@@ -519,7 +539,7 @@ struct LoadAndConstruct<El::DistMatrix<DataT, CDist, RDist, Wrap, D>>
     // underlying archive type.
     load(ar, *construct.ptr());
   }
-};// struct LoadAndConstruct<El::DistMatrix<DataT, CDist, RDist, Wrap, D>>
+};// struct LoadAndConstruct<::El::DistMatrix<DataT, CDist, RDist, Wrap, D>>
 }// namespace cereal
 
 #endif // LBANN_UTILS_SERIALIZATION_SERIALIZE_MATRICES_HPP_
