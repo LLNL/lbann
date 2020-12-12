@@ -466,9 +466,9 @@ public:
        CEREAL_NVP(m_expected_num_child_layers),
        CEREAL_NVP(m_frozen),
        CEREAL_NVP(m_name),
-       CEREAL_NVP(m_parent_layers),
-       CEREAL_NVP(m_child_layers),
-       CEREAL_NVP(m_weights),
+       cereal::make_nvp("m_parent_layers", cereal::defer(m_parent_layers)),
+       cereal::make_nvp("m_child_layers", cereal::defer(m_child_layers)),
+       cereal::make_nvp("m_weights", cereal::defer(m_weights)),
        CEREAL_NVP(m_output_dims_list),
        CEREAL_NVP(m_hint_layer));
     // Members that aren't serialized:

@@ -101,6 +101,8 @@ public:
       , CEREAL_NVP(m_max_mini_batch_size_distconv)
 #endif // LBANN_HAS_DISTCONV
       );
+
+    ar.serializeDeferments();
   }
 
   // ===========================================
