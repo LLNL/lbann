@@ -864,7 +864,7 @@ get_distconv_adapter() const {
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
 
-//template class data_type_layer<float, double>;
+template class data_type_layer<float, double>;
 //template class data_type_layer<double, float>;
 
 } // namespace lbann
