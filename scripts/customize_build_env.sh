@@ -52,14 +52,59 @@ set_center_specific_gpu_arch()
                 ;;
             "power8le")
                 GPU_ARCH_VARIANTS="cuda_arch=60"
-                CMAKE_GPU_ARCH="70"
+                CMAKE_GPU_ARCH="60"
                 ;;
             "broadwell")
                 GPU_ARCH_VARIANTS="cuda_arch=60"
-                CMAKE_GPU_ARCH="70"
+                CMAKE_GPU_ARCH="60"
                 ;;
             *)
                 ;;
         esac
     fi
 }
+
+
+set_center_specific_modules()
+{
+    local center="$1" 
+    local spack_arch_target="$2"
+
+    if [[ ${center} = "llnl_lc" ]]; then
+        case ${spack_arch_target} in
+            "power9le")
+                ;;
+            "power8le")
+                # Disable the StdEnv for Power systems in LC
+                MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 cuda/11.1.1 spectrum-mpi/rolling-release python/3.7.2"
+                ;;
+            "broadwell")
+                ;;
+            *)
+                ;;
+        esac
+    fi
+}
+
+set_center_specific_mpi()
+{
+    local center="$1" 
+    local spack_arch_target="$2"
+
+    if [[ ${center} = "llnl_lc" ]]; then
+        case ${spack_arch_target} in
+            "power9le")
+                MPI="^spectrum-mpi"
+                ;;
+            "power8le")
+                MPI="^spectrum-mpi"
+                ;;
+            "broadwell")
+                MPI="^mvapich2"
+                ;;
+            *)
+                ;;
+        esac
+    fi
+}
+
