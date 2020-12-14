@@ -65,12 +65,10 @@ void dropout_forward(DropoutDescriptor const& dropoutDesc,
                      El::SyncInfo<El::Device::GPU> const& si)
 {
   auto handle_manager = internal::make_default_handle_manager(si);
-  TensorDescriptor noise_shape; // This input is not used:
-  // https://rocmsoftwareplatform.github.io/MIOpen/doc/html/dropout.html?highlight=dropoutgetreserve#miopendropoutforward
   CHECK_MIOPEN(
     miopenDropoutForward(handle_manager.get(),
                          dropoutDesc,
-                         noise_shape,
+                         xDesc, // noise_shape is a placeholder
                          xDesc,
                          x.LockedBuffer(),
                          yDesc,
@@ -103,11 +101,10 @@ void dropout_backward(DropoutDescriptor const& dropoutDesc,
                       El::SyncInfo<El::Device::GPU> const& si)
 {
   auto handle_manager = internal::make_default_handle_manager(si);
-  TensorDescriptor noise_shape; // This input is not used
   CHECK_MIOPEN(
     miopenDropoutBackward(handle_manager.get(),
                           dropoutDesc,
-                          noise_shape,
+                          dxDesc, // noise_shape is a placeholder
                           dyDesc,
                           dy.LockedBuffer(),
                           dxDesc,

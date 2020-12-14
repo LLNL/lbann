@@ -102,7 +102,7 @@ template <> miopenDataType_t get_data_type<fp16>() { return miopenHalf; }
 #endif // LBANN_HAS_GPU_FP16
 template <> miopenDataType_t get_data_type<float>() { return miopenFloat; }
 template <> miopenDataType_t get_data_type<double>() {
-  LBANN_ERROR("Double is not supported in MIOpen");
+  LBANN_WARNING("Double is not supported in MIOpen");
   return miopenFloat;
 }
 
