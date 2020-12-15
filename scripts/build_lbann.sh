@@ -52,13 +52,8 @@ SPACK_ARCH_GENERIC_TARGET=$(spack python -c "import archspec.cpu as cpu; print(s
 SPACK_ARCH_PLATFORM_GENERIC_TARGET="${SPACK_ARCH_PLATFORM}-${SPACK_ARCH_GENERIC_TARGET}"
 
 SCRIPT=$(basename ${BASH_SOURCE})
-#BUILD_DIR=${LBANN_HOME}/build/spack
 LBANN_ENV=
-#SPACK_INSTALL_ARGS=
-#MERLIN_PACKAGES=
-
 INSTALL_DEPS=
-
 DRY_RUN=
 # Flag for passing subcommands to spack dev-build
 DEV_BUILD_FLAGS=
@@ -85,14 +80,14 @@ function help_message {
     local N=$(tput sgr0)    # Normal text
     local C=$(tput setf 4)  # Colored text
     cat << EOF
-######################################################################################
+##########################################################################################
 Build LBANN: has preconfigured module lists for LLNL LC, OLCF, and NERSC systems.
   Will create a build directory with the name spack-build-<hash> in the root of the LBANN project tree.
   primary variants that can be passed into lbann come from spack and can be seen with:
     spack info lbann
   and passed to this script via:
     ${SCRIPT} -- <variants>
-######################################################################################
+##########################################################################################
 Usage: ${SCRIPT} [options] -- [list of spack variants]
 Options:
   ${C}--help${N}                  Display this help message and exit.
@@ -238,6 +233,21 @@ fi
 # Establish the spec for LBANN
 LBANN_SPEC="lbann@${LBANN_LABEL}${LBANN_VARIANTS} ${HYDROGEN} ${DIHYDROGEN} ${ALUMINUM} ${MPI}"
 
+# Uninstall any existing versions for this architecture with the same label
+LBANN_FIND_CMD="spack find --format {hash:7} lbann@${LBANN_LABEL} arch=${SPACK_ARCH}"
+echo ${LBANN_FIND_CMD} | tee -a ${LOG}
+LBANN_HASH=$(${LBANN_FIND_CMD})
+if [[ -n "${LBANN_HASH}" && ! "${LBANN_HASH}" =~ "No package matches the query" ]]; then
+    LBANN_HASH_ARRAY=(${LBANN_HASH})
+    echo "I found a hash array ${HASH_ARRAY[@]}"
+    for h in ${LBANN_HASH_ARRAY[@]}
+    do
+        CMD="spack uninstall -y lbann@${LBANN_LABEL} arch=${SPACK_ARCH} /${h}"
+        echo ${CMD} | tee -a ${LOG}
+        ${CMD}
+    done
+fi
+
 if [[ ! -n "${SKIP_MODULES:-}" ]]; then
     # Activate modules
     MODULE_CMD=
@@ -245,18 +255,6 @@ if [[ ! -n "${SKIP_MODULES:-}" ]]; then
     echo ${MODULE_CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && eval ${MODULE_CMD}
 fi
-
-#LBANN_FIND_CMD="spack find --format {hash:7} lbann@${LBANN_LABEL} arch=${SPACK_ARCH}"
-#echo ${LBANN_FIND_CMD}
-#LBANN_HASH=$(${LBANN_FIND_CMD})
-#if [[ -n "${LBANN_HASH}" && ! "${LBANN_HASH}" == "No package matches the query" ]]; then
-#    echo "Unable to find the package"
-#else
-#    CMD="spack uninstall -y -a lbann@${LBANN_LABEL} arch=${SPACK_ARCH}"
-#    echo ${CMD}
-#    ${CMD}
-#fi
-#echo "Found the hash ${LBANN_FIND_CMD}"
 
 if [[ -n "${INSTALL_DEPS:-}" ]]; then
     if [[ $(spack env list | grep ${LBANN_ENV}) ]]; then
@@ -292,7 +290,7 @@ fi
 MPI=
 set_center_specific_mpi ${CENTER} ${SPACK_ARCH_TARGET}
 
-CMD="spack spec ${LBANN_SPEC}"
+CMD="spack spec -l ${LBANN_SPEC}"
 echo ${CMD} | tee -a ${LOG}
 if [[ -z "${DRY_RUN:-}" ]]; then
     eval ${CMD}
@@ -328,26 +326,7 @@ CMD="spack dev-build --source-path ${LBANN_HOME} ${DEV_BUILD_FLAGS} ${LBANN_SPEC
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && ${CMD}
 
-if [[ -n "${INSTALL_DEPS}" ]]; then
-    echo "LBANN's dependencies are installed in a spack environment named ${LBANN_ENV}, access it via:"
-    echo "  spack env activate -p ${LBANN_ENV}"
-    # Reactivate the spack environment since a clean installation will note setup the modules properly
-    CMD=". $SPACK_ROOT/share/spack/setup-env.sh"
-    ${CMD}
-        # It is no longer necessary to load modules
-        # CMD="spack env loads"
-        # ${CMD}
-
-    echo "Build LBANN from source using the spack environment ${LBANN_ENV}, using the build script:"
-    echo "  ${SCRIPTS_DIR}/build_lbann_from_source.sh -e ${LBANN_ENV}"
-fi
-
 LBANN_BUILD_DIR=$(grep "PROJECT_BINARY_DIR:" ${LBANN_HOME}/spack-build-out.txt | awk '{print $2}')
-
-#LBANN_HASH=$(${LBANN_FIND_CMD})
-#if [[ "${LBANN_HASH}" == "No package matches the query" ]]; then
-#    echo "Unable to find the package"
-#fi
 
 if [[ -L "${LINK_DIR}" && -d "${LINK_DIR}" ]]; then
     CMD="rm ${LINK_DIR}"
@@ -358,20 +337,13 @@ fi
 CMD="ln -s ${LBANN_BUILD_DIR} ${LINK_DIR}"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && ${CMD}
-#exit
 
-#    else
+echo "##########################################################################################" | tee -a ${LOG}
 echo "LBANN is installed in a spack environment named ${LBANN_ENV}, access it via:" | tee -a ${LOG}
 echo "  spack env activate -p ${LBANN_ENV}" | tee -a ${LOG}
 echo "To rebuild LBANN from source drop into a shell with the spack build environment setup:" | tee -a ${LOG}
-CMD="spack build-env ${LBANN_SPEC} -- bash"
-echo ${CMD} | tee -a ${LOG}
+echo "  spack build-env ${LBANN_SPEC} -- bash" | tee -a ${LOG}
 echo "To use this version of LBANN have spack load it's module:is installed in a spack environment named ${LBANN_ENV}, access it via:" | tee -a ${LOG}
-echo "spack load lbann@${LBANN_LABEL}" | tee -a ${LOG}
-
-#echo "I dropped you into a bash shell in the build-env for the package:"
-#echo "To uninstall execute:"
-
-#    fi
-#fi
+echo "  spack load lbann@${LBANN_LABEL} arch=${SPACK_ARCH}" | tee -a ${LOG}
+echo "##########################################################################################" | tee -a ${LOG}
 
