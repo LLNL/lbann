@@ -2,7 +2,7 @@ import os, os.path
 import socket
 import lbann
 import lbann.launcher
-from lbann.util import make_iterable
+from lbann.util import make_iterable, nvprof_command
 
 # ==============================================
 # Detect the current compute center
@@ -85,6 +85,8 @@ def run(
     setup_only=False,
     batch_job=False,
     proto_file_name='experiment.prototext',
+    nvprof=False,
+    nvprof_output_name=None,
     *args,
     **kwargs,
 ):
@@ -104,6 +106,10 @@ def run(
 
     # Batch script invokes LBANN
     lbann_command = [lbann_exe]
+    if nvprof:
+        lbann_command = nvprof_command(
+            work_dir=script.work_dir,
+            output_name=nvprof_output_name)+lbann_command
     lbann_command.extend(make_iterable(lbann_args))
     prototext_file = os.path.join(script.work_dir, proto_file_name)
     lbann.proto.save_prototext(prototext_file,
