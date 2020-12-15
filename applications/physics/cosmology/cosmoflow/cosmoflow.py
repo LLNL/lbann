@@ -337,8 +337,8 @@ if __name__ == "__main__":
     # Construct layer graph
     input = lbann.Input(
         target_mode='regression')
-    universes = lbann.Split(input)
-    secrets = lbann.Split(input)
+    universes = lbann.Identity(input)
+    secrets = lbann.Identity(input)
     statistics_group_size = 1 if args.local_batchnorm else -1
     preds = CosmoFlow(
         input_width=args.input_width,
