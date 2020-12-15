@@ -239,7 +239,6 @@ echo ${LBANN_FIND_CMD} | tee -a ${LOG}
 LBANN_HASH=$(${LBANN_FIND_CMD})
 if [[ -n "${LBANN_HASH}" && ! "${LBANN_HASH}" =~ "No package matches the query" ]]; then
     LBANN_HASH_ARRAY=(${LBANN_HASH})
-    echo "I found a hash array ${HASH_ARRAY[@]}"
     for h in ${LBANN_HASH_ARRAY[@]}
     do
         CMD="spack uninstall -y lbann@${LBANN_LABEL} arch=${SPACK_ARCH} /${h}"
