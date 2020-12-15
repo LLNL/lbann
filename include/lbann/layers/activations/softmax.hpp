@@ -127,6 +127,10 @@ public:
       m_workspace->Matrix().SetMemoryMode(1); // CUB memory pool
     }
 #endif // HYDROGEN_HAVE_CUB
+#ifdef LBANN_HAS_DNN_LIB
+    if (!m_tensors_dnn_desc.get_layer())
+      m_tensors_dnn_desc.set_layer(this);
+#endif // LBANN_HAS_DNN_LIB
   }
 
   void fp_setup_outputs(El::Int mini_batch_size) override {

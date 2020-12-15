@@ -27,6 +27,7 @@
 #include "lbann/models/model.hpp"
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/callbacks/callback.hpp"
+#include "lbann/callbacks/checkpoint.hpp"
 #include "lbann/callbacks/save_model.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/layers/io/input_layer.hpp"
@@ -548,6 +549,11 @@ void model::setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata) {
   // Bail out if the model is already setup
   if(m_model_is_setup) { return; }
 
+  for (const auto& cb : m_callbacks) {
+    if (dynamic_cast<callback::checkpoint const*>(cb.get()))
+      cb->setup(this);
+  }
+
   // Setup layers
   setup_layer_topology();
   setup_layer_execution_order();
@@ -566,7 +572,8 @@ void model::setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata) {
 
   // Set up callbacks
   for (const auto& cb : m_callbacks) {
-    cb->setup(this);
+    if (!dynamic_cast<callback::checkpoint const*>(cb.get()))
+      cb->setup(this);
   }
 
 #ifdef LBANN_HAS_DISTCONV
@@ -1320,6 +1327,7 @@ bool model::load_from_checkpoint_shared(persist& p) {
     ar(*this);
   }
 
+  m_model_is_setup = false;
   p.set_restart_dir(trainer_dir);
 #ifdef LBANN_HAS_GPU
   hydrogen::gpu::SynchronizeDevice();
@@ -1354,6 +1362,7 @@ bool model::load_from_checkpoint_distributed(persist& p){
     ar(*this);
   }
 
+  m_model_is_setup = false;
   p.set_restart_dir(trainer_dir);
   return true;
 }

@@ -209,25 +209,26 @@ void data_type_weights<TensorDataType>::set_optimizer(
 
 template <typename TensorDataType>
 void data_type_weights<TensorDataType>::do_setup_() {
-  // Return immediately if weights have already been setup
-  if (m_values != nullptr) { return; }
 
-  auto matrix_dist = this->get_matrix_distribution();
-  // Construct weights matrix
-  m_values.reset(AbsDistMatrixType::Instantiate(*matrix_dist.grid,
-                                                matrix_dist.root,
-                                                matrix_dist.colDist,
-                                                matrix_dist.rowDist,
-                                                (matrix_dist.blockHeight == 1
-                                                 && matrix_dist.blockWidth == 1 ?
-                                                 El::ELEMENT : El::BLOCK),
-                                                matrix_dist.device));
-  m_values->AlignWith(matrix_dist);
-  m_values->Resize(this->get_matrix_height(), this->get_matrix_width());
-  if (m_initializer != nullptr) {
-    m_initializer->fill(*m_values);
-  } else {
-    El::Zero(*m_values);
+  if (!m_values)
+  {
+    auto matrix_dist = this->get_matrix_distribution();
+    // Construct weights matrix
+    m_values.reset(AbsDistMatrixType::Instantiate(*matrix_dist.grid,
+                                                  matrix_dist.root,
+                                                  matrix_dist.colDist,
+                                                  matrix_dist.rowDist,
+                                                  (matrix_dist.blockHeight == 1
+                                                   && matrix_dist.blockWidth == 1 ?
+                                                   El::ELEMENT : El::BLOCK),
+                                                  matrix_dist.device));
+    m_values->AlignWith(matrix_dist);
+    m_values->Resize(this->get_matrix_height(), this->get_matrix_width());
+    if (m_initializer != nullptr) {
+      m_initializer->fill(*m_values);
+    } else {
+      El::Zero(*m_values);
+    }
   }
 
   // Setup optimizer
