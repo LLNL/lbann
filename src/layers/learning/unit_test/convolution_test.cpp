@@ -79,22 +79,6 @@ TEMPLATE_LIST_TEST_CASE("Serializing convolution layer",
     src_layer_ptr = lbann::make_unique<LayerType>(2, 46, src_dims, src_pads, src_strides, src_dilations, 2, true),
     tgt_layer_ptr;
 
-  SECTION("JSON archive")
-  {
-    {
-      cereal::JSONOutputArchive oarchive(ss);
-      REQUIRE_NOTHROW(oarchive(src_layer));
-      REQUIRE_NOTHROW(oarchive(src_layer_ptr));
-    }
-
-    {
-      cereal::JSONInputArchive iarchive(ss);
-      REQUIRE_NOTHROW(iarchive(tgt_layer));
-      REQUIRE_NOTHROW(iarchive(tgt_layer_ptr));
-      CHECK(IsValidPtr(tgt_layer_ptr));
-    }
-  }
-
   SECTION("XML archive")
   {
     {
@@ -121,22 +105,6 @@ TEMPLATE_LIST_TEST_CASE("Serializing convolution layer",
 
     {
       cereal::BinaryInputArchive iarchive(ss);
-      REQUIRE_NOTHROW(iarchive(tgt_layer));
-      REQUIRE_NOTHROW(iarchive(tgt_layer_ptr));
-      CHECK(IsValidPtr(tgt_layer_ptr));
-    }
-  }
-
-  SECTION("Rooted JSON archive")
-  {
-    {
-      lbann::RootedJSONOutputArchive oarchive(ss, g);
-      REQUIRE_NOTHROW(oarchive(src_layer));
-      REQUIRE_NOTHROW(oarchive(src_layer_ptr));
-    }
-
-    {
-      lbann::RootedJSONInputArchive iarchive(ss, g);
       REQUIRE_NOTHROW(iarchive(tgt_layer));
       REQUIRE_NOTHROW(iarchive(tgt_layer_ptr));
       CHECK(IsValidPtr(tgt_layer_ptr));

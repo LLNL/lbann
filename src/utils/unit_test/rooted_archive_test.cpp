@@ -76,25 +76,6 @@ TEST_CASE("Rooted archive adaptor", "[mpi][cereal][archive]")
     CHECK(f.y_ == f_restore.y_);
   }
 
-  SECTION("JSON archives")
-  {
-    {
-      lbann::RootedJSONOutputArchive ar(ss, g);
-      REQUIRE_NOTHROW(ar(x, ::cereal::make_nvp("myfloat", p)));
-      REQUIRE_NOTHROW(ar(::cereal::make_nvp("myfoo", f)));
-    }
-    {
-      lbann::RootedJSONInputArchive ar(ss, g);
-      REQUIRE_NOTHROW(ar(y, ::cereal::make_nvp("myfloat", q)));
-      REQUIRE_NOTHROW(ar(::cereal::make_nvp("myfoo", f_restore)));
-    }
-    CHECK(x == y);
-    CHECK(p == q);
-
-    CHECK(f.x_ == f_restore.x_);
-    CHECK(f.y_ == f_restore.y_);
-  }
-
   SECTION("Binary archives")
   {
     {
@@ -185,22 +166,6 @@ TEMPLATE_LIST_TEST_CASE("Rooted archive adaptor and matrices",
 
     {
       lbann::RootedXMLInputArchive iarchive(ss, g);
-      CHECK_NOTHROW(iarchive(mat_restore));
-    }
-
-    CHECK(mat.Height() == mat_restore.Height());
-    CHECK(mat.Width() == mat_restore.Width());
-  }
-
-  SECTION("JSON archive")
-  {
-    {
-      lbann::RootedJSONOutputArchive oarchive(ss, g);
-      CHECK_NOTHROW(oarchive(mat));
-    }
-
-    {
-      lbann::RootedJSONInputArchive iarchive(ss, g);
       CHECK_NOTHROW(iarchive(mat_restore));
     }
 

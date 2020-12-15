@@ -31,6 +31,7 @@
 #include "lbann/weights/weights_proxy.hpp"
 
 #include "lbann/utils/h2_tmp.hpp"
+#include "lbann/utils/serialize.hpp"
 
 #ifdef LBANN_HAS_DISTCONV
 #include "lbann/layers/data_type_distconv_adapter.hpp"
@@ -395,8 +396,9 @@ private:
 #endif // LBANN_HAS_GPU
 };
 
+
 #ifndef LBANN_DATA_TYPE_LAYER_INSTANTIATE
-#define PROTO(T)                           \
+#define PROTO(T)                                \
   extern template class data_type_layer<T>
 
 #define LBANN_INSTANTIATE_CPU_HALF
@@ -409,5 +411,19 @@ private:
 #endif // LBANN_DATA_TYPE_LAYER_INSTANTIATE
 
 } // namespace lbann
+
+#ifndef LBANN_DATA_TYPE_LAYER_INSTANTIATE
+#define PROTO(T)                                                        \
+  extern template class ::cereal::detail::PolymorphicVirtualCaster<     \
+    lbann::Layer, lbann::data_type_layer<T>>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
+#undef PROTO
+#undef LBANN_INSTANTIATE_CPU_HALF
+#undef LBANN_INSTANTIATE_GPU_HALF
+
+#endif // LBANN_DATA_TYPE_LAYER_INSTANTIATe
 
 #endif // LBANN_LAYERS_DATA_TYPE_LAYER_HPP_INCLUDED

@@ -28,17 +28,7 @@
 #define LBANN_IO_BUFFER_HPP_INCLUDED
 
 #include "lbann/data_readers/utils/input_data_type.hpp"
-#include <cereal/types/utility.hpp>
-#include <cereal/types/map.hpp>
-//#include <cereal/types/atomic.hpp>
-#include <cereal/types/base_class.hpp>
-
-#include <cereal/types/utility.hpp>
-#include <cereal/types/map.hpp>
-#include <cereal/types/unordered_map.hpp>
-#include <cereal/types/vector.hpp>
-#include <cereal/archives/binary.hpp>
-#include <cereal/archives/xml.hpp>
+#include "lbann/utils/serialize.hpp"
 
 namespace lbann {
 

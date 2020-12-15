@@ -856,3 +856,13 @@ const data_type_distconv_adapter<TensorDataType>& data_type_layer<TensorDataType
 #include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann
+
+#undef PROTO
+#define PROTO(T)                                                \
+  CEREAL_REGISTER_TYPE_WITH_NAME(                               \
+    ::lbann::data_type_layer<T>,                                \
+    "dtl(" #T ")");                                             \
+  template class ::cereal::detail::PolymorphicVirtualCaster<    \
+    lbann::Layer, lbann::data_type_layer<T>>
+
+#include "lbann/macros/instantiate.hpp"

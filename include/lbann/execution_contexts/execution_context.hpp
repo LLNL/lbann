@@ -30,8 +30,8 @@
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
 #include "lbann/io/persist.hpp"
+#include "lbann/utils/serialize.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
-#include <cereal/types/utility.hpp>
 
 namespace lbann {
 

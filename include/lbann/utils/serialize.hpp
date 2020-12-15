@@ -27,10 +27,10 @@
 #ifndef LBANN_UTILS_SERIALIZE_HPP_
 #define LBANN_UTILS_SERIALIZE_HPP_
 
+#include "serialization/cereal_utils.hpp"
+
 // Serialization code is only valid in C++ code.
 #if !(defined __CUDACC__ || defined __HIPCC__)
-
-#include "serialization/cereal_utils.hpp"
 #include "serialization/rooted_archive_adaptor.hpp"
 #ifdef LBANN_HAS_HALF
 #include "serialization/serialize_half.hpp"

@@ -27,14 +27,10 @@
 /** @file
  *
  *  Serialization functions for arithmetic types. Specializations for
- *  Cereal's Binary, JSON, and XML archives are provided.
+ *  Cereal's Binary and XML archives are provided.
  */
 
 #include "lbann/utils/serialize.hpp"
-
-#include <cereal/archives/binary.hpp>
-#include <cereal/archives/json.hpp>
-#include <cereal/archives/xml.hpp>
 
 /** @namespace cereal
  *
@@ -71,22 +67,6 @@ void load_minimal(XMLInputArchive const&, half_float::half& val,
                   float const& in_val) noexcept
 {
   val = in_val;
-}
-
-// Save/load functions for JSON archives
-void save(JSONOutputArchive& oarchive, half_float::half const& val)
-{
-  std::ostringstream oss;
-  oss.precision(std::numeric_limits<long double>::max_digits10);
-  oss << val;
-  oarchive.saveValue(oss.str());
-}
-
-void load(JSONInputArchive& iarchive, half_float::half& val)
-{
-  std::string encoded;
-  iarchive.loadValue(encoded);
-  val = std::stof(encoded);
 }
 
 #endif // LBANN_HAS_HALF

@@ -28,18 +28,11 @@
 #define LBANN_UTILS_SERIALIZATION_SERIALIZE_MATRICES_HPP_
 
 #include "cereal_utils.hpp"
+#include "rooted_archive_adaptor.hpp"
+
 #include <lbann/utils/exception.hpp>
 
 #include <El.hpp>
-
-#include <cereal/archives/binary.hpp>
-#include <cereal/archives/json.hpp>
-#include <cereal/archives/xml.hpp>
-
-#include <cereal/types/polymorphic.hpp>
-
-#include "rooted_archive_adaptor.hpp"
-
 #include <stdexcept>
 
 // These really belong in Elemental; let's just extend that.

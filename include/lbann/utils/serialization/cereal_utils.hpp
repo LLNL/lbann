@@ -27,14 +27,23 @@
 #ifndef LBANN_UTILS_SERIALIZATION_CEREAL_UTILS_HPP_
 #define LBANN_UTILS_SERIALIZATION_CEREAL_UTILS_HPP_
 
+#include <cereal/cereal.hpp>
+
 #include <cereal/archives/binary.hpp>
-#include <cereal/archives/json.hpp>
-#include <cereal/archives/portable_binary.hpp>
 #include <cereal/archives/xml.hpp>
 #include <cereal/details/traits.hpp>
 
+#include <cereal/types/base_class.hpp>
+#include <cereal/types/map.hpp>
+#include <cereal/types/polymorphic.hpp>
+#include <cereal/types/string.hpp>
+#include <cereal/types/unordered_map.hpp>
+#include <cereal/types/utility.hpp>
+#include <cereal/types/vector.hpp>
+
 #include <lbann/utils/h2_tmp.hpp>
 
+#if !(defined __CUDACC__ || defined __HIPCC__)
 namespace lbann
 {
 namespace utils
@@ -63,18 +72,9 @@ struct IsBuiltinArchiveT
 template <>
 struct IsBuiltinArchiveT<cereal::BinaryInputArchive> : std::true_type {};
 template <>
-struct IsBuiltinArchiveT<cereal::JSONInputArchive> : std::true_type {};
-template <>
-struct IsBuiltinArchiveT<cereal::PortableBinaryInputArchive> : std::true_type {};
-template <>
 struct IsBuiltinArchiveT<cereal::XMLInputArchive> : std::true_type {};
 template <>
 struct IsBuiltinArchiveT<cereal::BinaryOutputArchive> : std::true_type {};
-template <>
-struct IsBuiltinArchiveT<cereal::JSONOutputArchive> : std::true_type {};
-template <>
-struct IsBuiltinArchiveT<cereal::PortableBinaryOutputArchive>
-  : std::true_type {};
 template <>
 struct IsBuiltinArchiveT<cereal::XMLOutputArchive> : std::true_type {};
 #endif // defined DOXYGEN_SHOULD_SKIP_THIS
@@ -122,4 +122,5 @@ using WhenNotTextArchive = EnableWhen<!IsTextArchive<ArchiveT> && IsBuiltinArchi
 
 }// namespace utils
 }// namespace lbann
+#endif // !(defined __CUDACC__ || defined __HIPCC__)
 #endif // LBANN_UTILS_SERIALIZATION_CEREAL_UTILS_HPP_

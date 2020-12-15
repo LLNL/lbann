@@ -77,22 +77,6 @@ TEMPLATE_LIST_TEST_CASE("Serializing batchnorm layer",
     src_layer_ptr = lbann::make_unique<LayerType>(0.75, 1e-1, 0),
     tgt_layer_ptr;
 
-  SECTION("JSON archive")
-  {
-    {
-      cereal::JSONOutputArchive oarchive(ss);
-      REQUIRE_NOTHROW(oarchive(src_layer));
-      REQUIRE_NOTHROW(oarchive(src_layer_ptr));
-    }
-
-    {
-      cereal::JSONInputArchive iarchive(ss);
-      REQUIRE_NOTHROW(iarchive(tgt_layer));
-      REQUIRE_NOTHROW(iarchive(tgt_layer_ptr));
-      CHECK(IsValidPtr(tgt_layer_ptr));
-    }
-  }
-
   SECTION("XML archive")
   {
     {
@@ -119,22 +103,6 @@ TEMPLATE_LIST_TEST_CASE("Serializing batchnorm layer",
 
     {
       cereal::BinaryInputArchive iarchive(ss);
-      REQUIRE_NOTHROW(iarchive(tgt_layer));
-      REQUIRE_NOTHROW(iarchive(tgt_layer_ptr));
-      CHECK(IsValidPtr(tgt_layer_ptr));
-    }
-  }
-
-  SECTION("Rooted JSON archive")
-  {
-    {
-      lbann::RootedJSONOutputArchive oarchive(ss, g);
-      REQUIRE_NOTHROW(oarchive(src_layer));
-      REQUIRE_NOTHROW(oarchive(src_layer_ptr));
-    }
-
-    {
-      lbann::RootedJSONInputArchive iarchive(ss, g);
       REQUIRE_NOTHROW(iarchive(tgt_layer));
       REQUIRE_NOTHROW(iarchive(tgt_layer_ptr));
       CHECK(IsValidPtr(tgt_layer_ptr));

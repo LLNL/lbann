@@ -7,10 +7,6 @@
 #include <lbann/utils/h2_tmp.hpp>
 #include <lbann/utils/serialize.hpp>
 
-#include <cereal/archives/binary.hpp>
-#include <cereal/archives/json.hpp>
-#include <cereal/archives/xml.hpp>
-
 // This header should only be used in the unit testing code, so this
 // is fine.
 using namespace h2::meta;
@@ -31,9 +27,6 @@ std::string desc_string(ObjectType const& opt)
 
 using BinaryArchiveTypes = TL<cereal::BinaryOutputArchive,
                               cereal::BinaryInputArchive>;
-
-using JSONArchiveTypes = TL<cereal::JSONOutputArchive,
-                            cereal::JSONInputArchive>;
 
 using XMLArchiveTypes = TL<cereal::XMLOutputArchive,
                            cereal::XMLInputArchive>;
@@ -71,7 +64,7 @@ using GetInputArchiveType = typename TypePack::InputArchiveType;
 //
 // Basically, we need the full tensor product of:
 //
-//   (float,double,[cpu_fp16,[fp16]]) x (Binary,JSON,XML)Archives
+//   (float,double,[cpu_fp16,[fp16]]) x (Binary,XML)Archives
 //
 // The test case, then, will be quite simple: construct a stateful
 // optimizer, serialize it to the archive, deserialize it to a new
@@ -79,10 +72,8 @@ using GetInputArchiveType = typename TypePack::InputArchiveType;
 
 #define CORE_TEMPLATE_ARG_LIST    \
   (float, BinaryArchiveTypes),    \
-  (float, JSONArchiveTypes),      \
   (float, XMLArchiveTypes),       \
   (double, BinaryArchiveTypes),   \
-  (double, JSONArchiveTypes),     \
   (double, XMLArchiveTypes)
 
 #ifdef LBANN_HAS_HALF
@@ -90,16 +81,13 @@ using GetInputArchiveType = typename TypePack::InputArchiveType;
 #define TEMPLATE_ARG_LIST                  \
   ( CORE_TEMPLATE_ARG_LIST,                \
     (lbann::cpu_fp16, BinaryArchiveTypes), \
-    (lbann::cpu_fp16, JSONArchiveTypes),   \
     (lbann::cpu_fp16, XMLArchiveTypes),    \
     (lbann::fp16, BinaryArchiveTypes),     \
-    (lbann::fp16, JSONArchiveTypes),       \
     (lbann::fp16, XMLArchiveTypes) )
 #else
 #define TEMPLATE_ARG_LIST                  \
   ( CORE_TEMPLATE_ARG_LIST,                \
     (lbann::cpu_fp16, BinaryArchiveTypes), \
-    (lbann::cpu_fp16, JSONArchiveTypes),   \
     (lbann::cpu_fp16, XMLArchiveTypes) )
 #endif // LBANN_HAS_GPU_FP16
 #else

@@ -29,12 +29,9 @@
 
 #ifndef __CUDACC__
 
-#include <El.hpp>
+#include "cereal_utils.hpp"
 
-#include <cereal/cereal.hpp>
-#include <cereal/archives/binary.hpp>
-#include <cereal/archives/json.hpp>
-#include <cereal/archives/xml.hpp>
+#include <El.hpp>
 
 #include <optional>
 #include <string>
@@ -212,11 +209,6 @@ using RootedBinaryInputArchive =
   RootedInputArchiveAdaptor<cereal::BinaryInputArchive>;
 using RootedBinaryOutputArchive =
   RootedOutputArchiveAdaptor<cereal::BinaryOutputArchive>;
-
-using RootedJSONInputArchive =
-  RootedInputArchiveAdaptor<cereal::JSONInputArchive>;
-using RootedJSONOutputArchive =
-  RootedOutputArchiveAdaptor<cereal::JSONOutputArchive>;
 
 using RootedXMLInputArchive =
   RootedInputArchiveAdaptor<cereal::XMLInputArchive>;
@@ -414,10 +406,6 @@ CEREAL_REGISTER_ARCHIVE(
 CEREAL_REGISTER_ARCHIVE(
   lbann::RootedOutputArchiveAdaptor<cereal::BinaryOutputArchive>);
 CEREAL_REGISTER_ARCHIVE(
-  lbann::RootedInputArchiveAdaptor<cereal::JSONInputArchive>);
-CEREAL_REGISTER_ARCHIVE(
-  lbann::RootedOutputArchiveAdaptor<cereal::JSONOutputArchive>);
-CEREAL_REGISTER_ARCHIVE(
   lbann::RootedInputArchiveAdaptor<cereal::XMLInputArchive>);
 CEREAL_REGISTER_ARCHIVE(
   lbann::RootedOutputArchiveAdaptor<cereal::XMLOutputArchive>);
@@ -425,9 +413,6 @@ CEREAL_REGISTER_ARCHIVE(
 CEREAL_SETUP_ARCHIVE_TRAITS(
   lbann::RootedInputArchiveAdaptor<cereal::BinaryInputArchive>,
   lbann::RootedOutputArchiveAdaptor<cereal::BinaryOutputArchive>);
-CEREAL_SETUP_ARCHIVE_TRAITS(
-  lbann::RootedInputArchiveAdaptor<cereal::JSONInputArchive>,
-  lbann::RootedOutputArchiveAdaptor<cereal::JSONOutputArchive>);
 CEREAL_SETUP_ARCHIVE_TRAITS(
   lbann::RootedInputArchiveAdaptor<cereal::XMLInputArchive>,
   lbann::RootedOutputArchiveAdaptor<cereal::XMLOutputArchive>);

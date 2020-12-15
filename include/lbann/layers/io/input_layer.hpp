@@ -38,12 +38,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include <cereal/types/utility.hpp>
-#include <cereal/types/unordered_map.hpp>
-#include <cereal/types/vector.hpp>
-#include <cereal/archives/binary.hpp>
-#include <cereal/archives/xml.hpp>
-
 namespace lbann {
 
 #ifdef LBANN_HAS_DISTCONV

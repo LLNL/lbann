@@ -113,21 +113,6 @@ TEST_CASE("Serializing weights", "[mpi][weights][serialize]")
     dtw_src_ptr = std::move(dtw_src_ptr_init),
     dtw_tgt_ptr;
 
-  SECTION("JSON archive")
-  {
-    {
-      cereal::JSONOutputArchive oarchive(ss);
-      REQUIRE_NOTHROW(oarchive(dtw_src));
-      REQUIRE_NOTHROW(oarchive(dtw_src_ptr));
-    }
-    {
-      cereal::JSONInputArchive iarchive(ss);
-      REQUIRE_NOTHROW(iarchive(dtw_tgt));
-      REQUIRE_NOTHROW(iarchive(dtw_tgt_ptr));
-      CHECK(IsValidPtr(dtw_tgt_ptr));
-    }
-  }
-
   SECTION("XML archive")
   {
     {
@@ -153,21 +138,6 @@ TEST_CASE("Serializing weights", "[mpi][weights][serialize]")
 
     {
       cereal::BinaryInputArchive iarchive(ss);
-      REQUIRE_NOTHROW(iarchive(dtw_tgt));
-      REQUIRE_NOTHROW(iarchive(dtw_tgt_ptr));
-      CHECK(IsValidPtr(dtw_tgt_ptr));
-    }
-  }
-
-  SECTION("Rooted JSON archive")
-  {
-    {
-      lbann::RootedJSONOutputArchive oarchive(ss, g);
-      REQUIRE_NOTHROW(oarchive(dtw_src));
-      REQUIRE_NOTHROW(oarchive(dtw_src_ptr));
-    }
-    {
-      lbann::RootedJSONInputArchive iarchive(ss, g);
       REQUIRE_NOTHROW(iarchive(dtw_tgt));
       REQUIRE_NOTHROW(iarchive(dtw_tgt_ptr));
       CHECK(IsValidPtr(dtw_tgt_ptr));

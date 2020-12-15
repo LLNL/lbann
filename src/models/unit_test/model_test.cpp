@@ -89,18 +89,6 @@ TEST_CASE("Serializing models", "[mpi][model][serialize]")
     model_src_ptr = make_model<DataType>(comm),
     model_tgt_ptr;
 
-  SECTION("JSON archive")
-  {
-    {
-      cereal::JSONOutputArchive oarchive(ss);
-      REQUIRE_NOTHROW(oarchive(model_src_ptr));
-    }
-    {
-      cereal::JSONInputArchive iarchive(ss);
-      REQUIRE_NOTHROW(iarchive(model_tgt_ptr));
-      REQUIRE(IsValidPtr(model_tgt_ptr));
-    }
-  }
   SECTION("XML archive")
   {
     {
@@ -131,20 +119,6 @@ TEST_CASE("Serializing models", "[mpi][model][serialize]")
       // if (comm.get_rank_in_world() == 1)
       //   std::cout << model_tgt_ptr->get_description()
       //             << std::endl;
-    }
-  }
-
-  SECTION("Rooted JSON archive")
-  {
-    {
-      lbann::RootedJSONOutputArchive oarchive(ss, g);
-      REQUIRE_NOTHROW(oarchive(::cereal::make_nvp("model", model_src_ptr)));
-    }
-    std::cout << ss.str() << std::endl;
-    {
-      lbann::RootedJSONInputArchive iarchive(ss, g);
-      REQUIRE_NOTHROW(iarchive(::cereal::make_nvp("model", model_tgt_ptr)));
-      REQUIRE(IsValidPtr(model_tgt_ptr));
     }
   }
 

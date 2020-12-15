@@ -73,21 +73,6 @@ TEMPLATE_LIST_TEST_CASE("DistMatrix serialization",
     CHECK(mat.Width() == mat_restore.Width());
   }
 
-  SECTION("JSON archive")
-  {
-    {
-      cereal::JSONOutputArchive oarchive(ss);
-      REQUIRE_NOTHROW(oarchive(mat));
-    }
-    {
-      cereal::JSONInputArchive iarchive(ss);
-      REQUIRE_NOTHROW(iarchive(mat_restore));
-    }
-
-    CHECK(mat.Height() == mat_restore.Height());
-    CHECK(mat.Width() == mat_restore.Width());
-  }
-
   SECTION("Binary archive")
   {
     El::MakeUniform(mat);
@@ -143,22 +128,6 @@ TEMPLATE_LIST_TEST_CASE(
     }
     {
       cereal::XMLInputArchive iarchive(ss);
-      REQUIRE_NOTHROW(iarchive(mat_restore));
-    }
-
-    REQUIRE((check_valid_ptr) mat_restore);
-    CHECK(mat->Height() == mat_restore->Height());
-    CHECK(mat->Width() == mat_restore->Width());
-  }
-
-  SECTION("JSON archive")
-  {
-    {
-      cereal::JSONOutputArchive oarchive(ss);
-      REQUIRE_NOTHROW(oarchive(mat));
-    }
-    {
-      cereal::JSONInputArchive iarchive(ss);
       REQUIRE_NOTHROW(iarchive(mat_restore));
     }
 

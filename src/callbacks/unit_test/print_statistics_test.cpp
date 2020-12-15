@@ -57,24 +57,6 @@ TEST_CASE("Serializing \"print statistics\" callback",
   CHECK(IsValidPtr(src_ptr));
   CHECK_FALSE(IsValidPtr(tgt_ptr));
 
-  SECTION("JSON archive")
-  {
-    {
-      cereal::JSONOutputArchive oarchive(ss);
-      REQUIRE_NOTHROW(oarchive(src));
-      REQUIRE_NOTHROW(oarchive(src_ptr));
-    }
-
-    {
-      cereal::JSONInputArchive iarchive(ss);
-      REQUIRE_NOTHROW(iarchive(tgt));
-      REQUIRE_NOTHROW(iarchive(tgt_ptr));
-      CHECK(src.get_batch_interval() == tgt.get_batch_interval());
-      CHECK(IsValidPtr(tgt_ptr));
-      CHECK(src_ptr->get_batch_interval() == tgt_ptr->get_batch_interval());
-    }
-  }
-
   SECTION("XML archive")
   {
     {
@@ -103,24 +85,6 @@ TEST_CASE("Serializing \"print statistics\" callback",
 
     {
       cereal::BinaryInputArchive iarchive(ss);
-      REQUIRE_NOTHROW(iarchive(tgt));
-      REQUIRE_NOTHROW(iarchive(tgt_ptr));
-      CHECK(src.get_batch_interval() == tgt.get_batch_interval());
-      CHECK(IsValidPtr(tgt_ptr));
-      CHECK(src_ptr->get_batch_interval() == tgt_ptr->get_batch_interval());
-    }
-  }
-
-  SECTION("Rooted JSON archive")
-  {
-    {
-      lbann::RootedJSONOutputArchive oarchive(ss, g);
-      REQUIRE_NOTHROW(oarchive(src));
-      REQUIRE_NOTHROW(oarchive(src_ptr));
-    }
-
-    {
-      lbann::RootedJSONInputArchive iarchive(ss, g);
       REQUIRE_NOTHROW(iarchive(tgt));
       REQUIRE_NOTHROW(iarchive(tgt_ptr));
       CHECK(src.get_batch_interval() == tgt.get_batch_interval());
