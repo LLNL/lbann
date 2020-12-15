@@ -103,7 +103,7 @@ while :; do
             help_message
             exit 1
             ;;
-        -d|-deps-only)
+        -d|--deps-only)
             DEPS_ONLY="TRUE"
 # Until several spack bugs are fixed we cannot use this flag
 #            SPACK_INSTALL_ARGS="--only dependencies"
@@ -348,6 +348,11 @@ if [[ $? -ne 0 ]]; then
     echo "--------------------"
     exit 1
 else
+#-u cmake 
+    CMD="spack dev-build lbann@${VER_NAME}${GPU_VARIANTS} +al+dihydrogen+distconv${HALF_VARIANTS}"
+    echo ${CMD}
+    ${CMD}
+
     if [[ ${DEPS_ONLY} = "TRUE" ]]; then
         echo "LBANN's dependencies are installed in a spack environment named ${LBANN_ENV}, access it via:"
         echo "  spack env activate -p ${LBANN_ENV}"
@@ -365,3 +370,4 @@ else
         echo "  spack env activate -p ${LBANN_ENV}"
     fi
 fi
+
