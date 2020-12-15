@@ -175,8 +175,8 @@ def construct_model(run_args):
     #Dump output (activation) for post processing
     if(run_args.dump_outputs_dir):
       pred_tensor = lbann.Concatenation(arg_max, name='pred_tensor')
-      callbacks.append(lbann.CallbackDumpOutputs(batch_interval=run_args.dump_outputs_interval, 
-                       execution_modes='test', 
+      callbacks.append(lbann.CallbackDumpOutputs(batch_interval=run_args.dump_outputs_interval,
+                       execution_modes='test',
                        directory=run_args.dump_outputs_dir,
                        layers=f'inp pred_tensor {waemodel.q_mu.name}'))
     # Construct model
@@ -238,7 +238,6 @@ def main():
     trainer = lbann.Trainer(
         run_args.batch_size,
         #name=None,
-        #procs_per_trainer=run_args.procs_per_trainer,
     )
 
     # define data_reader
@@ -279,6 +278,8 @@ def main():
     m_lbann_args=f"--load_model_weights_dir_is_complete --load_model_weights_dir={run_args.dump_model_dir} --vocab={run_args.vocab} --num_samples={run_args.num_samples} --sequence_length={run_args.sequence_length}  --num_io_threads={run_args.num_io_threads} --no_header={run_args.no_header} --delimiter={run_args.delimiter}"
     if(run_args.data_reader_prototext):
       m_lbann_args = " ".join((m_lbann_args, " --use_data_store --preload_data_store "))
+    if(run_args.procs_per_trainer):
+      m_lbann_args = " ".join((m_lbann_args, f"--procs_per_trainer={run_args.procs_per_trainer}"))
 
     status = lbann.contrib.launcher.run(
         trainer,

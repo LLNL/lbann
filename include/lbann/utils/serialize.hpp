@@ -23,24 +23,14 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
+#pragma once
+#ifndef LBANN_UTILS_SERIALIZE_HPP_
+#define LBANN_UTILS_SERIALIZE_HPP_
 
-#ifndef LBANN_LAYER_LEARNING_HPP_INCLUDED
-#define LBANN_LAYER_LEARNING_HPP_INCLUDED
+#include "serialization/cereal_utils.hpp"
+#ifdef LBANN_HAS_HALF
+#include "serialization/serialize_half.hpp"
+#endif // LBANN_HAS_HALF
+#include "serialization/serialize_matrices.hpp"
 
-#include "lbann/layers/data_type_layer.hpp"
-
-namespace lbann {
-
-/** @todo Remove. Layers should inherit directly from the base layer
- *  class.
- */
-
-template <typename TensorDataType>
-class learning_layer : public data_type_layer<TensorDataType> {
- public:
-  learning_layer(lbann_comm *comm) : data_type_layer<TensorDataType>(comm) {}
-};
-
-} // namespace lbann
-
-#endif // LBANN_LAYER_LEARNING_HPP_INCLUDED
+#endif // LBANN_UTILS_SERIALIZE_HPP_

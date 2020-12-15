@@ -89,14 +89,6 @@ data_type_layer<TensorDataType>& data_type_layer<TensorDataType>::operator=(cons
 }
 
 template <typename TensorDataType>
-void data_type_layer<TensorDataType>::setup_weights(size_t idx, weights& w) {
-  if (idx >= m_weights_proxy.size()) {
-    m_weights_proxy.resize(idx+1);
-  }
-  m_weights_proxy[idx].setup(w);
-}
-
-template <typename TensorDataType>
 void data_type_layer<TensorDataType>::forward_prop() {
   const auto fp_start = get_time();
 
@@ -105,9 +97,9 @@ void data_type_layer<TensorDataType>::forward_prop() {
     if ((m_weights_proxy.size() == 0) || m_weights_proxy[0].empty()) {
       auto const num_weights = this->num_weights();
       m_weights_proxy.resize(num_weights);
+      const auto ptrs = this->get_weights_pointers();
       for (size_t ii = 0; ii < num_weights; ++ii) {
-        auto& w = this->get_weights(ii);
-        m_weights_proxy[ii].setup(w);
+        m_weights_proxy[ii].setup(ptrs[ii]);
       }
     }
     for (auto& wp : m_weights_proxy)
@@ -328,10 +320,10 @@ auto data_type_layer<TensorDataType>::get_local_error_signals(int parent_index) 
 // Accessing matrices corresponding to parent/child layer
 template <typename TensorDataType>
 auto data_type_layer<TensorDataType>::get_activations(const Layer& child) const -> const BaseDistMat& {
-  if(m_child_layers.empty()) {
+  if (this->get_num_children() <= 0) {
     LBANN_ERROR("This layer has no children");
   }
-  const int child_index = find_child_layer_index(&child);
+  const int child_index = find_child_layer_index(child);
   if (child_index >= get_num_children()) {
     std::stringstream err;
     err << "attempted to get activation tensor of "
@@ -344,7 +336,7 @@ auto data_type_layer<TensorDataType>::get_activations(const Layer& child) const 
 }
 template <typename TensorDataType>
 auto data_type_layer<TensorDataType>::get_error_signals(const Layer& parent) const -> const BaseDistMat& {
-  const int parent_index = find_parent_layer_index(&parent);
+  const int parent_index = find_parent_layer_index(parent);
   if (parent_index >= get_num_parents()) {
     LBANN_ERROR("attempted to get error signal tensor of "
                 "layer \"", get_name(), "\" "
@@ -550,7 +542,7 @@ void data_type_layer<TensorDataType>::fp_setup_inputs(El::Int mini_batch_size) {
   if (get_num_parents() < 1) { return; }
 
   // Determine distributed matrix alignment
-  const auto& alignment_dist = m_parent_layers.front()->get_activations(*this).DistData();
+  const auto& alignment_dist = get_parent_layer().get_activations(*this).DistData();
 
   // Iterate through input tensors
   for (int i = 0; i < get_num_parents(); ++i) {
@@ -558,7 +550,7 @@ void data_type_layer<TensorDataType>::fp_setup_inputs(El::Int mini_batch_size) {
     if (!keep_original_inputs(i)) continue;
 #endif // LBANN_HAS_DISTCONV
     // Initialize input tensor
-    const auto& parent = *m_parent_layers[i];
+    const auto& parent = get_parent_layer(i);
     const auto& parent_output = parent.get_activations(*this);
     auto& input = *m_inputs[i];
     input.Empty(false);
@@ -665,31 +657,13 @@ void assert_tensor_size(const BaseDistMat& mat,
   }
 }
 
-// Layers only store pointers-to-const to their
-// parents/children. Sometimes we need nonconst access to be able to
-// efficiently move/swap things.
-Layer& get_nonconst_layer(std::vector<Layer*> const& layers,
-                          Layer const* layer_in)
-{
-  // Thanks to the lack of const-correctness in Layers, we cannot
-  // modify parent/child layers directly, but we can through the
-  // model. Unfortunately, this costs us a linear search through the
-  // layer list. Maybe it's better to just "const-cast" things away,
-  // since const-correctness is already long gone.
-  auto p_layer_it = std::find(begin(layers), end(layers), layer_in);
-  if (p_layer_it == end(layers)) {
-    LBANN_ERROR("Layer \"", layer_in->get_name(), "\" not found in model.");
-  }
-  return **p_layer_it;
-}
-
 }// namespace <anon>
 
 template <typename TensorDataType>
 void data_type_layer<TensorDataType>::view_or_copy_prev_error_signal_(
   const Layer& child, const BaseDistMat& signal)
 {
-  auto layer_idx = find_child_layer_index(std::addressof(child));
+  auto layer_idx = find_child_layer_index(child);
 #ifdef LBANN_HAS_DISTCONV
   if (!keep_original_gradient_wrt_outputs(layer_idx)) return;
 #endif // LBANN_HAS_DISTCONV
@@ -715,7 +689,7 @@ template <typename TensorDataType>
 void data_type_layer<TensorDataType>::move_or_copy_prev_error_signal_(
   const Layer& child, std::unique_ptr<BaseDistMat> signal_in)
 {
-    auto layer_idx = find_child_layer_index(std::addressof(child));
+    auto layer_idx = find_child_layer_index(child);
 #ifdef LBANN_HAS_DISTCONV
   if (!keep_original_gradient_wrt_outputs(layer_idx)) return;
 #endif // LBANN_HAS_DISTCONV
@@ -756,7 +730,7 @@ template <typename TensorDataType>
 void data_type_layer<TensorDataType>::deep_copy_prev_error_signal_(
   const Layer& child, const BaseDistMat& signal)
 {
-  auto layer_idx = find_child_layer_index(std::addressof(child));
+  auto layer_idx = find_child_layer_index(child);
 #ifdef LBANN_HAS_DISTCONV
   if (!keep_original_gradient_wrt_outputs(layer_idx)) return;
 #endif // LBANN_HAS_DISTCONV
@@ -804,23 +778,21 @@ void deep_copy_error_signal(
 // etc is OK.
 template <typename TensorDataType>
 void data_type_layer<TensorDataType>::propagate_error_signals_to_parents_() {
-  auto& parents = get_parent_layers();
-  std::vector<Layer*> layer_list = get_model()->get_layers();
-  for (size_t p_idx = 0; p_idx < parents.size(); ++p_idx) {
-    Layer& parent = get_nonconst_layer(layer_list, parents[p_idx]);
+  for (int i=0; i<get_num_parents(); ++i) {
+    auto& parent = const_cast<Layer&>(get_parent_layer(i));
 
     // If my error signals persist, my parent can always view them,
     // assuming the distdata is right. Otherwise, my views and my data
     // will be released. Views must be copied and owned data can
     // either be copied or swapped out.
-    auto& error_signal = *m_gradient_wrt_inputs[p_idx];
+    auto& error_signal = *m_gradient_wrt_inputs[i];
     if (m_persistent_error_signals)
       attempt_view_error_signal(parent, *this, error_signal);
     else if (error_signal.Viewing())
       deep_copy_error_signal(parent, *this, error_signal);
     else
       attempt_move_error_signal(parent, *this,
-                                std::move(m_gradient_wrt_inputs[p_idx]));
+                                std::move(m_gradient_wrt_inputs[i]));
   }
 }
 

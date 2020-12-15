@@ -24,21 +24,37 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_LAYER_REGULARIZER_HPP_INCLUDED
-#define LBANN_LAYER_REGULARIZER_HPP_INCLUDED
-#include "lbann/layers/data_type_layer.hpp"
+#ifndef LBANN_UTILS_DNN_LIB_HELPERS_HPP
+#define LBANN_UTILS_DNN_LIB_HELPERS_HPP
 
+#include "lbann_config.hpp"
+#include "lbann/utils/dnn_enums.hpp"
+
+#ifdef LBANN_HAS_DNN_LIB
+
+// Import the GPU __device__ function library
+#if defined LBANN_HAS_CUDNN
+#include "cudnn.hpp"
 namespace lbann {
+namespace dnn_lib {
+using namespace cudnn;
+}// namespace dnn_lib
+}// namespace lbann
 
-/** @todo Remove. Layers should inherit directly from the base layer
- *  class.
- */
-template <typename TensorDataType>
-class regularizer_layer : public data_type_layer<TensorDataType> {
- public:
-  regularizer_layer(lbann_comm *comm) : data_type_layer<TensorDataType>(comm) {}
-};
+#elif defined LBANN_HAS_MIOPEN
 
-} // namespace lbann
+// For now, just a placeholder
+#include "miopen.hpp"
+namespace lbann {
+namespace dnn_lib {
+using namespace miopen;
+}// namespace dnn_lib
+}// namespace lbann
 
-#endif // LBANN_LAYER_REGULARIZER_HPP_INCLUDED
+#endif // LBANN_HAS_CUDNN
+
+#include "dnn_lib.hpp"
+
+#endif // LBANN_HAS_DNN_LIB
+
+#endif // LBANN_UTILS_DNN_LIB_HELPERS_HPP

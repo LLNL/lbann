@@ -26,7 +26,7 @@ EXTERNAL_PACKAGES=$(cat <<EOF
       - 10.1.243
       target: []
       compiler: []
-      providers: {}    
+      providers: {}
       externals:
       - spec: cuda@10.1.243 arch=linux-rhel7-power9le
         modules:
@@ -41,7 +41,7 @@ EXTERNAL_PACKAGES=$(cat <<EOF
       - 7.4.0
       target: []
       compiler: []
-      providers: {}    
+      providers: {}
       externals:
       - spec: gcc@7.4.0 arch=linux-rhel7-power9le
         modules:
@@ -49,12 +49,12 @@ EXTERNAL_PACKAGES=$(cat <<EOF
     hwloc::
       buildable: False
       version:
-      - 2.0.2
+      - 1.11.13
       target: []
       compiler: []
-      providers: {}    
+      providers: {}
       externals:
-      - spec: hwloc@2.0.2 arch=linux-rhel7-power9le
+      - spec: hwloc@1.11.13 arch=linux-rhel7-power9le
         prefix: /usr/lib64/libhwloc.so
     openblas::
       buildable: True
@@ -77,7 +77,7 @@ EXTERNAL_PACKAGES=$(cat <<EOF
        - 20
       target: []
       compiler: []
-      providers: {}    
+      providers: {}
       externals:
       - spec: rdma-core@20 arch=linux-rhel7-power9le
         prefix: /usr
@@ -87,7 +87,7 @@ EXTERNAL_PACKAGES=$(cat <<EOF
       - 10.3.1.2-20200121
       target: []
       compiler: []
-      providers: {}    
+      providers: {}
       externals:
       - spec: spectrum-mpi@10.3.1.2-20200121 %gcc@7.4.0 arch=linux-rhel7-power9le
         modules:

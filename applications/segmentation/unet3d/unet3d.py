@@ -270,8 +270,8 @@ if __name__ == '__main__':
         .format(default_test_dir))
 
     parser.add_argument(
-        '--keep-error-signals', action='store_true',
-        help='Keep error signals (default: False)')
+        '--dynamically-reclaim-error-signals', action='store_true',
+        help='Allow LBANN to reclaim error signals buffers (default: False)')
 
     parser.add_argument(
         '--batch-job', action='store_true',
@@ -338,7 +338,9 @@ if __name__ == '__main__':
     # Runtime parameters/arguments
     environment = lbann.contrib.args.get_distconv_environment(
         num_io_partitions=args.depth_groups)
-    if args.keep_error_signals:
+    if args.dynamically_reclaim_error_signals:
+        environment['LBANN_KEEP_ERROR_SIGNALS'] = 0
+    else:
         environment['LBANN_KEEP_ERROR_SIGNALS'] = 1
     lbann_args = ['--use_data_store']
 

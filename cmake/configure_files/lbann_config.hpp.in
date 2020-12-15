@@ -47,6 +47,10 @@
 #cmakedefine LBANN_HAS_ROCM
 #cmakedefine LBANN_HAS_MIOPEN
 
+#if defined LBANN_HAS_CUDNN || defined LBANN_HAS_MIOPEN
+#cmakedefine LBANN_HAS_DNN_LIB
+#endif
+
 #cmakedefine LBANN_HAS_HALF
 #cmakedefine LBANN_HAS_GPU_FP16
 

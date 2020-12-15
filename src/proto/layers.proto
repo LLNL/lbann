@@ -432,9 +432,16 @@ message Layer {
     string pool_mode = 7;
   }
 
+  /** @brief Transpose of pooling layer
+   *
+   *  Requires that a pooling layer is set as the hint layer.
+   *
+   *  @warning This has not been well maintained and is probably
+   *  broken.
+   *  @todo GPU support.
+   */
   message Unpooling {
     int64 num_dims = 1;
-    string pooling_layer = 13; //should be name of the pooling layer
   }
 
 

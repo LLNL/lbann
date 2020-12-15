@@ -22,7 +22,7 @@ np.random.seed(20191111)
 _m = 11
 _n = 3
 _k = 5
-_samples = np.random.normal(size=(27,_m*_k+_k*_n)).astype(np.float32)
+_samples = np.random.normal(size=(2,_m*_k+_k*_n)).astype(np.float32)
 
 # Sample access functions
 def get_sample(index):

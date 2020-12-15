@@ -37,16 +37,6 @@ message Trainer {
   // Unique identifier
   string name = 1;
 
-  // Parallel processes per trainer
-  //
-  // The number of processes per trainer must evenly divide the total
-  // number of MPI ranks. The number of resulting trainers is
-  // num_procs / procs_per_trainer.
-  //
-  // If procs_per_trainer is not provided, then all MPI ranks are
-  // assigned to one trainer.
-  int64 procs_per_trainer = 2;
-
   // I/O threads per parallel process
   //
   // These threads are typically used to perform data ingestion in the

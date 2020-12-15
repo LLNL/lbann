@@ -61,7 +61,7 @@ protected:
     if (input_dims.size() != 1) {
       LBANN_ERROR(get_type()," layer \"",this->get_name(),"\" ",
                   "expects a 1-D input tensor, ",
-                  "but parent layer \"",this->m_parent_layers[0]->get_name(),"\" ",
+                  "but parent layer \"",this->get_parent_layer().get_name(),"\" ",
                   "outputs a ",input_dims.size(),"-D tensor");
     }
 

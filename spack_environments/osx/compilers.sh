@@ -2,6 +2,7 @@
 
 COMPILER_ALL_PACKAGES=$(cat <<EOF
       compiler:
+        - clang@10.0.1 arch=darwin-catalina-skylake
         - clang@9.0.1 arch=darwin-mojave-skylake
         - clang@9.0.0 arch=darwin-mojave-skylake
 EOF
@@ -9,6 +10,20 @@ EOF
 
 COMPILER_DEFINITIONS=$(cat <<EOF
   compilers:
+  - compiler:
+      environment:
+        unset: []
+      extra_rpaths: []
+      flags: {}
+      modules: []
+      operating_system: catalina
+      paths:
+        cc: /usr/local/Cellar/llvm/10.0.1/bin/clang
+        cxx: /usr/local/Cellar/llvm/10.0.1/bin/clang++
+        f77: /usr/local/bin/gfortran
+        fc: /usr/local/bin/gfortran
+      spec: clang@10.0.1
+      target: x86_64
   - compiler:
       environment:
         unset: []

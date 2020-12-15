@@ -31,9 +31,9 @@
 #include "lbann/utils/protobuf_utils.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
 #include "lbann/utils/argument_parser.hpp"
-#ifdef LBANN_HAS_CUDNN
-#include "lbann/utils/cudnn.hpp"
-#endif // LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_DNN_LIB
+#include "lbann/utils/dnn_lib/helpers.hpp"
+#endif // LBANN_DNN_LIB
 
 #include <lbann.pb.h>
 #include <model.pb.h>
@@ -126,10 +126,10 @@ int main(int argc, char *argv[]) {
                 << "using tensor core math." << "\n"
                 << std::endl;
     }
-#ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_DNN_LIB
     if (use_cudnn_tensor_ops)
-      cudnn::default_to_tensor_ops();
-#endif // LBANN_HAS_CUDNN
+      dnn_lib::default_to_tensor_ops();
+#endif // LBANN_HAS_DNN_LIB
 #ifdef LBANN_HAS_CUDA
     if (use_cublas_tensor_ops)
       El::gpu_blas::RequestTensorOperations();
@@ -145,8 +145,15 @@ int main(int argc, char *argv[]) {
     //to activate, must specify --st_on on cmd line
     stack_profiler::get()->activate(comm->get_rank_in_world());
 
+    // Split MPI into trainers
+    allocate_trainer_resources(comm.get());
+
+    int trainer_rank = 0;
+    if(opts->get_bool("generate_multi_proto")) {
+        trainer_rank = comm->get_trainer_rank();
+    }
     // Load the prototexts specificed on the command line
-    auto pbs = protobuf_utils::load_prototext(master, argc, argv);
+    auto pbs = protobuf_utils::load_prototext(master, argc, argv,trainer_rank);
     // Optionally over-ride some values in the prototext for each model
     for(size_t i = 0; i < pbs.size(); i++) {
       get_cmdline_overrides(*comm, *(pbs[i]));
@@ -165,7 +172,6 @@ int main(int argc, char *argv[]) {
     if(dr != nullptr) {
       training_dr_linearized_data_size = dr->get_linearized_data_size();
     }
-
     lbann_data::Model *pb_model = pb.mutable_model();
 
     auto model = build_model_from_prototext(argc, argv, pb_trainer, pb,

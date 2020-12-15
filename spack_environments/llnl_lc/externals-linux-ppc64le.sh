@@ -1,16 +1,21 @@
 #!/bin/sh
 
+if [[ ${GPU_ARCH_VARIANTS} ]]; then
+    GLOBAL_GPU_ARCH_VARIANTS="variants: ${GPU_ARCH_VARIANTS}"
+fi
+
 EXTERNAL_ALL_PACKAGES=$(cat <<EOF
     all:
       providers:
         mpi:
-          - spectrum-mpi@rolling-release arch=linux-rhel7-power9le
+          - spectrum-mpi@rolling-release arch=${SPACK_ARCH}
         lapack:
           - openblas threads=openmp
         blas:
           - openblas threasd=openmp
       buildable: true
       version: []
+      ${GLOBAL_GPU_ARCH_VARIANTS}
 EOF
 )
 
@@ -18,36 +23,32 @@ EXTERNAL_PACKAGES=$(cat <<EOF
     cmake::
       buildable: True
       variants: ~openssl ~ncurses
-      version: [3.18.0]
-      externals:
-      - spec: cmake@3.18.0 arch=linux-rhel7-power9le
-        modules:
-        - cmake/3.18.0
+      version: [3.18.2]
     cuda::
       buildable: False
       version: [11.0.2]
       externals:
-      - spec: cuda@11.0.2 arch=linux-rhel7-power9le
+      - spec: cuda@11.0.2 arch=${SPACK_ARCH}
         modules:
         - cuda/11.0.2
     cudnn::
       buildable: true
       version:
-      - 8.0.4.30-11.0-linux-ppc64le
+      - 8.0.4.30-11.0
     gcc::
       buildable: False
       version:
       - 8.3.1
       externals:
-      - spec: gcc@8.3.1 arch=linux-rhel7-power9le
+      - spec: gcc@8.3.1 arch=${SPACK_ARCH}
         modules:
         - gcc/8.3.1
     hwloc::
       buildable: False
       version:
-      - 2.0.2
+      - 1.11.13
       externals:
-      - spec: hwloc@2.0.2 arch=linux-rhel7-power9le
+      - spec: hwloc@1.11.13 arch=${SPACK_ARCH}
         prefix: /usr/lib64/libhwloc.so
     openblas::
       buildable: True
@@ -64,7 +65,7 @@ EXTERNAL_PACKAGES=$(cat <<EOF
       version:
         - 5.16.3
       externals:
-      - spec: perl@5.16.3 arch=linux-rhel7-power9le
+      - spec: perl@5.16.3 arch=${SPACK_ARCH}
         prefix: /usr
     python::
       buildable: True
@@ -72,7 +73,7 @@ EXTERNAL_PACKAGES=$(cat <<EOF
       version:
       - 3.7.2
       externals:
-      - spec: python@3.7.2 arch=linux-rhel7-power9le
+      - spec: python@3.7.2 arch=${SPACK_ARCH}
         modules:
         - python/3.7.2
     rdma-core::
@@ -80,14 +81,14 @@ EXTERNAL_PACKAGES=$(cat <<EOF
       version:
       - 20
       externals:
-      - spec: rdma-core@20 arch=linux-rhel7-power9le
+      - spec: rdma-core@20 arch=${SPACK_ARCH}
         prefix: /usr
     spectrum-mpi::
       buildable: False
       version:
       - rolling-release
       externals:
-      - spec: spectrum-mpi@rolling-release %gcc@8.3.1 arch=linux-rhel7-power9le
+      - spec: spectrum-mpi@rolling-release %gcc@8.3.1 arch=${SPACK_ARCH}
         prefix: /usr/tce/packages/spectrum-mpi/spectrum-mpi-rolling-release-gcc-8.3.1
 EOF
 )

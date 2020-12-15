@@ -105,6 +105,14 @@ template <typename TensorDataType,
 class input_layer : public data_type_layer<TensorDataType> {
   static_assert(T_layout == data_layout::DATA_PARALLEL,
                 "input layer only supports DATA_PARALLEL data layout");
+ public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+  ///@}
  protected:
   data_reader_target_mode m_data_reader_mode;
 
@@ -147,9 +155,9 @@ class input_layer : public data_type_layer<TensorDataType> {
   El::Device get_device_allocation() const override { return Dev; }
 
 
-  void setup_dims(DataReaderMetaData& dr_metadata);
+  void setup_dims(DataReaderMetaData& dr_metadata) override;
 
-  void setup_data(size_t max_mini_batch_size);
+  void setup_data(size_t max_mini_batch_size) override;
 
   /** Setup output tensors.
    *  Sets up the effective (global) mini-batch size.
@@ -183,7 +191,6 @@ class input_layer : public data_type_layer<TensorDataType> {
 #ifdef LBANN_HAS_DISTCONV
   /** @brief Extensions for distributed convolutions */
 ///{@
-  void fp_compute () override;
   using distconv_adapter_type = input_distconv_adapter<TensorDataType, T_layout, Dev>;
   friend distconv_adapter_type;
  protected:

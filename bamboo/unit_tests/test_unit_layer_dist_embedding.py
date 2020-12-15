@@ -26,7 +26,7 @@ _sequence_length = 3
 # Sample access functions
 def get_sample(index):
     np.random.seed(100*_seed+index)
-    return np.random.randint(_num_embeddings, size=_sequence_length)
+    return np.random.randint(-1, _num_embeddings+1, size=_sequence_length)
 def num_samples():
     return _num_samples
 def sample_dims():
@@ -96,7 +96,8 @@ def construct_model(lbann):
     vals = []
     for i in range(num_samples()):
         x = get_sample(i)
-        y = embeddings[x,:]
+        x_is_valid = np.logical_and(0<=x, x<_num_embeddings).reshape((-1,1))
+        y = np.where(x_is_valid, embeddings[x % _num_embeddings,:], 0)
         z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)
@@ -137,7 +138,8 @@ def construct_model(lbann):
     vals = []
     for i in range(num_samples()):
         x = get_sample(i)
-        y = embeddings[x,:]
+        x_is_valid = np.logical_and(0<=x, x<_num_embeddings).reshape((-1,1))
+        y = np.where(x_is_valid, embeddings[x % _num_embeddings,:], 0)
         z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)

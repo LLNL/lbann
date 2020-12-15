@@ -42,7 +42,8 @@ std::vector<prototext_fn_triple>
 parse_prototext_filenames_from_command_line(
                const bool master,
                const int argc,
-               char * const argv[]) {
+               char * const argv[],
+               const int trainer_rank) {
   std::vector<std::string> models;
   std::vector<std::string> optimizers;
   std::vector<std::string> readers;
@@ -62,6 +63,13 @@ parse_prototext_filenames_from_command_line(
     if (equal_sign != std::string::npos) {
       std::string which = s.substr(2, equal_sign-2);
       std::string fn = s.substr(equal_sign+1);
+      //check if trainer is append to filename string
+      size_t t_pos = fn.find("trainer");
+      if(t_pos != std::string::npos) {
+         //append appropriate trainer id to prototext filename
+         std::string fname = fn.substr(0,t_pos+7)+ std::to_string(trainer_rank);
+         fn = fname;
+      }
       if (which == "prototext") {
         models.push_back(fn);
         single_file_load = true;
@@ -168,9 +176,10 @@ std::vector<std::unique_ptr<lbann_data::LbannPB>>
 load_prototext(
   const bool master,
   const int argc,
-  char* const argv[])
+  char* const argv[],
+  const int trainer_rank)
 {
-  auto names = parse_prototext_filenames_from_command_line(master, argc, argv);
+  auto names = parse_prototext_filenames_from_command_line(master, argc, argv, trainer_rank);
   auto models_out = read_in_prototext_files(master, names);
   if (models_out.size() == 0 && master) {
     LBANN_ERROR("Failed to load any prototext files");

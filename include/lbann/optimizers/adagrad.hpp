@@ -72,6 +72,7 @@ public:
   template <class Archive> void serialize(Archive & ar) {
     ar(cereal::base_class<data_type_optimizer<TensorDataType>>(this),
        CEREAL_NVP(m_eps));
+    // CEREAL_NVP(m_cache)
   }
 
   /** Human-readable type name. */
@@ -95,10 +96,10 @@ private:
 
   /** CPU implementation of optimization step. */
   void step_compute_cpu(AbsDistMatrixType& values, const AbsDistMatrixType& gradient);
-#ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_DNN_LIB
   /** GPU implementation of optimization step. */
   void step_compute_gpu(AbsDistMatrixType& values, const AbsDistMatrixType& gradient);
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_DNN_LIB
 
   // ===========================================
   // Checkpointing

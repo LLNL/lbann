@@ -23,23 +23,40 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
+#pragma once
+#ifndef LBANN_UTILS_SERIALIZATION_CEREAL_UTILS_HPP_
+#define LBANN_UTILS_SERIALIZATION_CEREAL_UTILS_HPP_
 
-#ifndef LBANN_LAYER_TRANSFORM_HPP_INCLUDED
-#define LBANN_LAYER_TRANSFORM_HPP_INCLUDED
+#include <cereal/details/traits.hpp>
 
-#include "lbann/layers/data_type_layer.hpp"
+#include <lbann/utils/h2_tmp.hpp>
 
-namespace lbann {
+namespace lbann
+{
+namespace utils
+{
 
-/** @todo Remove. Layers should inherit directly from the base layer
- *  class.
+using namespace ::cereal::traits;
+using namespace ::h2::meta;
+
+/** @brief Variable template for checking that an archive type is
+ *         marked as a text archive in Cereal.
  */
-template <typename TensorDataType>
-class transform_layer : public data_type_layer<TensorDataType> {
- public:
-  transform_layer(lbann_comm *comm) : data_type_layer<TensorDataType>(comm) {}
-};
+template <typename ArchiveT>
+constexpr bool IsTextArchive = is_text_archive<ArchiveT>::value;
 
-} // namespace lbann
+/** @brief SFINAE helper for splitting text-based and non-text-based
+ *         serialization functions.
+ */
+template <typename ArchiveT, typename ResultT=int>
+using WhenTextArchive = EnableWhen<IsTextArchive<ArchiveT>, ResultT>;
 
-#endif // LBANN_LAYER_TRANSFORM_HPP_INCLUDED
+/** @brief SFINAE helper for splitting text-based and non-text-based
+ *         serialization functions.
+ */
+template <typename ArchiveT, typename ResultT=int>
+using WhenNotTextArchive = EnableUnless<IsTextArchive<ArchiveT>, ResultT>;
+
+}// namespace utils
+}// namespace lbann
+#endif // LBANN_UTILS_SERIALIZATION_CEREAL_UTILS_HPP_

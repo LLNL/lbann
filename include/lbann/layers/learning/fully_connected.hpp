@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_LEARNING_FULLY_CONNECTED_HPP_INCLUDED
 #define LBANN_LAYERS_LEARNING_FULLY_CONNECTED_HPP_INCLUDED
 
-#include "lbann/layers/learning/learning.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 #include "lbann/models/model.hpp"
 
 #include <string>
@@ -48,7 +48,7 @@ namespace lbann {
  *  initialized to zero.
  */
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-class fully_connected_layer : public learning_layer<TensorDataType> {
+class fully_connected_layer : public data_type_layer<TensorDataType> {
 public:
   /** @name Public Types */
   ///@{

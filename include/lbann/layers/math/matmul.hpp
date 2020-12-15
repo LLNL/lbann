@@ -158,8 +158,8 @@ void matmul_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& 
                 "have different numbers of dimensions ",
                 "(",print_inputs(),")");
   }
-  if (input0_dims.size() != 2) {
-    LBANN_ERROR("input tensors in ",print_name()," are not 2D ",
+  if (input0_dims.size() != 2 && input0_dims.size() != 3) {
+    LBANN_ERROR("input tensors in ",print_name()," are not 2D or 3D",
                 "(",print_inputs(),")");
   }
 

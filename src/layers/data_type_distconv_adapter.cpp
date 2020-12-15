@@ -43,7 +43,7 @@ data_type_distconv_adapter<TensorDataType>::get_activations(const Layer& child) 
   if (layer().get_num_children() == 0) {
     LBANN_ERROR("This layer has no children");
   }
-  const int child_index = layer().find_child_layer_index(&child);
+  const int child_index = layer().find_child_layer_index(child);
   if (child_index >= layer().get_num_children()) {
     LBANN_ERROR("attempted to get activation tensor of ",
                 "layer \"", get_name(), "\" ",
@@ -162,7 +162,7 @@ data_type_distconv_adapter<TensorDataType>::get_error_signals(const Layer& paren
   if (layer().get_num_parents() == 0) {
     LBANN_ERROR("This layer has no parents");
   }
-  const int parent_index = layer().find_parent_layer_index(&parent);
+  const int parent_index = layer().find_parent_layer_index(parent);
   if (parent_index >= layer().get_num_parents()) {
     LBANN_ERROR("attempted to get error signal tensor of ",
                 "layer \"", get_name(), "\" ",

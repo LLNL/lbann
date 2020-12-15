@@ -83,6 +83,9 @@ int main(int argc, char *argv[]) {
   const bool master = comm->am_world_master();
 
   try {
+    // Split MPI into trainers
+    allocate_trainer_resources(comm.get());
+
     // Initialize options db (this parses the command line)
     options *opts = options::get();
     opts->init(argc, argv);

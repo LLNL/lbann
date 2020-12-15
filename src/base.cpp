@@ -44,9 +44,9 @@
 #include "lbann/utils/omp_diagnostics.hpp"
 #include "lbann/utils/stack_trace.hpp"
 
-#ifdef LBANN_HAS_CUDNN
-#include "lbann/utils/cudnn.hpp"
-#endif
+#ifdef LBANN_HAS_DNN_LIB
+#include "lbann/utils/dnn_lib/helpers.hpp"
+#endif // LBANN_HAS_DNN_LIB
 #ifdef LBANN_HAS_PYTHON
 #include "lbann/utils/python.hpp"
 #endif
@@ -129,8 +129,8 @@ void finalize(lbann_comm* comm) {
 #ifdef LBANN_HAS_DISTCONV
   dc::finalize();
 #endif
-#ifdef LBANN_HAS_CUDNN
-  cudnn::destroy();
+#ifdef LBANN_HAS_DNN_LIB
+  dnn_lib::destroy();
 #endif
 #ifdef LBANN_HAS_PYTHON
   python::finalize();
@@ -145,17 +145,6 @@ void finalize(lbann_comm* comm) {
     delete comm;
   }
   El::Finalize();
-}
-
-/** hack to avoid long switch/case statement; users should ignore; of interest to developers */
-static std::vector<std::string> pool_mode_names = { "invalid", "max", "average", "average_no_pad" };
-
-/** returns a string representation of the pool_mode */
-std::string get_pool_mode_name(pool_mode m) {
-  if ((int)m < 1 or (int)m >= (int)pool_mode_names.size()) {
-    LBANN_ERROR("Invalid pool_mode");
-  }
-  return pool_mode_names[(int)m];
 }
 
 matrix_format data_layout_to_matrix_format(data_layout layout) {

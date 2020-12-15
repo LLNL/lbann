@@ -28,7 +28,7 @@
 #define LBANN_LAYER_REDUCTION_HPP_INCLUDED
 
 #include <vector>
-#include "lbann/layers/transform/transform.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
 
@@ -41,7 +41,7 @@ enum class reduction_mode {INVALID, SUM, AVERAGE};
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class reduction_layer : public transform_layer<TensorDataType> {
+class reduction_layer : public data_type_layer<TensorDataType> {
   static_assert(T_layout == data_layout::DATA_PARALLEL,
                 "reduction currently only supports DATA_PARALLEL");
 private:
@@ -56,7 +56,7 @@ public:
 
   reduction_layer(lbann_comm *comm,
                   reduction_mode mode)
-    : transform_layer<TensorDataType>(comm),
+    : data_type_layer<TensorDataType>(comm),
       m_mode(mode) {
     if (mode == reduction_mode::INVALID) {
       LBANN_ERROR("invalid reduction mode");
@@ -69,7 +69,7 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
   description get_description() const override {
-    auto desc = transform_layer<TensorDataType>::get_description();
+    auto desc = data_type_layer<TensorDataType>::get_description();
     std::string mode_str;
     switch (m_mode) {
     case reduction_mode::SUM:     mode_str = "sum";     break;

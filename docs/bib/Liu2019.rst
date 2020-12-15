@@ -1,0 +1,19 @@
+Scalable Topological Data Analysis and Visualization for Evaluating Data-Driven Models in Scientific Applications
+==================================================================================================================
+
+.. code-block:: bibtex
+
+    @ARTICLE{8820172,
+      author={S. {Liu} and D. {Wang} and D. {Maljovec} and R. {Anirudh}
+      and J. J. {Thiagarajan} and S. A. {Jacobs} and B. C. {Van Essen}
+      and D. {Hysom} and J. -S. {Yeom} and J. {Gaffney} and L. {Peterson}
+      and P. B. {Robinson} and H. {Bhatia} and V. {Pascucci}
+      and B. K. {Spears} and P. -T. {Bremer}},
+      journal={IEEE Transactions on Visualization and Computer Graphics},
+      title={Scalable Topological Data Analysis and Visualization for
+      Evaluating Data-Driven Models in Scientific Applications},
+      year={2020},
+      volume={26},
+      number={1},
+      pages={291-300},
+      doi={10.1109/TVCG.2019.2934594}}

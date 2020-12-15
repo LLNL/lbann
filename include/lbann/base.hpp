@@ -36,9 +36,6 @@
 #include "lbann/utils/cyg_profile.hpp"
 #include "lbann/utils/file_utils.hpp"
 #include "lbann/utils/enum_iterator.hpp"
-#ifdef LBANN_HAS_HALF
-#include "lbann/utils/serialization.hpp"
-#endif // LBANN_HAS_HALF
 
 // Support for OpenMP macros
 #include "lbann/utils/omp_pragma.hpp"
@@ -178,12 +175,6 @@ using execution_mode_iterator = enum_iterator<execution_mode, execution_mode::tr
 execution_mode exec_mode_from_string(std::string const& str);
 /** @brief Extract an execution_mode from a stream. */
 std::istream& operator>>(std::istream& os, execution_mode& e);
-
-/** Pooling layer mode */
-enum class pool_mode {invalid, max, average, average_no_pad};
-
-/** returns a string representation of the pool_mode */
-std::string get_pool_mode_name(pool_mode m);
 
 /*
  * endsWith: http://thispointer.com/c-how-to-check-if-a-string-ends-with-an-another-given-string/

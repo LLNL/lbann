@@ -27,13 +27,13 @@
 #ifndef LBANN_LAYER_EVALUATION_HPP_INCLUDED
 #define LBANN_LAYER_EVALUATION_HPP_INCLUDED
 
-#include "lbann/layers/transform/transform.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
 
 /** @brief Interface with objective function and metrics. */
 template <typename TensorDataType>
-class abstract_evaluation_layer : public transform_layer<TensorDataType> {
+class abstract_evaluation_layer : public data_type_layer<TensorDataType> {
 public:
 #ifdef LBANN_DETERMINISTIC
   using EvalDataType = EvalType;

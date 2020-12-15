@@ -82,6 +82,9 @@ Available Callbacks
 .. toctree::
    :maxdepth: 1
 
+   Summarize images <callbacks/summarize_images>
+
+..
    Check dataset <callbacks/check_dataset>
    Check gradients <callbacks/check_gradients>
    Check init <callbacks/check_init>
@@ -115,9 +118,9 @@ Available Callbacks
    Save images <callbacks/save_images>
    Save model <callbacks/save_model>
    Save topk models <callbacks/save_topk_models>
-   Summarize images <callbacks/summarize_images>
    Summary <callbacks/summary>
    Sync layers <callbacks/sync_layers>
    Timeline <callbacks/timeline>
    Timer <callbacks/timer>
    Variable minibatch <callbacks/variable_minibatch>
+   

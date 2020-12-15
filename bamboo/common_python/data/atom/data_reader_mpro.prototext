@@ -1,0 +1,18 @@
+data_reader {
+  reader {
+    name: "smiles"
+    role: "train"
+    shuffle: true
+    percent_of_data_to_use: 1.0
+    data_filedir: "/p/gpfs1/brainusr/datasets/atom/mpro_inhib"
+    data_filename: "mpro_inhib_kekulized_train_smiles.txt"
+  }
+  reader {
+    name: "smiles"
+    role: "test"
+    shuffle: false
+    percent_of_data_to_use: 0.01
+    data_filedir: "/p/gpfs1/brainusr/datasets/atom/mpro_inhib"
+    data_filename: "mpro_inhib_kekulized_test_smiles.txt"
+  }
+}

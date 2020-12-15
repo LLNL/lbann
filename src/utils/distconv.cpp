@@ -26,7 +26,9 @@
 
 #define LBANN_UTILS_DISTCONV_INSTANTIATE
 #include "lbann/utils/distconv.hpp"
-#include "lbann/utils/cudnn.hpp"
+#ifdef LBANN_HAS_DNN_LIB
+#include "lbann/utils/dnn_lib/helpers.hpp"
+#endif // LBANN_HAS_DNN_LIB
 #include "lbann/layers/layer.hpp"
 #include <cstdlib>
 
@@ -293,7 +295,7 @@ void initialize(MPI_Comm comm) {
   ::distconv::cudnn::Options backend_opts;
   backend_opts.m_deterministic = opt_deterministic;
   backend_instance = new Backend(
-      mpi_comm, lbann::cudnn::get_handle(),
+      mpi_comm, lbann::dnn_lib::get_handle(),
       hydrogen::cuda::GetDefaultStream(), backend_opts);
   print_options(std::cout);
   initialized = true;

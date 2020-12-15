@@ -52,8 +52,8 @@ execution_context::execution_context(trainer& trainer,
                                      training_algorithm& training_algorithm,
                                      lbann_comm *comm,
                                      execution_mode mode)
-  : m_trainer(trainer),
-    m_training_algorithm(training_algorithm),
+  : m_trainer(&trainer),
+    m_training_algorithm(&training_algorithm),
     m_comm(comm),
     m_execution_mode(mode),
     m_terminate_training(false) {}
@@ -67,7 +67,7 @@ execution_context::execution_context(trainer& trainer,
 // }
 
 thread_pool& execution_context::get_io_thread_pool() const {
-  return m_trainer.get_io_thread_pool();
+  return m_trainer->get_io_thread_pool();
 }
 
 ////////////////////////////////////////////////////////////

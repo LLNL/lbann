@@ -26,6 +26,7 @@ cmake \
   -D CMAKE_INSTALL_PREFIX:PATH=${LBANN_INSTALL_DIR} \
   -D CMAKE_CXX_FLAGS="${CXX_FLAGS}" \
   -D CMAKE_C_FLAGS="${C_FLAGS}" \
+${GPU_ARCH_FLAGS} \
   \
   -D LBANN_DATATYPE:STRING=float \
   -D LBANN_WITH_ALUMINUM:BOOL=ON \
@@ -52,10 +53,11 @@ if [[ ${VERBOSE} -ne 0 ]]; then
 else
     echo "${CONFIGURE_COMMAND}" > lbann_cmake_invocation.txt
 fi
-eval ${CONFIGURE_COMMAND}
-if [[ $? -ne 0 ]]; then
-    echo "--------------------"
-    echo "CONFIGURE FAILED"
-    echo "--------------------"
+eval ${CONFIGURE_COMMAND} |& tee cmake_lbann.log
+if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
+    echo "-----------------------"
+    echo "CMAKE CONFIGURE FAILED"
+    echo "-----------------------"
+    echo "See ${LBANN_BUILD_DIR}/cmake_lbann.log for details"
     exit 1
 fi

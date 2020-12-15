@@ -20,24 +20,22 @@ _system_params = {
 
 # Detect system
 _system = re.sub(r'\d+', '', socket.gethostname())
-if _system not in _system_params.keys():
-    _system = None
 
 # ==============================================
 # Access functions
 # ==============================================
 
 def system():
-    """Name of OLCF system."""
-    if _system:
-        return _system
-    else:
-        raise RuntimeError('unknown system '
-                           '(' + socket.gethostname() + ')')
+    """Name of system.
+
+    Hostname with trailing digits removed.
+
+    """
+    return _system
 
 def is_olcf_system(system = system()):
     """Whether current system is a supported OLCF system."""
-    return (system is not None) and (system in _system_params.keys())
+    return _system in _system_params.keys()
 
 def gpus_per_node(system = system()):
     """Number of GPUs per node."""
