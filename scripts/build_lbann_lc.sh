@@ -336,7 +336,7 @@ fi
 # Load packages
 if [ ${USE_MODULES} -ne 0 ]; then
     module load git
-    module load cmake/3.18.1
+    module load cmake/3.18.0
 else
     use git
 fi
