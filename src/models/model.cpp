@@ -1268,35 +1268,58 @@ struct lbann_model_header {
 
 bool model::save_to_checkpoint_shared(persist& p) {
   const std::string trainer_dir = p.get_checkpoint_dir();
-  p.open_checkpoint_dir(trainer_dir + '/' + get_name() + '/', m_comm->am_trainer_master());
+
+  // This "pushes" the model-specific directory to the "stack". After
+  // the call, p.get_checkpoint_dir() returns the model-specific
+  // directory.
+  p.open_checkpoint_dir(
+    file::join_path(trainer_dir, this->get_name()),
+    m_comm->am_trainer_master());
+
   // Make sure that the master has had a chance to create the directories
+  // (trb 12/14/2020): I don't think this matters; all output is from
+  //                   the trainer master...
   m_comm->trainer_barrier();
-  // write out fields we need to save for model
-  if (m_comm->am_trainer_master()) {
-    write_cereal_archive(*this, p, "model.xml");
+
+  // Open the stream for writing
+  std::ofstream ofs;
+  if (m_comm->am_trainer_master())
+  {
+    std::cout << "OUTPUTTING THING: "
+              << file::join_path(p.get_checkpoint_dir(), "model.bin")
+              << std::endl;
+    ofs.open(file::join_path(p.get_checkpoint_dir(), "model.bin"));
+    LBANN_ASSERT(ofs.good());
   }
 
-  for (const auto& m : m_metrics) {
-    m->save_to_checkpoint_shared(p);
+  // Write the checkpoint
+  {
+    lbann::RootedBinaryOutputArchive ar(ofs, m_comm->get_trainer_grid());
+    ar(*this);
   }
+
   p.open_checkpoint_dir(trainer_dir, false);
   return true;
 }
 
 bool model::load_from_checkpoint_shared(persist& p) {
   const std::string trainer_dir = p.get_checkpoint_dir();
-  p.open_restart(trainer_dir + '/' + get_name() + '/');
+  p.open_restart(file::join_path(trainer_dir, get_name()));
   // Assume checkpoint reload from epoch end not step end
 
-  load_from_shared_cereal_archive(*this, p, *get_comm(), "model.xml");
+  std::ifstream ifs;
+  if (m_comm->am_trainer_master())
+  {
+    ifs.open(file::join_path(p.get_checkpoint_dir(), "model.bin"));
+    LBANN_ASSERT(ifs.good());
+  }
 
-  /// @todo FIXME BVE why are we only reloading the metrics if there
-  //  has been validation iterations?
-  //  if(get_num_iterations_per_epoch(execution_mode::validation) != 0){
-    for (const auto& m : m_metrics) {
-      m->load_from_checkpoint_shared(p);
-    }
-    //  }
+  // Restore the checkpoint
+  {
+    lbann::RootedBinaryInputArchive ar(ifs, m_comm->get_trainer_grid());
+    ar(*this);
+  }
+
   p.set_restart_dir(trainer_dir);
 #ifdef LBANN_HAS_GPU
   hydrogen::gpu::SynchronizeDevice();
@@ -1306,16 +1329,15 @@ bool model::load_from_checkpoint_shared(persist& p) {
 
 bool model::save_to_checkpoint_distributed(persist& p){
   const std::string trainer_dir = p.get_checkpoint_dir();
-  p.open_checkpoint_dir(trainer_dir + '/' + get_name() + '/', true);
+  p.open_checkpoint_dir(file::join_path(trainer_dir, get_name()), true);
+
   // Make sure that the master has had a chance to create the directories
   m_comm->trainer_barrier();
 
-  write_cereal_archive(*this, p, "model.xml");
-
-  // for each execution context write out them out
-
-  for (const auto& m : m_metrics) {
-    m->save_to_checkpoint_distributed(p);
+  {
+    std::ofstream ofs(file::join_path(p.get_checkpoint_dir(), "model.bin"));
+    cereal::BinaryOutputArchive ar(ofs);
+    ar(*this);
   }
 
   p.open_checkpoint_dir(trainer_dir, false);
@@ -1324,13 +1346,14 @@ bool model::save_to_checkpoint_distributed(persist& p){
 
 bool model::load_from_checkpoint_distributed(persist& p){
   const std::string trainer_dir = p.get_checkpoint_dir();
-  p.open_restart(trainer_dir + '/' + get_name() + '/');
+  p.open_restart(file::join_path(trainer_dir, get_name()));
 
-  read_cereal_archive(*this, p, "model.xml");
-
-  for (const auto& m : m_metrics) {
-    m->load_from_checkpoint_distributed(p);
+  {
+    std::ifstream ifs(file::join_path(p.get_checkpoint_dir(), "model.bin"));
+    cereal::BinaryInputArchive ar(ifs);
+    ar(*this);
   }
+
   p.set_restart_dir(trainer_dir);
   return true;
 }

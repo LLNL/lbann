@@ -299,24 +299,27 @@ bool trainer::load_from_checkpoint_shared(model& m, execution_context& c) {
       if(current_mode == mode) {
         /// Restart has to be able to load the currently running execution context
         c.load_from_checkpoint_shared(get_persist_obj());
-      }else {
+      }
+      else {
         key = check_and_build_execution_context(c, m, mode);
-        auto& evaluation_context = static_cast<sgd_execution_context&>(get_execution_context(key));
+        auto& evaluation_context =
+          static_cast<sgd_execution_context&>(get_execution_context(key));
         evaluation_context.load_from_checkpoint_shared(get_persist_obj());
       }
-    }catch (NonexistentArchiveFile const&) {
+    }
+    catch (NonexistentArchiveFile const&) {
       // Ignore the exception if the file is not for the current execution mode
       if(current_mode == mode) {
-        LBANN_ERROR("Failed to restart model, invalid execution mode: " + to_string(current_mode));
-      }else {
+        LBANN_ERROR("Failed to restart model, invalid execution mode: ",
+                    to_string(current_mode));
+      }
+      else {
         delete_execution_context(key);
       }
     }
   }
 
-  auto flag = get_data_coordinator().load_from_checkpoint_shared(get_persist_obj());
-
-  return flag;
+  return get_data_coordinator().load_from_checkpoint_shared(get_persist_obj());
 }
 
 bool trainer::save_to_checkpoint_distributed(){

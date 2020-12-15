@@ -629,7 +629,7 @@ bool generic_data_reader::save_to_checkpoint_distributed(persist& p, execution_m
 }
 
 bool lbann::generic_data_reader::load_from_checkpoint_distributed(persist& p, execution_mode mode) {
-  read_cereal_archive<generic_data_reader>(*this, p, mode, "_dc.xml");
+  read_cereal_archive<generic_data_reader>(*this, p, mode, "_dr.xml");
   return true;
 }
 

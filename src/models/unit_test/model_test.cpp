@@ -140,6 +140,7 @@ TEST_CASE("Serializing models", "[mpi][model][serialize]")
       lbann::RootedJSONOutputArchive oarchive(ss, g);
       REQUIRE_NOTHROW(oarchive(::cereal::make_nvp("model", model_src_ptr)));
     }
+    std::cout << ss.str() << std::endl;
     {
       lbann::RootedJSONInputArchive iarchive(ss, g);
       REQUIRE_NOTHROW(iarchive(::cereal::make_nvp("model", model_tgt_ptr)));
