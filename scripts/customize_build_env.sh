@@ -82,7 +82,7 @@ set_center_specific_modules()
                 ;;
             "broadwell")
                 # Disable the StdEnv for Power systems in LC
-                MODULE_CMD="module load gcc/8.3.1 cuda/11.1.0 mvapich2/2.3 python/3.7.2"
+                MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 cuda/11.1.0 mvapich2/2.3 python/3.7.2"
                 ;;
             *)
                 ;;
