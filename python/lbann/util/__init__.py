@@ -43,7 +43,7 @@ def nvprof_command(nvprof_exe="nvprof",
     """
 
     if output_name is None:
-        output_name = "prof_%q{OMPI_COMM_WORLD_RANK}.nvvp"
+        output_name = "prof-%h-%p.nvvp"
 
     command = [nvprof_exe]
     output_path = os.path.join(work_dir, output_name) if work_dir else output_name
