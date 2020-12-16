@@ -229,13 +229,12 @@ void data_type_weights<TensorDataType>::do_setup_() {
     } else {
       El::Zero(*m_values);
     }
-  }
 
-  // Setup optimizer
-  if (m_optimizer != nullptr) {
-    m_optimizer->setup(this);
+    // Setup optimizer
+    if (m_optimizer != nullptr) {
+      m_optimizer->setup(this);
+    }
   }
-
 }
 
 // -----------------------------------------------

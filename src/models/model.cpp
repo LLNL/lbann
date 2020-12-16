@@ -176,7 +176,9 @@ model& model::operator=(const model& other) {
       LBANN_ERROR("model \"",other.get_name(),"\" ",
                   "has a null pointer in its list of weights");
     }
-    m_weights.emplace_back(make_unique<data_type_weights<DataType>>(dynamic_cast<data_type_weights<DataType>&>(*other_weights)));
+    m_weights.emplace_back(
+      make_unique<data_type_weights<DataType>>(
+        dynamic_cast<data_type_weights<DataType>&>(*other_weights)));
     weights_map[other_weights.get()] = m_weights.back();
   }
 
@@ -1289,19 +1291,23 @@ bool model::save_to_checkpoint_shared(persist& p) {
   m_comm->trainer_barrier();
 
   // Open the stream for writing
-  std::ofstream ofs;
+  std::ofstream ofs, ofs_xml;
   if (m_comm->am_trainer_master())
   {
-    std::cout << "OUTPUTTING THING: "
-              << file::join_path(p.get_checkpoint_dir(), "model.bin")
-              << std::endl;
     ofs.open(file::join_path(p.get_checkpoint_dir(), "model.bin"));
     LBANN_ASSERT(ofs.good());
+    ofs_xml.open(file::join_path(p.get_checkpoint_dir(), "model.xml"));
+    LBANN_ASSERT(ofs_xml.good());
   }
 
   // Write the checkpoint
   {
     lbann::RootedBinaryOutputArchive ar(ofs, m_comm->get_trainer_grid());
+    ar(*this);
+  }
+
+  {
+    lbann::RootedXMLOutputArchive ar(ofs_xml, m_comm->get_trainer_grid());
     ar(*this);
   }
 
@@ -1345,6 +1351,12 @@ bool model::save_to_checkpoint_distributed(persist& p){
   {
     std::ofstream ofs(file::join_path(p.get_checkpoint_dir(), "model.bin"));
     cereal::BinaryOutputArchive ar(ofs);
+    ar(*this);
+  }
+
+  {
+    std::ofstream  ofs_xml(file::join_path(p.get_checkpoint_dir(), "model.xml"));
+    cereal::XMLOutputArchive ar(ofs_xml);
     ar(*this);
   }
 

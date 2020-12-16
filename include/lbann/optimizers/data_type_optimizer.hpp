@@ -72,7 +72,7 @@ public:
    *  the weights.
    */
   virtual void setup(data_type_weights<TensorDataType>* w = nullptr);
-
+  void setup_base(data_type_weights<TensorDataType>* w);
   /** @name Weights management */
   ///@{
 

@@ -163,14 +163,20 @@ public:
    */
   template <typename ArchiveT>
   void serialize(ArchiveT& ar)
+#if !defined(__CUDACC__)
   {
     ar(cereal::base_class<weights>(this),
        CEREAL_NVP(m_values),
        CEREAL_NVP(m_optimizer));
-
-    // What about:
-    //   m_initializer
+    if constexpr (utils::IsInputArchive<ArchiveT>)
+    {
+      if (m_optimizer)
+        m_optimizer->setup_base(this);
+    }
   }
+#else
+  ;
+#endif
 
   ///@}
 
