@@ -89,7 +89,7 @@ public:
   void setup(trainer *t) override;
   void on_train_begin(model *m) override;
   void on_epoch_end(model *m) override;
-  void on_batch_end(model *m) override;
+  void on_batch_begin(model *m) override;
   void on_validation_end(model *m) override;
 
   inline void set_checkpoint_dir(const std::string& dir){

@@ -77,7 +77,7 @@ void checkpoint::on_validation_end(model *m) {
   p.set_cb_type(callback_type::invalid);
 }
  // Interval defined with checkpoint_steps or ckpt_dist_steps
-void checkpoint::on_batch_end(model *m) {
+void checkpoint::on_batch_begin(model *m) {
   auto& p = get_active_trainer().get_persist_obj();
   p.set_cb_type(callback_type::full_checkpoint);
   if(need_checkpoint(m, callback_phase::batch)){
