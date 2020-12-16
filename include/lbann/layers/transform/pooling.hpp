@@ -268,7 +268,7 @@ protected:
 
   friend class cereal::access;
   pooling_layer()
-    : pooling_layer(nullptr, 1, 1, 1, 1, pool_mode::max)
+    : pooling_layer(nullptr, 1, 1, 1, 1, pooling_mode::MAX)
   {}
 
   void setup_dims(DataReaderMetaData& dr_metadata) override {
