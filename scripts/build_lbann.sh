@@ -256,8 +256,10 @@ if [[ ! -n "${SKIP_MODULES:-}" ]]; then
     # Activate modules
     MODULE_CMD=
     set_center_specific_modules ${CENTER} ${SPACK_ARCH_TARGET}
-    echo ${MODULE_CMD} | tee -a ${LOG}
-    [[ -z "${DRY_RUN:-}" ]] && eval ${MODULE_CMD}
+    if [[ -n ${MODULE_CMD} ]]; then
+        echo ${MODULE_CMD} | tee -a ${LOG}
+        [[ -z "${DRY_RUN:-}" ]] && eval ${MODULE_CMD}
+    fi
 fi
 
 if [[ -n "${INSTALL_DEPS:-}" ]]; then

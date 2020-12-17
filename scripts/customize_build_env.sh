@@ -85,6 +85,7 @@ set_center_specific_modules()
                 MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 mvapich2/2.3 python/3.7.2"
                 ;;
             *)
+                echo "No pre-specified modules found for this system. Make sure to setup your own"
                 ;;
         esac
     fi
