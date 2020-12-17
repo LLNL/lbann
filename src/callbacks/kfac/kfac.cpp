@@ -142,6 +142,12 @@ void kfac::on_backward_prop_end(model *m) {
       if(!(is_fc || is_conv || is_bn))
         continue;
 
+      // Ignore layers without optimizers
+      const auto& weights = l->get_weights(0);
+      const optimizer *w_optimizer = weights.get_optimizer();
+      if(w_optimizer == nullptr)
+        continue;
+
       std::string proc_rank_key = "all";
       if(m_inverse_strategy == kfac_inverse_strategy::EACH)
         proc_rank_key = (is_fc ? "fc" : (is_conv ? "conv" : "bn"));

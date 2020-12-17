@@ -112,6 +112,7 @@ def construct_model(lbann):
     fc_input_size = kernel_dims[0] * np.prod(_sample_dims[1:])
     linearity1 = make_random_array((_output_size, fc_input_size), 13)
     linearity2 = make_random_array((_output_size, _output_size), 17)
+    linearity_no_opt = make_random_array((_output_size, _output_size), 19)
     biases = make_random_array((_output_size, ), 19)
 
     # Weight values
@@ -131,6 +132,12 @@ def construct_model(lbann):
         optimizer=lbann.SGD(),
         initializer=lbann.ValueInitializer(
             values=tools.str_list(np.nditer(linearity2, order='F'))
+        )
+    )
+    linearity_no_opt_weights = lbann.Weights(
+        optimizer=lbann.NoOptimizer(),
+        initializer=lbann.ValueInitializer(
+            values=tools.str_list(np.nditer(linearity_no_opt, order='F'))
         )
     )
     biases_weights = lbann.Weights(
@@ -187,6 +194,13 @@ def construct_model(lbann):
     y = lbann.BatchNormalization(
         y,
         weights=create_bn_weights("bn3", _output_size))
+    y = lbann.Relu(y)
+    y = lbann.FullyConnected(
+        y,
+        weights=(linearity_no_opt_weights),
+        data_layout='data_parallel',
+        num_neurons=_output_size,
+        has_bias=False)
     z = lbann.L2Norm2(y)
     obj.append(z)
 
