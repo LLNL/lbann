@@ -29,6 +29,7 @@ set_full_path(THIS_DIR_SOURCES
   perturb_dropout.cpp
   print_model_description.cpp
   print_statistics.cpp
+  print_tensor_dimensions.cpp
   profiler.cpp
   replace_weights.cpp
   save_images.cpp

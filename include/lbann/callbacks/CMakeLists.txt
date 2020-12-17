@@ -28,6 +28,7 @@ set_full_path(THIS_DIR_HEADERS
   perturb_dropout.hpp
   print_model_description.hpp
   print_statistics.hpp
+  print_tensor_dimensions.hpp
   profiler.hpp
   replace_weights.hpp
   save_images.hpp
