@@ -26,8 +26,8 @@
 // check_nan .hpp .cpp - Check matrices for invalid numbers
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_CALLBACKS_CALLBACK_PRINT_TENSOR_DIMENSIONS_HPP_INCLUDED
-#define LBANN_CALLBACKS_CALLBACK_PRINT_TENSOR_DIMENSIONS_HPP_INCLUDED
+#ifndef LBANN_CALLBACKS_CALLBACK_DUMP_MODEL_GRAPH_HPP_INCLUDED
+#define LBANN_CALLBACKS_CALLBACK_DUMP_MODEL_GRAPH_HPP_INCLUDED
 
 #include "lbann/callbacks/callback.hpp"
 
@@ -35,31 +35,39 @@ namespace lbann {
 namespace callback {
 
 /**
- * @brief Print tensor dimensions callback.
+ * @brief Dump model graph callback.
  *
- * This callback prints input and output tensor dimensions of all
- * layers at the beginning of training.
+ * This callback dumps a graphviz graph that represents the model at
+ * the end of setup.
  */
-class print_tensor_dimensions : public callback_base {
+class dump_model_graph : public callback_base {
  public:
-  print_tensor_dimensions() = default;
-  print_tensor_dimensions(const print_tensor_dimensions&) = default;
-  print_tensor_dimensions& operator=(
-    const print_tensor_dimensions&) = default;
-  print_tensor_dimensions* copy() const override {
-    return new print_tensor_dimensions(*this);
+  dump_model_graph(std::string basename, bool print) :
+      m_basename(basename), m_print(print) {}
+  dump_model_graph(const dump_model_graph&) = default;
+  dump_model_graph& operator=(
+    const dump_model_graph&) = default;
+  dump_model_graph* copy() const override {
+    return new dump_model_graph(*this);
   }
   std::string name() const override { return "print tensor dimensions"; }
 
-  void on_train_begin(model *m) override;
+  void on_setup_end(model *m) override;
+
+ private:
+  /** Filename to output graphviz graph. */
+  std::string m_basename;
+  /** Whether to print the model architecture to stdout. */
+  bool m_print;
 
 };
 
 // Builder function
-LBANN_ADD_DEFAULT_CALLBACK_BUILDER(
-  print_tensor_dimensions, build_print_tensor_dimensions_callback_from_pbuf)
+std::unique_ptr<callback_base>
+build_dump_model_graph_callback_from_pbuf(
+  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
 
 } // namespace callback
 } // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_PRINT_TENSOR_DIMENSIONS_HPP_INCLUDED
+#endif  // LBANN_CALLBACKS_CALLBACK_DUMP_MODEL_GRAPH_HPP_INCLUDED

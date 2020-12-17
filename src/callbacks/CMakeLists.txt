@@ -14,6 +14,7 @@ set_full_path(THIS_DIR_SOURCES
   dump_error_signals.cpp
   dump_gradients.cpp
   dump_minibatch_sample_indices.cpp
+  dump_model_graph.cpp
   dump_outputs.cpp
   dump_weights.cpp
   early_stopping.cpp
@@ -29,7 +30,6 @@ set_full_path(THIS_DIR_SOURCES
   perturb_dropout.cpp
   print_model_description.cpp
   print_statistics.cpp
-  print_tensor_dimensions.cpp
   profiler.cpp
   replace_weights.cpp
   save_images.cpp

@@ -39,6 +39,7 @@
 #include "lbann/callbacks/dump_error_signals.hpp"
 #include "lbann/callbacks/dump_gradients.hpp"
 #include "lbann/callbacks/dump_minibatch_sample_indices.hpp"
+#include "lbann/callbacks/dump_model_graph.hpp"
 #include "lbann/callbacks/dump_outputs.hpp"
 #include "lbann/callbacks/dump_weights.hpp"
 #include "lbann/callbacks/early_stopping.hpp"
@@ -53,7 +54,6 @@
 #include "lbann/callbacks/perturb_dropout.hpp"
 #include "lbann/callbacks/print_model_description.hpp"
 #include "lbann/callbacks/print_statistics.hpp"
-#include "lbann/callbacks/print_tensor_dimensions.hpp"
 #include "lbann/callbacks/profiler.hpp"
 #include "lbann/callbacks/replace_weights.hpp"
 #include "lbann/callbacks/save_images.hpp"
@@ -127,6 +127,8 @@ void register_default_builders(factory_type& factory)
                            build_dump_error_signals_callback_from_pbuf);
   factory.register_builder("CallbackDumpGradients",
                            build_dump_gradients_callback_from_pbuf);
+  factory.register_builder("CallbackDumpModelGraph",
+                           build_dump_model_graph_callback_from_pbuf);
   factory.register_builder("CallbackDumpMBIndices",
                            build_dump_mb_indices_callback_from_pbuf);
   factory.register_builder("CallbackDumpOutputs",
@@ -163,8 +165,6 @@ void register_default_builders(factory_type& factory)
                            build_print_model_description_callback_from_pbuf);
   factory.register_builder("CallbackPrint",
                            build_print_statistics_callback_from_pbuf);
-  factory.register_builder("CallbackPrintTensorDimensions",
-                           build_print_tensor_dimensions_callback_from_pbuf);
   factory.register_builder("CallbackProfiler",
                            build_profiler_callback_from_pbuf);
   factory.register_builder("CallbackReplaceWeights",

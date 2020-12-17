@@ -14,6 +14,7 @@ set_full_path(THIS_DIR_HEADERS
   dump_error_signals.hpp
   dump_gradients.hpp
   dump_minibatch_sample_indices.hpp
+  dump_model_graph.hpp
   dump_outputs.hpp
   dump_weights.hpp
   early_stopping.hpp
@@ -28,7 +29,6 @@ set_full_path(THIS_DIR_HEADERS
   perturb_dropout.hpp
   print_model_description.hpp
   print_statistics.hpp
-  print_tensor_dimensions.hpp
   profiler.hpp
   replace_weights.hpp
   save_images.hpp
