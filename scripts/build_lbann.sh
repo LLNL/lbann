@@ -287,6 +287,9 @@ if [[ -n "${BUILD_ENV_ONLY:-}" ]]; then
 fi
 
 if [[ -n "${INSTALL_DEPS:-}" ]]; then
+    CMD="spack compiler find --scope env:${LBANN_ENV}"
+    echo ${CMD} | tee -a ${LOG}
+    [[ -z "${DRY_RUN:-}" ]] && ${CMD}
     CMD="spack external find --scope env:${LBANN_ENV}"
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && ${CMD}

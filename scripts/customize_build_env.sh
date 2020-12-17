@@ -76,7 +76,7 @@ set_center_specific_modules()
                 # Disable the StdEnv for systems in LC
                 MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 cuda/11.1.1 spectrum-mpi/rolling-release python/3.7.2"
                 ;;
-            "broadwell")
+            "broadwell" | "haswell")
                 # Disable the StdEnv for systems in LC
                 MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 cuda/11.1.0 mvapich2/2.3 python/3.7.2"
                 ;;
@@ -98,13 +98,10 @@ set_center_specific_mpi()
 
     if [[ ${center} = "llnl_lc" ]]; then
         case ${spack_arch_target} in
-            "power9le")
+            "power9le" | "power8le")
                 MPI="^spectrum-mpi"
                 ;;
-            "power8le")
-                MPI="^spectrum-mpi"
-                ;;
-            "broadwell")
+            "broadwell" | "haswell")
                 MPI="^mvapich2"
                 ;;
             *)
