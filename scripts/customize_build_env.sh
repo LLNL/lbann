@@ -41,7 +41,7 @@ set_center_specific_fields()
 # CMAKE_GPU_ARCH
 set_center_specific_gpu_arch()
 {
-    local center="$1" 
+    local center="$1"
     local spack_arch_target="$2"
 
     if [[ ${center} = "llnl_lc" ]]; then
@@ -67,22 +67,22 @@ set_center_specific_gpu_arch()
 
 set_center_specific_modules()
 {
-    local center="$1" 
+    local center="$1"
     local spack_arch_target="$2"
 
     if [[ ${center} = "llnl_lc" ]]; then
         case ${spack_arch_target} in
-            "power9le")
-                # Disable the StdEnv for Power systems in LC
-                MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 cuda/11.1.1 spectrum-mpi/rolling-release python/3.7.2"
-                ;;
-            "power8le")
-                # Disable the StdEnv for Power systems in LC
+            "power9le" | "power8le")
+                # Disable the StdEnv for systems in LC
                 MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 cuda/11.1.1 spectrum-mpi/rolling-release python/3.7.2"
                 ;;
             "broadwell")
-                # Disable the StdEnv for Power systems in LC
+                # Disable the StdEnv for systems in LC
                 MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 cuda/11.1.0 mvapich2/2.3 python/3.7.2"
+                ;;
+            "zen2")
+                # Disable the StdEnv for systems in LC
+                MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 mvapich2/2.3 python/3.7.2"
                 ;;
             *)
                 ;;
@@ -92,7 +92,7 @@ set_center_specific_modules()
 
 set_center_specific_mpi()
 {
-    local center="$1" 
+    local center="$1"
     local spack_arch_target="$2"
 
     if [[ ${center} = "llnl_lc" ]]; then
@@ -111,4 +111,3 @@ set_center_specific_mpi()
         esac
     fi
 }
-
