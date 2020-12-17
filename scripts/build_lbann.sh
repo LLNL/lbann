@@ -39,7 +39,7 @@ LBANN_HOME=$(dirname ${SCRIPTS_DIR})
 CENTER=
 # Customize the build based on the center
 source $(dirname ${BASH_SOURCE})/customize_build_env.sh
-set_center_specific_fields 
+set_center_specific_fields
 
 # Temporarily overwrite the build suffix
 BUILD_SUFFIX=
@@ -100,6 +100,7 @@ Options:
   ${C}-e | --env ENV${N}          Build and install LBANN in the spack environment provided
   ${C}-l | --label${N}            LBANN local version label.
   ${C}--no-modules${N}            Don't try to load any modules (use the existing users environment)
+  ${C}--spec-only${N}             Stop after a spack spec command
   ${C}-s | --stable${N}           Use the latest stable defaults not the head of Hydrogen, DiHydrogen and Aluminum repos
   ${C}--${N}                      Pass all variants to spack after the dash dash (--)
 EOF
@@ -176,6 +177,9 @@ while :; do
         --no-modules)
             SKIP_MODULES="TRUE"
             ;;
+        --spec-only)
+            SPEC_ONLY="TRUE"
+            ;;
         -s|--stable-defaults)
             # Use the latest released version
             HYDROGEN_VER=
@@ -232,6 +236,7 @@ fi
 
 # Establish the spec for LBANN
 LBANN_SPEC="lbann@${LBANN_LABEL}${LBANN_VARIANTS} ${HYDROGEN} ${DIHYDROGEN} ${ALUMINUM} ${MPI}"
+LBANN_DEV_PATH_SPEC="lbann@${LBANN_LABEL}${LBANN_VARIANTS} dev_path=${LBANN_HOME} ${HYDROGEN} ${DIHYDROGEN} ${ALUMINUM} ${MPI}"
 
 # Uninstall any existing versions for this architecture with the same label
 LBANN_FIND_CMD="spack find --format {hash:7} lbann@${LBANN_LABEL} arch=${SPACK_ARCH}"
@@ -289,7 +294,7 @@ fi
 MPI=
 set_center_specific_mpi ${CENTER} ${SPACK_ARCH_TARGET}
 
-CMD="spack spec -l ${LBANN_SPEC}"
+CMD="spack spec -l ${LBANN_DEV_PATH_SPEC}"
 echo ${CMD} | tee -a ${LOG}
 if [[ -z "${DRY_RUN:-}" ]]; then
     eval ${CMD}
@@ -300,6 +305,9 @@ if [[ -z "${DRY_RUN:-}" ]]; then
         exit 1
     fi
 fi
+# Currently unused, but here is how to get the spack hash before dev-build is called
+# LBANN_SPEC_HASH=$(spack spec -l ${LBANN_DEV_PATH_SPEC} | grep lbann | grep arch=${SPACK_ARCH} | awk '{print $1}')
+[[ -z "${DRY_RUN:-}" && "${SPEC_ONLY}" == "TRUE" ]] && exit
 
 CMD="spack install --only dependencies ${LBANN_SPEC}"
 [[ -n "${INSTALL_DEPS:-}" ]] && echo ${CMD} | tee -a ${LOG}
@@ -345,4 +353,3 @@ echo "  spack build-env ${LBANN_SPEC} -- bash" | tee -a ${LOG}
 echo "To use this version of LBANN have spack load it's module:is installed in a spack environment named ${LBANN_ENV}, access it via:" | tee -a ${LOG}
 echo "  spack load lbann@${LBANN_LABEL} arch=${SPACK_ARCH}" | tee -a ${LOG}
 echo "##########################################################################################" | tee -a ${LOG}
-
