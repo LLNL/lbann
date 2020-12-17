@@ -207,7 +207,11 @@ LBANN_ENV="${LBANN_ENV:-lbann-${LBANN_LABEL}-${SPACK_ARCH_TARGET}}"
 CORE_BUILD_PATH="${LBANN_HOME}/build/${CLUSTER}.${LBANN_ENV}${BUILD_SUFFIX:-}"
 
 LOG="spack-build-${LBANN_ENV}.log"
-rm ${LOG}
+if [[ -f ${LOG} ]]; then
+    CMD="rm ${LOG}"
+    echo ${CMD}
+    [[ -z "${DRY_RUN:-}" ]] && ${CMD}
+fi
 
 if [[ ! "${LBANN_VARIANTS}" =~ .*"^hydrogen".* ]]; then
     # If the user didn't supply a specific version of Hydrogen on the command line add one
@@ -248,7 +252,7 @@ if [[ -n "${LBANN_HASH}" && ! "${LBANN_HASH}" =~ "No package matches the query" 
     do
         CMD="spack uninstall -y lbann@${LBANN_LABEL} arch=${SPACK_ARCH} /${h}"
         echo ${CMD} | tee -a ${LOG}
-        ${CMD}
+        [[ -z "${DRY_RUN:-}" ]] && ${CMD}
     done
 fi
 

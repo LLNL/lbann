@@ -71,23 +71,26 @@ set_center_specific_modules()
     local spack_arch_target="$2"
 
     if [[ ${center} = "llnl_lc" ]]; then
+        # Disable the StdEnv for systems in LC
         case ${spack_arch_target} in
             "power9le" | "power8le")
-                # Disable the StdEnv for systems in LC
                 MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 cuda/11.1.1 spectrum-mpi/rolling-release python/3.7.2"
                 ;;
             "broadwell" | "haswell")
-                # Disable the StdEnv for systems in LC
                 MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 cuda/11.1.0 mvapich2/2.3 python/3.7.2"
                 ;;
+            "ivybridge")
+                MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 mvapich2/2.3 python/3.7.2"
+                ;;
             "zen2")
-                # Disable the StdEnv for systems in LC
                 MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 mvapich2/2.3 python/3.7.2"
                 ;;
             *)
                 echo "No pre-specified modules found for this system. Make sure to setup your own"
                 ;;
         esac
+    else
+        echo "No pre-specified modules found for this system. Make sure to setup your own"
     fi
 }
 
