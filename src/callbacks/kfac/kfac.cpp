@@ -43,6 +43,8 @@ namespace callback {
 #ifdef LBANN_HAS_GPU
 
 void kfac::setup(model *m) {
+  m_rank = m->get_comm()->get_rank_in_trainer();
+
   const auto v2s =
       [](const std::vector<double> v) {
         std::ostringstream oss;
@@ -287,6 +289,11 @@ void kfac::on_backward_prop_end(model *m) {
 El::Matrix<DataType, El::Device::GPU>& kfac::get_workspace_matrix(
     const std::string& key, const size_t height, const size_t width) {
   if(m_workspace.find(key) == m_workspace.end()) {
+    std::ostringstream oss;
+    oss << "K-FAC callback workspace allocation (rank=" << m_rank
+        << "): " << key << " (" << height << "x" << width << ")" << std::endl;
+    std::cout << oss.str();
+
     m_workspace.emplace(
         key, El::Matrix<DataType, El::Device::GPU>(height, width));
 #ifdef HYDROGEN_HAVE_CUB

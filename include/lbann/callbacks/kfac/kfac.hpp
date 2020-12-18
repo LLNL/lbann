@@ -198,6 +198,10 @@ class kfac : public callback_base {
                      El::Matrix<DataType, El::Device::GPU>> m_workspace;
 #endif // LBANN_HAS_GPU
 
+  /** @brief Copy of lbann_comm::get_rank_in_trainer() for internal
+      functions. TODO: Get the rank from lbann_comm directly */
+  int m_rank;
+
 };
 
 // Builder function
