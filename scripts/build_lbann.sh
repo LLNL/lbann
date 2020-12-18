@@ -94,7 +94,8 @@ Options:
   ${C}--build-env-only SHELL${N}  Drop into a shell with all of the spack build environment setup
   ${C}--build-suffix SUFFIX${N}   Appends the string to the sym link pointing to the build directory
   ${C}--config-only${N}           Run the spack dev-build command up to the configure stage only
-  ${C}-d | --deps-only)${N}       Only install the lbann dependencies
+  ${C}-d | --install-deps)${N}    Install the lbann dependencies in addition to building from local source
+  ${C}--dependencies-only)${N}    Stop after installing the lbann dependencies
   ${C}--drop-in SHELL${N}         Drop into a shell with all of the spack build environment setup after setting up the dev-build
   ${C}--dry-run${N}               Dry run the commands (no effect)
   ${C}-e | --env ENV${N}          Build and install LBANN in the spack environment provided
@@ -102,6 +103,9 @@ Options:
   ${C}--no-modules${N}            Don't try to load any modules (use the existing users environment)
   ${C}--spec-only${N}             Stop after a spack spec command
   ${C}-s | --stable${N}           Use the latest stable defaults not the head of Hydrogen, DiHydrogen and Aluminum repos
+  ${C}--hydrogen-repo PATH${N}    Use a local repository for the Hydrogen library
+  ${C}--dihydrogen-repo PATH${N}  Use a local repository for the DiHydrogen library
+  ${C}--aluminum-repo PATH${N}    Use a local repository for the Aluminum library
   ${C}--${N}                      Pass all variants to spack after the dash dash (--)
 EOF
 }
@@ -141,6 +145,9 @@ while :; do
             ;;
         -d|--install-deps)
             INSTALL_DEPS="TRUE"
+            ;;
+        --dependencies-only)
+            DEPENDENCIES_ONLY="TRUE"
             ;;
         --drop-in)
             if [ -n "${2}" ]; then
@@ -185,6 +192,33 @@ while :; do
             HYDROGEN_VER=
             ALUMINUM_VER=
             DIHYDROGEN_VER=
+            ;;
+        --hydrogen-repo)
+            if [ -n "${2}" ]; then
+                HYDROGEN_PATH=${2}
+                shift
+            else
+                echo "\"${1}\" option requires a non-empty option argument" >&2
+                exit 1
+            fi
+            ;;
+        --dihydrogen-repo)
+            if [ -n "${2}" ]; then
+                DIHYDROGEN_PATH=${2}
+                shift
+            else
+                echo "\"${1}\" option requires a non-empty option argument" >&2
+                exit 1
+            fi
+            ;;
+        --aluminum-repo)
+            if [ -n "${2}" ]; then
+                ALUMINUM_PATH=${2}
+                shift
+            else
+                echo "\"${1}\" option requires a non-empty option argument" >&2
+                exit 1
+            fi
             ;;
         --)
             shift
@@ -318,6 +352,27 @@ fi
 # LBANN_SPEC_HASH=$(spack spec -l ${LBANN_DEV_PATH_SPEC} | grep lbann | grep arch=${SPACK_ARCH} | awk '{print $1}')
 [[ -z "${DRY_RUN:-}" && "${SPEC_ONLY}" == "TRUE" ]] && exit
 
+##########################################################################################
+# Tell the spack environment to use a local repository for these libraries
+if [[ -n "${HYDROGEN_PATH:-}" ]]; then
+    CMD="spack develop --no-clone -p ${HYDROGEN_PATH} hydrogen${HYDROGEN_VER}"
+    echo "${CMD}" | tee -a ${LOG}
+    ${CMD}
+fi
+
+if [[ -n "${DIHYDROGEN_PATH:-}" ]]; then
+    CMD="spack develop --no-clone -p ${DIHYDROGEN_PATH} dihydrogen${DIHYDROGEN_VER}"
+    echo "${CMD}" | tee -a ${LOG}
+    ${CMD}
+fi
+
+if [[ -n "${ALUMINUM_PATH:-}" ]]; then
+    CMD="spack develop --no-clone -p ${ALUMINUM_PATH} aluminum${ALUMINUM_VER}"
+    echo "${CMD}" | tee -a ${LOG}
+    ${CMD}
+fi
+##########################################################################################
+
 CMD="spack install --only dependencies ${LBANN_SPEC}"
 [[ -n "${INSTALL_DEPS:-}" ]] && echo ${CMD} | tee -a ${LOG}
 if [[ -z "${DRY_RUN:-}" && -n "${INSTALL_DEPS:-}" ]]; then
@@ -327,6 +382,9 @@ if [[ -z "${DRY_RUN:-}" && -n "${INSTALL_DEPS:-}" ]]; then
         echo "Spack installation of dependenceis FAILED"
         echo "-----------------------------------------"
         exit 1
+    fi
+    if [[ -n "${DEPENDENCIES_ONLY:-}" ]]; then
+        exit
     fi
 fi
 
