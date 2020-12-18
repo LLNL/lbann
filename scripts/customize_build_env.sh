@@ -89,6 +89,26 @@ set_center_specific_modules()
                 echo "No pre-specified modules found for this system. Make sure to setup your own"
                 ;;
         esac
+    elif [[ ${center} = "olcf" ]]; then
+        case ${spack_arch_target} in
+            "power9le")
+                MODULE_CMD="module load gcc/8.1.1 cuda/11.1.1 spectrum-mpi/10.3.1.2-20200121"
+                ;;
+            *)
+                echo "No pre-specified modules found for this system. Make sure to setup your own"
+                ;;
+        esac
+    elif [[ ${center} = "nersc" ]]; then
+        case ${spack_arch_target} in
+            "skylake")
+                MODULE_CMD="module purge; module load modules/3.2.11.4 gcc/8.2.0 cuda/10.2.89 mvapich2/2.3.2 cmake/3.14.4
+cuda/10.2.89"
+                ;;
+            *)
+                echo "No pre-specified modules found for this system. Make sure to setup your own"
+                ;;
+        esac
+
     else
         echo "No pre-specified modules found for this system. Make sure to setup your own"
     fi
@@ -105,6 +125,22 @@ set_center_specific_mpi()
                 MPI="^spectrum-mpi"
                 ;;
             "broadwell" | "haswell")
+                MPI="^mvapich2"
+                ;;
+            *)
+                ;;
+        esac
+    elif [[ ${center} = "olcf" ]]; then
+        case ${spack_arch_target} in
+            "power9le")
+                MPI="^spectrum-mpi"
+                ;;
+            *)
+                ;;
+        esac
+    elif [[ ${center} = "nersc" ]]; then
+        case ${spack_arch_target} in
+            "skylake")
                 MPI="^mvapich2"
                 ;;
             *)
