@@ -111,7 +111,7 @@ def compare_decoded_to_original_smiles(orig_smiles, decoded_smiles, output_file=
 
 
 fdir = sys.argv[1] #directory of LBANN tensor outputs
-sd = sys.argv[3]   #tag for say different noise pertubation values
+sd = sys.argv[2]   #tag for say different noise pertubation values
 
 sequence_length = 102 #Max sequence lenght use in LBANN training (100+bos+eos)
 zdim = 128 #latent space dimension
