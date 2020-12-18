@@ -124,75 +124,45 @@ Expert developers should refer to :ref:`the "Superbuild" documentation
 <building-with-the-superbuild>` for a list and descriptions of all
 CMake flags known to LBANN's "Superbuild" build system.
 
-1.  Install all of the external packages via Spack (Aluminum,
-    Hydrogen, etc).
-
-    Install packages into a Spack environment. This is only done when
-    initially installing or upgrading the dependencies. LBANN provides
-    a script to install the basic dependencies in their default
-    configurations and it can be found at:
+1.  Build LBANN from the local source repository and install the
+    necessary dependencies into an environment.  The build script has
+    a number of features that are described by the help message.
+    Customization of the build is done via spack variants following
+    the double dash.  An example of the invocation that installs
+    dependencies and enables common variants is shown below:
 
     .. code-block:: bash
 
-        <path to lbann repo>/scripts/install_lbann.sh -d
+        <path to lbann repo>/scripts/build_lbann.sh -d -- +dihydrogen +cuda +half
 
     Note that the named environment can be controlled via the
     :code:`-e` flag. A full list of options can be viewed with the
-    :code:`-h` flag.
-
-2.  Setup the LBANN CMake environment using the Spack environment for the
-    dependencies.  If you used a custom Spack environment name in the step
-    above, be sure to specify that with the :code:`-e` option:
-
-    .. code-block:: bash
-
-        <path to lbann repo>/scripts/build_lbann_from_source.sh
-
-
-   Options exist in the script to disable the GPUs, set a build and
-   install prefix, separately set the build and install
-   directories, or use a different spack environment. These options
-   can be viewed using the :code:`-h` flag.
-
-   The environments provided by this script have a set of external
-   packages and compilers that are installed on an LLNL LC CZ, NERSC,
-   or LLNL-configured OS X system. If you are not on one of these
-   systems, please update the externals and compilers for your system
-   environment. Alternatively, you can create baseline versions of
-   the user-level Spack configuration files and remove the externals
-   and compilers from the :code:`spack.yaml` file. More details are
-   provided :ref:`here <setup-spack-env>`.
+    :code:`-h` flag.  External packages are setup via :code:`modules`
+    and found via spack using the :code:`spack externals find`
+    command.  If you want to provide your own modules just pass the
+    :code:`--no-modules` flag to the :code:`build_lbann.sh` script to
+    have it avoid loading what it thinks are good one.
 
    .. warning:: Depending on the completeness of the externals
                 specification, the initial build of all of the
                 standard packages in Spack can take a long time.
 
-3.  Once the installation has completed, to run LBANN you will want to
-    activate the spack environment to setup the depedencies
-    correctly, and then you can load the module file
-    for LBANN with the following command:
+2.  Once the installation has completed, to run LBANN you will want to
+    load the spack module for LBANN with the following command:
 
     .. code-block:: console
 
-        spack env activate -p <name of the spack environment>
-        ml use <path to installation of lbann executable>/etc/modulefiles
-        ml load lbann-0.99.0
+        spack load lbann@local
 
-
-    For advanced users, :ref:`the LBANN superbuild system
-    <building-with-the-superbuild>` provides additional control over
-    the dependencies, especially Aluminum and Hydrogen.
-
-4.  After the initial setup of the LBANN CMake environment, you can
+3.  After the initial setup of the LBANN CMake environment, you can
     rebuild by activating the Spack environment and then re-running
     ninja.
 
     .. code-block:: console
 
-         spack env activate -p <environmment>
-         cd <build directory>/lbann/build
-         unset CPATH # Can cause bad include resolution
-         ninja
+        <path to lbann repo>/scripts/build_lbann.sh --build-env-only -- +dihydrogen +cuda +half
+        cd <path to lbann repo>/spack-build-<hash>
+        ninja install
 
 For more control over the LBANN build, please see :ref:`the complete
 documentation for building LBANN directly with CMake
