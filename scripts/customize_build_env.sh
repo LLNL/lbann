@@ -92,7 +92,7 @@ set_center_specific_modules()
     elif [[ ${center} = "olcf" ]]; then
         case ${spack_arch_target} in
             "power9le")
-                MODULE_CMD="module load gcc/8.1.1 cuda/11.1.1 spectrum-mpi/10.3.1.2-20200121"
+                MODULE_CMD="module load gcc/9.3.0 cuda/11.1.1 spectrum-mpi/10.3.1.2-20200121"
                 ;;
             *)
                 echo "No pre-specified modules found for this system. Make sure to setup your own"
