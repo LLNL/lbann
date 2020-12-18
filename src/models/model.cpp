@@ -1311,6 +1311,19 @@ bool model::save_to_checkpoint_shared(persist& p) {
     ar(*this);
   }
 
+  for (auto const& w : m_weights)
+  {
+    using AbsDistMatT = El::AbstractDistMatrix<DataType>;
+    auto const basename =
+      file::join_path(
+        p.get_checkpoint_dir(),
+        w->get_name() + "_save_rank"
+        + std::to_string(m_comm->get_rank_in_world()));
+    El::Write(dynamic_cast<AbsDistMatT const&>(w->get_values()).LockedMatrix(),
+              basename,
+              /*format=*/El::ASCII);
+  }
+
   p.open_checkpoint_dir(trainer_dir, false);
   return true;
 }
@@ -1331,6 +1344,37 @@ bool model::load_from_checkpoint_shared(persist& p) {
   {
     lbann::RootedBinaryInputArchive ar(ifs, m_comm->get_trainer_grid());
     ar(*this);
+  }
+
+  // Print it back out again.
+  std::ofstream ofs, ofs_xml;
+  if (m_comm->am_trainer_master())
+  {
+    ofs.open(file::join_path(p.get_checkpoint_dir(), "model_redump.bin"));
+    LBANN_ASSERT(ofs.good());
+    ofs_xml.open(file::join_path(p.get_checkpoint_dir(), "model_redump.xml"));
+    LBANN_ASSERT(ofs_xml.good());
+  }
+  {
+    lbann::RootedBinaryOutputArchive ar(ofs, m_comm->get_trainer_grid());
+    ar(*this);
+  }
+  {
+    lbann::RootedXMLOutputArchive ar(ofs_xml, m_comm->get_trainer_grid());
+    ar(*this);
+  }
+
+  for (auto const& w : m_weights)
+  {
+    using AbsDistMatT = El::AbstractDistMatrix<DataType>;
+    auto const basename =
+      file::join_path(
+        p.get_checkpoint_dir(),
+        w->get_name() + "_load_rank"
+        + std::to_string(m_comm->get_rank_in_world()));
+    El::Write(dynamic_cast<AbsDistMatT const&>(w->get_values()).LockedMatrix(),
+              basename,
+              /*format=*/El::ASCII);
   }
 
   m_model_is_setup = false;
