@@ -9,9 +9,12 @@ set_full_path(THIS_DIR_SOURCES
   mini_batch_index.cpp
   mini_batch_size.cpp
   one_hot.cpp
-  uniform_hash.cpp
   variance.cpp
   )
+
+if (LBANN_HAS_GPU)
+  list(APPEND THIS_DIR_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/uniform_hash.cpp")
+endif ()
 
 if (LBANN_HAS_FFTW)
   list(APPEND THIS_DIR_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/dft_abs.cpp")
