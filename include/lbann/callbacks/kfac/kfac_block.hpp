@@ -50,9 +50,9 @@ class kfac_block {
              size_t layer_id,
              size_t inverse_proc_rank)
       : m_layer(layer),
-        m_callback(callback),
         m_layer_id(layer_id),
-        m_inverse_proc_rank(inverse_proc_rank) {
+        m_inverse_proc_rank(inverse_proc_rank),
+        m_callback(callback) {
     m_has_kronecker_inverse = false;
   }
   virtual ~kfac_block() = default;
@@ -115,9 +115,22 @@ class kfac_block {
     return m_inverse_proc_rank;
   }
 
+  /** @brief Return the list of internal matrices' (name, height,
+   * width) for debugging. All internal matrices should be ready when
+   * this function is called. */
+  virtual std::vector<std::tuple<std::string, size_t, size_t>>
+  get_internal_matrix_info() const {
+    LBANN_ERROR("this function should be called via a sub-class.");
+  }
+
  protected:
 
 #ifdef LBANN_HAS_GPU
+
+  /** @brief Gets the Kronecker factor matrix of a FC layer.
+   *  The same key is tied with the same matrix instance. */
+  El::Matrix<DataType, El::Device::GPU>& get_workspace_matrix(
+      const std::string& key, size_t height, size_t width);
 
   /** @brief Return the default stream that may used in update functions. */
   cudaStream_t get_stream() {
@@ -129,10 +142,6 @@ class kfac_block {
   /** @brief The target layer. */
   Layer *m_layer;
 
-  /** @brief The parent callback.
-   * TODO: Use its own workspace and remove this pointer. */
-  kfac *m_callback;
-
   /** @brief The layer ID in the model.
       TODO: Remove this. */
   const size_t m_layer_id;
@@ -142,6 +151,12 @@ class kfac_block {
 
   /** @brief Whether this block already has an inverse history. */
   bool m_has_kronecker_inverse;
+
+ private:
+
+  /** @brief The parent callback.
+   * TODO: Use its own workspace and remove this pointer. */
+  kfac *m_callback;
 
 };
 

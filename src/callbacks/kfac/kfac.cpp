@@ -210,6 +210,7 @@ void kfac::on_backward_prop_end(model *m) {
 
   // Step 1: Ensure that each process has averaged Kronecker factors
   // for the model-parallel part.
+  const bool is_first_step = (!m_has_kronecker_inverse);
   const bool is_kronecker_update_required =
       ((num_steps%m_update_interval) == 0 || !m_has_kronecker_inverse);
   if(is_kronecker_update_required) {
@@ -312,6 +313,22 @@ void kfac::on_backward_prop_end(model *m) {
         buffers, local_buffer, global_buffer, comm, m_allgather_mode);
   }
   prof_region_end("kfac-kronecker-allgather", prof_sync);
+
+  if(is_first_step) {
+    for(auto& block : m_blocks) {
+      for(auto& info : block->get_internal_matrix_info()) {
+        std::ostringstream oss;
+        oss << "K-FAC callback matrix allocation (rank="
+            << comm->get_rank_in_trainer()
+            << "): " << block->get_name()
+            << " " << std::get<0>(info)
+            << " (" << std::get<1>(info)
+            << "x" << std::get<2>(info)
+            << ")" << std::endl;
+        std::cout << oss.str();
+      }
+    }
+  }
 }
 
 El::Matrix<DataType, El::Device::GPU>& kfac::get_workspace_matrix(

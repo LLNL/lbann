@@ -69,16 +69,12 @@ void kfac_block_fc_conv::compute_local_kronecker_factors(
     m_height_A++;
 
   m_height_G = !m_is_conv ? local_errors.Height() : num_output_channels;
-  auto& A = m_callback->get_workspace_matrix(
-      std::string("A_")+std::to_string(m_layer_id),
-      m_height_A, m_height_A);
-  auto& G = m_callback->get_workspace_matrix(
-      std::string("G_")+std::to_string(m_layer_id),
-      m_height_G, m_height_G);
+  auto& A = get_workspace_matrix("A", m_height_A, m_height_A);
+  auto& G = get_workspace_matrix("G", m_height_G, m_height_G);
   if(!m_is_conv) {
     if(m_has_bias) {
-      auto& local_activations_with_ones = m_callback->get_workspace_matrix(
-          std::string("local_activations_with_ones_")+std::to_string(m_layer_id),
+      auto& local_activations_with_ones = get_workspace_matrix(
+          "local_activations_with_ones",
           local_activations.Height()+1, local_activations.Width());
       auto local_activations_dst = El::View(
           local_activations_with_ones,
@@ -107,12 +103,10 @@ void kfac_block_fc_conv::compute_local_kronecker_factors(
         &(get_conv_layer()->get_pads()[0]),
         &(get_conv_layer()->get_conv_dims()[0]),
         &(get_conv_layer()->get_strides()[0]));
-    auto& Acol = m_callback->get_workspace_matrix(
-        std::string("Acol"), // im2col workspace is reused as it is huge.
-        Acol_size.first, Acol_size.second);
-    auto& Gcol = m_callback->get_workspace_matrix(
-        std::string("Gcol_")+std::to_string(m_layer_id),
-        num_output_channels, local_batch_size*m_conv_output_spatial_prod);
+    auto& Acol = get_workspace_matrix(
+        "Acol", Acol_size.first, Acol_size.second);
+    auto& Gcol = get_workspace_matrix(
+        "Gcol", num_output_channels, local_batch_size*m_conv_output_spatial_prod);
     get_kronecker_factor_conv(
         A, Acol,
         local_activations, 1.0/mini_batch_size,
@@ -158,12 +152,10 @@ void kfac_block_fc_conv::update_kronecker_average(
 
   const auto stream = get_stream();
 
-  auto& A = m_callback->get_workspace_matrix(
-      std::string("A_")+std::to_string(m_layer_id),
-      m_height_A, m_height_A);
-  auto& G = m_callback->get_workspace_matrix(
-      std::string("G_")+std::to_string(m_layer_id),
-      m_height_G, m_height_G);
+  auto& A = get_workspace_matrix(
+      "A", m_height_A, m_height_A);
+  auto& G = get_workspace_matrix(
+      "G", m_height_G, m_height_G);
 
   kfac_util::unpack_lower_tri(
       A.Buffer(), m_kronecker_factor_buf_A.LockedBuffer(), m_height_A, stream);
@@ -225,9 +217,8 @@ void kfac_block_fc_conv::update_kronecker_inverse(
   // Compute the pi constant
   DataType pi = 1.0;
   if(use_pi) {
-    auto& ws = m_callback->get_workspace_matrix(
-        std::string("pi_ws_")+std::to_string(m_layer_id),
-        std::max(Aave.Height(), Gave.Height())*2+1, 1);
+    auto& ws = get_workspace_matrix(
+        "pi_ws", std::max(Aave.Height(), Gave.Height())*2+1, 1);
     pi = compute_pi(Aave, Gave, ws, stream);
   }
   // Compute the inverse of the factors
@@ -250,12 +241,10 @@ void kfac_block_fc_conv::update_kronecker_inverse(
   // TODO: Refactoring
   auto& Ainv = m_kronecker_inverse_A;
   auto& Ginv = m_kronecker_inverse_G;
-  auto& ALinv = m_callback->get_workspace_matrix(
-      std::string("ALinv_")+std::to_string(m_layer_id),
-      Aave.Height(), Aave.Height());
-  auto& GLinv = m_callback->get_workspace_matrix(
-      std::string("GLinv_")+std::to_string(m_layer_id),
-      Gave.Height(), Gave.Height());
+  auto& ALinv = get_workspace_matrix(
+      "ALinv", Aave.Height(), Aave.Height());
+  auto& GLinv = get_workspace_matrix(
+      "GLinv", Gave.Height(), Gave.Height());
   kfac_util::get_matrix_inverse(
       Ainv, ALinv, Aave, comm->am_trainer_master() && print_time,
       DataType(damping_act*pi), 0,
@@ -290,9 +279,8 @@ void kfac_block_fc_conv::update_kronecker_inverse(
                              height);
   } else {
     if(m_has_bias) {
-      auto& w_grads_concat = m_callback->get_workspace_matrix(
-          std::string("A_")+std::to_string(m_layer_id),
-          w_grads_orig.Height(), w_grads_orig.Width()+1);
+      auto& w_grads_concat = get_workspace_matrix(
+          "A", w_grads_orig.Height(), w_grads_orig.Width()+1);
 
       auto w_grads_concat_weights = El::View(
           w_grads_concat, El::ALL, El::IR(0, w_grads_orig.Width()));
@@ -318,8 +306,8 @@ void kfac_block_fc_conv::update_kronecker_inverse(
   }
 
   // Compute preconditioned gradients
-  auto& Gg = m_callback->get_workspace_matrix(
-      std::string("Gg_")+std::to_string(m_layer_id),
+  auto& Gg = get_workspace_matrix(
+      "Gg",
       Ginv.Height(),
       m_is_conv ? w_gradients.Height() : w_gradients.Width());
 
@@ -327,9 +315,8 @@ void kfac_block_fc_conv::update_kronecker_inverse(
       El::NORMAL, m_is_conv ? El::TRANSPOSE : El::NORMAL,
       El::TypeTraits<DataType>::One(), Ginv, w_gradients,
       El::TypeTraits<DataType>::Zero(), Gg);
-  auto& Fgrad = m_callback->get_workspace_matrix(
-      std::string("Fgrad_")+std::to_string(m_layer_id),
-      Ginv.Height(), Ainv.Width());
+  auto& Fgrad = get_workspace_matrix(
+      "Fgrad", Ginv.Height(), Ainv.Width());
   El::Gemm(
       El::NORMAL, El::NORMAL,
       El::TypeTraits<DataType>::One(), Gg, Ainv,
@@ -503,6 +490,24 @@ double kfac_block_fc_conv::compute_pi(
         return El::Matrix<DataType>(ret)(0, 0);
       };
   return sqrt((get_trace(A, ws, stream)/A.Height())/(get_trace(G, ws, stream)/G.Height()));
+}
+
+std::vector<std::tuple<std::string, size_t, size_t>>
+kfac_block_fc_conv::get_internal_matrix_info() const {
+  std::vector<std::tuple<std::string, size_t, size_t>> list;
+  const auto emplace =
+      [&list](const std::string name,
+              const El::Matrix<DataType, El::Device::GPU>& m) {
+        list.emplace_back(name, m.Height(), m.Width());
+      };
+  emplace("buf_A", m_kronecker_factor_buf_A);
+  emplace("buf_G", m_kronecker_factor_buf_G);
+  emplace("average_A", m_kronecker_average_A);
+  emplace("average_G", m_kronecker_average_G);
+  emplace("inverse_A", m_kronecker_inverse_A);
+  emplace("inverse_G", m_kronecker_inverse_G);
+  emplace("grad_buffer_v", m_grad_buffer_v);
+  return list;
 }
 
 #endif // LBANN_HAS_GPU

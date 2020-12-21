@@ -181,6 +181,9 @@ class kfac_block_fc_conv: public kfac_block {
     return dynamic_cast<convolution_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>*>(m_layer);
   }
 
+  std::vector<std::tuple<std::string, size_t, size_t>>
+  get_internal_matrix_info() const override;
+
 #endif // LBANN_HAS_GPU
 
   /** @brief Information to perform its computation. **/

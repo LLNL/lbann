@@ -69,8 +69,8 @@ void kfac_block_bn::compute_local_kronecker_factors(
   assert(m_num_channels == (size_t) bias_values.Height());
   assert(m_num_channels == (size_t) bias_values.LocalHeight());
 
-  auto& cols = m_callback->get_workspace_matrix(
-      std::string("bn_cols_")+std::to_string(m_layer_id),
+  auto& cols = get_workspace_matrix(
+      "bn_cols",
       m_num_channels*2*local_batch_size,
       m_spatial_prod);
   compute_bn_factor_data2col(
@@ -84,11 +84,11 @@ void kfac_block_bn::compute_local_kronecker_factors(
       m_spatial_prod,
       stream);
 
-  auto& ones = m_callback->get_workspace_matrix(
-      std::string("bn_ones_")+std::to_string(m_layer_id),
+  auto& ones = get_workspace_matrix(
+      "bn_ones",
       m_spatial_prod, 1);
-  auto& factor_v = m_callback->get_workspace_matrix(
-      std::string("bn_factor_v_")+std::to_string(m_layer_id),
+  auto& factor_v = get_workspace_matrix(
+      "bn_factor_v",
       m_num_channels*2*local_batch_size, 1);
   El::Ones(ones, ones.Height(), ones.Width()); // TODO: Call once
   El::Gemm(
@@ -100,8 +100,8 @@ void kfac_block_bn::compute_local_kronecker_factors(
   factor.LockedAttach(m_num_channels*2, local_batch_size,
                       factor_v.LockedBuffer(),
                       m_num_channels*2);
-  auto& fisher_block = m_callback->get_workspace_matrix(
-      std::string("bn_fisher_block_")+std::to_string(m_layer_id),
+  auto& fisher_block = get_workspace_matrix(
+      "bn_fisher_block",
       m_num_channels*2, m_num_channels*2);
   const DataType alpha = mini_batch_size;
   El::Gemm(
@@ -136,8 +136,8 @@ void kfac_block_bn::update_kronecker_average(
 
   const auto stream = get_stream();
 
-  auto& fisher_block = m_callback->get_workspace_matrix(
-      std::string("bn_fisher_block_")+std::to_string(m_layer_id),
+  auto& fisher_block = get_workspace_matrix(
+      "bn_fisher_block",
       m_num_channels*2, m_num_channels*2);
   kfac_util::unpack_lower_tri(
       fisher_block.Buffer(), m_fisher_buf.LockedBuffer(),
@@ -172,8 +172,8 @@ void kfac_block_bn::update_kronecker_inverse(
   }
   // TODO: Refactoring
   auto& Finv = m_fisher_inverse;
-  auto& FLinv = m_callback->get_workspace_matrix(
-      std::string("bn_FLinv_")+std::to_string(m_layer_id),
+  auto& FLinv = get_workspace_matrix(
+      "bn_FLinv",
       Fave.Height(), Fave.Height());
   kfac_util::get_matrix_inverse(
       Finv, FLinv, Fave, comm->am_trainer_master() && print_time,
@@ -198,8 +198,8 @@ void kfac_block_bn::update_kronecker_inverse(
   El::Matrix<DataType, El::Device::GPU> s_gradients = s_dto->get_gradient().Matrix();
   El::Matrix<DataType, El::Device::GPU> b_gradients = b_dto->get_gradient().Matrix();
 
-  auto& stacked_grads = m_callback->get_workspace_matrix(
-      std::string("bn_stacked_grads_")+std::to_string(m_layer_id),
+  auto& stacked_grads = get_workspace_matrix(
+      "bn_stacked_grads",
       m_num_channels*2, 1);
   auto stacked_grads_scale = El::View(
       stacked_grads, El::IR(0, m_num_channels), El::ALL);
@@ -208,8 +208,8 @@ void kfac_block_bn::update_kronecker_inverse(
   El::Copy(s_gradients, stacked_grads_scale);
   El::Copy(b_gradients, stacked_grads_bias);
 
-  auto& Fgrad = m_callback->get_workspace_matrix(
-      std::string("bn_Fgrad_")+std::to_string(m_layer_id),
+  auto& Fgrad = get_workspace_matrix(
+      "bn_Fgrad",
       m_num_channels*2, 1);
   El::Gemm(
       El::NORMAL, El::NORMAL,
@@ -255,6 +255,20 @@ kfac_block_bn::get_preconditioned_grad_buffers() {
   std::vector<El::AbstractMatrix<DataType>*>
       ret = {&s_grad_buffer.Matrix(), &b_grad_buffer.Matrix()};
   return ret;
+}
+
+std::vector<std::tuple<std::string, size_t, size_t>>
+kfac_block_bn::get_internal_matrix_info() const {
+  std::vector<std::tuple<std::string, size_t, size_t>> list;
+  const auto emplace =
+      [&list](const std::string name,
+              const El::Matrix<DataType, El::Device::GPU>& m) {
+        list.emplace_back(name, m.Height(), m.Width());
+      };
+  emplace("fisher_buf", m_fisher_buf);
+  emplace("fisher_average", m_fisher_average);
+  emplace("fisher_inverse", m_fisher_inverse);
+  return list;
 }
 
 #endif // LBANN_HAS_GPU

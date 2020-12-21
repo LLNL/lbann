@@ -113,6 +113,9 @@ class kfac_block_bn: public kfac_block {
   const std::vector<El::AbstractMatrix<DataType>*>
   get_preconditioned_grad_buffers() override;
 
+  std::vector<std::tuple<std::string, size_t, size_t>>
+  get_internal_matrix_info() const override;
+
 #endif // LBANN_HAS_GPU
 
   std::string get_info() const override {
