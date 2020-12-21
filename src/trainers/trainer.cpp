@@ -266,22 +266,18 @@ bool trainer::save_to_checkpoint_shared() {
     write_cereal_archive(*this, get_persist_obj(), "trainer.xml");
   }
 
-  auto flag = get_data_coordinator().save_to_checkpoint_shared(get_persist_obj());
-
-  return flag;
+  return get_data_coordinator().save_to_checkpoint_shared(get_persist_obj());
 }
 
 bool trainer::load_from_checkpoint_shared(persist& p) {
   try {
     load_from_shared_cereal_archive(*this, p, *get_comm(), "trainer.xml");
-  }catch (NonexistentArchiveFile const& e) {
+  } catch (NonexistentArchiveFile const& e) {
     LBANN_MSG(e.what());
     return false;
   }
 
-  auto flag = get_data_coordinator().load_from_checkpoint_shared(p);
-
-  return flag;
+  return get_data_coordinator().load_from_checkpoint_shared(p);
 }
 
 bool trainer::load_from_checkpoint_shared(model& m, execution_context& c) {
@@ -328,14 +324,12 @@ bool trainer::save_to_checkpoint_distributed(){
   };
   for_each_execution_context(save_checkpoint);
   save_rng_to_checkpoint_distributed(get_persist_obj(), m_comm);
-  auto flag = get_data_coordinator().save_to_checkpoint_shared(get_persist_obj());
-  return flag;
+  return get_data_coordinator().save_to_checkpoint_shared(get_persist_obj());
 }
 
 bool trainer::load_from_checkpoint_distributed(persist& p){
   read_cereal_archive(*this, p, "trainer.xml");
-  auto flag = get_data_coordinator().load_from_checkpoint_distributed(p);
-  return flag;
+  return get_data_coordinator().load_from_checkpoint_distributed(p);
 }
 
 bool trainer::load_from_checkpoint_distributed(model& m, execution_context& c){
@@ -365,8 +359,7 @@ bool trainer::load_from_checkpoint_distributed(model& m, execution_context& c){
       }
     }
   }
-  auto flag = get_data_coordinator().load_from_checkpoint_distributed(get_persist_obj());
-  return flag;
+  return get_data_coordinator().load_from_checkpoint_distributed(get_persist_obj());
 }
 
 void trainer::write_proto(lbann_data::Trainer* proto) {
