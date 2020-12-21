@@ -28,6 +28,7 @@
 #include <iomanip>
 #include <sstream>
 
+#include "lbann/utils/profiling.hpp"
 #include "lbann/callbacks/kfac/kfac.hpp"
 #include "lbann/callbacks/kfac/kfac_util.hpp"
 #include "lbann/callbacks/kfac/kfac_block_fc_conv.hpp"
@@ -130,6 +131,7 @@ void kfac::on_backward_prop_end(model *m) {
 
   // List up layers to be updated
   if(m_blocks.size() == 0){
+    prof_region_begin("kfac-block-setup", prof_color, prof_sync);
     const size_t num_procs = comm->get_procs_per_trainer();
     std::unordered_map<std::string, int> proc_ranks;
     for(auto i_layer = layers.begin(); i_layer != layers.end(); i_layer++) {
@@ -143,6 +145,8 @@ void kfac::on_backward_prop_end(model *m) {
       const bool is_bn = (l_bn != nullptr);
       if(!(is_fc || is_conv || is_bn))
         continue;
+
+      prof_region_begin(("kfac-block-setup " + l->get_name()).c_str(), prof_color, prof_sync);
 
       // Ignore layers without optimizers
       const auto& weights = l->get_weights(0);
@@ -191,12 +195,17 @@ void kfac::on_backward_prop_end(model *m) {
       m_blocks.push_back(std::shared_ptr<kfac_block>(block));
       if(m_inverse_strategy != kfac_inverse_strategy::ROOT)
         proc_rank = (proc_rank+1)%num_procs;
+
+      prof_region_end(("kfac-block-setup " + l->get_name()).c_str(), prof_sync);
     }
 
-    if(comm->am_trainer_master())
+    if(comm->am_trainer_master()) {
       for(const auto& block : m_blocks)
         std::cout << "K-FAC callback setup: "
                   << block->get_info() << std::endl;
+    }
+
+    prof_region_end("kfac-block-setup", prof_sync);
   }
 
   // Step 1: Ensure that each process has averaged Kronecker factors
@@ -204,10 +213,16 @@ void kfac::on_backward_prop_end(model *m) {
   const bool is_kronecker_update_required =
       ((num_steps%m_update_interval) == 0 || !m_has_kronecker_inverse);
   if(is_kronecker_update_required) {
+    prof_region_begin("kfac-kronecker-update", prof_color, prof_sync);
 
-    for(auto& block : m_blocks)
+    prof_region_begin("kfac-kronecker-update-local", prof_color, prof_sync);
+    for(auto& block : m_blocks) {
+      prof_region_begin(("kfac-kronecker-update-local " + block->get_name()).c_str(), prof_color, prof_sync);
       block->compute_local_kronecker_factors(
           comm, m_print_matrix, m_print_matrix_summary);
+      prof_region_end(("kfac-kronecker-update-local " + block->get_name()).c_str(), prof_sync);
+    }
+    prof_region_end("kfac-kronecker-update-local", prof_sync);
 
     // List-up buffers to synchronize.
     std::vector<std::pair<size_t, El::AbstractMatrix<DataType>*>> buffers;
@@ -221,6 +236,7 @@ void kfac::on_backward_prop_end(model *m) {
       }
 
     // Perform reduce-scatter.
+    prof_region_begin("kfac-kronecker-update-reduce-scatter", prof_color, prof_sync);
     El::Matrix<DataType, El::Device::GPU>& global_buffer =
         get_workspace_matrix(
             "reduce_scatter_send_buffer",
@@ -228,19 +244,29 @@ void kfac::on_backward_prop_end(model *m) {
             1);
     kfac_util::reduce_scatter_blocks(
         buffers, global_buffer, comm, m_reduce_scatter_mode);
+    prof_region_end("kfac-kronecker-update-reduce-scatter", prof_sync);
 
-    for(auto& block : m_blocks)
+    prof_region_begin("kfac-kronecker-update-average", prof_color, prof_sync);
+    for(auto& block : m_blocks) {
+      prof_region_begin(("kfac-kronecker-update-average " + block->get_name()).c_str(), prof_color, prof_sync);
       block->update_kronecker_average(
           comm,
           m_kronecker_decay,
           m_print_matrix, m_print_matrix_summary);
+      prof_region_end(("kfac-kronecker-update-average " + block->get_name()).c_str(), prof_sync);
+    }
+    prof_region_end("kfac-kronecker-update-average", prof_sync);
+
+    prof_region_end("kfac-kronecker-update", prof_sync);
   }
 
   // Step 2: Model-parallel inverse computation
+  prof_region_begin("kfac-kronecker-inverse", prof_color, prof_sync);
   for(auto& block : m_blocks) {
     if(!is_kronecker_update_required || (size_t) comm->get_rank_in_trainer() != block->get_inverse_proc_rank())
       continue;
 
+    prof_region_begin(("kfac-kronecker-inverse " + block->get_name()).c_str(), prof_color, prof_sync);
     // TODO: Add kfac_block::is_bn?
     const bool is_bn = dynamic_cast<kfac_block_bn*>(block.get()) != nullptr;
     block->update_kronecker_inverse(
@@ -249,10 +275,13 @@ void kfac::on_backward_prop_end(model *m) {
         is_bn ? m_damping_bn_err : m_damping_err,
         m_print_matrix, m_print_matrix_summary,
         m_print_time);
+    prof_region_end(("kfac-kronecker-inverse " + block->get_name()).c_str(), prof_sync);
   }
   m_has_kronecker_inverse = true;
+  prof_region_end("kfac-kronecker-inverse", prof_sync);
 
   // Step 3: All-gather of each preconditioned gradient tensor
+  prof_region_begin("kfac-kronecker-allgather", prof_color, prof_sync);
   {
     // List-up buffers to synchronize.
     std::vector<std::pair<size_t, El::AbstractMatrix<DataType>*>> buffers;
@@ -281,9 +310,8 @@ void kfac::on_backward_prop_end(model *m) {
             1);
     kfac_util::allgather_blocks(
         buffers, local_buffer, global_buffer, comm, m_allgather_mode);
-
   }
-
+  prof_region_end("kfac-kronecker-allgather", prof_sync);
 }
 
 El::Matrix<DataType, El::Device::GPU>& kfac::get_workspace_matrix(

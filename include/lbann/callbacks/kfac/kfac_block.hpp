@@ -107,6 +107,10 @@ class kfac_block {
     return oss.str();
   }
 
+  std::string get_name() const {
+    return m_layer->get_name();
+  }
+
   size_t get_inverse_proc_rank() const {
     return m_inverse_proc_rank;
   }

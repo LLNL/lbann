@@ -202,6 +202,10 @@ class kfac : public callback_base {
       functions. TODO: Get the rank from lbann_comm directly */
   int m_rank;
 
+  /** @brief Parameters for prof_region_*. */
+  constexpr static const bool prof_sync = true;
+  constexpr static const int prof_color = 0;
+
 };
 
 // Builder function
