@@ -66,6 +66,7 @@ class leaky_relu_distconv_adapter: public data_type_distconv_adapter<TensorDataT
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 class leaky_relu_layer : public data_type_layer<TensorDataType> {
 public:
+  leaky_relu_layer() : leaky_relu_layer(nullptr) {}
   leaky_relu_layer(lbann_comm *comm, TensorDataType negative_slope = 0.01)
     : data_type_layer<TensorDataType>(comm), m_negative_slope(negative_slope) {}
   leaky_relu_layer* copy() const override { return new leaky_relu_layer(*this); }

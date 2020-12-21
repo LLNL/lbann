@@ -50,7 +50,7 @@ public:
   ///@}
 
 public:
-
+  log_softmax_layer() : log_softmax_layer(nullptr) {}
   log_softmax_layer(lbann_comm *comm)
     : data_type_layer<TensorDataType>(comm)
 #ifdef LBANN_HAS_DNN_LIB
