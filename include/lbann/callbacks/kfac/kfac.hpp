@@ -90,7 +90,8 @@ class kfac : public callback_base {
        size_t update_interval_steps,
        kfac_inverse_strategy inverse_strategy,
        kfac_reduce_scatter_mode reduce_scatter_mode,
-       kfac_allgather_mode allgather_mode)
+       kfac_allgather_mode allgather_mode,
+       const std::vector<std::string>& disable_layers)
   : callback_base(),
     m_damping_act_params(damping_act_params),
     m_damping_err_params(damping_err_params),
@@ -104,7 +105,8 @@ class kfac : public callback_base {
     m_update_interval_steps(update_interval_steps),
     m_inverse_strategy(inverse_strategy),
     m_reduce_scatter_mode(reduce_scatter_mode),
-    m_allgather_mode(allgather_mode) {
+    m_allgather_mode(allgather_mode),
+    m_disable_layers(disable_layers) {
     m_has_kronecker_inverse = false;
     m_damping_act = m_damping_act_params[0];
     m_damping_err = m_damping_err_params[0];
@@ -178,6 +180,9 @@ class kfac : public callback_base {
   /** @brief Collective communication algorithms. */
   const kfac_reduce_scatter_mode m_reduce_scatter_mode;
   const kfac_allgather_mode m_allgather_mode;
+
+  /** @brief Layer names where K-FAC is not used. */
+  const std::vector<std::string> m_disable_layers;
 
   /** @brief Whether inverse of Kronecker factors are available. */
   bool m_has_kronecker_inverse;

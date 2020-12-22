@@ -146,6 +146,12 @@ void kfac::on_backward_prop_end(model *m) {
       if(!(is_fc || is_conv || is_bn))
         continue;
 
+      if(std::find(m_disable_layers.begin(), m_disable_layers.end(), l->get_name()) != m_disable_layers.end()) {
+        if(comm->am_trainer_master())
+          std::cout << "K-fac callback: " << l->get_name() << " is ignored to optimize with K-FAC." << std::endl;
+        continue;
+      }
+
       prof_region_begin(("kfac-setup/" + l->get_name()).c_str(), prof_color, prof_sync);
 
       // Ignore layers without optimizers
@@ -481,6 +487,9 @@ build_kfac_callback_from_pbuf(
     LBANN_ERROR(err.str());
   }
 
+  const std::vector<std::string> disable_layers =
+      parse_list<std::string>(params.disable_layers());
+
   return make_unique<CallbackType>(
       damping_act_params,
       damping_err_params,
@@ -492,7 +501,8 @@ build_kfac_callback_from_pbuf(
       use_pi,
       update_intervals, update_interval_steps,
       inverse_strategy,
-      reduce_scatter_mode, allgather_mode);
+      reduce_scatter_mode, allgather_mode,
+      disable_layers);
 }
 
 } // namespace callback

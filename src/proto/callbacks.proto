@@ -403,6 +403,8 @@ message Callback {
 
     string reduce_scatter_mode = 14; // Options: allreduce, reduce-scatter, reduce (default: allreduce)
     string allgather_mode = 15; // Options: allreduce, allgather, broadcast (default: allreduce)
+
+    string disable_layers = 16;
   }
 
 }
