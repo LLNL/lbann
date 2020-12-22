@@ -431,7 +431,7 @@ bool checkpoint::restart(model *m) {
     get_active_trainer().get_name(),
     get_active_training_algorithm().get_name(),
     [&m, &c](persist& p_ref) {
-      return c.get_trainer().load_from_checkpoint_distributed(*m, c);
+      return c.get_trainer().load_from_checkpoint_shared(*m, c);
     },
     [&m, &c](persist& p_ref) {
       return c.get_trainer().load_from_checkpoint_distributed(*m, c);
