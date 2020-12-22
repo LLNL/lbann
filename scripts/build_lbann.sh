@@ -1,29 +1,5 @@
 #!/bin/bash
 
-# "spack" is just a shell function; it may not be exported to this
-# scope. Just to be sure, reload the shell integration.
-if [ -n "${SPACK_ROOT}" ]; then
-    source ${SPACK_ROOT}/share/spack/setup-env.sh
-fi
-
-SPACK_VERSION=$(spack --version | sed 's/-.*//g')
-MIN_SPACK_VERSION=0.16.0
-
-source $(dirname ${BASH_SOURCE})/utilities.sh
-
-compare_versions ${SPACK_VERSION} ${MIN_SPACK_VERSION}
-VALID_SPACK=$?
-
-if [[ ${VALID_SPACK} -eq 2 ]]; then
-    echo "Newer version of Spack required.  Detected version ${SPACK_VERSION} requires at least ${MIN_SPACK_VERSION}"
-    exit 1
-fi
-
-# Detect system parameters
-CLUSTER=$(hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g')
-#ARCH=$(uname -m)
-SYS=$(uname -s)
-
 SCRIPT=${BASH_SOURCE}
 
 if [[ ${SYS} = "Darwin" ]]; then
@@ -34,22 +10,6 @@ fi
 
 LBANN_HOME=$(dirname ${SCRIPTS_DIR})
 #SPACK_ENV_DIR=${LBANN_HOME}/spack_environments
-
-# Identify the center that we are running at
-CENTER=
-# Customize the build based on the center
-source $(dirname ${BASH_SOURCE})/customize_build_env.sh
-set_center_specific_fields
-
-# Temporarily overwrite the build suffix
-BUILD_SUFFIX=
-
-SPACK_ARCH=$(spack arch)
-SPACK_ARCH_TARGET=$(spack arch -t)
-SPACK_ARCH_PLATFORM=$(spack arch -p)
-SPACK_ARCH_GENERIC_TARGET=$(spack python -c "import archspec.cpu as cpu; print(str(cpu.host().family))")
-# Create a modified spack arch with generic target architecture
-SPACK_ARCH_PLATFORM_GENERIC_TARGET="${SPACK_ARCH_PLATFORM}-${SPACK_ARCH_GENERIC_TARGET}"
 
 SCRIPT=$(basename ${BASH_SOURCE})
 LBANN_ENV=
@@ -65,11 +25,6 @@ LBANN_VARIANTS=
 HYDROGEN_VER="@develop"
 ALUMINUM_VER="@master"
 DIHYDROGEN_VER="@develop"
-
-# Define the GPU_ARCH_VARIANTS field
-GPU_ARCH_VARIANTS=
-set_center_specific_gpu_arch ${CENTER} ${SPACK_ARCH_TARGET}
-GPU_VARIANTS+=" ${GPU_ARCH_VARIANTS}"
 
 ################################################################
 # Help message
@@ -94,8 +49,8 @@ Options:
   ${C}--build-env-only SHELL${N}  Drop into a shell with all of the spack build environment setup
   ${C}--build-suffix SUFFIX${N}   Appends the string to the sym link pointing to the build directory
   ${C}--config-only${N}           Run the spack dev-build command up to the configure stage only
-  ${C}-d | --install-deps)${N}    Install the lbann dependencies in addition to building from local source
-  ${C}--dependencies-only)${N}    Stop after installing the lbann dependencies
+  ${C}-d | --install-deps${N}    Install the lbann dependencies in addition to building from local source
+  ${C}--dependencies-only${N}    Stop after installing the lbann dependencies
   ${C}--drop-in SHELL${N}         Drop into a shell with all of the spack build environment setup after setting up the dev-build
   ${C}--dry-run${N}               Dry run the commands (no effect)
   ${C}-e | --env ENV${N}          Build and install LBANN in the spack environment provided
@@ -236,6 +191,54 @@ while :; do
     esac
     shift
 done
+
+# "spack" is just a shell function; it may not be exported to this
+# scope. Just to be sure, reload the shell integration.
+if [ -n "${SPACK_ROOT}" ]; then
+    source ${SPACK_ROOT}/share/spack/setup-env.sh
+else
+    echo "Spack required.  Please set SPACK_ROOT environment variable"
+    exit 1
+fi
+
+SPACK_VERSION=$(spack --version | sed 's/-.*//g')
+MIN_SPACK_VERSION=0.16.0
+
+source $(dirname ${BASH_SOURCE})/utilities.sh
+
+compare_versions ${SPACK_VERSION} ${MIN_SPACK_VERSION}
+VALID_SPACK=$?
+
+if [[ ${VALID_SPACK} -eq 2 ]]; then
+    echo "Newer version of Spack required.  Detected version ${SPACK_VERSION} requires at least ${MIN_SPACK_VERSION}"
+    exit 1
+fi
+
+# Detect system parameters
+CLUSTER=$(hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g')
+#ARCH=$(uname -m)
+SYS=$(uname -s)
+
+# Identify the center that we are running at
+CENTER=
+# Customize the build based on the center
+source $(dirname ${BASH_SOURCE})/customize_build_env.sh
+set_center_specific_fields
+
+# Temporarily overwrite the build suffix
+BUILD_SUFFIX=
+
+SPACK_ARCH=$(spack arch)
+SPACK_ARCH_TARGET=$(spack arch -t)
+SPACK_ARCH_PLATFORM=$(spack arch -p)
+SPACK_ARCH_GENERIC_TARGET=$(spack python -c "import archspec.cpu as cpu; print(str(cpu.host().family))")
+# Create a modified spack arch with generic target architecture
+SPACK_ARCH_PLATFORM_GENERIC_TARGET="${SPACK_ARCH_PLATFORM}-${SPACK_ARCH_GENERIC_TARGET}"
+
+# Define the GPU_ARCH_VARIANTS field
+GPU_ARCH_VARIANTS=
+set_center_specific_gpu_arch ${CENTER} ${SPACK_ARCH_TARGET}
+GPU_VARIANTS+=" ${GPU_ARCH_VARIANTS}"
 
 LBANN_ENV="${LBANN_ENV:-lbann-${LBANN_LABEL}-${SPACK_ARCH_TARGET}}"
 CORE_BUILD_PATH="${LBANN_HOME}/build/${CLUSTER}.${LBANN_ENV}${BUILD_SUFFIX:-}"
