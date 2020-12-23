@@ -8,7 +8,7 @@ import sys
 from google.protobuf import text_format as txtf
 import json
 import numpy as np
-import models.wae_stack as molwae
+import models.wae as molwae
 
 import lbann
 import lbann.contrib.launcher
@@ -52,6 +52,8 @@ def construct_lc_launcher_args():
     parser.add_argument("--num-embeddings", type=int, default=None)
     parser.add_argument("--batch-size", type=int, default=512)
     parser.add_argument("--num-epochs", type=int, default=1)
+    parser.add_argument("--z-dim", type=int, default=128, help="latent space dim")
+    parser.add_argument("--lamda", type=float, default=0.001, help="weighting of adversarial loss")
     parser.add_argument("--data-reader-prototext", default=None)
     parser.add_argument("--pad-index", type=int, default=None)
     parser.add_argument("--sequence-length", type=int, default=None)
@@ -102,9 +104,10 @@ def construct_model(run_args):
     data_layout = "data_parallel"
     # Layer graph
     input_ = lbann.Input(target_mode='N/A',name='inp_data')
-    inp_slice = lbann.Slice(input_, axis=0, slice_points="0 102 230",name='inp_slice')
+    #inp_slice = lbann.Slice(input_, axis=0, slice_points="0 102 230",name='inp_slice')
+    inp_slice = lbann.Slice(input_, axis=0, slice_points="0 102 118",name='inp_slice')
     inp_smile = lbann.Identity(inp_slice,name='inp_smile')
-    z = lbann.Identity(inp_slice, name='z') #param not used
+    z_in = lbann.Identity(inp_slice, name='z') 
     #input_ = lbann.Identity(lbann.Input(name='inp',target_mode="N/A"), name='inp1')
     vae_loss= []
     input_feature_dims = sequence_length
@@ -118,13 +121,13 @@ def construct_model(run_args):
 
     #print("Inp smile len ", len(inp_smile), "z len ",  len(z))
     print("save output? ", save_output, "out dir ",  run_args.dump_outputs_dir)
-    #z = lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims="128")
+    z = lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims=str(run_args.z_dim))
     x = lbann.Slice(inp_smile, slice_points=str_list([0, input_feature_dims]))
     x = lbann.Identity(x)
     waemodel = molwae.MolWAE(input_feature_dims,
                            dictionary_size,
                            embedding_size,
-                           pad_index,save_output)
+                           pad_index,run_args.z_dim,save_output)
     x_emb = lbann.Embedding(
             x,
             num_embeddings=waemodel.dictionary_size,

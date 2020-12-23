@@ -87,7 +87,7 @@ class MolWAE(lbann.modules.Module):
     global_count = 0  # Static counter, used for default names
 
     def __init__(self, input_feature_dims,dictionary_size, embedding_size, 
-                 ignore_label,save_output=False, name=None):
+                 ignore_label,zdim=128, save_output=False, name=None):
         """Initialize Molecular WAE.
 
         Args:
@@ -95,6 +95,7 @@ class MolWAE(lbann.modules.Module):
             dictionary_size (int): vocabulary size
             embedding_size (int): embedding size
             ignore_label (int): padding index
+            zdim (int): latent dimension
             save_output (bool, optional): save or not save predictions
                 (default: False).
             name (str, optional): Module name
@@ -110,6 +111,7 @@ class MolWAE(lbann.modules.Module):
         self.embedding_size = embedding_size
         self.dictionary_size = dictionary_size
         self.label_to_ignore = ignore_label
+        self.zdim = zdim
         self.save_output = save_output
         self.datatype = lbann.DataType.FLOAT
         self.weights_datatype = lbann.DataType.FLOAT
@@ -125,8 +127,8 @@ class MolWAE(lbann.modules.Module):
             datatype=self.datatype,
             weights_datatype=self.weights_datatype,
         )
-        self.q_mu = fc(128,name='encoder_qmu')
-        self.q_logvar = fc(128,name='encoder_qlogvar')
+        self.q_mu = fc(zdim,name='encoder_qmu')
+        self.q_logvar = fc(zdim,name='encoder_qlogvar')
         for w in self.q_mu.weights + self.q_logvar.weights:
             w.datatype = self.weights_datatype
 
@@ -195,15 +197,15 @@ class MolWAE(lbann.modules.Module):
         recon_loss = lbann.Identity(recon_loss, device='CPU')
 
         z_prior = lbann.Tessellate(
-            lbann.Reshape(z, dims=str_list([1, 128])),
-            dims=str_list([self.input_feature_dims, 128]),
+            lbann.Reshape(z, dims=str_list([1, self.zdim])),
+            dims=str_list([self.input_feature_dims, self.zdim]),
         )
 
         d_real = self.discriminator0(lbann.Concatenation([x_emb,z_prior],axis=1))
 
         z_sample0 = lbann.Tessellate(
-            lbann.Reshape(z_sample, dims=str_list([1, 128])),
-            dims=str_list([self.input_feature_dims, 128]),
+            lbann.Reshape(z_sample, dims=str_list([1, self.zdim])),
+            dims=str_list([self.input_feature_dims, self.zdim]),
         )
         y_z_sample = lbann.Concatenation([x_emb,z_sample0],axis=1)
 
@@ -245,8 +247,8 @@ class MolWAE(lbann.modules.Module):
         # z_0 = z.unsqueeze(1).repeat(1, x_emb.size(1), 1)
         # x_input = torch.cat([x_emb, z_0], dim=-1)
         z_0 = lbann.Tessellate(
-            lbann.Reshape(z, dims=str_list([1, 128])),
-            dims=str_list([self.input_feature_dims, 128]),
+            lbann.Reshape(z, dims=str_list([1, self.zdim])),
+            dims=str_list([self.input_feature_dims, self.zdim]),
         )
         x_input = lbann.Concatenation(x_emb, z_0, axis=1)
 
