@@ -56,7 +56,7 @@ def construct_lc_launcher_args():
     parser.add_argument("--lamda", type=float, default=0.001, help="weighting of adversarial loss")
     parser.add_argument("--data-reader-prototext", default=None)
     parser.add_argument("--pad-index", type=int, default=None)
-    parser.add_argument("--sequence-length", type=int, default=None)
+    parser.add_argument("--sequence-length", type=int, default=None, help="seq length used in training + bos + eos")
     parser.add_argument("--dump-model-dir", type=str, default=None)
     parser.add_argument("--dump-outputs-dir", type=str, default="output")
     parser.add_argument("--dump-outputs-interval", type=int, default=1)
@@ -96,20 +96,20 @@ def construct_model(run_args):
     pad_index = run_args.pad_index
     assert pad_index is not None
 
-    #sequence_length = run_args.sequence_length
-    sequence_length = 102
+    sequence_length = run_args.sequence_length
     assert sequence_length is not None
 
     print("sequence length is {}".format(sequence_length))
     data_layout = "data_parallel"
     # Layer graph
     input_ = lbann.Input(target_mode='N/A',name='inp_data')
-    #inp_slice = lbann.Slice(input_, axis=0, slice_points="0 102 230",name='inp_slice')
-    inp_slice = lbann.Slice(input_, axis=0, slice_points="0 102 118",name='inp_slice')
+    #@todo, pass slice points as argument
+    inp_slice = lbann.Slice(input_, axis=0, 
+                             slice_points=str_list([0, sequence_length, sequence_length+run_args.z_dim]),
+                             name='inp_slice')
     inp_smile = lbann.Identity(inp_slice,name='inp_smile')
-    z_in = lbann.Identity(inp_slice, name='z') 
-    #input_ = lbann.Identity(lbann.Input(name='inp',target_mode="N/A"), name='inp1')
-    vae_loss= []
+    z  = lbann.Identity(inp_slice, name='z') 
+    wae_loss= []
     input_feature_dims = sequence_length
 
     embedding_size = run_args.embedding_dim
@@ -119,9 +119,9 @@ def construct_model(run_args):
 
     save_output = True if run_args.dump_outputs_dir else False
 
-    #print("Inp smile len ", len(inp_smile), "z len ",  len(z))
     print("save output? ", save_output, "out dir ",  run_args.dump_outputs_dir)
-    z = lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims=str(run_args.z_dim))
+    #uncomment below for random sampling
+    #z = lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims=str(run_args.z_dim))
     x = lbann.Slice(inp_smile, slice_points=str_list([0, input_feature_dims]))
     x = lbann.Identity(x)
     waemodel = molwae.MolWAE(input_feature_dims,
@@ -143,7 +143,7 @@ def construct_model(run_args):
 
 
 
-    vae_loss.append(recon)
+    wae_loss.append(recon)
 
     layers = list(lbann.traverse_layer_graph(input_))
     # Setup objective function
@@ -152,10 +152,10 @@ def construct_model(run_args):
       weights.update(l.weights)
     #l2_reg = lbann.L2WeightRegularization(weights=weights, scale=1e-4)
 
-    #vae_loss.append(l2_reg)
-    print("LEN vae loss ", len(vae_loss))
+    #wae_loss.append(l2_reg)
+    print("LEN wae loss ", len(wae_loss))
 
-    obj = lbann.ObjectiveFunction(vae_loss)
+    obj = lbann.ObjectiveFunction(wae_loss)
 
     # Initialize check metric callback
     metrics = [lbann.Metric(recon, name='recon')]

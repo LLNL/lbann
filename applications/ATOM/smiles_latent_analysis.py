@@ -18,7 +18,7 @@ def get_smiles_from_lbann_tensors(fdir, sequence_length, zdim, batch_num=0):
     This function, converts the input and output tensor to equivalent SMILES string
     Save SMILES strings to fdir
   '''
-  #vocab_path = 'path/to/vocab/file/'
+  vocab_path = 'path/to/vocab/file/'
  
   out_files = glob.glob(fdir+"*epoch."+str(batch_num)+".step*conc*_output0*.csv")
   outs = np.loadtxt(out_files[0], delimiter=",")
@@ -114,7 +114,7 @@ fdir = sys.argv[1] #directory of LBANN tensor outputs
 sd = sys.argv[2]   #tag for say different noise pertubation values
 
 sequence_length = 102 #Max sequence lenght use in LBANN training (100+bos+eos)
-zdim = 16 #latent space dimension
+zdim = 128 #latent space dimension
 batch_num = 0 #use to control loading different batches of dump (default 0) 
 
 get_smiles_from_lbann_tensors(fdir,sequence_length, zdim)
