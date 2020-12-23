@@ -253,13 +253,14 @@ void kfac::on_backward_prop_end(model *m) {
 
     // Perform reduce-scatter.
     prof_region_begin("kfac-update/reduce-scatter", prof_color, prof_sync);
+    const auto reduce_scatter_mode = kfac_reduce_scatter_mode::ALLREDUCE;
     El::Matrix<DataType, El::Device::GPU>& global_buffer =
         get_workspace_matrix(
             "reduce_scatter_send_buffer",
-            kfac_util::is_reduce_scatter_buffer_required(m_reduce_scatter_mode) ? global_buffer_size : 0,
+            kfac_util::is_reduce_scatter_buffer_required(reduce_scatter_mode) ? global_buffer_size : 0,
             1);
     kfac_util::reduce_scatter_blocks(
-        buffers, global_buffer, comm, m_reduce_scatter_mode);
+        buffers, global_buffer, comm, reduce_scatter_mode);
     prof_region_end("kfac-update/reduce-scatter", prof_sync);
 
 #ifdef LBANN_NVPROF
@@ -327,7 +328,8 @@ void kfac::on_backward_prop_end(model *m) {
       }
 
     // Perform allgather.
-    const auto is_buffer_needed = kfac_util::is_allgather_buffer_required(m_allgather_mode);
+    const auto allgather_mode = kfac_allgather_mode::ALLREDUCE;
+    const auto is_buffer_needed = kfac_util::is_allgather_buffer_required(allgather_mode);
     El::Matrix<DataType, El::Device::GPU>& local_buffer =
         get_workspace_matrix(
             "allgather_send_buffer",
@@ -339,7 +341,7 @@ void kfac::on_backward_prop_end(model *m) {
             is_buffer_needed.second ? global_buffer_size : 0,
             1);
     kfac_util::allgather_blocks(
-        buffers, local_buffer, global_buffer, comm, m_allgather_mode);
+        buffers, local_buffer, global_buffer, comm, allgather_mode);
   }
   prof_region_end("kfac-allgather", prof_sync);
 
@@ -457,36 +459,6 @@ build_kfac_callback_from_pbuf(
     LBANN_ERROR(err.str());
   }
 
-  const std::string reduce_scatter_mode_str = params.reduce_scatter_mode();
-  kfac_reduce_scatter_mode reduce_scatter_mode;
-  if(reduce_scatter_mode_str == "" || reduce_scatter_mode_str == "allreduce")
-    reduce_scatter_mode = kfac_reduce_scatter_mode::ALLREDUCE;
-  else if(reduce_scatter_mode_str == "reduce-scatter")
-    reduce_scatter_mode = kfac_reduce_scatter_mode::REDUCE_SCATTER;
-  else if(reduce_scatter_mode_str == "reduce")
-    reduce_scatter_mode = kfac_reduce_scatter_mode::REDUCE;
-  else {
-    std::stringstream err;
-    err << "Invalid reduce-scatter mode: "
-        << reduce_scatter_mode_str;
-    LBANN_ERROR(err.str());
-  }
-
-  const std::string allgather_mode_str = params.allgather_mode();
-  kfac_allgather_mode allgather_mode;
-  if(allgather_mode_str == "" || allgather_mode_str == "allreduce")
-    allgather_mode = kfac_allgather_mode::ALLREDUCE;
-  else if(allgather_mode_str == "allgather")
-    allgather_mode = kfac_allgather_mode::ALLGATHER;
-  else if(allgather_mode_str == "broadcast")
-    allgather_mode = kfac_allgather_mode::BROADCAST;
-  else {
-    std::stringstream err;
-    err << "Invalid allgather mode: "
-        << allgather_mode_str;
-    LBANN_ERROR(err.str());
-  }
-
   const std::vector<std::string> disable_layers =
       parse_list<std::string>(params.disable_layers());
 
@@ -501,7 +473,6 @@ build_kfac_callback_from_pbuf(
       use_pi,
       update_intervals, update_interval_steps,
       inverse_strategy,
-      reduce_scatter_mode, allgather_mode,
       disable_layers);
 }
 
