@@ -97,13 +97,13 @@ def construct_model(run_args):
     assert pad_index is not None
 
     sequence_length = run_args.sequence_length
-    assert sequence_length is not None
+    assert sequence_length is not None, 'should be training seq len + bos + eos'
 
-    print("sequence length is {}".format(sequence_length))
+    print("sequence length is {}, which is training sequence len + bos + eos".format(sequence_length))
     data_layout = "data_parallel"
     # Layer graph
     input_ = lbann.Input(target_mode='N/A',name='inp_data')
-    #@todo, pass slice points as argument
+    #Note input assumes to come from encoder script concatenation of input smiles + z
     inp_slice = lbann.Slice(input_, axis=0, 
                              slice_points=str_list([0, sequence_length, sequence_length+run_args.z_dim]),
                              name='inp_slice')

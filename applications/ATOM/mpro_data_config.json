@@ -1,0 +1,10 @@
+{
+
+  "pad_index": 40,
+  "max_seq_len": 230,
+  "data_path": "/path/to/inz/file.npy",
+  "embedding_dim" : 42,
+  "num_embeddings" : 42
+
+
+}
