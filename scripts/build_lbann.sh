@@ -318,7 +318,13 @@ fi
 
 CMD="spack env activate -p ${LBANN_ENV}"
 echo ${CMD} | tee -a ${LOG}
-[[ -z "${DRY_RUN:-}" ]] && ${CMD}
+if [[ -z "${DRY_RUN:-}" ]]; then
+    if [[ -z $(spack env list | grep ${LBANN_ENV}) ]]; then
+        echo "Spack could not activate environment ${LBANN_ENV} -- install dependencies with -d flag"
+        exit 1
+    fi
+    ${CMD}
+fi
 
 if [[ -n "${BUILD_ENV_ONLY:-}" ]]; then
     CMD="spack build-env ${LBANN_SPEC} -- ${BUILD_ENV_SHELL}"
