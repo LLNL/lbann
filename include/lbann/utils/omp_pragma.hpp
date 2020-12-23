@@ -32,6 +32,9 @@
 
 /// Allow OpenMP parallel for loops to be replaced with taskloop constructs
 /// Requires OpenMP 5.0 support for taskloop reduction clauses
+
+#ifndef LBANN_DETERMINISTIC
+
 #if defined(LBANN_HAVE_OMP_TASKLOOP)
   #pragma message "Using OpenMP taskloops instead of parallel for loops"
   #define LBANN_OMP_PARALLEL_FOR_HELPER(arg) #arg
@@ -62,4 +65,21 @@
 #define LBANN_OMP_PARALLEL _Pragma("omp parallel")
 #define OMP_CRITICAL _Pragma("omp critical")
 
+#else // LBANN_DETERMINISTIC
+
+#define LBANN_OMP_PARALLEL_FOR_HELPER(arg)
+#define LBANN_OMP_PARALLEL_FOR_TEXT(arg)
+#define LBANN_OMP_PARALLEL_FOR_ARGS(arg)
+#define LBANN_OMP_PARALLEL_FOR
+#define LBANN_OMP_PARALLEL_FOR_COLLAPSE2
+#define LBANN_OMP_PARALLEL_FOR_COLLAPSE3
+#define LBANN_OMP_PARALLEL_FOR_COLLAPSE4
+#define LBANN_OMP_PARALLEL_FOR_COLLAPSE5
+#define LBANN_OMP_PARALLEL_HELPER(arg)
+#define LBANN_OMP_PARALLEL_TEXT(arg)
+#define LBANN_OMP_PARALLEL_ARGS(arg)
+#define LBANN_OMP_PARALLEL
+#define OMP_CRITICAL
+
+#endif // LBANN_DETERMINISTIC
 #endif // LBANN_OMP_PRAGMA_HPP
