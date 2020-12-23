@@ -296,6 +296,22 @@ void fp_compute_impl(softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, E
   const auto& local_input = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_prev_activations());
   auto& local_output = dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_activations());
   if (!local_input.IsEmpty()) {
+    /*
+    int N = 8, labels_n = 2;
+
+    // Scaling parameters
+    const dnn_lib::ScalingParamType<TensorDataType> alpha = 1.;
+    const dnn_lib::ScalingParamType<TensorDataType> beta = 0.;
+
+    // Input/Output tensors and descriptors
+    dnn_lib::TensorDescriptor xDesc;
+    xDesc.set(dnn_lib::get_data_type<TensorDataType>(), { N, 1, labels_n });
+    El::Matrix<TensorDataType, El::Device::GPU> x(labels_n, N);
+    dnn_lib::TensorDescriptor yDesc;
+    yDesc.set(dnn_lib::get_data_type<TensorDataType>(), { N, 1, labels_n });
+    El::Matrix<TensorDataType, El::Device::GPU> y(labels_n, N);
+    dnn_lib::softmax_forward(alpha, xDesc, x, beta, yDesc, y, softmax_mode::CHANNEL, softmax_alg::ACCURATE);
+    */
     dnn_lib::softmax_forward(one,
                              l.m_tensors_dnn_desc.get_prev_activations(),
                              local_input,
@@ -305,7 +321,7 @@ void fp_compute_impl(softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, E
                              l.m_mode);
 #ifdef LBANN_ENABLE_SOFTMAX_THRESHOLD
     gpu_lib::apply_entrywise_unary_operator<threshold_op>(local_output,
-                                                       local_output);
+                                                          local_output);
 #endif // LBANN_ENABLE_SOFTMAX_THRESHOLD
   }
 }

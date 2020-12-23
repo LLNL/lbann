@@ -1283,6 +1283,10 @@ std::vector<miopenConvBwdWeightsAlgorithm_t> nondet_bwd_filter_algos = {
   //HIPDNN_CONVOLUTION_BWD_FILTER_ALGO_3
 };
 
+int ConvolutionFwdAlgoCount() { return 4; }
+int ConvolutionBwdFilterAlgoCount() { return 2; }
+int ConvolutionBwdDataAlgoCount() { return 2; }
+
 template <typename AlgoType>
 AlgoType get_miopen_conv_algo(
   const miopenConvAlgoPerf_t& perf_result) {
@@ -1388,7 +1392,7 @@ miopenConvFwdAlgorithm_t get_fwd_algo_heuristic(
   void* output,
   size_t ws_size,
   void* ws) {
-  int num_algos = 5; //TODO: find smarter way to get algo count
+  int num_algos = ConvolutionFwdAlgoCount();
   std::vector<miopenConvAlgoPerf_t> perf_results(num_algos);
   int num_tested_algos;
   CHECK_MIOPEN(miopenFindConvolutionForwardAlgorithm(
@@ -1416,7 +1420,7 @@ miopenConvBwdDataAlgorithm_t get_bwd_data_algo_heuristic(
   void* error_signal,
   size_t ws_size,
   void* ws) {
-  int num_algos = 4; //TODO
+  int num_algos = ConvolutionBwdDataAlgoCount();
   std::vector<miopenConvAlgoPerf_t> perf_results(num_algos);
   int num_tested_algos;
   CHECK_MIOPEN(miopenFindConvolutionBackwardDataAlgorithm(
@@ -1431,6 +1435,7 @@ miopenConvBwdDataAlgorithm_t get_bwd_data_algo_heuristic(
                 true));
   return find_best_heuristic_algorithm(perf_results, nondet_bwd_data_algos,
                                        deterministic, ws_size);
+  //return miopenConvolutionBwdDataAlgoGEMM;
 }
 
 miopenConvBwdWeightsAlgorithm_t get_bwd_filter_algo_heuristic(
@@ -1444,7 +1449,7 @@ miopenConvBwdWeightsAlgorithm_t get_bwd_filter_algo_heuristic(
   void* kernel_gradient,
   size_t ws_size,
   void* ws) {
-  int num_algos = 3; //TODO
+  int num_algos = ConvolutionBwdFilterAlgoCount();
   std::vector<miopenConvAlgoPerf_t> perf_results(num_algos);
   int num_tested_algos;
   CHECK_MIOPEN(miopenFindConvolutionBackwardWeightsAlgorithm(
@@ -1459,6 +1464,7 @@ miopenConvBwdWeightsAlgorithm_t get_bwd_filter_algo_heuristic(
                 true));
   return find_best_heuristic_algorithm(perf_results, nondet_bwd_filter_algos,
                                        deterministic, ws_size);
+  //return miopenConvolutionBwdWeightsAlgoGEMM;
 }
 
 miopenConvFwdAlgorithm_t get_fwd_algo_autotune(
@@ -1474,7 +1480,7 @@ miopenConvFwdAlgorithm_t get_fwd_algo_autotune(
   void* ws) {
   constexpr int num_trials = 3;
   constexpr int num_skip = 1;
-  int num_algos = 5; //TODO
+  int num_algos = ConvolutionFwdAlgoCount();
   std::vector<miopenConvAlgoPerf_t> perf_results_all;
   std::vector<miopenConvAlgoPerf_t> perf_results(num_algos);
   for (int trial = 0; trial < num_trials + num_skip; ++trial) {
@@ -1512,7 +1518,7 @@ miopenConvBwdDataAlgorithm_t get_bwd_data_algo_autotune(
   void* ws) {
   constexpr int num_trials = 3;
   constexpr int num_skip = 1;
-  int num_algos = 4;//TODO
+  int num_algos = ConvolutionBwdDataAlgoCount();
   std::vector<miopenConvAlgoPerf_t> perf_results_all;
   std::vector<miopenConvAlgoPerf_t> perf_results(num_algos);
   for (int trial = 0; trial < num_trials + num_skip; ++trial) {
@@ -1535,6 +1541,7 @@ miopenConvBwdDataAlgorithm_t get_bwd_data_algo_autotune(
   }
   return find_best_algorithm(perf_results_all, nondet_bwd_data_algos,
                              deterministic, ws_size);
+  //return miopenConvolutionBwdDataAlgoGEMM;
 }
 
 miopenConvBwdWeightsAlgorithm_t get_bwd_filter_algo_autotune(
@@ -1550,7 +1557,7 @@ miopenConvBwdWeightsAlgorithm_t get_bwd_filter_algo_autotune(
   void* ws) {
   constexpr int num_trials = 3;
   constexpr int num_skip = 1;
-  int num_algos = 3;//TODO
+  int num_algos = ConvolutionBwdFilterAlgoCount();
   std::vector<miopenConvAlgoPerf_t> perf_results_all;
   std::vector<miopenConvAlgoPerf_t> perf_results(num_algos);
   for (int trial = 0; trial < num_trials + num_skip; ++trial) {
@@ -1573,6 +1580,7 @@ miopenConvBwdWeightsAlgorithm_t get_bwd_filter_algo_autotune(
   }
   return find_best_algorithm(perf_results_all, nondet_bwd_filter_algos,
                              deterministic, ws_size);
+  //return miopenConvolutionBwdWeightsAlgoGEMM;
 }
 
 }  // namespace
@@ -1589,6 +1597,7 @@ fwd_conv_alg get_fwd_algorithm(
   void* output,
   size_t ws_size,
   void* ws) {
+  return fwd_conv_alg::IMPLICIT_GEMM;
   miopenConvFwdAlgorithm_t a;
   if (autotune) {
     a = get_fwd_algo_autotune(deterministic,
@@ -1620,6 +1629,7 @@ bwd_data_conv_alg get_bwd_data_algorithm(
   void* error_signal,
   size_t ws_size,
   void* ws) {
+  return bwd_data_conv_alg::CUDNN_ALGO_0;
   miopenConvBwdDataAlgorithm_t a;
   if (autotune) {
     a = get_bwd_data_algo_autotune(deterministic,
@@ -1651,6 +1661,7 @@ bwd_filter_conv_alg get_bwd_filter_algorithm(
   void* kernel_gradient,
   size_t ws_size,
   void* ws) {
+  return bwd_filter_conv_alg::CUDNN_ALGO_0;
   miopenConvBwdWeightsAlgorithm_t a;
   if (autotune) {
     a = get_bwd_filter_algo_autotune(deterministic,

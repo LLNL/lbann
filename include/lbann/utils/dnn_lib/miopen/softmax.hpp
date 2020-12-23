@@ -48,6 +48,7 @@ void softmax_forward(
   ScalarParameterType const& beta_in,
   TensorDescriptor const& yDesc,
   El::Matrix<TensorDataType, El::Device::GPU>& y,
+  El::SyncInfo<El::Device::GPU> const& si,
   softmax_mode mode,
   softmax_alg alg = softmax_alg::ACCURATE)
 {
@@ -56,13 +57,11 @@ void softmax_forward(
     return;
 
   using LibScalingParamT = dnn_lib::ScalingParamType<TensorDataType>;
-  auto multisync = El::MakeMultiSync(gpu::get_sync_info(y),
-                                     gpu::get_sync_info(x));
-  auto handle_manager = internal::make_default_handle_manager(multisync);
+  auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
   auto beta = El::To<LibScalingParamT>(beta_in);
   CHECK_MIOPEN(miopenSoftmaxForward_V2(handle_manager.get(),
-                                      &alpha,
+                                       &alpha,
                                        xDesc,
                                        x.LockedBuffer(),
                                        &beta,
@@ -70,6 +69,60 @@ void softmax_forward(
                                        y.Buffer(),
                                        miopen::to_miopen(alg),
                                        miopen::to_miopen(mode)));
+}
+
+template <typename TensorDataType, typename ScalarParameterType>
+void softmax_forward(
+  ScalarParameterType const& alpha_in,
+  TensorDescriptor const& xDesc,
+  El::Matrix<TensorDataType, El::Device::GPU> const& x,
+  ScalarParameterType const& beta_in,
+  TensorDescriptor const& yDesc,
+  El::Matrix<TensorDataType, El::Device::GPU>& y,
+  softmax_mode mode,
+  softmax_alg alg = softmax_alg::ACCURATE)
+{
+  auto multisync = El::MakeMultiSync(gpu::get_sync_info(y),
+                                     gpu::get_sync_info(x));
+  softmax_forward(alpha_in, xDesc, x,
+                  beta_in, yDesc, y,
+                  multisync,
+                  mode, alg);
+}
+
+template <typename TensorDataType, typename ScalarParameterType>
+void softmax_backward(
+  ScalarParameterType const& alpha_in,
+  TensorDescriptor const& yDesc,
+  El::Matrix<TensorDataType, El::Device::GPU> const& y,
+  TensorDescriptor const& dyDesc,
+  El::Matrix<TensorDataType, El::Device::GPU> const& dy,
+  ScalarParameterType const& beta_in,
+  TensorDescriptor const& dxDesc,
+  El::Matrix<TensorDataType, El::Device::GPU>& dx,
+  El::SyncInfo<El::Device::GPU> const& si,
+  softmax_mode mode,
+  softmax_alg alg = softmax_alg::ACCURATE)
+{
+  // Short-circuit if we can
+  if (y.IsEmpty())
+    return;
+
+  using LibScalingParamT = dnn_lib::ScalingParamType<TensorDataType>;
+  auto handle_manager = internal::make_default_handle_manager(si);
+  auto alpha = El::To<LibScalingParamT>(alpha_in);
+  auto beta = El::To<LibScalingParamT>(beta_in);
+  CHECK_MIOPEN(miopenSoftmaxBackward_V2(handle_manager.get(),
+                                        &alpha,
+                                        yDesc,
+                                        y.LockedBuffer(),
+                                        dyDesc,
+                                        dy.LockedBuffer(),
+                                        &beta,
+                                        dxDesc,
+                                        dx.Buffer(),
+                                        miopen::to_miopen(alg),
+                                        miopen::to_miopen(mode)));
 }
 
 template <typename TensorDataType, typename ScalarParameterType>
@@ -85,28 +138,14 @@ void softmax_backward(
   softmax_mode mode,
   softmax_alg alg = softmax_alg::ACCURATE)
 {
-  // Short-circuit if we can
-  if (y.IsEmpty())
-    return;
-
-  using LibScalingParamT = dnn_lib::ScalingParamType<TensorDataType>;
   auto multisync = El::MakeMultiSync(gpu::get_sync_info(dx),
                                      gpu::get_sync_info(y),
                                      gpu::get_sync_info(dy));
-  auto handle_manager = internal::make_default_handle_manager(multisync);
-  auto alpha = El::To<LibScalingParamT>(alpha_in);
-  auto beta = El::To<LibScalingParamT>(beta_in);
-  CHECK_MIOPEN(miopenSoftmaxBackward_V2(handle_manager.get(),
-                                        &alpha,
-                                        yDesc,
-                                        y.LockedBuffer(),
-                                        dyDesc,
-                                        dy.LockedBuffer(),
-                                        &beta,
-                                        dxDesc,
-                                        dx.Buffer(),
-                                        miopen::to_miopen(alg),
-                                        miopen::to_miopen(mode)));
+  softmax_backward(alpha_in, yDesc, y,
+                   dyDesc, dy,
+                   beta_in, dxDesc, dx,
+                   multisync,
+                   mode, alg);
 }
 
 } // namespace dnn_lib

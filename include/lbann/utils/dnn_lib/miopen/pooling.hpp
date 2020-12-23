@@ -66,7 +66,7 @@ void pooling_forward(PoolingDescriptor const& poolingDesc,
   auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
   auto beta = El::To<LibScalingParamT>(beta_in);
-  if (workSpace.Height() == 0 || workSpace.Width() == 0) { // Inference use-case
+  if (workSpace.Height() == 0 || workSpace.Width() == 0) { // Inference
     CHECK_MIOPEN(miopenPoolingForward(handle_manager.get(),
                                       poolingDesc,
                                       &alpha,
@@ -76,10 +76,10 @@ void pooling_forward(PoolingDescriptor const& poolingDesc,
                                       yDesc,
                                       y.Buffer(),
                                       false,
-                                      workSpace.Buffer(),
-                                      workSpace.Height()*sizeof(TensorDataType)));
+                                      nullptr,
+                                      0));
   }
-  else {                                                  // Training use-case
+  else {                                                  // Training
     CHECK_MIOPEN(miopenPoolingForward(handle_manager.get(),
                                       poolingDesc,
                                       &alpha,
@@ -133,36 +133,19 @@ void pooling_backward(PoolingDescriptor const& poolingDesc,
   auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
   auto beta = El::To<LibScalingParamT>(beta_in);
-  if (workSpace.Height() == 0 || workSpace.Width() == 0) { // Training use-case
-    CHECK_MIOPEN(miopenPoolingBackward(handle_manager.get(),
-                                       poolingDesc,
-                                       &alpha,
-                                       yDesc,
-                                       y.LockedBuffer(),
-                                       dyDesc,
-                                       dy.LockedBuffer(),
-                                       xDesc,
-                                       x.LockedBuffer(),
-                                       &beta,
-                                       dxDesc,
-                                       dx.Buffer(),
-                                       workSpace.Buffer()));
-  }
-  else {                                                  // Inference use-case
-    CHECK_MIOPEN(miopenPoolingBackward(handle_manager.get(),
-                                       poolingDesc,
-                                       &alpha,
-                                       yDesc,
-                                       y.LockedBuffer(),
-                                       dyDesc,
-                                       dy.LockedBuffer(),
-                                       xDesc,
-                                       x.LockedBuffer(),
-                                       &beta,
-                                       dxDesc,
-                                       dx.Buffer(),
-                                       workSpace.Buffer()));
-  }
+  CHECK_MIOPEN(miopenPoolingBackward(handle_manager.get(),
+                                     poolingDesc,
+                                     &alpha,
+                                     yDesc,
+                                     y.LockedBuffer(),
+                                     dyDesc,
+                                     dy.LockedBuffer(),
+                                     xDesc,
+                                     x.LockedBuffer(),
+                                     &beta,
+                                     dxDesc,
+                                     dx.Buffer(),
+                                     workSpace.Buffer()));
 }
 
 template <typename TensorDataType, typename ScalarParameterType>

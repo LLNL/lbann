@@ -66,19 +66,7 @@ void lrn_cross_channel_forward(LRNDescriptor const& normDesc,
   auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
   auto beta = El::To<LibScalingParamT>(beta_in);
-  if (workSpace.Height() == 0 || workSpace.Width() == 0) { // Training use-case
-    CHECK_MIOPEN(miopenLRNForward(handle_manager.get(),
-                                  normDesc,
-                                  &alpha,
-                                  xDesc,
-                                  x.LockedBuffer(),
-                                  &beta,
-                                  yDesc,
-                                  y.Buffer(),
-                                  true,
-                                  workSpace.Buffer()));
-  }
-  else {                                                  // Inference use-case
+  if (workSpace.Height() == 0 || workSpace.Width() == 0) { // Inference
     CHECK_MIOPEN(miopenLRNForward(handle_manager.get(),
                                   normDesc,
                                   &alpha,
@@ -89,6 +77,18 @@ void lrn_cross_channel_forward(LRNDescriptor const& normDesc,
                                   y.Buffer(),
                                   false,
                                   nullptr));
+  }
+  else {                                                  // Training
+    CHECK_MIOPEN(miopenLRNForward(handle_manager.get(),
+                                  normDesc,
+                                  &alpha,
+                                  xDesc,
+                                  x.LockedBuffer(),
+                                  &beta,
+                                  yDesc,
+                                  y.Buffer(),
+                                  true,
+                                  workSpace.Buffer()));
   }
 }
 
@@ -135,36 +135,19 @@ void lrn_cross_channel_backward(LRNDescriptor const& normDesc,
   auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
   auto beta = El::To<LibScalingParamT>(beta_in);
-  if (workSpace.Height() == 0 || workSpace.Width() == 0) { // Training use-case
-    CHECK_MIOPEN(miopenLRNBackward(handle_manager.get(),
-                                   normDesc,
-                                   &alpha,
-                                   yDesc,
-                                   y.LockedBuffer(),
-                                   dyDesc,
-                                   dy.LockedBuffer(),
-                                   xDesc,
-                                   x.LockedBuffer(),
-                                   &beta,
-                                   dxDesc,
-                                   dx.Buffer(),
-                                   workSpace.Buffer()));
-  }
-  else {                                                  // Inference use-case
-    CHECK_MIOPEN(miopenLRNBackward(handle_manager.get(),
-                                   normDesc,
-                                   &alpha,
-                                   yDesc,
-                                   y.LockedBuffer(),
-                                   dyDesc,
-                                   dy.LockedBuffer(),
-                                   xDesc,
-                                   x.LockedBuffer(),
-                                   &beta,
-                                   dxDesc,
-                                   dx.Buffer(),
-                                   nullptr));
-  }
+  CHECK_MIOPEN(miopenLRNBackward(handle_manager.get(),
+                                 normDesc,
+                                 &alpha,
+                                 yDesc,
+                                 y.LockedBuffer(),
+                                 dyDesc,
+                                 dy.LockedBuffer(),
+                                 xDesc,
+                                 x.LockedBuffer(),
+                                 &beta,
+                                 dxDesc,
+                                 dx.Buffer(),
+                                 workSpace.Buffer()));
 }
 
 template <typename TensorDataType, typename ScalarParameterType>
