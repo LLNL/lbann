@@ -487,7 +487,9 @@ double kfac_block_fc_conv::compute_pi(
             El::TRANSPOSE, El::NORMAL,
             El::TypeTraits<DataType>::One(), diag, ones,
             El::TypeTraits<DataType>::Zero(), ret);
-        return El::Matrix<DataType>(ret)(0, 0);
+        El::Matrix<DataType> pi;
+        El::Copy(ret, pi);
+        return pi(0, 0);
       };
   return sqrt((get_trace(A, ws, stream)/A.Height())/(get_trace(G, ws, stream)/G.Height()));
 }
