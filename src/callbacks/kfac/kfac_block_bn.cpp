@@ -159,6 +159,7 @@ void kfac_block_bn::update_kronecker_inverse(
     lbann_comm* comm,
     const bool use_pi,
     const DataType damping_act, const DataType damping_err,
+    const DataType learning_rate_factor,
     const bool print_matrix,
     const bool print_matrix_summary,
     const bool print_time) {
@@ -213,7 +214,7 @@ void kfac_block_bn::update_kronecker_inverse(
       m_num_channels*2, 1);
   El::Gemm(
       El::NORMAL, El::NORMAL,
-      El::TypeTraits<DataType>::One(), Finv, stacked_grads,
+      learning_rate_factor, Finv, stacked_grads,
       El::TypeTraits<DataType>::Zero(), Fgrad);
 
   const auto Fgrad_scale = El::View(Fgrad, El::IR(0, m_num_channels), El::ALL);

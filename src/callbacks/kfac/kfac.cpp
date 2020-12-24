@@ -67,6 +67,7 @@ void kfac::setup(model *m) {
         << " damping_bn_err=" << v2s(m_damping_bn_err_params)
         << " damping_warmup_steps=" << m_damping_warmup_steps
         << " kronecker_decay=" << m_kronecker_decay
+        << " learning_rate_factor=" << m_learning_rate_factor
         << std::endl;
     std::cout << oss.str();
   }
@@ -297,6 +298,7 @@ void kfac::on_backward_prop_end(model *m) {
         comm, m_use_pi,
         is_bn ? m_damping_bn_act : m_damping_act,
         is_bn ? m_damping_bn_err : m_damping_err,
+        m_learning_rate_factor,
         m_print_matrix, m_print_matrix_summary,
         m_print_time);
     prof_region_end(("kfac-inverse/" + block->get_name()).c_str(), prof_sync);
@@ -462,6 +464,10 @@ build_kfac_callback_from_pbuf(
   const std::vector<std::string> disable_layers =
       parse_list<std::string>(params.disable_layers());
 
+  double learning_rate_factor = params.learning_rate_factor();
+  if(learning_rate_factor == 0.0)
+    learning_rate_factor = 1.0;
+
   return make_unique<CallbackType>(
       damping_act_params,
       damping_err_params,
@@ -473,7 +479,8 @@ build_kfac_callback_from_pbuf(
       use_pi,
       update_intervals, update_interval_steps,
       inverse_strategy,
-      disable_layers);
+      disable_layers,
+      learning_rate_factor);
 }
 
 } // namespace callback

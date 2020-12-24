@@ -401,7 +401,9 @@ message Callback {
 
     string inverse_strategy = 13; // Options: all, each, root (default: all)
 
-    string disable_layers = 14;
+    string disable_layers = 14; // List of layers to be ignored by the callback
+
+    float learning_rate_factor = 15; // Factor to be multiplied to the learning rate
   }
 
 }

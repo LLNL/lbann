@@ -201,6 +201,7 @@ void kfac_block_fc_conv::update_kronecker_inverse(
     lbann_comm* comm,
     const bool use_pi,
     const DataType damping_act, const DataType damping_err,
+    const DataType learning_rate_factor,
     const bool print_matrix,
     const bool print_matrix_summary,
     const bool print_time) {
@@ -319,7 +320,7 @@ void kfac_block_fc_conv::update_kronecker_inverse(
       "Fgrad", Ginv.Height(), Ainv.Width());
   El::Gemm(
       El::NORMAL, El::NORMAL,
-      El::TypeTraits<DataType>::One(), Gg, Ainv,
+      learning_rate_factor, Gg, Ainv,
       El::TypeTraits<DataType>::Zero(), Fgrad);
 
   if(m_is_conv) {

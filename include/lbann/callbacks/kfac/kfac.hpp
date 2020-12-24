@@ -89,7 +89,8 @@ class kfac : public callback_base {
        const std::vector<size_t>& update_intervals,
        size_t update_interval_steps,
        kfac_inverse_strategy inverse_strategy,
-       const std::vector<std::string>& disable_layers)
+       const std::vector<std::string>& disable_layers,
+       double learning_rate_factor)
   : callback_base(),
     m_damping_act_params(damping_act_params),
     m_damping_err_params(damping_err_params),
@@ -102,7 +103,8 @@ class kfac : public callback_base {
     m_update_intervals(update_intervals),
     m_update_interval_steps(update_interval_steps),
     m_inverse_strategy(inverse_strategy),
-    m_disable_layers(disable_layers) {
+    m_disable_layers(disable_layers),
+    m_learning_rate_factor(learning_rate_factor) {
     m_has_kronecker_inverse = false;
     m_damping_act = m_damping_act_params[0];
     m_damping_err = m_damping_err_params[0];
@@ -173,8 +175,11 @@ class kfac : public callback_base {
   /** @brief Assignment strategy for the model-parallel part. */
   const kfac_inverse_strategy m_inverse_strategy;
 
-  /** @brief Layer names where K-FAC is not used. */
+  /** @brief List of layers to be ignored by the callback. */
   const std::vector<std::string> m_disable_layers;
+
+  /** @brief Factor to be multiplied to the learning rate */
+  const double m_learning_rate_factor;
 
   /** @brief Whether inverse of Kronecker factors are available. */
   bool m_has_kronecker_inverse;

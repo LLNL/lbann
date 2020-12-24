@@ -113,6 +113,7 @@ class kfac_block_fc_conv: public kfac_block {
       lbann_comm* comm,
       bool use_pi,
       DataType damping_act, DataType damping_err,
+      DataType learning_rate_factor,
       bool print_matrix,
       bool print_matrix_summary,
       bool print_time) override;
