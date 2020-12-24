@@ -72,6 +72,7 @@ def construct_model(lbann):
 
     # Manually override the global count so that each model is named the same
     lbann.models.LeNet.global_count = 0
+    lbann.Layer.global_count = 0
     # Layer graph
     input_ = lbann.Input(target_mode='classification')
     images = lbann.Identity(input_)
