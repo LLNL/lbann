@@ -41,6 +41,7 @@ namespace callback {
 class kfac_block_fc_conv: public kfac_block {
  public:
 
+
   /** Constructor.
    */
   kfac_block_fc_conv(Layer *layer,
@@ -50,6 +51,8 @@ class kfac_block_fc_conv: public kfac_block {
                      const bool is_conv)
       : kfac_block(layer, callback, layer_id, inverse_proc_rank),
         m_is_conv(is_conv), m_has_bias(layer->num_weights() > 1) {
+
+#ifdef LBANN_HAS_GPU
 
     if(m_is_conv) {
       m_conv_input_spatial_prod = 1;
@@ -83,6 +86,12 @@ class kfac_block_fc_conv: public kfac_block {
           << " layer: " << layer->get_name();
       LBANN_ERROR(err.str());
     }
+
+#else // LBANN_HAS_GPU
+
+    LBANN_ERROR("The K-FAC callback is available only on GPUs.");
+
+#endif // LBANN_HAS_GPU
 
   }
 

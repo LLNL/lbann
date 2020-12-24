@@ -49,6 +49,8 @@ class kfac_block_bn: public kfac_block {
                 size_t inverse_proc_rank)
       : kfac_block(layer, callback, layer_id, inverse_proc_rank) {
 
+#ifdef LBANN_HAS_GPU
+
     const auto parent = layer->get_parent_layers()[0];
     const bool is_after_fc =
         (dynamic_cast<const fully_connected_layer<DataType,
@@ -78,6 +80,12 @@ class kfac_block_bn: public kfac_block {
       for(auto i = input_dims.begin()+1; i != input_dims.end(); i++)
         m_spatial_prod *= *i;
     }
+
+#else // LBANN_HAS_GPU
+
+    LBANN_ERROR("The K-FAC callback is available only on GPUs.");
+
+#endif // LBANN_HAS_GPU
 
   }
   kfac_block_bn(const kfac_block_bn&) = default;
