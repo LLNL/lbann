@@ -129,3 +129,10 @@ build_adagrad_optimizer_from_pbuf(
 #include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann
+
+#undef PROTO
+#define PROTO(T)                                                \
+  CEREAL_REGISTER_TYPE_WITH_NAME(lbann::adagrad<T>, "adagrad(" #T ")")
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"

@@ -77,11 +77,12 @@ public:
    *  @param eps                    Small factor to avoid division by
    *                                zero.
    */
-  hypergradient_adam(TensorDataType init_learning_rate = 1e-3,
-                     TensorDataType hyper_learning_rate = 1e-7,
-                     TensorDataType beta1 = 0.9,
-                     TensorDataType beta2 = 0.99,
-                     TensorDataType eps = 1e-8);
+  hypergradient_adam(
+    TensorDataType init_learning_rate = El::To<TensorDataType>(1e-3),
+    TensorDataType hyper_learning_rate = El::To<TensorDataType>(1e-7),
+    TensorDataType beta1 = El::To<TensorDataType>(0.9),
+    TensorDataType beta2 = El::To<TensorDataType>(0.99),
+    TensorDataType eps = El::To<TensorDataType>(1e-8));
   hypergradient_adam(const hypergradient_adam& other);
   hypergradient_adam& operator=(const hypergradient_adam& other);
   ~hypergradient_adam() override = default;

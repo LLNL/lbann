@@ -85,6 +85,8 @@ public:
 
 protected:
 
+  friend cereal::access;
+
   /** @brief Default constructor.
    *  @details This constructor exists as an implementation detail of
    *  the serialization code. It is not for general use.
