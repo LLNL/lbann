@@ -63,6 +63,16 @@ public:
 
   description get_description() const override;
 
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar)
+  {
+    using DataTypeLayer = data_type_layer<TensorDataType>;
+    ar(::cereal::make_nvp("DataTypeLayer",
+                          ::cereal::base_class<DataTypeLayer>(this)),
+       CEREAL_NVP(m_transpose_a),
+       CEREAL_NVP(m_transpose_b));
+  }
+
 protected:
 
   void setup_dims(DataReaderMetaData& dr_metadata) override;

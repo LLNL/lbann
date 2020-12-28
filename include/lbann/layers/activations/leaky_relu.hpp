@@ -80,6 +80,15 @@ public:
     return desc;
   }
 
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar)
+  {
+    using DataTypeLayer = data_type_layer<TensorDataType>;
+    ar(::cereal::make_nvp("DataTypeLayer",
+                          ::cereal::base_class<DataTypeLayer>(this)),
+       CEREAL_NVP(m_negative_slope));
+  }
+
 protected:
   void setup_dims(DataReaderMetaData& dr_metadata) override {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
