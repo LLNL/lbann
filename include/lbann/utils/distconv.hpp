@@ -119,6 +119,7 @@ template <typename TensorDataType>
 using BatchNormalization = ::distconv::BatchNormalization<Backend, TensorDataType>;
 using Softmax = ::distconv::Softmax<Backend>;
 using CrossEntropy = ::distconv::CrossEntropy<Backend>;
+using MeanSquaredError = ::distconv::MeanSquaredError<Backend>;
 
 using ::distconv::get_sample_dim;
 using ::distconv::get_channel_dim;
