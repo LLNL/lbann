@@ -211,14 +211,26 @@ void TensorDescriptor::set(
   }
 
   std::vector<int> dims=std::move(dims_in), strides=std::move(strides_in);
-  if (dims.size() < 3)
+  if (dims.size() < 4)
   {
-    dims.resize(3, 1);
-    if (strides.size() < 3)
-      strides.resize(3, 1);
+    switch (dims.size())
+    {
+    case 2:
+      dims = {dims[0], 1, dims[1], 1};
+      strides = {};
+      break;
+    case 3:
+      dims = {dims[0], 1, dims[1], dims[2]};
+      strides = {};
+      break;
+    default:
+      LBANN_ERROR("Dims of size 1. Don't know what to do.");
+      break;
+    }
   }
 
   // Assume data is contiguous if no strides are provided
+  // Note (trb 12/29/2020): MIOpen only accepts contiguous strides.
   if (strides.empty()) {
     strides.resize(dims.size(), 1);
     for (int i=strides.size()-1; i>0; --i) {
