@@ -1311,19 +1311,6 @@ bool model::save_to_checkpoint_shared(persist& p) {
     ar(*this);
   }
 
-  for (auto const& w : m_weights)
-  {
-    using AbsDistMatT = El::AbstractDistMatrix<DataType>;
-    auto const basename =
-      file::join_path(
-        p.get_checkpoint_dir(),
-        w->get_name() + "_save_rank"
-        + std::to_string(m_comm->get_rank_in_world()));
-    El::Write(dynamic_cast<AbsDistMatT const&>(w->get_values()).LockedMatrix(),
-              basename,
-              /*format=*/El::ASCII);
-  }
-
   p.open_checkpoint_dir(trainer_dir, false);
   return true;
 }
