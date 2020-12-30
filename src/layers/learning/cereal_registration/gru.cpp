@@ -26,6 +26,7 @@
 #include <lbann/layers/learning/gru.hpp>
 #include <cereal/types/polymorphic.hpp>
 
+#ifdef LBANN_GRU_LAYER_GPU_SUPPORTED
 #define LBANN_LAYER_NAME gru_layer
 #define LBANN_COMMA ,
 #define LBANN_REGISTER_LAYER_WITH_CEREAL_BASE(NAME, TYPE, LAYOUT, DEVICE) \
@@ -44,3 +45,4 @@
 PROTO_DEVICE(float, El::Device::GPU)
 PROTO_DEVICE(double, El::Device::GPU)
 #endif // LBANN_HAS_GPU
+#endif // LBANN_GRU_LAYER_GPU_SUPPORTED

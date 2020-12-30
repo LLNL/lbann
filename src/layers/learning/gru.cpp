@@ -50,11 +50,6 @@ gru_layer<TensorDataType, Layout, Device>::gru_layer(
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-gru_layer<TensorDataType, Layout, Device>::gru_layer()
-  : gru_layer(0, 0)
-{}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
 gru_layer<TensorDataType, Layout, Device>::gru_layer(const gru_layer& other)
   : data_type_layer<TensorDataType>(other),
     m_hidden_size{other.m_hidden_size},
