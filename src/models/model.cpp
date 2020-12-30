@@ -1385,23 +1385,6 @@ void model::write_proto(lbann_data::Model* proto) {
   //   proto->set_mini_batch_size(m_max_mini_batch_size);
 }
 
-
-bool model::save_weights(persist& p) {
-  // write out fields we need to save a model's weights
-  // for (auto&& w : m_weights) {
-  //   w->save_to_checkpoint_shared(p);
-  // }
-  return true;
-}
-
-bool model::reload_weights(const std::string latest, const std::vector<std::string>& weight_list) {
-  // load weights that appear in weight list.
-  // for(auto&& w : m_weights) {
-  //   w->load_from_save(latest,weight_list);
-  // }
-  return true;
-}
-
 bool model::save_model() {
   for (auto&& c : m_callbacks) {
     if (auto *cb = dynamic_cast<callback::save_model*>(c.get())) {

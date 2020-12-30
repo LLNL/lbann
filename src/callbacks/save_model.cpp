@@ -29,6 +29,7 @@
 #include "lbann/callbacks/save_model.hpp"
 #include "lbann/callbacks/checkpoint.hpp" // Reuse the checkpoint naming scheme
 #include "lbann/training_algorithms/training_algorithm.hpp"
+#include "lbann/weights/data_type_weights.hpp"
 
 #include <callbacks.pb.h>
 #include <model.pb.h>
@@ -117,7 +118,19 @@ bool save_model::do_save_model_weights(model *m) {
                                                 m->get_name(),
                                                 m_dir.c_str());
   p.open_checkpoint_dir(epochdir.c_str(), comm->am_trainer_master());
-  m->save_weights(p);
+
+  for (weights *w : m->get_weights()) {
+    // create weight file name to match to weight list entry
+    const auto* dtw = dynamic_cast<const data_type_weights<DataType>*>(w);
+    auto file = El::BuildString(epochdir, "model_weights_", w->get_name(), "_",
+                                dtw->get_values().Height(), "x",
+                                dtw->get_values().Width());
+
+    //    El::AbstractDistMatrix<DataType>& val = dtw->get_values();
+    El::Write(dtw->get_values(), file, El::BINARY);
+    // write weights using persist call -- uses Elemental's write function.
+    //    p.write_distmat(persist_type::model, file, &val);
+  }
 
   uint64_t bytes_count = p.get_bytes();
 

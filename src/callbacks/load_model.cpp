@@ -29,6 +29,7 @@
 #include "lbann/callbacks/load_model.hpp"
 #include "lbann/callbacks/checkpoint.hpp"
 #include "lbann/training_algorithms/training_algorithm.hpp"
+#include "lbann/weights/data_type_weights.hpp"
 
 #include <callbacks.pb.h>
 #include <model.pb.h>
@@ -98,20 +99,55 @@ bool load_model::load_model_weights(const std::string& ckpt_dir,
     LBANN_WARNING("error opening ",  active_ckpt_dir);
     return false;
   }
+
+  bool monolithic_checkpoint = false;
+  std::string monolithic_checkpoint_file = "";
   // Populate weight list
   struct dirent *weight_file;
   while ((weight_file = readdir(weight_dir)) != nullptr){
-    if(!strncmp(weight_file->d_name,"model_weights_",14))
+    if(!strncmp(weight_file->d_name,"model.bin",9)) {
+      if(comm->am_trainer_master()) {
+        std::cout << "Found a combo model file for: " << weight_file->d_name << std::endl;
+      }
+      monolithic_checkpoint = true;
+      monolithic_checkpoint_file = weight_file->d_name;
+      break;
+    }
+    if(!strncmp(weight_file->d_name,"model_weights_",14)) {
       weight_list.push_back(std::string(weight_file->d_name));
+      if(comm->am_trainer_master()) {
+        std::cout << "Found a weights file for: " << weight_file->d_name << std::endl;
+      }
+    }
   }
   closedir(weight_dir);
 
   // load weights that appear in weight list.
-  // load weights that appear in weight list.
-  // for(auto&& w : m_weights) {
-  //   w->load_from_save(latest,weight_list);
-  // }
-  //  m->reload_weights(active_ckpt_dir, weight_list);
+  if(monolithic_checkpoint) {
+    {
+      auto archive = El::BuildString(active_ckpt_dir, monolithic_checkpoint_file);
+      if(comm->am_trainer_master()) {
+        std::cout << "Restoring from " << archive << std::endl;
+      }
+      std::ifstream ifs(archive);
+      lbann::RootedBinaryInputArchive ar(ifs, comm->get_trainer_grid());
+      /// @todo TOM FIXME
+      ar(*m);
+    }
+  }else {
+    for (weights *w : m->get_weights()) {
+      // create weight file name to match to weight list entry
+      auto* dtw = dynamic_cast<data_type_weights<DataType>*>(w);
+      auto file = El::BuildString(active_ckpt_dir, "model_weights_", w->get_name(), "_",
+                                  dtw->get_values().Height(), "x",
+                                  dtw->get_values().Width(), ".bin");
+
+      if(comm->am_trainer_master()) {
+        std::cout << "Loading: " << file << std::endl;
+      }
+      El::Read(dtw->get_values(), file, El::BINARY, true);
+    }
+  }
   return true;
 }
 
