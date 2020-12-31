@@ -518,7 +518,8 @@ struct LoadAndConstruct<::El::DistMatrix<DataT, CDist, RDist, Wrap, D>>
                                         Wrap,
                                         ::El::Device::CPU>;
 
-  template <typename ArchiveT>
+  template <typename ArchiveT,
+            ::h2::meta::EnableWhen<::lbann::utils::IsBuiltinArchive<ArchiveT>, int> = 0>
   static void load_and_construct(
     ArchiveT & ar, cereal::construct<DistMatrixType> & construct)
   {
@@ -530,6 +531,15 @@ struct LoadAndConstruct<::El::DistMatrix<DataT, CDist, RDist, Wrap, D>>
     // *not* use ArchiveT::operator() here because it trys to open a
     // new scope, which can cause a variety of errors depending on the
     // underlying archive type.
+    load(ar, *construct.ptr());
+  }
+
+  template <typename ArchiveT>
+  static void load_and_construct(
+    lbann::RootedInputArchiveAdaptor<ArchiveT> & ar,
+    cereal::construct<DistMatrixType> & construct)
+  {
+    construct(ar.grid(), /*root=*/0);
     load(ar, *construct.ptr());
   }
 };// struct LoadAndConstruct<::El::DistMatrix<DataT, CDist, RDist, Wrap, D>>
