@@ -126,10 +126,7 @@ bool save_model::do_save_model_weights(model *m) {
                                 dtw->get_values().Height(), "x",
                                 dtw->get_values().Width());
 
-    //    El::AbstractDistMatrix<DataType>& val = dtw->get_values();
     El::Write(dtw->get_values(), file, El::BINARY);
-    // write weights using persist call -- uses Elemental's write function.
-    //    p.write_distmat(persist_type::model, file, &val);
   }
 
   uint64_t bytes_count = p.get_bytes();
