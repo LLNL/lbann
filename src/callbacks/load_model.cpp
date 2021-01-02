@@ -79,7 +79,7 @@ void load_weights_from_checkpoint(model& m,
     if (dagm_w_iter != dagm_weights_map.end())
     {
       auto* dagm_w = dagm_w_iter->second;
-      El::Copy(dagm_w->get_values(), w->get_values());
+      w->steal_values(*dagm_w);
       // TODO: Replace with logging API
       if (comm->am_trainer_master()) {
         std::cout << "Restored weights \"" << w->get_name() << "\" "

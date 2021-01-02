@@ -208,4 +208,15 @@ void weights::setup() {
   do_setup_();
 }
 
+void weights::steal_values(weights& other)
+{
+  LBANN_ASSERT(this->get_values().Height() == other.get_values().Height());
+  LBANN_ASSERT(this->get_values().Width() == other.get_values().Width());
+
+  if (this->get_values().DistData() == other.get_values().DistData())
+    this->do_steal_values_(other);
+  else
+    // Copy things over.
+    this->set_values(other.get_values());
+}
 }  // namespace lbann

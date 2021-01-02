@@ -276,7 +276,27 @@ public:
   }
 
   ///@}
+  /** @name Expert interface */
+  ///@{
 
+  /** @brief Take the values matrix from another weights object.
+   *
+   *  If the other object has the same underlying DistData, the values
+   *  matrix will simply be moved over. In this case, the other object
+   *  will not have valid weights after this operation
+   *  completes. Otherwise, the values will be copied.
+   *
+   *  @pre Other weights has the same dimenions.
+   *  @post Other weights objects values may be invalidated.
+   *
+   *  @param[in,out] The object from which to steal values.
+   *
+   *  @throws lbann::exception If the weights objects don't have the
+   *  same dimensions.
+   */
+  void steal_values(weights& other);
+
+  ///@}
 protected:
 
   weights(const weights& other) = default;
@@ -287,6 +307,7 @@ private:
   virtual void do_setup_() = 0;
   virtual void do_set_dims_(std::vector<int> const& matrix_height_dims,
                             std::vector<int> const& matrix_width_dims) = 0;
+  virtual void do_steal_values_(weights& other) = 0;
 private:
 
   /** Weights name.

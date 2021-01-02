@@ -434,6 +434,19 @@ bool data_type_weights<TensorDataType>::load_from_save(std::string const& ckpt_d
   return true;
 }
 
+template <typename TensorDataType>
+void data_type_weights<TensorDataType>::do_move_values_(
+  data_type_weights& other)
+{
+  m_values = std::move(other.m_values);
+}
+
+template <typename TensorDataType>
+void data_type_weights<TensorDataType>::do_steal_values_(weights& other)
+{
+  do_move_values_(dynamic_cast<data_type_weights<TensorDataType>&>(other));
+}
+
 }  // namespace lbann
 
 #define PROTO(T)                                                        \

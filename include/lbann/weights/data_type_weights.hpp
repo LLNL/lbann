@@ -126,6 +126,7 @@ public:
   AbsDistMatrixType& get_values() override;
   /** Get the weight matrix. */
   const AbsDistMatrixType& get_values() const override;
+  using weights::set_values;
   /** Set the weight matrix. */
   void set_values(const AbsDistMatrixType& values);
 
@@ -193,6 +194,8 @@ private:
   void do_setup_() override;
   void do_set_dims_(std::vector<int> const& matrix_height_dims,
                     std::vector<int> const& matrix_width_dims) override;
+  void do_move_values_(data_type_weights& other);
+  void do_steal_values_(weights& other) override;
 private:
 
   /** Weight matrix. */
