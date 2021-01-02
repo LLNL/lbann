@@ -40,9 +40,9 @@ namespace kfac_util {
 
 /** @brief Gets the inverse matrix of A. **/
 void get_matrix_inverse(
-    El::Matrix<DataType, El::Device::GPU>& Ainv,
-    El::Matrix<DataType, El::Device::GPU>& Linv,
-    const El::Matrix<DataType, El::Device::GPU>& A,
+    El::AbstractMatrix<DataType>& Ainv,
+    El::AbstractMatrix<DataType>& Linv,
+    const El::AbstractMatrix<DataType>& A,
     bool report_time,
     DataType damping,
     DataType damping_bn_err,
@@ -51,13 +51,13 @@ void get_matrix_inverse(
 
 /** @brief Gets statistics of a given matrix. **/
 std::string get_matrix_stat(
-    const El::Matrix<DataType, El::Device::GPU>& X,
+    const El::AbstractMatrix<DataType>& X,
     const char *name);
 
 /** @brief Perform all-reduce on the lower triangular of a symmetric matrix. **/
 void allreduce_lower_tri(
-    El::Matrix<DataType, El::Device::GPU>& A,
-    El::Matrix<DataType, El::Device::GPU>& AL,
+    El::AbstractMatrix<DataType>& A,
+    El::AbstractMatrix<DataType>& AL,
     lbann_comm *comm,
     const cudaStream_t& stream);
 
@@ -65,9 +65,10 @@ void allreduce_lower_tri(
 bool is_reduce_scatter_buffer_required(kfac_reduce_scatter_mode mode);
 
 /** @brief Perform reduce-scatter on one or more blocks. **/
+template <El::Device Device>
 void reduce_scatter_blocks(
     const std::vector<std::pair<size_t, El::AbstractMatrix<DataType>*>>& blocks,
-    El::Matrix<DataType, El::Device::GPU>& global_buffer,
+    El::Matrix<DataType, Device>& global_buffer,
     lbann_comm *comm,
     kfac_reduce_scatter_mode mode);
 
@@ -75,10 +76,11 @@ void reduce_scatter_blocks(
 std::pair<bool, bool> is_allgather_buffer_required(kfac_allgather_mode mode);
 
 /** @brief Perform reduce-scatter on one or more blocks. **/
+template <El::Device Device>
 void allgather_blocks(
     const std::vector<std::pair<size_t, El::AbstractMatrix<DataType>*>>& blocks,
-    El::Matrix<DataType, El::Device::GPU>& send_buffer,
-    El::Matrix<DataType, El::Device::GPU>& recv_buffer,
+    El::Matrix<DataType, Device>& send_buffer,
+    El::Matrix<DataType, Device>& recv_buffer,
     lbann_comm *comm,
     kfac_allgather_mode mode);
 

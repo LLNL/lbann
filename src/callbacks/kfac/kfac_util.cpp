@@ -39,9 +39,9 @@ namespace kfac_util {
 #ifdef LBANN_HAS_GPU
 
 void get_matrix_inverse(
-    El::Matrix<DataType, El::Device::GPU>& Ainv,
-    El::Matrix<DataType, El::Device::GPU>& Linv,
-    const El::Matrix<DataType, El::Device::GPU>& A,
+    El::AbstractMatrix<DataType>& Ainv,
+    El::AbstractMatrix<DataType>& Linv,
+    const El::AbstractMatrix<DataType>& A,
     const bool report_time,
     const DataType damping,
     const DataType damping_bn_err,
@@ -110,7 +110,7 @@ void get_matrix_inverse(
   CHECK_CUDA(cudaStreamSynchronize(stream));
 }
 
-std::string get_matrix_stat(const El::Matrix<DataType, El::Device::GPU>& X,
+std::string get_matrix_stat(const El::AbstractMatrix<DataType>& X,
                             const char *name) {
   El::Matrix<DataType> XCPU(X);
   const auto nrm2 = El::Nrm2(El::Reshape(XCPU.Height()*XCPU.Width(), 1, XCPU));
@@ -127,8 +127,8 @@ std::string get_matrix_stat(const El::Matrix<DataType, El::Device::GPU>& X,
   return oss.str();
 }
 
-void allreduce_lower_tri(El::Matrix<DataType, El::Device::GPU>& A,
-                         El::Matrix<DataType, El::Device::GPU>& AL,
+void allreduce_lower_tri(El::AbstractMatrix<DataType>& A,
+                         El::AbstractMatrix<DataType>& AL,
                          lbann_comm *comm,
                          const cudaStream_t& stream) {
   assert(A.Height() == A.Width());
@@ -150,9 +150,10 @@ bool is_reduce_scatter_buffer_required(const kfac_reduce_scatter_mode mode) {
   LBANN_ERROR("Invalid reduce-scatter mode");
 }
 
+template <El::Device Device>
 void reduce_scatter_blocks(
     const std::vector<std::pair<size_t, El::AbstractMatrix<DataType>*>>& blocks,
-    El::Matrix<DataType, El::Device::GPU>& global_buffer,
+    El::Matrix<DataType, Device>& global_buffer,
     lbann_comm *comm,
     const kfac_reduce_scatter_mode mode) {
 
@@ -232,10 +233,11 @@ std::pair<bool, bool> is_allgather_buffer_required(const kfac_allgather_mode mod
   LBANN_ERROR("Invalid allgather mode");
 }
 
+template <El::Device Device>
 void allgather_blocks(
     const std::vector<std::pair<size_t, El::AbstractMatrix<DataType>*>>& blocks,
-    El::Matrix<DataType, El::Device::GPU>& local_buffer,
-    El::Matrix<DataType, El::Device::GPU>& global_buffer,
+    El::Matrix<DataType, Device>& local_buffer,
+    El::Matrix<DataType, Device>& global_buffer,
     lbann_comm *comm,
     const kfac_allgather_mode mode) {
 
@@ -261,7 +263,7 @@ void allgather_blocks(
 
   // Copy blocks to the send buffer.
   {
-    El::Matrix<DataType, El::Device::GPU>& buffer =
+    El::Matrix<DataType, Device>& buffer =
         (mode == kfac_allgather_mode::ALLREDUCE ? global_buffer : local_buffer);
     if(mode == kfac_allgather_mode::ALLREDUCE)
       El::Zeros(buffer, buffer.Height(), buffer.Width());
@@ -310,6 +312,24 @@ void allgather_blocks(
   }
 
 }
+
+#define PROTO_DEVICE(T, Device)                 \
+  template void reduce_scatter_blocks(          \
+      const std::vector<std::pair<size_t,       \
+      El::AbstractMatrix<T>*>>& blocks,         \
+      El::Matrix<T, Device>& global_buffer,     \
+      lbann_comm *comm,                         \
+      const kfac_reduce_scatter_mode mode);     \
+  template void allgather_blocks(               \
+      const std::vector<std::pair<size_t,       \
+      El::AbstractMatrix<T>*>>& blocks,         \
+      El::Matrix<T, Device>& local_buffer,      \
+      El::Matrix<T, Device>& global_buffer,     \
+      lbann_comm *comm,                         \
+      const kfac_allgather_mode mode);
+
+// TODO: Support any data types and CPUs
+PROTO_DEVICE(DataType, El::Device::GPU);
 
 #endif // LBANN_HAS_GPU
 

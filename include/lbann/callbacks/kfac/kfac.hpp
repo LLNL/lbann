@@ -56,6 +56,7 @@ enum class kfac_allgather_mode {
 
 // Forward declarations
 // TODO: Remove if kfac_block no longer refers kfac
+template <El::Device Device>
 class kfac_block;
 
 /** Callback hooks for the K-FAC method.
@@ -73,6 +74,7 @@ class kfac_block;
  * deep convolutional neural networks." Proceedings of the IEEE
  * Conference on Computer Vision and Pattern Recognition. 2019.
  */
+template <El::Device Device>
 class kfac : public callback_base {
  public:
 
@@ -125,7 +127,7 @@ class kfac : public callback_base {
 
   /** @brief Gets the Kronecker factor matrix of a FC layer.
    *  The same key is tied with the same matrix instance. */
-  El::Matrix<DataType, El::Device::GPU>& get_workspace_matrix(
+  El::Matrix<DataType, Device>& get_workspace_matrix(
       const std::string& key,
       size_t height, size_t width);
 
@@ -192,12 +194,12 @@ class kfac : public callback_base {
   size_t m_update_interval;
 
   /** @brief K-FAC per-layer blocks. */
-  std::vector<std::shared_ptr<kfac_block>> m_blocks;
+  std::vector<std::shared_ptr<kfac_block<Device>>> m_blocks;
 
 #ifdef LBANN_HAS_GPU
   /** @brief Workspace matrices that are used by m_blocks. */
   std::unordered_map<std::string,
-                     El::Matrix<DataType, El::Device::GPU>> m_workspace;
+                     El::Matrix<DataType, Device>> m_workspace;
 #endif // LBANN_HAS_GPU
 
   /** @brief Copy of lbann_comm::get_rank_in_trainer() for internal

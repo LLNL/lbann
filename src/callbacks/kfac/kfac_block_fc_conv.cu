@@ -60,8 +60,10 @@ __global__ void kfac_conv_transpose_kernel(
 
 } // namespace
 
+namespace kfac_fc_conv_util {
+
 template <typename TensorDataType>
-void kfac_block_fc_conv::get_diagonal(
+void get_diagonal(
     TensorDataType * __restrict__ diag,
     const TensorDataType * __restrict__ A,
     const size_t height,
@@ -75,7 +77,7 @@ void kfac_block_fc_conv::get_diagonal(
 }
 
 template <typename TensorDataType>
-void kfac_block_fc_conv::conv_transpose(
+void conv_transpose(
     const TensorDataType * __restrict__ activations,
     TensorDataType * __restrict__ act_columns,
     const size_t mini_batch_size, const size_t num_channels,
@@ -89,22 +91,24 @@ void kfac_block_fc_conv::conv_transpose(
       num_elems);
 }
 
-#define PROTO(T)                                        \
-  template void kfac_block_fc_conv::get_diagonal<T>(                  \
-      T * __restrict__ diag,                            \
-      const T * __restrict__ A,                         \
-      const size_t height,                              \
-      const cudaStream_t& stream);                      \
-  template void kfac_block_fc_conv::conv_transpose<T>(  \
-      const T * __restrict__ activations,               \
-      T * __restrict__ act_columns,                     \
-      const size_t batch_size,                          \
-      const size_t num_channels,                        \
-      const size_t spatial_prod,                        \
+#define PROTO(T)                                \
+  template void get_diagonal<T>(                \
+      T * __restrict__ diag,                    \
+      const T * __restrict__ A,                 \
+      const size_t height,                      \
+      const cudaStream_t& stream);              \
+  template void conv_transpose<T>(              \
+      const T * __restrict__ activations,       \
+      T * __restrict__ act_columns,             \
+      const size_t batch_size,                  \
+      const size_t num_channels,                \
+      const size_t spatial_prod,                \
       const cudaStream_t& stream);
 
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
+
+} // namespace kfac_fc_conv_util
 
 } // namespace callback
 } // namespace lbann

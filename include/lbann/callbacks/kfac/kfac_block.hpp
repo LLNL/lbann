@@ -36,17 +36,19 @@ namespace callback {
 
 // Forward declarations
 // TODO: Remove if kfac_block no longer refers kfac
+template <El::Device Device>
 class kfac;
 
 /** A building block for K-FAC.
  */
+template <El::Device Device>
 class kfac_block {
  public:
 
   /** Constructor.
    */
   kfac_block(Layer *layer,
-             kfac *callback,
+             kfac<Device> *callback,
              size_t layer_id,
              size_t inverse_proc_rank)
       : m_layer(layer),
@@ -130,12 +132,12 @@ class kfac_block {
 
   /** @brief Gets the Kronecker factor matrix of a FC layer.
    *  The same key is tied with the same matrix instance. */
-  El::Matrix<DataType, El::Device::GPU>& get_workspace_matrix(
+  El::Matrix<DataType, Device>& get_workspace_matrix(
       const std::string& key, size_t height, size_t width);
 
   /** @brief Return the default stream that may used in update functions. */
   cudaStream_t get_stream() {
-    return hydrogen::cuda::GetDefaultStream();
+    return El::cuda::GetDefaultStream();
   }
 
 #endif // LBANN_HAS_GPU
@@ -157,7 +159,7 @@ class kfac_block {
 
   /** @brief The parent callback.
    * TODO: Use its own workspace and remove this pointer. */
-  kfac *m_callback;
+  kfac<Device> *m_callback;
 
 };
 

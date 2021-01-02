@@ -43,7 +43,8 @@ namespace callback {
 
 #ifdef LBANN_HAS_GPU
 
-void kfac::setup(model *m) {
+template <El::Device Device>
+void kfac<Device>::setup(model *m) {
   m_rank = m->get_comm()->get_rank_in_trainer();
 
   const auto v2s =
@@ -73,7 +74,8 @@ void kfac::setup(model *m) {
   }
 }
 
-void kfac::on_epoch_end(model *m) {
+template <El::Device Device>
+void kfac<Device>::on_epoch_end(model *m) {
   const auto comm = m->get_comm();
   if(comm->am_trainer_master()) {
     const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
@@ -91,7 +93,8 @@ void kfac::on_epoch_end(model *m) {
   }
 }
 
-void kfac::on_backward_prop_end(model *m) {
+template <El::Device Device>
+void kfac<Device>::on_backward_prop_end(model *m) {
   // Update the damping value
   // using a modified Tikhonov damping tequnique from
   // http://arxiv.org/abs/1811.12019
@@ -138,9 +141,9 @@ void kfac::on_backward_prop_end(model *m) {
     for(auto i_layer = layers.begin(); i_layer != layers.end(); i_layer++) {
       const size_t layer_id = std::distance(layers.begin(), i_layer);
       const auto &l = *i_layer;
-      const auto l_fc = dynamic_cast<fully_connected_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>*>(l);
-      const auto l_conv = dynamic_cast<convolution_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>*>(l);
-      const auto l_bn = dynamic_cast<batch_normalization_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>*>(l);
+      const auto l_fc = dynamic_cast<fully_connected_layer<DataType, data_layout::DATA_PARALLEL, Device>*>(l);
+      const auto l_conv = dynamic_cast<convolution_layer<DataType, data_layout::DATA_PARALLEL, Device>*>(l);
+      const auto l_bn = dynamic_cast<batch_normalization_layer<DataType, data_layout::DATA_PARALLEL, Device>*>(l);
       const bool is_fc = (l_fc != nullptr);
       const bool is_conv = (l_conv != nullptr);
       const bool is_bn = (l_bn != nullptr);
@@ -183,23 +186,23 @@ void kfac::on_backward_prop_end(model *m) {
             << ", #child: " << l->get_num_children();
         LBANN_ERROR(err.str());
       }
-      if(local_activations.GetDevice() != El::Device::GPU
-         || local_errors.GetDevice() != El::Device::GPU) {
+      if(local_activations.GetDevice() != Device
+         || local_errors.GetDevice() != Device) {
         std::stringstream err;
         err << "The K-FAC callback only supports GPU layers."
             << " layer: " << l->get_name();
         LBANN_ERROR(err.str());
       }
 
-      kfac_block* block;
+      kfac_block<Device>* block;
       if(is_fc || is_conv) {
-        block = new kfac_block_fc_conv(
+        block = new kfac_block_fc_conv<Device>(
             l, this, layer_id, proc_rank, is_conv);
       } else if(is_bn) {
-        block = new kfac_block_bn(l, this, layer_id, proc_rank);
+        block = new kfac_block_bn<Device>(l, this, layer_id, proc_rank);
       }
 
-      m_blocks.push_back(std::shared_ptr<kfac_block>(block));
+      m_blocks.push_back(std::shared_ptr<kfac_block<Device>>(block));
       if(m_inverse_strategy != kfac_inverse_strategy::ROOT)
         proc_rank = (proc_rank+1)%num_procs;
 
@@ -255,7 +258,7 @@ void kfac::on_backward_prop_end(model *m) {
     // Perform reduce-scatter.
     prof_region_begin("kfac-update/reduce-scatter", prof_color, prof_sync);
     const auto reduce_scatter_mode = kfac_reduce_scatter_mode::ALLREDUCE;
-    El::Matrix<DataType, El::Device::GPU>& global_buffer =
+    El::Matrix<DataType, Device>& global_buffer =
         get_workspace_matrix(
             "reduce_scatter_send_buffer",
             kfac_util::is_reduce_scatter_buffer_required(reduce_scatter_mode) ? global_buffer_size : 0,
@@ -293,7 +296,7 @@ void kfac::on_backward_prop_end(model *m) {
 
     prof_region_begin(("kfac-inverse/" + block->get_name()).c_str(), prof_color, prof_sync);
     // TODO: Add kfac_block::is_bn?
-    const bool is_bn = dynamic_cast<kfac_block_bn*>(block.get()) != nullptr;
+    const bool is_bn = dynamic_cast<kfac_block_bn<Device>*>(block.get()) != nullptr;
     block->update_kronecker_inverse(
         comm, m_use_pi,
         is_bn ? m_damping_bn_act : m_damping_act,
@@ -332,12 +335,12 @@ void kfac::on_backward_prop_end(model *m) {
     // Perform allgather.
     const auto allgather_mode = kfac_allgather_mode::ALLREDUCE;
     const auto is_buffer_needed = kfac_util::is_allgather_buffer_required(allgather_mode);
-    El::Matrix<DataType, El::Device::GPU>& local_buffer =
+    El::Matrix<DataType, Device>& local_buffer =
         get_workspace_matrix(
             "allgather_send_buffer",
             is_buffer_needed.first ? local_buffer_size : 0,
             1);
-    El::Matrix<DataType, El::Device::GPU>& global_buffer =
+    El::Matrix<DataType, Device>& global_buffer =
         get_workspace_matrix(
             "allgather_recv_buffer",
             is_buffer_needed.second ? global_buffer_size : 0,
@@ -373,7 +376,8 @@ void kfac::on_backward_prop_end(model *m) {
   }
 }
 
-El::Matrix<DataType, El::Device::GPU>& kfac::get_workspace_matrix(
+template <El::Device Device>
+El::Matrix<DataType, Device>& kfac<Device>::get_workspace_matrix(
     const std::string& key, const size_t height, const size_t width) {
   if(m_workspace.find(key) == m_workspace.end()) {
     std::ostringstream oss;
@@ -382,7 +386,7 @@ El::Matrix<DataType, El::Device::GPU>& kfac::get_workspace_matrix(
     std::cout << oss.str();
 
     m_workspace.emplace(
-        key, El::Matrix<DataType, El::Device::GPU>(height, width));
+        key, El::Matrix<DataType, Device>(height, width));
 #ifdef HYDROGEN_HAVE_CUB
     m_workspace[key].SetMemoryMode(1); // Use CUB GPU memory pool if possible
 #endif // HYDROGEN_HAVE_CUB
@@ -403,13 +407,13 @@ build_kfac_callback_from_pbuf(
     const google::protobuf::Message& proto_msg,
     const std::shared_ptr<lbann_summary>&) {
   using MsgType = lbann_data::Callback::CallbackKFAC;
-  using CallbackType = kfac;
+  using CallbackType = kfac<El::Device::GPU>;
   const auto& params = dynamic_cast<const MsgType&>(proto_msg);
 
   const auto parse_damping_params =
       [](const std::string str) {
         if(str == "")
-          return std::vector<double>({kfac::damping_0_default});
+          return std::vector<double>({CallbackType::damping_0_default});
         else {
           const auto ret = parse_list<double>(str);
           if(ret.size() > 2)
@@ -435,10 +439,10 @@ build_kfac_callback_from_pbuf(
   const std::vector<double> damping_bn_act_params = parse_damping_params(params.damping_bn_act());
   const std::vector<double> damping_bn_err_params = parse_damping_params(params.damping_bn_err());
   size_t damping_warmup_steps = params.damping_warmup_steps();
-  if(damping_warmup_steps == 0) damping_warmup_steps = kfac::damping_warmup_steps_default;
+  if(damping_warmup_steps == 0) damping_warmup_steps = CallbackType::damping_warmup_steps_default;
   double kronecker_decay = params.kronecker_decay();
   if(kronecker_decay == 0.0)
-    kronecker_decay = kfac::kronecker_decay_default;
+    kronecker_decay = CallbackType::kronecker_decay_default;
   const bool print_time = params.print_time();
   const bool print_matrix = params.print_matrix();
   const bool print_matrix_summary = params.print_matrix_summary();

@@ -36,28 +36,61 @@
 namespace lbann {
 namespace callback {
 
+namespace kfac_bn_util {
+
+/** @brief Compute the factor of a batch-normalization layer.
+ *  TODO: Remove as compute_bn_factor_data2col is used as default. **/
+template <typename TensorDataType>
+void compute_bn_factor(
+    const TensorDataType * __restrict__ activations,
+    const TensorDataType * __restrict__ errors,
+    const TensorDataType * __restrict__ scales,
+    const TensorDataType * __restrict__ biases,
+    TensorDataType * __restrict__ factor,
+    size_t batch_size,
+    size_t num_channels,
+    size_t spatial_prod,
+    const cudaStream_t& stream);
+
+/** @brief The memory copy part of compute_bn_factor. Combined with
+ *  GEMM. **/
+template <typename TensorDataType>
+void compute_bn_factor_data2col(
+    const TensorDataType * __restrict__ activations,
+    const TensorDataType * __restrict__ errors,
+    const TensorDataType * __restrict__ scales,
+    const TensorDataType * __restrict__ biases,
+    TensorDataType * __restrict__ cols,
+    size_t batch_size,
+    size_t num_channels,
+    size_t spatial_prod,
+    const cudaStream_t& stream);
+
+} // namespace kfac_bn_util
+
 /** A BN building block for K-FAC.
  */
-class kfac_block_bn: public kfac_block {
+template <El::Device Device>
+class kfac_block_bn: public kfac_block<Device> {
  public:
 
   /** Constructor.
    */
   kfac_block_bn(Layer *layer,
-                kfac *callback,
+                kfac<Device> *callback,
                 size_t layer_id,
                 size_t inverse_proc_rank)
-      : kfac_block(layer, callback, layer_id, inverse_proc_rank) {
+      : kfac_block<Device>(layer, callback, layer_id, inverse_proc_rank) {
 
 #ifdef LBANN_HAS_GPU
 
     const auto parent = layer->get_parent_layers()[0];
     const bool is_after_fc =
         (dynamic_cast<const fully_connected_layer<DataType,
-         data_layout::DATA_PARALLEL, El::Device::GPU>*>(parent) != nullptr);
+         data_layout::DATA_PARALLEL, Device>*>(parent) != nullptr);
     m_is_after_conv =
         (dynamic_cast<const convolution_layer<DataType,
-         data_layout::DATA_PARALLEL, El::Device::GPU>*>(parent) != nullptr);
+         data_layout::DATA_PARALLEL, Device>*>(parent) != nullptr);
     if(!is_after_fc && !m_is_after_conv) {
       std::stringstream err;
       err << "The K-FAC callback only supports batch-normalization layers after "
@@ -129,44 +162,12 @@ class kfac_block_bn: public kfac_block {
 
   std::string get_info() const override {
     std::ostringstream oss;
-    oss << kfac_block::get_info()
+    oss << kfac_block<Device>::get_info()
         << ", is_after_conv=" << m_is_after_conv;
     return oss.str();
   }
 
  private:
-
-#ifdef LBANN_HAS_GPU
-
-  /** @brief Compute the factor of a batch-normalization layer.
-   *  TODO: Remove as compute_bn_factor_data2col is used as default. **/
-  template <typename TensorDataType>
-  static void compute_bn_factor(
-      const TensorDataType * __restrict__ activations,
-      const TensorDataType * __restrict__ errors,
-      const TensorDataType * __restrict__ scales,
-      const TensorDataType * __restrict__ biases,
-      TensorDataType * __restrict__ factor,
-      size_t batch_size,
-      size_t num_channels,
-      size_t spatial_prod,
-      const cudaStream_t& stream);
-
-  /** @brief The memory copy part of compute_bn_factor. Combined with
-   *  GEMM. **/
-  template <typename TensorDataType>
-  static void compute_bn_factor_data2col(
-      const TensorDataType * __restrict__ activations,
-      const TensorDataType * __restrict__ errors,
-      const TensorDataType * __restrict__ scales,
-      const TensorDataType * __restrict__ biases,
-      TensorDataType * __restrict__ cols,
-      size_t batch_size,
-      size_t num_channels,
-      size_t spatial_prod,
-      const cudaStream_t& stream);
-
-#endif // LBANN_HAS_GPU
 
   /** @brief Information to perform its computation. **/
   bool m_is_after_conv;
@@ -175,15 +176,15 @@ class kfac_block_bn: public kfac_block {
 #ifdef LBANN_HAS_GPU
 
   /** @brief Lower triangle buffers of the Fisher block. */
-  El::Matrix<DataType, El::Device::GPU>
+  El::Matrix<DataType, Device>
   m_fisher_buf;
 
   /** @brief Exponential moving average of the Fisher matrix. */
-  El::Matrix<DataType, El::Device::GPU>
+  El::Matrix<DataType, Device>
   m_fisher_average;
 
   /** @brief Inverse of the average Fisher matrix. */
-  El::Matrix<DataType, El::Device::GPU>
+  El::Matrix<DataType, Device>
   m_fisher_inverse;
 
 #endif // LBANN_HAS_GPU

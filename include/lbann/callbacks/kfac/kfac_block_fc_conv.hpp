@@ -35,21 +35,42 @@
 namespace lbann {
 namespace callback {
 
+namespace kfac_fc_conv_util {
+
+/** @brief Get diagonal elements of a matrix. **/
+template <typename TensorDataType>
+void get_diagonal(
+    TensorDataType * __restrict__ diag,
+    const TensorDataType * __restrict__ A,
+    size_t height,
+    const cudaStream_t& stream);
+
+/** @brief Transpose NC(D)HW matrix to N(D)HWC. **/
+template <typename TensorDataType>
+void conv_transpose(
+    const TensorDataType * __restrict__ activations,
+    TensorDataType * __restrict__ act_columns,
+    size_t mini_batch_size, size_t num_channels,
+    size_t spatial_prod,
+    const cudaStream_t& stream);
+
+} // namespace kfac_fc_conv_util
+
 /** An FC/conv building block for K-FAC.
  * TODO: Split into kfac_block_fc and kfac_block_conv.
  */
-class kfac_block_fc_conv: public kfac_block {
+template <El::Device Device>
+class kfac_block_fc_conv: public kfac_block<Device> {
  public:
-
 
   /** Constructor.
    */
   kfac_block_fc_conv(Layer *layer,
-                     kfac *callback,
+                     kfac<Device> *callback,
                      const size_t layer_id,
                      const size_t inverse_proc_rank,
                      const bool is_conv)
-      : kfac_block(layer, callback, layer_id, inverse_proc_rank),
+      : kfac_block<Device>(layer, callback, layer_id, inverse_proc_rank),
         m_is_conv(is_conv), m_has_bias(layer->num_weights() > 1) {
 
 #ifdef LBANN_HAS_GPU
@@ -134,7 +155,7 @@ class kfac_block_fc_conv: public kfac_block {
 
   std::string get_info() const override {
     std::ostringstream oss;
-    oss << kfac_block::get_info()
+    oss << kfac_block<Device>::get_info()
         << ", is_conv=" << m_is_conv;
     return oss.str();
   }
@@ -151,44 +172,27 @@ class kfac_block_fc_conv: public kfac_block {
 
   /** @brief Gets the Kronecker factor matrix of a convolutional layer. **/
   static void get_kronecker_factor_conv(
-      El::Matrix<DataType, El::Device::GPU>& factor,
-      El::Matrix<DataType, El::Device::GPU>& Acol,
-      const El::Matrix<DataType, El::Device::GPU>& activations,
+      El::Matrix<DataType, Device>& factor,
+      El::Matrix<DataType, Device>& Acol,
+      const El::Matrix<DataType, Device>& activations,
       DataType alpha,
       size_t local_batch_size, size_t num_channels,
       const std::vector<int>& spatial_dims,
-      const convolution_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU> *l_conv,
+      const convolution_layer<DataType, data_layout::DATA_PARALLEL, Device> *l_conv,
       bool use_im2col,
-      const cudaStream_t& stream);
-
-  /** @brief Get diagonal elements of a matrix. **/
-  template <typename TensorDataType>
-  static void get_diagonal(
-      TensorDataType * __restrict__ diag,
-      const TensorDataType * __restrict__ A,
-      size_t height,
       const cudaStream_t& stream);
 
   /** @brief Returns the pi constant. **/
   static double compute_pi(
-      const El::Matrix<DataType, El::Device::GPU>& A,
-      const El::Matrix<DataType, El::Device::GPU>& G,
-      El::Matrix<DataType, El::Device::GPU>& ws,
-      const cudaStream_t& stream);
-
-  /** @brief Transpose NC(D)HW matrix to N(D)HWC. **/
-  template <typename TensorDataType>
-  static void conv_transpose(
-      const TensorDataType * __restrict__ activations,
-      TensorDataType * __restrict__ act_columns,
-      size_t mini_batch_size, size_t num_channels,
-      size_t spatial_prod,
+      const El::Matrix<DataType, Device>& A,
+      const El::Matrix<DataType, Device>& G,
+      El::Matrix<DataType, Device>& ws,
       const cudaStream_t& stream);
 
   /** @brief Get the pointer to its convolution_layer. **/
-  convolution_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>*
+  convolution_layer<DataType, data_layout::DATA_PARALLEL, Device>*
   get_conv_layer() {
-    return dynamic_cast<convolution_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>*>(m_layer);
+    return dynamic_cast<convolution_layer<DataType, data_layout::DATA_PARALLEL, Device>*>(this->m_layer);
   }
 
   std::vector<std::tuple<std::string, size_t, size_t>>
@@ -204,22 +208,22 @@ class kfac_block_fc_conv: public kfac_block {
 #ifdef LBANN_HAS_GPU
 
   /** @brief Lower triangle buffers of Kronecker factors. */
-  El::Matrix<DataType, El::Device::GPU>
+  El::Matrix<DataType, Device>
   m_kronecker_factor_buf_A, m_kronecker_factor_buf_G;
 
   /** @brief The heights of the Kronecker factors. */
   size_t m_height_A, m_height_G;
 
   /** @brief Exponential moving average of Kronecker factors. */
-  El::Matrix<DataType, El::Device::GPU>
+  El::Matrix<DataType, Device>
   m_kronecker_average_A, m_kronecker_average_G;
 
   /** @brief Inverse of the average Kronecker factors. */
-  El::Matrix<DataType, El::Device::GPU>
+  El::Matrix<DataType, Device>
   m_kronecker_inverse_A, m_kronecker_inverse_G;
 
   /** @brief Vectorized gradient buffer (only for fully-connecter layers). */
-  El::Matrix<DataType, El::Device::GPU>
+  El::Matrix<DataType, Device>
   m_grad_buffer_v;
 
 #endif // LBANN_HAS_GPU

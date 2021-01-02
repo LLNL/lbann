@@ -35,15 +35,16 @@ namespace callback {
 
 #ifdef LBANN_HAS_GPU
 
-void kfac_block_fc_conv::compute_local_kronecker_factors(
+template <El::Device Device>
+void kfac_block_fc_conv<Device>::compute_local_kronecker_factors(
     lbann_comm* comm,
     const bool print_matrix,
     const bool print_matrix_summary) {
 
-  const auto stream = get_stream();
+  const auto stream = this->get_stream();
 
-  const auto parent = m_layer->get_parent_layers()[0];
-  const auto child = m_layer->get_child_layers()[0];
+  const auto parent = this->m_layer->get_parent_layers()[0];
+  const auto child = this->m_layer->get_child_layers()[0];
   const auto& dtl_parent = dynamic_cast<const data_type_layer<DataType>&>(*parent);
   const auto& dtl_child = dynamic_cast<const data_type_layer<DataType>&>(*child);
   const El::AbstractMatrix<DataType>& local_activations = dtl_parent.get_local_activations();
@@ -54,8 +55,8 @@ void kfac_block_fc_conv::compute_local_kronecker_factors(
 
   // Compute Kronecker factors, assuming that local_errors are
   // already multiplied by 1/N in the loss layer.
-  const auto input_dims = m_layer->get_input_dims(); // CHW
-  const auto output_dims = m_layer->get_output_dims(); // KH'W'
+  const auto input_dims = this->m_layer->get_input_dims(); // CHW
+  const auto output_dims = this->m_layer->get_output_dims(); // KH'W'
   const size_t num_input_channels = input_dims[0];
   const size_t num_output_channels = output_dims[0];
   m_height_A = local_activations.Height();
@@ -69,11 +70,11 @@ void kfac_block_fc_conv::compute_local_kronecker_factors(
     m_height_A++;
 
   m_height_G = !m_is_conv ? local_errors.Height() : num_output_channels;
-  auto& A = get_workspace_matrix("A", m_height_A, m_height_A);
-  auto& G = get_workspace_matrix("G", m_height_G, m_height_G);
+  auto& A = this->get_workspace_matrix("A", m_height_A, m_height_A);
+  auto& G = this->get_workspace_matrix("G", m_height_G, m_height_G);
   if(!m_is_conv) {
     if(m_has_bias) {
-      auto& local_activations_with_ones = get_workspace_matrix(
+      auto& local_activations_with_ones = this->get_workspace_matrix(
           "local_activations_with_ones",
           local_activations.Height()+1, local_activations.Width());
       auto local_activations_dst = El::View(
@@ -103,9 +104,9 @@ void kfac_block_fc_conv::compute_local_kronecker_factors(
         &(get_conv_layer()->get_pads()[0]),
         &(get_conv_layer()->get_conv_dims()[0]),
         &(get_conv_layer()->get_strides()[0]));
-    auto& Acol = get_workspace_matrix(
+    auto& Acol = this->get_workspace_matrix(
         "Acol", Acol_size.first, Acol_size.second);
-    auto& Gcol = get_workspace_matrix(
+    auto& Gcol = this->get_workspace_matrix(
         "Gcol", num_output_channels, local_batch_size*m_conv_output_spatial_prod);
     get_kronecker_factor_conv(
         A, Acol,
@@ -132,7 +133,7 @@ void kfac_block_fc_conv::compute_local_kronecker_factors(
     // const auto &dtw = dynamic_cast<data_type_weights<DataType>*>(&weights);
     // const auto &w_values = dtw->get_values();
     std::ostringstream oss;
-    oss << "K-FAC callback: L2 norm @ "<< m_layer->get_name() << ": "
+    oss << "K-FAC callback: L2 norm @ "<< this->m_layer->get_name() << ": "
         // << kfac_util::get_matrix_stat(w_values.LockedMatrix(), "W")
         << kfac_util::get_matrix_stat(local_activations, "acts")
         << ", " << kfac_util::get_matrix_stat(local_errors, "errs")
@@ -144,17 +145,18 @@ void kfac_block_fc_conv::compute_local_kronecker_factors(
 
 }
 
-void kfac_block_fc_conv::update_kronecker_average(
+template <El::Device Device>
+void kfac_block_fc_conv<Device>::update_kronecker_average(
     lbann_comm* comm,
     const DataType kronecker_decay,
     const bool print_matrix,
     const bool print_matrix_summary) {
 
-  const auto stream = get_stream();
+  const auto stream = this->get_stream();
 
-  auto& A = get_workspace_matrix(
+  auto& A = this->get_workspace_matrix(
       "A", m_height_A, m_height_A);
-  auto& G = get_workspace_matrix(
+  auto& G = this->get_workspace_matrix(
       "G", m_height_G, m_height_G);
 
   kfac_util::unpack_lower_tri(
@@ -163,7 +165,7 @@ void kfac_block_fc_conv::update_kronecker_average(
       G.Buffer(), m_kronecker_factor_buf_G.LockedBuffer(), m_height_G, stream);
 
   // Update average Kronecker factors
-  if(!m_has_kronecker_inverse) {
+  if(!this->m_has_kronecker_inverse) {
     El::Copy(A, m_kronecker_average_A);
     El::Copy(G, m_kronecker_average_G);
   }
@@ -188,7 +190,7 @@ void kfac_block_fc_conv::update_kronecker_average(
   // Dump L2 norm of matrices
   if(comm->am_trainer_master() && print_matrix_summary) {
     std::ostringstream oss;
-    oss << "K-FAC callback: L2 norm @ "<< m_layer->get_name() << ": "
+    oss << "K-FAC callback: L2 norm @ "<< this->m_layer->get_name() << ": "
         << kfac_util::get_matrix_stat(Aave, "Aave")
         << ", " << kfac_util::get_matrix_stat(Gave, "Gave")
         << std::endl;
@@ -197,7 +199,8 @@ void kfac_block_fc_conv::update_kronecker_average(
 
 }
 
-void kfac_block_fc_conv::update_kronecker_inverse(
+template <El::Device Device>
+void kfac_block_fc_conv<Device>::update_kronecker_inverse(
     lbann_comm* comm,
     const bool use_pi,
     const DataType damping_act, const DataType damping_err,
@@ -206,9 +209,9 @@ void kfac_block_fc_conv::update_kronecker_inverse(
     const bool print_matrix_summary,
     const bool print_time) {
 
-  const auto stream = get_stream();
+  const auto stream = this->get_stream();
 
-  auto& weights = m_layer->get_weights(0);
+  auto& weights = this->m_layer->get_weights(0);
   optimizer *w_optimizer = weights.get_optimizer();
   auto* w_dto = dynamic_cast<data_type_optimizer<DataType>*>(w_optimizer);
 
@@ -218,7 +221,7 @@ void kfac_block_fc_conv::update_kronecker_inverse(
   // Compute the pi constant
   DataType pi = 1.0;
   if(use_pi) {
-    auto& ws = get_workspace_matrix(
+    auto& ws = this->get_workspace_matrix(
         "pi_ws", std::max(Aave.Height(), Gave.Height())*2+1, 1);
     pi = compute_pi(Aave, Gave, ws, stream);
   }
@@ -228,23 +231,23 @@ void kfac_block_fc_conv::update_kronecker_inverse(
   if(use_pi && damping_act != damping_err) {
     std::stringstream err;
     err << "Damping values for activations and errors are different while the pi constant is used."
-        << " layer: " << m_layer->get_name()
+        << " layer: " << this->m_layer->get_name()
         << ", damping_act: " << damping_act
         << ", damping_err: " << damping_err;
     LBANN_WARNING(err.str());
   }
 
-  if(!m_has_kronecker_inverse) {
-    m_has_kronecker_inverse = true;
+  if(!this->m_has_kronecker_inverse) {
+    this->m_has_kronecker_inverse = true;
     m_kronecker_inverse_A.Resize(Aave.Height(), Aave.Width());
     m_kronecker_inverse_G.Resize(Gave.Height(), Gave.Width());
   }
   // TODO: Refactoring
   auto& Ainv = m_kronecker_inverse_A;
   auto& Ginv = m_kronecker_inverse_G;
-  auto& ALinv = get_workspace_matrix(
+  auto& ALinv = this->get_workspace_matrix(
       "ALinv", Aave.Height(), Aave.Height());
-  auto& GLinv = get_workspace_matrix(
+  auto& GLinv = this->get_workspace_matrix(
       "GLinv", Gave.Height(), Gave.Height());
   kfac_util::get_matrix_inverse(
       Ainv, ALinv, Aave, comm->am_trainer_master() && print_time,
@@ -257,7 +260,7 @@ void kfac_block_fc_conv::update_kronecker_inverse(
 
   if(print_matrix_summary) {
     std::ostringstream oss;
-    oss << "K-FAC callback: pi=" << pi << " @ "<< m_layer->get_name() << std::endl;
+    oss << "K-FAC callback: pi=" << pi << " @ "<< this->m_layer->get_name() << std::endl;
     std::cout << oss.str();
   }
 
@@ -269,10 +272,10 @@ void kfac_block_fc_conv::update_kronecker_inverse(
       dst_scale, gradient_scale, false);
 
   const auto& w_grads_orig = w_dto->get_gradient().LockedMatrix();
-  El::Matrix<DataType, El::Device::GPU> w_gradients;
+  El::Matrix<DataType, Device> w_gradients;
   // w_gradients is already synchronized among processes.
   if(m_is_conv) {
-    const auto num_output_channels = m_layer->get_output_dims()[0];
+    const auto num_output_channels = this->m_layer->get_output_dims()[0];
     assert((w_grads_orig.Height()%num_output_channels) == 0);
     const auto height = w_grads_orig.Height()/num_output_channels;
     w_gradients.LockedAttach(height, num_output_channels,
@@ -280,7 +283,7 @@ void kfac_block_fc_conv::update_kronecker_inverse(
                              height);
   } else {
     if(m_has_bias) {
-      auto& w_grads_concat = get_workspace_matrix(
+      auto& w_grads_concat = this->get_workspace_matrix(
           "A", w_grads_orig.Height(), w_grads_orig.Width()+1);
 
       auto w_grads_concat_weights = El::View(
@@ -288,7 +291,7 @@ void kfac_block_fc_conv::update_kronecker_inverse(
       auto w_grads_concat_biases = El::View(
           w_grads_concat, El::ALL, El::IR(w_grads_orig.Width(), w_grads_orig.Width()+1));
 
-      auto& biases = m_layer->get_weights(1);
+      auto& biases = this->m_layer->get_weights(1);
       optimizer *b_optimizer = biases.get_optimizer();
       auto* b_dto = dynamic_cast<data_type_optimizer<DataType>*>(b_optimizer);
       const auto& b_grads_orig = b_dto->get_gradient().LockedMatrix();
@@ -307,7 +310,7 @@ void kfac_block_fc_conv::update_kronecker_inverse(
   }
 
   // Compute preconditioned gradients
-  auto& Gg = get_workspace_matrix(
+  auto& Gg = this->get_workspace_matrix(
       "Gg",
       Ginv.Height(),
       m_is_conv ? w_gradients.Height() : w_gradients.Width());
@@ -316,7 +319,7 @@ void kfac_block_fc_conv::update_kronecker_inverse(
       El::NORMAL, m_is_conv ? El::TRANSPOSE : El::NORMAL,
       El::TypeTraits<DataType>::One(), Ginv, w_gradients,
       El::TypeTraits<DataType>::Zero(), Gg);
-  auto& Fgrad = get_workspace_matrix(
+  auto& Fgrad = this->get_workspace_matrix(
       "Fgrad", Ginv.Height(), Ainv.Width());
   El::Gemm(
       El::NORMAL, El::NORMAL,
@@ -324,7 +327,7 @@ void kfac_block_fc_conv::update_kronecker_inverse(
       El::TypeTraits<DataType>::Zero(), Fgrad);
 
   if(m_is_conv) {
-    El::Matrix<DataType, El::Device::GPU> Fgrad_v;
+    El::Matrix<DataType, Device> Fgrad_v;
     Fgrad_v.LockedAttach(Fgrad.Width()*Fgrad.Height(), 1,
                          Fgrad.LockedBuffer(),
                          Fgrad.Width()*Fgrad.Height());
@@ -334,7 +337,7 @@ void kfac_block_fc_conv::update_kronecker_inverse(
     assert(Fgrad.Width() == w_gradients.Width());
 
     if(m_has_bias) {
-      auto& biases = m_layer->get_weights(1);
+      auto& biases = this->m_layer->get_weights(1);
       optimizer *b_optimizer = biases.get_optimizer();
       auto& grad_buffer_biases = b_optimizer->get_gradient_buffer(
           dst_scale, gradient_scale, false);
@@ -364,7 +367,7 @@ void kfac_block_fc_conv::update_kronecker_inverse(
     const auto &dtw = dynamic_cast<data_type_weights<DataType>*>(&weights);
     const auto &w_values = dtw->get_values();
     std::ostringstream oss;
-    oss << "K-FAC callback: L2 norm @ "<< m_layer->get_name() << ": "
+    oss << "K-FAC callback: L2 norm @ "<< this->m_layer->get_name() << ": "
         << kfac_util::get_matrix_stat(w_values.LockedMatrix(), "W")
         << ", " << kfac_util::get_matrix_stat(Ainv, "Ainv")
         << ", " << kfac_util::get_matrix_stat(Ginv, "Ginv")
@@ -375,9 +378,10 @@ void kfac_block_fc_conv::update_kronecker_inverse(
   }
 }
 
+template <El::Device Device>
 const std::vector<El::AbstractMatrix<DataType>*>
-kfac_block_fc_conv::get_preconditioned_grad_buffers() {
-  auto& weights = m_layer->get_weights(0);
+kfac_block_fc_conv<Device>::get_preconditioned_grad_buffers() {
+  auto& weights = this->m_layer->get_weights(0);
   optimizer *w_optimizer = weights.get_optimizer();
   DataType dst_scale = El::TypeTraits<DataType>::Zero(),
       gradient_scale = El::TypeTraits<DataType>::One();
@@ -403,11 +407,12 @@ kfac_block_fc_conv::get_preconditioned_grad_buffers() {
   }
 }
 
-void kfac_block_fc_conv::get_kronecker_factor_fc(
+template <El::Device Device>
+void kfac_block_fc_conv<Device>::get_kronecker_factor_fc(
     El::AbstractMatrix<DataType>& factor,
     const El::AbstractMatrix<DataType>& activations,
     const DataType alpha) {
-  assert(activations.GetDevice() == El::Device::GPU);
+  assert(activations.GetDevice() == Device);
   assert(factor.Height() == activations.Height());
   assert(factor.Width() == activations.Height());
   El::Gemm(
@@ -417,18 +422,19 @@ void kfac_block_fc_conv::get_kronecker_factor_fc(
       factor);
 }
 
-void kfac_block_fc_conv::get_kronecker_factor_conv(
-    El::Matrix<DataType, El::Device::GPU>& factor,
-    El::Matrix<DataType, El::Device::GPU>& Acol,
-    const El::Matrix<DataType, El::Device::GPU>& activations,
+template <El::Device Device>
+void kfac_block_fc_conv<Device>::get_kronecker_factor_conv(
+    El::Matrix<DataType, Device>& factor,
+    El::Matrix<DataType, Device>& Acol,
+    const El::Matrix<DataType, Device>& activations,
     const DataType alpha,
     const size_t local_batch_size, const size_t num_channels,
     const std::vector<int>& spatial_dims,
-    const convolution_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU> *l_conv,
+    const convolution_layer<DataType, data_layout::DATA_PARALLEL, Device> *l_conv,
     const bool use_im2col,
     const cudaStream_t& stream) {
-  assert(factor.GetDevice() == El::Device::GPU);
-  assert(activations.GetDevice() == El::Device::GPU);
+  assert(factor.GetDevice() == Device);
+  assert(activations.GetDevice() == Device);
 
   const auto dilations = l_conv->get_dilations();
   for(auto i = dilations.begin(); i != dilations.end(); i++)
@@ -453,7 +459,7 @@ void kfac_block_fc_conv::get_kronecker_factor_conv(
       spatial_prod *= *i;
     assert((size_t) Acol.Height() == num_channels);
     assert((size_t) Acol.Width() == local_batch_size*spatial_prod);
-    conv_transpose(
+    kfac_fc_conv_util::conv_transpose(
         activations.LockedBuffer(), Acol.Buffer(),
         local_batch_size, num_channels, spatial_prod,
         stream);
@@ -467,22 +473,23 @@ void kfac_block_fc_conv::get_kronecker_factor_conv(
       El::TypeTraits<DataType>::Zero(), factor);
 }
 
-double kfac_block_fc_conv::compute_pi(
-    const El::Matrix<DataType, El::Device::GPU>& A,
-    const El::Matrix<DataType, El::Device::GPU>& G,
-    El::Matrix<DataType, El::Device::GPU>& ws,
+template <El::Device Device>
+double kfac_block_fc_conv<Device>::compute_pi(
+    const El::Matrix<DataType, Device>& A,
+    const El::Matrix<DataType, Device>& G,
+    El::Matrix<DataType, Device>& ws,
     const cudaStream_t& stream) {
   assert(ws.Height() >= A.Height()*2+1);
   assert(ws.Height() >= G.Height()*2+1);
   // TODO: Replace with El::Trace once GPU matrices get supported.
   const auto get_trace =
-      [](const El::Matrix<DataType, El::Device::GPU>& X,
-         El::Matrix<DataType, El::Device::GPU>& w,
+      [](const El::Matrix<DataType, Device>& X,
+         El::Matrix<DataType, Device>& w,
          const cudaStream_t& s) {
         auto diag = El::View(w, El::IR(0, X.Height()), El::ALL);
         auto ones = El::View(w, El::IR(X.Height(), X.Height()*2), El::ALL);
         auto ret = El::View(w, El::IR(X.Height()*2, X.Height()*2+1), El::ALL);
-        get_diagonal(diag.Buffer(), X.LockedBuffer(), X.Height(), s);
+        kfac_fc_conv_util::get_diagonal(diag.Buffer(), X.LockedBuffer(), X.Height(), s);
         El::Ones(ones, ones.Height(), ones.Width());
         El::Gemm(
             El::TRANSPOSE, El::NORMAL,
@@ -495,12 +502,13 @@ double kfac_block_fc_conv::compute_pi(
   return sqrt((get_trace(A, ws, stream)/A.Height())/(get_trace(G, ws, stream)/G.Height()));
 }
 
+template <El::Device Device>
 std::vector<std::tuple<std::string, size_t, size_t>>
-kfac_block_fc_conv::get_internal_matrix_info() const {
+kfac_block_fc_conv<Device>::get_internal_matrix_info() const {
   std::vector<std::tuple<std::string, size_t, size_t>> list;
   const auto emplace =
       [&list](const std::string name,
-              const El::Matrix<DataType, El::Device::GPU>& m) {
+              const El::Matrix<DataType, Device>& m) {
         list.emplace_back(name, m.Height(), m.Width());
       };
   emplace("buf_A", m_kronecker_factor_buf_A);
@@ -512,6 +520,8 @@ kfac_block_fc_conv::get_internal_matrix_info() const {
   emplace("grad_buffer_v", m_grad_buffer_v);
   return list;
 }
+
+template class kfac_block_fc_conv<El::Device::GPU>;
 
 #endif // LBANN_HAS_GPU
 
