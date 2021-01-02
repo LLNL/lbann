@@ -38,21 +38,20 @@ namespace callback {
 namespace kfac_fc_conv_util {
 
 /** @brief Get diagonal elements of a matrix. **/
-template <typename TensorDataType>
+template <El::Device Device>
 void get_diagonal(
-    TensorDataType * __restrict__ diag,
-    const TensorDataType * __restrict__ A,
-    size_t height,
-    const cudaStream_t& stream);
+    El::Matrix<DataType, Device>& diag,
+    const El::Matrix<DataType, Device>& A,
+    const El::SyncInfo<Device>& sync_info);
 
 /** @brief Transpose NC(D)HW matrix to N(D)HWC. **/
-template <typename TensorDataType>
+template <El::Device Device>
 void conv_transpose(
-    const TensorDataType * __restrict__ activations,
-    TensorDataType * __restrict__ act_columns,
+    const El::Matrix<DataType, Device>& activations,
+    El::Matrix<DataType, Device>& act_columns,
     size_t mini_batch_size, size_t num_channels,
     size_t spatial_prod,
-    const cudaStream_t& stream);
+    const El::SyncInfo<Device>& sync_info);
 
 } // namespace kfac_fc_conv_util
 
@@ -180,14 +179,14 @@ class kfac_block_fc_conv: public kfac_block<Device> {
       const std::vector<int>& spatial_dims,
       const convolution_layer<DataType, data_layout::DATA_PARALLEL, Device> *l_conv,
       bool use_im2col,
-      const cudaStream_t& stream);
+      const El::SyncInfo<Device>& sync_info);
 
   /** @brief Returns the pi constant. **/
   static double compute_pi(
       const El::Matrix<DataType, Device>& A,
       const El::Matrix<DataType, Device>& G,
       El::Matrix<DataType, Device>& ws,
-      const cudaStream_t& stream);
+      const El::SyncInfo<Device>& sync_info);
 
   /** @brief Get the pointer to its convolution_layer. **/
   convolution_layer<DataType, data_layout::DATA_PARALLEL, Device>*

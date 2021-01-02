@@ -39,6 +39,7 @@ namespace kfac_util {
 #ifdef LBANN_HAS_GPU
 
 /** @brief Gets the inverse matrix of A. **/
+template <El::Device Device>
 void get_matrix_inverse(
     El::AbstractMatrix<DataType>& Ainv,
     El::AbstractMatrix<DataType>& Linv,
@@ -47,7 +48,7 @@ void get_matrix_inverse(
     DataType damping,
     DataType damping_bn_err,
     bool is_bn,
-    const cudaStream_t& stream);
+    const El::SyncInfo<Device>& sync_info);
 
 /** @brief Gets statistics of a given matrix. **/
 std::string get_matrix_stat(
@@ -55,11 +56,12 @@ std::string get_matrix_stat(
     const char *name);
 
 /** @brief Perform all-reduce on the lower triangular of a symmetric matrix. **/
+template <El::Device Device>
 void allreduce_lower_tri(
     El::AbstractMatrix<DataType>& A,
     El::AbstractMatrix<DataType>& AL,
     lbann_comm *comm,
-    const cudaStream_t& stream);
+    const El::SyncInfo<Device>& sync_info);
 
 /** @brief Get whether a global buffer is needed. **/
 bool is_reduce_scatter_buffer_required(kfac_reduce_scatter_mode mode);
@@ -85,57 +87,52 @@ void allgather_blocks(
     kfac_allgather_mode mode);
 
 /** @brief Add the damping value to the diagonal elements of A. **/
-template <typename TensorDataType>
+template <El::Device Device>
 void add_to_diagonal(
-    TensorDataType * __restrict__ A,
-    size_t height,
-    TensorDataType value,
-    TensorDataType value_bn_err,
+    El::Matrix<DataType, Device>& A,
+    DataType value,
+    DataType value_bn_err,
     bool is_bn,
-    const cudaStream_t& stream);
+    const El::SyncInfo<Device>& sync_info);
 
 /** @brief Fill the upper trianglar with the lower trianglar. **/
-template <typename TensorDataType>
+template <El::Device Device>
 void fill_upper_tri(
-    TensorDataType * __restrict__ A,
-    size_t height,
-    const cudaStream_t& stream);
+    El::Matrix<DataType, Device>& A,
+    const El::SyncInfo<Device>& sync_info);
 
 /** @brief Update a Kronecker factor matrix using decay.
  *
  * Aave = Aave * decay + A * (1-decay) **/
-template <typename TensorDataType>
+template <El::Device Device>
 void update_kronecker_average(
-    TensorDataType * __restrict__ Aave,
-    const TensorDataType * __restrict__ A,
+    El::Matrix<DataType, Device>& Aave,
+    const El::Matrix<DataType, Device>& A,
     size_t count,
     double decay,
-    const cudaStream_t& stream);
+    const El::SyncInfo<Device>& sync_info);
 
 /** @brief Substitute the identity matrix.
  *  TODO: Replace with El::Identity<El::Device::GPU>
  *   once it gets supported. **/
-template <typename TensorDataType>
+template <El::Device Device>
 void identity(
-    TensorDataType * __restrict__ A,
-    size_t height,
-    const cudaStream_t& stream);
+    El::Matrix<DataType, Device>& A,
+    const El::SyncInfo<Device>& sync_info);
 
 /** @brief Pack the lower triangular of a symmetric matrix. **/
-template <typename TensorDataType>
+template <El::Device Device>
 void pack_lower_tri(
-    TensorDataType * __restrict__ L,
-    const TensorDataType * __restrict__ A,
-    size_t height,
-    const cudaStream_t& stream);
+    El::Matrix<DataType, Device>& L,
+    const El::Matrix<DataType, Device>& A,
+    const El::SyncInfo<Device>& sync_info);
 
 /** @brief Unpack the lower triangular of a symmetric matrix. **/
-template <typename TensorDataType>
+template <El::Device Device>
 void unpack_lower_tri(
-    TensorDataType * __restrict__ A,
-    const TensorDataType * __restrict__ L,
-    size_t height,
-    const cudaStream_t& stream);
+    El::Matrix<DataType, Device>& A,
+    const El::Matrix<DataType, Device>& L,
+    const El::SyncInfo<Device>& sync_info);
 
 #endif // LBANN_HAS_GPU
 

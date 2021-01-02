@@ -34,39 +34,6 @@ namespace callback {
 namespace {
 
 template <typename TensorDataType>
-__global__ void kfac_compute_bn_factor_kernel(
-    const TensorDataType * __restrict__ activations,
-    const TensorDataType * __restrict__ errors,
-    const TensorDataType * __restrict__ scales,
-    const TensorDataType * __restrict__ biases,
-    TensorDataType * __restrict__ factor,
-    const size_t batch_size,
-    const size_t num_channels,
-    const size_t spatial_prod,
-    const size_t num_threads) { // = batch_size*num_channels
-  const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
-  if(gid < num_threads) {
-    const size_t i_c = gid%num_channels;
-    const size_t i_n = gid/num_channels;
-
-    const auto scale = scales[i_c];
-    const auto bias = biases[i_c];
-
-    TensorDataType sum_ea = 0.0, sum_e = 0.0;
-    // TODO: This loop would be slow in large (3D) CNNs
-    for(size_t i_s = 0; i_s < spatial_prod; i_s++) {
-      const auto i_act = i_s+gid*spatial_prod;
-      const auto error = errors[i_act];
-      const auto act = (activations[i_act]-bias)/scale;
-      sum_ea += error * act;
-      sum_e += error;
-    }
-    factor[i_c+i_n*num_channels*2] = sum_ea;
-    factor[i_c+num_channels+i_n*num_channels*2] = sum_e;
-  }
-}
-
-template <typename TensorDataType>
 __global__ void kfac_compute_bn_factor_data2col_kernel(
     const TensorDataType * __restrict__ activations,
     const TensorDataType * __restrict__ errors,
@@ -95,78 +62,30 @@ __global__ void kfac_compute_bn_factor_data2col_kernel(
 
 } // namespace
 
-namespace kfac_bn_util {
-
-template <typename TensorDataType>
-void compute_bn_factor(
-    const TensorDataType * __restrict__ activations,
-    const TensorDataType * __restrict__ errors,
-    const TensorDataType * __restrict__ scales,
-    const TensorDataType * __restrict__ biases,
-    TensorDataType * __restrict__ factor,
-    const size_t batch_size,
-    const size_t num_channels,
-    const size_t spatial_prod,
-    const cudaStream_t& stream) {
-  constexpr size_t block_size = 256;
-  const size_t num_threads = batch_size * num_channels;
-  const size_t grid_size = (num_threads + block_size - 1) / block_size;
-  kfac_compute_bn_factor_kernel<TensorDataType>
-      <<<grid_size, block_size, 0, stream>>>(
-          activations, errors, scales, biases,
-          factor,
-          batch_size, num_channels, spatial_prod,
-          num_threads);
-}
-
-template <typename TensorDataType>
-void compute_bn_factor_data2col(
-    const TensorDataType * __restrict__ activations,
-    const TensorDataType * __restrict__ errors,
-    const TensorDataType * __restrict__ scales,
-    const TensorDataType * __restrict__ biases,
-    TensorDataType * __restrict__ cols,
-    const size_t batch_size,
-    const size_t num_channels,
-    const size_t spatial_prod,
-    const cudaStream_t& stream) {
+template <>
+void kfac_bn_util::compute_bn_factor_data2col<El::Device::GPU>(
+    const El::Matrix<DataType, El::Device::GPU>& activations,
+    const El::Matrix<DataType, El::Device::GPU>& errors,
+    const El::Matrix<DataType, El::Device::GPU>& scales,
+    const El::Matrix<DataType, El::Device::GPU>& biases,
+    El::Matrix<DataType, El::Device::GPU>& cols,
+    size_t batch_size,
+    size_t num_channels,
+    size_t spatial_prod,
+    const El::SyncInfo<El::Device::GPU>& sync_info) {
   constexpr size_t block_size = 256;
   const size_t num_threads = batch_size * num_channels * spatial_prod;
   const size_t grid_size = (num_threads + block_size - 1) / block_size;
-  kfac_compute_bn_factor_data2col_kernel<TensorDataType>
-      <<<grid_size, block_size, 0, stream>>>(
-          activations, errors, scales, biases,
-          cols,
+  kfac_compute_bn_factor_data2col_kernel<DataType>
+      <<<grid_size, block_size, 0, sync_info.Stream()>>>(
+          activations.LockedBuffer(),
+          errors.LockedBuffer(),
+          scales.LockedBuffer(),
+          biases.LockedBuffer(),
+          cols.Buffer(),
           batch_size, num_channels, spatial_prod,
           num_threads);
 }
-
-#define PROTO(T)                                \
-  template void compute_bn_factor<T>(           \
-      const T * __restrict__ activations,       \
-      const T * __restrict__ errors,            \
-      const T * __restrict__ scales,            \
-      const T * __restrict__ biases,            \
-      T * __restrict__ factor,                  \
-      const size_t batch_size,                  \
-      const size_t num_channels,                \
-      const size_t spatial_prod,                \
-      const cudaStream_t& stream);              \
-  template void compute_bn_factor_data2col<T>(  \
-      const T * __restrict__ activations,       \
-      const T * __restrict__ errors,            \
-      const T * __restrict__ scales,            \
-      const T * __restrict__ biases,            \
-      T * __restrict__ cols,                    \
-      const size_t batch_size,                  \
-      const size_t num_channels,                \
-      const size_t spatial_prod,                \
-      const cudaStream_t& stream);
-
-#define LBANN_INSTANTIATE_GPU_HALF
-#include "lbann/macros/instantiate.hpp"
-
-} // namespace kfac_bn_util
 
 } // namespace callback
 } // namespace lbann

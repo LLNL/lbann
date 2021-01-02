@@ -40,7 +40,7 @@ void kfac_block_bn<Device>::compute_local_kronecker_factors(
     const bool print_matrix,
     const bool print_matrix_summary) {
 
-  const auto stream = this->get_stream();
+  const auto& sync_info = this->get_sync_info();
 
   const auto parent = this->m_layer->get_parent_layers()[0];
   const auto child = this->m_layer->get_child_layers()[0];
@@ -74,16 +74,16 @@ void kfac_block_bn<Device>::compute_local_kronecker_factors(
       "bn_cols",
       m_num_channels*2*local_batch_size,
       m_spatial_prod);
-  kfac_bn_util::compute_bn_factor_data2col(
-      local_activations.LockedBuffer(),
-      local_errors.LockedBuffer(),
-      scale_values.LockedMatrix().LockedBuffer(),
-      bias_values.LockedMatrix().LockedBuffer(),
-      cols.Buffer(),
+  kfac_bn_util::compute_bn_factor_data2col<Device>(
+      (El::Matrix<DataType, Device>) local_activations,
+      (El::Matrix<DataType, Device>) local_errors,
+      (El::Matrix<DataType, Device>) scale_values.LockedMatrix(),
+      (El::Matrix<DataType, Device>) bias_values.LockedMatrix(),
+      cols,
       local_batch_size,
       m_num_channels,
       m_spatial_prod,
-      stream);
+      sync_info);
 
   auto& ones = this->get_workspace_matrix(
       "bn_ones",
@@ -112,8 +112,7 @@ void kfac_block_bn<Device>::compute_local_kronecker_factors(
 
   m_fisher_buf.Resize(fisher_block.Height()*(fisher_block.Height()+1)/2, 1);
   kfac_util::pack_lower_tri(
-      m_fisher_buf.Buffer(), fisher_block.LockedBuffer(),
-      fisher_block.Height(), stream);
+      m_fisher_buf, fisher_block, sync_info);
 
   // dump L2 norm of matrices
   if(comm->am_trainer_master() && print_matrix_summary) {
@@ -136,14 +135,13 @@ void kfac_block_bn<Device>::update_kronecker_average(
     const bool print_matrix,
     const bool print_matrix_summary) {
 
-  const auto stream = this->get_stream();
+  const auto& sync_info = this->get_sync_info();
 
   auto& fisher_block = this->get_workspace_matrix(
       "bn_fisher_block",
       m_num_channels*2, m_num_channels*2);
   kfac_util::unpack_lower_tri(
-      fisher_block.Buffer(), m_fisher_buf.LockedBuffer(),
-      fisher_block.Height(), stream);
+      fisher_block, m_fisher_buf, sync_info);
 
   // Update average Kronecker factors
   if(!this->m_has_kronecker_inverse) {
@@ -151,10 +149,9 @@ void kfac_block_bn<Device>::update_kronecker_average(
   }
   auto &Fave = m_fisher_average;
   kfac_util::update_kronecker_average(
-      Fave.Buffer(), fisher_block.Buffer(),
+      Fave, fisher_block,
       fisher_block.Height()*fisher_block.Width(),
-      kronecker_decay, stream);
-
+      kronecker_decay, sync_info);
 }
 
 template <El::Device Device>
@@ -167,7 +164,7 @@ void kfac_block_bn<Device>::update_kronecker_inverse(
     const bool print_matrix_summary,
     const bool print_time) {
 
-  const auto stream = this->get_stream();
+  const auto& sync_info = this->get_sync_info();
 
   const auto &Fave = m_fisher_average;
   if(!this->m_has_kronecker_inverse) {
@@ -182,7 +179,7 @@ void kfac_block_bn<Device>::update_kronecker_inverse(
   kfac_util::get_matrix_inverse(
       Finv, FLinv, Fave, comm->am_trainer_master() && print_time,
       DataType(damping_act), DataType(damping_err),
-      true, stream);
+      true, sync_info);
 
   // dump L2 norm of matrices
   if(comm->am_trainer_master() && print_matrix_summary) {

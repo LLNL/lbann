@@ -135,9 +135,9 @@ class kfac_block {
   El::Matrix<DataType, Device>& get_workspace_matrix(
       const std::string& key, size_t height, size_t width);
 
-  /** @brief Return the default stream that may used in update functions. */
-  cudaStream_t get_stream() {
-    return El::cuda::GetDefaultStream();
+  /** @brief Return the default sync info that may used in update functions. */
+  El::SyncInfo<Device> get_sync_info() {
+    return El::gpu::DefaultSyncInfo();
   }
 
 #endif // LBANN_HAS_GPU

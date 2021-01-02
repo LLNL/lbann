@@ -41,7 +41,7 @@ void kfac_block_fc_conv<Device>::compute_local_kronecker_factors(
     const bool print_matrix,
     const bool print_matrix_summary) {
 
-  const auto stream = this->get_stream();
+  const auto& sync_info = this->get_sync_info();
 
   const auto parent = this->m_layer->get_parent_layers()[0];
   const auto child = this->m_layer->get_child_layers()[0];
@@ -112,20 +112,18 @@ void kfac_block_fc_conv<Device>::compute_local_kronecker_factors(
         A, Acol,
         local_activations, 1.0/mini_batch_size,
         local_batch_size, num_input_channels, m_conv_input_spatial_dims,
-        get_conv_layer(), true, stream);
+        get_conv_layer(), true, sync_info);
     get_kronecker_factor_conv(
         G, Gcol,
         local_errors, DataType(mini_batch_size)/m_conv_output_spatial_prod,
         local_batch_size, num_output_channels, m_conv_output_spatial_dims,
-        get_conv_layer(), false, stream);
+        get_conv_layer(), false, sync_info);
   }
 
   m_kronecker_factor_buf_A.Resize(A.Height()*(A.Height()+1)/2, 1);
   m_kronecker_factor_buf_G.Resize(G.Height()*(G.Height()+1)/2, 1);
-  kfac_util::pack_lower_tri(m_kronecker_factor_buf_A.Buffer(),
-                            A.LockedBuffer(), A.Height(), stream);
-  kfac_util::pack_lower_tri(m_kronecker_factor_buf_G.Buffer(),
-                            G.LockedBuffer(), G.Height(), stream);
+  kfac_util::pack_lower_tri(m_kronecker_factor_buf_A, A, sync_info);
+  kfac_util::pack_lower_tri(m_kronecker_factor_buf_G, G, sync_info);
 
   // Dump L2 norm of matrices
   if(comm->am_trainer_master() && print_matrix_summary) {
@@ -152,17 +150,15 @@ void kfac_block_fc_conv<Device>::update_kronecker_average(
     const bool print_matrix,
     const bool print_matrix_summary) {
 
-  const auto stream = this->get_stream();
+  const auto& sync_info = this->get_sync_info();
 
   auto& A = this->get_workspace_matrix(
       "A", m_height_A, m_height_A);
   auto& G = this->get_workspace_matrix(
       "G", m_height_G, m_height_G);
 
-  kfac_util::unpack_lower_tri(
-      A.Buffer(), m_kronecker_factor_buf_A.LockedBuffer(), m_height_A, stream);
-  kfac_util::unpack_lower_tri(
-      G.Buffer(), m_kronecker_factor_buf_G.LockedBuffer(), m_height_G, stream);
+  kfac_util::unpack_lower_tri(A, m_kronecker_factor_buf_A, sync_info);
+  kfac_util::unpack_lower_tri(G, m_kronecker_factor_buf_G, sync_info);
 
   // Update average Kronecker factors
   if(!this->m_has_kronecker_inverse) {
@@ -172,9 +168,9 @@ void kfac_block_fc_conv<Device>::update_kronecker_average(
   auto &Aave = m_kronecker_average_A;
   auto &Gave = m_kronecker_average_G;
   kfac_util::update_kronecker_average(
-      Aave.Buffer(), A.Buffer(), A.Height()*A.Width(), kronecker_decay, stream);
+      Aave, A, A.Height()*A.Width(), kronecker_decay, sync_info);
   kfac_util::update_kronecker_average(
-      Gave.Buffer(), G.Buffer(), G.Height()*G.Width(), kronecker_decay, stream);
+      Gave, G, G.Height()*G.Width(), kronecker_decay, sync_info);
 
   // Dump matrices for debugging
   if(comm->am_trainer_master() && print_matrix) {
@@ -209,7 +205,7 @@ void kfac_block_fc_conv<Device>::update_kronecker_inverse(
     const bool print_matrix_summary,
     const bool print_time) {
 
-  const auto stream = this->get_stream();
+  const auto& sync_info = this->get_sync_info();
 
   auto& weights = this->m_layer->get_weights(0);
   optimizer *w_optimizer = weights.get_optimizer();
@@ -223,7 +219,7 @@ void kfac_block_fc_conv<Device>::update_kronecker_inverse(
   if(use_pi) {
     auto& ws = this->get_workspace_matrix(
         "pi_ws", std::max(Aave.Height(), Gave.Height())*2+1, 1);
-    pi = compute_pi(Aave, Gave, ws, stream);
+    pi = compute_pi(Aave, Gave, ws, sync_info);
   }
   // Compute the inverse of the factors
   // Since setting different damping constants for A and G is an
@@ -252,11 +248,11 @@ void kfac_block_fc_conv<Device>::update_kronecker_inverse(
   kfac_util::get_matrix_inverse(
       Ainv, ALinv, Aave, comm->am_trainer_master() && print_time,
       DataType(damping_act*pi), 0,
-      false, stream);
+      false, sync_info);
   kfac_util::get_matrix_inverse(
       Ginv, GLinv, Gave, comm->am_trainer_master() && print_time,
       DataType(damping_err/pi), 0,
-      false, stream);
+      false, sync_info);
 
   if(print_matrix_summary) {
     std::ostringstream oss;
@@ -432,10 +428,7 @@ void kfac_block_fc_conv<Device>::get_kronecker_factor_conv(
     const std::vector<int>& spatial_dims,
     const convolution_layer<DataType, data_layout::DATA_PARALLEL, Device> *l_conv,
     const bool use_im2col,
-    const cudaStream_t& stream) {
-  assert(factor.GetDevice() == Device);
-  assert(activations.GetDevice() == Device);
-
+    const El::SyncInfo<Device>& sync_info) {
   const auto dilations = l_conv->get_dilations();
   for(auto i = dilations.begin(); i != dilations.end(); i++)
     if(*i != 1) {
@@ -452,7 +445,7 @@ void kfac_block_fc_conv<Device>::get_kronecker_factor_conv(
            &(l_conv->get_pads()[0]),
            &(l_conv->get_conv_dims()[0]),
            &(l_conv->get_strides()[0]),
-           stream);
+           sync_info.Stream());
   } else {
     size_t spatial_prod = 1;
     for(auto i = spatial_dims.begin(); i != spatial_dims.end(); i++)
@@ -460,9 +453,9 @@ void kfac_block_fc_conv<Device>::get_kronecker_factor_conv(
     assert((size_t) Acol.Height() == num_channels);
     assert((size_t) Acol.Width() == local_batch_size*spatial_prod);
     kfac_fc_conv_util::conv_transpose(
-        activations.LockedBuffer(), Acol.Buffer(),
+        activations, Acol,
         local_batch_size, num_channels, spatial_prod,
-        stream);
+        sync_info);
   }
 
   assert(factor.Height() == Acol.Height());
@@ -478,18 +471,18 @@ double kfac_block_fc_conv<Device>::compute_pi(
     const El::Matrix<DataType, Device>& A,
     const El::Matrix<DataType, Device>& G,
     El::Matrix<DataType, Device>& ws,
-    const cudaStream_t& stream) {
+    const El::SyncInfo<Device>& sync_info) {
   assert(ws.Height() >= A.Height()*2+1);
   assert(ws.Height() >= G.Height()*2+1);
   // TODO: Replace with El::Trace once GPU matrices get supported.
   const auto get_trace =
       [](const El::Matrix<DataType, Device>& X,
          El::Matrix<DataType, Device>& w,
-         const cudaStream_t& s) {
+         const El::SyncInfo<Device>& s) {
         auto diag = El::View(w, El::IR(0, X.Height()), El::ALL);
         auto ones = El::View(w, El::IR(X.Height(), X.Height()*2), El::ALL);
         auto ret = El::View(w, El::IR(X.Height()*2, X.Height()*2+1), El::ALL);
-        kfac_fc_conv_util::get_diagonal(diag.Buffer(), X.LockedBuffer(), X.Height(), s);
+        kfac_fc_conv_util::get_diagonal(diag, X, s);
         El::Ones(ones, ones.Height(), ones.Width());
         El::Gemm(
             El::TRANSPOSE, El::NORMAL,
@@ -499,7 +492,7 @@ double kfac_block_fc_conv<Device>::compute_pi(
         El::Copy(ret, pi);
         return pi(0, 0);
       };
-  return sqrt((get_trace(A, ws, stream)/A.Height())/(get_trace(G, ws, stream)/G.Height()));
+  return sqrt((get_trace(A, ws, sync_info)/A.Height())/(get_trace(G, ws, sync_info)/G.Height()));
 }
 
 template <El::Device Device>

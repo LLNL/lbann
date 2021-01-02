@@ -127,123 +127,90 @@ __global__ void kfac_unpack_lower_tri_kernel(
 
 } // namespace
 
-template <typename TensorDataType>
+template <>
 void add_to_diagonal(
-    TensorDataType * __restrict__ A,
-    const size_t height,
-    const TensorDataType damping,
-    const TensorDataType damping_bn_err,
+    El::Matrix<DataType, El::Device::GPU>& A,
+    const DataType damping,
+    const DataType damping_bn_err,
     const bool is_bn,
-    const cudaStream_t& stream) {
+    const El::SyncInfo<El::Device::GPU>& sync_info) {
+  const size_t height = A.Height();
   constexpr size_t block_size = 256;
   const size_t grid_size = (height + block_size - 1) / block_size;
-  kfac_add_to_diagonal_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
-      A, height, damping,
+  kfac_add_to_diagonal_kernel<DataType>
+      <<<grid_size, block_size, 0, sync_info.Stream()>>>(
+      A.Buffer(), height, damping,
       damping_bn_err, is_bn);
 }
 
-template <typename TensorDataType>
+template <>
 void fill_upper_tri(
-    TensorDataType * __restrict__ A,
-    const size_t height,
-    const cudaStream_t& stream) {
+    El::Matrix<DataType, El::Device::GPU>& A,
+    const El::SyncInfo<El::Device::GPU>& sync_info) {
+  const size_t height = A.Height();
   constexpr size_t block_size = 256;
   // TODO: Launch N^2/2 threads instead of N^2
   const size_t grid_size = (height*height + block_size - 1) / block_size;
-  kfac_fill_upper_tri_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
-      A, height);
+  kfac_fill_upper_tri_kernel<DataType>
+      <<<grid_size, block_size, 0, sync_info.Stream()>>>(
+      A.Buffer(), height);
 }
 
-template <typename TensorDataType>
+template <>
 void update_kronecker_average(
-    TensorDataType * __restrict__ Aave,
-    const TensorDataType * __restrict__ A,
+    El::Matrix<DataType, El::Device::GPU>& Aave,
+    const El::Matrix<DataType, El::Device::GPU>& A,
     const size_t count, const double decay,
-    const cudaStream_t& stream) {
+    const El::SyncInfo<El::Device::GPU>& sync_info) {
   constexpr size_t block_size = 256;
   const size_t grid_size = (count + block_size - 1) / block_size;
-  kfac_update_kronecker_average_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
-      Aave, A, count, decay);
+  kfac_update_kronecker_average_kernel<DataType>
+      <<<grid_size, block_size, 0, sync_info.Stream()>>>(
+      Aave.Buffer(), A.LockedBuffer(), count, decay);
 }
 
-template <typename TensorDataType>
+template <>
 void identity(
-    TensorDataType * __restrict__ A,
-    const size_t height,
-    const cudaStream_t& stream) {
+    El::Matrix<DataType, El::Device::GPU>& A,
+    const El::SyncInfo<El::Device::GPU>& sync_info) {
+  const size_t height = A.Height();
   constexpr size_t block_size = 256;
   const size_t num_threads = height*height;
   const size_t grid_size = (num_threads + block_size - 1) / block_size;
-  kfac_identity_kernel<TensorDataType>
-      <<<grid_size, block_size, 0, stream>>>(
-          A, height);
+  kfac_identity_kernel<DataType>
+      <<<grid_size, block_size, 0, sync_info.Stream()>>>(
+          A.Buffer(), height);
 }
 
-template <typename TensorDataType>
+template <>
 void pack_lower_tri(
-    TensorDataType * __restrict__ L,
-    const TensorDataType * __restrict__ A,
-    const size_t height,
-    const cudaStream_t& stream) {
+    El::Matrix<DataType, El::Device::GPU>& L,
+    const El::Matrix<DataType, El::Device::GPU>& A,
+    const El::SyncInfo<El::Device::GPU>& sync_info) {
+  const size_t height = A.Height();
   constexpr size_t block_size = 256;
   const size_t num_threads = height*height;
   const size_t grid_size = (num_threads + block_size - 1) / block_size;
   // TODO: Launch N^2/2 threads instead of N^2
-  kfac_pack_lower_tri_kernel<TensorDataType>
-      <<<grid_size, block_size, 0, stream>>>(
-          L, A, height);
+  kfac_pack_lower_tri_kernel<DataType>
+      <<<grid_size, block_size, 0, sync_info.Stream()>>>(
+          L.Buffer(), A.LockedBuffer(), height);
 }
 
-template <typename TensorDataType>
+template <>
 void unpack_lower_tri(
-    TensorDataType * __restrict__ A,
-    const TensorDataType * __restrict__ L,
-    const size_t height,
-    const cudaStream_t& stream) {
+    El::Matrix<DataType, El::Device::GPU>& A,
+    const El::Matrix<DataType, El::Device::GPU>& L,
+    const El::SyncInfo<El::Device::GPU>& sync_info) {
+  const size_t height = A.Height();
   constexpr size_t block_size = 256;
   const size_t num_threads = height*height;
   const size_t grid_size = (num_threads + block_size - 1) / block_size;
   // TODO: Launch N^2/2 threads instead of N^2
-  kfac_unpack_lower_tri_kernel<TensorDataType>
-      <<<grid_size, block_size, 0, stream>>>(
-          A, L, height);
+  kfac_unpack_lower_tri_kernel<DataType>
+      <<<grid_size, block_size, 0, sync_info.Stream()>>>(
+          A.Buffer(), L.LockedBuffer(), height);
 }
-
-#define PROTO(T)                                \
-  template void add_to_diagonal<T>(             \
-      T* __restrict__ A,                        \
-      const size_t height,                      \
-      const T value,                            \
-      const T value_bn_err,                     \
-      const bool is_bn,                         \
-      const cudaStream_t& stream);              \
-  template void fill_upper_tri<T>(              \
-      T * __restrict__ A,                       \
-      const size_t height,                      \
-      const cudaStream_t& stream);              \
-  template void update_kronecker_average<T>(    \
-      T * __restrict__ Aave,                    \
-      const T * __restrict__ A,                 \
-      const size_t count,                       \
-      const double decay,                       \
-      const cudaStream_t& stream);              \
-  template void identity<T>(                    \
-      T * __restrict__ A,                       \
-      const size_t height,                      \
-      const cudaStream_t& stream);              \
-  template void pack_lower_tri<T>(              \
-      T * __restrict__ L,                       \
-      const T * __restrict__ A,                 \
-      const size_t height,                      \
-      const cudaStream_t& stream);              \
-  template void unpack_lower_tri<T>(            \
-      T * __restrict__ A,                       \
-      const T * __restrict__ L,                 \
-      const size_t height,                      \
-      const cudaStream_t& stream);
-
-#define LBANN_INSTANTIATE_GPU_HALF
-#include "lbann/macros/instantiate.hpp"
 
 } // namespace kfac_util
 } // namespace callback

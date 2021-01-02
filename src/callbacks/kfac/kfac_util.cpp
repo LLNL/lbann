@@ -38,6 +38,7 @@ namespace kfac_util {
 
 #ifdef LBANN_HAS_GPU
 
+template <El::Device Device>
 void get_matrix_inverse(
     El::AbstractMatrix<DataType>& Ainv,
     El::AbstractMatrix<DataType>& Linv,
@@ -46,7 +47,7 @@ void get_matrix_inverse(
     const DataType damping,
     const DataType damping_bn_err,
     const bool is_bn,
-    const cudaStream_t& stream) {
+    const El::SyncInfo<Device>& sync_info) {
   assert(A.Height() == A.Width());
   assert(Ainv.Height() == A.Height());
   assert(Ainv.Width() == A.Height());
@@ -55,11 +56,11 @@ void get_matrix_inverse(
   const double t_start = get_time();
 
   if(damping > 0 || damping_bn_err > 0)
-    add_to_diagonal(
-        Ainv.Buffer(), Ainv.Height(),
+    add_to_diagonal<Device>(
+        Ainv,
         damping, damping_bn_err,
         is_bn,
-        stream);
+        sync_info);
 
   const double t_damping = get_time();
 
@@ -72,7 +73,7 @@ void get_matrix_inverse(
 
   assert(Linv.Height() == Ainv.Height());
   assert(Linv.Width() == Ainv.Height());
-  identity(Linv.Buffer(), Linv.Height(), stream);
+  identity<Device>(Linv, sync_info);
   El::Trsm(
       El::LeftOrRightNS::LEFT,
       uplo,
@@ -107,7 +108,7 @@ void get_matrix_inverse(
   }
 
   // TODO: Check whether this is actually needed.
-  CHECK_CUDA(cudaStreamSynchronize(stream));
+  El::Synchronize(sync_info);
 }
 
 std::string get_matrix_stat(const El::AbstractMatrix<DataType>& X,
@@ -127,17 +128,17 @@ std::string get_matrix_stat(const El::AbstractMatrix<DataType>& X,
   return oss.str();
 }
 
+template <El::Device Device>
 void allreduce_lower_tri(El::AbstractMatrix<DataType>& A,
                          El::AbstractMatrix<DataType>& AL,
                          lbann_comm *comm,
-                         const cudaStream_t& stream) {
+                         const El::SyncInfo<Device>& sync_info) {
   assert(A.Height() == A.Width());
   assert(AL.Height() == A.Height()*(A.Height()+1)/2);
   assert(AL.Width() == 1);
-  pack_lower_tri(AL.Buffer(), A.LockedBuffer(), A.Height(), stream);
-  comm->allreduce((El::AbstractMatrix<DataType>&) AL,
-                  comm->get_trainer_comm());
-  unpack_lower_tri(A.Buffer(), AL.Buffer(), A.Height(), stream);
+  pack_lower_tri<Device>(AL, A, sync_info);
+  comm->allreduce(AL, comm->get_trainer_comm());
+  unpack_lower_tri<Device>(A, AL, sync_info);
 }
 
 bool is_reduce_scatter_buffer_required(const kfac_reduce_scatter_mode mode) {
@@ -314,6 +315,20 @@ void allgather_blocks(
 }
 
 #define PROTO_DEVICE(T, Device)                 \
+  template void get_matrix_inverse(             \
+      El::AbstractMatrix<T>& Ainv,              \
+      El::AbstractMatrix<T>& Linv,              \
+      const El::AbstractMatrix<T>& A,           \
+      bool report_time,                         \
+      T damping,                                \
+      T damping_bn_err,                         \
+      bool is_bn,                               \
+      const El::SyncInfo<Device>& sync_info);   \
+  template void allreduce_lower_tri(            \
+      El::AbstractMatrix<T>& A,                 \
+      El::AbstractMatrix<T>& AL,                \
+      lbann_comm *comm,                         \
+      const El::SyncInfo<Device>& sync_info);   \
   template void reduce_scatter_blocks(          \
       const std::vector<std::pair<size_t,       \
       El::AbstractMatrix<T>*>>& blocks,         \

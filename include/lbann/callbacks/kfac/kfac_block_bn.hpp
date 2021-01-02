@@ -38,33 +38,19 @@ namespace callback {
 
 namespace kfac_bn_util {
 
-/** @brief Compute the factor of a batch-normalization layer.
- *  TODO: Remove as compute_bn_factor_data2col is used as default. **/
-template <typename TensorDataType>
-void compute_bn_factor(
-    const TensorDataType * __restrict__ activations,
-    const TensorDataType * __restrict__ errors,
-    const TensorDataType * __restrict__ scales,
-    const TensorDataType * __restrict__ biases,
-    TensorDataType * __restrict__ factor,
-    size_t batch_size,
-    size_t num_channels,
-    size_t spatial_prod,
-    const cudaStream_t& stream);
-
 /** @brief The memory copy part of compute_bn_factor. Combined with
  *  GEMM. **/
-template <typename TensorDataType>
+template <El::Device Device>
 void compute_bn_factor_data2col(
-    const TensorDataType * __restrict__ activations,
-    const TensorDataType * __restrict__ errors,
-    const TensorDataType * __restrict__ scales,
-    const TensorDataType * __restrict__ biases,
-    TensorDataType * __restrict__ cols,
+    const El::Matrix<DataType, Device>& activations,
+    const El::Matrix<DataType, Device>& errors,
+    const El::Matrix<DataType, Device>& scales,
+    const El::Matrix<DataType, Device>& biases,
+    El::Matrix<DataType, Device>& cols,
     size_t batch_size,
     size_t num_channels,
     size_t spatial_prod,
-    const cudaStream_t& stream);
+    const El::SyncInfo<Device>& sync_info);
 
 } // namespace kfac_bn_util
 

@@ -60,55 +60,35 @@ __global__ void kfac_conv_transpose_kernel(
 
 } // namespace
 
-namespace kfac_fc_conv_util {
-
-template <typename TensorDataType>
-void get_diagonal(
-    TensorDataType * __restrict__ diag,
-    const TensorDataType * __restrict__ A,
-    const size_t height,
-    const cudaStream_t& stream) {
+template <>
+void kfac_fc_conv_util::get_diagonal<El::Device::GPU>(
+    El::Matrix<DataType, El::Device::GPU>& diag,
+    const El::Matrix<DataType, El::Device::GPU>& A,
+    const El::SyncInfo<El::Device::GPU>& sync_info) {
+  const size_t height = A.Height();
   constexpr size_t block_size = 256;
   const size_t num_threads = height;
   const size_t grid_size = (num_threads + block_size - 1) / block_size;
-  kfac_get_diagonal_kernel<TensorDataType>
-      <<<grid_size, block_size, 0, stream>>>(
-          diag, A, height);
+  kfac_get_diagonal_kernel<DataType>
+      <<<grid_size, block_size, 0, sync_info.Stream()>>>(
+          diag.Buffer(), A.LockedBuffer(), height);
 }
 
-template <typename TensorDataType>
-void conv_transpose(
-    const TensorDataType * __restrict__ activations,
-    TensorDataType * __restrict__ act_columns,
-    const size_t mini_batch_size, const size_t num_channels,
-    const size_t spatial_prod,
-    const cudaStream_t& stream) {
+template <>
+void kfac_fc_conv_util::conv_transpose<El::Device::GPU>(
+    const El::Matrix<DataType, El::Device::GPU>& activations,
+    El::Matrix<DataType, El::Device::GPU>& act_columns,
+    size_t mini_batch_size, size_t num_channels,
+    size_t spatial_prod,
+    const El::SyncInfo<El::Device::GPU>& sync_info) {
   constexpr size_t block_size = 256;
   const size_t num_elems = mini_batch_size*num_channels*spatial_prod;
   const size_t grid_size = (num_elems + block_size - 1) / block_size;
-  kfac_conv_transpose_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
-      activations, act_columns, mini_batch_size, num_channels, spatial_prod,
+  kfac_conv_transpose_kernel<DataType><<<grid_size, block_size, 0, sync_info.Stream()>>>(
+      activations.LockedBuffer(), act_columns.Buffer(),
+      mini_batch_size, num_channels, spatial_prod,
       num_elems);
 }
-
-#define PROTO(T)                                \
-  template void get_diagonal<T>(                \
-      T * __restrict__ diag,                    \
-      const T * __restrict__ A,                 \
-      const size_t height,                      \
-      const cudaStream_t& stream);              \
-  template void conv_transpose<T>(              \
-      const T * __restrict__ activations,       \
-      T * __restrict__ act_columns,             \
-      const size_t batch_size,                  \
-      const size_t num_channels,                \
-      const size_t spatial_prod,                \
-      const cudaStream_t& stream);
-
-#define LBANN_INSTANTIATE_GPU_HALF
-#include "lbann/macros/instantiate.hpp"
-
-} // namespace kfac_fc_conv_util
 
 } // namespace callback
 } // namespace lbann
