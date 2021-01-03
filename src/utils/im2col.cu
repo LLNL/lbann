@@ -179,16 +179,17 @@ void im2col(const El::Matrix<TensorDataType, El::Device::GPU>& im,
   }
 }
 
-#define PROTO(T)                                                        \
-  template void im2col<T>(const El::Matrix<T, El::Device::GPU>& im,     \
-                          El::Matrix<T, El::Device::GPU>& col,          \
-                          const int num_channels,                       \
-                          const int im_num_dims,                        \
-                          const int * im_dims,                          \
-                          const int * im_pads,                          \
-                          const int * window_dims,                      \
-                          const int * window_strides,                   \
-                          const cudaStream_t& stream)
+#define PROTO(T)                                        \
+  template void im2col<T>(                              \
+      const El::Matrix<T, El::Device::GPU>& im,         \
+      El::Matrix<T, El::Device::GPU>& col,              \
+      const int num_channels,                           \
+      const int im_num_dims,                            \
+      const int * im_dims,                              \
+      const int * im_pads,                              \
+      const int * window_dims,                          \
+      const int * window_strides,                       \
+      const cudaStream_t& stream)
 
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"

@@ -274,6 +274,21 @@ kfac_block_bn<Device>::get_internal_matrix_info() const {
   return list;
 }
 
+template <>
+void kfac_bn_util::compute_bn_factor_data2col(
+    const El::Matrix<DataType, El::Device::CPU>& activations,
+    const El::Matrix<DataType, El::Device::CPU>& errors,
+    const El::Matrix<DataType, El::Device::CPU>& scales,
+    const El::Matrix<DataType, El::Device::CPU>& biases,
+    El::Matrix<DataType, El::Device::CPU>& cols,
+    const size_t batch_size,
+    const size_t num_channels,
+    const size_t spatial_prod,
+    const El::SyncInfo<El::Device::CPU>& sync_info) {
+  LBANN_ERROR("Not implemented yet");
+}
+
+template class kfac_block_bn<El::Device::CPU>;
 template class kfac_block_bn<El::Device::GPU>;
 
 #endif // LBANN_HAS_GPU

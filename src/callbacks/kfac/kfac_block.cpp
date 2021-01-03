@@ -38,6 +38,16 @@ El::Matrix<DataType, Device>& kfac_block<Device>::get_workspace_matrix(
   return m_callback->get_workspace_matrix(get_name()+" "+key, height, width);
 }
 
+template <>
+El::SyncInfo<El::Device::CPU> kfac_block<El::Device::CPU>::get_sync_info() {
+  return El::SyncInfo<El::Device::CPU>{};
+}
+template <>
+El::SyncInfo<El::Device::GPU> kfac_block<El::Device::GPU>::get_sync_info() {
+  return El::gpu::DefaultSyncInfo();
+}
+
+template class kfac_block<El::Device::CPU>;
 template class kfac_block<El::Device::GPU>;
 
 #endif // LBANN_HAS_GPU

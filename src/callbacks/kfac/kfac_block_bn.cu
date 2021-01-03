@@ -63,15 +63,15 @@ __global__ void kfac_compute_bn_factor_data2col_kernel(
 } // namespace
 
 template <>
-void kfac_bn_util::compute_bn_factor_data2col<El::Device::GPU>(
+void kfac_bn_util::compute_bn_factor_data2col(
     const El::Matrix<DataType, El::Device::GPU>& activations,
     const El::Matrix<DataType, El::Device::GPU>& errors,
     const El::Matrix<DataType, El::Device::GPU>& scales,
     const El::Matrix<DataType, El::Device::GPU>& biases,
     El::Matrix<DataType, El::Device::GPU>& cols,
-    size_t batch_size,
-    size_t num_channels,
-    size_t spatial_prod,
+    const size_t batch_size,
+    const size_t num_channels,
+    const size_t spatial_prod,
     const El::SyncInfo<El::Device::GPU>& sync_info) {
   constexpr size_t block_size = 256;
   const size_t num_threads = batch_size * num_channels * spatial_prod;

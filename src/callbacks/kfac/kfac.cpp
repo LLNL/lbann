@@ -376,17 +376,23 @@ void kfac<Device>::on_backward_prop_end(model *m) {
   }
 }
 
-template <El::Device Device>
-El::Matrix<DataType, Device>& kfac<Device>::get_workspace_matrix(
+
+template <>
+El::Matrix<DataType, El::Device::CPU>& kfac<El::Device::CPU>::get_workspace_matrix(
+    const std::string& key, const size_t height, const size_t width) {
+  LBANN_ERROR("Not implemented yet");
+}
+
+template <>
+El::Matrix<DataType, El::Device::GPU>& kfac<El::Device::GPU>::get_workspace_matrix(
     const std::string& key, const size_t height, const size_t width) {
   if(m_workspace.find(key) == m_workspace.end()) {
     std::ostringstream oss;
     oss << "K-FAC callback workspace allocation (rank=" << m_rank
         << "): " << key << " (" << height << "x" << width << ")" << std::endl;
     std::cout << oss.str();
-
     m_workspace.emplace(
-        key, El::Matrix<DataType, Device>(height, width));
+        key, El::Matrix<DataType, El::Device::GPU>(height, width));
 #ifdef HYDROGEN_HAVE_CUB
     m_workspace[key].SetMemoryMode(1); // Use CUB GPU memory pool if possible
 #endif // HYDROGEN_HAVE_CUB

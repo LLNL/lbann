@@ -134,6 +134,29 @@ void unpack_lower_tri(
     const El::Matrix<DataType, Device>& L,
     const El::SyncInfo<Device>& sync_info);
 
+/** @brief Wrappers to call Aluminum with suitable communication types. **/
+template <El::Device Device>
+void reduce_block_device(
+    El::Matrix<DataType, Device>& block,
+    const size_t count,
+    const size_t root,
+    const El::mpi::Comm& trainer_comm,
+    const El::SyncInfo<Device>& sync_info);
+template <El::Device Device>
+void reduce_scatter_v_blocks_device(
+    El::Matrix<DataType, Device>& blocks,
+    const std::vector<size_t>& recv_sizes,
+    const El::mpi::Comm& trainer_comm,
+    const El::SyncInfo<Device>& sync_info);
+template <El::Device Device>
+void allgather_v_blocks_device(
+    const El::Matrix<DataType, Device>& send_block,
+    El::Matrix<DataType, Device>& recv_blocks,
+    const std::vector<size_t>& recv_sizes,
+    const std::vector<size_t>& recv_offsets,
+    const El::mpi::Comm& trainer_comm,
+    const El::SyncInfo<Device>& sync_info);
+
 #endif // LBANN_HAS_GPU
 
 } // namespace kfac_util

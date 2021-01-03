@@ -160,12 +160,12 @@ void reduce_scatter_blocks(
 
   if(mode == kfac_reduce_scatter_mode::REDUCE) {
     for(auto& block : blocks)
-      ::Al::Reduce<::Al::NCCLBackend>(
-           block.second->Buffer(),
-           block.second->Height(),
-           ::Al::ReductionOperator::sum,
-           block.first,
-           comm->get_trainer_comm().template GetComm<::Al::NCCLBackend>(El::SyncInfoFromMatrix(global_buffer)));
+      reduce_block_device<Device>(
+          *block.second,
+          block.second->Height(),
+          block.first,
+          comm->get_trainer_comm(),
+          El::SyncInfoFromMatrix(global_buffer));
     return;
   }
 
@@ -199,11 +199,11 @@ void reduce_scatter_blocks(
     recv_sizes.resize(comm->get_procs_per_trainer());
     for(auto& block : sorted_blocks)
       recv_sizes[block.first] += block.second->Height();
-    ::Al::Reduce_scatterv<::Al::NCCLBackend>(
-         global_buffer.Buffer(),
-         recv_sizes,
-         ::Al::ReductionOperator::sum,
-         comm->get_trainer_comm().template GetComm<::Al::NCCLBackend>(El::SyncInfoFromMatrix(global_buffer)));
+    reduce_scatter_v_blocks_device(
+        global_buffer,
+        recv_sizes,
+        comm->get_trainer_comm(),
+        El::SyncInfoFromMatrix(global_buffer));
   }
 
   // Apply aggregated Kronecker factros to each block.
@@ -220,7 +220,6 @@ void reduce_scatter_blocks(
       }
     }
   }
-
 }
 
 /** @brief Get whether local and global buffers are needed. **/
@@ -293,11 +292,11 @@ void allgather_blocks(
     recv_offsets.resize(recv_sizes.size()+1);
     for(size_t i = 0; i <= recv_sizes.size(); i++)
       recv_offsets[i] = (i > 0 ? recv_offsets[i-1]+recv_sizes[i-1] : 0);
-
-    ::Al::Allgatherv<::Al::NCCLBackend>(
-         local_buffer.LockedBuffer(), global_buffer.Buffer(),
-         recv_sizes, recv_offsets,
-         comm->get_trainer_comm().template GetComm<::Al::NCCLBackend>(El::SyncInfoFromMatrix(local_buffer)));
+    allgather_v_blocks_device<Device>(
+        local_buffer, global_buffer,
+        recv_sizes, recv_offsets,
+        comm->get_trainer_comm(),
+        El::SyncInfoFromMatrix(local_buffer));
   }
 
   // Copy blocks from the buffer.
@@ -311,7 +310,118 @@ void allgather_blocks(
       offset += block.second->Height();
     }
   }
+}
 
+template <>
+void reduce_block_device(
+    El::Matrix<DataType, El::Device::GPU>& block,
+    const size_t count,
+    const size_t root,
+    const El::mpi::Comm& trainer_comm,
+    const El::SyncInfo<El::Device::GPU>& sync_info) {
+  ::Al::Reduce<::Al::NCCLBackend>(
+       block.Buffer(),
+       count,
+       ::Al::ReductionOperator::sum,
+       root,
+       trainer_comm.template GetComm<::Al::NCCLBackend>(sync_info));
+}
+template <>
+void reduce_scatter_v_blocks_device(
+    El::Matrix<DataType, El::Device::GPU>& blocks,
+    const std::vector<size_t>& recv_sizes,
+    const El::mpi::Comm& trainer_comm,
+    const El::SyncInfo<El::Device::GPU>& sync_info) {
+  ::Al::Reduce_scatterv<::Al::NCCLBackend>(
+       blocks.Buffer(),
+       recv_sizes,
+       ::Al::ReductionOperator::sum,
+       trainer_comm.template GetComm<::Al::NCCLBackend>(sync_info));
+}
+template <>
+void allgather_v_blocks_device(
+    const El::Matrix<DataType, El::Device::GPU>& send_block,
+    El::Matrix<DataType, El::Device::GPU>& recv_blocks,
+    const std::vector<size_t>& recv_sizes,
+    const std::vector<size_t>& recv_offsets,
+    const El::mpi::Comm& trainer_comm,
+    const El::SyncInfo<El::Device::GPU>& sync_info) {
+  ::Al::Allgatherv<::Al::NCCLBackend>(
+       send_block.LockedBuffer(), recv_blocks.Buffer(),
+       recv_sizes, recv_offsets,
+       trainer_comm.template GetComm<::Al::NCCLBackend>(sync_info));
+}
+
+template <>
+void add_to_diagonal(
+    El::Matrix<DataType, El::Device::CPU>& A,
+    const DataType damping,
+    const DataType damping_bn_err,
+    const bool is_bn,
+    const El::SyncInfo<El::Device::CPU>& sync_info) {
+  LBANN_ERROR("Not implemented yet");
+}
+template <>
+void fill_upper_tri(
+    El::Matrix<DataType, El::Device::CPU>& A,
+    const El::SyncInfo<El::Device::CPU>& sync_info) {
+  LBANN_ERROR("Not implemented yet");
+}
+template <>
+void update_kronecker_average(
+    El::Matrix<DataType, El::Device::CPU>& Aave,
+    const El::Matrix<DataType, El::Device::CPU>& A,
+    const size_t count, const double decay,
+    const El::SyncInfo<El::Device::CPU>& sync_info) {
+  LBANN_ERROR("Not implemented yet");
+}
+template <>
+void identity(
+    El::Matrix<DataType, El::Device::CPU>& A,
+    const El::SyncInfo<El::Device::CPU>& sync_info) {
+  LBANN_ERROR("Not implemented yet");
+}
+template <>
+void pack_lower_tri(
+    El::Matrix<DataType, El::Device::CPU>& L,
+    const El::Matrix<DataType, El::Device::CPU>& A,
+    const El::SyncInfo<El::Device::CPU>& sync_info) {
+  LBANN_ERROR("Not implemented yet");
+}
+template <>
+void unpack_lower_tri(
+    El::Matrix<DataType, El::Device::CPU>& A,
+    const El::Matrix<DataType, El::Device::CPU>& L,
+    const El::SyncInfo<El::Device::CPU>& sync_info) {
+  LBANN_ERROR("Not implemented yet");
+}
+
+template <>
+void reduce_block_device(
+    El::Matrix<DataType, El::Device::CPU>& block,
+    const size_t count,
+    const size_t root,
+    const El::mpi::Comm& trainer_comm,
+    const El::SyncInfo<El::Device::CPU>& sync_info) {
+  LBANN_ERROR("Not implemented yet");
+}
+template <>
+void reduce_scatter_v_blocks_device(
+    El::Matrix<DataType, El::Device::CPU>& blocks,
+    const std::vector<size_t>& recv_sizes,
+    const El::mpi::Comm& trainer_comm,
+    const El::SyncInfo<El::Device::CPU>& sync_info) {
+  LBANN_ERROR("Not implemented yet");
+}
+template <>
+void allgather_v_blocks_device(
+    const El::Matrix<DataType, El::Device::CPU>& send_block,
+    El::Matrix<DataType, El::Device::CPU>& recv_blocks,
+    const std::vector<size_t>& recv_sizes,
+    const std::vector<size_t>& recv_offsets,
+    const El::mpi::Comm& trainer_comm,
+    const El::SyncInfo<El::Device::CPU>& sync_info) {
+  LBANN_ERROR("Not implemented yet");
 }
 
 #define PROTO_DEVICE(T, Device)                 \
@@ -343,7 +453,7 @@ void allgather_blocks(
       lbann_comm *comm,                         \
       const kfac_allgather_mode mode);
 
-// TODO: Support any data types and CPUs
+PROTO_DEVICE(DataType, El::Device::CPU);
 PROTO_DEVICE(DataType, El::Device::GPU);
 
 #endif // LBANN_HAS_GPU

@@ -439,13 +439,14 @@ void kfac_block_fc_conv<Device>::get_kronecker_factor_conv(
     }
 
   if(use_im2col) {
-    im2col(activations, Acol,
-           num_channels, spatial_dims.size(),
-           &(spatial_dims[0]),
-           &(l_conv->get_pads()[0]),
-           &(l_conv->get_conv_dims()[0]),
-           &(l_conv->get_strides()[0]),
-           sync_info.Stream());
+    kfac_fc_conv_util::im2col(
+        activations, Acol,
+        num_channels, spatial_dims.size(),
+        &(spatial_dims[0]),
+        &(l_conv->get_pads()[0]),
+        &(l_conv->get_conv_dims()[0]),
+        &(l_conv->get_strides()[0]),
+        sync_info);
   } else {
     size_t spatial_prod = 1;
     for(auto i = spatial_dims.begin(); i != spatial_dims.end(); i++)
@@ -514,6 +515,62 @@ kfac_block_fc_conv<Device>::get_internal_matrix_info() const {
   return list;
 }
 
+namespace kfac_fc_conv_util {
+
+template <>
+void get_diagonal(
+    El::Matrix<DataType, El::Device::CPU>& diag,
+    const El::Matrix<DataType, El::Device::CPU>& A,
+    const El::SyncInfo<El::Device::CPU>& sync_info) {
+  LBANN_ERROR("Not implemented yet");
+}
+template <>
+void conv_transpose(
+    const El::Matrix<DataType, El::Device::CPU>& activations,
+    El::Matrix<DataType, El::Device::CPU>& act_columns,
+    size_t mini_batch_size, size_t num_channels,
+    size_t spatial_prod,
+    const El::SyncInfo<El::Device::CPU>& sync_info) {
+  LBANN_ERROR("Not implemented yet");
+}
+template <>
+void im2col(const El::Matrix<DataType, El::Device::CPU>& im,
+            El::Matrix<DataType, El::Device::CPU>& col,
+            const int num_channels,
+            const int im_num_dims,
+            const int * im_dims,
+            const int * im_pads,
+            const int * window_dims,
+            const int * window_strides,
+            const El::SyncInfo<El::Device::CPU>& sync_info) {
+  lbann::im2col(
+      im, col,
+      num_channels, im_num_dims,
+      im_dims, im_pads,
+      window_dims, window_strides);
+}
+
+template <>
+void im2col(const El::Matrix<DataType, El::Device::GPU>& im,
+            El::Matrix<DataType, El::Device::GPU>& col,
+            const int num_channels,
+            const int im_num_dims,
+            const int * im_dims,
+            const int * im_pads,
+            const int * window_dims,
+            const int * window_strides,
+            const El::SyncInfo<El::Device::GPU>& sync_info) {
+  lbann::im2col(
+      im, col,
+      num_channels, im_num_dims,
+      im_dims, im_pads,
+      window_dims, window_strides,
+      sync_info.Stream());
+}
+
+} // namespace kfac_fc_conv_util
+
+template class kfac_block_fc_conv<El::Device::CPU>;
 template class kfac_block_fc_conv<El::Device::GPU>;
 
 #endif // LBANN_HAS_GPU

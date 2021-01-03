@@ -575,11 +575,11 @@ void col2im_2d(const TensorDataType *__restrict__ input_buffer,
   template void col2im_1x1(                                         \
     const T*, T*, int, int, const int*);                            \
   template void col2im_2d(                                          \
-    const T*, T*, int, int, int, int, int, int, int, int, int)
+      const T*, T*, int, int, int, int, int, int, int, int, int)
 
 #define LBANN_INSTANTIATE_CPU_HALF
 // FIXME -- these should never be called in GPU code.
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
 
-}  // namespace lbann
+} // namespace lbann

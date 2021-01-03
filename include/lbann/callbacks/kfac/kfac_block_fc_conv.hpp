@@ -53,6 +53,18 @@ void conv_transpose(
     size_t spatial_prod,
     const El::SyncInfo<Device>& sync_info);
 
+/** @brief im2col. **/
+template <El::Device Device>
+void im2col(const El::Matrix<DataType, Device>& im,
+            El::Matrix<DataType, Device>& col,
+            const int num_channels,
+            const int im_num_dims,
+            const int * im_dims,
+            const int * im_pads,
+            const int * window_dims,
+            const int * window_strides,
+            const El::SyncInfo<Device>& sync_info);
+
 } // namespace kfac_fc_conv_util
 
 /** An FC/conv building block for K-FAC.

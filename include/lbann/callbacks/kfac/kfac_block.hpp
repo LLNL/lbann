@@ -136,9 +136,7 @@ class kfac_block {
       const std::string& key, size_t height, size_t width);
 
   /** @brief Return the default sync info that may used in update functions. */
-  El::SyncInfo<Device> get_sync_info() {
-    return El::gpu::DefaultSyncInfo();
-  }
+  El::SyncInfo<Device> get_sync_info();
 
 #endif // LBANN_HAS_GPU
 
