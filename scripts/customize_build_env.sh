@@ -18,8 +18,6 @@ set_center_specific_fields()
         DOMAINNAME=$(python -c 'import socket; domain = socket.getfqdn().split("."); print(domain[-2] + "." + domain[-1])')
         if [[ ${CORI} -eq 1 ]]; then
             CENTER="nersc"
-            # Make sure to purge and setup the modules properly prior to finding the Spack architecture
-            source ${SPACK_ENV_DIR}/${CENTER}/setup_modules.sh
             BUILD_SUFFIX=nersc.gov
         elif [[ ${DOMAINNAME} = "ornl.gov" ]]; then
             CENTER="olcf"
@@ -100,9 +98,8 @@ set_center_specific_modules()
         esac
     elif [[ ${center} = "nersc" ]]; then
         case ${spack_arch_target} in
-            "skylake")
-                MODULE_CMD="module purge; module load modules/3.2.11.4 gcc/8.2.0 cuda/10.2.89 mvapich2/2.3.2 cmake/3.14.4
-cuda/10.2.89"
+            "skylake_avx512")
+                MODULE_CMD="module purge; module load modules/3.2.11.4 gcc/8.2.0 cuda/11.0.2 openmpi/4.0.2 cmake/3.18.2"
                 ;;
             *)
                 echo "No pre-specified modules found for this system. Make sure to setup your own"
@@ -128,6 +125,7 @@ set_center_specific_mpi()
                 MPI="^mvapich2"
                 ;;
             *)
+		echo "No center-specified MPI library."
                 ;;
         esac
     elif [[ ${center} = "olcf" ]]; then
@@ -136,15 +134,61 @@ set_center_specific_mpi()
                 MPI="^spectrum-mpi"
                 ;;
             *)
+		echo "No center-specified MPI library."
                 ;;
         esac
     elif [[ ${center} = "nersc" ]]; then
         case ${spack_arch_target} in
-            "skylake")
-                MPI="^mvapich2"
+            "skylake_avx512")
+                MPI="^openmpi"
                 ;;
             *)
+		echo "No center-specified MPI library."
                 ;;
         esac
+    else
+        echo "No center-specified MPI library."
     fi
 }
+
+set_center_specific_externals()
+{
+    local center="$1"
+    local spack_arch_target="$2"
+    local yaml="$3"
+
+    if [[ ${center} = "llnl_lc" ]]; then
+        case ${spack_arch_target} in
+            *)
+		echo "No center-specified externals."
+                ;;
+        esac
+    elif [[ ${center} = "olcf" ]]; then
+        case ${spack_arch_target} in
+            *)
+		echo "No center-specified externals."
+                ;;
+        esac
+    elif [[ ${center} = "nersc" ]]; then
+        case ${spack_arch_target} in
+            "skylake_avx512")
+cat <<EOF  >> ${yaml}
+    rdma-core:
+      buildable: False
+      version:
+      - 20
+      externals:
+      - spec: rdma-core@20 arch=cray-cnl7-skylake_avx512
+        prefix: /usr
+EOF
+                ;;
+            *)
+		echo "No center-specified externals."
+                ;;
+        esac
+    else
+	echo "No center-specified externals."
+    fi
+}
+
+

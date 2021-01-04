@@ -1,5 +1,6 @@
 #!/bin/bash
 
+ORIG_CMD="$0 $@"
 SCRIPT=${BASH_SOURCE}
 
 if [[ ${SYS} = "Darwin" ]]; then
@@ -275,9 +276,8 @@ if [[ "${LBANN_VARIANTS}" =~ .*"${GPU_VARIANTS}".* ]]; then
     LBANN_VARIANTS=" ${GPU_ARCH_VARIANTS} ${LBANN_VARIANTS}"
 fi
 
-# Establish the spec for LBANN
-LBANN_SPEC="lbann@${LBANN_LABEL}${LBANN_VARIANTS} ${HYDROGEN} ${DIHYDROGEN} ${ALUMINUM} ${MPI}"
-LBANN_DEV_PATH_SPEC="lbann@${LBANN_LABEL}${LBANN_VARIANTS} dev_path=${LBANN_HOME} ${HYDROGEN} ${DIHYDROGEN} ${ALUMINUM} ${MPI}"
+# Record the original command in the log file
+echo "${ORIG_CMD}" | tee -a ${LOG}
 
 # Uninstall any existing versions for this architecture with the same label
 LBANN_FIND_CMD="spack find --format {hash:7} lbann@${LBANN_LABEL} arch=${SPACK_ARCH}"
@@ -326,6 +326,16 @@ if [[ -z "${DRY_RUN:-}" ]]; then
     ${CMD}
 fi
 
+# Figure out if there is a default MPI library for the center
+MPI=
+set_center_specific_mpi ${CENTER} ${SPACK_ARCH_TARGET}
+
+##########################################################################################
+# Establish the spec for LBANN
+LBANN_SPEC="lbann@${LBANN_LABEL}${LBANN_VARIANTS} ${HYDROGEN} ${DIHYDROGEN} ${ALUMINUM} ${MPI}"
+LBANN_DEV_PATH_SPEC="lbann@${LBANN_LABEL}${LBANN_VARIANTS} dev_path=${LBANN_HOME} ${HYDROGEN} ${DIHYDROGEN} ${ALUMINUM} ${MPI}"
+##########################################################################################
+
 if [[ -n "${BUILD_ENV_ONLY:-}" ]]; then
     CMD="spack build-env ${LBANN_SPEC} -- ${BUILD_ENV_SHELL}"
     echo ${CMD} | tee -a ${LOG}
@@ -340,11 +350,13 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
     CMD="spack external find --scope env:${LBANN_ENV}"
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && ${CMD}
-fi
 
-# Figure out if there is a default MPI library for the center
-MPI=
-set_center_specific_mpi ${CENTER} ${SPACK_ARCH_TARGET}
+    # See if there are any center-specific externals
+    SPACK_ENV_YAML_FILE="${SPACK_ROOT}/var/spack/environments/${LBANN_ENV}/spack.yaml"
+    CMD="set_center_specific_externals ${CENTER} ${SPACK_ARCH_TARGET} ${SPACK_ENV_YAML_FILE}"
+    echo ${CMD} | tee -a ${LOG}
+    [[ -z "${DRY_RUN:-}" ]] && ${CMD}
+fi
 
 CMD="spack spec -l ${LBANN_DEV_PATH_SPEC}"
 echo ${CMD} | tee -a ${LOG}
