@@ -65,7 +65,7 @@ class dump_gradients : public callback_base {
   void on_backward_prop_end(model *m) override;
   std::string name() const override { return "dump gradients"; }
 
-  /** @name Checkpointing */
+  /** @name Serialization */
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */

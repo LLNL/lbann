@@ -61,7 +61,7 @@ class check_small : public callback_base {
   void on_batch_end(model *m) override;
   std::string name() const override { return "check_small"; }
 
-  /** @name Checkpointing */
+  /** @name Serialization */
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */

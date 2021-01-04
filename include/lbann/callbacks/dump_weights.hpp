@@ -63,7 +63,7 @@ class dump_weights : public callback_base {
   void set_target_dir(const std::string& dir) { m_directory = dir; }
   const std::string& get_target_dir() { return m_directory; }
 
-  /** @name Checkpointing */
+  /** @name Serialization */
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */

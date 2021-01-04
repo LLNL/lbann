@@ -65,7 +65,7 @@ class sync_layers : public callback_base {
   void on_forward_prop_end(model *m, Layer *l) override;
   void on_backward_prop_end(model *m, Layer *l) override;
 
-  /** @name Checkpointing */
+  /** @name Serialization */
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */

@@ -53,7 +53,7 @@ class dump_error_signals : public callback_base {
   /** Write error signals to file after each backward prop step. */
   void on_backward_prop_end(model *m, Layer *l) override;
 
-  /** @name Checkpointing */
+  /** @name Serialization */
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */

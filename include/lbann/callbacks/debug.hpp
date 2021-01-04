@@ -94,7 +94,7 @@ class debug : public callback_base {
   /** @brief Print that a weights' optimization step is ending. */
   void on_optimize_end(model *m, weights *w) override;
 
-  /** @name Checkpointing */
+  /** @name Serialization */
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */

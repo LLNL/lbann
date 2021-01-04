@@ -55,7 +55,7 @@ class early_stopping : public callback_base {
   void on_validation_end(model *m) override;
   std::string name() const override { return "early stopping"; }
 
-  /** @name Checkpointing */
+  /** @name Serialization */
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */

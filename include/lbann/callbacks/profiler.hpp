@@ -72,7 +72,7 @@ class profiler : public callback_base {
   void on_optimize_end(model *m, weights *w) override;
   std::string name() const override { return "profiler"; }
 
-  /** @name Checkpointing */
+  /** @name Serialization */
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */

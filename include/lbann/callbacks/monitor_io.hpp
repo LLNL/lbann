@@ -61,7 +61,7 @@ class monitor_io : public callback_base {
   void on_test_end(model *m) override;
   std::string name() const override { return "monitor_io"; }
 
-  /** @name Checkpointing */
+  /** @name Serialization */
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */

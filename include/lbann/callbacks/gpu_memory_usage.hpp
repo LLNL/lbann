@@ -47,7 +47,7 @@ class gpu_memory_usage : public callback_base {
   void on_epoch_begin(model *m) override;
   std::string name() const override { return "GPU memory usage"; }
 
-  /** @name Checkpointing */
+  /** @name Serialization */
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */

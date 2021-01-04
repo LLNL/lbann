@@ -75,7 +75,7 @@ class load_model : public callback_base {
 
   std::string name() const override { return "load model"; }
 
-  /** @name Checkpointing */
+  /** @name Serialization */
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */

@@ -64,7 +64,7 @@ class hang : public callback_base {
   }
   std::string name() const override { return "hang"; }
 
-  /** @name Checkpointing */
+  /** @name Serialization */
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */

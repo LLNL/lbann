@@ -83,7 +83,7 @@ public:
   void setup(model* m) override;
   void on_batch_begin(model* m) override;
 
-  /** @name Checkpointing */
+  /** @name Serialization */
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */

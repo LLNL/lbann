@@ -70,7 +70,7 @@ class dump_minibatch_sample_indices : public callback_base {
 
   std::string name() const override { return "dump minibatch sample indices"; }
 
-  /** @name Checkpointing */
+  /** @name Serialization */
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */

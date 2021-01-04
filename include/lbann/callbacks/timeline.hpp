@@ -73,7 +73,7 @@ class timeline : public callback_base {
   void on_optimize_begin(model *m, weights *w) override;
   void on_optimize_end(model *m, weights *w) override;
 
-  /** @name Checkpointing */
+  /** @name Serialization */
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */

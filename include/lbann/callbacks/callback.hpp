@@ -187,7 +187,7 @@ public:
   virtual description get_description() const;
 
   ///@}
-  /** @name Checkpointing */
+  /** @name Serialization */
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */

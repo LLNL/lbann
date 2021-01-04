@@ -78,7 +78,7 @@ public:
   /** Callback name. */
   std::string name() const override { return "timer"; }
 
-  /** @name Checkpointing */
+  /** @name Serialization */
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */

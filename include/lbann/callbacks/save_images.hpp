@@ -59,7 +59,7 @@ public:
   void on_test_end(model *m) override;
   std::string name() const override { return "save images"; }
 
-  /** @name Checkpointing */
+  /** @name Serialization */
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */

@@ -49,7 +49,7 @@ class check_init : public callback_base {
   void on_train_begin(model *m) override;
   std::string name() const override { return "check init"; }
 
-  /** @name Checkpointing */
+  /** @name Serialization */
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */
