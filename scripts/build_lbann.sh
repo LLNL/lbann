@@ -21,6 +21,7 @@ DEV_BUILD_FLAGS=
 
 LBANN_LABEL="local"
 LBANN_VARIANTS=
+DEV_BUILD_EXTRAS=
 
 # Default versions of Hydrogen, DiHydrogen, and Aluminum - use head of repo
 HYDROGEN_VER="@develop"
@@ -59,6 +60,7 @@ Options:
   ${C}--no-modules${N}            Don't try to load any modules (use the existing users environment)
   ${C}--spec-only${N}             Stop after a spack spec command
   ${C}-s | --stable${N}           Use the latest stable defaults not the head of Hydrogen, DiHydrogen and Aluminum repos
+  ${C}--test PATH${N}             Enable local unit tests
   ${C}--hydrogen-repo PATH${N}    Use a local repository for the Hydrogen library
   ${C}--dihydrogen-repo PATH${N}  Use a local repository for the DiHydrogen library
   ${C}--aluminum-repo PATH${N}    Use a local repository for the Aluminum library
@@ -148,6 +150,9 @@ while :; do
             HYDROGEN_VER=
             ALUMINUM_VER=
             DIHYDROGEN_VER=
+            ;;
+        --test)
+            DEV_BUILD_EXTRAS="--test root"
             ;;
         --hydrogen-repo)
             if [ -n "${2}" ]; then
@@ -417,7 +422,7 @@ CMD="mkdir -p ${BUILD_DIR}"
 echo ${CMD}
 [[ -z "${DRY_RUN:-}" ]] && ${CMD}
 
-CMD="spack dev-build --source-path ${LBANN_HOME} ${DEV_BUILD_FLAGS} ${LBANN_SPEC}"
+CMD="spack dev-build ${DEV_BUILD_EXTRAS} --source-path ${LBANN_HOME} ${DEV_BUILD_FLAGS} ${LBANN_SPEC}"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && ${CMD}
 
