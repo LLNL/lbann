@@ -78,7 +78,14 @@ public:
 
   /** @brief The proxy tensor type expected in this object. */
   template <El::Device D>
-  using AbsDistMatReadProxyType = El::AbstractDistMatrixReadDeviceProxy<InputTensorDataType, D>;
+  using AbsDistMatReadProxyType =
+    El::AbstractDistMatrixReadDeviceProxy<InputTensorDataType, D>;
+  template <El::Device D>
+  using InputAbsDistMatReadProxyType =
+    El::AbstractDistMatrixReadDeviceProxy<InputTensorDataType, D>;
+  template <El::Device D>
+  using OutputAbsDistMatReadProxyType =
+    El::AbstractDistMatrixReadDeviceProxy<OutputTensorDataType, D>;
 
   /** @brief The local tensor type expected in this object. */
   using AbsMatrixType = El::AbstractMatrix<InputTensorDataType>;

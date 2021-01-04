@@ -92,16 +92,7 @@ operator=(const data_type_layer<InputTensorDataType, OutputTensorDataType>& othe
   m_persistent_error_signals = other.m_persistent_error_signals;
   return *this;
 }
-/*
-template <typename InputTensorDataType, typename OutputTensorDataType>
-void data_type_layer<InputTensorDataType, OutputTensorDataType>::
-setup_weights(size_t idx, weights& w) {
-  if (idx >= m_weights_proxy.size()) {
-    m_weights_proxy.resize(idx+1);
-  }
-  m_weights_proxy[idx].setup(w);
-}
-*/
+
 template <typename InputTensorDataType, typename OutputTensorDataType>
 void data_type_layer<InputTensorDataType, OutputTensorDataType>::forward_prop() {
   const auto fp_start = get_time();
@@ -201,7 +192,7 @@ summarize_matrices(lbann_summary& summarizer, int step) {
   // Summarize activation matrices
   const int num_children = get_num_children();
   for (int i = 0; i < num_children; ++i) {
-    AbsDistMatReadProxyType<El::Device::CPU> acts(*m_outputs[i]);
+    OutputAbsDistMatReadProxyType<El::Device::CPU> acts(*m_outputs[i]);
     std::string prefix = m_name + "/activations";
     if (num_children > 1) { prefix += std::to_string(i); }
     summarizer.reduce_mean(prefix + "/mean", acts.GetLocked(), step);
@@ -216,7 +207,7 @@ summarize_matrices(lbann_summary& summarizer, int step) {
   for (int i = 0; i < num_parents; ++i) {
     if (!m_gradient_wrt_inputs[i]) continue;
 
-    AbsDistMatReadProxyType<El::Device::CPU> error_signals(*m_gradient_wrt_inputs[i]);
+    InputAbsDistMatReadProxyType<El::Device::CPU> error_signals(*m_gradient_wrt_inputs[i]);
     std::string prefix = m_name + "/error_signals";
     if (num_parents > 1) { prefix += std::to_string(i); }
     summarizer.reduce_mean(prefix + "/mean", error_signals.GetLocked(), step);
@@ -348,11 +339,7 @@ get_local_error_signals(int parent_index) const -> const InputAbsMatrixType& {
 }
 
 // Accessing matrices corresponding to parent/child layer
-<<<<<<< HEAD
-template <typename OutputTensorDataType>
-=======
 template <typename InputTensorDataType, typename OutputTensorDataType>
->>>>>>> 0ebfb47de (changes to data_type_layer)
 auto data_type_layer<InputTensorDataType, OutputTensorDataType>::
 get_activations(const Layer& child) const -> const BaseDistMat& {
   if (this->get_num_children() <= 0) {
@@ -456,7 +443,8 @@ template <typename InputTensorDataType, typename OutputTensorDataType>
 void data_type_layer<InputTensorDataType, OutputTensorDataType>::
 setup_matrices(const El::Grid& grid) {
 
-  using MatrixBuilderType = details::MatrixBuilder<InputTensorDataType>;
+  using InputMatrixBuilderType = details::MatrixBuilder<InputTensorDataType>;
+  using OutputMatrixBuilderType = details::MatrixBuilder<OutputTensorDataType>;
 
   // DEBUG
   {
@@ -474,8 +462,11 @@ setup_matrices(const El::Grid& grid) {
 #endif
 
   // Figure out how to make new matrices
-  std::unique_ptr<MatrixBuilderType> mat_builder =
+  std::unique_ptr<InputMatrixBuilderType> input_mat_builder =
     MakeMatBuilder<InputTensorDataType>(
+      this->get_data_layout(), this->get_device_allocation());
+  std::unique_ptr<OutputMatrixBuilderType> output_mat_builder =
+    MakeMatBuilder<OutputTensorDataType>(
       this->get_data_layout(), this->get_device_allocation());
 
   // Destroy previously setup matrices
@@ -490,16 +481,16 @@ setup_matrices(const El::Grid& grid) {
   m_gradient_wrt_outputs.resize(get_num_children());
   m_gradient_wrt_inputs.resize(get_num_parents());
   for (auto& input : m_inputs) {
-    input = mat_builder->MakeEmpty(grid, 0);
+    input = input_mat_builder->MakeEmpty(grid, 0);
   }
   for (auto& output : m_outputs) {
-    output = mat_builder->MakeEmpty(grid, 0);
+    output = output_mat_builder->MakeEmpty(grid, 0);
   }
   for (auto& grad_wrt_input : m_gradient_wrt_inputs) {
-    grad_wrt_input = mat_builder->MakeEmpty(grid, 0);
+    grad_wrt_input = input_mat_builder->MakeEmpty(grid, 0);
   }
   for (auto& grad_wrt_output : m_gradient_wrt_outputs) {
-    grad_wrt_output = mat_builder->MakeEmpty(grid, 0);
+    grad_wrt_output = output_mat_builder->MakeEmpty(grid, 0);
   }
 }
 
@@ -676,7 +667,7 @@ view_or_copy_prev_error_signal_(
   // If the distributions are compatible, we can just view
   // things. Otherwise, deep-copy the data.
   auto& prev_error_sig = *m_gradient_wrt_outputs[layer_idx];
-  view_or_copy_tensor(signal, prev_error_sig);
+  view_or_copy_tensor<OutputAbsDistMatrixType>(signal, prev_error_sig);
 }
 
 template <typename InputTensorDataType, typename OutputTensorDataType>
@@ -699,7 +690,7 @@ move_or_copy_prev_error_signal_(
   // around. Otherwise, deep copy into correct distribution.
   El::DistData expected_distdata = m_outputs[layer_idx]->DistData();
   if (signal.DistData() == expected_distdata) {
-    if (auto sig_ptr = dynamic_cast<AbsDistMatrixType*>(signal_in.get())) {
+    if (auto sig_ptr = dynamic_cast<OutputAbsDistMatrixType*>(signal_in.get())) {
       signal_in.release();
       m_gradient_wrt_outputs[layer_idx].reset(sig_ptr);
     }
@@ -712,7 +703,7 @@ move_or_copy_prev_error_signal_(
   {
     if (!m_gradient_wrt_outputs[layer_idx]) {
       m_gradient_wrt_outputs[layer_idx] =
-        MakeMatBuilder<InputTensorDataType>(
+        MakeMatBuilder<OutputTensorDataType>(
           this->get_data_layout(),
           this->get_device_allocation())->MakeEmpty(*expected_distdata.grid, 0);
     }
@@ -863,8 +854,5 @@ get_distconv_adapter() const {
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
-
-template class data_type_layer<float, double>;
-//template class data_type_layer<double, float>;
 
 } // namespace lbann
