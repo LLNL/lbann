@@ -30,8 +30,6 @@
 namespace lbann {
 namespace callback {
 
-#ifdef LBANN_HAS_GPU
-
 template <El::Device Device>
 El::Matrix<DataType, Device>& kfac_block<Device>::get_workspace_matrix(
     const std::string& key, const size_t height, const size_t width) {
@@ -42,14 +40,17 @@ template <>
 El::SyncInfo<El::Device::CPU> kfac_block<El::Device::CPU>::get_sync_info() {
   return El::SyncInfo<El::Device::CPU>{};
 }
+
+#ifdef LBANN_HAS_GPU
 template <>
 El::SyncInfo<El::Device::GPU> kfac_block<El::Device::GPU>::get_sync_info() {
   return El::gpu::DefaultSyncInfo();
 }
+#endif // LBANN_HAS_GPU
 
 template class kfac_block<El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
 template class kfac_block<El::Device::GPU>;
-
 #endif // LBANN_HAS_GPU
 
 } // namespace callback

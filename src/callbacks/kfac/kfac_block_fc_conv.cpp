@@ -33,8 +33,6 @@
 namespace lbann {
 namespace callback {
 
-#ifdef LBANN_HAS_GPU
-
 template <El::Device Device>
 void kfac_block_fc_conv<Device>::compute_local_kronecker_factors(
     lbann_comm* comm,
@@ -133,14 +131,13 @@ void kfac_block_fc_conv<Device>::compute_local_kronecker_factors(
     std::ostringstream oss;
     oss << "K-FAC callback: L2 norm @ "<< this->m_layer->get_name() << ": "
         // << kfac_util::get_matrix_stat(w_values.LockedMatrix(), "W")
-        << kfac_util::get_matrix_stat(local_activations, "acts")
-        << ", " << kfac_util::get_matrix_stat(local_errors, "errs")
-        << ", " << kfac_util::get_matrix_stat(A, "A")
-        << ", " << kfac_util::get_matrix_stat(G, "G")
+        << kfac_util::get_matrix_stat((const El::Matrix<DataType, Device>&) local_activations, "acts")
+        << ", " << kfac_util::get_matrix_stat((const El::Matrix<DataType, Device>&) local_errors, "errs")
+        << ", " << kfac_util::get_matrix_stat((const El::Matrix<DataType, Device>&) A, "A")
+        << ", " << kfac_util::get_matrix_stat((const El::Matrix<DataType, Device>&) G, "G")
         << std::endl;
     std::cout << oss.str();
   }
-
 }
 
 template <El::Device Device>
@@ -192,7 +189,6 @@ void kfac_block_fc_conv<Device>::update_kronecker_average(
         << std::endl;
     std::cout << oss.str();
   }
-
 }
 
 template <El::Device Device>
@@ -364,7 +360,7 @@ void kfac_block_fc_conv<Device>::update_kronecker_inverse(
     const auto &w_values = dtw->get_values();
     std::ostringstream oss;
     oss << "K-FAC callback: L2 norm @ "<< this->m_layer->get_name() << ": "
-        << kfac_util::get_matrix_stat(w_values.LockedMatrix(), "W")
+        << kfac_util::get_matrix_stat((const El::Matrix<DataType, Device>&) w_values.LockedMatrix(), "W")
         << ", " << kfac_util::get_matrix_stat(Ainv, "Ainv")
         << ", " << kfac_util::get_matrix_stat(Ginv, "Ginv")
         << ", " << kfac_util::get_matrix_stat(w_gradients, "grad")
@@ -446,6 +442,7 @@ void kfac_block_fc_conv<Device>::get_kronecker_factor_conv(
         &(l_conv->get_pads()[0]),
         &(l_conv->get_conv_dims()[0]),
         &(l_conv->get_strides()[0]),
+        local_batch_size,
         sync_info);
   } else {
     size_t spatial_prod = 1;
@@ -522,8 +519,12 @@ void get_diagonal(
     El::Matrix<DataType, El::Device::CPU>& diag,
     const El::Matrix<DataType, El::Device::CPU>& A,
     const El::SyncInfo<El::Device::CPU>& sync_info) {
-  LBANN_ERROR("Not implemented yet");
+  const size_t height = A.Height();
+#pragma omp parallel for
+  for(size_t gid = 0; gid < height; gid++)
+    diag.Buffer()[gid] = A.LockedBuffer()[gid+gid*height];
 }
+
 template <>
 void conv_transpose(
     const El::Matrix<DataType, El::Device::CPU>& activations,
@@ -531,8 +532,17 @@ void conv_transpose(
     size_t mini_batch_size, size_t num_channels,
     size_t spatial_prod,
     const El::SyncInfo<El::Device::CPU>& sync_info) {
-  LBANN_ERROR("Not implemented yet");
+  const size_t num_elems = mini_batch_size*num_channels*spatial_prod;
+#pragma omp parallel for
+  for(size_t gid = 0; gid < num_elems; gid++) {
+    const auto i_spatial = gid%spatial_prod;
+    const auto i_c = (gid/spatial_prod)%num_channels;
+    const auto i_n = (gid/spatial_prod/num_channels);
+    act_columns.Buffer()[i_c+i_spatial*num_channels+i_n*num_channels*spatial_prod]
+        = activations.LockedBuffer()[gid];
+  }
 }
+
 template <>
 void im2col(const El::Matrix<DataType, El::Device::CPU>& im,
             El::Matrix<DataType, El::Device::CPU>& col,
@@ -542,14 +552,29 @@ void im2col(const El::Matrix<DataType, El::Device::CPU>& im,
             const int * im_pads,
             const int * window_dims,
             const int * window_strides,
+            const int batch_size,
             const El::SyncInfo<El::Device::CPU>& sync_info) {
+  // Since CPU im2col does not support batched im2col explicitly,
+  // treat multiple samples as different channels of a single sample.
+  El::Matrix<DataType, El::Device::CPU> im_flatten;
+  im_flatten.LockedAttach(
+      im.Height()*im.Width(), 1,
+      im.LockedBuffer(),
+      im.Height()*im.Width());
+  El::Matrix<DataType, El::Device::CPU> col_flatten;
+  col_flatten.Attach(
+      col.Height()*batch_size, col.Width()/batch_size,
+      col.Buffer(),
+      col.Height()*batch_size);
   lbann::im2col(
-      im, col,
-      num_channels, im_num_dims,
+      im_flatten, col_flatten,
+      num_channels*batch_size,
+      im_num_dims,
       im_dims, im_pads,
       window_dims, window_strides);
 }
 
+#ifdef LBANN_HAS_GPU
 template <>
 void im2col(const El::Matrix<DataType, El::Device::GPU>& im,
             El::Matrix<DataType, El::Device::GPU>& col,
@@ -559,7 +584,9 @@ void im2col(const El::Matrix<DataType, El::Device::GPU>& im,
             const int * im_pads,
             const int * window_dims,
             const int * window_strides,
+            const int batch_size,
             const El::SyncInfo<El::Device::GPU>& sync_info) {
+  // Since GPU im2col supports batched im2col, the batch_size argument is ignored.
   lbann::im2col(
       im, col,
       num_channels, im_num_dims,
@@ -567,12 +594,13 @@ void im2col(const El::Matrix<DataType, El::Device::GPU>& im,
       window_dims, window_strides,
       sync_info.Stream());
 }
+#endif // LBANN_HAS_GPU
 
 } // namespace kfac_fc_conv_util
 
 template class kfac_block_fc_conv<El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
 template class kfac_block_fc_conv<El::Device::GPU>;
-
 #endif // LBANN_HAS_GPU
 
 } // namespace callback

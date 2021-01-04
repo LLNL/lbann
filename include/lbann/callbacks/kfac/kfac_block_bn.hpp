@@ -67,9 +67,6 @@ class kfac_block_bn: public kfac_block<Device> {
                 size_t layer_id,
                 size_t inverse_proc_rank)
       : kfac_block<Device>(layer, callback, layer_id, inverse_proc_rank) {
-
-#ifdef LBANN_HAS_GPU
-
     const auto parent = layer->get_parent_layers()[0];
     const bool is_after_fc =
         (dynamic_cast<const fully_connected_layer<DataType,
@@ -99,18 +96,9 @@ class kfac_block_bn: public kfac_block<Device> {
       for(auto i = input_dims.begin()+1; i != input_dims.end(); i++)
         m_spatial_prod *= *i;
     }
-
-#else // LBANN_HAS_GPU
-
-    LBANN_ERROR("The K-FAC callback is available only on GPUs.");
-
-#endif // LBANN_HAS_GPU
-
   }
   kfac_block_bn(const kfac_block_bn&) = default;
   kfac_block_bn& operator=(const kfac_block_bn&) = default;
-
-#ifdef LBANN_HAS_GPU
 
   void compute_local_kronecker_factors(
       lbann_comm* comm,
@@ -144,8 +132,6 @@ class kfac_block_bn: public kfac_block<Device> {
   std::vector<std::tuple<std::string, size_t, size_t>>
   get_internal_matrix_info() const override;
 
-#endif // LBANN_HAS_GPU
-
   std::string get_info() const override {
     std::ostringstream oss;
     oss << kfac_block<Device>::get_info()
@@ -159,8 +145,6 @@ class kfac_block_bn: public kfac_block<Device> {
   bool m_is_after_conv;
   size_t m_num_channels, m_spatial_prod;
 
-#ifdef LBANN_HAS_GPU
-
   /** @brief Lower triangle buffers of the Fisher block. */
   El::Matrix<DataType, Device>
   m_fisher_buf;
@@ -172,8 +156,6 @@ class kfac_block_bn: public kfac_block<Device> {
   /** @brief Inverse of the average Fisher matrix. */
   El::Matrix<DataType, Device>
   m_fisher_inverse;
-
-#endif // LBANN_HAS_GPU
 
 };
 

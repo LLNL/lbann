@@ -32,8 +32,6 @@
 namespace lbann {
 namespace callback {
 
-#ifdef LBANN_HAS_GPU
-
 template <El::Device Device>
 void kfac_block_bn<Device>::compute_local_kronecker_factors(
     lbann_comm* comm,
@@ -118,10 +116,10 @@ void kfac_block_bn<Device>::compute_local_kronecker_factors(
   if(comm->am_trainer_master() && print_matrix_summary) {
     std::ostringstream oss;
     oss << "K-FAC callback: L2 norm @ "<< this->m_layer->get_name() << ": "
-        << kfac_util::get_matrix_stat(scale_values.LockedMatrix(), "scale")
-        << ", " << kfac_util::get_matrix_stat(bias_values.LockedMatrix(), "bias")
-        << ", " << kfac_util::get_matrix_stat(local_activations, "acts")
-        << ", " << kfac_util::get_matrix_stat(local_errors, "errs")
+        << kfac_util::get_matrix_stat((const El::Matrix<DataType, Device>&) scale_values.LockedMatrix(), "scale")
+        << ", " << kfac_util::get_matrix_stat((const El::Matrix<DataType, Device>&) bias_values.LockedMatrix(), "bias")
+        << ", " << kfac_util::get_matrix_stat((const El::Matrix<DataType, Device>&) local_activations, "acts")
+        << ", " << kfac_util::get_matrix_stat((const El::Matrix<DataType, Device>&) local_errors, "errs")
         << std::endl;
     std::cout << oss.str();
   }
@@ -285,12 +283,26 @@ void kfac_bn_util::compute_bn_factor_data2col(
     const size_t num_channels,
     const size_t spatial_prod,
     const El::SyncInfo<El::Device::CPU>& sync_info) {
-  LBANN_ERROR("Not implemented yet");
+  const size_t num_threads = batch_size*num_channels*spatial_prod;
+#pragma omp parallel for
+  for(size_t gid = 0; gid < num_threads; gid++) {
+    const size_t i_c = gid%num_channels;
+    const size_t i_n = (gid/num_channels)%batch_size;
+    const size_t i_s = gid/num_channels/batch_size;
+    const auto scale = scales.LockedBuffer()[i_c];
+    const auto bias = biases.LockedBuffer()[i_c];
+    const auto i_act = i_s+i_c*spatial_prod+i_n*spatial_prod*num_channels;
+    const auto error = errors.LockedBuffer()[i_act];
+    const auto act = (activations.LockedBuffer()[i_act]-bias)/scale;
+    const auto i_out = i_c+i_n*num_channels*2 + i_s*(num_channels*2*batch_size);
+    cols.Buffer()[i_out] = error*act;
+    cols.Buffer()[i_out+num_channels] = error;
+  }
 }
 
 template class kfac_block_bn<El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
 template class kfac_block_bn<El::Device::GPU>;
-
 #endif // LBANN_HAS_GPU
 
 } // namespace callback

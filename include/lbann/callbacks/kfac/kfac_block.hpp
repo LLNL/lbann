@@ -128,8 +128,6 @@ class kfac_block {
 
  protected:
 
-#ifdef LBANN_HAS_GPU
-
   /** @brief Gets the Kronecker factor matrix of a FC layer.
    *  The same key is tied with the same matrix instance. */
   El::Matrix<DataType, Device>& get_workspace_matrix(
@@ -137,8 +135,6 @@ class kfac_block {
 
   /** @brief Return the default sync info that may used in update functions. */
   El::SyncInfo<Device> get_sync_info();
-
-#endif // LBANN_HAS_GPU
 
   /** @brief The target layer. */
   Layer *m_layer;

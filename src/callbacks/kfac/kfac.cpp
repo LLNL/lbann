@@ -41,8 +41,6 @@
 namespace lbann {
 namespace callback {
 
-#ifdef LBANN_HAS_GPU
-
 template <El::Device Device>
 void kfac<Device>::setup(model *m) {
   m_rank = m->get_comm()->get_rank_in_trainer();
@@ -172,25 +170,12 @@ void kfac<Device>::on_backward_prop_end(model *m) {
       int& proc_rank = proc_ranks[proc_rank_key];
 
       // Check layer property
-      const auto parent = l->get_parent_layers()[0];
-      const auto child = l->get_child_layers()[0];
-      const auto& dtl_parent = dynamic_cast<const data_type_layer<DataType>&>(*parent);
-      const auto& dtl_child = dynamic_cast<const data_type_layer<DataType>&>(*child);
-      const El::AbstractMatrix<DataType>& local_activations = dtl_parent.get_local_activations();
-      const El::AbstractMatrix<DataType>& local_errors = dtl_child.get_local_error_signals();
       if(l->get_num_parents() != 1 || l->get_num_children() != 1) {
         std::stringstream err;
         err << "The K-FAC callback only supports layers who have exact one parent and child."
             << " layer: " << l->get_name()
             << ", #parent: " << l->get_num_parents()
             << ", #child: " << l->get_num_children();
-        LBANN_ERROR(err.str());
-      }
-      if(local_activations.GetDevice() != Device
-         || local_errors.GetDevice() != Device) {
-        std::stringstream err;
-        err << "The K-FAC callback only supports GPU layers."
-            << " layer: " << l->get_name();
         LBANN_ERROR(err.str());
       }
 
@@ -376,15 +361,8 @@ void kfac<Device>::on_backward_prop_end(model *m) {
   }
 }
 
-
-template <>
-El::Matrix<DataType, El::Device::CPU>& kfac<El::Device::CPU>::get_workspace_matrix(
-    const std::string& key, const size_t height, const size_t width) {
-  LBANN_ERROR("Not implemented yet");
-}
-
-template <>
-El::Matrix<DataType, El::Device::GPU>& kfac<El::Device::GPU>::get_workspace_matrix(
+template <El::Device Device>
+El::Matrix<DataType, Device>& kfac<Device>::get_workspace_matrix(
     const std::string& key, const size_t height, const size_t width) {
   if(m_workspace.find(key) == m_workspace.end()) {
     std::ostringstream oss;
@@ -392,7 +370,7 @@ El::Matrix<DataType, El::Device::GPU>& kfac<El::Device::GPU>::get_workspace_matr
         << "): " << key << " (" << height << "x" << width << ")" << std::endl;
     std::cout << oss.str();
     m_workspace.emplace(
-        key, El::Matrix<DataType, El::Device::GPU>(height, width));
+        key, El::Matrix<DataType, Device>(height, width));
 #ifdef HYDROGEN_HAVE_CUB
     m_workspace[key].SetMemoryMode(1); // Use CUB GPU memory pool if possible
 #endif // HYDROGEN_HAVE_CUB
@@ -400,20 +378,22 @@ El::Matrix<DataType, El::Device::GPU>& kfac<El::Device::GPU>::get_workspace_matr
   auto& ret = m_workspace[key];
   if((size_t) ret.Height() != height || (size_t) ret.Width() != width) {
     // Make sure that no kernels are using this workspace.
-    CHECK_CUDA(cudaDeviceSynchronize());
+    El::Synchronize(El::SyncInfoFromMatrix(ret));
     ret.Resize(height, width);
   }
   return ret;
 }
-
-#endif // LBANN_HAS_GPU
 
 std::unique_ptr<callback_base>
 build_kfac_callback_from_pbuf(
     const google::protobuf::Message& proto_msg,
     const std::shared_ptr<lbann_summary>&) {
   using MsgType = lbann_data::Callback::CallbackKFAC;
+#ifdef LBANN_HAS_GPU
   using CallbackType = kfac<El::Device::GPU>;
+#else
+  using CallbackType = kfac<El::Device::CPU>;
+#endif // LBANN_HAS_GPU
   const auto& params = dynamic_cast<const MsgType&>(proto_msg);
 
   const auto parse_damping_params =
@@ -492,6 +472,11 @@ build_kfac_callback_from_pbuf(
       disable_layers,
       learning_rate_factor);
 }
+
+template class kfac<El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
+template class kfac<El::Device::GPU>;
+#endif // LBANN_HAS_GPU
 
 } // namespace callback
 } // namespace lbann

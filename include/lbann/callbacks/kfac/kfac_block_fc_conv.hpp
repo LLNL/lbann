@@ -63,6 +63,7 @@ void im2col(const El::Matrix<DataType, Device>& im,
             const int * im_pads,
             const int * window_dims,
             const int * window_strides,
+            const int batch_size,
             const El::SyncInfo<Device>& sync_info);
 
 } // namespace kfac_fc_conv_util
@@ -83,9 +84,6 @@ class kfac_block_fc_conv: public kfac_block<Device> {
                      const bool is_conv)
       : kfac_block<Device>(layer, callback, layer_id, inverse_proc_rank),
         m_is_conv(is_conv), m_has_bias(layer->num_weights() > 1) {
-
-#ifdef LBANN_HAS_GPU
-
     if(m_is_conv) {
       m_conv_input_spatial_prod = 1;
       const auto input_dims = layer->get_input_dims();
@@ -118,19 +116,10 @@ class kfac_block_fc_conv: public kfac_block<Device> {
           << " layer: " << layer->get_name();
       LBANN_ERROR(err.str());
     }
-
-#else // LBANN_HAS_GPU
-
-    LBANN_ERROR("The K-FAC callback is available only on GPUs.");
-
-#endif // LBANN_HAS_GPU
-
   }
 
   kfac_block_fc_conv(const kfac_block_fc_conv&) = default;
   kfac_block_fc_conv& operator=(const kfac_block_fc_conv&) = default;
-
-#ifdef LBANN_HAS_GPU
 
   void compute_local_kronecker_factors(
       lbann_comm* comm,
@@ -162,8 +151,6 @@ class kfac_block_fc_conv: public kfac_block<Device> {
   const std::vector<El::AbstractMatrix<DataType>*>
   get_preconditioned_grad_buffers() override;
 
-#endif // LBANN_HAS_GPU
-
   std::string get_info() const override {
     std::ostringstream oss;
     oss << kfac_block<Device>::get_info()
@@ -172,8 +159,6 @@ class kfac_block_fc_conv: public kfac_block<Device> {
   }
 
  private:
-
-#ifdef LBANN_HAS_GPU
 
   /** @brief Gets the Kronecker factor matrix of a FC layer. **/
   static void get_kronecker_factor_fc(
@@ -209,14 +194,10 @@ class kfac_block_fc_conv: public kfac_block<Device> {
   std::vector<std::tuple<std::string, size_t, size_t>>
   get_internal_matrix_info() const override;
 
-#endif // LBANN_HAS_GPU
-
   /** @brief Information to perform its computation. **/
   const bool m_is_conv, m_has_bias;
   size_t m_conv_input_spatial_prod, m_conv_output_spatial_prod;
   std::vector<int> m_conv_input_spatial_dims, m_conv_output_spatial_dims;
-
-#ifdef LBANN_HAS_GPU
 
   /** @brief Lower triangle buffers of Kronecker factors. */
   El::Matrix<DataType, Device>
@@ -236,8 +217,6 @@ class kfac_block_fc_conv: public kfac_block<Device> {
   /** @brief Vectorized gradient buffer (only for fully-connecter layers). */
   El::Matrix<DataType, Device>
   m_grad_buffer_v;
-
-#endif // LBANN_HAS_GPU
 
 };
 

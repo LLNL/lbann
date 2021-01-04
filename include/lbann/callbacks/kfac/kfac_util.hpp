@@ -36,8 +36,6 @@ namespace lbann {
 namespace callback {
 namespace kfac_util {
 
-#ifdef LBANN_HAS_GPU
-
 /** @brief Gets the inverse matrix of A. **/
 template <El::Device Device>
 void get_matrix_inverse(
@@ -51,8 +49,9 @@ void get_matrix_inverse(
     const El::SyncInfo<Device>& sync_info);
 
 /** @brief Gets statistics of a given matrix. **/
+template <El::Device Device>
 std::string get_matrix_stat(
-    const El::AbstractMatrix<DataType>& X,
+    const El::Matrix<DataType, Device>& X,
     const char *name);
 
 /** @brief Perform all-reduce on the lower triangular of a symmetric matrix. **/
@@ -156,8 +155,6 @@ void allgather_v_blocks_device(
     const std::vector<size_t>& recv_offsets,
     const El::mpi::Comm& trainer_comm,
     const El::SyncInfo<Device>& sync_info);
-
-#endif // LBANN_HAS_GPU
 
 } // namespace kfac_util
 } // namespace callback

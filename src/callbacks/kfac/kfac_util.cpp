@@ -36,8 +36,6 @@ namespace lbann {
 namespace callback {
 namespace kfac_util {
 
-#ifdef LBANN_HAS_GPU
-
 template <El::Device Device>
 void get_matrix_inverse(
     El::AbstractMatrix<DataType>& Ainv,
@@ -111,7 +109,8 @@ void get_matrix_inverse(
   El::Synchronize(sync_info);
 }
 
-std::string get_matrix_stat(const El::AbstractMatrix<DataType>& X,
+template <El::Device Device>
+std::string get_matrix_stat(const El::Matrix<DataType, Device>& X,
                             const char *name) {
   El::Matrix<DataType> XCPU(X);
   const auto nrm2 = El::Nrm2(El::Reshape(XCPU.Height()*XCPU.Width(), 1, XCPU));
@@ -312,6 +311,7 @@ void allgather_blocks(
   }
 }
 
+#ifdef LBANN_HAS_GPU
 template <>
 void reduce_block_device(
     El::Matrix<DataType, El::Device::GPU>& block,
@@ -326,6 +326,7 @@ void reduce_block_device(
        root,
        trainer_comm.template GetComm<::Al::NCCLBackend>(sync_info));
 }
+
 template <>
 void reduce_scatter_v_blocks_device(
     El::Matrix<DataType, El::Device::GPU>& blocks,
@@ -338,6 +339,7 @@ void reduce_scatter_v_blocks_device(
        ::Al::ReductionOperator::sum,
        trainer_comm.template GetComm<::Al::NCCLBackend>(sync_info));
 }
+
 template <>
 void allgather_v_blocks_device(
     const El::Matrix<DataType, El::Device::GPU>& send_block,
@@ -351,6 +353,7 @@ void allgather_v_blocks_device(
        recv_sizes, recv_offsets,
        trainer_comm.template GetComm<::Al::NCCLBackend>(sync_info));
 }
+#endif // LBANN_HAS_GPU
 
 template <>
 void add_to_diagonal(
@@ -359,41 +362,72 @@ void add_to_diagonal(
     const DataType damping_bn_err,
     const bool is_bn,
     const El::SyncInfo<El::Device::CPU>& sync_info) {
-  LBANN_ERROR("Not implemented yet");
+  const auto height = A.Height();
+#pragma omp parallel for
+  for(int i = 0; i < height; i++)
+    A(i, i) += (is_bn && i >= A.Height()/2 ? damping_bn_err : damping);
 }
+
 template <>
 void fill_upper_tri(
     El::Matrix<DataType, El::Device::CPU>& A,
     const El::SyncInfo<El::Device::CPU>& sync_info) {
-  LBANN_ERROR("Not implemented yet");
+  const auto height = A.Height();
+#pragma omp parallel for
+  for(int col = 0; col < height; col++)
+    for(int row = 0; row < height; row++)
+      if(row < col)
+        A(row, col) += A(col, row);
 }
+
+// TODO: Do not define count but use A.Height()*A.Height()
 template <>
 void update_kronecker_average(
     El::Matrix<DataType, El::Device::CPU>& Aave,
     const El::Matrix<DataType, El::Device::CPU>& A,
     const size_t count, const double decay,
     const El::SyncInfo<El::Device::CPU>& sync_info) {
-  LBANN_ERROR("Not implemented yet");
+  assert(count == (size_t) (A.Height()*A.Height()));
+  const auto height = A.Height();
+#pragma omp parallel for
+  for(int col = 0; col < height; col++)
+    for(int row = 0; row < height; row++)
+      Aave(row, col) = Aave(row, col)*decay + A(row, col)*(1.0-decay);
 }
+
 template <>
 void identity(
     El::Matrix<DataType, El::Device::CPU>& A,
     const El::SyncInfo<El::Device::CPU>& sync_info) {
-  LBANN_ERROR("Not implemented yet");
+  El::Identity(A, A.Height(), A.Height());
 }
+
 template <>
 void pack_lower_tri(
     El::Matrix<DataType, El::Device::CPU>& L,
     const El::Matrix<DataType, El::Device::CPU>& A,
     const El::SyncInfo<El::Device::CPU>& sync_info) {
-  LBANN_ERROR("Not implemented yet");
+  const auto height = A.Height();
+#pragma omp parallel for
+  for(int col = 0; col < height; col++)
+    for(int row = 0; row < height; row++)
+      if(row >= col)
+        L(row+(2*height-(col-1))*col/2-col, 0) = A(row+col*height, 0);
 }
+
 template <>
 void unpack_lower_tri(
     El::Matrix<DataType, El::Device::CPU>& A,
     const El::Matrix<DataType, El::Device::CPU>& L,
     const El::SyncInfo<El::Device::CPU>& sync_info) {
-  LBANN_ERROR("Not implemented yet");
+  const auto height = A.Height();
+#pragma omp parallel for
+  for(int col = 0; col < height; col++)
+    for(int row = 0; row < height; row++)
+      if(row >= col)
+        A(row+col*height, 0)
+            = A(col+row*height, 0)
+            = L(row+(2*height-(col-1))*col/2-col, 0);
 }
 
 template <>
@@ -403,16 +437,27 @@ void reduce_block_device(
     const size_t root,
     const El::mpi::Comm& trainer_comm,
     const El::SyncInfo<El::Device::CPU>& sync_info) {
-  LBANN_ERROR("Not implemented yet");
+  ::Al::Reduce<::Al::MPIBackend>(
+       block.Buffer(),
+       count,
+       ::Al::ReductionOperator::sum,
+       root,
+       trainer_comm.template GetComm<::Al::MPIBackend>(sync_info));
 }
+
 template <>
 void reduce_scatter_v_blocks_device(
     El::Matrix<DataType, El::Device::CPU>& blocks,
     const std::vector<size_t>& recv_sizes,
     const El::mpi::Comm& trainer_comm,
     const El::SyncInfo<El::Device::CPU>& sync_info) {
-  LBANN_ERROR("Not implemented yet");
+  ::Al::Reduce_scatterv<::Al::MPIBackend>(
+       blocks.Buffer(),
+       recv_sizes,
+       ::Al::ReductionOperator::sum,
+       trainer_comm.template GetComm<::Al::MPIBackend>(sync_info));
 }
+
 template <>
 void allgather_v_blocks_device(
     const El::Matrix<DataType, El::Device::CPU>& send_block,
@@ -421,7 +466,10 @@ void allgather_v_blocks_device(
     const std::vector<size_t>& recv_offsets,
     const El::mpi::Comm& trainer_comm,
     const El::SyncInfo<El::Device::CPU>& sync_info) {
-  LBANN_ERROR("Not implemented yet");
+  ::Al::Allgatherv<::Al::MPIBackend>(
+       send_block.LockedBuffer(), recv_blocks.Buffer(),
+       recv_sizes, recv_offsets,
+       trainer_comm.template GetComm<::Al::MPIBackend>(sync_info));
 }
 
 #define PROTO_DEVICE(T, Device)                 \
@@ -434,6 +482,9 @@ void allgather_v_blocks_device(
       T damping_bn_err,                         \
       bool is_bn,                               \
       const El::SyncInfo<Device>& sync_info);   \
+  template std::string get_matrix_stat(         \
+      const El::Matrix<T, Device>& X,           \
+      const char *name);                        \
   template void allreduce_lower_tri(            \
       El::AbstractMatrix<T>& A,                 \
       El::AbstractMatrix<T>& AL,                \
@@ -454,8 +505,8 @@ void allgather_v_blocks_device(
       const kfac_allgather_mode mode);
 
 PROTO_DEVICE(DataType, El::Device::CPU);
+#ifdef LBANN_HAS_GPU
 PROTO_DEVICE(DataType, El::Device::GPU);
-
 #endif // LBANN_HAS_GPU
 
 } // namespace kfac_util

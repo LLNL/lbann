@@ -86,39 +86,6 @@ __global__ void im2col_2d_kernel(
   }
 }
 
-
-std::pair<size_t, size_t> get_im2col_output_size(
-    const int num_samples,
-    const int num_channels,
-    const int im_num_dims,
-    const int * im_dims,
-    const int * im_pads,
-    const int * window_dims,
-    const int * window_strides) {
-  // TODO: Merge with the main im2col function.
-
-  // im2col parameters
-  std::vector<size_t> offset_start(im_num_dims);
-  std::vector<size_t> offset_end(im_num_dims);
-  std::vector<size_t> offset_stride(im_num_dims);
-  std::vector<size_t> offset_num(im_num_dims);
-  for(int d = 0; d < im_num_dims; ++d) {
-    offset_start[d] = -im_pads[d];
-    offset_end[d] = im_dims[d] + im_pads[d] - window_dims[d] + 1;
-    offset_stride[d] = window_strides[d];
-    offset_num[d] = (offset_end[d] - offset_start[d] + offset_stride[d] - 1) / offset_stride[d];
-  }
-
-  // Compute the output size and resize col
-  const std::vector<int> window_dims_v(window_dims, window_dims+im_num_dims);
-  const size_t output_height =
-      num_channels * std::accumulate(window_dims_v.begin(), window_dims_v.end(), 1, std::multiplies<size_t>());
-  const size_t output_width =
-      std::accumulate(offset_num.begin(), offset_num.end(), 1, std::multiplies<size_t>()) * num_samples;
-
-  return std::make_pair(output_height, output_width);
-}
-
 template <typename TensorDataType>
 void im2col(const El::Matrix<TensorDataType, El::Device::GPU>& im,
             El::Matrix<TensorDataType, El::Device::GPU>& col,

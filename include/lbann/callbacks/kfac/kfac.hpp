@@ -118,7 +118,6 @@ class kfac : public callback_base {
   kfac* copy() const override { return new kfac(*this); }
   std::string name() const override { return "K-FAC"; }
 
-#ifdef LBANN_HAS_GPU
   void setup(model *m) override;
   void setup(trainer *t) override {}
   void on_backward_prop_end(model *m) override;
@@ -130,12 +129,6 @@ class kfac : public callback_base {
   El::Matrix<DataType, Device>& get_workspace_matrix(
       const std::string& key,
       size_t height, size_t width);
-
-#else
-  void setup(model *m) override {
-    LBANN_ERROR("The K-FAC callback is available only on GPUs.");
-  }
-#endif // LBANN_HAS_GPU
 
   /** @brief The default parameters of a Tikhonov damping technique. */
   constexpr static const double damping_0_default = 3e-2;
@@ -196,11 +189,9 @@ class kfac : public callback_base {
   /** @brief K-FAC per-layer blocks. */
   std::vector<std::shared_ptr<kfac_block<Device>>> m_blocks;
 
-#ifdef LBANN_HAS_GPU
   /** @brief Workspace matrices that are used by m_blocks. */
   std::unordered_map<std::string,
                      El::Matrix<DataType, Device>> m_workspace;
-#endif // LBANN_HAS_GPU
 
   /** @brief Copy of lbann_comm::get_rank_in_trainer() for internal
       functions. TODO: Get the rank from lbann_comm directly */
