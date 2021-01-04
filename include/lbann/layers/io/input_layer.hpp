@@ -107,12 +107,6 @@ class input_layer : public data_type_layer<TensorDataType> {
   using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
 
   ///@}
- protected:
-  data_reader_target_mode m_data_reader_mode;
-  input_layer(data_reader_target_mode dr_mode = data_reader_target_mode::NA)
-    : input_layer(nullptr, dr_mode)
-  {}
-  friend class cereal::access;
  public:
 
   /// @todo make the map and vector references
@@ -180,8 +174,17 @@ class input_layer : public data_type_layer<TensorDataType> {
   }
 
   ///@}
+ protected:
+  data_reader_target_mode m_data_reader_mode;
+
+ private:
+  friend cereal::access;
+  input_layer()
+    : input_layer(nullptr, data_reader_target_mode::NA)
+  {}
 
 #ifdef LBANN_HAS_DISTCONV
+ public:
   /** @brief Extensions for distributed convolutions */
 ///{@
   using distconv_adapter_type = input_distconv_adapter<TensorDataType, T_layout, Dev>;

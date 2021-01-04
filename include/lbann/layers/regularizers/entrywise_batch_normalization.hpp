@@ -61,11 +61,16 @@ public:
 
 public:
 
-  entrywise_batch_normalization_layer(TensorDataType decay=El::To<TensorDataType>(0.9),
-                                      TensorDataType epsilon=El::To<TensorDataType>(1e-5))
-    : data_type_layer<TensorDataType>(nullptr), m_decay(decay), m_epsilon(epsilon) {}
+  entrywise_batch_normalization_layer(
+    TensorDataType decay=El::To<TensorDataType>(0.9),
+    TensorDataType epsilon=El::To<TensorDataType>(1e-5))
+    : data_type_layer<TensorDataType>(nullptr),
+      m_decay(decay),
+      m_epsilon(epsilon)
+  {}
 
-  entrywise_batch_normalization_layer(const entrywise_batch_normalization_layer& other)
+  entrywise_batch_normalization_layer(
+    const entrywise_batch_normalization_layer& other)
     : data_type_layer<TensorDataType>(other),
       m_decay(other.m_decay),
       m_epsilon(other.m_epsilon),
@@ -74,9 +79,12 @@ public:
                          nullptr),
       m_batch_statistics_gradient(other.m_batch_statistics_gradient ?
                                   other.m_batch_statistics_gradient->Copy() :
-                                  nullptr) {}
+                                  nullptr)
+  {}
 
-  entrywise_batch_normalization_layer& operator=(const entrywise_batch_normalization_layer& other) {
+  entrywise_batch_normalization_layer& operator=(
+    const entrywise_batch_normalization_layer& other)
+  {
     data_type_layer<TensorDataType>::operator=(other);
     m_decay = other.m_decay;
     m_epsilon = other.m_epsilon;

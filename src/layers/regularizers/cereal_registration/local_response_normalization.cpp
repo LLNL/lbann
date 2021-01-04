@@ -23,16 +23,8 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
+#include <lbann/layers/regularizers/local_response_normalization.hpp>
+#include <cereal/types/polymorphic.hpp>
 
-#define LBANN_SELU_DROPOUT_LAYER_INSTANTIATE
-#include "lbann/layers/regularizers/selu_dropout.hpp"
-
-namespace lbann {
-
-#define PROTO_DEVICE(T, Device) \
-  template class selu_dropout<T, data_layout::DATA_PARALLEL, Device>; \
-  template class selu_dropout<T, data_layout::MODEL_PARALLEL, Device>
-
-#include "lbann/macros/instantiate_device.hpp"
-
-}// namespace lbann
+#define LBANN_LAYER_NAME local_response_normalization_layer
+#include "lbann/macros/register_layer_with_cereal_data_parallel_only.hpp"

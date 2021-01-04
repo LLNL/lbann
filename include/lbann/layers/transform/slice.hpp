@@ -62,9 +62,6 @@ public:
   /** @name Serialization */
   ///@{
 
-  /** @name Serialization */
-  ///@{
-
   template <typename ArchiveT>
   void serialize(ArchiveT& ar)
   {
@@ -79,6 +76,8 @@ public:
     //   m_workspace;
     //   m_workspace_event;
   }
+
+  ///@}
 
   std::string get_type() const override;
   data_layout get_data_layout() const override;

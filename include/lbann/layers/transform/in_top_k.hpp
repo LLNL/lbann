@@ -47,9 +47,7 @@ class in_top_k_layer : public data_type_layer<TensorDataType> {
   in_top_k_layer(lbann_comm *comm, El::Int k)
     : data_type_layer<TensorDataType>(comm), m_k(k) {
     if (m_k < 0) {
-      std::stringstream err;
-      err << "invalid parameter for top-k search (k=" << m_k << ")";
-      LBANN_ERROR(err.str());
+      LBANN_ERROR("invalid parameter for top-k search (k=", m_k, ")");
     }
   }
 
@@ -96,7 +94,7 @@ class in_top_k_layer : public data_type_layer<TensorDataType> {
  private:
 
   /** Parameter for top-k search. */
-  /*const*/ El::Int m_k;
+  El::Int m_k;
 
 };
 

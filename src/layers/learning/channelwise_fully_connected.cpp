@@ -496,6 +496,3 @@ std::unique_ptr<Layer> build_channelwise_fully_connected_layer_from_pbuf(
 #include "lbann/macros/instantiate_device.hpp"
 
 } // namespace lbann
-
-#define LBANN_LAYER_NAME channelwise_fully_connected_layer
-#include "lbann/macros/register_layer_with_cereal_data_parallel_only.hpp"

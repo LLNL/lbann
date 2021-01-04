@@ -347,7 +347,6 @@ public:
   std::string get_parent_names() const;
   std::string get_child_names() const;
 
-  // ===========================================================
   /** @name Layer pointer manipulation functions */
   ///@{
 
