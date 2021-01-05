@@ -101,6 +101,10 @@ char *x = "asdf";
 
 private:
 
+  std::unordered_map<std::string,
+        std::unordered_map<std::string, conduit::Node*>> m_schema_nodes;
+
+#if 0
   /** Contains pointers to Nodes that contain the complete schemas
    *  for the data on disk, and additionally contain normalization data.
    */
@@ -110,6 +114,7 @@ private:
    * to be used for the current experiment
    */
   std::unordered_map<std::string, conduit::Node*> m_experiment_schema_nodes;
+#endif
 
   /** Name of a (possibly empty) top-level branch in the useme schema that 
    *  contains instructions on normalizing and packing data, etc.
@@ -197,9 +202,13 @@ TODO
   /** Fills in m_metadata_nodes */
   void get_metadata_node_ptrs();
 
+  /** run transform pipelines */
   void transform(conduit::Node& node); 
 
-  const std::string strip_sample_id(const std::string &s);
+  /** pack the data */
+  void pack(conduit::Node &node);
+
+//  const std::string strip_sample_id(const std::string &s);
 };
 
 } // namespace lbann 

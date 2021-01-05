@@ -30,9 +30,11 @@
 
 using namespace std; //XX
 
+
 namespace lbann {
 
 int hdf5_data_reader::fetch_data(CPUMat& X, El::Matrix<El::Int>& indices_fetched) {
+std::cerr << " X"; 
   return 0;
 }
 
@@ -61,11 +63,11 @@ void hdf5_data_reader::copy_members(const hdf5_data_reader &rhs) {
 
 void hdf5_data_reader::load() {
   if(is_master()) {
-    std::cout << "hdf5_data_reader - starting load" << std::endl;
+    std::cerr << "hdf5_data_reader - starting load" << std::endl;
   }
   double tm1 = get_time();
 
-//  data_reader_sample_list::load();
+  data_reader_sample_list::load();
 
   // load the schemas (yes, these are actually Nodes, but they play
   // the part of schemas, so that's what I'm colling them)
@@ -80,33 +82,41 @@ void hdf5_data_reader::load() {
   }
   load_schema(opts->get_string("experiment_schema_fn"), m_experiment_schema);
 
+cerr << "XX get_ptrs\n";
   // get ptrs to all nodes
   get_schema_ptrs(&m_experiment_schema, m_experiment_schema_nodes);
   get_schema_ptrs(&m_data_schema, m_data_schema_nodes);
+cerr << "XX DONE! get_ptrs\n";
+cerr << "XX parse\n";
 
   parse_schemas();
+cerr << "XX DONE! parse\n";
+cerr << "XX get_metadata\n";
   get_metadata_node_ptrs();
+cerr << "XX DONE! get_metadata\n";
+cerr << "XX tabulate\n";
   tabulate_packing_memory_requirements();
+cerr << "XX DONE! tabulate\n";
 
   // may go away; for now, this reader only supports preloading mode
   opts->set_option("use_data_store", true);
 
   // the usual boilerplate (we should wrap this in a function)
   m_shuffled_indices.clear();
-//  m_shuffled_indices.resize(m_sample_list.size());
+  m_shuffled_indices.resize(m_sample_list.size());
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
   resize_shuffled_indices();
- // instantiate_data_store();
-  //select_subset_of_data();
+  instantiate_data_store();
+  select_subset_of_data();
 
   if (is_master()) {
-    std::cout << "hdf5_data_reader::load() time: " << (get_time() - tm1) 
+    std::cerr << "hdf5_data_reader::load() time: " << (get_time() - tm1) 
               << " num samples: " << m_shuffled_indices.size() << std::endl;
   }
 }
 
 void hdf5_data_reader::load_schema(std::string filename, conduit::Node &schema) {
-cout << "starting load_schema for: " << filename << endl;
+cerr << "starting load_schema for: " << filename << endl;
   // master loads the schema then bcasts to all others.
   // for now this is an MPI_WORLD_COMM operation
   if (filename == "") {
@@ -122,7 +132,7 @@ cout << "starting load_schema for: " << filename << endl;
 void hdf5_data_reader::do_preload_data_store() {
   double tm1 = get_time();
   if (is_master()) {
-    std::cout << "starting hdf5_data_reader::do_preload_data_store()\n";
+    std::cerr << "starting hdf5_data_reader::do_preload_data_store()\n";
   }
 
   // TODO: construct a more efficient owner mapping, and set it in the data store.
@@ -136,6 +146,7 @@ void hdf5_data_reader::do_preload_data_store() {
       conduit::Node & node = m_data_store->get_empty_node(index);
       load_sample(node, index);
       transform(node);
+      pack(node);
       m_data_store->set_preloaded_conduit_node(index, node);
     } catch (conduit::Error const& e) {
       LBANN_ERROR(" :: trying to load the node ", index, " and caught conduit exception: ", e.what());
@@ -151,7 +162,7 @@ void hdf5_data_reader::do_preload_data_store() {
   }
 
   if (is_master()) {
-    std::cout << "loading data for role: " << get_role() << " took " << get_time() - tm1 << "s" << std::endl;
+    std::cerr << "loading data for role: " << get_role() << " took " << get_time() - tm1 << "s" << std::endl;
   }
 }
 
@@ -169,19 +180,14 @@ int hdf5_data_reader::get_linearized_size(const std::string &key) const {
 }
 
 
-// Loads the fields that are specified in the user supplied schema.
-// On entry, 'node,' which was obtained from the data_store, contains a 
-// single top-level node which is the sample_id.
+// Loads the fields that are specified in the user supplied schema
 void hdf5_data_reader::load_sample(conduit::Node &node, size_t index) {
-#if 0
   // get file handle
   hid_t file_handle;
   std::string sample_name;
   data_reader_sample_list::open_file(index, file_handle, sample_name);
 
-  // load data for the  field names that the user specified in their schema;
-  // first, we load each field separately; at the end of this method
-  // we call pack_data, in which we pack and or normalize, etc, the data
+  // load data for the field names specified in the user's experiment-schema
   for (const auto &p : m_all_exp_leaves) {
     const std::string pathname = p->path();
 
@@ -199,7 +205,6 @@ void hdf5_data_reader::load_sample(conduit::Node &node, size_t index) {
     // load the field's data into the conduit::Node
     conduit::relay::io::hdf5_read(file_handle, original_path, node[useme_path]);
   }
-#endif
 }
 
 // on entry, 'node' contains data specified by the user's schema,
@@ -288,6 +293,7 @@ void hdf5_data_reader::munge_data(conduit::Node &node) {
 #endif
 
 void hdf5_data_reader::parse_schemas() {
+cerr<<"XX starting parse_schemas\n";
 
   // Get the pathnames for the fields that the user specified are
   // to be used in the current experiment. 
@@ -299,11 +305,11 @@ void hdf5_data_reader::parse_schemas() {
   // then trace them to the leaves in the m_data_schema (which is never
   // pruned)
   std::vector<const conduit::Node*> leaves_exp;
-
   get_leaves(&m_experiment_schema, leaves_exp);
 
   for (auto node : leaves_exp) {
-    // WARNING: possible fragility ahead
+
+    // WARNING: fragility ahead
     const std::string &pathname = node->path();
     size_t k = pathname.find('/');
     if (k != std::string::npos) {
@@ -354,8 +360,8 @@ void hdf5_data_reader::get_schema_ptrs(conduit::Node* schema, std::unordered_map
 void hdf5_data_reader::get_leaves(const conduit::Node* schema_in, std::vector<const conduit::Node*> &leaves, std::string ignore_child_branch, int indent) {
 
   #ifdef DEBUGME
-  for (int j=0; j<indent; j++) std::cout << " ";
-  std::cout << schema_in->path() << std::endl;
+  for (int j=0; j<indent; j++) std::cerr << " ";
+  std::cerr << schema_in->path() << std::endl;
   #endif 
 
   // nursery rhyme
@@ -395,8 +401,8 @@ void hdf5_data_reader::tabulate_packing_memory_requirements() {
         m_field_name_to_num_elts[field_name] = n_elts;
         total_elts += n_elts;
       } catch (conduit::Error const& e) {
-cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>.\n";
-cout << "error fetching child: "<<field_name<<endl;
+cerr << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>.\n";
+cerr << "error fetching child: "<<field_name<<endl;
 schema.print();
         LBANN_ERROR("caught conduit::Error: ", e.what());
       }
@@ -406,15 +412,11 @@ schema.print();
 }
 
 void hdf5_data_reader::load_schema_from_data(conduit::Schema &schema) {
+  // master loads a node and grabs the schema, then bcasts to all others
   std::string json;
   if (is_master()) {
-    // Load a node, then grab the schema. Note that we're loading the 
-    // entire node; TODO fix this (but only if it proves too slow)
     conduit::Node node;
     load_sample(node, 0);
-    //conduit::Node nd = node.child(0);
-    //const conduit::Schema &tmp_schema = nd.schema();
-    //json = tmp_schema.to_json(); 
     const conduit::Schema &tmp = node.schema();
     json = tmp.to_json();
   }
@@ -435,59 +437,79 @@ const conduit::Node* hdf5_data_reader::get_metadata_node(const conduit::Node* no
 }
 
 void hdf5_data_reader::transform(conduit::Node& node_in) {
-#if 0
-std::cout << "\nSTARTING TRANSFORM:\n";
+  std::cerr << "\nSTARTING TRANSFORM:\n";
+  static bool print_warnings = true;
 
+  // warning: possible fragility
   conduit::Node node = node_in.child(0);
 
-  // TODO: currently I'm parsing conduit::Node* to get transform values;
-  // would be more efficient to cache these, if time savings warrent
+  // TODO: currently I'm parsing conduit::Node* to get transform values for each
+  // call; would be more efficient to cache these, if time savings warrent
 
   std::vector<const conduit::Node*> leaves;
   get_leaves(&node, leaves);
 
+  const conduit::Node* metadata;
+cerr <<"XX iterating over "<<leaves.size()<<" leaves\n";
   for (const auto &leaf : leaves) {
     const std::string field_name = leaf->path();
 
-  // Assumption: the only thing we'll ever do with scalars (aka, primitive
-  // data types) is to normalize them using scale and bias; 
-  // TODO relook if needed
-  if (m_field_name_to_num_elts[field_name] == 1) {
-  cout << "SCALING: "<< field_name<<std::endl;
-    double scale = 0;
-    double bias = 0;
-
-
-    if (metadata->has_child("scale")) {
-      scale = static_cast<double>(metadata->child("scale").value());
+    if (m_metadata_nodes.find(field_name) != m_metadata_nodes.end() && print_warnings) {
+      LBANN_WARNING("failed to find metadata node for: ", field_name, "; this is not necessarily an error, but means we will not normalize or otherwise transform this datum");
     }
-    if (metadata->has_child("bias")) {
-      bias = static_cast<double>(metadata->child("bias").value());
-    }
-    vals[0] = (vals[0] * scale + bias);
-  } 
-  // Assumption: this is a 2D matrix
-  else {
-    //TODO: cache these!
-    try {
-      const conduit::float64_array &bias = metadata->child("bias").value();
-      const conduit::float64_array &scale = metadata->child("scale").value();
-      const int num_channels = metadata->child("channels").value();
-      const conduit::int64_array &dims = metadata->child("dims").value();
-      const conduit::int64_array &xdims = metadata->child("xdims").value();
-      bool hwc = false;
-      if (metadata->has_child("hwc")) {
-        hwc = true;
+    metadata = m_metadata_nodes[field_name];
+cerr << "XX got metadata!\n";
+
+    // Assumption: the only thing we'll ever do with scalars (aka, primitive
+    // data types) is to normalize them using scale and bias; 
+    // TODO relook if needed
+    if (m_field_name_to_num_elts[field_name] == 1) {
+      double scale = 0;
+      double bias = 0;
+
+      if (metadata->has_child("scale")) {
+        scale = static_cast<double>(metadata->child("scale").value());
       }
-      cout << "TEST: " << metadata->has_child("xdims") << " :: " << metadata->has_child("dims")<<endl;
+      if (metadata->has_child("bias")) {
+        bias = static_cast<double>(metadata->child("bias").value());
+      }
+
+      const std::string &dt = node[field_name].dtype().name();
+      cerr << "XX dt: " << dt << std::endl;
+
+      if (dt == "float32") {
+        float v = node[field_name].value();
+        v = (v*scale+bias);
+      } else if (dt == "float64") {
+        double v = node[field_name].value();
+        v = (v*scale+bias);
+      } else {
+      node[field_name].print();
+        LBANN_ERROR("Please contact Dave Hysom, or other developer, to add support for your data type: ", dt, " with field_name: ", field_name);
+      }
+    }
+
+    // Assumption: this is a 2D matrix
+    else {
+      //TODO: cache these values!
+      try {
+        const conduit::float64_array &bias = metadata->child("bias").value();
+        const conduit::float64_array &scale = metadata->child("scale").value();
+        const int num_channels = metadata->child("channels").value();
+        const conduit::int64_array &dims = metadata->child("dims").value();
+        const conduit::int64_array &xdims = metadata->child("xdims").value();
+        bool hwc = false;
+        if (metadata->has_child("hwc")) {
+          hwc = true;
+        }
+        cerr << "TEST: " << metadata->has_child("xdims") << " :: " << metadata->has_child("dims")<<endl;
       
-    } catch (conduit::Error const& e) {
-      LBANN_ERROR(" :: running transform pipeline on  matrix and caught conduit exception: ", e.what());
+      } catch (conduit::Error const& e) {
+        LBANN_ERROR(" :: running transform pipeline on  matrix and caught conduit exception: ", e.what());
+      }
     }
   }
-exit(9);
-#endif
-cout << "YYYYYY";
+  print_warnings = false;
 }
 
 void hdf5_data_reader::get_metadata_node_ptrs() {
@@ -507,12 +529,19 @@ void hdf5_data_reader::get_metadata_node_ptrs() {
   }
 }
 
+/*
 const std::string hdf5_data_reader::strip_sample_id(const std::string &s) {
   size_t j = s.find("/");
   if (j == std::string::npos) {
     LBANN_ERROR("failed to find '/' in string: ", s);
   }
   return s.substr(j+1);
+}
+*/
+
+void hdf5_data_reader::pack(conduit::Node &node) {
+cout << "xx  pack!\n";
+
 }
 
 } // namespace lbann
