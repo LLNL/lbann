@@ -116,6 +116,10 @@ std::unique_ptr<weights> construct_weights(
   lbann_comm* comm,
   const lbann_data::Optimizer& proto_opt,
   const lbann_data::Weights& proto_weights) {
+
+  if (!comm)
+    LBANN_ERROR("Cannot have a null communicator.");
+
   std::stringstream err;
 
   auto proto_datatype = proto_weights.datatype();
@@ -129,7 +133,7 @@ std::unique_ptr<weights> construct_weights(
 #define TEMPLATE_INSTANTIATION(TensorDataType)                                \
     do {                                                                      \
       if (proto_datatype == TypeToProtoDataType<TensorDataType>::value) {     \
-        w = make_unique<data_type_weights<TensorDataType>>(comm);             \
+        w = make_unique<data_type_weights<TensorDataType>>(*comm);            \
         init = (proto_weights.has_initializer()                               \
           ? construct_initializer<TensorDataType>(proto_weights)              \
           : nullptr);                                                         \

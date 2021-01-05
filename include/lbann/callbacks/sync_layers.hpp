@@ -65,6 +65,21 @@ class sync_layers : public callback_base {
   void on_forward_prop_end(model *m, Layer *l) override;
   void on_backward_prop_end(model *m, Layer *l) override;
 
+  /** @name Serialization */
+  ///@{
+
+  /** @brief Store state to archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar) {
+    ar(::cereal::make_nvp(
+         "BaseCallback",
+         ::cereal::base_class<callback_base>(this)),
+       CEREAL_NVP(m_sync_gpus),
+       CEREAL_NVP(m_sync_mpi),
+       CEREAL_NVP(m_only_input));
+  }
+
+  ///@}
+
  protected:
   /** Whether to synchronize GPUs. */
   bool m_sync_gpus;

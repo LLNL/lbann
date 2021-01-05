@@ -34,6 +34,7 @@
 #include <iostream>
 #include <fstream>
 #include <iterator>
+#include <utility>
 
 namespace lbann {
 
@@ -90,6 +91,57 @@ std::basic_string<T> pad(const std::basic_string<T>& s,
 }
 
 namespace file {
+#if !defined(DOXYGEN_SHOULD_SKIP_THIS)
+namespace details {
+
+template <typename BaseTypeT,
+          typename... PathRepresentationType>
+std::string join_path_impl(BaseTypeT const& base,
+                           PathRepresentationType&&... rest);
+
+// Base cases
+inline std::string const& join_path_impl(std::string const& x)
+{
+  return x;
+}
+inline std::string join_path_impl(char const* const x)
+{
+  return std::string(x);
+}
+
+// Recursive cases
+template <typename... PathRepresentationType>
+std::string join_path_impl(
+  std::string const& base,
+  PathRepresentationType&&... rest)
+{
+  return base
+    + "/"
+    + join_path_impl(std::forward<PathRepresentationType>(rest)...);
+}
+
+template <typename BaseType,
+          typename... PathRepresentationType>
+std::string join_path_impl(BaseType const& base,
+                           PathRepresentationType&&... rest)
+{
+  return std::string(base)
+    + "/"
+    + join_path_impl(std::forward<PathRepresentationType>(rest)...);
+}
+
+}// namespace details
+#endif // !defined(DOXYGEN_SHOULD_SKIP_THIS)
+
+/** @brief Concatenate all paths, injecting path separators between
+ *         each argument.
+ *  @todo Assert every
+ */
+template <typename... PathNameType>
+std::string join_path(PathNameType&&... paths)
+{
+  return details::join_path_impl(std::forward<PathNameType>(paths)...);
+}
 
 /** @brief Wrapper around @c dirname.
  *

@@ -71,34 +71,12 @@ weights::weights()
   num_weights++;
 }
 
-weights::weights(lbann_comm* comm)
+weights::weights(lbann_comm& comm)
   : weights() {
 
-  m_comm = comm;
-  if(comm == nullptr) { LBANN_ERROR("Unable to construct weights with null comm ptr"); }
+  m_comm = &comm;
 
   setup_default_matrix_distribution();
-}
-
-weights::weights(const weights& other)
-  : m_name(other.m_name),
-    m_comm(other.m_comm),
-    m_matrix_height_dims(other.m_matrix_height_dims),
-    m_matrix_width_dims(other.m_matrix_width_dims),
-    m_matrix_dist(other.m_matrix_dist),
-    m_frozen(other.m_frozen) {
-
-}
-
-weights& weights::operator=(const weights& other) {
-  m_name = other.m_name;
-  m_comm = other.m_comm;
-  m_matrix_height_dims = other.m_matrix_height_dims;
-  m_matrix_width_dims = other.m_matrix_width_dims;
-  m_matrix_dist = other.m_matrix_dist;
-  m_frozen = other.m_frozen;
-
-  return *this;
 }
 
 description weights::get_description() const {
@@ -230,4 +208,15 @@ void weights::setup() {
   do_setup_();
 }
 
+void weights::steal_values(weights& other)
+{
+  LBANN_ASSERT(this->get_values().Height() == other.get_values().Height());
+  LBANN_ASSERT(this->get_values().Width() == other.get_values().Width());
+
+  if (this->get_values().DistData() == other.get_values().DistData())
+    this->do_steal_values_(other);
+  else
+    // Copy things over.
+    this->set_values(other.get_values());
+}
 }  // namespace lbann

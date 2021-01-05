@@ -41,10 +41,9 @@ namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 gru_layer<TensorDataType, Layout, Device>::gru_layer(
-  lbann_comm* comm,
   size_t hidden_size,
   size_t num_layers)
-  : data_type_layer<TensorDataType>(comm),
+  : data_type_layer<TensorDataType>(nullptr),
     m_hidden_size{hidden_size},
     m_num_layers{num_layers} {
   this->m_expected_num_parent_layers = 2;
@@ -202,7 +201,7 @@ void gru_layer<TensorDataType, Layout, Device>
     const auto scale = El::To<TensorDataType>(1./std::sqrt(m_hidden_size));
     for (size_t i=0; i<m_num_layers; ++i) {
       for (size_t j=0; j<4; ++j) {
-        auto w = std::make_shared<data_type_weights<TensorDataType>>(this->get_comm());
+        auto w = std::make_shared<data_type_weights<TensorDataType>>(*this->get_comm());
         auto init = make_unique<uniform_initializer<TensorDataType>>(-scale, scale);
         auto opt = this->m_model->template create_optimizer<TensorDataType>();
         w->set_name(lbann::build_string(this->get_name(),"_",weight_names[j],"_l",i));
@@ -973,7 +972,7 @@ std::unique_ptr<Layer> build_gru_layer_from_pbuf(
   const size_t num_layers = (params.has_num_layers()
                              ? params.num_layers().value()
                              : 1);
-  return BuilderType::Build(comm, params.hidden_size(), num_layers);
+  return BuilderType::Build(params.hidden_size(), num_layers);
 }
 
 // ---------------------------------------------

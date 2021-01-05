@@ -54,6 +54,21 @@ public:
   top_k_categorical_accuracy_layer* copy() const override {
     return new top_k_categorical_accuracy_layer(*this);
   }
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar)
+  {
+    using DataTypeLayer = data_type_layer<TensorDataType>;
+    ar(::cereal::make_nvp("DataTypeLayer",
+                          ::cereal::base_class<DataTypeLayer>(this)),
+       CEREAL_NVP(m_k));
+  }
+
+  ///@}
+
   std::string get_type() const override { return "top-k accuracy"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
@@ -65,6 +80,11 @@ public:
   }
 
 protected:
+
+  friend class cereal::access;
+  top_k_categorical_accuracy_layer()
+    : top_k_categorical_accuracy_layer(nullptr, 1)
+  {}
 
   void setup_dims(DataReaderMetaData& dr_metadata) override {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
@@ -95,7 +115,7 @@ protected:
 private:
 
   /** Parameter for top-k search. */
-  const El::Int m_k;
+  /*const*/ El::Int m_k;
 
 };
 

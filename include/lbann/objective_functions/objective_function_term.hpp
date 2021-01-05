@@ -51,7 +51,9 @@ class objective_function_term {
 
   /** Archive for checkpoint and restart */
   template <class Archive> void serialize( Archive & ar ) {
-    ar(CEREAL_NVP(m_scale_factor));
+    ar(CEREAL_NVP(m_scale_factor),
+       CEREAL_NVP(m_layers),
+       CEREAL_NVP(m_weights));
   }
 
   /** Get the name of the objective function term. */

@@ -50,7 +50,7 @@ public:
   ///@}
 
 public:
-
+  log_softmax_layer() : log_softmax_layer(nullptr) {}
   log_softmax_layer(lbann_comm *comm)
     : data_type_layer<TensorDataType>(comm)
 #ifdef LBANN_HAS_DNN_LIB
@@ -121,6 +121,14 @@ public:
   friend void fp_compute_impl(log_softmax_layer<U, Layout, Device>& l);
   template <typename U>
   friend void bp_compute_impl(log_softmax_layer<U, Layout, Device>& l);
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar)
+  {
+    using DataTypeLayer = data_type_layer<TensorDataType>;
+    ar(::cereal::make_nvp("DataTypeLayer",
+                          ::cereal::base_class<DataTypeLayer>(this)));
+  }
 
 private:
 

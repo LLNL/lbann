@@ -45,7 +45,7 @@ enum class callback_phase {
 
 /** @brief Checkpoint at given interval in given directory */
 class checkpoint : public callback_base {
- public:
+public:
 
   /** @brief Construct the checkpoint callback
    *
@@ -69,18 +69,19 @@ class checkpoint : public callback_base {
              int checkpoint_secs,
              std::string per_rank_dir,
              int ckpt_dist_epochs,
-             int ckpt_dist_steps) :
-    callback_base(),
-    m_active_trainer(nullptr),
-    m_active_training_algorithm(nullptr),
-    m_checkpoint_dir(std::move(checkpoint_dir)),
-    m_restart_dir(std::move(restart_dir)),
-    m_checkpoint_epochs(checkpoint_epochs),
-    m_checkpoint_steps(checkpoint_steps),
-    m_checkpoint_secs(checkpoint_secs),
-    m_per_rank_dir(per_rank_dir),
-    m_ckpt_dist_epochs(ckpt_dist_epochs),
-    m_ckpt_dist_steps(ckpt_dist_steps) {}
+             int ckpt_dist_steps)
+    : callback_base(),
+      m_active_trainer(nullptr),
+      m_active_training_algorithm(nullptr),
+      m_checkpoint_dir(std::move(checkpoint_dir)),
+      m_restart_dir(std::move(restart_dir)),
+      m_checkpoint_epochs(checkpoint_epochs),
+      m_checkpoint_steps(checkpoint_steps),
+      m_checkpoint_secs(checkpoint_secs),
+      m_per_rank_dir(per_rank_dir),
+      m_ckpt_dist_epochs(ckpt_dist_epochs),
+      m_ckpt_dist_steps(ckpt_dist_steps)
+  {}
   checkpoint(const checkpoint&) = default;
   checkpoint& operator=(const checkpoint&) = default;
   checkpoint* copy() const override { return new checkpoint(*this); }
@@ -194,9 +195,25 @@ class checkpoint : public callback_base {
   bool reload_trainer(trainer *t);
   bool restart(model *m);
   std::string name() const override { return "checkpoint"; }
- protected:
+private:
   bool do_checkpoint(model *m);
- private:
+  void do_distributed_checkpoint(
+    lbann_comm& comm,
+    trainer& t,
+    model& m,
+    sgd_execution_context const& c,
+    persist& p,
+    size_t epoch,
+    size_t step);
+  void do_shared_checkpoint(
+    lbann_comm& comm,
+    trainer& t,
+    model& m,
+    sgd_execution_context const& c,
+    persist& p,
+    size_t epoch,
+    size_t step);
+private:
   trainer* m_active_trainer;
   training_algorithm* m_active_training_algorithm;
   std::string m_checkpoint_dir;

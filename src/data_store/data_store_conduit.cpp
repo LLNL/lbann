@@ -35,6 +35,7 @@
 #include "lbann/utils/distconv.hpp"
 #include "lbann/utils/file_utils.hpp"
 #include "lbann/utils/commify.hpp"
+#include "lbann/utils/serialize.hpp"
 #include <unordered_set>
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -44,12 +45,7 @@
 #include <unistd.h>
 #include <unistd.h>
 #include <sys/statvfs.h>
-#include <cereal/types/unordered_map.hpp>
-#include <cereal/archives/binary.hpp>
 
-
-#include <cereal/archives/binary.hpp>
-#include <cereal/archives/xml.hpp>
 #include <cstdlib>
 
 namespace lbann {

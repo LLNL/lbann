@@ -29,14 +29,13 @@
 #include "lbann/data_readers/data_reader.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
 #include "lbann/utils/omp_pragma.hpp"
+#include "lbann/utils/serialize.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
 #include "lbann/trainers/trainer.hpp"
 #include <omp.h>
 #include <future>
 #include "lbann/io/persist.hpp"
 #include "lbann/execution_contexts/sgd_execution_context.hpp"
-#include <cereal/archives/binary.hpp>
-#include <cereal/archives/xml.hpp>
 
 namespace lbann {
 
@@ -629,7 +628,7 @@ bool generic_data_reader::save_to_checkpoint_distributed(persist& p, execution_m
 }
 
 bool lbann::generic_data_reader::load_from_checkpoint_distributed(persist& p, execution_mode mode) {
-  read_cereal_archive<generic_data_reader>(*this, p, mode, "_dc.xml");
+  read_cereal_archive<generic_data_reader>(*this, p, mode, "_dr.xml");
   return true;
 }
 

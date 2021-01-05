@@ -27,11 +27,7 @@
 #include <lbann/data_coordinator/data_coordinator.hpp>
 #include <lbann/trainers/trainer.hpp>
 #include <lbann/utils/distconv.hpp>
-#include <cereal/types/utility.hpp>
-#include <cereal/types/unordered_map.hpp>
-#include <cereal/types/vector.hpp>
-#include <cereal/archives/binary.hpp>
-#include <cereal/archives/xml.hpp>
+#include <lbann/utils/serialize.hpp>
 
 namespace lbann {
 

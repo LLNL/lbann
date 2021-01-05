@@ -44,11 +44,31 @@ class stop_gradient_layer : public data_type_layer<TensorDataType> {
 public:
   stop_gradient_layer(lbann_comm *comm) : data_type_layer<TensorDataType>(comm) {}
   stop_gradient_layer* copy() const override { return new stop_gradient_layer(*this); }
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar)
+  {
+    using DataTypeLayer = data_type_layer<TensorDataType>;
+    ar(::cereal::make_nvp("DataTypeLayer",
+                          ::cereal::base_class<DataTypeLayer>(this)));
+  }
+
+  ///@}
+
   std::string get_type() const override { return "stop_gradient"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
 protected:
+
+  friend class cereal::access;
+  stop_gradient_layer()
+    : stop_gradient_layer(nullptr)
+  {}
+
   void setup_dims(DataReaderMetaData& dr_metadata) override {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims(this->get_input_dims());

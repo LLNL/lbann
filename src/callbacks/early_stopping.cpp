@@ -38,6 +38,10 @@ namespace callback {
 early_stopping::early_stopping(int64_t patience) :
   callback_base(), m_patience(patience) {}
 
+early_stopping::early_stopping() :
+  early_stopping(0)
+{}
+
 /// Monitor the objective function to see if the validation score
 /// continues to improve
 void early_stopping::on_validation_end(model *m) {
@@ -76,3 +80,7 @@ build_early_stopping_callback_from_pbuf(
 
 } // namespace callback
 } // namespace lbann
+
+CEREAL_REGISTER_TYPE_WITH_NAME(
+  ::lbann::callback::early_stopping,
+  "callback::early_stopping")

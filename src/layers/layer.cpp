@@ -47,7 +47,7 @@
 
 namespace lbann {
 
-Layer::Layer(lbann_comm *comm)
+Layer::Layer()
   : m_frozen(false) {
 
   // Initialize layer name
@@ -507,23 +507,6 @@ void Layer::back_prop() {
   back_prop_impl_();
   propagate_error_signals_to_parents_();
   clear_prev_error_signals_();
-}
-
-
-bool Layer::save_to_checkpoint_shared(persist& p) const {
-  return true;
-}
-
-bool Layer::load_from_checkpoint_shared(persist& p) {
-  return true;
-}
-
-bool Layer::save_to_checkpoint_distributed(persist& p) const {
-  return true;
-}
-
-bool Layer::load_from_checkpoint_distributed(persist& p) {
-  return true;
 }
 
 void Layer::write_proto(lbann_data::Layer* proto) const {

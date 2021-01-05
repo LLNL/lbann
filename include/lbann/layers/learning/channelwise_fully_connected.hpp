@@ -64,7 +64,6 @@ public:
    *                                weights matrix.
    */
   channelwise_fully_connected_layer(
-    lbann_comm* comm,
     std::vector<size_t> output_channel_dims,
     bool bias,
     bool transpose);
@@ -81,7 +80,18 @@ public:
   El::Device get_device_allocation() const override;
   description get_description() const override;
 
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
+
 protected:
+
+  friend class cereal::access;
+  channelwise_fully_connected_layer();
 
   void setup_dims(DataReaderMetaData& dr_metadata) override;
   void setup_data(size_t max_mini_batch_size) override;
@@ -100,6 +110,20 @@ private:
 
 // Builder function
 LBANN_DEFINE_LAYER_BUILDER(channelwise_fully_connected);
+
+// Template implementation
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+template <typename ArchiveT>
+void
+channelwise_fully_connected_layer<TensorDataType,Layout,Device>
+::serialize(ArchiveT& ar)
+{
+  using DataTypeLayer = data_type_layer<TensorDataType>;
+  ar(::cereal::make_nvp("DataTypeLayer",
+                        ::cereal::base_class<DataTypeLayer>(this)),
+     CEREAL_NVP(m_has_bias),
+     CEREAL_NVP(m_transpose));
+}
 
 // Explicit template instantiation
 #ifndef LBANN_CHANNELWISE_FULLY_CONNECTED_LAYER_INSTANTIATE

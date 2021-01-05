@@ -55,7 +55,25 @@ class set_weights_value : public callback_base {
 
   void on_batch_begin(model *m) override;
 
+  /** @name Serialization */
+  ///@{
+
+  /** @brief Store state to archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar) {
+    ar(::cereal::make_nvp(
+         "BaseCallback",
+         ::cereal::base_class<callback_base>(this)),
+       CEREAL_NVP(m_weights_name),
+       CEREAL_NVP(m_value),
+       CEREAL_NVP(m_step));
+  }
+
+  ///@}
+
  private:
+
+  friend class cereal::access;
+  set_weights_value();
 
   /** @brief Name of weights object. */
   std::string m_weights_name;

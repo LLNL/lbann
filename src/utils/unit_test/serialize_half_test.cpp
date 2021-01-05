@@ -3,10 +3,6 @@
 #include <lbann/base.hpp> // half stuff is here.
 #include <lbann/utils/serialize.hpp>
 
-#include <cereal/archives/binary.hpp>
-#include <cereal/archives/json.hpp>
-#include <cereal/archives/xml.hpp>
-
 #include <lbann/utils/h2_tmp.hpp>
 
 #include <sstream>
@@ -23,10 +19,6 @@ using BinaryArchiveTypes = TL<ValueType...,
                               cereal::BinaryOutputArchive,
                               cereal::BinaryInputArchive>;
 template <typename... ValueType>
-using JSONArchiveTypes = TL<ValueType...,
-                            cereal::JSONOutputArchive,
-                            cereal::JSONInputArchive>;
-template <typename... ValueType>
 using XMLArchiveTypes = TL<ValueType...,
                            cereal::XMLOutputArchive,
                            cereal::XMLInputArchive>;
@@ -38,13 +30,13 @@ using XMLArchiveTypes = TL<ValueType...,
 TEMPLATE_PRODUCT_TEST_CASE(
   "Serialization of half types",
   "[utilities][half][serialize]",
-  (BinaryArchiveTypes, JSONArchiveTypes, XMLArchiveTypes),
+  (BinaryArchiveTypes, XMLArchiveTypes),
   (lbann::cpu_fp16, lbann::fp16))
 #else
 TEMPLATE_PRODUCT_TEST_CASE(
   "Serialization of half types",
   "[utilities][half][serialize]",
-  (BinaryArchiveTypes, JSONArchiveTypes, XMLArchiveTypes),
+  (BinaryArchiveTypes, XMLArchiveTypes),
   (lbann::cpu_fp16))
 #endif
 {

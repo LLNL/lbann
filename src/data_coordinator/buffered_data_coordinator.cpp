@@ -30,14 +30,7 @@
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/profiling.hpp"
 #include "lbann/utils/distconv.hpp"
-
-#include <cereal/types/utility.hpp>
-#include <cereal/types/map.hpp>
-#include <cereal/types/unordered_map.hpp>
-#include <cereal/types/vector.hpp>
-#include <cereal/archives/binary.hpp>
-#include <cereal/archives/xml.hpp>
-//#include <cereal/types/atomic.hpp>
+#include "lbann/utils/serialize.hpp"
 
 namespace lbann {
 

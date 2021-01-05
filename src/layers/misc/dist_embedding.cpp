@@ -410,7 +410,6 @@ std::unique_ptr<Layer> build_dist_embedding_layer_from_pbuf(
   LBANN_ASSERT_MSG_HAS_FIELD(proto_layer, dist_embedding);
   const auto& params = proto_layer.dist_embedding();
   return BuilderType::Build(
-    comm,
     params.num_embeddings(),
     params.embedding_dim(),
     params.sparse_sgd(),

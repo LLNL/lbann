@@ -41,6 +41,10 @@
 namespace lbann {
 namespace callback {
 
+timeline::timeline()
+  : timeline("")
+{}
+
 void timeline::on_train_begin(model *m) {
   // Set up layers and weights.
   for (const auto& l : m->get_layers()) {
@@ -117,3 +121,7 @@ build_timeline_callback_from_pbuf(
 
 } // namespace callback
 } // namespace lbann
+
+CEREAL_REGISTER_TYPE_WITH_NAME(
+  ::lbann::callback::timeline,
+  "callback::timeline")

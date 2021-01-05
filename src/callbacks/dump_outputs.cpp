@@ -136,6 +136,10 @@ dump_outputs::dump_outputs(std::set<std::string> layer_names,
 
 }
 
+dump_outputs::dump_outputs()
+  : dump_outputs({}, {}, 0, "", "")
+{}
+
 void dump_outputs::do_dump_outputs(const model& m, const Layer& l) {
   const auto& c = static_cast<const sgd_execution_context&>(m.get_execution_context());
 
@@ -196,3 +200,7 @@ build_dump_outputs_callback_from_pbuf(
 
 } // namespace callback
 } // namespace lbann
+
+CEREAL_REGISTER_TYPE_WITH_NAME(
+  ::lbann::callback::dump_outputs,
+  "callback::dump_outputs")

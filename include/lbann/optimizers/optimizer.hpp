@@ -213,10 +213,6 @@ public:
     // Do not save the optimizer's step time
   }
 
-  virtual bool save_to_checkpoint_shared(persist& p, std::string m_name) = 0;
-  virtual bool load_from_checkpoint_shared(persist& p, std::string m_name) = 0;
-  virtual bool save_to_checkpoint_distributed(persist& p, std::string m_name) = 0;
-  virtual bool load_from_checkpoint_distributed(persist& p, std::string m_name) = 0;
   ///@}
 
 protected:

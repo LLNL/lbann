@@ -62,7 +62,26 @@ class dump_weights : public callback_base {
   std::string name() const override { return "dump weights"; }
   void set_target_dir(const std::string& dir) { m_directory = dir; }
   const std::string& get_target_dir() { return m_directory; }
+
+  /** @name Serialization */
+  ///@{
+
+  /** @brief Store state to archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar) {
+    ar(::cereal::make_nvp(
+         "BaseCallback",
+         ::cereal::base_class<callback_base>(this)),
+       CEREAL_NVP(m_directory),
+       CEREAL_NVP(m_epoch_interval));
+  }
+
+  ///@}
+
  private:
+
+  friend class cereal::access;
+  dump_weights();
+
   /** Basename for writing files. */
   std::string m_directory;
   /** Interval at which to dump weights */

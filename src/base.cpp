@@ -62,6 +62,12 @@
 #include <vector>
 
 namespace lbann {
+namespace {
+lbann_comm* world_comm_ = nullptr;
+}// namespace <anon>
+namespace utils {
+lbann_comm& get_current_comm() noexcept { return *world_comm_; }
+}// namespace utils
 
 MPI_Errhandler err_handle;
 
@@ -72,6 +78,7 @@ world_comm_ptr initialize(int& argc, char**& argv) {
   // Create a new comm object.
   // Initial creation with every process in one model.
   auto comm = world_comm_ptr{new lbann_comm(0), &lbann::finalize };
+  world_comm_ = comm.get();
 
   // Install MPI error handler
   MPI_Comm_create_errhandler(lbann_mpi_err_handler, &err_handle);

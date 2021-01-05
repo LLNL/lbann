@@ -28,7 +28,8 @@
 #define LBANN_SGD_EXECUTION_CONTEXT_HPP
 
 #include "lbann/execution_contexts/execution_context.hpp"
-#include <cereal/types/base_class.hpp>
+#include "lbann/utils/serialize.hpp"
+
 namespace lbann {
 
 class sgd_termination_criteria : public termination_criteria {

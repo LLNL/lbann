@@ -58,11 +58,29 @@ public:
   channelwise_softmax_layer& operator=(const channelwise_softmax_layer& other) = default;
   channelwise_softmax_layer* copy() const override;
 
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar)
+  {
+    using DataTypeLayer = data_type_layer<TensorDataType>;
+    ar(::cereal::make_nvp("DataTypeLayer",
+                          ::cereal::base_class<DataTypeLayer>(this)));
+  }
+
+  ///@}
+
   std::string get_type() const override;
   data_layout get_data_layout() const override;
   El::Device get_device_allocation() const override;
 
 protected:
+
+  friend class cereal::access;
+  channelwise_softmax_layer()
+    : channelwise_softmax_layer(nullptr)
+  {}
 
   void setup_dims(DataReaderMetaData& dr_metadata) override;
 

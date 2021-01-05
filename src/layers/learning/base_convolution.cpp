@@ -50,7 +50,6 @@ namespace lbann {
 
 template <typename TensorDataType, El::Device Device>
 base_convolution_layer<TensorDataType,Device>::base_convolution_layer(
-  lbann_comm* comm,
   int num_data_dims,
   int output_channels,
   std::vector<int> conv_dims,
@@ -59,7 +58,7 @@ base_convolution_layer<TensorDataType,Device>::base_convolution_layer(
   std::vector<int> dilations,
   int groups,
   bool has_bias)
-  : data_type_layer<TensorDataType>(comm),
+  : data_type_layer<TensorDataType>(nullptr),
   m_output_channels(output_channels),
   m_conv_dims(std::move(conv_dims)),
   m_pads(std::move(pads)),
@@ -321,7 +320,7 @@ base_convolution_layer<TensorDataType,Device>
     this->set_num_weights(1);
   }
   if (!this->has_weights(0)) {
-    auto w = std::make_shared<WeightsType>(this->get_comm());
+    auto w = std::make_shared<WeightsType>(*this->get_comm());
     auto init = make_unique<he_initializer<TensorDataType>>(probability_distribution::gaussian);
     auto opt = this->m_model->template create_optimizer<TensorDataType>();
 
@@ -349,7 +348,7 @@ base_convolution_layer<TensorDataType,Device>
   // Set up bias if needed.
   if (m_bias_scaling_factor != El::TypeTraits<ScalingType>::Zero()) {
     if (!this->has_weights(1)) {
-      auto w = std::make_shared<WeightsType>(this->get_comm());
+      auto w = std::make_shared<WeightsType>(*this->get_comm());
       auto opt = this->m_model->template create_optimizer<TensorDataType>();
       w->set_name(this->get_name() + "_bias");
       w->set_optimizer(std::move(opt));

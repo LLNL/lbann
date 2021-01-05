@@ -69,7 +69,25 @@ class dump_minibatch_sample_indices : public callback_base {
   void dump_to_file(model *m, Layer *l, int64_t step);
 
   std::string name() const override { return "dump minibatch sample indices"; }
+
+  /** @name Serialization */
+  ///@{
+
+  /** @brief Store state to archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar) {
+    ar(::cereal::make_nvp(
+         "BaseCallback",
+         ::cereal::base_class<callback_base>(this)),
+       CEREAL_NVP(m_basename));
+  }
+
+  ///@}
+
  private:
+
+  friend class cereal::access;
+  dump_minibatch_sample_indices();
+
   /** Basename for writing files. */
   std::string m_basename;
 };

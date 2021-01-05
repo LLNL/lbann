@@ -60,6 +60,24 @@ public:
 
 protected:
   abstract_evaluation_layer(lbann_comm *comm);
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar)
+  {
+    using DataTypeLayer = data_type_layer<TensorDataType>;
+    ar(::cereal::make_nvp("DataTypeLayer",
+                          ::cereal::base_class<DataTypeLayer>(this)));
+  }
+
+  ///@}
+
+  friend class cereal::access;
+  abstract_evaluation_layer()
+    : abstract_evaluation_layer(nullptr)
+  {}
+
   void setup_dims(DataReaderMetaData& dr_metadata) override;
   void setup_data(size_t max_mini_batch_size) override;
   void fp_compute() override;
@@ -93,9 +111,31 @@ class evaluation_layer : public abstract_evaluation_layer<TensorDataType> {
 public:
   evaluation_layer(lbann_comm *comm) : abstract_evaluation_layer<TensorDataType>(comm) {}
   evaluation_layer* copy() const override { return new evaluation_layer(*this); }
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar)
+  {
+    using AbstractEvaluationLayer = abstract_evaluation_layer<TensorDataType>;
+    ar(::cereal::make_nvp("AbstractEvaluationLayer",
+                          ::cereal::base_class<AbstractEvaluationLayer>(this)));
+  }
+
+  ///@}
+
   std::string get_type() const override { return "evaluation"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
+
+protected:
+  friend class cereal::access;
+  evaluation_layer()
+    : evaluation_layer(nullptr)
+  {}
+
+
 };
 
 LBANN_DEFINE_LAYER_BUILDER(evaluation);

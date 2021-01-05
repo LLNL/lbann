@@ -85,7 +85,24 @@ public:
 
   /** Archive for checkpoint and restart */
   template <class Archive> void serialize(Archive & ar) {
-    ar(CEREAL_NVP(*m_objective_function));
+    ar(
+      //CEREAL_NVP(m_execution_context),
+      CEREAL_NVP(m_name),
+      //CEREAL_NVP(m_comm),
+      CEREAL_NVP(m_layers),
+      CEREAL_NVP(m_weights),
+      //CEREAL_NVP(m_default_optimizer_msg),
+      CEREAL_NVP(m_objective_function),
+      CEREAL_NVP(m_metrics),
+      //CEREAL_NVP(m_callbacks),
+      CEREAL_NVP(m_background_io_allowed)
+      //CEREAL_NVP(m_model_is_setup)
+#ifdef LBANN_HAS_DISTCONV
+      , CEREAL_NVP(m_max_mini_batch_size_distconv)
+#endif // LBANN_HAS_DISTCONV
+      );
+
+    ar.serializeDeferments();
   }
 
   // ===========================================
@@ -261,13 +278,6 @@ public:
 
   virtual bool save_to_checkpoint_distributed(persist& p);
   virtual bool load_from_checkpoint_distributed(persist& p);
-
-  /** @brief Save the model's weight to file */
-  virtual bool save_weights(persist& p);
-
-  /** @brief Reload the model's weights from a file */
-  virtual bool reload_weights(const std::string latest,
-                              const std::vector<std::string>& weight_list);
 
   /** @brief Saves the model explicitly if the save_model callback is present */
   virtual bool save_model();

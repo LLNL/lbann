@@ -34,6 +34,7 @@
 #include "lbann/models/model.hpp"
 #include "lbann/utils/description.hpp"
 #include "lbann/utils/memory.hpp"
+#include "lbann/utils/serialize.hpp"
 #include "lbann/utils/summary.hpp"
 #include "lbann/execution_contexts/sgd_execution_context.hpp"
 
@@ -184,6 +185,15 @@ public:
 
   /** @brief Human-readable description. */
   virtual description get_description() const;
+
+  ///@}
+  /** @name Serialization */
+  ///@{
+
+  /** @brief Store state to archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar) {
+    ar(CEREAL_NVP(m_batch_interval));
+  }
 
   ///@}
 

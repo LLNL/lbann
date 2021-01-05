@@ -108,56 +108,6 @@ void adagrad<TensorDataType>::step_compute_cpu(AbsDistMatrixType& values,
 
 }
 
-// =============================================
-// Checkpointing
-// =============================================
-
-template <typename TensorDataType>
-bool adagrad<TensorDataType>::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
-  if (this->get_comm().am_trainer_master()) {
-    write_cereal_archive(*this, p, "adagrad.xml");
-  }
-
-  char l_name[512];
-  sprintf(l_name, "%s_optimizer_cache_%lldx%lld", name_prefix.c_str(), m_cache->Height(), m_cache->Width());
-  p.write_distmat(persist_type::train, l_name, m_cache.get());
-
-  return true;
-}
-
-template <typename TensorDataType>
-bool adagrad<TensorDataType>::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
-  load_from_shared_cereal_archive(*this, p, this->get_comm(), "adagrad.xml");
-
-  char l_name[512];
-  sprintf(l_name, "%s_optimizer_cache_%lldx%lld.bin", name_prefix.c_str(), m_cache->Height(), m_cache->Width());
-  p.read_distmat(persist_type::train, l_name, m_cache.get());
-
-  return true;
-}
-
-template <typename TensorDataType>
-bool adagrad<TensorDataType>::save_to_checkpoint_distributed(persist& p, std::string name_prefix) {
-  write_cereal_archive(*this, p, "adagrad.xml");
-
-  char l_name[512];
-  sprintf(l_name, "%s_optimizer_cache_%lldx%lld", name_prefix.c_str(), m_cache->Height(), m_cache->Width());
-  p.write_rank_distmat(persist_type::train, l_name, *m_cache);
-
-  return true;
-}
-
-template <typename TensorDataType>
-bool adagrad<TensorDataType>::load_from_checkpoint_distributed(persist& p, std::string name_prefix) {
-  read_cereal_archive(*this, p, "adagrad.xml");
-
-  char l_name[512];
-  sprintf(l_name, "%s_optimizer_cache_%lldx%lld", name_prefix.c_str(), m_cache->Height(), m_cache->Width());
-  p.read_rank_distmat(persist_type::train, l_name, *m_cache);
-
-  return true;
-}
-
 template <typename TensorDataType>
 std::unique_ptr<optimizer>
 build_adagrad_optimizer_from_pbuf(
@@ -179,3 +129,10 @@ build_adagrad_optimizer_from_pbuf(
 #include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann
+
+#undef PROTO
+#define PROTO(T)                                                \
+  CEREAL_REGISTER_TYPE_WITH_NAME(lbann::adagrad<T>, "adagrad(" #T ")")
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"

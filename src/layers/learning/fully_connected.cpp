@@ -39,12 +39,11 @@ namespace lbann {
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 fully_connected_layer<TensorDataType, T_layout, Dev>::fully_connected_layer(
-  lbann_comm *comm,
   int output_size,
   bool transpose,
   WeightsType* weight,
   bool has_bias)
-  : data_type_layer<TensorDataType>(comm),
+  : data_type_layer<TensorDataType>(nullptr),
   m_bias_gradient(nullptr),
   m_transpose(transpose) {
 
@@ -56,6 +55,11 @@ fully_connected_layer<TensorDataType, T_layout, Dev>::fully_connected_layer(
                            ? El::TypeTraits<TensorDataType>::One()
                            : El::TypeTraits<TensorDataType>::Zero());
 }
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+fully_connected_layer<TensorDataType, T_layout, Dev>::fully_connected_layer()
+  : fully_connected_layer(0, false, nullptr, false)
+{}
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 fully_connected_layer<TensorDataType, T_layout, Dev>::fully_connected_layer(
@@ -143,7 +147,7 @@ void fully_connected_layer<TensorDataType, T_layout, Dev>
     this->set_num_weights(1);
   }
   if (!this->has_weights(0)) {
-    auto w = std::make_shared<WeightsType>(this->get_comm());
+    auto w = std::make_shared<WeightsType>(*this->get_comm());
     auto init = make_unique<he_initializer<TensorDataType>>(probability_distribution::gaussian);
     auto opt = this->m_model->template create_optimizer<TensorDataType>();
     w->set_name(this->get_name() + "_linearity_weights");
@@ -177,7 +181,7 @@ void fully_connected_layer<TensorDataType, T_layout, Dev>
   // Set up bias if needed.
   if (m_bias_scaling_factor != El::TypeTraits<TensorDataType>::Zero()) {
     if (!this->has_weights(1)) {
-      auto w = std::make_shared<WeightsType>(this->get_comm());
+      auto w = std::make_shared<WeightsType>(*this->get_comm());
       auto opt = this->m_model->template create_optimizer<TensorDataType>();
       w->set_name(this->get_name() + "_bias_weights");
       w->set_optimizer(std::move(opt));
@@ -642,7 +646,6 @@ std::unique_ptr<Layer> build_fully_connected_layer_from_pbuf(
   using LayerType = fully_connected_layer<TensorDataType, layout, device>;
   const auto& params = layer_msg.fully_connected();
   return lbann::make_unique<LayerType>(
-    comm,
     params.num_neurons(),
     params.transpose(),
     nullptr,

@@ -28,6 +28,7 @@
 #define LBANN_CALLBACKS_CALLBACK_CHECK_METRIC_HPP_INCLUDED
 
 #include "lbann/callbacks/callback.hpp"
+#include <cereal/types/set.hpp>
 #include <set>
 
 namespace lbann {
@@ -53,7 +54,27 @@ public:
   void on_validation_end(model* m) override { do_check_metric(*m); }
   void on_test_end(model* m) override       { do_check_metric(*m); }
 
+  /** @name Serialization */
+  ///@{
+
+  /** @brief Store state to archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar) {
+    ar(::cereal::make_nvp(
+         "BaseCallback",
+         ::cereal::base_class<callback_base>(this)),
+       CEREAL_NVP(m_metric_name),
+       CEREAL_NVP(m_modes),
+       CEREAL_NVP(m_lower_bound),
+       CEREAL_NVP(m_upper_bound),
+       CEREAL_NVP(m_error_on_failure));
+  }
+
+  ///@}
+
 private:
+
+  friend class cereal::access;
+  check_metric();
 
   /** Metric name. */
   std::string m_metric_name;

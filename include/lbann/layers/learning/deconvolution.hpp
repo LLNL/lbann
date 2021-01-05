@@ -63,8 +63,7 @@ private:
 
 public:
 
-  deconvolution_layer(lbann_comm *comm,
-                      int num_data_dims,
+  deconvolution_layer(int num_data_dims,
                       int num_output_channels,
                       int conv_dim,
                       int pad,
@@ -73,8 +72,7 @@ public:
                       int groups,
                       bool has_bias = true);
 
-  deconvolution_layer(lbann_comm *comm,
-                      int num_data_dims,
+  deconvolution_layer(int num_data_dims,
                       int num_output_channels,
                       std::vector<int> conv_dims,
                       std::vector<int> pads,
@@ -95,7 +93,23 @@ public:
 
   void setup_dims(DataReaderMetaData& dr_metadata) override;
 
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar)
+  {
+    using BaseConvolutionLayer = base_convolution_layer<TensorDataType, Device>;
+    ar(::cereal::make_nvp("BaseConvolutionLayer",
+                          ::cereal::base_class<BaseConvolutionLayer>(this)));
+  }
+
+  ///@}
+
 protected:
+
+  friend class cereal::access;
+  deconvolution_layer();
 
   std::vector<int> get_kernel_dims() const override;
   void fp_compute() override;

@@ -25,10 +25,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/execution_contexts/sgd_execution_context.hpp"
-#include <cereal/types/base_class.hpp>
-#include <cereal/types/polymorphic.hpp>
-#include <cereal/archives/binary.hpp>
-#include <cereal/archives/xml.hpp>
 
 namespace lbann {
 

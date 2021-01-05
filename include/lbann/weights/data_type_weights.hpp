@@ -30,6 +30,7 @@
 #include "lbann/weights/weights.hpp"
 #include "lbann/weights/initializer.hpp"
 #include "lbann/optimizers/data_type_optimizer.hpp"
+#include "lbann/utils/serialize.hpp"
 
 namespace lbann_data {
 class WeightsData;
@@ -79,7 +80,7 @@ public:
   ///@}
 
 public:
-  data_type_weights(lbann_comm* comm);
+  data_type_weights(lbann_comm& comm);
   data_type_weights(const data_type_weights& other);
   data_type_weights& operator=(const data_type_weights& other);
   virtual ~data_type_weights() = default;
@@ -125,6 +126,7 @@ public:
   AbsDistMatrixType& get_values() override;
   /** Get the weight matrix. */
   const AbsDistMatrixType& get_values() const override;
+  using weights::set_values;
   /** Set the weight matrix. */
   void set_values(const AbsDistMatrixType& values);
 
@@ -146,24 +148,54 @@ public:
    */
   void reconcile_values(Al::request& req) override;
 
-  // -----------------------------------------------
-  // Checkpointing
-  // -----------------------------------------------
-  bool save_to_checkpoint_shared(persist& p) override;
-  bool load_from_checkpoint_shared(persist& p) override;
   bool load_from_save(std::string const& ckpt_dir, std::vector<std::string> const& weight_list, El::FileFormat el_mode);
   bool load_from_save(std::string const& ckpt_dir, std::vector<std::string> const& weight_list) override;
-  bool save_to_checkpoint_distributed(persist& p) override;
-  bool load_from_checkpoint_distributed(persist& p) override;
 
   /** Write weights to proto file */
   void write_proto(lbann_data::WeightsData* proto) const override;
 
+  /** @name Serialization */
+  ///@{
+
+  /** @brief Serialize the weights object to the archive.
+   *  @tparam ArchiveT (Inferred.) The archive type.
+   *  @param ar[in,out] The archive to which to write or from which to
+   *                    read.
+   */
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar)
+#if !defined(__CUDACC__)
+  {
+    ar(cereal::base_class<weights>(this),
+       CEREAL_NVP(m_values),
+       CEREAL_NVP(m_optimizer));
+    if constexpr (utils::IsInputArchive<ArchiveT>)
+    {
+      if (m_optimizer)
+        m_optimizer->setup_base(this);
+    }
+  }
+#else
+  ;
+#endif
+
+  ///@}
+
 private:
+  friend cereal::access;
+  data_type_weights()
+#ifndef __CUDACC__
+    : data_type_weights(utils::get_current_comm()) {}
+#else
+  ;
+#endif
+
   void do_augment_description_(description&) const override;
   void do_setup_() override;
   void do_set_dims_(std::vector<int> const& matrix_height_dims,
                     std::vector<int> const& matrix_width_dims) override;
+  void do_move_values_(data_type_weights& other);
+  void do_steal_values_(weights& other) override;
 private:
 
   /** Weight matrix. */
