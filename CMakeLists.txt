@@ -396,11 +396,8 @@ if (LBANN_WITH_TBINF)
 endif ()
 
 # Find Python
-# Note: This uses the Python module in cmake/modules, not the module
-# that comes included with CMake. See the file for a discussion of the
-# differences.
 if (LBANN_WITH_PYTHON)
-  find_package(Python REQUIRED)
+  find_package(Python REQUIRED COMPONENTS Interpreter Development)
   set(LBANN_HAS_PYTHON "${Python_FOUND}")
   if (NOT Python_VERSION_MAJOR EQUAL 3)
     set(LBANN_HAS_PYTHON FALSE)
