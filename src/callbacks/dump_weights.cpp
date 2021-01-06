@@ -45,14 +45,14 @@ dump_weights::dump_weights()
 {}
 
 void dump_weights::on_train_begin(model *m) {
-  do_dump_weights(*m, "initial");
+  do_dump_weights(*m, visitor_hook::train_begin, "initial");
 }
 
 void dump_weights::on_epoch_end(model *m) {
-  do_dump_weights(*m);
+  do_dump_weights(*m, visitor_hook::epoch_end);
 }
 
-void dump_weights::do_dump_weights(const model& m, std::string s) {
+void dump_weights::do_dump_weights(const model& m, visitor_hook hook, std::string s) {
   const auto& c = static_cast<const sgd_execution_context&>(m.get_execution_context());
 
   if(c.get_epoch() % m_epoch_interval != 0)  return;
@@ -62,7 +62,7 @@ void dump_weights::do_dump_weights(const model& m, std::string s) {
   std::string epochdir = El::BuildString(get_shared_checkpoint_dirname(t.get_name(),
                                                                        c.get_training_algorithm().get_name(),
                                                                        m_directory.c_str(),
-                                                                       c.get_execution_mode(),
+                                                                       hook,
                                                                        c.get_epoch(),
                                                                        c.get_step()),
 
@@ -81,7 +81,7 @@ void dump_weights::do_dump_weights(const model& m, std::string s) {
     auto latest_file = get_last_shared_checkpoint_filename(t.get_name(),
                                                            c.get_training_algorithm().get_name(),
                                                            m_directory.c_str());
-    write_latest(latest_file, c.get_execution_mode(), c.get_epoch(), c.get_step());
+    write_latest(latest_file, hook, c.get_epoch(), c.get_step());
   }
 
 }

@@ -40,6 +40,7 @@ set_full_path(THIS_DIR_HEADERS
   trainer_file_utils.hpp
   type_erased_matrix.hpp
   typename.hpp
+  visitor_hooks.hpp
   )
 
 if (LBANN_HAS_HALF)
