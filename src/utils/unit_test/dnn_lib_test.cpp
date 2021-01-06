@@ -38,50 +38,6 @@
 
 using namespace lbann;
 
-TEMPLATE_TEST_CASE("Computing softmax layers", "[dnn_lib]", float)
-{
-  // Parmeters describing tensor sizes
-  int N = 128, labels_n = 10;
-
-  // Scaling parameters
-  const dnn_lib::ScalingParamType<TestType> alpha = 1.;
-  const dnn_lib::ScalingParamType<TestType> beta = 0.;
-
-  // Input/Output tensors and descriptors
-  dnn_lib::TensorDescriptor xDesc;
-  xDesc.set(dnn_lib::get_data_type<TestType>(), { N, labels_n, 1 });
-  El::Matrix<TestType, El::Device::GPU> x(labels_n, N);
-  dnn_lib::TensorDescriptor dxDesc;
-  dxDesc.set(dnn_lib::get_data_type<TestType>(), { N, labels_n, 1 });
-  El::Matrix<TestType, El::Device::GPU> dx(labels_n, N);
-  dnn_lib::TensorDescriptor yDesc;
-  yDesc.set(dnn_lib::get_data_type<TestType>(), { N, labels_n, 1 });
-  El::Matrix<TestType, El::Device::GPU> y(labels_n, N);
-  dnn_lib::TensorDescriptor dyDesc;
-  dyDesc.set(dnn_lib::get_data_type<TestType>(), { N, labels_n, 1 });
-  El::Matrix<TestType, El::Device::GPU> dy(labels_n, N);
-
-  SECTION("softmax forward")
-  {
-    REQUIRE_NOTHROW(
-      dnn_lib::softmax_forward(alpha, xDesc, x,
-                               beta, yDesc, y,
-                               softmax_mode::CHANNEL,
-                               softmax_alg::ACCURATE));
-  }
-  SECTION("softmax backward")
-  {
-    REQUIRE_NOTHROW(
-      dnn_lib::softmax_backward(alpha,
-                                yDesc, y,
-                                dyDesc, dy,
-                                beta,
-                                dxDesc, dx,
-                                softmax_mode::CHANNEL,
-                                softmax_alg::ACCURATE));
-  }
-}
-
 TEMPLATE_TEST_CASE("Tensor operations", "[dnn_lib]", float)
 {
   int N = 64, c = 4, h = 128, w = 128;
@@ -361,5 +317,49 @@ TEMPLATE_TEST_CASE("Computing pooling layers", "[dnn_lib]", float)
                                 beta,
                                 dxDesc, dx,
                                 workSpace));
+  }
+}
+
+TEMPLATE_TEST_CASE("Computing softmax layers", "[dnn_lib]", float)
+{
+  // Parmeters describing tensor sizes
+  int N = 128, labels_n = 10;
+
+  // Scaling parameters
+  const dnn_lib::ScalingParamType<TestType> alpha = 1.;
+  const dnn_lib::ScalingParamType<TestType> beta = 0.;
+
+  // Input/Output tensors and descriptors
+  dnn_lib::TensorDescriptor xDesc;
+  xDesc.set(dnn_lib::get_data_type<TestType>(), { N, labels_n, 1 });
+  El::Matrix<TestType, El::Device::GPU> x(labels_n, N);
+  dnn_lib::TensorDescriptor dxDesc;
+  dxDesc.set(dnn_lib::get_data_type<TestType>(), { N, labels_n, 1 });
+  El::Matrix<TestType, El::Device::GPU> dx(labels_n, N);
+  dnn_lib::TensorDescriptor yDesc;
+  yDesc.set(dnn_lib::get_data_type<TestType>(), { N, labels_n, 1 });
+  El::Matrix<TestType, El::Device::GPU> y(labels_n, N);
+  dnn_lib::TensorDescriptor dyDesc;
+  dyDesc.set(dnn_lib::get_data_type<TestType>(), { N, labels_n, 1 });
+  El::Matrix<TestType, El::Device::GPU> dy(labels_n, N);
+
+  SECTION("softmax forward")
+  {
+    REQUIRE_NOTHROW(
+      dnn_lib::softmax_forward(alpha, xDesc, x,
+                               beta, yDesc, y,
+                               softmax_mode::CHANNEL,
+                               softmax_alg::ACCURATE));
+  }
+  SECTION("softmax backward")
+  {
+    REQUIRE_NOTHROW(
+      dnn_lib::softmax_backward(alpha,
+                                yDesc, y,
+                                dyDesc, dy,
+                                beta,
+                                dxDesc, dx,
+                                softmax_mode::CHANNEL,
+                                softmax_alg::ACCURATE));
   }
 }
