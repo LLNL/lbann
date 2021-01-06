@@ -89,7 +89,11 @@ def construct_model(lbann):
     ]
     callbacks = [
         lbann.CallbackPrint(),
-        lbann.CallbackLTFB(batch_interval=1, metric='random'),
+        lbann.CallbackLTFB(
+            batch_interval=1,
+            metric='random',
+            communication_algorithm='checkpoint_file',
+        ),
     ]
 
     # Construct model
