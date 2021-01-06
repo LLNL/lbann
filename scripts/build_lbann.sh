@@ -18,10 +18,11 @@ INSTALL_DEPS=
 DRY_RUN=
 # Flag for passing subcommands to spack dev-build
 DEV_BUILD_FLAGS=
+# Flag for passing subcommands to spack install and dev-build
+INSTALL_DEV_BUILD_EXTRAS=
 
 LBANN_LABEL="local"
 LBANN_VARIANTS=
-DEV_BUILD_EXTRAS=
 
 # Default versions of Hydrogen, DiHydrogen, and Aluminum - use head of repo
 HYDROGEN_VER="@develop"
@@ -152,7 +153,7 @@ while :; do
             DIHYDROGEN_VER=
             ;;
         --test)
-            DEV_BUILD_EXTRAS="--test root"
+            INSTALL_DEV_BUILD_EXTRAS="--test root"
             ;;
         --hydrogen-repo)
             if [ -n "${2}" ]; then
@@ -309,7 +310,7 @@ if [[ ! -n "${SKIP_MODULES:-}" ]]; then
 fi
 
 if [[ -n "${INSTALL_DEPS:-}" ]]; then
-    if [[ $(spack env list | grep ${LBANN_ENV}) ]]; then
+    if [[ $(spack env list | grep -e "${LBANN_ENV}$") ]]; then
         echo "Spack environment ${LBANN_ENV} already exists... overwriting it"
         CMD="spack env rm --yes-to-all ${LBANN_ENV}"
         echo ${CMD} | tee -a ${LOG}
@@ -324,7 +325,7 @@ fi
 CMD="spack env activate -p ${LBANN_ENV}"
 echo ${CMD} | tee -a ${LOG}
 if [[ -z "${DRY_RUN:-}" ]]; then
-    if [[ -z $(spack env list | grep ${LBANN_ENV}) ]]; then
+    if [[ -z $(spack env list | grep -e "${LBANN_ENV}$") ]]; then
         echo "Spack could not activate environment ${LBANN_ENV} -- install dependencies with -d flag"
         exit 1
     fi
@@ -399,7 +400,7 @@ if [[ -n "${ALUMINUM_PATH:-}" ]]; then
 fi
 ##########################################################################################
 
-CMD="spack install --only dependencies ${LBANN_SPEC}"
+CMD="spack install --only dependencies ${INSTALL_DEV_BUILD_EXTRAS} ${LBANN_SPEC}"
 [[ -n "${INSTALL_DEPS:-}" ]] && echo ${CMD} | tee -a ${LOG}
 if [[ -z "${DRY_RUN:-}" && -n "${INSTALL_DEPS:-}" ]]; then
     eval ${CMD}
@@ -422,7 +423,7 @@ CMD="mkdir -p ${BUILD_DIR}"
 echo ${CMD}
 [[ -z "${DRY_RUN:-}" ]] && ${CMD}
 
-CMD="spack dev-build ${DEV_BUILD_EXTRAS} --source-path ${LBANN_HOME} ${DEV_BUILD_FLAGS} ${LBANN_SPEC}"
+CMD="spack dev-build --source-path ${LBANN_HOME} ${DEV_BUILD_FLAGS} ${INSTALL_DEV_BUILD_EXTRAS} ${LBANN_SPEC}"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && ${CMD}
 
