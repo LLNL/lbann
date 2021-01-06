@@ -129,15 +129,6 @@ TensorDescriptor::TensorDescriptor(const TensorDescriptor& other) {
   if (other.desc_) {
     miopenDataType_t data_type;
     int num_dims;
-    // TODO: can this first call be removed?
-    /*
-    CHECK_MIOPEN(
-      miopenGetTensorDescriptor(
-        other.desc_,
-        &data_type,
-        nullptr,    // dimA
-        nullptr));  // strideA
-        */
     CHECK_MIOPEN(
       miopenGetTensorDescriptorSize(
         other.desc_,
@@ -340,26 +331,19 @@ void FilterDescriptor::set(
   const std::vector<int>& dims) {
   create();
   int nbDims = dims.size();
-  //std::vector<int> local_dims = dims;
-  int local_dims[nbDims];
-  std::copy(dims.begin(), dims.end(), local_dims);
-  //int strideA[nbDims - 1];
-  //for (int k = nbDims - 1; k >= 0; k--) {
-  //  strideA[k] =
-  //    (k != nbDims - 1) ? strideA[k + 1] * local_dims.data()[k + 1] : 1;
-  //}
+  std::vector<int> local_dims = dims;
   int strideDimA[nbDims];
   for (int k = nbDims - 1; k >= 0; k--) {
     strideDimA[k] =
-      (k != nbDims - 1) ? strideDimA[k + 1] * local_dims[k + 1] : 1;
+      (k != nbDims - 1) ? strideDimA[k + 1] * local_dims.data()[k + 1] : 1;
   }
   CHECK_MIOPEN(
     miopenSetTensorDescriptor(
       desc_,
       data_type,
       nbDims,
-      const_cast<int *>(local_dims),
-      const_cast<int *>(strideDimA)));
+      local_dims.data(),
+      strideDimA));
 }
 
 // -----------------------------
