@@ -446,11 +446,15 @@ echo "LBANN is installed in a spack environment named ${LBANN_ENV}, access it vi
 echo "  spack env activate -p ${LBANN_ENV}" | tee -a ${LOG}
 echo "To rebuild LBANN from source drop into a shell with the spack build environment setup:" | tee -a ${LOG}
 echo "  spack build-env ${LBANN_SPEC} -- bash" | tee -a ${LOG}
+echo "  cd spack-build-${LBANN_HASH}" | tee -a ${LOG}
+echo "  ninja install" | tee -a ${LOG}
 echo "To use this version of LBANN have spack load it's module:is installed in a spack environment named ${LBANN_ENV}, access it via:" | tee -a ${LOG}
 echo "  spack load lbann@${LBANN_LABEL} arch=${SPACK_ARCH}" | tee -a ${LOG}
 echo "##########################################################################################" | tee -a ${LOG}
-echo "Alternatively, you can get the script to drop you into a shell in the build environment" | tee -a ${LOG}
+echo "Alternatively, for rebuilding, the script can drop create a shell in the build environment" | tee -a ${LOG}
 echo "  ${BASH_SOURCE} --build-env-only bash -e ${LBANN_ENV} -- ${CMD_LINE_VARIANTS}" | tee -a ${LOG}
+echo "  cd spack-build-${LBANN_HASH}" | tee -a ${LOG}
+echo "  ninja install" | tee -a ${LOG}
 echo "##########################################################################################" | tee -a ${LOG}
 echo "All details of the run are logged to ${LOG}"
 echo "##########################################################################################"
