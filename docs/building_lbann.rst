@@ -120,9 +120,6 @@ environment with the remaining dependencies, and then invoke the LBANN
 CMake infrastructure to build LBANN from the local source. The
 provided script will build with a standard compiler for a given
 platform and the nominal options in the CMake build environment.
-Expert developers should refer to :ref:`the "Superbuild" documentation
-<building-with-the-superbuild>` for a list and descriptions of all
-CMake flags known to LBANN's "Superbuild" build system.
 
 1.  Install all of the external packages via Spack (Aluminum,
     Hydrogen, etc).
@@ -178,11 +175,6 @@ CMake flags known to LBANN's "Superbuild" build system.
         ml use <path to installation of lbann executable>/etc/modulefiles
         ml load lbann-0.99.0
 
-
-    For advanced users, :ref:`the LBANN superbuild system
-    <building-with-the-superbuild>` provides additional control over
-    the dependencies, especially Aluminum and Hydrogen.
-
 4.  After the initial setup of the LBANN CMake environment, you can
     rebuild by activating the Spack environment and then re-running
     ninja.
@@ -207,7 +199,6 @@ Advanced build methods
 
    build_osx
    build_with_cmake
-   build_with_superbuild
    build_containers
    build_llnl_idiosyncracies
    build_spack_extra_config
