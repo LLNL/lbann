@@ -1,6 +1,5 @@
 model {
   name: "ae_model"
-  shareable_training_data_reader:false
   serialize_io: true
   data_layout: "data_parallel"
   mini_batch_size: 128

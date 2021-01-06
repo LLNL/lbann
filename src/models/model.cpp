@@ -1094,6 +1094,7 @@ void model::do_model_forward_prop_begin_cbs(execution_mode mode) {
       }
       break;
     case execution_mode::validation:
+    case execution_mode::tournament:
     case execution_mode::testing:
       cb->on_evaluate_forward_prop_begin(this);
       break;
@@ -1112,6 +1113,7 @@ void model::do_model_forward_prop_end_cbs(execution_mode mode) {
       }
       break;
     case execution_mode::validation:
+    case execution_mode::tournament:
     case execution_mode::testing:
       cb->on_evaluate_forward_prop_end(this);
       break;
@@ -1133,6 +1135,7 @@ void model::do_layer_forward_prop_begin_cbs(execution_mode mode, Layer *l) {
       }
       break;
     case execution_mode::validation:
+    case execution_mode::tournament:
     case execution_mode::testing:
       cb->on_evaluate_forward_prop_begin(this, l);
       break;
@@ -1154,6 +1157,7 @@ void model::do_layer_forward_prop_end_cbs(execution_mode mode, Layer *l) {
       }
       break;
     case execution_mode::validation:
+    case execution_mode::tournament:
     case execution_mode::testing:
       cb->on_evaluate_forward_prop_end(this, l);
       break;

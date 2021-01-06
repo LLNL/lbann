@@ -100,6 +100,9 @@ void timer::timing_end(model& m) {
   case execution_mode::validation:
     mode_string = "validation";
     break;
+  case execution_mode::tournament:
+    mode_string = "tournament";
+    break;
   case execution_mode::testing:
     mode_string = "test";
     break;

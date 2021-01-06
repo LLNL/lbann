@@ -172,6 +172,7 @@ void sgd_training_algorithm::evaluate(sgd_execution_context& c,
   // Return early if execution mode is invalid
   if (!dc.is_execution_mode_valid(mode)) return;
   if (mode != execution_mode::validation
+      && mode != execution_mode::tournament
       && mode != execution_mode::testing) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
@@ -233,6 +234,8 @@ void sgd_training_algorithm::do_evaluate_begin_cbs(model& model, execution_mode 
     switch (mode) {
     case execution_mode::validation:
       cb->on_validation_begin(&model); break;
+    case execution_mode::tournament:
+      cb->on_validation_begin(&model); break;
     case execution_mode::testing:
       cb->on_test_begin(&model); break;
     default:
@@ -245,6 +248,8 @@ void sgd_training_algorithm::do_evaluate_end_cbs(model& model, execution_mode mo
   for (const auto& cb : model.get_callbacks()) {
     switch (mode) {
     case execution_mode::validation:
+      cb->on_validation_end(&model); break;
+    case execution_mode::tournament:
       cb->on_validation_end(&model); break;
     case execution_mode::testing:
       cb->on_test_end(&model); break;
@@ -277,6 +282,7 @@ void sgd_training_algorithm::do_batch_begin_cbs(model& model, execution_mode mod
       }
       break;
     case execution_mode::validation:
+    case execution_mode::tournament:
     case execution_mode::testing:
       cb->on_batch_evaluate_begin(&model);
       break;
@@ -297,6 +303,7 @@ void sgd_training_algorithm::do_batch_end_cbs(model& model, execution_mode mode)
       }
       break;
     case execution_mode::validation:
+    case execution_mode::tournament:
     case execution_mode::testing:
       cb->on_batch_evaluate_end(&model);
       break;
