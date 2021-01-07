@@ -45,7 +45,7 @@ dump_weights::dump_weights()
 {}
 
 void dump_weights::on_train_begin(model *m) {
-  do_dump_weights(*m, visitor_hook::train_begin, "initial");
+  do_dump_weights(*m, visitor_hook::execution_mode_begin, "initial");
 }
 
 void dump_weights::on_epoch_end(model *m) {
@@ -63,6 +63,7 @@ void dump_weights::do_dump_weights(const model& m, visitor_hook hook, std::strin
                                                                        c.get_training_algorithm().get_name(),
                                                                        m_directory.c_str(),
                                                                        hook,
+                                                                       c.get_execution_mode(),
                                                                        c.get_epoch(),
                                                                        c.get_step()),
 
@@ -81,7 +82,7 @@ void dump_weights::do_dump_weights(const model& m, visitor_hook hook, std::strin
     auto latest_file = get_last_shared_checkpoint_filename(t.get_name(),
                                                            c.get_training_algorithm().get_name(),
                                                            m_directory.c_str());
-    write_latest(latest_file, hook, c.get_epoch(), c.get_step());
+    write_latest(latest_file, hook, c.get_execution_mode(), c.get_epoch(), c.get_step());
   }
 
 }

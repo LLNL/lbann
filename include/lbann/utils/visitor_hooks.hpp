@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////xecu
+////////////////////////////////////////////////////////////////////////////////
 // Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
@@ -27,6 +27,7 @@
 #ifndef LBANN_VISITOR_HOOKS_HPP_INCLUDED
 #define LBANN_VISITOR_HOOKS_HPP_INCLUDED
 
+#include "lbann/base.hpp"
 #include "lbann/utils/enum_iterator.hpp"
 
 #include <iostream>
@@ -37,36 +38,31 @@ namespace lbann {
 /// Neural network execution mode
 enum class visitor_hook{setup_begin,
     setup_end,
-    train_begin,
-    train_end,
     phase_end,
     epoch_begin,
     epoch_end,
-    batch_begin,
-    batch_end,
-    test_begin,
-    test_end,
-    validation_begin,
-    validation_end,
-    forward_prop_begin,
-    forward_prop_end,
-    backward_prop_begin,
-    backward_prop_end,
     optimize_begin,
     optimize_end,
-    batch_evaluate_begin,
-    batch_evaluate_end,
-    evaluate_forward_prop_begin,
-    evaluate_forward_prop_end,
+
+    /// Special visitor hooks that execute in conjunction with the execution mode
+    execution_mode_begin,
+    execution_mode_end,
+    execution_mode_batch_begin,
+    execution_mode_batch_end,
+    execution_mode_forward_prop_begin,
+    execution_mode_forward_prop_end,
+    execution_mode_backward_prop_begin,
+    execution_mode_backward_prop_end,
     invalid};
 
 
-//enum class execution_mode {training, validation, testing, prediction, invalid};
+bool is_execution_mode_hook(visitor_hook hook);
 std::string to_string(visitor_hook hook);
-//using visitor_hook_iterator = enum_iterator<visitor_hook, visitor_hook::setup_begin, visitor_hook::invalid>;
+std::string to_string(visitor_hook hook, execution_mode mode);
+using visitor_hook_iterator = enum_iterator<visitor_hook, visitor_hook::setup_begin, visitor_hook::invalid>;
 
 /** @brief Convert a string to an execution_mode. */
-visitor_hook visitor_hook_from_string(std::string const& str);
+void visitor_hook_from_string(std::string const& str, visitor_hook& hook, execution_mode& mode);
 /** @brief Extract an execution_mode from a stream. */
 std::istream& operator>>(std::istream& os, visitor_hook& e);
 

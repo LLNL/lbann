@@ -62,7 +62,7 @@ void checkpoint::on_train_end(model *m) {
   auto& p = get_active_trainer().get_persist_obj();
   p.set_cb_type(callback_type::full_checkpoint);
   if(need_checkpoint(m, callback_phase::epoch)){
-    do_checkpoint(m, visitor_hook::train_end);
+    do_checkpoint(m, visitor_hook::execution_mode_end);
   }
   p.set_cb_type(callback_type::invalid);
 }
@@ -81,7 +81,7 @@ void checkpoint::on_validation_begin(model *m) {
   auto& p = get_active_trainer().get_persist_obj();
   p.set_cb_type(callback_type::full_checkpoint);
   if(need_checkpoint(m, callback_phase::validation)){
-    do_checkpoint(m, visitor_hook::validation_begin);
+    do_checkpoint(m, visitor_hook::execution_mode_begin);
   }
   p.set_cb_type(callback_type::invalid);
 }
@@ -90,7 +90,7 @@ void checkpoint::on_batch_begin(model *m) {
   auto& p = get_active_trainer().get_persist_obj();
   p.set_cb_type(callback_type::full_checkpoint);
   if(need_checkpoint(m, callback_phase::batch)){
-    do_checkpoint(m, visitor_hook::batch_begin);
+    do_checkpoint(m, visitor_hook::execution_mode_batch_begin);
   }
   p.set_cb_type(callback_type::invalid);
 }
@@ -150,7 +150,7 @@ bool checkpoint::need_checkpoint(model *m, callback_phase phase) {
 }
 
 // Checkpoint Shared/Distributed
-  bool checkpoint::do_checkpoint(model *m, visitor_hook hook) {
+bool checkpoint::do_checkpoint(model *m, visitor_hook hook) {
   auto& p = get_active_trainer().get_persist_obj();
   auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
   auto& t = get_active_trainer();
@@ -179,7 +179,7 @@ bool checkpoint::need_checkpoint(model *m, callback_phase phase) {
     timer.Start();
     std::cout << "[" << m->get_name()
               << "." << comm->get_trainer_rank()
-              << "] Checkpoint [" << to_string(hook)
+              << "] Checkpoint [" << (is_execution_mode_hook(hook) ? to_string(hook, c.get_execution_mode()) : to_string(hook))
               << "] to " << get_checkpoint_dir()
               << " : epoch " << epoch << " step " << step << " ..." << std::endl;
     fflush(stdout);
@@ -195,6 +195,7 @@ bool checkpoint::need_checkpoint(model *m, callback_phase phase) {
       t,  /* trainer */
       *m, /* model   */
       hook,  /* visitor hook */
+      c.get_execution_mode(),  /* mode */
       p,  /* persist */
       epoch,
       step);
@@ -207,6 +208,7 @@ bool checkpoint::need_checkpoint(model *m, callback_phase phase) {
       t,  /* trainer */
       *m, /* model   */
       hook,  /* visitor hook */
+      c.get_execution_mode(),  /* mode */
       p,  /* persist */
       epoch,
       step);
@@ -222,7 +224,7 @@ bool checkpoint::need_checkpoint(model *m, callback_phase phase) {
     }
     std::cout << "[" << m->get_name()
               << "." << comm->get_trainer_rank()
-              << "] Checkpoint [" << to_string(hook)
+              << "] Checkpoint [" << (is_execution_mode_hook(hook) ? to_string(hook, c.get_execution_mode()) : to_string(hook))
               << "] to " << get_checkpoint_dir()
               << " complete: Epoch=" << epoch
               << " Step=" << step
@@ -240,6 +242,7 @@ std::string checkpoint::find_latest_checkpoint(lbann_comm& comm,
                                                const std::string& trainer_name,
                                                const std::string& alg_name,
                                                visitor_hook& hook,
+                                               execution_mode& mode,
                                                size_t &epoch,
                                                size_t& step,
                                                bool& shared) {
@@ -254,12 +257,12 @@ std::string checkpoint::find_latest_checkpoint(lbann_comm& comm,
     if(m_per_rank_dir.length()){
       dir = get_distributed_checkpoint_rootdir();
       latest_file = get_last_distributed_checkpoint_filename(trainer_name, alg_name, dir);
-      read_latest(latest_file, &hook, &epoch_dist, &step_dist);
+      read_latest(latest_file, &hook, &mode, &epoch_dist, &step_dist);
     }
     if(get_restart_dir().length()){
       dir = get_shared_checkpoint_rootdir();
       latest_file = get_last_shared_checkpoint_filename(trainer_name, alg_name, dir);
-      read_latest(latest_file, &hook, &epoch, &step);
+      read_latest(latest_file, &hook, &mode, &epoch, &step);
     }
 
     if(epoch > epoch_dist){
@@ -285,6 +288,7 @@ std::string checkpoint::find_latest_checkpoint(lbann_comm& comm,
 
   if (comm.am_trainer_master()) {
     header.hook = hook;
+    header.mode = mode;
     header.epoch = epoch;
     header.step = step;
     header.shared = shared;
@@ -295,6 +299,7 @@ std::string checkpoint::find_latest_checkpoint(lbann_comm& comm,
 
   if (!comm.am_trainer_master()) {
     hook = header.hook;
+    mode = header.mode;
     epoch = header.epoch;
     step = header.step;
     shared = header.shared;
@@ -324,11 +329,12 @@ bool checkpoint::open_latest_checkpoint(
   size_t step = std::numeric_limits<size_t>::max();
   bool shared = true;
   visitor_hook hook;
+  execution_mode mode;
 
   std::string dir = find_latest_checkpoint(comm,
                                            trainer_name,
                                            alg_name,
-                                           hook, epoch, step, shared);
+                                           hook, mode, epoch, step, shared);
 
   // if we couldn't find the latest epoch, just return
   if (epoch == std::numeric_limits<size_t>::max()) {
@@ -339,7 +345,9 @@ bool checkpoint::open_latest_checkpoint(
   // let user know we're restarting from a checkpoint
   if (comm.am_trainer_master()) {
     timer.Start();
-    std::cout << task_label << " from " << get_restart_dir() << " : hook " << to_string(hook) << " epoch " << epoch << " step " << step << " ..." << std::endl;
+    std::cout << task_label << " from " << get_restart_dir() << " : hook "
+              << (is_execution_mode_hook(hook) ? to_string(hook, mode) : to_string(hook))
+              << " epoch " << epoch << " step " << step << " ..." << std::endl;
   }
 
   std::string epochdir;
@@ -348,7 +356,7 @@ bool checkpoint::open_latest_checkpoint(
     epochdir = get_distributed_checkpoint_dirname(trainer_name,
                                                   alg_name,
                                                   comm.get_rank_in_trainer(),
-                                                  dir, hook, epoch, step);
+                                                  dir, hook, mode, epoch, step);
     if(!file::directory_exists(epochdir)) {
       LBANN_WARNING(epochdir + " does not exist");
       return false;
@@ -361,7 +369,7 @@ bool checkpoint::open_latest_checkpoint(
   else {
     epochdir = get_shared_checkpoint_dirname(trainer_name,
                                              alg_name,
-                                             dir, hook, epoch, step);
+                                             dir, hook, mode, epoch, step);
 
     if(!file::directory_exists(epochdir)) {
       LBANN_WARNING(epochdir + " does not exist");
@@ -452,6 +460,7 @@ void checkpoint::do_distributed_checkpoint(
   trainer& t,
   model& m,
   visitor_hook hook,
+  execution_mode mode,
   persist& p,
   size_t epoch,
   size_t step)
@@ -483,6 +492,7 @@ void checkpoint::do_distributed_checkpoint(
     comm.get_rank_in_trainer(),
     dir,
     hook,
+    mode,
     epoch,
     step);
 
@@ -518,6 +528,7 @@ void checkpoint::do_distributed_checkpoint(
     write_latest(
       latest_file,
       hook,
+      mode,
       epoch,
       step);
   }
@@ -528,6 +539,7 @@ void checkpoint::do_shared_checkpoint(
   trainer& t,
   model& m,
   visitor_hook hook,
+  execution_mode mode,
   persist& p,
   size_t epoch,
   size_t step)
@@ -543,6 +555,7 @@ void checkpoint::do_shared_checkpoint(
     this->get_active_training_algorithm().get_name(),
     dir,
     hook,
+    mode,
     epoch,
     step);
   p.open_checkpoint(epochdir.c_str(), comm.am_trainer_master());
@@ -567,7 +580,7 @@ void checkpoint::do_shared_checkpoint(
       t.get_name(),
       this->get_active_training_algorithm().get_name(),
       dir);
-    write_latest(latest_file, hook, epoch, step);
+    write_latest(latest_file, hook, mode, epoch, step);
   }
 }
 

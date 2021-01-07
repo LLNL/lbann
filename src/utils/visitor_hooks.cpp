@@ -29,119 +29,166 @@
 
 namespace lbann {
 
+bool is_execution_mode_hook(visitor_hook hook) {
+  switch(hook) {
+  case visitor_hook::setup_begin:
+  case visitor_hook::setup_end:
+  case visitor_hook::phase_end:
+  case visitor_hook::epoch_begin:
+  case visitor_hook::epoch_end:
+  case visitor_hook::optimize_begin:
+  case visitor_hook::optimize_end:
+  case visitor_hook::invalid:
+    return false;
+  case visitor_hook::execution_mode_begin:
+  case visitor_hook::execution_mode_end:
+  case visitor_hook::execution_mode_batch_begin:
+  case visitor_hook::execution_mode_batch_end:
+  case visitor_hook::execution_mode_forward_prop_begin:
+  case visitor_hook::execution_mode_forward_prop_end:
+  case visitor_hook::execution_mode_backward_prop_begin:
+  case visitor_hook::execution_mode_backward_prop_end:
+    return true;
+  default:
+    LBANN_ERROR("Invalid visitor hook specified");
+  }
+}
+
 std::string to_string(visitor_hook hook) {
   switch(hook) {
   case visitor_hook::setup_begin:
     return "setup_begin";
   case visitor_hook::setup_end:
     return "setup_end";
-  case visitor_hook::train_begin:
-    return "train_begin";
-  case visitor_hook::train_end:
-    return "train_end";
   case visitor_hook::phase_end:
     return "phase_end";
   case visitor_hook::epoch_begin:
     return "epoch_begin";
   case visitor_hook::epoch_end:
     return "epoch_end";
-  case visitor_hook::batch_begin:
-    return "batch_begin";
-  case visitor_hook::batch_end:
-    return "batch_end";
-  case visitor_hook::test_begin:
-    return "test_begin";
-  case visitor_hook::test_end:
-    return "test_end";
-  case visitor_hook::validation_begin:
-    return "validation_begin";
-  case visitor_hook::validation_end:
-    return "validation_end";
-  case visitor_hook::forward_prop_begin:
-    return "forward_prop_begin";
-  case visitor_hook::forward_prop_end:
-    return "forward_prop_end";
-  case visitor_hook::backward_prop_begin:
-    return "backward_prop_begin";
-  case visitor_hook::backward_prop_end:
-    return "backward_prop_end";
   case visitor_hook::optimize_begin:
     return "optimize_begin";
   case visitor_hook::optimize_end:
     return "optimize_end";
-  case visitor_hook::batch_evaluate_begin:
-    return "batch_evaluate_begin";
-  case visitor_hook::batch_evaluate_end:
-    return "batch_evaluate_end";
-  case visitor_hook::evaluate_forward_prop_begin:
-    return "evaluate_forward_prop_begin";
-  case visitor_hook::evaluate_forward_prop_end:
-    return "evaluate_forward_prop_end";
   case visitor_hook::invalid:
     return "invalid";
+  case visitor_hook::execution_mode_begin:
+  case visitor_hook::execution_mode_end:
+  case visitor_hook::execution_mode_batch_begin:
+  case visitor_hook::execution_mode_batch_end:
+  case visitor_hook::execution_mode_forward_prop_begin:
+  case visitor_hook::execution_mode_forward_prop_end:
+  case visitor_hook::execution_mode_backward_prop_begin:
+  case visitor_hook::execution_mode_backward_prop_end:
+    LBANN_ERROR("visitor_hook is execution_mode specific");
   default:
-      LBANN_ERROR("Invalid visitor hook specified");
+    LBANN_ERROR("Invalid visitor hook specified");
   }
 }
 
-visitor_hook visitor_hook_from_string(std::string const& str) {
+std::string to_string(visitor_hook hook, execution_mode mode) {
+  switch(hook) {
+  case visitor_hook::execution_mode_begin:
+    return to_string(mode) + "_begin";
+  case visitor_hook::execution_mode_end:
+    return to_string(mode) + "_end";
+  case visitor_hook::execution_mode_batch_begin:
+    return to_string(mode) + "_batch_begin";
+  case visitor_hook::execution_mode_batch_end:
+    return to_string(mode) + "_batch_end";
+  case visitor_hook::execution_mode_forward_prop_begin:
+    return to_string(mode) + "_forward_prop_begin";
+  case visitor_hook::execution_mode_forward_prop_end:
+    return to_string(mode) + "_forward_prop_end";
+  case visitor_hook::execution_mode_backward_prop_begin:
+    return to_string(mode) + "_backward_prop_begin";
+  case visitor_hook::execution_mode_backward_prop_end:
+    return to_string(mode) + "_backward_prop_end";
+  case visitor_hook::setup_begin:
+  case visitor_hook::setup_end:
+  case visitor_hook::epoch_begin:
+  case visitor_hook::epoch_end:
+  case visitor_hook::phase_end:
+  case visitor_hook::optimize_begin:
+  case visitor_hook::optimize_end:
+  case visitor_hook::invalid:
+    LBANN_ERROR("visitor_hook is not execution_mode specific");
+  default:
+    LBANN_ERROR("Invalid visitor hook specified");
+  }
+}
+
+void visitor_hook_from_string(std::string const& str, visitor_hook& hook, execution_mode& mode) {
+  mode = execution_mode::invalid;
+
   if(str == "setup_begin") {
-    return visitor_hook::setup_begin;
+    hook = visitor_hook::setup_begin;
+    return;
   }else if(str == "setup_end") {
-    return visitor_hook::setup_end;
-  }else if(str == "train_begin") {
-    return visitor_hook::train_begin;
-  }else if(str == "train_end") {
-    return visitor_hook::train_end;
+    hook = visitor_hook::setup_end;
+    return;
   }else if(str == "phase_end") {
-    return visitor_hook::phase_end;
+    hook = visitor_hook::phase_end;
+    return;
   }else if(str == "epoch_begin") {
-    return visitor_hook::epoch_begin;
+    hook = visitor_hook::epoch_begin;
+    return;
   }else if(str == "epoch_end") {
-    return  visitor_hook::epoch_end;
-  }else if(str == "batch_begin") {
-    return visitor_hook::batch_begin;
-  }else if(str == "batch_end") {
-    return visitor_hook::batch_end;
-  }else if(str == "test_begin") {
-    return  visitor_hook::test_begin;
-  }else if(str == "test_end") {
-    return visitor_hook::test_end;
-  }else if(str == "validation_begin") {
-    return visitor_hook::validation_begin;
-  }else if(str == "validation_end") {
-    return visitor_hook::validation_end;
-  }else if(str == "forward_prop_begin") {
-    return visitor_hook::forward_prop_begin;
-  }else if(str == "forward_prop_end") {
-    return visitor_hook::forward_prop_end;
-  }else if(str == "backward_prop_begin") {
-    return visitor_hook::backward_prop_begin;
-  }else if(str == "backward_prop_end") {
-    return visitor_hook::backward_prop_end;
+    hook =  visitor_hook::epoch_end;
+    return;
   }else if(str == "optimize_begin") {
-    return visitor_hook::optimize_begin;
+    hook = visitor_hook::optimize_begin;
+    return;
   }else if(str == "optimize_end") {
-    return visitor_hook::optimize_end;
-  }else if(str == "batch_evaluate_begin") {
-    return visitor_hook::batch_evaluate_begin;
-  }else if(str == "batch_evaluate_end") {
-    return visitor_hook::batch_evaluate_end;
-  }else if(str == "evaluate_forward_prop_begin") {
-    return visitor_hook::evaluate_forward_prop_begin;
-  }else if(str == "evaluate_forward_prop_end") {
-    return visitor_hook::evaluate_forward_prop_end;
+    hook = visitor_hook::optimize_end;
+    return;
   }else if(str == "invalid") {
-    return visitor_hook::invalid;
-  } else {
+    hook = visitor_hook::invalid;
+    return;
+  }else {
+    std::string delimiter = "_";
+    size_t pos = str.find(delimiter);
+    if(pos != std::string::npos) {
+      std::string mode_token = str.substr(0, pos);
+      mode = exec_mode_from_string(mode_token);
+      std::string visitor_token = str.substr(pos, str.length());
+      if(visitor_token == "_batch_begin") {
+        hook = visitor_hook::execution_mode_batch_begin;
+        return;
+      }else if(visitor_token == "_batch_end") {
+        hook = visitor_hook::execution_mode_batch_end;
+        return;
+      }else if(visitor_token == "_forward_prop_begin") {
+        hook = visitor_hook::execution_mode_forward_prop_begin;
+        return;
+      }else if(visitor_token == "_forward_prop_end") {
+        hook = visitor_hook::execution_mode_forward_prop_end;
+        return;
+      }else if(visitor_token == "_backward_prop_begin") {
+        hook = visitor_hook::execution_mode_backward_prop_begin;
+        return;
+      }else if(visitor_token == "_backward_prop_end") {
+        hook = visitor_hook::execution_mode_backward_prop_end;
+        return;
+      }else if(visitor_token == "_begin") { // Needs to be last to avoid substrings
+        hook = visitor_hook::execution_mode_begin;
+        return;
+      }else if(visitor_token == "_end") { // Needs to be last to avoid substrings
+        hook = visitor_hook::execution_mode_end;
+        return;
+      }
+      LBANN_ERROR("\"" + str + "\" is not a valid visitor hook.");
+    }
     LBANN_ERROR("\"" + str + "\" is not a valid visitor hook.");
   }
+  return;
 }
 
 std::istream& operator>>(std::istream& is, visitor_hook& hook) {
   std::string tmp;
   is >> tmp;
-  hook = visitor_hook_from_string(tmp);
+  execution_mode mode;
+  visitor_hook_from_string(tmp, hook, mode);
   return is;
 }
 
