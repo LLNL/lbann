@@ -132,7 +132,7 @@ model::model(const model& other) :
 model& model::operator=(const model& other) {
 
   // Delete objects
-  if (m_execution_context  != nullptr) { delete m_execution_context; } /// @todo BVE FIXME what do we do with smart pointers here
+  // if (m_execution_context  != nullptr) { delete m_execution_context; } /// @todo BVE FIXME what do we do with smart pointers here
 
   // Shallow copies
   m_comm = other.m_comm;
@@ -450,6 +450,22 @@ void model::copy_trained_weights_from(std::vector<weights*>& new_weights) {
    }
 }
 
+void model::swap_layers(model& other) {
+  std::swap(m_layers, other.m_layers);
+}
+
+void model::swap_weights(model& other) {
+  std::swap(m_weights, other.m_weights);
+}
+
+void model::swap_metrics(model& other) {
+  std::swap(m_metrics, other.m_metrics);
+}
+
+void model::swap_objective_function(model& other) {
+  std::swap(m_objective_function, other.m_objective_function);
+}
+
 void model::reorder_layers(const std::vector<El::Int>& gather_indices) {
   std::stringstream err;
 
@@ -546,10 +562,10 @@ void model::remap_pointers(
 // Setup
 // =============================================
 
-void model::setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata) {
+void model::setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata, bool force) {
 
   // Bail out if the model is already setup
-  if(m_model_is_setup) { return; }
+  if(m_model_is_setup && !force) { return; }
 
   for (const auto& cb : m_callbacks) {
     if (dynamic_cast<callback::checkpoint const*>(cb.get()))
