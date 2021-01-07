@@ -88,23 +88,11 @@ may simply use
 In this case, it is not even necessary to clone the LBANN repository
 from Github; Spack will handle this in its installation.
 
-For users that are new to spack, LBANN provides a script that will do
-some basic configuration and then install LBANN using the Spack
-environment method:
-
-.. code-block:: bash
-
-   <path lbann repo>/scripts/install_lbann.sh -e lbann
-   spack env activate -p lbann
-
-Options exist in the script to disable the GPUs and change the
-name of the Spack environment. These can be viewed by passing the
-:code:`-h` option to the script.
-
-.. note:: Currently this script will clone a second LBANN repository
-          that Spack will use to build the LBANN library and
-          executables. We are working on simplifying this further.
-
+Please note that when getting LBANN to build as a user will encounter
+some issues with the Spack legacy concretizer.  It will require
+getting just the "right" invocation and we are working on making it
+smoother.  For the time being, it may be easier to use the developer
+build instructions.
 
 .. _build_lbann_from_source:
 
@@ -160,7 +148,7 @@ CMake flags known to LBANN's "Superbuild" build system.
 
     .. code-block:: console
 
-        <path to lbann repo>/scripts/build_lbann.sh --build-env-only -- +dihydrogen +cuda +half
+        <path to lbann repo>/scripts/build_lbann.sh --build-env-only bash -- +dihydrogen +cuda +half
         cd <path to lbann repo>/spack-build-<hash>
         ninja install
 
@@ -171,6 +159,14 @@ documentation for building LBANN directly with CMake
 ------------------------------
 Advanced build methods
 ------------------------------
+
+If you want to build LBANN with local versions of Hydrogen,
+DiHydrogen, or Aluminum, you can instruct the script and spack to
+build from local repositories:
+
+    .. code-block:: console
+
+        <path to lbann repo>/scripts/build_lbann.sh --hydrogen-repo <path>/Hydrogen.git --aluminum-repo <path>/Aluminum.git --dihydrogen-repo <path>/DiHydrogen.git  -- +dihydrogen
 
 .. toctree::
    :maxdepth: 1
