@@ -309,6 +309,7 @@ inline bool read_latest(std::string filename, visitor_hook *hook, execution_mode
   // assume we don't have a file, we'll return -1 in that case
   *epochLast = -1;
   *trainLast = -1;
+  *mode = execution_mode::invalid;
   *hook = visitor_hook::invalid;
   // open the file for reading
   int fd = openread(filename.c_str());
