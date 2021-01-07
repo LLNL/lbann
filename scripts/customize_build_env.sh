@@ -157,16 +157,20 @@ set_center_specific_externals()
     local spack_arch_target="$2"
     local yaml="$3"
 
+    # Point compilers that don't have a fortran compiler a default one
+    sed -i.bak -e 's/\(f[c7]7*:\)$/\1 \/usr\/bin\/gfortran/g' ${yaml}
+    echo "Updating Clang compiler's to see the gfortran compiler."
+
     if [[ ${center} = "llnl_lc" ]]; then
         case ${spack_arch_target} in
             *)
-		echo "No center-specified externals."
+                echo "No center-specified externals."
                 ;;
         esac
     elif [[ ${center} = "olcf" ]]; then
         case ${spack_arch_target} in
             *)
-		echo "No center-specified externals."
+                echo "No center-specified externals."
                 ;;
         esac
     elif [[ ${center} = "nersc" ]]; then
@@ -183,12 +187,10 @@ cat <<EOF  >> ${yaml}
 EOF
                 ;;
             *)
-		echo "No center-specified externals."
+                echo "No center-specified externals."
                 ;;
         esac
     else
-	echo "No center-specified externals."
+        echo "No center-specified externals."
     fi
 }
-
-
