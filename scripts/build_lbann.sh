@@ -16,6 +16,7 @@ SCRIPT=$(basename ${BASH_SOURCE})
 LBANN_ENV=
 INSTALL_DEPS=
 DRY_RUN=
+CLEAN_BUILD=
 # Flag for passing subcommands to spack dev-build
 DEV_BUILD_FLAGS=
 # Flag for passing subcommands to spack install and dev-build
@@ -52,14 +53,16 @@ Options:
   ${C}--help${N}                  Display this help message and exit.
   ${C}--build-env-only SHELL${N}  Drop into a shell with all of the spack build environment setup
   ${C}--build-suffix SUFFIX${N}   Appends the string to the sym link pointing to the build directory
+  ${C}--clean-build${N}           Delete the local link to the build directory
   ${C}--config-only${N}           Run the spack dev-build command up to the configure stage only
-  ${C}-d | --install-deps${N}    Install the lbann dependencies in addition to building from local source
-  ${C}--dependencies-only${N}    Stop after installing the lbann dependencies
+  ${C}-d | --install-deps${N}     Install the lbann dependencies in addition to building from local source
+  ${C}--dependencies-only${N}     Stop after installing the lbann dependencies
   ${C}--drop-in SHELL${N}         Drop into a shell with all of the spack build environment setup after setting up the dev-build
   ${C}--dry-run${N}               Dry run the commands (no effect)
   ${C}-e | --env ENV${N}          Build and install LBANN in the spack environment provided
   ${C}-l | --label${N}            LBANN local version label.
   ${C}--no-modules${N}            Don't try to load any modules (use the existing users environment)
+  ${C}--no-tmp-build-dir${N}      Don't put the build directory in tmp space
   ${C}--spec-only${N}             Stop after a spack spec command
   ${C}-s | --stable${N}           Use the latest stable defaults not the head of Hydrogen, DiHydrogen and Aluminum repos
   ${C}--test PATH${N}             Enable local unit tests
@@ -99,6 +102,9 @@ while :; do
                 echo "\"${1}\" option requires a non-empty option argument" >&2
                 exit 1
             fi
+            ;;
+        --clean-build)
+            CLEAN_BUILD="TRUE"
             ;;
         --config-only)
             DEV_BUILD_FLAGS+=" -u cmake"
@@ -143,6 +149,10 @@ while :; do
             ;;
         --no-modules)
             SKIP_MODULES="TRUE"
+            ;;
+        --no-tmp-build-dir)
+            CLEAN_BUILD="TRUE"
+            NO_TMP_BUILD_DIR="TRUE"
             ;;
         --spec-only)
             SPEC_ONLY="TRUE"
@@ -378,7 +388,7 @@ if [[ -z "${DRY_RUN:-}" ]]; then
     fi
 fi
 # Currently unused, but here is how to get the spack hash before dev-build is called
-# LBANN_SPEC_HASH=$(spack spec -l ${LBANN_DEV_PATH_SPEC} | grep lbann | grep arch=${SPACK_ARCH} | awk '{print $1}')
+LBANN_SPEC_HASH=$(spack spec -l ${LBANN_DEV_PATH_SPEC} | grep lbann | grep arch=${SPACK_ARCH} | awk '{print $1}')
 [[ -z "${DRY_RUN:-}" && "${SPEC_ONLY}" == "TRUE" ]] && exit
 
 ##########################################################################################
@@ -420,10 +430,31 @@ fi
 LINK_DIR="${LINK_DIR:-${CORE_BUILD_PATH}}"
 
 BUILD_DIR=$(dirname ${LINK_DIR})
+if [[ ! -d "${BUILD_DIR}" ]]; then
+    CMD="mkdir -p ${BUILD_DIR}"
+    echo ${CMD}
+    [[ -z "${DRY_RUN:-}" ]] && ${CMD}
+fi
 
-CMD="mkdir -p ${BUILD_DIR}"
-echo ${CMD}
-[[ -z "${DRY_RUN:-}" ]] && ${CMD}
+# Check to see if the link to the build directory exists and is valid
+SPACK_BUILD_DIR="spack-build-${LBANN_SPEC_HASH}"
+if [[ -L "${SPACK_BUILD_DIR}" ]]; then
+  # If the link is not valid or are told to clean it, remove the link
+  if [[ ! -d "${SPACK_BUILD_DIR}" || ! -z "${CLEAN_BUILD}" ]]; then
+      CMD="rm ${SPACK_BUILD_DIR}"
+      echo ${CMD}
+      [[ -z "${DRY_RUN:-}" ]] && ${CMD}
+  fi
+fi
+
+# If the spack build directory does not exist, create a tmp directory and link it
+if [[ ! -L "${SPACK_BUILD_DIR}" && -z "${NO_TMP_BUILD_DIR}" && -z "${DRY_RUN:-}" ]]; then
+    tmp_dir=$(mktemp -d -t lbann-spack-build-${LBANN_SPEC_HASH}-$(date +%Y-%m-%d-%H%M%S)-XXXXXXXXXX)
+    echo ${tmp_dir}
+    CMD="ln -s ${tmp_dir} spack-build-${LBANN_SPEC_HASH}"
+    echo ${CMD}
+    [[ -z "${DRY_RUN:-}" ]] && ${CMD}
+fi
 
 CMD="spack dev-build --source-path ${LBANN_HOME} ${DEV_BUILD_FLAGS} ${INSTALL_DEV_BUILD_EXTRAS} ${LBANN_SPEC}"
 echo ${CMD} | tee -a ${LOG}
@@ -446,14 +477,14 @@ echo "LBANN is installed in a spack environment named ${LBANN_ENV}, access it vi
 echo "  spack env activate -p ${LBANN_ENV}" | tee -a ${LOG}
 echo "To rebuild LBANN from source drop into a shell with the spack build environment setup:" | tee -a ${LOG}
 echo "  spack build-env ${LBANN_SPEC} -- bash" | tee -a ${LOG}
-echo "  cd spack-build-${LBANN_HASH}" | tee -a ${LOG}
+echo "  cd spack-build-${LBANN_SPEC_HASH}" | tee -a ${LOG}
 echo "  ninja install" | tee -a ${LOG}
 echo "To use this version of LBANN have spack load it's module:is installed in a spack environment named ${LBANN_ENV}, access it via:" | tee -a ${LOG}
 echo "  spack load lbann@${LBANN_LABEL} arch=${SPACK_ARCH}" | tee -a ${LOG}
 echo "##########################################################################################" | tee -a ${LOG}
 echo "Alternatively, for rebuilding, the script can drop create a shell in the build environment" | tee -a ${LOG}
 echo "  ${BASH_SOURCE} --build-env-only bash -e ${LBANN_ENV} -- ${CMD_LINE_VARIANTS}" | tee -a ${LOG}
-echo "  cd spack-build-${LBANN_HASH}" | tee -a ${LOG}
+echo "  cd spack-build-${LBANN_SPEC_HASH}" | tee -a ${LOG}
 echo "  ninja install" | tee -a ${LOG}
 echo "##########################################################################################" | tee -a ${LOG}
 echo "All details of the run are logged to ${LOG}"
