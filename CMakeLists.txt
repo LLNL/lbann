@@ -542,6 +542,10 @@ if (LBANN_WITH_CONDUIT)
   set(CONDUIT_LIBRARIES conduit::conduit)
 endif (LBANN_WITH_CONDUIT)
 
+# Boost (optional)
+find_package(Boost QUIET)
+set(LBANN_HAS_BOOST ${Boost_FOUND})
+
 if (LBANN_WITH_UNIT_TESTING)
   find_package(Catch2 2.0.0 CONFIG QUIET
     HINTS ${CATCH2_DIR} $ENV{CATCH2_DIR} ${CATCH_DIR} $ENV{CATCH_DIR}
@@ -910,6 +914,7 @@ append_str_tf(_str
   LBANN_HAS_ROCM
   LBANN_HAS_TBINF
   LBANN_HAS_VTUNE
+  LBANN_HAS_BOOST
   LBANN_NVPROF
   )
 string(APPEND _str

@@ -24,13 +24,17 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <boost/graph/graphviz.hpp>
-
 #include "lbann/callbacks/dump_model_graph.hpp"
+#include "lbann_config.hpp"
+
+#ifdef LBANN_HAS_BOOST
+#include <boost/graph/graphviz.hpp>
+#endif // LBANN_HAS_BOOST
 
 namespace lbann {
 namespace callback {
 
+#ifdef LBANN_HAS_BOOST
 namespace {
 struct vertex_property {
   std::string label;
@@ -47,8 +51,10 @@ typedef boost::adjacency_list<
   vertex_property,
   edge_property> model_graph;
 }
+#endif // LBANN_HAS_BOOST
 
 void dump_model_graph::on_setup_end(model *m) {
+#ifdef LBANN_HAS_BOOST
   const auto layers = m->get_layers();
   if (!m->get_comm()->am_world_master())
     return;
@@ -137,6 +143,9 @@ void dump_model_graph::on_setup_end(model *m) {
   std::ofstream file(m_basename);
   boost::write_graphviz_dp(file, g, dp);
 
+#else // LBANN_HAS_BOOST
+  LBANN_ERROR("This callback requires the Boost library.");
+#endif // LBANN_HAS_BOOST
 }
 
 std::unique_ptr<callback_base>
