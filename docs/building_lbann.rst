@@ -71,22 +71,57 @@ With Spack setup and installed into your path, it can be used to
 install the LBANN executables. This approach is appropriate for users
 that want to train new or existing models using the Python front-end.
 
+.. note:: Users should make themselves comfortable with Spack and `its
+          idioms for installing packages
+          <https://spack-tutorial.readthedocs.io/en/latest/tutorial_basics.html>`_
+          and experts can `customizations to their Spack ecosystem
+          <https://spack.readthedocs.io/en/latest/configuration.html>`_
+          (and modify these instructions) to ensure that they get the
+          compilers and externals that they want.
+
 .. note:: If your model requires custom layers or data readers, you
           may need to install LBANN as a developer, which would allow
           you to modify and recompile the source code.
 
-Users comfortable with Spack and `its idioms for installing packages
-<https://spack-tutorial.readthedocs.io/en/latest/tutorial_basics.html>`_
-or those who already have `customizations to their Spack ecosystem
-<https://spack.readthedocs.io/en/latest/configuration.html>`_ in place
-may simply use
+The best practices are to create a Spack environment (similar to a
+Python virtual environment) and to use something like your compute
+center's `modules` packages to provide paths to system installed
+software.
+
+1. Create and activate spack environment called (replace <env name>):
 
 .. code-block:: bash
 
-   spack install lbann <customization options>
+   spack env create <env name>
+   spack env activate -p <env name>
 
-In this case, it is not even necessary to clone the LBANN repository
-from Github; Spack will handle this in its installation.
+2. Load relevant modules and find pre-installed software:
+
+.. code-block:: bash
+
+   module load <modules that you want>
+   spack compiler find --scope env:<env name>
+   spack external find --scope env:<env name>
+
+3. Install LBANN with the variants that you care about:
+
+.. code-block:: bash
+
+   spack install lbann <variants and dependencies>
+   spack load lbann@develop
+
+.. note:: Here is an example of a set of commands that works on an
+          x86_64 architecture with Nvidia P100 GPUs:
+
+   .. code-block:: bash
+
+      spack env create lbann
+      spack env activate -p lbann
+      module --force unload StdEnv; module load gcc/8.3.1 cuda/11.1.0 mvapich2/2.3 python/3.7.2
+      spack compiler find --scope env:lbann
+      spack external find --scope env:lbann
+      spack install lbann@develop cuda_arch=60 +cuda ^hydrogen@develop+al ^aluminum@master ^mvapich2
+      spack load lbann@develop
 
 Please note that when getting LBANN to build as a user will encounter
 some issues with the Spack legacy concretizer.  It will require
