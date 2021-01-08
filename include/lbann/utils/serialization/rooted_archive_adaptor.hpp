@@ -27,7 +27,7 @@
 #ifndef LBANN_UTILS_SERIALIZATION_ROOTED_ARCHIVE_ADAPTOR_HPP_
 #define LBANN_UTILS_SERIALIZATION_ROOTED_ARCHIVE_ADAPTOR_HPP_
 
-#if !(defined __CUDACC__ || defined __HIPCC__)
+#if !(defined __CUDACC__)
 
 #include "cereal_utils.hpp"
 
