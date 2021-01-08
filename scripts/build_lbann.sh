@@ -254,11 +254,6 @@ SPACK_ARCH_GENERIC_TARGET=$(spack python -c "import archspec.cpu as cpu; print(s
 # Create a modified spack arch with generic target architecture
 SPACK_ARCH_PLATFORM_GENERIC_TARGET="${SPACK_ARCH_PLATFORM}-${SPACK_ARCH_GENERIC_TARGET}"
 
-# Define the GPU_ARCH_VARIANTS field
-GPU_ARCH_VARIANTS=
-set_center_specific_gpu_arch ${CENTER} ${SPACK_ARCH_TARGET}
-GPU_VARIANTS+=" ${GPU_ARCH_VARIANTS}"
-
 LBANN_ENV="${LBANN_ENV:-lbann-${LBANN_LABEL}-${SPACK_ARCH_TARGET}}"
 CORE_BUILD_PATH="${LBANN_HOME}/build/${CLUSTER}.${LBANN_ENV}${BUILD_SUFFIX:-}"
 
@@ -290,7 +285,10 @@ fi
 
 GPU_VARIANTS='+cuda'
 if [[ "${LBANN_VARIANTS}" =~ .*"${GPU_VARIANTS}".* ]]; then
-    # Prepend the GPU_ARCH_Variants for the LBANN variants
+    # Define the GPU_ARCH_VARIANTS field
+    GPU_ARCH_VARIANTS=
+    set_center_specific_gpu_arch ${CENTER} ${SPACK_ARCH_TARGET}
+    # Prepend the GPU_ARCH_VARIANTS for the LBANN variants if the +cuda variant is defined
     LBANN_VARIANTS=" ${GPU_ARCH_VARIANTS} ${LBANN_VARIANTS}"
 fi
 
