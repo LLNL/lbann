@@ -24,7 +24,6 @@ set_full_path(THIS_DIR_HEADERS
   number_theory.hpp
   nvshmem.hpp
   omp_diagnostics.hpp
-  opencv.hpp
   options.hpp
   nvshmem.hpp
   profiling.hpp
@@ -40,6 +39,7 @@ set_full_path(THIS_DIR_HEADERS
   trainer_file_utils.hpp
   type_erased_matrix.hpp
   typename.hpp
+  vision.hpp
   )
 
 if (LBANN_HAS_HALF)
@@ -49,6 +49,10 @@ endif (LBANN_HAS_HALF)
 
 if (LBANN_HAS_DISTCONV)
   list(APPEND THIS_DIR_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/distconv.hpp")
+endif ()
+
+if (LBANN_HAS_OPENCV)
+  list(APPEND THIS_DIR_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/opencv.hpp")
 endif ()
 
 # Add the subdirectories
