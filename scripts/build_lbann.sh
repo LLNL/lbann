@@ -460,7 +460,7 @@ echo ${CMD} | tee -a ${LOG}
 
 LBANN_BUILD_DIR=$(grep "PROJECT_BINARY_DIR:" ${LBANN_HOME}/spack-build-out.txt | awk '{print $2}')
 
-if [[ -L "${LINK_DIR}" && -d "${LINK_DIR}" ]]; then
+if [[ -L "${LINK_DIR}" ]]; then
     CMD="rm ${LINK_DIR}"
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && ${CMD}
