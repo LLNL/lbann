@@ -51,24 +51,24 @@
 namespace lbann {
 namespace callback {
 
-/** @class CommunicationAlgorithm
+/** @class LTFBCommunicationAlgorithm
  *  @brief Exchange model information with partners.
  */
-class CommunicationAlgorithm
-  : public Cloneable<HasAbstractFunction<CommunicationAlgorithm>>
+class LTFBCommunicationAlgorithm
+  : public Cloneable<HasAbstractFunction<LTFBCommunicationAlgorithm>>
 {
 public:
   /** @brief Default constructor.
    *
    *  All weights within a model are exchanged.
    */
-  CommunicationAlgorithm() = default;
+  LTFBCommunicationAlgorithm() = default;
 
   /** @brief Construct with names of weights
    *  @param[in] weights_names Names of weights to exchange. If empty,
    *                           then all weights are exchanged.
    */
-  CommunicationAlgorithm(std::set<std::string> const& weights_names)
+  LTFBCommunicationAlgorithm(std::set<std::string> const& weights_names)
     : weights_names_{weights_names}
   {}
 
@@ -76,11 +76,11 @@ public:
    *  @param[in] weights_names Names of weights to exchange. If empty,
    *                           then all weights are exchanged.
    */
-  CommunicationAlgorithm(std::set<std::string>&& weights_names)
+  LTFBCommunicationAlgorithm(std::set<std::string>&& weights_names)
     : weights_names_{std::move(weights_names)}
   {}
 
-  virtual ~CommunicationAlgorithm() noexcept = default;
+  virtual ~LTFBCommunicationAlgorithm() noexcept = default;
 
   /** @brief Exchange data in model with a partner.
    *
@@ -95,8 +95,8 @@ public:
                                El::Int partner_trainer,
                                El::Int step) const = 0;
 protected:
-  CommunicationAlgorithm(CommunicationAlgorithm const&) = default;
-  CommunicationAlgorithm(CommunicationAlgorithm&&) = default;
+  LTFBCommunicationAlgorithm(LTFBCommunicationAlgorithm const&) = default;
+  LTFBCommunicationAlgorithm(LTFBCommunicationAlgorithm&&) = default;
   /** @name Data access and query */
   ///@{
   auto weights_names() const noexcept
@@ -106,7 +106,7 @@ protected:
   ///@}
 private:
   std::set<std::string> weights_names_;
-};// class CommunicationAlgorithm
+};// class LTFBCommunicationAlgorithm
 
 namespace {
 
@@ -226,9 +226,9 @@ El::Int get_partner_trainer(lbann_comm& comm,
  *  only SGD and Adam are supported.
  */
 class SendRecvWeights final
-  : public Cloneable<SendRecvWeights, CommunicationAlgorithm>
+  : public Cloneable<SendRecvWeights, LTFBCommunicationAlgorithm>
 {
-  using BaseType = Cloneable<SendRecvWeights, CommunicationAlgorithm>;
+  using BaseType = Cloneable<SendRecvWeights, LTFBCommunicationAlgorithm>;
 public:
   /** @brief Construct from weights names
    *  @param[in] weights_names Names of weights to exchange. If empty,
@@ -376,9 +376,9 @@ private:
 
 /// See @c lbann::callbacks::ltfb::communication_algorithm::checkpoint_file
 class CheckpointFile final
-  : public Cloneable<CheckpointFile, CommunicationAlgorithm>
+  : public Cloneable<CheckpointFile, LTFBCommunicationAlgorithm>
 {
-  using BaseType = Cloneable<CheckpointFile, CommunicationAlgorithm>;
+  using BaseType = Cloneable<CheckpointFile, LTFBCommunicationAlgorithm>;
 public:
 
   CheckpointFile(std::set<std::string> const& weights_names,
@@ -473,9 +473,9 @@ private:
 };// class CheckpointFile
 
 class CheckpointBlob final
-  : public Cloneable<CheckpointBlob, CommunicationAlgorithm>
+  : public Cloneable<CheckpointBlob, LTFBCommunicationAlgorithm>
 {
-  using BaseType = Cloneable<CheckpointBlob, CommunicationAlgorithm>;
+  using BaseType = Cloneable<CheckpointBlob, LTFBCommunicationAlgorithm>;
 public:
   CheckpointBlob(std::set<std::string> const& weights_names)
     : BaseType(weights_names)
@@ -602,7 +602,7 @@ EvalType evaluate(model& m, const std::string& metric_name)
 
 ltfb::ltfb(El::Int batch_interval,
            std::string metric_name,
-           std::unique_ptr<CommunicationAlgorithm> algo,
+           std::unique_ptr<LTFBCommunicationAlgorithm> algo,
            bool low_score_wins)
   : callback_base(batch_interval),
     m_metric_name{std::move(metric_name)},
@@ -732,7 +732,7 @@ build_ltfb_callback_from_pbuf(
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackLTFB&>(proto_msg);
   auto weights_list = parse_set<std::string>(params.weights());
-  std::unique_ptr<CommunicationAlgorithm> algo;
+  std::unique_ptr<LTFBCommunicationAlgorithm> algo;
   switch (string_to_comm_algo(params.communication_algorithm()))
   {
   case comm_algorithm::sendrecv_weights:

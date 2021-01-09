@@ -36,7 +36,7 @@ namespace lbann {
 namespace callback {
 
 // Forward declaration
-class CommunicationAlgorithm;
+class LTFBCommunicationAlgorithm;
 
 /** @brief Tournament training.
  *
@@ -75,7 +75,7 @@ public:
    */
   ltfb(El::Int batch_interval,
        std::string metric_name,
-       std::unique_ptr<CommunicationAlgorithm> comm_algo,
+       std::unique_ptr<LTFBCommunicationAlgorithm> comm_algo,
        bool exchange_hyperparameters = false);
   ltfb(const ltfb& other);
   ltfb& operator=(const ltfb& other);
@@ -91,7 +91,7 @@ private:
   std::string m_metric_name;
 
   /** @brief Communication algorithm for exchanging models */
-  std::unique_ptr<CommunicationAlgorithm> comm_algo_;
+  std::unique_ptr<LTFBCommunicationAlgorithm> comm_algo_;
 
   /** @brief Whether low-scoring or high-scoring models survive a
    *  tournament. */
