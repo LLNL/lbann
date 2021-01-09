@@ -103,6 +103,10 @@ public:
       );
 
     ar.serializeDeferments();
+#ifndef __CUDACC__
+    if constexpr (utils::IsInputArchive<Archive>)
+      m_model_is_setup = false;
+#endif // __CUDACC__
   }
 
   // ===========================================
