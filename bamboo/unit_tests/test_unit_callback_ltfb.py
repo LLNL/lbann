@@ -92,7 +92,7 @@ def construct_model(lbann):
         lbann.CallbackLTFB(
             batch_interval=1,
             metric='random',
-            communication_algorithm='checkpoint_file',
+            communication_algorithm='checkpoint_binary',
         ),
     ]
 
