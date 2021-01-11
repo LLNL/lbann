@@ -295,20 +295,6 @@ fi
 # Record the original command in the log file
 echo "${ORIG_CMD}" | tee -a ${LOG}
 
-# Uninstall any existing versions for this architecture with the same label
-LBANN_FIND_CMD="spack find --format {hash:7} lbann@${LBANN_LABEL} arch=${SPACK_ARCH}"
-echo ${LBANN_FIND_CMD} | tee -a ${LOG}
-LBANN_HASH=$(${LBANN_FIND_CMD})
-if [[ -n "${LBANN_HASH}" && ! "${LBANN_HASH}" =~ "No package matches the query" ]]; then
-    LBANN_HASH_ARRAY=(${LBANN_HASH})
-    for h in ${LBANN_HASH_ARRAY[@]}
-    do
-        CMD="spack uninstall -y lbann@${LBANN_LABEL} arch=${SPACK_ARCH} /${h}"
-        echo ${CMD} | tee -a ${LOG}
-        [[ -z "${DRY_RUN:-}" ]] && ${CMD}
-    done
-fi
-
 if [[ ! -n "${SKIP_MODULES:-}" ]]; then
     # Activate modules
     MODULE_CMD=
@@ -319,7 +305,9 @@ if [[ ! -n "${SKIP_MODULES:-}" ]]; then
     fi
 fi
 
+# If the dependencies are being installed then you should clean things up
 if [[ -n "${INSTALL_DEPS:-}" ]]; then
+    # Remove any old environment with the same name
     if [[ $(spack env list | grep -e "${LBANN_ENV}$") ]]; then
         echo "Spack environment ${LBANN_ENV} already exists... overwriting it"
         CMD="spack env rm --yes-to-all ${LBANN_ENV}"
@@ -327,6 +315,21 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
         [[ -z "${DRY_RUN:-}" && -n "${INSTALL_DEPS:-}" ]] && ${CMD}
     fi
 
+    # Uninstall any existing versions for this architecture with the same label
+    LBANN_FIND_CMD="spack find --format {hash:7} lbann@${LBANN_LABEL} arch=${SPACK_ARCH}"
+    echo ${LBANN_FIND_CMD} | tee -a ${LOG}
+    LBANN_HASH=$(${LBANN_FIND_CMD})
+    if [[ -n "${LBANN_HASH}" && ! "${LBANN_HASH}" =~ "No package matches the query" ]]; then
+        LBANN_HASH_ARRAY=(${LBANN_HASH})
+        for h in ${LBANN_HASH_ARRAY[@]}
+        do
+            CMD="spack uninstall -y lbann@${LBANN_LABEL} arch=${SPACK_ARCH} /${h}"
+            echo ${CMD} | tee -a ${LOG}
+            [[ -z "${DRY_RUN:-}" ]] && ${CMD}
+        done
+    fi
+
+    # Create the environment
     CMD="spack env create ${LBANN_ENV}"
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && ${CMD}
@@ -477,8 +480,10 @@ echo "To rebuild LBANN from source drop into a shell with the spack build enviro
 echo "  spack build-env ${LBANN_SPEC} -- bash" | tee -a ${LOG}
 echo "  cd spack-build-${LBANN_SPEC_HASH}" | tee -a ${LOG}
 echo "  ninja install" | tee -a ${LOG}
-echo "To use this version of LBANN have spack load it's module:is installed in a spack environment named ${LBANN_ENV}, access it via:" | tee -a ${LOG}
+echo "To use this version of LBANN have spack load it's module:is installed in a spack environment named ${LBANN_ENV}, access it via: [WARNING THIS IS CURRENTLY BROKEN]" | tee -a ${LOG}
 echo "  spack load lbann@${LBANN_LABEL} arch=${SPACK_ARCH}" | tee -a ${LOG}
+echo "  or just use the module system without the need for activating the environment"  | tee -a ${LOG}
+echo "  module load lbann@${LBANN_LABEL}-<compiler ver>-${LBANN_SPEC_HASH}" | tee -a ${LOG}
 echo "##########################################################################################" | tee -a ${LOG}
 echo "Alternatively, for rebuilding, the script can drop create a shell in the build environment" | tee -a ${LOG}
 echo "  ${BASH_SOURCE} --build-env-only bash -e ${LBANN_ENV} -- ${CMD_LINE_VARIANTS}" | tee -a ${LOG}
