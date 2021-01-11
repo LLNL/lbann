@@ -315,7 +315,16 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
         [[ -z "${DRY_RUN:-}" && -n "${INSTALL_DEPS:-}" ]] && ${CMD}
     fi
 
-    # Uninstall any existing versions for this architecture with the same label
+    # Create the environment
+    CMD="spack env create ${LBANN_ENV}"
+    echo ${CMD} | tee -a ${LOG}
+    [[ -z "${DRY_RUN:-}" ]] && ${CMD}
+fi
+
+##########################################################################################
+# If not just dropping into the build environment, uninstall any existing versions for this
+# architecture with the same label -- note that this has to be done outside of an environment
+if [[ -z "${BUILD_ENV_ONLY:-}" ]]; then
     LBANN_FIND_CMD="spack find --format {hash:7} lbann@${LBANN_LABEL} arch=${SPACK_ARCH}"
     echo ${LBANN_FIND_CMD} | tee -a ${LOG}
     LBANN_HASH=$(${LBANN_FIND_CMD})
@@ -328,11 +337,6 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
             [[ -z "${DRY_RUN:-}" ]] && ${CMD}
         done
     fi
-
-    # Create the environment
-    CMD="spack env create ${LBANN_ENV}"
-    echo ${CMD} | tee -a ${LOG}
-    [[ -z "${DRY_RUN:-}" ]] && ${CMD}
 fi
 
 CMD="spack env activate -p ${LBANN_ENV}"
@@ -457,6 +461,8 @@ if [[ ! -L "${SPACK_BUILD_DIR}" && -z "${NO_TMP_BUILD_DIR}" && -z "${DRY_RUN:-}"
     [[ -z "${DRY_RUN:-}" ]] && ${CMD}
 fi
 
+##########################################################################################
+# Actually install LBANN from local source
 CMD="spack dev-build --source-path ${LBANN_HOME} ${DEV_BUILD_FLAGS} ${INSTALL_DEV_BUILD_EXTRAS} ${LBANN_SPEC}"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && ${CMD}
@@ -473,6 +479,19 @@ CMD="ln -s ${LBANN_BUILD_DIR} ${LINK_DIR}"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && ${CMD}
 
+
+##########################################################################################
+# Once LBANN is installed deactivate the environment and try to find the package to get the
+# installed path
+spack env deactivate
+LBANN_FIND_CMD="spack find --path lbann@${LBANN_LABEL} arch=${SPACK_ARCH} /${LBANN_SPEC_HASH}"
+echo ${LBANN_FIND_CMD} | tee -a ${LOG}
+COMPILER_VER="<FIND ONE>"
+if [[ -z "${DRY_RUN:-}" ]]; then
+    LBANN_PATH=$(${LBANN_FIND_CMD})
+    LBANN_INSTALL_DIR=${LBANN_PATH##* }
+    COMPILER_VER=$(basename $(dirname $LBANN_INSTALL_DIR))
+fi
 echo "##########################################################################################" | tee -a ${LOG}
 echo "LBANN is installed in a spack environment named ${LBANN_ENV}, access it via:" | tee -a ${LOG}
 echo "  spack env activate -p ${LBANN_ENV}" | tee -a ${LOG}
@@ -482,8 +501,8 @@ echo "  cd spack-build-${LBANN_SPEC_HASH}" | tee -a ${LOG}
 echo "  ninja install" | tee -a ${LOG}
 echo "To use this version of LBANN have spack load it's module:is installed in a spack environment named ${LBANN_ENV}, access it via: [WARNING THIS IS CURRENTLY BROKEN]" | tee -a ${LOG}
 echo "  spack load lbann@${LBANN_LABEL} arch=${SPACK_ARCH}" | tee -a ${LOG}
-echo "  or just use the module system without the need for activating the environment"  | tee -a ${LOG}
-echo "  module load lbann@${LBANN_LABEL}-<compiler ver>-${LBANN_SPEC_HASH}" | tee -a ${LOG}
+echo "or just use the module system without the need for activating the environment"  | tee -a ${LOG}
+echo "  module load lbann-${LBANN_LABEL}-${COMPILER_VER}-${LBANN_SPEC_HASH}" | tee -a ${LOG}
 echo "##########################################################################################" | tee -a ${LOG}
 echo "Alternatively, for rebuilding, the script can drop create a shell in the build environment" | tee -a ${LOG}
 echo "  ${BASH_SOURCE} --build-env-only bash -e ${LBANN_ENV} -- ${CMD_LINE_VARIANTS}" | tee -a ${LOG}
