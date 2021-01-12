@@ -68,7 +68,7 @@ void dropout_forward(DropoutDescriptor const& dropoutDesc,
   CHECK_MIOPEN(
     miopenDropoutForward(handle_manager.get(),
                          dropoutDesc,
-                         xDesc, // noise_shape is a placeholder
+                         /*noise_shape=*/nullptr, // placeholder, unused.
                          xDesc,
                          x.LockedBuffer(),
                          yDesc,
@@ -104,7 +104,7 @@ void dropout_backward(DropoutDescriptor const& dropoutDesc,
   CHECK_MIOPEN(
     miopenDropoutBackward(handle_manager.get(),
                           dropoutDesc,
-                          dxDesc, // noise_shape is a placeholder
+                          /*noise_shape=*/nullptr, // placeholder, unused.
                           dyDesc,
                           dy.LockedBuffer(),
                           dxDesc,
