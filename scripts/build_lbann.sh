@@ -381,21 +381,6 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
     [[ -z "${DRY_RUN:-}" ]] && ${CMD}
 fi
 
-CMD="spack spec -l ${LBANN_DEV_PATH_SPEC}"
-echo ${CMD} | tee -a ${LOG}
-if [[ -z "${DRY_RUN:-}" ]]; then
-    eval ${CMD}
-    if [[ $? -ne 0 ]]; then
-        echo "-----------------"
-        echo "Spack spec FAILED"
-        echo "-----------------"
-        exit 1
-    fi
-fi
-# Currently unused, but here is how to get the spack hash before dev-build is called
-LBANN_SPEC_HASH=$(spack spec -l ${LBANN_DEV_PATH_SPEC} | grep lbann | grep arch=${SPACK_ARCH} | awk '{print $1}')
-[[ -z "${DRY_RUN:-}" && "${SPEC_ONLY}" == "TRUE" ]] && exit
-
 ##########################################################################################
 # Tell the spack environment to use a local repository for these libraries
 if [[ -n "${HYDROGEN_PATH:-}" ]]; then
@@ -416,6 +401,21 @@ if [[ -n "${ALUMINUM_PATH:-}" ]]; then
     ${CMD}
 fi
 ##########################################################################################
+
+CMD="spack spec -l ${LBANN_DEV_PATH_SPEC}"
+echo ${CMD} | tee -a ${LOG}
+if [[ -z "${DRY_RUN:-}" ]]; then
+    eval ${CMD}
+    if [[ $? -ne 0 ]]; then
+        echo "-----------------"
+        echo "Spack spec FAILED"
+        echo "-----------------"
+        exit 1
+    fi
+fi
+# Get the spack hash before dev-build is called
+LBANN_SPEC_HASH=$(spack spec -l ${LBANN_DEV_PATH_SPEC} | grep lbann | grep arch=${SPACK_ARCH} | awk '{print $1}')
+[[ -z "${DRY_RUN:-}" && "${SPEC_ONLY}" == "TRUE" ]] && exit
 
 CMD="spack add ${LBANN_SPEC}"
 [[ -n "${INSTALL_DEPS:-}" ]] && echo ${CMD} | tee -a ${LOG}
