@@ -143,6 +143,15 @@ public:
     IntTs... dims) {
     set(data_type, {static_cast<int>(dims)...});
   }
+#if !(defined LBANN_HAS_CUDNN)
+  void set(
+    dnnDataType_t data_type,
+    dnnTensorFormat_t /*format*/,
+    const std::vector<int>& dims)
+  {
+    this->set(data_type, dims);
+  }
+#endif // !LBANN_HAS_CUDNN
 
 private:
 
@@ -150,6 +159,7 @@ private:
 
 };
 
+#ifdef LBANN_HAS_CUDNN
 /** @brief Wrapper around @c cudnnFilterDescriptor_t */
 class FilterDescriptor {
 public:
@@ -207,6 +217,9 @@ private:
   dnnFilterDescriptor_t desc_ = nullptr;
 
 };
+#else // MIOpen and OneDNN
+using FilterDescriptor = TensorDescriptor;
+#endif // LBANN_HAS_CUDNN
 
 /** @brief Wrapper around @c cudnnDropoutDescriptor_t */
 class DropoutDescriptor {
