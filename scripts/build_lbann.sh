@@ -417,6 +417,26 @@ if [[ -n "${ALUMINUM_PATH:-}" ]]; then
 fi
 ##########################################################################################
 
+CMD="spack add ${LBANN_SPEC}"
+[[ -n "${INSTALL_DEPS:-}" ]] && echo ${CMD} | tee -a ${LOG}
+if [[ -z "${DRY_RUN:-}" && -n "${INSTALL_DEPS:-}" ]]; then
+    eval ${CMD}
+    if [[ $? -ne 0 ]]; then
+        echo "-----------------------------------------"
+        echo "Spack installation of dependenceis FAILED"
+        echo "-----------------------------------------"
+        exit 1
+    fi
+    if [[ -n "${DEPENDENCIES_ONLY:-}" ]]; then
+        exit
+    fi
+fi
+
+# Explicitly add the lbann spec to the environment
+CMD="spack develop --no-clone -p ${LBANN_HOME} ${LBANN_SPEC}"
+echo ${CMD} | tee -a ${LOG}
+[[ -z "${DRY_RUN:-}" ]] && ${CMD}
+
 CMD="spack install --only dependencies ${INSTALL_DEV_BUILD_EXTRAS} ${LBANN_SPEC}"
 [[ -n "${INSTALL_DEPS:-}" ]] && echo ${CMD} | tee -a ${LOG}
 if [[ -z "${DRY_RUN:-}" && -n "${INSTALL_DEPS:-}" ]]; then
@@ -463,6 +483,7 @@ fi
 
 ##########################################################################################
 # Actually install LBANN from local source
+# Really you could use the install command, but the dev-build has nice options and better output
 CMD="spack dev-build --source-path ${LBANN_HOME} ${DEV_BUILD_FLAGS} ${INSTALL_DEV_BUILD_EXTRAS} ${LBANN_SPEC}"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && ${CMD}
@@ -499,9 +520,9 @@ echo "To rebuild LBANN from source drop into a shell with the spack build enviro
 echo "  spack build-env ${LBANN_SPEC} -- bash" | tee -a ${LOG}
 echo "  cd spack-build-${LBANN_SPEC_HASH}" | tee -a ${LOG}
 echo "  ninja install" | tee -a ${LOG}
-echo "To use this version of LBANN have spack load it's module:is installed in a spack environment named ${LBANN_ENV}, access it via: [WARNING THIS IS CURRENTLY BROKEN]" | tee -a ${LOG}
+echo "To use this version of LBANN have spack load it's module:is installed in a spack environment named ${LBANN_ENV}, access it via: (has to be executed from the environment)" | tee -a ${LOG}
 echo "  spack load lbann@${LBANN_LABEL} arch=${SPACK_ARCH}" | tee -a ${LOG}
-echo "or just use the module system without the need for activating the environment"  | tee -a ${LOG}
+echo "or just use the module system without the need for activating the environment (does not require being in an environment)"  | tee -a ${LOG}
 echo "  module load lbann-${LBANN_LABEL}-${COMPILER_VER}-${LBANN_SPEC_HASH}" | tee -a ${LOG}
 echo "##########################################################################################" | tee -a ${LOG}
 echo "Alternatively, for rebuilding, the script can drop create a shell in the build environment" | tee -a ${LOG}
