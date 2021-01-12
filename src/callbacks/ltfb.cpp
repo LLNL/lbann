@@ -220,6 +220,25 @@ El::Int get_partner_trainer(lbann_comm& comm,
   return send_buffer[comm.get_trainer_rank()];
 }
 
+void restore_model_weights(
+  model& m,
+  std::unordered_map<std::string, std::unique_ptr<weights>>& restore_weights)
+{
+  // Restore weights that shouldn't be exchanged
+  if (restore_weights.empty())
+    return;
+
+  // FIXME: Generalize this; enable ptr move??
+  for (auto w : m.get_weights()) {
+    if (restore_weights.count(w->get_name()) > 0) {
+      using TensorDataType = DataType;
+      using WeightsType = data_type_weights<TensorDataType>;
+      dynamic_cast<WeightsType&>(*w)
+        = dynamic_cast<WeightsType&>(*restore_weights[w->get_name()]);
+    }
+  }
+}
+
 /** @class SendRecvWeights
  *  @brief Exchange model weights directly using sendrecvs.
  *  @todo More general approach to exchange optimizer state. Currently
@@ -456,17 +475,7 @@ public:
       p.close_restart();
     }
 
-    // Restore weights that shouldn't be exchanged
-    if (!restore_weights.empty()) {
-      for (auto w : m.get_weights()) {
-        if (restore_weights.count(w->get_name()) > 0) {
-          using TensorDataType = DataType;
-          using WeightsType = data_type_weights<TensorDataType>;
-          dynamic_cast<WeightsType&>(*w)
-            = dynamic_cast<WeightsType&>(*restore_weights[w->get_name()]);
-        }
-      }
-    }
+    restore_model_weights(m, restore_weights);
   }
 private:
   std::string ckpt_basedir_;
@@ -523,14 +532,33 @@ public:
                     &load_size, 1, partner_trainer, 0,
                     El::SyncInfo<El::Device::CPU>{});
       load_model_ckpt.resize(load_size);
-      comm.sendrecv(
-        reinterpret_cast<El::byte const*>(save_model_ckpt.data()),
-        save_size*sizeof(typename std::string::value_type)/sizeof(El::byte),
-        partner_trainer, 0,
-        reinterpret_cast<El::byte*>(load_model_ckpt.data()),
-        load_size*sizeof(typename std::string::value_type)/sizeof(El::byte),
-        partner_trainer, 0,
-        El::SyncInfo<El::Device::CPU>{});
+
+      while (save_size && load_size)
+      {
+        // Get the max blk size
+        auto constexpr max_blk_size = std::numeric_limits<int>::max();
+        std::size_t constexpr max_blk_size_size_t = max_blk_size;
+
+        int this_blk_send_size =
+          (save_size > max_blk_size_size_t ? max_blk_size : save_size);
+        int this_blk_recv_size =
+          (load_size > max_blk_size_size_t ? max_blk_size : load_size);
+        comm.sendrecv(
+          reinterpret_cast<El::byte const*>(save_model_ckpt.data()),
+          this_blk_send_size, partner_trainer, 0,
+          reinterpret_cast<El::byte*>(load_model_ckpt.data()),
+          this_blk_recv_size, partner_trainer, 0,
+          El::SyncInfo<El::Device::CPU>{});
+
+        save_size =
+          (save_size > max_blk_size_size_t
+           ? save_size - max_blk_size_size_t
+           : 0);
+        load_size =
+          (load_size > max_blk_size_size_t
+           ? load_size - max_blk_size_size_t
+           : 0);
+      }
     }
 
     // sure, why not
@@ -543,17 +571,7 @@ public:
       ar(m);
     }
 
-    // Restore weights that shouldn't be exchanged
-    if (!restore_weights.empty()) {
-      for (auto w : m.get_weights()) {
-        if (restore_weights.count(w->get_name()) > 0) {
-          using TensorDataType = DataType;
-          using WeightsType = data_type_weights<TensorDataType>;
-          dynamic_cast<WeightsType&>(*w)
-            = dynamic_cast<WeightsType&>(*restore_weights[w->get_name()]);
-        }
-      }
-    }
+    restore_model_weights(m, restore_weights);
   }
 };// class CheckpointBlob
 
