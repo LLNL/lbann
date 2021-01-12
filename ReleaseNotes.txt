@@ -43,6 +43,10 @@ I/O & data readers:
  - Added explict tournament execution mode
  - Added support to split training data reader into validation and
    tournament readers
+ - Updated SMILES data reader to use sample lists
+ - Added explicitly managed buffered reading and local unpacking for the
+   SMILES data reader to minimize file access
+ - Sample lists with integral indices can use range format (start ... end)
 
 Build system:
  - Hydrogen v1.5.0

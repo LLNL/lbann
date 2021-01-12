@@ -1,0 +1,18 @@
+const std::string smiles_reader_prototext_const = R"ptext(data_reader {
+  reader {
+    name: "smiles"
+    role: "train"
+    shuffle: true
+    percent_of_data_to_use: 1.0
+    label_filename: "METADATA_FN"
+    sample_list: "SAMPLE_LIST_FN"
+    validation_percent: 0.2
+  }
+}
+model {
+}
+optimizer {
+}
+trainer {
+}
+)ptext";

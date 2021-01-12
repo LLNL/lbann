@@ -24,9 +24,10 @@ int main(int argc, char **argv) {
       std::cerr
         << "usage: " << argv[0]
         << " --input_fn=<string> --output_fn=<string> --delimiter=<char>\n"
-        << "where: input_fn is csv file containing SMILES strings;\n"
-        << "       --delimiter is c (comma), t (tab) or 0 (none)\n"
-        << "function: computes vocabulary\n";
+        << "where: input_fn contains a listing of SMILES data files.\n"
+        << "       --delimiter is c (comma), t (tab) s (space) or 0 (none)\n"
+        << "function: computes vocabulary\n\n"
+        << "CAUTION: does not discard the first line!\n\n";
       exit(9);
     }
 
@@ -50,6 +51,12 @@ int main(int argc, char **argv) {
     const char ww = w[0];
     char d = 0;
     switch (ww) {
+      case 's' :
+        d = ' ';
+        break;
+      case ' ' :
+        d = ' ';
+        break;
       case 'c' :
         d = ',';
         break;
@@ -60,26 +67,31 @@ int main(int argc, char **argv) {
         d = '\0';
         break;
       default :
-        LBANN_ERROR("Invalid delimiter character; should be 'c', 't', '0'; you passed: ", ww);
+        LBANN_ERROR("Invalid delimiter character; should be 's', 'c', 't', '0'; you passed: ", ww);
     }
 
     std::set<char> s;
-
-    std::string line;
-    getline(in, line); //discard header
     size_t j = 1;
-    while (!in.eof()) {
-      ++j;
-      if (j % 1000 == 0) std::cout << j/1000 << "K lines processed" << std::endl;
-      getline(in, line);
-      if (line.size() < 5) continue;
-      size_t h = line.find(d);
-      if (h == std::string::npos) {
-        LBANN_ERROR("failed to find delimiter: ", d, " on line ", j);
+    std::string line;
+
+    while (in >> line) {
+      std::ifstream in2(line.c_str());
+      if (!in2) {
+        LBANN_ERROR("failed to open ", line , " for reading");
       }
-      const std::string smiles = line.substr(0, h);
-      for (const auto &t : smiles) {
-        s.insert(t);
+
+      while (getline(in2, line)) {
+        if (line.size() < 5) continue;
+        if (j % 100000000 == 0) std::cout << j/100000000 << "* 100M lines processed" << std::endl;
+        ++j;
+        size_t h = line.find(d);
+        if (h == std::string::npos && d != 0) {
+          LBANN_ERROR("failed to find delimiter: ", d, " on line ", j);
+        }
+        const std::string smiles = line.substr(0, h);
+        for (const auto &t : smiles) {
+          s.insert(t);
+        }
       }
     }
 

@@ -28,22 +28,33 @@
 #ifndef LBANN_DATA_READER_SMILES_HPP
 #define LBANN_DATA_READER_SMILES_HPP
 
-#include "conduit/conduit.hpp"
-#include "lbann/utils/options.hpp"
 #include "lbann/data_readers/data_reader.hpp"
+#include "lbann/data_readers/sample_list_ifstream.hpp"
 
 namespace lbann {
   /**
-   * Data reader for SMILES data that has been converted to an array
-   * of short ints and stored in binary format.
-   * Binary format is: (n_int, int (repeating n_int times) ) repeating
-   * last entry in the file is the only entry stored as an integer; it
-   * contains the number of samples. Second to last entry is the maximum
-   * number of ints in any sample; this is stored as a short int
+   * Data reader for SMILES (string) data. The string data is converted to
+   * a vector of shorts according to an arbitrary mapping.
+   *
+   * Terminology and Notes:
+   *   "local_id" (or similar name): refers to a line number in a file.
+   *   "global_id" (aka, sample_id, etc) refers to an index from the
+   *               m_shuffled_indices vector.
    */
 class smiles_data_reader : public generic_data_reader {
 
 public:
+  /// Types for the sample_list
+  using sample_name_t = long long;
+  using sample_list_t = sample_list_ifstream<sample_name_t>;
+
+  /// Types for a sample
+  using sample_file_id_t = sample_list_t::sample_file_id_t;
+  using sample_t = std::pair<sample_file_id_t, sample_name_t>;
+
+  // Types for mapping a sample id to an <offset,length> locator
+  using offset_t = std::pair<long long, short>;
+  using offset_map_t = std::unordered_map<size_t, offset_t>;
 
   smiles_data_reader(const bool shuffle);
   smiles_data_reader(const smiles_data_reader&);
@@ -64,39 +75,82 @@ public:
   const std::vector<int> get_data_dims() const override {  return {get_linearized_data_size()}; }
   int get_num_labels() const override { return m_num_labels; }
 
-  void set_sequence_length(int n) { m_linearized_data_size = n; }
-  int get_sequence_length() { return get_linearized_data_size(); }
+  void set_sequence_length(int n) { 
+    m_sequence_length = n;
+    m_linearized_data_size = n+2; 
+  }
+  int get_sequence_length() { return m_sequence_length; }
+
+  void use_unused_index_set(execution_mode m) override;
+
+  sample_list_t& get_sample_list() { return m_sample_list; }
+
+  /** This method is for use during testing and development */
+  void get_sample_origin(
+    const size_t index_in,
+    std::string& filename_out,
+    size_t& offset_out,
+    short& length_out) const;
+
+  /** This method is for use during testing and development. 
+   *  Returns the set of indices whose samples are cached in
+   *  the data_store
+   */
+  std::set<int> get_my_indices() const;
+
+  /** This method made public for use during testing.
+   *  Convert SMILES string to a vector of shorts
+   */
+  bool encode_smiles(const char *smiles, short size, std::vector<unsigned short> &data);
+  /** This method made public for use during testing.
+   *  Convert SMILES string to a vector of shorts
+   */
+  bool encode_smiles(const std::string &smiles, std::vector<unsigned short> &data);
+  /** This method made public for use during testing.
+   *  Decode SMILES string from a vector of shorts
+   */
+  void decode_smiles(const std::vector<unsigned short> &data, std::string &out);
+
+  /** This method made public for use during testing. */
+  void load_vocab(std::string filename);
+  /** This method made public for use during testing. */
+  void load_vocab(std::stringstream& s);
+  /** This method made public for use during testing. */
+  void set_linearized_data_size(size_t s) { m_linearized_data_size = s; }
+  /** This method made public for use during testing. */
+  // reads and returns the smiles string from the input stream
+  std::string get_raw_sample(std::istream* istrm, size_t index, size_t buf_offset=0);
+  /** This method made public only for use during testing.
+   *  Insert an entry into a map: index -> (offset, length),
+   *  where 'index' is an alias for an entry in the shuffled_indices
+   */
+  void set_offset(size_t index, long long offset, short length);
+
+  /** This method made public for use during testing. */
+  void load_list_of_samples(const std::string sample_list_file);
+
 
 private:
 
-  /// used for sanity checking in load() and do_preload();
-  /// may eventually go away
-  int m_min_index = INT_MAX;
-  int m_max_index = 0;
+  // note: linearized_size is m_sequence_length+2; the +2 is for the
+  //       <bos> and <eos> characters that get tacked on
+  int m_sequence_length = 0;
 
-  //==== start hack to make it work fast ====
-  
-  // maps: sample_id to <sample offset, wrt m_data[0], sample_size>
-  std::unordered_map<int, std::pair<size_t, short>> m_sample_lookup;
+  const size_t OffsetBinarySize = sizeof(long long);
+  const size_t LengthBinarySize = sizeof(short);
+  const std::streamsize OffsetAndLengthBinarySize = OffsetBinarySize+LengthBinarySize;
 
-  std::vector<char> m_data;
+  struct SampleData {
+    SampleData() {}
+    SampleData(int idx, long long off, short len)
+      : index(idx),  offset(off), length(len) {
+    }
+    size_t index;
+    long long offset;
+    short length;
+  };
 
-  void get_sample(int sample_id, std::vector<short> &sample_out);
-
-  void setup_local_cache();
-
-  // to enable this feature, add '#define DEBUG_F' to data_reader_smiles.cpp;
-  // this is ONLY for testing/development; if enabled, each rank will encode
-  // all samples after loading, and prior to the first epoch
-  void test_encode();
-
-  char m_delimiter = '\0';
-
-  // CAUTION: line_number is same as sample_id, i.e, assumes a single
-  //          data input file
-  int get_smiles_string_length(const std::string &line, int line_number);
-
-  //==== end hack to make it work fast ====
+  sample_list_t m_sample_list;
 
   int m_linearized_data_size = 0;
   int m_linearized_label_size = 0;
@@ -109,7 +163,7 @@ private:
   short m_bos = 422;
   short m_eos = 423;
 
-  bool m_has_header = true;
+  bool m_has_header = false;
 
   std::unordered_map<char, short> m_vocab;
   std::unordered_map<short,std::string> m_vocab_inv;
@@ -119,14 +173,30 @@ private:
   size_t m_missing_char_in_vocab_count = 0;
   std::unordered_set<char> m_missing_chars;
 
+  // maps: sample id -> offset within a file
+  offset_map_t m_sample_offsets;
+
+  /** Here and elsewhere, 'index' refers to an entry in the shuffled indices;
+   *  'local_id' refers, loosely, to a line number in a file.
+   *  Also, 'file' or 'filename' refers to a file containing SMILES strings.
+   *
+   *  maps: index -> local_id. Note: clearly the mapping is not unique,
+   *  since a local_id requires a filename for full specification
+   */
+  std::unordered_map<size_t, size_t> m_index_to_local_id;
+
+  /** maps: filename -> { local_id -> index } */
+  std::unordered_map<std::string, std::map<size_t, size_t>> m_local_to_index;
+
+  /** maps: filename -> {local_id} */
+  std::unordered_map<std::string, std::set<size_t>> m_filename_to_local_id_set;
+
+  /** maps: index -> filename */
+  std::unordered_map<size_t, std::string> m_index_to_filename;
+
   //=====================================================================
   // private methods follow
   //=====================================================================
-
-  void get_delimiter();
-
-  /// returns a lower bound on memory usage for dataset
-  size_t get_mem_usage() const;
 
   /** @brief Contains common code for operator= and copy ctor */
   void copy_members(const smiles_data_reader& rhs);
@@ -138,12 +208,28 @@ private:
   bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override;
 
   void print_statistics() const;
-  void load_vocab();
-  int get_num_lines(std::string fn); 
-  void construct_conduit_node(int data_id, const std::string &line, conduit::Node &node); 
-  void encode_smiles(const char *smiles, short size, std::vector<short> &data, int data_id); 
-  void encode_smiles(const std::string &smiles, std::vector<short> &data, int data_id); 
-  void decode_smiles(const std::vector<short> &data, std::string &out);
+
+  // load "offset" and "length" for samples from a binary file;
+  // the (offset, length) specify the location of a sample within
+  // the data file
+  void load_offsets_and_lengths();
+
+  // called by load_offsets_and_lengths
+  void read_offset_data(std::vector<SampleData> &data);
+
+  // calls load_sample
+  void construct_conduit_node(conduit::Node &node, std::istream* istream, size_t sample_id, size_t buf_offset=0);
+
+  // calls get_raw_sample; returns in 'output' an encoded version of the sample
+  void load_sample(std::istream* istrm, size_t index, std::vector<unsigned short> &output, size_t buf_offset=0);
+
+  void build_some_maps();
+
+  // called by read_offset_data()
+  void read_metadata_file(
+    std::vector<size_t>& samples_per_file,
+    std::vector<std::string>& data_filenames,
+    std::vector<std::string>& offsets_filenames);
 };
 
 }  // namespace lbann

@@ -1,5 +1,9 @@
 
 # Parallel Tests
+add_executable( lbann-dr-bin test_bed_data_reader.cpp )
+target_link_libraries(lbann-dr-bin lbann )
+set_target_properties(lbann-dr-bin PROPERTIES OUTPUT_NAME test_bed_data_reader)
+
 add_executable( lbann-bin lbann.cpp )
 target_link_libraries(lbann-bin lbann )
 set_target_properties(lbann-bin PROPERTIES OUTPUT_NAME lbann)
@@ -27,7 +31,7 @@ set_target_properties(lbann-inf-bin PROPERTIES OUTPUT_NAME lbann_inf)
 # Install the binaries
 install(
   TARGETS lbann-bin lbann-gan-bin lbann-cycgan-bin lbann-aecycgan-bin
-  lbann-help lbann-inf-bin
+  lbann-help lbann-inf-bin lbann-dr-bin
   EXPORT LBANNTargets
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
