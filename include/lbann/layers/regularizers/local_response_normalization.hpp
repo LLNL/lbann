@@ -207,9 +207,6 @@ private:
 #else
     // Initialize GPU workspace
     El::Matrix<TensorDataType, El::Device::GPU> workspace;
-#ifdef HYDROGEN_HAVE_CUB
-    workspace.SetMemoryMode(1);
-#endif // HYDROGEN_HAVE_CUB
     size_t workspace_size = dnn_lib::get_lrn_ws_size(m_tensors_dnn_desc.get_activations());
     workspace.Resize(workspace_size / sizeof(TensorDataType), 1);
 
@@ -238,9 +235,6 @@ private:
 #else
     // Initialize GPU workspace
     El::Matrix<TensorDataType, El::Device::GPU> workspace;
-#ifdef HYDROGEN_HAVE_CUB
-    workspace.SetMemoryMode(1);
-#endif // HYDROGEN_HAVE_CUB
     size_t workspace_size = dnn_lib::get_lrn_ws_size(m_tensors_dnn_desc.get_activations());
     workspace.Resize(workspace_size / sizeof(TensorDataType), 1);
 
