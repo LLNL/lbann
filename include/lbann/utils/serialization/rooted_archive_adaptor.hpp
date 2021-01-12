@@ -417,5 +417,5 @@ CEREAL_SETUP_ARCHIVE_TRAITS(
   lbann::RootedInputArchiveAdaptor<cereal::XMLInputArchive>,
   lbann::RootedOutputArchiveAdaptor<cereal::XMLOutputArchive>);
 
-#endif // __CUDACC__ || __HIPCC__
+#endif // __CUDACC__
 #endif // LBANN_UTILS_SERIALIZATION_ROOTED_ARCHIVE_ADAPTOR_HPP_
