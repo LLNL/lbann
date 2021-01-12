@@ -646,7 +646,7 @@ base_convolution_layer<TensorDataType,Device>
 #ifdef HYDROGEN_HAVE_CUB
       workspace.SetMemoryMode(1); // CUB GPU memory pool
 #endif // HYDROGEN_HAVE_CUB
-      size_t workspace_size = 1 << 26; /// @todo Allocate largest free block
+      size_t workspace_size = 1 << 30; /// @todo Allocate largest free block
       workspace.Resize(workspace_size / sizeof(TensorDataType), 1);
       workspace_size = workspace.Height() * sizeof(TensorDataType);
 
