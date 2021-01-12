@@ -252,19 +252,20 @@ FilterDescriptor::FilterDescriptor(const FilterDescriptor& other) {
     int num_dims;
     cudnnDataType_t data_type;
     cudnnTensorFormat_t format;
+    std::vector<int> dims(1);
     CHECK_CUDNN(
       cudnnGetFilterNdDescriptor(
         other.desc_,
-        0,          // nbDimsRequested
+        dims.size(),
         &data_type,
         &format,
         &num_dims,
-        nullptr));  // filterDimA
-    std::vector<int> dims(num_dims);
+        dims.data()));
+    dims.resize(num_dims);
     CHECK_CUDNN(
       cudnnGetFilterNdDescriptor(
         other.desc_,
-        num_dims,
+        dims.size(),
         &data_type,
         &format,
         &num_dims,
