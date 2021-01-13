@@ -68,6 +68,10 @@ using factory_type = lbann::generic_factory<
 
 void register_default_builders(factory_type& factory) {
   using namespace transform;
+  factory.register_builder("Normalize", build_normalize_transform_from_pbuf);
+  factory.register_builder("SampleNormalize", build_sample_normalize_transform_from_pbuf);
+  factory.register_builder("Scale", build_scale_transform_from_pbuf);
+#if LBANN_HAS_OPENCV
   factory.register_builder("AdjustBrightness", build_adjust_brightness_transform_from_pbuf);
   factory.register_builder("AdjustContrast", build_adjust_contrast_transform_from_pbuf);
   factory.register_builder("AdjustSaturation", build_adjust_saturation_transform_from_pbuf);
@@ -77,7 +81,6 @@ void register_default_builders(factory_type& factory) {
   factory.register_builder("Cutout", build_cutout_transform_from_pbuf);
   factory.register_builder("Grayscale", build_grayscale_transform_from_pbuf);
   factory.register_builder("HorizontalFlip", build_horizontal_flip_transform_from_pbuf);
-  factory.register_builder("Normalize", build_normalize_transform_from_pbuf);
   factory.register_builder("NormalizeToLBANNLayout", build_normalize_to_lbann_layout_transform_from_pbuf);
   factory.register_builder("RandomAffine", build_random_affine_transform_from_pbuf);
   factory.register_builder("RandomCrop", build_random_crop_transform_from_pbuf);
@@ -85,10 +88,9 @@ void register_default_builders(factory_type& factory) {
   factory.register_builder("RandomResizedCropWithFixedAspectRatio", build_random_resized_crop_with_fixed_aspect_ratio_transform_from_pbuf);
   factory.register_builder("Resize", build_resize_transform_from_pbuf);
   factory.register_builder("ResizedCenterCrop", build_resized_center_crop_transform_from_pbuf);
-  factory.register_builder("SampleNormalize", build_sample_normalize_transform_from_pbuf);
-  factory.register_builder("Scale", build_scale_transform_from_pbuf);
   factory.register_builder("ToLBANNLayout", build_to_lbann_layout_transform_from_pbuf);
   factory.register_builder("VerticalFlip", build_vertical_flip_transform_from_pbuf);
+#endif // LBANN_HAS_OPENCV
 }
 
 // Manage a global factory

@@ -85,7 +85,11 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const lbann_dat
   }
 
   if (name == "imagenet") {
+#if LBANN_HAS_OPENCV
     reader = new imagenet_reader(shuffle);
+#else
+    LBANN_ERROR("Imagenet reader not supported without OpenCV");
+#endif // LBANN_HAS_OPENCV
   } else if (name =="jag_conduit") {
     data_reader_jag_conduit* reader_jag = new data_reader_jag_conduit(shuffle);
     const lbann_data::DataSetMetaData::Schema& pb_schema = pb_metadata.schema();
