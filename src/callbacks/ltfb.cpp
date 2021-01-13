@@ -533,7 +533,7 @@ public:
                     El::SyncInfo<El::Device::CPU>{});
       load_model_ckpt.resize(load_size);
 
-      while (save_size && load_size)
+      while (save_size || load_size)
       {
         // Get the max blk size
         auto constexpr max_blk_size = std::numeric_limits<int>::max();
