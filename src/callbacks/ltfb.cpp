@@ -481,15 +481,15 @@ private:
   std::string ckpt_basedir_;
 };// class CheckpointFile
 
-class CheckpointBlob final
-  : public Cloneable<CheckpointBlob, LTFBCommunicationAlgorithm>
+class CheckpointBinary final
+  : public Cloneable<CheckpointBinary, LTFBCommunicationAlgorithm>
 {
-  using BaseType = Cloneable<CheckpointBlob, LTFBCommunicationAlgorithm>;
+  using BaseType = Cloneable<CheckpointBinary, LTFBCommunicationAlgorithm>;
 public:
-  CheckpointBlob(std::set<std::string> const& weights_names)
+  CheckpointBinary(std::set<std::string> const& weights_names)
     : BaseType(weights_names)
   {}
-  CheckpointBlob(std::set<std::string>&& weights_names)
+  CheckpointBinary(std::set<std::string>&& weights_names)
     : BaseType(std::move(weights_names))
   {}
   void exchange_models(model& m,
@@ -533,6 +533,11 @@ public:
                     El::SyncInfo<El::Device::CPU>{});
       load_model_ckpt.resize(load_size);
 
+      auto const* send_buf =
+        reinterpret_cast<El::byte const*>(save_model_ckpt.data());
+      auto* recv_buf =
+        reinterpret_cast<El::byte*>(load_model_ckpt.data());
+
       while (save_size || load_size)
       {
         // Get the max blk size
@@ -543,13 +548,14 @@ public:
           (save_size > max_blk_size_size_t ? max_blk_size : save_size);
         int this_blk_recv_size =
           (load_size > max_blk_size_size_t ? max_blk_size : load_size);
+
         comm.sendrecv(
-          reinterpret_cast<El::byte const*>(save_model_ckpt.data()),
-          this_blk_send_size, partner_trainer, 0,
-          reinterpret_cast<El::byte*>(load_model_ckpt.data()),
-          this_blk_recv_size, partner_trainer, 0,
+          send_buf, this_blk_send_size, partner_trainer, 0,
+          recv_buf, this_blk_recv_size, partner_trainer, 0,
           El::SyncInfo<El::Device::CPU>{});
 
+        send_buf += this_blk_send_size;
+        recv_buf += this_blk_recv_size;
         save_size =
           (save_size > max_blk_size_size_t
            ? save_size - max_blk_size_size_t
@@ -573,7 +579,7 @@ public:
 
     restore_model_weights(m, restore_weights);
   }
-};// class CheckpointBlob
+};// class CheckpointBinary
 
 /** Get mean metric value with validation set. */
 EvalType evaluate(model& m, const std::string& metric_name)
@@ -764,7 +770,7 @@ build_ltfb_callback_from_pbuf(
       params.checkpoint_basedir());
     break;
   case comm_algorithm::checkpoint_binary:
-    algo = make_unique<CheckpointBlob>(std::move(weights_list));
+    algo = make_unique<CheckpointBinary>(std::move(weights_list));
     break;
   }
   return make_unique<ltfb>(
