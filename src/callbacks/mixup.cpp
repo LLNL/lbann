@@ -30,7 +30,6 @@
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/beta.hpp"
 #include "lbann/utils/exception.hpp"
-#include "lbann/utils/image.hpp"
 
 #include <callbacks.pb.h>
 

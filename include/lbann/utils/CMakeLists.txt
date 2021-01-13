@@ -17,7 +17,6 @@ set_full_path(THIS_DIR_HEADERS
   glob.hpp
   hydrogen_utils.hpp
   im2col.hpp
-  image.hpp
   jag_utils.hpp
   lbann_library.hpp
   mild_exception.hpp
@@ -53,6 +52,7 @@ endif ()
 
 if (LBANN_HAS_OPENCV)
   list(APPEND THIS_DIR_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/opencv.hpp")
+  list(APPEND THIS_DIR_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/image.hpp")
 endif ()
 
 # Add the subdirectories

@@ -27,7 +27,9 @@
 #include "lbann/utils/summary.hpp"
 
 #include "lbann/utils/exception.hpp"
+#if LBANN_HAS_OPENCV
 #include "lbann/utils/image.hpp"
+#endif // LBANN_HAS_OPENCV
 
 namespace lbann {
 
@@ -50,6 +52,7 @@ lbann_summary::~lbann_summary() {
   }
 }
 
+#ifdef LBANN_HAS_OPENCV
 void lbann_summary::report_image(std::string const& tag,
                                  std::string const& img_format,
                                  CPUMat const& image,
@@ -69,6 +72,7 @@ void lbann_summary::report_image(std::string const& tag,
   m_sw->add_image(tag, img_str, dims, step);
 
 }
+#endif // LBANN_HAS_OPENCV
 
 void lbann_summary::flush() {
   flush_means();
