@@ -356,7 +356,7 @@ set_center_specific_mpi ${CENTER} ${SPACK_ARCH_TARGET}
 ##########################################################################################
 # Establish the spec for LBANN
 LBANN_SPEC="lbann@${LBANN_LABEL}${LBANN_VARIANTS} ${HYDROGEN} ${DIHYDROGEN} ${ALUMINUM} ${MPI}"
-LBANN_DEV_PATH_SPEC="lbann@${LBANN_LABEL}${LBANN_VARIANTS} dev_path=${LBANN_HOME} ${HYDROGEN} ${DIHYDROGEN} ${ALUMINUM} ${MPI}"
+LBANN_DEV_PATH_SPEC="lbann@${LBANN_LABEL} dev_path=${LBANN_HOME} ${LBANN_VARIANTS} ${HYDROGEN} ${DIHYDROGEN} ${ALUMINUM} ${MPI}"
 ##########################################################################################
 
 if [[ -n "${BUILD_ENV_ONLY:-}" ]]; then
