@@ -4,7 +4,6 @@ set_full_path(THIS_DIR_SOURCES
   data_reader_cifar10.cpp
   data_reader_csv.cpp
   data_reader_image.cpp
-  data_reader_imagenet.cpp
   data_reader_jag_conduit.cpp
   data_reader_merge_features.cpp
   data_reader_merge_samples.cpp
@@ -25,6 +24,11 @@ set_full_path(THIS_DIR_SOURCES
 if (LBANN_HAS_DISTCONV)
   list(APPEND THIS_DIR_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/data_reader_hdf5.cpp")
+endif ()
+
+if (LBANN_HAS_OPENCV)
+  list(APPEND THIS_DIR_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/data_reader_imagenet.cpp")
 endif ()
 
 # Add the subdirectories
