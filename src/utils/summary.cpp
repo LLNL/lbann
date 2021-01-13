@@ -27,7 +27,7 @@
 #include "lbann/utils/summary.hpp"
 
 #include "lbann/utils/exception.hpp"
-#if LBANN_HAS_OPENCV
+#ifdef LBANN_HAS_OPENCV
 #include "lbann/utils/image.hpp"
 #endif // LBANN_HAS_OPENCV
 

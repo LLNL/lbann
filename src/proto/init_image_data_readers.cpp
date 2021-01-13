@@ -87,7 +87,7 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const lbann_dat
   }
 
   if (name == "imagenet") {
-#if LBANN_HAS_OPENCV
+#ifdef LBANN_HAS_OPENCV
     reader = new imagenet_reader(shuffle);
 #else
     LBANN_ERROR("Imagenet reader not supported without OpenCV");

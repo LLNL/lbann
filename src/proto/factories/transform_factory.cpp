@@ -71,7 +71,7 @@ void register_default_builders(factory_type& factory) {
   factory.register_builder("Normalize", build_normalize_transform_from_pbuf);
   factory.register_builder("SampleNormalize", build_sample_normalize_transform_from_pbuf);
   factory.register_builder("Scale", build_scale_transform_from_pbuf);
-#if LBANN_HAS_OPENCV
+#ifdef LBANN_HAS_OPENCV
   factory.register_builder("AdjustBrightness", build_adjust_brightness_transform_from_pbuf);
   factory.register_builder("AdjustContrast", build_adjust_contrast_transform_from_pbuf);
   factory.register_builder("AdjustSaturation", build_adjust_saturation_transform_from_pbuf);

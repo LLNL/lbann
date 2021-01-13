@@ -434,7 +434,7 @@ void init_data_readers(
           } else if (name == "numpy_npz_conduit_reader") {
             split_reader = new numpy_npz_conduit_reader(*dynamic_cast<const numpy_npz_conduit_reader*>(reader));
           } else if (name == "imagenet") {
-#if LBANN_HAS_OPENCV
+#ifdef LBANN_HAS_OPENCV
             split_reader = new imagenet_reader(*dynamic_cast<const imagenet_reader*>(reader));
 #else
             LBANN_ERROR("imagenet reader not supported without OpenCV.");
