@@ -39,6 +39,7 @@ set_full_path(THIS_DIR_HEADERS
   type_erased_matrix.hpp
   typename.hpp
   vision.hpp
+  visitor_hooks.hpp
   )
 
 if (LBANN_HAS_HALF)

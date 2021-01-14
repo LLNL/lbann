@@ -40,7 +40,7 @@ def initialize_rng():
 
 # Sample access functions
 _mini_batch_size = 2
-_num_epochs = 3
+_num_epochs = 5
 def get_sample(index):
     initialize_rng()
     return (random.gauss(0,1),)
@@ -89,7 +89,11 @@ def construct_model(lbann):
     ]
     callbacks = [
         lbann.CallbackPrint(),
-        lbann.CallbackLTFB(batch_interval=1, metric='random'),
+        lbann.CallbackLTFB(
+            batch_interval=1,
+            metric='random',
+            communication_algorithm='checkpoint_file',
+        ),
     ]
 
     # Construct model
@@ -109,6 +113,8 @@ def construct_data_reader(lbann):
 
     """
 
+    # Note: The training data reader should be removed when
+    # https://github.com/LLNL/lbann/issues/1098 is resolved.
     message = lbann.reader_pb2.DataReader()
     message.reader.extend([
         tools.create_python_data_reader(
@@ -187,7 +193,8 @@ def augment_test_func(test_func):
                         continue
                     ltfb_partners = [[] for _ in range(num_trainers)]
                     ltfb_winners = [[] for _ in range(num_trainers)]
-                    metric_values = [[] for _ in range(num_trainers)]
+                    tournament_metrics = [[] for _ in range(num_trainers)]
+                    validation_metrics = [[] for _ in range(num_trainers)]
 
                 # LTFB tournament winners
                 match = re.search(
@@ -209,7 +216,7 @@ def augment_test_func(test_func):
                     line)
                 if match:
                     trainer = int(match.group(1))
-                    metric_values[trainer].append(float(match.group(2)))
+                    tournament_metrics[trainer].append(float(match.group(2)))
 
                 # Metric value on validation set
                 match = re.search(
@@ -218,7 +225,7 @@ def augment_test_func(test_func):
                     line)
                 if match:
                     trainer = int(match.group(1))
-                    metric_values[trainer].append(float(match.group(2)))
+                    validation_metrics[trainer].append(float(match.group(2)))
 
         # Make sure file has been parsed correctly
         assert num_trainers, \
@@ -233,18 +240,23 @@ def augment_test_func(test_func):
                 f'Error parsing {log_file} ' \
                 f'(expected {_num_epochs-1} LTFB rounds, ' \
                 f'but found {len(winners)} for trainer {trainer})'
-        for trainer, vals in enumerate(metric_values):
-            assert len(vals) == _num_epochs+2*(_num_epochs-1), \
+        for trainer, vals in enumerate(validation_metrics):
+            assert len(vals) == _num_epochs, \
                 f'Error parsing {log_file} ' \
-                f'(expected {_num_epochs+2*(_num_epochs-1)} validation metric values, ' \
+                f'(expected {_num_epochs} validation metric values, ' \
+                f'but found {len(val)} for trainer {trainer})'
+        for trainer, vals in enumerate(tournament_metrics):
+            assert len(vals) == 2*(_num_epochs-1), \
+                f'Error parsing {log_file} ' \
+                f'(expected {_num_epochs} validation metric values, ' \
                 f'but found {len(val)} for trainer {trainer})'
 
         # Make sure metric values match expected values
         # Note: An LTFB round occurs once per training epoch
         # (excluding the first epoch). Each LTFB round involves two
-        # evaluations on the validation set: once on the local model
+        # evaluations on the tournament set: once on the local model
         # and once on a model from a partner trainer. At the end of
-        # each training epoch, we perform another evalutation on the
+        # each training epoch, we perform an evalutation on the
         # validation set. By inspecting the metric values
         # (corresponding to the model weight), we can make sure that
         # LTFB is evaluating on the correct models.
@@ -253,12 +265,12 @@ def augment_test_func(test_func):
             for trainer in range(num_trainers):
                 partner = ltfb_partners[trainer][step]
                 winner = ltfb_winners[trainer][step]
-                local_val = metric_values[trainer][3*step+1]
-                partner_val = metric_values[trainer][3*step+2]
-                winner_val = metric_values[trainer][3*step+3]
-                true_local_val = metric_values[trainer][3*step]
-                true_partner_val = metric_values[partner][3*step]
-                true_winner_val = metric_values[winner][3*step]
+                local_val = tournament_metrics[trainer][2*step]
+                partner_val = tournament_metrics[trainer][2*step+1]
+                winner_val = validation_metrics[trainer][step+1]
+                true_local_val = validation_metrics[trainer][step]
+                true_partner_val = validation_metrics[partner][step]
+                true_winner_val = validation_metrics[winner][step]
                 assert true_local_val-tol < local_val < true_local_val+tol, \
                     'Incorrect metric value for LTFB local model'
                 assert true_partner_val-tol < partner_val < true_partner_val+tol, \
