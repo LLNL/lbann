@@ -20,6 +20,7 @@ Internal features:
  - Elementary examples of using complex numbers
  - cuDNN handles are now wrapped in RAII management classes
  - Improved HWLOC compatility for v1.11 and v2.x
+ - Added support for ROCm and MIOpen
 
 I/O & data readers:
  - Experimental data reader that generates graph random walks with
@@ -47,6 +48,7 @@ Retired features:
    data reader moved into the data coordinator
  - Removed the deprecated partitioned data reader modes that were used
    to partition and overlap data sets for multiple models
+ - Removed depracated ActivationDescriptor class
 
 ============================== Release Notes: v0.101 ==============================
 
