@@ -55,8 +55,6 @@ namespace callback {
  *      or a subset of the weights? Hyperparameters?
  *    - Can this be used to explore model architectures?
  *
- *  @todo Exchange optimizer state.
- *  @todo Support heterogeneous models.
  */
 class ltfb : public callback_base {
 public:
@@ -89,13 +87,8 @@ public:
 
     /** Save and load model data with checkpoint files.
      *
-     *  @todo Implement.
-     *
      *  Notes:
      *    - Supports hyperparameter exploration.
-     *    - Checkpoint files currently do not store model architecture
-     *      information, so this is not suitable for model
-     *      architecture exploraiton.
      *    - This approach is temporary and experimental, since going
      *      through the file system is very suboptimal. When a wire
      *      format for model checkpoints is developed, it should be
@@ -128,11 +121,10 @@ public:
   ltfb* copy() const override { return new ltfb(*this); }
   std::string name() const override { return "LTFB"; }
 
-  void setup(model *m) override;
   void on_train_begin(model *m) override;
   void on_batch_begin(model *m) override;
 
-  /** Convert string to LTFB communication algorithm.
+  /** @brief Convert string to LTFB communication algorithm.
    *
    *  If an empty string is provided, returns @c
    *  communication_algorithm::sendrecv_weights.
@@ -144,34 +136,29 @@ public:
 
 private:
 
-  /** Metric for tournament evaluation. */
+  /** @brief Metric for tournament evaluation. */
   std::string m_metric_name;
 
-  /** List of weights to exchange with partner.
+  /** @brief List of weights to exchange with partner.
    *
    *  If empty, then all weights are exchanged.
    */
   std::set<std::string> m_weights_names;
 
-  /** Whether low-scoring or high-scoring models survive a
+  /** @brief Whether low-scoring or high-scoring models survive a
    *  tournament. */
   bool m_low_score_wins;
 
-  /** Inter-trainer communication scheme. */
+  /** @brief Inter-trainer communication scheme. */
   communication_algorithm m_comm_algo;
 
-  /** Base directory of the checkpoint state */
+  /** @brief Base directory of the checkpoint state */
   std::string m_ckpt_basedir;
 
   /** Whether to exchange training hyperparameters between trainers
   */
   bool m_exchange_hyperparameters;
 
-  /** Workspace weights.
-   *
-   *  Used to temporarily store local weights during a tournament.
-   */
-  std::vector<std::unique_ptr<weights>> m_workspace_weights;
 };
 
 // Builder function

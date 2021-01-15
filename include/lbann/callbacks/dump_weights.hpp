@@ -32,6 +32,7 @@
 #include <utility>
 
 #include "lbann/callbacks/callback.hpp"
+#include "lbann/utils/visitor_hooks.hpp"
 
 namespace lbann {
 namespace callback {
@@ -87,7 +88,7 @@ class dump_weights : public callback_base {
   /** Interval at which to dump weights */
   El::Int m_epoch_interval;
   /// Dump weights from learning layers.
-  void do_dump_weights(const model& m, std::string s = "");
+  void do_dump_weights(const model& m, visitor_hook hook, std::string s = "");
 };
 
 // Builder function
