@@ -122,7 +122,8 @@ set_center_specific_mpi()
                 MPI="^spectrum-mpi"
                 ;;
             "broadwell" | "haswell")
-                MPI="^mvapich2"
+                # On LC the mvapich2 being used is built against HWLOC v1
+                MPI="^mvapich2 ^hwloc@1.11.13"
                 ;;
             *)
 		echo "No center-specified MPI library."
@@ -163,6 +164,18 @@ set_center_specific_externals()
 
     if [[ ${center} = "llnl_lc" ]]; then
         case ${spack_arch_target} in
+            "power9le" | "power8le")
+cat <<EOF  >> ${yaml}
+    rdma-core:
+      buildable: False
+      version:
+      - 20
+      externals:
+      - spec: rdma-core@20 arch=${spack_arch_target}
+        prefix: /usr
+EOF
+                ;;
+
             *)
                 echo "No center-specified externals."
                 ;;
