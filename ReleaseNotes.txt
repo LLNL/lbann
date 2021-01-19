@@ -32,6 +32,7 @@ Build system:
  - Hydrogen v1.5.0
  - Aluminum v0.5.0
  - C++14 or newer standard with CUDA (CMake: "-DCMAKE_CUDA_STANDARD=14")
+ - CNPY is now an optional dependency via CMake "LBANN_WITH_CNPY"
 
 Bug fixes:
  - Fixed a bug where LBANN didn't set the Hydrogen RNG seed
