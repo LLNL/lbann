@@ -1222,7 +1222,6 @@ miopenConvBwdDataAlgorithm_t get_bwd_data_algo_heuristic(
                 true));
   return find_best_heuristic_algorithm(perf_results, nondet_bwd_data_algos,
                                        deterministic, ws_size);
-  //return miopenConvolutionBwdDataAlgoGEMM;
 }
 
 miopenConvBwdWeightsAlgorithm_t get_bwd_filter_algo_heuristic(
@@ -1251,7 +1250,6 @@ miopenConvBwdWeightsAlgorithm_t get_bwd_filter_algo_heuristic(
                 true));
   return find_best_heuristic_algorithm(perf_results, nondet_bwd_filter_algos,
                                        deterministic, ws_size);
-  //return miopenConvolutionBwdWeightsAlgoGEMM;
 }
 
 miopenConvFwdAlgorithm_t get_fwd_algo_autotune(
@@ -1328,7 +1326,6 @@ miopenConvBwdDataAlgorithm_t get_bwd_data_algo_autotune(
   }
   return find_best_algorithm(perf_results_all, nondet_bwd_data_algos,
                              deterministic, ws_size);
-  //return miopenConvolutionBwdDataAlgoGEMM;
 }
 
 miopenConvBwdWeightsAlgorithm_t get_bwd_filter_algo_autotune(
@@ -1367,7 +1364,6 @@ miopenConvBwdWeightsAlgorithm_t get_bwd_filter_algo_autotune(
   }
   return find_best_algorithm(perf_results_all, nondet_bwd_filter_algos,
                              deterministic, ws_size);
-  //return miopenConvolutionBwdWeightsAlgoGEMM;
 }
 
 }  // namespace
