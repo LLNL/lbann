@@ -162,7 +162,7 @@ public:
   ~base_convolution_layer();
 
 #ifdef LBANN_HAS_DNN_LIB
-  void set_dnn_math_mode(cudnnMathType_t math_type) noexcept;
+  void set_dnn_math_mode(dnn_lib::dnnMathType_t math_type) noexcept;
 #endif // LBANN_HAS_DNN_LIB
 
   description get_description() const override;

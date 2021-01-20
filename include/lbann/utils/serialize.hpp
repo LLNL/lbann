@@ -30,7 +30,7 @@
 #include "serialization/cereal_utils.hpp"
 
 // Serialization code is only valid in C++ code.
-#if !(defined __CUDACC__ || defined __HIPCC__)
+#if !(defined __CUDACC__)
 #include "serialization/rooted_archive_adaptor.hpp"
 #ifdef LBANN_HAS_HALF
 #include "serialization/serialize_half.hpp"

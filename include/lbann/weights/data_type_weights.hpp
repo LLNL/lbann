@@ -164,7 +164,7 @@ public:
    */
   template <typename ArchiveT>
   void serialize(ArchiveT& ar)
-#if !defined(__CUDACC__)
+#if !(defined __CUDACC__)
   {
     ar(cereal::base_class<weights>(this),
        CEREAL_NVP(m_values),
@@ -184,7 +184,7 @@ public:
 private:
   friend cereal::access;
   data_type_weights()
-#ifndef __CUDACC__
+#if !(defined __CUDACC__)
     : data_type_weights(utils::get_current_comm()) {}
 #else
   ;

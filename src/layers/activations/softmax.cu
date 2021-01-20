@@ -305,7 +305,7 @@ void fp_compute_impl(softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, E
                              l.m_mode);
 #ifdef LBANN_ENABLE_SOFTMAX_THRESHOLD
     gpu_lib::apply_entrywise_unary_operator<threshold_op>(local_output,
-                                                       local_output);
+                                                          local_output);
 #endif // LBANN_ENABLE_SOFTMAX_THRESHOLD
   }
 }

@@ -43,7 +43,7 @@
 
 #include <lbann/utils/h2_tmp.hpp>
 
-#if !(defined __CUDACC__ || defined __HIPCC__)
+#if !(defined __CUDACC__)
 namespace lbann
 {
 namespace utils

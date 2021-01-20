@@ -23,8 +23,8 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
-#ifndef LBANN_UTILS_DNN_LIB_CUDNN_POOLING_HPP_
-#define LBANN_UTILS_DNN_LIB_CUDNN_POOLING_HPP_
+#ifndef LBANN_UTILS_DNN_LIB_MIOPEN_POOLING_HPP_
+#define LBANN_UTILS_DNN_LIB_MIOPEN_POOLING_HPP_
 
 #include "lbann/utils/dnn_enums.hpp"
 #include "lbann/utils/dnn_lib/helpers.hpp"
@@ -35,16 +35,20 @@
 namespace lbann
 {
 
-#ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_MIOPEN
 namespace dnn_lib
 {
 
-using namespace cudnn;
+using namespace miopen;
 
 inline size_t get_pooling_ws_size(PoolingDescriptor const& poolingDesc,
                                   TensorDescriptor const& yDesc)
 {
-  return 0UL;
+  size_t size;
+  CHECK_MIOPEN(miopenPoolingGetWorkSpaceSizeV2(poolingDesc,
+                                               yDesc,
+                                               &size));
+  return size;
 }
 
 template <typename TensorDataType, typename ScalarParameterType>
@@ -62,14 +66,32 @@ void pooling_forward(PoolingDescriptor const& poolingDesc,
   auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
   auto beta = El::To<LibScalingParamT>(beta_in);
-  CHECK_CUDNN(cudnnPoolingForward(handle_manager.get(),
-                                  poolingDesc,
-                                  &alpha,
-                                  xDesc,
-                                  x.LockedBuffer(),
-                                  &beta,
-                                  yDesc,
-                                  y.Buffer()));
+  if (workSpace.Height() == 0 || workSpace.Width() == 0) { // Inference
+    CHECK_MIOPEN(miopenPoolingForward(handle_manager.get(),
+                                      poolingDesc,
+                                      &alpha,
+                                      xDesc,
+                                      x.LockedBuffer(),
+                                      &beta,
+                                      yDesc,
+                                      y.Buffer(),
+                                      false,
+                                      nullptr,
+                                      0));
+  }
+  else {                                                  // Training
+    CHECK_MIOPEN(miopenPoolingForward(handle_manager.get(),
+                                      poolingDesc,
+                                      &alpha,
+                                      xDesc,
+                                      x.LockedBuffer(),
+                                      &beta,
+                                      yDesc,
+                                      y.Buffer(),
+                                      true,
+                                      workSpace.Buffer(),
+                                      workSpace.Height()*sizeof(TensorDataType)));
+  }
 }
 
 template <typename TensorDataType, typename ScalarParameterType>
@@ -82,7 +104,8 @@ void pooling_forward(PoolingDescriptor const& poolingDesc,
                      El::AbstractMatrix<TensorDataType>& y,
                      El::Matrix<TensorDataType, El::Device::GPU>& workSpace)
 {
-  auto multisync = El::MakeMultiSync(gpu::get_sync_info(y),
+  auto multisync = El::MakeMultiSync(gpu::get_sync_info(workSpace),
+                                     gpu::get_sync_info(y),
                                      gpu::get_sync_info(x));
   pooling_forward(poolingDesc,
                   alpha_in, xDesc, x,
@@ -110,18 +133,19 @@ void pooling_backward(PoolingDescriptor const& poolingDesc,
   auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
   auto beta = El::To<LibScalingParamT>(beta_in);
-  CHECK_CUDNN(cudnnPoolingBackward(handle_manager.get(),
-                                   poolingDesc,
-                                   &alpha,
-                                   yDesc,
-                                   y.LockedBuffer(),
-                                   dyDesc,
-                                   dy.LockedBuffer(),
-                                   xDesc,
-                                   x.LockedBuffer(),
-                                   &beta,
-                                   dxDesc,
-                                   dx.Buffer()));
+  CHECK_MIOPEN(miopenPoolingBackward(handle_manager.get(),
+                                     poolingDesc,
+                                     &alpha,
+                                     yDesc,
+                                     y.LockedBuffer(),
+                                     dyDesc,
+                                     dy.LockedBuffer(),
+                                     xDesc,
+                                     x.LockedBuffer(),
+                                     &beta,
+                                     dxDesc,
+                                     dx.Buffer(),
+                                     workSpace.Buffer()));
 }
 
 template <typename TensorDataType, typename ScalarParameterType>
@@ -138,7 +162,8 @@ void pooling_backward(PoolingDescriptor const& poolingDesc,
                       El::AbstractMatrix<TensorDataType>& dx,
                       El::Matrix<TensorDataType, El::Device::GPU>& workSpace)
 {
-  auto multisync = El::MakeMultiSync(gpu::get_sync_info(dx),
+  auto multisync = El::MakeMultiSync(gpu::get_sync_info(workSpace),
+                                     gpu::get_sync_info(dx),
                                      gpu::get_sync_info(x),
                                      gpu::get_sync_info(dy),
                                      gpu::get_sync_info(y));
@@ -150,6 +175,6 @@ void pooling_backward(PoolingDescriptor const& poolingDesc,
 }
 
 }// namespace dnn_lib
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_MIOPEN
 }// namespace lbann
-#endif // LBANN_UTILS_DNN_LIB_CUDNN_POOLING_HPP_
+#endif // LBANN_UTILS_DNN_LIB_MIOPEN_POOLING_HPP_
