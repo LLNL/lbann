@@ -1384,7 +1384,6 @@ fwd_conv_alg get_fwd_algorithm(
   void* output,
   size_t ws_size,
   void* ws) {
-  return fwd_conv_alg::IMPLICIT_GEMM;
   miopenConvFwdAlgorithm_t a;
   if (autotune) {
     a = get_fwd_algo_autotune(deterministic,
@@ -1416,7 +1415,6 @@ bwd_data_conv_alg get_bwd_data_algorithm(
   void* error_signal,
   size_t ws_size,
   void* ws) {
-  return bwd_data_conv_alg::CUDNN_ALGO_0;
   miopenConvBwdDataAlgorithm_t a;
   if (autotune) {
     a = get_bwd_data_algo_autotune(deterministic,
@@ -1448,7 +1446,6 @@ bwd_filter_conv_alg get_bwd_filter_algorithm(
   void* kernel_gradient,
   size_t ws_size,
   void* ws) {
-  return bwd_filter_conv_alg::CUDNN_ALGO_0;
   miopenConvBwdWeightsAlgorithm_t a;
   if (autotune) {
     a = get_bwd_filter_algo_autotune(deterministic,
