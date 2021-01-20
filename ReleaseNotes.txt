@@ -26,6 +26,7 @@ Internal features:
  - Changed checkpoint logic to checkpoint at the start of epochs
    and changed the naming scheme to use the callback phase (visitor
    hook) in the name rather than the current execution context.
+ - Added in-memory binary model exchange for LTFB.
 
 I/O & data readers:
  - Experimental data reader that generates graph random walks with
