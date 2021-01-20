@@ -20,6 +20,13 @@ Internal features:
  - Elementary examples of using complex numbers
  - cuDNN handles are now wrapped in RAII management classes
  - Improved HWLOC compatility for v1.11 and v2.x
+ - Added an enum type of visitor hooks that will eventually be used to
+   allow callbacks or other visitors to operate at user defined hook
+   points
+ - Changed checkpoint logic to checkpoint at the start of epochs
+   and changed the naming scheme to use the callback phase (visitor
+   hook) in the name rather than the current execution context.
+ - Added in-memory binary model exchange for LTFB.
  - Added support for ROCm and MIOpen
 
 I/O & data readers:

@@ -103,6 +103,10 @@ public:
       );
 
     ar.serializeDeferments();
+#ifndef __CUDACC__
+    if constexpr (utils::IsInputArchive<Archive>)
+      m_model_is_setup = false;
+#endif // __CUDACC__
   }
 
   // ===========================================
@@ -240,13 +244,21 @@ public:
   /** @brief Are background I/O activities enabled by the input layers */
   bool background_io_activity_allowed() { return m_background_io_allowed; }
 
+  void swap_layers(model& other);
+  void swap_weights(model& other);
+  void swap_metrics(model& other);
+  void swap_objective_function(model& other);
+
   // ===========================================
   // Setup
   // ===========================================
 
   /** @details Must be called after model specification and before
    *  execution. */
-  virtual void setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata);
+  virtual void setup(
+    size_t max_mini_batch_size,
+    DataReaderMetaData& dr_metadata,
+    bool force=false);
 
   virtual void make_data_store_preloaded(execution_mode mode);
 

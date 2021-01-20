@@ -290,11 +290,10 @@ if __name__ == '__main__':
 
     # Construct layer graph
     input = lbann.Input(
-        io_buffer='partitioned',
         target_mode='label_reconstruction')
-    volume = lbann.Split(input)
+    volume = lbann.Identity(input)
     output = UNet3D()(volume)
-    segmentation = lbann.Split(input)
+    segmentation = lbann.Identity(input)
     ce = lbann.CrossEntropy(
         [output, segmentation],
         use_labels=True)

@@ -29,6 +29,7 @@ set_full_path(THIS_DIR_SOURCES
   summary.cpp
   system_info.cpp
   trainer_file_utils.cpp
+  visitor_hooks.cpp
 )
 
 if (LBANN_HAS_CUDA)
