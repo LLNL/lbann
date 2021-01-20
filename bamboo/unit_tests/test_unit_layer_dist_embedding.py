@@ -213,5 +213,5 @@ def construct_data_reader(lbann):
 # Note (tym 6/12/20): Tests are disabled for now since the default
 # build doesn't include SHMEM or NVSHMEM. Restore these tests when
 # proper support is added.
-# for test in tools.create_tests(setup_experiment, __file__):
-#     globals()[test.__name__] = test
+# for _test_func in tools.create_tests(setup_experiment, __file__):
+#     globals()[_test_func.__name__] = _test_func

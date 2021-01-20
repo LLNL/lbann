@@ -115,7 +115,7 @@ def construct_data_reader(lbann):
 # ==============================================
 # Setup PyTest
 # ==============================================
-def run_datastore_test_func(test_func, baseline_metrics, cluster, exes, dirname, profile_data) :
+def run_datastore_test_func(test_func, baseline_metrics, cluster, dirname, profile_data) :
     '''Executes the input test function
 
     Args:
@@ -132,7 +132,7 @@ def run_datastore_test_func(test_func, baseline_metrics, cluster, exes, dirname,
         on success:
           ['passed', <test function name>]
     '''
-    datastore_test_output = test_func(cluster, exes, dirname)
+    datastore_test_output = test_func(cluster, dirname)
 
     test_name = test_func.__name__
     r = ['passed', test_name]
@@ -184,7 +184,7 @@ def run_datastore_test_func(test_func, baseline_metrics, cluster, exes, dirname,
             r.append('bad value for "' + key + '; value is: ' + str(found_profile_data[key]) + '; should be: ' + str(d[key]))
     return r
 
-def run_baseline_test_func(baseline_test_func, cluster, exes, dirname) :
+def run_baseline_test_func(baseline_test_func, cluster, dirname) :
     '''Executes the input test function
 
     Args:
@@ -194,7 +194,7 @@ def run_baseline_test_func(baseline_test_func, cluster, exes, dirname) :
         list of metrics that are parsed from the function's
         output log
     '''
-    baseline_test_output = baseline_test_func(cluster, exes, dirname)
+    baseline_test_output = baseline_test_func(cluster, dirname)
     baseline_metrics = []
     with open(baseline_test_output['stdout_log_file']) as f:
         for line in f:
@@ -228,15 +228,15 @@ def create_test_func(baseline_test_func, datastore_test_funcs, profile_data=None
 
     """
     # Define test function
-    def func(cluster, exes, dirname, weekly):
+    def func(cluster, dirname, weekly):
         # Run LBANN experiment without data store
-        baseline_metrics = run_baseline_test_func(baseline_test_func, cluster, exes, dirname)
+        baseline_metrics = run_baseline_test_func(baseline_test_func, cluster, dirname)
 
         # Run LBANN experiments with data store
         num_failed = 0
         results = []
         for i in range(len(datastore_test_funcs)) :
-            r = run_datastore_test_func(datastore_test_funcs[i], baseline_metrics, cluster, exes, dirname, profile_data)
+            r = run_datastore_test_func(datastore_test_funcs[i], baseline_metrics, cluster, dirname, profile_data)
             results.append(r)
             if len(r) > 2 :
               num_failed += 1
