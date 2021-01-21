@@ -55,7 +55,7 @@ else ()
   if (PkgConfig_FOUND)
     pkg_check_modules(PC_FFTWF REQUIRED
       IMPORTED_TARGET GLOBAL
-      fftwf>=${FFTW_FIND_VERSION})
+      fftwf>=${FFTW_FIND_VERSION} fftw3f>=${FFTW_FIND_VERSION})
     if (PC_FFTWF_FOUND)
       set(FFTW_FLOAT_FOUND ${PC_FFTWF_FOUND})
       set(FFTW_FLOAT_VERSION ${PC_FFTWF_VERSION})
@@ -84,7 +84,7 @@ else ()
   if (PkgConfig_FOUND)
     pkg_check_modules(PC_FFTW REQUIRED
       IMPORTED_TARGET GLOBAL
-      fftw>=${FFTW_FIND_VERSION})
+      fftw>=${FFTW_FIND_VERSION} fftw3>=${FFTW_FIND_VERSION})
     if (PC_FFTW_FOUND)
       set(FFTW_DOUBLE_FOUND ${PC_FFTW_FOUND})
       set(FFTW_DOUBLE_VERSION ${PC_FFTW_VERSION})
