@@ -36,58 +36,98 @@
 # All targets are grouped under the imported target FFTW::FFTW.
 
 # Try to find the float things
-find_package(FFTW3f ${PACKAGE_FIND_VERSION} CONFIG QUIET
+find_package(FFTW3f ${FFTW_FIND_VERSION} CONFIG QUIET
   HINTS ${FFTW_DIR} $ENV{FFTW_DIR}
   PATH_SUFFIXES lib64/cmake/fftw3f lib/cmake/fftw3f
   lib64/cmake/fftw3 lib/cmake/fftw3
   NO_DEFAULT_PATH)
-find_package(FFTW3f ${PACKAGE_FIND_VERSION} CONFIG QUIET)
+find_package(FFTW3f ${FFTW_FIND_VERSION} CONFIG QUIET)
+
+set(FFTW_FLOAT_FOUND)
+set(FFTW_FLOAT_VERSION)
+set(FFTW_FLOAT_IMPORTED_LIBRARY)
+if (FFTW3f_FOUND)
+  set(FFTW_FLOAT_FOUND ${FFTW3f_FOUND})
+  set(FFTW_FLOAT_VERSION ${FFTW3f_VERSION})
+  set(FFTW_FLOAT_IMPORTED_LIBRARY FFTW3::fftw3f)
+else ()
+  find_package(PkgConfig)
+  if (PkgConfig_FOUND)
+    pkg_check_modules(PC_FFTWF REQUIRED
+      IMPORTED_TARGET GLOBAL
+      fftwf>=${FFTW_FIND_VERSION})
+    if (PC_FFTWF_FOUND)
+      set(FFTW_FLOAT_FOUND ${PC_FFTWF_FOUND})
+      set(FFTW_FLOAT_VERSION ${PC_FFTWF_VERSION})
+      set(FFTW_FLOAT_IMPORTED_LIBRARY PkgConfig::PC_FFTWF)
+    endif ()
+  endif (PkgConfig_FOUND)
+endif ()
 
 # Try to find the double things
-find_package(FFTW3 ${PACKAGE_FIND_VERSION} CONFIG QUIET
+find_package(FFTW3 ${FFTW_FIND_VERSION} CONFIG QUIET
   HINTS ${FFTW_DIR} $ENV{FFTW_DIR}
   PATH_SUFFIXES lib64/cmake/fftw3 lib/cmake/fftw3
   lib64/cmake/fftw3f lib/cmake/fftw3f
   NO_DEFAULT_PATH)
-find_package(FFTW3 ${PACKAGE_FIND_VERSION} CONFIG QUIET)
+find_package(FFTW3 ${FFTW_FIND_VERSION} CONFIG QUIET)
 
-set(FOUND_OK_FFTW_LIB)
+set(FFTW_DOUBLE_FOUND)
+set(FFTW_DOUBLE_VERSION)
+set(FFTW_DOUBLE_IMPORTED_LIBRARY)
+if (FFTW3_FOUND)
+  set(FFTW_DOUBLE_FOUND ${FFTW3_FOUND})
+  set(FFTW_DOUBLE_VERSION ${FFTW3_VERSION})
+  set(FFTW_DOUBLE_IMPORTED_LIBRARY FFTW3::fftw3)
+else ()
+  find_package(PkgConfig)
+  if (PkgConfig_FOUND)
+    pkg_check_modules(PC_FFTW REQUIRED
+      IMPORTED_TARGET GLOBAL
+      fftw>=${FFTW_FIND_VERSION})
+    if (PC_FFTW_FOUND)
+      set(FFTW_DOUBLE_FOUND ${PC_FFTW_FOUND})
+      set(FFTW_DOUBLE_VERSION ${PC_FFTW_VERSION})
+      set(FFTW_DOUBLE_IMPORTED_LIBRARY PkgConfig::PC_FFTW)
+    endif ()
+  endif (PkgConfig_FOUND)
+endif ()
+
 set(FFTW_VERSION)
+set(FOUND_OK_FFTW_LIB)
 
 # Setup the float imported target
-if (FFTW3f_FOUND)
+if (FFTW_FLOAT_FOUND)
   add_library(FFTW::FFTW_FLOAT INTERFACE IMPORTED)
-  target_link_libraries(FFTW::FFTW_FLOAT INTERFACE FFTW3::fftw3f)
+  target_link_libraries(
+    FFTW::FFTW_FLOAT INTERFACE ${FFTW_FLOAT_IMPORTED_LIBRARY})
   set(FOUND_OK_FFTW_LIB TRUE)
-  set(FFTW_VERSION "${FFTW3f_VERSION}")
-endif (FFTW3f_FOUND)
+  set(FFTW_VERSION ${FFTW_FLOAT_VERSION})
+endif (FFTW_FLOAT_FOUND)
 
 # Setup the double imported target
-if (FFTW3_FOUND)
-  # Check for version consistency.
-  set(_SKIP_FFTW_DOUBLE)
-  if (FFTW_VERSION)
-    if (NOT FFTW3_VERSION VERSION_EQUAL FFTW_VERSION)
+if (FFTW_DOUBLE_FOUND)
+  if (FFTW_FLOAT_FOUND)
+    if (NOT FFTW_FLOAT_VERSION VERSION_EQUAL FFTW_DOUBLE_VERSION)
       message(WARNING
-        "FFTW double-precision library found with different "
-        "version than single precision. Found ${FFTW3_VERSION}; "
-        "expected ${FFTW_VERSION}. Only single-precision library "
-        "will be accepted.")
-      set(_SKIP_FFTW_DOUBLE TRUE)
+        "Found differently versioned FFTW libraries. FFTW(float) "
+        "found with version ${FFTW_FLOAT_VERSION} and FFTW(double) "
+        "found with version ${FFTW_DOUBLE_VERSION}.")
+    endif ()
+    if (FFTW_DOUBLE_VERSION VERSION_LESS FFTW_FLOAT_VERSION)
+      set(FFTW_VERSION ${FFTW_DOUBLE_VERSION})
     endif ()
   else ()
     message(WARNING
-      "Single-precision FFTW library not found; only "
-      "double-precision library will be used.")
-    set(FFTW_VERSION "${FFTW3f_VERSION}")
-  endif (FFTW_VERSION)
-
-  if (NOT _SKIP_FFTW_DOUBLE)
-    add_library(FFTW::FFTW_DOUBLE INTERFACE IMPORTED)
-    target_link_libraries(FFTW::FFTW_DOUBLE INTERFACE FFTW3::fftw3)
-    set(FOUND_OK_FFTW_LIB TRUE)
-  endif (NOT _SKIP_FFTW_DOUBLE)
-endif (FFTW3_FOUND)
+      "FFTW(float) library not found. "
+      "Only the double-precision library will be linked.")
+    set(FFTW_VERSION ${FFTW_DOUBLE_VERSION})
+  endif ()
+  add_library(FFTW::FFTW_DOUBLE INTERFACE IMPORTED)
+  target_link_libraries(
+    FFTW::FFTW_DOUBLE INTERFACE ${FFTW_DOUBLE_IMPORTED_LIBRARY})
+  set(FOUND_OK_FFTW_LIB TRUE)
+endif (FFTW_DOUBLE_FOUND)
 
 if (FOUND_OK_FFTW_LIB)
   add_library(FFTW::FFTW INTERFACE IMPORTED)
