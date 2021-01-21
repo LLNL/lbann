@@ -44,7 +44,7 @@ CMD="module use ${INSTALL_DIR}/etc/modulefiles"
 echo ${CMD}
 ${CMD}
 CMD="module load lbann"
-3cho ${CMD}
+echo ${CMD}
 ${CMD}
 cd ..
 
