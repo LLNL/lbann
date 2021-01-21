@@ -80,7 +80,7 @@ set_center_specific_modules()
             "ivybridge")
                 MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 mvapich2/2.3 python/3.7.2"
                 ;;
-            "zen2")
+            "zen")
                 MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 mvapich2/2.3 python/3.7.2"
                 ;;
             *)
@@ -164,7 +164,7 @@ set_center_specific_externals()
 
     if [[ ${center} = "llnl_lc" ]]; then
         case ${spack_arch_target} in
-            "broadwell" | "haswell" | "zen2" | "power9le" | "power8le")
+            "broadwell" | "haswell" | "zen" | "power9le" | "power8le")
 cat <<EOF  >> ${yaml}
     rdma-core:
       buildable: False
