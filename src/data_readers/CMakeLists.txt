@@ -25,7 +25,7 @@ if (LBANN_HAS_CNPY)
     data_reader_numpy_npz_conduit.cpp
     data_reader_pilot2_molecular.cpp
     )
-  list(APPEND THIS_DIR_HEADERS ${CNPY_SRC_FILES})
+  list(APPEND THIS_DIR_SOURCES ${CNPY_SRC_FILES})
 endif ()
 
 if (LBANN_HAS_DISTCONV)
