@@ -488,7 +488,8 @@ CMD="spack dev-build --source-path ${LBANN_HOME} ${DEV_BUILD_FLAGS} ${INSTALL_DE
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && ${CMD}
 
-LBANN_BUILD_DIR=$(grep "PROJECT_BINARY_DIR:" ${LBANN_HOME}/spack-build-out.txt | awk '{print $2}')
+# Don't use the output of this file since it will not exist if the compilation is not successful
+# LBANN_BUILD_DIR=$(grep "PROJECT_BINARY_DIR:" ${LBANN_HOME}/spack-build-out.txt | awk '{print $2}')
 
 if [[ -L "${LINK_DIR}" ]]; then
     CMD="rm ${LINK_DIR}"
@@ -496,10 +497,9 @@ if [[ -L "${LINK_DIR}" ]]; then
     [[ -z "${DRY_RUN:-}" ]] && ${CMD}
 fi
 
-CMD="ln -s ${LBANN_BUILD_DIR} ${LINK_DIR}"
+CMD="ln -s ${LBANN_HOME}/spack-build-${LBANN_SPEC_HASH} ${LINK_DIR}"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && ${CMD}
-
 
 ##########################################################################################
 # Once LBANN is installed deactivate the environment and try to find the package to get the
@@ -532,3 +532,8 @@ echo "  ninja install" | tee -a ${LOG}
 echo "##########################################################################################" | tee -a ${LOG}
 echo "All details of the run are logged to ${LOG}"
 echo "##########################################################################################"
+
+# Lastly, Save the log file in the build directory
+CMD="cp ${LOG} ${LBANN_HOME}/spack-build-${LBANN_SPEC_HASH}/${LOG}"
+echo ${CMD}
+[[ -z "${DRY_RUN:-}" ]] && ${CMD}
