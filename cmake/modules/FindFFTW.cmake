@@ -44,6 +44,7 @@ find_package(FFTW3f ${FFTW_FIND_VERSION} CONFIG QUIET
 find_package(FFTW3f ${FFTW_FIND_VERSION} CONFIG QUIET)
 
 set(FFTW_FLOAT_FOUND)
+set(FFTW_FLOAT_FOUND_BY_PKG_CONFIG)
 set(FFTW_FLOAT_VERSION)
 set(FFTW_FLOAT_IMPORTED_LIBRARY)
 if (FFTW3f_FOUND)
@@ -55,9 +56,15 @@ else ()
   if (PkgConfig_FOUND)
     pkg_check_modules(PC_FFTWF REQUIRED
       IMPORTED_TARGET GLOBAL
-      fftwf>=${FFTW_FIND_VERSION} fftw3f>=${FFTW_FIND_VERSION})
+      fftw3f>=${FFTW_FIND_VERSION})
+    if (NOT PC_FFTWF_FOUND)
+      pkg_check_modules(PC_FFTWF REQUIRED
+        IMPORTED_TARGET GLOBAL
+        fftwf>=${FFTW_FIND_VERSION})
+    endif ()
     if (PC_FFTWF_FOUND)
       set(FFTW_FLOAT_FOUND ${PC_FFTWF_FOUND})
+      set(FFTW_FLOAT_FOUND_BY_PKG_CONFIG ${PC_FFTWF_FOUND})
       set(FFTW_FLOAT_VERSION ${PC_FFTWF_VERSION})
       set(FFTW_FLOAT_IMPORTED_LIBRARY PkgConfig::PC_FFTWF)
     endif ()
@@ -65,12 +72,14 @@ else ()
 endif ()
 
 # Try to find the double things
-find_package(FFTW3 ${FFTW_FIND_VERSION} CONFIG QUIET
-  HINTS ${FFTW_DIR} $ENV{FFTW_DIR}
-  PATH_SUFFIXES lib64/cmake/fftw3 lib/cmake/fftw3
-  lib64/cmake/fftw3f lib/cmake/fftw3f
-  NO_DEFAULT_PATH)
-find_package(FFTW3 ${FFTW_FIND_VERSION} CONFIG QUIET)
+if (NOT FFTW_FLOAT_FOUND_BY_PKG_CONFIG)
+  find_package(FFTW3 ${FFTW_FIND_VERSION} CONFIG QUIET
+    HINTS ${FFTW_DIR} $ENV{FFTW_DIR}
+    PATH_SUFFIXES lib64/cmake/fftw3 lib/cmake/fftw3
+    lib64/cmake/fftw3f lib/cmake/fftw3f
+    NO_DEFAULT_PATH)
+  find_package(FFTW3 ${FFTW_FIND_VERSION} CONFIG QUIET)
+endif ()
 
 set(FFTW_DOUBLE_FOUND)
 set(FFTW_DOUBLE_VERSION)
@@ -84,7 +93,12 @@ else ()
   if (PkgConfig_FOUND)
     pkg_check_modules(PC_FFTW REQUIRED
       IMPORTED_TARGET GLOBAL
-      fftw>=${FFTW_FIND_VERSION} fftw3>=${FFTW_FIND_VERSION})
+      fftw3>=${FFTW_FIND_VERSION})
+    if (NOT PC_FFTW_FOUND)
+      pkg_check_modules(PC_FFTW REQUIRED
+        IMPORTED_TARGET GLOBAL
+        fftw>=${FFTW_FIND_VERSION})
+    endif ()
     if (PC_FFTW_FOUND)
       set(FFTW_DOUBLE_FOUND ${PC_FFTW_FOUND})
       set(FFTW_DOUBLE_VERSION ${PC_FFTW_VERSION})
