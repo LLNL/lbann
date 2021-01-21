@@ -36,6 +36,16 @@ echo "Task: Cleaning"
 echo "Task: Compiler Tests"
 cd compiler_tests
 $PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml
+LBANN_DIR=$(git rev-parse --show-toplevel)
+BUILD_DIR_BASE=${LBANN_DIR}/build/gnu.Release.${CLUSTER}.llnl.gov
+BUILD_DIR=${BUILD_DIR_BASE}/lbann/build
+INSTALL_DIR=${BUILD_DIR_BASE}/install
+CMD="module use ${INSTALL_DIR}/etc/modulefiles"
+echo ${CMD}
+${CMD}
+CMD="module load lbann"
+3cho ${CMD}
+${CMD}
 cd ..
 
 echo "Task: Integration Tests"

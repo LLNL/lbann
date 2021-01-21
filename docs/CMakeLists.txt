@@ -20,7 +20,6 @@ if (SPHINX_FOUND)
       build_containers.rst
       building_lbann.rst
       build_llnl_idiosyncracies.rst
-      build_spack_extra_config.rst
       build_with_cmake.rst
       build_with_superbuild.rst
       build_osx.rst
