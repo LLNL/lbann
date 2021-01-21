@@ -164,6 +164,23 @@ set_center_specific_externals()
 
     if [[ ${center} = "llnl_lc" ]]; then
         case ${spack_arch_target} in
+            "broadwell" | "haswell" | "zen2" | "power9le" | "power8le")
+cat <<EOF  >> ${yaml}
+    rdma-core:
+      buildable: False
+      version:
+      - 20
+      externals:
+      - spec: rdma-core@20 arch=${spack_arch_target}
+        prefix: /usr
+EOF
+                ;;
+            *)
+                echo "No center-specified externals."
+                ;;
+        esac
+    elif [[ ${center} = "olcf" ]]; then
+        case ${spack_arch_target} in
             "power9le" | "power8le")
 cat <<EOF  >> ${yaml}
     rdma-core:
@@ -175,13 +192,6 @@ cat <<EOF  >> ${yaml}
         prefix: /usr
 EOF
                 ;;
-
-            *)
-                echo "No center-specified externals."
-                ;;
-        esac
-    elif [[ ${center} = "olcf" ]]; then
-        case ${spack_arch_target} in
             *)
                 echo "No center-specified externals."
                 ;;
@@ -206,4 +216,38 @@ EOF
     else
         echo "No center-specified externals."
     fi
+
+    echo "Setting up a sane definition of how to represent modules."
+cat <<EOF >> ${yaml}
+  modules:
+    enable::
+      - tcl
+      - lmod
+    lmod::
+      hash_length: 7
+      projections:
+        all: '\${PACKAGE}/\${VERSION}'
+      all:
+        autoload: 'direct'
+        filter:
+          # Exclude changes to any of these variables
+          environment_blacklist:
+          - 'CPATH'
+          - 'LIBRARY_PATH'
+      ^python:
+        autoload:  'direct'
+    tcl:
+      hash_length: 7
+      projections:
+        all: '\${PACKAGE}/\${VERSION}'
+      all:
+        autoload: 'direct'
+        filter:
+          # Exclude changes to any of these variables
+          environment_blacklist:
+          - 'CPATH'
+          - 'LIBRARY_PATH'
+      ^python:
+        autoload:  'direct'
+EOF
 }

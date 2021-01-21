@@ -504,15 +504,16 @@ echo ${CMD} | tee -a ${LOG}
 ##########################################################################################
 # Once LBANN is installed deactivate the environment and try to find the package to get the
 # installed path
-spack env deactivate
-LBANN_FIND_CMD="spack find --path lbann@${LBANN_LABEL} arch=${SPACK_ARCH} /${LBANN_SPEC_HASH}"
-echo ${LBANN_FIND_CMD} | tee -a ${LOG}
-COMPILER_VER="<FIND ONE>"
-if [[ -z "${DRY_RUN:-}" ]]; then
-    LBANN_PATH=$(${LBANN_FIND_CMD})
-    LBANN_INSTALL_DIR=${LBANN_PATH##* }
-    COMPILER_VER=$(basename $(dirname $LBANN_INSTALL_DIR))
-fi
+# This is no longer necessary since we don't need to find the compiler version right now
+# spack env deactivate
+# LBANN_FIND_CMD="spack find --path lbann@${LBANN_LABEL} arch=${SPACK_ARCH} /${LBANN_SPEC_HASH}"
+# echo ${LBANN_FIND_CMD} | tee -a ${LOG}
+# COMPILER_VER="<FIND ONE>"
+# if [[ -z "${DRY_RUN:-}" ]]; then
+#     LBANN_PATH=$(${LBANN_FIND_CMD})
+#     LBANN_INSTALL_DIR=${LBANN_PATH##* }
+#     COMPILER_VER=$(basename $(dirname $LBANN_INSTALL_DIR))
+# fi
 echo "##########################################################################################" | tee -a ${LOG}
 echo "LBANN is installed in a spack environment named ${LBANN_ENV}, access it via:" | tee -a ${LOG}
 echo "  spack env activate -p ${LBANN_ENV}" | tee -a ${LOG}
@@ -523,7 +524,7 @@ echo "  ninja install" | tee -a ${LOG}
 echo "To use this version of LBANN have spack load it's module:is installed in a spack environment named ${LBANN_ENV}, access it via: (has to be executed from the environment)" | tee -a ${LOG}
 echo "  spack load lbann@${LBANN_LABEL} arch=${SPACK_ARCH}" | tee -a ${LOG}
 echo "or just use the module system without the need for activating the environment (does not require being in an environment)"  | tee -a ${LOG}
-echo "  module load lbann-${LBANN_LABEL}-${COMPILER_VER}-${LBANN_SPEC_HASH}" | tee -a ${LOG}
+echo "  module load lbann/${LBANN_LABEL}-${LBANN_SPEC_HASH}" | tee -a ${LOG}
 echo "##########################################################################################" | tee -a ${LOG}
 echo "Alternatively, for rebuilding, the script can drop create a shell in the build environment" | tee -a ${LOG}
 echo "  ${BASH_SOURCE} --build-env-only bash -e ${LBANN_ENV} -- ${CMD_LINE_VARIANTS}" | tee -a ${LOG}
