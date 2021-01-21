@@ -171,7 +171,11 @@ CMake flags known to LBANN's "Superbuild" build system.
                 standard packages in Spack can take a long time.
 
 2.  Once the installation has completed, to run LBANN you will want to
-    load the spack module for LBANN with the following command:
+    load the spack module for LBANN with one of the following commands:
+
+    .. code-block:: console
+
+        module load lbann/local
 
     .. code-block:: console
 
