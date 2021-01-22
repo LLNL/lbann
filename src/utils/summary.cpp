@@ -30,6 +30,7 @@
 #ifdef LBANN_HAS_OPENCV
 #include "lbann/utils/image.hpp"
 #endif // LBANN_HAS_OPENCV
+#include "lbann/utils/vision.hpp"
 
 namespace lbann {
 

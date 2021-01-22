@@ -395,6 +395,10 @@ if (NOT DL_LIBRARY)
 endif ()
 
 # Other optional dependencies
+if (LBANN_WITH_TBINF AND NOT LBANN_HAS_OPENCV)
+  message(FATAL_ERROR "TensorBoard requires OpenCV. Enable LBANN_WITH_VISION to use TensorBoard.")
+endif ()
+
 if (LBANN_WITH_TBINF)
   add_subdirectory(external/TBinf)
 endif ()
