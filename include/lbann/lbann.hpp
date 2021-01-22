@@ -122,7 +122,9 @@
 
 /// Data readers
 #include "lbann/data_readers/data_reader_npz_ras_lipid.hpp"
+#ifdef LBANN_HAS_OPENCV
 #include "lbann/data_readers/data_reader_imagenet.hpp"
+#endif // LBANN_HAS_OPENCV
 #include "lbann/data_readers/data_reader_cifar10.hpp"
 #include "lbann/data_readers/data_reader_mnist.hpp"
 #include "lbann/data_readers/data_reader_synthetic.hpp"

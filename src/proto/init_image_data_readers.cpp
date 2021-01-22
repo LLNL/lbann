@@ -31,7 +31,9 @@
 
 #include "lbann/data_readers/data_reader_cifar10.hpp"
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"
+#ifdef LBANN_HAS_OPENCV
 #include "lbann/data_readers/data_reader_imagenet.hpp"
+#endif // LBANN_HAS_OPENCV
 #include "lbann/data_readers/data_reader_mnist.hpp"
 
 #include <reader.pb.h>
@@ -85,7 +87,11 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const lbann_dat
   }
 
   if (name == "imagenet") {
+#ifdef LBANN_HAS_OPENCV
     reader = new imagenet_reader(shuffle);
+#else
+    LBANN_ERROR("Imagenet reader not supported without OpenCV");
+#endif // LBANN_HAS_OPENCV
   } else if (name =="jag_conduit") {
     data_reader_jag_conduit* reader_jag = new data_reader_jag_conduit(shuffle);
     const lbann_data::DataSetMetaData::Schema& pb_schema = pb_metadata.schema();

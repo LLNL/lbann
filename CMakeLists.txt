@@ -125,6 +125,8 @@ option(LBANN_WITH_PYTHON
 
 option(LBANN_WITH_TBINF "Include Tensorboard interface" ON)
 
+option(LBANN_WITH_VISION "Include vision processing components" ON)
+
 option(LBANN_WITH_VTUNE
   "Link the Intel VTune profiling library" OFF)
 
@@ -245,14 +247,16 @@ if (LBANN_WITH_FFT)
 endif (LBANN_WITH_FFT)
 
 # OpenCV installs a CMake configure file we can exploit
-find_package(OpenCV NO_MODULE QUIET
-  HINTS ${OpenCV_DIR} ${OPENCV_DIR} $ENV{OpenCV_DIR} $ENV{OPENCV_DIR}
-  PATH_SUFFIXES share/OpenCV
-  NO_DEFAULT_PATH)
-if (NOT OpenCV_FOUND)
-  find_package(OpenCV NO_MODULE QUIET REQUIRED)
+if (LBANN_WITH_VISION)
+  find_package(OpenCV NO_MODULE QUIET
+    HINTS ${OpenCV_DIR} ${OPENCV_DIR} $ENV{OpenCV_DIR} $ENV{OPENCV_DIR}
+    PATH_SUFFIXES share/OpenCV
+    NO_DEFAULT_PATH)
+  if (NOT OpenCV_FOUND)
+    find_package(OpenCV NO_MODULE QUIET REQUIRED)
+  endif ()
+  message(STATUS "Found OpenCV: ${OpenCV_DIR}")
 endif ()
-message(STATUS "Found OpenCV: ${OpenCV_DIR}")
 set(LBANN_HAS_OPENCV ${OpenCV_FOUND})
 
 # CUDA-ness of LBANN is 1:1 with Hydrogen. Iff Hydrogen has CUDA,
@@ -611,7 +615,9 @@ target_link_libraries(lbann PUBLIC OpenMP::OpenMP_CXX)
 target_link_libraries(lbann PUBLIC MPI::MPI_CXX)
 target_link_libraries(lbann PUBLIC protobuf::libprotobuf)
 target_link_libraries(lbann PUBLIC ${HYDROGEN_LIBRARIES})
-target_link_libraries(lbann PUBLIC ${OpenCV_LIBRARIES})
+if (LBANN_HAS_OPENCV)
+  target_link_libraries(lbann PUBLIC ${OpenCV_LIBRARIES})
+endif ()
 target_link_libraries(lbann PUBLIC ${CONDUIT_LIBRARIES})
 
 target_link_libraries(lbann PUBLIC

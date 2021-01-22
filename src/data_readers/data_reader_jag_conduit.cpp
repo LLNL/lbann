@@ -30,9 +30,8 @@
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/execution_contexts/sgd_execution_context.hpp"
 #include "lbann/utils/lbann_library.hpp"
-#include "lbann/utils/image.hpp"
-#include "lbann/utils/opencv.hpp"
 #include "lbann/utils/serialize.hpp"
+#include "lbann/utils/vision.hpp"
 #include "lbann/transforms/repack_HWC_to_CHW_layout.hpp"
 #include "lbann/transforms/scale_and_translate.hpp"
 
