@@ -12,15 +12,21 @@ set_full_path(THIS_DIR_SOURCES
   data_reader_mnist.cpp
   data_reader_nci.cpp
   data_reader_node2vec.cpp
-  data_reader_numpy.cpp
-  data_reader_numpy_npz.cpp
-  data_reader_pilot2_molecular.cpp
   data_reader_synthetic.cpp
   data_reader_python.cpp
-  data_reader_numpy_npz_conduit.cpp
-  data_reader_npz_ras_lipid.cpp
   data_reader_smiles.cpp
   )
+
+if (LBANN_HAS_CNPY)
+  set_full_path(CNPY_SRC_FILES
+    data_reader_npz_ras_lipid.cpp
+    data_reader_numpy.cpp
+    data_reader_numpy_npz.cpp
+    data_reader_numpy_npz_conduit.cpp
+    data_reader_pilot2_molecular.cpp
+    )
+  list(APPEND THIS_DIR_SOURCES ${CNPY_SRC_FILES})
+endif ()
 
 if (LBANN_HAS_DISTCONV)
   list(APPEND THIS_DIR_SOURCES
