@@ -72,7 +72,7 @@ BadSubstitutionPattern::BadSubstitutionPattern(std::string const& str)
 std::string replace_escapes(
   std::string const& str, lbann::utils::SystemInfo const& system_info)
 {
-  std::regex re("%env\\{([a-zA-Z0-9_]+)\\}|%[a-zA-Z]", std::regex::extended);
+  std::regex re("%env\\{([a-zA-Z0-9_]+)}|%[a-zA-Z]", std::regex::extended);
   std::smatch match;
   std::string outstr;
   outstr.reserve(str.size());

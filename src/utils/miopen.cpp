@@ -26,9 +26,9 @@
 
 #include "lbann_config.hpp"
 
-#ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_MIOPEN
 #include "lbann/utils/dnn_lib/helpers.hpp"
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_MIOPEN
 #include "lbann/utils/number_theory.hpp"
 
 #include "El.hpp"
@@ -37,36 +37,36 @@
 #include <unordered_map>
 #include <tuple>
 
-#ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_MIOPEN
 
 namespace lbann {
 namespace dnn_lib {
 
-using namespace cudnn;
+using namespace miopen;
 
 ////////////////////////////////////////////////////////////
-// Global cuDNN objects
+// Global MIOpen objects
 ////////////////////////////////////////////////////////////
 
 namespace {
 
 /** Wrapper for cuDNN handle. */
 struct handle_wrapper {
-  cudnnHandle_t handle;
+  miopenHandle_t handle;
   handle_wrapper() : handle(nullptr) {
-    CHECK_CUDA(cudaSetDevice(hydrogen::gpu::DefaultDevice()));
-    if (handle == nullptr) { CHECK_CUDNN(cudnnCreate(&handle)); }
-    if (handle == nullptr) { LBANN_ERROR("failed to create cuDNN handle"); }
-    CHECK_CUDNN(cudnnSetStream(handle, hydrogen::cuda::GetDefaultStream()));
+    CHECK_ROCM(hipSetDevice(hydrogen::gpu::DefaultDevice()));
+    if (handle == nullptr) { CHECK_MIOPEN(miopenCreate(&handle)); }
+    if (handle == nullptr) { LBANN_ERROR("failed to create MIOpen handle"); }
+    CHECK_MIOPEN(miopenSetStream(handle, hydrogen::rocm::GetDefaultStream()));
   }
   handle_wrapper(const handle_wrapper&) = delete;
   handle_wrapper& operator=(const handle_wrapper&) = delete;
   ~handle_wrapper() {
-    if (handle != nullptr) { cudnnDestroy(handle); }
+    if (handle != nullptr) { miopenDestroy(handle); }
   }
 };
 
-/** Global instance of cuDNN handle. */
+/** Global instance of MIOpen handle. */
 std::unique_ptr<handle_wrapper> handle_instance;
 
 } // namespace
@@ -79,68 +79,65 @@ void destroy() {
   handle_instance.reset();
 }
 
-cudnnHandle_t& get_handle() {
+miopenHandle_t& get_handle() {
   if (!handle_instance) { initialize(); }
-  CHECK_CUDA(cudaSetDevice(hydrogen::gpu::DefaultDevice()));
-  CHECK_CUDNN(cudnnSetStream(handle_instance->handle,
-                             hydrogen::cuda::GetDefaultStream()));
+  CHECK_ROCM(hipSetDevice(hydrogen::gpu::DefaultDevice()));
+  CHECK_MIOPEN(miopenSetStream(handle_instance->handle,
+                             hydrogen::rocm::GetDefaultStream()));
   return handle_instance->handle;
 }
 
 ////////////////////////////////////////////////////////////
-// Helper functions for cuDNN types
+// Helper functions for MIOpen types
 ////////////////////////////////////////////////////////////
 
 template <typename TensorDataType>
-cudnnDataType_t get_data_type() {
-  LBANN_ERROR("invalid data type for cuDNN");
-  return CUDNN_DATA_FLOAT;
+miopenDataType_t get_data_type() {
+  LBANN_ERROR("invalid data type for MIOpen");
+  return miopenFloat;
 }
 
 #ifdef LBANN_HAS_GPU_FP16
-template <> cudnnDataType_t get_data_type<fp16>() { return CUDNN_DATA_HALF; }
+template <> miopenDataType_t get_data_type<fp16>() { return miopenHalf; }
 #endif // LBANN_HAS_GPU_FP16
-template <> cudnnDataType_t get_data_type<float>() { return CUDNN_DATA_FLOAT; }
-template <> cudnnDataType_t get_data_type<double>() { return CUDNN_DATA_DOUBLE; }
+template <> miopenDataType_t get_data_type<float>() { return miopenFloat; }
+template <> miopenDataType_t get_data_type<double>() {
+  LBANN_WARNING("Double is not supported in MIOpen");
+  return miopenFloat;
+}
 
 ////////////////////////////////////////////////////////////
-// Wrapper classes for cuDNN types
+// Wrapper classes for MIOpen types
 ////////////////////////////////////////////////////////////
 
 // -----------------------------
 // TensorDescriptor
 // -----------------------------
 
-TensorDescriptor::TensorDescriptor(cudnnTensorDescriptor_t desc)
+TensorDescriptor::TensorDescriptor(miopenTensorDescriptor_t desc)
   : desc_{desc}
 {}
 
 TensorDescriptor::~TensorDescriptor() {
   if (desc_) {
     // Don't check status to avoid exceptions
-    cudnnDestroyTensorDescriptor(desc_);
+    miopenDestroyTensorDescriptor(desc_);
   }
 }
 
 TensorDescriptor::TensorDescriptor(const TensorDescriptor& other) {
   if (other.desc_) {
-    cudnnDataType_t data_type;
+    miopenDataType_t data_type;
     int num_dims;
-    CHECK_CUDNN(
-      cudnnGetTensorNdDescriptor(
+    CHECK_MIOPEN(
+      miopenGetTensorDescriptorSize(
         other.desc_,
-        0,          // nbDimsRequested
-        &data_type,
-        &num_dims,
-        nullptr,    // dimA
-        nullptr));  // strideA
+        &num_dims));
     std::vector<int> dims(num_dims), strides(num_dims);
-    CHECK_CUDNN(
-      cudnnGetTensorNdDescriptor(
+    CHECK_MIOPEN(
+      miopenGetTensorDescriptor(
         other.desc_,
-        num_dims,
         &data_type,
-        &num_dims,
         dims.data(),
         strides.data()));
     set(data_type, dims, strides);
@@ -161,58 +158,70 @@ void swap(TensorDescriptor& first, TensorDescriptor& second) {
   std::swap(first.desc_, second.desc_);
 }
 
-void TensorDescriptor::reset(cudnnTensorDescriptor_t desc) {
+void TensorDescriptor::reset(miopenTensorDescriptor_t desc) {
   if (desc_) {
-    CHECK_CUDNN(cudnnDestroyTensorDescriptor(desc_));
+    CHECK_MIOPEN(miopenDestroyTensorDescriptor(desc_));
   }
   desc_ = desc;
 }
 
-cudnnTensorDescriptor_t TensorDescriptor::release() noexcept {
+miopenTensorDescriptor_t TensorDescriptor::release() noexcept {
   auto old_desc = desc_;
   desc_ = nullptr;
   return old_desc;
 }
 
-cudnnTensorDescriptor_t TensorDescriptor::get() const noexcept {
+miopenTensorDescriptor_t TensorDescriptor::get() const noexcept {
   return desc_;
 }
 
-TensorDescriptor::operator cudnnTensorDescriptor_t() const noexcept {
+TensorDescriptor::operator miopenTensorDescriptor_t() const noexcept {
   return get();
 }
 
 void TensorDescriptor::create() {
   if (!desc_) {
-    CHECK_CUDNN(cudnnCreateTensorDescriptor(&desc_));
+    CHECK_MIOPEN(miopenCreateTensorDescriptor(&desc_));
   }
 }
 
 void TensorDescriptor::set(
-  cudnnDataType_t data_type,
+  miopenDataType_t data_type,
   std::vector<int> dims_in,
   std::vector<int> strides_in) {
 
   // Check that arguments are valid
   if (dims_in.empty()) {
-    LBANN_ERROR("attempted to set cuDNN tensor descriptor with no dimensions");
+    LBANN_ERROR("attempted to set MIOpen tensor descriptor with no dimensions");
   }
   if (!strides_in.empty() && dims_in.size() != strides_in.size()) {
     LBANN_ERROR(
-      "attempted to set cuDNN tensor descriptor ",
+      "attempted to set MIOpen tensor descriptor ",
       "with mismatched dimensions (", dims_in.size(), ") ",
       "and strides (",strides_in.size(),")");
   }
 
   std::vector<int> dims=std::move(dims_in), strides=std::move(strides_in);
-  if (dims.size() < 3)
+  if (dims.size() < 4)
   {
-    dims.resize(3, 1);
-    if (strides.size() < 3)
-      strides.resize(3, 1);
+    switch (dims.size())
+    {
+    case 2:
+      dims = {dims[0], 1, dims[1], 1};
+      strides = {};
+      break;
+    case 3:
+      dims = {dims[0], 1, dims[1], dims[2]};
+      strides = {};
+      break;
+    default:
+      LBANN_ERROR("Dims of size 1. Don't know what to do.");
+      break;
+    }
   }
 
   // Assume data is contiguous if no strides are provided
+  // Note (trb 12/29/2020): MIOpen only accepts contiguous strides.
   if (strides.empty()) {
     strides.resize(dims.size(), 1);
     for (int i=strides.size()-1; i>0; --i) {
@@ -220,10 +229,10 @@ void TensorDescriptor::set(
     }
   }
 
-  // Set cuDNN object
+  // Set MIOpen object
   create();
-  CHECK_CUDNN(
-    cudnnSetTensorNdDescriptor(
+  CHECK_MIOPEN(
+    miopenSetTensorDescriptor(
       desc_,
       data_type,
       dims.size(),
@@ -233,114 +242,17 @@ void TensorDescriptor::set(
 }
 
 // -----------------------------
-// FilterDescriptor
-// -----------------------------
-
-FilterDescriptor::FilterDescriptor(cudnnFilterDescriptor_t desc)
-  : desc_{desc}
-{}
-
-FilterDescriptor::~FilterDescriptor() {
-  if (desc_) {
-    // Don't check status to avoid exceptions
-    cudnnDestroyFilterDescriptor(desc_);
-  }
-}
-
-FilterDescriptor::FilterDescriptor(const FilterDescriptor& other) {
-  if (other.desc_) {
-    int num_dims;
-    cudnnDataType_t data_type;
-    cudnnTensorFormat_t format;
-    std::vector<int> dims(1);
-    CHECK_CUDNN(
-      cudnnGetFilterNdDescriptor(
-        other.desc_,
-        dims.size(),
-        &data_type,
-        &format,
-        &num_dims,
-        dims.data()));
-    dims.resize(num_dims);
-    CHECK_CUDNN(
-      cudnnGetFilterNdDescriptor(
-        other.desc_,
-        dims.size(),
-        &data_type,
-        &format,
-        &num_dims,
-        dims.data()));
-    set(data_type, format, dims);
-  }
-}
-
-FilterDescriptor::FilterDescriptor(FilterDescriptor&& other)
-  : desc_{other.desc_} {
-  other.desc_ = nullptr;
-}
-
-FilterDescriptor& FilterDescriptor::operator=(FilterDescriptor other) {
-  swap(other, *this);
-  return *this;
-}
-
-void swap(FilterDescriptor& first, FilterDescriptor& second) {
-  std::swap(first.desc_, second.desc_);
-}
-
-void FilterDescriptor::reset(cudnnFilterDescriptor_t desc) {
-  if (desc_) {
-    CHECK_CUDNN(cudnnDestroyFilterDescriptor(desc_));
-  }
-  desc_ = desc;
-}
-
-cudnnFilterDescriptor_t FilterDescriptor::release() noexcept {
-  auto old_desc = desc_;
-  desc_ = nullptr;
-  return old_desc;
-}
-
-cudnnFilterDescriptor_t FilterDescriptor::get() const noexcept {
-  return desc_;
-}
-
-FilterDescriptor::operator cudnnFilterDescriptor_t() const noexcept {
-  return get();
-}
-
-void FilterDescriptor::create() {
-  if (!desc_) {
-    CHECK_CUDNN(cudnnCreateFilterDescriptor(&desc_));
-  }
-}
-
-void FilterDescriptor::set(
-  cudnnDataType_t data_type,
-  cudnnTensorFormat_t format,
-  const std::vector<int>& dims) {
-  create();
-  CHECK_CUDNN(
-    cudnnSetFilterNdDescriptor(
-      desc_,
-      data_type,
-      format,
-      dims.size(),
-      dims.data()));
-}
-
-// -----------------------------
 // DropoutDescriptor
 // -----------------------------
 
-DropoutDescriptor::DropoutDescriptor(cudnnDropoutDescriptor_t desc)
+DropoutDescriptor::DropoutDescriptor(miopenDropoutDescriptor_t desc)
   : desc_{desc}
 {}
 
 DropoutDescriptor::~DropoutDescriptor() {
   if (desc_) {
     // Don't check status to avoid exceptions
-    cudnnDestroyDropoutDescriptor(desc_);
+    miopenDestroyDropoutDescriptor(desc_);
   }
 }
 
@@ -350,15 +262,20 @@ DropoutDescriptor::DropoutDescriptor(const DropoutDescriptor& other) {
     void* states;
     size_t states_size;
     unsigned long long seed;
-    CHECK_CUDNN(cudnnDropoutGetStatesSize(get_handle(), &states_size));
-    CHECK_CUDNN(
-      cudnnGetDropoutDescriptor(
+    bool use_mask, state_evo;
+    miopenRNGType_t rng_mode;
+    CHECK_MIOPEN(miopenDropoutGetStatesSize(get_handle(), &states_size));
+    CHECK_MIOPEN(
+      miopenGetDropoutDescriptor(
         other.desc_,
         get_handle(),
         &dropout,
         &states,
-        &seed));
-    set(dropout, states, states_size, seed);
+        &seed,
+        &use_mask,
+        &state_evo,
+        &rng_mode));
+    set(dropout, states, states_size, seed, use_mask, state_evo, rng_mode);
   }
 }
 
@@ -376,30 +293,30 @@ void swap(DropoutDescriptor& first, DropoutDescriptor& second) {
   std::swap(first.desc_, second.desc_);
 }
 
-void DropoutDescriptor::reset(cudnnDropoutDescriptor_t desc) {
+void DropoutDescriptor::reset(miopenDropoutDescriptor_t desc) {
   if (desc_) {
-    CHECK_CUDNN(cudnnDestroyDropoutDescriptor(desc_));
+    CHECK_MIOPEN(miopenDestroyDropoutDescriptor(desc_));
   }
   desc_ = desc;
 }
 
-cudnnDropoutDescriptor_t DropoutDescriptor::release() noexcept {
+miopenDropoutDescriptor_t DropoutDescriptor::release() noexcept {
   auto old_desc = desc_;
   desc_ = nullptr;
   return old_desc;
 }
 
-cudnnDropoutDescriptor_t DropoutDescriptor::get() const noexcept {
+miopenDropoutDescriptor_t DropoutDescriptor::get() const noexcept {
   return desc_;
 }
 
-DropoutDescriptor::operator cudnnDropoutDescriptor_t() const noexcept {
+DropoutDescriptor::operator miopenDropoutDescriptor_t() const noexcept {
   return get();
 }
 
 void DropoutDescriptor::create() {
   if (!desc_) {
-    CHECK_CUDNN(cudnnCreateDropoutDescriptor(&desc_));
+    CHECK_MIOPEN(miopenCreateDropoutDescriptor(&desc_));
   }
 }
 
@@ -408,32 +325,35 @@ void DropoutDescriptor::set(
   void* states,
   size_t states_size,
   unsigned long long seed,
-  bool /*use_mask*/, // these 3 unused for cuDNN
-  bool /*state_evo*/,
-  int /*rng_mode*/) {
+  bool use_mask,
+  bool state_evo,
+  miopenRNGType_t rng_mode) {
   create();
-  CHECK_CUDNN(
-    cudnnSetDropoutDescriptor(
+  CHECK_MIOPEN(
+    miopenSetDropoutDescriptor(
       desc_,
       get_handle(),
       dropout,
       states,
       states_size,
-      seed));
+      seed,
+      use_mask,
+      state_evo,
+      rng_mode));
 }
 
 // -----------------------------
 // RNNDescriptor
 // -----------------------------
 
-RNNDescriptor::RNNDescriptor(cudnnRNNDescriptor_t desc)
+RNNDescriptor::RNNDescriptor(miopenRNNDescriptor_t desc)
   : desc_{desc}
 {}
 
 RNNDescriptor::~RNNDescriptor() {
   if (desc_) {
     // Don't check status to avoid exceptions
-    cudnnDestroyRNNDescriptor(desc_);
+    miopenDestroyRNNDescriptor(desc_);
   }
 }
 
@@ -451,149 +371,61 @@ void swap(RNNDescriptor& first, RNNDescriptor& second) {
   std::swap(first.desc_, second.desc_);
 }
 
-void RNNDescriptor::reset(cudnnRNNDescriptor_t desc) {
+void RNNDescriptor::reset(miopenRNNDescriptor_t desc) {
   if (desc_) {
-    CHECK_CUDNN(cudnnDestroyRNNDescriptor(desc_));
+    CHECK_MIOPEN(miopenDestroyRNNDescriptor(desc_));
   }
   desc_ = desc;
 }
 
-cudnnRNNDescriptor_t RNNDescriptor::release() noexcept {
+miopenRNNDescriptor_t RNNDescriptor::release() noexcept {
   auto old_desc = desc_;
   desc_ = nullptr;
   return old_desc;
 }
 
-cudnnRNNDescriptor_t RNNDescriptor::get() const noexcept {
+miopenRNNDescriptor_t RNNDescriptor::get() const noexcept {
   return desc_;
 }
 
-RNNDescriptor::operator cudnnRNNDescriptor_t() const noexcept {
+RNNDescriptor::operator miopenRNNDescriptor_t() const noexcept {
   return get();
 }
 
 void RNNDescriptor::create() {
   if (!desc_) {
-    CHECK_CUDNN(cudnnCreateRNNDescriptor(&desc_));
+    CHECK_MIOPEN(miopenCreateRNNDescriptor(&desc_));
   }
 }
 
 void RNNDescriptor::set(
-  cudnnRNNAlgo_t algorithm,
-  cudnnRNNMode_t cell_mode,
-  cudnnRNNBiasMode_t bias_mode,
-  cudnnDirectionMode_t direction_mode,
-  cudnnRNNInputMode_t input_mode,
-  cudnnDataType_t data_type,
-  cudnnDataType_t math_precision,
-  cudnnMathType_t math_type,
+  miopenRNNAlgo_t algorithm,
+  miopenRNNMode_t cell_mode,
+  miopenRNNBiasMode_t bias_mode,
+  miopenRNNDirectionMode_t direction_mode,
+  miopenRNNInputMode_t input_mode,
+  miopenDataType_t data_type,
+  miopenDataType_t math_precision,
+  int math_type, // placeholder
   size_t input_size,
   size_t hidden_size,
   size_t proj_size,
   size_t num_layers,
-  cudnnDropoutDescriptor_t dropout_desc,
+  miopenDropoutDescriptor_t dropout_desc,
   uint32_t aux_flags) {
   create();
-#if CUDNN_VERSION < 8000
-  LBANN_ERROR(
-    "cuDNN 8 or newer is required for RNN support ",
-    "(detected ",CUDNN_MAJOR,".",CUDNN_MINOR,".",CUDNN_PATCHLEVEL,")");
-#else // CUDNN_VERSION >= 8000
-  CHECK_CUDNN(
-    cudnnSetRNNDescriptor_v8(
+  CHECK_MIOPEN(
+    miopenSetRNNDescriptor_V2(
       desc_,
-      algorithm,
-      cell_mode,
-      bias_mode,
-      direction_mode,
-      input_mode,
-      data_type,
-      math_precision,
-      math_type,
-      input_size,
       hidden_size,
-      proj_size,
       num_layers,
       dropout_desc,
-      aux_flags));
-#endif // CUDNN_VERSION >= 8000
-}
-
-// -----------------------------
-// RNNDataDescriptor
-// -----------------------------
-
-RNNDataDescriptor::RNNDataDescriptor(cudnnRNNDataDescriptor_t desc)
-  : desc_{desc}
-{}
-
-RNNDataDescriptor::~RNNDataDescriptor() {
-  if (desc_) {
-    // Don't check status to avoid exceptions
-    cudnnDestroyRNNDataDescriptor(desc_);
-  }
-}
-
-RNNDataDescriptor::RNNDataDescriptor(RNNDataDescriptor&& other)
-  : desc_{other.desc_} {
-  other.desc_ = nullptr;
-}
-
-RNNDataDescriptor& RNNDataDescriptor::operator=(RNNDataDescriptor other) {
-  swap(other, *this);
-  return *this;
-}
-
-void swap(RNNDataDescriptor& first, RNNDataDescriptor& second) {
-  std::swap(first.desc_, second.desc_);
-}
-
-void RNNDataDescriptor::reset(cudnnRNNDataDescriptor_t desc) {
-  if (desc_) {
-    CHECK_CUDNN(cudnnDestroyRNNDataDescriptor(desc_));
-  }
-  desc_ = desc;
-}
-
-cudnnRNNDataDescriptor_t RNNDataDescriptor::release() {
-  auto old_desc = desc_;
-  desc_ = nullptr;
-  return old_desc;
-}
-
-cudnnRNNDataDescriptor_t RNNDataDescriptor::get() const noexcept {
-  return desc_;
-}
-
-RNNDataDescriptor::operator cudnnRNNDataDescriptor_t() const noexcept {
-  return get();
-}
-
-void RNNDataDescriptor::create() {
-  if (!desc_) {
-    CHECK_CUDNN(cudnnCreateRNNDataDescriptor(&desc_));
-  }
-}
-
-void RNNDataDescriptor::set(
-  cudnnDataType_t data_type,
-  cudnnRNNDataLayout_t layout,
-  size_t max_seq_length,
-  size_t batch_size,
-  size_t vector_size,
-  const int seq_length_array[],
-  void* padding_fill) {
-  create();
-  CHECK_CUDNN(
-    cudnnSetRNNDataDescriptor(
-      desc_,
-      data_type,
-      layout,
-      max_seq_length,
-      batch_size,
-      vector_size,
-      seq_length_array,
-      padding_fill));
+      input_mode,
+      direction_mode,
+      cell_mode,
+      bias_mode,
+      algorithm,
+      data_type));
 }
 
 // -----------------------------
@@ -627,31 +459,32 @@ ConvolutionDescriptor::ConvolutionDescriptor(const ConvolutionDescriptor& rhs)
     return;
   }
 
-  cudnnMathType_t math_type;
-  cudnnConvolutionMode_t mode;
-  cudnnDataType_t data_type;
-  int num_dims, num_groups;
-  CHECK_CUDNN(cudnnGetConvolutionMathType(rhs.desc_, &math_type));
-  CHECK_CUDNN(cudnnGetConvolutionGroupCount(rhs.desc_, &num_groups));
+  int math_type; // placeholder
+  miopenConvolutionMode_t mode;
+  miopenDataType_t data_type; // placeholder
+  int num_dims;
+  // TODO: how to get group count?
+  int num_groups = 1;
+  //CHECK_MIOPEN(cudnnGetConvolutionGroupCount(rhs.desc_, &num_groups));
   // Get the mode, data type, and dims
-  CHECK_CUDNN(
-    cudnnGetConvolutionNdDescriptor(
+  CHECK_MIOPEN(
+    miopenGetConvolutionNdDescriptor(
       rhs.desc_, 0, &num_dims,
       nullptr, nullptr, nullptr,
-      &mode, &data_type));
+      &mode));
 
   // Get the padding, strides, and dilations
   std::vector<int> pads(num_dims), strides(num_dims), dilations(num_dims);
-  CHECK_CUDNN(
-    cudnnGetConvolutionNdDescriptor(
+  CHECK_MIOPEN(
+    miopenGetConvolutionNdDescriptor(
       rhs.desc_, num_dims, &num_dims,
       pads.data(), strides.data(), dilations.data(),
-      &mode, &data_type));
+      &mode));
 
   // Now set up this one
   this->set(
     pads, strides, dilations, data_type, mode);
-  this->set_math_mode(math_type);
+  //this->set_math_mode(math_type);
   this->set_group_count(num_groups);
 }
 
@@ -694,7 +527,7 @@ void ConvolutionDescriptor::swap(ConvolutionDescriptor& other)
 void ConvolutionDescriptor::reset(DescriptorHandle_t desc)
 {
   if (desc_)
-    CHECK_CUDNN(cudnnDestroyConvolutionDescriptor(desc_));
+    CHECK_MIOPEN(miopenDestroyConvolutionDescriptor(desc_));
 
   desc_ = desc;
 }
@@ -702,15 +535,15 @@ void ConvolutionDescriptor::reset(DescriptorHandle_t desc)
 void ConvolutionDescriptor::create()
 {
   if (!desc_)
-    CHECK_CUDNN(cudnnCreateConvolutionDescriptor(&desc_));
+    CHECK_MIOPEN(miopenCreateConvolutionDescriptor(&desc_));
 }
 
 void ConvolutionDescriptor::set(
   std::vector<int> const& pad,
   std::vector<int> const& stride,
   std::vector<int> const& dilation,
-  cudnnDataType_t data_type,
-  cudnnConvolutionMode_t mode)
+  miopenDataType_t data_type,
+  miopenConvolutionMode_t mode)
 {
   LBANN_ASSERT(pad.size() == stride.size());
   LBANN_ASSERT(pad.size() == dilation.size());
@@ -722,26 +555,26 @@ void ConvolutionDescriptor::set(
     int const pad[],
     int const stride[],
     int const dilation[],
-    cudnnDataType_t data_type,
-    cudnnConvolutionMode_t mode)
+    miopenDataType_t data_type,
+    miopenConvolutionMode_t mode)
 {
   this->create();
-  CHECK_CUDNN(
-    cudnnSetConvolutionNdDescriptor(
-      desc_, array_dim, pad, stride, dilation,
-      mode, data_type));
+  int *local_pad = const_cast<int*>(pad);
+  int *local_stride = const_cast<int*>(stride);
+  int *local_dilation = const_cast<int*>(dilation);
+  CHECK_MIOPEN(
+    miopenInitConvolutionNdDescriptor(
+      desc_, array_dim, local_pad, local_stride, local_dilation, mode));
 }
 
-void ConvolutionDescriptor::set_math_mode(cudnnMathType_t math_type)
+void ConvolutionDescriptor::set_math_mode(int math_type)
 {
-  CHECK_CUDNN(
-    cudnnSetConvolutionMathType(desc_, math_type));
 }
 
 void ConvolutionDescriptor::set_group_count(int num_groups)
 {
-  CHECK_CUDNN(
-    cudnnSetConvolutionGroupCount(desc_, num_groups));
+  CHECK_MIOPEN(
+    miopenSetConvolutionGroupCount(desc_, num_groups));
 }
 
 void swap(ConvolutionDescriptor& lhs, ConvolutionDescriptor& rhs)
@@ -779,19 +612,19 @@ PoolingDescriptor::PoolingDescriptor(const PoolingDescriptor& rhs)
     return;
   }
 
-  cudnnPoolingMode_t mode;
-  cudnnNanPropagation_t nan_prop;
+  miopenPoolingMode_t mode;
+  miopenNanPropagation_t nan_prop; // placeholder
   int num_dims;
-  CHECK_CUDNN(
-    cudnnGetPoolingNdDescriptor(
-      rhs.desc_, 0, &mode, &nan_prop, &num_dims,
+  CHECK_MIOPEN(
+    miopenGetNdPoolingDescriptor(
+      rhs.desc_, 0, &mode, &num_dims,
       nullptr, nullptr, nullptr));
   std::vector<int> window_dims(num_dims), padding(num_dims), strides(num_dims);
-  CHECK_CUDNN(
-    cudnnGetPoolingNdDescriptor(
-      rhs.desc_, num_dims, &mode, &nan_prop, &num_dims,
+  CHECK_MIOPEN(
+    miopenGetNdPoolingDescriptor(
+      rhs.desc_, num_dims, &mode, &num_dims,
       window_dims.data(), padding.data(), strides.data()));
-  this->set(cudnn::from_cudnn(mode), nan_prop, window_dims, padding, strides);
+  this->set(miopen::from_miopen(mode), nan_prop, window_dims, padding, strides);
 }
 
 PoolingDescriptor::PoolingDescriptor(PoolingDescriptor&& rhs)
@@ -831,20 +664,20 @@ void PoolingDescriptor::swap(PoolingDescriptor& other)
 void PoolingDescriptor::reset(DescriptorHandle_t desc)
 {
   if (desc_)
-    CHECK_CUDNN(cudnnDestroyPoolingDescriptor(desc_));
+    CHECK_MIOPEN(miopenDestroyPoolingDescriptor(desc_));
   desc_ = desc;
 }
 
 void PoolingDescriptor::create()
 {
   if (!desc_)
-    CHECK_CUDNN(
-      cudnnCreatePoolingDescriptor(&desc_));
+    CHECK_MIOPEN(
+      miopenCreatePoolingDescriptor(&desc_));
 }
 
 void PoolingDescriptor::set(
   pooling_mode mode,
-  cudnnNanPropagation_t nan_prop,
+  miopenNanPropagation_t nan_prop, // placeholder
   std::vector<int> const& window_dims,
   std::vector<int> const& padding,
   std::vector<int> const& stride)
@@ -857,17 +690,20 @@ void PoolingDescriptor::set(
 
 void PoolingDescriptor::set(
   pooling_mode mode,
-  cudnnNanPropagation_t nan_prop,
+  miopenNanPropagation_t nan_prop, // placeholder
   int num_dims,
   int const window_dims[],
   int const padding[],
   int const stride[])
 {
   this->create();
-  CHECK_CUDNN(
-    cudnnSetPoolingNdDescriptor(
-      desc_, cudnn::to_cudnn(mode), nan_prop,
-      num_dims, window_dims, padding, stride));
+  int *local_window_dims = const_cast<int*>(window_dims);
+  int *local_padding = const_cast<int*>(padding);
+  int *local_stride = const_cast<int*>(stride);
+  CHECK_MIOPEN(
+    miopenSetNdPoolingDescriptor(
+      desc_, miopen::to_miopen(mode),
+      num_dims, local_window_dims, local_padding, local_stride));
 }
 
 void swap(PoolingDescriptor& lhs, PoolingDescriptor& rhs)
@@ -907,8 +743,9 @@ LRNDescriptor::LRNDescriptor(const LRNDescriptor& rhs)
 
   unsigned n;
   double alpha, beta, k;
-  CHECK_CUDNN(cudnnGetLRNDescriptor(desc_, &n, &alpha, &beta, &k));
-  this->set(n, alpha, beta, k);
+  miopenLRNMode_t mode;
+  CHECK_MIOPEN(miopenGetLRNDescriptor(desc_, &mode, &n, &alpha, &beta, &k));
+  this->set(n, alpha, beta, k, mode);
 }
 
 LRNDescriptor::LRNDescriptor(LRNDescriptor&& rhs)
@@ -948,26 +785,27 @@ void LRNDescriptor::swap(LRNDescriptor& other)
 void LRNDescriptor::reset(DescriptorHandle_t desc)
 {
   if (desc_)
-    CHECK_CUDNN(cudnnDestroyLRNDescriptor(desc_));
+    CHECK_MIOPEN(miopenDestroyLRNDescriptor(desc_));
   desc_ = desc;
 }
 
 void LRNDescriptor::create()
 {
   if (!desc_)
-    CHECK_CUDNN(cudnnCreateLRNDescriptor(&desc_));
+    CHECK_MIOPEN(miopenCreateLRNDescriptor(&desc_));
 }
 
 void LRNDescriptor::set(unsigned n, double alpha, double beta,
-                        double k, cudnnLRNMode_t mode)
+                        double k, miopenLRNMode_t mode)
 {
-  LBANN_ASSERT(n >= CUDNN_LRN_MIN_N);
-  LBANN_ASSERT(n <= CUDNN_LRN_MAX_N);
-  LBANN_ASSERT(k >= CUDNN_LRN_MIN_K);
-  LBANN_ASSERT(beta >= CUDNN_LRN_MIN_BETA);
+  //TODO: verify equivalent to CUDNN version
+  LBANN_ASSERT(n >= 1);
+  LBANN_ASSERT(n <= 16);
+  LBANN_ASSERT(k >= 0.00001);
+  LBANN_ASSERT(beta >= 0.01);
 
   this->create();
-  CHECK_CUDNN(cudnnSetLRNDescriptor(desc_, n, alpha, beta, k));
+  CHECK_MIOPEN(miopenSetLRNDescriptor(desc_, mode, n, alpha, beta, k));
 }
 
 /** @brief Swap two LRN descriptors. */
@@ -977,7 +815,7 @@ void swap(LRNDescriptor& lhs, LRNDescriptor& rhs)
 }
 
 ////////////////////////////////////////////////////////////
-// Base cuDNN tensor manager
+// Base MIOpen tensor manager
 ////////////////////////////////////////////////////////////
 
 template <typename TensorDataType>
@@ -1028,7 +866,7 @@ void layer_tensor_manager<TensorDataType>::set_num_children(int num_children) {
 }
 
 ////////////////////////////////////////////////////////////
-// Data-parallel cuDNN tensor manager
+// Data-parallel MIOpen tensor manager
 ////////////////////////////////////////////////////////////
 
 template <typename TensorDataType>
@@ -1038,7 +876,7 @@ data_parallel_layer_tensor_manager<TensorDataType>
 
 namespace {
 
-/** Set a cuDNN tensor descriptor for a data-parallel data layout.
+/** Set a MIOpen tensor descriptor for a data-parallel data layout.
  */
 template <typename TensorDataType>
 void set_data_parallel_tensor_desc(TensorDescriptor& desc,
@@ -1046,7 +884,7 @@ void set_data_parallel_tensor_desc(TensorDescriptor& desc,
                                    const El::AbstractMatrix<TensorDataType>& local_data) {
 #ifdef LBANN_DEBUG
   if (local_data.GetDevice() != El::Device::GPU) {
-    LBANN_ERROR("attempted to setup cuDNN tensor with non-GPU data");
+    LBANN_ERROR("attempted to setup MIOpen tensor with non-GPU data");
   }
 #endif // LBANN_DEBUG
   if (local_data.Height() > 0 && local_data.Width() > 0) {
@@ -1119,7 +957,7 @@ data_parallel_layer_tensor_manager<TensorDataType>::get_error_signals(int parent
 }
 
 ////////////////////////////////////////////////////////////
-// Entry-wise cuDNN tensor manager
+// Entry-wise MIOpen tensor manager
 ////////////////////////////////////////////////////////////
 
 template <typename TensorDataType>
@@ -1140,7 +978,7 @@ void set_entrywise_tensor_desc(TensorDescriptor& desc,
                                const El::AbstractMatrix<TensorDataType>& local_data) {
 #ifdef LBANN_DEBUG
   if (local_data.GetDevice() != El::Device::GPU) {
-    LBANN_ERROR("attempted to setup cuDNN tensor with non-GPU data");
+    LBANN_ERROR("attempted to setup MIOpen tensor with non-GPU data");
   }
 #endif // LBANN_DEBUG
   const int height = local_data.Height();
@@ -1217,20 +1055,51 @@ TensorDescriptor& entrywise_layer_tensor_manager<TensorDataType>::get_error_sign
 }
 
 ////////////////////////////////////////////////////////////
-// cuDNN algorithm selection
+// MIOpen algorithm selection
 ////////////////////////////////////////////////////////////
 
 namespace {
 
 // Non-deterministic algorithms.
-std::vector<cudnnConvolutionFwdAlgo_t> nondet_fwd_algos = {};
-std::vector<cudnnConvolutionBwdDataAlgo_t> nondet_bwd_data_algos = {
-  CUDNN_CONVOLUTION_BWD_DATA_ALGO_0
+std::vector<miopenConvFwdAlgorithm_t> nondet_fwd_algos = {};
+std::vector<miopenConvBwdDataAlgorithm_t> nondet_bwd_data_algos = {
+  miopenConvolutionBwdDataAlgoGEMM
 };
-std::vector<cudnnConvolutionBwdFilterAlgo_t> nondet_bwd_filter_algos = {
-  CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0,
-  CUDNN_CONVOLUTION_BWD_FILTER_ALGO_3
+std::vector<miopenConvBwdWeightsAlgorithm_t> nondet_bwd_filter_algos = {
+  miopenConvolutionBwdWeightsAlgoGEMM
+  //HIPDNN_CONVOLUTION_BWD_FILTER_ALGO_3
 };
+
+int ConvolutionFwdAlgoCount() { return 4; }
+int ConvolutionBwdFilterAlgoCount() { return 2; }
+int ConvolutionBwdDataAlgoCount() { return 2; }
+
+template <typename AlgoType>
+AlgoType get_miopen_conv_algo(
+  const miopenConvAlgoPerf_t& perf_result) {
+  LBANN_ERROR("Convolution algorithm not supported by MIOpen");
+}
+
+template <>
+miopenConvFwdAlgorithm_t
+  get_miopen_conv_algo<miopenConvFwdAlgorithm_t>(
+    const miopenConvAlgoPerf_t& perf_result) {
+    return perf_result.fwd_algo;
+}
+
+template <>
+miopenConvBwdWeightsAlgorithm_t
+  get_miopen_conv_algo<miopenConvBwdWeightsAlgorithm_t>(
+    const miopenConvAlgoPerf_t& perf_result) {
+    return perf_result.bwd_weights_algo;
+}
+
+template <>
+miopenConvBwdDataAlgorithm_t
+  get_miopen_conv_algo<miopenConvBwdDataAlgorithm_t>(
+    const miopenConvAlgoPerf_t& perf_result) {
+    return perf_result.bwd_data_algo;
+}
 
 template <typename AlgoType, typename PerfType>
 AlgoType find_best_heuristic_algorithm(
@@ -1240,18 +1109,16 @@ AlgoType find_best_heuristic_algorithm(
   size_t max_ws_size) {
   std::vector<AlgoType> algos;
   for (const auto& p : perf_results) {
-    if (p.status != CUDNN_STATUS_SUCCESS) {
-      continue;
-    }
+    AlgoType p_algo = get_miopen_conv_algo<AlgoType>(p);
     if (deterministic &&
         std::find(nondeterministic_algos.begin(), nondeterministic_algos.end(),
-                  p.algo) != nondeterministic_algos.end()) {
+                  p_algo) != nondeterministic_algos.end()) {
       continue;
     }
     if (p.memory > max_ws_size) {
       continue;
     }
-    algos.push_back(p.algo);
+    algos.push_back(p_algo);
   }
   if (algos.empty()) {
     LBANN_ERROR("No valid convolution algorithms.");
@@ -1267,24 +1134,19 @@ AlgoType find_best_algorithm(
   size_t max_ws_size) {
   std::map<AlgoType, float> time_map;
   for (const auto& p : perf_results) {
-    if (p.status != CUDNN_STATUS_SUCCESS) {
-      // If an algorithm fails, we still add it in case the failure is
-      // nondeterministic.
-      time_map[p.algo] = std::numeric_limits<float>::max();
-      continue;
-    }
+    AlgoType p_algo = get_miopen_conv_algo<AlgoType>(p);
     if (deterministic &&
         std::find(nondeterministic_algos.begin(), nondeterministic_algos.end(),
-                  p.algo) != nondeterministic_algos.end()) {
+                  p_algo) != nondeterministic_algos.end()) {
       continue;
     }
     if (p.memory > max_ws_size) {
       continue;
     }
-    if (time_map.count(p.algo) == 0) {
-      time_map[p.algo] = p.time;
+    if (time_map.count(p_algo) == 0) {
+      time_map[p_algo] = p.time;
     } else {
-      time_map[p.algo] += p.time;
+      time_map[p_algo] += p.time;
     }
   }
   if (time_map.empty()) {
@@ -1306,66 +1168,91 @@ AlgoType find_best_algorithm(
   return best_algo;
 }
 
-cudnnConvolutionFwdAlgo_t get_fwd_algo_heuristic(
+miopenConvFwdAlgorithm_t get_fwd_algo_heuristic(
   bool deterministic,
   const TensorDescriptor& input_desc,
+  const void* input,
   const FilterDescriptor& kernel_desc,
+  const void* kernel,
   const ConvolutionDescriptor& conv_desc,
   const TensorDescriptor& output_desc,
-  size_t ws_size) {
-  int num_algos;
-  CHECK_CUDNN(cudnnGetConvolutionForwardAlgorithmMaxCount(
-                get_handle(), &num_algos));
-  std::vector<cudnnConvolutionFwdAlgoPerf_t> perf_results(num_algos);
+  void* output,
+  size_t ws_size,
+  void* ws) {
+  int num_algos = ConvolutionFwdAlgoCount();
+  std::vector<miopenConvAlgoPerf_t> perf_results(num_algos);
   int num_tested_algos;
-  CHECK_CUDNN(cudnnGetConvolutionForwardAlgorithm_v7(
-                get_handle(), input_desc, kernel_desc, conv_desc, output_desc,
-                num_algos, &num_tested_algos, perf_results.data()));
+  CHECK_MIOPEN(miopenFindConvolutionForwardAlgorithm(
+                get_handle(),
+                input_desc, input,
+                kernel_desc, kernel,
+                conv_desc,
+                output_desc, output,
+                num_algos, &num_tested_algos,
+                perf_results.data(),
+                ws, ws_size,
+                true));
   return find_best_heuristic_algorithm(perf_results, nondet_fwd_algos,
                                        deterministic, ws_size);
 }
 
-cudnnConvolutionBwdDataAlgo_t get_bwd_data_algo_heuristic(
+miopenConvBwdDataAlgorithm_t get_bwd_data_algo_heuristic(
   bool deterministic,
   const FilterDescriptor& kernel_desc,
+  const void* kernel,
   const TensorDescriptor& prev_error_signal_desc,
+  const void* prev_error_signal,
   const ConvolutionDescriptor& conv_desc,
   const TensorDescriptor& error_signal_desc,
-  size_t ws_size) {
-  int num_algos;
-  CHECK_CUDNN(cudnnGetConvolutionBackwardDataAlgorithmMaxCount(
-                get_handle(), &num_algos));
-  std::vector<cudnnConvolutionBwdDataAlgoPerf_t> perf_results(num_algos);
+  void* error_signal,
+  size_t ws_size,
+  void* ws) {
+  int num_algos = ConvolutionBwdDataAlgoCount();
+  std::vector<miopenConvAlgoPerf_t> perf_results(num_algos);
   int num_tested_algos;
-  CHECK_CUDNN(cudnnGetConvolutionBackwardDataAlgorithm_v7(
-                get_handle(), kernel_desc, prev_error_signal_desc, conv_desc,
-                error_signal_desc, num_algos, &num_tested_algos,
-                perf_results.data()));
+  CHECK_MIOPEN(miopenFindConvolutionBackwardDataAlgorithm(
+                get_handle(),
+                prev_error_signal_desc, prev_error_signal,
+                kernel_desc, kernel,
+                conv_desc,
+                error_signal_desc, error_signal,
+                num_algos, &num_tested_algos,
+                perf_results.data(),
+                ws, ws_size,
+                true));
   return find_best_heuristic_algorithm(perf_results, nondet_bwd_data_algos,
                                        deterministic, ws_size);
 }
 
-cudnnConvolutionBwdFilterAlgo_t get_bwd_filter_algo_heuristic(
+miopenConvBwdWeightsAlgorithm_t get_bwd_filter_algo_heuristic(
   bool deterministic,
   const TensorDescriptor& input_desc,
+  const void* input,
   const TensorDescriptor& prev_error_signal_desc,
+  const void* prev_error_signal,
   const ConvolutionDescriptor& conv_desc,
   const FilterDescriptor& kernel_gradient_desc,
-  size_t ws_size) {
-  int num_algos;
-  CHECK_CUDNN(cudnnGetConvolutionBackwardFilterAlgorithmMaxCount(
-                get_handle(), &num_algos));
-  std::vector<cudnnConvolutionBwdFilterAlgoPerf_t> perf_results(num_algos);
+  void* kernel_gradient,
+  size_t ws_size,
+  void* ws) {
+  int num_algos = ConvolutionBwdFilterAlgoCount();
+  std::vector<miopenConvAlgoPerf_t> perf_results(num_algos);
   int num_tested_algos;
-  CHECK_CUDNN(cudnnGetConvolutionBackwardFilterAlgorithm_v7(
-                get_handle(), input_desc, prev_error_signal_desc, conv_desc,
-                kernel_gradient_desc, num_algos, &num_tested_algos,
-                perf_results.data()));
+  CHECK_MIOPEN(miopenFindConvolutionBackwardWeightsAlgorithm(
+                get_handle(),
+                prev_error_signal_desc, prev_error_signal,
+                input_desc, input,
+                conv_desc,
+                kernel_gradient_desc, kernel_gradient,
+                num_algos, &num_tested_algos,
+                perf_results.data(),
+                ws, ws_size,
+                true));
   return find_best_heuristic_algorithm(perf_results, nondet_bwd_filter_algos,
                                        deterministic, ws_size);
 }
 
-cudnnConvolutionFwdAlgo_t get_fwd_algo_autotune(
+miopenConvFwdAlgorithm_t get_fwd_algo_autotune(
   bool deterministic,
   const TensorDescriptor& input_desc,
   const void* input,
@@ -1378,17 +1265,21 @@ cudnnConvolutionFwdAlgo_t get_fwd_algo_autotune(
   void* ws) {
   constexpr int num_trials = 3;
   constexpr int num_skip = 1;
-  int num_algos;
-  CHECK_CUDNN(cudnnGetConvolutionForwardAlgorithmMaxCount(
-                get_handle(), &num_algos));
-  std::vector<cudnnConvolutionFwdAlgoPerf_t> perf_results_all;
-  std::vector<cudnnConvolutionFwdAlgoPerf_t> perf_results(num_algos);
+  int num_algos = ConvolutionFwdAlgoCount();
+  std::vector<miopenConvAlgoPerf_t> perf_results_all;
+  std::vector<miopenConvAlgoPerf_t> perf_results(num_algos);
   for (int trial = 0; trial < num_trials + num_skip; ++trial) {
     int num_tested_algos;
-    CHECK_CUDNN(cudnnFindConvolutionForwardAlgorithmEx(
-                  get_handle(), input_desc, input, kernel_desc, kernel,
-                  conv_desc, output_desc, output, num_algos, &num_tested_algos,
-                  perf_results.data(), ws, ws_size));
+    CHECK_MIOPEN(miopenFindConvolutionForwardAlgorithm(
+                  get_handle(),
+                  input_desc, input,
+                  kernel_desc, kernel,
+                  conv_desc,
+                  output_desc, output,
+                  num_algos, &num_tested_algos,
+                  perf_results.data(),
+                  ws, ws_size,
+                  false));
     if (trial > num_skip) {
       for (const auto& p : perf_results) {
         perf_results_all.push_back(p);
@@ -1399,7 +1290,7 @@ cudnnConvolutionFwdAlgo_t get_fwd_algo_autotune(
                              deterministic, ws_size);
 }
 
-cudnnConvolutionBwdDataAlgo_t get_bwd_data_algo_autotune(
+miopenConvBwdDataAlgorithm_t get_bwd_data_algo_autotune(
   bool deterministic,
   const FilterDescriptor& kernel_desc,
   const void* kernel,
@@ -1412,18 +1303,21 @@ cudnnConvolutionBwdDataAlgo_t get_bwd_data_algo_autotune(
   void* ws) {
   constexpr int num_trials = 3;
   constexpr int num_skip = 1;
-  int num_algos;
-  CHECK_CUDNN(cudnnGetConvolutionBackwardDataAlgorithmMaxCount(
-                get_handle(), &num_algos));
-  std::vector<cudnnConvolutionBwdDataAlgoPerf_t> perf_results_all;
-  std::vector<cudnnConvolutionBwdDataAlgoPerf_t> perf_results(num_algos);
+  int num_algos = ConvolutionBwdDataAlgoCount();
+  std::vector<miopenConvAlgoPerf_t> perf_results_all;
+  std::vector<miopenConvAlgoPerf_t> perf_results(num_algos);
   for (int trial = 0; trial < num_trials + num_skip; ++trial) {
     int num_tested_algos;
-    CHECK_CUDNN(cudnnFindConvolutionBackwardDataAlgorithmEx(
-                  get_handle(), kernel_desc, kernel,
+    CHECK_MIOPEN(miopenFindConvolutionBackwardDataAlgorithm(
+                  get_handle(),
                   prev_error_signal_desc, prev_error_signal,
-                  conv_desc, error_signal_desc, error_signal, num_algos,
-                  &num_tested_algos, perf_results.data(), ws, ws_size));
+                  kernel_desc, kernel,
+                  conv_desc,
+                  error_signal_desc, error_signal,
+                  num_algos, &num_tested_algos,
+                  perf_results.data(),
+                  ws, ws_size,
+                  false));
     if (trial > num_skip) {
       for (const auto& p : perf_results) {
         perf_results_all.push_back(p);
@@ -1434,7 +1328,7 @@ cudnnConvolutionBwdDataAlgo_t get_bwd_data_algo_autotune(
                              deterministic, ws_size);
 }
 
-cudnnConvolutionBwdFilterAlgo_t get_bwd_filter_algo_autotune(
+miopenConvBwdWeightsAlgorithm_t get_bwd_filter_algo_autotune(
   bool deterministic,
   const TensorDescriptor& input_desc,
   const void* input,
@@ -1447,18 +1341,21 @@ cudnnConvolutionBwdFilterAlgo_t get_bwd_filter_algo_autotune(
   void* ws) {
   constexpr int num_trials = 3;
   constexpr int num_skip = 1;
-  int num_algos;
-  CHECK_CUDNN(cudnnGetConvolutionBackwardFilterAlgorithmMaxCount(
-                get_handle(), &num_algos));
-  std::vector<cudnnConvolutionBwdFilterAlgoPerf_t> perf_results_all;
-  std::vector<cudnnConvolutionBwdFilterAlgoPerf_t> perf_results(num_algos);
+  int num_algos = ConvolutionBwdFilterAlgoCount();
+  std::vector<miopenConvAlgoPerf_t> perf_results_all;
+  std::vector<miopenConvAlgoPerf_t> perf_results(num_algos);
   for (int trial = 0; trial < num_trials + num_skip; ++trial) {
     int num_tested_algos;
-    CHECK_CUDNN(cudnnFindConvolutionBackwardFilterAlgorithmEx(
-                  get_handle(), input_desc, input,
+    CHECK_MIOPEN(miopenFindConvolutionBackwardWeightsAlgorithm(
+                  get_handle(),
                   prev_error_signal_desc, prev_error_signal,
-                  conv_desc, kernel_gradient_desc, kernel_gradient, num_algos,
-                  &num_tested_algos, perf_results.data(), ws, ws_size));
+                  input_desc, input,
+                  conv_desc,
+                  kernel_gradient_desc, kernel_gradient,
+                  num_algos, &num_tested_algos,
+                  perf_results.data(),
+                  ws, ws_size,
+                  false));
     if (trial > num_skip) {
       for (const auto& p : perf_results) {
         perf_results_all.push_back(p);
@@ -1483,7 +1380,7 @@ fwd_conv_alg get_fwd_algorithm(
   void* output,
   size_t ws_size,
   void* ws) {
-  cudnnConvolutionFwdAlgo_t a;
+  miopenConvFwdAlgorithm_t a;
   if (autotune) {
     a = get_fwd_algo_autotune(deterministic,
                               input_desc, input,
@@ -1492,10 +1389,14 @@ fwd_conv_alg get_fwd_algorithm(
                               output_desc, output,
                               ws_size, ws);
   } else {
-    a = get_fwd_algo_heuristic(deterministic, input_desc, kernel_desc,
-                               conv_desc, output_desc, ws_size);
+    a = get_fwd_algo_heuristic(deterministic,
+                               input_desc, input,
+                               kernel_desc, kernel,
+                               conv_desc,
+                               output_desc, output,
+                               ws_size, ws);
   }
-  return from_cudnn(a);
+  return from_miopen(a);
 }
 
 bwd_data_conv_alg get_bwd_data_algorithm(
@@ -1510,7 +1411,7 @@ bwd_data_conv_alg get_bwd_data_algorithm(
   void* error_signal,
   size_t ws_size,
   void* ws) {
-  cudnnConvolutionBwdDataAlgo_t a;
+  miopenConvBwdDataAlgorithm_t a;
   if (autotune) {
     a = get_bwd_data_algo_autotune(deterministic,
                                    kernel_desc, kernel,
@@ -1519,11 +1420,14 @@ bwd_data_conv_alg get_bwd_data_algorithm(
                                    error_signal_desc, error_signal,
                                    ws_size, ws);
   } else {
-    a = get_bwd_data_algo_heuristic(deterministic, kernel_desc,
-                                    prev_error_signal_desc, conv_desc,
-                                    error_signal_desc, ws_size);
+    a = get_bwd_data_algo_heuristic(deterministic,
+                                    kernel_desc, kernel,
+                                    prev_error_signal_desc, prev_error_signal,
+                                    conv_desc,
+                                    error_signal_desc, error_signal,
+                                    ws_size, ws);
   }
-  return from_cudnn(a);
+  return from_miopen(a);
 }
 
 bwd_filter_conv_alg get_bwd_filter_algorithm(
@@ -1538,7 +1442,7 @@ bwd_filter_conv_alg get_bwd_filter_algorithm(
   void* kernel_gradient,
   size_t ws_size,
   void* ws) {
-  cudnnConvolutionBwdFilterAlgo_t a;
+  miopenConvBwdWeightsAlgorithm_t a;
   if (autotune) {
     a = get_bwd_filter_algo_autotune(deterministic,
                                      input_desc, input,
@@ -1547,45 +1451,40 @@ bwd_filter_conv_alg get_bwd_filter_algorithm(
                                      kernel_gradient_desc, kernel_gradient,
                                      ws_size, ws);
   } else {
-    a = get_bwd_filter_algo_heuristic(deterministic, input_desc,
-                                      prev_error_signal_desc, conv_desc,
-                                      kernel_gradient_desc, ws_size);
+    a = get_bwd_filter_algo_heuristic(deterministic,
+                                     input_desc, input,
+                                     prev_error_signal_desc, prev_error_signal,
+                                     conv_desc,
+                                     kernel_gradient_desc, kernel_gradient,
+                                     ws_size, ws);
   }
-  return from_cudnn(a);
+  return from_miopen(a);
 }
 
+// Placeholder functions for mathtype
 namespace {
-cudnnMathType_t default_tensor_ops_mode = CUDNN_DEFAULT_MATH;
+int default_tensor_ops_mode = 0;
 }
 
 void default_to_tensor_ops() noexcept
 {
-  default_tensor_ops_mode = CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION;
+  default_tensor_ops_mode = 0;
 }
 
-cudnnMathType_t get_default_convolution_math_type() noexcept
+int get_default_convolution_math_type() noexcept
 {
-  return default_tensor_ops_mode;
+  return 0;
 }
 
 using ProtoTensorOpEnumType = decltype(lbann_data::DEFAULT_TENSOR_OPS);
-cudnnMathType_t convert_to_dnn_math_type(ProtoTensorOpEnumType mt)
+int convert_to_dnn_math_type(ProtoTensorOpEnumType mt)
 {
-  switch (mt)
-  {
-  case lbann_data::DEFAULT_TENSOR_OPS:
-    return dnn_lib::get_default_convolution_math_type();
-  case lbann_data::NO_TENSOR_OPS:
-    return CUDNN_DEFAULT_MATH;
-  case lbann_data::USE_TENSOR_OPS:
-    return CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION;
-  default:
-    LBANN_ERROR("Bad math type value.");
-  }
-  return CUDNN_DEFAULT_MATH;
+  // MIOpen only supports one math type, so this is just a placeholder function
+  return 0;
 }
 
 #define PROTO(T)                                        \
+  template miopenDataType_t get_data_type<T>();          \
   template class layer_tensor_manager<T>;               \
   template class data_parallel_layer_tensor_manager<T>; \
   template class entrywise_layer_tensor_manager<T>
@@ -1597,4 +1496,4 @@ cudnnMathType_t convert_to_dnn_math_type(ProtoTensorOpEnumType mt)
 } // namespace dnn_lib
 } // namespace lbann
 
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_MIOPEN

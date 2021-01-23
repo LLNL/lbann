@@ -140,7 +140,7 @@ base_convolution_layer<TensorDataType,Device>::~base_convolution_layer() {}
 template <typename TensorDataType, El::Device Device>
 void
 base_convolution_layer<TensorDataType,Device>
-::set_dnn_math_mode(cudnnMathType_t math_type) noexcept {
+::set_dnn_math_mode(dnn_lib::dnnMathType_t math_type) noexcept {
   m_convolution_math_type = math_type;
 }
 #endif // LBANN_HAS_DNN_LIB

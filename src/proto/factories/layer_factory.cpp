@@ -107,7 +107,6 @@
 #include <layers.pb.h>
 
 #ifdef LBANN_HAS_DNN_LIB
-//#include <cudnn.h>
 #include "lbann/utils/dnn_lib/helpers.hpp"
 #endif // LBANN_HAS_DNN_LIB
 

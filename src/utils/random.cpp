@@ -213,7 +213,6 @@ bool load_rng_from_checkpoint(persist& p, const lbann_comm* comm) {
     std::ifstream rng_ltfb(rng_name);
     if(!rng_ltfb) { LBANN_ERROR("Failed to open ", rng_name); }
     rng_ltfb >> get_ltfb_generator();
-   }
 #endif
   return true;
 }

@@ -10,14 +10,21 @@ set_full_path(THIS_DIR_HEADERS
   data_reader_mnist.hpp
   data_reader_nci.hpp
   data_reader_node2vec.hpp
-  data_reader_numpy.hpp
-  data_reader_numpy_npz.hpp
-  data_reader_numpy_npz_conduit.hpp
-  data_reader_pilot2_molecular.hpp
   data_reader_python.hpp
   data_reader_synthetic.hpp
   data_reader_smiles.hpp
   )
+
+if (LBANN_HAS_CNPY)
+  set_full_path(CNPY_HDR_FILES
+    data_reader_npz_ras_lipid.hpp
+    data_reader_numpy.hpp
+    data_reader_numpy_npz.hpp
+    data_reader_numpy_npz_conduit.hpp
+    data_reader_pilot2_molecular.hpp
+    )
+  list(APPEND THIS_DIR_HEADERS ${CNPY_HDR_FILES})
+endif ()
 
 if (LBANN_HAS_DISTCONV)
   list(APPEND THIS_DIR_HEADERS

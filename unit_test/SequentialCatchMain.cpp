@@ -29,11 +29,20 @@
 #include <lbann/utils/random_number_generators.hpp>
 
 int main(int argc, char* argv[]) {
+#ifdef LBANN_HAS_GPU
+  hydrogen::gpu::Initialize();
+#endif // LBANN_HAS_GPU
+
   // Initialize the general RNGs and the data sequence RNGs
   int random_seed = 42;
   lbann::init_random(random_seed);
   lbann::init_data_seq_random(random_seed);
 
   int result = Catch::Session().run(argc, argv);
+
+#ifdef LBANN_HAS_GPU
+  hydrogen::gpu::Finalize();
+#endif // LBANN_HAS_GPU
+
   return result;
 }

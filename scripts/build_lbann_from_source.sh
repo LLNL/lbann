@@ -238,7 +238,12 @@ if [[ ${ENABLE_GPUS} == ON ]]; then
     GPU_ARCH_FLAGS="-D CMAKE_CUDA_ARCHITECTURES=${CMAKE_GPU_ARCH}"
 fi
 
-SUPERBUILD="${SUPERBUILD:-cmake_lbann.sh}"
+if [[ ${SPACK_ARCH} = "linux-rhel7-zen" ]]; then
+    SUPERBUILD="${SUPERBUILD:-cmake_lbann_zen.sh}"
+else
+    SUPERBUILD="${SUPERBUILD:-cmake_lbann.sh}"
+fi
+
 if [[ ${SYS} = "Darwin" ]]; then
     OSX_VER=$(sw_vers -productVersion)
     ENABLE_GPUS=OFF
