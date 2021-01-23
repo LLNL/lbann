@@ -475,6 +475,9 @@ public:
       p.close_restart();
     }
 
+    /// @todo Should be unneeded, but we experience hangs without it
+    comm.trainer_barrier();
+
     restore_model_weights(m, restore_weights);
   }
 private:
@@ -576,6 +579,9 @@ public:
       RootedBinaryInputArchive ar(iss, comm.get_trainer_grid());
       ar(m);
     }
+
+    /// @todo Should be unneeded, but we experience hangs without it
+    comm.trainer_barrier();
 
     restore_model_weights(m, restore_weights);
   }
