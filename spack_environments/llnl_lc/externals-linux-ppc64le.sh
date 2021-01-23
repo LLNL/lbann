@@ -47,6 +47,7 @@ EXTERNAL_PACKAGES=$(cat <<EOF
       buildable: False
       version:
       - 1.11.13
+      variants: +cuda +nvml
       externals:
       - spec: hwloc@1.11.13 arch=${SPACK_ARCH}
         prefix: /usr/lib64/libhwloc.so
