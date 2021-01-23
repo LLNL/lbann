@@ -484,7 +484,11 @@ void init_data_readers(
                   "but LBANN is not built with CNPY");
 #endif // LBANN_HAS_CNPY
           } else if (name == "imagenet") {
+#ifdef LBANN_HAS_OPENCV
             split_reader = new imagenet_reader(*dynamic_cast<const imagenet_reader*>(reader));
+#else
+            LBANN_ERROR("imagenet reader not supported without OpenCV.");
+#endif // LBANN_HAS_OPENCV
           } else if (name == "smiles") {
             split_reader = new smiles_data_reader(*dynamic_cast<const smiles_data_reader*>(reader));
           } else if (name == "jag_conduit") {

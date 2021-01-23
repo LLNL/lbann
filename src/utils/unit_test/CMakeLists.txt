@@ -9,7 +9,6 @@ set_full_path(THIS_DIR_SEQ_CATCH2_TEST_FILES
   file_utils_test.cpp
   from_string_test.cpp
   hash_test.cpp
-  image_test.cpp
   python_test.cpp
   random_test.cpp
   serialize_matrix_test.cpp
@@ -33,6 +32,11 @@ endif (LBANN_HAS_HALF)
 if (LBANN_HAS_FFTW)
   list(APPEND THIS_DIR_SEQ_CATCH2_TEST_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/fftw_test.cpp)
+endif (LBANN_HAS_FFTW)
+
+if (LBANN_HAS_OPENCV)
+  list(APPEND THIS_DIR_SEQ_CATCH2_TEST_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/image_test.cpp)
 endif (LBANN_HAS_FFTW)
 
 # This is actually CUDA-specific. rocFFT will get a new test when we

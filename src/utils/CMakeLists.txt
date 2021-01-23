@@ -10,7 +10,6 @@ set_full_path(THIS_DIR_SOURCES
   file_utils.cpp
   graph.cpp
   im2col.cpp
-  image.cpp
   jag_common.cpp
   lbann_library.cpp
   miopen.cpp
@@ -52,6 +51,10 @@ endif ()
 
 if (LBANN_HAS_DISTCONV)
   list(APPEND THIS_DIR_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/distconv.cpp")
+endif ()
+
+if (LBANN_HAS_OPENCV)
+  list(APPEND THIS_DIR_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/image.cpp")
 endif ()
 
 add_subdirectory(serialize_matrices)

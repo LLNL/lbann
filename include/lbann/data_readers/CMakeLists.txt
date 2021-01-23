@@ -5,7 +5,6 @@ set_full_path(THIS_DIR_HEADERS
   data_reader_cifar10.hpp
   data_reader_csv.hpp
   data_reader_image.hpp
-  data_reader_imagenet.hpp
   data_reader_merge_features.hpp
   data_reader_merge_samples.hpp
   data_reader_mnist.hpp
@@ -30,6 +29,11 @@ endif ()
 if (LBANN_HAS_DISTCONV)
   list(APPEND THIS_DIR_HEADERS
     "${CMAKE_CURRENT_SOURCE_DIR}/data_reader_hdf5.hpp")
+endif ()
+
+if (LBANN_HAS_OPENCV)
+  list(APPEND THIS_DIR_HEADERS
+    "${CMAKE_CURRENT_SOURCE_DIR}/data_reader_imagenet.hpp")
 endif ()
 
 # Propagate the files up the tree
