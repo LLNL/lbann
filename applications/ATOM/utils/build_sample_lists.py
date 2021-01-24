@@ -24,7 +24,7 @@ if len(sys.argv) < 3 :
 if len(sys.argv) == 4 :
   random.seed( int(sys.argv[3]) )
 
-output_base = sys.argv[2][:-1]
+output_base = sys.argv[2]
 
 a = open(sys.argv[1]).readlines()
 idx = 0
