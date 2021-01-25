@@ -222,6 +222,12 @@ obj.append(lbann.WeightedSum(negative_loss, scaling_factors='2'))
 metrics.append(lbann.Metric(positive_loss, name='positive loss'))
 metrics.append(lbann.Metric(negative_loss, name='negative loss'))
 
+# Perform computation at double precision
+for l in lbann.traverse_layer_graph(input_):
+    l.datatype = lbann.DataType.DOUBLE
+    for w in l.weights:
+        w.datatype = lbann.DataType.DOUBLE
+
 # ----------------------------------
 # Run LBANN
 # ----------------------------------

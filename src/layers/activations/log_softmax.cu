@@ -74,7 +74,7 @@ __global__ void reduce_max_kernel(size_t height,
   for (size_t col = bidy; col < width; col += nblocksy) {
 
     // Find largest value for each thread
-    TensorDataType thread_max_val{-gpu_lib::infinity<DataType>()};
+    TensorDataType thread_max_val{-gpu_lib::infinity<TensorDataType>()};
     for (size_t row = gidx; row < height; row += nthreadsx) {
       const auto& val = values[row+col*values_ldim];
       thread_max_val = gpu_lib::max(thread_max_val, val);
