@@ -80,7 +80,7 @@ EXTERNAL_PACKAGES=$(cat <<EOF
         - 5.16.3
       externals:
       - spec: perl@5.16.3 arch=${SPACK_ARCH}
-        prefix: /usr/bin
+        prefix: /usr
     python::
       buildable: True
       variants: +shared ~readline ~zlib ~bz2 ~lzma ~pyexpat
