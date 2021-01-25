@@ -113,7 +113,7 @@ class SampleIterator:
         self.next_walk_batch_thread = None
 
         # Cache for batched sample generation
-        self.batch = np.zeros((self.batch_size, sample_dims()[0]), dtype=np.float32)
+        self.batch = np.zeros((self.batch_size, sample_dims()[0]), dtype=np.float64)
         self.batch_rows = []
 
         # Negative sampling distribution
@@ -176,7 +176,7 @@ class SampleIterator:
 
         Batch data is output to `out` and valid matrix rows are output
         to `rows`. `out` should be a `np.ndarray` with type
-        `np.float32` and dimensions `batch_size` x `sample_size`.
+        `np.float64` and dimensions `batch_size` x `sample_size`.
         `rows` should be a `list`.
 
         Walk data is read from the walk file in a background thread.
