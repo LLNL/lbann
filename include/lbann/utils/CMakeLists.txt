@@ -56,6 +56,10 @@ if (LBANN_HAS_OPENCV)
   list(APPEND THIS_DIR_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/image.hpp")
 endif ()
 
+if (LBANN_HAS_CNPY)
+  list(APPEND THIS_DIR_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/cnpy_utils.hpp")
+endif ()
+
 # Add the subdirectories
 add_subdirectory(threads)
 add_subdirectory(impl)

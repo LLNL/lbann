@@ -1,7 +1,6 @@
 # Add the source files for this directory
 set_full_path(THIS_DIR_SOURCES
   argument_parser.cpp
-  cnpy_utils.cpp
   commify.cpp
   cudnn.cpp
   description.cpp
@@ -55,6 +54,10 @@ endif ()
 
 if (LBANN_HAS_OPENCV)
   list(APPEND THIS_DIR_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/image.cpp")
+endif ()
+
+if (LBANN_HAS_CNPY)
+  list(APPEND THIS_DIR_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/cnpy_utils.cpp")
 endif ()
 
 add_subdirectory(serialize_matrices)
