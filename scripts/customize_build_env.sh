@@ -15,7 +15,7 @@ set_center_specific_fields()
         BUILD_SUFFIX=llnl.gov
     else
         CORI=$([[ $(hostname) =~ (cori|cgpu) ]] && echo 1 || echo 0)
-        DOMAINNAME=$(python -c 'import socket; domain = socket.getfqdn().split("."); print(domain[-2] + "." + domain[-1])')
+        DOMAINNAME=$(python3 -c 'import socket; domain = socket.getfqdn().split("."); print(domain[-2] + "." + domain[-1])')
         if [[ ${CORI} -eq 1 ]]; then
             CENTER="nersc"
             BUILD_SUFFIX=nersc.gov
@@ -228,7 +228,6 @@ cat <<EOF >> ${yaml}
       projections:
         all: '\${PACKAGE}/\${VERSION}'
       all:
-        autoload: 'direct'
         filter:
           # Exclude changes to any of these variables
           environment_blacklist:
@@ -241,7 +240,6 @@ cat <<EOF >> ${yaml}
       projections:
         all: '\${PACKAGE}/\${VERSION}'
       all:
-        autoload: 'direct'
         filter:
           # Exclude changes to any of these variables
           environment_blacklist:
