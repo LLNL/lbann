@@ -195,6 +195,24 @@ For more control over the LBANN build, please see :ref:`the complete
 documentation for building LBANN directly with CMake
 <build-with-cmake>`.
 
+-------------------------------------
+Common Debugging Spack related issues
+-------------------------------------
+
+One common issue that can occur is that the modules can get out of
+sync between what the LBANN environment does and the Spack defaults.
+As a result the generated module files can get out of whack.  LBANN
+uses a module hierarchy naming scheme that is compatible with other
+modules, provides for name collision, and reduces the cluttter in the
+module name.  If your modules are not working you can regenerate them
+in a LBANN Spack environment compatible approach:
+
+    .. code-block:: console
+
+       spack env activate -p <>
+       spack module lmod refresh --delete-tree
+       spack module tcl refresh --delete-tree
+
 ------------------------------
 Advanced build methods
 ------------------------------
