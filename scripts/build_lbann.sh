@@ -22,7 +22,6 @@ DEV_BUILD_FLAGS=
 # Flag for passing subcommands to spack install and dev-build
 INSTALL_DEV_BUILD_EXTRAS=
 
-LBANN_LABEL="local"
 LBANN_VARIANTS=
 CMD_LINE_VARIANTS=
 
@@ -52,15 +51,14 @@ Usage: ${SCRIPT} [options] -- [list of spack variants]
 Options:
   ${C}--help${N}                  Display this help message and exit.
   ${C}--build-env-only SHELL${N}  Drop into a shell with all of the spack build environment setup
-  ${C}--build-suffix SUFFIX${N}   Appends the string to the sym link pointing to the build directory
   ${C}--clean-build${N}           Delete the local link to the build directory
   ${C}--config-only${N}           Run the spack dev-build command up to the configure stage only
   ${C}-d | --install-deps${N}     Install the lbann dependencies in addition to building from local source
   ${C}--dependencies-only${N}     Stop after installing the lbann dependencies
   ${C}--drop-in SHELL${N}         Drop into a shell with all of the spack build environment setup after setting up the dev-build
   ${C}--dry-run${N}               Dry run the commands (no effect)
-  ${C}-e | --env ENV${N}          Build and install LBANN in the spack environment provided
-  ${C}-l | --label${N}            LBANN version label (default label is local).
+  ${C}-l | --label${N}            LBANN version label prefix: (default label is local-<SPACK_ARCH_TARGET>,
+                          and is built and installed in the spack environment lbann-<label>-<SPACK_ARCH_TARGET>
   ${C}--no-modules${N}            Don't try to load any modules (use the existing users environment)
   ${C}--no-tmp-build-dir${N}      Don't put the build directory in tmp space
   ${C}--spec-only${N}             Stop after a spack spec command
@@ -94,15 +92,6 @@ while :; do
                 exit 1
             fi
             ;;
-        --build-suffix)
-            if [ -n "${2}" ]; then
-                BUILD_SUFFIX=".${2}"
-                shift
-            else
-                echo "\"${1}\" option requires a non-empty option argument" >&2
-                exit 1
-            fi
-            ;;
         --clean-build)
             CLEAN_BUILD="TRUE"
             ;;
@@ -127,20 +116,10 @@ while :; do
         --dry-run)
             DRY_RUN="TRUE"
             ;;
-        -e|--env)
-            # Change default build directory
-            if [ -n "${2}" ]; then
-                LBANN_ENV=${2}
-                shift
-            else
-                echo "\"${1}\" option requires a non-empty option argument" >&2
-                exit 1
-            fi
-            ;;
         -l|--label)
             # Change default LBANN version label
             if [ -n "${2}" ]; then
-                LBANN_LABEL=${2}
+                LBANN_LABEL_PREFIX=${2}
                 shift
             else
                 echo "\"${1}\" option requires a non-empty option argument" >&2
@@ -244,9 +223,6 @@ CENTER=
 source $(dirname ${BASH_SOURCE})/customize_build_env.sh
 set_center_specific_fields
 
-# Temporarily overwrite the build suffix
-BUILD_SUFFIX=
-
 SPACK_ARCH=$(spack arch)
 SPACK_ARCH_TARGET=$(spack arch -t)
 SPACK_ARCH_PLATFORM=$(spack arch -p)
@@ -254,8 +230,9 @@ SPACK_ARCH_GENERIC_TARGET=$(spack python -c "import archspec.cpu as cpu; print(s
 # Create a modified spack arch with generic target architecture
 SPACK_ARCH_PLATFORM_GENERIC_TARGET="${SPACK_ARCH_PLATFORM}-${SPACK_ARCH_GENERIC_TARGET}"
 
-LBANN_ENV="${LBANN_ENV:-lbann-${LBANN_LABEL}-${SPACK_ARCH_TARGET}}"
-CORE_BUILD_PATH="${LBANN_HOME}/build/${CLUSTER}.${LBANN_ENV}${BUILD_SUFFIX:-}"
+LBANN_LABEL="${LBANN_LABEL_PREFIX:-local}-${SPACK_ARCH_TARGET}"
+LBANN_ENV="${LBANN_ENV:-lbann-${LBANN_LABEL}}"
+CORE_BUILD_PATH="${LBANN_HOME}/build/${CLUSTER}.${LBANN_ENV}"
 
 LOG="spack-build-${LBANN_ENV}.log"
 if [[ -f ${LOG} ]]; then
@@ -325,14 +302,14 @@ fi
 # If not just dropping into the build environment, uninstall any existing versions for this
 # architecture with the same label -- note that this has to be done outside of an environment
 if [[ -z "${BUILD_ENV_ONLY:-}" ]]; then
-    LBANN_FIND_CMD="spack find --format {hash:7} lbann@${LBANN_LABEL} arch=${SPACK_ARCH}"
+    LBANN_FIND_CMD="spack find --format {hash:7} lbann@${LBANN_LABEL}"
     echo ${LBANN_FIND_CMD} | tee -a ${LOG}
     LBANN_HASH=$(${LBANN_FIND_CMD})
     if [[ -n "${LBANN_HASH}" && ! "${LBANN_HASH}" =~ "No package matches the query" ]]; then
         LBANN_HASH_ARRAY=(${LBANN_HASH})
         for h in ${LBANN_HASH_ARRAY[@]}
         do
-            CMD="spack uninstall -y lbann@${LBANN_LABEL} arch=${SPACK_ARCH} /${h}"
+            CMD="spack uninstall -y lbann@${LBANN_LABEL} /${h}"
             echo ${CMD} | tee -a ${LOG}
             [[ -z "${DRY_RUN:-}" ]] && ${CMD}
         done
@@ -414,7 +391,7 @@ if [[ -z "${DRY_RUN:-}" ]]; then
     fi
 fi
 # Get the spack hash before dev-build is called
-LBANN_SPEC_HASH=$(spack spec -l ${LBANN_DEV_PATH_SPEC} | grep lbann | grep arch=${SPACK_ARCH} | awk '{print $1}')
+LBANN_SPEC_HASH=$(spack spec -l ${LBANN_DEV_PATH_SPEC} | grep lbann | grep arch=${SPACK_ARCH_PLATFORM} | awk '{print $1}')
 [[ -z "${DRY_RUN:-}" && "${SPEC_ONLY}" == "TRUE" ]] && exit
 
 CMD="spack add ${LBANN_SPEC}"
