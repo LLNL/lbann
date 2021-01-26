@@ -305,7 +305,9 @@ get_activations_shape(int index) const {
     auto shape = this->get_activations_shape(0);
     auto label_size = data_type_distconv_adapter<TensorDataType>::
         get_activations_shape(1).reduce_prod();
-    auto num_channels = label_size / shape.reduce_prod();
+    const std::string env = std::getenv("DISTCONV_LABEL_NUM_CHANNELS");
+    auto num_channels = env != ""
+        ? std::stoi(env) : label_size / shape.reduce_prod();
     shape[-2] = num_channels;
     return shape;
   }
