@@ -98,6 +98,9 @@ option(LBANN_WITH_CONDUIT "Enable Conduit library" ON)
 
 option(LBANN_WITH_CUDNN "Include Nvidia cuDNN" ON)
 
+# For now, we just assert CPU support.
+option(LBANN_WITH_ONEDNN "Include OneDNN API support" OFF)
+
 option(LBANN_WITH_DIHYDROGEN "Build with DiHydrogen support" OFF)
 if (LBANN_WITH_DIHYDROGEN)
   message(WARNING "DiHydrogen support is currently expermimental. "
@@ -258,6 +261,22 @@ if (LBANN_WITH_VISION)
   message(STATUS "Found OpenCV: ${OpenCV_DIR}")
 endif ()
 set(LBANN_HAS_OPENCV ${OpenCV_FOUND})
+
+# OneDNN stuff
+if (LBANN_WITH_ONEDNN)
+  find_package(DNNL 2.0.0 CONFIG REQUIRED)
+  set(LBANN_HAS_ONEDNN ${DNNL_FOUND})
+  if (NOT DNNL_CPU_RUNTIME STREQUAL "NONE")
+    set(LBANN_HAS_ONEDNN_CPU TRUE)
+  else ()
+    set(LBANN_HAS_ONEDNN_CPU FALSE)
+  endif ()
+  if (NOT DNNL_GPU_RUNTIME STREQUAL "NONE")
+    set(LBANN_HAS_ONEDNN_GPU TRUE)
+  else ()
+    set(LBANN_HAS_ONEDNN_GPU FALSE)
+  endif ()
+endif ()
 
 # CUDA-ness of LBANN is 1:1 with Hydrogen. Iff Hydrogen has CUDA,
 # LBANN gets CUDA.
@@ -648,6 +667,7 @@ target_link_libraries(lbann PUBLIC
   $<TARGET_NAME_IF_EXISTS:MIOpen>
   $<TARGET_NAME_IF_EXISTS:roc::rocfft>
 
+  $<TARGET_NAME_IF_EXISTS:DNNL::dnnl>
   )
 
 if (LBANN_HAS_ALUMINUM)
@@ -925,6 +945,9 @@ append_str_tf(_str
   LBANN_HAS_HYDROGEN
   LBANN_HAS_LBANN_PROTO
   LBANN_HAS_NCCL2
+  LBANN_HAS_ONEDNN
+  LBANN_HAS_ONEDNN_CPU
+  LBANN_HAS_ONEDNN_GPU
   LBANN_HAS_OPENCV
   LBANN_HAS_PROTOBUF
   LBANN_HAS_PYTHON

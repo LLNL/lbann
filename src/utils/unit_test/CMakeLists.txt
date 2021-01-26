@@ -51,6 +51,12 @@ if (LBANN_HAS_DNN_LIB)
     ${CMAKE_CURRENT_SOURCE_DIR}/dnn_lib_test.cpp)
 endif (LBANN_HAS_DNN_LIB)
 
+if (LBANN_HAS_ONEDNN)
+  message(STATUS "Adding oneDNN tests.")
+  list(APPEND THIS_DIR_SEQ_CATCH2_TEST_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/onednn_infrastructure_test.cpp)
+endif ()
+
 set(LBANN_SEQ_CATCH2_TEST_FILES
   "${LBANN_SEQ_CATCH2_TEST_FILES}"
   "${THIS_DIR_SEQ_CATCH2_TEST_FILES}" PARENT_SCOPE)
