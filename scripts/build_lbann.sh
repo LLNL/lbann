@@ -60,7 +60,7 @@ Options:
   ${C}--drop-in SHELL${N}         Drop into a shell with all of the spack build environment setup after setting up the dev-build
   ${C}--dry-run${N}               Dry run the commands (no effect)
   ${C}-e | --env ENV${N}          Build and install LBANN in the spack environment provided
-  ${C}-l | --label${N}            LBANN local version label.
+  ${C}-l | --label${N}            LBANN version label (default label is local).
   ${C}--no-modules${N}            Don't try to load any modules (use the existing users environment)
   ${C}--no-tmp-build-dir${N}      Don't put the build directory in tmp space
   ${C}--spec-only${N}             Stop after a spack spec command
@@ -473,7 +473,7 @@ if [[ -L "${SPACK_BUILD_DIR}" ]]; then
 fi
 
 # If the spack build directory does not exist, create a tmp directory and link it
-if [[ ! -L "${SPACK_BUILD_DIR}" && -z "${NO_TMP_BUILD_DIR}" && -z "${DRY_RUN:-}" ]]; then
+if [[ ! -e "${SPACK_BUILD_DIR}" && -z "${NO_TMP_BUILD_DIR}" && -z "${DRY_RUN:-}" ]]; then
     tmp_dir=$(mktemp -d -t lbann-spack-build-${LBANN_SPEC_HASH}-$(date +%Y-%m-%d-%H%M%S)-XXXXXXXXXX)
     echo ${tmp_dir}
     CMD="ln -s ${tmp_dir} spack-build-${LBANN_SPEC_HASH}"
