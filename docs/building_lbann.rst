@@ -71,40 +71,63 @@ With Spack setup and installed into your path, it can be used to
 install the LBANN executables. This approach is appropriate for users
 that want to train new or existing models using the Python front-end.
 
+.. note:: Users should make themselves comfortable with Spack and `its
+          idioms for installing packages
+          <https://spack-tutorial.readthedocs.io/en/latest/tutorial_basics.html>`_
+          and experts can `customizations to their Spack ecosystem
+          <https://spack.readthedocs.io/en/latest/configuration.html>`_
+          (and modify these instructions) to ensure that they get the
+          compilers and externals that they want.
+
 .. note:: If your model requires custom layers or data readers, you
           may need to install LBANN as a developer, which would allow
           you to modify and recompile the source code.
 
-Users comfortable with Spack and `its idioms for installing packages
-<https://spack-tutorial.readthedocs.io/en/latest/tutorial_basics.html>`_
-or those who already have `customizations to their Spack ecosystem
-<https://spack.readthedocs.io/en/latest/configuration.html>`_ in place
-may simply use
+The best practices are to create a Spack environment (similar to a
+Python virtual environment) and to use something like your compute
+center's `modules` packages to provide paths to system installed
+software.
+
+1. Create and activate spack environment called (replace <env name>):
 
 .. code-block:: bash
 
-   spack install lbann <customization options>
+   spack env create <env name>
+   spack env activate -p <env name>
 
-In this case, it is not even necessary to clone the LBANN repository
-from Github; Spack will handle this in its installation.
-
-For users that are new to spack, LBANN provides a script that will do
-some basic configuration and then install LBANN using the Spack
-environment method:
+2. Load relevant modules and find pre-installed software:
 
 .. code-block:: bash
 
-   <path lbann repo>/scripts/install_lbann.sh -e lbann
-   spack env activate -p lbann
+   module load <modules that you want>
+   spack compiler find --scope env:<env name>
+   spack external find --scope env:<env name>
 
-Options exist in the script to disable the GPUs and change the
-name of the Spack environment. These can be viewed by passing the
-:code:`-h` option to the script.
+3. Install LBANN with the variants that you care about:
 
-.. note:: Currently this script will clone a second LBANN repository
-          that Spack will use to build the LBANN library and
-          executables. We are working on simplifying this further.
+.. code-block:: bash
 
+   spack install lbann <variants and dependencies>
+   spack load lbann@develop
+
+.. note:: Here is an example of a set of commands that works on an
+          x86_64 architecture with Nvidia P100 GPUs:
+
+   .. code-block:: bash
+
+      spack env create lbann
+      spack env activate -p lbann
+      module --force unload StdEnv; module load gcc/8.3.1 cuda/11.1.0 mvapich2/2.3 python/3.7.2
+      spack compiler find --scope env:lbann
+      spack external find --scope env:lbann
+      spack install lbann@develop cuda_arch=60 +cuda ^hydrogen@develop+al ^aluminum@master ^mvapich2
+      spack load lbann@develop
+
+Please note that when getting LBANN to build as a user will encounter
+some issues with the Spack legacy concretizer.  It will require
+getting just the "right" invocation and we are working on making it
+smoother.  For the time being, it may be easier to use the developer
+build instructions.
 
 .. _build_lbann_from_source:
 
@@ -124,83 +147,92 @@ Expert developers should refer to :ref:`the "Superbuild" documentation
 <building-with-the-superbuild>` for a list and descriptions of all
 CMake flags known to LBANN's "Superbuild" build system.
 
-1.  Install all of the external packages via Spack (Aluminum,
-    Hydrogen, etc).
-
-    Install packages into a Spack environment. This is only done when
-    initially installing or upgrading the dependencies. LBANN provides
-    a script to install the basic dependencies in their default
-    configurations and it can be found at:
-
-    .. code-block:: bash
-
-        <path to lbann repo>/scripts/install_lbann.sh -d
-
-    Note that the named environment can be controlled via the
-    :code:`-e` flag. A full list of options can be viewed with the
-    :code:`-h` flag.
-
-2.  Setup the LBANN CMake environment using the Spack environment for the
-    dependencies.  If you used a custom Spack environment name in the step
-    above, be sure to specify that with the :code:`-e` option:
+1.  Build LBANN from the local source repository and install the
+    necessary dependencies into an environment.  The build script has
+    a number of features that are described by the help message.
+    Customization of the build is done via spack variants following
+    the double dash.  An example of the invocation that installs
+    dependencies and enables common variants is shown below:
 
     .. code-block:: bash
 
-        <path to lbann repo>/scripts/build_lbann_from_source.sh
+        <path to lbann repo>/scripts/build_lbann.sh -d -- +dihydrogen +cuda +half
 
+    Note that the named version and resulting environment can be
+    controlled via the :code:`-l` flag. A full list of options can be
+    viewed with the :code:`-h` flag.  External packages are setup via
+    :code:`modules` and found via spack using the :code:`spack
+    externals find` command.  If you want to provide your own modules
+    just pass the :code:`--no-modules` flag to the
+    :code:`build_lbann.sh` script to have it avoid loading what it
+    thinks are good one.
 
-   Options exist in the script to disable the GPUs, set a build and
-   install prefix, separately set the build and install
-   directories, or use a different spack environment. These options
-   can be viewed using the :code:`-h` flag.
-
-   The environments provided by this script have a set of external
-   packages and compilers that are installed on an LLNL LC CZ, NERSC,
-   or LLNL-configured OS X system. If you are not on one of these
-   systems, please update the externals and compilers for your system
-   environment. Alternatively, you can create baseline versions of
-   the user-level Spack configuration files and remove the externals
-   and compilers from the :code:`spack.yaml` file. More details are
-   provided :ref:`here <setup-spack-env>`.
+    .. note:: Pro-tip: use a customized version label (via :code:`-l`)
+              to create a build of LBANN tailored for your PR,
+              experiment, etc.  Each version creates it's own module
+              file, lives in its own Spack environment, and build
+              directory.  The default version label is :code:`local`.
 
    .. warning:: Depending on the completeness of the externals
                 specification, the initial build of all of the
                 standard packages in Spack can take a long time.
 
-3.  Once the installation has completed, to run LBANN you will want to
-    activate the spack environment to setup the depedencies
-    correctly, and then you can load the module file
-    for LBANN with the following command:
+2.  Once the installation has completed, to run LBANN you will want to
+    load the spack module for LBANN with one of the following
+    commands, where the architecture and hash are printed at the end
+    of the build script:
 
     .. code-block:: console
 
-        spack env activate -p <name of the spack environment>
-        ml use <path to installation of lbann executable>/etc/modulefiles
-        ml load lbann-0.99.0
+        module load lbann/local-<arch>-<hash>
 
+    .. code-block:: console
 
-    For advanced users, :ref:`the LBANN superbuild system
-    <building-with-the-superbuild>` provides additional control over
-    the dependencies, especially Aluminum and Hydrogen.
+        spack load lbann@local-<arch>-<hash>
 
-4.  After the initial setup of the LBANN CMake environment, you can
+3.  After the initial setup of the LBANN CMake environment, you can
     rebuild by activating the Spack environment and then re-running
     ninja.
 
     .. code-block:: console
 
-         spack env activate -p <environmment>
-         cd <build directory>/lbann/build
-         unset CPATH # Can cause bad include resolution
-         ninja
+        <path to lbann repo>/scripts/build_lbann.sh --build-env-only bash -- +dihydrogen +cuda +half
+        cd <path to lbann repo>/spack-build-<hash>
+        ninja install
 
 For more control over the LBANN build, please see :ref:`the complete
 documentation for building LBANN directly with CMake
 <build-with-cmake>`.
 
+-------------------------------------
+Common Debugging Spack related issues
+-------------------------------------
+
+One common issue that can occur is that the modules can get out of
+sync between what the LBANN environment does and the Spack defaults.
+As a result the generated module files can get out of whack.  LBANN
+uses a module hierarchy naming scheme that is compatible with other
+modules, provides for name collision, and reduces the cluttter in the
+module name.  If your modules are not working you can regenerate them
+in a LBANN Spack environment compatible approach:
+
+    .. code-block:: console
+
+       spack env activate -p lbann-<label>-<arch>
+       spack module lmod refresh --delete-tree
+       spack module tcl refresh --delete-tree
+
 ------------------------------
 Advanced build methods
 ------------------------------
+
+If you want to build LBANN with local versions of Hydrogen,
+DiHydrogen, or Aluminum, you can instruct the script and spack to
+build from local repositories:
+
+    .. code-block:: console
+
+        <path to lbann repo>/scripts/build_lbann.sh --hydrogen-repo <path>/Hydrogen.git --aluminum-repo <path>/Aluminum.git --dihydrogen-repo <path>/DiHydrogen.git  -- +dihydrogen
 
 .. toctree::
    :maxdepth: 1

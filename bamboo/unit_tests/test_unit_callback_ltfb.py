@@ -173,10 +173,10 @@ def augment_test_func(test_func):
     test_name = test_func.__name__
 
     # Define test function
-    def func(cluster, exes, dirname):
+    def func(cluster, dirname):
 
         # Run LBANN experiment
-        experiment_output = test_func(cluster, exes, dirname)
+        experiment_output = test_func(cluster, dirname)
 
         # Parse LBANN log file
         num_trainers = None
@@ -283,8 +283,8 @@ def augment_test_func(test_func):
     return func
 
 # Create test functions that can interact with PyTest
-for test in tools.create_tests(setup_experiment,
+for _test_func in tools.create_tests(setup_experiment,
                                __file__,
                                nodes=2,
                                lbann_args='--procs_per_trainer=2'):
-    globals()[test.__name__] = augment_test_func(test)
+    globals()[_test_func.__name__] = augment_test_func(_test_func)
