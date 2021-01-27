@@ -18,17 +18,15 @@ set_center_specific_fields()
         DOMAINNAME=$(python3 -c 'import socket; domain = socket.getfqdn().split("."); print(domain[-2] + "." + domain[-1])')
         if [[ ${CORI} -eq 1 ]]; then
             CENTER="nersc"
-            BUILD_SUFFIX=nersc.gov
         elif [[ ${DOMAINNAME} = "ornl.gov" ]]; then
             CENTER="olcf"
-            BUILD_SUFFIX=${DOMAINNAME}
             NINJA_NUM_PROCESSES=16 # Don't let OLCF kill build jobs
         elif [[ ${DOMAINNAME} = "llnl.gov" ]]; then
             CENTER="llnl_lc"
-            BUILD_SUFFIX=${DOMAINNAME}
+        elif [[ ${DOMAINNAME} = "riken.jp" ]]; then
+            CENTER="riken"
         else
             CENTER="llnl_lc"
-            BUILD_SUFFIX=llnl.gov
         fi
         COMPILER="gnu"
     fi
@@ -105,7 +103,15 @@ set_center_specific_modules()
                 echo "No pre-specified modules found for this system. Make sure to setup your own"
                 ;;
         esac
-
+    elif [[ ${center} = "riken" ]]; then
+        case ${spack_arch_target} in
+            "a64fx")
+                MODULE_CMD="module load system/fx700 gcc/10.1 gcc/openmpi/4.0.3"
+                ;;
+            *)
+                echo "No pre-specified modules found for this system. Make sure to setup your own"
+                ;;
+        esac
     else
         echo "No pre-specified modules found for this system. Make sure to setup your own"
     fi
@@ -141,6 +147,15 @@ set_center_specific_mpi()
     elif [[ ${center} = "nersc" ]]; then
         case ${spack_arch_target} in
             "skylake_avx512")
+                MPI="^openmpi"
+                ;;
+            *)
+		echo "No center-specified MPI library."
+                ;;
+        esac
+    elif [[ ${center} = "riken" ]]; then
+        case ${spack_arch_target} in
+            "a64fx")
                 MPI="^openmpi"
                 ;;
             *)
@@ -211,6 +226,12 @@ EOF
                 ;;
             *)
                 echo "No center-specified externals."
+                ;;
+        esac
+    elif [[ ${center} = "riken" ]]; then
+        case ${spack_arch_target} in
+            *)
+        echo "No center-specified externals."
                 ;;
         esac
     else
