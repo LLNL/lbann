@@ -204,9 +204,9 @@ For more control over the LBANN build, please see :ref:`the complete
 documentation for building LBANN directly with CMake
 <build-with-cmake>`.
 
--------------------------------------
-Common Debugging Spack related issues
--------------------------------------
+------------------------------------------
+Debugging some common Spack related issues
+------------------------------------------
 
 One common issue that can occur is that the modules can get out of
 sync between what the LBANN environment does and the Spack defaults.
@@ -232,7 +232,11 @@ build from local repositories:
 
     .. code-block:: console
 
-        <path to lbann repo>/scripts/build_lbann.sh --hydrogen-repo <path>/Hydrogen.git --aluminum-repo <path>/Aluminum.git --dihydrogen-repo <path>/DiHydrogen.git  -- +dihydrogen
+        <path to lbann repo>/scripts/build_lbann.sh
+                    --hydrogen-repo <path>/Hydrogen.git
+                    --aluminum-repo <path>/Aluminum.git
+                    --dihydrogen-repo <path>/DiHydrogen.git
+                    -- +dihydrogen
 
 .. toctree::
    :maxdepth: 1
