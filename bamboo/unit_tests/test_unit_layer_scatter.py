@@ -121,8 +121,7 @@ def construct_model(lbann):
         execution_modes='test'))
 
     # Gradient checking
-    ### @todo Restore
-    # callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
+    callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
 
     # Construct model
     num_epochs = 0
