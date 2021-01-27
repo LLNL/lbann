@@ -171,7 +171,7 @@ CMake flags known to LBANN's "Superbuild" build system.
               to create a build of LBANN tailored for your PR,
               experiment, etc.  Each version creates it's own module
               file, lives in its own Spack environment, and build
-              directory.
+              directory.  The default version label is :code:`local`.
 
    .. warning:: Depending on the completeness of the externals
                 specification, the initial build of all of the
@@ -218,7 +218,7 @@ in a LBANN Spack environment compatible approach:
 
     .. code-block:: console
 
-       spack env activate -p <>
+       spack env activate -p lbann-<label>-<arch>
        spack module lmod refresh --delete-tree
        spack module tcl refresh --delete-tree
 
