@@ -90,6 +90,7 @@ message Layer {
     Sort sort = 325;
     WeightsLayer weights_layer = 326;
     Tessellate tessellate = 327;
+    Scatter scatter = 334;
 
     // Learning layers
     FullyConnected fully_connected = 11;
@@ -534,6 +535,10 @@ message Layer {
   }
 
   message Tessellate {
+    string dims = 1;
+  }
+
+  message Scatter {
     string dims = 1;
   }
 

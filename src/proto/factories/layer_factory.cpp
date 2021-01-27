@@ -90,6 +90,7 @@
 #include "lbann/layers/transform/pooling.hpp"
 #include "lbann/layers/transform/reduction.hpp"
 #include "lbann/layers/transform/reshape.hpp"
+#include "lbann/layers/transform/scatter.hpp"
 #include "lbann/layers/transform/slice.hpp"
 #include "lbann/layers/transform/sort.hpp"
 #include "lbann/layers/transform/split.hpp"
@@ -235,6 +236,7 @@ private:
     LBANN_REGISTER_BUILDER(Evaluation, evaluation);
     LBANN_REGISTER_BUILDER(Hadamard, hadamard);
     LBANN_REGISTER_BUILDER(Pooling, pooling);
+    LBANN_REGISTER_BUILDER(Scatter, scatter);
     LBANN_REGISTER_BUILDER(Split, split);
     LBANN_REGISTER_BUILDER(StopGradient, stop_gradient);
     LBANN_REGISTER_BUILDER(Sum, sum);

@@ -14,6 +14,7 @@ set_full_path(THIS_DIR_SOURCES
   pooling.cpp
   reduction.cpp
   reshape.cpp
+  scatter.cpp
   slice.cpp
   sort.cpp
   split.cpp

@@ -16,6 +16,8 @@ set_full_path(THIS_DIR_SOURCES
   pooling.cpp
   reduction.cpp
   reshape.cpp
+  scatter.cpp
+  scatter_builder.cpp
   slice.cpp
   sort.cpp
   split.cpp
@@ -35,6 +37,7 @@ if (LBANN_HAS_GPU)
     crop.cu
     in_top_k.cu
     sort.cu
+    scatter.cu
     slice.cu
     tessellate.cu
     split.cu
