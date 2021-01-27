@@ -97,7 +97,7 @@ set_center_specific_modules()
     elif [[ ${center} = "nersc" ]]; then
         case ${spack_arch_target} in
             "skylake_avx512")
-                MODULE_CMD="module purge; module load modules/3.2.11.4 gcc/8.2.0 cuda/11.0.2 openmpi/4.0.2 cmake/3.18.2"
+                MODULE_CMD="module purge; module load cgpu modules/3.2.11.4 gcc/8.3.0 cuda/11.1.1 openmpi/4.0.3 cmake/3.18.2"
                 ;;
             *)
                 echo "No pre-specified modules found for this system. Make sure to setup your own"
@@ -171,7 +171,8 @@ set_center_specific_externals()
 {
     local center="$1"
     local spack_arch_target="$2"
-    local yaml="$3"
+    local spack_arch="$3"
+    local yaml="$4"
 
     # Point compilers that don't have a fortran compiler a default one
     sed -i.bak -e 's/\(f[c7]7*:\)$/\1 \/usr\/bin\/gfortran/g' ${yaml}
@@ -186,7 +187,7 @@ cat <<EOF  >> ${yaml}
       version:
       - 20
       externals:
-      - spec: rdma-core@20 arch=${spack_arch_target}
+      - spec: rdma-core@20 arch=${spack_arch}
         prefix: /usr
 EOF
                 ;;
@@ -203,7 +204,7 @@ cat <<EOF  >> ${yaml}
       version:
       - 20
       externals:
-      - spec: rdma-core@20 arch=${spack_arch_target}
+      - spec: rdma-core@20 arch=${spack_arch}
         prefix: /usr
 EOF
                 ;;
@@ -220,7 +221,7 @@ cat <<EOF  >> ${yaml}
       version:
       - 20
       externals:
-      - spec: rdma-core@20 arch=cray-cnl7-skylake_avx512
+      - spec: rdma-core@20 arch=${spack_arch}
         prefix: /usr
 EOF
                 ;;
