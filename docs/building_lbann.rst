@@ -167,6 +167,12 @@ CMake flags known to LBANN's "Superbuild" build system.
     :code:`build_lbann.sh` script to have it avoid loading what it
     thinks are good one.
 
+    .. note:: Pro-tip: use a customized version label (via :code:`-l`)
+              to create a build of LBANN tailored for your PR,
+              experiment, etc.  Each version creates it's own module
+              file, lives in its own Spack environment, and build
+              directory.
+
    .. warning:: Depending on the completeness of the externals
                 specification, the initial build of all of the
                 standard packages in Spack can take a long time.
