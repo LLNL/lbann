@@ -158,28 +158,31 @@ CMake flags known to LBANN's "Superbuild" build system.
 
         <path to lbann repo>/scripts/build_lbann.sh -d -- +dihydrogen +cuda +half
 
-    Note that the named environment can be controlled via the
-    :code:`-e` flag. A full list of options can be viewed with the
-    :code:`-h` flag.  External packages are setup via :code:`modules`
-    and found via spack using the :code:`spack externals find`
-    command.  If you want to provide your own modules just pass the
-    :code:`--no-modules` flag to the :code:`build_lbann.sh` script to
-    have it avoid loading what it thinks are good one.
+    Note that the named version and resulting environment can be
+    controlled via the :code:`-l` flag. A full list of options can be
+    viewed with the :code:`-h` flag.  External packages are setup via
+    :code:`modules` and found via spack using the :code:`spack
+    externals find` command.  If you want to provide your own modules
+    just pass the :code:`--no-modules` flag to the
+    :code:`build_lbann.sh` script to have it avoid loading what it
+    thinks are good one.
 
    .. warning:: Depending on the completeness of the externals
                 specification, the initial build of all of the
                 standard packages in Spack can take a long time.
 
 2.  Once the installation has completed, to run LBANN you will want to
-    load the spack module for LBANN with one of the following commands:
+    load the spack module for LBANN with one of the following
+    commands, where the architecture and hash are printed at the end
+    of the build script:
 
     .. code-block:: console
 
-        module load lbann/local
+        module load lbann/local-<arch>-<hash>
 
     .. code-block:: console
 
-        spack load lbann@local
+        spack load lbann@local-<arch>-<hash>
 
 3.  After the initial setup of the LBANN CMake environment, you can
     rebuild by activating the Spack environment and then re-running

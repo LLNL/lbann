@@ -504,7 +504,7 @@ echo "or have spack load the module auto-magically. It is installed in a spack e
 echo "  spack load lbann@${LBANN_LABEL} arch=${SPACK_ARCH}" | tee -a ${LOG}
 echo "##########################################################################################" | tee -a ${LOG}
 echo "Alternatively, for rebuilding, the script can drop create a shell in the build environment" | tee -a ${LOG}
-echo "  ${BASH_SOURCE} --build-env-only bash -e ${LBANN_ENV} -- ${CMD_LINE_VARIANTS}" | tee -a ${LOG}
+echo "  ${BASH_SOURCE} --build-env-only bash -l ${LBANN_LABEL_PREFIX:-local} -- ${CMD_LINE_VARIANTS}" | tee -a ${LOG}
 echo "  cd spack-build-${LBANN_SPEC_HASH}" | tee -a ${LOG}
 echo "  ninja install" | tee -a ${LOG}
 echo "##########################################################################################" | tee -a ${LOG}
