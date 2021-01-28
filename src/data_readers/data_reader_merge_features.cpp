@@ -36,9 +36,7 @@ data_reader_merge_features::data_reader_merge_features(
   std::vector<generic_data_reader*> data_readers,
   generic_data_reader *label_reader, bool shuffle) :
   generic_compound_data_reader(data_readers, shuffle),
-  m_label_reader(label_reader) {
-  m_supported_input_types[input_data_type::RESPONSES] = true;
-}
+  m_label_reader(label_reader) {}
 
 data_reader_merge_features::data_reader_merge_features(
   const data_reader_merge_features& other) :
