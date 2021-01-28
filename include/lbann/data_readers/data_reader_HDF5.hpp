@@ -101,38 +101,52 @@ char *x = "asdf";
 
 private:
 
+  /** Name of nodes in the data and experiment schemas that contain
+   *  instructions on normalizing and packing data, etc.
+   */
+  const std::string s_metadata_node_name = "metadata";
+
+  /** Keys to the outer map are the names of the major "division" 
+   *  in the schemas: data, useme, coerce, etc. Keys to the inner
+   *  maps are the full field names
+   */
   std::unordered_map<std::string,
         std::unordered_map<std::string, conduit::Node*>> m_schema_nodes;
 
-#if 0
-  /** Contains pointers to Nodes that contain the complete schemas
-   *  for the data on disk, and additionally contain normalization data.
-   */
-  std::unordered_map<std::string, conduit::Node*> m_data_schema_nodes;
+  /** Schema supplied by the user; this contains a listing of the fields
+   *  that will be used in an experiment; additionally may contain processing
+   *  directives related to type coercion, packing, etc. */
+  conduit::Node m_experiment_schema;
 
-  /** Contains pointers to nodes that specify which data fields are
-   * to be used for the current experiment
-   */
-  std::unordered_map<std::string, conduit::Node*> m_experiment_schema_nodes;
-#endif
-
-  /** Name of a (possibly empty) top-level branch in the useme schema that 
-   *  contains instructions on normalizing and packing data, etc.
-   */
-  const std::string m_metadata_field_name = "metadata";
-
-  /** Schema supplied by the user; this should contain the smae information
-   *  (sans data) as is on disk, and may additionally contain normalization
-   *  data, etc; supplied by the user
+  /** Schema specifying the data set as it resides, e.g, on disk.
+   *  May contain additional "metadata" nodes that contain processing
+   *  directives.
    */
   conduit::Node m_data_schema;
 
-  /** The Schema specifying the data fields to use in an experiment */
-  conduit::Node m_experiment_schema;
+  /** Maps pathnames to nodes */
+  std::unordered_map<std::string, const conduit::Node*> m_data_map;
+
+  /** Fills in various data structures by parsing the m_data_schema and
+   *  m_experiment_schema
+   */
+  void parse_schemas();
 
   /** P_0 reads and bcasts the schema */
   void load_schema(std::string fn, conduit::Node &schema);
 
+  /** get pointers to all nodes in the subtree rooted at the 'starting_node;'
+   *  keys are the pathnames; recursive.
+   */
+  void get_schema_ptrs(conduit::Node* starting_node, std::unordered_map<std::string, const conduit::Node*> &schema_name_map);
+
+  /** Returns, in leaves, the schemas for all leaf noodes in the tree 
+   *  rooted at 'node_in.'
+   */
+  void get_leaves(const conduit::Node* node_in, std::vector<const conduit::Node*> &leaves_out);
+  void get_leaves_multi(const conduit::Node* node_in, std::vector<const conduit::Node*> &leaves_out);
+
+#if 0
   /** Next few are used for "packing" data. 
    *  'name' would be datum, label, response, or other (the user can choose
    *  any names they like; I'm using datum, etc for backwards compatibility)
@@ -142,16 +156,17 @@ private:
 
   std::unordered_map<std::string, size_t> m_field_name_to_num_elts;
   std::unordered_map<std::string, size_t> m_packed_name_to_num_elts;
+#endif
 
   /** all leaves from the user's experiment-schema specification */
-  std::unordered_set<const conduit::Node*> m_all_exp_leaves;
+//XX  std::unordered_set<const conduit::Node*> m_all_exp_leaves;
 
   /** keys in this map are the pathnames of quasi-leaf nodes, where a
    * "quasi-leaf" is a node that has a single child named "metadata;"
    * the pathnames exclude the terminating "/metadata." 
    * The values are the corresponding metadata nodes.
    */
-  std::unordered_map<std::string, const conduit::Node*> m_metadata_nodes;
+//XX  std::unordered_map<std::string, const conduit::Node*> m_metadata_nodes;
 
 #if 0
 TODO
@@ -162,25 +177,11 @@ TODO
   std:unordered_map<std::string, double> m_scale;
 #endif
 
-  /** Fills in various data structures (m_packed_to_field_names_map, 
-   *  m_packed_name_to_num_elts, etc) using data from the schema for
-   *  the actual data from disk, and the metadata schemas supplied by
-   *  the user
-   */
-  void parse_schemas();
 
   /** Fills in: m_packed_name_to_num_elts and m_field_name_to_num_elts */
   void tabulate_packing_memory_requirements();
 
-  /** get pointers to all nodes in the subtree rooted at the 'starting_node;'
-   *  keys are the pathnames; recursive.
-   */
-  void get_schema_ptrs(conduit::Node* starting_node, std::unordered_map<std::string, conduit::Node*> &schema_name_map);
 
-  /** Returns, in leaves, the schemas for all leaf noodes in the tree 
-   *  rooted at 'schema_in'
-   */
-  void get_leaves(const conduit::Node* node_in, std::vector<const conduit::Node*> &leaves, std::string ignore_child_branch="metadata", int indent = 2);
 
   void do_preload_data_store() override;
 
@@ -197,16 +198,22 @@ TODO
   /** Returns a pointer to the child named 'metadata' if it exists,
    *  else returns nullptr
    */
-  const conduit::Node* get_metadata_node(const conduit::Node* node);
+  conduit::Node* get_metadata_node(const conduit::Node* node);
 
   /** Fills in m_metadata_nodes */
-  void get_metadata_node_ptrs();
+//XX   void get_metadata_node_ptrs();
 
   /** run transform pipelines */
   void transform(conduit::Node& node); 
 
   /** pack the data */
   void pack(conduit::Node &node);
+
+  /** Merges the contents of the two input nodes, either of which may be
+   *  a nullptr; if the input nodes contain a common fieldname, then the
+   *  value from node_B are used, and the value from node_A discarded.
+   */
+  conduit::Node merge_metadata_nodes(const conduit::Node *node_A, const conduit::Node *node_B);
 
 //  const std::string strip_sample_id(const std::string &s);
 };

@@ -30,6 +30,9 @@
 
 using namespace std; //XX
 
+#undef DEBUGME
+#define DEBUGME
+
 
 namespace lbann {
 
@@ -66,40 +69,27 @@ void hdf5_data_reader::load() {
     std::cerr << "hdf5_data_reader - starting load" << std::endl;
   }
   double tm1 = get_time();
+  options *opts = options::get();
 
+  // May go away; for now, this reader only supports preloading mode and
+  // use of data store
+  opts->set_option("preload_data_store", true);
+
+  // Load the sample list(s)
   data_reader_sample_list::load();
 
-  // load the schemas (yes, these are actually Nodes, but they play
+  // Load, then parse, the schemas.
+  // (yes, these are actually conduit::Nodes, but they play 
   // the part of schemas, so that's what I'm colling them)
-  options *opts = options::get();
   if (!opts->has_string("data_schema_fn")) {
     LBANN_ERROR("you must include --data_schema_fn=<string>");
   }
-  load_schema(opts->get_string("data_schema_fn"), m_data_schema);
-
   if (!opts->has_string("experiment_schema_fn")) {
     LBANN_ERROR("you must include --experiment_schema_fn=<string>");
   }
+  load_schema(opts->get_string("data_schema_fn"), m_data_schema);
   load_schema(opts->get_string("experiment_schema_fn"), m_experiment_schema);
-
-cerr << "XX get_ptrs\n";
-  // get ptrs to all nodes
-  get_schema_ptrs(&m_experiment_schema, m_experiment_schema_nodes);
-  get_schema_ptrs(&m_data_schema, m_data_schema_nodes);
-cerr << "XX DONE! get_ptrs\n";
-cerr << "XX parse\n";
-
   parse_schemas();
-cerr << "XX DONE! parse\n";
-cerr << "XX get_metadata\n";
-  get_metadata_node_ptrs();
-cerr << "XX DONE! get_metadata\n";
-cerr << "XX tabulate\n";
-  tabulate_packing_memory_requirements();
-cerr << "XX DONE! tabulate\n";
-
-  // may go away; for now, this reader only supports preloading mode
-  opts->set_option("use_data_store", true);
 
   // the usual boilerplate (we should wrap this in a function)
   m_shuffled_indices.clear();
@@ -117,15 +107,11 @@ cerr << "XX DONE! tabulate\n";
 
 void hdf5_data_reader::load_schema(std::string filename, conduit::Node &schema) {
 cerr << "starting load_schema for: " << filename << endl;
-  // master loads the schema then bcasts to all others.
-  // for now this is an MPI_WORLD_COMM operation
-  if (filename == "") {
-    LBANN_ERROR("load_schema was passed an empty filename; did you call set_schema_filename?");
-  }
+  // master loads the schema then bcasts to all others;
+  // for now this is a world operation
   if (is_master()) {
     conduit::relay::io::load(filename, schema);
   }
-
   conduit::relay::mpi::broadcast_using_schema(schema, m_comm->get_world_master(), m_comm->get_world_comm().GetMPIComm());
 }
 
@@ -182,6 +168,7 @@ int hdf5_data_reader::get_linearized_size(const std::string &key) const {
 
 // Loads the fields that are specified in the user supplied schema
 void hdf5_data_reader::load_sample(conduit::Node &node, size_t index) {
+#if 0
   // get file handle
   hid_t file_handle;
   std::string sample_name;
@@ -205,6 +192,7 @@ void hdf5_data_reader::load_sample(conduit::Node &node, size_t index) {
     // load the field's data into the conduit::Node
     conduit::relay::io::hdf5_read(file_handle, original_path, node[useme_path]);
   }
+#endif
 }
 
 // on entry, 'node' contains data specified by the user's schema,
@@ -293,7 +281,40 @@ void hdf5_data_reader::munge_data(conduit::Node &node) {
 #endif
 
 void hdf5_data_reader::parse_schemas() {
-cerr<<"XX starting parse_schemas\n";
+cerr<<"XXX starting parse_schemas\n";
+
+  get_schema_ptrs(&m_data_schema, m_data_map);
+
+  int n_children = m_experiment_schema.number_of_children();
+  for (int j=0; j<n_children; j++) {
+    const conduit::Node& child = m_experiment_schema.child(j);
+    const std::string &name = child.name();
+    if (name == "useme") {
+    } else {
+      cout << "XX parse_schemas; unknown/unhandled child name: "<< name << endl;
+    }
+  }
+
+  
+  std::vector<const conduit::Node*> ll;
+  get_leaves_multi(&m_experiment_schema, ll);
+  for (auto t : ll) {
+    cout << "===\n";
+    t->print();
+  }
+#if 0
+
+#if 0
+XX
+cerr << "XX get_ptrs\n";
+  // get ptrs to all nodes
+  get_schema_ptrs(&m_data_schema, m_data_schema_nodes);
+cerr << "XX DONE! get_ptrs\n";
+cerr << "XX parse\n";
+  get_metadata_node_ptrs();
+
+ tabulate_packing_memory_requirements();
+#endif
 
   // Get the pathnames for the fields that the user specified are
   // to be used in the current experiment. 
@@ -328,65 +349,75 @@ cerr<<"XX starting parse_schemas\n";
       }
     }
   }
+#endif
 }
 
-// recursive
-void hdf5_data_reader::get_schema_ptrs(conduit::Node* schema, std::unordered_map<std::string, conduit::Node*> &schema_name_map) {
+// recursive. Note: this is very similar to get_leaves().
+void hdf5_data_reader::get_schema_ptrs(conduit::Node* input, std::unordered_map<std::string, const conduit::Node*> &schema_name_map) {
 
-  // process the input node 
-  const std::string &path = schema->path();
-  if (path == "") {
-    if (!schema->is_root()) {
-      LBANN_ERROR("path == '' but not root");
+  // add the input node to the output map
+  const std::string &path_name = input->path();
+  if (path_name == "") {
+    if (!input->is_root()) {
+      LBANN_ERROR("node.path == '', but node is not root");
     }  
   } else {
-    if (schema_name_map.find(path) != schema_name_map.end()) {
-      LBANN_ERROR("duplicate pathname: ", path);
+    if (schema_name_map.find(path_name) != schema_name_map.end()) {
+      LBANN_ERROR("duplicate pathname: ", path_name);
     }
-    schema_name_map[path] = schema;
+    schema_name_map[path_name] = input;
   }
 
   // recurse for each child
-  int n_children = schema->number_of_children();
+  int n_children = input->number_of_children();
   for (int j=0; j<n_children; j++) {
-    get_schema_ptrs(&schema->child(j), schema_name_map);
+    get_schema_ptrs(&input->child(j), schema_name_map);
   }
 }
 
-#undef DEBUGME
-#define DEBUGME
+
+void hdf5_data_reader::get_leaves_multi(const conduit::Node* node_in, std::vector<const conduit::Node*> &leaves_out) {
+  std::vector<const conduit::Node*> first;
+  get_leaves(node_in, first);
+  for (const auto& leaf : first) {
+    const std::string path_name = leaf->path();
+    if (m_data_map.find(path_name) == m_data_map.end()) {
+      LBANN_ERROR("pathname: ", path_name, " was not found in m_data_map");
+    }
+    std::vector<const conduit::Node*> second;
+    get_leaves(m_data_map[path_name], second);
+    for (const auto *final_leaf : second) {
+      leaves_out.push_back(final_leaf);
+    }
+  }
+}
+
 
 // recursive
-void hdf5_data_reader::get_leaves(const conduit::Node* schema_in, std::vector<const conduit::Node*> &leaves, std::string ignore_child_branch, int indent) {
-
-  #ifdef DEBUGME
-  for (int j=0; j<indent; j++) std::cerr << " ";
-  std::cerr << schema_in->path() << std::endl;
-  #endif 
+void hdf5_data_reader::get_leaves(const conduit::Node* node_in, std::vector<const conduit::Node*> &leaves_out) {
 
   // nursery rhyme
-  int n = schema_in->number_of_children();
+  int n = node_in->number_of_children();
   int n_children = 0;
   for (int j=0; j<n; j++) {
-    if (schema_in->child_ptr(j)->name() != ignore_child_branch) {
+    if (node_in->child_ptr(j)->name() != s_metadata_node_name) {
       ++n_children;
     }
   }
-
   if (n_children == 0) {
-    leaves.push_back(schema_in);
+    leaves_out.push_back(node_in);
     return;
   } else {
-    for (int j=0; j<n_children; j++) {
-      if (schema_in->child_ptr(j)->name() != ignore_child_branch) {
-        get_leaves(schema_in->child_ptr(j), leaves);
+    for (int j=0; j<n; j++) {
+      if (node_in->child_ptr(j)->name() != s_metadata_node_name) {
+        get_leaves(node_in->child_ptr(j), leaves_out);
       }
     }
   }
 }
 
 void hdf5_data_reader::tabulate_packing_memory_requirements() {
-
+#if 0
   // load the schema from the actual data
   conduit::Schema schema;
   load_schema_from_data(schema);
@@ -409,6 +440,7 @@ schema.print();
     }
     m_packed_name_to_num_elts[pack_name.first] = total_elts;
   }
+#endif
 }
 
 void hdf5_data_reader::load_schema_from_data(conduit::Schema &schema) {
@@ -425,18 +457,9 @@ void hdf5_data_reader::load_schema_from_data(conduit::Schema &schema) {
   schema = data_schema.child(0);
 }
 
-const conduit::Node* hdf5_data_reader::get_metadata_node(const conduit::Node* node) {
-  const conduit::Node *r = nullptr;
-  int n = node->number_of_children();
-  for (int j=0; j<n; j++) {
-    if (node->child(j).name() == m_metadata_field_name) {
-      r = &(node->child(j));
-    }
-  }
-  return r;
-}
 
 void hdf5_data_reader::transform(conduit::Node& node_in) {
+#if 0
   std::cerr << "\nSTARTING TRANSFORM:\n";
   static bool print_warnings = true;
 
@@ -510,8 +533,11 @@ cerr << "XX got metadata!\n";
     }
   }
   print_warnings = false;
+#endif
 }
 
+
+#if 0
 void hdf5_data_reader::get_metadata_node_ptrs() {
   for (const auto &node : m_all_exp_leaves) {
     const std::string path = node->path();
@@ -528,6 +554,7 @@ void hdf5_data_reader::get_metadata_node_ptrs() {
     }  
   }
 }
+#endif
 
 /*
 const std::string hdf5_data_reader::strip_sample_id(const std::string &s) {
@@ -542,6 +569,24 @@ const std::string hdf5_data_reader::strip_sample_id(const std::string &s) {
 void hdf5_data_reader::pack(conduit::Node &node) {
 cout << "xx  pack!\n";
 
+}
+
+conduit::Node * hdf5_data_reader::get_metadata_node(const conduit::Node *node) {
+LBANN_ERROR("broke");
+#if 0
+  conduit::Node* r = nullptr;
+  if (node == nullptr) {
+    return r;
+  }
+  size_t n = node->number_of_children();
+  for (int j=0; j<n; j++) {
+    if (node->child_ptr(j)->name() != s_metadata_node_name) {
+      r = node->child_ptr(j);
+    }
+  }
+  return r;
+#endif
+  return nullptr;
 }
 
 } // namespace lbann
