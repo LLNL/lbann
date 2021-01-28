@@ -32,6 +32,23 @@
 
 namespace lbann {
 
+/** @brief Scatter values to specified tensor indices.
+ *
+ *  @f[
+ *    y[i,\text{ind}[i]] = x[i]
+ *  @f]
+ *
+ *  The first input tensor is the values and the second is the
+ *  indices. The two input tensors must have the same dimensions. If
+ *  an index is out-of-range, it is ignored.
+ *
+ *  @todo Only flat tensors are currently supported. For higher-order
+ *  tensors, PyTorch
+ *  (https://pytorch.org/docs/master/tensors.html#torch.Tensor.scatter_)
+ *  and TensorFlow
+ *  (https://www.tensorflow.org/api_docs/python/tf/scatter_nd) will
+ *  scatter along a specified dimension.
+ */
 template <typename TensorDataType,
           data_layout Layout = data_layout::DATA_PARALLEL,
           El::Device Device = El::Device::CPU>

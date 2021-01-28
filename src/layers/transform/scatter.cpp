@@ -36,7 +36,7 @@ void scatter_layer<TensorDataType, Layout, Device>::fp_compute() {
   const auto& local_values = this->get_local_prev_activations(0);
   const auto& local_indices = this->get_local_prev_activations(1);
   auto& local_output = this->get_local_activations();
-  const size_t input_size = this->get_input_size(0);
+  const size_t values_size = this->get_input_size(0);
   const El::Int output_size = this->get_output_size();
   const size_t local_mini_batch_size = local_values.Width();
 
@@ -44,8 +44,8 @@ void scatter_layer<TensorDataType, Layout, Device>::fp_compute() {
   El::Zero(local_output);
   LBANN_OMP_PARALLEL_FOR
   for (size_t j=0; j<local_mini_batch_size; ++j) {
-    for (size_t i=0; i<input_size; ++i) {
-      const El::Int ind = static_cast<El::Int>(std::floor(local_indices(i,j)));
+    for (size_t i=0; i<values_size; ++i) {
+      const auto ind = static_cast<El::Int>(std::floor(local_indices(i,j)));
       if (0<=ind && ind<output_size) {
         local_output(ind,j) += local_values(i,j);
       }
@@ -62,7 +62,7 @@ void scatter_layer<TensorDataType, Layout, Device>::bp_compute() {
   const auto& local_output_grad = this->get_local_prev_error_signals();
   auto& local_values_grad = this->get_local_error_signals(0);
   auto& local_indices_grad = this->get_local_error_signals(1);
-  const size_t input_size = this->get_input_size(0);
+  const size_t values_size = this->get_input_size(0);
   const El::Int output_size = this->get_output_size();
   const size_t local_mini_batch_size = local_indices.Width();
 
@@ -72,8 +72,8 @@ void scatter_layer<TensorDataType, Layout, Device>::bp_compute() {
   // Gather into gradient w.r.t. values
   LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (size_t j=0; j<local_mini_batch_size; ++j) {
-    for (size_t i=0; i<input_size; ++i) {
-      const El::Int ind = static_cast<El::Int>(std::floor(local_indices(i,j)));
+    for (size_t i=0; i<values_size; ++i) {
+      const auto ind = static_cast<El::Int>(std::floor(local_indices(i,j)));
       if (0<=ind && ind<output_size) {
         local_values_grad(i,j) = local_output_grad(ind,j);
       }

@@ -83,7 +83,6 @@ def construct_model(lbann):
 
     # Apply scatter
     y0 = lbann.Scatter(x0, x1, dims=tools.str_list(output_size))
-    y0.device = 'CPU' ### @todo Remove
     y1 = lbann.Concatenation([
         lbann.Constant(value=i+1, num_neurons='1')
         for i in range(output_size)
