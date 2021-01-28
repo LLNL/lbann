@@ -57,7 +57,15 @@ set(LBANN_NVPROF @LBANN_NVPROF@)
 set(LBANN_TOPO_AWARE @LBANN_TOPO_AWARE@)
 
 # Setup dependencies
+include(CMakeFindDependencyMacro)
+
 find_package(Threads REQUIRED)
+
+find_dependency(Clara)
+
+if (LBANN_HAS_PYTHON)
+  find_package(Python REQUIRED COMPONENTS Interpreter Development)
+endif ()
 
 if (LBANN_HAS_CEREAL)
   find_package(CEREAL NO_MODULE QUIET

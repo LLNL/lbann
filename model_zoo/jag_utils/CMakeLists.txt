@@ -95,7 +95,7 @@ add_dependencies(jag-utils convert_npz_to_conduit)
 install(
   TARGETS select_samples build_sample_id_mapping build_index convert_npz_to_conduit 
   OPTIONAL
-  EXPORT LBANNTargets
+  #EXPORT LBANNTargets
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
