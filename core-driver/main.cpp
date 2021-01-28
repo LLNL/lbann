@@ -25,7 +25,21 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/lbann.hpp"
+#include <mpi.h>
+#include <stdio.h>
 
-int main() {
+int main(int argc, char *argv[]) {
+  int provided;
+  MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
+  if (provided != MPI_THREAD_MULTIPLE) {
+    std::cout << "MPI_THREAD_MULTIPLE not supported" << std::endl;
+  }
+
+  std::cout << "initializing LBANN..." << std::endl;
+  auto lbann_comm = lbann::driver_init(MPI_COMM_WORLD);
+  lbann::finalize();
+  std::cout << "LBANN initialized." << std::endl;
+
+  MPI_Finalize();
   return 0;
 }

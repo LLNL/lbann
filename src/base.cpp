@@ -71,6 +71,75 @@ lbann_comm& get_current_comm() noexcept { return *world_comm_; }
 
 MPI_Errhandler err_handle;
 
+std::unique_ptr<lbann_comm> driver_init(El::mpi::Comm&& c)
+{
+  // to ensure that all the necessary infrastructure in Hydrogen and
+  // Aluminum has been setup.
+  El::Initialize();
+
+  // Create a new comm object with provided MPI_Comm
+  auto comm = std::make_unique<lbann_comm>(0, std::move(c));
+  world_comm_ = comm.get();
+
+  // Install MPI error handler
+  MPI_Comm_create_errhandler(lbann_mpi_err_handler, &err_handle);
+  MPI_Comm_set_errhandler(MPI_COMM_WORLD, err_handle);
+
+#if defined(LBANN_TOPO_AWARE)
+  // Determine the number of NUMA nodes present.
+  hwloc_topology_t topo;
+  hwloc_topology_init(&topo);
+  hwloc_topology_load(topo);
+  int numa_depth = hwloc_get_type_depth(topo, HWLOC_OBJ_NUMANODE);
+  if (numa_depth == HWLOC_TYPE_DEPTH_UNKNOWN) {
+    std::cout << comm->get_rank_in_world() <<
+              ": cannot determine hwloc NUMA-node depth" << std::endl;
+  }
+  int num_numa_nodes = hwloc_get_nbobjs_by_depth(topo, numa_depth);
+  // Warn if there are more NUMA nodes than processes per node.
+  // It's probably fine if there are more processes than NUMA nodes for now.
+  // We can adjust that later when we better understand the threaded perf.
+  int ppn = comm->get_procs_per_node();
+  if (num_numa_nodes > ppn) {
+    if (comm->get_rank_in_world() == 0) {
+      std::cout << comm->get_rank_in_world() <<
+                ": WARNING: node has " << num_numa_nodes <<
+                " NUMA nodes but you have " << ppn << " processes per node" <<
+                std::endl;
+    }
+  }
+  hwloc_topology_destroy(topo);
+#endif
+
+#ifdef LBANN_HAS_SHMEM
+  // Initialize SHMEM
+  {
+    int threading_level = SHMEM_THREAD_MULTIPLE;
+    int status = shmem_init_thread(threading_level, &threading_level);
+    if (status != 0 || threading_level != SHMEM_THREAD_MULTIPLE) {
+      LBANN_ERROR("error initializing OpenSHMEM");
+    }
+  }
+#endif // LBANN_HAS_SHMEM
+
+#ifdef LBANN_HAS_DISTCONV
+  dc::initialize(MPI_COMM_WORLD);
+#endif // LBANN_HAS_DISTCONV
+
+  return comm;
+}
+
+std::unique_ptr<lbann_comm> driver_init(MPI_Comm c)
+{
+  return driver_init(El::mpi::Comm{c});
+}
+
+std::unique_ptr<lbann_comm> driver_init(int argc, char** argv)
+{
+  El::Initialize(argc, argv);
+  return driver_init(MPI_COMM_WORLD);
+}
+
 world_comm_ptr initialize(int& argc, char**& argv) {
   // Initialize Elemental.
   El::Initialize(argc, argv);
