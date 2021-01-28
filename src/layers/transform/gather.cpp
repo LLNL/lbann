@@ -24,30 +24,32 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#define LBANN_SCATTER_LAYER_INSTANTIATE
-#include "lbann/layers/transform/scatter.hpp"
+#define LBANN_GATHER_LAYER_INSTANTIATE
+#include "lbann/layers/transform/gather.hpp"
 
 namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void scatter_layer<TensorDataType, Layout, Device>::fp_compute() {
+void gather_layer<TensorDataType, Layout, Device>::fp_compute() {
 
   // Local matrices
   const auto& local_values = this->get_local_prev_activations(0);
   const auto& local_indices = this->get_local_prev_activations(1);
   auto& local_output = this->get_local_activations();
-  const size_t values_size = this->get_input_size(0);
-  const El::Int output_size = this->get_output_size();
+  const El::Int values_size = this->get_input_size(0);
+  const size_t output_size = this->get_output_size();
   const size_t local_mini_batch_size = local_values.Width();
 
-  // Scatter into output tensor
-  El::Zero(local_output);
-  LBANN_OMP_PARALLEL_FOR
+  // Gather into output tensor
+  LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (size_t j=0; j<local_mini_batch_size; ++j) {
-    for (size_t i=0; i<values_size; ++i) {
+    for (size_t i=0; i<output_size; ++i) {
       const auto ind = static_cast<El::Int>(std::floor(local_indices(i,j)));
-      if (0<=ind && ind<output_size) {
-        local_output(ind,j) += local_values(i,j);
+      if (0<=ind && ind<values_size) {
+        local_output(i,j) = local_values(ind,j);
+      }
+      else {
+        local_output(i,j) = El::TypeTraits<TensorDataType>::Zero();
       }
     }
   }
@@ -55,30 +57,28 @@ void scatter_layer<TensorDataType, Layout, Device>::fp_compute() {
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void scatter_layer<TensorDataType, Layout, Device>::bp_compute() {
+void gather_layer<TensorDataType, Layout, Device>::bp_compute() {
 
   // Local matrices
   const auto& local_indices = this->get_local_prev_activations(1);
   const auto& local_output_grad = this->get_local_prev_error_signals();
   auto& local_values_grad = this->get_local_error_signals(0);
   auto& local_indices_grad = this->get_local_error_signals(1);
-  const size_t values_size = this->get_input_size(0);
-  const El::Int output_size = this->get_output_size();
+  const El::Int values_size = this->get_input_size(0);
+  const size_t output_size = this->get_output_size();
   const size_t local_mini_batch_size = local_indices.Width();
 
   // Zero out gradient w.r.t. indices
   El::Zero(local_indices_grad);
 
-  // Gather into gradient w.r.t. values
-  LBANN_OMP_PARALLEL_FOR_COLLAPSE2
+  // Scatter into gradient w.r.t. values
+  El::Zero(local_values_grad);
+  LBANN_OMP_PARALLEL_FOR
   for (size_t j=0; j<local_mini_batch_size; ++j) {
-    for (size_t i=0; i<values_size; ++i) {
+    for (size_t i=0; i<output_size; ++i) {
       const auto ind = static_cast<El::Int>(std::floor(local_indices(i,j)));
-      if (0<=ind && ind<output_size) {
-        local_values_grad(i,j) = local_output_grad(ind,j);
-      }
-      else {
-        local_values_grad(i,j) = El::TypeTraits<TensorDataType>::Zero();
+      if (0<=ind && ind<values_size) {
+        local_values_grad(ind,j) += local_output_grad(i,j);
       }
     }
   }
@@ -86,7 +86,7 @@ void scatter_layer<TensorDataType, Layout, Device>::bp_compute() {
 }
 
 #define PROTO(T)                                        \
-  template class scatter_layer<                         \
+  template class gather_layer<                          \
     T, data_layout::DATA_PARALLEL, El::Device::CPU>
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"

@@ -10,6 +10,8 @@ set_full_path(THIS_DIR_SOURCES
   discrete_random.cpp
   dummy.cpp
   evaluation.cpp
+  gather.cpp
+  gather_builder.cpp
   gaussian.cpp
   hadamard.cpp
   in_top_k.cpp
@@ -35,6 +37,7 @@ if (LBANN_HAS_GPU)
   set_full_path(THIS_DIR_CU_SOURCES
     concatenate.cu
     crop.cu
+    gather.cu
     in_top_k.cu
     sort.cu
     scatter.cu
