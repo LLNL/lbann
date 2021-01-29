@@ -110,6 +110,8 @@ class csv_reader : public generic_data_reader {
    */
   void load() override;
 
+  void setup(int num_io_threads, observer_ptr<thread_pool> io_thread_pool) override;
+
   int get_num_labels() const override { return m_num_labels; }
   int get_linearized_data_size() const override {
     // Account for label and skipped columns.
