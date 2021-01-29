@@ -78,6 +78,7 @@ message Callback {
     CallbackLoadModel load_model = 46;
     CallbackSetWeightsValue set_weights_value = 47;
     CallbackSummarizeImages summarize_images = 48;
+    CallbackDumpModelGraph dump_model_graph = 49;
   }
 
   message CallbackLTFB {
@@ -387,5 +388,10 @@ message Callback {
     string image_source_layer_name = 2;
     uint64 epoch_interval = 3;
   }// message CallbackSummarizeImages
+
+  message CallbackDumpModelGraph {
+    string basename = 1; // default: "model.dot"
+    bool print = 2;
+  }
 
 }
