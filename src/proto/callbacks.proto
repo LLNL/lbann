@@ -78,6 +78,7 @@ message Callback {
     CallbackLoadModel load_model = 46;
     CallbackSetWeightsValue set_weights_value = 47;
     CallbackSummarizeImages summarize_images = 48;
+    CallbackDumpModelGraph dump_model_graph = 49;
   }
 
   message CallbackLTFB {
@@ -130,9 +131,22 @@ message Callback {
     int64 mat_interval = 3; //default in lbann_callback_summary.hpp is 25
   }
 
+  /** @brief Dump weights to files.
+   *
+   *  Saves all weights to files. This is meant to export the weights
+   *  for debugging and analysis that isn't easily done in LBANN. It is
+   *  not meant for checkpointing.
+   *
+   *  The "text" and "binary" formats are written using Elemental's
+   *  ASCII and BINARY formats, respectively. The "distributed_binary"
+   *  format is written by using Elemental's BINARY format independently
+   *  on each process' local data.
+   */
   message CallbackDumpWeights {
-    string directory = 1;
-    int64  epoch_interval = 2;
+    string directory = 1;       // Directory for weight files
+    int64  epoch_interval = 2;  // Frequency for weight dumping
+                                // (default: after each training epoch)
+    string format = 3;          // Options: text (default), binary, distributed_binary
   }
 
   message CallbackDumpOutputs {
@@ -374,5 +388,10 @@ message Callback {
     string image_source_layer_name = 2;
     uint64 epoch_interval = 3;
   }// message CallbackSummarizeImages
+
+  message CallbackDumpModelGraph {
+    string basename = 1; // default: "model.dot"
+    bool print = 2;
+  }
 
 }

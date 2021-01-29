@@ -549,6 +549,10 @@ if (LBANN_WITH_CONDUIT)
   set(CONDUIT_LIBRARIES conduit::conduit)
 endif (LBANN_WITH_CONDUIT)
 
+# Boost (optional)
+find_package(Boost QUIET)
+set(LBANN_HAS_BOOST ${Boost_FOUND})
+
 if (LBANN_WITH_UNIT_TESTING)
   find_package(Catch2 2.0.0 CONFIG QUIET
     HINTS ${CATCH2_DIR} $ENV{CATCH2_DIR} ${CATCH_DIR} $ENV{CATCH_DIR}
@@ -925,6 +929,7 @@ append_str_tf(_str
   LBANN_HAS_ROCM
   LBANN_HAS_TBINF
   LBANN_HAS_VTUNE
+  LBANN_HAS_BOOST
   LBANN_NVPROF
   )
 string(APPEND _str
@@ -937,7 +942,7 @@ set(_str)
 #
 # Write a basic modulefile
 #
-set(LBANN_MODULEFILE_NAME "lbann-${LBANN_VERSION}.lua"
+set(LBANN_MODULEFILE_NAME "${LBANN_VERSION}.lua"
   CACHE STRING
   "The name of the LBANN modulefile to install. Must end in .lua.")
 
@@ -958,7 +963,7 @@ configure_file(
 
 install(FILES "${CMAKE_BINARY_DIR}/lbann_module.lua.install"
   RENAME "${LBANN_MODULEFILE_NAME}"
-  DESTINATION "${CMAKE_INSTALL_SYSCONFDIR}/modulefiles")
+  DESTINATION "${CMAKE_INSTALL_SYSCONFDIR}/modulefiles/lbann")
 install(FILES "${CMAKE_BINARY_DIR}/lbann_module.tcl.install"
   RENAME "${LBANN_VERSION}"
   DESTINATION "${CMAKE_INSTALL_SYSCONFDIR}/modulefiles/lbann")

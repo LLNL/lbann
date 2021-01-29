@@ -131,7 +131,7 @@ def augment_test_func(test_func):
     test_name = test_func.__name__
 
     # Define test function
-    def func(cluster, exes, dirname, weekly):
+    def func(cluster, dirname, weekly):
 
         # Skip test with nightly builds and on CPU systems
         if not weekly:
@@ -140,7 +140,7 @@ def augment_test_func(test_func):
             pytest.skip('only run {} on GPU systems'.format(test_name))
 
         # Run LBANN experiment
-        experiment_output = test_func(cluster, exes, dirname)
+        experiment_output = test_func(cluster, dirname)
 
         # Parse LBANN log file
         train_accuracy = None
