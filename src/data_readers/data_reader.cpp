@@ -28,7 +28,6 @@
 
 #include "lbann/data_readers/data_reader.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
-#include "lbann/utils/omp_pragma.hpp"
 #include "lbann/utils/serialize.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
 #include "lbann/trainers/trainer.hpp"
