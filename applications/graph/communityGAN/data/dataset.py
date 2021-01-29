@@ -1,15 +1,33 @@
+import configparser
 import os
 import random
+
+import numpy as np
 
 # ----------------------------------------------
 # Configuration
 # ----------------------------------------------
 
 # Hard-coded options
-### @todo Specify with config file
+### @todo Get options from config file
 motif_size = 4
-walk_length = 20
 epoch_size = 51200
+
+# Load config file
+config_file = os.getenv('LBANN_COMMUNITYGAN_CONFIG_FILE')
+if not config_file:
+    raise RuntimeError(
+        'No configuration file provided in '
+        'LBANN_COMMUNITYGAN_CONFIG_FILE environment variable')
+if not os.path.exists(config_file):
+    raise FileNotFoundError(f'Could not find config file at {config_file}')
+config = configparser.ConfigParser()
+config.read(config_file)
+
+# Options from config file
+walk_length = config.getint('RW', 'rw_walk_len', fallback=None)
+motif_file = config.get('Motifs', 'motif_file', fallback=None)
+walk_file = config.get('RW', 'rw_out_filename', fallback=None)
 
 # Configure RNG
 rng_pid = None
@@ -26,6 +44,13 @@ def initialize_rng():
         random.seed()
 
 # ----------------------------------------------
+# Load data
+# ----------------------------------------------
+
+motifs = np.loadtxt(motif_file, delimiter=',')
+walks = np.loadtxt(walk_file)
+
+# ----------------------------------------------
 # Sample access functions
 # ----------------------------------------------
 
@@ -33,11 +58,10 @@ def num_samples():
     return epoch_size
 
 def sample_dims():
-    return (motif_size+walk_length,)
+    return (motifs.shape[1] + walks.shape[1],)
 
 def get_sample(_):
-    ### @todo Real data
     initialize_rng()
-    motif = random.sample(range(40,80), motif_size)
-    walk = random.sample(range(0,80), walk_length)
-    return motif + walk
+    motif = motifs[random.randrange(len(motifs))]
+    walk = walks[random.randrange(len(walks))]
+    return np.concatenate((motif, walk))
