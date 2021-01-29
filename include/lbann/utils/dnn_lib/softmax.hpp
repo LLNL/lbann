@@ -36,4 +36,8 @@
 static_assert(false, "This file must be included only if there is support from a valid DNN library.");
 #endif // LBANN_HAS_CUDNN
 
+#if defined LBANN_HAS_ONEDNN
+#include "lbann/utils/dnn_lib/onednn/softmax.hpp"
+#endif // LBANN_HAS_ONEDNN
+
 #endif // LBANN_UTILS_DNN_LIB_SOFTMAX_HPP
