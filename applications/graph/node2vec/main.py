@@ -245,8 +245,11 @@ trainer = lbann.Trainer(
 callbacks = [
     lbann.CallbackPrint(),
     lbann.CallbackTimer(),
-    lbann.CallbackDumpWeights(directory='embeddings',
-                              epoch_interval=num_epochs),
+    lbann.CallbackDumpWeights(
+        directory='embeddings',
+        epoch_interval=num_epochs,
+        format='distributed_binary',
+    ),
 ]
 model = lbann.Model(
     num_epochs,
