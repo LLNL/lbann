@@ -30,7 +30,6 @@
 #include "lbann/data_readers/data_reader_csv.hpp"
 #include "lbann/utils/options.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
-#include <omp.h>
 
 namespace lbann {
 
