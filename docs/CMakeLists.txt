@@ -21,7 +21,6 @@ if (SPHINX_FOUND)
       building_lbann.rst
       build_llnl_idiosyncracies.rst
       build_with_cmake.rst
-      build_with_superbuild.rst
       build_osx.rst
       publications.rst
       index.rst

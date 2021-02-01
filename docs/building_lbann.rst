@@ -143,9 +143,6 @@ environment with the remaining dependencies, and then invoke the LBANN
 CMake infrastructure to build LBANN from the local source. The
 provided script will build with a standard compiler for a given
 platform and the nominal options in the CMake build environment.
-Expert developers should refer to :ref:`the "Superbuild" documentation
-<building-with-the-superbuild>` for a list and descriptions of all
-CMake flags known to LBANN's "Superbuild" build system.
 
 1.  Build LBANN from the local source repository and install the
     necessary dependencies into an environment.  The build script has
@@ -243,7 +240,6 @@ build from local repositories:
 
    build_osx
    build_with_cmake
-   build_with_superbuild
    build_containers
    build_llnl_idiosyncracies
    build_spack_extra_config
