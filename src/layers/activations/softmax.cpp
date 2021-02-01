@@ -98,17 +98,10 @@ void fp_model_parallel(lbann_comm& comm,
 }
 
 template <typename TensorDataType>
-void fp_data_parallel(lbann_comm& comm,
-                      const El::AbstractDistMatrix<TensorDataType>& input,
+void fp_data_parallel(El::AbstractDistMatrix<TensorDataType> const& input,
                       El::AbstractDistMatrix<TensorDataType>& output,
-                      El::AbstractDistMatrix<TensorDataType>& workspace,
-                      TensorDataType threshold_val,
                       softmax_mode mode)
 {
-#ifdef LBANN_HAS_ONEDNN_CPU
-  (void) comm;
-  (void) threshold_val;
-  (void) workspace;
   const auto& local_input =
     dynamic_cast<El::Matrix<TensorDataType, El::Device::CPU> const&>(
       input.LockedMatrix());
@@ -117,29 +110,30 @@ void fp_data_parallel(lbann_comm& comm,
       output.Matrix());
 
   // I should be able to delete from here...
+#ifdef LBANN_HAS_ONEDNN_CPU
   using backend = onednn_backend<El::Device::CPU>;
+#else
+  using backend = openmp_backend;
+#endif // LBANN_HAS_ONEDNN_CPU
   using mem_desc = typename backend::TensorDescriptor;
 
   mem_desc src_desc, dest_desc;
-  src_desc.set(dnnl::memory::data_type::f32,
+  src_desc.set(backend::data_type<TensorDataType>(),
                local_input.Width(),
                local_input.Height());
-  dest_desc.set(dnnl::memory::data_type::f32,
+  dest_desc.set(backend::data_type<TensorDataType>(),
                 local_input.Width(),
                 local_input.Height());
   // ... to here.
 
   // Eventually this should just be `dnn_lib::softmax_forward`...
-  onednn::softmax_forward(1.f,
-                          src_desc,
-                          local_input,
-                          0.f,
-                          dest_desc,
-                          local_output,
-                          mode);
-#else
-  fp_model_parallel(comm, input, output, workspace, threshold_val, mode);
-#endif // LBANN_HAS_ONEDNN_CPU
+  dnn_lib::softmax_forward(1.f,
+                           src_desc,
+                           local_input,
+                           0.f,
+                           dest_desc,
+                           local_output,
+                           mode);
 }
 
 template <typename TensorDataType>
@@ -194,18 +188,11 @@ void bp_model_parallel(
 
 template <typename TensorDataType>
 void bp_data_parallel(
-  lbann_comm& comm,
   const El::AbstractDistMatrix<TensorDataType>& output,
   const El::AbstractDistMatrix<TensorDataType>& gradient_wrt_output,
   El::AbstractDistMatrix<TensorDataType>& gradient_wrt_input,
-  El::AbstractDistMatrix<TensorDataType>& workspace,
-  TensorDataType threshold_val,
   softmax_mode mode)
 {
-#ifdef LBANN_HAS_ONEDNN_CPU
-  (void) comm;
-  (void) threshold_val;
-  (void) workspace;
   auto const& local_output =
     dynamic_cast<El::Matrix<TensorDataType, El::Device::CPU> const&>(
       output.LockedMatrix());
@@ -217,40 +204,35 @@ void bp_data_parallel(
       gradient_wrt_input.Matrix());
 
   // I should be able to delete from here...
+#ifdef LBANN_HAS_ONEDNN_CPU
   using backend = onednn_backend<El::Device::CPU>;
+#else
+  using backend = openmp_backend;
+#endif
   using mem_desc = typename backend::TensorDescriptor;
 
   mem_desc output_desc, grad_wrt_output_desc, grad_wrt_input_desc;
-  output_desc.set(dnnl::memory::data_type::f32,
+  output_desc.set(backend::data_type<TensorDataType>(),
                   local_output.Width(),
                   local_output.Height());
-  grad_wrt_output_desc.set(dnnl::memory::data_type::f32,
+  grad_wrt_output_desc.set(backend::data_type<TensorDataType>(),
                            local_grad_wrt_output.Width(),
                            local_grad_wrt_output.Height());
-  grad_wrt_input_desc.set(dnnl::memory::data_type::f32,
+  grad_wrt_input_desc.set(backend::data_type<TensorDataType>(),
                           local_grad_wrt_input.Width(),
                           local_grad_wrt_input.Height());
   // ... to here.
 
   // Eventually this should just be `dnn_lib::softmax_forward`...
-  onednn::softmax_backward(1.f,
-                           output_desc,
-                           local_output,
-                           grad_wrt_output_desc,
-                           local_grad_wrt_output,
-                           0.f,
-                           grad_wrt_input_desc,
-                           local_grad_wrt_input,
-                           mode);
-#else
-  bp_model_parallel(comm,
-                    output,
-                    gradient_wrt_output,
-                    gradient_wrt_input,
-                    workspace,
-                    threshold_val,
-                    mode);
-#endif // LBANN_HAS_ONEDNN_CPU
+  dnn_lib::softmax_backward(1.f,
+                            output_desc,
+                            local_output,
+                            grad_wrt_output_desc,
+                            local_grad_wrt_output,
+                            0.f,
+                            grad_wrt_input_desc,
+                            local_grad_wrt_input,
+                            mode);
 }
 
 } // namespace
@@ -258,11 +240,8 @@ void bp_data_parallel(
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void softmax_layer<TensorDataType, Layout, Device>::fp_compute() {
   if constexpr (Layout == data_layout::DATA_PARALLEL)
-    fp_data_parallel(*this->get_comm(),
-                     this->get_prev_activations(),
+    fp_data_parallel(this->get_prev_activations(),
                      this->get_activations(),
-                     *this->m_workspace,
-                     this->threshold_val,
                      this->m_mode);
   else
     fp_model_parallel(*this->get_comm(),
@@ -276,12 +255,9 @@ void softmax_layer<TensorDataType, Layout, Device>::fp_compute() {
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void softmax_layer<TensorDataType, Layout, Device>::bp_compute() {
   if constexpr (Layout == data_layout::DATA_PARALLEL)
-    bp_data_parallel(*this->get_comm(),
-                     this->get_activations(),
+    bp_data_parallel(this->get_activations(),
                      this->get_prev_error_signals(),
                      this->get_error_signals(),
-                     *this->m_workspace,
-                     this->threshold_val,
                      this->m_mode);
   else
     bp_model_parallel(*this->get_comm(),

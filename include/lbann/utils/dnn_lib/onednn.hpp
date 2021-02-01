@@ -143,6 +143,9 @@ struct onednn_backend
 {
   static constexpr auto device = D;
 
+  template <typename T>
+  static auto data_type() { return onednn::get_data_type<T>(); }
+
   class TensorDescriptor
   {
   public:
