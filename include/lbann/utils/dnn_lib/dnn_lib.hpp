@@ -41,7 +41,11 @@
 namespace lbann {
 namespace dnn_lib {
 
+#if defined LBANN_HAS_CUDNN
 using namespace cudnn;
+#elif defined LBANN_HAS_MIOPEN
+using namespace miopen;
+#endif // LBANN_HAS_CUDNN
 
 template <typename T>
 struct ScalingParameterT
@@ -139,6 +143,15 @@ public:
     IntTs... dims) {
     set(data_type, {static_cast<int>(dims)...});
   }
+#if !(defined LBANN_HAS_CUDNN)
+  void set(
+    dnnDataType_t data_type,
+    dnnTensorFormat_t /*format*/,
+    const std::vector<int>& dims)
+  {
+    this->set(data_type, dims);
+  }
+#endif // !LBANN_HAS_CUDNN
 
 private:
 
@@ -146,6 +159,7 @@ private:
 
 };
 
+#ifdef LBANN_HAS_CUDNN
 /** @brief Wrapper around @c cudnnFilterDescriptor_t */
 class FilterDescriptor {
 public:
@@ -203,6 +217,9 @@ private:
   dnnFilterDescriptor_t desc_ = nullptr;
 
 };
+#else // MIOpen and OneDNN
+using FilterDescriptor = TensorDescriptor;
+#endif // LBANN_HAS_CUDNN
 
 /** @brief Wrapper around @c cudnnDropoutDescriptor_t */
 class DropoutDescriptor {
@@ -213,9 +230,12 @@ public:
   DropoutDescriptor(float dropout,
                     void* states,
                     size_t states_size,
-                    unsigned long long seed)
+                    unsigned long long seed,
+                    bool use_mask,
+                    bool state_evo,
+                    dnnRNGType_t rng_mode)
   {
-    this->set(dropout, states, states_size, seed);
+    this->set(dropout, states, states_size, seed, use_mask, state_evo, rng_mode);
   }
 
   ~DropoutDescriptor();
@@ -248,7 +268,10 @@ public:
     float dropout,
     void* states,
     size_t states_size,
-    unsigned long long seed);
+    unsigned long long seed,
+    bool use_mask = false,
+    bool state_evo = false,
+    dnnRNGType_t rng_mode = DNN_RNG_PSEUDO_XORWOW);
 
 private:
 
@@ -405,84 +428,6 @@ private:
 /** @brief Swap two convolution descriptors. */
 void swap(ConvolutionDescriptor& lhs, ConvolutionDescriptor& rhs);
 
-/** @brief Wrapper around @c cudnnActivationDescriptor_t */
-class ActivationDescriptor
-{
-public:
-
-  /** @brief Descriptor handle from the implementation. */
-  using DescriptorHandle_t = dnnActivationDescriptor_t;
-
-public:
-
-  /** @name Constructors and destructor */
-  ///@{
-
-  /** @brief Construct from an existing handle. */
-  explicit ActivationDescriptor(DescriptorHandle_t desc=nullptr);
-
-  /** @brief Any handle resources will be freed. */
-  ~ActivationDescriptor();
-
-  /** @brief Copy constructor.
-   *
-   *  Constructs a new handle with identical features.
-   */
-  ActivationDescriptor(const ActivationDescriptor&);
-  /** @brief Move constructor */
-  ActivationDescriptor(ActivationDescriptor&&);
-
-  /** @brief Assignment operator. */
-  ActivationDescriptor& operator=(ActivationDescriptor);
-
-  ///@}
-  /** @name Accessors */
-  ///@{
-
-  /** @brief Return handle object and release ownership */
-  DescriptorHandle_t release() noexcept;
-  /** @brief Return handle object without releasing ownership */
-  DescriptorHandle_t get() const noexcept;
-  /** @brief Implicit conversion to handle object without releasing
-   *         ownership
-   */
-  operator DescriptorHandle_t() const noexcept;
-
-  ///@}
-  /** @name Modifiers */
-  ///@{
-
-  /** @brief Swap contents with another descriptor */
-  void swap(ActivationDescriptor& other);
-
-  /** @brief Take ownership of existing handle */
-  void reset(DescriptorHandle_t desc=nullptr);
-
-  /** @brief Allocate a new handle.
-   *
-   *  Does nothing if already created.
-   */
-  void create();
-  /** @brief Configure handle properties
-   *
-   *  Allocates a new handle if one doesn't already exist.
-   */
-  void set(
-    dnnActivationMode_t mode,
-    dnnNanPropagation_t nan_prop,
-    double coeff);
-
-  ///@}
-
-private:
-
-  DescriptorHandle_t desc_ = nullptr;
-
-};
-
-/** @brief Swap two convolution descriptors. */
-void swap(ActivationDescriptor& lhs, ActivationDescriptor& rhs);
-
 /** @brief Wrapper around @c cudnnPoolingDescriptor_t */
 class PoolingDescriptor
 {
@@ -632,7 +577,8 @@ public:
    *
    *  Allocates a new handle if one doesn't already exist.
    */
-  void set(unsigned n, double alpha, double beta, double k);
+  void set(unsigned n, double alpha, double beta, double k,
+           dnnLRNMode_t mode = DNN_LRN_CROSS_CHANNEL);
 
   ///@}
 

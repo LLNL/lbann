@@ -96,6 +96,9 @@ void sgd_training_algorithm::train(sgd_execution_context& c,
       evaluate(evaluation_context, model, dc, execution_mode::validation);
     }
   }
+  // Reset the model back to the training execution context prior to
+  // end of training callbacks
+  model.reset_mode(c, execution_mode::training);
   do_train_end_cbs(model);
 }
 

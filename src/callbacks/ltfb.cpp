@@ -25,24 +25,154 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/ltfb.hpp"
-#include "lbann/callbacks/imcomm.hpp"
 #include "lbann/utils/random_number_generators.hpp"
+#include "lbann/models/directed_acyclic_graph.hpp"
 #include "lbann/optimizers/sgd.hpp"
 #include "lbann/optimizers/adam.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/weights/data_type_weights.hpp"
 #include "lbann/data_coordinator/data_coordinator.hpp"
 
+#include <lbann/utils/cloneable.hpp>
+#include <lbann/utils/memory.hpp>
+
 #include <callbacks.pb.h>
 
+#include <algorithm>
+#include <numeric>
+#include <set>
 #include <sstream>
 #include <string>
 #include <tuple>
+#include <unordered_map>
+#include <utility>
+#include <vector>
 
 namespace lbann {
 namespace callback {
 
+/** @class LTFBCommunicationAlgorithm
+ *  @brief Exchange model information with partners.
+ */
+class LTFBCommunicationAlgorithm
+  : public Cloneable<HasAbstractFunction<LTFBCommunicationAlgorithm>>
+{
+public:
+  /** @brief Default constructor.
+   *
+   *  All weights within a model are exchanged.
+   */
+  LTFBCommunicationAlgorithm() = default;
+
+  /** @brief Construct with names of weights
+   *  @param[in] weights_names Names of weights to exchange. If empty,
+   *                           then all weights are exchanged.
+   */
+  LTFBCommunicationAlgorithm(std::set<std::string> const& weights_names)
+    : weights_names_{weights_names}
+  {}
+
+  /** @brief Construct with names of weights
+   *  @param[in] weights_names Names of weights to exchange. If empty,
+   *                           then all weights are exchanged.
+   */
+  LTFBCommunicationAlgorithm(std::set<std::string>&& weights_names)
+    : weights_names_{std::move(weights_names)}
+  {}
+
+  virtual ~LTFBCommunicationAlgorithm() noexcept = default;
+
+  /** @brief Exchange data in model with a partner.
+   *
+   *  @param[in,out] m Model to send to partner trainer. On output it
+   *                   will be overwritten with model recieved from
+   *                   partner trainer.
+   *  @param[in] partner_trainer Index of the partner trainer with
+   *                             which to exchange models.
+   *  @param[in] step The step ID at which the exchange occurs.
+   */
+  virtual void exchange_models(model& m,
+                               El::Int partner_trainer,
+                               El::Int step) const = 0;
+protected:
+  LTFBCommunicationAlgorithm(LTFBCommunicationAlgorithm const&) = default;
+  LTFBCommunicationAlgorithm(LTFBCommunicationAlgorithm&&) = default;
+  /** @name Data access and query */
+  ///@{
+  auto weights_names() const noexcept
+    -> std::set<std::string> const&
+  { return weights_names_; }
+  bool has_weights_names() const noexcept { return !weights_names_.empty(); }
+  ///@}
+private:
+  std::set<std::string> weights_names_;
+};// class LTFBCommunicationAlgorithm
+
 namespace {
+
+/** @brief Inter-trainer communication scheme for LTFB.
+ *
+ *  The specifics of these algorithms are experimental and will be
+ *  in flux.
+ */
+enum class comm_algorithm {
+  /** @brief Directly exchange weights values with sendrecv.
+   *
+   *  Corresponding ranks in partner trainers will iterate through
+   *  their weights and exchange values with sendrecvs.
+   *
+   *  Notes:
+   *    - Requires all models to be identical aside from their
+   *      weights values, so this is not suitable for hyperparameter
+   *      or model architecture exploration.
+   *    - Optimizer state is not exchanged, so there may be wonky
+   *      learning behavior immediately after a tournament.
+   *    - Optimal if communication performance between ranks is
+   *      uniform and independent. If intra-trainer communication is
+   *      fast or if communication performance is sensitive to
+   *      network traffic, it may be advantageous to gather model
+   *      data on the trainer master ranks and only perform
+   *      inter-trainer communication between them.
+   */
+  sendrecv_weights,
+
+  /** @brief Save and load model data with checkpoint files.
+   *
+   *  Notes:
+   *    - Supports hyperparameter exploration.
+   *    - This approach is temporary and experimental, since going
+   *      through the file system is very suboptimal. When a wire
+   *      format for model checkpoints is developed, it should be
+   *      used instead.
+   */
+  checkpoint_file,
+
+  /** @brief Transfer model on the wire.
+   *
+   *  The entire model is saved, as though doing a
+   *  checkpoint. Instead of writing to disk, a binary stream is
+   *  used. After gathering the binary stream, it is
+   *  exchanged. There is an implicit assumption that the
+   *  participating processes are binary-compatible (e.g., for
+   *  issues like endianness).
+   */
+  checkpoint_binary,
+};// enum comm_algorithm
+comm_algorithm string_to_comm_algo(const std::string& str)
+{
+  if (str.empty() || str == "sendrecv_weights") {
+    return comm_algorithm::sendrecv_weights;
+  }
+  else if (str == "checkpoint_file") {
+    return comm_algorithm::checkpoint_file;
+  }
+  else if (str == "checkpoint_binary") {
+    return comm_algorithm::checkpoint_binary;
+  }
+  // Invalid LTFB communication algorithm
+  LBANN_ERROR("invalid LTFB communication algorithm (",str,")");
+  return comm_algorithm::sendrecv_weights;
+}
 
 /** @brief Generate partner trainer assignments.
  *
@@ -50,128 +180,193 @@ namespace {
  *  odd number of trainers, one of them is partnered with itself.
  */
 El::Int get_partner_trainer(lbann_comm& comm,
-                            const std::string& message_prefix) {
-    // Assign partner trainers
-    // Note: The first trainer in 'trainers' is paired with the
-    // second, the third with the fourth, and so on. If there are an
-    // odd number of trainers, the last one is partnered with itself.
-    const El::Int num_trainers = comm.get_num_trainers();
-    std::vector<El::Int> trainers(num_trainers);
-    std::iota(trainers.begin(), trainers.end(), 0);
-    // Everyone use a special RNG that is only for LTFB so that they
-    // can all communicate the same pairs without communication
-    std::shuffle(trainers.begin(), trainers.end(), get_ltfb_generator());
+                            const std::string& message_prefix)
+{
+  // Assign partner trainers
+  // Note: The first trainer in 'trainers' is paired with the
+  // second, the third with the fourth, and so on. If there are an
+  // odd number of trainers, the last one is partnered with itself.
+  const El::Int num_trainers = comm.get_num_trainers();
+  std::vector<El::Int> trainers(num_trainers);
+  std::iota(trainers.begin(), trainers.end(), 0);
+  // Everyone use a special RNG that is only for LTFB so that they
+  // can all communicate the same pairs without communication
+  std::shuffle(trainers.begin(), trainers.end(), get_ltfb_generator());
 
-    if (comm.am_world_master()) { // Root process
-      // Print partner assignments to standard output
-      std::stringstream msg;
-      msg << message_prefix << "tournament partners -";
-      for (El::Int i = 0; i < num_trainers; i += 2) {
-        msg << (i > 0 ? "," : "")
-            << " {" << trainers[i];
-        if (i+1 < num_trainers) {
-          msg << "," << trainers[i+1];
-        }
-        msg << "}";
-      }
-      msg << "\n";
-      std::cout << msg.str() << std::endl << std::flush;
-    }
-
-    // Setup partner assignments for all processes
-    std::vector<El::Int> send_buffer(num_trainers);
+  if (comm.am_world_master()) { // Root process
+    // Print partner assignments to standard output
+    std::stringstream msg;
+    msg << message_prefix << "tournament partners -";
     for (El::Int i = 0; i < num_trainers; i += 2) {
-      const auto& trainer1 = trainers[i];
-      const auto& trainer2 = (i+1 < num_trainers) ? trainers[i+1] : trainer1;
-      send_buffer[trainer1] = trainer2;
-      send_buffer[trainer2] = trainer1;
+      msg << (i > 0 ? "," : "")
+          << " {" << trainers[i];
+      if (i+1 < num_trainers) {
+        msg << "," << trainers[i+1];
+      }
+      msg << "}";
     }
-    return send_buffer[comm.get_trainer_rank()];
+    msg << "\n";
+    std::cout << msg.str() << std::endl << std::flush;
+  }
+
+  // Setup partner assignments for all processes
+  std::vector<El::Int> send_buffer(num_trainers);
+  for (El::Int i = 0; i < num_trainers; i += 2) {
+    const auto& trainer1 = trainers[i];
+    const auto& trainer2 = (i+1 < num_trainers) ? trainers[i+1] : trainer1;
+    send_buffer[trainer1] = trainer2;
+    send_buffer[trainer2] = trainer1;
+  }
+  return send_buffer[comm.get_trainer_rank()];
 }
 
-/// See @c lbann::callbacks::ltfb::communication_algorithm::sendrecv_weights
-namespace sendrecv_weights {
+void restore_model_weights(
+  model& m,
+  std::unordered_map<std::string, std::unique_ptr<weights>>& restore_weights)
+{
+  // Restore weights that shouldn't be exchanged
+  if (restore_weights.empty())
+    return;
 
-/** @param weights_names    Names of weights to exchange. If empty,
- *                          then all weights are exchanged.
- *  @param send_weights     Weights values sent to partner.
- *  @param recv_weights     Weights values recieved from partner.
+  // FIXME: Generalize this; enable ptr move??
+  for (auto w : m.get_weights()) {
+    if (restore_weights.count(w->get_name()) > 0) {
+      using TensorDataType = DataType;
+      using WeightsType = data_type_weights<TensorDataType>;
+      dynamic_cast<WeightsType&>(*w)
+        = dynamic_cast<WeightsType&>(*restore_weights[w->get_name()]);
+    }
+  }
+}
+
+/** @class SendRecvWeights
+ *  @brief Exchange model weights directly using sendrecvs.
+ *  @todo More general approach to exchange optimizer state. Currently
+ *  only SGD and Adam are supported.
  */
-template <typename TensorDataType>
-void exchange_models(lbann_comm& comm,
-                     El::Int partner_trainer,
-                     const std::set<std::string>& weights_names,
-                     const std::vector<data_type_weights<TensorDataType>*>& send_weights,
-                     std::vector<data_type_weights<TensorDataType>*>& recv_weights,
-                     bool exchange_hyperparameters) {
+class SendRecvWeights final
+  : public Cloneable<SendRecvWeights, LTFBCommunicationAlgorithm>
+{
+  using BaseType = Cloneable<SendRecvWeights, LTFBCommunicationAlgorithm>;
+public:
+  /** @brief Construct from weights names
+   *  @param[in] weights_names Names of weights to exchange. If empty,
+   *                           then all weights are exchanged.
+   *  @param[in] exchange_hyperparameters Exchange optimizer
+   *                                      hyperparameters.
+   */
+  SendRecvWeights(std::set<std::string> const& weights_names,
+                  bool exchange_hyperparameters)
+    : BaseType(weights_names),
+      exchange_hyperparams_{exchange_hyperparameters}
+  {}
 
-  // Get partner process
-  const El::Int rank_in_trainer = comm.get_rank_in_trainer();
-  const El::Int procs_per_trainer = comm.get_procs_per_trainer();
-  const El::Int partner_rank_in_world = (partner_trainer * procs_per_trainer
-                                         + rank_in_trainer);
+  /** @brief Construct from weights names
+   *  @param[in] weights_names Names of weights to exchange. If empty,
+   *                           then all weights are exchanged.
+   *  @param[in] exchange_hyperparameters Exchange optimizer
+   *                                      hyperparameters.
+   */
+  SendRecvWeights(std::set<std::string>&& weights_names,
+                  bool exchange_hyperparameters)
+    : BaseType(std::move(weights_names)),
+      exchange_hyperparams_{exchange_hyperparameters}
+  {}
 
-  // Exchange weights with partner
-  for (size_t i = 0; i < send_weights.size(); ++i) {
-    const auto& send = *send_weights[i];
-    auto& recv = *recv_weights[i];
-    if (weights_names.empty()
-        || (std::find(weights_names.begin(), weights_names.end(),
-                      send.get_name())
-            != weights_names.end())) {
+  SendRecvWeights(SendRecvWeights const&) = default;
+  SendRecvWeights(SendRecvWeights&&) = default;
+
+  /** @todo This function is way too long. */
+  void exchange_models(model& m,
+                       El::Int partner_trainer,
+                       El::Int /*step*/) const final
+  {
+    auto&& comm = *m.get_comm();
+
+    // Get partner process
+    const El::Int rank_in_trainer = comm.get_rank_in_trainer();
+    const El::Int procs_per_trainer = comm.get_procs_per_trainer();
+    const El::Int partner_rank_in_world =
+      (partner_trainer * procs_per_trainer + rank_in_trainer);
+
+    // Exchange weights with partner
+    for (auto&& w_ptr : m.get_weights()) {
+
+      // Skip weights if name isn't in list
+      auto const& weights_names = this->weights_names();
+      if (this->has_weights_names()
+          && (weights_names.find(w_ptr->get_name()) == weights_names.cend()))
+      {
+        continue;
+      }
 
       // Exchange weights values
-      El::SendRecv(send.get_values().LockedMatrix(),
-                   recv.get_values().Matrix(),
-                   comm.get_world_comm(),
-                   partner_rank_in_world,
-                   partner_rank_in_world);
+      using TensorDataType = DataType;
+      using WeightsType = data_type_weights<TensorDataType>;
+      auto& recv_weights = dynamic_cast<WeightsType&>(*w_ptr);
+      auto send_weights = recv_weights;
+      El::SendRecv(
+        send_weights.get_values().LockedMatrix(),
+        recv_weights.get_values().Matrix(),
+        comm.get_world_comm(),
+        partner_rank_in_world,
+        partner_rank_in_world);
 
-      // Exchange optimizer state
-      const auto* send_opt = send.get_optimizer();
-      auto* recv_opt = recv.get_optimizer();
-      const auto* send_sgd = dynamic_cast<const sgd<TensorDataType>*>(send_opt);
-      auto* recv_sgd = dynamic_cast<sgd<TensorDataType>*>(recv_opt);
+      // Exchange SGD optimizer state
+      using SGDType = sgd<TensorDataType>;
+      auto* send_sgd = dynamic_cast<SGDType*>(send_weights.get_optimizer());
+      auto* recv_sgd = dynamic_cast<SGDType*>(recv_weights.get_optimizer());
       if (send_sgd != nullptr && recv_sgd != nullptr) {
-        if(exchange_hyperparameters) {
-          using hyperparameters_type = std::tuple<TensorDataType, TensorDataType, bool>;
-          hyperparameters_type hyperparameters(send_sgd->get_learning_rate(),
-                                               send_sgd->get_momentum(),
-                                               send_sgd->using_nesterov());
-          El::mpi::SendRecv(reinterpret_cast<El::byte*>(&hyperparameters),
-                            sizeof(hyperparameters_type),
-                            partner_rank_in_world,
-                            partner_rank_in_world,
-                            comm.get_world_comm(),
-                            El::SyncInfo<El::Device::CPU>{});
+        if (exchange_hyperparams_) {
+          using hyperparameters_type = std::tuple<TensorDataType,
+                                                  TensorDataType,
+                                                  bool>;
+          hyperparameters_type hyperparameters(
+            send_sgd->get_learning_rate(),
+            send_sgd->get_momentum(),
+            send_sgd->using_nesterov());
+          El::mpi::SendRecv(
+            reinterpret_cast<El::byte*>(&hyperparameters),
+            sizeof(hyperparameters_type),
+            partner_rank_in_world,
+            partner_rank_in_world,
+            comm.get_world_comm(),
+            El::SyncInfo<El::Device::CPU>{});
           recv_sgd->set_learning_rate(std::get<0>(hyperparameters));
           recv_sgd->set_momentum(std::get<1>(hyperparameters));
           recv_sgd->set_nesterov(std::get<2>(hyperparameters));
         }
-        El::SendRecv(send_sgd->get_velocity().LockedMatrix(),
-                     recv_sgd->get_velocity().Matrix(),
-                     comm.get_world_comm(),
-                     partner_rank_in_world,
-                     partner_rank_in_world);
+        El::SendRecv(
+          send_sgd->get_velocity().LockedMatrix(),
+          recv_sgd->get_velocity().Matrix(),
+          comm.get_world_comm(),
+          partner_rank_in_world,
+          partner_rank_in_world);
       }
-      const auto* send_adam = dynamic_cast<const adam<TensorDataType>*>(send_opt);
-      auto* recv_adam = dynamic_cast<adam<TensorDataType>*>(recv_opt);
+
+      // Exchange Adam optimizer state
+      using AdamType = adam<TensorDataType>;
+      auto* send_adam = dynamic_cast<AdamType*>(send_weights.get_optimizer());
+      auto* recv_adam = dynamic_cast<AdamType*>(recv_weights.get_optimizer());
       if (send_adam != nullptr && recv_adam != nullptr) {
-        if(exchange_hyperparameters) {
-          using hyperparameters_type = std::tuple<TensorDataType, TensorDataType, TensorDataType,
-                                                  TensorDataType, TensorDataType, TensorDataType>;
-          hyperparameters_type hyperparameters(send_adam->get_learning_rate(),
-                                               send_adam->get_beta1(),
-                                               send_adam->get_beta2(),
-                                               send_adam->get_eps(),
-                                               send_adam->get_current_beta1(),
-                                               send_adam->get_current_beta2());
-          El::mpi::SendRecv(reinterpret_cast<El::byte*>(&hyperparameters),
-                            sizeof(hyperparameters_type),
-                            partner_rank_in_world,
-                            partner_rank_in_world,
-                            comm.get_world_comm(),
-                            El::SyncInfo<El::Device::CPU>{});
+        if (exchange_hyperparams_) {
+          using hyperparameters_type =
+            std::tuple<TensorDataType, TensorDataType, TensorDataType,
+                       TensorDataType, TensorDataType, TensorDataType>;
+          hyperparameters_type hyperparameters(
+            send_adam->get_learning_rate(),
+            send_adam->get_beta1(),
+            send_adam->get_beta2(),
+            send_adam->get_eps(),
+            send_adam->get_current_beta1(),
+            send_adam->get_current_beta2());
+          El::mpi::SendRecv(
+            reinterpret_cast<El::byte*>(&hyperparameters),
+            sizeof(hyperparameters_type),
+            partner_rank_in_world,
+            partner_rank_in_world,
+            comm.get_world_comm(),
+            El::SyncInfo<El::Device::CPU>{});
           recv_adam->set_learning_rate(std::get<0>(hyperparameters));
           recv_adam->set_beta1(std::get<1>(hyperparameters));
           recv_adam->set_beta2(std::get<2>(hyperparameters));
@@ -179,129 +374,222 @@ void exchange_models(lbann_comm& comm,
           recv_adam->set_current_beta1(std::get<4>(hyperparameters));
           recv_adam->set_current_beta2(std::get<5>(hyperparameters));
         }
-        El::SendRecv(send_adam->get_moment1().LockedMatrix(),
-                     recv_adam->get_moment1().Matrix(),
-                     comm.get_world_comm(),
-                     partner_rank_in_world,
-                     partner_rank_in_world);
-        El::SendRecv(send_adam->get_moment2().LockedMatrix(),
-                     recv_adam->get_moment2().Matrix(),
-                     comm.get_world_comm(),
-                     partner_rank_in_world,
-                     partner_rank_in_world);
+        El::SendRecv(
+          send_adam->get_moment1().LockedMatrix(),
+          recv_adam->get_moment1().Matrix(),
+          comm.get_world_comm(),
+          partner_rank_in_world,
+          partner_rank_in_world);
+        El::SendRecv(
+          send_adam->get_moment2().LockedMatrix(),
+          recv_adam->get_moment2().Matrix(),
+          comm.get_world_comm(),
+          partner_rank_in_world,
+          partner_rank_in_world);
       }
-
     }
   }
-
-}
-
-} // namespace sendrecv_weights
+private:
+  bool exchange_hyperparams_;
+};// class SendRecvWeights
 
 /// See @c lbann::callbacks::ltfb::communication_algorithm::checkpoint_file
-namespace checkpoint_file {
+class CheckpointFile final
+  : public Cloneable<CheckpointFile, LTFBCommunicationAlgorithm>
+{
+  using BaseType = Cloneable<CheckpointFile, LTFBCommunicationAlgorithm>;
+public:
 
-/** @param weights_names    Names of weights to exchange. If empty,
- *                          then all weights are exchanged.
- *  @param local_weight     Copies of weights. Used to restore weights
- *                          that we don't want to exchange.
- */
-template <typename TensorDataType>
-void exchange_models(lbann_comm& comm,
-                     El::Int partner_trainer,
-                     model& m,
-                     El::Int step,
-                     const std::set<std::string>& weights_names,
-                     const std::vector<data_type_weights<TensorDataType>*>& local_weights,
-                     const std::string& ckpt_basedir) {
+  CheckpointFile(std::set<std::string> const& weights_names,
+                 std::string const& ckpt_basedir)
+    : BaseType(weights_names),
+      ckpt_basedir_{ckpt_basedir}
+  {}
 
-  // Checkpoint directories
-  const auto basedir = (ckpt_basedir.empty()?
-                          std::string("") :
-                          add_delimiter(ckpt_basedir));
-  const auto local_trainer = comm.get_trainer_rank();
-  const std::string send_dir = (basedir
-                                + m.get_name()
-                                + "_trainer" + std::to_string(local_trainer)
-                                + "_step" + std::to_string(step));
-  const std::string recv_dir = (basedir
-                                + m.get_name()
-                                + "_trainer" + std::to_string(partner_trainer)
-                                + "_step" + std::to_string(step));
+  CheckpointFile(std::set<std::string>&& weights_names,
+                 std::string const& ckpt_basedir)
+    : BaseType(std::move(weights_names)),
+      ckpt_basedir_{ckpt_basedir}
+  {}
 
-  // Save model checkpoint
+  void exchange_models(model& m,
+                       El::Int partner_trainer,
+                       El::Int step) const final
   {
-    persist p;
-    p.set_cb_type(callback_type::model_only);
-    p.open_checkpoint(send_dir, comm.am_trainer_master());
-    comm.trainer_barrier();
-    m.save_to_checkpoint_shared(p);
-    p.close_checkpoint();
-  }
-
-  // Synchronize with partner trainer
-  comm.trainer_barrier();
-  if (comm.am_trainer_master()) {
-    int send{0}, recv{0};
-    comm.sendrecv(&send, 1, partner_trainer, 0,
-                  &recv, 1, partner_trainer, 0,
-                  El::SyncInfo<El::Device::CPU>{});
-  }
-  comm.trainer_barrier();
-
-  // Load model checkpoint from partner trainer
-  {
-    persist p;
-    p.set_cb_type(callback_type::model_only);
-    p.open_restart(recv_dir);
-    m.load_from_checkpoint_shared(p);
-    p.close_restart();
-  }
-
-  // Restore weights that shouldn't be exchanged
-  if (!weights_names.empty()) {
-    const auto& model_weights = m.get_weights();
-    for (size_t i = 0; i < model_weights.size(); ++i) {
-      if (std::find(weights_names.begin(),
-                    weights_names.end(),
-                    model_weights[i]->get_name())
-          == weights_names.end()) {
-        using dtw_type = data_type_weights<TensorDataType>;
-        dynamic_cast<dtw_type&>(*model_weights[i]) = *local_weights[i];
+    auto&& comm = *m.get_comm();
+    // Keep track of weights that shouldn't be exchanged
+    std::unordered_map<std::string, std::unique_ptr<weights>> restore_weights;
+    if (this->has_weights_names()) {
+      auto const& weights_names = this->weights_names();
+      for (auto w : m.get_weights()) {
+        if (weights_names.find(w->get_name()) == weights_names.cend())
+        {
+          using TensorDataType = DataType;
+          using WeightsType = data_type_weights<TensorDataType>;
+          restore_weights[w->get_name()]
+            = make_unique<WeightsType>(dynamic_cast<WeightsType&>(*w));
+        }
       }
     }
+
+    // Checkpoint directories
+    const auto basedir = (ckpt_basedir_.empty()
+                          ? std::string("")
+                          : add_delimiter(ckpt_basedir_));
+    const auto local_trainer = comm.get_trainer_rank();
+    const std::string send_dir = (basedir
+                                  + m.get_name()
+                                  + "_trainer" + std::to_string(local_trainer)
+                                  + "_step" + std::to_string(step));
+    const std::string recv_dir = (basedir
+                                  + m.get_name()
+                                  + "_trainer" + std::to_string(partner_trainer)
+                                  + "_step" + std::to_string(step));
+
+    // Save model checkpoint
+    {
+      persist p;
+      p.set_cb_type(callback_type::model_only);
+      p.open_checkpoint(send_dir, comm.am_trainer_master());
+      comm.trainer_barrier();
+      m.save_to_checkpoint_shared(p);
+      p.close_checkpoint();
+    }
+
+    // Synchronize with partner trainer
+    comm.trainer_barrier();
+    if (comm.am_trainer_master()) {
+      int send{0}, recv{0};
+      comm.sendrecv(&send, 1, partner_trainer, 0,
+                    &recv, 1, partner_trainer, 0,
+                    El::SyncInfo<El::Device::CPU>{});
+    }
+    comm.trainer_barrier();
+
+    // Load model checkpoint from partner trainer
+    {
+      persist p;
+      p.set_cb_type(callback_type::model_only);
+      p.open_restart(recv_dir);
+      m.load_from_checkpoint_shared(p);
+      p.close_restart();
+    }
+
+    /// @todo Should be unneeded, but we experience hangs without it
+    comm.trainer_barrier();
+
+    restore_model_weights(m, restore_weights);
   }
+private:
+  std::string ckpt_basedir_;
+};// class CheckpointFile
 
-}
+class CheckpointBinary final
+  : public Cloneable<CheckpointBinary, LTFBCommunicationAlgorithm>
+{
+  using BaseType = Cloneable<CheckpointBinary, LTFBCommunicationAlgorithm>;
+public:
+  CheckpointBinary(std::set<std::string> const& weights_names)
+    : BaseType(weights_names)
+  {}
+  CheckpointBinary(std::set<std::string>&& weights_names)
+    : BaseType(std::move(weights_names))
+  {}
+  void exchange_models(model& m,
+                       El::Int partner_trainer,
+                       El::Int /*step*/) const final
+  {
+    auto&& comm = *m.get_comm();
+    // Keep track of weights that shouldn't be exchanged
+    std::unordered_map<std::string, std::unique_ptr<weights>> restore_weights;
+    if (this->has_weights_names()) {
+      auto const& weights_names = this->weights_names();
+      for (auto w : m.get_weights()) {
+        if (weights_names.find(w->get_name()) == weights_names.cend())
+        {
+          using TensorDataType = DataType;
+          using WeightsType = data_type_weights<TensorDataType>;
+          restore_weights[w->get_name()]
+            = make_unique<WeightsType>(dynamic_cast<WeightsType&>(*w));
+        }
+      }
+    }
 
-void restore_local_model(lbann_comm& comm,
-                         model& m,
-                         El::Int step,
-                         const std::string& ckpt_basedir) {
+    // Save model checkpoint
+    std::ostringstream oss;
+    {
+      RootedBinaryOutputArchive ar(oss, comm.get_trainer_grid());
+      comm.trainer_barrier();
+      ar(m);
+    }
 
-  // Checkpoint directories
-  const auto basedir = (ckpt_basedir.empty()?
-                          std::string("") :
-                          add_delimiter(ckpt_basedir));
-  const auto local_trainer = comm.get_trainer_rank();
-  const std::string checkpoint_dir = (basedir
-                                      + m.get_name()
-                                      + "_trainer" + std::to_string(local_trainer)
-                                      + "_step" + std::to_string(step));
+    // sure, why not
+    comm.trainer_barrier();
 
-  // Load local model checkpoint
-  persist p;
-  p.set_cb_type(callback_type::model_only);
-  p.open_restart(checkpoint_dir);
-  m.load_from_checkpoint_shared(p);
-  p.close_restart();
+    // Synchronize with partner trainer
+    std::string save_model_ckpt = oss.str(), load_model_ckpt;
+    if (comm.am_trainer_master())
+    {
+      std::size_t save_size=save_model_ckpt.size(), load_size=0;
+      comm.sendrecv(&save_size, 1, partner_trainer, 0,
+                    &load_size, 1, partner_trainer, 0,
+                    El::SyncInfo<El::Device::CPU>{});
+      load_model_ckpt.resize(load_size);
 
-}
+      auto const* send_buf =
+        reinterpret_cast<El::byte const*>(save_model_ckpt.data());
+      auto* recv_buf =
+        reinterpret_cast<El::byte*>(load_model_ckpt.data());
 
-} // namespace checkpoint_file
+      while (save_size || load_size)
+      {
+        // Get the max blk size
+        auto constexpr max_blk_size = std::numeric_limits<int>::max();
+        std::size_t constexpr max_blk_size_size_t = max_blk_size;
+
+        int this_blk_send_size =
+          (save_size > max_blk_size_size_t ? max_blk_size : save_size);
+        int this_blk_recv_size =
+          (load_size > max_blk_size_size_t ? max_blk_size : load_size);
+
+        comm.sendrecv(
+          send_buf, this_blk_send_size, partner_trainer, 0,
+          recv_buf, this_blk_recv_size, partner_trainer, 0,
+          El::SyncInfo<El::Device::CPU>{});
+
+        send_buf += this_blk_send_size;
+        recv_buf += this_blk_recv_size;
+        save_size =
+          (save_size > max_blk_size_size_t
+           ? save_size - max_blk_size_size_t
+           : 0);
+        load_size =
+          (load_size > max_blk_size_size_t
+           ? load_size - max_blk_size_size_t
+           : 0);
+      }
+    }
+
+    // sure, why not
+    comm.trainer_barrier();
+
+    // Load model checkpoint from partner trainer
+    {
+      std::istringstream iss{std::move(load_model_ckpt)};
+      RootedBinaryInputArchive ar(iss, comm.get_trainer_grid());
+      ar(m);
+    }
+
+    /// @todo Should be unneeded, but we experience hangs without it
+    comm.trainer_barrier();
+
+    restore_model_weights(m, restore_weights);
+  }
+};// class CheckpointBinary
 
 /** Get mean metric value with validation set. */
-EvalType evaluate(model& m, const std::string& metric_name) {
+EvalType evaluate(model& m, const std::string& metric_name)
+{
   auto& c = m.get_execution_context();
   // Make sure data readers finish asynchronous work
   const auto original_mode = c.get_execution_mode();
@@ -338,85 +626,38 @@ EvalType evaluate(model& m, const std::string& metric_name) {
   m.reset_mode(c, original_mode);
   c.get_trainer().get_data_coordinator().reset_mode(c);
   return metric_value;
-
 }
 
 } // namespace <anon>
 
 ltfb::ltfb(El::Int batch_interval,
            std::string metric_name,
-           std::set<std::string> weights_names,
-           bool low_score_wins,
-           communication_algorithm comm_algo,
-           const std::string& ckpt_basedir,
-           bool exchange_hyperparameters)
+           std::unique_ptr<LTFBCommunicationAlgorithm> algo,
+           bool low_score_wins)
   : callback_base(batch_interval),
-    m_metric_name(std::move(metric_name)),
-    m_weights_names(std::move(weights_names)),
-    m_low_score_wins(low_score_wins),
-    m_comm_algo(comm_algo),
-    m_ckpt_basedir(ckpt_basedir),
-    m_exchange_hyperparameters(exchange_hyperparameters) {}
+    m_metric_name{std::move(metric_name)},
+    comm_algo_{std::move(algo)},
+    m_low_score_wins{low_score_wins}
+{}
 
 ltfb::ltfb(const ltfb& other) :
   callback_base(other),
   m_metric_name(other.m_metric_name),
-  m_weights_names(other.m_weights_names),
-  m_low_score_wins(other.m_low_score_wins),
-  m_comm_algo(other.m_comm_algo),
-  m_ckpt_basedir(other.m_ckpt_basedir),
-  m_exchange_hyperparameters(other.m_exchange_hyperparameters) {
+  comm_algo_(other.comm_algo_->clone()),
+  m_low_score_wins(other.m_low_score_wins)
+{}
 
-  // Deep copy
-  m_workspace_weights.clear();
-  m_workspace_weights.reserve(other.m_workspace_weights.size());
-  for (const auto& w : other.m_workspace_weights) {
-    m_workspace_weights.emplace_back(w->clone());
-  }
-
-}
-
-ltfb& ltfb::operator=(const ltfb& other) {
+ltfb& ltfb::operator=(const ltfb& other)
+{
   callback_base::operator=(other);
-
-  // Shallow copies
   m_metric_name = other.m_metric_name;
-  m_weights_names = other.m_weights_names;
+  comm_algo_ = other.comm_algo_->clone();
   m_low_score_wins = other.m_low_score_wins;
-  m_comm_algo = other.m_comm_algo;
-  m_ckpt_basedir = other.m_ckpt_basedir;
-  m_exchange_hyperparameters = other.m_exchange_hyperparameters;
-
-  // Deep copy
-  m_workspace_weights.clear();
-  m_workspace_weights.reserve(other.m_workspace_weights.size());
-  for (const auto& w : other.m_workspace_weights) {
-    m_workspace_weights.emplace_back(w->clone());
-  }
-
   return *this;
 }
 
-void ltfb::setup(model *m) {
-
-  // Create workspace objects
-  const auto& model_weights = m->get_weights();
-  m_workspace_weights.clear();
-  m_workspace_weights.reserve(model_weights.size());
-  for (const auto& w : model_weights) {
-    m_workspace_weights.emplace_back(w->clone());
-  }
-
-  // Make sure model does not have inter-trainer communication callback
-  for (auto&& cb : m->get_callbacks()) {
-    if (dynamic_cast<imcomm*>(cb) != nullptr) {
-      LBANN_ERROR("Detected both LTFB and imcomm callbacks. ");
-    }
-  }
-
-}
-
-void ltfb::on_train_begin(model *m) {
+void ltfb::on_train_begin(model *m)
+{
   auto&& comm = *m->get_comm();
 
   if (comm.am_world_master()) {
@@ -431,18 +672,20 @@ void ltfb::on_train_begin(model *m) {
   }
 }
 
-void ltfb::on_batch_begin(model *m) {
-  const auto& c = m->get_execution_context();
-  auto&& comm = *m->get_comm();
+void ltfb::on_batch_begin(model* m)
+{
+  auto& local_model = *m;
+  auto& context = local_model.get_execution_context();
+  auto&& comm = *local_model.get_comm();
 
   // Check whether to start LTFB round
-  const auto mode = c.get_execution_mode();
-  const auto step = c.get_step();
+  const auto mode = context.get_execution_mode();
+  const auto step = context.get_step();
   if (mode != execution_mode::training || step == 0) { return; }
 
   // Print message
   const auto message_prefix = (std::string{} + "LTFB ("
-                               + "model \"" + m->get_name() + "\", "
+                               + "model \"" + local_model.get_name() + "\", "
                                + "step " + std::to_string(step)
                                + "): ");
   if (comm.am_world_master()) {
@@ -457,84 +700,50 @@ void ltfb::on_batch_begin(model *m) {
   if (comm.am_world_master()) {
     std::cout << message_prefix + "evaluating local model...\n";
   }
-  auto local_score = evaluate(*m, m_metric_name);
-  if (std::isinf(local_score)) { local_score = std::nan(""); }
+  auto local_score = evaluate(local_model, m_metric_name);
 
-  // Store local model data
-  auto&& model_weights_tmp = m->get_weights();
-  std::vector<data_type_weights<DataType>*> local_weights, model_weights;
-  local_weights.reserve(model_weights_tmp.size());
-  model_weights.reserve(model_weights_tmp.size());
-  for (size_t i = 0; i < model_weights_tmp.size(); ++i) {
-    auto* wsp = dynamic_cast<data_type_weights<DataType>*>(
-      m_workspace_weights[i].get());
-    auto* mlw = dynamic_cast<data_type_weights<DataType>*>(
-      model_weights_tmp[i]);
-    if (!wsp || !mlw)
-      LBANN_ERROR("Detected bad weights");
-    local_weights.push_back(wsp);
-    model_weights.push_back(mlw);
-    *local_weights.back() = *model_weights.back();
-  }
-
-  // Exchange model data with partner trainer
+  // Get model from partner trainer
   if (comm.am_world_master()) {
     std::cout << message_prefix + "exchanging model data...\n";
   }
-  switch (m_comm_algo) {
-  case communication_algorithm::sendrecv_weights:
-    sendrecv_weights::exchange_models(comm,
-                                      partner_trainer,
-                                      m_weights_names,
-                                      local_weights,
-                                      model_weights,
-                                      m_exchange_hyperparameters);
-    break;
-  case communication_algorithm::checkpoint_file:
-    checkpoint_file::exchange_models(comm,
-                                     partner_trainer,
-                                     *m,
-                                     step,
-                                     m_weights_names,
-                                     local_weights,
-                                     m_ckpt_basedir);
-    break;
-  default:
-    LBANN_ERROR("invalid LTFB communication algorithm");
-  }
+  using ModelType = directed_acyclic_graph_model;
+  ModelType partner_model(dynamic_cast<ModelType&>(local_model));
+  if (comm_algo_)
+    comm_algo_->exchange_models(partner_model, partner_trainer, step);
+  else
+    LBANN_ERROR("No communication algorithm.");
 
   // Evaluate partner model
   if (comm.am_world_master()) {
     std::cout << message_prefix + "evaluating partner model...\n";
   }
-  auto partner_score = evaluate(*m, m_metric_name);
-  if (std::isinf(partner_score)) { partner_score = std::nan(""); }
+  auto partner_score = evaluate(partner_model, m_metric_name);
 
   // Choose tournament winner
   // Note: restore local model data if it got a better score.
-  El::Int tournament_winner = partner_trainer;
-  if ((m_low_score_wins && local_score <= partner_score)
-      || (!m_low_score_wins && local_score >= partner_score)
-      || (!std::isnan(local_score) && std::isnan(partner_score))) {
+  El::Int tournament_winner = local_trainer;
+  if ((m_low_score_wins && partner_score <= local_score)
+      || (!m_low_score_wins && partner_score >= local_score)
+      || (!std::isfinite(local_score) && std::isfinite(partner_score))) {
+    tournament_winner = partner_trainer;
 
-    tournament_winner = local_trainer;
-    switch (m_comm_algo) {
-    case communication_algorithm::sendrecv_weights:
-      for (size_t i = 0; i < model_weights.size(); ++i) {
-        *model_weights[i] = *local_weights[i];
-      }
-      break;
-    case communication_algorithm::checkpoint_file:
-      checkpoint_file::restore_local_model(comm, *m, step, m_ckpt_basedir);
-      break;
-    default:
-      LBANN_ERROR("invalid LTFB communication algorithm");
-    }
+    /// @todo Use move assignment operator once LTFB is moved into a
+    /// training algorithm
+    local_model.swap_layers(partner_model);
+    local_model.swap_weights(partner_model);
+    local_model.swap_metrics(partner_model);
+    local_model.swap_objective_function(partner_model);
+    auto& trainer_ = context.get_trainer();
+    auto&& metadata = trainer_.get_data_coordinator().get_dr_metadata();
+    local_model.setup(
+      trainer_.get_max_mini_batch_size(),
+      metadata,
+      true);
   }
 
   // Report tournament winner
   if (comm.am_trainer_master()) {
-    std::stringstream msg;
+    std::ostringstream msg;
     msg << message_prefix
         << "trainer " << local_trainer << " "
         << "selected model from trainer " << tournament_winner
@@ -546,43 +755,35 @@ void ltfb::on_batch_begin(model *m) {
   }
 }
 
-typename ltfb::communication_algorithm
-ltfb::string_to_comm_algo(const std::string& str) {
-  if (str.empty() || str == "sendrecv_weights") {
-    return communication_algorithm::sendrecv_weights;
-  }
-  if (str == "checkpoint_file") {
-    return communication_algorithm::checkpoint_file;
-  }
-
-  // Invalid LTFB communication algorithm
-  LBANN_ERROR("invalid LTFB communication algorithm (",str,")");
-  return communication_algorithm::sendrecv_weights;
-
-}
-
-void ltfb::set_ckpt_basedir(const std::string& dir) {
-  m_ckpt_basedir = dir;
-}
-
-std::string ltfb::get_ckpt_basedir() const {
-  return m_ckpt_basedir;
-}
-
 std::unique_ptr<callback_base>
 build_ltfb_callback_from_pbuf(
   const google::protobuf::Message& proto_msg,
   const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackLTFB&>(proto_msg);
+  auto weights_list = parse_set<std::string>(params.weights());
+  std::unique_ptr<LTFBCommunicationAlgorithm> algo;
+  switch (string_to_comm_algo(params.communication_algorithm()))
+  {
+  case comm_algorithm::sendrecv_weights:
+    algo = make_unique<SendRecvWeights>(
+      std::move(weights_list),
+      params.exchange_hyperparameters());
+    break;
+  case comm_algorithm::checkpoint_file:
+    algo = make_unique<CheckpointFile>(
+      std::move(weights_list),
+      params.checkpoint_basedir());
+    break;
+  case comm_algorithm::checkpoint_binary:
+    algo = make_unique<CheckpointBinary>(std::move(weights_list));
+    break;
+  }
   return make_unique<ltfb>(
     params.batch_interval(),
     params.metric(),
-    parse_set<std::string>(params.weights()),
-    params.low_score_wins(),
-    ltfb::string_to_comm_algo(params.communication_algorithm()),
-    params.checkpoint_basedir(),
-    params.exchange_hyperparameters());
+    std::move(algo),
+    params.low_score_wins());
 }
 
 } // namespace callback

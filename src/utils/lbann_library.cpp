@@ -380,15 +380,16 @@ std::unique_ptr<model> build_model_from_prototext(
       size_t epochLast = std::numeric_limits<size_t>::max();;
       size_t stepLast = std::numeric_limits<size_t>::max();;
       execution_mode mode = execution_mode::invalid;
+      visitor_hook hook = visitor_hook::invalid;
       active_load_model_dir = callback::get_last_shared_checkpoint_filename("sgd", load_model_dir);
 
       // get last epoch and step saved.
-      int success = callback::read_latest(active_load_model_dir, &mode, &epochLast, &stepLast);
+      int success = callback::read_latest(active_load_model_dir, &hook, &mode, &epochLast, &stepLast);
       if(!success) {
         LBANN_ERROR("Unable to find the latest checkpoint ", active_load_model_dir);
         return nullptr;
       }
-      active_load_model_dir = callback::get_shared_checkpoint_dirname("sgd", load_model_dir, mode, epochLast, stepLast) + ret_model->get_name() + '/';
+      active_load_model_dir = callback::get_shared_checkpoint_dirname("sgd", load_model_dir, hook, mode, epochLast, stepLast) + ret_model->get_name() + '/';
     }
 
     if(cb == nullptr) {

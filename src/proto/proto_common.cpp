@@ -135,9 +135,14 @@ void init_data_readers(
       smiles_data_reader * smiles = new smiles_data_reader(shuffle);
       reader = smiles;
     } else if (name == "ras_lipid") {
+#ifdef LBANN_HAS_CNPY
       auto *ras_lipid = new ras_lipid_conduit_data_reader(shuffle);
       ras_lipid->set_num_labels(readme.num_labels());
       reader = ras_lipid;
+#else
+      LBANN_ERROR("attempted to construct ras_lipid numpy data reader, "
+                  "but LBANN is not built with CNPY");
+#endif // LBANN_HAS_CNPY
     } else if (name == "csv") {
       auto* reader_csv = new csv_reader(shuffle);
       reader_csv->set_label_col(readme.label_col());
@@ -150,6 +155,7 @@ void init_data_readers(
       reader_csv->set_has_header(readme.has_header());
       reader = reader_csv;
     } else if (name == "numpy_npz_conduit_reader") {
+#ifdef LBANN_HAS_CNPY
       auto *npz_conduit = new numpy_npz_conduit_reader(shuffle);
       npz_conduit->set_has_labels(!readme.disable_labels());
       npz_conduit->set_has_responses(!readme.disable_responses());
@@ -158,17 +164,31 @@ void init_data_readers(
         npz_conduit->set_num_labels(readme.num_labels());
       }
       reader = npz_conduit;
+#else
+      LBANN_ERROR("attempted to construct numpy_npz_conduit data reader, "
+                  "but LBANN is not built with CNPY");
+#endif // LBANN_HAS_CNPY
     } else if (name == "numpy") {
+#ifdef LBANN_HAS_CNPY
       auto* reader_numpy = new numpy_reader(shuffle);
       reader_numpy->set_has_labels(!readme.disable_labels());
       reader_numpy->set_has_responses(!readme.disable_responses());
       reader = reader_numpy;
+#else
+      LBANN_ERROR("attempted to construct numpy data reader, "
+                  "but LBANN is not built with CNPY");
+#endif // LBANN_HAS_CNPY
     } else if (name == "numpy_npz") {
+#ifdef LBANN_HAS_CNPY
       auto* reader_numpy_npz = new numpy_npz_reader(shuffle);
       reader_numpy_npz->set_has_labels(!readme.disable_labels());
       reader_numpy_npz->set_has_responses(!readme.disable_responses());
       reader_numpy_npz->set_scaling_factor_int16(readme.scaling_factor_int16());
       reader = reader_numpy_npz;
+#else
+      LBANN_ERROR("attempted to construct numpy_npz data reader, "
+                  "but LBANN is not built with CNPY");
+#endif // LBANN_HAS_CNPY
 #ifdef LBANN_HAS_DISTCONV
     } else if (name == "cosmoflow_hdf5" || name == "hdf5") {
       if(name == "cosmoflow_hdf5") {
@@ -194,8 +214,13 @@ void init_data_readers(
       reader = reader_hdf5;
 #endif // LBANN_HAS_DISTCONV
     } else if (name == "pilot2_molecular_reader") {
+#ifdef LBANN_HAS_CNPY
       pilot2_molecular_reader* reader_pilot2_molecular = new pilot2_molecular_reader(readme.num_neighbors(), readme.max_neighborhood(), shuffle);
       reader = reader_pilot2_molecular;
+#else
+      LBANN_ERROR("attempted to construct pilot2_molecular numpy data reader, "
+                  "but LBANN is not built with CNPY");
+#endif // LBANN_HAS_CNPY
     } else if (name == "merge_samples" || name == "merge_features" || name == "multi_conduit") {
       //TODO: verify how much of wildcard conflict with label file, label file should be loaded separately
       auto filedir = readme.data_filedir();
@@ -208,25 +233,40 @@ void init_data_readers(
         const auto path = *i;
         if(master) { std::cout << "Loading file: " << path << std::endl; }
         if (readme.format() == "numpy") {
+#ifdef LBANN_HAS_CNPY
           auto *reader_numpy = new numpy_reader(false);
           reader_numpy->set_data_filename(path);
           reader_numpy->set_has_labels(!readme.disable_labels());
           reader_numpy->set_has_responses(!readme.disable_responses());
           npy_readers.push_back(reader_numpy);
+#else
+      LBANN_ERROR("attempted to construct numpy data reader, "
+                  "but LBANN is not built with CNPY");
+#endif // LBANN_HAS_CNPY
         } else if (readme.format() == "numpy_npz") {
+#ifdef LBANN_HAS_CNPY
           auto* reader_numpy_npz = new numpy_npz_reader(false);
           reader_numpy_npz->set_data_filename(path);
           reader_numpy_npz->set_has_labels(!readme.disable_labels());
           reader_numpy_npz->set_has_responses(!readme.disable_responses());
           reader_numpy_npz->set_scaling_factor_int16(readme.scaling_factor_int16());
           npy_readers.push_back(reader_numpy_npz);
+#else
+      LBANN_ERROR("attempted to construct numpy data reader, "
+                  "but LBANN is not built with CNPY");
+#endif // LBANN_HAS_CNPY
         } else if (readme.format() == "jag_conduit") {
           init_image_data_reader(readme, pb_metadata, master, reader);
           npy_readers.push_back(reader);
         } else if (readme.format() == "pilot2_molecular_reader") {
+#ifdef LBANN_HAS_CNPY
           pilot2_molecular_reader* reader_pilot2_molecular = new pilot2_molecular_reader(readme.num_neighbors(), readme.max_neighborhood(), shuffle);
           reader_pilot2_molecular->set_data_filename(path);
           npy_readers.push_back(reader_pilot2_molecular);
+#else
+      LBANN_ERROR("attempted to construct numpy data reader, "
+                  "but LBANN is not built with CNPY");
+#endif // LBANN_HAS_CNPY
         } else if (readme.format() == "csv") {
           auto* reader_csv = new csv_reader(shuffle);
           if(master) { std::cout << "Set data filename: " << path << std::endl; }
@@ -264,10 +304,15 @@ void init_data_readers(
         if(readme.label_filename() != "") {
           if(master) { std::cout << "Set label filename: " << readme.label_filename() << std::endl; }
           if (readme.format() == "numpy") {
+#ifdef LBANN_HAS_CNPY
              auto* label_numpy  = new numpy_reader(false);
              label_numpy->set_label_filename(readme.label_filename());
              label_numpy->set_data_filename(readme.label_filename());
              label_reader = label_numpy;
+#else
+      LBANN_ERROR("attempted to construct numpy data reader, "
+                  "but LBANN is not built with CNPY");
+#endif // LBANN_HAS_CNPY
            } else if (readme.format() == "csv") { //if format is csv and label_filename is not empty
              auto* label_csv = new csv_reader(shuffle);
              if(master) { std::cout << "Set label filename: " << readme.label_filename() << std::endl; }
@@ -432,9 +477,18 @@ void init_data_readers(
             split_reader = new mnist_reader(shuffle);
             (*(mnist_reader *)split_reader) = (*(mnist_reader *)reader);
           } else if (name == "numpy_npz_conduit_reader") {
+#ifdef LBANN_HAS_CNPY
             split_reader = new numpy_npz_conduit_reader(*dynamic_cast<const numpy_npz_conduit_reader*>(reader));
+#else
+      LBANN_ERROR("attempted to construct npz_conduit numpy data reader, "
+                  "but LBANN is not built with CNPY");
+#endif // LBANN_HAS_CNPY
           } else if (name == "imagenet") {
+#ifdef LBANN_HAS_OPENCV
             split_reader = new imagenet_reader(*dynamic_cast<const imagenet_reader*>(reader));
+#else
+            LBANN_ERROR("imagenet reader not supported without OpenCV.");
+#endif // LBANN_HAS_OPENCV
           } else if (name == "smiles") {
             split_reader = new smiles_data_reader(*dynamic_cast<const smiles_data_reader*>(reader));
           } else if (name == "jag_conduit") {
@@ -443,10 +497,15 @@ void init_data_readers(
             auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(split_reader);
             reader_jag_conduit->set_role(role);
           } else if (name == "ras_lipid") {
+#ifdef LBANN_HAS_CNPY
             auto *ras_lipid = new ras_lipid_conduit_data_reader(shuffle);
             ras_lipid->set_num_labels(readme.num_labels());
             split_reader = ras_lipid;
             (*(ras_lipid_conduit_data_reader *)split_reader) = (*(ras_lipid_conduit_data_reader *)reader);
+#else
+      LBANN_ERROR("attempted to construct ras_lipid numpy data reader, "
+                  "but LBANN is not built with CNPY");
+#endif // LBANN_HAS_CNPY
           } else if (name == "nci") {
             split_reader = new data_reader_nci(shuffle);
             (*(data_reader_nci *)split_reader) = (*(data_reader_nci *)reader);
@@ -454,8 +513,13 @@ void init_data_readers(
             split_reader = new csv_reader(shuffle);
             (*(csv_reader *)split_reader) = (*(csv_reader *)reader);
           } else if (name == "numpy") {
+#ifdef LBANN_HAS_CNPY
             split_reader = new numpy_reader(shuffle);
             (*(numpy_reader *)split_reader) = (*(numpy_reader *)reader);
+#else
+      LBANN_ERROR("attempted to construct numpy data reader, "
+                  "but LBANN is not built with CNPY");
+#endif // LBANN_HAS_CNPY
           } else if (name == "merge_samples") {
             split_reader = new data_reader_merge_samples(*(data_reader_merge_samples *)reader);
           } else if (name == "merge_features") {

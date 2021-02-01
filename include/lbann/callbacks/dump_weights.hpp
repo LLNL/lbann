@@ -32,28 +32,38 @@
 #include <utility>
 
 #include "lbann/callbacks/callback.hpp"
+#include "lbann/utils/visitor_hooks.hpp"
 
 namespace lbann {
 namespace callback {
 
-/**
- * Dump weight matrices to files.
- * This will dump each hidden layer's weight/bias matrix after specified epoch interval.
- * The matrices are written to files using Elemental's simple ASCII format. This
- * is not meant for checkpointing, but for exporting weight matrices for
- * analysis that isn't easily done in LBANN.
+// Forward declaration
+namespace dump_weights_internal {
+class FileFormat;
+}
+
+/** @brief Dump weights to files.
+ *
+ *  Saves all weights to files. This is meant to export the weights
+ *  for debugging and analysis that isn't easily done in LBANN. It is
+ *  not meant for checkpointing.
+ *
+ *  The "text" and "binary" formats are written using Elemental's
+ *  ASCII and BINARY formats, respectively. The "distributed_binary"
+ *  format is written by using Elemental's BINARY format independently
+ *  on each process' local data.
  */
 class dump_weights : public callback_base {
  public:
   /**
-   * @param basename The basename for writing files.
+   *  @param dir Directory in which weight files will be saved.
    */
-  dump_weights(std::string dir, El::Int epoch_interval=1) :
-    callback_base(), m_directory(std::move(dir)),
-    m_epoch_interval(std::max(El::Int(1),epoch_interval)) {}
-  dump_weights(const dump_weights&) = default;
-  dump_weights& operator=(
-    const dump_weights&) = default;
+  dump_weights(
+    std::string dir,
+    El::Int epoch_interval,
+    std::unique_ptr<dump_weights_internal::FileFormat> file_format);
+  dump_weights(const dump_weights&);
+  dump_weights& operator=(const dump_weights&);
   dump_weights* copy() const override {
     return new dump_weights(*this);
   }
@@ -72,7 +82,8 @@ class dump_weights : public callback_base {
          "BaseCallback",
          ::cereal::base_class<callback_base>(this)),
        CEREAL_NVP(m_directory),
-       CEREAL_NVP(m_epoch_interval));
+       CEREAL_NVP(m_epoch_interval),
+       CEREAL_NVP(m_file_format));
   }
 
   ///@}
@@ -82,12 +93,16 @@ class dump_weights : public callback_base {
   friend class cereal::access;
   dump_weights();
 
-  /** Basename for writing files. */
+  /// Basename for writing files
   std::string m_directory;
-  /** Interval at which to dump weights */
+  /// Interval at which to dump weights
   El::Int m_epoch_interval;
-  /// Dump weights from learning layers.
-  void do_dump_weights(const model& m, std::string s = "");
+  /// Weight file format
+  std::unique_ptr<dump_weights_internal::FileFormat> m_file_format;
+
+  /// Dump weights from learning layers
+  void do_dump_weights(const model& m, visitor_hook hook);
+
 };
 
 // Builder function

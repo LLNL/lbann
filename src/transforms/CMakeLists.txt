@@ -8,7 +8,9 @@ set_full_path(THIS_DIR_SOURCES
   transform_pipeline.cpp
   )
 
-add_subdirectory(vision)
+if (LBANN_HAS_OPENCV)
+  add_subdirectory(vision)
+endif ()
 
 # Propagate the files up the tree
 set(SOURCES "${SOURCES}" "${THIS_DIR_SOURCES}" PARENT_SCOPE)

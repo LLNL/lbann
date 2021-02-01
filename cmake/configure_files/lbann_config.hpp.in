@@ -70,6 +70,8 @@
 #cmakedefine LBANN_HAS_FFTW_FLOAT
 #cmakedefine LBANN_HAS_FFTW_DOUBLE
 
+#cmakedefine LBANN_HAS_BOOST
+
 // Define the LBANN datatype
 namespace lbann
 {

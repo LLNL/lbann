@@ -16,7 +16,6 @@ Usage: ./${SCRIPT} [options]
 Options:
   ${C}--help${N}                      Display this help message and exit.
   ${C}--data-reader-percent${N} <val> Specify data reader percent. Note that `data-reader-percent=1.0` means 100%, not 1%.
-  ${C}--executable${N} <val>          Specify executable to be used. Required field.
   ${C}--integration-tests${N}         Specify that only integration tests should be run.
   ${C}--unit-tests${N}                Specify that only unit tests should be run.
 EOF
@@ -27,7 +26,6 @@ EOF
 ################################################################
 
 DATA_READER_PERCENT=0.001
-EXECUTABLE=
 INTEGRATION_TESTS=1
 UNIT_TESTS=1
 while :; do
@@ -42,18 +40,6 @@ while :; do
             # -n: check if string has non-zero length.
             if [ -n "${2}" ]; then
                 DATA_READER_PERCENT=${2}
-                shift
-            else
-                echo "\"${1}\" option requires a non-empty option argument" >&2
-                help_message
-                exit 1
-            fi
-            ;;
-        -e|--executable)
-            # Set executable.
-            # -n: check if string has non-zero length.
-            if [ -n "${2}" ]; then
-                EXECUTABLE=${2}
                 shift
             else
                 echo "\"${1}\" option requires a non-empty option argument" >&2
@@ -81,13 +67,6 @@ while :; do
     shift
 done
 
-# -z: check if string has zero length.
-if [ -z ${EXECUTABLE} ]; then
-    echo "Executable must be set."
-    help_message
-    exit 1
-fi
-
 ################################################################
 # Run tests
 ################################################################
@@ -106,14 +85,14 @@ echo "Task: Cleaning"
 echo "Task: Integration Tests"
 cd integration_tests
 if [ ${INTEGRATION_TESTS} -ne 0 ]; then
-    $PYTHON -m pytest -s -vv --durations=0 --exe=${EXECUTABLE}
+    $PYTHON -m pytest -s -vv --durations=0
 fi
 cd ..
 
 echo "Task: Unit Tests"
 cd unit_tests
 if [ ${UNIT_TESTS} -ne 0 ]; then
-    $PYTHON -m pytest -s -vv --durations=0 --exe=${EXECUTABLE} --data-reader-percent=${DATA_READER_PERCENT}
+    $PYTHON -m pytest -s -vv --durations=0 --data-reader-percent=${DATA_READER_PERCENT}
 fi
 cd ..
 

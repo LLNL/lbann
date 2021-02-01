@@ -162,7 +162,7 @@ struct array {
 // Helper functions for tensor operations
 // -------------------------------------------------------------
 
-#if defined __CUDACC__ || __HIPCC__
+#if defined __CUDACC__ || defined __HIPCC__
 
 /** Apply an entry-wise unary operator to GPU data.
  *  The input and output data must be on GPU and must have the same

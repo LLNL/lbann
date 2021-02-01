@@ -12,7 +12,7 @@ LBANN_FWD_CMD=$(cat << EOF
 EOF
 )
 LBANN_COMPILER_CMD=$(cat << EOF
-  -D CMAKE_CXX_COMPILER=$(which clang++) \
+  -D CMAKE_CXX_COMPILER=/opt/rocm-3.8.0/hip/bin/hipcc \
   -D CMAKE_C_COMPILER=$(which clang)
 EOF
 )
@@ -22,11 +22,13 @@ fi
 CONFIGURE_COMMAND=$(cat << EOF
 cmake \
   -G Ninja \
+  -D CMAKE_CXX_COMPILER=/opt/rocm-3.8.0/hip/bin/hipcc \
+  -D CMAKE_MPI_CXX_COMPILER=/opt/rocm-3.8.0/hip/bin/hipcc \
   -D CMAKE_BUILD_TYPE:STRING=${BUILD_TYPE} \
   -D CMAKE_INSTALL_PREFIX:PATH=${LBANN_INSTALL_DIR} \
-  -D CMAKE_CXX_FLAGS="${CXX_FLAGS}" \
-  -D CMAKE_C_FLAGS="${C_FLAGS}" \
-${GPU_ARCH_FLAGS} \
+  -D CMAKE_CXX_FLAGS="${CXX_FLAGS} -g -fPIC -shared -fsized-deallocation -std=c++17 -fno-gpu-rdc -Wno-deprecated-declarations -Wno-unused-command-line-argument" \
+  -D CMAKE_C_FLAGS="${C_FLAGS} -fPIC -fsized-deallocation" \
+  -D HIP_HIPCC_FLAGS="-fPIC -shared -fsized-deallocation -std=c++17" \
   \
   -D LBANN_DATATYPE:STRING=float \
   -D LBANN_WITH_ALUMINUM:BOOL=ON \
@@ -53,11 +55,10 @@ if [[ ${VERBOSE} -ne 0 ]]; then
 else
     echo "${CONFIGURE_COMMAND}" > lbann_cmake_invocation.txt
 fi
-eval ${CONFIGURE_COMMAND} |& tee cmake_lbann.log
-if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
-    echo "-----------------------"
-    echo "CMAKE CONFIGURE FAILED"
-    echo "-----------------------"
-    echo "See ${LBANN_BUILD_DIR}/cmake_lbann.log for details"
+eval ${CONFIGURE_COMMAND}
+if [[ $? -ne 0 ]]; then
+    echo "--------------------"
+    echo "CONFIGURE FAILED"
+    echo "--------------------"
     exit 1
 fi

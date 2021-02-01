@@ -25,7 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/transforms/repack_HWC_to_CHW_layout.hpp"
-#include "lbann/utils/opencv.hpp"
+#include "lbann/utils/vision.hpp"
 
 namespace lbann {
 namespace transform {

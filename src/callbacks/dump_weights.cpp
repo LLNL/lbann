@@ -22,15 +22,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// dump_weights .hpp .cpp - Callbacks to dump weight matrices
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/dump_weights.hpp"
 #include "lbann/callbacks/checkpoint.hpp" // Reuse the checkpoint naming scheme
 #include "lbann/utils/memory.hpp"
 #include "lbann/weights/data_type_weights.hpp"
-//#include "lbann/utils/file_utils.hpp"
+#include "lbann/utils/cloneable.hpp"
+#include "lbann/utils/memory.hpp"
 #include "lbann/utils/trainer_file_utils.hpp"
 
 #include <callbacks.pb.h>
@@ -40,48 +39,254 @@
 namespace lbann {
 namespace callback {
 
-dump_weights::dump_weights()
-  : dump_weights("", 0)
+namespace dump_weights_internal {
+
+/** @brief Format for weight files. */
+class FileFormat
+  : public Cloneable<HasAbstractFunction<FileFormat>>
+{
+public:
+  FileFormat() = default;
+  FileFormat(const FileFormat&) = default;
+  FileFormat(FileFormat&&) = default;
+  virtual ~FileFormat() noexcept = default;
+
+  /** @brief Write weight values to file. */
+  virtual void write(const weights& w, const std::string& file) const = 0;
+};
+
+namespace {
+
+class TextFileFormat final
+  : public Cloneable<TextFileFormat, FileFormat>
+{
+public:
+  TextFileFormat() = default;
+
+  void write(const weights& w, const std::string& file) const final {
+
+    // Try casting weights values and writing
+    if (try_write<float>(w, file)) { return; }
+    if (try_write<double>(w, file)) { return; }
+#ifdef LBANN_HAS_HALF
+    if (try_write<cpu_fp16>(w, file)) { return; }
+#endif // LBANN_HAS_HALF
+#ifdef LBANN_HAS_GPU_FP16
+    if (try_write<fp16>(w, file)) { return; }
+#endif // LBANN_HAS_GPU_FP16
+
+    // Could not figure out weights' data type
+    LBANN_ERROR(
+      "could not write weights \"",w.get_name(),"\" ",
+      "to text file ",file);
+
+  }
+
+private:
+
+  /** @brief Try casting weight values and writing to file.
+   *
+   *  If the weights data can be cast to @c TensorDataType, then it is
+   *  saved to file in Elemental's ASCII format.
+   *
+   *  @returns Whether the weight values were saved to file.
+   */
+  template <typename TensorDataType>
+  bool try_write(const weights& w, const std::string& file) const {
+    auto* typed_w = dynamic_cast<const data_type_weights<TensorDataType>*>(&w);
+    if (typed_w == nullptr) {
+      return false;
+    }
+    else {
+      El::Write(typed_w->get_values(), file, El::ASCII);
+      return true;
+    }
+  }
+
+};
+
+class BinaryFileFormat final
+  : public Cloneable<BinaryFileFormat, FileFormat>
+{
+public:
+  BinaryFileFormat() = default;
+
+  void write(const weights& w, const std::string& file) const final {
+
+    // Try casting weights values and writing
+    if (try_write<float>(w, file)) { return; }
+    if (try_write<double>(w, file)) { return; }
+#ifdef LBANN_HAS_HALF
+    if (try_write<cpu_fp16>(w, file)) { return; }
+#endif // LBANN_HAS_HALF
+#ifdef LBANN_HAS_GPU_FP16
+    if (try_write<fp16>(w, file)) { return; }
+#endif // LBANN_HAS_GPU_FP16
+
+    // Could not figure out weights' data type
+    LBANN_ERROR(
+      "could not write weights \"",w.get_name(),"\" ",
+      "to text file ",file);
+
+  }
+
+private:
+
+  /** @brief Try casting weight values and writing to file.
+   *
+   *  If the weights data can be cast to @c TensorDataType, then it is
+   *  saved to file in Elemental's BINARY format.
+   *
+   *  @returns Whether the weight values were saved to file.
+   */
+  template <typename TensorDataType>
+  bool try_write(const weights& w, const std::string& file) const {
+    auto* typed_w = dynamic_cast<const data_type_weights<TensorDataType>*>(&w);
+    if (typed_w == nullptr) {
+      return false;
+    }
+    else {
+      El::Write(typed_w->get_values(), file, El::BINARY);
+      return true;
+    }
+  }
+
+};
+
+class DistributedBinaryFileFormat final
+  : public Cloneable<DistributedBinaryFileFormat, FileFormat>
+{
+public:
+  DistributedBinaryFileFormat() = default;
+
+  void write(const weights& w, const std::string& file) const final {
+
+    // Try casting weights values and writing
+    if (try_write<float>(w, file)) { return; }
+    if (try_write<double>(w, file)) { return; }
+#ifdef LBANN_HAS_HALF
+    if (try_write<cpu_fp16>(w, file)) { return; }
+#endif // LBANN_HAS_HALF
+#ifdef LBANN_HAS_GPU_FP16
+    if (try_write<fp16>(w, file)) { return; }
+#endif // LBANN_HAS_GPU_FP16
+
+    // Could not figure out weights' data type
+    LBANN_ERROR(
+      "could not write weights \"",w.get_name(),"\" ",
+      "to text file ",file);
+
+  }
+
+private:
+
+  /** @brief Try casting weight values and writing to file.
+   *
+   *  If the weights data can be cast to @c TensorDataType, then each
+   *  non-redundant local matrix is saved to file in Elemental's
+   *  BINARY format.
+   *
+   *  @returns Whether the weight values were saved to file.
+   */
+  template <typename TensorDataType>
+  bool try_write(const weights& w, const std::string& file) const {
+    auto* typed_w = dynamic_cast<const data_type_weights<TensorDataType>*>(&w);
+    if (typed_w == nullptr) {
+      return false;
+    }
+    else {
+      const auto& mat = typed_w->get_values();
+      if (mat.RedundantRank() == 0) {
+        El::Write(
+          mat.LockedMatrix(),
+          El::BuildString(file, "_rank", mat.DistRank()),
+          El::BINARY);
+      }
+      return true;
+    }
+  }
+
+};
+
+} // namespace <anon>
+
+} // namespace dump_weights_internal
+
+dump_weights::dump_weights(
+  std::string dir,
+  El::Int epoch_interval,
+  std::unique_ptr<dump_weights_internal::FileFormat> file_format)
+  : callback_base(),
+    m_directory(std::move(dir)),
+    m_epoch_interval(std::max(El::Int(1),epoch_interval)),
+    m_file_format(std::move(file_format))
 {}
 
+dump_weights::dump_weights()
+  : dump_weights("", 1, make_unique<dump_weights_internal::TextFileFormat>())
+{}
+
+dump_weights::dump_weights(const dump_weights& other)
+  : callback_base(other),
+    m_directory(other.m_directory),
+    m_epoch_interval(other.m_epoch_interval),
+    m_file_format(other.m_file_format->clone())
+{}
+
+dump_weights& dump_weights::operator=(const dump_weights& other) {
+  callback_base::operator=(other);
+  m_directory = other.m_directory;
+  m_epoch_interval = other.m_epoch_interval;
+  m_file_format = other.m_file_format->clone();
+  return *this;
+}
+
 void dump_weights::on_train_begin(model *m) {
-  do_dump_weights(*m, "initial");
+  do_dump_weights(*m, visitor_hook::execution_mode_begin);
 }
 
 void dump_weights::on_epoch_end(model *m) {
-  do_dump_weights(*m);
+  const auto& context = static_cast<const sgd_execution_context&>(m->get_execution_context());
+  if (context.get_epoch() % m_epoch_interval == 0) {
+    do_dump_weights(*m, visitor_hook::epoch_end);
+  }
 }
 
-void dump_weights::do_dump_weights(const model& m, std::string s) {
-  const auto& c = static_cast<const sgd_execution_context&>(m.get_execution_context());
+void dump_weights::do_dump_weights(const model& m, visitor_hook hook) {
+  const auto& context = static_cast<const sgd_execution_context&>(m.get_execution_context());
+  const auto& t = context.get_trainer();
 
-  if(c.get_epoch() % m_epoch_interval != 0)  return;
+  // Create directory for weight files
+  // Note: Use naming scheme from checkpoint callback
+  std::string dir = El::BuildString(
+    get_shared_checkpoint_dirname(
+      t.get_name(),
+      context.get_training_algorithm().get_name(),
+      m_directory.c_str(),
+      hook,
+      context.get_execution_mode(),
+      context.get_epoch(),
+      context.get_step()),
+    m.get_name(), '/');
+  file::trainer_master_make_directory(dir, m.get_comm());
 
-  // Create directory
-  auto& t = c.get_trainer();
-  std::string epochdir = El::BuildString(get_shared_checkpoint_dirname(t.get_name(),
-                                                                       c.get_training_algorithm().get_name(),
-                                                                       m_directory.c_str(),
-                                                                       c.get_execution_mode(),
-                                                                       c.get_epoch(),
-                                                                       c.get_step()),
-
-                                         m.get_name(), '/');
-  file::trainer_master_make_directory(epochdir, m.get_comm());
-  for (weights *w : m.get_weights()) {
-    // create weight file name to match to weight list entry
-    const auto* dtw = dynamic_cast<const data_type_weights<DataType>*>(w);
-    auto file = El::BuildString(epochdir, "model_weights_", w->get_name(), "_",
-                                dtw->get_values().Height(), "x",
-                                dtw->get_values().Width());
-
-    El::Write(dtw->get_values(), file, El::ASCII);
+  // Save weights
+  for (auto* w : m.get_weights()) {
+    m_file_format->write(*w, El::BuildString(dir, w->get_name()));
   }
+
+  // Update checkpoint file
   if (m.get_comm()->am_trainer_master()) {
-    auto latest_file = get_last_shared_checkpoint_filename(t.get_name(),
-                                                           c.get_training_algorithm().get_name(),
-                                                           m_directory.c_str());
-    write_latest(latest_file, c.get_execution_mode(), c.get_epoch(), c.get_step());
+    auto latest_file = get_last_shared_checkpoint_filename(
+      t.get_name(),
+      context.get_training_algorithm().get_name(),
+      m_directory.c_str());
+    write_latest(
+      latest_file,
+      hook,
+      context.get_execution_mode(),
+      context.get_epoch(),
+      context.get_step());
   }
 
 }
@@ -91,7 +296,29 @@ build_dump_weights_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackDumpWeights&>(proto_msg);
-  return make_unique<dump_weights>(params.directory(), params.epoch_interval());
+
+  // Initialize file format
+  /// @todo Support binary and distributed binary
+  std::unique_ptr<dump_weights_internal::FileFormat> file_format;
+  if (params.format().empty() || params.format() == "text") {
+    file_format = make_unique<dump_weights_internal::TextFileFormat>();
+  }
+  if (params.format() == "binary") {
+    file_format = make_unique<dump_weights_internal::BinaryFileFormat>();
+  }
+  if (params.format() == "distributed_binary") {
+    file_format = make_unique<dump_weights_internal::DistributedBinaryFileFormat>();
+  }
+  if (file_format == nullptr) {
+    LBANN_ERROR("unrecognized file format \"",params.format(),"\"");
+  }
+
+  // Construct callback
+  return make_unique<dump_weights>(
+    params.directory(),
+    params.epoch_interval(),
+    std::move(file_format));
+
 }
 
 } // namespace callback
