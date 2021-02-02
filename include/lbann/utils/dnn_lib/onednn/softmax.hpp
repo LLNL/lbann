@@ -28,10 +28,8 @@
 
 #include "lbann/utils/dnn_enums.hpp"
 #include "lbann/utils/dnn_lib/helpers.hpp"
-#include "lbann/utils/gpu/helpers.hpp"
-#include "utils.hpp"
-
 #include "lbann/utils/dnn_lib/onednn.hpp"
+#include "lbann/utils/sync_info_helpers.hpp"
 
 #if !defined(LBANN_HAS_ONEDNN)
 static_assert(false,
@@ -43,12 +41,6 @@ namespace lbann
 {
 
 #if defined LBANN_HAS_ONEDNN
-template <typename T>
-El::SyncInfo<El::Device::CPU>
-get_sync_info(El::Matrix<T, El::Device::CPU> const&)
-{
-  return El::SyncInfo<El::Device::CPU>{};
-}
 
 template <El::Device D>
 template <typename DataT, typename ScalarT>
