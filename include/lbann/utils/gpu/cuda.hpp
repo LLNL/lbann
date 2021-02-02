@@ -53,7 +53,6 @@
                   "CUDA error (",                               \
                   cudaGetErrorString(status_CUDA_SYNC),         \
                   ")");                                         \
-      LBANN_ERROR(err_CUDA_SYNC.str());                         \
     }                                                           \
   } while (0)
 #define LBANN_CUDA_CHECK_LAST_ERROR(async)                      \
