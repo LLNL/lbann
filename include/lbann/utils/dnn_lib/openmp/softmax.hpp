@@ -29,7 +29,6 @@
 #include "lbann/utils/dnn_enums.hpp"
 #include "lbann/utils/dnn_lib/helpers.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
-#include "utils.hpp"
 
 #include "lbann/utils/dnn_lib/openmp.hpp"
 

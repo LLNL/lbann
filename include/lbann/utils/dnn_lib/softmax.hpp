@@ -32,8 +32,10 @@
 #include "lbann/utils/dnn_lib/cudnn/softmax.hpp"
 #elif defined LBANN_HAS_MIOPEN
 #include "lbann/utils/dnn_lib/miopen/softmax.hpp"
-#else
-static_assert(false, "This file must be included only if there is support from a valid DNN library.");
+#elif defined LBANN_HAS_GPU && !defined LBANN_HAS_ONEDNN_GPU
+static_assert(
+  false,
+  "GPU support detected but no valid DNN library implementation. ");
 #endif // LBANN_HAS_CUDNN
 
 #if defined LBANN_HAS_ONEDNN
