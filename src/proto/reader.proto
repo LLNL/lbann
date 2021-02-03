@@ -97,6 +97,11 @@ message Reader {
   int32 num_responses = 704;
   //------------- end of only for HDF5 data reader ------------------
 
+  //-------- start of only for new (generalized) HDF5 data reader -------------
+  string data_schema_filename = 800; 
+  string experiment_schema_filename = 801; 
+  //-------- end of only for new (generalized) HDF5 data reader -------------
+
 }
 
 message PythonDataReader {

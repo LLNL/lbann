@@ -138,9 +138,11 @@ void init_data_readers(
       reader->set_label_filename(readme.label_filename());
     } else if (name == "hdf5_data_reader") {
       hdf5_data_reader* dr = new hdf5_data_reader(shuffle);
+      dr->keep_sample_order(readme.sample_list_keep_order());
+      dr->set_experiment_schema_filename(readme.experiment_schema_filename());
+      dr->set_data_schema_filename(readme.data_schema_filename());
       reader = dr;
       reader->set_data_sample_list(readme.sample_list());
-      reader->keep_sample_order(readme.sample_list_keep_order());
     } else if (name == "ras_lipid") {
 #ifdef LBANN_HAS_CNPY
       auto *ras_lipid = new ras_lipid_conduit_data_reader(shuffle);

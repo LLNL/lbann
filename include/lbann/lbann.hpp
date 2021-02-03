@@ -135,6 +135,7 @@
 #include "lbann/data_readers/data_reader_merge_features.hpp"
 #include "lbann/data_readers/data_reader_mesh.hpp"
 #include "lbann/data_readers/data_reader_python.hpp"
+#include "lbann/data_readers/data_reader_HDF5.hpp"
 #ifdef LBANN_HAS_OPENCV
 #include "lbann/data_readers/data_reader_imagenet.hpp"
 #endif // LBANN_HAS_OPENCV

@@ -70,10 +70,8 @@ int main(int argc, char *argv[]) {
     lbann_data::LbannPB& pb = *(pbs[0]);
 
     std::map<execution_mode, generic_data_reader *> data_readers;
-    bool is_shared_training_data_reader = false;
-    bool is_shared_testing_data_reader = false;
 
-    init_data_readers(comm.get(), pb, data_readers, is_shared_training_data_reader, is_shared_testing_data_reader);
+    init_data_readers(comm.get(), pb, data_readers);
 
     // exercise a bit of the reader's API functionality
     for (std::map<execution_mode, generic_data_reader *>::iterator iter = data_readers.begin(); iter != data_readers.end(); iter++) {

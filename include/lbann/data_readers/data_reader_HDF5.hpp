@@ -1,3 +1,17 @@
+//////////////////////////////////////////////////////////////////////////////
+//
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
+// Written by the LBANN Research Team (B. Van Essen, et al.) listed in
+// the CONTRIBUTORS file. <lbann-dev@llnl.gov>
+//
+// LLNL-CODE-697807.
+// All rights reserved.
+//
+// This file is part of LBANN: Livermore Big Artificial Neural Network
+// Toolkit. For details, see http://software.llnl.gov/LBANN or
+// https://github.com/LLNL/LBANN.
+//
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
 // obtain a copy of the License at:
@@ -20,10 +34,6 @@
 namespace lbann {
 /**
  * A generalized data reader for data stored in HDF5 files.
- *
- * Assumptions:
- *   1. All field names are unique. A "file name" is the final
- *      '/'-deliniated name in a pathname
  */
 class hdf5_data_reader : public data_reader_sample_list {
 public:
@@ -99,19 +109,38 @@ char *x = "asdf";
     return dtype.is_double();
   }  
 
+  void set_experiment_schema_filename(std::string fn) {
+    m_experiment_schema_filename = fn;
+  }
+  const std::string& get_experiment_schema_filename() {
+    return m_experiment_schema_filename;
+  }
+
+  void set_data_schema_filename(std::string fn) {
+    m_data_schema_filename = fn;
+  }
+  const std::string& get_data_schema_filename() {
+    return m_data_schema_filename;
+  }
+
 private:
 
-  /** Name of nodes in the data and experiment schemas that contain
-   *  instructions on normalizing and packing data, etc.
+  std::string m_experiment_schema_filename;
+  std::string m_data_schema_filename;
+
+  /** Name of nodes in schemas that contain instructions 
+   * on normalizing, packing, and casting data, etc.
    */
   const std::string s_metadata_node_name = "metadata";
 
-  /** Keys to the outer map are the names of the major "division" 
-   *  in the schemas: data, useme, coerce, etc. Keys to the inner
-   *  maps are the full field names
+  /** name for root node in the subtree in m_experiment_schema 
+   *  that contains the specifcation of fields that are to be used
+   *  in the current experiment
    */
-  std::unordered_map<std::string,
-        std::unordered_map<std::string, conduit::Node*>> m_schema_nodes;
+  const std::string s_useme_name = "useme";
+
+  /** Leaf nodes whose fields are to be used in the current experiment */
+  std::vector<conduit::Node*> m_useme_nodes;
 
   /** Schema supplied by the user; this contains a listing of the fields
    *  that will be used in an experiment; additionally may contain processing
@@ -120,12 +149,19 @@ private:
 
   /** Schema specifying the data set as it resides, e.g, on disk.
    *  May contain additional "metadata" nodes that contain processing
-   *  directives.
+   *  directives, normalization values, etc.
    */
   conduit::Node m_data_schema;
 
-  /** Maps pathnames to nodes */
-  std::unordered_map<std::string, const conduit::Node*> m_data_map;
+  /** Maps a node's pathname to the node for m_data_schema */
+  std::unordered_map<std::string, conduit::Node*> m_data_map;
+
+  /** Maps a node's pathname to the node for m_experiment_schema */
+//XX  std::unordered_map<std::string, conduit::Node*> m_experiment_map;
+
+  //=========================================================================
+  // methods follow
+  //=========================================================================
 
   /** Fills in various data structures by parsing the m_data_schema and
    *  m_experiment_schema
@@ -136,15 +172,24 @@ private:
   void load_schema(std::string fn, conduit::Node &schema);
 
   /** get pointers to all nodes in the subtree rooted at the 'starting_node;'
-   *  keys are the pathnames; recursive.
+   *  keys are the pathnames; recursive. However, ignores any nodes named s_metadata_node_name
    */
-  void get_schema_ptrs(conduit::Node* starting_node, std::unordered_map<std::string, const conduit::Node*> &schema_name_map);
+  void get_schema_ptrs(conduit::Node* starting_node, std::unordered_map<std::string, conduit::Node*> &schema_name_map);
 
-  /** Returns, in leaves, the schemas for all leaf noodes in the tree 
-   *  rooted at 'node_in.'
+  /** Returns, in leaves, the schemas for all leaf nodes in the tree rooted
+   *  at 'node_in.' However, ignores any nodes named s_metadata_node_name
    */
-  void get_leaves(const conduit::Node* node_in, std::vector<const conduit::Node*> &leaves_out);
-  void get_leaves_multi(const conduit::Node* node_in, std::vector<const conduit::Node*> &leaves_out);
+  void get_leaves(conduit::Node* node_in, std::vector<conduit::Node*> &leaves_out, bool strip_leading_name=false);
+
+  /** Functionality is similar to get_leaves(); this method differs in that
+   *  two conduit::Node hierarchies are searched for leaves. The leaves from 
+   *  the first are found, and are then treated as starting points for 
+   *  continuing the search in the second hierarchy.
+   *
+   *  Applicability: a user's schema should be able to specify "inputs,"
+   *  without specifying all the "inputs" leaf names
+   */
+  void get_leaves_multi(conduit::Node* node_in, std::vector<conduit::Node*> &leaves_out, bool strip_leading_name=false);
 
 #if 0
   /** Next few are used for "packing" data. 
@@ -158,15 +203,6 @@ private:
   std::unordered_map<std::string, size_t> m_packed_name_to_num_elts;
 #endif
 
-  /** all leaves from the user's experiment-schema specification */
-//XX  std::unordered_set<const conduit::Node*> m_all_exp_leaves;
-
-  /** keys in this map are the pathnames of quasi-leaf nodes, where a
-   * "quasi-leaf" is a node that has a single child named "metadata;"
-   * the pathnames exclude the terminating "/metadata." 
-   * The values are the corresponding metadata nodes.
-   */
-//XX  std::unordered_map<std::string, const conduit::Node*> m_metadata_nodes;
 
 #if 0
 TODO
@@ -200,9 +236,6 @@ TODO
    */
   conduit::Node* get_metadata_node(const conduit::Node* node);
 
-  /** Fills in m_metadata_nodes */
-//XX   void get_metadata_node_ptrs();
-
   /** run transform pipelines */
   void transform(conduit::Node& node); 
 
@@ -214,6 +247,14 @@ TODO
    *  value from node_B are used, and the value from node_A discarded.
    */
   conduit::Node merge_metadata_nodes(const conduit::Node *node_A, const conduit::Node *node_B);
+
+  /** on return, every Node will have a (possibly empty) child node named
+   *  <s_metadata_node_name>. The rules: 1) a node inherits the metadata node 
+   *  of its parent; 2) if the node already had a metadata child, the contents
+   *  are preserved and, where applicable, over-rides the fields of the parent.
+   *  Recursive.
+   */
+  void adjust_metadata(conduit::Node* root);
 
 //  const std::string strip_sample_id(const std::string &s);
 };
