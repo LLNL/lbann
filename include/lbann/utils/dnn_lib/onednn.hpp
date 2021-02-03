@@ -36,36 +36,6 @@
 
 #include <dnnl.hpp>
 
-// Error utility macros
-#define CHECK_ONEDNN(onednn_call)                               \
-  do {                                                          \
-    try {                                                       \
-      (onednn_call);                                            \
-    }                                                           \
-    catch (::dnnl::error const& e)                              \
-    {                                                           \
-      LBANN_ERROR("Detected oneDNN error. e.what(): \n\n",      \
-                  e.what());                                    \
-    }                                                           \
-  } while (0)
-
-#define CHECK_ONEDNN_DTOR(onednn_call)                                  \
-  try {                                                                 \
-    (onednn_call);                                                      \
-  }                                                                     \
-  catch (std::exception const& e) {                                     \
-    std::cerr << "Caught exception:\n\n    what(): "                    \
-              << e.what() << "\n\nCalling std::terminate() now."        \
-              <<  std::endl;                                            \
-    std::terminate();                                                   \
-  }                                                                     \
-  catch (...) {                                                         \
-    std::cerr << "Caught something that isn't an std::exception.\n\n"   \
-              << "Calling std::terminate() now." << std::endl;          \
-    std::terminate();                                                   \
-  }
-
-
 namespace lbann {
 namespace onednn {
 namespace details {
@@ -160,6 +130,9 @@ struct onednn_backend
 
     /** @brief The data type enumerator type for oneDNN. */
     using dnnDataType_t = dnnl::memory::data_type;
+
+    /** @brief The tensor format type. */
+    using dnnTensorFormat_t = dnnl::memory::format_tag;
 
     /** @brief The internal, device-independent memory descriptor type. */
     using internal_descriptor_type = dnnl::memory::desc;
@@ -266,7 +239,6 @@ struct onednn_backend
     {
       set(data_type, {static_cast<dnnl::memory::dim>(dims)...});
     }
-#if !(defined LBANN_HAS_CUDNN)
     // This function is required for API compatibility.
     void set(
       dnnDataType_t data_type,
@@ -275,7 +247,6 @@ struct onednn_backend
     {
       this->set(data_type, dims);
     }
-#endif // !LBANN_HAS_CUDNN
 
   private:
 
