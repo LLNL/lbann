@@ -37,7 +37,7 @@ endif (LBANN_HAS_FFTW)
 if (LBANN_HAS_OPENCV)
   list(APPEND THIS_DIR_SEQ_CATCH2_TEST_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/image_test.cpp)
-endif (LBANN_HAS_FFTW)
+endif (LBANN_HAS_OPENCV)
 
 # This is actually CUDA-specific. rocFFT will get a new test when we
 # port that over.
