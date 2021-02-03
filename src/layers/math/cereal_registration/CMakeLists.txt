@@ -29,6 +29,7 @@ set_full_path(THIS_DIR_SOURCES
   logical_not.cpp
   logical_or.cpp
   logical_xor.cpp
+  matmul.cpp
   max.cpp
   min.cpp
   mod.cpp

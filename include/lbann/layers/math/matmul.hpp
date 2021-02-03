@@ -74,6 +74,11 @@ public:
   }
 
 protected:
+  friend class cereal::access;
+  matmul_layer()
+    : matmul_layer(nullptr, false, false)
+  {}
+
 
   void setup_dims(DataReaderMetaData& dr_metadata) override;
   void fp_compute() override;
