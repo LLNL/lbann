@@ -34,7 +34,7 @@
 
 #ifdef LBANN_HAS_ONEDNN
 
-#include <oneapi/dnnl/dnnl.hpp>
+#include <dnnl.hpp>
 
 // Error utility macros
 #define CHECK_ONEDNN(onednn_call)                               \
