@@ -25,8 +25,12 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/lbann.hpp"
+#include "lbann/weights/data_type_weights.hpp"
 #include <mpi.h>
 #include <stdio.h>
+
+//#include <thread>
+//#include <chrono>
 
 int main(int argc, char *argv[]) {
   int provided;
@@ -43,7 +47,6 @@ int main(int argc, char *argv[]) {
   if (ppt != lbann_comm->get_procs_per_trainer()) {
     lbann_comm->split_trainers(ppt);
   }
-
 
   // Data Coordinator
   std::unique_ptr<lbann::data_coordinator> dc;
@@ -64,18 +67,17 @@ int main(int argc, char *argv[]) {
   std::cout << "trainer load: " << t_flag << std::endl;
 
   // Model
-  auto m = lbann::make_unique<lbann::directed_acyclic_graph_model>(lbann_comm.get(), nullptr, nullptr);
+  auto m = lbann::directed_acyclic_graph_model(lbann_comm.get(), nullptr, nullptr);
 
   // Load model from checkpoint
-  auto m_flag = m->load_from_checkpoint_shared(p);
+  auto m_flag = m.load_from_checkpoint_shared(p);
   std::cout << "model load: " << m_flag << std::endl;
+  load_weights_from_checkpoint(m, cp_loc);
 
-  // Close restart
+  // Clean up
   p.close_restart();
-
-  // Close comms
   lbann::finalize();
-
   MPI_Finalize();
+
   return 0;
 }
