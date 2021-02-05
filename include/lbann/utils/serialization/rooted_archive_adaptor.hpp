@@ -31,7 +31,7 @@
 
 #include "cereal_utils.hpp"
 
-#include <El.hpp>
+#include <El.hpp> // IWYU pragma: export
 
 #include <optional>
 #include <string>

@@ -27,7 +27,7 @@
 #ifndef LBANN_UTILS_GPU_SYNC_INFO_HELPERS_HPP_INCLUDED
 #define LBANN_UTILS_GPU_SYNC_INFO_HELPERS_HPP_INCLUDED
 
-#include <El.hpp>
+#include <El.hpp> // IWYU pragma: export
 
 namespace lbann {
 namespace gpu {

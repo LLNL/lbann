@@ -41,7 +41,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include "El.hpp"
+#include "El.hpp" // IWYU pragma: export
 #include "mpi.h"
 
 /****************************************************

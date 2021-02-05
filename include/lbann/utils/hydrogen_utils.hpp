@@ -26,7 +26,7 @@
 
 namespace lbann {
 
-#include <El.hpp>
+#include <El.hpp> // IWYU pragma: export
 #include <lbann/utils/memory.hpp>
 
 template <typename TensorDataType, typename EvalDataType>

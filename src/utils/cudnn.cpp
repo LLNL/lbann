@@ -31,7 +31,7 @@
 #endif // LBANN_HAS_CUDNN
 #include "lbann/utils/number_theory.hpp"
 
-#include "El.hpp"
+#include "El.hpp" // IWYU pragma: export
 #include <iostream>
 #include <map>
 #include <unordered_map>

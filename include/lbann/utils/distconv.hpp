@@ -31,7 +31,7 @@
 
 #ifdef LBANN_HAS_DISTCONV
 
-#include "El.hpp"
+#include "El.hpp" // IWYU pragma: export
 #include "lbann/comm.hpp"
 #include <vector>
 

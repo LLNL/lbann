@@ -4,7 +4,7 @@
 #include <lbann/utils/any.hpp>
 #include <lbann/utils/memory.hpp>
 
-#include <El.hpp>
+#include <El.hpp> // IWYU pragma: export
 
 namespace lbann
 {

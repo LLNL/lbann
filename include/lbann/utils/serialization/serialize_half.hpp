@@ -36,7 +36,7 @@
 #include "lbann_config.hpp"
 
 // Half-precision support comes from here:
-#include <El.hpp>
+#include <El.hpp> // IWYU pragma: export
 
 #include "cereal_utils.hpp"
 

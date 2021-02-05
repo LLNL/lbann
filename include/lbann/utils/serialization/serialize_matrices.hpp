@@ -32,7 +32,7 @@
 
 #include <lbann/utils/exception.hpp>
 
-#include <El.hpp>
+#include <El.hpp> // IWYU pragma: export
 #include <stdexcept>
 
 // These really belong in Elemental; let's just extend that.

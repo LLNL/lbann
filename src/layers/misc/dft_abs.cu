@@ -1,4 +1,4 @@
-#include <El.hpp>
+#include <El.hpp> // IWYU pragma: export
 
 namespace lbann
 {
