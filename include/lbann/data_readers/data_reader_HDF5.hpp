@@ -133,12 +133,6 @@ private:
    */
   const std::string s_metadata_node_name = "metadata";
 
-  /** name for root node in the subtree in m_experiment_schema 
-   *  that contains the specifcation of fields that are to be used
-   *  in the current experiment
-   */
-  const std::string s_useme_name = "useme";
-
   /** Leaf nodes whose fields are to be used in the current experiment */
   std::vector<conduit::Node*> m_useme_nodes;
 
@@ -179,7 +173,7 @@ private:
   /** Returns, in leaves, the schemas for all leaf nodes in the tree rooted
    *  at 'node_in.' However, ignores any nodes named s_metadata_node_name
    */
-  void get_leaves(conduit::Node* node_in, std::vector<conduit::Node*> &leaves_out, bool strip_leading_name=false);
+  void get_leaves(conduit::Node* node_in, std::vector<conduit::Node*> &leaves_out);
 
   /** Functionality is similar to get_leaves(); this method differs in that
    *  two conduit::Node hierarchies are searched for leaves. The leaves from 
@@ -189,7 +183,7 @@ private:
    *  Applicability: a user's schema should be able to specify "inputs,"
    *  without specifying all the "inputs" leaf names
    */
-  void get_leaves_multi(conduit::Node* node_in, std::vector<conduit::Node*> &leaves_out, bool strip_leading_name=false);
+  void get_leaves_multi(conduit::Node* node_in, std::vector<conduit::Node*> &leaves_out);
 
 #if 0
   /** Next few are used for "packing" data. 
@@ -231,11 +225,6 @@ TODO
   /** Loads a conduit::Node, then pulls out the Schema */
   void load_schema_from_data(conduit::Schema &schema);
 
-  /** Returns a pointer to the child named 'metadata' if it exists,
-   *  else returns nullptr
-   */
-  conduit::Node* get_metadata_node(const conduit::Node* node);
-
   /** run transform pipelines */
   void transform(conduit::Node& node); 
 
@@ -255,6 +244,8 @@ TODO
    *  Recursive.
    */
   void adjust_metadata(conduit::Node* root);
+
+  void coerce();
 
 //  const std::string strip_sample_id(const std::string &s);
 };

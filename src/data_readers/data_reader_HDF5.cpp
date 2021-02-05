@@ -37,7 +37,7 @@ using namespace std; //XX
 namespace lbann {
 
 int hdf5_data_reader::fetch_data(CPUMat& X, El::Matrix<El::Int>& indices_fetched) {
-std::cout << " X"; 
+std::cout << " X fetch_data"; 
   return 0;
 }
 
@@ -106,10 +106,10 @@ void hdf5_data_reader::load() {
 }
 
 void hdf5_data_reader::load_schema(std::string filename, conduit::Node &schema) {
-cout << "XX starting load_schema for: " << filename << endl;
   // master loads the schema then bcasts to all others;
   // for now this is a world operation
   if (is_master()) {
+    std::cout << "starting load_schema from file: " << filename << std::endl;
     conduit::relay::io::load(filename, schema);
   }
   conduit::relay::mpi::broadcast_using_schema(schema, m_comm->get_world_master(), m_comm->get_world_comm().GetMPIComm());
@@ -121,8 +121,6 @@ void hdf5_data_reader::do_preload_data_store() {
     std::cout << "starting hdf5_data_reader::do_preload_data_store()\n";
   }
 
-  // TODO: construct a more efficient owner mapping, and set it in the data store.
-
  for (size_t idx=0; idx < m_shuffled_indices.size(); idx++) {
     int index = m_shuffled_indices[idx];
     if(m_data_store->get_index_owner(index) != m_rank_in_model) {
@@ -131,8 +129,8 @@ void hdf5_data_reader::do_preload_data_store() {
     try {
       conduit::Node & node = m_data_store->get_empty_node(index);
       load_sample(node, index);
-      transform(node);
-      pack(node);
+//      transform(node);
+//      pack(node);
       m_data_store->set_preloaded_conduit_node(index, node);
     } catch (conduit::Error const& e) {
       LBANN_ERROR(" :: trying to load the node ", index, " and caught conduit exception: ", e.what());
@@ -147,8 +145,11 @@ void hdf5_data_reader::do_preload_data_store() {
     close_file(index);
   }
 
+  size_t nn = m_data_store->get_num_global_indices();
   if (is_master()) {
-    std::cout << "loading data for role: " << get_role() << " took " << get_time() - tm1 << "s" << std::endl;
+    std::cout << "loading data for role: " << get_role() << " took " << get_time() - tm1 << "s" 
+             << "num samples (local to this rank): "<< m_data_store->get_data_size()
+             << "; global to this trainer: "<< nn <<endl;
   }
 }
 
@@ -168,14 +169,14 @@ int hdf5_data_reader::get_linearized_size(const std::string &key) const {
 
 // Loads the fields that are specified in the user supplied schema
 void hdf5_data_reader::load_sample(conduit::Node &node, size_t index) {
-#if 0
-  // get file handle
+cout << "starting load sample for: " << node.path()<<endl;
+  // get file handle 
   hid_t file_handle;
   std::string sample_name;
   data_reader_sample_list::open_file(index, file_handle, sample_name);
 
   // load data for the field names specified in the user's experiment-schema
-  for (const auto &p : m_all_exp_leaves) {
+  for (const auto &p : m_useme_nodes) {
     const std::string pathname = p->path();
 
     // check that the requested data exists
@@ -189,10 +190,16 @@ void hdf5_data_reader::load_sample(conduit::Node &node, size_t index) {
     ss2 << LBANN_DATA_ID_STR(index) << '/' << pathname;
     const std::string useme_path(ss2.str());
 
+    cout << "XX useme path: " << useme_path << endl;
+    p->print();
+
+    if (p->child(s_metadata_node_name).has_child("coerce")) {
+      cout << "XX COERCE! " << ss2.str()<<endl;
+    }
+
     // load the field's data into the conduit::Node
     conduit::relay::io::hdf5_read(file_handle, original_path, node[useme_path]);
   }
-#endif
 }
 
 // on entry, 'node' contains data specified by the user's schema,
@@ -283,45 +290,42 @@ void hdf5_data_reader::munge_data(conduit::Node &node) {
 void hdf5_data_reader::parse_schemas() {
 cout<<"XXX starting parse_schemas\n";
 
+  // these two recursive calls start at the root and "spread" the root's
+  // metadata node up the branches; any non-root nodes that already contain
+  // metadata will have the two nodes merged (um, sorry, thats not very clear)
+  // TODO:
   adjust_metadata(&m_data_schema);
-
-//XX
-    cout << "===========================================================\n\n";
-    cout << "m_experiment_schema, with meta, before adjust:\n";
-    m_experiment_schema.print();
-    cout << "===========================================================\n\n";
-
   adjust_metadata(&m_experiment_schema);
-
-//XX
-  if (is_master()) {
-    cout << "===========================================================\n\n";
-    cout << "m_experiment_schema, with meta, after adjust:\n";
-    m_experiment_schema.print();
-    cout << "===========================================================\n\n";
-  }
 
   // get pointers to all Nodes in the data schema (this is the schema for
   // the data as it resides on disk). On return, m_data_map maps:
-  // node_pathname -> Node*. 
+  //       node_pathname -> Node*
   get_schema_ptrs(&m_data_schema, m_data_map);
-//XX  get_schema_ptrs(&m_experiment_schema, m_experiment_map);
 
-  // Get the pathnames for the fields that the user specified are
-  // to be used in the current experiment. 
-  std::vector<const conduit::Node*> useme;
-  if (!m_experiment_schema.has_child(s_useme_name)) {
-    LBANN_ERROR("the user's experiment_schema.json must include a 'useme' node");
-  }
-  get_leaves_multi(m_experiment_schema.fetch_ptr(s_useme_name), m_useme_nodes, true);
+  // Get the pathnames for the fields to be used in the current experiment;
+cout << "calling get leaves multi XX\n";
+  get_leaves_multi(&m_experiment_schema, m_useme_nodes);
 
-  cout << "\nXX useme nodes:\n";
-  for (auto t : m_useme_nodes) {
-    cout << ">>>>\n";
-    t->print();
-    cout << "<<<<n";
+//XX
+cout << ">>>>>>>>>>>>>> useme nodes, after get_leaves_multi\n";
+for (auto t : m_useme_nodes) {
+  cout << "path: "<< t->path() << endl;
+  t->print();
+}
+cout << ">>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<\n";
+exit(0);
+
+  // sanity checks
+  std::unordered_set<std::string> sanity;
+  for (const auto nd : m_useme_nodes) {
+    const std::string &path =  nd->path();
+    if (sanity.find(path) != sanity.end()) {
+      LBANN_ERROR("sanity.find(path) != sanity.end() for path: ", path);
+    }
+    if (!nd->has_child(s_metadata_node_name)) {
+      LBANN_ERROR("missing metadata child node for: ", path);
+    }
   }
-  exit(0);
 
   // At this point, each Node* in m_useme_nodes:
   //   1. is a leaf node that whose values will be used in the experiment
@@ -355,38 +359,35 @@ void hdf5_data_reader::get_schema_ptrs(conduit::Node* input, std::unordered_map<
 }
 
 
-void hdf5_data_reader::get_leaves_multi(conduit::Node* node_in, std::vector<conduit::Node*> &leaves_out, bool strip_leading_name) {
-cout <<"XX starting get_leaves_multi for path: "<<node_in->path()<<endl;
-cout << ">>>\n";
-node_in->print();
-cout << "<<<\n";
-
+void hdf5_data_reader::get_leaves_multi(conduit::Node* node_in, std::vector<conduit::Node*> &leaves_out) {
   std::vector<conduit::Node*> first;
-  get_leaves(node_in, first, true);
-
-cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n";
-cout << "first children: "<<endl;
-for (auto t : first) {
-  cout << "  next:\n";
-  t->print();
-}
-cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n";
+  get_leaves(node_in, first);
+  // "first" contains pointers to leaf nodes from "m_experiment_schema;"
+  // we're using this as a starting node for a search in m_data_schema.
+  // (recall, m_experiment_schema is a trimmed version of m_data_schema)
 
   for (const auto& leaf : first) {
     std::string path_name = leaf->path();
-    if (strip_leading_name) {
-      size_t j=path_name.find('/');
-      if (j == std::string::npos) {
-        LBANN_ERROR("failed to find '/' in path_name: ", path_name, " strip: ", strip_leading_name);
-      }
-      path_name = path_name.substr(j+1);
-    }
     if (m_data_map.find(path_name) == m_data_map.end()) {
       LBANN_ERROR("pathname: ", path_name, " was not found in m_data_map");
     }
+
+    const conduit::Node& from_meta = leaf->child(s_metadata_node_name);
+    conduit::Node* node_for_recursion = m_data_map[path_name];
+    // following creates the node if it doesn't exist (but it should
+    // exist at this point)
+    conduit::Node* to_meta = node_for_recursion->fetch_ptr(s_metadata_node_name);
+
+    for (int i=0; i<from_meta.number_of_children(); i++) {
+      const std::string& field_name = from_meta.child(i).name();
+      if (!to_meta->has_child(field_name)) {
+        (*to_meta)[field_name] = from_meta[field_name];
+      }
+    }
+
     std::vector<conduit::Node*> second;
     get_leaves(m_data_map[path_name], second);
-    for (auto* final_leaf : second) {
+    for (auto final_leaf : second) {
       leaves_out.push_back(final_leaf);
     }
   }
@@ -394,41 +395,39 @@ cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n";
 
 
 // recursive
-void hdf5_data_reader::get_leaves(conduit::Node* parent, std::vector<conduit::Node*> &leaves_out, bool strip_leading_name) {
+void hdf5_data_reader::get_leaves(conduit::Node* node, std::vector<conduit::Node*> &leaves_out) {
+  // on entry, node is guaranteed to have a metadata node; but lets check:
+  if (!node->has_child(s_metadata_node_name)) {
+    LBANN_ERROR("missing metadata child node for node with path: ", node->path());
+  }
+  conduit::Node& nodes_metadata = node->child(s_metadata_node_name);
 
-  if (!parent->has_child(s_metadata_node_name)) {
-    LBANN_ERROR("node path: ", parent->path(), " is missing metadata node");
+  // add fields from parent's metadata node to this node's metadata node,
+  // but only if they don't already exist (existing fields takes precedence)
+  if (!node->is_root()) {
+    const conduit::Node &parents_metadata = node->parent()->child(s_metadata_node_name);
+    if (parents_metadata.has_child(s_metadata_node_name)) {
+      LBANN_ERROR("metadata nodes may not be chained");
+    }
+    for (int k=0; k<parents_metadata.number_of_children(); k++) {
+      const std::string& field_name = parents_metadata.child(k).name();
+      if (! nodes_metadata.has_child(field_name)) {
+        nodes_metadata[field_name] = parents_metadata[field_name];
+      }
+    }
   }
 
   // end of recusion
-  if (parent->number_of_children() == 1) {
-    leaves_out.push_back(parent);
+  if (node->number_of_children() == 1) { // 1 is for metadata node
+    leaves_out.push_back(node);
     return;
   } 
 
   // recursion loop
-  const conduit::Node &parents_metadata = parent->child(s_metadata_node_name);
-  int pm_n = parents_metadata.number_of_children();
-  for (int j=0; j<parent->number_of_children(); j++) {
-    conduit::Node* child = parent->child_ptr(j);
+  for (int j=0; j<node->number_of_children(); j++) {
+    conduit::Node* child = node->child_ptr(j);
     if (child->name() != s_metadata_node_name) {
-      // next call creates the Node, if it doesn't exist
-      conduit::Node* metadata = child->fetch_ptr(s_metadata_node_name);
-      for (int k=0; k<pm_n; k++) {
-        const std::string field = parents_metadata.child_ptr(k)->name();
-        if (field == s_metadata_node_name) {
-//XX
-cout << "\nERROR: metadata nodes may not be chained; parent: \n";
-parent->print();
-cout << "\n===\nmetadata node:\n";
-parents_metadata.print();
-          LBANN_ERROR("metadata nodes may not be chained");
-        }
-        if (!metadata->has_child(field)) {
-         (*metadata)[field] = parents_metadata[field];
-        }
-      }
-      get_leaves(parent->child_ptr(j), leaves_out);
+      get_leaves(child, leaves_out);
     }
   }
 }
@@ -569,30 +568,12 @@ cout << "xx  pack!\n";
 
 }
 
-conduit::Node * hdf5_data_reader::get_metadata_node(const conduit::Node *node) {
-LBANN_ERROR("broke");
-#if 0
-  conduit::Node* r = nullptr;
-  if (node == nullptr) {
-    return r;
-  }
-  size_t n = node->number_of_children();
-  for (int j=0; j<n; j++) {
-    if (node->child_ptr(j)->name() != s_metadata_node_name) {
-      r = node->child_ptr(j);
-    }
-  }
-  return r;
-#endif
-  return nullptr;
-}
-
+// recursive
 void hdf5_data_reader::adjust_metadata(conduit::Node* node) {
-  if (!node->is_root()) {
-    //note: next call creates the node if it doesn't exist
-    conduit::Node* metadata = node->fetch_ptr(s_metadata_node_name);
+  //note: next call creates the node if it doesn't exist
+  conduit::Node* metadata = node->fetch_ptr(s_metadata_node_name);
 
-    //note: ditto 
+  if (!node->is_root()) {
     const conduit::Node* parents_metadata = node->parent()->fetch_ptr(s_metadata_node_name);
     for (int j=0; j<parents_metadata->number_of_children(); j++) {
       const std::string &field_name = parents_metadata->child(j).name();
@@ -609,6 +590,5 @@ void hdf5_data_reader::adjust_metadata(conduit::Node* node) {
     }
   }
 }
-
 
 } // namespace lbann
