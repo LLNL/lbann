@@ -25,12 +25,64 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/lbann.hpp"
-#include "lbann/weights/data_type_weights.hpp"
+#include "lbann/utils/threads/thread_utils.hpp"
 #include <mpi.h>
 #include <stdio.h>
 
 //#include <thread>
 //#include <chrono>
+
+std::unique_ptr<lbann::directed_acyclic_graph_model>
+load_model(lbann::lbann_comm* lc, std::string cp_loc) {
+  // Data Coordinator
+  std::unique_ptr<lbann::data_coordinator> dc;
+  dc = lbann::make_unique<lbann::buffered_data_coordinator<float>>(lc);
+
+  // Trainer
+  int mbs = 64;
+  auto t = lbann::make_unique<lbann::trainer>(lc, mbs, std::move(dc));
+
+  // Checkpoint location
+  auto& p = t->get_persist_obj();
+  p.open_restart(cp_loc.c_str());
+
+  auto io_thread_pool = lbann::make_unique<lbann::thread_pool>();
+  io_thread_pool->launch_pinned_threads(1, lbann::free_core_offset(lc));
+
+  // Datareader, but this will go away
+  lbann::init_data_seq_random(-1);
+  std::map<lbann::execution_mode, lbann::generic_data_reader *> data_readers;
+  lbann::generic_data_reader *reader = nullptr;
+  reader = new lbann::mnist_reader(false);
+  reader->set_comm(lc);
+  reader->set_data_filename("t10k-images-idx3-ubyte");
+  reader->set_label_filename("t10k-labels-idx1-ubyte");
+  reader->set_file_dir("/usr/WS2/wyatt5/pascal/lbann-save-model/applications/vision/data/mnist");
+  reader->set_role("test");
+  reader->set_master(lc->am_world_master());
+  reader->load();
+  data_readers[lbann::execution_mode::testing] = reader;
+
+  // Load trainer from checkpoint
+  auto t_flag = t->load_from_checkpoint_shared(p);
+  std::cout << "trainer load: " << t_flag << std::endl;
+  t->setup(std::move(io_thread_pool), data_readers);
+
+  // Model
+  auto m = lbann::make_unique<lbann::directed_acyclic_graph_model>(lc, nullptr, nullptr);
+
+  // Load model from checkpoint
+  auto m_flag = m->load_from_checkpoint_shared(p);
+  std::cout << "model load: " << m_flag << std::endl;
+
+  p.close_restart();
+
+  return m;
+}
+
+void load_samples(std::string sample_loc) {
+
+}
 
 int main(int argc, char *argv[]) {
   int provided;
@@ -39,7 +91,7 @@ int main(int argc, char *argv[]) {
     std::cout << "MPI_THREAD_MULTIPLE not supported" << std::endl;
   }
 
-  // Comms
+  // Setup comms
   std::cout << "initializing LBANN..." << std::endl;
   auto lbann_comm = lbann::driver_init(MPI_COMM_WORLD);
 
@@ -48,34 +100,21 @@ int main(int argc, char *argv[]) {
     lbann_comm->split_trainers(ppt);
   }
 
-  // Data Coordinator
-  std::unique_ptr<lbann::data_coordinator> dc;
-  dc = lbann::make_unique<lbann::buffered_data_coordinator<float>>(lbann_comm.get());
+  // Load the model
+  std::string model_dir;
+  model_dir = "/usr/workspace/wyatt5/cp_models/trainer0/sgd.shared.epoch_begin.epoch.10.step.8440/";
+  auto m = load_model(lbann_comm.get(), model_dir);
 
-  // Trainer
-  int mbs = 64;
-  auto t = lbann::make_unique<lbann::trainer>(lbann_comm.get(), mbs, std::move(dc));
+  // Load the data
+  std::string sample_dir;
+  sample_dir = "/usr/workspace/wyatt5/mnist_data/mnist.csv";
+  //auto samples = load_data(sample_dir);
 
-  // Checkpoint location
-  auto& p = t->get_persist_obj();
-  std::string cp_loc;
-  cp_loc = "/usr/workspace/wyatt5/cp_models/trainer0/sgd.shared.epoch_begin.epoch.10.step.8440/";
-  p.open_restart(cp_loc.c_str());
-
-  // Load trainer from checkpoint
-  auto t_flag = t->load_from_checkpoint_shared(p);
-  std::cout << "trainer load: " << t_flag << std::endl;
-
-  // Model
-  auto m = lbann::directed_acyclic_graph_model(lbann_comm.get(), nullptr, nullptr);
-
-  // Load model from checkpoint
-  auto m_flag = m.load_from_checkpoint_shared(p);
-  std::cout << "model load: " << m_flag << std::endl;
-  load_weights_from_checkpoint(m, cp_loc);
+  // Infer
+  //auto inf = infer(m.get(), samples.key, samples.values);
 
   // Clean up
-  p.close_restart();
+  m.reset();
   lbann::finalize();
   MPI_Finalize();
 
