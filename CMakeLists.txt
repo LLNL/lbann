@@ -795,6 +795,12 @@ configure_package_config_file(cmake/configure_files/LBANNConfig.cmake.in
   INSTALL_DESTINATION "${CMAKE_INSTALL_DIR}"
   PATH_VARS INCLUDE_INSTALL_DIRS LIB_INSTALL_DIR)
 
+# Clang format
+include(LBANNClangFormat)
+if (CLANG_FORMAT_AVAILABLE)
+  add_clang_format(lbann)
+endif ()
+
 # Install library
 install(
   TARGETS lbann
