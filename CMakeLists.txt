@@ -577,7 +577,9 @@ if (LBANN_WITH_UNIT_TESTING)
   add_subdirectory(src/utils/unit_test)
   add_subdirectory(src/weights/unit_test)
   add_subdirectory(src/transforms/unit_test)
-  add_subdirectory(src/transforms/vision/unit_test)
+  if (LBANN_HAS_OPENCV)
+    add_subdirectory(src/transforms/vision/unit_test)
+  endif ()
 
   # Add this one last
   add_subdirectory(unit_test)
