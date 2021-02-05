@@ -144,6 +144,7 @@ void dump_model_graph::on_setup_end(model *m) {
   boost::write_graphviz_dp(file, g, dp);
 
 #else // LBANN_HAS_BOOST
+  (void) m_print;
   LBANN_ERROR("This callback requires the Boost library.");
 #endif // LBANN_HAS_BOOST
 }
