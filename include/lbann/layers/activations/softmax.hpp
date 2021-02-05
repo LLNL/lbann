@@ -34,6 +34,7 @@
 #include "lbann/utils/dnn_lib/helpers.hpp"
 #include "lbann/utils/dnn_lib/softmax.hpp"
 #endif // defined LBANN_HAS_DNN_LIB
+#include "lbann/utils/dnn_lib/softmax.hpp"
 
 // Threshold outputs to a minimum value.
 
@@ -107,17 +108,17 @@ public:
 
   ~softmax_layer() = default;
 
-  softmax_layer* copy() const override { return new softmax_layer(*this); }
-  std::string get_type() const override { return "softmax"; }
-  data_layout get_data_layout() const override { return Layout; }
-  El::Device get_device_allocation() const override { return Device; }
+  softmax_layer* copy() const final { return new softmax_layer(*this); }
+  std::string get_type() const final { return "softmax"; }
+  data_layout get_data_layout() const final { return Layout; }
+  El::Device get_device_allocation() const final { return Device; }
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override {
+  void setup_dims(DataReaderMetaData& dr_metadata) final {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims(this->get_input_dims());
   }
 
-  void setup_matrices(const El::Grid& grid) override {
+  void setup_matrices(const El::Grid& grid) final {
     data_type_layer<TensorDataType>::setup_matrices(grid);
     auto dist = this->get_prev_activations().DistData();
     dist.colDist = El::STAR;
@@ -131,18 +132,26 @@ public:
     if (!m_tensors_dnn_desc.get_layer())
       m_tensors_dnn_desc.set_layer(this);
 #endif // LBANN_HAS_DNN_LIB
+
   }
 
-  void fp_setup_outputs(El::Int mini_batch_size) override {
+  void fp_setup_outputs(El::Int mini_batch_size) final {
     data_type_layer<TensorDataType>::fp_setup_outputs(mini_batch_size);
-    const auto& dist_data = this->get_prev_activations().DistData();
-    m_workspace->Empty(false);
-    m_workspace->AlignWith(dist_data);
-    m_workspace->Resize(1, mini_batch_size);
+    if constexpr ((Layout == data_layout::MODEL_PARALLEL)
+                  && (Device == El::Device::CPU))
+    {
+      const auto& dist_data = this->get_prev_activations().DistData();
+      m_workspace->Empty(false);
+      m_workspace->AlignWith(dist_data);
+      m_workspace->Resize(1, mini_batch_size);
+    }
+
+    // Setup the descriptors
+    this->setup_fp_dnn_descriptors();
   }
 
-  void fp_compute() override;
-  void bp_compute() override;
+  void fp_compute() final;
+  void bp_compute() final;
 
   template <typename U>
   friend void fp_compute_impl(softmax_layer<U, Layout, Device>& l);
@@ -160,6 +169,27 @@ public:
   }
 
 private:
+  /** @name DNN library stuff */
+  ///@{
+
+  //using dnn_backend = dnn_lib::get_backend<Device>;
+#ifdef LBANN_HAS_ONEDNN
+  using dnn_backend = onednn_backend<Device>;
+#else
+  using dnn_backend = openmp_backend;
+#endif
+  using dnnTensorDescriptor = typename dnn_backend::TensorDescriptor;
+
+  dnnTensorDescriptor input_descriptor_;
+  dnnTensorDescriptor output_descriptor_;
+  dnnTensorDescriptor grad_wrt_input_descriptor_;
+  dnnTensorDescriptor grad_wrt_output_descriptor_;
+
+  void setup_fp_dnn_descriptors();
+  void setup_bp_dnn_descriptors();
+
+  ///@}
+
   friend cereal::access;
   softmax_layer() : data_type_layer<TensorDataType>(nullptr) {}
 
@@ -184,15 +214,15 @@ private:
 #ifdef LBANN_HAS_DISTCONV
   friend class softmax_distconv_adapter<TensorDataType, Layout, Device>;
  protected:
-  bool is_distconv_supported() const override {
+  bool is_distconv_supported() const final {
     return Device == El::Device::GPU && Layout == data_layout::DATA_PARALLEL;
   }
-  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override {
+  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) final {
     this->get_distconv_adapter_ptr() = make_unique<softmax_distconv_adapter<
       TensorDataType, Layout, Device>>(*this);
   }
-  softmax_distconv_adapter<TensorDataType, Layout, Device>& get_distconv_adapter() override;
-  const softmax_distconv_adapter<TensorDataType, Layout, Device>& get_distconv_adapter() const override;
+  softmax_distconv_adapter<TensorDataType, Layout, Device>& get_distconv_adapter() final;
+  const softmax_distconv_adapter<TensorDataType, Layout, Device>& get_distconv_adapter() const final;
 #endif // LBANN_HAS_DISTCONV
 };
 
