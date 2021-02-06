@@ -34,7 +34,7 @@
 #include "lbann/layers/data_type_layer.hpp"
 #include <vector>
 
-#include <layers.pb.h>
+#include <layers.pb.h> // IWYU pragma: export
 
 #ifdef LBANN_HAS_DNN_LIB
 
@@ -775,4 +775,3 @@ dnnMathType_t convert_to_dnn_math_type(ProtoTensorOpEnumType mt);
 } // namespace lbann
 #endif // LBANN_HAS_DNN_LIB
 #endif // LBANN_UTILS_DNN_LIB_DNN_LIB_HPP
-

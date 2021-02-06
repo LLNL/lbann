@@ -74,8 +74,8 @@
 #include "lbann/utils/file_utils.hpp"
 #include "lbann/utils/memory.hpp"
 
-#include <callbacks.pb.h>
-#include <model.pb.h>
+#include <callbacks.pb.h>  // IWYU pragma: export
+#include <model.pb.h> // IWYU pragma: export
 
 #include <google/protobuf/message.h>
 

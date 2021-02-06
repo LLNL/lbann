@@ -31,12 +31,12 @@
 #include "lbann/training_algorithms/training_algorithm.hpp"
 #include "lbann/weights/data_type_weights.hpp"
 
-#include <callbacks.pb.h>
-#include <model.pb.h>
+#include <callbacks.pb.h> // IWYU pragma: export
+#include <model.pb.h> // IWYU pragma: export
 
-#include <google/protobuf/text_format.h>
-#include <google/protobuf/io/coded_stream.h>
-#include <google/protobuf/io/zero_copy_stream_impl.h>
+#include <google/protobuf/text_format.h> // IWYU pragma: export
+#include <google/protobuf/io/coded_stream.h> // IWYU pragma: export
+#include <google/protobuf/io/zero_copy_stream_impl.h> // IWYU pragma: export
 
 #include <unistd.h>
 #include <dirent.h>

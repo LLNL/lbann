@@ -34,8 +34,8 @@
 #include "lbann/objective_functions/weight_regularization/l2.hpp"
 #include "lbann/utils/memory.hpp"
 
-#include <model.pb.h>
-#include <objective_functions.pb.h>
+#include <model.pb.h> // IWYU pragma: export
+#include <objective_functions.pb.h> // IWYU pragma: export
 
 #include <iostream>
 #include <map>

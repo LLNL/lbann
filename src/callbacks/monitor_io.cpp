@@ -32,7 +32,7 @@
 #include "lbann/data_coordinator/data_coordinator.hpp"
 #include "lbann/proto/proto_common.hpp"
 
-#include <callbacks.pb.h>
+#include <callbacks.pb.h> // IWYU pragma: export
 
 namespace lbann {
 namespace callback {

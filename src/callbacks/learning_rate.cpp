@@ -33,7 +33,7 @@
 
 #include "callback_helpers.hpp"
 
-#include <callbacks.pb.h>
+#include <callbacks.pb.h> // IWYU pragma: export
 
 #include <algorithm>
 #include <cmath> // std::pow

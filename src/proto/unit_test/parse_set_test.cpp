@@ -1,7 +1,7 @@
 #include <catch2/catch.hpp>
 
 #include <lbann/base.hpp>
-#include <lbann/proto/proto_common.hpp>
+#include <lbann/proto/proto_common.hpp> // IWYU pragma: export
 
 #include <string>
 #include <set>

@@ -34,7 +34,7 @@
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/profiling.hpp"
 
-#include <callbacks.pb.h>
+#include <callbacks.pb.h> // IWYU pragma: export
 
 #include <algorithm>
 #include <string>

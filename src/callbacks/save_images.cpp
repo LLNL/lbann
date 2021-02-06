@@ -29,7 +29,7 @@
 
 #include "lbann/proto/proto_common.hpp"
 
-#include <callbacks.pb.h>
+#include <callbacks.pb.h> // IWYU pragma: export
 
 #ifdef LBANN_HAS_OPENCV
 #include <opencv2/imgcodecs.hpp>

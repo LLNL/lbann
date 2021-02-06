@@ -34,12 +34,12 @@
 #include "lbann/utils/file_utils.hpp"
 #include "lbann/utils/argument_parser.hpp"
 
-#include <lbann.pb.h>
-#include <reader.pb.h>
+#include <lbann.pb.h> // IWYU pragma: export
+#include <reader.pb.h> // IWYU pragma: export
 
-#include <google/protobuf/io/coded_stream.h>
-#include <google/protobuf/io/zero_copy_stream_impl.h>
-#include <google/protobuf/text_format.h>
+#include <google/protobuf/io/coded_stream.h> // IWYU pragma: export
+#include <google/protobuf/io/zero_copy_stream_impl.h> // IWYU pragma: export
+#include <google/protobuf/text_format.h> // IWYU pragma: export
 
 #include <functional>
 #include <memory>

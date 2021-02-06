@@ -27,7 +27,7 @@
 #include "lbann/callbacks/confusion_matrix.hpp"
 #include "lbann/layers/data_type_layer.hpp"
 
-#include <callbacks.pb.h>
+#include <callbacks.pb.h> // IWYU pragma: export
 
 #include <fstream>
 #include <memory>

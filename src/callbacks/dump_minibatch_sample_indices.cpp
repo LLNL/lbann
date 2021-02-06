@@ -31,7 +31,7 @@
 #include "lbann/callbacks/dump_minibatch_sample_indices.hpp"
 #include "lbann/data_coordinator/data_coordinator.hpp"
 
-#include <callbacks.pb.h>
+#include <callbacks.pb.h> // IWYU pragma: export
 
 #include <iomanip>
 #include <cstdlib>

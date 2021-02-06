@@ -27,8 +27,8 @@
 #include "lbann/proto/helpers.hpp"
 #include "lbann/utils/exception.hpp"
 
-#include <google/protobuf/message.h>
-#include <google/protobuf/text_format.h>
+#include <google/protobuf/message.h> // IWYU pragma: export
+#include <google/protobuf/text_format.h> // IWYU pragma: export
 
 #include <string>
 

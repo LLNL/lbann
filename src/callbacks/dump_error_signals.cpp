@@ -27,7 +27,7 @@
 #include "lbann/callbacks/dump_error_signals.hpp"
 #include "lbann/layers/data_type_layer.hpp"
 
-#include <callbacks.pb.h>
+#include <callbacks.pb.h> // IWYU pragma: export
 
 namespace lbann {
 namespace callback {

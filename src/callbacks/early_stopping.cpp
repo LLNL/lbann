@@ -28,7 +28,7 @@
 
 #include "lbann/callbacks/early_stopping.hpp"
 
-#include <callbacks.pb.h>
+#include <callbacks.pb.h> // IWYU pragma: export
 
 #include <iostream>
 

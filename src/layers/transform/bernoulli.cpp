@@ -27,8 +27,8 @@
 #define LBANN_BERNOULLI_LAYER_INSTANTIATE
 #include "lbann/layers/transform/bernoulli.hpp"
 
-#include <lbann/proto/proto_common.hpp>
-#include <layers.pb.h>
+#include <lbann/proto/proto_common.hpp> // IWYU pragma: export
+#include <layers.pb.h> // IWYU pragma: export
 
 namespace lbann {
 

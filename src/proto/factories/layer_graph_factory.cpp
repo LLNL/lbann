@@ -29,8 +29,8 @@
 
 #include "lbann/layers/learning/fully_connected.hpp"
 
-#include <model.pb.h>
-#include <trainer.pb.h>
+#include <model.pb.h> // IWYU pragma: export
+#include <trainer.pb.h> // IWYU pragma: export
 
 #include <string>
 #include <unordered_map>

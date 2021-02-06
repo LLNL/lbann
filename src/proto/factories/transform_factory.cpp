@@ -52,8 +52,8 @@
 #include "lbann/utils/factory.hpp"
 #include "lbann/utils/memory.hpp"
 
-#include <reader.pb.h>
-#include <transforms.pb.h>
+#include <reader.pb.h> // IWYU pragma: export
+#include <transforms.pb.h> // IWYU pragma: export
 
 namespace lbann {
 namespace proto {

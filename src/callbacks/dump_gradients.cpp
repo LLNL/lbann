@@ -29,7 +29,7 @@
 #include "lbann/callbacks/dump_gradients.hpp"
 #include "lbann/optimizers/data_type_optimizer.hpp"
 
-#include <callbacks.pb.h>
+#include <callbacks.pb.h> // IWYU pragma: export
 
 #include <vector>
 

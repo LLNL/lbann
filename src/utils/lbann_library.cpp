@@ -36,8 +36,8 @@
 #include "lbann/callbacks/load_model.hpp"
 #include "lbann/utils/argument_parser.hpp"
 
-#include <lbann.pb.h>
-#include <model.pb.h>
+#include <lbann.pb.h> // IWYU pragma: export
+#include <model.pb.h> // IWYU pragma: export
 
 namespace lbann {
 

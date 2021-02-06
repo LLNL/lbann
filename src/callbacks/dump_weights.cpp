@@ -32,7 +32,7 @@
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/trainer_file_utils.hpp"
 
-#include <callbacks.pb.h>
+#include <callbacks.pb.h> // IWYU pragma: export
 
 #include <string>
 

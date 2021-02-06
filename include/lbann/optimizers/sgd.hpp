@@ -29,7 +29,7 @@
 
 #include "lbann/optimizers/data_type_optimizer.hpp"
 #include "lbann/io/persist.hpp"
-#include <optimizers.pb.h>
+#include <optimizers.pb.h> // IWYU pragma: export
 
 namespace lbann {
 

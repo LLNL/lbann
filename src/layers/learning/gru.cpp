@@ -30,7 +30,7 @@
 #include "lbann/weights/initializer.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/hash.hpp"
-#include <layers.pb.h>
+#include <layers.pb.h> // IWYU pragma: export
 
 namespace lbann {
 

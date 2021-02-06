@@ -104,7 +104,7 @@
 #include "lbann/data_coordinator/data_coordinator_metadata.hpp"
 #include "lbann/utils/peek_map.hpp"
 
-#include <layers.pb.h>
+#include <layers.pb.h> // IWYU pragma: export
 
 #ifdef LBANN_HAS_DNN_LIB
 #include "lbann/utils/dnn_lib/helpers.hpp"

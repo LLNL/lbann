@@ -28,7 +28,7 @@
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/random_number_generators.hpp"
 
-#include <callbacks.pb.h>
+#include <callbacks.pb.h> // IWYU pragma: export
 
 namespace lbann {
 namespace callback {

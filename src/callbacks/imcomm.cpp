@@ -32,7 +32,7 @@
 #include "lbann/utils/timer.hpp"
 #include "lbann/weights/data_type_weights.hpp"
 
-#include <callbacks.pb.h>
+#include <callbacks.pb.h> // IWYU pragma: export
 
 #include <typeinfo>
 #include <typeindex>

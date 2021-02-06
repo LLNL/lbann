@@ -32,7 +32,7 @@
 #include "lbann/utils/distconv.hpp"
 
 #include <lbann/proto/proto_common.hpp>
-#include <layers.pb.h>
+#include <layers.pb.h> // IWYU pragma: export
 
 namespace lbann {
 

@@ -32,7 +32,7 @@
 
 #include "lbann/utils/h2_tmp.hpp"
 
-#include <callbacks.pb.h>
+#include <callbacks.pb.h> // IWYU pragma: export
 
 #include <cmath>
 #include <iostream>

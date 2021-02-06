@@ -30,8 +30,8 @@
 #include <lbann/layers/math/matmul.hpp>
 #include <lbann/layers/math/unary.hpp>
 
-#include <lbann/proto/proto_common.hpp>
-#include <layers.pb.h>
+#include <lbann/proto/proto_common.hpp> // IWYU pragma: export
+#include <layers.pb.h> // IWYU pragma: export
 
 namespace lbann
 {

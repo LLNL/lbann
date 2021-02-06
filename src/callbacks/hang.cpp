@@ -26,7 +26,7 @@
 
 #include "lbann/callbacks/hang.hpp"
 
-#include <callbacks.pb.h>
+#include <callbacks.pb.h> // IWYU pragma: export
 
 namespace lbann {
 namespace callback {
