@@ -27,6 +27,7 @@
 #ifndef LBANN_UTILS_DISTCONV_HPP
 #define LBANN_UTILS_DISTCONV_HPP
 
+// IWYU pragma: begin_exports
 #include "lbann_config.hpp"
 
 #ifdef LBANN_HAS_DISTCONV
@@ -255,4 +256,5 @@ int get_num_spatial_dims(const Layer &layer);
 } // namespace lbann
 
 #endif // LBANN_HAS_DISTCONV
+// IWYU pragma: end_exports
 #endif // LBANN_UTILS_DISTCONV_HPP

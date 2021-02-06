@@ -26,7 +26,7 @@
 #pragma once
 #ifndef LBANN_UTILS_SERIALIZE_HPP_
 #define LBANN_UTILS_SERIALIZE_HPP_
-
+// IWYU pragma: begin_exports
 #include "serialization/cereal_utils.hpp"
 
 // Serialization code is only valid in C++ code.
@@ -38,4 +38,5 @@
 #include "serialization/serialize_matrices.hpp"
 
 #endif // !(defined __CUDACC__ || defined __HIPCC__)
+// IWYU pragma: end_exports
 #endif // LBANN_UTILS_SERIALIZE_HPP_
