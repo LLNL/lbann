@@ -32,7 +32,8 @@
 //#include <thread>
 //#include <chrono>
 
-std::unique_ptr<lbann::directed_acyclic_graph_model>
+//std::unique_ptr<lbann::directed_acyclic_graph_model>
+void
 load_model(lbann::lbann_comm* lc, std::string cp_loc) {
   // Data Coordinator
   std::unique_ptr<lbann::data_coordinator> dc;
@@ -50,6 +51,7 @@ load_model(lbann::lbann_comm* lc, std::string cp_loc) {
   io_thread_pool->launch_pinned_threads(1, lbann::free_core_offset(lc));
 
   // Datareader, but this will go away
+  lbann::init_random(1337, io_thread_pool->get_num_threads());
   lbann::init_data_seq_random(-1);
   std::map<lbann::execution_mode, lbann::generic_data_reader *> data_readers;
   lbann::generic_data_reader *reader = nullptr;
@@ -72,12 +74,30 @@ load_model(lbann::lbann_comm* lc, std::string cp_loc) {
   auto m = lbann::make_unique<lbann::directed_acyclic_graph_model>(lc, nullptr, nullptr);
 
   // Load model from checkpoint
+  lbann::utils::grid_manager grid_raii(m->get_comm()->get_trainer_grid());
   auto m_flag = m->load_from_checkpoint_shared(p);
   std::cout << "model load: " << m_flag << std::endl;
+  auto&& metadata = t->get_data_coordinator().get_dr_metadata();
+  m->setup(mbs, metadata);
 
   p.close_restart();
 
-  return m;
+  // Infer
+  auto *dr = t->get_data_coordinator().get_data_reader(lbann::execution_mode::testing);
+  //int num_samples = dr->get_num_iterations_per_epoch();
+  int num_samples = 157; // get_num_iterations_per_epoch isn't working
+                         // correctly and returns a different number for
+                         // different ranks, this is just a temporary hack
+                         // as we don't plan to keep the data readers anyway!
+
+  for (int s=0; s < num_samples; s++) {
+    t->evaluate(m.get(), lbann::execution_mode::testing, 2);
+    std::cout << getpid() << " evaluated " << (s+1) << "/" << num_samples << " samples." << std::endl;
+  }
+
+  // Next step, get the model prediction layer to return predicted labels?
+
+  //return m;
 }
 
 void load_samples(std::string sample_loc) {
@@ -103,7 +123,8 @@ int main(int argc, char *argv[]) {
   // Load the model
   std::string model_dir;
   model_dir = "/usr/workspace/wyatt5/cp_models/trainer0/sgd.shared.epoch_begin.epoch.10.step.8440/";
-  auto m = load_model(lbann_comm.get(), model_dir);
+  //auto m = load_model(lbann_comm.get(), model_dir);
+  load_model(lbann_comm.get(), model_dir);
 
   // Load the data
   std::string sample_dir;
@@ -114,7 +135,7 @@ int main(int argc, char *argv[]) {
   //auto inf = infer(m.get(), samples.key, samples.values);
 
   // Clean up
-  m.reset();
+  //m.reset();
   lbann::finalize();
   MPI_Finalize();
 
