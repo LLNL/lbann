@@ -1,7 +1,7 @@
 #ifndef __SAMPLE_LIST_HDF5_HPP__
 #define __SAMPLE_LIST_HDF5_HPP__
 
-#include "sample_list_open_files.hpp"
+#include "lbann/data_readers/sample_list_open_files.hpp"
 #include "hdf5.h"
 #include "conduit/conduit.hpp"
 #include "conduit/conduit_relay.hpp"
@@ -35,7 +35,7 @@ class sample_list_hdf5 : public sample_list_open_files<sample_name_t, hid_t> {
 
 template <typename sample_name_t>
 inline sample_list_hdf5<sample_name_t>::sample_list_hdf5()
-: sample_list_open_files<sample_name_t, hid_t>() {} 
+: sample_list_open_files<sample_name_t, hid_t>() {}
 
 template <typename sample_name_t>
 inline sample_list_hdf5<sample_name_t>::~sample_list_hdf5() {
