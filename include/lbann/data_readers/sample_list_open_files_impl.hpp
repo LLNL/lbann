@@ -1,3 +1,6 @@
+#ifndef __SAMPLE_LIST_OPEN_FILES_IMPL_HPP__
+#define __SAMPLE_LIST_OPEN_FILES_IMPL_HPP__
+
 namespace lbann {
 
 template <typename sample_name_t, typename file_handle_t>
@@ -723,3 +726,5 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
 }
 
 } // end of namespace lbann
+
+#endif // __SAMPLE_LIST_OPEN_FILES_IMPL_HPP__

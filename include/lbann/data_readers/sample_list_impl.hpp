@@ -1,3 +1,6 @@
+#ifndef __SAMPLE_LIST_IMPL_HPP__
+#define __SAMPLE_LIST_IMPL_HPP__
+
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -945,3 +948,5 @@ inline void sample_list<sample_name_t>
 }
 
 } // end of namespace lbann
+
+#endif // __SAMPLE_LIST_IMPL_HPP__
