@@ -48,6 +48,10 @@
 
 #include <cstdlib>
 
+#include <hdf5.h>
+#include "conduit/conduit_relay.hpp"
+#include "conduit/conduit_relay_io_hdf5.hpp"
+
 namespace lbann {
 
 data_store_conduit::data_store_conduit(
