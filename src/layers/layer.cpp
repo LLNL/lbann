@@ -31,7 +31,7 @@
 #include "lbann/io/persist.hpp"
 #include "lbann/execution_contexts/sgd_execution_context.hpp"
 
-#include <layers.pb.h>
+#include <layers.pb.h> // IWYU pragma: export
 
 #include <sys/types.h>
 #include <sys/stat.h>

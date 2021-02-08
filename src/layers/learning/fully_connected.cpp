@@ -30,7 +30,7 @@
 #include "lbann/weights/initializer.hpp"
 #include "lbann/weights/variance_scaling_initializers.hpp"
 
-#include <layers.pb.h>
+#include <layers.pb.h> // IWYU pragma: export
 
 #include <string>
 #include <sstream>

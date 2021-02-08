@@ -30,7 +30,7 @@
 #include "lbann/models/model.hpp"
 #include "lbann/layers/layer.hpp"
 
-#include <optimizers.pb.h>
+#include <optimizers.pb.h> // IWYU pragma: export
 
 namespace lbann {
 

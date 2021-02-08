@@ -44,7 +44,7 @@
 #include <iomanip>
 #include <queue>
 #include <unordered_set>
-#include <lbann.pb.h>
+#include <lbann.pb.h> // IWYU pragma: export
 
 #include "mpi.h"
 

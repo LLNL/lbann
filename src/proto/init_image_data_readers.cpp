@@ -36,11 +36,11 @@
 #endif // LBANN_HAS_OPENCV
 #include "lbann/data_readers/data_reader_mnist.hpp"
 
-#include <reader.pb.h>
+#include <reader.pb.h> // IWYU pragma: export
 
-#include <google/protobuf/io/coded_stream.h>
-#include <google/protobuf/io/zero_copy_stream_impl.h>
-#include <google/protobuf/text_format.h>
+#include <google/protobuf/io/coded_stream.h> // IWYU pragma: export
+#include <google/protobuf/io/zero_copy_stream_impl.h> // IWYU pragma: export
+#include <google/protobuf/text_format.h> // IWYU pragma: export
 
 #include <memory>
 #include <string>

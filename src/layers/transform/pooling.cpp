@@ -27,8 +27,8 @@
 #define LBANN_POOLING_LAYER_INSTANTIATE
 #include "lbann/layers/transform/pooling.hpp"
 
-#include <lbann/proto/proto_common.hpp>
-#include <lbann.pb.h>
+#include <lbann/proto/proto_common.hpp> // IWYU pragma: export
+#include <lbann.pb.h> // IWYU pragma: export
 
 namespace lbann {
 namespace {

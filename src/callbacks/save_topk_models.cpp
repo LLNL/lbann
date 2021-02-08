@@ -28,7 +28,7 @@
 
 #include "lbann/callbacks/save_topk_models.hpp"
 
-#include <callbacks.pb.h>
+#include <callbacks.pb.h> // IWYU pragma: export
 
 #include <algorithm>
 #include <functional>

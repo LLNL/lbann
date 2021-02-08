@@ -24,7 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "El.hpp"
+#include "El.hpp" // IWYU pragma: export
 
 namespace El {
 

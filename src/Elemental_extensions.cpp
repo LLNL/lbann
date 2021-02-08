@@ -26,7 +26,7 @@
 // This file is an extension of several Elemental functions
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "El.hpp"
+#include "El.hpp" // IWYU pragma: export
 
 #include <lbann_config.hpp>
 #include "lbann/Elemental_extensions.hpp"

@@ -28,7 +28,7 @@
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/opencv.hpp"
 
-#include <transforms.pb.h>
+#include <transforms.pb.h> // IWYU pragma: export
 
 #include <cmath>
 

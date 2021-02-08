@@ -1,0 +1,6 @@
+[
+{ include: ["@<hydrogen/.*>", "private", "<El.hpp>", "public"] },
+{ include: ["@<h2/.*>", "private", "\"lbann/utils/h2_tmp.hpp\"", "public"] },
+{ include: ["@<cereal/types/.*>", "private", "\"lbann/utils/serialization/cereal_utils.hpp\"", "public"] },
+{ include: ["@<El/.*>", "private", "<El.hpp>", "public"] },
+]

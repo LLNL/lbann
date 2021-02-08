@@ -36,7 +36,7 @@
 #include <lbann/utils/cloneable.hpp>
 #include <lbann/utils/memory.hpp>
 
-#include <callbacks.pb.h>
+#include <callbacks.pb.h> // IWYU pragma: export
 
 #include <algorithm>
 #include <numeric>

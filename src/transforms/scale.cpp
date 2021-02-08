@@ -26,7 +26,7 @@
 
 #include "lbann/transforms/scale.hpp"
 #include "lbann/utils/memory.hpp"
-#include <transforms.pb.h>
+#include <transforms.pb.h> // IWYU pragma: export
 
 namespace lbann {
 namespace transform {

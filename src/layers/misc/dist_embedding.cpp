@@ -28,7 +28,7 @@
 
 #include "lbann/weights/weights_helpers.hpp"
 #include "lbann/proto/proto_common.hpp"
-#include <layers.pb.h>
+#include <layers.pb.h> // IWYU pragma: export
 
 // =========================================================
 // CPU layer implementation

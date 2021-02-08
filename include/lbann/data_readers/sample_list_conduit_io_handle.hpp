@@ -1,7 +1,7 @@
 #ifndef __SAMPLE_LIST_CONDUIT_IO_HANDLE_HPP__
 #define __SAMPLE_LIST_CONDUIT_IO_HANDLE_HPP__
 
-#include "sample_list_open_files.hpp"
+#include "lbann/data_readers/sample_list_open_files.hpp"
 #include "conduit/conduit.hpp"
 #include "conduit/conduit_relay.hpp"
 #include "conduit/conduit_relay_io_handle.hpp"

@@ -27,7 +27,7 @@
 #ifndef LBANN_PROTO_DATATYPE_HELPERS_HPP_INCLUDED
 #define LBANN_PROTO_DATATYPE_HELPERS_HPP_INCLUDED
 
-#include <model.pb.h>
+#include <model.pb.h> // IWYU pragma: export
 
 namespace lbann
 {

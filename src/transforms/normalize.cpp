@@ -28,7 +28,7 @@
 
 #include "lbann/proto/proto_common.hpp"
 
-#include <transforms.pb.h>
+#include <transforms.pb.h> // IWYU pragma: export
 
 namespace lbann {
 namespace transform {

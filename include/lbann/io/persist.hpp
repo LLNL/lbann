@@ -33,7 +33,7 @@
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/enum_iterator.hpp"
 #include "lbann/utils/serialize.hpp"
-#include "El.hpp"
+#include "El.hpp"  // IWYU pragma: export
 #include <sstream>
 
 namespace lbann {

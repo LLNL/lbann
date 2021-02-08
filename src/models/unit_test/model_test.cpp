@@ -37,8 +37,8 @@
 #include <lbann/utils/serialize.hpp>
 #include <lbann/proto/factories.hpp>
 
-#include <lbann.pb.h>
-#include <google/protobuf/text_format.h>
+#include <lbann.pb.h> // IWYU pragma: export
+#include <google/protobuf/text_format.h> // IWYU pragma: export
 
 namespace pb = ::google::protobuf;
 

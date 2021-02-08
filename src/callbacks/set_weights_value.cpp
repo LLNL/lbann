@@ -27,7 +27,7 @@
 #include "lbann/callbacks/set_weights_value.hpp"
 #include "lbann/weights/data_type_weights.hpp"
 
-#include <callbacks.pb.h>
+#include <callbacks.pb.h> // IWYU pragma: export
 
 
 namespace lbann {

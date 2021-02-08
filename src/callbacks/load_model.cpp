@@ -33,8 +33,8 @@
 #include "lbann/models/directed_acyclic_graph.hpp"
 #include "lbann/utils/file_utils.hpp"
 
-#include <callbacks.pb.h>
-#include <model.pb.h>
+#include <callbacks.pb.h> // IWYU pragma: export
+#include <model.pb.h> // IWYU pragma: export
 
 #include <cstdlib>
 #include <fstream>

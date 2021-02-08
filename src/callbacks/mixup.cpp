@@ -31,7 +31,7 @@
 #include "lbann/utils/beta.hpp"
 #include "lbann/utils/exception.hpp"
 
-#include <callbacks.pb.h>
+#include <callbacks.pb.h> // IWYU pragma: export
 
 #include <unordered_set>
 

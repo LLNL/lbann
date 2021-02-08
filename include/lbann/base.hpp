@@ -27,10 +27,10 @@
 #ifndef LBANN_BASE_HPP_INCLUDED
 #define LBANN_BASE_HPP_INCLUDED
 
-#include <El.hpp>
+#include <El.hpp> // IWYU pragma: export
 
 // Defines, among other things, DataType.
-#include "lbann_config.hpp"
+#include "lbann_config.hpp" // IWYU pragma: export
 
 #include "lbann/Elemental_extensions.hpp"
 #include "lbann/utils/cyg_profile.hpp"
@@ -40,10 +40,10 @@
 // Support for OpenMP macros
 #include "lbann/utils/omp_pragma.hpp"
 
-#include <functional>
-#include <iostream>
-#include <memory>
-#include <string>
+#include <functional> // IWYU pragma: export
+#include <iostream> // IWYU pragma: export
+#include <memory> // IWYU pragma: export
+#include <string> // IWYU pragma: export
 
 namespace lbann {
 

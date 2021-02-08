@@ -31,7 +31,7 @@
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/timer.hpp"
 
-#include <callbacks.pb.h>
+#include <callbacks.pb.h> // IWYU pragma: export
 
 #include <fstream>
 #include <string>

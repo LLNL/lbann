@@ -29,7 +29,7 @@
 #include "lbann/callbacks/profiler.hpp"
 #include "lbann/utils/profiling.hpp"
 
-#include <callbacks.pb.h>
+#include <callbacks.pb.h> // IWYU pragma: export
 
 #ifdef LBANN_NVPROF
 #include "nvToolsExt.h"

@@ -43,8 +43,8 @@
 #include <cereal/types/base_class.hpp>
 #include <cereal/types/polymorphic.hpp>
 
-#include <model.pb.h>
-#include <optimizers.pb.h>
+#include <model.pb.h> // IWYU pragma: export
+#include <optimizers.pb.h> // IWYU pragma: export
 
 #include <mpi.h>
 

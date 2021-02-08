@@ -1,6 +1,6 @@
 #include <catch2/catch.hpp>
 
-#include <lbann/proto/proto_common.hpp>
+#include <lbann/proto/proto_common.hpp> // IWYU pragma: export
 
 #include <string>
 

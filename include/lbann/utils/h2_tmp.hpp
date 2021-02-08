@@ -29,6 +29,7 @@
 
 #include <lbann_config.hpp>
 
+// IWYU pragma: begin_exports
 #ifdef LBANN_HAS_DIHYDROGEN
 
 #include <h2/meta/Core.hpp>
@@ -900,4 +901,5 @@ public:
 #endif // H2_MULTIMETHODS_SWITCHDISPATCHER_HPP_
 
 #endif // LBANN_HAS_DIHYDROGEN
+// IWYU pragma: end_exports
 #endif // LBANN_UTILS_H2_TMP_HPP_

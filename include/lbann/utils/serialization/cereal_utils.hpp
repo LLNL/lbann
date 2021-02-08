@@ -27,6 +27,7 @@
 #ifndef LBANN_UTILS_SERIALIZATION_CEREAL_UTILS_HPP_
 #define LBANN_UTILS_SERIALIZATION_CEREAL_UTILS_HPP_
 
+// IWYU pragma: begin_exports
 #include <cereal/cereal.hpp>
 
 #include <cereal/archives/binary.hpp>
@@ -40,6 +41,7 @@
 #include <cereal/types/unordered_map.hpp>
 #include <cereal/types/utility.hpp>
 #include <cereal/types/vector.hpp>
+// IWYU pragma: end_exports
 
 #include <lbann/utils/h2_tmp.hpp>
 

@@ -27,7 +27,7 @@
 #ifndef LBANN_DATA_COORDINATOR_METADATA_HPP
 #define LBANN_DATA_COORDINATOR_METADATA_HPP
 
-#include <El.hpp>
+#include <El.hpp> // IWYU pragma: export
 
 #include "lbann/utils/enum_iterator.hpp"
 #include "lbann/utils/distconv.hpp"

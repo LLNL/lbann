@@ -30,7 +30,7 @@
 #include "lbann/utils/trainer_file_utils.hpp"
 #include "lbann/layers/data_type_layer.hpp"
 
-#include <callbacks.pb.h>
+#include <callbacks.pb.h> // IWYU pragma: export
 
 #ifdef LBANN_HAS_CNPY
 #include <cnpy.h>

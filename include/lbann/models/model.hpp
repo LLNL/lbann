@@ -49,7 +49,7 @@
 // complete type. Sigh. (The greater implication of this is that you
 // cannot have `unique_ptr<IncompleteType>` as a drop-in for
 // `IncompleteType*`, which is annoying.
-#include <optimizers.pb.h>
+#include <optimizers.pb.h> // IWYU pragma: export
 
 #include <vector>
 #include <string>

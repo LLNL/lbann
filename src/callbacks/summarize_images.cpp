@@ -35,7 +35,7 @@
 #include <lbann/utils/factory.hpp>
 #include <lbann/utils/summary.hpp>
 
-#include <callbacks.pb.h>
+#include <callbacks.pb.h> // IWYU pragma: export
 
 #include <iostream>
 

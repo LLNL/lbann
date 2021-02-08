@@ -30,7 +30,7 @@
 #include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/data_coordinator/buffered_data_coordinator.hpp"
 
-#include <trainer.pb.h>
+#include <trainer.pb.h> // IWYU pragma: export
 
 namespace lbann {
 namespace proto {

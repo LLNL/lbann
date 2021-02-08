@@ -30,7 +30,7 @@
 #include "lbann/utils/exception.hpp"
 #include "lbann/io/file_io.hpp"
 
-#include <layers.pb.h>
+#include <layers.pb.h> // IWYU pragma: export
 
 #include <algorithm>
 #include <sstream>

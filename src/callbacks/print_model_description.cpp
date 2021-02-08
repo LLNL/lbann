@@ -26,7 +26,7 @@
 
 #include "lbann/callbacks/print_model_description.hpp"
 #include "lbann/models/model.hpp"
-#include <callbacks.pb.h>
+#include <callbacks.pb.h> // IWYU pragma: export
 
 namespace lbann {
 namespace callback {

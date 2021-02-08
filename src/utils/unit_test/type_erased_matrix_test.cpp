@@ -5,7 +5,7 @@
 #include <lbann/utils/type_erased_matrix.hpp>
 
 // Other includes
-#include <El.hpp>
+#include <El.hpp> // IWYU pragma: export
 
 namespace
 {

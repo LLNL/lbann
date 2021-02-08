@@ -35,7 +35,7 @@
 #include "lbann/io/persist.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
 #include "lbann/utils/hash.hpp"
-#include <lbann.pb.h>
+#include <lbann.pb.h> // IWYU pragma: export
 #include <vector>
 #include <string>
 #include <unordered_map>
