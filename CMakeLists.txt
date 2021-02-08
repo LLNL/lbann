@@ -407,7 +407,7 @@ endif ()
 
 # Find Python
 if (LBANN_WITH_PYTHON)
-  find_package(Python REQUIRED COMPONENTS Interpreter Development)
+  find_package(Python REQUIRED COMPONENTS Interpreter Development.Embed)
   set(LBANN_HAS_PYTHON "${Python_FOUND}")
   if (NOT Python_VERSION_MAJOR EQUAL 3)
     set(LBANN_HAS_PYTHON FALSE)
@@ -629,6 +629,9 @@ if (LBANN_HAS_OPENCV)
   target_link_libraries(lbann PUBLIC ${OpenCV_LIBRARIES})
 endif ()
 target_link_libraries(lbann PUBLIC ${CONDUIT_LIBRARIES})
+if (Python_Development.Embed_FOUND)
+  target_link_libraries(lbann PUBLIC Python::Python)
+endif ()
 
 target_link_libraries(lbann PUBLIC
   $<TARGET_NAME_IF_EXISTS:LBANN_CXX_FLAGS_werror>
