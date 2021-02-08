@@ -40,10 +40,10 @@
 // Support for OpenMP macros
 #include "lbann/utils/omp_pragma.hpp"
 
-#include <functional>
-#include <iostream>
-#include <memory>
-#include <string>
+#include <functional> // IWYU pragma: export
+#include <iostream> // IWYU pragma: export
+#include <memory> // IWYU pragma: export
+#include <string> // IWYU pragma: export
 
 namespace lbann {
 
