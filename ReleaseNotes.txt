@@ -27,6 +27,9 @@ Internal features:
    and changed the naming scheme to use the callback phase (visitor
    hook) in the name rather than the current execution context.
  - Added in-memory binary model exchange for LTFB.
+ - Added support for ROCm and MIOpen
+ - Updated the bamboo test environment to use local executable rather
+   than hard coded executables
 
 I/O & data readers:
  - Experimental data reader that generates graph random walks with
@@ -39,6 +42,8 @@ Build system:
  - Hydrogen v1.5.0
  - Aluminum v0.5.0
  - C++14 or newer standard with CUDA (CMake: "-DCMAKE_CUDA_STANDARD=14")
+ - OpenCV is now an optional dependency via CMake "LBANN_WITH_VISION"
+ - CNPY is now an optional dependency via CMake "LBANN_WITH_CNPY"
 
 Bug fixes:
  - Fixed a bug where LBANN didn't set the Hydrogen RNG seed
@@ -54,6 +59,7 @@ Retired features:
    data reader moved into the data coordinator
  - Removed the deprecated partitioned data reader modes that were used
    to partition and overlap data sets for multiple models
+ - Removed deprecated ActivationDescriptor class
 
 ============================== Release Notes: v0.101 ==============================
 

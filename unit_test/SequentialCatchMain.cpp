@@ -34,12 +34,14 @@ int main(int argc, char* argv[]) {
   hydrogen::gpu::Initialize();
 #endif // LBANN_HAS_DNN_LIB
 
+
   // Initialize the general RNGs and the data sequence RNGs
   int random_seed = 42;
   lbann::init_random(random_seed);
   lbann::init_data_seq_random(random_seed);
 
   int result = Catch::Session().run(argc, argv);
+
 
 #ifdef LBANN_HAS_DNN_LIB
   lbann::dnn_lib::destroy();

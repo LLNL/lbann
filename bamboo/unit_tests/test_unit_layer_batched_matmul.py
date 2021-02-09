@@ -190,7 +190,7 @@ def construct_model(lbann):
     vals = []
     for i in range(num_samples()):
         x = get_sample(i).astype(np.float64)
-        x0 = x[:(_N*_m*_k)].reshape([_N,_k,_m]) 
+        x0 = x[:(_N*_m*_k)].reshape([_N,_k,_m])
         x1 = x[_N*_m*_k:].reshape([_N,_n,_k])
         y = np.matmul(x0.transpose((0,2,1)), x1.transpose((0,2,1)))
         z = tools.numpy_l2norm2(y)
@@ -262,5 +262,5 @@ def construct_data_reader(lbann):
 # ==============================================
 
 # Create test functions that can interact with PyTest
-for test in tools.create_tests(setup_experiment, __file__):
-    globals()[test.__name__] = test
+for _test_func in tools.create_tests(setup_experiment, __file__):
+    globals()[_test_func.__name__] = _test_func

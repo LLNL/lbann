@@ -407,7 +407,10 @@ void DropoutDescriptor::set(
   float dropout,
   void* states,
   size_t states_size,
-  unsigned long long seed) {
+  unsigned long long seed,
+  bool /*use_mask*/, // these 3 unused for cuDNN
+  bool /*state_evo*/,
+  int /*rng_mode*/) {
   create();
   CHECK_CUDNN(
     cudnnSetDropoutDescriptor(
@@ -593,7 +596,9 @@ void RNNDataDescriptor::set(
       padding_fill));
 }
 
-// class ConvolutionDescriptor
+// -----------------------------
+// ConvolutionDescriptor
+// -----------------------------
 
 ConvolutionDescriptor::ConvolutionDescriptor(DescriptorHandle_t desc)
   : desc_{desc}
@@ -744,107 +749,9 @@ void swap(ConvolutionDescriptor& lhs, ConvolutionDescriptor& rhs)
   lhs.swap(rhs);
 }
 
-// class ActivationDescriptor
-
-ActivationDescriptor::ActivationDescriptor(DescriptorHandle_t desc)
-  : desc_{desc}
-{}
-
-ActivationDescriptor::~ActivationDescriptor()
-{
-  try
-  {
-    this->reset();
-  }
-  catch (std::exception const& e)
-  {
-    std::cerr << "Caught exception in ~ActivationDescriptor(). Shutting down."
-              << std::endl;
-    std::terminate();
-  }
-}
-
-ActivationDescriptor::ActivationDescriptor(const ActivationDescriptor& rhs)
-{
-  // Short-circuit
-  if (rhs.desc_ == nullptr)
-  {
-    desc_ = nullptr;
-    return;
-  }
-
-  cudnnActivationMode_t mode;
-  cudnnNanPropagation_t nan_prop;
-  double coeff;
-  CHECK_CUDNN(
-    cudnnGetActivationDescriptor(rhs.desc_, &mode, &nan_prop, &coeff));
-  this->set(mode, nan_prop, coeff);
-}
-
-ActivationDescriptor::ActivationDescriptor(ActivationDescriptor&& rhs)
-  : desc_{rhs.desc_}
-{
-  rhs.desc_ = nullptr;
-}
-
-ActivationDescriptor& ActivationDescriptor::operator=(ActivationDescriptor rhs)
-{
-  this->swap(rhs);
-  return *this;
-}
-
-auto ActivationDescriptor::release() noexcept -> DescriptorHandle_t
-{
-  auto tmp = desc_;
-  desc_ = nullptr;
-  return tmp;
-}
-
-auto ActivationDescriptor::get() const noexcept -> DescriptorHandle_t
-{
-  return desc_;
-}
-
-ActivationDescriptor::operator DescriptorHandle_t() const noexcept
-{
-  return desc_;
-}
-
-void ActivationDescriptor::swap(ActivationDescriptor& other)
-{
-  std::swap(desc_, other.desc_);
-}
-
-void ActivationDescriptor::reset(DescriptorHandle_t desc)
-{
-  if (desc_)
-    CHECK_CUDNN(cudnnDestroyActivationDescriptor(desc_));
-  desc_ = desc;
-}
-
-void ActivationDescriptor::create()
-{
-  if (!desc_)
-    CHECK_CUDNN(cudnnCreateActivationDescriptor(&desc_));
-}
-
-void ActivationDescriptor::set(
-    cudnnActivationMode_t mode,
-    cudnnNanPropagation_t nan_prop,
-    double coeff)
-{
-  this->create();
-  CHECK_CUDNN(
-    cudnnSetActivationDescriptor(desc_, mode, nan_prop, coeff));
-}
-
-/** @brief Swap two activation descriptors. */
-void swap(ActivationDescriptor& lhs, ActivationDescriptor& rhs)
-{
-  lhs.swap(rhs);
-}
-
-// class PoolingDescriptor
+// -----------------------------
+// PoolingDescriptor
+// -----------------------------
 
 PoolingDescriptor::PoolingDescriptor(DescriptorHandle_t desc)
   : desc_{desc}
@@ -968,7 +875,9 @@ void swap(PoolingDescriptor& lhs, PoolingDescriptor& rhs)
   lhs.swap(rhs);
 }
 
-// class LRNDescriptor
+// -----------------------------
+// LRNDescriptor
+// -----------------------------
 
 LRNDescriptor::LRNDescriptor(DescriptorHandle_t desc)
   : desc_{desc}
@@ -1049,7 +958,8 @@ void LRNDescriptor::create()
     CHECK_CUDNN(cudnnCreateLRNDescriptor(&desc_));
 }
 
-void LRNDescriptor::set(unsigned n, double alpha, double beta, double k)
+void LRNDescriptor::set(unsigned n, double alpha, double beta,
+                        double k, cudnnLRNMode_t mode)
 {
   LBANN_ASSERT(n >= CUDNN_LRN_MIN_N);
   LBANN_ASSERT(n <= CUDNN_LRN_MAX_N);
@@ -1684,7 +1594,7 @@ cudnnMathType_t convert_to_dnn_math_type(ProtoTensorOpEnumType mt)
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
 
-} // namespace cudnn
+} // namespace dnn_lib
 } // namespace lbann
 
 #endif // LBANN_HAS_CUDNN

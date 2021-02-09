@@ -33,7 +33,6 @@
 
 #include <lbann/proto/helpers.hpp>
 #include <lbann/utils/factory.hpp>
-#include <lbann/utils/image.hpp>
 #include <lbann/utils/summary.hpp>
 
 #include <callbacks.pb.h>

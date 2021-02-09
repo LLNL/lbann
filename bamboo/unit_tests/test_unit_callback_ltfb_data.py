@@ -171,8 +171,8 @@ def construct_data_reader(lbann):
 # ==============================================
 
 # Create test functions that can interact with PyTest
-for test in tools.create_tests(setup_experiment,
+for _test_func in tools.create_tests(setup_experiment,
                                __file__,
                                nodes=2,
                                lbann_args='--procs_per_trainer=2'):
-    globals()[test.__name__] = test
+    globals()[_test_func.__name__] = _test_func

@@ -60,6 +60,8 @@ class data_reader_merge_features : public generic_compound_data_reader {
   /// Call load on the subsidiary data readers.
   void load() override;
 
+  void setup(int num_io_threads, observer_ptr<thread_pool> io_thread_pool) override;
+
   int get_num_labels() const override { return m_label_reader->get_num_labels(); }
   int get_linearized_data_size() const override { return m_data_size; }
   int get_linearized_label_size() const override {

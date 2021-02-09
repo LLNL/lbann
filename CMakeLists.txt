@@ -125,6 +125,8 @@ option(LBANN_WITH_PYTHON
 
 option(LBANN_WITH_TBINF "Include Tensorboard interface" ON)
 
+option(LBANN_WITH_VISION "Include vision processing components" ON)
+
 option(LBANN_WITH_VTUNE
   "Link the Intel VTune profiling library" OFF)
 
@@ -245,14 +247,16 @@ if (LBANN_WITH_FFT)
 endif (LBANN_WITH_FFT)
 
 # OpenCV installs a CMake configure file we can exploit
-find_package(OpenCV NO_MODULE QUIET
-  HINTS ${OpenCV_DIR} ${OPENCV_DIR} $ENV{OpenCV_DIR} $ENV{OPENCV_DIR}
-  PATH_SUFFIXES share/OpenCV
-  NO_DEFAULT_PATH)
-if (NOT OpenCV_FOUND)
-  find_package(OpenCV NO_MODULE QUIET REQUIRED)
+if (LBANN_WITH_VISION)
+  find_package(OpenCV NO_MODULE QUIET
+    HINTS ${OpenCV_DIR} ${OPENCV_DIR} $ENV{OpenCV_DIR} $ENV{OPENCV_DIR}
+    PATH_SUFFIXES share/OpenCV
+    NO_DEFAULT_PATH)
+  if (NOT OpenCV_FOUND)
+    find_package(OpenCV NO_MODULE QUIET REQUIRED)
+  endif ()
+  message(STATUS "Found OpenCV: ${OpenCV_DIR}")
 endif ()
-message(STATUS "Found OpenCV: ${OpenCV_DIR}")
 set(LBANN_HAS_OPENCV ${OpenCV_FOUND})
 
 # CUDA-ness of LBANN is 1:1 with Hydrogen. Iff Hydrogen has CUDA,
@@ -391,6 +395,12 @@ if (NOT DL_LIBRARY)
 endif ()
 
 # Other optional dependencies
+# TODO: This probably shouldn't be the case and should disable specific
+# callbacks when OpenCV is not available
+if (LBANN_WITH_TBINF AND NOT LBANN_HAS_OPENCV)
+  message(FATAL_ERROR "TensorBoard requires OpenCV. Enable LBANN_WITH_VISION to use TensorBoard.")
+endif ()
+
 if (LBANN_WITH_TBINF)
   add_subdirectory(external/TBinf)
 endif ()
@@ -539,6 +549,10 @@ if (LBANN_WITH_CONDUIT)
   set(CONDUIT_LIBRARIES conduit::conduit)
 endif (LBANN_WITH_CONDUIT)
 
+# Boost (optional)
+find_package(Boost QUIET)
+set(LBANN_HAS_BOOST ${Boost_FOUND})
+
 if (LBANN_WITH_UNIT_TESTING)
   find_package(Catch2 2.0.0 CONFIG QUIET
     HINTS ${CATCH2_DIR} $ENV{CATCH2_DIR} ${CATCH_DIR} $ENV{CATCH_DIR}
@@ -611,7 +625,9 @@ target_link_libraries(lbann PUBLIC OpenMP::OpenMP_CXX)
 target_link_libraries(lbann PUBLIC MPI::MPI_CXX)
 target_link_libraries(lbann PUBLIC protobuf::libprotobuf)
 target_link_libraries(lbann PUBLIC ${HYDROGEN_LIBRARIES})
-target_link_libraries(lbann PUBLIC ${OpenCV_LIBRARIES})
+if (LBANN_HAS_OPENCV)
+  target_link_libraries(lbann PUBLIC ${OpenCV_LIBRARIES})
+endif ()
 target_link_libraries(lbann PUBLIC ${CONDUIT_LIBRARIES})
 
 target_link_libraries(lbann PUBLIC
@@ -913,6 +929,7 @@ append_str_tf(_str
   LBANN_HAS_ROCM
   LBANN_HAS_TBINF
   LBANN_HAS_VTUNE
+  LBANN_HAS_BOOST
   LBANN_NVPROF
   )
 string(APPEND _str
@@ -925,7 +942,7 @@ set(_str)
 #
 # Write a basic modulefile
 #
-set(LBANN_MODULEFILE_NAME "lbann-${LBANN_VERSION}.lua"
+set(LBANN_MODULEFILE_NAME "${LBANN_VERSION}.lua"
   CACHE STRING
   "The name of the LBANN modulefile to install. Must end in .lua.")
 
@@ -946,7 +963,7 @@ configure_file(
 
 install(FILES "${CMAKE_BINARY_DIR}/lbann_module.lua.install"
   RENAME "${LBANN_MODULEFILE_NAME}"
-  DESTINATION "${CMAKE_INSTALL_SYSCONFDIR}/modulefiles")
+  DESTINATION "${CMAKE_INSTALL_SYSCONFDIR}/modulefiles/lbann")
 install(FILES "${CMAKE_BINARY_DIR}/lbann_module.tcl.install"
   RENAME "${LBANN_VERSION}"
   DESTINATION "${CMAKE_INSTALL_SYSCONFDIR}/modulefiles/lbann")

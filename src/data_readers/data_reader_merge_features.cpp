@@ -91,6 +91,13 @@ void data_reader_merge_features::load() {
   select_subset_of_data();
 }
 
+void data_reader_merge_features::setup(int num_io_threads, observer_ptr<thread_pool> io_thread_pool) {
+  generic_compound_data_reader::setup(num_io_threads, io_thread_pool);
+  for (auto&& reader : m_data_readers) {
+    reader->setup(num_io_threads, io_thread_pool);
+  }
+}
+
 bool data_reader_merge_features::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
   int start = 0;
   for (auto&& reader : m_data_readers) {

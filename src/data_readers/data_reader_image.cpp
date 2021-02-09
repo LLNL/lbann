@@ -27,7 +27,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_image.hpp"
-#include "lbann/utils/image.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
 #include "lbann/utils/file_utils.hpp"
