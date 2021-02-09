@@ -24,7 +24,6 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 #include <lbann/layers/learning/gru.hpp>
-#include <cereal/types/polymorphic.hpp>
 
 #ifdef LBANN_GRU_LAYER_GPU_SUPPORTED
 #define LBANN_LAYER_NAME gru_layer

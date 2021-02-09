@@ -24,7 +24,6 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 #include <lbann/layers/regularizers/instance_norm.hpp>
-#include <cereal/types/polymorphic.hpp>
 
 #define LBANN_LAYER_NAME instance_norm_layer
 #define LBANN_COMMA ,

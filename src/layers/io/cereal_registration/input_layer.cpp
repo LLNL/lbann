@@ -23,8 +23,6 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
-
-#include <cereal/types/polymorphic.hpp>
 #include <lbann/layers/io/input_layer.hpp>
 
 #define LBANN_COMMA ,

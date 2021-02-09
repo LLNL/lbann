@@ -24,7 +24,6 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 #include <lbann/layers/activations/identity.hpp>
-#include <cereal/types/polymorphic.hpp>
 
 #define LBANN_LAYER_NAME identity_layer
 #include "lbann/macros/register_layer_with_cereal.hpp"

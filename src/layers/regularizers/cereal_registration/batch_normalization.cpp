@@ -24,7 +24,6 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 #include <lbann/layers/regularizers/batch_normalization.hpp>
-#include <cereal/types/polymorphic.hpp>
 
 #define LBANN_LAYER_NAME batch_normalization_layer
 #define LBANN_COMMA ,

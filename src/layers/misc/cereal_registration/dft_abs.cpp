@@ -24,7 +24,6 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 #include <lbann/layers/misc/dft_abs.hpp>
-#include <cereal/types/polymorphic.hpp>
 
 #define LBANN_COMMA ,
 #define PROTO_DEVICE(TYPE, DEVICE)                      \
