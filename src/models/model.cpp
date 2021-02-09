@@ -82,7 +82,7 @@ model::model(const model& other) :
   m_execution_context(other.m_execution_context),
   m_comm(other.m_comm),
   m_name(other.m_name),
-  m_model_is_setup(other.m_model_is_setup) {
+  m_model_is_setup(false) {
 
   // Deep copies
   m_default_optimizer_msg = (other.m_default_optimizer_msg
@@ -137,7 +137,7 @@ model& model::operator=(const model& other) {
   // Shallow copies
   m_comm = other.m_comm;
   m_name = other.m_name;
-  m_model_is_setup = other.m_model_is_setup;
+  m_model_is_setup = false;
 
   // Deep copies
   m_execution_context  = other.m_execution_context;
