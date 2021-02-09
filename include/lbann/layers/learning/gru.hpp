@@ -137,6 +137,7 @@ private:
   ByteBuffer m_cudnn_reserve_space;
   hydrogen::simple_buffer<int32_t, El::Device::GPU> m_gpu_sequence_lengths;
 
+#ifndef LBANN_DEBUG
   using GraphCache = std::unordered_map<size_t, std::pair<size_t, cuda::ExecutableGraph>>;
   /** @brief Cache of CUDA graphs for cuDNN forward prop function
    *
@@ -152,6 +153,7 @@ private:
    *  pointers. The graph is a @c cuda::ExecutableGraph .
    */
   GraphCache m_cuda_graph_backward_prop_cache;
+#endif // not LBANN_DEBUG
 #endif // LBANN_GRU_LAYER_GPU_SUPPORTED
 
   template <typename T>
