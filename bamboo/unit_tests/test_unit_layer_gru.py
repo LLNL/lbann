@@ -27,7 +27,8 @@ _input_size = 7
 _hidden_size = 5
 _num_layers = 2
 _sample_size = _sequence_length*_input_size + _num_layers*_hidden_size
-_samples = np.random.normal(size=(_num_samples,_sample_size)).astype(np.float32)
+_samples = np.random.uniform(low=-1, high=1, size=(_num_samples,_sample_size))
+_samples = _samples.astype(np.float32)
 
 # Sample access functions
 def get_sample(index):
@@ -137,10 +138,18 @@ def construct_model(lbann):
     rnn_weights_numpy = []
     for i in range(_num_layers):
         input_size = _input_size if i == 0 else _hidden_size
-        ih_matrix = np.random.normal(size=(3*_hidden_size,input_size))
-        hh_matrix = np.random.normal(size=(3*_hidden_size,_hidden_size))
-        ih_bias = np.random.normal(size=(3*_hidden_size,))
-        hh_bias = np.random.normal(size=(3*_hidden_size,))
+        ih_matrix = np.random.uniform(
+            low=-1,
+            high=1,
+            size=(3*_hidden_size,input_size),
+        )
+        hh_matrix = np.random.uniform(
+            low=-1,
+            high=1,
+            size=(3*_hidden_size,_hidden_size),
+        )
+        ih_bias = np.random.uniform(low=-1, high=1, size=(3*_hidden_size,))
+        hh_bias = np.random.uniform(low=-1, high=1, size=(3*_hidden_size,))
         rnn_weights_numpy.extend([ih_matrix, hh_matrix, ih_bias, hh_bias])
     rnn_weights_numpy = [w.astype(np.float32) for w in rnn_weights_numpy]
     rnn_weights_lbann = [
