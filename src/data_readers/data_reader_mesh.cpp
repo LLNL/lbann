@@ -28,7 +28,7 @@
 
 #include "lbann/data_readers/data_reader_mesh.hpp"
 #include "lbann/utils/glob.hpp"
-#include <omp.h>
+#include "lbann/utils/threads/thread_pool.hpp"
 
 namespace lbann {
 
@@ -48,11 +48,6 @@ void mesh_reader::load() {
     throw lbann_exception("mesh_reader: could not find any targets");
   }
   m_num_samples = matches.size();
-  // Set up buffers to load data into.
-  m_load_bufs.resize(omp_get_max_threads());
-  for (auto&& buf : m_load_bufs) {
-    buf.resize(m_data_height * m_data_width);
-  }
   // Set up the format string.
   if (std::pow(10, m_index_length) <= m_num_samples) {
     throw lbann_exception("mesh_reader: index length too small");
@@ -67,6 +62,15 @@ void mesh_reader::load() {
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
   resize_shuffled_indices();
   select_subset_of_data();
+}
+
+void mesh_reader::setup(int num_io_threads, observer_ptr<thread_pool> io_thread_pool) {
+  generic_data_reader::setup(num_io_threads, io_thread_pool);
+  // Set up buffers to load data into.
+  m_load_bufs.resize(m_io_thread_pool->get_num_threads());
+  for (auto&& buf : m_load_bufs) {
+    buf.resize(m_data_height * m_data_width);
+  }
 }
 
 bool mesh_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
@@ -98,7 +102,7 @@ void mesh_reader::load_file(int data_id, const std::string channel, Mat& mat) {
     throw lbann_exception("mesh_reader: failed to open " + filename);
   }
   // Load into a local buffer.
-  DataType* buf = m_load_bufs[omp_get_thread_num()].data();
+  DataType* buf = m_load_bufs[m_io_thread_pool->get_local_thread_id()].data();
   if (!f.read((char*) buf, m_data_height * m_data_width * sizeof(float))) {
     throw lbann_exception("mesh_reader: failed to read " + filename);
   }

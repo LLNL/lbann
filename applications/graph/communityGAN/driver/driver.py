@@ -5,14 +5,11 @@ import sys
 import os
 from os import path
 import glob
+
 import argparse
 import configparser
 
-import lbann
-import lbann.contrib.launcher
-
-from model import make_model
-from data import make_data_reader
+from train import do_train
 
 gr_ingest_exec = '/usr/WS1/llamag/lbann/applications/graph/communityGAN/havoqgt/build/lassen.llnl.gov/src/ingest_edge_list '
 prunejuice_exec = '/usr/WS1/llamag/lbann/applications/graph/communityGAN/havoqgt/build/lassen.llnl.gov/src/run_pattern_matching '
@@ -95,7 +92,6 @@ def add_args():
 def parse_config(args):
 
   root_dir = os.path.dirname(os.path.realpath(__file__))
-  root_dir = os.path.join(root_dir, 'driver')
 
   config = configparser.ConfigParser()
   config.read(os.path.join(root_dir, 'default.config'))
@@ -307,46 +303,6 @@ def do_random_walks (config):
   cmd = 'bsub -K ' + script_name
   os.system(cmd)
 
-# ----------------------------------
-# Train embeddings
-# ----------------------------------
-
-def do_train(
-    config_file,
-    motif_size=4,
-    walk_length=20,
-    num_vertices=1234,
-    embed_dim=128,
-    learn_rate=1e-2,
-    mini_batch_size=512,
-    num_epochs=100,
-):
-
-  # Construct LBANN objects
-  trainer = lbann.Trainer(
-    mini_batch_size=mini_batch_size,
-    num_parallel_readers=0,
-  )
-  model_ = make_model(
-    motif_size,
-    walk_length,
-    num_vertices,
-    embed_dim,
-    learn_rate,
-    num_epochs,
-  )
-  optimizer = lbann.SGD(learn_rate=learn_rate)
-  data_reader = make_data_reader()
-
-  # Run LBANN
-  lbann.contrib.launcher.run(
-    trainer,
-    model_,
-    data_reader,
-    optimizer,
-    job_name='lbann_communitygan',
-    environment={'LBANN_COMMUNITYGAN_CONFIG_FILE' : config_file},
-  )
 
 def main():
   args = add_args()
@@ -354,9 +310,10 @@ def main():
   graph_file = config.get('Graph', 'graph_file', fallback=None)
 
   find_motifs(config)
+
   do_random_walks(config)
-  config_file = "/usr/workspace/llamag/lbann/applications/graph/communityGAN/driver/default.config" ### @todo Write config file for each run
-  do_train(config_file)
+
+  do_train()
 
 # find all the motifs from graph
 # construct motifs set as CSV

@@ -111,6 +111,20 @@ class generic_compound_data_reader : public generic_data_reader {
     return m_data_readers;
   }
 
+  bool has_labels() const override {
+    for (auto&& reader : m_data_readers) {
+      return reader->has_labels();
+    }
+    return false;
+  }
+
+  bool has_responses() const override {
+    for (auto&& reader : m_data_readers) {
+      return reader->has_responses();
+    }
+    return false;
+  }
+
   //************************************************************************
 
  protected:

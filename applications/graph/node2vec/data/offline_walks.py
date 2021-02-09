@@ -38,14 +38,14 @@ config.read(config_file)
 
 # Options from config file
 num_vertices = config.getint('Graph', 'num_vertices', fallback=0)
-walk_file = config.get('Walks', 'file', fallback=None)
+walk_files = config.get('Walks', 'file', fallback='').split()
 walk_length = config.getint('Walks', 'walk_length', fallback=0)
 epoch_size = config.getint('Skip-gram', 'epoch_size')
 num_negative_samples = config.getint('Skip-gram', 'num_negative_samples')
 noise_distribution_exp = config.getfloat('Skip-gram', 'noise_distribution_exp')
 
 # Check options
-if not walk_file:
+if not walk_files:
     raise RuntimeError(f'No walk file specified in {config_file}')
 assert num_negative_samples > 0, \
     f'Invalid number of negative samples ({num_negative_samples})'
@@ -65,16 +65,27 @@ def initialize_rng():
         rng_pid = os.getpid()
         np.random.seed()
 
-# Determine MPI rank
-if 'OMPI_COMM_WORLD_RANK' not in os.environ:
-    warnings.warn(
-        'Could not detect MPI environment variables. '
-        'We expect that LBANN is run with '
-        'Open MPI or one of its derivatives.',
-        warning.RuntimeWarning,
-    )
-mpi_rank = int(os.getenv('OMPI_COMM_WORLD_RANK', default=0))
-mpi_size = int(os.getenv('OMPI_COMM_WORLD_SIZE', default=1))
+# MPI info
+def mpi_rank():
+    """Current process's rank within MPI world communcator."""
+    if 'OMPI_COMM_WORLD_RANK' not in os.environ:
+        warnings.warn(
+            'Could not detect MPI environment variables. '
+            'We expect that LBANN is run with '
+            'Open MPI or one of its derivatives.',
+            warning.RuntimeWarning,
+        )
+    return int(os.getenv('OMPI_COMM_WORLD_RANK', default=0))
+def mpi_size():
+    """Number of ranks in MPI world communcator."""
+    if 'OMPI_COMM_WORLD_RANK' not in os.environ:
+        warnings.warn(
+            'Could not detect MPI environment variables. '
+            'We expect that LBANN is run with '
+            'Open MPI or one of its derivatives.',
+            warning.RuntimeWarning,
+        )
+    return int(os.getenv('OMPI_COMM_WORLD_SIZE', default=1))
 
 # ----------------------------------------------
 # Sample generator
@@ -97,6 +108,8 @@ class SampleIterator:
             num_negative_samples,
             noise_distribution_exp,
             batch_size,
+            ranks_per_file=1,
+            rank_in_file=0,
         ):
 
         # Options
@@ -106,6 +119,8 @@ class SampleIterator:
         self.num_negative_samples = num_negative_samples
         self.noise_distribution_exp = noise_distribution_exp
         self.batch_size = batch_size
+        self.ranks_per_file = ranks_per_file
+        self.rank_in_file = rank_in_file
 
         # Cache for walk data
         self.walk_batches = iter(())
@@ -135,9 +150,9 @@ class SampleIterator:
         return self.batch[self.batch_rows.pop()]
 
     def _read_walks(self):
-        """Read walk data from walks file.
+        """Read walk data from walk file.
 
-        Results are stored in `self.next_walk_batch`. Each MPI process
+        Results are stored in `self.next_walk_batch`. Each MPI rank
         reads a different subset of the file.
 
         """
@@ -151,7 +166,10 @@ class SampleIterator:
                 delimiter=' ',
                 header=None,
                 dtype=np.int64,
-                skiprows=(lambda row : (row + mpi_rank) % mpi_size),
+                skiprows=(
+                    lambda row
+                    : (row + self.rank_in_file) % self.ranks_per_file
+                ),
                 keep_default_na=False,
                 iterator=True,
                 chunksize=self.batch_size,
@@ -252,7 +270,7 @@ def sample_dims():
     """Dimensions of a data sample."""
     return (num_negative_samples + walk_length,)
 
-samples = None
+_sample_iter = None
 def get_sample(*args):
     """Get a single data sample.
 
@@ -260,14 +278,31 @@ def get_sample(*args):
     samples. Input arguments are ignored.
 
     """
-    global samples
-    if samples is None:
-        samples = SampleIterator(
-            walk_file=walk_file,
+
+    # Construct iterator the first time this is called
+    # Note: We assume there are more MPI ranks than walk files. Each
+    # MPI rank reads a distinct subset of one file.
+    global _sample_iter
+    if _sample_iter is None:
+        world_size = mpi_size()
+        world_rank = mpi_rank()
+        ranks_per_file = (world_size + len(walk_files) - 1) // len(walk_files)
+        rank_in_file = world_rank % ranks_per_file
+        file_id = world_rank // ranks_per_file
+        ranks_per_file = min(
+            ranks_per_file,
+            world_size - file_id*ranks_per_file,
+        )
+        _sample_iter = SampleIterator(
+            walk_file=walk_files[file_id],
             walk_length=walk_length,
             num_vertices=num_vertices,
             num_negative_samples=num_negative_samples,
             noise_distribution_exp=noise_distribution_exp,
             batch_size=4096,
+            ranks_per_file=ranks_per_file,
+            rank_in_file=rank_in_file,
         )
-    return next(samples)
+
+    # Get sample from iterator
+    return next(_sample_iter)

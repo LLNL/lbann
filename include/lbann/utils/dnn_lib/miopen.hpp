@@ -37,11 +37,10 @@
 #define CHECK_MIOPEN_NODEBUG(miopen_call)                         \
   do {                                                            \
     const miopenStatus_t status_CHECK_MIOPEN = (miopen_call);     \
-    if (status_CHECK_MIOPEN != miopenStatusSuccess) {           \
-      hipDeviceReset();                                           \
-      LBANN_ERROR(std::string("MIOpen error (")                   \
-                  + miopenGetErrorString(status_CHECK_MIOPEN)     \
-                  + std::string(")"));                            \
+    if (status_CHECK_MIOPEN != miopenStatusSuccess) {             \
+      LBANN_ERROR("MIOpen error (",                               \
+                  miopenGetErrorString(status_CHECK_MIOPEN),      \
+                  ")");                                           \
     }                                                             \
   } while (0)
 #define CHECK_MIOPEN_DEBUG(miopen_call)                           \

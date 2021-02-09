@@ -3,6 +3,11 @@
 ORIG_CMD="$0 $@"
 SCRIPT=${BASH_SOURCE}
 
+# Grab some helper functions
+source $(dirname ${BASH_SOURCE})/utilities.sh
+
+# Detect system parameters
+SYS=$(uname -s)
 if [[ ${SYS} = "Darwin" ]]; then
 SCRIPTS_DIR=$(normpath $(dirname $(osx_realpath ${SCRIPT})))
 else
@@ -202,8 +207,6 @@ fi
 SPACK_VERSION=$(spack --version | sed 's/-.*//g')
 MIN_SPACK_VERSION=0.16.0
 
-source $(dirname ${BASH_SOURCE})/utilities.sh
-
 compare_versions ${SPACK_VERSION} ${MIN_SPACK_VERSION}
 VALID_SPACK=$?
 
@@ -214,8 +217,6 @@ fi
 
 # Detect system parameters
 CLUSTER=$(hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g')
-#ARCH=$(uname -m)
-SYS=$(uname -s)
 
 # Identify the center that we are running at
 CENTER=

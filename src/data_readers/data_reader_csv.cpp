@@ -29,12 +29,17 @@
 #include <unordered_set>
 #include "lbann/data_readers/data_reader_csv.hpp"
 #include "lbann/utils/options.hpp"
-#include <omp.h>
+#include "lbann/utils/threads/thread_pool.hpp"
 
 namespace lbann {
 
 csv_reader::csv_reader(bool shuffle)
-  : generic_data_reader(shuffle) {}
+  : generic_data_reader(shuffle) {
+  // By default assume that there are labels in the CSV data set
+  m_supported_input_types[input_data_type::LABELS] = true;
+  // By default assume that there are not responses in the CSV data set
+  m_supported_input_types[input_data_type::RESPONSES] = false;
+}
 
 csv_reader::csv_reader(const csv_reader& other) :
   generic_data_reader(other),
@@ -269,6 +274,11 @@ void csv_reader::load() {
   select_subset_of_data();
 }
 
+void csv_reader::setup(int num_io_threads, observer_ptr<thread_pool> io_thread_pool) {
+  generic_data_reader::setup(num_io_threads, io_thread_pool);
+  setup_ifstreams();
+}
+
 bool csv_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
   auto line = fetch_line_label_response(data_id);
   // TODO: Avoid unneeded copies.
@@ -354,7 +364,7 @@ std::vector<DataType> csv_reader::fetch_line_label_response(
 
 std::string csv_reader::fetch_raw_line(int data_id) {
 static int n = 0;
-  std::ifstream& ifs = *m_ifstreams[omp_get_thread_num()];
+  std::ifstream& ifs = *m_ifstreams[m_io_thread_pool->get_local_thread_id()];
   // Seek to the start of this datum's line.
   ifs.seekg(m_index[data_id], std::ios::beg);
   // Compute the length of the line to read, excluding newline.
@@ -386,8 +396,12 @@ void csv_reader::skip_rows(std::ifstream& s, int rows) {
 }
 
 void csv_reader::setup_ifstreams() {
-  m_ifstreams.resize(omp_get_max_threads());
-  for (int i = 0; i < omp_get_max_threads(); ++i) {
+  if(m_io_thread_pool != nullptr) {
+    m_ifstreams.resize(m_io_thread_pool->get_num_threads());
+  }else {
+    m_ifstreams.resize(1);
+  }
+  for (size_t i = 0; i < m_ifstreams.size(); ++i) {
     m_ifstreams[i] = new std::ifstream(
       get_file_dir() + get_data_filename(), std::ios::in | std::ios::binary);
     if (m_ifstreams[i]->fail()) {
