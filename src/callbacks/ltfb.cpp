@@ -596,6 +596,9 @@ EvalType evaluate(model& m, const std::string& metric_name)
   data_coordinator& dc = m.get_execution_context().get_trainer().get_data_coordinator();
   dc.collect_background_data_fetch(original_mode);
 
+  if(!dc.is_execution_mode_valid(execution_mode::tournament)) {
+    LBANN_ERROR("LTFB requires ", to_string(execution_mode::tournament), " execution mode");
+  }
   // Mark the data store as loading - Note that this is a temporary fix
   // for the current use of the tournament
   m.mark_data_store_explicitly_loading(execution_mode::tournament);
