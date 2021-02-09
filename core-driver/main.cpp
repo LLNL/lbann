@@ -44,6 +44,44 @@ int max_idx(const El::AbstractDistMatrix<float>& data, int row) {
   return idx;
 }
 
+void print_inf(lbann::directed_acyclic_graph_model* m, lbann::lbann_comm* lc) {
+  // Get predicted labels
+  if (lc->am_world_master()) {
+  std::cout << std::endl << "predicted:" << std::endl;
+  }
+  for (const auto* l : m->get_layers()) {
+    if (l->get_name() == "layer15") {
+      auto const& dtl = dynamic_cast<lbann::data_type_layer<float> const&>(*l);
+      const auto& labels = dtl.get_activations();
+      for (int row_idx=0; row_idx<labels.Width(); row_idx++) {
+        int label_val = max_idx(labels, row_idx);
+        if (lc->am_world_master()) {
+          std::cout << label_val << ", ";
+        }
+      }
+      //std::cout << "labels size: " << labels.Height() << ", " << labels.Width() << std::endl;
+      //El::Display(labels);
+    }
+  }
+
+  if (lc->am_world_master()) {
+  std::cout << std::endl << "truth:" << std::endl;
+  }
+  // Get actual labels (just to verify the predictions we're getting)
+  for (const auto* l : m->get_layers()) {
+    if (l->get_name() == "layer3") {
+      auto const& dtli = dynamic_cast<lbann::data_type_layer<float> const&>(*l);
+      const auto& t_labels = dtli.get_activations();
+      for (int row_idx=0; row_idx<t_labels.Width(); row_idx++) {
+        int t_label_val = max_idx(t_labels, row_idx);
+        if (lc->am_world_master()) {
+          std::cout << t_label_val << ", ";
+        }
+      }
+    }
+  }
+}
+
 //std::unique_ptr<lbann::directed_acyclic_graph_model>
 void
 load_model(lbann::lbann_comm* lc, std::string cp_loc) {
@@ -104,23 +142,10 @@ load_model(lbann::lbann_comm* lc, std::string cp_loc) {
 
   for (int s=0; s < num_samples; s++) {
     t->evaluate(m.get(), lbann::execution_mode::testing, 2);
-    std::cout << getpid() << " evaluated " << (s+1) << "/" << num_samples << " samples." << std::endl;
+    //std::cout << getpid() << " evaluated " << (s+1) << "/" << num_samples << " samples." << std::endl;
+    print_inf(m.get(), lc);
   }
 
-  // Next step, get the model prediction layer to return predicted labels?
-  for (const auto* l : m->get_layers()) {
-    //std::cout << l->get_name() << std::endl;
-    if (l->get_name() == "layer15") {
-      auto const& dtl = dynamic_cast<lbann::data_type_layer<float> const&>(*l);
-      const auto& labels = dtl.get_activations();
-      for (int row_idx=0; row_idx<labels.Width(); row_idx++) {
-        int label_val = max_idx(labels, row_idx);
-        std::cout << label_val << std::endl;
-      }
-      //std::cout << "labels size: " << labels.Height() << ", " << labels.Width() << std::endl;
-      //El::Display(labels);
-    }
-  }
 
   //return m;
 }
