@@ -32,6 +32,18 @@
 //#include <thread>
 //#include <chrono>
 
+int max_idx(const El::AbstractDistMatrix<float>& data, int row) {
+  float max = 0;
+  int idx = 0;
+  for (int i=0; i<data.Height(); i++) {
+    if (data.Get(row, i) > max) {
+      max = data.Get(row, i);
+      idx = i;
+    }
+  }
+  return idx;
+}
+
 //std::unique_ptr<lbann::directed_acyclic_graph_model>
 void
 load_model(lbann::lbann_comm* lc, std::string cp_loc) {
@@ -101,8 +113,12 @@ load_model(lbann::lbann_comm* lc, std::string cp_loc) {
     if (l->get_name() == "layer15") {
       auto const& dtl = dynamic_cast<lbann::data_type_layer<float> const&>(*l);
       const auto& labels = dtl.get_activations();
-      std::cout << "labels size: " << labels.Height() << ", " << labels.Width() << std::endl;
-      El::Print(labels);
+      for (int row_idx=0; row_idx<labels.Width(); row_idx++) {
+        int label_val = max_idx(labels, row_idx);
+        std::cout << label_val << std::endl;
+      }
+      //std::cout << "labels size: " << labels.Height() << ", " << labels.Width() << std::endl;
+      //El::Display(labels);
     }
   }
 
