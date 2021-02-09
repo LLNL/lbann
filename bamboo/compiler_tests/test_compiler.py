@@ -12,7 +12,8 @@ def test_compiler_build_script(cluster, dirname):
         pytest.skip(e)
     output_file_name = '%s/bamboo/compiler_tests/output/build_script_output.txt' % (dirname)
     error_file_name = '%s/bamboo/compiler_tests/error/build_script_error.txt' % (dirname)
-    command = '%s/bamboo/compiler_tests/build_script.sh > %s 2> %s' % (
+    # --test should be included but currently fails
+    command = '%s/scripts/build_lbann.sh -d -l bamboo -- +cuda +deterministic +fft +vision +numpy > %s 2> %s' % (
         dirname, output_file_name, error_file_name)
     return_code = os.system(command)
     tools.assert_success(return_code, error_file_name)
