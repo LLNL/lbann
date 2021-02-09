@@ -5,7 +5,8 @@ This also contains modules for fully-connected and convolution layers.
 """
 import abc
 import lbann
-from lbann.util import make_iterable
+from lbann.util import make_iterable, str_list
+
 
 class Module(abc.ABC):
     """Base class for neural network modules.
@@ -228,10 +229,19 @@ class ConvolutionModule(Module):
 
     global_count = 0  # Static counter, used for default names
 
-    def __init__(self, num_dims,
-                 out_channels, kernel_size, has_vectors=False,
-                 stride=1, padding=0, dilation=1, groups=1, bias=True,
-                 weights=[], activation=None, name=None, transpose=False,
+    def __init__(self,
+                 num_dims,
+                 out_channels,
+                 kernel_size,
+                 stride=1,
+                 padding=0,
+                 dilation=1,
+                 groups=1,
+                 bias=True,
+                 weights=[],
+                 activation=None,
+                 name=None,
+                 transpose=False,
                  parallel_strategy={}):
         """Initialize convolution module.
 
@@ -239,12 +249,12 @@ class ConvolutionModule(Module):
             num_dims (int): Number of dimensions.
             out_channels (int): Number of output channels, i.e. number
                 of filters.
-            kernel_size (int): Size of convolution kernel.
+            kernel_size (int) or (list): Size of convolution kernel. Either an int for square kernel or list of size num_dims.
             has_vector (bool): If true then call with non-square kernel
               padding, stride, dilation, and padding
-            stride (int): Convolution stride.
-            padding (int): Convolution padding.
-            dilation (int): Convolution dilation.
+            stride (int) or (list): Convolution stride. Either an int for square kernel or list of size num_dims.
+            padding (int) or (list): Convolution padding. Either an int for square kernel or list of size num_dims.
+            dilation (int) or (list): Convolution dilation. Either an int for square kernel or list of size num_dims.
             groups (int): Number of convolution groups.
             bias (bool): Whether to apply channel-wise bias after
                 convolution.
@@ -261,20 +271,46 @@ class ConvolutionModule(Module):
         """
         super().__init__()
         ConvolutionModule.global_count += 1
-        self.instance = 0
-        self.num_dims = num_dims
-        self.out_channels = out_channels
-        self.kernel_size = kernel_size
-        self.has_vectors = has_vectors
-        self.stride = stride
-        self.padding = padding
-        self.dilation = dilation
-        self.groups = groups
-        self.bias = bias
-        self.weights = list(make_iterable(weights))
         self.name = (name
                      if name
                      else 'convmodule{0}'.format(ConvolutionModule.global_count))
+
+        self.instance = 0
+        self.num_dims = num_dims
+        self.out_channels = out_channels
+
+        self.kernel_dims = list(make_iterable(kernel_size))
+
+        if (len(self.kernel_dims)) == 1:
+          self.kernel_dims = self.kernel_dims * self.num_dims
+        elif (len(self.kernel_dims)) != self.num_dims:
+          raise ValueError("Invalid kernel dimensions passed to {}".format(self.name))
+
+        self.stride = list(make_iterable(stride))
+        
+        if (len(self.stride)) == 1:
+          self.stride = self.stride * self.num_dims
+        elif (len(self.stride)) != self.num_dims:
+          raise ValueError("Invalid stride dimensions passed to {}".format(self.name))
+        
+        self.padding = list(make_iterable(padding))
+        
+        if (len(self.padding)) == 1:
+          self.padding = self.padding * self.num_dims
+        elif (len(self.stride)) != self.num_dims:
+          raise ValueError("Invalid padding dimensions passed to {}".format(self.name))
+        
+        self.dilation = list(make_iterable(dilation))
+        
+        if (len(self.dilation)) == 1:
+          self.dilation = self.dilation * self.num_dims
+        elif (len(self.dilation)) != self.num_dims:
+          raise ValueError("Invalid dilation dimensions passed to {}".format(self.name))
+        
+        self.groups = groups
+        
+        self.bias = bias
+        self.weights = list(make_iterable(weights))
         self.transpose = transpose
         self.parallel_strategy = parallel_strategy
 
@@ -320,18 +356,12 @@ class ConvolutionModule(Module):
         kwargs['has_bias'] = self.bias
         kwargs['num_groups'] = self.groups
         kwargs['parallel_strategy'] = self.parallel_strategy
-        kwargs['has_vectors'] = self.has_vectors
+        kwargs['has_vectors'] = True
 
-        if (self.has_vectors):
-          kwargs['conv_dims'] = self.kernel_size
-          kwargs['conv_pads'] = self.padding
-          kwargs['conv_dilations'] = self.dilation
-          kwargs['conv_strides'] = self.stride
-        else:
-          kwargs['conv_dims_i'] = self.kernel_size
-          kwargs['conv_pads_i'] = self.padding
-          kwargs['conv_dilations_i'] = self.dilation
-          kwargs['conv_strides_i'] = self.stride
+        kwargs['conv_dims_i'] = str_list(self.kernel_size)
+        kwargs['conv_pads_i'] = str_list(self.padding)
+        kwargs['conv_dilations_i'] = str_list(self.dilation)
+        kwargs['conv_strides_i'] = str_list(self.stride)
 
 
         if(self.transpose):
