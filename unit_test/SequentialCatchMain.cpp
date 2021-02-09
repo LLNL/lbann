@@ -32,6 +32,7 @@
 int main(int argc, char* argv[]) {
 #ifdef LBANN_HAS_DNN_LIB
   hydrogen::gpu::Initialize();
+  dnn_lib::initialize();
 #endif // LBANN_HAS_DNN_LIB
 
 
