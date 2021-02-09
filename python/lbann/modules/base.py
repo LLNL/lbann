@@ -131,7 +131,7 @@ class FullyConnectedModule(Module):
         else:
             return y
 
-class ChannelwiseFCModule(Module):
+class ChannelwiseFullyConnectedModule(Module):
   """Basic block for channelwise fully-connected neural networks.
 
     Applies a dense linearity channelwise and a nonlinear activation function.
@@ -146,9 +146,7 @@ class ChannelwiseFCModule(Module):
                weights=[],
                activation=None,
                transpose=False,
-               name=None,
-               data_layout='data_parallel',
-               parallel_strategy={}):
+               name=None):
     """Initalize channelwise fully connected module
 
     Args:
@@ -167,16 +165,15 @@ class ChannelwiseFCModule(Module):
         parallel_strategy (dict): Data partitioning scheme.
     """
     super().__init__()
-    ChannelwiseFCModule.global_count += 1
+    ChannelwiseFullyConnectedModule.global_count += 1
     self.instance = 0
     self.size = size
     self.bias = bias
     self.transpose = transpose
     self.name = (name
                  if name
-                 else 'channelwisefc{0}'.format(ChannelwiseFCModule.global_count))
-    self.data_layout = data_layout
-    self.parallel_strategy = parallel_strategy
+                 else 'channelwisefc{0}'.format(ChannelwiseFullyConnectedModule.global_count))
+    self.parallel_strategy = 'data_parallel'
 
     self.weights = list(make_iterable(weights))
     if len(self.weights) > 2:
