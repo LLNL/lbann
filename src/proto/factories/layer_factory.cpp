@@ -84,12 +84,14 @@
 #include "lbann/layers/transform/discrete_random.hpp"
 #include "lbann/layers/transform/dummy.hpp"
 #include "lbann/layers/transform/evaluation.hpp"
+#include "lbann/layers/transform/gather.hpp"
 #include "lbann/layers/transform/gaussian.hpp"
 #include "lbann/layers/transform/hadamard.hpp"
 #include "lbann/layers/transform/in_top_k.hpp"
 #include "lbann/layers/transform/pooling.hpp"
 #include "lbann/layers/transform/reduction.hpp"
 #include "lbann/layers/transform/reshape.hpp"
+#include "lbann/layers/transform/scatter.hpp"
 #include "lbann/layers/transform/slice.hpp"
 #include "lbann/layers/transform/sort.hpp"
 #include "lbann/layers/transform/split.hpp"
@@ -233,8 +235,10 @@ private:
     LBANN_REGISTER_BUILDER(Crop, crop);
     LBANN_REGISTER_BUILDER(Dummy, dummy);
     LBANN_REGISTER_BUILDER(Evaluation, evaluation);
+    LBANN_REGISTER_BUILDER(Gather, gather);
     LBANN_REGISTER_BUILDER(Hadamard, hadamard);
     LBANN_REGISTER_BUILDER(Pooling, pooling);
+    LBANN_REGISTER_BUILDER(Scatter, scatter);
     LBANN_REGISTER_BUILDER(Split, split);
     LBANN_REGISTER_BUILDER(StopGradient, stop_gradient);
     LBANN_REGISTER_BUILDER(Sum, sum);
