@@ -96,6 +96,15 @@ load_model(lbann::lbann_comm* lc, std::string cp_loc) {
   }
 
   // Next step, get the model prediction layer to return predicted labels?
+  for (const auto* l : m->get_layers()) {
+    //std::cout << l->get_name() << std::endl;
+    if (l->get_name() == "layer15") {
+      auto const& dtl = dynamic_cast<lbann::data_type_layer<float> const&>(*l);
+      const auto& labels = dtl.get_activations();
+      std::cout << "labels size: " << labels.Height() << ", " << labels.Width() << std::endl;
+      El::Print(labels);
+    }
+  }
 
   //return m;
 }
