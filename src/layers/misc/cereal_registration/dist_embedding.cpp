@@ -23,6 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
+#include "lbann/utils/serialize.hpp"
 #include <lbann/layers/misc/dist_embedding.hpp>
 
 #if defined(LBANN_HAS_SHMEM) || defined(LBANN_HAS_NVSHMEM)

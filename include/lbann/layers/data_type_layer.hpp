@@ -31,7 +31,6 @@
 #include "lbann/weights/weights_proxy.hpp"
 
 #include "lbann/utils/h2_tmp.hpp"
-#include "lbann/utils/serialize.hpp"
 
 #ifdef LBANN_HAS_DISTCONV
 #include "lbann/layers/data_type_distconv_adapter.hpp"
@@ -39,6 +38,11 @@
 #include <map>
 #include <array>
 #endif // LBANN_HAS_DISTCONV
+
+namespace cereal
+{
+  class access;
+}// namespace cereal
 
 namespace lbann {
 
