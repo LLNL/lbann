@@ -634,7 +634,7 @@ void unpack_cudnn_rnn_weights(
   size_t num_layers,
   const void* packed_weights_buffer,
   size_t packed_weights_size,
-  const std::vector<El::Matrix<TensorDataType,El::Device::GPU>>& weights_list) {
+  std::vector<El::Matrix<TensorDataType,El::Device::GPU>>& weights_list) {
 
   // Construct objects
   static dnn_lib::TensorDescriptor matrix_desc, bias_desc;
