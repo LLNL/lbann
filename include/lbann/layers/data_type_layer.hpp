@@ -148,18 +148,7 @@ public:
   ///@{
 
   template <typename ArchiveT>
-  void serialize(ArchiveT& ar)
-  {
-    ar(::cereal::make_nvp("BaseLayer",
-                          ::cereal::base_class<Layer>(this)),
-       CEREAL_NVP(m_persistent_error_signals));
-    // Members not serialized:
-    //   m_weights_proxy
-    //   m_inputs
-    //   m_outputs
-    //   m_gradient_wrt_outputs
-    //   m_gradient_wrt_inputs;
-  }
+  void serialize(ArchiveT& ar);
 
   ///@}
 

@@ -25,6 +25,39 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include <lbann/layers/data_type_layer.hpp>
 
+namespace lbann {
+
+template <typename TensorDataType>
+template <typename ArchiveT>
+void data_type_layer<TensorDataType>::serialize(ArchiveT& ar)
+{
+  ar(::cereal::make_nvp("BaseLayer",
+                        ::cereal::base_class<Layer>(this)),
+     CEREAL_NVP(m_persistent_error_signals));
+  // Members not serialized:
+  //   m_weights_proxy
+  //   m_inputs
+  //   m_outputs
+  //   m_gradient_wrt_outputs
+  //   m_gradient_wrt_inputs;
+}
+
+
+#define PROTO(T)                                                             \
+  template void data_type_layer<T>::serialize(cereal::XMLOutputArchive&);    \
+  template void data_type_layer<T>::serialize(cereal::XMLInputArchive&);     \
+  template void data_type_layer<T>::serialize(cereal::BinaryOutputArchive&); \
+  template void data_type_layer<T>::serialize(cereal::BinaryInputArchive&);  \
+  template void data_type_layer<T>::serialize(RootedXMLOutputArchive&);      \
+  template void data_type_layer<T>::serialize(RootedXMLInputArchive&);       \
+  template void data_type_layer<T>::serialize(RootedBinaryOutputArchive&);   \
+  template void data_type_layer<T>::serialize(RootedBinaryInputArchive&)
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
+
+} // namespace lbann
+
 #undef PROTO
 #define PROTO(T)                                                \
   CEREAL_REGISTER_TYPE_WITH_NAME(                               \
