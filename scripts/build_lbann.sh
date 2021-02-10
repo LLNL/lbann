@@ -57,6 +57,7 @@ Options:
   ${C}--help${N}                  Display this help message and exit.
   ${C}--build-env-only SHELL${N}  Drop into a shell with all of the spack build environment setup
   ${C}--clean-build${N}           Delete the local link to the build directory
+  ${C}--clean-deps${N}            Forcibly uninstall Hydrogen, Aluminum, and DiHydrogen dependencies
   ${C}--config-only${N}           Run the spack dev-build command up to the configure stage only
   ${C}-d | --install-deps${N}     Install the lbann dependencies in addition to building from local source
   ${C}--dependencies-only${N}     Stop after installing the lbann dependencies
@@ -68,7 +69,7 @@ Options:
   ${C}--no-tmp-build-dir${N}      Don't put the build directory in tmp space
   ${C}--spec-only${N}             Stop after a spack spec command
   ${C}-s | --stable${N}           Use the latest stable defaults not the head of Hydrogen, DiHydrogen and Aluminum repos
-  ${C}--test PATH${N}             Enable local unit tests
+  ${C}--test${N}                  Enable local unit tests
   ${C}--hydrogen-repo PATH${N}    Use a local repository for the Hydrogen library
   ${C}--dihydrogen-repo PATH${N}  Use a local repository for the DiHydrogen library
   ${C}--aluminum-repo PATH${N}    Use a local repository for the Aluminum library
@@ -99,6 +100,9 @@ while :; do
             ;;
         --clean-build)
             CLEAN_BUILD="TRUE"
+            ;;
+        --clean-deps)
+            CLEAN_DEPS="TRUE"
             ;;
         --config-only)
             DEV_BUILD_FLAGS+=" -u cmake"
@@ -195,6 +199,34 @@ while :; do
     shift
 done
 
+function exit_on_failure()
+{
+    local cmd="$1"
+    echo "FAILED: ${cmd}"
+    exit 1
+}
+
+function uninstall_specific_versions()
+{
+    local package="$1"
+    local version="$2"
+
+    SPACK_ARCH=$(spack arch)
+    # Ensure that only versions for this architecture are found
+    FIND_CMD="spack find --format {hash:7} ${package}${version} arch=${SPACK_ARCH}"
+    echo ${FIND_CMD} | tee -a ${LOG}
+    HASH=$(${FIND_CMD})
+    if [[ -n "${HASH}" && ! "${HASH}" =~ "No package matches the query" ]]; then
+        HASH_ARRAY=(${HASH})
+        for h in ${HASH_ARRAY[@]}
+        do
+            CMD="spack uninstall -y --force ${package}${version} /${h}"
+            echo ${CMD} | tee -a ${LOG}
+            [[ -z "${DRY_RUN:-}" ]] && (${CMD} || exit_on_failure "${CMD}")
+        done
+    fi
+}
+
 # "spack" is just a shell function; it may not be exported to this
 # scope. Just to be sure, reload the shell integration.
 if [ -n "${SPACK_ROOT}" ]; then
@@ -279,7 +311,7 @@ if [[ ! -n "${SKIP_MODULES:-}" ]]; then
     set_center_specific_modules ${CENTER} ${SPACK_ARCH_TARGET}
     if [[ -n ${MODULE_CMD} ]]; then
         echo ${MODULE_CMD} | tee -a ${LOG}
-        [[ -z "${DRY_RUN:-}" ]] && eval ${MODULE_CMD}
+        [[ -z "${DRY_RUN:-}" ]] && { eval ${MODULE_CMD} || exit_on_failure "${MODULE_CMD}"; }
     fi
 fi
 
@@ -290,19 +322,21 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
         echo "Spack environment ${LBANN_ENV} already exists... overwriting it"
         CMD="spack env rm --yes-to-all ${LBANN_ENV}"
         echo ${CMD} | tee -a ${LOG}
-        [[ -z "${DRY_RUN:-}" && -n "${INSTALL_DEPS:-}" ]] && ${CMD}
+        [[ -z "${DRY_RUN:-}" && -n "${INSTALL_DEPS:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
     fi
 
     # Create the environment
     CMD="spack env create ${LBANN_ENV}"
     echo ${CMD} | tee -a ${LOG}
-    [[ -z "${DRY_RUN:-}" ]] && ${CMD}
+    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+
 fi
 
 ##########################################################################################
 # If not just dropping into the build environment, uninstall any existing versions for this
 # architecture with the same label -- note that this has to be done outside of an environment
 if [[ -z "${BUILD_ENV_ONLY:-}" ]]; then
+    # For finding the lbann version don't use the architecture because sometimes it is "downgraded"
     LBANN_FIND_CMD="spack find --format {hash:7} lbann@${LBANN_LABEL}"
     echo ${LBANN_FIND_CMD} | tee -a ${LOG}
     LBANN_HASH=$(${LBANN_FIND_CMD})
@@ -310,11 +344,17 @@ if [[ -z "${BUILD_ENV_ONLY:-}" ]]; then
         LBANN_HASH_ARRAY=(${LBANN_HASH})
         for h in ${LBANN_HASH_ARRAY[@]}
         do
-            CMD="spack uninstall -y lbann@${LBANN_LABEL} /${h}"
+            CMD="spack uninstall -y --force lbann@${LBANN_LABEL} /${h}"
             echo ${CMD} | tee -a ${LOG}
-            [[ -z "${DRY_RUN:-}" ]] && ${CMD}
+            [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
         done
     fi
+fi
+
+if [[ -n "${CLEAN_DEPS:-}" ]]; then
+    uninstall_specific_versions "hydrogen" "${HYDROGEN_VER}"
+    uninstall_specific_versions "aluminum" "${ALUMINUM_VER}"
+    uninstall_specific_versions "dihydrogen" "${DIHYDROGEN_VER}"
 fi
 
 CMD="spack env activate -p ${LBANN_ENV}"
@@ -324,7 +364,7 @@ if [[ -z "${DRY_RUN:-}" ]]; then
         echo "Spack could not activate environment ${LBANN_ENV} -- install dependencies with -d flag"
         exit 1
     fi
-    ${CMD}
+    ${CMD} || exit_on_failure "${CMD}"
 fi
 
 # Figure out if there is a default MPI library for the center
@@ -347,16 +387,17 @@ fi
 if [[ -n "${INSTALL_DEPS:-}" ]]; then
     CMD="spack compiler find --scope env:${LBANN_ENV}"
     echo ${CMD} | tee -a ${LOG}
-    [[ -z "${DRY_RUN:-}" ]] && ${CMD}
+    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+
     CMD="spack external find --scope env:${LBANN_ENV}"
     echo ${CMD} | tee -a ${LOG}
-    [[ -z "${DRY_RUN:-}" ]] && ${CMD}
+    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
     # See if there are any center-specific externals
     SPACK_ENV_YAML_FILE="${SPACK_ROOT}/var/spack/environments/${LBANN_ENV}/spack.yaml"
     CMD="set_center_specific_externals ${CENTER} ${SPACK_ARCH_TARGET} ${SPACK_ARCH} ${SPACK_ENV_YAML_FILE}"
     echo ${CMD} | tee -a ${LOG}
-    [[ -z "${DRY_RUN:-}" ]] && ${CMD}
+    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 fi
 
 ##########################################################################################
@@ -364,32 +405,26 @@ fi
 if [[ -n "${HYDROGEN_PATH:-}" ]]; then
     CMD="spack develop --no-clone -p ${HYDROGEN_PATH} hydrogen${HYDROGEN_VER}"
     echo "${CMD}" | tee -a ${LOG}
-    ${CMD}
+    ${CMD} || exit_on_failure "${CMD}"
 fi
 
 if [[ -n "${DIHYDROGEN_PATH:-}" ]]; then
     CMD="spack develop --no-clone -p ${DIHYDROGEN_PATH} dihydrogen${DIHYDROGEN_VER}"
     echo "${CMD}" | tee -a ${LOG}
-    ${CMD}
+    ${CMD} || exit_on_failure "${CMD}"
 fi
 
 if [[ -n "${ALUMINUM_PATH:-}" ]]; then
     CMD="spack develop --no-clone -p ${ALUMINUM_PATH} aluminum${ALUMINUM_VER}"
     echo "${CMD}" | tee -a ${LOG}
-    ${CMD}
+    ${CMD} || exit_on_failure "${CMD}"
 fi
 ##########################################################################################
 
 CMD="spack spec -l ${LBANN_DEV_PATH_SPEC}"
 echo ${CMD} | tee -a ${LOG}
 if [[ -z "${DRY_RUN:-}" ]]; then
-    eval ${CMD}
-    if [[ $? -ne 0 ]]; then
-        echo "-----------------"
-        echo "Spack spec FAILED"
-        echo "-----------------"
-        exit 1
-    fi
+    eval ${CMD} || exit_on_failure "${CMD}"
 fi
 # Get the spack hash before dev-build is called
 LBANN_SPEC_HASH=$(spack spec -l ${LBANN_DEV_PATH_SPEC} | grep lbann | grep arch=${SPACK_ARCH_PLATFORM} | awk '{print $1}')
@@ -413,7 +448,7 @@ fi
 # Explicitly add the lbann spec to the environment
 CMD="spack develop --no-clone -p ${LBANN_HOME} ${LBANN_SPEC}"
 echo ${CMD} | tee -a ${LOG}
-[[ -z "${DRY_RUN:-}" ]] && ${CMD}
+[[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
 CMD="spack install --only dependencies ${INSTALL_DEV_BUILD_EXTRAS} ${LBANN_SPEC}"
 [[ -n "${INSTALL_DEPS:-}" ]] && echo ${CMD} | tee -a ${LOG}
@@ -436,7 +471,7 @@ BUILD_DIR=$(dirname ${LINK_DIR})
 if [[ ! -d "${BUILD_DIR}" ]]; then
     CMD="mkdir -p ${BUILD_DIR}"
     echo ${CMD}
-    [[ -z "${DRY_RUN:-}" ]] && ${CMD}
+    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 fi
 
 # Check to see if the link to the build directory exists and is valid
@@ -446,7 +481,7 @@ if [[ -L "${SPACK_BUILD_DIR}" ]]; then
   if [[ ! -d "${SPACK_BUILD_DIR}" || ! -z "${CLEAN_BUILD}" ]]; then
       CMD="rm ${SPACK_BUILD_DIR}"
       echo ${CMD}
-      [[ -z "${DRY_RUN:-}" ]] && ${CMD}
+      [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
   fi
 fi
 
@@ -456,7 +491,7 @@ if [[ ! -e "${SPACK_BUILD_DIR}" && -z "${NO_TMP_BUILD_DIR}" && -z "${DRY_RUN:-}"
     echo ${tmp_dir}
     CMD="ln -s ${tmp_dir} spack-build-${LBANN_SPEC_HASH}"
     echo ${CMD}
-    [[ -z "${DRY_RUN:-}" ]] && ${CMD}
+    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 fi
 
 ##########################################################################################
@@ -464,7 +499,7 @@ fi
 # Really you could use the install command, but the dev-build has nice options and better output
 CMD="spack dev-build --source-path ${LBANN_HOME} ${DEV_BUILD_FLAGS} ${INSTALL_DEV_BUILD_EXTRAS} ${LBANN_SPEC}"
 echo ${CMD} | tee -a ${LOG}
-[[ -z "${DRY_RUN:-}" ]] && ${CMD}
+[[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
 # Don't use the output of this file since it will not exist if the compilation is not successful
 # LBANN_BUILD_DIR=$(grep "PROJECT_BINARY_DIR:" ${LBANN_HOME}/spack-build-out.txt | awk '{print $2}')
@@ -472,12 +507,12 @@ echo ${CMD} | tee -a ${LOG}
 if [[ -L "${LINK_DIR}" ]]; then
     CMD="rm ${LINK_DIR}"
     echo ${CMD} | tee -a ${LOG}
-    [[ -z "${DRY_RUN:-}" ]] && ${CMD}
+    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 fi
 
 CMD="ln -s ${LBANN_HOME}/spack-build-${LBANN_SPEC_HASH} ${LINK_DIR}"
 echo ${CMD} | tee -a ${LOG}
-[[ -z "${DRY_RUN:-}" ]] && ${CMD}
+[[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
 ##########################################################################################
 # Once LBANN is installed deactivate the environment and try to find the package to get the
