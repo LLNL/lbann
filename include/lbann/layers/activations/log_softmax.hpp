@@ -122,13 +122,13 @@ public:
   template <typename U>
   friend void bp_compute_impl(log_softmax_layer<U, Layout, Device>& l);
 
+  /** @name Serialization */
+  ///@{
+
   template <typename ArchiveT>
-  void serialize(ArchiveT& ar)
-  {
-    using DataTypeLayer = data_type_layer<TensorDataType>;
-    ar(::cereal::make_nvp("DataTypeLayer",
-                          ::cereal::base_class<DataTypeLayer>(this)));
-  }
+  void serialize(ArchiveT& ar);
+
+  ///@}
 
 private:
 
