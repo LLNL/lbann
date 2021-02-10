@@ -25,6 +25,22 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include <lbann/layers/loss/mean_absolute_error.hpp>
 
+namespace lbann {
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+template <typename ArchiveT>
+void
+mean_absolute_error_layer<TensorDataType,Layout,Device>
+::serialize(ArchiveT& ar)
+{
+  using DataTypeLayer = data_type_layer<TensorDataType>;
+  ar(::cereal::make_nvp("DataTypeLayer",
+                        ::cereal::base_class<DataTypeLayer>(this)));
+  // Members that aren't serialized
+  //  m_workspace
+}
+
+} // namespace lbann
+
 #define LBANN_LAYER_NAME mean_absolute_error_layer
 #include <lbann/macros/register_layer_with_cereal.hpp>
-

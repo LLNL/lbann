@@ -25,6 +25,20 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include <lbann/layers/loss/categorical_accuracy.hpp>
 
+namespace lbann {
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+template <typename ArchiveT>
+void
+categorical_accuracy_layer<TensorDataType,Layout,Device>
+::serialize(ArchiveT& ar)
+{
+  using DataTypeLayer = data_type_layer<TensorDataType>;
+  ar(::cereal::make_nvp("DataTypeLayer",
+                        ::cereal::base_class<DataTypeLayer>(this)));
+}
+
+} // namespace lbann
+
 #define LBANN_LAYER_NAME categorical_accuracy_layer
 #include <lbann/macros/register_layer_with_cereal.hpp>
-

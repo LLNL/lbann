@@ -25,6 +25,22 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include <lbann/layers/io/input_layer.hpp>
 
+namespace lbann {
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+template <typename ArchiveT>
+void
+input_layer<TensorDataType,Layout,Device>
+::serialize(ArchiveT& ar)
+{
+  using DataTypeLayer = data_type_layer<TensorDataType>;
+  ar(::cereal::make_nvp("DataTypeLayer",
+                        ::cereal::base_class<DataTypeLayer>(this)),
+     CEREAL_NVP(m_data_reader_mode));
+}
+
+} // namespace lbann
+
 #define LBANN_COMMA ,
 #define LBANN_REGISTER_LAYER_WITH_CEREAL_BASE(TYPE, LAYOUT, DEVICE) \
   CEREAL_REGISTER_TYPE_WITH_NAME(                                       \
