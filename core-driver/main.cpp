@@ -44,13 +44,30 @@ int max_idx(const El::AbstractDistMatrix<float>& data, int row) {
   return idx;
 }
 
+std::vector<int>
+get_label(lbann::directed_acyclic_graph_model* m, std::string pred_layer) {
+  std::vector<int> pred_labels;
+  for (const auto* l : m->get_layers()) {
+    if (l->get_name() == pred_layer) {
+      auto const& dtl = dynamic_cast<lbann::data_type_layer<float> const&>(*l);
+      const auto& labels = dtl.get_activations();
+
+      for (int row_idx=0; row_idx<labels.Width(); row_idx++) {
+        pred_labels.push_back(max_idx(labels, row_idx));
+
+      }
+    }
+  }
+  return pred_labels;
+}
+
 void print_inf(lbann::directed_acyclic_graph_model* m, lbann::lbann_comm* lc) {
   // Get predicted labels
   if (lc->am_world_master()) {
   std::cout << std::endl << "predicted:" << std::endl;
   }
   for (const auto* l : m->get_layers()) {
-    if (l->get_name() == "layer15") {
+    if (l->get_type() == "softmax") {
       auto const& dtl = dynamic_cast<lbann::data_type_layer<float> const&>(*l);
       const auto& labels = dtl.get_activations();
       for (int row_idx=0; row_idx<labels.Width(); row_idx++) {
@@ -82,27 +99,32 @@ void print_inf(lbann::directed_acyclic_graph_model* m, lbann::lbann_comm* lc) {
   }
 }
 
-//std::unique_ptr<lbann::directed_acyclic_graph_model>
-void
-load_model(lbann::lbann_comm* lc, std::string cp_loc) {
-  // Data Coordinator
+auto mock_dr_metadata() {
+  lbann::DataReaderMetaData drmd;
+  auto& md_dims = drmd.data_dims;
+  md_dims[lbann::data_reader_target_mode::CLASSIFICATION] = {10};
+  md_dims[lbann::data_reader_target_mode::INPUT] = {1,28,28};
+  return drmd;
+}
+
+std::unique_ptr<lbann::trainer>
+load_trainer(lbann::lbann_comm* lc, std::string cp_dir, int mbs) {
+  // Make data coordinator
   std::unique_ptr<lbann::data_coordinator> dc;
   dc = lbann::make_unique<lbann::buffered_data_coordinator<float>>(lc);
 
-  // Trainer
-  int mbs = 64;
+  // Make trainer
   auto t = lbann::make_unique<lbann::trainer>(lc, mbs, std::move(dc));
 
-  // Checkpoint location
-  auto& p = t->get_persist_obj();
-  p.open_restart(cp_loc.c_str());
-
+  // Start thread pool
   auto io_thread_pool = lbann::make_unique<lbann::thread_pool>();
   io_thread_pool->launch_pinned_threads(1, lbann::free_core_offset(lc));
 
-  // Datareader, but this will go away
+  // Init RNG, this should be moved to driver_init
   lbann::init_random(1337, io_thread_pool->get_num_threads());
   lbann::init_data_seq_random(-1);
+
+  // Get datareader (this will go away)
   std::map<lbann::execution_mode, lbann::generic_data_reader *> data_readers;
   lbann::generic_data_reader *reader = nullptr;
   reader = new lbann::mnist_reader(false);
@@ -115,25 +137,72 @@ load_model(lbann::lbann_comm* lc, std::string cp_loc) {
   reader->load();
   data_readers[lbann::execution_mode::testing] = reader;
 
+  // Open checkpoint
+  auto& p = t->get_persist_obj();
+  p.open_restart(cp_dir.c_str());
+
   // Load trainer from checkpoint
   auto t_flag = t->load_from_checkpoint_shared(p);
-  std::cout << "trainer load: " << t_flag << std::endl;
+  if (lc->am_world_master()) {
+    std::cout << "trainer load: " << t_flag << std::endl;
+  }
+
+  // Close checkpoint
+  p.close_restart();
+
+  // Setup the trainer
   t->setup(std::move(io_thread_pool), data_readers);
+
+  return t;
+
+}
+
+std::unique_ptr<lbann::directed_acyclic_graph_model>
+load_model(lbann::lbann_comm* lc, lbann::trainer* t, std::string cp_dir, int mbs) {
+  // Open checkpoint
+  auto& p = t->get_persist_obj();
+  p.open_restart(cp_dir.c_str());
 
   // Model
   auto m = lbann::make_unique<lbann::directed_acyclic_graph_model>(lc, nullptr, nullptr);
 
   // Load model from checkpoint
-  lbann::utils::grid_manager grid_raii(m->get_comm()->get_trainer_grid());
   auto m_flag = m->load_from_checkpoint_shared(p);
-  std::cout << "model load: " << m_flag << std::endl;
-  auto&& metadata = t->get_data_coordinator().get_dr_metadata();
-  m->setup(mbs, metadata);
+  if (lc->am_world_master()) {
+    std::cout << "model load: " << m_flag << std::endl;
+  }
 
+  // Close checkpoint
   p.close_restart();
 
-  // Infer
+  // Setup the model
+  auto dr_metadata = mock_dr_metadata();
+  m->setup(mbs, dr_metadata);
+
+  /*
+  for (const auto* l : m->get_layers()) {
+    if (lc->am_world_master()) {
+      std::cout << l->get_name() << ": ";
+      auto dims = l->get_output_dims(0);
+      for (int k=0; k<dims.size(); k++) {
+        std::cout << dims[k] << ", ";
+      }
+      std::cout << std::endl;
+    }
+  }
+  p.close_restart();
+
+  */
+
+  return m;
+}
+
+std::vector<int>
+infer(lbann::directed_acyclic_graph_model* m, lbann::trainer* t, std::string pred_layer) {
+  // Get datareader (for now...)
   auto *dr = t->get_data_coordinator().get_data_reader(lbann::execution_mode::testing);
+
+  /*
   //int num_samples = dr->get_num_iterations_per_epoch();
   int num_samples = 157; // get_num_iterations_per_epoch isn't working
                          // correctly and returns a different number for
@@ -141,20 +210,32 @@ load_model(lbann::lbann_comm* lc, std::string cp_loc) {
                          // as we don't plan to keep the data readers anyway!
 
   for (int s=0; s < num_samples; s++) {
-    t->evaluate(m.get(), lbann::execution_mode::testing, 2);
-    //std::cout << getpid() << " evaluated " << (s+1) << "/" << num_samples << " samples." << std::endl;
-    print_inf(m.get(), lc);
-  }
+  */
 
+  // Just do a single batch right now, this will all
+  // change as we get rid of the need for datareaders
+  t->evaluate(m, lbann::execution_mode::testing, 2);
 
-  //return m;
+  return get_label(m, pred_layer);
 }
 
-void load_samples(std::string sample_loc) {
-
+El::Matrix<float, El::Device::CPU> load_samples() {
+  int h = 28, w = 128, c = 1, N = 64;
+  El::Matrix<float, El::Device::CPU> samples(c * h * w, N);
+  return samples;
 }
 
 int main(int argc, char *argv[]) {
+  // Input params
+  std::string model_dir, sample_dir, input_data_layer, input_label_layer, pred_layer;
+  model_dir = "/usr/workspace/wyatt5/cp_models/trainer0/sgd.shared.epoch_begin.epoch.10.step.8440/";
+  sample_dir = "/usr/workspace/wyatt5/mnist_data/mnist.csv";
+  input_data_layer = "layer1";
+  input_label_layer = "layer3";
+  pred_layer = "layer15";
+  int mbs = 64;
+
+  // Init MPI and verify MPI_THREADED_MULTIPLE
   int provided;
   MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
   if (provided != MPI_THREAD_MULTIPLE) {
@@ -170,22 +251,22 @@ int main(int argc, char *argv[]) {
     lbann_comm->split_trainers(ppt);
   }
 
+  // Load the trainer
+  auto t = load_trainer(lbann_comm.get(), model_dir, mbs);
+
   // Load the model
-  std::string model_dir;
-  model_dir = "/usr/workspace/wyatt5/cp_models/trainer0/sgd.shared.epoch_begin.epoch.10.step.8440/";
-  //auto m = load_model(lbann_comm.get(), model_dir);
-  load_model(lbann_comm.get(), model_dir);
+  auto m = load_model(lbann_comm.get(), t.get(), model_dir, mbs);
 
   // Load the data
-  std::string sample_dir;
-  sample_dir = "/usr/workspace/wyatt5/mnist_data/mnist.csv";
-  //auto samples = load_data(sample_dir);
+  //const auto& samples = load_samples();
+  //El::Print(samples);
 
   // Infer
-  //auto inf = infer(m.get(), samples.key, samples.values);
+  auto inf = infer(m.get(), t.get(), pred_layer);
 
   // Clean up
-  //m.reset();
+  t.reset();
+  m.reset();
   lbann::finalize();
   MPI_Finalize();
 
