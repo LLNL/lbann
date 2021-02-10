@@ -186,17 +186,6 @@ void channelwise_scale_bias_layer<TensorDataType, Layout, Dev>
   m_weights_gradient->Resize(num_channels, 2);
 }
 
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-template <typename ArchiveT>
-void
-channelwise_scale_bias_layer<TensorDataType,Layout,Device>
-::serialize(ArchiveT& ar)
-{
-  using DataTypeLayer = data_type_layer<TensorDataType>;
-  ar(::cereal::make_nvp("DataTypeLayer",
-                        ::cereal::base_class<DataTypeLayer>(this)));
-}
-
 LBANN_DEFINE_LAYER_BUILDER(channelwise_scale_bias);
 
 #ifndef LBANN_CHANNELWISE_SCALE_BIAS_LAYER_INSTANTIATE

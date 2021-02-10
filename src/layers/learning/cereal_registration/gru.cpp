@@ -25,6 +25,24 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include <lbann/layers/learning/gru.hpp>
 
+namespace lbann {
+
+// Template implementation
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+template <typename ArchiveT>
+void
+gru_layer<TensorDataType,Layout,Device>
+::serialize(ArchiveT& ar)
+{
+  using DataTypeLayer = data_type_layer<TensorDataType>;
+  ar(::cereal::make_nvp("DataTypeLayer",
+                        ::cereal::base_class<DataTypeLayer>(this)),
+     CEREAL_NVP(m_hidden_size),
+     CEREAL_NVP(m_num_layers));
+}
+
+} // namespace lbann
+
 #ifdef LBANN_GRU_LAYER_GPU_SUPPORTED
 #define LBANN_LAYER_NAME gru_layer
 #define LBANN_COMMA ,

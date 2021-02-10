@@ -25,5 +25,20 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include <lbann/layers/learning/entrywise_scale_bias.hpp>
 
+namespace lbann {
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+template <typename ArchiveT>
+void
+entrywise_scale_bias_layer<TensorDataType,Layout,Device>
+::serialize(ArchiveT& ar)
+{
+  using DataTypeLayer = data_type_layer<TensorDataType>;
+  ar(::cereal::make_nvp("DataTypeLayer",
+                        ::cereal::base_class<DataTypeLayer>(this)));
+}
+
+} // namespace lbann
+
 #define LBANN_LAYER_NAME entrywise_scale_bias_layer
 #include <lbann/macros/register_layer_with_cereal.hpp>

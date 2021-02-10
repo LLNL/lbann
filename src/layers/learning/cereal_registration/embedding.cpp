@@ -25,5 +25,23 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include <lbann/layers/learning/embedding.hpp>
 
+namespace lbann {
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+template <typename ArchiveT>
+void
+embedding_layer<TensorDataType,Layout,Device>
+::serialize(ArchiveT& ar)
+{
+  using DataTypeLayer = data_type_layer<TensorDataType>;
+  ar(::cereal::make_nvp("DataTypeLayer",
+                        ::cereal::base_class<DataTypeLayer>(this)),
+     CEREAL_NVP(m_num_embeddings),
+     CEREAL_NVP(m_embedding_dim),
+     CEREAL_NVP(m_padding_idx));
+}
+
+} // namespace lbann
+
 #define LBANN_LAYER_NAME embedding_layer
 #include <lbann/macros/register_layer_with_cereal_data_parallel_only.hpp>

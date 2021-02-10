@@ -107,12 +107,7 @@ public:
   ///@{
 
   template <typename ArchiveT>
-  void serialize(ArchiveT& ar)
-  {
-    using BaseConvolutionLayer = base_convolution_layer<TensorDataType, Device>;
-    ar(::cereal::make_nvp("BaseConvolutionLayer",
-                          ::cereal::base_class<BaseConvolutionLayer>(this)));
-  }
+  void serialize(ArchiveT& ar);
 
   ///@}
 

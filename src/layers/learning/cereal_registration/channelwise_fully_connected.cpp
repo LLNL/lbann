@@ -25,5 +25,23 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include <lbann/layers/learning/channelwise_fully_connected.hpp>
 
+namespace lbann {
+
+// Template implementation
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+template <typename ArchiveT>
+void
+channelwise_fully_connected_layer<TensorDataType,Layout,Device>
+::serialize(ArchiveT& ar)
+{
+  using DataTypeLayer = data_type_layer<TensorDataType>;
+  ar(::cereal::make_nvp("DataTypeLayer",
+                        ::cereal::base_class<DataTypeLayer>(this)),
+     CEREAL_NVP(m_has_bias),
+     CEREAL_NVP(m_transpose));
+}
+
+} // namespace lbann
+
 #define LBANN_LAYER_NAME channelwise_fully_connected_layer
 #include <lbann/macros/register_layer_with_cereal_data_parallel_only.hpp>
