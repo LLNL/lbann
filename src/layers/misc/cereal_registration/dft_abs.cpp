@@ -28,10 +28,10 @@
 
 namespace lbann {
 
-template <typename TensorDataType, data_layout Layout, El::Device Device>
+template <typename TensorDataType, El::Device Device>
 template <typename ArchiveT>
 void
-dft_abs_layer<TensorDataType,Layout,Device>
+dft_abs_layer<TensorDataType,Device>
 ::serialize(ArchiveT& ar)
 {
   using DataTypeLayer = data_type_layer<TensorDataType>;
