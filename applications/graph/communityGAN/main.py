@@ -3,10 +3,11 @@
 import subprocess
 import sys
 import os
-from os import path
+import os.path
 import glob
 import argparse
 import configparser
+import datetime
 
 import lbann
 import lbann.contrib.launcher
@@ -22,11 +23,13 @@ prunejuice_exec = '/usr/WS1/llamag/lbann/applications/graph/communityGAN/havoqgt
 # ----------------------------------
 def add_args():
 
-
   parser = argparse.ArgumentParser()
   parser.add_argument(
       '--config', action='store', default=None, type=str,
       help='data config file', metavar='FILE')
+  parser.add_argument(
+    '--work-dir', action='store', default=None, type=str,
+    help='working directory', metavar='DIR')
   parser.add_argument(
       '--graph', action='store', default=None, type=str,
       help='edgelist file',
@@ -313,6 +316,7 @@ def do_random_walks (config):
 
 def do_train(
     config_file,
+    work_dir,
     motif_size=4,
     walk_length=20,
     num_vertices=1234,
@@ -345,18 +349,33 @@ def do_train(
     data_reader,
     optimizer,
     job_name='lbann_communitygan',
+    work_dir=work_dir,
     environment={'LBANN_COMMUNITYGAN_CONFIG_FILE' : config_file},
   )
 
 def main():
+
   args = add_args()
   config = parse_config(args)
   graph_file = config.get('Graph', 'graph_file', fallback=None)
 
+  # Create work directory
+  # Note: Default is timestamped directory in cwd
+  if not args.work_dir:
+    timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+    args.work_dir = os.path.join(os.getcwd(), f'{timestamp}_communitygan')
+  args.work_dir = os.path.realpath(args.work_dir)
+  os.makedirs(args.work_dir, exist_ok=True)
+
+  # Write config file to work directory
+  config_file = os.path.join(args.work_dir, 'experiment.config')
+  with open(config_file, 'w') as f:
+    config.write(f)
+  os.environ['LBANN_NODE2VEC_CONFIG_FILE'] = config_file
+
   find_motifs(config)
   do_random_walks(config)
-  config_file = "/usr/workspace/llamag/lbann/applications/graph/communityGAN/driver/default.config" ### @todo Write config file for each run
-  do_train(config_file)
+  do_train(config_file, args.work_dir)
 
 # find all the motifs from graph
 # construct motifs set as CSV
