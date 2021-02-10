@@ -25,6 +25,21 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include <lbann/layers/misc/channelwise_softmax.hpp>
 
+namespace lbann {
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+template <typename ArchiveT>
+void
+channelwise_softmax_layer<TensorDataType,Layout,Device>
+::serialize(ArchiveT& ar)
+{
+  using DataTypeLayer = data_type_layer<TensorDataType>;
+  ar(::cereal::make_nvp("DataTypeLayer",
+                        ::cereal::base_class<DataTypeLayer>(this)));
+}
+
+} // namespace lbann
+
 #define LBANN_LAYER_NAME channelwise_softmax_layer
 #define LBANN_COMMA ,
 #define LBANN_REGISTER_LAYER_WITH_CEREAL_BASE(NAME, TYPE, LAYOUT, DEVICE) \

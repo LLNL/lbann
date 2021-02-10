@@ -25,5 +25,19 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include <lbann/layers/misc/uniform_hash.hpp>
 
+namespace lbann {
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+template <typename ArchiveT>
+void
+uniform_hash_layer<TensorDataType,Layout,Device>
+::serialize(ArchiveT& ar) {
+  using DataTypeLayer = data_type_layer<TensorDataType>;
+  ar(::cereal::make_nvp("DataTypeLayer",
+                        ::cereal::base_class<DataTypeLayer>(this)));
+}
+
+} // namespace lbann
+
 #define LBANN_LAYER_NAME uniform_hash_layer
 #include <lbann/macros/register_layer_with_cereal_gpu_only.hpp>

@@ -25,6 +25,21 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include <lbann/layers/misc/dft_abs.hpp>
 
+namespace lbann {
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+template <typename ArchiveT>
+void
+dft_abs_layer<TensorDataType,Layout,Device>
+::serialize(ArchiveT& ar)
+{
+  using DataTypeLayer = data_type_layer<TensorDataType>;
+  ar(::cereal::make_nvp("DataTypeLayer",
+                        ::cereal::base_class<DataTypeLayer>(this)));
+}
+
+} // namespace lbann
+
 #define LBANN_COMMA ,
 #define PROTO_DEVICE(TYPE, DEVICE)                      \
   CEREAL_REGISTER_TYPE_WITH_NAME(                       \

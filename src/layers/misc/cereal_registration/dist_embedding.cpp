@@ -27,6 +27,28 @@
 
 #if defined(LBANN_HAS_SHMEM) || defined(LBANN_HAS_NVSHMEM)
 
+namespace lbann {
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+template <typename ArchiveT>
+void dist_embedding_layer<TensorDataType,Layout,Device>::serialize(ArchiveT& ar) {
+  using DataTypeLayer = data_type_layer<TensorDataType>;
+  ar(::cereal::make_nvp("DataTypeLayer",
+                        ::cereal::base_class<DataTypeLayer>(this)),
+     CEREAL_NVP(m_num_embeddings),
+     CEREAL_NVP(m_embedding_dim),
+     CEREAL_NVP(m_sparse_sgd),
+     CEREAL_NVP(m_learning_rate),
+     CEREAL_NVP(m_barrier_in_forward_prop));
+  // Members that aren't serialized
+  //   m_embeddings_buffer
+  //   m_workspace_buffer_size
+  //   m_metadata_buffer_size
+  //   m_nb_barrier_request
+}
+
+} // namespace lbann
+
 #define LBANN_LAYER_NAME dist_embedding_layer
 #include <lbann/macros/register_layer_with_cereal_data_parallel_only.hpp>
 
