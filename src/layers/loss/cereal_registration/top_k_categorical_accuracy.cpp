@@ -23,6 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
+#include "lbann/utils/serialize.hpp"
 #include <lbann/layers/loss/top_k_categorical_accuracy.hpp>
 
 namespace lbann {
