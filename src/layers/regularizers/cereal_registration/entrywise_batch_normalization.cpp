@@ -25,6 +25,23 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include <lbann/layers/regularizers/entrywise_batch_normalization.hpp>
 
+namespace lbann {
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+template <typename ArchiveT>
+void
+entrywise_batch_normalization_layer<TensorDataType,Layout,Device>
+::serialize(ArchiveT& ar)
+{
+  using DataTypeLayer = data_type_layer<TensorDataType>;
+  ar(::cereal::make_nvp("DataTypeLayer",
+                        ::cereal::base_class<DataTypeLayer>(this)),
+     CEREAL_NVP(m_decay),
+     CEREAL_NVP(m_epsilon));
+}
+
+} // namespace lbann
+
 #define LBANN_LAYER_NAME entrywise_batch_normalization_layer
 #define LBANN_COMMA ,
 #define LBANN_REGISTER_LAYER_WITH_CEREAL_BASE(NAME, TYPE, LAYOUT, DEVICE) \

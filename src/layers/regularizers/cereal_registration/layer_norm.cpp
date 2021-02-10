@@ -25,6 +25,19 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include <lbann/layers/regularizers/layer_norm.hpp>
 
+namespace lbann {
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+template <typename ArchiveT>
+void layer_norm_layer<TensorDataType,Layout,Device>::serialize(ArchiveT& ar) {
+  using DataTypeLayer = data_type_layer<TensorDataType>;
+  ar(::cereal::make_nvp("DataTypeLayer",
+                        ::cereal::base_class<DataTypeLayer>(this)),
+     CEREAL_NVP(m_epsilon));
+}
+
+} // namespace lbann
+
 #define LBANN_LAYER_NAME layer_norm_layer
 #define LBANN_COMMA ,
 #define LBANN_REGISTER_LAYER_WITH_CEREAL_BASE(NAME, TYPE, LAYOUT, DEVICE) \

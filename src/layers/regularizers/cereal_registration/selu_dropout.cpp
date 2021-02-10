@@ -25,5 +25,24 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include <lbann/layers/regularizers/selu_dropout.hpp>
 
+namespace lbann {
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+template <typename ArchiveT>
+void
+selu_dropout<TensorDataType,Layout,Device>
+::serialize(ArchiveT& ar)
+{
+  using DataTypeLayer = data_type_layer<TensorDataType>;
+  ar(::cereal::make_nvp("DataTypeLayer",
+                        ::cereal::base_class<DataTypeLayer>(this)),
+     CEREAL_NVP(m_alpha_prime),
+     CEREAL_NVP(m_a),
+     CEREAL_NVP(m_b),
+     CEREAL_NVP(m_keep_prob));
+}
+
+} // namespace lbann
+
 #define LBANN_LAYER_NAME selu_dropout
 #include "lbann/macros/register_layer_with_cereal_data_parallel_only.hpp"
