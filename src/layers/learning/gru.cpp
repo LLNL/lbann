@@ -59,8 +59,10 @@ gru_layer<TensorDataType, Layout, Device>::gru_layer(const gru_layer& other)
   // CUDA graphs. They are setup in forward and backward prop
   // functions, as needed.
   /// @todo Copy @c m_rnn_cudnn_desc
+#ifndef LBANN_DEBUG
   m_cuda_graph_forward_prop_cache.clear();
   m_cuda_graph_backward_prop_cache.clear();
+#endif // not LBANN_DEBUG
 #endif // LBANN_GRU_LAYER_GPU_SUPPORTED
 }
 
@@ -75,8 +77,10 @@ gru_layer<TensorDataType, Layout, Device>& gru_layer<TensorDataType, Layout, Dev
   // CUDA graphs. They are setup in forward and backward prop
   // functions, as needed.
   /// @todo Copy @c m_rnn_cudnn_desc
+#ifndef LBANN_DEBUG
   m_cuda_graph_forward_prop_cache.clear();
   m_cuda_graph_backward_prop_cache.clear();
+#endif // not LBANN_DEBUG
 #endif // LBANN_GRU_LAYER_GPU_SUPPORTED
   return *this;
 }
@@ -543,6 +547,7 @@ void fp_compute_impl(
     l.m_weights_cudnn_workspace.size(),
     weights_list);
 
+#ifndef LBANN_DEBUG
   // Compute hash with cuDNN function arguments
   size_t hash{0};
   hash = hash_combine(hash, l.m_gpu_sequence_lengths.data());
@@ -559,6 +564,7 @@ void fp_compute_impl(
 
     // Capture graph
     cuda::Graph::begin_capture(stream);
+#endif // not LBANN_DEBUG
     CHECK_CUDNN(
       cudnnRNNForward(
         handle,
@@ -581,6 +587,7 @@ void fp_compute_impl(
         l.m_cudnn_workspace.data(),
         l.m_cudnn_reserve_space.size(),
         l.m_cudnn_reserve_space.data()));
+#ifndef LBANN_DEBUG
     auto graph = cuda::Graph::end_capture(stream);
 
     // Update cache
@@ -592,6 +599,7 @@ void fp_compute_impl(
 
   // Launch CUDA graph with cuDNN kernels
   l.m_cuda_graph_forward_prop_cache[workspace_mini_batch_size].second.launch(stream);
+#endif // not LBANN_DEBUG
 
   // Output tensor
   El::LockedView(
@@ -626,7 +634,7 @@ void unpack_cudnn_rnn_weights(
   size_t num_layers,
   const void* packed_weights_buffer,
   size_t packed_weights_size,
-  const std::vector<El::Matrix<TensorDataType,El::Device::GPU>>& weights_list) {
+  std::vector<El::Matrix<TensorDataType,El::Device::GPU>>& weights_list) {
 
   // Construct objects
   static dnn_lib::TensorDescriptor matrix_desc, bias_desc;
@@ -805,6 +813,7 @@ void bp_compute_impl(
       l.m_weights_grad_cudnn_workspace.size(),
       stream));
 
+#ifndef LBANN_DEBUG
   // Compute hash with cuDNN function arguments
   size_t hash{0};
   hash = hash_combine(hash, l.m_gpu_sequence_lengths.data());
@@ -825,6 +834,7 @@ void bp_compute_impl(
 
     // Capture graph
     cuda::Graph::begin_capture(stream);
+#endif // not LBANN_DEBUG
     CHECK_CUDNN(
       cudnnRNNBackwardData_v8(
         handle,
@@ -867,6 +877,7 @@ void bp_compute_impl(
         l.m_cudnn_workspace.data(),
         l.m_cudnn_reserve_space.size(),
         l.m_cudnn_reserve_space.data()));
+#ifndef LBANN_DEBUG
     auto graph = cuda::Graph::end_capture(stream);
 
     // Update cache
@@ -878,6 +889,7 @@ void bp_compute_impl(
 
   // Launch CUDA graph with cuDNN kernels
   l.m_cuda_graph_backward_prop_cache[workspace_mini_batch_size].second.launch(stream);
+#endif // not LBANN_DEBUG
 
   // Send gradients to optimizers
   unpack_cudnn_rnn_weights<TensorDataType>(
