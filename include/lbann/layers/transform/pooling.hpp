@@ -193,20 +193,7 @@ public:
   ///@{
 
   template <typename ArchiveT>
-  void serialize(ArchiveT& ar)
-  {
-    using DataTypeLayer = data_type_layer<TensorDataType>;
-    ar(::cereal::make_nvp("DataTypeLayer",
-                          ::cereal::base_class<DataTypeLayer>(this)),
-       CEREAL_NVP(m_pool_mode),
-       CEREAL_NVP(m_pool_dims),
-       CEREAL_NVP(m_pool_size),
-       CEREAL_NVP(m_pads),
-       CEREAL_NVP(m_strides));
-    // Members that aren't serialized
-    //     m_max_pool_indices;
-
-  }
+  void serialize(ArchiveT& ar);
 
   ///@}
 

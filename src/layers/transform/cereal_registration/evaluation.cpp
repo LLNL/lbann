@@ -25,5 +25,31 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include <lbann/layers/transform/evaluation.hpp>
 
+namespace lbann {
+
+template <typename TensorDataType>
+template <typename ArchiveT>
+void
+abstract_evaluation_layer<TensorDataType>
+::serialize(ArchiveT& ar) {
+  using DataTypeLayer = data_type_layer<TensorDataType>;
+  ar(::cereal::make_nvp("DataTypeLayer",
+                        ::cereal::base_class<DataTypeLayer>(this)));
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+template <typename ArchiveT>
+void
+evaluation_layer<TensorDataType,Layout,Device>
+::serialize(ArchiveT& ar)
+{
+  using AbstractEvaluationLayer = abstract_evaluation_layer<TensorDataType>;
+  ar(::cereal::make_nvp("AbstractEvaluationLayer",
+                        ::cereal::base_class<AbstractEvaluationLayer>(this)));
+}
+
+} // namespace lbann
+
+
 #define LBANN_LAYER_NAME evaluation_layer
 #include <lbann/macros/register_layer_with_cereal.hpp>

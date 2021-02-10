@@ -57,13 +57,7 @@ class in_top_k_layer : public data_type_layer<TensorDataType> {
   ///@{
 
   template <typename ArchiveT>
-  void serialize(ArchiveT& ar)
-  {
-    using DataTypeLayer = data_type_layer<TensorDataType>;
-    ar(::cereal::make_nvp("DataTypeLayer",
-                          ::cereal::base_class<DataTypeLayer>(this)),
-       CEREAL_NVP(m_k));
-  }
+  void serialize(ArchiveT& ar);
 
   ///@}
 

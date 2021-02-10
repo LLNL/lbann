@@ -25,5 +25,27 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include <lbann/layers/transform/slice.hpp>
 
+namespace lbann {
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+template <typename ArchiveT>
+void
+slice_layer<TensorDataType,Layout,Device>
+::serialize(ArchiveT& ar)
+{
+  using DataTypeLayer = data_type_layer<TensorDataType>;
+  ar(::cereal::make_nvp("DataTypeLayer",
+                        ::cereal::base_class<DataTypeLayer>(this)),
+     CEREAL_NVP(m_slice_dim),
+     CEREAL_NVP(m_slice_points),
+     CEREAL_NVP(m_set_slice_points_from_data_reader),
+     CEREAL_NVP(m_var_category));
+  // Members that aren't serialized
+  //   m_workspace;
+  //   m_workspace_event;
+}
+
+} // namespace lbann
+
 #define LBANN_LAYER_NAME slice_layer
 #include <lbann/macros/register_layer_with_cereal.hpp>

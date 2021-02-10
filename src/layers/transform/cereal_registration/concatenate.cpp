@@ -25,5 +25,24 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include <lbann/layers/transform/concatenate.hpp>
 
+namespace lbann {
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+template <typename ArchiveT>
+void
+concatenate_layer<TensorDataType,Layout,Device>
+::serialize(ArchiveT& ar)
+{
+  using DataTypeLayer = data_type_layer<TensorDataType>;
+  ar(::cereal::make_nvp("DataTypeLayer",
+                        ::cereal::base_class<DataTypeLayer>(this)),
+     CEREAL_NVP(m_concat_dim));
+  // Members that aren't serialized:
+  //   m_workspace
+  //   m_workspace_event
+}
+
+} // namespace lbann
+
 #define LBANN_LAYER_NAME concatenate_layer
 #include <lbann/macros/register_layer_with_cereal.hpp>
