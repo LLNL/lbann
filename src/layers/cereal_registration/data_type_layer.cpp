@@ -34,6 +34,3 @@
     lbann::Layer, lbann::data_type_layer<T>>
 
 #include "lbann/macros/instantiate.hpp"
-
-// #define LBANN_LAYER_NAME data_type_layer
-// #include <lbann/macros/register_layer_with_cereal.hpp>

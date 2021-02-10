@@ -459,26 +459,8 @@ public:
   ///@{
 
   template <typename ArchiveT>
-  void serialize(ArchiveT& ar)
-  {
-    ar(CEREAL_NVP(m_expected_num_parent_layers),
-       CEREAL_NVP(m_expected_num_child_layers),
-       CEREAL_NVP(m_frozen),
-       CEREAL_NVP(m_name),
-       cereal::make_nvp("m_parent_layers", cereal::defer(m_parent_layers)),
-       cereal::make_nvp("m_child_layers", cereal::defer(m_child_layers)),
-       cereal::make_nvp("m_weights", cereal::defer(m_weights)),
-       CEREAL_NVP(m_output_dims_list),
-       CEREAL_NVP(m_hint_layer));
-    // Members that aren't serialized:
-    //   m_model
-    //   m_fp_time
-    //   m_fp_compute_time
-    //   m_bp_time
-    //   m_bp_compute_time
-    //   m_update_time
-    //   m_parallel_strategy
-  }
+  void serialize(ArchiveT& ar);
+
   ///@}
 
 protected:

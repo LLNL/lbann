@@ -23,7 +23,40 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
-// #include <lbann/layers/layer.hpp>
+#include <lbann/layers/layer.hpp>
 
-// #define LBANN_LAYER_NAME layer
-// #include <lbann/macros/register_layer_with_cereal.hpp>
+namespace lbann {
+
+template <typename ArchiveT>
+void
+Layer::serialize(ArchiveT& ar)
+{
+  ar(CEREAL_NVP(m_expected_num_parent_layers),
+     CEREAL_NVP(m_expected_num_child_layers),
+     CEREAL_NVP(m_frozen),
+     CEREAL_NVP(m_name),
+     cereal::make_nvp("m_parent_layers", cereal::defer(m_parent_layers)),
+     cereal::make_nvp("m_child_layers", cereal::defer(m_child_layers)),
+     cereal::make_nvp("m_weights", cereal::defer(m_weights)),
+     CEREAL_NVP(m_output_dims_list),
+     CEREAL_NVP(m_hint_layer));
+  // Members that aren't serialized:
+  //   m_model
+  //   m_fp_time
+  //   m_fp_compute_time
+  //   m_bp_time
+  //   m_bp_compute_time
+  //   m_update_time
+  //   m_parallel_strategy
+}
+
+template void Layer::serialize(cereal::XMLOutputArchive&);
+template void Layer::serialize(cereal::XMLInputArchive&);
+template void Layer::serialize(cereal::BinaryOutputArchive&);
+template void Layer::serialize(cereal::BinaryInputArchive&);
+template void Layer::serialize(RootedXMLOutputArchive&);
+template void Layer::serialize(RootedXMLInputArchive&);
+template void Layer::serialize(RootedBinaryOutputArchive&);
+template void Layer::serialize(RootedBinaryInputArchive&);
+
+} // namespace lbann
