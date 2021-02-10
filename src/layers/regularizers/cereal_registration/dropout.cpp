@@ -31,7 +31,7 @@ namespace lbann {
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 template <typename ArchiveT>
 void
-dropout_layer<TensorDataType,Layout,Device>
+dropout<TensorDataType,Layout,Device>
 ::serialize(ArchiveT& ar)
 {
   using DataTypeLayer = data_type_layer<TensorDataType>;
