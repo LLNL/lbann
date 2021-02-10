@@ -30,11 +30,15 @@
 #include "lbann/weights/weights.hpp"
 #include "lbann/weights/initializer.hpp"
 #include "lbann/optimizers/data_type_optimizer.hpp"
-#include "lbann/utils/serialize.hpp"
 
 namespace lbann_data {
 class WeightsData;
 }
+
+namespace cereal
+{
+  class access;
+}// namespace cereal
 
 namespace lbann {
 
@@ -163,32 +167,13 @@ public:
    *                    read.
    */
   template <typename ArchiveT>
-  void serialize(ArchiveT& ar)
-#if !(defined __CUDACC__)
-  {
-    ar(cereal::base_class<weights>(this),
-       CEREAL_NVP(m_values),
-       CEREAL_NVP(m_optimizer));
-    if constexpr (utils::IsInputArchive<ArchiveT>)
-    {
-      if (m_optimizer)
-        m_optimizer->setup_base(this);
-    }
-  }
-#else
-  ;
-#endif
+  void serialize(ArchiveT& ar);
 
   ///@}
 
 private:
   friend cereal::access;
-  data_type_weights()
-#if !(defined __CUDACC__)
-    : data_type_weights(utils::get_current_comm()) {}
-#else
-  ;
-#endif
+  data_type_weights();
 
   void do_augment_description_(description&) const override;
   void do_setup_() override;

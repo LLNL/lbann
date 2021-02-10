@@ -26,6 +26,7 @@
 
 #include "lbann/weights/weights.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/serialize.hpp"
 #include "lbann/io/file_io.hpp"
 
 #include <layers.pb.h>
@@ -77,6 +78,18 @@ weights::weights(lbann_comm& comm)
   m_comm = &comm;
 
   setup_default_matrix_distribution();
+}
+
+template <typename ArchiveT>
+void weights::serialize(ArchiveT& ar)
+{
+  ar(CEREAL_NVP(m_name),
+     CEREAL_NVP(m_frozen));
+
+  // What about:
+  //   m_matrix_height_dims
+  //   m_matrix_width_dims
+  //   m_matrix_dist
 }
 
 description weights::get_description() const {

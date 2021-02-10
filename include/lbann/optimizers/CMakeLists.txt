@@ -3,6 +3,7 @@ set_full_path(THIS_DIR_HEADERS
   adagrad.hpp
   adam.hpp
   data_type_optimizer.hpp
+  data_type_optimizer_impl.hpp
   hypergradient_adam.hpp
   optimizer.hpp
   rmsprop.hpp

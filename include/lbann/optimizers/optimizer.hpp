@@ -39,8 +39,6 @@
 #include "lbann/utils/memory.hpp"
 #include "lbann/weights/weights.hpp"
 
-#include "lbann/utils/serialize.hpp"
-
 #include <memory>
 #include <string>
 #include <unordered_set>
@@ -209,9 +207,7 @@ public:
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar) {
-    // Do not save the optimizer's step time
-  }
+  template <class Archive> void serialize(Archive & ar);
 
   ///@}
 

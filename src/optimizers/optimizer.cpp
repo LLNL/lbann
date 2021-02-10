@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/optimizers/optimizer.hpp"
+#include "lbann/utils/serialize.hpp"
 #include "lbann/utils/timer.hpp"
 
 namespace lbann {
@@ -68,6 +69,11 @@ optimizer& optimizer::operator=(const optimizer& other) {
                 "gradient allreduce is in progress");
   }
   return *this;
+}
+
+template <class Archive>
+void optimizer::serialize(Archive & ar) {
+  // Do not save the optimizer's step time
 }
 
 description optimizer::get_description() const {

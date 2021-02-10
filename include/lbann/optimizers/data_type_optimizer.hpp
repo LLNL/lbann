@@ -106,10 +106,8 @@ public:
   ///@{
   /** @brief Archive for checkpoint and restart */
   template <class Archive>
-  void serialize(Archive & ar) {
-    ar(cereal::base_class<optimizer>(this),
-       CEREAL_NVP(m_learning_rate));
-  }
+  void serialize(Archive & ar);
+
   ///@}
 
 protected:
