@@ -58,6 +58,17 @@ void data_type_layer<TensorDataType>::serialize(ArchiveT& ar)
 
 } // namespace lbann
 
+#define PROTO(T)                                                        \
+  extern template class ::cereal::detail::PolymorphicVirtualCaster<     \
+    lbann::Layer, lbann::data_type_layer<T>>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
+#undef PROTO
+#undef LBANN_INSTANTIATE_CPU_HALF
+#undef LBANN_INSTANTIATE_GPU_HALF
+
 #undef PROTO
 #define PROTO(T)                                                \
   CEREAL_REGISTER_TYPE_WITH_NAME(                               \

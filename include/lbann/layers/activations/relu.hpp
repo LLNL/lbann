@@ -59,13 +59,14 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
+  /** @name Serialization */
+  ///@{
+
   template <typename ArchiveT>
-  void serialize(ArchiveT& ar)
-  {
-    using DataTypeLayer = data_type_layer<TensorDataType>;
-    ar(::cereal::make_nvp("DataTypeLayer",
-                          ::cereal::base_class<DataTypeLayer>(this)));
-  }
+  void serialize(ArchiveT& ar);
+
+  ///@}
+
 protected:
   void fp_compute() override;
   void bp_compute() override;

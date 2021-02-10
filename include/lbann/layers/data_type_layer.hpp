@@ -405,18 +405,4 @@ private:
 
 } // namespace lbann
 
-#ifndef LBANN_DATA_TYPE_LAYER_INSTANTIATE
-#define PROTO(T)                                                        \
-  extern template class ::cereal::detail::PolymorphicVirtualCaster<     \
-    lbann::Layer, lbann::data_type_layer<T>>
-
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
-#include "lbann/macros/instantiate.hpp"
-#undef PROTO
-#undef LBANN_INSTANTIATE_CPU_HALF
-#undef LBANN_INSTANTIATE_GPU_HALF
-
-#endif // LBANN_DATA_TYPE_LAYER_INSTANTIATE
-
 #endif // LBANN_LAYERS_DATA_TYPE_LAYER_HPP_INCLUDED
