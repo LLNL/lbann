@@ -51,13 +51,7 @@ Layer::serialize(ArchiveT& ar)
   //   m_parallel_strategy
 }
 
-template void Layer::serialize(cereal::XMLOutputArchive&);
-template void Layer::serialize(cereal::XMLInputArchive&);
-template void Layer::serialize(cereal::BinaryOutputArchive&);
-template void Layer::serialize(cereal::BinaryInputArchive&);
-template void Layer::serialize(RootedXMLOutputArchive&);
-template void Layer::serialize(RootedXMLInputArchive&);
-template void Layer::serialize(RootedBinaryOutputArchive&);
-template void Layer::serialize(RootedBinaryInputArchive&);
-
 } // namespace lbann
+
+#define LBANN_CLASS_NAME Layer
+#include <lbann/macros/register_class_with_cereal.hpp>
