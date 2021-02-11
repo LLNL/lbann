@@ -69,11 +69,7 @@ public:
   ~adagrad() override = default;
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar) {
-    ar(cereal::base_class<data_type_optimizer<TensorDataType>>(this),
-       CEREAL_NVP(m_eps),
-       CEREAL_NVP(m_cache));
-  }
+  template <class Archive> void serialize(Archive & ar);
 
   /** Human-readable type name. */
   std::string get_type() const override { return "AdaGrad"; }

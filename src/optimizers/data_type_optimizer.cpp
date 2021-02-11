@@ -167,11 +167,12 @@ data_type_optimizer<TensorDataType>::get_matrix_info() const {
 // Checkpointing
 // =============================
 
-#define PROTO(T)                         \
-  template class data_type_optimizer<T>
+} // namespace lbann
+
+#define PROTO(T)                                                                 \
+  template class lbann::data_type_optimizer<T>;                                  \
+  CEREAL_REGISTER_TYPE_WITH_NAME(lbann::data_type_optimizer<T>, "dtopt(" #T ")")
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
-
-} // namespace lbann

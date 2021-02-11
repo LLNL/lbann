@@ -88,18 +88,7 @@ public:
   ~hypergradient_adam() override = default;
 
     /** Archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar) {
-    ar(cereal::base_class<data_type_optimizer<TensorDataType>>(this),
-       CEREAL_NVP(m_hyper_learning_rate),
-       CEREAL_NVP(m_beta1),
-       CEREAL_NVP(m_beta2),
-       CEREAL_NVP(m_eps),
-       CEREAL_NVP(m_current_beta1),
-       CEREAL_NVP(m_current_beta2),
-       CEREAL_NVP(m_moment1),
-       CEREAL_NVP(m_moment2),
-       CEREAL_NVP(m_old_gradient));
-  }
+  template <class Archive> void serialize(Archive & ar);
 
   /** @brief Human-readable type name. */
   std::string get_type() const override { return "hypergradient Adam"; }

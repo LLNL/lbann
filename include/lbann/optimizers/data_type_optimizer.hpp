@@ -29,6 +29,12 @@
 
 #include "lbann/optimizers/optimizer.hpp"
 
+// Forward declarations
+namespace cereal
+{
+  class access;
+}// namespace cereal
+
 namespace lbann {
 
 // Forward declarations
