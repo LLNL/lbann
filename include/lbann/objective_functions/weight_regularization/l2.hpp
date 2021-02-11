@@ -63,12 +63,7 @@ public:
 
   /** Archive for checkpoint and restart */
   template <typename ArchiveT>
-  void serialize(ArchiveT& ar)
-  {
-    ar(::cereal::make_nvp(
-         "ObjectiveFunctionTerm",
-         cereal::base_class<objective_function_term>(this)));
-  }
+  void serialize(ArchiveT& ar);
 
   std::string name() const override { return "L2 weight regularization"; }
   void setup(model& m) override;
@@ -115,7 +110,5 @@ private:
 };
 
 } // namespace lbann
-
-CEREAL_REGISTER_TYPE(lbann::l2_weight_regularization);
 
 #endif // LBANN_OBJECTIVE_FUNCTIONS_WEIGHT_REGULARIZATION_L2_WEIGHT_REGULARIZATION_HPP_INCLUDED

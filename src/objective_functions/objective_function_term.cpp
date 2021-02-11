@@ -26,6 +26,7 @@
 
 #include "lbann/objective_functions/objective_function_term.hpp"
 #include "lbann/models/model.hpp"
+#include "lbann/utils/serialize.hpp"
 
 namespace lbann {
 
@@ -34,6 +35,13 @@ objective_function_term::objective_function_term(EvalType scale_factor)
   if (m_scale_factor == EvalType(0)) {
     m_scale_factor = EvalType(1);
   }
+}
+
+template <class Archive> void
+objective_function_term::serialize( Archive & ar ) {
+  ar(CEREAL_NVP(m_scale_factor),
+     CEREAL_NVP(m_layers),
+     CEREAL_NVP(m_weights));
 }
 
 void objective_function_term::setup(model& m) {
@@ -57,3 +65,6 @@ void objective_function_term::set_weights_pointers(std::vector<ViewingWeightsPtr
 }
 
 }  // namespace lbann
+
+#define LBANN_CLASS_NAME objective_function_term
+#include <lbann/macros/register_class_with_cereal.hpp>

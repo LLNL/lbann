@@ -27,6 +27,7 @@
 #include "lbann/objective_functions/objective_function.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/profiling.hpp"
+#include "lbann/utils/serialize.hpp"
 #include <numeric>
 
 namespace lbann {
@@ -49,6 +50,12 @@ objective_function& objective_function::operator=(const objective_function& othe
   m_evaluation_time = other.m_evaluation_time;
   m_differentiation_time = other.m_differentiation_time;
   return *this;
+}
+
+template <class Archive>
+void objective_function::serialize( Archive & ar ) {
+  ar(CEREAL_NVP(m_statistics),
+     CEREAL_NVP(m_terms));
 }
 
 void objective_function::add_term(std::unique_ptr<objective_function_term> term) {
@@ -194,3 +201,6 @@ void objective_function::set_weights_pointers(std::vector<ViewingWeightsPtr> w) 
 }
 
 }  // namespace lbann
+
+#define LBANN_CLASS_NAME objective_function
+#include <lbann/macros/register_class_with_cereal.hpp>
