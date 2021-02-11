@@ -28,6 +28,7 @@
 #include "lbann/callbacks/callback.hpp"
 //#include "lbann/callbacks/callback_save_model.hpp"
 #include "lbann/io/persist.hpp"
+#include "lbann/io/persist_impl.hpp"
 #include "lbann/layers/transform/dummy.hpp"
 #include "lbann/layers/transform/split.hpp"
 #include "lbann/layers/transform/evaluation.hpp"
