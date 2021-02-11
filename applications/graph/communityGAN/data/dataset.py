@@ -25,7 +25,6 @@ config = configparser.ConfigParser()
 config.read(config_file)
 
 # Options from config file
-walk_length = config.getint('RW', 'rw_walk_len', fallback=None)
 motif_file = config.get('Motifs', 'motif_file', fallback=None)
 walk_file = config.get('RW', 'rw_out_filename', fallback=None)
 

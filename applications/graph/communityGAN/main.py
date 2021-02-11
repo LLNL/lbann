@@ -31,6 +31,9 @@ def add_args():
     '--work-dir', action='store', default=None, type=str,
     help='working directory', metavar='DIR')
   parser.add_argument(
+    '--run', action='store_true',
+    help='run directly instead of submitting a batch job')
+  parser.add_argument(
       '--graph', action='store', default=None, type=str,
       help='edgelist file',
       metavar='FILE')
@@ -104,7 +107,7 @@ def parse_config(args):
   config.read(os.path.join(root_dir, 'default.config'))
   config_file = args.config
   if not config_file:
-      config_file = os.getenv('COMMUNITY_GAN_CONFIG_FILE')
+      config_file = os.getenv('COMMUNITYGAN_CONFIG_FILE')
   if config_file:
       config.read(config_file)
 
@@ -140,81 +143,11 @@ def parse_config(args):
 
   return config
 
-
-# ----------------------------------
-# Construct a set of motifs in given graph and dump them in a file
-# ----------------------------------
-def dump_motifs(config):
-
-  # Get the parameters from config
-  graph_file = config.get('Graph', 'graph_file', fallback=None)
-  graph_store = config.get('Graph', 'graph_store', fallback=None)
-  pattern_in_dir = config.get('Pattern', 'pattern_in_dir', fallback=None)
-  pattern_out_dir = config.get('Pattern', 'pattern_out_dir', fallback=None)
-  match_dir = config.get('Motifs', 'match_dir', fallback=None)
-  motifs_out_file = config.get('Motifs', 'motif_file', fallback=None)
-
-  create_motif_file = config.getboolean('Motifs', 'create_motif_file', fallback=None)
-
-  motif_set_file = config.get('Motifs', 'motif_set_file', fallback=None)
-
-  if os.path.exists(match_dir):
-    command = '/usr/bin/rm -rf %s/*'%(match_dir)
-    os.system(command)
-  else:
-    command = '/usr/bin/mkdir %s'%(match_dir)
-    os.system(command)
-
-  command = '/usr/bin/mv %s/all_ranks_subgraphs/subgraphs_* %s'%(pattern_out_dir, match_dir)
-  os.system(command)
-
-  files = os.listdir(match_dir)
-  motif_set = set()
-  for f in files:
-      filename = os.path.join(match_dir, f)
-      fd = open(filename, 'r')
-      lines = fd.readlines()
-      for l in lines:
-          tokens = l.split(',')
-          amotif = []
-          i = 1
-          while i < len(tokens)-1:
-             amotif.append(int(tokens[i]))
-             i = i + 1
-          motif_set.add(frozenset(amotif))
-
-      fd.close()
-
-  # Dump all the motifs detected to a file as CSVs
-  mfd = open(motifs_out_file, 'w')
-  for s in motif_set:
-    l = 0
-    for v in s:
-       mfd.write('%d'%v)
-       if l < len(s) - 1:
-          mfd.write(', ')
-
-       l = l + 1
-    mfd.write('\n')
-  mfd.close()
-
-  # List all the motifs found in input graph with thier IDs
-  if create_motif_file:
-    set_fd = open(motif_set_file, 'w')
-    mid = 0
-    for s in motif_set:
-      set_fd.write('%d: '%mid)
-      for v in s:
-         set_fd.write('%d '%v)
-      set_fd.write('\n')
-      mid = mid + 1
-
-    set_fd.close()
-
 # ----------------------------------
 # Find all the motifs from given graph and dump them to a file
 # ----------------------------------
-def find_motifs(config):
+
+def find_motifs(script, config, config_file):
 
   # Get the parameters from config
   graph_file = config.get('Graph', 'graph_file', fallback=None)
@@ -226,23 +159,31 @@ def find_motifs(config):
 
   # NOTE: Following is just a reference to a job script to call prunejuice
   # There are many and better ways to do it.
-  script_name = 'motif-find.script'
-  f = open(script_name, 'w')
-  f.write('#!/usr/bin/csh\n')
-  #f.write('#BSUB -G lc\n')
-  f.write('#BSUB -nnodes 1\n')
-  f.write('#BSUB -W 1:00\n')
-  f.write('jsrun -n ALL_HOSTS -r 1 /bin/rm -rf %s'%graph_store + '\n')
-  f.write('jsrun -d packed -n ALL_HOSTS -r 1 -a 4 -g 4 -c 40 -b packed:10 -M -gpu %s -p 1 -f 2.00 -o %s %s \n'%(gr_ingest_exec, graph_store, graph_file))
-  f.write('jsrun -d packed -n ALL_HOSTS -r 1 -a 4 -g 4 -c 40 -b packed:10 -M -gpu %s -i %s -p %s -o %s\n'%(prunejuice_exec, graph_store, pattern_in_dir, pattern_out_dir))
-  f.close()
-
-  # Submit the job and wait for its completion
-  cmd = 'bsub -K ' + script_name
-  os.system(cmd)
-
-  dump_motifs(config)
-
+  script.add_body_line('')
+  script.add_body_line('# Find motifs')
+  script.add_parallel_command(['rm', '-rf', graph_store], procs_per_node=1)
+  script.add_parallel_command([
+    gr_ingest_exec,
+    '-p 1',
+    '-f 2.00',
+    f'-o {graph_store}',
+    graph_file,
+  ])
+  script.add_parallel_command([
+    prunejuice_exec,
+    f'-i {graph_store}',
+    f'-p {pattern_in_dir}',
+    f'-o {pattern_out_dir}',
+  ])
+  script.add_command([
+    os.path.realpath(sys.executable),
+    os.path.join(
+      os.path.dirname(os.path.realpath(__file__)),
+      'driver',
+      'dump_motifs.py',
+    ),
+    config_file,
+  ])
 
 '''
 # Compute initial values for Theta_G and Theta_D, via graph embedding and initialize the matrices
@@ -264,7 +205,8 @@ rw.terminate()
 # ----------------------------------
 # Generate random walks from given input graph
 # ----------------------------------
-def do_random_walks (config):
+
+def do_random_walks(script, config):
 
   # Get the parameters from config
   graph_file = config.get('Graph', 'graph_file', fallback=None)
@@ -281,50 +223,55 @@ def do_random_walks (config):
   rw_graph_read_exec = '/usr/workspace/llamag/lbann/applications/graph/communityGAN/largescale_node2vec/build/lassen.llnl.gov/src/construct_dist_graph '
   rw_exec = '/usr/workspace/llamag/lbann/applications/graph/communityGAN/largescale_node2vec/build/lassen.llnl.gov/src/run_dist_node2vec_rw '
 
-  # Prepare rw output directories
+  script.add_body_line('')
+  script.add_body_line('# Perform random walks')
 
+  # Ingest graph
+  script.add_parallel_command(['rm', '-rf', rw_graph_store], procs_per_node=1)
+  script.add_parallel_command([
+    rw_graph_read_exec,
+    '-D',
+    f'-o {rw_graph_store}',
+    graph_file,
+  ])
 
-  # NOTE: Following is just a reference to a job script to call prunejuice
-  # There are many and better ways to do it.
-  script_name = 'do-rw.script'
-  f = open(script_name, 'w')
-  f.write('#!/usr/bin/csh\n')
-  #f.write('#BSUB -G lc\n')
-  f.write('#BSUB -nnodes 1\n')
-  f.write('#BSUB -W 1:00\n')
-
-  # Ingest graph first
-  f.write('jsrun -n ALL_HOSTS -r 1 /usr/bin/rm -rf %s\n'%(rw_graph_store))
-  f.write('jsrun -d packed -n ALL_HOSTS -r 1 -a 4 -g 4 -c 40 -b packed:10 -M -gpu %s -D -o %s %s \n'%(rw_graph_read_exec, rw_graph_store, graph_file))
-
-  f.write('/usr/bin/rm -rf %s\n'%(rw_walks_store))
-  f.write('/usr/bin/mkdir %s\n'%(rw_walks_store))
-
-  f.write('jsrun -d packed -n ALL_HOSTS -r 1 -a 4 -g 4 -c 40 -b packed:10 -M -gpu %s -g %s -o %s/%s -p %s -q %s -l %s -w %s\n'%(rw_exec, rw_graph_store, rw_walks_store, rw_file, p, q, walk_len, num_walkers))
-
-  f.write('/usr/bin/cat %s/%s* > %s\n'%(rw_walks_store, rw_file, rw_out_filename))
-  f.write('/usr/bin/rm -rf %s\n'%(rw_walks_store))
-  f.close()
-
-  # Submit the job and wait for its completion
-  cmd = 'bsub -K ' + script_name
-  os.system(cmd)
+  # Perform random walks
+  script.add_command(['rm', '-rf', rw_walks_store])
+  script.add_command(['mkdir', rw_walks_store])
+  script.add_parallel_command([
+    rw_exec,
+    f'-g {rw_graph_store}',
+    f'-o {os.path.join(rw_walks_store, rw_file)}',
+    f'-p {p}',
+    f'-q {q}',
+    f'-l {walk_len}',
+    f'-w {num_walkers}',
+  ])
+  script.add_command([
+    'cat',
+    f'{os.path.join(rw_walks_store, rw_file)}*',
+    '>',
+    rw_out_filename,
+  ])
+  script.add_command(['rm', '-rf', rw_walks_store])
 
 # ----------------------------------
 # Train embeddings
 # ----------------------------------
 
 def do_train(
-    config_file,
-    work_dir,
+    script,
+    config,
     motif_size=4,
-    walk_length=20,
     num_vertices=1234,
     embed_dim=128,
     learn_rate=1e-2,
     mini_batch_size=512,
     num_epochs=100,
 ):
+
+  # Get parameters from config file
+  walk_length = config.getint('RW', 'rw_walk_len', fallback=0)
 
   # Construct LBANN objects
   trainer = lbann.Trainer(
@@ -342,16 +289,22 @@ def do_train(
   optimizer = lbann.SGD(learn_rate=learn_rate)
   data_reader = make_data_reader()
 
-  # Run LBANN
-  lbann.contrib.launcher.run(
-    trainer,
-    model_,
-    data_reader,
-    optimizer,
-    job_name='lbann_communitygan',
-    work_dir=work_dir,
-    environment={'LBANN_COMMUNITYGAN_CONFIG_FILE' : config_file},
+  # Add LBANN invocation to batch script
+  prototext_file = os.path.join(script.work_dir, 'experiment.prototext')
+  lbann.proto.save_prototext(
+    prototext_file,
+    trainer=trainer,
+    model=model_,
+    data_reader=data_reader,
+    optimizer=optimizer,
   )
+  script.add_body_line('')
+  script.add_body_line('# Train embeddings')
+  script.add_parallel_command([
+    lbann.lbann_exe(),
+    f'--prototext={prototext_file}',
+    f'--num_io_threads=1',
+  ])
 
 def main():
 
@@ -371,11 +324,26 @@ def main():
   config_file = os.path.join(args.work_dir, 'experiment.config')
   with open(config_file, 'w') as f:
     config.write(f)
-  os.environ['LBANN_NODE2VEC_CONFIG_FILE'] = config_file
+  os.environ['LBANN_COMMUNITYGAN_CONFIG_FILE'] = config_file
 
-  find_motifs(config)
-  do_random_walks(config)
-  do_train(config_file, args.work_dir)
+  # Construct batch script
+  kwargs = {}
+  script = lbann.contrib.launcher.make_batch_script(
+    job_name='lbann_communitygan',
+    work_dir=args.work_dir,
+    environment={'LBANN_COMMUNITYGAN_CONFIG_FILE' : config_file},
+    **kwargs,
+  )
+  find_motifs(script, config, config_file)
+  do_random_walks(script, config)
+  do_train(script, config)
+
+  # Run LBANN
+  if args.run:
+    script.run(True)
+  else:
+    script.submit(True)
+
 
 # find all the motifs from graph
 # construct motifs set as CSV
