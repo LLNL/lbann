@@ -26,9 +26,16 @@
 
 #include "lbann/metrics/metric.hpp"
 #include "lbann/models/model.hpp"
+#include "lbann/utils/serialize.hpp"
 #include "lbann/utils/timer.hpp"
 
 namespace lbann {
+
+template <class Archive>
+void metric_statistics::serialize( Archive & ar ) {
+  ar(CEREAL_NVP(m_sum),
+     CEREAL_NVP(m_num_samples));
+}
 
 void metric_statistics::add_value(EvalType total_value, int num_samples) {
   m_sum += total_value;
@@ -51,6 +58,11 @@ void metric_statistics::reset() {
 }
 
 metric::metric(lbann_comm *comm) : m_comm(comm) {}
+
+template <class Archive>
+void metric::serialize( Archive & ar ) {
+  ar(CEREAL_NVP(m_statistics));
+}
 
 EvalType metric::get_mean_value(execution_mode mode) const {
   if (m_statistics.count(mode) == 0
@@ -87,3 +99,9 @@ void metric::set_layer_pointers(std::vector<ViewingLayerPtr> layers) {
 }
 
 }  // namespace lbann
+
+#define LBANN_CLASS_NAME metric
+#include <lbann/macros/register_class_with_cereal.hpp>
+
+#define LBANN_CLASS_NAME metric_statistics
+#include <lbann/macros/register_class_with_cereal.hpp>
