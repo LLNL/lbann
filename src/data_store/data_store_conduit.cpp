@@ -29,6 +29,7 @@
 
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"
 #include "lbann/data_readers/data_reader_image.hpp"
+#include "lbann/data_readers/sample_list_impl.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/options.hpp"
 #include "lbann/utils/timer.hpp"
@@ -1794,7 +1795,7 @@ void data_store_conduit::open_next_conduit_spill_directory() {
   }
   m_num_files_in_cur_spill_dir = 0;
   m_cur_spill_dir_integer += 1;
-  m_cur_spill_dir = get_conduit_dir() + "/" + to_string(m_cur_spill_dir_integer);
+  m_cur_spill_dir = get_conduit_dir() + "/" + std::to_string(m_cur_spill_dir_integer);
   DEBUG_DS("calling file::directory_exists(", m_cur_spill_dir, ")");
   bool exists = file::directory_exists(m_cur_spill_dir);
   DEBUG_DS("exists? ", exists);

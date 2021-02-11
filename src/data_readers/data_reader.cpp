@@ -34,12 +34,21 @@
 #include <omp.h>
 #include <future>
 #include "lbann/io/persist.hpp"
+#include "lbann/io/persist_impl.hpp"
 #include "lbann/execution_contexts/sgd_execution_context.hpp"
 
 namespace lbann {
 
 #undef DEBUG
 //#define DEBUG
+
+template <class Archive>
+void generic_data_reader::serialize( Archive & ar ) {
+  ar(CEREAL_NVP(m_current_mini_batch_idx),
+     CEREAL_NVP(m_current_pos),
+     CEREAL_NVP(m_shuffled_indices),
+     CEREAL_NVP(m_supported_input_types));
+}
 
 void generic_data_reader::shuffle_indices() {
   shuffle_indices(get_data_seq_generator());

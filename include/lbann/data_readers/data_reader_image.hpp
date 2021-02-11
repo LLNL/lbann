@@ -29,8 +29,8 @@
 #ifndef IMAGE_DATA_READER_HPP
 #define IMAGE_DATA_READER_HPP
 
-#include "data_reader.hpp"
-#include "sample_list.hpp"
+#include "lbann/data_readers/data_reader.hpp"
+#include "lbann/data_readers/sample_list.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
 
 namespace lbann {

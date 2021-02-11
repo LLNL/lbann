@@ -36,6 +36,9 @@
 #include "lbann/transforms/scale_and_translate.hpp"
 
 #include "lbann/utils/file_utils.hpp" // for add_delimiter() in load()
+#include "lbann/data_readers/sample_list_impl.hpp"
+#include "lbann/data_readers/sample_list_open_files_impl.hpp"
+
 #include <limits>     // numeric_limits
 #include <algorithm>  // max_element
 #include <numeric>    // accumulate

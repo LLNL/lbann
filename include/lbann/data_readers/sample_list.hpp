@@ -1,5 +1,31 @@
-#ifndef __SAMPLE_LIST_HPP__
-#define __SAMPLE_LIST_HPP__
+////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
+// Written by the LBANN Research Team (B. Van Essen, et al.) listed in
+// the CONTRIBUTORS file. <lbann-dev@llnl.gov>
+//
+// LLNL-CODE-697807.
+// All rights reserved.
+//
+// This file is part of LBANN: Livermore Big Artificial Neural Network
+// Toolkit. For details, see http://software.llnl.gov/LBANN or
+// https://github.com/LLNL/LBANN.
+//
+// Licensed under the Apache License, Version 2.0 (the "Licensee"); you
+// may not use this file except in compliance with the License.  You may
+// obtain a copy of the License at:
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the license.
+////////////////////////////////////////////////////////////////////////////////
+
+#ifndef LBANN_SAMPLE_LIST_HPP
+#define LBANN_SAMPLE_LIST_HPP
 
 #include <iostream>
 #include <string>
@@ -9,12 +35,6 @@
 #include "lbann/comm.hpp"
 
 #include "lbann/utils/file_utils.hpp"
-#include <cereal/types/unordered_map.hpp>
-#include <cereal/types/deque.hpp>
-#include <cereal/types/vector.hpp>
-#include <cereal/types/tuple.hpp>
-#include <cereal/types/string.hpp>
-#include <cereal/types/utility.hpp>
 
 namespace lbann {
 
@@ -56,12 +76,7 @@ struct sample_list_header {
   /// Save the filename or stream name of this sample list for debugging
   void set_sample_list_name(const std::string& n);
   const std::string& get_label_filename() const;
-  template <class Archive> void serialize( Archive & ar ) {
-    ar(m_is_multi_sample, m_is_exclusive, m_no_label_header,
-       m_included_sample_count, m_excluded_sample_count,
-       m_num_files, m_file_dir,
-       m_sample_list_name, m_label_filename);
-  }
+  template <class Archive> void serialize( Archive & ar );
 };
 
 template <typename sample_name_t>
@@ -222,6 +237,4 @@ inline T uninitialized_sample_name();
 
 } // end of namespace
 
-#include "sample_list_impl.hpp"
-
-#endif // __SAMPLE_LIST_HPP__
+#endif // LBANN_SAMPLE_LIST_HPP
