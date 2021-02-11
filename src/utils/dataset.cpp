@@ -24,31 +24,18 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_DATASET_HPP_INCLUDED
-#define LBANN_DATASET_HPP_INCLUDED
-
-#include "lbann/data_readers/data_reader.hpp"
+#include "lbann/utils/dataset.hpp"
+#include "lbann/utils/serialize.hpp"
 
 namespace lbann {
 
-class dataset {
- public:
-  dataset() : m_num_samples_processed(0), m_total_samples(0) {};
-  // The associated model/IO layer using this dataset is responsible for copying
-  // the data reader.
-  dataset(const dataset& other) = default;
-  dataset& operator=(const dataset& other) = default;
-  template <class Archive> void serialize( Archive & ar );
+template <class Archive>
+void dataset::serialize( Archive & ar ) {
+  ar(CEREAL_NVP(m_num_samples_processed),
+     CEREAL_NVP(m_total_samples));
+}
 
-  long get_num_samples_processed() const { return m_num_samples_processed; }
-  long& num_samples_processed() { return m_num_samples_processed; }
-  long get_total_samples() const { return m_total_samples; }
-  long& total_samples() { return m_total_samples; }
- protected:
-  long m_num_samples_processed;
-  long m_total_samples;
-};
+} // namespace lbann
 
-}  // namespace lbann
-
-#endif  // LBANN_DATASET_HPP_INCLUDED
+#define LBANN_CLASS_NAME dataset
+#include <lbann/macros/register_class_with_cereal.hpp>

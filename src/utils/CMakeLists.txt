@@ -3,6 +3,7 @@ set_full_path(THIS_DIR_SOURCES
   argument_parser.cpp
   commify.cpp
   cudnn.cpp
+  dataset.cpp
   description.cpp
   environment_variable.cpp
   exception.cpp
