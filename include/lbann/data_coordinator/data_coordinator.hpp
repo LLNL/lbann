@@ -102,12 +102,7 @@ class data_coordinator {
   }
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize( Archive & ar ) {
-    ar(/*CEREAL_NVP(m_io_buffer),*/
-       CEREAL_NVP(m_datasets)/*,
-       CEREAL_NVP(m_data_readers),
-       CEREAL_NVP(m_data_set_processed)*/);
-  }
+  template <class Archive> void serialize( Archive & ar );
 
   virtual void setup(thread_pool& io_thread_pool, int max_mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers);
 

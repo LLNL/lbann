@@ -31,6 +31,14 @@
 
 namespace lbann {
 
+template <class Archive>
+void data_coordinator::serialize( Archive & ar ) {
+  ar(/*CEREAL_NVP(m_io_buffer),*/
+     CEREAL_NVP(m_datasets)/*,
+     CEREAL_NVP(m_data_readers),
+     CEREAL_NVP(m_data_set_processed)*/);
+}
+
 void data_coordinator::setup(thread_pool& io_thread_pool, int max_mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers) {
   m_io_thread_pool = &io_thread_pool;
 

@@ -108,11 +108,7 @@ class buffered_data_coordinator : public data_coordinator {
   }
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize( Archive & ar ) {
-    ar(cereal::base_class<data_coordinator>( this )
-       /*CEREAL_NVP(m_active_buffer),*/
-       /*CEREAL_NVP(m_data_buffers)*/);
-  }
+  template <class Archive> void serialize( Archive & ar );
 
   void setup(
     thread_pool& io_thread_pool,
