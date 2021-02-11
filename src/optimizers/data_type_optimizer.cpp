@@ -163,23 +163,6 @@ data_type_optimizer<TensorDataType>::get_matrix_info() const {
   };
 }
 
-// =============================
-// Checkpointing
-// =============================
-
-#define PROTO(T)                                                             \
-  template void data_type_optimizer<T>::serialize(cereal::XMLOutputArchive&);    \
-  template void data_type_optimizer<T>::serialize(cereal::XMLInputArchive&);     \
-  template void data_type_optimizer<T>::serialize(cereal::BinaryOutputArchive&); \
-  template void data_type_optimizer<T>::serialize(cereal::BinaryInputArchive&);  \
-  template void data_type_optimizer<T>::serialize(RootedXMLOutputArchive&);      \
-  template void data_type_optimizer<T>::serialize(RootedXMLInputArchive&);       \
-  template void data_type_optimizer<T>::serialize(RootedBinaryOutputArchive&);   \
-  template void data_type_optimizer<T>::serialize(RootedBinaryInputArchive&)
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
-#include "lbann/macros/instantiate.hpp"
-
 } // namespace lbann
 
 #undef PROTO
@@ -191,3 +174,9 @@ data_type_optimizer<TensorDataType>::get_matrix_info() const {
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
+
+#define LBANN_CLASS_NAME data_type_optimizer
+#include <lbann/macros/register_template_class_with_cereal.hpp>
+
+#undef LBANN_INSTANTIATE_CPU_HALF
+#undef LBANN_INSTANTIATE_GPU_HALF

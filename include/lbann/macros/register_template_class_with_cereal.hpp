@@ -23,42 +23,27 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
-#include "lbann/utils/serialize.hpp"
-#include <lbann/layers/data_type_layer.hpp>
 
-namespace lbann {
+/** @file
+ *
+ *  Define LBANN_CLASS_NAME to be the full class name before
+ *  including this file. Don't include this file inside the lbann
+ *  namespace.
+ */
 
-template <typename TensorDataType>
-template <typename ArchiveT>
-void data_type_layer<TensorDataType>::serialize(ArchiveT& ar)
-{
-  ar(::cereal::make_nvp("BaseLayer",
-                        ::cereal::base_class<Layer>(this)),
-     CEREAL_NVP(m_persistent_error_signals));
-  // Members not serialized:
-  //   m_weights_proxy
-  //   m_inputs
-  //   m_outputs
-  //   m_gradient_wrt_outputs
-  //   m_gradient_wrt_inputs;
-}
+#undef PROTO
+#define LBANN_REGISTER_TEMPLATE_CLASS_WITH_CEREAL(NAME, TYPE)                        \
+  template void ::lbann::NAME<TYPE>::serialize(cereal::XMLOutputArchive&);    \
+  template void ::lbann::NAME<TYPE>::serialize(cereal::XMLInputArchive&);     \
+  template void ::lbann::NAME<TYPE>::serialize(cereal::BinaryOutputArchive&); \
+  template void ::lbann::NAME<TYPE>::serialize(cereal::BinaryInputArchive&);  \
+  template void ::lbann::NAME<TYPE>::serialize(RootedXMLOutputArchive&);      \
+  template void ::lbann::NAME<TYPE>::serialize(RootedXMLInputArchive&);       \
+  template void ::lbann::NAME<TYPE>::serialize(RootedBinaryOutputArchive&);   \
+  template void ::lbann::NAME<TYPE>::serialize(RootedBinaryInputArchive&)
 
-} // namespace lbann
+#define PROTO(T)                              \
+  LBANN_REGISTER_TEMPLATE_CLASS_WITH_CEREAL(LBANN_CLASS_NAME, T)
 
-#define PROTO(T)                                                \
-  CEREAL_REGISTER_TYPE_WITH_NAME(                               \
-    ::lbann::data_type_layer<T>,                                \
-    "dtl(" #T ")");                                             \
-  template class ::cereal::detail::PolymorphicVirtualCaster<    \
-    lbann::Layer, lbann::data_type_layer<T>>
-
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
 #undef PROTO
-
-#define LBANN_CLASS_NAME data_type_layer
-#include <lbann/macros/register_template_class_with_cereal.hpp>
-
-#undef LBANN_INSTANTIATE_CPU_HALF
-#undef LBANN_INSTANTIATE_GPU_HALF
