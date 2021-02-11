@@ -344,3 +344,6 @@ bool data_coordinator::load_from_checkpoint_distributed(persist& p) {
 }
 
 } // namespace lbann
+
+#define LBANN_CLASS_NAME data_coordinator
+#include <lbann/macros/register_class_with_cereal.hpp>
