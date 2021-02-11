@@ -30,6 +30,7 @@
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/protobuf_utils.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
+#include "lbann/data_readers/data_reader_HDF5.hpp"
 #include "lbann/utils/argument_parser.hpp"
 
 #include <lbann.pb.h>

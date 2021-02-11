@@ -34,6 +34,8 @@
 #include "lbann/utils/file_utils.hpp"
 #include "lbann/utils/argument_parser.hpp"
 
+#include "lbann/data_readers/data_reader_HDF5.hpp"
+
 #include <lbann.pb.h>
 #include <reader.pb.h>
 
