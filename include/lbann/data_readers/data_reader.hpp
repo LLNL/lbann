@@ -674,10 +674,6 @@ class generic_data_reader {
     return *m_trainer;
   }
 
-  /// experimental; used to ensure all readers for jag_conduit_hdf5
-  /// have identical shuffled indices
-  virtual void post_update() {}
-
   /** Set the transform pipeline this data reader will use. */
   void set_transform_pipeline(transform::transform_pipeline&& tp) {
     m_transform_pipeline = std::move(tp);
