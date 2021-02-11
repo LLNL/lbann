@@ -28,6 +28,7 @@
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/callbacks/callback.hpp"
 #include "lbann/io/persist.hpp"
+#include "lbann/io/persist_impl.hpp"
 #include <string>
 #include <unistd.h>
 #include <iomanip>

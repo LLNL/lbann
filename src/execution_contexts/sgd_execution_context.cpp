@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/execution_contexts/sgd_execution_context.hpp"
+#include "lbann/io/persist_impl.hpp"
 
 namespace lbann {
 
