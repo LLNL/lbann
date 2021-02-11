@@ -28,6 +28,7 @@
 
 #include "lbann/callbacks/check_init.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/serialize.hpp"
 #include "lbann/weights/data_type_weights.hpp"
 
 namespace lbann {
@@ -51,6 +52,13 @@ bool check_equal(const El::AbstractMatrix<TensorDataType>& x,
   return true;
 }
 }// namespace <anon>
+
+template <class Archive>
+void check_init::serialize(Archive & ar) {
+  ar(::cereal::make_nvp(
+       "BaseCallback",
+       ::cereal::base_class<callback_base>(this)));
+}
 
 void check_init::on_train_begin(model *m) {
   const auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());

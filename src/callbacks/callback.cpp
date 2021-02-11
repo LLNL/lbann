@@ -25,11 +25,22 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/callback.hpp"
+#include "lbann/utils/serialize.hpp"
+#include "lbann/trainers/trainer.hpp"
 
 namespace lbann {
+
+template <class Archive>
+void
+callback_base::serialize(Archive & ar) {
+  ar(CEREAL_NVP(m_batch_interval));
+}
 
 description callback_base::get_description() const {
   return name();
 }
 
 } // namespace lbann
+
+#define LBANN_CLASS_NAME callback_base
+#include <lbann/macros/register_class_with_cereal.hpp>

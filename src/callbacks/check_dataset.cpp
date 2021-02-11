@@ -28,9 +28,23 @@
 #include "lbann/callbacks/check_dataset.hpp"
 #include "lbann/layers/io/input_layer.hpp"
 #include <iomanip>
+#include "lbann/utils/serialize.hpp"
+#include <cereal/types/set.hpp>
 
 namespace lbann {
 namespace callback {
+
+template <class Archive>
+void
+check_dataset::serialize(Archive & ar) {
+  ar(::cereal::make_nvp(
+       "BaseCallback",
+       ::cereal::base_class<callback_base>(this)),
+     CEREAL_NVP(m_basename),
+     CEREAL_NVP(training_set),
+     CEREAL_NVP(validation_set),
+     CEREAL_NVP(testing_set));
+}
 
 void check_dataset::add_to_set(model *m, Layer *l, int64_t step, std::set<long>& set) {
   if (!dynamic_cast<input_layer<DataType>*>(l)) {

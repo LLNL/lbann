@@ -29,6 +29,8 @@
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
+#include "lbann/utils/serialize.hpp"
+#include <cereal/types/set.hpp>
 
 #include <callbacks.pb.h>
 
@@ -63,6 +65,19 @@ check_metric::check_metric(std::string metric_name,
 check_metric::check_metric()
   : check_metric("", {}, 0, 0, false)
 {}
+
+template <class Archive>
+void
+check_metric::serialize(Archive & ar) {
+  ar(::cereal::make_nvp(
+       "BaseCallback",
+       ::cereal::base_class<callback_base>(this)),
+     CEREAL_NVP(m_metric_name),
+     CEREAL_NVP(m_modes),
+     CEREAL_NVP(m_lower_bound),
+     CEREAL_NVP(m_upper_bound),
+     CEREAL_NVP(m_error_on_failure));
+}
 
 void check_metric::do_check_metric(const model& m) const {
   const auto& c = m.get_execution_context();
