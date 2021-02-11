@@ -233,3 +233,6 @@ void weights::steal_values(weights& other)
     this->set_values(other.get_values());
 }
 }  // namespace lbann
+
+#define LBANN_CLASS_NAME weights
+#include <lbann/macros/register_class_with_cereal.hpp>

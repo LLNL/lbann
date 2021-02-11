@@ -100,3 +100,6 @@ void optimizer::remove_gradient_source(const void* source) {
 }
 
 } // namespace lbann
+
+#define LBANN_CLASS_NAME optimizer
+#include <lbann/macros/register_class_with_cereal.hpp>
