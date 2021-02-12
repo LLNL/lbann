@@ -26,6 +26,7 @@
 // lbann_data_reader .hpp .cpp - Input data base class for training, testing
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/comm_impl.hpp"
 #include "lbann/data_readers/data_reader.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
 #include "lbann/utils/serialize.hpp"

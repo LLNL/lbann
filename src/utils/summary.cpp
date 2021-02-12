@@ -24,7 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/utils/summary.hpp"
+#include "lbann/comm_impl.hpp"
 #include "lbann/utils/summary_impl.hpp"
 
 #include "lbann/utils/exception.hpp"

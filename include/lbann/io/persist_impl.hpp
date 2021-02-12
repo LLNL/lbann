@@ -29,6 +29,7 @@
 #ifndef LBANN_PERSIST_IMPL_H
 #define LBANN_PERSIST_IMPL_H
 
+#include "lbann/comm_impl.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/utils/serialize.hpp"
 

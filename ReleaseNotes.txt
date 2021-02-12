@@ -30,6 +30,12 @@ Internal features:
  - Added support for ROCm and MIOpen
  - Updated the bamboo test environment to use local executable rather
    than hard coded executables
+ - Significant cleanup and refactoring of code base to improve compile
+   times.  Moving to ensure  that code adheres to standard split of
+   header between declaration and implementation functions (for
+   templated code).  Specifically focused on serialization functions
+   and comm class.  Reduced dependencies through over reaching header
+   inclusions.
 
 I/O & data readers:
  - Experimental data reader that generates graph random walks with
@@ -41,6 +47,7 @@ I/O & data readers:
 Build system:
  - Hydrogen v1.5.0
  - Aluminum v0.5.0
+ - DiHydrogen v0.2.0 is required
  - C++14 or newer standard with CUDA (CMake: "-DCMAKE_CUDA_STANDARD=14")
  - OpenCV is now an optional dependency via CMake "LBANN_WITH_VISION"
  - CNPY is now an optional dependency via CMake "LBANN_WITH_CNPY"

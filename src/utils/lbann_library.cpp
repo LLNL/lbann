@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/comm_impl.hpp"
 #include "lbann/utils/lbann_library.hpp"
 
 #include "lbann/proto/factories.hpp"

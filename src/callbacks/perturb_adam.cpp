@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/comm_impl.hpp"
 #include "lbann/callbacks/perturb_adam.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/random_number_generators.hpp"

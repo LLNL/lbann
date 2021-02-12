@@ -5,8 +5,7 @@
 
 #include <lbann/base.hpp>
 #include <lbann/utils/serialize.hpp>
-#include <lbann/utils/h2_tmp.hpp>
-#include <lbann/utils/h2_tmp_impl.hpp>
+#include <h2/patterns/multimethods/SwitchDispatcher.hpp>
 
 namespace
 {

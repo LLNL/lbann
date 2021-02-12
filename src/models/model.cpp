@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/comm_impl.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/callbacks/callback.hpp"

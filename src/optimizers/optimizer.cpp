@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/comm_impl.hpp"
 #include "lbann/optimizers/optimizer.hpp"
 #include "lbann/utils/serialize.hpp"
 #include "lbann/utils/timer.hpp"

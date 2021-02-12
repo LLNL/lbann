@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_CATEGORICAL_ACCURACY_LAYER_INSTANTIATE
+#include "lbann/comm_impl.hpp"
 #include "lbann/layers/loss/categorical_accuracy.hpp"
 #include <limits>
 

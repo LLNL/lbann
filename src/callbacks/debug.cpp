@@ -25,7 +25,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/debug.hpp"
-#include "lbann/comm.hpp"
+#include "lbann/comm_impl.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/weights/data_type_weights.hpp"

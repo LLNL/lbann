@@ -1,8 +1,8 @@
 #include <catch2/catch.hpp>
 #include <lbann/base.hpp>
-#include <lbann/utils/h2_tmp.hpp>
-#include <lbann/utils/h2_tmp_impl.hpp>
+
 #include <lbann/utils/serialize.hpp>
+#include <h2/patterns/multimethods/SwitchDispatcher.hpp>
 
 #include "MPITestHelpers.hpp"
 

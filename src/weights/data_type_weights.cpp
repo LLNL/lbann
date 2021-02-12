@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_DATA_TYPE_WEIGHTS_INSTANTIATE
+#include "lbann/comm_impl.hpp"
 #include "lbann/weights/data_type_weights.hpp"
 #include "lbann/weights/data_type_weights_impl.hpp"
 #include "lbann/optimizers/optimizer.hpp"

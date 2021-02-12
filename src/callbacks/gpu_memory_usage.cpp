@@ -25,6 +25,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/comm_impl.hpp"
 #include "lbann/callbacks/gpu_memory_usage.hpp"
 #include "lbann/utils/serialize.hpp"
 #include <iomanip>

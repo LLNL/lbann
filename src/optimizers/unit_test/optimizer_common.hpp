@@ -4,7 +4,10 @@
 // Some common includes
 #include <lbann_config.hpp>
 #include <lbann/base.hpp>
-#include <lbann/utils/h2_tmp.hpp>
+#include <h2/meta/Core.hpp>
+#include <h2/meta/TypeList.hpp>
+#include <h2/patterns/multimethods/SwitchDispatcher.hpp>
+
 
 // This header should only be used in the unit testing code, so this
 // is fine.

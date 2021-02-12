@@ -1,3 +1,4 @@
+#include "lbann/comm_impl.hpp"
 #include "lbann/utils/jag_utils.hpp"
 #include "lbann/utils/exception.hpp"
 
@@ -6,9 +7,9 @@ namespace lbann {
 void read_filelist(lbann_comm *comm, const std::string &fn, std::vector<std::string> &filelist_out) {
     const int rank = comm->get_rank_in_world();
     std::string f; // concatenated, space separated filelist
-    int f_size;    
+    int f_size;
 
-    // P_0 reads filelist 
+    // P_0 reads filelist
     if (!rank) {
 
       std::ifstream in(fn.c_str());
@@ -29,7 +30,7 @@ void read_filelist(lbann_comm *comm, const std::string &fn, std::vector<std::str
       f_size = s.str().size();
     }
 
-    // bcast concatenated filelist 
+    // bcast concatenated filelist
     comm->world_broadcast<int>(0, &f_size, 1);
     f.resize(f_size);
     comm->world_broadcast<char>(0, &f[0], f_size);

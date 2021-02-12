@@ -27,6 +27,9 @@
 #ifndef LBANN_LBANN_HPP_INCLUDED
 #define LBANN_LBANN_HPP_INCLUDED
 
+/// Templated communicator
+#include "lbann/comm_impl.hpp"
+
 /// Trainers
 #include "lbann/trainers/trainer.hpp"
 

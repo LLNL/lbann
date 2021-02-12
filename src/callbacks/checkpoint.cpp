@@ -27,6 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
+#include "lbann/comm_impl.hpp"
 #include "lbann/callbacks/checkpoint.hpp"
 
 #include "lbann/models/model.hpp"

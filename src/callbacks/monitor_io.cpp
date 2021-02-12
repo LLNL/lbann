@@ -81,6 +81,6 @@ build_monitor_io_callback_from_pbuf(
 } // namespace callback
 } // namespace lbann
 
-// CEREAL_REGISTER_TYPE_WITH_NAME(
-//   ::lbann::callback::monitor_io,
-//   "callback::monitor_io")
+CEREAL_REGISTER_TYPE_WITH_NAME(
+  ::lbann::callback::monitor_io,
+  "callback::monitor_io")

@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/comm_impl.hpp"
 #include "lbann/data_coordinator/buffered_data_coordinator.hpp"
 #include "lbann/data_coordinator/buffered_data_coordinator_impl.hpp"
 #include "lbann/data_coordinator/io_data_buffer_impl.hpp"

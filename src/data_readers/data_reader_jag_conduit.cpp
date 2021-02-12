@@ -25,6 +25,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/comm_impl.hpp"
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
 #include "lbann/trainers/trainer.hpp"

@@ -3,8 +3,7 @@
 #include <lbann/base.hpp> // half stuff is here.
 #include <lbann/utils/serialize.hpp>
 
-#include <lbann/utils/h2_tmp.hpp>
-#include <lbann/utils/h2_tmp_impl.hpp>
+#include <h2/patterns/multimethods/SwitchDispatcher.hpp>
 
 #include <sstream>
 

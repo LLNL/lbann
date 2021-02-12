@@ -28,9 +28,8 @@
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/utils/exception.hpp"
 
-#include "lbann/utils/h2_tmp.hpp"
-#include <lbann/utils/h2_tmp_impl.hpp>
 #include "lbann/utils/serialize.hpp"
+#include <h2/patterns/multimethods/SwitchDispatcher.hpp>
 
 namespace lbann {
 namespace callback {

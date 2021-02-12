@@ -28,8 +28,7 @@
 #include "lbann/weights/variance_scaling_initializers.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
-#include "lbann/utils/h2_tmp.hpp"
-#include <lbann/utils/h2_tmp_impl.hpp>
+#include <h2/patterns/multimethods/SwitchDispatcher.hpp>
 
 #include <weights.pb.h>
 

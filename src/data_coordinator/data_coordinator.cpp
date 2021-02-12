@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/comm_impl.hpp"
 #include <lbann/data_coordinator/data_coordinator.hpp>
 #include <lbann/trainers/trainer.hpp>
 #include <lbann/utils/distconv.hpp>

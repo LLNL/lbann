@@ -26,6 +26,7 @@
 // data_reader_image .hpp .cpp - generic data reader class for image dataset
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/comm_impl.hpp"
 #include "lbann/data_readers/data_reader_image.hpp"
 #include "lbann/data_readers/sample_list_impl.hpp"
 #include "lbann/utils/timer.hpp"

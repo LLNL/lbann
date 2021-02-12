@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/comm_impl.hpp"
 #include "lbann/callbacks/timer.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/argument_parser.hpp"

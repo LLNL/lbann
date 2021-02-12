@@ -30,7 +30,8 @@
 #include "lbann/layers/layer.hpp"
 #include "lbann/weights/weights_proxy.hpp"
 
-#include "lbann/utils/h2_tmp.hpp"
+#include <h2/meta/Core.hpp>
+#include <h2/meta/TypeList.hpp>
 
 #ifdef LBANN_HAS_DISTCONV
 #include "lbann/layers/data_type_distconv_adapter.hpp"

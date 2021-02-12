@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 //
 /////////////////////////////////////////////////////////////////////////////////
+#include "lbann/comm_impl.hpp"
 #include "lbann/data_readers/data_reader_hdf5.hpp"
 #include "lbann/utils/profiling.hpp"
 #include "lbann/utils/distconv.hpp"

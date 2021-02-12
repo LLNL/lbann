@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <vector>
+#include "lbann/comm_impl.hpp"
 #include "lbann/callbacks/check_dataset.hpp"
 #include "lbann/layers/io/input_layer.hpp"
 #include <iomanip>

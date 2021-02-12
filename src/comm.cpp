@@ -27,7 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_COMM_INSTANTIATE
-#include "lbann/comm.hpp"
+#include "lbann/comm_impl.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/gpu/helpers.hpp"

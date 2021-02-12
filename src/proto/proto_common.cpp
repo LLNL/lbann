@@ -28,7 +28,7 @@
 
 #include "lbann/lbann.hpp"
 #include "lbann/base.hpp"
-#include "lbann/comm.hpp"
+#include "lbann/comm_impl.hpp"
 #include "lbann/proto/init_image_data_readers.hpp"
 #include "lbann/proto/factories.hpp"
 #include "lbann/utils/file_utils.hpp"

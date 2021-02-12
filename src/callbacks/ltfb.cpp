@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/comm_impl.hpp"
 #include "lbann/callbacks/ltfb.hpp"
 #include "lbann/utils/random_number_generators.hpp"
 #include "lbann/models/directed_acyclic_graph.hpp"

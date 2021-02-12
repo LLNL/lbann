@@ -44,6 +44,7 @@
 
 #include <unistd.h>
 
+#include "lbann/comm_impl.hpp"
 #include "lbann/data_readers/sample_list.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/file_utils.hpp"

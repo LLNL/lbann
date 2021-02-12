@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_LOG_SOFTMAX_LAYER_INSTANTIATE
+#include "lbann/comm_impl.hpp"
 #include "lbann/layers/activations/log_softmax.hpp"
 #ifdef LBANN_HAS_DNN_LIB
 #include "lbann/utils/dnn_lib/softmax.hpp"

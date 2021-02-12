@@ -26,6 +26,7 @@
 // print_statistics .hpp .cpp - Callback hooks to print information
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/comm_impl.hpp"
 #include "lbann/callbacks/print_statistics.hpp"
 
 #include "lbann/data_coordinator/data_coordinator.hpp"

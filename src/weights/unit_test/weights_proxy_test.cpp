@@ -33,7 +33,10 @@
 #include <lbann/weights/weights.hpp>
 #include <lbann/weights/weights_proxy.hpp>
 #include <lbann/utils/memory.hpp>
-#include <lbann/utils/h2_tmp.hpp>
+#include <h2/meta/Core.hpp>
+#include <h2/meta/TypeList.hpp>
+#include <h2/patterns/multimethods/SwitchDispatcher.hpp>
+
 
 // Some convenience typedefs
 

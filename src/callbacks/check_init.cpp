@@ -26,6 +26,7 @@
 // check_init .hpp .cpp - Check multi-model init
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/comm_impl.hpp"
 #include "lbann/callbacks/check_init.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/serialize.hpp"

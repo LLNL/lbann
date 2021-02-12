@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/comm_impl.hpp"
 #include "lbann/callbacks/confusion_matrix.hpp"
 #include "lbann/layers/data_type_layer.hpp"
 
