@@ -16,6 +16,8 @@ set_full_path(THIS_DIR_HEADERS
   file_utils.hpp
   glob.hpp
   hydrogen_utils.hpp
+  h2_tmp.hpp
+  h2_tmp_impl.hpp
   im2col.hpp
   jag_utils.hpp
   lbann_library.hpp
