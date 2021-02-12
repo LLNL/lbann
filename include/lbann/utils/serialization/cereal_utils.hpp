@@ -36,6 +36,7 @@
 #include <cereal/types/base_class.hpp>
 #include <cereal/types/map.hpp>
 #include <cereal/types/polymorphic.hpp>
+#include <cereal/types/set.hpp>
 #include <cereal/types/string.hpp>
 #include <cereal/types/unordered_map.hpp>
 #include <cereal/types/utility.hpp>
