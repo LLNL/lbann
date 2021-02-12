@@ -335,6 +335,6 @@ build_dump_weights_callback_from_pbuf(
 } // namespace callback
 } // namespace lbann
 
-// CEREAL_REGISTER_TYPE_WITH_NAME(
-//   ::lbann::callback::dump_weights,
-//   "callback::dump_weights")
+CEREAL_REGISTER_TYPE_WITH_NAME(
+  ::lbann::callback::dump_weights,
+  "callback::dump_weights")

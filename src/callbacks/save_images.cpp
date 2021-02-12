@@ -29,6 +29,7 @@
 
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/serialize.hpp"
+#include <cereal/types/polymorphic.hpp>
 
 #include <callbacks.pb.h>
 
@@ -184,3 +185,7 @@ build_save_images_callback_from_pbuf(
 
 } // namespace callback
 } // namespace lbann
+
+// CEREAL_REGISTER_TYPE_WITH_NAME(
+//   ::lbann::callback::save_images,
+//   "callback::save_images")

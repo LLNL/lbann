@@ -192,6 +192,6 @@ build_debug_callback_from_pbuf(const google::protobuf::Message& proto_msg,
 } // namespace callback
 } // namespace lbann
 
-// CEREAL_REGISTER_TYPE_WITH_NAME(
-//   ::lbann::callback::debug,
-//   "callback::debug")
+CEREAL_REGISTER_TYPE_WITH_NAME(
+  ::lbann::callback::debug,
+  "callback::debug")

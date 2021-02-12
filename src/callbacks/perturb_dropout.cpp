@@ -147,6 +147,6 @@ build_perturb_dropout_callback_from_pbuf(
 } // namespace callback
 } // namespace lbann
 
-// CEREAL_REGISTER_TYPE_WITH_NAME(
-//   ::lbann::callback::perturb_dropout,
-//   "callback::perturb_dropout")
+CEREAL_REGISTER_TYPE_WITH_NAME(
+  ::lbann::callback::perturb_dropout,
+  "callback::perturb_dropout")

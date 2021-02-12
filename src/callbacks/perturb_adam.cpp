@@ -29,7 +29,6 @@
 #include "lbann/utils/random_number_generators.hpp"
 #include "lbann/utils/serialize.hpp"
 
-#include <cereal/types/set.hpp>
 #include <callbacks.pb.h>
 
 #include <algorithm>

@@ -218,3 +218,7 @@ build_load_model_callback_from_pbuf(
 
 } // namespace callback
 } // namespace lbann
+
+// CEREAL_REGISTER_TYPE_WITH_NAME(
+//   ::lbann::callback::load_model,
+//   "callback::load_model")

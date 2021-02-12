@@ -163,6 +163,3 @@ build_dump_model_graph_callback_from_pbuf(
 
 } // namespace callback
 } // namespace lbann
-
-// #define LBANN_CLASS_NAME dump_model_graph
-// #include <lbann/macros/register_class_with_cereal.hpp>

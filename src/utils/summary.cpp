@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/utils/summary.hpp"
+#include "lbann/utils/summary_impl.hpp"
 
 #include "lbann/utils/exception.hpp"
 #ifdef LBANN_HAS_OPENCV
