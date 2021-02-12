@@ -26,6 +26,7 @@
 
 #include "lbann/data_coordinator/buffered_data_coordinator.hpp"
 #include "lbann/data_coordinator/buffered_data_coordinator_impl.hpp"
+#include "lbann/data_coordinator/io_data_buffer_impl.hpp"
 #include "lbann/data_readers/utils/input_data_type.hpp"
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/exception.hpp"

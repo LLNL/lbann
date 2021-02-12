@@ -29,10 +29,6 @@
 
 #include "lbann/data_coordinator/data_coordinator.hpp"
 #include "lbann/data_coordinator/io_data_buffer.hpp"
-#include <cereal/types/utility.hpp>
-#include <cereal/types/map.hpp>
-//#include <cereal/types/atomic.hpp>
-#include <cereal/types/base_class.hpp>
 
 namespace lbann {
 
