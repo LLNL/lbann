@@ -17,7 +17,7 @@ epoch_size = 51200
 config_file = os.getenv('LBANN_COMMUNITYGAN_CONFIG_FILE')
 if not config_file:
     raise RuntimeError(
-        'No configuration file provided in '
+        'No configuration file in '
         'LBANN_COMMUNITYGAN_CONFIG_FILE environment variable')
 if not os.path.exists(config_file):
     raise FileNotFoundError(f'Could not find config file at {config_file}')
@@ -26,7 +26,11 @@ config.read(config_file)
 
 # Options from config file
 motif_file = config.get('Motifs', 'motif_file', fallback=None)
-walk_file = config.get('RW', 'rw_out_filename', fallback=None)
+walk_file = config.get('Walks', 'file', fallback=None)
+if not motif_file:
+    raise RuntimeError(f'No motif file in {config_file}')
+if not walk_file:
+    raise RuntimeError(f'No walk file in {config_file}')
 
 # Configure RNG
 rng_pid = None

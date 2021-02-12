@@ -14,130 +14,83 @@ from model import make_model
 
 root_dir = os.path.dirname(os.path.realpath(__file__))
 
-# ----------------------------------
-# Add/Define arguments to command-line parser
-# ----------------------------------
-def add_args():
+# ----------------------------------------------------------
+# Configuration
+# ----------------------------------------------------------
 
+def parse_args():
+    """Parse command-line arguments."""
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--config', action='store', default=None, type=str,
-        help='data config file', metavar='FILE')
+        help='configuration file', metavar='FILE')
     parser.add_argument(
         '--work-dir', action='store', default=None, type=str,
         help='working directory', metavar='DIR')
     parser.add_argument(
         '--run', action='store_true',
         help='run directly instead of submitting a batch job')
-    parser.add_argument(
-        '--graph', action='store', default=None, type=str,
-        help='edgelist file',
-        metavar='FILE')
-    parser.add_argument(
-        '--graph_store', action='store', default=None, type=str,
-        help='where to store input graph',
-        metavar='FILE')
-    parser.add_argument(
-        '--pattern_in_dir', action='store', default=None, type=str,
-        help='input motifs directory',
-        metavar='FILE')
-    parser.add_argument(
-        '--pattern_out_dir', action='store', default=None, type=str,
-        help='where to store match results',
-        metavar='FILE')
-    parser.add_argument(
-        '--match_dir', action='store', default=None, type=str,
-        help='directory to store match results',
-        metavar='FILE')
-    parser.add_argument(
-        '--motif_file', action='store', default=None, type=str,
-        help='name of motif CSV file',
-        metavar='FILE')
-    parser.add_argument(
-        '--create_motif_file', action='store', default=False, type=bool,
-        help='option to create motif set file',
-        metavar='FILE')
-    parser.add_argument(
-        '--motif_set_file', action='store', default=None, type=str,
-        help='the name of file to store motifs with their IDs (when create_motif_file flag is set)',
-        metavar='FILE')
-    parser.add_argument(
-        '--rw_walks_store', action='store', default=None, type=str,
-        help='place to park rw paths',
-        metavar='FILE')
-    parser.add_argument(
-        '--rw_out_filename', action='store', default=None, type=str,
-        help='base name for RW results',
-        metavar='FILE')
-    parser.add_argument(
-        '--rw_walk_len', action='store', default=None, type=str,
-        help='the length of each walk',
-        metavar='FILE')
-    parser.add_argument(
-        '--rw_num_walkers', action='store', default=None, type=str,
-        help='the number of walkers per each vertex',
-        metavar='FILE')
-    parser.add_argument(
-        '--rw_p', action='store', default=None, type=str,
-        help='the p value for node2vec rw',
-        metavar='FILE')
-    parser.add_argument(
-        '--rw_q', action='store', default=None, type=str,
-        help='the q value for node2vec rw',
-        metavar='FILE')
+    return parser.parse_args()
 
-    args = parser.parse_args()
-    return args
+def make_work_dir(args):
+    """Make directory to store outputs, logs, and intermediate data.
 
+    If not provided, create a timestamped directory in current working
+    directory.
 
-# ----------------------------------
-# Parse config file
-# ----------------------------------
-def parse_config(args):
+    """
+    work_dir = args.work_dir
+    if not work_dir:
+        timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        work_dir = os.path.join(os.getcwd(), f'{timestamp}_communitygan')
+    work_dir = os.path.realpath(work_dir)
+    os.makedirs(work_dir, exist_ok=True)
+    args.work_dir = work_dir
+    return work_dir
 
+def setup_config(args, work_dir):
+    """Setup experiment configuration.
+
+    Loads default config and loads user-provided config file. The
+    resulting config is written to the work directory.
+
+    """
+
+    # Load default config
     config = configparser.ConfigParser()
     config.read(os.path.join(root_dir, 'default.config'))
+
+    # Read config file if provided
     config_file = args.config
     if not config_file:
         config_file = os.getenv('COMMUNITYGAN_CONFIG_FILE')
     if config_file:
         config.read(config_file)
 
-    # Command-line overrides
-    if args.graph:
-        config.set('Graph', 'file', args.graph)
-    if args.graph_store:
-        config.set('Graph', 'ingest_dir', args.graph_store)
-    if args.pattern_in_dir:
-        config.set('Pattern', 'pattern_in_dir', args.pattern_in_dir)
-    if args.pattern_out_dir:
-        config.set('Pattern', 'pattern_out_dir', args.pattern_out_dir)
-    if args.match_dir:
-        config.set('Motifs', 'match_dir', args.match_dir)
-    if args.motif_file:
-        config.set('Motifs', 'motif_file', args.motif_file)
-    if args.create_motif_file:
-        config.set('Motifs', 'create_motif_file', args.create_motif_file)
-    if args.motif_set_file:
-        config.set('Motifs', 'motif_set_file', args.motif_set_file)
-    if args.rw_walks_store:
-        config.set('RW', 'rw_walks_store', args.rw_walks_store)
-    if args.rw_out_filename:
-        config.set('RW', 'rw_out_filename', args.rw_out_filename)
-    if args.rw_walk_len:
-        config.set('RW', 'rw_walk_len', args.rw_walk_len)
-    if args.rw_num_walkers:
-        config.set('RW', 'rw_num_walkers', args.rw_num_walkers)
-    if args.rw_p:
-        config.set('RW', 'rw_p', args.rw_p)
-    if args.rw_q:
-        config.set('RW', 'rw_q', args.rw_q)
+    # Default parameters for random walks
+    walks_file = config.get('Walks', 'file', fallback=None)
+    if not walks_file:
+        walks_file = os.path.join(work_dir, 'walks')
+    walks_file = os.path.realpath(walks_file)
+    config.set('Walks', 'file', walks_file)
+    distributed_walks_dir = config.get('Walks', 'distributed_walks_dir', fallback=None)
+    if not distributed_walks_dir:
+        distributed_walks_dir = os.path.join(work_dir, 'distributed_walks')
+    distributed_walks_dir = os.path.realpath(distributed_walks_dir)
+    config.set('Walks', 'distributed_walks_dir', distributed_walks_dir)
 
-    return config
+    # Write config file to work directory
+    config_file = os.path.join(work_dir, 'experiment.config')
+    with open(config_file, 'w') as f:
+        config.write(f)
+    os.environ['LBANN_COMMUNITYGAN_CONFIG_FILE'] = config_file
+    args.config = config_file
 
-# ----------------------------------
-# Find all the motifs from given graph and dump them to a file
-# ----------------------------------
+    return config, config_file
+
+# ----------------------------------------------------------
+# Find motifs
+# ----------------------------------------------------------
 
 def find_motifs(script, config, config_file):
 
@@ -176,79 +129,62 @@ def find_motifs(script, config, config_file):
         config_file,
     ])
 
-'''
-# Compute initial values for Theta_G and Theta_D, via graph embedding and initialize the matrices
+# ----------------------------------------------------------
+# Perform random walks
+# ----------------------------------------------------------
 
-# Spawn Keita's RW code in background to generate RW paths for all the vertices in graph
-# Need to touch, Keita's side code to repeatedly generate random walks as long as the
-# output RW files are consumed and removed
-rw = subprocess.Popen(["path-to-keita's", "parameters ..."])
+def setup_walks(script, config):
+    """Add random walker to batch script
+    """
 
-# Start LBANN process here
-# CommunityGAN produces SW files and LBANN consumes/erase these files
-# Start LBANN learing
-# End of LBANN learning
-
-# Stop RW gen code
-rw.terminate()
-'''
-
-# ----------------------------------
-# Generate random walks from given input graph
-# ----------------------------------
-
-def do_random_walks(script, config):
-
-    # Get the parameters from config
+    # Get parameters
     graph_file = config.get('Graph', 'file', fallback=None)
-    rw_graph_store = '/dev/shm/gr/'
-    rw_walks_store = config.get('RW', 'rw_walks_store', fallback=None)
-    rw_file = 'rw_outs'
-    rw_out_filename = config.get('RW', 'rw_out_filename', fallback=None)
+    walks_file = config.get('Walks', 'file', fallback=None)
+    walk_length = config.getint('Walks', 'walk_length',  fallback=0)
+    num_walkers = config.getint('Walks', 'num_walkers', fallback=0)
+    p = config.getfloat('Walks', 'p', fallback=-1)
+    q = config.getfloat('Walks', 'q', fallback=-1)
+    distributed_graph_dir = config.get('Walks', 'distributed_graph_dir', fallback=None)
+    distributed_walks_dir = config.get('Walks', 'distributed_walks_dir', fallback=None)
+    graph_ingest_exec = config.get('Walks', 'graph_ingest_exec', fallback=None)
+    walk_exec = config.get('Walks', 'walk_exec', fallback=None)
+    assert (graph_file and walks_file
+            and walk_length and num_walkers and p>=0 and q>=0
+            and distributed_graph_dir and distributed_walks_dir
+            and graph_ingest_exec and walk_exec), \
+        'invalid configuration for random walker'
 
-    walk_len = config.get('RW', 'walk_len',  fallback=80)
-    num_walkers = config.get('RW', 'num_walkers', fallback=40)
-    p = config.get('RW', 'p', fallback=1.0)
-    q = config.get('RW', 'q', fallback=1.0)
-
-    rw_graph_read_exec = '/usr/workspace/llamag/lbann/applications/graph/communityGAN/largescale_node2vec/build/lassen.llnl.gov/src/construct_dist_graph '
-    rw_exec = '/usr/workspace/llamag/lbann/applications/graph/communityGAN/largescale_node2vec/build/lassen.llnl.gov/src/run_dist_node2vec_rw '
-
+    # Add random walker to batch script
     script.add_body_line('')
     script.add_body_line('# Perform random walks')
-
-    # Ingest graph
-    script.add_parallel_command(['rm', '-rf', rw_graph_store], procs_per_node=1)
+    script.add_parallel_command(['rm', '-rf', distributed_graph_dir], procs_per_node=1)
     script.add_parallel_command([
-        rw_graph_read_exec,
+        graph_ingest_exec,
         '-D',
-        f'-o {rw_graph_store}',
+        f'-o {distributed_graph_dir}',
         graph_file,
     ])
-
-    # Perform random walks
-    script.add_command(['rm', '-rf', rw_walks_store])
-    script.add_command(['mkdir', rw_walks_store])
+    script.add_command(['rm', '-rf', distributed_walks_dir])
+    script.add_command(['mkdir', distributed_walks_dir])
     script.add_parallel_command([
-        rw_exec,
-        f'-g {rw_graph_store}',
-        f'-o {os.path.join(rw_walks_store, rw_file)}',
+        walk_exec,
+        f'-g {distributed_graph_dir}',
+        f'-o {os.path.join(distributed_walks_dir, "walks")}',
         f'-p {p}',
         f'-q {q}',
-        f'-l {walk_len}',
+        f'-l {walk_length}',
         f'-w {num_walkers}',
     ])
     script.add_command([
         'cat',
-        f'{os.path.join(rw_walks_store, rw_file)}*',
+        f'{os.path.join(distributed_walks_dir, "walks")}*',
         '>',
-        rw_out_filename,
+        walks_file,
     ])
-    script.add_command(['rm', '-rf', rw_walks_store])
 
-# ----------------------------------
+# ----------------------------------------------------------
 # Train embeddings
-# ----------------------------------
+# ----------------------------------------------------------
 
 def do_train(
     script,
@@ -262,7 +198,7 @@ def do_train(
 
     # Get parameters from config file
     num_vertices = config.getint('Graph', 'num_vertices', fallback=0)
-    walk_length = config.getint('RW', 'rw_walk_len', fallback=0)
+    walk_length = config.getint('Walks', 'walk_length', fallback=0)
 
     # Determine number of vertices, if needed
     if not num_vertices:
@@ -303,42 +239,30 @@ def do_train(
         f'--num_io_threads=1',
     ])
 
-# find all the motifs from graph
-# construct motifs set as CSV
-# compute massive random walks from the input graph
-# dump random walks to file?
+# ----------------------------------------------------------
+# Main function
+# ----------------------------------------------------------
 
 if __name__ == '__main__':
-    args = add_args()
-    config = parse_config(args)
 
-    # Create work directory
-    # Note: Default is timestamped directory in cwd
-    if not args.work_dir:
-        timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-        args.work_dir = os.path.join(os.getcwd(), f'{timestamp}_communitygan')
-    args.work_dir = os.path.realpath(args.work_dir)
-    os.makedirs(args.work_dir, exist_ok=True)
-
-    # Write config file to work directory
-    config_file = os.path.join(args.work_dir, 'experiment.config')
-    with open(config_file, 'w') as f:
-        config.write(f)
-    os.environ['LBANN_COMMUNITYGAN_CONFIG_FILE'] = config_file
+    # Setup config and work dir
+    args = parse_args()
+    work_dir = make_work_dir(args)
+    config, config_file = setup_config(args, work_dir)
 
     # Construct batch script
     kwargs = {}
     script = lbann.contrib.launcher.make_batch_script(
         job_name='lbann_communitygan',
-        work_dir=args.work_dir,
+        work_dir=work_dir,
         environment={'LBANN_COMMUNITYGAN_CONFIG_FILE' : config_file},
         **kwargs,
     )
     find_motifs(script, config, config_file)
-    do_random_walks(script, config)
+    setup_walks(script, config)
     do_train(script, config)
 
-    # Run LBANN
+    # Launch experiment
     if args.run:
         script.run(True)
     else:
