@@ -103,5 +103,6 @@ void metric::set_layer_pointers(std::vector<ViewingLayerPtr> layers) {
 #define LBANN_CLASS_NAME metric
 #include <lbann/macros/register_class_with_cereal.hpp>
 
+#undef LBANN_CLASS_NAME
 #define LBANN_CLASS_NAME metric_statistics
 #include <lbann/macros/register_class_with_cereal.hpp>
