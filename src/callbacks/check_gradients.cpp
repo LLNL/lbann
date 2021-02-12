@@ -31,6 +31,7 @@
 #include "lbann/utils/memory.hpp"
 
 #include "lbann/utils/h2_tmp.hpp"
+#include <lbann/utils/h2_tmp_impl.hpp>
 #include <cereal/types/set.hpp>
 #include "lbann/utils/serialize.hpp"
 

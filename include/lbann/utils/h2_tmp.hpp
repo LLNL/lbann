@@ -832,20 +832,7 @@ class SwitchDispatcher<FunctorT, ReturnT,
 
 public:
     template <typename... Args>
-    static ReturnT Exec(FunctorT F, ThisBase& arg, Args&&... others)
-    {
-        using Head = meta::tlist::Car<ThisList>;
-        using Tail = meta::tlist::Cdr<ThisList>;
-
-        if (auto* arg_dc = dynamic_cast<Head*>(&arg))
-            return SwitchDispatcher<FunctorT, ReturnT, ArgumentTs...>::
-                Exec(F, std::forward<Args>(others)..., *arg_dc);
-        else
-            return SwitchDispatcher<FunctorT, ReturnT,
-                                    ThisBase, Tail,
-                                    ArgumentTs...>::
-                Exec(F, arg, std::forward<Args>(others)...);
-    }
+    static ReturnT Exec(FunctorT F, ThisBase& arg, Args&&... others);
 };
 
 // Base case
@@ -860,19 +847,13 @@ class SwitchDispatcher<FunctorT, ReturnT>
 public:
     template <typename... Args,
               meta::EnableWhenV<Invocable<Args...>,int> = 0>
-    static ReturnT Exec(FunctorT F, Args&&... others)
-    {
-        return F(std::forward<Args>(others)...);
-    }
+    static ReturnT Exec(FunctorT F, Args&&... others);
 
     // All types were deduced, but there is no suitable dispatch for
     // this case.
     template <typename... Args,
               meta::EnableUnlessV<Invocable<Args...>,int> = 0>
-    static ReturnT Exec(FunctorT F, Args&&... args)
-    {
-        return F.DispatchError(std::forward<Args>(args)...);
-    }
+    static ReturnT Exec(FunctorT F, Args&&... args);
 };
 
 // Deduction failure case
@@ -887,10 +868,7 @@ class SwitchDispatcher<FunctorT, ReturnT,
 {
 public:
     template <typename... Args>
-    static ReturnT Exec(FunctorT F, Args&&... args)
-    {
-        return F.DeductionError(std::forward<Args>(args)...);
-    }
+    static ReturnT Exec(FunctorT F, Args&&... args);
 };
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS

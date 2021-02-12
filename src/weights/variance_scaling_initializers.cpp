@@ -29,6 +29,7 @@
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/h2_tmp.hpp"
+#include <lbann/utils/h2_tmp_impl.hpp>
 
 #include <weights.pb.h>
 

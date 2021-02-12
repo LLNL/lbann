@@ -5,6 +5,7 @@
 #include <lbann_config.hpp>
 #include <lbann/base.hpp>
 #include <lbann/utils/h2_tmp.hpp>
+#include <lbann/utils/h2_tmp_impl.hpp>
 #include <lbann/utils/serialize.hpp>
 
 // This header should only be used in the unit testing code, so this

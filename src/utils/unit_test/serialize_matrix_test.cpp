@@ -2,6 +2,7 @@
 #include <lbann/base.hpp>
 #include <lbann/utils/serialize.hpp>
 #include <lbann/utils/h2_tmp.hpp>
+#include <lbann/utils/h2_tmp_impl.hpp>
 
 using MatrixTypes =
   h2::meta::TL<

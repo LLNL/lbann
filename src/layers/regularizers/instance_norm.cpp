@@ -27,6 +27,7 @@
 #define LBANN_INSTANCE_NORM_LAYER_INSTANTIATE
 #include "lbann/layers/regularizers/instance_norm.hpp"
 #include "lbann/utils/h2_tmp.hpp"
+#include <lbann/utils/h2_tmp_impl.hpp>
 #include "layers.pb.h"
 
 namespace lbann

@@ -4,6 +4,7 @@
 
 //#include <lbann/utils/exception.hpp>
 #include <lbann/utils/h2_tmp.hpp>
+#include <lbann/utils/h2_tmp_impl.hpp>
 #include <lbann/utils/serialize.hpp>
 
 // Use-cases:
