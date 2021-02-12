@@ -67,6 +67,18 @@ def setup_config(args, work_dir):
     if config_file:
         config.read(config_file)
 
+    # Default parameters for finding motifs
+    motif_file = config.get('Motifs', 'file', fallback=None)
+    if not motif_file:
+        motif_file = os.path.join(work_dir, 'motifs')
+    motif_file = os.path.realpath(motif_file)
+    config.set('Motifs', 'file', motif_file)
+    prunejuice_output_dir = config.get('Motifs', 'prunejuice_output_dir', fallback=None)
+    if not prunejuice_output_dir:
+        prunejuice_output_dir = os.path.join(work_dir, 'prunejuice_output')
+    prunejuice_output_dir = os.path.realpath(prunejuice_output_dir)
+    config.set('Motifs', 'prunejuice_output_dir', prunejuice_output_dir)
+
     # Default parameters for random walks
     walks_file = config.get('Walks', 'file', fallback=None)
     if not walks_file:
@@ -92,41 +104,47 @@ def setup_config(args, work_dir):
 # Find motifs
 # ----------------------------------------------------------
 
-def find_motifs(script, config, config_file):
+def setup_motifs(script, config):
+    """Add motif finding to batch script."""
 
-    # Get the parameters from config
+    # Get parameters
     graph_file = config.get('Graph', 'file', fallback=None)
-    graph_store = config.get('Graph', 'ingest_dir', fallback=None)
-    pattern_in_dir = config.get('Pattern', 'pattern_in_dir', fallback=None)
-    pattern_out_dir = config.get('Pattern', 'pattern_out_dir', fallback=None)
-    match_dir = config.get('Motifs', 'match_dir', fallback=None)
-    motif_file = config.get('Motifs', 'motif_file', fallback=None)
+    motif_file = config.get('Motifs', 'file', fallback=None)
+    pattern_dir = config.get('Motifs', 'pattern_dir', fallback=None)
+    graph_ingest_exec = config.get('Motifs', 'graph_ingest_exec', fallback=None)
+    distributed_graph_dir = config.get('Motifs', 'distributed_graph_dir', fallback=None)
+    prunejuice_exec = config.get('Motifs', 'prunejuice_exec', fallback=None)
+    prunejuice_output_dir = config.get('Motifs', 'prunejuice_output_dir', fallback=None)
 
-    gr_ingest_exec = '/usr/WS1/llamag/lbann/applications/graph/communityGAN/havoqgt/build/lassen.llnl.gov/src/ingest_edge_list '
-    prunejuice_exec = '/usr/WS1/llamag/lbann/applications/graph/communityGAN/havoqgt/build/lassen.llnl.gov/src/run_pattern_matching '
-
-    # NOTE: Following is just a reference to a job script to call prunejuice
-    # There are many and better ways to do it.
+    # Add motif finding to batch script
     script.add_body_line('')
     script.add_body_line('# Find motifs')
-    script.add_parallel_command(['rm', '-rf', graph_store], procs_per_node=1)
+    script.add_parallel_command(['rm', '-rf', distributed_graph_dir], procs_per_node=1)
     script.add_parallel_command([
-        gr_ingest_exec,
+        graph_ingest_exec,
         '-p 1',
         '-f 2.00',
-        f'-o {graph_store}',
+        f'-o {distributed_graph_dir}',
         graph_file,
+    ])
+    script.add_command(['rm', '-rf', prunejuice_output_dir])
+    script.add_command(['mkdir', '-p', prunejuice_output_dir])
+    script.add_command([
+        'mkdir',
+        '-p',
+        os.path.join(prunejuice_output_dir, 'all_ranks_subgraphs'),
     ])
     script.add_parallel_command([
         prunejuice_exec,
-        f'-i {graph_store}',
-        f'-p {pattern_in_dir}',
-        f'-o {pattern_out_dir}',
+        f'-i {distributed_graph_dir}',
+        f'-p {pattern_dir}',
+        f'-o {prunejuice_output_dir}',
     ])
     script.add_command([
         os.path.realpath(sys.executable),
         os.path.join(root_dir, 'dump_motifs.py'),
-        config_file,
+        prunejuice_output_dir,
+        motif_file,
     ])
 
 # ----------------------------------------------------------
@@ -134,8 +152,7 @@ def find_motifs(script, config, config_file):
 # ----------------------------------------------------------
 
 def setup_walks(script, config):
-    """Add random walker to batch script
-    """
+    """Add random walker to batch script."""
 
     # Get parameters
     graph_file = config.get('Graph', 'file', fallback=None)
@@ -144,14 +161,14 @@ def setup_walks(script, config):
     num_walkers = config.getint('Walks', 'num_walkers', fallback=0)
     p = config.getfloat('Walks', 'p', fallback=-1)
     q = config.getfloat('Walks', 'q', fallback=-1)
-    distributed_graph_dir = config.get('Walks', 'distributed_graph_dir', fallback=None)
-    distributed_walks_dir = config.get('Walks', 'distributed_walks_dir', fallback=None)
     graph_ingest_exec = config.get('Walks', 'graph_ingest_exec', fallback=None)
+    distributed_graph_dir = config.get('Walks', 'distributed_graph_dir', fallback=None)
     walk_exec = config.get('Walks', 'walk_exec', fallback=None)
+    distributed_walks_dir = config.get('Walks', 'distributed_walks_dir', fallback=None)
     assert (graph_file and walks_file
             and walk_length and num_walkers and p>=0 and q>=0
-            and distributed_graph_dir and distributed_walks_dir
-            and graph_ingest_exec and walk_exec), \
+            and graph_ingest_exec and distributed_graph_dir
+            and walk_exec and distributed_walks_dir), \
         'invalid configuration for random walker'
 
     # Add random walker to batch script
@@ -165,7 +182,7 @@ def setup_walks(script, config):
         graph_file,
     ])
     script.add_command(['rm', '-rf', distributed_walks_dir])
-    script.add_command(['mkdir', distributed_walks_dir])
+    script.add_command(['mkdir', '-p', distributed_walks_dir])
     script.add_parallel_command([
         walk_exec,
         f'-g {distributed_graph_dir}',
@@ -258,7 +275,7 @@ if __name__ == '__main__':
         environment={'LBANN_COMMUNITYGAN_CONFIG_FILE' : config_file},
         **kwargs,
     )
-    find_motifs(script, config, config_file)
+    setup_motifs(script, config)
     setup_walks(script, config)
     do_train(script, config)
 

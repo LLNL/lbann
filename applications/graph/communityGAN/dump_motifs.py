@@ -1,74 +1,31 @@
-import configparser
 import os
 
-# ----------------------------------
-# Construct a set of motifs in given graph and dump them in a file
-# ----------------------------------
-def dump_motifs(config):
+def dump_motifs(prunejuice_output_dir, motif_file):
+    """Convert PruneJuice output to a single motif file.
 
-    # Get the parameters from config
-    graph_file = config.get('Graph', 'file', fallback=None)
-    graph_store = config.get('Graph', 'graph_store', fallback=None)
-    pattern_out_dir = config.get('Pattern', 'pattern_out_dir', fallback=None)
-    match_dir = config.get('Motifs', 'match_dir', fallback=None)
-    motifs_out_file = config.get('Motifs', 'motif_file', fallback=None)
+    First column is motif ID. Remaining columns are vertex IDs.
 
-    create_motif_file = config.getboolean('Motifs', 'create_motif_file', fallback=None)
+    """
 
-    motif_set_file = config.get('Motifs', 'motif_set_file', fallback=None)
+    # Parse distributed motif files and find unique motifs
+    # Note: Ignore first and last token in each line
+    motifs = set()
+    distributed_motif_dir = os.path.join(
+        prunejuice_output_dir,
+        'all_ranks_subgraphs',
+    )
+    for file_name in os.listdir(distributed_motif_dir):
+        file_name = os.path.join(distributed_motif_dir, file_name)
+        with open(file_name, 'r') as f:
+            for line in f.readlines():
+                tokens = line.split(',')
+                motif = frozenset(int(t) for t in tokens[1:-1])
+                motifs.add(motif)
 
-    if os.path.exists(match_dir):
-        command = '/usr/bin/rm -rf %s/*'%(match_dir)
-        os.system(command)
-    else:
-        command = '/usr/bin/mkdir %s'%(match_dir)
-        os.system(command)
-
-    command = '/usr/bin/mv %s/all_ranks_subgraphs/subgraphs_* %s'%(pattern_out_dir, match_dir)
-    os.system(command)
-
-    files = os.listdir(match_dir)
-    motif_set = set()
-    for f in files:
-        filename = os.path.join(match_dir, f)
-        fd = open(filename, 'r')
-        lines = fd.readlines()
-        for l in lines:
-            tokens = l.split(',')
-            amotif = []
-            i = 1
-            while i < len(tokens)-1:
-                amotif.append(int(tokens[i]))
-                i = i + 1
-            motif_set.add(frozenset(amotif))
-
-        fd.close()
-
-    # Dump all the motifs detected to a file as CSVs
-    mfd = open(motifs_out_file, 'w')
-    for s in motif_set:
-        l = 0
-        for v in s:
-            mfd.write('%d'%v)
-            if l < len(s) - 1:
-                mfd.write(', ')
-
-            l = l + 1
-        mfd.write('\n')
-    mfd.close()
-
-    # List all the motifs found in input graph with thier IDs
-    if create_motif_file:
-        set_fd = open(motif_set_file, 'w')
-        mid = 0
-        for s in motif_set:
-            set_fd.write('%d: '%mid)
-            for v in s:
-                set_fd.write('%d '%v)
-            set_fd.write('\n')
-            mid = mid + 1
-
-        set_fd.close()
+    # Dump motifs to file
+    with open(motif_file, 'w') as f:
+        for i, motif in enumerate(motifs):
+            f.write(f'{i} {" ".join(str(v) for v in motif)}\n')
 
 if __name__ == '__main__':
 
@@ -76,14 +33,14 @@ if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        'config', action='store', default=None, type=str,
-        help='configuration file'
+        'prunejuice_output_dir', action='store', type=str,
+        help='PruneJuice output'
+    )
+    parser.add_argument(
+        'motif_file', action='store', type=str,
+        help='output file'
     )
     args = parser.parse_args()
 
-    # Parse config file
-    config = configparser.ConfigParser()
-    config.read(os.path.join(args.config))
-
-    # Convert motifs to format readable by LBANN
-    dump_motifs(config)
+    # Convert PruneJuice output to a single motif file
+    dump_motifs(args.prunejuice_output_dir, args.motif_file)

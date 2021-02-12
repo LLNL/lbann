@@ -25,7 +25,7 @@ config = configparser.ConfigParser()
 config.read(config_file)
 
 # Options from config file
-motif_file = config.get('Motifs', 'motif_file', fallback=None)
+motif_file = config.get('Motifs', 'file', fallback=None)
 walk_file = config.get('Walks', 'file', fallback=None)
 if not motif_file:
     raise RuntimeError(f'No motif file in {config_file}')
@@ -50,7 +50,7 @@ def initialize_rng():
 # Load data
 # ----------------------------------------------
 
-motifs = np.loadtxt(motif_file, delimiter=',')
+motifs = np.loadtxt(motif_file)
 walks = np.loadtxt(walk_file)
 
 # ----------------------------------------------
@@ -61,10 +61,11 @@ def num_samples():
     return epoch_size
 
 def sample_dims():
-    return (motifs.shape[1] + walks.shape[1],)
+    return (motifs.shape[1]-1 + walks.shape[1],)
 
 def get_sample(_):
     initialize_rng()
-    motif = motifs[random.randrange(len(motifs))]
+    motif = motifs[random.randrange(len(motifs))][1:].copy()
+    np.random.shuffle(motif)
     walk = walks[random.randrange(len(walks))]
     return np.concatenate((motif, walk))
