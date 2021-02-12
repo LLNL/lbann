@@ -103,14 +103,6 @@ scatter_layer<TensorDataType,Layout,Device>* scatter_layer<TensorDataType,Layout
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-template <typename ArchiveT>
-void scatter_layer<TensorDataType,Layout,Device>::serialize(ArchiveT& ar) {
-  using DataTypeLayer = data_type_layer<TensorDataType>;
-  ar(::cereal::make_nvp("DataTypeLayer",
-                        ::cereal::base_class<DataTypeLayer>(this)));
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
 std::string scatter_layer<TensorDataType,Layout,Device>::get_type() const {
   return "scatter";
 }
