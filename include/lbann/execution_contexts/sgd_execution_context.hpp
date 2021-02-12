@@ -28,7 +28,6 @@
 #define LBANN_SGD_EXECUTION_CONTEXT_HPP
 
 #include "lbann/execution_contexts/execution_context.hpp"
-#include "lbann/utils/serialize.hpp"
 
 namespace lbann {
 
@@ -64,12 +63,7 @@ public:
   }
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize( Archive & ar ) {
-    ar(cereal::base_class<execution_context>( this ),
-       CEREAL_NVP(m_epoch),
-       CEREAL_NVP(m_current_mini_batch_size),
-       CEREAL_NVP(m_effective_mini_batch_size));
-  }
+  template <class Archive> void serialize( Archive & ar );
 
   /** @brief Return the state of the execution context as a string */
   std::string get_state_string() const noexcept override {

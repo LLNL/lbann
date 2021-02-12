@@ -30,7 +30,6 @@
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
 #include "lbann/io/persist.hpp"
-#include "lbann/utils/serialize.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
 
 namespace lbann {
@@ -60,11 +59,7 @@ public:
   }
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize( Archive & ar ) {
-    ar(CEREAL_NVP(m_execution_mode),
-       CEREAL_NVP(m_terminate_training),
-       CEREAL_NVP(m_step));
-  }
+  template <class Archive> void serialize( Archive & ar );
 
   /** @brief Return the state of the execution context as a string */
   virtual std::string get_state_string() const noexcept {

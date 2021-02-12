@@ -29,6 +29,7 @@
 #include "lbann/callbacks/callback.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/io/persist_impl.hpp"
+#include "lbann/utils/serialize.hpp"
 #include <string>
 #include <unistd.h>
 #include <iomanip>
@@ -51,6 +52,13 @@ execution_context::execution_context(trainer& trainer,
     m_comm(comm),
     m_execution_mode(mode),
     m_terminate_training(false) {}
+
+template <class Archive>
+void execution_context::serialize( Archive & ar ) {
+  ar(CEREAL_NVP(m_execution_mode),
+     CEREAL_NVP(m_terminate_training),
+     CEREAL_NVP(m_step));
+}
 
 ////////////////////////////////////////////////////////////
 // Training_Algorithm state
@@ -91,3 +99,6 @@ void execution_context::load_from_checkpoint_distributed(persist& p){
 }
 
 }  // namespace lbann
+
+#define LBANN_CLASS_NAME execution_context
+#include <lbann/macros/register_class_with_cereal.hpp>
