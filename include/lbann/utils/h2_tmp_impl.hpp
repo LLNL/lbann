@@ -78,7 +78,7 @@ template <
     typename FunctorT,
     typename ReturnT>
 template <typename... Args,
-          meta::EnableWhenV<Invocable<Args...>,int> = 0>
+          meta::EnableWhenV<meta::IsInvocableVT<FunctorT, Args...>,int>>
 ReturnT
 SwitchDispatcher<FunctorT, ReturnT>
 ::Exec(FunctorT F, Args&&... others)
@@ -92,7 +92,7 @@ template <
     typename FunctorT,
     typename ReturnT>
 template <typename... Args,
-          meta::EnableUnlessV<Invocable<Args...>,int> = 0>
+          meta::EnableUnlessV<meta::IsInvocableVT<FunctorT, Args...>,int>>
 ReturnT
 SwitchDispatcher<FunctorT, ReturnT>
 ::Exec(FunctorT F, Args&&... args)
