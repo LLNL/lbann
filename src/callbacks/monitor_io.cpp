@@ -31,11 +31,20 @@
 #include "lbann/callbacks/monitor_io.hpp"
 #include "lbann/data_coordinator/data_coordinator.hpp"
 #include "lbann/proto/proto_common.hpp"
+#include "lbann/utils/serialize.hpp"
 
 #include <callbacks.pb.h>
 
 namespace lbann {
 namespace callback {
+
+template <class Archive>
+void monitor_io::serialize(Archive & ar) {
+  ar(::cereal::make_nvp(
+       "BaseCallback",
+       ::cereal::base_class<callback_base>(this)),
+     CEREAL_NVP(m_layers));
+}
 
 void monitor_io::on_epoch_end(model *m) {
   const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
@@ -72,6 +81,9 @@ build_monitor_io_callback_from_pbuf(
 } // namespace callback
 } // namespace lbann
 
-CEREAL_REGISTER_TYPE_WITH_NAME(
-  ::lbann::callback::monitor_io,
-  "callback::monitor_io")
+// CEREAL_REGISTER_TYPE_WITH_NAME(
+//   ::lbann::callback::monitor_io,
+//   "callback::monitor_io")
+
+// #define LBANN_CLASS_NAME callback::monitor_io
+// #include <lbann/macros/register_class_with_cereal.hpp>

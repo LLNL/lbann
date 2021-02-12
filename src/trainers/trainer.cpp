@@ -40,6 +40,7 @@
 #include "lbann/execution_contexts/sgd_execution_context.hpp"
 #include "lbann/training_algorithms/sgd_training_algorithm.hpp"
 #include "lbann/data_coordinator/data_coordinator_metadata.hpp"
+#include "lbann/utils/serialize.hpp"
 #include <string>
 #include <unistd.h>
 #include <iomanip>
@@ -104,6 +105,15 @@ trainer& trainer::operator=(const trainer& other) {
 }
 
 trainer::~trainer() {
+}
+
+template <class Archive>
+void trainer::serialize(Archive & ar) {
+  ar(CEREAL_NVP(m_persist),
+     CEREAL_NVP(m_max_mini_batch_size),
+     CEREAL_NVP(m_root_random_seed),
+     CEREAL_NVP(m_random_seed),
+     CEREAL_NVP(m_data_seq_random_seed));
 }
 
 ////////////////////////////////////////////////////////////

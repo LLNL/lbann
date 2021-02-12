@@ -28,10 +28,22 @@
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/argument_parser.hpp"
 #include "lbann/utils/lbann_library.hpp"
+#include "lbann/utils/serialize.hpp"
 #include <algorithm>
 
 namespace lbann {
 namespace callback {
+
+template <class Archive>
+void timer::serialize(Archive & ar) {
+  ar(::cereal::make_nvp(
+       "BaseCallback",
+       ::cereal::base_class<callback_base>(this)),
+     CEREAL_NVP(m_start_times),
+     CEREAL_NVP(m_batch_start_times),
+     CEREAL_NVP(m_batch_times));
+  /// @todo Consider what to do with m_summarizer (preferably remove)
+}
 
 void timer::batch_timing_begin(const model& m) {
   const auto& c = m.get_execution_context();

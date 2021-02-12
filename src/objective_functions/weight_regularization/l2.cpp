@@ -32,6 +32,7 @@
 #include "lbann/optimizers/data_type_optimizer.hpp"
 #include "lbann/weights/data_type_weights.hpp"
 #include "lbann/utils/h2_tmp.hpp"
+#include "lbann/utils/serialize.hpp"
 
 namespace lbann {
 

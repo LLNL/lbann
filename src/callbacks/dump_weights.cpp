@@ -31,6 +31,7 @@
 #include "lbann/utils/cloneable.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/trainer_file_utils.hpp"
+#include "lbann/utils/serialize.hpp"
 
 #include <callbacks.pb.h>
 
@@ -226,6 +227,16 @@ dump_weights::dump_weights()
   : dump_weights("", 1, make_unique<dump_weights_internal::TextFileFormat>())
 {}
 
+template <class Archive>
+void dump_weights::serialize(Archive & ar) {
+  ar(::cereal::make_nvp(
+       "BaseCallback",
+       ::cereal::base_class<callback_base>(this)),
+     CEREAL_NVP(m_directory),
+     CEREAL_NVP(m_epoch_interval),
+     CEREAL_NVP(m_file_format));
+}
+
 dump_weights::dump_weights(const dump_weights& other)
   : callback_base(other),
     m_directory(other.m_directory),
@@ -324,6 +335,6 @@ build_dump_weights_callback_from_pbuf(
 } // namespace callback
 } // namespace lbann
 
-CEREAL_REGISTER_TYPE_WITH_NAME(
-  ::lbann::callback::dump_weights,
-  "callback::dump_weights")
+// CEREAL_REGISTER_TYPE_WITH_NAME(
+//   ::lbann::callback::dump_weights,
+//   "callback::dump_weights")

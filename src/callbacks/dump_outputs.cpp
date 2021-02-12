@@ -29,6 +29,7 @@
 #include "lbann/utils/file_utils.hpp"
 #include "lbann/utils/trainer_file_utils.hpp"
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/utils/serialize.hpp"
 
 #include <callbacks.pb.h>
 
@@ -140,6 +141,17 @@ dump_outputs::dump_outputs()
   : dump_outputs({}, {}, 0, "", "")
 {}
 
+template <class Archive>
+void dump_outputs::serialize(Archive & ar) {
+  ar(::cereal::make_nvp(
+       "BaseCallback",
+       ::cereal::base_class<callback_base>(this)),
+     CEREAL_NVP(m_layer_names),
+     CEREAL_NVP(m_modes),
+     CEREAL_NVP(m_directory),
+     CEREAL_NVP(m_file_format));
+}
+
 void dump_outputs::do_dump_outputs(const model& m, const Layer& l) {
   const auto& c = static_cast<const sgd_execution_context&>(m.get_execution_context());
 
@@ -201,6 +213,8 @@ build_dump_outputs_callback_from_pbuf(
 } // namespace callback
 } // namespace lbann
 
-CEREAL_REGISTER_TYPE_WITH_NAME(
-  ::lbann::callback::dump_outputs,
-  "callback::dump_outputs")
+// CEREAL_REGISTER_TYPE_WITH_NAME(
+//   ::lbann::callback::dump_outputs,
+//   "callback::dump_outputs")
+// #define LBANN_CLASS_NAME dump_outputs
+// #include <lbann/macros/register_class_with_cereal.hpp>

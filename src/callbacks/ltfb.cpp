@@ -32,6 +32,7 @@
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/weights/data_type_weights.hpp"
 #include "lbann/data_coordinator/data_coordinator.hpp"
+#include "lbann/utils/serialize.hpp"
 
 #include <lbann/utils/cloneable.hpp>
 #include <lbann/utils/memory.hpp>

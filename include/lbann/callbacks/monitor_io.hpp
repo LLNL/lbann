@@ -33,7 +33,6 @@
 
 #include <google/protobuf/message.h>
 
-#include <cereal/types/unordered_set.hpp>
 #include <string>
 #include <set>
 #include <vector>
@@ -65,12 +64,7 @@ class monitor_io : public callback_base {
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar) {
-    ar(::cereal::make_nvp(
-         "BaseCallback",
-         ::cereal::base_class<callback_base>(this)),
-       CEREAL_NVP(m_layers));
-  }
+  template <class Archive> void serialize(Archive & ar);
 
   ///@}
 

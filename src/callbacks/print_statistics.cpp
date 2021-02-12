@@ -32,6 +32,7 @@
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/argument_parser.hpp"
 #include "lbann/utils/lbann_library.hpp"
+#include "lbann/utils/serialize.hpp"
 
 #include <callbacks.pb.h>
 
@@ -43,6 +44,14 @@
 
 namespace lbann {
 namespace callback {
+
+template <class Archive>
+void print_statistics::serialize(Archive & ar) {
+  ar(::cereal::make_nvp(
+       "BaseCallback",
+       ::cereal::base_class<callback_base>(this)),
+     CEREAL_NVP(m_print_global_stat_only));
+}
 
 void print_statistics::setup(model *m) {
 #ifdef LBANN_VERSION

@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/models/directed_acyclic_graph.hpp"
+#include "lbann/utils/serialize.hpp"
 #include <unordered_map>
 
 namespace lbann {
@@ -33,6 +34,18 @@ directed_acyclic_graph_model::directed_acyclic_graph_model(lbann_comm *comm,
                                                            std::unique_ptr<objective_function> obj_fn,
                                                            std::unique_ptr<lbann_data::Optimizer> default_optimizer_msg)
   : model(comm, std::move(obj_fn), std::move(default_optimizer_msg)) {}
+
+directed_acyclic_graph_model::directed_acyclic_graph_model()
+    : directed_acyclic_graph_model(
+      &utils::get_current_comm(), nullptr, nullptr)
+  {}
+
+template <typename ArchiveT>
+void directed_acyclic_graph_model::serialize(ArchiveT& ar)
+{
+  ar(::cereal::make_nvp("ActualModel",
+                        ::cereal::base_class<model>(this)));
+}
 
 void directed_acyclic_graph_model::setup_layer_execution_order() {
 
@@ -71,3 +84,6 @@ void directed_acyclic_graph_model::setup_layer_execution_order() {
 CEREAL_REGISTER_TYPE_WITH_NAME(
   ::lbann::directed_acyclic_graph_model,
   "dag_model");
+
+#define LBANN_CLASS_NAME directed_acyclic_graph_model
+#include <lbann/macros/register_class_with_cereal.hpp>

@@ -26,6 +26,7 @@
 
 #include "lbann/callbacks/set_weights_value.hpp"
 #include "lbann/weights/data_type_weights.hpp"
+#include "lbann/utils/serialize.hpp"
 
 #include <callbacks.pb.h>
 
@@ -46,6 +47,15 @@ set_weights_value::set_weights_value()
   : set_weights_value("", 0, 0)
 {}
 
+template <class Archive>
+void set_weights_value::serialize(Archive & ar) {
+  ar(::cereal::make_nvp(
+       "BaseCallback",
+       ::cereal::base_class<callback_base>(this)),
+     CEREAL_NVP(m_weights_name),
+     CEREAL_NVP(m_value),
+     CEREAL_NVP(m_step));
+}
 
 set_weights_value* set_weights_value::copy() const {
   return new set_weights_value(*this);

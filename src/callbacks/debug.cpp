@@ -29,6 +29,7 @@
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/weights/data_type_weights.hpp"
+#include "lbann/utils/serialize.hpp"
 
 #include "callbacks.pb.h"
 
@@ -77,6 +78,14 @@ std::string batch_step_string(const model& m) {
 }
 
 } // namespace
+
+template <class Archive>
+void debug::serialize(Archive & ar) {
+  ar(::cereal::make_nvp(
+       "BaseCallback",
+       ::cereal::base_class<callback_base>(this)),
+     CEREAL_NVP(m_modes));
+}
 
 // Status updates for batch beginnings/endings
 void debug::on_batch_begin(model *m) {
@@ -183,6 +192,6 @@ build_debug_callback_from_pbuf(const google::protobuf::Message& proto_msg,
 } // namespace callback
 } // namespace lbann
 
-CEREAL_REGISTER_TYPE_WITH_NAME(
-  ::lbann::callback::debug,
-  "callback::debug")
+// CEREAL_REGISTER_TYPE_WITH_NAME(
+//   ::lbann::callback::debug,
+//   "callback::debug")
