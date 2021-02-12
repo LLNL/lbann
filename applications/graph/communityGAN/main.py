@@ -91,6 +91,18 @@ def setup_config(args, work_dir):
     distributed_walks_dir = os.path.realpath(distributed_walks_dir)
     config.set('Walks', 'distributed_walks_dir', distributed_walks_dir)
 
+    # Default parameters for training embeddings
+    num_vertices = config.getint('Graph', 'num_vertices', fallback=0)
+    if not num_vertices:
+        graph_file = config.get('Graph', 'file')
+        num_vertices = np.loadtxt(graph_file, dtype=int).max() + 1
+    config.set('Graph', 'num_vertices', str(num_vertices))
+    embeddings_dir = config.get('Embeddings', 'embeddings_dir', fallback=None)
+    if not embeddings_dir:
+        embeddings_dir = os.path.join(work_dir, 'embeddings')
+    embeddings_dir = os.path.realpath(embeddings_dir)
+    config.set('Embeddings', 'embeddings_dir', embeddings_dir)
+
     # Write config file to work directory
     config_file = os.path.join(work_dir, 'experiment.config')
     with open(config_file, 'w') as f:
@@ -207,27 +219,25 @@ def setup_walks(script, config):
 # Train embeddings
 # ----------------------------------------------------------
 
-def do_train(
-    script,
-    config,
-    motif_size=4,
-    embed_dim=128,
-    learn_rate=1e-2,
-    mini_batch_size=512,
-    num_epochs=100,
-):
+def setup_embeddings(script, config):
 
-    # Get parameters from config file
+    # Get parameters
     num_vertices = config.getint('Graph', 'num_vertices', fallback=0)
+    motif_size = config.getint('Motifs', 'motif_size', fallback=0)
     walk_length = config.getint('Walks', 'walk_length', fallback=0)
-
-    # Determine number of vertices, if needed
-    if not num_vertices:
-        graph_file = config.get('Graph', 'file', fallback=None)
-        assert graph_file, 'Graph file not provided'
-        num_vertices = np.loadtxt(graph_file, dtype=int).max() + 1
+    embeddings_dir = config.get('Embeddings', 'embeddings_dir', fallback=None)
+    embed_dim = config.getint('Embeddings', 'embed_dim', fallback=0)
+    learn_rate = config.getfloat('Embeddings', 'learn_rate', fallback=-1.0)
+    mini_batch_size = config.getint('Embeddings', 'mini_batch_size', fallback=0)
+    sgd_steps = config.getint('Embeddings', 'sgd_steps', fallback=0)
+    sgd_steps_per_epoch = config.getint('Embeddings', 'sgd_steps_per_epoch', fallback=0)
+    assert (num_vertices>0 and motif_size>0 and walk_length>=motif_size
+            and embeddings_dir and embed_dim>0 and mini_batch_size>0
+            and sgd_steps>=0 and sgd_steps_per_epoch>0), \
+        'invalid configuration for training embeddings'
 
     # Construct LBANN objects
+    num_epochs = (sgd_steps + sgd_steps_per_epoch - 1) // sgd_steps_per_epoch
     trainer = lbann.Trainer(
         mini_batch_size=mini_batch_size,
         num_parallel_readers=0,
@@ -239,6 +249,7 @@ def do_train(
         embed_dim,
         learn_rate,
         num_epochs,
+        embeddings_dir,
     )
     optimizer = lbann.SGD(learn_rate=learn_rate)
     data_reader = make_data_reader()
@@ -281,7 +292,7 @@ if __name__ == '__main__':
     )
     setup_motifs(script, config)
     setup_walks(script, config)
-    do_train(script, config)
+    setup_embeddings(script, config)
 
     # Launch experiment
     if args.run:

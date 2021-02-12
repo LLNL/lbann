@@ -8,11 +8,6 @@ import numpy as np
 # Configuration
 # ----------------------------------------------
 
-# Hard-coded options
-### @todo Get options from config file
-motif_size = 4
-epoch_size = 51200
-
 # Load config file
 config_file = os.getenv('LBANN_COMMUNITYGAN_CONFIG_FILE')
 if not config_file:
@@ -26,11 +21,15 @@ config.read(config_file)
 
 # Options from config file
 motif_file = config.get('Motifs', 'file', fallback=None)
+motif_size = config.getint('Motifs', 'motif_size', fallback=0)
 walk_file = config.get('Walks', 'file', fallback=None)
-if not motif_file:
-    raise RuntimeError(f'No motif file in {config_file}')
-if not walk_file:
-    raise RuntimeError(f'No walk file in {config_file}')
+walk_length = config.getint('Walks', 'walk_length', fallback=0)
+mini_batch_size = config.getint('Embeddings', 'mini_batch_size', fallback=0)
+sgd_steps_per_epoch = config.getint('Embeddings', 'sgd_steps_per_epoch', fallback=0)
+assert (motif_file and motif_size>0
+        and walk_file and walk_length>0
+        and mini_batch_size>0 and sgd_steps_per_epoch>0), \
+    f'Invalid config in {config_file}'
 
 # Configure RNG
 rng_pid = None
@@ -45,6 +44,7 @@ def initialize_rng():
     if rng_pid != os.getpid():
         rng_pid = os.getpid()
         random.seed()
+        np.random.seed()
 
 # ----------------------------------------------
 # Load data
@@ -52,13 +52,15 @@ def initialize_rng():
 
 motifs = np.loadtxt(motif_file)
 walks = np.loadtxt(walk_file)
+assert motifs.shape[1] == motif_size+1, "motif size doesn't match motif data"
+assert walks.shape[1] == walk_length, "walk length doesn't match walk data"
 
 # ----------------------------------------------
 # Sample access functions
 # ----------------------------------------------
 
 def num_samples():
-    return epoch_size
+    return mini_batch_size * sgd_steps_per_epoch
 
 def sample_dims():
     return (motifs.shape[1]-1 + walks.shape[1],)
