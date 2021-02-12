@@ -6,6 +6,7 @@ import subprocess
 import sys
 
 import lbann
+import lbann.contrib.args
 import lbann.contrib.launcher
 import numpy as np
 
@@ -30,6 +31,7 @@ def parse_args():
     parser.add_argument(
         '--run', action='store_true',
         help='run directly instead of submitting a batch job')
+    lbann.contrib.args.add_scheduler_arguments(parser)
     return parser.parse_args()
 
 def make_work_dir(args):
@@ -120,13 +122,13 @@ def setup_motifs(script, config):
     """Add motif finding to batch script."""
 
     # Get parameters
-    graph_file = config.get('Graph', 'file', fallback=None)
-    motif_file = config.get('Motifs', 'file', fallback=None)
-    pattern_dir = config.get('Motifs', 'pattern_dir', fallback=None)
-    graph_ingest_exec = config.get('Motifs', 'graph_ingest_exec', fallback=None)
-    distributed_graph_dir = config.get('Motifs', 'distributed_graph_dir', fallback=None)
-    prunejuice_exec = config.get('Motifs', 'prunejuice_exec', fallback=None)
-    prunejuice_output_dir = config.get('Motifs', 'prunejuice_output_dir', fallback=None)
+    graph_file = config.get('Graph', 'file')
+    motif_file = config.get('Motifs', 'file')
+    pattern_dir = config.get('Motifs', 'pattern_dir')
+    graph_ingest_exec = config.get('Motifs', 'graph_ingest_exec')
+    distributed_graph_dir = config.get('Motifs', 'distributed_graph_dir')
+    prunejuice_exec = config.get('Motifs', 'prunejuice_exec')
+    prunejuice_output_dir = config.get('Motifs', 'prunejuice_output_dir')
     assert (graph_file and motif_file and pattern_dir
             and graph_ingest_exec and distributed_graph_dir
             and prunejuice_exec and prunejuice_output_dir), \
@@ -171,18 +173,18 @@ def setup_walks(script, config):
     """Add random walker to batch script."""
 
     # Get parameters
-    graph_file = config.get('Graph', 'file', fallback=None)
-    walks_file = config.get('Walks', 'file', fallback=None)
-    walk_length = config.getint('Walks', 'walk_length',  fallback=0)
-    num_walkers = config.getint('Walks', 'num_walkers', fallback=0)
-    p = config.getfloat('Walks', 'p', fallback=-1)
-    q = config.getfloat('Walks', 'q', fallback=-1)
-    graph_ingest_exec = config.get('Walks', 'graph_ingest_exec', fallback=None)
-    distributed_graph_dir = config.get('Walks', 'distributed_graph_dir', fallback=None)
-    walk_exec = config.get('Walks', 'walk_exec', fallback=None)
-    distributed_walks_dir = config.get('Walks', 'distributed_walks_dir', fallback=None)
+    graph_file = config.get('Graph', 'file')
+    walks_file = config.get('Walks', 'file')
+    walk_length = config.getint('Walks', 'walk_length')
+    num_walkers = config.getint('Walks', 'num_walkers')
+    p = config.getfloat('Walks', 'p')
+    q = config.getfloat('Walks', 'q')
+    graph_ingest_exec = config.get('Walks', 'graph_ingest_exec')
+    distributed_graph_dir = config.get('Walks', 'distributed_graph_dir')
+    walk_exec = config.get('Walks', 'walk_exec')
+    distributed_walks_dir = config.get('Walks', 'distributed_walks_dir')
     assert (graph_file and walks_file
-            and walk_length and num_walkers and p>=0 and q>=0
+            and walk_length>0 and num_walkers>0
             and graph_ingest_exec and distributed_graph_dir
             and walk_exec and distributed_walks_dir), \
         'invalid configuration for random walker'
@@ -222,15 +224,15 @@ def setup_walks(script, config):
 def setup_embeddings(script, config):
 
     # Get parameters
-    num_vertices = config.getint('Graph', 'num_vertices', fallback=0)
-    motif_size = config.getint('Motifs', 'motif_size', fallback=0)
-    walk_length = config.getint('Walks', 'walk_length', fallback=0)
-    embeddings_dir = config.get('Embeddings', 'embeddings_dir', fallback=None)
-    embed_dim = config.getint('Embeddings', 'embed_dim', fallback=0)
-    learn_rate = config.getfloat('Embeddings', 'learn_rate', fallback=-1.0)
-    mini_batch_size = config.getint('Embeddings', 'mini_batch_size', fallback=0)
-    sgd_steps = config.getint('Embeddings', 'sgd_steps', fallback=0)
-    sgd_steps_per_epoch = config.getint('Embeddings', 'sgd_steps_per_epoch', fallback=0)
+    num_vertices = config.getint('Graph', 'num_vertices')
+    motif_size = config.getint('Motifs', 'motif_size')
+    walk_length = config.getint('Walks', 'walk_length')
+    embeddings_dir = config.get('Embeddings', 'embeddings_dir')
+    embed_dim = config.getint('Embeddings', 'embed_dim')
+    learn_rate = config.getfloat('Embeddings', 'learn_rate')
+    mini_batch_size = config.getint('Embeddings', 'mini_batch_size')
+    sgd_steps = config.getint('Embeddings', 'sgd_steps')
+    sgd_steps_per_epoch = config.getint('Embeddings', 'sgd_steps_per_epoch')
     assert (num_vertices>0 and motif_size>0 and walk_length>=motif_size
             and embeddings_dir and embed_dim>0 and mini_batch_size>0
             and sgd_steps>=0 and sgd_steps_per_epoch>0), \
@@ -283,9 +285,9 @@ if __name__ == '__main__':
     config, config_file = setup_config(args, work_dir)
 
     # Construct batch script
-    kwargs = {}
+    kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
     script = lbann.contrib.launcher.make_batch_script(
-        job_name='lbann_communitygan',
+        job_name='communitygan',
         work_dir=work_dir,
         environment={'LBANN_COMMUNITYGAN_CONFIG_FILE' : config_file},
         **kwargs,

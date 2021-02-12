@@ -20,12 +20,12 @@ config = configparser.ConfigParser()
 config.read(config_file)
 
 # Options from config file
-motif_file = config.get('Motifs', 'file', fallback=None)
-motif_size = config.getint('Motifs', 'motif_size', fallback=0)
-walk_file = config.get('Walks', 'file', fallback=None)
-walk_length = config.getint('Walks', 'walk_length', fallback=0)
-mini_batch_size = config.getint('Embeddings', 'mini_batch_size', fallback=0)
-sgd_steps_per_epoch = config.getint('Embeddings', 'sgd_steps_per_epoch', fallback=0)
+motif_file = config.get('Motifs', 'file')
+motif_size = config.getint('Motifs', 'motif_size')
+walk_file = config.get('Walks', 'file')
+walk_length = config.getint('Walks', 'walk_length')
+mini_batch_size = config.getint('Embeddings', 'mini_batch_size')
+sgd_steps_per_epoch = config.getint('Embeddings', 'sgd_steps_per_epoch')
 assert (motif_file and motif_size>0
         and walk_file and walk_length>0
         and mini_batch_size>0 and sgd_steps_per_epoch>0), \
