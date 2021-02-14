@@ -10,6 +10,7 @@ def make_model(
         embed_dim,
         learn_rate,
         num_epochs,
+        embeddings_dir,
 ):
 
     # Layer graph
@@ -43,7 +44,7 @@ def make_model(
     callbacks = [
         lbann.CallbackPrint(),
         lbann.CallbackTimer(),
-        lbann.CallbackDumpWeights(directory='embeddings',
+        lbann.CallbackDumpWeights(directory=embeddings_dir,
                                   epoch_interval=num_epochs),
     ]
 
