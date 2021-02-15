@@ -50,18 +50,9 @@ public:
 
   void load() override;
 
-  /** Returns a raw pointer to the data. 
-   * The data fields that are returned are determined by the
-   * "pack" field in the "lbann_metadata" subtree in the user supplied schema
+  /** Returns a raw pointer to the requested data field or group. 
    */
-  const unsigned char* get_raw_data(const size_t sample_id, const std::string &field_name, size_t &num_bytes) const {
-    const conduit::Node &node = m_data_store->get_conduit_node(sample_id);
-    num_bytes = node.allocated_bytes();
-    std::stringstream ss;
-    ss << '/' << LBANN_DATA_ID_STR(sample_id) + '/' + field_name;
-    return node[ss.str()].as_unsigned_char_ptr();
-  }
-
+  const void* get_raw_data(const size_t sample_id, const std::string &field_name, size_t &num_bytes) const; 
   /** Returns a raw pointer to the data.  This is intended to eventually
    *  replace fetch_datum(), etc. Once those are gone, the reader no longer
    *  needs to know anyting about CPUMat
@@ -73,16 +64,19 @@ public:
     size_t &num_elts_out,
     T*& data_out) const; 
 
-  // TODO; should go away in future?
+  // TODO; should go away in future; implementation is only for
+  //       backwards compatibility and testing during development
   bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
 
 
-  // TODO, should go away in future?
+  // TODO: can go away in future; use get_data(...) instead;
+  //       overring for backwards compatibility
   int fetch_responses(CPUMat& Y) override {
     LBANN_ERROR("fetch_response() is not implemented");
   }
 
-  // TODO; should go away in future?
+  // TODO: can go away in future; use get_data(...) instead;
+  //       overring for backwards compatibility
   int fetch_labels(CPUMat& Y) override {
     LBANN_ERROR("fetch_labels() is not implemented");
   }

@@ -31,8 +31,6 @@
 #undef DEBUGME
 #define DEBUGME
 
-using namespace std; //XX
-
 namespace lbann {
 
 hdf5_data_reader::hdf5_data_reader(bool shuffle) 
@@ -682,10 +680,6 @@ void hdf5_data_reader::get_packing_data(
   LBANN_ERROR("not implemented");
 }
 
-//==========================================================================
-// the following methods are included for testing and backwards compatibility;
-// they may (should?) go away in the future
-//
 bool hdf5_data_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
   size_t n_elts = 0;
   DataType *data;
@@ -694,6 +688,17 @@ bool hdf5_data_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
     X(j, mb_idx) = data[j];
   }
   return 0;
+}
+
+const void* hdf5_data_reader::get_raw_data(const size_t sample_id, const std::string &field_name, size_t &num_bytes) const {
+  const conduit::Node &node = m_data_store->get_conduit_node(sample_id);
+  num_bytes = node.allocated_bytes();
+  std::stringstream ss;
+  ss << '/' << LBANN_DATA_ID_STR(sample_id) + '/' + field_name;
+  if (!node.has_path(ss.str())) {
+    LBANN_ERROR("you requested data for a non-existant data field or group: ", ss.str());
+  }
+  return node[ss.str()].data_ptr();
 }
 
 } // namespace lbann
