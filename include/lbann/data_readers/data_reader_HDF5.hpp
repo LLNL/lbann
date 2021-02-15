@@ -62,33 +62,27 @@ public:
     return node[ss.str()].as_unsigned_char_ptr();
   }
 
-  /** Returns a raw pointer to the data.  */
-  const DataType* get_data(const size_t sample_id, const std::string &field_name, size_t &num_bytes) const {
-  #if 0
-//XX TODO
-    const conduit::Node &node = m_data_store->get_conduit_node(sample_id);
-    num_bytes = node.allocated_bytes();
-    std::stringstream ss;
-    ss << '/' << LBANN_DATA_ID_STR(sample_id) + '/' + field_name;
-char *x = "asdf";
-    return static_cast<DataType*>(x);
-    //return static_cast<DataType*>(node[ss.str()].as_unsigned_char_ptr());
-  #endif    
-    return nullptr;
-  }
+  /** Returns a raw pointer to the data.  This is intended to eventually
+   *  replace fetch_datum(), etc. Once those are gone, the reader no longer
+   *  needs to know anyting about CPUMat
+   */
+  template<typename T>
+  void get_data(
+    const size_t sample_id_in, 
+    std::string field_name_in, 
+    size_t &num_elts_out,
+    T*& data_out) const; 
 
-  // TODO, perhaps
-  // should go away in future?
-  int fetch_data(CPUMat& X, El::Matrix<El::Int>& indices_fetched) override;
+  // TODO; should go away in future?
+  bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
 
-  // TODO, perhaps
-  // should go away in future?
+
+  // TODO, should go away in future?
   int fetch_responses(CPUMat& Y) override {
     LBANN_ERROR("fetch_response() is not implemented");
   }
 
-  // TODO, perhaps
-  // should go away in future?
+  // TODO; should go away in future?
   int fetch_labels(CPUMat& Y) override {
     LBANN_ERROR("fetch_labels() is not implemented");
   }
@@ -439,6 +433,28 @@ void hdf5_data_reader::pack(std::string group_name, conduit::Node& node, size_t 
   }
 }
 
+template<typename T>
+void hdf5_data_reader::get_data(
+    const size_t sample_id_in, 
+    std::string field_name_in, 
+    size_t &num_elts_out,
+    T*& data_out) const {
+  const conduit::Node& node = m_data_store->get_conduit_node(sample_id_in);
+  std::stringstream ss;
+  ss << node.name() << node.child(0).name() + "/" << field_name_in;
+  if (!node.has_path(ss.str())) {
+    LBANN_ERROR("no path: ", ss.str());
+  }
+  num_elts_out = node[ss.str()].dtype().number_of_elements();
+  const std::string& tp = node[ss.str()].dtype().name();
+  T w = 42;
+  std::string tp2 = conduit::DataType::id_to_name(w);
+  if (tp != tp2) {
+    LBANN_ERROR("requested type is incorrect; data type is ", tp, " but you requested type ", tp2);
+  }
+  void *d = const_cast<void*>(node[ss.str()].data_ptr());
+  data_out = reinterpret_cast<T*>(d);
+}
 
 } // namespace lbann 
 

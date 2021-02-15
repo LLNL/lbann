@@ -682,13 +682,17 @@ void hdf5_data_reader::get_packing_data(
   LBANN_ERROR("not implemented");
 }
 
-
 //==========================================================================
 // the following methods are included for testing and backwards compatibility;
 // they may (should?) go away in the future
 //
-int hdf5_data_reader::fetch_data(CPUMat& X, El::Matrix<El::Int>& indices_fetched) {
-std::cout << " X fetch_data"; 
+bool hdf5_data_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
+  size_t n_elts = 0;
+  DataType *data;
+  get_data(data_id, "datum", n_elts, data);
+  for (size_t j = 0; j < n_elts; ++j) {
+    X(j, mb_idx) = data[j];
+  }
   return 0;
 }
 
