@@ -29,6 +29,9 @@ def parse_args():
         '--work-dir', action='store', default=None, type=str,
         help='working directory', metavar='DIR')
     parser.add_argument(
+        '--job-name', action='store', default='communitygan', type=str,
+        help='scheduler job name', metavar='NAME')
+    parser.add_argument(
         '--run', action='store_true',
         help='run directly instead of submitting a batch job')
     lbann.contrib.args.add_scheduler_arguments(parser)
@@ -44,7 +47,7 @@ def make_work_dir(args):
     work_dir = args.work_dir
     if not work_dir:
         timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-        work_dir = os.path.join(os.getcwd(), f'{timestamp}_communitygan')
+        work_dir = os.path.join(os.getcwd(), f'{timestamp}_{args.job_name}')
     work_dir = os.path.realpath(work_dir)
     os.makedirs(work_dir, exist_ok=True)
     args.work_dir = work_dir
@@ -287,7 +290,7 @@ if __name__ == '__main__':
     # Construct batch script
     kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
     script = lbann.contrib.launcher.make_batch_script(
-        job_name='communitygan',
+        job_name=args.job_name,
         work_dir=work_dir,
         environment={'LBANN_COMMUNITYGAN_CONFIG_FILE' : config_file},
         **kwargs,
