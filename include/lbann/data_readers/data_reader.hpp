@@ -336,33 +336,55 @@ class generic_data_reader {
   virtual int get_num_responses() const {
     return 1;
   }
+
   /// Get the linearized size (i.e. number of elements) in a sample.
   virtual int get_linearized_data_size() const {
     return 0;
   }
+  virtual int get_linearized_data_size(std::string name) const {
+    return 0;
+  }
+
   /// Get the linearized size (i.e. number of elements) in a label.
   virtual int get_linearized_label_size() const {
     return 0;
   }
+  virtual int get_linearized_label_size(std::string name) const {
+    return 0;
+  }
+
   /// Get the linearized size (i.e. number of elements) in a response.
   virtual int get_linearized_response_size() const {
     return 1;
   }
+  virtual int get_linearized_response_size(std::string name) const {
+    return 1;
+  }
+
   /// get the linearized size of what is identified by desc.
   virtual int get_linearized_size(const std::string& desc) const {
+    return get_linearized_size(desc, "");
+  }
+  virtual int get_linearized_size(const std::string& desc, std::string name) const {
     if (desc == "data") {
-      return get_linearized_data_size();
+      return get_linearized_data_size(name);
     } else if (desc == "label") {
-      return get_linearized_label_size();
+      return get_linearized_label_size(name);
     } else if (desc == "response") {
-      return get_linearized_response_size();
+      return get_linearized_response_size(name);
     }
     return 0;
   }
+
   /// Get the dimensions of the data.
   virtual const std::vector<int> get_data_dims() const {
     return std::vector<int>(0);
   }
+  virtual const std::vector<int> get_data_dims(std::string name) const {
+    return std::vector<int>(0);
+  }
+
+  virtual void get_packing_data(std::string field_name, std::vector<std::vector<int>> &sizes_out, std::vector<std::string> &field_names_out) const { }
 
   virtual std::vector<El::Int> get_slice_points(const slice_points_mode var_category,
                                                 bool& is_supported) {

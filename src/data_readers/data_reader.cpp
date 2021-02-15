@@ -352,8 +352,6 @@ bool generic_data_reader::update(bool is_active_reader) {
     set_initial_position();
   }
 
-  post_update();
-
   return reader_not_done;
 }
 

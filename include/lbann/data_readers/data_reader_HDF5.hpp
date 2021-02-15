@@ -65,6 +65,7 @@ public:
   /** Returns a raw pointer to the data.  */
   const DataType* get_data(const size_t sample_id, const std::string &field_name, size_t &num_bytes) const {
   #if 0
+//XX TODO
     const conduit::Node &node = m_data_store->get_conduit_node(sample_id);
     num_bytes = node.allocated_bytes();
     std::stringstream ss;
@@ -75,13 +76,6 @@ char *x = "asdf";
   #endif    
     return nullptr;
   }
-
-  /** returns the number of elements (not bytes) for the datum
-   * associated with the 'key'
-   * Ceveloper's note: if this is called frequently we should
-   * perhaps cache the values
-   */
-  int get_linearized_size(const std::string &key) const override;
 
   // TODO, perhaps
   // should go away in future?
@@ -113,33 +107,91 @@ char *x = "asdf";
     return m_data_schema_filename;
   }
 
+  /** Returns the dimensions of the requested 'field.' Here, 'field'
+   *  can be either the name of a field from the original data
+   *  (which retains backwards compatibility), or a user-defined field
+   *  per the user-supplied schema, e.g, a packed field name.
+   *  In the latter case the returned vector will contains a single
+   *  entry, which is the linearized size of the combined data fields.
+   */
+  const std::vector<int> get_data_dims(std::string name="") const override; 
+  const std::vector<int> get_data_dims() const override {
+    compatibility_exception();
+    return std::vector<int>(0);
+  }
+
+  int get_linearized_data_size(std::string name="") const override;
+  int get_linearized_data_size() const override {
+    compatibility_exception();
+    return 0;
+  }
+
+  /** Returns information on the dimensions and field names for the
+   *  requested field name. Currently not implemented, as it may not be 
+   *  needed or used
+   */
+  void get_packing_data(std::string group_name, std::vector<std::vector<int>> &sizes_out, std::vector<std::string> &field_names_out) const override;
+
+  int get_linearized_response_size(std::string name) const override {
+    return get_linearized_data_size(name);
+  }
+  // required for backwards compatibility
+  int get_linearized_response_size() const override {
+    compatibility_exception();
+    return 0;
+  }
+
+  int get_linearized_label_size(std::string name) const override {
+    return get_linearized_data_size(name);
+  }
+  // required for backwards compatibility
+  int get_linearized_label_size() const override {
+    compatibility_exception();
+    return 0;
+  }
+
+  // TODO: uncertain what these should return; possibly extend the
+  // schemas to include this information?
+  int get_num_labels() const override {
+    return 0;
+  }
+  int get_num_responses() const override {
+    return 0;
+  }
+
 private:
+
+  // filled in by construct_data_size_lookup_tables; used by get_linearized_data_size()
+  std::unordered_map<std::string, std::vector<int>> m_data_dims_lookup_table;
+
+  // filled in by construct_data_size_lookup_tables; used by get_linearized_data_size()
+  std::unordered_map<std::string, int> m_linearized_size_lookup_table;
+
+  // filled in by construct_data_size_lookup_tables; used by get_packing_data()
+  std::unordered_map<std::string, std::vector<std::string>> m_field_names_lookup_table;
 
   std::string m_experiment_schema_filename;
 
   std::string m_data_schema_filename;
 
   // to set to false, use the cmd line flag: --keep_packed_fields
-  // I don't know a use case for keeping the original (possibly coerced)
+  // I don't know a use case for keeping an original (possibly coerced)
   // field if it's been packed, but someone else might ...
   // note that setting to 'false' invokes both a memory and communication
   // penalty
   //TODO: not yet implemented
   bool m_delete_packed_fields = true;
 
-  struct PackingData {
-    PackingData(std::string s, int n_elts, int order) 
-      : field_name(s), num_elts(n_elts), ordering(order) {}
-    PackingData() {}
-    std::string field_name;
-    int num_elts;
-    conduit::index_t ordering;
+  struct PackingGroup {
+    std::string group_name;
+    conduit::index_t data_type;
+    size_t n_elts;
+    std::vector<std::string> names;
+    std::vector<size_t> sizes;
+    std::vector<conduit::index_t> data_types;
   };
 
-  std::unordered_map<std::string, std::string> m_packing_types;
-  std::unordered_map<std::string, size_t> m_packing_num_elts;
-  std::unordered_map<std::string, std::vector<conduit::Node*>> m_packing_nodes;
-  std::unordered_map<std::string, std::vector<PackingData>> m_packing_data;
+  std::unordered_map<std::string, PackingGroup> m_packing_groups;
 
   /** Name of nodes in schemas that contain instructions 
    * on normalizing, packing, and casting data, etc.
@@ -178,6 +230,10 @@ private:
   // methods follow
   //=========================================================================
 
+  void compatibility_exception() const {
+    LBANN_ERROR("not implemented for this data reader; please use the form that takes an 'std::string name' as a parameter");
+  }  
+
   /** P_0 reads and bcasts the schema */
   void load_sample_schema(conduit::Schema &s);
 
@@ -194,7 +250,7 @@ private:
   /** Returns, in leaves, the schemas for all leaf nodes in the tree rooted
    *  at 'node_in.' However, ignores any nodes named s_metadata_node_name
    */
-  void get_leaves(conduit::Node* node_in, std::vector<conduit::Node*> &leaves_out);
+  void get_leaves(conduit::Node* node_in, std::vector<conduit::Node*> &leaves_out, bool ignore_metadata=false);
 
   /** Functionality is similar to get_leaves(); this method differs in that
    *  two conduit::Node hierarchies are searched for leaves. The leaves from 
@@ -204,7 +260,10 @@ private:
    *  Applicability: a user's schema should be able to specify an "inputs"
    *  node, without having to enumerate all the "inputs" leaves names
    */
-  void get_leaves_multi(conduit::Node* node_in, std::vector<conduit::Node*> &leaves_out);
+  void get_leaves_multi(
+    conduit::Node* node_in, 
+    std::vector<conduit::Node*> &leaves_out, 
+    bool ignore_metadata=false);
 
   /** Fills in: m_packed_name_to_num_elts and m_field_name_to_num_elts */
   void do_preload_data_store() override;
@@ -227,7 +286,7 @@ private:
 
 
   /** pack the data; this is for all 'groups' in the node */
-  void pack(conduit::Node &node);
+  void pack(conduit::Node &node, size_t index);
 
   /** Merges the contents of the two input nodes, either of which may be
    *  a nullptr; if the input nodes contain a common fieldname, then the
@@ -243,7 +302,7 @@ private:
    */
   void adjust_metadata(conduit::Node* root);
 
-  void build_packing_map();
+  void build_packing_map(conduit::Node &node);
 
   /** repacks from HWC to CHW */
   void repack_image(conduit::Node& node, const std::string &path, const conduit::Node& metadata); 
@@ -261,18 +320,10 @@ private:
     const std::string &path, 
     const conduit::Node& metadata);
 
-  // check that all fields that are to be packed in a group have the same
-  // data type
-  void verify_packing_data_types();
-
   // constructs m_useme_node_map from m_useme_nodes
   void build_useme_node_map();
 
-  struct {
-    bool operator()(const PackingData& a, const PackingData& b) const { 
-      return a.ordering < b.ordering; 
-    }
-  } less_oper;
+  void construct_data_size_lookup_tables(conduit::Node &node); 
 
   //=========================================================================
   // templates follow
@@ -292,7 +343,7 @@ private:
 
   /** all field assigned to 'group_name' (e.g, 'datum') into a 1D vector */
   template<typename T>
-  void pack(std::string group_name, conduit::Node& node);
+  void pack(std::string group_name, conduit::Node& node, size_t index);
 
 }; // class hdf5_data_reader
 
@@ -359,15 +410,27 @@ void hdf5_data_reader::repack_image(T* src_buf, size_t n_bytes, size_t n_rows, s
 }
 
 template<typename T>
-void hdf5_data_reader::pack(std::string group_name, conduit::Node& node) {
-  std::vector<T> data;
-  data.reserve(m_packing_num_elts[group_name]);
-  size_t offset = 0;
-  for (const auto &nd : m_packing_nodes[group_name]) {
-    size_t n_bytes = nd->dtype().number_of_elements() * sizeof(T);
-    T* field_data = reinterpret_cast<T*>(nd->data_ptr());
-    memcpy(data.data()+offset, field_data, n_bytes);
-    offset += n_bytes;
+void hdf5_data_reader::pack(std::string group_name, conduit::Node& node, size_t index) {
+  if (m_packing_groups.find(group_name) == m_packing_groups.end()) {
+    LBANN_ERROR("(m_packing_groups.find(", group_name, ") failed");
+  }
+
+  const PackingGroup& g = m_packing_groups[group_name];
+  std::vector<T> data(g.n_elts);
+  size_t idx = 0;
+  for (size_t k=0; k<g.names.size(); k++) {
+    size_t n_elts = g.sizes[k];
+    std::stringstream ss;
+    ss << node.name() << node.child(0).name() + "/" << g.names[k];
+    if (!node.has_path(ss.str())) {
+      LBANN_ERROR("no leaf for path: ", ss.str());
+    }
+    conduit::Node& leaf = node[ss.str()];
+    memcpy(data.data()+idx, leaf.data_ptr(), n_elts*sizeof(T));
+    idx += n_elts;
+  }
+  if (idx != g.n_elts) {
+    LBANN_ERROR("idx != g.n_elts*sizeof(T): ", idx, " ", g.n_elts*sizeof(T));
   }
 }
 

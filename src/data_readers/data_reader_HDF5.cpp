@@ -31,7 +31,7 @@
 #undef DEBUGME
 #define DEBUGME
 
-using namespace std;
+using namespace std; //XX
 
 namespace lbann {
 
@@ -75,6 +75,9 @@ void hdf5_data_reader::load() {
   opts->set_option("preload_data_store", true);
 
   // Load the sample list(s)
+  if (is_master()) {
+    std::cout << "loading the sample list ...\n";
+  }
   data_reader_sample_list::load();
   if (is_master()) {
     std::cout << "time to load sample list: " << get_time() - tm11 << std::endl;
@@ -101,8 +104,6 @@ void hdf5_data_reader::load() {
   load_schema(get_experiment_schema_filename(), m_experiment_schema);
   parse_schemas();
   build_useme_node_map();
-  build_packing_map();
-  verify_packing_data_types();
 
   if (is_master()) {
     std::cout << "time to load and parse the schemas: " << get_time() - tm11 
@@ -116,35 +117,6 @@ void hdf5_data_reader::load() {
 void hdf5_data_reader::build_useme_node_map() {
   for (const auto& nd : m_useme_nodes) {
     m_useme_node_map[nd->path()] = nd;
-  }
-}
-
-
-// check that all fields that are to be packed in a group have the same
-// data type
-void hdf5_data_reader::verify_packing_data_types() {
-  for (const auto &t : m_packing_data) {
-    const std::string& group_name = t.first;
-    const std::vector<PackingData>& data = t.second;
-    std::string group_type;
-    for (const auto& t2 : data) {
-      const std::string& field_name = t2.field_name;
-      std::unordered_map<std::string, conduit::Node*>::const_iterator iter = m_useme_node_map.find(field_name);
-      if (iter == m_useme_node_map.end()) {
-        LBANN_ERROR("failed to find path '", field_name, "' in m_useme_node_map");
-      }
-      const conduit::Node& metadata = (*iter->second)[s_metadata_node_name];
-      if (metadata.has_child("coerce")) {
-        const std::string& field_type = metadata["coerce"].as_string();
-        if (group_type == "") {
-          group_type = field_type;
-        } else {
-          if (field_type != group_type) {
-            LBANN_ERROR("node ", field_name, " has type ", field_type, " but group ", group_name, " has type ", group_type);
-          }
-        }
-      }
-    }
   }
 }
 
@@ -178,11 +150,6 @@ void hdf5_data_reader::load_schema_from_data(conduit::Schema &schema) {
 
   m_comm->broadcast<std::string>(m_comm->get_trainer_master(), json, m_comm->get_trainer_comm());
   schema = json;
-
-  if (is_master()) {
-    std::cout << "schema from dataset:\n";
-    schema.print();
-  }
 }
 
 void hdf5_data_reader::do_preload_data_store() {
@@ -190,15 +157,26 @@ void hdf5_data_reader::do_preload_data_store() {
   if (is_master()) {
     std::cout << "starting hdf5_data_reader::do_preload_data_store()\n";
   }
-
- for (size_t idx=0; idx < m_shuffled_indices.size(); idx++) {
+ 
+  static bool build_tables = true;
+  for (size_t idx=0; idx < m_shuffled_indices.size(); idx++) {
     int index = m_shuffled_indices[idx];
-    if(m_data_store->get_index_owner(index) != m_rank_in_model) {
+    if(m_data_store->get_index_owner(index) != get_rank()) {
       continue;
     }
     try {
       conduit::Node & node = m_data_store->get_empty_node(index);
       load_sample(node, index);
+
+      if (build_tables) {
+        build_tables = false;
+        if (is_master()) {
+        }
+        construct_data_size_lookup_tables(node);
+      }
+
+      //note: this call may change the node hierarchy, so it must go
+      //      after calling construct_data_size_lookup_tables()
       m_data_store->set_preloaded_conduit_node(index, node);
     } catch (conduit::Error const& e) {
       LBANN_ERROR("trying to load the node ", index, " and caught conduit exception: ", e.what());
@@ -207,7 +185,7 @@ void hdf5_data_reader::do_preload_data_store() {
   // Once all of the data has been preloaded, close all of the file handles
   for (size_t idx=0; idx < m_shuffled_indices.size(); idx++) {
     int index = m_shuffled_indices[idx];
-    if(m_data_store->get_index_owner(index) != m_rank_in_model) {
+    if(m_data_store->get_index_owner(index) != get_rank()) {
       continue;
     }
     close_file(index);
@@ -220,20 +198,6 @@ void hdf5_data_reader::do_preload_data_store() {
              << "; global to this trainer: "<< nn << std::endl;
   }
 }
-
-
-
-int hdf5_data_reader::get_linearized_size(const std::string &key) const {
-#if 0
-  if (m_all_exp_leaveXXs.find(key) == m_data_pathnames.end()) {
-    LBANN_ERROR("requested key: ", key, " is not in the schema");
-  }
-  conduit::DataType dt = m_data_schema.dtype();
-  return dt.number_of_elements();
-#endif
-  return 0;
-}
-
 
 // Loads the fields that are specified in the user supplied schema
 void hdf5_data_reader::load_sample(conduit::Node &node, size_t index) {
@@ -258,8 +222,6 @@ void hdf5_data_reader::load_sample(conduit::Node &node, size_t index) {
     // note: this will throw an exception if the child node doesn't exist
     const conduit::Node& metadata = p->child(s_metadata_node_name);
 
-    // load the requested data field; optionally coercing it to a different
-    // data type 
     if (metadata.has_child(s_coerce_name)) {
       coerce(metadata, file_handle, original_path, new_pathname, node);
     } else {
@@ -270,14 +232,15 @@ void hdf5_data_reader::load_sample(conduit::Node &node, size_t index) {
     if (metadata.has_child("scale")) {
       normalize(node, new_pathname, metadata);
     }
+
     // for images
     if (metadata.has_child("channels")) {
       repack_image(node, new_pathname, metadata);
     }
-  }
-  pack(node);
-}
 
+  }
+  pack(node, index);
+}
 
 void hdf5_data_reader::normalize(
   conduit::Node& node, 
@@ -399,9 +362,10 @@ void hdf5_data_reader::get_schema_ptrs(conduit::Node* input, std::unordered_map<
 }
 
 
-void hdf5_data_reader::get_leaves_multi(conduit::Node* node_in, std::vector<conduit::Node*> &leaves_out) {
+void hdf5_data_reader::get_leaves_multi(conduit::Node* node_in, std::vector<conduit::Node*> &leaves_out, bool ignore_metadata) {
   std::vector<conduit::Node*> first;
-  get_leaves(node_in, first);
+  get_leaves(node_in, first, ignore_metadata);
+
   // "first" contains pointers to leaf nodes from "m_experiment_schema;"
   // we use these as starting nodes for searchs in m_data_schema.
   // (recall, m_experiment_schema is a trimmed version of m_data_schema)
@@ -414,7 +378,7 @@ void hdf5_data_reader::get_leaves_multi(conduit::Node* node_in, std::vector<cond
 
     const conduit::Node& from_meta = leaf->child(s_metadata_node_name);
     conduit::Node* node_for_recursion = m_data_map[path_name];
-    // "getch_ptr" creates the node if it doesn't exist (but it should
+    // "fetch_ptr" creates the node if it doesn't exist (though it should
     // exist at this point)
     if (!node_for_recursion->has_child(s_metadata_node_name)) {
       LBANN_ERROR("Node with path: ", node_for_recursion->path(), " is missing its metadata node");
@@ -441,30 +405,36 @@ void hdf5_data_reader::get_leaves_multi(conduit::Node* node_in, std::vector<cond
 }
 
 // recursive
-void hdf5_data_reader::get_leaves(conduit::Node* node, std::vector<conduit::Node*> &leaves_out) {
-  // on entry, node is guaranteed to have a metadata node; but lets check:
-  if (!node->has_child(s_metadata_node_name)) {
-    LBANN_ERROR("missing metadata child node for node with path: ", node->path());
-  }
-  conduit::Node& nodes_metadata = node->child(s_metadata_node_name);
+void hdf5_data_reader::get_leaves(conduit::Node* node, std::vector<conduit::Node*> &leaves_out, bool ignore_metadata) {
 
-  // add fields from parent's metadata node to this node's metadata node,
+  // merge fields from parent's metadata node to this node's metadata node,
   // but only if they don't already exist (existing fields takes precedence)
-  if (!node->is_root()) {
-    const conduit::Node &parents_metadata = node->parent()->child(s_metadata_node_name);
-    if (parents_metadata.has_child(s_metadata_node_name)) {
-      LBANN_ERROR("metadata nodes may not be chained");
+  if (!ignore_metadata) {
+    if (!node->has_child(s_metadata_node_name)) {
+    LBANN_ERROR("missing metadata child node for node with path: ", node->path());
     }
-    for (int k=0; k<parents_metadata.number_of_children(); k++) {
-      const std::string& field_name = parents_metadata.child(k).name();
-      if (! nodes_metadata.has_child(field_name)) {
-        nodes_metadata[field_name] = parents_metadata[field_name];
+    conduit::Node& nodes_metadata = node->child(s_metadata_node_name);
+    if (!node->is_root()) {
+      const conduit::Node &parents_metadata = node->parent()->child(s_metadata_node_name);
+      if (parents_metadata.has_child(s_metadata_node_name)) {
+       LBANN_ERROR("metadata nodes may not be chained");
+      }
+      for (int k=0; k<parents_metadata.number_of_children(); k++) {
+        const std::string& field_name = parents_metadata.child(k).name();
+        if (! nodes_metadata.has_child(field_name)) {
+          nodes_metadata[field_name] = parents_metadata[field_name];
+        }
       }
     }
-  }
+  } // end, deal with metadata
 
-  // end of recusion
-  if (node->number_of_children() == 1) { // 1 is for metadata node
+  // end of recusion conditions: no children, or only child is "metadata"
+  int n = node->number_of_children();
+  if (n == 0) {
+    leaves_out.push_back(node);
+    return;
+  }
+  if (n == 1 && node->child(0).name() == s_metadata_node_name) {
     leaves_out.push_back(node);
     return;
   } 
@@ -473,34 +443,51 @@ void hdf5_data_reader::get_leaves(conduit::Node* node, std::vector<conduit::Node
   for (int j=0; j<node->number_of_children(); j++) {
     conduit::Node* child = node->child_ptr(j);
     if (child->name() != s_metadata_node_name) {
-      get_leaves(child, leaves_out);
+      get_leaves(child, leaves_out, ignore_metadata);
     }
   }
 }
 
-void hdf5_data_reader::pack(conduit::Node &node) {
-  for (const auto& t : m_packing_nodes) {
+void hdf5_data_reader::pack(conduit::Node &node, size_t index) {
+  static bool build_the_packing_map = true;
+  if (build_the_packing_map) {
+    build_the_packing_map = false;
+    build_packing_map(node.child(0));
+  }
+  for (const auto& t : m_packing_groups) {
     const std::string& group_name = t.first;
-    const std::vector<conduit::Node*> p = t.second;
-    if (m_packing_types.find(group_name) == m_packing_types.end()) {
-      LBANN_ERROR("failed to find group_name: ", group_name, " in m_packing_types");
-    }
-    const std::string& group_type = m_packing_types[group_name];
+    const PackingGroup& g = t.second;
+    std::string group_type = conduit::DataType::id_to_name(g.data_type);
     if (group_type == "float32") {
-      pack<float>(group_name, node);
+      pack<float>(group_name, node, index);
     } else if (group_type == "float64") {
-      pack<double>(group_name, node);
+      pack<double>(group_name, node, index);
     } else {
       LBANN_ERROR("packing is currently only implemented for float32 and float64; your data type was: ", group_type, " for group_name: ", group_name);
     }
   }
 }
 
-void hdf5_data_reader::build_packing_map() {
-  load_schema_from_data(m_schema_from_dataset);
+struct PackingData {
+    PackingData(std::string s, int n_elts, size_t dt, int order) 
+      : field_name(s), num_elts(n_elts), dtype(dt), ordering(order) {}
+    PackingData() {}
+    std::string field_name;
+    int num_elts;
+    size_t dtype;
+    conduit::index_t ordering;
+};
 
-  // fill in m_packing_data, which maps: group_name -> vector<PackingData>
-  for (const auto &nd : m_useme_nodes) {
+struct {
+  bool operator()(const PackingData& a, const PackingData& b) const { 
+    return a.ordering < b.ordering; 
+  }
+} less_oper;
+
+void hdf5_data_reader::build_packing_map(conduit::Node &node) {
+  load_schema_from_data(m_schema_from_dataset);
+  std::unordered_map<std::string, std::vector<PackingData>> packing_data;
+  for (const auto& nd : m_useme_nodes) {
     const conduit::Node& metadata = (*nd)[s_metadata_node_name];
     if (metadata.has_child("pack")) {
       const std::string& group_name = metadata["pack"].as_string();
@@ -509,37 +496,39 @@ void hdf5_data_reader::build_packing_map() {
       }
       conduit::int64 ordering = metadata["ordering"].value();
       const std::string& field_name = nd->path();
-      int n_elts =  m_schema_from_dataset[field_name].dtype().number_of_elements();
-      m_packing_data[group_name].push_back(PackingData(nd->path(), n_elts, ordering));
+      int n_elts =  node[field_name].dtype().number_of_elements();
+      size_t data_type =  node[field_name].dtype().id();
+      packing_data[group_name].push_back(PackingData(field_name, n_elts, data_type, ordering));
     }
   }
 
   // sort the vectors by ordering numbers
-  for (auto& t : m_packing_data) {
+  for (auto& t : packing_data) {
     std::sort(t.second.begin(), t.second.end(), less_oper);
   }
 
-  // construct the three maps that will be used during packing:
-  //   m_packing_nodes, m_packing_num_elts, m_packing_types
-  for (const auto& t : m_packing_data) {
+  for (const auto& t : packing_data) {
     const std::string& group_name = t.first;
-    const std::vector<PackingData> data = t.second;
-    size_t n = 0;
-    for (const auto &t2 : data) {
-      n += t2.num_elts;
-      std::unordered_map<std::string, conduit::Node*>::const_iterator iter = m_useme_node_map.find(t2.field_name);
-      if (iter == m_useme_node_map.end()) {
-        LBANN_ERROR("failed to find ", t2.field_name, " in m_useme_node_map");
-      }
-      m_packing_nodes[group_name].push_back(iter->second);
+    m_packing_groups[group_name].group_name = group_name;  // ACH!
+    for (const auto& t2 : t.second) {
+      m_packing_groups[group_name].names.push_back(t2.field_name);
+      m_packing_groups[group_name].sizes.push_back(t2.num_elts);
+      m_packing_groups[group_name].data_types.push_back(t2.dtype);
     }
-    m_packing_num_elts[group_name] = n;
-  }
-
-  for (const auto& t : m_packing_nodes) {
-    const std::string& group_name = t.first;
-    const std::string& path = t.second[0]->path();
-    m_packing_types[group_name] =  m_schema_from_dataset[path].dtype().name();
+    size_t n_elts = 0;
+    conduit::index_t id_sanity = 0;
+    for (size_t k=0; k<m_packing_groups[group_name].names.size(); k++) {
+      n_elts += m_packing_groups[group_name].sizes[k];
+      if (id_sanity == 0) {
+        id_sanity = m_packing_groups[group_name].data_types[k];
+      } else {
+        if (m_packing_groups[group_name].data_types[k] != id_sanity) {
+          LBANN_ERROR("m_packing_groups[group_name].data_types[k] != id_sanity; you may need to coerce a data type in your schema");
+        }
+      }
+    }
+    m_packing_groups[group_name].n_elts = n_elts;
+    m_packing_groups[group_name].data_type = id_sanity;
   }
 }
 
@@ -573,8 +562,6 @@ void hdf5_data_reader::coerce(
   const std::string & original_path, 
   const std::string &new_pathname, 
   conduit::Node &node) {
-  //TODO: check that we're not coercing to the same type; for now
-  //      this is the user's responsibility (nothing will break)
   conduit::Node tmp;
   conduit::relay::io::hdf5_read(file_handle, original_path, tmp);
 
@@ -582,7 +569,7 @@ void hdf5_data_reader::coerce(
   void* vals = tmp.data_ptr();
   size_t num_bytes = tmp.dtype().number_of_elements() * tmp.dtype().element_bytes();
 
-  // check primitive type for data from disk
+  // get data type for data from disk
   bool from_is_float = tmp.dtype().is_float32();
   bool from_is_double = tmp.dtype().is_float64();
   if (!(from_is_float || from_is_double)) {
@@ -595,25 +582,25 @@ void hdf5_data_reader::coerce(
   const std::string& coerce_to = cc.substr(1, cc.size()-2);
 
   // this is just ugly, but I don't know how to make it better; would
-  // like a single call to coerceme (template)
+  // like to have a single call to coerceme<>
   if (coerce_to == "float") {
     std::vector<float> d;
     if (from_is_float) {
       const float* from = reinterpret_cast<float*>(vals);
-      coerceme(from, num_bytes, d);
+      coerceme<float>(from, num_bytes, d);
     } else if (from_is_double) {
       const double* from = reinterpret_cast<double*>(vals);
-      coerceme(from, num_bytes, d);
+      coerceme<double>(from, num_bytes, d);
     }  
     node[new_pathname] = d;
   } else if (coerce_to == "double") {
     std::vector<double> d;
     if (from_is_float) {
       const float* from = reinterpret_cast<float*>(vals);
-      coerceme(from, num_bytes, d);
+      coerceme<float>(from, num_bytes, d);
     } else if (from_is_double) {
       const double* from = reinterpret_cast<double*>(vals);
-      coerceme(from, num_bytes, d);
+      coerceme<double>(from, num_bytes, d);
     }
     node[new_pathname] = d;
   } else {
@@ -657,13 +644,66 @@ void hdf5_data_reader::repack_image(
   }
 }
 
+const std::vector<int> hdf5_data_reader::get_data_dims(std::string name) const {
+  std::unordered_map<std::string, std::vector<int>>::const_iterator iter = m_data_dims_lookup_table.find(name);
+  if (iter == m_data_dims_lookup_table.end()) {
+    LBANN_ERROR("get_data_dims_size was asked for info about an unknown field name: ", name);
+  }
+  return iter->second;
+}
+
+int hdf5_data_reader::get_linearized_data_size(std::string name) const {
+  std::unordered_map<std::string, int>::const_iterator iter = m_linearized_size_lookup_table.find(name);
+  if (iter == m_linearized_size_lookup_table.end()) {
+    LBANN_ERROR("get_linearized_data_size was asked for info about an unknown field name: ", name);
+  }
+  return iter->second;
+}
+
+//fills in: 
+//  m_data_dims_lookup_table and m_linearized_size_lookup_table
+void hdf5_data_reader::construct_data_size_lookup_tables(conduit::Node &node_in) {
+  conduit::Node node = node_in.child(0);
+  std::vector<conduit::Node*> leaves;
+  get_leaves(&node, leaves, true);
+  for (const auto& t : leaves) {
+    size_t n_elts = t->dtype().number_of_elements();
+    m_linearized_size_lookup_table[t->path()] = n_elts;
+    if (m_useme_node_map.find(t->path()) == m_useme_node_map.end()) {
+      LBANN_ERROR(" m_useme_node_map.find(t->path() failed for: ", t->path());
+    }
+    const conduit::Node* nd = m_useme_node_map[t->path()];
+    const conduit::Node& metadata = nd->child(s_metadata_node_name);
+    if (!metadata.has_child("channels")) {
+      m_data_dims_lookup_table[t->path()].push_back(n_elts);
+    } 
+    
+    else {
+      int channels = metadata.child("channels").to_int32();
+      m_data_dims_lookup_table[t->path()].push_back(channels);
+      int nn_elts = metadata.child("dims").dtype().number_of_elements();
+      const conduit::int64* tmp = metadata.child("dims").as_int64_ptr();
+      for (int k=0;k<nn_elts;k++) {
+        m_data_dims_lookup_table[t->path()].push_back(tmp[k]);
+      }
+    }
+  }
+}
+
+void hdf5_data_reader::get_packing_data(
+   std::string group_name, 
+   std::vector<std::vector<int>> &sizes_out, 
+   std::vector<std::string> &field_names_out) const {
+  LBANN_ERROR("not implemented");
+}
+
 
 //==========================================================================
 // the following methods are included for testing and backwards compatibility;
 // they may (should?) go away in the future
 //
 int hdf5_data_reader::fetch_data(CPUMat& X, El::Matrix<El::Int>& indices_fetched) {
-std::cerr << " X fetch_data"; 
+std::cout << " X fetch_data"; 
   return 0;
 }
 
