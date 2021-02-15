@@ -150,24 +150,29 @@ char *x = "asdf";
     return 0;
   }
 
-  // TODO: uncertain what these should return; possibly extend the
-  // schemas to include this information?
   int get_num_labels() const override {
-    return 0;
+    return m_num_labels;
   }
+
   int get_num_responses() const override {
-    return 0;
+    return m_num_responses;
   }
 
 private:
 
-  // filled in by construct_data_size_lookup_tables; used by get_linearized_data_size()
+  /** num labels and responses can be specified in a metadata node attached to
+   *  the root of the experiment schema
+   */
+  int m_num_labels = 0;
+  int m_num_responses = 0;
+
+  // filled in by construct_linearized_size_lookup_tables; used by get_linearized_data_size()
   std::unordered_map<std::string, std::vector<int>> m_data_dims_lookup_table;
 
-  // filled in by construct_data_size_lookup_tables; used by get_linearized_data_size()
+  // filled in by construct_linearized_size_lookup_tables; used by get_linearized_data_size()
   std::unordered_map<std::string, int> m_linearized_size_lookup_table;
 
-  // filled in by construct_data_size_lookup_tables; used by get_packing_data()
+  // filled in by construct_linearized_size_lookup_tables; used by get_packing_data()
   std::unordered_map<std::string, std::vector<std::string>> m_field_names_lookup_table;
 
   std::string m_experiment_schema_filename;
@@ -217,11 +222,6 @@ private:
    *  directives, normalization values, etc.
    */
   conduit::Node m_data_schema;
-
-  /** contains a sample's schema, as loaded from disk
-   * (identical for all samples) 
-   */
-  conduit::Schema m_schema_from_dataset;
 
   /** Maps a node's pathname to the node for m_data_schema */
   std::unordered_map<std::string, conduit::Node*> m_data_map;
@@ -323,7 +323,7 @@ private:
   // constructs m_useme_node_map from m_useme_nodes
   void build_useme_node_map();
 
-  void construct_data_size_lookup_tables(conduit::Node &node); 
+  void construct_linearized_size_lookup_tables(conduit::Node &node); 
 
   //=========================================================================
   // templates follow
@@ -332,20 +332,24 @@ private:
   template<typename T_from, typename T_to>
   void coerceme(const T_from* data_in, size_t n_bytes, std::vector<T_to> & data_out); 
 
+  //normalization for scalars and 1D arrays
   template<typename T>
   void normalizeme(T* data, double scale, double bias, size_t n_bytes); 
 
+  //normalization for images with multiple channels
   template<typename T>
   void normalizeme(T* data, const double* scale, const double* bias, size_t n_bytes, size_t n_channels); 
 
   template<typename T>
   void repack_image(T* src_buf, size_t n_bytes, size_t n_rows, size_t n_cols, int n_channels); 
 
-  /** all field assigned to 'group_name' (e.g, 'datum') into a 1D vector */
+  // packs all fields assigned to 'group_name' (e.g, 'datum') into a 1D vector 
   template<typename T>
   void pack(std::string group_name, conduit::Node& node, size_t index);
 
 }; // class hdf5_data_reader
+
+//============================================================================
 
 template<typename T_from, typename T_to>
 void hdf5_data_reader::coerceme(const T_from* data_in, size_t n_bytes, std::vector<T_to> & data_out) {
@@ -357,6 +361,7 @@ void hdf5_data_reader::coerceme(const T_from* data_in, size_t n_bytes, std::vect
   }
 }
 
+//normalization for scalars and 1D arrays
 template<typename T>
 void hdf5_data_reader::normalizeme(T* data, double scale, double bias, size_t n_bytes) {
   size_t n_elts = n_bytes / sizeof(T);
@@ -365,6 +370,7 @@ void hdf5_data_reader::normalizeme(T* data, double scale, double bias, size_t n_
   }
 }
 
+//normalization for images with multiple channels
 template<typename T>
 void hdf5_data_reader::normalizeme(T* data, const double* scale, const double* bias, size_t n_bytes, size_t n_channels) {
   size_t n_elts = n_bytes / sizeof(T);
@@ -414,7 +420,6 @@ void hdf5_data_reader::pack(std::string group_name, conduit::Node& node, size_t 
   if (m_packing_groups.find(group_name) == m_packing_groups.end()) {
     LBANN_ERROR("(m_packing_groups.find(", group_name, ") failed");
   }
-
   const PackingGroup& g = m_packing_groups[group_name];
   std::vector<T> data(g.n_elts);
   size_t idx = 0;
@@ -425,7 +430,7 @@ void hdf5_data_reader::pack(std::string group_name, conduit::Node& node, size_t 
     if (!node.has_path(ss.str())) {
       LBANN_ERROR("no leaf for path: ", ss.str());
     }
-    conduit::Node& leaf = node[ss.str()];
+    const conduit::Node& leaf = node[ss.str()];
     memcpy(data.data()+idx, leaf.data_ptr(), n_elts*sizeof(T));
     idx += n_elts;
   }

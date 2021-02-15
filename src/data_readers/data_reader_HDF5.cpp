@@ -92,7 +92,6 @@ void hdf5_data_reader::load() {
   instantiate_data_store();
   select_subset_of_data();
 
-
   // Load and parse the user-supplied schemas
   if (get_data_schema_filename().empty()) {
     LBANN_ERROR("you must include 'data_schema_filename' in your data reader prototext file");
@@ -104,6 +103,17 @@ void hdf5_data_reader::load() {
   load_schema(get_experiment_schema_filename(), m_experiment_schema);
   parse_schemas();
   build_useme_node_map();
+
+  // deal with num_labels and num_responses
+  if (m_experiment_schema.has_child(s_metadata_node_name)) {
+    const conduit::Node& metadata = m_experiment_schema.child(s_metadata_node_name);
+    if (metadata.has_child("num_labels")) {
+      m_num_labels = metadata["num_labels"].to_int32();
+    }
+    if (metadata.has_child("num_responses")) {
+      m_num_responses = metadata["num_responses"].to_int32();
+    }
+  } 
 
   if (is_master()) {
     std::cout << "time to load and parse the schemas: " << get_time() - tm11 
@@ -128,30 +138,6 @@ void hdf5_data_reader::load_schema(std::string filename, conduit::Node &schema) 
   conduit::relay::mpi::broadcast_using_schema(schema, m_comm->get_trainer_master(), m_comm->get_trainer_comm().GetMPIComm());
 }
 
-// each trainer master loads a schema and bcasts to others 
-void hdf5_data_reader::load_schema_from_data(conduit::Schema &schema) {
-  std::string json;
-  if (m_comm->am_trainer_master()) {
-      size_t index = random() % m_shuffled_indices.size();
-      hid_t file_handle;
-      std::string sample_name;
-      data_reader_sample_list::open_file(index, file_handle, sample_name);
-      const std::string path = "/" + sample_name;
-      if (!conduit::relay::io::hdf5_has_path(file_handle, path)) {
-        LBANN_ERROR("hdf5_has_path failed for path: ", path);
-      }
-      conduit::Node node;
-      conduit::relay::io::hdf5_read(file_handle, path, node);
-
-      const conduit::Schema &tmp = node.schema();
-      json = tmp.to_json();
-      data_reader_sample_list::close_file(index);
-  }
-
-  m_comm->broadcast<std::string>(m_comm->get_trainer_master(), json, m_comm->get_trainer_comm());
-  schema = json;
-}
-
 void hdf5_data_reader::do_preload_data_store() {
   double tm1 = get_time();
   if (is_master()) {
@@ -172,11 +158,11 @@ void hdf5_data_reader::do_preload_data_store() {
         build_tables = false;
         if (is_master()) {
         }
-        construct_data_size_lookup_tables(node);
+        construct_linearized_size_lookup_tables(node);
       }
 
       //note: this call may change the node hierarchy, so it must go
-      //      after calling construct_data_size_lookup_tables()
+      //      after calling construct_linearized_size_lookup_tables()
       m_data_store->set_preloaded_conduit_node(index, node);
     } catch (conduit::Error const& e) {
       LBANN_ERROR("trying to load the node ", index, " and caught conduit exception: ", e.what());
@@ -485,7 +471,6 @@ struct {
 } less_oper;
 
 void hdf5_data_reader::build_packing_map(conduit::Node &node) {
-  load_schema_from_data(m_schema_from_dataset);
   std::unordered_map<std::string, std::vector<PackingData>> packing_data;
   for (const auto& nd : m_useme_nodes) {
     const conduit::Node& metadata = (*nd)[s_metadata_node_name];
@@ -662,7 +647,7 @@ int hdf5_data_reader::get_linearized_data_size(std::string name) const {
 
 //fills in: 
 //  m_data_dims_lookup_table and m_linearized_size_lookup_table
-void hdf5_data_reader::construct_data_size_lookup_tables(conduit::Node &node_in) {
+void hdf5_data_reader::construct_linearized_size_lookup_tables(conduit::Node &node_in) {
   conduit::Node node = node_in.child(0);
   std::vector<conduit::Node*> leaves;
   get_leaves(&node, leaves, true);
