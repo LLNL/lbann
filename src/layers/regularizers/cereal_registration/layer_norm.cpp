@@ -39,5 +39,26 @@ void layer_norm_layer<TensorDataType,Layout,Device>::serialize(ArchiveT& ar) {
 
 } // namespace lbann
 
-#define LBANN_LAYER_NAME layer_norm_layer
-#include <lbann/macros/register_layer_with_cereal_data_parallel_only.hpp>
+// In this case, we want to exclude FP16 types, so we must handle
+// registration manually.
+#include "lbann/macros/common_cereal_registration.hpp"
+#define LBANN_COMMA ,
+#define PROTO_DEVICE(T, D)                                              \
+  LBANN_ADD_ALL_SERIALIZE_ETI(                                          \
+    ::lbann::layer_norm_layer<T,::lbann::data_layout::DATA_PARALLEL,D>); \
+  CEREAL_REGISTER_TYPE_WITH_NAME(                                       \
+    ::lbann::layer_norm_layer<T LBANN_COMMA ::lbann::data_layout::DATA_PARALLEL LBANN_COMMA D>, \
+    "layer_norm_layer(" #T ",DATA_PARALLEL," #D ")")
+
+#define PROTO_CPU(T) PROTO_DEVICE(T,El::Device::CPU)
+#ifdef LBANN_HAS_GPU
+#define PROTO_GPU(T) PROTO_DEVICE(T,El::Device::GPU)
+#else
+#define PROTO_GPU(T)
+#endif
+
+#define PROTO(T) \
+  PROTO_CPU(T);  \
+  PROTO_GPU(T);
+
+#include "lbann/macros/instantiate.hpp"
