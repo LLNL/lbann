@@ -29,8 +29,6 @@
 #include "lbann/layers/io/input_layer.hpp"
 #include "lbann/utils/serialize.hpp"
 
-#include <cereal/types/set.hpp>
-
 #include <iomanip>
 #include <vector>
 
