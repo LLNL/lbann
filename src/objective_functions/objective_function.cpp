@@ -202,5 +202,6 @@ void objective_function::set_weights_pointers(std::vector<ViewingWeightsPtr> w) 
 
 }  // namespace lbann
 
+#define LBANN_SKIP_CEREAL_REGISTRATION
 #define LBANN_CLASS_NAME objective_function
 #include <lbann/macros/register_class_with_cereal.hpp>

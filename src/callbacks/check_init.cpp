@@ -104,6 +104,5 @@ void check_init::on_train_begin(model *m) {
 } // namespace callback
 } // namespace lbann
 
-CEREAL_REGISTER_TYPE_WITH_NAME(
-  ::lbann::callback::check_init,
-  "callback::check_init")
+#define LBANN_CLASS_NAME callback::check_init
+#include <lbann/macros/register_class_with_cereal.hpp>

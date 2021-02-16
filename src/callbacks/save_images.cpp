@@ -186,6 +186,5 @@ build_save_images_callback_from_pbuf(
 } // namespace callback
 } // namespace lbann
 
-// CEREAL_REGISTER_TYPE_WITH_NAME(
-//   ::lbann::callback::save_images,
-//   "callback::save_images")
+// #define LBANN_CLASS_NAME callback::save_images
+// #include <lbann/macros/register_class_with_cereal.hpp>

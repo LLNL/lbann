@@ -100,5 +100,6 @@ void execution_context::load_from_checkpoint_distributed(persist& p){
 
 }  // namespace lbann
 
+#define LBANN_SKIP_CEREAL_REGISTRATION
 #define LBANN_CLASS_NAME execution_context
 #include <lbann/macros/register_class_with_cereal.hpp>

@@ -191,6 +191,5 @@ build_debug_io_callback_from_pbuf(
 } // namespace callback
 } // namespace lbann
 
-CEREAL_REGISTER_TYPE_WITH_NAME(
-  ::lbann::callback::debug_io,
-  "callback::debug_io")
+#define LBANN_CLASS_NAME callback::debug_io
+#include <lbann/macros/register_class_with_cereal.hpp>

@@ -313,7 +313,3 @@ build_print_statistics_callback_from_pbuf(
 
 #define LBANN_CLASS_NAME callback::print_statistics
 #include <lbann/macros/register_class_with_cereal.hpp>
-
-CEREAL_REGISTER_TYPE_WITH_NAME(
-  ::lbann::callback::print_statistics,
-  "callback::print_statistics")

@@ -229,4 +229,5 @@ void l2_weight_regularization::compute_weight_regularization() {
 
 } // namespace lbann
 
-CEREAL_REGISTER_TYPE(lbann::l2_weight_regularization);
+#define LBANN_CLASS_NAME l2_weight_regularization
+#include <lbann/macros/register_class_with_cereal.hpp>

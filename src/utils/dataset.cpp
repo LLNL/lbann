@@ -37,5 +37,6 @@ void dataset::serialize( Archive & ar ) {
 
 } // namespace lbann
 
+#define LBANN_SKIP_CEREAL_REGISTRATION
 #define LBANN_CLASS_NAME dataset
 #include <lbann/macros/register_class_with_cereal.hpp>

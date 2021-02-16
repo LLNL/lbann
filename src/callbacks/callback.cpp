@@ -42,9 +42,5 @@ description callback_base::get_description() const {
 
 } // namespace lbann
 
-CEREAL_REGISTER_TYPE_WITH_NAME(
-  ::lbann::callback_base,
-  "callback_base")
-
 #define LBANN_CLASS_NAME callback_base
 #include <lbann/macros/register_class_with_cereal.hpp>

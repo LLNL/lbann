@@ -104,6 +104,5 @@ void check_small::on_batch_end(model *m) {
 } // namespace callback
 } // namespace lbann
 
-CEREAL_REGISTER_TYPE_WITH_NAME(
-  ::lbann::callback::check_small,
-  "callback::check_small")
+#define LBANN_CLASS_NAME callback::check_small
+#include <lbann/macros/register_class_with_cereal.hpp>

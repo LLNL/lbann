@@ -203,6 +203,5 @@ build_perturb_adam_callback_from_pbuf(
 } // namespace callback
 } // namespace lbann
 
-CEREAL_REGISTER_TYPE_WITH_NAME(
-  ::lbann::callback::perturb_adam,
-  "callback::perturb_adam")
+#define LBANN_CLASS_NAME callback::perturb_adam
+#include <lbann/macros/register_class_with_cereal.hpp>

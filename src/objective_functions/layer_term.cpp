@@ -98,4 +98,5 @@ void layer_term::differentiate() {
 
 }  // namespace lbann
 
-CEREAL_REGISTER_TYPE(lbann::layer_term);
+#define LBANN_CLASS_NAME layer_term
+#include <lbann/macros/register_class_with_cereal.hpp>

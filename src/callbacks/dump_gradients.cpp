@@ -79,6 +79,5 @@ build_dump_gradients_callback_from_pbuf(
 } // namespace callback
 } // namespace lbann
 
-CEREAL_REGISTER_TYPE_WITH_NAME(
-  ::lbann::callback::dump_gradients,
-  "callback::dump_gradients")
+#define LBANN_CLASS_NAME callback::dump_gradients
+#include <lbann/macros/register_class_with_cereal.hpp>

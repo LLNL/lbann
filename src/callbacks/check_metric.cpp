@@ -134,6 +134,5 @@ build_check_metric_callback_from_pbuf(
 } // namespace callback
 } // namespace lbann
 
-CEREAL_REGISTER_TYPE_WITH_NAME(
-  ::lbann::callback::check_metric,
-  "callback::check_metric")
+#define LBANN_CLASS_NAME callback::check_metric
+#include <lbann/macros/register_class_with_cereal.hpp>

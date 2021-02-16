@@ -98,6 +98,5 @@ build_dump_mb_indices_callback_from_pbuf(
 } // namespace callback
 } // namespace lbann
 
-CEREAL_REGISTER_TYPE_WITH_NAME(
-  ::lbann::callback::dump_minibatch_sample_indices,
-  "callback::dump_minibatch_sample_indices")
+#define LBANN_CLASS_NAME callback::dump_minibatch_sample_indices
+#include <lbann/macros/register_class_with_cereal.hpp>

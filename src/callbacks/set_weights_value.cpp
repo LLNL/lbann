@@ -108,6 +108,5 @@ build_set_weights_value_callback_from_pbuf(
 } // namespace callback
 } // namespace lbann
 
-CEREAL_REGISTER_TYPE_WITH_NAME(
-  ::lbann::callback::set_weights_value,
-  "callback::set_weights_value")
+#define LBANN_CLASS_NAME callback::set_weights_value
+#include <lbann/macros/register_class_with_cereal.hpp>

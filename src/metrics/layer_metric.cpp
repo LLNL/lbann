@@ -139,7 +139,5 @@ bool layer_metric::load_from_checkpoint_distributed(persist& p) {
 
 } // namespace lbann
 
-CEREAL_REGISTER_TYPE(lbann::layer_metric);
-
 #define LBANN_CLASS_NAME layer_metric
 #include <lbann/macros/register_class_with_cereal.hpp>

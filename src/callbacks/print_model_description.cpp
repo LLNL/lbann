@@ -56,6 +56,5 @@ build_print_model_description_callback_from_pbuf(
 } // namespace callback
 } // namespace lbann
 
-CEREAL_REGISTER_TYPE_WITH_NAME(
-  ::lbann::callback::print_model_description,
-  "callback::print_model_description")
+#define LBANN_CLASS_NAME callback::print_model_description
+#include <lbann/macros/register_class_with_cereal.hpp>

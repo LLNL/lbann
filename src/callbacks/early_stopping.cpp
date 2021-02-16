@@ -92,6 +92,5 @@ build_early_stopping_callback_from_pbuf(
 } // namespace callback
 } // namespace lbann
 
-CEREAL_REGISTER_TYPE_WITH_NAME(
-  ::lbann::callback::early_stopping,
-  "callback::early_stopping")
+#define LBANN_CLASS_NAME callback::early_stopping
+#include <lbann/macros/register_class_with_cereal.hpp>

@@ -220,9 +220,5 @@ build_adam_optimizer_from_pbuf(
 
 } // namespace lbann
 
-#undef PROTO
-#define PROTO(T)                                                \
-  CEREAL_REGISTER_TYPE_WITH_NAME(lbann::adam<T>, "adam(" #T ")")
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
-#include "lbann/macros/instantiate.hpp"
+#define LBANN_CLASS_NAME adam
+#include <lbann/macros/register_template_class_with_cereal.hpp>

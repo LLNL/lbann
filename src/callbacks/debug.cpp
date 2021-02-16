@@ -192,6 +192,5 @@ build_debug_callback_from_pbuf(const google::protobuf::Message& proto_msg,
 } // namespace callback
 } // namespace lbann
 
-CEREAL_REGISTER_TYPE_WITH_NAME(
-  ::lbann::callback::debug,
-  "callback::debug")
+#define LBANN_CLASS_NAME callback::debug
+#include <lbann/macros/register_class_with_cereal.hpp>

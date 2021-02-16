@@ -64,6 +64,5 @@ build_hang_callback_from_pbuf(
 } // namespace callback
 } // namespace lbann
 
-CEREAL_REGISTER_TYPE_WITH_NAME(
-  ::lbann::callback::hang,
-  "callback::hang")
+#define LBANN_CLASS_NAME callback::hang
+#include <lbann/macros/register_class_with_cereal.hpp>
