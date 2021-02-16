@@ -38,7 +38,7 @@ message DataReader {
 
 message Reader {
   string name = 1; //mnist, nci, nci_regression, numpy, imagenet, synthetic, merge_samples
-  string role = 3; //train, validation, test
+  string role = 3; //train, validation, test, tournament
   bool shuffle = 4;
   string data_filedir = 5;
   string data_local_filedir = 50; //to support data_store
@@ -46,6 +46,7 @@ message Reader {
   string label_filename = 7;
   string sample_list = 8;
   double validation_percent = 9;
+  double tournament_percent = 10;
   int64 absolute_sample_count = 11;
   int64 first_n = 200;
   double percent_of_data_to_use = 12;
@@ -75,14 +76,6 @@ message Reader {
   float scaling_factor_int16 = 116; // for numpy_npz_reader with int16 data
 
   int32 max_files_to_load = 1000;
-
-  //------------- start of only for partitioned data sets ------------------
-  bool is_partitioned = 300;
-  double partition_overlap = 301;
-  int32 partition_mode = 302;
-       // 1 - share a portion of your data with two neighbors;
-       // 2 - there's a set of overlap indices that are common to all models
-  //------------- end of only for partitioned data sets ------------------
 
   //------------- start of only for sample lists ------------------
   bool sample_list_per_trainer = 400;

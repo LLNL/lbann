@@ -129,8 +129,6 @@ def construct_data_reader(lbann):
 
     """
 
-    # Note: The training data reader should be removed when
-    # https://github.com/LLNL/lbann/issues/1098 is resolved.
     message = lbann.reader_pb2.DataReader()
     message.reader.extend([
         tools.create_python_data_reader(
@@ -152,6 +150,14 @@ def construct_data_reader(lbann):
         tools.create_python_data_reader(
             lbann,
             current_file,
+            'get_val_sample',
+            'num_val_samples',
+            'sample_dims',
+            'tournament',
+        ),
+        tools.create_python_data_reader(
+            lbann,
+            current_file,
             'get_test_sample',
             'num_test_samples',
             'sample_dims',
@@ -165,8 +171,8 @@ def construct_data_reader(lbann):
 # ==============================================
 
 # Create test functions that can interact with PyTest
-for test in tools.create_tests(setup_experiment,
+for _test_func in tools.create_tests(setup_experiment,
                                __file__,
                                nodes=2,
                                lbann_args='--procs_per_trainer=2'):
-    globals()[test.__name__] = test
+    globals()[_test_func.__name__] = _test_func

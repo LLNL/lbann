@@ -62,8 +62,12 @@ public:
   l2_weight_regularization* copy() const override { return new l2_weight_regularization(*this); }
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize( Archive & ar ) {
-    ar(cereal::base_class<objective_function_term>(this));
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar)
+  {
+    ar(::cereal::make_nvp(
+         "ObjectiveFunctionTerm",
+         cereal::base_class<objective_function_term>(this)));
   }
 
   std::string name() const override { return "L2 weight regularization"; }
@@ -111,5 +115,7 @@ private:
 };
 
 } // namespace lbann
+
+CEREAL_REGISTER_TYPE(lbann::l2_weight_regularization);
 
 #endif // LBANN_OBJECTIVE_FUNCTIONS_WEIGHT_REGULARIZATION_L2_WEIGHT_REGULARIZATION_HPP_INCLUDED

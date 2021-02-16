@@ -27,10 +27,11 @@
 #ifndef LBANN_CALLBACKS_MIXUP_HPP
 #define LBANN_CALLBACKS_MIXUP_HPP
 
+#include "lbann/callbacks/callback.hpp"
+
+#include <cereal/types/unordered_set.hpp>
 #include <unordered_set>
 #include <string>
-
-#include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
 namespace callback {
@@ -70,7 +71,25 @@ public:
 
   void on_forward_prop_end(model *m, Layer *l) override;
 
+  /** @name Serialization */
+  ///@{
+
+  /** @brief Store state to archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar) {
+    ar(::cereal::make_nvp(
+         "BaseCallback",
+         ::cereal::base_class<callback_base>(this)),
+       CEREAL_NVP(m_layers),
+       CEREAL_NVP(m_alpha));
+  }
+
+  ///@}
+
 private:
+
+  friend class cereal::access;
+  mixup();
+
   /** Names of input layers to apply mixup to. */
   std::unordered_set<std::string> m_layers;
   /** mixup parameter. */

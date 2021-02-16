@@ -25,13 +25,15 @@ def run(trainer, model, data_reader, optimizer,
         launcher_args=[],
         lbann_exe=lbann.lbann_exe(),
         lbann_args=[],
+        procs_per_trainer=None,
         environment={},
         overwrite_script=False,
         setup_only=False,
         batch_job=False,
         nvprof=False,
         nvprof_output_name=None,
-        experiment_dir=None):
+        experiment_dir=None,
+):
     """Run LBANN.
 
     This is intended to interface with job schedulers on HPC
@@ -65,6 +67,8 @@ def run(trainer, model, data_reader, optimizer,
         lbann_exe (str, optional): LBANN executable.
         lbann_args (str, optional): Command-line arguments to LBANN
             executable.
+        procs_per_trainer (int, optional): Number of processes per
+            LBANN trainer. Default is all processes in one trainer.
         environment (dict of {str: str}, optional): Environment
             variables.
         overwrite_script (bool, optional): Whether to overwrite script
@@ -117,6 +121,9 @@ def run(trainer, model, data_reader, optimizer,
                                data_reader=data_reader,
                                optimizer=optimizer)
     lbann_command.append('--prototext={}'.format(prototext_file))
+    if procs_per_trainer is not None:
+        lbann_command.append(f'--procs_per_trainer={procs_per_trainer}')
+
     script.add_parallel_command(lbann_command)
     script.add_command('status=$?')
 

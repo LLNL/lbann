@@ -47,13 +47,26 @@ class in_top_k_layer : public data_type_layer<TensorDataType> {
   in_top_k_layer(lbann_comm *comm, El::Int k)
     : data_type_layer<TensorDataType>(comm), m_k(k) {
     if (m_k < 0) {
-      std::stringstream err;
-      err << "invalid parameter for top-k search (k=" << m_k << ")";
-      LBANN_ERROR(err.str());
+      LBANN_ERROR("invalid parameter for top-k search (k=", m_k, ")");
     }
   }
 
   in_top_k_layer* copy() const override { return new in_top_k_layer(*this); }
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar)
+  {
+    using DataTypeLayer = data_type_layer<TensorDataType>;
+    ar(::cereal::make_nvp("DataTypeLayer",
+                          ::cereal::base_class<DataTypeLayer>(this)),
+       CEREAL_NVP(m_k));
+  }
+
+  ///@}
+
   std::string get_type() const override { return "in_top_k"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
@@ -66,6 +79,11 @@ class in_top_k_layer : public data_type_layer<TensorDataType> {
 
  protected:
 
+  friend class cereal::access;
+  in_top_k_layer()
+    : in_top_k_layer(nullptr, 1)
+  {}
+
   void setup_dims(DataReaderMetaData& dr_metadata) override {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims(this->get_input_dims());
@@ -76,7 +94,7 @@ class in_top_k_layer : public data_type_layer<TensorDataType> {
  private:
 
   /** Parameter for top-k search. */
-  const El::Int m_k;
+  El::Int m_k;
 
 };
 

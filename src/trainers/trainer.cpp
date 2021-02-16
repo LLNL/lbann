@@ -266,22 +266,18 @@ bool trainer::save_to_checkpoint_shared() {
     write_cereal_archive(*this, get_persist_obj(), "trainer.xml");
   }
 
-  auto flag = get_data_coordinator().save_to_checkpoint_shared(get_persist_obj());
-
-  return flag;
+  return get_data_coordinator().save_to_checkpoint_shared(get_persist_obj());
 }
 
 bool trainer::load_from_checkpoint_shared(persist& p) {
   try {
     load_from_shared_cereal_archive(*this, p, *get_comm(), "trainer.xml");
-  }catch (NonexistentArchiveFile const& e) {
+  } catch (NonexistentArchiveFile const& e) {
     LBANN_MSG(e.what());
     return false;
   }
 
-  auto flag = get_data_coordinator().load_from_checkpoint_shared(p);
-
-  return flag;
+  return get_data_coordinator().load_from_checkpoint_shared(p);
 }
 
 bool trainer::load_from_checkpoint_shared(model& m, execution_context& c) {
@@ -299,21 +295,27 @@ bool trainer::load_from_checkpoint_shared(model& m, execution_context& c) {
       if(current_mode == mode) {
         /// Restart has to be able to load the currently running execution context
         c.load_from_checkpoint_shared(get_persist_obj());
-      }else {
+      }
+      else {
         key = check_and_build_execution_context(c, m, mode);
-        auto& evaluation_context = static_cast<sgd_execution_context&>(get_execution_context(key));
+        auto& evaluation_context =
+          static_cast<sgd_execution_context&>(get_execution_context(key));
         evaluation_context.load_from_checkpoint_shared(get_persist_obj());
       }
-    }catch (NonexistentArchiveFile const&) {
+    }
+    catch (NonexistentArchiveFile const&) {
       // Ignore the exception if the file is not for the current execution mode
       if(current_mode == mode) {
-        LBANN_ERROR("Failed to restart model, invalid execution mode: " + to_string(current_mode));
-      }else {
+        LBANN_ERROR("Failed to restart model, invalid execution mode: ",
+                    to_string(current_mode));
+      }
+      else {
         delete_execution_context(key);
       }
     }
   }
-  return true;
+
+  return get_data_coordinator().load_from_checkpoint_shared(get_persist_obj());
 }
 
 bool trainer::save_to_checkpoint_distributed(){
@@ -322,12 +324,12 @@ bool trainer::save_to_checkpoint_distributed(){
   };
   for_each_execution_context(save_checkpoint);
   save_rng_to_checkpoint_distributed(get_persist_obj(), m_comm);
-  return true;
+  return get_data_coordinator().save_to_checkpoint_shared(get_persist_obj());
 }
 
 bool trainer::load_from_checkpoint_distributed(persist& p){
   read_cereal_archive(*this, p, "trainer.xml");
-  return false;
+  return get_data_coordinator().load_from_checkpoint_distributed(p);
 }
 
 bool trainer::load_from_checkpoint_distributed(model& m, execution_context& c){
@@ -357,7 +359,7 @@ bool trainer::load_from_checkpoint_distributed(model& m, execution_context& c){
       }
     }
   }
-  return true;
+  return get_data_coordinator().load_from_checkpoint_distributed(get_persist_obj());
 }
 
 void trainer::write_proto(lbann_data::Trainer* proto) {

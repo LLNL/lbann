@@ -100,6 +100,11 @@ auto data_type_optimizer<TensorDataType>::get_gradient() -> AbsDistMatrixType& {
 
 template <typename TensorDataType>
 void data_type_optimizer<TensorDataType>::setup(WeightsType* w) {
+  this->setup_base(w);
+}
+
+template <typename TensorDataType>
+void data_type_optimizer<TensorDataType>::setup_base(WeightsType* w) {
   this->set_comm(w->get_comm());
   this->clear_gradient();
 

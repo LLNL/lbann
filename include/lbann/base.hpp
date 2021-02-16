@@ -167,7 +167,7 @@ std::string to_string(data_layout const& dl);
 data_layout data_layout_from_string(std::string const& str);
 
 /// Neural network execution mode
-enum class execution_mode {training, validation, testing, prediction, invalid};
+enum class execution_mode {training, validation, testing, prediction, tournament, invalid};
 std::string to_string(execution_mode m);
 using execution_mode_iterator = enum_iterator<execution_mode, execution_mode::training, execution_mode::invalid>;
 

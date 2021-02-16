@@ -35,22 +35,6 @@ TEMPLATE_LIST_TEST_CASE("Matrix serialization",
     CHECK(mat.Width() == mat_restore.Width());
   }
 
-  SECTION("JSON archive")
-  {
-    {
-      cereal::JSONOutputArchive oarchive(ss);
-      CHECK_NOTHROW(oarchive(mat));
-    }
-
-    {
-      cereal::JSONInputArchive iarchive(ss);
-      CHECK_NOTHROW(iarchive(mat_restore));
-    }
-
-    CHECK(mat.Height() == mat_restore.Height());
-    CHECK(mat.Width() == mat_restore.Width());
-  }
-
   // The binary test case is slightly different since we serialize the
   // data, too. In this case, the buffer has to have real data.
   SECTION("Binary archive")
@@ -140,22 +124,6 @@ TEMPLATE_LIST_TEST_CASE("Matrix smart-pointer-to-concrete serialization",
     }
     {
       cereal::XMLInputArchive iarchive(ss);
-      CHECK_NOTHROW(iarchive(mat_restore));
-    }
-
-    REQUIRE((check_valid_ptr) mat_restore);
-    CHECK(mat->Height() == mat_restore->Height());
-    CHECK(mat->Width() == mat_restore->Width());
-  }
-
-  SECTION("JSON Archive")
-  {
-    {
-      cereal::JSONOutputArchive oarchive(ss);
-      CHECK_NOTHROW(oarchive(mat));
-    }
-    {
-      cereal::JSONInputArchive iarchive(ss);
       CHECK_NOTHROW(iarchive(mat_restore));
     }
 

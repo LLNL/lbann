@@ -146,8 +146,7 @@ protected:
 
 public:
   /** @todo Remove num_data_dims from arg list */
-  base_convolution_layer(lbann_comm* comm,
-                         int num_data_dims,
+  base_convolution_layer(int num_data_dims,
                          int output_channels,
                          std::vector<int> conv_dims,
                          std::vector<int> pads,
@@ -163,7 +162,7 @@ public:
   ~base_convolution_layer();
 
 #ifdef LBANN_HAS_DNN_LIB
-  void set_dnn_math_mode(cudnnMathType_t math_type) noexcept;
+  void set_dnn_math_mode(dnn_lib::dnnMathType_t math_type) noexcept;
 #endif // LBANN_HAS_DNN_LIB
 
   description get_description() const override;
@@ -176,6 +175,27 @@ public:
 
   /** @brief Initialize GPU objects */
   void setup_gpu() override;
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar)
+  {
+    using DataTypeLayer = data_type_layer<TensorDataType>;
+    ar(::cereal::make_nvp("DataTypeLayer",
+                          ::cereal::base_class<DataTypeLayer>(this)),
+       CEREAL_NVP(m_output_channels),
+       CEREAL_NVP(m_conv_dims),
+       CEREAL_NVP(m_pads),
+       CEREAL_NVP(m_strides),
+       CEREAL_NVP(m_dilations),
+       CEREAL_NVP(m_groups),
+       CEREAL_NVP(m_bias_scaling_factor));
+    /// @todo Consider serializing m_convolution_math_type
+  }
+
+  ///@}
 
 protected:
 

@@ -65,3 +65,9 @@ void directed_acyclic_graph_model::setup_layer_execution_order() {
 }
 
 } // namespace lbann
+
+#include <cereal/types/polymorphic.hpp>
+
+CEREAL_REGISTER_TYPE_WITH_NAME(
+  ::lbann::directed_acyclic_graph_model,
+  "dag_model");

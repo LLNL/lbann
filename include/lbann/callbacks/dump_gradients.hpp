@@ -64,9 +64,28 @@ class dump_gradients : public callback_base {
   }
   void on_backward_prop_end(model *m) override;
   std::string name() const override { return "dump gradients"; }
+
+  /** @name Serialization */
+  ///@{
+
+  /** @brief Store state to archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar) {
+    ar(::cereal::make_nvp(
+         "BaseCallback",
+         ::cereal::base_class<callback_base>(this)),
+       CEREAL_NVP(m_basename));
+  }
+
+  ///@}
+
  private:
+
+  friend class cereal::access;
+  dump_gradients();
+
   /** @brief Basename for writing files. */
   std::string m_basename;
+
 };
 
 // Builder function

@@ -72,6 +72,20 @@ public:
   dft_abs_layer(lbann_comm* const comm);
   ~dft_abs_layer();
   dft_abs_layer* copy() const override { return new dft_abs_layer(*this); }
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar)
+  {
+    using DataTypeLayer = data_type_layer<TensorDataType>;
+    ar(::cereal::make_nvp("DataTypeLayer",
+                          ::cereal::base_class<DataTypeLayer>(this)));
+  }
+
+  ///@}
+
   std::string get_type() const override { return "DFT Abs"; }
   data_layout get_data_layout() const override {
     return Layout;
@@ -82,6 +96,12 @@ public:
   }
 
 protected:
+
+  friend class cereal::access;
+  dft_abs_layer()
+    : dft_abs_layer(nullptr)
+  {}
+
   dft_abs_layer(dft_abs_layer const&);
   void setup_dims(DataReaderMetaData& dr_metadata) override;
   void fp_compute() override;

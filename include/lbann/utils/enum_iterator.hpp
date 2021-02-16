@@ -53,5 +53,5 @@ public:
   bool operator!=(const enum_iterator& i) { return val != i.val; }
 };
 
-}
+} // namespace lbann
 #endif // LBANN_ENUM_ITERATOR_H

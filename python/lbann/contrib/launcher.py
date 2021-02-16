@@ -81,6 +81,7 @@ def run(
     optimizer,
     lbann_exe=lbann.lbann_exe(),
     lbann_args=[],
+    procs_per_trainer=None,
     overwrite_script=False,
     setup_only=False,
     batch_job=False,
@@ -118,6 +119,8 @@ def run(
                                data_reader=data_reader,
                                optimizer=optimizer)
     lbann_command.append('--prototext={}'.format(prototext_file))
+    if procs_per_trainer is not None:
+        lbann_command.append(f'--procs_per_trainer={procs_per_trainer}')
     script.add_parallel_command(lbann_command)
     script.add_command('status=$?')
 

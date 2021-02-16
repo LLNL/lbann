@@ -41,6 +41,12 @@ namespace dnn_lib
 
 using namespace cudnn;
 
+inline size_t get_lrn_ws_size(TensorDescriptor const& yDesc)
+{
+  return 0UL;
+}
+
+
 template <typename TensorDataType, typename ScalarParameterType>
 void lrn_cross_channel_forward(LRNDescriptor const& normDesc,
                                ScalarParameterType const& alpha_in,
@@ -49,8 +55,9 @@ void lrn_cross_channel_forward(LRNDescriptor const& normDesc,
                                ScalarParameterType const& beta_in,
                                TensorDescriptor const& yDesc,
                                El::AbstractMatrix<TensorDataType>& y,
+                               El::Matrix<TensorDataType, El::Device::GPU>& workSpace,
                                El::SyncInfo<El::Device::GPU> const& si,
-                               lrn_mode mode = lrn_mode::CROSS_CHANNEL_DIM1)
+                               dnnLRNMode_t mode = DNN_LRN_CROSS_CHANNEL)
 {
 
   using LibScalingParamT = dnn_lib::ScalingParamType<TensorDataType>;
@@ -59,7 +66,7 @@ void lrn_cross_channel_forward(LRNDescriptor const& normDesc,
   auto beta = El::To<LibScalingParamT>(beta_in);
   CHECK_CUDNN(cudnnLRNCrossChannelForward(handle_manager.get(),
                                           normDesc,
-                                          cudnn::to_cudnn(mode),
+                                          mode,
                                           &alpha,
                                           xDesc,
                                           x.LockedBuffer(),
@@ -76,7 +83,8 @@ void lrn_cross_channel_forward(LRNDescriptor const& normDesc,
                                ScalarParameterType const& beta_in,
                                TensorDescriptor const& yDesc,
                                El::AbstractMatrix<TensorDataType>& y,
-                               lrn_mode mode = lrn_mode::CROSS_CHANNEL_DIM1)
+                               El::Matrix<TensorDataType, El::Device::GPU>& workSpace,
+                               dnnLRNMode_t mode = DNN_LRN_CROSS_CHANNEL)
 {
 
   auto multisync = El::MakeMultiSync(gpu::get_sync_info(y),
@@ -84,6 +92,7 @@ void lrn_cross_channel_forward(LRNDescriptor const& normDesc,
   lrn_cross_channel_forward(normDesc,
                             alpha_in, xDesc, x,
                             beta_in, yDesc, y,
+                            workSpace,
                             multisync, mode);
 }
 
@@ -99,8 +108,9 @@ void lrn_cross_channel_backward(LRNDescriptor const& normDesc,
                                 ScalarParameterType const& beta_in,
                                 TensorDescriptor const& dxDesc,
                                 El::AbstractMatrix<TensorDataType>& dx,
+                                El::Matrix<TensorDataType, El::Device::GPU>& workSpace,
                                 El::SyncInfo<El::Device::GPU> const& si,
-                                lrn_mode mode = lrn_mode::CROSS_CHANNEL_DIM1)
+                                dnnLRNMode_t mode = DNN_LRN_CROSS_CHANNEL)
 {
 
   using LibScalingParamT = dnn_lib::ScalingParamType<TensorDataType>;
@@ -109,7 +119,7 @@ void lrn_cross_channel_backward(LRNDescriptor const& normDesc,
   auto beta = El::To<LibScalingParamT>(beta_in);
   CHECK_CUDNN(cudnnLRNCrossChannelBackward(handle_manager.get(),
                                            normDesc,
-                                           cudnn::to_cudnn(mode),
+                                           mode,
                                            &alpha,
                                            yDesc,
                                            y.LockedBuffer(),
@@ -134,7 +144,8 @@ void lrn_cross_channel_backward(LRNDescriptor const& normDesc,
                                 ScalarParameterType const& beta_in,
                                 TensorDescriptor const& dxDesc,
                                 El::AbstractMatrix<TensorDataType>& dx,
-                                lrn_mode mode = lrn_mode::CROSS_CHANNEL_DIM1)
+                                El::Matrix<TensorDataType, El::Device::GPU>& workSpace,
+                                dnnLRNMode_t mode = DNN_LRN_CROSS_CHANNEL)
 {
 
   auto multisync = El::MakeMultiSync(gpu::get_sync_info(dx),
@@ -144,6 +155,7 @@ void lrn_cross_channel_backward(LRNDescriptor const& normDesc,
   lrn_cross_channel_backward(normDesc,
                              alpha_in, yDesc, y, dyDesc, dy,
                              xDesc, x, beta_in, dxDesc, dx,
+                             workSpace,
                              multisync, mode);
 }
 

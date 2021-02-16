@@ -69,16 +69,22 @@ public:
   sgd(const sgd& other);
   sgd& operator=(const sgd& other);
   ~sgd() override = default;
-
-  /** Archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar) {
-    ar(cereal::base_class<data_type_optimizer<TensorDataType>>(this),
-       CEREAL_NVP(m_momentum),
-       CEREAL_NVP(m_nesterov));
-    // CEREAL_NVP(m_velocity));
-  }
   ///@}
 
+  /** @name Serialization */
+  ///@{
+
+  /** @brief Serialize to the archive. */
+  template <class ArchiveT>
+  void serialize(ArchiveT & ar)
+  {
+    ar(::cereal::base_class<data_type_optimizer<TensorDataType>>(this),
+       CEREAL_NVP(m_momentum),
+       CEREAL_NVP(m_nesterov),
+       CEREAL_NVP(m_velocity));
+  }
+
+  ///@}
   /** @name Descriptions */
   ///@{
 
@@ -112,7 +118,6 @@ public:
   AbsDistMatrixType& get_velocity();
 
   ///@}
-
   /** @name Setup */
   ///@{
 
@@ -122,8 +127,19 @@ public:
 
 protected:
 
+  /** @brief Default constructor.
+   *  @details This constructor exists as an implementation detail of
+   *  the serialization code. It is not for general use.
+   */
+  sgd()
+    : sgd(El::To<TensorDataType>(0.f),
+          El::To<TensorDataType>(0.f),
+          false)
+  {}
+
   /** Computation for an optimization step. */
-  void step_compute(AbsDistMatrixType& values, const AbsDistMatrixType& gradient) override;
+  void step_compute(AbsDistMatrixType& values,
+                    const AbsDistMatrixType& gradient) override;
 
 private:
 
@@ -145,16 +161,7 @@ private:
   void momentum_step_gpu(AbsDistMatrixType& values, const AbsDistMatrixType& gradient);
 #endif // LBANN_HAS_GPU
 
-  /** @name Checkpointing */
-  ///@{
-
-  bool save_to_checkpoint_shared(persist& p, std::string m_name) override;
-  bool load_from_checkpoint_shared(persist& p, std::string m_name) override;
-  bool save_to_checkpoint_distributed(persist& p, std::string m_name) override;
-  bool load_from_checkpoint_distributed(persist& p, std::string m_name) override;
-
-  ///@}
-
+  friend class cereal::access;
 };
 
 template <typename TensorDataType>

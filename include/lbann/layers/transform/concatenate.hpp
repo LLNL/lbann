@@ -63,6 +63,24 @@ public:
   concatenate_layer& operator=(const concatenate_layer& other) = default;
 
   concatenate_layer* copy() const override;
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar)
+  {
+    using DataTypeLayer = data_type_layer<TensorDataType>;
+    ar(::cereal::make_nvp("DataTypeLayer",
+                          ::cereal::base_class<DataTypeLayer>(this)),
+       CEREAL_NVP(m_concat_dim));
+    // Members that aren't serialized:
+    //   m_workspace
+    //   m_workspace_event
+  }
+
+  ///@}
+
   std::string get_type() const override;
   data_layout get_data_layout() const override;
   El::Device get_device_allocation() const override;
@@ -70,6 +88,11 @@ public:
   description get_description() const override;
 
 protected:
+
+  friend class cereal::access;
+  concatenate_layer()
+    : concatenate_layer(nullptr, 0 )
+  {}
 
   void setup_pointers() override;
   void setup_dims(DataReaderMetaData& dr_metadata) override;

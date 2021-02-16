@@ -73,16 +73,20 @@ class load_model : public callback_base {
 
   void on_test_begin(model *m) override;
 
-  /* ckptdir_is_fullpath flag if true
- * allow user to specify full path to model weights to load
- * and allow system to ignore appending trainer id, num of epochs/steps
- * to default ckpt_dir*/
-  static bool load_model_weights(const std::string& ckpt_dir,
-                                 const std::string& alg_name,
-                                 model *m,
-                                 bool ckptdir_is_fullpath=false);
-
   std::string name() const override { return "load model"; }
+
+  /** @name Serialization */
+  ///@{
+
+  /** @brief Store state to archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar) {
+    ar(cereal::base_class<callback_base>(this),
+       CEREAL_NVP(m_dirs),
+       CEREAL_NVP(m_extension),
+       CEREAL_NVP(m_loaded));
+  }
+
+  ///@}
 
  protected:
   friend class lbann::model;

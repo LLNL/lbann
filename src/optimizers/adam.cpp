@@ -195,68 +195,6 @@ void adam<TensorDataType>::step_compute_cpu(AbsDistMatrixType& values,
 
 }
 
-// =============================================
-// Checkpointing
-// =============================================
-
-template <typename TensorDataType>
-bool adam<TensorDataType>::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
-  if (this->get_comm().am_trainer_master()) {
-    write_cereal_archive(*this, p, "adam.xml");
-  }
-
-  char l_name[512];
-  sprintf(l_name, "%s_optimizer_adam_moment1_%lldx%lld", name_prefix.c_str(), m_moment1->Height(), m_moment2->Width());
-  p.write_distmat(persist_type::train, l_name, m_moment1.get());
-
-  sprintf(l_name, "%s_optimizer_adam_moment2_%lldx%lld", name_prefix.c_str(), m_moment2->Height(), m_moment2->Width());
-  p.write_distmat(persist_type::train, l_name, m_moment2.get());
-
-  return true;
-}
-
-template <typename TensorDataType>
-bool adam<TensorDataType>::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
-  load_from_shared_cereal_archive(*this, p, this->get_comm(), "adam.xml");
-
-  char l_name[512];
-  sprintf(l_name, "%s_optimizer_adam_moment1_%lldx%lld.bin", name_prefix.c_str(), m_moment1->Height(), m_moment2->Width());
-  p.read_distmat(persist_type::train, l_name, m_moment1.get());
-
-  sprintf(l_name, "%s_optimizer_adam_moment2_%lldx%lld.bin", name_prefix.c_str(), m_moment2->Height(), m_moment2->Width());
-  p.read_distmat(persist_type::train, l_name, m_moment2.get());
-
-  return true;
-}
-
-template <typename TensorDataType>
-bool adam<TensorDataType>::save_to_checkpoint_distributed(persist& p, std::string name_prefix) {
-  write_cereal_archive(*this, p, "adam.xml");
-
-  char l_name[512];
-  sprintf(l_name, "%s_optimizer_adam_moment1_%lldx%lld", name_prefix.c_str(), m_moment1->Height(), m_moment2->Width());
-  p.write_rank_distmat(persist_type::train, l_name, *m_moment1);
-
-  sprintf(l_name, "%s_optimizer_adam_moment2_%lldx%lld", name_prefix.c_str(), m_moment2->Height(), m_moment2->Width());
-  p.write_rank_distmat(persist_type::train, l_name, *m_moment2);
-
-  return true;
-}
-
-template <typename TensorDataType>
-bool adam<TensorDataType>::load_from_checkpoint_distributed(persist& p, std::string name_prefix) {
-  read_cereal_archive(*this, p, "adam.xml");
-
-  char l_name[512];
-  sprintf(l_name, "%s_optimizer_adam_moment1_%lldx%lld", name_prefix.c_str(), m_moment1->Height(), m_moment2->Width());
-  p.read_rank_distmat(persist_type::train, l_name, *m_moment1);
-
-  sprintf(l_name, "%s_optimizer_adam_moment2_%lldx%lld", name_prefix.c_str(), m_moment2->Height(), m_moment2->Width());
-  p.read_rank_distmat(persist_type::train, l_name, *m_moment2);
-
-  return true;
-}
-
 template <typename TensorDataType>
 std::unique_ptr<optimizer>
 build_adam_optimizer_from_pbuf(
@@ -280,3 +218,10 @@ build_adam_optimizer_from_pbuf(
 #include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann
+
+#undef PROTO
+#define PROTO(T)                                                \
+  CEREAL_REGISTER_TYPE_WITH_NAME(lbann::adam<T>, "adam(" #T ")")
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"

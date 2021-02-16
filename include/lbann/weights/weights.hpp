@@ -100,7 +100,7 @@ private:
   void setup_default_matrix_distribution();
 
 public:
-  weights(lbann_comm* comm);
+  weights(lbann_comm& comm);
   virtual ~weights() = default;
 
   /** Set weights name.
@@ -112,7 +112,6 @@ public:
   std::string get_name() const { return m_name; }
 
   lbann_comm& get_comm() const {
-    if(m_comm == nullptr) { LBANN_ERROR("weights class has null comm pointer"); }
     return *m_comm;
   }
 
@@ -251,28 +250,64 @@ public:
    */
   virtual void reconcile_values(Al::request& req) = 0;
 
-  // -----------------------------------------------
-  // Checkpointing
-  // -----------------------------------------------
-  virtual bool save_to_checkpoint_shared(persist& p) = 0;
-  virtual bool load_from_checkpoint_shared(persist& p) = 0;
   virtual bool load_from_save(std::string const& ckpt_dir, std::vector<std::string> const& weight_list) = 0;
-  virtual bool save_to_checkpoint_distributed(persist& p) = 0;
-  virtual bool load_from_checkpoint_distributed(persist& p) = 0;
 
   /** Write weights to proto file */
   virtual void write_proto(lbann_data::WeightsData* proto) const = 0;
 
+  /** @name Serialization */
+  ///@{
+
+  /** @brief Serialize the weights object to the archive.
+   *  @tparam ArchiveT (Inferred.) The archive type.
+   *  @param ar[in,out] The archive to which to write or from which to
+   *                    read.
+   */
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar)
+  {
+    ar(CEREAL_NVP(m_name),
+       CEREAL_NVP(m_frozen));
+
+    // What about:
+    //   m_matrix_height_dims
+    //   m_matrix_width_dims
+    //   m_matrix_dist
+  }
+
+  ///@}
+  /** @name Expert interface */
+  ///@{
+
+  /** @brief Take the values matrix from another weights object.
+   *
+   *  If the other object has the same underlying DistData, the values
+   *  matrix will simply be moved over. In this case, the other object
+   *  will not have valid weights after this operation
+   *  completes. Otherwise, the values will be copied.
+   *
+   *  @pre Other weights has the same dimenions.
+   *  @post Other weights objects values may be invalidated.
+   *
+   *  @param[in,out] The object from which to steal values.
+   *
+   *  @throws lbann::exception If the weights objects don't have the
+   *  same dimensions.
+   */
+  void steal_values(weights& other);
+
+  ///@}
 protected:
 
-  weights(const weights& other);
-  weights& operator=(const weights& other);
+  weights(const weights& other) = default;
+  weights& operator=(const weights& other) = default;
 
 private:
   virtual void do_augment_description_(description&) const = 0;
   virtual void do_setup_() = 0;
   virtual void do_set_dims_(std::vector<int> const& matrix_height_dims,
                             std::vector<int> const& matrix_width_dims) = 0;
+  virtual void do_steal_values_(weights& other) = 0;
 private:
 
   /** Weights name.

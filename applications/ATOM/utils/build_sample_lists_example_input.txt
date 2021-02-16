@@ -1,0 +1,15 @@
+# Example input file for build_sample_lists.py
+# Given this file as input, build_sample_lists.py outputs 100 sample lists;
+# each will have 3,000,000 unique sample_IDs from the 'train' file, and the 
+# same set of 500 sample_IDs from the 'test' file.
+#
+# '100' is num trainers; line after that is base data directory;
+# remaining lines specify what to use from each data file; format is:
+#  filename total_sample num_samples_per_sample_list reuse
+# where: 'reuse' is 0 or 1, indicating if a single set of samples 
+#        will be used in all sample lists,
+#
+100 
+/p/gpfs1/brainusr/datasets/atom/combo_enamine1613M_mpro_inhib 
+test_enamine_all2018q1_2020q1-2_mpro_inhib_kekulized_2010kSMILES.csv 2010000 500 1
+train_enamine_all2018q1_2020q1-2_mpro_inhib_kekulized_1613mSMILES.csv 1612990000 3000000 0

@@ -27,11 +27,7 @@
 #include <lbann/data_coordinator/data_coordinator.hpp>
 #include <lbann/trainers/trainer.hpp>
 #include <lbann/utils/distconv.hpp>
-#include <cereal/types/utility.hpp>
-#include <cereal/types/unordered_map.hpp>
-#include <cereal/types/vector.hpp>
-#include <cereal/archives/binary.hpp>
-#include <cereal/archives/xml.hpp>
+#include <lbann/utils/serialize.hpp>
 
 namespace lbann {
 
@@ -40,16 +36,11 @@ void data_coordinator::setup(thread_pool& io_thread_pool, int max_mini_batch_siz
 
   m_data_readers = data_readers;
 
-  if(m_data_readers[execution_mode::training] != nullptr) {
-    this->m_training_dataset.total_samples() = m_data_readers[execution_mode::training]->get_num_data();
-  }
-
-  if(m_data_readers[execution_mode::validation] != nullptr) {
-    this->m_validation_dataset.total_samples() = m_data_readers[execution_mode::validation]->get_num_data();
-  }
-
-  if(m_data_readers[execution_mode::testing] != nullptr) {
-    this->m_testing_dataset.total_samples() = m_data_readers[execution_mode::testing]->get_num_data();
+  // Initialize the data sets
+  for(auto m : execution_mode_iterator()) {
+    if(this->m_data_readers.count(m)) {
+      this->m_datasets[m].total_samples() = m_data_readers[m]->get_num_data();
+    }
   }
 
   /// @todo BVE FIXME the list of execution modes should not include

@@ -32,15 +32,8 @@
 #include "lbann/base.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/enum_iterator.hpp"
+#include "lbann/utils/serialize.hpp"
 #include "El.hpp"
-#include <cereal/types/utility.hpp>
-#include <cereal/types/map.hpp>
-#include <cereal/types/unordered_map.hpp>
-#include <cereal/types/vector.hpp>
-#include <cereal/archives/binary.hpp>
-#include <cereal/archives/xml.hpp>
-#include <cereal/types/base_class.hpp>
-#include <cereal/types/polymorphic.hpp>
 #include <sstream>
 
 namespace lbann {
@@ -54,6 +47,7 @@ enum class persist_type {
   prediction_context,
   training_context,
   testing_context,
+  tournament_context,
   validation_context,
 };
 
@@ -69,8 +63,8 @@ inline persist_type execution_mode_to_persist_type(execution_mode m) {
     return persist_type::testing_context;
   case execution_mode::prediction:
     return persist_type::prediction_context;
-  // case execution_mode::tournament:
-  //   return persist_type::tournament;
+  case execution_mode::tournament:
+    return persist_type::tournament_context;
   case execution_mode::invalid:
   default:
     LBANN_ERROR("Invalid execution mode specified");
@@ -95,6 +89,8 @@ inline std::string to_string(persist_type pt) {
     return "training";
   case persist_type::validation_context:
     return "validation";
+  case persist_type::tournament_context:
+    return "tournament";
   case persist_type::testing_context:
     return "testing";
   default:

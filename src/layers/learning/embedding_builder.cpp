@@ -70,7 +70,7 @@ std::unique_ptr<Layer> build_embedding_layer_from_pbuf(
   const size_t embedding_dim = params.embedding_dim();
   const El::Int padding_idx = (params.has_padding_idx() ?
                                params.padding_idx().value() : -1);
-  return BuilderType::Build(comm, num_embeddings, embedding_dim, padding_idx);
+  return BuilderType::Build(num_embeddings, embedding_dim, padding_idx);
 }
 
 #define PROTO_DEVICE(T, Device) \

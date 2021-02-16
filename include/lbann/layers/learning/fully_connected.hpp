@@ -67,11 +67,11 @@ public:
 public:
 
   /** @todo Accept a vector for output_size */
-  fully_connected_layer(lbann_comm *comm,
-                        int output_size,
-                        bool transpose = false,
-                        WeightsType* weight = nullptr,
-                        bool has_bias = true);
+  fully_connected_layer(
+    int output_size,
+    bool transpose = false,
+    WeightsType* weight = nullptr,
+    bool has_bias = true);
 
   fully_connected_layer(const fully_connected_layer& other);
 
@@ -89,7 +89,18 @@ public:
 
   description get_description() const override;
 
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
+
 protected:
+
+  friend class cereal::access;
+  fully_connected_layer();
 
   void setup_matrices(const El::Grid& grid) override;
   void setup_data(size_t max_mini_batch_size) override;
@@ -126,6 +137,20 @@ private:
 
 // Builder function
 LBANN_DEFINE_LAYER_BUILDER(fully_connected);
+
+// Template implementation
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+template <typename ArchiveT>
+void
+fully_connected_layer<TensorDataType,Layout,Device>
+::serialize(ArchiveT& ar)
+{
+  using DataTypeLayer = data_type_layer<TensorDataType>;
+  ar(::cereal::make_nvp("DataTypeLayer",
+                        ::cereal::base_class<DataTypeLayer>(this)),
+     CEREAL_NVP(m_bias_scaling_factor),
+     CEREAL_NVP(m_transpose));
+}
 
 #ifndef LBANN_FULLY_CONNECTED_LAYER_INSTANTIATE
 

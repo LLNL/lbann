@@ -8,6 +8,7 @@
 #include <locale>
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/file_utils.hpp"
+#include "lbann/utils/serialize.hpp"
 #include <deque>
 #include <unordered_set>
 #include <memory>
@@ -15,7 +16,6 @@
 #include <limits>
 #include <algorithm>
 
-#include <cereal/archives/binary.hpp>
 #include <unistd.h>
 
 namespace lbann {

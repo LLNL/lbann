@@ -71,10 +71,7 @@ class gru_layer
 
 public:
 
-  gru_layer(
-    lbann_comm* comm,
-    size_t hidden_size,
-    size_t num_layers);
+  gru_layer(size_t hidden_size, size_t num_layers);
 
   gru_layer(const gru_layer& other);
   gru_layer& operator=(const gru_layer& other);
@@ -86,7 +83,18 @@ public:
   El::Device get_device_allocation() const override;
   description get_description() const override;
 
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
+
 protected:
+
+  friend class cereal::access;
+  gru_layer() : gru_layer(0,0) {}
 
   void setup_dims(DataReaderMetaData& dr_metadata) override;
   void setup_data(size_t max_mini_batch_size) override;
@@ -129,6 +137,7 @@ private:
   ByteBuffer m_cudnn_reserve_space;
   hydrogen::simple_buffer<int32_t, El::Device::GPU> m_gpu_sequence_lengths;
 
+#ifndef LBANN_DEBUG
   using GraphCache = std::unordered_map<size_t, std::pair<size_t, cuda::ExecutableGraph>>;
   /** @brief Cache of CUDA graphs for cuDNN forward prop function
    *
@@ -144,6 +153,7 @@ private:
    *  pointers. The graph is a @c cuda::ExecutableGraph .
    */
   GraphCache m_cuda_graph_backward_prop_cache;
+#endif // not LBANN_DEBUG
 #endif // LBANN_GRU_LAYER_GPU_SUPPORTED
 
   template <typename T>
@@ -155,6 +165,20 @@ private:
 
 // Builder function
 LBANN_DEFINE_LAYER_BUILDER(gru);
+
+// Template implementation
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+template <typename ArchiveT>
+void
+gru_layer<TensorDataType,Layout,Device>
+::serialize(ArchiveT& ar)
+{
+  using DataTypeLayer = data_type_layer<TensorDataType>;
+  ar(::cereal::make_nvp("DataTypeLayer",
+                        ::cereal::base_class<DataTypeLayer>(this)),
+     CEREAL_NVP(m_hidden_size),
+     CEREAL_NVP(m_num_layers));
+}
 
 // Explicit template instantiation
 #ifdef LBANN_GRU_LAYER_GPU_SUPPORTED

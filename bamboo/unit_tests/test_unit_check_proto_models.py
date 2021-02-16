@@ -5,12 +5,8 @@ import pytest
 import os
 
 
-def skeleton_models(cluster, dir_name, executables, compiler_name,
+def skeleton_models(cluster, dir_name,
                     weekly, data_reader_percent):
-    if compiler_name not in executables:
-        e = 'skeleton_models: default_exes[%s] does not exist' % compiler_name
-        print('Skip - ' + e)
-        pytest.skip(e)
     opt = 'sgd'
     node_count = 1
     time_limit = 1
@@ -70,10 +66,10 @@ def skeleton_models(cluster, dir_name, executables, compiler_name,
                         ('conv_autoencoder' in file_name) or ('gan' in subdir):
                     print('Skipping %s because unpooling/noise is not implemented on gpu' % model_path)
                 else:
-                    output_file_name = '%s/bamboo/unit_tests/output/check_proto_models_%s_%s_output.txt' % (dir_name, file_name, compiler_name)
-                    error_file_name = '%s/bamboo/unit_tests/error/check_proto_models_%s_%s_error.txt' % (dir_name, file_name, compiler_name)
+                    output_file_name = '%s/bamboo/unit_tests/output/check_proto_models_%s_output.txt' % (dir_name, file_name)
+                    error_file_name = '%s/bamboo/unit_tests/error/check_proto_models_%s_error.txt' % (dir_name, file_name)
                     cmd = tools.get_command(
-                        cluster=cluster, executable=executables[compiler_name],
+                        cluster=cluster,
                         num_nodes=node_count,
                         partition='pbatch', time_limit=time_limit,
                         dir_name=dir_name,
@@ -99,7 +95,7 @@ def skeleton_models(cluster, dir_name, executables, compiler_name,
     if num_defective != 0:
         print('Working models: %d. Defective models: %d' % (
             len(working_models), num_defective))
-        print('Errors for: The following models exited with errors %s' % compiler_name)
+        print('Errors for: The following models exited with errors')
         for model in defective_models:
             print(model)
     if num_defective != 0:
@@ -108,23 +104,6 @@ def skeleton_models(cluster, dir_name, executables, compiler_name,
                 nd=num_defective, dms=defective_models))
 
 
-def test_unit_models_clang6(cluster, dirname, exes, weekly, data_reader_percent):
-    skeleton_models(cluster, dirname, exes, 'clang6', weekly, data_reader_percent)
-
-
-def test_unit_models_gcc7(cluster, dirname, exes, weekly, data_reader_percent):
-    skeleton_models(cluster, exes, dirname, 'gcc7', weekly, data_reader_percent)
-
-
-def test_unit_models_intel19(cluster, dirname, exes, weekly, data_reader_percent):
-    skeleton_models(cluster, dirname, exes, 'intel19', weekly, data_reader_percent)
-
-
-# Run with python3 -m pytest -s test_unit_check_proto_models.py -k 'test_unit_models_exe' --exe=<executable>
-def test_unit_models_exe(cluster, dirname, exe, weekly, data_reader_percent):
-    if exe is None:
-        e = 'test_unit_models_exe: Non-local testing'
-        print('Skip - ' + e)
-        pytest.skip(e)
-    exes = {'exe' : exe}
-    skeleton_models(cluster, dirname, exes, 'exe', weekly, data_reader_percent)
+# Run with python3 -m pytest -s test_unit_check_proto_models.py -k 'test_unit_models'
+def test_unit_models(cluster, dirname, weekly, data_reader_percent):
+    skeleton_models(cluster, dirname, weekly, data_reader_percent)

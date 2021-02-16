@@ -188,6 +188,28 @@ public:
   ~pooling_layer() override = default;
 
   pooling_layer* copy() const override { return new pooling_layer(*this); }
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar)
+  {
+    using DataTypeLayer = data_type_layer<TensorDataType>;
+    ar(::cereal::make_nvp("DataTypeLayer",
+                          ::cereal::base_class<DataTypeLayer>(this)),
+       CEREAL_NVP(m_pool_mode),
+       CEREAL_NVP(m_pool_dims),
+       CEREAL_NVP(m_pool_size),
+       CEREAL_NVP(m_pads),
+       CEREAL_NVP(m_strides));
+    // Members that aren't serialized
+    //     m_max_pool_indices;
+
+  }
+
+  ///@}
+
   std::string get_type() const override { return "pooling"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
@@ -243,6 +265,11 @@ public:
   }
 
 protected:
+
+  friend class cereal::access;
+  pooling_layer()
+    : pooling_layer(nullptr, 1, 1, 1, 1, pooling_mode::MAX)
+  {}
 
   void setup_dims(DataReaderMetaData& dr_metadata) override {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
@@ -309,6 +336,12 @@ private:
 #ifndef LBANN_HAS_DNN_LIB
     LBANN_ERROR("DNN library not detected");
 #else
+    // Initialize GPU workspace
+    El::Matrix<TensorDataType, El::Device::GPU> workspace;
+    size_t workspace_size = dnn_lib::get_pooling_ws_size(m_pooling_dnn_desc,
+                                                         m_tensors_dnn_desc.get_activations());
+    workspace.Resize(workspace_size / sizeof(TensorDataType), 1);
+
     using ScalingType = dnn_lib::ScalingParamType<TensorDataType>;
     const auto& local_input = this->get_local_prev_activations();
     auto& local_output = this->get_local_activations();
@@ -321,7 +354,8 @@ private:
                                local_input,
                                zero,
                                m_tensors_dnn_desc.get_activations(),
-                               local_output);
+                               local_output,
+                               workspace);
     }
 #endif // #ifndef LBANN_HAS_DNN_LIB
   }
@@ -331,6 +365,12 @@ private:
 #ifndef LBANN_HAS_DNN_LIB
     LBANN_ERROR("DNN library not detected");
 #else
+    // Initialize GPU workspace
+    El::Matrix<TensorDataType, El::Device::GPU> workspace;
+    size_t workspace_size = dnn_lib::get_pooling_ws_size(m_pooling_dnn_desc,
+                                                         m_tensors_dnn_desc.get_activations());
+    workspace.Resize(workspace_size / sizeof(TensorDataType), 1);
+
     using ScalingType = dnn_lib::ScalingParamType<TensorDataType>;
     const auto& local_input = this->get_local_prev_activations();
     const auto& local_output = this->get_local_activations();
@@ -353,7 +393,8 @@ private:
                                 local_input,
                                 zero,
                                 m_tensors_dnn_desc.get_error_signals(),
-                                local_gradient_wrt_input);
+                                local_gradient_wrt_input,
+                                workspace);
     }
 #endif // #ifndef LBANN_HAS_DNN_LIB
   }

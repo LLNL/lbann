@@ -29,27 +29,153 @@
 #include "lbann/callbacks/load_model.hpp"
 #include "lbann/callbacks/checkpoint.hpp"
 #include "lbann/training_algorithms/training_algorithm.hpp"
+#include "lbann/weights/data_type_weights.hpp"
+#include "lbann/models/directed_acyclic_graph.hpp"
+#include "lbann/utils/file_utils.hpp"
 
 #include <callbacks.pb.h>
 #include <model.pb.h>
-
-
-#include <unistd.h>
-#include <dirent.h>
 
 #include <cstdlib>
 #include <fstream>
 #include <string>
 
 namespace lbann {
-namespace callback {
+namespace {
 
+auto make_weights_map(std::vector<weights*> const& weights_list)
+{
+  std::unordered_map<std::string, weights*> weights_map;
+  for (auto* w : weights_list)
+    weights_map.emplace(w->get_name(), w);
+  return weights_map;
+}
+
+void load_weights_from_checkpoint(model& m,
+                                  std::string const& model_ckpt_file)
+{
+  auto comm = m.get_comm();
+  // TODO: Logging API
+  if(comm->am_trainer_master()) {
+    std::cout << "Restoring from " << model_ckpt_file << std::endl;
+  }
+
+  // Create a temporary model
+  directed_acyclic_graph_model dagm(comm, nullptr, nullptr);
+  {
+    std::ifstream ifs(model_ckpt_file);
+    RootedBinaryInputArchive ar(ifs, comm->get_trainer_grid());
+    ar(dagm);
+  }
+
+  // Loop through the weights in this model and attempt to restore
+  // their values from the temporary model's weights with the same
+  // name.
+  auto dagm_weights_map = make_weights_map(dagm.get_weights());
+  auto const model_weights = m.get_weights();
+  for (auto* w : model_weights)
+  {
+    auto dagm_w_iter = dagm_weights_map.find(w->get_name());
+    if (dagm_w_iter != dagm_weights_map.end())
+    {
+      auto* dagm_w = dagm_w_iter->second;
+      w->steal_values(*dagm_w);
+      // TODO: Replace with logging API
+      if (comm->am_trainer_master()) {
+        std::cout << "Restored weights \"" << w->get_name() << "\" "
+                  << "from checkpointed model."
+                  << std::endl;
+      }
+    }
+    else
+    {
+      // TODO: Replace with logging API
+      if (comm->am_trainer_master()) {
+        std::cout << "Could not load weights with name \""
+                  << w->get_name() << "\". Not found in checkpoint."
+                  << std::endl;
+      }
+    }
+  }
+}
+
+void load_weights_from_files(model& m,
+                             std::string const& ckpt_dir)
+{
+  auto const model_weights = m.get_weights();
+  for (weights * w : model_weights)
+  {
+    // create weight file name to match to weight list entry
+    auto* dtw = dynamic_cast<data_type_weights<DataType>*>(w);
+    LBANN_ASSERT(dtw);
+
+    auto const file = file::join_path(ckpt_dir,
+                                      build_string(
+                                        "model_weights_", w->get_name(), "_",
+                                        dtw->get_values().Height(), "x",
+                                        dtw->get_values().Width(), ".bin"));
+    if (file::file_exists(file))
+    {
+      // TODO: Replace with logging API
+      if (m.get_comm()->am_trainer_master()) {
+        std::cout << "Loading: " << file << std::endl;
+      }
+      El::Read(dtw->get_values(), file, El::BINARY, true);
+    }
+    else
+    {
+      // TODO: Replace with logging API
+      if (m.get_comm()->am_trainer_master()) {
+        std::cout << "Could not load weights with name \""
+                  << w->get_name() << "\". Expected file not found ("
+                  << file << ")." << std::endl;
+      }
+    }
+  }
+}
+
+// (trb 12/30/2020): My understanding is that `m` should be a
+// constructed model with a DAG and weights that at least have
+// names. This function will then loop through the weights objects of
+// `m` and look for a corresponding weights object in the appropriate
+// directory.
+//
+// Weights can be restored from independent files storing the binary
+// weights or from a checkpoint. In the first case, weights are
+// matched by filename. In the latter case, the entire model is
+// restored into a temporary model object, which is then stripped for
+// parts and discarded. If dedicated weights files are sharing a
+// directory with a checkpoint, the weights will be pulled from the
+// checkpoint. (In the future, it might be faster to prefer the
+// standalone weights objects, but testing for `model.bin` is
+// faster/easier than checking each `<weights_name>.bin`.)
+bool load_model_weights(const std::string& ckpt_dir, model& m)
+{
+  std::string const active_ckpt_dir = add_delimiter(ckpt_dir);
+  LBANN_ASSERT(file::directory_exists(active_ckpt_dir));
+
+  // TODO: Replace with logging API
+  if (m.get_comm()->am_trainer_master()) {
+    std::cout << "Loading model weights from " << active_ckpt_dir << std::endl;
+  }
+
+  auto const checkpoint_file = file::join_path(active_ckpt_dir, "model.bin");
+  if (file::file_exists(checkpoint_file))
+    load_weights_from_checkpoint(m, checkpoint_file);
+  else
+    load_weights_from_files(m, active_ckpt_dir);
+  return true;
+}
+}// namespace <anon>
+
+namespace callback {
 
 void load_model::on_train_begin(model *m) {
   if(!m_loaded) {
     for (const auto& d : m_dirs) {
-      m_loaded = load_model_weights(d, "", m, true);
-      if(!m_loaded)  LBANN_ERROR("Unable to reload model on train begin");
+      m_loaded = load_model_weights(d, *m);
+      if(!m_loaded)
+        LBANN_ERROR("Unable to reload model on train begin");
     }
   }
 }
@@ -57,59 +183,13 @@ void load_model::on_train_begin(model *m) {
 void load_model::on_test_begin(model *m) {
   if(!m_loaded) {
     for (const auto& d : m_dirs) {
-      m_loaded = load_model_weights(d, "", m, true);
-      if(!m_loaded)  LBANN_ERROR("Unable to reload model on test begin");
+      m_loaded = load_model_weights(d, *m);
+      if(!m_loaded)
+        LBANN_ERROR("Unable to reload model on test begin");
     }
   }
 }
 
-
-bool load_model::load_model_weights(const std::string& ckpt_dir,
-                                    const std::string& alg_name,
-                                    model *m,
-                                    bool ckptdir_is_fullpath) {
-  std::vector<std::string> weight_list = std::vector<std::string>();
-  std::string active_ckpt_dir;
-  if(ckptdir_is_fullpath) {
-    active_ckpt_dir = add_delimiter(ckpt_dir);
-  }else {
-    size_t epochLast = std::numeric_limits<size_t>::max();;
-    size_t stepLast = std::numeric_limits<size_t>::max();;
-    execution_mode mode = execution_mode::invalid;
-    active_ckpt_dir = get_last_shared_checkpoint_filename(alg_name, ckpt_dir);
-
-    // get last epoch and step saved.
-    int success = read_latest(active_ckpt_dir, &mode, &epochLast, &stepLast);
-    if(!success) {
-      LBANN_WARNING("Unable to find the latest checkpoint ", active_ckpt_dir);
-      return false;
-    }
-    active_ckpt_dir = get_shared_checkpoint_dirname(alg_name, ckpt_dir, mode, epochLast, stepLast) + m->get_name() + '/';
-  }
-
-  lbann_comm *comm = m->get_comm();
-  if(comm->am_trainer_master()) {
-    std::cout << "Loading model weights from " << active_ckpt_dir << std::endl;
-  }
-
-  DIR *weight_dir = opendir(active_ckpt_dir.c_str());
-  if(weight_dir == nullptr)
-  {
-    LBANN_WARNING("error opening ",  active_ckpt_dir);
-    return false;
-  }
-  // Populate weight list
-  struct dirent *weight_file;
-  while ((weight_file = readdir(weight_dir)) != nullptr){
-    if(!strncmp(weight_file->d_name,"model_weights_",14))
-      weight_list.push_back(std::string(weight_file->d_name));
-  }
-  closedir(weight_dir);
-
-  // load weights that appear in weight list.
-  m->reload_weights(active_ckpt_dir, weight_list);
-  return true;
-}
 
 std::unique_ptr<callback_base>
 build_load_model_callback_from_pbuf(

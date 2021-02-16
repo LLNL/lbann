@@ -66,6 +66,7 @@ class leaky_relu_distconv_adapter: public data_type_distconv_adapter<TensorDataT
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 class leaky_relu_layer : public data_type_layer<TensorDataType> {
 public:
+  leaky_relu_layer() : leaky_relu_layer(nullptr, El::To<TensorDataType>(0.01)) {}
   leaky_relu_layer(lbann_comm *comm, TensorDataType negative_slope = 0.01)
     : data_type_layer<TensorDataType>(comm), m_negative_slope(negative_slope) {}
   leaky_relu_layer* copy() const override { return new leaky_relu_layer(*this); }
@@ -77,6 +78,15 @@ public:
     auto desc = data_type_layer<TensorDataType>::get_description();
     desc.add("Negative slope", m_negative_slope);
     return desc;
+  }
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar)
+  {
+    using DataTypeLayer = data_type_layer<TensorDataType>;
+    ar(::cereal::make_nvp("DataTypeLayer",
+                          ::cereal::base_class<DataTypeLayer>(this)),
+       CEREAL_NVP(m_negative_slope));
   }
 
 protected:

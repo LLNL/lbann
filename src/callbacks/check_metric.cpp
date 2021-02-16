@@ -60,6 +60,9 @@ check_metric::check_metric(std::string metric_name,
   }
 }
 
+check_metric::check_metric()
+  : check_metric("", {}, 0, 0, false)
+{}
 
 void check_metric::do_check_metric(const model& m) const {
   const auto& c = m.get_execution_context();
@@ -115,3 +118,7 @@ build_check_metric_callback_from_pbuf(
 
 } // namespace callback
 } // namespace lbann
+
+CEREAL_REGISTER_TYPE_WITH_NAME(
+  ::lbann::callback::check_metric,
+  "callback::check_metric")

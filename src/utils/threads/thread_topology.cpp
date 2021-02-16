@@ -29,17 +29,17 @@
 
 #if defined(LBANN_TOPO_AWARE)
 #include <hwloc.h>
-#ifdef LBANN_HAS_GPU
+#ifdef LBANN_HAS_CUDA
 #include <hwloc/cudart.h>
-#endif // LBANN_HAS_GPU
+#endif // LBANN_HAS_CUDA
 #if defined(HWLOC_API_VERSION) && (HWLOC_API_VERSION < 0x00010b00)
 #define HWLOC_OBJ_NUMANODE HWLOC_OBJ_NODE
 #endif
 #endif
 
-#ifdef LBANN_HAS_GPU
+#ifdef LBANN_HAS_CUDA
 #include <hydrogen/device/gpu/CUDA.hpp>
-#endif // LBANN_HAS_GPU
+#endif // LBANN_HAS_CUDA
 
 #include <iostream>
 
@@ -162,7 +162,7 @@ int hwloc_bitmap_singlify_per_core(hwloc_topology_t topology, hwloc_bitmap_t cpu
 
 hwloc_cpuset_t get_local_cpuset_for_current_thread(hwloc_topology_t topo) {
   hwloc_cpuset_t local_cpuset = hwloc_bitmap_alloc();
-#ifdef LBANN_HAS_GPU
+#ifdef LBANN_HAS_CUDA
   // Find CPUs close to the GPU being used
   hwloc_cudart_get_device_cpuset(topo, hydrogen::gpu::DefaultDevice(), local_cpuset);
 #else
@@ -170,7 +170,7 @@ hwloc_cpuset_t get_local_cpuset_for_current_thread(hwloc_topology_t topo) {
   hwloc_bitmap_free(local_cpuset);
   local_cpuset = hwloc_bitmap_dup(allowed_cpuset);
   //  hwloc_bitmap_free(allowed_cpuset);
-#endif // LBANN_HAS_GPU
+#endif // LBANN_HAS_CUDA
   return local_cpuset;
 }
 

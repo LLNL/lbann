@@ -127,6 +127,10 @@ public:
       m_workspace->Matrix().SetMemoryMode(1); // CUB memory pool
     }
 #endif // HYDROGEN_HAVE_CUB
+#ifdef LBANN_HAS_DNN_LIB
+    if (!m_tensors_dnn_desc.get_layer())
+      m_tensors_dnn_desc.set_layer(this);
+#endif // LBANN_HAS_DNN_LIB
   }
 
   void fp_setup_outputs(El::Int mini_batch_size) override {
@@ -145,10 +149,22 @@ public:
   template <typename U>
   friend void bp_compute_impl(softmax_layer<U, Layout, Device>& l);
 
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar)
+  {
+    using DataTypeLayer = data_type_layer<TensorDataType>;
+    ar(::cereal::make_nvp("DataTypeLayer",
+                          ::cereal::base_class<DataTypeLayer>(this)),
+       CEREAL_NVP(m_mode),
+       CEREAL_NVP(threshold_val));
+  }
+
 private:
+  friend cereal::access;
+  softmax_layer() : data_type_layer<TensorDataType>(nullptr) {}
 
   /** Softmax mode. */
-  const softmax_mode m_mode;
+  softmax_mode m_mode;
 
   /** Workspace for column-wise reductions. */
   std::unique_ptr<AbsDistMatrixType> m_workspace;
@@ -160,9 +176,9 @@ private:
 
 // Minimum output value to avoid denormalized floats
 #ifdef LBANN_ENABLE_SOFTMAX_THRESHOLD
-  const TensorDataType threshold_val = static_cast<TensorDataType>(El::Sqrt(std::numeric_limits<TensorDataType>::min()));
+  TensorDataType threshold_val = static_cast<TensorDataType>(El::Sqrt(std::numeric_limits<TensorDataType>::min()));
 #else
-  const TensorDataType threshold_val = El::TypeTraits<TensorDataType>::Zero();
+  TensorDataType threshold_val = El::TypeTraits<TensorDataType>::Zero();
 #endif // LBANN_ENABLE_SOFTMAX_THRESHOLD
 
 #ifdef LBANN_HAS_DISTCONV

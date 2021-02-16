@@ -41,11 +41,10 @@ namespace lbann
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 channelwise_fully_connected_layer<TensorDataType,Layout,Device>
 ::channelwise_fully_connected_layer(
-  lbann_comm* comm,
   std::vector<size_t> output_channel_dims,
   bool bias,
   bool transpose)
-  : data_type_layer<TensorDataType>(comm),
+  : data_type_layer<TensorDataType>(nullptr),
     m_has_bias{bias},
     m_transpose{transpose}
 {
@@ -63,6 +62,12 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
   this->set_output_dims(output_dims);
 
 }
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+channelwise_fully_connected_layer<TensorDataType,Layout,Device>
+::channelwise_fully_connected_layer()
+  : channelwise_fully_connected_layer({}, false, false)
+{}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 channelwise_fully_connected_layer<TensorDataType,Layout,Device>*
@@ -172,7 +177,7 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
 
   // Create default linearity weights if needed
   if (!this->has_weights(0)) {
-    auto w = std::make_shared<WeightsType>(this->get_comm());
+    auto w = std::make_shared<WeightsType>(*this->get_comm());
     auto init = make_unique<he_initializer<TensorDataType>>(probability_distribution::gaussian);
     auto opt = this->m_model->template create_optimizer<TensorDataType>();
     w->set_name(this->get_name() + "_linearity_weights");
@@ -205,7 +210,7 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
     dist.colDist = El::STAR;
     dist.rowDist = El::STAR;
     if (!this->has_weights(1)) {
-      auto w = std::make_shared<WeightsType>(this->get_comm());
+      auto w = std::make_shared<WeightsType>(*this->get_comm());
       auto opt = this->m_model->template create_optimizer<TensorDataType>();
       w->set_name(this->get_name() + "_bias_weights");
       w->set_optimizer(std::move(opt));
@@ -477,7 +482,7 @@ std::unique_ptr<Layer> build_channelwise_fully_connected_layer_from_pbuf(
   const bool transpose = (params.has_transpose()
                           ? params.transpose().value()
                           : false);
-  return BuilderType::Build(comm, output_channel_dims, has_bias, transpose);
+  return BuilderType::Build(output_channel_dims, has_bias, transpose);
 }
 
 // =========================================================

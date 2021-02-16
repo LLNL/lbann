@@ -73,6 +73,24 @@ public:
   }
 
   variance_layer* copy() const override { return new variance_layer(*this); }
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar)
+  {
+    using DataTypeLayer = data_type_layer<TensorDataType>;
+    ar(::cereal::make_nvp("DataTypeLayer",
+                          ::cereal::base_class<DataTypeLayer>(this)),
+       CEREAL_NVP(m_biased));
+    // Members that aren't serialized
+    //   m_means
+    //   m_workspace
+  }
+
+  ///@}
+
   std::string get_type() const override { return "variance"; }
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
@@ -84,6 +102,11 @@ public:
   }
 
 protected:
+
+  friend class cereal::access;
+  variance_layer()
+    : variance_layer(nullptr, false)
+  {}
 
   void setup_matrices(const El::Grid& grid) override {
     data_type_layer<TensorDataType>::setup_matrices(grid);

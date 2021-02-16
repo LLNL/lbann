@@ -20,15 +20,30 @@ Internal features:
  - Elementary examples of using complex numbers
  - cuDNN handles are now wrapped in RAII management classes
  - Improved HWLOC compatility for v1.11 and v2.x
+ - Added an enum type of visitor hooks that will eventually be used to
+   allow callbacks or other visitors to operate at user defined hook
+   points
+ - Changed checkpoint logic to checkpoint at the start of epochs
+   and changed the naming scheme to use the callback phase (visitor
+   hook) in the name rather than the current execution context.
+ - Added in-memory binary model exchange for LTFB.
+ - Added support for ROCm and MIOpen
+ - Updated the bamboo test environment to use local executable rather
+   than hard coded executables
 
 I/O & data readers:
  - Experimental data reader that generates graph random walks with
    HavoqGT
+ - Added explict tournament execution mode
+ - Added support to split training data reader into validation and
+   tournament readers
 
 Build system:
  - Hydrogen v1.5.0
  - Aluminum v0.5.0
  - C++14 or newer standard with CUDA (CMake: "-DCMAKE_CUDA_STANDARD=14")
+ - OpenCV is now an optional dependency via CMake "LBANN_WITH_VISION"
+ - CNPY is now an optional dependency via CMake "LBANN_WITH_CNPY"
 
 Bug fixes:
  - Fixed a bug where LBANN didn't set the Hydrogen RNG seed
@@ -40,6 +55,11 @@ Bug fixes:
  - Fixed the data coordinator's interface to input_layer
 
 Retired features:
+ - Removed deprecated JAG leader mode which was made obsolete when the
+   data reader moved into the data coordinator
+ - Removed the deprecated partitioned data reader modes that were used
+   to partition and overlap data sets for multiple models
+ - Removed deprecated ActivationDescriptor class
 
 ============================== Release Notes: v0.101 ==============================
 

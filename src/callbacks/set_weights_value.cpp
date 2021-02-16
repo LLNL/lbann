@@ -42,6 +42,11 @@ set_weights_value::set_weights_value(
     m_value{value},
     m_step{step} {}
 
+set_weights_value::set_weights_value()
+  : set_weights_value("", 0, 0)
+{}
+
+
 set_weights_value* set_weights_value::copy() const {
   return new set_weights_value(*this);
 }
@@ -92,3 +97,7 @@ build_set_weights_value_callback_from_pbuf(
 
 } // namespace callback
 } // namespace lbann
+
+CEREAL_REGISTER_TYPE_WITH_NAME(
+  ::lbann::callback::set_weights_value,
+  "callback::set_weights_value")

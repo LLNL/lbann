@@ -38,9 +38,7 @@
 // Half-precision support comes from here:
 #include <El.hpp>
 
-#include <cereal/archives/binary.hpp>
-#include <cereal/archives/json.hpp>
-#include <cereal/archives/xml.hpp>
+#include "cereal_utils.hpp"
 
 /** @namespace cereal
  *
@@ -95,16 +93,6 @@ float save_minimal(XMLOutputArchive const&,
 /** @brief Load this half-precision value as a float from XML */
 void load_minimal(
   XMLInputArchive const&, half_float::half&, float const&) noexcept;
-
-///@}
-/** @name JSON archives */
-///@{
-
-/** @brief Save this half-precision value in JSON */
-void save(JSONOutputArchive&, half_float::half const&);
-
-/** @brief Load this half-precision value from JSON */
-void load(JSONInputArchive&, half_float::half&);
 
 ///@}
 #endif // LBANN_HAS_HALF

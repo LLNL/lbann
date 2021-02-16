@@ -28,6 +28,7 @@
 #include "lbann/layers/io/input_layer.hpp"
 #include "lbann/utils/profiling.hpp"
 #include "lbann/callbacks/imcomm.hpp"
+#include "lbann/utils/serialize.hpp"
 
 namespace lbann {
 
@@ -126,25 +127,6 @@ void input_layer<TensorDataType, T_layout, Dev>::fp_compute() {
 template <typename TensorDataType,
           data_layout T_layout,
           El::Device Dev>
-bool input_layer<TensorDataType, T_layout, Dev>::
-save_to_checkpoint_shared(persist& p) const {
-  // save state of data readers from input layer
-  if(p.get_cb_type() == callback_type::execution_context_only
-     || p.get_cb_type() == callback_type::full_checkpoint){
-
-    this->m_model->get_execution_context().get_trainer().get_data_coordinator().save_to_checkpoint_shared(p);
-
-    if (this->get_comm()->am_trainer_master()) {
-      write_cereal_archive<const input_layer>(*this, p, execution_mode::training, "_io.xml");
-    }
-
-  }
-  return true;
-}
-
-template <typename TensorDataType,
-          data_layout T_layout,
-          El::Device Dev>
 std::vector<int> input_layer<TensorDataType, T_layout, Dev>::
 get_data_dims(DataReaderMetaData& dr_metadata, int child_index) const {
   if(child_index == 0) {
@@ -155,61 +137,6 @@ get_data_dims(DataReaderMetaData& dr_metadata, int child_index) const {
     LBANN_ERROR("get_data_dims: Invalid child index");
   }
   return std::vector<int>(1, 0);
-}
-
-// reload state of IO from a checkpoint
-template <typename TensorDataType,
-          data_layout T_layout,
-          El::Device Dev>
-bool input_layer<TensorDataType, T_layout, Dev>::
-load_from_checkpoint_shared(persist& p) {
-  // save state of the input layer
-  if(p.get_cb_type() == callback_type::execution_context_only
-     || p.get_cb_type() == callback_type::full_checkpoint){
-
-    std::string buf;
-    if (this->get_comm()->am_trainer_master()) {
-      read_cereal_archive<input_layer>(*this, p, execution_mode::training, "_io.xml");
-      buf = create_cereal_archive_binary_string<input_layer>(*this);
-    }
-
-    // TODO: this assumes homogeneous processors
-    // broadcast state from rank 0
-    this->get_comm()->trainer_broadcast(0, buf);
-
-    if (!this->get_comm()->am_trainer_master()) {
-      unpack_cereal_archive_binary_string<input_layer>(*this, buf);
-    }
-
-  }
-  return true;
-}
-
-template <typename TensorDataType,
-          data_layout T_layout,
-          El::Device Dev>
-bool input_layer<TensorDataType, T_layout, Dev>::
-save_to_checkpoint_distributed(persist& p) const {
-  // save state of data readers from input layer
-  if(p.get_cb_type() == callback_type::execution_context_only || p.get_cb_type() == callback_type::full_checkpoint) {
-    this->m_model->get_execution_context().get_trainer().get_data_coordinator().save_to_checkpoint_distributed(p);
-
-    write_cereal_archive<const input_layer>(*this, p, execution_mode::training, "_io.xml");
-  }
-  return true;
-}
-
-template <typename TensorDataType,
-          data_layout T_layout,
-          El::Device Dev>
-bool input_layer<TensorDataType, T_layout, Dev>::
-load_from_checkpoint_distributed(persist& p) {
-  // load state of data readers for input layer
-
-  this->m_model->get_execution_context().get_trainer().get_data_coordinator().load_from_checkpoint_distributed(p);
-
-  read_cereal_archive<input_layer>(*this, p, execution_mode::training, "_io.xml");
-  return true;
 }
 
 #ifdef LBANN_HAS_DISTCONV
@@ -378,7 +305,9 @@ get_activations_shape(int index) const {
     auto shape = this->get_activations_shape(0);
     auto label_size = data_type_distconv_adapter<TensorDataType>::
         get_activations_shape(1).reduce_prod();
-    auto num_channels = label_size / shape.reduce_prod();
+    const std::string env = std::getenv("DISTCONV_LABEL_NUM_CHANNELS");
+    auto num_channels = env != ""
+        ? std::stoi(env) : label_size / shape.reduce_prod();
     shape[-2] = num_channels;
     return shape;
   }

@@ -27,6 +27,7 @@
 #include "lbann/models/model.hpp"
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/callbacks/callback.hpp"
+#include "lbann/callbacks/checkpoint.hpp"
 #include "lbann/callbacks/save_model.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/layers/io/input_layer.hpp"
@@ -81,7 +82,7 @@ model::model(const model& other) :
   m_execution_context(other.m_execution_context),
   m_comm(other.m_comm),
   m_name(other.m_name),
-  m_model_is_setup(other.m_model_is_setup) {
+  m_model_is_setup(false) {
 
   // Deep copies
   m_default_optimizer_msg = (other.m_default_optimizer_msg
@@ -131,12 +132,12 @@ model::model(const model& other) :
 model& model::operator=(const model& other) {
 
   // Delete objects
-  if (m_execution_context  != nullptr) { delete m_execution_context; } /// @todo BVE FIXME what do we do with smart pointers here
+  // if (m_execution_context  != nullptr) { delete m_execution_context; } /// @todo BVE FIXME what do we do with smart pointers here
 
   // Shallow copies
   m_comm = other.m_comm;
   m_name = other.m_name;
-  m_model_is_setup = other.m_model_is_setup;
+  m_model_is_setup = false;
 
   // Deep copies
   m_execution_context  = other.m_execution_context;
@@ -175,7 +176,9 @@ model& model::operator=(const model& other) {
       LBANN_ERROR("model \"",other.get_name(),"\" ",
                   "has a null pointer in its list of weights");
     }
-    m_weights.emplace_back(make_unique<data_type_weights<DataType>>(dynamic_cast<data_type_weights<DataType>&>(*other_weights)));
+    m_weights.emplace_back(
+      make_unique<data_type_weights<DataType>>(
+        dynamic_cast<data_type_weights<DataType>&>(*other_weights)));
     weights_map[other_weights.get()] = m_weights.back();
   }
 
@@ -447,6 +450,22 @@ void model::copy_trained_weights_from(std::vector<weights*>& new_weights) {
    }
 }
 
+void model::swap_layers(model& other) {
+  std::swap(m_layers, other.m_layers);
+}
+
+void model::swap_weights(model& other) {
+  std::swap(m_weights, other.m_weights);
+}
+
+void model::swap_metrics(model& other) {
+  std::swap(m_metrics, other.m_metrics);
+}
+
+void model::swap_objective_function(model& other) {
+  std::swap(m_objective_function, other.m_objective_function);
+}
+
 void model::reorder_layers(const std::vector<El::Int>& gather_indices) {
   std::stringstream err;
 
@@ -543,10 +562,15 @@ void model::remap_pointers(
 // Setup
 // =============================================
 
-void model::setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata) {
+void model::setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata, bool force) {
 
   // Bail out if the model is already setup
-  if(m_model_is_setup) { return; }
+  if(m_model_is_setup && !force) { return; }
+
+  for (const auto& cb : m_callbacks) {
+    if (dynamic_cast<callback::checkpoint const*>(cb.get()))
+      cb->setup(this);
+  }
 
   // Setup layers
   setup_layer_topology();
@@ -566,7 +590,8 @@ void model::setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata) {
 
   // Set up callbacks
   for (const auto& cb : m_callbacks) {
-    cb->setup(this);
+    if (!dynamic_cast<callback::checkpoint const*>(cb.get()))
+      cb->setup(this);
   }
 
 #ifdef LBANN_HAS_DISTCONV
@@ -1085,6 +1110,7 @@ void model::do_model_forward_prop_begin_cbs(execution_mode mode) {
       }
       break;
     case execution_mode::validation:
+    case execution_mode::tournament:
     case execution_mode::testing:
       cb->on_evaluate_forward_prop_begin(this);
       break;
@@ -1103,6 +1129,7 @@ void model::do_model_forward_prop_end_cbs(execution_mode mode) {
       }
       break;
     case execution_mode::validation:
+    case execution_mode::tournament:
     case execution_mode::testing:
       cb->on_evaluate_forward_prop_end(this);
       break;
@@ -1124,6 +1151,7 @@ void model::do_layer_forward_prop_begin_cbs(execution_mode mode, Layer *l) {
       }
       break;
     case execution_mode::validation:
+    case execution_mode::tournament:
     case execution_mode::testing:
       cb->on_evaluate_forward_prop_begin(this, l);
       break;
@@ -1145,6 +1173,7 @@ void model::do_layer_forward_prop_end_cbs(execution_mode mode, Layer *l) {
       }
       break;
     case execution_mode::validation:
+    case execution_mode::tournament:
     case execution_mode::testing:
       cb->on_evaluate_forward_prop_end(this, l);
       break;
@@ -1268,54 +1297,56 @@ struct lbann_model_header {
 
 bool model::save_to_checkpoint_shared(persist& p) {
   const std::string trainer_dir = p.get_checkpoint_dir();
-  p.open_checkpoint_dir(trainer_dir + '/' + get_name() + '/', m_comm->am_trainer_master());
+
+  // This "pushes" the model-specific directory to the "stack". After
+  // the call, p.get_checkpoint_dir() returns the model-specific
+  // directory.
+  p.open_checkpoint_dir(
+    file::join_path(trainer_dir, this->get_name()),
+    m_comm->am_trainer_master());
+
   // Make sure that the master has had a chance to create the directories
+  // (trb 12/14/2020): I don't think this matters; all output is from
+  //                   the trainer master...
   m_comm->trainer_barrier();
-  // write out fields we need to save for model
-  if (m_comm->am_trainer_master()) {
-    write_cereal_archive(*this, p, "model.xml");
+
+  // Open the stream for writing
+  std::ofstream ofs;
+  if (m_comm->am_trainer_master())
+  {
+    ofs.open(file::join_path(p.get_checkpoint_dir(), "model.bin"));
+    LBANN_ASSERT(ofs.good());
   }
 
-  for (auto&& w : m_weights) {
-    w->save_to_checkpoint_shared(p);
+  // Write the checkpoint
+  {
+    lbann::RootedBinaryOutputArchive ar(ofs, m_comm->get_trainer_grid());
+    ar(*this);
   }
 
-  for (El::Int i = 0; i < get_num_layers(); ++i) {
-    if (!get_layer(i).save_to_checkpoint_shared(p)) {
-      LBANN_ERROR("Unable to save layer[",i,"]=", get_layer(i).get_name());
-    }
-  }
-  for (const auto& m : m_metrics) {
-    m->save_to_checkpoint_shared(p);
-  }
   p.open_checkpoint_dir(trainer_dir, false);
   return true;
 }
 
 bool model::load_from_checkpoint_shared(persist& p) {
   const std::string trainer_dir = p.get_checkpoint_dir();
-  p.open_restart(trainer_dir + '/' + get_name() + '/');
+  p.open_restart(file::join_path(trainer_dir, get_name()));
   // Assume checkpoint reload from epoch end not step end
 
-  load_from_shared_cereal_archive(*this, p, *get_comm(), "model.xml");
-
-  for (auto&& w : m_weights) {
-    w->load_from_checkpoint_shared(p);
+  std::ifstream ifs;
+  if (m_comm->am_trainer_master())
+  {
+    ifs.open(file::join_path(p.get_checkpoint_dir(), "model.bin"));
+    LBANN_ASSERT(ifs.good());
   }
 
-  // read in each layer
-  for (El::Int i = 0; i < get_num_layers(); ++i) {
-    if (!get_layer(i).load_from_checkpoint_shared(p)) {
-      LBANN_ERROR("Unable to load layer[",i,"]=", get_layer(i).get_name());
-    }
+  // Restore the checkpoint
+  {
+    lbann::RootedBinaryInputArchive ar(ifs, m_comm->get_trainer_grid());
+    ar(*this);
   }
-  /// @todo FIXME BVE why are we only reloading the metrics if there
-  //  has been validation iterations?
-  //  if(get_num_iterations_per_epoch(execution_mode::validation) != 0){
-    for (const auto& m : m_metrics) {
-      m->load_from_checkpoint_shared(p);
-    }
-    //  }
+
+  m_model_is_setup = false;
   p.set_restart_dir(trainer_dir);
 #ifdef LBANN_HAS_GPU
   hydrogen::gpu::SynchronizeDevice();
@@ -1325,24 +1356,21 @@ bool model::load_from_checkpoint_shared(persist& p) {
 
 bool model::save_to_checkpoint_distributed(persist& p){
   const std::string trainer_dir = p.get_checkpoint_dir();
-  p.open_checkpoint_dir(trainer_dir + '/' + get_name() + '/', true);
+  p.open_checkpoint_dir(file::join_path(trainer_dir, get_name()), true);
+
   // Make sure that the master has had a chance to create the directories
   m_comm->trainer_barrier();
 
-  write_cereal_archive(*this, p, "model.xml");
-
-  // for each execution context write out them out
-  for (auto&& w : m_weights) {
-    w->save_to_checkpoint_distributed(p);
+  {
+    std::ofstream ofs(file::join_path(p.get_checkpoint_dir(), "model.bin"));
+    cereal::BinaryOutputArchive ar(ofs);
+    ar(*this);
   }
 
-  for (El::Int i = 0; i < get_num_layers(); ++i) {
-    if (!get_layer(i).save_to_checkpoint_distributed(p)) {
-      LBANN_ERROR("Unable to save layer[",i,"]=", get_layer(i).get_name());
-    }
-  }
-  for (const auto& m : m_metrics) {
-    m->save_to_checkpoint_distributed(p);
+  {
+    std::ofstream  ofs_xml(file::join_path(p.get_checkpoint_dir(), "model.xml"));
+    cereal::XMLOutputArchive ar(ofs_xml);
+    ar(*this);
   }
 
   p.open_checkpoint_dir(trainer_dir, false);
@@ -1351,22 +1379,15 @@ bool model::save_to_checkpoint_distributed(persist& p){
 
 bool model::load_from_checkpoint_distributed(persist& p){
   const std::string trainer_dir = p.get_checkpoint_dir();
-  p.open_restart(trainer_dir + '/' + get_name() + '/');
+  p.open_restart(file::join_path(trainer_dir, get_name()));
 
-  read_cereal_archive(*this, p, "model.xml");
-
-  for (auto&& w : m_weights) {
-    w->load_from_checkpoint_distributed(p);
+  {
+    std::ifstream ifs(file::join_path(p.get_checkpoint_dir(), "model.bin"));
+    cereal::BinaryInputArchive ar(ifs);
+    ar(*this);
   }
 
-  for (El::Int i = 0; i < get_num_layers(); ++i) {
-    if (!get_layer(i).load_from_checkpoint_distributed(p)) {
-      LBANN_ERROR("Unable to load layer[",i,"]=", get_layer(i).get_name());
-    }
-  }
-  for (const auto& m : m_metrics) {
-    m->load_from_checkpoint_distributed(p);
-  }
+  m_model_is_setup = false;
   p.set_restart_dir(trainer_dir);
   return true;
 }
@@ -1375,23 +1396,6 @@ void model::write_proto(lbann_data::Model* proto) {
   proto->Clear();
   // if (m_comm->am_world_master())
   //   proto->set_mini_batch_size(m_max_mini_batch_size);
-}
-
-
-bool model::save_weights(persist& p) {
-  // write out fields we need to save a model's weights
-  for (auto&& w : m_weights) {
-    w->save_to_checkpoint_shared(p);
-  }
-  return true;
-}
-
-bool model::reload_weights(const std::string latest, const std::vector<std::string>& weight_list) {
-  // load weights that appear in weight list.
-  for(auto&& w : m_weights) {
-    w->load_from_save(latest,weight_list);
-  }
-  return true;
 }
 
 bool model::save_model() {

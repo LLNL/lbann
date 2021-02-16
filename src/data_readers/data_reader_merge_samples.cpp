@@ -34,7 +34,9 @@ namespace lbann {
 data_reader_merge_samples::data_reader_merge_samples(
   std::vector<generic_data_reader*> data_readers,
   bool shuffle) :
-  generic_compound_data_reader(data_readers, shuffle) {}
+  generic_compound_data_reader(data_readers, shuffle) {
+  m_supported_input_types[input_data_type::RESPONSES] = true;
+}
 
 data_reader_merge_samples::data_reader_merge_samples(
   const data_reader_merge_samples& other) :

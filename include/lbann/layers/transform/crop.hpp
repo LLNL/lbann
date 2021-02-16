@@ -64,7 +64,7 @@ public:
 
   crop_layer(lbann_comm *comm,
              std::vector<int> dims)
-    : data_type_layer<TensorDataType>(comm) {
+    : data_type_layer<TensorDataType>(nullptr) {
     this->set_output_dims(dims);
     this->m_expected_num_parent_layers = 2;
   }
@@ -89,6 +89,20 @@ public:
   }
 
   crop_layer* copy() const override { return new crop_layer(*this); }
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar)
+  {
+    using DataTypeLayer = data_type_layer<TensorDataType>;
+    ar(::cereal::make_nvp("DataTypeLayer",
+                          ::cereal::base_class<DataTypeLayer>(this)));
+  }
+
+  ///@}
+
   std::string get_type() const override { return "crop"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
@@ -145,6 +159,11 @@ public:
   }
 
 protected:
+
+  friend class cereal::access;
+  crop_layer()
+    : crop_layer(nullptr, { 1 } )
+  {}
 
   void fp_compute() override {
     switch (this->get_input_dims().size()) {

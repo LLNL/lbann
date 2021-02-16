@@ -62,26 +62,11 @@ TEMPLATE_LIST_TEST_CASE("DistMatrix serialization",
   {
     {
       cereal::XMLOutputArchive oarchive(ss);
-      CHECK_NOTHROW(oarchive(mat));
+      REQUIRE_NOTHROW(oarchive(mat));
     }
     {
       cereal::XMLInputArchive iarchive(ss);
-      CHECK_NOTHROW(iarchive(mat_restore));
-    }
-
-    CHECK(mat.Height() == mat_restore.Height());
-    CHECK(mat.Width() == mat_restore.Width());
-  }
-
-  SECTION("JSON archive")
-  {
-    {
-      cereal::JSONOutputArchive oarchive(ss);
-      CHECK_NOTHROW(oarchive(mat));
-    }
-    {
-      cereal::JSONInputArchive iarchive(ss);
-      CHECK_NOTHROW(iarchive(mat_restore));
+      REQUIRE_NOTHROW(iarchive(mat_restore));
     }
 
     CHECK(mat.Height() == mat_restore.Height());
@@ -94,11 +79,11 @@ TEMPLATE_LIST_TEST_CASE("DistMatrix serialization",
 
     {
       cereal::BinaryOutputArchive oarchive(ss);
-      CHECK_NOTHROW(oarchive(mat));
+      REQUIRE_NOTHROW(oarchive(mat));
     }
     {
       cereal::BinaryInputArchive iarchive(ss);
-      CHECK_NOTHROW(iarchive(mat_restore));
+      REQUIRE_NOTHROW(iarchive(mat_restore));
     }
 
     REQUIRE(mat.Height() == mat_restore.Height());
@@ -139,27 +124,11 @@ TEMPLATE_LIST_TEST_CASE(
   {
     {
       cereal::XMLOutputArchive oarchive(ss);
-      CHECK_NOTHROW(oarchive(mat));
+      REQUIRE_NOTHROW(oarchive(mat));
     }
     {
       cereal::XMLInputArchive iarchive(ss);
-      CHECK_NOTHROW(iarchive(mat_restore));
-    }
-
-    REQUIRE((check_valid_ptr) mat_restore);
-    CHECK(mat->Height() == mat_restore->Height());
-    CHECK(mat->Width() == mat_restore->Width());
-  }
-
-  SECTION("JSON archive")
-  {
-    {
-      cereal::JSONOutputArchive oarchive(ss);
-      CHECK_NOTHROW(oarchive(mat));
-    }
-    {
-      cereal::JSONInputArchive iarchive(ss);
-      CHECK_NOTHROW(iarchive(mat_restore));
+      REQUIRE_NOTHROW(iarchive(mat_restore));
     }
 
     REQUIRE((check_valid_ptr) mat_restore);
@@ -173,12 +142,12 @@ TEMPLATE_LIST_TEST_CASE(
 
     {
       cereal::BinaryOutputArchive oarchive(ss);
-      CHECK_NOTHROW(oarchive(mat));
+      REQUIRE_NOTHROW(oarchive(mat));
 
     }
     {
       cereal::BinaryInputArchive iarchive(ss);
-      CHECK_NOTHROW(iarchive(mat_restore));
+      REQUIRE_NOTHROW(iarchive(mat_restore));
     }
 
     REQUIRE(mat->Height() == mat_restore->Height());

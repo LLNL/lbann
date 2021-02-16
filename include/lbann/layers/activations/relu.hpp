@@ -52,12 +52,20 @@ class relu_distconv_adapter: public data_type_distconv_adapter<TensorDataType> {
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 class relu_layer : public data_type_layer<TensorDataType> {
 public:
+  relu_layer() : data_type_layer<TensorDataType>(nullptr) {}
   relu_layer(lbann_comm *comm) : data_type_layer<TensorDataType>(comm) {}
   relu_layer* copy() const override { return new relu_layer(*this); }
   std::string get_type() const override { return "ReLU"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar)
+  {
+    using DataTypeLayer = data_type_layer<TensorDataType>;
+    ar(::cereal::make_nvp("DataTypeLayer",
+                          ::cereal::base_class<DataTypeLayer>(this)));
+  }
 protected:
   void fp_compute() override;
   void bp_compute() override;

@@ -29,8 +29,12 @@
 #ifndef LBANN_CALLBACKS_CALLBACK_TIMELINE_HPP_INCLUDED
 #define LBANN_CALLBACKS_CALLBACK_TIMELINE_HPP_INCLUDED
 
-#include <unordered_map>
 #include "lbann/callbacks/callback.hpp"
+
+#include <cereal/types/unordered_map.hpp>
+#include <cereal/types/vector.hpp>
+#include <unordered_map>
+#include <vector>
 
 namespace lbann {
 namespace callback {
@@ -68,7 +72,32 @@ class timeline : public callback_base {
   void on_backward_prop_end(model *m, Layer *l) override;
   void on_optimize_begin(model *m, weights *w) override;
   void on_optimize_end(model *m, weights *w) override;
+
+  /** @name Serialization */
+  ///@{
+
+  /** @brief Store state to archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar) {
+    ar(::cereal::make_nvp(
+         "BaseCallback",
+         ::cereal::base_class<callback_base>(this)),
+       CEREAL_NVP(m_outdir),
+       CEREAL_NVP(m_start_time),
+       CEREAL_NVP(m_fp_start_time),
+       CEREAL_NVP(m_bp_start_time),
+       CEREAL_NVP(m_opt_start_time),
+       CEREAL_NVP(m_fp_times),
+       CEREAL_NVP(m_bp_times),
+       CEREAL_NVP(m_opt_times));
+  }
+
+  ///@}
+
  private:
+
+  friend class cereal::access;
+  timeline();
+
   /// Get time relative to the start time.
   EvalType get_rel_time() const { return get_time() - m_start_time; }
 

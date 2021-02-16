@@ -166,3 +166,7 @@ void check_dataset::on_test_end(model *m) {
 
 } // namespace callback
 } // namespace lbann
+
+CEREAL_REGISTER_TYPE_WITH_NAME(
+  ::lbann::callback::check_dataset,
+  "callback::check_dataset")

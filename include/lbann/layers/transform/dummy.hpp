@@ -45,10 +45,30 @@ public:
     this->m_expected_num_child_layers = 0;
   }
   dummy_layer* copy() const override { return new dummy_layer(*this); }
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar)
+  {
+    using DataTypeLayer = data_type_layer<TensorDataType>;
+    ar(::cereal::make_nvp("DataTypeLayer",
+                          ::cereal::base_class<DataTypeLayer>(this)));
+  }
+
+  ///@}
+
   std::string get_type() const override { return "dummy"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 protected:
+
+  friend class cereal::access;
+  dummy_layer()
+    : dummy_layer(nullptr)
+  {}
+
   void fp_compute() override {}
 };
 

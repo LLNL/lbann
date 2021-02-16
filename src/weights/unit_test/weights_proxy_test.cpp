@@ -99,7 +99,7 @@ TEST_CASE("Basic weights tests", "[mpi][weights]")
   int const weights_width = 2 * size_of_world;
 
   // Create the object
-  DataTypeWeights<DataType> dtw(&world_comm);
+  DataTypeWeights<DataType> dtw(world_comm);
 
   REQUIRE_NOTHROW(dtw.set_dims({weights_height}, {weights_width}));
   CHECK(dtw.get_matrix_height() == weights_height);
@@ -180,7 +180,7 @@ TEMPLATE_TEST_CASE("Weights proxy tests.", "[mpi][weights][proxy]",
   int const weights_width = 2 * size_of_world;
 
   // Create the master weights object.
-  auto dtw = std::make_shared<DataTypeWeights<MasterDataType>>(&world_comm);
+  auto dtw = std::make_shared<DataTypeWeights<MasterDataType>>(world_comm);
 
   // Create and set the initializer; using a constant initializer
   // here. This must be done at the master data type.

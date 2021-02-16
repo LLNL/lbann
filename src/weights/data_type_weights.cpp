@@ -68,7 +68,7 @@ std::string get_dims_string(const std::vector<int>& matrix_height_dims,
 namespace lbann {
 
 template <typename TensorDataType>
-data_type_weights<TensorDataType>::data_type_weights(lbann_comm* comm)
+data_type_weights<TensorDataType>::data_type_weights(lbann_comm& comm)
   : BaseType(comm) {}
 
 template <typename TensorDataType>
@@ -209,32 +209,32 @@ void data_type_weights<TensorDataType>::set_optimizer(
 
 template <typename TensorDataType>
 void data_type_weights<TensorDataType>::do_setup_() {
-  // Return immediately if weights have already been setup
-  if (m_values != nullptr) { return; }
 
-  auto matrix_dist = this->get_matrix_distribution();
-  // Construct weights matrix
-  m_values.reset(AbsDistMatrixType::Instantiate(*matrix_dist.grid,
-                                                matrix_dist.root,
-                                                matrix_dist.colDist,
-                                                matrix_dist.rowDist,
-                                                (matrix_dist.blockHeight == 1
-                                                 && matrix_dist.blockWidth == 1 ?
-                                                 El::ELEMENT : El::BLOCK),
-                                                matrix_dist.device));
-  m_values->AlignWith(matrix_dist);
-  m_values->Resize(this->get_matrix_height(), this->get_matrix_width());
-  if (m_initializer != nullptr) {
-    m_initializer->fill(*m_values);
-  } else {
-    El::Zero(*m_values);
+  if (!m_values)
+  {
+    auto matrix_dist = this->get_matrix_distribution();
+    // Construct weights matrix
+    m_values.reset(AbsDistMatrixType::Instantiate(*matrix_dist.grid,
+                                                  matrix_dist.root,
+                                                  matrix_dist.colDist,
+                                                  matrix_dist.rowDist,
+                                                  (matrix_dist.blockHeight == 1
+                                                   && matrix_dist.blockWidth == 1 ?
+                                                   El::ELEMENT : El::BLOCK),
+                                                  matrix_dist.device));
+    m_values->AlignWith(matrix_dist);
+    m_values->Resize(this->get_matrix_height(), this->get_matrix_width());
+    if (m_initializer != nullptr) {
+      m_initializer->fill(*m_values);
+    } else {
+      El::Zero(*m_values);
+    }
+
+    // Setup optimizer
+    if (m_optimizer != nullptr) {
+      m_optimizer->setup(this);
+    }
   }
-
-  // Setup optimizer
-  if (m_optimizer != nullptr) {
-    m_optimizer->setup(this);
-  }
-
 }
 
 // -----------------------------------------------
@@ -357,27 +357,6 @@ void data_type_weights<TensorDataType>::reconcile_values(Al::request& req) {
   }
 }
 
-// -----------------------------------------------
-// Checkpointing
-// -----------------------------------------------
-
-template <typename TensorDataType>
-bool data_type_weights<TensorDataType>::save_to_checkpoint_shared(lbann::persist& p)
-{
-  // define name to store weight values
-  char l_name[512];
-  // Note that the string model_ will be prepended to the string
-  sprintf(l_name, "weights_%s_%lldx%lld", this->get_name().c_str(), m_values->Height(), m_values->Width());
-  // write weights using persist call -- uses Elemental's write function.
-  p.write_distmat(persist_type::model, l_name, m_values.get());
-  // if saving training state, also write out state of optimizer
-  if (m_optimizer != nullptr && (p.get_cb_type() != callback_type::weights_only)) {
-    m_optimizer->save_to_checkpoint_shared(p, this->get_name());
-  }
-
-  return true;
-}
-
 template <typename TensorDataType>
 void data_type_weights<TensorDataType>::write_proto(lbann_data::WeightsData* proto) const {
 
@@ -412,22 +391,6 @@ void data_type_weights<TensorDataType>::write_proto(lbann_data::WeightsData* pro
     }
   }
 
-}
-
-template <typename TensorDataType>
-bool data_type_weights<TensorDataType>::load_from_checkpoint_shared(lbann::persist& p)
-{
-  // define filename containing saved weight values
-  // Note that the string model_ will be prepended to the string
-  auto f_name = El::BuildString("weights_", this->get_name(), "_",
-                                m_values->Height(), "x", m_values->Width(),
-                                ".bin");
-  p.read_distmat(persist_type::model, f_name.c_str(), m_values.get());
-  if (m_optimizer != nullptr) {
-    m_optimizer->load_from_checkpoint_shared(p, this->get_name());
-  }
-
-  return true;
 }
 
 template <typename TensorDataType>
@@ -472,38 +435,24 @@ bool data_type_weights<TensorDataType>::load_from_save(std::string const& ckpt_d
 }
 
 template <typename TensorDataType>
-bool data_type_weights<TensorDataType>::save_to_checkpoint_distributed(lbann::persist& p){
-  // Functions identically to shared checkpoint except weights and parameters are saved on a per rank basis
-  // Note that the string model_ will be prepended to the string
-  auto l_name = El::BuildString("weights_", this->get_name(),
-                                "_", m_values->LocalHeight(),
-                                "x", m_values->LocalWidth(), ".bin");
-  p.write_rank_distmat(persist_type::model, l_name.c_str(), *m_values);
-  if (m_optimizer != nullptr) {
-    m_optimizer->save_to_checkpoint_distributed(p, this->get_name());
-  }
-  return true;
+void data_type_weights<TensorDataType>::do_move_values_(
+  data_type_weights& other)
+{
+  m_values = std::move(other.m_values);
 }
 
 template <typename TensorDataType>
-bool data_type_weights<TensorDataType>::load_from_checkpoint_distributed(lbann::persist& p){
-  // Functions identically to shared checkpoint except weights and parameters are loaded on a per rank basis
-  // Note that the string model_ will be prepended to the string
-  auto l_name = El::BuildString("weights_", this->get_name(),
-                                "_", m_values->LocalHeight(),
-                                "x", m_values->LocalWidth(), ".bin");
-  p.read_rank_distmat(persist_type::model, l_name.c_str(), *m_values);
-  if (m_optimizer != nullptr) {
-    m_optimizer->load_from_checkpoint_distributed(p, this->get_name());
-  }
-  return true;
+void data_type_weights<TensorDataType>::do_steal_values_(weights& other)
+{
+  do_move_values_(dynamic_cast<data_type_weights<TensorDataType>&>(other));
 }
 
-#define PROTO(T)                     \
-  template class data_type_weights<T>
+}  // namespace lbann
+
+#define PROTO(T)                                                        \
+  template class lbann::data_type_weights<T>;                           \
+  CEREAL_REGISTER_TYPE_WITH_NAME(lbann::data_type_weights<T>, "dtw(" #T ")")
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
-
-}  // namespace lbann
