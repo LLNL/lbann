@@ -225,17 +225,16 @@ inline const std::string& sample_list_header::get_label_filename() const {
 //------------------
 
 template <typename sample_name_t>
-inline sample_list<sample_name_t>::sample_list()
+sample_list<sample_name_t>::sample_list()
 : m_stride(1ul), m_keep_order(true), m_check_data_file(false) {
 }
 
 template <typename sample_name_t>
-inline sample_list<sample_name_t>::~sample_list() {
+sample_list<sample_name_t>::~sample_list() {
 }
 
 template <typename sample_name_t>
-inline sample_list<sample_name_t>
-::sample_list(const sample_list& rhs) {
+sample_list<sample_name_t>::sample_list(const sample_list& rhs) {
   copy_members(rhs);
 }
 

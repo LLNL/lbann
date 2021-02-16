@@ -27,6 +27,8 @@
 #ifndef LBANN_SUMMARY_IMPL_HPP_INCLUDED
 #define LBANN_SUMMARY_IMPL_HPP_INCLUDED
 
+#include "lbann/utils/summary.hpp"
+
 namespace lbann {
 
 #ifdef LBANN_HAS_TBINF

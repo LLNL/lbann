@@ -24,6 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <lbann/macros/common_cereal_registration.hpp>
+
 /** @file
  *
  *  Define LBANN_CLASS_NAME to be the full class name before
@@ -31,19 +33,13 @@
  *  namespace.
  */
 
+#define LBANN_STRINGIFY(STR) #STR
 #undef PROTO
-#define LBANN_REGISTER_TEMPLATE_CLASS_WITH_CEREAL(NAME, TYPE)                        \
-  template void ::lbann::NAME<TYPE>::serialize(cereal::XMLOutputArchive&);    \
-  template void ::lbann::NAME<TYPE>::serialize(cereal::XMLInputArchive&);     \
-  template void ::lbann::NAME<TYPE>::serialize(cereal::BinaryOutputArchive&); \
-  template void ::lbann::NAME<TYPE>::serialize(cereal::BinaryInputArchive&);  \
-  template void ::lbann::NAME<TYPE>::serialize(RootedXMLOutputArchive&);      \
-  template void ::lbann::NAME<TYPE>::serialize(RootedXMLInputArchive&);       \
-  template void ::lbann::NAME<TYPE>::serialize(RootedBinaryOutputArchive&);   \
-  template void ::lbann::NAME<TYPE>::serialize(RootedBinaryInputArchive&)
-
-#define PROTO(T)                              \
-  LBANN_REGISTER_TEMPLATE_CLASS_WITH_CEREAL(LBANN_CLASS_NAME, T)
+#define PROTO(T)                                                        \
+  LBANN_ADD_ALL_SERIALIZE_ETI(::lbann::LBANN_CLASS_NAME<T>);            \
+  CEREAL_REGISTER_TYPE_WITH_NAME(                                       \
+    lbann::LBANN_CLASS_NAME<T>,                                         \
+    LBANN_STRINGIFY(LBANN_CLASS_NAME) "(" #T ")")
 
 #include "lbann/macros/instantiate.hpp"
 #undef PROTO

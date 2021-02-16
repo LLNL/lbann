@@ -101,13 +101,6 @@ option(LBANN_WITH_CUDNN "Include Nvidia cuDNN" ON)
 # For now, we just assert CPU support.
 option(LBANN_WITH_ONEDNN "Include OneDNN API support" OFF)
 
-option(LBANN_WITH_DIHYDROGEN "Build with DiHydrogen support" OFF)
-if (LBANN_WITH_DIHYDROGEN)
-  message(WARNING "DiHydrogen support is currently expermimental. "
-    "There is no stable interface. "
-    "Use caution before using any features.")
-endif (LBANN_WITH_DIHYDROGEN)
-
 option(LBANN_WITH_DISTCONV "Enable DiHydrogen's Distconv" OFF)
 if (LBANN_WITH_DISTCONV)
   message(WARNING "Distconv support is currently expermimental. "
@@ -200,29 +193,25 @@ message(STATUS "Found Hydrogen: ${Hydrogen_DIR}")
 set(LBANN_HAS_HYDROGEN ${Hydrogen_FOUND})
 
 # DiHydrogen and Distconv
-if (LBANN_WITH_DISTCONV AND NOT LBANN_WITH_DIHYDROGEN)
-  message(FATAL_ERROR "Distconv requires DiHydrogen. Enable DiHydrogen to use Distconv.")
+if (LBANN_WITH_DISTCONV)
+  find_package(DiHydrogen QUIET CONFIG COMPONENTS Meta Patterns DistConv
+    HINTS ${DIHYDROGEN_DIR} $ENV{DIHYDROGEN_DIR}
+    ${H2_DIR} $ENV{H2_DIR}
+    PATH_SUFFIXES install/lib64/cmake install/lib/cmake
+    NO_DEFAULT_PATH)
+  find_package(DiHydrogen QUIET CONFIG REQUIRED
+    COMPONENTS Meta Patterns DistConv)
+  set(LBANN_HAS_DISTCONV TRUE)
+else ()
+  find_package(DiHydrogen QUIET CONFIG COMPONENTS Meta Patterns
+    HINTS ${DIHYDROGEN_DIR} $ENV{DIHYDROGEN_DIR}
+    ${H2_DIR} $ENV{H2_DIR}
+    PATH_SUFFIXES install/lib64/cmake install/lib/cmake
+    NO_DEFAULT_PATH)
+  find_package(DiHydrogen QUIET CONFIG REQUIRED COMPONENTS Meta Patterns)
 endif ()
-
-if (LBANN_WITH_DIHYDROGEN)
-  if (LBANN_WITH_DISTCONV)
-    find_package(DiHydrogen CONFIG COMPONENTS Meta Patterns DistConv
-      HINTS ${DIHYDROGEN_DIR} $ENV{DIHYDROGEN_DIR}
-      ${H2_DIR} $ENV{H2_DIR}
-      PATH_SUFFIXES install/lib64/cmake install/lib/cmake
-      NO_DEFAULT_PATH)
-    find_package(DiHydrogen CONFIG REQUIRED COMPONENTS Meta Patterns DistConv)
-    set(LBANN_HAS_DISTCONV TRUE)
-  else ()
-    find_package(DiHydrogen CONFIG COMPONENTS Meta Patterns
-      HINTS ${DIHYDROGEN_DIR} $ENV{DIHYDROGEN_DIR}
-      ${H2_DIR} $ENV{H2_DIR}
-      PATH_SUFFIXES install/lib64/cmake install/lib/cmake
-      NO_DEFAULT_PATH)
-    find_package(DiHydrogen CONFIG REQUIRED COMPONENTS Meta Patterns)
-  endif ()
-  set(LBANN_HAS_DIHYDROGEN TRUE)
-endif ()
+set(LBANN_HAS_DIHYDROGEN TRUE)
+message(STATUS "Found DiHydrogen: ${DiHydrogen_DIR}")
 
 # Inherit half-precision stuff from Hydrogen
 set(LBANN_HAS_HALF ${HYDROGEN_HAVE_HALF}) # This is CPU-only

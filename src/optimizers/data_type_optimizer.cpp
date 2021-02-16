@@ -168,8 +168,7 @@ data_type_optimizer<TensorDataType>::get_matrix_info() const {
 
 #undef PROTO
 #define PROTO(T)                                                                 \
-  template class lbann::data_type_optimizer<T>;                                  \
-  CEREAL_REGISTER_TYPE_WITH_NAME(lbann::data_type_optimizer<T>, "dtopt(" #T ")")
+  template class lbann::data_type_optimizer<T>
 
 
 #define LBANN_INSTANTIATE_CPU_HALF

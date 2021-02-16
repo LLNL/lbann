@@ -4,6 +4,7 @@
 // Some common includes
 #include <lbann_config.hpp>
 #include <lbann/base.hpp>
+#include <lbann/utils/serialize.hpp>
 #include <h2/meta/Core.hpp>
 #include <h2/meta/TypeList.hpp>
 #include <h2/patterns/multimethods/SwitchDispatcher.hpp>

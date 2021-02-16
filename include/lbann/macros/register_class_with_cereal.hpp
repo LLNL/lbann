@@ -24,6 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <lbann/macros/common_cereal_registration.hpp>
+
 #include <cereal/types/polymorphic.hpp>
 
 /** @file
@@ -33,21 +35,4 @@
  *  namespace.
  */
 
-
-#define CEREAL_REGISTER_SIMPLE_CLASS_BASE(CLS_NAME, ARCHIVE_TYPE)           \
-  template void ::lbann::CLS_NAME::serialize(ARCHIVE_TYPE&)
-
-#define CEREAL_REGISTER_SIMPLE_CLASS(CLS_NAME)                              \
-  CEREAL_REGISTER_SIMPLE_CLASS_BASE(CLS_NAME, cereal::XMLOutputArchive);    \
-  CEREAL_REGISTER_SIMPLE_CLASS_BASE(CLS_NAME, cereal::XMLInputArchive);     \
-  CEREAL_REGISTER_SIMPLE_CLASS_BASE(CLS_NAME, cereal::BinaryOutputArchive); \
-  CEREAL_REGISTER_SIMPLE_CLASS_BASE(CLS_NAME, cereal::BinaryInputArchive);  \
-  CEREAL_REGISTER_SIMPLE_CLASS_BASE(CLS_NAME, RootedXMLOutputArchive);      \
-  CEREAL_REGISTER_SIMPLE_CLASS_BASE(CLS_NAME, RootedXMLInputArchive);       \
-  CEREAL_REGISTER_SIMPLE_CLASS_BASE(CLS_NAME, RootedBinaryOutputArchive);   \
-  CEREAL_REGISTER_SIMPLE_CLASS_BASE(CLS_NAME, RootedBinaryInputArchive)
-
-CEREAL_REGISTER_SIMPLE_CLASS(LBANN_CLASS_NAME);
-
-#undef CEREAL_REGISTER_SIMPLE_CLASS
-#undef CEREAL_REGISTER_SIMPLE_CLASS_BASE
+LBANN_ADD_ALL_SERIALIZE_ETI(::lbann::LBANN_CLASS_NAME);
