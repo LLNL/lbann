@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_SAMPLE_LIST_OPEN_FILES_IMPL_HPP
-#define LBANN_SAMPLE_LIST_OPEN_FILES_IMPL_HPP
+#ifndef LBANN_DATA_READERS_SAMPLE_LIST_OPEN_FILES_IMPL_HPP
+#define LBANN_DATA_READERS_SAMPLE_LIST_OPEN_FILES_IMPL_HPP
 
 #include "lbann/data_readers/sample_list_open_files.hpp"
 

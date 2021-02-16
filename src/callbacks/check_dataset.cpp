@@ -24,13 +24,15 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <vector>
 #include "lbann/comm_impl.hpp"
 #include "lbann/callbacks/check_dataset.hpp"
 #include "lbann/layers/io/input_layer.hpp"
-#include <iomanip>
 #include "lbann/utils/serialize.hpp"
+
 #include <cereal/types/set.hpp>
+
+#include <iomanip>
+#include <vector>
 
 namespace lbann {
 namespace callback {

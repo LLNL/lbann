@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_SAMPLE_LIST_OPEN_FILES_HPP
-#define LBANN_SAMPLE_LIST_OPEN_FILES_HPP
+#ifndef LBANN_DATA_READERS_SAMPLE_LIST_OPEN_FILES_HPP
+#define LBANN_DATA_READERS_SAMPLE_LIST_OPEN_FILES_HPP
 
 #include "sample_list.hpp"
 
@@ -166,4 +166,4 @@ inline T uninitialized_file_handle();
 
 } // end of namespace
 
-#endif // LBANN_SAMPLE_LIST_OPEN_FILES_HPP
+#endif // LBANN_DATA_READERS_SAMPLE_LIST_OPEN_FILES_HPP

@@ -26,8 +26,8 @@
 // lbann_file_io .hpp .cpp - Input / output utilities
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_PERSIST_IMPL_H
-#define LBANN_PERSIST_IMPL_H
+#ifndef LBANN_IO_PERSIST_IMPL_H
+#define LBANN_IO_PERSIST_IMPL_H
 
 #include "lbann/comm_impl.hpp"
 #include "lbann/io/persist.hpp"
@@ -160,4 +160,4 @@ void load_from_shared_cereal_archive(C& obj, persist& p, execution_mode mode,
 }
 
 } // namespace lbann
-#endif // LBANN_PERSIST_IMPL_H
+#endif // LBANN_IO_PERSIST_IMPL_H

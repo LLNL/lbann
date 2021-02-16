@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_SAMPLE_LIST_IMPL_HPP
-#define LBANN_SAMPLE_LIST_IMPL_HPP
+#ifndef LBANN_DATA_READERS_SAMPLE_LIST_IMPL_HPP
+#define LBANN_DATA_READERS_SAMPLE_LIST_IMPL_HPP
 
 #include <iostream>
 #include <fstream>
@@ -120,10 +120,15 @@ inline sample_list_header::sample_list_header()
 
 template <class Archive>
 void sample_list_header::serialize( Archive & ar ) {
-  ar(m_is_multi_sample, m_is_exclusive, m_no_label_header,
-     m_included_sample_count, m_excluded_sample_count,
-     m_num_files, m_file_dir,
-     m_sample_list_name, m_label_filename);
+  ar(m_is_multi_sample,
+     m_is_exclusive,
+     m_no_label_header,
+     m_included_sample_count,
+     m_excluded_sample_count,
+     m_num_files,
+     m_file_dir,
+     m_sample_list_name,
+     m_label_filename);
 }
 
 inline void sample_list_header::set_sample_list_type(const std::string& line1) {
@@ -989,4 +994,4 @@ inline void sample_list<sample_name_t>
 
 } // end of namespace lbann
 
-#endif // LBANN_SAMPLE_LIST_IMPL_HPP
+#endif // LBANN_DATA_READERS_SAMPLE_LIST_IMPL_HPP

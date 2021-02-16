@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_SAMPLE_LIST_HPP
-#define LBANN_SAMPLE_LIST_HPP
+#ifndef LBANN_DATA_READERS_SAMPLE_LIST_HPP
+#define LBANN_DATA_READERS_SAMPLE_LIST_HPP
 
 #include <iostream>
 #include <string>
@@ -237,4 +237,4 @@ inline T uninitialized_sample_name();
 
 } // end of namespace
 
-#endif // LBANN_SAMPLE_LIST_HPP
+#endif // LBANN_DATA_READERS_SAMPLE_LIST_HPP
