@@ -41,6 +41,7 @@
 #include "lbann/utils/description.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
 #include "lbann/utils/serialize.hpp"
+#include "lbann/utils/summary_impl.hpp"
 
 #include <model.pb.h>
 #include <optimizers.pb.h>
