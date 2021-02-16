@@ -59,3 +59,6 @@ PROTO_DEVICE(float, El::Device::GPU)
 PROTO_DEVICE(double, El::Device::GPU)
 #endif // LBANN_HAS_GPU
 #endif // LBANN_HAS_FFTW
+
+// #define LBANN_LAYER_NAME dft_abs_layer
+// #include <lbann/macros/register_layer_with_cereal_data_parallel_only.hpp>

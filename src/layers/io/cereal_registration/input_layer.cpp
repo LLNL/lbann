@@ -42,16 +42,5 @@ input_layer<TensorDataType,Layout,Device>
 
 } // namespace lbann
 
-#define LBANN_COMMA ,
-#define LBANN_REGISTER_LAYER_WITH_CEREAL_BASE(TYPE, LAYOUT, DEVICE) \
-  CEREAL_REGISTER_TYPE_WITH_NAME(                                       \
-    ::lbann::input_layer<TYPE LBANN_COMMA ::lbann::data_layout::LAYOUT LBANN_COMMA DEVICE>, \
-    "input_layer(" #TYPE "," #LAYOUT "," #DEVICE ")")
-
-#define LBANN_REGISTER_LAYER_WITH_CEREAL(TYPE, DEVICE)                  \
-  LBANN_REGISTER_LAYER_WITH_CEREAL_BASE(                                \
-    TYPE, DATA_PARALLEL, DEVICE)
-
-#define PROTO_DEVICE(T, D)                              \
-  LBANN_REGISTER_LAYER_WITH_CEREAL(T, D)
-#include <lbann/macros/instantiate_device.hpp>
+#define LBANN_LAYER_NAME input_layer
+#include <lbann/macros/register_layer_with_cereal_data_parallel_only.hpp>
