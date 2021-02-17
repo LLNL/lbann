@@ -293,14 +293,17 @@ if [[ "${LBANN_VARIANTS}" =~ .*"${DIHYDROGEN_VARIANTS}".* ]]; then
     fi
 fi
 
-GPU_VARIANTS='+cuda'
-if [[ "${LBANN_VARIANTS}" =~ .*"${GPU_VARIANTS}".* ]]; then
-    # Define the GPU_ARCH_VARIANTS field
-    GPU_ARCH_VARIANTS=
-    set_center_specific_gpu_arch ${CENTER} ${SPACK_ARCH_TARGET}
-    # Prepend the GPU_ARCH_VARIANTS for the LBANN variants if the +cuda variant is defined
-    LBANN_VARIANTS=" ${GPU_ARCH_VARIANTS} ${LBANN_VARIANTS}"
-fi
+GPU_VARIANTS_ARRAY=('+cuda' '+rocm')
+for GPU_VARIANTS in ${GPU_VARIANTS_ARRAY[@]}
+do
+    if [[ "${LBANN_VARIANTS}" =~ .*"${GPU_VARIANTS}".* ]]; then
+        # Define the GPU_ARCH_VARIANTS field
+        GPU_ARCH_VARIANTS=
+        set_center_specific_gpu_arch ${CENTER} ${SPACK_ARCH_TARGET}
+        # Prepend the GPU_ARCH_VARIANTS for the LBANN variants if the +cuda variant is defined
+        LBANN_VARIANTS=" ${GPU_ARCH_VARIANTS} ${LBANN_VARIANTS}"
+    fi
+done
 
 # Record the original command in the log file
 echo "${ORIG_CMD}" | tee -a ${LOG}

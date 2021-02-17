@@ -54,6 +54,9 @@ set_center_specific_gpu_arch()
                 GPU_ARCH_VARIANTS="cuda_arch=60"
                 CMAKE_GPU_ARCH="60"
                 ;;
+            "zen2")
+                GPU_ARCH_VARIANTS="amdgpu_target=gfx906"
+                ;;
             *)
                 ;;
         esac
@@ -78,8 +81,8 @@ set_center_specific_modules()
             "ivybridge")
                 MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 mvapich2/2.3 python/3.7.2"
                 ;;
-            "zen")
-                MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 mvapich2/2.3 python/3.7.2"
+            "zen2")
+                MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 mvapich2/2.3 python/3.7.2 opt rocm/3.10.0 hwloc/2.1"
                 ;;
             *)
                 echo "No pre-specified modules found for this system. Make sure to setup your own"
@@ -131,6 +134,10 @@ set_center_specific_mpi()
                 # On LC the mvapich2 being used is built against HWLOC v1
                 MPI="^mvapich2 ^hwloc@1.11.13"
                 ;;
+            "zen2")
+                # On LC the mvapich2 being used is built against HWLOC v1
+                MPI="^mvapich2 ^hwloc@2.1"
+                ;;
             *)
 		echo "No center-specified MPI library."
                 ;;
@@ -180,8 +187,47 @@ set_center_specific_externals()
 
     if [[ ${center} = "llnl_lc" ]]; then
         case ${spack_arch_target} in
-            "broadwell" | "haswell" | "zen" | "power9le" | "power8le")
+            "broadwell" | "haswell" | "power9le" | "power8le")
 cat <<EOF  >> ${yaml}
+    rdma-core:
+      buildable: False
+      version:
+      - 20
+      externals:
+      - spec: rdma-core@20 arch=${spack_arch}
+        prefix: /usr
+EOF
+                ;;
+            "zen2")
+cat <<EOF  >> ${yaml}
+    hip:
+      buildable: False
+      version:
+      - 4.0.0
+      externals:
+      - spec: hip@4.0.0 arch=${spack_arch}
+        prefix: /opt/rocm-3.10.0/hip
+    hsa-rocr-dev:
+      buildable: False
+      version:
+      - 4.0.0
+      externals:
+      - spec: hsa-rocr-dev@4.0.0 arch=${spack_arch}
+        prefix: /opt/rocm-3.10.0/hsa
+    hwloc:
+      buildable: False
+      version:
+      - 2.1
+      externals:
+      - spec: hwloc@2.1 arch=${spack_arch}
+        prefix: /opt/hwloc/2.1
+    llvm-amdgpu:
+      buildable: False
+      version:
+      - 4.0.0
+      externals:
+      - spec: llvm-amdgpu@4.0.0 arch=${spack_arch}
+        prefix: /opt/rocm-3.10.0/llvm
     rdma-core:
       buildable: False
       version:
