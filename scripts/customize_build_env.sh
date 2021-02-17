@@ -82,7 +82,7 @@ set_center_specific_modules()
                 MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 mvapich2/2.3 python/3.7.2"
                 ;;
             "zen2")
-                MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 mvapich2/2.3 python/3.7.2 opt rocm/3.10.0 hwloc/2.1"
+                MODULE_CMD="module --force unload StdEnv; module load clang/11.0.0 mvapich2/2.3 python/3.7.2 opt rocm/4.0.0 hwloc/2.1"
                 ;;
             *)
                 echo "No pre-specified modules found for this system. Make sure to setup your own"
@@ -182,10 +182,13 @@ set_center_specific_externals()
     local yaml="$4"
 
     # Point compilers that don't have a fortran compiler a default one
-    sed -i.bak -e 's/\(f[c7]7*:\)$/\1 \/usr\/bin\/gfortran/g' ${yaml}
+    sed -i.sed_bak -e 's/\(f[c7]7*:\)$/\1 \/usr\/bin\/gfortran/g' ${yaml}
     echo "Updating Clang compiler's to see the gfortran compiler."
 
     if [[ ${center} = "llnl_lc" ]]; then
+        # LC uses a old default gcc and clang needs a newer default gcc toolchain
+        perl -i.perl_bak -0pe 's/(- compiler:.*?spec: clang.*?flags:) (\{\})/$1 \{cflags: --gcc-toolchain=\/usr\/tce\/packages\/gcc\/gcc\-8\.1\.0, cxxflags: --gcc-toolchain=\/usr\/tce\/packages\/gcc\/gcc-8.1.0\}/smg' ${yaml}
+
         case ${spack_arch_target} in
             "broadwell" | "haswell" | "power9le" | "power8le")
 cat <<EOF  >> ${yaml}
@@ -206,14 +209,14 @@ cat <<EOF  >> ${yaml}
       - 4.0.0
       externals:
       - spec: hip@4.0.0 arch=${spack_arch}
-        prefix: /opt/rocm-3.10.0/hip
+        prefix: /opt/rocm-4.0.0/hip
     hsa-rocr-dev:
       buildable: False
       version:
       - 4.0.0
       externals:
       - spec: hsa-rocr-dev@4.0.0 arch=${spack_arch}
-        prefix: /opt/rocm-3.10.0/hsa
+        prefix: /opt/rocm-4.0.0/hsa
     hwloc:
       buildable: False
       version:
@@ -227,7 +230,7 @@ cat <<EOF  >> ${yaml}
       - 4.0.0
       externals:
       - spec: llvm-amdgpu@4.0.0 arch=${spack_arch}
-        prefix: /opt/rocm-3.10.0/llvm
+        prefix: /opt/rocm-4.0.0/llvm
     rdma-core:
       buildable: False
       version:
