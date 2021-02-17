@@ -199,22 +199,9 @@ load_model(lbann::lbann_comm* lc, lbann::trainer* t, std::string cp_dir, int mbs
 
 std::vector<int>
 infer(lbann::directed_acyclic_graph_model* m, lbann::trainer* t, std::string pred_layer) {
-  // Get datareader (for now...)
-  auto *dr = t->get_data_coordinator().get_data_reader(lbann::execution_mode::testing);
-
-  /*
-  //int num_samples = dr->get_num_iterations_per_epoch();
-  int num_samples = 157; // get_num_iterations_per_epoch isn't working
-                         // correctly and returns a different number for
-                         // different ranks, this is just a temporary hack
-                         // as we don't plan to keep the data readers anyway!
-
-  for (int s=0; s < num_samples; s++) {
-  */
-
   // Just do a single batch right now, this will all
   // change as we get rid of the need for datareaders
-  t->evaluate(m, lbann::execution_mode::testing, 2);
+  t->evaluate(m, lbann::execution_mode::testing, 1);
 
   return get_label(m, pred_layer);
 }
@@ -243,7 +230,6 @@ int main(int argc, char *argv[]) {
   }
 
   // Setup comms
-  std::cout << "initializing LBANN..." << std::endl;
   auto lbann_comm = lbann::driver_init(MPI_COMM_WORLD);
 
   int ppt = lbann_comm->get_procs_in_world();
@@ -262,7 +248,14 @@ int main(int argc, char *argv[]) {
   //El::Print(samples);
 
   // Infer
-  auto inf = infer(m.get(), t.get(), pred_layer);
+  auto labels = infer(m.get(), t.get(), pred_layer);
+  if (lbann_comm->am_world_master()) {
+    std::cout << "Predicted Labels: ";
+    for (int i=0; i<labels.size(); i++) {
+      std::cout << labels[i] << " ";
+    }
+    std::cout << std::endl;
+  }
 
   // Clean up
   t.reset();
