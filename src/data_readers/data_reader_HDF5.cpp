@@ -28,9 +28,6 @@
 #include "lbann/utils/timer.hpp"
 #include "conduit/conduit_relay_mpi.hpp"
 
-#undef DEBUGME
-#define DEBUGME
-
 namespace lbann {
 
 hdf5_data_reader::hdf5_data_reader(bool shuffle) 
@@ -101,6 +98,7 @@ void hdf5_data_reader::load() {
   load_schema(get_experiment_schema_filename(), m_experiment_schema);
   parse_schemas();
   build_useme_node_map();
+  construct_linearized_size_lookup_tables();
 
   // deal with num_labels and num_responses
   if (m_experiment_schema.has_child(s_metadata_node_name)) {
@@ -142,7 +140,6 @@ void hdf5_data_reader::do_preload_data_store() {
     std::cout << "starting hdf5_data_reader::do_preload_data_store()\n";
   }
  
-  static bool build_tables = true;
   for (size_t idx=0; idx < m_shuffled_indices.size(); idx++) {
     int index = m_shuffled_indices[idx];
     if(m_data_store->get_index_owner(index) != get_rank()) {
@@ -151,16 +148,6 @@ void hdf5_data_reader::do_preload_data_store() {
     try {
       conduit::Node & node = m_data_store->get_empty_node(index);
       load_sample(node, index);
-
-      if (build_tables) {
-        build_tables = false;
-        if (is_master()) {
-        }
-        construct_linearized_size_lookup_tables(node);
-      }
-
-      //note: this call may change the node hierarchy, so it must go
-      //      after calling construct_linearized_size_lookup_tables()
       m_data_store->set_preloaded_conduit_node(index, node);
     } catch (conduit::Error const& e) {
       LBANN_ERROR("trying to load the node ", index, " and caught conduit exception: ", e.what());
@@ -632,6 +619,12 @@ const std::vector<int> hdf5_data_reader::get_data_dims(std::string name) const {
   if (iter == m_data_dims_lookup_table.end()) {
     LBANN_ERROR("get_data_dims_size was asked for info about an unknown field name: ", name);
   }
+
+
+std::cout<<"XX get_data_dims("<<name<<"):\n";
+for(auto t : iter->second)std::cout<<t<<" ";
+std::cout<<std::endl;
+
   return iter->second;
 }
 
@@ -640,34 +633,52 @@ int hdf5_data_reader::get_linearized_data_size(std::string name) const {
   if (iter == m_linearized_size_lookup_table.end()) {
     LBANN_ERROR("get_linearized_data_size was asked for info about an unknown field name: ", name);
   }
+std::cout << "XX get_linearized_data_size: " << name << "  "<<iter->second<<std::endl;
   return iter->second;
 }
 
-//fills in: 
-//  m_data_dims_lookup_table and m_linearized_size_lookup_table
-void hdf5_data_reader::construct_linearized_size_lookup_tables(conduit::Node &node_in) {
-  conduit::Node node = node_in.child(0);
+//fills in: m_data_dims_lookup_table and m_linearized_size_lookup_table
+void hdf5_data_reader::construct_linearized_size_lookup_tables() {
+  conduit::Node node;
+  size_t index = random() % m_shuffled_indices.size();
+  load_sample(node, index);
   std::vector<conduit::Node*> leaves;
   get_leaves(&node, leaves, true);
+
+  std::stringstream ss;
+  ss << '/' << LBANN_DATA_ID_STR(0);
+  size_t sz = ss.str().size();
+
+  // loop over the data-fields (aka, leaves)
   for (const auto& t : leaves) {
-    size_t n_elts = t->dtype().number_of_elements();
-    m_linearized_size_lookup_table[t->path()] = n_elts;
-    if (m_useme_node_map.find(t->path()) == m_useme_node_map.end()) {
-      LBANN_ERROR(" m_useme_node_map.find(t->path() failed for: ", t->path());
-    }
-    const conduit::Node* nd = m_useme_node_map[t->path()];
-    const conduit::Node& metadata = nd->child(s_metadata_node_name);
-    if (!metadata.has_child("channels")) {
-      m_data_dims_lookup_table[t->path()].push_back(n_elts);
-    } 
+      const std::string field_name = t->path().substr(sz);
+    // we only care about leaves that are being used in the current experiment
+    if (m_useme_node_map.find(field_name) != m_useme_node_map.end()) {
+
+      // add entry to linearized size lookup table
+      size_t n_elts = t->dtype().number_of_elements();
+      m_linearized_size_lookup_table[field_name] = n_elts;
+
+      // remainder of this block is filling in the m_data_dims_lookup_table
+      conduit::Node* nd = m_useme_node_map[field_name];
+      conduit::Node* metadata = nd->fetch_ptr(s_metadata_node_name);
+
+      // easy case: scalars, vectors
+      if (!metadata->has_child("channels")) {
+        m_data_dims_lookup_table[field_name].push_back(n_elts);
+      }
     
-    else {
-      int channels = metadata.child("channels").to_int32();
-      m_data_dims_lookup_table[t->path()].push_back(channels);
-      int nn_elts = metadata.child("dims").dtype().number_of_elements();
-      const conduit::int64* tmp = metadata.child("dims").as_int64_ptr();
-      for (int k=0;k<nn_elts;k++) {
-        m_data_dims_lookup_table[t->path()].push_back(tmp[k]);
+      // error prone case; depends on user correctly writing schema 
+      // data dims for JAG images are: {4, 64, 64}; they may have previously
+      // been {64, 64}; this could be a problem
+      else {
+        int channels = metadata->child("channels").to_int32();
+        m_data_dims_lookup_table[field_name].push_back(channels);
+        int nn_elts = metadata->child("dims").dtype().number_of_elements();
+        const conduit::int64* tmp = metadata->child("dims").as_int64_ptr();
+        for (int k=0;k<nn_elts;k++) {
+          m_data_dims_lookup_table[field_name].push_back(tmp[k]);
+        }
       }
     }
   }
@@ -681,6 +692,7 @@ void hdf5_data_reader::get_packing_data(
 }
 
 bool hdf5_data_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
+std::cout << "starting fetch_datum for id: "<<data_id<<std::endl;
   size_t n_elts = 0;
   DataType *data;
   get_data(data_id, "datum", n_elts, data);

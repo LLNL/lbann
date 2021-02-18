@@ -72,7 +72,7 @@ public:
   // TODO: can go away in future; use get_data(...) instead;
   //       overring for backwards compatibility
   int fetch_responses(CPUMat& Y) override {
-    LBANN_ERROR("fetch_response() is not implemented");
+    LBANN_ERROR("not implemented for this data reader; please use the form that takes an 'std::string name' as a parameter");
   }
 
   // TODO: can go away in future; use get_data(...) instead;
@@ -104,13 +104,17 @@ public:
    */
   const std::vector<int> get_data_dims(std::string name="") const override; 
   const std::vector<int> get_data_dims() const override {
-    compatibility_exception();
+    //hack! TODO XX this will break everything!! sooner or later!!!
+    return get_data_dims("datum");
+    LBANN_ERROR("not implemented for this data reader; please use the form that takes an 'std::string name' as a parameter");
     return std::vector<int>(0);
   }
 
   int get_linearized_data_size(std::string name="") const override;
   int get_linearized_data_size() const override {
-    compatibility_exception();
+    //hack! TODO XX this will break everything!! sooner or later!!!
+    return get_linearized_size("datum");
+    LBANN_ERROR("not implemented for this data reader; please use the form that takes an 'std::string name' as a parameter");
     return 0;
   }
 
@@ -125,7 +129,7 @@ public:
   }
   // required for backwards compatibility
   int get_linearized_response_size() const override {
-    compatibility_exception();
+    LBANN_ERROR("not implemented for this data reader; please use the form that takes an 'std::string name' as a parameter");
     return 0;
   }
 
@@ -134,7 +138,7 @@ public:
   }
   // required for backwards compatibility
   int get_linearized_label_size() const override {
-    compatibility_exception();
+    LBANN_ERROR("not implemented for this data reader; please use the form that takes an 'std::string name' as a parameter");
     return 0;
   }
 
@@ -218,10 +222,6 @@ private:
   // methods follow
   //=========================================================================
 
-  void compatibility_exception() const {
-    LBANN_ERROR("not implemented for this data reader; please use the form that takes an 'std::string name' as a parameter");
-  }  
-
   /** P_0 reads and bcasts the schema */
   void load_sample_schema(conduit::Schema &s);
 
@@ -264,14 +264,8 @@ private:
   /** Performs packing, normalization, etc. Called by load_sample. */
   void pack_data(conduit::Node &node_in_out);
 
-  /** Trainer master loads a conduit::Node, then pulls out the Schema 
-   *  and bcasts to others
-   */
-  void load_schema_from_data(conduit::Schema &schema);
-
-  /** loads a use-supplied schema */
+  /** loads a schema from file */
   void load_schema(std::string filename, conduit::Node &schema); 
-
 
   /** pack the data; this is for all 'groups' in the node */
   void pack(conduit::Node &node, size_t index);
@@ -311,7 +305,7 @@ private:
   // constructs m_useme_node_map from m_useme_nodes
   void build_useme_node_map();
 
-  void construct_linearized_size_lookup_tables(conduit::Node &node); 
+  void construct_linearized_size_lookup_tables();
 
   //=========================================================================
   // templates follow
@@ -424,6 +418,15 @@ void hdf5_data_reader::pack(std::string group_name, conduit::Node& node, size_t 
   }
   if (idx != g.n_elts) {
     LBANN_ERROR("idx != g.n_elts*sizeof(T): ", idx, " ", g.n_elts*sizeof(T));
+  }
+  std::stringstream ss;
+  ss << '/' << LBANN_DATA_ID_STR(index) + '/' + group_name;
+  node[ss.str()] = data;
+
+  static bool add_to_map = true;
+  if (add_to_map) {
+    add_to_map = false;
+    m_useme_node_map[group_name] = &(node[ss.str()]);
   }
 }
 

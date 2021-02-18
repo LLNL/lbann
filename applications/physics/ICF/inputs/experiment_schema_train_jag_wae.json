@@ -1,0 +1,25 @@
+{
+    "metadata" : {
+      "num_labels": 10,
+      "num_responses": 5
+    },
+    "inputs": {
+      "metadata": {
+        "coerce": "float",
+        "pack": "datum"
+      }
+    },
+    "outputs": {
+      "metadata": {
+        "coerce": "float",
+        "pack": "datum"
+      },
+      "scalars": {
+      },
+      "images": {
+        "(90.0, 0.0)": {
+          "0.0": {}
+        }
+      }
+    }
+}
