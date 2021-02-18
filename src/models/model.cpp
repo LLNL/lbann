@@ -1043,6 +1043,18 @@ void model::forward_prop(execution_mode mode) {
   do_model_forward_prop_end_cbs(mode);
 }
 
+void model::fp_inf_samples(El::Matrix<float, El::Device::CPU>samples) {
+  for (El::Int i = 0; i < get_num_layers(); ++i) {
+    auto& l = get_layer(i);
+    // inject samples on input layer
+    if (l.get_name() == "layer1") {
+      l.forward_prop_sample(samples);
+    } else {
+      l.forward_prop();
+    }
+  }
+}
+
 void model::backward_prop() {
   do_model_backward_prop_begin_cbs();
   for (El::Int i = get_num_layers()-1; i >= 0; --i) {

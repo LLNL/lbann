@@ -90,6 +90,44 @@ data_type_layer<TensorDataType>& data_type_layer<TensorDataType>::operator=(cons
 }
 
 template <typename TensorDataType>
+void data_type_layer<TensorDataType>::forward_prop_sample(El::Matrix<float, El::device::CPU> samples) {
+  // Setup weights proxies
+  if (this->has_weights()) {
+    if ((m_weights_proxy.size() == 0) || m_weights_proxy[0].empty()) {
+      auto const num_weights = this->num_weights();
+      m_weights_proxy.resize(num_weights);
+      const auto ptrs = this->get_weights_pointers();
+      for (size_t ii = 0; ii < num_weights; ++ii) {
+        m_weights_proxy[ii].setup(ptrs[ii]);
+      }
+    }
+    for (auto& wp : m_weights_proxy)
+      wp.synchronize_with_master();
+  }
+
+  // Setup tensors
+  int mini_batch_size = 64;
+  fp_setup_inputs(mini_batch_size);
+  fp_setup_outputs(mini_batch_size);
+
+#if defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
+  // Synchronize GPUs and check for errors
+  if (using_gpus()) { hydrogen::gpu::SynchronizeDevice(); }
+#endif // defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
+
+  // Apply layer's compute function
+  fp_sample(samples);
+
+  // Add this layer as a gradient source for weight optimizers
+  this->add_as_gradient_source();
+
+#if defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
+  // Synchronize GPUs and check for errors
+  if (using_gpus()) { hydrogen::gpu::SynchronizeDevice(); }
+#endif // defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
+}
+
+template <typename TensorDataType>
 void data_type_layer<TensorDataType>::forward_prop() {
   const auto fp_start = get_time();
 

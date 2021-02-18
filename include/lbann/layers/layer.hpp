@@ -573,6 +573,8 @@ protected:
    *  the output tensors are populated with computed values.
    */
   virtual void fp_compute() = 0;
+  virtual void fp_sample(El::Matrix<float, El::Device::CPU> samples);
+
 
   // ===========================================================
   // Back prop step helper functions

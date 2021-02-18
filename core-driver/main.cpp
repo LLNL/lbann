@@ -201,7 +201,8 @@ std::vector<int>
 infer(lbann::directed_acyclic_graph_model* m, lbann::trainer* t, std::string pred_layer) {
   // Just do a single batch right now, this will all
   // change as we get rid of the need for datareaders
-  t->evaluate(m, lbann::execution_mode::testing, 1);
+  //t->evaluate(m, lbann::execution_mode::testing, 1);
+  m->fp_inf_sample(samples);
 
   return get_label(m, pred_layer);
 }
