@@ -305,6 +305,8 @@ private:
   // constructs m_useme_node_map from m_useme_nodes
   void build_useme_node_map();
 
+  // constructs m_data_dims_lookup_table and m_linearized_size_lookup_table,
+  // fills in m_supported_input_types for LABELS and RESPONSES
   void construct_linearized_size_lookup_tables();
 
   //=========================================================================

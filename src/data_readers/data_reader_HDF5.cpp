@@ -637,7 +637,8 @@ std::cout << "XX get_linearized_data_size: " << name << "  "<<iter->second<<std:
   return iter->second;
 }
 
-//fills in: m_data_dims_lookup_table and m_linearized_size_lookup_table
+//fills in: m_data_dims_lookup_table and m_linearized_size_lookup_table;
+//          m_supported_input_types for LABELS and RESPONSES
 void hdf5_data_reader::construct_linearized_size_lookup_tables() {
   conduit::Node node;
   size_t index = random() % m_shuffled_indices.size();
@@ -654,6 +655,13 @@ void hdf5_data_reader::construct_linearized_size_lookup_tables() {
       const std::string field_name = t->path().substr(sz);
     // we only care about leaves that are being used in the current experiment
     if (m_useme_node_map.find(field_name) != m_useme_node_map.end()) {
+
+      if (t->name() == "label") {
+        m_supported_input_types[input_data_type::LABELS] = true;
+      }
+      if (t->name() == "response") {
+        m_supported_input_types[input_data_type::RESPONSES] = true;
+      }
 
       // add entry to linearized size lookup table
       size_t n_elts = t->dtype().number_of_elements();
