@@ -755,4 +755,4 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
 
 } // end of namespace lbann
 
-#endif // LBANN_SAMPLE_LIST_OPEN_FILES_IMPL_HPP
+#endif // LBANN_DATA_READERS_SAMPLE_LIST_OPEN_FILES_IMPL_HPP
