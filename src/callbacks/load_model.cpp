@@ -219,5 +219,5 @@ build_load_model_callback_from_pbuf(
 } // namespace callback
 } // namespace lbann
 
-// #define LBANN_CLASS_NAME callback::load_model
-// #include <lbann/macros/register_class_with_cereal.hpp>
+#define LBANN_CLASS_NAME callback::load_model
+#include <lbann/macros/register_class_with_cereal.hpp>

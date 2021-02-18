@@ -69,6 +69,11 @@ public:
 
 private:
 
+  friend class cereal::access;
+  save_images() = default;
+
+private:
+
   /** List of layer names to save as images. */
   std::vector<std::string> m_layer_names;
   /** Image file format.
