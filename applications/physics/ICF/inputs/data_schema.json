@@ -5,7 +5,7 @@
         "metadata": {
           "scale": 1.666672e+00,
           "bias": 5.000000e-01,
-          "ordering": 100
+          "ordering": 300
         }
       },
       "betti_prl15_trans_u":  
@@ -13,7 +13,7 @@
         "metadata": {
           "scale": 1.000002e+00,
           "bias": -1.603483e-07,
-          "ordering": 101
+          "ordering": 301
         }
       },
       "betti_prl15_trans_v": 
@@ -21,7 +21,7 @@
         "metadata": {
           "scale": 1.000001e+00,
           "bias": -1.406672e-06,
-          "ordering": 102
+          "ordering": 302
         }
       },
       "shape_model_initial_modes:(2,1)": 
@@ -29,7 +29,7 @@
         "metadata": {
           "scale": 1.666675e+00,
           "bias": 4.999992e-01,
-          "ordering": 103
+          "ordering": 303
         }
       },
       "shape_model_initial_modes:(1,0)": 
@@ -37,7 +37,7 @@
         "metadata": {
           "scale": 1.666669e+00,
           "bias": 5.000008e-01,
-          "ordering": 104
+          "ordering": 304
         }
       }
     },
@@ -178,17 +178,17 @@
         },
         "(0.0, 0.0)": { "0.0": { "emi": { 
                                     "metadata": {
-                                      "ordering": 300 
+                                      "ordering": 100
                                     } 
                                  }}},
         "(90.0, 0.0)": { "0.0": { "emi": {
                                     "metadata": {
-                                      "ordering": 301
+                                      "ordering": 200
                                     }
                                  }}},
         "(90.0, 78.0)": { "0.0": { "emi": {
                                     "metadata": {
-                                      "ordering": 302
+                                      "ordering": 300
                                     } 
                                  }}}
       }

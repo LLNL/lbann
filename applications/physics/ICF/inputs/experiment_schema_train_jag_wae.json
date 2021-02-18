@@ -1,8 +1,4 @@
 {
-    "metadata" : {
-      "num_labels": 10,
-      "num_responses": 5
-    },
     "inputs": {
       "metadata": {
         "coerce": "float",
@@ -17,8 +13,8 @@
       "scalars": {
       },
       "images": {
-        "(90.0, 0.0)": {
-          "0.0": {}
+        "(00.0, 0.0)": {
+          "0.0/emi": {}
         }
       }
     }
