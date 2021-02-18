@@ -173,7 +173,7 @@ class ChannelwiseFullyConnectedModule(Module):
     self.name = (name
                  if name
                  else 'channelwisefc{0}'.format(ChannelwiseFullyConnectedModule.global_count))
-    self.parallel_strategy = 'data_parallel'
+    self.data_layout = 'data_parallel'
 
     self.weights = list(make_iterable(weights))
     if len(self.weights) > 2:
@@ -206,13 +206,11 @@ class ChannelwiseFullyConnectedModule(Module):
                                         data_layout=self.data_layout,
                                         output_channel_dims=self.size,
                                         bias=self.bias,
-                                        transpose=self.transpose,
-                                        parallel_strategy=self.parallel_strategy)
+                                        transpose=self.transpose)
     if self.activation:
         return self.activation(y,
                                name=name+'_activation',
-                               data_layout=self.data_layout,
-                               parallel_strategy=self.parallel_strategy)
+                               data_layout=self.data_layout)
     else:
         return y
 
@@ -355,10 +353,10 @@ class ConvolutionModule(Module):
         kwargs['parallel_strategy'] = self.parallel_strategy
         kwargs['has_vectors'] = True
 
-        kwargs['conv_dims_i'] = str_list(self.kernel_size)
-        kwargs['conv_pads_i'] = str_list(self.padding)
-        kwargs['conv_dilations_i'] = str_list(self.dilation)
-        kwargs['conv_strides_i'] = str_list(self.stride)
+        kwargs['conv_dims'] = str_list(self.kernel_dims)
+        kwargs['conv_pads'] = str_list(self.padding)
+        kwargs['conv_dilations'] = str_list(self.dilation)
+        kwargs['conv_strides'] = str_list(self.stride)
 
 
         if(self.transpose):
