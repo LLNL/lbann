@@ -100,17 +100,6 @@ void hdf5_data_reader::load() {
   build_useme_node_map();
   construct_linearized_size_lookup_tables();
 
-  // deal with num_labels and num_responses
-  if (m_experiment_schema.has_child(s_metadata_node_name)) {
-    const conduit::Node& metadata = m_experiment_schema.child(s_metadata_node_name);
-    if (metadata.has_child("num_labels")) {
-      m_num_labels = metadata["num_labels"].to_int32();
-    }
-    if (metadata.has_child("num_responses")) {
-      m_num_responses = metadata["num_responses"].to_int32();
-    }
-  } 
-
   if (is_master()) {
     std::cout << "time to load and parse the schemas: " << get_time() - tm11 
              << std::endl << "hdf5_data_reader::load() time (total): " 
