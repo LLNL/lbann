@@ -10,27 +10,27 @@ stages:
   - integration
   - unit
 
-compilerQuartz:
+compilerRay:
   stage: compiler
   tags:
-    - quartz
+    - ray
     - shell
   script:
-    - echo "=== compilerQuartz section ==="
+    - echo "=== compilerRay section ==="
 
-integrationQuartz:
+integrationRay:
   stage: compiler
   tags:
-    - quartz
+    - ray
     - shell
   script:
-    - echo "=== integrationQuartz section ==="
+    - echo "=== integrationRay section ==="
 
-unitQuartz:
+unitRay:
   stage: compiler
   tags:
-    - quartz
+    - ray
     - shell
   script:
-    - echo "=== unitQuartz section ==="
+    - echo "=== unitRay section ==="
     - echo "FINISHED"
