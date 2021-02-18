@@ -33,7 +33,9 @@
  *  namespace.
  */
 
-#define LBANN_STRINGIFY(STR) #STR
+#define LBANN_STRINGIFY(STR) LBANN_STRINGIFY_IMPL(STR)
+#define LBANN_STRINGIFY_IMPL(STR) #STR
+
 #undef PROTO
 #define PROTO(T)                                                        \
   LBANN_ADD_ALL_SERIALIZE_ETI(::lbann::LBANN_CLASS_NAME<T>);            \
