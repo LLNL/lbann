@@ -137,8 +137,7 @@ public:
 
   void fp_setup_outputs(El::Int mini_batch_size) final {
     data_type_layer<TensorDataType>::fp_setup_outputs(mini_batch_size);
-    if constexpr ((Layout == data_layout::MODEL_PARALLEL)
-                  && (Device == El::Device::CPU))
+    if constexpr (Layout == data_layout::MODEL_PARALLEL)
     {
       const auto& dist_data = this->get_prev_activations().DistData();
       m_workspace->Empty(false);
@@ -173,7 +172,7 @@ private:
   ///@{
 
   //using dnn_backend = dnn_lib::get_backend<Device>;
-#ifdef LBANN_HAS_ONEDNN
+#ifdef LBANN_HAS_ONEDNN_CPU
   using dnn_backend = onednn_backend<Device>;
 #else
   using dnn_backend = openmp_backend;

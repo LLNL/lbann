@@ -210,7 +210,6 @@ void softmax_layer<TensorDataType, Layout, Device>::fp_compute() {
       dynamic_cast<El::Matrix<TensorDataType, El::Device::CPU>&>(
         this->get_activations().Matrix());
 
-    // Eventually this should just be `dnn_lib::softmax_forward`...
     dnn_lib::softmax_forward(1.f,
                              this->input_descriptor_,
                              local_input,
