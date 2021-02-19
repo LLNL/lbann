@@ -32,16 +32,16 @@ namespace lbann {
 
 sgd_execution_context::sgd_execution_context(trainer& trainer,
                                              training_algorithm& training_alg,
-                                             lbann_comm *comm,
                                              execution_mode mode,
                                              size_t mini_batch_size)
-  : execution_context(trainer, training_alg, comm, mode),
+  : execution_context(trainer, training_alg, mode),
     m_current_mini_batch_size(mini_batch_size),
-    m_effective_mini_batch_size(mini_batch_size) {}
+    m_effective_mini_batch_size(mini_batch_size)
+{}
 
 template <class Archive>
-void sgd_execution_context::serialize( Archive & ar ) {
-  ar(cereal::base_class<execution_context>( this ),
+void sgd_execution_context::serialize(Archive & ar) {
+  ar(cereal::base_class<execution_context>(this),
      CEREAL_NVP(m_epoch),
      CEREAL_NVP(m_current_mini_batch_size),
      CEREAL_NVP(m_effective_mini_batch_size));
@@ -75,6 +75,5 @@ void sgd_execution_context::load_from_checkpoint_distributed(persist& p) {
 
 }  // namespace lbann
 
-#define LBANN_SKIP_CEREAL_REGISTRATION
 #define LBANN_CLASS_NAME sgd_execution_context
 #include <lbann/macros/register_class_with_cereal.hpp>

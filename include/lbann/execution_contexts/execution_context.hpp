@@ -32,6 +32,11 @@
 #include "lbann/io/persist.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
 
+// Forward declaration
+namespace cereal {
+class access;
+}
+
 namespace lbann {
 
 // Forward-declare this.
@@ -46,8 +51,9 @@ public:
 class execution_context {
 public:
   /** Constructor. */
-  execution_context(trainer& trainer, training_algorithm& training_alg,
-                    lbann_comm *comm, execution_mode mode);
+  execution_context(trainer& trainer,
+                    training_algorithm& training_alg,
+                    execution_mode mode);
   /** Destructor. */
   virtual ~execution_context() = default;
 
@@ -130,6 +136,8 @@ public:
   virtual void load_from_checkpoint_distributed(persist& p);
 
 protected:
+  friend class cereal::access;
+  execution_context() = default;
   /** Copy constructor. */
   execution_context(const execution_context& other) = default;
   /** Copy assignment operator. */

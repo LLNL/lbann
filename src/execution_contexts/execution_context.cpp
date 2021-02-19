@@ -45,11 +45,10 @@ namespace lbann {
 
 execution_context::execution_context(trainer& trainer,
                                      training_algorithm& training_algorithm,
-                                     lbann_comm *comm,
                                      execution_mode mode)
   : m_trainer(&trainer),
     m_training_algorithm(&training_algorithm),
-    m_comm(comm),
+    m_comm(trainer.get_comm()),
     m_execution_mode(mode),
     m_terminate_training(false) {}
 
@@ -100,6 +99,5 @@ void execution_context::load_from_checkpoint_distributed(persist& p){
 
 }  // namespace lbann
 
-#define LBANN_SKIP_CEREAL_REGISTRATION
 #define LBANN_CLASS_NAME execution_context
 #include <lbann/macros/register_class_with_cereal.hpp>
