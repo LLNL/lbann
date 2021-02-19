@@ -23,8 +23,10 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
+#include "lbann/layers/learning/base_convolution.hpp"
 #include "lbann/utils/serialize.hpp"
-#include <lbann/layers/learning/base_convolution.hpp>
+
+#include "lbann/macros/common_cereal_registration.hpp"
 
 namespace lbann {
 
@@ -44,21 +46,12 @@ void base_convolution_layer<TensorDataType,Device>::serialize(ArchiveT& ar)
      CEREAL_NVP(m_bias_scaling_factor));
   /// @todo Consider serializing m_convolution_math_type
 }
-
-#define PROTO_DEVICE(T, Device)                                                \
-  template void base_convolution_layer<T, Device>::serialize(cereal::XMLOutputArchive&);    \
-  template void base_convolution_layer<T, Device>::serialize(cereal::XMLInputArchive&);     \
-  template void base_convolution_layer<T, Device>::serialize(cereal::BinaryOutputArchive&); \
-  template void base_convolution_layer<T, Device>::serialize(cereal::BinaryInputArchive&);  \
-  template void base_convolution_layer<T, Device>::serialize(RootedXMLOutputArchive&);      \
-  template void base_convolution_layer<T, Device>::serialize(RootedXMLInputArchive&);       \
-  template void base_convolution_layer<T, Device>::serialize(RootedBinaryOutputArchive&);   \
-  template void base_convolution_layer<T, Device>::serialize(RootedBinaryInputArchive&)
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
-#include "lbann/macros/instantiate_device.hpp"
-
 } // namespace lbann
 
-//#define LBANN_LAYER_NAME base_convolution_layer
-//#include <lbann/macros/register_layer_with_cereal.hpp>
+#define LBANN_COMMA ,
+#define PROTO_DEVICE(T, D)                                              \
+  LBANN_ADD_ALL_SERIALIZE_ETI(::lbann::base_convolution_layer<T,D>);    \
+  CEREAL_REGISTER_TYPE_WITH_NAME(                                       \
+    ::lbann::base_convolution_layer<T LBANN_COMMA D>,                   \
+    "base_convolution_layer(" #T "," #D ")")
+#include "lbann/macros/instantiate_device.hpp"
