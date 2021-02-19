@@ -50,6 +50,3 @@ void data_type_layer<TensorDataType>::serialize(ArchiveT& ar)
 
 #define LBANN_CLASS_NAME data_type_layer
 #include <lbann/macros/register_template_class_with_cereal.hpp>
-
-#undef LBANN_INSTANTIATE_CPU_HALF
-#undef LBANN_INSTANTIATE_GPU_HALF

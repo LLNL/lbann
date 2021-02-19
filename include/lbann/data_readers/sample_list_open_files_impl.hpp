@@ -28,6 +28,7 @@
 #define LBANN_DATA_READERS_SAMPLE_LIST_OPEN_FILES_IMPL_HPP
 
 #include "lbann/data_readers/sample_list_open_files.hpp"
+#include "lbann/data_readers/sample_list_impl.hpp" // to_sample_name_t
 
 namespace lbann {
 

@@ -177,6 +177,3 @@ data_type_optimizer<TensorDataType>::get_matrix_info() const {
 
 #define LBANN_CLASS_NAME data_type_optimizer
 #include <lbann/macros/register_template_class_with_cereal.hpp>
-
-#undef LBANN_INSTANTIATE_CPU_HALF
-#undef LBANN_INSTANTIATE_GPU_HALF

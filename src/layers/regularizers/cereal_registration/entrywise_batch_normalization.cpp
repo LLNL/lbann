@@ -63,6 +63,6 @@ entrywise_batch_normalization_layer<TensorDataType,Layout,Device>
 
 #define PROTO(T) \
   PROTO_CPU(T);  \
-  PROTO_GPU(T);
+  PROTO_GPU(T)
 
 #include "lbann/macros/instantiate.hpp"

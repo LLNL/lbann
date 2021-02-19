@@ -31,8 +31,8 @@
 #endif // LBANN_HAS_GPU
 #include "lbann/optimizers/data_type_optimizer.hpp"
 #include "lbann/weights/data_type_weights.hpp"
-#include <h2/patterns/multimethods/SwitchDispatcher.hpp>
 #include "lbann/utils/serialize.hpp"
+#include <h2/patterns/multimethods/SwitchDispatcher.hpp>
 
 namespace lbann {
 

@@ -59,6 +59,6 @@ void layer_norm_layer<TensorDataType,Layout,Device>::serialize(ArchiveT& ar) {
 
 #define PROTO(T) \
   PROTO_CPU(T);  \
-  PROTO_GPU(T);
+  PROTO_GPU(T)
 
 #include "lbann/macros/instantiate.hpp"
