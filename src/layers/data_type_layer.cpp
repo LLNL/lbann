@@ -90,7 +90,7 @@ data_type_layer<TensorDataType>& data_type_layer<TensorDataType>::operator=(cons
 }
 
 template <typename TensorDataType>
-void data_type_layer<TensorDataType>::forward_prop_sample(El::Matrix<float, El::device::CPU> samples) {
+void data_type_layer<TensorDataType>::forward_prop_sample(El::DistMatrix<float, El::STAR, El::STAR, El::ELEMENT, El::Device::CPU> samples) {
   // Setup weights proxies
   if (this->has_weights()) {
     if ((m_weights_proxy.size() == 0) || m_weights_proxy[0].empty()) {

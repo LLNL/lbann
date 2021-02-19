@@ -347,7 +347,7 @@ public:
   /** @brief Forward propagation step. */
   virtual void forward_prop(execution_mode mode);
   /** @brief Forward propagation with passed inference sample. */
-  virtual void fp_inf_samples(El::Matrix<float, El::Device::CPU> samples);
+  virtual void fp_inf_samples(El::DistMatrix<float, El::STAR, El::STAR, El::ELEMENT, El::Device::CPU> samples);
   /** @brief Backward propagation step. */
   virtual void backward_prop();
   /** Evaluate any metrics in the model */

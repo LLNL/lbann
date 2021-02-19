@@ -198,18 +198,18 @@ load_model(lbann::lbann_comm* lc, lbann::trainer* t, std::string cp_dir, int mbs
 }
 
 std::vector<int>
-infer(lbann::directed_acyclic_graph_model* m, lbann::trainer* t, std::string pred_layer) {
+infer(lbann::directed_acyclic_graph_model* m, lbann::trainer* t, El::DistMatrix<float, El::STAR, El::STAR, El::ELEMENT, El::Device::CPU> samples, std::string pred_layer) {
   // Just do a single batch right now, this will all
   // change as we get rid of the need for datareaders
   //t->evaluate(m, lbann::execution_mode::testing, 1);
-  m->fp_inf_sample(samples);
+  m->fp_inf_samples(samples);
 
   return get_label(m, pred_layer);
 }
 
-El::Matrix<float, El::Device::CPU> load_samples() {
+El::DistMatrix<float, El::STAR, El::STAR, El::ELEMENT, El::Device::CPU> load_samples() {
   int h = 28, w = 128, c = 1, N = 64;
-  El::Matrix<float, El::Device::CPU> samples(c * h * w, N);
+  El::DistMatrix<float, El::STAR, El::STAR, El::ELEMENT, El::Device::CPU> samples(c * h * w, N);
   return samples;
 }
 
@@ -245,11 +245,11 @@ int main(int argc, char *argv[]) {
   auto m = load_model(lbann_comm.get(), t.get(), model_dir, mbs);
 
   // Load the data
-  //const auto& samples = load_samples();
+  const auto& samples = load_samples();
   //El::Print(samples);
 
   // Infer
-  auto labels = infer(m.get(), t.get(), pred_layer);
+  auto labels = infer(m.get(), t.get(), samples, pred_layer);
   if (lbann_comm->am_world_master()) {
     std::cout << "Predicted Labels: ";
     for (int i=0; i<labels.size(); i++) {

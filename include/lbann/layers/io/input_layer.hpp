@@ -151,7 +151,7 @@ class input_layer : public data_type_layer<TensorDataType> {
   void fp_setup_outputs(El::Int mini_batch_size) override;
 
   void fp_compute() override;
-  void fp_sample(El::Matrix<float, El::Device::CPU> samples) override;
+  void fp_sample(El::DistMatrix<float, El::STAR, El::STAR, El::ELEMENT, El::Device::CPU> samples) override;
 
   void set_samples(const El::AbstractDistMatrix<TensorDataType>& samples);
 
