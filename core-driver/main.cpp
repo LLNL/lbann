@@ -26,6 +26,7 @@
 
 #include "lbann/lbann.hpp"
 #include "lbann/utils/threads/thread_utils.hpp"
+#include "lbann/training_algorithms/sgd_training_algorithm.hpp"
 #include <mpi.h>
 #include <stdio.h>
 
@@ -198,11 +199,12 @@ load_model(lbann::lbann_comm* lc, lbann::trainer* t, std::string cp_dir, int mbs
 }
 
 std::vector<int>
-infer(lbann::directed_acyclic_graph_model* m, lbann::trainer* t, El::DistMatrix<float, El::STAR, El::STAR, El::ELEMENT, El::Device::CPU> samples, std::string pred_layer) {
+infer(lbann::directed_acyclic_graph_model* m, lbann::trainer* t, El::DistMatrix<float, El::STAR, El::STAR, El::ELEMENT, El::Device::CPU> const& samples, std::string pred_layer) {
   // Just do a single batch right now, this will all
   // change as we get rid of the need for datareaders
   //t->evaluate(m, lbann::execution_mode::testing, 1);
-  m->fp_inf_samples(samples);
+  //El::Print(samples);
+  t->evaluate_samples(m, samples);
 
   return get_label(m, pred_layer);
 }
@@ -245,7 +247,7 @@ int main(int argc, char *argv[]) {
   auto m = load_model(lbann_comm.get(), t.get(), model_dir, mbs);
 
   // Load the data
-  const auto& samples = load_samples();
+  const auto samples = load_samples();
   //El::Print(samples);
 
   // Infer

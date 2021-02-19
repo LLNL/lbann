@@ -1043,9 +1043,10 @@ void model::forward_prop(execution_mode mode) {
   do_model_forward_prop_end_cbs(mode);
 }
 
-void model::fp_inf_samples(El::DistMatrix<float, El::STAR, El::STAR, El::ELEMENT, El::Device::CPU> samples) {
+void model::fp_inf_samples(El::DistMatrix<float, El::STAR, El::STAR, El::ELEMENT, El::Device::CPU> const& samples) {
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     auto& l = get_layer(i);
+    std::cout << "layer " << i << ": " << l.get_name() << std::endl;
     // inject samples on input layer
     if (l.get_name() == "layer1") {
       l.forward_prop_sample(samples);

@@ -241,6 +241,23 @@ void sgd_training_algorithm::evaluate(sgd_execution_context& c,
   do_evaluate_end_cbs(model, mode);
 }
 
+void sgd_training_algorithm::evaluate_samples(sgd_execution_context& c,
+                                              model& model,
+                                              El::DistMatrix<float, El::STAR, El::STAR, El::ELEMENT, El::Device::CPU> const& samples) {
+  /// @todo BVE FIXME this state needs to be set for inference-only
+  /// workflows -- however, if the model will bail due to a lack of a
+  /// valid mode, the state of the data coordinator is not
+  /// consistent.  Fix this once the data coordinator is fully
+  /// decoupled from the input layer.
+  model.reset_epoch_statistics(execution_mode::testing);
+  model.reset_mode(c, execution_mode::testing);
+  model.fp_inf_samples(samples);
+  // Ensure that the data coordinator has the right execution context
+  //dc.reset_mode(c);
+  // Return early if execution mode is invalid
+
+}
+
 bool sgd_training_algorithm::evaluate_mini_batch(sgd_execution_context& c,
                                                  model& model,
                                                  data_coordinator& dc,
