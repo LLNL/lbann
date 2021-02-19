@@ -81,8 +81,8 @@ set_center_specific_modules()
             "ivybridge")
                 MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 mvapich2/2.3 python/3.7.2"
                 ;;
-            "zen2")
-                MODULE_CMD="module --force unload StdEnv; module load clang/11.0.0 mvapich2/2.3 python/3.7.2 opt rocm/4.0.0 hwloc/2.1"
+            "zen" | "zen2")
+                MODULE_CMD="module --force unload StdEnv; module load clang/11.0.0 openmpi/4.0 python/3.7.2 opt rocm/4.0.0"
                 ;;
             *)
                 echo "No pre-specified modules found for this system. Make sure to setup your own"
@@ -134,9 +134,9 @@ set_center_specific_mpi()
                 # On LC the mvapich2 being used is built against HWLOC v1
                 MPI="^mvapich2 ^hwloc@1.11.13"
                 ;;
-            "zen2")
+            "zen" | "zen2")
                 # On LC the mvapich2 being used is built against HWLOC v1
-                MPI="^mvapich2 ^hwloc@2.1"
+                MPI="^openmpi ^hwloc@2.3.0"
                 ;;
             *)
 		echo "No center-specified MPI library."
@@ -192,6 +192,7 @@ set_center_specific_externals()
         case ${spack_arch_target} in
             "broadwell" | "haswell" | "power9le" | "power8le")
 cat <<EOF  >> ${yaml}
+  packages:
     rdma-core:
       buildable: False
       version:
@@ -201,8 +202,23 @@ cat <<EOF  >> ${yaml}
         prefix: /usr
 EOF
                 ;;
-            "zen2")
+            "zen" | "zen2")
 cat <<EOF  >> ${yaml}
+  compilers:
+    - compiler:
+        spec: clang@amd
+        paths:
+          cc: /opt/rocm-4.0.0/llvm/bin/clang
+          cxx: /opt/rocm-4.0.0/llvm/bin/clang++
+          f77:
+          fc:
+        flags: {}
+        operating_system: rhel7
+        target: x86_64
+        modules: []
+        environment: {}
+        extra_rpaths: []
+  packages:
     hip:
       buildable: False
       version:
@@ -210,20 +226,33 @@ cat <<EOF  >> ${yaml}
       externals:
       - spec: hip@4.0.0 arch=${spack_arch}
         prefix: /opt/rocm-4.0.0/hip
+        extra_attributes:
+          compilers:
+            c: /opt/rocm-4.0.0/llvm/bin/clang
+            c++: /opt/rocm-4.0.0/llvm/bin/clang++
+            hip: /opt/rocm-4.0.0/hip/bin/hipcc
+    hipcub:
+      buildable: False
+      version:
+      - 4.0.0
+      externals:
+      - spec: hipcub@4.0.0 arch=${spack_arch}
+        prefix: /opt/rocm-4.0.0/hipcub
+        extra_attributes:
+          compilers:
+            c: /opt/rocm-4.0.0/llvm/bin/clang
+            c++: /opt/rocm-4.0.0/llvm/bin/clang++
     hsa-rocr-dev:
       buildable: False
       version:
       - 4.0.0
       externals:
       - spec: hsa-rocr-dev@4.0.0 arch=${spack_arch}
-        prefix: /opt/rocm-4.0.0/hsa
-    hwloc:
-      buildable: False
-      version:
-      - 2.1
-      externals:
-      - spec: hwloc@2.1 arch=${spack_arch}
-        prefix: /opt/hwloc/2.1
+        prefix: /opt/rocm-4.0.0
+        extra_attributes:
+          compilers:
+            c: /opt/rocm-4.0.0/llvm/bin/clang
+            c++: /opt/rocm-4.0.0/llvm/bin/clang++
     llvm-amdgpu:
       buildable: False
       version:
@@ -231,6 +260,10 @@ cat <<EOF  >> ${yaml}
       externals:
       - spec: llvm-amdgpu@4.0.0 arch=${spack_arch}
         prefix: /opt/rocm-4.0.0/llvm
+        extra_attributes:
+          compilers:
+            c: /opt/rocm-4.0.0/llvm/bin/clang
+            c++: /opt/rocm-4.0.0/llvm/bin/clang++
     rdma-core:
       buildable: False
       version:
@@ -248,6 +281,7 @@ EOF
         case ${spack_arch_target} in
             "power9le" | "power8le")
 cat <<EOF  >> ${yaml}
+  packages:
     rdma-core:
       buildable: False
       version:
@@ -265,6 +299,7 @@ EOF
         case ${spack_arch_target} in
             "skylake_avx512")
 cat <<EOF  >> ${yaml}
+  packages:
     rdma-core:
       buildable: False
       version:
@@ -319,4 +354,19 @@ cat <<EOF >> ${yaml}
       ^python:
         autoload:  'direct'
 EOF
+}
+
+cleanup_clang_compilers()
+{
+    local center="$1"
+    local yaml="$2"
+
+    # Point compilers that don't have a fortran compiler a default one
+    sed -i.sed_bak -e 's/\(f[c7]7*:\)$/\1 \/usr\/bin\/gfortran/g' ${yaml}
+    echo "Updating Clang compiler's to see the gfortran compiler."
+
+    if [[ ${center} = "llnl_lc" ]]; then
+        # LC uses a old default gcc and clang needs a newer default gcc toolchain
+        perl -i.perl_bak -0pe 's/(- compiler:.*?spec: clang.*?flags:) (\{\})/$1 \{cflags: --gcc-toolchain=\/usr\/tce\/packages\/gcc\/gcc\-8\.1\.0, cxxflags: --gcc-toolchain=\/usr\/tce\/packages\/gcc\/gcc-8.1.0\}/smg' ${yaml}
+    fi
 }
