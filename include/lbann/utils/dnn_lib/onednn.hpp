@@ -30,7 +30,9 @@
 #include "lbann/utils/dim_helpers.hpp"
 #include "lbann/utils/dnn_enums.hpp"
 #include "lbann/utils/exception.hpp"
-#include "lbann/utils/h2_tmp.hpp"
+
+#include <h2/meta/Core.hpp>
+#include <h2/meta/TypeList.hpp>
 
 #ifdef LBANN_HAS_ONEDNN
 
