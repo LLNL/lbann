@@ -125,7 +125,7 @@ void dump_model_graph::on_setup_end(model *m) {
       edges.emplace(l, l->get_child_layers()[i_child],
                     get_tensor_dims_str(l->get_output_dims(i_child)));
   }
-  for(const auto edge : edges) {
+  for(const auto& edge : edges) {
     const auto i_from = std::distance(
         layers.begin(), std::find(layers.begin(), layers.end(), std::get<0>(edge)));
     const auto i_to = std::distance(
@@ -144,6 +144,7 @@ void dump_model_graph::on_setup_end(model *m) {
   boost::write_graphviz_dp(file, g, dp);
 
 #else // LBANN_HAS_BOOST
+  (void) m_print;
   LBANN_ERROR("This callback requires the Boost library.");
 #endif // LBANN_HAS_BOOST
 }

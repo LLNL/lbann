@@ -37,7 +37,7 @@ endif (LBANN_HAS_FFTW)
 if (LBANN_HAS_OPENCV)
   list(APPEND THIS_DIR_SEQ_CATCH2_TEST_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/image_test.cpp)
-endif (LBANN_HAS_FFTW)
+endif (LBANN_HAS_OPENCV)
 
 # This is actually CUDA-specific. rocFFT will get a new test when we
 # port that over.
@@ -50,6 +50,12 @@ if (LBANN_HAS_DNN_LIB)
   list(APPEND THIS_DIR_SEQ_CATCH2_TEST_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/dnn_lib_test.cpp)
 endif (LBANN_HAS_DNN_LIB)
+
+if (LBANN_HAS_ONEDNN)
+  message(STATUS "Adding oneDNN tests.")
+  list(APPEND THIS_DIR_SEQ_CATCH2_TEST_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/onednn_infrastructure_test.cpp)
+endif ()
 
 set(LBANN_SEQ_CATCH2_TEST_FILES
   "${LBANN_SEQ_CATCH2_TEST_FILES}"

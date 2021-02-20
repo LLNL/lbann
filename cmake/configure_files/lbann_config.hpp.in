@@ -47,7 +47,11 @@
 #cmakedefine LBANN_HAS_ROCM
 #cmakedefine LBANN_HAS_MIOPEN
 
-#if defined LBANN_HAS_CUDNN || defined LBANN_HAS_MIOPEN
+#cmakedefine LBANN_HAS_ONEDNN
+#cmakedefine LBANN_HAS_ONEDNN_CPU
+#cmakedefine LBANN_HAS_ONEDNN_GPU
+
+#if defined LBANN_HAS_CUDNN || defined LBANN_HAS_MIOPEN || defined LBANN_HAS_ONEDNN
 #cmakedefine LBANN_HAS_DNN_LIB
 #endif
 

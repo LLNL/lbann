@@ -48,6 +48,10 @@ if (LBANN_HAS_ROCM)
     )
 endif ()
 
+if (LBANN_HAS_ONEDNN)
+  list(APPEND THIS_DIR_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/onednn.cpp")
+endif ()
+
 if (LBANN_HAS_DISTCONV)
   list(APPEND THIS_DIR_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/distconv.cpp")
 endif ()
