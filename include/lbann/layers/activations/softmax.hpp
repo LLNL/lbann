@@ -137,6 +137,9 @@ public:
 
   void fp_setup_outputs(El::Int mini_batch_size) final {
     data_type_layer<TensorDataType>::fp_setup_outputs(mini_batch_size);
+    // The data parallel implementations do not use a workspace. Thus,
+    // we only need to allocate a workspace when we are in model
+    // parallel mode.
     if constexpr (Layout == data_layout::MODEL_PARALLEL)
     {
       const auto& dist_data = this->get_prev_activations().DistData();
