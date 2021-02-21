@@ -92,6 +92,9 @@ endif ()
 
 option(LBANN_WITH_ALUMINUM "Enable Aluminum all-reduce library" OFF)
 
+option(LBANN_WITH_CEREAL_XML "Enable the use of XML archives from Cereal" OFF)
+set(LBANN_HAS_CEREAL_XML_ARCHIVES ${LBANN_WITH_CEREAL_XML})
+
 option(LBANN_WITH_CNPY "Include cnpy" ON)
 
 option(LBANN_WITH_CONDUIT "Enable Conduit library" ON)
