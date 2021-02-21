@@ -290,7 +290,15 @@ bool trainer::save_to_checkpoint_shared() {
   save_rng_to_checkpoint_shared(get_persist_obj(), m_comm);
 
   if (m_comm->am_trainer_master()) {
-    write_cereal_archive(*this, get_persist_obj(), "trainer.xml");
+    write_cereal_archive(
+      *this,
+      get_persist_obj(),
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
+      "trainer.xml"
+#else // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
+      "trainer.bin"
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
+      );
   }
 
   return get_data_coordinator().save_to_checkpoint_shared(get_persist_obj());
@@ -298,7 +306,16 @@ bool trainer::save_to_checkpoint_shared() {
 
 bool trainer::load_from_checkpoint_shared(persist& p) {
   try {
-    load_from_shared_cereal_archive(*this, p, *get_comm(), "trainer.xml");
+    load_from_shared_cereal_archive(
+      *this,
+      p,
+      *get_comm(),
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
+      "trainer.xml"
+#else // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
+      "trainer.bin"
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
+      );
   } catch (NonexistentArchiveFile const& e) {
     LBANN_MSG(e.what());
     return false;
@@ -355,7 +372,15 @@ bool trainer::save_to_checkpoint_distributed(){
 }
 
 bool trainer::load_from_checkpoint_distributed(persist& p){
-  read_cereal_archive(*this, p, "trainer.xml");
+  read_cereal_archive(
+    *this,
+    p,
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
+      "trainer.xml"
+#else // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
+      "trainer.bin"
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
+    );
   return get_data_coordinator().load_from_checkpoint_distributed(p);
 }
 

@@ -117,23 +117,56 @@ EvalType layer_metric::evaluate(execution_mode mode,
 bool layer_metric::save_to_checkpoint_shared(persist& p) {
   // write out fields we need to save for model
   if (get_comm().am_trainer_master()) {
-    write_cereal_archive<layer_metric>(*this, p, "metrics.xml");
+    write_cereal_archive<layer_metric>(
+      *this,
+      p,
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
+      "metrics.xml"
+#else // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
+      "metrics.bin"
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
+      );
   }
   return true;
 }
 
 bool layer_metric::load_from_checkpoint_shared(persist& p) {
-  load_from_shared_cereal_archive<layer_metric>(*this, p, get_comm(), "metrics.xml");
+  load_from_shared_cereal_archive<layer_metric>(
+    *this,
+    p,
+    get_comm(),
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
+    "metrics.xml"
+#else // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
+    "metrics.bin"
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
+    );
   return true;
 }
 
 bool layer_metric::save_to_checkpoint_distributed(persist& p) {
-  write_cereal_archive<layer_metric>(*this, p, "metrics.xml");
+  write_cereal_archive<layer_metric>(
+    *this,
+    p,
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
+    "metrics.xml"
+#else // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
+    "metrics.bin"
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
+    );
   return true;
 }
 
 bool layer_metric::load_from_checkpoint_distributed(persist& p) {
-  read_cereal_archive<layer_metric>(*this, p, "metrics.xml");
+  read_cereal_archive<layer_metric>(
+    *this,
+    p,
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
+    "metrics.xml"
+#else // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
+    "metrics.bin"
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
+    );
   return true;
 }
 
