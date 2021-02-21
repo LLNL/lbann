@@ -26,19 +26,7 @@ TEST_CASE("Serializing enums", "[serialize][utils][enum]")
   myenum a = myenum::NOT_THE_DEFAULT;
   myenum b = myenum::DEFAULT;
 
-  SECTION("XML Archive")
-  {
-    {
-      cereal::XMLOutputArchive oarchive(ss);
-      REQUIRE_NOTHROW(oarchive(a));
-    }
-    {
-      cereal::XMLInputArchive iarchive(ss);
-      REQUIRE_NOTHROW(iarchive(b));
-    }
-
-    REQUIRE(a == b);
-  }
+#ifdef LBANN_HAS_CEREAL_BINARY_ARCHIVES
   SECTION("Binary Archive")
   {
     {
@@ -47,19 +35,6 @@ TEST_CASE("Serializing enums", "[serialize][utils][enum]")
     }
     {
       cereal::BinaryInputArchive iarchive(ss);
-      REQUIRE_NOTHROW(iarchive(b));
-    }
-
-    REQUIRE(a == b);
-  }
-  SECTION("Rooted XML archive")
-  {
-    {
-      lbann::RootedXMLOutputArchive oarchive(ss, g);
-      REQUIRE_NOTHROW(oarchive(a));
-    }
-    {
-      lbann::RootedXMLInputArchive iarchive(ss, g);
       REQUIRE_NOTHROW(iarchive(b));
     }
 
@@ -78,5 +53,34 @@ TEST_CASE("Serializing enums", "[serialize][utils][enum]")
 
     REQUIRE(a == b);
   }
+#endif // LBANN_HAS_CEREAL_BINARY_ARCHIVES
 
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
+  SECTION("XML Archive")
+  {
+    {
+      cereal::XMLOutputArchive oarchive(ss);
+      REQUIRE_NOTHROW(oarchive(a));
+    }
+    {
+      cereal::XMLInputArchive iarchive(ss);
+      REQUIRE_NOTHROW(iarchive(b));
+    }
+
+    REQUIRE(a == b);
+  }
+  SECTION("Rooted XML archive")
+  {
+    {
+      lbann::RootedXMLOutputArchive oarchive(ss, g);
+      REQUIRE_NOTHROW(oarchive(a));
+    }
+    {
+      lbann::RootedXMLInputArchive iarchive(ss, g);
+      REQUIRE_NOTHROW(iarchive(b));
+    }
+
+    REQUIRE(a == b);
+  }
+#endif // LBANN_HAS_CEREAL_BINARY_ARCHIVES
 }
