@@ -27,6 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_mnist.hpp"
+#include "lbann/data_readers/sample_list_impl.hpp"
 #include "lbann/utils/file_utils.hpp"
 #include <cstdio>
 

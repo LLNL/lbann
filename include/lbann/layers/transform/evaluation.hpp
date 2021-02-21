@@ -64,12 +64,7 @@ protected:
   ///@{
 
   template <typename ArchiveT>
-  void serialize(ArchiveT& ar)
-  {
-    using DataTypeLayer = data_type_layer<TensorDataType>;
-    ar(::cereal::make_nvp("DataTypeLayer",
-                          ::cereal::base_class<DataTypeLayer>(this)));
-  }
+  void serialize(ArchiveT& ar);
 
   ///@}
 
@@ -116,12 +111,7 @@ public:
   ///@{
 
   template <typename ArchiveT>
-  void serialize(ArchiveT& ar)
-  {
-    using AbstractEvaluationLayer = abstract_evaluation_layer<TensorDataType>;
-    ar(::cereal::make_nvp("AbstractEvaluationLayer",
-                          ::cereal::base_class<AbstractEvaluationLayer>(this)));
-  }
+  void serialize(ArchiveT& ar);
 
   ///@}
 

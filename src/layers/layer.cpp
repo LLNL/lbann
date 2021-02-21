@@ -24,20 +24,22 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/layers/layer.hpp"
-#include "lbann/utils/timer.hpp"
-#include "lbann/models/model.hpp"
+#include "lbann/execution_contexts/sgd_execution_context.hpp"
 #include "lbann/io/file_io.hpp"
 #include "lbann/io/persist.hpp"
-#include "lbann/execution_contexts/sgd_execution_context.hpp"
+#include "lbann/layers/layer.hpp"
+#include "lbann/models/model.hpp"
+#include "lbann/utils/summary_impl.hpp"
+#include "lbann/utils/timer.hpp"
 
 #include <layers.pb.h>
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-
+#include <algorithm>
+#include <functional>
+#include <sstream>
 #include <string>
+#include <utility>
+#include <vector>
 
 // Asynchronous memory transfers for input data
 // Note: This introduces a race condition. It is possible for the

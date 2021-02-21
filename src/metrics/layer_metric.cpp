@@ -25,6 +25,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/metrics/layer_metric.hpp"
+#include "lbann/utils/serialize.hpp"
+#include "lbann/io/persist_impl.hpp"
 
 namespace lbann {
 
@@ -32,6 +34,15 @@ layer_metric::layer_metric(lbann_comm *comm, std::string name_, std::string unit
   : metric(comm),
     m_name(name_),
     m_unit(unit) {}
+
+template <class Archive>
+void layer_metric::serialize( Archive & ar ) {
+  ar(::cereal::make_nvp("Metric",
+                        ::cereal::base_class<metric>(this)),
+     CEREAL_NVP(m_name),
+     CEREAL_NVP(m_unit),
+     CEREAL_NVP(m_layer));
+}
 
 std::string layer_metric::name() const {
   if (!m_name.empty()) {
@@ -127,3 +138,6 @@ bool layer_metric::load_from_checkpoint_distributed(persist& p) {
 }
 
 } // namespace lbann
+
+#define LBANN_CLASS_NAME layer_metric
+#include <lbann/macros/register_class_with_cereal.hpp>

@@ -264,16 +264,7 @@ public:
    *                    read.
    */
   template <typename ArchiveT>
-  void serialize(ArchiveT& ar)
-  {
-    ar(CEREAL_NVP(m_name),
-       CEREAL_NVP(m_frozen));
-
-    // What about:
-    //   m_matrix_height_dims
-    //   m_matrix_width_dims
-    //   m_matrix_dist
-  }
+  void serialize(ArchiveT& ar);
 
   ///@}
   /** @name Expert interface */

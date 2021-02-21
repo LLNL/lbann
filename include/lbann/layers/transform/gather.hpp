@@ -102,14 +102,6 @@ gather_layer<TensorDataType,Layout,Device>* gather_layer<TensorDataType,Layout,D
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-template <typename ArchiveT>
-void gather_layer<TensorDataType,Layout,Device>::serialize(ArchiveT& ar) {
-  using DataTypeLayer = data_type_layer<TensorDataType>;
-  ar(::cereal::make_nvp("DataTypeLayer",
-                        ::cereal::base_class<DataTypeLayer>(this)));
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
 std::string gather_layer<TensorDataType,Layout,Device>::get_type() const {
   return "gather";
 }

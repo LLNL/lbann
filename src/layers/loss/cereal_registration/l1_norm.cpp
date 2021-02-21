@@ -23,8 +23,25 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
+#include "lbann/utils/serialize.hpp"
 #include <lbann/layers/loss/l1_norm.hpp>
+
+namespace lbann {
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+template <typename ArchiveT>
+void
+l1_norm_layer<TensorDataType,Layout,Device>
+::serialize(ArchiveT& ar)
+{
+  using DataTypeLayer = data_type_layer<TensorDataType>;
+  ar(::cereal::make_nvp("DataTypeLayer",
+                        ::cereal::base_class<DataTypeLayer>(this)));
+  // Members that aren't serialized
+  //  m_workspace
+}
+
+} // namespace lbann
 
 #define LBANN_LAYER_NAME l1_norm_layer
 #include <lbann/macros/register_layer_with_cereal.hpp>
-

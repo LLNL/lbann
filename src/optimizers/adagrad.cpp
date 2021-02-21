@@ -24,7 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/optimizers/adagrad.hpp"
+#include "lbann/optimizers/adagrad_impl.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
 
@@ -130,9 +130,5 @@ build_adagrad_optimizer_from_pbuf(
 
 } // namespace lbann
 
-#undef PROTO
-#define PROTO(T)                                                \
-  CEREAL_REGISTER_TYPE_WITH_NAME(lbann::adagrad<T>, "adagrad(" #T ")")
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
-#include "lbann/macros/instantiate.hpp"
+#define LBANN_CLASS_NAME adagrad
+#include <lbann/macros/register_template_class_with_cereal.hpp>

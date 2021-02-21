@@ -23,8 +23,22 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
+#include "lbann/utils/serialize.hpp"
 #include <lbann/layers/loss/entrywise.hpp>
+
+namespace lbann {
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+template <typename ArchiveT>
+void
+boolean_accuracy_layer<TensorDataType,Layout,Device>
+::serialize(ArchiveT& ar) {
+  using DataTypeLayer = data_type_layer<TensorDataType>;
+  ar(::cereal::make_nvp("DataTypeLayer",
+                        ::cereal::base_class<DataTypeLayer>(this)));
+}
+
+} // namespace lbann
 
 #define LBANN_LAYER_NAME boolean_accuracy_layer
 #include <lbann/macros/register_layer_with_cereal.hpp>
-

@@ -28,6 +28,7 @@
 
 #include "lbann/callbacks/dump_gradients.hpp"
 #include "lbann/optimizers/data_type_optimizer.hpp"
+#include "lbann/utils/serialize.hpp"
 
 #include <callbacks.pb.h>
 
@@ -39,6 +40,14 @@ namespace callback {
 dump_gradients::dump_gradients()
   : dump_gradients("", 0)
 {}
+
+template <class Archive>
+void dump_gradients::serialize(Archive & ar) {
+  ar(::cereal::make_nvp(
+       "BaseCallback",
+       ::cereal::base_class<callback_base>(this)),
+     CEREAL_NVP(m_basename));
+}
 
 void dump_gradients::on_backward_prop_end(model *m) {
   const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
@@ -70,6 +79,5 @@ build_dump_gradients_callback_from_pbuf(
 } // namespace callback
 } // namespace lbann
 
-CEREAL_REGISTER_TYPE_WITH_NAME(
-  ::lbann::callback::dump_gradients,
-  "callback::dump_gradients")
+#define LBANN_CLASS_NAME callback::dump_gradients
+#include <lbann/macros/register_class_with_cereal.hpp>

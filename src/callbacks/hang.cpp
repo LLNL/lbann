@@ -25,11 +25,20 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/hang.hpp"
+#include "lbann/utils/serialize.hpp"
 
 #include <callbacks.pb.h>
 
 namespace lbann {
 namespace callback {
+
+template <class Archive>
+void hang::serialize(Archive & ar) {
+  ar(::cereal::make_nvp(
+       "BaseCallback",
+       ::cereal::base_class<callback_base>(this)),
+     CEREAL_NVP(m_rank_to_hang));
+}
 
 void hang::setup(model* m)
 {
@@ -55,6 +64,5 @@ build_hang_callback_from_pbuf(
 } // namespace callback
 } // namespace lbann
 
-CEREAL_REGISTER_TYPE_WITH_NAME(
-  ::lbann::callback::hang,
-  "callback::hang")
+#define LBANN_CLASS_NAME callback::hang
+#include <lbann/macros/register_class_with_cereal.hpp>

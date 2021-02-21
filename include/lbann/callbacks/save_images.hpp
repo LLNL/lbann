@@ -63,14 +63,14 @@ public:
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar) {
-    ar(cereal::base_class<callback_base>(this),
-       CEREAL_NVP(m_layer_names),
-       CEREAL_NVP(m_image_format),
-       CEREAL_NVP(m_image_prefix));
-  }
+  template <class Archive> void serialize(Archive & ar);
 
   ///@}
+
+private:
+
+  friend class cereal::access;
+  save_images() = default;
 
 private:
 

@@ -30,7 +30,9 @@
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/memory.hpp"
 
-#include "lbann/utils/h2_tmp.hpp"
+#include <cereal/types/set.hpp>
+#include "lbann/utils/serialize.hpp"
+#include <h2/patterns/multimethods/SwitchDispatcher.hpp>
 
 #include <callbacks.pb.h>
 
@@ -195,6 +197,18 @@ check_gradients::check_gradients(std::set<execution_mode> modes,
     m_verbose(verbose),
     m_error_on_failure(error_on_failure) {}
 
+template <class Archive>
+void
+check_gradients::serialize(Archive & ar) {
+  ar(::cereal::make_nvp(
+       "BaseCallback",
+       ::cereal::base_class<callback_base>(this)),
+     CEREAL_NVP(m_modes),
+     CEREAL_NVP(m_step_size),
+     CEREAL_NVP(m_verbose),
+     CEREAL_NVP(m_error_on_failure));
+}
+
 void check_gradients::do_check_gradients(model& m) const {
 
   // Get objects from model
@@ -316,6 +330,5 @@ build_check_gradients_callback_from_pbuf(
 } // namespace callback
 } // namespace lbann
 
-CEREAL_REGISTER_TYPE_WITH_NAME(
-  ::lbann::callback::check_gradients,
-  "callback::check_gradients")
+#define LBANN_CLASS_NAME callback::check_gradients
+#include <lbann/macros/register_class_with_cereal.hpp>

@@ -39,7 +39,7 @@
 #include <shmem.h>
 #endif // LBANN_HAS_SHMEM
 
-#include "lbann/comm.hpp"
+#include "lbann/comm_impl.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/omp_diagnostics.hpp"
 #include "lbann/utils/stack_trace.hpp"

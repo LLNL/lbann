@@ -166,20 +166,6 @@ private:
 // Builder function
 LBANN_DEFINE_LAYER_BUILDER(gru);
 
-// Template implementation
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-template <typename ArchiveT>
-void
-gru_layer<TensorDataType,Layout,Device>
-::serialize(ArchiveT& ar)
-{
-  using DataTypeLayer = data_type_layer<TensorDataType>;
-  ar(::cereal::make_nvp("DataTypeLayer",
-                        ::cereal::base_class<DataTypeLayer>(this)),
-     CEREAL_NVP(m_hidden_size),
-     CEREAL_NVP(m_num_layers));
-}
-
 // Explicit template instantiation
 #ifdef LBANN_GRU_LAYER_GPU_SUPPORTED
 #ifndef LBANN_GRU_LAYER_INSTANTIATE

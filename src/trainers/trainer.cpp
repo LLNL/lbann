@@ -24,29 +24,40 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+// This header
 #include "lbann/trainers/trainer.hpp"
+
+// LBANN dependencies
 #include "lbann/callbacks/callback.hpp"
-//#include "lbann/callbacks/callback_save_model.hpp"
-#include "lbann/io/persist.hpp"
-#include "lbann/layers/transform/dummy.hpp"
-#include "lbann/layers/transform/split.hpp"
-#include "lbann/layers/transform/evaluation.hpp"
-#include "lbann/objective_functions/layer_term.hpp"
-#include "lbann/metrics/layer_metric.hpp"
-#include "lbann/utils/random.hpp"
-#include "lbann/utils/omp_diagnostics.hpp"
-#include "lbann/utils/description.hpp"
-#include "lbann/execution_contexts/sgd_execution_context.hpp"
-#include "lbann/training_algorithms/sgd_training_algorithm.hpp"
 #include "lbann/data_coordinator/data_coordinator_metadata.hpp"
-#include <string>
-#include <unistd.h>
-#include <iomanip>
-#include <queue>
-#include <unordered_set>
+#include "lbann/execution_contexts/sgd_execution_context.hpp"
+#include "lbann/io/persist.hpp"
+#include "lbann/io/persist_impl.hpp"
+#include "lbann/layers/transform/dummy.hpp"
+#include "lbann/layers/transform/evaluation.hpp"
+#include "lbann/layers/transform/split.hpp"
+#include "lbann/metrics/layer_metric.hpp"
+#include "lbann/objective_functions/layer_term.hpp"
+#include "lbann/training_algorithms/sgd_training_algorithm.hpp"
+#include "lbann/utils/description.hpp"
+#include "lbann/utils/omp_diagnostics.hpp"
+#include "lbann/utils/random.hpp"
+#include "lbann/utils/serialize.hpp"
+
+// LBANN proto
 #include <lbann.pb.h>
 
-#include "mpi.h"
+// External dependencies
+#include <mpi.h>
+
+// C dependencies
+#include <unistd.h>
+
+// STL
+#include <iomanip>
+#include <queue>
+#include <string>
+#include <unordered_set>
 
 namespace lbann {
 
@@ -105,6 +116,15 @@ trainer& trainer::operator=(const trainer& other) {
 trainer::~trainer() {
 }
 
+template <class Archive>
+void trainer::serialize(Archive & ar) {
+  ar(CEREAL_NVP(m_persist),
+     CEREAL_NVP(m_max_mini_batch_size),
+     CEREAL_NVP(m_root_random_seed),
+     CEREAL_NVP(m_random_seed),
+     CEREAL_NVP(m_data_seq_random_seed));
+}
+
 ////////////////////////////////////////////////////////////
 // Trainer specification
 ////////////////////////////////////////////////////////////
@@ -158,9 +178,9 @@ trainer::execution_context_key_pair_t trainer::check_and_build_execution_context
     if(dynamic_cast<observer_ptr<sgd_training_algorithm>>(&alg) != nullptr) {
       /// @todo BVE FIXME Figure out how to get a good mini-batch size
       /// in here
-      context = make_unique<sgd_execution_context>(*this, alg, m_comm, mode, get_max_mini_batch_size());
+      context = make_unique<sgd_execution_context>(*this, alg, mode, get_max_mini_batch_size());
     }else {
-      context = make_unique<execution_context>(*this, alg, m_comm, mode);
+      context = make_unique<execution_context>(*this, alg, mode);
     }
     m_model_execution_context.emplace(key,std::move(context));
   }
@@ -176,9 +196,14 @@ trainer::execution_context_key_pair_t trainer::check_and_build_execution_context
     std::unique_ptr<execution_context> context;
     //    observer_ptr<training_algorithm> alg = const_cast
     if(dynamic_cast<observer_ptr</*const */sgd_execution_context>>(&c) != nullptr) {
-      context = make_unique<sgd_execution_context>(*this, c.get_training_algorithm(), m_comm, mode, get_max_mini_batch_size());
+      context = make_unique<sgd_execution_context>(*this,
+                                                   c.get_training_algorithm(),
+                                                   mode,
+                                                   get_max_mini_batch_size());
     }else {
-      context = make_unique<execution_context>(*this, c.get_training_algorithm(), m_comm, mode);
+      context = make_unique<execution_context>(*this,
+                                               c.get_training_algorithm(),
+                                               mode);
     }
     m_model_execution_context.emplace(key,std::move(context));
   }
@@ -208,7 +233,9 @@ void trainer::delete_execution_context(execution_context_key_pair_t key) {
 
   /// @todo BVE FIXME seems like there is a bug here about mapping
   /// execution contexts to the right model
-void trainer::for_each_execution_context(std::function<void(observer_ptr<execution_context>)>fn) {
+void trainer::for_each_execution_context(
+  std::function<void(observer_ptr<execution_context>)>fn)
+{
   for(auto&& c : m_model_execution_context) {
     // auto&& model = c.first.first;
     // auto&& mode = c.first.second;
@@ -256,10 +283,10 @@ void trainer::evaluate(observer_ptr<model> model, execution_mode mode, El::Int n
 // =============================================
 
 bool trainer::save_to_checkpoint_shared() {
-  auto save_checkpoint = [this](observer_ptr<execution_context> ctx) {
-    ctx->save_to_checkpoint_shared(this->get_persist_obj());
-  };
-  for_each_execution_context(save_checkpoint);
+  for_each_execution_context(
+    [this](observer_ptr<execution_context> ctx) {
+      ctx->save_to_checkpoint_shared(this->get_persist_obj());
+    });
   save_rng_to_checkpoint_shared(get_persist_obj(), m_comm);
 
   if (m_comm->am_trainer_master()) {
@@ -319,10 +346,10 @@ bool trainer::load_from_checkpoint_shared(model& m, execution_context& c) {
 }
 
 bool trainer::save_to_checkpoint_distributed(){
-  auto save_checkpoint = [this](observer_ptr<execution_context> ctx) {
-    ctx->save_to_checkpoint_distributed(this->get_persist_obj());
-  };
-  for_each_execution_context(save_checkpoint);
+  for_each_execution_context(
+    [this](observer_ptr<execution_context> ctx) {
+      ctx->save_to_checkpoint_distributed(this->get_persist_obj());
+    });
   save_rng_to_checkpoint_distributed(get_persist_obj(), m_comm);
   return get_data_coordinator().save_to_checkpoint_shared(get_persist_obj());
 }

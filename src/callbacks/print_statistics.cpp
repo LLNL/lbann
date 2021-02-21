@@ -26,12 +26,14 @@
 // print_statistics .hpp .cpp - Callback hooks to print information
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/comm_impl.hpp"
 #include "lbann/callbacks/print_statistics.hpp"
 
 #include "lbann/data_coordinator/data_coordinator.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/argument_parser.hpp"
 #include "lbann/utils/lbann_library.hpp"
+#include "lbann/utils/serialize.hpp"
 
 #include <callbacks.pb.h>
 
@@ -43,6 +45,14 @@
 
 namespace lbann {
 namespace callback {
+
+template <class Archive>
+void print_statistics::serialize(Archive & ar) {
+  ar(::cereal::make_nvp(
+       "BaseCallback",
+       ::cereal::base_class<callback_base>(this)),
+     CEREAL_NVP(m_print_global_stat_only));
+}
 
 void print_statistics::setup(model *m) {
 #ifdef LBANN_VERSION
@@ -301,6 +311,5 @@ build_print_statistics_callback_from_pbuf(
 } // namespace callback
 } // namespace lbann
 
-CEREAL_REGISTER_TYPE_WITH_NAME(
-  ::lbann::callback::print_statistics,
-  "callback::print_statistics")
+#define LBANN_CLASS_NAME callback::print_statistics
+#include <lbann/macros/register_class_with_cereal.hpp>

@@ -44,11 +44,7 @@ namespace lbann {
     data_layout get_data_layout() const override { return Layout; }         \
     El::Device get_device_allocation() const override { return Device; }    \
     template <typename ArchiveT>                                            \
-    void serialize(ArchiveT& ar) {                                          \
-      using DataTypeLayer = data_type_layer<TensorDataType>;                \
-      ar(::cereal::make_nvp("DataTypeLayer",                                \
-                            ::cereal::base_class<DataTypeLayer>(this)));    \
-    }                                                                       \
+    void serialize(ArchiveT& ar);                                           \
   protected:                                                                \
     void setup_dims(DataReaderMetaData& dr_metadata) override {             \
       data_type_layer<TensorDataType>::setup_dims(dr_metadata);             \

@@ -27,6 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/early_stopping.hpp"
+#include "lbann/utils/serialize.hpp"
 
 #include <callbacks.pb.h>
 
@@ -41,6 +42,16 @@ early_stopping::early_stopping(int64_t patience) :
 early_stopping::early_stopping() :
   early_stopping(0)
 {}
+
+template <class Archive>
+void early_stopping::serialize(Archive & ar) {
+  ar(::cereal::make_nvp(
+       "BaseCallback",
+       ::cereal::base_class<callback_base>(this)),
+     CEREAL_NVP(m_patience),
+     CEREAL_NVP(m_last_score),
+     CEREAL_NVP(m_wait));
+}
 
 /// Monitor the objective function to see if the validation score
 /// continues to improve
@@ -81,6 +92,5 @@ build_early_stopping_callback_from_pbuf(
 } // namespace callback
 } // namespace lbann
 
-CEREAL_REGISTER_TYPE_WITH_NAME(
-  ::lbann::callback::early_stopping,
-  "callback::early_stopping")
+#define LBANN_CLASS_NAME callback::early_stopping
+#include <lbann/macros/register_class_with_cereal.hpp>

@@ -30,6 +30,7 @@
 
 #include "lbann/base.hpp"
 #include "lbann/utils/memory.hpp"
+#include "lbann/utils/serialize.hpp"
 
 #include <callbacks.pb.h>
 #include <iostream>
@@ -37,6 +38,15 @@
 
 namespace lbann {
 namespace callback {
+
+template <class Archive>
+void debug_io::serialize(Archive & ar) {
+  ar(::cereal::make_nvp(
+       "BaseCallback",
+       ::cereal::base_class<callback_base>(this)),
+     CEREAL_NVP(m_debug_phase),
+     CEREAL_NVP(m_debug_lvl));
+}
 
 /// BVE FIXME @todo The use of execution_mode invalid needs to be reconsidered
 void debug_io::on_epoch_begin(model *m) {
@@ -181,6 +191,5 @@ build_debug_io_callback_from_pbuf(
 } // namespace callback
 } // namespace lbann
 
-CEREAL_REGISTER_TYPE_WITH_NAME(
-  ::lbann::callback::debug_io,
-  "callback::debug_io")
+#define LBANN_CLASS_NAME callback::debug_io
+#include <lbann/macros/register_class_with_cereal.hpp>

@@ -32,6 +32,11 @@
 
 #include <optimizers.pb.h>
 
+namespace cereal
+{
+  class access;
+}// namespace cereal
+
 namespace lbann {
 
 /** Neural network model with a DAG layer graph. */
@@ -48,19 +53,12 @@ public:
   std::string get_type() const override { return "directed acyclic graph"; }
 
   template <typename ArchiveT>
-  void serialize(ArchiveT& ar)
-  {
-    ar(::cereal::make_nvp("ActualModel",
-                          ::cereal::base_class<model>(this)));
-  }
+  void serialize(ArchiveT& ar);
 
 protected:
 
   friend cereal::access;
-  directed_acyclic_graph_model()
-    : directed_acyclic_graph_model(
-      &utils::get_current_comm(), nullptr, nullptr)
-  {}
+  directed_acyclic_graph_model();
 
   /** Set up layer execution order.
    *

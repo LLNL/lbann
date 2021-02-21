@@ -23,13 +23,32 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
+#include "lbann/utils/serialize.hpp"
 #include <lbann/layers/misc/dft_abs.hpp>
-#include <cereal/types/polymorphic.hpp>
 
+namespace lbann {
+
+template <typename TensorDataType, El::Device Device>
+template <typename ArchiveT>
+void
+dft_abs_layer<TensorDataType,Device>
+::serialize(ArchiveT& ar)
+{
+  using DataTypeLayer = data_type_layer<TensorDataType>;
+  ar(::cereal::make_nvp("DataTypeLayer",
+                        ::cereal::base_class<DataTypeLayer>(this)));
+}
+
+} // namespace lbann
+
+// Manually register the DFT ABS layer since it has many permutations
+// of supported data and device types
+#include <lbann/macros/common_cereal_registration.hpp>
 #define LBANN_COMMA ,
-#define PROTO_DEVICE(TYPE, DEVICE)                      \
-  CEREAL_REGISTER_TYPE_WITH_NAME(                       \
-    ::lbann::dft_abs_layer<TYPE LBANN_COMMA DEVICE>,    \
+#define PROTO_DEVICE(TYPE, DEVICE)                           \
+  LBANN_ADD_ALL_SERIALIZE_ETI(::lbann::dft_abs_layer<TYPE LBANN_COMMA DEVICE>); \
+  CEREAL_REGISTER_TYPE_WITH_NAME(                            \
+    ::lbann::dft_abs_layer<TYPE LBANN_COMMA DEVICE>,         \
     "dft_abs_layer (" #TYPE "," #DEVICE ")");
 
 #ifdef LBANN_HAS_FFTW

@@ -3,8 +3,8 @@
 #include "MPITestHelpers.hpp"
 
 //#include <lbann/utils/exception.hpp>
-#include <lbann/utils/h2_tmp.hpp>
 #include <lbann/utils/serialize.hpp>
+#include <h2/patterns/multimethods/SwitchDispatcher.hpp>
 
 // Use-cases:
 // 1. Checkpoint

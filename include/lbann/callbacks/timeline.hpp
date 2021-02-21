@@ -31,8 +31,6 @@
 
 #include "lbann/callbacks/callback.hpp"
 
-#include <cereal/types/unordered_map.hpp>
-#include <cereal/types/vector.hpp>
 #include <unordered_map>
 #include <vector>
 
@@ -77,19 +75,7 @@ class timeline : public callback_base {
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar) {
-    ar(::cereal::make_nvp(
-         "BaseCallback",
-         ::cereal::base_class<callback_base>(this)),
-       CEREAL_NVP(m_outdir),
-       CEREAL_NVP(m_start_time),
-       CEREAL_NVP(m_fp_start_time),
-       CEREAL_NVP(m_bp_start_time),
-       CEREAL_NVP(m_opt_start_time),
-       CEREAL_NVP(m_fp_times),
-       CEREAL_NVP(m_bp_times),
-       CEREAL_NVP(m_opt_times));
-  }
+  template <class Archive> void serialize(Archive & ar);
 
   ///@}
 

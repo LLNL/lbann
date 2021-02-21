@@ -32,6 +32,7 @@
 #include "lbann/weights/data_type_weights.hpp"
 #include "lbann/models/directed_acyclic_graph.hpp"
 #include "lbann/utils/file_utils.hpp"
+#include "lbann/utils/serialize.hpp"
 
 #include <callbacks.pb.h>
 #include <model.pb.h>
@@ -170,6 +171,14 @@ bool load_model_weights(const std::string& ckpt_dir, model& m)
 
 namespace callback {
 
+template <class Archive>
+void load_model::serialize(Archive & ar) {
+  ar(cereal::base_class<callback_base>(this),
+     CEREAL_NVP(m_dirs),
+     CEREAL_NVP(m_extension),
+     CEREAL_NVP(m_loaded));
+}
+
 void load_model::on_train_begin(model *m) {
   if(!m_loaded) {
     for (const auto& d : m_dirs) {
@@ -209,3 +218,6 @@ build_load_model_callback_from_pbuf(
 
 } // namespace callback
 } // namespace lbann
+
+#define LBANN_CLASS_NAME callback::load_model
+#include <lbann/macros/register_class_with_cereal.hpp>

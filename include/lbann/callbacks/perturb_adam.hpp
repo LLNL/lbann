@@ -30,7 +30,6 @@
 #include "lbann/callbacks/callback.hpp"
 #include "lbann/optimizers/adam.hpp"
 
-#include <cereal/types/set.hpp>
 #include <set>
 
 namespace lbann {
@@ -87,17 +86,7 @@ public:
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar) {
-    ar(::cereal::make_nvp(
-         "BaseCallback",
-         ::cereal::base_class<callback_base>(this)),
-       CEREAL_NVP(m_learning_rate_factor),
-       CEREAL_NVP(m_beta1_factor),
-       CEREAL_NVP(m_beta2_factor),
-       CEREAL_NVP(m_eps_factor),
-       CEREAL_NVP(m_perturb_during_training),
-       CEREAL_NVP(m_weights_names));
-  }
+  template <class Archive> void serialize(Archive & ar);
 
   ///@}
 

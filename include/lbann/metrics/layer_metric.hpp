@@ -48,13 +48,7 @@ class layer_metric : public metric {
   std::string get_unit() const override { return m_unit; }
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize( Archive & ar ) {
-    ar(::cereal::make_nvp("Metric",
-                          ::cereal::base_class<metric>(this)),
-       CEREAL_NVP(m_name),
-       CEREAL_NVP(m_unit),
-       CEREAL_NVP(m_layer));
-  }
+  template <class Archive> void serialize( Archive & ar );
 
   /** Set corresponding layer. */
   void set_layer(ViewingLayerPtr l);
@@ -108,7 +102,5 @@ class layer_metric : public metric {
 };
 
 }  // namespace lbann
-
-CEREAL_REGISTER_TYPE(lbann::layer_metric);
 
 #endif  // LBANN_METRIC_LAYER_METRIC_HPP

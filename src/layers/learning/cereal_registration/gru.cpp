@@ -23,26 +23,26 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
+#include "lbann/utils/serialize.hpp"
 #include <lbann/layers/learning/gru.hpp>
-#include <cereal/types/polymorphic.hpp>
 
-#ifdef LBANN_GRU_LAYER_GPU_SUPPORTED
+namespace lbann {
+
+// Template implementation
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+template <typename ArchiveT>
+void
+gru_layer<TensorDataType,Layout,Device>
+::serialize(ArchiveT& ar)
+{
+  using DataTypeLayer = data_type_layer<TensorDataType>;
+  ar(::cereal::make_nvp("DataTypeLayer",
+                        ::cereal::base_class<DataTypeLayer>(this)),
+     CEREAL_NVP(m_hidden_size),
+     CEREAL_NVP(m_num_layers));
+}
+
+} // namespace lbann
+
 #define LBANN_LAYER_NAME gru_layer
-#define LBANN_COMMA ,
-#define LBANN_REGISTER_LAYER_WITH_CEREAL_BASE(NAME, TYPE, LAYOUT, DEVICE) \
-  CEREAL_REGISTER_TYPE_WITH_NAME(                                       \
-    ::lbann::NAME<TYPE LBANN_COMMA ::lbann::data_layout::LAYOUT LBANN_COMMA DEVICE>, \
-    #NAME "(" #TYPE "," #LAYOUT "," #DEVICE ")")
-
-#define LBANN_REGISTER_LAYER_WITH_CEREAL(NAME, TYPE, DEVICE)            \
-  LBANN_REGISTER_LAYER_WITH_CEREAL_BASE(                                \
-    NAME, TYPE, DATA_PARALLEL, DEVICE);
-
-#define PROTO_DEVICE(T, D)                              \
-  LBANN_REGISTER_LAYER_WITH_CEREAL(LBANN_LAYER_NAME, T, D)
-
-#ifdef LBANN_HAS_GPU
-PROTO_DEVICE(float, El::Device::GPU)
-PROTO_DEVICE(double, El::Device::GPU)
-#endif // LBANN_HAS_GPU
-#endif // LBANN_GRU_LAYER_GPU_SUPPORTED
+#include <lbann/macros/register_layer_with_cereal_data_parallel_gpu_only.hpp>

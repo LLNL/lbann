@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_LAYER_NORM_LAYER_INSTANTIATE
+#include "lbann/comm_impl.hpp"
 #include "lbann/layers/regularizers/layer_norm.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
 

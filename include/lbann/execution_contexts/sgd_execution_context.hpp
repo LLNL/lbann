@@ -28,7 +28,6 @@
 #define LBANN_SGD_EXECUTION_CONTEXT_HPP
 
 #include "lbann/execution_contexts/execution_context.hpp"
-#include "lbann/utils/serialize.hpp"
 
 namespace lbann {
 
@@ -45,8 +44,10 @@ public:
 class sgd_execution_context final : public execution_context {
 public:
   /** Constructor. */
-  sgd_execution_context(trainer& trainer, training_algorithm& training_alg,
-                        lbann_comm *comm, execution_mode mode, size_t mini_batch_size);
+  sgd_execution_context(trainer& trainer,
+                        training_algorithm& training_alg,
+                        execution_mode mode,
+                        size_t mini_batch_size);
   /** Destructor. */
   virtual ~sgd_execution_context() = default;
 
@@ -64,12 +65,7 @@ public:
   }
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize( Archive & ar ) {
-    ar(cereal::base_class<execution_context>( this ),
-       CEREAL_NVP(m_epoch),
-       CEREAL_NVP(m_current_mini_batch_size),
-       CEREAL_NVP(m_effective_mini_batch_size));
-  }
+  template <class Archive> void serialize( Archive & ar );
 
   /** @brief Return the state of the execution context as a string */
   std::string get_state_string() const noexcept override {
@@ -109,6 +105,10 @@ public:
   void load_from_checkpoint_shared(persist& p) override;
   void save_to_checkpoint_distributed(persist& p) override;
   void load_from_checkpoint_distributed(persist& p) override;
+
+private:
+  friend class cereal::access;
+  sgd_execution_context() = default;
 
 private:
   /** Number of times the training data set has been traversed. */

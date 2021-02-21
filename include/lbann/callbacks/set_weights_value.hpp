@@ -59,14 +59,7 @@ class set_weights_value : public callback_base {
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar) {
-    ar(::cereal::make_nvp(
-         "BaseCallback",
-         ::cereal::base_class<callback_base>(this)),
-       CEREAL_NVP(m_weights_name),
-       CEREAL_NVP(m_value),
-       CEREAL_NVP(m_step));
-  }
+  template <class Archive> void serialize(Archive & ar);
 
   ///@}
 

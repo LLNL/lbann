@@ -27,9 +27,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
+#include "lbann/comm_impl.hpp"
 #include "lbann/callbacks/checkpoint.hpp"
 
 #include "lbann/models/model.hpp"
+#include "lbann/utils/serialize.hpp"
 
 #include <callbacks.pb.h>
 

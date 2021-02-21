@@ -23,20 +23,24 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
-
-#include <cereal/types/polymorphic.hpp>
+#include "lbann/utils/serialize.hpp"
 #include <lbann/layers/io/input_layer.hpp>
 
-#define LBANN_COMMA ,
-#define LBANN_REGISTER_LAYER_WITH_CEREAL_BASE(TYPE, LAYOUT, DEVICE) \
-  CEREAL_REGISTER_TYPE_WITH_NAME(                                       \
-    ::lbann::input_layer<TYPE LBANN_COMMA ::lbann::data_layout::LAYOUT LBANN_COMMA DEVICE>, \
-    "input_layer(" #TYPE "," #LAYOUT "," #DEVICE ")")
+namespace lbann {
 
-#define LBANN_REGISTER_LAYER_WITH_CEREAL(TYPE, DEVICE)                  \
-  LBANN_REGISTER_LAYER_WITH_CEREAL_BASE(                                \
-    TYPE, DATA_PARALLEL, DEVICE)
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+template <typename ArchiveT>
+void
+input_layer<TensorDataType,Layout,Device>
+::serialize(ArchiveT& ar)
+{
+  using DataTypeLayer = data_type_layer<TensorDataType>;
+  ar(::cereal::make_nvp("DataTypeLayer",
+                        ::cereal::base_class<DataTypeLayer>(this)),
+     CEREAL_NVP(m_data_reader_mode));
+}
 
-#define PROTO_DEVICE(T, D)                              \
-  LBANN_REGISTER_LAYER_WITH_CEREAL(T, D)
-#include <lbann/macros/instantiate_device.hpp>
+} // namespace lbann
+
+#define LBANN_LAYER_NAME input_layer
+#include <lbann/macros/register_layer_with_cereal_data_parallel_only.hpp>

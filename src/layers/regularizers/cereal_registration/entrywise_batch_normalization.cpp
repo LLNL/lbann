@@ -23,28 +23,46 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
+#include "lbann/utils/serialize.hpp"
 #include <lbann/layers/regularizers/entrywise_batch_normalization.hpp>
-#include <cereal/types/polymorphic.hpp>
 
-#define LBANN_LAYER_NAME entrywise_batch_normalization_layer
+namespace lbann {
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+template <typename ArchiveT>
+void
+entrywise_batch_normalization_layer<TensorDataType,Layout,Device>
+::serialize(ArchiveT& ar)
+{
+  using DataTypeLayer = data_type_layer<TensorDataType>;
+  ar(::cereal::make_nvp("DataTypeLayer",
+                        ::cereal::base_class<DataTypeLayer>(this)),
+     CEREAL_NVP(m_decay),
+     CEREAL_NVP(m_epsilon));
+}
+
+} // namespace lbann
+
+// In this case, we want to exclude FP16 types, so we must handle
+// registration manually.
+#include "lbann/macros/common_cereal_registration.hpp"
 #define LBANN_COMMA ,
-#define LBANN_REGISTER_LAYER_WITH_CEREAL_BASE(NAME, TYPE, LAYOUT, DEVICE) \
+#define PROTO_DEVICE(T, D)                                              \
+  LBANN_ADD_ALL_SERIALIZE_ETI(                                          \
+    ::lbann::entrywise_batch_normalization_layer<T,::lbann::data_layout::DATA_PARALLEL,D>); \
   CEREAL_REGISTER_TYPE_WITH_NAME(                                       \
-    ::lbann::NAME<TYPE LBANN_COMMA ::lbann::data_layout::LAYOUT LBANN_COMMA DEVICE>, \
-    #NAME "(" #TYPE "," #LAYOUT "," #DEVICE ")")
+    ::lbann::entrywise_batch_normalization_layer<T LBANN_COMMA ::lbann::data_layout::DATA_PARALLEL LBANN_COMMA D>, \
+    "entrywise_batch_normalization_layer(" #T ",DATA_PARALLEL," #D ")")
 
-#define LBANN_REGISTER_LAYER_WITH_CEREAL(NAME, TYPE, DEVICE)            \
-  LBANN_REGISTER_LAYER_WITH_CEREAL_BASE(                                \
-    NAME, TYPE, DATA_PARALLEL, DEVICE);                                 \
-  LBANN_REGISTER_LAYER_WITH_CEREAL_BASE(                                \
-    NAME, TYPE, MODEL_PARALLEL, DEVICE);
-
-#define PROTO_DEVICE(T, D)                              \
-  LBANN_REGISTER_LAYER_WITH_CEREAL(LBANN_LAYER_NAME, T, D)
-
-PROTO_DEVICE(float, El::Device::CPU)
-PROTO_DEVICE(double, El::Device::CPU)
+#define PROTO_CPU(T) PROTO_DEVICE(T,El::Device::CPU)
 #ifdef LBANN_HAS_GPU
-PROTO_DEVICE(float, El::Device::GPU)
-PROTO_DEVICE(double, El::Device::GPU)
-#endif // LBANN_HAS_GPU
+#define PROTO_GPU(T) PROTO_DEVICE(T,El::Device::GPU)
+#else
+#define PROTO_GPU(T)
+#endif
+
+#define PROTO(T) \
+  PROTO_CPU(T);  \
+  PROTO_GPU(T)
+
+#include "lbann/macros/instantiate.hpp"

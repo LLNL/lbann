@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/comm_impl.hpp"
 #include "lbann/callbacks/ltfb.hpp"
 #include "lbann/utils/random_number_generators.hpp"
 #include "lbann/models/directed_acyclic_graph.hpp"
@@ -32,9 +33,9 @@
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/weights/data_type_weights.hpp"
 #include "lbann/data_coordinator/data_coordinator.hpp"
-
-#include <lbann/utils/cloneable.hpp>
-#include <lbann/utils/memory.hpp>
+#include "lbann/utils/cloneable.hpp"
+#include "lbann/utils/memory.hpp"
+#include "lbann/utils/serialize.hpp"
 
 #include <callbacks.pb.h>
 

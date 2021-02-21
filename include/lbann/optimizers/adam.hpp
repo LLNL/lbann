@@ -30,8 +30,6 @@
 #include "lbann/optimizers/data_type_optimizer.hpp"
 #include "lbann/io/persist.hpp"
 #include <optimizers.pb.h>
-#include <cereal/types/base_class.hpp>
-//#include <cereal/types/utility.hpp>
 
 namespace lbann {
 namespace callback {
@@ -79,16 +77,8 @@ public:
   ~adam() = default;
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar) {
-    ar(cereal::base_class<data_type_optimizer<TensorDataType>>(this),
-       CEREAL_NVP(m_beta1),
-       CEREAL_NVP(m_beta2),
-       CEREAL_NVP(m_eps),
-       CEREAL_NVP(m_current_beta1),
-       CEREAL_NVP(m_current_beta2),
-       CEREAL_NVP(m_moment1),
-       CEREAL_NVP(m_moment2));
-  }
+  template <class Archive> void serialize(Archive & ar);
+
   ///@}
 
   /** @name Descriptions */

@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/comm_impl.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/callbacks/callback.hpp"
@@ -39,9 +40,8 @@
 #include "lbann/utils/omp_diagnostics.hpp"
 #include "lbann/utils/description.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
-
-#include <cereal/types/base_class.hpp>
-#include <cereal/types/polymorphic.hpp>
+#include "lbann/utils/serialize.hpp"
+#include "lbann/utils/summary_impl.hpp"
 
 #include <model.pb.h>
 #include <optimizers.pb.h>
@@ -186,6 +186,30 @@ model& model::operator=(const model& other) {
   remap_pointers(layer_map, weights_map);
 
   return *this;
+}
+
+template <class Archive>
+void model::serialize(Archive & ar) {
+  ar(
+    //CEREAL_NVP(m_execution_context),
+    CEREAL_NVP(m_name),
+    //CEREAL_NVP(m_comm),
+    CEREAL_NVP(m_layers),
+    CEREAL_NVP(m_weights),
+    //CEREAL_NVP(m_default_optimizer_msg),
+    CEREAL_NVP(m_objective_function),
+    CEREAL_NVP(m_metrics),
+    //CEREAL_NVP(m_callbacks),
+    CEREAL_NVP(m_background_io_allowed)
+    //CEREAL_NVP(m_model_is_setup)
+#ifdef LBANN_HAS_DISTCONV
+    , CEREAL_NVP(m_max_mini_batch_size_distconv)
+#endif // LBANN_HAS_DISTCONV
+     );
+
+  ar.serializeDeferments();
+  if constexpr (utils::IsInputArchive<Archive>)
+    m_model_is_setup = false;
 }
 
 // =============================================
@@ -1484,3 +1508,6 @@ void model::print_distributions() const {
 #endif // LBANN_HAS_DISTCONV
 
 }  // namespace lbann
+
+#define LBANN_CLASS_NAME model
+#include <lbann/macros/register_class_with_cereal.hpp>

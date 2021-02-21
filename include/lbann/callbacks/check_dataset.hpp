@@ -29,7 +29,6 @@
 
 #include "lbann/callbacks/callback.hpp"
 
-#include <cereal/types/set.hpp>
 #include <set>
 
 namespace lbann {
@@ -67,15 +66,7 @@ class check_dataset : public callback_base {
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar) {
-    ar(::cereal::make_nvp(
-         "BaseCallback",
-         ::cereal::base_class<callback_base>(this)),
-       CEREAL_NVP(m_basename),
-       CEREAL_NVP(training_set),
-       CEREAL_NVP(validation_set),
-       CEREAL_NVP(testing_set));
-  }
+  template <class Archive> void serialize(Archive & ar);
 
   ///@}
 

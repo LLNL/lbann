@@ -31,9 +31,9 @@
 #include "lbann/callbacks/summarize_images.hpp"
 #include "lbann/layers/io/input_layer.hpp"
 
-#include <lbann/proto/helpers.hpp>
-#include <lbann/utils/factory.hpp>
-#include <lbann/utils/summary.hpp>
+#include "lbann/proto/helpers.hpp"
+#include "lbann/utils/factory.hpp"
+#include "lbann/utils/summary_impl.hpp"
 
 #include <callbacks.pb.h>
 

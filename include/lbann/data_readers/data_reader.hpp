@@ -47,9 +47,6 @@
 #include <vector>
 #include <unistd.h>
 #include <unordered_set>
-#include <cereal/types/utility.hpp>
-#include <cereal/types/unordered_map.hpp>
-#include <cereal/types/vector.hpp>
 
 #define NOT_IMPLEMENTED(n) { \
   std::stringstream s; \
@@ -120,12 +117,7 @@ class generic_data_reader {
   virtual generic_data_reader* copy() const = 0;
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize( Archive & ar ) {
-    ar(CEREAL_NVP(m_current_mini_batch_idx),
-       CEREAL_NVP(m_current_pos),
-       CEREAL_NVP(m_shuffled_indices),
-       CEREAL_NVP(m_supported_input_types));
-  }
+  template <class Archive> void serialize( Archive & ar );
 
   /// set the comm object
   void set_comm(lbann_comm *comm) {

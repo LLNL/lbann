@@ -34,14 +34,17 @@
 #include <cereal/details/traits.hpp>
 
 #include <cereal/types/base_class.hpp>
-#include <cereal/types/map.hpp>
+#include <cereal/types/map.hpp>  // Not sure that we need this
 #include <cereal/types/polymorphic.hpp>
+#include <cereal/types/set.hpp> // Only used by small number of classes
+#include <cereal/types/unordered_set.hpp> // Only used by small number of classes
 #include <cereal/types/string.hpp>
 #include <cereal/types/unordered_map.hpp>
 #include <cereal/types/utility.hpp>
 #include <cereal/types/vector.hpp>
 
-#include <lbann/utils/h2_tmp.hpp>
+#include <h2/meta/Core.hpp>
+#include <h2/meta/TypeList.hpp>
 
 #if !(defined __CUDACC__)
 namespace lbann

@@ -27,6 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_cifar10.hpp"
+#include "lbann/data_readers/sample_list_impl.hpp"
 
 namespace lbann {
 

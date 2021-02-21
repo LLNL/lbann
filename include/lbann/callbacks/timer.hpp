@@ -29,8 +29,6 @@
 
 #include "lbann/callbacks/callback.hpp"
 
-#include <cereal/types/map.hpp>
-#include <cereal/types/vector.hpp>
 #include <chrono>
 #include <map>
 #include <vector>
@@ -82,15 +80,7 @@ public:
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar) {
-    ar(::cereal::make_nvp(
-         "BaseCallback",
-         ::cereal::base_class<callback_base>(this)),
-       CEREAL_NVP(m_start_times),
-       CEREAL_NVP(m_batch_start_times),
-       CEREAL_NVP(m_batch_times));
-    /// @todo Consider what to do with m_summarizer (preferably remove)
-  }
+  template <class Archive> void serialize(Archive & ar);
 
   ///@}
 

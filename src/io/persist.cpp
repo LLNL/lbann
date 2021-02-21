@@ -33,6 +33,7 @@
 
 #define LBANN_PERSIST_INSTANTIATE
 #include "lbann/io/persist.hpp"
+#include "lbann/io/persist_impl.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/io/file_io.hpp"
 

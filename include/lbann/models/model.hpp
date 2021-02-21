@@ -42,7 +42,6 @@
 #include "lbann/proto/factories.hpp"
 #include "lbann/weights/weights.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
-#include <cereal/types/utility.hpp>
 
 // Note (trb): There's what is, IMO, an STL error in GCC in which the
 // dtor for unique_ptr is checking sizeof(T), so this must be a
@@ -84,30 +83,7 @@ public:
   virtual std::unique_ptr<model> copy_model() const = 0;
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar) {
-    ar(
-      //CEREAL_NVP(m_execution_context),
-      CEREAL_NVP(m_name),
-      //CEREAL_NVP(m_comm),
-      CEREAL_NVP(m_layers),
-      CEREAL_NVP(m_weights),
-      //CEREAL_NVP(m_default_optimizer_msg),
-      CEREAL_NVP(m_objective_function),
-      CEREAL_NVP(m_metrics),
-      //CEREAL_NVP(m_callbacks),
-      CEREAL_NVP(m_background_io_allowed)
-      //CEREAL_NVP(m_model_is_setup)
-#ifdef LBANN_HAS_DISTCONV
-      , CEREAL_NVP(m_max_mini_batch_size_distconv)
-#endif // LBANN_HAS_DISTCONV
-      );
-
-    ar.serializeDeferments();
-#ifndef __CUDACC__
-    if constexpr (utils::IsInputArchive<Archive>)
-      m_model_is_setup = false;
-#endif // __CUDACC__
-  }
+  template <class Archive> void serialize(Archive & ar);
 
   // ===========================================
   // Access functions

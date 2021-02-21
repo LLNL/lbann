@@ -25,11 +25,20 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/objective_functions/layer_term.hpp"
+#include "lbann/utils/serialize.hpp"
 
 namespace lbann {
 
 layer_term::layer_term(EvalType scale_factor)
   : objective_function_term(scale_factor) {}
+
+template <typename ArchiveT>
+void layer_term::serialize(ArchiveT& ar)
+{
+  ar(::cereal::make_nvp(
+       "ObjectiveFunctionTerm",
+       ::cereal::base_class<objective_function_term>(this)));
+}
 
 void layer_term::set_layer(ViewingLayerPtr l) {
   std::vector<ViewingLayerPtr> ptrs;
@@ -88,3 +97,6 @@ void layer_term::differentiate() {
 }
 
 }  // namespace lbann
+
+#define LBANN_CLASS_NAME layer_term
+#include <lbann/macros/register_class_with_cereal.hpp>

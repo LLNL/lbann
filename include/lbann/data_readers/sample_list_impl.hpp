@@ -1,3 +1,32 @@
+////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
+// Written by the LBANN Research Team (B. Van Essen, et al.) listed in
+// the CONTRIBUTORS file. <lbann-dev@llnl.gov>
+//
+// LLNL-CODE-697807.
+// All rights reserved.
+//
+// This file is part of LBANN: Livermore Big Artificial Neural Network
+// Toolkit. For details, see http://software.llnl.gov/LBANN or
+// https://github.com/LLNL/LBANN.
+//
+// Licensed under the Apache License, Version 2.0 (the "Licensee"); you
+// may not use this file except in compliance with the License.  You may
+// obtain a copy of the License at:
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the license.
+////////////////////////////////////////////////////////////////////////////////
+
+#ifndef LBANN_DATA_READERS_SAMPLE_LIST_IMPL_HPP
+#define LBANN_DATA_READERS_SAMPLE_LIST_IMPL_HPP
+
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -6,9 +35,6 @@
 #include <unordered_set>
 #include <algorithm>
 #include <locale>
-#include "lbann/utils/exception.hpp"
-#include "lbann/utils/file_utils.hpp"
-#include "lbann/utils/serialize.hpp"
 #include <deque>
 #include <unordered_set>
 #include <memory>
@@ -17,6 +43,16 @@
 #include <algorithm>
 
 #include <unistd.h>
+
+#include "lbann/comm_impl.hpp"
+#include "lbann/data_readers/sample_list.hpp"
+#include "lbann/utils/exception.hpp"
+#include "lbann/utils/file_utils.hpp"
+#include "lbann/utils/serialize.hpp"
+
+// Add cereal files not included in lbann/utils/serialize.hpp
+#include <cereal/types/deque.hpp>
+#include <cereal/types/tuple.hpp>
 
 namespace lbann {
 
@@ -80,6 +116,19 @@ inline sample_list_header::sample_list_header()
   : m_is_multi_sample(false), m_is_exclusive(false), m_no_label_header(false),
     m_included_sample_count(0u), m_excluded_sample_count(0u), m_num_files(0u),
     m_file_dir(""), m_sample_list_name(""), m_label_filename("") {
+}
+
+template <class Archive>
+void sample_list_header::serialize( Archive & ar ) {
+  ar(m_is_multi_sample,
+     m_is_exclusive,
+     m_no_label_header,
+     m_included_sample_count,
+     m_excluded_sample_count,
+     m_num_files,
+     m_file_dir,
+     m_sample_list_name,
+     m_label_filename);
 }
 
 inline void sample_list_header::set_sample_list_type(const std::string& line1) {
@@ -181,17 +230,16 @@ inline const std::string& sample_list_header::get_label_filename() const {
 //------------------
 
 template <typename sample_name_t>
-inline sample_list<sample_name_t>::sample_list()
+sample_list<sample_name_t>::sample_list()
 : m_stride(1ul), m_keep_order(true), m_check_data_file(false) {
 }
 
 template <typename sample_name_t>
-inline sample_list<sample_name_t>::~sample_list() {
+sample_list<sample_name_t>::~sample_list() {
 }
 
 template <typename sample_name_t>
-inline sample_list<sample_name_t>
-::sample_list(const sample_list& rhs) {
+sample_list<sample_name_t>::sample_list(const sample_list& rhs) {
   copy_members(rhs);
 }
 
@@ -945,3 +993,5 @@ inline void sample_list<sample_name_t>
 }
 
 } // end of namespace lbann
+
+#endif // LBANN_DATA_READERS_SAMPLE_LIST_IMPL_HPP

@@ -24,13 +24,17 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/comm_impl.hpp"
 #include "lbann/data_coordinator/buffered_data_coordinator.hpp"
+#include "lbann/data_coordinator/buffered_data_coordinator_impl.hpp"
+#include "lbann/data_coordinator/io_data_buffer_impl.hpp"
 #include "lbann/data_readers/utils/input_data_type.hpp"
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/profiling.hpp"
 #include "lbann/utils/distconv.hpp"
 #include "lbann/utils/serialize.hpp"
+#include "lbann/io/persist_impl.hpp"
 
 namespace lbann {
 

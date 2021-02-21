@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <lbann/utils/serialization/serialize_matrices.hpp>
+#include <lbann/utils/serialization/serialize_matrices_impl.hpp>
 #include "common.hpp"
 
 // Enumerate valid DistMatrix permutations and add Matrix.

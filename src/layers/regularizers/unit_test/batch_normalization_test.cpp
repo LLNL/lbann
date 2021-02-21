@@ -31,9 +31,10 @@
 
 #include <lbann/base.hpp>
 #include <lbann/layers/regularizers/batch_normalization.hpp>
-#include <lbann/utils/h2_tmp.hpp>
+
 #include <lbann/utils/memory.hpp>
 #include <lbann/utils/serialize.hpp>
+#include <h2/patterns/multimethods/SwitchDispatcher.hpp>
 
 // Some convenience typedefs
 

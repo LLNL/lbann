@@ -32,8 +32,6 @@
 #include "lbann/layers/layer.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/io/persist.hpp"
-#include <cereal/types/base_class.hpp>
-#include <cereal/types/map.hpp>
 
 namespace lbann {
 
@@ -60,10 +58,7 @@ struct metric_statistics {
   ~metric_statistics() = default;
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize( Archive & ar ) {
-    ar(CEREAL_NVP(m_sum),
-       CEREAL_NVP(m_num_samples));
-  }
+  template <class Archive> void serialize( Archive & ar );
 
   /** Add metric value to statistics. */
   void add_value(EvalType value, int num_samples = 1);
@@ -99,9 +94,7 @@ class metric {
   virtual metric* copy() const = 0;
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize( Archive & ar ) {
-    ar(CEREAL_NVP(m_statistics));
-  }
+  template <class Archive> void serialize( Archive & ar );
 
   /** Return a string name for this metric. */
   virtual std::string name() const = 0;

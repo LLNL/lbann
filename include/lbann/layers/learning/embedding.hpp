@@ -202,20 +202,6 @@ description embedding_layer<TensorDataType,Layout,Device>::get_description() con
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-template <typename ArchiveT>
-void
-embedding_layer<TensorDataType,Layout,Device>
-::serialize(ArchiveT& ar)
-{
-  using DataTypeLayer = data_type_layer<TensorDataType>;
-  ar(::cereal::make_nvp("DataTypeLayer",
-                        ::cereal::base_class<DataTypeLayer>(this)),
-     CEREAL_NVP(m_num_embeddings),
-     CEREAL_NVP(m_embedding_dim),
-     CEREAL_NVP(m_padding_idx));
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
 void embedding_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& dr_metadata) {
   data_type_layer<TensorDataType>::setup_dims(dr_metadata);
   auto dims = this->get_input_dims();

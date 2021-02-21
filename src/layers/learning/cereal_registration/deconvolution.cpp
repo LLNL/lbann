@@ -23,8 +23,23 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
+#include "lbann/utils/serialize.hpp"
 #include <lbann/layers/learning/deconvolution.hpp>
-#include <cereal/types/polymorphic.hpp>
+
+namespace lbann {
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+template <typename ArchiveT>
+void
+deconvolution_layer<TensorDataType,Layout,Device>
+::serialize(ArchiveT& ar)
+{
+  using BaseConvolutionLayer = base_convolution_layer<TensorDataType, Device>;
+  ar(::cereal::make_nvp("BaseConvolutionLayer",
+                        ::cereal::base_class<BaseConvolutionLayer>(this)));
+}
+
+} // namespace lbann
 
 #define LBANN_LAYER_NAME deconvolution_layer
 #include <lbann/macros/register_layer_with_cereal_data_parallel_only.hpp>

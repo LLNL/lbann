@@ -76,13 +76,7 @@ public:
 
   /** @brief Serialize to the archive. */
   template <class ArchiveT>
-  void serialize(ArchiveT & ar)
-  {
-    ar(::cereal::base_class<data_type_optimizer<TensorDataType>>(this),
-       CEREAL_NVP(m_momentum),
-       CEREAL_NVP(m_nesterov),
-       CEREAL_NVP(m_velocity));
-  }
+  void serialize(ArchiveT & ar);
 
   ///@}
   /** @name Descriptions */

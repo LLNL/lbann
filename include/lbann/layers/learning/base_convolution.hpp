@@ -180,20 +180,7 @@ public:
   ///@{
 
   template <typename ArchiveT>
-  void serialize(ArchiveT& ar)
-  {
-    using DataTypeLayer = data_type_layer<TensorDataType>;
-    ar(::cereal::make_nvp("DataTypeLayer",
-                          ::cereal::base_class<DataTypeLayer>(this)),
-       CEREAL_NVP(m_output_channels),
-       CEREAL_NVP(m_conv_dims),
-       CEREAL_NVP(m_pads),
-       CEREAL_NVP(m_strides),
-       CEREAL_NVP(m_dilations),
-       CEREAL_NVP(m_groups),
-       CEREAL_NVP(m_bias_scaling_factor));
-    /// @todo Consider serializing m_convolution_math_type
-  }
+  void serialize(ArchiveT& ar);
 
   ///@}
 

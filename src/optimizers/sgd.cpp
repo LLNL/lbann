@@ -24,7 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/optimizers/sgd.hpp"
+#include "lbann/optimizers/sgd_impl.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
 
@@ -190,9 +190,5 @@ build_sgd_optimizer_from_pbuf(
 #include "lbann/macros/instantiate.hpp"
 } // namespace lbann
 
-#undef PROTO
-#define PROTO(T)                                                \
-  CEREAL_REGISTER_TYPE_WITH_NAME(lbann::sgd<T>, "sgd(" #T ")")
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
-#include "lbann/macros/instantiate.hpp"
+#define LBANN_CLASS_NAME sgd
+#include <lbann/macros/register_template_class_with_cereal.hpp>

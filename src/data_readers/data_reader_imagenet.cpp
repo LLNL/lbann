@@ -27,6 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_imagenet.hpp"
+#include "lbann/data_readers/sample_list_impl.hpp"
 #include "lbann/utils/image.hpp"
 #include "lbann/utils/file_utils.hpp"
 

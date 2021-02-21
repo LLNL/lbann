@@ -85,13 +85,7 @@ class debug_io : public callback_base {
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar) {
-    ar(::cereal::make_nvp(
-         "BaseCallback",
-         ::cereal::base_class<callback_base>(this)),
-       CEREAL_NVP(m_debug_phase),
-       CEREAL_NVP(m_debug_lvl));
-  }
+  template <class Archive> void serialize(Archive & ar);
 
   ///@}
 

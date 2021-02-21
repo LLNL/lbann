@@ -30,8 +30,8 @@
 #include "lbann/layers/layer.hpp"
 #include "lbann/weights/weights_proxy.hpp"
 
-#include "lbann/utils/h2_tmp.hpp"
-#include "lbann/utils/serialize.hpp"
+#include <h2/meta/Core.hpp>
+#include <h2/meta/TypeList.hpp>
 
 #ifdef LBANN_HAS_DISTCONV
 #include "lbann/layers/data_type_distconv_adapter.hpp"
@@ -39,6 +39,11 @@
 #include <map>
 #include <array>
 #endif // LBANN_HAS_DISTCONV
+
+namespace cereal
+{
+  class access;
+}// namespace cereal
 
 namespace lbann {
 
@@ -148,18 +153,7 @@ public:
   ///@{
 
   template <typename ArchiveT>
-  void serialize(ArchiveT& ar)
-  {
-    ar(::cereal::make_nvp("BaseLayer",
-                          ::cereal::base_class<Layer>(this)),
-       CEREAL_NVP(m_persistent_error_signals));
-    // Members not serialized:
-    //   m_weights_proxy
-    //   m_inputs
-    //   m_outputs
-    //   m_gradient_wrt_outputs
-    //   m_gradient_wrt_inputs;
-  }
+  void serialize(ArchiveT& ar);
 
   ///@}
 
@@ -411,19 +405,5 @@ private:
 #endif // LBANN_DATA_TYPE_LAYER_INSTANTIATE
 
 } // namespace lbann
-
-#ifndef LBANN_DATA_TYPE_LAYER_INSTANTIATE
-#define PROTO(T)                                                        \
-  extern template class ::cereal::detail::PolymorphicVirtualCaster<     \
-    lbann::Layer, lbann::data_type_layer<T>>
-
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
-#include "lbann/macros/instantiate.hpp"
-#undef PROTO
-#undef LBANN_INSTANTIATE_CPU_HALF
-#undef LBANN_INSTANTIATE_GPU_HALF
-
-#endif // LBANN_DATA_TYPE_LAYER_INSTANTIATE
 
 #endif // LBANN_LAYERS_DATA_TYPE_LAYER_HPP_INCLUDED

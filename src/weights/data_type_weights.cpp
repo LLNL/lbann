@@ -25,7 +25,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_DATA_TYPE_WEIGHTS_INSTANTIATE
+#include "lbann/comm_impl.hpp"
 #include "lbann/weights/data_type_weights.hpp"
+#include "lbann/weights/data_type_weights_impl.hpp"
 #include "lbann/optimizers/optimizer.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/io/file_io.hpp"
@@ -450,9 +452,11 @@ void data_type_weights<TensorDataType>::do_steal_values_(weights& other)
 }  // namespace lbann
 
 #define PROTO(T)                                                        \
-  template class lbann::data_type_weights<T>;                           \
-  CEREAL_REGISTER_TYPE_WITH_NAME(lbann::data_type_weights<T>, "dtw(" #T ")")
+  template class lbann::data_type_weights<T>
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
+
+#define LBANN_CLASS_NAME data_type_weights
+#include <lbann/macros/register_template_class_with_cereal.hpp>

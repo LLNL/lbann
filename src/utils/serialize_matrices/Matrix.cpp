@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <lbann/utils/serialization/serialize_matrices.hpp>
+#include <lbann/utils/serialization/serialize_matrices_impl.hpp>
 
 // Register types outside Cereal's namespace.
 #define LBANN_COMMA ,

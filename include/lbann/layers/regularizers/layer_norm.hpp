@@ -176,15 +176,6 @@ description layer_norm_layer<TensorDataType,Layout,Device>::get_description() co
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-template <typename ArchiveT>
-void layer_norm_layer<TensorDataType,Layout,Device>::serialize(ArchiveT& ar) {
-  using DataTypeLayer = data_type_layer<TensorDataType>;
-  ar(::cereal::make_nvp("DataTypeLayer",
-                        ::cereal::base_class<DataTypeLayer>(this)),
-     CEREAL_NVP(m_epsilon));
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
 void layer_norm_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& dr_metadata) {
   data_type_layer<TensorDataType>::setup_dims(dr_metadata);
   this->set_output_dims(this->get_input_dims());

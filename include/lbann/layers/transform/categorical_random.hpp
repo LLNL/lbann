@@ -60,12 +60,7 @@ class categorical_random_layer : public data_type_layer<TensorDataType> {
   ///@{
 
   template <typename ArchiveT>
-  void serialize(ArchiveT& ar)
-  {
-    using DataTypeLayer = data_type_layer<TensorDataType>;
-    ar(::cereal::make_nvp("DataTypeLayer",
-                          ::cereal::base_class<DataTypeLayer>(this)));
-  }
+  void serialize(ArchiveT& ar);
 
   ///@}
 

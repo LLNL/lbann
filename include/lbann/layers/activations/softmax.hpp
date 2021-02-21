@@ -160,15 +160,13 @@ public:
   template <typename U>
   friend void bp_compute_impl(softmax_layer<U, Layout, Device>& l);
 
+  /** @name Serialization */
+  ///@{
+
   template <typename ArchiveT>
-  void serialize(ArchiveT& ar)
-  {
-    using DataTypeLayer = data_type_layer<TensorDataType>;
-    ar(::cereal::make_nvp("DataTypeLayer",
-                          ::cereal::base_class<DataTypeLayer>(this)),
-       CEREAL_NVP(m_mode),
-       CEREAL_NVP(threshold_val));
-  }
+  void serialize(ArchiveT& ar);
+
+  ///@}
 
 private:
   /** @name DNN library stuff */

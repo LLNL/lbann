@@ -56,12 +56,7 @@ public:
   void compute_weight_regularization() override {};
 
   template <typename ArchiveT>
-  void serialize(ArchiveT& ar)
-  {
-    ar(::cereal::make_nvp(
-         "ObjectiveFunctionTerm",
-         ::cereal::base_class<objective_function_term>(this)));
-  }
+  void serialize(ArchiveT& ar);
 
 private:
 
@@ -71,7 +66,5 @@ private:
 };
 
 } // namespace lbann
-
-CEREAL_REGISTER_TYPE(lbann::layer_term);
 
 #endif // LBANN_OBJECTIVE_FUNCTION_LAYER_TERM_HPP_INCLUDED

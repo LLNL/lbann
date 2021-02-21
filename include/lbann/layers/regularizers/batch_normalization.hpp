@@ -234,15 +234,7 @@ public:
   ///@{
 
   template <typename ArchiveT>
-  void serialize(ArchiveT& ar)
-  {
-    using DataTypeLayer = data_type_layer<TensorDataType>;
-    ar(::cereal::make_nvp("DataTypeLayer",
-                          ::cereal::base_class<DataTypeLayer>(this)),
-       CEREAL_NVP(m_decay),
-       CEREAL_NVP(m_epsilon),
-       CEREAL_NVP(m_statistics_group_size));
-  }
+  void serialize(ArchiveT& ar);
 
   ///@}
 

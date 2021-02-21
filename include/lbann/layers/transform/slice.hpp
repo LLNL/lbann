@@ -63,19 +63,7 @@ public:
   ///@{
 
   template <typename ArchiveT>
-  void serialize(ArchiveT& ar)
-  {
-    using DataTypeLayer = data_type_layer<TensorDataType>;
-    ar(::cereal::make_nvp("DataTypeLayer",
-                          ::cereal::base_class<DataTypeLayer>(this)),
-       CEREAL_NVP(m_slice_dim),
-       CEREAL_NVP(m_slice_points),
-       CEREAL_NVP(m_set_slice_points_from_data_reader),
-       CEREAL_NVP(m_var_category));
-    // Members that aren't serialized
-    //   m_workspace;
-    //   m_workspace_event;
-  }
+  void serialize(ArchiveT& ar);
 
   ///@}
 

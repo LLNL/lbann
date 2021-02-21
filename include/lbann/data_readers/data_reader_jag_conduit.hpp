@@ -29,7 +29,7 @@
 
 #include "lbann_config.hpp"
 
-#include "data_reader.hpp"
+#include "lbann/data_readers/data_reader.hpp"
 #include "conduit/conduit.hpp"
 #include "hdf5.h"
 #include <string>

@@ -33,6 +33,7 @@
 
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/profiling.hpp"
+#include "lbann/utils/summary_impl.hpp"
 
 #include <callbacks.pb.h>
 
