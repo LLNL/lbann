@@ -116,19 +116,19 @@ option(LBANN_WITH_HWLOC
 option(LBANN_WITH_NVPROF
   "Enable NVTX-based instrumentation for nvprof" OFF)
 
-option(LBANN_WITH_PYTHON
+option(LBANN_WITH_PYTHON_FRONTEND
   "Install Python frontend and enable embedded Python" ON)
 
 option(LBANN_WITH_EMBEDDED_PYTHON
-  "Enable embedded Python" ${LBANN_WITH_PYTHON})
+  "Enable embedded Python" ON)
 
-if (LBANN_WITH_EMBEDDED_PYTHON AND NOT LBANN_WITH_PYTHON)
+if (LBANN_WITH_EMBEDDED_PYTHON AND NOT LBANN_WITH_PYTHON_FRONTEND)
   # (trb): This could also be an error.
   message(WARNING
-    "Interesting combination of LBANN_WITH_PYTHON "
+    "Interesting combination of NOT LBANN_WITH_PYTHON_FRONTEND "
     "and LBANN_WITH_EMBEDDED_PYTHON detected. This is just "
     "to make sure you're aware.")
-endif (LBANN_WITH_EMBEDDED_PYTHON AND NOT LBANN_WITH_PYTHON)
+endif (LBANN_WITH_EMBEDDED_PYTHON AND NOT LBANN_WITH_PYTHON_FRONTEND)
 
 option(LBANN_WITH_TBINF "Include Tensorboard interface" ON)
 
@@ -429,16 +429,18 @@ if (LBANN_WITH_TBINF)
 endif ()
 
 # Find Python
-if (LBANN_WITH_PYTHON OR LBANN_WITH_EMBEDDED_PYTHON)
+if (LBANN_WITH_PYTHON_FRONTEND OR LBANN_WITH_EMBEDDED_PYTHON)
   find_package(Python REQUIRED COMPONENTS Interpreter Development)
-  set(LBANN_HAS_PYTHON_FRONTEND "${Python_FOUND}")
+  if (LBANN_WITH_PYTHON_FRONTEND AND Python_FOUND)
+    set(LBANN_HAS_PYTHON_FRONTEND TRUE)
+  endif ()
   if (LBANN_WITH_EMBEDDED_PYTHON AND Python_FOUND)
-    set(LBANN_HAS_PYTHON TRUE)
+    set(LBANN_HAS_EMBEDDED_PYTHON TRUE)
   endif ()
 
   if (NOT Python_VERSION_MAJOR EQUAL 3)
     set(LBANN_HAS_PYTHON_FRONTEND FALSE)
-    set(LBANN_HAS_PYTHON FALSE)
+    set(LBANN_HAS_EMBEDDED_PYTHON FALSE)
     message(FATAL_ERROR "Python 2 is not supported.")
   endif ()
 
@@ -451,7 +453,7 @@ if (LBANN_WITH_PYTHON OR LBANN_WITH_EMBEDDED_PYTHON)
     CACHE PATH
     "Relative path from PYTHON_INSTALL_PREFIX to the python package install")
 
-endif (LBANN_WITH_PYTHON OR LBANN_WITH_EMBEDDED_PYTHON)
+endif (LBANN_WITH_PYTHON_FRONTEND OR LBANN_WITH_EMBEDDED_PYTHON)
 
 if (LBANN_WITH_VTUNE)
   find_package(VTune MODULE)
@@ -960,7 +962,7 @@ append_str_tf(_str
   LBANN_HAS_OPENCV
   LBANN_HAS_PROTOBUF
   LBANN_HAS_PYTHON_FRONTEND
-  LBANN_HAS_PYTHON
+  LBANN_HAS_EMBEDDED_PYTHON
   LBANN_HAS_ROCM
   LBANN_HAS_TBINF
   LBANN_HAS_VTUNE
