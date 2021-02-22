@@ -55,14 +55,7 @@ gru_layer<TensorDataType, Layout, Device>::gru_layer(const gru_layer& other)
     m_hidden_size{other.m_hidden_size},
     m_num_layers{other.m_num_layers} {
 #ifdef LBANN_GRU_LAYER_GPU_SUPPORTED
-  // No need to copy cuDNN tensor descriptors, cuDNN workspaces, or
-  // CUDA graphs. They are setup in forward and backward prop
-  // functions, as needed.
-  /// @todo Copy @c m_rnn_cudnn_desc
-#ifndef LBANN_DEBUG
-  m_cuda_graph_forward_prop_cache.clear();
-  m_cuda_graph_backward_prop_cache.clear();
-#endif // not LBANN_DEBUG
+  m_cudnn_objects.reset();
 #endif // LBANN_GRU_LAYER_GPU_SUPPORTED
 }
 
@@ -73,14 +66,7 @@ gru_layer<TensorDataType, Layout, Device>& gru_layer<TensorDataType, Layout, Dev
   m_hidden_size = other.m_hidden_size;
   m_num_layers = other.m_num_layers;
 #ifdef LBANN_GRU_LAYER_GPU_SUPPORTED
-  // No need to copy cuDNN tensor descriptors, cuDNN workspaces, or
-  // CUDA graphs. They are setup in forward and backward prop
-  // functions, as needed.
-  /// @todo Copy @c m_rnn_cudnn_desc
-#ifndef LBANN_DEBUG
-  m_cuda_graph_forward_prop_cache.clear();
-  m_cuda_graph_backward_prop_cache.clear();
-#endif // not LBANN_DEBUG
+  m_cudnn_objects.reset();
 #endif // LBANN_GRU_LAYER_GPU_SUPPORTED
   return *this;
 }
@@ -258,10 +244,13 @@ void gru_layer<TensorDataType, Layout, Device>::setup_gpu() {
   const size_t sequence_length = this->get_input_dims(0)[0];
   const size_t input_size = this->get_input_size(0) / sequence_length;
 
+  // Initialize storage for cuDNN objects
+  m_cudnn_objects = make_unique<CudnnObjects>();
+
   // RNN descriptor
   static dnn_lib::DropoutDescriptor dropout_desc;
   dropout_desc.set(0, nullptr, 0, 0);
-  m_rnn_cudnn_desc.set(
+  m_cudnn_objects->rnn_desc.set(
     CUDNN_RNN_ALGO_STANDARD,
     CUDNN_GRU,
     CUDNN_RNN_DOUBLE_BIAS,
@@ -439,15 +428,21 @@ void fp_compute_impl(
   const size_t workspace_mini_batch_size = El::Max(mini_batch_size, active_min_workspace_mini_batch_size);
 
   // GPU objects
+  if (l.m_cudnn_objects == nullptr) {
+    LBANN_ERROR(
+      l.get_type()," layer \"",l.get_name(),"\" ",
+      "attempted to run cuDNN implementation ",
+      "before initializing cuDNN objects");
+  }
   auto&& sync_info = input_sequence.GetSyncInfo();
   auto&& stream = sync_info.Stream();
   auto&& handle = dnn_lib::get_handle();
-  auto&& rnn_desc = l.m_rnn_cudnn_desc;
+  auto&& cudnn_objects = *l.m_cudnn_objects;
   const auto data_type = dnn_lib::get_data_type<TensorDataType>();
 
   // Configure input and output tensor descriptors
   std::vector<int> sequence_lengths(workspace_mini_batch_size, sequence_length);
-  l.m_input_cudnn_desc.set(
+  cudnn_objects.input_desc.set(
     data_type,
     CUDNN_RNN_DATA_LAYOUT_BATCH_MAJOR_UNPACKED,
     sequence_length,
@@ -455,7 +450,7 @@ void fp_compute_impl(
     input_size,
     sequence_lengths.data(),
     nullptr);
-  l.m_output_cudnn_desc.set(
+  cudnn_objects.output_desc.set(
     data_type,
     CUDNN_RNN_DATA_LAYOUT_BATCH_MAJOR_UNPACKED,
     sequence_length,
@@ -463,33 +458,37 @@ void fp_compute_impl(
     hidden_size,
     sequence_lengths.data(),
     nullptr);
-  l.m_hidden_cudnn_desc.set(data_type, num_layers, workspace_mini_batch_size, hidden_size);
+  cudnn_objects.hidden_desc.set(
+    data_type,
+    num_layers,
+    workspace_mini_batch_size,
+    hidden_size);
 
   // Allocate cuDNN workspace buffers
   size_t cudnn_workspace_size, cudnn_reserve_space_size;
   CHECK_CUDNN(
     cudnnGetRNNTempSpaceSizes(
       handle,
-      rnn_desc,
+      cudnn_objects.rnn_desc,
       CUDNN_FWD_MODE_TRAINING,
-      l.m_input_cudnn_desc,
+      cudnn_objects.input_desc,
       &cudnn_workspace_size,
       &cudnn_reserve_space_size));
-  if (l.m_cudnn_workspace.size() < cudnn_workspace_size) {
+  if (cudnn_objects.workspace.size() < cudnn_workspace_size) {
     /// @todo Handle synchronization
-    l.m_cudnn_workspace.allocate(cudnn_workspace_size);
+    cudnn_objects.workspace.allocate(cudnn_workspace_size);
   }
-  if (l.m_cudnn_reserve_space.size() < cudnn_reserve_space_size) {
+  if (cudnn_objects.reserve_space.size() < cudnn_reserve_space_size) {
     /// @todo Handle synchronization
-    l.m_cudnn_reserve_space.allocate(cudnn_reserve_space_size);
+    cudnn_objects.reserve_space.allocate(cudnn_reserve_space_size);
   }
-  if (l.m_gpu_sequence_lengths.size() < workspace_mini_batch_size) {
+  if (cudnn_objects.gpu_sequence_lengths.size() < workspace_mini_batch_size) {
     /// @todo Handle synchronization
-    l.m_gpu_sequence_lengths.allocate(workspace_mini_batch_size);
+    cudnn_objects.gpu_sequence_lengths.allocate(workspace_mini_batch_size);
     std::vector<int32_t> cpu_sequence_lengths(workspace_mini_batch_size, sequence_length);
     CHECK_CUDA(
       cudaMemcpyAsync(
-        l.m_gpu_sequence_lengths.data(),
+        cudnn_objects.gpu_sequence_lengths.data(),
         cpu_sequence_lengths.data(),
         cpu_sequence_lengths.size() * sizeof(int32_t),
         cudaMemcpyHostToDevice,
@@ -498,27 +497,27 @@ void fp_compute_impl(
   }
 
   // Make sure tensors are in correct format
-  l.m_input_sequence_workspace.SetSyncInfo(sync_info);
-  l.m_init_hidden_workspace.SetSyncInfo(sync_info);
-  l.m_output_sequence_workspace.SetSyncInfo(sync_info);
+  cudnn_objects.input_sequence_workspace.SetSyncInfo(sync_info);
+  cudnn_objects.init_hidden_workspace.SetSyncInfo(sync_info);
+  cudnn_objects.output_sequence_workspace.SetSyncInfo(sync_info);
   constexpr size_t one{1};
-  l.m_input_sequence_workspace.Resize(
+  cudnn_objects.input_sequence_workspace.Resize(
     sequence_length*input_size, workspace_mini_batch_size);
-  l.m_init_hidden_workspace.Resize(
+  cudnn_objects.init_hidden_workspace.Resize(
     workspace_mini_batch_size*hidden_size, num_layers);
-  l.m_output_sequence_workspace.Resize(
+  cudnn_objects.output_sequence_workspace.Resize(
     sequence_length*hidden_size, workspace_mini_batch_size);
-  El::Zero(l.m_input_sequence_workspace);
-  El::Zero(l.m_init_hidden_workspace);
+  El::Zero(cudnn_objects.input_sequence_workspace);
+  El::Zero(cudnn_objects.init_hidden_workspace);
   auto input_sequence_workspace_
-    = l.m_input_sequence_workspace(El::ALL, El::IR(0, mini_batch_size));
+    = cudnn_objects.input_sequence_workspace(El::ALL, El::IR(0, mini_batch_size));
   El::Copy(input_sequence, input_sequence_workspace_);
   cuda::copy_tensor(
     stream,
     {mini_batch_size, num_layers, hidden_size},
     init_hidden.LockedBuffer(),
     {static_cast<size_t>(init_hidden.LDim()), hidden_size, one},
-    l.m_init_hidden_workspace.Buffer(),
+    cudnn_objects.init_hidden_workspace.Buffer(),
     {hidden_size, workspace_mini_batch_size*hidden_size, one});
 
   // Pack weights into workspace buffer
@@ -527,9 +526,9 @@ void fp_compute_impl(
   CHECK_CUDNN(
     cudnnGetRNNWeightSpaceSize(
       handle,
-      l.m_rnn_cudnn_desc,
+      cudnn_objects.rnn_desc,
       &weights_size));
-  l.m_weights_cudnn_workspace.allocate(weights_size);
+  cudnn_objects.weights_workspace.allocate(weights_size);
   std::vector<LocalMat> weights_list;
   for (size_t i=0; i<4*num_layers; ++i) {
     const auto& w
@@ -538,73 +537,76 @@ void fp_compute_impl(
   }
   pack_cudnn_rnn_weights<TensorDataType>(
     handle,
-    rnn_desc,
+    cudnn_objects.rnn_desc,
     sync_info,
     input_size,
     hidden_size,
     num_layers,
-    l.m_weights_cudnn_workspace.data(),
-    l.m_weights_cudnn_workspace.size(),
+    cudnn_objects.weights_workspace.data(),
+    cudnn_objects.weights_workspace.size(),
     weights_list);
 
-#ifndef LBANN_DEBUG
+#if !defined(LBANN_DEBUG) // Disable CUDA graphs
+
   // Compute hash with cuDNN function arguments
   size_t hash{0};
-  hash = hash_combine(hash, l.m_gpu_sequence_lengths.data());
-  hash = hash_combine(hash, l.m_input_sequence_workspace.LockedBuffer());
-  hash = hash_combine(hash, l.m_init_hidden_workspace.LockedBuffer());
-  hash = hash_combine(hash, l.m_output_sequence_workspace.Buffer());
-  hash = hash_combine(hash, l.m_weights_cudnn_workspace.data());
-  hash = hash_combine(hash, l.m_cudnn_workspace.data());
-  hash = hash_combine(hash, l.m_cudnn_reserve_space.data());
+  hash = hash_combine(hash, cudnn_objects.gpu_sequence_lengths.data());
+  hash = hash_combine(hash, cudnn_objects.input_sequence_workspace.LockedBuffer());
+  hash = hash_combine(hash, cudnn_objects.init_hidden_workspace.LockedBuffer());
+  hash = hash_combine(hash, cudnn_objects.output_sequence_workspace.Buffer());
+  hash = hash_combine(hash, cudnn_objects.weights_workspace.data());
+  hash = hash_combine(hash, cudnn_objects.workspace.data());
+  hash = hash_combine(hash, cudnn_objects.reserve_space.data());
 
-  // Update graph cache if cuDNN function arguments don't match
-  if (l.m_cuda_graph_forward_prop_cache.count(workspace_mini_batch_size) < 1
-      || l.m_cuda_graph_forward_prop_cache[workspace_mini_batch_size].first != hash) {
-
-    // Capture graph
+  // Capture graph if not in cache
+  if (cudnn_objects.forward_prop_graph_cache.count(workspace_mini_batch_size) < 1
+      || cudnn_objects.forward_prop_graph_cache[workspace_mini_batch_size].first != hash) {
     cuda::Graph::begin_capture(stream);
-#endif // not LBANN_DEBUG
+
+#endif // !defined(LBANN_DEBUG)
+
+    // cuDNN forward prop
     CHECK_CUDNN(
       cudnnRNNForward(
         handle,
-        rnn_desc,
+        cudnn_objects.rnn_desc,
         CUDNN_FWD_MODE_TRAINING,
-        l.m_gpu_sequence_lengths.data(),
-        l.m_input_cudnn_desc,
-        l.m_input_sequence_workspace.LockedBuffer(),
-        l.m_output_cudnn_desc,
-        l.m_output_sequence_workspace.Buffer(),
-        l.m_hidden_cudnn_desc,
-        l.m_init_hidden_workspace.LockedBuffer(),
+        cudnn_objects.gpu_sequence_lengths.data(),
+        cudnn_objects.input_desc,
+        cudnn_objects.input_sequence_workspace.LockedBuffer(),
+        cudnn_objects.output_desc,
+        cudnn_objects.output_sequence_workspace.Buffer(),
+        cudnn_objects.hidden_desc,
+        cudnn_objects.init_hidden_workspace.LockedBuffer(),
         nullptr,                // hy
-        l.m_hidden_cudnn_desc,  // cDesc
+        cudnn_objects.hidden_desc,  // cDesc
         nullptr,                // cx
         nullptr,                // cy
-        l.m_weights_cudnn_workspace.size(),
-        l.m_weights_cudnn_workspace.data(),
-        l.m_cudnn_workspace.size(),
-        l.m_cudnn_workspace.data(),
-        l.m_cudnn_reserve_space.size(),
-        l.m_cudnn_reserve_space.data()));
-#ifndef LBANN_DEBUG
-    auto graph = cuda::Graph::end_capture(stream);
+        cudnn_objects.weights_workspace.size(),
+        cudnn_objects.weights_workspace.data(),
+        cudnn_objects.workspace.size(),
+        cudnn_objects.workspace.data(),
+        cudnn_objects.reserve_space.size(),
+        cudnn_objects.reserve_space.data()));
 
-    // Update cache
-    auto& cache_pair = l.m_cuda_graph_forward_prop_cache[workspace_mini_batch_size];
+#if !defined(LBANN_DEBUG) // Disable CUDA graphs
+
+    // Finish capturing graph and update cache
+    auto graph = cuda::Graph::end_capture(stream);
+    auto& cache_pair = cudnn_objects.forward_prop_graph_cache[workspace_mini_batch_size];
     cache_pair.first = hash;
     cache_pair.second.update(graph);
-
   }
 
-  // Launch CUDA graph with cuDNN kernels
-  l.m_cuda_graph_forward_prop_cache[workspace_mini_batch_size].second.launch(stream);
-#endif // not LBANN_DEBUG
+  // Launch CUDA graph
+  cudnn_objects.forward_prop_graph_cache[workspace_mini_batch_size].second.launch(stream);
+
+#endif // !defined(LBANN_DEBUG)
 
   // Output tensor
   El::LockedView(
     output_sequence,
-    l.m_output_sequence_workspace,
+    cudnn_objects.output_sequence_workspace,
     El::ALL,
     El::IR(0, mini_batch_size));
 
@@ -748,10 +750,16 @@ void bp_compute_impl(
   const size_t workspace_mini_batch_size = El::Max(mini_batch_size, active_min_workspace_mini_batch_size);
 
   // GPU objects
+  if (l.m_cudnn_objects == nullptr) {
+    LBANN_ERROR(
+      l.get_type()," layer \"",l.get_name(),"\" ",
+      "attempted to run cuDNN implementation ",
+      "before initializing cuDNN objects");
+  }
   auto&& sync_info = output_sequence_grad.GetSyncInfo();
   auto&& stream = sync_info.Stream();
   auto&& handle = dnn_lib::get_handle();
-  auto&& rnn_desc = l.m_rnn_cudnn_desc;
+  auto&& cudnn_objects = *l.m_cudnn_objects;
 
   // Define closure to send weight gradients to optimizers
   std::vector<LocalMat> weights_grad_list(4*num_layers);
@@ -789,118 +797,122 @@ void bp_compute_impl(
   // Make sure tensors are in correct format
   // Note: m_input_sequence_workspace and m_init_hidden_workspace have
   // already been setup in forward prop
-  l.m_output_sequence_grad_workspace.SetSyncInfo(sync_info);
-  l.m_input_sequence_grad_workspace.SetSyncInfo(sync_info);
-  l.m_init_hidden_grad_workspace.SetSyncInfo(sync_info);
-  l.m_output_sequence_grad_workspace.Resize(
+  cudnn_objects.output_sequence_grad_workspace.SetSyncInfo(sync_info);
+  cudnn_objects.input_sequence_grad_workspace.SetSyncInfo(sync_info);
+  cudnn_objects.init_hidden_grad_workspace.SetSyncInfo(sync_info);
+  cudnn_objects.output_sequence_grad_workspace.Resize(
     sequence_length*hidden_size, workspace_mini_batch_size);
-  l.m_input_sequence_grad_workspace.Resize(
+  cudnn_objects.input_sequence_grad_workspace.Resize(
     sequence_length*input_size, workspace_mini_batch_size);
-  l.m_init_hidden_grad_workspace.Resize(
+  cudnn_objects.init_hidden_grad_workspace.Resize(
     workspace_mini_batch_size*hidden_size, num_layers);
-  El::Zero(l.m_output_sequence_grad_workspace);
+  El::Zero(cudnn_objects.output_sequence_grad_workspace);
   auto output_sequence_grad_workspace_
-    = l.m_output_sequence_grad_workspace(El::ALL, El::IR(0, mini_batch_size));
+    = cudnn_objects.output_sequence_grad_workspace(El::ALL, El::IR(0, mini_batch_size));
   El::Copy(output_sequence_grad, output_sequence_grad_workspace_);
 
   // Initialize workspace for weight gradients
   // Note: Weights have already been packed in forward prop
-  l.m_weights_grad_cudnn_workspace.allocate(l.m_weights_cudnn_workspace.size());
+  cudnn_objects.weights_grad_workspace.allocate(cudnn_objects.weights_workspace.size());
   CHECK_CUDA(
     cudaMemsetAsync(
-      l.m_weights_grad_cudnn_workspace.data(),
+      cudnn_objects.weights_grad_workspace.data(),
       0,
-      l.m_weights_grad_cudnn_workspace.size(),
+      cudnn_objects.weights_grad_workspace.size(),
       stream));
 
-#ifndef LBANN_DEBUG
+#if !defined(LBANN_DEBUG) // Disable CUDA graphs
+
   // Compute hash with cuDNN function arguments
   size_t hash{0};
-  hash = hash_combine(hash, l.m_gpu_sequence_lengths.data());
-  hash = hash_combine(hash, l.m_input_sequence_workspace.LockedBuffer());
-  hash = hash_combine(hash, l.m_input_sequence_grad_workspace.Buffer());
-  hash = hash_combine(hash, l.m_init_hidden_workspace.LockedBuffer());
-  hash = hash_combine(hash, l.m_init_hidden_grad_workspace.Buffer());
-  hash = hash_combine(hash, l.m_output_sequence_workspace.LockedBuffer());
-  hash = hash_combine(hash, l.m_output_sequence_grad_workspace.LockedBuffer());
-  hash = hash_combine(hash, l.m_weights_cudnn_workspace.data());
-  hash = hash_combine(hash, l.m_weights_grad_cudnn_workspace.data());
-  hash = hash_combine(hash, l.m_cudnn_workspace.data());
-  hash = hash_combine(hash, l.m_cudnn_reserve_space.data());
+  hash = hash_combine(hash, cudnn_objects.gpu_sequence_lengths.data());
+  hash = hash_combine(hash, cudnn_objects.input_sequence_workspace.LockedBuffer());
+  hash = hash_combine(hash, cudnn_objects.input_sequence_grad_workspace.Buffer());
+  hash = hash_combine(hash, cudnn_objects.init_hidden_workspace.LockedBuffer());
+  hash = hash_combine(hash, cudnn_objects.init_hidden_grad_workspace.Buffer());
+  hash = hash_combine(hash, cudnn_objects.output_sequence_workspace.LockedBuffer());
+  hash = hash_combine(hash, cudnn_objects.output_sequence_grad_workspace.LockedBuffer());
+  hash = hash_combine(hash, cudnn_objects.weights_workspace.data());
+  hash = hash_combine(hash, cudnn_objects.weights_grad_workspace.data());
+  hash = hash_combine(hash, cudnn_objects.workspace.data());
+  hash = hash_combine(hash, cudnn_objects.reserve_space.data());
 
-  // Update graph cache if cuDNN function arguments don't match
-  if (l.m_cuda_graph_backward_prop_cache.count(workspace_mini_batch_size) < 1
-      || l.m_cuda_graph_backward_prop_cache[workspace_mini_batch_size].first != hash) {
-
-    // Capture graph
+  // Capture graph if not in cache
+  if (cudnn_objects.backward_prop_graph_cache.count(workspace_mini_batch_size) < 1
+      || cudnn_objects.backward_prop_graph_cache[workspace_mini_batch_size].first != hash) {
     cuda::Graph::begin_capture(stream);
-#endif // not LBANN_DEBUG
+
+#endif // !defined(LBANN_DEBUG)
+
+    // cuDNN backward prop
     CHECK_CUDNN(
       cudnnRNNBackwardData_v8(
         handle,
-        rnn_desc,
-        l.m_gpu_sequence_lengths.data(),
-        l.m_output_cudnn_desc,
-        l.m_output_sequence_workspace.LockedBuffer(),
-        l.m_output_sequence_grad_workspace.LockedBuffer(),
-        l.m_input_cudnn_desc,
-        l.m_input_sequence_grad_workspace.Buffer(),
-        l.m_hidden_cudnn_desc,
-        l.m_init_hidden_workspace.LockedBuffer(),
+        cudnn_objects.rnn_desc,
+        cudnn_objects.gpu_sequence_lengths.data(),
+        cudnn_objects.output_desc,
+        cudnn_objects.output_sequence_workspace.LockedBuffer(),
+        cudnn_objects.output_sequence_grad_workspace.LockedBuffer(),
+        cudnn_objects.input_desc,
+        cudnn_objects.input_sequence_grad_workspace.Buffer(),
+        cudnn_objects.hidden_desc,
+        cudnn_objects.init_hidden_workspace.LockedBuffer(),
         nullptr,                // dhy
-        l.m_init_hidden_grad_workspace.Buffer(),
-        l.m_hidden_cudnn_desc,  // cDesc
+        cudnn_objects.init_hidden_grad_workspace.Buffer(),
+        cudnn_objects.hidden_desc,  // cDesc
         nullptr,                // cx
         nullptr,                // dcy
         nullptr,                // dcx
-        l.m_weights_cudnn_workspace.size(),
-        l.m_weights_cudnn_workspace.data(),
-        l.m_cudnn_workspace.size(),
-        l.m_cudnn_workspace.data(),
-        l.m_cudnn_reserve_space.size(),
-        l.m_cudnn_reserve_space.data()));
+        cudnn_objects.weights_workspace.size(),
+        cudnn_objects.weights_workspace.data(),
+        cudnn_objects.workspace.size(),
+        cudnn_objects.workspace.data(),
+        cudnn_objects.reserve_space.size(),
+        cudnn_objects.reserve_space.data()));
     CHECK_CUDNN(
       cudnnRNNBackwardWeights_v8(
         handle,
-        rnn_desc,
+        cudnn_objects.rnn_desc,
         CUDNN_WGRAD_MODE_ADD,
-        l.m_gpu_sequence_lengths.data(),
-        l.m_input_cudnn_desc,
-        l.m_input_sequence_workspace.LockedBuffer(),
-        l.m_hidden_cudnn_desc,
-        l.m_init_hidden_workspace.LockedBuffer(),
-        l.m_output_cudnn_desc,
-        l.m_output_sequence_workspace.LockedBuffer(),
-        l.m_weights_grad_cudnn_workspace.size(),
-        l.m_weights_grad_cudnn_workspace.data(),
-        l.m_cudnn_workspace.size(),
-        l.m_cudnn_workspace.data(),
-        l.m_cudnn_reserve_space.size(),
-        l.m_cudnn_reserve_space.data()));
-#ifndef LBANN_DEBUG
-    auto graph = cuda::Graph::end_capture(stream);
+        cudnn_objects.gpu_sequence_lengths.data(),
+        cudnn_objects.input_desc,
+        cudnn_objects.input_sequence_workspace.LockedBuffer(),
+        cudnn_objects.hidden_desc,
+        cudnn_objects.init_hidden_workspace.LockedBuffer(),
+        cudnn_objects.output_desc,
+        cudnn_objects.output_sequence_workspace.LockedBuffer(),
+        cudnn_objects.weights_grad_workspace.size(),
+        cudnn_objects.weights_grad_workspace.data(),
+        cudnn_objects.workspace.size(),
+        cudnn_objects.workspace.data(),
+        cudnn_objects.reserve_space.size(),
+        cudnn_objects.reserve_space.data()));
 
-    // Update cache
-    auto& cache_pair = l.m_cuda_graph_backward_prop_cache[workspace_mini_batch_size];
+#if !defined(LBANN_DEBUG) // Disable CUDA graphs
+
+    // Finish capturing graph and update cache
+    auto graph = cuda::Graph::end_capture(stream);
+    auto& cache_pair = cudnn_objects.backward_prop_graph_cache[workspace_mini_batch_size];
     cache_pair.first = hash;
     cache_pair.second.update(graph);
 
   }
 
-  // Launch CUDA graph with cuDNN kernels
-  l.m_cuda_graph_backward_prop_cache[workspace_mini_batch_size].second.launch(stream);
-#endif // not LBANN_DEBUG
+  // Launch CUDA graph
+  cudnn_objects.backward_prop_graph_cache[workspace_mini_batch_size].second.launch(stream);
+
+#endif // !defined(LBANN_DEBUG)
 
   // Send gradients to optimizers
   unpack_cudnn_rnn_weights<TensorDataType>(
     handle,
-    rnn_desc,
+    cudnn_objects.rnn_desc,
     sync_info,
     input_size,
     hidden_size,
     num_layers,
-    l.m_weights_grad_cudnn_workspace.data(),
-    l.m_weights_grad_cudnn_workspace.size(),
+    cudnn_objects.weights_grad_workspace.data(),
+    cudnn_objects.weights_grad_workspace.size(),
     weights_grad_list);
   send_weight_grads_to_optimizers();
 
@@ -911,13 +923,13 @@ void bp_compute_impl(
   constexpr size_t one{1};
   El::LockedView(
     input_sequence_grad,
-    l.m_input_sequence_grad_workspace,
+    cudnn_objects.input_sequence_grad_workspace,
     El::ALL,
     El::IR(0, mini_batch_size));
   cuda::copy_tensor(
     stream,
     {mini_batch_size, num_layers, hidden_size},
-    l.m_init_hidden_grad_workspace.LockedBuffer(),
+    cudnn_objects.init_hidden_grad_workspace.LockedBuffer(),
     {hidden_size, workspace_mini_batch_size*hidden_size, one},
     init_hidden_grad.Buffer(),
     {static_cast<size_t>(init_hidden_grad.LDim()), hidden_size, one});

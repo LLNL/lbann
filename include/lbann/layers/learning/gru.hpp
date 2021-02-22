@@ -114,46 +114,57 @@ private:
 
 #ifdef LBANN_GRU_LAYER_GPU_SUPPORTED
 
-  // Convenience typedefs
-  using ByteBuffer = hydrogen::simple_buffer<El::byte, Device>;
-  using LocalMat = El::Matrix<TensorDataType, El::Device::GPU>;
+  /** @brief Objects used in cuDNN implementation */
+  struct CudnnObjects {
 
-  // DNN library descriptors
-  dnn_lib::RNNDescriptor m_rnn_cudnn_desc;
-  dnn_lib::RNNDataDescriptor m_input_cudnn_desc;
-  dnn_lib::RNNDataDescriptor m_output_cudnn_desc;
-  dnn_lib::TensorDescriptor m_hidden_cudnn_desc;
+    /** @name Typedefs */
+    ///@{
+    using ByteBuffer = hydrogen::simple_buffer<El::byte, El::Device::GPU>;
+    using IntBuffer = hydrogen::simple_buffer<int32_t, El::Device::GPU>;
+    using LocalMat = El::Matrix<TensorDataType, El::Device::GPU>;
+    using GraphCache = std::unordered_map<size_t, std::pair<size_t, cuda::ExecutableGraph>>;
+    ///@}
 
-  // DNN library workspaces
-  LocalMat m_input_sequence_workspace;
-  LocalMat m_output_sequence_workspace;
-  LocalMat m_input_sequence_grad_workspace;
-  LocalMat m_output_sequence_grad_workspace;
-  LocalMat m_init_hidden_workspace;
-  LocalMat m_init_hidden_grad_workspace;
-  ByteBuffer m_weights_cudnn_workspace;
-  ByteBuffer m_weights_grad_cudnn_workspace;
-  ByteBuffer m_cudnn_workspace;
-  ByteBuffer m_cudnn_reserve_space;
-  hydrogen::simple_buffer<int32_t, El::Device::GPU> m_gpu_sequence_lengths;
+    /** @name Descriptors */
+    ///@{
+    dnn_lib::RNNDescriptor rnn_desc;
+    dnn_lib::RNNDataDescriptor input_desc;
+    dnn_lib::RNNDataDescriptor output_desc;
+    dnn_lib::TensorDescriptor hidden_desc;
+    ///@}
 
-#ifndef LBANN_DEBUG
-  using GraphCache = std::unordered_map<size_t, std::pair<size_t, cuda::ExecutableGraph>>;
-  /** @brief Cache of CUDA graphs for cuDNN forward prop function
-   *
-   *  The cache is a map from mini-batch sizes to (hash, graph) pairs.
-   *  The hash is generated from the cuDNN function arguments, mostly
-   *  pointers. The graph is a @c cuda::ExecutableGraph .
-   */
-  GraphCache m_cuda_graph_forward_prop_cache;
-  /** @brief Cache of CUDA graphs for cuDNN backprop functions
-   *
-   *  The cache is a map from mini-batch sizes to (hash, graph) pairs.
-   *  The hash is generated from the cuDNN function arguments, mostly
-   *  pointers. The graph is a @c cuda::ExecutableGraph .
-   */
-  GraphCache m_cuda_graph_backward_prop_cache;
-#endif // not LBANN_DEBUG
+    /** @name Workspaces */
+    ///@{
+    LocalMat input_sequence_workspace;
+    LocalMat output_sequence_workspace;
+    LocalMat input_sequence_grad_workspace;
+    LocalMat output_sequence_grad_workspace;
+    LocalMat init_hidden_workspace;
+    LocalMat init_hidden_grad_workspace;
+    ByteBuffer weights_workspace;
+    ByteBuffer weights_grad_workspace;
+    ByteBuffer workspace;
+    ByteBuffer reserve_space;
+    IntBuffer gpu_sequence_lengths;
+    ///@}
+
+    /** @name CUDA graph caches
+     *
+     *  The cache is a map from mini-batch sizes to (hash, graph)
+     *  pairs. The hash is generated from the cuDNN function
+     *  arguments, mostly pointers. The graph is a @c
+     *  cuda::ExecutableGraph .
+     */
+    ///@{
+    GraphCache forward_prop_graph_cache;
+    GraphCache backward_prop_graph_cache;
+    ///@}
+
+  };
+
+  /** @brief Storage for cuDNN objects */
+  std::unique_ptr<CudnnObjects> m_cudnn_objects;
+
 #endif // LBANN_GRU_LAYER_GPU_SUPPORTED
 
   template <typename T>
