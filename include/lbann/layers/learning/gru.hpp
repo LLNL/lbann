@@ -35,7 +35,7 @@
 /// GPU GRU layer requires CUDA 11.0 and cuDNN 8.0.4 or newer
 #ifdef LBANN_HAS_CUDNN
 #if CUDA_VERSION >= 11000 && CUDNN_VERSION >= 8004
-#define LBANN_GRU_LAYER_GPU_SUPPORTED
+#define LBANN_GRU_LAYER_CUDNN_SUPPORTED
 #endif // CUDA_VERSION >= 11000 && CUDNN_VERSION >= 8004
 #endif // LBANN_HAS_CUDNN
 
@@ -98,9 +98,9 @@ protected:
 
   void setup_dims(DataReaderMetaData& dr_metadata) override;
   void setup_data(size_t max_mini_batch_size) override;
-#ifdef LBANN_GRU_LAYER_GPU_SUPPORTED
+#ifdef LBANN_GRU_LAYER_CUDNN_SUPPORTED
   void setup_gpu() override;
-#endif // LBANN_GRU_LAYER_GPU_SUPPORTED
+#endif // LBANN_GRU_LAYER_CUDNN_SUPPORTED
 
   void fp_compute() override;
   void bp_compute() override;
@@ -112,7 +112,7 @@ private:
   /** @brief Number of stacked GRU cells */
   size_t m_num_layers;
 
-#ifdef LBANN_GRU_LAYER_GPU_SUPPORTED
+#ifdef LBANN_GRU_LAYER_CUDNN_SUPPORTED
 
   /** @brief Objects used in cuDNN implementation */
   struct CudnnObjects {
@@ -165,7 +165,7 @@ private:
   /** @brief Storage for cuDNN objects */
   std::unique_ptr<CudnnObjects> m_cudnn_objects;
 
-#endif // LBANN_GRU_LAYER_GPU_SUPPORTED
+#endif // LBANN_GRU_LAYER_CUDNN_SUPPORTED
 
   template <typename T>
   friend void fp_compute_impl(gru_layer<T,Layout,Device>&);
@@ -178,7 +178,7 @@ private:
 LBANN_DEFINE_LAYER_BUILDER(gru);
 
 // Explicit template instantiation
-#ifdef LBANN_GRU_LAYER_GPU_SUPPORTED
+#ifdef LBANN_GRU_LAYER_CUDNN_SUPPORTED
 #ifndef LBANN_GRU_LAYER_INSTANTIATE
 #define PROTO(T)                                        \
   extern template class gru_layer<                      \
@@ -187,7 +187,7 @@ LBANN_DEFINE_LAYER_BUILDER(gru);
 #include "lbann/macros/instantiate.hpp"
 #undef PROTO
 #endif // LBANN_GRU_LAYER_INSTANTIATE
-#endif // LBANN_GRU_LAYER_GPU_SUPPORTED
+#endif // LBANN_GRU_LAYER_CUDNN_SUPPORTED
 
 } // namespace lbann
 

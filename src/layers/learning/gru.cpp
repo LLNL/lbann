@@ -34,7 +34,6 @@
 
 namespace lbann {
 
-
 // ---------------------------------------------
 // Life cycle
 // ---------------------------------------------
@@ -54,9 +53,9 @@ gru_layer<TensorDataType, Layout, Device>::gru_layer(const gru_layer& other)
   : data_type_layer<TensorDataType>(other),
     m_hidden_size{other.m_hidden_size},
     m_num_layers{other.m_num_layers} {
-#ifdef LBANN_GRU_LAYER_GPU_SUPPORTED
+#ifdef LBANN_GRU_LAYER_CUDNN_SUPPORTED
   m_cudnn_objects.reset();
-#endif // LBANN_GRU_LAYER_GPU_SUPPORTED
+#endif // LBANN_GRU_LAYER_CUDNN_SUPPORTED
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -65,9 +64,9 @@ gru_layer<TensorDataType, Layout, Device>& gru_layer<TensorDataType, Layout, Dev
   data_type_layer<TensorDataType>::operator=(other);
   m_hidden_size = other.m_hidden_size;
   m_num_layers = other.m_num_layers;
-#ifdef LBANN_GRU_LAYER_GPU_SUPPORTED
+#ifdef LBANN_GRU_LAYER_CUDNN_SUPPORTED
   m_cudnn_objects.reset();
-#endif // LBANN_GRU_LAYER_GPU_SUPPORTED
+#endif // LBANN_GRU_LAYER_CUDNN_SUPPORTED
   return *this;
 }
 
@@ -236,7 +235,7 @@ void gru_layer<TensorDataType, Layout, Device>
 
 }
 
-#ifdef LBANN_GRU_LAYER_GPU_SUPPORTED
+#ifdef LBANN_GRU_LAYER_CUDNN_SUPPORTED
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void gru_layer<TensorDataType, Layout, Device>::setup_gpu() {
 
@@ -267,7 +266,7 @@ void gru_layer<TensorDataType, Layout, Device>::setup_gpu() {
     CUDNN_RNN_PADDED_IO_ENABLED);
 
 }
-#endif // LBANN_GRU_LAYER_GPU_SUPPORTED
+#endif // LBANN_GRU_LAYER_CUDNN_SUPPORTED
 
 // ---------------------------------------------
 // Forward prop
@@ -278,7 +277,7 @@ void gru_layer<TensorDataType, Layout, Device>::fp_compute() {
   fp_compute_impl(*this);
 }
 
-#ifdef LBANN_GRU_LAYER_GPU_SUPPORTED
+#ifdef LBANN_GRU_LAYER_CUDNN_SUPPORTED
 
 namespace {
 template <typename TensorDataType>
@@ -612,7 +611,7 @@ void fp_compute_impl(
 
 }
 
-#endif // LBANN_GRU_LAYER_GPU_SUPPORTED
+#endif // LBANN_GRU_LAYER_CUDNN_SUPPORTED
 
 // ---------------------------------------------
 // Back prop
@@ -623,7 +622,7 @@ void gru_layer<TensorDataType, Layout, Device>::bp_compute() {
   bp_compute_impl(*this);
 }
 
-#ifdef LBANN_GRU_LAYER_GPU_SUPPORTED
+#ifdef LBANN_GRU_LAYER_CUDNN_SUPPORTED
 
 namespace {
 template <typename TensorDataType>
@@ -936,7 +935,7 @@ void bp_compute_impl(
 
 }
 
-#endif // LBANN_GRU_LAYER_GPU_SUPPORTED
+#endif // LBANN_GRU_LAYER_CUDNN_SUPPORTED
 
 // ---------------------------------------------
 // Builder
@@ -969,7 +968,7 @@ struct Builder<TensorDataType,data_layout::DATA_PARALLEL,El::Device::GPU>
   {
     constexpr auto Layout = data_layout::DATA_PARALLEL;
     constexpr auto Device = El::Device::GPU;
-#ifdef LBANN_GRU_LAYER_GPU_SUPPORTED
+#ifdef LBANN_GRU_LAYER_CUDNN_SUPPORTED
     using LayerType = gru_layer<TensorDataType,Layout,Device>;
     return make_unique<LayerType>(std::forward<Args>(args)...);
 #else
@@ -979,7 +978,7 @@ struct Builder<TensorDataType,data_layout::DATA_PARALLEL,El::Device::GPU>
       "Layout=",to_string(Layout),", ",
       "Device=",to_string(Device),")");
     return nullptr;
-#endif // LBANN_GRU_LAYER_GPU_SUPPORTED
+#endif // LBANN_GRU_LAYER_CUDNN_SUPPORTED
   }
 };
 #endif // LBANN_HAS_GPU
@@ -1004,14 +1003,14 @@ std::unique_ptr<Layer> build_gru_layer_from_pbuf(
 // ---------------------------------------------
 
 /// @todo CPU implementation
-#ifdef LBANN_GRU_LAYER_GPU_SUPPORTED
+#ifdef LBANN_GRU_LAYER_CUDNN_SUPPORTED
 #define PROTO(T)                                                        \
   template class gru_layer<                                             \
     T, data_layout::DATA_PARALLEL, El::Device::GPU>;
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"
 #undef PROTO
-#endif // LBANN_GRU_LAYER_GPU_SUPPORTED
+#endif // LBANN_GRU_LAYER_CUDNN_SUPPORTED
 
 #define PROTO_DEVICE(T, Device)                 \
   LBANN_LAYER_BUILDER_ETI(gru, T, Device)
