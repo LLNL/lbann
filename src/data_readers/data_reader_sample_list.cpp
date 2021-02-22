@@ -26,6 +26,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_sample_list.hpp"
+#include "lbann/data_readers/sample_list_impl.hpp"
+#include "lbann/data_readers/sample_list_open_files_impl.hpp"
 #include "lbann/utils/timer.hpp"
 
 namespace lbann {
@@ -43,7 +45,7 @@ data_reader_sample_list::data_reader_sample_list(bool shuffle)
   : generic_data_reader(shuffle) {
 }
 
-data_reader_sample_list::data_reader_sample_list(const data_reader_sample_list &rhs) 
+data_reader_sample_list::data_reader_sample_list(const data_reader_sample_list &rhs)
   : generic_data_reader(rhs) {
   copy_members(rhs);
 }
@@ -78,7 +80,7 @@ void data_reader_sample_list::load_list_of_samples(const std::string sample_list
   double tm1 = get_time();
   options *opts = options::get();
 
-  // dah: I've not a clue what this next block does; 
+  // dah: I've not a clue what this next block does;
   //      is it a hack that should come out?
   if (this->m_keep_sample_order || opts->has_string("keep_sample_order")) {
     m_sample_list.keep_sample_order(true);
@@ -107,7 +109,7 @@ void data_reader_sample_list::load_list_of_samples(const std::string sample_list
   }
 
   // Merge all of the sample lists
-  double tm3 = get_time(); 
+  double tm3 = get_time();
   m_sample_list.all_gather_packed_lists(*m_comm);
 
   if(is_master()) {
@@ -134,7 +136,7 @@ void data_reader_sample_list::load_list_of_samples_from_archive(const std::strin
 }
 void data_reader_sample_list::open_file(
     size_t index_in,
-    hid_t& file_handle_out, 
+    hid_t& file_handle_out,
     std::string& sample_name_out) {
   const sample_t& s = m_sample_list[index_in];
   sample_name_out = s.second;
@@ -151,4 +153,3 @@ void data_reader_sample_list::close_file(size_t index) {
 }
 
 } // end of namespace lbann
-
