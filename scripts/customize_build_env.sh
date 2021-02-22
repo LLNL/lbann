@@ -54,7 +54,7 @@ set_center_specific_gpu_arch()
                 GPU_ARCH_VARIANTS="cuda_arch=60"
                 CMAKE_GPU_ARCH="60"
                 ;;
-            "zen2")
+            "zen" | "zen2")
                 GPU_ARCH_VARIANTS="amdgpu_target=gfx906"
                 ;;
             *)
