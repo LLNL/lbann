@@ -32,12 +32,15 @@
 #include "lbann/utils/dnn_lib/helpers.hpp"
 #endif // LBANN_HAS_DNN_LIB
 
-/// GPU GRU layer requires CUDA 11.0 and cuDNN 8.0.4 or newer
+// Supported implementations
 #ifdef LBANN_HAS_CUDNN
-#if CUDA_VERSION >= 11000 && CUDNN_VERSION >= 8004
+#if CUDA_VERSION >= 11000 && CUDNN_VERSION >= 8004 // CUDA 11.0, cuDNN 8.0.4
 #define LBANN_GRU_LAYER_CUDNN_SUPPORTED
 #endif // CUDA_VERSION >= 11000 && CUDNN_VERSION >= 8004
 #endif // LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_ONEDNN_CPU
+#define LBANN_GRU_LAYER_ONEDNN_CPU_SUPPORTED
+#endif // LBANN_HAS_ONEDNN_CPU
 
 namespace lbann {
 
@@ -59,7 +62,6 @@ namespace lbann {
  *  Currently only supported on GPU. Requires at least CUDA 11.0 and
  *  cuDNN 8.0.4.
  *
- *  @todo Support CPU
  *  @todo Support bidirectional RNNs
  */
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -98,9 +100,6 @@ protected:
 
   void setup_dims(DataReaderMetaData& dr_metadata) override;
   void setup_data(size_t max_mini_batch_size) override;
-#ifdef LBANN_GRU_LAYER_CUDNN_SUPPORTED
-  void setup_gpu() override;
-#endif // LBANN_GRU_LAYER_CUDNN_SUPPORTED
 
   void fp_compute() override;
   void bp_compute() override;
@@ -112,29 +111,43 @@ private:
   /** @brief Number of stacked GRU cells */
   size_t m_num_layers;
 
+#ifdef LBANN_GRU_LAYER_ONEDNN_CPU_SUPPORTED
+  /** @name oneDNN CPU implementation */
+  ///@{
+
+  /** @brief Objects used in oneDNN CPU implementation */
+  struct OnednnCpuObjects {
+  };
+
+  /** @brief Storage for oneDNN CPU objects */
+  std::unique_ptr<OnednnCpuObjects> m_onednn_cpu_objects;
+
+  /** @brief Setup oneDNN CPU implementation */
+  void setup_onednn_cpu();
+
+  ///@}
+#endif // LBANN_GRU_LAYER_ONEDNN_CPU_SUPPORTED
+
 #ifdef LBANN_GRU_LAYER_CUDNN_SUPPORTED
+  /** @name cuDNN implementation */
+  ///@{
 
   /** @brief Objects used in cuDNN implementation */
   struct CudnnObjects {
 
-    /** @name Typedefs */
-    ///@{
+    // Typedefs
     using ByteBuffer = hydrogen::simple_buffer<El::byte, El::Device::GPU>;
     using IntBuffer = hydrogen::simple_buffer<int32_t, El::Device::GPU>;
     using LocalMat = El::Matrix<TensorDataType, El::Device::GPU>;
     using GraphCache = std::unordered_map<size_t, std::pair<size_t, cuda::ExecutableGraph>>;
-    ///@}
 
-    /** @name Descriptors */
-    ///@{
+    // Descriptors
     dnn_lib::RNNDescriptor rnn_desc;
     dnn_lib::RNNDataDescriptor input_desc;
     dnn_lib::RNNDataDescriptor output_desc;
     dnn_lib::TensorDescriptor hidden_desc;
-    ///@}
 
-    /** @name Workspaces */
-    ///@{
+    // Workspaces
     LocalMat input_sequence_workspace;
     LocalMat output_sequence_workspace;
     LocalMat input_sequence_grad_workspace;
@@ -146,25 +159,29 @@ private:
     ByteBuffer workspace;
     ByteBuffer reserve_space;
     IntBuffer gpu_sequence_lengths;
-    ///@}
 
-    /** @name CUDA graph caches
-     *
-     *  The cache is a map from mini-batch sizes to (hash, graph)
+    /** The cache is a map from mini-batch sizes to (hash, graph)
      *  pairs. The hash is generated from the cuDNN function
      *  arguments, mostly pointers. The graph is a @c
      *  cuda::ExecutableGraph .
      */
-    ///@{
     GraphCache forward_prop_graph_cache;
+    /** The cache is a map from mini-batch sizes to (hash, graph)
+     *  pairs. The hash is generated from the cuDNN function
+     *  arguments, mostly pointers. The graph is a @c
+     *  cuda::ExecutableGraph .
+     */
     GraphCache backward_prop_graph_cache;
-    ///@}
 
   };
 
   /** @brief Storage for cuDNN objects */
   std::unique_ptr<CudnnObjects> m_cudnn_objects;
 
+  /** @brief Setup cuDNN implementation */
+  void setup_cudnn();
+
+  ///@}
 #endif // LBANN_GRU_LAYER_CUDNN_SUPPORTED
 
   template <typename T>
@@ -178,16 +195,27 @@ private:
 LBANN_DEFINE_LAYER_BUILDER(gru);
 
 // Explicit template instantiation
-#ifdef LBANN_GRU_LAYER_CUDNN_SUPPORTED
 #ifndef LBANN_GRU_LAYER_INSTANTIATE
+
+#ifdef LBANN_GRU_LAYER_ONEDNN_CPU_SUPPORTED
+#define PROTO(T)                                        \
+  extern template class gru_layer<                      \
+    T, data_layout::DATA_PARALLEL, El::Device::CPU>;
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
+#undef PROTO
+#endif // LBANN_GRU_LAYER_ONEDNN_CPU_SUPPORTED
+
+#ifdef LBANN_GRU_LAYER_CUDNN_SUPPORTED
 #define PROTO(T)                                        \
   extern template class gru_layer<                      \
     T, data_layout::DATA_PARALLEL, El::Device::GPU>;
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"
 #undef PROTO
-#endif // LBANN_GRU_LAYER_INSTANTIATE
 #endif // LBANN_GRU_LAYER_CUDNN_SUPPORTED
+
+#endif // LBANN_GRU_LAYER_INSTANTIATE
 
 } // namespace lbann
 

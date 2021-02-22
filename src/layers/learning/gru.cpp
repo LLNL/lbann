@@ -34,9 +34,9 @@
 
 namespace lbann {
 
-// ---------------------------------------------
+// =========================================================
 // Life cycle
-// ---------------------------------------------
+// =========================================================
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 gru_layer<TensorDataType, Layout, Device>::gru_layer(
@@ -53,6 +53,9 @@ gru_layer<TensorDataType, Layout, Device>::gru_layer(const gru_layer& other)
   : data_type_layer<TensorDataType>(other),
     m_hidden_size{other.m_hidden_size},
     m_num_layers{other.m_num_layers} {
+#ifdef LBANN_GRU_LAYER_ONEDNN_CPU_SUPPORTED
+  m_onednn_cpu_objects.reset();
+#endif // LBANN_GRU_LAYER_ONEDNN_CPU_SUPPORTED
 #ifdef LBANN_GRU_LAYER_CUDNN_SUPPORTED
   m_cudnn_objects.reset();
 #endif // LBANN_GRU_LAYER_CUDNN_SUPPORTED
@@ -64,6 +67,9 @@ gru_layer<TensorDataType, Layout, Device>& gru_layer<TensorDataType, Layout, Dev
   data_type_layer<TensorDataType>::operator=(other);
   m_hidden_size = other.m_hidden_size;
   m_num_layers = other.m_num_layers;
+#ifdef LBANN_GRU_LAYER_ONEDNN_CPU_SUPPORTED
+  m_onednn_cpu_objects.reset();
+#endif // LBANN_GRU_LAYER_ONEDNN_CPU_SUPPORTED
 #ifdef LBANN_GRU_LAYER_CUDNN_SUPPORTED
   m_cudnn_objects.reset();
 #endif // LBANN_GRU_LAYER_CUDNN_SUPPORTED
@@ -78,9 +84,9 @@ gru_layer<TensorDataType,Layout,Device>
   return new gru_layer(*this);
 }
 
-// ---------------------------------------------
+// =========================================================
 // Query functions
-// ---------------------------------------------
+// =========================================================
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 std::string
@@ -117,9 +123,9 @@ gru_layer<TensorDataType,Layout,Device>
   return desc;
 }
 
-// ---------------------------------------------
+// =========================================================
 // Setup
-// ---------------------------------------------
+// =========================================================
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void gru_layer<TensorDataType, Layout, Device>::setup_dims(DataReaderMetaData& dr_metadata) {
@@ -233,11 +239,82 @@ void gru_layer<TensorDataType, Layout, Device>
     hh_bias.set_matrix_distribution(dist);
   }
 
+#ifdef LBANN_GRU_LAYER_ONEDNN_CPU_SUPPORTED
+  if constexpr (Device == El::Device::CPU) {
+    setup_onednn_cpu();
+  }
+#endif // LBANN_GRU_LAYER_ONEDNN_CPU_SUPPORTED
+#ifdef LBANN_GRU_LAYER_CUDNN_SUPPORTED
+  if constexpr (Device == El::Device::GPU) {
+    setup_cudnn();
+  }
+#endif // LBANN_GRU_LAYER_CUDNN_SUPPORTED
+
 }
 
-#ifdef LBANN_GRU_LAYER_CUDNN_SUPPORTED
+// =========================================================
+// Forward prop and back prop
+// =========================================================
+
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void gru_layer<TensorDataType, Layout, Device>::setup_gpu() {
+void gru_layer<TensorDataType, Layout, Device>::fp_compute() {
+  fp_compute_impl(*this);
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void gru_layer<TensorDataType, Layout, Device>::bp_compute() {
+  bp_compute_impl(*this);
+}
+
+// =========================================================
+// oneDNN CPU implementation
+// =========================================================
+
+#ifdef LBANN_GRU_LAYER_ONEDNN_CPU_SUPPORTED
+
+// ---------------------------------
+// oneDNN CPU setup
+// ---------------------------------
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void gru_layer<TensorDataType, Layout, Device>::setup_onednn_cpu() {
+  m_onednn_cpu_objects = make_unique<OnednnCpuObjects>();
+}
+
+// ---------------------------------
+// oneDNN CPU forward prop
+// ---------------------------------
+
+template <typename TensorDataType>
+void fp_compute_impl(
+  gru_layer<TensorDataType,data_layout::DATA_PARALLEL,El::Device::CPU>& l) {
+  LBANN_ERROR("not yet implemented"); /// @todo Implement
+}
+
+// ---------------------------------
+// oneDNN CPU back prop
+// ---------------------------------
+
+template <typename TensorDataType>
+void bp_compute_impl(
+  gru_layer<TensorDataType,data_layout::DATA_PARALLEL,El::Device::CPU>& l) {
+  LBANN_ERROR("not yet implemented"); /// @todo Implement
+}
+
+#endif // LBANN_GRU_LAYER_ONEDNN_CPU_SUPPORTED
+
+// =========================================================
+// cuDNN implementation
+// =========================================================
+
+#ifdef LBANN_GRU_LAYER_CUDNN_SUPPORTED
+
+// ---------------------------------
+// cuDNN setup
+// ---------------------------------
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void gru_layer<TensorDataType, Layout, Device>::setup_cudnn() {
 
   // Dimensions
   const size_t sequence_length = this->get_input_dims(0)[0];
@@ -266,18 +343,23 @@ void gru_layer<TensorDataType, Layout, Device>::setup_gpu() {
     CUDNN_RNN_PADDED_IO_ENABLED);
 
 }
-#endif // LBANN_GRU_LAYER_CUDNN_SUPPORTED
 
-// ---------------------------------------------
-// Forward prop
-// ---------------------------------------------
+// ---------------------------------
+// cuDNN forward prop
+// ---------------------------------
 
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void gru_layer<TensorDataType, Layout, Device>::fp_compute() {
-  fp_compute_impl(*this);
-}
-
-#ifdef LBANN_GRU_LAYER_CUDNN_SUPPORTED
+/// @todo Figure out cuDNN bug
+// Note (tym 10/3/20): We experience an error in cuDNN with certain
+// mini-batch sizes. Hack around it by padding to a minimum batch
+// size.
+// Note (BVE 10/3/20): Note that the bug seems to be triggered by
+// switching mini-batch sizes when the last mini-batch is too small.
+// This means that we need a lower bound, which is emperically tested
+// to be 128 for WAE. However, if the initial mini-batch size is less
+// than 128 and it isn't changed, things seem to be okay. So set the
+// threshold to be the smaller of the initial mini-batch size or 128.
+#define MIN_WORKSPACE_MINI_BATCH_SIZE 128
+size_t active_min_workspace_mini_batch_size = 0;
 
 namespace {
 template <typename TensorDataType>
@@ -380,9 +462,6 @@ void pack_cudnn_rnn_weights(
 
 } // namespace <anon>
 
-#define MIN_WORKSPACE_MINI_BATCH_SIZE 128
-size_t active_min_workspace_mini_batch_size = 0;
-
 template <typename TensorDataType>
 void fp_compute_impl(
   gru_layer<TensorDataType,data_layout::DATA_PARALLEL,El::Device::GPU>& l) {
@@ -404,21 +483,11 @@ void fp_compute_impl(
 
   // Configure workspace mini-batch size
   // Note: Return immediately if there is no local data.
-  // Note (tym 10/3/20): We experience an error in cuDNN with certain
-  // mini-batch sizes. Hack around it by padding to a minimum batch
-  // size.
   /// @todo Figure out cuDNN bug
   const size_t mini_batch_size = input_sequence.Width();
   if (mini_batch_size <= 0) {
     return;
   }
-  // Note (BVE 10/3/20): Note that the bug seems to be triggered by
-  // switching mini-batch sizes when the last mini-batch is too small.
-  // This means that we need a lower bound, which is emperically
-  // tested to be 128 for WAE.  However, if the initial mini-batch
-  // size is less than 128 and it isn't changed, things seem to be
-  // okay.  So set the threshold to be the smaller of the initial
-  // mini-batch size or 128.
   if(active_min_workspace_mini_batch_size == 0) {
     // Set the minumum to the smaller of the initial mini-batch size
     // or a predefined minumim
@@ -611,18 +680,9 @@ void fp_compute_impl(
 
 }
 
-#endif // LBANN_GRU_LAYER_CUDNN_SUPPORTED
-
-// ---------------------------------------------
-// Back prop
-// ---------------------------------------------
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void gru_layer<TensorDataType, Layout, Device>::bp_compute() {
-  bp_compute_impl(*this);
-}
-
-#ifdef LBANN_GRU_LAYER_CUDNN_SUPPORTED
+// ---------------------------------
+// cuDNN back prop
+// ---------------------------------
 
 namespace {
 template <typename TensorDataType>
@@ -738,9 +798,6 @@ void bp_compute_impl(
   const size_t num_layers = l.m_num_layers;
 
   // Configure workspace mini-batch size
-  // Note (tym 10/3/20): We experience an error in cuDNN with certain
-  // mini-batch sizes. Hack around it by padding to a minimum batch
-  // size.
   /// @todo Figure out cuDNN bug
   const size_t mini_batch_size = output_sequence_grad.Width();
   if (mini_batch_size <= 0) {
@@ -937,9 +994,9 @@ void bp_compute_impl(
 
 #endif // LBANN_GRU_LAYER_CUDNN_SUPPORTED
 
-// ---------------------------------------------
+// =========================================================
 // Builder
-// ---------------------------------------------
+// =========================================================
 
 namespace
 {
@@ -956,6 +1013,28 @@ struct Builder
       "Layout=",to_string(Layout),", ",
       "Device=",to_string(Device),")");
     return nullptr;
+  }
+};
+
+template <typename TensorDataType>
+struct Builder<TensorDataType,data_layout::DATA_PARALLEL,El::Device::CPU>
+{
+  template <typename... Args>
+  static std::unique_ptr<Layer> Build(Args&&... args)
+  {
+    constexpr auto Layout = data_layout::DATA_PARALLEL;
+    constexpr auto Device = El::Device::CPU;
+#ifdef LBANN_GRU_LAYER_ONEDNN_CPU_SUPPORTED
+    using LayerType = gru_layer<TensorDataType,Layout,Device>;
+    return make_unique<LayerType>(std::forward<Args>(args)...);
+#else
+    LBANN_ERROR(
+      "CPU gru_layer requires oneDNN "
+      "(TensorDataType=",TypeName<TensorDataType>(),", ",
+      "Layout=",to_string(Layout),", ",
+      "Device=",to_string(Device),")");
+    return nullptr;
+#endif // LBANN_GRU_LAYER_ONEDNN_CPU_SUPPORTED
   }
 };
 
@@ -998,11 +1077,18 @@ std::unique_ptr<Layer> build_gru_layer_from_pbuf(
   return BuilderType::Build(params.hidden_size(), num_layers);
 }
 
-// ---------------------------------------------
+// =========================================================
 // Explicit template instantiation
-// ---------------------------------------------
+// =========================================================
 
-/// @todo CPU implementation
+#ifdef LBANN_GRU_LAYER_ONEDNN_CPU_SUPPORTED
+#define PROTO(T)                                                        \
+  template class gru_layer<                                             \
+    T, data_layout::DATA_PARALLEL, El::Device::CPU>;
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
+#undef PROTO
+#endif // LBANN_GRU_LAYER_ONEDNN_CPU_SUPPORTED
 #ifdef LBANN_GRU_LAYER_CUDNN_SUPPORTED
 #define PROTO(T)                                                        \
   template class gru_layer<                                             \
