@@ -42,17 +42,27 @@ set_center_specific_gpu_arch()
 
     if [[ ${center} = "llnl_lc" ]]; then
         case ${spack_arch_target} in
-            "power9le")
+            "power9le") # Lassen
                 GPU_ARCH_VARIANTS="cuda_arch=70"
                 CMAKE_GPU_ARCH="70"
                 ;;
-            "power8le")
+            "power8le") # Ray
                 GPU_ARCH_VARIANTS="cuda_arch=60"
                 CMAKE_GPU_ARCH="60"
                 ;;
-            "broadwell")
+            "broadwell") # Pascal
                 GPU_ARCH_VARIANTS="cuda_arch=60"
                 CMAKE_GPU_ARCH="60"
+                ;;
+            "haswell") # RZHasGPU
+                GPU_ARCH_VARIANTS="cuda_arch=37"
+                CMAKE_GPU_ARCH="37"
+                ;;
+            "ivybridge") # Catalyst
+                ;;
+            "sandybridge") # Surface
+                GPU_ARCH_VARIANTS="cuda_arch=35"
+                CMAKE_GPU_ARCH="35"
                 ;;
             *)
                 ;;
@@ -69,16 +79,16 @@ set_center_specific_modules()
     if [[ ${center} = "llnl_lc" ]]; then
         # Disable the StdEnv for systems in LC
         case ${spack_arch_target} in
-            "power9le" | "power8le")
+            "power9le" | "power8le") # Lassen, Ray
                 MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 cuda/11.1.1 spectrum-mpi/rolling-release python/3.7.2"
                 ;;
-            "broadwell" | "haswell")
+            "broadwell" | "haswell" | "sandybridge") # Pascal, RZHasGPU, Surface
                 MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 cuda/11.1.0 mvapich2/2.3 python/3.7.2"
                 ;;
-            "ivybridge")
+            "ivybridge") # Catalyst
                 MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 mvapich2/2.3 python/3.7.2"
                 ;;
-            "zen")
+            "zen") # Corona
                 MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 mvapich2/2.3 python/3.7.2"
                 ;;
             *)
@@ -124,10 +134,10 @@ set_center_specific_mpi()
 
     if [[ ${center} = "llnl_lc" ]]; then
         case ${spack_arch_target} in
-            "power9le" | "power8le")
+            "power9le" | "power8le") # Lassen, Ray
                 MPI="^spectrum-mpi"
                 ;;
-            "broadwell" | "haswell")
+            "broadwell" | "haswell" | "sandybridge") # Pascal, RZHasGPU, Surface
                 # On LC the mvapich2 being used is built against HWLOC v1
                 MPI="^mvapich2 ^hwloc@1.11.13"
                 ;;
@@ -180,7 +190,7 @@ set_center_specific_externals()
 
     if [[ ${center} = "llnl_lc" ]]; then
         case ${spack_arch_target} in
-            "broadwell" | "haswell" | "zen" | "power9le" | "power8le")
+            "broadwell" | "haswell" | "sandybridge" | "zen" | "power9le" | "power8le")
 cat <<EOF  >> ${yaml}
     rdma-core:
       buildable: False
