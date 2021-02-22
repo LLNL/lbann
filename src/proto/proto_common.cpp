@@ -353,7 +353,7 @@ void init_data_readers(
     } else if (name == "mesh") {
       reader = new mesh_reader(shuffle);
     } else if (name == "python") {
-#ifdef LBANN_HAS_PYTHON
+#ifdef LBANN_HAS_EMBEDDED_PYTHON
       const auto& params = readme.python();
       reader = new python_reader(params.module(),
                                  params.module_dir(),
@@ -364,7 +364,7 @@ void init_data_readers(
 #else
       LBANN_ERROR("attempted to construct Python data reader, "
                   "but LBANN is not built with Python/C API");
-#endif // LBANN_HAS_PYTHON
+#endif // LBANN_HAS_EMBEDDED_PYTHON
     } else if (name == "node2vec") {
 #ifdef LBANN_HAS_LARGESCALE_NODE2VEC
       const auto& params = readme.node2vec();
@@ -534,7 +534,7 @@ void init_data_readers(
             split_reader = new mesh_reader(shuffle);
             (*(mesh_reader *)split_reader) = (*(mesh_reader *)reader);
           } else if (name == "python") {
-#ifdef LBANN_HAS_PYTHON
+#ifdef LBANN_HAS_EMBEDDED_PYTHON
             const auto& params = readme.python();
             split_reader = new python_reader(params.module(),
                                              params.module_dir(),
@@ -546,7 +546,7 @@ void init_data_readers(
 #else
             LBANN_ERROR("attempted to construct Python data reader, "
                         "but LBANN is not built with Python/C API");
-#endif // LBANN_HAS_PYTHON
+#endif // LBANN_HAS_EMBEDDED_PYTHON
           }
 
           if(m == execution_mode::validation) {

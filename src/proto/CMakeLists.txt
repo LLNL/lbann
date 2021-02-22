@@ -26,12 +26,14 @@ if (LBANN_HAS_PROTOBUF)
     get_filename_component(name "${proto}" NAME_WE)
     list(APPEND PROTO_SRCS "${CMAKE_CURRENT_BINARY_DIR}/${name}.pb.cc")
     list(APPEND PROTO_HDRS "${CMAKE_CURRENT_BINARY_DIR}/${name}.pb.h")
+if (LBANN_HAS_PYTHON_FRONTEND)
     list(APPEND PROTO_PY "${CMAKE_CURRENT_BINARY_DIR}/${name}_pb2.py")
+endif (LBANN_HAS_PYTHON_FRONTEND)
   endforeach ()
   add_custom_command(
     COMMAND protobuf::protoc
     "--cpp_out=${CMAKE_CURRENT_BINARY_DIR}"
-    "--python_out=${CMAKE_CURRENT_BINARY_DIR}"
+    $<$<BOOL:${LBANN_HAS_PYTHON_FRONTEND}>:--python_out=${CMAKE_CURRENT_BINARY_DIR}>
     "-I" "${CMAKE_CURRENT_SOURCE_DIR}"
     "${PROTO_INPUTS}"
     OUTPUT ${PROTO_SRCS} ${PROTO_HDRS} ${PROTO_PY}
@@ -64,9 +66,11 @@ if (LBANN_HAS_PROTOBUF)
   # Install the newly built headers
   install(FILES ${PROTO_HDRS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
+if (LBANN_HAS_PYTHON_FRONTEND)
   # Install the Python module into the site-packages directory
   install(FILES ${PROTO_PY} DESTINATION
                 ${PYTHON_INSTALL_PREFIX}/${CMAKE_INSTALL_PYTHONDIR})
+endif (LBANN_HAS_PYTHON_FRONTEND)
 
 endif (LBANN_HAS_PROTOBUF)
 
