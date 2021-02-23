@@ -126,6 +126,7 @@ private:
     using TensorDesc = Backend::TensorDescriptor;
 
     // Descriptors
+    ::dnnl::gru_forward::primitive_desc gru_forward_primitive_desc;
     ::dnnl::gru_forward::primitive gru_forward_primitive;
     TensorDesc input_sequence_desc;
     TensorDesc init_hidden_desc;

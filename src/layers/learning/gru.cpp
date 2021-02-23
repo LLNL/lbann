@@ -387,9 +387,8 @@ void fp_compute_impl(
     ::dnnl::memory::desc(), // onednn_objects.bias_desc,
     onednn_objects.output_sequence_desc.get().get_desc(),
     ::dnnl::memory::desc()); // dst_iter_desc
-  ::dnnl::gru_forward::primitive_desc gru_forward_primitive_desc(
-    gru_forward_desc,
-    engine);
+  onednn_objects.gru_forward_primitive_desc
+    = ::dnnl::gru_forward::primitive_desc(gru_forward_desc, engine);
 
   // Reorder data as needed
   /// @todo Implement
@@ -398,7 +397,7 @@ void fp_compute_impl(
   // Execute primitive
   /// @todo Cache primitive and reuse
   onednn_objects.gru_forward_primitive
-    = ::dnnl::gru_forward(gru_forward_primitive_desc);
+    = ::dnnl::gru_forward(onednn_objects.gru_forward_primitive_desc);
   onednn_objects.gru_forward_primitive.execute(
     stream,
     { {DNNL_ARG_SRC_LAYER, onednn_objects.input_sequence_desc},
