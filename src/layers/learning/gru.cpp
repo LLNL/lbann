@@ -30,6 +30,7 @@
 #include "lbann/weights/initializer.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/hash.hpp"
+#include "lbann/utils/sync_info_helpers.hpp"
 #include <layers.pb.h>
 
 namespace lbann {
@@ -278,7 +279,23 @@ void gru_layer<TensorDataType, Layout, Device>::bp_compute() {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void gru_layer<TensorDataType, Layout, Device>::setup_onednn_cpu() {
+
+  // Initialize storage for cuDNN objects
   m_onednn_cpu_objects = make_unique<OnednnCpuObjects>();
+
+  // Check that input and hidden size are identical
+  // Note: This is a limitation in oneDNN.
+  const size_t sequence_length = this->get_input_dims(0)[0];
+  const size_t input_size = this->get_input_size(0) / sequence_length;
+  if (m_num_layers > 1 && input_size != m_hidden_size) {
+    LBANN_ERROR(
+      "oneDNN requires that multi-layer GRUs ",
+      "have consistent input and output dimensions, ",
+      "but ",this->get_type()," layer \"",this->get_name(),"\" ",
+      "has num_layers=",m_num_layers,", input_size=",input_size,", ",
+      "and hidden_size=",m_hidden_size);
+  }
+
 }
 
 // ---------------------------------
@@ -288,7 +305,111 @@ void gru_layer<TensorDataType, Layout, Device>::setup_onednn_cpu() {
 template <typename TensorDataType>
 void fp_compute_impl(
   gru_layer<TensorDataType,data_layout::DATA_PARALLEL,El::Device::CPU>& l) {
-  LBANN_ERROR("not yet implemented"); /// @todo Implement
+
+  // Matrices
+  using LocalMat = El::Matrix<TensorDataType, El::Device::CPU>;
+  const auto& input_sequence
+    = dynamic_cast<const LocalMat&>(l.get_local_prev_activations(0));
+  const auto& init_hidden
+    = dynamic_cast<const LocalMat&>(l.get_local_prev_activations(1));
+  auto& output_sequence
+    = dynamic_cast<LocalMat&>(l.get_local_activations());
+
+  // Dimensions
+  const int local_mini_batch_size = input_sequence.Width();
+  const int sequence_length = l.get_input_dims(0)[0];
+  const int input_size = l.get_input_size(0) / sequence_length;
+  const int hidden_size = l.m_hidden_size;
+  const int num_layers = l.m_num_layers;
+
+  // oneDNN objects
+  if (l.m_onednn_cpu_objects == nullptr) {
+    LBANN_ERROR(
+      l.get_type()," layer \"",l.get_name(),"\" ",
+      "attempted to run oneDNN CPU implementation ",
+      "before initializing oneDNN objects");
+  }
+  auto sync_info = force(
+    El::MakeMultiSync(
+      get_sync_info(output_sequence),
+      get_sync_info(input_sequence),
+      get_sync_info(init_hidden)));
+  constexpr auto Device = El::Device::CPU;
+  auto& engine = onednn::get_device_engine<Device>();
+  auto stream = onednn::get_stream<Device>(engine, sync_info);
+  auto&& onednn_objects = *l.m_onednn_cpu_objects;
+  using Backend = onednn_backend<Device>;
+  const auto data_type = Backend::template data_type<TensorDataType>();
+
+  // Configure input and output tensor descriptors
+  /// @todo Consider specifying tensors with
+  /// @c ::dnnl::memory::format_tag
+  onednn_objects.input_sequence_desc.set(
+    data_type,
+    {sequence_length, local_mini_batch_size, input_size},
+    {input_size, El::To<int>(input_sequence.LDim()), 1});
+  onednn_objects.input_sequence_desc.get().set_data_handle(
+    const_cast<TensorDataType*>(input_sequence.LockedBuffer()),
+    stream);
+  onednn_objects.init_hidden_desc.set(
+    data_type,
+    {local_mini_batch_size, num_layers, hidden_size},
+    {El::To<int>(init_hidden.LDim()), hidden_size, 1});
+  onednn_objects.init_hidden_desc.get().set_data_handle(
+    const_cast<TensorDataType*>(init_hidden.LockedBuffer()),
+    stream);
+  onednn_objects.output_sequence_desc.set(
+    data_type,
+    {sequence_length, local_mini_batch_size, hidden_size},
+    {hidden_size, El::To<int>(output_sequence.LDim()), 1});
+  onednn_objects.output_sequence_desc.get().set_data_handle(
+    output_sequence.Buffer(),
+    stream);
+
+  // Configure weight tensor descriptors
+  /// @todo Packing and set pointers
+  onednn_objects.ih_matrix_desc.set(
+    data_type,
+    {num_layers, /*num_directions=*/1, input_size, /*num_gates=*/3, hidden_size});
+  onednn_objects.hh_matrix_desc.set(
+    data_type,
+    {num_layers, /*num_directions=*/1, hidden_size, /*num_gates=*/3, hidden_size});
+  onednn_objects.hh_matrix_desc.set(data_type, {});
+
+  // Construct operation descriptor and primitive descriptor
+  ::dnnl::gru_forward::desc gru_forward_desc(
+    ::dnnl::prop_kind::forward_training,
+    ::dnnl::rnn_direction::unidirectional_left2right,
+    onednn_objects.input_sequence_desc.get().get_desc(),
+    ::dnnl::memory::desc(), // onednn_objects.init_hidden_desc,
+    onednn_objects.ih_matrix_desc.get().get_desc(),
+    onednn_objects.hh_matrix_desc.get().get_desc(),
+    ::dnnl::memory::desc(), // onednn_objects.bias_desc,
+    onednn_objects.output_sequence_desc.get().get_desc(),
+    ::dnnl::memory::desc()); // dst_iter_desc
+  ::dnnl::gru_forward::primitive_desc gru_forward_primitive_desc(
+    gru_forward_desc,
+    engine);
+
+  // Reorder data as needed
+  /// @todo Implement
+  /// @todo Handle workspace
+
+  // Execute primitive
+  /// @todo Cache primitive and reuse
+  onednn_objects.gru_forward_primitive
+    = ::dnnl::gru_forward(gru_forward_primitive_desc);
+  onednn_objects.gru_forward_primitive.execute(
+    stream,
+    { {DNNL_ARG_SRC_LAYER, onednn_objects.input_sequence_desc},
+        // {DNNL_ARG_SRC_ITER, onednn_objects.init_hidden_desc},
+      {DNNL_ARG_DST_LAYER, onednn_objects.output_sequence_desc},
+      {DNNL_ARG_WEIGHTS_LAYER, onednn_objects.ih_matrix_desc},
+      {DNNL_ARG_WEIGHTS_ITER, onednn_objects.hh_matrix_desc},
+        // {DNNL_ARG_BIAS, onednn_objects.bias_desc},
+      {DNNL_ARG_WORKSPACE, onednn_objects.workspace_desc}});
+  stream.wait();
+
 }
 
 // ---------------------------------

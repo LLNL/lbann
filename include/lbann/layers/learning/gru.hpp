@@ -31,6 +31,9 @@
 #ifdef LBANN_HAS_DNN_LIB
 #include "lbann/utils/dnn_lib/helpers.hpp"
 #endif // LBANN_HAS_DNN_LIB
+#ifdef LBANN_HAS_ONEDNN
+#include "lbann/utils/dnn_lib/onednn.hpp"
+#endif // LBANN_HAS_ONEDNN
 
 // Supported implementations
 #ifdef LBANN_HAS_CUDNN
@@ -117,6 +120,21 @@ private:
 
   /** @brief Objects used in oneDNN CPU implementation */
   struct OnednnCpuObjects {
+
+    // Typedefs
+    using Backend = onednn_backend<El::Device::CPU>;
+    using TensorDesc = Backend::TensorDescriptor;
+
+    // Descriptors
+    ::dnnl::gru_forward::primitive gru_forward_primitive;
+    TensorDesc input_sequence_desc;
+    TensorDesc init_hidden_desc;
+    TensorDesc output_sequence_desc;
+    TensorDesc ih_matrix_desc;
+    TensorDesc hh_matrix_desc;
+    TensorDesc bias_desc;
+    TensorDesc workspace_desc;
+
   };
 
   /** @brief Storage for oneDNN CPU objects */
