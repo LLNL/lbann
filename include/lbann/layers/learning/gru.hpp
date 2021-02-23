@@ -131,6 +131,7 @@ private:
     TensorDesc input_sequence_desc;
     TensorDesc init_hidden_desc;
     TensorDesc output_sequence_desc;
+    TensorDesc final_hidden_desc;
 
     // Workspaces
     TensorDesc ih_matrix_weights;
