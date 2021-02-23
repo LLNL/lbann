@@ -131,10 +131,12 @@ private:
     TensorDesc input_sequence_desc;
     TensorDesc init_hidden_desc;
     TensorDesc output_sequence_desc;
-    TensorDesc ih_matrix_desc;
-    TensorDesc hh_matrix_desc;
-    TensorDesc bias_desc;
-    TensorDesc workspace_desc;
+
+    // Workspaces
+    TensorDesc ih_matrix_weights;
+    TensorDesc hh_matrix_weights;
+    TensorDesc bias_weights;
+    TensorDesc workspace;
 
   };
 

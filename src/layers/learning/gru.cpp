@@ -29,6 +29,7 @@
 #include "lbann/models/model.hpp"
 #include "lbann/weights/initializer.hpp"
 #include "lbann/proto/proto_common.hpp"
+#include "lbann/utils/dim_helpers.hpp"
 #include "lbann/utils/hash.hpp"
 #include "lbann/utils/sync_info_helpers.hpp"
 #include <layers.pb.h>
@@ -280,11 +281,19 @@ void gru_layer<TensorDataType, Layout, Device>::bp_compute() {
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void gru_layer<TensorDataType, Layout, Device>::setup_onednn_cpu() {
 
-  // Initialize storage for cuDNN objects
+  // Initialize storage for oneDNN objects
   m_onednn_cpu_objects = make_unique<OnednnCpuObjects>();
 
+  // oneDNN objects
+  using Backend = onednn_backend<El::Device::CPU>;
+  using Memory = ::dnnl::memory;
+  const auto data_type = Backend::template data_type<TensorDataType>();
+  auto& onednn_objects = *m_onednn_cpu_objects;
+  auto& engine = onednn::get_device_engine<El::Device::CPU>();
+
   // Check that input and hidden size are identical
-  // Note: This is a limitation in oneDNN.
+  // Note: As of oneDNN 2.1.0, GRUs with num_layers>1 require the
+  // input and output channel sizes to be identical.
   const size_t sequence_length = this->get_input_dims(0)[0];
   const size_t input_size = this->get_input_size(0) / sequence_length;
   if (m_num_layers > 1 && input_size != m_hidden_size) {
@@ -296,11 +305,146 @@ void gru_layer<TensorDataType, Layout, Device>::setup_onednn_cpu() {
       "and hidden_size=",m_hidden_size);
   }
 
+  // Initialize storage for packed "ih matrix" weights
+  // Note: weights_layer in oneDNN terminology.
+  Memory::dims ih_matrix_weights_dims{
+    m_num_layers,
+    1, // num_directions
+    input_size,
+    3, // num_gates
+    m_hidden_size};
+  Memory::desc ih_matrix_weights_desc(
+    ih_matrix_weights_dims,
+    data_type,
+    get_packed_strides(ih_matrix_weights_dims));
+  onednn_objects.ih_matrix_weights.reset(
+    Memory(ih_matrix_weights_desc, engine));
+
+  // Initialize storage for packed "hh matrix" weights
+  // Note: weights_iter in oneDNN terminology.
+  Memory::dims hh_matrix_weights_dims{
+    m_num_layers,
+    1, // num_directions
+    m_hidden_size,
+    3, // num_gates
+    m_hidden_size};
+  Memory::desc hh_matrix_weights_desc(
+    hh_matrix_weights_dims,
+    data_type,
+    get_packed_strides(hh_matrix_weights_dims));
+  onednn_objects.hh_matrix_weights.reset(
+    Memory(hh_matrix_weights_desc, engine));
+
+  // Initialize storage for packed biases
+  /// @todo Implement
+
 }
 
 // ---------------------------------
 // oneDNN CPU forward prop
 // ---------------------------------
+
+namespace {
+
+/** @brief Pack entries from LBANN weights into oneDNN buffers.
+ *
+ *  oneDNN expects weights in 5D tensors:
+ *
+ *    weights_layer : num_layers x num_directions x input_size x num_gates x hidden_size
+ *
+ *    weights_iter : num_layers x num_directions x hidden_size x num_gates x hidden_size
+ *
+ *  In oneDNN, the gates are ordered {update, reset, output}. Note
+ *  that this is different than the order in LBANN and cuDNN, which is
+ *  {reset, update, output}.
+ */
+template <typename TensorDataType>
+void pack_onednn_weights(
+  size_t input_size,
+  size_t hidden_size,
+  size_t num_layers,
+  ::dnnl::memory ih_matrix_weights,
+  ::dnnl::memory hh_matrix_weights,
+  ::dnnl::memory bias_weights,
+  const std::vector<El::Matrix<TensorDataType,El::Device::CPU>>& weights_list) {
+
+  // Typedefs
+  using Memory = ::dnnl::memory;
+  using LocalMat = El::Matrix<TensorDataType,El::Device::CPU>;
+
+  // Copy from "ih matrix" weights to workspace buffer
+  // Note: oneDNN expects weight matrices in {update, reset, output}
+  // order. LBANN and cuDNN store in {reset, update, output} order.
+  auto make_ih_matrix_src_view = [&](size_t layer_id, size_t gate_id)
+    -> const LocalMat {
+    const auto& ih_matrix = weights_list[4*layer_id];
+    return ih_matrix(
+      El::IR(gate_id*hidden_size, (gate_id+1)*hidden_size),
+      El::ALL);
+  };
+  auto make_ih_matrix_dst_view = [&](size_t layer_id, size_t gate_id)
+    -> LocalMat {
+    auto* buffer = reinterpret_cast<TensorDataType*>(ih_matrix_weights.get_data_handle());
+    const size_t layer_stride = 1*input_size*3*hidden_size;
+    const size_t gate_stride = hidden_size;
+    return LocalMat(
+      hidden_size,
+      input_size,
+      buffer + layer_id*layer_stride * gate_id*gate_stride,
+      3*hidden_size);
+  };
+  for (size_t layer_id=0; layer_id<num_layers; ++layer_id) {
+    const auto src_update = make_ih_matrix_src_view(layer_id, 1);
+    const auto src_reset = make_ih_matrix_src_view(layer_id, 0);
+    const auto src_output = make_ih_matrix_src_view(layer_id, 2);
+    auto dst_update = make_ih_matrix_dst_view(layer_id, 0);
+    auto dst_reset = make_ih_matrix_dst_view(layer_id, 1);
+    auto dst_output = make_ih_matrix_dst_view(layer_id, 2);
+    El::Copy(src_update, dst_update);
+    El::Copy(src_reset, dst_reset);
+    El::Copy(src_output, dst_output);
+  }
+
+  // Copy from "hh matrix" weights to workspace buffer
+  // Note: oneDNN expects weight matrices in {update, reset, output}
+  // order. LBANN and cuDNN store in {reset, update, output} order.
+  auto make_hh_matrix_src_view = [&](size_t layer_id, size_t gate_id)
+    -> const LocalMat {
+    const auto& hh_matrix = weights_list[4*layer_id+1];
+    return hh_matrix(
+      El::IR(gate_id*hidden_size, (gate_id+1)*hidden_size),
+      El::ALL);
+  };
+  auto make_hh_matrix_dst_view = [&](size_t layer_id, size_t gate_id)
+    -> LocalMat {
+    auto* buffer = reinterpret_cast<TensorDataType*>(hh_matrix_weights.get_data_handle());
+    const size_t layer_stride = 1*hidden_size*3*hidden_size;
+    const size_t gate_stride = hidden_size;
+    return LocalMat(
+      hidden_size,
+      hidden_size,
+      buffer + layer_id*layer_stride * gate_id*gate_stride,
+      3*hidden_size);
+  };
+  for (size_t layer_id=0; layer_id<num_layers; ++layer_id) {
+    const auto src_update = make_hh_matrix_src_view(layer_id, 1);
+    const auto src_reset = make_hh_matrix_src_view(layer_id, 0);
+    const auto src_output = make_hh_matrix_src_view(layer_id, 2);
+    auto dst_update = make_hh_matrix_dst_view(layer_id, 0);
+    auto dst_reset = make_hh_matrix_dst_view(layer_id, 1);
+    auto dst_output = make_hh_matrix_dst_view(layer_id, 2);
+    El::Copy(src_update, dst_update);
+    El::Copy(src_reset, dst_reset);
+    El::Copy(src_output, dst_output);
+  }
+
+  // Copy from bias weights to workspace buffer
+  // Note: oneDNN expects weight matrices in {update, reset, output}
+  // order. LBANN and cuDNN store in {reset, update, output} order.
+  /// @todo Implement
+
+}
+} // namespace <anon>
 
 template <typename TensorDataType>
 void fp_compute_impl(
@@ -329,21 +473,21 @@ void fp_compute_impl(
       "attempted to run oneDNN CPU implementation ",
       "before initializing oneDNN objects");
   }
+  constexpr auto Device = El::Device::CPU;
+  using Backend = onednn_backend<Device>;
+  using Memory = ::dnnl::memory;
+  const auto data_type = Backend::template data_type<TensorDataType>();
+  auto& onednn_objects = *l.m_onednn_cpu_objects;
   auto sync_info = force(
     El::MakeMultiSync(
       get_sync_info(output_sequence),
       get_sync_info(input_sequence),
       get_sync_info(init_hidden)));
-  constexpr auto Device = El::Device::CPU;
   auto& engine = onednn::get_device_engine<Device>();
   auto stream = onednn::get_stream<Device>(engine, sync_info);
-  auto&& onednn_objects = *l.m_onednn_cpu_objects;
-  using Backend = onednn_backend<Device>;
-  const auto data_type = Backend::template data_type<TensorDataType>();
 
   // Configure input and output tensor descriptors
-  /// @todo Consider specifying tensors with
-  /// @c ::dnnl::memory::format_tag
+  /// @todo Consider specifying tensors with format tags
   onednn_objects.input_sequence_desc.set(
     data_type,
     {sequence_length, local_mini_batch_size, input_size},
@@ -366,33 +510,42 @@ void fp_compute_impl(
     output_sequence.Buffer(),
     stream);
 
-  // Configure weight tensor descriptors
-  /// @todo Packing and set pointers
-  onednn_objects.ih_matrix_desc.set(
-    data_type,
-    {num_layers, /*num_directions=*/1, input_size, /*num_gates=*/3, hidden_size});
-  onednn_objects.hh_matrix_desc.set(
-    data_type,
-    {num_layers, /*num_directions=*/1, hidden_size, /*num_gates=*/3, hidden_size});
-  onednn_objects.hh_matrix_desc.set(data_type, {});
+  // Pack weights into workspace buffer
+  std::vector<LocalMat> weights_list;
+  for (size_t i=0; i<4*num_layers; ++i) {
+    const auto& w
+      = dynamic_cast<const LocalMat&>(l.weights_values(i).LockedMatrix());
+    weights_list.emplace_back(El::LockedView(w));
+  }
+  pack_onednn_weights<TensorDataType>(
+    input_size,
+    hidden_size,
+    num_layers,
+    onednn_objects.ih_matrix_weights,
+    onednn_objects.hh_matrix_weights,
+    onednn_objects.bias_weights,
+    weights_list);
 
   // Construct operation descriptor and primitive descriptor
   ::dnnl::gru_forward::desc gru_forward_desc(
     ::dnnl::prop_kind::forward_training,
     ::dnnl::rnn_direction::unidirectional_left2right,
     onednn_objects.input_sequence_desc.get().get_desc(),
-    ::dnnl::memory::desc(), // onednn_objects.init_hidden_desc,
-    onednn_objects.ih_matrix_desc.get().get_desc(),
-    onednn_objects.hh_matrix_desc.get().get_desc(),
-    ::dnnl::memory::desc(), // onednn_objects.bias_desc,
+    Memory::desc(), // onednn_objects.init_hidden_desc.get().get_desc(), /// @todo Restore
+    onednn_objects.ih_matrix_weights.get().get_desc(),
+    onednn_objects.hh_matrix_weights.get().get_desc(),
+    Memory::desc(), // onednn_objects.bias_weights.get().get_desc(), /// @todo Restore
     onednn_objects.output_sequence_desc.get().get_desc(),
-    ::dnnl::memory::desc()); // dst_iter_desc
+    Memory::desc()); // dst_iter_desc
   onednn_objects.gru_forward_primitive_desc
     = ::dnnl::gru_forward::primitive_desc(gru_forward_desc, engine);
 
-  // Reorder data as needed
-  /// @todo Implement
-  /// @todo Handle workspace
+  // Allocate workspace, if needed
+  const auto& workspace_desc
+    = onednn_objects.gru_forward_primitive_desc.workspace_desc();
+  if (onednn_objects.workspace.get().get_desc() != workspace_desc) {
+    onednn_objects.workspace.reset(Memory(workspace_desc, engine));
+  }
 
   // Execute primitive
   /// @todo Cache primitive and reuse
@@ -403,10 +556,10 @@ void fp_compute_impl(
     { {DNNL_ARG_SRC_LAYER, onednn_objects.input_sequence_desc},
         // {DNNL_ARG_SRC_ITER, onednn_objects.init_hidden_desc},
       {DNNL_ARG_DST_LAYER, onednn_objects.output_sequence_desc},
-      {DNNL_ARG_WEIGHTS_LAYER, onednn_objects.ih_matrix_desc},
-      {DNNL_ARG_WEIGHTS_ITER, onednn_objects.hh_matrix_desc},
-        // {DNNL_ARG_BIAS, onednn_objects.bias_desc},
-      {DNNL_ARG_WORKSPACE, onednn_objects.workspace_desc}});
+      {DNNL_ARG_WEIGHTS_LAYER, onednn_objects.ih_matrix_weights},
+      {DNNL_ARG_WEIGHTS_ITER, onednn_objects.hh_matrix_weights},
+        // {DNNL_ARG_BIAS, onednn_objects.bias_weights},
+      {DNNL_ARG_WORKSPACE, onednn_objects.workspace}});
   stream.wait();
 
 }
@@ -625,7 +778,7 @@ void fp_compute_impl(
   auto&& sync_info = input_sequence.GetSyncInfo();
   auto&& stream = sync_info.Stream();
   auto&& handle = dnn_lib::get_handle();
-  auto&& cudnn_objects = *l.m_cudnn_objects;
+  auto& cudnn_objects = *l.m_cudnn_objects;
   const auto data_type = dnn_lib::get_data_type<TensorDataType>();
 
   // Configure input and output tensor descriptors
@@ -935,7 +1088,7 @@ void bp_compute_impl(
   auto&& sync_info = output_sequence_grad.GetSyncInfo();
   auto&& stream = sync_info.Stream();
   auto&& handle = dnn_lib::get_handle();
-  auto&& cudnn_objects = *l.m_cudnn_objects;
+  auto& cudnn_objects = *l.m_cudnn_objects;
 
   // Define closure to send weight gradients to optimizers
   std::vector<LocalMat> weights_grad_list(4*num_layers);
