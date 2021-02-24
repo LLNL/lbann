@@ -284,23 +284,27 @@ if [[ ! "${LBANN_VARIANTS}" =~ .*"^aluminum".* ]]; then
     ALUMINUM="^aluminum${ALUMINUM_VER}"
 fi
 
-# Check to see if LBANN turned on dihydrogen
-DIHYDROGEN_VARIANTS='+dihydrogen'
-if [[ "${LBANN_VARIANTS}" =~ .*"${DIHYDROGEN_VARIANTS}".* ]]; then
-    if [[ ! "${LBANN_VARIANTS}" =~ .*"^dihydrogen".* ]]; then
-        # If the user didn't supply a specific version of DiHydrogen on the command line add one
-        DIHYDROGEN="^dihydrogen${DIHYDROGEN_VER}"
-    fi
+if [[ ! "${LBANN_VARIANTS}" =~ .*"^dihydrogen".* ]]; then
+    # If the user didn't supply a specific version of DiHydrogen on the command line add one
+    # Due to concretizer errors force the openmp variant for DiHydrogen
+    DIHYDROGEN="^dihydrogen${DIHYDROGEN_VER}+openmp"
 fi
 
-GPU_VARIANTS='+cuda'
-if [[ "${LBANN_VARIANTS}" =~ .*"${GPU_VARIANTS}".* ]]; then
-    # Define the GPU_ARCH_VARIANTS field
-    GPU_ARCH_VARIANTS=
-    set_center_specific_gpu_arch ${CENTER} ${SPACK_ARCH_TARGET}
-    # Prepend the GPU_ARCH_VARIANTS for the LBANN variants if the +cuda variant is defined
-    LBANN_VARIANTS=" ${GPU_ARCH_VARIANTS} ${LBANN_VARIANTS}"
-fi
+GPU_VARIANTS_ARRAY=('+cuda' '+rocm')
+for GPU_VARIANTS in ${GPU_VARIANTS_ARRAY[@]}
+do
+    if [[ "${LBANN_VARIANTS}" =~ .*"${GPU_VARIANTS}".* ]]; then
+        # Define the GPU_ARCH_VARIANTS field
+        GPU_ARCH_VARIANTS=
+        set_center_specific_gpu_arch ${CENTER} ${SPACK_ARCH_TARGET}
+        # Prepend the GPU_ARCH_VARIANTS for the LBANN variants if the +cuda variant is defined
+        LBANN_VARIANTS=" ${GPU_ARCH_VARIANTS} ${LBANN_VARIANTS}"
+        # Due to concretizer errors force the GPU ARCH variant for DiHydrogen
+        if [[ ! "${LBANN_VARIANTS}" =~ .*"^dihydrogen".* ]]; then
+            DIHYDROGEN+="${GPU_VARIANTS} ${GPU_ARCH_VARIANTS}"
+        fi
+    fi
+done
 
 # Record the original command in the log file
 echo "${ORIG_CMD}" | tee -a ${LOG}
@@ -368,13 +372,13 @@ if [[ -z "${DRY_RUN:-}" ]]; then
 fi
 
 # Figure out if there is a default MPI library for the center
-MPI=
-set_center_specific_mpi ${CENTER} ${SPACK_ARCH_TARGET}
+CENTER_DEPENDENCIES=
+set_center_specific_spack_dependencies ${CENTER} ${SPACK_ARCH_TARGET}
 
 ##########################################################################################
 # Establish the spec for LBANN
-LBANN_SPEC="lbann@${LBANN_LABEL} ${LBANN_VARIANTS} ${HYDROGEN} ${DIHYDROGEN} ${ALUMINUM} ${MPI}"
-LBANN_DEV_PATH_SPEC="lbann@${LBANN_LABEL} dev_path=${LBANN_HOME} ${LBANN_VARIANTS} ${HYDROGEN} ${DIHYDROGEN} ${ALUMINUM} ${MPI}"
+LBANN_SPEC="lbann@${LBANN_LABEL} ${LBANN_VARIANTS} ${HYDROGEN} ${DIHYDROGEN} ${ALUMINUM} ${CENTER_DEPENDENCIES}"
+LBANN_DEV_PATH_SPEC="lbann@${LBANN_LABEL} dev_path=${LBANN_HOME} ${LBANN_VARIANTS} ${HYDROGEN} ${DIHYDROGEN} ${ALUMINUM} ${CENTER_DEPENDENCIES}"
 ##########################################################################################
 
 if [[ -n "${BUILD_ENV_ONLY:-}" ]]; then
@@ -385,6 +389,12 @@ if [[ -n "${BUILD_ENV_ONLY:-}" ]]; then
 fi
 
 if [[ -n "${INSTALL_DEPS:-}" ]]; then
+    # See if there are any center-specific externals
+    SPACK_ENV_YAML_FILE="${SPACK_ROOT}/var/spack/environments/${LBANN_ENV}/spack.yaml"
+    CMD="set_center_specific_externals ${CENTER} ${SPACK_ARCH_TARGET} ${SPACK_ARCH} ${SPACK_ENV_YAML_FILE}"
+    echo ${CMD} | tee -a ${LOG}
+    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+
     CMD="spack compiler find --scope env:${LBANN_ENV}"
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
@@ -393,9 +403,7 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
-    # See if there are any center-specific externals
-    SPACK_ENV_YAML_FILE="${SPACK_ROOT}/var/spack/environments/${LBANN_ENV}/spack.yaml"
-    CMD="set_center_specific_externals ${CENTER} ${SPACK_ARCH_TARGET} ${SPACK_ARCH} ${SPACK_ENV_YAML_FILE}"
+    CMD="cleanup_clang_compilers ${CENTER} ${SPACK_ENV_YAML_FILE}"
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 fi
