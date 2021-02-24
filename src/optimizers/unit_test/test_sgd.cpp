@@ -80,51 +80,21 @@ struct SGDBuilder
   }
 };// struct SGDBuilder
 
-template <typename DataType, typename ArchiveTypes>
-struct TestSGD : TestOptimizer<lbann::sgd<DataType>,
-                               SGDBuilder<DataType>,
-                               ArchiveTypes>
-{};
-
 }// namespace <anon>
 
-// By way of documentation, this is what all the metaprogramming and
-// "common" code have been building up to. The driving goal was to
-// make things look "nice" and be meaningful to developers on the
-// command line. The result is that the test case names will be
-// something like:
-//
-//   "Optimizer serialization - TestSGD<float, XMLArchiveTypes>"
-//
-// This gives the developer three important bits of information: the
-// optimizer class under test, the TensorDataType being used, and the
-// Cereal archive type being used. This doesn't really matter when the
-// test is passing, but it will be very useful specificity when/if it
-// fails. It is also useful for narrowing down the list of tests to
-// run by regexp match, which is supported in both CTest and the
-// Catch2 CLI.
-//
-// The test case itself is implemented as though it were a template
-// function, taking a subclass of TestOptimizer<...> as its template
-// parameter. All of the data for the test is generated internally to
-// the test, and the archive is written to a string stream, so the
-// test is also disk-free. The test asserts that serializing and
-// deserializing the archive is exception-free and that the
-// deserialized optimizer object matches the serialized optimizer
-// object, for whatever definition of "matching" the test implementor
-// has decided upon.
-
-TEMPLATE_PRODUCT_TEST_CASE(
-  "Optimizer serialization",
+TEMPLATE_LIST_TEST_CASE(
+  "SGD Optimizer serialization",
   "[optimizer][serialize]",
-  TestSGD,
-  TEMPLATE_ARG_LIST)
+  AllArchiveTypes)
 {
-  using TypePack = TestType;
-  using OptimizerType = GetOptimizerType<TypePack>;
-  using BuilderType = GetBuilderType<TypePack>;
-  using OutputArchiveType = GetOutputArchiveType<TypePack>;
-  using InputArchiveType = GetInputArchiveType<TypePack>;
+  using ValueType = tlist::Car<TestType>;
+
+  using ArchiveTypes = tlist::Cdr<TestType>;
+  using OutputArchiveType = tlist::Car<ArchiveTypes>;
+  using InputArchiveType = tlist::Cadr<ArchiveTypes>;
+
+  using OptimizerType = lbann::sgd<ValueType>;
+  using BuilderType = SGDBuilder<ValueType>;
 
   std::stringstream ss;
 

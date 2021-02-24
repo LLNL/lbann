@@ -28,25 +28,21 @@ struct RmspropBuilder
   }
 };// struct RmspropBuilder
 
-template <typename DataType, typename ArchiveTypes>
-struct TestRmsprop : TestOptimizer<lbann::rmsprop<DataType>,
-                                RmspropBuilder<DataType>,
-                                ArchiveTypes>
-{};
-
 }// namespace <anon>
 
-TEMPLATE_PRODUCT_TEST_CASE(
-  "Optimizer serialization",
+TEMPLATE_LIST_TEST_CASE(
+  "RMSProp Optimizer serialization",
   "[optimizer][serialize]",
-  TestRmsprop,
-  TEMPLATE_ARG_LIST)
+  AllArchiveTypes)
 {
-  using TypePack = TestType;
-  using OptimizerType = GetOptimizerType<TypePack>;
-  using BuilderType = GetBuilderType<TypePack>;
-  using OutputArchiveType = GetOutputArchiveType<TypePack>;
-  using InputArchiveType = GetInputArchiveType<TypePack>;
+  using ValueType = tlist::Car<TestType>;
+
+  using ArchiveTypes = tlist::Cdr<TestType>;
+  using OutputArchiveType = tlist::Car<ArchiveTypes>;
+  using InputArchiveType = tlist::Cadr<ArchiveTypes>;
+
+  using OptimizerType = lbann::rmsprop<ValueType>;
+  using BuilderType = RmspropBuilder<ValueType>;
 
   std::stringstream ss;
 
