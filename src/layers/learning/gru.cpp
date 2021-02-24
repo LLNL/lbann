@@ -311,35 +311,31 @@ void gru_layer<TensorDataType, Layout, Device>::setup_onednn_cpu() {
 
   // Initialize storage for packed "ih_matrix" weights
   // Note: weights_layer in oneDNN terminology.
-  Memory::dims ih_matrix_weights_dims{
-    num_layers, /*num_directions=*/1, input_size, /*num_gates=*/3, hidden_size};
-  Memory::desc ih_matrix_weights_desc(
-    ih_matrix_weights_dims,
-    data_type,
-    Memory::format_tag::ldigo);
-  onednn_objects.ih_matrix_weights.reset(
-    Memory(ih_matrix_weights_desc, engine));
-  onednn_objects.ih_matrix_weights_grad.reset(
-    Memory(ih_matrix_weights_desc, engine));
+  {
+    Memory::dims dims{
+      num_layers, /*num_directions=*/1, input_size, /*num_gates=*/3, hidden_size};
+    Memory::desc ldigo_desc(dims, data_type, Memory::format_tag::ldigo);
+    Memory::desc ldgoi_desc(dims, data_type, Memory::format_tag::ldgoi);
+    onednn_objects.forward_ih_matrix_weights.reset(Memory(ldigo_desc, engine));
+    onednn_objects.backward_ih_matrix_weights.reset(Memory(ldgoi_desc, engine));
+    onednn_objects.ih_matrix_weights_grad.reset(Memory(ldigo_desc, engine));
+  }
 
   // Initialize storage for packed "hh_matrix" weights
   // Note: weights_iter in oneDNN terminology.
-  Memory::dims hh_matrix_weights_dims{
-    num_layers, /*num_directions=*/1, hidden_size, /*num_gates=*/3, hidden_size};
-  Memory::desc hh_matrix_weights_desc(
-    hh_matrix_weights_dims,
-    data_type,
-    Memory::format_tag::ldigo);
-  onednn_objects.hh_matrix_weights.reset(
-    Memory(hh_matrix_weights_desc, engine));
-  onednn_objects.hh_matrix_weights_grad.reset(
-    Memory(hh_matrix_weights_desc, engine));
+  {
+    Memory::dims dims{
+      num_layers, /*num_directions=*/1, hidden_size, /*num_gates=*/3, hidden_size};
+    Memory::desc ldigo_desc(dims, data_type, Memory::format_tag::ldigo);
+    Memory::desc ldgoi_desc(dims, data_type, Memory::format_tag::ldgoi);
+    onednn_objects.forward_hh_matrix_weights.reset(Memory(ldigo_desc, engine));
+    onednn_objects.backward_hh_matrix_weights.reset(Memory(ldgoi_desc, engine));
+    onednn_objects.hh_matrix_weights_grad.reset(Memory(ldigo_desc, engine));
+  }
 
   // Initialize storage for packed biases
-  Memory::dims bias_weights_dims{
-    num_layers, /*num_directions=*/1, /*num_gates=*/4, hidden_size};
   Memory::desc bias_weights_desc(
-    bias_weights_dims,
+    {num_layers, /*num_directions=*/1, /*num_gates=*/4, hidden_size},
     data_type,
     Memory::format_tag::ldgo);
   onednn_objects.bias_weights.reset(
@@ -566,8 +562,8 @@ void fp_compute_impl(
     input_size,
     hidden_size,
     num_layers,
-    onednn_objects.ih_matrix_weights,
-    onednn_objects.hh_matrix_weights,
+    onednn_objects.forward_ih_matrix_weights,
+    onednn_objects.forward_hh_matrix_weights,
     onednn_objects.bias_weights,
     weights_list);
 
@@ -577,8 +573,8 @@ void fp_compute_impl(
     ::dnnl::rnn_direction::unidirectional_left2right,
     onednn_objects.input_sequence_desc.get().get_desc(),
     onednn_objects.init_hidden_desc.get().get_desc(),
-    onednn_objects.ih_matrix_weights.get().get_desc(),
-    onednn_objects.hh_matrix_weights.get().get_desc(),
+    onednn_objects.forward_ih_matrix_weights.get().get_desc(),
+    onednn_objects.forward_hh_matrix_weights.get().get_desc(),
     onednn_objects.bias_weights.get().get_desc(),
     onednn_objects.output_sequence_desc.get().get_desc(),
     onednn_objects.final_hidden_desc.get().get_desc());
@@ -602,8 +598,8 @@ void fp_compute_impl(
       {DNNL_ARG_SRC_ITER, onednn_objects.init_hidden_desc},
       {DNNL_ARG_DST_LAYER, onednn_objects.output_sequence_desc},
       {DNNL_ARG_DST_ITER, onednn_objects.final_hidden_desc},
-      {DNNL_ARG_WEIGHTS_LAYER, onednn_objects.ih_matrix_weights},
-      {DNNL_ARG_WEIGHTS_ITER, onednn_objects.hh_matrix_weights},
+      {DNNL_ARG_WEIGHTS_LAYER, onednn_objects.forward_ih_matrix_weights},
+      {DNNL_ARG_WEIGHTS_ITER, onednn_objects.forward_hh_matrix_weights},
       {DNNL_ARG_BIAS, onednn_objects.bias_weights},
       {DNNL_ARG_WORKSPACE, onednn_objects.workspace} });
   stream.wait();
@@ -762,6 +758,7 @@ void bp_compute_impl(
   }
   constexpr auto Device = El::Device::CPU;
   using Backend = onednn_backend<Device>;
+  using Memory = ::dnnl::memory;
   const auto data_type = Backend::template data_type<TensorDataType>();
   auto& onednn_objects = *l.m_onednn_cpu_objects;
   auto sync_info = force(
@@ -798,6 +795,7 @@ void bp_compute_impl(
       El::Zero(dw);
     }
     send_weight_grads_to_optimizers();
+    return;
   }
 
   // Configure input grad and output grad tensor descriptors
@@ -830,8 +828,8 @@ void bp_compute_impl(
     ::dnnl::rnn_direction::unidirectional_left2right,
     onednn_objects.input_sequence_desc.get().get_desc(),
     onednn_objects.init_hidden_desc.get().get_desc(),
-    onednn_objects.ih_matrix_weights.get().get_desc(),
-    onednn_objects.hh_matrix_weights.get().get_desc(),
+    onednn_objects.backward_ih_matrix_weights.get().get_desc(),
+    onednn_objects.backward_hh_matrix_weights.get().get_desc(),
     onednn_objects.bias_weights.get().get_desc(),
     onednn_objects.output_sequence_desc.get().get_desc(),
     onednn_objects.final_hidden_desc.get().get_desc(),
@@ -849,17 +847,29 @@ void bp_compute_impl(
       onednn_objects.gru_forward_primitive_desc);
 
   // Execute primitive
-  /// @todo Cache primitive and reuse
+  /// @todo Cache primitives and reuse
+  auto&& forward_ih_matrix_weights = onednn_objects.forward_ih_matrix_weights.get();
+  auto&& backward_ih_matrix_weights = onednn_objects.backward_ih_matrix_weights.get();
+  auto&& forward_hh_matrix_weights = onednn_objects.forward_hh_matrix_weights.get();
+  auto&& backward_hh_matrix_weights = onednn_objects.backward_hh_matrix_weights.get();
   onednn_objects.gru_backward_primitive
     = ::dnnl::lbr_gru_backward(onednn_objects.gru_backward_primitive_desc);
+  ::dnnl::reorder reorder_ih_matrix_weights_primitive(
+    forward_ih_matrix_weights, backward_ih_matrix_weights);
+  ::dnnl::reorder reorder_hh_matrix_weights_primitive(
+    forward_hh_matrix_weights, backward_hh_matrix_weights);
+  reorder_ih_matrix_weights_primitive.execute(
+    stream, forward_ih_matrix_weights, backward_ih_matrix_weights);
+  reorder_hh_matrix_weights_primitive.execute(
+    stream, forward_hh_matrix_weights, backward_hh_matrix_weights);
   onednn_objects.gru_backward_primitive.execute(
     stream,
     { {DNNL_ARG_SRC_LAYER, onednn_objects.input_sequence_desc},
       {DNNL_ARG_SRC_ITER, onednn_objects.init_hidden_desc},
       {DNNL_ARG_DST_LAYER, onednn_objects.output_sequence_desc},
       {DNNL_ARG_DST_ITER, onednn_objects.final_hidden_desc},
-      {DNNL_ARG_WEIGHTS_LAYER, onednn_objects.ih_matrix_weights},
-      {DNNL_ARG_WEIGHTS_ITER, onednn_objects.hh_matrix_weights},
+      {DNNL_ARG_WEIGHTS_LAYER, backward_ih_matrix_weights},
+      {DNNL_ARG_WEIGHTS_ITER, backward_hh_matrix_weights},
       {DNNL_ARG_BIAS, onednn_objects.bias_weights},
       {DNNL_ARG_DIFF_SRC_LAYER, onednn_objects.input_sequence_grad_desc},
       {DNNL_ARG_DIFF_SRC_ITER, onednn_objects.init_hidden_grad_desc},
@@ -1431,6 +1441,7 @@ void bp_compute_impl(
       El::Zero(dw);
     }
     send_weight_grads_to_optimizers();
+    return;
   }
 
   // Make sure tensors are in correct format

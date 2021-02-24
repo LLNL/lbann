@@ -140,8 +140,10 @@ private:
     TensorDesc final_hidden_grad_desc;
 
     // Workspaces
-    TensorDesc ih_matrix_weights;
-    TensorDesc hh_matrix_weights;
+    TensorDesc forward_ih_matrix_weights;
+    TensorDesc forward_hh_matrix_weights;
+    TensorDesc backward_ih_matrix_weights;
+    TensorDesc backward_hh_matrix_weights;
     TensorDesc bias_weights;
     TensorDesc ih_matrix_weights_grad;
     TensorDesc hh_matrix_weights_grad;
