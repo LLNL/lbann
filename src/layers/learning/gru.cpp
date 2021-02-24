@@ -309,7 +309,7 @@ void gru_layer<TensorDataType, Layout, Device>::setup_onednn_cpu() {
       "and hidden_size=",hidden_size);
   }
 
-  // Initialize storage for packed "ih matrix" weights
+  // Initialize storage for packed "ih_matrix" weights
   // Note: weights_layer in oneDNN terminology.
   Memory::dims ih_matrix_weights_dims{
     num_layers, /*num_directions=*/1, input_size, /*num_gates=*/3, hidden_size};
@@ -319,8 +319,10 @@ void gru_layer<TensorDataType, Layout, Device>::setup_onednn_cpu() {
     Memory::format_tag::ldigo);
   onednn_objects.ih_matrix_weights.reset(
     Memory(ih_matrix_weights_desc, engine));
+  onednn_objects.ih_matrix_weights_grad.reset(
+    Memory(ih_matrix_weights_desc, engine));
 
-  // Initialize storage for packed "hh matrix" weights
+  // Initialize storage for packed "hh_matrix" weights
   // Note: weights_iter in oneDNN terminology.
   Memory::dims hh_matrix_weights_dims{
     num_layers, /*num_directions=*/1, hidden_size, /*num_gates=*/3, hidden_size};
@@ -329,6 +331,8 @@ void gru_layer<TensorDataType, Layout, Device>::setup_onednn_cpu() {
     data_type,
     Memory::format_tag::ldigo);
   onednn_objects.hh_matrix_weights.reset(
+    Memory(hh_matrix_weights_desc, engine));
+  onednn_objects.hh_matrix_weights_grad.reset(
     Memory(hh_matrix_weights_desc, engine));
 
   // Initialize storage for packed biases
@@ -340,9 +344,12 @@ void gru_layer<TensorDataType, Layout, Device>::setup_onednn_cpu() {
     Memory::format_tag::ldgo);
   onednn_objects.bias_weights.reset(
     Memory(bias_weights_desc, engine));
+  onednn_objects.bias_weights_grad.reset(
+    Memory(bias_weights_desc, engine));
 
   // Initialize empty tensors
   onednn_objects.final_hidden_desc.set(data_type, {});
+  onednn_objects.final_hidden_grad_desc.set(data_type, {});
   onednn_objects.workspace.set(data_type, {});
 
 }
@@ -352,7 +359,6 @@ void gru_layer<TensorDataType, Layout, Device>::setup_onednn_cpu() {
 // ---------------------------------
 
 namespace {
-
 /** @brief Pack entries from LBANN weights into oneDNN buffers.
  *
  *  The oneDNN linear-before-reset GRU expects weights to be packed
@@ -383,7 +389,7 @@ void pack_onednn_weights(
   // Typedefs
   using LocalMat = El::Matrix<TensorDataType,El::Device::CPU>;
 
-  // Copy from "ih matrix" weights to workspace buffer
+  // Copy from "ih_matrix" weights to packed buffer
   auto make_ih_matrix_src_view = [&](size_t layer_id, size_t gate_id)
     -> const LocalMat {
     const auto& ih_matrix = weights_list[4*layer_id];
@@ -411,7 +417,7 @@ void pack_onednn_weights(
     El::Copy(make_ih_matrix_src_view(layer_id, 2), dst_output);
   }
 
-  // Copy from "hh matrix" weights to workspace buffer
+  // Copy from "hh_matrix" weights to packed buffer
   auto make_hh_matrix_src_view = [&](size_t layer_id, size_t gate_id)
     -> const LocalMat {
     const auto& hh_matrix = weights_list[4*layer_id+1];
@@ -439,7 +445,7 @@ void pack_onednn_weights(
     El::Copy(make_hh_matrix_src_view(layer_id, 2), dst_output);
   }
 
-  // Copy from bias weights to workspace buffer
+  // Copy from bias weights to packed buffer
   auto make_ih_bias_src_view = [&](size_t layer_id, size_t gate_id)
     -> const LocalMat {
     const auto& ih_bias = weights_list[4*layer_id+2];
@@ -502,8 +508,7 @@ void fp_compute_impl(
   const int num_layers = l.m_num_layers;
 
   // Return immediately if there is no local data.
-  const size_t mini_batch_size = input_sequence.Width();
-  if (mini_batch_size <= 0) {
+  if (local_mini_batch_size <= 0) {
     return;
   }
 
@@ -609,10 +614,274 @@ void fp_compute_impl(
 // oneDNN CPU back prop
 // ---------------------------------
 
+namespace {
+/** @brief See @c pack_onednn_weights */
+template <typename TensorDataType>
+void unpack_onednn_weights(
+  size_t input_size,
+  size_t hidden_size,
+  size_t num_layers,
+  const onednn_backend<El::Device::CPU>::TensorDescriptor& ih_matrix_weights,
+  const onednn_backend<El::Device::CPU>::TensorDescriptor& hh_matrix_weights,
+  const onednn_backend<El::Device::CPU>::TensorDescriptor& bias_weights,
+  std::vector<El::Matrix<TensorDataType,El::Device::CPU>>& weights_list) {
+
+  // Typedefs
+  using LocalMat = El::Matrix<TensorDataType,El::Device::CPU>;
+
+  // Copy from packed buffer to "ih_matrix" weights
+  auto make_ih_matrix_src_view = [&](size_t layer_id, size_t gate_id)
+    -> const LocalMat {
+    const auto* buffer = reinterpret_cast<const TensorDataType*>(ih_matrix_weights.get().get_data_handle());
+    const size_t layer_stride = 1*input_size*3*hidden_size;
+    const size_t gate_stride = hidden_size;
+    return LocalMat(
+      hidden_size,
+      input_size,
+      &buffer[layer_id*layer_stride + gate_id*gate_stride],
+      3*hidden_size);
+  };
+  auto make_ih_matrix_dst_view = [&](size_t layer_id, size_t gate_id)
+    -> LocalMat {
+    auto& ih_matrix = weights_list[4*layer_id];
+    return ih_matrix(
+      El::IR(gate_id*hidden_size, (gate_id+1)*hidden_size),
+      El::ALL);
+  };
+  for (size_t layer_id=0; layer_id<num_layers; ++layer_id) {
+    auto dst_reset = make_ih_matrix_dst_view(layer_id, 0);
+    auto dst_update = make_ih_matrix_dst_view(layer_id, 1);
+    auto dst_output = make_ih_matrix_dst_view(layer_id, 2);
+    El::Copy(make_ih_matrix_src_view(layer_id, 1), dst_reset);
+    El::Copy(make_ih_matrix_src_view(layer_id, 0), dst_update);
+    El::Copy(make_ih_matrix_src_view(layer_id, 2), dst_output);
+  }
+
+  // Copy from packed buffer to "hh_matrix" weights
+  auto make_hh_matrix_src_view = [&](size_t layer_id, size_t gate_id)
+    -> const LocalMat {
+    const auto* buffer = reinterpret_cast<const TensorDataType*>(hh_matrix_weights.get().get_data_handle());
+    const size_t layer_stride = 1*hidden_size*3*hidden_size;
+    const size_t gate_stride = hidden_size;
+    return LocalMat(
+      hidden_size,
+      hidden_size,
+      &buffer[layer_id*layer_stride + gate_id*gate_stride],
+      3*hidden_size);
+  };
+  auto make_hh_matrix_dst_view = [&](size_t layer_id, size_t gate_id)
+    -> LocalMat {
+    auto& hh_matrix = weights_list[4*layer_id+1];
+    return hh_matrix(
+      El::IR(gate_id*hidden_size, (gate_id+1)*hidden_size),
+      El::ALL);
+  };
+  for (size_t layer_id=0; layer_id<num_layers; ++layer_id) {
+    auto dst_reset = make_hh_matrix_dst_view(layer_id, 0);
+    auto dst_update = make_hh_matrix_dst_view(layer_id, 1);
+    auto dst_output = make_hh_matrix_dst_view(layer_id, 2);
+    El::Copy(make_hh_matrix_src_view(layer_id, 1), dst_reset);
+    El::Copy(make_hh_matrix_src_view(layer_id, 0), dst_update);
+    El::Copy(make_hh_matrix_src_view(layer_id, 2), dst_output);
+  }
+
+  // Copy from packed buffer to bias weights
+  auto make_bias_src_view = [&](size_t layer_id, size_t gate_id)
+    -> const LocalMat {
+    const auto* buffer = reinterpret_cast<const TensorDataType*>(bias_weights.get().get_data_handle());
+    const size_t layer_stride = 1*4*hidden_size;
+    const size_t gate_stride = hidden_size;
+    return LocalMat(
+      hidden_size,
+      1,
+      &buffer[layer_id*layer_stride + gate_id*gate_stride],
+      hidden_size);
+  };
+  auto make_ih_bias_dst_view = [&](size_t layer_id, size_t gate_id)
+    -> LocalMat {
+    auto& ih_bias = weights_list[4*layer_id+2];
+    return ih_bias(
+      El::IR(gate_id*hidden_size, (gate_id+1)*hidden_size),
+      El::ALL);
+  };
+  auto make_hh_bias_dst_view = [&](size_t layer_id, size_t gate_id)
+    -> LocalMat {
+    auto& hh_bias = weights_list[4*layer_id+3];
+    return hh_bias(
+      El::IR(gate_id*hidden_size, (gate_id+1)*hidden_size),
+      El::ALL);
+  };
+  for (size_t layer_id=0; layer_id<num_layers; ++layer_id) {
+    const auto src_update = make_bias_src_view(layer_id, 0);
+    const auto src_reset = make_bias_src_view(layer_id, 1);
+    const auto src_output = make_bias_src_view(layer_id, 2);
+    const auto src_before_reset = make_bias_src_view(layer_id, 3);
+    auto dst_ih_reset = make_ih_bias_dst_view(layer_id, 0);
+    auto dst_ih_update = make_ih_bias_dst_view(layer_id, 1);
+    auto dst_ih_output = make_ih_bias_dst_view(layer_id, 2);
+    auto dst_hh_reset = make_hh_bias_dst_view(layer_id, 0);
+    auto dst_hh_update = make_hh_bias_dst_view(layer_id, 1);
+    auto dst_hh_output = make_hh_bias_dst_view(layer_id, 2);
+    El::Copy(src_reset, dst_ih_reset);
+    El::Copy(src_update, dst_ih_update);
+    El::Copy(src_output, dst_ih_output);
+    El::Copy(src_reset, dst_hh_reset);
+    El::Copy(src_update, dst_hh_update);
+    El::Copy(src_before_reset, dst_hh_output);
+  }
+
+}
+} // namespace <anon>
+
 template <typename TensorDataType>
 void bp_compute_impl(
   gru_layer<TensorDataType,data_layout::DATA_PARALLEL,El::Device::CPU>& l) {
-  LBANN_ERROR("not yet implemented"); /// @todo Implement
+
+  // Matrices
+  using LocalMat = El::Matrix<TensorDataType, El::Device::CPU>;
+  const auto& output_sequence_grad
+    = dynamic_cast<const LocalMat&>(l.get_local_prev_error_signals());
+  auto& input_sequence_grad
+    = dynamic_cast<LocalMat&>(l.get_local_error_signals(0));
+  auto& init_hidden_grad
+    = dynamic_cast<LocalMat&>(l.get_local_error_signals(1));
+
+  // Dimensions
+  const int local_mini_batch_size = output_sequence_grad.Width();
+  const int sequence_length = l.get_input_dims(0)[0];
+  const int input_size = l.get_input_size(0) / sequence_length;
+  const int hidden_size = l.m_hidden_size;
+  const int num_layers = l.m_num_layers;
+
+  // oneDNN objects
+  if (l.m_onednn_cpu_objects == nullptr) {
+    LBANN_ERROR(
+      l.get_type()," layer \"",l.get_name(),"\" ",
+      "attempted to run oneDNN CPU implementation ",
+      "before initializing oneDNN objects");
+  }
+  constexpr auto Device = El::Device::CPU;
+  using Backend = onednn_backend<Device>;
+  const auto data_type = Backend::template data_type<TensorDataType>();
+  auto& onednn_objects = *l.m_onednn_cpu_objects;
+  auto sync_info = force(
+    El::MakeMultiSync(
+      get_sync_info(input_sequence_grad),
+      get_sync_info(init_hidden_grad),
+      get_sync_info(output_sequence_grad)));
+  auto& engine = onednn::get_device_engine<Device>();
+  auto stream = onednn::get_stream<Device>(engine, sync_info);
+
+  // Define closure to send weight gradients to optimizers
+  std::vector<LocalMat> weights_grad_list(4*num_layers);
+  for (int i=0; i<num_layers; ++i) {
+    weights_grad_list[4*i].Resize(3*hidden_size, input_size);
+    weights_grad_list[4*i+1].Resize(3*hidden_size, hidden_size);
+    weights_grad_list[4*i+2].Resize(3*hidden_size, 1);
+    weights_grad_list[4*i+3].Resize(3*hidden_size, 1);
+  }
+  auto send_weight_grads_to_optimizers = [&] () {
+    TensorDataType buf_scale, in_scale;
+    for (int i=0; i<4*num_layers; ++i) {
+      auto&& opt = l.get_weights(i).get_optimizer();
+      if (opt != nullptr) {
+        auto& buf = opt->get_gradient_buffer(buf_scale, in_scale, true);
+        El::Scale(buf_scale, buf);
+        El::Axpy(in_scale, weights_grad_list[i], buf.Matrix());
+      }
+    }
+  };
+
+  // Return immediately if there is no local data
+  if (local_mini_batch_size <= 0) {
+    for (auto& dw : weights_grad_list) {
+      El::Zero(dw);
+    }
+    send_weight_grads_to_optimizers();
+  }
+
+  // Configure input grad and output grad tensor descriptors
+  // Note: Reuse tensor descriptors from forward prop.
+  onednn_objects.output_sequence_grad_desc.set(
+    data_type,
+    {sequence_length, local_mini_batch_size, hidden_size},
+    {hidden_size, El::To<int>(output_sequence_grad.LDim()), 1});
+  onednn_objects.output_sequence_grad_desc.get().set_data_handle(
+    const_cast<TensorDataType*>(output_sequence_grad.LockedBuffer()),
+    stream);
+  onednn_objects.input_sequence_grad_desc.set(
+    data_type,
+    {sequence_length, local_mini_batch_size, input_size},
+    {input_size, El::To<int>(input_sequence_grad.LDim()), 1});
+  onednn_objects.input_sequence_grad_desc.get().set_data_handle(
+    input_sequence_grad.Buffer(),
+    stream);
+  onednn_objects.init_hidden_grad_desc.set(
+    data_type,
+    {num_layers, /*num_directions=*/1, local_mini_batch_size, hidden_size},
+    {hidden_size, 1, El::To<int>(init_hidden_grad.LDim()), 1});
+  onednn_objects.init_hidden_grad_desc.get().set_data_handle(
+    init_hidden_grad.Buffer(),
+    stream);
+
+  // Construct operation descriptor and primitive descriptor
+  ::dnnl::lbr_gru_backward::desc gru_backward_desc(
+    ::dnnl::prop_kind::backward,
+    ::dnnl::rnn_direction::unidirectional_left2right,
+    onednn_objects.input_sequence_desc.get().get_desc(),
+    onednn_objects.init_hidden_desc.get().get_desc(),
+    onednn_objects.ih_matrix_weights.get().get_desc(),
+    onednn_objects.hh_matrix_weights.get().get_desc(),
+    onednn_objects.bias_weights.get().get_desc(),
+    onednn_objects.output_sequence_desc.get().get_desc(),
+    onednn_objects.final_hidden_desc.get().get_desc(),
+    onednn_objects.input_sequence_grad_desc.get().get_desc(),
+    onednn_objects.init_hidden_grad_desc.get().get_desc(),
+    onednn_objects.ih_matrix_weights_grad.get().get_desc(),
+    onednn_objects.hh_matrix_weights_grad.get().get_desc(),
+    onednn_objects.bias_weights_grad.get().get_desc(),
+    onednn_objects.output_sequence_grad_desc.get().get_desc(),
+    onednn_objects.final_hidden_grad_desc.get().get_desc());
+  onednn_objects.gru_backward_primitive_desc
+    = ::dnnl::lbr_gru_backward::primitive_desc(
+      gru_backward_desc,
+      engine,
+      onednn_objects.gru_forward_primitive_desc);
+
+  // Execute primitive
+  /// @todo Cache primitive and reuse
+  onednn_objects.gru_backward_primitive
+    = ::dnnl::lbr_gru_backward(onednn_objects.gru_backward_primitive_desc);
+  onednn_objects.gru_backward_primitive.execute(
+    stream,
+    { {DNNL_ARG_SRC_LAYER, onednn_objects.input_sequence_desc},
+      {DNNL_ARG_SRC_ITER, onednn_objects.init_hidden_desc},
+      {DNNL_ARG_DST_LAYER, onednn_objects.output_sequence_desc},
+      {DNNL_ARG_DST_ITER, onednn_objects.final_hidden_desc},
+      {DNNL_ARG_WEIGHTS_LAYER, onednn_objects.ih_matrix_weights},
+      {DNNL_ARG_WEIGHTS_ITER, onednn_objects.hh_matrix_weights},
+      {DNNL_ARG_BIAS, onednn_objects.bias_weights},
+      {DNNL_ARG_DIFF_SRC_LAYER, onednn_objects.input_sequence_grad_desc},
+      {DNNL_ARG_DIFF_SRC_ITER, onednn_objects.init_hidden_grad_desc},
+      {DNNL_ARG_DIFF_DST_LAYER, onednn_objects.output_sequence_grad_desc},
+      {DNNL_ARG_DIFF_DST_ITER, onednn_objects.final_hidden_grad_desc},
+      {DNNL_ARG_DIFF_WEIGHTS_LAYER, onednn_objects.ih_matrix_weights_grad},
+      {DNNL_ARG_DIFF_WEIGHTS_ITER, onednn_objects.hh_matrix_weights_grad},
+      {DNNL_ARG_DIFF_BIAS, onednn_objects.bias_weights_grad},
+      {DNNL_ARG_WORKSPACE, onednn_objects.workspace} });
+  stream.wait();
+
+  // Send gradients to optimizers
+  unpack_onednn_weights<TensorDataType>(
+    input_size,
+    hidden_size,
+    num_layers,
+    onednn_objects.ih_matrix_weights_grad,
+    onednn_objects.hh_matrix_weights_grad,
+    onednn_objects.bias_weights_grad,
+    weights_grad_list);
+  send_weight_grads_to_optimizers();
+
 }
 
 #endif // LBANN_GRU_LAYER_ONEDNN_CPU_SUPPORTED
@@ -1165,7 +1434,7 @@ void bp_compute_impl(
   }
 
   // Make sure tensors are in correct format
-  // Note: m_input_sequence_workspace and m_init_hidden_workspace have
+  // Note: input_sequence_workspace and init_hidden_workspace have
   // already been setup in forward prop
   cudnn_objects.output_sequence_grad_workspace.SetSyncInfo(sync_info);
   cudnn_objects.input_sequence_grad_workspace.SetSyncInfo(sync_info);

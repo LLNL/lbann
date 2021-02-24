@@ -128,15 +128,24 @@ private:
     // Descriptors
     ::dnnl::lbr_gru_forward::primitive_desc gru_forward_primitive_desc;
     ::dnnl::lbr_gru_forward::primitive gru_forward_primitive;
+    ::dnnl::lbr_gru_backward::primitive_desc gru_backward_primitive_desc;
+    ::dnnl::lbr_gru_backward::primitive gru_backward_primitive;
     TensorDesc input_sequence_desc;
     TensorDesc init_hidden_desc;
     TensorDesc output_sequence_desc;
     TensorDesc final_hidden_desc;
+    TensorDesc input_sequence_grad_desc;
+    TensorDesc init_hidden_grad_desc;
+    TensorDesc output_sequence_grad_desc;
+    TensorDesc final_hidden_grad_desc;
 
     // Workspaces
     TensorDesc ih_matrix_weights;
     TensorDesc hh_matrix_weights;
     TensorDesc bias_weights;
+    TensorDesc ih_matrix_weights_grad;
+    TensorDesc hh_matrix_weights_grad;
+    TensorDesc bias_weights_grad;
     TensorDesc workspace;
 
   };

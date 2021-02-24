@@ -84,9 +84,11 @@ def setup_experiment(lbann):
 
     """
 
-    # Skip test on non-GPU systems
-    if not tools.gpus_per_node(lbann):
-        message = f'{os.path.basename(__file__)} requires GPUs'
+    # Skip test on Corona
+    # Note: Test requires cuDNN or oneDNN, so either a GPU or x86 CPU.
+    ### @todo Does AMD support oneDNN?
+    if tools.system(lbann)  == 'corona':
+        message = f'{os.path.basename(__file__)} requires cuDNN or oneDNN'
         print('Skip - ' + message)
         pytest.skip(message)
 
@@ -262,7 +264,7 @@ def construct_model(lbann):
     # Gradient checking
     # ------------------------------------------
 
-    # callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True)) ### @todo Restore
+    callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
 
     # ------------------------------------------
     # Construct model
