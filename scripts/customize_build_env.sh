@@ -129,7 +129,7 @@ set_center_specific_mpi()
     if [[ ${center} = "llnl_lc" ]]; then
         case ${spack_arch_target} in
             "power9le" | "power8le")
-                MPI="^spectrum-mpi"
+                MPI="^spectrum-mpi ^openblas@0.3.12"
                 ;;
             "broadwell" | "haswell")
                 # On LC the mvapich2 being used is built against HWLOC v1
@@ -146,7 +146,7 @@ set_center_specific_mpi()
     elif [[ ${center} = "olcf" ]]; then
         case ${spack_arch_target} in
             "power9le")
-                MPI="^spectrum-mpi"
+                MPI="^spectrum-mpi ^openblas@0.3.12"
                 ;;
             *)
 		echo "No center-specified MPI library."

@@ -284,13 +284,10 @@ if [[ ! "${LBANN_VARIANTS}" =~ .*"^aluminum".* ]]; then
     ALUMINUM="^aluminum${ALUMINUM_VER}"
 fi
 
-# Check to see if LBANN turned on dihydrogen
-DIHYDROGEN_VARIANTS='+dihydrogen'
-if [[ "${LBANN_VARIANTS}" =~ .*"${DIHYDROGEN_VARIANTS}".* ]]; then
-    if [[ ! "${LBANN_VARIANTS}" =~ .*"^dihydrogen".* ]]; then
-        # If the user didn't supply a specific version of DiHydrogen on the command line add one
-        DIHYDROGEN="^dihydrogen${DIHYDROGEN_VER}"
-    fi
+if [[ ! "${LBANN_VARIANTS}" =~ .*"^dihydrogen".* ]]; then
+    # If the user didn't supply a specific version of DiHydrogen on the command line add one
+    # Due to concretizer errors force the openmp variant for DiHydrogen
+    DIHYDROGEN="^dihydrogen${DIHYDROGEN_VER}+openmp"
 fi
 
 GPU_VARIANTS_ARRAY=('+cuda' '+rocm')
@@ -302,6 +299,10 @@ do
         set_center_specific_gpu_arch ${CENTER} ${SPACK_ARCH_TARGET}
         # Prepend the GPU_ARCH_VARIANTS for the LBANN variants if the +cuda variant is defined
         LBANN_VARIANTS=" ${GPU_ARCH_VARIANTS} ${LBANN_VARIANTS}"
+        # Due to concretizer errors force the GPU ARCH variant for DiHydrogen
+        if [[ ! "${LBANN_VARIANTS}" =~ .*"^dihydrogen".* ]]; then
+            DIHYDROGEN+=" ${GPU_ARCH_VARIANTS}"
+        fi
     fi
 done
 
