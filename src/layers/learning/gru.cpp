@@ -758,7 +758,6 @@ void bp_compute_impl(
   }
   constexpr auto Device = El::Device::CPU;
   using Backend = onednn_backend<Device>;
-  using Memory = ::dnnl::memory;
   const auto data_type = Backend::template data_type<TensorDataType>();
   auto& onednn_objects = *l.m_onednn_cpu_objects;
   auto sync_info = force(
@@ -822,14 +821,42 @@ void bp_compute_impl(
     init_hidden_grad.Buffer(),
     stream);
 
+  // Reorder matrix weights from LDIGO to LDGOI format
+  auto&& forward_ih_matrix_weights = onednn_objects.forward_ih_matrix_weights.get();
+  auto&& backward_ih_matrix_weights = onednn_objects.backward_ih_matrix_weights.get();
+  auto&& forward_hh_matrix_weights = onednn_objects.forward_hh_matrix_weights.get();
+  auto&& backward_hh_matrix_weights = onednn_objects.backward_hh_matrix_weights.get();
+  ::dnnl::reorder reorder_ih_matrix_weights_primitive(
+    forward_ih_matrix_weights, backward_ih_matrix_weights);
+  ::dnnl::reorder reorder_hh_matrix_weights_primitive(
+    forward_hh_matrix_weights, backward_hh_matrix_weights);
+  reorder_ih_matrix_weights_primitive.execute(
+    stream, forward_ih_matrix_weights, backward_ih_matrix_weights);
+  reorder_hh_matrix_weights_primitive.execute(
+    stream, forward_hh_matrix_weights, backward_hh_matrix_weights);
+
+  // Clear weights gradients
+  std::memset(
+    onednn_objects.ih_matrix_weights_grad.get().get_data_handle(),
+    0,
+    onednn_objects.ih_matrix_weights_grad.get().get_desc().get_size());
+  std::memset(
+    onednn_objects.hh_matrix_weights_grad.get().get_data_handle(),
+    0,
+    onednn_objects.hh_matrix_weights_grad.get().get_desc().get_size());
+  std::memset(
+    onednn_objects.bias_weights_grad.get().get_data_handle(),
+    0,
+    onednn_objects.bias_weights_grad.get().get_desc().get_size());
+
   // Construct operation descriptor and primitive descriptor
   ::dnnl::lbr_gru_backward::desc gru_backward_desc(
     ::dnnl::prop_kind::backward,
     ::dnnl::rnn_direction::unidirectional_left2right,
     onednn_objects.input_sequence_desc.get().get_desc(),
     onednn_objects.init_hidden_desc.get().get_desc(),
-    onednn_objects.backward_ih_matrix_weights.get().get_desc(),
-    onednn_objects.backward_hh_matrix_weights.get().get_desc(),
+    backward_ih_matrix_weights.get_desc(),
+    backward_hh_matrix_weights.get_desc(),
     onednn_objects.bias_weights.get().get_desc(),
     onednn_objects.output_sequence_desc.get().get_desc(),
     onednn_objects.final_hidden_desc.get().get_desc(),
@@ -846,22 +873,10 @@ void bp_compute_impl(
       engine,
       onednn_objects.gru_forward_primitive_desc);
 
-  // Execute primitive
+  // Execute backprop primitive
   /// @todo Cache primitives and reuse
-  auto&& forward_ih_matrix_weights = onednn_objects.forward_ih_matrix_weights.get();
-  auto&& backward_ih_matrix_weights = onednn_objects.backward_ih_matrix_weights.get();
-  auto&& forward_hh_matrix_weights = onednn_objects.forward_hh_matrix_weights.get();
-  auto&& backward_hh_matrix_weights = onednn_objects.backward_hh_matrix_weights.get();
   onednn_objects.gru_backward_primitive
     = ::dnnl::lbr_gru_backward(onednn_objects.gru_backward_primitive_desc);
-  ::dnnl::reorder reorder_ih_matrix_weights_primitive(
-    forward_ih_matrix_weights, backward_ih_matrix_weights);
-  ::dnnl::reorder reorder_hh_matrix_weights_primitive(
-    forward_hh_matrix_weights, backward_hh_matrix_weights);
-  reorder_ih_matrix_weights_primitive.execute(
-    stream, forward_ih_matrix_weights, backward_ih_matrix_weights);
-  reorder_hh_matrix_weights_primitive.execute(
-    stream, forward_hh_matrix_weights, backward_hh_matrix_weights);
   onednn_objects.gru_backward_primitive.execute(
     stream,
     { {DNNL_ARG_SRC_LAYER, onednn_objects.input_sequence_desc},

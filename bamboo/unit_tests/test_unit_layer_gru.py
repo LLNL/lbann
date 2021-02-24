@@ -84,10 +84,10 @@ def setup_experiment(lbann):
 
     """
 
-    # Skip test on Corona
-    # Note: Test requires cuDNN or oneDNN, so either a GPU or x86 CPU.
-    ### @todo Does AMD support oneDNN?
-    if tools.system(lbann)  == 'corona':
+    # Skip test on non-GPU systems
+    # Note: Test requires cuDNN (on GPU) or oneDNN (on CPU).
+    ### @todo Assume LBANN has been built with oneDNN?
+    if not tools.gpus_per_node(lbann):
         message = f'{os.path.basename(__file__)} requires cuDNN or oneDNN'
         print('Skip - ' + message)
         pytest.skip(message)
