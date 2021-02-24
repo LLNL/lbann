@@ -170,7 +170,7 @@ def construct_model(lbann):
     )
     z = lbann.L2Norm2(y)
     obj.append(z)
-    metrics.append(lbann.Metric(z, name='3-layer, unidirectional'))
+    metrics.append(lbann.Metric(z, name='Multi-layer, unidirectional'))
 
     # NumPy implementation
     vals = []
@@ -237,7 +237,7 @@ def construct_model(lbann):
     )
     z = lbann.L2Norm2(y)
     obj.append(z)
-    metrics.append(lbann.Metric(z, name='1-layer, unidirectional'))
+    metrics.append(lbann.Metric(z, name='Single-layer, unidirectional'))
 
     # NumPy implementation
     vals = []

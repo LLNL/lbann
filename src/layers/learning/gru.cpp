@@ -333,7 +333,7 @@ void gru_layer<TensorDataType, Layout, Device>::setup_onednn_cpu() {
 
   // Initialize storage for packed biases
   Memory::dims bias_weights_dims{
-    num_layers, /*num_directions=*/1, /*num_gates=*/3, hidden_size};
+    num_layers, /*num_directions=*/1, /*num_gates=*/4, hidden_size};
   Memory::desc bias_weights_desc(
     bias_weights_dims,
     data_type,
@@ -355,15 +355,20 @@ namespace {
 
 /** @brief Pack entries from LBANN weights into oneDNN buffers.
  *
- *  oneDNN expects weights in 5D tensors:
+ *  The oneDNN linear-before-reset GRU expects weights to be packed
+ *  into three tensors:
  *
  *    weights_layer : num_layers x num_directions x input_size x num_gates x hidden_size
  *
  *    weights_iter : num_layers x num_directions x hidden_size x num_gates x hidden_size
  *
- *  In oneDNN, the gates are ordered {update, reset, output}. Note
- *  that this is different than the order in LBANN and cuDNN, which is
- *  {reset, update, output}.
+ *    bias: num_layers x num_directions x num_gates x hidden_size
+ *
+ *  The gates for the matrix weights are ordered {update, reset,
+ *  output} and the gates for the bias are ordered {update, reset,
+ *  output, before_reset}. Note that this is different than the order
+ *  in LBANN and cuDNN, which is {reset, update, output}.
+ *
  */
 template <typename TensorDataType>
 void pack_onednn_weights(
@@ -394,19 +399,16 @@ void pack_onednn_weights(
     return LocalMat(
       hidden_size,
       input_size,
-      buffer + layer_id*layer_stride + gate_id*gate_stride,
+      &buffer[layer_id*layer_stride + gate_id*gate_stride],
       3*hidden_size);
   };
   for (size_t layer_id=0; layer_id<num_layers; ++layer_id) {
-    const auto src_update = make_ih_matrix_src_view(layer_id, 1);
-    const auto src_reset = make_ih_matrix_src_view(layer_id, 0);
-    const auto src_output = make_ih_matrix_src_view(layer_id, 2);
     auto dst_update = make_ih_matrix_dst_view(layer_id, 0);
     auto dst_reset = make_ih_matrix_dst_view(layer_id, 1);
     auto dst_output = make_ih_matrix_dst_view(layer_id, 2);
-    El::Copy(src_update, dst_update);
-    El::Copy(src_reset, dst_reset);
-    El::Copy(src_output, dst_output);
+    El::Copy(make_ih_matrix_src_view(layer_id, 1), dst_update);
+    El::Copy(make_ih_matrix_src_view(layer_id, 0), dst_reset);
+    El::Copy(make_ih_matrix_src_view(layer_id, 2), dst_output);
   }
 
   // Copy from "hh matrix" weights to workspace buffer
@@ -425,19 +427,16 @@ void pack_onednn_weights(
     return LocalMat(
       hidden_size,
       hidden_size,
-      buffer + layer_id*layer_stride + gate_id*gate_stride,
+      &buffer[layer_id*layer_stride + gate_id*gate_stride],
       3*hidden_size);
   };
   for (size_t layer_id=0; layer_id<num_layers; ++layer_id) {
-    const auto src_update = make_hh_matrix_src_view(layer_id, 1);
-    const auto src_reset = make_hh_matrix_src_view(layer_id, 0);
-    const auto src_output = make_hh_matrix_src_view(layer_id, 2);
     auto dst_update = make_hh_matrix_dst_view(layer_id, 0);
     auto dst_reset = make_hh_matrix_dst_view(layer_id, 1);
     auto dst_output = make_hh_matrix_dst_view(layer_id, 2);
-    El::Copy(src_update, dst_update);
-    El::Copy(src_reset, dst_reset);
-    El::Copy(src_output, dst_output);
+    El::Copy(make_hh_matrix_src_view(layer_id, 1), dst_update);
+    El::Copy(make_hh_matrix_src_view(layer_id, 0), dst_reset);
+    El::Copy(make_hh_matrix_src_view(layer_id, 2), dst_output);
   }
 
   // Copy from bias weights to workspace buffer
@@ -457,25 +456,26 @@ void pack_onednn_weights(
   };
   auto make_bias_dst_view = [&](size_t layer_id, size_t gate_id)
     -> LocalMat {
-    auto* buffer = reinterpret_cast<TensorDataType*>(hh_matrix_weights.get().get_data_handle());
-    const size_t layer_stride = 1*3*hidden_size;
+    auto* buffer = reinterpret_cast<TensorDataType*>(bias_weights.get().get_data_handle());
+    const size_t layer_stride = 1*4*hidden_size;
     const size_t gate_stride = hidden_size;
     return LocalMat(
       hidden_size,
       1,
-      buffer + layer_id*layer_stride + gate_id*gate_stride,
+      &buffer[layer_id*layer_stride + gate_id*gate_stride],
       hidden_size);
   };
   for (size_t layer_id=0; layer_id<num_layers; ++layer_id) {
     auto dst_update = make_bias_dst_view(layer_id, 0);
+    auto dst_reset = make_bias_dst_view(layer_id, 1);
+    auto dst_output = make_bias_dst_view(layer_id, 2);
+    auto dst_before_reset = make_bias_dst_view(layer_id, 3);
     El::Copy(make_ih_bias_src_view(layer_id, 1), dst_update);
     El::Axpy(1, make_hh_bias_src_view(layer_id, 1), dst_update);
-    auto dst_reset = make_bias_dst_view(layer_id, 1);
     El::Copy(make_ih_bias_src_view(layer_id, 0), dst_reset);
     El::Axpy(1, make_hh_bias_src_view(layer_id, 0), dst_reset);
-    auto dst_output = make_bias_dst_view(layer_id, 2);
     El::Copy(make_ih_bias_src_view(layer_id, 2), dst_output);
-    El::Axpy(1, make_hh_bias_src_view(layer_id, 2), dst_output);
+    El::Copy(make_hh_bias_src_view(layer_id, 2), dst_before_reset);
   }
 
 }
@@ -552,7 +552,7 @@ void fp_compute_impl(
 
   // Pack weights into workspace buffer
   std::vector<LocalMat> weights_list;
-  for (size_t i=0; i<4*num_layers; ++i) {
+  for (int i=0; i<4*num_layers; ++i) {
     const auto& w
       = dynamic_cast<const LocalMat&>(l.weights_values(i).LockedMatrix());
     weights_list.emplace_back(El::LockedView(w));
@@ -567,7 +567,7 @@ void fp_compute_impl(
     weights_list);
 
   // Construct operation descriptor and primitive descriptor
-  ::dnnl::gru_forward::desc gru_forward_desc(
+  ::dnnl::lbr_gru_forward::desc gru_forward_desc(
     ::dnnl::prop_kind::forward_training,
     ::dnnl::rnn_direction::unidirectional_left2right,
     onednn_objects.input_sequence_desc.get().get_desc(),
@@ -578,7 +578,7 @@ void fp_compute_impl(
     onednn_objects.output_sequence_desc.get().get_desc(),
     onednn_objects.final_hidden_desc.get().get_desc());
   onednn_objects.gru_forward_primitive_desc
-    = ::dnnl::gru_forward::primitive_desc(gru_forward_desc, engine);
+    = ::dnnl::lbr_gru_forward::primitive_desc(gru_forward_desc, engine);
 
   // Allocate workspace, if needed
   const auto& workspace_desc
@@ -590,7 +590,7 @@ void fp_compute_impl(
   // Execute primitive
   /// @todo Cache primitive and reuse
   onednn_objects.gru_forward_primitive
-    = ::dnnl::gru_forward(onednn_objects.gru_forward_primitive_desc);
+    = ::dnnl::lbr_gru_forward(onednn_objects.gru_forward_primitive_desc);
   onednn_objects.gru_forward_primitive.execute(
     stream,
     { {DNNL_ARG_SRC_LAYER, onednn_objects.input_sequence_desc},
@@ -600,7 +600,7 @@ void fp_compute_impl(
       {DNNL_ARG_WEIGHTS_LAYER, onednn_objects.ih_matrix_weights},
       {DNNL_ARG_WEIGHTS_ITER, onednn_objects.hh_matrix_weights},
       {DNNL_ARG_BIAS, onednn_objects.bias_weights},
-      {DNNL_ARG_WORKSPACE, onednn_objects.workspace}});
+      {DNNL_ARG_WORKSPACE, onednn_objects.workspace} });
   stream.wait();
 
 }
