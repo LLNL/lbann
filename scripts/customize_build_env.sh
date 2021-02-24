@@ -121,7 +121,7 @@ set_center_specific_modules()
     fi
 }
 
-set_center_specific_mpi()
+set_center_specific_spack_dependencies()
 {
     local center="$1"
     local spack_arch_target="$2"
@@ -129,49 +129,49 @@ set_center_specific_mpi()
     if [[ ${center} = "llnl_lc" ]]; then
         case ${spack_arch_target} in
             "power9le" | "power8le")
-                MPI="^spectrum-mpi ^openblas@0.3.12"
+                CENTER_DEPENDENCIES="^spectrum-mpi ^openblas@0.3.12"
                 ;;
             "broadwell" | "haswell")
                 # On LC the mvapich2 being used is built against HWLOC v1
-                MPI="^mvapich2 ^hwloc@1.11.13"
+                CENTER_DEPENDENCIES="^mvapich2 ^hwloc@1.11.13"
                 ;;
             "zen" | "zen2")
                 # On LC the mvapich2 being used is built against HWLOC v1
-                MPI="^openmpi ^hwloc@2.3.0"
+                CENTER_DEPENDENCIES="^openmpi ^hwloc@2.3.0"
                 ;;
             *)
-		echo "No center-specified MPI library."
+                echo "No center-specified CENTER_DEPENDENCIES."
                 ;;
         esac
     elif [[ ${center} = "olcf" ]]; then
         case ${spack_arch_target} in
             "power9le")
-                MPI="^spectrum-mpi ^openblas@0.3.12"
+                CENTER_DEPENDENCIES="^spectrum-mpi ^openblas@0.3.12"
                 ;;
             *)
-		echo "No center-specified MPI library."
+                echo "No center-specified CENTER_DEPENDENCIES."
                 ;;
         esac
     elif [[ ${center} = "nersc" ]]; then
         case ${spack_arch_target} in
             "skylake_avx512")
-                MPI="^openmpi"
+                CENTER_DEPENDENCIES="^openmpi"
                 ;;
             *)
-		echo "No center-specified MPI library."
+                echo "No center-specified CENTER_DEPENDENCIES."
                 ;;
         esac
     elif [[ ${center} = "riken" ]]; then
         case ${spack_arch_target} in
             "a64fx")
-                MPI="^openmpi"
+                CENTER_DEPENDENCIES="^openmpi"
                 ;;
             *)
-		echo "No center-specified MPI library."
+                echo "No center-specified CENTER_DEPENDENCIES."
                 ;;
         esac
     else
-        echo "No center-specified MPI library."
+        echo "No center found and no center-specified CENTER_DEPENDENCIES."
     fi
 }
 

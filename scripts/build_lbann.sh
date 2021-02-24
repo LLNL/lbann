@@ -301,7 +301,7 @@ do
         LBANN_VARIANTS=" ${GPU_ARCH_VARIANTS} ${LBANN_VARIANTS}"
         # Due to concretizer errors force the GPU ARCH variant for DiHydrogen
         if [[ ! "${LBANN_VARIANTS}" =~ .*"^dihydrogen".* ]]; then
-            DIHYDROGEN+=" ${GPU_ARCH_VARIANTS}"
+            DIHYDROGEN+="${GPU_VARIANTS} ${GPU_ARCH_VARIANTS}"
         fi
     fi
 done
@@ -372,13 +372,13 @@ if [[ -z "${DRY_RUN:-}" ]]; then
 fi
 
 # Figure out if there is a default MPI library for the center
-MPI=
-set_center_specific_mpi ${CENTER} ${SPACK_ARCH_TARGET}
+CENTER_DEPENDENCIES=
+set_center_specific_spack_dependencies ${CENTER} ${SPACK_ARCH_TARGET}
 
 ##########################################################################################
 # Establish the spec for LBANN
-LBANN_SPEC="lbann@${LBANN_LABEL} ${LBANN_VARIANTS} ${HYDROGEN} ${DIHYDROGEN} ${ALUMINUM} ${MPI}"
-LBANN_DEV_PATH_SPEC="lbann@${LBANN_LABEL} dev_path=${LBANN_HOME} ${LBANN_VARIANTS} ${HYDROGEN} ${DIHYDROGEN} ${ALUMINUM} ${MPI}"
+LBANN_SPEC="lbann@${LBANN_LABEL} ${LBANN_VARIANTS} ${HYDROGEN} ${DIHYDROGEN} ${ALUMINUM} ${CENTER_DEPENDENCIES}"
+LBANN_DEV_PATH_SPEC="lbann@${LBANN_LABEL} dev_path=${LBANN_HOME} ${LBANN_VARIANTS} ${HYDROGEN} ${DIHYDROGEN} ${ALUMINUM} ${CENTER_DEPENDENCIES}"
 ##########################################################################################
 
 if [[ -n "${BUILD_ENV_ONLY:-}" ]]; then
