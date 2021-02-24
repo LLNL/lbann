@@ -158,7 +158,7 @@ void debug::on_evaluate_forward_prop_begin(model *m, Layer *l) {
   on_forward_prop_begin(m, l);
 }
 void debug::on_evaluate_forward_prop_end(model *m, Layer *l) {
-  on_backward_prop_end(m, l);
+  on_forward_prop_end(m, l);
 }
 
 // Status updates for optimization step
