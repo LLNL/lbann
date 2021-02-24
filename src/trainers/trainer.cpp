@@ -347,11 +347,12 @@ bool trainer::load_from_checkpoint_shared(model& m, execution_context& c) {
         evaluation_context.load_from_checkpoint_shared(get_persist_obj());
       }
     }
-    catch (NonexistentArchiveFile const&) {
+    catch (NonexistentArchiveFile const& e) {
       // Ignore the exception if the file is not for the current execution mode
       if(current_mode == mode) {
         LBANN_ERROR("Failed to restart model, invalid execution mode: ",
-                    to_string(current_mode));
+                    to_string(current_mode),
+                    "\n\n  e.what(): ", e.what(), "\n");
       }
       else {
         delete_execution_context(key);

@@ -62,7 +62,6 @@ void sgd_execution_context::save_to_checkpoint_shared(persist& p) {
 #else // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
       "_ctx.bin"
 #endif // LBANN_HAS_CEREAL_XML_ARCHIVES
-      "_ctx.xml"
       );
   }
   return;
