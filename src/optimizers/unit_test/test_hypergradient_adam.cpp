@@ -32,26 +32,21 @@ struct HypergradientAdamBuilder
   }
 };// struct Hypergradient_AdamBuilder
 
-template <typename DataType, typename ArchiveTypes>
-struct TestHypergradAdam
-  : TestOptimizer<lbann::hypergradient_adam<DataType>,
-                  HypergradientAdamBuilder<DataType>,
-                  ArchiveTypes>
-{};
-
 }// namespace <anon>
 
-TEMPLATE_PRODUCT_TEST_CASE(
-  "Optimizer serialization",
+TEMPLATE_LIST_TEST_CASE(
+  "Hypergradient Adam Optimizer serialization",
   "[optimizer][serialize]",
-  TestHypergradAdam,
-  TEMPLATE_ARG_LIST)
+  AllArchiveTypes)
 {
-  using TypePack = TestType;
-  using OptimizerType = GetOptimizerType<TypePack>;
-  using BuilderType = GetBuilderType<TypePack>;
-  using OutputArchiveType = GetOutputArchiveType<TypePack>;
-  using InputArchiveType = GetInputArchiveType<TypePack>;
+  using ValueType = tlist::Car<TestType>;
+
+  using ArchiveTypes = tlist::Cdr<TestType>;
+  using OutputArchiveType = tlist::Car<ArchiveTypes>;
+  using InputArchiveType = tlist::Cadr<ArchiveTypes>;
+
+  using OptimizerType = lbann::hypergradient_adam<ValueType>;
+  using BuilderType = HypergradientAdamBuilder<ValueType>;
 
   std::stringstream ss;
 

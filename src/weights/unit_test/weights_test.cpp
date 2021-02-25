@@ -113,21 +113,7 @@ TEST_CASE("Serializing weights", "[mpi][weights][serialize]")
     dtw_src_ptr = std::move(dtw_src_ptr_init),
     dtw_tgt_ptr;
 
-  SECTION("XML archive")
-  {
-    {
-      cereal::XMLOutputArchive oarchive(ss);
-      REQUIRE_NOTHROW(oarchive(dtw_src));
-      REQUIRE_NOTHROW(oarchive(dtw_src_ptr));
-    }
-    {
-      cereal::XMLInputArchive iarchive(ss);
-      REQUIRE_NOTHROW(iarchive(dtw_tgt));
-      REQUIRE_NOTHROW(iarchive(dtw_tgt_ptr));
-      CHECK(IsValidPtr(dtw_tgt_ptr));
-    }
-  }
-
+#ifdef LBANN_HAS_CEREAL_BINARY_ARCHIVES
   SECTION("Binary archive")
   {
     {
@@ -138,21 +124,6 @@ TEST_CASE("Serializing weights", "[mpi][weights][serialize]")
 
     {
       cereal::BinaryInputArchive iarchive(ss);
-      REQUIRE_NOTHROW(iarchive(dtw_tgt));
-      REQUIRE_NOTHROW(iarchive(dtw_tgt_ptr));
-      CHECK(IsValidPtr(dtw_tgt_ptr));
-    }
-  }
-
-  SECTION("Rooted XML archive")
-  {
-    {
-      lbann::RootedXMLOutputArchive oarchive(ss, g);
-      REQUIRE_NOTHROW(oarchive(dtw_src));
-      REQUIRE_NOTHROW(oarchive(dtw_src_ptr));
-    }
-    {
-      lbann::RootedXMLInputArchive iarchive(ss, g);
       REQUIRE_NOTHROW(iarchive(dtw_tgt));
       REQUIRE_NOTHROW(iarchive(dtw_tgt_ptr));
       CHECK(IsValidPtr(dtw_tgt_ptr));
@@ -173,4 +144,36 @@ TEST_CASE("Serializing weights", "[mpi][weights][serialize]")
       CHECK(IsValidPtr(dtw_tgt_ptr));
     }
   }
+#endif // LBANN_HAS_CEREAL_BINARY_ARCHIVES
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
+  SECTION("XML archive")
+  {
+    {
+      cereal::XMLOutputArchive oarchive(ss);
+      REQUIRE_NOTHROW(oarchive(dtw_src));
+      REQUIRE_NOTHROW(oarchive(dtw_src_ptr));
+    }
+    {
+      cereal::XMLInputArchive iarchive(ss);
+      REQUIRE_NOTHROW(iarchive(dtw_tgt));
+      REQUIRE_NOTHROW(iarchive(dtw_tgt_ptr));
+      CHECK(IsValidPtr(dtw_tgt_ptr));
+    }
+  }
+
+  SECTION("Rooted XML archive")
+  {
+    {
+      lbann::RootedXMLOutputArchive oarchive(ss, g);
+      REQUIRE_NOTHROW(oarchive(dtw_src));
+      REQUIRE_NOTHROW(oarchive(dtw_src_ptr));
+    }
+    {
+      lbann::RootedXMLInputArchive iarchive(ss, g);
+      REQUIRE_NOTHROW(iarchive(dtw_tgt));
+      REQUIRE_NOTHROW(iarchive(dtw_tgt_ptr));
+      CHECK(IsValidPtr(dtw_tgt_ptr));
+    }
+  }
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
 }

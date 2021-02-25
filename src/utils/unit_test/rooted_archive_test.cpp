@@ -57,25 +57,8 @@ TEST_CASE("Rooted archive adaptor", "[mpi][cereal][archive]")
   int x = 13, y = -1;
   float p = 4.12f, q = -1.f;
   foo f(x, 2.), f_restore(0,0.0);
-  SECTION("XML archives")
-  {
-    {
-      lbann::RootedXMLOutputArchive ar(ss, g);
-      REQUIRE_NOTHROW(ar(x, ::cereal::make_nvp("myfloat", p)));
-      REQUIRE_NOTHROW(ar(::cereal::make_nvp("myfoo", f)));
-    }
-    {
-      lbann::RootedXMLInputArchive ar(ss, g);
-      REQUIRE_NOTHROW(ar(y, ::cereal::make_nvp("myfloat", q)));
-      REQUIRE_NOTHROW(ar(::cereal::make_nvp("myfoo", f_restore)));
-   }
-    CHECK(x == y);
-    CHECK(p == q);
 
-    CHECK(f.x_ == f_restore.x_);
-    CHECK(f.y_ == f_restore.y_);
-  }
-
+#ifdef LBANN_HAS_CEREAL_BINARY_ARCHIVES
   SECTION("Binary archives")
   {
     {
@@ -94,6 +77,27 @@ TEST_CASE("Rooted archive adaptor", "[mpi][cereal][archive]")
     CHECK(f.x_ == f_restore.x_);
     CHECK(f.y_ == f_restore.y_);
   }
+#endif // LBANN_HAS_CEREAL_BINARY_ARCHIVES
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
+  SECTION("XML archives")
+  {
+    {
+      lbann::RootedXMLOutputArchive ar(ss, g);
+      REQUIRE_NOTHROW(ar(x, ::cereal::make_nvp("myfloat", p)));
+      REQUIRE_NOTHROW(ar(::cereal::make_nvp("myfoo", f)));
+    }
+    {
+      lbann::RootedXMLInputArchive ar(ss, g);
+      REQUIRE_NOTHROW(ar(y, ::cereal::make_nvp("myfloat", q)));
+      REQUIRE_NOTHROW(ar(::cereal::make_nvp("myfoo", f_restore)));
+   }
+    CHECK(x == y);
+    CHECK(p == q);
+
+    CHECK(f.x_ == f_restore.x_);
+    CHECK(f.y_ == f_restore.y_);
+  }
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
 }
 
 // Matrices
@@ -157,22 +161,7 @@ TEMPLATE_LIST_TEST_CASE("Rooted archive adaptor and matrices",
   std::stringstream ss;
   MatrixType mat(13,17), mat_restore;
 
-  SECTION("XML archive")
-  {
-    {
-      lbann::RootedXMLOutputArchive oarchive(ss, g);
-      CHECK_NOTHROW(oarchive(mat));
-    }
-
-    {
-      lbann::RootedXMLInputArchive iarchive(ss, g);
-      CHECK_NOTHROW(iarchive(mat_restore));
-    }
-
-    CHECK(mat.Height() == mat_restore.Height());
-    CHECK(mat.Width() == mat_restore.Width());
-  }
-
+#ifdef LBANN_HAS_CEREAL_BINARY_ARCHIVES
   SECTION("Binary archive")
   {
     {
@@ -188,5 +177,23 @@ TEMPLATE_LIST_TEST_CASE("Rooted archive adaptor and matrices",
     CHECK(mat.Height() == mat_restore.Height());
     CHECK(mat.Width() == mat_restore.Width());
   }
+#endif // LBANN_HAS_CEREAL_BINARY_ARCHIVES
 
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
+  SECTION("XML archive")
+  {
+    {
+      lbann::RootedXMLOutputArchive oarchive(ss, g);
+      CHECK_NOTHROW(oarchive(mat));
+    }
+
+    {
+      lbann::RootedXMLInputArchive iarchive(ss, g);
+      CHECK_NOTHROW(iarchive(mat_restore));
+    }
+
+    CHECK(mat.Height() == mat_restore.Height());
+    CHECK(mat.Width() == mat_restore.Width());
+  }
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
 }

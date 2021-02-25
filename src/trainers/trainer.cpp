@@ -290,7 +290,15 @@ bool trainer::save_to_checkpoint_shared() {
   save_rng_to_checkpoint_shared(get_persist_obj(), m_comm);
 
   if (m_comm->am_trainer_master()) {
-    write_cereal_archive(*this, get_persist_obj(), "trainer.xml");
+    write_cereal_archive(
+      *this,
+      get_persist_obj(),
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
+      "trainer.xml"
+#else // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
+      "trainer.bin"
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
+      );
   }
 
   return get_data_coordinator().save_to_checkpoint_shared(get_persist_obj());
@@ -298,7 +306,16 @@ bool trainer::save_to_checkpoint_shared() {
 
 bool trainer::load_from_checkpoint_shared(persist& p) {
   try {
-    load_from_shared_cereal_archive(*this, p, *get_comm(), "trainer.xml");
+    load_from_shared_cereal_archive(
+      *this,
+      p,
+      *get_comm(),
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
+      "trainer.xml"
+#else // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
+      "trainer.bin"
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
+      );
   } catch (NonexistentArchiveFile const& e) {
     LBANN_MSG(e.what());
     return false;
@@ -330,11 +347,12 @@ bool trainer::load_from_checkpoint_shared(model& m, execution_context& c) {
         evaluation_context.load_from_checkpoint_shared(get_persist_obj());
       }
     }
-    catch (NonexistentArchiveFile const&) {
+    catch (NonexistentArchiveFile const& e) {
       // Ignore the exception if the file is not for the current execution mode
       if(current_mode == mode) {
         LBANN_ERROR("Failed to restart model, invalid execution mode: ",
-                    to_string(current_mode));
+                    to_string(current_mode),
+                    "\n\n  e.what(): ", e.what(), "\n");
       }
       else {
         delete_execution_context(key);
@@ -355,7 +373,15 @@ bool trainer::save_to_checkpoint_distributed(){
 }
 
 bool trainer::load_from_checkpoint_distributed(persist& p){
-  read_cereal_archive(*this, p, "trainer.xml");
+  read_cereal_archive(
+    *this,
+    p,
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
+      "trainer.xml"
+#else // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
+      "trainer.bin"
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
+    );
   return get_data_coordinator().load_from_checkpoint_distributed(p);
 }
 

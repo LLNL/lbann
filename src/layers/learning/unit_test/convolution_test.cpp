@@ -80,22 +80,7 @@ TEMPLATE_LIST_TEST_CASE("Serializing convolution layer",
     src_layer_ptr = lbann::make_unique<LayerType>(2, 46, src_dims, src_pads, src_strides, src_dilations, 2, true),
     tgt_layer_ptr;
 
-  SECTION("XML archive")
-  {
-    {
-      cereal::XMLOutputArchive oarchive(ss);
-      REQUIRE_NOTHROW(oarchive(src_layer));
-      REQUIRE_NOTHROW(oarchive(src_layer_ptr));
-    }
-
-    {
-      cereal::XMLInputArchive iarchive(ss);
-      REQUIRE_NOTHROW(iarchive(tgt_layer));
-      REQUIRE_NOTHROW(iarchive(tgt_layer_ptr));
-      CHECK(IsValidPtr(tgt_layer_ptr));
-    }
-  }
-
+#ifdef LBANN_HAS_CEREAL_BINARY_ARCHIVES
   SECTION("Binary archive")
   {
     {
@@ -106,22 +91,6 @@ TEMPLATE_LIST_TEST_CASE("Serializing convolution layer",
 
     {
       cereal::BinaryInputArchive iarchive(ss);
-      REQUIRE_NOTHROW(iarchive(tgt_layer));
-      REQUIRE_NOTHROW(iarchive(tgt_layer_ptr));
-      CHECK(IsValidPtr(tgt_layer_ptr));
-    }
-  }
-
-  SECTION("Rooted XML archive")
-  {
-    {
-      lbann::RootedXMLOutputArchive oarchive(ss, g);
-      REQUIRE_NOTHROW(oarchive(src_layer));
-      REQUIRE_NOTHROW(oarchive(src_layer_ptr));
-    }
-
-    {
-      lbann::RootedXMLInputArchive iarchive(ss, g);
       REQUIRE_NOTHROW(iarchive(tgt_layer));
       REQUIRE_NOTHROW(iarchive(tgt_layer_ptr));
       CHECK(IsValidPtr(tgt_layer_ptr));
@@ -143,4 +112,39 @@ TEMPLATE_LIST_TEST_CASE("Serializing convolution layer",
       CHECK(IsValidPtr(tgt_layer_ptr));
     }
   }
+#endif // LBANN_HAS_CEREAL_BINARY_ARCHIVES
+
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
+  SECTION("XML archive")
+  {
+    {
+      cereal::XMLOutputArchive oarchive(ss);
+      REQUIRE_NOTHROW(oarchive(src_layer));
+      REQUIRE_NOTHROW(oarchive(src_layer_ptr));
+    }
+
+    {
+      cereal::XMLInputArchive iarchive(ss);
+      REQUIRE_NOTHROW(iarchive(tgt_layer));
+      REQUIRE_NOTHROW(iarchive(tgt_layer_ptr));
+      CHECK(IsValidPtr(tgt_layer_ptr));
+    }
+  }
+
+  SECTION("Rooted XML archive")
+  {
+    {
+      lbann::RootedXMLOutputArchive oarchive(ss, g);
+      REQUIRE_NOTHROW(oarchive(src_layer));
+      REQUIRE_NOTHROW(oarchive(src_layer_ptr));
+    }
+
+    {
+      lbann::RootedXMLInputArchive iarchive(ss, g);
+      REQUIRE_NOTHROW(iarchive(tgt_layer));
+      REQUIRE_NOTHROW(iarchive(tgt_layer_ptr));
+      CHECK(IsValidPtr(tgt_layer_ptr));
+    }
+  }
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
 }
