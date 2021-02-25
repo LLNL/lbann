@@ -146,7 +146,8 @@ def construct_model(run_args):
         for idx in range(len(l.weights)):
           l.weights[idx].optimizer = lbann.NoOptimizer()
       weights.update(l.weights)
-    l2_reg = lbann.L2WeightRegularization(weights=weights, scale=1e-4)
+    l2_weights = [w for w in weights if not isinstance(w.optimizer, lbann.NoOptimizer)]
+    l2_reg = lbann.L2WeightRegularization(weights=l2_weights, scale=1e-4)
 
     d_adv_bce = lbann.LayerTerm(d_adv_bce,scale=0.01)
 
