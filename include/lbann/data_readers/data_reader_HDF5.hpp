@@ -48,6 +48,13 @@ public:
     return "hdf5_data_reader";
   }
 
+  /** Prints metadata and data-types for all fields (including packed) 
+   *  CAUTION: if you change the "os" parameter to other than cout, some 
+   *  information will be lost; this is because conduit print() methods
+   *  do not take parameters, and print to cout.
+   */
+  void print_metadata(std::ostream& os=std::cout);
+
   void load() override;
 
   /** Returns a raw pointer to the requested data field or group. 
@@ -197,9 +204,6 @@ private:
 
   const std::string s_coerce_name = "coerce";
 
-  /** constains leaf nodes whose fields are used in the current experiment */
-  std::vector<conduit::Node*> m_useme_nodes;
-
   /** maps: Node's path -> the Node */
   std::unordered_map<std::string, conduit::Node*> m_useme_node_map;
 
@@ -236,9 +240,10 @@ private:
   void get_schema_ptrs(conduit::Node* starting_node, std::unordered_map<std::string, conduit::Node*> &schema_name_map);
 
   /** Returns, in leaves, the schemas for all leaf nodes in the tree rooted
-   *  at 'node_in.' However, ignores any nodes named s_metadata_node_name
+   *  at 'node_in.' However, ignores any nodes named s_metadata_node_name.
+   *  Keys are the pathnames to the leaf nodes.
    */
-  void get_leaves(conduit::Node* node_in, std::vector<conduit::Node*> &leaves_out, bool ignore_metadata=false);
+  void get_leaves(conduit::Node* node_in, std::unordered_map<std::string, conduit::Node*> &leaves_out, bool ignore_metadata=false);
 
   /** Functionality is similar to get_leaves(); this method differs in that
    *  two conduit::Node hierarchies are searched for leaves. The leaves from 
@@ -250,7 +255,7 @@ private:
    */
   void get_leaves_multi(
     conduit::Node* node_in, 
-    std::vector<conduit::Node*> &leaves_out, 
+    std::unordered_map<std::string, conduit::Node*> &leaves_out, 
     bool ignore_metadata=false);
 
   /** Fills in: m_packed_name_to_num_elts and m_field_name_to_num_elts */
@@ -259,7 +264,7 @@ private:
   /** loads a sample from file to a conduit::Node;
    *  call normalize, coerce, pack, etc
    */
-  void load_sample(conduit::Node &node, size_t index); 
+  void load_sample(conduit::Node &node, size_t index, bool ignore_failure = false); 
 
   /** Performs packing, normalization, etc. Called by load_sample. */
   void pack_data(conduit::Node &node_in_out);
@@ -301,9 +306,6 @@ private:
     conduit::Node& node, 
     const std::string &path, 
     const conduit::Node& metadata);
-
-  // constructs m_useme_node_map from m_useme_nodes
-  void build_useme_node_map();
 
   // constructs m_data_dims_lookup_table and m_linearized_size_lookup_table,
   // fills in m_supported_input_types for LABELS and RESPONSES
@@ -407,8 +409,11 @@ void hdf5_data_reader::pack(std::string group_name, conduit::Node& node, size_t 
   const PackingGroup& g = m_packing_groups[group_name];
   std::vector<T> data(g.n_elts);
   size_t idx = 0;
+  conduit::Node metadata;
+  std::vector<int> datum_names;
   for (size_t k=0; k<g.names.size(); k++) {
     size_t n_elts = g.sizes[k];
+    datum_names.push_back(k);
     std::stringstream ss;
     ss << node.name() << node.child(0).name() + "/" << g.names[k];
     if (!node.has_path(ss.str())) {
@@ -428,7 +433,8 @@ void hdf5_data_reader::pack(std::string group_name, conduit::Node& node, size_t 
   static bool add_to_map = true;
   if (add_to_map) {
     add_to_map = false;
-    m_useme_node_map[group_name] = &(node[ss.str()]);
+    metadata["components"] = datum_names;
+    m_experiment_schema[group_name][s_metadata_node_name] = metadata;
   }
 }
 

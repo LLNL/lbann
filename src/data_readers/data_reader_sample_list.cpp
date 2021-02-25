@@ -29,6 +29,7 @@
 #include "lbann/data_readers/sample_list_impl.hpp"
 #include "lbann/data_readers/sample_list_open_files_impl.hpp"
 #include "lbann/utils/timer.hpp"
+#include "lbann/utils/serialize.hpp"
 
 namespace lbann {
 
