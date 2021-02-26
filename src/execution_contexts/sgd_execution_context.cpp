@@ -53,23 +53,60 @@ void sgd_execution_context::serialize(Archive & ar) {
 
 void sgd_execution_context::save_to_checkpoint_shared(persist& p) {
   if (get_comm().am_trainer_master()) {
-    write_cereal_archive<sgd_execution_context>(*this, p, get_execution_mode(), "_ctx.xml");
+    write_cereal_archive<sgd_execution_context>(
+      *this,
+      p,
+      get_execution_mode(),
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
+      "_ctx.xml"
+#else // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
+      "_ctx.bin"
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
+      );
   }
   return;
 }
 
 void sgd_execution_context::load_from_checkpoint_shared(persist& p) {
-  load_from_shared_cereal_archive<sgd_execution_context>(*this, p, get_execution_mode(), get_comm(), "_ctx.xml");
+  load_from_shared_cereal_archive<sgd_execution_context>(
+    *this,
+    p,
+    get_execution_mode(),
+    get_comm(),
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
+    "_ctx.xml"
+#else // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
+    "_ctx.bin"
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
+    );
   return;
 }
 
 void sgd_execution_context::save_to_checkpoint_distributed(persist& p) {
-  write_cereal_archive<sgd_execution_context>(*this, p, get_execution_mode(), "_ctx.xml");
+  write_cereal_archive<sgd_execution_context>(
+    *this,
+    p,
+    get_execution_mode(),
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
+    "_ctx.xml"
+#else // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
+    "_ctx.bin"
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
+    );
   return;
 }
 
 void sgd_execution_context::load_from_checkpoint_distributed(persist& p) {
-  read_cereal_archive<sgd_execution_context>(*this, p, get_execution_mode(), "_ctx.xml");
+  read_cereal_archive<sgd_execution_context>(
+    *this,
+    p,
+    get_execution_mode(),
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
+    "_ctx.xml"
+#else // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
+    "_ctx.bin"
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
+    );
   return;
 }
 

@@ -89,18 +89,7 @@ TEST_CASE("Serializing models", "[mpi][model][serialize]")
     model_src_ptr = make_model<DataType>(comm),
     model_tgt_ptr;
 
-  SECTION("XML archive")
-  {
-    {
-      cereal::XMLOutputArchive oarchive(ss);
-      REQUIRE_NOTHROW(oarchive(model_src_ptr));
-    }
-    {
-      cereal::XMLInputArchive iarchive(ss);
-      REQUIRE_NOTHROW(iarchive(model_tgt_ptr));
-      REQUIRE(IsValidPtr(model_tgt_ptr));
-    }
-  }
+#ifdef LBANN_HAS_CEREAL_BINARY_ARCHIVES
   SECTION("Binary archive")
   {
     {
@@ -119,20 +108,6 @@ TEST_CASE("Serializing models", "[mpi][model][serialize]")
       // if (comm.get_rank_in_world() == 1)
       //   std::cout << model_tgt_ptr->get_description()
       //             << std::endl;
-    }
-  }
-
-  SECTION("Rooted XML archive")
-  {
-    {
-      lbann::RootedXMLOutputArchive oarchive(ss, g);
-      REQUIRE_NOTHROW(oarchive(model_src_ptr));
-    }
-    //std::cout << ss.str() << std::endl;
-    {
-      lbann::RootedXMLInputArchive iarchive(ss, g);
-      REQUIRE_NOTHROW(iarchive(model_tgt_ptr));
-      REQUIRE(IsValidPtr(model_tgt_ptr));
     }
   }
 
@@ -157,4 +132,34 @@ TEST_CASE("Serializing models", "[mpi][model][serialize]")
       //             << std::endl;
     }
   }
+#endif // LBANN_HAS_CEREAL_BINARY_ARCHIVES
+
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
+  SECTION("XML archive")
+  {
+    {
+      cereal::XMLOutputArchive oarchive(ss);
+      REQUIRE_NOTHROW(oarchive(model_src_ptr));
+    }
+    {
+      cereal::XMLInputArchive iarchive(ss);
+      REQUIRE_NOTHROW(iarchive(model_tgt_ptr));
+      REQUIRE(IsValidPtr(model_tgt_ptr));
+    }
+  }
+
+  SECTION("Rooted XML archive")
+  {
+    {
+      lbann::RootedXMLOutputArchive oarchive(ss, g);
+      REQUIRE_NOTHROW(oarchive(model_src_ptr));
+    }
+    //std::cout << ss.str() << std::endl;
+    {
+      lbann::RootedXMLInputArchive iarchive(ss, g);
+      REQUIRE_NOTHROW(iarchive(model_tgt_ptr));
+      REQUIRE(IsValidPtr(model_tgt_ptr));
+    }
+  }
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
 }

@@ -67,6 +67,7 @@ void load(InputArchiveT& archive, __half& value) {
 }
 
 ///@}
+#ifdef LBANN_HAS_CEREAL_BINARY_ARCHIVES
 /** @name Binary archives */
 ///@{
 
@@ -77,8 +78,10 @@ void save(BinaryOutputArchive&, __half const&);
 void load(BinaryInputArchive&, __half&);
 
 ///@}
+#endif // LBANN_HAS_CEREAL_BINARY_ARCHIVES
 #endif // LBANN_HAS_GPU_FP16
 
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
 /** @name XML archives */
 ///@{
 
@@ -95,6 +98,7 @@ void load_minimal(
   XMLInputArchive const&, half_float::half&, float const&) noexcept;
 
 ///@}
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
 #endif // LBANN_HAS_HALF
 }// namespace cereal
 

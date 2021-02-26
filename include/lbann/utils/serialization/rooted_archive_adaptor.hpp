@@ -205,15 +205,33 @@ private:
   El::Int root_;
 };// RootedInputArchiveAdaptor
 
+#ifdef LBANN_HAS_CEREAL_BINARY_ARCHIVES
 using RootedBinaryInputArchive =
   RootedInputArchiveAdaptor<cereal::BinaryInputArchive>;
 using RootedBinaryOutputArchive =
   RootedOutputArchiveAdaptor<cereal::BinaryOutputArchive>;
+#endif // LBANN_HAS_CEREAL_BINARY_ARCHIVES
 
+#ifdef LBANN_HAS_CEREAL_JSON_ARCHIVES
+using RootedJSONInputArchive =
+  RootedInputArchiveAdaptor<cereal::JSONInputArchive>;
+using RootedJSONOutputArchive =
+  RootedOutputArchiveAdaptor<cereal::JSONOutputArchive>;
+#endif // LBANN_HAS_CEREAL_JSON_ARCHIVES
+
+#ifdef LBANN_HAS_CEREAL_PORTABLE_BINARY_ARCHIVES
+using RootedPortableBinaryInputArchive =
+  RootedInputArchiveAdaptor<cereal::PortableBinaryInputArchive>;
+using RootedPortableBinaryOutputArchive =
+  RootedOutputArchiveAdaptor<cereal::PortableBinaryOutputArchive>;
+#endif // LBANN_HAS_CEREAL_PORTABLE_BINARY_ARCHIVES
+
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
 using RootedXMLInputArchive =
   RootedInputArchiveAdaptor<cereal::XMLInputArchive>;
 using RootedXMLOutputArchive =
   RootedOutputArchiveAdaptor<cereal::XMLOutputArchive>;
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
 
 }// namespace lbann
 
@@ -401,21 +419,45 @@ void epilogue(lbann::RootedInputArchiveAdaptor<ArchiveT>&,
 
 }// namespace cereal
 
+#ifdef LBANN_HAS_CEREAL_BINARY_ARCHIVES
 CEREAL_REGISTER_ARCHIVE(
   lbann::RootedInputArchiveAdaptor<cereal::BinaryInputArchive>);
 CEREAL_REGISTER_ARCHIVE(
   lbann::RootedOutputArchiveAdaptor<cereal::BinaryOutputArchive>);
+CEREAL_SETUP_ARCHIVE_TRAITS(
+  lbann::RootedInputArchiveAdaptor<cereal::BinaryInputArchive>,
+  lbann::RootedOutputArchiveAdaptor<cereal::BinaryOutputArchive>);
+#endif // LBANN_HAS_CEREAL_BINARY_ARCHIVES
+
+#ifdef LBANN_HAS_CEREAL_JSON_ARCHIVES
+CEREAL_REGISTER_ARCHIVE(
+  lbann::RootedInputArchiveAdaptor<cereal::JSONInputArchive>);
+CEREAL_REGISTER_ARCHIVE(
+  lbann::RootedOutputArchiveAdaptor<cereal::JSONOutputArchive>);
+CEREAL_SETUP_ARCHIVE_TRAITS(
+  lbann::RootedInputArchiveAdaptor<cereal::JSONInputArchive>,
+  lbann::RootedOutputArchiveAdaptor<cereal::JSONOutputArchive>);
+#endif // LBANN_HAS_CEREAL_JSON_ARCHIVES
+
+#ifdef LBANN_HAS_CEREAL_PORTABLE_BINARY_ARCHIVES
+CEREAL_REGISTER_ARCHIVE(
+  lbann::RootedInputArchiveAdaptor<cereal::PortableBinaryInputArchive>);
+CEREAL_REGISTER_ARCHIVE(
+  lbann::RootedOutputArchiveAdaptor<cereal::PortableBinaryOutputArchive>);
+CEREAL_SETUP_ARCHIVE_TRAITS(
+  lbann::RootedInputArchiveAdaptor<cereal::PortableBinaryInputArchive>,
+  lbann::RootedOutputArchiveAdaptor<cereal::PortableBinaryOutputArchive>);
+#endif // LBANN_HAS_CEREAL_PORTABLE_BINARY_ARCHIVES
+
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
 CEREAL_REGISTER_ARCHIVE(
   lbann::RootedInputArchiveAdaptor<cereal::XMLInputArchive>);
 CEREAL_REGISTER_ARCHIVE(
   lbann::RootedOutputArchiveAdaptor<cereal::XMLOutputArchive>);
-
-CEREAL_SETUP_ARCHIVE_TRAITS(
-  lbann::RootedInputArchiveAdaptor<cereal::BinaryInputArchive>,
-  lbann::RootedOutputArchiveAdaptor<cereal::BinaryOutputArchive>);
 CEREAL_SETUP_ARCHIVE_TRAITS(
   lbann::RootedInputArchiveAdaptor<cereal::XMLInputArchive>,
   lbann::RootedOutputArchiveAdaptor<cereal::XMLOutputArchive>);
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
 
 #endif // __CUDACC__
 #endif // LBANN_UTILS_SERIALIZATION_ROOTED_ARCHIVE_ADAPTOR_HPP_

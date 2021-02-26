@@ -47,7 +47,11 @@ void write_cereal_archive(C& obj, const std::string& filename) {
   if(!os.is_open()) {
     throw NonexistentArchiveFile(filename);
   }
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
   cereal::XMLOutputArchive archive(os);
+#else // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
+  cereal::BinaryOutputArchive archive(os);
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
   archive(obj);
 }
 
@@ -73,7 +77,11 @@ void read_cereal_archive(C& obj, const std::string& filename) {
   if(!is.is_open()) {
     throw NonexistentArchiveFile(filename);
   }
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
   cereal::XMLInputArchive archive(is);
+#else // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
+  cereal::BinaryInputArchive archive(is);
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
   archive(obj);
 }
 
