@@ -116,10 +116,12 @@ def construct_model(run_args):
 
     print("save output? ", save_output, "out dir ",  run_args.dump_outputs_dir)
     z = lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims="128")
-    recon, d1_real, d1_fake, d_adv, arg_max  = molwae.MolWAE(input_feature_dims,
-                                                           dictionary_size,
-                                                           embedding_size,
-                                                           pad_index,save_output)(input_,z)
+    recon, d1_real, d1_fake, d_adv, arg_max  = molwae.MolWAE(
+        input_feature_dims,
+        dictionary_size,
+        embedding_size,
+        pad_index,
+        save_output=save_output)(input_,z)
 
 
 
@@ -146,7 +148,8 @@ def construct_model(run_args):
         for idx in range(len(l.weights)):
           l.weights[idx].optimizer = lbann.NoOptimizer()
       weights.update(l.weights)
-    l2_reg = lbann.L2WeightRegularization(weights=weights, scale=1e-4)
+    l2_weights = [w for w in weights if not isinstance(w.optimizer, lbann.NoOptimizer)]
+    l2_reg = lbann.L2WeightRegularization(weights=l2_weights, scale=1e-4)
 
     d_adv_bce = lbann.LayerTerm(d_adv_bce,scale=0.01)
 

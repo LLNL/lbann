@@ -150,7 +150,8 @@ def construct_model(run_args):
         for idx in range(len(l.weights)):
           l.weights[idx].optimizer = lbann.NoOptimizer()
       weights.update(l.weights)
-    l2_reg = lbann.L2WeightRegularization(weights=weights, scale=1e-4)
+    l2_weights = [w for w in weights if not isinstance(w.optimizer, lbann.NoOptimizer)]
+    l2_reg = lbann.L2WeightRegularization(weights=l2_weights, scale=1e-4)
 
     wae_loss.append(d1_real_bce)
     wae_loss.append(d_adv_bce)

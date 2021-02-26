@@ -313,8 +313,7 @@ class MolWAE(lbann.modules.Module):
         )
         x = lbann.Identity(x)
 
-        # Convert indices in x to one-hot representation
-        # Note: Ignored indices result in zero vectors
+        # Figure out entries in x to ignore
         ignore_mask = lbann.Equal(
             x,
             self.constant(self.label_to_ignore, hint_layer=x),
@@ -322,22 +321,38 @@ class MolWAE(lbann.modules.Module):
         keep_mask = lbann.LogicalNot(ignore_mask)
         length = lbann.Reduction(keep_mask, mode='sum')
         length = lbann.Max(length, self.constant(1, [1]))
-        x = lbann.Add(
-            lbann.Multiply(keep_mask, x),
-            lbann.Multiply(ignore_mask, self.constant(-1, hint_layer=x)),
+
+        # Convert entries in x to indices in y
+        # Note: Ignored entries correspond to an index of -1.
+        offsets = [
+            row*self.dictionary_size
+            for row in range(self.input_feature_dims-1)
+        ]
+        offsets = lbann.Weights(
+            initializer=lbann.ValueInitializer(values=str_list(offsets)),
+            optimizer=lbann.NoOptimizer(),
         )
-        x = lbann.Slice(x, slice_points=str_list(range(self.input_feature_dims)))
-        x = [lbann.Identity(x) for _ in range(self.input_feature_dims-1)]
-        x = [lbann.OneHot(xi, size=self.dictionary_size) for xi in x]
-        x = [lbann.Reshape(xi, dims=str_list([1, self.dictionary_size])) for xi in x]
-        x = lbann.Concatenation(x, axis=0)
+        offsets = lbann.WeightsLayer(
+            dims=str_list([self.input_feature_dims-1]),
+            weights=offsets,
+        )
+        y_inds = lbann.Add(x, offsets)
+        y_inds = lbann.Add(
+            lbann.Multiply(keep_mask, y_inds),
+            lbann.Multiply(
+                ignore_mask,
+                self.constant(-1, hint_layer=y_inds),
+            ),
+        )
 
         # recon_loss = F.cross_entropy(
         #     y[:, :-1].contiguous().view(-1, y.size(-1)),
         #     x[:, 1:].contiguous().view(-1),
         #     ignore_index=self.pad
         # )
-        # Note: Ideally we'd shift y by y.max(-1) for numerical stability
+
+        # Shift y for numerical stability
+        # Note: We'd prefer to shift by y.max(-1)
         shifts = lbann.MatMul(
             lbann.Max(y, self.constant(0, hint_layer=y)),
             self.constant(
@@ -346,6 +361,8 @@ class MolWAE(lbann.modules.Module):
             ),
         )
         y = lbann.Subtract(y, shifts)
+
+        # Compute log of softmax denominator and sum
         z = lbann.MatMul(
             lbann.Exp(y),
             self.constant(1, [self.dictionary_size, 1]),
@@ -355,13 +372,15 @@ class MolWAE(lbann.modules.Module):
             lbann.Reshape(keep_mask, dims=str_list([1, -1])),
             z,
         )
-        recon_loss = lbann.MatMul(
-            lbann.Reshape(y, dims=str_list([1, -1])),
-            lbann.Reshape(x, dims=str_list([1, -1])),
-            transpose_b=True,
+        z = lbann.Reshape(z, dims=str_list([1]))
+
+        # Compute cross entropy
+        recon_loss = lbann.Gather(
+            lbann.Reshape(y, dims=str_list([-1])),
+            y_inds,
         )
+        recon_loss = lbann.Reduction(recon_loss, mode='sum')
         recon_loss = lbann.Subtract(z, recon_loss)
-        recon_loss = lbann.Reshape(recon_loss, dims=str_list([1]))
         recon_loss = lbann.Divide(recon_loss, length)
 
         return recon_loss
