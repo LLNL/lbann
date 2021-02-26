@@ -47,7 +47,7 @@
 #ifdef LBANN_HAS_DNN_LIB
 #include "lbann/utils/dnn_lib/helpers.hpp"
 #endif // LBANN_HAS_DNN_LIB
-#ifdef LBANN_HAS_PYTHON
+#ifdef LBANN_HAS_EMBEDDED_PYTHON
 #include "lbann/utils/python.hpp"
 #endif
 #ifdef LBANN_HAS_NVSHMEM
@@ -139,7 +139,7 @@ void finalize(lbann_comm* comm) {
 #ifdef LBANN_HAS_DNN_LIB
   dnn_lib::destroy();
 #endif
-#ifdef LBANN_HAS_PYTHON
+#ifdef LBANN_HAS_EMBEDDED_PYTHON
   python::finalize();
 #endif
 #ifdef LBANN_HAS_NVSHMEM

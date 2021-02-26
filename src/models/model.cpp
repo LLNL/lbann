@@ -1385,17 +1385,22 @@ bool model::save_to_checkpoint_distributed(persist& p){
   // Make sure that the master has had a chance to create the directories
   m_comm->trainer_barrier();
 
+#ifdef LBANN_HAS_CEREAL_BINARY_ARCHIVES
   {
     std::ofstream ofs(file::join_path(p.get_checkpoint_dir(), "model.bin"));
     cereal::BinaryOutputArchive ar(ofs);
     ar(*this);
   }
+#endif // LBANN_HAS_CEREAL_BINARY_ARCHIVES
 
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
   {
-    std::ofstream  ofs_xml(file::join_path(p.get_checkpoint_dir(), "model.xml"));
+    std::ofstream  ofs_xml(
+      file::join_path(p.get_checkpoint_dir(), "model.xml"));
     cereal::XMLOutputArchive ar(ofs_xml);
     ar(*this);
   }
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
 
   p.open_checkpoint_dir(trainer_dir, false);
   return true;
@@ -1405,11 +1410,13 @@ bool model::load_from_checkpoint_distributed(persist& p){
   const std::string trainer_dir = p.get_checkpoint_dir();
   p.open_restart(file::join_path(trainer_dir, get_name()));
 
+#ifdef LBANN_HAS_CEREAL_BINARY_ARCHIVES
   {
     std::ifstream ifs(file::join_path(p.get_checkpoint_dir(), "model.bin"));
     cereal::BinaryInputArchive ar(ifs);
     ar(*this);
   }
+#endif // LBANN_HAS_CEREAL_BINARY_ARCHIVES
 
   m_model_is_setup = false;
   p.set_restart_dir(trainer_dir);

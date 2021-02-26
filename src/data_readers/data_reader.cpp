@@ -509,26 +509,64 @@ void generic_data_reader::use_unused_index_set(execution_mode m) {
 /** \brief Given directory to store checkpoint files, write state to file and add to number of bytes written */
 bool generic_data_reader::save_to_checkpoint_shared(persist& p, execution_mode mode) {
   if (get_comm()->am_trainer_master()) {
-    write_cereal_archive<generic_data_reader>(*this, p, mode, "_dr.xml");
+    write_cereal_archive<generic_data_reader>(
+      *this,
+      p,
+      mode,
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
+      "_dr.xml"
+#else // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
+      "_dr.bin"
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
+      );
   }
   return true;
 }
 
 /** \brief Given directory to store checkpoint files, read state from file and add to number of bytes read */
 bool lbann::generic_data_reader::load_from_checkpoint_shared(persist& p, execution_mode mode) {
-  load_from_shared_cereal_archive<generic_data_reader>(*this, p, mode, *get_comm(), "_dr.xml");
+  load_from_shared_cereal_archive<generic_data_reader>(
+    *this,
+    p,
+    mode,
+    *get_comm(),
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
+      "_dr.xml"
+#else // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
+      "_dr.bin"
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
+    );
   // Adjust current position to deal with fact that it was just loaded to all ranks from rank 0 (differs by rank #)
   m_current_pos += m_comm->get_rank_in_trainer();
   return true;
 }
 
 bool generic_data_reader::save_to_checkpoint_distributed(persist& p, execution_mode mode) {
-  write_cereal_archive<generic_data_reader>(*this, p, mode, "_dr.xml");
+  write_cereal_archive<generic_data_reader>(
+    *this,
+    p,
+    mode,
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
+    "_dr.xml"
+#else // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
+    "_dr.bin"
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
+
+    );
   return true;
 }
 
 bool lbann::generic_data_reader::load_from_checkpoint_distributed(persist& p, execution_mode mode) {
-  read_cereal_archive<generic_data_reader>(*this, p, mode, "_dr.xml");
+  read_cereal_archive<generic_data_reader>(
+    *this,
+    p,
+    mode,
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
+    "_dr.xml"
+#else // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
+    "_dr.bin"
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
+    );
   return true;
 }
 

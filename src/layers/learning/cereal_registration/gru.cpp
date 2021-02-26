@@ -45,4 +45,9 @@ gru_layer<TensorDataType,Layout,Device>
 } // namespace lbann
 
 #define LBANN_LAYER_NAME gru_layer
+#ifdef LBANN_GRU_LAYER_ONEDNN_CPU_SUPPORTED
+#include <lbann/macros/register_layer_with_cereal_data_parallel_cpu_only.hpp>
+#endif // LBANN_GRU_LAYER_ONEDNN_CPU_SUPPORTED
+#ifdef LBANN_GRU_LAYER_CUDNN_SUPPORTED
 #include <lbann/macros/register_layer_with_cereal_data_parallel_gpu_only.hpp>
+#endif // LBANN_GRU_LAYER_CUDNN_SUPPORTED

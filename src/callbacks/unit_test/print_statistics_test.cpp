@@ -57,6 +57,7 @@ TEST_CASE("Serializing \"print statistics\" callback",
   CHECK(IsValidPtr(src_ptr));
   CHECK_FALSE(IsValidPtr(tgt_ptr));
 
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
   SECTION("XML archive")
   {
     {
@@ -67,24 +68,6 @@ TEST_CASE("Serializing \"print statistics\" callback",
 
     {
       cereal::XMLInputArchive iarchive(ss);
-      REQUIRE_NOTHROW(iarchive(tgt));
-      REQUIRE_NOTHROW(iarchive(tgt_ptr));
-      CHECK(src.get_batch_interval() == tgt.get_batch_interval());
-      CHECK(IsValidPtr(tgt_ptr));
-      CHECK(src_ptr->get_batch_interval() == tgt_ptr->get_batch_interval());
-    }
-  }
-
-  SECTION("Binary archive")
-  {
-    {
-      cereal::BinaryOutputArchive oarchive(ss);
-      REQUIRE_NOTHROW(oarchive(src));
-      REQUIRE_NOTHROW(oarchive(src_ptr));
-    }
-
-    {
-      cereal::BinaryInputArchive iarchive(ss);
       REQUIRE_NOTHROW(iarchive(tgt));
       REQUIRE_NOTHROW(iarchive(tgt_ptr));
       CHECK(src.get_batch_interval() == tgt.get_batch_interval());
@@ -110,6 +93,26 @@ TEST_CASE("Serializing \"print statistics\" callback",
       CHECK(src_ptr->get_batch_interval() == tgt_ptr->get_batch_interval());
     }
   }
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
+
+#ifdef LBANN_HAS_CEREAL_BINARY_ARCHIVES
+  SECTION("Binary archive")
+  {
+    {
+      cereal::BinaryOutputArchive oarchive(ss);
+      REQUIRE_NOTHROW(oarchive(src));
+      REQUIRE_NOTHROW(oarchive(src_ptr));
+    }
+
+    {
+      cereal::BinaryInputArchive iarchive(ss);
+      REQUIRE_NOTHROW(iarchive(tgt));
+      REQUIRE_NOTHROW(iarchive(tgt_ptr));
+      CHECK(src.get_batch_interval() == tgt.get_batch_interval());
+      CHECK(IsValidPtr(tgt_ptr));
+      CHECK(src_ptr->get_batch_interval() == tgt_ptr->get_batch_interval());
+    }
+  }
 
   SECTION("Rooted binary archive")
   {
@@ -128,4 +131,5 @@ TEST_CASE("Serializing \"print statistics\" callback",
       CHECK(src_ptr->get_batch_interval() == tgt_ptr->get_batch_interval());
     }
   }
+#endif // LBANN_HAS_CEREAL_BINARY_ARCHIVES
 }
