@@ -127,7 +127,8 @@ def construct_model(run_args):
     weights = set()
     for l in layers:
       weights.update(l.weights)
-    l2_reg = lbann.L2WeightRegularization(weights=weights, scale=5e-4)
+    l2_weights = [w for w in weights if not isinstance(w.optimizer, lbann.NoOptimizer)]
+    l2_reg = lbann.L2WeightRegularization(weights=l2_weights, scale=5e-4)
     obj = lbann.ObjectiveFunction(vae_loss)
 
     # Initialize check metric callback
