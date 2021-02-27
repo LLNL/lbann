@@ -3,6 +3,7 @@ import os, os.path
 import subprocess
 import lbann
 import lbann.proto
+import lbann.launcher.openmpi
 import lbann.launcher.slurm
 import lbann.launcher.lsf
 from lbann.util import make_iterable, nvprof_command
@@ -190,6 +191,7 @@ def make_batch_script(script_file=None,
     """
 
     # Try detecting job scheduler if not provided
+    # Note: Fallback to OpenMPI launcher
     if not scheduler:
         try:
             subprocess.call(['sbatch', '--version'],
@@ -207,7 +209,7 @@ def make_batch_script(script_file=None,
         except:
             pass
     if not scheduler:
-        raise RuntimeError('could not detect job scheduler')
+        scheduler = 'openmpi'
 
     # Create work directory if not provided
     if not work_dir:
@@ -233,7 +235,14 @@ def make_batch_script(script_file=None,
     if not script_file:
         script_file = os.path.join(work_dir, 'batch.sh')
     script = None
-    if scheduler.lower() in ('slurm', 'srun', 'sbatch'):
+    if scheduler.lower() in ('openmpi',):
+        script = lbann.launcher.openmpi.OpenMPIBatchScript(
+            script_file=script_file,
+            work_dir=work_dir,
+            nodes=nodes,
+            procs_per_node=procs_per_node,
+            launcher_args=launcher_args)
+    elif scheduler.lower() in ('slurm', 'srun', 'sbatch'):
         script = lbann.launcher.slurm.SlurmBatchScript(
             script_file=script_file,
             work_dir=work_dir,
