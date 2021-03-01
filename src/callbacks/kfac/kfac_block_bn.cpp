@@ -73,10 +73,10 @@ void kfac_block_bn<Device>::compute_local_kronecker_factors(
       m_num_channels*2*local_batch_size,
       m_spatial_prod);
   kfac_bn_util::compute_bn_factor_data2col<Device>(
-      (El::Matrix<DataType, Device>) local_activations,
-      (El::Matrix<DataType, Device>) local_errors,
-      (El::Matrix<DataType, Device>) scale_values.LockedMatrix(),
-      (El::Matrix<DataType, Device>) bias_values.LockedMatrix(),
+      (El::Matrix<DataType, Device>&) local_activations,
+      (El::Matrix<DataType, Device>&) local_errors,
+      (El::Matrix<DataType, Device>&) scale_values.LockedMatrix(),
+      (El::Matrix<DataType, Device>&) bias_values.LockedMatrix(),
       cols,
       local_batch_size,
       m_num_channels,
