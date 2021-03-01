@@ -64,6 +64,15 @@ public:
     this->m_expected_num_parent_layers = 0;
   }
   uniform_layer* copy() const override { return new uniform_layer(*this); }
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
+
   std::string get_type() const override { return "uniform"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
@@ -78,6 +87,11 @@ public:
   }
 
 protected:
+
+  friend class cereal::access;
+  uniform_layer()
+    : uniform_layer(nullptr, { 1 } )
+  {}
 
   void fp_compute() override {
     const auto& mean = (m_max + m_min) / El::To<TensorDataType>(2);

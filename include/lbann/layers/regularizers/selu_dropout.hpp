@@ -56,11 +56,10 @@ public:
 
  public:
   /** Keep units with probabiliy keep_prob. */
-  selu_dropout(lbann_comm *comm,
-               TensorDataType keep_prob = TensorDataType(0.95f),
-               TensorDataType alpha = TensorDataType(1.6732632423543772848170429916717),
-               TensorDataType scale = TensorDataType(1.0507009873554804934193349852946)) :
-    data_type_layer<TensorDataType>(comm),
+  selu_dropout(TensorDataType keep_prob = El::To<TensorDataType>(0.95),
+               TensorDataType alpha = El::To<TensorDataType>(1.6732632423543772848170429916717),
+               TensorDataType scale = El::To<TensorDataType>(1.0507009873554804934193349852946)) :
+    data_type_layer<TensorDataType>(nullptr),
     m_keep_prob(keep_prob),
     m_mask(nullptr) {
 #ifdef LBANN_DETERMINISTIC
@@ -118,6 +117,14 @@ public:
     if (m_mask != nullptr) { delete m_mask; }
     m_mask = this->get_activations().Copy();
   }
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
 
  protected:
   /** Drop out units in forward propagation. */

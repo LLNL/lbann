@@ -82,7 +82,18 @@ public:
   void setup(model* m) override;
   void on_batch_begin(model* m) override;
 
+  /** @name Serialization */
+  ///@{
+
+  /** @brief Store state to archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar);
+
+  ///@}
+
 private:
+
+  friend class cereal::access;
+  perturb_adam();
 
   /** Standard deviation of learning rate perturbation.
    *

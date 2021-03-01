@@ -29,7 +29,7 @@
 
 #include "lbann_config.hpp"
 
-#include "data_reader.hpp"
+#include "lbann/data_readers/data_reader.hpp"
 #include "conduit/conduit.hpp"
 #include "hdf5.h"
 #include <string>
@@ -158,10 +158,6 @@ class data_reader_jag_conduit : public generic_data_reader {
   // void set_open_hdf5_files(std::shared_ptr<hdf5_file_handles>& f);
   // /// Get the set of open hdf5 data files
   // std::shared_ptr<hdf5_file_handles>& get_open_hdf5_files();
-  /// Set the leader of local data reader group
-  void set_leading_reader(data_reader_jag_conduit* r);
-  /// Get the leader of local data reader group
-  data_reader_jag_conduit* get_leading_reader();
 #else
   /// See if the image size is consistent with the linearized size
   void check_image_data();
@@ -439,12 +435,6 @@ class data_reader_jag_conduit : public generic_data_reader {
   static std::unordered_map<std::string, int> m_num_local_readers;
   /// locally addressable id in case of multiple data reader instances attached to a model
   int m_local_reader_id;
-
-  /**
-   * The leading data reader among the local readers, which actually does the
-   * file IO and data shuffling.
-   */
-  data_reader_jag_conduit* m_leading_reader;
 
   CPUMat m_data_cache;
   CPUMat m_response_cache;

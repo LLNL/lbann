@@ -28,7 +28,7 @@
 #define LBANN_UTILS_PYTHON_HPP_INCLUDED
 
 #include "lbann/base.hpp"
-#ifdef LBANN_HAS_PYTHON
+#ifdef LBANN_HAS_EMBEDDED_PYTHON
 
 #include <Python.h>
 
@@ -166,5 +166,5 @@ private:
 } // namespace python
 } // namespace lbann
 
-#endif // LBANN_HAS_PYTHON
+#endif // LBANN_HAS_EMBEDDED_PYTHON
 #endif // LBANN_UTILS_PYTHON_HPP_INCLUDED

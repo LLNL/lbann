@@ -27,6 +27,7 @@
 #include "lbann/callbacks/check_small.hpp"
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/serialize.hpp"
 
 namespace lbann {
 namespace callback {
@@ -52,6 +53,13 @@ bool is_good(const El::AbstractDistMatrix<TensorDataType>& m) {
   return true;
 }
 }// namespace <anon>
+
+template <class Archive>
+void check_small::serialize(Archive & ar) {
+  ar(::cereal::make_nvp(
+       "BaseCallback",
+       ::cereal::base_class<callback_base>(this)));
+}
 
 void check_small::on_forward_prop_end(model *m, Layer *l) {
   const auto& c = m->get_execution_context();
@@ -95,3 +103,6 @@ void check_small::on_batch_end(model *m) {
 
 } // namespace callback
 } // namespace lbann
+
+#define LBANN_CLASS_NAME callback::check_small
+#include <lbann/macros/register_class_with_cereal.hpp>

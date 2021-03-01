@@ -31,7 +31,8 @@
 #endif // LBANN_HAS_GPU
 #include "lbann/optimizers/data_type_optimizer.hpp"
 #include "lbann/weights/data_type_weights.hpp"
-#include "lbann/utils/h2_tmp.hpp"
+#include "lbann/utils/serialize.hpp"
+#include <h2/patterns/multimethods/SwitchDispatcher.hpp>
 
 namespace lbann {
 
@@ -65,6 +66,14 @@ void l2_weight_regularization::accumulate_contribution<El::Device::CPU>(const CP
 
 l2_weight_regularization::l2_weight_regularization(EvalType scale_factor)
   : objective_function_term(scale_factor) {}
+
+template <typename ArchiveT>
+void l2_weight_regularization::serialize(ArchiveT& ar)
+{
+  ar(::cereal::make_nvp(
+       "ObjectiveFunctionTerm",
+       cereal::base_class<objective_function_term>(this)));
+}
 
 void l2_weight_regularization::setup(model& m) {
   objective_function_term::setup(m);
@@ -219,3 +228,6 @@ void l2_weight_regularization::compute_weight_regularization() {
 }
 
 } // namespace lbann
+
+#define LBANN_CLASS_NAME l2_weight_regularization
+#include <lbann/macros/register_class_with_cereal.hpp>

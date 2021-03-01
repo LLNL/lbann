@@ -86,7 +86,7 @@ __global__ void reduce_max_kernel(size_t height,
   for (size_t col = bidy; col < width; col += nblocksy) {
 
     // Find largest value for each thread
-    TensorDataType thread_max_val{-gpu_lib::infinity<DataType>()};
+    TensorDataType thread_max_val{-gpu_lib::infinity<TensorDataType>()};
     for (size_t row = gidx; row < height; row += nthreadsx) {
       const auto& val = values[row+col*values_ldim];
       thread_max_val = gpu_lib::max(thread_max_val, val);
@@ -305,7 +305,7 @@ void fp_compute_impl(softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, E
                              l.m_mode);
 #ifdef LBANN_ENABLE_SOFTMAX_THRESHOLD
     gpu_lib::apply_entrywise_unary_operator<threshold_op>(local_output,
-                                                       local_output);
+                                                          local_output);
 #endif // LBANN_ENABLE_SOFTMAX_THRESHOLD
   }
 }
@@ -492,6 +492,16 @@ void bp_compute_impl(softmax_layer<TensorDataType, data_layout::MODEL_PARALLEL, 
       local_gradient_wrt_input.LDim());
   }
 
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void softmax_layer<TensorDataType, Layout, Device>::setup_fp_dnn_descriptors()
+{
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void softmax_layer<TensorDataType, Layout, Device>::setup_bp_dnn_descriptors()
+{
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>

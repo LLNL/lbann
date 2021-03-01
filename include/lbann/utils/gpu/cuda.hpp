@@ -49,27 +49,21 @@
     if (status_CUDA_SYNC == cudaSuccess)                        \
       status_CUDA_SYNC = cudaGetLastError();                    \
     if (status_CUDA_SYNC != cudaSuccess) {                      \
-      cudaDeviceReset();                                        \
-      std::stringstream err_CUDA_SYNC;                          \
-      if (async) { err_CUDA_SYNC << "Asynchronous "; }          \
-      err_CUDA_SYNC << "CUDA error ("                           \
-                    << cudaGetErrorString(status_CUDA_SYNC)     \
-                    << ")";                                     \
-      LBANN_ERROR(err_CUDA_SYNC.str());                         \
+      LBANN_ERROR((async ? "Asynchronous " : ""),               \
+                  "CUDA error (",                               \
+                  cudaGetErrorString(status_CUDA_SYNC),         \
+                  ")");                                         \
     }                                                           \
   } while (0)
-#define LBANN_CUDA_CHECK_LAST_ERROR(async)                              \
-  do {                                                                  \
-    cudaError_t status = cudaGetLastError();                            \
-    if (status != cudaSuccess) {                                        \
-      cudaDeviceReset();                                                \
-      std::stringstream err_CUDA_CHECK_LAST_ERROR;                      \
-      if (async) { err_CUDA_CHECK_LAST_ERROR << "Asynchronous "; }      \
-      err_CUDA_CHECK_LAST_ERROR << "CUDA error ("                       \
-                                << cudaGetErrorString(status)           \
-                                << ")";                                 \
-      LBANN_ERROR(err_CUDA_CHECK_LAST_ERROR.str());                     \
-    }                                                                   \
+#define LBANN_CUDA_CHECK_LAST_ERROR(async)                      \
+  do {                                                          \
+    cudaError_t status = cudaGetLastError();                    \
+    if (status != cudaSuccess) {                                \
+      LBANN_ERROR((async ? "Asynchronous " : ""),               \
+                  "CUDA error (",                               \
+                  cudaGetErrorString(status),                   \
+                  ")");                                         \
+    }                                                           \
   } while (0)
 #define FORCE_CHECK_CUDA(cuda_call)                             \
   do {                                                          \
@@ -78,9 +72,9 @@
     LBANN_CUDA_SYNC(true);                                      \
     cudaError_t status_CHECK_CUDA = (cuda_call);                \
     if (status_CHECK_CUDA != cudaSuccess) {                     \
-      LBANN_ERROR(std::string("CUDA error (")                   \
-                  + cudaGetErrorString(status_CHECK_CUDA)       \
-                  + std::string(")"));                          \
+      LBANN_ERROR("CUDA error (",                               \
+                  cudaGetErrorString(status_CHECK_CUDA),        \
+                  ")");                                         \
     }                                                           \
     LBANN_CUDA_SYNC(false);                                     \
   } while (0)
@@ -88,9 +82,9 @@
   do {                                                          \
     cudaError_t status_CHECK_CUDA = (cuda_call);                \
     if (status_CHECK_CUDA != cudaSuccess) {                     \
-      LBANN_ERROR(std::string("CUDA error (")                   \
-                  + cudaGetErrorString(status_CHECK_CUDA)       \
-                  + std::string(")"));                          \
+      LBANN_ERROR("CUDA error (",                               \
+                  cudaGetErrorString(status_CHECK_CUDA),        \
+                  ")");                                         \
     }                                                           \
   } while (0)
 #ifdef LBANN_DEBUG

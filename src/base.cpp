@@ -39,7 +39,7 @@
 #include <shmem.h>
 #endif // LBANN_HAS_SHMEM
 
-#include "lbann/comm.hpp"
+#include "lbann/comm_impl.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/omp_diagnostics.hpp"
 #include "lbann/utils/stack_trace.hpp"
@@ -47,7 +47,7 @@
 #ifdef LBANN_HAS_DNN_LIB
 #include "lbann/utils/dnn_lib/helpers.hpp"
 #endif // LBANN_HAS_DNN_LIB
-#ifdef LBANN_HAS_PYTHON
+#ifdef LBANN_HAS_EMBEDDED_PYTHON
 #include "lbann/utils/python.hpp"
 #endif
 #ifdef LBANN_HAS_NVSHMEM
@@ -62,6 +62,12 @@
 #include <vector>
 
 namespace lbann {
+namespace {
+lbann_comm* world_comm_ = nullptr;
+}// namespace <anon>
+namespace utils {
+lbann_comm& get_current_comm() noexcept { return *world_comm_; }
+}// namespace utils
 
 MPI_Errhandler err_handle;
 
@@ -72,6 +78,7 @@ world_comm_ptr initialize(int& argc, char**& argv) {
   // Create a new comm object.
   // Initial creation with every process in one model.
   auto comm = world_comm_ptr{new lbann_comm(0), &lbann::finalize };
+  world_comm_ = comm.get();
 
   // Install MPI error handler
   MPI_Comm_create_errhandler(lbann_mpi_err_handler, &err_handle);
@@ -132,7 +139,7 @@ void finalize(lbann_comm* comm) {
 #ifdef LBANN_HAS_DNN_LIB
   dnn_lib::destroy();
 #endif
-#ifdef LBANN_HAS_PYTHON
+#ifdef LBANN_HAS_EMBEDDED_PYTHON
   python::finalize();
 #endif
 #ifdef LBANN_HAS_NVSHMEM
@@ -217,6 +224,8 @@ std::string to_string(execution_mode m) {
     return "testing";
   case execution_mode::prediction:
     return "prediction";
+  case execution_mode::tournament:
+    return "tournament";
   case execution_mode::invalid:
     return "invalid";
   default:
@@ -233,6 +242,8 @@ execution_mode exec_mode_from_string(std::string const& str) {
     return execution_mode::testing;
   else if (str == "prediction" || str == "predict")
     return execution_mode::prediction;
+  else if (str == "tournament")
+    return execution_mode::tournament;
   else if (str == "invalid")
     return execution_mode::invalid;
   else

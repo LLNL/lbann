@@ -34,6 +34,7 @@
 #include <google/protobuf/message.h>
 
 #include <string>
+#include <set>
 #include <vector>
 
 namespace lbann {
@@ -58,6 +59,15 @@ class monitor_io : public callback_base {
   void on_epoch_end(model *m) override;
   void on_test_end(model *m) override;
   std::string name() const override { return "monitor_io"; }
+
+  /** @name Serialization */
+  ///@{
+
+  /** @brief Store state to archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar);
+
+  ///@}
+
  private:
   /** Indicies of layers to monitor. */
   std::unordered_set<std::string> m_layers;

@@ -47,6 +47,14 @@ public:
   void on_setup_end(model *m) override;
   std::string name() const override { return "print_model_description"; }
 
+  /** @name Serialization */
+  ///@{
+
+  /** @brief Store state to archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar);
+
+  ///@}
+
 };
 
 // Builder function

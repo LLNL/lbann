@@ -2,7 +2,7 @@ import os, os.path
 import socket
 import lbann
 import lbann.launcher
-from lbann.util import make_iterable
+from lbann.util import make_iterable, nvprof_command
 
 # ==============================================
 # Detect the current compute center
@@ -81,10 +81,13 @@ def run(
     optimizer,
     lbann_exe=lbann.lbann_exe(),
     lbann_args=[],
+    procs_per_trainer=None,
     overwrite_script=False,
     setup_only=False,
     batch_job=False,
     proto_file_name='experiment.prototext',
+    nvprof=False,
+    nvprof_output_name=None,
     *args,
     **kwargs,
 ):
@@ -104,6 +107,10 @@ def run(
 
     # Batch script invokes LBANN
     lbann_command = [lbann_exe]
+    if nvprof:
+        lbann_command = nvprof_command(
+            work_dir=script.work_dir,
+            output_name=nvprof_output_name)+lbann_command
     lbann_command.extend(make_iterable(lbann_args))
     prototext_file = os.path.join(script.work_dir, proto_file_name)
     lbann.proto.save_prototext(prototext_file,
@@ -112,6 +119,8 @@ def run(
                                data_reader=data_reader,
                                optimizer=optimizer)
     lbann_command.append('--prototext={}'.format(prototext_file))
+    if procs_per_trainer is not None:
+        lbann_command.append(f'--procs_per_trainer={procs_per_trainer}')
     script.add_parallel_command(lbann_command)
     script.add_command('status=$?')
 

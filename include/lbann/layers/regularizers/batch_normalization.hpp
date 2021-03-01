@@ -155,11 +155,10 @@ public:
    *  @param statistics_group_size Number of processors to aggregate
    *         statistics over. Defaults to 1 (i.e. local aggregation).
    */
-  batch_normalization_layer(lbann_comm *comm,
-                            TensorDataType decay=0.9,
+  batch_normalization_layer(TensorDataType decay=0.9,
                             TensorDataType epsilon=1e-5,
                             int statistics_group_size=1)
-    : data_type_layer<TensorDataType>(comm),
+    : data_type_layer<TensorDataType>(nullptr),
       m_decay(decay),
       m_epsilon(epsilon),
       m_statistics_group_size(statistics_group_size) {
@@ -231,6 +230,14 @@ public:
     return desc;
   }
 
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
+
 protected:
 
   void setup_matrices(const El::Grid& grid) override {
@@ -295,7 +302,7 @@ protected:
     }
     this->set_num_weights(4);
     if (!this->has_weights(0)) {
-      auto w = std::make_shared<WeightsType>(this->get_comm());
+      auto w = std::make_shared<WeightsType>(*this->get_comm());
       auto init = make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::One());
       auto opt = this->m_model->template create_optimizer<TensorDataType>();
       w->set_name(this->get_name() + "_scale");
@@ -305,7 +312,7 @@ protected:
       this->m_model->add_weights(std::move(w));
     }
     if (!this->has_weights(1)) {
-      auto w = std::make_shared<WeightsType>(this->get_comm());
+      auto w = std::make_shared<WeightsType>(*this->get_comm());
       auto init = make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::Zero());
       auto opt = this->m_model->template create_optimizer<TensorDataType>();
       w->set_name(this->get_name() + "_bias");
@@ -315,7 +322,7 @@ protected:
       this->m_model->add_weights(std::move(w));
     }
     if (!this->has_weights(2)) {
-      auto w = std::make_shared<WeightsType>(this->get_comm());
+      auto w = std::make_shared<WeightsType>(*this->get_comm());
       auto init = make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::Zero());
       w->set_name(this->get_name() + "_running_mean");
       w->set_initializer(std::move(init));
@@ -323,7 +330,7 @@ protected:
       this->m_model->add_weights(std::move(w));
     }
     if (!this->has_weights(3)) {
-      auto w = std::make_shared<WeightsType>(this->get_comm());
+      auto w = std::make_shared<WeightsType>(*this->get_comm());
       auto init = make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::One());
       w->set_name(this->get_name() + "_running_variance");
       w->set_initializer(std::move(init));
@@ -393,6 +400,7 @@ protected:
   batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>& get_distconv_adapter() override;
   const batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>& get_distconv_adapter() const override;
 #endif // LBANN_HAS_DISTCONV
+
 };
 
 #ifdef LBANN_HAS_DISTCONV

@@ -26,14 +26,28 @@
 
 #define CATCH_CONFIG_RUNNER
 #include <catch2/catch.hpp>
+#include <lbann/utils/dnn_lib/helpers.hpp>
 #include <lbann/utils/random_number_generators.hpp>
 
 int main(int argc, char* argv[]) {
+#ifdef LBANN_HAS_DNN_LIB
+  hydrogen::gpu::Initialize();
+  lbann::dnn_lib::initialize();
+#endif // LBANN_HAS_DNN_LIB
+
+
   // Initialize the general RNGs and the data sequence RNGs
   int random_seed = 42;
   lbann::init_random(random_seed);
   lbann::init_data_seq_random(random_seed);
 
   int result = Catch::Session().run(argc, argv);
+
+
+#ifdef LBANN_HAS_DNN_LIB
+  lbann::dnn_lib::destroy();
+  hydrogen::gpu::Finalize();
+#endif // LBANN_HAS_DNN_LIB
+
   return result;
 }

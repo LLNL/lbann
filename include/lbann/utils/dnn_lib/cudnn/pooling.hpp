@@ -41,6 +41,12 @@ namespace dnn_lib
 
 using namespace cudnn;
 
+inline size_t get_pooling_ws_size(PoolingDescriptor const& poolingDesc,
+                                  TensorDescriptor const& yDesc)
+{
+  return 0UL;
+}
+
 template <typename TensorDataType, typename ScalarParameterType>
 void pooling_forward(PoolingDescriptor const& poolingDesc,
                      ScalarParameterType const& alpha_in,
@@ -49,6 +55,7 @@ void pooling_forward(PoolingDescriptor const& poolingDesc,
                      ScalarParameterType const& beta_in,
                      TensorDescriptor const& yDesc,
                      El::AbstractMatrix<TensorDataType>& y,
+                     El::Matrix<TensorDataType, El::Device::GPU>& workSpace,
                      El::SyncInfo<El::Device::GPU> const& si)
 {
   using LibScalingParamT = dnn_lib::ScalingParamType<TensorDataType>;
@@ -72,13 +79,15 @@ void pooling_forward(PoolingDescriptor const& poolingDesc,
                      El::AbstractMatrix<TensorDataType> const& x,
                      ScalarParameterType const& beta_in,
                      TensorDescriptor const& yDesc,
-                     El::AbstractMatrix<TensorDataType>& y)
+                     El::AbstractMatrix<TensorDataType>& y,
+                     El::Matrix<TensorDataType, El::Device::GPU>& workSpace)
 {
   auto multisync = El::MakeMultiSync(gpu::get_sync_info(y),
                                      gpu::get_sync_info(x));
   pooling_forward(poolingDesc,
                   alpha_in, xDesc, x,
                   beta_in, yDesc, y,
+                  workSpace,
                   multisync);
 }
 
@@ -94,6 +103,7 @@ void pooling_backward(PoolingDescriptor const& poolingDesc,
                       ScalarParameterType const& beta_in,
                       TensorDescriptor const& dxDesc,
                       El::AbstractMatrix<TensorDataType>& dx,
+                      El::Matrix<TensorDataType, El::Device::GPU>& workSpace,
                       El::SyncInfo<El::Device::GPU> const& si)
 {
   using LibScalingParamT = dnn_lib::ScalingParamType<TensorDataType>;
@@ -125,7 +135,8 @@ void pooling_backward(PoolingDescriptor const& poolingDesc,
                       El::AbstractMatrix<TensorDataType> const& x,
                       ScalarParameterType const& beta_in,
                       TensorDescriptor const& dxDesc,
-                      El::AbstractMatrix<TensorDataType>& dx)
+                      El::AbstractMatrix<TensorDataType>& dx,
+                      El::Matrix<TensorDataType, El::Device::GPU>& workSpace)
 {
   auto multisync = El::MakeMultiSync(gpu::get_sync_info(dx),
                                      gpu::get_sync_info(x),
@@ -134,6 +145,7 @@ void pooling_backward(PoolingDescriptor const& poolingDesc,
   pooling_backward(poolingDesc,
                    alpha_in, yDesc, y, dyDesc, dy,
                    xDesc, x, beta_in, dxDesc, dx,
+                   workSpace,
                    multisync);
 }
 

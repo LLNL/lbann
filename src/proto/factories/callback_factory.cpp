@@ -39,6 +39,7 @@
 #include "lbann/callbacks/dump_error_signals.hpp"
 #include "lbann/callbacks/dump_gradients.hpp"
 #include "lbann/callbacks/dump_minibatch_sample_indices.hpp"
+#include "lbann/callbacks/dump_model_graph.hpp"
 #include "lbann/callbacks/dump_outputs.hpp"
 #include "lbann/callbacks/dump_weights.hpp"
 #include "lbann/callbacks/early_stopping.hpp"
@@ -127,6 +128,8 @@ void register_default_builders(factory_type& factory)
                            build_dump_error_signals_callback_from_pbuf);
   factory.register_builder("CallbackDumpGradients",
                            build_dump_gradients_callback_from_pbuf);
+  factory.register_builder("CallbackDumpModelGraph",
+                           build_dump_model_graph_callback_from_pbuf);
   factory.register_builder("CallbackDumpMBIndices",
                            build_dump_mb_indices_callback_from_pbuf);
   factory.register_builder("CallbackDumpOutputs",

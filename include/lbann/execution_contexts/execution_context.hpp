@@ -31,7 +31,11 @@
 #include "lbann/comm.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
-#include <cereal/types/utility.hpp>
+
+// Forward declaration
+namespace cereal {
+class access;
+}
 
 namespace lbann {
 
@@ -47,8 +51,9 @@ public:
 class execution_context {
 public:
   /** Constructor. */
-  execution_context(trainer& trainer, training_algorithm& training_alg,
-                    lbann_comm *comm, execution_mode mode);
+  execution_context(trainer& trainer,
+                    training_algorithm& training_alg,
+                    execution_mode mode);
   /** Destructor. */
   virtual ~execution_context() = default;
 
@@ -60,11 +65,7 @@ public:
   }
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize( Archive & ar ) {
-    ar(CEREAL_NVP(m_execution_mode),
-       CEREAL_NVP(m_terminate_training),
-       CEREAL_NVP(m_step));
-  }
+  template <class Archive> void serialize( Archive & ar );
 
   /** @brief Return the state of the execution context as a string */
   virtual std::string get_state_string() const noexcept {
@@ -135,6 +136,8 @@ public:
   virtual void load_from_checkpoint_distributed(persist& p);
 
 protected:
+  friend class cereal::access;
+  execution_context() = default;
   /** Copy constructor. */
   execution_context(const execution_context& other) = default;
   /** Copy assignment operator. */

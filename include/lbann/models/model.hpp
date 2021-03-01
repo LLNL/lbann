@@ -42,7 +42,6 @@
 #include "lbann/proto/factories.hpp"
 #include "lbann/weights/weights.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
-#include <cereal/types/utility.hpp>
 
 // Note (trb): There's what is, IMO, an STL error in GCC in which the
 // dtor for unique_ptr is checking sizeof(T), so this must be a
@@ -84,9 +83,7 @@ public:
   virtual std::unique_ptr<model> copy_model() const = 0;
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar) {
-    ar(CEREAL_NVP(*m_objective_function));
-  }
+  template <class Archive> void serialize(Archive & ar);
 
   // ===========================================
   // Access functions
@@ -223,13 +220,21 @@ public:
   /** @brief Are background I/O activities enabled by the input layers */
   bool background_io_activity_allowed() { return m_background_io_allowed; }
 
+  void swap_layers(model& other);
+  void swap_weights(model& other);
+  void swap_metrics(model& other);
+  void swap_objective_function(model& other);
+
   // ===========================================
   // Setup
   // ===========================================
 
   /** @details Must be called after model specification and before
    *  execution. */
-  virtual void setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata);
+  virtual void setup(
+    size_t max_mini_batch_size,
+    DataReaderMetaData& dr_metadata,
+    bool force=false);
 
   virtual void make_data_store_preloaded(execution_mode mode);
 
@@ -261,13 +266,6 @@ public:
 
   virtual bool save_to_checkpoint_distributed(persist& p);
   virtual bool load_from_checkpoint_distributed(persist& p);
-
-  /** @brief Save the model's weight to file */
-  virtual bool save_weights(persist& p);
-
-  /** @brief Reload the model's weights from a file */
-  virtual bool reload_weights(const std::string latest,
-                              const std::vector<std::string>& weight_list);
 
   /** @brief Saves the model explicitly if the save_model callback is present */
   virtual bool save_model();

@@ -1,7 +1,7 @@
 #include <catch2/catch.hpp>
 #include <lbann/base.hpp>
 #include <lbann/utils/serialize.hpp>
-#include <lbann/utils/h2_tmp.hpp>
+#include <h2/patterns/multimethods/SwitchDispatcher.hpp>
 
 using MatrixTypes =
   h2::meta::TL<
@@ -19,6 +19,7 @@ TEMPLATE_LIST_TEST_CASE("Matrix serialization",
   std::stringstream ss;
   MatrixType mat(13,17), mat_restore;
 
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
   SECTION("XML archive")
   {
     {
@@ -34,25 +35,11 @@ TEMPLATE_LIST_TEST_CASE("Matrix serialization",
     CHECK(mat.Height() == mat_restore.Height());
     CHECK(mat.Width() == mat_restore.Width());
   }
-
-  SECTION("JSON archive")
-  {
-    {
-      cereal::JSONOutputArchive oarchive(ss);
-      CHECK_NOTHROW(oarchive(mat));
-    }
-
-    {
-      cereal::JSONInputArchive iarchive(ss);
-      CHECK_NOTHROW(iarchive(mat_restore));
-    }
-
-    CHECK(mat.Height() == mat_restore.Height());
-    CHECK(mat.Width() == mat_restore.Width());
-  }
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
 
   // The binary test case is slightly different since we serialize the
   // data, too. In this case, the buffer has to have real data.
+#ifdef LBANN_HAS_CEREAL_BINARY_ARCHIVES
   SECTION("Binary archive")
   {
     El::MakeUniform(mat);
@@ -104,19 +91,24 @@ TEMPLATE_LIST_TEST_CASE("Matrix serialization",
     }
 
   }
+#endif // LBANN_HAS_CEREAL_BINARY_ARCHIVES
 
   SECTION("Views are not serializable")
   {
     auto mat_view = El::View(mat);
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
     {
       cereal::XMLOutputArchive oarchive(ss);
       CHECK_THROWS(oarchive(mat_view));
     }
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
 
+#ifdef LBANN_HAS_CEREAL_BINARY_ARCHIVES
     {
       cereal::BinaryOutputArchive oarchive(ss);
       CHECK_THROWS(oarchive(mat_view));
     }
+#endif // LBANN_HAS_CEREAL_BINARY_ARCHIVES
   }
 }
 
@@ -132,6 +124,7 @@ TEMPLATE_LIST_TEST_CASE("Matrix smart-pointer-to-concrete serialization",
   std::unique_ptr<MatrixType> mat, mat_restore;
   mat = std::make_unique<MatrixType>(16, 12);
 
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
   SECTION("XML Archive")
   {
     {
@@ -147,23 +140,8 @@ TEMPLATE_LIST_TEST_CASE("Matrix smart-pointer-to-concrete serialization",
     CHECK(mat->Height() == mat_restore->Height());
     CHECK(mat->Width() == mat_restore->Width());
   }
-
-  SECTION("JSON Archive")
-  {
-    {
-      cereal::JSONOutputArchive oarchive(ss);
-      CHECK_NOTHROW(oarchive(mat));
-    }
-    {
-      cereal::JSONInputArchive iarchive(ss);
-      CHECK_NOTHROW(iarchive(mat_restore));
-    }
-
-    REQUIRE((check_valid_ptr) mat_restore);
-    CHECK(mat->Height() == mat_restore->Height());
-    CHECK(mat->Width() == mat_restore->Width());
-  }
-
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
+#ifdef LBANN_HAS_CEREAL_BINARY_ARCHIVES
   SECTION("Binary archive")
   {
     El::MakeUniform(*mat);
@@ -188,5 +166,5 @@ TEMPLATE_LIST_TEST_CASE("Matrix smart-pointer-to-concrete serialization",
       }
     }
   }
-
+#endif // LBANN_HAS_CEREAL_BINARY_ARCHIVES
 }

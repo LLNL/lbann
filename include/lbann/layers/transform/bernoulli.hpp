@@ -54,6 +54,15 @@ public:
     this->m_expected_num_parent_layers = 0;
   }
   bernoulli_layer* copy() const override { return new bernoulli_layer(*this); }
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
+
   std::string get_type() const override { return "Bernoulli"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
@@ -65,6 +74,11 @@ public:
   }
 
 protected:
+
+  friend class cereal::access;
+  bernoulli_layer()
+    : bernoulli_layer(nullptr, { 1 }, 0.5 )
+  {}
 
   void fp_compute() override {
     auto& output = this->get_activations();

@@ -61,12 +61,16 @@ public:
 
 public:
 
-  entrywise_batch_normalization_layer(lbann_comm* comm,
-                                      TensorDataType decay=0.9,
-                                      TensorDataType epsilon=1e-5)
-    : data_type_layer<TensorDataType>(comm), m_decay(decay), m_epsilon(epsilon) {}
+  entrywise_batch_normalization_layer(
+    TensorDataType decay=El::To<TensorDataType>(0.9),
+    TensorDataType epsilon=El::To<TensorDataType>(1e-5))
+    : data_type_layer<TensorDataType>(nullptr),
+      m_decay(decay),
+      m_epsilon(epsilon)
+  {}
 
-  entrywise_batch_normalization_layer(const entrywise_batch_normalization_layer& other)
+  entrywise_batch_normalization_layer(
+    const entrywise_batch_normalization_layer& other)
     : data_type_layer<TensorDataType>(other),
       m_decay(other.m_decay),
       m_epsilon(other.m_epsilon),
@@ -75,9 +79,12 @@ public:
                          nullptr),
       m_batch_statistics_gradient(other.m_batch_statistics_gradient ?
                                   other.m_batch_statistics_gradient->Copy() :
-                                  nullptr) {}
+                                  nullptr)
+  {}
 
-  entrywise_batch_normalization_layer& operator=(const entrywise_batch_normalization_layer& other) {
+  entrywise_batch_normalization_layer& operator=(
+    const entrywise_batch_normalization_layer& other)
+  {
     data_type_layer<TensorDataType>::operator=(other);
     m_decay = other.m_decay;
     m_epsilon = other.m_epsilon;
@@ -101,6 +108,14 @@ public:
     desc.add("Epsilon", m_epsilon);
     return desc;
   }
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
 
 protected:
 
@@ -130,7 +145,7 @@ protected:
     }
     this->set_num_weights(2);
     if (!this->has_weights(0)) {
-      auto w = std::make_shared<WeightsType>(this->get_comm());
+      auto w = std::make_shared<WeightsType>(*this->get_comm());
       auto init = make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::Zero());
       w->set_name(this->get_name() + "_running_mean");
       w->set_initializer(std::move(init));
@@ -138,7 +153,7 @@ protected:
       this->m_model->add_weights(std::move(w));
     }
     if (!this->has_weights(1)) {
-      auto w = std::make_shared<WeightsType>(this->get_comm());
+      auto w = std::make_shared<WeightsType>(*this->get_comm());
       auto init = make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::One());
       w->set_name(this->get_name() + "_running_variance");
       w->set_initializer(std::move(init));

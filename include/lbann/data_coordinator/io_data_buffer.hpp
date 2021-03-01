@@ -28,17 +28,6 @@
 #define LBANN_IO_BUFFER_HPP_INCLUDED
 
 #include "lbann/data_readers/utils/input_data_type.hpp"
-#include <cereal/types/utility.hpp>
-#include <cereal/types/map.hpp>
-//#include <cereal/types/atomic.hpp>
-#include <cereal/types/base_class.hpp>
-
-#include <cereal/types/utility.hpp>
-#include <cereal/types/map.hpp>
-#include <cereal/types/unordered_map.hpp>
-#include <cereal/types/vector.hpp>
-#include <cereal/archives/binary.hpp>
-#include <cereal/archives/xml.hpp>
 
 namespace lbann {
 
@@ -98,12 +87,7 @@ public:
   data_buffer* copy() const { return new data_buffer(*this); }
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize( Archive & ar ) {
-    ar(/*CEREAL_NVP(m_input_buffers)*//*,
-                                    CEREAL_NVP(m_fetch_data_in_background),
-       CEREAL_NVP(m_data_fetch_future),
-       CEREAL_NVP(m_indices_fetched_per_mb)*/);
-  }
+  template <class Archive> void serialize( Archive & ar );
 
   void set_fetch_data_in_background(bool flag) { m_fetch_data_in_background = flag; }
 

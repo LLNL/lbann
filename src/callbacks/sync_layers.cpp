@@ -31,11 +31,22 @@
 #include "lbann/layers/io/input_layer.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/timer.hpp"
+#include "lbann/utils/serialize.hpp"
 
 #include <callbacks.pb.h>
 
 namespace lbann {
 namespace callback {
+
+template <class Archive>
+void sync_layers::serialize(Archive & ar) {
+  ar(::cereal::make_nvp(
+       "BaseCallback",
+       ::cereal::base_class<callback_base>(this)),
+     CEREAL_NVP(m_sync_gpus),
+     CEREAL_NVP(m_sync_mpi),
+     CEREAL_NVP(m_only_input));
+}
 
 void sync_layers::on_forward_prop_end(model *m, Layer *l) {
   if (m_only_input && dynamic_cast<input_layer<DataType>*>(l) == nullptr) {
@@ -78,3 +89,6 @@ build_sync_layers_callback_from_pbuf(
 
 } // namespace callback
 } // namespace lbann
+
+#define LBANN_CLASS_NAME callback::sync_layers
+#include <lbann/macros/register_class_with_cereal.hpp>

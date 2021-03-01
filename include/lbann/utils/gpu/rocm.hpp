@@ -49,27 +49,21 @@
     if (status_ROCM_SYNC == hipSuccess)                         \
       status_ROCM_SYNC = hipGetLastError();                     \
     if (status_ROCM_SYNC != hipSuccess) {                       \
-      hipDeviceReset();                                         \
-      std::stringstream err_ROCM_SYNC;                          \
-      if (async) { err_ROCM_SYNC << "Asynchronous "; }          \
-      err_ROCM_SYNC << "ROCm error ("                           \
-                    << hipGetErrorString(status_ROCM_SYNC)      \
-                    << ")";                                     \
-      LBANN_ERROR(err_ROCM_SYNC.str());                         \
+      LBANN_ERROR((async ? "Asynchronous " : ""),               \
+                  "ROCm error (",                               \
+                  hipGetErrorString(status_ROCM_SYNC),          \
+                  ")");                                         \
     }                                                           \
   } while (0)
-#define LBANN_ROCM_CHECK_LAST_ERROR(async)                              \
-  do {                                                                  \
-    hipError_t status = hipGetLastError();                              \
-    if (status != hipSuccess) {                                         \
-      hipDeviceReset();                                                 \
-      std::stringstream err_ROCM_CHECK_LAST_ERROR;                      \
-      if (async) { err_ROCM_CHECK_LAST_ERROR << "Asynchronous "; }      \
-      err_ROCM_CHECK_LAST_ERROR << "ROCm error ("                       \
-                                << hipGetErrorString(status)            \
-                                << ")";                                 \
-      LBANN_ERROR(err_ROCM_CHECK_LAST_ERROR.str());                     \
-    }                                                                   \
+#define LBANN_ROCM_CHECK_LAST_ERROR(async)                      \
+  do {                                                          \
+    hipError_t status = hipGetLastError();                      \
+    if (status != hipSuccess) {                                 \
+      LBANN_ERROR((async ? "Asynchronous " : ""),               \
+                  "ROCm error (",                               \
+                  hipGetErrorString(status),                    \
+                  ")");                                         \
+    }                                                           \
   } while (0)
 #define FORCE_CHECK_ROCM(rocm_call)                             \
   do {                                                          \
@@ -78,9 +72,9 @@
     LBANN_ROCM_SYNC(true);                                      \
     hipError_t status_CHECK_ROCM = (rocm_call);                 \
     if (status_CHECK_ROCM != hipSuccess) {                      \
-      LBANN_ERROR(std::string("ROCm error (")                   \
-                  + hipGetErrorString(status_CHECK_ROCM)        \
-                  + std::string(")"));                          \
+      LBANN_ERROR("ROCm error (",                               \
+                  hipGetErrorString(status_CHECK_ROCM),         \
+                  ")");                                         \
     }                                                           \
     LBANN_ROCM_SYNC(false);                                     \
   } while (0)
@@ -88,9 +82,9 @@
   do {                                                          \
     hipError_t status_CHECK_ROCM = (rocm_call);                 \
     if (status_CHECK_ROCM != hipSuccess) {                      \
-      LBANN_ERROR(std::string("ROCm error (")                   \
-                  + hipGetErrorString(status_CHECK_ROCM)        \
-                  + std::string(")"));                          \
+      LBANN_ERROR("ROCm error (",                               \
+                  hipGetErrorString(status_CHECK_ROCM),         \
+                  ")");                                         \
     }                                                           \
   } while (0)
 #ifdef LBANN_DEBUG

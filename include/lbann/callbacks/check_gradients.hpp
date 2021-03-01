@@ -31,6 +31,8 @@
 
 #include <google/protobuf/message.h>
 
+#include <set>
+
 namespace lbann {
 namespace callback {
 
@@ -70,6 +72,14 @@ public:
   void on_train_end(model *m) override      { do_check_gradients(*m); }
   void on_validation_end(model *m) override { do_check_gradients(*m); }
   void on_test_end(model *m) override       { do_check_gradients(*m); }
+
+  /** @name Serialization */
+  ///@{
+
+  /** @brief Store state to archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar);
+
+  ///@}
 
 private:
 

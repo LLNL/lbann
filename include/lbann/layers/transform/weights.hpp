@@ -88,11 +88,25 @@ public:
     return *this;
   }
   weights_layer* copy() const override { return new weights_layer(*this); }
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
+
   std::string get_type() const override { return "weights"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
  protected:
+
+  friend class cereal::access;
+  weights_layer()
+    : weights_layer(nullptr, { 1 } )
+  {}
 
   void setup_matrices(const El::Grid& grid) override {
     data_type_layer<TensorDataType>::setup_matrices(grid);
@@ -114,7 +128,7 @@ public:
 
     // Initialize default weights if none are provided
     if (!this->has_weights()) {
-      auto w = std::make_shared<WeightsType>(this->get_comm());
+      auto w = std::make_shared<WeightsType>(*this->get_comm());
       auto init = make_unique<constant_initializer<DataType>>(DataType(0));
       auto opt = this->m_model->template create_optimizer<TensorDataType>();
       w->set_name(this->get_name() + "_weights");

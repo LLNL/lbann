@@ -26,9 +26,11 @@
 // imcomm .hpp .cpp - Send gradient updates between models
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/comm_impl.hpp"
 #include "lbann/callbacks/imcomm.hpp"
 
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/summary_impl.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/weights/data_type_weights.hpp"
 

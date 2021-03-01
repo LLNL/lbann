@@ -24,20 +24,22 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/layers/layer.hpp"
-#include "lbann/utils/timer.hpp"
-#include "lbann/models/model.hpp"
+#include "lbann/execution_contexts/sgd_execution_context.hpp"
 #include "lbann/io/file_io.hpp"
 #include "lbann/io/persist.hpp"
-#include "lbann/execution_contexts/sgd_execution_context.hpp"
+#include "lbann/layers/layer.hpp"
+#include "lbann/models/model.hpp"
+#include "lbann/utils/summary_impl.hpp"
+#include "lbann/utils/timer.hpp"
 
 #include <layers.pb.h>
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-
+#include <algorithm>
+#include <functional>
+#include <sstream>
 #include <string>
+#include <utility>
+#include <vector>
 
 // Asynchronous memory transfers for input data
 // Note: This introduces a race condition. It is possible for the
@@ -47,7 +49,7 @@
 
 namespace lbann {
 
-Layer::Layer(lbann_comm *comm)
+Layer::Layer()
   : m_frozen(false) {
 
   // Initialize layer name
@@ -507,23 +509,6 @@ void Layer::back_prop() {
   back_prop_impl_();
   propagate_error_signals_to_parents_();
   clear_prev_error_signals_();
-}
-
-
-bool Layer::save_to_checkpoint_shared(persist& p) const {
-  return true;
-}
-
-bool Layer::load_from_checkpoint_shared(persist& p) {
-  return true;
-}
-
-bool Layer::save_to_checkpoint_distributed(persist& p) const {
-  return true;
-}
-
-bool Layer::load_from_checkpoint_distributed(persist& p) {
-  return true;
 }
 
 void Layer::write_proto(lbann_data::Layer* proto) const {

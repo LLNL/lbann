@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_ENTRYWISE_BATCH_NORMALIZATION_LAYER_INSTANTIATE
+#include "lbann/comm_impl.hpp"
 #include "lbann/layers/regularizers/entrywise_batch_normalization.hpp"
 
 #include "lbann/weights/weights_helpers.hpp"
@@ -425,7 +426,6 @@ void entrywise_batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_comp
   template class entrywise_batch_normalization_layer< \
     T, data_layout::MODEL_PARALLEL, El::Device::CPU>
 
-#define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

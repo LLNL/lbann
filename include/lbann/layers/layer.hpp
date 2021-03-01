@@ -59,7 +59,8 @@
 #define LBANN_LAYER_DEFAULT_BUILDER(LAYER_NAME) \
   template <typename TensorDataType, data_layout Layout, El::Device Device> \
   std::unique_ptr<Layer> build_##LAYER_NAME##_layer_from_pbuf(          \
-    lbann_comm* comm, lbann_data::Layer const&) {                       \
+    lbann_comm* comm, lbann_data::Layer const&)                         \
+  {                                                                     \
     using LayerType = LAYER_NAME##_layer<TensorDataType, Layout, Device>; \
     return make_unique<LayerType>(comm);                                \
   }
@@ -219,58 +220,56 @@ class Layer {
 
 public:
 
-  /// @todo Remove lbann_comm* argument
-  Layer(lbann_comm *comm);
+  Layer();
   Layer(const Layer& other);
   Layer& operator=(const Layer& other);
   virtual ~Layer() = default;
 
-  /** Copy function.
+  /** @brief Copy function.
    *  This function dynamically allocates memory for a layer instance
    *  and instantiates a copy. The caller is responsible for
    *  deallocating the instance.
    */
   virtual Layer* copy() const = 0;
 
-  /** Get the layer type's name.
+  /** @brief Get the layer type's name.
    *  A layer type name should be brief, human-readable description of
    *  the layer's mathematical operation.
    */
   virtual std::string get_type() const = 0;
-  /** Get the layer instance's name.
+  /** @brief Get the layer instance's name.
    *  Each layer in a model should have a unique, preferably
    *  human-readable, name.
    */
   inline std::string get_name() const { return m_name; }
-  /** Set the layer instance's name.
+  /** @brief Set the layer instance's name.
    *  Each layer in a model should have a unique, preferably
    *  human-readable, name.
    */
   inline void set_name(const std::string name) { m_name = name; }
-  /** Get a string representing the layer datatype
-   */
+  /** @brief Get a string representing the layer datatype */
   virtual std::string get_datatype_name() const {
     return TypeName<DataType>();
   };
 
-  /** Human-readable description. */
+  /** @brief Human-readable description. */
   virtual description get_description() const;
 
-  /** Get the parallel strategy for the layer. */
+  /** @brief Get the parallel strategy for the layer. */
   inline ParallelStrategy& get_parallel_strategy() {
     return m_parallel_strategy;
   }
-  /** Get the parallel strategy for the layer. */
+  /** @brief Get the parallel strategy for the layer. */
   const ParallelStrategy& get_parallel_strategy() const {
     return m_parallel_strategy;
   }
 
-  /** Forward propagation step.
+  /** @brief Forward propagation step.
    *  Apply a mathematical operation to input tensors to obtain output
    *  tensors.
    */
   virtual void forward_prop() {};
-  /** Backward propagation step.
+  /** @brief Backward propagation step.
    *  Given the objective function gradients w.r.t. the output
    *  tensors, compute the gradients w.r.t. the input tensors and
    *  w.r.t. the weights. This is essentially an application of the
@@ -278,7 +277,7 @@ public:
    */
   void back_prop();
 
-  /** Update step.
+  /** @brief Update step.
    *  Update the layer's internal members. Note that the optimization
    *  step for the weights happens elsewhere.
    */
@@ -287,24 +286,24 @@ public:
   virtual void summarize_stats(lbann_summary& summarizer, int step);
   virtual void summarize_matrices(lbann_summary& summarizer, int step) = 0;
 
-  /** Setup layer members.
+  /** @brief Setup layer members.
    *  This calls the 'setup_pointers', 'setup_dims', 'setup_matrices',
    *  'setup_data', and 'setup_gpu' (if needed) functions. It is
    *  assumed that pointers to parent/child layers have already been
    *  initialized.
    */
   virtual void setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata);
-  /** Check that the setup is reasonable. */
+  /** @brief Check that the setup is reasonable. */
   virtual void check_setup();
 
-  /** Get data layout of the data tensors.
+  /** @brief Get data layout of the data tensors.
    *  We assume that the data layouts of the previous activations,
    *  activations, previous error signals, and error signals are the
    *  same. Each concrete layer that is templated on its data layout
    *  should override this function to return its template parameter.
    */
   virtual data_layout get_data_layout() const = 0;
-  /** Get the device allocation for the data tensors.
+  /** @brief Get the device allocation for the data tensors.
    *  We assume that the decice allocation of the previous activations,
    *  activations, previous error signals, and error signals are the
    *  same. Each concrete layer that is templated on its device allocation
@@ -312,10 +311,10 @@ public:
    */
   virtual El::Device get_device_allocation() const = 0;
 
-  /** Reset layer stat counters. */
+  /** @brief Reset layer stat counters. */
   virtual void reset_counters();
 
-  /** Whether the layer is using a GPU implementation. */
+  /** @brief Whether the layer is using a GPU implementation. */
   inline bool using_gpus() const {
 #ifdef LBANN_HAS_GPU
     return get_device_allocation() == El::Device::GPU;
@@ -324,29 +323,23 @@ public:
 #endif // LBANN_HAS_GPU
   }
 
-  /** Get expected number of parent layers.
+  /** @brief Get expected number of parent layers.
    *  A negative value indicates no limit.
    */
   inline int get_expected_num_parent_layers() const { return m_expected_num_parent_layers; }
-  /** Get expected number of child layers.
+  /** @brief Get expected number of child layers.
    *  A negative value indicates no limit.
    */
   inline int get_expected_num_child_layers() const { return m_expected_num_child_layers; }
 
-  /** Return the model that manages this layer. */
+  /** @brief Return the model that manages this layer. */
   inline model* get_model() const { return m_model; }
-  /** Set the model that manages this layer. */
+  /** @brief Set the model that manages this layer. */
   inline void set_model(model* m) { m_model = m; }
 
   virtual El::Matrix<El::Int>* get_sample_indices_per_mb() { return nullptr; };
 
-  virtual bool save_to_checkpoint_shared(persist& p) const;
-  virtual bool load_from_checkpoint_shared(persist& p);
-
-  virtual bool save_to_checkpoint_distributed(persist& p) const;
-  virtual bool load_from_checkpoint_distributed(persist& p);
-
-  /** Write layer to proto file */
+  /** @brief Write layer to proto file */
   virtual void write_proto(lbann_data::Layer* proto) const;
 
   const Layer& get_parent_layer(size_t index=0) const;
@@ -358,17 +351,16 @@ public:
   size_t find_parent_layer_index(const Layer& l) const;
   size_t find_child_layer_index(const Layer& l) const;
 
-  /** Get number of parent layers. */
+  /** @brief Get number of parent layers. */
   int get_num_parents() const { return m_parent_layers.size(); }
-  /** Get number of child layers. */
+  /** @brief Get number of child layers. */
   int get_num_children() const { return m_child_layers.size(); }
 
   std::string get_parent_names() const;
   std::string get_child_names() const;
 
-  // ===========================================================
-  // Layer pointer manipulation functions
-  // ===========================================================
+  /** @name Layer pointer manipulation functions */
+  ///@{
 
   /** @brief Add a parent layer
    *
@@ -402,52 +394,52 @@ public:
    */
   virtual void set_layer_pointers(std::vector<ViewingLayerPtr> layers);
 
-  // ===========================================================
-  // Weights access functions
-  // ===========================================================
+  ///@}
+  /** @name Weights access functions */
+  ///@{
 
   /** @brief List of pointers to weights */
   std::vector<ViewingWeightsPtr> get_weights_pointers() const;
   /** @brief Set list of pointers to weights */
   void set_weights_pointers(std::vector<ViewingWeightsPtr> ptrs);
 
-  /** Replace weights with another Layer's weights*/
+  /** @brief Replace weights with another Layer's weights*/
   void replace_weights(Layer const& other_layer);
 
-  // ===========================================================
-  // Tensor access functions
-  // ===========================================================
+  ///@}
+  /** @name Tensor access functions */
+  ///@{
 
-  /** Get activation tensor corresponding to child layer. */
+  /** @brief Get activation tensor corresponding to child layer. */
   virtual const BaseDistMat& get_activations(const Layer& child) const = 0;
-  /** Get error signal tensor corresponding to parent layer. */
+  /** @brief Get error signal tensor corresponding to parent layer. */
   virtual const BaseDistMat& get_error_signals(const Layer& parent) const = 0;
 
-  // ===========================================================
-  // Tensor dimension access functions
-  // ===========================================================
+  ///@}
+  /** @name Tensor dimension access functions */
+  ///@{
 
-  /** Get input tensor dimensions. */
+  /** @brief Get input tensor dimensions. */
   std::vector<int> get_input_dims(size_t input_index = 0) const;
-  /** Get input tensor size. */
+  /** @brief Get input tensor size. */
   int get_input_size(size_t input_index = 0) const;
-  /** Get output tensor dimensions. */
+  /** @brief Get output tensor dimensions. */
   std::vector<int> get_output_dims(size_t output_index = 0) const;
-  /** Get output tensor size. */
+  /** @brief Get output tensor size. */
   int get_output_size(size_t output_index = 0) const;
 
-  /** Set output tensor dimensions. */
+  /** @brief Set output tensor dimensions. */
   void set_output_dims(std::vector<int> dims, size_t output_index = 0);
 
+  ///@}
 
   /** Get reference to LBANN communicator. */
   lbann_comm* get_comm() const;
 
-  // ===========================================================
-  // Hint layer access functions
-  // ===========================================================
+  /** @name Hint layer access functions */
+  ///@{
 
-  /** Set hint layer.
+  /** @brief Set hint layer.
    *
    *  Properties of the hint layer are used during the setup
    *  phase. For instance, the output tensor dimensions are set to
@@ -455,16 +447,18 @@ public:
    */
   void set_hint_layer(ViewingLayerPtr l);
 
-  /** Get hint layer. */
+  /** @brief Get hint layer. */
   const Layer* get_hint_layer() const;
 
-  // ===========================================================
-  // Freeze management functions
-  // ===========================================================
+  ///@}
+  /** @name Freeze management functions */
+  ///@{
 
   void freeze();
   void unfreeze();
   bool is_frozen() const;
+
+  ///@}
 
   /** @brief Set whether to keep or dynamically reallocate error signals.
    *
@@ -472,6 +466,14 @@ public:
    *  false means to dynamically reallocate them.
    */
   virtual void set_keep_error_signals(bool) = 0;
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
 
 protected:
 
@@ -534,18 +536,18 @@ protected:
   // Setup helper functions
   // ===========================================================
 
-  /** Setup layer pointers.
+  /** @brief Setup layer pointers.
    *  Called by the 'setup' function. Pointers to parent/child layers
    *  are assumed to be already initialized.
    */
   virtual void setup_pointers();
-  /** Setup tensor dimensions
+  /** @brief Setup tensor dimensions
    *  Called by the 'setup' function. If there are any input tensors,
    *  the base method sets all uninitialized output tensor dimensions
    *  equal to the first input tensor dimensions.
    */
   virtual void setup_dims(DataReaderMetaData& dr_metadata);
-  /** Setup distributed matrices.
+  /** @brief Setup distributed matrices.
    *  Called by the 'setup' function. Each column of these distributed
    *  matrices is interpreted as the flattened tensor for a mini-batch
    *  sample. The matrices themselves are constructed by calling the
@@ -553,12 +555,12 @@ protected:
    *  setup, they are destroyed and reinstantiated.
    */
   virtual void setup_matrices(const El::Grid& grid) = 0;
-  /** Setup layer data.
+  /** @brief Setup layer data.
    *  Called by the 'setup' function. Memory is allocated for
    *  distributed matrices.
    */
   virtual void setup_data(size_t max_mini_batch_size) {};
-  /** Setup GPU objects.
+  /** @brief Setup GPU objects.
    *  Called by the 'setup' function if the layer is on GPUs.
    */
   virtual void setup_gpu() {}
@@ -567,18 +569,18 @@ protected:
   // Forward prop step helper functions
   // ===========================================================
 
-  /** Setup input tensors.
+  /** @brief Setup input tensors.
    *  Called by the 'forward_prop' function. Each input tensor is
    *  setup as a view or copy of the corresponding parent layer's
    *  output tensor.
    */
   virtual void fp_setup_inputs(El::Int mini_batch_size) = 0;
-  /** Setup output tensors.
+  /** @brief Setup output tensors.
    *  Called by the 'forward_prop' function. Each output tensor is
    *  resized to match the mini-batch size.
    */
   virtual void fp_setup_outputs(El::Int mini_batch_size) = 0;
-  /** Apply layer operation.
+  /** @brief Apply layer operation.
    *  Called by the 'forward_prop' function. Given the input tensors,
    *  the output tensors are populated with computed values.
    */
@@ -588,12 +590,12 @@ protected:
   // Back prop step helper functions
   // ===========================================================
 
-  /** Setup gradient w.r.t. input tensors.
+  /** @brief Setup gradient w.r.t. input tensors.
    *  Called by the 'back_prop' function. Each gradient w.r.t. input
    *  tensor is resized to match the mini-batch size.
    */
   virtual void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) = 0;
-  /** Compute objective funciton gradients.
+  /** @brief Compute objective funciton gradients.
    *  Called by the 'back_prop' function. Given the input, output, and
    *  gradient w.r.t. output tensors, the gradient w.r.t. input
    *  tensors are populated with the computed values and the gradients
@@ -605,7 +607,7 @@ protected:
   // Update step helper functions
   // ===========================================================
 
-  /** Perform the computation for the update step.
+  /** @brief Perform the computation for the update step.
    *  Returns false if the layer must reset for a new training epoch.
    */
   virtual bool update_compute() { return true; }
@@ -618,29 +620,29 @@ protected:
    *  A negative value indicates no limit.
    */
   int m_expected_num_parent_layers = 1;
-  /** Expected number of child layers.
+  /** @brief Expected number of child layers.
    *  A negative value indicates no limit.
    */
   int m_expected_num_child_layers = 1;
 
-  /** Reference to model managing this layer. */
+  /** @brief Reference to model managing this layer. */
   model *m_model = nullptr;
 
-  /** Avoid back prop if frozen */
+  /** @brief Avoid back prop if frozen */
   bool m_frozen;
 
-  /** Time spent in forward propagation. */
+  /** @brief Time spent in forward propagation. */
   EvalType m_fp_time;
-  /** Time spent in the forward propagation computation. */
+  /** @brief Time spent in the forward propagation computation. */
   EvalType m_fp_compute_time;
-  /** Time spent in backward propagation. */
+  /** @brief Time spent in backward propagation. */
   EvalType m_bp_time;
-  /** Time spent in the backward propagation computation. */
+  /** @brief Time spent in the backward propagation computation. */
   EvalType m_bp_compute_time;
-  /** Time spent in updates. */
+  /** @brief Time spent in updates. */
   EvalType m_update_time;
 
-  /** Layer instance's name.
+  /** @brief Layer instance's name.
    *  Each layer in a model should have a unique, preferably
    *  human-readable, name.
    */
@@ -762,42 +764,42 @@ private:
    */
   std::vector<ViewingWeightsPtr> m_weights;
 
-  /** Dimensions of output tensors. */
+  /** @brief Dimensions of output tensors. */
   std::vector<std::vector<int>> m_output_dims_list;
 
-  /** Hint layer.
+  /** @brief Hint layer.
    *  During setup, the output tensor dimensions are set to match the
    *  first output tensor of the hint layer. Derived classes may do
    *  more elaborate setup based on the hint layer.
    */
   ViewingLayerPtr m_hint_layer;
 
-  /** Parallel strategy for the layer. */
+  /** @brief Parallel strategy for the layer. */
   ParallelStrategy m_parallel_strategy;
 
 #ifdef LBANN_HAS_DISTCONV
  private:
   friend class distconv_adapter;
  public:
-  /** Indicate whether distconv is enabled. */
+  /** @brief Indicate whether distconv is enabled. */
   bool distconv_enabled() const;
-  /** Indicate whether original input matrices need to be set up. */
+  /** @brief Indicate whether original input matrices need to be set up. */
   virtual bool keep_original_inputs(int index) const;
-  /** Indicate whether original output matrices need to be set up. */
+  /** @brief Indicate whether original output matrices need to be set up. */
   virtual bool keep_original_outputs(int index) const;
-  /** Indicate whether original gradient wrt input matrices need to be set up. */
+  /** @brief Indicate whether original gradient wrt input matrices need to be set up. */
   virtual bool keep_original_gradient_wrt_inputs(int index) const;
-  /** Indicate whether original gradient wrt output matrices need to be set up. */
+  /** @brief Indicate whether original gradient wrt output matrices need to be set up. */
   virtual bool keep_original_gradient_wrt_outputs(int index) const;
-  /** Retrievs distconv adapter. */
+  /** @brief Retrieves distconv adapter. */
   virtual const distconv_adapter& get_distconv_adapter() const;
-  /** Retrievs distconv adapter. */
+  /** @brief Retrieves distconv adapter. */
   virtual distconv_adapter& get_distconv_adapter();
 
  protected:
-  /** Indicate whether distconv is supported. */
+  /** @brief Indicate whether distconv is supported. */
   virtual bool is_distconv_supported() const { return false; }
-  /** Pre-initialize distconv attributes needed for setup_data(). */
+  /** @brief Pre-initialize distconv attributes needed for setup_data(). */
   void prepare_distconv(const DataReaderMetaData& dr_metadata);
   virtual void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) = 0;
   std::unique_ptr<distconv_adapter>& get_distconv_adapter_ptr() {

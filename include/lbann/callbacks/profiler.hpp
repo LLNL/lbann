@@ -71,6 +71,15 @@ class profiler : public callback_base {
   void on_optimize_begin(model *m, weights *w) override;
   void on_optimize_end(model *m, weights *w) override;
   std::string name() const override { return "profiler"; }
+
+  /** @name Serialization */
+  ///@{
+
+  /** @brief Store state to archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar);
+
+  ///@}
+
  private:
   /** Get a color to use in the profiler for a layer. */
   int get_color(Layer *l);

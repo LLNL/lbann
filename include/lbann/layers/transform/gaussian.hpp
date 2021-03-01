@@ -63,6 +63,15 @@ public:
     this->m_expected_num_parent_layers = 0;
   }
   gaussian_layer* copy() const override { return new gaussian_layer(*this); }
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
+
   std::string get_type() const override { return "Gaussian"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
@@ -76,6 +85,12 @@ public:
   }
 
 protected:
+
+  friend class cereal::access;
+  gaussian_layer()
+    : gaussian_layer(nullptr, { 1 } )
+  {}
+
 
   void fp_compute() override {
     auto& output = this->get_activations();

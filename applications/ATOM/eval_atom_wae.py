@@ -51,6 +51,8 @@ def construct_lc_launcher_args():
     parser.add_argument("--embedding-dim", type=int, default=None)
     parser.add_argument("--num-embeddings", type=int, default=None)
     parser.add_argument("--batch-size", type=int, default=512)
+    parser.add_argument("--z-dim", type=int, default=128, help="latent space dim")
+    parser.add_argument("--lamda", type=float, default=0.001, help="weighting of adversarial loss")
     parser.add_argument("--num-epochs", type=int, default=20)
     parser.add_argument("--data-reader-prototext", default=None)
     #parser.add_argument("--data-filedir", default=None)
@@ -116,12 +118,12 @@ def construct_model(run_args):
     save_output = True if run_args.dump_outputs_dir else False
 
     print("save output? ", save_output, "out dir ",  run_args.dump_outputs_dir)
-    z = lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims="128")
+    z = lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims=run_args.z_dim)
 
     waemodel = molwae.MolWAE(input_feature_dims,
                            dictionary_size,
                            embedding_size,
-                           pad_index,save_output)
+                           pad_index,run_args.z_dim,save_output)
     recon, d1_real, d1_fake, d_adv, arg_max = waemodel(input_,z)
 
 
@@ -148,7 +150,8 @@ def construct_model(run_args):
         for idx in range(len(l.weights)):
           l.weights[idx].optimizer = lbann.NoOptimizer()
       weights.update(l.weights)
-    l2_reg = lbann.L2WeightRegularization(weights=weights, scale=1e-4)
+    l2_weights = [w for w in weights if not isinstance(w.optimizer, lbann.NoOptimizer)]
+    l2_reg = lbann.L2WeightRegularization(weights=l2_weights, scale=1e-4)
 
     wae_loss.append(d1_real_bce)
     wae_loss.append(d_adv_bce)
@@ -215,6 +218,7 @@ def construct_data_reader(run_args):
     data_reader.shuffle = True
     data_reader.percent_of_data_to_use = 1.0
     data_reader.validation_percent = 0.1
+    data_reader.tournament_percent = 0.1
     data_reader.python.module = module_name
     data_reader.python.module_dir = module_dir
     data_reader.python.sample_function = "get_sample"

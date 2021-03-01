@@ -92,18 +92,17 @@ endif ()
 
 option(LBANN_WITH_ALUMINUM "Enable Aluminum all-reduce library" OFF)
 
+option(LBANN_WITH_CEREAL_XML "Enable the use of XML archives from Cereal" OFF)
+set(LBANN_HAS_CEREAL_XML_ARCHIVES ${LBANN_WITH_CEREAL_XML})
+
 option(LBANN_WITH_CNPY "Include cnpy" ON)
 
 option(LBANN_WITH_CONDUIT "Enable Conduit library" ON)
 
 option(LBANN_WITH_CUDNN "Include Nvidia cuDNN" ON)
 
-option(LBANN_WITH_DIHYDROGEN "Build with DiHydrogen support" OFF)
-if (LBANN_WITH_DIHYDROGEN)
-  message(WARNING "DiHydrogen support is currently expermimental. "
-    "There is no stable interface. "
-    "Use caution before using any features.")
-endif (LBANN_WITH_DIHYDROGEN)
+# For now, we just assert CPU support.
+option(LBANN_WITH_ONEDNN "Include OneDNN API support" OFF)
 
 option(LBANN_WITH_DISTCONV "Enable DiHydrogen's Distconv" OFF)
 if (LBANN_WITH_DISTCONV)
@@ -120,10 +119,23 @@ option(LBANN_WITH_HWLOC
 option(LBANN_WITH_NVPROF
   "Enable NVTX-based instrumentation for nvprof" OFF)
 
-option(LBANN_WITH_PYTHON
+option(LBANN_WITH_PYTHON_FRONTEND
   "Install Python frontend and enable embedded Python" ON)
 
+option(LBANN_WITH_EMBEDDED_PYTHON
+  "Enable embedded Python" ON)
+
+if (LBANN_WITH_EMBEDDED_PYTHON AND NOT LBANN_WITH_PYTHON_FRONTEND)
+  # (trb): This could also be an error.
+  message(WARNING
+    "Interesting combination of NOT LBANN_WITH_PYTHON_FRONTEND "
+    "and LBANN_WITH_EMBEDDED_PYTHON detected. This is just "
+    "to make sure you're aware.")
+endif (LBANN_WITH_EMBEDDED_PYTHON AND NOT LBANN_WITH_PYTHON_FRONTEND)
+
 option(LBANN_WITH_TBINF "Include Tensorboard interface" ON)
+
+option(LBANN_WITH_VISION "Include vision processing components" ON)
 
 option(LBANN_WITH_VTUNE
   "Link the Intel VTune profiling library" OFF)
@@ -195,29 +207,25 @@ message(STATUS "Found Hydrogen: ${Hydrogen_DIR}")
 set(LBANN_HAS_HYDROGEN ${Hydrogen_FOUND})
 
 # DiHydrogen and Distconv
-if (LBANN_WITH_DISTCONV AND NOT LBANN_WITH_DIHYDROGEN)
-  message(FATAL_ERROR "Distconv requires DiHydrogen. Enable DiHydrogen to use Distconv.")
+if (LBANN_WITH_DISTCONV)
+  find_package(DiHydrogen QUIET CONFIG COMPONENTS Meta Patterns DistConv
+    HINTS ${DIHYDROGEN_DIR} $ENV{DIHYDROGEN_DIR}
+    ${H2_DIR} $ENV{H2_DIR}
+    PATH_SUFFIXES install/lib64/cmake install/lib/cmake
+    NO_DEFAULT_PATH)
+  find_package(DiHydrogen QUIET CONFIG REQUIRED
+    COMPONENTS Meta Patterns DistConv)
+  set(LBANN_HAS_DISTCONV TRUE)
+else ()
+  find_package(DiHydrogen QUIET CONFIG COMPONENTS Meta Patterns
+    HINTS ${DIHYDROGEN_DIR} $ENV{DIHYDROGEN_DIR}
+    ${H2_DIR} $ENV{H2_DIR}
+    PATH_SUFFIXES install/lib64/cmake install/lib/cmake
+    NO_DEFAULT_PATH)
+  find_package(DiHydrogen QUIET CONFIG REQUIRED COMPONENTS Meta Patterns)
 endif ()
-
-if (LBANN_WITH_DIHYDROGEN)
-  if (LBANN_WITH_DISTCONV)
-    find_package(DiHydrogen CONFIG COMPONENTS Meta Patterns DistConv
-      HINTS ${DIHYDROGEN_DIR} $ENV{DIHYDROGEN_DIR}
-      ${H2_DIR} $ENV{H2_DIR}
-      PATH_SUFFIXES install/lib64/cmake install/lib/cmake
-      NO_DEFAULT_PATH)
-    find_package(DiHydrogen CONFIG REQUIRED COMPONENTS Meta Patterns DistConv)
-    set(LBANN_HAS_DISTCONV TRUE)
-  else ()
-    find_package(DiHydrogen CONFIG COMPONENTS Meta Patterns
-      HINTS ${DIHYDROGEN_DIR} $ENV{DIHYDROGEN_DIR}
-      ${H2_DIR} $ENV{H2_DIR}
-      PATH_SUFFIXES install/lib64/cmake install/lib/cmake
-      NO_DEFAULT_PATH)
-    find_package(DiHydrogen CONFIG REQUIRED COMPONENTS Meta Patterns)
-  endif ()
-  set(LBANN_HAS_DIHYDROGEN TRUE)
-endif ()
+set(LBANN_HAS_DIHYDROGEN TRUE)
+message(STATUS "Found DiHydrogen: ${DiHydrogen_DIR}")
 
 # Inherit half-precision stuff from Hydrogen
 set(LBANN_HAS_HALF ${HYDROGEN_HAVE_HALF}) # This is CPU-only
@@ -245,15 +253,37 @@ if (LBANN_WITH_FFT)
 endif (LBANN_WITH_FFT)
 
 # OpenCV installs a CMake configure file we can exploit
-find_package(OpenCV NO_MODULE QUIET
-  HINTS ${OpenCV_DIR} ${OPENCV_DIR} $ENV{OpenCV_DIR} $ENV{OPENCV_DIR}
-  PATH_SUFFIXES share/OpenCV
-  NO_DEFAULT_PATH)
-if (NOT OpenCV_FOUND)
-  find_package(OpenCV NO_MODULE QUIET REQUIRED)
+if (LBANN_WITH_VISION)
+  find_package(OpenCV NO_MODULE QUIET
+    HINTS ${OpenCV_DIR} ${OPENCV_DIR} $ENV{OpenCV_DIR} $ENV{OPENCV_DIR}
+    PATH_SUFFIXES share/OpenCV
+    NO_DEFAULT_PATH)
+  if (NOT OpenCV_FOUND)
+    find_package(OpenCV NO_MODULE QUIET REQUIRED)
+  endif ()
+  message(STATUS "Found OpenCV: ${OpenCV_DIR}")
 endif ()
-message(STATUS "Found OpenCV: ${OpenCV_DIR}")
 set(LBANN_HAS_OPENCV ${OpenCV_FOUND})
+
+# OneDNN stuff
+if (LBANN_WITH_ONEDNN)
+  find_package(DNNL 1.6.0 CONFIG)
+  set(LBANN_HAS_ONEDNN_V1 ${DNNL_FOUND})
+  if (NOT DNNL_FOUND)
+    find_package(DNNL 2.0.0 REQUIRED CONFIG)
+  endif ()
+  set(LBANN_HAS_ONEDNN ${DNNL_FOUND})
+  if (NOT DNNL_CPU_RUNTIME STREQUAL "NONE")
+    set(LBANN_HAS_ONEDNN_CPU TRUE)
+  else ()
+    set(LBANN_HAS_ONEDNN_CPU FALSE)
+  endif ()
+  if (NOT DNNL_GPU_RUNTIME STREQUAL "NONE")
+    set(LBANN_HAS_ONEDNN_GPU TRUE)
+  else ()
+    set(LBANN_HAS_ONEDNN_GPU FALSE)
+  endif ()
+endif ()
 
 # CUDA-ness of LBANN is 1:1 with Hydrogen. Iff Hydrogen has CUDA,
 # LBANN gets CUDA.
@@ -391,19 +421,29 @@ if (NOT DL_LIBRARY)
 endif ()
 
 # Other optional dependencies
+# TODO: This probably shouldn't be the case and should disable specific
+# callbacks when OpenCV is not available
+if (LBANN_WITH_TBINF AND NOT LBANN_HAS_OPENCV)
+  message(FATAL_ERROR "TensorBoard requires OpenCV. Enable LBANN_WITH_VISION to use TensorBoard.")
+endif ()
+
 if (LBANN_WITH_TBINF)
   add_subdirectory(external/TBinf)
 endif ()
 
 # Find Python
-# Note: This uses the Python module in cmake/modules, not the module
-# that comes included with CMake. See the file for a discussion of the
-# differences.
-if (LBANN_WITH_PYTHON)
-  find_package(Python REQUIRED)
-  set(LBANN_HAS_PYTHON "${Python_FOUND}")
+if (LBANN_WITH_PYTHON_FRONTEND OR LBANN_WITH_EMBEDDED_PYTHON)
+  find_package(Python REQUIRED COMPONENTS Interpreter Development)
+  if (LBANN_WITH_PYTHON_FRONTEND AND Python_FOUND)
+    set(LBANN_HAS_PYTHON_FRONTEND TRUE)
+  endif ()
+  if (LBANN_WITH_EMBEDDED_PYTHON AND Python_FOUND)
+    set(LBANN_HAS_EMBEDDED_PYTHON TRUE)
+  endif ()
+
   if (NOT Python_VERSION_MAJOR EQUAL 3)
-    set(LBANN_HAS_PYTHON FALSE)
+    set(LBANN_HAS_PYTHON_FRONTEND FALSE)
+    set(LBANN_HAS_EMBEDDED_PYTHON FALSE)
     message(FATAL_ERROR "Python 2 is not supported.")
   endif ()
 
@@ -416,7 +456,7 @@ if (LBANN_WITH_PYTHON)
     CACHE PATH
     "Relative path from PYTHON_INSTALL_PREFIX to the python package install")
 
-endif (LBANN_WITH_PYTHON)
+endif (LBANN_WITH_PYTHON_FRONTEND OR LBANN_WITH_EMBEDDED_PYTHON)
 
 if (LBANN_WITH_VTUNE)
   find_package(VTune MODULE)
@@ -542,6 +582,12 @@ if (LBANN_WITH_CONDUIT)
   set(CONDUIT_LIBRARIES conduit::conduit)
 endif (LBANN_WITH_CONDUIT)
 
+if (LBANN_WITH_BOOST)
+  # Boost (optional)
+  find_package(Boost QUIET)
+  set(LBANN_HAS_BOOST ${Boost_FOUND})
+endif (LBANN_WITH_BOOST)
+
 if (LBANN_WITH_UNIT_TESTING)
   find_package(Catch2 2.0.0 CONFIG QUIET
     HINTS ${CATCH2_DIR} $ENV{CATCH2_DIR} ${CATCH_DIR} $ENV{CATCH_DIR}
@@ -555,12 +601,20 @@ if (LBANN_WITH_UNIT_TESTING)
   # Now that Catch2 has been found, start adding the unit tests
   include(CTest)
   include(Catch)
+  add_subdirectory(src/callbacks/unit_test)
+  add_subdirectory(src/layers/activations/unit_test)
+  add_subdirectory(src/layers/learning/unit_test)
+  add_subdirectory(src/layers/math/unit_test)
+  add_subdirectory(src/layers/regularizers/unit_test)
+  add_subdirectory(src/models/unit_test)
   add_subdirectory(src/proto/unit_test)
   add_subdirectory(src/optimizers/unit_test)
   add_subdirectory(src/utils/unit_test)
   add_subdirectory(src/weights/unit_test)
   add_subdirectory(src/transforms/unit_test)
-  add_subdirectory(src/transforms/vision/unit_test)
+  if (LBANN_HAS_OPENCV)
+    add_subdirectory(src/transforms/vision/unit_test)
+  endif ()
 
   # Add this one last
   add_subdirectory(unit_test)
@@ -608,7 +662,9 @@ target_link_libraries(lbann PUBLIC OpenMP::OpenMP_CXX)
 target_link_libraries(lbann PUBLIC MPI::MPI_CXX)
 target_link_libraries(lbann PUBLIC protobuf::libprotobuf)
 target_link_libraries(lbann PUBLIC ${HYDROGEN_LIBRARIES})
-target_link_libraries(lbann PUBLIC ${OpenCV_LIBRARIES})
+if (LBANN_HAS_OPENCV)
+  target_link_libraries(lbann PUBLIC ${OpenCV_LIBRARIES})
+endif ()
 target_link_libraries(lbann PUBLIC ${CONDUIT_LIBRARIES})
 
 target_link_libraries(lbann PUBLIC
@@ -627,6 +683,7 @@ target_link_libraries(lbann PUBLIC
   $<TARGET_NAME_IF_EXISTS:MIOpen>
   $<TARGET_NAME_IF_EXISTS:roc::rocfft>
 
+  $<TARGET_NAME_IF_EXISTS:DNNL::dnnl>
   )
 
 if (LBANN_HAS_ALUMINUM)
@@ -788,7 +845,7 @@ install(
 # We go for option 3 since it's simple and lightweight, but it runs
 # counter to the intent of setuptools. If we learn about any nicer
 # approaches, we should use them.
-if (LBANN_HAS_PYTHON)
+if (LBANN_HAS_PYTHON_FRONTEND)
 
   # Construct config file
   # NOTE (trb): python_config.ini is installed by setup.py
@@ -829,7 +886,7 @@ this package, be sure to add this directory to your PYTHONPATH, e.g.:
   install(CODE
     "execute_process(COMMAND ${CMAKE_COMMAND} -E echo \"${_PY_INSTALL_MSG}\")")
 
-endif (LBANN_HAS_PYTHON)
+endif (LBANN_HAS_PYTHON_FRONTEND)
 
 # Install contributor list, license, readme
 install(
@@ -894,6 +951,7 @@ append_str_tf(_str
   LBANN_GNU_LINUX
   LBANN_HAS_ALUMINUM
   LBANN_HAS_CEREAL
+  LBANN_HAS_CEREAL_XML_ARCHIVES
   LBANN_HAS_CNPY
   LBANN_HAS_CUDA
   LBANN_HAS_CUDNN
@@ -904,12 +962,17 @@ append_str_tf(_str
   LBANN_HAS_HYDROGEN
   LBANN_HAS_LBANN_PROTO
   LBANN_HAS_NCCL2
+  LBANN_HAS_ONEDNN
+  LBANN_HAS_ONEDNN_CPU
+  LBANN_HAS_ONEDNN_GPU
   LBANN_HAS_OPENCV
   LBANN_HAS_PROTOBUF
-  LBANN_HAS_PYTHON
+  LBANN_HAS_PYTHON_FRONTEND
+  LBANN_HAS_EMBEDDED_PYTHON
   LBANN_HAS_ROCM
   LBANN_HAS_TBINF
   LBANN_HAS_VTUNE
+  LBANN_HAS_BOOST
   LBANN_NVPROF
   )
 string(APPEND _str
@@ -922,7 +985,7 @@ set(_str)
 #
 # Write a basic modulefile
 #
-set(LBANN_MODULEFILE_NAME "lbann-${LBANN_VERSION}.lua"
+set(LBANN_MODULEFILE_NAME "${LBANN_VERSION}.lua"
   CACHE STRING
   "The name of the LBANN modulefile to install. Must end in .lua.")
 
@@ -943,7 +1006,7 @@ configure_file(
 
 install(FILES "${CMAKE_BINARY_DIR}/lbann_module.lua.install"
   RENAME "${LBANN_MODULEFILE_NAME}"
-  DESTINATION "${CMAKE_INSTALL_SYSCONFDIR}/modulefiles")
+  DESTINATION "${CMAKE_INSTALL_SYSCONFDIR}/modulefiles/lbann")
 install(FILES "${CMAKE_BINARY_DIR}/lbann_module.tcl.install"
   RENAME "${LBANN_VERSION}"
   DESTINATION "${CMAKE_INSTALL_SYSCONFDIR}/modulefiles/lbann")

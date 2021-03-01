@@ -53,6 +53,15 @@ public:
   categorical_accuracy_layer* copy() const override {
     return new categorical_accuracy_layer(*this);
   }
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
+
   std::string get_type() const override { return "categorical accuracy"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
@@ -82,6 +91,13 @@ public:
   }
 
   void fp_compute() override;
+
+protected:
+
+  friend class cereal::access;
+  categorical_accuracy_layer()
+    : categorical_accuracy_layer(nullptr)
+  {}
 
 };
 

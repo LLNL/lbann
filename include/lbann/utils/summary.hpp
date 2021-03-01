@@ -221,8 +221,6 @@ public:
                              std::vector<float>& scalars);
 };
 
-#include "lbann/utils/summary_impl.hpp"
-
 #else
 
 /** Dummy class when TBinf is not present. */

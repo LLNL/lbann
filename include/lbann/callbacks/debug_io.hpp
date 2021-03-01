@@ -29,10 +29,10 @@
 #ifndef LBANN_CALLBACKS_CALLBACK_DEBUG_IO_HPP_INCLUDED
 #define LBANN_CALLBACKS_CALLBACK_DEBUG_IO_HPP_INCLUDED
 
-#include <chrono>
-#include <vector>
 #include "lbann/callbacks/callback.hpp"
 #include "lbann/layers/io/input_layer.hpp"
+#include <chrono>
+#include <vector>
 
 namespace lbann {
 namespace callback {
@@ -80,6 +80,15 @@ class debug_io : public callback_base {
   void print_phase_start(model *m, execution_mode mode);
 
   std::string name() const override { return "debug_io"; }
+
+  /** @name Serialization */
+  ///@{
+
+  /** @brief Store state to archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar);
+
+  ///@}
+
  private:
   /** The phase to debug. */
   execution_mode m_debug_phase;

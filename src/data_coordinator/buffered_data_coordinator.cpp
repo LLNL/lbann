@@ -24,20 +24,17 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/comm_impl.hpp"
 #include "lbann/data_coordinator/buffered_data_coordinator.hpp"
+#include "lbann/data_coordinator/buffered_data_coordinator_impl.hpp"
+#include "lbann/data_coordinator/io_data_buffer_impl.hpp"
 #include "lbann/data_readers/utils/input_data_type.hpp"
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/profiling.hpp"
 #include "lbann/utils/distconv.hpp"
-
-#include <cereal/types/utility.hpp>
-#include <cereal/types/map.hpp>
-#include <cereal/types/unordered_map.hpp>
-#include <cereal/types/vector.hpp>
-#include <cereal/archives/binary.hpp>
-#include <cereal/archives/xml.hpp>
-//#include <cereal/types/atomic.hpp>
+#include "lbann/utils/serialize.hpp"
+#include "lbann/io/persist_impl.hpp"
 
 namespace lbann {
 
@@ -313,7 +310,16 @@ bool buffered_data_coordinator<TensorDataType>::save_to_checkpoint_shared(persis
   data_coordinator::save_to_checkpoint_shared(p);
 
   if (this->m_comm->am_trainer_master()) {
-    write_cereal_archive<const buffered_data_coordinator>(*this, p, execution_mode::training, "_dc.xml");
+    write_cereal_archive<const buffered_data_coordinator>(
+      *this,
+      p,
+      execution_mode::training,
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
+      "_dc.xml"
+#else // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
+      "_dc.bin"
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
+      );
   }
   return true;
 }
@@ -324,7 +330,16 @@ bool buffered_data_coordinator<TensorDataType>::load_from_checkpoint_shared(pers
   data_coordinator::load_from_checkpoint_shared(p);
   std::string buf;
   if (this->m_comm->am_trainer_master()) {
-    read_cereal_archive<buffered_data_coordinator>(*this, p, execution_mode::training, "_dc.xml");
+    read_cereal_archive<buffered_data_coordinator>(
+      *this,
+      p,
+      execution_mode::training,
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
+      "_dc.xml"
+#else // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
+      "_dc.bin"
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
+      );
     buf = create_cereal_archive_binary_string<buffered_data_coordinator>(*this);
   }
 
@@ -342,7 +357,16 @@ template <typename TensorDataType>
 bool buffered_data_coordinator<TensorDataType>::save_to_checkpoint_distributed(persist& p) const {
   data_coordinator::save_to_checkpoint_distributed(p);
 
-  write_cereal_archive<const buffered_data_coordinator>(*this, p, execution_mode::training, "_dc.xml");
+  write_cereal_archive<const buffered_data_coordinator>(
+    *this,
+    p,
+    execution_mode::training,
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
+    "_dc.xml"
+#else // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
+    "_dc.bin"
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
+    );
   return true;
 }
 
@@ -350,7 +374,16 @@ template <typename TensorDataType>
 bool buffered_data_coordinator<TensorDataType>::load_from_checkpoint_distributed(persist& p) {
   data_coordinator::load_from_checkpoint_distributed(p);
 
-  read_cereal_archive<buffered_data_coordinator>(*this, p, execution_mode::training, "_dc.xml");
+  read_cereal_archive<buffered_data_coordinator>(
+    *this,
+    p,
+    execution_mode::training,
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
+    "_dc.xml"
+#else // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
+    "_dc.bin"
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
+    );
   return true;
 }
 

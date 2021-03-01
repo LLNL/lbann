@@ -24,9 +24,11 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/comm_impl.hpp"
 #include "lbann/callbacks/perturb_dropout.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/random_number_generators.hpp"
+#include "lbann/utils/serialize.hpp"
 
 #include <callbacks.pb.h>
 
@@ -38,6 +40,19 @@ perturb_dropout::perturb_dropout(EvalType keep_prob_factor,
   : callback_base(1),
     m_keep_prob_factor(keep_prob_factor),
     m_layer_names(std::move(layer_names)) {}
+
+perturb_dropout::perturb_dropout()
+  : perturb_dropout(0, {})
+{}
+
+template <class Archive>
+void perturb_dropout::serialize(Archive & ar) {
+  ar(::cereal::make_nvp(
+       "BaseCallback",
+       ::cereal::base_class<callback_base>(this)),
+     CEREAL_NVP(m_keep_prob_factor),
+     CEREAL_NVP(m_layer_names));
+}
 
 void perturb_dropout::setup(model* m) {
   perturb(*m);
@@ -132,3 +147,6 @@ build_perturb_dropout_callback_from_pbuf(
 
 } // namespace callback
 } // namespace lbann
+
+#define LBANN_CLASS_NAME callback::perturb_dropout
+#include <lbann/macros/register_class_with_cereal.hpp>

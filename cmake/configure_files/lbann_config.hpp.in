@@ -24,6 +24,13 @@
 #cmakedefine LBANN_GNU_LINUX
 
 #cmakedefine LBANN_HAS_CEREAL
+#ifdef LBANN_HAS_CEREAL
+#define LBANN_HAS_CEREAL_BINARY_ARCHIVES
+#cmakedefine LBANN_HAS_CEREAL_JSON_ARCHIVES
+#cmakedefine LBANN_HAS_CEREAL_PORTABLE_BINARY_ARCHIVES
+#cmakedefine LBANN_HAS_CEREAL_XML_ARCHIVES
+#endif // LBANN_HAS_CEREAL
+
 #cmakedefine LBANN_HAS_DIHYDROGEN
 #cmakedefine LBANN_HAS_OPENCV
 #cmakedefine LBANN_HAS_TBINF
@@ -31,7 +38,7 @@
 #cmakedefine LBANN_HAS_VTUNE
 #cmakedefine LBANN_HAS_ALUMINUM
 #cmakedefine LBANN_ALUMINUM_MPI_PASSTHROUGH
-#cmakedefine LBANN_HAS_PYTHON
+#cmakedefine LBANN_HAS_EMBEDDED_PYTHON
 #cmakedefine LBANN_HAS_SHMEM
 #cmakedefine LBANN_HAS_LARGESCALE_NODE2VEC
 
@@ -47,7 +54,11 @@
 #cmakedefine LBANN_HAS_ROCM
 #cmakedefine LBANN_HAS_MIOPEN
 
-#if defined LBANN_HAS_CUDNN || defined LBANN_HAS_MIOPEN
+#cmakedefine LBANN_HAS_ONEDNN
+#cmakedefine LBANN_HAS_ONEDNN_CPU
+#cmakedefine LBANN_HAS_ONEDNN_GPU
+
+#if defined LBANN_HAS_CUDNN || defined LBANN_HAS_MIOPEN || defined LBANN_HAS_ONEDNN
 #cmakedefine LBANN_HAS_DNN_LIB
 #endif
 
@@ -69,6 +80,8 @@
 #cmakedefine LBANN_HAS_FFTW
 #cmakedefine LBANN_HAS_FFTW_FLOAT
 #cmakedefine LBANN_HAS_FFTW_DOUBLE
+
+#cmakedefine LBANN_HAS_BOOST
 
 // Define the LBANN datatype
 namespace lbann

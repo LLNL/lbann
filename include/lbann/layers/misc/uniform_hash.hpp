@@ -55,11 +55,24 @@ public:
   uniform_hash_layer& operator=(const uniform_hash_layer& other) = default;
   uniform_hash_layer* copy() const override;
 
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
+
   std::string get_type() const override;
   data_layout get_data_layout() const override;
   El::Device get_device_allocation() const override;
 
 protected:
+
+  friend class cereal::access;
+  uniform_hash_layer()
+    : uniform_hash_layer(nullptr)
+  {}
 
   void setup_dims(DataReaderMetaData& dr_metadata) override;
 

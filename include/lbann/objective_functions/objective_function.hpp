@@ -49,15 +49,7 @@ class objective_function {
   objective_function* copy() const { return new objective_function(*this); }
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize( Archive & ar ) {
-    ar(CEREAL_NVP(m_statistics));
-
-    // Serialized each objective function term object explicitly, not the pointer to
-    // the objective function term
-    for(auto&& t : m_terms) {
-      ar(CEREAL_NVP(*t));
-    }
-  }
+  template <class Archive> void serialize( Archive & ar );
 
   /** Add a term to the objective function. */
   void add_term(std::unique_ptr<objective_function_term> term);

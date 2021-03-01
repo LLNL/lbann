@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/comm_impl.hpp"
 #include "lbann/data_readers/data_reader_node2vec.hpp"
 #ifdef LBANN_HAS_LARGESCALE_NODE2VEC
 #include "lbann/utils/memory.hpp"

@@ -4,12 +4,11 @@
 // Some common includes
 #include <lbann_config.hpp>
 #include <lbann/base.hpp>
-#include <lbann/utils/h2_tmp.hpp>
 #include <lbann/utils/serialize.hpp>
+#include <h2/meta/Core.hpp>
+#include <h2/meta/TypeList.hpp>
+#include <h2/patterns/multimethods/SwitchDispatcher.hpp>
 
-#include <cereal/archives/binary.hpp>
-#include <cereal/archives/json.hpp>
-#include <cereal/archives/xml.hpp>
 
 // This header should only be used in the unit testing code, so this
 // is fine.
@@ -29,82 +28,33 @@ std::string desc_string(ObjectType const& opt)
 // archive, the cadr is the input archive. Accessor metafunctions are
 // defined below.
 
-using BinaryArchiveTypes = TL<cereal::BinaryOutputArchive,
-                              cereal::BinaryInputArchive>;
-
-using JSONArchiveTypes = TL<cereal::JSONOutputArchive,
-                            cereal::JSONInputArchive>;
-
-using XMLArchiveTypes = TL<cereal::XMLOutputArchive,
-                           cereal::XMLInputArchive>;
-
-// A basic "type pack" for things related to the serialization tests.
-template <typename OptimizerT,
-          typename BuilderT,
-          typename ArchiveTypes>
-struct TestOptimizer
-{
-  using OptimizerType = OptimizerT;
-  using BuilderType = BuilderT;
-  using OutputArchiveType = tlist::Car<ArchiveTypes>;
-  using InputArchiveType = tlist::Cadr<ArchiveTypes>;
-};
-
-// These are accessor metafunctions to retreive information from
-// the type packs used to construct the test cases.
-template <typename TypePack>
-using GetOptimizerType = typename TypePack::OptimizerType;
-
-template <typename TypePack>
-using GetBuilderType = typename TypePack::BuilderType;
-
-template <typename TypePack>
-using GetOutputArchiveType = typename TypePack::OutputArchiveType;
-
-template <typename TypePack>
-using GetInputArchiveType = typename TypePack::InputArchiveType;
-
-// We need to determine the combinations of types and
-// archives that we're going to use for these tests. This needs to
-// happen here because embedding preprocessor macros in the arguments
-// to preprocessor macros (#ifdef/#endif blocks, e.g.) is not allowed.
-//
-// Basically, we need the full tensor product of:
-//
-//   (float,double,[cpu_fp16,[fp16]]) x (Binary,JSON,XML)Archives
-//
-// The test case, then, will be quite simple: construct a stateful
-// optimizer, serialize it to the archive, deserialize it to a new
-// archive, and then compare the optimizer metadata.
-
-#define CORE_TEMPLATE_ARG_LIST    \
-  (float, BinaryArchiveTypes),    \
-  (float, JSONArchiveTypes),      \
-  (float, XMLArchiveTypes),       \
-  (double, BinaryArchiveTypes),   \
-  (double, JSONArchiveTypes),     \
-  (double, XMLArchiveTypes)
-
-#ifdef LBANN_HAS_HALF
+using Fp16Types = TL<lbann::cpu_fp16
 #ifdef LBANN_HAS_GPU_FP16
-#define TEMPLATE_ARG_LIST                  \
-  ( CORE_TEMPLATE_ARG_LIST,                \
-    (lbann::cpu_fp16, BinaryArchiveTypes), \
-    (lbann::cpu_fp16, JSONArchiveTypes),   \
-    (lbann::cpu_fp16, XMLArchiveTypes),    \
-    (lbann::fp16, BinaryArchiveTypes),     \
-    (lbann::fp16, JSONArchiveTypes),       \
-    (lbann::fp16, XMLArchiveTypes) )
-#else
-#define TEMPLATE_ARG_LIST                  \
-  ( CORE_TEMPLATE_ARG_LIST,                \
-    (lbann::cpu_fp16, BinaryArchiveTypes), \
-    (lbann::cpu_fp16, JSONArchiveTypes),   \
-    (lbann::cpu_fp16, XMLArchiveTypes) )
+                     , lbann::fp16
 #endif // LBANN_HAS_GPU_FP16
+                     >;
+
+#ifdef LBANN_HAS_CEREAL_BINARY_ARCHIVES
+template <typename T>
+using BinaryArchiveTypeBundle = TL<T,
+                                   cereal::BinaryOutputArchive,
+                                   cereal::BinaryInputArchive>;
+using BinaryArchiveTypes = tlist::ExpandTL<BinaryArchiveTypeBundle, Fp16Types>;
 #else
-#define TEMPLATE_ARG_LIST         \
-  ( CORE_TEMPLATE_ARG_LIST )
-#endif // LBANN_HAS_HALF
+using BinaryArchiveTypes = tlist::Empty;
+#endif // LBANN_HAS_CEREAL_BINARY_ARCHIVES
+
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
+template <typename T>
+using XMLArchiveTypeBundle = TL<T,
+                                cereal::XMLOutputArchive,
+                                cereal::XMLInputArchive>;
+using XMLArchiveTypes = tlist::ExpandTL<XMLArchiveTypeBundle, Fp16Types>;
+#else
+using XMLArchiveTypes = tlist::Empty;
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
+
+using AllArchiveTypes = tlist::Append<BinaryArchiveTypes,
+                                      XMLArchiveTypes>;
 
 #endif // OPTIMIZERS_UNIT_TEST_OPTIMIZER_COMMON_HPP_

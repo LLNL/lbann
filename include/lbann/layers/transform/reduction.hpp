@@ -47,7 +47,7 @@ class reduction_layer : public data_type_layer<TensorDataType> {
 private:
 
   /** Reduction mode. */
-  const reduction_mode m_mode;
+  /*const*/ reduction_mode m_mode;
 
   /** Vector composed of ones. */
   El::Matrix<TensorDataType, Dev> m_ones;
@@ -64,6 +64,15 @@ public:
   }
 
   reduction_layer* copy() const override { return new reduction_layer(*this); }
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
+
   std::string get_type() const override { return "reduction"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
@@ -83,6 +92,12 @@ public:
   }
 
 protected:
+
+  friend class cereal::access;
+  reduction_layer()
+    : reduction_layer(nullptr, reduction_mode::AVERAGE)
+  {}
+
 
   void setup_dims(DataReaderMetaData& dr_metadata) override {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);

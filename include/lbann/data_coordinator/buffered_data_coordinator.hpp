@@ -29,10 +29,6 @@
 
 #include "lbann/data_coordinator/data_coordinator.hpp"
 #include "lbann/data_coordinator/io_data_buffer.hpp"
-#include <cereal/types/utility.hpp>
-#include <cereal/types/map.hpp>
-//#include <cereal/types/atomic.hpp>
-#include <cereal/types/base_class.hpp>
 
 namespace lbann {
 
@@ -108,11 +104,7 @@ class buffered_data_coordinator : public data_coordinator {
   }
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize( Archive & ar ) {
-    ar(cereal::base_class<data_coordinator>( this )
-       /*CEREAL_NVP(m_active_buffer),*/
-       /*CEREAL_NVP(m_data_buffers)*/);
-  }
+  template <class Archive> void serialize( Archive & ar );
 
   void setup(
     thread_pool& io_thread_pool,

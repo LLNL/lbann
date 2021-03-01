@@ -60,11 +60,24 @@ public:
   }
 
   split_layer* copy() const override { return new split_layer(*this); }
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
   std::string get_type() const override { return "split"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
 protected:
+
+  friend class cereal::access;
+  split_layer()
+    : split_layer(nullptr)
+  {}
 
   void setup_dims(DataReaderMetaData& dr_metadata) override {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);

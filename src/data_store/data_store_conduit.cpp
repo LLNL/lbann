@@ -25,16 +25,19 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/comm_impl.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
 
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"
 #include "lbann/data_readers/data_reader_image.hpp"
+#include "lbann/data_readers/sample_list_impl.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/options.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/distconv.hpp"
 #include "lbann/utils/file_utils.hpp"
 #include "lbann/utils/commify.hpp"
+#include "lbann/utils/serialize.hpp"
 #include <unordered_set>
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -44,12 +47,7 @@
 #include <unistd.h>
 #include <unistd.h>
 #include <sys/statvfs.h>
-#include <cereal/types/unordered_map.hpp>
-#include <cereal/archives/binary.hpp>
 
-
-#include <cereal/archives/binary.hpp>
-#include <cereal/archives/xml.hpp>
 #include <cstdlib>
 
 namespace lbann {
@@ -1668,7 +1666,11 @@ void data_store_conduit::save_state() {
   }
 
   {
-  cereal::XMLOutputArchive archive(os);
+#if defined LBANN_HAS_CEREAL_XML_ARCHIVES
+    cereal::XMLOutputArchive archive(os);
+#else //if defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
+    cereal::BinaryOutputArchive archive(os);
+#endif
     archive(CEREAL_NVP(m_my_num_indices),
             CEREAL_NVP(m_owner_maps_were_exchanged),
             CEREAL_NVP(m_is_setup),
@@ -1708,7 +1710,11 @@ void data_store_conduit::load_checkpoint(std::string dir_name, generic_data_read
   if (!in) {
     LBANN_ERROR("failed to open ", m_cereal_fn, " for reading");
   }
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
   cereal::XMLInputArchive iarchive(in);
+#else // if defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
+  cereal::BinaryInputArchive iarchive(in);
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
   iarchive(CEREAL_NVP(m_my_num_indices),
            m_owner_maps_were_exchanged, m_is_setup,
            m_preloading, m_loading_is_complete,
@@ -1785,7 +1791,13 @@ std::string data_store_conduit::get_conduit_dir() const {
 }
 
 std::string data_store_conduit::get_cereal_fn() const {
-  return m_spill_dir_base + '/' + m_cereal_fn + "_" + m_reader->get_role() + "_" + std::to_string(m_rank_in_world) + ".xml";
+  return m_spill_dir_base + '/' + m_cereal_fn + "_" + m_reader->get_role() + "_" + std::to_string(m_rank_in_world) +
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
+    ".xml"
+#else // if defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
+    ".bin"
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
+    ;
 }
 
 std::string data_store_conduit::get_metadata_fn() const {
@@ -1798,7 +1810,7 @@ void data_store_conduit::open_next_conduit_spill_directory() {
   }
   m_num_files_in_cur_spill_dir = 0;
   m_cur_spill_dir_integer += 1;
-  m_cur_spill_dir = get_conduit_dir() + "/" + to_string(m_cur_spill_dir_integer);
+  m_cur_spill_dir = get_conduit_dir() + "/" + std::to_string(m_cur_spill_dir_integer);
   DEBUG_DS("calling file::directory_exists(", m_cur_spill_dir, ")");
   bool exists = file::directory_exists(m_cur_spill_dir);
   DEBUG_DS("exists? ", exists);

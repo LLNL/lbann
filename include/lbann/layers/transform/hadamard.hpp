@@ -45,11 +45,26 @@ public:
   }
 
   hadamard_layer* copy() const override { return new hadamard_layer(*this); }
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
+
   std::string get_type() const override { return "Hadamard"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
 protected:
+
+  friend class cereal::access;
+  hadamard_layer()
+    : hadamard_layer(nullptr)
+  {}
+
 
   void setup_pointers() override {
     data_type_layer<TensorDataType>::setup_pointers();

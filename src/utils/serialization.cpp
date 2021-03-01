@@ -27,14 +27,10 @@
 /** @file
  *
  *  Serialization functions for arithmetic types. Specializations for
- *  Cereal's Binary, JSON, and XML archives are provided.
+ *  Cereal's Binary and XML archives are provided.
  */
 
 #include "lbann/utils/serialize.hpp"
-
-#include <cereal/archives/binary.hpp>
-#include <cereal/archives/json.hpp>
-#include <cereal/archives/xml.hpp>
 
 /** @namespace cereal
  *
@@ -45,6 +41,7 @@ namespace cereal
 
 #ifdef LBANN_HAS_HALF
 #ifdef LBANN_HAS_GPU_FP16
+#ifdef LBANN_HAS_CEREAL_BINARY_ARCHIVES
 
 /** @brief Save this half-precision value in Binary */
 void save(BinaryOutputArchive& archive, __half const& value)
@@ -58,9 +55,11 @@ void load(BinaryInputArchive& archive, __half& value)
   archive.loadBinary(std::addressof(value), sizeof(value));
 }
 
+#endif // LBANN_HAS_CEREAL_BINARY_ARCHIVES
 #endif // LBANN_HAS_GPU_FP16
 
 // Save/load functions for XML archives
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
 float save_minimal(XMLOutputArchive const&,
                    half_float::half const& val) noexcept
 {
@@ -72,23 +71,7 @@ void load_minimal(XMLInputArchive const&, half_float::half& val,
 {
   val = in_val;
 }
-
-// Save/load functions for JSON archives
-void save(JSONOutputArchive& oarchive, half_float::half const& val)
-{
-  std::ostringstream oss;
-  oss.precision(std::numeric_limits<long double>::max_digits10);
-  oss << val;
-  oarchive.saveValue(oss.str());
-}
-
-void load(JSONInputArchive& iarchive, half_float::half& val)
-{
-  std::string encoded;
-  iarchive.loadValue(encoded);
-  val = std::stof(encoded);
-}
-
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
 #endif // LBANN_HAS_HALF
 
 }// namespace cereal

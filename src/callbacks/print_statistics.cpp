@@ -26,12 +26,14 @@
 // print_statistics .hpp .cpp - Callback hooks to print information
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/comm_impl.hpp"
 #include "lbann/callbacks/print_statistics.hpp"
 
 #include "lbann/data_coordinator/data_coordinator.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/argument_parser.hpp"
 #include "lbann/utils/lbann_library.hpp"
+#include "lbann/utils/serialize.hpp"
 
 #include <callbacks.pb.h>
 
@@ -43,6 +45,14 @@
 
 namespace lbann {
 namespace callback {
+
+template <class Archive>
+void print_statistics::serialize(Archive & ar) {
+  ar(::cereal::make_nvp(
+       "BaseCallback",
+       ::cereal::base_class<callback_base>(this)),
+     CEREAL_NVP(m_print_global_stat_only));
+}
 
 void print_statistics::setup(model *m) {
 #ifdef LBANN_VERSION
@@ -60,9 +70,9 @@ void print_statistics::on_epoch_begin(model *m) {
   lbann_comm *comm = m->get_comm();
   if (comm->am_world_master()) {
     // Print message
-    std::cout << "--------------------------------------------------------------------------------"
+    std::cout << "--------------------------------------------------------------------------------------------"
               << std::endl;
-    std::cout << "[" << c.get_epoch() << "] Epoch : stats formated [tr/v/te]"
+    std::cout << "[" << c.get_epoch() << "] Epoch : stats formated [tr/v/te/to]"
               << " iter/epoch ="
               << " ["
               << dc.get_num_iterations_per_epoch(execution_mode::training)
@@ -70,6 +80,8 @@ void print_statistics::on_epoch_begin(model *m) {
               << dc.get_num_iterations_per_epoch(execution_mode::validation)
               << "/"
               << dc.get_num_iterations_per_epoch(execution_mode::testing)
+              << "/"
+              << dc.get_num_iterations_per_epoch(execution_mode::tournament)
               << "]"
               << std::endl;
     std::cout << std::setfill(' ') << std::setw(23)
@@ -80,6 +92,8 @@ void print_statistics::on_epoch_begin(model *m) {
               << std::setw(4) << dc.get_global_mini_batch_size(execution_mode::validation)
               << "/"
               << std::setw(4) << dc.get_global_mini_batch_size(execution_mode::testing)
+              << "/"
+              << std::setw(4) << dc.get_global_mini_batch_size(execution_mode::tournament)
               << "]"
               << " global last MB ="
               << " ["
@@ -91,6 +105,9 @@ void print_statistics::on_epoch_begin(model *m) {
               << "/"
               << std::setw(4) << dc.get_global_last_mini_batch_size(execution_mode::testing)
               << std::setw(2) << " "
+              << "/"
+              << std::setw(4) << dc.get_global_last_mini_batch_size(execution_mode::tournament)
+              << std::setw(2) << " "
               << "]"
               << std::endl;
     std::cout << std::setfill(' ') << std::setw(23)
@@ -101,6 +118,8 @@ void print_statistics::on_epoch_begin(model *m) {
               << std::setw(4) << dc.get_mini_batch_size(execution_mode::validation)
               << "/"
               << std::setw(4) << dc.get_mini_batch_size(execution_mode::testing)
+              << "/"
+              << std::setw(4) << dc.get_mini_batch_size(execution_mode::tournament)
               << "]"
               << "  local last MB ="
               << " ["
@@ -112,9 +131,12 @@ void print_statistics::on_epoch_begin(model *m) {
               << "/"
               << std::setw(4) << dc.get_last_mini_batch_size(execution_mode::testing)
               << "+" << dc.get_world_master_mini_batch_adjustment(execution_mode::testing)
+              << "/"
+              << std::setw(4) << dc.get_last_mini_batch_size(execution_mode::tournament)
+              << "+" << dc.get_world_master_mini_batch_adjustment(execution_mode::tournament)
               << "]"
               << std::endl;
-    std::cout << "--------------------------------------------------------------------------------"
+    std::cout << "--------------------------------------------------------------------------------------------"
               << std::endl;
   }
 }
@@ -144,6 +166,9 @@ void print_statistics::report_results(model *m) {
     break;
   case execution_mode::validation:
     mode_string = "validation";
+    break;
+  case execution_mode::tournament:
+    mode_string = "tournament";
     break;
   case execution_mode::testing:
     mode_string = "test";
@@ -285,3 +310,6 @@ build_print_statistics_callback_from_pbuf(
 
 } // namespace callback
 } // namespace lbann
+
+#define LBANN_CLASS_NAME callback::print_statistics
+#include <lbann/macros/register_class_with_cereal.hpp>

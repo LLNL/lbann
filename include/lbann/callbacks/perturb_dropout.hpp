@@ -55,7 +55,18 @@ public:
 
   void setup(model* m) override;
 
+  /** @name Serialization */
+  ///@{
+
+  /** @brief Store state to archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar);
+
+  ///@}
+
 private:
+
+  friend class cereal::access;
+  perturb_dropout();
 
   /** Standard deviation of keep probability  perturbation.
    *

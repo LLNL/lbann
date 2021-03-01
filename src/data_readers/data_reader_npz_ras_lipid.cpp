@@ -25,9 +25,10 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/comm_impl.hpp"
 #include "lbann/data_readers/data_reader_npz_ras_lipid.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
-#include "lbann/utils/jag_utils.hpp" 
+#include "lbann/utils/jag_utils.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/commify.hpp"
@@ -84,7 +85,7 @@ void ras_lipid_conduit_data_reader::load() {
   options *opts = options::get();
   opts->set_option("preload_data_store", 1);
 
-  // Error check some settings 
+  // Error check some settings
   size_t count = get_absolute_sample_count();
   if (count) {
     LBANN_ERROR("You cannot use absolute sample count with this data reader");
@@ -95,7 +96,7 @@ void ras_lipid_conduit_data_reader::load() {
   }
 
   // The input file should contain, on each line, the complete
-  // pathname of an npz file. 
+  // pathname of an npz file.
   std::string infile = get_data_filename();
   read_filelist(m_comm, infile, m_filenames);
 
@@ -153,16 +154,16 @@ void ras_lipid_conduit_data_reader::load() {
   int my_rank = m_comm->get_rank_in_trainer();
 
   //m_filename_to_multi_sample maps filename -> multi-sample data_ids
-  //m_multi_sample_id_to_first_sample maps multi-sample data_id 
-  //    -> first single-sample that is part of the multi-sample. 
-  //Note: multi-sample data_id is global; single-sample data_id is 
+  //m_multi_sample_id_to_first_sample maps multi-sample data_id
+  //    -> first single-sample that is part of the multi-sample.
+  //Note: multi-sample data_id is global; single-sample data_id is
   //      local (WRT the current file)
-  
+
   //Note: m_filename_to_multi_sample contains all multi-samples in the file;
   //      some of these may be marked for transfer to the validation set
   //      (during select_subset_of_data)
 
-  for (size_t j=my_rank; j<m_filenames.size(); j += np) { 
+  for (size_t j=my_rank; j<m_filenames.size(); j += np) {
     int first_multi_sample_id = first_multi_id_per_file[j];
     int num_multi_samples = multi_samples_per_file[j];
     for (int k=0; k<num_multi_samples; k++) {
@@ -192,16 +193,16 @@ void ras_lipid_conduit_data_reader::do_preload_data_store() {
 ==========================================================================
 data types, from python+numpy:
 
-  rots          numpy.float64  RAS rotation angle    
+  rots          numpy.float64  RAS rotation angle
   states        numpy.float64  the assigned state
   tilts         numpy.float64  RAS tilt angle
   density_sig1  numpy.float64  13x13x14 lipid density data
   frames        numpy.int64    list of frame ids
-  bbs           numpy.float32  184x3 xyz coordinates for 
+  bbs           numpy.float32  184x3 xyz coordinates for
                                each of the 184 RAS backbone beads
   probs         numpy.float64  probability to be in each of the three states
 
-  Notes: 
+  Notes:
     1. Adam talks about 'frames,' which is equivalent, in lbannese, to 'sample'
     2. the "frames" field is simply a set of sequential integers, 0 .. 539
 
@@ -222,7 +223,7 @@ data types, from python+numpy:
   // Variables only used for user feedback
   bool verbose = options::get()->get_bool("verbose");
   int np = m_comm->get_procs_per_trainer();
-  size_t nn = 0; 
+  size_t nn = 0;
 
   std::vector<conduit::Node> work(m_seq_len);
 
@@ -274,7 +275,7 @@ data types, from python+numpy:
 
           work[0]["states"].value();
           m_data_store->set_conduit_node(multi_sample_id, work[0]);
-        }  
+        }
 
         // Second branch: seq_len > 1, or seq_len = 1 and we're using this
         //        branch for debugging
@@ -499,7 +500,7 @@ void ras_lipid_conduit_data_reader::read_normalization_data() {
     m_mean.reserve(14);
     m_std_dev.reserve(14);
     double v_max, v_min, v_mean, v_std_dev;
-    while (in >> v_max >> v_min >> v_mean >> v_std_dev) { 
+    while (in >> v_max >> v_min >> v_mean >> v_std_dev) {
       m_min.push_back(v_min);
       m_max_min.push_back(v_max - v_min);
       m_mean.push_back(v_mean);
@@ -548,7 +549,7 @@ void ras_lipid_conduit_data_reader::print_shapes_etc() {
       std::cout << std::endl;
     }
     std::cout << std::endl;
-  }  
+  }
 
   std::cout << "======================================================\n\n";
 }
@@ -562,7 +563,7 @@ void ras_lipid_conduit_data_reader::load_the_next_sample(conduit::Node &node, in
       conduit::float32 *data = reinterpret_cast<conduit::float32*>(a[name].data_holder->data());
       offset = sample_index*m_datum_num_words["bbs"];
       node[name].set(data + offset, m_datum_num_words[name]);
-    } 
+    }
 
     else { // rots, states, tilts, density_sig1, probs
       offset = sample_index*m_datum_num_words[name];
@@ -595,7 +596,7 @@ void ras_lipid_conduit_data_reader::load_the_next_sample(conduit::Node &node, in
       // rots, tilts, probs
       } else {
         node[name].set(data + offset, m_datum_num_words[name]);
-      }  
+      }
     }
   }
 }
@@ -611,7 +612,7 @@ void ras_lipid_conduit_data_reader::construct_multi_sample(std::vector<conduit::
   for (const auto &t42 : m_datum_num_words) {
     const std::string &name = t42.first;
     int n_words = t42.second;
-  
+
     if (name == "frames") {
       continue;
     }
@@ -624,7 +625,7 @@ void ras_lipid_conduit_data_reader::construct_multi_sample(std::vector<conduit::
       }
       node[LBANN_DATA_ID_STR(data_id) + "/" + name].set(work_i.data(), m_seq_len * m_datum_num_words[name]);
     }
-            
+
     // 'bbs' is float32
     else if (name == "bbs") {
       work_f.resize(m_seq_len*n_words);
@@ -636,9 +637,9 @@ void ras_lipid_conduit_data_reader::construct_multi_sample(std::vector<conduit::
         }
       }
       node[LBANN_DATA_ID_STR(data_id) + "/" + name].set(work_f.data(), m_seq_len * m_datum_num_words[name]);
-  
+
     }
-            
+
     // rots, tilts, density_sig1, probs are float64
     else {
       work_d.resize(m_seq_len*n_words);

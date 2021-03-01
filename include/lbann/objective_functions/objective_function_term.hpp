@@ -50,9 +50,7 @@ class objective_function_term {
   virtual objective_function_term* copy() const = 0;
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize( Archive & ar ) {
-    ar(CEREAL_NVP(m_scale_factor));
-  }
+  template <class Archive> void serialize( Archive & ar );
 
   /** Get the name of the objective function term. */
   virtual std::string name() const = 0;

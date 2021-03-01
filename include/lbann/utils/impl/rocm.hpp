@@ -88,7 +88,9 @@ T gpu_lib::block_reduce(T val) {
 #else
   const size_t tid = threadIdx.x + threadIdx.y*bdimx + threadIdx.z*bdimx*bdimy;
   constexpr size_t bsize = bdimx * bdimy * bdimz;
-  __shared__ DataType shared_max_vals[bsize];
+  //__shared__ T shared_max_vals[bsize];
+  __shared__ char shared_max_vals_buffer[bsize * sizeof(T)];
+  T* shared_max_vals = reinterpret_cast<T*>(shared_max_vals);
   shared_max_vals[tid] = val;
   for (size_t stride = bsize/2; stride > 0; stride /= 2) {
     __syncthreads();
@@ -114,7 +116,9 @@ T gpu_lib::block_reduce(T val) {
   Op op;
   const size_t tid = threadIdx.x + threadIdx.y*bdimx + threadIdx.z*bdimx*bdimy;
   constexpr size_t bsize = bdimx * bdimy * bdimz;
-  __shared__ DataType shared_max_vals[bsize];
+  //__shared__ DataType shared_max_vals[bsize];
+  __shared__ char shared_max_vals_buffer[bsize * sizeof(T)];
+  T* shared_max_vals = reinterpret_cast<T*>(shared_max_vals);
   shared_max_vals[tid] = val;
   for (size_t stride = bsize/2; stride > 0; stride /= 2) {
     __syncthreads();

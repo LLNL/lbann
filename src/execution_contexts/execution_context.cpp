@@ -28,19 +28,14 @@
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/callbacks/callback.hpp"
 #include "lbann/io/persist.hpp"
+#include "lbann/io/persist_impl.hpp"
+#include "lbann/utils/serialize.hpp"
 #include <string>
 #include <unistd.h>
 #include <iomanip>
 #include <queue>
 #include <unordered_set>
 #include <lbann.pb.h>
-
-#include <cereal/archives/binary.hpp>
-#include <cereal/archives/xml.hpp>
-#include <cereal/types/base_class.hpp>
-#include <cereal/types/polymorphic.hpp>
-
-//#include <mpi.h>
 
 namespace lbann {
 
@@ -50,13 +45,19 @@ namespace lbann {
 
 execution_context::execution_context(trainer& trainer,
                                      training_algorithm& training_algorithm,
-                                     lbann_comm *comm,
                                      execution_mode mode)
   : m_trainer(&trainer),
     m_training_algorithm(&training_algorithm),
-    m_comm(comm),
+    m_comm(trainer.get_comm()),
     m_execution_mode(mode),
     m_terminate_training(false) {}
+
+template <class Archive>
+void execution_context::serialize( Archive & ar ) {
+  ar(CEREAL_NVP(m_execution_mode),
+     CEREAL_NVP(m_terminate_training),
+     CEREAL_NVP(m_step));
+}
 
 ////////////////////////////////////////////////////////////
 // Training_Algorithm state
@@ -76,24 +77,64 @@ thread_pool& execution_context::get_io_thread_pool() const {
 
 void execution_context::save_to_checkpoint_shared(persist& p) {
   if (get_comm().am_trainer_master()) {
-    write_cereal_archive<execution_context>(*this, p, get_execution_mode(), "_ctx.xml");
+    write_cereal_archive<execution_context>(
+      *this,
+      p,
+      get_execution_mode(),
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
+      "_ctx.xml"
+#else // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
+      "_ctx.bin"
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
+      );
   }
   return;
 }
 
 void execution_context::load_from_checkpoint_shared(persist& p) {
-  load_from_shared_cereal_archive<execution_context>(*this, p, get_execution_mode(), get_comm(), "_ctx.xml");
+  load_from_shared_cereal_archive<execution_context>(
+    *this,
+    p,
+    get_execution_mode(),
+    get_comm(),
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
+    "_ctx.xml"
+#else // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
+    "_ctx.bin"
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
+    );
   return;
 }
 
 void execution_context::save_to_checkpoint_distributed(persist& p){
-  write_cereal_archive<execution_context>(*this, p, get_execution_mode(), "_ctx.xml");
+  write_cereal_archive<execution_context>(
+    *this,
+    p,
+    get_execution_mode(),
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
+    "_ctx.xml"
+#else // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
+    "_ctx.bin"
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
+    );
   return;
 }
 
 void execution_context::load_from_checkpoint_distributed(persist& p){
-  read_cereal_archive<execution_context>(*this, p, get_execution_mode(), "_ctx.xml");
+  read_cereal_archive<execution_context>(
+    *this,
+    p,
+    get_execution_mode(),
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
+    "_ctx.xml"
+#else // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
+    "_ctx.bin"
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
+    );
   return;
 }
 
 }  // namespace lbann
+
+#define LBANN_CLASS_NAME execution_context
+#include <lbann/macros/register_class_with_cereal.hpp>

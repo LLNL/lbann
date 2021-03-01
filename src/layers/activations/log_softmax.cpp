@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_LOG_SOFTMAX_LAYER_INSTANTIATE
+#include "lbann/comm_impl.hpp"
 #include "lbann/layers/activations/log_softmax.hpp"
 
 namespace lbann {

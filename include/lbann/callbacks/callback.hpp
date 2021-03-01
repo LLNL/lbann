@@ -50,6 +50,11 @@
     return lbann::make_unique<Class>();                          \
   }
 
+namespace cereal
+{
+  class access;
+}// namespace cereal
+
 namespace lbann {
 
 /** @class callback_base
@@ -184,6 +189,13 @@ public:
 
   /** @brief Human-readable description. */
   virtual description get_description() const;
+
+  ///@}
+  /** @name Serialization */
+  ///@{
+
+  /** @brief Store state to archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar);
 
   ///@}
 

@@ -55,6 +55,9 @@ public:
 
   void compute_weight_regularization() override {};
 
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
 private:
 
   /** Get corresponding evaluation layer. */

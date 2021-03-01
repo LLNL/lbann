@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/comm_impl.hpp"
 #include "lbann/utils/lbann_library.hpp"
 
 #include "lbann/proto/factories.hpp"
@@ -242,12 +243,7 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
     // Initialize data readers
     //@todo: code not in place for correctly handling image preprocessing
     std::map<execution_mode, generic_data_reader *> data_readers;
-    bool is_shared_training_data_reader = pb_trainer->shareable_training_data_reader();
-    bool is_shared_testing_data_reader = pb_trainer->shareable_testing_data_reader();
-    if (opts->has_string("share_testing_data_readers")) {
-      is_shared_testing_data_reader = opts->get_bool("share_testing_data_readers");
-    }
-    init_data_readers(comm, pb, data_readers, is_shared_training_data_reader, is_shared_testing_data_reader);
+    init_data_readers(comm, pb, data_readers);
 
     trainer->setup(std::move(io_thread_pool), data_readers);
 
@@ -385,15 +381,16 @@ std::unique_ptr<model> build_model_from_prototext(
       size_t epochLast = std::numeric_limits<size_t>::max();;
       size_t stepLast = std::numeric_limits<size_t>::max();;
       execution_mode mode = execution_mode::invalid;
+      visitor_hook hook = visitor_hook::invalid;
       active_load_model_dir = callback::get_last_shared_checkpoint_filename("sgd", load_model_dir);
 
       // get last epoch and step saved.
-      int success = callback::read_latest(active_load_model_dir, &mode, &epochLast, &stepLast);
+      int success = callback::read_latest(active_load_model_dir, &hook, &mode, &epochLast, &stepLast);
       if(!success) {
         LBANN_ERROR("Unable to find the latest checkpoint ", active_load_model_dir);
         return nullptr;
       }
-      active_load_model_dir = callback::get_shared_checkpoint_dirname("sgd", load_model_dir, mode, epochLast, stepLast) + ret_model->get_name() + '/';
+      active_load_model_dir = callback::get_shared_checkpoint_dirname("sgd", load_model_dir, hook, mode, epochLast, stepLast) + ret_model->get_name() + '/';
     }
 
     if(cb == nullptr) {

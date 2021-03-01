@@ -57,11 +57,25 @@ public:
   }
 
   sum_layer* copy() const override { return new sum_layer(*this); }
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
+
   std::string get_type() const override { return "sum"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
 protected:
+
+  friend class cereal::access;
+  sum_layer()
+    : sum_layer(nullptr)
+  {}
 
   void setup_pointers() override {
     data_type_layer<TensorDataType>::setup_pointers();

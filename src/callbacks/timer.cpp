@@ -24,14 +24,29 @@
 // permissions and limitations under the license.
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/comm_impl.hpp"
 #include "lbann/callbacks/timer.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/argument_parser.hpp"
 #include "lbann/utils/lbann_library.hpp"
+#include "lbann/utils/serialize.hpp"
+#include "lbann/utils/summary_impl.hpp"
+
 #include <algorithm>
 
 namespace lbann {
 namespace callback {
+
+template <class Archive>
+void timer::serialize(Archive & ar) {
+  ar(::cereal::make_nvp(
+       "BaseCallback",
+       ::cereal::base_class<callback_base>(this)),
+     CEREAL_NVP(m_start_times),
+     CEREAL_NVP(m_batch_start_times),
+     CEREAL_NVP(m_batch_times));
+  /// @todo Consider what to do with m_summarizer (preferably remove)
+}
 
 void timer::batch_timing_begin(const model& m) {
   const auto& c = m.get_execution_context();
@@ -99,6 +114,9 @@ void timer::timing_end(model& m) {
     break;
   case execution_mode::validation:
     mode_string = "validation";
+    break;
+  case execution_mode::tournament:
+    mode_string = "tournament";
     break;
   case execution_mode::testing:
     mode_string = "test";
@@ -220,3 +238,6 @@ build_timer_callback_from_pbuf(
 
 } // namespace callback
 } // namespace lbann
+
+#define LBANN_CLASS_NAME callback::timer
+#include <lbann/macros/register_class_with_cereal.hpp>

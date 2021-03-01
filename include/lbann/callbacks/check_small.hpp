@@ -60,6 +60,15 @@ class check_small : public callback_base {
   /** Check that weights are good. */
   void on_batch_end(model *m) override;
   std::string name() const override { return "check_small"; }
+
+  /** @name Serialization */
+  ///@{
+
+  /** @brief Store state to archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar);
+
+  ///@}
+
 };
 
 // Builder function

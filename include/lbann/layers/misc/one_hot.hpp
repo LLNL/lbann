@@ -49,11 +49,25 @@ public:
     this->set_output_dims({static_cast<int>(size)});
   }
   one_hot_layer* copy() const override { return new one_hot_layer(*this); }
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
+
   std::string get_type() const override { return "one-hot"; }
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
 
 protected:
+
+  friend class cereal::access;
+  one_hot_layer()
+    : one_hot_layer(nullptr, 1)
+  {}
 
   void setup_dims(DataReaderMetaData& dr_metadata) override {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);

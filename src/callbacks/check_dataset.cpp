@@ -24,13 +24,28 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <vector>
+#include "lbann/comm_impl.hpp"
 #include "lbann/callbacks/check_dataset.hpp"
 #include "lbann/layers/io/input_layer.hpp"
+#include "lbann/utils/serialize.hpp"
+
 #include <iomanip>
+#include <vector>
 
 namespace lbann {
 namespace callback {
+
+template <class Archive>
+void
+check_dataset::serialize(Archive & ar) {
+  ar(::cereal::make_nvp(
+       "BaseCallback",
+       ::cereal::base_class<callback_base>(this)),
+     CEREAL_NVP(m_basename),
+     CEREAL_NVP(training_set),
+     CEREAL_NVP(validation_set),
+     CEREAL_NVP(testing_set));
+}
 
 void check_dataset::add_to_set(model *m, Layer *l, int64_t step, std::set<long>& set) {
   if (!dynamic_cast<input_layer<DataType>*>(l)) {
@@ -166,3 +181,6 @@ void check_dataset::on_test_end(model *m) {
 
 } // namespace callback
 } // namespace lbann
+
+#define LBANN_CLASS_NAME callback::check_dataset
+#include <lbann/macros/register_class_with_cereal.hpp>

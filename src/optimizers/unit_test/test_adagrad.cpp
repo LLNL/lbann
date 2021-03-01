@@ -27,25 +27,21 @@ struct AdagradBuilder
   }
 };// struct AdagradBuilder
 
-template <typename DataType, typename ArchiveTypes>
-struct TestAdagrad : TestOptimizer<lbann::adagrad<DataType>,
-                                   AdagradBuilder<DataType>,
-                                   ArchiveTypes>
-{};
-
 }// namespace <anon>
 
-TEMPLATE_PRODUCT_TEST_CASE(
-  "Optimizer serialization",
+TEMPLATE_LIST_TEST_CASE(
+  "Adagrad Optimizer serialization",
   "[optimizer][serialize]",
-  TestAdagrad,
-  TEMPLATE_ARG_LIST)
+  AllArchiveTypes)
 {
-  using TypePack = TestType;
-  using OptimizerType = GetOptimizerType<TypePack>;
-  using BuilderType = GetBuilderType<TypePack>;
-  using OutputArchiveType = GetOutputArchiveType<TypePack>;
-  using InputArchiveType = GetInputArchiveType<TypePack>;
+  using ValueType = tlist::Car<TestType>;
+
+  using ArchiveTypes = tlist::Cdr<TestType>;
+  using OutputArchiveType = tlist::Car<ArchiveTypes>;
+  using InputArchiveType = tlist::Cadr<ArchiveTypes>;
+
+  using OptimizerType = lbann::adagrad<ValueType>;
+  using BuilderType = AdagradBuilder<ValueType>;
 
   std::stringstream ss;
 

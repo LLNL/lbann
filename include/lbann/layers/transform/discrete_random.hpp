@@ -62,11 +62,25 @@ class discrete_random_layer : public data_type_layer<TensorDataType> {
     this->set_output_dims(dims);
   }
   discrete_random_layer* copy() const override { return new discrete_random_layer(*this); }
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
+
   std::string get_type() const override { return "discrete random"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
  protected:
+
+  friend class cereal::access;
+  discrete_random_layer()
+    : discrete_random_layer(nullptr, { 0 }, { 1 } )
+  {}
 
   void setup_dims(DataReaderMetaData& dr_metadata) override {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);

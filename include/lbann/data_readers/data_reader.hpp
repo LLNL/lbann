@@ -47,9 +47,6 @@
 #include <vector>
 #include <unistd.h>
 #include <unordered_set>
-#include <cereal/types/utility.hpp>
-#include <cereal/types/unordered_map.hpp>
-#include <cereal/types/vector.hpp>
 
 #define NOT_IMPLEMENTED(n) { \
   std::stringstream s; \
@@ -70,6 +67,7 @@ class trainer;
  */
 class generic_data_reader {
  public:
+  using unused_index_map_t = std::map<execution_mode,std::vector<int>>;
 
  #define JAG_NOOP_VOID if (m_jag_partitioned) { return; }
  #define JAG_NOOP_INT if (m_jag_partitioned) { return 0; }
@@ -95,15 +93,11 @@ class generic_data_reader {
     m_num_parallel_readers(0), m_rank_in_model(0),
     m_max_files_to_load(0),
     m_file_dir(""), m_data_sample_list(""), m_data_fn(""), m_label_fn(""),
-    m_shuffle(shuffle), m_absolute_sample_count(0), m_validation_percent(0.0),
+    m_shuffle(shuffle), m_absolute_sample_count(0),
     m_use_percent(1.0),
     m_master(false),
     m_gan_labelling(false), //default, not GAN
     m_gan_label_value(0),  //If GAN, default for fake label, discriminator model
-    m_is_partitioned(false),
-    m_partition_overlap(0),
-    m_partition_mode(0),
-    m_procs_per_partition(1),
     m_io_thread_pool(nullptr),
     m_jag_partitioned(false),
     m_keep_sample_order(false),
@@ -123,12 +117,7 @@ class generic_data_reader {
   virtual generic_data_reader* copy() const = 0;
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize( Archive & ar ) {
-    ar(CEREAL_NVP(m_current_mini_batch_idx),
-       CEREAL_NVP(m_current_pos),
-       CEREAL_NVP(m_shuffled_indices),
-       CEREAL_NVP(m_supported_input_types));
-  }
+  template <class Archive> void serialize( Archive & ar );
 
   /// set the comm object
   void set_comm(lbann_comm *comm) {
@@ -272,7 +261,7 @@ class generic_data_reader {
    * Sets the percentage of the dataset to be used for validation.
    * @param s The percentage used, in the range [0, 1].
    */
-  virtual void set_validation_percent(double s);
+  virtual void set_execution_mode_split_percent(execution_mode m, double s);
 
   /**
    * Set an idenifier for the dataset.
@@ -545,15 +534,27 @@ class generic_data_reader {
     return (int)m_shuffled_indices.size();
   }
   /// Get the number of unused samples in this dataset.
-  int get_num_unused_data() const {
-    return (int)m_unused_indices.size();
+  int get_num_unused_data(execution_mode m) const {
+    if(m_unused_indices.count(m)) {
+      return (int)m_unused_indices.at(m).size();
+    }else {
+      LBANN_ERROR("Invalid execution mode ", to_string(m), " for unused indices");
+    }
   }
   /// Get a pointer to the start of the unused sample indices.
-  int *get_unused_data() {
-    return &m_unused_indices[0];
+  int *get_unused_data(execution_mode m) {
+    if(m_unused_indices.count(m)) {
+      return &(m_unused_indices[m][0]);
+    }else {
+      LBANN_ERROR("Invalid execution mode ", to_string(m), " for unused indices");
+    }
   }
-  const std::vector<int>& get_unused_indices() {
-    return m_unused_indices;
+  const std::vector<int>& get_unused_indices(execution_mode m) {
+    if(m_unused_indices.count(m)) {
+      return m_unused_indices.at(m);
+    }else {
+      LBANN_ERROR("Invalid execution mode ", to_string(m), " for unused indices");
+    }
   }
   /// Set the number of iterations in each epoch.
   void set_num_iterations_per_epoch(int num_iterations_per_epoch) {
@@ -597,25 +598,18 @@ class generic_data_reader {
   void resize_shuffled_indices();
 
   /**
-   * Select the appropriate subset of data for the validation set based on
-   * the data reader prototext setting: validation_percent
+   * Select the appropriate subset of data for the additional
+   * execution modes such as validation or tournament  set based on
+   * the data reader prototext setting: validation_percent or
+   * tournament_percent
    */
   void select_subset_of_data();
-
-  /// called by select_subset_of_data() if data set is partitioned
-  void select_subset_of_data_partitioned();
 
   /**
    * Replaced the shuffled index set with the unused index set, empying the
    * unused set.
    */
-  virtual void use_unused_index_set();
-
-  /// partition the dataset amongst the models
-  void set_partitioned(bool is_partitioned=true, double overlap=0.0, int mode=0);
-
-  /// returns true if the data set is partitioned
-  bool is_partitioned() const { return m_is_partitioned; }
+  virtual void use_unused_index_set(execution_mode m);
 
   /// Does the data reader have a unqiue sample list per model
   virtual bool has_list_per_model() const { return false; }
@@ -713,9 +707,10 @@ class generic_data_reader {
   double get_use_percent() const;
 
   /**
-   * Return the percent of the dataset to be used for validation.
+   * Return the percent of the dataset to be used for
+   * other execution modes such as validation or tournament.
    */
-  double get_validation_percent() const;
+  double get_execution_mode_split_percent(execution_mode m) const;
 
   data_store_conduit *m_data_store;
 
@@ -789,7 +784,7 @@ class generic_data_reader {
 
   std::vector<int> m_shuffled_indices;
   /// Record of the indicies that are not being used for training
-  std::vector<int> m_unused_indices;
+  unused_index_map_t m_unused_indices;
 
   int m_last_mini_batch_size;
   int m_stride_to_last_mini_batch;
@@ -816,7 +811,7 @@ class generic_data_reader {
   std::string m_label_fn;
   bool m_shuffle;
   size_t m_absolute_sample_count;
-  double m_validation_percent;
+  std::map<execution_mode, double> m_execution_mode_split_percentage;
   double m_use_percent;
   int m_first_n;
   std::string m_role;
@@ -854,31 +849,6 @@ private:
   //var to support GAN
   bool m_gan_labelling; //boolean flag of whether its GAN binary label, default is false
   int m_gan_label_value; //zero(0) or 1 label value for discriminator, default is 0
-
-   /// if true, dataset is partitioned amongst several models,
-   /// with options overlap (yeah, I know, if there's overlap its
-   /// not technically a partition)
-   bool m_is_partitioned;
-
-   /// if m_is_partitioned, this determines the amount of overlap
-   /// Has no effect if m_is_partitioned = false
-   double m_partition_overlap;
-
-   /// mode = 1: share overlap_percent/2 with left and right nabors
-   /// mode = 2: there's a set of overlap indices common to all models
-   int m_partition_mode;
-
-   /// only relevant if m_is_partitioned = true.  Currently this is same as
-   /// comm->num_models()
-   int m_num_partitions;
-
-   /// only relevant if m_is_partitioned = true.  Currently this is same as
-   /// comm->get_trainer_rank())
-   int m_my_partition;
-
-   /// only relevant if m_is_partitioned = true.  Currently this is same as
-   /// comm->get_procs_per_trainer)
-   int m_procs_per_partition;
 
   std::vector<std::vector<char>> m_thread_buffer;
 

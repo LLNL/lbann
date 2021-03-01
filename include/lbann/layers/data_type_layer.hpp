@@ -30,7 +30,8 @@
 #include "lbann/layers/layer.hpp"
 #include "lbann/weights/weights_proxy.hpp"
 
-#include "lbann/utils/h2_tmp.hpp"
+#include <h2/meta/Core.hpp>
+#include <h2/meta/TypeList.hpp>
 
 #ifdef LBANN_HAS_DISTCONV
 #include "lbann/layers/data_type_distconv_adapter.hpp"
@@ -38,6 +39,11 @@
 #include <map>
 #include <array>
 #endif // LBANN_HAS_DISTCONV
+
+namespace cereal
+{
+  class access;
+}// namespace cereal
 
 namespace lbann {
 
@@ -84,8 +90,10 @@ public:
     h2::meta::tlist::MemberV<TensorDataType, supported_layer_data_type>(),
     "Must use a supported type.");
 
-  data_type_layer(lbann_comm *comm, bool persistent_error_signals=false)
-    : Layer(comm), m_persistent_error_signals{persistent_error_signals} {}
+  data_type_layer(lbann_comm* /*comm*/, bool persistent_error_signals=false)
+    : Layer(),
+      m_persistent_error_signals{persistent_error_signals}
+  {}
   data_type_layer(const data_type_layer<TensorDataType>& other);
   data_type_layer& operator=(const data_type_layer<TensorDataType>& other);
   virtual ~data_type_layer() = default;
@@ -140,6 +148,14 @@ public:
    *  false means to dynamically reallocate them.
    */
   void set_keep_error_signals(bool) override;
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
 
 protected:
 
@@ -374,8 +390,9 @@ private:
 #endif // LBANN_HAS_GPU
 };
 
+
 #ifndef LBANN_DATA_TYPE_LAYER_INSTANTIATE
-#define PROTO(T)                           \
+#define PROTO(T)                                \
   extern template class data_type_layer<T>
 
 #define LBANN_INSTANTIATE_CPU_HALF

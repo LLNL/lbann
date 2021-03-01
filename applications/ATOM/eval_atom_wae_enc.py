@@ -52,6 +52,8 @@ def construct_lc_launcher_args():
     parser.add_argument("--num-embeddings", type=int, default=None)
     parser.add_argument("--batch-size", type=int, default=512)
     parser.add_argument("--num-epochs", type=int, default=20)
+    parser.add_argument("--z-dim", type=int, default=128, help="latent space dim")
+    parser.add_argument("--lamda", type=float, default=0.001, help="weighting of adversarial loss")
     parser.add_argument("--data-reader-prototext", default=None)
     parser.add_argument("--pad-index", type=int, default=None)
     parser.add_argument("--sequence-length", type=int, default=None)
@@ -114,14 +116,14 @@ def construct_model(run_args):
     save_output = False
 
     print("save output? ", save_output, "out dir ",  run_args.dump_outputs_dir)
-    z = lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims="128")
+    z = lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims=str(run_args.z_dim))
 
     x = lbann.Slice(input_, slice_points=str_list([0, input_feature_dims]))
     x = lbann.Identity(x)
     waemodel = molwae.MolWAE(input_feature_dims,
                            dictionary_size,
                            embedding_size,
-                           pad_index,save_output)
+                           pad_index,run_args.z_dim,save_output)
     x_emb = lbann.Embedding(
             x,
             num_embeddings=waemodel.dictionary_size,
@@ -153,6 +155,7 @@ def construct_model(run_args):
     conc_out = lbann.Concatenation([input_,latentz], name='conc_out')
     callbacks.append(lbann.CallbackDumpOutputs(batch_interval=run_args.dump_outputs_interval,
                        execution_modes='test',
+                       format='npy',
                        directory=run_args.dump_outputs_dir,
                        layers=f'{conc_out.name}'))
     # Construct model
@@ -268,7 +271,7 @@ def main():
         time_limit=run_args.time_limit,
         nodes=run_args.nodes,
         procs_per_node=ppn,
-        batch_job = True,
+        #batch_job = True,
         #setup_only = True,
         job_name=run_args.job_name,
         experiment_dir=experiment_dir,

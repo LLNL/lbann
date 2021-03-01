@@ -38,12 +38,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include <cereal/types/utility.hpp>
-#include <cereal/types/unordered_map.hpp>
-#include <cereal/types/vector.hpp>
-#include <cereal/archives/binary.hpp>
-#include <cereal/archives/xml.hpp>
-
 namespace lbann {
 
 #ifdef LBANN_HAS_DISTCONV
@@ -113,9 +107,6 @@ class input_layer : public data_type_layer<TensorDataType> {
   using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
 
   ///@}
- protected:
-  data_reader_target_mode m_data_reader_mode;
-
  public:
 
   /// @todo make the map and vector references
@@ -139,11 +130,6 @@ class input_layer : public data_type_layer<TensorDataType> {
   input_layer& operator=(const input_layer&) = default;
   input_layer* copy() const override {
     return new input_layer(*this);
-  }
-
-  /** Archive for checkpoint and restart */
-  template <class Archive> void serialize( Archive & ar ) {
-    ar(CEREAL_NVP(m_data_reader_mode));
   }
 
   std::string get_type() const override { return "input"; }
@@ -175,20 +161,24 @@ class input_layer : public data_type_layer<TensorDataType> {
     return (m_data_reader_mode == data_reader_target_mode::REGRESSION);
   }
 
-  /** @brief Checkpoint and restore functions */
-///{@
-  // save state of IO to a checkpoint
-  bool save_to_checkpoint_shared(persist& p) const override;
+  /** @name Serialization */
+  ///@{
 
-  // reload state of IO from a checkpoint
-  bool load_from_checkpoint_shared(persist& p) override;
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
 
-  bool save_to_checkpoint_distributed(persist& p) const override;
+  ///@}
+ protected:
+  data_reader_target_mode m_data_reader_mode;
 
-  bool load_from_checkpoint_distributed(persist& p) override;
-///@}
+ private:
+  friend cereal::access;
+  input_layer()
+    : input_layer(nullptr, data_reader_target_mode::NA)
+  {}
 
 #ifdef LBANN_HAS_DISTCONV
+ public:
   /** @brief Extensions for distributed convolutions */
 ///{@
   using distconv_adapter_type = input_distconv_adapter<TensorDataType, T_layout, Dev>;

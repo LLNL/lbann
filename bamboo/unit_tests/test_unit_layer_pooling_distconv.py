@@ -309,6 +309,6 @@ def construct_data_reader(lbann):
 # Create test functions that can interact with PyTest
 # Note: Create test name by removing ".py" from file name
 _test_name = os.path.splitext(os.path.basename(current_file))[0]
-for test in tools.create_tests(setup_experiment, _test_name,
+for _test_func in tools.create_tests(setup_experiment, _test_name,
                                environment=tools.get_distconv_environment()):
-    globals()[test.__name__] = test
+    globals()[_test_func.__name__] = _test_func

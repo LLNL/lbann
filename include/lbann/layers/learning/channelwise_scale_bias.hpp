@@ -75,7 +75,7 @@ public:
 
 public:
 
-  channelwise_scale_bias_layer(lbann_comm *comm);
+  channelwise_scale_bias_layer(lbann_comm *comm=nullptr);
   channelwise_scale_bias_layer(const channelwise_scale_bias_layer& other);
   channelwise_scale_bias_layer& operator=(
     const channelwise_scale_bias_layer& other);
@@ -90,6 +90,14 @@ public:
 
   void setup_matrices(const El::Grid& grid) override;
   void setup_data(size_t max_mini_batch_size) override;
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
 
 protected:
 
@@ -146,7 +154,7 @@ void channelwise_scale_bias_layer<TensorDataType, Layout, Dev>
   // Construct default weights if needed
   // Note: Scale is initialized to 1 and bias to 0
   if (!this->has_weights()) {
-    auto w = std::make_shared<WeightsType>(this->get_comm());
+    auto w = std::make_shared<WeightsType>(*this->get_comm());
     std::vector<TensorDataType> vals(2*num_channels,
                                      El::TypeTraits<TensorDataType>::Zero());
     std::fill(vals.begin(), vals.begin()+num_channels,
