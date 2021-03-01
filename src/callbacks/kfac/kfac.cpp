@@ -31,12 +31,7 @@
 #include "lbann/utils/profiling.hpp"
 #include "lbann/callbacks/kfac/kfac.hpp"
 #include "lbann/callbacks/kfac/kfac_util.hpp"
-#include "lbann/callbacks/kfac/kfac_block_fc_conv.hpp"
-#include "lbann/callbacks/kfac/kfac_block_bn.hpp"
 #include "lbann/layers/data_type_layer.hpp"
-#include "lbann/layers/learning/fully_connected.hpp"
-#include "lbann/layers/learning/convolution.hpp"
-#include "lbann/layers/regularizers/batch_normalization.hpp"
 
 namespace lbann {
 namespace callback {
@@ -92,6 +87,93 @@ void kfac<Device>::on_epoch_end(model *m) {
 }
 
 template <El::Device Device>
+void kfac<Device>::on_forward_prop_end(model *m) {
+  const auto comm = m->get_comm();
+  const auto layers = m->get_layers();
+
+  // List up layers to be updated
+  if(m_blocks.size() == 0){
+    prof_region_begin("kfac-setup", prof_color, prof_sync);
+    const size_t num_procs = comm->get_procs_per_trainer();
+    std::unordered_map<std::string, int> proc_ranks;
+    for(auto i_layer = layers.begin(); i_layer != layers.end(); i_layer++) {
+      const size_t layer_id = std::distance(layers.begin(), i_layer);
+      const auto &l = *i_layer;
+      const auto l_fc = dynamic_cast<fully_connected_layer<DataType, data_layout::DATA_PARALLEL, Device>*>(l);
+      const auto l_conv = dynamic_cast<convolution_layer<DataType, data_layout::DATA_PARALLEL, Device>*>(l);
+      const auto l_bn = dynamic_cast<batch_normalization_layer<DataType, data_layout::DATA_PARALLEL, Device>*>(l);
+      const auto l_gru = dynamic_cast<gru_layer<DataType, data_layout::DATA_PARALLEL, Device>*>(l);
+      const bool is_fc = (l_fc != nullptr);
+      const bool is_conv = (l_conv != nullptr);
+      const bool is_bn = (l_bn != nullptr);
+      const bool is_gru = (l_gru != nullptr);
+      if(!(is_fc || is_conv || is_bn || is_gru))
+        continue;
+
+      if(std::find(m_disable_layers.begin(), m_disable_layers.end(), l->get_name()) != m_disable_layers.end()) {
+        if(comm->am_trainer_master())
+          std::cout << "K-fac callback: " << l->get_name() << " is ignored to optimize with K-FAC." << std::endl;
+        continue;
+      }
+
+      prof_region_begin(("kfac-setup/" + l->get_name()).c_str(), prof_color, prof_sync);
+
+      // Ignore layers without optimizers
+      const auto& weights = l->get_weights(0);
+      const optimizer *w_optimizer = weights.get_optimizer();
+      if(w_optimizer == nullptr)
+        continue;
+
+      std::string proc_rank_key = "all";
+      if(m_inverse_strategy == kfac_inverse_strategy::EACH)
+        proc_rank_key = l->get_type();
+      if(proc_ranks.find(proc_rank_key) == proc_ranks.end())
+        proc_ranks[proc_rank_key] = 0;
+      int& proc_rank = proc_ranks[proc_rank_key];
+
+      // Check layer property
+      if((l->get_num_parents() != 1 || l->get_num_children() != 1) && !is_gru) {
+        std::stringstream err;
+        err << "The K-FAC callback expects layers who have exact one parent and child."
+            << " layer: " << l->get_name()
+            << ", #parent: " << l->get_num_parents()
+            << ", #child: " << l->get_num_children();
+        LBANN_ERROR(err.str());
+      }
+
+      std::shared_ptr<kfac_block<Device>> block;
+      if(is_fc || is_conv) {
+        block = std::make_shared<kfac_block_fc_conv<Device>>(
+            l, this, layer_id, proc_rank, is_conv);
+      } else if(is_bn) {
+        block = std::make_shared<kfac_block_bn<Device>>(
+            l, this, layer_id, proc_rank);
+      } else if(is_gru) {
+        block = std::make_shared<kfac_block_gru<Device>>(
+            l, this, layer_id, proc_rank);
+      }
+
+      m_blocks.push_back(std::move(block));
+      if(m_inverse_strategy != kfac_inverse_strategy::ROOT)
+        proc_rank = (proc_rank+1)%num_procs;
+
+      prof_region_end(("kfac-setup/" + l->get_name()).c_str(), prof_sync);
+    }
+
+    if(comm->am_trainer_master()) {
+      for(const auto& block : m_blocks)
+        std::cout << "K-FAC callback setup: "
+                  << block->get_info() << std::endl;
+    }
+
+    prof_region_end("kfac-setup", prof_sync);
+  }
+
+  for(auto& block : m_blocks)
+    block->on_forward_prop_end();
+}
+
+template <El::Device Device>
 void kfac<Device>::on_backward_prop_end(model *m) {
   // Update the damping value
   // using a modified Tikhonov damping tequnique from
@@ -129,80 +211,6 @@ void kfac<Device>::on_backward_prop_end(model *m) {
   const auto comm = m->get_comm();
   const auto& context = static_cast<const sgd_execution_context&>(m->get_execution_context());
   const size_t num_steps = context.get_step();
-  const auto layers = m->get_layers();
-
-  // List up layers to be updated
-  if(m_blocks.size() == 0){
-    prof_region_begin("kfac-setup", prof_color, prof_sync);
-    const size_t num_procs = comm->get_procs_per_trainer();
-    std::unordered_map<std::string, int> proc_ranks;
-    for(auto i_layer = layers.begin(); i_layer != layers.end(); i_layer++) {
-      const size_t layer_id = std::distance(layers.begin(), i_layer);
-      const auto &l = *i_layer;
-      const auto l_fc = dynamic_cast<fully_connected_layer<DataType, data_layout::DATA_PARALLEL, Device>*>(l);
-      const auto l_conv = dynamic_cast<convolution_layer<DataType, data_layout::DATA_PARALLEL, Device>*>(l);
-      const auto l_bn = dynamic_cast<batch_normalization_layer<DataType, data_layout::DATA_PARALLEL, Device>*>(l);
-      const bool is_fc = (l_fc != nullptr);
-      const bool is_conv = (l_conv != nullptr);
-      const bool is_bn = (l_bn != nullptr);
-      if(!(is_fc || is_conv || is_bn))
-        continue;
-
-      if(std::find(m_disable_layers.begin(), m_disable_layers.end(), l->get_name()) != m_disable_layers.end()) {
-        if(comm->am_trainer_master())
-          std::cout << "K-fac callback: " << l->get_name() << " is ignored to optimize with K-FAC." << std::endl;
-        continue;
-      }
-
-      prof_region_begin(("kfac-setup/" + l->get_name()).c_str(), prof_color, prof_sync);
-
-      // Ignore layers without optimizers
-      const auto& weights = l->get_weights(0);
-      const optimizer *w_optimizer = weights.get_optimizer();
-      if(w_optimizer == nullptr)
-        continue;
-
-      std::string proc_rank_key = "all";
-      if(m_inverse_strategy == kfac_inverse_strategy::EACH)
-        proc_rank_key = (is_fc ? "fc" : (is_conv ? "conv" : "bn"));
-      if(proc_ranks.find(proc_rank_key) == proc_ranks.end())
-        proc_ranks[proc_rank_key] = 0;
-      int& proc_rank = proc_ranks[proc_rank_key];
-
-      // Check layer property
-      if(l->get_num_parents() != 1 || l->get_num_children() != 1) {
-        std::stringstream err;
-        err << "The K-FAC callback only supports layers who have exact one parent and child."
-            << " layer: " << l->get_name()
-            << ", #parent: " << l->get_num_parents()
-            << ", #child: " << l->get_num_children();
-        LBANN_ERROR(err.str());
-      }
-
-      std::shared_ptr<kfac_block<Device>> block;
-      if(is_fc || is_conv) {
-        block = std::make_shared<kfac_block_fc_conv<Device>>(
-            l, this, layer_id, proc_rank, is_conv);
-      } else if(is_bn) {
-        block = std::make_shared<kfac_block_bn<Device>>(
-            l, this, layer_id, proc_rank);
-      }
-
-      m_blocks.push_back(std::move(block));
-      if(m_inverse_strategy != kfac_inverse_strategy::ROOT)
-        proc_rank = (proc_rank+1)%num_procs;
-
-      prof_region_end(("kfac-setup/" + l->get_name()).c_str(), prof_sync);
-    }
-
-    if(comm->am_trainer_master()) {
-      for(const auto& block : m_blocks)
-        std::cout << "K-FAC callback setup: "
-                  << block->get_info() << std::endl;
-    }
-
-    prof_region_end("kfac-setup", prof_sync);
-  }
 
   prof_region_begin("kfac-step", prof_color, prof_sync);
 
@@ -308,6 +316,7 @@ void kfac<Device>::on_backward_prop_end(model *m) {
     // List-up buffers to synchronize.
     std::vector<std::pair<size_t, El::AbstractMatrix<DataType>*>> buffers;
     int local_buffer_size = 0, global_buffer_size = 0;
+
     for(auto& block : m_blocks)
       for(auto L : block->get_preconditioned_grad_buffers()) {
         const size_t rank = block->get_inverse_proc_rank();

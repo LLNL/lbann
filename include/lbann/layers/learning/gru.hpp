@@ -96,6 +96,17 @@ public:
 
   ///@}
 
+  size_t get_hidden_size() const {
+    return m_hidden_size;
+  }
+  size_t get_num_layers() const {
+    return m_num_layers;
+  }
+  const hydrogen::simple_buffer<El::byte, Device>&
+  get_reserve_space() const {
+    return m_cudnn_objects->reserve_space;
+  }
+
 protected:
 
   friend class cereal::access;

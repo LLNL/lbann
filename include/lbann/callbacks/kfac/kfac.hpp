@@ -120,6 +120,7 @@ class kfac : public callback_base {
 
   void setup(model *m) override;
   void setup(trainer *t) override {}
+  void on_forward_prop_end(model *m) override;
   void on_backward_prop_end(model *m) override;
   void on_epoch_end(model *m) override;
   void on_backward_prop_end(model *m, Layer *l) override {}

@@ -256,13 +256,6 @@ void kfac_block_fc_conv<Device>::update_kronecker_inverse(
     std::cout << oss.str();
   }
 
-  DataType dst_scale = El::TypeTraits<DataType>::Zero(),
-      gradient_scale = El::TypeTraits<DataType>::One();
-  // grad_buffer is already synchronized among processes,
-  // and won't be all-reduced later.
-  auto& grad_buffer = w_optimizer->get_gradient_buffer(
-      dst_scale, gradient_scale, false);
-
   const auto& w_grads_orig = w_dto->get_gradient().LockedMatrix();
   El::Matrix<DataType, Device> w_gradients;
   // w_gradients is already synchronized among processes.
@@ -318,6 +311,13 @@ void kfac_block_fc_conv<Device>::update_kronecker_inverse(
       learning_rate_factor, Gg, Ainv,
       El::TypeTraits<DataType>::Zero(), Fgrad);
 
+  // Update gradients in the buffer
+  DataType dst_scale = El::TypeTraits<DataType>::Zero(),
+      gradient_scale = El::TypeTraits<DataType>::One();
+  // grad_buffer is already synchronized among processes,
+  // and won't be all-reduced later.
+  auto& grad_buffer = w_optimizer->get_gradient_buffer(
+      dst_scale, gradient_scale, false);
   if(m_is_conv) {
     El::Matrix<DataType, Device> Fgrad_v;
     Fgrad_v.LockedAttach(Fgrad.Width()*Fgrad.Height(), 1,
