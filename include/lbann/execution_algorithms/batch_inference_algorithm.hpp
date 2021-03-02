@@ -28,6 +28,8 @@
 #define LBANN_BATCH_INFERENCE_ALGORITHM_HPP
 
 #include "lbann/execution_algorithms/execution_algorithm.hpp"
+#include "lbann/models/model.hpp"
+#include "lbann/data_coordinator/data_coordinator.hpp"
 
 namespace lbann {
 
@@ -56,15 +58,14 @@ public:
   // Execution
   // ===========================================
 
-  /** Infer on samples with a given model. */
-  void infer(inf_execution_context& c,
-             model& model,
+  /** Infer on samples from a data coordinator with a given model. */
+  void infer(model& model,
              data_coordinator& dc,
              size_t num_batches=0);
 
 protected:
   /** Evaluate model on one step / mini-batch of an SGD forward pass */
-  virtual bool infer_mini_batch(inf_execution_context& c, model& model, data_coordinator& dc);
+  virtual bool infer_mini_batch(model& model, data_coordinator& dc);
 
 };
 

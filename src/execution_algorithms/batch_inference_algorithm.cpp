@@ -1,0 +1,56 @@
+////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
+// Written by the LBANN Research Team (B. Van Essen, et al.) listed in
+// the CONTRIBUTORS file. <lbann-dev@llnl.gov>
+//
+// LLNL-CODE-697807.
+// All rights reserved.
+//
+// This file is part of LBANN: Livermore Big Artificial Neural Network
+// Toolkit. For details, see http://software.llnl.gov/LBANN or
+// https://github.com/LLNL/LBANN.
+//
+// Licensed under the Apache License, Version 2.0 (the "Licensee"); you
+// may not use this file except in compliance with the License.  You may
+// obtain a copy of the License at:
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the license.
+////////////////////////////////////////////////////////////////////////////////
+
+#include "lbann/execution_algorithms/batch_inference_algorithm.hpp"
+#include "lbann/models/model.hpp"
+#include "lbann/callbacks/callback.hpp"
+
+namespace lbann {
+
+void batch_inference_algorithm::infer(model& model,
+                                      data_coordinator& dc,
+                                      size_t num_batches) {
+  // Infer on all mini-batches
+  if (num_batches > 0) {
+    for (size_t i = 0; i < num_batches; i++) { infer_mini_batch(model, dc); }
+  } else {
+    while (!evaluate_mini_batch(c, model, dc, mode)) {}
+  }
+  c.inc_epoch();
+  do_evaluate_end_cbs(model, mode);
+}
+
+bool batch_inference_algorithm::infer_mini_batch(model& model,
+                                                 data_coordinator& dc) {
+  dc.fetch_data(execution_mode::inference);
+  model.forward_prop(execution_mode::inference);
+  // check if the data coordinator has finished the epoch and kickoff
+  // background I/O
+  const bool finished = dc.epoch_complete(execution_mode::inference);
+  return finished;
+}
+
+}  // namespace lbann
