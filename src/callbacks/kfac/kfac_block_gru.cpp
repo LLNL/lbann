@@ -51,6 +51,16 @@ void kfac_block_gru<El::Device::GPU>::on_forward_prop_end() {
 }
 
 template <El::Device Device>
+const std::vector<El::AbstractMatrix<DataType>*>
+kfac_block_gru<Device>::get_local_kronecker_buffers() {
+  std::vector<El::AbstractMatrix<DataType>*> ret =
+      {&m_kronecker_factor_buf_A_h};
+  for(auto& matrix_type : kfac_gru_util::LEARNABLE_MATRICES)
+    ret.push_back(&m_kronecker_factor_buf_G[matrix_type]);
+  return ret;
+}
+
+template <El::Device Device>
 void kfac_block_gru<Device>::compute_local_kronecker_factors(
     lbann_comm* comm,
     const bool print_matrix,
@@ -84,7 +94,13 @@ void kfac_block_gru<Device>::compute_local_kronecker_factors(
 
   // OPTIMIZE: m_input_size and m_hidden_size?
   auto& A = this->get_workspace_matrix("A", hidden_size, hidden_size);
-  auto& G = this->get_workspace_matrix("G", hidden_size, hidden_size);
+  std::unordered_map<kfac_gru_util::weight_type,
+                     El::Matrix<DataType, Device>*> Gs;
+  for(auto& matrix_type : kfac_gru_util::LEARNABLE_MATRICES) {
+    Gs[matrix_type] = &this->get_workspace_matrix(
+        std::string("G_")+kfac_gru_util::get_matrix_type_name(matrix_type),
+        hidden_size, hidden_size);
+  }
 
   // r, i: (hidden_size*local_batch_size) x seq_length
   auto& r = this->get_workspace_matrix("r", hidden_size*local_batch_size, seq_length);
@@ -100,8 +116,8 @@ void kfac_block_gru<Device>::compute_local_kronecker_factors(
   // biases_Rh: hidden_size x 1
   auto& hfc = this->get_workspace_matrix("hfc_t", hidden_size, local_batch_size*seq_length);
   El::Matrix<DataType, Device> weights_Rh, biases_Rh;
-  get_weight_matrix(kfac_gru_util::gru_weight_matrix_type::Rh, weights_Rh);
-  get_weight_matrix(kfac_gru_util::gru_weight_matrix_type::bRh, biases_Rh);
+  get_weight_matrix(kfac_gru_util::weight_type::Rh, weights_Rh);
+  get_weight_matrix(kfac_gru_util::weight_type::bRh, biases_Rh);
 
   // Recompute hfc = R_h h_t + b_Rh
   // OPTIMIZE: Merge the following two loops
@@ -125,23 +141,41 @@ void kfac_block_gru<Device>::compute_local_kronecker_factors(
   }
 
   // OPTIMIZE: Replace with a single kernel call
-  auto& g = this->get_workspace_matrix("g", hidden_size, local_batch_size*seq_length);
+  std::unordered_map<kfac_gru_util::weight_type,
+                     El::Matrix<DataType, Device>*> gs;
+  for(auto& matrix_type : kfac_gru_util::LEARNABLE_MATRICES) {
+    gs[matrix_type] = &this->get_workspace_matrix(
+        std::string("g_")+kfac_gru_util::get_matrix_type_name(matrix_type),
+        hidden_size, local_batch_size*seq_length);
+  }
   for(size_t t = 0; t < seq_length; t++) {
     // hidden_size x local_batch_size
-    auto g_t = El::View(g, El::ALL, El::IR(t*local_batch_size, (t+1)*local_batch_size));
+    auto g_Rr_t = El::View(
+        *gs[kfac_gru_util::weight_type::Rr],
+        El::ALL, El::IR(t*local_batch_size, (t+1)*local_batch_size));
+    auto g_Ri_t = El::View(
+        *gs[kfac_gru_util::weight_type::Ri],
+        El::ALL, El::IR(t*local_batch_size, (t+1)*local_batch_size));
     const auto x_t =
         El::LockedView((El::Matrix<DataType, Device>&) local_inputs,
                        El::IR(input_size*t, input_size*(t+1)), El::ALL);
     const auto h_t =
         El::LockedView((El::Matrix<DataType, Device>&) local_outputs,
                        El::IR(hidden_size*t, hidden_size*(t+1)), El::ALL);
+    const auto hprev_t =
+        (t == 0
+         ? El::LockedView((El::Matrix<DataType, Device>&) h0, El::ALL, El::ALL) // OPTIMIZE
+         : El::LockedView((El::Matrix<DataType, Device>&) local_outputs,
+                          El::IR(hidden_size*(t-1), hidden_size*t), El::ALL));
     const auto dh_t =
         El::LockedView((El::Matrix<DataType, Device>&) local_errors,
                        El::IR(hidden_size*t, hidden_size*(t+1)), El::ALL);
     const auto r_t = El::LockedView(r, El::ALL, El::IR(t, t+1));
     const auto i_t = El::LockedView(i, El::ALL, El::IR(t, t+1));
     const auto hfc_t = El::LockedView(hfc, El::ALL, El::IR(t*local_batch_size, (t+1)*local_batch_size));
-    kfac_gru_util::get_g_Rr(h_t, dh_t, hfc_t, r_t, i_t, g_t, hidden_size, sync_info);
+    kfac_gru_util::get_g(h_t, hprev_t, dh_t, hfc_t, r_t, i_t,
+                         g_Rr_t, g_Ri_t,
+                         hidden_size, sync_info);
 
     const DataType alpha = 1.0/seq_length;
     const DataType beta = (t == 0 ? El::TypeTraits<DataType>::Zero() : El::TypeTraits<DataType>::One());
@@ -149,26 +183,41 @@ void kfac_block_gru<Device>::compute_local_kronecker_factors(
         El::NORMAL, El::TRANSPOSE,
         alpha, h_t, h_t,
         beta, A);
-    El::Gemm(
-        El::NORMAL, El::TRANSPOSE,
-        alpha, g_t, g_t,
-        beta, G);
+    for(auto& matrix_type : kfac_gru_util::LEARNABLE_MATRICES) {
+      auto& g = *gs[matrix_type];
+      auto& G = *Gs[matrix_type];
+      El::Gemm(
+          El::NORMAL, El::TRANSPOSE,
+          alpha, g, g,
+          beta, G);
+    }
   }
 
-  m_kronecker_factor_buf_A.Resize(A.Height()*(A.Height()+1)/2, 1);
-  m_kronecker_factor_buf_G.Resize(G.Height()*(G.Height()+1)/2, 1);
-  kfac_util::pack_lower_tri(m_kronecker_factor_buf_A, A, sync_info);
-  kfac_util::pack_lower_tri(m_kronecker_factor_buf_G, G, sync_info);
+  m_kronecker_factor_buf_A_h.Resize(A.Height()*(A.Height()+1)/2, 1);
+  kfac_util::pack_lower_tri(m_kronecker_factor_buf_A_h, A, sync_info);
+  for(auto& matrix_type : kfac_gru_util::LEARNABLE_MATRICES) {
+    auto& G = *Gs[matrix_type];
+    m_kronecker_factor_buf_G[matrix_type].Resize(G.Height()*(G.Height()+1)/2, 1);
+    kfac_util::pack_lower_tri(m_kronecker_factor_buf_G[matrix_type], G, sync_info);
+  }
 
   // Dump L2 norm of matrices
   if(comm->am_trainer_master() && print_matrix_summary) {
     std::ostringstream oss;
     oss << "K-FAC callback: L2 norm @ "<< this->m_layer->get_name() << ": "
         << kfac_util::get_matrix_stat((const El::Matrix<DataType, Device>&) local_outputs, "h")
-        << ", " << kfac_util::get_matrix_stat((const El::Matrix<DataType, Device>&) g, "g")
-        << ", " << kfac_util::get_matrix_stat((const El::Matrix<DataType, Device>&) A, "A")
-        << ", " << kfac_util::get_matrix_stat((const El::Matrix<DataType, Device>&) G, "G")
-        << std::endl;
+        << ", " << kfac_util::get_matrix_stat((const El::Matrix<DataType, Device>&) A, "A");
+
+    for(auto& matrix_type : kfac_gru_util::LEARNABLE_MATRICES) {
+      const auto mname = kfac_gru_util::get_matrix_type_name(matrix_type);
+      oss << ", " << kfac_util::get_matrix_stat(
+          (const El::Matrix<DataType, Device>&) *gs[matrix_type],
+          (std::string("g_")+mname).c_str())
+          << ", " << kfac_util::get_matrix_stat(
+              (const El::Matrix<DataType, Device>&) *Gs[matrix_type],
+              (std::string("G_")+mname).c_str());
+    }
+    oss << std::endl;
     std::cout << oss.str();
   }
 
@@ -177,7 +226,6 @@ void kfac_block_gru<Device>::compute_local_kronecker_factors(
   comm->global_barrier();
 }
 
-// TODO: Merge with fc_conv
 template <El::Device Device>
 void kfac_block_gru<Device>::update_kronecker_average(
     lbann_comm* comm,
@@ -190,32 +238,42 @@ void kfac_block_gru<Device>::update_kronecker_average(
 
   auto& A = this->get_workspace_matrix(
       "A", hidden_size, hidden_size);
-  auto& G = this->get_workspace_matrix(
-      "G", hidden_size, hidden_size);
-
-  kfac_util::unpack_lower_tri(A, m_kronecker_factor_buf_A, sync_info);
-  kfac_util::unpack_lower_tri(G, m_kronecker_factor_buf_G, sync_info);
-
-  // Update average Kronecker factors
-  if(!this->m_has_kronecker_inverse) {
-    El::Copy(A, m_kronecker_average_A);
-    El::Copy(G, m_kronecker_average_G);
-  }
-  auto &Aave = m_kronecker_average_A;
-  auto &Gave = m_kronecker_average_G;
+  kfac_util::unpack_lower_tri(A, m_kronecker_factor_buf_A_h, sync_info);
+  if(!this->m_has_kronecker_inverse)
+    El::Copy(A, m_kronecker_average_A_h);
+  auto &Aave = m_kronecker_average_A_h;
   kfac_util::update_kronecker_average(
       Aave, A, A.Height()*A.Width(), kronecker_decay, sync_info);
-  kfac_util::update_kronecker_average(
-      Gave, G, G.Height()*G.Width(), kronecker_decay, sync_info);
 
   // Dump matrices for debugging
   if(comm->am_trainer_master() && print_matrix) {
     if(comm->am_trainer_master()) {
       std::cout << std::endl; El::Print(A, "A");
-      std::cout << std::endl; El::Print(G, "G");
       std::cout << std::endl; El::Print(Aave, "Aave");
-      std::cout << std::endl; El::Print(Gave, "Gave");
-      std::cout << std::endl;
+    }
+  }
+
+  for(auto& matrix_type : kfac_gru_util::LEARNABLE_MATRICES) {
+    const auto mname = kfac_gru_util::get_matrix_type_name(matrix_type);
+    auto& G = this->get_workspace_matrix(
+        std::string("G_")+mname,
+        hidden_size, hidden_size);
+    kfac_util::unpack_lower_tri(
+        G, m_kronecker_factor_buf_G[matrix_type],
+        sync_info);
+    if(!this->m_has_kronecker_inverse)
+      El::Copy(G, m_kronecker_average_G[matrix_type]);
+    auto &Gave = m_kronecker_average_G[matrix_type];
+    kfac_util::update_kronecker_average(
+        Gave, G, G.Height()*G.Width(), kronecker_decay, sync_info);
+
+    // Dump matrices for debugging
+    if(comm->am_trainer_master() && print_matrix) {
+      if(comm->am_trainer_master()) {
+        std::cout << std::endl; El::Print(G, std::string("G")+mname);
+        std::cout << std::endl; El::Print(Gave, std::string("Gave")+mname);
+        std::cout << std::endl;
+      }
     }
   }
 
@@ -223,9 +281,14 @@ void kfac_block_gru<Device>::update_kronecker_average(
   if(comm->am_trainer_master() && print_matrix_summary) {
     std::ostringstream oss;
     oss << "K-FAC callback: L2 norm @ "<< this->m_layer->get_name() << ": "
-        << kfac_util::get_matrix_stat(Aave, "Aave")
-        << ", " << kfac_util::get_matrix_stat(Gave, "Gave")
-        << std::endl;
+        << kfac_util::get_matrix_stat(Aave, "Aave");
+    for(auto& matrix_type : kfac_gru_util::LEARNABLE_MATRICES) {
+      const auto mname = kfac_gru_util::get_matrix_type_name(matrix_type);
+      auto &Gave = m_kronecker_average_G[matrix_type];
+      oss << ", " << kfac_util::get_matrix_stat(
+          Gave, (std::string("Gave")+mname).c_str());
+      oss << std::endl;
+    }
     std::cout << oss.str();
   }
 }
@@ -241,91 +304,114 @@ void kfac_block_gru<Device>::update_kronecker_inverse(
     const bool print_time) {
   const auto& sync_info = this->get_sync_info();
 
-  const auto &Aave = m_kronecker_average_A;
-  const auto &Gave = m_kronecker_average_G;
-
-  if(!this->m_has_kronecker_inverse) {
-    this->m_has_kronecker_inverse = true;
-    m_kronecker_inverse_A.Resize(Aave.Height(), Aave.Width());
-    m_kronecker_inverse_G.Resize(Gave.Height(), Gave.Width());
-  }
+  const auto &Aave = m_kronecker_average_A_h;
+  if(!this->m_has_kronecker_inverse)
+    m_kronecker_inverse_A_h.Resize(Aave.Height(), Aave.Width());
   // TODO: Refactoring
   const DataType pi = 1.0; // TODO: Compute pi if use_pi
-  auto& Ainv = m_kronecker_inverse_A;
-  auto& Ginv = m_kronecker_inverse_G;
+  auto& Ainv = m_kronecker_inverse_A_h;
   auto& ALinv = this->get_workspace_matrix(
       "ALinv", Aave.Height(), Aave.Height());
-  auto& GLinv = this->get_workspace_matrix(
-      "GLinv", Gave.Height(), Gave.Height());
   kfac_util::get_matrix_inverse(
       Ainv, ALinv, Aave, comm->am_trainer_master() && print_time,
       DataType(damping_act*pi), 0,
       false, sync_info);
-  kfac_util::get_matrix_inverse(
-      Ginv, GLinv, Gave, comm->am_trainer_master() && print_time,
-      DataType(damping_err/pi), 0,
-      false, sync_info);
-
-  // Compute preconditioned gradients
-  El::Matrix<DataType, Device> gradients_Rr;
-  get_gradient_matrix(kfac_gru_util::gru_weight_matrix_type::Rr, gradients_Rr);
-  auto& Gg = this->get_workspace_matrix(
-      "Gg",
-      Ginv.Height(),
-      gradients_Rr.Width());
-  El::Gemm(
-      El::NORMAL, El::NORMAL, // gradient matrices are in row-major
-      El::TypeTraits<DataType>::One(), Ginv, gradients_Rr,
-      El::TypeTraits<DataType>::Zero(), Gg);
-  auto& Fgrad = this->get_workspace_matrix(
-      "Fgrad", Ginv.Height(), Ainv.Width());
-  El::Gemm(
-      El::NORMAL, El::NORMAL,
-      learning_rate_factor, Gg, Ainv,
-      El::TypeTraits<DataType>::Zero(), Fgrad);
 
   // Dump matrices for debugging
   if(print_matrix) {
     std::cout << std::endl; El::Print(Ainv, "Ainv");
-    std::cout << std::endl; El::Print(Ginv, "Ginv");
-    std::cout << std::endl; El::Print(gradients_Rr, "grad");
-    std::cout << std::endl; El::Print(Fgrad, "Finvgrad");
     std::cout << std::endl;
   }
 
   // Dump L2 norm of matrices
   if(print_matrix_summary) {
-    El::Matrix<DataType, Device> weights_Rr;
-    get_weight_matrix(kfac_gru_util::gru_weight_matrix_type::Rr, weights_Rr);
     std::ostringstream oss;
     oss << "K-FAC callback: L2 norm @ "<< this->m_layer->get_name() << ": "
-        << kfac_util::get_matrix_stat((const El::Matrix<DataType, Device>&) weights_Rr, "Rr")
-        << ", " << kfac_util::get_matrix_stat(Ainv, "Ainv")
-        << ", " << kfac_util::get_matrix_stat(Ginv, "Ginv")
-        << ", " << kfac_util::get_matrix_stat(gradients_Rr, "grad")
-        << ", " << kfac_util::get_matrix_stat(Fgrad, "Finvgrad")
+        << kfac_util::get_matrix_stat(Ainv, "Ainv")
         << std::endl;
     std::cout << oss.str();
   }
 
-  // Update gradients in the buffer
-  El::Matrix<DataType, Device> grad_buffer_Rr;
-  get_gradient_buffer(kfac_gru_util::gru_weight_matrix_type::Rr, grad_buffer_Rr);
-  assert(Fgrad.Height() == grad_buffer_Rr.Height());
-  assert(Fgrad.Width() == grad_buffer_Rr.Width());
-  El::Copy(Fgrad, grad_buffer_Rr);
+  for(auto& matrix_type : kfac_gru_util::LEARNABLE_MATRICES) {
+    const auto mname = kfac_gru_util::get_matrix_type_name(matrix_type);
+    const auto &Gave = m_kronecker_average_G[matrix_type];
+    if(!this->m_has_kronecker_inverse)
+      m_kronecker_inverse_G[matrix_type].Resize(Gave.Height(), Gave.Width());
+    auto& Ginv = m_kronecker_inverse_G[matrix_type];
+    auto& GLinv = this->get_workspace_matrix(
+        std::string("GLinv_"+mname),
+        Gave.Height(), Gave.Height());
+    kfac_util::get_matrix_inverse(
+        Ginv, GLinv, Gave, comm->am_trainer_master() && print_time,
+        DataType(damping_err/pi), 0,
+        false, sync_info);
+
+    // Compute preconditioned gradients
+    El::Matrix<DataType, Device> gradients_mat;
+    get_gradient_matrix(matrix_type, gradients_mat);
+    auto& Gg = this->get_workspace_matrix(
+        std::string("Gg_")+mname,
+        Ginv.Height(),
+        gradients_mat.Width());
+    El::Gemm(
+        El::NORMAL, El::NORMAL, // gradient matrices are in row-major
+        El::TypeTraits<DataType>::One(), Ginv, gradients_mat,
+        El::TypeTraits<DataType>::Zero(), Gg);
+    auto& Fgrad = this->get_workspace_matrix(
+        std::string("Fgrad_")+mname,
+        Ginv.Height(), Ainv.Width());
+    El::Gemm(
+        El::NORMAL, El::NORMAL,
+        learning_rate_factor, Gg, Ainv,
+        El::TypeTraits<DataType>::Zero(), Fgrad);
+
+    // Dump matrices for debugging
+    if(print_matrix) {
+      std::cout << std::endl; El::Print(Ginv, std::string("Ginv_")+mname);
+      std::cout << std::endl; El::Print(gradients_mat, std::string("grad_")+mname);
+      std::cout << std::endl; El::Print(Fgrad, std::string("Finvgrad_")+mname);
+      std::cout << std::endl;
+    }
+
+    // Dump L2 norm of matrices
+    if(print_matrix_summary) {
+      El::Matrix<DataType, Device> weights_mat;
+      get_weight_matrix(matrix_type, weights_mat);
+      std::ostringstream oss;
+      oss << "K-FAC callback: L2 norm @ "<< this->m_layer->get_name() << ": "
+          << kfac_util::get_matrix_stat((const El::Matrix<DataType, Device>&) weights_mat, mname.c_str())
+          << ", " << kfac_util::get_matrix_stat(Ginv, (std::string("Ginv_")+mname).c_str())
+          << ", " << kfac_util::get_matrix_stat(gradients_mat, (std::string("grad_")+mname).c_str())
+          << ", " << kfac_util::get_matrix_stat(Fgrad, (std::string("Finvgrad_")+mname).c_str())
+          << std::endl;
+      std::cout << oss.str();
+    }
+
+    // Update gradients in the buffer
+    El::Matrix<DataType, Device> grad_buffer_mat;
+    get_gradient_buffer(matrix_type, grad_buffer_mat);
+    assert(Fgrad.Height() == grad_buffer_mat.Height());
+    assert(Fgrad.Width() == grad_buffer_mat.Width());
+    El::Copy(Fgrad, grad_buffer_mat);
+  }
+
+  if(!this->m_has_kronecker_inverse)
+    this->m_has_kronecker_inverse = true;
 }
 
 template <El::Device Device>
 const std::vector<El::AbstractMatrix<DataType>*>
 kfac_block_gru<Device>::get_preconditioned_grad_buffers() {
-  get_gradient_buffer(kfac_gru_util::gru_weight_matrix_type::Rr, m_grad_buffer_Rr);
-  m_grad_buffer_Rr.Attach(
-      m_grad_buffer_Rr.Height()*m_grad_buffer_Rr.Width(), 1,
-      m_grad_buffer_Rr.Buffer(),
-      m_grad_buffer_Rr.Height()*m_grad_buffer_Rr.Width());
-  std::vector<El::AbstractMatrix<DataType>*>
-      ret = {&m_grad_buffer_Rr};
+  std::vector<El::AbstractMatrix<DataType>*> ret;
+  for(auto& matrix_type : kfac_gru_util::LEARNABLE_MATRICES) {
+    auto& buf = m_grad_buffer_G[matrix_type];
+    get_gradient_buffer(matrix_type, buf);
+    buf.Attach(
+        buf.Height()*buf.Width(), 1,
+        buf.Buffer(),
+        buf.Height()*buf.Width());
+    ret.push_back(&buf);
+  }
   return ret;
 }
 
@@ -334,22 +420,35 @@ std::vector<std::tuple<std::string, size_t, size_t>>
 kfac_block_gru<Device>::get_internal_matrix_info() const {
   std::vector<std::tuple<std::string, size_t, size_t>> list;
   const auto emplace =
-      [&list](const std::string name,
+      [&list](const std::string& name,
               const El::Matrix<DataType, Device>& m) {
         list.emplace_back(name, m.Height(), m.Width());
       };
-  emplace("buf_A", m_kronecker_factor_buf_A);
-  emplace("buf_G", m_kronecker_factor_buf_G);
-  emplace("average_A", m_kronecker_average_A);
-  emplace("average_G", m_kronecker_average_G);
-  emplace("inverse_A", m_kronecker_inverse_A);
-  emplace("inverse_G", m_kronecker_inverse_G);
+  const auto emplace_if_available =
+      [&list, &emplace](
+          const std::string& name,
+          const std::unordered_map<kfac_gru_util::weight_type,
+          El::Matrix<DataType, Device>>& map,
+          const kfac_gru_util::weight_type& matrix_type) {
+        auto i = map.find(matrix_type);
+        if(i != map.end())
+          emplace(name, (const El::Matrix<DataType, Device>&) *i);
+      };
+  emplace("buf_A_h", m_kronecker_factor_buf_A_h);
+  emplace("average_A_h", m_kronecker_average_A_h);
+  emplace("inverse_A_h", m_kronecker_inverse_A_h);
+  for(auto& matrix_type : kfac_gru_util::LEARNABLE_MATRICES) {
+    const auto mname = kfac_gru_util::get_matrix_type_name(matrix_type);
+    emplace_if_available("buf_G_"+mname, m_kronecker_factor_buf_G, matrix_type);
+    emplace_if_available("average_G_"+mname, m_kronecker_average_G, matrix_type);
+    emplace_if_available("inverse_G_"+mname, m_kronecker_inverse_G, matrix_type);
+  }
   return list;
 }
 
 template <El::Device Device>
 void kfac_block_gru<Device>::get_weight_matrix(
-    const kfac_gru_util::gru_weight_matrix_type matrix_type,
+    const kfac_gru_util::weight_type matrix_type,
     El::Matrix<DataType, Device>& view) {
   const size_t hidden_size = get_gru_layer()->get_hidden_size();
   const auto ids = kfac_gru_util::get_gru_weight_offset(matrix_type);
@@ -364,7 +463,7 @@ void kfac_block_gru<Device>::get_weight_matrix(
 
 template <El::Device Device>
 void kfac_block_gru<Device>::get_gradient_matrix(
-    const kfac_gru_util::gru_weight_matrix_type matrix_type,
+    const kfac_gru_util::weight_type matrix_type,
     El::Matrix<DataType, Device>& view) {
   const size_t hidden_size = get_gru_layer()->get_hidden_size();
   const auto ids = kfac_gru_util::get_gru_weight_offset(matrix_type);
@@ -381,7 +480,7 @@ void kfac_block_gru<Device>::get_gradient_matrix(
 
 template <El::Device Device>
 void kfac_block_gru<Device>::get_gradient_buffer(
-    const kfac_gru_util::gru_weight_matrix_type matrix_type,
+    const kfac_gru_util::weight_type matrix_type,
     El::Matrix<DataType, Device>& view) {
   const size_t hidden_size = get_gru_layer()->get_hidden_size();
   DataType dst_scale = El::TypeTraits<DataType>::Zero(),
@@ -398,31 +497,48 @@ void kfac_block_gru<Device>::get_gradient_buffer(
   El::View(view, grad_buffer_mat);
 }
 
+std::string kfac_gru_util::get_matrix_type_name(
+    const weight_type& matrix_type) {
+  if(matrix_type == weight_type::Wr) return "Wr";
+  else if(matrix_type == weight_type::Wi) return "Wi";
+  else if(matrix_type == weight_type::Wh) return "Wh";
+  else if(matrix_type == weight_type::Rr) return "Rr";
+  else if(matrix_type == weight_type::Ri) return "Ri";
+  else if(matrix_type == weight_type::Rh) return "Rh";
+  else if(matrix_type == weight_type::bWr) return "bWr";
+  else if(matrix_type == weight_type::bWi) return "bWi";
+  else if(matrix_type == weight_type::bWh) return "bWh";
+  else if(matrix_type == weight_type::bRr) return "bRr";
+  else if(matrix_type == weight_type::bRi) return "bRi";
+  else if(matrix_type == weight_type::bRh) return "bRh";
+  LBANN_ERROR("Invalid matrix type");
+}
+
 std::pair<int, int> kfac_gru_util::get_gru_weight_offset(
-    const gru_weight_matrix_type matrix_type) {
-  if(matrix_type == gru_weight_matrix_type::Wr)
+    const weight_type matrix_type) {
+  if(matrix_type == weight_type::Wr)
     return std::make_pair<int, int>(0, 0);
-  else if(matrix_type == gru_weight_matrix_type::Wi)
+  else if(matrix_type == weight_type::Wi)
     return std::make_pair<int, int>(0, 1);
-  else if(matrix_type == gru_weight_matrix_type::Wh)
+  else if(matrix_type == weight_type::Wh)
     return std::make_pair<int, int>(0, 2);
-  else if(matrix_type == gru_weight_matrix_type::Rr)
+  else if(matrix_type == weight_type::Rr)
     return std::make_pair<int, int>(1, 0);
-  else if(matrix_type == gru_weight_matrix_type::Ri)
+  else if(matrix_type == weight_type::Ri)
     return std::make_pair<int, int>(1, 1);
-  else if(matrix_type == gru_weight_matrix_type::Rh)
+  else if(matrix_type == weight_type::Rh)
     return std::make_pair<int, int>(1, 2);
-  else if(matrix_type == gru_weight_matrix_type::bWr)
+  else if(matrix_type == weight_type::bWr)
     return std::make_pair<int, int>(2, 0);
-  else if(matrix_type == gru_weight_matrix_type::bWi)
+  else if(matrix_type == weight_type::bWi)
     return std::make_pair<int, int>(2, 1);
-  else if(matrix_type == gru_weight_matrix_type::bWh)
+  else if(matrix_type == weight_type::bWh)
     return std::make_pair<int, int>(2, 2);
-  else if(matrix_type == gru_weight_matrix_type::bRr)
+  else if(matrix_type == weight_type::bRr)
     return std::make_pair<int, int>(3, 0);
-  else if(matrix_type == gru_weight_matrix_type::bRi)
+  else if(matrix_type == weight_type::bRi)
     return std::make_pair<int, int>(3, 1);
-  else if(matrix_type == gru_weight_matrix_type::bRh)
+  else if(matrix_type == weight_type::bRh)
     return std::make_pair<int, int>(3, 2);
   LBANN_ERROR("Invalid GRU matrix type");
 }
@@ -441,14 +557,16 @@ void kfac_gru_util::unpack_reserve_space(
 }
 
 template <>
-void kfac_gru_util::get_g_Rr(
+void kfac_gru_util::get_g(
     const El::Matrix<DataType, El::Device::CPU>& h,
+    const El::Matrix<DataType, El::Device::CPU>& hprev,
     const El::Matrix<DataType, El::Device::CPU>& dh,
     const El::Matrix<DataType, El::Device::CPU>& hfc,
     const El::Matrix<DataType, El::Device::CPU>& r,
     const El::Matrix<DataType, El::Device::CPU>& i,
-    El::Matrix<DataType, El::Device::CPU>& g,
-    const size_t count,
+    El::Matrix<DataType, El::Device::CPU>& g_Rr,
+    El::Matrix<DataType, El::Device::CPU>& g_Ri,
+    size_t count,
     const El::SyncInfo<El::Device::CPU>& sync_info) {
   // TODO: implement
   LBANN_ERROR("unimplemented");

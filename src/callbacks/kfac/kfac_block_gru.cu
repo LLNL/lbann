@@ -79,46 +79,58 @@ __global__ void unpack_reserve_space_kernel(
 }
 
 template <typename TensorDataType>
-__global__ void get_g_Rr_kernel(
+__global__ void get_g_kernel(
     const TensorDataType * __restrict__ h,
+    const TensorDataType * __restrict__ hprev,
     const TensorDataType * __restrict__ dh,
     const TensorDataType * __restrict__ hfc,
     const TensorDataType * __restrict__ r,
     const TensorDataType * __restrict__ i,
-    TensorDataType * __restrict__ g,
+    TensorDataType * __restrict__ g_Rr,
+    TensorDataType * __restrict__ g_Ri,
     const size_t count) {
   const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
   if(gid < count) {
     // dh/dr = diag{(1-i_t)*tanh'(tanh^-1(h'_t))*hfc}
-    // dr/dg = diag{sigmoid'(sigmoid^-1(r_t))}
-    const TensorDataType dhdr = (1.0-i[gid]) * tanh_deriv(tanh_inv(h[gid])) * hfc[gid];
-    const TensorDataType drdg = sigmoid_deriv(sigmoid_inv(r[gid]));
-    g[gid] = dh[gid] * dhdr * drdg;
+    // dh/di = diag{h_{t-1} - h'_t}
+    // dr/dg_Rr = diag{sigmoid'(sigmoid^-1(r_t))}
+    // g_Rr = Rr h_{t-1}
+    const TensorDataType hd = tanh_inv(h[gid]);
+    const TensorDataType dhdr = (1.0-i[gid]) * tanh_deriv(hd) * hfc[gid];
+    const TensorDataType dhdi = hprev[gid] - hd;
+    const TensorDataType drdg_Rr = sigmoid_deriv(sigmoid_inv(r[gid]));
+    const TensorDataType didg_Ri = sigmoid_deriv(sigmoid_inv(i[gid]));
+    g_Rr[gid] = dh[gid] * dhdr * drdg_Rr;
+    g_Ri[gid] = dh[gid] * dhdi * didg_Ri;
   }
 }
 
 }
 
 template <>
-void kfac_gru_util::get_g_Rr(
+void kfac_gru_util::get_g(
     const El::Matrix<DataType, El::Device::GPU>& h,
+    const El::Matrix<DataType, El::Device::GPU>& hprev,
     const El::Matrix<DataType, El::Device::GPU>& dh,
     const El::Matrix<DataType, El::Device::GPU>& hfc,
     const El::Matrix<DataType, El::Device::GPU>& r,
     const El::Matrix<DataType, El::Device::GPU>& i,
-    El::Matrix<DataType, El::Device::GPU>& g,
+    El::Matrix<DataType, El::Device::GPU>& g_Rr,
+    El::Matrix<DataType, El::Device::GPU>& g_Ri,
     const size_t count,
     const El::SyncInfo<El::Device::GPU>& sync_info) {
   constexpr size_t block_size = 256;
   const size_t grid_size = (count + block_size - 1) / block_size;
-  get_g_Rr_kernel<DataType>
+  get_g_kernel<DataType>
       <<<grid_size, block_size, 0, sync_info.Stream()>>>(
           h.LockedBuffer(),
+          hprev.LockedBuffer(),
           dh.LockedBuffer(),
           hfc.LockedBuffer(),
           r.LockedBuffer(),
           i.LockedBuffer(),
-          g.Buffer(),
+          g_Rr.Buffer(),
+          g_Ri.Buffer(),
           count);
 }
 

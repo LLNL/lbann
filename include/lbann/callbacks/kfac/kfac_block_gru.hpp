@@ -37,16 +37,24 @@ namespace callback {
 
 namespace kfac_gru_util {
 
-enum class gru_weight_matrix_type {
+enum class weight_type {
   Wr, Wi, Wh,
   Rr, Ri, Rh,
   bWr, bWi, bWh,
   bRr, bRi, bRh,
 };
 
+const std::vector<weight_type> LEARNABLE_MATRICES = {
+  weight_type::Rr,
+  weight_type::Ri
+};
+
+/** @brief Get the name of a GRU weight matrix. **/
+std::string get_matrix_type_name(const weight_type& matrix_type);
+
 /** @brief Get the weight ID and the row offset ID of a GRU weight matrix. **/
 std::pair<int, int> get_gru_weight_offset(
-    gru_weight_matrix_type matrix_type);
+    weight_type matrix_type);
 
 /** @brief Copy r_t and i_t from the reserve space after the forward pass **/
 template <El::Device Device>
@@ -61,13 +69,15 @@ void unpack_reserve_space(
 
 /** @brief Compute d h_t / d g_t. **/
 template <El::Device Device>
-void get_g_Rr(
+void get_g(
     const El::Matrix<DataType, Device>& h,
+    const El::Matrix<DataType, Device>& hprev,
     const El::Matrix<DataType, Device>& dh,
     const El::Matrix<DataType, Device>& hfc,
     const El::Matrix<DataType, Device>& r,
     const El::Matrix<DataType, Device>& i,
-    El::Matrix<DataType, Device>& g,
+    El::Matrix<DataType, Device>& g_Rr,
+    El::Matrix<DataType, Device>& g_Ri,
     size_t count,
     const El::SyncInfo<Device>& sync_info);
 
@@ -103,17 +113,13 @@ class kfac_block_gru: public kfac_block<Device> {
 
   void on_forward_prop_end() override;
 
+  const std::vector<El::AbstractMatrix<DataType>*>
+  get_local_kronecker_buffers();
+
   void compute_local_kronecker_factors(
       lbann_comm* comm,
       bool print_matrix,
       bool print_matrix_summary) override;
-
-  const std::vector<El::AbstractMatrix<DataType>*>
-  get_local_kronecker_buffers() {
-    std::vector<El::AbstractMatrix<DataType>*> ret =
-        {&m_kronecker_factor_buf_A, &m_kronecker_factor_buf_G};
-    return ret;
-  }
 
   void update_kronecker_average(
       lbann_comm* comm,
@@ -136,13 +142,13 @@ class kfac_block_gru: public kfac_block<Device> {
  private:
 
   void get_weight_matrix(
-      kfac_gru_util::gru_weight_matrix_type matrix_type,
+      kfac_gru_util::weight_type matrix_type,
       El::Matrix<DataType, Device>& view);
   void get_gradient_matrix(
-      kfac_gru_util::gru_weight_matrix_type matrix_type,
+      kfac_gru_util::weight_type matrix_type,
       El::Matrix<DataType, Device>& view);
   void get_gradient_buffer(
-      kfac_gru_util::gru_weight_matrix_type matrix_type,
+      kfac_gru_util::weight_type matrix_type,
       El::Matrix<DataType, Device>& view);
 
   std::vector<std::tuple<std::string, size_t, size_t>>
@@ -160,18 +166,34 @@ class kfac_block_gru: public kfac_block<Device> {
 
   /** @brief Lower triangle buffers of Kronecker factors. */
   El::Matrix<DataType, Device>
-  m_kronecker_factor_buf_A, m_kronecker_factor_buf_G;
+  m_kronecker_factor_buf_A_h;
+  std::unordered_map<
+    kfac_gru_util::weight_type,
+    El::Matrix<DataType, Device>>
+  m_kronecker_factor_buf_G;
 
   /** @brief Exponential moving average of Kronecker factors. */
   El::Matrix<DataType, Device>
-  m_kronecker_average_A, m_kronecker_average_G;
+  m_kronecker_average_A_h;
+  std::unordered_map<
+    kfac_gru_util::weight_type,
+    El::Matrix<DataType, Device>>
+  m_kronecker_average_G;
 
   /** @brief Inverse of the average Kronecker factors. */
   El::Matrix<DataType, Device>
-  m_kronecker_inverse_A, m_kronecker_inverse_G;
+  m_kronecker_inverse_A_h;
+  std::unordered_map<
+    kfac_gru_util::weight_type,
+    El::Matrix<DataType, Device>>
+  m_kronecker_inverse_G;
 
   El::Matrix<DataType, Device>
-  m_grad_buffer_Rr;
+  m_grad_buffer_A_h;
+  std::unordered_map<
+    kfac_gru_util::weight_type,
+    El::Matrix<DataType, Device>>
+  m_grad_buffer_G;
 
 };
 
