@@ -29,6 +29,7 @@
 
 #include "lbann/base.hpp"
 #include "lbann/execution_contexts/execution_context.hpp"
+#include "lbann/execution_algorithms/execution_algorithm.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/data_coordinator/data_coordinator.hpp"
 
@@ -37,8 +38,8 @@ namespace lbann {
 // Forward-declare this.
 class execution_context;
 
-/** Base class for LBANN execution_algorithms. */
-class training_algorithm {
+/** Base class for LBANN training_algorithms. */
+class training_algorithm : public execution_algorithm {
 public:
 
   /** Constructor. */
