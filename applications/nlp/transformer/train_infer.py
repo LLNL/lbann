@@ -6,7 +6,7 @@ import lbann
 import lbann.models
 import lbann.contrib.launcher
 from lbann.util import str_list
-
+from os.path import abspath, dirname, join
 import dataset
 
 # ----------------------------------------------
@@ -149,14 +149,14 @@ def make_model(
 
     # Construct model
     metrics = []
-    callbacks = [lbann.CallbackPrint(), lbann.CallbackTimer()]
+    callbacks = [lbann.CallbackPrint(), lbann.CallbackTimer(),lbann.CallbackPrintModelDescription()]
 
 
-    # layers = list(lbann.traverse_layer_graph(input_))
-    # print("Subgrpah subgraph_topology",subgraph_topology)
-    # for l in layers:
-    #     for idx in range(len(l.weights)):
-    #         l.weights[idx].optimizer = lbann.NoOptimizer()
+    layers = list(lbann.traverse_layer_graph(input_))
+    print("Subgrpah subgraph_topology",subgraph_topology)
+    for l in layers:
+        for idx in range(len(l.weights)):
+            l.weights[idx].optimizer = lbann.NoOptimizer()
 
 
     # for l in layers:
@@ -180,7 +180,7 @@ def make_data_reader():
     reader = lbann.reader_pb2.DataReader()
     _reader = reader.reader.add()
     _reader.name = 'python'
-    _reader.role = 'train'
+    _reader.role = 'test'
     _reader.shuffle = True
     _reader.percent_of_data_to_use = 1.0
     _reader.python.module = 'dataset'
@@ -196,17 +196,22 @@ def make_data_reader():
 
 def make_batch_script(trainer_params, model_params, script_params):
 
+    #inference exe
+    lbann_exe = abspath(lbann.lbann_exe())
+    lbann_exe = join(dirname(lbann_exe), 'lbann_inf')
+
     # Create LBANN objects
     trainer = lbann.Trainer(mini_batch_size=trainer_params['mini_batch_size'])
     model = make_model(**model_params)
+    # model.eval()
     reader = make_data_reader()
 
     # Optimizer with learning rate schedule
     # Note: Rough approximation of
     #   embed_dim^-0.5 * min(step^-0.5, step*warmup^-1.5)
     # with embed_dim=512 and warmup=4000.
-    opt = lbann.Adam(learn_rate=0.0001, beta1=0.9, beta2=0.98, eps=1e-9)
-    # opt = lbann.NoOptimizer()
+    # opt = lbann.Adam(learn_rate=0.0001, beta1=0.9, beta2=0.98, eps=1e-9)
+    opt = lbann.NoOptimizer()
     model.callbacks.append(
         lbann.CallbackDropFixedLearningRate(
             drop_epoch=[1],
@@ -236,26 +241,14 @@ def make_batch_script(trainer_params, model_params, script_params):
     #     )
     # )
 
-    # Create Protobuf file
-    protobuf_file = os.path.join(script_params['work_dir'], 'experiment.prototext')
-    lbann.proto.save_prototext(
-        protobuf_file,
-        trainer=trainer,
-        model=model,
-        data_reader=reader,
-        optimizer=opt,
-    )
+    status = lbann.contrib.launcher.run(trainer,model, reader, opt,
+                       lbann_exe,
+                       nodes=script_params['nodes'],
+                       procs_per_node=script_params['procs_per_node'],
+                       time_limit=30,
+                       setup_only=False,
+                       batch_job=False,)
+                                   # **kwargs)
 
-    # Create batch script
-    script = lbann.contrib.launcher.make_batch_script(
-        **script_params,
-    )
-    script.add_command('echo "Started training at $(date)"')
-    script.add_parallel_command([
-        lbann.lbann_exe(),
-        f'--prototext={protobuf_file}',
-    ])
-    script.add_command('status=$?')
-    script.add_command('echo "Finished training at $(date)"')
-    script.add_command('exit ${status}')
-    return script
+   
+    print(status)

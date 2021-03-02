@@ -126,7 +126,36 @@ def get_train_sample(index):
     sample[0:len(sample_en)] = sample_en
     sample[sequence_length:sequence_length+len(sample_de)] = sample_de
     return sample
+def get_test_sample(index):
+    """Token indices for a data sample from the training set.
 
+    The English and German text samples are tokenized,
+    padded/subsampled to sequence_length tokens, and concatenated.
+
+    """
+
+    # Tokenize text data
+    text = dataset_train[index]
+    sample_en = tokenize(text['en'])
+    sample_de = tokenize(text['de'])
+
+    # Randomly subsample sequences if they are too long
+    if len(sample_en) > sequence_length or len(sample_de) > sequence_length:
+        pos = np.random.rand()
+        if len(sample_en) > sequence_length:
+            offset = (len(sample_en) - sequence_length + 1) * pos
+            offset = int(np.floor(offset))
+            sample_en = sample_en[offset:offset+sequence_length]
+        if len(sample_de) > sequence_length:
+            offset = (len(sample_de) - sequence_length + 1) * pos
+            offset = int(np.floor(offset))
+            sample_de = sample_de[offset:offset+sequence_length]
+
+    # Concatenate sequences and return
+    sample = np.full(2*sequence_length, pad_index, dtype=int)
+    sample[0:len(sample_en)] = sample_en
+    sample[sequence_length:sequence_length+len(sample_de)] = sample_de
+    return sample
 def get_val_sample(index):
     """Token indices for a data sample from the validation set."""
     text = dataset_val[index]

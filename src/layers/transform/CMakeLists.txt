@@ -7,6 +7,8 @@ set_full_path(THIS_DIR_SOURCES
   constant.cpp
   crop.cpp
   crop_builder.cpp
+  cross_grid_sum_slice.cpp
+  cross_grid_sum.cpp
   discrete_random.cpp
   dummy.cpp
   evaluation.cpp
@@ -21,6 +23,7 @@ set_full_path(THIS_DIR_SOURCES
   split.cpp
   stop_gradient.cpp
   sum.cpp
+  dist_SOB.cpp
   tessellate.cpp
   uniform.cpp
   unpooling.cpp
@@ -33,12 +36,15 @@ if (LBANN_HAS_CUDA)
   set_full_path(THIS_DIR_CU_SOURCES
     concatenate.cu
     crop.cu
+    cross_grid_sum_slice.cu
+    cross_grid_sum.cu
     in_top_k.cu
     sort.cu
     slice.cu
     tessellate.cu
     split.cu
     sum.cu
+    dist_SOB.cu
     )
 endif ()
 

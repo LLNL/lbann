@@ -572,6 +572,43 @@ void data_type_layer<TensorDataType>::setup_matrices(const El::Grid& grid) {
     }
     
   }
+  else if( (get_type()=="cross_grid_sum"  || get_type()=="cross_grid_sum_slice") && this->get_model()->is_subgraph_parallelism_enabled())
+  {
+    std::cout<<"Running setup matric with:"<< get_type()<<"\n";
+    m_subgrid_tensors_split.clear();
+    //std::cout<<"Number of spliting groups:"<<childs[0]->num_spliting_groups<<"\n";
+    m_subgrid_tensors_split.resize(childs[0]->num_spliting_groups);
+
+    int count = 0;
+    for (auto& input : m_inputs) {
+    input = mat_builder->MakeEmpty(*(parents[count]->mygrid), 0);
+    count++;
+    } 
+
+    count = 0;
+
+    for (auto& output : m_outputs) {
+      output = mat_builder->MakeEmpty(*(childs[count]->mygrid), 0);
+      count++;
+    }
+    count = 0;
+    for (auto& grad_wrt_output : m_gradient_wrt_outputs) {
+      grad_wrt_output = mat_builder->MakeEmpty(*(childs[count]->mygrid), 0);
+      count++;
+    }
+
+    count = 0;
+    for (auto& grad_wrt_input : m_gradient_wrt_inputs) {
+    grad_wrt_input = mat_builder->MakeEmpty(*(parents[count]->mygrid), 0);
+    count++;
+    }
+
+    for (auto& temp_grad : m_temp_grad) {
+    temp_grad = mat_builder->MakeEmpty(grid, 0);
+    }
+    
+
+  }
   else if( (get_type()=="sum" || this->get_type()=="concatenate" ) && this->get_model()->is_subgraph_parallelism_enabled() && this->get_parallel_strategy().enable_subgraph==1)
   {
     //split layer 

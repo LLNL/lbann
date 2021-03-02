@@ -114,12 +114,19 @@ protected:
     auto& output = this->get_activations();
     auto parents = this->get_parent_layers(); 
 
+
     if(this->is_subgraph_parallelism_enabled() && this->get_parallel_strategy().enable_subgraph==1)
     {
       auto subgrid_tags = (*this->parent_tags);
       int tag=0;
       
       std::vector<bool> is_initialized_tensor(this->num_spliting_groups, false);
+
+      
+
+      
+
+
 
       //Copy data internally with same branch tag 
       for (int i = 0; i < this->get_num_parents(); ++i) {
@@ -132,15 +139,20 @@ protected:
           {
             El::Axpy(DataType(1), this->get_prev_activations(i),
                     this->get_branch_tag_input(tag));
+            El::Print( this->get_prev_activations(i), "Sum Layer Input" );
           }
         }
         else
         {
-          El::Copy(this->get_prev_activations(i), this->get_branch_tag_input(tag));
-          is_initialized_tensor[tag] = true;
+          if(this->get_prev_activations(i).Participating())
+          {
+            El::Copy(this->get_prev_activations(i), this->get_branch_tag_input(tag));
+            is_initialized_tensor[tag] = true;
+          }
 
         }
       }
+
 
       // copy and add data from reduced gradients from same branch 
 

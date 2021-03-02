@@ -819,14 +819,14 @@ void model::setup_subgrid_layers_run_condition()
   {
 
 
-    // for (El::Int node = 0; node < num_layers; ++node) {
-    //   std::cout<<"Rank:"<<myrank<<" Layer name:"<<layers[node]->get_name()<<" Subgrid Ranks:";
-    //   for (int const& rank : (*layers[node]->subgrid_ranks))
-    //   {
-    //       std::cout << rank << ' ';
-    //   }
-    //   std::cout<<"\n";
-    // }
+    for (El::Int node = 0; node < num_layers; ++node) {
+      std::cout<<"Rank:"<<myrank<<" Layer name:"<<layers[node]->get_name()<<" Subgrid Ranks:";
+      for (int const& rank : (*layers[node]->subgrid_ranks))
+      {
+          std::cout << rank << ' ';
+      }
+      std::cout<<"\n";
+    }
   }
 
 
@@ -1130,6 +1130,14 @@ void model::setup_subcommunicators()
 
       }
     }
+
+    if(layers[node]->get_type()=="cross_grid_sum" || 
+      layers[node]->get_type()=="cross_grid_sum_slice")
+    {
+      layers[node]->interSubGridVCComm = subCommunicatorsSubgrids[one_index];
+    }
+
+
   }
 
 }
@@ -1141,6 +1149,7 @@ void  model::setup_subgrids(){
   const auto& layers = this->get_layers();
   const El::Int num_layers = layers.size();
   const El::GridOrder orderGrid =  El::COLUMN_MAJOR;
+  const int rank = m_comm->get_rank_in_trainer();
 
   std::string grid_global_index = "";
   std::string grid_temp_index = "";
@@ -1267,8 +1276,11 @@ void  model::setup_subgrids(){
     else
     {
       if(layers[node]->get_parallel_strategy().sub_branch_tag == 0)
+        // A layer might be a common layer or 
+        // there is no need to divide resources at this point (continuation of previous grids)
       {
         std::vector<const Layer*>& parents = layers[node]->get_parent_layers();
+        auto mychilds = layers[node]->get_child_layers(); 
         //when layer has only one parent no branching copy everthing from parent 
 
         if(parents.size()==0)
@@ -1276,6 +1288,29 @@ void  model::setup_subgrids(){
           layers[node]->subgrid_ranks.reset(new std::set<int >(initial_ranks_global.begin(),initial_ranks_global.end()));
           layers[node]->subgrid_index = grid_global_index;
           layers[node]->mygrid = grids[grid_global_index];
+
+        }
+        else if(parents[0]->get_type() == "cross_grid_sum" || parents[0]->get_type() == "cross_grid_sum_slice")
+        {
+          //layers name are unique
+          std::vector<const Layer*> allchilds =  parents[0]->get_child_layers();
+          int subgrid_number = -1;
+          for (int child_index = 0; child_index < int(allchilds.size()); ++child_index)
+          {
+            if(allchilds[child_index]->get_name() == layers[node]->get_name())
+            {
+              subgrid_number = child_index;
+            }
+          }
+          
+
+          const Layer* parent_with_same_subgrid = parents[0]->get_parent_layers()[subgrid_number];
+          std::cout<<"Rank:"<<rank<<" On Child Layer:"<< layers[node]->get_name() <<" Subgrid index is:"<<parent_with_same_subgrid->subgrid_index<<"\n";
+
+          std::set <int > layer_ranks = *(parent_with_same_subgrid->subgrid_ranks);
+          layers[node]->subgrid_ranks.reset(new std::set<int>(layer_ranks.begin(),layer_ranks.end()));
+          layers[node]->subgrid_index = parent_with_same_subgrid->subgrid_index;
+          layers[node]->mygrid = grids[layers[node]->subgrid_index];
 
         }
         else if(parents.size()==1)
@@ -1286,6 +1321,41 @@ void  model::setup_subgrids(){
           layers[node]->subgrid_index = parents[0]->subgrid_index;
           layers[node]->mygrid = grids[layers[node]->subgrid_index];
         }
+        else if( parents.size() == mychilds.size() && 
+                 parents.size() > 1 )
+        {
+          
+          // parent for each rank will be based on subgrid it belongs to in previous layer 
+          // Starting rank will have the parent that belongs to first sub-grid
+          
+          // Example: S# (Sub-grid number #), 8 ranks, topology-aware
+          // S1: 0,4 
+          // S2: 1,5
+          // S3: 2,6
+          // S4: 3,7
+
+          // cross_grid_sum layer will have 4 parents and 4 childs
+          // Rank4: will have sub-grid 1. First parent and child will be used for computation and communication
+          // Rank2 will have sub-grid 3. Third parent and child will be used for computation and communication  
+          int my_parent_based_rank = -1;
+
+          for (int parent_index = 0; parent_index < int(parents.size()); ++parent_index)
+          {
+            std::set <int > layer_ranks = *(parents[parent_index]->subgrid_ranks);
+            if(layer_ranks.find(rank) != layer_ranks.end())
+            {
+              my_parent_based_rank = parent_index;
+            }
+          }
+          std::cout<<"Parent_index is:"<<my_parent_based_rank<<"\n";
+          // Initialize the subgrid of common layers like cross_grid_sum with the subgrid based on own rank 
+          std::set <int > layer_ranks = *(parents[my_parent_based_rank]->subgrid_ranks);
+          layers[node]->subgrid_ranks.reset(new std::set<int>(layer_ranks.begin(),layer_ranks.end()));
+          layers[node]->subgrid_index = parents[my_parent_based_rank]->subgrid_index;
+          layers[node]->mygrid = grids[layers[node]->subgrid_index];
+
+        }
+        
         else
         {
 
@@ -1826,13 +1896,13 @@ void model::forward_prop(execution_mode mode) {
     auto& l = get_layer(i);
 
     
-    // std::cout<<"Runing Rank:"<<El::mpi::Rank()<<" Layer type:"<<l.get_type()<<" Layer Name:"<<l.get_name()<<"\n";
+    // std::cout<<"Runing Rank:"<<El::mpi::Rank()<<" Layer type:"<<l.get_type()<<" Layer Name:"<<l.get_name()<<"\n"<< std::flush;
         
     if(this->is_subgraph_parallelism_enabled())
     {
       if(l.get_run_layer_in_subgraph() || l.get_name()=="layer1")
       {
-        // std::cout<<"Actually FP Runing Rank:"<<El::mpi::Rank()<<" Layer type:"<<l.get_type()<<" Layer Name:"<<l.get_name()<<"\n";
+        // std::cout<<"Actually FP Runing Rank:"<<El::mpi::Rank()<<" Layer type:"<<l.get_type()<<" Layer Name:"<<l.get_name()<<"\n"<< std::flush;
         
         do_layer_forward_prop_begin_cbs(mode, &l);
 

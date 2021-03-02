@@ -13,7 +13,7 @@ import lbann.contrib.args
 current_dir = os.path.dirname(os.path.realpath(__file__))
 root_dir = os.path.dirname(current_dir)
 sys.path.append(root_dir)
-import train
+import train_infer as train
 import evaluate
 import utils.paths
 
@@ -77,6 +77,9 @@ parser.add_argument('--enable-concat', dest='ENABLE_Concat', action='store_true'
 
 args = parser.parse_args()
 
+
+
+
 # Hard-coded options
 label_smoothing = 0.1
 
@@ -125,20 +128,20 @@ script_params['work_dir'] = work_dir
 script_params['job_name'] = args.job_name
 #script_params['mini_batch_size'] = args.mini_batch_size
 #print("script params",trainer_params['mini_batch_size'])
-train_script = train.make_batch_script(
+train.make_batch_script(
     trainer_params=trainer_params,
     model_params=model_params,
     script_params=script_params,
 )
-weights_prefix = os.path.join(
-    work_dir,
-    'weights',
-    f'model0-epoch{args.num_epochs-1}',
-)
-train_script.add_command(
-    f'# python3 {utils.paths.root_dir()}/transformer/evaluate.py {weights_prefix}'
-)
-train_script.run(overwrite=True)
+# weights_prefix = os.path.join(
+#     work_dir,
+#     'weights',
+#     f'model0-epoch{args.num_epochs-1}',
+# )
+# train_script.add_command(
+#     f'# python3 {utils.paths.root_dir()}/transformer/evaluate.py {weights_prefix}'
+# )
+# train_script.run(overwrite=True)
 
 # ----------------------------------------------
 # Evaluate

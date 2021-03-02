@@ -1,11 +1,14 @@
 # Add the headers for this directory
 set_full_path(THIS_DIR_HEADERS
   concatenate.hpp
+  cross_grid_sum_slice.hpp
+  cross_grid_sum.hpp
   pooling.hpp
   reshape.hpp
   slice.hpp
   split.hpp
   sum.hpp
+  dist_SOB.hpp
   weighted_sum.hpp
   transform.hpp
   unpooling.hpp
