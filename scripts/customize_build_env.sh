@@ -129,7 +129,7 @@ set_center_specific_spack_dependencies()
     if [[ ${center} = "llnl_lc" ]]; then
         case ${spack_arch_target} in
             "power9le" | "power8le")
-                CENTER_DEPENDENCIES="^spectrum-mpi ^openblas@0.3.12"
+                CENTER_DEPENDENCIES="^spectrum-mpi ^openblas@0.3.12 threads=openmp"
                 ;;
             "broadwell" | "haswell")
                 # On LC the mvapich2 being used is built against HWLOC v1
