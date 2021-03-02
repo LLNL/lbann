@@ -37,10 +37,8 @@ void batch_inference_algorithm::infer(model& model,
   if (num_batches > 0) {
     for (size_t i = 0; i < num_batches; i++) { infer_mini_batch(model, dc); }
   } else {
-    while (!evaluate_mini_batch(c, model, dc, mode)) {}
+    while (!infer_mini_batch(model, dc)) {}
   }
-  c.inc_epoch();
-  do_evaluate_end_cbs(model, mode);
 }
 
 bool batch_inference_algorithm::infer_mini_batch(model& model,
