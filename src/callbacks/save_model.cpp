@@ -28,7 +28,7 @@
 
 #include "lbann/callbacks/save_model.hpp"
 #include "lbann/callbacks/checkpoint.hpp" // Reuse the checkpoint naming scheme
-#include "lbann/training_algorithms/training_algorithm.hpp"
+#include "lbann/execution_algorithms/training_algorithm.hpp"
 #include "lbann/weights/data_type_weights.hpp"
 
 #include <callbacks.pb.h>

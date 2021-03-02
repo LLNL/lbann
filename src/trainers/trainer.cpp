@@ -38,7 +38,7 @@
 #include "lbann/layers/transform/split.hpp"
 #include "lbann/metrics/layer_metric.hpp"
 #include "lbann/objective_functions/layer_term.hpp"
-#include "lbann/training_algorithms/sgd_training_algorithm.hpp"
+#include "lbann/execution_algorithms/sgd_training_algorithm.hpp"
 #include "lbann/utils/description.hpp"
 #include "lbann/utils/omp_diagnostics.hpp"
 #include "lbann/utils/random.hpp"
