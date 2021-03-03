@@ -28,18 +28,21 @@ std::string desc_string(ObjectType const& opt)
 // archive, the cadr is the input archive. Accessor metafunctions are
 // defined below.
 
-using Fp16Types = TL<lbann::cpu_fp16
+using FpTypes = TL<float, double,
+#ifdef LBANN_HAS_HALF
+                   , lbann::cpu_fp16
 #ifdef LBANN_HAS_GPU_FP16
-                     , lbann::fp16
+                   , lbann::fp16
 #endif // LBANN_HAS_GPU_FP16
-                     >;
+#endif // LBANN_HAS_HALF
+                   >;
 
 #ifdef LBANN_HAS_CEREAL_BINARY_ARCHIVES
 template <typename T>
 using BinaryArchiveTypeBundle = TL<T,
                                    cereal::BinaryOutputArchive,
                                    cereal::BinaryInputArchive>;
-using BinaryArchiveTypes = tlist::ExpandTL<BinaryArchiveTypeBundle, Fp16Types>;
+using BinaryArchiveTypes = tlist::ExpandTL<BinaryArchiveTypeBundle, FpTypes>;
 #else
 using BinaryArchiveTypes = tlist::Empty;
 #endif // LBANN_HAS_CEREAL_BINARY_ARCHIVES
@@ -49,7 +52,7 @@ template <typename T>
 using XMLArchiveTypeBundle = TL<T,
                                 cereal::XMLOutputArchive,
                                 cereal::XMLInputArchive>;
-using XMLArchiveTypes = tlist::ExpandTL<XMLArchiveTypeBundle, Fp16Types>;
+using XMLArchiveTypes = tlist::ExpandTL<XMLArchiveTypeBundle, FpTypes>;
 #else
 using XMLArchiveTypes = tlist::Empty;
 #endif // LBANN_HAS_CEREAL_XML_ARCHIVES
