@@ -144,11 +144,19 @@ void kfac_gru_util::unpack_reserve_space(
     const size_t local_batch_size,
     const El::SyncInfo<El::Device::GPU>& sync_info) {
   const size_t count = hidden_size*seq_length*local_batch_size;
+  const cudnnMathType_t math_type = dnn_lib::get_default_convolution_math_type();
+  size_t offset = 0;
+  if(math_type == CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION) {
+    const size_t align_base = 4;
+    offset = ((size_t) ((0.5*hidden_size*seq_length*local_batch_size+align_base-1)/align_base))*align_base;
+  } else if(math_type != CUDNN_DEFAULT_MATH)
+    LBANN_ERROR("Unsupported cuDNN math type.");
+
   constexpr size_t block_size = 256;
   const size_t grid_size = (count + block_size - 1) / block_size;
   unpack_reserve_space_kernel<DataType>
       <<<grid_size, block_size, 0, sync_info.Stream()>>>(
-          reserve_space_fwd,
+          reserve_space_fwd+offset*sizeof(DataType),
           r.Buffer(),
           i.Buffer(),
           hidden_size,
