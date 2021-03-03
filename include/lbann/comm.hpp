@@ -165,62 +165,65 @@ public:
   void split_trainers(int procs_per_trainer);
 
   /** Get which trainer this process is in. */
-  inline int get_trainer_rank() const { return trainer_rank; }
+  inline int get_trainer_rank() const noexcept { return trainer_rank; }
   /** Get the rank of this process in its trainer. */
-  inline int get_rank_in_trainer() const { return rank_in_trainer; }
+  inline int get_rank_in_trainer() const noexcept { return rank_in_trainer; }
   /** Get my rank in COMM_WORLD. */
   inline int get_rank_in_world() const
   {
     return El::mpi::Rank(get_world_comm());
   }
   /** Return the COMM_WORLD rank of the rank'th processor in trainer. */
-  inline int get_world_rank(int trainer, int rank) const
+  inline int get_world_rank(int trainer, int rank) const noexcept
   {
     return procs_per_trainer * trainer + rank;
   }
   /** Return the "rank" of the trainer that this rank is in */
-  inline int map_world_rank_to_trainer_rank(int world_rank) const
+  inline int map_world_rank_to_trainer_rank(int world_rank) const noexcept
   {
     return (world_rank / procs_per_trainer);
   }
   /** Return the "rank" within the trainer that this rank is in */
-  inline int map_world_rank_to_rank_in_trainer(int world_rank) const
+  inline int map_world_rank_to_rank_in_trainer(int world_rank) const noexcept
   {
     return (world_rank % procs_per_trainer);
   }
   /** Return the rank of the master process in this trainer. */
-  inline int get_trainer_master() const { return 0; }
+  inline int get_trainer_master() const noexcept { return 0; }
   /** Return the rank of the inter-trainer master process. */
-  inline int get_intertrainer_master() const { return 0; }
+  inline int get_intertrainer_master() const noexcept { return 0; }
   /** Return the rank of the world master process. */
-  inline int get_world_master() const { return 0; }
+  inline int get_world_master() const noexcept { return 0; }
   /** Return true if this process is the master process in its trainer. */
-  inline bool am_trainer_master() const
+  inline bool am_trainer_master() const noexcept
   {
     return get_rank_in_trainer() == get_trainer_master();
   }
   /** Return true if this process is the world master process. */
-  inline bool am_world_master() const
+  inline bool am_world_master() const noexcept
   {
     return get_rank_in_world() == get_world_master();
   }
   /** Return a grid to use for this trainer. */
-  inline El::Grid& get_trainer_grid() { return *grid; }
+  inline El::Grid& get_trainer_grid() noexcept { return *grid; }
   /** Return a read-only grid to use for this trainer. */
-  inline const El::Grid& get_trainer_grid() const { return *grid; }
+  inline const El::Grid& get_trainer_grid() const noexcept { return *grid; }
   /** Return the total number of trainers. */
-  inline int get_num_trainers() const { return num_trainers; }
+  inline int get_num_trainers() const noexcept { return num_trainers; }
   /* Return the number of processes in a trainer. */
-  inline int get_procs_per_trainer() const { return procs_per_trainer; }
+  inline int get_procs_per_trainer() const noexcept
+  {
+    return procs_per_trainer;
+  }
   /** Return the number of processes in a compute node. */
-  inline int get_procs_per_node() const { return procs_per_node; }
+  inline int get_procs_per_node() const noexcept { return procs_per_node; }
   /** Return the total number of ranks. */
   inline int get_procs_in_world() const
   {
     return El::mpi::Size(get_world_comm());
   }
   /** Return the rank of this process within its compute node. */
-  inline int get_rank_in_node() const { return rank_in_node; }
+  inline int get_rank_in_node() const noexcept { return rank_in_node; }
   /** Return true if rank (in COMM_WORLD) is on this compute node. */
   inline bool is_world_rank_on_node(int rank) const
   {
@@ -234,7 +237,10 @@ public:
    *  regions, provided omp_set_num_threads has not been called or the
    *  num_threads directive has not been provided.
    */
-  inline int get_default_threads_per_proc() const { return threads_per_proc; }
+  inline int get_default_threads_per_proc() const noexcept
+  {
+    return threads_per_proc;
+  }
 
   /** Reset the number of threads per process to the default. */
   void reset_threads();
@@ -331,19 +337,6 @@ public:
   void intertrainer_broadcast(int root, std::vector<T>& data);
   /// Broadcast vector<> within trainer.
   template <typename T> void trainer_broadcast(int root, std::vector<T>& data);
-
-  /**
-   * Keep track of the number of broadcast bytes transmitted and received
-   */
-  void count_bytes_broadcast(const size_t bytes, const int rank, const int root)
-  {
-    if (rank == root) {
-      bytes_sent += bytes;
-    }
-    else {
-      bytes_received += bytes;
-    }
-  }
 
   /** Allgather over an arbitrary communicator */
   template <typename T>
@@ -759,23 +752,26 @@ public:
 
   // Statistics methods.
   /** Return the number of trainer barriers performed. */
-  inline size_t get_num_trainer_barriers() const
+  inline size_t get_num_trainer_barriers() const noexcept
   {
     return num_trainer_barriers;
   }
   /** Return the number of inter-trainer barriers performed. */
-  inline size_t get_num_intertrainer_barriers() const
+  inline size_t get_num_intertrainer_barriers() const noexcept
   {
     return num_intertrainer_barriers;
   }
   /** Return the number of global barriers performed. */
-  inline size_t get_num_global_barriers() const { return num_global_barriers; }
+  inline size_t get_num_global_barriers() const noexcept
+  {
+    return num_global_barriers;
+  }
   /** Return the number of bytes sent. */
-  inline size_t get_bytes_sent() const { return bytes_sent; }
+  inline size_t get_bytes_sent() const noexcept { return bytes_sent; }
   /** Return the number of bytes received. */
-  inline size_t get_bytes_received() const { return bytes_received; }
+  inline size_t get_bytes_received() const noexcept { return bytes_received; }
 
-  inline void reset_stats_counters()
+  inline void reset_stats_counters() noexcept
   {
     num_trainer_barriers = 0;
     num_intertrainer_barriers = 0;
@@ -785,7 +781,7 @@ public:
   }
 
   /** Return true if mat can be transmitted. */
-  static inline bool is_sendable(const AbsMat& mat)
+  static inline bool is_sendable(const AbsMat& mat) noexcept
   {
     // This assumes we do not transmit mat with a datatype smaller than
     // DataType.
@@ -794,25 +790,28 @@ public:
     return count <= (size_t)std::numeric_limits<int>::max();
   }
   /** Return true if the local portion of dist_mat can be transmitted. */
-  static inline bool is_sendable(const AbsDistMat& dist_mat)
+  static inline bool is_sendable(const AbsDistMat& dist_mat) noexcept
   {
     return is_sendable(dist_mat.LockedMatrix());
   }
 
   /** Return the intertrainer communicator. */
-  const El::mpi::Comm& get_intertrainer_comm() const
+  const El::mpi::Comm& get_intertrainer_comm() const noexcept
   {
     return intertrainer_comm;
   }
 
   /** Return the trainer communicator. */
-  const El::mpi::Comm& get_trainer_comm() const { return trainer_comm; }
+  const El::mpi::Comm& get_trainer_comm() const noexcept
+  {
+    return trainer_comm;
+  }
 
   /** Return the world communicator. */
-  const El::mpi::Comm& get_world_comm() const { return world_comm; }
+  const El::mpi::Comm& get_world_comm() const noexcept { return world_comm; }
 
   /** Return the communicator for this node. */
-  const El::mpi::Comm& get_node_comm() const { return node_comm; }
+  const El::mpi::Comm& get_node_comm() const noexcept { return node_comm; }
 
   /**
    * Return a communicator containing num_per_group processors.
@@ -888,7 +887,22 @@ private:
    *  cores per node divided by the number of processes per node.
    */
   void setup_threads();
-};
+
+  /**
+   * Keep track of the number of broadcast bytes transmitted and received
+   */
+  void count_bytes_broadcast(const size_t bytes,
+                             const int rank,
+                             const int root) noexcept
+  {
+    if (rank == root) {
+      bytes_sent += bytes;
+    }
+    else {
+      bytes_received += bytes;
+    }
+  }
+}; // class lbann_comm
 
 /** Get the current rank within MPI_COMM_WORLD.
  *  This function is safe to call even if MPI has not initialized or
