@@ -41,6 +41,15 @@ void batch_inference_algorithm::infer(model& model,
   }
 }
 
+template <typename TensorDataType>
+void batch_inference_algorithm::infer(model& model,
+                                      El::AbstractDistMatrix<TensorDataType> samples) {
+  // Infer on all mini-batches
+  // get mini-batch size from model
+  int mbs = 64;
+  infer_mini_batch(model, samples);
+}
+
 bool batch_inference_algorithm::infer_mini_batch(model& model,
                                                  data_coordinator& dc) {
   dc.fetch_data(execution_mode::inference);
@@ -49,6 +58,17 @@ bool batch_inference_algorithm::infer_mini_batch(model& model,
   // background I/O
   const bool finished = dc.epoch_complete(execution_mode::inference);
   return finished;
+}
+
+template <typename TensorDataType>
+bool batch_inference_algorithm::infer_mini_batch(model& model,
+                                                 El::AbstractDistMatrix<TensorDataType> samples) {
+  // Insert samples into input layer
+  //dc.fetch_data(execution_mode::inference);
+  model.forward_prop(execution_mode::inference);
+  // check if the data coordinator has finished the epoch and kickoff
+  // background I/O
+  return true;
 }
 
 }  // namespace lbann

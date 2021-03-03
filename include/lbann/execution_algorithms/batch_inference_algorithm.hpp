@@ -63,9 +63,18 @@ public:
              data_coordinator& dc,
              size_t num_batches=0);
 
+  template <typename TensorDataType>
+  void infer(model& model,
+             El::AbstractDistMatrix<TensorDataType> samples);
+
+
 protected:
   /** Evaluate model on one step / mini-batch of an SGD forward pass */
-  virtual bool infer_mini_batch(model& model, data_coordinator& dc);
+  bool infer_mini_batch(model& model, data_coordinator& dc);
+
+  template <typename TensorDataType>
+  bool infer_mini_batch(model& model,
+                                El::AbstractDistMatrix<TensorDataType> samples);
 
 };
 
