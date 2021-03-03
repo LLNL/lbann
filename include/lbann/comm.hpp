@@ -243,7 +243,7 @@ public:
   }
 
   /** Reset the number of threads per process to the default. */
-  void reset_threads();
+  void reset_threads() const noexcept;
 
   /** Perform a sum reduction of mat over the inter-trainer communicator. */
   void intertrainer_sum_matrix(AbsMat& mat);
@@ -358,61 +358,65 @@ public:
    * all vectors must be correctly sized prior to entry.
    */
   template <typename T>
-  void all_gather(std::vector<T>& src,
+  void all_gather(std::vector<T> const& src,
                   std::vector<T>& rcs,
-                  std::vector<int>& rcv_counts,
-                  std::vector<int>& rcv_disp,
+                  std::vector<int> const& rcv_counts,
+                  std::vector<int> const& rcv_disp,
                   const El::mpi::Comm& c);
   /**
    * Allgatherv over a trainer communicator;
    * all vectors must be correctly sized prior to entry.
    */
   template <typename T>
-  void trainer_all_gather(std::vector<T>& src,
+  void trainer_all_gather(std::vector<T> const& src,
                           std::vector<T>& rcs,
-                          std::vector<int>& rcv_counts,
-                          std::vector<int>& rcv_disp);
+                          std::vector<int> const& rcv_counts,
+                          std::vector<int> const& rcv_disp);
   /**
    * Allgather for a single element over an arbitrary communicator;
    * std::vector<T> &data must be correctly sized prior to entry.
    */
   template <typename T>
-  void all_gather(T& src, std::vector<T>& data, const El::mpi::Comm& c);
+  void all_gather(T const& src, std::vector<T>& data, const El::mpi::Comm& c);
   /**
    * Allgather for a single element over the world communicator;
    * std::vector<T> &data must be correctly sized prior to entry.
    */
-  template <typename T> void world_all_gather(T& src, std::vector<T>& data);
+  template <typename T>
+  void world_all_gather(T const& src, std::vector<T>& data);
   /**
    * Allgather for a single element over the trainer communicator;
    * std::vector<T> &data must be correctly sized prior to entry.
    */
-  template <typename T> void trainer_all_gather(T& src, std::vector<T>& data);
+  template <typename T>
+  void trainer_all_gather(T const& src, std::vector<T>& data);
 
   /** Within-trainer scalar gather (for non-root processes). */
   template <typename T> void trainer_gather(T snd, int root);
   /** Within-trainer scalar gather (for root processes). */
   template <typename T> void trainer_gather(T snd, T* rcv);
   /** Within-trainer scalar-array gather (for non-root processes). */
-  template <typename T> void trainer_gather(T* snd, int count, int root);
+  template <typename T> void trainer_gather(T const* snd, int count, int root);
   /** Within-trainer scalar-array gather (for root processes). */
-  template <typename T> void trainer_gather(T* snd, int count, T* rcv);
+  template <typename T> void trainer_gather(T const* snd, int count, T* rcv);
   /** Within-trainer variable-length-array gather (for non-root processes). */
-  template <typename T> void trainer_gatherv(T* snd, int count, int root);
+  template <typename T> void trainer_gatherv(T const* snd, int count, int root);
   template <typename T>
-  void trainer_gatherv(T* snd,
+  void trainer_gatherv(T const* snd,
                        int count,
                        T* rcv,
-                       int* rcv_counts,
-                       int* rcv_displacements);
+                       int const* rcv_counts,
+                       int const* rcv_displacements);
   /** Inter-trainer gather (for non-root processes). */
   template <typename T> void intertrainer_gather(T snd, int root);
   /** Inter-trainer gather (for root processes). */
   template <typename T> void intertrainer_gather(T snd, std::vector<T>& rcv);
   /** Inter-trainer scalar-array gather (for non-root processes). */
-  template <typename T> void intertrainer_gather(T* snd, int count, int root);
+  template <typename T>
+  void intertrainer_gather(T const* snd, int count, int root);
   /** Inter-trainer scalar-array gather (for root processes). */
-  template <typename T> void intertrainer_gather(T* snd, int count, T* rcv);
+  template <typename T>
+  void intertrainer_gather(T const* snd, int count, T* rcv);
   /** Scalar gather (for non-root processes). */
   template <typename T> void gather(T snd, int root, const El::mpi::Comm& c);
   /** Scalar gather (for root processes). */
@@ -422,18 +426,18 @@ public:
   void gather(T snd, std::vector<T>& rcv, const El::mpi::Comm& c);
   /** Scalar-array gather (for non-root processes). */
   template <typename T>
-  void gather(T* snd, int count, int root, const El::mpi::Comm& c);
+  void gather(T const* snd, int count, int root, const El::mpi::Comm& c);
   template <typename T, El::Device D>
-  void gather(T* snd,
+  void gather(T const* snd,
               int count,
               int root,
               const El::mpi::Comm& c,
               El::SyncInfo<D> const& syncInfo);
   /** Scalar-array gather (for root processes). */
   template <typename T>
-  void gather(T* snd, int count, T* rcv, const El::mpi::Comm& c);
+  void gather(T const* snd, int count, T* rcv, const El::mpi::Comm& c);
   template <typename T, El::Device D>
-  void gather(T* snd,
+  void gather(T const* snd,
               int count,
               T* rcv,
               const El::mpi::Comm& c,
@@ -441,7 +445,7 @@ public:
   /** Scalar scatter (for non-root processes). */
   template <typename T> T scatter(int root, const El::mpi::Comm& c);
   /** Scalar scatter (for root processes). */
-  template <typename T> T scatter(T* snd, const El::mpi::Comm& c);
+  template <typename T> T scatter(T const* snd, const El::mpi::Comm& c);
   /** Inter-trainer reduce (for non-root processes). */
   template <typename T>
   void intertrainer_reduce(T snd, int root, El::mpi::Op op = El::mpi::SUM);
@@ -455,11 +459,16 @@ public:
   template <typename T> T trainer_reduce(T snd, El::mpi::Op op = El::mpi::SUM);
   /** Within-trainer scalar array reduce (for non-root processes). */
   template <typename T>
-  void
-  trainer_reduce(T* snd, int count, int root, El::mpi::Op op = El::mpi::SUM);
+  void trainer_reduce(T const* snd,
+                      int count,
+                      int root,
+                      El::mpi::Op op = El::mpi::SUM);
   /** Within-trainer scalar array reduce (for root processes). */
   template <typename T>
-  void trainer_reduce(T* snd, int count, T* rcv, El::mpi::Op op = El::mpi::SUM);
+  void trainer_reduce(T const* snd,
+                      int count,
+                      T* rcv,
+                      El::mpi::Op op = El::mpi::SUM);
   /** Scalar reduce (for non-root processes). */
   template <typename T>
   void reduce(T snd,
@@ -473,19 +482,22 @@ public:
   /** Scalar-array reduce (for non-root processes). */
   // Op is "SUM"
   template <typename T>
-  void reduce(T* snd, int count, int root, const El::mpi::Comm& c);
+  void reduce(T const* snd, int count, int root, const El::mpi::Comm& c);
   template <typename T, El::Device D>
-  void reduce(T* snd,
+  void reduce(T const* snd,
               int count,
               int root,
               const El::mpi::Comm& c,
               El::SyncInfo<D> const& syncInfo);
 
   template <typename T>
-  void
-  reduce(T* snd, int count, int root, const El::mpi::Comm& c, El::mpi::Op op);
+  void reduce(T const* snd,
+              int count,
+              int root,
+              const El::mpi::Comm& c,
+              El::mpi::Op op);
   template <typename T, El::Device D>
-  void reduce(T* snd,
+  void reduce(T const* snd,
               int count,
               int root,
               const El::mpi::Comm& c,
@@ -493,19 +505,22 @@ public:
               El::SyncInfo<D> const& syncInfo);
   /** Scalar-array reduce (for root processes). */
   template <typename T, El::Device D>
-  void reduce(T* snd,
+  void reduce(T const* snd,
               int count,
               T* rcv,
               const El::mpi::Comm& c,
               El::SyncInfo<D> const& syncInfo);
   template <typename T>
-  void reduce(T* snd, int count, T* rcv, const El::mpi::Comm& c);
+  void reduce(T const* snd, int count, T* rcv, const El::mpi::Comm& c);
 
   template <typename T>
-  void
-  reduce(T* snd, int count, T* rcv, const El::mpi::Comm& c, El::mpi::Op op);
+  void reduce(T const* snd,
+              int count,
+              T* rcv,
+              const El::mpi::Comm& c,
+              El::mpi::Op op);
   template <typename T, El::Device D>
-  void reduce(T* snd,
+  void reduce(T const* snd,
               int count,
               T* rcv,
               const El::mpi::Comm& c,
@@ -519,8 +534,10 @@ public:
   T trainer_allreduce(T snd, El::mpi::Op op = El::mpi::SUM);
   /** Scalar array within-trainer all-reduce. */
   template <typename T>
-  void
-  trainer_allreduce(T* snd, int count, T* rcv, El::mpi::Op op = El::mpi::SUM);
+  void trainer_allreduce(T const* snd,
+                         int count,
+                         T* rcv,
+                         El::mpi::Op op = El::mpi::SUM);
   /** Scalar allreduce. */
   template <typename T>
   T allreduce(T snd, const El::mpi::Comm& c, El::mpi::Op op = El::mpi::SUM);
@@ -529,7 +546,7 @@ public:
   // assuming this is intended as a CPU-only call.
   /** Scalar-array allreduce. */
   template <typename T>
-  void allreduce(T* snd,
+  void allreduce(T const* snd,
                  int count,
                  T* rcv,
                  const El::mpi::Comm& c,

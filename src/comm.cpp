@@ -48,8 +48,8 @@ namespace lbann {
       int error_string_len;                                                    \
       MPI_Error_string(status, error_string, &error_string_len);               \
       std::cerr << "MPI error: "                                               \
-                << std::string(error_string, error_string_len) << "\n";        \
-      std::cerr << "Error at " << __FILE__ << ":" << __LINE__ << "\n";         \
+                << std::string(error_string, error_string_len) << "\n"         \
+                << "Error at " << __FILE__ << ":" << __LINE__ << "\n";         \
       throw lbann_exception("MPI error");                                      \
     }                                                                          \
   }
@@ -91,7 +91,7 @@ lbann_comm::~lbann_comm()
 #endif
 }
 
-void lbann_comm::split_trainers(int ppm)
+void lbann_comm::split_trainers(const int ppm)
 {
   int world_size = El::mpi::Size(get_world_comm());
   procs_per_trainer = ppm;
@@ -100,19 +100,18 @@ void lbann_comm::split_trainers(int ppm)
   }
   // Check if parameters are valid
   if (procs_per_trainer > world_size) {
-    throw lbann_exception(
-      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: Not enough processes to create one trainer; procs_per_trainer: " +
-      std::to_string(procs_per_trainer) +
-      " is larger than world_size: " + std::to_string(world_size));
+    LBANN_ERROR(
+      "Not enough processes to create one trainer; procs_per_trainer: ",
+      procs_per_trainer,
+      " is larger than world_size: ",
+      world_size);
   }
   if (world_size % procs_per_trainer != 0) {
-    throw lbann_exception(
-      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: Procs per trainer does not divide total number of procs; "
-      "procs_per_trainer: " +
-      std::to_string(procs_per_trainer) +
-      " total number of procs (world size): " + std::to_string(world_size));
+    LBANN_ERROR("Procs per trainer does not divide total number of procs; "
+                "procs_per_trainer: ",
+                procs_per_trainer,
+                " total number of procs (world size): ",
+                world_size);
   }
 
   num_trainers = world_size / procs_per_trainer;
@@ -510,27 +509,27 @@ void lbann_comm::global_barrier()
 
 void lbann_comm::barrier(const El::mpi::Comm& c) { El::mpi::Barrier(c); }
 
-void lbann_comm::send(const AbsMat& mat, int trainer, int rank)
+void lbann_comm::send(const AbsMat& mat, const int trainer, const int rank)
 {
   El::Send(mat, get_world_comm(), get_world_rank(trainer, rank));
 }
 
-void lbann_comm::send(const DistMat& mat, int trainer, int rank)
+void lbann_comm::send(const DistMat& mat, const int trainer, const int rank)
 {
   send(mat.LockedMatrix(), trainer, rank);
 }
 
 void lbann_comm::nb_send(const AbsMat& mat,
-                         int trainer,
-                         int rank,
+                         const int trainer,
+                         const int rank,
                          El::mpi::Request<DataType>& req)
 {
   nb_send(mat.LockedBuffer(), mat.Height() * mat.Width(), trainer, rank, req);
 }
 
 void lbann_comm::nb_send(const DistMat& mat,
-                         int trainer,
-                         int rank,
+                         const int trainer,
+                         const int rank,
                          El::mpi::Request<DataType>& req)
 {
   nb_send(mat.LockedBuffer(),
@@ -540,12 +539,12 @@ void lbann_comm::nb_send(const DistMat& mat,
           req);
 }
 
-void lbann_comm::recv(AbsMat& mat, int trainer, int rank)
+void lbann_comm::recv(AbsMat& mat, const int trainer, const int rank)
 {
   El::Recv(mat, get_world_comm(), get_world_rank(trainer, rank));
 }
 
-void lbann_comm::recv(DistMat& mat, int trainer, int rank)
+void lbann_comm::recv(DistMat& mat, const int trainer, const int rank)
 {
   recv(mat.Matrix(), trainer, rank);
 }
@@ -558,16 +557,16 @@ void lbann_comm::recv(AbsMat& mat)
 void lbann_comm::recv(DistMat& mat) { recv(mat.Matrix()); }
 
 void lbann_comm::nb_recv(AbsMat& mat,
-                         int trainer,
-                         int rank,
+                         const int trainer,
+                         const int rank,
                          El::mpi::Request<DataType>& req)
 {
   nb_recv(mat.Buffer(), mat.Height() * mat.Width(), trainer, rank, req);
 }
 
 void lbann_comm::nb_recv(DistMat& mat,
-                         int trainer,
-                         int rank,
+                         const int trainer,
+                         const int rank,
                          El::mpi::Request<DataType>& req)
 {
   nb_recv(mat.Buffer(),
@@ -607,24 +606,25 @@ void lbann_comm::setup_node_comm()
   const int hash_comm_size = El::mpi::Size(hash_comm);
 
   // Compare node names and split MPI processes
-  auto* node_name_list = new char[hash_comm_size * MPI_MAX_PROCESSOR_NAME];
-  checkMPI(MPI_Allgather(node_name,
-                         MPI_MAX_PROCESSOR_NAME,
-                         MPI_CHAR,
-                         node_name_list,
-                         MPI_MAX_PROCESSOR_NAME,
-                         MPI_CHAR,
-                         hash_comm.GetMPIComm()));
   int node_num = El::mpi::Rank(hash_comm);
-  for (int i = 0; i < hash_comm_size; ++i) {
-    const std::string other_node_string(node_name_list +
-                                        i * MPI_MAX_PROCESSOR_NAME);
-    if (node_string == other_node_string) {
-      node_num = i;
-      break;
+  {
+    std::vector<char> node_name_list(hash_comm_size * MPI_MAX_PROCESSOR_NAME);
+    checkMPI(MPI_Allgather(node_name,
+                           MPI_MAX_PROCESSOR_NAME,
+                           MPI_CHAR,
+                           node_name_list.data(),
+                           MPI_MAX_PROCESSOR_NAME,
+                           MPI_CHAR,
+                           hash_comm.GetMPIComm()));
+    for (int i = 0; i < hash_comm_size; ++i) {
+      const std::string other_node_string(node_name_list.data() +
+                                          i * MPI_MAX_PROCESSOR_NAME);
+      if (node_string == other_node_string) {
+        node_num = i;
+        break;
+      }
     }
   }
-  delete[] node_name_list;
   El::mpi::Split(hash_comm,
                  node_num,
                  El::mpi::Rank(get_world_comm()),
@@ -651,7 +651,7 @@ void lbann_comm::setup_threads()
   reset_threads();
 }
 
-void lbann_comm::reset_threads()
+void lbann_comm::reset_threads() const noexcept
 {
   if (threads_per_proc != omp_get_max_threads()) {
     omp_set_num_threads(threads_per_proc);
@@ -663,7 +663,7 @@ const El::mpi::Comm& lbann_comm::get_packed_group_comm(int num_per_group) const
   if (group_communicators.count(num_per_group) == 0) {
     // Ensure we can get an even number of groups.
     if (get_procs_in_world() % num_per_group != 0) {
-      std::stringstream err;
+      std::ostringstream err;
       err << "Cannot create a packed group comm with group size "
           << num_per_group << " out of " << get_procs_in_world()
           << " processes";
