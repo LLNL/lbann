@@ -65,16 +65,13 @@ public:
 
   template <typename TensorDataType>
   void infer(model& model,
-             El::AbstractDistMatrix<TensorDataType> samples);
+             El::AbstractDistMatrix<TensorDataType> const& samples,
+             size_t num_batches=0);
 
 
 protected:
   /** Evaluate model on one step / mini-batch of an SGD forward pass */
   bool infer_mini_batch(model& model, data_coordinator& dc);
-
-  template <typename TensorDataType>
-  bool infer_mini_batch(model& model,
-                                El::AbstractDistMatrix<TensorDataType> samples);
 
 };
 
