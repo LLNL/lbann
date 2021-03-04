@@ -239,7 +239,7 @@ void allreduce_aluminum(El::Matrix<T, El::Device::GPU>& m,
                         El::mpi::Op const& op,
                         BackendTag<BackendT>,
                         typename BackendT::allreduce_algo_type algo =
-                          BackendT::allreduce_algo_type::automatic) const
+                          BackendT::allreduce_algo_type::automatic)
 {
   const auto local_size = m.Height() * m.Width();
   ::Al::Allreduce<BackendT>(
@@ -263,7 +263,7 @@ void nb_allreduce_aluminum(El::Matrix<T, El::Device::GPU>& m,
                            El::mpi::Op const& op,
                            BackendTag<BackendT> const& tag,
                            typename BackendT::allreduce_algo_type algo =
-                             BackendT::allreduce_algo_type::automatic) const
+                             BackendT::allreduce_algo_type::automatic)
 {
   const auto local_size = m.Height() * m.Width();
   const auto& syncinfo = El::SyncInfoFromMatrix(m);
@@ -290,7 +290,7 @@ void nb_allreduce_aluminum(El::Matrix<T, El::Device::GPU>& m,
                            El::mpi::Op const& op,
                            BackendTag<BackendT> const& tag,
                            typename BackendT::allreduce_algo_type algo =
-                             BackendT::allreduce_algo_type::automatic) const
+                             BackendT::allreduce_algo_type::automatic)
 {
   El::AllReduce(m, c, op);
 }
@@ -307,7 +307,7 @@ void allreduce_aluminum(El::Matrix<T, El::Device::GPU>& m,
                         El::mpi::Op const& op,
                         BackendTag<BackendT>,
                         typename BackendT::allreduce_algo_type =
-                          BackendT::allreduce_algo_type::automatic) const
+                          BackendT::allreduce_algo_type::automatic)
 {
   // We cannot dispatch with this backend directly to Aluminum. Let
   // Elemental handle it.
@@ -317,7 +317,7 @@ void allreduce_aluminum(El::Matrix<T, El::Device::GPU>& m,
 template <typename T>
 void allreduce_impl(El::Matrix<T, El::Device::GPU>& m,
                     El::mpi::Comm const& c,
-                    El::mpi::Op const& op) const
+                    El::mpi::Op const& op)
 {
   return El::AllReduce(m, c, op);
 }
@@ -326,7 +326,7 @@ template <typename T>
 void nb_allreduce_impl(El::Matrix<T, El::Device::GPU>& m,
                        El::mpi::Comm const& c,
                        Al::request& req,
-                       El::mpi::Op const& op) const
+                       El::mpi::Op const& op)
 {
   if (m.Width() > 1 && m.Height() != m.LDim()) {
     // Aluminum doesn't do allreduces on strided matrices
