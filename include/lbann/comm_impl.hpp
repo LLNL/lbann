@@ -32,17 +32,18 @@
 namespace lbann {
 
 /// World broadcast of a scalar.
-template <typename T> void lbann_comm::world_broadcast(int root, T& val)
+template <typename T> void lbann_comm::world_broadcast(int root, T& val) const
 {
   broadcast(root, val, get_world_comm());
 }
 /// Inter-trainer broadcast of a scalar.
-template <typename T> void lbann_comm::intertrainer_broadcast(int root, T& val)
+template <typename T>
+void lbann_comm::intertrainer_broadcast(int root, T& val) const
 {
   broadcast(root, val, get_intertrainer_comm());
 }
 /// Within-trainer broadcast of a scalar.
-template <typename T> void lbann_comm::trainer_broadcast(int root, T& val)
+template <typename T> void lbann_comm::trainer_broadcast(int root, T& val) const
 {
   broadcast(root, val, get_trainer_comm());
 }
@@ -57,14 +58,16 @@ template <typename T>
 void lbann_comm::broadcast(const int root,
                            T* const data,
                            const int count,
-                           const El::mpi::Comm& c)
+                           const El::mpi::Comm& c) const
 {
   broadcast(root, data, count, c, El::SyncInfo<El::Device::CPU>{});
 }
 
 /// World broadcast of a buffer.
 template <typename T>
-void lbann_comm::world_broadcast(const int root, T* const data, const int count)
+void lbann_comm::world_broadcast(const int root,
+                                 T* const data,
+                                 const int count) const
 {
   world_broadcast(root, data, count, El::SyncInfo<El::Device::CPU>{});
 }
@@ -73,7 +76,7 @@ template <typename T, El::Device D>
 void lbann_comm::world_broadcast(const int root,
                                  T* const data,
                                  const int count,
-                                 El::SyncInfo<D> const& syncInfo)
+                                 El::SyncInfo<D> const& syncInfo) const
 {
   broadcast(root, data, count, get_world_comm(), syncInfo);
 }
@@ -81,7 +84,7 @@ void lbann_comm::world_broadcast(const int root,
 template <typename T>
 void lbann_comm::intertrainer_broadcast(const int root,
                                         T* data,
-                                        const int count)
+                                        const int count) const
 {
   intertrainer_broadcast(root, data, count, El::SyncInfo<El::Device::CPU>{});
 }
@@ -89,7 +92,7 @@ template <typename T, El::Device D>
 void lbann_comm::intertrainer_broadcast(const int root,
                                         T* const data,
                                         const int count,
-                                        El::SyncInfo<D> const& syncInfo)
+                                        El::SyncInfo<D> const& syncInfo) const
 {
   broadcast(root, data, count, get_intertrainer_comm(), syncInfo);
 }
@@ -97,7 +100,7 @@ void lbann_comm::intertrainer_broadcast(const int root,
 template <typename T>
 void lbann_comm::trainer_broadcast(const int root,
                                    T* const data,
-                                   const int count)
+                                   const int count) const
 {
   trainer_broadcast(root, data, count, El::SyncInfo<El::Device::CPU>{});
 }
@@ -106,7 +109,7 @@ template <typename T, El::Device D>
 void lbann_comm::trainer_broadcast(const int root,
                                    T* const data,
                                    const int count,
-                                   El::SyncInfo<D> const& syncInfo)
+                                   El::SyncInfo<D> const& syncInfo) const
 {
   broadcast(root, data, count, get_trainer_comm(), syncInfo);
 }
@@ -115,8 +118,9 @@ void lbann_comm::trainer_broadcast(const int root,
  * Resize vector<> over an arbitrary communicator to match the one on root.
  */
 template <typename T>
-size_t
-lbann_comm::resize(const int root, std::vector<T>& data, const El::mpi::Comm& c)
+size_t lbann_comm::resize(const int root,
+                          std::vector<T>& data,
+                          const El::mpi::Comm& c) const
 {
   auto const rank_c = El::mpi::Rank(c);
   size_t count = data.size();
@@ -133,7 +137,7 @@ lbann_comm::resize(const int root, std::vector<T>& data, const El::mpi::Comm& c)
 template <typename T>
 void lbann_comm::broadcast(const int root,
                            std::vector<T>& data,
-                           const El::mpi::Comm& c)
+                           const El::mpi::Comm& c) const
 {
   const int count = static_cast<int>(resize(root, data, c));
   if (count <= 0) {
@@ -143,7 +147,7 @@ void lbann_comm::broadcast(const int root,
 }
 /// Broadcast vector<> to world.
 template <typename T>
-void lbann_comm::world_broadcast(const int root, std::vector<T>& data)
+void lbann_comm::world_broadcast(const int root, std::vector<T>& data) const
 {
   broadcast(root, data, get_world_comm());
 }
@@ -153,13 +157,14 @@ void lbann_comm::world_broadcast(const int root, std::vector<T>& data)
  */
 /// Broadcast vector<> across trainers.
 template <typename T>
-void lbann_comm::intertrainer_broadcast(const int root, std::vector<T>& data)
+void lbann_comm::intertrainer_broadcast(const int root,
+                                        std::vector<T>& data) const
 {
   broadcast(root, data, get_intertrainer_comm());
 }
 /// Broadcast vector<> within trainer.
 template <typename T>
-void lbann_comm::trainer_broadcast(const int root, std::vector<T>& data)
+void lbann_comm::trainer_broadcast(const int root, std::vector<T>& data) const
 {
   broadcast(root, data, get_trainer_comm());
 }
@@ -170,7 +175,7 @@ void lbann_comm::all_gather(const T* const src,
                             const int src_count,
                             T* const rcv,
                             const int rcv_count,
-                            const El::mpi::Comm& c)
+                            const El::mpi::Comm& c) const
 {
   all_gather(src,
              src_count,
@@ -185,7 +190,7 @@ void lbann_comm::all_gather(const T* const src,
                             T* const rcv,
                             const int rcv_count,
                             const El::mpi::Comm& c,
-                            El::SyncInfo<D> const& syncInfo)
+                            El::SyncInfo<D> const& syncInfo) const
 {
   El::mpi::AllGather(src, src_count, rcv, rcv_count, c, syncInfo);
 }
@@ -199,7 +204,7 @@ void lbann_comm::all_gather(std::vector<T> const& src,
                             std::vector<T>& rcs,
                             std::vector<int> const& rcv_counts,
                             std::vector<int> const& rcv_disp,
-                            const El::mpi::Comm& c)
+                            const El::mpi::Comm& c) const
 {
   if (src.size() == 0) {
     std::ostringstream err;
@@ -224,7 +229,7 @@ template <typename T>
 void lbann_comm::trainer_all_gather(std::vector<T> const& src,
                                     std::vector<T>& rcs,
                                     std::vector<int> const& rcv_counts,
-                                    std::vector<int> const& rcv_disp)
+                                    std::vector<int> const& rcv_disp) const
 {
   all_gather(src, rcs, rcv_counts, rcv_disp, get_trainer_comm());
 }
@@ -235,7 +240,7 @@ void lbann_comm::trainer_all_gather(std::vector<T> const& src,
 template <typename T>
 void lbann_comm::all_gather(T const& src,
                             std::vector<T>& data,
-                            const El::mpi::Comm& c)
+                            const El::mpi::Comm& c) const
 {
   El::mpi::AllGather(&src,
                      1,
@@ -249,7 +254,7 @@ void lbann_comm::all_gather(T const& src,
  * std::vector<T> &data must be correctly sized prior to entry.
  */
 template <typename T>
-void lbann_comm::world_all_gather(T const& src, std::vector<T>& data)
+void lbann_comm::world_all_gather(T const& src, std::vector<T>& data) const
 {
   all_gather(src, data, get_world_comm());
 }
@@ -258,25 +263,27 @@ void lbann_comm::world_all_gather(T const& src, std::vector<T>& data)
  * std::vector<T> &data must be correctly sized prior to entry.
  */
 template <typename T>
-void lbann_comm::trainer_all_gather(T const& src, std::vector<T>& data)
+void lbann_comm::trainer_all_gather(T const& src, std::vector<T>& data) const
 {
   all_gather(src, data, get_trainer_comm());
 }
 
 /** Within-trainer scalar gather (for non-root processes). */
 template <typename T>
-void lbann_comm::trainer_gather(const T snd, const int root)
+void lbann_comm::trainer_gather(const T snd, const int root) const
 {
   gather(snd, root, m_trainer_comm);
 }
 /** Within-trainer scalar gather (for root processes). */
-template <typename T> void lbann_comm::trainer_gather(const T snd, T* rcv)
+template <typename T> void lbann_comm::trainer_gather(const T snd, T* rcv) const
 {
   gather(snd, rcv, m_trainer_comm);
 }
 /** Within-trainer scalar-array gather (for non-root processes). */
 template <typename T>
-void lbann_comm::trainer_gather(T const* snd, const int count, const int root)
+void lbann_comm::trainer_gather(T const* snd,
+                                const int count,
+                                const int root) const
 {
   gather(snd, count, root, m_trainer_comm);
 }
@@ -284,13 +291,15 @@ void lbann_comm::trainer_gather(T const* snd, const int count, const int root)
 template <typename T>
 void lbann_comm::trainer_gather(T const* const snd,
                                 const int count,
-                                T* const rcv)
+                                T* const rcv) const
 {
   gather(snd, count, rcv, m_trainer_comm);
 }
 /** Within-trainer variable-length-array gather (for non-root processes). */
 template <typename T>
-void lbann_comm::trainer_gatherv(T const* snd, const int count, const int root)
+void lbann_comm::trainer_gatherv(T const* snd,
+                                 const int count,
+                                 const int root) const
 {
   m_bytes_sent += sizeof(T) * count;
   El::mpi::Gather(snd, count, nullptr, nullptr, nullptr, root, m_trainer_comm);
@@ -300,7 +309,7 @@ void lbann_comm::trainer_gatherv(T const* const snd,
                                  const int count,
                                  T* const rcv,
                                  int const* const rcv_counts,
-                                 int const* const rcv_displacements)
+                                 int const* const rcv_displacements) const
 {
   El::mpi::Gather(snd,
                   count,
@@ -316,13 +325,13 @@ void lbann_comm::trainer_gatherv(T const* const snd,
 }
 /** Inter-trainer gather (for non-root processes). */
 template <typename T>
-void lbann_comm::intertrainer_gather(const T snd, const int root)
+void lbann_comm::intertrainer_gather(const T snd, const int root) const
 {
   gather(snd, root, m_intertrainer_comm);
 }
 /** Inter-trainer gather (for root processes). */
 template <typename T>
-void lbann_comm::intertrainer_gather(const T snd, std::vector<T>& rcv)
+void lbann_comm::intertrainer_gather(const T snd, std::vector<T>& rcv) const
 {
   gather(snd, rcv, m_intertrainer_comm);
 }
@@ -330,7 +339,7 @@ void lbann_comm::intertrainer_gather(const T snd, std::vector<T>& rcv)
 template <typename T>
 void lbann_comm::intertrainer_gather(T const* const snd,
                                      const int count,
-                                     const int root)
+                                     const int root) const
 {
   gather(snd, count, root, m_intertrainer_comm);
 }
@@ -338,13 +347,15 @@ void lbann_comm::intertrainer_gather(T const* const snd,
 template <typename T>
 void lbann_comm::intertrainer_gather(T const* const snd,
                                      const int count,
-                                     T* const rcv)
+                                     T* const rcv) const
 {
   gather(snd, count, rcv, m_intertrainer_comm);
 }
 /** Scalar gather (for non-root processes). */
 template <typename T>
-void lbann_comm::gather(const T snd, const int root, const El::mpi::Comm& c)
+void lbann_comm::gather(const T snd,
+                        const int root,
+                        const El::mpi::Comm& c) const
 {
   m_bytes_sent += sizeof(T);
   El::mpi::Gather(&snd,
@@ -357,7 +368,7 @@ void lbann_comm::gather(const T snd, const int root, const El::mpi::Comm& c)
 }
 /** Scalar gather (for root processes). */
 template <typename T>
-void lbann_comm::gather(const T snd, T* const rcv, const El::mpi::Comm& c)
+void lbann_comm::gather(const T snd, T* const rcv, const El::mpi::Comm& c) const
 {
   auto const size_c = El::mpi::Size(c);
   auto const rank_c = El::mpi::Rank(c);
@@ -368,7 +379,7 @@ void lbann_comm::gather(const T snd, T* const rcv, const El::mpi::Comm& c)
 template <typename T>
 void lbann_comm::gather(const T snd,
                         std::vector<T>& rcv,
-                        const El::mpi::Comm& c)
+                        const El::mpi::Comm& c) const
 {
   gather(snd, rcv.data(), c);
 }
@@ -377,7 +388,7 @@ template <typename T>
 void lbann_comm::gather(T const* const snd,
                         const int count,
                         const int root,
-                        const El::mpi::Comm& c)
+                        const El::mpi::Comm& c) const
 {
   gather(snd, count, root, c, El::SyncInfo<El::Device::CPU>{});
 }
@@ -386,7 +397,7 @@ void lbann_comm::gather(T const* const snd,
                         const int count,
                         const int root,
                         const El::mpi::Comm& c,
-                        El::SyncInfo<D> const& syncInfo)
+                        El::SyncInfo<D> const& syncInfo) const
 {
   m_bytes_sent += sizeof(T) * count;
   El::mpi::Gather(snd, count, (T*)nullptr, 0, root, c, syncInfo);
@@ -396,7 +407,7 @@ template <typename T>
 void lbann_comm::gather(T const* const snd,
                         const int count,
                         T* const rcv,
-                        const El::mpi::Comm& c)
+                        const El::mpi::Comm& c) const
 {
   gather(snd, count, rcv, c, El::SyncInfo<El::Device::CPU>{});
 }
@@ -405,7 +416,7 @@ void lbann_comm::gather(T const* const snd,
                         const int count,
                         T* const rcv,
                         const El::mpi::Comm& c,
-                        El::SyncInfo<D> const& syncInfo)
+                        El::SyncInfo<D> const& syncInfo) const
 {
   auto const size_c = El::mpi::Size(c);
   auto const rank_c = El::mpi::Rank(c);
@@ -414,7 +425,7 @@ void lbann_comm::gather(T const* const snd,
 }
 /** Scalar scatter (for non-root processes). */
 template <typename T>
-T lbann_comm::scatter(const int root, const El::mpi::Comm& c)
+T lbann_comm::scatter(const int root, const El::mpi::Comm& c) const
 {
   T val = {};
   El::mpi::Scatter((T*)nullptr,
@@ -429,7 +440,7 @@ T lbann_comm::scatter(const int root, const El::mpi::Comm& c)
 }
 /** Scalar scatter (for root processes). */
 template <typename T>
-T lbann_comm::scatter(T const* const snd, const El::mpi::Comm& c)
+T lbann_comm::scatter(T const* const snd, const El::mpi::Comm& c) const
 {
   m_bytes_sent += sizeof(T) * (El::mpi::Size(c) - 1);
   T val = {};
@@ -441,13 +452,13 @@ T lbann_comm::scatter(T const* const snd, const El::mpi::Comm& c)
 template <typename T>
 void lbann_comm::intertrainer_reduce(const T snd,
                                      const int root,
-                                     const El::mpi::Op op)
+                                     const El::mpi::Op op) const
 {
   reduce(snd, root, m_intertrainer_comm, op);
 }
 /** Inter-trainer reduce (for root processes). */
 template <typename T>
-T lbann_comm::intertrainer_reduce(const T snd, const El::mpi::Op op)
+T lbann_comm::intertrainer_reduce(const T snd, const El::mpi::Op op) const
 {
   return reduce(snd, m_intertrainer_comm, op);
 }
@@ -455,13 +466,13 @@ T lbann_comm::intertrainer_reduce(const T snd, const El::mpi::Op op)
 template <typename T>
 void lbann_comm::trainer_reduce(const T snd,
                                 const int root,
-                                const El::mpi::Op op)
+                                const El::mpi::Op op) const
 {
   reduce(snd, root, m_trainer_comm, op);
 }
 /** Within-trainer reduce (for root processes). */
 template <typename T>
-T lbann_comm::trainer_reduce(const T snd, const El::mpi::Op op)
+T lbann_comm::trainer_reduce(const T snd, const El::mpi::Op op) const
 {
   return reduce(snd, m_trainer_comm, op);
 }
@@ -470,7 +481,7 @@ template <typename T>
 void lbann_comm::trainer_reduce(T const* const snd,
                                 const int count,
                                 const int root,
-                                const El::mpi::Op op)
+                                const El::mpi::Op op) const
 {
   reduce(snd, count, root, m_trainer_comm, op);
 }
@@ -479,7 +490,7 @@ template <typename T>
 void lbann_comm::trainer_reduce(T const* const snd,
                                 const int count,
                                 T* const rcv,
-                                const El::mpi::Op op)
+                                const El::mpi::Op op) const
 {
   reduce(snd, count, rcv, m_trainer_comm, op);
 }
@@ -488,7 +499,7 @@ template <typename T>
 void lbann_comm::reduce(const T snd,
                         const int root,
                         const El::mpi::Comm& c,
-                        const El::mpi::Op op)
+                        const El::mpi::Op op) const
 {
   m_bytes_sent += sizeof(T);
   El::mpi::Reduce(&snd,
@@ -501,7 +512,9 @@ void lbann_comm::reduce(const T snd,
 }
 /** Scalar reduce (for root processes). */
 template <typename T>
-T lbann_comm::reduce(const T snd, const El::mpi::Comm& c, const El::mpi::Op op)
+T lbann_comm::reduce(const T snd,
+                     const El::mpi::Comm& c,
+                     const El::mpi::Op op) const
 {
   T val = {};
   auto const size_c = El::mpi::Size(c);
@@ -523,7 +536,7 @@ template <typename T>
 void lbann_comm::reduce(T const* const snd,
                         const int count,
                         const int root,
-                        const El::mpi::Comm& c)
+                        const El::mpi::Comm& c) const
 {
   reduce(snd, count, root, c, El::mpi::SUM, El::SyncInfo<El::Device::CPU>{});
 }
@@ -532,7 +545,7 @@ void lbann_comm::reduce(T const* const snd,
                         const int count,
                         const int root,
                         const El::mpi::Comm& c,
-                        El::SyncInfo<D> const& syncInfo)
+                        El::SyncInfo<D> const& syncInfo) const
 {
   reduce(snd, count, root, c, El::mpi::SUM, syncInfo);
 }
@@ -542,7 +555,7 @@ void lbann_comm::reduce(T const* const snd,
                         const int count,
                         const int root,
                         const El::mpi::Comm& c,
-                        const El::mpi::Op op)
+                        const El::mpi::Op op) const
 {
   reduce(snd, count, root, c, op, El::SyncInfo<El::Device::CPU>{});
 }
@@ -552,7 +565,7 @@ void lbann_comm::reduce(T const* const snd,
                         const int root,
                         const El::mpi::Comm& c,
                         const El::mpi::Op op,
-                        El::SyncInfo<D> const& syncInfo)
+                        El::SyncInfo<D> const& syncInfo) const
 {
   m_bytes_sent += sizeof(T) * count;
   El::mpi::Reduce(snd, (T*)nullptr, count, op, root, c, syncInfo);
@@ -563,7 +576,7 @@ void lbann_comm::reduce(T const* const snd,
                         const int count,
                         T* const rcv,
                         const El::mpi::Comm& c,
-                        El::SyncInfo<D> const& syncInfo)
+                        El::SyncInfo<D> const& syncInfo) const
 {
   reduce(snd, count, rcv, c, El::mpi::SUM, syncInfo);
 }
@@ -571,7 +584,7 @@ template <typename T>
 void lbann_comm::reduce(T const* const snd,
                         const int count,
                         T* const rcv,
-                        const El::mpi::Comm& c)
+                        const El::mpi::Comm& c) const
 {
   reduce(snd, count, rcv, c, El::mpi::SUM, El::SyncInfo<El::Device::CPU>{});
 }
@@ -581,7 +594,7 @@ void lbann_comm::reduce(T const* const snd,
                         const int count,
                         T* const rcv,
                         const El::mpi::Comm& c,
-                        const El::mpi::Op op)
+                        const El::mpi::Op op) const
 {
   reduce(snd, count, rcv, c, op, El::SyncInfo<El::Device::CPU>{});
 }
@@ -591,7 +604,7 @@ void lbann_comm::reduce(T const* snd,
                         T* const rcv,
                         const El::mpi::Comm& c,
                         El::mpi::Op op,
-                        El::SyncInfo<D> const& syncInfo)
+                        El::SyncInfo<D> const& syncInfo) const
 {
   if (snd == rcv) {
     snd = (T const*)MPI_IN_PLACE;
@@ -603,13 +616,13 @@ void lbann_comm::reduce(T const* snd,
 }
 /** Inter-trainer all-reduce. */
 template <typename T>
-T lbann_comm::intertrainer_allreduce(const T snd, const El::mpi::Op op)
+T lbann_comm::intertrainer_allreduce(const T snd, const El::mpi::Op op) const
 {
   return allreduce(snd, m_intertrainer_comm, op);
 }
 /** Within-trainer all-reduce. */
 template <typename T>
-T lbann_comm::trainer_allreduce(const T snd, const El::mpi::Op op)
+T lbann_comm::trainer_allreduce(const T snd, const El::mpi::Op op) const
 {
   return allreduce(snd, m_trainer_comm, op);
 }
@@ -618,13 +631,15 @@ template <typename T>
 void lbann_comm::trainer_allreduce(T const* const snd,
                                    const int count,
                                    T* const rcv,
-                                   const El::mpi::Op op)
+                                   const El::mpi::Op op) const
 {
   allreduce(snd, count, rcv, m_trainer_comm, op);
 }
 /** Scalar allreduce. */
 template <typename T>
-T lbann_comm::allreduce(T snd, const El::mpi::Comm& c, const El::mpi::Op op)
+T lbann_comm::allreduce(T snd,
+                        const El::mpi::Comm& c,
+                        const El::mpi::Op op) const
 {
   auto const size_c = El::mpi::Size(c);
   m_bytes_sent += sizeof(T);
@@ -641,7 +656,7 @@ void lbann_comm::allreduce(T const* const snd,
                            const int count,
                            T* const rcv,
                            const El::mpi::Comm& c,
-                           const El::mpi::Op op)
+                           const El::mpi::Op op) const
 {
   auto const size_c = El::mpi::Size(c);
   m_bytes_sent += count * sizeof(T);
@@ -669,7 +684,7 @@ template <typename T>
 void lbann_comm::allreduce(T* const data,
                            const int count,
                            const El::mpi::Comm& c,
-                           const El::mpi::Op op)
+                           const El::mpi::Op op) const
 {
   auto const size_c = El::mpi::Size(c);
   m_bytes_sent += count * sizeof(T);
@@ -701,7 +716,7 @@ void lbann_comm::nb_allreduce(T* data,
                               const int count,
                               const El::mpi::Comm& c,
                               Al::request& req,
-                              const El::mpi::Op op)
+                              const El::mpi::Op op) const
 {
 #ifdef LBANN_HAS_ALUMINUM
   bytes_sent += count * sizeof(T);
@@ -720,13 +735,13 @@ void lbann_comm::nb_allreduce(T* data,
 
 /** Wait for a all non-blocking requests to complete. */
 template <typename T>
-void lbann_comm::wait_all(std::vector<El::mpi::Request<T>>& req)
+void lbann_comm::wait_all(std::vector<El::mpi::Request<T>>& req) const
 {
   El::mpi::WaitAll(req.size(), req.data());
 }
 
 /** Wait for a non-blocking request to complete. */
-template <typename T> void lbann_comm::wait(El::mpi::Request<T>& req)
+template <typename T> void lbann_comm::wait(El::mpi::Request<T>& req) const
 {
   El::mpi::Wait(req);
 }
@@ -736,7 +751,7 @@ template <typename T>
 void lbann_comm::send(const T* const data,
                       const int count,
                       const int trainer,
-                      const int rank)
+                      const int rank) const
 {
   send(data, count, trainer, rank, El::SyncInfo<El::Device::CPU>{});
 }
@@ -745,7 +760,7 @@ void lbann_comm::send(const T* const data,
                       const int count,
                       const int trainer,
                       const int rank,
-                      El::SyncInfo<D> const& syncInfo)
+                      El::SyncInfo<D> const& syncInfo) const
 {
   m_bytes_sent += sizeof(T) * count;
   El::mpi::Send(data,
@@ -758,7 +773,7 @@ template <typename T, El::Device D>
 void lbann_comm::send(const T* const data,
                       const int count,
                       const int trainer,
-                      El::SyncInfo<D> const& syncInfo)
+                      El::SyncInfo<D> const& syncInfo) const
 {
   send(data, count, trainer, m_rank_in_trainer, syncInfo);
 }
@@ -769,7 +784,7 @@ void lbann_comm::nb_send(const T* const data,
                          const int count,
                          const int trainer,
                          const int rank,
-                         El::mpi::Request<T>& req)
+                         El::mpi::Request<T>& req) const
 {
   m_bytes_sent += sizeof(T) * count;
   El::mpi::ISend(data,
@@ -784,7 +799,7 @@ void lbann_comm::nb_tagged_send(const T* const data,
                                 const int rank,
                                 const int tag,
                                 El::mpi::Request<T>& req,
-                                const El::mpi::Comm& c)
+                                const El::mpi::Comm& c) const
 {
   m_bytes_sent += sizeof(T) * count;
   El::mpi::TaggedISend(data, count, rank, tag, c, req);
@@ -793,7 +808,7 @@ template <typename T>
 void lbann_comm::nb_send(const T* const data,
                          const int count,
                          const int trainer,
-                         El::mpi::Request<T>& req)
+                         El::mpi::Request<T>& req) const
 {
   nb_send(data, count, trainer, m_rank_in_trainer, req);
 }
@@ -803,16 +818,17 @@ template <typename T>
 void lbann_comm::recv(T* const data,
                       const int count,
                       const int trainer,
-                      const int rank)
+                      const int rank) const
 {
   recv(data, count, trainer, rank, El::SyncInfo<El::Device::CPU>{});
 }
 template <typename T>
-void lbann_comm::recv(T* data, const int count, const int trainer)
+void lbann_comm::recv(T* data, const int count, const int trainer) const
 {
   recv(data, count, trainer, m_rank_in_trainer);
 }
-template <typename T> void lbann_comm::recv(T* const data, const int count)
+template <typename T>
+void lbann_comm::recv(T* const data, const int count) const
 {
   recv(data, count, El::SyncInfo<El::Device::CPU>{});
 }
@@ -821,7 +837,7 @@ void lbann_comm::recv(T* const data,
                       const int count,
                       const int trainer,
                       const int rank,
-                      El::SyncInfo<D> const& syncInfo)
+                      El::SyncInfo<D> const& syncInfo) const
 {
   El::mpi::Recv(data,
                 count,
@@ -834,7 +850,7 @@ template <typename T, El::Device D>
 void lbann_comm::recv(T* const data,
                       const int count,
                       const int trainer,
-                      El::SyncInfo<D> const& syncInfo)
+                      El::SyncInfo<D> const& syncInfo) const
 {
   recv(data, count, trainer, m_rank_in_trainer, syncInfo);
 }
@@ -842,7 +858,7 @@ void lbann_comm::recv(T* const data,
 template <typename T, El::Device D>
 void lbann_comm::recv(T* const data,
                       const int count,
-                      El::SyncInfo<D> const& syncInfo)
+                      El::SyncInfo<D> const& syncInfo) const
 {
   El::mpi::Recv(data, count, El::mpi::ANY_SOURCE, get_world_comm(), syncInfo);
   m_bytes_received += sizeof(T) * count;
@@ -854,7 +870,7 @@ void lbann_comm::nb_recv(T* const data,
                          const int count,
                          const int trainer,
                          const int rank,
-                         El::mpi::Request<T>& req)
+                         El::mpi::Request<T>& req) const
 {
   El::mpi::IRecv(data,
                  count,
@@ -869,7 +885,7 @@ void lbann_comm::nb_tagged_recv(T* const data,
                                 const int rank,
                                 const int tag,
                                 El::mpi::Request<T>& req,
-                                const El::mpi::Comm& c)
+                                const El::mpi::Comm& c) const
 {
   El::mpi::TaggedIRecv(data, count, rank, tag, c, req);
   m_bytes_received += sizeof(T) * count;
@@ -879,14 +895,14 @@ template <typename T>
 void lbann_comm::nb_recv(T* const data,
                          const int count,
                          const int trainer,
-                         El::mpi::Request<T>& req)
+                         El::mpi::Request<T>& req) const
 {
   nb_recv(data, count, trainer, m_rank_in_trainer, req);
 }
 template <typename T>
 void lbann_comm::nb_recv(T* const data,
                          const int count,
-                         El::mpi::Request<T>& req)
+                         El::mpi::Request<T>& req) const
 {
   El::mpi::IRecv(data, count, El::mpi::ANY_SOURCE, get_world_comm(), req);
   m_bytes_received += sizeof(T) * count;
@@ -901,7 +917,7 @@ void lbann_comm::sendrecv(const T* const snd,
                           T* const rcv,
                           const int recv_count,
                           const int recv_trainer,
-                          const int recv_rank)
+                          const int recv_rank) const
 {
   sendrecv(snd,
            send_count,
@@ -919,7 +935,7 @@ void lbann_comm::sendrecv(const T* const snd,
                           const int send_trainer,
                           T* const rcv,
                           const int recv_count,
-                          const int recv_trainer)
+                          const int recv_trainer) const
 {
   sendrecv(snd,
            send_count,
@@ -941,7 +957,7 @@ void lbann_comm::sendrecv(const T* const snd,
                           const int recv_count,
                           const int recv_trainer,
                           const int recv_rank,
-                          El::SyncInfo<D> const& syncInfo)
+                          El::SyncInfo<D> const& syncInfo) const
 {
   m_bytes_sent += sizeof(T) * send_count;
   m_bytes_received += sizeof(T) * recv_count;
@@ -961,7 +977,7 @@ void lbann_comm::sendrecv(const T* const snd,
                           T* const rcv,
                           const int recv_count,
                           const int recv_trainer,
-                          El::SyncInfo<D> const& syncInfo)
+                          El::SyncInfo<D> const& syncInfo) const
 {
   sendrecv(snd,
            send_count,
@@ -976,7 +992,7 @@ void lbann_comm::sendrecv(const T* const snd,
 
 /** Determine the size (count) of an incoming message. */
 template <typename T>
-int lbann_comm::get_count(const int trainer, const int rank)
+int lbann_comm::get_count(const int trainer, const int rank) const
 {
   MPI_Status status;
   MPI_Probe(get_world_rank(trainer, rank),
@@ -985,13 +1001,13 @@ int lbann_comm::get_count(const int trainer, const int rank)
             &status);
   return El::mpi::GetCount<T>(status);
 }
-template <typename T> int lbann_comm::get_count(const int trainer)
+template <typename T> int lbann_comm::get_count(const int trainer) const
 {
   return get_count<T>(trainer, m_rank_in_trainer);
 }
 
 template <typename T, bool S>
-void lbann_comm::broadcast(const int root, T& val, const El::mpi::Comm& c)
+void lbann_comm::broadcast(const int root, T& val, const El::mpi::Comm& c) const
 {
   auto const rank_c = El::mpi::Rank(c);
   if (S) {
@@ -1032,7 +1048,7 @@ void lbann_comm::broadcast(const int root,
                            T* const data,
                            const int count,
                            const El::mpi::Comm& c,
-                           El::SyncInfo<D> const& syncInfo)
+                           El::SyncInfo<D> const& syncInfo) const
 {
   auto const rank_c = El::mpi::Rank(c);
   const int size = static_cast<int>(S ? count : sizeof(T) * count);
@@ -1047,24 +1063,24 @@ void lbann_comm::broadcast(const int root,
 template <>
 void lbann_comm::broadcast<std::string>(int root,
                                         std::string& str,
-                                        const El::mpi::Comm& c);
+                                        const El::mpi::Comm& c) const;
 
 #ifndef LBANN_COMM_INSTANTIATE
 #define PROTO(T)                                                               \
   extern template void lbann_comm::allreduce(El::AbstractMatrix<T>& m,         \
                                              const El::mpi::Comm& c,           \
-                                             El::mpi::Op op);                  \
+                                             El::mpi::Op op) const;            \
   extern template void lbann_comm::allreduce(El::AbstractDistMatrix<T>& m,     \
                                              const El::mpi::Comm& c,           \
-                                             El::mpi::Op op);                  \
+                                             El::mpi::Op op) const;            \
   extern template void lbann_comm::nb_allreduce(El::AbstractMatrix<T>& m,      \
                                                 const El::mpi::Comm& c,        \
                                                 Al::request& req,              \
-                                                El::mpi::Op op);               \
+                                                El::mpi::Op op) const;         \
   extern template void lbann_comm::nb_allreduce(El::AbstractDistMatrix<T>& m,  \
                                                 const El::mpi::Comm& c,        \
                                                 Al::request& req,              \
-                                                El::mpi::Op op)
+                                                El::mpi::Op op) const
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF

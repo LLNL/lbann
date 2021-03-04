@@ -135,14 +135,14 @@ void lbann_comm::split_trainers(const int ppm)
   m_grid = new Grid(m_trainer_comm.GetMPIComm());
 }
 
-void lbann_comm::intertrainer_sum_matrix(AbsMat& mat)
+void lbann_comm::intertrainer_sum_matrix(AbsMat& mat) const
 {
   m_bytes_sent += sizeof(DataType) * mat.Height() * mat.Width();
   El::AllReduce(mat, m_intertrainer_comm, El::mpi::SUM);
   m_bytes_received += sizeof(DataType) * mat.Height() * mat.Width();
 }
 
-void lbann_comm::intertrainer_sum_matrix(AbsDistMat& mat)
+void lbann_comm::intertrainer_sum_matrix(AbsDistMat& mat) const
 {
   allreduce(mat, m_intertrainer_comm, El::mpi::SUM);
 }
@@ -239,7 +239,7 @@ void allreduce_aluminum(El::Matrix<T, El::Device::GPU>& m,
                         El::mpi::Op const& op,
                         BackendTag<BackendT>,
                         typename BackendT::allreduce_algo_type algo =
-                          BackendT::allreduce_algo_type::automatic)
+                          BackendT::allreduce_algo_type::automatic) const
 {
   const auto local_size = m.Height() * m.Width();
   ::Al::Allreduce<BackendT>(
@@ -263,7 +263,7 @@ void nb_allreduce_aluminum(El::Matrix<T, El::Device::GPU>& m,
                            El::mpi::Op const& op,
                            BackendTag<BackendT> const& tag,
                            typename BackendT::allreduce_algo_type algo =
-                             BackendT::allreduce_algo_type::automatic)
+                             BackendT::allreduce_algo_type::automatic) const
 {
   const auto local_size = m.Height() * m.Width();
   const auto& syncinfo = El::SyncInfoFromMatrix(m);
@@ -290,7 +290,7 @@ void nb_allreduce_aluminum(El::Matrix<T, El::Device::GPU>& m,
                            El::mpi::Op const& op,
                            BackendTag<BackendT> const& tag,
                            typename BackendT::allreduce_algo_type algo =
-                             BackendT::allreduce_algo_type::automatic)
+                             BackendT::allreduce_algo_type::automatic) const
 {
   El::AllReduce(m, c, op);
 }
@@ -307,7 +307,7 @@ void allreduce_aluminum(El::Matrix<T, El::Device::GPU>& m,
                         El::mpi::Op const& op,
                         BackendTag<BackendT>,
                         typename BackendT::allreduce_algo_type =
-                          BackendT::allreduce_algo_type::automatic)
+                          BackendT::allreduce_algo_type::automatic) const
 {
   // We cannot dispatch with this backend directly to Aluminum. Let
   // Elemental handle it.
@@ -317,7 +317,7 @@ void allreduce_aluminum(El::Matrix<T, El::Device::GPU>& m,
 template <typename T>
 void allreduce_impl(El::Matrix<T, El::Device::GPU>& m,
                     El::mpi::Comm const& c,
-                    El::mpi::Op const& op)
+                    El::mpi::Op const& op) const
 {
   return El::AllReduce(m, c, op);
 }
@@ -326,7 +326,7 @@ template <typename T>
 void nb_allreduce_impl(El::Matrix<T, El::Device::GPU>& m,
                        El::mpi::Comm const& c,
                        Al::request& req,
-                       El::mpi::Op const& op)
+                       El::mpi::Op const& op) const
 {
   if (m.Width() > 1 && m.Height() != m.LDim()) {
     // Aluminum doesn't do allreduces on strided matrices
@@ -355,7 +355,7 @@ void nb_allreduce_impl(El::Matrix<T, El::Device::GPU>& m,
 template <typename TensorDataType>
 void lbann_comm::allreduce(El::AbstractMatrix<TensorDataType>& m,
                            const El::mpi::Comm& c,
-                           El::mpi::Op op)
+                           El::mpi::Op op) const
 {
   if (El::mpi::Size(c) == 1 || m.Height() < 1 || m.Width() < 1) {
     return;
@@ -384,7 +384,7 @@ void lbann_comm::allreduce(El::AbstractMatrix<TensorDataType>& m,
 template <typename TensorDataType>
 void lbann_comm::allreduce(El::AbstractDistMatrix<TensorDataType>& m,
                            const El::mpi::Comm& c,
-                           El::mpi::Op op)
+                           El::mpi::Op op) const
 {
   allreduce(m.Matrix(), c, op);
 }
@@ -393,7 +393,7 @@ template <typename TensorDataType>
 void lbann_comm::nb_allreduce(El::AbstractMatrix<TensorDataType>& m,
                               const El::mpi::Comm& c,
                               Al::request& req,
-                              El::mpi::Op op)
+                              El::mpi::Op op) const
 {
   if (El::mpi::Size(c) == 1 || m.Height() < 1 || m.Width() < 1) {
     return;
@@ -425,12 +425,12 @@ template <typename TensorDataType>
 void lbann_comm::nb_allreduce(El::AbstractDistMatrix<TensorDataType>& m,
                               const El::mpi::Comm& c,
                               Al::request& req,
-                              El::mpi::Op op)
+                              El::mpi::Op op) const
 {
   nb_allreduce(m.Matrix(), c, req, op);
 }
 
-void lbann_comm::wait(Al::request& req)
+void lbann_comm::wait(Al::request& req) const
 {
 #ifdef LBANN_HAS_ALUMINUM
   if (req.mpi_req != Al::mpi_null_req) {
@@ -451,7 +451,7 @@ void lbann_comm::wait(Al::request& req)
 #endif // LBANN_HAS_ALUMINUM
 }
 
-bool lbann_comm::test(Al::request& req)
+bool lbann_comm::test(Al::request& req) const
 {
   bool req_test = true;
 #ifdef LBANN_HAS_ALUMINUM
@@ -472,12 +472,12 @@ bool lbann_comm::test(Al::request& req)
   return req_test;
 }
 
-void lbann_comm::intertrainer_broadcast_matrix(AbsMat& mat, int root)
+void lbann_comm::intertrainer_broadcast_matrix(AbsMat& mat, int root) const
 {
   El::Broadcast(mat, m_intertrainer_comm, root);
 }
 
-void lbann_comm::intertrainer_broadcast_matrix(AbsDistMat& mat, int root)
+void lbann_comm::intertrainer_broadcast_matrix(AbsDistMat& mat, int root) const
 {
   El::Broadcast(mat, m_intertrainer_comm, root);
 }
@@ -485,39 +485,43 @@ void lbann_comm::intertrainer_broadcast_matrix(AbsDistMat& mat, int root)
 template <>
 void lbann_comm::broadcast<std::string>(const int root,
                                         std::string& str,
-                                        const El::mpi::Comm& c)
+                                        const El::mpi::Comm& c) const
 {
   std::vector<char> data(str.begin(), str.end());
   broadcast(root, data, c);
   str.assign(data.begin(), data.end());
 }
 
-void lbann_comm::intertrainer_barrier()
+void lbann_comm::intertrainer_barrier() const
 {
   ++m_num_intertrainer_barriers;
   barrier(m_intertrainer_comm);
 }
 
-void lbann_comm::trainer_barrier()
+void lbann_comm::trainer_barrier() const
 {
   ++m_num_trainer_barriers;
   barrier(m_trainer_comm);
 }
 
-void lbann_comm::global_barrier()
+void lbann_comm::global_barrier() const
 {
   ++m_num_global_barriers;
   barrier(get_world_comm());
 }
 
-void lbann_comm::barrier(const El::mpi::Comm& c) { El::mpi::Barrier(c); }
+void lbann_comm::barrier(const El::mpi::Comm& c) const { El::mpi::Barrier(c); }
 
-void lbann_comm::send(const AbsMat& mat, const int trainer, const int rank)
+void lbann_comm::send(const AbsMat& mat,
+                      const int trainer,
+                      const int rank) const
 {
   El::Send(mat, get_world_comm(), get_world_rank(trainer, rank));
 }
 
-void lbann_comm::send(const DistMat& mat, const int trainer, const int rank)
+void lbann_comm::send(const DistMat& mat,
+                      const int trainer,
+                      const int rank) const
 {
   send(mat.LockedMatrix(), trainer, rank);
 }
@@ -525,7 +529,7 @@ void lbann_comm::send(const DistMat& mat, const int trainer, const int rank)
 void lbann_comm::nb_send(const AbsMat& mat,
                          const int trainer,
                          const int rank,
-                         El::mpi::Request<DataType>& req)
+                         El::mpi::Request<DataType>& req) const
 {
   nb_send(mat.LockedBuffer(), mat.Height() * mat.Width(), trainer, rank, req);
 }
@@ -533,7 +537,7 @@ void lbann_comm::nb_send(const AbsMat& mat,
 void lbann_comm::nb_send(const DistMat& mat,
                          const int trainer,
                          const int rank,
-                         El::mpi::Request<DataType>& req)
+                         El::mpi::Request<DataType>& req) const
 {
   nb_send(mat.LockedBuffer(),
           mat.LocalHeight() * mat.LocalWidth(),
@@ -542,27 +546,27 @@ void lbann_comm::nb_send(const DistMat& mat,
           req);
 }
 
-void lbann_comm::recv(AbsMat& mat, const int trainer, const int rank)
+void lbann_comm::recv(AbsMat& mat, const int trainer, const int rank) const
 {
   El::Recv(mat, get_world_comm(), get_world_rank(trainer, rank));
 }
 
-void lbann_comm::recv(DistMat& mat, const int trainer, const int rank)
+void lbann_comm::recv(DistMat& mat, const int trainer, const int rank) const
 {
   recv(mat.Matrix(), trainer, rank);
 }
 
-void lbann_comm::recv(AbsMat& mat)
+void lbann_comm::recv(AbsMat& mat) const
 {
   El::Recv(mat, get_world_comm(), El::mpi::ANY_SOURCE);
 }
 
-void lbann_comm::recv(DistMat& mat) { recv(mat.Matrix()); }
+void lbann_comm::recv(DistMat& mat) const { recv(mat.Matrix()); }
 
 void lbann_comm::nb_recv(AbsMat& mat,
                          const int trainer,
                          const int rank,
-                         El::mpi::Request<DataType>& req)
+                         El::mpi::Request<DataType>& req) const
 {
   nb_recv(mat.Buffer(), mat.Height() * mat.Width(), trainer, rank, req);
 }
@@ -570,7 +574,7 @@ void lbann_comm::nb_recv(AbsMat& mat,
 void lbann_comm::nb_recv(DistMat& mat,
                          const int trainer,
                          const int rank,
-                         El::mpi::Request<DataType>& req)
+                         El::mpi::Request<DataType>& req) const
 {
   nb_recv(mat.Buffer(),
           mat.LocalHeight() * mat.LocalWidth(),
@@ -579,12 +583,12 @@ void lbann_comm::nb_recv(DistMat& mat,
           req);
 }
 
-void lbann_comm::nb_recv(AbsMat& mat, El::mpi::Request<DataType>& req)
+void lbann_comm::nb_recv(AbsMat& mat, El::mpi::Request<DataType>& req) const
 {
   nb_recv(mat.Buffer(), mat.Height() * mat.Width(), req);
 }
 
-void lbann_comm::nb_recv(DistMat& mat, El::mpi::Request<DataType>& req)
+void lbann_comm::nb_recv(DistMat& mat, El::mpi::Request<DataType>& req) const
 {
   nb_recv(mat.Buffer(), mat.LocalHeight() * mat.LocalWidth(), req);
 }
@@ -683,7 +687,7 @@ const El::mpi::Comm& lbann_comm::get_packed_group_comm(int num_per_group) const
   return m_group_communicators[num_per_group];
 }
 
-void lbann_comm::lbann_comm_abort(std::string msg)
+void lbann_comm::lbann_comm_abort(std::string msg) const
 {
   throw lbann_exception(msg);
 }
@@ -721,20 +725,20 @@ int get_rank_in_world()
 }
 
 #define PROTO(T)                                                               \
-  template void lbann_comm::allreduce<T>(El::AbstractMatrix<T> & m,            \
+  template void lbann_comm::allreduce(El::AbstractMatrix<T>& m,                \
+                                      const El::mpi::Comm& c,                  \
+                                      El::mpi::Op op) const;                   \
+  template void lbann_comm::allreduce(El::AbstractDistMatrix<T>& m,            \
+                                      const El::mpi::Comm& c,                  \
+                                      El::mpi::Op op) const;                   \
+  template void lbann_comm::nb_allreduce(El::AbstractMatrix<T>& m,             \
                                          const El::mpi::Comm& c,               \
-                                         El::mpi::Op op);                      \
-  template void lbann_comm::allreduce<T>(El::AbstractDistMatrix<T> & m,        \
+                                         Al::request& req,                     \
+                                         El::mpi::Op op) const;                \
+  template void lbann_comm::nb_allreduce(El::AbstractDistMatrix<T>& m,         \
                                          const El::mpi::Comm& c,               \
-                                         El::mpi::Op op);                      \
-  template void lbann_comm::nb_allreduce<T>(El::AbstractMatrix<T> & m,         \
-                                            const El::mpi::Comm& c,            \
-                                            Al::request& req,                  \
-                                            El::mpi::Op op);                   \
-  template void lbann_comm::nb_allreduce<T>(El::AbstractDistMatrix<T> & m,     \
-                                            const El::mpi::Comm& c,            \
-                                            Al::request& req,                  \
-                                            El::mpi::Op op)
+                                         Al::request& req,                     \
+                                         El::mpi::Op op) const
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF

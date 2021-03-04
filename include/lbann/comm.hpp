@@ -246,15 +246,15 @@ public:
   void reset_threads() const noexcept;
 
   /** Perform a sum reduction of mat over the inter-trainer communicator. */
-  void intertrainer_sum_matrix(AbsMat& mat);
-  void intertrainer_sum_matrix(AbsDistMat& mat);
+  void intertrainer_sum_matrix(AbsMat& mat) const;
+  void intertrainer_sum_matrix(AbsDistMat& mat) const;
   /** Broadcast mat over the inter-trainer communicator starting from root. */
-  void intertrainer_broadcast_matrix(AbsMat& mat, int root);
-  void intertrainer_broadcast_matrix(AbsDistMat& mat, int root);
+  void intertrainer_broadcast_matrix(AbsMat& mat, int root) const;
+  void intertrainer_broadcast_matrix(AbsDistMat& mat, int root) const;
 
   /// Broadcast a scalar value over an arbitrary communicator
   template <typename T, bool S = is_instantiated_El_mpi_type<T>::value>
-  void broadcast(int root, T& val, const El::mpi::Comm& c);
+  void broadcast(int root, T& val, const El::mpi::Comm& c) const;
 
   template <typename T>
   void broadcast_custom(int root, T& val, const El::mpi::Comm& c) const;
@@ -262,11 +262,11 @@ public:
   void broadcast_native(int root, T& val, const El::mpi::Comm& c) const;
 
   /// World broadcast of a scalar.
-  template <typename T> void world_broadcast(int root, T& val);
+  template <typename T> void world_broadcast(int root, T& val) const;
   /// Inter-trainer broadcast of a scalar.
-  template <typename T> void intertrainer_broadcast(int root, T& val);
+  template <typename T> void intertrainer_broadcast(int root, T& val) const;
   /// Within-trainer broadcast of a scalar.
-  template <typename T> void trainer_broadcast(int root, T& val);
+  template <typename T> void trainer_broadcast(int root, T& val) const;
 
   /**
    * Broadcast a buffer over an arbitrary communicator assuming that
@@ -275,8 +275,10 @@ public:
 
   // Default to cpu memory
   template <typename T>
-  void
-  broadcast(const int root, T* data, const int count, const El::mpi::Comm& c);
+  void broadcast(const int root,
+                 T* data,
+                 const int count,
+                 const El::mpi::Comm& c) const;
 
   template <typename T,
             El::Device D,
@@ -285,58 +287,62 @@ public:
                  T* data,
                  const int count,
                  const El::mpi::Comm& c,
-                 El::SyncInfo<D> const& syncInfo);
+                 El::SyncInfo<D> const& syncInfo) const;
 
   /// World broadcast of a buffer.
   template <typename T>
-  void world_broadcast(const int root, T* data, const int count);
+  void world_broadcast(const int root, T* data, const int count) const;
 
   template <typename T, El::Device D>
   void world_broadcast(const int root,
                        T* data,
                        const int count,
-                       El::SyncInfo<D> const& syncInfo);
+                       El::SyncInfo<D> const& syncInfo) const;
   /// Inter-trainer broadcast of a buffer.
   template <typename T>
-  void intertrainer_broadcast(const int root, T* data, const int count);
+  void intertrainer_broadcast(const int root, T* data, const int count) const;
   template <typename T, El::Device D>
   void intertrainer_broadcast(const int root,
                               T* data,
                               const int count,
-                              El::SyncInfo<D> const& syncInfo);
+                              El::SyncInfo<D> const& syncInfo) const;
   /// Within-trainer broadcast of a buffer.
   template <typename T>
-  void trainer_broadcast(const int root, T* data, const int count);
+  void trainer_broadcast(const int root, T* data, const int count) const;
 
   template <typename T, El::Device D>
   void trainer_broadcast(const int root,
                          T* data,
                          const int count,
-                         El::SyncInfo<D> const& syncInfo);
+                         El::SyncInfo<D> const& syncInfo) const;
 
   /**
    * Resize vector<> over an arbitrary communicator to match the one on root.
    */
   template <typename T>
-  size_t resize(const int root, std::vector<T>& data, const El::mpi::Comm& c);
+  size_t
+  resize(const int root, std::vector<T>& data, const El::mpi::Comm& c) const;
 
   /**
    * Broadcast vector<> over an arbitrary communicator;
    * vector<> for non-root processes will be resized as needed.
    */
   template <typename T>
-  void broadcast(const int root, std::vector<T>& data, const El::mpi::Comm& c);
+  void
+  broadcast(const int root, std::vector<T>& data, const El::mpi::Comm& c) const;
   /// Broadcast vector<> to world.
-  template <typename T> void world_broadcast(int root, std::vector<T>& data);
+  template <typename T>
+  void world_broadcast(int root, std::vector<T>& data) const;
   /**
    * Broadcast vector<> within trainer;
    * vector<> for non-root processes will be resized as needed.
    */
   /// Broadcast vector<> across trainers.
   template <typename T>
-  void intertrainer_broadcast(int root, std::vector<T>& data);
+  void intertrainer_broadcast(int root, std::vector<T>& data) const;
   /// Broadcast vector<> within trainer.
-  template <typename T> void trainer_broadcast(int root, std::vector<T>& data);
+  template <typename T>
+  void trainer_broadcast(int root, std::vector<T>& data) const;
 
   /** Allgather over an arbitrary communicator */
   template <typename T>
@@ -344,14 +350,14 @@ public:
                   int src_count,
                   T* rcv,
                   int rcv_count,
-                  const El::mpi::Comm& c);
+                  const El::mpi::Comm& c) const;
   template <typename T, El::Device D>
   void all_gather(const T* src,
                   int src_count,
                   T* rcv,
                   int rcv_count,
                   const El::mpi::Comm& c,
-                  El::SyncInfo<D> const& syncInfo);
+                  El::SyncInfo<D> const& syncInfo) const;
 
   /**
    * Allgatherv over an arbitrary communicator;
@@ -362,7 +368,7 @@ public:
                   std::vector<T>& rcs,
                   std::vector<int> const& rcv_counts,
                   std::vector<int> const& rcv_disp,
-                  const El::mpi::Comm& c);
+                  const El::mpi::Comm& c) const;
   /**
    * Allgatherv over a trainer communicator;
    * all vectors must be correctly sized prior to entry.
@@ -371,176 +377,187 @@ public:
   void trainer_all_gather(std::vector<T> const& src,
                           std::vector<T>& rcs,
                           std::vector<int> const& rcv_counts,
-                          std::vector<int> const& rcv_disp);
+                          std::vector<int> const& rcv_disp) const;
   /**
    * Allgather for a single element over an arbitrary communicator;
    * std::vector<T> &data must be correctly sized prior to entry.
    */
   template <typename T>
-  void all_gather(T const& src, std::vector<T>& data, const El::mpi::Comm& c);
+  void
+  all_gather(T const& src, std::vector<T>& data, const El::mpi::Comm& c) const;
   /**
    * Allgather for a single element over the world communicator;
    * std::vector<T> &data must be correctly sized prior to entry.
    */
   template <typename T>
-  void world_all_gather(T const& src, std::vector<T>& data);
+  void world_all_gather(T const& src, std::vector<T>& data) const;
   /**
    * Allgather for a single element over the trainer communicator;
    * std::vector<T> &data must be correctly sized prior to entry.
    */
   template <typename T>
-  void trainer_all_gather(T const& src, std::vector<T>& data);
+  void trainer_all_gather(T const& src, std::vector<T>& data) const;
 
   /** Within-trainer scalar gather (for non-root processes). */
-  template <typename T> void trainer_gather(T snd, int root);
+  template <typename T> void trainer_gather(T snd, int root) const;
   /** Within-trainer scalar gather (for root processes). */
-  template <typename T> void trainer_gather(T snd, T* rcv);
+  template <typename T> void trainer_gather(T snd, T* rcv) const;
   /** Within-trainer scalar-array gather (for non-root processes). */
-  template <typename T> void trainer_gather(T const* snd, int count, int root);
+  template <typename T>
+  void trainer_gather(T const* snd, int count, int root) const;
   /** Within-trainer scalar-array gather (for root processes). */
-  template <typename T> void trainer_gather(T const* snd, int count, T* rcv);
+  template <typename T>
+  void trainer_gather(T const* snd, int count, T* rcv) const;
   /** Within-trainer variable-length-array gather (for non-root processes). */
-  template <typename T> void trainer_gatherv(T const* snd, int count, int root);
+  template <typename T>
+  void trainer_gatherv(T const* snd, int count, int root) const;
   template <typename T>
   void trainer_gatherv(T const* snd,
                        int count,
                        T* rcv,
                        int const* rcv_counts,
-                       int const* rcv_displacements);
+                       int const* rcv_displacements) const;
   /** Inter-trainer gather (for non-root processes). */
-  template <typename T> void intertrainer_gather(T snd, int root);
+  template <typename T> void intertrainer_gather(T snd, int root) const;
   /** Inter-trainer gather (for root processes). */
-  template <typename T> void intertrainer_gather(T snd, std::vector<T>& rcv);
+  template <typename T>
+  void intertrainer_gather(T snd, std::vector<T>& rcv) const;
   /** Inter-trainer scalar-array gather (for non-root processes). */
   template <typename T>
-  void intertrainer_gather(T const* snd, int count, int root);
+  void intertrainer_gather(T const* snd, int count, int root) const;
   /** Inter-trainer scalar-array gather (for root processes). */
   template <typename T>
-  void intertrainer_gather(T const* snd, int count, T* rcv);
+  void intertrainer_gather(T const* snd, int count, T* rcv) const;
   /** Scalar gather (for non-root processes). */
-  template <typename T> void gather(T snd, int root, const El::mpi::Comm& c);
-  /** Scalar gather (for root processes). */
-  template <typename T> void gather(T snd, T* rcv, const El::mpi::Comm& c);
+  template <typename T>
+  void gather(T snd, int root, const El::mpi::Comm& c) const;
   /** Scalar gather (for root processes). */
   template <typename T>
-  void gather(T snd, std::vector<T>& rcv, const El::mpi::Comm& c);
+  void gather(T snd, T* rcv, const El::mpi::Comm& c) const;
+  /** Scalar gather (for root processes). */
+  template <typename T>
+  void gather(T snd, std::vector<T>& rcv, const El::mpi::Comm& c) const;
   /** Scalar-array gather (for non-root processes). */
   template <typename T>
-  void gather(T const* snd, int count, int root, const El::mpi::Comm& c);
+  void gather(T const* snd, int count, int root, const El::mpi::Comm& c) const;
   template <typename T, El::Device D>
   void gather(T const* snd,
               int count,
               int root,
               const El::mpi::Comm& c,
-              El::SyncInfo<D> const& syncInfo);
+              El::SyncInfo<D> const& syncInfo) const;
   /** Scalar-array gather (for root processes). */
   template <typename T>
-  void gather(T const* snd, int count, T* rcv, const El::mpi::Comm& c);
+  void gather(T const* snd, int count, T* rcv, const El::mpi::Comm& c) const;
   template <typename T, El::Device D>
   void gather(T const* snd,
               int count,
               T* rcv,
               const El::mpi::Comm& c,
-              El::SyncInfo<D> const& syncInfo);
+              El::SyncInfo<D> const& syncInfo) const;
   /** Scalar scatter (for non-root processes). */
-  template <typename T> T scatter(int root, const El::mpi::Comm& c);
+  template <typename T> T scatter(int root, const El::mpi::Comm& c) const;
   /** Scalar scatter (for root processes). */
-  template <typename T> T scatter(T const* snd, const El::mpi::Comm& c);
+  template <typename T> T scatter(T const* snd, const El::mpi::Comm& c) const;
   /** Inter-trainer reduce (for non-root processes). */
   template <typename T>
-  void intertrainer_reduce(T snd, int root, El::mpi::Op op = El::mpi::SUM);
+  void
+  intertrainer_reduce(T snd, int root, El::mpi::Op op = El::mpi::SUM) const;
   /** Inter-trainer reduce (for root processes). */
   template <typename T>
-  T intertrainer_reduce(T snd, El::mpi::Op op = El::mpi::SUM);
+  T intertrainer_reduce(T snd, El::mpi::Op op = El::mpi::SUM) const;
   /** Within-trainer reduce (for non-root processes). */
   template <typename T>
-  void trainer_reduce(T snd, int root, El::mpi::Op op = El::mpi::SUM);
+  void trainer_reduce(T snd, int root, El::mpi::Op op = El::mpi::SUM) const;
   /** Within-trainer reduce (for root processes). */
-  template <typename T> T trainer_reduce(T snd, El::mpi::Op op = El::mpi::SUM);
+  template <typename T>
+  T trainer_reduce(T snd, El::mpi::Op op = El::mpi::SUM) const;
   /** Within-trainer scalar array reduce (for non-root processes). */
   template <typename T>
   void trainer_reduce(T const* snd,
                       int count,
                       int root,
-                      El::mpi::Op op = El::mpi::SUM);
+                      El::mpi::Op op = El::mpi::SUM) const;
   /** Within-trainer scalar array reduce (for root processes). */
   template <typename T>
   void trainer_reduce(T const* snd,
                       int count,
                       T* rcv,
-                      El::mpi::Op op = El::mpi::SUM);
+                      El::mpi::Op op = El::mpi::SUM) const;
   /** Scalar reduce (for non-root processes). */
   template <typename T>
   void reduce(T snd,
               int root,
               const El::mpi::Comm& c,
-              El::mpi::Op op = El::mpi::SUM);
+              El::mpi::Op op = El::mpi::SUM) const;
   /** Scalar reduce (for root processes). */
   template <typename T>
-  T reduce(T snd, const El::mpi::Comm& c, El::mpi::Op op = El::mpi::SUM);
+  T reduce(T snd, const El::mpi::Comm& c, El::mpi::Op op = El::mpi::SUM) const;
 
   /** Scalar-array reduce (for non-root processes). */
   // Op is "SUM"
   template <typename T>
-  void reduce(T const* snd, int count, int root, const El::mpi::Comm& c);
+  void reduce(T const* snd, int count, int root, const El::mpi::Comm& c) const;
   template <typename T, El::Device D>
   void reduce(T const* snd,
               int count,
               int root,
               const El::mpi::Comm& c,
-              El::SyncInfo<D> const& syncInfo);
+              El::SyncInfo<D> const& syncInfo) const;
 
   template <typename T>
   void reduce(T const* snd,
               int count,
               int root,
               const El::mpi::Comm& c,
-              El::mpi::Op op);
+              El::mpi::Op op) const;
   template <typename T, El::Device D>
   void reduce(T const* snd,
               int count,
               int root,
               const El::mpi::Comm& c,
               El::mpi::Op op,
-              El::SyncInfo<D> const& syncInfo);
+              El::SyncInfo<D> const& syncInfo) const;
   /** Scalar-array reduce (for root processes). */
   template <typename T, El::Device D>
   void reduce(T const* snd,
               int count,
               T* rcv,
               const El::mpi::Comm& c,
-              El::SyncInfo<D> const& syncInfo);
+              El::SyncInfo<D> const& syncInfo) const;
   template <typename T>
-  void reduce(T const* snd, int count, T* rcv, const El::mpi::Comm& c);
+  void reduce(T const* snd, int count, T* rcv, const El::mpi::Comm& c) const;
 
   template <typename T>
   void reduce(T const* snd,
               int count,
               T* rcv,
               const El::mpi::Comm& c,
-              El::mpi::Op op);
+              El::mpi::Op op) const;
   template <typename T, El::Device D>
   void reduce(T const* snd,
               int count,
               T* rcv,
               const El::mpi::Comm& c,
               El::mpi::Op op,
-              El::SyncInfo<D> const& syncInfo);
+              El::SyncInfo<D> const& syncInfo) const;
   /** Inter-trainer all-reduce. */
   template <typename T>
-  T intertrainer_allreduce(T snd, El::mpi::Op op = El::mpi::SUM);
+  T intertrainer_allreduce(T snd, El::mpi::Op op = El::mpi::SUM) const;
   /** Within-trainer all-reduce. */
   template <typename T>
-  T trainer_allreduce(T snd, El::mpi::Op op = El::mpi::SUM);
+  T trainer_allreduce(T snd, El::mpi::Op op = El::mpi::SUM) const;
   /** Scalar array within-trainer all-reduce. */
   template <typename T>
   void trainer_allreduce(T const* snd,
                          int count,
                          T* rcv,
-                         El::mpi::Op op = El::mpi::SUM);
+                         El::mpi::Op op = El::mpi::SUM) const;
   /** Scalar allreduce. */
   template <typename T>
-  T allreduce(T snd, const El::mpi::Comm& c, El::mpi::Op op = El::mpi::SUM);
+  T allreduce(T snd,
+              const El::mpi::Comm& c,
+              El::mpi::Op op = El::mpi::SUM) const;
 
   // FIXME (trb): Based on the backend choice of "MPIBackend", I'm
   // assuming this is intended as a CPU-only call.
@@ -550,23 +567,23 @@ public:
                  int count,
                  T* rcv,
                  const El::mpi::Comm& c,
-                 El::mpi::Op op = El::mpi::SUM);
+                 El::mpi::Op op = El::mpi::SUM) const;
   /** In-place scalar-array allreduce. */
   template <typename T>
   void allreduce(T* data,
                  int count,
                  const El::mpi::Comm& c,
-                 El::mpi::Op op = El::mpi::SUM);
+                 El::mpi::Op op = El::mpi::SUM) const;
   /** Matrix allreduce. */
   template <typename TensorDataType>
   void allreduce(El::AbstractMatrix<TensorDataType>& m,
                  const El::mpi::Comm& c,
-                 El::mpi::Op op = El::mpi::SUM);
+                 El::mpi::Op op = El::mpi::SUM) const;
   /** Matrix allreduce. */
   template <typename TensorDataType>
   void allreduce(El::AbstractDistMatrix<TensorDataType>& m,
                  const El::mpi::Comm& c,
-                 El::mpi::Op op = El::mpi::SUM);
+                 El::mpi::Op op = El::mpi::SUM) const;
   /** Non-blocking matrix allreduce.
    *  If LBANN has not been built with Aluminum, then this calls a
    *  blocking matrix allreduce.
@@ -575,7 +592,7 @@ public:
   void nb_allreduce(El::AbstractMatrix<TensorDataType>& m,
                     const El::mpi::Comm& c,
                     Al::request& req,
-                    El::mpi::Op op = El::mpi::SUM);
+                    El::mpi::Op op = El::mpi::SUM) const;
   /** Non-blocking matrix allreduce.
    *  If LBANN has not been built with Aluminum, then this calls a
    *  blocking matrix allreduce.
@@ -584,7 +601,7 @@ public:
   void nb_allreduce(El::AbstractDistMatrix<TensorDataType>& m,
                     const El::mpi::Comm& c,
                     Al::request& req,
-                    El::mpi::Op op = El::mpi::SUM);
+                    El::mpi::Op op = El::mpi::SUM) const;
   /** Non-blocking in-place scalar-array allreduce.
    *  If LBANN has not been built with Aluminum, then this calls a blocking
    *  allreduce.
@@ -595,47 +612,50 @@ public:
                     int count,
                     const El::mpi::Comm& c,
                     Al::request& req,
-                    El::mpi::Op op = El::mpi::SUM);
+                    El::mpi::Op op = El::mpi::SUM) const;
 
   /** Wait for a all non-blocking requests to complete. */
-  template <typename T> void wait_all(std::vector<El::mpi::Request<T>>& req);
+  template <typename T>
+  void wait_all(std::vector<El::mpi::Request<T>>& req) const;
 
   /** Wait for a non-blocking request to complete. */
-  template <typename T> void wait(El::mpi::Request<T>& req);
+  template <typename T> void wait(El::mpi::Request<T>& req) const;
 
   /** Wait for a non-blocking request to complete. */
-  void wait(Al::request& req);
+  void wait(Al::request& req) const;
   /** Test whether a non-blocking request has completed; true if it has. */
-  bool test(Al::request& req);
+  bool test(Al::request& req) const;
 
   /** Barrier among the inter-trainer processes. */
-  void intertrainer_barrier();
+  void intertrainer_barrier() const;
   /** Barrier among processes in this trainer. */
-  void trainer_barrier();
+  void trainer_barrier() const;
   /** Barrier among all processes. */
-  void global_barrier();
+  void global_barrier() const;
   /** Barrier on an arbitrary communicator. */
-  void barrier(const El::mpi::Comm& c);
+  void barrier(const El::mpi::Comm& c) const;
 
   /** Send a buffer to rank in trainer. */
   template <typename T>
-  void send(const T* data, int count, int trainer, int rank);
+  void send(const T* data, int count, int trainer, int rank) const;
   template <typename T, El::Device D>
   void send(const T* data,
             int count,
             int trainer,
             int rank,
-            El::SyncInfo<D> const& syncInfo);
+            El::SyncInfo<D> const& syncInfo) const;
   template <typename T, El::Device D>
-  void
-  send(const T* data, int count, int trainer, El::SyncInfo<D> const& syncInfo);
-  void send(const AbsMat& mat, int trainer, int rank);
-  void send(const DistMat& mat, int trainer, int rank);
-  void send(const AbsMat& mat, int trainer)
+  void send(const T* data,
+            int count,
+            int trainer,
+            El::SyncInfo<D> const& syncInfo) const;
+  void send(const AbsMat& mat, int trainer, int rank) const;
+  void send(const DistMat& mat, int trainer, int rank) const;
+  void send(const AbsMat& mat, int trainer) const
   {
     send(mat, trainer, m_rank_in_trainer);
   }
-  void send(const DistMat& mat, int trainer)
+  void send(const DistMat& mat, int trainer) const
   {
     send(mat, trainer, m_rank_in_trainer);
   }
@@ -646,88 +666,106 @@ public:
                int count,
                int trainer,
                int rank,
-               El::mpi::Request<T>& req);
+               El::mpi::Request<T>& req) const;
   template <typename T>
   void nb_tagged_send(const T* data,
                       int count,
                       int rank,
                       int tag,
                       El::mpi::Request<T>& req,
-                      const El::mpi::Comm& c);
+                      const El::mpi::Comm& c) const;
   template <typename T>
-  void nb_send(const T* data, int count, int trainer, El::mpi::Request<T>& req);
+  void nb_send(const T* data,
+               int count,
+               int trainer,
+               El::mpi::Request<T>& req) const;
   void nb_send(const AbsMat& mat,
                int trainer,
                int rank,
-               El::mpi::Request<DataType>& req);
+               El::mpi::Request<DataType>& req) const;
   void nb_send(const DistMat& mat,
                int trainer,
                int rank,
-               El::mpi::Request<DataType>& req);
-  void nb_send(const AbsMat& mat, int trainer, El::mpi::Request<DataType>& req)
+               El::mpi::Request<DataType>& req) const;
+  void
+  nb_send(const AbsMat& mat, int trainer, El::mpi::Request<DataType>& req) const
   {
     nb_send(mat, trainer, m_rank_in_trainer, req);
   }
-  void nb_send(const DistMat& mat, int trainer, El::mpi::Request<DataType>& req)
+  void nb_send(const DistMat& mat,
+               int trainer,
+               El::mpi::Request<DataType>& req) const
   {
     nb_send(mat, trainer, m_rank_in_trainer, req);
   }
 
   /** Corresponding receive to send. */
-  template <typename T> void recv(T* data, int count, int trainer, int rank);
-  template <typename T> void recv(T* data, int count, int trainer);
-  template <typename T> void recv(T* data, int count);
+  template <typename T>
+  void recv(T* data, int count, int trainer, int rank) const;
+  template <typename T> void recv(T* data, int count, int trainer) const;
+  template <typename T> void recv(T* data, int count) const;
   template <typename T, El::Device D>
   void recv(T* data,
             int count,
             int trainer,
             int rank,
-            El::SyncInfo<D> const& syncInfo);
+            El::SyncInfo<D> const& syncInfo) const;
   template <typename T, El::Device D>
-  void recv(T* data, int count, int trainer, El::SyncInfo<D> const& syncInfo);
-  void recv(AbsMat& mat, int trainer, int rank);
-  void recv(DistMat& mat, int trainer, int rank);
-  void recv(AbsMat& mat, int trainer) { recv(mat, trainer, m_rank_in_trainer); }
-  void recv(DistMat& mat, int trainer)
+  void
+  recv(T* data, int count, int trainer, El::SyncInfo<D> const& syncInfo) const;
+  void recv(AbsMat& mat, int trainer, int rank) const;
+  void recv(DistMat& mat, int trainer, int rank) const;
+  void recv(AbsMat& mat, int trainer) const
+  {
+    recv(mat, trainer, m_rank_in_trainer);
+  }
+  void recv(DistMat& mat, int trainer) const
   {
     recv(mat, trainer, m_rank_in_trainer);
   }
   /** As above, but receive from anyone. */
   template <typename T, El::Device D>
-  void recv(T* data, int count, El::SyncInfo<D> const& syncInfo);
-  void recv(AbsMat& mat);
-  void recv(DistMat& mat);
+  void recv(T* data, int count, El::SyncInfo<D> const& syncInfo) const;
+  void recv(AbsMat& mat) const;
+  void recv(DistMat& mat) const;
 
   /** Corresponding non-blocking receives. */
   template <typename T>
-  void
-  nb_recv(T* data, int count, int trainer, int rank, El::mpi::Request<T>& req);
+  void nb_recv(T* data,
+               int count,
+               int trainer,
+               int rank,
+               El::mpi::Request<T>& req) const;
   template <typename T>
   void nb_tagged_recv(T* data,
                       int count,
                       int rank,
                       int tag,
                       El::mpi::Request<T>& req,
-                      const El::mpi::Comm& c);
+                      const El::mpi::Comm& c) const;
 
   template <typename T>
-  void nb_recv(T* data, int count, int trainer, El::mpi::Request<T>& req);
-  void
-  nb_recv(AbsMat& mat, int trainer, int rank, El::mpi::Request<DataType>& req);
-  void
-  nb_recv(DistMat& mat, int trainer, int rank, El::mpi::Request<DataType>& req);
-  void nb_recv(AbsMat& mat, int trainer, El::mpi::Request<DataType>& req)
+  void nb_recv(T* data, int count, int trainer, El::mpi::Request<T>& req) const;
+  void nb_recv(AbsMat& mat,
+               int trainer,
+               int rank,
+               El::mpi::Request<DataType>& req) const;
+  void nb_recv(DistMat& mat,
+               int trainer,
+               int rank,
+               El::mpi::Request<DataType>& req) const;
+  void nb_recv(AbsMat& mat, int trainer, El::mpi::Request<DataType>& req) const
   {
     nb_recv(mat, trainer, m_rank_in_trainer, req);
   }
-  void nb_recv(DistMat& mat, int trainer, El::mpi::Request<DataType>& req)
+  void nb_recv(DistMat& mat, int trainer, El::mpi::Request<DataType>& req) const
   {
     nb_recv(mat, trainer, m_rank_in_trainer, req);
   }
   template <typename T>
-  void nb_recv(T* data, int count, El::mpi::Request<T>& req);
-  void nb_recv(AbsMat& mat, El::mpi::Request<DataType>& req);
-  void nb_recv(DistMat& mat, El::mpi::Request<DataType>& req);
+  void nb_recv(T* data, int count, El::mpi::Request<T>& req) const;
+  void nb_recv(AbsMat& mat, El::mpi::Request<DataType>& req) const;
+  void nb_recv(DistMat& mat, El::mpi::Request<DataType>& req) const;
 
   /** Send/recv to/from ranks. */
   template <typename T, El::Device D>
@@ -738,14 +776,14 @@ public:
                 T* rcv,
                 int recv_count,
                 int recv_trainer,
-                int recv_rank);
+                int recv_rank) const;
   template <typename T, El::Device D>
   void sendrecv(const T* snd,
                 int send_count,
                 int send_trainer,
                 T* rcv,
                 int recv_count,
-                int recv_trainer);
+                int recv_trainer) const;
 
   template <typename T, El::Device D>
   void sendrecv(const T* snd,
@@ -756,7 +794,7 @@ public:
                 int recv_count,
                 int recv_trainer,
                 int recv_rank,
-                El::SyncInfo<D> const& syncInfo);
+                El::SyncInfo<D> const& syncInfo) const;
   template <typename T, El::Device D>
   void sendrecv(const T* snd,
                 int send_count,
@@ -764,11 +802,11 @@ public:
                 T* rcv,
                 int recv_count,
                 int recv_trainer,
-                El::SyncInfo<D> const& syncInfo);
+                El::SyncInfo<D> const& syncInfo) const;
 
   /** Determine the size (count) of an incoming message. */
-  template <typename T> int get_count(int trainer, int rank);
-  template <typename T> int get_count(int trainer);
+  template <typename T> int get_count(int trainer, int rank) const;
+  template <typename T> int get_count(int trainer) const;
 
   // Statistics methods.
   /** Return the number of trainer barriers performed. */
@@ -852,7 +890,7 @@ public:
   }
 
   /** throws an lbann_exception **/
-  void lbann_comm_abort(std::string msg);
+  void lbann_comm_abort(std::string msg) const;
 
 private:
   /** World communicator. */
@@ -889,11 +927,11 @@ private:
   int m_threads_per_proc;
 
   // Various statistics counters.
-  size_t m_num_trainer_barriers;
-  size_t m_num_intertrainer_barriers;
-  size_t m_num_global_barriers;
-  size_t m_bytes_sent;
-  size_t m_bytes_received;
+  mutable size_t m_num_trainer_barriers;
+  mutable size_t m_num_intertrainer_barriers;
+  mutable size_t m_num_global_barriers;
+  mutable size_t m_bytes_sent;
+  mutable size_t m_bytes_received;
 
   /** Setup communicator for processes in the same compute node. */
   void setup_node_comm();
@@ -913,7 +951,7 @@ private:
    */
   void count_bytes_broadcast(const size_t bytes,
                              const int rank,
-                             const int root) noexcept
+                             const int root) const noexcept
   {
     if (rank == root) {
       m_bytes_sent += bytes;
