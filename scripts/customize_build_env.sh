@@ -63,6 +63,7 @@ set_center_specific_gpu_arch()
             "sandybridge") # Surface
                 GPU_ARCH_VARIANTS="cuda_arch=35"
                 CMAKE_GPU_ARCH="35"
+                ;;
             "zen" | "zen2") # Corona
                 GPU_ARCH_VARIANTS="amdgpu_target=gfx906"
                 ;;
