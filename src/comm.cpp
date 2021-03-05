@@ -227,8 +227,8 @@ void nb_allreduce_impl(El::Matrix<T, El::Device::CPU>& m,
 {
   if (m.Height() == m.LDim() || m.Width() == 1) {
     auto const count = m.Height() * m.Width();
-    MPI_Iallreduce(m.Buffer(),
-                   MPI_IN_PLACE,
+    MPI_Iallreduce(MPI_IN_PLACE,
+                   m.Buffer(),
                    count,
                    El::mpi::TypeMap<T>(),
                    op.op,

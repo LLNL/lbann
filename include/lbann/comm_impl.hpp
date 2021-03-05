@@ -728,13 +728,13 @@ void lbann_comm::nb_allreduce(T* data,
     c.template GetComm<::Al::MPIBackend>(El::SyncInfo<El::Device::CPU>{}),
     req.mpi_req);
 #else
-  MPI_Iallreduce(data,
-                 MPI_IN_PLACE,
+  MPI_Iallreduce(MPI_IN_PLACE,
+                 data,
                  count,
                  El::mpi::TypeMap<T>(),
                  op.op,
-                 c.GetMPIComm()
-                 &req.raw_mpi_req);
+                 c.GetMPIComm(),
+                 &(req.raw_mpi_req));
 #endif // LBANN_HAS_ALUMINUM
   m_bytes_received += count * sizeof(T) * (El::mpi::Size(c) - 1);
 }
