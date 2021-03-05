@@ -35,7 +35,6 @@ namespace lbann {
 void batch_inference_algorithm::infer(model& model,
                                       data_coordinator& dc,
                                       size_t num_batches) {
-  // Infer on all mini-batches
   if (num_batches > 0) {
     for (size_t i = 0; i < num_batches; i++) { infer_mini_batch(model, dc); }
   } else {
@@ -47,24 +46,29 @@ template <typename TensorDataType>
 void batch_inference_algorithm::infer(model& model,
                                       El::AbstractDistMatrix<TensorDataType> const& samples,
                                       size_t num_batches) {
-  // Made data coordinator
-  data_coordinator dc;
-  dc = buffered_data_coordinator<TensorDataType>(model.get_comm());
-  dc.setup();
-
-  // Place samples in data coordinator buffers
-
-  infer(model, dc, num_batches);
+  // This code block will change, but depends on how samples inserted into the
+  // input layer, for now this is ok...
+  if (num_batches > 0) {
+    for (size_t i = 0; i < num_batches; i++) { infer_mini_batch(model, samples); }
+  } else {
+    while (!infer_mini_batch(model, samples)) {}
+  }
 }
 
 bool batch_inference_algorithm::infer_mini_batch(model& model,
                                                  data_coordinator& dc) {
   dc.fetch_data(execution_mode::inference);
   model.forward_prop(execution_mode::inference);
-  // check if the data coordinator has finished the epoch and kickoff
-  // background I/O
   const bool finished = dc.epoch_complete(execution_mode::inference);
   return finished;
+}
+
+template <typename TensorDataType>
+bool batch_inference_algorithm::infer_mini_batch(model& model,
+                                                 El::AbstractDistMatrix<TensorDataType> const& samples) {
+  // TODO: Insert samples into input layer here
+  model.forward_prop(execution_mode::inference);
+  return true;
 }
 
 }  // namespace lbann
