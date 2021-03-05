@@ -24,8 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#define LBANN_HAS_CEREAL_BINARY_ARCHIVES
-#define LBANN_HAS_CEREAL_XML_ARCHIVES
+#include "lbann_config.hpp"
 
 #ifdef LBANN_HAS_CEREAL_BINARY_ARCHIVES
 #define LBANN_ADD_BINARY_SERIALIZE_ETI(...)                             \

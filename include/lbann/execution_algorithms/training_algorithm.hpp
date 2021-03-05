@@ -40,6 +40,7 @@ class execution_context;
 
 /** Base class for LBANN training_algorithms. */
 class training_algorithm : public execution_algorithm {
+
 public:
 
   /** Constructor. */

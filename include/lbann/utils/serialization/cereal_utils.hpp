@@ -27,10 +27,23 @@
 #ifndef LBANN_UTILS_SERIALIZATION_CEREAL_UTILS_HPP_
 #define LBANN_UTILS_SERIALIZATION_CEREAL_UTILS_HPP_
 
+#include "lbann_config.hpp"
+
 #include <cereal/cereal.hpp>
 
+#ifdef LBANN_HAS_CEREAL_BINARY_ARCHIVES
 #include <cereal/archives/binary.hpp>
+#endif // LBANN_HAS_CEREAL_BINARY_ARCHIVES
+#ifdef LBANN_HAS_CEREAL_JSON_ARCHIVES // Not yet supported
+#include <cereal/archives/json.hpp>
+#endif // LBANN_HAS_CEREAL_JSON_ARCHIVES
+#ifdef LBANN_HAS_CEREAL_PORTABLE_BINARY_ARCHIVES // Not yet supported
+#include <cereal/archives/portable_binary.hpp>
+#endif // LBANN_HAS_CEREAL_PORTABLE_BINARY_ARCHIVES
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
 #include <cereal/archives/xml.hpp>
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
+
 #include <cereal/details/traits.hpp>
 
 #include <cereal/types/base_class.hpp>
@@ -72,14 +85,37 @@ struct IsBuiltinArchiveT
 {};
 
 // Add all the builtin types
+#ifdef LBANN_HAS_CEREAL_BINARY_ARCHIVES
 template <>
 struct IsBuiltinArchiveT<cereal::BinaryInputArchive> : std::true_type {};
 template <>
+struct IsBuiltinArchiveT<cereal::BinaryOutputArchive> : std::true_type {};
+#endif // LBANN_HAS_CEREAL_BINARY_ARCHIVES
+
+#ifdef LBANN_HAS_CEREAL_JSON_ARCHIVES
+template <>
+struct IsBuiltinArchiveT<cereal::JSONInputArchive> : std::true_type {};
+template <>
+struct IsBuiltinArchiveT<cereal::JSONOutputArchive> : std::true_type {};
+#endif // LBANN_HAS_CEREAL_JSON_ARCHIVES
+
+#ifdef LBANN_HAS_CEREAL_PORTABLE_BINARY_ARCHIVES
+template <>
+struct IsBuiltinArchiveT<cereal::PortableBinaryInputArchive>
+  : std::true_type
+{};
+template <>
+struct IsBuiltinArchiveT<cereal::PortableBinaryOutputArchive>
+  : std::true_type
+{};
+#endif // LBANN_HAS_CEREAL_PORTABLE_BINARY_ARCHIVES
+
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
+template <>
 struct IsBuiltinArchiveT<cereal::XMLInputArchive> : std::true_type {};
 template <>
-struct IsBuiltinArchiveT<cereal::BinaryOutputArchive> : std::true_type {};
-template <>
 struct IsBuiltinArchiveT<cereal::XMLOutputArchive> : std::true_type {};
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
 #endif // defined DOXYGEN_SHOULD_SKIP_THIS
 }// namespace details
 

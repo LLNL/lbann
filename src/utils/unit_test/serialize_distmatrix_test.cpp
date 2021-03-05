@@ -59,21 +59,7 @@ TEMPLATE_LIST_TEST_CASE("DistMatrix serialization",
   DistMatType mat(12,16, lbann::utils::get_current_grid()),
     mat_restore(lbann::utils::get_current_grid());
 
-  SECTION("XML archive")
-  {
-    {
-      cereal::XMLOutputArchive oarchive(ss);
-      REQUIRE_NOTHROW(oarchive(mat));
-    }
-    {
-      cereal::XMLInputArchive iarchive(ss);
-      REQUIRE_NOTHROW(iarchive(mat_restore));
-    }
-
-    CHECK(mat.Height() == mat_restore.Height());
-    CHECK(mat.Width() == mat_restore.Width());
-  }
-
+#ifdef LBANN_HAS_CEREAL_BINARY_ARCHIVES
   SECTION("Binary archive")
   {
     El::MakeUniform(mat);
@@ -98,7 +84,24 @@ TEMPLATE_LIST_TEST_CASE("DistMatrix serialization",
       }
     }
   }
+#endif // LBANN_HAS_CEREAL_BINARY_ARCHIVES
 
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
+  SECTION("XML archive")
+  {
+    {
+      cereal::XMLOutputArchive oarchive(ss);
+      REQUIRE_NOTHROW(oarchive(mat));
+    }
+    {
+      cereal::XMLInputArchive iarchive(ss);
+      REQUIRE_NOTHROW(iarchive(mat_restore));
+    }
+
+    CHECK(mat.Height() == mat_restore.Height());
+    CHECK(mat.Width() == mat_restore.Width());
+  }
+#endif // LBANN_HAS_CEREAL_BINARY_ARCHIVES
 }
 
 // Just a bit of sugar to make the output clearer when testing for
@@ -121,22 +124,7 @@ TEMPLATE_LIST_TEST_CASE(
   std::unique_ptr<AbsDistMatType> mat, mat_restore;
   mat = std::make_unique<DistMatType>(12, 16, lbann::utils::get_current_grid());
 
-  SECTION("XML archive")
-  {
-    {
-      cereal::XMLOutputArchive oarchive(ss);
-      REQUIRE_NOTHROW(oarchive(mat));
-    }
-    {
-      cereal::XMLInputArchive iarchive(ss);
-      REQUIRE_NOTHROW(iarchive(mat_restore));
-    }
-
-    REQUIRE((check_valid_ptr) mat_restore);
-    CHECK(mat->Height() == mat_restore->Height());
-    CHECK(mat->Width() == mat_restore->Width());
-  }
-
+#ifdef LBANN_HAS_CEREAL_BINARY_ARCHIVES
   SECTION("Binary archive")
   {
     El::MakeUniform(*mat);
@@ -162,4 +150,23 @@ TEMPLATE_LIST_TEST_CASE(
       }
     }
   }
+#endif // LBANN_HAS_CEREAL_BINARY_ARCHIVES
+
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
+  SECTION("XML archive")
+  {
+    {
+      cereal::XMLOutputArchive oarchive(ss);
+      REQUIRE_NOTHROW(oarchive(mat));
+    }
+    {
+      cereal::XMLInputArchive iarchive(ss);
+      REQUIRE_NOTHROW(iarchive(mat_restore));
+    }
+
+    REQUIRE((check_valid_ptr) mat_restore);
+    CHECK(mat->Height() == mat_restore->Height());
+    CHECK(mat->Width() == mat_restore->Width());
+  }
+#endif // LBANN_HAS_CEREAL_BINARY_ARCHIVES
 }

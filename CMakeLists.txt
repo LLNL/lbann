@@ -92,6 +92,9 @@ endif ()
 
 option(LBANN_WITH_ALUMINUM "Enable Aluminum all-reduce library" OFF)
 
+option(LBANN_WITH_CEREAL_XML "Enable the use of XML archives from Cereal" OFF)
+set(LBANN_HAS_CEREAL_XML_ARCHIVES ${LBANN_WITH_CEREAL_XML})
+
 option(LBANN_WITH_CNPY "Include cnpy" ON)
 
 option(LBANN_WITH_CONDUIT "Enable Conduit library" ON)
@@ -579,9 +582,11 @@ if (LBANN_WITH_CONDUIT)
   set(CONDUIT_LIBRARIES conduit::conduit)
 endif (LBANN_WITH_CONDUIT)
 
-# Boost (optional)
-find_package(Boost QUIET)
-set(LBANN_HAS_BOOST ${Boost_FOUND})
+if (LBANN_WITH_BOOST)
+  # Boost (optional)
+  find_package(Boost QUIET)
+  set(LBANN_HAS_BOOST ${Boost_FOUND})
+endif (LBANN_WITH_BOOST)
 
 if (LBANN_WITH_UNIT_TESTING)
   find_package(Catch2 2.0.0 CONFIG QUIET
@@ -946,6 +951,7 @@ append_str_tf(_str
   LBANN_GNU_LINUX
   LBANN_HAS_ALUMINUM
   LBANN_HAS_CEREAL
+  LBANN_HAS_CEREAL_XML_ARCHIVES
   LBANN_HAS_CNPY
   LBANN_HAS_CUDA
   LBANN_HAS_CUDNN

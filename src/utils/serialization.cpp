@@ -41,6 +41,7 @@ namespace cereal
 
 #ifdef LBANN_HAS_HALF
 #ifdef LBANN_HAS_GPU_FP16
+#ifdef LBANN_HAS_CEREAL_BINARY_ARCHIVES
 
 /** @brief Save this half-precision value in Binary */
 void save(BinaryOutputArchive& archive, __half const& value)
@@ -54,9 +55,11 @@ void load(BinaryInputArchive& archive, __half& value)
   archive.loadBinary(std::addressof(value), sizeof(value));
 }
 
+#endif // LBANN_HAS_CEREAL_BINARY_ARCHIVES
 #endif // LBANN_HAS_GPU_FP16
 
 // Save/load functions for XML archives
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
 float save_minimal(XMLOutputArchive const&,
                    half_float::half const& val) noexcept
 {
@@ -68,7 +71,7 @@ void load_minimal(XMLInputArchive const&, half_float::half& val,
 {
   val = in_val;
 }
-
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
 #endif // LBANN_HAS_HALF
 
 }// namespace cereal

@@ -22,11 +22,10 @@ import tools
 # Data
 np.random.seed(20200909)
 _num_samples = 15
-_sequence_length = 13
-_input_size = 7
-_hidden_size = 5
+_sequence_length = 9
+_input_size = 5
 _num_layers = 2
-_sample_size = _sequence_length*_input_size + _num_layers*_hidden_size
+_sample_size = _sequence_length*_input_size + _num_layers*_input_size
 _samples = np.random.uniform(low=-1, high=1, size=(_num_samples,_sample_size))
 _samples = _samples.astype(np.float32)
 
@@ -86,8 +85,10 @@ def setup_experiment(lbann):
     """
 
     # Skip test on non-GPU systems
+    # Note: Test requires cuDNN (on GPU) or oneDNN (on CPU).
+    ### @todo Assume LBANN has been built with oneDNN?
     if not tools.gpus_per_node(lbann):
-        message = f'{os.path.basename(__file__)} requires GPUs'
+        message = f'{os.path.basename(__file__)} requires cuDNN or oneDNN'
         print('Skip - ' + message)
         pytest.skip(message)
 
@@ -120,7 +121,7 @@ def construct_model(lbann):
     )
     x = lbann.Reshape(input_slice, dims=tools.str_list([_sequence_length,_input_size]))
     x = lbann.Sum(x, lbann.WeightsLayer(weights=x_weights, hint_layer=x))
-    h = lbann.Reshape(input_slice, dims=tools.str_list([_num_layers,_hidden_size]),)
+    h = lbann.Reshape(input_slice, dims=tools.str_list([_num_layers,_input_size]),)
     h = lbann.Sum(h, lbann.WeightsLayer(weights=h_weights, hint_layer=h))
     x_lbann = x
     h_lbann = h
@@ -131,25 +132,25 @@ def construct_model(lbann):
     callbacks = []
 
     # ------------------------------------------
-    # 3-layer, uni-directional GRU
+    # Multi-layer, unidirectional GRU
     # ------------------------------------------
+    # Note: input_size=hidden_size due to a limitation in oneDNN
 
     # Weights
     rnn_weights_numpy = []
     for i in range(_num_layers):
-        input_size = _input_size if i == 0 else _hidden_size
         ih_matrix = np.random.uniform(
             low=-1,
             high=1,
-            size=(3*_hidden_size,input_size),
+            size=(3*_input_size,_input_size),
         )
         hh_matrix = np.random.uniform(
             low=-1,
             high=1,
-            size=(3*_hidden_size,_hidden_size),
+            size=(3*_input_size,_input_size),
         )
-        ih_bias = np.random.uniform(low=-1, high=1, size=(3*_hidden_size,))
-        hh_bias = np.random.uniform(low=-1, high=1, size=(3*_hidden_size,))
+        ih_bias = np.random.uniform(low=-1, high=1, size=(3*_input_size,))
+        hh_bias = np.random.uniform(low=-1, high=1, size=(3*_input_size,))
         rnn_weights_numpy.extend([ih_matrix, hh_matrix, ih_bias, hh_bias])
     rnn_weights_numpy = [w.astype(np.float32) for w in rnn_weights_numpy]
     rnn_weights_lbann = [
@@ -165,20 +166,88 @@ def construct_model(lbann):
     y = lbann.GRU(
         x,
         h,
-        hidden_size=_hidden_size,
+        hidden_size=_input_size,
         num_layers=_num_layers,
         weights=rnn_weights_lbann,
     )
     z = lbann.L2Norm2(y)
     obj.append(z)
-    metrics.append(lbann.Metric(z, name='3-layer, unidirectional'))
+    metrics.append(lbann.Metric(z, name='Multi-layer, unidirectional'))
 
     # NumPy implementation
     vals = []
     for i in range(num_samples()):
         input_ = get_sample(i).astype(np.float64)
         x = input_[:_sequence_length*_input_size].reshape((_sequence_length,_input_size))
-        h = input_[_sequence_length*_input_size:].reshape((_num_layers,_hidden_size))
+        h = input_[_sequence_length*_input_size:].reshape((_num_layers,_input_size))
+        y = numpy_gru(x, h, rnn_weights_numpy)
+        z = tools.numpy_l2norm2(y)
+        vals.append(z)
+    val = np.mean(vals)
+    tol = 8 * val * np.finfo(np.float32).eps
+    callbacks.append(lbann.CallbackCheckMetric(
+        metric=metrics[-1].name,
+        lower_bound=val-tol,
+        upper_bound=val+tol,
+        error_on_failure=True,
+        execution_modes='test'))
+
+    # ------------------------------------------
+    # Single-layer, unidirectional GRU
+    # ------------------------------------------
+
+    # Weights
+    rnn_weights_numpy = []
+    hidden_size = 7
+    ih_matrix = np.random.uniform(
+        low=-1,
+        high=1,
+        size=(3*hidden_size,_input_size),
+    )
+    hh_matrix = np.random.uniform(
+        low=-1,
+        high=1,
+        size=(3*hidden_size,hidden_size),
+    )
+    ih_bias = np.random.uniform(low=-1, high=1, size=(3*hidden_size,))
+    hh_bias = np.random.uniform(low=-1, high=1, size=(3*hidden_size,))
+    rnn_weights_numpy.extend([ih_matrix, hh_matrix, ih_bias, hh_bias])
+    rnn_weights_numpy = [w.astype(np.float32) for w in rnn_weights_numpy]
+    rnn_weights_lbann = [
+        lbann.Weights(
+            initializer=lbann.ValueInitializer(
+                values=tools.str_list(np.nditer(w, order='F'))))
+        for w in rnn_weights_numpy
+    ]
+
+    # LBANN implementation
+    x = x_lbann
+    h = h_lbann
+    h = lbann.Reshape(
+        lbann.Slice(
+            lbann.Reshape(h, dims='-1'),
+            slice_points=tools.str_list([0, hidden_size]),
+        ),
+        dims='1 -1',
+    )
+    y = lbann.GRU(
+        x,
+        h,
+        hidden_size=hidden_size,
+        num_layers=1,
+        weights=rnn_weights_lbann,
+    )
+    z = lbann.L2Norm2(y)
+    obj.append(z)
+    metrics.append(lbann.Metric(z, name='Single-layer, unidirectional'))
+
+    # NumPy implementation
+    vals = []
+    for i in range(num_samples()):
+        input_ = get_sample(i).astype(np.float64)
+        x = input_[:_sequence_length*_input_size].reshape((_sequence_length,_input_size))
+        h = input_[_sequence_length*_input_size:].reshape((_num_layers,_input_size))
+        h = h.flatten()[:hidden_size].reshape((1,hidden_size))
         y = numpy_gru(x, h, rnn_weights_numpy)
         z = tools.numpy_l2norm2(y)
         vals.append(z)
