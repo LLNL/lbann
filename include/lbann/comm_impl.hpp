@@ -718,8 +718,8 @@ void lbann_comm::nb_allreduce(T* data,
                               Al::request& req,
                               const El::mpi::Op op) const
 {
-#ifdef LBANN_HAS_ALUMINUM
   m_bytes_sent += count * sizeof(T);
+#ifdef LBANN_HAS_ALUMINUM
   req.mpi_req = Al::mpi_null_req;
   ::Al::NonblockingAllreduce<::Al::MPIBackend>(
     data,
@@ -727,10 +727,16 @@ void lbann_comm::nb_allreduce(T* data,
     mpi_op_to_al_op(op),
     c.template GetComm<::Al::MPIBackend>(El::SyncInfo<El::Device::CPU>{}),
     req.mpi_req);
-  m_bytes_received += count * sizeof(T) * (El::mpi::Size(c) - 1);
 #else
-  allreduce(data, count, c, op);
+  MPI_Iallreduce(data,
+                 MPI_IN_PLACE,
+                 count,
+                 El::mpi::TypeMap<T>(),
+                 op.op,
+                 c.GetMPIComm()
+                 &req.raw_mpi_req);
 #endif // LBANN_HAS_ALUMINUM
+  m_bytes_received += count * sizeof(T) * (El::mpi::Size(c) - 1);
 }
 
 /** Wait for a all non-blocking requests to complete. */
