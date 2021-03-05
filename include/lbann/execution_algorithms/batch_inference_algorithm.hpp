@@ -27,14 +27,13 @@
 #ifndef LBANN_BATCH_INFERENCE_ALGORITHM_HPP
 #define LBANN_BATCH_INFERENCE_ALGORITHM_HPP
 
-#include "lbann/execution_algorithms/execution_algorithm.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/data_coordinator/data_coordinator.hpp"
 
 namespace lbann {
 
 /** @brief Class for LBANN batch inference algorithms. */
-class batch_inference_algorithm : public execution_algorithm {
+class batch_inference_algorithm {
 public:
 
   /** Constructor. */
@@ -52,7 +51,7 @@ public:
   /** Copy training_algorithm. */
   //  virtual batch_inference_algorithm* copy() const = default;
 
-  std::string get_name() const override { return "batch_inference"; }
+  std::string get_name() const { return "batch_inference"; }
 
   // ===========================================
   // Execution

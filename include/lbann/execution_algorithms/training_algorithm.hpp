@@ -29,7 +29,6 @@
 
 #include "lbann/base.hpp"
 #include "lbann/execution_contexts/execution_context.hpp"
-#include "lbann/execution_algorithms/execution_algorithm.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/data_coordinator/data_coordinator.hpp"
 
@@ -39,7 +38,7 @@ namespace lbann {
 class execution_context;
 
 /** Base class for LBANN training_algorithms. */
-class training_algorithm : public execution_algorithm {
+class training_algorithm {
 
 public:
 
