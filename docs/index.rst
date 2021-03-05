@@ -48,6 +48,12 @@ Users are advised to view `the Doxygen API Documentation
 
 .. toctree::
    :maxdepth: 2
+   :caption: User Documentation
+
+   userdocs/data_transforms
+
+.. toctree::
+   :maxdepth: 2
    :caption: Developer Documentation
 
    lbann

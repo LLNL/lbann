@@ -16,17 +16,18 @@ sys.path.insert(0, os.path.abspath('../python'))
 
 import subprocess, os, runpy
 
-rebuild_doxygen = not os.path.isdir("doxy_out/xml") or not os.path.isdir("_static/doxygen/html")
+rebuild_doxygen = False
+#not os.path.isdir("doxy_out/xml") or not os.path.isdir("_static/doxygen/html")
 
 if not os.path.isdir("_static"):
     os.makedirs("_static")
-    
+
 if rebuild_doxygen:
     os.makedirs("doxy_out/xml")
     subprocess.call('doxygen SourceTreeDoxyfile', shell=True)
 
 #exec(open("./BuildRSTDocs.py").read())
-runpy.run_path("BuildRSTDocs.py")
+#runpy.run_path("BuildRSTDocs.py")
 
 # -- Project information -----------------------------------------------------
 
