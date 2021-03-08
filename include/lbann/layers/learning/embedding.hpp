@@ -239,8 +239,7 @@ void embedding_layer<TensorDataType,Layout,Device>::setup_data(size_t max_mini_b
   auto matrix_dist = this->get_prev_activations().DistData();
   matrix_dist.colDist = El::STAR;
   matrix_dist.rowDist = El::STAR;
-  embeddings.set_dims({static_cast<int>(m_embedding_dim)},
-                      {static_cast<int>(m_num_embeddings)});
+  embeddings.set_dims({m_embedding_dim}, {m_num_embeddings});
   embeddings.set_matrix_distribution(matrix_dist);
   embeddings.setup();
 

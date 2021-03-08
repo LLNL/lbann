@@ -177,8 +177,8 @@ private:
 
   void do_augment_description_(description&) const override;
   void do_setup_() override;
-  void do_set_dims_(std::vector<int> const& matrix_height_dims,
-                    std::vector<int> const& matrix_width_dims) override;
+  void do_set_dims_(std::vector<size_t> const& matrix_height_dims,
+                    std::vector<size_t> const& matrix_width_dims) override;
   void do_move_values_(data_type_weights& other);
   void do_steal_values_(weights& other) override;
 private:

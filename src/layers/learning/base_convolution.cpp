@@ -302,7 +302,8 @@ base_convolution_layer<TensorDataType,Device>
   // Tensor dimensions
   const auto& input_dims = this->get_input_dims();
   const auto& output_dims = this->get_output_dims();
-  const auto& kernel_dims = this->get_kernel_dims();
+  const auto& kernel_dims_ = this->get_kernel_dims();
+  std::vector<size_t> kernel_dims(kernel_dims_.begin(), kernel_dims_.end());
   const auto& kernel_size = std::accumulate(kernel_dims.begin(),
                                             kernel_dims.end(),
                                             1, std::multiplies<int>());
