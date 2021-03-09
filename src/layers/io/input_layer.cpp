@@ -129,6 +129,7 @@ template <typename TensorDataType,
           El::Device Dev>
 void input_layer<TensorDataType, T_layout, Dev>::
 set_samples(const El::AbstractDistMatrix<TensorDataType>& samples) {
+  El::Copy(samples, this->get_activations(0));
 }
 
 template <typename TensorDataType,
