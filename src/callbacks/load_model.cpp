@@ -28,7 +28,7 @@
 
 #include "lbann/callbacks/load_model.hpp"
 #include "lbann/callbacks/checkpoint.hpp"
-#include "lbann/training_algorithms/training_algorithm.hpp"
+#include "lbann/execution_algorithms/training_algorithm.hpp"
 #include "lbann/weights/data_type_weights.hpp"
 #include "lbann/models/directed_acyclic_graph.hpp"
 #include "lbann/utils/file_utils.hpp"
