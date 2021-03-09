@@ -127,6 +127,13 @@ void input_layer<TensorDataType, T_layout, Dev>::fp_compute() {
 template <typename TensorDataType,
           data_layout T_layout,
           El::Device Dev>
+void input_layer<TensorDataType, T_layout, Dev>::
+set_samples(const El::AbstractDistMatrix<TensorDataType>& samples) {
+}
+
+template <typename TensorDataType,
+          data_layout T_layout,
+          El::Device Dev>
 std::vector<int> input_layer<TensorDataType, T_layout, Dev>::
 get_data_dims(DataReaderMetaData& dr_metadata, int child_index) const {
   if(child_index == 0) {
