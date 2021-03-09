@@ -147,6 +147,8 @@ class input_layer : public data_type_layer<TensorDataType> {
 
   void fp_compute() override;
 
+  void set_samples(const El::AbstractDistMatrix<TensorDataType>& samples);
+
   /**
    * Get the dimensions of the underlying data.
    */
