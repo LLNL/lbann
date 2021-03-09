@@ -1,5 +1,7 @@
 # Add the source files for this directory
 set_full_path(THIS_DIR_SOURCES
+  batchwise_reduce_sum.cpp
+  batchwise_reduce_sum_builder.cpp
   bernoulli.cpp
   categorical_random.cpp
   concatenate.cpp
