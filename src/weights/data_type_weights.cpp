@@ -129,8 +129,8 @@ void data_type_weights<TensorDataType>::do_set_dims_(
   std::vector<size_t> const& matrix_height_dims,
   std::vector<size_t> const& matrix_width_dims) {
   if (m_values != nullptr) {
-    const auto& height = this->get_matrix_height();
-    const auto& width = this->get_matrix_width();
+    const El::Int height = this->get_matrix_height();
+    const El::Int width = this->get_matrix_width();
     if (m_values->Height() != height || m_values->Width() != width) {
       LBANN_ERROR("attempted to set weights \"", this->get_name(), "\" "
                   "with dimensions ",
