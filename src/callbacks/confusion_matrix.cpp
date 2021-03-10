@@ -211,7 +211,8 @@ void confusion_matrix::save_confusion_matrix(const model& m) {
                       counts.data());
   } else {
     comm.trainer_reduce(counts.data(), counts.size(),
-                      comm.get_trainer_master());
+                        comm.get_trainer_master(),
+                        El::mpi::SUM);
     counts.assign(counts.size(), 0);
   }
 
