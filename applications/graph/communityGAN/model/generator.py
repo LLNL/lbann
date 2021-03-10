@@ -1,10 +1,11 @@
 import math
+import numpy as np
 import lbann
 import lbann.modules
 
 from util import str_list
 
-class GreedyGenerator(lbann.modules.Module):
+class Generator(lbann.modules.Module):
 
     def __init__(
             self,
@@ -35,6 +36,10 @@ class GreedyGenerator(lbann.modules.Module):
                 min=mean-radius, max=mean+radius),
             name='generator_log_embeddings',
         )
+
+        # Initialize caches for helper functions
+        self.tril_ones_cache = {}
+        self.iota_cache = {}
 
     def forward(
             self,
@@ -118,25 +123,34 @@ class GreedyGenerator(lbann.modules.Module):
         log_probs = lbann.LogSoftmax(x)
 
         # Pick best vertex
-        ### @todo Use gather instead of one-hot vector
-        ### @todo Consider choosing propabilistically
-        choice = lbann.Argmax(log_probs, device='CPU')
-        choice_onehot = lbann.OneHot(choice, size=num_candidates)
-        choice_onehot = lbann.Reshape(choice_onehot, hint_layer=motif_mask)
-        choice_index = lbann.MatMul(
-            lbann.Reshape(candidate_indices, dims='1 -1'),
-            choice_onehot,
+        # Note: Pick randomly with distribution from G
+        probs = lbann.Exp(log_probs)
+        probs_cumsum = lbann.MatMul(
+            self._tril_ones((num_candidates, num_candidates), -1),
+            lbann.Reshape(probs, dims='-1 1'),
         )
-        choice_index = lbann.Reshape(choice_index, dims='1')
+        probs_cumsum = lbann.Reshape(probs_cumsum, dims='-1', device='CPU')
+        rand = lbann.Uniform(min=0, max=1, neuron_dims='1', device='CPU')
+        choice = lbann.Argmax(
+            lbann.Multiply(
+                lbann.LessEqual(
+                    probs_cumsum,
+                    lbann.Tessellate(rand, hint_layer=probs_cumsum, device='CPU'),
+                    device='CPU',
+                ),
+                self._iota(num_candidates),
+                device='CPU',
+            ),
+            device='CPU',
+        )
+        choice_index = lbann.Gather(candidate_indices, choice)
 
         # Loss function
-        log_prob = lbann.MatMul(
-            lbann.Reshape(log_probs, dims='1 -1'),
-            choice_onehot,
-        )
-        log_prob = lbann.Reshape(log_prob, dims='1')
+        log_prob = lbann.Gather(log_probs, choice)
 
         # Add choice to motif
+        choice_onehot = lbann.OneHot(choice, size=num_candidates)
+        choice_onehot = lbann.Reshape(choice_onehot, hint_layer=motif_mask)
         motif_mask = lbann.Add(motif_mask, choice_onehot)
         return choice_index, motif_mask, log_prob
 
@@ -144,3 +158,30 @@ class GreedyGenerator(lbann.modules.Module):
         value_mask = lbann.Constant(value=value, hint_layer=bool_mask)
         value_mask = lbann.Multiply(value_mask, bool_mask)
         return value_mask
+
+    def _tril_ones(self, dims, k):
+        if (dims, k) not in self.tril_ones_cache:
+            vals = np.tril(np.full(dims, 1, dtype=int), k=k)
+            w = lbann.Weights(
+                initializer=lbann.ValueInitializer(values=str_list(np.nditer(vals))),
+                optimizer=lbann.NoOptimizer(),
+            )
+            self.tril_ones_cache[(dims, k)] = lbann.WeightsLayer(
+                dims=str_list(dims),
+                weights=w,
+            )
+        return self.tril_ones_cache[(dims, k)]
+
+    def _iota(self, size):
+        """Computed on CPU"""
+        if size not in self.iota_cache:
+            w = lbann.Weights(
+                initializer=lbann.ValueInitializer(values=str_list(range(size))),
+                optimizer=lbann.NoOptimizer(),
+            )
+            self.iota_cache[size] = lbann.WeightsLayer(
+                dims=str(size),
+                weights=w,
+                device='CPU',
+            )
+        return self.iota_cache[size]
