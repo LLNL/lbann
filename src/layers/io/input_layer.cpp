@@ -120,15 +120,15 @@ void input_layer<TensorDataType, T_layout, Dev>::fp_compute()
     }else {
       input_buffers[input_data_type::LABELS] = &(this->get_activations(1));
     }
-  }
 
-  dc.distribute_from_local_matrix(mode, input_buffers);
+    dc.distribute_from_local_matrix(mode, input_buffers);
 
 #ifdef LBANN_HAS_DISTCONV
-  if (this->distconv_enabled()) {
-    get_distconv_adapter().fp_compute();
-  }
+    if (this->distconv_enabled()) {
+      get_distconv_adapter().fp_compute();
+    }
 #endif // LBANN_HAS_DISTCONV
+  }
 }
 
 template <typename TensorDataType,
@@ -137,6 +137,7 @@ template <typename TensorDataType,
 void input_layer<TensorDataType, T_layout, Dev>::
 set_samples(const El::AbstractDistMatrix<TensorDataType>& samples) {
   El::Copy(samples, this->get_activations(0));
+  this->m_samples_loaded = true;
 }
 
 template <typename TensorDataType,

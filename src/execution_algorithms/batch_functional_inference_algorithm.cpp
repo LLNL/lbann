@@ -82,7 +82,15 @@ batch_functional_inference_algorithm::
 infer_mini_batch(model& model,
                  El::AbstractDistMatrix<TensorDataType> const& samples,
                  std::string output_layer) {
-  // TODO: Insert samples into input layer here
+  // Insert samples into input layer here
+  for (int i=0; i < model.get_num_layers(); i++) {
+    auto& l = model.get_layer(i);
+    if (l.get_type() == "input") {
+      auto& il = dynamic_cast<input_layer<DataType>&>(l);
+      il.set_samples(samples);
+    }
+  }
+
   model.forward_prop(execution_mode::inference);
 
   // Get inference labels
