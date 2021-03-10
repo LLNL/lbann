@@ -19,7 +19,7 @@ class CommunityGAN(lbann.modules.Module):
         self.learn_rate = learn_rate
 
         # Construct generator and discriminator
-        self.generator = model.generator.GreedyGenerator(
+        self.generator = model.generator.Generator(
             num_vertices,
             embed_dim,
             learn_rate,

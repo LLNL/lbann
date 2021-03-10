@@ -1,5 +1,4 @@
 import math
-import numpy as np
 import lbann
 
 from util import str_list
@@ -33,9 +32,6 @@ class Discriminator(lbann.modules.Module):
                 min=mean-radius, max=mean+radius),
             name='discriminator_log_embeddings',
         )
-
-        # Initialize cache for helper function
-        self.triu_mask_cache = {}
 
     def get_log_embeddings(self, indices):
         return lbann.DistEmbedding(
@@ -72,16 +68,3 @@ class Discriminator(lbann.modules.Module):
         prob = lbann.Negative(lbann.Expm1(log_not_prob))
 
         return prob, log_not_prob
-
-    def _triu(self, x, dims, k):
-        if (dims, k) not in self.triu_mask_cache:
-            vals = np.triu(np.full(dims, 1, dtype=int), k=k)
-            w = lbann.Weights(
-                initializer=lbann.ValueInitializer(values=str_list(np.nditer(vals))),
-                optimizer=lbann.NoOptimizer(),
-            )
-            self.triu_mask_cache[(dims, k)] = lbann.WeightsLayer(
-                dims=str_list(dims),
-                weights=w,
-            )
-        return lbann.Multiply(x, self.triu_mask_cache[(dims, k)])
