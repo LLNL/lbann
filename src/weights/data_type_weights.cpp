@@ -44,7 +44,7 @@
 namespace {
 
 /** @brief Get a string version of tensor dimensions */
-std::string stringify_dims(const std::vector<int>& dims)
+std::string stringify_dims(const std::vector<size_t>& dims)
 {
   std::ostringstream oss;
   oss << dims.front();
@@ -57,8 +57,8 @@ std::string stringify_dims(const std::vector<int>& dims)
  *  The tensor is stored in a matrix, although there may be multiple
  *  dimensions corresponding to the matrix height and width.
  */
-std::string get_dims_string(const std::vector<int>& matrix_height_dims,
-                            const std::vector<int>& matrix_width_dims) {
+std::string get_dims_string(const std::vector<size_t>& matrix_height_dims,
+                            const std::vector<size_t>& matrix_width_dims) {
   std::ostringstream oss;
   oss << "(" << stringify_dims(matrix_height_dims) << ")x"
       << "(" << stringify_dims(matrix_width_dims) << ")";
@@ -126,11 +126,11 @@ void data_type_weights<TensorDataType>::do_augment_description_(description& des
 // -----------------------------------------------
 template <typename TensorDataType>
 void data_type_weights<TensorDataType>::do_set_dims_(
-  std::vector<int> const& matrix_height_dims,
-  std::vector<int> const& matrix_width_dims) {
+  std::vector<size_t> const& matrix_height_dims,
+  std::vector<size_t> const& matrix_width_dims) {
   if (m_values != nullptr) {
-    const auto& height = this->get_matrix_height();
-    const auto& width = this->get_matrix_width();
+    const El::Int height = this->get_matrix_height();
+    const El::Int width = this->get_matrix_width();
     if (m_values->Height() != height || m_values->Width() != width) {
       LBANN_ERROR("attempted to set weights \"", this->get_name(), "\" "
                   "with dimensions ",
