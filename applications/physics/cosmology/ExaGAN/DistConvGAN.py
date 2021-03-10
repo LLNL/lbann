@@ -3,6 +3,8 @@ import lbann.modules.base
 import lbann.models.resnet
 
 
+def list2str(l):
+    return ' '.join([str(i) for i in l])
 
 class ConvBNRelu(lbann.modules.Module):
     """Convolution -> Batch normalization -> ReLU
@@ -106,7 +108,11 @@ class Exa3DGAN(lbann.modules.Module):
 
        assert self.input_width in [128, 256, 512]
 
-       
+       w  = [input_width]*3 
+       w.insert(0,input_channel)
+       self.input_dims = w
+       print("INPUT W C DIM ", self.input_width, " ", self.input_channel, " ", self.input_dims , " ", list2str(self.input_dims))
+
        #last_conv_dim = [512,8,8,8] 
        #Use Glorot for conv?
        #initializer=lbann.GlorotUniformInitializer())]
@@ -158,33 +164,35 @@ class Exa3DGAN(lbann.modules.Module):
         return d1_real, d1_fake, d_adv,gen_img
 
     def forward_discriminator1(self,y):
-        #@todo: generalize (str_list(in_c, in_w, in_w, (in_w->3D)
-        y = lbann.Reshape(y, dims='4 128 128 128',device='CPU')
+        y = lbann.Reshape(y, dims=list2str(self.input_dims))
         x = lbann.LeakyRelu(self.d1_conv[0](y), negative_slope=0.2)
         x = lbann.LeakyRelu(self.d1_conv[1](x), negative_slope=0.2)
         x = lbann.LeakyRelu(self.d1_conv[2](x), negative_slope=0.2)
         x = lbann.LeakyRelu(self.d1_conv[3](x), negative_slope=0.2)
         #@todo, get rid of reshape, infer from conv shape 
         #return self.d1_fc(lbann.Reshape(x,dims='32768',device='CPU')) 
-        return self.d1_fc(lbann.Reshape(x,dims='262144',device='CPU')) 
+        return self.d1_fc(lbann.Reshape(x,dims='262144')) 
 
     def forward_discriminator2(self,y):
-        #@todo: generalize (str_list(in_c, in_w, in_w, (in_w->3D)
-        y = lbann.Reshape(y, dims='4 128 128 128', name='d2_in_reshape', device='CPU')
+        y = lbann.Reshape(y, dims=list2str(self.input_dims))
         x = lbann.LeakyRelu(self.d2_conv[0](y), negative_slope=0.2)
         x = lbann.LeakyRelu(self.d2_conv[1](x), negative_slope=0.2)
         x = lbann.LeakyRelu(self.d2_conv[2](x), negative_slope=0.2)
         x = lbann.LeakyRelu(self.d2_conv[3](x), negative_slope=0.2)
         #return self.d2_fc(lbann.Reshape(x,dims='32768',name='d2_out_reshape', device='CPU')) 
         #@todo, get rid of reshape, infer from conv shape 
-        return self.d2_fc(lbann.Reshape(x,dims='262144',name='d2_out_reshape', device='CPU')) 
+        return self.d2_fc(lbann.Reshape(x,dims='262144',name='d2_out_reshape')) 
  
     def forward_generator(self,z):
-        x = lbann.Relu(lbann.BatchNormalization(self.g_fc1(z),decay=0.9,scale_init=1.0,epsilon=1e-5, device='CPU',),device='CPU')
+        #x = lbann.Relu(lbann.BatchNormalization(self.g_fc1(z),decay=0.9,scale_init=1.0,epsilon=1e-5))
+        x = lbann.Relu(self.g_fc1(z))
         #x = lbann.Reshape(x, dims='512 8 8') #channel first
-        x = lbann.Reshape(x, dims='512 8 8 8',name='gen_zin_reshape', device='CPU') #new
-        x = lbann.Relu(lbann.BatchNormalization(self.g_convT[0](x),decay=0.9,scale_init=1.0,epsilon=1e-5))
-        x = lbann.Relu(lbann.BatchNormalization(self.g_convT[1](x),decay=0.9,scale_init=1.0,epsilon=1e-5))
-        x = lbann.Relu(lbann.BatchNormalization(self.g_convT[2](x),decay=0.9,scale_init=1.0,epsilon=1e-5))
+        x = lbann.Reshape(x, dims='512 8 8 8',name='gen_zin_reshape') #new
+        #x = lbann.Relu(lbann.BatchNormalization(self.g_convT[0](x),decay=0.9,scale_init=1.0,epsilon=1e-5))
+        #x = lbann.Relu(lbann.BatchNormalization(self.g_convT[1](x),decay=0.9,scale_init=1.0,epsilon=1e-5))
+        #x = lbann.Relu(lbann.BatchNormalization(self.g_convT[2](x),decay=0.9,scale_init=1.0,epsilon=1e-5))
+        x = lbann.Relu(self.g_convT[0](x))
+        x = lbann.Relu(self.g_convT[1](x))
+        x = lbann.Relu(self.g_convT[2](x))
         return self.g_convT3(x) 
 

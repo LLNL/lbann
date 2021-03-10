@@ -1,5 +1,5 @@
 import DistConvGAN
-import dataset
+import dataset3D
 import lbann.contrib.launcher
 import lbann.contrib.args
 import argparse
@@ -40,6 +40,9 @@ def construct_lc_launcher_args():
     parser.add_argument(
         '--input-width', action='store', default=128, type=int,
         help='the input spatial width (default: 128)')
+    parser.add_argument(
+        '--input-channel', action='store', default=1, type=int,
+        help='the input channel (default: 1)')
     parser.add_argument(
         '--num-secrets', action='store', default=4, type=int,
         help='number of secrets (default: 4)')
@@ -88,9 +91,9 @@ def construct_model(run_args):
     import lbann
 
     # Layer graph
-    #input = lbann.Input(target_mode='N/A',name='inp_img')
-    input = lbann.Input(name='input',
-        target_mode='reconstruction')
+    input = lbann.Input(target_mode='N/A',name='inp_img')
+    #input = lbann.Input(name='input',
+    #    target_mode='reconstruction')
     #label flipping
     label_flip_rand = lbann.Uniform(min=0,max=1, neuron_dims='1')
     label_flip_prob = lbann.Constant(value=0.01, num_neurons='1')
@@ -98,7 +101,9 @@ def construct_model(run_args):
     zero = lbann.LogicalNot(one,name='is_fake')
 
     z = lbann.Reshape(lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims="64", name='noise_vec'),dims='1 64')
-    d1_real, d1_fake, d_adv, gen_img  = DistConvGAN.Exa3DGAN()(input,z)
+    print("RUN ARGS ", run_args) 
+    d1_real, d1_fake, d_adv, gen_img  = DistConvGAN.Exa3DGAN(run_args.input_width,
+                                         run_args.input_channel)(input,z)
 
     d1_real_bce = lbann.SigmoidBinaryCrossEntropy([d1_real,one],name='d1_real_bce')
     d1_fake_bce = lbann.SigmoidBinaryCrossEntropy([d1_fake,zero],name='d1_fake_bce')
@@ -109,12 +114,14 @@ def construct_model(run_args):
     parallel_strategy = get_parallel_strategy_args(
         sample_groups=run_args.mini_batch_size,
         depth_groups=run_args.depth_groups)
-
+   
+    '''
     supported_layers=["Input","Convolution", "Deconvolution", "Relu","Tanh", "FullyConnected", "BatchNormalization"]
     for i, layer in enumerate(layers):
         layer_name = layer.__class__.__name__
         if layer_name in supported_layers:
           layer.parallel_strategy = parallel_strategy
+    '''
 
     # Setup objective function
     weights = set()
@@ -138,8 +145,8 @@ def construct_model(run_args):
     callbacks = [lbann.CallbackPrint(),
                  lbann.CallbackTimer(),
                  lbann.CallbackGPUMemoryUsage(),
-                 lbann.CallbackPrintModelDescription(),
-                 lbann.CallbackDebug(),
+                 #lbann.CallbackPrintModelDescription(),
+                 #lbann.CallbackDebug(),
                  lbann.CallbackProfiler(skip_init=True),
                  lbann.CallbackReplaceWeights(source_layers=list2str(src_layers),
                                       destination_layers=list2str(dst_layers),
@@ -216,8 +223,8 @@ def construct_data_reader():
     data_reader.role = 'train'
     data_reader.shuffle = True
     data_reader.percent_of_data_to_use = 1.0
-    data_reader.validation_percent = 0.1
-    data_reader.python.module = 'dataset'
+    #data_reader.validation_percent = 0.1
+    data_reader.python.module = 'dataset3D'
     data_reader.python.module_dir = module_dir
     data_reader.python.sample_function = 'get_sample'
     data_reader.python.num_samples_function = 'num_samples'
@@ -240,8 +247,10 @@ if __name__ == '__main__':
         environment['LBANN_KEEP_ERROR_SIGNALS'] = 0
     else:
         environment['LBANN_KEEP_ERROR_SIGNALS'] = 1
-    lbann_args = ['--use_data_store --num_io_threads=4']
-    #lbann_args = ['--num_io_threads=4']
+    #lbann_args = ['--use_data_store --num_io_threads=4']
+    #lbann_args = ['--num_io_threads=1 --disable_cuda']
+    #@todo, parse as args and use data_reader flag to differentiate
+    lbann_args = ['--num_io_threads=1']
 
     # Load data reader from prototext
     data_reader = create_hdf5_data_reader(
@@ -259,7 +268,7 @@ if __name__ == '__main__':
                        account=args.account,
                        nodes=args.num_nodes,
                        time_limit=120,
-                       environment=environment,
+                       #environment=environment,
                        lbann_args=lbann_args,
                        setup_only=False,
                        job_name=args.job_name)
