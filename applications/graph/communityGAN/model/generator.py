@@ -173,7 +173,7 @@ class Generator(lbann.modules.Module):
         return self.tril_ones_cache[(dims, k)]
 
     def _iota(self, size):
-        """Computed on CPU"""
+        """Generated on CPU"""
         if size not in self.iota_cache:
             w = lbann.Weights(
                 initializer=lbann.ValueInitializer(values=str_list(range(size))),
