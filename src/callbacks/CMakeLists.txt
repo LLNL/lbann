@@ -28,6 +28,7 @@ set_full_path(THIS_DIR_SOURCES
   monitor_io.cpp
   perturb_adam.cpp
   perturb_dropout.cpp
+  perturb_lr.cpp
   print_model_description.cpp
   print_statistics.cpp
   profiler.cpp
