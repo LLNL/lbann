@@ -126,6 +126,10 @@ class input_layer : public data_type_layer<TensorDataType> {
     }
   }
 
+  // This is to track if samples are loaded with set_samples(), if so the
+  // fp_compute() sample loading is no longer necessary
+  bool m_samples_loaded = false;
+
   input_layer(const input_layer&) = default;
   input_layer& operator=(const input_layer&) = default;
   input_layer* copy() const override {
