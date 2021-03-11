@@ -24,7 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/execution_algorithms/batch_inference_algorithm.hpp"
+#include "lbann/execution_algorithms/batch_functional_inference_algorithm.hpp"
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/callbacks/callback.hpp"
