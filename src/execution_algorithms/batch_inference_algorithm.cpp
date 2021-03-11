@@ -25,50 +25,49 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/execution_algorithms/batch_inference_algorithm.hpp"
-#include "lbann/data_coordinator/data_coordinator.hpp"
-#include "lbann/data_coordinator/buffered_data_coordinator.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
 
-void batch_inference_algorithm::infer(model& model,
-                                      data_coordinator& dc,
-                                      size_t num_batches) {
-  if (num_batches > 0) {
-    for (size_t i = 0; i < num_batches; i++) { infer_mini_batch(model, dc); }
-  } else {
-    while (!infer_mini_batch(model, dc)) {}
+template <typename TensorDataType>
+El::AbstractDistMatrix<TensorDataType>
+batch_functional_inference_algorithm::
+infer(model& model,
+      El::AbstractDistMatrix<TensorDataType> const& samples,
+      std::string output_layer,
+      size_t mbs) {
+  // Matrix for collecting mini batch labels
+  El::AbstractDistMatrix<TensorDataType> labels(samples.Height(), 1);
+
+  for (size_t i = 0; i < mbs; i++) {
+    // Need to view subsamples for mini batch
+    auto& mbl = infer_mini_batch(model, samples, output_layer);
+    // Will need a method for concatenating returned matrices here
   }
+  return labels;
 }
 
 template <typename TensorDataType>
-void batch_inference_algorithm::infer(model& model,
-                                      El::AbstractDistMatrix<TensorDataType> const& samples,
-                                      size_t num_batches) {
-  // This code block will change, but depends on how samples inserted into the
-  // input layer, for now this is ok...
-  if (num_batches > 0) {
-    for (size_t i = 0; i < num_batches; i++) { infer_mini_batch(model, samples); }
-  } else {
-    while (!infer_mini_batch(model, samples)) {}
-  }
-}
-
-bool batch_inference_algorithm::infer_mini_batch(model& model,
-                                                 data_coordinator& dc) {
-  dc.fetch_data(execution_mode::inference);
-  model.forward_prop(execution_mode::inference);
-  const bool finished = dc.epoch_complete(execution_mode::inference);
-  return finished;
-}
-
-template <typename TensorDataType>
-bool batch_inference_algorithm::infer_mini_batch(model& model,
-                                                 El::AbstractDistMatrix<TensorDataType> const& samples) {
+El::AbstractDistMatrix<TensorDataType>
+batch_functional_inference_algorithm::
+infer_mini_batch(model& model,
+                 El::AbstractDistMatrix<TensorDataType> const& samples,
+                 std::string output_layer) {
   // TODO: Insert samples into input layer here
   model.forward_prop(execution_mode::inference);
-  return true;
+
+  // Get inference labels
+  El::AbstractDistMatrix<TensorDataType> labels;
+  for (const auto* l : model.get_layers()) {
+    if (l->get_name() == output_layer) {
+      auto const& dtl = dynamic_cast<lbann::data_type_layer<float> const&>(*l);
+      labels = dtl.get_activations();
+    }
+  }
+
+  return labels;
 }
 
 }  // namespace lbann

@@ -33,48 +33,46 @@
 namespace lbann {
 
 /** @brief Class for LBANN batch inference algorithms. */
-class batch_inference_algorithm {
+class batch_functional_inference_algorithm {
 public:
 
   /** Constructor. */
-  batch_inference_algorithm() {};
+  batch_functional_inference_algorithm() {};
   /** Copy constructor. */
-  batch_inference_algorithm(const batch_inference_algorithm& other) = default;
+  batch_functional_inference_algorithm(const batch_functional_inference_algorithm& other) = default;
   /** Copy assignment operator. */
-  batch_inference_algorithm& operator=(const batch_inference_algorithm& other) = default;
+  batch_functional_inference_algorithm& operator=(const batch_functional_inference_algorithm& other) = default;
   /** Move constructor. */
-  batch_inference_algorithm(batch_inference_algorithm&& other) = default;
+  batch_functional_inference_algorithm(batch_functional_inference_algorithm&& other) = default;
   /** Move assignment operator. */
-  batch_inference_algorithm& operator=(batch_inference_algorithm&& other) = default;
+  batch_functional_inference_algorithm& operator=(batch_functional_inference_algorithm&& other) = default;
   /** Destructor. */
-  virtual ~batch_inference_algorithm() = default;
+  virtual ~batch_functional_inference_algorithm() = default;
   /** Copy training_algorithm. */
-  //  virtual batch_inference_algorithm* copy() const = default;
+  //  virtual batch_functional_inference_algorithm* copy() const = default;
 
-  std::string get_name() const { return "batch_inference"; }
+  std::string get_name() const { return "batch_functional_inference"; }
 
   // ===========================================
   // Execution
   // ===========================================
 
   /** Infer on samples from a data coordinator with a given model. */
-  void infer(model& model,
-             data_coordinator& dc,
-             size_t num_batches=0);
-
   template <typename TensorDataType>
-  void infer(model& model,
-             El::AbstractDistMatrix<TensorDataType> const& samples,
-             size_t num_batches=0);
+  El::AbstractDistMatrix<TensorDataType>
+  infer(model& model,
+        El::AbstractDistMatrix<TensorDataType> const& samples,
+        std::string output_layer,
+        size_t mbs=0);
 
 
 protected:
-  /** Evaluate model on one step / mini-batch of an SGD forward pass */
-  bool infer_mini_batch(model& model, data_coordinator& dc);
-
+  /** Infer on one mini batch with a given model. */
   template <typename TensorDataType>
-  bool infer_mini_batch(model& model,
-                        El::AbstractDistMatrix<TensorDataType> const& samples);
+  El::AbstractDistMatrix<TensorDataType>
+  infer_mini_batch(model& model,
+                   El::AbstractDistMatrix<TensorDataType> const& samples,
+                   std::string output_layer);
 
 };
 
