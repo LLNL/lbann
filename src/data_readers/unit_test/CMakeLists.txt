@@ -5,6 +5,7 @@ set_full_path(THIS_DIR_SEQ_CATCH2_TEST_FILES
 set_full_path(THIS_DIR_MPI_CATCH2_TEST_FILES
   data_reader_smiles_fetch_datum_test.cpp
   data_reader_smiles_sample_list_test.cpp
+  hdf5_data_reader_test.cpp
   )
 
 set(LBANN_SEQ_CATCH2_TEST_FILES

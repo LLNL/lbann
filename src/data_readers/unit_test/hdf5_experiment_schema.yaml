@@ -1,0 +1,19 @@
+inputs:
+  metadata:
+    pack: "datum"
+  shape_model_initial_modes:(4,3):
+
+outputs:
+  metadata:
+    pack: "datum"
+  scalars:
+    BWx:
+
+    BT:
+
+  images:
+    metadata:
+      coerce: "double"
+    (90.0, 0.0):
+      0.0:
+
