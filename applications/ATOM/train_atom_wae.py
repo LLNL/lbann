@@ -48,6 +48,9 @@ def construct_lc_launcher_args():
     parser.add_argument("--embedding-dim", type=int, default=None)
     parser.add_argument("--num-embeddings", type=int, default=None)
     parser.add_argument("--batch-size", type=int, default=512)
+    parser.add_argument("--z-dim", type=int, default=512, help="latent space dim")
+    parser.add_argument("--g-mean", type=float, default=0.0, help="Gaussian mean")
+    parser.add_argument("--g-std", type=float, default=1.0, help="Gaussian std")
     parser.add_argument("--num-epochs", type=int, default=20)
     parser.add_argument("--data-reader-prototext", default=None)
     parser.add_argument("--data-filedir", default=None)
@@ -67,7 +70,7 @@ def construct_lc_launcher_args():
     parser.add_argument("--ltfb-batch-interval", type=int, default=100)
     parser.add_argument("--weights-to-send", type=str, default='')
     parser.add_argument("--warmup", type=bool, default=False)
-
+    parser.add_argument("--lamda", type=float, default=0.00157, help="weighting of adversarial loss")
     # these are specific to the Trainer object
     parser.add_argument(
         "--procs-per-trainer",
@@ -115,12 +118,15 @@ def construct_model(run_args):
     save_output = True if run_args.dump_outputs_dir else False
 
     print("save output? ", save_output, "out dir ",  run_args.dump_outputs_dir)
-    z = lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims="128")
+    z = lbann.Gaussian(mean=run_args.g_mean,stdev=run_args.g_std, neuron_dims=str(run_args.z_dim))
     recon, d1_real, d1_fake, d_adv, arg_max  = molwae.MolWAE(
         input_feature_dims,
         dictionary_size,
         embedding_size,
         pad_index,
+        run_args.z_dim,
+        run_args.g_mean,
+        run_args.g_std,
         save_output=save_output)(input_,z)
 
 
@@ -151,7 +157,7 @@ def construct_model(run_args):
     l2_weights = [w for w in weights if not isinstance(w.optimizer, lbann.NoOptimizer)]
     l2_reg = lbann.L2WeightRegularization(weights=l2_weights, scale=1e-4)
 
-    d_adv_bce = lbann.LayerTerm(d_adv_bce,scale=0.01)
+    d_adv_bce = lbann.LayerTerm(d_adv_bce,scale=run_args.lamda)
 
     obj = lbann.ObjectiveFunction([d1_real_bce,d1_fake_bce,d_adv_bce,recon,l2_reg])
 
@@ -310,7 +316,7 @@ def main():
         time_limit=run_args.time_limit,
         nodes=run_args.nodes,
         procs_per_node=ppn,
-        batch_job = True,
+        #batch_job = True,
         #setup_only = True,
         job_name=run_args.job_name,
         experiment_dir=experiment_dir,
