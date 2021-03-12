@@ -90,7 +90,7 @@ public:
    *  @param[in] name The user-defined name of the algorithm.
    */
   training_algorithm(std::string name);
-  virtual ~training_algorithm() = 0;
+  virtual ~training_algorithm() = default;
   ///@}
 
   /** @name Queries */

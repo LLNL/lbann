@@ -30,8 +30,18 @@
 #include "lbann/callbacks/load_model.hpp"
 #include "lbann/callbacks/save_model.hpp"
 #include "lbann/models/model.hpp"
+#include <string>
 
 namespace lbann {
+
+training_algorithm::training_algorithm(std::string name)
+  : m_name{std::move(name)}
+{}
+
+std::string const& training_algorithm::get_name() const noexcept
+{
+  return m_name;
+}
 
 void training_algorithm::setup_models(
   std::vector<observer_ptr<model>> const& models,
