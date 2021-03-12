@@ -45,6 +45,7 @@ class training_algorithm;
 
 class termination_criteria {
 public:
+  virtual ~termination_criteria() = default;
   size_t num_steps;
 };
 

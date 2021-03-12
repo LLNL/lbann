@@ -33,6 +33,7 @@ namespace lbann {
 
 class sgd_termination_criteria : public termination_criteria {
 public:
+  ~sgd_termination_criteria() = default;
   size_t num_epochs;
 };
 
