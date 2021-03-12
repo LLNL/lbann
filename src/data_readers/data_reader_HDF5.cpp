@@ -49,8 +49,21 @@ hdf5_data_reader& hdf5_data_reader::operator=(const hdf5_data_reader& rhs) {
 }
 
 void hdf5_data_reader::copy_members(const hdf5_data_reader &rhs) {
+  m_num_labels = rhs.m_num_labels;
+  m_num_responses = rhs.m_num_responses;
+  m_experiment_schema_filename = rhs.m_experiment_schema_filename;
+  m_data_schema_filename = rhs.m_data_schema_filename;
+  m_delete_packed_fields = rhs.m_delete_packed_fields;
   m_data_schema = rhs.m_data_schema;
   m_experiment_schema = rhs.m_experiment_schema;
+  m_packing_groups = rhs.m_packing_groups;
+  m_data_dims_lookup_table = rhs.m_data_dims_lookup_table;
+  m_linearized_size_lookup_table = rhs.m_linearized_size_lookup_table;
+
+  // fills in: m_data_map, m_useme_node_map; we don't want to copy these maps,
+  // since they contain pointers: conduit::Node*, to nodes in m_data_schema
+  // and/or m_experiment_schema
+  parse_schemas();
 }
 
 void hdf5_data_reader::load() {
@@ -101,18 +114,18 @@ void hdf5_data_reader::load() {
 
   if (is_master()) {
     std::cout << "time to load and parse the schemas: " << get_time() - tm11 
-             << std::endl << "hdf5_data_reader::load() time (total): " 
+              << std::endl << "hdf5_data_reader::load() time (total): " 
               << (get_time() - tm1) 
-              << " num samples: " << m_shuffled_indices.size() 
-              << " for role: " << get_role() << std::endl;
+              << "\nnum samples: " << m_shuffled_indices.size() 
+              << "\nfor role: " << get_role() << std::endl;
   }
 
-  //if (opts->has_string("print_metadata")) {
+  if (!opts->get_bool("quiet") && is_master()) {
     print_metadata();
-  //}
+  }
 }
 
-// master loads the use-supplied schema then bcasts to all others;
+// master loads the experiment-schema then bcasts to others
 void hdf5_data_reader::load_schema(std::string filename, conduit::Node &schema) {
   if (m_comm->am_trainer_master()) {
     conduit::relay::io::load(filename, schema);
@@ -164,40 +177,43 @@ void hdf5_data_reader::load_sample(conduit::Node &node, size_t index, bool ignor
 
   // load data for the field names specified in the user's experiment-schema
   for (const auto &p : m_useme_node_map) {
-    // check that the requested data (pathname) exists on disk
-    const std::string pathname = p.first;
-    const std::string original_path = "/" + sample_name + "/" + pathname;
-    if (!conduit::relay::io::hdf5_has_path(file_handle, original_path)) {
-      if (ignore_failure) {
-        continue;
+    // do not load a "packed" field, as it doesn't exist on disk!
+    if (! is_composite_node(p.second)) {
+
+      // check that the requested data (pathname) exists on disk
+      const std::string pathname = p.first;
+      const std::string original_path = "/" + sample_name + "/" + pathname;
+      if (!conduit::relay::io::hdf5_has_path(file_handle, original_path)) {
+        if (ignore_failure) {
+          continue;
+        }
+        LBANN_ERROR("hdf5_has_path failed for path: ", original_path);
       }
-      LBANN_ERROR("hdf5_has_path failed for path: ", original_path);
+
+      // get the new path-name (prepend the index)
+      std::stringstream ss2;
+      ss2 << LBANN_DATA_ID_STR(index) << '/' << pathname;
+      const std::string new_pathname(ss2.str());
+  
+      // note: this will throw an exception if the child node doesn't exist
+      const conduit::Node& metadata = p.second->child(s_metadata_node_name);
+  
+      if (metadata.has_child(s_coerce_name)) {
+        coerce(metadata, file_handle, original_path, new_pathname, node);
+      } else {
+        conduit::relay::io::hdf5_read(file_handle, original_path, node[new_pathname]);
+      }
+  
+      // optionally normalize 
+      if (metadata.has_child("scale")) {
+        normalize(node, new_pathname, metadata);
+      }
+  
+      // for images
+      if (metadata.has_child("channels")) {
+        repack_image(node, new_pathname, metadata);
+      }
     }
-
-    // get the new path-name (prepend the index)
-    std::stringstream ss2;
-    ss2 << LBANN_DATA_ID_STR(index) << '/' << pathname;
-    const std::string new_pathname(ss2.str());
-
-    // note: this will throw an exception if the child node doesn't exist
-    const conduit::Node& metadata = p.second->child(s_metadata_node_name);
-
-    if (metadata.has_child(s_coerce_name)) {
-      coerce(metadata, file_handle, original_path, new_pathname, node);
-    } else {
-      conduit::relay::io::hdf5_read(file_handle, original_path, node[new_pathname]);
-    }
-
-    // optionally normalize 
-    if (metadata.has_child("scale")) {
-      normalize(node, new_pathname, metadata);
-    }
-
-    // for images
-    if (metadata.has_child("channels")) {
-      repack_image(node, new_pathname, metadata);
-    }
-
   }
   pack(node, index);
 }
@@ -264,9 +280,7 @@ void hdf5_data_reader::normalize(
 }
 
 void hdf5_data_reader::parse_schemas() {
-  // these two recursive calls start at the root and "spread" the root's
-  // metadata node up the branches; any non-root nodes that already contain
-  // metadata will have the two nodes merged
+  clear();
   adjust_metadata(&m_data_schema);
   adjust_metadata(&m_experiment_schema);
 
@@ -291,7 +305,7 @@ void hdf5_data_reader::parse_schemas() {
   }
 
   // At this point, each object in "m_useme_node_map:"
-  //   1. is a leaf node that whose values will be used in the experiment
+  //   1. is a leaf node whose values will be used in the experiment
   //   2. has a "metatdata" child node that contains instructions for
   //      munging the data, i.e: scale, bias, ordering, coersion, packing, etc.
 }
@@ -527,7 +541,7 @@ void hdf5_data_reader::coerce(
   conduit::Node tmp;
   conduit::relay::io::hdf5_read(file_handle, original_path, tmp);
 
-  // yay! I finally get to use a void* !!
+  // yay! I finally get to use a void* 
   void* vals = tmp.data_ptr();
   size_t num_bytes = tmp.dtype().number_of_elements() * tmp.dtype().element_bytes();
 
@@ -607,6 +621,7 @@ void hdf5_data_reader::repack_image(
 }
 
 const std::vector<int> hdf5_data_reader::get_data_dims(std::string name) const {
+std::cerr << "starting get_data_dims for: "<<name<<std::endl;
   std::unordered_map<std::string, std::vector<int>>::const_iterator iter = m_data_dims_lookup_table.find(name);
   if (iter == m_data_dims_lookup_table.end()) {
     LBANN_ERROR("get_data_dims_size was asked for info about an unknown field name: ", name);
@@ -615,6 +630,7 @@ const std::vector<int> hdf5_data_reader::get_data_dims(std::string name) const {
 }
 
 int hdf5_data_reader::get_linearized_data_size(std::string name) const {
+std::cerr << "starting get_linearized_data_size for: "<<name<<std::endl;
   std::unordered_map<std::string, int>::const_iterator iter = m_linearized_size_lookup_table.find(name);
   if (iter == m_linearized_size_lookup_table.end()) {
     LBANN_ERROR("get_linearized_data_size was asked for info about an unknown field name: ", name);
@@ -623,8 +639,10 @@ int hdf5_data_reader::get_linearized_data_size(std::string name) const {
 }
 
 //fills in: m_data_dims_lookup_table and m_linearized_size_lookup_table;
-//          m_supported_input_types for LABELS and RESPONSES
 void hdf5_data_reader::construct_linearized_size_lookup_tables() {
+  m_linearized_size_lookup_table.clear();
+  m_data_dims_lookup_table.clear();
+
   conduit::Node node;
   size_t index = random() % m_shuffled_indices.size();
   load_sample(node, index);
@@ -640,13 +658,6 @@ void hdf5_data_reader::construct_linearized_size_lookup_tables() {
       const std::string field_name = t.first.substr(sz);
     // we only care about leaves that are being used in the current experiment
     if (m_useme_node_map.find(field_name) != m_useme_node_map.end()) {
-
-      if (t.first == "label") {
-        m_supported_input_types[input_data_type::LABELS] = true;
-      }
-      if (t.first == "response") {
-        m_supported_input_types[input_data_type::RESPONSES] = true;
-      }
 
       // add entry to linearized size lookup table
       size_t n_elts = t.second->dtype().number_of_elements();
@@ -707,9 +718,10 @@ const void* hdf5_data_reader::get_raw_data(const size_t sample_id, const std::st
 }
 
 void hdf5_data_reader::print_metadata(std::ostream& os) {
-  os << std::endl << "Metadata and data-type information for all loaded fields follows\n";
+  os << std::endl << "Metadata and data-type information for all loaded fields follows, for role: " << get_role() << std::endl;
 
-  // load a sample from file, applying all transformations along the way
+  // load a sample from file, applying all transformations along the way;
+  // need to do this so we can get the correct dtypes
   conduit::Node populated_node;
   size_t index = random() % m_shuffled_indices.size();
   bool ignore_failure = true; 
@@ -726,28 +738,10 @@ void hdf5_data_reader::print_metadata(std::ostream& os) {
     mp[t.first.substr(j+1)] = t.second;
   }
 
-  // print metadata and data types for packed (composite) nodes
-  os << std::endl;
-  for (const auto& t : m_packing_groups) {
-    os << "==================================================================\n"
-       << "packed (composite) field: " << t.first << std::endl;
-    os << "\nMetadata Info:\n--------------\n";
-    const PackingGroup& g = t.second;
-    for (const auto &t2 : g.names) {
-      os << "  " << t2 << std::endl;
-    }
-    if (mp.find(t.first) != mp.end()) {
-      const conduit::Node* nd = mp[t.first];
-      const conduit::Schema& schema = nd->schema();
-      std::string yaml_schema = schema.to_yaml();
-      os << "\nDataType Info:\n--------------\n" << yaml_schema;
-    } else {
-      LBANN_ERROR("mp.find(", t.first, " failed");
-    }
-  }
-
   // print metadata and data types for all other nodes
+int jj = 1;
   for (const auto& t : m_useme_node_map) {
+std::cerr << "XXX " << jj++ << " of " << m_useme_node_map.size() << std::endl;
     const std::string& name = t.first;
     conduit::Node* node = t.second;
     os << "==================================================================\n"
@@ -769,6 +763,31 @@ void hdf5_data_reader::print_metadata(std::ostream& os) {
     os << std::endl;
   }
   os << "==================================================================\n\n";
+}
+
+bool hdf5_data_reader::is_composite_node(const conduit::Node& node) {
+  if (!node.has_child(s_metadata_node_name)) {
+    LBANN_ERROR("node with path: ", node.path(), " is missing metadata child node");
+  }
+  const conduit::Node& metadata = node.child(s_metadata_node_name);
+  return metadata.has_child(s_composite_node);
+}
+
+void hdf5_data_reader::set_data_schema(const conduit::Schema& s) {
+  m_data_schema = s;
+  parse_schemas();
+}
+
+void hdf5_data_reader::set_experiment_schema(const conduit::Schema& s) {
+  m_experiment_schema = s;
+  parse_schemas();
+}
+
+void hdf5_data_reader::clear() {
+  m_data_dims_lookup_table.clear();
+  m_linearized_size_lookup_table.clear();
+  m_packing_groups.clear();
+  m_useme_node_map.clear();
 }
 
 } // namespace lbann

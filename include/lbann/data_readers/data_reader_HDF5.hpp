@@ -157,6 +157,20 @@ public:
     return m_num_responses;
   }
 
+  /** @brief this method is made public for testing */
+  const conduit::Node& get_experiment_schema() { return m_experiment_schema; }
+  /** @brief this method is made public for testing */
+  const conduit::Node& get_data_schema() { return m_data_schema; }
+  /** @brief this method is made public for testing */
+  void set_experiment_schema(const conduit::Schema& s);
+  /** @brief this method is made public for testing */
+  void set_data_schema(const conduit::Schema& s);
+  /** @brief this method is made public for testing */
+  const std::unordered_map<std::string, conduit::Node*>& get_node_map() { 
+    return  m_useme_node_map; 
+  }
+
+
 private:
 
   /** num labels and responses can be specified in a metadata node attached to
@@ -165,14 +179,15 @@ private:
   int m_num_labels = 0;
   int m_num_responses = 0;
 
-  // filled in by construct_linearized_size_lookup_tables; used by get_linearized_data_size()
+  /** filled in by construct_linearized_size_lookup_tables; 
+   *  used by get_data_dims()
+   */
   std::unordered_map<std::string, std::vector<int>> m_data_dims_lookup_table;
 
-  // filled in by construct_linearized_size_lookup_tables; used by get_linearized_data_size()
+  /** filled in by construct_linearized_size_lookup_tables; 
+   *  used by get_linearized_data_size()
+   */
   std::unordered_map<std::string, int> m_linearized_size_lookup_table;
-
-  // filled in by construct_linearized_size_lookup_tables; used by get_packing_data()
-  std::unordered_map<std::string, std::vector<std::string>> m_field_names_lookup_table;
 
   std::string m_experiment_schema_filename;
 
@@ -184,7 +199,7 @@ private:
   // note that setting to 'false' invokes both a memory and communication
   // penalty
   //TODO: not yet implemented
-  bool m_delete_packed_fields = true;
+  bool m_delete_packed_fields = false;
 
   struct PackingGroup {
     std::string group_name;
@@ -201,6 +216,8 @@ private:
    * on normalizing, packing, and casting data, etc.
    */
   const std::string s_metadata_node_name = "metadata";
+
+  const std::string s_composite_node = "composite_node";
 
   const std::string s_coerce_name = "coerce";
 
@@ -308,7 +325,6 @@ private:
     const conduit::Node& metadata);
 
   // constructs m_data_dims_lookup_table and m_linearized_size_lookup_table,
-  // fills in m_supported_input_types for LABELS and RESPONSES
   void construct_linearized_size_lookup_tables();
 
   //=========================================================================
@@ -332,6 +348,21 @@ private:
   // packs all fields assigned to 'group_name' (e.g, 'datum') into a 1D vector 
   template<typename T>
   void pack(std::string group_name, conduit::Node& node, size_t index);
+
+  // returns true if this is a node that was constructed from one or more
+  // original data fields
+  bool is_composite_node(const conduit::Node& node);
+  bool is_composite_node(const conduit::Node* node) {
+    return is_composite_node(*node);
+  }
+
+  /** @brief clears all data structures 
+   *
+   * should be called at start of parse_schemas(), since this method may
+   * be called multiple times (ordinarily only once, but may be called
+   * during testing)
+   */ 
+  void clear();
 
 }; // class hdf5_data_reader
 
@@ -410,10 +441,8 @@ void hdf5_data_reader::pack(std::string group_name, conduit::Node& node, size_t 
   std::vector<T> data(g.n_elts);
   size_t idx = 0;
   conduit::Node metadata;
-  std::vector<int> datum_names;
   for (size_t k=0; k<g.names.size(); k++) {
     size_t n_elts = g.sizes[k];
-    datum_names.push_back(k);
     std::stringstream ss;
     ss << node.name() << node.child(0).name() + "/" << g.names[k];
     if (!node.has_path(ss.str())) {
@@ -433,8 +462,9 @@ void hdf5_data_reader::pack(std::string group_name, conduit::Node& node, size_t 
   static bool add_to_map = true;
   if (add_to_map) {
     add_to_map = false;
-    metadata["components"] = datum_names;
+    metadata[s_composite_node] = true;
     m_experiment_schema[group_name][s_metadata_node_name] = metadata;
+    m_useme_node_map[group_name] = &(m_experiment_schema[group_name]);
   }
 }
 
