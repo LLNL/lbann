@@ -28,7 +28,6 @@
 #include "lbann/trainers/trainer.hpp"
 
 // LBANN dependencies
-#include "lbann/base.hpp"
 #include "lbann/callbacks/callback.hpp"
 #include "lbann/data_coordinator/data_coordinator_metadata.hpp"
 #include "lbann/execution_contexts/sgd_execution_context.hpp"
@@ -38,7 +37,6 @@
 #include "lbann/layers/transform/evaluation.hpp"
 #include "lbann/layers/transform/split.hpp"
 #include "lbann/metrics/layer_metric.hpp"
-#include "lbann/models/model.hpp"
 #include "lbann/objective_functions/layer_term.hpp"
 #include "lbann/execution_algorithms/sgd_training_algorithm.hpp"
 #include "lbann/utils/description.hpp"
@@ -60,7 +58,6 @@
 #include <queue>
 #include <string>
 #include <unordered_set>
-#include <vector>
 
 namespace lbann {
 
@@ -252,42 +249,33 @@ void trainer::for_each_execution_context(
 // Evaluation and training
 ////////////////////////////////////////////////////////////
 void trainer::apply(training_algorithm& alg,
-                    observer_ptr<model> mdl,
+                    observer_ptr<model> model,
                     execution_mode mode,
                     termination_criteria const& term_criteria) {
 
-  auto key = check_and_build_execution_context(alg, mdl, mode);
+  auto key = check_and_build_execution_context(alg, model, mode);
   DataReaderMetaData dr_metadata = get_data_coordinator().get_dr_metadata();
-  {
-    std::vector<observer_ptr<model>> models = {mdl};
-    alg.setup_models(models, get_max_mini_batch_size(), dr_metadata);
-  }
-  // Apply the training algorithm to train the model
-  alg.apply(*(m_model_execution_context[key].get()), *mdl, get_data_coordinator(), mode, term_criteria);
+  alg.setup_models({model}, get_max_mini_batch_size(), dr_metadata);
+  /// Apply the training algorithm to train the model
+  alg.apply(*(m_model_execution_context[key].get()), *model, get_data_coordinator(), mode, term_criteria);
 }
 
-void trainer::train(observer_ptr<model> mdl, El::Int num_epochs, El::Int num_batches) {
-  // FIXME (trb 03/11/21): This needs to be factory-ized.
-  auto sgd = make_unique<sgd_training_algorithm>("mysgd_train");
-  auto key = check_and_build_execution_context(*sgd.get(), mdl, execution_mode::training);
-  {
-    DataReaderMetaData dr_metadata = get_data_coordinator().get_dr_metadata();
-    std::vector<observer_ptr<model>> models = {mdl};
-    sgd.get()->setup_models(models, get_max_mini_batch_size(), dr_metadata);
-  }
-  // Apply the training algorithm to train the model
-  sgd.get()->train(static_cast<sgd_execution_context&>(*(m_model_execution_context[key].get())), *mdl, get_data_coordinator(), num_epochs, num_batches);
+void trainer::train(observer_ptr<model> model, El::Int num_epochs, El::Int num_batches) {
+  auto sgd = make_unique<sgd_training_algorithm>();
+  auto key = check_and_build_execution_context(*sgd.get(), model, execution_mode::training);
+  DataReaderMetaData dr_metadata = get_data_coordinator().get_dr_metadata();
+  sgd.get()->setup_models({model}, get_max_mini_batch_size(), dr_metadata);
+  /// Apply the training algorithm to train the model
+  sgd.get()->train(static_cast<sgd_execution_context&>(*(m_model_execution_context[key].get())), *model, get_data_coordinator(), num_epochs, num_batches);
 }
 
-void trainer::evaluate(observer_ptr<model> mdl, execution_mode mode, El::Int num_batches) {
-  // FIXME (trb 03/11/21): This needs to be factory-ized.
-  auto sgd = make_unique<sgd_training_algorithm>("mysgd_evaluate");
-  auto key = check_and_build_execution_context(*sgd.get(), mdl, mode);
+void trainer::evaluate(observer_ptr<model> model, execution_mode mode, El::Int num_batches) {
+  auto sgd = make_unique<sgd_training_algorithm>();
+  auto key = check_and_build_execution_context(*sgd.get(), model, mode);
   DataReaderMetaData dr_metadata = get_data_coordinator().get_dr_metadata();
-  std::vector<observer_ptr<model>> models = {mdl};
-  sgd.get()->setup_models(models, get_max_mini_batch_size(), dr_metadata);
+  sgd.get()->setup_models({model}, get_max_mini_batch_size(), dr_metadata);
   /// Apply the training algorithm to evaluate the model
-  sgd.get()->evaluate(static_cast<sgd_execution_context&>(*(m_model_execution_context[key].get())), *mdl, get_data_coordinator(), mode, num_batches);
+  sgd.get()->evaluate(static_cast<sgd_execution_context&>(*(m_model_execution_context[key].get())), *model, get_data_coordinator(), mode, num_batches);
 }
 
 // =============================================
