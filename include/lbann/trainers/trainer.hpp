@@ -30,15 +30,15 @@
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
 #include "lbann/data_coordinator/data_coordinator.hpp"
-#include "lbann/models/model.hpp"
 #include "lbann/execution_contexts/execution_context.hpp"
 #include "lbann/io/persist.hpp"
-#include "lbann/utils/threads/thread_pool.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/utils/hash.hpp"
+#include "lbann/utils/threads/thread_pool.hpp"
 #include <lbann.pb.h>
-#include <vector>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 namespace lbann {
 
@@ -48,11 +48,11 @@ class training_algorithm;
 class termination_criteria;
 
 /** Represents an LBANN trainer and its context. */
-class trainer {
+class trainer
+{
 public:
-
   /** Constructor. */
-  trainer(lbann_comm *comm,
+  trainer(lbann_comm* comm,
           size_t mini_batch_size,
           std::unique_ptr<data_coordinator> dc);
 
@@ -64,7 +64,7 @@ public:
   ~trainer();
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar);
+  template <class Archive> void serialize(Archive& ar);
 
   /** Set the trainer's name; this is an arbitrary string
    *  that may be useful in multi-trainer scenarios, e.g,
@@ -76,15 +76,16 @@ public:
    *  that may be useful in multi-trainer scenarios, e.g,
    *  LTFB, jag
    */
-  std::string get_name() const {
-    return m_name;
-  }
+  std::string get_name() const { return m_name; }
 
   /** Human-readable description. */
   description get_description() const;
 
   /** Set the random seeds used for the trainer */
-  void set_random_seeds(int root_random_seed, int random_seed, int data_seq_random_seed) {
+  void set_random_seeds(int root_random_seed,
+                        int random_seed,
+                        int data_seq_random_seed)
+  {
     m_root_random_seed = root_random_seed;
     m_random_seed = random_seed;
     m_data_seq_random_seed = data_seq_random_seed;
@@ -94,7 +95,8 @@ public:
   int get_data_seq_random_seed() const { return m_data_seq_random_seed; }
 
   /** @brief Get the list of callbacks for the trainer. */
-  std::vector<observer_ptr<callback_base>> get_callbacks() {
+  std::vector<observer_ptr<callback_base>> get_callbacks()
+  {
     std::vector<observer_ptr<callback_base>> callback_list;
     callback_list.reserve(m_callbacks.size());
     for (const auto& ptr : m_callbacks) {
@@ -103,21 +105,26 @@ public:
     return callback_list;
   }
 
-  void add_callback(std::shared_ptr<callback_base> cb) {
+  void add_callback(std::shared_ptr<callback_base> cb)
+  {
     if (cb == nullptr) {
-      throw lbann_exception("model: Attempted to add null pointer as a callback.");
+      throw lbann_exception(
+        "model: Attempted to add null pointer as a callback.");
     }
     m_callbacks.push_back(std::move(cb));
   }
 
-  std::vector<std::shared_ptr<callback_base>>& get_callbacks_with_ownership() {
+  std::vector<std::shared_ptr<callback_base>>& get_callbacks_with_ownership()
+  {
     return m_callbacks;
   }
 
   /** Set up the trainer. */
-  void setup(std::unique_ptr<thread_pool> io_thread_pool, std::map<execution_mode, generic_data_reader *> data_readers);
+  void setup(std::unique_ptr<thread_pool> io_thread_pool,
+             std::map<execution_mode, generic_data_reader*> data_readers);
 
-  using execution_context_key_pair_t = typename std::pair<observer_ptr<model>, execution_mode>;
+  using execution_context_key_pair_t =
+    typename std::pair<observer_ptr<model>, execution_mode>;
 
   execution_context_key_pair_t
   check_and_build_execution_context(training_algorithm& alg,
@@ -130,21 +137,27 @@ public:
                                     execution_mode mode);
 
   execution_context& get_execution_context(observer_ptr<model> model,
-                                                                 execution_mode mode);
+                                           execution_mode mode);
 
   execution_context& get_execution_context(execution_context_key_pair_t key);
 
   void delete_execution_context(execution_context_key_pair_t key);
 
-  void for_each_execution_context(std::function<void(observer_ptr<execution_context>)>fn);
+  void for_each_execution_context(
+    std::function<void(observer_ptr<execution_context>)> fn);
 
-  const data_coordinator& get_data_coordinator() const {
-    if(m_data_coordinator == nullptr) { LBANN_ERROR("data_coordinator is nullptr"); }
+  const data_coordinator& get_data_coordinator() const
+  {
+    if (m_data_coordinator == nullptr) {
+      LBANN_ERROR("data_coordinator is nullptr");
+    }
     return *m_data_coordinator;
   }
 
-  data_coordinator& get_data_coordinator() {
-    return const_cast<data_coordinator&>(static_cast<const trainer&>(*this).get_data_coordinator());
+  data_coordinator& get_data_coordinator()
+  {
+    return const_cast<data_coordinator&>(
+      static_cast<const trainer&>(*this).get_data_coordinator());
   }
 
   void apply(training_algorithm& alg,
@@ -152,33 +165,40 @@ public:
              execution_mode mode,
              termination_criteria const& term_criteria);
 
-  void train(observer_ptr<model> model, El::Int num_epochs, El::Int num_batches=0);
+  void
+  train(observer_ptr<model> model, El::Int num_epochs, El::Int num_batches = 0);
 
-  void evaluate(observer_ptr<model> model, execution_mode mode, El::Int num_batches=0);
+  void evaluate(observer_ptr<model> model,
+                execution_mode mode,
+                El::Int num_batches = 0);
 
   /** Return the I/O thread pool */
-  thread_pool& get_io_thread_pool() const {
-    if (!m_io_thread_pool) { LBANN_ERROR("m_io_thread_pool is null"); }
+  thread_pool& get_io_thread_pool() const
+  {
+    if (!m_io_thread_pool) {
+      LBANN_ERROR("m_io_thread_pool is null");
+    }
     return *(m_io_thread_pool.get());
   }
 
   /** Get the trainer's comm. */
-  inline lbann_comm *get_comm() const {
-    return m_comm;
-  }
+  inline lbann_comm* get_comm() const { return m_comm; }
 
   /** Get the trainer's persist object */
-  inline persist& get_persist_obj() {
-    return m_persist;
-  }
+  inline persist& get_persist_obj() { return m_persist; }
 
   /** Get the trainer's maximum mini-batch size. */
-  inline size_t get_max_mini_batch_size() const {
+  inline size_t get_max_mini_batch_size() const
+  {
     return m_max_mini_batch_size;
   }
 
-  /** Set a flag that can be used to enable / disable the background I/O activities */
-  void allow_background_io_activity(bool enable) { m_background_io_allowed = enable; }
+  /** Set a flag that can be used to enable / disable the background I/O
+   * activities */
+  void allow_background_io_activity(bool enable)
+  {
+    m_background_io_allowed = enable;
+  }
 
   /** Are background I/O activities enabled by the input layers */
   bool background_io_activity_allowed() { return m_background_io_allowed; }
@@ -187,9 +207,11 @@ public:
   // Checkpointing
   // ===========================================
 
-  /** @brief Checkpoint model to given file descriptor, return number of bytes written */
+  /** @brief Checkpoint model to given file descriptor, return number of bytes
+   * written */
   bool save_to_checkpoint_shared();
-  /** @brief Restore model by reading checkpoint from given file descriptor, return number of bytes read */
+  /** @brief Restore model by reading checkpoint from given file descriptor,
+   * return number of bytes read */
   bool load_from_checkpoint_shared(persist& p);
   bool load_from_checkpoint_shared(model& m, execution_context& c);
 
@@ -201,12 +223,11 @@ public:
   void write_proto(lbann_data::Trainer* proto);
 
 private:
-
   /** Give trainer a name. */
   std::string m_name;
 
   /** Communicator for the trainer. */
-  lbann_comm *m_comm;
+  lbann_comm* m_comm;
 
   /** @details Maximum possible minibatch size supported by models and
    *  layers in this trainer.  Note that this field will eventually be
@@ -231,15 +252,17 @@ private:
   persist m_persist;
 
   /** Hash function for @c m_model_execution_context */
-  using model_execution_context_hash_t = pair_hash<observer_ptr<model>,
-                                                   execution_mode,
-                                                   std::hash<observer_ptr<model>>,
-                                                   enum_hash<execution_mode>>;
+  using model_execution_context_hash_t =
+    pair_hash<observer_ptr<model>,
+              execution_mode,
+              std::hash<observer_ptr<model>>,
+              enum_hash<execution_mode>>;
 
   /** @brief Map from model and execution mode to its execution context */
   std::unordered_map<std::pair<observer_ptr<model>, execution_mode>,
                      std::unique_ptr<execution_context>,
-                     model_execution_context_hash_t> m_model_execution_context;
+                     model_execution_context_hash_t>
+    m_model_execution_context;
 
   /** @brief Current callbacks to process. */
   std::vector<std::shared_ptr<callback_base>> m_callbacks;
@@ -248,6 +271,6 @@ private:
   std::unique_ptr<data_coordinator> m_data_coordinator;
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_TRAINER_HPP
+#endif // LBANN_TRAINER_HPP
