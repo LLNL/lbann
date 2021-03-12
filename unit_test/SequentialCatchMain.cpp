@@ -35,6 +35,9 @@ int main(int argc, char* argv[]) {
   lbann::dnn_lib::initialize();
 #endif // LBANN_HAS_DNN_LIB
 
+  // as of Mar 2021, required for data_readers
+  options::get()->init(irgc, argv);
+
 
   // Initialize the general RNGs and the data sequence RNGs
   int random_seed = 42;
