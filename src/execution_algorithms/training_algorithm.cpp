@@ -25,21 +25,24 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/execution_algorithms/training_algorithm.hpp"
-#include "lbann/models/model.hpp"
 #include "lbann/callbacks/callback.hpp"
 #include "lbann/callbacks/checkpoint.hpp"
-#include "lbann/callbacks/save_model.hpp"
 #include "lbann/callbacks/load_model.hpp"
+#include "lbann/callbacks/save_model.hpp"
+#include "lbann/models/model.hpp"
 
 namespace lbann {
 
-void training_algorithm::setup_models(std::vector<observer_ptr<model>> models, size_t max_mini_batch_size, DataReaderMetaData& dr_metadata) {
-  for (observer_ptr<model> m : models) {
+void training_algorithm::setup_models(std::vector<observer_ptr<model>>& models,
+                                      size_t max_mini_batch_size,
+                                      DataReaderMetaData& dr_metadata)
+{
+  for (observer_ptr<model> const& m : models) {
     // Set up callbacks
     for (auto* c : m->get_callbacks()) {
       {
         auto* cb = dynamic_cast<callback::checkpoint*>(c);
-        if(cb != nullptr) {
+        if (cb != nullptr) {
           cb->set_active_training_algorithm(this);
         }
       }
@@ -47,8 +50,6 @@ void training_algorithm::setup_models(std::vector<observer_ptr<model>> models, s
     // Setup models
     m->setup(max_mini_batch_size, dr_metadata);
   }
-  return;
 }
 
-
-}  // namespace lbann
+} // namespace lbann
