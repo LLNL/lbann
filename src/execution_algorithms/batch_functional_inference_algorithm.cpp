@@ -32,6 +32,23 @@
 namespace lbann {
 
 template <typename TensorDataType>
+int batch_functional_inference_algorithm::
+get_label(El::AbstractDistMatrix<TensorDataType> const& label_data, int row) {
+  TensorDataType max = 0;
+  int idx = 0;
+  TensorDataType col_value;
+  int col_count = label_data.Height();
+  for (int i = 0; i < col_count; i++) {
+    col_value = label_data.Get(row, i);
+    if (col_value > max) {
+      max = col_value;
+      idx = i;
+    }
+  }
+  return idx;
+}
+
+template <typename TensorDataType>
 El::AbstractDistMatrix<TensorDataType>
 batch_functional_inference_algorithm::
 infer(model& model,
@@ -40,12 +57,22 @@ infer(model& model,
       size_t mbs) {
   size_t samples_size = samples.Height();
   El::AbstractDistMatrix<TensorDataType> labels(samples_size, 1);
+
+  // Infer on mini batches
   for (size_t i = 0; i < samples_size; i+=mbs) {
     size_t mbs_idx = std::min(i+mbs, samples_size);
     auto mini_batch_samples = El::View(samples, El::IR(i, mbs_idx), El::ALL);
     auto& mbl = infer_mini_batch(model, mini_batch_samples, output_layer);
-    // Will need a method for concatenating returned matrices here
+
+    // Fill labels, right now this assumes a softmax output for a
+    // classification problem
+    for (size_t j = i; j < mbs_idx; j++) {
+      // This probably doesn't work for a distributed matrix and will be
+      // changed when I properly test it with an external driver application
+      labels[j] = get_label(mbl, j-i);
+    }
   }
+
   return labels;
 }
 

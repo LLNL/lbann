@@ -67,6 +67,10 @@ public:
 
 
 protected:
+  /** return label for a given row of softmax output. */
+  template <typename TensorDataType>
+  int get_label(El::AbstractDistMatrix<TensorDataType> const& label_data, int row);
+
   /** Infer on one mini batch with a given model. */
   template <typename TensorDataType>
   El::AbstractDistMatrix<TensorDataType>
