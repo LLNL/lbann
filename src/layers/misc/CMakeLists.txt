@@ -10,6 +10,8 @@ set_full_path(THIS_DIR_SOURCES
   mini_batch_index.cpp
   mini_batch_size.cpp
   one_hot.cpp
+  rowwise_weights_norms.cpp
+  rowwise_weights_norms_builder.cpp
   uniform_hash.cpp
   variance.cpp
   )
@@ -21,13 +23,14 @@ endif ()
 if (LBANN_HAS_GPU)
   # Add the CUDA source files for this directory
   set_full_path(THIS_DIR_CU_SOURCES
-    covariance.cu
-    dist_embedding.cu
-    variance.cu
     channelwise_mean.cu
     channelwise_softmax.cu
+    covariance.cu
+    dist_embedding.cu
     one_hot.cu
+    rowwise_weights_norms.cu
     uniform_hash.cu
+    variance.cu
     )
   if (LBANN_HAS_FFTW)
     list(APPEND THIS_DIR_CU_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/dft_abs.cu")

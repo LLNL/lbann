@@ -57,18 +57,19 @@
 #include "lbann/layers/loss/mean_squared_error.hpp"
 #include "lbann/layers/loss/top_k_categorical_accuracy.hpp"
 #include "lbann/layers/math/math_builders.hpp"
+#include "lbann/layers/misc/argmax.hpp"
+#include "lbann/layers/misc/argmin.hpp"
 #include "lbann/layers/misc/channelwise_mean.hpp"
 #include "lbann/layers/misc/channelwise_softmax.hpp"
 #include "lbann/layers/misc/covariance.hpp"
+#include "lbann/layers/misc/dist_embedding.hpp"
 #include "lbann/layers/misc/dft_abs_builder.hpp"
 #include "lbann/layers/misc/mini_batch_index.hpp"
 #include "lbann/layers/misc/mini_batch_size.hpp"
-#include "lbann/layers/misc/variance.hpp"
-#include "lbann/layers/misc/argmax.hpp"
-#include "lbann/layers/misc/argmin.hpp"
 #include "lbann/layers/misc/one_hot.hpp"
-#include "lbann/layers/misc/dist_embedding.hpp"
+#include "lbann/layers/misc/rowwise_weights_norms.hpp"
 #include "lbann/layers/misc/uniform_hash.hpp"
+#include "lbann/layers/misc/variance.hpp"
 #include "lbann/layers/regularizers/batch_normalization.hpp"
 #include "lbann/layers/regularizers/dropout.hpp"
 #include "lbann/layers/regularizers/local_response_normalization.hpp"
@@ -281,6 +282,7 @@ private:
     LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(MiniBatchSize, mini_batch_size);
     LBANN_REGISTER_BUILDER(DistEmbedding, dist_embedding);
     LBANN_REGISTER_BUILDER(UniformHash, uniform_hash);
+    LBANN_REGISTER_BUILDER(RowwiseWeightsNorms, rowwise_weights_norms);
 
   }
 
