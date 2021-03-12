@@ -33,9 +33,10 @@
 
 namespace lbann {
 
-void training_algorithm::setup_models(std::vector<observer_ptr<model>>& models,
-                                      size_t max_mini_batch_size,
-                                      DataReaderMetaData& dr_metadata)
+void training_algorithm::setup_models(
+  std::vector<observer_ptr<model>> const& models,
+  size_t max_mini_batch_size,
+  DataReaderMetaData& dr_metadata)
 {
   for (observer_ptr<model> const& m : models) {
     // Set up callbacks

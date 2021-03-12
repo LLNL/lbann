@@ -28,9 +28,9 @@
 #define LBANN_TRAINING_ALGORITHM_HPP
 
 #include "lbann/base.hpp"
+#include "lbann/data_coordinator/data_coordinator.hpp"
 #include "lbann/execution_contexts/execution_context.hpp"
 #include "lbann/models/model.hpp"
-#include "lbann/data_coordinator/data_coordinator.hpp"
 #include "lbann/utils/cloneable.hpp"
 
 namespace lbann {
@@ -84,7 +84,6 @@ class training_algorithm
   : public Cloneable<HasAbstractFunction<training_algorithm>>
 {
 public:
-
   /** @name Lifecycle Management */
   ///@{
   /** @brief Constructor
@@ -119,7 +118,7 @@ public:
                      execution_mode mode,
                      termination_criteria const& term_criteria) = 0;
 
-  void setup_models(std::vector<observer_ptr<model>>& models,
+  void setup_models(std::vector<observer_ptr<model>> const& models,
                     size_t max_mini_batch_size,
                     DataReaderMetaData& dr_metadata);
 
@@ -136,6 +135,6 @@ private:
   std::string m_name;
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_TRAINING_ALGORITHM_HPP
+#endif // LBANN_TRAINING_ALGORITHM_HPP
