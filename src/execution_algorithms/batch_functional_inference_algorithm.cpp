@@ -38,12 +38,12 @@ infer(model& model,
       El::AbstractDistMatrix<TensorDataType> const& samples,
       std::string output_layer,
       size_t mbs) {
-  // Matrix for collecting mini batch labels
-  El::AbstractDistMatrix<TensorDataType> labels(samples.Height(), 1);
-
-  for (size_t i = 0; i < mbs; i++) {
-    // Need to view subsamples for mini batch
-    auto& mbl = infer_mini_batch(model, samples, output_layer);
+  size_t samples_size = samples.Height();
+  El::AbstractDistMatrix<TensorDataType> labels(samples_size, 1);
+  for (size_t i = 0; i < samples_size; i+=mbs) {
+    size_t mbs_idx = std::min(i+mbs, samples_size);
+    auto mini_batch_samples = El::View(samples, El::IR(i, mbs_idx), El::ALL);
+    auto& mbl = infer_mini_batch(model, mini_batch_samples, output_layer);
     // Will need a method for concatenating returned matrices here
   }
   return labels;
@@ -59,6 +59,9 @@ infer_mini_batch(model& model,
   model.forward_prop(execution_mode::inference);
 
   // Get inference labels
+  // Currently this just gets the output tensor of size sample_n X label_n
+  // We will need to work out how to process the output to give the correct
+  // values for different models (e.g., classification vs regression)
   El::AbstractDistMatrix<TensorDataType> labels;
   for (const auto* l : model.get_layers()) {
     if (l->get_name() == output_layer) {
