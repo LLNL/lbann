@@ -175,8 +175,7 @@ def construct_model(lbann):
     # Model-parallel layout
     # ------------------------------------------
 
-    ### @todo Restore
-    # callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
+    callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
 
     # ------------------------------------------
     # Construct model

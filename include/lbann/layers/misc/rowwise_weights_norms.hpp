@@ -72,12 +72,12 @@ private:
   static void row_sqsums(const LocalMat& mat, LocalMat& row_sqsums);
   static void sqrt(LocalMat& mat);
   static void divide(LocalMat& numer, const LocalMat& denom);
-  static void multiply_add(
+  static void row_axpy(
     TensorDataType alpha,
-    const LocalMat& a_col,
-    const LocalMat& b,
+    const LocalMat& a_vec,
+    const LocalMat& x_mat,
     TensorDataType beta,
-    LocalMat& c);
+    LocalMat& y_mat);
 
 };
 
@@ -152,7 +152,7 @@ void rowwise_weights_norms_layer<TensorDataType,Layout,Device>::fp_compute() {
       "data matrices for ",
       this->get_type()," layer \"",this->get_name(),"\" ",
       "and weights \"",w.get_name(),"\" ",
-      "are not aligned");
+      "are not aligned or have invalid layouts");
   }
 
   // Workspace buffers
@@ -178,12 +178,11 @@ void rowwise_weights_norms_layer<TensorDataType,Layout,Device>::fp_compute() {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void rowwise_weights_norms_layer<TensorDataType,Layout,Device>::bp_compute() {
-#if 0
 
   // Weights data
-  const auto& w = this->get_weights(0);
-  using ValuesGetter = weights_details::SafeWeightsAccessor<TensorDataType>;
-  const auto& weights_matrix = ValuesGetter::mutable_values(w);
+  using WeightsType = data_type_weights<TensorDataType>;
+  auto& w = dynamic_cast<WeightsType&>(this->get_weights(0));
+  const auto& weights_matrix = w.get_values();
   auto&& opt = w.get_optimizer();
   if (opt == nullptr) { return; }
   TensorDataType alpha, beta;
@@ -194,16 +193,16 @@ void rowwise_weights_norms_layer<TensorDataType,Layout,Device>::bp_compute() {
   const auto& output_grad = this->get_prev_error_signals();
   if (weights_matrix.LocalHeight() != output_grad.LocalHeight()) {
     LBANN_ERROR(
-      "data matrices for "
+      "data matrices for ",
       this->get_type()," layer \"",this->get_name(),"\" ",
       "and weights \"",w.get_name(),"\" ",
-      "are not aligned");
+      "are not aligned or have invalid layouts");
   }
 
   // Workspace buffers
-  LocalMat workspace(local_output.Height(), 1);
+  LocalMat workspace(output_grad.LocalHeight(), 1);
   LocalMat ones;
-  El::Ones(ones, local_output.Width(), 1);
+  El::Ones(ones, output_grad.LocalWidth(), 1);
 
   // dw/dL = w / norm(w) * sum(dy/dL)
   El::Gemm(
@@ -216,14 +215,13 @@ void rowwise_weights_norms_layer<TensorDataType,Layout,Device>::bp_compute() {
     workspace);
   El::AllReduce(workspace, output_grad.RowComm(), El::mpi::SUM);
   this->divide(workspace, m_local_norms);
-  this->multiply_add(
+  this->row_axpy(
     alpha,
     workspace,
-    weights_matrix,
+    weights_matrix.LockedMatrix(),
     beta,
-    weights_matrix_grad);
+    weights_matrix_grad.Matrix());
 
-#endif // 0
 }
 
 LBANN_DEFINE_LAYER_BUILDER(rowwise_weights_norms);

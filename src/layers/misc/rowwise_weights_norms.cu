@@ -42,6 +42,23 @@ void rowwise_weights_norms_layer<TensorDataType, Layout, Device>::sqrt(
   LBANN_ERROR("Not implemented"); /// @todo Implement
 }
 
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void rowwise_weights_norms_layer<TensorDataType, Layout, Device>::divide(
+  El::Matrix<TensorDataType, Device>& numer,
+  const El::Matrix<TensorDataType, Device>& denom) {
+  LBANN_ERROR("Not implemented"); /// @todo Implement
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void rowwise_weights_norms_layer<TensorDataType, Layout, Device>::row_axpy(
+  TensorDataType alpha,
+  const El::Matrix<TensorDataType, Device>& a_vec,
+  const El::Matrix<TensorDataType, Device>& x_mat,
+  TensorDataType beta,
+  El::Matrix<TensorDataType, Device>& y_mat) {
+  LBANN_ERROR("Not implemented"); /// @todo Implement
+}
+
 #define PROTO(T)                                            \
   template class rowwise_weights_norms_layer<               \
     T, data_layout::DATA_PARALLEL, El::Device::GPU>;        \
