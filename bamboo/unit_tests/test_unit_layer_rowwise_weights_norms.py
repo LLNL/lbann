@@ -100,15 +100,13 @@ def construct_model(lbann):
         lbann.Constant(num_neurons=tools.str_list([width])),
         weights=w,
         num_neurons=height,
-        data_layout='DATA_PARALLEL',
-        device='CPU', ### @todo Remove
+        data_layout='data_parallel',
     )
     x = x_lbann
     y = lbann.RowwiseWeightsNorms(
         weights=w,
         hint_layer=dummy,
-        data_layout='DATA_PARALLEL',
-        device='CPU', ### @todo Remove
+        data_layout='data_parallel',
     )
     z = lbann.MatMul(
         lbann.Reshape(x, dims=tools.str_list([1,-1])),
@@ -143,15 +141,13 @@ def construct_model(lbann):
         lbann.Constant(num_neurons=tools.str_list([width])),
         weights=w,
         num_neurons=height,
-        data_layout='MODEL_PARALLEL',
-        device='CPU', ### @todo Remove
+        data_layout='model_parallel',
     )
     x = x_lbann
     y = lbann.RowwiseWeightsNorms(
         weights=w,
         hint_layer=dummy,
-        data_layout='MODEL_PARALLEL',
-        device='CPU', ### @todo Remove
+        data_layout='model_parallel',
     )
     z = lbann.MatMul(
         lbann.Reshape(x, dims=tools.str_list([1,-1])),

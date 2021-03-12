@@ -41,8 +41,8 @@ void rowwise_weights_norms_layer<TensorDataType, Layout, Device>::row_sqsums(
   const size_t mat_ldim = mat.LDim();
   TensorDataType* __restrict__ row_sqsums_buf = row_sqsums.Buffer();
 
-// Block size for loops
-// Note: x86 cache lines are 64B
+  // Block size for loops
+  // Note: x86 cache lines are 64B
   constexpr size_t _bsize = 64 / sizeof(TensorDataType);
   constexpr size_t bsize = _bsize > 1 ? _bsize : 1;
 
