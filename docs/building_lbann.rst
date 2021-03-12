@@ -193,7 +193,8 @@ platform and the nominal options in the CMake build environment.
 
     .. code-block:: console
 
-        <path to lbann repo>/scripts/build_lbann.sh --build-env-only bash -- +dihydrogen +cuda +half
+        spack env activate -p lbann-<label>-<arch>
+        spack build-env lbann -- bash
         cd <path to lbann repo>/spack-build-<hash>
         ninja install
 
