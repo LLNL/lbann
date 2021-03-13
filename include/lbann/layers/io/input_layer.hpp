@@ -27,12 +27,11 @@
 #ifndef LBANN_LAYERS_INPUT_LAYER_HPP_INCLUDED
 #define LBANN_LAYERS_INPUT_LAYER_HPP_INCLUDED
 
-#include "lbann/data_coordinator/buffered_data_coordinator.hpp"
-#include "lbann/data_readers/utils/input_data_type.hpp"
 #include "lbann/layers/data_type_layer.hpp"
-#include "lbann/models/model.hpp"
-#include "lbann/utils/distconv.hpp"
+#include "lbann/data_coordinator/buffered_data_coordinator.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/distconv.hpp"
+#include "lbann/models/model.hpp"
 
 namespace lbann {
 
@@ -106,14 +105,21 @@ class input_layer : public data_type_layer<TensorDataType> {
  public:
 
   /// @todo make the map and vector references
-   input_layer(lbann_comm* comm, std::string const data_field = "")
-     : data_type_layer<TensorDataType>(comm), m_data_field(data_field)
-   {
+  input_layer(lbann_comm *comm,
+              data_reader_target_mode dr_mode = data_reader_target_mode::NA)
+    : data_type_layer<TensorDataType>(comm),
+    m_data_reader_mode(dr_mode) {
 
-     // Input layers have no parents
-     this->m_expected_num_parent_layers = 0;
-     this->m_expected_num_child_layers = 1;
-   }
+    // Input layers have no parents
+    this->m_expected_num_parent_layers = 0;
+    if(dr_mode == data_reader_target_mode::NA) {
+      this->m_expected_num_child_layers = 1;
+    }else {
+      // Input layers output a sample and target, which could be the
+      // original value, categorical label, or regression value
+      this->m_expected_num_child_layers = 2;
+    }
+  }
 
   input_layer(const input_layer&) = default;
   input_layer& operator=(const input_layer&) = default;
@@ -136,7 +142,7 @@ class input_layer : public data_type_layer<TensorDataType> {
 
       auto* dims = input_type->mutable_tensor_type()->mutable_shape()->add_dim();
       dims->set_dim_param("batch");
-      for( auto const& dim : child->get_output_dims() ) {
+      for( auto const& dim : this->get_output_dims(idx) ) {
         dims = input_type->mutable_tensor_type()->mutable_shape()->add_dim();
         dims->set_dim_value(dim);
       }
@@ -172,6 +178,10 @@ class input_layer : public data_type_layer<TensorDataType> {
    */
   std::vector<int> get_data_dims(DataReaderMetaData& dr_metadata, int child_index = 0) const;
 
+  bool is_for_regression() const {
+    return (m_data_reader_mode == data_reader_target_mode::REGRESSION);
+  }
+
   /** @name Serialization */
   ///@{
 
@@ -179,16 +189,18 @@ class input_layer : public data_type_layer<TensorDataType> {
   void serialize(ArchiveT& ar);
 
   ///@}
+ protected:
+  data_reader_target_mode m_data_reader_mode;
 
  private:
   friend cereal::access;
-  input_layer() : input_layer(nullptr) {}
+  input_layer()
+    : input_layer(nullptr, data_reader_target_mode::NA)
+  {}
 
   // This is to track if samples are loaded with set_samples(), if so the
   // fp_compute() sample loading is no longer necessary
   bool m_samples_loaded = false;
-
-  data_field_type m_data_field;
 
 #ifdef LBANN_HAS_DISTCONV
  public:
