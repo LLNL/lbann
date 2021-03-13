@@ -122,9 +122,6 @@ public:
 #ifdef LBANN_HAS_ONNX
   std::string get_onnx_op_type() const override { return "Identity"; }
 
-#ifdef LBANN_HAS_ONNX
-  std::string get_onnx_op_type() const override { return "Identity"; }
-
   void fill_onnx_node(onnx::GraphProto& graph) const override {
     auto* node = graph.add_node();
     for(auto const* parent : this->get_parent_layers()) {

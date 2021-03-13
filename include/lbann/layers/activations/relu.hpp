@@ -63,10 +63,6 @@ public:
   std::string get_onnx_op_type() const override { return "Relu"; }
 #endif // LBANN_HAS_ONNX
 
-#ifdef LBANN_HAS_ONNX
-  std::string get_onnx_op_type() const override { return "Relu"; }
-#endif // LBANN_HAS_ONNX
-
   /** @name Serialization */
   ///@{
 

@@ -603,9 +603,12 @@ if (LBANN_WITH_ONNX)
 endif ()
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 =======
 >>>>>>> added LBANN_HAS_ONNX option, cleaned up FIXMEs
+=======
+>>>>>>> added export_onnx callback
 ################################################################
 # Build LBANN
 ################################################################
@@ -640,6 +643,7 @@ target_compile_features(lbann PUBLIC cxx_std_17)
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 if (LBANN_HAS_ONNX)
   target_link_libraries(lbann PUBLIC onnx)
 endif ()
@@ -654,6 +658,11 @@ if (LBANN_HAS_ONNX)
   target_link_libraries(lbann PUBLIC onnx)
 endif ()
 >>>>>>> added LBANN_HAS_ONNX option, cleaned up FIXMEs
+=======
+if (LBANN_HAS_ONNX)
+  target_link_libraries(lbann PUBLIC onnx)
+endif ()
+>>>>>>> added export_onnx callback
 target_link_libraries(lbann PUBLIC LbannProto)
 if (LBANN_HAS_TBINF)
   target_link_libraries(lbann PUBLIC TBinf)

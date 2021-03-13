@@ -90,27 +90,6 @@ public:
   }
 #endif // LBANN_HAS_ONNX
 
-#ifdef LBANN_HAS_ONNX
-  std::string get_onnx_op_type() const override { return "Identity"; }
-
-  void fill_onnx_node(onnx::GraphProto& graph) const override {
-    const auto& parent = this->get_parent_layer();
-    const size_t idx_in_parent = parent.find_child_layer_index(*this);
-    for(auto const* child : this->get_child_layers()) {
-      auto* node = graph.add_node();
-      node->add_input(parent.get_name() + "_" + std::to_string(idx_in_parent));
-      size_t idx = this->find_child_layer_index(*child);
-      node->add_output(this->get_name() + "_" + std::to_string(idx));
-      node->set_name(this->get_name() + std::to_string(idx));
-      node->set_op_type(this->get_onnx_op_type());
-      node->set_domain("");
-      node->set_doc_string(this->get_type());
-    }
-  }
-#endif // LBANN_HAS_ONNX
-
-
-
 protected:
 
   El::SyncInfo<Dev> syncSubGridCommunication = El::SyncInfo<Dev>();
