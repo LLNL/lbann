@@ -32,27 +32,60 @@ namespace lbann {
 
 namespace {
 
+/** See El::AbstractDistMatrix::RowOwner. */
+__device__ __forceinline__
+El::Int distmat_index_owner(El::Int global_index, El::Int align, El::Int stride) {
+  return (global_index + align) % stride;
+}
+
+/** See El::AbstractDistMatrix::LocalRow. */
+__device__ __forceinline__
+El::Int distmat_local_index(El::Int global_index, El::Int rank, El::Int align, El::Int stride) {
+  auto shift = (rank - align) % stride;
+  if (global_index > shift) {
+    return (global_index - shift - 1) / stride + 1;
+  }
+  else {
+    return 0;
+  }
+}
+
 /**
  *  On input, output is assumed to be filled with zeros.
  *
- *  Block dimensions: bsize x 1 x 1
+ *  Block dimensions: bdim x 1 x 1
  *
- *  Grid dimensions: (width / bsize) x 1 x 1
+ *  Grid dimensions: (local_mini_batch_size / bdim) x 1 x 1
  */
 template <typename TensorDataType>
-__global__ void fp_kernel(unsigned long long height,
-                          unsigned long long width,
-                          const TensorDataType* __restrict__ indices,
-                          unsigned long long indices_stride,
-                          TensorDataType* __restrict__ output,
-                          unsigned long long output_ldim) {
-  const unsigned long long gid = threadIdx.x + blockIdx.x * blockDim.x;
-  const unsigned long long nthreads = blockDim.x * gridDim.x;
-  for (unsigned long long col = gid; col < width; col += nthreads) {
-    const auto& ind = indices[col*indices_stride];
-    if (TensorDataType(0.f) <= ind && ind < TensorDataType(height)) {
-      const unsigned long long row = static_cast<unsigned long long>(ind);
-      output[row+col*output_ldim] = TensorDataType(1.f);
+__global__ void fp_kernel(
+  El::Int local_mini_batch_size,
+  El::Int output_size,
+  El::Int col_rank,
+  const TensorDataType* __restrict__ local_input,
+  El::Int input_ldim,
+  TensorDataType* __restrict__ local_output,
+  El::Int output_ldim,
+  El::Int output_col_align,
+  El::Int output_col_stride) {
+  const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
+  const El::Int nthreads = blockDim.x * gridDim.x;
+  for (El::Int j=gid; j<local_mini_batch_size; j+=nthreads) {
+    const auto& x = local_input[j*input_ldim];
+    const auto i_global = static_cast<El::Int>(gpu_lib::floor(x));
+    const auto owner_rank = distmat_index_owner(
+      i_global,
+      output_col_align,
+      output_col_stride);
+    if (0 <= i_global
+        && i_global < output_size
+        && owner_rank == col_rank) {
+      const auto i = distmat_local_index(
+        i_global,
+        col_rank,
+        output_col_align,
+        output_col_stride);
+      local_output[i+j*output_ldim] = TensorDataType(1.f);
     }
   }
 }
@@ -62,31 +95,56 @@ __global__ void fp_kernel(unsigned long long height,
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void one_hot_layer<TensorDataType, Layout, Device>::fp_compute() {
 
-  using GPUMatType = El::Matrix<TensorDataType, El::Device::GPU>;
-
   // Local matrices
-  const auto& local_input =
-    dynamic_cast<const GPUMatType&>(this->get_local_prev_activations());
-  auto& local_output = dynamic_cast<GPUMatType&>(this->get_local_activations());
+  using AbsLocalMat = El::AbstractMatrix<TensorDataType>;
+  using LocalMat = El::Matrix<TensorDataType, El::Device::GPU>;
+  const auto& input = this->get_prev_activations();
+  auto& output = this->get_activations();
+  const auto& local_input = dynamic_cast<const LocalMat&>(input.LockedMatrix());
+  auto& local_output = dynamic_cast<LocalMat&>(output.Matrix());
+  const El::Int local_mini_batch_size = output.LocalWidth();
+  const El::Int output_size = output.Height();
+
+  // Make sure all procs in column communicator have access to input
+  LocalMat local_input_view;
+  const auto& col_comm = input.ColComm();
+  const El::Int col_rank = El::mpi::Rank(col_comm);
+  if (El::mpi::Size(col_comm) == 1) {
+    El::LockedView(local_input_view, local_input);
+  }
+  else {
+    local_input_view.Resize(1, input.LocalWidth());
+    const auto owner_rank = input.RowOwner(0);
+    if (col_rank == owner_rank) {
+      El::Copy(local_input, local_input_view);
+    }
+    /** @todo (tym1 3/12/21): We are working around a bug in Hydrogen.
+     *  Broadcast with Matrix<T,D> is not instatiated. */
+    El::Broadcast(
+      static_cast<AbsLocalMat&>(local_input_view),
+      col_comm,
+      owner_rank);
+  }
 
   // Populate one-hot vectors
-  El::Zero(local_output);
+  El::Zero(output);
   if (!local_output.IsEmpty()) {
-    const size_t local_height = local_output.Height();
-    const size_t local_width = local_output.Width();
-    constexpr size_t block_size = 64;
-    const size_t grid_size = (local_width + block_size - 1) / block_size;
     auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_input),
                                        gpu::get_sync_info(local_output));
+    constexpr size_t block_size = 64;
+    const size_t grid_size = (local_mini_batch_size + block_size - 1) / block_size;
     hydrogen::gpu::LaunchKernel(
       fp_kernel<TensorDataType>,
       grid_size, block_size, 0, multisync,
-      local_height,
-      local_width,
-      local_input.LockedBuffer(),
-      local_input.LDim(),
-      local_output.Buffer(),
-      local_output.LDim());
+      local_mini_batch_size,
+      output_size,
+      col_rank,
+      local_input_view.LockedBuffer(),
+      local_input_view.LDim(),
+      output.Buffer(),
+      output.LDim(),
+      output.ColAlign(),
+      output.ColStride());
   }
 
 }

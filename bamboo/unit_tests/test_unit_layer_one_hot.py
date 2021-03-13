@@ -97,7 +97,6 @@ def construct_model(lbann):
         x,
         size=one_hot_size,
         data_layout='data_parallel',
-        device='CPU', ### @todo Remove
     )
     z = lbann.MatMul(
         lbann.Reshape(x_onehot, dims='1 -1'),
@@ -126,7 +125,6 @@ def construct_model(lbann):
         x,
         size=one_hot_size,
         data_layout='model_parallel',
-        device='CPU', ### @todo Remove
     )
     z = lbann.MatMul(
         lbann.Reshape(x_onehot, dims='1 -1'),

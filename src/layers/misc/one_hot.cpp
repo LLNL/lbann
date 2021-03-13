@@ -55,7 +55,7 @@ void one_hot_layer<TensorDataType, Layout, Device>::fp_compute() {
     if (col_rank == owner_rank) {
       El::Copy(local_input, local_input_view);
     }
-    /** @todo (tym1 3/12/21): We work around a bug in Hydrogen.
+    /** @todo (tym1 3/12/21): We are working around a bug in Hydrogen.
      *  Broadcast with Matrix<T,D> is not instatiated. */
     El::Broadcast(
       static_cast<AbsLocalMat&>(local_input_view),
