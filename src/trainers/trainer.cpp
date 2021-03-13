@@ -279,13 +279,6 @@ void trainer::evaluate(observer_ptr<model> model,
                 epoch_termination_criteria(/*num_epochs=*/1UL));
 }
 
-void trainer::evaluate_samples(observer_ptr<model> model, El::DistMatrix<float, El::STAR, El::STAR, El::ELEMENT, El::Device::CPU> const& samples) {
-  auto sgd = make_unique<sgd_training_algorithm>();
-  auto key = check_and_build_execution_context(*sgd.get(), model, execution_mode::testing);
-  /// Apply the training algorithm to evaluate the model
-  sgd.get()->evaluate_samples(static_cast<sgd_execution_context&>(*(m_model_execution_context[key].get())), *model, samples);
-}
-
 // =============================================
 // Checkpointing
 // =============================================

@@ -109,7 +109,6 @@ public:
    *  tensors.
    */
   void forward_prop() final;
-  void forward_prop_sample(El::DistMatrix<float, El::STAR, El::STAR, El::ELEMENT, El::Device::CPU> const& samples);
 
   void summarize_matrices(lbann_summary& summarizer, int step) override;
 

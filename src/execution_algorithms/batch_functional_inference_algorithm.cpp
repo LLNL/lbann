@@ -52,7 +52,7 @@ get_label(El::AbstractDistMatrix<TensorDataType> const& label_data, int row) {
 template <typename TensorDataType>
 El::AbstractDistMatrix<TensorDataType>
 batch_functional_inference_algorithm::
-infer(model& model,
+infer(observer_ptr<model> model,
       El::AbstractDistMatrix<TensorDataType> const& samples,
       std::string output_layer,
       size_t mbs) {
@@ -63,7 +63,7 @@ infer(model& model,
   for (size_t i = 0; i < samples_size; i+=mbs) {
     size_t mbs_idx = std::min(i+mbs, samples_size);
     auto mini_batch_samples = El::View(samples, El::IR(i, mbs_idx), El::ALL);
-    auto& mbl = infer_mini_batch(model, mini_batch_samples, output_layer);
+    auto& mbl = infer_mini_batch(*model, mini_batch_samples, output_layer);
 
     // Fill labels, right now this assumes a softmax output for a
     // classification problem

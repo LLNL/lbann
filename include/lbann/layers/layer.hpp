@@ -257,7 +257,6 @@ public:
    *  tensors.
    */
   virtual void forward_prop() {};
-  virtual void forward_prop_sample(El::DistMatrix<float, El::STAR, El::STAR, El::ELEMENT, El::Device::CPU> samples) {};
   /** @brief Backward propagation step.
    *  Given the objective function gradients w.r.t. the output
    *  tensors, compute the gradients w.r.t. the input tensors and
@@ -574,8 +573,6 @@ protected:
    *  the output tensors are populated with computed values.
    */
   virtual void fp_compute() = 0;
-  virtual void fp_sample(El::DistMatrix<float, El::STAR, El::STAR, El::ELEMENT, El::Device::CPU> samples) {};
-
 
   // ===========================================================
   // Back prop step helper functions

@@ -60,7 +60,7 @@ public:
   /** Infer on samples from a data coordinator with a given model. */
   template <typename TensorDataType>
   El::AbstractDistMatrix<TensorDataType>
-  infer(model& model,
+  infer(observer_ptr<model> model,
         El::AbstractDistMatrix<TensorDataType> const& samples,
         std::string output_layer,
         size_t mbs=0);

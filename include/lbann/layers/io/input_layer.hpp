@@ -68,7 +68,6 @@ class input_distconv_adapter: public data_type_distconv_adapter<TensorDataType> 
   // Nothing to do here as everything is done in fp_compute_distconv.
   void fp_setup(El::Int mini_batch_size) override {}
   void fp_compute();
-  void forward_prop_sample(El::Matrix<float, El::Device::CPU> samples);
   bool is_input_processed(size_t index) const;
 
  private:
@@ -151,7 +150,6 @@ class input_layer : public data_type_layer<TensorDataType> {
   void fp_setup_outputs(El::Int mini_batch_size) override;
 
   void fp_compute() override;
-  void fp_sample(El::DistMatrix<float, El::STAR, El::STAR, El::ELEMENT, El::Device::CPU> samples) override;
 
   void set_samples(const El::AbstractDistMatrix<TensorDataType>& samples);
 

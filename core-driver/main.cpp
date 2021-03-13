@@ -25,13 +25,9 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/lbann.hpp"
-#include "lbann/utils/threads/thread_utils.hpp"
-#include "lbann/training_algorithms/sgd_training_algorithm.hpp"
+#include "lbann/execution_algorithms/batch_functional_inference_algorithm.hpp"
 #include <mpi.h>
 #include <stdio.h>
-
-//#include <thread>
-//#include <chrono>
 
 int max_idx(const El::AbstractDistMatrix<float>& data, int row) {
   float max = 0;
@@ -108,60 +104,10 @@ auto mock_dr_metadata() {
   return drmd;
 }
 
-std::unique_ptr<lbann::trainer>
-load_trainer(lbann::lbann_comm* lc, std::string cp_dir, int mbs) {
-  // Make data coordinator
-  std::unique_ptr<lbann::data_coordinator> dc;
-  dc = lbann::make_unique<lbann::buffered_data_coordinator<float>>(lc);
-
-  // Make trainer
-  auto t = lbann::make_unique<lbann::trainer>(lc, mbs, std::move(dc));
-
-  // Start thread pool
-  auto io_thread_pool = lbann::make_unique<lbann::thread_pool>();
-  io_thread_pool->launch_pinned_threads(1, lbann::free_core_offset(lc));
-
-  // Init RNG, this should be moved to driver_init
-  lbann::init_random(1337, io_thread_pool->get_num_threads());
-  lbann::init_data_seq_random(-1);
-
-  // Get datareader (this will go away)
-  std::map<lbann::execution_mode, lbann::generic_data_reader *> data_readers;
-  lbann::generic_data_reader *reader = nullptr;
-  reader = new lbann::mnist_reader(false);
-  reader->set_comm(lc);
-  reader->set_data_filename("t10k-images-idx3-ubyte");
-  reader->set_label_filename("t10k-labels-idx1-ubyte");
-  reader->set_file_dir("/usr/WS2/wyatt5/pascal/lbann-save-model/applications/vision/data/mnist");
-  reader->set_role("test");
-  reader->set_master(lc->am_world_master());
-  reader->load();
-  data_readers[lbann::execution_mode::testing] = reader;
-
+std::unique_ptr<lbann::model>
+load_model(lbann::lbann_comm* lc, std::string cp_dir, int mbs) {
   // Open checkpoint
-  auto& p = t->get_persist_obj();
-  p.open_restart(cp_dir.c_str());
-
-  // Load trainer from checkpoint
-  auto t_flag = t->load_from_checkpoint_shared(p);
-  if (lc->am_world_master()) {
-    std::cout << "trainer load: " << t_flag << std::endl;
-  }
-
-  // Close checkpoint
-  p.close_restart();
-
-  // Setup the trainer
-  t->setup(std::move(io_thread_pool), data_readers);
-
-  return t;
-
-}
-
-std::unique_ptr<lbann::directed_acyclic_graph_model>
-load_model(lbann::lbann_comm* lc, lbann::trainer* t, std::string cp_dir, int mbs) {
-  // Open checkpoint
-  auto& p = t->get_persist_obj();
+  lbann::persist p;
   p.open_restart(cp_dir.c_str());
 
   // Model
@@ -198,17 +144,6 @@ load_model(lbann::lbann_comm* lc, lbann::trainer* t, std::string cp_dir, int mbs
   return m;
 }
 
-std::vector<int>
-infer(lbann::directed_acyclic_graph_model* m, lbann::trainer* t, El::DistMatrix<float, El::STAR, El::STAR, El::ELEMENT, El::Device::CPU> const& samples, std::string pred_layer) {
-  // Just do a single batch right now, this will all
-  // change as we get rid of the need for datareaders
-  //t->evaluate(m, lbann::execution_mode::testing, 1);
-  //El::Print(samples);
-  t->evaluate_samples(m, samples);
-
-  return get_label(m, pred_layer);
-}
-
 El::DistMatrix<float, El::STAR, El::STAR, El::ELEMENT, El::Device::CPU> load_samples() {
   int h = 28, w = 128, c = 1, N = 64;
   El::DistMatrix<float, El::STAR, El::STAR, El::ELEMENT, El::Device::CPU> samples(c * h * w, N);
@@ -240,18 +175,17 @@ int main(int argc, char *argv[]) {
     lbann_comm->split_trainers(ppt);
   }
 
-  // Load the trainer
-  auto t = load_trainer(lbann_comm.get(), model_dir, mbs);
-
   // Load the model
-  auto m = load_model(lbann_comm.get(), t.get(), model_dir, mbs);
+  auto m = load_model(lbann_comm.get(), model_dir, mbs);
 
   // Load the data
   const auto samples = load_samples();
-  //El::Print(samples);
+
+  // Create inference algorithm
+  auto inf_alg = lbann::batch_functional_inference_algorithm();
 
   // Infer
-  auto labels = infer(m.get(), t.get(), samples, pred_layer);
+  auto labels = inf_alg.infer(m.get(), samples, pred_layer, mbs);
   if (lbann_comm->am_world_master()) {
     std::cout << "Predicted Labels: ";
     for (int i=0; i<labels.size(); i++) {
@@ -261,7 +195,6 @@ int main(int argc, char *argv[]) {
   }
 
   // Clean up
-  t.reset();
   m.reset();
   lbann::finalize();
   MPI_Finalize();
