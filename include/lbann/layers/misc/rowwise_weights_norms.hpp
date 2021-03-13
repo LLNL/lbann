@@ -224,12 +224,12 @@ void rowwise_weights_norms_layer<TensorDataType,Layout,Device>::bp_compute() {
 
 }
 
-LBANN_DEFINE_LAYER_BUILDER(rowwise_weights_norms);
-
 #ifndef LBANN_ROWWISE_WEIGHTS_NORMS_LAYER_INSTANTIATE
-#define PROTO_DEVICE(T, Device)                 \
-  extern template class rowwise_weights_norms_layer<          \
-    T, data_layout::DATA_PARALLEL, Device>;
+#define PROTO_DEVICE(T, Device)                             \
+  extern template class rowwise_weights_norms_layer<        \
+    T, data_layout::DATA_PARALLEL, Device>;                 \
+  extern template class rowwise_weights_norms_layer<        \
+    T, data_layout::MODEL_PARALLEL, Device>;
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE
 #endif // LBANN_ROWWISE_WEIGHTS_NORMS_LAYER_INSTANTIATE

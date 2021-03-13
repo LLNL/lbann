@@ -75,7 +75,6 @@ def construct_model(lbann):
     # Compute expected metric values with NumPy
     # ------------------------------------------
 
-    # Compute expected metric value
     vals = []
     for i in range(num_samples()):
         x = get_sample(i).astype(np.float64)
@@ -89,7 +88,6 @@ def construct_model(lbann):
     # Data-parallel layout
     # ------------------------------------------
 
-    # Input data
     w = lbann.Weights(
         optimizer=lbann.SGD(),
         initializer=lbann.ValueInitializer(
@@ -130,7 +128,6 @@ def construct_model(lbann):
     # Model-parallel layout
     # ------------------------------------------
 
-    # Input data
     w = lbann.Weights(
         optimizer=lbann.SGD(),
         initializer=lbann.ValueInitializer(
@@ -168,7 +165,7 @@ def construct_model(lbann):
     )
 
     # ------------------------------------------
-    # Model-parallel layout
+    # Gradient checking
     # ------------------------------------------
 
     callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))

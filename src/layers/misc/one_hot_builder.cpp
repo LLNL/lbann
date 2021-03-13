@@ -24,7 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/layers/misc/rowwise_weights_norms.hpp"
+#include "lbann/layers/misc/one_hot.hpp"
 #include "lbann/proto/helpers.hpp"
 
 #include <lbann/proto/proto_common.hpp>
@@ -33,19 +33,17 @@
 namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-std::unique_ptr<Layer> build_rowwise_weights_norms_layer_from_pbuf(
+std::unique_ptr<Layer> build_one_hot_layer_from_pbuf(
   lbann_comm* comm, lbann_data::Layer const& proto_layer)
 {
-  LBANN_ASSERT_MSG_HAS_FIELD(proto_layer, rowwise_weights_norms);
-  using LayerType = rowwise_weights_norms_layer<
-    TensorDataType,
-    Layout,
-    Device>;
-  return make_unique<LayerType>();
+  using LayerType = one_hot_layer<TensorDataType,Layout,Device>;
+  LBANN_ASSERT_MSG_HAS_FIELD(proto_layer, one_hot);
+  const auto& params = proto_layer.one_hot();
+  return make_unique<LayerType>(params.size());
 }
 
 #define PROTO_DEVICE(T, Device) \
-  LBANN_LAYER_BUILDER_ETI(rowwise_weights_norms, T, Device)
+  LBANN_LAYER_BUILDER_ETI(one_hot, T, Device)
 #include "lbann/macros/instantiate_device.hpp"
 
 } // namespace lbann

@@ -10,8 +10,8 @@ set_full_path(THIS_DIR_SOURCES
   mini_batch_index.cpp
   mini_batch_size.cpp
   one_hot.cpp
+  one_hot_builder.cpp
   rowwise_weights_norms.cpp
-  rowwise_weights_norms_builder.cpp
   uniform_hash.cpp
   variance.cpp
   )

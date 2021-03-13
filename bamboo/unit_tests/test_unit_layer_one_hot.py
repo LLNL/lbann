@@ -18,15 +18,16 @@ import tools
 # the functions below to ingest data.
 
 # Data
+np.random.seed(201909113)
 one_hot_size = 7
-seed = 201909113
+_num_samples = 47
+_samples = [np.random.uniform(-1, one_hot_size+1) for _ in range(_num_samples)]
 
 # Sample access functions
 def get_sample(index):
-    np.random.seed(seed+index)
-    return [np.random.uniform(-1, one_hot_size+1)]
+    return [_samples[index]]
 def num_samples():
-    return 47
+    return _num_samples
 def sample_dims():
     return (1,)
 
@@ -56,42 +57,103 @@ def construct_model(lbann):
 
     """
 
-    # Layer graph
-    x = lbann.Input()
-    y1 = lbann.OneHot(x, size=one_hot_size)
-    y2 = lbann.Concatenation([lbann.Constant(value=i+1, num_neurons='1')
-                              for i in range(one_hot_size)])
-    y = lbann.Multiply(y1, y2)
-    z = lbann.L2Norm2(y)
+    # Input data
+    x_lbann = lbann.Identity(lbann.Input())
+    y_numpy = np.random.normal(size=one_hot_size).astype(np.float32)
+    y_numpy[:] = 1 ### @todo Remove
+    y_lbann = lbann.Weights(
+        initializer=lbann.ValueInitializer(
+            values=tools.str_list(y_numpy)))
+    y_lbann = lbann.WeightsLayer(
+        weights=y_lbann,
+        dims=tools.str_list([one_hot_size]),
+    )
 
     # Objects for LBANN model
-    layers = list(lbann.traverse_layer_graph(x))
-    metric = lbann.Metric(z, name='obj')
-    obj = lbann.ObjectiveFunction(z)
+    obj = []
+    metrics = []
     callbacks = []
 
-    # Compute expected metric value
+    # ------------------------------------------
+    # Compute expected metric values with NumPy
+    # ------------------------------------------
+
     vals = []
     for i in range(num_samples()):
-        x = get_sample(i)[0]
-        y = int(x) + 1 if (0 <= x and x < one_hot_size) else 0
-        z = y * y
+        x = int(np.floor(get_sample(i)[0]))
+        y = y_numpy
+        z = y[x] if (0 <= x < one_hot_size) else 0
         vals.append(z)
-    val = np.mean(vals)
-    tol = 8 * val * np.finfo(np.float32).eps
-    callbacks.append(lbann.CallbackCheckMetric(
-        metric=metric.name,
-        lower_bound=val-tol,
-        upper_bound=val+tol,
-        error_on_failure=True,
-        execution_modes='test'))
+    val = np.mean(vals, dtype=np.float64)
+    tol = np.abs(8 * val * np.finfo(np.float32).eps)
 
+    # ------------------------------------------
+    # Data-parallel layout
+    # ------------------------------------------
+
+    x = x_lbann
+    y = y_lbann
+    x_onehot = lbann.OneHot(
+        x,
+        size=one_hot_size,
+        data_layout='data_parallel',
+        device='CPU', ### @todo Remove
+    )
+    z = lbann.MatMul(
+        lbann.Reshape(x_onehot, dims='1 -1'),
+        lbann.Reshape(y, dims='1 -1'),
+        transpose_b=True,
+    )
+    obj.append(z)
+    metrics.append(lbann.Metric(z, name='data-parallel layout'))
+    callbacks.append(
+        lbann.CallbackCheckMetric(
+            metric=metrics[-1].name,
+            lower_bound=val-tol,
+            upper_bound=val+tol,
+            error_on_failure=True,
+            execution_modes='test',
+        )
+    )
+
+    # ------------------------------------------
+    # Model-parallel layout
+    # ------------------------------------------
+
+    x = x_lbann
+    y = y_lbann
+    x_onehot = lbann.OneHot(
+        x,
+        size=one_hot_size,
+        data_layout='model_parallel',
+        device='CPU', ### @todo Remove
+    )
+    z = lbann.MatMul(
+        lbann.Reshape(x_onehot, dims='1 -1'),
+        lbann.Reshape(y, dims='1 -1'),
+        transpose_b=True,
+    )
+    obj.append(z)
+    metrics.append(lbann.Metric(z, name='model-parallel layout'))
+    callbacks.append(
+        lbann.CallbackCheckMetric(
+            metric=metrics[-1].name,
+            lower_bound=val-tol,
+            upper_bound=val+tol,
+            error_on_failure=True,
+            execution_modes='test',
+        )
+    )
+
+    # ------------------------------------------
     # Construct model
+    # ------------------------------------------
+
     num_epochs = 0
     return lbann.Model(num_epochs,
-                       layers=layers,
+                       layers=x_lbann,
                        objective_function=obj,
-                       metrics=[metric],
+                       metrics=metrics,
                        callbacks=callbacks)
 
 def construct_data_reader(lbann):

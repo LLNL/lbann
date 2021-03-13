@@ -91,9 +91,11 @@ void one_hot_layer<TensorDataType, Layout, Device>::fp_compute() {
 
 }
 
-#define PROTO(T)                     \
-  template class one_hot_layer<T, data_layout::DATA_PARALLEL, El::Device::GPU>
-
+#define PROTO(T)                                            \
+  template class one_hot_layer<                             \
+    T, data_layout::DATA_PARALLEL, El::Device::GPU>;        \
+  template class one_hot_layer<                             \
+    T, data_layout::MODEL_PARALLEL, El::Device::GPU>
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
 
