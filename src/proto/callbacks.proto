@@ -82,6 +82,8 @@ message Callback {
     CallbackPerturbLearningRate perturb_learning_rate = 50;
     CallbackComputeModelSize compute_model_size = 51;
     CallbackPerturbWeights perturb_weights = 52;
+    CallbackExportOnnx export_onnx = 50;
+    CallbackExportOnnx export_onnx = 53;
   }
 
   message CallbackLTFB {
@@ -402,6 +404,10 @@ message Callback {
     bool perturb_during_training = 2; // Whether to periodically perturb during training (default: False)
     int64 batch_interval = 3;         // Frequency of perturbation if perturb_during_training is true
     string weights = 4;               // Optimizer weights with lr to perturb (default: All)
+
+  /** @brief Export trained model in onnx format */
+  message CallbackExportOnnx {
+
   }
 
   message CallbackComputeModelSize {
@@ -413,4 +419,8 @@ message Callback {
     string output_name = 1;
     int64 batch_interval = 2;
   }
+  /** @brief Export trained model in onnx format */
+  message CallbackExportOnnx {
+  }
+
 }

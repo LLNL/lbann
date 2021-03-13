@@ -146,6 +146,9 @@ option(LBANN_WITH_UNIT_TESTING
 option(LBANN_WITH_ADDRESS_SANITIZER
   "Try clang-style use of ASAN (-fsanitize=address)" OFF)
 
+option(LBANN_WITH_ONNX
+  "Enable exporting onnx model." OFF)
+
 # Use deterministic GPU algorithms and layer operations
 option(LBANN_DETERMINISTIC
   "Use deterministic algorithms as much as possible." OFF)
@@ -604,6 +607,12 @@ endif (LBANN_WITH_UNIT_TESTING)
 # Handle the documentation
 add_subdirectory(docs)
 
+# Include onnx dependency
+if (LBANN_WITH_ONNX)
+  set (LBANN_HAS_ONNX TRUE)
+  find_package(ONNX CONFIG REQUIRED)
+endif ()
+
 ################################################################
 # Build LBANN
 ################################################################
@@ -635,6 +644,9 @@ target_include_directories(lbann PUBLIC
 target_compile_features(lbann PUBLIC cxx_std_17)
 
 # Use the IMPORTED targets when possible.
+if (LBANN_HAS_ONNX)
+  target_link_libraries(lbann PUBLIC onnx)
+endif ()
 target_link_libraries(lbann PUBLIC LbannProto)
 if (LBANN_HAS_TBINF)
   target_link_libraries(lbann PUBLIC TBinf)
@@ -971,6 +983,7 @@ append_str_tf(_str
   LBANN_HAS_TBINF
   LBANN_HAS_VTUNE
   LBANN_HAS_BOOST
+  LBANN_HAS_ONNX
   LBANN_NVPROF
   )
 string(APPEND _str

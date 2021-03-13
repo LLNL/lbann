@@ -527,6 +527,28 @@ void Layer::write_proto(lbann_data::Layer* proto) const {
     get_weights(i).write_proto(weight_proto);
   }
 }
+#ifdef LBANN_HAS_ONNX
+void Layer::fill_onnx_node(onnx::GraphProto& graph) const {
+  auto* node = graph.add_node();
+  for(auto const* parent : this->get_parent_layers()) {
+    size_t idx = parent->find_child_layer_index(*this);
+    node->add_input(parent->get_name() + "_" + std::to_string(idx));
+  }
+  for(auto const* child : this->get_child_layers()) {
+    size_t idx = this->find_child_layer_index(*child);
+    node->add_output(this->get_name() + "_" + std::to_string(idx));
+  }
+  node->set_name(this->get_name());
+  node->set_op_type(this->get_onnx_op_type());
+  node->set_domain("");
+  node->set_doc_string(this->get_type());
+
+}
+
+std::string Layer::get_onnx_op_type() const {
+  return this->get_type();
+}
+#endif // LBANN_HAS_ONNX
 
 const Layer& Layer::get_parent_layer(size_t index) const {
   if (index >= m_parent_layers.size()) {
