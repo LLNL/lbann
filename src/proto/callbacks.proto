@@ -79,6 +79,7 @@ message Callback {
     CallbackSetWeightsValue set_weights_value = 47;
     CallbackSummarizeImages summarize_images = 48;
     CallbackDumpModelGraph dump_model_graph = 49;
+    CallbackExportOnnx export_onnx = 50;
   }
 
   message CallbackLTFB {
@@ -392,6 +393,10 @@ message Callback {
   message CallbackDumpModelGraph {
     string basename = 1; // default: "model.dot"
     bool print = 2;
+  }
+
+  /** @brief Export trained model in onnx format */
+  message CallbackExportOnnx {
   }
 
 }
