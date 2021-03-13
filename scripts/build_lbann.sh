@@ -32,7 +32,7 @@ CMD_LINE_VARIANTS=
 
 # Default versions of Hydrogen, DiHydrogen, and Aluminum - use head of repo
 HYDROGEN_VER="@develop"
-ALUMINUM_VER="@master"
+ALUMINUM_VER="@0.7.0"
 DIHYDROGEN_VER="@develop"
 
 ################################################################
