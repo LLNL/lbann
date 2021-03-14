@@ -39,7 +39,7 @@ def summarize_metrics(trainer_metrics):
         partial_mean_epoch_test_time = np.mean(np.array(test_times))
       else:
         partial_mean_epoch_test_time = 0
-      partial_total_time = (mean_epoch_train_time + mean_epoch_test_time)
+      partial_total_time = (partial_mean_epoch_train_time + partial_mean_epoch_test_time)
       partial_results[e] = { 'epoch' : e,
                              'total_time' : total_time + partial_total_time,
                              'total_train_time' : total_train_time,
@@ -68,8 +68,14 @@ def summarize_metrics(trainer_metrics):
       total_train_times.append(train_times)
       if e != '0':
         total_train_times_not_first_epoch.append(train_times)
-      mean_epoch_train_time = np.mean(np.array(train_times))
-      mean_epoch_test_time = 0 # np.mean(np.array(test_times))
+      if np.array(train_times):
+        mean_epoch_train_time = np.mean(np.array(train_times))
+      else:
+        mean_epoch_train_time = 0
+      if np.array(test_times):
+        mean_epoch_test_time = np.mean(np.array(test_times))
+      else:
+        mean_epoch_test_time = 0
       total_time += (mean_epoch_train_time + mean_epoch_test_time)
       total_train_time += mean_epoch_train_time
       results[e] = { 'epoch' : e,
@@ -92,7 +98,7 @@ def summarize_metrics(trainer_metrics):
                             'recon_max' : np.amax(np.array(test_recons)),
                             'recon_mean' : np.mean(np.array(test_recons)),
                             'recon_std' : np.std(np.array(test_recons)),
-                            'mean_test_time' : partial_mean_epoch_test_time,
+                            'mean_test_time' : mean_epoch_test_time,
                             'std_test_time' : np.std(np.array(test_times))})
 
   return results, partial_results, total_train_times, total_train_times_not_first_epoch
@@ -164,11 +170,19 @@ for num in range(len(sys.argv)-1):
   print('################################################################################')
   print("File#", num , " ", inp)
   print('################################################################################')
+  run_stats = dict()
   trainer_metrics = dict()
   current_epoch = {} # Dict for each trainer to track the current epoch
   ds_times = {}
   active_ds_mode = ''
   sync_time = 0
+  # Patterns for key metrics
+  p_trainers = re.compile('\s+Trainers\s+: ([0-9.]+)')
+  p_ppt = re.compile('\s+Processes per trainer\s+: ([0-9.]+)')
+  p_ppn = re.compile('\s+Processes on node\s+: ([0-9.]+)')
+  p_procs = re.compile('\s+Total number of processes\s+: ([0-9.]+)')
+  p_omp = re.compile('\s+OpenMP threads per process\s+: ([0-9.]+)')
+  p_mb = re.compile('\s+mini_batch_size:\s+([0-9.]+)')
   # Patterns for key metrics
   p_train_time = re.compile('\w+\s+\(instance ([0-9]*)\) training epoch ([0-9]*) run time : ([0-9.]+)')
   p_test_time = re.compile('\w+\s+\(instance ([0-9]*)\) test run time : ([0-9.]+)')
@@ -183,6 +197,25 @@ for num in range(len(sys.argv)-1):
   p_sync_time = re.compile('synchronizing trainers... ([0-9.]+)s')
   with open(inp) as ifile1:
     for line in ifile1:
+      m_trainers = p_trainers.match(line)
+      if (m_trainers):
+        run_stats['num_trainers'] = m_trainers.group(1)
+      m_ppt = p_ppt.match(line)
+      if (m_ppt):
+        run_stats['procs_per_trainer'] = m_ppt.group(1)
+      m_ppn = p_ppn.match(line)
+      if (m_ppn):
+        run_stats['procs_per_node'] = m_ppn.group(1)
+      m_procs = p_procs.match(line)
+      if (m_procs):
+        run_stats['num_processes'] = m_procs.group(1)
+      m_omp = p_omp.match(line)
+      if (m_omp):
+        run_stats['num_omp_threads'] = m_omp.group(1)
+      m_mb = p_mb.match(line)
+      if (m_mb):
+        run_stats['minibatch_size'] = m_mb.group(1)
+
       m_time = p_train_time.match(line)
       if (m_time):
           tid = m_time.group(1)
@@ -267,6 +300,12 @@ for num in range(len(sys.argv)-1):
       #     r = m_train_recon.group(3)
       #     trainer_metrics[e][tid]['train_recon'] = r
 
+    print(f"Trainers : {run_stats['num_trainers']}")
+    print(f"Procs per trainer : {run_stats['procs_per_trainer']}")
+    print(f"Procs per node : {run_stats['procs_per_node']}")
+    print(f"Total num. Processes : {run_stats['num_processes']}")
+    print(f"Num. OpenMP Threads : {run_stats['num_omp_threads']}")
+    print(f"Mini-batch Size : {run_stats['minibatch_size']}")
     results, partial_results, total_train_times, total_train_times_not_first_epoch = summarize_metrics(trainer_metrics)
 
     print_results(results, partial_results, total_train_times, total_train_times_not_first_epoch)
