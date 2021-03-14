@@ -339,6 +339,10 @@ class generic_data_reader {
     m_supported_input_types[INPUT_DATA_TYPE_RESPONSES] = b;
   }
 
+  void start_data_store_mini_batch_exchange();
+  void finish_data_store_mini_batch_exchange();
+
+
   /**
    * During the network's update phase, the data reader will
    * advanced the current position pointer.  If the pointer wraps

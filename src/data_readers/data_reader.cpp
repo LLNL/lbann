@@ -205,6 +205,29 @@ int lbann::generic_data_reader::fetch(
   return mb_size;
 }
 
+void lbann::generic_data_reader::start_data_store_mini_batch_exchange() {
+  int loaded_batch_size = get_loaded_mini_batch_size();
+
+  /// Make sure that every rank participates in the data store prior
+  /// to seeing if the local rank's position is valid.  Note that
+  /// every rank will hold data that may be used in the last mini-batch
+  if (data_store_active()) {
+    const int end_pos = std::min(static_cast<size_t>(m_current_pos+loaded_batch_size), m_shuffled_indices.size());
+    m_data_store->start_exchange_mini_batch_data(m_current_pos-m_base_offset-m_model_offset, loaded_batch_size);
+  }
+  return;
+}
+
+void lbann::generic_data_reader::finish_data_store_mini_batch_exchange() {
+  /// Make sure that every rank participates in the data store prior
+  /// to seeing if the local rank's position is valid.  Note that
+  /// every rank will hold data that may be used in the last mini-batch
+  if (data_store_active()) {
+    m_data_store->finish_exchange_mini_batch_data();
+  }
+  return;
+}
+
 bool lbann::generic_data_reader::fetch_data_block(
   std::map<data_field_type, CPUMat*>& input_buffers,
   El::Int block_offset,
