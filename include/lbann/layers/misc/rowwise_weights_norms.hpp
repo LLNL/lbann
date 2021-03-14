@@ -132,7 +132,9 @@ void rowwise_weights_norms_layer<TensorDataType,Layout,Device>::setup_dims(DataR
   }
 
   // Output dimensions are height of weights matrix
-  this->set_output_dims(this->get_weights(0).get_matrix_height_dims());
+  const auto& dims_ = this->get_weights(0).get_matrix_height_dims();
+  std::vector<int> dims(dims_.begin(), dims_.end());
+  this->set_output_dims(dims);
 
 }
 
