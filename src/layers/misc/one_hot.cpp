@@ -33,41 +33,36 @@ template <typename TensorDataType, data_layout Layout, El::Device Device>
 void one_hot_layer<TensorDataType, Layout, Device>::fp_compute() {
 
   // Local matrices
-  using AbsLocalMat = El::AbstractMatrix<TensorDataType>;
   using LocalMat = El::Matrix<TensorDataType, El::Device::CPU>;
   const auto& input = this->get_prev_activations();
   auto& output = this->get_activations();
-  const auto& local_input = dynamic_cast<const LocalMat&>(input.LockedMatrix());
   auto& local_output = dynamic_cast<LocalMat&>(output.Matrix());
   const El::Int local_mini_batch_size = output.LocalWidth();
   const El::Int output_size = output.Height();
 
   // Make sure all procs in column communicator have access to input
-  LocalMat local_input_view;
+  LocalMat local_input;
   const auto& col_comm = input.ColComm();
   const auto col_rank = El::mpi::Rank(col_comm);
-  if (El::mpi::Size(col_comm) == 1) {
-    El::LockedView(local_input_view, local_input);
+  const auto owner_rank = input.RowOwner(0);
+  if (col_rank == owner_rank) {
+    El::LockedView(local_input, input.LockedMatrix());
   }
   else {
-    local_input_view.Resize(1, input.LocalWidth());
-    const auto owner_rank = input.RowOwner(0);
-    if (col_rank == owner_rank) {
-      El::Copy(local_input, local_input_view);
-    }
-    /** @todo (tym1 3/12/21): We are working around a bug in Hydrogen.
-     *  Broadcast with Matrix<T,D> is not instatiated. */
-    El::Broadcast(
-      static_cast<AbsLocalMat&>(local_input_view),
-      col_comm,
-      owner_rank);
+    local_input.Resize(1, input.LocalWidth());
   }
+  /** @todo (tym1 3/12/21): We are working around a bug in Hydrogen.
+   *  Broadcast with Matrix<T,D> is not instatiated. */
+  El::Broadcast(
+    static_cast<El::AbstractMatrix<TensorDataType>&>(local_input),
+    col_comm,
+    owner_rank);
 
   // Populate one-hot vectors
   El::Zero(output);
   LBANN_OMP_PARALLEL_FOR
   for (El::Int j=0; j<local_mini_batch_size; ++j) {
-    const auto& x = local_input_view(0,j);
+    const auto& x = local_input(0,j);
     const auto i_global = static_cast<El::Int>(std::floor(x));
     if (0 <= i_global
         && i_global < output_size

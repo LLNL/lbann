@@ -100,31 +100,27 @@ void one_hot_layer<TensorDataType, Layout, Device>::fp_compute() {
   using LocalMat = El::Matrix<TensorDataType, El::Device::GPU>;
   const auto& input = this->get_prev_activations();
   auto& output = this->get_activations();
-  const auto& local_input = dynamic_cast<const LocalMat&>(input.LockedMatrix());
   auto& local_output = dynamic_cast<LocalMat&>(output.Matrix());
   const El::Int local_mini_batch_size = output.LocalWidth();
   const El::Int output_size = output.Height();
 
   // Make sure all procs in column communicator have access to input
-  LocalMat local_input_view;
+  LocalMat local_input;
   const auto& col_comm = input.ColComm();
-  const El::Int col_rank = El::mpi::Rank(col_comm);
-  if (El::mpi::Size(col_comm) == 1) {
-    El::LockedView(local_input_view, local_input);
+  const auto col_rank = El::mpi::Rank(col_comm);
+  const auto owner_rank = input.RowOwner(0);
+  if (col_rank == owner_rank) {
+    El::LockedView(local_input, input.LockedMatrix());
   }
   else {
-    local_input_view.Resize(1, input.LocalWidth());
-    const auto owner_rank = input.RowOwner(0);
-    if (col_rank == owner_rank) {
-      El::Copy(local_input, local_input_view);
-    }
-    /** @todo (tym1 3/12/21): We are working around a bug in Hydrogen.
-     *  Broadcast with Matrix<T,D> is not instatiated. */
-    El::Broadcast(
-      static_cast<AbsLocalMat&>(local_input_view),
-      col_comm,
-      owner_rank);
+    local_input.Resize(1, input.LocalWidth());
   }
+  /** @todo (tym1 3/12/21): We are working around a bug in Hydrogen.
+   *  Broadcast with Matrix<T,D> is not instatiated. */
+  El::Broadcast(
+    static_cast<El::AbstractMatrix<TensorDataType>&>(local_input),
+    col_comm,
+    owner_rank);
 
   // Populate one-hot vectors
   El::Zero(output);
@@ -139,8 +135,8 @@ void one_hot_layer<TensorDataType, Layout, Device>::fp_compute() {
       local_mini_batch_size,
       output_size,
       col_rank,
-      local_input_view.LockedBuffer(),
-      local_input_view.LDim(),
+      local_input.LockedBuffer(),
+      local_input.LDim(),
       output.Buffer(),
       output.LDim(),
       output.ColAlign(),

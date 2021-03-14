@@ -38,8 +38,6 @@ reduction_layer<TensorDataType,Layout,Device>
   ar(::cereal::make_nvp("DataTypeLayer",
                         ::cereal::base_class<DataTypeLayer>(this)),
      CEREAL_NVP(m_mode));
-  // Members that aren't serialized
-  //  m_ones
 
 }
 

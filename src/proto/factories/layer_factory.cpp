@@ -239,6 +239,7 @@ private:
     LBANN_REGISTER_BUILDER(Gather, gather);
     LBANN_REGISTER_BUILDER(Hadamard, hadamard);
     LBANN_REGISTER_BUILDER(Pooling, pooling);
+    LBANN_REGISTER_BUILDER(Reduction, reduction);
     LBANN_REGISTER_BUILDER(Scatter, scatter);
     LBANN_REGISTER_BUILDER(Split, split);
     LBANN_REGISTER_BUILDER(StopGradient, stop_gradient);
@@ -493,19 +494,6 @@ std::unique_ptr<Layer> construct_layer_legacy(
     } else {
       LBANN_ERROR("unpooling layer is only supported with "
                   "a data-parallel layout and on CPU");
-    }
-  }
-  if (proto_layer.has_reduction()) {
-    const auto& params = proto_layer.reduction();
-    const auto& mode_str = params.mode();
-    reduction_mode mode = reduction_mode::INVALID;
-    if (mode_str == "sum" || mode_str.empty()) { mode = reduction_mode::SUM; }
-    if (mode_str == "average") { mode = reduction_mode::AVERAGE; }
-    if (Layout == data_layout::DATA_PARALLEL) {
-      return lbann::make_unique<reduction_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(comm, mode);
-    } else {
-      LBANN_ERROR("reduction layer is only supported with "
-                  "a data-parallel layout");
     }
   }
   if (proto_layer.has_discrete_random()) {

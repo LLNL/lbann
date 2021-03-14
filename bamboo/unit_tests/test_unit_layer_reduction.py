@@ -139,6 +139,46 @@ def construct_model(lbann):
     )
 
     # ------------------------------------------
+    # Model-parallel layout, sum reduction
+    # ------------------------------------------
+
+    x1 = x1_lbann
+    x2 = x2_lbann
+    y = lbann.Reduction(x1, mode='sum', data_layout='model_parallel')
+    z = lbann.Multiply(y, x2)
+    obj.append(z)
+    metrics.append(lbann.Metric(z, name='model-parallel layout, sum reduction'))
+    callbacks.append(
+        lbann.CallbackCheckMetric(
+            metric=metrics[-1].name,
+            lower_bound=val_sum-tol,
+            upper_bound=val_sum+tol,
+            error_on_failure=True,
+            execution_modes='test',
+        )
+    )
+
+    # ------------------------------------------
+    # Data-parallel layout, mean reduction
+    # ------------------------------------------
+
+    x1 = x1_lbann
+    x2 = x2_lbann
+    y = lbann.Reduction(x1, mode='average', data_layout='model_parallel')
+    z = lbann.Multiply(y, x2)
+    obj.append(z)
+    metrics.append(lbann.Metric(z, name='model-parallel layout, mean reduction'))
+    callbacks.append(
+        lbann.CallbackCheckMetric(
+            metric=metrics[-1].name,
+            lower_bound=val_mean-tol,
+            upper_bound=val_mean+tol,
+            error_on_failure=True,
+            execution_modes='test',
+        )
+    )
+
+    # ------------------------------------------
     # Gradient checking
     # ------------------------------------------
 

@@ -26,12 +26,33 @@
 
 #define LBANN_REDUCTION_LAYER_INSTANTIATE
 #include "lbann/layers/transform/reduction.hpp"
+#include "lbann/proto/helpers.hpp"
+
+#include <lbann/proto/proto_common.hpp>
+#include <layers.pb.h>
 
 namespace lbann {
 
-#define PROTO_DEVICE(T, Device) \
-  template class reduction_layer<T, data_layout::DATA_PARALLEL, Device>
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+std::unique_ptr<Layer> build_reduction_layer_from_pbuf(
+  lbann_comm* comm, lbann_data::Layer const& proto_layer)
+{
+  using LayerType = reduction_layer<TensorDataType,Layout,Device>;
+  LBANN_ASSERT_MSG_HAS_FIELD(proto_layer, reduction);
+  const auto& params = proto_layer.reduction();
+  const std::string mode_str = params.mode();
+  reduction_mode mode = reduction_mode::INVALID;
+  if (mode_str == "sum" || mode_str.empty()) { mode = reduction_mode::SUM; }
+  if (mode_str == "average") { mode = reduction_mode::AVERAGE; }
+  return lbann::make_unique<LayerType>(mode);
+}
 
+#define PROTO_DEVICE(T, Device)                 \
+  template class reduction_layer<               \
+    T, data_layout::DATA_PARALLEL, Device>;     \
+  template class reduction_layer<               \
+    T, data_layout::MODEL_PARALLEL, Device>;    \
+  LBANN_LAYER_BUILDER_ETI(reduction, T, Device)
 #include "lbann/macros/instantiate_device.hpp"
 
 }// namespace lbann
