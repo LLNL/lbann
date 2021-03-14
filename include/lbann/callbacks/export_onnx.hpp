@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -30,15 +30,15 @@
 #define LBANN_CALLBACKS_EXPORT_ONNX_HPP_INCLUDED
 
 #include "lbann/callbacks/callback.hpp"
+#include <lbann/base.hpp>
+
+#include <onnx/onnx_pb.h>
 
 #include <google/protobuf/message.h>
-#include <lbann/base.hpp>
-#include <onnx/onnx_pb.h>
+
 #include <iostream>
 #include <memory>
 #include <vector>
-
-using namespace onnx;
 
 namespace lbann {
 namespace callback {
@@ -49,13 +49,16 @@ namespace callback {
 class export_onnx : public callback_base {
 
 public:
-  /** @brief export_onnx Constructor. */
-  export_onnx(std::shared_ptr<lbann_summary> const& summarizer);
+  /** @brief export_onnx Constructor.
+   *  @param output_file Output filename (default = lbann_output.onnx)
+   *  @param print_debug_string Option to print debug string to stdout
+   */
+  export_onnx(bool print_debug_string = false,
+              std::string output_file = "lbann_output.onnx");
 
-  /** @brief Copy constructor */
-  callback_base* copy() const override {
-    LBANN_ERROR( "This callback is not copyable.");
-    return nullptr;
+  /** @brief Copy interface */
+  export_onnx* copy() const override {
+    return new export_onnx(*this);
   }
 
   /** @brief Return name of callback */
@@ -69,19 +72,21 @@ public:
 
 private:
 
+  /* @brief option to print onnx debug string */
+  bool m_print_debug_string;
+
+  /* @brief name of output file. Default = lbann_output.onnx */
+  std::string m_output_file;
+
   /* @brief onnx ModelProto object */
   onnx::ModelProto mp_;
-
-  /* @brief lbann_summary object */
-  std::shared_ptr<lbann_summary> m_summarizer;
-
 
 }; // class export_onnx
 
 std::unique_ptr<callback_base>
 build_export_onnx_callback_from_pbuf(
   const google::protobuf::Message& proto_msg,
-  const std::shared_ptr<lbann_summary>& summarizer);
+  const std::shared_ptr<lbann_summary>&);
 
 } // namespace callback
 } // namespace lbann
