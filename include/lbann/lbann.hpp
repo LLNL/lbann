@@ -34,7 +34,7 @@
 #include "lbann/trainers/trainer.hpp"
 
 /// Training Algorithms
-#include "lbann/training_algorithms/training_algorithm.hpp"
+#include "lbann/execution_algorithms/training_algorithm.hpp"
 
 /// Models
 #include "lbann/models/directed_acyclic_graph.hpp"

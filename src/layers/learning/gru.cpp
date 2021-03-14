@@ -225,13 +225,11 @@ void gru_layer<TensorDataType, Layout, Device>
     auto& hh_bias = this->get_weights(4*i+3);
 
     ih_matrix.set_dims(
-      {static_cast<int>(3*m_hidden_size)},
-      {static_cast<int>(i == 0 ? input_size : m_hidden_size)});
-    hh_matrix.set_dims(
-      {static_cast<int>(3*m_hidden_size)},
-      {static_cast<int>(m_hidden_size)});
-    ih_bias.set_dims({static_cast<int>(3*m_hidden_size)});
-    hh_bias.set_dims({static_cast<int>(3*m_hidden_size)});
+      {3*m_hidden_size},
+      {i == 0 ? input_size : m_hidden_size});
+    hh_matrix.set_dims({3*m_hidden_size}, {m_hidden_size});
+    ih_bias.set_dims({3*m_hidden_size});
+    hh_bias.set_dims({3*m_hidden_size});
     auto dist = this->get_prev_activations().DistData();
     dist.colDist = El::STAR;
     dist.rowDist = El::STAR;

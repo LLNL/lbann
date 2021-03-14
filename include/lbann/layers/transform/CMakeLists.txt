@@ -1,5 +1,6 @@
 # Add the headers for this directory
 set_full_path(THIS_DIR_HEADERS
+  batchwise_reduce_sum.hpp
   concatenate.hpp
   pooling.hpp
   reshape.hpp

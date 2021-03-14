@@ -141,7 +141,7 @@ set_center_specific_spack_dependencies()
             "power9le" | "power8le") # Lassen, Ray
                 CENTER_DEPENDENCIES="^spectrum-mpi ^openblas@0.3.12 threads=openmp"
                 ;;
-            "broadwell" | "haswell" | "sandybridge") # Pascal, RZHasGPU, Surface
+            "broadwell" | "haswell" | "sandybridge" | "ivybridge") # Pascal, RZHasGPU, Surface, Catalyst
                 # On LC the mvapich2 being used is built against HWLOC v1
                 CENTER_DEPENDENCIES="^mvapich2 ^hwloc@1.11.13"
                 ;;

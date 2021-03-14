@@ -92,6 +92,7 @@ message Layer {
     Tessellate tessellate = 327;
     Scatter scatter = 334;
     Gather gather = 335;
+    BatchwiseReduceSum batchwise_reduce_sum = 336;
 
     // Learning layers
     FullyConnected fully_connected = 11;
@@ -582,6 +583,12 @@ message Layer {
     *  gather along a specified dimension.
     */
   message Gather {}
+
+  /** @brief Sum of tensor entries along batch dimension
+    *
+    *  Output tensor has same shape as input tensor.
+    */
+  message BatchwiseReduceSum {}
 
   /////////////////////
   // Learning layers //

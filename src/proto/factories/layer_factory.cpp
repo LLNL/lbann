@@ -77,6 +77,7 @@
 #include "lbann/layers/regularizers/entrywise_batch_normalization.hpp"
 #include "lbann/layers/regularizers/layer_norm.hpp"
 #include "lbann/layers/regularizers/instance_norm.hpp"
+#include "lbann/layers/transform/batchwise_reduce_sum.hpp"
 #include "lbann/layers/transform/bernoulli.hpp"
 #include "lbann/layers/transform/categorical_random.hpp"
 #include "lbann/layers/transform/concatenate.hpp"
@@ -229,6 +230,7 @@ private:
     LBANN_REGISTER_BUILDER(Tanh, tanh);
 
     // Transform layers
+    LBANN_REGISTER_BUILDER(BatchwiseReduceSum, batchwise_reduce_sum);
     LBANN_REGISTER_BUILDER(Bernoulli, bernoulli);
     LBANN_REGISTER_BUILDER(CategoricalRandom, categorical_random);
     LBANN_REGISTER_BUILDER(Concatenation, concatenate);

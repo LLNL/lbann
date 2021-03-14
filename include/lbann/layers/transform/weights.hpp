@@ -146,9 +146,11 @@ public:
     }
 
     // Setup weights and weights gradient
+    const auto& output_dims_ = this->get_output_dims();
+    std::vector<size_t> output_dims(output_dims_.begin(), output_dims_.end());
     m_gradient->AlignWith(this->get_activations());
     m_gradient->Resize(this->get_output_size(), 1);
-    this->get_weights(0).set_dims(this->get_output_dims());
+    this->get_weights(0).set_dims(output_dims);
     this->get_weights(0).set_matrix_distribution(m_gradient->DistData());
 
     // Initialize freeze state

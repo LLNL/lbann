@@ -30,10 +30,16 @@ def download_data():
         data_file = os.path.join(data_dir, data_file)
         compressed_file = data_file + '.gz'
         if not os.path.isfile(data_file):
-            urllib.request.urlretrieve(url, filename=compressed_file)
-            with gzip.open(compressed_file, 'rb') as in_file:
-                with open(data_file, 'wb') as out_file:
-                    out_file.write(in_file.read())
+            request = urllib.request.Request(
+                url,
+                headers={'User-Agent': 'LBANN/vision-app'},
+            )
+            with urllib.request.urlopen(request) as response, \
+                 open(compressed_file, 'wb') as out_file:
+                out_file.write(response.read())
+            with gzip.open(compressed_file, 'rb') as in_file, \
+                 open(data_file, 'wb') as out_file:
+                out_file.write(in_file.read())
 
 def make_data_reader():
     """Make Protobuf message for MNIST data reader.
