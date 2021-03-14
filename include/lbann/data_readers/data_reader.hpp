@@ -304,6 +304,9 @@ class generic_data_reader {
   /// Fetch this mini-batch's responses into Y.
   virtual int fetch_responses(CPUMat& Y);
 
+  void start_data_store_mini_batch_exchange();
+  void finish_data_store_mini_batch_exchange();
+
   virtual bool has_labels() const { return m_supported_input_types.at(input_data_type::LABELS); }
   virtual bool has_responses() const { return m_supported_input_types.at(input_data_type::RESPONSES); }
 
