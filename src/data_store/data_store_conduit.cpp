@@ -74,6 +74,7 @@ data_store_conduit::data_store_conduit(
   m_offset_in_partition = m_rank_in_trainer%num_io_parts;
   m_np_in_trainer = m_comm->get_procs_per_trainer();
   m_num_partitions_in_trainer = m_np_in_trainer/num_io_parts; // rename this m_num_io_groups_in_trainer
+  m_mini_batch_data_exchange_started = false;
 
   open_informational_files();
 
@@ -232,6 +233,8 @@ void data_store_conduit::copy_members(const data_store_conduit& rhs) {
   m_compacted_sample_size = rhs.m_compacted_sample_size;
   m_indices_to_send = rhs.m_indices_to_send;
   m_indices_to_recv = rhs.m_indices_to_recv;
+
+  m_mini_batch_data_exchange_started = rhs.m_mini_batch_data_exchange_started;
 
   open_informational_files();
 }
@@ -472,7 +475,7 @@ void data_store_conduit::build_node_for_sending(const conduit::Node &node_in, co
   }
 }
 
-void data_store_conduit::exchange_data_by_sample(size_t current_pos, size_t mb_size) {
+void data_store_conduit::start_exchange_data_by_sample(size_t current_pos, size_t mb_size) {
   if (! m_is_setup) {
     LBANN_ERROR("setup(mb_size) has not been called");
   }
@@ -587,9 +590,11 @@ void data_store_conduit::exchange_data_by_sample(size_t current_pos, size_t mb_s
   }
 
   m_start_snd_rcv_time += (get_time() - tm5);
+}
 
+void data_store_conduit::finish_exchange_data_by_sample() {
   // wait for all msgs to complete
-  tm5 = get_time();
+  double tm5 = get_time();
   m_comm->wait_all(m_send_requests);
   m_comm->wait_all(m_recv_requests);
   m_comm->trainer_barrier();
@@ -1472,7 +1477,7 @@ void data_store_conduit::profile_timing() {
   }
 }
 
-void data_store_conduit::exchange_mini_batch_data(size_t current_pos, size_t mb_size) {
+void data_store_conduit::start_exchange_mini_batch_data(size_t current_pos, size_t mb_size) {
   if (is_local_cache() && is_fully_loaded()) {
     return;
   }
@@ -1516,7 +1521,19 @@ PROFILE("exchange_mini_batch_data; m_owner_maps_were_exchanged = true");
     */
   }
 
-  exchange_data_by_sample(current_pos, mb_size);
+  start_exchange_data_by_sample(current_pos, mb_size);
+  m_mini_batch_data_exchange_started = true;
+  m_exchange_time += (get_time() - tm1);
+}
+
+void data_store_conduit::finish_exchange_mini_batch_data() {
+  if (!m_mini_batch_data_exchange_started) {
+    return;
+  }
+
+  double tm1 = get_time();
+  finish_exchange_data_by_sample();
+  m_mini_batch_data_exchange_started = false;
   m_exchange_time += (get_time() - tm1);
 }
 

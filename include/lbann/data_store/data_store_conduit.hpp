@@ -233,7 +233,8 @@ class data_store_conduit {
    */
   void preload_local_cache();
 
-  void exchange_mini_batch_data(size_t current_pos, size_t mb_size);
+  void start_exchange_mini_batch_data(size_t current_pos, size_t mb_size);
+  void finish_exchange_mini_batch_data();
 
   void set_node_sizes_vary() { m_node_sizes_vary = true; }
 
@@ -440,6 +441,9 @@ private :
   int  m_np_in_trainer;
   int  m_num_partitions_in_trainer;
 
+  /// Flag to indicate if a data exchange has started
+  bool m_mini_batch_data_exchange_started = false;
+
   /** @brief Maps an index to the processor that owns the associated data
    * First value of index is the sample ID and second value is the partiton ID
    *
@@ -508,7 +512,8 @@ private :
   // methods follow
   //=========================================================================
 
-  void exchange_data_by_sample(size_t current_pos, size_t mb_size);
+  void start_exchange_data_by_sample(size_t current_pos, size_t mb_size);
+  void finish_exchange_data_by_sample();
 
   void setup_data_store_buffers();
 
