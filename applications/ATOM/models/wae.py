@@ -137,13 +137,15 @@ class MolWAE(lbann.modules.Module):
             w.datatype = self.weights_datatype
 
         #Decoder
-        self.decoder_rnn = gru(
-            hidden_size=512,
-            num_layers=3,
-            name=self.name+'_decoder_rnn',
-            datatype=self.datatype,
-            weights_datatype=self.weights_datatype,
-        )
+        self.decoder_rnn = [
+            gru(
+                hidden_size=512,
+                name=f'{self.name}_decoder_rnn{i}',
+                datatype=self.datatype,
+                weights_datatype=self.weights_datatype,
+            )
+            for i in range(3)
+        ]
         self.decoder_lat = fc(512, name=self.name+'_decoder_lat')
         self.decoder_fc = fc(self.dictionary_size, name=self.name+'_decoder_fc')
         for w in self.decoder_lat.weights + self.decoder_fc.weights:
@@ -262,10 +264,12 @@ class MolWAE(lbann.modules.Module):
         h_0 = self.decoder_lat(z)
         # h_0 = h_0.unsqueeze(0).repeat(self.decoder_rnn.num_layers, 1, 1)
         h_0 = lbann.Reshape(h_0, dims=str_list([1, 512]))
-        h_0 = lbann.Tessellate(h_0, dims=str_list((3, 512)))
 
         # output, _ = self.decoder_rnn(x_input, h_0)
-        output = self.decoder_rnn(x_input, h_0)
+        y = x_input
+        for rnn in self.decoder_rnn:
+            y = rnn(y, h_0)
+        output = y
 
         # y = self.decoder_fc(output)
         y = lbann.ChannelwiseFullyConnected(
@@ -289,7 +293,7 @@ class MolWAE(lbann.modules.Module):
                     stack.append(parent)
                     in_stack[parent] = True
 
-        # Find argmax 
+        # Find argmax
         if(self.save_output):
           y_slice = lbann.Slice(
               y,
@@ -402,6 +406,6 @@ class MolWAE(lbann.modules.Module):
 
     def discriminator0(self,input):
         return self.d0_fc2(self.d0_fc1(self.d0_fc0(input)))
-        
+
     def discriminator1(self,input):
         return self.d1_fc2(self.d1_fc1(self.d1_fc0(input)))
