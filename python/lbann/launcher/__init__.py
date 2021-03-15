@@ -6,6 +6,7 @@ import lbann.proto
 import lbann.launcher.openmpi
 import lbann.launcher.slurm
 import lbann.launcher.lsf
+import lbann.launcher.pjm
 from lbann.util import make_iterable, nvprof_command
 
 # ==============================================
@@ -264,6 +265,16 @@ def make_batch_script(script_file=None,
             partition=partition,
             account=account,
             reservation=reservation,
+            launcher_args=launcher_args)
+    elif scheduler.lower() in ('pjm', 'pjsub'):
+        script = lbann.launcher.pjm.PJMBatchScript(
+            script_file=script_file,
+            work_dir=work_dir,
+            nodes=nodes,
+            procs_per_node=procs_per_node,
+            time_limit=time_limit,
+            job_name=job_name,
+            partition=partition,
             launcher_args=launcher_args)
     else:
         raise RuntimeError('unsupported job scheduler ({})'
