@@ -124,7 +124,7 @@ def construct_model(lbann):
 
     x1 = x1_lbann
     x2 = x2_lbann
-    y = lbann.Reduction(x1, mode='average', data_layout='data_parallel')
+    y = lbann.Reduction(x1, mode='mean', data_layout='data_parallel')
     z = lbann.Multiply(y, x2)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='data-parallel layout, mean reduction'))
@@ -164,7 +164,7 @@ def construct_model(lbann):
 
     x1 = x1_lbann
     x2 = x2_lbann
-    y = lbann.Reduction(x1, mode='average', data_layout='model_parallel')
+    y = lbann.Reduction(x1, mode='mean', data_layout='model_parallel')
     z = lbann.Multiply(y, x2)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='model-parallel layout, mean reduction'))

@@ -44,4 +44,4 @@ reduction_layer<TensorDataType,Layout,Device>
 } // namespace lbann
 
 #define LBANN_LAYER_NAME reduction_layer
-#include <lbann/macros/register_layer_with_cereal_data_parallel_only.hpp>
+#include <lbann/macros/register_layer_with_cereal.hpp>

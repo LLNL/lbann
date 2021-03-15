@@ -33,6 +33,21 @@
 
 namespace lbann {
 
+/** @brief L2 norm of each row of a weights matrix.
+ *
+ *  @warning This layer is experimental and finnicky. It is intended
+ *  for use with the matrix weights from a fully-connected layer, and
+ *  other use-cases may have strange behavior.
+ *
+ *  Given a weights object, this layer computes the L2 norm for each
+ *  row of the underlying matrix. Note that the internal matrix may
+ *  have different dimensions than the logical weight dimensions.
+ *
+ *  This layer expects to have one weights object. During setup, that
+ *  weights object should be initialized by another layer before this
+ *  layer's setup phase. Setting a "hint layer" may be necessary to
+ *  enforce this ordering.
+ */
 template <typename TensorDataType,
           data_layout Layout = data_layout::DATA_PARALLEL,
           El::Device Device = El::Device::CPU>

@@ -43,7 +43,7 @@ std::unique_ptr<Layer> build_reduction_layer_from_pbuf(
   const std::string mode_str = params.mode();
   reduction_mode mode = reduction_mode::INVALID;
   if (mode_str == "sum" || mode_str.empty()) { mode = reduction_mode::SUM; }
-  if (mode_str == "average") { mode = reduction_mode::AVERAGE; }
+  if (mode_str == "mean" || mode_str == "average") { mode = reduction_mode::AVERAGE; }
   return lbann::make_unique<LayerType>(mode);
 }
 
