@@ -84,9 +84,6 @@ class PJMBatchScript(BatchScript):
                              work_dir=None,
                              nodes=None,
                              procs_per_node=None,
-                             time_limit=None,
-                             job_name=None,
-                             partition=None,
                              launcher=None,
                              launcher_args=None):
         """Add command to be executed in parallel.
@@ -101,11 +98,6 @@ class PJMBatchScript(BatchScript):
             nodes (int, optional): Number of compute nodes.
             procs_per_node (int, optional): Number of parallel
                 processes per compute node.
-            time_limit (int, optional): Job time limit, in minutes
-                (default: none).
-            job_name (str, optional): Job name (default: none).
-            partition (str, optional): Scheduler partition
-                (default: none).
             launcher (str, optional): mpiexec executable.
             launcher_args (`Iterable` of `str`s, optional):
                 Command-line arguments to mpiexec.
@@ -127,6 +119,11 @@ class PJMBatchScript(BatchScript):
         # Construct mpiexec invocation
         args = [f'GOMP_SPINCOUNT=0 OMP_SCHEDULE=static FLIB_FASTOMP=FALSE OMP_NESTED=TRUE LD_PRELOAD=/usr/lib64/libhwloc.so.5 {launcher}']
         args.extend(make_iterable(launcher_args))
+        args.extend([
+            f'-n {nodes*procs_per_node}',
+            f'--map-by ppr:{procs_per_node}:node',
+            f'-wdir {work_dir}'
+        ])
         args.extend([
             '-mca plm_ple_memory_allocation_policy bind_local',
 #            ' numactl --physcpubind=12-59 --membind=4-7'
