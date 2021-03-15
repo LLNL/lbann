@@ -24,7 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/training_algorithms/sgd_training_algorithm.hpp"
+#include "lbann/execution_algorithms/sgd_training_algorithm.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/callbacks/callback.hpp"
 

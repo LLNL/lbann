@@ -93,13 +93,13 @@ TEST_CASE("Basic weights tests", "[mpi][weights]")
   using DataType = float;
 
   auto& world_comm = unit_test::utilities::current_world_comm();
-  int const size_of_world = world_comm.get_procs_in_world();
+  size_t const size_of_world = world_comm.get_procs_in_world();
 
   // Setup the weights object -- let's hope I do this right. It's not
   // like it's documented anywhere.
 
-  int const weights_height = 3 * size_of_world;
-  int const weights_width = 2 * size_of_world;
+  size_t const weights_height = 3 * size_of_world;
+  size_t const weights_width = 2 * size_of_world;
 
   // Create the object
   DataTypeWeights<DataType> dtw(world_comm);
@@ -123,8 +123,10 @@ TEST_CASE("Basic weights tests", "[mpi][weights]")
     REQUIRE_NOTHROW(dtw.setup());
     CHECK(count_differing_values(value, get_local_values(dtw)) == 0UL);
 
-    CHECK(dtw.get_values().Height() == dtw.get_matrix_height());
-    CHECK(dtw.get_values().Width() == dtw.get_matrix_width());
+    CHECK(dtw.get_values().Height()
+          == El::To<El::Int>(dtw.get_matrix_height()));
+    CHECK(dtw.get_values().Width()
+          == El::To<El::Int>(dtw.get_matrix_width()));
   }
 }
 
@@ -176,11 +178,11 @@ TEMPLATE_TEST_CASE("Weights proxy tests.", "[mpi][weights][proxy]",
   using DataType = ProxyType<TestType>;
 
   auto& world_comm = unit_test::utilities::current_world_comm();
-  int const size_of_world = world_comm.get_procs_in_world();
+  size_t const size_of_world = world_comm.get_procs_in_world();
 
   // Setup the weights object
-  int const weights_height = 3 * size_of_world;
-  int const weights_width = 2 * size_of_world;
+  size_t const weights_height = 3 * size_of_world;
+  size_t const weights_width = 2 * size_of_world;
 
   // Create the master weights object.
   auto dtw = std::make_shared<DataTypeWeights<MasterDataType>>(world_comm);
@@ -207,8 +209,10 @@ TEMPLATE_TEST_CASE("Weights proxy tests.", "[mpi][weights][proxy]",
     REQUIRE(!proxy.empty());
 
     // At this point, the proxy should have the right size.
-    CHECK(proxy.values().Height() == dtw->get_matrix_height());
-    CHECK(proxy.values().Width() == dtw->get_matrix_width());
+    CHECK(proxy.values().Height()
+          == El::To<El::Int>(dtw->get_matrix_height()));
+    CHECK(proxy.values().Width()
+          == El::To<El::Int>(dtw->get_matrix_width()));
 
     REQUIRE_NOTHROW(proxy.synchronize_with_master());
 
@@ -293,7 +297,9 @@ TEMPLATE_TEST_CASE("Weights proxy tests.", "[mpi][weights][proxy]",
     CHECK(&proxy_default.master_weights() == dtw.get());
 
     // At this point, the proxy_default should have the right size.
-    CHECK(proxy_default.values().Height() == dtw->get_matrix_height());
-    CHECK(proxy_default.values().Width() == dtw->get_matrix_width());
+    CHECK(proxy_default.values().Height()
+          == El::To<El::Int>(dtw->get_matrix_height()));
+    CHECK(proxy_default.values().Width()
+          == El::To<El::Int>(dtw->get_matrix_width()));
   }
 }

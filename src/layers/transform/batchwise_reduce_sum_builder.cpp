@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -24,31 +24,28 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/training_algorithms/training_algorithm.hpp"
-#include "lbann/models/model.hpp"
-#include "lbann/callbacks/callback.hpp"
-#include "lbann/callbacks/checkpoint.hpp"
-#include "lbann/callbacks/save_model.hpp"
-#include "lbann/callbacks/load_model.hpp"
+#include "lbann/layers/transform/batchwise_reduce_sum.hpp"
+#include "lbann/proto/helpers.hpp"
+
+#include <lbann/proto/proto_common.hpp>
+#include <layers.pb.h>
 
 namespace lbann {
 
-void training_algorithm::setup_models(std::vector<observer_ptr<model>> models, size_t max_mini_batch_size, DataReaderMetaData& dr_metadata) {
-  for (observer_ptr<model> m : models) {
-    // Set up callbacks
-    for (auto* c : m->get_callbacks()) {
-      {
-        auto* cb = dynamic_cast<callback::checkpoint*>(c);
-        if(cb != nullptr) {
-          cb->set_active_training_algorithm(this);
-        }
-      }
-    }
-    // Setup models
-    m->setup(max_mini_batch_size, dr_metadata);
-  }
-  return;
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+std::unique_ptr<Layer> build_batchwise_reduce_sum_layer_from_pbuf(
+  lbann_comm* comm, lbann_data::Layer const& proto_layer)
+{
+  LBANN_ASSERT_MSG_HAS_FIELD(proto_layer, batchwise_reduce_sum);
+  using LayerType = batchwise_reduce_sum_layer<
+    TensorDataType,
+    data_layout::DATA_PARALLEL,
+    Device>;
+  return make_unique<LayerType>();
 }
 
+#define PROTO_DEVICE(T, Device) \
+  LBANN_LAYER_BUILDER_ETI(batchwise_reduce_sum, T, Device)
+#include "lbann/macros/instantiate_device.hpp"
 
-}  // namespace lbann
+} // namespace lbann

@@ -30,7 +30,7 @@
 
 #include "lbann/callbacks/callback.hpp"
 #include "lbann/io/persist.hpp"
-#include "lbann/training_algorithms/training_algorithm.hpp"
+#include "lbann/execution_algorithms/training_algorithm.hpp"
 #include "lbann/utils/visitor_hooks.hpp"
 
 namespace lbann {

@@ -27,7 +27,7 @@
 #ifndef LBANN_SGD_TRAINING_ALGORITHM_HPP
 #define LBANN_SGD_TRAINING_ALGORITHM_HPP
 
-#include "lbann/training_algorithms/training_algorithm.hpp"
+#include "lbann/execution_algorithms/training_algorithm.hpp"
 #include "lbann/execution_contexts/sgd_execution_context.hpp"
 
 namespace lbann {

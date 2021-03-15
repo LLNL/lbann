@@ -132,7 +132,8 @@ protected:
 
     // Initialize output dimensions
     this->set_output_dims(this->get_input_dims());
-    const auto output_dims = this->get_output_dims();
+    const auto output_dims_ = this->get_output_dims();
+    std::vector<size_t> output_dims(output_dims_.begin(), output_dims_.end());
     const auto output_size = this->get_output_size();
 
     // Initialize default weights if none are provided
