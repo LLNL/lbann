@@ -220,11 +220,65 @@ bool load_rng_from_checkpoint(persist& p, const lbann_comm* comm) {
 template <typename TensorDataType>
 void gaussian_fill(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::Int n,
                    TensorDataType mean, TensorDataType stddev) {
-#ifndef LBANN_DETERMINISTIC
-  El::Gaussian(mat, m, n, mean, stddev);
-#else
+#ifdef LBANN_DETERMINISTIC
   gaussian_fill_procdet(mat, m, n, mean, stddev);
-#endif  // LBANN_DETERMINISTIC
+#else
+
+  // Type for generating random variables
+#if defined(LBANN_HAS_GPU_FP16) && defined(LBANN_HAS_HALF)
+  using RandDataType = typename std::conditional<
+    El::Or<std::is_same<TensorDataType,cpu_fp16>,
+           std::is_same<TensorDataType,fp16>>::value,
+    float, TensorDataType>::type;
+#elif defined(LBANN_HAS_GPU_FP16)
+  using RandDataType = typename std::conditional<
+    std::is_same<TensorDataType,fp16>::value,
+    float, TensorDataType>::type;
+#elif defined(LBANN_HAS_HALF)
+  using RandDataType = typename std::conditional<
+    std::is_same<TensorDataType,cpu_fp16>::value,
+    float, TensorDataType>::type;
+#else
+  using RandDataType = TensorDataType;
+#endif // LBANN_HAS_GPU_FP16
+
+  // Buffer to hold random variables
+  El::Matrix<RandDataType, El::Device::CPU> local_vals;
+  if (std::is_same<TensorDataType,RandDataType>::value
+      && mat.GetLocalDevice() == El::Device::CPU) {
+    El::View(local_vals, mat.Matrix());
+  }
+  else {
+    local_vals.Resize(mat.LocalHeight(), mat.LocalWidth());
+  }
+
+  // Populate buffer with random variables
+  // Note: Optimized implementation if buffer is contiguous
+  std::normal_distribution<RandDataType> dist(mean, stddev);
+  if (local_vals.Contiguous()) {
+    // Need to duplicate distribution since GCC STL uses stateful
+    // Marsaglia polar method
+    auto* __restrict__ buffer = local_vals.Buffer();
+    const size_t size = local_vals.Height() * local_vals.Width();
+    LBANN_OMP_PARALLEL_FOR_ARGS(firstprivate(dist))
+    for (size_t i=0; i<size; ++i) {
+      buffer[i] = dist(get_generator());
+    }
+  }
+  else {
+    for (El::Int col=0; col<local_vals.Width(); ++col) {
+      for (El::Int row=0; row<local_vals.Height(); ++row) {
+        local_vals(row, col) = dist(get_generator());
+      }
+    }
+  }
+
+  // Copy to output matrix if needed
+  if (!local_vals.Viewing()) {
+    El::Copy(local_vals, mat.Matrix());
+  }
+
+#endif // LBANN_DETERMINISTIC
 }
 
 template <typename TensorDataType>
