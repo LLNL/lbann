@@ -232,6 +232,7 @@ template <typename TensorDataType>
 void abstract_evaluation_layer<TensorDataType>::fp_compute() {
   switch (this->get_device_allocation()) {
   case El::Device::CPU:
+    this->get_comm()->wait(m_allreduce_req);
     fp_cpu(*this->get_comm(),
            this->get_prev_activations(),
            m_value(0, 0),
