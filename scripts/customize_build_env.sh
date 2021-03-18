@@ -93,7 +93,7 @@ set_center_specific_modules()
                 ;;
             "zen" | "zen2") # Corona
                 # Don't load OpenMPI get the HIP Clang to build it
-                MODULE_CMD="module --force unload StdEnv; module load clang/11.0.0 python/3.7.2 opt rocm/4.0.0"
+                MODULE_CMD="module --force unload StdEnv; module load clang/11.0.0 python/3.7.2 opt rocm/4.0.0 openmpi-gnu/4.0"
                 ;;
             *)
                 echo "No pre-specified modules found for this system. Make sure to setup your own"
@@ -282,6 +282,13 @@ cat <<EOF  >> ${yaml}
       externals:
       - spec: rdma-core@20 arch=${spack_arch}
         prefix: /usr
+    openmpi:
+      buildable: False
+      version:
+      - 4.0
+      externals:
+      - spec: openmpi@4.0.0 arch=${spack_arch}
+        prefix: /opt/openmpi/4.0/gnu
 EOF
                 ;;
             *)
