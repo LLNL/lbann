@@ -239,15 +239,16 @@ TEMPLATE_LIST_TEST_CASE(
       // Fill matrix with random values
       DistMatType mat(2*height, width, comm.get_trainer_grid());
       DistMatType mat_view = El::View(mat, El::IR(height/2,height+height/2), El::ALL);
+      const auto* buffer = mat_view.LockedBuffer();
       REQUIRE_NOTHROW(lbann::gaussian_fill(mat_view, height, width, mean, stddev));
 
-      // Check matrix dimensions
+      // Check matrix
       REQUIRE(mat_view.Height() == height);
       REQUIRE(mat_view.Width() == width);
       REQUIRE(mat_view.Viewing());
       if (!mat_view.LockedMatrix().IsEmpty())
       {
-        REQUIRE_FALSE(mat_view.Contiguous());
+        REQUIRE(mat_view.LockedBuffer() == buffer);
       }
 
       // Check that values are normally distributed
