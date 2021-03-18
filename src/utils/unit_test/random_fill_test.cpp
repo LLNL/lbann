@@ -189,7 +189,7 @@ TEMPLATE_LIST_TEST_CASE(
 
     // Attempt Anderson-Darling test several times
     bool passed_test = false;
-    for (int iter=0; iter<3; iter)
+    for (int iter=0; iter<3; ++iter)
     {
 
       // Fill matrix with random values
@@ -233,7 +233,7 @@ TEMPLATE_LIST_TEST_CASE(
 
     // Attempt Anderson-Darling test several times
     bool passed_test = false;
-    for (int iter=0; iter<3; iter)
+    for (int iter=0; iter<3; ++iter)
     {
 
       // Fill matrix with random values
