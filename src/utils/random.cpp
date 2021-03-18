@@ -218,8 +218,12 @@ bool load_rng_from_checkpoint(persist& p, const lbann_comm* comm) {
 }
 
 template <typename TensorDataType>
-void gaussian_fill(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::Int n,
-                   TensorDataType mean, TensorDataType stddev) {
+void gaussian_fill(
+  El::AbstractDistMatrix<TensorDataType>& mat,
+  El::Int m,
+  El::Int n,
+  TensorDataType mean,
+  TensorDataType stddev) {
 #ifdef LBANN_DETERMINISTIC
   gaussian_fill_procdet(mat, m, n, mean, stddev);
 #else
@@ -242,41 +246,64 @@ void gaussian_fill(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::I
   using RandDataType = TensorDataType;
 #endif // LBANN_HAS_GPU_FP16
 
-  // Buffer to hold random variables
-  El::Matrix<RandDataType, El::Device::CPU> local_vals;
-  if (std::is_same<TensorDataType,RandDataType>::value
-      && mat.GetLocalDevice() == El::Device::CPU) {
-    El::View(local_vals, mat.Matrix());
-  }
-  else {
-    local_vals.Resize(mat.LocalHeight(), mat.LocalWidth());
+  // Resize matrix
+  mat.Resize(m, n);
+
+  // Nothing to be done if there is no local data
+  if (mat.LockedMatrix().IsEmpty()) {
+    return;
   }
 
-  // Populate buffer with random variables
-  // Note: Optimized implementation if buffer is contiguous
-  std::normal_distribution<RandDataType> dist(mean, stddev);
-  if (local_vals.Contiguous()) {
-    // Need to duplicate distribution since GCC STL uses stateful
-    // Marsaglia polar method
-    auto* __restrict__ buffer = local_vals.Buffer();
-    const size_t size = local_vals.Height() * local_vals.Width();
-    LBANN_OMP_PARALLEL_FOR_ARGS(firstprivate(dist))
-    for (size_t i=0; i<size; ++i) {
-      buffer[i] = dist(get_generator());
+  // Generate random numbers on root rank of redundant comm
+  if (mat.RedundantRank() == 0) {
+
+    // Local buffer to hold random variables
+    El::Matrix<RandDataType, El::Device::CPU> local_vals;
+    if (std::is_same<TensorDataType,RandDataType>::value
+        && mat.GetLocalDevice() == El::Device::CPU) {
+      El::View(local_vals, mat.Matrix());
     }
-  }
-  else {
-    for (El::Int col=0; col<local_vals.Width(); ++col) {
-      for (El::Int row=0; row<local_vals.Height(); ++row) {
-        local_vals(row, col) = dist(get_generator());
+    else {
+      local_vals.Resize(mat.LocalHeight(), mat.LocalWidth());
+    }
+
+    // Populate local buffer with random variables
+    // Note: Need to duplicate distribution on each thread since GCC
+    // STL uses stateful Marsaglia polar method
+    std::normal_distribution<RandDataType> dist(mean, stddev);
+    if (local_vals.Contiguous()) {
+      auto* __restrict__ buffer = local_vals.Buffer();
+      const size_t size = local_vals.Height() * local_vals.Width();
+      LBANN_OMP_PARALLEL_FOR_ARGS(firstprivate(dist))
+      for (size_t i=0; i<size; ++i) {
+        buffer[i] = dist(get_generator());
       }
     }
+    else {
+      auto* __restrict__ buffer = local_vals.Buffer();
+      const size_t height = local_vals.Height();
+      const size_t width = local_vals.Width();
+      const size_t ldim = local_vals.LDim();
+      LBANN_OMP_PARALLEL_FOR_ARGS(collapse(2) firstprivate(dist))
+      for (size_t j=0; j<width; ++j) {
+        for (size_t i=0; i<height; ++i) {
+          buffer[i+j*ldim] = dist(get_generator());
+        }
+      }
+    }
+
+    // Copy to output matrix if needed
+    if (!local_vals.Viewing()) {
+      El::Copy(local_vals, mat.Matrix());
+    }
+
   }
 
-  // Copy to output matrix if needed
-  if (!local_vals.Viewing()) {
-    El::Copy(local_vals, mat.Matrix());
-  }
+  // Make sure local matrix is identical across redundant comm
+  El::Broadcast(
+    static_cast<El::AbstractMatrix<TensorDataType>&>(mat.Matrix()),
+    mat.RedundantComm(),
+    0);
 
 #endif // LBANN_DETERMINISTIC
 }
