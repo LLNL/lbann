@@ -205,9 +205,9 @@ public:
     return get_rank_in_world() == get_world_master();
   }
   /** Return a grid to use for this trainer. */
-  inline El::Grid& get_trainer_grid() noexcept { return *m_grid; }
+  inline El::Grid& get_trainer_grid() { return *m_grid; }
   /** Return a read-only grid to use for this trainer. */
-  inline const El::Grid& get_trainer_grid() const noexcept { return *m_grid; }
+  inline const El::Grid& get_trainer_grid() const { return *m_grid; }
   /** Return the total number of trainers. */
   inline int get_num_trainers() const noexcept { return m_num_trainers; }
   /* Return the number of processes in a trainer. */
@@ -904,7 +904,7 @@ private:
   /** Packed group communicators. */
   mutable std::unordered_map<int, El::mpi::Comm> m_group_communicators;
   /** Grid for this trainer. */
-  Grid* m_grid;
+  std::unique_ptr<El::Grid> m_grid;
   /** Number of trainers. */
   int m_num_trainers;
   /** Number of processors per trainer. */
