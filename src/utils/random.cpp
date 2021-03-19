@@ -430,7 +430,7 @@ void gaussian_fill_parallel(
   template void gaussian_fill_procdet<T>(El::AbstractDistMatrix<T>& mat, El::Int m, El::Int n, T mean, T stddev); \
   template void bernoulli_fill_procdet<T>(El::AbstractDistMatrix<T>& mat, El::Int m, El::Int n, double p);        \
   template void uniform_fill_procdet<T>(El::AbstractDistMatrix<T>& mat, El::Int m, El::Int n, T center, T radius); \
-  template void gaussian_fill_procdet<T>(El::AbstractDistMatrix<T>& mat, El::Int m, El::Int n, T mean, T stddev)
+  template void gaussian_fill_parallel<T>(El::AbstractDistMatrix<T>& mat, El::Int m, El::Int n, T mean, T stddev)
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF
