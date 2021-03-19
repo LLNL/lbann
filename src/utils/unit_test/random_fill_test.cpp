@@ -1,6 +1,5 @@
 #include <catch2/catch.hpp>
 #include <lbann/base.hpp>
-
 #include <lbann/utils/random.hpp>
 #include <h2/patterns/multimethods/SwitchDispatcher.hpp>
 
@@ -177,31 +176,33 @@ TEMPLATE_LIST_TEST_CASE(
   // Parameters
   const TensorDataType<DistMatType> mean = 12.3f;
   const TensorDataType<DistMatType> stddev = 4.56f;
-  const El::Int height = 53;
-  const El::Int width = 41;
+  const El::Int height = 41;
+  const El::Int width = 31;
+  const El::Int num_attempts = 3; // Number of times to perform normality test
 
   // Initialization
   auto& comm = ::unit_test::utilities::current_world_comm();
-  lbann::init_random(-1, 0, &comm);
+  const auto& grid = comm.get_trainer_grid();
+  lbann::init_random(20200319, 0, &comm);
 
-  SECTION("Contiguous matrix")
+  SECTION("Contiguous matrix (parallel implementation)")
   {
 
     // Attempt Anderson-Darling test several times
     bool passed_test = false;
-    for (int iter=0; iter<3; ++iter)
+    for (El::Int attempt=0; attempt<num_attempts; ++attempt)
     {
 
       // Fill matrix with random values
-      DistMatType mat(comm.get_trainer_grid());
-      REQUIRE_NOTHROW(lbann::gaussian_fill(mat, height, width, mean, stddev));
+      DistMatType mat(grid);
+      REQUIRE_NOTHROW(lbann::gaussian_fill_parallel(mat, height, width, mean, stddev));
 
       // Check matrix dimensions
       REQUIRE(mat.Height() == height);
       REQUIRE(mat.Width() == width);
 
       // Check that values are normally distributed
-      StarMatType mat_copy(mat.Grid());
+      StarMatType mat_copy(grid);
       El::Copy(mat, mat_copy);
       std::vector<double> values;
       for (El::Int col = 0; col < width; ++col)
@@ -228,32 +229,139 @@ TEMPLATE_LIST_TEST_CASE(
 
   }
 
-  SECTION("Non-contiguous matrix")
+  SECTION("Non-contiguous matrix (parallel implementation)")
   {
 
     // Attempt Anderson-Darling test several times
     bool passed_test = false;
-    for (int iter=0; iter<3; ++iter)
+    for (El::Int attempt=0; attempt<num_attempts; ++attempt)
     {
 
       // Fill matrix with random values
-      DistMatType mat(2*height, width, comm.get_trainer_grid());
-      DistMatType mat_view = El::View(mat, El::IR(height/2,height+height/2), El::ALL);
-      const auto* buffer = mat_view.LockedBuffer();
-      REQUIRE_NOTHROW(lbann::gaussian_fill(mat_view, height, width, mean, stddev));
+      const El::Int owner_height = 2*height+1;
+      const El::Int owner_offset = height/2;
+      DistMatType mat_owner(grid);
+      El::Zeros(mat_owner, owner_height, width);
+      DistMatType mat = El::View(
+        mat_owner,
+        El::IR(owner_offset,height+owner_offset),
+        El::ALL);
+      const auto* buffer = mat.LockedBuffer();
+      REQUIRE_NOTHROW(lbann::gaussian_fill_parallel(mat, height, width, mean, stddev));
 
       // Check matrix
-      REQUIRE(mat_view.Height() == height);
-      REQUIRE(mat_view.Width() == width);
-      REQUIRE(mat_view.Viewing());
-      if (!mat_view.LockedMatrix().IsEmpty())
+      REQUIRE(mat.Height() == height);
+      REQUIRE(mat.Width() == width);
+      REQUIRE(mat.Viewing());
+      if (!mat.LockedMatrix().IsEmpty())
       {
-        REQUIRE(mat_view.LockedBuffer() == buffer);
+        REQUIRE(mat.LockedBuffer() == buffer);
       }
 
       // Check that values are normally distributed
-      StarMatType mat_copy(mat_view.Grid());
-      El::Copy(mat_view, mat_copy);
+      StarMatType mat_copy(grid);
+      El::Copy(mat, mat_copy);
+      std::vector<double> values;
+      for (El::Int col = 0; col < width; ++col)
+      {
+        for (El::Int row = 0; row < height; ++row)
+        {
+          values.push_back(mat_copy.Get(row, col));
+        }
+      }
+      if (anderson_darling_test(
+            values,
+            static_cast<double>(mean),
+            static_cast<double>(stddev))
+          < anderson_darling_critical_value)
+      {
+        passed_test = true;
+        break;
+      }
+
+    }
+
+    // Make sure Anderson-Darling test has succeeded at least once
+    REQUIRE(passed_test);
+
+  }
+
+  SECTION("Contiguous matrix (serial implementation)")
+  {
+
+    // Attempt Anderson-Darling test several times
+    bool passed_test = false;
+    for (El::Int attempt=0; attempt<num_attempts; ++attempt)
+    {
+
+      // Fill matrix with random values
+      DistMatType mat(grid);
+      REQUIRE_NOTHROW(lbann::gaussian_fill_procdet(mat, height, width, mean, stddev));
+
+      // Check matrix dimensions
+      REQUIRE(mat.Height() == height);
+      REQUIRE(mat.Width() == width);
+
+      // Check that values are normally distributed
+      StarMatType mat_copy(grid);
+      El::Copy(mat, mat_copy);
+      std::vector<double> values;
+      for (El::Int col = 0; col < width; ++col)
+      {
+        for (El::Int row = 0; row < height; ++row)
+        {
+          values.push_back(mat_copy.Get(row, col));
+        }
+      }
+      if (anderson_darling_test(
+            values,
+            static_cast<double>(mean),
+            static_cast<double>(stddev))
+          < anderson_darling_critical_value)
+      {
+        passed_test = true;
+        break;
+      }
+
+    }
+
+    // Make sure Anderson-Darling test has succeeded at least once
+    REQUIRE(passed_test);
+
+  }
+
+  SECTION("Non-contiguous matrix (serial implementation)")
+  {
+
+    // Attempt Anderson-Darling test several times
+    bool passed_test = false;
+    for (El::Int attempt=0; attempt<num_attempts; ++attempt)
+    {
+
+      // Fill matrix with random values
+      const El::Int owner_height = 2*height+1;
+      const El::Int owner_offset = height/2;
+      DistMatType mat_owner(owner_height, width, grid);
+      El::Zero(mat_owner);
+      DistMatType mat = El::View(
+        mat_owner,
+        El::IR(owner_offset,height+owner_offset),
+        El::ALL);
+      const auto* buffer = mat.LockedBuffer();
+      REQUIRE_NOTHROW(lbann::gaussian_fill_procdet(mat, height, width, mean, stddev));
+
+      // Check matrix
+      REQUIRE(mat.Height() == height);
+      REQUIRE(mat.Width() == width);
+      REQUIRE(mat.Viewing());
+      if (!mat.LockedMatrix().IsEmpty())
+      {
+        REQUIRE(mat.LockedBuffer() == buffer);
+      }
+
+      // Check that values are normally distributed
+      StarMatType mat_copy(grid);
+      El::Copy(mat, mat_copy);
       std::vector<double> values;
       for (El::Int col = 0; col < width; ++col)
       {

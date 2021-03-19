@@ -227,6 +227,122 @@ void gaussian_fill(
 #ifdef LBANN_DETERMINISTIC
   gaussian_fill_procdet(mat, m, n, mean, stddev);
 #else
+  gaussian_fill_parallel(mat, m, n, mean, stddev);
+#endif // LBANN_DETERMINISTIC
+}
+
+template <typename TensorDataType>
+void bernoulli_fill(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::Int n, double p) {
+#ifndef LBANN_DETERMINISTIC
+  El::Bernoulli(mat, m, n, p);
+#else
+  bernoulli_fill_procdet(mat, m, n, p);
+#endif  // LBANN_DETERMINISTIC
+}
+
+template <typename TensorDataType>
+void uniform_fill(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::Int n,
+                  TensorDataType center, TensorDataType radius) {
+#ifndef LBANN_DETERMINISTIC
+  El::Uniform(mat, m, n, center, radius);
+#else
+  uniform_fill_procdet(mat, m, n, center, radius);
+#endif  // LBANN_DETERMINISTIC
+}
+
+template <typename TensorDataType>
+void gaussian_fill_procdet(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::Int n,
+                           TensorDataType mean, TensorDataType stddev) {
+#if defined(LBANN_HAS_GPU_FP16) && defined(LBANN_HAS_HALF)
+  using RandDataType = typename std::conditional<
+    El::Or<std::is_same<TensorDataType,cpu_fp16>,
+           std::is_same<TensorDataType,fp16>>::value,
+    float, TensorDataType>::type;
+#elif defined(LBANN_HAS_GPU_FP16)
+  using RandDataType = typename std::conditional<
+    std::is_same<TensorDataType,fp16>::value,
+    float, TensorDataType>::type;
+#elif defined(LBANN_HAS_HALF)
+  using RandDataType = typename std::conditional<
+    std::is_same<TensorDataType,cpu_fp16>::value,
+    float, TensorDataType>::type;
+#else
+  using RandDataType = TensorDataType;
+#endif // LBANN_HAS_GPU_FP16
+
+  using CircMatType = El::DistMatrix<
+    RandDataType, El::CIRC, El::CIRC, El::ELEMENT, El::Device::CPU>;
+  CircMatType vals(m, n, mat.Grid(), 0);
+  if (vals.Participating()) {
+    auto* __restrict__ buffer = vals.Buffer(); // Should be contiguous
+    const size_t size = vals.LocalHeight() * vals.LocalWidth();
+    std::normal_distribution<RandDataType> dist(mean, stddev);
+    auto& gen = get_generator();
+    for (size_t i=0; i<size; ++i) {
+      buffer[i] = dist(gen);
+    }
+  }
+  El::Copy(vals, mat);
+}
+
+template <typename TensorDataType>
+void bernoulli_fill_procdet(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::Int n, double p) {
+  CircMatDT<TensorDataType, El::Device::CPU> vals(m, n, mat.Grid(), 0);
+  if (vals.Participating()) {
+    auto& local_vals = vals.Matrix();
+    auto& gen = get_generator();
+    std::bernoulli_distribution dist(p);
+    for (El::Int col = 0; col < local_vals.Width(); ++col) {
+      for (El::Int row = 0; row < local_vals.Height(); ++row) {
+        local_vals(row, col) = El::To<TensorDataType>(dist(gen));
+      }
+    }
+  }
+  El::Copy(vals, mat);
+}
+
+template <typename TensorDataType>
+void uniform_fill_procdet(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::Int n,
+                          TensorDataType center, TensorDataType radius) {
+#if defined(LBANN_HAS_GPU_FP16) && defined(LBANN_HAS_HALF)
+  using RandDataType = typename std::conditional<
+    El::Or<std::is_same<TensorDataType,cpu_fp16>,
+           std::is_same<TensorDataType,fp16>>::value,
+    float, TensorDataType>::type;
+#elif defined(LBANN_HAS_GPU_FP16)
+  using RandDataType = typename std::conditional<
+    std::is_same<TensorDataType,fp16>::value,
+    float, TensorDataType>::type;
+#elif defined(LBANN_HAS_HALF)
+  using RandDataType = typename std::conditional<
+    std::is_same<TensorDataType,cpu_fp16>::value,
+    float, TensorDataType>::type;
+#else
+  using RandDataType = TensorDataType;
+#endif // LBANN_HAS_GPU_FP16
+
+  CircMatDT<RandDataType, El::Device::CPU> vals(m, n, mat.Grid(), 0);
+  if (vals.Participating()) {
+    auto& local_vals = vals.Matrix();
+    auto& gen = get_generator();
+    std::uniform_real_distribution<RandDataType> dist(center - radius,
+                                                      center + radius);
+    for (El::Int col = 0; col < local_vals.Width(); ++col) {
+      for (El::Int row = 0; row < local_vals.Height(); ++row) {
+        local_vals(row, col) = dist(gen);
+      }
+    }
+  }
+  El::Copy(vals, mat);
+}
+
+template <typename TensorDataType>
+void gaussian_fill_parallel(
+  El::AbstractDistMatrix<TensorDataType>& mat,
+  El::Int m,
+  El::Int n,
+  TensorDataType mean,
+  TensorDataType stddev) {
 
   // Type for generating random variables
 #if defined(LBANN_HAS_GPU_FP16) && defined(LBANN_HAS_HALF)
@@ -305,111 +421,6 @@ void gaussian_fill(
     mat.RedundantComm(),
     0);
 
-#endif // LBANN_DETERMINISTIC
-}
-
-template <typename TensorDataType>
-void bernoulli_fill(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::Int n, double p) {
-#ifndef LBANN_DETERMINISTIC
-  El::Bernoulli(mat, m, n, p);
-#else
-  bernoulli_fill_procdet(mat, m, n, p);
-#endif  // LBANN_DETERMINISTIC
-}
-
-template <typename TensorDataType>
-void uniform_fill(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::Int n,
-                  TensorDataType center, TensorDataType radius) {
-#ifndef LBANN_DETERMINISTIC
-  El::Uniform(mat, m, n, center, radius);
-#else
-  uniform_fill_procdet(mat, m, n, center, radius);
-#endif  // LBANN_DETERMINISTIC
-}
-
-template <typename TensorDataType>
-void gaussian_fill_procdet(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::Int n,
-                           TensorDataType mean, TensorDataType stddev) {
-#if defined(LBANN_HAS_GPU_FP16) && defined(LBANN_HAS_HALF)
-  using RandDataType = typename std::conditional<
-    El::Or<std::is_same<TensorDataType,cpu_fp16>,
-           std::is_same<TensorDataType,fp16>>::value,
-    float, TensorDataType>::type;
-#elif defined(LBANN_HAS_GPU_FP16)
-  using RandDataType = typename std::conditional<
-    std::is_same<TensorDataType,fp16>::value,
-    float, TensorDataType>::type;
-#elif defined(LBANN_HAS_HALF)
-  using RandDataType = typename std::conditional<
-    std::is_same<TensorDataType,cpu_fp16>::value,
-    float, TensorDataType>::type;
-#else
-  using RandDataType = TensorDataType;
-#endif // LBANN_HAS_GPU_FP16
-
-  CircMatDT<RandDataType, El::Device::CPU> vals(m, n, mat.Grid(), 0);
-  if (vals.Participating()) {
-    auto& local_vals = vals.Matrix();
-    auto& gen = get_generator();
-    std::normal_distribution<RandDataType> dist(mean, stddev);
-    for (El::Int col = 0; col < local_vals.Width(); ++col) {
-      for (El::Int row = 0; row < local_vals.Height(); ++row) {
-        local_vals(row, col) = dist(gen);
-      }
-    }
-  }
-  El::Copy(vals, mat);
-}
-
-template <typename TensorDataType>
-void bernoulli_fill_procdet(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::Int n, double p) {
-  CircMatDT<TensorDataType, El::Device::CPU> vals(m, n, mat.Grid(), 0);
-  if (vals.Participating()) {
-    auto& local_vals = vals.Matrix();
-    auto& gen = get_generator();
-    std::bernoulli_distribution dist(p);
-    for (El::Int col = 0; col < local_vals.Width(); ++col) {
-      for (El::Int row = 0; row < local_vals.Height(); ++row) {
-        local_vals(row, col) = El::To<TensorDataType>(dist(gen));
-      }
-    }
-  }
-  El::Copy(vals, mat);
-}
-
-template <typename TensorDataType>
-void uniform_fill_procdet(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::Int n,
-                          TensorDataType center, TensorDataType radius) {
-#if defined(LBANN_HAS_GPU_FP16) && defined(LBANN_HAS_HALF)
-  using RandDataType = typename std::conditional<
-    El::Or<std::is_same<TensorDataType,cpu_fp16>,
-           std::is_same<TensorDataType,fp16>>::value,
-    float, TensorDataType>::type;
-#elif defined(LBANN_HAS_GPU_FP16)
-  using RandDataType = typename std::conditional<
-    std::is_same<TensorDataType,fp16>::value,
-    float, TensorDataType>::type;
-#elif defined(LBANN_HAS_HALF)
-  using RandDataType = typename std::conditional<
-    std::is_same<TensorDataType,cpu_fp16>::value,
-    float, TensorDataType>::type;
-#else
-  using RandDataType = TensorDataType;
-#endif // LBANN_HAS_GPU_FP16
-
-  CircMatDT<RandDataType, El::Device::CPU> vals(m, n, mat.Grid(), 0);
-  if (vals.Participating()) {
-    auto& local_vals = vals.Matrix();
-    auto& gen = get_generator();
-    std::uniform_real_distribution<RandDataType> dist(center - radius,
-                                                      center + radius);
-    for (El::Int col = 0; col < local_vals.Width(); ++col) {
-      for (El::Int row = 0; row < local_vals.Height(); ++row) {
-        local_vals(row, col) = dist(gen);
-      }
-    }
-  }
-  El::Copy(vals, mat);
 }
 
 #define PROTO(T)                                                                                                  \
@@ -418,7 +429,8 @@ void uniform_fill_procdet(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m
   template void uniform_fill<T>(El::AbstractDistMatrix<T>& mat, El::Int m, El::Int n, T center, T radius);        \
   template void gaussian_fill_procdet<T>(El::AbstractDistMatrix<T>& mat, El::Int m, El::Int n, T mean, T stddev); \
   template void bernoulli_fill_procdet<T>(El::AbstractDistMatrix<T>& mat, El::Int m, El::Int n, double p);        \
-  template void uniform_fill_procdet<T>(El::AbstractDistMatrix<T>& mat, El::Int m, El::Int n, T center, T radius)
+  template void uniform_fill_procdet<T>(El::AbstractDistMatrix<T>& mat, El::Int m, El::Int n, T center, T radius); \
+  template void gaussian_fill_procdet<T>(El::AbstractDistMatrix<T>& mat, El::Int m, El::Int n, T mean, T stddev)
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF
