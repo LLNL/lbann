@@ -374,10 +374,12 @@ void gaussian_fill_parallel(
   if (mat.RedundantRank() == 0) {
 
     // Local buffer to hold random variables
-    El::Matrix<RandDataType, El::Device::CPU> local_vals;
-    if (std::is_same<TensorDataType,RandDataType>::value
-        && mat.GetLocalDevice() == El::Device::CPU) {
-      El::View(local_vals, mat.Matrix());
+    using LocalMatType = El::Matrix<RandDataType, El::Device::CPU>;
+    LocalMatType local_vals;
+    if constexpr (std::is_same<TensorDataType,RandDataType>::value) {
+      if (mat.GetLocalDevice() == El::Device::CPU) {
+        El::View(local_vals, mat.Matrix());
+      }
     }
     else {
       local_vals.Resize(mat.LocalHeight(), mat.LocalWidth());
