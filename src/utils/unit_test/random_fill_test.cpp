@@ -5,7 +5,7 @@
 
 #include "MPITestHelpers.hpp"
 
-/** @brief Statistic for Anderson-Darling normality test
+/*  @brief Statistic for Anderson-Darling normality test
  *
  *  A higher statistic implies greater confidence in non-normality.
  *
@@ -45,7 +45,7 @@ double anderson_darling_test(
 
 }
 
-/** @brief Critical value for Anderson-Darling normality test
+/*  @brief Critical value for Anderson-Darling normality test
  *
  *  A statistic of 1.9329578327415937304 corresponds to a significance
  *  of 0.1, 2.4923671600494096176 to 0.05, and 3.8781250216053948842
@@ -185,7 +185,7 @@ TEMPLATE_LIST_TEST_CASE(
   const auto& grid = comm.get_trainer_grid();
   lbann::init_random(20200319, 0, &comm);
 
-  SECTION("Contiguous matrix (parallel implementation)")
+  SECTION("Contiguous matrix")
   {
 
     // Attempt Anderson-Darling test several times
@@ -195,7 +195,7 @@ TEMPLATE_LIST_TEST_CASE(
 
       // Fill matrix with random values
       DistMatType mat(grid);
-      REQUIRE_NOTHROW(lbann::gaussian_fill_parallel(mat, height, width, mean, stddev));
+      REQUIRE_NOTHROW(lbann::gaussian_fill(mat, height, width, mean, stddev));
 
       // Check matrix dimensions
       REQUIRE(mat.Height() == height);
@@ -229,7 +229,7 @@ TEMPLATE_LIST_TEST_CASE(
 
   }
 
-  SECTION("Non-contiguous matrix (parallel implementation)")
+  SECTION("Non-contiguous matrix")
   {
 
     // Attempt Anderson-Darling test several times
@@ -247,7 +247,7 @@ TEMPLATE_LIST_TEST_CASE(
         El::IR(owner_offset,height+owner_offset),
         El::ALL);
       const auto* buffer = mat.LockedBuffer();
-      REQUIRE_NOTHROW(lbann::gaussian_fill_parallel(mat, height, width, mean, stddev));
+      REQUIRE_NOTHROW(lbann::gaussian_fill(mat, height, width, mean, stddev));
 
       // Check matrix
       REQUIRE(mat.Height() == height);
