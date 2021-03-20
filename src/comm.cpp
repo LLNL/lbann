@@ -92,11 +92,13 @@ lbann_comm::~lbann_comm()
 #endif
 }
 
-void lbann_comm::split_trainers(const int ppm)
+void lbann_comm::split_trainers(
+  int procs_per_trainer,
+  int trainer_grid_height)
 {
-  int world_size = El::mpi::Size(get_world_comm());
-  m_procs_per_trainer = ppm;
-  if (ppm == 0) {
+  const int world_size = El::mpi::Size(get_world_comm());
+  m_procs_per_trainer = procs_per_trainer;
+  if (m_procs_per_trainer <= 0) {
     m_procs_per_trainer = world_size;
   }
   // Check if parameters are valid
@@ -130,16 +132,9 @@ void lbann_comm::split_trainers(const int ppm)
                  m_intertrainer_comm);
 
   // Initialize Elemental grid for trainer
-  if (const auto& trainer_grid_height
-      = std::getenv("LBANN_TRAINER_GRID_HEIGHT")) {
-    m_grid = make_unique<El::Grid>(
-      m_trainer_comm.GetMPIComm(),
-      std::stoi(trainer_grid_height));
-  }
-  else {
-    m_grid = make_unique<El::Grid>(
-      m_trainer_comm.GetMPIComm());
-  }
+  m_grid = make_unique<El::Grid>(
+    m_trainer_comm.GetMPIComm(),
+    trainer_grid_height);
 
 }
 

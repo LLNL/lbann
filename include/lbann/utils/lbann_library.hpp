@@ -41,6 +41,7 @@ const int lbann_default_random_seed = 42;
 #define NUM_TEST_SAMPLES "Num test samples"
 #define ALLOW_GLOBAL_STATISTICS "LTFB Allow global statistics"
 #define PROCS_PER_TRAINER "Processes per trainer"
+#define TRAINER_GRID_HEIGHT "Height of 2D process grid for each trainer"
 
 void construct_std_options();
 

@@ -157,12 +157,17 @@ public:
   lbann_comm& operator=(const lbann_comm&) = delete;
   ~lbann_comm();
 
-  /**
-   * Split communicators so each trainer has procs_per_trainer processes.
-   * If you call this multiple times, it will invalidate existing grids
-   * and communicators.
+  /** @brief Construct communicators for trainers
+   *
+   *  Invalidates any existing trainer communicators.
+   *
+   *  @param procs_per_trainer Number of MPI ranks in a trainer.
+   *  Default is size of world communicator.
+   *  @param trainer_grid_height Height of 2D process grid for each
+   *  trainer. Must divide @c procs_per_trainer. Default grid is
+   *  approximately square.
    */
-  void split_trainers(int procs_per_trainer);
+  void split_trainers(int procs_per_trainer=-1, int trainer_grid_height=-1);
 
   /** Get which trainer this process is in. */
   inline int get_trainer_rank() const noexcept { return m_trainer_rank; }
