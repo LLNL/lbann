@@ -30,6 +30,7 @@
 #include "lbann/comm_impl.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
+#include "lbann/utils/memory.hpp"
 #include "lbann/utils/timer.hpp"
 #include "mpi.h"
 #include "omp.h"
@@ -58,7 +59,7 @@ namespace lbann {
 #endif // #ifdef LBANN_DEBUG
 
 lbann_comm::lbann_comm(int ppm, El::mpi::Comm world)
-  : m_world_comm(std::move(world)), m_grid(nullptr), m_procs_per_trainer(ppm),
+  : m_world_comm(std::move(world)), m_procs_per_trainer(ppm),
     m_num_trainer_barriers(0), m_num_intertrainer_barriers(0),
     m_num_global_barriers(0), m_bytes_sent(0), m_bytes_received(0)
 {
@@ -82,7 +83,7 @@ lbann_comm::lbann_comm(int ppm, El::mpi::Comm world)
 
 lbann_comm::~lbann_comm()
 {
-  delete m_grid;
+  m_grid.reset();
   El::mpi::Free(m_trainer_comm);
   El::mpi::Free(m_intertrainer_comm);
   El::mpi::Free(m_node_comm);
@@ -128,11 +129,18 @@ void lbann_comm::split_trainers(const int ppm)
                  m_trainer_rank,
                  m_intertrainer_comm);
 
-  // Initialize Elemental grid
-  if (m_grid != nullptr) {
-    delete m_grid;
+  // Initialize Elemental grid for trainer
+  if (const auto& trainer_grid_height
+      = std::getenv("LBANN_TRAINER_GRID_HEIGHT")) {
+    m_grid = make_unique<El::Grid>(
+      m_trainer_comm.GetMPIComm(),
+      std::stoi(trainer_grid_height));
   }
-  m_grid = new Grid(m_trainer_comm.GetMPIComm());
+  else {
+    m_grid = make_unique<El::Grid>(
+      m_trainer_comm.GetMPIComm());
+  }
+
 }
 
 void lbann_comm::intertrainer_sum_matrix(AbsMat& mat) const
