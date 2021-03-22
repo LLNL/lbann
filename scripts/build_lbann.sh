@@ -32,7 +32,7 @@ CMD_LINE_VARIANTS=
 
 # Default versions of Hydrogen, DiHydrogen, and Aluminum - use head of repo
 HYDROGEN_VER="@develop"
-ALUMINUM_VER="@master"
+ALUMINUM_VER="@0.7.0"
 DIHYDROGEN_VER="@develop"
 
 ################################################################
@@ -55,7 +55,6 @@ Build LBANN: has preconfigured module lists for LLNL LC, OLCF, and NERSC systems
 Usage: ${SCRIPT} [options] -- [list of spack variants]
 Options:
   ${C}--help${N}                  Display this help message and exit.
-  ${C}--build-env-only SHELL${N}  Drop into a shell with all of the spack build environment setup
   ${C}--clean-build${N}           Delete the local link to the build directory
   ${C}--clean-deps${N}            Forcibly uninstall Hydrogen, Aluminum, and DiHydrogen dependencies
   ${C}--config-only${N}           Run the spack dev-build command up to the configure stage only
@@ -87,16 +86,6 @@ while :; do
             # Help message
             help_message
             exit 1
-            ;;
-        --build-env-only)
-            BUILD_ENV_ONLY="TRUE"
-            if [ -n "${2}" ]; then
-                BUILD_ENV_SHELL="${2}"
-                shift
-            else
-                echo "\"${1}\" option requires a non-empty option argument" >&2
-                exit 1
-            fi
             ;;
         --clean-build)
             CLEAN_BUILD="TRUE"
@@ -276,10 +265,15 @@ fi
 
 if [[ ! "${LBANN_VARIANTS}" =~ .*"^hydrogen".* ]]; then
     # If the user didn't supply a specific version of Hydrogen on the command line add one
-    HYDROGEN="^hydrogen${HYDROGEN_VER}+al"
+    if [[ ("${LBANN_VARIANTS}" =~ .*"~al".*) ]]; then
+        HYDROGEN="^hydrogen${HYDROGEN_VER}"
+    else
+        # with Aluminum
+        HYDROGEN="^hydrogen${HYDROGEN_VER}+al"
+    fi
 fi
 
-if [[ ! "${LBANN_VARIANTS}" =~ .*"^aluminum".* ]]; then
+if [[ (! "${LBANN_VARIANTS}" =~ .*"^aluminum".*) && (! "${LBANN_VARIANTS}" =~ .*"~al".*) ]]; then
     # If the user didn't supply a specific version of Aluminum on the command line add one
     ALUMINUM="^aluminum${ALUMINUM_VER}"
 fi
@@ -287,7 +281,12 @@ fi
 if [[ ! "${LBANN_VARIANTS}" =~ .*"^dihydrogen".* ]]; then
     # If the user didn't supply a specific version of DiHydrogen on the command line add one
     # Due to concretizer errors force the openmp variant for DiHydrogen
-    DIHYDROGEN="^dihydrogen${DIHYDROGEN_VER}+openmp"
+    if [[ ("${LBANN_VARIANTS}" =~ .*"~al".*) ]]; then
+        # without Aluminum
+        DIHYDROGEN="^dihydrogen${DIHYDROGEN_VER}+openmp~al"
+    else
+        DIHYDROGEN="^dihydrogen${DIHYDROGEN_VER}+openmp"
+    fi
 fi
 
 GPU_VARIANTS_ARRAY=('+cuda' '+rocm')
@@ -337,22 +336,20 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
 fi
 
 ##########################################################################################
-# If not just dropping into the build environment, uninstall any existing versions for this
-# architecture with the same label -- note that this has to be done outside of an environment
-if [[ -z "${BUILD_ENV_ONLY:-}" ]]; then
-    # For finding the lbann version don't use the architecture because sometimes it is "downgraded"
-    LBANN_FIND_CMD="spack find --format {hash:7} lbann@${LBANN_LABEL}"
-    echo ${LBANN_FIND_CMD} | tee -a ${LOG}
-    LBANN_HASH=$(${LBANN_FIND_CMD})
-    if [[ -n "${LBANN_HASH}" && ! "${LBANN_HASH}" =~ "No package matches the query" ]]; then
-        LBANN_HASH_ARRAY=(${LBANN_HASH})
-        for h in ${LBANN_HASH_ARRAY[@]}
-        do
-            CMD="spack uninstall -y --force lbann@${LBANN_LABEL} /${h}"
-            echo ${CMD} | tee -a ${LOG}
-            [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
-        done
-    fi
+# Uninstall any existing versions for this architecture with the same label -- note that
+# this has to be done outside of an environment
+# For finding the lbann version don't use the architecture because sometimes it is "downgraded"
+LBANN_FIND_CMD="spack find --format {hash:7} lbann@${LBANN_LABEL}"
+echo ${LBANN_FIND_CMD} | tee -a ${LOG}
+LBANN_HASH=$(${LBANN_FIND_CMD})
+if [[ -n "${LBANN_HASH}" && ! "${LBANN_HASH}" =~ "No package matches the query" ]]; then
+    LBANN_HASH_ARRAY=(${LBANN_HASH})
+    for h in ${LBANN_HASH_ARRAY[@]}
+    do
+        CMD="spack uninstall -y --force lbann@${LBANN_LABEL} /${h}"
+        echo ${CMD} | tee -a ${LOG}
+        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+    done
 fi
 
 if [[ -n "${CLEAN_DEPS:-}" ]]; then
@@ -380,13 +377,6 @@ set_center_specific_spack_dependencies ${CENTER} ${SPACK_ARCH_TARGET}
 LBANN_SPEC="lbann@${LBANN_LABEL} ${LBANN_VARIANTS} ${HYDROGEN} ${DIHYDROGEN} ${ALUMINUM} ${CENTER_DEPENDENCIES}"
 LBANN_DEV_PATH_SPEC="lbann@${LBANN_LABEL} dev_path=${LBANN_HOME} ${LBANN_VARIANTS} ${HYDROGEN} ${DIHYDROGEN} ${ALUMINUM} ${CENTER_DEPENDENCIES}"
 ##########################################################################################
-
-if [[ -n "${BUILD_ENV_ONLY:-}" ]]; then
-    CMD="spack build-env ${LBANN_SPEC} -- ${BUILD_ENV_SHELL}"
-    echo ${CMD} | tee -a ${LOG}
-    [[ -z "${DRY_RUN:-}" ]] && ${CMD}
-    exit
-fi
 
 if [[ -n "${INSTALL_DEPS:-}" ]]; then
     # See if there are any center-specific externals
@@ -538,19 +528,14 @@ echo ${CMD} | tee -a ${LOG}
 echo "##########################################################################################" | tee -a ${LOG}
 echo "LBANN is installed in a spack environment named ${LBANN_ENV}, access it via:" | tee -a ${LOG}
 echo "  spack env activate -p ${LBANN_ENV}" | tee -a ${LOG}
-echo "To rebuild LBANN from source drop into a shell with the spack build environment setup:" | tee -a ${LOG}
-echo "  spack build-env ${LBANN_SPEC} -- bash" | tee -a ${LOG}
+echo "To rebuild LBANN from source drop into a shell with the spack build environment setup (requires active environment):" | tee -a ${LOG}
+echo "  spack build-env lbann -- bash" | tee -a ${LOG}
 echo "  cd spack-build-${LBANN_SPEC_HASH}" | tee -a ${LOG}
 echo "  ninja install" | tee -a ${LOG}
 echo "To use this version of LBANN use the module system without the need for activating the environment (does not require being in an environment)" | tee -a ${LOG}
 echo "  module load lbann/${LBANN_LABEL}-${LBANN_SPEC_HASH}" | tee -a ${LOG}
 echo "or have spack load the module auto-magically. It is installed in a spack environment named ${LBANN_ENV}, access it via: (has to be executed from the environment)"  | tee -a ${LOG}
 echo "  spack load lbann@${LBANN_LABEL} arch=${SPACK_ARCH}" | tee -a ${LOG}
-echo "##########################################################################################" | tee -a ${LOG}
-echo "Alternatively, for rebuilding, the script can drop create a shell in the build environment" | tee -a ${LOG}
-echo "  ${BASH_SOURCE} --build-env-only bash -l ${LBANN_LABEL_PREFIX:-local} -- ${CMD_LINE_VARIANTS}" | tee -a ${LOG}
-echo "  cd spack-build-${LBANN_SPEC_HASH}" | tee -a ${LOG}
-echo "  ninja install" | tee -a ${LOG}
 echo "##########################################################################################" | tee -a ${LOG}
 echo "All details of the run are logged to ${LOG}"
 echo "##########################################################################################"

@@ -135,11 +135,11 @@ public:
   void set_values(const AbsDistMatrixType& values);
 
   /** Set a weight value. */
-  void set_value(TensorDataType value, int index);
+  void set_value(TensorDataType value, size_t index);
   /** Set an entry in the weight tensor. */
-  void set_value(TensorDataType value, std::vector<int> pos);
+  void set_value(TensorDataType value, std::vector<size_t> pos);
   /** Set an entry in the weight matrix. */
-  void set_value(TensorDataType value, int row, int col);
+  void set_value(TensorDataType value, size_t row, size_t col);
 
   /** Reconcile weight values.
    *  If weight values are duplicated across multiple processes, they

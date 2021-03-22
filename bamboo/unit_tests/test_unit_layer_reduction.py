@@ -18,18 +18,18 @@ import tools
 # the functions below to ingest data.
 
 # Data
-np.random.seed(201909113)
-one_hot_size = 7
-_num_samples = 47
-_samples = [np.random.uniform(-1, one_hot_size+1) for _ in range(_num_samples)]
+np.random.seed(20210313)
+_num_samples = 13
+_sample_size = 29
+_samples = np.random.normal(size=(_num_samples,_sample_size)).astype(np.float32)
 
 # Sample access functions
 def get_sample(index):
-    return [_samples[index]]
+    return _samples[index,:]
 def num_samples():
     return _num_samples
 def sample_dims():
-    return (1,)
+    return (_sample_size,)
 
 # ==============================================
 # Setup LBANN experiment
@@ -58,16 +58,20 @@ def construct_model(lbann):
     """
 
     # Input data
-    x_lbann = lbann.Identity(lbann.Input())
-    y_numpy = np.random.normal(size=one_hot_size).astype(np.float32)
-    y_numpy[:] = 1 ### @todo Remove
-    y_lbann = lbann.Weights(
-        initializer=lbann.ValueInitializer(
-            values=tools.str_list(y_numpy)))
-    y_lbann = lbann.WeightsLayer(
-        weights=y_lbann,
-        dims=tools.str_list([one_hot_size]),
-    )
+    # Note: Slice to separate the last entry in the input tensor. Sum
+    # with a weights layer so that gradient checking will verify that
+    # error signals are correct.
+    x = lbann.Identity(lbann.Input())
+    x = lbann.Slice(x, slice_points=tools.str_list([0,_sample_size-1,_sample_size]))
+    x1 = lbann.Identity(x)
+    x2 = lbann.Identity(x)
+    x1_weights = lbann.Weights(
+        optimizer=lbann.SGD(),
+        initializer=lbann.ConstantInitializer(value=0.0),
+        name='input_weights')
+    x1 = lbann.Sum(x1, lbann.WeightsLayer(weights=x1_weights, hint_layer=x1))
+    x1_lbann = x1
+    x2_lbann = x2
 
     # Objects for LBANN model
     obj = []
@@ -78,70 +82,107 @@ def construct_model(lbann):
     # Compute expected metric values with NumPy
     # ------------------------------------------
 
-    vals = []
+    vals_sum = []
+    vals_mean = []
     for i in range(num_samples()):
-        x = int(np.floor(get_sample(i)[0]))
-        y = y_numpy
-        z = y[x] if (0 <= x < one_hot_size) else 0
-        vals.append(z)
-    val = np.mean(vals, dtype=np.float64)
-    tol = np.abs(8 * val * np.finfo(np.float32).eps)
+        x = get_sample(i).astype(np.float64)
+        x1 = x[:-1]
+        x2 = x[-1]
+        y_sum = np.sum(x1)
+        z_sum = y_sum * x2
+        y_mean = np.mean(x1)
+        z_mean = y_mean * x2
+        vals_sum.append(z_sum)
+        vals_mean.append(z_mean)
+    val_sum = np.mean(vals_sum)
+    val_mean = np.mean(vals_mean)
+    tol = 2 * _sample_size * np.finfo(np.float32).eps
 
     # ------------------------------------------
-    # Data-parallel layout
+    # Data-parallel layout, sum reduction
     # ------------------------------------------
 
-    x = x_lbann
-    y = y_lbann
-    x_onehot = lbann.OneHot(
-        x,
-        size=one_hot_size,
-        data_layout='data_parallel',
-    )
-    z = lbann.MatMul(
-        lbann.Reshape(x_onehot, dims='1 -1'),
-        lbann.Reshape(y, dims='1 -1'),
-        transpose_b=True,
-    )
+    x1 = x1_lbann
+    x2 = x2_lbann
+    y = lbann.Reduction(x1, mode='sum', data_layout='data_parallel')
+    z = lbann.Multiply(y, x2)
     obj.append(z)
-    metrics.append(lbann.Metric(z, name='data-parallel layout'))
+    metrics.append(lbann.Metric(z, name='data-parallel layout, sum reduction'))
     callbacks.append(
         lbann.CallbackCheckMetric(
             metric=metrics[-1].name,
-            lower_bound=val-tol,
-            upper_bound=val+tol,
+            lower_bound=val_sum-tol,
+            upper_bound=val_sum+tol,
             error_on_failure=True,
             execution_modes='test',
         )
     )
 
     # ------------------------------------------
-    # Model-parallel layout
+    # Data-parallel layout, mean reduction
     # ------------------------------------------
 
-    x = x_lbann
-    y = y_lbann
-    x_onehot = lbann.OneHot(
-        x,
-        size=one_hot_size,
-        data_layout='model_parallel',
-    )
-    z = lbann.MatMul(
-        lbann.Reshape(x_onehot, dims='1 -1'),
-        lbann.Reshape(y, dims='1 -1'),
-        transpose_b=True,
-    )
+    x1 = x1_lbann
+    x2 = x2_lbann
+    y = lbann.Reduction(x1, mode='mean', data_layout='data_parallel')
+    z = lbann.Multiply(y, x2)
     obj.append(z)
-    metrics.append(lbann.Metric(z, name='model-parallel layout'))
+    metrics.append(lbann.Metric(z, name='data-parallel layout, mean reduction'))
     callbacks.append(
         lbann.CallbackCheckMetric(
             metric=metrics[-1].name,
-            lower_bound=val-tol,
-            upper_bound=val+tol,
+            lower_bound=val_mean-tol,
+            upper_bound=val_mean+tol,
             error_on_failure=True,
             execution_modes='test',
         )
     )
+
+    # ------------------------------------------
+    # Model-parallel layout, sum reduction
+    # ------------------------------------------
+
+    x1 = x1_lbann
+    x2 = x2_lbann
+    y = lbann.Reduction(x1, mode='sum', data_layout='model_parallel')
+    z = lbann.Multiply(y, x2)
+    obj.append(z)
+    metrics.append(lbann.Metric(z, name='model-parallel layout, sum reduction'))
+    callbacks.append(
+        lbann.CallbackCheckMetric(
+            metric=metrics[-1].name,
+            lower_bound=val_sum-tol,
+            upper_bound=val_sum+tol,
+            error_on_failure=True,
+            execution_modes='test',
+        )
+    )
+
+    # ------------------------------------------
+    # Data-parallel layout, mean reduction
+    # ------------------------------------------
+
+    x1 = x1_lbann
+    x2 = x2_lbann
+    y = lbann.Reduction(x1, mode='mean', data_layout='model_parallel')
+    z = lbann.Multiply(y, x2)
+    obj.append(z)
+    metrics.append(lbann.Metric(z, name='model-parallel layout, mean reduction'))
+    callbacks.append(
+        lbann.CallbackCheckMetric(
+            metric=metrics[-1].name,
+            lower_bound=val_mean-tol,
+            upper_bound=val_mean+tol,
+            error_on_failure=True,
+            execution_modes='test',
+        )
+    )
+
+    # ------------------------------------------
+    # Gradient checking
+    # ------------------------------------------
+
+    callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
 
     # ------------------------------------------
     # Construct model
@@ -149,7 +190,7 @@ def construct_model(lbann):
 
     num_epochs = 0
     return lbann.Model(num_epochs,
-                       layers=x_lbann,
+                       layers=x1_lbann,
                        objective_function=obj,
                        metrics=metrics,
                        callbacks=callbacks)

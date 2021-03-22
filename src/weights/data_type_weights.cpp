@@ -271,7 +271,7 @@ void data_type_weights<TensorDataType>::set_values(const AbsDistMatrixType& valu
 }
 
 template <typename TensorDataType>
-void data_type_weights<TensorDataType>::set_value(TensorDataType value, int index) {
+void data_type_weights<TensorDataType>::set_value(TensorDataType value, size_t index) {
 
 #ifdef LBANN_DEBUG
   // Check that tensor position is valid
@@ -291,7 +291,7 @@ void data_type_weights<TensorDataType>::set_value(TensorDataType value, int inde
 }
 
 template <typename TensorDataType>
-void data_type_weights<TensorDataType>::set_value(TensorDataType value, std::vector<int> pos) {
+void data_type_weights<TensorDataType>::set_value(TensorDataType value, std::vector<size_t> pos) {
 
   // Get tensor dimensions
   const auto& dims = this->get_dims();
@@ -311,7 +311,7 @@ void data_type_weights<TensorDataType>::set_value(TensorDataType value, std::vec
 #endif // LBANN_DEBUG
 
   // Get index of weight value and set
-  int index = 0;
+  size_t index = 0;
   for (size_t i = 0; i < dims.size(); ++i) {
     index = index * dims[i] + pos[i];
   }
@@ -319,7 +319,7 @@ void data_type_weights<TensorDataType>::set_value(TensorDataType value, std::vec
 }
 
 template <typename TensorDataType>
-void data_type_weights<TensorDataType>::set_value(TensorDataType value, int row, int col) {
+void data_type_weights<TensorDataType>::set_value(TensorDataType value, size_t row, size_t col) {
 
 #ifdef LBANN_DEBUG
   // Check that matrix entry is valid
