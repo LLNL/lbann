@@ -148,7 +148,6 @@ else ()
     "This should not be possible.")
 endif (LBANN_HAS_HYDROGEN)
 
-# Start with Aluminum. If we can inherit MPI, OpenMPI, etc, from there, super.
 if (LBANN_HAS_DIHYDROGEN)
   set(MIN_H2_VERSION "@H2_VERSION@")
   find_package(DiHydrogen NO_MODULE QUIET
@@ -158,7 +157,7 @@ if (LBANN_HAS_DIHYDROGEN)
     NO_DEFAULT_PATH)
   find_package(DiHydrogen NO_MODULE REQUIRED)
 
-  # Ensure Aluminum features match
+  # Ensure DiHydrogen features match
   if (H2_VERSION VERSION_LESS MIN_H2_VERSION)
     message(FATAL_ERROR
       "Incompatible DiHydrogen version found: ${H2_VERSION}. "
