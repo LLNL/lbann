@@ -271,5 +271,6 @@ if __name__ == '__main__':
                        #environment=environment,
                        lbann_args=lbann_args,
                        setup_only=False,
+                       batch_job=True,
                        job_name=args.job_name)
     print(status)
