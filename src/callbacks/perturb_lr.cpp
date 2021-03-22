@@ -71,7 +71,9 @@ void perturb_lr::setup(model* m) {
 
 void perturb_lr::on_batch_begin(model* m) {
   const auto& c = m->get_execution_context();
-  if (m_perturb_during_training && c.get_step() > 0) {
+  if (m_perturb_during_training && 
+      c.get_step() % m_batch_interval == 0 &&
+      c.get_step() > 0) {
     perturb(*m);
   }
 }
