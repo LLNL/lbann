@@ -5,7 +5,7 @@
 
 #include "MPITestHelpers.hpp"
 
-/*  @brief Statistic for Anderson-Darling normality test
+/** @brief Statistic for Anderson-Darling normality test
  *
  *  A higher statistic implies greater confidence in non-normality.
  *
@@ -45,7 +45,7 @@ double anderson_darling_test(
 
 }
 
-/*  @brief Critical value for Anderson-Darling normality test
+/** @brief Critical value for Anderson-Darling normality test
  *
  *  A statistic of 1.9329578327415937304 corresponds to a significance
  *  of 0.1, 2.4923671600494096176 to 0.05, and 3.8781250216053948842
