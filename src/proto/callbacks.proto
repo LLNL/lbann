@@ -79,7 +79,7 @@ message Callback {
     CallbackSetWeightsValue set_weights_value = 47;
     CallbackSummarizeImages summarize_images = 48;
     CallbackDumpModelGraph dump_model_graph = 49;
-    CallbackPerturbLR perturb_lr = 50;
+    CallbackPerturbLearningRate perturb_learning_rate = 50;
   }
 
   message CallbackLTFB {
@@ -395,7 +395,7 @@ message Callback {
     bool print = 2;
   }
 
-  message CallbackPerturbLR {
+  message CallbackPerturbLearningRate {
     float learning_rate_factor = 1;   // Learning rate perturbation (in log space)
     bool perturb_during_training = 2; // Whether to periodically perturb during training (default: False)
     int64 batch_interval = 3;         // Frequency of perturbation if perturb_during_training is true
