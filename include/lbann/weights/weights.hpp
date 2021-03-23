@@ -135,34 +135,34 @@ public:
    *  height dimensions. If the local matrices are also fully packed,
    *  the tensor data is fully packed.
    */
-  std::vector<int> get_dims() const;
+  std::vector<size_t> get_dims() const;
   /** Get number of entries in weight tensor. */
-  int get_size() const;
+  size_t get_size() const;
   /** Get tensor dimensions corresponding to weight matrix height.
    *  The dimensions are sorted in decreasing order of strides. Matrix
    *  rows are fully-packed w.r.t. the matrix height dimensions.
    */
-  std::vector<int> get_matrix_height_dims() const;
+  std::vector<size_t> get_matrix_height_dims() const;
   /** Get tensor dimensions corresponding to weight matrix width.
    *  The dimensions are sorted in decreasing order of strides. Matrix
    *  columns are fully-packed w.r.t. the matrix width dimensions.
    */
-  std::vector<int> get_matrix_width_dims() const;
+  std::vector<size_t> get_matrix_width_dims() const;
   /** Get weight matrix height.
    *  If there are no matrix height dimensions, the height is one.
    */
-  int get_matrix_height() const;
+  size_t get_matrix_height() const;
   /** Get weight matrix width.
    *  If there are no matrix width dimensions, the width is one.
    */
-  int get_matrix_width() const;
+  size_t get_matrix_width() const;
   /** Set weight tensor dimensions.
    *  See the 'get_dims' function for an explanation of the notation.
    */
-  void set_dims(std::vector<int> matrix_height_dims,
-                std::vector<int> matrix_width_dims = std::vector<int>());
+  void set_dims(std::vector<size_t> matrix_height_dims,
+                std::vector<size_t> matrix_width_dims = {});
   /** Set weight tensor dimensions as a 1D tensor. */
-  void set_dims(int size) { set_dims({size}, {}); }
+  void set_dims(size_t size) { set_dims({size}, {}); }
 
   // -----------------------------------------------
   // Matrix distribution accessors
@@ -296,8 +296,8 @@ protected:
 private:
   virtual void do_augment_description_(description&) const = 0;
   virtual void do_setup_() = 0;
-  virtual void do_set_dims_(std::vector<int> const& matrix_height_dims,
-                            std::vector<int> const& matrix_width_dims) = 0;
+  virtual void do_set_dims_(std::vector<size_t> const& matrix_height_dims,
+                            std::vector<size_t> const& matrix_width_dims) = 0;
   virtual void do_steal_values_(weights& other) = 0;
 private:
 
@@ -313,11 +313,11 @@ private:
   /** Tensor dimensions corresponding to matrix height.
    *  See the 'get_matrix_height_dims' function.
    */
-  std::vector<int> m_matrix_height_dims;
+  std::vector<size_t> m_matrix_height_dims;
   /** Tensor dimensions corresponding to matrix width.
    *  See the 'get_matrix_width_dims' function.
    */
-  std::vector<int> m_matrix_width_dims;
+  std::vector<size_t> m_matrix_width_dims;
   /** Distribution of weights matrix. */
   El::DistData m_matrix_dist;
 

@@ -56,7 +56,7 @@ auto make_weights(lbann::lbann_comm& comm)
 }
 
 template <typename T>
-auto make_weights(lbann::lbann_comm& comm, int height, int width)
+auto make_weights(lbann::lbann_comm& comm, size_t height, size_t width)
 {
   T const value = El::To<T>(1.3);
   DataTypeWeights<T> out(comm);
@@ -68,7 +68,7 @@ auto make_weights(lbann::lbann_comm& comm, int height, int width)
 }// namespace <>
 
 template <typename T>
-auto make_weights_ptr(lbann::lbann_comm& comm, int height, int width)
+auto make_weights_ptr(lbann::lbann_comm& comm, size_t height, size_t width)
 {
   T const value = El::To<T>(1.3);
   auto out = std::make_unique<DataTypeWeights<T>>(comm);
@@ -84,7 +84,7 @@ TEST_CASE("Serializing weights", "[mpi][weights][serialize]")
   using DataType = float;
 
   auto& world_comm = unit_test::utilities::current_world_comm();
-  int const size_of_world = world_comm.get_procs_in_world();
+  size_t const size_of_world = world_comm.get_procs_in_world();
 
   auto const& g = world_comm.get_trainer_grid();
   lbann::utils::grid_manager mgr(g);
@@ -92,8 +92,8 @@ TEST_CASE("Serializing weights", "[mpi][weights][serialize]")
   std::stringstream ss;
 
   // Create the objects
-  int const weights_height = 3 * size_of_world;
-  int const weights_width = 2 * size_of_world;
+  size_t const weights_height = 3 * size_of_world;
+  size_t const weights_width = 2 * size_of_world;
 
   auto dtw_src = make_weights<DataType>(world_comm,
                                         weights_height,

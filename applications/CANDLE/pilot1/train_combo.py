@@ -31,8 +31,17 @@ def construct_model():
     pred = combo.Combo()(data)
     mse = lbann.MeanSquaredError([responses, pred])
 
+    SS_res = lbann.Reduction(lbann.Square(lbann.Subtract(responses, pred)), mode='sum')
+ 
+    #SS_tot = var(x) = mean((x-mean(x))^2)
+    mini_batch_size = lbann.MiniBatchSize()
+    mean = lbann.Divide(lbann.BatchwiseReduceSum(responses), mini_batch_size)
+    SS_tot = lbann.Divide(lbann.BatchwiseReduceSum(lbann.Square(lbann.Subtract(responses, mean))), mini_batch_size)
+    eps = lbann.Constant(value=1e-07,hint_layer=SS_tot)
+    r2 = lbann.Subtract(lbann.Constant(value=1, num_neurons='1'), lbann.Divide(SS_res, lbann.Add(SS_tot,eps)))
+
     metrics = [lbann.Metric(mse, name='mse')]
-    #lbann.Metric(r2, name='r2')]
+    metrics.append(lbann.Metric(r2, name='r2'))
 
     callbacks = [lbann.CallbackPrint(),
                  lbann.CallbackTimer()]
@@ -63,7 +72,7 @@ if __name__ == '__main__':
 
     status = lbann.run(trainer,model, data_reader_proto, opt,
                        scheduler='lsf',
-                       nodes=1,
+                       nodes=2,
                        procs_per_node=4,
                        time_limit=360,
                        #setup_only=True,

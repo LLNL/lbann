@@ -87,7 +87,7 @@ class MolWAE(lbann.modules.Module):
     global_count = 0  # Static counter, used for default names
 
     def __init__(self, input_feature_dims,dictionary_size, embedding_size, 
-                 ignore_label,zdim=128, save_output=False, name=None):
+                 ignore_label,zdim= 512, gmean=0.0, gstd=1.0,save_output=False, name=None):
         """Initialize Molecular WAE.
 
         Args:
@@ -96,6 +96,8 @@ class MolWAE(lbann.modules.Module):
             embedding_size (int): embedding size
             ignore_label (int): padding index
             zdim (int): latent dimension
+            gmean (double): mean of Gaussian noise
+            gstd (double): std of Gaussian noise
             save_output (bool, optional): save or not save predictions
                 (default: False).
             name (str, optional): Module name
@@ -112,6 +114,8 @@ class MolWAE(lbann.modules.Module):
         self.dictionary_size = dictionary_size
         self.label_to_ignore = ignore_label
         self.zdim = zdim
+        self.gmean = gmean
+        self.gstd = gstd
         self.save_output = save_output
         self.datatype = lbann.DataType.FLOAT
         self.weights_datatype = lbann.DataType.FLOAT
@@ -186,6 +190,9 @@ class MolWAE(lbann.modules.Module):
 
         # Encoder: x -> z, kl_loss
         z_sample = self.forward_encoder(x_emb)
+        
+        eps = lbann.Gaussian(mean=self.gmean, stdev=self.gstd,hint_layer=z_sample)
+        z_sample = lbann.Add([z_sample, eps])
 
         # Decoder: x, z -> recon_loss
         #pred = self.forward_decoder(x_emb, z_sample)

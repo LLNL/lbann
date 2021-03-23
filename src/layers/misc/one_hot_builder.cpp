@@ -24,8 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#define LBANN_REDUCTION_LAYER_INSTANTIATE
-#include "lbann/layers/transform/reduction.hpp"
+#include "lbann/layers/misc/one_hot.hpp"
 #include "lbann/proto/helpers.hpp"
 
 #include <lbann/proto/proto_common.hpp>
@@ -34,25 +33,17 @@
 namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-std::unique_ptr<Layer> build_reduction_layer_from_pbuf(
+std::unique_ptr<Layer> build_one_hot_layer_from_pbuf(
   lbann_comm* comm, lbann_data::Layer const& proto_layer)
 {
-  using LayerType = reduction_layer<TensorDataType,Layout,Device>;
-  LBANN_ASSERT_MSG_HAS_FIELD(proto_layer, reduction);
-  const auto& params = proto_layer.reduction();
-  const std::string mode_str = params.mode();
-  reduction_mode mode = reduction_mode::INVALID;
-  if (mode_str == "sum" || mode_str.empty()) { mode = reduction_mode::SUM; }
-  if (mode_str == "mean" || mode_str == "average") { mode = reduction_mode::AVERAGE; }
-  return lbann::make_unique<LayerType>(mode);
+  using LayerType = one_hot_layer<TensorDataType,Layout,Device>;
+  LBANN_ASSERT_MSG_HAS_FIELD(proto_layer, one_hot);
+  const auto& params = proto_layer.one_hot();
+  return make_unique<LayerType>(params.size());
 }
 
-#define PROTO_DEVICE(T, Device)                 \
-  template class reduction_layer<               \
-    T, data_layout::DATA_PARALLEL, Device>;     \
-  template class reduction_layer<               \
-    T, data_layout::MODEL_PARALLEL, Device>;    \
-  LBANN_LAYER_BUILDER_ETI(reduction, T, Device)
+#define PROTO_DEVICE(T, Device) \
+  LBANN_LAYER_BUILDER_ETI(one_hot, T, Device)
 #include "lbann/macros/instantiate_device.hpp"
 
-}// namespace lbann
+} // namespace lbann

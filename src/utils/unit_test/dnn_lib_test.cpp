@@ -40,7 +40,7 @@ using namespace lbann;
 
 TEMPLATE_TEST_CASE("Tensor operations", "[dnn_lib]", float)
 {
-  int N = 64, c = 4, h = 128, w = 128;
+  int N = 128, c = 4, h = 128, w = 128;
   const dnn_lib::ScalingParamType<TestType> alpha = 1.;
   const dnn_lib::ScalingParamType<TestType> beta = 0.;
 
@@ -110,14 +110,26 @@ TEMPLATE_TEST_CASE("Computing convolution layers", "[dnn_lib]", float)
   size_t workspace_size = (1<<30) / sizeof(TestType);
   El::Matrix<TestType, El::Device::GPU> workSpace(workspace_size, 1);
 
+  // Convolution Algorithm
   SECTION("convolution forward")
   {
+    fwd_conv_alg alg = dnn_lib::get_fwd_algorithm(true,
+                                                  true,
+                                                  xDesc,
+                                                  x.LockedBuffer(),
+                                                  wDesc,
+                                                  w.LockedBuffer(),
+                                                  convDesc,
+                                                  yDesc,
+                                                  y.Buffer(),
+                                                  workspace_size,
+                                                  workSpace.Buffer());
     REQUIRE_NOTHROW(
       dnn_lib::convolution_forward(alpha,
                                    xDesc, x,
                                    wDesc, w,
                                    convDesc,
-                                   fwd_conv_alg::GEMM,
+                                   alg,
                                    workSpace,
                                    beta,
                                    yDesc, y));
@@ -125,12 +137,24 @@ TEMPLATE_TEST_CASE("Computing convolution layers", "[dnn_lib]", float)
 
   SECTION("convolution backward data")
   {
+    bwd_data_conv_alg alg = dnn_lib::
+      get_bwd_data_algorithm(true,
+                             true,
+                             wDesc,
+                             w.LockedBuffer(),
+                             dyDesc,
+                             dy.LockedBuffer(),
+                             convDesc,
+                             dxDesc,
+                             dx.Buffer(),
+                             workspace_size,
+                             workSpace.Buffer());
     REQUIRE_NOTHROW(
       dnn_lib::convolution_backward_data(alpha,
                                          wDesc, w,
                                          dyDesc, dy,
                                          convDesc,
-                                         bwd_data_conv_alg::CUDNN_ALGO_0,
+                                         alg,
                                          workSpace,
                                          beta,
                                          dxDesc, dx));
@@ -145,12 +169,24 @@ TEMPLATE_TEST_CASE("Computing convolution layers", "[dnn_lib]", float)
 
   SECTION("convolution backward filter")
   {
+    bwd_filter_conv_alg alg = dnn_lib::
+      get_bwd_filter_algorithm(true,
+                               true,
+                               xDesc,
+                               x.LockedBuffer(),
+                               dyDesc,
+                               dy.LockedBuffer(),
+                               convDesc,
+                               dwDesc,
+                               dw.Buffer(),
+                               workspace_size,
+                               workSpace.Buffer());
     REQUIRE_NOTHROW(
       dnn_lib::convolution_backward_filter(alpha,
                                            xDesc, x,
                                            dyDesc, dy,
                                            convDesc,
-                                           bwd_filter_conv_alg::CUDNN_ALGO_0,
+                                           alg,
                                            workSpace,
                                            beta,
                                            dwDesc, dw));

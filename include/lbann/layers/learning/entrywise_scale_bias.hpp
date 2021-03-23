@@ -153,8 +153,9 @@ entrywise_scale_bias_layer<TensorDataType, Layout, Dev>
 
     // Initialize output dimensions
     this->set_output_dims(this->get_input_dims());
-    const auto output_dims = this->get_output_dims();
-    const El::Int output_size = this->get_output_size();
+    const auto& output_dims_ = this->get_output_dims();
+    std::vector<size_t> output_dims(output_dims_.begin(), output_dims_.end());
+    const auto output_size = this->get_output_size();
 
     // Construct default weights if needed
     // Note: Scale is initialized to 1 and bias to 0
@@ -183,7 +184,7 @@ entrywise_scale_bias_layer<TensorDataType, Layout, Dev>
     auto dist = this->get_prev_activations().DistData();
     dist.rowDist = El::STAR;
     this->get_weights(0).set_dims(output_dims,
-                                     {static_cast<int>(2)});
+                                  {static_cast<int>(2)});
     this->get_weights(0).set_matrix_distribution(dist);
 
     // Setup gradient w.r.t. weights

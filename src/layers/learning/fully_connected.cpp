@@ -164,6 +164,12 @@ void fully_connected_layer<TensorDataType, T_layout, Dev>
     set_fan_out(*initializer, this->get_output_size());
   }
 
+  // Input and output dimensions
+  const auto& input_dims_ = this->get_input_dims();
+  const auto& output_dims_ = this->get_output_dims();
+  std::vector<size_t> input_dims(input_dims_.begin(), input_dims_.end());
+  std::vector<size_t> output_dims(output_dims_.begin(), output_dims_.end());
+
   // Setup linearity weights
   auto linearity_dist = this->get_prev_activations().DistData();
   if (linearity_dist.colDist != El::MC
@@ -172,9 +178,9 @@ void fully_connected_layer<TensorDataType, T_layout, Dev>
     linearity_dist.rowDist = El::STAR;
   }
   if (m_transpose) {
-    linearity_weights.set_dims(this->get_input_dims(), this->get_output_dims());
+    linearity_weights.set_dims(input_dims, output_dims);
   } else {
-    linearity_weights.set_dims(this->get_output_dims(), this->get_input_dims());
+    linearity_weights.set_dims(output_dims, input_dims);
   }
   linearity_weights.set_matrix_distribution(linearity_dist);
 
@@ -192,7 +198,7 @@ void fully_connected_layer<TensorDataType, T_layout, Dev>
     // Setup bias weights
     auto bias_dist = this->get_activations().DistData();
     bias_dist.rowDist = El::STAR;
-    bias_weights.set_dims(this->get_output_dims());
+    bias_weights.set_dims(output_dims);
     bias_weights.set_matrix_distribution(bias_dist);
     if (this->m_bias_gradient != nullptr) {
       El::Zeros(*this->m_bias_gradient,
