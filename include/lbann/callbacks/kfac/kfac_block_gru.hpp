@@ -46,11 +46,18 @@ enum class weight_type {
 
 const std::vector<weight_type> LEARNABLE_MATRICES = {
   weight_type::Rr,
-  weight_type::Ri
+  weight_type::Ri,
+  weight_type::Rh,
+  weight_type::Wr,
+  weight_type::Wi,
+  weight_type::Wh
 };
 
 /** @brief Get the name of a GRU weight matrix. **/
 std::string get_matrix_type_name(const weight_type& matrix_type);
+
+/** @brief Return whether the height of a GRU weight matrix is the hidden size. **/
+bool is_matrix_height_hidden(const weight_type& matrix_type);
 
 /** @brief Get the weight ID and the row offset ID of a GRU weight matrix. **/
 std::pair<int, int> get_gru_weight_offset(
@@ -78,6 +85,10 @@ void get_g(
     const El::Matrix<DataType, Device>& i,
     El::Matrix<DataType, Device>& g_Rr,
     El::Matrix<DataType, Device>& g_Ri,
+    El::Matrix<DataType, Device>& g_Rh,
+    El::Matrix<DataType, Device>& g_Wr,
+    El::Matrix<DataType, Device>& g_Wi,
+    El::Matrix<DataType, Device>& g_Wh,
     size_t count,
     const El::SyncInfo<Device>& sync_info);
 
@@ -156,8 +167,20 @@ class kfac_block_gru: public kfac_block<Device> {
 
   /** @brief Get the pointer to its GRU_layer. **/
   gru_layer<DataType, data_layout::DATA_PARALLEL, Device>*
-  get_gru_layer() {
+  get_gru_layer() const {
     return dynamic_cast<gru_layer<DataType, data_layout::DATA_PARALLEL, Device>*>(this->m_layer);
+  }
+
+  size_t get_input_size() const {
+    const auto input_dims = this->m_layer->get_input_dims();
+    return input_dims[1];
+  }
+  size_t get_hidden_size() const {
+    return get_gru_layer()->get_hidden_size();
+  }
+  size_t get_seq_length() const {
+    const auto input_dims = this->m_layer->get_input_dims();
+    return input_dims[0];
   }
 
   /** @brief A copy of the reserve space after forward passes. */
@@ -166,7 +189,7 @@ class kfac_block_gru: public kfac_block<Device> {
 
   /** @brief Lower triangle buffers of Kronecker factors. */
   El::Matrix<DataType, Device>
-  m_kronecker_factor_buf_A_h;
+  m_kronecker_factor_buf_A_h, m_kronecker_factor_buf_A_x;
   std::unordered_map<
     kfac_gru_util::weight_type,
     El::Matrix<DataType, Device>>
@@ -174,7 +197,7 @@ class kfac_block_gru: public kfac_block<Device> {
 
   /** @brief Exponential moving average of Kronecker factors. */
   El::Matrix<DataType, Device>
-  m_kronecker_average_A_h;
+  m_kronecker_average_A_h, m_kronecker_average_A_x;
   std::unordered_map<
     kfac_gru_util::weight_type,
     El::Matrix<DataType, Device>>
@@ -182,14 +205,14 @@ class kfac_block_gru: public kfac_block<Device> {
 
   /** @brief Inverse of the average Kronecker factors. */
   El::Matrix<DataType, Device>
-  m_kronecker_inverse_A_h;
+  m_kronecker_inverse_A_h, m_kronecker_inverse_A_x;
   std::unordered_map<
     kfac_gru_util::weight_type,
     El::Matrix<DataType, Device>>
   m_kronecker_inverse_G;
 
   El::Matrix<DataType, Device>
-  m_grad_buffer_A_h;
+  m_grad_buffer_A_h, m_grad_buffer_A_x;
   std::unordered_map<
     kfac_gru_util::weight_type,
     El::Matrix<DataType, Device>>

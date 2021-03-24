@@ -88,20 +88,30 @@ __global__ void get_g_kernel(
     const TensorDataType * __restrict__ i,
     TensorDataType * __restrict__ g_Rr,
     TensorDataType * __restrict__ g_Ri,
+    TensorDataType * __restrict__ g_Rh,
+    TensorDataType * __restrict__ g_Wr,
+    TensorDataType * __restrict__ g_Wi,
+    TensorDataType * __restrict__ g_Wh,
     const size_t count) {
   const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
   if(gid < count) {
-    // dh/dr = diag{(1-i_t)*tanh'(tanh^-1(h'_t))*hfc}
+    // dh/dh' = diag(1-i_t)
+    // dh/dr = diag{(dh/dh')*tanh'(tanh^-1(h'_t))*hfc}
     // dh/di = diag{h_{t-1} - h'_t}
     // dr/dg_Rr = diag{sigmoid'(sigmoid^-1(r_t))}
     // g_Rr = Rr h_{t-1}
-    const TensorDataType hd = tanh_inv(h[gid]);
-    const TensorDataType dhdr = (1.0-i[gid]) * tanh_deriv(hd) * hfc[gid];
+    const TensorDataType hd = (h[gid]-i[gid]*hprev[gid])/(1.0-i[gid]);
+    const TensorDataType dhdhd = 1.0-i[gid];
+    const TensorDataType dhdr = dhdhd * tanh_deriv(tanh_inv(hd)) * hfc[gid];
     const TensorDataType dhdi = hprev[gid] - hd;
     const TensorDataType drdg_Rr = sigmoid_deriv(sigmoid_inv(r[gid]));
     const TensorDataType didg_Ri = sigmoid_deriv(sigmoid_inv(i[gid]));
-    g_Rr[gid] = dh[gid] * dhdr * drdg_Rr;
-    g_Ri[gid] = dh[gid] * dhdi * didg_Ri;
+    const TensorDataType dhddg_Wh = tanh_deriv(tanh_inv(hd));
+    const TensorDataType dhddg_Rh = dhddg_Wh * r[gid];
+    g_Wr[gid] = g_Rr[gid] = dh[gid] * dhdr * drdg_Rr;
+    g_Wi[gid] = g_Ri[gid] = dh[gid] * dhdi * didg_Ri;
+    g_Wh[gid] = dh[gid] * dhdhd * dhddg_Wh;
+    g_Rh[gid] = dh[gid] * dhdhd * dhddg_Rh;
   }
 }
 
@@ -117,6 +127,10 @@ void kfac_gru_util::get_g(
     const El::Matrix<DataType, El::Device::GPU>& i,
     El::Matrix<DataType, El::Device::GPU>& g_Rr,
     El::Matrix<DataType, El::Device::GPU>& g_Ri,
+    El::Matrix<DataType, El::Device::GPU>& g_Rh,
+    El::Matrix<DataType, El::Device::GPU>& g_Wr,
+    El::Matrix<DataType, El::Device::GPU>& g_Wi,
+    El::Matrix<DataType, El::Device::GPU>& g_Wh,
     const size_t count,
     const El::SyncInfo<El::Device::GPU>& sync_info) {
   constexpr size_t block_size = 256;
@@ -129,8 +143,8 @@ void kfac_gru_util::get_g(
           hfc.LockedBuffer(),
           r.LockedBuffer(),
           i.LockedBuffer(),
-          g_Rr.Buffer(),
-          g_Ri.Buffer(),
+          g_Rr.Buffer(), g_Ri.Buffer(), g_Rh.Buffer(),
+          g_Wr.Buffer(), g_Wi.Buffer(), g_Wh.Buffer(),
           count);
 }
 
