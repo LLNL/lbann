@@ -160,7 +160,7 @@ void register_default_builders(factory_type& factory)
                            build_perturb_adam_callback_from_pbuf);
   factory.register_builder("CallbackPerturbDropout",
                            build_perturb_dropout_callback_from_pbuf);
-  factory.register_builder("CallbackPerturbLR",
+  factory.register_builder("CallbackPerturbLearningRate",
                            build_perturb_learning_rate_callback_from_pbuf);
   factory.register_builder("CallbackPolyLearningRate",
                            build_poly_learning_rate_callback_from_pbuf);
