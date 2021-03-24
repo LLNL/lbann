@@ -145,6 +145,9 @@ option(LBANN_WITH_VTUNE
 option(LBANN_WITH_UNIT_TESTING
   "Enable the unit testing framework (requires Catch2)" OFF)
 
+option(LBANN_WITH_ADDRESS_SANITIZER
+  "Try clang-style use of ASAN (-fsanitize=address)" OFF)
+
 # Use deterministic GPU algorithms and layer operations
 option(LBANN_DETERMINISTIC
   "Use deterministic algorithms as much as possible." OFF)
