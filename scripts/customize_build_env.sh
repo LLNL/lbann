@@ -143,7 +143,7 @@ set_center_specific_spack_dependencies()
                 ;;
             "broadwell" | "haswell" | "sandybridge" | "ivybridge") # Pascal, RZHasGPU, Surface, Catalyst
                 # On LC the mvapich2 being used is built against HWLOC v1
-                CENTER_DEPENDENCIES="^mvapich2 ^hwloc@1.11.13"
+                CENTER_DEPENDENCIES="^mvapich2 ^hwloc@1.11.13 ^openblas@0.3.12 threads=openmp"
                 ;;
             "zen" | "zen2") # Corona
                 # On LC the mvapich2 being used is built against HWLOC v1
