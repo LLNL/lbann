@@ -36,6 +36,7 @@ void kfac_block_gru<El::Device::CPU>::on_forward_prop_end() {
   LBANN_ERROR("The K-FAC callback does not support CPU GRU layers.");
 }
 
+#ifdef LBANN_HAS_GPU
 template <>
 void kfac_block_gru<El::Device::GPU>::on_forward_prop_end() {
   const auto& reserve_space = get_gru_layer()->get_reserve_space();
@@ -49,6 +50,7 @@ void kfac_block_gru<El::Device::GPU>::on_forward_prop_end() {
       cudaMemcpyDeviceToDevice,
       sync_info.Stream()));
 }
+#endif // LBANN_HAS_GPU
 
 template <El::Device Device>
 const std::vector<El::AbstractMatrix<DataType>*>
