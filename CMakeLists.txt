@@ -136,9 +136,8 @@ if (LBANN_WITH_EMBEDDED_PYTHON AND NOT LBANN_WITH_PYTHON_FRONTEND)
     "to make sure you're aware.")
 endif (LBANN_WITH_EMBEDDED_PYTHON AND NOT LBANN_WITH_PYTHON_FRONTEND)
 
-option(LBANN_WITH_TBINF "Include Tensorboard interface" ON)
-
 option(LBANN_WITH_VISION "Include vision processing components" ON)
+option(LBANN_WITH_TBINF "Include Tensorboard interface" ${LBANN_WITH_VISION})
 
 option(LBANN_WITH_VTUNE
   "Link the Intel VTune profiling library" OFF)
@@ -153,6 +152,10 @@ option(LBANN_DETERMINISTIC
 option(LBANN_DEBUG_PRINT_SUBTARGETS
   "Turn on debugging output of internal target properties." OFF)
 mark_as_advanced(LBANN_DEBUG_PRINT_SUBTARGETS)
+
+option(LBANN_EXPLICIT_LIBDL
+  "Explicitly find and link to libdl" OFF)
+mark_as_advanced(LBANN_EXPLICIT_LIBDL)
 
 # This option is off by default because non-developers should not use
 # this option under normal circumstances.
@@ -412,7 +415,7 @@ endif ()
 # This shouldn't be here, but is ok for now. This will occasionally be
 # part of another TPL's libraries (e.g., MKL), but it's no
 # guarantee. There's no harm including it multiple times.
-if (NOT DL_LIBRARY)
+if (LBANN_EXPLICIT_LIBDL AND NOT DL_LIBRARY)
   find_library(DL_LIBRARY dl DOC "The dynamic loader library.")
   if (DL_LIBRARY)
     message(STATUS "Found dl: ${DL_LIBRARY}")
@@ -427,7 +430,8 @@ endif ()
 # TODO: This probably shouldn't be the case and should disable specific
 # callbacks when OpenCV is not available
 if (LBANN_WITH_TBINF AND NOT LBANN_HAS_OPENCV)
-  message(FATAL_ERROR "TensorBoard requires OpenCV. Enable LBANN_WITH_VISION to use TensorBoard.")
+  message(FATAL_ERROR "TensorBoard requires OpenCV. "
+    "Enable LBANN_WITH_VISION to use TensorBoard.")
 endif ()
 
 if (LBANN_WITH_TBINF)
@@ -672,7 +676,6 @@ endif ()
 target_link_libraries(lbann PUBLIC ${CONDUIT_LIBRARIES})
 
 target_link_libraries(lbann PUBLIC
-  $<TARGET_NAME_IF_EXISTS:LBANN_CXX_FLAGS_werror>
   $<TARGET_NAME_IF_EXISTS:TBinf>
 
   $<TARGET_NAME_IF_EXISTS:H2::H2Meta>
@@ -690,6 +693,11 @@ target_link_libraries(lbann PUBLIC
   $<TARGET_NAME_IF_EXISTS:DNNL::dnnl>
   )
 
+if (LBANN_FLAG_Werror_OK)
+  target_compile_options(lbann
+    PRIVATE $<BUILD_INTERFACE:-Werror>)
+endif ()
+
 if (LBANN_HAS_ALUMINUM)
   target_link_libraries(lbann PUBLIC ${Aluminum_LIBRARIES})
 endif ()
@@ -703,7 +711,9 @@ if (LBANN_HAS_NVSHMEM)
   target_link_libraries(lbann PUBLIC NVSHMEM::NVSHMEM)
 endif ()
 
-target_link_libraries(lbann PUBLIC ${DL_LIBRARY})
+if (LBANN_EXPLICIT_LIBDL)
+  target_link_libraries(lbann PUBLIC ${DL_LIBRARY})
+endif ()
 
 if (LBANN_HAS_FFTW AND LBANN_HAS_CUDA)
   target_compile_options(lbann PRIVATE
