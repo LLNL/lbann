@@ -62,6 +62,7 @@ void kfac<Device>::setup(model *m) {
         << " damping_warmup_steps=" << m_damping_warmup_steps
         << " kronecker_decay=" << m_kronecker_decay
         << " learning_rate_factor=" << m_learning_rate_factor
+        << " learning_rate_factor_gru=" << m_learning_rate_factor_gru
         << std::endl;
     std::cout << oss.str();
   }
@@ -291,11 +292,12 @@ void kfac<Device>::on_backward_prop_end(model *m) {
     prof_region_begin(("kfac-inverse/" + block->get_name()).c_str(), prof_color, prof_sync);
     // TODO: Add kfac_block::is_bn?
     const bool is_bn = dynamic_cast<kfac_block_bn<Device>*>(block.get()) != nullptr;
+    const bool is_gru = dynamic_cast<kfac_block_gru<Device>*>(block.get()) != nullptr;
     block->update_kronecker_inverse(
         comm, m_use_pi,
         is_bn ? m_damping_bn_act : m_damping_act,
         is_bn ? m_damping_bn_err : m_damping_err,
-        m_learning_rate_factor,
+        is_gru ? m_learning_rate_factor_gru : m_learning_rate_factor,
         m_print_matrix, m_print_matrix_summary,
         m_print_time);
     prof_region_end(("kfac-inverse/" + block->get_name()).c_str(), prof_sync);
@@ -465,8 +467,11 @@ build_kfac_callback_from_pbuf(
       parse_list<std::string>(params.disable_layers());
 
   double learning_rate_factor = params.learning_rate_factor();
+  double learning_rate_factor_gru = params.learning_rate_factor_gru();
   if(learning_rate_factor == 0.0)
     learning_rate_factor = 1.0;
+  if(learning_rate_factor_gru == 0.0)
+    learning_rate_factor_gru = learning_rate_factor;
 
   return make_unique<CallbackType>(
       damping_act_params,
@@ -480,7 +485,8 @@ build_kfac_callback_from_pbuf(
       update_intervals, update_interval_steps,
       inverse_strategy,
       disable_layers,
-      learning_rate_factor);
+      learning_rate_factor,
+      learning_rate_factor_gru);
 }
 
 template class kfac<El::Device::CPU>;
