@@ -93,8 +93,6 @@ endif ()
 # Options
 #
 
-option(LBANN_WITH_ALUMINUM "Enable Aluminum all-reduce library" OFF)
-
 option(LBANN_WITH_CEREAL_XML "Enable the use of XML archives from Cereal" OFF)
 set(LBANN_HAS_CEREAL_XML_ARCHIVES ${LBANN_WITH_CEREAL_XML})
 
@@ -212,7 +210,7 @@ find_package(Hydrogen 1.5.0 NO_MODULE QUIET
 if (NOT Hydrogen_FOUND)
   find_package(Hydrogen 1.5.0 NO_MODULE QUIET REQUIRED)
 endif ()
-message(STATUS "Found Hydrogen: ${Hydrogen_DIR}")
+message(STATUS "Found Hydrogen@${HYDROGEN_VERSION}: ${Hydrogen_DIR}")
 set(LBANN_HAS_HYDROGEN ${Hydrogen_FOUND})
 
 # DiHydrogen and Distconv
@@ -239,10 +237,10 @@ message(STATUS "Found DiHydrogen: ${DiHydrogen_DIR}")
 # Inherit half-precision stuff from Hydrogen
 set(LBANN_HAS_HALF ${HYDROGEN_HAVE_HALF}) # This is CPU-only
 
-# Not the ideal fix, but should be fine for now.
 if (Aluminum_FOUND)
+  message(STATUS "Found Aluminum@${ALUMINUM_VERSION}: ${Aluminum_DIR}")
   message(STATUS "Aluminum found in Hydrogen. Using Aluminum.")
-  set(LBANN_WITH_ALUMINUM ON CACHE BOOL "Use aluminum." FORCE)
+  set(LBANN_HAS_ALUMINUM ON)
 endif ()
 
 include(SetupOpenMP)
@@ -319,49 +317,18 @@ if (LBANN_HAS_CUDA)
   set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
 endif ()
 
-if (LBANN_WITH_ALUMINUM)
-  # Aluminum may have already been found by Hydrogen
-  if (NOT Aluminum_FOUND)
+if (LBANN_HAS_ALUMINUM)
+  if (AL_HAS_CUDA AND NOT LBANN_HAS_CUDA)
     message(WARNING
-      "Using Aluminum without Hydrogen support may not be well-supported.")
-    find_package(Aluminum 0.5.0 NO_MODULE QUIET
-      HINTS ${Aluminum_DIR} ${ALUMINUM_DIR} ${AL_DIR}
-      $ENV{Aluminum_DIR} $ENV{ALUMINUM_DIR} $ENV{AL_DIR}
-      PATH_SUFFIXES lib64/cmake/aluminum lib/cmake/aluminum
-      NO_DEFAULT_PATH)
-    if (NOT Aluminum_FOUND)
-      find_package(Aluminum 0.5.0 NO_MODULE QUIET)
-    endif ()
+      "Aluminum has CUDA support but CUDA support has not been found.")
   endif ()
-  set(LBANN_HAS_ALUMINUM ${Aluminum_FOUND})
 
-  # Report failure.
-  if (NOT LBANN_HAS_ALUMINUM)
-    message(WARNING
-      "Requested LBANN_WITH_ALUMINUM but Aluminum not found. "
-      "Aluminum is now disabled. "
-      "Try specifying ALUMINUM_DIR as the root of an ALUMINUM install. "
-      "Alternatively, build with LBANN_WITH_ALUMINUM=OFF to suppress "
-      "this warning.")
-    set(LBANN_WITH_ALUMINUM OFF)
-
-  else ()
-
-    message(STATUS "Found Aluminum: ${Aluminum_DIR}")
-
-    if (AL_HAS_CUDA AND NOT LBANN_HAS_CUDA)
-      message(WARNING
-        "Aluminum has CUDA support but CUDA support has not been found.")
-    endif ()
-
-    option(LBANN_BUILT_WITH_SPECTRUM "LBANN was built with Spectrum MPI" OFF)
-    if (LBANN_BUILT_WITH_SPECTRUM)
-      set(LBANN_ALUMINUM_MPI_PASSTHROUGH ON)
-    endif (LBANN_BUILT_WITH_SPECTRUM)
-
-  endif (NOT LBANN_HAS_ALUMINUM)
-endif (LBANN_WITH_ALUMINUM)
-
+  option(LBANN_BUILT_WITH_SPECTRUM "LBANN was built with Spectrum MPI" OFF)
+  if (LBANN_BUILT_WITH_SPECTRUM)
+    set(LBANN_ALUMINUM_MPI_PASSTHROUGH ON)
+  endif (LBANN_BUILT_WITH_SPECTRUM)
+endif (LBANN_HAS_ALUMINUM)
+  
 # Setup some additional CUDA-y things
 if (LBANN_HAS_CUDA)
   if (NOT LBANN_WITH_CUDNN)
