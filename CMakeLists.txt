@@ -698,7 +698,7 @@ target_link_libraries(lbann PUBLIC
 
 if (LBANN_FLAG_Werror_OK)
   target_compile_options(lbann
-    PRIVATE $<BUILD_INTERFACE:-Werror>)
+    PRIVATE $<$<COMPILE_LANGUAGE:CXX>:$<BUILD_INTERFACE:-Werror>>)
 endif ()
 
 if (LBANN_HAS_ALUMINUM)
