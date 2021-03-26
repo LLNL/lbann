@@ -10,7 +10,8 @@ with open(os.environ['DATA_CONFIG'], 'rb') as handle:
 pad_index = config['pad_index']
 max_seq_len = config['max_seq_len']
 
-samples = np.load(config['data_path'], allow_pickle=True)
+#samples = np.load(config['data_path'], allow_pickle=True)
+samples = np.load(os.environ['DATA_PATH'], allow_pickle=True)
 
 # Sample access functions
 def get_sample(index):

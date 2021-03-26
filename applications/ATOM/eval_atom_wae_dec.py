@@ -41,6 +41,10 @@ def construct_lc_launcher_args():
         help="path to a data config file that is used for the construction of python data reader",
     )
     parser.add_argument(
+        "--data-path",
+        help="path to npy dumped by perturb script",
+    )
+    parser.add_argument(
         "--time-limit",
         type=int,
         default=720,
@@ -191,6 +195,8 @@ def construct_data_reader(run_args):
 
     module_file = os.path.abspath(run_args.data_module_file)
     os.environ["DATA_CONFIG"] = os.path.abspath(run_args.data_config)
+    #@todo: provide base directory and use join
+    os.environ["DATA_PATH"] = run_args.data_path
 
     module_name = os.path.splitext(os.path.basename(module_file))[0]
     module_dir = os.path.dirname(module_file)
