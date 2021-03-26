@@ -117,12 +117,10 @@ public:
     return std::vector<int>(0);
   }
 
-  int get_linearized_data_size(std::string name="") const override;
+  int get_linearized_data_size(std::string name) const override;
+
   int get_linearized_data_size() const override {
-    //hack! TODO XX this will break everything!! sooner or later!!!
-    return get_linearized_size("datum");
-    LBANN_ERROR("not implemented for this data reader; please use the form that takes an 'std::string name' as a parameter");
-    return 0;
+    return get_linearized_data_size("datum");
   }
 
   /** Returns information on the dimensions and field names for the
@@ -136,7 +134,7 @@ public:
   }
   // required for backwards compatibility
   int get_linearized_response_size() const override {
-    LBANN_ERROR("not implemented for this data reader; please use the form that takes an 'std::string name' as a parameter");
+    return get_linearized_data_size("response");
     return 0;
   }
 
@@ -145,8 +143,7 @@ public:
   }
   // required for backwards compatibility
   int get_linearized_label_size() const override {
-    LBANN_ERROR("not implemented for this data reader; please use the form that takes an 'std::string name' as a parameter");
-    return 0;
+    return get_linearized_data_size("label");
   }
 
   int get_num_labels() const override {
@@ -459,9 +456,9 @@ void hdf5_data_reader::pack(std::string group_name, conduit::Node& node, size_t 
   ss << '/' << LBANN_DATA_ID_STR(index) + '/' + group_name;
   node[ss.str()] = data;
 
-  static bool add_to_map = true;
-  if (add_to_map) {
-    add_to_map = false;
+  static std::unordered_set<std::string> add_to_map;
+  if (add_to_map.find(group_name) == add_to_map.end()) {
+    add_to_map.insert(group_name);
     metadata[s_composite_node] = true;
     m_experiment_schema[group_name][s_metadata_node_name] = metadata;
     m_useme_node_map[group_name] = &(m_experiment_schema[group_name]);
@@ -481,12 +478,7 @@ void hdf5_data_reader::get_data(
     LBANN_ERROR("no path: ", ss.str());
   }
   num_elts_out = node[ss.str()].dtype().number_of_elements();
-  const std::string& tp = node[ss.str()].dtype().name();
-  T w = 42;
-  std::string tp2 = conduit::DataType::id_to_name(w);
-  if (tp != tp2) {
-    LBANN_ERROR("requested type is incorrect; data type is ", tp, " but you requested type ", tp2);
-  }
+  const std::string& dtype = node[ss.str()].dtype().name();
   void *d = const_cast<void*>(node[ss.str()].data_ptr());
   data_out = reinterpret_cast<T*>(d);
 }

@@ -83,9 +83,6 @@ void hdf5_data_reader::load() {
   opts->set_option("preload_data_store", true);
 
   // Load the sample list(s)
-  if (is_master()) {
-    std::cout << "loading the sample list ...\n";
-  }
   data_reader_sample_list::load();
   if (is_master()) {
     std::cout << "time to load sample list: " << get_time() - tm11 << std::endl;
@@ -210,7 +207,7 @@ void hdf5_data_reader::load_sample(conduit::Node &node, size_t index, bool ignor
       }
   
       // for images
-      if (metadata.has_child("channels")) {
+      if (metadata.has_child("channels") && metadata["channels"].as_int64() > 1) {
         repack_image(node, new_pathname, metadata);
       }
     }
@@ -621,7 +618,6 @@ void hdf5_data_reader::repack_image(
 }
 
 const std::vector<int> hdf5_data_reader::get_data_dims(std::string name) const {
-std::cerr << "starting get_data_dims for: "<<name<<std::endl;
   std::unordered_map<std::string, std::vector<int>>::const_iterator iter = m_data_dims_lookup_table.find(name);
   if (iter == m_data_dims_lookup_table.end()) {
     LBANN_ERROR("get_data_dims_size was asked for info about an unknown field name: ", name);
@@ -630,7 +626,6 @@ std::cerr << "starting get_data_dims for: "<<name<<std::endl;
 }
 
 int hdf5_data_reader::get_linearized_data_size(std::string name) const {
-std::cerr << "starting get_linearized_data_size for: "<<name<<std::endl;
   std::unordered_map<std::string, int>::const_iterator iter = m_linearized_size_lookup_table.find(name);
   if (iter == m_linearized_size_lookup_table.end()) {
     LBANN_ERROR("get_linearized_data_size was asked for info about an unknown field name: ", name);
@@ -696,14 +691,14 @@ void hdf5_data_reader::get_packing_data(
 }
 
 bool hdf5_data_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
-std::cout << "starting fetch_datum for id: "<<data_id<<std::endl;
+std::cout << m_comm->get_rank_in_trainer() << "  starting fetch_datum for id: "<<data_id<<std::endl;
   size_t n_elts = 0;
   DataType *data;
   get_data(data_id, "datum", n_elts, data);
   for (size_t j = 0; j < n_elts; ++j) {
     X(j, mb_idx) = data[j];
   }
-  return 0;
+  return true;
 }
 
 const void* hdf5_data_reader::get_raw_data(const size_t sample_id, const std::string &field_name, size_t &num_bytes) const {
@@ -739,9 +734,7 @@ void hdf5_data_reader::print_metadata(std::ostream& os) {
   }
 
   // print metadata and data types for all other nodes
-int jj = 1;
   for (const auto& t : m_useme_node_map) {
-std::cerr << "XXX " << jj++ << " of " << m_useme_node_map.size() << std::endl;
     const std::string& name = t.first;
     conduit::Node* node = t.second;
     os << "==================================================================\n"
