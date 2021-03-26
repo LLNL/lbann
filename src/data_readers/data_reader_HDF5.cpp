@@ -691,7 +691,6 @@ void hdf5_data_reader::get_packing_data(
 }
 
 bool hdf5_data_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
-std::cout << m_comm->get_rank_in_trainer() << "  starting fetch_datum for id: "<<data_id<<std::endl;
   size_t n_elts = 0;
   DataType *data;
   get_data(data_id, "datum", n_elts, data);
