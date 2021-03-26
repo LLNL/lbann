@@ -51,7 +51,7 @@ def construct_lc_launcher_args():
     parser.add_argument("--embedding-dim", type=int, default=None)
     parser.add_argument("--num-embeddings", type=int, default=None)
     parser.add_argument("--batch-size", type=int, default=512)
-    parser.add_argument("--z-dim", type=int, default=128, help="latent space dim")
+    parser.add_argument("--z-dim", type=int, default=512, help="latent space dim")
     parser.add_argument("--lamda", type=float, default=0.001, help="weighting of adversarial loss")
     parser.add_argument("--num-epochs", type=int, default=20)
     parser.add_argument("--data-reader-prototext", default=None)
