@@ -131,7 +131,7 @@ def construct_model(run_args):
     waemodel = molwae.MolWAE(input_feature_dims,
                            dictionary_size,
                            embedding_size,
-                           pad_index,run_args.z_dim,save_output)
+                           pad_index,run_args.z_dim,save_output=save_output)
     x_emb = lbann.Embedding(
             x,
             num_embeddings=waemodel.dictionary_size,
@@ -197,6 +197,9 @@ def construct_data_reader(run_args):
     os.environ["DATA_CONFIG"] = os.path.abspath(run_args.data_config)
     #@todo: provide base directory and use join
     os.environ["DATA_PATH"] = run_args.data_path
+    seq_len = run_args.sequence_length+run_args.z_dim
+    print("SEQ LEN for env ", seq_len)
+    os.environ["MAX_SEQ_LEN"] = str(seq_len) 
 
     module_name = os.path.splitext(os.path.basename(module_file))[0]
     module_dir = os.path.dirname(module_file)
