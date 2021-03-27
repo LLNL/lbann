@@ -520,6 +520,9 @@ void init_data_readers(
           } else if (name == "nci") {
             split_reader = new data_reader_nci(shuffle);
             (*(data_reader_nci *)split_reader) = (*(data_reader_nci *)reader);
+          } else if (name == "hdf5_data_reader") {
+            split_reader = new hdf5_data_reader(shuffle);
+            (*(hdf5_data_reader*)split_reader) = (*(hdf5_data_reader *)reader);
           } else if (name == "csv") {
             split_reader = new csv_reader(shuffle);
             (*(csv_reader *)split_reader) = (*(csv_reader *)reader);
