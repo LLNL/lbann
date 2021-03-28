@@ -51,19 +51,22 @@ hdf5_data_reader& hdf5_data_reader::operator=(const hdf5_data_reader& rhs) {
 void hdf5_data_reader::copy_members(const hdf5_data_reader &rhs) {
   m_num_labels = rhs.m_num_labels;
   m_num_responses = rhs.m_num_responses;
+  m_data_dims_lookup_table = rhs.m_data_dims_lookup_table;
+  m_linearized_size_lookup_table = rhs.m_linearized_size_lookup_table;
   m_experiment_schema_filename = rhs.m_experiment_schema_filename;
   m_data_schema_filename = rhs.m_data_schema_filename;
   m_delete_packed_fields = rhs.m_delete_packed_fields;
-  m_data_schema = rhs.m_data_schema;
-  m_experiment_schema = rhs.m_experiment_schema;
   m_packing_groups = rhs.m_packing_groups;
-  m_data_dims_lookup_table = rhs.m_data_dims_lookup_table;
-  m_linearized_size_lookup_table = rhs.m_linearized_size_lookup_table;
+  m_experiment_schema = rhs.m_experiment_schema;
+  m_data_schema = rhs.m_data_schema;
+  m_useme_node_map = rhs.m_useme_node_map;
+  //m_data_map should not be copied, as it contains pointers, and is only
+  //needed for setting up other structures during load
 
-  // fills in: m_data_map, m_useme_node_map; we don't want to copy these maps,
-  // since they contain pointers: conduit::Node*, to nodes in m_data_schema
-  // and/or m_experiment_schema
-  parse_schemas();
+  if(rhs.m_data_store != nullptr) {
+    m_data_store = new data_store_conduit(rhs.get_data_store());
+    m_data_store->set_data_reader_ptr(this);
+  }
 }
 
 void hdf5_data_reader::load() {
@@ -107,6 +110,11 @@ void hdf5_data_reader::load() {
   load_schema(get_data_schema_filename(), m_data_schema);
   load_schema(get_experiment_schema_filename(), m_experiment_schema);
   parse_schemas();
+
+  // ptrs were a problem when carving out a validation set 
+  for (const auto &t : m_useme_node_map_ptrs) {
+    m_useme_node_map[t.first] = *t.second;
+  }
   construct_linearized_size_lookup_tables();
 
   if (is_master()) {
@@ -133,9 +141,9 @@ void hdf5_data_reader::load_schema(std::string filename, conduit::Node &schema) 
 void hdf5_data_reader::do_preload_data_store() {
   double tm1 = get_time();
   if (is_master()) {
-    std::cout << "starting hdf5_data_reader::do_preload_data_store()\n";
+    std::cout << "starting hdf5_data_reader::do_preload_data_store() for role: " << get_role() << std::endl;
   }
- 
+
   for (size_t idx=0; idx < m_shuffled_indices.size(); idx++) {
     int index = m_shuffled_indices[idx];
     if(m_data_store->get_index_owner(index) != get_rank()) {
@@ -193,7 +201,7 @@ void hdf5_data_reader::load_sample(conduit::Node &node, size_t index, bool ignor
       const std::string new_pathname(ss2.str());
   
       // note: this will throw an exception if the child node doesn't exist
-      const conduit::Node& metadata = p.second->child(s_metadata_node_name);
+      const conduit::Node& metadata = p.second.child(s_metadata_node_name);
   
       if (metadata.has_child(s_coerce_name)) {
         coerce(metadata, file_handle, original_path, new_pathname, node);
@@ -212,6 +220,7 @@ void hdf5_data_reader::load_sample(conduit::Node &node, size_t index, bool ignor
       }
     }
   }
+
   pack(node, index);
 }
 
@@ -277,7 +286,6 @@ void hdf5_data_reader::normalize(
 }
 
 void hdf5_data_reader::parse_schemas() {
-  clear();
   adjust_metadata(&m_data_schema);
   adjust_metadata(&m_experiment_schema);
 
@@ -287,11 +295,11 @@ void hdf5_data_reader::parse_schemas() {
   get_schema_ptrs(&m_data_schema, m_data_map);
 
   // Get the pathnames for the fields to be used in the current experiment;
-  get_leaves_multi(&m_experiment_schema, m_useme_node_map);
+  get_leaves_multi(&m_experiment_schema, m_useme_node_map_ptrs);
 
   // sanity checks
   std::unordered_set<std::string> sanity;
-  for (const auto nd : m_useme_node_map) {
+  for (const auto nd : m_useme_node_map_ptrs) {
     const std::string &path =  nd.first;
     if (sanity.find(path) != sanity.end()) {
       LBANN_ERROR("sanity.find(path) != sanity.end() for path: ", path);
@@ -301,7 +309,7 @@ void hdf5_data_reader::parse_schemas() {
     }
   }
 
-  // At this point, each object in "m_useme_node_map:"
+  // At this point, each object in "m_useme_node_map_ptrs:"
   //   1. is a leaf node whose values will be used in the experiment
   //   2. has a "metatdata" child node that contains instructions for
   //      munging the data, i.e: scale, bias, ordering, coersion, packing, etc.
@@ -309,7 +317,6 @@ void hdf5_data_reader::parse_schemas() {
 
 // recursive
 void hdf5_data_reader::get_schema_ptrs(conduit::Node* input, std::unordered_map<std::string, conduit::Node*> &schema_name_map) {
-
   // add the input node to the output map
   const std::string &path_name = input->path();
   if (path_name == "") {
@@ -347,7 +354,7 @@ void hdf5_data_reader::get_leaves_multi(
   for (const auto& leaf : first) {
     std::string path_name = leaf.first;
     if (m_data_map.find(path_name) == m_data_map.end()) {
-      LBANN_ERROR("pathname: ", path_name, " was not found in m_data_map");
+      LBANN_ERROR("pathname: ", path_name, " was not found in m_data_map; num map entries: ", m_data_map.size(), "; role: ", get_role());
     }
 
     const conduit::Node& from_meta = leaf.second->child(s_metadata_node_name);
@@ -424,6 +431,7 @@ void hdf5_data_reader::get_leaves(conduit::Node* node, std::unordered_map<std::s
 
 void hdf5_data_reader::pack(conduit::Node &node, size_t index) {
   static bool build_the_packing_map = true;
+
   if (build_the_packing_map) {
     build_the_packing_map = false;
     build_packing_map(node.child(0));
@@ -460,7 +468,7 @@ struct {
 
 void hdf5_data_reader::build_packing_map(conduit::Node &node) {
   std::unordered_map<std::string, std::vector<PackingData>> packing_data;
-  for (const auto& nd : m_useme_node_map) {
+  for (const auto& nd : m_useme_node_map_ptrs) {
     const conduit::Node& metadata = (*nd.second)[s_metadata_node_name];
     if (metadata.has_child("pack")) {
       const std::string& group_name = metadata["pack"].as_string();
@@ -506,7 +514,9 @@ void hdf5_data_reader::build_packing_map(conduit::Node &node) {
 }
 
 
-// recursive
+// Union your parent's metadata with yours; in case of
+// a key conflict, the child's values prevail
+// (recursive)
 void hdf5_data_reader::adjust_metadata(conduit::Node* node) {
   //note: next call creates the node if it doesn't exist
   conduit::Node* metadata = node->fetch_ptr(s_metadata_node_name);
@@ -628,7 +638,7 @@ const std::vector<int> hdf5_data_reader::get_data_dims(std::string name) const {
 int hdf5_data_reader::get_linearized_data_size(std::string name) const {
   std::unordered_map<std::string, int>::const_iterator iter = m_linearized_size_lookup_table.find(name);
   if (iter == m_linearized_size_lookup_table.end()) {
-    LBANN_ERROR("get_linearized_data_size was asked for info about an unknown field name: ", name);
+    LBANN_ERROR("get_linearized_data_size was asked for info about an unknown field name: ", name, "; table size: ", m_linearized_size_lookup_table.size(), " for role: ", get_role());
   }
   return iter->second;
 }
@@ -652,14 +662,14 @@ void hdf5_data_reader::construct_linearized_size_lookup_tables() {
   for (const auto& t : leaves) {
       const std::string field_name = t.first.substr(sz);
     // we only care about leaves that are being used in the current experiment
-    if (m_useme_node_map.find(field_name) != m_useme_node_map.end()) {
+    if (m_useme_node_map_ptrs.find(field_name) != m_useme_node_map_ptrs.end()) {
 
       // add entry to linearized size lookup table
       size_t n_elts = t.second->dtype().number_of_elements();
       m_linearized_size_lookup_table[field_name] = n_elts;
 
       // remainder of this block is filling in the m_data_dims_lookup_table
-      conduit::Node* nd = m_useme_node_map[field_name];
+      conduit::Node* nd = m_useme_node_map_ptrs[field_name];
       conduit::Node* metadata = nd->fetch_ptr(s_metadata_node_name);
 
       // easy case: scalars, vectors
@@ -733,7 +743,7 @@ void hdf5_data_reader::print_metadata(std::ostream& os) {
   }
 
   // print metadata and data types for all other nodes
-  for (const auto& t : m_useme_node_map) {
+  for (const auto& t : m_useme_node_map_ptrs) {
     const std::string& name = t.first;
     conduit::Node* node = t.second;
     os << "==================================================================\n"
@@ -773,13 +783,6 @@ void hdf5_data_reader::set_data_schema(const conduit::Schema& s) {
 void hdf5_data_reader::set_experiment_schema(const conduit::Schema& s) {
   m_experiment_schema = s;
   parse_schemas();
-}
-
-void hdf5_data_reader::clear() {
-  m_data_dims_lookup_table.clear();
-  m_linearized_size_lookup_table.clear();
-  m_packing_groups.clear();
-  m_useme_node_map.clear();
 }
 
 } // namespace lbann

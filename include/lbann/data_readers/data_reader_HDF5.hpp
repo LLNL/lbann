@@ -163,7 +163,7 @@ public:
   /** @brief this method is made public for testing */
   void set_data_schema(const conduit::Schema& s);
   /** @brief this method is made public for testing */
-  const std::unordered_map<std::string, conduit::Node*>& get_node_map() { 
+  const std::unordered_map<std::string, conduit::Node>& get_node_map() { 
     return  m_useme_node_map; 
   }
 
@@ -219,7 +219,8 @@ private:
   const std::string s_coerce_name = "coerce";
 
   /** maps: Node's path -> the Node */
-  std::unordered_map<std::string, conduit::Node*> m_useme_node_map;
+  std::unordered_map<std::string, conduit::Node*> m_useme_node_map_ptrs;
+  std::unordered_map<std::string, conduit::Node> m_useme_node_map;
 
   /** Schema supplied by the user; this contains a listing of the fields
    *  that will be used in an experiment; additionally may contain processing
@@ -353,14 +354,6 @@ private:
     return is_composite_node(*node);
   }
 
-  /** @brief clears all data structures 
-   *
-   * should be called at start of parse_schemas(), since this method may
-   * be called multiple times (ordinarily only once, but may be called
-   * during testing)
-   */ 
-  void clear();
-
 }; // class hdf5_data_reader
 
 //============================================================================
@@ -431,13 +424,13 @@ void hdf5_data_reader::repack_image(T* src_buf, size_t n_bytes, size_t n_rows, s
 
 template<typename T>
 void hdf5_data_reader::pack(std::string group_name, conduit::Node& node, size_t index) {
+  static std::unordered_set<std::string> add_to_map;
   if (m_packing_groups.find(group_name) == m_packing_groups.end()) {
     LBANN_ERROR("(m_packing_groups.find(", group_name, ") failed");
   }
   const PackingGroup& g = m_packing_groups[group_name];
   std::vector<T> data(g.n_elts);
   size_t idx = 0;
-  conduit::Node metadata;
   for (size_t k=0; k<g.names.size(); k++) {
     size_t n_elts = g.sizes[k];
     std::stringstream ss;
@@ -456,12 +449,15 @@ void hdf5_data_reader::pack(std::string group_name, conduit::Node& node, size_t 
   ss << '/' << LBANN_DATA_ID_STR(index) + '/' + group_name;
   node[ss.str()] = data;
 
-  static std::unordered_set<std::string> add_to_map;
   if (add_to_map.find(group_name) == add_to_map.end()) {
     add_to_map.insert(group_name);
+    conduit::Node metadata;
     metadata[s_composite_node] = true;
     m_experiment_schema[group_name][s_metadata_node_name] = metadata;
-    m_useme_node_map[group_name] = &(m_experiment_schema[group_name]);
+    m_data_schema[group_name][s_metadata_node_name] = metadata;
+std::cout << "XX ADDING "<<group_name<<" to m_useme_node_map\n";
+    m_useme_node_map[group_name] = m_experiment_schema[group_name];
+    m_useme_node_map_ptrs[group_name] = &(m_experiment_schema[group_name]);
   }
 }
 
