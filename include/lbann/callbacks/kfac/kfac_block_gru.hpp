@@ -63,7 +63,7 @@ bool is_matrix_height_hidden(const weight_type& matrix_type);
 std::pair<int, int> get_gru_weight_offset(
     weight_type matrix_type);
 
-/** @brief Copy r_t and i_t from the reserve space after the forward pass **/
+/** @brief Copy r_t and i_t from the reserve space after the forward pass. **/
 template <El::Device Device>
 void unpack_reserve_space(
     const DataType* reserve_space_fwd,
@@ -73,6 +73,18 @@ void unpack_reserve_space(
     size_t seq_length,
     size_t local_batch_size,
     const El::SyncInfo<Device>& sync_info);
+
+/** @brief Compute internal GRU gate state (r or i). **/
+template <El::Device Device>
+void gru_gate_forward(
+    const El::Matrix<DataType, Device>& W_y,
+    const El::Matrix<DataType, Device>& R_y,
+    const El::Matrix<DataType, Device>& b_Wy,
+    const El::Matrix<DataType, Device>& b_Ry,
+    const El::Matrix<DataType, Device>& x_t,
+    const El::Matrix<DataType, Device>& hprev_t,
+    const El::Matrix<DataType, Device>& biases_ones,
+    El::Matrix<DataType, Device>& y_t);
 
 /** @brief Compute d h_t / d g_t. **/
 template <El::Device Device>
@@ -152,6 +164,19 @@ class kfac_block_gru: public kfac_block<Device> {
 
  private:
 
+  /** @brief Recompute or copy (from cuDNN's reserve space if
+   * available) forward internal state (r and i).  **/
+  void get_r_i(
+      El::Matrix<DataType, Device>& r,
+      El::Matrix<DataType, Device>& i,
+      const El::Matrix<DataType, Device>& biases_ones,
+      const El::Matrix<DataType, Device>& local_inputs,
+      const El::Matrix<DataType, Device>& local_outputs,
+      const El::Matrix<DataType, Device>& h0,
+      size_t local_batch_size,
+      const El::SyncInfo<Device>& sync_info);
+
+  /** @brief Get the view of a weight matrix or a bias vector or its gradients. **/
   void get_weight_matrix(
       kfac_gru_util::weight_type matrix_type,
       El::Matrix<DataType, Device>& view);
