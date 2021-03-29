@@ -62,7 +62,7 @@ void one_hot_layer<TensorDataType, Layout, Device>::fp_compute() {
   El::Zero(output);
   LBANN_OMP_PARALLEL_FOR
   for (El::Int j=0; j<local_mini_batch_size; ++j) {
-    const auto& x = local_input(0,j);
+    const auto& x = local_input.CRef(0,j);
     const auto i_global = static_cast<El::Int>(std::floor(x));
     if (0 <= i_global
         && i_global < output_size

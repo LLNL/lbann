@@ -381,7 +381,8 @@ void gaussian_fill_parallel(
         El::View(local_vals, mat.Matrix());
       }
     }
-    else {
+
+    if (!local_vals.Viewing()) {
       local_vals.Resize(mat.LocalHeight(), mat.LocalWidth());
     }
 
