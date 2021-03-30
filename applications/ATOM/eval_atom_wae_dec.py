@@ -30,7 +30,10 @@ def construct_lc_launcher_args():
     parser.add_argument("--scheduler", type=str, default="slurm")
     parser.add_argument(
         "--data-module-file",
-        default="dataset.py",
+        #default="dataset.py",
+        default=os.path.join(
+            os.path.abspath(os.path.dirname(__file__)), "dataset.py"
+        ),
         help="specifies the module that contains the logic for loading data",
     )
     parser.add_argument(
@@ -200,6 +203,7 @@ def construct_data_reader(run_args):
     seq_len = run_args.sequence_length+run_args.z_dim
     print("SEQ LEN for env ", seq_len)
     os.environ["MAX_SEQ_LEN"] = str(seq_len) 
+    print("MODULE file ", module_file)
 
     module_name = os.path.splitext(os.path.basename(module_file))[0]
     module_dir = os.path.dirname(module_file)
