@@ -62,27 +62,32 @@ $PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml
 # Find the correct module to load
 SPACK_ARCH=$(spack arch)
 SPACK_ARCH_TARGET=$(spack arch -t)
-LBANN_FIND_CMD="spack find --format {hash:7} lbann@bamboo-${SPACK_ARCH_TARGET} arch=${SPACK_ARCH}"
-echo ${LBANN_FIND_CMD} | tee -a ${LOG}
-LBANN_HASH=$(${LBANN_FIND_CMD})
-if [[ -n "${LBANN_HASH}" && ! "${LBANN_HASH}" =~ "No package matches the query" ]]; then
-    LBANN_HASH_ARRAY=(${LBANN_HASH})
-    echo "Our array length is ${#LBANN_HASH_ARRAY[@]}"
-    if [[ ${#LBANN_HASH_ARRAY[@]} -ne 1 ]]; then
-        echo "Unable to find a single LBANN executable"
-        exit 1
-    fi
-    for h in ${LBANN_HASH_ARRAY[@]}
-    do
-        CMD="module load lbann/bamboo-${SPACK_ARCH_TARGET}-${h}"
-        echo ${CMD} | tee -a ${LOG}
-        [[ -z "${DRY_RUN:-}" ]] && ${CMD}
-    done
-else
-    echo "Unable to find the LBANN executable in Spack"
-    exit 1
-fi
+SPACK_LOAD_CMD="spack load lbann@bamboo-${SPACK_ARCH_TARGET} arch=${SPACK_ARCH}"
+echo ${SPACK_LOAD_CMD} | tee -a ${LOG}
+${SPACK_LOAD_CMD}
+echo $(which lbann)
+# LBANN_FIND_CMD="spack find --format {hash:7} lbann@bamboo-${SPACK_ARCH_TARGET} arch=${SPACK_ARCH}"
+# echo ${LBANN_FIND_CMD} | tee -a ${LOG}
+# LBANN_HASH=$(${LBANN_FIND_CMD})
+# if [[ -n "${LBANN_HASH}" && ! "${LBANN_HASH}" =~ "No package matches the query" ]]; then
+#     LBANN_HASH_ARRAY=(${LBANN_HASH})
+#     echo "Our array length is ${#LBANN_HASH_ARRAY[@]}"
+#     if [[ ${#LBANN_HASH_ARRAY[@]} -ne 1 ]]; then
+#         echo "Unable to find a single LBANN executable"
+#         exit 1
+#     fi
+#     for h in ${LBANN_HASH_ARRAY[@]}
+#     do
+#         CMD="module load lbann/bamboo-${SPACK_ARCH_TARGET}-${h}"
+#         echo ${CMD} | tee -a ${LOG}
+#         [[ -z "${DRY_RUN:-}" ]] && ${CMD}
+#     done
+# else
+#     echo "Unable to find the LBANN executable in Spack"
+#     exit 1
+# fi
 cd ..
+#exit
 
 echo "Task: Integration Tests"
 cd integration_tests
