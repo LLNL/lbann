@@ -288,7 +288,7 @@ class MolWAE(lbann.modules.Module):
                 if parent not in in_stack and parent not in (x_emb, z):
                     stack.append(parent)
                     in_stack[parent] = True
-
+        print("WAE save output? ", self.save_output)
         # Find argmax 
         if(self.save_output):
           y_slice = lbann.Slice(
