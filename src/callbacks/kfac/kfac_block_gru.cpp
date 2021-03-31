@@ -124,11 +124,9 @@ void kfac_block_gru<Device>::compute_local_kronecker_factors(
   std::unordered_map<kfac_gru_util::weight_type,
                      El::Matrix<DataType, Device>*> Gs;
   for(auto& matrix_type : kfac_gru_util::LEARNABLE_MATRICES) {
-    const size_t height = kfac_gru_util::is_matrix_height_hidden(matrix_type)
-        ? hidden_size : input_size;
     Gs[matrix_type] = &this->get_workspace_matrix(
         std::string("G_")+kfac_gru_util::get_matrix_type_name(matrix_type),
-        height, height);
+        hidden_size, hidden_size);
   }
 
   // r, i: (hidden_size*local_batch_size) x seq_length
@@ -149,13 +147,12 @@ void kfac_block_gru<Device>::compute_local_kronecker_factors(
   get_weight_matrix(kfac_gru_util::weight_type::bRh, biases_Rh);
 
   // Recompute hfc = R_h h_t + b_Rh
-  // OPTIMIZE: Merge the following two loops
   // OPTIMIZE: compute with a single GEMM call
   for(size_t t = 0; t < seq_length; t++) {
     auto hfc_t = El::View(hfc, El::ALL, El::IR(t*local_batch_size, (t+1)*local_batch_size));
     const auto h_prev =
         (t == 0
-         ? El::LockedView((El::Matrix<DataType, Device>&) h0, El::ALL, El::ALL) // OPTIMIZE
+         ? El::LockedView((El::Matrix<DataType, Device>&) h0)
          : El::LockedView((El::Matrix<DataType, Device>&) local_outputs,
                           El::IR(hidden_size*(t-1), hidden_size*t), El::ALL));
     El::Gemm(
@@ -168,66 +165,52 @@ void kfac_block_gru<Device>::compute_local_kronecker_factors(
         El::TypeTraits<DataType>::One(), hfc_t);
   }
 
-  // OPTIMIZE: Replace with a single kernel call
   std::unordered_map<kfac_gru_util::weight_type,
                      El::Matrix<DataType, Device>*> gs;
   for(auto& matrix_type : kfac_gru_util::LEARNABLE_MATRICES) {
-    const auto height = kfac_gru_util::is_matrix_height_hidden(matrix_type)
-        ? hidden_size : input_size;
     gs[matrix_type] = &this->get_workspace_matrix(
         std::string("g_")+kfac_gru_util::get_matrix_type_name(matrix_type),
-        height,
+        hidden_size,
         local_batch_size*seq_length);
   }
 
-  for(size_t t = 0; t < seq_length; t++) {
-    // OPTIMIZE: g_Rr_t and g_Wr_t is the same!
-    // hidden_size x local_batch_size
-    auto g_Rr_t = El::View(*gs[kfac_gru_util::weight_type::Rr], El::ALL, El::IR(t*local_batch_size, (t+1)*local_batch_size));
-    auto g_Ri_t = El::View(*gs[kfac_gru_util::weight_type::Ri], El::ALL, El::IR(t*local_batch_size, (t+1)*local_batch_size));
-    auto g_Rh_t = El::View(*gs[kfac_gru_util::weight_type::Rh], El::ALL, El::IR(t*local_batch_size, (t+1)*local_batch_size));
-    auto g_Wr_t = El::View(*gs[kfac_gru_util::weight_type::Wr], El::ALL, El::IR(t*local_batch_size, (t+1)*local_batch_size));
-    auto g_Wi_t = El::View(*gs[kfac_gru_util::weight_type::Wi], El::ALL, El::IR(t*local_batch_size, (t+1)*local_batch_size));
-    auto g_Wh_t = El::View(*gs[kfac_gru_util::weight_type::Wh], El::ALL, El::IR(t*local_batch_size, (t+1)*local_batch_size));
-    const auto x_t =
-        El::LockedView((El::Matrix<DataType, Device>&) local_inputs,
-                       El::IR(input_size*t, input_size*(t+1)), El::ALL);
-    const auto h_t =
-        El::LockedView((El::Matrix<DataType, Device>&) local_outputs,
-                       El::IR(hidden_size*t, hidden_size*(t+1)), El::ALL);
-    const auto hprev_t =
-        (t == 0
-         ? El::LockedView((El::Matrix<DataType, Device>&) h0, El::ALL, El::ALL) // OPTIMIZE
-         : El::LockedView((El::Matrix<DataType, Device>&) local_outputs,
-                          El::IR(hidden_size*(t-1), hidden_size*t), El::ALL));
-    const auto dh_t =
-        El::LockedView((El::Matrix<DataType, Device>&) local_errors,
-                       El::IR(hidden_size*t, hidden_size*(t+1)), El::ALL);
-    const auto r_t = El::LockedView(r, El::ALL, El::IR(t, t+1));
-    const auto i_t = El::LockedView(i, El::ALL, El::IR(t, t+1));
-    const auto hfc_t = El::LockedView(hfc, El::ALL, El::IR(t*local_batch_size, (t+1)*local_batch_size));
-    kfac_gru_util::get_g(h_t, hprev_t, dh_t, hfc_t, r_t, i_t,
-                         g_Rr_t, g_Ri_t, g_Rh_t,
-                         g_Wr_t, g_Wi_t, g_Wh_t,
-                         hidden_size, sync_info);
+  kfac_gru_util::get_g(
+      (El::Matrix<DataType, Device>&) local_outputs,
+      (El::Matrix<DataType, Device>&) h0,
+      (El::Matrix<DataType, Device>&) local_errors,
+      hfc, r, i,
+      *gs[kfac_gru_util::weight_type::Rr],
+      *gs[kfac_gru_util::weight_type::Ri],
+      *gs[kfac_gru_util::weight_type::Rh],
+      *gs[kfac_gru_util::weight_type::Wr],
+      *gs[kfac_gru_util::weight_type::Wi],
+      *gs[kfac_gru_util::weight_type::Wh],
+      hidden_size, seq_length, local_batch_size,
+      sync_info);
 
+  {
     const DataType alpha = 1.0/seq_length;
-    const DataType beta = (t == 0 ? El::TypeTraits<DataType>::Zero() : El::TypeTraits<DataType>::One());
-    El::Gemm(
-        El::NORMAL, El::TRANSPOSE,
-        alpha, h_t, h_t,
-        beta, A_h);
-    El::Gemm(
-        El::NORMAL, El::TRANSPOSE,
-        alpha, x_t, x_t,
-        beta, A_x);
+    for(size_t t = 0; t < seq_length; t++) {
+      const DataType beta = (t == 0 ? El::TypeTraits<DataType>::Zero() : El::TypeTraits<DataType>::One());
+      const auto x_t = El::LockedView(
+          (El::Matrix<DataType, Device>&) local_inputs,
+          El::IR(input_size*t, input_size*(t+1)), El::ALL);
+      const auto h_t = El::LockedView(
+          (El::Matrix<DataType, Device>&) local_outputs,
+          El::IR(hidden_size*t, hidden_size*(t+1)), El::ALL);
+      El::Gemm(
+          El::NORMAL, El::TRANSPOSE,
+          alpha, h_t, h_t, beta, A_h);
+      El::Gemm(
+          El::NORMAL, El::TRANSPOSE,
+          alpha, x_t, x_t, beta, A_x);
+    }
     for(auto& matrix_type : kfac_gru_util::LEARNABLE_MATRICES) {
       auto& g = *gs[matrix_type];
       auto& G = *Gs[matrix_type];
       El::Gemm(
           El::NORMAL, El::TRANSPOSE,
-          alpha, g, g,
-          beta, G);
+          alpha, g, g, El::TypeTraits<DataType>::Zero(), G);
     }
   }
 
@@ -379,20 +362,19 @@ void kfac_block_gru<Device>::update_kronecker_inverse(
     m_kronecker_inverse_A_h.Resize(Aave_h.Height(), Aave_h.Width());
     m_kronecker_inverse_A_x.Resize(Aave_x.Height(), Aave_x.Width());
   }
-  // TODO: Refactoring
-  const DataType pi = 1.0; // TODO: Compute pi if use_pi
+  const DataType pi = 1.0;
+  if(use_pi)
+    LBANN_ERROR("The GRU K-FAC callback does not currently support use_pi.");
   auto& Ainv_h = m_kronecker_inverse_A_h;
   auto& Ainv_x = m_kronecker_inverse_A_x;
   auto& ALinv_h = this->get_workspace_matrix("ALinv_h", Aave_h.Height(), Aave_h.Height());
   auto& ALinv_x = this->get_workspace_matrix("ALinv_x", Aave_x.Height(), Aave_x.Height());
   kfac_util::get_matrix_inverse(
       Ainv_h, ALinv_h, Aave_h, comm->am_trainer_master() && print_time,
-      DataType(damping_act*pi), 0,
-      false, sync_info);
+      DataType(damping_act*pi), 0, false, sync_info);
   kfac_util::get_matrix_inverse(
       Ainv_x, ALinv_x, Aave_x, comm->am_trainer_master() && print_time,
-      DataType(damping_act*pi), 0,
-      false, sync_info);
+      DataType(damping_act*pi), 0, false, sync_info);
 
   // Dump matrices for debugging
   if(print_matrix) {
@@ -531,10 +513,30 @@ kfac_block_gru<Device>::get_internal_matrix_info() const {
 }
 
 template <>
+void kfac_block_gru<El::Device::CPU>::check_dnn_lib_spec() const {
+}
+
+#ifdef LBANN_HAS_GPU
+template <>
+void kfac_block_gru<El::Device::GPU>::check_dnn_lib_spec() const {
+#ifdef LBANN_HAS_DNN_LIB
+  const auto math_type = dnn_lib::get_default_convolution_math_type();
+  if(math_type != CUDNN_DEFAULT_MATH) {
+    std::stringstream ss;
+    ss << "The structure of cuDNN's reserve space might not be"
+       << " what the GRU K-FAC callback expects when Tensor Cores are enabled.";
+    LBANN_WARNING(ss.str());
+  }
+#else // LBANN_HAS_DNN_LIB
+  LBANN_ERROR("cuDNN should be enabled to use this callback with GPUs.");
+#endif // LBANN_HAS_DNN_LIB
+}
+#endif // LBANN_HAS_GPU
+
+template <>
 void kfac_block_gru<El::Device::CPU>::get_r_i(
     El::Matrix<DataType, El::Device::CPU>& r,
     El::Matrix<DataType, El::Device::CPU>& i,
-    // OPTIMIZE: Create biases_ones locally
     const El::Matrix<DataType, El::Device::CPU>& biases_ones,
     const El::Matrix<DataType, El::Device::CPU>& local_inputs,
     const El::Matrix<DataType, El::Device::CPU>& local_outputs,
@@ -567,9 +569,8 @@ void kfac_block_gru<El::Device::CPU>::get_r_i(
                        El::IR(input_size*t, input_size*(t+1)), El::ALL);
     const auto hprev_t =
         (t == 0
-         ? El::LockedView(h0, El::ALL, El::ALL) // OPTIMIZE
-         : El::LockedView(local_outputs,
-                          El::IR(hidden_size*(t-1), hidden_size*t), El::ALL));
+         ? El::LockedView(h0)
+         : El::LockedView(local_outputs, El::IR(hidden_size*(t-1), hidden_size*t), El::ALL));
     kfac_gru_util::gru_gate_forward(
         weights_Wi, weights_Ri, biases_Wi, biases_Ri,
         x_t, hprev_t, biases_ones, i_t);
@@ -704,8 +705,8 @@ void kfac_gru_util::unpack_reserve_space(
     const size_t seq_length,
     const size_t local_batch_size,
     const El::SyncInfo<El::Device::CPU>& sync_info) {
+  LBANN_ERROR("This function shouldn't be called because oneDNN does not have cuDNN's reserve space.");
 }
-
 
 template <El::Device Device>
 void kfac_gru_util::gru_gate_forward(
@@ -741,7 +742,7 @@ void kfac_gru_util::gru_gate_forward(
 template <>
 void kfac_gru_util::get_g(
     const El::Matrix<DataType, El::Device::CPU>& h,
-    const El::Matrix<DataType, El::Device::CPU>& hprev,
+    const El::Matrix<DataType, El::Device::CPU>& h0,
     const El::Matrix<DataType, El::Device::CPU>& dh,
     const El::Matrix<DataType, El::Device::CPU>& hfc,
     const El::Matrix<DataType, El::Device::CPU>& r,
@@ -752,10 +753,12 @@ void kfac_gru_util::get_g(
     El::Matrix<DataType, El::Device::CPU>& g_Wr,
     El::Matrix<DataType, El::Device::CPU>& g_Wi,
     El::Matrix<DataType, El::Device::CPU>& g_Wh,
-    size_t count,
+    const size_t hidden_size,
+    const size_t seq_length,
+    const size_t local_batch_size,
     const El::SyncInfo<El::Device::CPU>& sync_info) {
   const DataType *h_buf = h.LockedBuffer();
-  const DataType *hprev_buf = hprev.LockedBuffer();
+  const DataType *h0_buf = h0.LockedBuffer();
   const DataType *dh_buf = dh.LockedBuffer();
   const DataType *hfc_buf = hfc.LockedBuffer();
   const DataType *r_buf = r.LockedBuffer();
@@ -766,20 +769,36 @@ void kfac_gru_util::get_g(
   DataType *g_Rr_buf = g_Rr.Buffer();
   DataType *g_Ri_buf = g_Ri.Buffer();
   DataType *g_Rh_buf = g_Rh.Buffer();
+
 #pragma omp parallel for
-  for(size_t gid = 0; gid < count; gid++) {
-    const DataType hd = (h_buf[gid]-i_buf[gid]*hprev_buf[gid])/(1.0-i_buf[gid]);
-    const DataType dhdhd = 1.0-i_buf[gid];
-    const DataType dhdr = dhdhd * tanh_deriv(tanh_inv(hd)) * hfc_buf[gid];
-    const DataType dhdi = hprev_buf[gid] - hd;
-    const DataType drdg_Rr = sigmoid_deriv(sigmoid_inv(r_buf[gid]));
-    const DataType didg_Ri = sigmoid_deriv(sigmoid_inv(i_buf[gid]));
+  for(size_t gid = 0; gid < hidden_size*seq_length*local_batch_size; gid++) {
+    const size_t i_hidden = gid%hidden_size;
+    const size_t i_seq = (gid/hidden_size)%seq_length;
+    const size_t i_batch = gid/hidden_size/seq_length;
+    const size_t i_hsl = i_hidden + i_seq*hidden_size + i_batch*hidden_size*seq_length;
+    const size_t i_hl  = i_hidden + i_batch*hidden_size;
+    const size_t i_hls = i_hidden + i_batch*hidden_size + i_seq*hidden_size*local_batch_size;
+
+    const DataType r_val = r_buf[i_hls];
+    const DataType i_val = i_buf[i_hls];
+    const DataType dh_val = dh_buf[i_hsl];
+
+    const DataType hprev =
+        (i_seq == 0 ? h0_buf[i_hl] : h_buf[i_hsl - hidden_size]);
+    const DataType hd = (h_buf[i_hsl]-i_val*hprev)/(1.0-i_val);
+    const DataType dhdhd = 1.0-i_val;
+    const DataType dhdr = dhdhd * tanh_deriv(tanh_inv(hd)) * hfc_buf[i_hls];
+    const DataType dhdi = hprev - hd;
+
+    const DataType drdg_Rr = sigmoid_deriv(sigmoid_inv(r_val));
+    const DataType didg_Ri = sigmoid_deriv(sigmoid_inv(i_val));
     const DataType dhddg_Wh = tanh_deriv(tanh_inv(hd));
-    const DataType dhddg_Rh = dhddg_Wh * r_buf[gid];
-    g_Wr_buf[gid] = g_Rr_buf[gid] = dh_buf[gid] * dhdr * drdg_Rr;
-    g_Wi_buf[gid] = g_Ri_buf[gid] = dh_buf[gid] * dhdi * didg_Ri;
-    g_Wh_buf[gid] = dh_buf[gid] * dhdhd * dhddg_Wh;
-    g_Rh_buf[gid] = dh_buf[gid] * dhdhd * dhddg_Rh;
+    const DataType dhddg_Rh = dhddg_Wh * r_val;
+
+    g_Wr_buf[i_hls] = g_Rr_buf[i_hls] = dh_val * dhdr * drdg_Rr;
+    g_Wi_buf[i_hls] = g_Ri_buf[i_hls] = dh_val * dhdi * didg_Ri;
+    g_Wh_buf[i_hls] = dh_val * dhdhd * dhddg_Wh;
+    g_Rh_buf[i_hls] = dh_val * dhdhd * dhddg_Rh;
   }
 }
 

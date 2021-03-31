@@ -90,7 +90,7 @@ void gru_gate_forward(
 template <El::Device Device>
 void get_g(
     const El::Matrix<DataType, Device>& h,
-    const El::Matrix<DataType, Device>& hprev,
+    const El::Matrix<DataType, Device>& h0,
     const El::Matrix<DataType, Device>& dh,
     const El::Matrix<DataType, Device>& hfc,
     const El::Matrix<DataType, Device>& r,
@@ -101,7 +101,9 @@ void get_g(
     El::Matrix<DataType, Device>& g_Wr,
     El::Matrix<DataType, Device>& g_Wi,
     El::Matrix<DataType, Device>& g_Wh,
-    size_t count,
+    size_t hidde_size,
+    size_t seq_length,
+    size_t local_batch_size,
     const El::SyncInfo<Device>& sync_info);
 
 } // namespace kfac_bn_util
@@ -119,6 +121,8 @@ class kfac_block_gru: public kfac_block<Device> {
                  size_t layer_id,
                  size_t inverse_proc_rank)
       : kfac_block<Device>(layer, callback, layer_id, inverse_proc_rank) {
+
+    check_dnn_lib_spec();
 
     const auto num_layers = get_gru_layer()->get_num_layers();
     if(num_layers > 1) {
@@ -163,6 +167,8 @@ class kfac_block_gru: public kfac_block<Device> {
   get_preconditioned_grad_buffers() override;
 
  private:
+
+  void check_dnn_lib_spec() const;
 
   /** @brief Recompute or copy (from cuDNN's reserve space if
    * available) forward internal state (r and i).  **/

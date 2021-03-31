@@ -80,38 +80,53 @@ __global__ void unpack_reserve_space_kernel(
 
 template <typename TensorDataType>
 __global__ void get_g_kernel(
-    const TensorDataType * __restrict__ h,
-    const TensorDataType * __restrict__ hprev,
-    const TensorDataType * __restrict__ dh,
-    const TensorDataType * __restrict__ hfc,
-    const TensorDataType * __restrict__ r,
-    const TensorDataType * __restrict__ i,
-    TensorDataType * __restrict__ g_Rr,
-    TensorDataType * __restrict__ g_Ri,
-    TensorDataType * __restrict__ g_Rh,
-    TensorDataType * __restrict__ g_Wr,
-    TensorDataType * __restrict__ g_Wi,
-    TensorDataType * __restrict__ g_Wh,
-    const size_t count) {
+    const TensorDataType * __restrict__ h,   // hidden_size*seq_length x local_batch_size
+    const TensorDataType * __restrict__ h0,  // hidden_size x local_batch_size
+    const TensorDataType * __restrict__ dh,  // hidden_size*seq_length x local_batch_size
+    const TensorDataType * __restrict__ hfc, // hidden_size x local_batch_size*seq_length
+    const TensorDataType * __restrict__ r,   // hidden_size*local_batch_size x seq_length
+    const TensorDataType * __restrict__ i,   // hidden_size*local_batch_size x seq_length
+    TensorDataType * __restrict__ g_Rr, // hidden_size x local_batch_size*seq_length
+    TensorDataType * __restrict__ g_Ri, // hidden_size x local_batch_size*seq_length
+    TensorDataType * __restrict__ g_Rh, // hidden_size x local_batch_size*seq_length
+    TensorDataType * __restrict__ g_Wr, // hidden_size x local_batch_size*seq_length
+    TensorDataType * __restrict__ g_Wi, // hidden_size x local_batch_size*seq_length
+    TensorDataType * __restrict__ g_Wh, // hidden_size x local_batch_size*seq_length
+    const size_t hidden_size,
+    const size_t seq_length,
+    const size_t local_batch_size) {
   const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
-  if(gid < count) {
+  if(gid < hidden_size*seq_length*local_batch_size) {
+    const size_t i_hidden = gid%hidden_size;
+    const size_t i_seq = (gid/hidden_size)%seq_length;
+    const size_t i_batch = gid/hidden_size/seq_length;
+    const size_t i_hsl = i_hidden + i_seq*hidden_size + i_batch*hidden_size*seq_length;
+    const size_t i_hl  = i_hidden + i_batch*hidden_size;
+    const size_t i_hls = i_hidden + i_batch*hidden_size + i_seq*hidden_size*local_batch_size;
+
     // dh/dh' = diag(1-i_t)
     // dh/dr = diag{(dh/dh')*tanh'(tanh^-1(h'_t))*hfc}
     // dh/di = diag{h_{t-1} - h'_t}
     // dr/dg_Rr = diag{sigmoid'(sigmoid^-1(r_t))}
     // g_Rr = Rr h_{t-1}
-    const TensorDataType hd = (h[gid]-i[gid]*hprev[gid])/(1.0-i[gid]);
-    const TensorDataType dhdhd = 1.0-i[gid];
-    const TensorDataType dhdr = dhdhd * tanh_deriv(tanh_inv(hd)) * hfc[gid];
-    const TensorDataType dhdi = hprev[gid] - hd;
-    const TensorDataType drdg_Rr = sigmoid_deriv(sigmoid_inv(r[gid]));
-    const TensorDataType didg_Ri = sigmoid_deriv(sigmoid_inv(i[gid]));
+    const TensorDataType r_val = r[i_hls];
+    const TensorDataType i_val = i[i_hls];
+    const TensorDataType dh_val = dh[i_hsl];
+    const TensorDataType hprev =
+        (i_seq == 0 ? h0[i_hl] : h[i_hsl - hidden_size]);
+    const TensorDataType hd = (h[i_hsl]-i_val*hprev)/(1.0-i_val);
+    const TensorDataType dhdhd = 1.0-i_val;
+    const TensorDataType dhdr = dhdhd * tanh_deriv(tanh_inv(hd)) * hfc[i_hls];
+    const TensorDataType dhdi = hprev - hd;
+    const TensorDataType drdg_Rr = sigmoid_deriv(sigmoid_inv(r_val));
+    const TensorDataType didg_Ri = sigmoid_deriv(sigmoid_inv(i_val));
     const TensorDataType dhddg_Wh = tanh_deriv(tanh_inv(hd));
-    const TensorDataType dhddg_Rh = dhddg_Wh * r[gid];
-    g_Wr[gid] = g_Rr[gid] = dh[gid] * dhdr * drdg_Rr;
-    g_Wi[gid] = g_Ri[gid] = dh[gid] * dhdi * didg_Ri;
-    g_Wh[gid] = dh[gid] * dhdhd * dhddg_Wh;
-    g_Rh[gid] = dh[gid] * dhdhd * dhddg_Rh;
+    const TensorDataType dhddg_Rh = dhddg_Wh * r_val;
+
+    g_Wr[i_hls] = g_Rr[i_hls] = dh_val * dhdr * drdg_Rr;
+    g_Wi[i_hls] = g_Ri[i_hls] = dh_val * dhdi * didg_Ri;
+    g_Wh[i_hls] = dh_val * dhdhd * dhddg_Wh;
+    g_Rh[i_hls] = dh_val * dhdhd * dhddg_Rh;
   }
 }
 
@@ -120,7 +135,7 @@ __global__ void get_g_kernel(
 template <>
 void kfac_gru_util::get_g(
     const El::Matrix<DataType, El::Device::GPU>& h,
-    const El::Matrix<DataType, El::Device::GPU>& hprev,
+    const El::Matrix<DataType, El::Device::GPU>& h0,
     const El::Matrix<DataType, El::Device::GPU>& dh,
     const El::Matrix<DataType, El::Device::GPU>& hfc,
     const El::Matrix<DataType, El::Device::GPU>& r,
@@ -131,21 +146,24 @@ void kfac_gru_util::get_g(
     El::Matrix<DataType, El::Device::GPU>& g_Wr,
     El::Matrix<DataType, El::Device::GPU>& g_Wi,
     El::Matrix<DataType, El::Device::GPU>& g_Wh,
-    const size_t count,
+    const size_t hidden_size,
+    const size_t seq_length,
+    const size_t local_batch_size,
     const El::SyncInfo<El::Device::GPU>& sync_info) {
   constexpr size_t block_size = 256;
+  const size_t count = hidden_size*seq_length*local_batch_size;
   const size_t grid_size = (count + block_size - 1) / block_size;
   get_g_kernel<DataType>
       <<<grid_size, block_size, 0, sync_info.Stream()>>>(
           h.LockedBuffer(),
-          hprev.LockedBuffer(),
+          h0.LockedBuffer(),
           dh.LockedBuffer(),
           hfc.LockedBuffer(),
           r.LockedBuffer(),
           i.LockedBuffer(),
           g_Rr.Buffer(), g_Ri.Buffer(), g_Rh.Buffer(),
           g_Wr.Buffer(), g_Wi.Buffer(), g_Wh.Buffer(),
-          count);
+          hidden_size, seq_length, local_batch_size);
 }
 
 template <>
