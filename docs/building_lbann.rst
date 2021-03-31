@@ -25,7 +25,7 @@ Building with `Spack <https://github.com/llnl/spack>`_
           and an MPI library.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Setup Spack
+Setup Spack (One-time setup)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 1.  Download and install `Spack <https://github.com/llnl/spack>`_
@@ -39,8 +39,30 @@ Setup Spack
         export SPACK_ROOT=<path to installation>/spack.git
         source ${SPACK_ROOT}/share/spack/setup-env.sh
 
+2.  Update spack to use the new clingo concretizer.  There are two
+    steps to this: bootstrapping clingo and modifying the repositories
+    configuration file.
 
-2.  LBANN will use `Spack environments
+    .. code-block:: bash
+
+       module load gcc/8.3.1     # Load a compiler with C++17 support
+       spack compiler add        # Make Spack aware of the new compiler
+       spack solve zlib          # Force Spack to bootstrap clingo
+
+    Then open the `config.yaml` file:
+
+    .. code-block:: bash
+
+       emacs -nw <path to installation>/spack.git/etc/spack/config.yaml
+
+    Ensure the `config.yaml` file contains the following lines:
+
+    .. code-block:: bash
+
+       config:
+         concretizer: clingo
+
+3.  LBANN will use `Spack environments
     <https://spack.readthedocs.io/en/latest/environments.html>`_ to
     specify and manage both compilers and versions of dependent
     libraries.  Go to the install instructions for :ref:`users

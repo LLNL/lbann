@@ -32,7 +32,7 @@ CMD_LINE_VARIANTS=
 
 # Default versions of Hydrogen, DiHydrogen, and Aluminum - use head of repo
 HYDROGEN_VER="@develop"
-ALUMINUM_VER="@0.7.0"
+ALUMINUM_VER="@master"
 DIHYDROGEN_VER="@develop"
 
 ################################################################
@@ -57,10 +57,8 @@ Options:
   ${C}--help${N}                  Display this help message and exit.
   ${C}--clean-build${N}           Delete the local link to the build directory
   ${C}--clean-deps${N}            Forcibly uninstall Hydrogen, Aluminum, and DiHydrogen dependencies
-  ${C}--config-only${N}           Run the spack dev-build command up to the configure stage only
   ${C}-d | --install-deps${N}     Install the lbann dependencies in addition to building from local source
   ${C}--dependencies-only${N}     Stop after installing the lbann dependencies
-  ${C}--drop-in SHELL${N}         Drop into a shell with all of the spack build environment setup after setting up the dev-build
   ${C}--dry-run${N}               Dry run the commands (no effect)
   ${C}-l | --label${N}            LBANN version label prefix: (default label is local-<SPACK_ARCH_TARGET>,
                           and is built and installed in the spack environment lbann-<label>-<SPACK_ARCH_TARGET>
@@ -93,23 +91,11 @@ while :; do
         --clean-deps)
             CLEAN_DEPS="TRUE"
             ;;
-        --config-only)
-            DEV_BUILD_FLAGS+=" -u cmake"
-            ;;
         -d|--install-deps)
             INSTALL_DEPS="TRUE"
             ;;
         --dependencies-only)
             DEPENDENCIES_ONLY="TRUE"
-            ;;
-        --drop-in)
-            if [ -n "${2}" ]; then
-                DEV_BUILD_FLAGS+=" --drop-in ${2}"
-                shift
-            else
-                echo "\"${1}\" option requires a non-empty option argument" >&2
-                exit 1
-            fi
             ;;
         --dry-run)
             DRY_RUN="TRUE"
@@ -265,12 +251,7 @@ fi
 
 if [[ ! "${LBANN_VARIANTS}" =~ .*"^hydrogen".* ]]; then
     # If the user didn't supply a specific version of Hydrogen on the command line add one
-    if [[ ("${LBANN_VARIANTS}" =~ .*"~al".*) ]]; then
-        HYDROGEN="^hydrogen${HYDROGEN_VER}"
-    else
-        # with Aluminum
-        HYDROGEN="^hydrogen${HYDROGEN_VER}+al"
-    fi
+    HYDROGEN="^hydrogen${HYDROGEN_VER}"
 fi
 
 if [[ (! "${LBANN_VARIANTS}" =~ .*"^aluminum".*) && (! "${LBANN_VARIANTS}" =~ .*"~al".*) ]]; then
@@ -281,12 +262,7 @@ fi
 if [[ ! "${LBANN_VARIANTS}" =~ .*"^dihydrogen".* ]]; then
     # If the user didn't supply a specific version of DiHydrogen on the command line add one
     # Due to concretizer errors force the openmp variant for DiHydrogen
-    if [[ ("${LBANN_VARIANTS}" =~ .*"~al".*) ]]; then
-        # without Aluminum
-        DIHYDROGEN="^dihydrogen${DIHYDROGEN_VER}+openmp~al"
-    else
-        DIHYDROGEN="^dihydrogen${DIHYDROGEN_VER}+openmp"
-    fi
+    DIHYDROGEN="^dihydrogen${DIHYDROGEN_VER}"
 fi
 
 GPU_VARIANTS_ARRAY=('+cuda' '+rocm')
@@ -298,10 +274,6 @@ do
         set_center_specific_gpu_arch ${CENTER} ${SPACK_ARCH_TARGET}
         # Prepend the GPU_ARCH_VARIANTS for the LBANN variants if the +cuda variant is defined
         LBANN_VARIANTS=" ${GPU_ARCH_VARIANTS} ${LBANN_VARIANTS}"
-        # Due to concretizer errors force the GPU ARCH variant for DiHydrogen
-        if [[ ! "${LBANN_VARIANTS}" =~ .*"^dihydrogen".* ]]; then
-            DIHYDROGEN+="${GPU_VARIANTS} ${GPU_ARCH_VARIANTS}"
-        fi
     fi
 done
 
@@ -332,6 +304,11 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
     CMD="spack env create ${LBANN_ENV}"
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+
+#     SPACK_ENV_YAML_FILE="${SPACK_ROOT}/var/spack/environments/${LBANN_ENV}/spack.yaml"
+# cat <<EOF  >> ${SPACK_ENV_YAML_FILE}
+#   concretization: together
+# EOF
 
 fi
 
@@ -448,20 +425,8 @@ CMD="spack develop --no-clone -p ${LBANN_HOME} ${LBANN_SPEC}"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
-CMD="spack install --only dependencies ${INSTALL_DEV_BUILD_EXTRAS} ${LBANN_SPEC}"
-[[ -n "${INSTALL_DEPS:-}" ]] && echo ${CMD} | tee -a ${LOG}
-if [[ -z "${DRY_RUN:-}" && -n "${INSTALL_DEPS:-}" ]]; then
-    eval ${CMD}
-    if [[ $? -ne 0 ]]; then
-        echo "-----------------------------------------"
-        echo "Spack installation of dependenceis FAILED"
-        echo "-----------------------------------------"
-        exit 1
-    fi
-    if [[ -n "${DEPENDENCIES_ONLY:-}" ]]; then
-        exit
-    fi
-fi
+# Add any extra packages that you want to build in conjuction with the LBANN package
+# spack add py-merlin
 
 LINK_DIR="${LINK_DIR:-${CORE_BUILD_PATH}}"
 
@@ -494,8 +459,8 @@ fi
 
 ##########################################################################################
 # Actually install LBANN from local source
-# Really you could use the install command, but the dev-build has nice options and better output
-CMD="spack dev-build --source-path ${LBANN_HOME} ${DEV_BUILD_FLAGS} ${INSTALL_DEV_BUILD_EXTRAS} ${LBANN_SPEC}"
+CMD="spack install"
+#CMD="spack dev-build --source-path ${LBANN_HOME} ${DEV_BUILD_FLAGS} ${INSTALL_DEV_BUILD_EXTRAS} ${LBANN_SPEC}"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
