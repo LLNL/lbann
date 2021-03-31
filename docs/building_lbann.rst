@@ -49,13 +49,7 @@ Setup Spack (One-time setup)
        spack compiler add        # Make Spack aware of the new compiler
        spack solve zlib          # Force Spack to bootstrap clingo
 
-    Then open the `config.yaml` file:
-
-    .. code-block:: bash
-
-       emacs -nw <path to installation>/spack.git/etc/spack/config.yaml
-
-    Ensure the `config.yaml` file contains the following lines:
+    Create the file `${SPACK_ROOT}/etc/spack/config.yaml` if it doesn't exist. Verify that this file contains the following lines, adding them if necessary:
 
     .. code-block:: bash
 
