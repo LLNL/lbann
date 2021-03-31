@@ -87,6 +87,12 @@ void construct_std_options() {
                         " The number of resulting trainers is "
                         " num_procs / procs_per_trainer.",
                         0);
+  arg_parser.add_option(TRAINER_GRID_HEIGHT,
+                        {"--trainer_grid_height"},
+                        utils::ENV("LBANN_TRAINER_GRID_HEIGHT"),
+                        "Height of 2D process grid for each trainer. "
+                        "Default grid is approximately square.",
+                        -1);
 }
 
 /// Split the MPI communicator into trainers
@@ -94,6 +100,7 @@ void construct_std_options() {
 int allocate_trainer_resources(lbann_comm *comm) {
   auto& arg_parser = global_argument_parser();
   int procs_per_trainer = arg_parser.get<int>(PROCS_PER_TRAINER);
+  int trainer_grid_height = arg_parser.get<int>(TRAINER_GRID_HEIGHT);
 
   if (procs_per_trainer == 0) {
     procs_per_trainer = comm->get_procs_in_world();
@@ -102,8 +109,9 @@ int allocate_trainer_resources(lbann_comm *comm) {
   // Set up the communicator and get the grid based on the commandline spec.
   // We do not currently support splitting different trainers in different ways,
   // as this implies different grids.
-  if (procs_per_trainer != comm->get_procs_per_trainer()) {
-    comm->split_trainers(procs_per_trainer);
+  if (procs_per_trainer != comm->get_procs_per_trainer()
+      || trainer_grid_height != comm->get_trainer_grid().Height()) {
+    comm->split_trainers(procs_per_trainer, trainer_grid_height);
   }
 
   return procs_per_trainer;

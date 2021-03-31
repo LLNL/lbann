@@ -152,9 +152,9 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
   // Tensor dimensions
   const auto& input_dims = this->get_input_dims();
   const auto& output_dims = this->get_output_dims();
-  const std::vector<int> input_channel_dims(
+  const std::vector<size_t> input_channel_dims(
     input_dims.begin()+1, input_dims.end());
-  const std::vector<int> output_channel_dims(
+  const std::vector<size_t> output_channel_dims(
     output_dims.begin()+1, output_dims.end());
   const auto& input_channel_size = std::accumulate(
     input_channel_dims.begin(), input_channel_dims.end(),

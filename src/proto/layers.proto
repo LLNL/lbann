@@ -92,6 +92,7 @@ message Layer {
     Tessellate tessellate = 327;
     Scatter scatter = 334;
     Gather gather = 335;
+    BatchwiseReduceSum batchwise_reduce_sum = 336;
 
     // Learning layers
     FullyConnected fully_connected = 11;
@@ -208,6 +209,7 @@ message Layer {
     ChannelwiseSoftmax channelwise_softmax = 608;
     DistEmbedding dist_embedding = 609;
     UniformHash uniform_hash = 610;
+    RowwiseWeightsNorms rowwise_weights_norms = 611;
 
   }
 
@@ -478,8 +480,9 @@ message Layer {
     string num_neurons=2;
   }
 
+  /** @brief Reduce tensor to scalar. */
   message Reduction {
-    string mode=1; //"sum" or "average"
+    string mode=1; // "sum" (default) or "mean"
   }
 
   message Evaluation {
@@ -581,6 +584,12 @@ message Layer {
     *  gather along a specified dimension.
     */
   message Gather {}
+
+  /** @brief Sum of tensor entries along batch dimension
+    *
+    *  Output tensor has same shape as input tensor.
+    */
+  message BatchwiseReduceSum {}
 
   /////////////////////
   // Learning layers //
@@ -835,6 +844,23 @@ message Layer {
    *  @warning Currently only supported on GPU.
    */
   message UniformHash {}
+
+  /** @brief L2 norm of each row of a weights matrix.
+   *
+   *  @warning This layer is experimental and finnicky. It is intended
+   *  for use with the matrix weights from a fully-connected layer, and
+   *  other use-cases may have strange behavior.
+   *
+   *  Given a weights object, this layer computes the L2 norm for each
+   *  row of the underlying matrix. Note that the internal matrix may
+   *  have different dimensions than the logical weight dimensions.
+   *
+   *  This layer expects to have one weights object. During setup, that
+   *  weights object should be initialized by another layer before this
+   *  layer's setup phase. Setting a "hint layer" may be necessary to
+   *  enforce this ordering.
+   */
+  message RowwiseWeightsNorms {}
 
 } // message Layer
 

@@ -39,7 +39,7 @@ def perturb_latent_vectors(latent_file, noise_factors):
                 output_df[latent_cols[i]] = latent_array[:,i]
         else:
             output_df = latent_df
-        output_file = '%s_noise_sd_%.2f.npy' % (os.path.splitext(latent_file)[0], noise_factor)
+        output_file = '%s_noise_sd_%.1f.npy' % (os.path.splitext(latent_file)[0], noise_factor)
         print("Out df shape ", output_df.shape)
         np.save(output_file, output_df.to_numpy())
         print("Wrote %s" % output_file)
@@ -49,9 +49,13 @@ def main():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--latent_file", "-i", required=True)
-    noise_factors = [0.0, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 1.0, 1.2, 1.5, 1.7, 2.0]
-
+    parser.add_argument("--noise_factor", "-f", required=True)
+    
+    #noise_factors = [0.0, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 1.0, 1.2, 1.5, 1.7, 2.0]
+    noise_factors = []
     args = parser.parse_args()
+    noise_factors.append(float(args.noise_factor))
+
     perturb_latent_vectors(args.latent_file, noise_factors)
 
 

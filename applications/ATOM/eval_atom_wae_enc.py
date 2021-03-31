@@ -52,7 +52,7 @@ def construct_lc_launcher_args():
     parser.add_argument("--num-embeddings", type=int, default=None)
     parser.add_argument("--batch-size", type=int, default=512)
     parser.add_argument("--num-epochs", type=int, default=20)
-    parser.add_argument("--z-dim", type=int, default=128, help="latent space dim")
+    parser.add_argument("--z-dim", type=int, default=512, help="latent space dim")
     parser.add_argument("--lamda", type=float, default=0.001, help="weighting of adversarial loss")
     parser.add_argument("--data-reader-prototext", default=None)
     parser.add_argument("--pad-index", type=int, default=None)
@@ -249,9 +249,9 @@ def main():
     # dump the config to the experiment_dir so that it can be used to load the model in pytorch (moses codebase)
     ppn = 4 if run_args.scheduler == "lsf" else 2
     print("args:\n" + str(run_args))
-    if(run_args.scheduler == 'slurm'):
-      import torch
-      torch.save(run_args, "{}/{}_config.pt".format(experiment_dir, run_args.job_name))
+    #if(run_args.scheduler == 'slurm'):
+    #  import torch
+    #  torch.save(run_args, "{}/{}_config.pt".format(experiment_dir, run_args.job_name))
 
     m_lbann_args=f"--load_model_weights_dir_is_complete --load_model_weights_dir={run_args.dump_model_dir} --vocab={run_args.vocab} --num_samples={run_args.num_samples} --sequence_length={run_args.sequence_length}  --num_io_threads={run_args.num_io_threads} --no_header={run_args.no_header} --delimiter={run_args.delimiter}"
     if(run_args.data_reader_prototext):
