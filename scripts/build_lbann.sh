@@ -174,13 +174,6 @@ while :; do
     shift
 done
 
-function exit_on_failure()
-{
-    local cmd="$1"
-    echo "FAILED: ${cmd}"
-    exit 1
-}
-
 function uninstall_specific_versions()
 {
     local package="$1"
@@ -248,6 +241,23 @@ if [[ -f ${LOG} ]]; then
     echo ${CMD}
     [[ -z "${DRY_RUN:-}" ]] && ${CMD}
 fi
+
+function exit_on_failure()
+{
+    local cmd="$1"
+    echo "FAILED: ${cmd}"
+    echo "##########################################################################################" | tee -a ${LOG}
+    echo "LBANN is being installed in a spack environment named ${LBANN_ENV} but an error occured, access it via:" | tee -a ${LOG}
+    echo "  spack env activate -p ${LBANN_ENV}" | tee -a ${LOG}
+    echo "To rebuild LBANN from source drop into a shell with the spack build environment setup (requires active environment):" | tee -a ${LOG}
+    echo "  spack build-env lbann -- bash" | tee -a ${LOG}
+    echo "  cd spack-build-${LBANN_SPEC_HASH}" | tee -a ${LOG}
+    echo "  ninja install" | tee -a ${LOG}
+    echo "##########################################################################################" | tee -a ${LOG}
+    echo "All details of the run are logged to ${LOG}"
+    echo "##########################################################################################"
+    exit 1
+}
 
 if [[ ! "${LBANN_VARIANTS}" =~ .*"^hydrogen".* ]]; then
     # If the user didn't supply a specific version of Hydrogen on the command line add one
