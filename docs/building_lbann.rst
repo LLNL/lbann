@@ -175,7 +175,7 @@ platform and the nominal options in the CMake build environment.
 
     .. code-block:: bash
 
-        <path to lbann repo>/scripts/build_lbann.sh -d -- +dihydrogen +cuda +half
+        <path to lbann repo>/scripts/build_lbann.sh -d -- +cuda +half
 
     Note that the named version and resulting environment can be
     controlled via the :code:`-l` flag. A full list of options can be
@@ -256,7 +256,6 @@ build from local repositories:
                     --hydrogen-repo <path>/Hydrogen.git
                     --aluminum-repo <path>/Aluminum.git
                     --dihydrogen-repo <path>/DiHydrogen.git
-                    -- +dihydrogen
 
 .. toctree::
    :maxdepth: 1
