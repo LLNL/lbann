@@ -92,7 +92,7 @@ that want to train new or existing models using the Python front-end.
 
           .. code-block:: bash
 
-             module load gcc/8.3.1     # Load a compiler with C++17 support
+             module load gcc/8.3.1     # Load a compiler with C++14 support
              spack compiler add        # Make Spack aware of the new compiler
              spack solve zlib          # Force Spack to bootstrap clingo
 

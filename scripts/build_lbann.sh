@@ -320,7 +320,7 @@ fi
 function exit_on_failure()
 {
     local cmd="$1"
-    echo "FAILED: ${cmd}"
+    echo -e "FAILED: ${cmd}"
     echo "##########################################################################################" | tee -a ${LOG}
     echo "LBANN is being installed in a spack environment named ${LBANN_ENV} but an error occured, access it via:" | tee -a ${LOG}
     echo "  spack env activate -p ${LBANN_ENV}" | tee -a ${LOG}
@@ -484,7 +484,7 @@ fi
 CMD="spack solve -l ${LBANN_DEV_PATH_SPEC}"
 echo ${CMD} | tee -a ${LOG}
 if [[ -z "${DRY_RUN:-}" ]]; then
-    eval ${CMD} || exit_on_failure "${CMD}"
+    eval ${CMD} || exit_on_failure "${CMD}\nIf the error is that boostrapping failed try something like 'module load gcc/8.3.1; spack compiler add' and then rerunning"
 fi
 # Get the spack hash before dev-build is called
 LBANN_SPEC_HASH=$(spack spec -l ${LBANN_DEV_PATH_SPEC} | grep lbann | grep arch=${SPACK_ARCH_PLATFORM} | awk '{print $1}')
