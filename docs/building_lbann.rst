@@ -24,6 +24,8 @@ Building with `Spack <https://github.com/llnl/spack>`_
           different compiler than the default OSX command line tools
           and an MPI library.
 
+.. _setup_spack:
+
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Setup Spack (One-time setup)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -39,24 +41,7 @@ Setup Spack (One-time setup)
         export SPACK_ROOT=<path to installation>/spack.git
         source ${SPACK_ROOT}/share/spack/setup-env.sh
 
-2.  Update spack to use the new clingo concretizer.  There are two
-    steps to this: bootstrapping clingo and modifying the repositories
-    configuration file.
-
-    .. code-block:: bash
-
-       module load gcc/8.3.1     # Load a compiler with C++17 support
-       spack compiler add        # Make Spack aware of the new compiler
-       spack solve zlib          # Force Spack to bootstrap clingo
-
-    Create the file `${SPACK_ROOT}/etc/spack/config.yaml` if it doesn't exist. Verify that this file contains the following lines, adding them if necessary:
-
-    .. code-block:: bash
-
-       config:
-         concretizer: clingo
-
-3.  LBANN will use `Spack environments
+2.  LBANN will use `Spack environments
     <https://spack.readthedocs.io/en/latest/environments.html>`_ to
     specify and manage both compilers and versions of dependent
     libraries.  Go to the install instructions for :ref:`users
@@ -89,11 +74,34 @@ that want to train new or existing models using the Python front-end.
 
 .. note:: Users should make themselves comfortable with Spack and `its
           idioms for installing packages
-          <https://spack-tutorial.readthedocs.io/en/latest/tutorial_basics.html>`_
-          and experts can `customizations to their Spack ecosystem
+          <https://spack-tutorial.readthedocs.io/en/latest/tutorial_basics.html>`_,
+          and experts can add `customizations to their Spack ecosystem
           <https://spack.readthedocs.io/en/latest/configuration.html>`_
           (and modify these instructions) to ensure that they get the
           compilers and externals that they want.
+
+.. _setting_up_clingo:
+
+.. note:: LBANN works best with Spack's new concretizer clingo.
+          Please enable it by performing the following steps.  This
+          only needs to be done once per spack repository.
+
+          To update spack to use the new clingo concretizer.  There are two
+          steps to this: bootstrapping clingo and modifying the repositories
+          configuration file.
+
+          .. code-block:: bash
+
+             module load gcc/8.3.1     # Load a compiler with C++17 support
+             spack compiler add        # Make Spack aware of the new compiler
+             spack solve zlib          # Force Spack to bootstrap clingo
+
+          Create the file `${SPACK_ROOT}/etc/spack/config.yaml` if it doesn't exist. Verify that this file contains the following lines, adding them if necessary:
+
+          .. code-block:: bash
+
+             config:
+               concretizer: clingo
 
 .. note:: If your model requires custom layers or data readers, you
           may need to install LBANN as a developer, which would allow
@@ -140,10 +148,10 @@ software.
       spack load lbann@develop
 
 Please note that when getting LBANN to build as a user will encounter
-some issues with the Spack legacy concretizer.  It will require
-getting just the "right" invocation and we are working on making it
-smoother.  For the time being, it may be easier to use the developer
-build instructions.
+some issues with the Spack legacy concretizer and use of the new
+clingo concreizer is highly recommended :ref:`(see above)
+<setuping_up_clingo>`.  Using the legacy concretizer will require getting
+just the "right" invocation and we suggest using clingo.
 
 .. _build_lbann_from_source:
 
@@ -189,6 +197,14 @@ platform and the nominal options in the CMake build environment.
    .. warning:: Depending on the completeness of the externals
                 specification, the initial build of all of the
                 standard packages in Spack can take a long time.
+
+   .. note:: The build script will automatically update your Spack
+             repository to use clingo.  The manual instructions for
+             doing this are detailed in the :ref:`user instructions
+             <setuping_up_clingo>`.  Note that if Spack's
+             bootstrapping fails due to not finding a valid compiler,
+             please refer to the explicit user instructions on how to
+             have spack find a modern enough C++ compiler.
 
 2.  Once the installation has completed, to run LBANN you will want to
     load the spack module for LBANN with one of the following

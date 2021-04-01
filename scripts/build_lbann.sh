@@ -215,6 +215,81 @@ if [[ ${VALID_SPACK} -eq 2 ]]; then
     exit 1
 fi
 
+##########################################################################################
+# Make sure that Spack is using Clingo
+function ask_permission()
+{
+    local question="$1"
+    echo "${question}"
+    read -p "Continue (y/n)? " choice
+    case "$choice" in
+        y|Y ) RESPONSE=1 ;;
+        n|N ) RESPONSE=0 ;;
+        * ) RESPONSE=0 ;;
+    esac
+    return ${RESPONSE}
+}
+
+SPACK_SITE_CONFIG="${SPACK_ROOT}/etc/spack/config.yaml"
+if [[ ! -f "${SPACK_SITE_CONFIG}" ]]; then
+    ask_permission "No site specific ${SPACK_SITE_CONFIG} file found, create one?"
+    RESPONSE=$?
+    if [[ ${RESPONSE} -eq 1 ]]; then
+        echo "Creating a new ${SPACK_SITE_CONFIG} file."
+        if [[ -z "${DRY_RUN:-}" ]]; then
+            cat <<EOF >> ${SPACK_SITE_CONFIG}
+config:
+  concretizer: clingo
+EOF
+        fi
+    else
+        echo "${SCRIPT} requires use of Spack's clingo optimizer -- please enable it"
+        echo "e.g. create a site specific config at ${SPACK_SITE_CONFIG}"
+        cat <<EOF
+config:
+  concretizer: clingo
+EOF
+        exit 1
+    fi
+else
+    SPACK_CONCRETIZER=$(grep "concretizer:" ${SPACK_SITE_CONFIG} | awk '{print $2}')
+    if [[ -z "${SPACK_CONCRETIZER}" ]]; then
+        ask_permission "Site specific ${SPACK_SITE_CONFIG} file does not have a explicit concretizer field, add one?"
+        RESPONSE=$?
+        if [[ ${RESPONSE} -eq 1 ]]; then
+            CMD="cp ${SPACK_SITE_CONFIG} ${SPACK_SITE_CONFIG}.pre_lbann"
+            echo "Appending 'concretizer: clingo' and saving old config ${CMD}"
+            if [[ -z "${DRY_RUN:-}" ]]; then
+                ${CMD}
+                cat <<EOF >> ${SPACK_SITE_CONFIG}
+  concretizer: clingo
+EOF
+            fi
+        else
+            echo "${SCRIPT} requires use of Spack's clingo optimizer -- please enable it"
+            echo "e.g. add the line to ${SPACK_SITE_CONFIG}"
+            cat <<EOF
+  concretizer: clingo
+EOF
+            exit 1
+        fi
+    else
+        if [[ ! "${SPACK_CONCRETIZER}" == "clingo" ]]; then
+            echo "${SCRIPT} requires use of Spack's clingo optimizer -- please enable it"
+            echo "e.g. edit the line in ${SPACK_SITE_CONFIG}"
+            cat <<EOF
+  concretizer: original
+EOF
+            echo "to look like"
+            cat <<EOF
+  concretizer: clingo
+EOF
+            exit 1
+        fi
+    fi
+fi
+##########################################################################################
+
 # Detect system parameters
 CLUSTER=$(hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g')
 
@@ -406,7 +481,7 @@ if [[ -n "${ALUMINUM_PATH:-}" ]]; then
 fi
 ##########################################################################################
 
-CMD="spack spec -l ${LBANN_DEV_PATH_SPEC}"
+CMD="spack solve -l ${LBANN_DEV_PATH_SPEC}"
 echo ${CMD} | tee -a ${LOG}
 if [[ -z "${DRY_RUN:-}" ]]; then
     eval ${CMD} || exit_on_failure "${CMD}"
