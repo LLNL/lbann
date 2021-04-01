@@ -1,4 +1,4 @@
-.. role:: bash(code)
+ .. role:: bash(code)
           :language: bash
 
 ====================
@@ -96,7 +96,9 @@ that want to train new or existing models using the Python front-end.
              spack compiler add        # Make Spack aware of the new compiler
              spack solve zlib          # Force Spack to bootstrap clingo
 
-          Create the file `${SPACK_ROOT}/etc/spack/config.yaml` if it doesn't exist. Verify that this file contains the following lines, adding them if necessary:
+          Create the file :code:`${SPACK_ROOT}/etc/spack/config.yaml`
+          if it doesn't exist. Verify that this file contains the
+          following lines, adding them if necessary:
 
           .. code-block:: bash
 
@@ -109,10 +111,10 @@ that want to train new or existing models using the Python front-end.
 
 The best practices are to create a Spack environment (similar to a
 Python virtual environment) and to use something like your compute
-center's `modules` packages to provide paths to system installed
+center's :code:`modules` packages to provide paths to system installed
 software.
 
-1. Create and activate spack environment called (replace <env name>):
+1. Create and activate spack environment called (replace :code:`<env name>`):
 
 .. code-block:: bash
 
@@ -134,8 +136,10 @@ software.
    spack install lbann <variants and dependencies>
    spack load lbann@develop
 
-.. note:: Here is an example of a set of commands that works on an
-          x86_64 architecture with Nvidia P100 GPUs:
+.. note::
+
+   Here is an example of a set of commands that works on an x86_64
+   architecture with Nvidia P100 GPUs:
 
    .. code-block:: bash
 
@@ -149,8 +153,8 @@ software.
 
 Please note that when getting LBANN to build as a user will encounter
 some issues with the Spack legacy concretizer and use of the new
-clingo concreizer is highly recommended :ref:`(see above)
-<setuping_up_clingo>`.  Using the legacy concretizer will require getting
+clingo concretizer is highly recommended :ref:`(see above)
+<setting_up_clingo>`. Using the legacy concretizer will require getting
 just the "right" invocation and we suggest using clingo.
 
 .. _build_lbann_from_source:
@@ -201,7 +205,7 @@ platform and the nominal options in the CMake build environment.
    .. note:: The build script will automatically update your Spack
              repository to use clingo.  The manual instructions for
              doing this are detailed in the :ref:`user instructions
-             <setuping_up_clingo>`.  Note that if Spack's
+             <setting_up_clingo>`.  Note that if Spack's
              bootstrapping fails due to not finding a valid compiler,
              please refer to the explicit user instructions on how to
              have spack find a modern enough C++ compiler.
@@ -234,15 +238,15 @@ For more control over the LBANN build, please see :ref:`the complete
 documentation for building LBANN directly with CMake
 <build-with-cmake>`.
 
-------------------------------------------
+--------------------------------------------
 Debugging some common Spack related issues
-------------------------------------------
+--------------------------------------------
 
 One common issue that can occur is that the modules can get out of
 sync between what the LBANN environment does and the Spack defaults.
 As a result the generated module files can get out of whack.  LBANN
 uses a module hierarchy naming scheme that is compatible with other
-modules, provides for name collision, and reduces the cluttter in the
+modules, provides for name collision, and reduces the clutter in the
 module name.  If your modules are not working you can regenerate them
 in a LBANN Spack environment compatible approach:
 
