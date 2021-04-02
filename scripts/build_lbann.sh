@@ -390,10 +390,10 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
-#     SPACK_ENV_YAML_FILE="${SPACK_ROOT}/var/spack/environments/${LBANN_ENV}/spack.yaml"
-# cat <<EOF  >> ${SPACK_ENV_YAML_FILE}
-#   concretization: together
-# EOF
+    SPACK_ENV_YAML_FILE="${SPACK_ROOT}/var/spack/environments/${LBANN_ENV}/spack.yaml"
+    cat <<EOF  >> ${SPACK_ENV_YAML_FILE}
+  concretization: together
+EOF
 
 fi
 
@@ -512,6 +512,7 @@ echo ${CMD} | tee -a ${LOG}
 
 # Add any extra packages that you want to build in conjuction with the LBANN package
 # spack add py-merlin
+spack add hpctoolkit@2020.03.01
 
 LINK_DIR="${LINK_DIR:-${CORE_BUILD_PATH}}"
 
