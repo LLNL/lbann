@@ -272,7 +272,7 @@ void dump_weights::do_dump_weights(const model& m, visitor_hook hook) {
   std::string dir = El::BuildString(
     get_shared_checkpoint_dirname(
       t.get_name(),
-      context.get_training_algorithm().get_name(),
+      context.get_training_algorithm().get_type(),
       m_directory.c_str(),
       hook,
       context.get_execution_mode(),
@@ -290,7 +290,7 @@ void dump_weights::do_dump_weights(const model& m, visitor_hook hook) {
   if (m.get_comm()->am_trainer_master()) {
     auto latest_file = get_last_shared_checkpoint_filename(
       t.get_name(),
-      context.get_training_algorithm().get_name(),
+      context.get_training_algorithm().get_type(),
       m_directory.c_str());
     write_latest(
       latest_file,

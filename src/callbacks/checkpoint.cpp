@@ -421,7 +421,7 @@ bool checkpoint::reload_model(model *m) {
     *(m->get_comm()),
     "Reloading Model " + m->get_name(),
     get_active_trainer().get_name(),
-    get_active_training_algorithm().get_name(),
+    get_active_training_algorithm().get_type(),
     [m](persist& p_ref) {return m->load_from_checkpoint_shared(p_ref);},
     [m](persist& p_ref) {return m->load_from_checkpoint_distributed(p_ref);});
 }
@@ -448,7 +448,7 @@ bool checkpoint::restart(model *m) {
     *(m->get_comm()),
     "Restarting",
     get_active_trainer().get_name(),
-    get_active_training_algorithm().get_name(),
+    get_active_training_algorithm().get_type(),
     [&m, &c](persist& p_ref) {
       return c.get_trainer().load_from_checkpoint_shared(*m, c);
     },
@@ -488,9 +488,16 @@ void checkpoint::do_distributed_checkpoint(
   makedir(dir.c_str());
 
   // now create directories per ranks
+  //
+  // NOTE: training_algorithm::get_type() is not entirely correct
+  // here. It could cause problems if multiple instances of the same
+  // callback are checkpointed at the same time, but currently we
+  // don't do this. The issue with "get_name()" is that we might not
+  // know the name of the training algorithm on restore (since the
+  // training algos themselves are not checkpointed).
   auto const epochdir = get_distributed_checkpoint_dirname(
     t.get_name(),
-    this->get_active_training_algorithm().get_name(),
+    this->get_active_training_algorithm().get_type(),
     comm.get_rank_in_trainer(),
     dir,
     hook,
@@ -525,7 +532,7 @@ void checkpoint::do_distributed_checkpoint(
   {
     auto const latest_file = get_last_distributed_checkpoint_filename(
       t.get_name(),
-      this->get_active_training_algorithm().get_name(),
+      this->get_active_training_algorithm().get_type(),
       dir);
     write_latest(
       latest_file,
@@ -554,7 +561,7 @@ void checkpoint::do_shared_checkpoint(
 
   auto const epochdir = get_shared_checkpoint_dirname(
     t.get_name(),
-    this->get_active_training_algorithm().get_name(),
+    this->get_active_training_algorithm().get_type(),
     dir,
     hook,
     mode,
@@ -580,7 +587,7 @@ void checkpoint::do_shared_checkpoint(
   if (comm.am_trainer_master()) {
     auto const latest_file = get_last_shared_checkpoint_filename(
       t.get_name(),
-      this->get_active_training_algorithm().get_name(),
+      this->get_active_training_algorithm().get_type(),
       dir);
     write_latest(latest_file, hook, mode, epoch, step);
   }
