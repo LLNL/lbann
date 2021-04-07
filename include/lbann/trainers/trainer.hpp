@@ -292,11 +292,11 @@ private:
   /** @brief Current callbacks to process. */
   std::vector<std::shared_ptr<callback_base>> m_callbacks;
 
-  /** @brief Data Coordinator holding trainers data readers */
-  std::unique_ptr<data_coordinator> m_data_coordinator;
-
   /** @brief Threads available for I/O */
   std::unique_ptr<thread_pool> m_io_thread_pool;
+
+  /** @brief Data Coordinator holding trainers data readers */
+  std::unique_ptr<data_coordinator> m_data_coordinator;
 
   /** @brief Communication domain for the trainer. */
   lbann_comm* m_comm;
