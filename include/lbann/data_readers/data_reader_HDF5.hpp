@@ -196,7 +196,7 @@ private:
   // note that setting to 'false' invokes both a memory and communication
   // penalty
   //TODO: not yet implemented
-  bool m_delete_packed_fields = false;
+  bool m_delete_packed_fields = true;
 
   struct PackingGroup {
     std::string group_name;
