@@ -308,17 +308,28 @@ private:
    */
   size_t m_max_mini_batch_size;
 
-  // Root of the random seed tree: either default or user supplied
+  /** @brief Root of the random seed tree.
+   *  @details Either default or user supplied.
+   */
   int m_root_random_seed;
-  // Random seed used for the general RNGs
+
+  /** @brief Random seed used for the general RNGs. */
   int m_random_seed;
-  // Random seed used for the RNG used to fetch data
+
+  /** @brief Random seed used for the RNG used to fetch data. */
   int m_data_seq_random_seed;
 
   /** @brief Flag that allows input layers to fetch data in the background. */
   bool m_background_io_allowed;
-
 };
+
+/** @brief Get a reference to the global trainer visible to this rank. */
+trainer& get_trainer();
+
+/** @brief Get a const reference to the global trainer visible to this
+ *         rank.
+ */
+trainer const& get_const_trainer();
 
 } // namespace lbann
 
