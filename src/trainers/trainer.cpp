@@ -32,32 +32,17 @@
 #include "lbann/data_coordinator/data_coordinator_metadata.hpp"
 #include "lbann/execution_algorithms/sgd_training_algorithm.hpp"
 #include "lbann/execution_contexts/sgd_execution_context.hpp"
-#include "lbann/io/persist.hpp"
 #include "lbann/io/persist_impl.hpp"
-#include "lbann/layers/transform/dummy.hpp"
-#include "lbann/layers/transform/evaluation.hpp"
-#include "lbann/layers/transform/split.hpp"
-#include "lbann/metrics/layer_metric.hpp"
-#include "lbann/objective_functions/layer_term.hpp"
 #include "lbann/utils/description.hpp"
-#include "lbann/utils/omp_diagnostics.hpp"
-#include "lbann/utils/random.hpp"
+#include "lbann/utils/memory.hpp"
 #include "lbann/utils/serialize.hpp"
 
 // LBANN proto
 #include <lbann.pb.h>
 
-// External dependencies
-#include <mpi.h>
-
-// C dependencies
-#include <unistd.h>
-
 // STL
-#include <iomanip>
-#include <queue>
+#include <functional>
 #include <string>
-#include <unordered_set>
 
 namespace lbann {
 
@@ -66,15 +51,15 @@ namespace lbann {
 ////////////////////////////////////////////////////////////
 
 trainer::trainer(lbann_comm* comm,
-                 size_t mini_batch_size,
-                 std::unique_ptr<data_coordinator> dc)
-  : m_comm(comm), m_max_mini_batch_size(mini_batch_size), m_io_thread_pool(),
-    m_background_io_allowed(true)
+                 std::unique_ptr<data_coordinator> dc,
+                 size_t mini_batch_size)
+  : m_data_coordinator{std::move(dc)},
+    m_comm{comm},
+    m_max_mini_batch_size{mini_batch_size},
+    m_background_io_allowed{true}
 {
-
   // Default trainer name
   m_name = "trainer" + std::to_string(m_comm->get_trainer_rank());
-  m_data_coordinator = std::move(dc);
   m_data_coordinator->set_trainer(*this);
 }
 
@@ -327,7 +312,7 @@ void trainer::evaluate(observer_ptr<model> model,
 // Checkpointing
 // =============================================
 
-bool trainer::save_to_checkpoint_shared()
+void trainer::save_to_checkpoint_shared()
 {
   for_each_execution_context([this](observer_ptr<execution_context> ctx) {
     ctx->save_to_checkpoint_shared(this->get_persist_obj());
@@ -345,31 +330,28 @@ bool trainer::save_to_checkpoint_shared()
     );
   }
 
-  return get_data_coordinator().save_to_checkpoint_shared(get_persist_obj());
+  if (!get_data_coordinator().save_to_checkpoint_shared(get_persist_obj()))
+    LBANN_ERROR("Failed to checkpoint data coordinator.");
 }
 
-bool trainer::load_from_checkpoint_shared(persist& p)
+void trainer::load_from_checkpoint_shared(persist& p)
 {
-  try {
-    load_from_shared_cereal_archive(*this,
-                                    p,
-                                    *get_comm(),
+  load_from_shared_cereal_archive(*this,
+                                  p,
+                                  *get_comm(),
 #ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
-                                    "trainer.xml"
+                                  "trainer.xml"
 #else  // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
-                                    "trainer.bin"
+                                  "trainer.bin"
 #endif // LBANN_HAS_CEREAL_XML_ARCHIVES
     );
-  }
-  catch (NonexistentArchiveFile const& e) {
-    LBANN_MSG(e.what());
-    return false;
-  }
 
-  return get_data_coordinator().load_from_checkpoint_shared(p);
+  // FIXME (trb 04/07/21): This check should move to the data coordinator.
+  if (!get_data_coordinator().load_from_checkpoint_shared(p))
+    LBANN_ERROR("Failed to reload data coordinator.");
 }
 
-bool trainer::load_from_checkpoint_shared(model& m, execution_context& c)
+void trainer::load_from_checkpoint_shared(model& m, execution_context& c)
 {
   // Reload the RNG once the trainer and all of the  models are setup
   // to avoid spurious turns of the RNGs
@@ -411,19 +393,21 @@ bool trainer::load_from_checkpoint_shared(model& m, execution_context& c)
     }
   }
 
-  return get_data_coordinator().load_from_checkpoint_shared(get_persist_obj());
+  if (!get_data_coordinator().load_from_checkpoint_shared(get_persist_obj()))
+    LBANN_ERROR("Failed to reload data coordinator.");
 }
 
-bool trainer::save_to_checkpoint_distributed()
+void trainer::save_to_checkpoint_distributed()
 {
   for_each_execution_context([this](observer_ptr<execution_context> ctx) {
     ctx->save_to_checkpoint_distributed(this->get_persist_obj());
   });
   save_rng_to_checkpoint_distributed(get_persist_obj(), m_comm);
-  return get_data_coordinator().save_to_checkpoint_shared(get_persist_obj());
+  if (!get_data_coordinator().save_to_checkpoint_shared(get_persist_obj()))
+    LBANN_ERROR("Failed to checkpoint data coordinator");
 }
 
-bool trainer::load_from_checkpoint_distributed(persist& p)
+void trainer::load_from_checkpoint_distributed(persist& p)
 {
   read_cereal_archive(*this,
                       p,
@@ -433,10 +417,11 @@ bool trainer::load_from_checkpoint_distributed(persist& p)
                       "trainer.bin"
 #endif // LBANN_HAS_CEREAL_XML_ARCHIVES
   );
-  return get_data_coordinator().load_from_checkpoint_distributed(p);
+  if (!get_data_coordinator().load_from_checkpoint_distributed(p))
+    LBANN_ERROR("Failed to reload data coordinator.");
 }
 
-bool trainer::load_from_checkpoint_distributed(model& m, execution_context& c)
+void trainer::load_from_checkpoint_distributed(model& m, execution_context& c)
 {
   load_rng_from_checkpoint(get_persist_obj(), m_comm);
 
@@ -472,15 +457,16 @@ bool trainer::load_from_checkpoint_distributed(model& m, execution_context& c)
       }
     }
   }
-  return get_data_coordinator().load_from_checkpoint_distributed(
-    get_persist_obj());
+  if (!get_data_coordinator().load_from_checkpoint_distributed(
+        get_persist_obj()))
+    LBANN_ERROR("Failed to reload data coordinator.");
 }
 
-void trainer::write_proto(lbann_data::Trainer* proto)
+void trainer::write_proto(lbann_data::Trainer& proto)
 {
-  proto->Clear();
+  proto.Clear();
   if (m_comm->am_world_master()) {
-    proto->set_mini_batch_size(m_max_mini_batch_size);
+    proto.set_mini_batch_size(m_max_mini_batch_size);
   }
 }
 

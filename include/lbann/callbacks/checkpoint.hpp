@@ -192,8 +192,8 @@ public:
                               const std::string& task_label,
                               const std::string& trainer_name,
                               const std::string& alg_name,
-                              std::function<bool(/*const */persist&)> reload_shared_ckpt,
-                              std::function<bool(/*const */persist&)> reload_distributed_ckpt);
+                              std::function<void(/*const */persist&)> reload_shared_ckpt,
+                              std::function<void(/*const */persist&)> reload_distributed_ckpt);
   bool reload_model(model *m);
   bool reload_trainer(trainer *t);
   bool restart(model *m);
