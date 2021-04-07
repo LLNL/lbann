@@ -30,7 +30,6 @@
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
 #include "lbann/io/persist.hpp"
-#include "lbann/utils/cloneable.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
 
 // Forward declaration
@@ -127,7 +126,7 @@ private:
    *  @details Step counts the number of iterations in the training
    *  algorithm's internal state
    */
-  size_t m_step = 0;
+  size_t m_step = 0UL;
 
   /** @brief Whether to terminate training.
    *  @details If true, training will terminate immediately before
