@@ -83,10 +83,10 @@ set_center_specific_modules()
         # Disable the StdEnv for systems in LC
         case ${spack_arch_target} in
             "power9le" | "power8le") # Lassen, Ray
-                MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 cuda/11.1.1 spectrum-mpi/rolling-release python/3.7.2"
+                MODULE_CMD="module load gcc/8.3.1 cuda/11.1.1 spectrum-mpi/rolling-release python/3.7.2 hpctoolkit/2020-03-01"
                 ;;
             "broadwell" | "haswell" | "sandybridge") # Pascal, RZHasGPU, Surface
-                MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 cuda/11.1.0 mvapich2/2.3 python/3.7.2"
+                MODULE_CMD="module load gcc/8.3.1 cuda/11.1.0 mvapich2/2.3 python/3.7.2"
                 ;;
             "ivybridge") # Catalyst
                 MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 mvapich2/2.3 python/3.7.2"
@@ -210,6 +210,14 @@ cat <<EOF  >> ${yaml}
       externals:
       - spec: rdma-core@20 arch=${spack_arch}
         prefix: /usr
+    hpctoolkit:
+      buildable: False
+      version:
+      -  2020.03.01
+      externals:
+      - spec: hpctoolkit@2020.03.01+papi arch=${spack_arch}
+        modules:
+        - hpctoolkit/2020-03-01
 EOF
                 ;;
             "zen" | "zen2")
@@ -282,12 +290,12 @@ cat <<EOF  >> ${yaml}
       - spec: rdma-core@20 arch=${spack_arch}
         prefix: /usr
     openmpi:
-      buildable: False
-      version:
-      - 4.0
-      externals:
-      - spec: openmpi@4.0.0 arch=${spack_arch}
-        prefix: /opt/openmpi/4.0/gnu
+       buildable: False
+       version:
+       - 4.0
+       externals:
+       - spec: openmpi@4.0.0 arch=${spack_arch}
+         prefix: /opt/openmpi/4.0/gnu
 EOF
                 ;;
             *)
