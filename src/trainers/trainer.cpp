@@ -261,7 +261,7 @@ void trainer::apply(training_algorithm& alg,
 }
 
 void trainer::train(observer_ptr<model> model, El::Int num_epochs, El::Int num_batches) {
-  auto sgd = make_unique<sgd_training_algorithm>();
+  auto sgd = make_unique<sgd_training_algorithm>("sgd_train");
   auto key = check_and_build_execution_context(*sgd.get(), model, execution_mode::training);
   DataReaderMetaData dr_metadata = get_data_coordinator().get_dr_metadata();
   sgd.get()->setup_models({model}, get_max_mini_batch_size(), dr_metadata);
@@ -270,7 +270,7 @@ void trainer::train(observer_ptr<model> model, El::Int num_epochs, El::Int num_b
 }
 
 void trainer::evaluate(observer_ptr<model> model, execution_mode mode, El::Int num_batches) {
-  auto sgd = make_unique<sgd_training_algorithm>();
+  auto sgd = make_unique<sgd_training_algorithm>("sgd_evaluate");
   auto key = check_and_build_execution_context(*sgd.get(), model, mode);
   DataReaderMetaData dr_metadata = get_data_coordinator().get_dr_metadata();
   sgd.get()->setup_models({model}, get_max_mini_batch_size(), dr_metadata);

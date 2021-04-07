@@ -43,12 +43,15 @@ namespace lbann {
 class trainer;
 class training_algorithm;
 
-class termination_criteria {
+class termination_criteria
+{
 public:
+  virtual ~termination_criteria() = default;
   size_t num_steps;
 };
 
-class execution_context {
+class execution_context
+{
 public:
   /** Constructor. */
   execution_context(trainer& trainer,
@@ -58,79 +61,88 @@ public:
   virtual ~execution_context() = default;
 
   /** Copy execution_context. */
-  virtual std::unique_ptr<execution_context> copy_execution_context() const {
+  virtual std::unique_ptr<execution_context> copy_execution_context() const
+  {
     // Use explicit construction of unique pointer since copy
     // constructor is protected and cannot be accessed in make_unique
     return std::unique_ptr<execution_context>{new execution_context(*this)};
   }
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize( Archive & ar );
+  template <class Archive> void serialize(Archive& ar);
 
   /** @brief Return the state of the execution context as a string */
-  virtual std::string get_state_string() const noexcept {
-    return build_string("ec.", to_string(get_execution_mode()),
-                        ".step.", get_step());
+  virtual std::string get_state_string() const noexcept
+  {
+    return build_string("ec.",
+                        to_string(get_execution_mode()),
+                        ".step.",
+                        get_step());
   }
 
   /** @brief Current step in the training algorithm
-    *  @details Step counts the number of iterations in the training
-    *  algorithm's internal state
-    */
+   *  @details Step counts the number of iterations in the training
+   *  algorithm's internal state
+   */
   size_t get_step() const noexcept { return m_step; }
 
   /** @brief Increment the current step in the training algorithm
-    *  @details Increment the step count in the training
-    *  algorithm's internal state
-    */
+   *  @details Increment the step count in the training
+   *  algorithm's internal state
+   */
   void inc_step() noexcept { ++m_step; }
 
   /** Get the mode that the trainer is currenting executing. */
-  inline void set_execution_mode(execution_mode mode) noexcept {
+  inline void set_execution_mode(execution_mode mode) noexcept
+  {
     m_execution_mode = mode;
   }
 
   /** Get the mode that the trainer is currenting executing. */
-  inline execution_mode get_execution_mode() const noexcept {
+  inline execution_mode get_execution_mode() const noexcept
+  {
     return m_execution_mode;
   }
 
   /** Return true if the flag to stop training is set. */
-  bool get_terminate_training() const {
-    return m_terminate_training;
-  }
+  bool get_terminate_training() const { return m_terminate_training; }
   /** Set the terminate training flag (on or off). */
-  void set_terminate_training(bool f) {
-    m_terminate_training = f;
-  }
+  void set_terminate_training(bool f) { m_terminate_training = f; }
 
   /** Grab the trainer from the execution context */
-  const trainer& get_trainer() const {
-    return *m_trainer;
+  const trainer& get_trainer() const { return *m_trainer; }
+
+  trainer& get_trainer()
+  {
+    return const_cast<trainer&>(
+      static_cast<const execution_context&>(*this).get_trainer());
   }
 
-  trainer& get_trainer() {
-    return const_cast<trainer&>(static_cast<const execution_context&>(*this).get_trainer());
-  }
-
-  const training_algorithm& get_training_algorithm() const {
+  const training_algorithm& get_training_algorithm() const
+  {
     return *m_training_algorithm;
   }
 
-  training_algorithm& get_training_algorithm() {
-    return const_cast<training_algorithm&>(static_cast<const execution_context&>(*this).get_training_algorithm());
+  training_algorithm& get_training_algorithm()
+  {
+    return const_cast<training_algorithm&>(
+      static_cast<const execution_context&>(*this).get_training_algorithm());
   }
 
   thread_pool& get_io_thread_pool() const;
 
-  lbann_comm& get_comm() const {
-    if (!m_comm) { LBANN_ERROR("m_comm is null"); }
+  lbann_comm& get_comm() const
+  {
+    if (!m_comm) {
+      LBANN_ERROR("m_comm is null");
+    }
     return *m_comm;
   };
 
   /** Checkpoint training_algorithm to given file descriptor */
   virtual void save_to_checkpoint_shared(persist& p);
-  /** Restore training_algorithm by reading checkpoint from given file descriptor */
+  /** Restore training_algorithm by reading checkpoint from given file
+   * descriptor */
   virtual void load_from_checkpoint_shared(persist& p);
   virtual void save_to_checkpoint_distributed(persist& p);
   virtual void load_from_checkpoint_distributed(persist& p);
@@ -148,7 +160,8 @@ protected:
   execution_context& operator=(execution_context&& other) = default;
 
 private:
-  /** Pointer to the training context (execution environment) for the training algorithm */
+  /** Pointer to the training context (execution environment) for the training
+   * algorithm */
   trainer* m_trainer;
 
   training_algorithm* m_training_algorithm;
@@ -160,9 +173,9 @@ private:
   execution_mode m_execution_mode = execution_mode::training;
 
   /** @brief Current step in the training algorithm
-    *  @details Step counts the number of iterations in the training
-    *  algorithm's internal state
-    */
+   *  @details Step counts the number of iterations in the training
+   *  algorithm's internal state
+   */
   size_t m_step = 0;
 
   /** @brief Whether to terminate training.
@@ -172,6 +185,6 @@ private:
   bool m_terminate_training = false;
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_EXECUTION_CONTEXT_HPP
+#endif // LBANN_EXECUTION_CONTEXT_HPP

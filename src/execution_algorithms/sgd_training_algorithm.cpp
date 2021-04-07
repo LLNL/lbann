@@ -25,8 +25,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/execution_algorithms/sgd_training_algorithm.hpp"
-#include "lbann/models/model.hpp"
 #include "lbann/callbacks/callback.hpp"
+#include "lbann/models/model.hpp"
 
 namespace lbann {
 
@@ -38,10 +38,13 @@ void sgd_training_algorithm::apply(execution_context& context,
                                    model& model,
                                    data_coordinator& dc,
                                    execution_mode mode,
-                                   termination_criteria const& term_criteria) {
-  sgd_execution_context& sgd_context = static_cast<sgd_execution_context&>(context);
-  const sgd_termination_criteria& sgd_term = static_cast<const sgd_termination_criteria&>(term_criteria);
-  switch(mode) {
+                                   termination_criteria const& term_criteria)
+{
+  sgd_execution_context& sgd_context =
+    static_cast<sgd_execution_context&>(context);
+  const sgd_termination_criteria& sgd_term =
+    static_cast<const sgd_termination_criteria&>(term_criteria);
+  switch (mode) {
   case execution_mode::training:
     train(sgd_context, model, dc, sgd_term.num_epochs, sgd_term.num_steps);
     break;
@@ -59,7 +62,8 @@ void sgd_training_algorithm::train(sgd_execution_context& c,
                                    model& model,
                                    data_coordinator& dc,
                                    size_t num_epochs,
-                                   size_t num_batches) {
+                                   size_t num_batches)
+{
 
   // Initialize epoch
   model.reset_mode(c, execution_mode::training);
@@ -67,7 +71,9 @@ void sgd_training_algorithm::train(sgd_execution_context& c,
 
   do_train_begin_cbs(model);
   for (size_t epoch = c.get_epoch(); epoch < num_epochs; ++epoch) {
-    if (c.get_terminate_training()) { break; }
+    if (c.get_terminate_training()) {
+      break;
+    }
 
     // Initialize epoch
     model.reset_mode(c, execution_mode::training);
@@ -77,9 +83,13 @@ void sgd_training_algorithm::train(sgd_execution_context& c,
 
     // Training iterations
     if (num_batches > 0) {
-      for (size_t i = 0; i < num_batches; i++) { train_mini_batch(c, model, dc); }
-    } else {
-      while (!train_mini_batch(c, model, dc)) {}
+      for (size_t i = 0; i < num_batches; i++) {
+        train_mini_batch(c, model, dc);
+      }
+    }
+    else {
+      while (!train_mini_batch(c, model, dc)) {
+      }
     }
 
     // Finalize epoch
@@ -88,8 +98,12 @@ void sgd_training_algorithm::train(sgd_execution_context& c,
     do_epoch_end_cbs(model);
 
     // Evaluate on validation set
-    auto key = c.get_trainer().check_and_build_execution_context(c, model, execution_mode::validation);
-    auto& evaluation_context = static_cast<sgd_execution_context&>(c.get_trainer().get_execution_context(key));
+    auto key = c.get_trainer().check_and_build_execution_context(
+      c,
+      model,
+      execution_mode::validation);
+    auto& evaluation_context = static_cast<sgd_execution_context&>(
+      c.get_trainer().get_execution_context(key));
     // Check to make sure that the model has a valid execution mode
     // before trying to do inference
     if (dc.is_execution_mode_valid(execution_mode::validation)) {
@@ -108,7 +122,8 @@ void sgd_training_algorithm::train(sgd_execution_context& c,
 
 bool sgd_training_algorithm::train_mini_batch(sgd_execution_context& c,
                                               model& model,
-                                              data_coordinator& dc) {
+                                              data_coordinator& dc)
+{
   model.reset_mode(c, execution_mode::training);
   dc.reset_mode(c);
   do_batch_begin_cbs(model, execution_mode::training);
@@ -120,34 +135,36 @@ bool sgd_training_algorithm::train_mini_batch(sgd_execution_context& c,
 #if defined(LBANN_HAVE_OMP_TASKLOOP)
   LBANN_OMP_PARALLEL
   {
-    #pragma omp single
+#pragma omp single
     {
 #endif
-  // Forward prop step
-  model.clear_gradients();
-  model.forward_prop(execution_mode::training);
-  // check if the data coordinator has finished the epoch and kickoff
-  // background I/O
-  finished = dc.epoch_complete(execution_mode::training);
+      // Forward prop step
+      model.clear_gradients();
+      model.forward_prop(execution_mode::training);
+      // check if the data coordinator has finished the epoch and kickoff
+      // background I/O
+      finished = dc.epoch_complete(execution_mode::training);
 
-  // Result is not needed until the end of the mini-batch.
-  model.get_objective_function()->start_evaluation(execution_mode::training,
-                                                    c.get_current_mini_batch_size());
+      // Result is not needed until the end of the mini-batch.
+      model.get_objective_function()->start_evaluation(
+        execution_mode::training,
+        c.get_current_mini_batch_size());
 
-  // Backward prop step
-  model.get_objective_function()->differentiate();
-  model.backward_prop();
-  model.get_objective_function()->compute_weight_regularization();
+      // Backward prop step
+      model.get_objective_function()->differentiate();
+      model.backward_prop();
+      model.get_objective_function()->compute_weight_regularization();
 
-  // Finish evaluation.
-  model.get_objective_function()->finish_evaluation(execution_mode::training,
-                                                     c.get_current_mini_batch_size());
-  model.evaluate_metrics(execution_mode::training,
-                          c.get_current_mini_batch_size());
+      // Finish evaluation.
+      model.get_objective_function()->finish_evaluation(
+        execution_mode::training,
+        c.get_current_mini_batch_size());
+      model.evaluate_metrics(execution_mode::training,
+                             c.get_current_mini_batch_size());
 
-  // Update step
-  model.update_weights();
-  model.update_layers();
+      // Update step
+      model.update_weights();
+      model.update_layers();
 #if defined(LBANN_HAVE_OMP_TASKLOOP)
     }
   }
@@ -162,7 +179,8 @@ void sgd_training_algorithm::evaluate(sgd_execution_context& c,
                                       model& model,
                                       data_coordinator& dc,
                                       execution_mode mode,
-                                      size_t num_batches) {
+                                      size_t num_batches)
+{
   /// @todo BVE FIXME this state needs to be set for inference-only
   /// workflows -- however, if the model will bail due to a lack of a
   /// valid mode, the state of the data coordinator is not
@@ -173,10 +191,10 @@ void sgd_training_algorithm::evaluate(sgd_execution_context& c,
   // Ensure that the data coordinator has the right execution context
   dc.reset_mode(c);
   // Return early if execution mode is invalid
-  if (!dc.is_execution_mode_valid(mode)) return;
-  if (mode != execution_mode::validation
-      && mode != execution_mode::tournament
-      && mode != execution_mode::testing) {
+  if (!dc.is_execution_mode_valid(mode))
+    return;
+  if (mode != execution_mode::validation &&
+      mode != execution_mode::tournament && mode != execution_mode::testing) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
         << "invalid execution mode for evaluation";
@@ -186,9 +204,13 @@ void sgd_training_algorithm::evaluate(sgd_execution_context& c,
   // Evaluate on all mini-batches
   do_evaluate_begin_cbs(model, mode);
   if (num_batches > 0) {
-    for (size_t i = 0; i < num_batches; i++) { evaluate_mini_batch(c, model, dc, mode); }
-  } else {
-    while (!evaluate_mini_batch(c, model, dc, mode)) {}
+    for (size_t i = 0; i < num_batches; i++) {
+      evaluate_mini_batch(c, model, dc, mode);
+    }
+  }
+  else {
+    while (!evaluate_mini_batch(c, model, dc, mode)) {
+    }
   }
   c.inc_epoch();
   do_evaluate_end_cbs(model, mode);
@@ -197,7 +219,8 @@ void sgd_training_algorithm::evaluate(sgd_execution_context& c,
 bool sgd_training_algorithm::evaluate_mini_batch(sgd_execution_context& c,
                                                  model& model,
                                                  data_coordinator& dc,
-                                                 execution_mode mode) {
+                                                 execution_mode mode)
+{
   model.reset_mode(c, mode);
   dc.reset_mode(c);
   do_batch_begin_cbs(model, mode);
@@ -207,8 +230,12 @@ bool sgd_training_algorithm::evaluate_mini_batch(sgd_execution_context& c,
   // background I/O
   const bool finished = dc.epoch_complete(mode);
 
-  model.get_objective_function()->start_evaluation(mode, c.get_current_mini_batch_size());
-  model.get_objective_function()->finish_evaluation(mode, c.get_current_mini_batch_size());
+  model.get_objective_function()->start_evaluation(
+    mode,
+    c.get_current_mini_batch_size());
+  model.get_objective_function()->finish_evaluation(
+    mode,
+    c.get_current_mini_batch_size());
   model.evaluate_metrics(mode, c.get_current_mini_batch_size());
   model.update_layers();
   c.inc_step();
@@ -220,62 +247,79 @@ bool sgd_training_algorithm::evaluate_mini_batch(sgd_execution_context& c,
 // Callbacks
 ////////////////////////////////////////////////////////////
 
-void sgd_training_algorithm::do_train_begin_cbs(model& model) {
+void sgd_training_algorithm::do_train_begin_cbs(model& model)
+{
   for (const auto& cb : model.get_callbacks()) {
     cb->on_train_begin(&model);
   }
 }
 
-void sgd_training_algorithm::do_train_end_cbs(model& model) {
+void sgd_training_algorithm::do_train_end_cbs(model& model)
+{
   for (const auto& cb : model.get_callbacks()) {
     cb->on_train_end(&model);
   }
 }
 
-void sgd_training_algorithm::do_evaluate_begin_cbs(model& model, execution_mode mode) {
+void sgd_training_algorithm::do_evaluate_begin_cbs(model& model,
+                                                   execution_mode mode)
+{
   for (const auto& cb : model.get_callbacks()) {
     switch (mode) {
     case execution_mode::validation:
-      cb->on_validation_begin(&model); break;
+      cb->on_validation_begin(&model);
+      break;
     case execution_mode::tournament:
-      cb->on_validation_begin(&model); break;
+      cb->on_validation_begin(&model);
+      break;
     case execution_mode::testing:
-      cb->on_test_begin(&model); break;
+      cb->on_test_begin(&model);
+      break;
     default:
       LBANN_ERROR("invalid execution mode");
     }
   }
 }
 
-void sgd_training_algorithm::do_evaluate_end_cbs(model& model, execution_mode mode) {
+void sgd_training_algorithm::do_evaluate_end_cbs(model& model,
+                                                 execution_mode mode)
+{
   for (const auto& cb : model.get_callbacks()) {
     switch (mode) {
     case execution_mode::validation:
-      cb->on_validation_end(&model); break;
+      cb->on_validation_end(&model);
+      break;
     case execution_mode::tournament:
-      cb->on_validation_end(&model); break;
+      cb->on_validation_end(&model);
+      break;
     case execution_mode::testing:
-      cb->on_test_end(&model); break;
+      cb->on_test_end(&model);
+      break;
     default:
       LBANN_ERROR("invalid execution mode");
     }
   }
 }
 
-void sgd_training_algorithm::do_epoch_begin_cbs(model& model) {
+void sgd_training_algorithm::do_epoch_begin_cbs(model& model)
+{
   for (const auto& cb : model.get_callbacks()) {
     cb->on_epoch_begin(&model);
   }
 }
 
-void sgd_training_algorithm::do_epoch_end_cbs(model& model) {
+void sgd_training_algorithm::do_epoch_end_cbs(model& model)
+{
   for (const auto& cb : model.get_callbacks()) {
     cb->on_epoch_end(&model);
   }
 }
 
-void sgd_training_algorithm::do_batch_begin_cbs(model& model, execution_mode mode) {
-  sgd_execution_context& c = static_cast<sgd_execution_context&>(model.get_execution_context());
+void sgd_training_algorithm::do_batch_begin_cbs(model& model,
+                                                execution_mode mode)
+{
+  sgd_execution_context& c =
+    static_cast<sgd_execution_context&>(model.get_execution_context());
 
   for (const auto& cb : model.get_callbacks()) {
     switch (mode) {
@@ -295,8 +339,10 @@ void sgd_training_algorithm::do_batch_begin_cbs(model& model, execution_mode mod
   }
 }
 
-void sgd_training_algorithm::do_batch_end_cbs(model& model, execution_mode mode) {
-  sgd_execution_context& c = static_cast<sgd_execution_context&>(model.get_execution_context());
+void sgd_training_algorithm::do_batch_end_cbs(model& model, execution_mode mode)
+{
+  sgd_execution_context& c =
+    static_cast<sgd_execution_context&>(model.get_execution_context());
 
   for (const auto& cb : model.get_callbacks()) {
     switch (mode) {
@@ -316,4 +362,6 @@ void sgd_training_algorithm::do_batch_end_cbs(model& model, execution_mode mode)
   }
 }
 
-}  // namespace lbann
+std::string sgd_training_algorithm::get_type() const { return "sgd"; }
+
+} // namespace lbann
