@@ -92,7 +92,6 @@ set_center_specific_modules()
                 MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 mvapich2/2.3 python/3.7.2"
                 ;;
             "zen" | "zen2") # Corona
-                # Don't load OpenMPI get the HIP Clang to build it
                 MODULE_CMD="module --force unload StdEnv; module load clang/11.0.0 python/3.7.2 opt rocm/4.0.0 openmpi-gnu/4.0"
                 ;;
             *)
