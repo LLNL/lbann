@@ -239,22 +239,22 @@ public:
   ///@{
 
   /** @brief Create a shared checkpoint of the trainer. */
-  void save_to_checkpoint_shared();
+  bool save_to_checkpoint_shared();
 
   /** @brief Restore trainer from a shared checkpoint. */
-  void load_from_checkpoint_shared(persist& p);
+  bool load_from_checkpoint_shared(persist& p);
 
   /** @brief Restore model from a shared checkpoint. */
-  void load_from_checkpoint_shared(model& m, execution_context& c);
+  bool load_from_checkpoint_shared(model& m, execution_context& c);
 
   /** @brief Create a distributed checkpoint of the trainer. */
-  void save_to_checkpoint_distributed();
+  bool save_to_checkpoint_distributed();
 
   /** @brief Restore a trainer from a distributed checkpoint. */
-  void load_from_checkpoint_distributed(persist& p);
+  bool load_from_checkpoint_distributed(persist& p);
 
   /** @brief Restore a model from a distributed checkpoint. */
-  void load_from_checkpoint_distributed(model& m, execution_context& c);
+  bool load_from_checkpoint_distributed(model& m, execution_context& c);
 
   /** @brief Write trainer to proto message */
   void write_proto(lbann_data::Trainer& proto);

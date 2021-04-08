@@ -316,8 +316,8 @@ bool checkpoint::open_latest_checkpoint(
   const std::string& task_label,
   const std::string& trainer_name,
   const std::string& alg_name,
-  std::function<void(persist&)> reload_shared_ckpt,
-  std::function<void(persist&)> reload_distributed_ckpt) {
+  std::function<bool(persist&)> reload_shared_ckpt,
+  std::function<bool(persist&)> reload_distributed_ckpt) {
   // if the checkpoint directory is not defined, bail
   if (get_restart_dir().length() == 0 &&  m_per_rank_dir.length() == 0) {
     return false;
@@ -364,7 +364,8 @@ bool checkpoint::open_latest_checkpoint(
       return false;
     }
     p.open_restart(epochdir.c_str());
-    reload_distributed_ckpt(p);
+    if (!reload_distributed_ckpt(p))
+      LBANN_WARNING("Unable to reload distributed checkpoint ", epochdir);
     p.close_restart();
   }
   else {
@@ -383,7 +384,8 @@ bool checkpoint::open_latest_checkpoint(
     // // Ensure all ranks have access to checkpoint dir, needed for loading rank specific rng state
     //   p.m_checkpoint_dir = epochdir;
     // }
-    reload_shared_ckpt(p);
+    if (!reload_shared_ckpt(p))
+      LBANN_WARNING("Unable to reload shared checkpoint ", epochdir);
     /// @todo For the moment let all ranks open the checkpoint files
     p.close_restart();
     // }

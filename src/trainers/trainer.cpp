@@ -53,10 +53,8 @@ namespace lbann {
 trainer::trainer(lbann_comm* comm,
                  std::unique_ptr<data_coordinator> dc,
                  size_t mini_batch_size)
-  : m_data_coordinator{std::move(dc)},
-    m_comm{comm},
-    m_max_mini_batch_size{mini_batch_size},
-    m_background_io_allowed{true}
+  : m_data_coordinator{std::move(dc)}, m_comm{comm},
+    m_max_mini_batch_size{mini_batch_size}, m_background_io_allowed{true}
 {
   // Default trainer name
   m_name = "trainer" + std::to_string(m_comm->get_trainer_rank());
@@ -172,8 +170,8 @@ trainer::check_and_build_execution_context(training_algorithm& alg,
     if (dynamic_cast<observer_ptr<sgd_training_algorithm>>(&alg) != nullptr) {
       /// @todo BVE FIXME Figure out how to get a good mini-batch size
       /// in here
-      context = make_unique<sgd_execution_context>(mode,
-                                                   get_max_mini_batch_size());
+      context =
+        make_unique<sgd_execution_context>(mode, get_max_mini_batch_size());
     }
     else {
       LBANN_ERROR("Unknown execution algorithm type.");
@@ -196,8 +194,8 @@ trainer::check_and_build_execution_context(execution_context& c,
     //    observer_ptr<training_algorithm> alg = const_cast
     if (dynamic_cast<observer_ptr</*const */ sgd_execution_context>>(&c) !=
         nullptr) {
-      context = make_unique<sgd_execution_context>(mode,
-                                                   get_max_mini_batch_size());
+      context =
+        make_unique<sgd_execution_context>(mode, get_max_mini_batch_size());
     }
     else {
       LBANN_ERROR("Unknown execution context type");
@@ -307,7 +305,7 @@ void trainer::evaluate(observer_ptr<model> model,
 // Checkpointing
 // =============================================
 
-void trainer::save_to_checkpoint_shared()
+bool trainer::save_to_checkpoint_shared()
 {
   for_each_execution_context([this](observer_ptr<execution_context> ctx) {
     ctx->save_to_checkpoint_shared(this->get_persist_obj());
@@ -325,35 +323,37 @@ void trainer::save_to_checkpoint_shared()
     );
   }
 
-  if (!get_data_coordinator().save_to_checkpoint_shared(get_persist_obj()))
-    LBANN_ERROR("Failed to checkpoint data coordinator.");
+  return get_data_coordinator().save_to_checkpoint_shared(get_persist_obj());
 }
 
-void trainer::load_from_checkpoint_shared(persist& p)
+bool trainer::load_from_checkpoint_shared(persist& p)
 {
-  load_from_shared_cereal_archive(*this,
-                                  p,
-                                  *get_comm(),
+  try {
+    load_from_shared_cereal_archive(*this,
+                                    p,
+                                    *get_comm(),
 #ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
-                                  "trainer.xml"
+                                    "trainer.xml"
 #else  // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
-                                  "trainer.bin"
+                                    "trainer.bin"
 #endif // LBANN_HAS_CEREAL_XML_ARCHIVES
     );
+  }
+  catch (NonexistentArchiveFile const& e) {
+    LBANN_MSG(e.what());
+    return false;
+  }
 
-  // FIXME (trb 04/07/21): This check should move to the data coordinator.
-  if (!get_data_coordinator().load_from_checkpoint_shared(p))
-    LBANN_ERROR("Failed to reload data coordinator.");
+  return get_data_coordinator().load_from_checkpoint_shared(p);
 }
 
-void trainer::load_from_checkpoint_shared(model& m, execution_context& c)
+bool trainer::load_from_checkpoint_shared(model& m, execution_context& c)
 {
   // Reload the RNG once the trainer and all of the  models are setup
   // to avoid spurious turns of the RNGs
   load_rng_from_checkpoint(get_persist_obj(), m_comm);
 
   execution_mode current_mode = c.get_execution_mode();
-
   for (execution_mode mode : execution_mode_iterator()) {
     /// Restart should optionally load any other valid contexts
     if (mode == execution_mode::invalid) {
@@ -388,21 +388,19 @@ void trainer::load_from_checkpoint_shared(model& m, execution_context& c)
     }
   }
 
-  if (!get_data_coordinator().load_from_checkpoint_shared(get_persist_obj()))
-    LBANN_ERROR("Failed to reload data coordinator.");
+  return get_data_coordinator().load_from_checkpoint_shared(get_persist_obj());
 }
 
-void trainer::save_to_checkpoint_distributed()
+bool trainer::save_to_checkpoint_distributed()
 {
   for_each_execution_context([this](observer_ptr<execution_context> ctx) {
     ctx->save_to_checkpoint_distributed(this->get_persist_obj());
   });
   save_rng_to_checkpoint_distributed(get_persist_obj(), m_comm);
-  if (!get_data_coordinator().save_to_checkpoint_shared(get_persist_obj()))
-    LBANN_ERROR("Failed to checkpoint data coordinator");
+  return get_data_coordinator().save_to_checkpoint_shared(get_persist_obj());
 }
 
-void trainer::load_from_checkpoint_distributed(persist& p)
+bool trainer::load_from_checkpoint_distributed(persist& p)
 {
   read_cereal_archive(*this,
                       p,
@@ -412,11 +410,10 @@ void trainer::load_from_checkpoint_distributed(persist& p)
                       "trainer.bin"
 #endif // LBANN_HAS_CEREAL_XML_ARCHIVES
   );
-  if (!get_data_coordinator().load_from_checkpoint_distributed(p))
-    LBANN_ERROR("Failed to reload data coordinator.");
+  return get_data_coordinator().load_from_checkpoint_distributed(p);
 }
 
-void trainer::load_from_checkpoint_distributed(model& m, execution_context& c)
+bool trainer::load_from_checkpoint_distributed(model& m, execution_context& c)
 {
   load_rng_from_checkpoint(get_persist_obj(), m_comm);
 
@@ -452,9 +449,8 @@ void trainer::load_from_checkpoint_distributed(model& m, execution_context& c)
       }
     }
   }
-  if (!get_data_coordinator().load_from_checkpoint_distributed(
-        get_persist_obj()))
-    LBANN_ERROR("Failed to reload data coordinator.");
+  return get_data_coordinator().load_from_checkpoint_distributed(
+    get_persist_obj());
 }
 
 void trainer::write_proto(lbann_data::Trainer& proto)
