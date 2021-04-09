@@ -40,6 +40,7 @@
 #include "lbann/callbacks/load_model.hpp"
 #include "lbann/utils/argument_parser.hpp"
 
+#include <cstdlib>
 #include <lbann.pb.h>
 #include <memory>
 #include <model.pb.h>
@@ -125,6 +126,8 @@ namespace {
 
 std::unique_ptr<trainer> global_trainer_;
 
+void cleanup_trainer_atexit() { global_trainer_ = nullptr; }
+
 } // namespace
 
 trainer& get_trainer() {
@@ -178,6 +181,12 @@ trainer& construct_trainer(lbann_comm *comm,
 
   // Initalize trainer
   global_trainer_ = proto::construct_trainer(comm, *pb_trainer);
+
+  // FIXME (trb 04/09/21): This ensures that the trainer is destroyed
+  // before the Hydrogen threadpools come destruction time. This is a
+  // hack and we should more carefully consider how globals from our
+  // various packages interact, both explicitly and implicitly.
+  std::atexit(cleanup_trainer_atexit);
 
   // If the checkpoint directory has been overridden reset it before
   // setting up the trainer
