@@ -156,7 +156,7 @@ bool checkpoint::do_checkpoint(model *m, visitor_hook hook) {
   auto& p = get_active_trainer().get_persist_obj();
   auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
   auto& t = get_active_trainer();
-  if(&t != &c.get_trainer()) { LBANN_ERROR("Mismatched trainers"); }
+  if(&t != &get_trainer()) { LBANN_ERROR("Mismatched trainers"); }
   // if the checkpoint directory is not defined, bail
   if (get_checkpoint_dir().length() == 0 && m_per_rank_dir.length() == 0) {
     return false;
@@ -364,8 +364,8 @@ bool checkpoint::open_latest_checkpoint(
       return false;
     }
     p.open_restart(epochdir.c_str());
-    auto flag = reload_distributed_ckpt(p);
-    if(!flag) { LBANN_WARNING("Unable to reload distributed checkpoint ", epochdir); }
+    if (!reload_distributed_ckpt(p))
+      LBANN_WARNING("Unable to reload distributed checkpoint ", epochdir);
     p.close_restart();
   }
   else {
@@ -384,9 +384,8 @@ bool checkpoint::open_latest_checkpoint(
     // // Ensure all ranks have access to checkpoint dir, needed for loading rank specific rng state
     //   p.m_checkpoint_dir = epochdir;
     // }
-    auto flag = reload_shared_ckpt(p);
-    if(!flag) { LBANN_WARNING("Unable to reload shared checkpoint ", epochdir); }
-    // if(comm->am_trainer_master()) {
+    if (!reload_shared_ckpt(p))
+      LBANN_WARNING("Unable to reload shared checkpoint ", epochdir);
     /// @todo For the moment let all ranks open the checkpoint files
     p.close_restart();
     // }
@@ -450,10 +449,10 @@ bool checkpoint::restart(model *m) {
     get_active_trainer().get_name(),
     get_active_training_algorithm().get_type(),
     [&m, &c](persist& p_ref) {
-      return c.get_trainer().load_from_checkpoint_shared(*m, c);
+      return get_trainer().load_from_checkpoint_shared(*m, c);
     },
     [&m, &c](persist& p_ref) {
-      return c.get_trainer().load_from_checkpoint_distributed(*m, c);
+      return get_trainer().load_from_checkpoint_distributed(*m, c);
     });
 }
 

@@ -166,14 +166,14 @@ int main(int argc, char* argv[])
     lbann_data::Trainer* pb_trainer = pb.mutable_trainer();
 
     // Construct the trainer
-    std::unique_ptr<trainer> trainer =
+    auto& trainer =
       construct_trainer(comm.get(), pb_trainer, pb, opts);
 
-    thread_pool& io_thread_pool = trainer->get_io_thread_pool();
+    thread_pool& io_thread_pool = trainer.get_io_thread_pool();
 
     int training_dr_linearized_data_size = -1;
     auto* dr =
-      trainer->get_data_coordinator().get_data_reader(execution_mode::training);
+      trainer.get_data_coordinator().get_data_reader(execution_mode::training);
     if (dr != nullptr) {
       training_dr_linearized_data_size = dr->get_linearized_data_size();
     }
@@ -187,7 +187,7 @@ int main(int argc, char* argv[])
                                  comm.get(),
                                  opts,
                                  io_thread_pool,
-                                 trainer->get_callbacks_with_ownership(),
+                                 trainer.get_callbacks_with_ownership(),
                                  training_dr_linearized_data_size);
 
     if (opts->has_string("create_tarball")) {
@@ -197,10 +197,10 @@ int main(int argc, char* argv[])
     if (!opts->get_bool("exit_after_setup")) {
 
       // Train model
-      trainer->train(model.get(), pb_model->num_epochs());
+      trainer.train(model.get(), pb_model->num_epochs());
 
       // Evaluate model on test set
-      trainer->evaluate(model.get(), execution_mode::testing);
+      trainer.evaluate(model.get(), execution_mode::testing);
 
       // has no affect unless option: --st_on was given
       stack_profiler::get()->print();

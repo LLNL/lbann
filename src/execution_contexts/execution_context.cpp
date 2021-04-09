@@ -24,18 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/callbacks/callback.hpp"
-#include "lbann/execution_algorithms/training_algorithm.hpp"
-#include "lbann/io/persist.hpp"
-#include "lbann/io/persist_impl.hpp"
-#include "lbann/trainers/trainer.hpp"
+#include "lbann/execution_contexts/execution_context.hpp"
 #include "lbann/utils/serialize.hpp"
-#include <iomanip>
-#include <lbann.pb.h>
-#include <queue>
-#include <string>
-#include <unistd.h>
-#include <unordered_set>
 
 namespace lbann {
 
@@ -43,95 +33,11 @@ namespace lbann {
 // Execution context
 //******************************************************************************
 
-execution_context::execution_context(trainer& trainer,
-                                     training_algorithm& training_algorithm,
-                                     execution_mode mode)
-  : m_trainer(&trainer), m_training_algorithm(&training_algorithm),
-    m_comm(trainer.get_comm()), m_execution_mode(mode),
-    m_terminate_training(false)
-{}
+execution_context::execution_context() : m_step{0UL} {}
 
 template <class Archive> void execution_context::serialize(Archive& ar)
 {
-  ar(CEREAL_NVP(m_execution_mode),
-     CEREAL_NVP(m_terminate_training),
-     CEREAL_NVP(m_step));
-}
-
-////////////////////////////////////////////////////////////
-// Training_Algorithm state
-////////////////////////////////////////////////////////////
-
-// observer_ptr<thread_pool> training_algorithm::get_io_thread_pool() {
-//   return m_trainer->get_io_thread_pool();
-// }
-
-thread_pool& execution_context::get_io_thread_pool() const
-{
-  return m_trainer->get_io_thread_pool();
-}
-
-////////////////////////////////////////////////////////////
-// Checkpointing
-////////////////////////////////////////////////////////////
-
-void execution_context::save_to_checkpoint_shared(persist& p)
-{
-  if (get_comm().am_trainer_master()) {
-    write_cereal_archive<execution_context>(*this,
-                                            p,
-                                            get_execution_mode(),
-#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
-                                            "_ctx.xml"
-#else  // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
-                                            "_ctx.bin"
-#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
-    );
-  }
-  return;
-}
-
-void execution_context::load_from_checkpoint_shared(persist& p)
-{
-  load_from_shared_cereal_archive<execution_context>(*this,
-                                                     p,
-                                                     get_execution_mode(),
-                                                     get_comm(),
-#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
-                                                     "_ctx.xml"
-#else  // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
-                                                     "_ctx.bin"
-#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
-  );
-  return;
-}
-
-void execution_context::save_to_checkpoint_distributed(persist& p)
-{
-  write_cereal_archive<execution_context>(*this,
-                                          p,
-                                          get_execution_mode(),
-#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
-                                          "_ctx.xml"
-#else  // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
-                                          "_ctx.bin"
-#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
-  );
-  return;
-}
-
-void execution_context::load_from_checkpoint_distributed(persist& p)
-{
-  read_cereal_archive<execution_context>(*this,
-                                         p,
-                                         get_execution_mode(),
-#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
-                                         "_ctx.xml"
-#else  // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
-                                         "_ctx.bin"
-#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
-  );
-  return;
+  ar(CEREAL_NVP(m_step));
 }
 
 } // namespace lbann

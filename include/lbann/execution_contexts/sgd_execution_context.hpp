@@ -27,6 +27,7 @@
 #ifndef LBANN_SGD_EXECUTION_CONTEXT_HPP
 #define LBANN_SGD_EXECUTION_CONTEXT_HPP
 
+#include "lbann/base.hpp"
 #include "lbann/execution_contexts/execution_context.hpp"
 
 namespace lbann {
@@ -46,9 +47,7 @@ class sgd_execution_context final : public execution_context
 {
 public:
   /** Constructor. */
-  sgd_execution_context(trainer& trainer,
-                        training_algorithm& training_alg,
-                        execution_mode mode,
+  sgd_execution_context(execution_mode mode,
                         size_t mini_batch_size);
   /** Destructor. */
   virtual ~sgd_execution_context() = default;
@@ -62,10 +61,10 @@ public:
   sgd_execution_context(sgd_execution_context&& other) = default;
   /** Move assignment operator. */
   sgd_execution_context& operator=(sgd_execution_context&& other) = default;
-  /** Copy sgd_execution_context. */
-  std::unique_ptr<execution_context> copy_execution_context() const override
+  /** @brief Get a clean sgd_execution_context. */
+  std::unique_ptr<execution_context> get_new() const override
   {
-    return make_unique<sgd_execution_context>(*this);
+    return make_unique<sgd_execution_context>(execution_mode::invalid, 0UL);
   }
 
   /** Archive for checkpoint and restart */
@@ -120,6 +119,20 @@ public:
   void save_to_checkpoint_distributed(persist& p) override;
   void load_from_checkpoint_distributed(persist& p) override;
 
+  std::string get_type() const override;
+
+  /** Get the mode that the trainer is currenting executing. */
+  void set_execution_mode(execution_mode mode) noexcept
+  {
+    m_execution_mode = mode;
+  }
+
+  /** Get the mode that the trainer is currenting executing. */
+  execution_mode get_execution_mode() const noexcept override
+  {
+    return m_execution_mode;
+  }
+
 private:
   friend class cereal::access;
   sgd_execution_context() = default;
@@ -137,6 +150,8 @@ private:
    *  e.g.  correctly averaging gradients from multiple models.
    */
   size_t m_effective_mini_batch_size;
+
+  execution_mode m_execution_mode;
 };
 
 } // namespace lbann

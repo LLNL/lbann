@@ -207,9 +207,8 @@ public:
     if (dir.empty()) { dir = "./"; }
     if (dir.back() != '/') { dir += "/"; }
 
-    const auto& c = static_cast<const sgd_execution_context&>(m.get_execution_context());
     return build_string(dir,
-                        c.get_trainer().get_name(), '/');
+                        get_const_trainer().get_name(), '/');
   }
 
   /** @brief Build a standard directory hierachy including trainer,

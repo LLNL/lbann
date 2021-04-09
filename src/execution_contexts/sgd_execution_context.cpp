@@ -25,18 +25,18 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/execution_contexts/sgd_execution_context.hpp"
+#include "lbann/base.hpp"
 #include "lbann/io/persist_impl.hpp"
+#include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/serialize.hpp"
 
 namespace lbann {
 
-sgd_execution_context::sgd_execution_context(trainer& trainer,
-                                             training_algorithm& training_alg,
-                                             execution_mode mode,
+sgd_execution_context::sgd_execution_context(execution_mode mode,
                                              size_t mini_batch_size)
-  : execution_context(trainer, training_alg, mode),
-    m_current_mini_batch_size(mini_batch_size),
-    m_effective_mini_batch_size(mini_batch_size)
+  : m_current_mini_batch_size(mini_batch_size),
+    m_effective_mini_batch_size(mini_batch_size),
+    m_execution_mode(mode)
 {}
 
 template <class Archive> void sgd_execution_context::serialize(Archive& ar)
@@ -44,7 +44,8 @@ template <class Archive> void sgd_execution_context::serialize(Archive& ar)
   ar(cereal::base_class<execution_context>(this),
      CEREAL_NVP(m_epoch),
      CEREAL_NVP(m_current_mini_batch_size),
-     CEREAL_NVP(m_effective_mini_batch_size));
+     CEREAL_NVP(m_effective_mini_batch_size),
+     CEREAL_NVP(m_execution_mode));
 }
 
 ////////////////////////////////////////////////////////////
@@ -53,7 +54,7 @@ template <class Archive> void sgd_execution_context::serialize(Archive& ar)
 
 void sgd_execution_context::save_to_checkpoint_shared(persist& p)
 {
-  if (get_comm().am_trainer_master()) {
+  if (get_trainer().get_comm()->am_trainer_master()) {
     write_cereal_archive<sgd_execution_context>(*this,
                                                 p,
                                                 get_execution_mode(),
@@ -72,7 +73,7 @@ void sgd_execution_context::load_from_checkpoint_shared(persist& p)
   load_from_shared_cereal_archive<sgd_execution_context>(*this,
                                                          p,
                                                          get_execution_mode(),
-                                                         get_comm(),
+                                                         *(get_trainer().get_comm()),
 #ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
                                                          "_ctx.xml"
 #else  // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
@@ -109,6 +110,8 @@ void sgd_execution_context::load_from_checkpoint_distributed(persist& p)
   );
   return;
 }
+
+std::string sgd_execution_context::get_type() const { return "sgd"; }
 
 } // namespace lbann
 

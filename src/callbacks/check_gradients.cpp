@@ -231,7 +231,7 @@ void check_gradients::do_check_gradients(model& m) const {
   }
 
   // Load data in input layers
-  data_coordinator& dc = c.get_trainer().get_data_coordinator();
+  data_coordinator& dc = get_trainer().get_data_coordinator();
   dc.fetch_data(mode);
   for (auto&& l : m.get_layers()) {
     if (dynamic_cast<input_layer<DataType>*>(l) != nullptr) {
