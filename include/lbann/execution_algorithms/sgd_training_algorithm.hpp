@@ -28,30 +28,33 @@
 #define LBANN_SGD_TRAINING_ALGORITHM_HPP
 
 #include "lbann/execution_algorithms/training_algorithm.hpp"
+#include "lbann/execution_contexts/execution_context.hpp"
 #include "lbann/execution_contexts/sgd_execution_context.hpp"
+#include "lbann/utils/cloneable.hpp"
 
 namespace lbann {
 
 /** @brief Base class for LBANN SGD-family training algorithms. */
-class sgd_training_algorithm : public training_algorithm {
-public:
+class sgd_training_algorithm
+  : public Cloneable<sgd_training_algorithm, training_algorithm>
+{
+  using BaseType = Cloneable<sgd_training_algorithm, training_algorithm>;
 
-  /** Constructor. */
-  sgd_training_algorithm() {};
-  /** Copy constructor. */
+public:
+  /** @brief Construct with a name. */
+  sgd_training_algorithm(std::string name) : BaseType{std::move(name)} {}
+
   sgd_training_algorithm(const sgd_training_algorithm& other) = default;
-  /** Copy assignment operator. */
-  sgd_training_algorithm& operator=(const sgd_training_algorithm& other) = default;
-  /** Move constructor. */
+  sgd_training_algorithm&
+  operator=(const sgd_training_algorithm& other) = default;
   sgd_training_algorithm(sgd_training_algorithm&& other) = default;
-  /** Move assignment operator. */
   sgd_training_algorithm& operator=(sgd_training_algorithm&& other) = default;
-  /** Destructor. */
+
   virtual ~sgd_training_algorithm() = default;
   /** Copy training_algorithm. */
   //  virtual sgd_training_algorithm* copy() const = default;
 
-  std::string get_name() const override { return "sgd"; }
+  std::string get_type() const override;
 
   // ===========================================
   // Execution
@@ -69,20 +72,27 @@ public:
   void train(sgd_execution_context& c,
              model& model,
              data_coordinator& dc,
-             size_t num_epochs, size_t num_batches=0);
+             size_t num_epochs,
+             size_t num_batches = 0);
 
   /** Evaluate a model using the forward pass of an SGD solver. */
   void evaluate(sgd_execution_context& c,
                 model& model,
                 data_coordinator& dc,
-                execution_mode mode, size_t num_batches=0);
+                execution_mode mode,
+                size_t num_batches = 0);
 
 protected:
   /** Train model on one step / mini-batch of an SGD forward pass */
-  virtual bool train_mini_batch(sgd_execution_context& c, model& model, data_coordinator& dc);
+  virtual bool train_mini_batch(sgd_execution_context& c,
+                                model& model,
+                                data_coordinator& dc);
 
   /** Evaluate model on one step / mini-batch of an SGD forward pass */
-  virtual bool evaluate_mini_batch(sgd_execution_context& c, model& model, data_coordinator& dc, execution_mode mode);
+  virtual bool evaluate_mini_batch(sgd_execution_context& c,
+                                   model& model,
+                                   data_coordinator& dc,
+                                   execution_mode mode);
 
   ////////////////////////////////////////////////////////////
   // Callbacks
@@ -106,6 +116,6 @@ protected:
   virtual void do_batch_end_cbs(model& model, execution_mode mode);
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_SGD_TRAINING_ALGORITHM_HPP
+#endif // LBANN_SGD_TRAINING_ALGORITHM_HPP

@@ -79,7 +79,8 @@ message Callback {
     CallbackSetWeightsValue set_weights_value = 47;
     CallbackSummarizeImages summarize_images = 48;
     CallbackDumpModelGraph dump_model_graph = 49;
-    CallbackExportOnnx export_onnx = 50;
+    CallbackPerturbLearningRate perturb_learning_rate = 50;
+    CallbackExportOnnx export_onnx = 51;
   }
 
   message CallbackLTFB {
@@ -395,8 +396,13 @@ message Callback {
     bool print = 2;
   }
 
-  /** @brief Export trained model in onnx format */
-  message CallbackExportOnnx {
+  message CallbackPerturbLearningRate {
+    float learning_rate_factor = 1;   // Learning rate perturbation (in log space)
+    bool perturb_during_training = 2; // Whether to periodically perturb during training (default: False)
+    int64 batch_interval = 3;         // Frequency of perturbation if perturb_during_training is true
+    string weights = 4;               // Optimizer weights with lr to perturb (default: All)
   }
+    /** @brief Export trained model in onnx format */
+  message CallbackExportOnnx {
 
-}
+  }

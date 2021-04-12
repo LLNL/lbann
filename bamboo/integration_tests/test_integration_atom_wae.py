@@ -103,6 +103,13 @@ def construct_model(lbann):
     wae_loss.append(recon)
 
     layers = list(lbann.traverse_layer_graph(input_))
+
+    # Hack to avoid non-deterministic floating-point errors in some
+    # GPU layers
+    for l in layers:
+        if isinstance(l, lbann.Embedding) or isinstance(l, lbann.Tessellate):
+            l.device = 'CPU'
+
     # Setup objective function
     weights = set()
     src_layers = []
@@ -111,7 +118,7 @@ def construct_model(lbann):
       if(l.weights and "disc0" in l.name and "instance1" in l.name):
         src_layers.append(l.name)
       #freeze weights in disc2
-      if(l.weights and "disc1" in l.name):
+      if(l.weights and "disc1" in l.name and "instance1" in l.name):
         dst_layers.append(l.name)
         for idx in range(len(l.weights)):
           l.weights[idx].optimizer = lbann.NoOptimizer()

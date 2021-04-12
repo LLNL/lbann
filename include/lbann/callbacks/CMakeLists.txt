@@ -28,6 +28,7 @@ set_full_path(THIS_DIR_HEADERS
   monitor_io.hpp
   perturb_adam.hpp
   perturb_dropout.hpp
+  perturb_learning_rate.hpp
   print_model_description.hpp
   print_statistics.hpp
   profiler.hpp

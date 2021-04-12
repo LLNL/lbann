@@ -65,7 +65,9 @@ void rowwise_weights_norms_layer<TensorDataType, Layout, Device>::row_sqsums(
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void rowwise_weights_norms_layer<TensorDataType, Layout, Device>::sqrt(
   El::Matrix<TensorDataType, Device>& mat) {
-  El::EntrywiseMap(mat, El::Sqrt<TensorDataType>);
+  El::EntrywiseMap(
+    mat,
+    {[](TensorDataType const& a) { return El::Sqrt(a); }});
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
