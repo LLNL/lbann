@@ -25,20 +25,31 @@
 //
 // export_onnx .hpp .cpp - Exports trained model to onnx format
 ////////////////////////////////////////////////////////////////////////////////
+//#include <catch2/catch.hpp>
 
 #include <iostream>
 #include "lbann/callbacks/export_onnx.hpp"
 
+#include "lbann/layers/io/input_layer.hpp"
+
+#include "lbann/proto/helpers.hpp"
+#include "lbann/utils/factory.hpp"
+#include "lbann/utils/summary_impl.hpp"
+
+#include <callbacks.pb.h>
+
+
 namespace lbann {
 namespace callback {
 
-export_onnx::export_onnx()
+export_onnx::export_onnx(std::shared_ptr<lbann_summary> const& summarizer)
+  : m_summarizer(summarizer)
 {
-  std::cout << "I do stuff!" << endl;
+  std::cout << "I do stuff!" << std::endl;
 }
 
 std::unique_ptr<callback_base>
-build_summarize_images_callback_from_pbuf(
+build_export_onnx_callback_from_pbuf(
   const google::protobuf::Message& proto_msg,
   const std::shared_ptr<lbann_summary>& summarizer) {
 
