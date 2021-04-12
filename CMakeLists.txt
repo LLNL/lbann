@@ -237,6 +237,9 @@ endif ()
 set(LBANN_HAS_DIHYDROGEN TRUE)
 message(STATUS "Found DiHydrogen: ${DiHydrogen_DIR}")
 
+# Include onnx dependency
+find_package(ONNX CONFIG REQUIRED)
+
 # Inherit half-precision stuff from Hydrogen
 set(LBANN_HAS_HALF ${HYDROGEN_HAVE_HALF}) # This is CPU-only
 
@@ -634,9 +637,13 @@ target_include_directories(lbann PUBLIC
 target_compile_features(lbann PUBLIC cxx_std_17)
 
 # Use the IMPORTED targets when possible.
+<<<<<<< HEAD
 if (LBANN_HAS_ONNX)
   target_link_libraries(lbann PUBLIC onnx)
 endif ()
+=======
+target_link_libraries(lbann PUBLIC onnx)
+>>>>>>> Added callback to CMakelists
 target_link_libraries(lbann PUBLIC LbannProto)
 if (LBANN_HAS_TBINF)
   target_link_libraries(lbann PUBLIC TBinf)
