@@ -455,7 +455,6 @@ void hdf5_data_reader::pack(std::string group_name, conduit::Node& node, size_t 
     metadata[s_composite_node] = true;
     m_experiment_schema[group_name][s_metadata_node_name] = metadata;
     m_data_schema[group_name][s_metadata_node_name] = metadata;
-std::cout << "XX ADDING "<<group_name<<" to m_useme_node_map\n";
     m_useme_node_map[group_name] = m_experiment_schema[group_name];
     m_useme_node_map_ptrs[group_name] = &(m_experiment_schema[group_name]);
   }
