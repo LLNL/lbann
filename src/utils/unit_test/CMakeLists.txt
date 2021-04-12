@@ -15,6 +15,8 @@ set_full_path(THIS_DIR_SEQ_CATCH2_TEST_FILES
   timer_test.cpp
   type_erased_matrix_test.cpp
 
+  #callback_export_onnx_test.cpp
+
   stubs/preset_env_accessor.hpp
   stubs/preset_env_accessor.cpp
   )

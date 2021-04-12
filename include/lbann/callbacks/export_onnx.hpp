@@ -30,6 +30,9 @@
 #define LBANN_CALLBACKS_EXPORT_ONNX_HPP_INCLUDED
 
 #include "lbann/callbacks/callback.hpp"
+
+#include <google/protobuf/message.h>
+#include <lbann/base.hpp>
 #include <onnx/onnx_pb.h>
 #include <iostream>
 #include <memory>
@@ -47,20 +50,29 @@ class export_onnx : public callback_base {
 
 public:
   /** @brief export_onnx Constructor. */
-  export_onnx();
+  export_onnx(std::shared_ptr<lbann_summary> const& summarizer);
 
+  /** @brief Copy constructor */
+  callback_base* copy() const override {
+    LBANN_ERROR( "This callback is not copyable.");
+    return nullptr;
+  }
 
+  /** @brief Return name of callback */
+  std::string name() const override { return "export_onnx"; }
 
 private:
 
+  /* @brief lbann_summary object */
+  std::shared_ptr<lbann_summary> m_summarizer;
 
 
 }; // class export_onnx
 
 std::unique_ptr<callback_base>
 build_export_onnx_callback_from_pbuf(
-  const google::protobuf::message&,
-  const std::shared_ptr<lbann_summary>&);
+  const google::protobuf::Message& proto_msg,
+  const std::shared_ptr<lbann_summary>& summarizer);
 
 } // namespace callback
 } // namespace lbann
