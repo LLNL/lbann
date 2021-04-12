@@ -638,9 +638,13 @@ target_compile_features(lbann PUBLIC cxx_std_17)
 
 # Use the IMPORTED targets when possible.
 <<<<<<< HEAD
+<<<<<<< HEAD
 if (LBANN_HAS_ONNX)
   target_link_libraries(lbann PUBLIC onnx)
 endif ()
+=======
+target_link_libraries(lbann PUBLIC onnx)
+>>>>>>> Added callback to CMakelists
 =======
 target_link_libraries(lbann PUBLIC onnx)
 >>>>>>> Added callback to CMakelists
