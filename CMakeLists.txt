@@ -227,6 +227,9 @@ endif ()
 set(LBANN_HAS_DIHYDROGEN TRUE)
 message(STATUS "Found DiHydrogen: ${DiHydrogen_DIR}")
 
+# Include onnx dependency
+find_package(ONNX CONFIG REQUIRED)
+
 # Inherit half-precision stuff from Hydrogen
 set(LBANN_HAS_HALF ${HYDROGEN_HAVE_HALF}) # This is CPU-only
 
@@ -654,6 +657,7 @@ target_include_directories(lbann PUBLIC
 target_compile_features(lbann PUBLIC cxx_std_17)
 
 # Use the IMPORTED targets when possible.
+target_link_libraries(lbann PUBLIC onnx)
 target_link_libraries(lbann PUBLIC LbannProto)
 target_link_libraries(lbann PUBLIC Threads::Threads)
 target_link_libraries(lbann PUBLIC clara::clara)
