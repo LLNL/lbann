@@ -91,4 +91,4 @@ build_export_onnx_callback_from_pbuf(
 } // namespace callback
 } // namespace lbann
 
-#endif  // LBANN_CALLBACKS_EXPORT_ONNX_HPP_INCLUDED
+#endif // LBANN_CALLBACKS_EXPORT_ONNX_HPP_INCLUDED
