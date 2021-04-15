@@ -243,6 +243,9 @@ void restore_model_weights(
 std::string sendrecv_string(lbann_comm const& c, std::string const& src,
                             El::Int partner_trainer)
 {
+  if (!c.am_trainer_master())
+    return "";
+
   // Exchange sizes
   size_t my_size = src.size();
   size_t other_size = src.max_size()+1;
@@ -588,7 +591,6 @@ public:
         }
       }
     }
-
     exchange(comm, m, partner_trainer);
     restore_model_weights(m, restore_weights);
   }
