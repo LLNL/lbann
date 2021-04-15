@@ -111,12 +111,6 @@ void hdf5_data_reader::load() {
   load_schema(get_experiment_schema_filename(), m_experiment_schema);
   parse_schemas();
 
-  // ptrs were a problem when carving out a validation set 
-  for (const auto &t : m_useme_node_map_ptrs) {
-    m_useme_node_map[t.first] = *t.second;
-  }
-  construct_linearized_size_lookup_tables();
-
   if (is_master()) {
     std::cout << "time to load and parse the schemas: " << get_time() - tm11 
               << std::endl << "hdf5_data_reader::load() time (total): " 
@@ -178,8 +172,8 @@ void hdf5_data_reader::do_preload_data_store() {
 void hdf5_data_reader::load_sample(conduit::Node &node, size_t index, bool ignore_failure) {
   hid_t file_handle;
   std::string sample_name;
-  data_reader_sample_list::open_file(index, file_handle, sample_name);
 
+  data_reader_sample_list::open_file(index, file_handle, sample_name);
   // load data for the field names specified in the user's experiment-schema
   for (const auto &p : m_useme_node_map) {
     // do not load a "packed" field, as it doesn't exist on disk!
@@ -313,6 +307,12 @@ void hdf5_data_reader::parse_schemas() {
   //   1. is a leaf node whose values will be used in the experiment
   //   2. has a "metatdata" child node that contains instructions for
   //      munging the data, i.e: scale, bias, ordering, coersion, packing, etc.
+
+  // ptrs were a problem when carving out a validation set ...
+  for (const auto &t : m_useme_node_map_ptrs) {
+    m_useme_node_map[t.first] = *t.second;
+  }
+  construct_linearized_size_lookup_tables();
 }
 
 // recursive

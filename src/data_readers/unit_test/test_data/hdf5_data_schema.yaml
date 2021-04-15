@@ -1,3 +1,4 @@
+std::string const data_schema = R"ptext(
 inputs: 
   shape_model_initial_modes:(4,3): 
     metadata: 
@@ -124,3 +125,4 @@ outputs:
         emi: 
           metadata: 
             ordering: 302
+)ptext";

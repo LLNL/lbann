@@ -1,3 +1,4 @@
+std::string const experiment_schema = R"ptext(
 inputs:
   metadata:
     pack: "datum"
@@ -16,4 +17,4 @@ outputs:
       coerce: "double"
     (90.0, 0.0):
       0.0:
-
+)ptext";

@@ -120,6 +120,7 @@ public:
   int get_linearized_data_size(std::string name) const override;
 
   int get_linearized_data_size() const override {
+  if (is_master())std::cout<<"XX get_linearized_data_size: "<<get_linearized_data_size("datum")<<std::endl;
     return get_linearized_data_size("datum");
   }
 
@@ -130,19 +131,22 @@ public:
   void get_packing_data(std::string group_name, std::vector<std::vector<int>> &sizes_out, std::vector<std::string> &field_names_out) const override;
 
   int get_linearized_response_size(std::string name) const override {
+  if (is_master()) std::cout<< "get_linearized_response_size for: "<< get_linearized_data_size(name)<<std::endl;
     return get_linearized_data_size(name);
   }
   // required for backwards compatibility
   int get_linearized_response_size() const override {
-    return get_linearized_data_size("response");
-    return 0;
+  if (is_master()) std::cout<< "get_linearized_response_size(): "<<get_linearized_data_size("response")<<std::endl;
+    return get_linearized_data_size("response"); 
   }
 
   int get_linearized_label_size(std::string name) const override {
+  if (is_master()) std::cout<< "get_linearized_label_size(): "<<name << "; "<<get_linearized_data_size(name)<<std::endl;
     return get_linearized_data_size(name);
   }
   // required for backwards compatibility
   int get_linearized_label_size() const override {
+  if (is_master()) std::cout<< "get_linearized_label_size(): "<<get_linearized_data_size("label")<<std::endl;
     return get_linearized_data_size("label");
   }
 
