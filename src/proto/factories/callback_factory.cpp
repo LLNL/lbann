@@ -34,6 +34,7 @@
 #include "lbann/callbacks/check_small.hpp"
 #include "lbann/callbacks/checkpoint.hpp"
 #include "lbann/callbacks/confusion_matrix.hpp"
+#include "lbann/callbacks/compute_model_size.hpp"
 #include "lbann/callbacks/debug.hpp"
 #include "lbann/callbacks/debug_io.hpp"
 #include "lbann/callbacks/dump_error_signals.hpp"
@@ -116,6 +117,8 @@ void register_default_builders(factory_type& factory)
                            build_check_small_callback_from_pbuf);
   factory.register_builder("CallbackConfusionMatrix",
                            build_confusion_matrix_callback_from_pbuf);
+  factory.register_builder("CallbackComputeModelSize",
+                           build_compute_model_size_callback_from_pbuf);
   factory.register_builder("CallbackDebug",
                            build_debug_callback_from_pbuf);
   factory.register_builder("CallbackDebugIO",
