@@ -180,7 +180,7 @@ std::vector<std::pair<size_t, El::Int>>
 autoencoder_strategy::get_image_indices(model const& m) const {
 
   // Grab the data coordinator
-  auto const& dc = m.get_execution_context().get_trainer().get_data_coordinator();
+  auto const& dc = get_const_trainer().get_data_coordinator();
 
   // Grab the data reader
   auto const& data_reader =

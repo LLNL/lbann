@@ -43,6 +43,7 @@ enum class persist_type {
   metrics,
   validate,
   testing,
+  inference_context,
   prediction_context,
   training_context,
   testing_context,
@@ -64,6 +65,8 @@ inline persist_type execution_mode_to_persist_type(execution_mode m) {
     return persist_type::prediction_context;
   case execution_mode::tournament:
     return persist_type::tournament_context;
+  case execution_mode::inference:
+    return persist_type::inference_context;
   case execution_mode::invalid:
   default:
     LBANN_ERROR("Invalid execution mode specified");
@@ -92,6 +95,8 @@ inline std::string to_string(persist_type pt) {
     return "tournament";
   case persist_type::testing_context:
     return "testing";
+  case persist_type::inference_context:
+    return "inference";
   default:
       LBANN_ERROR("Invalid persist type specified");
   }

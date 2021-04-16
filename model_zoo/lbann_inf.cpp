@@ -80,11 +80,11 @@ int main(int argc, char *argv[]) {
     lbann_data::Trainer *pb_trainer = pb.mutable_trainer();
 
     // Construct the trainer
-    std::unique_ptr<trainer> trainer = construct_trainer(comm.get(), pb_trainer, *(pbs[0]), opts);
+    auto& trainer = construct_trainer(comm.get(), pb_trainer, *(pbs[0]), opts);
 
-    thread_pool& io_thread_pool = trainer->get_io_thread_pool();
+    thread_pool& io_thread_pool = trainer.get_io_thread_pool();
     int training_dr_linearized_data_size = -1;
-    auto *dr = trainer->get_data_coordinator().get_data_reader(execution_mode::testing);
+    auto *dr = trainer.get_data_coordinator().get_data_reader(execution_mode::testing);
     if(dr != nullptr) {
       training_dr_linearized_data_size = dr->get_linearized_data_size();
     } else {
@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
       models.emplace_back(
         build_model_from_prototext(argc, argv, pb_trainer, *pb_model,
                                    comm.get(), opts, io_thread_pool,
-                                   trainer->get_callbacks_with_ownership(),
+                                   trainer.get_callbacks_with_ownership(),
                                    training_dr_linearized_data_size));
     }
 
@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
     if(num_samples == 0) { LBANN_ERROR("The testing data reader does not have any samples"); }
     for(El::Int s = 0; s < num_samples; s++) {
       for(auto&& m : models) {
-        trainer->evaluate(m.get(), execution_mode::testing, 1);
+        trainer.evaluate(m.get(), execution_mode::testing, 1);
       }
     }
 

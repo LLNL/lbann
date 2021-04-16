@@ -594,7 +594,7 @@ EvalType evaluate(model& m, const std::string& metric_name)
   auto& c = m.get_execution_context();
   // Make sure data readers finish asynchronous work
   const auto original_mode = c.get_execution_mode();
-  data_coordinator& dc = m.get_execution_context().get_trainer().get_data_coordinator();
+  data_coordinator& dc = get_trainer().get_data_coordinator();
   dc.collect_background_data_fetch(original_mode);
 
   if(!dc.is_execution_mode_valid(execution_mode::tournament)) {
@@ -605,7 +605,7 @@ EvalType evaluate(model& m, const std::string& metric_name)
   m.mark_data_store_explicitly_loading(execution_mode::tournament);
 
   // Evaluate model on validation set
-  c.get_trainer().evaluate(&m, execution_mode::tournament);
+  get_trainer().evaluate(&m, execution_mode::tournament);
 
   // Get metric value
   bool found_metric = false;
@@ -628,7 +628,7 @@ EvalType evaluate(model& m, const std::string& metric_name)
 
   // Clean up and return metric value
   m.reset_mode(c, original_mode);
-  c.get_trainer().get_data_coordinator().reset_mode(c);
+  get_trainer().get_data_coordinator().reset_mode(c);
   return metric_value;
 }
 
@@ -737,7 +737,7 @@ void ltfb::on_batch_begin(model* m)
     local_model.swap_weights(partner_model);
     local_model.swap_metrics(partner_model);
     local_model.swap_objective_function(partner_model);
-    auto& trainer_ = context.get_trainer();
+    auto& trainer_ = get_trainer();
     auto&& metadata = trainer_.get_data_coordinator().get_dr_metadata();
     local_model.setup(
       trainer_.get_max_mini_batch_size(),

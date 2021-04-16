@@ -49,8 +49,7 @@ void timer::serialize(Archive & ar) {
 }
 
 void timer::batch_timing_begin(const model& m) {
-  const auto& c = m.get_execution_context();
-  const auto& mode = c.get_execution_mode();
+  auto const mode = m.get_execution_context().get_execution_mode();
   m_batch_start_times[mode] = get_time();
 }
 

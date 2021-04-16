@@ -114,7 +114,7 @@ bool save_model::do_save_model_weights(model *m) {
 
   // Shared checkpoint, logic identical to Distributed.i
   makedir(m_dir.c_str());
-  std::string epochdir = get_save_model_dirname(c.get_trainer().get_name(),
+  std::string epochdir = get_save_model_dirname(get_const_trainer().get_name(),
                                                 m->get_name(),
                                                 m_dir.c_str());
   p.open_checkpoint_dir(epochdir.c_str(), comm->am_trainer_master());
