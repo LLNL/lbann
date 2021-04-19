@@ -138,6 +138,7 @@ public:
   /** @name Setup */
   ///@{
 
+  using OptimizerType::setup;
   void setup(WeightsType* w = nullptr) override;
 
   ///@}

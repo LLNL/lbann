@@ -76,6 +76,7 @@ public:
   /** Human-readable description. */
   description get_description() const override;
 
+  using OptimizerType::setup;
   void setup(WeightsType* w = nullptr) override;
 
 protected:
