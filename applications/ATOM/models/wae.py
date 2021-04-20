@@ -86,7 +86,7 @@ class MolWAE(lbann.modules.Module):
 
     global_count = 0  # Static counter, used for default names
 
-    def __init__(self, input_feature_dims,dictionary_size, embedding_size, 
+    def __init__(self, input_feature_dims,dictionary_size, embedding_size,
                  ignore_label,zdim= 512, gmean=0.0, gstd=1.0,save_output=False, name=None):
         """Initialize Molecular WAE.
 
@@ -192,7 +192,7 @@ class MolWAE(lbann.modules.Module):
 
         # Encoder: x -> z, kl_loss
         z_sample = self.forward_encoder(x_emb)
-        
+
         eps = lbann.Gaussian(mean=self.gmean, stdev=self.gstd,hint_layer=z_sample)
         z_sample = lbann.Add([z_sample, eps])
 
@@ -292,7 +292,7 @@ class MolWAE(lbann.modules.Module):
                 if parent not in in_stack and parent not in (x_emb, z):
                     stack.append(parent)
                     in_stack[parent] = True
-
+        print("WAE save output? ", self.save_output)
         # Find argmax
         if(self.save_output):
           y_slice = lbann.Slice(

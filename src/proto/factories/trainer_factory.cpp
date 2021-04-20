@@ -58,8 +58,8 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm* comm,
 
   // Instantiate trainer
   auto t = make_unique<trainer>(comm,
-                                proto_trainer.mini_batch_size(),
-                                std::move(dc));
+                                std::move(dc),
+                                proto_trainer.mini_batch_size());
   const auto& name = proto_trainer.name();
   if (!name.empty()) {
     t->set_name(name);

@@ -57,18 +57,19 @@
 #include "lbann/layers/loss/mean_squared_error.hpp"
 #include "lbann/layers/loss/top_k_categorical_accuracy.hpp"
 #include "lbann/layers/math/math_builders.hpp"
+#include "lbann/layers/misc/argmax.hpp"
+#include "lbann/layers/misc/argmin.hpp"
 #include "lbann/layers/misc/channelwise_mean.hpp"
 #include "lbann/layers/misc/channelwise_softmax.hpp"
 #include "lbann/layers/misc/covariance.hpp"
+#include "lbann/layers/misc/dist_embedding.hpp"
 #include "lbann/layers/misc/dft_abs_builder.hpp"
 #include "lbann/layers/misc/mini_batch_index.hpp"
 #include "lbann/layers/misc/mini_batch_size.hpp"
-#include "lbann/layers/misc/variance.hpp"
-#include "lbann/layers/misc/argmax.hpp"
-#include "lbann/layers/misc/argmin.hpp"
 #include "lbann/layers/misc/one_hot.hpp"
-#include "lbann/layers/misc/dist_embedding.hpp"
+#include "lbann/layers/misc/rowwise_weights_norms.hpp"
 #include "lbann/layers/misc/uniform_hash.hpp"
+#include "lbann/layers/misc/variance.hpp"
 #include "lbann/layers/regularizers/batch_normalization.hpp"
 #include "lbann/layers/regularizers/dropout.hpp"
 #include "lbann/layers/regularizers/local_response_normalization.hpp"
@@ -240,6 +241,7 @@ private:
     LBANN_REGISTER_BUILDER(Gather, gather);
     LBANN_REGISTER_BUILDER(Hadamard, hadamard);
     LBANN_REGISTER_BUILDER(Pooling, pooling);
+    LBANN_REGISTER_BUILDER(Reduction, reduction);
     LBANN_REGISTER_BUILDER(Scatter, scatter);
     LBANN_REGISTER_BUILDER(Split, split);
     LBANN_REGISTER_BUILDER(StopGradient, stop_gradient);
@@ -277,11 +279,13 @@ private:
                            local_response_normalization);
 
     // Miscellaneous layers
-    LBANN_REGISTER_BUILDER(DFTAbs, dft_abs);
     LBANN_REGISTER_BUILDER(ChannelwiseSoftmax, channelwise_softmax);
+    LBANN_REGISTER_BUILDER(DFTAbs, dft_abs);
+    LBANN_REGISTER_BUILDER(DistEmbedding, dist_embedding);
     LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(MiniBatchIndex, mini_batch_index);
     LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(MiniBatchSize, mini_batch_size);
-    LBANN_REGISTER_BUILDER(DistEmbedding, dist_embedding);
+    LBANN_REGISTER_BUILDER(OneHot, one_hot);
+    LBANN_REGISTER_DEFAULT_BUILDER(RowwiseWeightsNorms, rowwise_weights_norms);
     LBANN_REGISTER_BUILDER(UniformHash, uniform_hash);
 
   }
@@ -494,19 +498,6 @@ std::unique_ptr<Layer> construct_layer_legacy(
                   "a data-parallel layout and on CPU");
     }
   }
-  if (proto_layer.has_reduction()) {
-    const auto& params = proto_layer.reduction();
-    const auto& mode_str = params.mode();
-    reduction_mode mode = reduction_mode::INVALID;
-    if (mode_str == "sum" || mode_str.empty()) { mode = reduction_mode::SUM; }
-    if (mode_str == "average") { mode = reduction_mode::AVERAGE; }
-    if (Layout == data_layout::DATA_PARALLEL) {
-      return lbann::make_unique<reduction_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(comm, mode);
-    } else {
-      LBANN_ERROR("reduction layer is only supported with "
-                  "a data-parallel layout");
-    }
-  }
   if (proto_layer.has_discrete_random()) {
     const auto& params = proto_layer.discrete_random();
     const auto& values = parse_list<DataType>(params.values());
@@ -677,15 +668,6 @@ std::unique_ptr<Layer> construct_layer_legacy(
     } else {
       LBANN_ERROR("argmin layer is only supported with "
                   "a data-parallel layout and on CPU");
-    }
-  }
-  if (proto_layer.has_one_hot()) {
-    if (Layout == data_layout::DATA_PARALLEL) {
-      const auto& params = proto_layer.one_hot();
-      return lbann::make_unique<one_hot_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(comm, params.size());
-    } else {
-      LBANN_ERROR("one-hot layer is only supported with "
-                  "a data-parallel layout");
     }
   }
 

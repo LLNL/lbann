@@ -101,6 +101,15 @@ auto data_type_optimizer<TensorDataType>::get_gradient() -> AbsDistMatrixType& {
 }
 
 template <typename TensorDataType>
+void data_type_optimizer<TensorDataType>::setup(weights* w_in)
+{
+  if (auto* w = dynamic_cast<WeightsType*>(w_in))
+    this->setup(w);
+  else
+    LBANN_ERROR("Incompatible weights type.");
+}
+
+template <typename TensorDataType>
 void data_type_optimizer<TensorDataType>::setup(WeightsType* w) {
   this->setup_base(w);
 }

@@ -95,6 +95,8 @@ public:
   /** @name Gradient update management */
   ///@{
 
+  virtual void setup(weights* w) = 0;
+
   /** @brief Add to the objective function gradient w.r.t. the weights.
    *  @param gradient           Contribution to gradient.
    *  @param scale              Scaling factor for gradient

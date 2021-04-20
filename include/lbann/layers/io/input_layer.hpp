@@ -29,14 +29,9 @@
 
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/data_coordinator/buffered_data_coordinator.hpp"
-#include "lbann/execution_contexts/sgd_execution_context.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/distconv.hpp"
 #include "lbann/models/model.hpp"
-#include <string>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
 
 namespace lbann {
 

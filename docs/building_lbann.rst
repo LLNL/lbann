@@ -1,4 +1,4 @@
-.. role:: bash(code)
+ .. role:: bash(code)
           :language: bash
 
 ====================
@@ -24,8 +24,10 @@ Building with `Spack <https://github.com/llnl/spack>`_
           different compiler than the default OSX command line tools
           and an MPI library.
 
+.. _setup_spack:
+
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Setup Spack
+Setup Spack (One-time setup)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 1.  Download and install `Spack <https://github.com/llnl/spack>`_
@@ -38,7 +40,6 @@ Setup Spack
         git clone https://github.com/spack/spack.git spack.git
         export SPACK_ROOT=<path to installation>/spack.git
         source ${SPACK_ROOT}/share/spack/setup-env.sh
-
 
 2.  LBANN will use `Spack environments
     <https://spack.readthedocs.io/en/latest/environments.html>`_ to
@@ -73,11 +74,36 @@ that want to train new or existing models using the Python front-end.
 
 .. note:: Users should make themselves comfortable with Spack and `its
           idioms for installing packages
-          <https://spack-tutorial.readthedocs.io/en/latest/tutorial_basics.html>`_
-          and experts can `customizations to their Spack ecosystem
+          <https://spack-tutorial.readthedocs.io/en/latest/tutorial_basics.html>`_,
+          and experts can add `customizations to their Spack ecosystem
           <https://spack.readthedocs.io/en/latest/configuration.html>`_
           (and modify these instructions) to ensure that they get the
           compilers and externals that they want.
+
+.. _setting_up_clingo:
+
+.. note:: LBANN works best with Spack's new concretizer clingo.
+          Please enable it by performing the following steps.  This
+          only needs to be done once per spack repository.
+
+          To update spack to use the new clingo concretizer.  There are two
+          steps to this: bootstrapping clingo and modifying the repositories
+          configuration file.
+
+          .. code-block:: bash
+
+             module load gcc/8.3.1     # Load a compiler with C++14 support
+             spack compiler add        # Make Spack aware of the new compiler
+             spack solve zlib          # Force Spack to bootstrap clingo
+
+          Create the file :code:`${SPACK_ROOT}/etc/spack/config.yaml`
+          if it doesn't exist. Verify that this file contains the
+          following lines, adding them if necessary:
+
+          .. code-block:: bash
+
+             config:
+               concretizer: clingo
 
 .. note:: If your model requires custom layers or data readers, you
           may need to install LBANN as a developer, which would allow
@@ -85,10 +111,10 @@ that want to train new or existing models using the Python front-end.
 
 The best practices are to create a Spack environment (similar to a
 Python virtual environment) and to use something like your compute
-center's `modules` packages to provide paths to system installed
+center's :code:`modules` packages to provide paths to system installed
 software.
 
-1. Create and activate spack environment called (replace <env name>):
+1. Create and activate spack environment called (replace :code:`<env name>`):
 
 .. code-block:: bash
 
@@ -110,8 +136,10 @@ software.
    spack install lbann <variants and dependencies>
    spack load lbann@develop
 
-.. note:: Here is an example of a set of commands that works on an
-          x86_64 architecture with Nvidia P100 GPUs:
+.. note::
+
+   Here is an example of a set of commands that works on an x86_64
+   architecture with Nvidia P100 GPUs:
 
    .. code-block:: bash
 
@@ -124,10 +152,10 @@ software.
       spack load lbann@develop
 
 Please note that when getting LBANN to build as a user will encounter
-some issues with the Spack legacy concretizer.  It will require
-getting just the "right" invocation and we are working on making it
-smoother.  For the time being, it may be easier to use the developer
-build instructions.
+some issues with the Spack legacy concretizer and use of the new
+clingo concretizer is highly recommended :ref:`(see above)
+<setting_up_clingo>`. Using the legacy concretizer will require getting
+just the "right" invocation and we suggest using clingo.
 
 .. _build_lbann_from_source:
 
@@ -153,7 +181,7 @@ platform and the nominal options in the CMake build environment.
 
     .. code-block:: bash
 
-        <path to lbann repo>/scripts/build_lbann.sh -d -- +dihydrogen +cuda +half
+        <path to lbann repo>/scripts/build_lbann.sh -d -- +cuda +half
 
     Note that the named version and resulting environment can be
     controlled via the :code:`-l` flag. A full list of options can be
@@ -173,6 +201,14 @@ platform and the nominal options in the CMake build environment.
    .. warning:: Depending on the completeness of the externals
                 specification, the initial build of all of the
                 standard packages in Spack can take a long time.
+
+   .. note:: The build script will automatically update your Spack
+             repository to use clingo.  The manual instructions for
+             doing this are detailed in the :ref:`user instructions
+             <setting_up_clingo>`.  Note that if Spack's
+             bootstrapping fails due to not finding a valid compiler,
+             please refer to the explicit user instructions on how to
+             have spack find a modern enough C++ compiler.
 
 2.  Once the installation has completed, to run LBANN you will want to
     load the spack module for LBANN with one of the following
@@ -202,15 +238,15 @@ For more control over the LBANN build, please see :ref:`the complete
 documentation for building LBANN directly with CMake
 <build-with-cmake>`.
 
-------------------------------------------
+--------------------------------------------
 Debugging some common Spack related issues
-------------------------------------------
+--------------------------------------------
 
 One common issue that can occur is that the modules can get out of
 sync between what the LBANN environment does and the Spack defaults.
 As a result the generated module files can get out of whack.  LBANN
 uses a module hierarchy naming scheme that is compatible with other
-modules, provides for name collision, and reduces the cluttter in the
+modules, provides for name collision, and reduces the clutter in the
 module name.  If your modules are not working you can regenerate them
 in a LBANN Spack environment compatible approach:
 
@@ -234,7 +270,6 @@ build from local repositories:
                     --hydrogen-repo <path>/Hydrogen.git
                     --aluminum-repo <path>/Aluminum.git
                     --dihydrogen-repo <path>/DiHydrogen.git
-                    -- +dihydrogen
 
 .. toctree::
    :maxdepth: 1
