@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.17)
 
-project(LBANN CXX)
+# C isn't required by LBANN but packages such as Conduit are forcing C dependencies in MPI
+project(LBANN C CXX)
 
 # Prevent in-source builds
 if (PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)

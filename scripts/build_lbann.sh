@@ -62,6 +62,7 @@ Options:
   ${C}--dry-run${N}               Dry run the commands (no effect)
   ${C}-l | --label${N}            LBANN version label prefix: (default label is local-<SPACK_ARCH_TARGET>,
                           and is built and installed in the spack environment lbann-<label>-<SPACK_ARCH_TARGET>
+  ${C}-j | --build-jobs${N}       Number of parallel processes to use for compiling
   ${C}--no-modules${N}            Don't try to load any modules (use the existing users environment)
   ${C}--no-tmp-build-dir${N}      Don't put the build directory in tmp space
   ${C}--spec-only${N}             Stop after a spack spec command
@@ -104,6 +105,15 @@ while :; do
             # Change default LBANN version label
             if [ -n "${2}" ]; then
                 LBANN_LABEL_PREFIX=${2}
+                shift
+            else
+                echo "\"${1}\" option requires a non-empty option argument" >&2
+                exit 1
+            fi
+            ;;
+        -j|--build-jobs)
+            if [ -n "${2}" ]; then
+                BUILD_JOBS="-j${2}"
                 shift
             else
                 echo "\"${1}\" option requires a non-empty option argument" >&2
@@ -545,7 +555,7 @@ fi
 
 ##########################################################################################
 # Actually install LBANN from local source
-CMD="spack install"
+CMD="spack install ${BUILD_JOBS}"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
