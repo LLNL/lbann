@@ -40,8 +40,8 @@ def make_random_array(shape, seed):
     return x.reshape(shape).astype(np.float32)
 
 # Data
-_num_samples = 23
-_sample_dims = [6,11,7]
+_num_samples = 7
+_sample_dims = [5,7,7,7]
 _sample_size = functools.reduce(operator.mul, _sample_dims)
 _samples = make_random_array([_num_samples] + _sample_dims, 7)
 
@@ -144,6 +144,9 @@ def setup_experiment(lbann):
     optimizer = lbann.NoOptimizer()
     return trainer, model, data_reader, optimizer
 
+def create_parallel_strategy(num_height_groups):
+    return {"height_groups": num_height_groups}
+
 def construct_model(lbann):
     """Construct LBANN model.
 
@@ -151,6 +154,13 @@ def construct_model(lbann):
         lbann (module): Module for LBANN Python frontend
 
     """
+
+    # distconv parallelization strategy
+    num_height_groups = tools.gpus_per_node(lbann)
+    if num_height_groups == 0:
+        e = 'this test requires GPUs.'
+        print('Skip - ' + e)
+        pytest.skip(e)
 
     # Input data
     # Note: Sum with a weights layer so that gradient checking will
@@ -170,17 +180,16 @@ def construct_model(lbann):
     callbacks = []
 
     # ------------------------------------------
-    # Basic 3x3 deconvolution
+    # 3x3 deconvolution
     # ------------------------------------------
-    # 3x3 conv transpose, stride=1, pad=0, dilation=1, bias
 
     # Deconvolution settings
-    kernel_dims = (_sample_dims[0], 5, 3, 3)
+    kernel_dims = (_sample_dims[0]*_sample_dims[1], 6, 3, 3)
     strides = (1, 1)
-    pads = (0, 0)
+    pads = (1, 1)
     dilations = (1, 1)
-    kernel = make_random_array(kernel_dims, 314)
-    bias = make_random_array([kernel_dims[1]], 159)
+    kernel = make_random_array(kernel_dims, 987)
+    bias = make_random_array([kernel_dims[1]], 654)
 
     # Apply deconvolution
     kernel_weights = lbann.Weights(
@@ -193,11 +202,18 @@ def construct_model(lbann):
         initializer=lbann.ValueInitializer(values=tools.str_list(np.nditer(bias))),
         name='bias1'
     )
-    x = x_lbann
+    x = lbann.Reshape(
+        x_lbann,
+        dims=tools.str_list([
+            _sample_dims[0]*_sample_dims[1],
+            _sample_dims[2],
+            _sample_dims[3],
+        ]),
+    )
     y = lbann.Deconvolution(
         x,
         weights=(kernel_weights, bias_weights),
-        num_dims=3,
+        num_dims=2,
         num_output_channels=kernel_dims[1],
         has_vectors=True,
         conv_dims=tools.str_list(kernel_dims[2:]),
@@ -205,27 +221,34 @@ def construct_model(lbann):
         conv_pads=tools.str_list(pads),
         conv_dilations=tools.str_list(dilations),
         has_bias=True,
+        parallel_strategy=create_parallel_strategy(num_height_groups),
     )
     z = lbann.L2Norm2(y)
     obj.append(z)
-    metrics.append(lbann.Metric(z, name='basic 3x3 deconvolution'))
+    metrics.append(lbann.Metric(z, name='3x3 deconvolution'))
 
     # PyTorch implementation
     try:
-        x = _samples
+        x = _samples.reshape((
+            _num_samples,
+            _sample_dims[0] * _sample_dims[1],
+            _sample_dims[2],
+            _sample_dims[3],
+        ))
         y = pytorch_deconvolution(
             x,
             kernel,
             bias=bias,
             stride=strides,
-            padding=pads,
+            padding=0,
             dilation=dilations,
         )
+        y = y[:,:,1:-1,1:-1]
         z = tools.numpy_l2norm2(y) / _num_samples
         val = z
     except:
         # Precomputed value
-        val = 212.49315000392752
+        val = 523.9982876632505
     tol = 8 * val * np.finfo(np.float32).eps
     callbacks.append(lbann.CallbackCheckMetric(
         metric=metrics[-1].name,
@@ -235,16 +258,16 @@ def construct_model(lbann):
         execution_modes='test'))
 
     # ------------------------------------------
-    # 2x4 strided deconvolution
+    # 3x3x3 deconvolution
     # ------------------------------------------
 
     # Deconvolution settings
-    kernel_dims = (_sample_dims[0], 3, 2, 4)
-    strides = (3, 1)
-    pads = (0, 0)
-    dilations = (1, 1)
-    num_groups = 1
-    kernel = make_random_array(kernel_dims, 123)
+    kernel_dims = (_sample_dims[0], 6, 3, 3, 3)
+    strides = (1, 1, 1)
+    pads = (1, 1, 1)
+    dilations = (1, 1, 1)
+    kernel = make_random_array(kernel_dims, 234)
+    bias = make_random_array([kernel_dims[1]], 567)
 
     # Apply deconvolution
     kernel_weights = lbann.Weights(
@@ -252,10 +275,15 @@ def construct_model(lbann):
         initializer=lbann.ValueInitializer(values=tools.str_list(np.nditer(kernel))),
         name='kernel2'
     )
+    bias_weights = lbann.Weights(
+        optimizer=lbann.SGD(),
+        initializer=lbann.ValueInitializer(values=tools.str_list(np.nditer(bias))),
+        name='bias2'
+    )
     x = x_lbann
     y = lbann.Deconvolution(
         x,
-        weights=(kernel_weights),
+        weights=(kernel_weights, bias_weights),
         num_dims=3,
         num_output_channels=kernel_dims[1],
         has_vectors=True,
@@ -263,12 +291,12 @@ def construct_model(lbann):
         conv_strides=tools.str_list(strides),
         conv_pads=tools.str_list(pads),
         conv_dilations=tools.str_list(dilations),
-        num_groups=num_groups,
-        has_bias=False,
+        has_bias=True,
+        parallel_strategy=create_parallel_strategy(num_height_groups),
     )
     z = lbann.L2Norm2(y)
     obj.append(z)
-    metrics.append(lbann.Metric(z, name='2x4 deconvolution'))
+    metrics.append(lbann.Metric(z, name='3x3x3 deconvolution'))
 
     # PyTorch implementation
     try:
@@ -276,94 +304,17 @@ def construct_model(lbann):
         y = pytorch_deconvolution(
             x,
             kernel,
-            bias=None,
-            stride=strides,
-            padding=pads,
-            dilation=dilations,
-            groups=num_groups,
-        )
-        z = tools.numpy_l2norm2(y) / _num_samples
-        val = z
-    except:
-        # Precomputed value
-        val = 86.35898350218172
-    tol = 8 * val * np.finfo(np.float32).eps
-    callbacks.append(lbann.CallbackCheckMetric(
-        metric=metrics[-1].name,
-        lower_bound=val-tol,
-        upper_bound=val+tol,
-        error_on_failure=True,
-        execution_modes='test'))
-
-    # ------------------------------------------
-    # 2x1x3 strided deconvolution
-    # ------------------------------------------
-
-    # Deconvolution settings
-    kernel_dims = (2, 3, 2, 1, 3)
-    strides = (1, 2, 1)
-    pads = (0, 0, 0)
-    dilations = (1, 1, 1)
-    num_groups = 1
-    kernel = make_random_array(kernel_dims, 2021)
-    bias = make_random_array([kernel_dims[1]], 420)
-
-    # Apply deconvolution
-    kernel_weights = lbann.Weights(
-        optimizer=lbann.SGD(),
-        initializer=lbann.ValueInitializer(values=tools.str_list(np.nditer(kernel))),
-        name='kernel3'
-    )
-    bias_weights = lbann.Weights(
-        optimizer=lbann.SGD(),
-        initializer=lbann.ValueInitializer(values=tools.str_list(np.nditer(bias))),
-        name='bias3'
-    )
-    x = x_lbann
-    x = lbann.Reshape(
-        x,
-        dims=tools.str_list((2, _sample_dims[0]//2, _sample_dims[1], _sample_dims[2])),
-    )
-    y = lbann.Deconvolution(
-        x,
-        weights=(kernel_weights, bias_weights),
-        num_dims=4,
-        num_output_channels=kernel_dims[1],
-        has_vectors=True,
-        conv_dims=tools.str_list(kernel_dims[2:]),
-        conv_strides=tools.str_list(strides),
-        conv_pads=tools.str_list(pads),
-        conv_dilations=tools.str_list(dilations),
-        num_groups=num_groups,
-        has_bias=True,
-    )
-    z = lbann.L2Norm2(y)
-    obj.append(z)
-    metrics.append(lbann.Metric(z, name='2x1x3 deconvolution'))
-
-    # PyTorch implementation
-    try:
-        x = _samples.reshape((
-            _num_samples,
-            2,
-            _sample_dims[0]//2,
-            _sample_dims[1],
-            _sample_dims[2],
-        ))
-        y = pytorch_deconvolution(
-            x,
-            kernel,
             bias=bias,
             stride=strides,
-            padding=pads,
+            padding=0,
             dilation=dilations,
-            groups=num_groups,
         )
+        y = y[:,:,1:-1,1:-1,1:-1]
         z = tools.numpy_l2norm2(y) / _num_samples
         val = z
     except:
         # Precomputed value
-        val = 510.8189309477026
+        val = 1756.356765744791
     tol = 8 * val * np.finfo(np.float32).eps
     callbacks.append(lbann.CallbackCheckMetric(
         metric=metrics[-1].name,
@@ -432,5 +383,7 @@ def construct_data_reader(lbann):
 # Create test functions that can interact with PyTest
 # Note: Create test name by removing ".py" from file name
 _test_name = os.path.splitext(os.path.basename(current_file))[0]
-for _test_func in tools.create_tests(setup_experiment, _test_name):
+for _test_func in tools.create_tests(setup_experiment,
+                                     _test_name,
+                                     environment=tools.get_distconv_environment()):
     globals()[_test_func.__name__] = _test_func
