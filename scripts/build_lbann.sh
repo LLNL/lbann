@@ -63,6 +63,7 @@ Options:
   ${C}-l | --label${N}            LBANN version label prefix: (default label is local-<SPACK_ARCH_TARGET>,
                           and is built and installed in the spack environment lbann-<label>-<SPACK_ARCH_TARGET>
   ${C}-j | --build-jobs${N}       Number of parallel processes to use for compiling
+  ${C}-m | --mirror${N}           Specify a Spack mirror (and buildcache)
   ${C}--no-modules${N}            Don't try to load any modules (use the existing users environment)
   ${C}--no-tmp-build-dir${N}      Don't put the build directory in tmp space
   ${C}--spec-only${N}             Stop after a spack spec command
@@ -114,6 +115,15 @@ while :; do
         -j|--build-jobs)
             if [ -n "${2}" ]; then
                 BUILD_JOBS="-j${2}"
+                shift
+            else
+                echo "\"${1}\" option requires a non-empty option argument" >&2
+                exit 1
+            fi
+            ;;
+        -m|--mirror)
+            if [ -n "${2}" ]; then
+                USER_MIRROR="${2}"
                 shift
             else
                 echo "\"${1}\" option requires a non-empty option argument" >&2
@@ -450,6 +460,11 @@ set_center_specific_spack_dependencies ${CENTER} ${SPACK_ARCH_TARGET}
 
 ##########################################################################################
 # See if the is a local spack mirror or buildcache
+if [[ -n "${USER_MIRROR:-}" ]]; then
+    # Allow the user to overwrite a standard mirror
+    MIRROR=${USER_MIRROR}
+fi
+
 if [[ -n "${MIRROR:-}" ]]; then
     CMD="spack mirror add lbann ${MIRROR}"
     echo ${CMD} | tee -a ${LOG}
@@ -516,8 +531,6 @@ fi
 # Get the spack hash before dev-build is called
 LBANN_SPEC_HASH=$(spack solve -l ${LBANN_DEV_PATH_SPEC} | grep lbann | grep arch=${SPACK_ARCH_PLATFORM} | awk '{print $1}')
 [[ -z "${DRY_RUN:-}" && "${SPEC_ONLY}" == "TRUE" ]] && exit
-
-echo "BVE I have found the LBANN_SPEC_HASH and it is ${LBANN_SPEC_HASH}"
 
 CMD="spack add ${LBANN_SPEC}"
 [[ -n "${INSTALL_DEPS:-}" ]] && echo ${CMD} | tee -a ${LOG}
@@ -591,6 +604,12 @@ if [[ -n "${MIRROR:-}" && -n "${UPDATE_BUILDCACHE:-}" ]]; then
     # Don't check the return code of the mirror create command, it will fail to install some packages
     [[ -z "${DRY_RUN:-}" ]] && ${CMD}
 
+    if [[ ! -e "${MIRROR}/pubring.gpg" ]]; then
+        CMD="cp ${SPACK_ROOT}/opt/spack/gpg/pubring.gpg ${MIRROR}/pubring.gpg"
+        echo ${CMD} | tee -a ${LOG}
+        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+    fi
+
     SPACK_INSTALL_ROOT=$(grep root $SPACK_ROOT/etc/spack/config.yaml | awk '{ print $2 }')
     for ii in $(spack find --format "{prefix} {version} {name},/{hash}" |
         grep -v -E "^(develop^master)" |
@@ -605,15 +624,17 @@ if [[ -n "${MIRROR:-}" && -n "${UPDATE_BUILDCACHE:-}" ]]; then
                 continue
                 ;;
         esac
-        if spack buildcache check --rebuild-on-error --mirror-url file://${MIRROR} -s ${HASH};
-        then
-            echo "I already have $ii"
-            true
-        else
-            echo "I need to add $ii"
-            CMD="spack buildcache create -af -d ${MIRROR} --only=package ${HASH}"
-            echo ${CMD} | tee -a ${LOG}
-            [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+        CMD="spack buildcache check --rebuild-on-error --mirror-url file://${MIRROR} -s ${HASH}"
+        echo "${NAME}: ${CMD}" | tee -a ${LOG}
+        if [[ -z "${DRY_RUN:-}" ]]; then
+            if ${CMD};
+            then
+                true
+            else
+                CMD="spack buildcache create -af -d ${MIRROR} --only=package ${HASH}"
+                echo ${CMD} | tee -a ${LOG}
+                [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+            fi
         fi
     done
     CMD="spack buildcache update-index -d ${MIRROR}"
