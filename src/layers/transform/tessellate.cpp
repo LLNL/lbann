@@ -54,7 +54,7 @@ void tessellate_layer<TensorDataType, T_layout, Dev>
   const El::Int output_col_stride = output.ColStride();
 
   // Populate local entries in output matrix
-  LBANN_OMP_PARALLEL_FOR_COLLAPSE2
+  LBANN_OMP_PARALLEL_FOR
   for (El::Int local_col = 0; local_col < local_output_width; ++local_col) {
     for (El::Int local_row = 0; local_row < local_output_height; ++local_row) {
 

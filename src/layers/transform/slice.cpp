@@ -60,7 +60,7 @@ void concat4d(
     const auto& output_offset = output_offset_list[j];
 
     // Copy input tensor to corresponding position in output tensor
-    LBANN_OMP_PARALLEL_FOR_COLLAPSE4
+    LBANN_OMP_PARALLEL_FOR
     for (size_t i0=0; i0<std::get<0>(input_dims); ++i0) {
       for (size_t i1=0; i1<std::get<1>(input_dims); ++i1) {
         for (size_t i2=0; i2<std::get<2>(input_dims); ++i2) {
@@ -111,7 +111,7 @@ void slice4d(
     const auto& input_offset = input_offset_list[j];
 
     // Copy output tensor to corresponding position in input tensor
-    LBANN_OMP_PARALLEL_FOR_COLLAPSE4
+    LBANN_OMP_PARALLEL_FOR
     for (size_t i0=0; i0<std::get<0>(output_dims); ++i0) {
       for (size_t i1=0; i1<std::get<1>(output_dims); ++i1) {
         for (size_t i2=0; i2<std::get<2>(output_dims); ++i2) {
