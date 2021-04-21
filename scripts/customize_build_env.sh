@@ -222,8 +222,8 @@ cat <<EOF  >> ${yaml}
         paths:
           cc: /opt/rocm-4.0.0/llvm/bin/clang
           cxx: /opt/rocm-4.0.0/llvm/bin/clang++
-          f77:
-          fc:
+          f77: /usr/bin/gfortran
+          fc: /usr/bin/gfortran
         flags: {}
         operating_system: rhel7
         target: x86_64
@@ -386,7 +386,7 @@ cleanup_clang_compilers()
 
     if [[ ${center} = "llnl_lc" ]]; then
         # LC uses a old default gcc and clang needs a newer default gcc toolchain
-        # Also set LC clang compilers to use lld for faster linking
-        perl -i.perl_bak -0pe 's/(- compiler:.*?spec: clang.*?flags:) (\{\})/$1 \{cflags: --gcc-toolchain=\/usr\/tce\/packages\/gcc\/gcc-8.1.0, cxxflags: --gcc-toolchain=\/usr\/tce\/packages\/gcc\/gcc-8.1.0, ldflags: -fuse-ld=lld\}/smg' ${yaml}
+        # Also set LC clang compilers to use lld for faster linking ldflags: -fuse-ld=lld
+        perl -i.perl_bak -0pe 's/(- compiler:.*?spec: clang.*?flags:) (\{\})/$1 \{cflags: --gcc-toolchain=\/usr\/tce\/packages\/gcc\/gcc-8.1.0, cxxflags: --gcc-toolchain=\/usr\/tce\/packages\/gcc\/gcc-8.1.0\}/smg' ${yaml}
     fi
 }
