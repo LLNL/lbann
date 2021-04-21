@@ -474,6 +474,12 @@ if [[ -n "${MIRROR:-}" ]]; then
     CMD="spack buildcache keys --install --trust"
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+
+    # Manually force Spack to trust the keys in the build cache - this is a hack until
+    # https://github.com/spack/spack/issues/23186 is fixed
+    CMD="spack gpg trust ${MIRROR}/build_cache/_pgp/B180FE4A5ECF4C02D21E6A67F13D1FBB0E55F96F.pub"
+    echo ${CMD} | tee -a ${LOG}
+    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 fi
 
 ##########################################################################################
