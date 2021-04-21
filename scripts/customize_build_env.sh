@@ -136,21 +136,22 @@ set_center_specific_spack_dependencies()
     local spack_arch_target="$2"
 
     if [[ ${center} = "llnl_lc" ]]; then
+        MIRROR="/p/vast1/lbann/spack/mirror"
         case ${spack_arch_target} in
             "power9le" | "power8le") # Lassen, Ray
                 CENTER_DEPENDENCIES="^spectrum-mpi ^openblas@0.3.12 threads=openmp"
-                CENTER_FLAGS="ldflags=\"-fuse-ld=gold\""
+                CENTER_FLAGS="ldflags=-fuse-ld=gold"
                 ;;
             "broadwell" | "haswell" | "sandybridge" | "ivybridge") # Pascal, RZHasGPU, Surface, Catalyst
                 # On LC the mvapich2 being used is built against HWLOC v1
                 CENTER_DEPENDENCIES="^mvapich2 ^hwloc@1.11.13"
-                CENTER_FLAGS="ldflags=\"-fuse-ld=gold\""
+                CENTER_FLAGS="ldflags=-fuse-ld=gold"
                 ;;
             "zen" | "zen2") # Corona
                 # On LC the mvapich2 being used is built against HWLOC v1
                 CENTER_DEPENDENCIES="^openmpi ^hwloc@2.3.0"
                 # Don't overwrite the flag here since we set compiler specific flags
-                # CENTER_FLAGS="ldflags=\"-fuse-ld=lld\""
+                # CENTER_FLAGS="ldflags=-fuse-ld=lld"
                 ;;
             *)
                 echo "No center-specified CENTER_DEPENDENCIES."

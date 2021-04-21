@@ -123,9 +123,9 @@ while :; do
         --no-modules)
             SKIP_MODULES="TRUE"
             ;;
-        --no-tmp-build-dir)
+        --tmp-build-dir)
             CLEAN_BUILD="TRUE"
-            NO_TMP_BUILD_DIR="TRUE"
+            TMP_BUILD_DIR="TRUE"
             ;;
         --spec-only)
             SPEC_ONLY="TRUE"
@@ -165,6 +165,9 @@ while :; do
                 echo "\"${1}\" option requires a non-empty option argument" >&2
                 exit 1
             fi
+            ;;
+        --update-buildcache)
+            UPDATE_BUILDCACHE="TRUE"
             ;;
         --)
             shift
@@ -446,6 +449,19 @@ CENTER_FLAGS=
 set_center_specific_spack_dependencies ${CENTER} ${SPACK_ARCH_TARGET}
 
 ##########################################################################################
+# See if the is a local spack mirror or buildcache
+if [[ -n "${MIRROR:-}" ]]; then
+    CMD="spack mirror add lbann ${MIRROR}"
+    echo ${CMD} | tee -a ${LOG}
+    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+
+    # Tell Spack to trust the keys in the build cache
+    CMD="spack buildcache keys --install --trust"
+    echo ${CMD} | tee -a ${LOG}
+    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+fi
+
+##########################################################################################
 # Establish the spec for LBANN
 LBANN_SPEC="lbann@${LBANN_LABEL} ${CENTER_FLAGS} ${LBANN_VARIANTS} ${HYDROGEN} ${DIHYDROGEN} ${ALUMINUM} ${CENTER_DEPENDENCIES}"
 LBANN_DEV_PATH_SPEC="lbann@${LBANN_LABEL} ${CENTER_FLAGS} dev_path=${LBANN_HOME} ${LBANN_VARIANTS} ${HYDROGEN} ${DIHYDROGEN} ${ALUMINUM} ${CENTER_DEPENDENCIES}"
@@ -498,8 +514,10 @@ if [[ -z "${DRY_RUN:-}" ]]; then
     eval ${CMD} || exit_on_failure "${CMD}\nIf the error is that boostrapping failed try something like 'module load gcc/8.3.1; spack compiler add' and then rerunning"
 fi
 # Get the spack hash before dev-build is called
-LBANN_SPEC_HASH=$(spack spec -l ${LBANN_DEV_PATH_SPEC} | grep lbann | grep arch=${SPACK_ARCH_PLATFORM} | awk '{print $1}')
+LBANN_SPEC_HASH=$(spack solve -l ${LBANN_DEV_PATH_SPEC} | grep lbann | grep arch=${SPACK_ARCH_PLATFORM} | awk '{print $1}')
 [[ -z "${DRY_RUN:-}" && "${SPEC_ONLY}" == "TRUE" ]] && exit
+
+echo "BVE I have found the LBANN_SPEC_HASH and it is ${LBANN_SPEC_HASH}"
 
 CMD="spack add ${LBANN_SPEC}"
 [[ -n "${INSTALL_DEPS:-}" ]] && echo ${CMD} | tee -a ${LOG}
@@ -514,6 +532,12 @@ if [[ -z "${DRY_RUN:-}" && -n "${INSTALL_DEPS:-}" ]]; then
     if [[ -n "${DEPENDENCIES_ONLY:-}" ]]; then
         exit
     fi
+fi
+
+##########################################################################################
+# If there is a local mirror, pad out the install tree so that it can be relocated
+if [[ -n "${MIRROR:-}" ]]; then
+    spack config add "config:install_tree:padded_length:128"
 fi
 
 # Explicitly add the lbann spec to the environment
@@ -545,7 +569,7 @@ if [[ -L "${SPACK_BUILD_DIR}" ]]; then
 fi
 
 # If the spack build directory does not exist, create a tmp directory and link it
-if [[ ! -e "${SPACK_BUILD_DIR}" && -z "${NO_TMP_BUILD_DIR}" && -z "${DRY_RUN:-}" ]]; then
+if [[ ! -e "${SPACK_BUILD_DIR}" && -n "${TMP_BUILD_DIR:-}" && -z "${DRY_RUN:-}" ]]; then
     tmp_dir=$(mktemp -d -t lbann-spack-build-${LBANN_SPEC_HASH}-$(date +%Y-%m-%d-%H%M%S)-XXXXXXXXXX)
     echo ${tmp_dir}
     CMD="ln -s ${tmp_dir} spack-build-${LBANN_SPEC_HASH}"
@@ -558,6 +582,44 @@ fi
 CMD="spack install ${BUILD_JOBS}"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+
+
+if [[ -n "${MIRROR:-}" && -n "${UPDATE_BUILDCACHE:-}" ]]; then
+    # Make sure that all of the packages in the environment are in the mirror
+    CMD="spack mirror create -d ${MIRROR} --all"
+    echo ${CMD} | tee -a ${LOG}
+    # Don't check the return code of the mirror create command, it will fail to install some packages
+    [[ -z "${DRY_RUN:-}" ]] && ${CMD}
+
+    SPACK_INSTALL_ROOT=$(grep root $SPACK_ROOT/etc/spack/config.yaml | awk '{ print $2 }')
+    for ii in $(spack find --format "{prefix} {version} {name},/{hash}" |
+        grep -v -E "^(develop^master)" |
+        grep -e "${SPACK_ROOT}" -e "${SPACK_INSTALL_ROOT}" |
+        cut -f3 -d" ")
+    do
+        NAME=${ii%,*};
+        HASH=${ii#*,};
+        case ${NAME} in
+            "cuda" | "cudnn" | "ncurses" | "openssl" | "lbann")
+                echo "Skipping $ii"
+                continue
+                ;;
+        esac
+        if spack buildcache check --rebuild-on-error --mirror-url file://${MIRROR} -s ${HASH};
+        then
+            echo "I already have $ii"
+            true
+        else
+            echo "I need to add $ii"
+            CMD="spack buildcache create -af -d ${MIRROR} --only=package ${HASH}"
+            echo ${CMD} | tee -a ${LOG}
+            [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+        fi
+    done
+    CMD="spack buildcache update-index -d ${MIRROR}"
+    echo ${CMD} | tee -a ${LOG}
+    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+fi
 
 # Don't use the output of this file since it will not exist if the compilation is not successful
 # LBANN_BUILD_DIR=$(grep "PROJECT_BINARY_DIR:" ${LBANN_HOME}/spack-build-out.txt | awk '{print $2}')
