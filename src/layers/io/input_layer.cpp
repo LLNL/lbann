@@ -97,28 +97,30 @@ template <typename TensorDataType,
           El::Device Dev>
 void input_layer<TensorDataType, T_layout, Dev>::fp_compute()
 {
-  execution_mode const mode =
-    this->m_model->get_execution_context().get_execution_mode();
-  buffered_data_coordinator<TensorDataType>& dc =
-    static_cast<buffered_data_coordinator<TensorDataType>&>(
-      get_trainer().get_data_coordinator());
+  if (!this->m_samples_loaded) {
+    execution_mode const mode =
+      this->m_model->get_execution_context().get_execution_mode();
+    buffered_data_coordinator<TensorDataType>& dc =
+      static_cast<buffered_data_coordinator<TensorDataType>&>(
+        get_trainer().get_data_coordinator());
 
-  //  partitioned_io_buffer<TensorDataType>* io_buffer = dc.get_active_buffer(mode);
-  // generic_io_buffer<TensorDataType>* io_buffer = dc.m_io_buffers[dc.get_active_buffer_idx(mode) % dc.m_io_buffers.size()];
+    //  partitioned_io_buffer<TensorDataType>* io_buffer = dc.get_active_buffer(mode);
+    // generic_io_buffer<TensorDataType>* io_buffer = dc.m_io_buffers[dc.get_active_buffer_idx(mode) % dc.m_io_buffers.size()];
 
-  // if(dynamic_cast<partitioned_io_buffer<TensorDataType>*>(io_buffer) != nullptr) {
-  // Use the predetermined size of the mini-batch to set the current
-  // batch size for the neural network
-  int num_samples_in_batch = dc.get_current_mini_batch_size(mode);
+    // if(dynamic_cast<partitioned_io_buffer<TensorDataType>*>(io_buffer) != nullptr) {
+    // Use the predetermined size of the mini-batch to set the current
+    // batch size for the neural network
+    int num_samples_in_batch = dc.get_current_mini_batch_size(mode);
 
-  dc.update_num_samples_processed(mode, num_samples_in_batch);
-  std::map<input_data_type, AbsDistMatrixType*> input_buffers;
-  input_buffers[input_data_type::SAMPLES] = &(this->get_activations(0));
-  if(this->m_expected_num_child_layers > 1) {
-    if(is_for_regression()) {
-      input_buffers[input_data_type::RESPONSES] = &(this->get_activations(1));
-    }else {
-      input_buffers[input_data_type::LABELS] = &(this->get_activations(1));
+    dc.update_num_samples_processed(mode, num_samples_in_batch);
+    std::map<input_data_type, AbsDistMatrixType*> input_buffers;
+    input_buffers[input_data_type::SAMPLES] = &(this->get_activations(0));
+    if(this->m_expected_num_child_layers > 1) {
+      if(is_for_regression()) {
+        input_buffers[input_data_type::RESPONSES] = &(this->get_activations(1));
+      }else {
+        input_buffers[input_data_type::LABELS] = &(this->get_activations(1));
+      }
     }
 
     dc.distribute_from_local_matrix(mode, input_buffers);
