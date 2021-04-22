@@ -60,20 +60,20 @@ void concat4d(
     const auto& output_offset = output_offset_list[j];
 
     // Copy input tensor to corresponding position in output tensor
-    LBANN_OMP_PARALLEL_FOR_COLLAPSE4
-    for (size_t i0=0; i0<std::get<0>(input_dims); ++i0) {
-      for (size_t i1=0; i1<std::get<1>(input_dims); ++i1) {
-        for (size_t i2=0; i2<std::get<2>(input_dims); ++i2) {
-          for (size_t i3=0; i3<std::get<3>(input_dims); ++i3) {
-            const auto& x = input_buffer[i0 * std::get<0>(input_strides)
-                                         + i1 * std::get<1>(input_strides)
-                                         + i2 * std::get<2>(input_strides)
-                                         + i3 * std::get<3>(input_strides)];
+    LBANN_OMP_PARALLEL_FOR
+    for (size_t i0=0; i0<input_dims[0]; ++i0) {
+      for (size_t i1=0; i1<input_dims[1]; ++i1) {
+        for (size_t i2=0; i2<input_dims[2]; ++i2) {
+          for (size_t i3=0; i3<input_dims[3]; ++i3) {
+            const auto& x = input_buffer[i0 * input_strides[0]
+                                         + i1 * input_strides[1]
+                                         + i2 * input_strides[2]
+                                         + i3 * input_strides[3]];
             auto& y = output_buffer[output_offset
-                                    + i0 * std::get<0>(output_strides)
-                                    + i1 * std::get<1>(output_strides)
-                                    + i2 * std::get<2>(output_strides)
-                                    + i3 * std::get<3>(output_strides)];
+                                    + i0 * output_strides[0]
+                                    + i1 * output_strides[1]
+                                    + i2 * output_strides[2]
+                                    + i3 * output_strides[3]];
             y = x;
           }
         }
@@ -111,20 +111,20 @@ void slice4d(
     const auto& input_offset = input_offset_list[j];
 
     // Copy output tensor to corresponding position in input tensor
-    LBANN_OMP_PARALLEL_FOR_COLLAPSE4
-    for (size_t i0=0; i0<std::get<0>(output_dims); ++i0) {
-      for (size_t i1=0; i1<std::get<1>(output_dims); ++i1) {
-        for (size_t i2=0; i2<std::get<2>(output_dims); ++i2) {
-          for (size_t i3=0; i3<std::get<3>(output_dims); ++i3) {
+    LBANN_OMP_PARALLEL_FOR
+    for (size_t i0=0; i0<output_dims[0]; ++i0) {
+      for (size_t i1=0; i1<output_dims[1]; ++i1) {
+        for (size_t i2=0; i2<output_dims[2]; ++i2) {
+          for (size_t i3=0; i3<output_dims[3]; ++i3) {
             const auto& x = input_buffer[input_offset
-                                         + i0 * std::get<0>(input_strides)
-                                         + i1 * std::get<1>(input_strides)
-                                         + i2 * std::get<2>(input_strides)
-                                         + i3 * std::get<3>(input_strides)];
-            auto& y = output_buffer[i0 * std::get<0>(output_strides)
-                                    + i1 * std::get<1>(output_strides)
-                                    + i2 * std::get<2>(output_strides)
-                                    + i3 * std::get<3>(output_strides)];
+                                         + i0 * input_strides[0]
+                                         + i1 * input_strides[1]
+                                         + i2 * input_strides[2]
+                                         + i3 * input_strides[3]];
+            auto& y = output_buffer[i0 * output_strides[0]
+                                    + i1 * output_strides[1]
+                                    + i2 * output_strides[2]
+                                    + i3 * output_strides[3]];
             y = x;
           }
         }
