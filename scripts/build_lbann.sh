@@ -58,7 +58,6 @@ Options:
   ${C}--clean-build${N}           Delete the local link to the build directory
   ${C}--clean-deps${N}            Forcibly uninstall Hydrogen, Aluminum, and DiHydrogen dependencies
   ${C}-d | --install-deps${N}     Install the lbann dependencies in addition to building from local source
-  ${C}--dependencies-only${N}     Stop after installing the lbann dependencies
   ${C}--dry-run${N}               Dry run the commands (no effect)
   ${C}-l | --label${N}            LBANN version label prefix: (default label is local-<SPACK_ARCH_TARGET>,
                           and is built and installed in the spack environment lbann-<label>-<SPACK_ARCH_TARGET>
@@ -95,9 +94,6 @@ while :; do
             ;;
         -d|--install-deps)
             INSTALL_DEPS="TRUE"
-            ;;
-        --dependencies-only)
-            DEPENDENCIES_ONLY="TRUE"
             ;;
         --dry-run)
             DRY_RUN="TRUE"
