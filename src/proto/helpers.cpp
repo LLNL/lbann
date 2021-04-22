@@ -81,3 +81,28 @@ get_oneof_message(
 }// namespace helpers
 }// namespace proto
 }// namespace lbann
+
+namespace {
+std::string remove_scope_from_type(std::string const& type)
+{
+  auto pos = type.rfind('.');
+  if (pos == std::string::npos)
+    return type;// Assume the whole thing is just the type
+  else
+    return type.substr(pos+1);
+}
+} // namespace
+
+std::string lbann::proto::helpers::message_type(
+  google::protobuf::Message const& m)
+{
+  return m.GetDescriptor()->name();
+}
+
+std::string lbann::proto::helpers::message_type(
+  google::protobuf::Any const& m)
+{
+  std::string full_type;
+  google::protobuf::Any::ParseAnyTypeUrl(m.type_url(), &full_type);
+  return remove_scope_from_type(full_type);
+}

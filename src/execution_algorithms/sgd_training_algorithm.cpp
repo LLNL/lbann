@@ -25,8 +25,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/execution_algorithms/sgd_training_algorithm.hpp"
+#include "lbann/base.hpp"
 #include "lbann/callbacks/callback.hpp"
+#include "lbann/execution_contexts/sgd_execution_context.hpp"
 #include "lbann/models/model.hpp"
+#include "lbann/utils/memory.hpp"
+#include <training_algorithm.pb.h>
 
 namespace lbann {
 
@@ -37,21 +41,23 @@ namespace lbann {
 void sgd_training_algorithm::apply(execution_context& context,
                                    model& model,
                                    data_coordinator& dc,
-                                   execution_mode mode,
-                                   termination_criteria const& term_criteria)
+                                   execution_mode mode)
 {
   sgd_execution_context& sgd_context =
     static_cast<sgd_execution_context&>(context);
-  const sgd_termination_criteria& sgd_term =
-    static_cast<const sgd_termination_criteria&>(term_criteria);
+  const sgd_termination_criteria& sgd_term = m_stopping_criteria;
   switch (mode) {
   case execution_mode::training:
-    train(sgd_context, model, dc, sgd_term.num_epochs, sgd_term.num_steps);
+    train(sgd_context,
+          model,
+          dc,
+          sgd_term.max_num_epochs(),
+          sgd_term.max_num_steps());
     break;
   case execution_mode::validation:
   case execution_mode::testing:
   case execution_mode::prediction:
-    evaluate(sgd_context, model, dc, mode, sgd_term.num_steps);
+    evaluate(sgd_context, model, dc, mode, sgd_term.max_num_steps());
     break;
   default:
     LBANN_ERROR(std::string{} + "Illegal mode: " + to_string(mode));
@@ -64,8 +70,8 @@ void sgd_training_algorithm::train(sgd_execution_context& c,
                                    size_t num_epochs,
                                    size_t num_batches)
 {
-
   // Initialize epoch
+  c.set_execution_mode(execution_mode::training);
   model.reset_mode(c, execution_mode::training);
   dc.reset_mode(c);
 
@@ -364,4 +370,27 @@ void sgd_training_algorithm::do_batch_end_cbs(model& model, execution_mode mode)
 
 std::string sgd_training_algorithm::get_type() const { return "sgd"; }
 
+sgd_execution_context*
+sgd_training_algorithm::do_get_new_execution_context() const
+{
+  return new sgd_execution_context(execution_mode::invalid, 0);
+}
 } // namespace lbann
+
+template <>
+std::unique_ptr<lbann::sgd_training_algorithm>
+lbann::make<lbann::sgd_training_algorithm>(
+  google::protobuf::Message const& msg_in)
+{
+  auto const& params =
+    dynamic_cast<lbann_data::TrainingAlgorithm const&>(msg_in);
+
+  lbann_data::SGD sgd_params;
+  LBANN_ASSERT(params.parameters().UnpackTo(&sgd_params));
+
+  auto const& stopping_criteria = sgd_params.stopping_criteria();
+  return make_unique<sgd_training_algorithm>(
+    params.name(),
+    sgd_termination_criteria{stopping_criteria.max_batches(),
+                             stopping_criteria.max_epochs()});
+}

@@ -27,10 +27,15 @@
 #ifndef LBANN_SGD_TRAINING_ALGORITHM_HPP
 #define LBANN_SGD_TRAINING_ALGORITHM_HPP
 
+#include "lbann/base.hpp"
+#include "lbann/execution_algorithms/factory.hpp"
 #include "lbann/execution_algorithms/training_algorithm.hpp"
 #include "lbann/execution_contexts/execution_context.hpp"
 #include "lbann/execution_contexts/sgd_execution_context.hpp"
 #include "lbann/utils/cloneable.hpp"
+#include "lbann/utils/memory.hpp"
+#include <google/protobuf/message.h>
+#include <memory>
 
 namespace lbann {
 
@@ -42,7 +47,11 @@ class sgd_training_algorithm
 
 public:
   /** @brief Construct with a name. */
-  sgd_training_algorithm(std::string name) : BaseType{std::move(name)} {}
+  sgd_training_algorithm(std::string name,
+                         sgd_termination_criteria stop)
+    : BaseType{std::move(name)},
+      m_stopping_criteria{std::move(stop)}
+  {}
 
   sgd_training_algorithm(const sgd_training_algorithm& other) = default;
   sgd_training_algorithm&
@@ -65,8 +74,7 @@ public:
   void apply(execution_context& c,
              model& model,
              data_coordinator& dc,
-             execution_mode mode,
-             termination_criteria const& term_criteria) override;
+             execution_mode mode) override;
 
   /** Train a model using an iterative SGD solver. */
   void train(sgd_execution_context& c,
@@ -81,6 +89,18 @@ public:
                 data_coordinator& dc,
                 execution_mode mode,
                 size_t num_batches = 0);
+
+  /** @brief Get a default-initialized execution context.
+   *  @note This method participates in the
+   *        "covariant-smart-pointer-return" pattern. In particular,
+   *        it hides the base-class method to give the illusion of a
+   *        covariant return.
+   */
+  std::unique_ptr<sgd_execution_context>
+  get_new_execution_context() const
+  {
+    return to_unique_ptr(this->do_get_new_execution_context());
+  }
 
 protected:
   /** Train model on one step / mini-batch of an SGD forward pass */
@@ -114,7 +134,17 @@ protected:
   virtual void do_batch_begin_cbs(model& model, execution_mode mode);
   /** Execute callbacks at end of mini-batch. */
   virtual void do_batch_end_cbs(model& model, execution_mode mode);
+
+  sgd_execution_context*
+  do_get_new_execution_context() const override;
+
+private:
+  sgd_termination_criteria m_stopping_criteria;
 };
+
+template <>
+std::unique_ptr<sgd_training_algorithm>
+make<sgd_training_algorithm>(google::protobuf::Message const& params);
 
 } // namespace lbann
 

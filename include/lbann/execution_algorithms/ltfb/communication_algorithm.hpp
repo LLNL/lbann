@@ -24,50 +24,24 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-syntax = "proto3";
+#ifndef LBANN_EXECUTION_ALGORITHMS_LTFB_COMMUNICATION_ALGORITHM_HPP_
+#define LBANN_EXECUTION_ALGORITHMS_LTFB_COMMUNICATION_ALGORITHM_HPP_
 
-package lbann_data;
+#include "lbann/utils/cloneable.hpp"
 
-import "datatype.proto";
+namespace lbann {
+namespace ltfb {
 
-import "callbacks.proto";
+/** @brief Abstract interface for communicating model information. */
+class CommunicationAlgorithm
+  : public Cloneable<HasAbstractFunction<CommunicationAlgorithm>>
+{
+public:
 
-import "training_algorithm.proto";
+private:
 
-message Trainer {
+};// class CommunicationAlgorithm
 
-  // Unique identifier
-  string name = 1;
-
-  // I/O threads per parallel process
-  //
-  // These threads are typically used to perform data ingestion in the
-  // background.
-  int64 num_parallel_readers = 3;
-  bool  serialize_io = 101;
-
-  repeated Callback callback = 20;
-  int64 mini_batch_size = 12;
-
-  // -------------------------------
-  // Advanced options
-  // -------------------------------
-
-  // If false, trainers will have their trainer rank mixed into their random seed.
-  bool random_init_trainers_identically = 4;
-
-  // Set a random seed for the entire trainer
-  int64 random_seed = 30;
-
-  // Algorithmic block size for Hydrogen
-  int64 hydrogen_block_size = 100;
-
-  DataCoordinator data_coordinator = 200;
-
-  message DataCoordinator {
-    DataType datatype = 1;
-    string io_buffer = 2;         // Options: "partitioned" (default)
-  }
-
-  TrainingAlgorithm training_algorithm = 300;
-}
+}// namespace ltfb
+}// namespace lbann
+#endif // LBANN_EXECUTION_ALGORITHMS_LTFB_COMMUNICATION_ALGORITHM_HPP_

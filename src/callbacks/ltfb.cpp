@@ -636,7 +636,7 @@ EvalType evaluate(model& m, const std::string& metric_name)
 
   // Clean up and return metric value
   m.reset_mode(c, original_mode);
-  get_trainer().get_data_coordinator().reset_mode(c);
+  dc.reset_mode(c);
   return metric_value;
 }
 

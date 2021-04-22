@@ -26,9 +26,73 @@
 
 syntax = "proto3";
 
+import "google/protobuf/any.proto";
+
 package lbann_data;
 
+// A message describing a training algorithm.
 message TrainingAlgorithm {
-  string type = 1;
-  string name = 3;
+  // Human-decided name. Just for output/user reference.
+  string name = 1;
+
+  // This is a message containing the parameters needed to construct a
+  // solver. The actual message type must be registered with LBANN's
+  // factory. The onus is on the user to ensure the parameters
+  // provided are consistent with the algorithm they have selected.
+  google.protobuf.Any parameters = 2;
 }
+
+// Is-a TrainingAlgorithm
+message SGD {
+  message TerminationCriteria {
+    uint64 max_batches = 1;
+    uint64 max_epochs = 2;
+    double max_seconds = 3;
+  }
+
+  TerminationCriteria stopping_criteria = 1;
+}// message SGD
+
+// Is-a TrainingAlgorithm
+message LTFB {
+  message TerminationCriteria {
+    uint64 max_tournaments = 1;
+  }
+
+  TrainingAlgorithm local_training_algorithm = 1;
+  google.protobuf.Any meta_learning_strategy = 2;
+  TerminationCriteria stopping_criteria = 3;
+}// message LTFB
+
+// The classic LTFB algorithm. Implements MetaLearningStrategy.
+message RandomPairwiseExchange {
+  enum MetricStrategy {
+    LOWER_IS_BETTER = 0;
+    HIGHER_IS_BETTER = 1;
+  }
+
+  string metric_name = 1;
+  MetricStrategy metric_strategy = 2;
+  ExchangeStrategy exchange_strategy = 3;
+
+  // This uses the "oneof" strategy because we don't really want
+  // downstreams adding strategies willy nilly.
+  message ExchangeStrategy {
+    message SendRecvWeights {
+      bool exchange_hyperparameters = 1;
+    }
+    message CheckpointBinary {
+      // No extra params
+    }
+    message CheckpointFile {
+      string base_dir = 1;
+    }
+
+    repeated string weights_name = 1;
+    oneof strategy {
+      SendRecvWeights sendrecv_weights = 2;
+      CheckpointBinary checkpoint_binary = 3;
+      CheckpointFile checkpoint_file = 4;
+    }
+  }// message ExchangeStrategy
+}// message RandomPairwiseExchange

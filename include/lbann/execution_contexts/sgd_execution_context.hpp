@@ -35,8 +35,16 @@ namespace lbann {
 class sgd_termination_criteria : public termination_criteria
 {
 public:
+  sgd_termination_criteria(size_t max_num_batches,
+                           size_t max_num_epochs)
+    : termination_criteria{max_num_batches},
+      m_max_epochs{max_num_epochs}
+  {
+  }
   ~sgd_termination_criteria() = default;
-  size_t num_epochs;
+  size_t max_num_epochs() const noexcept { return m_max_epochs; }
+private:
+  size_t m_max_epochs;
 };
 
 /** @brief SGD Uses the step to track the Current mini-batch step for

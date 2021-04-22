@@ -43,13 +43,6 @@ namespace lbann {
 class trainer;
 class training_algorithm;
 
-class termination_criteria
-{
-public:
-  virtual ~termination_criteria() = default;
-  size_t num_steps;
-};
-
 class execution_context
 {
 public:
@@ -133,6 +126,24 @@ private:
    *  the next epoch.
    */
   bool m_terminate_training = false;
+};
+
+class termination_criteria
+{
+public:
+  termination_criteria(size_t max_steps)
+    : m_max_num_steps{max_steps}
+  {}
+  virtual ~termination_criteria() = default;
+  bool satisfied(execution_context const& ctxt) const
+  {
+    return (ctxt.get_step() >= m_max_num_steps);
+  }
+
+  size_t max_num_steps() const noexcept { return m_max_num_steps; }
+
+private:
+  size_t m_max_num_steps;
 };
 
 } // namespace lbann
