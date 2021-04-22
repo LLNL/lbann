@@ -62,7 +62,7 @@ Options:
   ${C}--dry-run${N}               Dry run the commands (no effect)
   ${C}-l | --label${N}            LBANN version label prefix: (default label is local-<SPACK_ARCH_TARGET>,
                           and is built and installed in the spack environment lbann-<label>-<SPACK_ARCH_TARGET>
-  ${C}-j | --build-jobs${N}       Number of parallel processes to use for compiling
+  ${C}-j | --build-jobs${N}       Number of parallel processes to use for compiling, e.g. -j \$((\$(nproc)+2))
   ${C}-m | --mirror${N}           Specify a Spack mirror (and buildcache)
   ${C}--no-modules${N}            Don't try to load any modules (use the existing users environment)
   ${C}--no-tmp-build-dir${N}      Don't put the build directory in tmp space
