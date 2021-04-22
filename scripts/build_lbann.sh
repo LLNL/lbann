@@ -465,7 +465,7 @@ if [[ -n "${USER_MIRROR:-}" ]]; then
     MIRROR=${USER_MIRROR}
 fi
 
-if [[ -n "${MIRROR:-}" ]]; then
+if [[ -n "${MIRROR:-}" && -r "${MIRROR:-}" ]]; then
     CMD="spack mirror add lbann ${MIRROR}"
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
@@ -477,9 +477,11 @@ if [[ -n "${MIRROR:-}" ]]; then
 
     # Manually force Spack to trust the keys in the build cache - this is a hack until
     # https://github.com/spack/spack/issues/23186 is fixed
-    CMD="spack gpg trust ${MIRROR}/build_cache/_pgp/B180FE4A5ECF4C02D21E6A67F13D1FBB0E55F96F.pub"
-    echo ${CMD} | tee -a ${LOG}
-    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+    if [[ -e "${MIRROR}/build_cache/_pgp/B180FE4A5ECF4C02D21E6A67F13D1FBB0E55F96F.pub" ]]; then
+        CMD="spack gpg trust ${MIRROR}/build_cache/_pgp/B180FE4A5ECF4C02D21E6A67F13D1FBB0E55F96F.pub"
+        echo ${CMD} | tee -a ${LOG}
+        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+    fi
 fi
 
 ##########################################################################################
@@ -555,7 +557,7 @@ fi
 
 ##########################################################################################
 # If there is a local mirror, pad out the install tree so that it can be relocated
-if [[ -n "${MIRROR:-}" ]]; then
+if [[ -n "${MIRROR:-}" && -r "${MIRROR:-}" ]]; then
     spack config add "config:install_tree:padded_length:128"
 fi
 
@@ -603,7 +605,7 @@ echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
 
-if [[ -n "${MIRROR:-}" && -n "${UPDATE_BUILDCACHE:-}" ]]; then
+if [[ -n "${MIRROR:-}" && -r "${MIRROR:-}"  && -n "${UPDATE_BUILDCACHE:-}" ]]; then
     # Make sure that all of the packages in the environment are in the mirror
     CMD="spack mirror create -d ${MIRROR} --all"
     echo ${CMD} | tee -a ${LOG}
