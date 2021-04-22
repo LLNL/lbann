@@ -58,11 +58,11 @@ Options:
   ${C}--clean-build${N}           Delete the local link to the build directory
   ${C}--clean-deps${N}            Forcibly uninstall Hydrogen, Aluminum, and DiHydrogen dependencies
   ${C}-d | --install-deps${N}     Install the lbann dependencies in addition to building from local source
-  ${C}--dependencies-only${N}     Stop after installing the lbann dependencies
   ${C}--dry-run${N}               Dry run the commands (no effect)
   ${C}-l | --label${N}            LBANN version label prefix: (default label is local-<SPACK_ARCH_TARGET>,
                           and is built and installed in the spack environment lbann-<label>-<SPACK_ARCH_TARGET>
-  ${C}-j | --build-jobs${N}       Number of parallel processes to use for compiling
+  ${C}-j | --build-jobs${N}       Number of parallel processes to use for compiling, e.g. -j \$((\$(nproc)+2))
+  ${C}-m | --mirror${N}           Specify a Spack mirror (and buildcache)
   ${C}--no-modules${N}            Don't try to load any modules (use the existing users environment)
   ${C}--no-tmp-build-dir${N}      Don't put the build directory in tmp space
   ${C}--spec-only${N}             Stop after a spack spec command
@@ -95,9 +95,6 @@ while :; do
         -d|--install-deps)
             INSTALL_DEPS="TRUE"
             ;;
-        --dependencies-only)
-            DEPENDENCIES_ONLY="TRUE"
-            ;;
         --dry-run)
             DRY_RUN="TRUE"
             ;;
@@ -120,12 +117,21 @@ while :; do
                 exit 1
             fi
             ;;
+        -m|--mirror)
+            if [ -n "${2}" ]; then
+                USER_MIRROR="${2}"
+                shift
+            else
+                echo "\"${1}\" option requires a non-empty option argument" >&2
+                exit 1
+            fi
+            ;;
         --no-modules)
             SKIP_MODULES="TRUE"
             ;;
-        --no-tmp-build-dir)
+        --tmp-build-dir)
             CLEAN_BUILD="TRUE"
-            NO_TMP_BUILD_DIR="TRUE"
+            TMP_BUILD_DIR="TRUE"
             ;;
         --spec-only)
             SPEC_ONLY="TRUE"
@@ -165,6 +171,9 @@ while :; do
                 echo "\"${1}\" option requires a non-empty option argument" >&2
                 exit 1
             fi
+            ;;
+        --update-buildcache)
+            UPDATE_BUILDCACHE="TRUE"
             ;;
         --)
             shift
@@ -446,11 +455,39 @@ CENTER_FLAGS=
 set_center_specific_spack_dependencies ${CENTER} ${SPACK_ARCH_TARGET}
 
 ##########################################################################################
+# See if the is a local spack mirror or buildcache
+if [[ -n "${USER_MIRROR:-}" ]]; then
+    # Allow the user to overwrite a standard mirror
+    MIRROR=${USER_MIRROR}
+fi
+
+if [[ -n "${INSTALL_DEPS:-}" && -n "${MIRROR:-}" && -r "${MIRROR:-}" ]]; then
+    CMD="spack mirror add lbann ${MIRROR}"
+    echo ${CMD} | tee -a ${LOG}
+    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+
+    # Tell Spack to trust the keys in the build cache
+    CMD="spack buildcache keys --install --trust"
+    echo ${CMD} | tee -a ${LOG}
+    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+
+    # Manually force Spack to trust the keys in the build cache - this is a hack until
+    # https://github.com/spack/spack/issues/23186 is fixed
+    if [[ -e "${MIRROR}/build_cache/_pgp/B180FE4A5ECF4C02D21E6A67F13D1FBB0E55F96F.pub" ]]; then
+        CMD="spack gpg trust ${MIRROR}/build_cache/_pgp/B180FE4A5ECF4C02D21E6A67F13D1FBB0E55F96F.pub"
+        echo ${CMD} | tee -a ${LOG}
+        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+    fi
+fi
+
+##########################################################################################
 # Establish the spec for LBANN
 LBANN_SPEC="lbann@${LBANN_LABEL} ${CENTER_FLAGS} ${LBANN_VARIANTS} ${HYDROGEN} ${DIHYDROGEN} ${ALUMINUM} ${CENTER_DEPENDENCIES}"
-LBANN_DEV_PATH_SPEC="lbann@${LBANN_LABEL} ${CENTER_FLAGS} dev_path=${LBANN_HOME} ${LBANN_VARIANTS} ${HYDROGEN} ${DIHYDROGEN} ${ALUMINUM} ${CENTER_DEPENDENCIES}"
 ##########################################################################################
 
+##########################################################################################
+# Add things to the environment
+##########################################################################################
 if [[ -n "${INSTALL_DEPS:-}" ]]; then
     # See if there are any center-specific externals
     SPACK_ENV_YAML_FILE="${SPACK_ROOT}/var/spack/environments/${LBANN_ENV}/spack.yaml"
@@ -469,63 +506,58 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
     CMD="cleanup_clang_compilers ${CENTER} ${SPACK_ENV_YAML_FILE}"
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+
+    ##########################################################################################
+    # Tell the spack environment to use a local repository for these libraries
+    if [[ -n "${HYDROGEN_PATH:-}" ]]; then
+        CMD="spack develop --no-clone -p ${HYDROGEN_PATH} hydrogen${HYDROGEN_VER}"
+        echo "${CMD}" | tee -a ${LOG}
+        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+    fi
+
+    if [[ -n "${DIHYDROGEN_PATH:-}" ]]; then
+        CMD="spack develop --no-clone -p ${DIHYDROGEN_PATH} dihydrogen${DIHYDROGEN_VER}"
+        echo "${CMD}" | tee -a ${LOG}
+        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+    fi
+
+    if [[ -n "${ALUMINUM_PATH:-}" ]]; then
+        CMD="spack develop --no-clone -p ${ALUMINUM_PATH} aluminum${ALUMINUM_VER}"
+        echo "${CMD}" | tee -a ${LOG}
+        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+    fi
+    ##########################################################################################
+
+    # Explicitly add the lbann spec to the environment
+    CMD="spack add ${LBANN_SPEC}"
+    echo ${CMD} | tee -a ${LOG}
+    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+
+    # Explicitly mark lbann for development
+    CMD="spack develop --no-clone -p ${LBANN_HOME} ${LBANN_SPEC}"
+    echo ${CMD} | tee -a ${LOG}
+    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+
+    ##########################################################################################
+    # If there is a local mirror, pad out the install tree so that it can be relocated
+    if [[ -n "${MIRROR:-}" && -r "${MIRROR:-}" && -n "${UPDATE_BUILDCACHE:-}" ]]; then
+        spack config add "config:install_tree:padded_length:128"
+    fi
+
+    # Add any extra packages that you want to build in conjuction with the LBANN package
+    # spack add py-merlin
 fi
 
-##########################################################################################
-# Tell the spack environment to use a local repository for these libraries
-if [[ -n "${HYDROGEN_PATH:-}" ]]; then
-    CMD="spack develop --no-clone -p ${HYDROGEN_PATH} hydrogen${HYDROGEN_VER}"
-    echo "${CMD}" | tee -a ${LOG}
-    ${CMD} || exit_on_failure "${CMD}"
-fi
-
-if [[ -n "${DIHYDROGEN_PATH:-}" ]]; then
-    CMD="spack develop --no-clone -p ${DIHYDROGEN_PATH} dihydrogen${DIHYDROGEN_VER}"
-    echo "${CMD}" | tee -a ${LOG}
-    ${CMD} || exit_on_failure "${CMD}"
-fi
-
-if [[ -n "${ALUMINUM_PATH:-}" ]]; then
-    CMD="spack develop --no-clone -p ${ALUMINUM_PATH} aluminum${ALUMINUM_VER}"
-    echo "${CMD}" | tee -a ${LOG}
-    ${CMD} || exit_on_failure "${CMD}"
-fi
-##########################################################################################
-
-CMD="spack solve -l ${LBANN_DEV_PATH_SPEC}"
+CMD="spack solve -l ${LBANN_SPEC}"
 echo ${CMD} | tee -a ${LOG}
 if [[ -z "${DRY_RUN:-}" ]]; then
     eval ${CMD} || exit_on_failure "${CMD}\nIf the error is that boostrapping failed try something like 'module load gcc/8.3.1; spack compiler add' and then rerunning"
 fi
-# Get the spack hash before dev-build is called
-LBANN_SPEC_HASH=$(spack spec -l ${LBANN_DEV_PATH_SPEC} | grep lbann | grep arch=${SPACK_ARCH_PLATFORM} | awk '{print $1}')
+# Get the spack hash for LBANN
+LBANN_SPEC_HASH=$(spack solve -l ${LBANN_SPEC} | grep lbann | grep arch=${SPACK_ARCH_PLATFORM} | awk '{print $1}')
 [[ -z "${DRY_RUN:-}" && "${SPEC_ONLY}" == "TRUE" ]] && exit
 
-CMD="spack add ${LBANN_SPEC}"
-[[ -n "${INSTALL_DEPS:-}" ]] && echo ${CMD} | tee -a ${LOG}
-if [[ -z "${DRY_RUN:-}" && -n "${INSTALL_DEPS:-}" ]]; then
-    eval ${CMD}
-    if [[ $? -ne 0 ]]; then
-        echo "-----------------------------------------"
-        echo "Spack installation of dependenceis FAILED"
-        echo "-----------------------------------------"
-        exit 1
-    fi
-    if [[ -n "${DEPENDENCIES_ONLY:-}" ]]; then
-        exit
-    fi
-fi
-
-# Explicitly add the lbann spec to the environment
-CMD="spack develop --no-clone -p ${LBANN_HOME} ${LBANN_SPEC}"
-echo ${CMD} | tee -a ${LOG}
-[[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
-
-# Add any extra packages that you want to build in conjuction with the LBANN package
-# spack add py-merlin
-
 LINK_DIR="${LINK_DIR:-${CORE_BUILD_PATH}}"
-
 BUILD_DIR=$(dirname ${LINK_DIR})
 if [[ ! -d "${BUILD_DIR}" ]]; then
     CMD="mkdir -p ${BUILD_DIR}"
@@ -545,7 +577,7 @@ if [[ -L "${SPACK_BUILD_DIR}" ]]; then
 fi
 
 # If the spack build directory does not exist, create a tmp directory and link it
-if [[ ! -e "${SPACK_BUILD_DIR}" && -z "${NO_TMP_BUILD_DIR}" && -z "${DRY_RUN:-}" ]]; then
+if [[ ! -e "${SPACK_BUILD_DIR}" && -n "${TMP_BUILD_DIR:-}" && -z "${DRY_RUN:-}" ]]; then
     tmp_dir=$(mktemp -d -t lbann-spack-build-${LBANN_SPEC_HASH}-$(date +%Y-%m-%d-%H%M%S)-XXXXXXXXXX)
     echo ${tmp_dir}
     CMD="ln -s ${tmp_dir} spack-build-${LBANN_SPEC_HASH}"
@@ -558,6 +590,51 @@ fi
 CMD="spack install ${BUILD_JOBS}"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+
+if [[ -n "${MIRROR:-}" && -r "${MIRROR:-}"  && -n "${UPDATE_BUILDCACHE:-}" ]]; then
+    # Make sure that all of the packages in the environment are in the mirror
+    CMD="spack mirror create -d ${MIRROR} --all"
+    echo ${CMD} | tee -a ${LOG}
+    # Don't check the return code of the mirror create command, it will fail to install some packages
+    [[ -z "${DRY_RUN:-}" ]] && ${CMD}
+
+    if [[ ! -e "${MIRROR}/pubring.gpg" ]]; then
+        CMD="cp ${SPACK_ROOT}/opt/spack/gpg/pubring.gpg ${MIRROR}/pubring.gpg"
+        echo ${CMD} | tee -a ${LOG}
+        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+    fi
+
+    SPACK_INSTALL_ROOT=$(grep root $SPACK_ROOT/etc/spack/config.yaml | awk '{ print $2 }')
+    for ii in $(spack find --format "{prefix} {version} {name},/{hash}" |
+        grep -v -E "^(develop^master)" |
+        grep -e "${SPACK_ROOT}" -e "${SPACK_INSTALL_ROOT}" |
+        cut -f3 -d" ")
+    do
+        NAME=${ii%,*};
+        HASH=${ii#*,};
+        case ${NAME} in
+            "cuda" | "cudnn" | "ncurses" | "openssl" | "lbann")
+                echo "Skipping $ii"
+                continue
+                ;;
+        esac
+        CMD="spack buildcache check --rebuild-on-error --mirror-url file://${MIRROR} -s ${HASH}"
+        echo -e "${NAME}:\t ${CMD}" | tee -a ${LOG}
+        if [[ -z "${DRY_RUN:-}" ]]; then
+            if ${CMD};
+            then
+                true
+            else
+                CMD="spack buildcache create -af -d ${MIRROR} --only=package ${HASH}"
+                echo ${CMD} | tee -a ${LOG}
+                [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+            fi
+        fi
+    done
+    CMD="spack buildcache update-index -d ${MIRROR}"
+    echo ${CMD} | tee -a ${LOG}
+    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+fi
 
 # Don't use the output of this file since it will not exist if the compilation is not successful
 # LBANN_BUILD_DIR=$(grep "PROJECT_BINARY_DIR:" ${LBANN_HOME}/spack-build-out.txt | awk '{print $2}')
