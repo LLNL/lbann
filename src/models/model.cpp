@@ -1000,8 +1000,7 @@ void model::mark_data_store_explicitly_loading(execution_mode mode) {
 // At the start of the epoch, set the execution mode and make sure
 // that each layer points to this model
 void model::reset_mode(execution_context& context, execution_mode mode) {
-  if (mode == execution_mode::invalid)
-  {
+  if (mode == execution_mode::invalid) {
     m_execution_context = nullptr;
     return;
   }
