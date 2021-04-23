@@ -147,10 +147,13 @@ void deconvolution_layer<TensorDataType,Layout,Device>::fp_compute() {
   if(this->using_gpus()) {
 #ifdef LBANN_HAS_DISTCONV
     if (this->distconv_enabled()) {
-      this->get_distconv_adapter().m_conv->backward_data_exchange_halo(
-        this->get_distconv_adapter().get_prev_error_signals());
-      this->get_distconv_adapter().bp_compute_convolution_data();
-      this->get_distconv_adapter().fp_apply_bias();
+      auto& adapter = this->get_distconv_adapter();
+      adapter.m_conv->backward_data_exchange_halo(
+        adapter.get_prev_error_signals());
+      adapter.compute_convolution_transpose(
+        adapter.get_prev_activations(),
+        adapter.get_activations());
+      adapter.fp_apply_bias();
       return;
     }
 #endif // LBANN_HAS_DISTCONV
@@ -168,8 +171,11 @@ void deconvolution_layer<TensorDataType,Layout,Device>::bp_compute() {
   if(this->using_gpus()) {
 #ifdef LBANN_HAS_DISTCONV
     if (this->distconv_enabled()) {
-      this->get_distconv_adapter().fp_compute_convolution();
-      this->get_distconv_adapter().bp_compute_convolution_filter();
+      auto& adapter = this->get_distconv_adapter();
+      adapter.compute_convolution(
+        adapter.get_prev_error_signals(),
+        adapter.get_error_signals());
+      adapter.bp_compute_gradients(true);
       return;
     }
 #endif // LBANN_HAS_DISTCONV

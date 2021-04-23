@@ -1182,14 +1182,15 @@ void base_convolution_adapter<TensorDataType, Device>::setup_layer(
 }
 
 template <typename TensorDataType, El::Device Device>
-void base_convolution_adapter<TensorDataType, Device>::fp_compute_convolution() {
+void base_convolution_adapter<TensorDataType, Device>::compute_convolution(
+  TensorDevType& input,
+  TensorDevType& output) {
   auto &l = dynamic_cast<base_convolution_layer<
     TensorDataType, Device>&>(this->layer());
   assert0(dc::tensor::View(
             *m_kernel, l.weights_values(0).LockedBuffer()));
-  /// @todo Restore standard convolution
-  m_conv->forward(El::To<TensorDataType>(1), this->get_prev_error_signals(),
-                  *m_kernel, El::To<TensorDataType>(0), this->get_error_signals());
+  m_conv->forward(El::To<TensorDataType>(1), input,
+                  *m_kernel, El::To<TensorDataType>(0), output);
 }
 
 template <typename TensorDataType, El::Device Device>
@@ -1204,19 +1205,20 @@ void base_convolution_adapter<TensorDataType, Device>::fp_apply_bias() {
 }
 
 template <typename TensorDataType, El::Device Device>
-void base_convolution_adapter<TensorDataType, Device>::bp_compute_convolution_data() {
+void base_convolution_adapter<TensorDataType, Device>::compute_convolution_transpose(
+  TensorDevType& input,
+  TensorDevType& output) {
   auto &l = dynamic_cast<base_convolution_layer<
     TensorDataType, Device>&>(this->layer());
   assert0(dc::tensor::View(
             *m_kernel, l.weights_values(0).LockedBuffer()));
-  /// @todo Restore standard convolution
-  m_conv->backward_data(El::To<TensorDataType>(1), *m_kernel,
-                        this->get_prev_activations(),
-                        El::To<TensorDataType>(0), this->get_activations());
+  m_conv->backward_data(El::To<TensorDataType>(1), *m_kernel, input,
+                        El::To<TensorDataType>(0), output);
 }
 
 template <typename TensorDataType, El::Device Device>
-void base_convolution_adapter<TensorDataType, Device>::bp_compute_convolution_filter() {
+void base_convolution_adapter<TensorDataType, Device>::bp_compute_gradients(
+  bool convolution_transpose) {
   auto &l = dynamic_cast<base_convolution_layer<
     TensorDataType, Device>&>(this->layer());
   const bool has_local_data = this->get_prev_activations().get_local_size() > 0 &&
@@ -1246,10 +1248,11 @@ void base_convolution_adapter<TensorDataType, Device>::bp_compute_convolution_fi
   assert0(dc::tensor::View(
             *m_kernel_gradient, kernel_gradient.Buffer()));
   if (has_local_data) {
-    /// @todo Restore standard convolution
+    auto& x = this->get_prev_activations();
+    auto& dy = this->get_prev_error_signals();
     m_conv->backward_filter(gradient_scale,
-                            this->get_prev_error_signals(),
-                            this->get_prev_activations(),
+                            convolution_transpose ? dy : x,
+                            convolution_transpose ? x : dy,
                             dst_scale,
                             *m_kernel_gradient, false);
   } else {
