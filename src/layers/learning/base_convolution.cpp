@@ -1187,8 +1187,9 @@ void base_convolution_adapter<TensorDataType, Device>::fp_compute_convolution() 
     TensorDataType, Device>&>(this->layer());
   assert0(dc::tensor::View(
             *m_kernel, l.weights_values(0).LockedBuffer()));
-  m_conv->forward(El::To<TensorDataType>(1), this->get_prev_activations(),
-                  *m_kernel, El::To<TensorDataType>(0), this->get_activations());
+  /// @todo Restore standard convolution
+  m_conv->forward(El::To<TensorDataType>(1), this->get_prev_error_signals(),
+                  *m_kernel, El::To<TensorDataType>(0), this->get_error_signals());
 }
 
 template <typename TensorDataType, El::Device Device>
@@ -1208,9 +1209,10 @@ void base_convolution_adapter<TensorDataType, Device>::bp_compute_convolution_da
     TensorDataType, Device>&>(this->layer());
   assert0(dc::tensor::View(
             *m_kernel, l.weights_values(0).LockedBuffer()));
+  /// @todo Restore standard convolution
   m_conv->backward_data(El::To<TensorDataType>(1), *m_kernel,
-                        this->get_prev_error_signals(),
-                        El::To<TensorDataType>(0), this->get_error_signals());
+                        this->get_prev_activations(),
+                        El::To<TensorDataType>(0), this->get_activations());
 }
 
 template <typename TensorDataType, El::Device Device>
@@ -1244,9 +1246,10 @@ void base_convolution_adapter<TensorDataType, Device>::bp_compute_convolution_fi
   assert0(dc::tensor::View(
             *m_kernel_gradient, kernel_gradient.Buffer()));
   if (has_local_data) {
+    /// @todo Restore standard convolution
     m_conv->backward_filter(gradient_scale,
-                            this->get_prev_activations(),
                             this->get_prev_error_signals(),
+                            this->get_prev_activations(),
                             dst_scale,
                             *m_kernel_gradient, false);
   } else {

@@ -147,7 +147,9 @@ void deconvolution_layer<TensorDataType,Layout,Device>::fp_compute() {
   if(this->using_gpus()) {
 #ifdef LBANN_HAS_DISTCONV
     if (this->distconv_enabled()) {
-      this->get_distconv_adapter().fp_compute_convolution();
+      this->get_distconv_adapter().m_conv->backward_data_exchange_halo(
+        this->get_distconv_adapter().get_prev_error_signals());
+      this->get_distconv_adapter().bp_compute_convolution_data();
       this->get_distconv_adapter().fp_apply_bias();
       return;
     }
@@ -166,12 +168,8 @@ void deconvolution_layer<TensorDataType,Layout,Device>::bp_compute() {
   if(this->using_gpus()) {
 #ifdef LBANN_HAS_DISTCONV
     if (this->distconv_enabled()) {
-      if (this->get_distconv_adapter().m_conv->is_overlap_bwd_halo_exchange_enabled()) {
-        this->get_distconv_adapter().m_conv->backward_data_exchange_halo(
-          this->get_distconv_adapter().get_prev_error_signals());
-      }
+      this->get_distconv_adapter().fp_compute_convolution();
       this->get_distconv_adapter().bp_compute_convolution_filter();
-      this->get_distconv_adapter().bp_compute_convolution_data();
       return;
     }
 #endif // LBANN_HAS_DISTCONV
@@ -196,19 +194,15 @@ bool deconvolution_layer<TensorDataType,Layout,Device>
 ::is_distconv_supported() const {
   const auto& kernel_dims = get_kernel_dims();
   for(int i = 0; i < dc::get_num_spatial_dims(*this); i++) {
-    auto pad = this->m_pads[i];
-    if (pad != 0) {
-      dc::MPIPrintStreamDebug()
-        << this->get_name()
-        << " unsupported as padding must be zero";
+    if (kernel_dims[2 + i] != kernel_dims[2]) {
+      dc::MPIRootPrintStreamDebug()
+        << "Nonsymmetric kernel not supported";
       return false;
     }
-    auto stride_size = this->m_strides[i];
-    auto filter_size = kernel_dims[2+i];
-    if (!(filter_size % 2 == 0 && filter_size == stride_size)) {
-      dc::MPIPrintStreamDebug()
-        << this->get_name()
-        << " unsupported due to filter and stride sizes";
+    if (kernel_dims[2 + i] !=
+        this->m_pads[i] / this->m_dilations[i] * 2 + 1) {
+      dc::MPIRootPrintStreamDebug()
+        << "Unsupported as padding does not match the kernel size";
       return false;
     }
   }
@@ -220,29 +214,44 @@ void deconvolution_distconv_adapter<TensorDataType, T_layout, Dev>::
 setup_distributions(tensor_overlap_constraints &constraints) {
   base_convolution_adapter<TensorDataType, Dev>::setup_distributions(
       constraints);
-
-  // Assumes zero halo all tensor for now
-  // prev activations
-  for (auto &d: this->m_prev_activations_dists) {
-    d.clear_overlap();
-    constraints.mark_updated(d);
-    constraints.mark_invariant(d);
+  auto &l = dynamic_cast<deconvolution_layer<
+    TensorDataType, T_layout, Dev>&>(this->layer());
+  auto kernel_dims = l.get_kernel_dims();
+  std::reverse(kernel_dims.begin(), kernel_dims.end());
+  auto dilations = l.m_dilations;
+  std::reverse(dilations.begin(), dilations.end());
+  dc::IntVector overlap(dc::get_num_dims(l), 0);
+  const auto &ps = l.get_parallel_strategy();
+  // i=0 -> width; i=1 -> height; i=2: -> depth;
+  for(int i = 0; i < dc::get_num_spatial_dims(l); i++) {
+    int splits = 0;
+    switch (i) {
+      case 0: splits = ps.width_splits; break;
+      case 1: splits = ps.height_splits; break;
+      case 2: splits = ps.depth_splits; break;
+    }
+    if (splits > 1) {
+      overlap[i] = (kernel_dims[i] - 1) / 2 * dilations[i];
+    }
   }
-  for (auto &d: this->m_activations_dists) {
-    d.clear_overlap();
-    constraints.mark_updated(d);
-    constraints.mark_invariant(d);
-  }
-  for (auto &d: this->m_prev_error_signals_dists) {
-    d.clear_overlap();
-    constraints.mark_updated(d);
-    constraints.mark_invariant(d);
-  }
-  for (auto &d: this->m_error_signals_dists) {
-    d.clear_overlap();
-    constraints.mark_updated(d);
-    constraints.mark_invariant(d);
-  }
+  auto &prev_activations_dist = this->get_prev_activations_dist();
+  prev_activations_dist.set_overlap(overlap);
+  constraints.mark_updated(prev_activations_dist);
+  constraints.mark_invariant(prev_activations_dist);
+  auto &activations_dist = this->get_activations_dist();
+  activations_dist.set_overlap(overlap);
+  constraints.mark_updated(activations_dist);
+  constraints.mark_invariant(activations_dist);
+  auto &prev_error_signals_dist = this->get_prev_error_signals_dist();
+  prev_error_signals_dist.set_overlap(overlap);
+  constraints.mark_updated(prev_error_signals_dist);
+  constraints.mark_invariant(prev_error_signals_dist);
+  // To deal with strides, error signals must have the same size
+  // of overlap
+  auto &error_signals_dist = this->get_error_signals_dist();
+  error_signals_dist.set_overlap(overlap);
+  constraints.mark_updated(error_signals_dist);
+  constraints.mark_invariant(error_signals_dist);
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -260,7 +269,7 @@ get_activations_local_shape(int index) const {
   const auto output_spatial_local_shape =
       ::distconv::get_deconvolution_output_local_tensor_shape(
           this->get_prev_activations(),
-          filter_dims, strides, false, dilations,
+          filter_dims, strides, true, dilations,
           layer.m_groups);
   return output_spatial_local_shape;
 }
@@ -292,15 +301,18 @@ void deconvolution_distconv_adapter<TensorDataType, Layout, Device>::setup_layer
   std::vector<int> dilations = layer.m_dilations;
   std::reverse(dilations.begin(), dilations.end());
 
-  this->m_conv->setup(this->get_prev_activations(),
-                      *(this->m_kernel), this->get_activations(),
-                      this->get_error_signals(),
+  /// @todo Consider supporting deconv within distconv
+  this->m_conv->setup(this->get_prev_error_signals(),
+                      *(this->m_kernel), this->get_error_signals(),
+                      this->get_activations(),
                       *this->m_kernel_gradient,
-                      this->get_prev_error_signals(),
+                      this->get_prev_activations(),
                       pads, strides, dilations, layer.m_groups,
                       this->m_fwd_algo, this->m_bwd_data_algo,
                       this->m_bwd_filter_algo,
-                      workspace_capacity, false, true);
+                      workspace_capacity,
+                      /*skip_bp_data=*/false,
+                      /*deconv=*/false);
 }
 #endif // defined LBANN_HAS_DISTCONV
 

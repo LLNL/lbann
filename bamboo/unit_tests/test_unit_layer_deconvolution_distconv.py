@@ -189,18 +189,12 @@ def construct_model(lbann):
     pads = (1, 1)
     dilations = (1, 1)
     kernel = make_random_array(kernel_dims, 987)
-    bias = make_random_array([kernel_dims[1]], 654)
 
     # Apply deconvolution
     kernel_weights = lbann.Weights(
         optimizer=lbann.SGD(),
         initializer=lbann.ValueInitializer(values=tools.str_list(np.nditer(kernel))),
         name='kernel1'
-    )
-    bias_weights = lbann.Weights(
-        optimizer=lbann.SGD(),
-        initializer=lbann.ValueInitializer(values=tools.str_list(np.nditer(bias))),
-        name='bias1'
     )
     x = lbann.Reshape(
         x_lbann,
@@ -212,7 +206,7 @@ def construct_model(lbann):
     )
     y = lbann.Deconvolution(
         x,
-        weights=(kernel_weights, bias_weights),
+        weights=kernel_weights,
         num_dims=2,
         num_output_channels=kernel_dims[1],
         has_vectors=True,
@@ -220,7 +214,7 @@ def construct_model(lbann):
         conv_strides=tools.str_list(strides),
         conv_pads=tools.str_list(pads),
         conv_dilations=tools.str_list(dilations),
-        has_bias=True,
+        has_bias=False,
         parallel_strategy=create_parallel_strategy(num_height_groups),
     )
     z = lbann.L2Norm2(y)
@@ -238,7 +232,6 @@ def construct_model(lbann):
         y = pytorch_deconvolution(
             x,
             kernel,
-            bias=bias,
             stride=strides,
             padding=0,
             dilation=dilations,
@@ -248,7 +241,7 @@ def construct_model(lbann):
         val = z
     except:
         # Precomputed value
-        val = 523.9982876632505
+        val = 491.89952150017973
     tol = 8 * val * np.finfo(np.float32).eps
     callbacks.append(lbann.CallbackCheckMetric(
         metric=metrics[-1].name,
@@ -267,7 +260,6 @@ def construct_model(lbann):
     pads = (1, 1, 1)
     dilations = (1, 1, 1)
     kernel = make_random_array(kernel_dims, 234)
-    bias = make_random_array([kernel_dims[1]], 567)
 
     # Apply deconvolution
     kernel_weights = lbann.Weights(
@@ -275,15 +267,10 @@ def construct_model(lbann):
         initializer=lbann.ValueInitializer(values=tools.str_list(np.nditer(kernel))),
         name='kernel2'
     )
-    bias_weights = lbann.Weights(
-        optimizer=lbann.SGD(),
-        initializer=lbann.ValueInitializer(values=tools.str_list(np.nditer(bias))),
-        name='bias2'
-    )
     x = x_lbann
     y = lbann.Deconvolution(
         x,
-        weights=(kernel_weights, bias_weights),
+        weights=kernel_weights,
         num_dims=3,
         num_output_channels=kernel_dims[1],
         has_vectors=True,
@@ -291,7 +278,7 @@ def construct_model(lbann):
         conv_strides=tools.str_list(strides),
         conv_pads=tools.str_list(pads),
         conv_dilations=tools.str_list(dilations),
-        has_bias=True,
+        has_bias=False,
         parallel_strategy=create_parallel_strategy(num_height_groups),
     )
     z = lbann.L2Norm2(y)
@@ -304,7 +291,6 @@ def construct_model(lbann):
         y = pytorch_deconvolution(
             x,
             kernel,
-            bias=bias,
             stride=strides,
             padding=0,
             dilation=dilations,
@@ -314,7 +300,7 @@ def construct_model(lbann):
         val = z
     except:
         # Precomputed value
-        val = 1756.356765744791
+        val = 1554.528901443455
     tol = 8 * val * np.finfo(np.float32).eps
     callbacks.append(lbann.CallbackCheckMetric(
         metric=metrics[-1].name,
