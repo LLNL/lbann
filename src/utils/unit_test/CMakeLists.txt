@@ -11,7 +11,7 @@ set_full_path(THIS_DIR_SEQ_CATCH2_TEST_FILES
   hash_test.cpp
   python_test.cpp
   random_test.cpp
-  #serialize_matrix_test.cpp
+  serialize_matrix_test.cpp
   timer_test.cpp
   type_erased_matrix_test.cpp
 
@@ -22,7 +22,7 @@ set_full_path(THIS_DIR_SEQ_CATCH2_TEST_FILES
 set_full_path(THIS_DIR_MPI_CATCH2_TEST_FILES
   random_fill_test.cpp
   rooted_archive_test.cpp
-  #serialize_distmatrix_test.cpp
+  serialize_distmatrix_test.cpp
   serialize_enum_test.cpp
   )
 
