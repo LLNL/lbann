@@ -409,10 +409,10 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
-#     SPACK_ENV_YAML_FILE="${SPACK_ROOT}/var/spack/environments/${LBANN_ENV}/spack.yaml"
-# cat <<EOF  >> ${SPACK_ENV_YAML_FILE}
-#   concretization: together
-# EOF
+    SPACK_ENV_YAML_FILE="${SPACK_ROOT}/var/spack/environments/${LBANN_ENV}/spack.yaml"
+    cat <<EOF  >> ${SPACK_ENV_YAML_FILE}
+  concretization: together
+EOF
 
 fi
 
@@ -546,6 +546,8 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
 
     # Add any extra packages that you want to build in conjuction with the LBANN package
     # spack add py-merlin
+    spack add py-numpy
+    spack add py-pandas
 fi
 
 CMD="spack solve -l ${LBANN_SPEC}"
