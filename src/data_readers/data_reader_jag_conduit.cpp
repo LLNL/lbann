@@ -745,14 +745,14 @@ void data_reader_jag_conduit::load() {
     m_num_labels=2;
   }
 
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     std::cout << "JAG load GAN m_gan_labelling : label_value "
               << m_gan_labelling <<" : " << m_gan_label_value << std::endl;
   }
 
   m_shuffled_indices.clear();
 
-  if(is_master()) {
+  if(get_comm()->am_world_master()) {
     std::cout << "data_reader_jag_conduit - starting load" << std::endl;
   }
   const std::string sample_list_file = get_data_sample_list();
@@ -915,14 +915,14 @@ void data_reader_jag_conduit::load_list_of_samples(const std::string sample_list
 
   double tm2 = get_time();
 
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     std::cout << "Time to load sample list '" << sample_list_file << "': " << tm2 - tm1 << std::endl;
   }
 
   sample_schema_check(check_data);
 
   double tm3 = get_time();
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     if (!check_data) {
       std::cout << "Skip data checking" << std::endl;
     } else {
@@ -935,7 +935,7 @@ void data_reader_jag_conduit::load_list_of_samples(const std::string sample_list
   set_file_dir(m_sample_list.get_samples_dirname());
 
   double tm4 = get_time();
-  if(is_master()) {
+  if(get_comm()->am_world_master()) {
     std::cout << "Time to gather sample list '" << sample_list_file << "': " << tm4 - tm3 << std::endl;
   }
 }
@@ -950,7 +950,7 @@ void data_reader_jag_conduit::load_list_of_samples_from_archive(const std::strin
   iarchive(m_sample_list); // Read the data from the archive
   double tm2 = get_time();
 
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     std::cout << "Time to load sample list from archive: " << tm2 - tm1 << std::endl;
   }
 }

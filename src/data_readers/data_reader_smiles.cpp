@@ -53,7 +53,7 @@ smiles_data_reader::smiles_data_reader(const smiles_data_reader& rhs)  : data_re
 
 smiles_data_reader::~smiles_data_reader() {
   if (m_missing_chars.size()) {
-    if (is_master()) {
+    if (get_comm()->am_world_master()) {
       std::cout << std::endl << "The following tokens were in SMILES strings, but were missing from the vocabulary: ";
       for (const auto t : m_missing_chars) {
         std::cout << t << " ";
@@ -108,7 +108,7 @@ void smiles_data_reader::copy_members(const smiles_data_reader &rhs) {
 }
 
 void smiles_data_reader::load() {
-  if(is_master()) {
+  if(get_comm()->am_world_master()) {
     std::cout << "starting load for role: " << get_role() << std::endl;
   }
 
@@ -159,7 +159,7 @@ void smiles_data_reader::load() {
 
 void smiles_data_reader::do_preload_data_store() {
   double tm1 = get_time();
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     std::cout << "starting do_preload_data_store; num indices: "
               << utils::commify(m_shuffled_indices.size())
               << "; role: " << get_role() << std::endl;
@@ -280,7 +280,7 @@ void smiles_data_reader::do_preload_data_store() {
     in.close();
   }
 
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     std::cout << " do_preload_data_store time: " << get_time() - tm1 << std::endl;
   }
 }
@@ -327,7 +327,7 @@ bool smiles_data_reader::fetch_response(Mat& Y, int data_id, int mb_idx) {
 
 //user feedback
 void smiles_data_reader::print_statistics() const {
-  if (!is_master()) {
+  if (!get_comm()->am_world_master()) {
     return;
   }
 
@@ -467,13 +467,13 @@ void smiles_data_reader::load_offsets_and_lengths() {
   // trainer P_0 fills in offset_data vector, then bcasts
   std::vector<SampleData> offset_data;
 
-  if (m_comm->am_trainer_master()) {
+  if (get_comm()->am_trainer_master()) {
     read_offset_data(offset_data);
   }
   size_t n_samples = offset_data.size(); // only meaningful for root
-  m_comm->trainer_broadcast<size_t>(0, &n_samples, 1);
+  get_comm()->trainer_broadcast<size_t>(0, &n_samples, 1);
   offset_data.resize(n_samples); // not meaningful for root
-  m_comm->trainer_broadcast<SampleData>(0, offset_data.data(), offset_data.size());
+  get_comm()->trainer_broadcast<SampleData>(0, offset_data.data(), offset_data.size());
 
   // fill in the m_sample_offsets map
   for (size_t j=0; j<offset_data.size(); j++) {

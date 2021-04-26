@@ -92,13 +92,6 @@ class generic_compound_data_reader : public generic_data_reader {
     }
   }
 
-  void set_master(bool m) override {
-    generic_data_reader::set_master(m);
-    for (auto&& reader : m_data_readers) {
-      reader->set_master(m);
-    }
-  }
-
   void set_rank(int rank) override {
     generic_data_reader::set_rank(rank);
     for (auto&& reader : m_data_readers) {
