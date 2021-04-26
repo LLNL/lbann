@@ -64,7 +64,7 @@ Options:
   ${C}-j | --build-jobs${N}       Number of parallel processes to use for compiling, e.g. -j \$((\$(nproc)+2))
   ${C}-m | --mirror${N}           Specify a Spack mirror (and buildcache)
   ${C}--no-modules${N}            Don't try to load any modules (use the existing users environment)
-  ${C}--no-tmp-build-dir${N}      Don't put the build directory in tmp space
+  ${C}--tmp-build-dir${N}         Put the build directory in tmp space
   ${C}--spec-only${N}             Stop after a spack spec command
   ${C}-s | --stable${N}           Use the latest stable defaults not the head of Hydrogen, DiHydrogen and Aluminum repos
   ${C}--test${N}                  Enable local unit tests
