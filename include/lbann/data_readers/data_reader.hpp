@@ -70,9 +70,6 @@ class generic_data_reader {
  public:
   using unused_index_map_t = std::map<execution_mode,std::vector<int>>;
 
- #define JAG_NOOP_VOID if (m_jag_partitioned) { return; }
- #define JAG_NOOP_INT if (m_jag_partitioned) { return 0; }
-
   /**
    * ctor
    */
@@ -107,11 +104,9 @@ class generic_data_reader {
       m_absolute_sample_count(0),
       m_use_percent(1.0),
       m_master(false),
-      m_gan_labelling(false), // default, not GAN
-      m_gan_label_value(
-        0), // If GAN, default for fake label, discriminator model
+      m_gan_labelling(false), //default, not GAN
+      m_gan_label_value(0),  //If GAN, default for fake label, discriminator model
       m_io_thread_pool(nullptr),
-      m_jag_partitioned(false),
       m_keep_sample_order(false),
       m_trainer(nullptr),
       m_issue_warning(true)
@@ -448,7 +443,6 @@ class generic_data_reader {
   }
   /// Set the mini batch size across all models (global)
   void set_global_mini_batch_size(const int s) {
-    JAG_NOOP_VOID
     m_global_mini_batch_size = s;
   }
   /// Return the mini_batch_size across all models (global)
@@ -457,7 +451,6 @@ class generic_data_reader {
   }
   /// Set the mini batch stride
   void set_stride_to_next_mini_batch(const int s) {
-    JAG_NOOP_VOID
     m_stride_to_next_mini_batch = s;
   }
   /// Return the mini batch stride.
@@ -466,7 +459,6 @@ class generic_data_reader {
   }
   /// Set the sample stride
   void set_sample_stride(const int s) {
-    JAG_NOOP_VOID
     m_sample_stride = s;
   }
   /// Return the sample stride.
@@ -483,7 +475,6 @@ class generic_data_reader {
   }
   /// Return the base offset.
   virtual void set_base_offset(const int s) {
-    JAG_NOOP_VOID
     m_base_offset = s;
   }
   /// Return the base offset.
@@ -492,7 +483,6 @@ class generic_data_reader {
   }
   /// Set the model offset
   void set_model_offset(const int s) {
-    JAG_NOOP_VOID
     m_model_offset = s;
   }
   /// Return the model offset.
@@ -501,7 +491,6 @@ class generic_data_reader {
   }
   /// Set the last mini batch size
   void set_last_mini_batch_size(const int s) {
-    JAG_NOOP_VOID
     m_last_mini_batch_size = s;
   }
   /// Return the last mini batch size
@@ -510,7 +499,6 @@ class generic_data_reader {
   }
   /// Set the last mini batch size across all models (global)
   void set_global_last_mini_batch_size(const int s) {
-    JAG_NOOP_VOID
     m_global_last_mini_batch_size = s;
   }
   /// Return the last mini batch size across all models (global)
@@ -519,7 +507,6 @@ class generic_data_reader {
   }
   /// Set the world master mini batch adjustment (global)
   void set_world_master_mini_batch_adjustment(const int s) {
-    JAG_NOOP_VOID
     m_world_master_mini_batch_adjustment = s;
   }
   /// Return the world master mini batch adjustment (global)
@@ -528,7 +515,6 @@ class generic_data_reader {
   }
   /// Set the last mini batch stride
   void set_stride_to_last_mini_batch(const int s) {
-    JAG_NOOP_VOID
     m_stride_to_last_mini_batch = s;
   }
   /// Return the last mini batch stride
@@ -929,18 +915,10 @@ private:
 
   observer_ptr<thread_pool> m_io_thread_pool;
 
-  /// special handling for 1B jag; each reader
-  /// owns a unique subset of the data
-  bool m_jag_partitioned;
-
   /** Whether to keep the order of loaded samples same as it is in the
    *  file to make testing and validation easier */
   bool m_keep_sample_order;
 
-  /// called by fetch_data a single time if m_jag_partitioned = true;
-  /// this sets various member variables (num_iterations, m_reset_mini_batch_index,
-  /// etc.
-  void set_jag_variables(int mb_size);
   trainer *m_trainer;
 
   /** Transform pipeline for preprocessing data. */

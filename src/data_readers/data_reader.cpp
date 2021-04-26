@@ -113,7 +113,7 @@ int lbann::generic_data_reader::fetch(
                     "mismatched widths: h=",
                     buf->Height(),
                     " x ",
-                    buf->Width(),
+                    Buf->Width(),
                     " for data field ",
                     data_field);
       }
@@ -156,12 +156,6 @@ int lbann::generic_data_reader::fetch(
   /// data source prior to fetching data
   for (int t = 0; t < static_cast<int>(m_io_thread_pool->get_num_threads()); t++) {
     preprocess_data_source(t);
-  }
-
-  static bool fix_jag = true;
-  if (m_jag_partitioned && fix_jag) {
-    fix_jag = false;
-    set_jag_variables(mb_size);
   }
 
   // BVE FIXME - for the time being certain data fields, such as the
@@ -290,32 +284,6 @@ bool lbann::generic_data_reader::fetch_data_block(
   return true;
 }
 
-void lbann::generic_data_reader::set_jag_variables(int mb_size) {
-  // all min_batches have the same number of indices;
-  // this probably causes a few indices to be discarded,
-  // but with 1B indices, who cares?
-  int mb_max = m_comm->trainer_allreduce<int>(mb_size, El::mpi::MAX);
-  m_num_iterations_per_epoch = m_shuffled_indices.size() / mb_max;
-
-  m_last_mini_batch_size = m_mini_batch_size;
-  m_global_mini_batch_size = m_mini_batch_size;
-  m_global_last_mini_batch_size = m_mini_batch_size;
-
-  m_reset_mini_batch_index = 0;
-  m_loaded_mini_batch_idx = 0;
-  m_current_mini_batch_idx = 0;
-
-  m_stride_to_next_mini_batch = mb_size;
-  m_stride_to_last_mini_batch = mb_size;
-
-  m_base_offset = 0;
-  m_model_offset = 0;
-  m_sample_stride = 1;
-  m_iteration_stride = 1;
-
-  m_world_master_mini_batch_adjustment = 0;
-}
-
 bool generic_data_reader::update(bool is_active_reader) {
   bool reader_not_done = true; // BVE The sense of this should be fixed
   m_current_mini_batch_idx++;
@@ -332,7 +300,7 @@ bool generic_data_reader::update(bool is_active_reader) {
   }
   if (m_current_mini_batch_idx == m_num_iterations_per_epoch) {
     // for working with 1B jag samples, we may not process all the data
-    if ((get_rank() < m_num_parallel_readers) && (m_current_pos < (int)m_shuffled_indices.size()) && !m_jag_partitioned) {
+    if ((get_rank() < m_num_parallel_readers) && (m_current_pos < (int)m_shuffled_indices.size())) {
       throw lbann_exception(
         std::string{} + __FILE__ + " " + std::to_string(__LINE__)
         + " :: generic data reader update error: the epoch is complete,"
@@ -446,12 +414,6 @@ size_t generic_data_reader::get_num_indices_to_use() const {
 }
 
 void generic_data_reader::resize_shuffled_indices() {
-  // ensure that all readers have the same number of indices
-  if (m_jag_partitioned) {
-    size_t n = m_comm->trainer_allreduce<size_t>(m_shuffled_indices.size(), El::mpi::MIN);
-    m_shuffled_indices.resize(n);
-  }
-
   size_t num_indices = get_num_indices_to_use();
   shuffle_indices();
   m_shuffled_indices.resize(num_indices);
@@ -788,13 +750,6 @@ void generic_data_reader::set_mini_batch_size(const int s) {
 
 void generic_data_reader::set_role(std::string role) {
   m_role = role;
-  if (global_argument_parser().get<bool>(JAG_PARTITIONED) &&
-      get_role() == "train") {
-    m_jag_partitioned = true;
-    if (is_master()) {
-      std::cout << "USING JAG DATA PARTITIONING\n";
-    }
-  }
 }
 
 void generic_data_reader::preload_data_store() {
