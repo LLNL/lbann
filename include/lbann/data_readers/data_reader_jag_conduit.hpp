@@ -173,11 +173,11 @@ class data_reader_jag_conduit : public generic_data_reader {
 
 
   /// Fetch data of a mini-batch or reuse it from the cache of the leading reader
-  int fetch_data(CPUMat& X, El::Matrix<El::Int>& indices_fetched) override;
+  int fetch_data(CPUMat& X, El::Matrix<El::Int>& indices_fetched, size_t mb_size) override;
   /// Fetch responses of a mini-batch or reuse it from the cache of the leading reader
-  int fetch_responses(CPUMat& Y) override;
+  int fetch_responses(CPUMat& Y, size_t mb_size) override;
   /// Fetch labels of a mini-batch or reuse it from the cache of the leading reader
-  int fetch_labels(CPUMat& Y) override;
+  int fetch_labels(CPUMat& Y, size_t mb_size) override;
 
   /// Return the number of measurement views
   unsigned int get_num_img_srcs() const;

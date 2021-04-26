@@ -142,7 +142,7 @@ void load_mnist_data(const std::string imagepath, const std::string labelpath,
 }
 
 void mnist_reader::load() {
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     std::cout << "starting lbann::mnist_reader::load\n";
   }
   m_image_data.clear();
@@ -157,7 +157,7 @@ void mnist_reader::load() {
   const std::string imagepath = FileDir + "/" + ImageFile;
   const std::string labelpath = FileDir + "/" + LabelFile;
 
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     std::cout << "read labels!\n";
   }
 
@@ -174,7 +174,7 @@ void mnist_reader::load() {
   for (size_t n = 0; n < m_shuffled_indices.size(); n++) {
     m_shuffled_indices[n] = n;
   }
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     std::cout << "calling select_subset_of_data; m_shuffled_indices.size: " <<
       m_shuffled_indices.size() << std::endl;
   }

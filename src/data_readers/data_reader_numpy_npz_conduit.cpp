@@ -75,7 +75,7 @@ void numpy_npz_conduit_reader::copy_members(const numpy_npz_conduit_reader &rhs)
 }
 
 void numpy_npz_conduit_reader::load() {
-  if(is_master()) {
+  if(get_comm()->am_world_master()) {
     std::cout << "starting load" << std::endl;
   }
 
@@ -117,7 +117,7 @@ void numpy_npz_conduit_reader::load() {
 void numpy_npz_conduit_reader::do_preload_data_store() {
   double tm1 = get_time();
 
-  if (is_master()) std::cout << "Starting numpy_npz_conduit_reader::preload_data_store; num indices: " << m_shuffled_indices.size() << std::endl;
+  if (get_comm()->am_world_master()) std::cout << "Starting numpy_npz_conduit_reader::preload_data_store; num indices: " << m_shuffled_indices.size() << std::endl;
 
   size_t count = get_absolute_sample_count();
   double use_percent = get_use_percent();
@@ -133,7 +133,7 @@ void numpy_npz_conduit_reader::do_preload_data_store() {
 
   //threaded mode
   if (threaded) {
-    if (is_master()) {
+    if (get_comm()->am_world_master()) {
       std::cout << "mode: data_store_thread\n";
     }
     std::shared_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(m_comm, options::get(), false);
@@ -215,7 +215,7 @@ void numpy_npz_conduit_reader::do_preload_data_store() {
     // set of zero-based labels, so let's pretend like we do
     if (m_num_labels != 0) { //note: num_labels may be specified in the reader
       m_num_labels = trainer_max - trainer_min;
-      if(is_master()) {
+      if(get_comm()->am_world_master()) {
         std::cout << "num_labels: " << m_num_labels << "\n";
       }
     }
@@ -235,7 +235,7 @@ void numpy_npz_conduit_reader::do_preload_data_store() {
   #endif
 
   double tm2 = get_time();
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     std::cout << "time to preload: " << tm2 - tm1 << " for role: " << get_role() << "\n";
   }
 }
@@ -262,7 +262,7 @@ bool numpy_npz_conduit_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
     load_npz(m_filenames[data_id], data_id, node);
     //note: if testing, and test set is touched more than once, the following
     //      will through an exception TODO: relook later
-    const auto& c = static_cast<const execution_context&>(m_trainer->get_data_coordinator().get_execution_context());
+    const auto& c = static_cast<const execution_context&>(get_trainer().get_data_coordinator().get_execution_context());
     if (priming_data_store() || c.get_execution_mode() == execution_mode::testing) {
       m_data_store->set_conduit_node(data_id, node);
     }
@@ -374,7 +374,7 @@ void numpy_npz_conduit_reader::fill_in_metadata() {
   }
   in.close();
   m_num_samples = m_filenames.size();
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     std::cout << "num samples: " << m_num_samples << "\n";
   }
 
@@ -392,7 +392,7 @@ void numpy_npz_conduit_reader::fill_in_metadata() {
                                    m_data_dims.end(),
                                    (unsigned) 1,
                                    std::multiplies<unsigned>());
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     std::cout << "num features: " << m_num_features << "\n";
   }
 
@@ -403,7 +403,7 @@ void numpy_npz_conduit_reader::fill_in_metadata() {
                 std::to_string(word_size) + " not supported");
   }
   m_data_word_size = word_size;
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     std::cout << "data word size: " << m_data_word_size << "\n";
   }
 
@@ -422,7 +422,7 @@ void numpy_npz_conduit_reader::fill_in_metadata() {
     for (int k=1; k<n; k++) {
       m_num_response_features *= r_shape[k];
     }
-    if (is_master()) {
+    if (get_comm()->am_world_master()) {
       std::cout << "response word size: " << m_response_word_size << "\n";
       std::cout << "num response features: " << m_num_response_features<< "\n";
     }

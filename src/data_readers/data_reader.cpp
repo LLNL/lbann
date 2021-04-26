@@ -87,20 +87,20 @@ void generic_data_reader::setup(int num_io_threads, observer_ptr<thread_pool> io
   m_io_thread_pool = io_thread_pool;
 }
 
-int lbann::generic_data_reader::fetch(std::map<input_data_type, CPUMat*>& input_buffers, El::Matrix<El::Int>& indices_fetched) {
+int lbann::generic_data_reader::fetch(std::map<input_data_type, CPUMat*>& input_buffers, El::Matrix<El::Int>& indices_fetched, size_t mb_size) {
   // Fetch sample
   auto buf = input_buffers[input_data_type::SAMPLES];
   if(buf == nullptr || buf->Height() == 0 || buf->Width() == 0) {
     LBANN_ERROR("fetch function called with invalid buffer: h=", buf->Height(), " x ", buf->Width());
   }
-  int num_samples_fetched = fetch_data(*(buf), indices_fetched);
+  int num_samples_fetched = fetch_data(*(buf), indices_fetched, mb_size);
   // Fetch label is applicable
   buf = input_buffers[input_data_type::LABELS];
   if(has_labels() && buf != nullptr && buf->Height() != 0 && buf->Width() != 0) {
     if(input_buffers[input_data_type::LABELS] == nullptr) {
       LBANN_ERROR("LABELS is not defined");
     }
-    int num_labels_fetched = fetch_labels(*(input_buffers[input_data_type::LABELS]));
+    int num_labels_fetched = fetch_labels(*(input_buffers[input_data_type::LABELS]), mb_size);
     if(num_labels_fetched != num_samples_fetched) {
       LBANN_ERROR("Number of samples: ",
                   std::to_string(num_samples_fetched),
@@ -111,7 +111,7 @@ int lbann::generic_data_reader::fetch(std::map<input_data_type, CPUMat*>& input_
   // Fetch response is applicable
   buf = input_buffers[input_data_type::RESPONSES];
   if(has_responses() && buf != nullptr && buf->Height() != 0 && buf->Width() != 0) {
-    int num_responses_fetched = fetch_responses(*(input_buffers[input_data_type::RESPONSES]));
+    int num_responses_fetched = fetch_responses(*(input_buffers[input_data_type::RESPONSES]), mb_size);
     if(num_responses_fetched != num_samples_fetched) {
       LBANN_ERROR("Number of samples: ",
                   std::to_string(num_samples_fetched),
@@ -138,11 +138,11 @@ bool lbann::generic_data_reader::fetch_data_block(CPUMat& X, El::Int block_offse
   return true;
 }
 
-int lbann::generic_data_reader::fetch_data(CPUMat& X, El::Matrix<El::Int>& indices_fetched) {
+int lbann::generic_data_reader::fetch_data(CPUMat& X, El::Matrix<El::Int>& indices_fetched, size_t mb_size) {
   #ifdef DEBUG
   if (m_current_pos == 0) {
-    if (is_master()) {
-      std::cout << "role: " << get_role() << " model: " << m_trainer->get_name()
+    if (get_comm()->am_world_master()) {
+      std::cout << "role: " << get_role() << " model: " << get_trainer().get_name()
                 << " shuffled indices: ";
       for (size_t j=0; j<15; j++) {
         std::cout << m_shuffled_indices[j] << " ";
@@ -153,10 +153,6 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X, El::Matrix<El::Int>& indic
   #endif
 
   int loaded_batch_size = get_loaded_mini_batch_size();
-
-  const int end_pos = std::min(static_cast<size_t>(m_current_pos+loaded_batch_size), m_shuffled_indices.size());
-  const int mb_size = std::min(El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
-      X.Width());
 
   El::Zeros_seq(X, X.Height(), X.Width());
   El::Zeros_seq(indices_fetched, mb_size, 1);
@@ -182,12 +178,6 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X, El::Matrix<El::Int>& indic
   /// data source prior to fetching data
   for (int t = 0; t < static_cast<int>(m_io_thread_pool->get_num_threads()); t++) {
     preprocess_data_source(t);
-  }
-
-  static bool fix_jag = true;
-  if (m_jag_partitioned && fix_jag) {
-    fix_jag = false;
-    set_jag_variables(mb_size);
   }
 
   // Fetch data is executed by the thread pool so it has to dispatch
@@ -222,40 +212,7 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X, El::Matrix<El::Int>& indic
   return mb_size;
 }
 
-void lbann::generic_data_reader::set_jag_variables(int mb_size) {
-  // all min_batches have the same number of indices;
-  // this probably causes a few indices to be discarded,
-  // but with 1B indices, who cares?
-  int mb_max = m_comm->trainer_allreduce<int>(mb_size, El::mpi::MAX);
-  m_num_iterations_per_epoch = m_shuffled_indices.size() / mb_max;
-
-  m_last_mini_batch_size = m_mini_batch_size;
-  m_global_mini_batch_size = m_mini_batch_size;
-  m_global_last_mini_batch_size = m_mini_batch_size;
-
-  m_reset_mini_batch_index = 0;
-  m_loaded_mini_batch_idx = 0;
-  m_current_mini_batch_idx = 0;
-
-  m_stride_to_next_mini_batch = mb_size;
-  m_stride_to_last_mini_batch = mb_size;
-
-  m_base_offset = 0;
-  m_model_offset = 0;
-  m_sample_stride = 1;
-  m_iteration_stride = 1;
-
-  m_world_master_mini_batch_adjustment = 0;
-}
-
-int lbann::generic_data_reader::fetch_labels(CPUMat& Y) {
-  int loaded_batch_size = get_loaded_mini_batch_size();
-  const int end_pos = std::min(static_cast<size_t>(m_current_pos+loaded_batch_size),
-                               m_shuffled_indices.size());
-  const int mb_size = std::min(
-    El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
-    Y.Width());
-
+int lbann::generic_data_reader::fetch_labels(CPUMat& Y, size_t mb_size) {
   El::Zeros_seq(Y, Y.Height(), Y.Width());
 
   if(!position_valid()) {
@@ -269,7 +226,7 @@ int lbann::generic_data_reader::fetch_labels(CPUMat& Y) {
   }
 
   std::string error_message;
-  for (int s = 0; s < mb_size; s++) {
+  for (size_t s = 0; s < mb_size; s++) {
     int n = m_current_pos + (s * m_sample_stride);
     int index = m_shuffled_indices[n];
     bool valid = fetch_label(Y, index, s);
@@ -282,14 +239,7 @@ int lbann::generic_data_reader::fetch_labels(CPUMat& Y) {
   return mb_size;
 }
 
-int lbann::generic_data_reader::fetch_responses(CPUMat& Y) {
-  int loaded_batch_size = get_loaded_mini_batch_size();
-  const int end_pos = std::min(static_cast<size_t>(m_current_pos+loaded_batch_size),
-                               m_shuffled_indices.size());
-  const int mb_size = std::min(
-    El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
-    Y.Width());
-
+int lbann::generic_data_reader::fetch_responses(CPUMat& Y, size_t mb_size) {
   El::Zeros_seq(Y, Y.Height(), Y.Width());
 
   if(!position_valid()) {
@@ -303,7 +253,7 @@ int lbann::generic_data_reader::fetch_responses(CPUMat& Y) {
   }
 
   std::string error_message;
-  for (int s = 0; s < mb_size; s++) {
+  for (size_t s = 0; s < mb_size; s++) {
     int n = m_current_pos + (s * m_sample_stride);
     int index = m_shuffled_indices[n];
     bool valid = fetch_response(Y, index, s);
@@ -331,7 +281,7 @@ bool generic_data_reader::update(bool is_active_reader) {
   }
   if (m_current_mini_batch_idx == m_num_iterations_per_epoch) {
     // for working with 1B jag samples, we may not process all the data
-    if ((get_rank() < m_num_parallel_readers) && (m_current_pos < (int)m_shuffled_indices.size()) && !m_jag_partitioned) {
+    if ((m_comm->get_rank_in_trainer() < m_num_parallel_readers) && (m_current_pos < (int)m_shuffled_indices.size())) {
       throw lbann_exception(
         std::string{} + __FILE__ + " " + std::to_string(__LINE__)
         + " :: generic data reader update error: the epoch is complete,"
@@ -447,12 +397,6 @@ size_t generic_data_reader::get_num_indices_to_use() const {
 }
 
 void generic_data_reader::resize_shuffled_indices() {
-  // ensure that all readers have the same number of indices
-  if (m_jag_partitioned) {
-    size_t n = m_comm->trainer_allreduce<size_t>(m_shuffled_indices.size(), El::mpi::MIN);
-    m_shuffled_indices.resize(n);
-  }
-
   size_t num_indices = get_num_indices_to_use();
   shuffle_indices();
   m_shuffled_indices.resize(num_indices);
@@ -694,7 +638,7 @@ void generic_data_reader::instantiate_data_store() {
     return;
   }
 
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     std::cout << "\nUSING DATA_STORE\n\n";
   }
   m_data_store = new data_store_conduit(this);  // *data_store_conduit
@@ -741,7 +685,7 @@ bool generic_data_reader::data_store_active() const {
     return true;
   }
 
-  const auto& c = static_cast<const sgd_execution_context&>(m_trainer->get_data_coordinator().get_execution_context());
+  const auto& c = static_cast<const sgd_execution_context&>(get_trainer().get_data_coordinator().get_execution_context());
   /// Use the data store for all modes except testing
   /// i.e. training, validation, tournament
   return (m_data_store != nullptr
@@ -752,7 +696,7 @@ bool generic_data_reader::data_store_active() const {
 }
 
 bool generic_data_reader::priming_data_store() const {
-  const auto& c = static_cast<const sgd_execution_context&>(m_trainer->get_data_coordinator().get_execution_context());
+  const auto& c = static_cast<const sgd_execution_context&>(get_trainer().get_data_coordinator().get_execution_context());
   if (m_data_store != nullptr && m_data_store->is_fully_loaded()) {
     return false;
   }
@@ -780,13 +724,6 @@ void generic_data_reader::set_mini_batch_size(const int s) {
 
 void generic_data_reader::set_role(std::string role) {
   m_role = role;
-  if (options::get()->has_string("jag_partitioned")
-      && get_role() == "train") {
-    m_jag_partitioned = true;
-    if (is_master()) {
-      std::cout << "USING JAG DATA PARTITIONING\n";
-    }
-  }
 }
 
 void generic_data_reader::preload_data_store() {
@@ -820,7 +757,7 @@ void generic_data_reader::preload_data_store() {
 }
 
 void generic_data_reader::print_get_methods(const std::string filename) {
-  if (!is_master()) {
+  if (!get_comm()->am_world_master()) {
     return;
   }
   std::ofstream out(filename.c_str());

@@ -47,7 +47,7 @@ smiles_data_reader::smiles_data_reader(const smiles_data_reader& rhs)  : generic
 
 smiles_data_reader::~smiles_data_reader() {
   if (m_missing_chars.size()) {
-    if (is_master()) {
+    if (get_comm()->am_world_master()) {
       std::cout << std::endl << "The following tokens were in SMILES strings, but were missing from the vocabulary: ";
       for (const auto t : m_missing_chars) {
         std::cout << t << " ";
@@ -90,7 +90,7 @@ void smiles_data_reader::copy_members(const smiles_data_reader &rhs) {
 }
 
 void smiles_data_reader::load() {
-  if(is_master()) {
+  if(get_comm()->am_world_master()) {
     std::cout << "starting load for role: " << get_role() << std::endl;
   }
 
@@ -140,7 +140,7 @@ void smiles_data_reader::load() {
 
   // Optionally run "poor man's" LTFB
   if (opts->get_bool("ltfb") && get_role() != "test") {
-    if (is_master()) {
+    if (get_comm()->am_world_master()) {
       std::cout << "running poor man's LTFB\n";
     }
     size_t my_trainer = m_comm->get_trainer_rank();
@@ -154,7 +154,7 @@ void smiles_data_reader::load() {
     size_t n = m_shuffled_indices.size() / num_trainers;
     size_t s3 = n*num_trainers;
     if (m_shuffled_indices.size() != s3) {
-      if (is_master()) {
+      if (get_comm()->am_world_master()) {
         std::cout << "adjusting global sample size from " << m_shuffled_indices.size() << " to " << s3 << std::endl;
       }
       m_shuffled_indices.resize(s3);
@@ -173,7 +173,7 @@ void smiles_data_reader::load() {
     }
 
   } else {
-    if (is_master()) std::cout << "NOT running ltfb\n";
+    if (get_comm()->am_world_master()) std::cout << "NOT running ltfb\n";
   }
 
   instantiate_data_store();
@@ -195,7 +195,7 @@ void smiles_data_reader::load() {
   if (m_data_store == nullptr) {
     double tm4 = get_time();
     setup_local_cache();
-    if (is_master()) {
+    if (get_comm()->am_world_master()) {
       std::cout << "time for setup_local_cache(): " << get_time()-tm4
                 << "; num samples: " << m_sample_lookup.size() << std::endl;
     }
@@ -205,7 +205,7 @@ void smiles_data_reader::load() {
 
 void smiles_data_reader::do_preload_data_store() {
   double tm1 = get_time();
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     std::cout << "starting do_preload_data_store; num indices: "
               << utils::commify(m_shuffled_indices.size())
               << " for role: " << get_role() << std::endl;
@@ -268,7 +268,7 @@ void smiles_data_reader::do_preload_data_store() {
     if (sample_id >= max_index) {
       break;
     }
-    if (is_master() && (sanity % 1000000 == 0) && sanity > 0) {
+    if (get_comm()->am_world_master() && (sanity % 1000000 == 0) && sanity > 0) {
       std::cout << sanity/1000000 << "M " << get_role() << " samples loaded" << std::endl;
     }
   }
@@ -280,7 +280,7 @@ void smiles_data_reader::do_preload_data_store() {
     LBANN_ERROR("sanity != valid_ids.size() (sanity=", sanity, "; valid_ids.size()=", valid_ids.size());
   }
 
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     std::cout << " do_preload_data_store time: " << get_time() - tm1 << std::endl;
   }
 }
@@ -337,7 +337,7 @@ bool smiles_data_reader::fetch_response(Mat& Y, int data_id, int mb_idx) {
 
 //user feedback
 void smiles_data_reader::print_statistics() const {
-  if (!is_master()) {
+  if (!get_comm()->am_world_master()) {
     return;
   }
 
@@ -414,7 +414,7 @@ void smiles_data_reader::load_vocab() {
 int smiles_data_reader::get_num_lines(std::string fn) {
   double tm1 = get_time();
   int count = 0;
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     std::ifstream in(fn.c_str());
     if (!in) {
       LBANN_ERROR("failed to open data file: ", fn, " for reading");
@@ -432,11 +432,11 @@ int smiles_data_reader::get_num_lines(std::string fn) {
 
   //I'm putting temporary timing around the bcast, because it
   //seems to be taking a long time
-  if (is_master()) std::cout << "XX calling bcast ..." << std::endl;
+  if (get_comm()->am_world_master()) std::cout << "XX calling bcast ..." << std::endl;
   tm1 = get_time();
   m_comm->broadcast<int>(0, &count, 1, m_comm->get_world_comm());
   double tm = get_time() - tm1;
-  if (is_master()) std::cout << "XX DONE! calling bcast ... TIME: " << tm << std::endl;
+  if (get_comm()->am_world_master()) std::cout << "XX DONE! calling bcast ... TIME: " << tm << std::endl;
 
   //check if user want less than all samples in this file
   //@todo, this (flag or entire function) should really be deprecated since it can be accomplished with absoulte sample count
@@ -444,7 +444,7 @@ int smiles_data_reader::get_num_lines(std::string fn) {
   int n_lines = INT_MAX;
   if (opts->has_int("n_lines")) {
      n_lines = opts->get_int("n_lines");
-     if(is_master() && count < n_lines) {
+     if(get_comm()->am_world_master() && count < n_lines) {
        std::cout << "WARNING:: number of available samples (" << count
                 << " ) in file " << fn << " is less than number of samples requested (" << n_lines
                 << " ) I am returning number of available samples " << std::endl;
@@ -534,7 +534,7 @@ int smiles_data_reader::get_smiles_string_length(const std::string &line, int li
 // TODO: some/most of the following could/should be in the data_store ??
 void smiles_data_reader::setup_local_cache() {
   double tm3 = get_time();
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     std::cout << "\nSTARTING smiles_data_reader::setup_fast_experimental() " << std::endl << std::endl;
   }
 
@@ -544,7 +544,7 @@ void smiles_data_reader::setup_local_cache() {
   // Will hold size of above buffer, for bcasting
   size_t buffer_size;
 
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     double tm1 = get_time();
 
     // Open input file and discard header line, if it exists
@@ -636,7 +636,7 @@ void smiles_data_reader::setup_local_cache() {
     m_comm->broadcast<char>(0, m_data.data()+the_offset, last_round, m_comm->get_world_comm());
   }
 
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     std::cout << "total time for loading data: " << get_time()-tm3 << std::endl
               << "num samples: " << m_sample_lookup.size() << std::endl;
   }
@@ -646,7 +646,7 @@ void smiles_data_reader::setup_local_cache() {
     test_encode();
   }
 
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     pid_t p = getpid();
     char buf[80];
     sprintf(buf, "cat /proc/%d/status >& status.txt", p);
@@ -661,7 +661,7 @@ void smiles_data_reader::test_encode() {
   // data_id; encodes the string (E1); reads the string from file (S2);
   // decodes E1 to produce string S1; compares S1 and S2 for equality.
   double tm1 = get_time();
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     std::cout << "STARTING TEST_ENCODE" << std::endl;
   }
   if (m_comm->get_rank_in_world() != 1) {
@@ -793,7 +793,7 @@ void smiles_data_reader::get_delimiter() {
         LBANN_ERROR("Invalid delimiter character; should be 'c', 't', '0'; you passed: ", d);
     }
   }
-  if (is_master()) {
+  if (get_comm()->am_world_master()) {
     std::cout << "USING delimiter character: (int)" << (int)m_delimiter << std::endl;
   }
 }

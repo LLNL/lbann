@@ -449,8 +449,6 @@ void init_data_readers(
       }
     }
 
-    reader->set_master(master);
-
     reader->load();
 
     if (readme.role() == "train") {

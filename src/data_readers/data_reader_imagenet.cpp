@@ -82,7 +82,7 @@ bool imagenet_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
         LBANN_ERROR("you shouldn't be here; please contact Dave Hysom");
       }
       if (m_issue_warning) {
-        if (is_master()) {
+        if (get_comm()->am_world_master()) {
           LBANN_WARNING("m_data_store != nullptr, but we are not retrivieving a node from the store; role: " + get_role() + "; this is probably OK for test mode, but may be an error for train or validate modes");
         }
       }
