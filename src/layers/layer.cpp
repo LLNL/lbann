@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -386,11 +386,10 @@ bool Layer::is_frozen() const {
   return m_frozen;
 }
 
-void Layer::setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata, const El::Grid& grid) {
+void Layer::setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata) {
   setup_pointers();
   setup_dims(dr_metadata);
-  setup_matrices(grid);
-
+  setup_matrices(get_comm()->get_trainer_grid());
 #ifdef LBANN_HAS_DISTCONV
   prepare_distconv(dr_metadata);
 #endif // LBANN_HAS_DISTCONV
@@ -510,7 +509,6 @@ void Layer::back_prop() {
   back_prop_impl_();
   propagate_error_signals_to_parents_();
   clear_prev_error_signals_();
-
 }
 
 void Layer::write_proto(lbann_data::Layer* proto) const {
@@ -526,36 +524,6 @@ void Layer::write_proto(lbann_data::Layer* proto) const {
     auto weight_proto = proto->add_weights_data();
     get_weights(i).write_proto(weight_proto);
   }
-}
-
-void Layer::fill_onnx_node(onnx::NodeProto& node) const {
-  for(auto const* parent : this->get_parent_layers())
-    node.add_input(parent->get_name());
-  for(auto const* child : this->get_parent_layers())
-    node.add_output(child->get_name());
-  node.set_name(this->get_name());
-
-  // FIXME: Do the names need formatting?
-  //string op_type
-  node.set_op_type(this->get_onnx_op_type());
-
-  // FIXME: Why does a layer need a domain?
-  //string domain
-  node.set_domain(this->get_type());
-
-  // FIXME: What goes here?
-  //repeated AttributeProto attribute = 5;
-
-  // FIXME: Do the layers need a doc_string?
-  //string doc_string
-  node.set_doc_string(this->get_type());
-
-}
-
-std::string Layer::get_onnx_op_type() const {
-  // FIXME: I can't find any docs that tell me what to return
-  //        from the layers. Help!
-  return this->get_name();
 }
 
 const Layer& Layer::get_parent_layer(size_t index) const {
@@ -768,26 +736,29 @@ void Layer::prepare_distconv(const DataReaderMetaData& dr_metadata) {
 }
 
 bool Layer::distconv_enabled() const {
-
-  // Return immediately if distconv support is known
-  if (m_distconv_enabled_set) {
-    return m_distconv_enabled;
+  if (!m_distconv_enabled_set) {
+    // Distconv is disabled if no parallel strategy is defined. When no
+    // strategy is defined, the layer has the default strategy of all
+    // zeros, which is invalid, thus should not be used when distconv is
+    // used.
+    const auto &ps = get_parallel_strategy();
+    ParallelStrategy default_zero_ps;
+    if (ps == default_zero_ps) {
+      dc::MPIRootPrintStreamDebug()
+          << "Disable " << get_name()
+          << " as it does not have a parallel strategy.";
+      m_distconv_enabled = false;
+      m_distconv_enabled_set = true;
+    }
   }
 
-  // Check if distconv is enabled
-  const auto &ps = get_parallel_strategy();
-  ParallelStrategy default_zero_ps;
-  if (ps == default_zero_ps || ps.enable_subgraph) {
-    // Distconv is disabled if no parallel strategy is defined or if
-    // sub-graph parallelism is enabled
-    m_distconv_enabled = false;
-  }
-  else {
+  if (!m_distconv_enabled_set) {
+    // Finally, check whether a layer is supported by distconv.
     m_distconv_enabled = is_distconv_supported();
+    m_distconv_enabled_set = true;
   }
-  m_distconv_enabled_set = true;
-  return m_distconv_enabled;
 
+  return m_distconv_enabled;
 }
 
 bool Layer::keep_original_inputs(int index) const {
