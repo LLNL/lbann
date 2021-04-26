@@ -39,9 +39,11 @@ namespace ltfb {
 CheckpointBinary::CheckpointBinary(std::set<std::string> const& weights_names)
   : BaseType(weights_names)
 {}
+
 CheckpointBinary::CheckpointBinary(std::set<std::string>&& weights_names)
   : BaseType(std::move(weights_names))
 {}
+
 std::unique_ptr<model>
 CheckpointBinary::get_partner_model(model const& m,
                                     El::Int partner_trainer,
@@ -66,79 +68,7 @@ CheckpointBinary::get_partner_model(model const& m,
       }
     }
   }
-
-  // Save model checkpoint
-  std::ostringstream oss;
-  {
-    RootedBinaryOutputArchive ar(oss, comm.get_trainer_grid());
-    comm.trainer_barrier();
-    ar(m);
-  }
-
-  // sure, why not
-  comm.trainer_barrier();
-
-  // Synchronize with partner trainer
-  std::string save_model_ckpt = oss.str(), load_model_ckpt;
-  if (comm.am_trainer_master()) {
-    std::size_t save_size = save_model_ckpt.size(), load_size = 0;
-    comm.sendrecv(&save_size,
-                  1,
-                  partner_trainer,
-                  0,
-                  &load_size,
-                  1,
-                  partner_trainer,
-                  0,
-                  El::SyncInfo<El::Device::CPU>{});
-    load_model_ckpt.resize(load_size);
-
-    auto const* send_buf =
-      reinterpret_cast<El::byte const*>(save_model_ckpt.data());
-    auto* recv_buf = reinterpret_cast<El::byte*>(load_model_ckpt.data());
-
-    while (save_size || load_size) {
-      // Get the max blk size
-      auto constexpr max_blk_size = std::numeric_limits<int>::max();
-      std::size_t constexpr max_blk_size_size_t = max_blk_size;
-
-      int this_blk_send_size =
-        (save_size > max_blk_size_size_t ? max_blk_size : save_size);
-      int this_blk_recv_size =
-        (load_size > max_blk_size_size_t ? max_blk_size : load_size);
-
-      comm.sendrecv(send_buf,
-                    this_blk_send_size,
-                    partner_trainer,
-                    0,
-                    recv_buf,
-                    this_blk_recv_size,
-                    partner_trainer,
-                    0,
-                    El::SyncInfo<El::Device::CPU>{});
-
-      send_buf += this_blk_send_size;
-      recv_buf += this_blk_recv_size;
-      save_size =
-        (save_size > max_blk_size_size_t ? save_size - max_blk_size_size_t : 0);
-      load_size =
-        (load_size > max_blk_size_size_t ? load_size - max_blk_size_size_t : 0);
-    }
-  }
-
-  // sure, why not
-  comm.trainer_barrier();
-
-  // Load model checkpoint from partner trainer
-  {
-    std::istringstream iss{std::move(load_model_ckpt)};
-    RootedBinaryInputArchive ar(iss, comm.get_trainer_grid());
-    ar(partner_model);
-  }
-
-  /// @todo Should be unneeded, but we experience hangs without it
-  comm.trainer_barrier();
-
+  exchange(comm, partner_model, partner_trainer);
   restore_model_weights(partner_model, restore_weights);
 
   return partner_model_ptr;

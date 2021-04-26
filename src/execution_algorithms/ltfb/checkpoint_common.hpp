@@ -34,7 +34,7 @@
 namespace lbann {
 namespace ltfb {
 
-inline void restore_model_weights(
+inline static void restore_model_weights(
   model& m,
   std::unordered_map<std::string, std::unique_ptr<weights>>& restore_weights)
 {
@@ -47,12 +47,85 @@ inline void restore_model_weights(
     if (restore_weights.count(w->get_name()) > 0) {
       using TensorDataType = DataType;
       using WeightsType = data_type_weights<TensorDataType>;
-      dynamic_cast<WeightsType&>(*w)
-        = dynamic_cast<WeightsType&>(*restore_weights[w->get_name()]);
+      dynamic_cast<WeightsType&>(*w) =
+        dynamic_cast<WeightsType&>(*restore_weights[w->get_name()]);
     }
   }
 }
 
+inline static std::string sendrecv_string(lbann_comm const& c,
+                                          std::string const& src,
+                                          El::Int partner_trainer)
+{
+  if (!c.am_trainer_master())
+    return "";
+
+  // Exchange sizes
+  size_t my_size = src.size();
+  size_t other_size = src.max_size() + 1;
+  c.sendrecv(&my_size,
+             1,
+             partner_trainer,
+             0,
+             &other_size,
+             1,
+             partner_trainer,
+             0,
+             El::SyncInfo<El::Device::CPU>{});
+
+  // Exchange strings
+  std::string tgt(other_size, '\0');
+
+  auto const* send_buf = reinterpret_cast<El::byte const*>(src.data());
+  auto* recv_buf = reinterpret_cast<El::byte*>(tgt.data());
+
+  // Get the max blk size
+  int constexpr max_blk_size_int = std::numeric_limits<int>::max();
+  std::size_t constexpr max_blk_size_size_t = max_blk_size_int;
+
+  while (my_size || other_size) {
+    int const this_blk_send_size =
+      (my_size > max_blk_size_size_t ? max_blk_size_int : my_size);
+    int const this_blk_recv_size =
+      (other_size > max_blk_size_size_t ? max_blk_size_int : other_size);
+
+    c.sendrecv(send_buf,
+               this_blk_send_size,
+               partner_trainer,
+               0,
+               recv_buf,
+               this_blk_recv_size,
+               partner_trainer,
+               0,
+               El::SyncInfo<El::Device::CPU>{});
+
+    send_buf += this_blk_send_size;
+    recv_buf += this_blk_recv_size;
+    my_size =
+      (my_size > max_blk_size_size_t ? my_size - max_blk_size_size_t : 0);
+    other_size =
+      (other_size > max_blk_size_size_t ? other_size - max_blk_size_size_t : 0);
+  }
+  return tgt;
+}
+
+template <typename T>
+static void exchange(lbann_comm const& c, T& object, El::Int partner_trainer)
+{
+  std::ostringstream oss;
+  {
+    RootedBinaryOutputArchive ar(oss, c.get_trainer_grid());
+    c.trainer_barrier();
+    ar(object);
+  }
+  c.trainer_barrier(); // I don't think this is necessary
+  {
+    std::istringstream iss{sendrecv_string(c, oss.str(), partner_trainer)};
+    RootedBinaryInputArchive ar(iss, c.get_trainer_grid());
+    ar(object);
+  }
+  c.trainer_barrier(); // I don't think this is necessary either
+}
 
 } // namespace ltfb
 } // namespace lbann

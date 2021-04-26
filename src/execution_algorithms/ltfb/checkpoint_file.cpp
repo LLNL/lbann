@@ -45,7 +45,9 @@ CheckpointFile::CheckpointFile(std::set<std::string>&& weights_names,
 {}
 
 std::unique_ptr<model>
-CheckpointFile::get_partner_model(model const& m, El::Int partner_trainer, size_t step)
+CheckpointFile::get_partner_model(model const& m,
+                                  El::Int partner_trainer,
+                                  size_t step)
 {
   auto const& comm = *m.get_comm();
 
@@ -72,11 +74,11 @@ CheckpointFile::get_partner_model(model const& m, El::Int partner_trainer, size_
     (ckpt_basedir_.empty() ? std::string("") : add_delimiter(ckpt_basedir_));
   const auto local_trainer = comm.get_trainer_rank();
   const std::string send_dir =
-    (basedir + partner_model.get_name() + "_trainer" + std::to_string(local_trainer) +
-     "_step" + std::to_string(step));
+    (basedir + partner_model.get_name() + "_trainer" +
+     std::to_string(local_trainer) + "_step" + std::to_string(step));
   const std::string recv_dir =
-    (basedir + partner_model.get_name() + "_trainer" + std::to_string(partner_trainer) +
-     "_step" + std::to_string(step));
+    (basedir + partner_model.get_name() + "_trainer" +
+     std::to_string(partner_trainer) + "_step" + std::to_string(step));
 
   // Save model checkpoint
   {
@@ -118,7 +120,7 @@ CheckpointFile::get_partner_model(model const& m, El::Int partner_trainer, size_
 
   restore_model_weights(partner_model, restore_weights);
 
-  return nullptr;
+  return partner_model_ptr;
 }
 
 } // namespace ltfb
