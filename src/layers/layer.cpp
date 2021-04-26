@@ -582,6 +582,28 @@ std::string Layer::get_onnx_op_type() const {
   return this->get_name();
 }
 
+void Layer::fill_onnx_node(onnx::NodeProto& node) const {
+  //   repeated string input = 1;    // namespace Value
+  for(auto const* parent : this->get_parent_layers())
+    node.add_input(parent->get_name());
+  //repeated string output = 2;   // namespace Value
+  for(auto const* child : this->get_parent_layers())
+    node.add_output(child->get_name());
+  node.set_name(this->get_name());
+
+  //string op_type = 4;  // namespace Operator
+
+  // FIXME: Why does a layer need a domain?
+  //string domain
+  node.set_domain(this->get_type());
+
+  //repeated AttributeProto attribute = 5;
+
+  //string doc_string = 6;
+  node.set_doc_string(this->get_description());
+
+}
+
 const Layer& Layer::get_parent_layer(size_t index) const {
   if (index >= m_parent_layers.size()) {
     LBANN_ERROR(
