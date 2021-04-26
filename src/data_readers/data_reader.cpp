@@ -123,7 +123,7 @@ int lbann::generic_data_reader::fetch(
 #ifdef DEBUG
   if (m_current_pos == 0) {
     if (get_comm()->am_world_master()) {
-      std::cout << "role: " << get_role() << " model: " << m_trainer->get_name()
+      std::cout << "role: " << get_role() << " model: " << get_trainer().get_name()
                 << " shuffled indices: ";
       for (size_t j=0; j<15; j++) {
         std::cout << m_shuffled_indices[j] << " ";
@@ -711,7 +711,7 @@ bool generic_data_reader::data_store_active() const {
     return true;
   }
 
-  const auto& c = static_cast<const sgd_execution_context&>(m_trainer->get_data_coordinator().get_execution_context());
+  const auto& c = static_cast<const sgd_execution_context&>(get_trainer().get_data_coordinator().get_execution_context());
   /// Use the data store for all modes except testing
   /// i.e. training, validation, tournament
   return (m_data_store != nullptr
@@ -722,7 +722,7 @@ bool generic_data_reader::data_store_active() const {
 }
 
 bool generic_data_reader::priming_data_store() const {
-  const auto& c = static_cast<const sgd_execution_context&>(m_trainer->get_data_coordinator().get_execution_context());
+  const auto& c = static_cast<const sgd_execution_context&>(get_trainer().get_data_coordinator().get_execution_context());
   if (m_data_store != nullptr && m_data_store->is_fully_loaded()) {
     return false;
   }

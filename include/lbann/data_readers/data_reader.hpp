@@ -106,7 +106,6 @@ class generic_data_reader {
       m_gan_label_value(0),  //If GAN, default for fake label, discriminator model
       m_io_thread_pool(nullptr),
       m_keep_sample_order(false),
-      m_trainer(nullptr),
       m_issue_warning(true)
   {
     // By default only support fetching input samples
@@ -677,12 +676,9 @@ class generic_data_reader {
 
   virtual bool priming_data_store() const;
 
-  void set_trainer(trainer *t) { m_trainer = t; }
-
-  trainer& get_trainer() const {
-    if(m_trainer == nullptr) { LBANN_ERROR("get_trainer called with nullptr"); }
-    return *m_trainer;
-  }
+  /// experimental; used to ensure all readers for jag_conduit_hdf5
+  /// have identical shuffled indices
+  virtual void post_update() {}
 
   /** Set the transform pipeline this data reader will use. */
   void set_transform_pipeline(transform::transform_pipeline&& tp) {
@@ -892,8 +888,6 @@ private:
   /** Whether to keep the order of loaded samples same as it is in the
    *  file to make testing and validation easier */
   bool m_keep_sample_order;
-
-  trainer *m_trainer;
 
   /** Transform pipeline for preprocessing data. */
   transform::transform_pipeline m_transform_pipeline;

@@ -263,7 +263,7 @@ bool numpy_npz_conduit_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
     load_npz(m_filenames[data_id], data_id, node);
     //note: if testing, and test set is touched more than once, the following
     //      will through an exception TODO: relook later
-    const auto& c = static_cast<const execution_context&>(m_trainer->get_data_coordinator().get_execution_context());
+    const auto& c = static_cast<const execution_context&>(get_trainer().get_data_coordinator().get_execution_context());
     if (priming_data_store() || c.get_execution_mode() == execution_mode::testing) {
       m_data_store->set_conduit_node(data_id, node);
     }
