@@ -92,13 +92,6 @@ class generic_compound_data_reader : public generic_data_reader {
     }
   }
 
-  void set_rank(int rank) override {
-    generic_data_reader::set_rank(rank);
-    for (auto&& reader : m_data_readers) {
-      reader->set_rank(rank);
-    }
-  }
-
   /// needed to support data_store_merge_samples
   std::vector<generic_data_reader*> & get_data_readers() {
     return m_data_readers;
