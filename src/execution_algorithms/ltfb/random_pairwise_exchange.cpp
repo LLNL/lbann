@@ -165,14 +165,17 @@ El::Int RandomPairwiseExchange::get_partner_trainer(
 }
 
 bool RandomPairwiseExchange::local_is_better(EvalType local,
-                                             EvalType remote) const noexcept
+                                             EvalType remote) const
 {
   switch (m_metric_strategy) {
   case metric_strategy::LOWER_IS_BETTER:
     return (local <= remote);
   case metric_strategy::HIGHER_IS_BETTER:
     return (local >= remote);
+  default:
+    LBANN_ERROR("Invalid metric strategy!");
   }
+  return false; // Silence compiler warning about no return.
 }
 
 void RandomPairwiseExchange::select_next(model& m,

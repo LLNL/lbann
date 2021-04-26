@@ -154,7 +154,7 @@ private:
    *  @param[in] remote The metric output of the remote model.
    *  @returns true if the local model is favored.
    */
-  bool local_is_better(EvalType local, EvalType remote) const noexcept;
+  bool local_is_better(EvalType local, EvalType remote) const;
 
 private:
   /** @brief Strategy to decide if the local or remote value is better. */

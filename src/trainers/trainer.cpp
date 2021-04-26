@@ -253,12 +253,8 @@ void trainer::evaluate(observer_ptr<model> model,
   model->reset_mode(*ctxt, execution_mode::invalid);
 
   DataReaderMetaData dr_metadata = get_data_coordinator().get_dr_metadata();
-  sgd.get()->setup_models({model}, get_max_mini_batch_size(), dr_metadata);
-  sgd.get()->evaluate(*ctxt,
-                      *model,
-                      get_data_coordinator(),
-                      mode,
-                      num_batches);
+  sgd->setup_models({model}, get_max_mini_batch_size(), dr_metadata);
+  sgd->evaluate(*ctxt, *model, get_data_coordinator(), mode, num_batches);
 }
 
 // =============================================
