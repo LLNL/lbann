@@ -45,6 +45,7 @@
 #endif // LBANN_HAS_DISTCONV
 #include <string>
 #include <vector>
+#include <onnx/onnx_pb.h>
 
 /** @brief A utility macro for easily defining default-constructed sub-class
  *  builders.*/
@@ -329,6 +330,9 @@ public:
 
   /** @brief Write layer to proto file */
   virtual void write_proto(lbann_data::Layer* proto) const;
+
+  /** @brief Add layer specific data to onnx node */
+  virtual void fill_onnx_node(onnx::NodeProto& node) const;
 
   const Layer& get_parent_layer(size_t index=0) const;
   const Layer& get_child_layer(size_t index=0) const;
