@@ -61,7 +61,16 @@ public:
   /** @brief Return name of callback */
   std::string name() const override { return "export_onnx"; }
 
+  /* @brief gather model info */
+  void on_setup_end(model* m) override;
+
+  /* @brief gather graph/layer info */
+  void on_train_begin(model* m) override;
+
 private:
+
+  /* @brief onnx ModelProto object */
+  onnx::ModelProto mp_;
 
   /* @brief lbann_summary object */
   std::shared_ptr<lbann_summary> m_summarizer;
