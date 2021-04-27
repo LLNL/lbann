@@ -32,12 +32,12 @@
 
 namespace lbann {
 
-template <typename TensorDataType>
+  /*
 int batch_functional_inference_algorithm::
-get_label(El::AbstractDistMatrix<TensorDataType> const& label_data, int row) {
-  TensorDataType max = 0;
+get_label(const El::DistMatrix<float, El::STAR, El::STAR, El::ELEMENT, El::Device::CPU>& label_data, int row) {
+  float max = 0;
   int idx = 0;
-  TensorDataType col_value;
+  float col_value;
   int col_count = label_data.Height();
   for (int i = 0; i < col_count; i++) {
     col_value = label_data.Get(row, i);
@@ -48,16 +48,19 @@ get_label(El::AbstractDistMatrix<TensorDataType> const& label_data, int row) {
   }
   return idx;
 }
+*/
 
-template <typename TensorDataType>
-El::AbstractDistMatrix<TensorDataType>
-batch_functional_inference_algorithm::
+  /*
+template <typename DataT, El::Dist CDist, El::Dist RDist, El::DistWrap DistView, El::Device Device>
+El::Matrix<int, El::Device::CPU>
 infer(observer_ptr<model> model,
-      El::AbstractDistMatrix<TensorDataType> const& samples,
-      std::string output_layer,
-      size_t mbs) {
+      El::DistMatrix<DataT, CDist, RDist, DistView, Device> const& samples){//,
+      //std::string output_layer,
+      //size_t mbs=0) {
+  El::Matrix<int, El::Device::CPU> labels(10, 1);
+  return labels;
   size_t samples_size = samples.Height();
-  El::AbstractDistMatrix<TensorDataType> labels(samples_size, 1);
+  El::Matrix<int, El::Device::CPU> labels(samples_size, 1);
 
   // Infer on mini batches
   for (size_t i = 0; i < samples_size; i+=mbs) {
@@ -70,18 +73,19 @@ infer(observer_ptr<model> model,
     for (size_t j = i; j < mbs_idx; j++) {
       // This probably doesn't work for a distributed matrix and will be
       // changed when I properly test it with an external driver application
-      labels[j] = get_label(mbl, j-i);
+      labels(j,0) = get_label(mbl, j-i);
     }
   }
 
   return labels;
-}
+  */
+//}
 
-template <typename TensorDataType>
-El::AbstractDistMatrix<TensorDataType>
-batch_functional_inference_algorithm::
+/*
+template <typename DataT, El::Dist CDist, El::Dist RDist, El::DistView DistView, El::Device Device>
+El::AbstractDistMatrix<DataT> batch_functional_inference_algorithm::
 infer_mini_batch(model& model,
-                 El::AbstractDistMatrix<TensorDataType> const& samples,
+                 El::DistMatrix<DataT, CDist, RDist, DistView, Device> const& samples,
                  std::string output_layer) {
   // Insert samples into input layer here
   for (int i=0; i < model.get_num_layers(); i++) {
@@ -98,7 +102,7 @@ infer_mini_batch(model& model,
   // Currently this just gets the output tensor of size sample_n X label_n
   // We will need to work out how to process the output to give the correct
   // values for different models (e.g., classification vs regression)
-  El::AbstractDistMatrix<TensorDataType> labels;
+  El::AbstractDistMatrix<DataT> labels;
   for (const auto* l : model.get_layers()) {
     if (l->get_name() == output_layer) {
       auto const& dtl = dynamic_cast<lbann::data_type_layer<float> const&>(*l);
@@ -108,5 +112,6 @@ infer_mini_batch(model& model,
 
   return labels;
 }
+*/
 
 }  // namespace lbann

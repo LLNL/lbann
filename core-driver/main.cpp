@@ -25,7 +25,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/lbann.hpp"
-#include "lbann/execution_algorithms/batch_functional_inference_algorithm.hpp"
 #include <mpi.h>
 #include <stdio.h>
 
@@ -144,9 +143,10 @@ load_model(lbann::lbann_comm* lc, std::string cp_dir, int mbs) {
   return m;
 }
 
-El::DistMatrix<float, El::STAR, El::STAR, El::ELEMENT, El::Device::CPU> load_samples() {
-  int h = 28, w = 128, c = 1, N = 64;
-  El::DistMatrix<float, El::STAR, El::STAR, El::ELEMENT, El::Device::CPU> samples(c * h * w, N);
+const El::DistMatrix<float, El::STAR, El::STAR, El::ELEMENT, El::Device::CPU>
+load_samples() {
+  int h = 128, w = 128, c = 1, N = 64;
+  const El::DistMatrix<float, El::STAR, El::STAR, El::ELEMENT, El::Device::CPU> samples(c * h * w, N);
   return samples;
 }
 
@@ -179,7 +179,8 @@ int main(int argc, char *argv[]) {
   auto m = load_model(lbann_comm.get(), model_dir, mbs);
 
   // Load the data
-  const auto samples = load_samples();
+  auto samples = load_samples();
+  //const El::Matrix<float, El::Device::CPU> samples;
 
   // Create inference algorithm
   auto inf_alg = lbann::batch_functional_inference_algorithm();
@@ -188,8 +189,8 @@ int main(int argc, char *argv[]) {
   auto labels = inf_alg.infer(m.get(), samples, pred_layer, mbs);
   if (lbann_comm->am_world_master()) {
     std::cout << "Predicted Labels: ";
-    for (int i=0; i<labels.size(); i++) {
-      std::cout << labels[i] << " ";
+    for (int i=0; i<labels.Height(); i++) {
+      std::cout << labels(i) << " ";
     }
     std::cout << std::endl;
   }
