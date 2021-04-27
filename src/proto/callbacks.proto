@@ -80,6 +80,7 @@ message Callback {
     CallbackSummarizeImages summarize_images = 48;
     CallbackDumpModelGraph dump_model_graph = 49;
     CallbackPerturbLearningRate perturb_learning_rate = 50;
+    CallbackExportOnnx export_onnx = 51;
   }
 
   message CallbackLTFB {
@@ -402,4 +403,8 @@ message Callback {
     string weights = 4;               // Optimizer weights with lr to perturb (default: All)
   }
 
+    /** @brief Export trained model in onnx format */
+  message CallbackExportOnnx {
+
+  }
 }

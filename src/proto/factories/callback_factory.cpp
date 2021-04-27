@@ -43,6 +43,7 @@
 #include "lbann/callbacks/dump_outputs.hpp"
 #include "lbann/callbacks/dump_weights.hpp"
 #include "lbann/callbacks/early_stopping.hpp"
+#include "lbann/callbacks/export_onnx.hpp"
 #include "lbann/callbacks/gpu_memory_usage.hpp"
 #include "lbann/callbacks/hang.hpp"
 #include "lbann/callbacks/imcomm.hpp"
@@ -138,6 +139,8 @@ void register_default_builders(factory_type& factory)
                            build_dump_weights_callback_from_pbuf);
   factory.register_builder("CallbackEarlyStopping",
                            build_early_stopping_callback_from_pbuf);
+  factory.register_builder("CallbackExportOnnx",
+                           build_export_onnx_callback_from_pbuf);
   factory.register_builder("CallbackGPUMemoryUsage",
                            build_gpu_memory_usage_callback_from_pbuf);
   factory.register_builder("CallbackHang",
