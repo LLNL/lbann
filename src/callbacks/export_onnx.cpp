@@ -44,14 +44,10 @@ namespace callback {
 
 export_onnx::export_onnx(std::shared_ptr<lbann_summary> const& summarizer)
   : m_summarizer(summarizer)
-{
-  std::cout << "I do stuff! different?" << std::endl;
-}
+{}
 
 void export_onnx::on_setup_end(model* m)
 {
-  std::cout << "TEST" << std::endl;
-
   mp_.set_ir_version(7);
   //FIXME: what goes here? ONNX operators?
   // The empty string ("") domain indicates the operators defined
@@ -85,12 +81,13 @@ void export_onnx::on_train_begin(model* m)
   {
     auto* np = gp->add_node();
     layer->fill_onnx_node(*np);
-    std::cout << "name: " << np->name() << std::endl;
   }
   gp->set_name(m->get_name());
 
   // FIXME: Dims and data type for graph?
   auto* initializer = gp->add_initializer();
+
+  // Fake dims for initializer.dims
   int32_t dims[] = {1, 2, 3};
   for( auto dim : dims )
   {
@@ -128,6 +125,8 @@ void export_onnx::on_train_begin(model* m)
   // FIXME: What is this stuff?
   auto* value_info = gp->add_value_info();
   auto* quantization_annotation = gp->add_quantization_annotation();
+
+  std::cout << gp->DebugString() << std::endl;
 }
 
 std::unique_ptr<callback_base>
