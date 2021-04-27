@@ -398,7 +398,6 @@ message Callback {
     bool print = 2;
   }
 
-<<<<<<< HEAD
   message CallbackPerturbLearningRate {
     float learning_rate_factor = 1;   // Learning rate perturbation (in log space)
     bool perturb_during_training = 2; // Whether to periodically perturb during training (default: False)
