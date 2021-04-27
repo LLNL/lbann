@@ -43,12 +43,7 @@ google::protobuf::FieldDescriptor const* get_oneof_field_descriptor(
   auto oneof_handle = desc->FindOneofByName(oneof_name);
   if (!oneof_handle)
   {
-    std::string msg_string;
-    google::protobuf::TextFormat::PrintToString(msg_in, &msg_string);
-    LBANN_ERROR("Message has no oneof field named \"",
-                oneof_name, "\"\n\nMessage(",
-                desc->DebugString(), "):\n\n",
-                msg_string);
+    return nullptr;
   }
 
   return reflex->GetOneofFieldDescriptor(msg_in, oneof_handle);
