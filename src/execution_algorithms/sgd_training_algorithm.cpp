@@ -44,7 +44,7 @@ void sgd_training_algorithm::apply(execution_context& context,
                                    execution_mode mode)
 {
   sgd_execution_context& sgd_context =
-    static_cast<sgd_execution_context&>(context);
+    dynamic_cast<sgd_execution_context&>(context);
   const sgd_termination_criteria& sgd_term = m_stopping_criteria;
   switch (mode) {
   case execution_mode::training:
@@ -108,7 +108,7 @@ void sgd_training_algorithm::train(sgd_execution_context& c,
       c,
       model,
       execution_mode::validation);
-    auto& evaluation_context = static_cast<sgd_execution_context&>(
+    auto& evaluation_context = dynamic_cast<sgd_execution_context&>(
       get_trainer().get_execution_context(key));
     // Check to make sure that the model has a valid execution mode
     // before trying to do inference

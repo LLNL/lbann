@@ -154,7 +154,7 @@ bool checkpoint::need_checkpoint(model *m, callback_phase phase) {
 // Checkpoint Shared/Distributed
 bool checkpoint::do_checkpoint(model *m, visitor_hook hook) {
   auto& p = get_active_trainer().get_persist_obj();
-  auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
+  auto& c = dynamic_cast<sgd_execution_context&>(m->get_execution_context());
   auto& t = get_active_trainer();
   if(&t != &get_trainer()) { LBANN_ERROR("Mismatched trainers"); }
   // if the checkpoint directory is not defined, bail

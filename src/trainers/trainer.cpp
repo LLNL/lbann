@@ -232,7 +232,22 @@ void trainer::train(observer_ptr<model> model,
 
   DataReaderMetaData dr_metadata = get_data_coordinator().get_dr_metadata();
   m_training_alg->setup_models({model}, get_max_mini_batch_size(), dr_metadata);
-  m_training_alg->apply(*model, get_data_coordinator());
+  // FIXME (trb 04/27/2021): This is a hack to support the current
+  // checkpoint/restart mechanisms. This needs to be refactored to be
+  // agnostic to the training algorithm. At this time, only SGD is
+  // properly C/R-able.
+  if (m_training_alg->get_type() == "sgd") {
+    auto key = check_and_build_execution_context(*m_training_alg,
+                                                 model,
+                                                 execution_mode::training);
+    m_training_alg->apply(*(m_model_execution_context[key]),
+                          *model,
+                          get_data_coordinator(),
+                          execution_mode::training);
+  }
+  else {
+    m_training_alg->apply(*model, get_data_coordinator());
+  }
 }
 
 // NOTE (trb 04/19/2021): Currently, "evaluate" is just defined as
