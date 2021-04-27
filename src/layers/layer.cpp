@@ -386,10 +386,11 @@ bool Layer::is_frozen() const {
   return m_frozen;
 }
 
-void Layer::setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata) {
+void Layer::setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata, const El::Grid& grid) {
   setup_pointers();
   setup_dims(dr_metadata);
-  setup_matrices(get_comm()->get_trainer_grid());
+  setup_matrices(grid);
+
 #ifdef LBANN_HAS_DISTCONV
   prepare_distconv(dr_metadata);
 #endif // LBANN_HAS_DISTCONV
@@ -509,6 +510,7 @@ void Layer::back_prop() {
   back_prop_impl_();
   propagate_error_signals_to_parents_();
   clear_prev_error_signals_();
+
 }
 
 void Layer::write_proto(lbann_data::Layer* proto) const {
@@ -525,6 +527,30 @@ void Layer::write_proto(lbann_data::Layer* proto) const {
     get_weights(i).write_proto(weight_proto);
   }
 }
+#ifdef LBANN_HAS_ONNX
+void Layer::fill_onnx_node(onnx::GraphProto& graph) const {
+  auto* node = graph.add_node();
+  for(auto const* parent : this->get_parent_layers()) {
+    size_t idx = parent->find_child_layer_index(*this);
+    node->add_input(parent->get_name() + "_" + std::to_string(idx));
+  }
+  for(auto const* child : this->get_child_layers()) {
+    size_t idx = this->find_child_layer_index(*child);
+    node->add_output(this->get_name() + "_" + std::to_string(idx));
+  }
+  node->set_name(this->get_name());
+  node->set_op_type(this->get_onnx_op_type());
+  node->set_domain("");
+  node->set_doc_string(this->get_type());
+
+}
+
+std::string Layer::get_onnx_op_type() const {
+  LBANN_ERROR( "ONNX export is not supported for ", this->get_type(),
+               " layer \"",this->get_name(),"\"");
+  return "";
+}
+#endif // LBANN_HAS_ONNX
 
 const Layer& Layer::get_parent_layer(size_t index) const {
   if (index >= m_parent_layers.size()) {
@@ -736,29 +762,26 @@ void Layer::prepare_distconv(const DataReaderMetaData& dr_metadata) {
 }
 
 bool Layer::distconv_enabled() const {
-  if (!m_distconv_enabled_set) {
-    // Distconv is disabled if no parallel strategy is defined. When no
-    // strategy is defined, the layer has the default strategy of all
-    // zeros, which is invalid, thus should not be used when distconv is
-    // used.
-    const auto &ps = get_parallel_strategy();
-    ParallelStrategy default_zero_ps;
-    if (ps == default_zero_ps) {
-      dc::MPIRootPrintStreamDebug()
-          << "Disable " << get_name()
-          << " as it does not have a parallel strategy.";
-      m_distconv_enabled = false;
-      m_distconv_enabled_set = true;
-    }
+
+  // Return immediately if distconv support is known
+  if (m_distconv_enabled_set) {
+    return m_distconv_enabled;
   }
 
-  if (!m_distconv_enabled_set) {
-    // Finally, check whether a layer is supported by distconv.
+  // Check if distconv is enabled
+  const auto &ps = get_parallel_strategy();
+  ParallelStrategy default_zero_ps;
+  if (ps == default_zero_ps || ps.enable_subgraph) {
+    // Distconv is disabled if no parallel strategy is defined or if
+    // sub-graph parallelism is enabled
+    m_distconv_enabled = false;
+  }
+  else {
     m_distconv_enabled = is_distconv_supported();
-    m_distconv_enabled_set = true;
   }
-
+  m_distconv_enabled_set = true;
   return m_distconv_enabled;
+
 }
 
 bool Layer::keep_original_inputs(int index) const {
