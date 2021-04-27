@@ -27,7 +27,9 @@
 #define LBANN_EXECUTION_ALGORITHMS_LTFB_RANDOM_PAIRWISE_EXCHANGE_HPP_INCLUDED
 
 #include "meta_learning_strategy.hpp"
+
 #include <google/protobuf/message.h>
+
 #include <cstddef>
 #include <memory>
 

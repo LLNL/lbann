@@ -35,8 +35,8 @@
 #include "lbann/utils/make_abstract.hpp"
 
 #include "ltfb/execution_context.hpp"
-#include "ltfb/termination_criteria.hpp"
 #include "ltfb/meta_learning_strategy.hpp"
+#include "ltfb/termination_criteria.hpp"
 
 #include <google/protobuf/message.h>
 #include <memory>
@@ -67,8 +67,8 @@ namespace lbann {
 class LTFB final : public Cloneable<LTFB, training_algorithm>
 {
   using BaseType = Cloneable<LTFB, training_algorithm>;
-public:
 
+public:
   using TermCriteriaType = ltfb::TerminationCriteria;
   using ExeContextType = ltfb::ExecutionContext;
 
@@ -84,8 +84,8 @@ public:
        std::unique_ptr<training_algorithm> local_training_algorithm,
        std::unique_ptr<ltfb::MetaLearningStrategy> meta_learning_strategy,
        ltfb::TerminationCriteria stopping_criteria)
-    : BaseType{std::move(name)},
-      m_local_algo{std::move(local_training_algorithm)},
+    : BaseType{std::move(name)}, m_local_algo{std::move(
+                                   local_training_algorithm)},
       m_meta_learning_strategy{std::move(meta_learning_strategy)},
       m_termination_criteria{std::move(stopping_criteria)}
   {}

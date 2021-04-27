@@ -49,8 +49,7 @@ std::unique_ptr<BaseClass> make_abstract(google::protobuf::Message const& msg)
 }
 
 template <class ConcreteClass>
-std::unique_ptr<ConcreteClass>
-make(google::protobuf::Message const& msg)
+std::unique_ptr<ConcreteClass> make(google::protobuf::Message const& msg)
 {
   static_assert(False<ConcreteClass>::value,
                 "There is no specialization of make() for this type.");

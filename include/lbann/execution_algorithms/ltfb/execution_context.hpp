@@ -94,10 +94,6 @@ public:
   }
   ///@}
 
-private:
-
-
-
 }; // class ExecutionContext
 
 } // namespace ltfb

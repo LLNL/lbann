@@ -101,7 +101,7 @@ void unregister_metalearning_strategy(MetaLearningStrategyKey const& key);
 
 template <>
 std::unique_ptr<ltfb::MetaLearningStrategy>
-make_abstract<ltfb::MetaLearningStrategy>(const google::protobuf::Message &msg);
+make_abstract<ltfb::MetaLearningStrategy>(const google::protobuf::Message& msg);
 
 } // namespace lbann
 #endif // LBANN_EXECUTION_ALGORITHMS_LTFB_META_LEARNING_STRATEGY_HPP_INCLUDED
