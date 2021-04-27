@@ -403,10 +403,6 @@ message Callback {
     bool perturb_during_training = 2; // Whether to periodically perturb during training (default: False)
     int64 batch_interval = 3;         // Frequency of perturbation if perturb_during_training is true
     string weights = 4;               // Optimizer weights with lr to perturb (default: All)
-
-  /** @brief Export trained model in onnx format */
-  message CallbackExportOnnx {
-
   }
 
   message CallbackComputeModelSize {
@@ -421,5 +417,12 @@ message Callback {
     float perturb_probability = 4; // Probability of perturbing the weight
     string output_name = 5;
     int64 batch_interval = 6;
+  }
+
+  /** @brief Export trained model in onnx format */
+  message CallbackExportOnnx {
+    bool print_debug_string = 1; // print debug string to stdout
+    string output_file = 2; // name of onnx output file
+
   }
 }
