@@ -493,6 +493,9 @@ private:
 
 public:
 
+  //** @brief Get ONNX operator type */
+  virtual std::string get_onnx_op_type() const;
+
   const Layer& get_parent_layer(size_t index=0) const;
   const Layer& get_child_layer(size_t index=0) const;
 
