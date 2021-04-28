@@ -28,7 +28,7 @@
 #define LBANN_CALLBACKS_CALLBACK_COMPUTE_MODEL_SIZE_HPP_INCLUDED
 
 #include "lbann/callbacks/callback.hpp"
-#include "lbann/layers/transform/constant.hpp"
+#include "lbann/weights/weights.hpp"
 
 
 namespace lbann {
@@ -37,16 +37,16 @@ namespace callback {
 /** @brief Compute model (parameter size).
  *
  *  Goes through learning layers, compute size and 
- *  write computed valude to output layer
+ *  write computed value to named output weight layer
  */
 class compute_model_size : public callback_base {
 public:
 
   /** 
    *  @param batch_interval Number of training mini-batch steps 
-   *  @param output_layer   To hold computed value 
+   *  @param output_name   To hold computed value 
    */
-  compute_model_size(std::string output_layer_name,
+  compute_model_size(std::string output_name,
                El::Int batch_interval = 1);
 
   compute_model_size* copy() const override { return new compute_model_size(*this); }
@@ -69,17 +69,14 @@ private:
   compute_model_size();
 
    /*
-   *  output_layer_name.
+   *  output_name.
    */
-  std::string m_output_layer_name;
+  std::string m_output_name;
   
-  Layer* m_output_layer;
+  weights* m_output;
   /** Compute model size. */
   void compute_size(model& m);
-
-  template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-  constant_layer<TensorDataType, T_layout, Dev>* get_constant_layer(Layer* l);
-
+  
 };
 
 // Builder function

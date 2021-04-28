@@ -404,7 +404,7 @@ message Callback {
   }
  
   message CallbackComputeModelSize {
-    string output_layer_name = 1;
+    string output_name = 1;
     int64 batch_interval = 2;
   }
 
