@@ -1,7 +1,7 @@
 """LBANN Trainer."""
 from lbann import trainer_pb2
 from lbann.util import make_iterable
-import lbann.core.training_algorithm
+import lbann.core.training_algorithm as Algos
 
 class Trainer:
     """Manages the training of a neural network model."""
@@ -12,7 +12,7 @@ class Trainer:
                  num_parallel_readers=None,
                  random_seed=None,
                  serialize_io=None,
-                 training_algo=get_default_training_algo(),
+                 training_algo=Algos.get_default_training_algo(),
                  callbacks=[]):
         self.name = name
         self.num_parallel_readers = num_parallel_readers
