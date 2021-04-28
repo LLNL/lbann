@@ -1,6 +1,7 @@
 """LBANN Trainer."""
 from lbann import trainer_pb2
 from lbann.util import make_iterable
+import lbann.core.training_algorithm
 
 class Trainer:
     """Manages the training of a neural network model."""
@@ -11,6 +12,7 @@ class Trainer:
                  num_parallel_readers=None,
                  random_seed=None,
                  serialize_io=None,
+                 training_algo=get_default_training_algo(),
                  callbacks=[]):
         self.name = name
         self.num_parallel_readers = num_parallel_readers
@@ -18,6 +20,7 @@ class Trainer:
         self.serialize_io = serialize_io
         self.mini_batch_size = mini_batch_size
         self.hydrogen_block_size = None
+        self.training_algo = training_algo
         # Callbacks
         self.callbacks = make_iterable(callbacks)
 
@@ -37,6 +40,8 @@ class Trainer:
             trainer.hydrogen_block_size = self.hydrogen_block_size
         if self.serialize_io is not None:
             trainer.serialize_io = self.serialize_io
+        if self.training_algo is not None:
+            trainer.training_algorithm.CopyFrom(self.training_algo.export_proto())
 
         # Add trainer components
         trainer.callback.extend([c.export_proto() for c in self.callbacks])
