@@ -91,18 +91,18 @@ class BatchedDescent(TrainingAlgorithm):
             msg.max_seconds = self.seconds
             return msg
 
-    def __init__(self, name: str, batch_count: int = 0, epoch_count: int = 0,
+    def __init__(self, name: str, num_iterations: int = 0, epoch_count: int = 0,
                  max_seconds: float = 0.):
         """Construct a new BatchedDescent training algorithm instance.
 
         Args:
             name: A user-defined name to identify this object in logs.
-            batch_count: Number of minibatches.
+            num_iterations: Number of minibatches.
             epoch_count: Number of epochs.
             max_seconds: Maximum training duration (seconds)
         """
         self.name = name
-        self.stopping = self.StoppingCriteria(batch_count=batch_count,
+        self.stopping = self.StoppingCriteria(batch_count=num_iterations,
                                               epoch_count=epoch_count,
                                               seconds=max_seconds)
 
