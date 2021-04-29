@@ -64,7 +64,7 @@ find_package(Threads REQUIRED)
 
 find_dependency(Clara)
 
-if (LBANN_HAS_PYTHON)
+if (LBANN_HAS_PYTHON_FRONTEND OR LBANN_HAS_EMBEDDED_PYTHON)
   find_package(Python REQUIRED COMPONENTS Interpreter Development)
 endif ()
 
