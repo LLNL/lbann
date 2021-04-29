@@ -39,7 +39,7 @@ class TrainingAlgorithm:
         algo.parameters.Pack(self.do_export_proto())
         return algo
 
-class BatchedDescent(TrainingAlgorithm):
+class BatchedIterativeOptimizer(TrainingAlgorithm):
     """Batched gradient descent training algorithm.
 
     Because LBANN manages optimizers on a weights-specific basis, and
@@ -57,9 +57,9 @@ class BatchedDescent(TrainingAlgorithm):
     """
 
     class StoppingCriteria:
-        """Stopping criteria for an instance of BatchedDescent.
+        """Stopping criteria for an instance of BatchedIterativeOptimizer.
 
-        BatchedDescent can be done to a finite batch count, a finite
+        BatchedIterativeOptimizer can be done to a finite batch count, a finite
         epoch count, or a fixed number of (double-precision) seconds
         (note: time-based stopping criteria is not publicly available
         yet; this is just a bit of foreshadowing).
@@ -70,14 +70,14 @@ class BatchedDescent(TrainingAlgorithm):
         satisfied.
         """
 
-        def __init__(self, batch_count: int=0, epoch_count: int=0,
-                     seconds: float=0.):
-            """Construct a new BatchedDescent stopping criteria.
+        def __init__(self, batch_count: int = 0, epoch_count: int = 0,
+                     seconds: float = 0.):
+            """Construct a new BatchedIterativeOptimizer stopping criteria.
 
-            Keyword arguments:
-            batch_count -- Number of minibatches (default: 0)
-            epoch_count -- Number of epochs (default: 0)
-            seconds -- Maximum training duration (default: 0.0)
+            Args:
+              batch_count: Number of minibatches.
+              epoch_count: Number of epochs.
+              seconds: Maximum training duration.
             """
             self.batch_count = batch_count
             self.epoch_count = epoch_count
@@ -93,7 +93,7 @@ class BatchedDescent(TrainingAlgorithm):
 
     def __init__(self, name: str, num_iterations: int = 0, epoch_count: int = 0,
                  max_seconds: float = 0.):
-        """Construct a new BatchedDescent training algorithm instance.
+        """Construct a new BatchedIterativeOptimizer instance.
 
         Args:
             name: A user-defined name to identify this object in logs.
@@ -319,4 +319,4 @@ def get_default_training_algo():
     Returns:
         A batched descent algorithm that will run for a single epoch.
     """
-    return BatchedDescent("default sgd", epoch_count=1)
+    return BatchedIterativeOptimizer("default sgd", epoch_count=1)
