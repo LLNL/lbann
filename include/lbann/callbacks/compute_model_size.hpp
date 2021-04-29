@@ -34,10 +34,10 @@
 namespace lbann {
 namespace callback {
 
-/** @brief Compute model (parameter size).
+/** @brief Compute number of parameters in model.
  *
- *  Goes through learning layers, compute size and 
- *  write computed value to named output weight layer
+ *  The model size is output into a user-provided weights object, 
+ *  which is expected to have one entry.
  */
 class compute_model_size : public callback_base {
 public:
