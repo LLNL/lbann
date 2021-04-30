@@ -68,21 +68,23 @@ void input_layer<TensorDataType, T_layout, Dev>::fp_setup_outputs(El::Int mini_b
   if(this->m_model->has_valid_execution_context()) {
     auto& c = dynamic_cast<sgd_execution_context&>(this->m_model->get_execution_context());
     auto mode = c.get_execution_mode();
-    data_coordinator& dc = get_trainer().get_data_coordinator();
-    // Determine model mini-batch size and effective mini-batch size
-    // Note: If inter-model communication is activated, the effective
-    // mini-batch is equal to the global mini-batch size.
-    /// @todo This functionality should probably be moved elsewhere
-    mini_batch_size = dc.get_current_mini_batch_size(mode);
-
     auto effective_mini_batch_size = mini_batch_size;
-    for (auto&& cb : this->m_model->get_callbacks()) {
-      if (dynamic_cast<callback::imcomm*>(cb) != nullptr) {
-        effective_mini_batch_size = dc.get_current_global_mini_batch_size(mode);
-        break;
+    if (!(mode==execution_mode::inference)) {
+      data_coordinator& dc = get_trainer().get_data_coordinator();
+      // Determine model mini-batch size and effective mini-batch size
+      // Note: If inter-model communication is activated, the effective
+      // mini-batch is equal to the global mini-batch size.
+      /// @todo This functionality should probably be moved elsewhere
+      mini_batch_size = dc.get_current_mini_batch_size(mode);
+
+      effective_mini_batch_size = mini_batch_size;
+      for (auto&& cb : this->m_model->get_callbacks()) {
+        if (dynamic_cast<callback::imcomm*>(cb) != nullptr) {
+          effective_mini_batch_size = dc.get_current_global_mini_batch_size(mode);
+          break;
+        }
       }
     }
-
     // Set mini-batch size in model
     c.set_current_mini_batch_size(mini_batch_size);
     c.set_effective_mini_batch_size(effective_mini_batch_size);

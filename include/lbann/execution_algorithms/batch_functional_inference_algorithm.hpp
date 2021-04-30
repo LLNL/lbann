@@ -27,12 +27,12 @@
 #ifndef LBANN_BATCH_INFERENCE_ALGORITHM_HPP
 #define LBANN_BATCH_INFERENCE_ALGORITHM_HPP
 
-#include "lbann/models/model.hpp"
+#include "lbann/callbacks/callback.hpp"
 #include "lbann/data_coordinator/data_coordinator.hpp"
-
+#include "lbann/execution_contexts/sgd_execution_context.hpp"
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/layers/io/input_layer.hpp"
-#include "lbann/callbacks/callback.hpp"
+#include "lbann/models/model.hpp"
 
 
 namespace lbann {
@@ -68,24 +68,30 @@ public:
   infer(observer_ptr<model> model,
         El::DistMatrix<DataT, CDist, RDist, DistView, Device> const& samples,
         std::string output_layer,
-        size_t mbs=0) {
+        size_t mbs) {
+    if (mbs <= 0) {
+      LBANN_ERROR("mini-batch size must be larger than 0");
+    }
+
+    // Make matrix for returning predicted labels
     size_t samples_size = samples.Height();
     El::Matrix<int, El::Device::CPU> labels(samples_size, 1);
 
+    // Create an SGD_execution_context so that layer.forward_prop can get the
+    // mini_batch_size - This should be fixed in the future, when SGD is not so
+    // hard-coded into the model & layers
+    auto c = sgd_execution_context(execution_mode::inference, mbs);
+    model->reset_mode(c, execution_mode::inference);
+
     // Infer on mini batches
     for (size_t i = 0; i < samples_size; i+=mbs) {
-      size_t mbs_idx = std::min(i+mbs, samples_size);
-      //El::DistMatrix<DataT, CDist, RDist, DistView, Device> mini_batch_samples(mbs,128*128);
-      auto mini_batch_samples = El::LockedView(samples, El::IR(i, mbs_idx), El::ALL);
-      auto mbl = infer_mini_batch(*model, mini_batch_samples, output_layer);
+      size_t mb_idx = std::min(i+mbs, samples_size);
+      auto mb_range = El::IR(i, mb_idx);
+      auto mb_samples = El::LockedView(samples, mb_range, El::ALL);
+      auto mb_labels = El::View(labels, mb_range, El::ALL);
 
-      // Fill labels, right now this assumes a softmax output for a
-      // classification problem
-      for (size_t j = i; j < mbs_idx; j++) {
-        // This probably doesn't work for a distributed matrix and will be
-        // changed when I properly test it with an external driver application
-        //labels(j) = get_label(mbl, j-i);
-      }
+      infer_mini_batch(*model, mb_samples);
+      get_labels(*model, mb_labels, output_layer);
     }
 
     return labels;
@@ -93,54 +99,53 @@ public:
 
 
 protected:
-  /** return label for a given row of softmax output. */
-  template <typename DataT, El::Dist CDist, El::Dist RDist, El::DistWrap DistView, El::Device Device>
-  int get_label(El::DistMatrix<DataT, CDist, RDist, DistView, Device> & label_data, int row) {
-    DataT max = 0;
-    int idx = 0;
-    DataT col_value;
-    int col_count = label_data.Height();
-    for (int i = 0; i < col_count; i++) {
-      col_value = label_data.Get(row, i);
-      if (col_value > max) {
-        max = col_value;
-        idx = i;
-      }
-    }
-    return idx;
-  }
 
   /** Infer on one mini batch with a given model. */
   template <typename DataT, El::Dist CDist, El::Dist RDist, El::DistWrap DistView, El::Device Device>
-  const El::BaseDistMatrix*
+  void
   infer_mini_batch(model& model,
-                   El::DistMatrix<DataT, CDist, RDist, DistView, Device> const& samples,
-                   std::string output_layer) {
-    // Insert samples into input layer here
+                   El::DistMatrix<DataT, CDist, RDist, DistView, Device> const& samples) {
     for (int i=0; i < model.get_num_layers(); i++) {
       auto& l = model.get_layer(i);
+      // Insert samples into the input layer
       if (l.get_type() == "input") {
         auto& il = dynamic_cast<input_layer<DataType>&>(l);
         il.set_samples(samples);
       }
     }
-
     model.forward_prop(execution_mode::inference);
+  }
 
-    // Get inference labels
-    // Currently this just gets the output tensor of size sample_n X label_n
-    // We will need to work out how to process the output to give the correct
-    // values for different models (e.g., classification vs regression)
-    const El::BaseDistMatrix *labels;
+  /** return label for a given row of softmax output. */
+  void get_labels(model& model,\
+                  El::Matrix<int, El::Device::CPU> &labels,\
+                  std::string output_layer) {
+    int pred_label;
+    float max, col_value;
+
     for (const auto* l : model.get_layers()) {
+      // Find the output layer
       if (l->get_name() == output_layer) {
         auto const& dtl = dynamic_cast<lbann::data_type_layer<float> const&>(*l);
-        labels = &dtl.get_activations();
+        const auto& outputs = dtl.get_activations();
+
+        // Find the prediction for each sample
+        int col_count = outputs.Width();
+        int row_count = outputs.Height();
+        for (int i=0; i<col_count; i++) {
+          max = 0;
+          for (int j=0; j<row_count; j++) {
+            col_value = outputs.Get(i, j);
+            if (col_value > max) {
+              max = col_value;
+              pred_label = j;
+            }
+          }
+          labels(i) = pred_label;
+        }
       }
     }
-
-    return labels;
-}
+  }
 
 };
 
