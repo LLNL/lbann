@@ -2,6 +2,7 @@
 set_full_path(THIS_DIR_SOURCES
   data_reader.cpp
   data_reader_cifar10.cpp
+  data_reader_communitygan.cpp
   data_reader_csv.cpp
   data_reader_image.cpp
   data_reader_jag_conduit.cpp
