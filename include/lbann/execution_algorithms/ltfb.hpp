@@ -109,31 +109,11 @@ public:
    *  @param[in,out] m The model to be trained.
    *  @param[in,out] dc The data source for training.
    *  @param[in] mode Completely superfluous.
-   *  @param[in] term_criteria When to stop training.
    */
   void apply(execution_context& context,
              model& m,
              data_coordinator& dc,
              execution_mode mode) final;
-  // /** @brief Apply the training algorithm to refine model weights.
-  //  *
-  //  *  Calls the other apply method with the context's internal
-  //  *  "execution_mode".
-  //  *
-  //  *  @param[in,out] m The model to be trained.
-  //  *  @param[in,out] dc The data source for training.
-  //  *  @param[in,out] context The persistent execution context for this
-  //  *                 algorithm.
-  //  *  @param[in] term_criteria When to stop training.
-  //  */
-  // void apply(model& m,
-  //            data_coordinator& dc,
-  //            execution_context& context,
-  //            termination_criteria const& term_criteria)
-  // {
-  //   this->apply(context, m, dc, context.get_execution_mode(), term_criteria);
-  // }
-  ///@}
 
 protected:
   /** @brief Covariant return-friendly implementation of

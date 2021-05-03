@@ -39,6 +39,13 @@ class TrainingAlgorithm:
         algo.parameters.Pack(self.do_export_proto())
         return algo
 
+    def do_export_proto(self):
+        """Get a protobuf representation of this object.
+        
+        Must be implemented in derived classes.  
+        """
+        raise NotImplementedError
+
 class BatchedIterativeOptimizer(TrainingAlgorithm):
     """Batched gradient descent training algorithm.
 

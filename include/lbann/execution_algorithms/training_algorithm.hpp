@@ -102,10 +102,6 @@ public:
   /** @brief A user-defined string identifying the algorithm object. */
   std::string const& get_name() const noexcept;
 
-  /** @brief Get the current termination criteria for the algorithm. */
-  // virtual termination_criteria& get_termination_criteria() = 0;
-  // virtual termination_criteria const& get_termination_criteria() const = 0;
-
   ///@}
   /** @name Execution interfaces */
   ///@{
