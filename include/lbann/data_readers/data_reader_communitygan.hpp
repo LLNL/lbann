@@ -89,6 +89,12 @@ private:
    */
   size_t m_epoch_size;
 
+  std::unique_ptr<::CommunityGANWalker> m_walker;
+
+  std::vector<std::pair<std::vector<size_t>,std::vector<size_t>>> m_motifs;
+
+  size_t m_cache_size{0};
+
   /** Cache of random walks.
    *
    *  The random walker does not output the same number of walks as
@@ -106,10 +112,7 @@ private:
    *  that the caller has acquired control of the IO RNG.
    */
   std::vector<std::vector<size_t>> generate_samples(
-    size_t num_samples,
     const locked_io_rng_ref&);
-
-  std::unique_ptr<::CommunityGANWalker> m_walker;
 
 };
 

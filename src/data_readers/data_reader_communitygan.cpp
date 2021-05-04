@@ -91,10 +91,12 @@ bool communitygan_reader::fetch_data_block(
   // Generate samples and add to cache
   /// @todo Use larger cache and don't generate samples every
   /// mini-batch
-  auto samples = generate_samples(mb_size, io_rng);
-  const auto max_cache_size = std::max(mb_size_, m_sample_cache.size());
+  if (m_cache_size <= 0) {
+    m_cache_size = mb_size;
+  }
+  auto samples = generate_samples(io_rng);
   for (auto& sample : samples) {
-    if (m_sample_cache.size() >= max_cache_size) {
+    if (m_sample_cache.size() >= m_cache_size) {
       m_sample_cache.pop_front();
     }
     m_sample_cache.emplace_back(std::move(sample));
@@ -118,136 +120,116 @@ bool communitygan_reader::fetch_label(CPUMat& Y, int data_id, int col) {
 
 void communitygan_reader::load() {
 
-#if 0 /// @todo Remove
+  // Trainer info
   auto& comm = *get_comm();
+  const size_t trainer_rank = comm.get_trainer_rank();
+  const size_t trainer_size = comm.get_procs_per_trainer();
 
-  // Load graph data
-  m_distributed_database = make_unique<DistributedDatabase>(
-    ::havoqgt::db_open(),
-    m_graph_file.c_str());
-  auto& graph = *m_distributed_database->get_segment_manager()->find<Graph>("graph_obj").first;
+  // Objects for parsing motif file
+  m_motifs.clear();
+  std::ifstream ifs(m_motif_file.c_str());
+  std::istringstream iss;
+  std::string line;
+  std::vector<size_t> local_vertices, remote_vertices;
+  local_vertices.reserve(m_motif_size);
+  remote_vertices.reserve(m_motif_size);
 
-  // Load edge data
-  m_edge_weight_data.reset();
-  auto* edge_weight_data = m_distributed_database->get_segment_manager()->find<EdgeWeightData::BaseType>("graph_edge_data_obj").first;
-  if (edge_weight_data == nullptr) {
-    m_edge_weight_data = make_unique<EdgeWeightData>(graph);
-    m_edge_weight_data->reset(1.0);
-    edge_weight_data = m_edge_weight_data.get();
-  }
-  comm.trainer_barrier();
+  // Iterate through lines in file
+  while (std::getline(ifs, line)) {
 
-  // Construct random walker
-  constexpr bool small_edge_weight_variance = false;
-  constexpr bool verbose = false;
-  m_random_walker = make_unique<RandomWalker>(
-    graph,
-    *edge_weight_data,
-    small_edge_weight_variance,
-    m_walk_length,
-    m_return_param,
-    m_inout_param,
-    comm.get_trainer_comm().GetMPIComm(),
-    verbose);
-  comm.trainer_barrier();
+    // Objects for parsing line
+    iss.str(line);
+    size_t vertex;
+    iss >> vertex; // First index is motif ID
+    local_vertices.clear();
+    remote_vertices.clear();
 
-  // Get local vertices
-  // Note: Estimate frequency of vertex visits using the vertex
-  // degree, plus 1 for Laplace smoothing.
-  const size_t num_local_vertices = graph.num_local_vertices();
-  if (num_local_vertices == 0) {
-    LBANN_ERROR("communitygan data reader loaded a graph with no local vertices");
-  }
-  m_local_vertex_global_indices.clear();
-  m_local_vertex_global_indices.reserve(num_local_vertices);
-  m_local_vertex_local_indices.clear();
-  m_local_vertex_local_indices.reserve(num_local_vertices);
-  m_local_vertex_visit_counts.clear();
-  m_local_vertex_visit_counts.reserve(num_local_vertices);
-  for (auto iter = graph.vertices_begin();
-       iter != graph.vertices_end();
-       ++iter) {
-    const auto& vertex = *iter;
-    const auto& degree = graph.degree(vertex);
-    const auto& global_index = graph.locator_to_label(vertex);
-    const auto& local_index = m_local_vertex_global_indices.size();
-    m_local_vertex_global_indices.push_back(global_index);
-    m_local_vertex_local_indices[global_index] = local_index;
-    m_local_vertex_visit_counts.push_back(degree+1);
-  }
-
-  // Compute noise distribution for negative sampling
-  update_noise_distribution();
-
-  // Make sure walks cache has at least one walk
-  const auto io_rng = set_io_generators_local_index(0);
-  m_walks_cache.clear();
-  do {
-    auto walks = run_walker(1, io_rng);
-    for (auto& walk : walks) {
-      m_walks_cache.emplace_back(std::move(walk));
+    // Parse vertices in motif
+    // Note: Keep track of vertices that are local or remote
+    for (size_t i=0; i<m_motif_size; ++i) {
+      iss >> vertex;
+      if (vertex % trainer_size == trainer_rank) {
+        local_vertices.push_back(vertex);
+      }
+      else {
+        remote_vertices.push_back(vertex);
+      }
     }
-  } while (comm.trainer_allreduce(m_walks_cache.empty() ? 1 : 0));
 
+    // Save motif if it has a local vertex
+    if (!local_vertices.empty()) {
+      m_motifs.emplace_back(local_vertices, remote_vertices);
+    }
 
-  // Construct list of indices
-  m_shuffled_indices.resize(m_epoch_size);
-  std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
-  resize_shuffled_indices();
-  select_subset_of_data();
-#endif // 0
+  }
 
 }
 
 std::vector<std::vector<size_t>> communitygan_reader::generate_samples(
-  size_t num_samples,
   const locked_io_rng_ref&) {
 
-#if 1 /// @todo Remove
-  return std::vector<std::vector<size_t>>();
-#else
-  // HavoqGT graph
-  const auto& graph = *m_distributed_database->get_segment_manager()->find<Graph>("graph_obj").first;
-  const auto num_local_vertices = m_local_vertex_global_indices.size();
+  // Construct random walker if needed
+  if (m_walker == nullptr) {
+    auto& comm = *get_comm();
+    float* embedding_buffer = nullptr; /// @todo Implement
+    size_t num_embeddings = 0; /// @todo Implement (global or local?)
+    size_t embedding_dim = 0; /// @todo Implement
+    m_walker = make_unique<::CommunityGANWalker>(
+      comm.get_trainer_comm().GetMPIComm(),
+      m_graph_file,
+      embedding_buffer,
+      static_cast<int>(num_embeddings),
+      static_cast<int>(embedding_dim),
+      static_cast<int>(m_walk_length-1),
+      static_cast<int>(m_cache_size));
+  }
 
-  // Randomly choose start vertices for random walks
-  std::vector<Vertex> start_vertices;
-  start_vertices.reserve(num_walks);
-  for (size_t i=0; i<num_walks; ++i) {
-    const auto& local_index = fast_rand_int(get_io_generator(),
-                                            num_local_vertices);
-    const auto& global_index = m_local_vertex_global_indices.at(local_index);
-    start_vertices.push_back(graph.label_to_locator(global_index));
+  // Allocate memory for samples and walk starts
+  std::vector<std::vector<size_t>> samples;
+  std::vector<int> starts;
+  samples.reserve(m_cache_size);
+  starts.reserve(m_cache_size);
+
+  // Randomly choose motifs and walk starts
+  auto pick_random = [&] (const auto& vector) {
+    return vector.at(fast_rand_int(get_io_generator(), vector.size()));
+  };
+  for (size_t i=0; i<m_cache_size; ++i) {
+
+    // Allocate memory for sample
+    samples.emplace_back();
+    auto& sample = samples.back();
+    sample.reserve(m_motif_size + m_walk_length);
+
+    // Choose random motif
+    const auto& motif = pick_random(m_motifs);
+    const auto& local_vertices = motif.first;
+    const auto& remote_vertices = motif.second;
+    sample.insert(sample.end(), local_vertices.cbegin(), local_vertices.cend());
+    sample.insert(sample.end(), remote_vertices.cbegin(), remote_vertices.cend());
+    std::shuffle(sample.begin(), sample.end(), get_io_generator());
+
+    // Choose random walk start
+    starts.push_back(static_cast<int>(pick_random(local_vertices)));
+
   }
 
   // Perform random walks
-  const auto walks_vertices = m_random_walker->run_walker(start_vertices);
-
-  // Convert walks to vertex indices
-  std::vector<std::vector<size_t>> walks_indices;
-  walks_indices.reserve(walks_vertices.size());
-  for (const auto& walk_vertices : walks_vertices) {
-    walks_indices.emplace_back();
-    auto& walk_indices = walks_indices.back();
-    walk_indices.reserve(walk_vertices.size());
-    for (const auto& vertex : walk_vertices) {
-      walk_indices.emplace_back(graph.locator_to_label(vertex));
-    }
+  const auto walks = m_walker->run(starts);
+  if (walks.size() != m_cache_size) {
+    LBANN_ERROR(
+      "CommunityGAN data reader expected ",
+      m_cache_size," walks from walker, ",
+      "but got ",walks.size());
   }
-
-  // Record visits to local vertices
-  for (const auto& walk : walks_indices) {
-    for (const auto& global_index : walk) {
-      if (m_local_vertex_local_indices.count(global_index) != 0) {
-        const auto& local_index = m_local_vertex_local_indices.at(global_index);
-        ++m_local_vertex_visit_counts[local_index];
-        ++m_total_visit_count;
-      }
+  for (size_t i=0; i<m_cache_size; ++i) {
+    auto& sample = samples[i];
+    for (const auto& vertex : pick_random(walks.at(starts[i]))) {
+      sample.push_back(vertex);
     }
+    sample.resize(m_motif_size + m_walk_length, -1);
   }
-
-  return walks_indices;
-#endif // 0
+  return samples;
 
 }
 
