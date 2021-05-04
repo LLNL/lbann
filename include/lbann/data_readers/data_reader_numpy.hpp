@@ -56,11 +56,6 @@ class numpy_reader : public generic_data_reader {
     return "numpy_reader";
   }
 
-  /// Set whether to fetch labels.
-  void set_has_labels(bool b) { m_has_labels = b; }
-  /// Set whether to fetch responses.
-  void set_has_responses(bool b) { m_has_responses = b; }
-
   void load() override;
 
   int get_num_labels() const override { return m_num_labels; }
@@ -69,7 +64,7 @@ class numpy_reader : public generic_data_reader {
   const std::vector<int> get_data_dims() const override {
     std::vector<int> dims(m_data.shape.begin() + 1,
                           m_data.shape.end());
-    if (m_has_labels || m_has_responses) {
+    if (m_supported_input_types.at(input_data_type::LABELS) || m_supported_input_types.at(input_data_type::RESPONSES)) {
       dims.back() -= 1;
     }
     return dims;
@@ -86,10 +81,6 @@ class numpy_reader : public generic_data_reader {
   int m_num_features = 0;
   /// Number of label classes.
   int m_num_labels = 0;
-  /// Whether to fetch a label from the last column.
-  bool m_has_labels = true;
-  /// Whether to fetch a response from the last column.
-  bool m_has_responses = false;
   /**
    * Underlying numpy data.
    * Note raw data is managed with shared smart pointer semantics (relevant

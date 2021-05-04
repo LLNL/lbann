@@ -57,10 +57,6 @@ class numpy_npz_conduit_reader : public generic_data_reader {
     return "numpy_npz_conduit_reader";
   }
 
-  /// Set whether to fetch labels.
-  void set_has_labels(bool b) { m_has_labels = b; }
-  /// Set whether to fetch responses.
-  void set_has_responses(bool b) { m_has_responses = b; }
   /// Set a scaling factor for int16 data.
   void set_scaling_factor_int16(DataType s) { m_scaling_factor_int16 = s; }
 
@@ -89,10 +85,6 @@ class numpy_npz_conduit_reader : public generic_data_reader {
     int m_num_labels = 0;
     /// Number of features in each response.
     int m_num_response_features = 0;
-    /// Whether to fetch a label from the last column.
-    bool m_has_labels = true;
-    /// Whether to fetch a response from the last column.
-    bool m_has_responses = true;
 
     std::vector<int> m_data_dims;
     int m_data_word_size = 0;
@@ -108,7 +100,7 @@ class numpy_npz_conduit_reader : public generic_data_reader {
 
     std::vector<std::string> m_filenames;
 
-    bool load_numpy_npz_from_file(const std::unordered_set<int> &data_ids, std::unordered_set<int>& label_classes); 
+    bool load_numpy_npz_from_file(const std::unordered_set<int> &data_ids, std::unordered_set<int>& label_classes);
 
     void load_conduit_node(const std::string filename, int data_id, conduit::Node &output, bool reset = true);
 
