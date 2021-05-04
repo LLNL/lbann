@@ -45,9 +45,11 @@ message TrainingAlgorithm {
 // Is-a TrainingAlgorithm
 message SGD {
   message TerminationCriteria {
-    uint64 max_batches = 1;
-    uint64 max_epochs = 2;
-    double max_seconds = 3;
+    oneof criterion {
+      uint64 max_batches = 1;
+      uint64 max_epochs = 2;
+      double max_seconds = 3;
+    }
   }
 
   TerminationCriteria stopping_criteria = 1;

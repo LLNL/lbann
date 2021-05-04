@@ -44,13 +44,13 @@ namespace {
 #define LBANN_LOG_WORLD_MASTER(comm_ref, ...)                                  \
   do {                                                                         \
     if (comm_ref.am_world_master())                                            \
-      Output(std::clog, __VA_ARGS__);                                          \
+      Output(std::cout, __VA_ARGS__);                                          \
   } while (0)
 
 #define LBANN_LOG_TRAINER_MASTER(comm_ref, ...)                                \
   do {                                                                         \
     if (comm_ref.am_trainer_master())                                          \
-      Output(std::clog, __VA_ARGS__);                                          \
+      Output(std::cout, __VA_ARGS__);                                          \
   } while (0)
 
 template <typename... Args> void Output(std::ostream& os, Args&&... args)
@@ -185,13 +185,14 @@ void RandomPairwiseExchange::select_next(model& m,
   auto const& comm = *(m.get_comm());
   auto const step = ctxt.get_step();
   const std::string message_prefix =
-    (comm.am_world_master() ? build_string("LTFB (model \"",
-                                           m.get_name(),
-                                           "\", "
-                                           "step ",
-                                           step,
-                                           "): ")
-                            : "");
+    (comm.am_trainer_master() || comm.am_world_master()
+     ? build_string("LTFB (model \"",
+                    m.get_name(),
+                    "\", "
+                    "step ",
+                    step,
+                    "): ")
+     : "");
 
   LBANN_LOG_WORLD_MASTER(comm, message_prefix, "starting tournament...");
 
@@ -236,11 +237,12 @@ void RandomPairwiseExchange::select_next(model& m,
   }
 
   LBANN_LOG_TRAINER_MASTER(comm,
+                           message_prefix,
                            "trainer ",
                            local_trainer,
                            " selected model from trainer ",
                            tournament_winner,
-                           " (Trainer ",
+                           " (trainer ",
                            local_trainer,
                            " score = ",
                            local_score,

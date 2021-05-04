@@ -41,8 +41,8 @@ class TrainingAlgorithm:
 
     def do_export_proto(self):
         """Get a protobuf representation of this object.
-        
-        Must be implemented in derived classes.  
+
+        Must be implemented in derived classes.
         """
         raise NotImplementedError
 
@@ -93,9 +93,12 @@ class BatchedIterativeOptimizer(TrainingAlgorithm):
         def export_proto(self):
             """Get a protobuf representation of this object."""
             msg = AlgoProto.SGD.TerminationCriteria()
-            msg.max_batches = self.batch_count
-            msg.max_epochs = self.epoch_count
-            msg.max_seconds = self.seconds
+            if self.batch_count > 0:
+                msg.max_batches = self.batch_count
+            if self.epoch_count > 0:
+                msg.max_epochs = self.epoch_count
+            if self.seconds > 0:
+                msg.max_seconds = self.seconds
             return msg
 
     def __init__(self, name: str, num_iterations: int = 0, epoch_count: int = 0,
@@ -319,11 +322,3 @@ class RandomPairwiseExchange(MetaLearningStrategy):
         msg.metric_strategy = self.metric_strategy
         msg.exchange_strategy.CopyFrom(self.exchange_strategy.export_proto())
         return msg
-
-def get_default_training_algo():
-    """Get a default training algorithm.
-
-    Returns:
-        A batched descent algorithm that will run for a single epoch.
-    """
-    return BatchedIterativeOptimizer("default sgd", epoch_count=1)

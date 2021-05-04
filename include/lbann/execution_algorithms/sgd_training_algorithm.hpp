@@ -48,14 +48,15 @@ class sgd_training_algorithm
 public:
   /** @brief Construct with a name. */
   sgd_training_algorithm(std::string name,
-                         sgd_termination_criteria stop)
+                         std::unique_ptr<sgd_termination_criteria> stop)
     : BaseType{std::move(name)},
       m_stopping_criteria{std::move(stop)}
   {}
 
-  sgd_training_algorithm(const sgd_training_algorithm& other) = default;
+  sgd_training_algorithm(const sgd_training_algorithm& other);
   sgd_training_algorithm&
-  operator=(const sgd_training_algorithm& other) = default;
+  operator=(const sgd_training_algorithm& other);
+
   sgd_training_algorithm(sgd_training_algorithm&& other) = default;
   sgd_training_algorithm& operator=(sgd_training_algorithm&& other) = default;
 
@@ -80,15 +81,14 @@ public:
   void train(sgd_execution_context& c,
              model& model,
              data_coordinator& dc,
-             size_t num_epochs,
-             size_t num_batches = 0);
+             sgd_termination_criteria const& term);
 
   /** Evaluate a model using the forward pass of an SGD solver. */
   void evaluate(sgd_execution_context& c,
                 model& model,
                 data_coordinator& dc,
                 execution_mode mode,
-                size_t num_batches = 0);
+                sgd_termination_criteria const& term);
 
   /** @brief Get a default-initialized execution context.
    *  @note This method participates in the
@@ -139,7 +139,7 @@ protected:
   do_get_new_execution_context() const override;
 
 private:
-  sgd_termination_criteria m_stopping_criteria;
+  std::unique_ptr<sgd_termination_criteria> m_stopping_criteria;
 };
 
 template <>

@@ -58,8 +58,10 @@ trainer::trainer(lbann_comm* comm,
                  size_t mini_batch_size,
                  std::unique_ptr<training_algorithm> alg)
   : m_data_coordinator{std::move(dc)},
-    m_training_alg{std::move(alg)}, m_comm{comm},
-    m_max_mini_batch_size{mini_batch_size}, m_background_io_allowed{true}
+    m_training_alg{std::move(alg)},
+    m_comm{comm},
+    m_max_mini_batch_size{mini_batch_size},
+    m_background_io_allowed{true}
 {
   // Default trainer name
   m_name = "trainer" + std::to_string(m_comm->get_trainer_rank());
@@ -225,11 +227,16 @@ void trainer::train(observer_ptr<model> model,
 {
   // FIXME (trb 04/22/21): This is a temporary fix to support old PFE
   // model descriptions.
-  if (!m_training_alg)
-    m_training_alg = std::make_unique<sgd_training_algorithm>(
-      "sgd_train",
-      sgd_termination_criteria(num_batches, num_epochs));
+  if (!m_training_alg) {
+    std::unique_ptr<sgd_termination_criteria> stopping;
+    if (num_epochs)
+      stopping = make_unique<epoch_termination_criteria>(num_epochs);
+    else
+      stopping = make_unique<batch_termination_criteria>(num_batches);
 
+    m_training_alg = std::make_unique<sgd_training_algorithm>(
+      "sgd_train", std::move(stopping));
+  }
   DataReaderMetaData dr_metadata = get_data_coordinator().get_dr_metadata();
   m_training_alg->setup_models({model}, get_max_mini_batch_size(), dr_metadata);
   // FIXME (trb 04/27/2021): This is a hack to support the current
@@ -261,15 +268,15 @@ void trainer::evaluate(observer_ptr<model> model,
 {
   auto sgd = make_unique<sgd_training_algorithm>(
     "sgd_evaluate",
-    sgd_termination_criteria{/*num_batches=*/0UL,
-                             /*num_epochs=*/1UL});
+    make_unique<epoch_termination_criteria>(/*num_epochs=*/1UL));
   auto ctxt = sgd->get_new_execution_context();
   ctxt->set_execution_mode(mode);
   model->reset_mode(*ctxt, execution_mode::invalid);
 
   DataReaderMetaData dr_metadata = get_data_coordinator().get_dr_metadata();
   sgd->setup_models({model}, get_max_mini_batch_size(), dr_metadata);
-  sgd->evaluate(*ctxt, *model, get_data_coordinator(), mode, num_batches);
+  sgd->evaluate(*ctxt, *model, get_data_coordinator(), mode,
+                epoch_termination_criteria(/*num_epochs=*/1UL));
 }
 
 // =============================================

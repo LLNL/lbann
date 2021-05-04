@@ -77,8 +77,8 @@ public:
 
   /** @brief Get the total elapsed time in seconds.
    *
-   *  Resets the counter, so a subsequent call to stop() without
-   *  another start() will return 0.0.
+   *  Resets the counter, so a subsequent call to stop() or check()
+   *  without another start() will return 0.0.
   */
   double stop() noexcept
   {
@@ -91,11 +91,9 @@ public:
   double check() const noexcept
   {
     using seconds_type = std::chrono::duration<double>;
-    if (m_start == TimePoint())
-      return 0.0;
-
-    auto elapsed_time = ClockType::now() -  m_start;
-    return seconds_type(elapsed_time).count();
+    return (m_start == TimePoint()
+            ? 0.0
+            : seconds_type(ClockType::now() -  m_start).count());
   }
 private:
   TimePoint m_start;

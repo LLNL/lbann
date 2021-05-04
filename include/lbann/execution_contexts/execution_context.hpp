@@ -81,11 +81,6 @@ public:
    */
   void inc_step() noexcept { ++m_step; }
 
-  /** Return true if the flag to stop training is set. */
-  bool get_terminate_training() const { return m_terminate_training; }
-  /** Set the terminate training flag (on or off). */
-  void set_terminate_training(bool f) { m_terminate_training = f; }
-
   /** @name Checkpointing and Serialization */
   ///@{
 
@@ -105,9 +100,9 @@ public:
 protected:
   friend class cereal::access;
   /** Copy constructor. */
-  execution_context(const execution_context& other) = default;
+  execution_context(const execution_context& other) = delete;
   /** Copy assignment operator. */
-  execution_context& operator=(const execution_context& other) = default;
+  execution_context& operator=(const execution_context& other) = delete;
   /** Move constructor. */
   execution_context(execution_context&& other) = default;
   /** Move assignment operator. */
@@ -120,30 +115,20 @@ private:
    *  algorithm's internal state
    */
   size_t m_step = 0UL;
-
-  /** @brief Whether to terminate training.
-   *  @details If true, training will terminate immediately before
-   *  the next epoch.
-   */
-  bool m_terminate_training = false;
 };
 
+/** @brief Specifies when to stop a training algorithm.
+ *
+ *  The stopping criteria must be compatible with the training
+ *  algorithm, and specifically its execution context, but can
+ *  otherwise be anything meaningful in the context of that algorithm.
+*/
 class termination_criteria
 {
 public:
-  termination_criteria(size_t max_steps)
-    : m_max_num_steps{max_steps}
-  {}
+  termination_criteria() = default;
   virtual ~termination_criteria() = default;
-  bool satisfied(execution_context const& ctxt) const
-  {
-    return (ctxt.get_step() >= m_max_num_steps);
-  }
-
-  size_t max_num_steps() const noexcept { return m_max_num_steps; }
-
-private:
-  size_t m_max_num_steps;
+  virtual bool operator()(execution_context const& c) const = 0;
 };
 
 } // namespace lbann

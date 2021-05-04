@@ -40,16 +40,21 @@ namespace ltfb {
 class TerminationCriteria final : public lbann::termination_criteria
 {
 public:
-  TerminationCriteria(size_t max_num_steps)
-    : lbann::termination_criteria{max_num_steps}
+  TerminationCriteria(size_t max_metalearning_steps)
+    : m_max_metalearning_steps{max_metalearning_steps}
   {}
   ~TerminationCriteria() = default;
-  /** @brief Decide if the criteria are fulfilled. */
-  bool operator()(ExecutionContext const& exe_state) const
+  bool operator()(execution_context const& c) const final
   {
-    return exe_state.get_step() >= this->max_num_steps();
+    return this->operator()(dynamic_cast<ExecutionContext const&>(c));
   }
-
+  /** @brief Decide if the criteria are fulfilled. */
+  bool operator()(ExecutionContext const& exe_state) const noexcept
+  {
+    return exe_state.get_step() >= m_max_metalearning_steps;
+  }
+private:
+  size_t m_max_metalearning_steps;
 }; // class TerminationCriteria
 
 } // namespace ltfb

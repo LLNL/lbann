@@ -29,23 +29,13 @@
 
 #include "lbann/base.hpp"
 #include "lbann/execution_contexts/execution_context.hpp"
+#include "lbann/utils/cloneable.hpp"
+#include "lbann/utils/timer.hpp"
+
+#include <cstddef>
+#include <limits>
 
 namespace lbann {
-
-class sgd_termination_criteria : public termination_criteria
-{
-public:
-  sgd_termination_criteria(size_t max_num_batches,
-                           size_t max_num_epochs)
-    : termination_criteria{max_num_batches},
-      m_max_epochs{max_num_epochs}
-  {
-  }
-  ~sgd_termination_criteria() = default;
-  size_t max_num_epochs() const noexcept { return m_max_epochs; }
-private:
-  size_t m_max_epochs;
-};
 
 /** @brief SGD Uses the step to track the Current mini-batch step for
  *  execution mode.
@@ -55,21 +45,22 @@ class sgd_execution_context final : public execution_context
 {
 public:
   /** Constructor. */
-  sgd_execution_context(execution_mode mode,
-                        size_t mini_batch_size);
+  sgd_execution_context(execution_mode mode, size_t mini_batch_size);
   /** Destructor. */
   virtual ~sgd_execution_context() = default;
 
-  /** Copy constructor. */
-  sgd_execution_context(const sgd_execution_context& other) = default;
-  /** Copy assignment operator. */
-  sgd_execution_context&
-  operator=(const sgd_execution_context& other) = default;
   /** Move constructor. */
   sgd_execution_context(sgd_execution_context&& other) = default;
   /** Move assignment operator. */
   sgd_execution_context& operator=(sgd_execution_context&& other) = default;
   /** @brief Get a clean sgd_execution_context. */
+
+  /** Copy constructor -- deleted. */
+  sgd_execution_context(const sgd_execution_context& other) = delete;
+  /** Copy assignment operator -- deleted. */
+  sgd_execution_context&
+  operator=(const sgd_execution_context& other) = delete;
+
   std::unique_ptr<execution_context> get_new() const override
   {
     return make_unique<sgd_execution_context>(execution_mode::invalid, 0UL);
@@ -81,12 +72,8 @@ public:
   /** @brief Return the state of the execution context as a string */
   std::string get_state_string() const noexcept override
   {
-    return build_string("sgd.",
-                        to_string(get_execution_mode()),
-                        ".epoch.",
-                        get_epoch(),
-                        ".step.",
-                        get_step());
+    return build_string("sgd.", to_string(get_execution_mode()), ".epoch.",
+                        get_epoch(), ".step.", get_step());
   }
 
   /** Number of times the training set has been traversed. */
@@ -141,11 +128,27 @@ public:
     return m_execution_mode;
   }
 
+  void set_early_stop(bool stop) noexcept
+  {
+    m_stop_early = stop;
+  }
+  bool get_early_stop() const noexcept
+  {
+    return m_stop_early;
+  }
+
+  void start_timer() noexcept { m_timer.start(); }
+  void stop_timer() noexcept { m_timer.stop(); }
+  double get_current_execution_time() const noexcept { return m_timer.check(); }
+
 private:
   friend class cereal::access;
   sgd_execution_context() = default;
 
 private:
+  /** @brief Timer tracking execution time. */
+  lbann::Timer m_timer;
+
   /** Number of times the training data set has been traversed. */
   size_t m_epoch = 0;
 
@@ -160,8 +163,79 @@ private:
   size_t m_effective_mini_batch_size;
 
   execution_mode m_execution_mode;
+
+  bool m_stop_early = false;
 };
 
+/** @brief Base class for SGD stopping. */
+class sgd_termination_criteria
+  : public termination_criteria,
+    public Cloneable<HasAbstractFunction<sgd_termination_criteria>>
+{
+public:
+  sgd_termination_criteria() = default;
+  virtual ~sgd_termination_criteria() = default;
+  bool operator()(execution_context const& c_in) const final {
+    auto const& c = dynamic_cast<sgd_execution_context const&>(c_in);
+    return c.get_early_stop() || this->is_done(c);
+  }
+private:
+  virtual bool is_done(sgd_execution_context const& c) const noexcept = 0;
+};
+
+/** @brief Stop SGD based on a fixed batch count.
+ *
+ *  The training algorithm still tracks the epoch count for other
+ *  parts of the code (e.g. at_epoch_begin/end callbacks).
+ */
+class batch_termination_criteria
+  : public Cloneable<batch_termination_criteria, sgd_termination_criteria>
+{
+public:
+  batch_termination_criteria(size_t num_batches)
+    : m_max_batches{num_batches}
+  {}
+
+private:
+  bool is_done(sgd_execution_context const& c) const noexcept final {
+    return c.get_step() >= m_max_batches;
+  }
+
+private:
+  size_t m_max_batches;
+};
+
+class epoch_termination_criteria
+  : public Cloneable<epoch_termination_criteria, sgd_termination_criteria>
+{
+public:
+  epoch_termination_criteria(size_t num_epochs)
+    : m_max_epochs{num_epochs}
+  {}
+
+private:
+  bool is_done(sgd_execution_context const& c) const noexcept final {
+    return c.get_epoch() >= m_max_epochs;
+  }
+
+private:
+  size_t m_max_epochs;
+};
+
+class seconds_termination_criteria
+  : public Cloneable<seconds_termination_criteria, sgd_termination_criteria>
+{
+public:
+  seconds_termination_criteria(double seconds)
+    : m_max_seconds{seconds}
+  {}
+
+private:
+  bool is_done(sgd_execution_context const& c) const noexcept final;
+
+private:
+  double m_max_seconds;
+};
 } // namespace lbann
 
 #endif // LBANN_SGD_EXECUTION_CONTEXT_HPP

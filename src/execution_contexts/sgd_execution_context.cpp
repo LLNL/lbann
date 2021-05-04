@@ -35,8 +35,7 @@ namespace lbann {
 sgd_execution_context::sgd_execution_context(execution_mode mode,
                                              size_t mini_batch_size)
   : m_current_mini_batch_size(mini_batch_size),
-    m_effective_mini_batch_size(mini_batch_size),
-    m_execution_mode(mode)
+    m_effective_mini_batch_size(mini_batch_size), m_execution_mode(mode)
 {}
 
 template <class Archive> void sgd_execution_context::serialize(Archive& ar)
@@ -70,14 +69,15 @@ void sgd_execution_context::save_to_checkpoint_shared(persist& p)
 
 void sgd_execution_context::load_from_checkpoint_shared(persist& p)
 {
-  load_from_shared_cereal_archive<sgd_execution_context>(*this,
-                                                         p,
-                                                         get_execution_mode(),
-                                                         *(get_trainer().get_comm()),
+  load_from_shared_cereal_archive<sgd_execution_context>(
+    *this,
+    p,
+    get_execution_mode(),
+    *(get_trainer().get_comm()),
 #ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
-                                                         "_ctx.xml"
+    "_ctx.xml"
 #else  // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
-                                                         "_ctx.bin"
+    "_ctx.bin"
 #endif // LBANN_HAS_CEREAL_XML_ARCHIVES
   );
   return;
@@ -112,6 +112,17 @@ void sgd_execution_context::load_from_checkpoint_distributed(persist& p)
 }
 
 std::string sgd_execution_context::get_type() const { return "sgd"; }
+
+bool seconds_termination_criteria::is_done(
+  sgd_execution_context const& c) const noexcept
+{
+  auto const& comm = *(get_const_trainer().get_comm());
+  int stop = (comm.am_trainer_master() &&
+              (c.get_current_execution_time() >= m_max_seconds));
+  if (comm.get_procs_per_trainer() > 1)
+    comm.trainer_broadcast(0, stop);
+  return (stop == 1);
+}
 
 } // namespace lbann
 

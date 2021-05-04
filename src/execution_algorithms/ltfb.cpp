@@ -62,6 +62,9 @@ void LTFB::apply(execution_context& context,
     ltfb_ctxt.inc_step();
   }
 
+  // Final sweep of local training.
+  m_local_algo->apply(m, dc);
+
   // TODO: How do we support aggregate outputs? What does "output"
   // mean here? Do we communicate among all trainers and just write
   // some interesting subset to disk? Top-k best models, e.g.
