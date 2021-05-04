@@ -58,10 +58,6 @@ class hdf5_reader : public generic_data_reader {
   void load() override;
   void set_hdf5_paths(const std::vector<std::string> hdf5_paths) {m_file_paths = hdf5_paths;}
 
-  /// Whether to fetch a label from the last column.
-  void set_has_labels(const bool b) { m_supported_input_types[input_data_type::LABELS] = b; }
-  /// Whether to fetch a response from the last column.
-  void set_has_responses(const bool b) { m_supported_input_types[input_data_type::RESPONSES] = b; }
   void set_num_responses(const size_t num_responses) {
     m_all_responses.resize(num_responses);
   }
