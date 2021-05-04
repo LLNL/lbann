@@ -2,9 +2,9 @@
 
 These are methods for training neural network models in LBANN. If a
 user does not explicitly specify a training algorithm in their
-lbann.Trainer object, the default is equivalent to:
+lbann.Trainer object, the default (generated in C++) is equivalent to:
 
-BatchedDescent('Some name', epoch_count=1)
+BatchedIterativeOptimizer('sgd_train', epoch_count=model.num_epochs)
 
 Recall that the LBANN Python front-end (PFE) does *NOT* generate
 meaningful python objects. They are simply vehicles for data waiting
@@ -251,7 +251,7 @@ class RandomPairwiseExchange(MetaLearningStrategy):
         """
 
         def __init__(self, strategy: str = "checkpoint_binary",
-                     keep_weights_names: list[str] = [],
+                     weights_names: list[str] = [],
                      exchange_hyperparameters: bool = False,
                      checkpoint_dir: str = None):
             """Construct a new exchange strategy.
@@ -259,8 +259,8 @@ class RandomPairwiseExchange(MetaLearningStrategy):
             Args:
                 strategy:
                   Which strategy to use (default: "checkpoint_binary").
-                keep_weights_names:
-                  A list of weights names that should not be exchanged.
+                weights_names:
+                  A list of weights names that should be exchanged.
                 exchange_hyperparameters:
                   If True, exchange all optimizer state. Only applies to
                   the "sendrecv_weights" strategy.
@@ -269,7 +269,7 @@ class RandomPairwiseExchange(MetaLearningStrategy):
             """
             self.strategy = strategy
             self.exchange_hyperparams = exchange_hyperparameters
-            self.keep_weights_names = make_iterable(keep_weights_names)
+            self.weights_names = make_iterable(weights_names)
             self.checkpoint_dir = checkpoint_dir
 
         def export_proto(self):
@@ -277,7 +277,7 @@ class RandomPairwiseExchange(MetaLearningStrategy):
 
             ExchangeStrategyMsg = AlgoProto.RandomPairwiseExchange.ExchangeStrategy
             msg = ExchangeStrategyMsg()
-            msg.weights_name.extend([n for n in self.keep_weights_names])
+            msg.weights_name.extend([n for n in self.weights_names])
             if self.strategy == "checkpoint_binary":
                 CheckpointBinaryMsg = ExchangeStrategyMsg.CheckpointBinary
                 msg.checkpoint_binary.CopyFrom(CheckpointBinaryMsg())

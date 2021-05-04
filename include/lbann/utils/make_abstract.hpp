@@ -34,7 +34,8 @@ namespace lbann {
  *         'false'.
  *
  *  This is mostly for static_asserts so the literal "false" isn't in
- *  the "expression" argument. Some compilers also give
+ *  the "expression" argument. Some compilers also give better type
+ *  information when writing their own error messages.
  */
 template <typename T> struct False : std::false_type
 {
