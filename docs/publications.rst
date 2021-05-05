@@ -12,7 +12,7 @@ Publications about or related to using LBANN:
   Journal of High Performance Computing Applications (IJHPCA),
   Nov. 2020.
 
-+ Arpan Jain, Tim Moon, Tom Benson, Hari Subramoni, Sam Ad́e
++ Arpan Jain, Tim Moon, Tom Benson, Hari Subramoni, Sam Adé
   Jacobs, Dhabaleswar K Panda, Brian Van Essen. "SUPER: SUb-Graph
   Parallelism for TransformERs", in submission to 35th IEEE
   International Parallel & Distributed Processing Symposium (IPDPS),
