@@ -27,6 +27,7 @@
 #ifndef LBANN_LIBRARY_HPP
 #define LBANN_LIBRARY_HPP
 
+#include "lbann/execution_algorithms/batch_functional_inference_algorithm.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/proto/proto_common.hpp"
 
@@ -44,6 +45,22 @@ const int lbann_default_random_seed = 42;
 #define TRAINER_GRID_HEIGHT "Height of 2D process grid for each trainer"
 
 void construct_std_options();
+
+std::unique_ptr<model> load_inference_model(lbann_comm* lc,
+                                            std::string cp_dir,
+                                            int mbs,
+                                            std::vector<int> input_dims,
+                                            std::vector<int> output_dims);
+
+// Stands up an execution algorithm and runs inference on samples
+template <typename DataT, El::Dist CDist, El::Dist RDist, El::DistWrap DistView, El::Device Device>
+El::Matrix<int, El::Device::CPU>
+infer(observer_ptr<model> model,
+      El::DistMatrix<DataT, CDist, RDist, DistView, Device> const& samples,
+      size_t mbs) {
+  auto inf_alg = batch_functional_inference_algorithm();
+  return inf_alg.infer(model, samples, mbs);
+}
 
 int allocate_trainer_resources(lbann_comm *comm);
 

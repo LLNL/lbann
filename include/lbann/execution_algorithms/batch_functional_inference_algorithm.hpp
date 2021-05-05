@@ -67,7 +67,6 @@ public:
   El::Matrix<int, El::Device::CPU>
   infer(observer_ptr<model> model,
         El::DistMatrix<DataT, CDist, RDist, DistView, Device> const& samples,
-        std::string output_layer,
         size_t mbs) {
     if (mbs <= 0) {
       LBANN_ERROR("mini-batch size must be larger than 0");
@@ -91,7 +90,7 @@ public:
       auto mb_labels = El::View(labels, mb_range, El::ALL);
 
       infer_mini_batch(*model, mb_samples);
-      get_labels(*model, mb_labels, output_layer);
+      get_labels(*model, mb_labels);
     }
 
     return labels;
@@ -118,14 +117,13 @@ protected:
 
   /** return label for a given row of softmax output. */
   void get_labels(model& model,\
-                  El::Matrix<int, El::Device::CPU> &labels,\
-                  std::string output_layer) {
+                  El::Matrix<int, El::Device::CPU> &labels) {
     int pred_label;
     float max, col_value;
 
     for (const auto* l : model.get_layers()) {
       // Find the output layer
-      if (l->get_name() == output_layer) {
+      if (l->get_type() == "softmax") {
         auto const& dtl = dynamic_cast<lbann::data_type_layer<float> const&>(*l);
         const auto& outputs = dtl.get_activations();
 

@@ -71,7 +71,7 @@ lbann_comm& get_current_comm() noexcept { return *world_comm_; }
 
 MPI_Errhandler err_handle;
 
-std::unique_ptr<lbann_comm> driver_init(El::mpi::Comm&& c)
+std::unique_ptr<lbann_comm> initialize_lbann(El::mpi::Comm&& c)
 {
   // to ensure that all the necessary infrastructure in Hydrogen and
   // Aluminum has been setup.
@@ -82,8 +82,8 @@ std::unique_ptr<lbann_comm> driver_init(El::mpi::Comm&& c)
   world_comm_ = comm.get();
 
   // Install MPI error handler
-  MPI_Comm_create_errhandler(lbann_mpi_err_handler, &err_handle);
-  MPI_Comm_set_errhandler(MPI_COMM_WORLD, err_handle);
+  //MPI_Comm_create_errhandler(lbann_mpi_err_handler, &err_handle);
+  //MPI_Comm_set_errhandler(MPI_COMM_WORLD, err_handle);
 
 #if defined(LBANN_TOPO_AWARE)
   // Determine the number of NUMA nodes present.
@@ -129,15 +129,41 @@ std::unique_ptr<lbann_comm> driver_init(El::mpi::Comm&& c)
   return comm;
 }
 
-std::unique_ptr<lbann_comm> driver_init(MPI_Comm c)
+std::unique_ptr<lbann_comm> initialize_lbann(MPI_Comm c)
 {
-  return driver_init(El::mpi::Comm{c});
+  return initialize_lbann(El::mpi::Comm{c});
 }
 
-std::unique_ptr<lbann_comm> driver_init(int argc, char** argv)
+std::unique_ptr<lbann_comm> initialize_lbann(int argc, char** argv)
 {
   El::Initialize(argc, argv);
-  return driver_init(MPI_COMM_WORLD);
+  return initialize_lbann(MPI_COMM_WORLD);
+}
+
+void finalize_lbann(lbann_comm* comm) {
+#ifdef LBANN_HAS_NVSHMEM
+  nvshmem::finalize();
+#endif // LBANN_HAS_NVSHMEM
+  //MPI_Errhandler_free( &err_handle );
+#ifdef LBANN_HAS_DISTCONV
+  dc::finalize();
+#endif
+#ifdef LBANN_HAS_DNN_LIB
+  dnn_lib::destroy();
+#endif
+#ifdef LBANN_HAS_EMBEDDED_PYTHON
+  python::finalize();
+#endif
+#ifdef LBANN_HAS_NVSHMEM
+  nvshmem::finalize();
+#endif // LBANN_HAS_SHMEM
+#ifdef LBANN_HAS_SHMEM
+  shmem_finalize();
+#endif // LBANN_HAS_SHMEM
+  if (comm != nullptr) {
+    delete comm;
+  }
+  El::Finalize();
 }
 
 world_comm_ptr initialize(int& argc, char**& argv) {

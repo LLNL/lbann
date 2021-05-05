@@ -72,9 +72,10 @@ using world_comm_ptr =
  *  @return     LBANN communicator corresponding to MPI_COMM_WORLD.
  */
 world_comm_ptr initialize(int& argc, char**& argv);
-std::unique_ptr<lbann_comm> driver_init(int& argc, char**& argv);
-std::unique_ptr<lbann_comm> driver_init(MPI_Comm c);
-std::unique_ptr<lbann_comm> driver_init(El::mpi::Comm&& c);
+std::unique_ptr<lbann_comm> initialize_lbann(int& argc, char**& argv);
+std::unique_ptr<lbann_comm> initialize_lbann(MPI_Comm c);
+std::unique_ptr<lbann_comm> initialize_lbann(El::mpi::Comm&& c);
+void finalize_lbann(lbann_comm* comm = nullptr);
 
 /** Destroy LBANN communicator.
  *
