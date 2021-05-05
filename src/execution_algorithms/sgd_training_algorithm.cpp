@@ -123,11 +123,18 @@ void sgd_training_algorithm::train(sgd_execution_context& c,
         sgd_execution_context evaluation_context(
           execution_mode::validation,
           dc.get_mini_batch_size(execution_mode::validation));
+        // FIXME (trb 05/05/2021): This hacks around a bad assumption
+        // in the data store.
+        size_t num_validation_epochs = 1UL;
+        if (c.get_epoch() > 1UL) {
+          evaluation_context.inc_epoch();
+          ++num_validation_epochs;
+        }
         evaluate(evaluation_context,
                  model,
                  dc,
                  execution_mode::validation,
-                 epoch_termination_criteria(/*num_epochs=*/1UL));
+                 epoch_termination_criteria(num_validation_epochs));
       }
 
       // Trigger new epoch stuff next iteration (if there is one).
