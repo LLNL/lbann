@@ -49,7 +49,6 @@ parameters {
   [type.googleapis.com/lbann_data.SGD] {
     stopping_criteria {
       max_batches: 5
-      max_epochs: 1
     }
   }
 })proto";
@@ -63,8 +62,6 @@ parameters {
     lbann_data::SGD sgd_msg;
     REQUIRE(algo_msg.parameters().UnpackTo(&sgd_msg));
     REQUIRE(sgd_msg.stopping_criteria().max_batches() == 5);
-    REQUIRE(sgd_msg.stopping_criteria().max_epochs() == 1);
-    REQUIRE(sgd_msg.stopping_criteria().max_seconds() == 0.0);
   }
 
   SECTION("Type URL error -- bad domain")
@@ -75,7 +72,6 @@ parameters {
   [apples.oranges.com/lbann_data.SGD] {
     stopping_criteria {
       max_batches: 5
-      max_epochs: 1
     }
   }
 })proto";
@@ -97,7 +93,6 @@ parameters {
   [type.googleapis.com/lbann_data.UnknownSolverName] {
     stopping_criteria {
       max_batches: 5
-      max_epochs: 1
     }
   }
 })proto";
@@ -116,7 +111,6 @@ parameters {
   [type.googleapis.com/lbann_data.LTFB] {
     stopping_criteria {
       max_batches: 5
-      max_epochs: 1
     }
   }
 })proto";
