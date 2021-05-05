@@ -92,8 +92,7 @@ set_center_specific_modules()
                 MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 mvapich2/2.3 python/3.7.2"
                 ;;
             "zen" | "zen2") # Corona
-                # Don't load OpenMPI get the HIP Clang to build it
-                MODULE_CMD="module --force unload StdEnv; module load clang/11.0.0 python/3.7.2 opt rocm/4.0.0"
+                MODULE_CMD="module --force unload StdEnv; module load clang/11.0.0 python/3.7.2 opt rocm/4.0.0 openmpi-gnu/4.0"
                 ;;
             *)
                 echo "No pre-specified modules found for this system. Make sure to setup your own"
@@ -137,17 +136,22 @@ set_center_specific_spack_dependencies()
     local spack_arch_target="$2"
 
     if [[ ${center} = "llnl_lc" ]]; then
+        MIRROR="/p/vast1/lbann/spack/mirror"
         case ${spack_arch_target} in
             "power9le" | "power8le") # Lassen, Ray
                 CENTER_DEPENDENCIES="^spectrum-mpi ^openblas@0.3.12 threads=openmp"
+                CENTER_FLAGS="ldflags=-fuse-ld=gold"
                 ;;
             "broadwell" | "haswell" | "sandybridge" | "ivybridge") # Pascal, RZHasGPU, Surface, Catalyst
                 # On LC the mvapich2 being used is built against HWLOC v1
                 CENTER_DEPENDENCIES="^mvapich2 ^hwloc@1.11.13"
+                CENTER_FLAGS="ldflags=-fuse-ld=gold"
                 ;;
             "zen" | "zen2") # Corona
                 # On LC the mvapich2 being used is built against HWLOC v1
                 CENTER_DEPENDENCIES="^openmpi ^hwloc@2.3.0"
+                # Don't overwrite the flag here since we set compiler specific flags
+                # CENTER_FLAGS="ldflags=-fuse-ld=lld"
                 ;;
             *)
                 echo "No center-specified CENTER_DEPENDENCIES."
@@ -197,9 +201,6 @@ set_center_specific_externals()
     echo "Updating Clang compiler's to see the gfortran compiler."
 
     if [[ ${center} = "llnl_lc" ]]; then
-        # LC uses a old default gcc and clang needs a newer default gcc toolchain
-        perl -i.perl_bak -0pe 's/(- compiler:.*?spec: clang.*?flags:) (\{\})/$1 \{cflags: --gcc-toolchain=\/usr\/tce\/packages\/gcc\/gcc\-8\.1\.0, cxxflags: --gcc-toolchain=\/usr\/tce\/packages\/gcc\/gcc-8.1.0\}/smg' ${yaml}
-
         case ${spack_arch_target} in
             "broadwell" | "haswell" | "sandybridge" | "power9le" | "power8le")
 cat <<EOF  >> ${yaml}
@@ -221,8 +222,8 @@ cat <<EOF  >> ${yaml}
         paths:
           cc: /opt/rocm-4.0.0/llvm/bin/clang
           cxx: /opt/rocm-4.0.0/llvm/bin/clang++
-          f77:
-          fc:
+          f77: /usr/bin/gfortran
+          fc: /usr/bin/gfortran
         flags: {}
         operating_system: rhel7
         target: x86_64
@@ -282,6 +283,13 @@ cat <<EOF  >> ${yaml}
       externals:
       - spec: rdma-core@20 arch=${spack_arch}
         prefix: /usr
+    openmpi:
+      buildable: False
+      version:
+      - 4.0
+      externals:
+      - spec: openmpi@4.0.0 arch=${spack_arch}
+        prefix: /opt/openmpi/4.0/gnu
 EOF
                 ;;
             *)
@@ -378,6 +386,7 @@ cleanup_clang_compilers()
 
     if [[ ${center} = "llnl_lc" ]]; then
         # LC uses a old default gcc and clang needs a newer default gcc toolchain
-        perl -i.perl_bak -0pe 's/(- compiler:.*?spec: clang.*?flags:) (\{\})/$1 \{cflags: --gcc-toolchain=\/usr\/tce\/packages\/gcc\/gcc\-8\.1\.0, cxxflags: --gcc-toolchain=\/usr\/tce\/packages\/gcc\/gcc-8.1.0\}/smg' ${yaml}
+        # Also set LC clang compilers to use lld for faster linking ldflags: -fuse-ld=lld
+        perl -i.perl_bak -0pe 's/(- compiler:.*?spec: clang.*?flags:) (\{\})/$1 \{cflags: --gcc-toolchain=\/usr\/tce\/packages\/gcc\/gcc-8.1.0, cxxflags: --gcc-toolchain=\/usr\/tce\/packages\/gcc\/gcc-8.1.0\}/smg' ${yaml}
     fi
 }

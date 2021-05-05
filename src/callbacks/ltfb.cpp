@@ -240,6 +240,75 @@ void restore_model_weights(
   }
 }
 
+std::string sendrecv_string(lbann_comm const& c, std::string const& src,
+                            El::Int partner_trainer)
+{
+  if (!c.am_trainer_master())
+    return "";
+
+  // Exchange sizes
+  size_t my_size = src.size();
+  size_t other_size = src.max_size()+1;
+  c.sendrecv(&my_size, 1, partner_trainer, 0,
+             &other_size, 1, partner_trainer, 0,
+             El::SyncInfo<El::Device::CPU>{});
+
+  // Exchange strings
+  std::string tgt(other_size, '\0');
+
+  auto const* send_buf = reinterpret_cast<El::byte const*>(src.data());
+  auto* recv_buf = reinterpret_cast<El::byte*>(tgt.data());
+
+  // Get the max blk size
+  int constexpr max_blk_size_int = std::numeric_limits<int>::max();
+  std::size_t constexpr max_blk_size_size_t = max_blk_size_int;
+
+  while (my_size || other_size)
+  {
+    int const this_blk_send_size =
+      (my_size > max_blk_size_size_t ? max_blk_size_int : my_size);
+    int const this_blk_recv_size =
+      (other_size > max_blk_size_size_t ? max_blk_size_int : other_size);
+
+    c.sendrecv(
+      send_buf, this_blk_send_size, partner_trainer, 0,
+      recv_buf, this_blk_recv_size, partner_trainer, 0,
+      El::SyncInfo<El::Device::CPU>{});
+
+    send_buf += this_blk_send_size;
+    recv_buf += this_blk_recv_size;
+    my_size =
+      (my_size > max_blk_size_size_t
+       ? my_size - max_blk_size_size_t
+       : 0);
+    other_size =
+      (other_size > max_blk_size_size_t
+       ? other_size - max_blk_size_size_t
+       : 0);
+  }
+  return tgt;
+}
+
+template <typename T>
+void exchange(lbann_comm const& c,
+              T& object,
+              El::Int partner_trainer)
+{
+  std::ostringstream oss;
+  {
+    RootedBinaryOutputArchive ar(oss, c.get_trainer_grid());
+    c.trainer_barrier();
+    ar(object);
+  }
+  c.trainer_barrier(); // I don't think this is necessary
+  {
+    std::istringstream iss{sendrecv_string(c, oss.str(), partner_trainer)};
+    RootedBinaryInputArchive ar(iss, c.get_trainer_grid());
+    ar(object);
+  }
+  c.trainer_barrier(); // I don't think this is necessary either
+}
+
 /** @class SendRecvWeights
  *  @brief Exchange model weights directly using sendrecvs.
  *  @todo More general approach to exchange optimizer state. Currently
@@ -291,8 +360,8 @@ public:
       (partner_trainer * procs_per_trainer + rank_in_trainer);
 
     // Exchange weights with partner
-    for (auto&& w_ptr : m.get_weights()) {
-
+    for (auto&& w_ptr : m.get_weights())
+    {
       // Skip weights if name isn't in list
       auto const& weights_names = this->weights_names();
       if (this->has_weights_names()
@@ -313,83 +382,90 @@ public:
         partner_rank_in_world,
         partner_rank_in_world);
 
-      // Exchange SGD optimizer state
-      using SGDType = sgd<TensorDataType>;
-      auto* send_sgd = dynamic_cast<SGDType*>(send_weights.get_optimizer());
-      auto* recv_sgd = dynamic_cast<SGDType*>(recv_weights.get_optimizer());
-      if (send_sgd != nullptr && recv_sgd != nullptr) {
-        if (exchange_hyperparams_) {
-          using hyperparameters_type = std::tuple<TensorDataType,
-                                                  TensorDataType,
-                                                  bool>;
-          hyperparameters_type hyperparameters(
-            send_sgd->get_learning_rate(),
-            send_sgd->get_momentum(),
-            send_sgd->using_nesterov());
-          El::mpi::SendRecv(
-            reinterpret_cast<El::byte*>(&hyperparameters),
-            sizeof(hyperparameters_type),
-            partner_rank_in_world,
-            partner_rank_in_world,
-            comm.get_world_comm(),
-            El::SyncInfo<El::Device::CPU>{});
-          recv_sgd->set_learning_rate(std::get<0>(hyperparameters));
-          recv_sgd->set_momentum(std::get<1>(hyperparameters));
-          recv_sgd->set_nesterov(std::get<2>(hyperparameters));
-        }
-        El::SendRecv(
-          send_sgd->get_velocity().LockedMatrix(),
-          recv_sgd->get_velocity().Matrix(),
-          comm.get_world_comm(),
-          partner_rank_in_world,
-          partner_rank_in_world);
-      }
+      // If the two weights objects use different optimizers across
+      // the set of trainers, we need to be careful about how we
+      // exchange the data.
 
-      // Exchange Adam optimizer state
-      using AdamType = adam<TensorDataType>;
-      auto* send_adam = dynamic_cast<AdamType*>(send_weights.get_optimizer());
-      auto* recv_adam = dynamic_cast<AdamType*>(recv_weights.get_optimizer());
-      if (send_adam != nullptr && recv_adam != nullptr) {
-        if (exchange_hyperparams_) {
-          using hyperparameters_type =
-            std::tuple<TensorDataType, TensorDataType, TensorDataType,
-                       TensorDataType, TensorDataType, TensorDataType>;
-          hyperparameters_type hyperparameters(
-            send_adam->get_learning_rate(),
-            send_adam->get_beta1(),
-            send_adam->get_beta2(),
-            send_adam->get_eps(),
-            send_adam->get_current_beta1(),
-            send_adam->get_current_beta2());
-          El::mpi::SendRecv(
-            reinterpret_cast<El::byte*>(&hyperparameters),
-            sizeof(hyperparameters_type),
-            partner_rank_in_world,
-            partner_rank_in_world,
+      // Skip if there is no optimizer.
+      // FIXME (trb 04/14/2021): Could we hit a situation in which the
+      // weights in Trainer I has an optimizer and the corresponding
+      // weights for Trainer J does not?
+      optimizer* send_opt = send_weights.get_optimizer();
+      if (!send_opt)
+        continue;
+
+      bool const do_binary_exchange =
+        exchange_hyperparams_ ||
+        !have_same_optimizer_type(comm, *send_opt, partner_trainer);
+
+      if (do_binary_exchange)
+      {
+        // Since we cannot get at the unique pointer directly, we make
+        // a copy:
+        auto opt_up = send_opt->clone();
+        exchange(comm, opt_up, partner_trainer);
+        opt_up->setup(&recv_weights);
+        recv_weights.set_optimizer(std::move(opt_up));
+      }
+      else
+      {
+        // Exchange SGD optimizer state
+        using SGDType = sgd<TensorDataType>;
+        auto* send_sgd = dynamic_cast<SGDType*>(send_weights.get_optimizer());
+        auto* recv_sgd = dynamic_cast<SGDType*>(recv_weights.get_optimizer());
+        if (send_sgd != nullptr && recv_sgd != nullptr) {
+          El::SendRecv(
+            send_sgd->get_velocity().LockedMatrix(),
+            recv_sgd->get_velocity().Matrix(),
             comm.get_world_comm(),
-            El::SyncInfo<El::Device::CPU>{});
-          recv_adam->set_learning_rate(std::get<0>(hyperparameters));
-          recv_adam->set_beta1(std::get<1>(hyperparameters));
-          recv_adam->set_beta2(std::get<2>(hyperparameters));
-          recv_adam->set_eps(std::get<3>(hyperparameters));
-          recv_adam->set_current_beta1(std::get<4>(hyperparameters));
-          recv_adam->set_current_beta2(std::get<5>(hyperparameters));
+            partner_rank_in_world,
+            partner_rank_in_world);
+          continue;
         }
-        El::SendRecv(
-          send_adam->get_moment1().LockedMatrix(),
-          recv_adam->get_moment1().Matrix(),
-          comm.get_world_comm(),
-          partner_rank_in_world,
-          partner_rank_in_world);
-        El::SendRecv(
-          send_adam->get_moment2().LockedMatrix(),
-          recv_adam->get_moment2().Matrix(),
-          comm.get_world_comm(),
-          partner_rank_in_world,
-          partner_rank_in_world);
+
+        // Exchange Adam optimizer state
+        using AdamType = adam<TensorDataType>;
+        auto* send_adam = dynamic_cast<AdamType*>(send_weights.get_optimizer());
+        auto* recv_adam = dynamic_cast<AdamType*>(recv_weights.get_optimizer());
+        if (send_adam != nullptr && recv_adam != nullptr)
+        {
+          El::SendRecv(
+            send_adam->get_moment1().LockedMatrix(),
+            recv_adam->get_moment1().Matrix(),
+            comm.get_world_comm(),
+            partner_rank_in_world,
+            partner_rank_in_world);
+          El::SendRecv(
+            send_adam->get_moment2().LockedMatrix(),
+            recv_adam->get_moment2().Matrix(),
+            comm.get_world_comm(),
+            partner_rank_in_world,
+            partner_rank_in_world);
+          continue;
+        }
+        LBANN_WARNING("Unknown optimizer type. NO EXCHANGE.");
       }
     }
   }
+private:
+  bool have_same_optimizer_type(lbann_comm const& c,
+                                optimizer const& opt,
+                                El::Int partner_trainer) const noexcept
+  {
+    std::size_t const my_type_hash = typeid(opt).hash_code();
+    std::size_t other_type_hash = -1;
+    c.sendrecv(&my_type_hash,
+               1,
+               partner_trainer,
+               0,
+               &other_type_hash,
+               1,
+               partner_trainer,
+               0,
+               El::SyncInfo<El::Device::CPU>{});
+    return my_type_hash == other_type_hash;
+  }
+
 private:
   bool exchange_hyperparams_;
 };// class SendRecvWeights
@@ -515,75 +591,7 @@ public:
         }
       }
     }
-
-    // Save model checkpoint
-    std::ostringstream oss;
-    {
-      RootedBinaryOutputArchive ar(oss, comm.get_trainer_grid());
-      comm.trainer_barrier();
-      ar(m);
-    }
-
-    // sure, why not
-    comm.trainer_barrier();
-
-    // Synchronize with partner trainer
-    std::string save_model_ckpt = oss.str(), load_model_ckpt;
-    if (comm.am_trainer_master())
-    {
-      std::size_t save_size=save_model_ckpt.size(), load_size=0;
-      comm.sendrecv(&save_size, 1, partner_trainer, 0,
-                    &load_size, 1, partner_trainer, 0,
-                    El::SyncInfo<El::Device::CPU>{});
-      load_model_ckpt.resize(load_size);
-
-      auto const* send_buf =
-        reinterpret_cast<El::byte const*>(save_model_ckpt.data());
-      auto* recv_buf =
-        reinterpret_cast<El::byte*>(load_model_ckpt.data());
-
-      while (save_size || load_size)
-      {
-        // Get the max blk size
-        auto constexpr max_blk_size = std::numeric_limits<int>::max();
-        std::size_t constexpr max_blk_size_size_t = max_blk_size;
-
-        int this_blk_send_size =
-          (save_size > max_blk_size_size_t ? max_blk_size : save_size);
-        int this_blk_recv_size =
-          (load_size > max_blk_size_size_t ? max_blk_size : load_size);
-
-        comm.sendrecv(
-          send_buf, this_blk_send_size, partner_trainer, 0,
-          recv_buf, this_blk_recv_size, partner_trainer, 0,
-          El::SyncInfo<El::Device::CPU>{});
-
-        send_buf += this_blk_send_size;
-        recv_buf += this_blk_recv_size;
-        save_size =
-          (save_size > max_blk_size_size_t
-           ? save_size - max_blk_size_size_t
-           : 0);
-        load_size =
-          (load_size > max_blk_size_size_t
-           ? load_size - max_blk_size_size_t
-           : 0);
-      }
-    }
-
-    // sure, why not
-    comm.trainer_barrier();
-
-    // Load model checkpoint from partner trainer
-    {
-      std::istringstream iss{std::move(load_model_ckpt)};
-      RootedBinaryInputArchive ar(iss, comm.get_trainer_grid());
-      ar(m);
-    }
-
-    /// @todo Should be unneeded, but we experience hangs without it
-    comm.trainer_barrier();
-
+    exchange(comm, m, partner_trainer);
     restore_model_weights(m, restore_weights);
   }
 };// class CheckpointBinary
@@ -594,7 +602,7 @@ EvalType evaluate(model& m, const std::string& metric_name)
   auto& c = m.get_execution_context();
   // Make sure data readers finish asynchronous work
   const auto original_mode = c.get_execution_mode();
-  data_coordinator& dc = m.get_execution_context().get_trainer().get_data_coordinator();
+  data_coordinator& dc = get_trainer().get_data_coordinator();
   dc.collect_background_data_fetch(original_mode);
 
   if(!dc.is_execution_mode_valid(execution_mode::tournament)) {
@@ -605,7 +613,7 @@ EvalType evaluate(model& m, const std::string& metric_name)
   m.mark_data_store_explicitly_loading(execution_mode::tournament);
 
   // Evaluate model on validation set
-  c.get_trainer().evaluate(&m, execution_mode::tournament);
+  get_trainer().evaluate(&m, execution_mode::tournament);
 
   // Get metric value
   bool found_metric = false;
@@ -628,7 +636,7 @@ EvalType evaluate(model& m, const std::string& metric_name)
 
   // Clean up and return metric value
   m.reset_mode(c, original_mode);
-  c.get_trainer().get_data_coordinator().reset_mode(c);
+  get_trainer().get_data_coordinator().reset_mode(c);
   return metric_value;
 }
 
@@ -737,7 +745,7 @@ void ltfb::on_batch_begin(model* m)
     local_model.swap_weights(partner_model);
     local_model.swap_metrics(partner_model);
     local_model.swap_objective_function(partner_model);
-    auto& trainer_ = context.get_trainer();
+    auto& trainer_ = get_trainer();
     auto&& metadata = trainer_.get_data_coordinator().get_dr_metadata();
     local_model.setup(
       trainer_.get_max_mini_batch_size(),

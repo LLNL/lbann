@@ -162,6 +162,7 @@
 #include "lbann/callbacks/check_small.hpp"
 #include "lbann/callbacks/checkpoint.hpp"
 #include "lbann/callbacks/confusion_matrix.hpp"
+#include "lbann/callbacks/compute_model_size.hpp"
 #include "lbann/callbacks/debug.hpp"
 #include "lbann/callbacks/debug_io.hpp"
 #include "lbann/callbacks/dump_error_signals.hpp"

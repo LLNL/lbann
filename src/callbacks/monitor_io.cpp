@@ -48,7 +48,7 @@ void monitor_io::serialize(Archive & ar) {
 
 void monitor_io::on_epoch_end(model *m) {
   const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
-  const data_coordinator& dc = c.get_trainer().get_data_coordinator();
+  const data_coordinator& dc = get_const_trainer().get_data_coordinator();
   lbann_comm *comm = m->get_comm();
   std::cout << "Rank " << comm->get_trainer_rank() << "."
             << comm->get_rank_in_trainer() << " processed "
@@ -59,7 +59,7 @@ void monitor_io::on_epoch_end(model *m) {
 
 void monitor_io::on_test_end(model *m) {
   const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
-  const data_coordinator& dc = c.get_trainer().get_data_coordinator();
+  const data_coordinator& dc = get_const_trainer().get_data_coordinator();
   lbann_comm *comm = m->get_comm();
   std::cout << "Rank " << comm->get_trainer_rank() << "."
             << comm->get_rank_in_trainer() << " processed "
