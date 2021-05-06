@@ -63,8 +63,7 @@ algorithm instance in log messages.
     trainer = lbann.Trainer(mini_batch_size=64,
                             training_algo=BatchedIterativeOptimizer(
                               "my descent algorithm",
-                              epoch_count=10
-                           )
+                              epoch_count=10))
 
     # Pass the update rule as a global parameter to the LBANN driver
     lbann.run(trainer, model, data_reader, default_update_rule)
