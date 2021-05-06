@@ -103,6 +103,62 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
+  void fill_onnx_node(onnx::GraphProto& graph) const override {
+    auto* diff = graph.add_node();
+    // repeated string input
+    for(auto const* parent : this->get_parent_layers())
+      diff->add_input(parent->get_name());
+    // FIXME: Is this right?
+    // repeated string output
+    diff->add_output("square");
+    // string name
+    diff->set_name("diff");
+    //string op_type
+    diff->set_op_type("Sub");
+    //string domain
+    diff->set_domain("N/A");
+    // FIXME: What goes here?
+    //repeated AttributeProto attribute = 5;
+    //string doc_string
+    diff->set_doc_string("First node representing Mean Squared Error Layer");
+
+    auto* square = graph.add_node();
+    // repeated string input
+    square->add_input(diff->name());
+    square->add_input(diff->name());
+    // FIXME: Is this right?
+    // repeated string output
+    square->add_output("mse");
+    // string name
+    square->set_name("square");
+    //string op_type
+    square->set_op_type("Mul");
+    //string domain
+    square->set_domain("N/A");
+    // FIXME: What goes here?
+    //repeated AttributeProto attribute = 5;
+    //string doc_string
+    square->set_doc_string("Second node representing Mean Squared Error Layer");
+
+    auto* mse = graph.add_node();
+    // repeated string input
+    mse->add_input(square->name());
+    // FIXME: Is this right?
+    // repeated string output
+    for(auto const* child : this->get_child_layers())
+      mse->add_output(child->get_name());
+    // string name
+    mse->set_name("square");
+    //string op_type
+    mse->set_op_type("Mean");
+    //string domain
+    mse->set_domain("N/A");
+    // FIXME: What goes here?
+    //repeated AttributeProto attribute = 5;
+    //string doc_string
+    mse->set_doc_string("Third node representing Mean Squared Error Layer");
+  }
+
   void setup_dims(DataReaderMetaData& dr_metadata) override {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims({1});

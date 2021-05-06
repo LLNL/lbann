@@ -122,6 +122,7 @@ class input_layer : public data_type_layer<TensorDataType> {
   }
 
   std::string get_type() const override { return "input"; }
+  std::string get_onnx_op_type() const override { return "Identity"; }
   // description get_description() const override {
   //   auto desc = io_layer<TensorDataType>::get_description();
   //   return desc;
