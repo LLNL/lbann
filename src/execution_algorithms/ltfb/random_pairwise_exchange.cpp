@@ -26,6 +26,7 @@
 
 #include "lbann/execution_algorithms/ltfb/random_pairwise_exchange.hpp"
 
+#include "lbann/base.hpp"
 #include "lbann/comm_impl.hpp"
 #include "lbann/data_coordinator/data_coordinator.hpp"
 #include "lbann/models/directed_acyclic_graph.hpp"
@@ -34,8 +35,15 @@
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
-#include <memory>
+
 #include <training_algorithm.pb.h>
+
+#include <algorithm>
+#include <iterator>
+#include <memory>
+#include <sstream>
+#include <string>
+#include <unordered_map>
 
 namespace lbann {
 namespace ltfb {
@@ -57,27 +65,85 @@ template <typename... Args> void Output(std::ostream& os, Args&&... args)
 {
   (os << ... << args) << "\n";
 }
+
+std::string stringify(std::vector<std::string> const& v)
+{
+  std::ostringstream oss;
+  oss << "[";
+  for (auto const& s : v)
+    oss << " \"" << s << "\"";
+  oss << " ]";
+  return oss.str();
+}
+
+template <typename KeyT, typename ValueT>
+auto keys(std::unordered_map<KeyT, ValueT> const& map)
+{
+  std::set<KeyT> keys;
+  std::transform(std::cbegin(map),
+                 std::cend(map),
+                 std::inserter(keys, keys.end()),
+                 [](auto const& kvp) { return kvp.first; });
+  return keys;
+}
+
+template <typename ValueT>
+auto set_diff(std::set<ValueT> const& set_a, std::set<ValueT> const& set_b)
+{
+  std::vector<ValueT> diff;
+  std::set_difference(std::cbegin(set_a),
+                      std::cend(set_a),
+                      std::cbegin(set_b),
+                      std::cend(set_b),
+                      std::back_inserter(diff));
+  return diff;
+}
+
+bool local_wins(EvalType local,
+                EvalType remote,
+                RandomPairwiseExchange::metric_strategy strategy)
+{
+  using MetricStrategy = RandomPairwiseExchange::metric_strategy;
+  switch (strategy) {
+  case MetricStrategy::LOWER_IS_BETTER:
+    return (local <= remote);
+  case MetricStrategy::HIGHER_IS_BETTER:
+    return (local >= remote);
+  default:
+    LBANN_ERROR("Invalid metric strategy!");
+  }
+  return false; // Silence compiler warning about no return.
+}
+
 } // namespace
 
 // RandomPairwiseExchange implementation
 
 RandomPairwiseExchange::RandomPairwiseExchange(
+  std::unordered_map<std::string, metric_strategy> metrics,
+  std::unique_ptr<ExchangeStrategy> comm_algo)
+  : m_metrics{std::move(metrics)}, m_comm_algo{std::move(comm_algo)}
+{
+  LBANN_ASSERT(m_metrics.size());
+}
+
+RandomPairwiseExchange::RandomPairwiseExchange(
   std::string metric_name,
   metric_strategy winner_strategy,
   std::unique_ptr<ExchangeStrategy> comm_algo)
-  : m_metric_strategy{winner_strategy}, m_metric_name{std::move(metric_name)},
-    m_comm_algo{std::move(comm_algo)}
+  : RandomPairwiseExchange({{metric_name, winner_strategy}},
+                           std::move(comm_algo))
 {}
 
 RandomPairwiseExchange::RandomPairwiseExchange(
   RandomPairwiseExchange const& other)
-  : m_metric_strategy{other.m_metric_strategy},
-    m_metric_name{other.m_metric_name}, m_comm_algo{other.m_comm_algo->clone()}
+  : m_metrics{other.m_metrics}, m_comm_algo{other.m_comm_algo->clone()}
 {}
 
-EvalType RandomPairwiseExchange::evaluate_model(model& m,
-                                                ExecutionContext& ctxt,
-                                                data_coordinator& dc) const
+std::unordered_map<std::string, EvalType>
+RandomPairwiseExchange::evaluate_model(model& m,
+                                       ExecutionContext& ctxt,
+                                       data_coordinator& dc) const
 {
   // Make sure data readers finish asynchronous work
   const auto original_mode = ctxt.get_execution_mode();
@@ -88,6 +154,7 @@ EvalType RandomPairwiseExchange::evaluate_model(model& m,
                 to_string(execution_mode::tournament),
                 " execution mode");
   }
+
   // Mark the data store as loading - Note that this is a temporary fix
   // for the current use of the tournament
   m.mark_data_store_explicitly_loading(execution_mode::tournament);
@@ -95,21 +162,20 @@ EvalType RandomPairwiseExchange::evaluate_model(model& m,
   // Evaluate model on validation set
   get_trainer().evaluate(&m, execution_mode::tournament);
 
-  // Get metric value
-  bool found_metric = false;
-  EvalType metric_value = 0;
+  // Get metric values
+  std::unordered_map<std::string, EvalType> metric_values;
   for (const auto& met : m.get_metrics()) {
-    if (met->name() == m_metric_name) {
-      found_metric = true;
-      metric_value = met->get_mean_value(execution_mode::tournament);
-      break;
+    auto const& metric_name = met->name();
+    if (m_metrics.count(metric_name)) {
+      metric_values[metric_name] =
+        met->get_mean_value(execution_mode::tournament);
     }
   }
-  if (!found_metric) {
-    LBANN_ERROR("could not find metric \"",
-                m_metric_name,
-                "\" ",
-                "in model \"",
+  if (metric_values.size() != m_metrics.size()) {
+    auto missing = set_diff(keys(m_metrics), keys(metric_values));
+    LBANN_ERROR("Could not find metrics \"",
+                stringify(missing),
+                "\" in model \"",
                 m.get_name(),
                 "\"");
   }
@@ -121,7 +187,7 @@ EvalType RandomPairwiseExchange::evaluate_model(model& m,
   // Clean up and return metric value
   m.reset_mode(ctxt, original_mode);
   dc.reset_mode(ctxt);
-  return metric_value;
+  return metric_values;
 }
 
 El::Int RandomPairwiseExchange::get_partner_trainer(
@@ -164,18 +230,21 @@ El::Int RandomPairwiseExchange::get_partner_trainer(
   return send_buffer[comm.get_trainer_rank()];
 }
 
-bool RandomPairwiseExchange::local_is_better(EvalType local,
-                                             EvalType remote) const
+bool RandomPairwiseExchange::local_is_better(
+  std::unordered_map<std::string, EvalType> const& local_scores,
+  std::unordered_map<std::string, EvalType> const& partner_scores) const
 {
-  switch (m_metric_strategy) {
-  case metric_strategy::LOWER_IS_BETTER:
-    return (local <= remote);
-  case metric_strategy::HIGHER_IS_BETTER:
-    return (local >= remote);
-  default:
-    LBANN_ERROR("Invalid metric strategy!");
-  }
-  return false; // Silence compiler warning about no return.
+  // If the local model wins any of the metric matches, it's the
+  // winner. The partner model has to win EVERY match to be the
+  // winner.
+  return std::any_of(std::cbegin(m_metrics),
+                     std::cend(m_metrics),
+                     [&](auto const& metric_strategy_pair) {
+                       auto const& [m_name, m_strategy] = metric_strategy_pair;
+                       return local_wins(local_scores.at(m_name),
+                                         partner_scores.at(m_name),
+                                         m_strategy);
+                     });
 }
 
 void RandomPairwiseExchange::select_next(model& m,
@@ -186,13 +255,13 @@ void RandomPairwiseExchange::select_next(model& m,
   auto const step = ctxt.get_step();
   const std::string message_prefix =
     (comm.am_trainer_master() || comm.am_world_master()
-     ? build_string("LTFB (model \"",
-                    m.get_name(),
-                    "\", "
-                    "step ",
-                    step,
-                    "): ")
-     : "");
+       ? build_string("LTFB (model \"",
+                      m.get_name(),
+                      "\", "
+                      "step ",
+                      step,
+                      "): ")
+       : "");
 
   LBANN_LOG_WORLD_MASTER(comm, message_prefix, "starting tournament...");
 
@@ -201,7 +270,7 @@ void RandomPairwiseExchange::select_next(model& m,
 
   LBANN_LOG_WORLD_MASTER(comm, message_prefix, "evaluating local model...");
 
-  auto const local_score = evaluate_model(m, ctxt, dc);
+  auto const local_scores = evaluate_model(m, ctxt, dc);
 
   LBANN_LOG_WORLD_MASTER(comm, message_prefix, "exchanging model data...");
 
@@ -213,13 +282,13 @@ void RandomPairwiseExchange::select_next(model& m,
 
   LBANN_LOG_WORLD_MASTER(comm, message_prefix, "evaluating partner model...");
 
-  auto const partner_score = evaluate_model(*partner_model, ctxt, dc);
+  auto const partner_scores = evaluate_model(*partner_model, ctxt, dc);
 
   // If we win, we do nothing. The input model is the winner, so no
   // further action is required. Otherwise, swap models.
   El::Int const tournament_winner =
-    (local_is_better(local_score, partner_score) ? local_trainer
-                                                 : partner_trainer);
+    (local_is_better(local_scores, partner_scores) ? local_trainer
+                                                   : partner_trainer);
 
   if (tournament_winner == partner_trainer) {
     // FIXME (trb 03/18/21): This is ... not great. We need to
@@ -245,11 +314,11 @@ void RandomPairwiseExchange::select_next(model& m,
                            " (trainer ",
                            local_trainer,
                            " score = ",
-                           local_score,
+                           local_scores.begin()->second,
                            ", trainer ",
                            partner_trainer,
                            " score = ",
-                           partner_score,
+                           partner_scores.begin()->second,
                            ")");
 }
 
@@ -363,10 +432,21 @@ lbann::make<lbann::ltfb::RandomPairwiseExchange>(
   lbann_data::RandomPairwiseExchange msg;
   LBANN_ASSERT(params.UnpackTo(&msg));
 
+  // Copy the metric map into LBANN format.
+  using MetricStrategy = ltfb::RandomPairwiseExchange::metric_strategy;
+  std::unordered_map<std::string, MetricStrategy> metric_map;
+  std::transform(msg.metric_name_strategy_map().cbegin(),
+                 msg.metric_name_strategy_map().cend(),
+                 std::inserter(metric_map, metric_map.end()),
+                 [](auto const& kvp) {
+                   using MapType = std::unordered_map<std::string, MetricStrategy>;
+                   using ValueType = typename MapType::value_type;
+                   return ValueType{ kvp.first, to_lbann(kvp.second) };
+                 });
+
   using ExchangeStrategyType =
     lbann::ltfb::RandomPairwiseExchange::ExchangeStrategy;
   return make_unique<lbann::ltfb::RandomPairwiseExchange>(
-    msg.metric_name(),
-    to_lbann(msg.metric_strategy()),
+    std::move(metric_map),
     make_abstract<ExchangeStrategyType>(msg.exchange_strategy()));
 }
