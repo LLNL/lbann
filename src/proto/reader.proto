@@ -68,6 +68,8 @@ message Reader {
   int32 response_col = 107;
   bool disable_labels = 108;
   bool disable_responses = 109;
+  bool enable_labels = 99108;
+  bool enable_responses = 99109;
   string format = 110; // numpy, csv
   string data_file_pattern = 111;
   int64 num_neighbors = 112; // pilot2_molecular_reader
