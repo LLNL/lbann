@@ -57,12 +57,15 @@ Options:
   ${C}--help${N}                  Display this help message and exit.
   ${C}--clean-build${N}           Delete the local link to the build directory
   ${C}--clean-deps${N}            Forcibly uninstall Hydrogen, Aluminum, and DiHydrogen dependencies
-  ${C}-d | --install-deps${N}     Install the lbann dependencies in addition to building from local source
+  ${C}--concretize-only${N}       Stop after adding all packages and concretizing the environment
+  ${C}--confgigure-only${N}       Stop after adding all packages to the environment
+  ${C}-d | --define-env${N}       Define (create) a Spack environment, including the lbann dependencies, for building LBANN from local source
   ${C}--dry-run${N}               Dry run the commands (no effect)
-  ${C}-l | --label${N}            LBANN version label prefix: (default label is local-<SPACK_ARCH_TARGET>,
+  ${C}-e | --extras PATH${N}      Add other packages to the Spack environment Install the lbann dependencies in addition to building from local source
+  ${C}-j | --build-jobs N${N}     Number of parallel processes to use for compiling, e.g. -j \$((\$(nproc)+2))
+  ${C}-l | --label LABEL${N}      LBANN version label prefix: (default label is local-<SPACK_ARCH_TARGET>,
                           and is built and installed in the spack environment lbann-<label>-<SPACK_ARCH_TARGET>
-  ${C}-j | --build-jobs${N}       Number of parallel processes to use for compiling, e.g. -j \$((\$(nproc)+2))
-  ${C}-m | --mirror${N}           Specify a Spack mirror (and buildcache)
+  ${C}-m | --mirror PATH${N}      Specify a Spack mirror (and buildcache)
   ${C}--no-modules${N}            Don't try to load any modules (use the existing users environment)
   ${C}--tmp-build-dir${N}         Put the build directory in tmp space
   ${C}--spec-only${N}             Stop after a spack spec command
@@ -71,6 +74,7 @@ Options:
   ${C}--hydrogen-repo PATH${N}    Use a local repository for the Hydrogen library
   ${C}--dihydrogen-repo PATH${N}  Use a local repository for the DiHydrogen library
   ${C}--aluminum-repo PATH${N}    Use a local repository for the Aluminum library
+  ${C}--update-buildcache${N}     Update a buildcache defined by the Spack mirror (Expert Only)
   ${C}--${N}                      Pass all variants to spack after the dash dash (--)
 EOF
 }
@@ -92,11 +96,26 @@ while :; do
         --clean-deps)
             CLEAN_DEPS="TRUE"
             ;;
-        -d|--install-deps)
+        --concretize-only)
+            CONCRETIZE_ONLY="TRUE"
+            ;;
+        --configure-only)
+            CONFIGURE_ONLY="TRUE"
+            ;;
+        -d|--define-env)
             INSTALL_DEPS="TRUE"
             ;;
         --dry-run)
             DRY_RUN="TRUE"
+            ;;
+        -e|--extras)
+            if [ -n "${2}" ]; then
+                EXTERNALS=${2}
+                shift
+            else
+                echo "\"${1}\" option requires a non-empty option argument" >&2
+                exit 1
+            fi
             ;;
         -l|--label)
             # Change default LBANN version label
@@ -353,6 +372,23 @@ function exit_on_failure()
     exit 1
 }
 
+function exit_with_instructions()
+{
+    echo "##########################################################################################" | tee -a ${LOG}
+    echo "LBANN is being installed in a spack environment named ${LBANN_ENV}, access it via:" | tee -a ${LOG}
+    echo "  spack env activate -p ${LBANN_ENV}" | tee -a ${LOG}
+    echo "To finish installing  LBANN and it's dependencies (requires active environment):" | tee -a ${LOG}
+    echo "  spack install" | tee -a ${LOG}
+    echo "Once the initial installation is complete, to rebuild LBANN from source drop into a shell with the spack build environment setup (requires active environment):" | tee -a ${LOG}
+    echo "  spack build-env lbann -- bash" | tee -a ${LOG}
+    echo "  cd spack-build-${LBANN_SPEC_HASH}" | tee -a ${LOG}
+    echo "  ninja install" | tee -a ${LOG}
+    echo "##########################################################################################" | tee -a ${LOG}
+    echo "All details of the run are logged to ${LOG}"
+    echo "##########################################################################################"
+    exit 1
+}
+
 if [[ ! "${LBANN_VARIANTS}" =~ .*"^hydrogen".* ]]; then
     # If the user didn't supply a specific version of Hydrogen on the command line add one
     HYDROGEN="^hydrogen${HYDROGEN_VER}"
@@ -409,10 +445,11 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
-#     SPACK_ENV_YAML_FILE="${SPACK_ROOT}/var/spack/environments/${LBANN_ENV}/spack.yaml"
-# cat <<EOF  >> ${SPACK_ENV_YAML_FILE}
-#   concretization: together
-# EOF
+    # Force the environment to concretize together with any additional packages
+    SPACK_ENV_YAML_FILE="${SPACK_ROOT}/var/spack/environments/${LBANN_ENV}/spack.yaml"
+cat <<EOF  >> ${SPACK_ENV_YAML_FILE}
+  concretization: together
+EOF
 
 fi
 
@@ -545,17 +582,33 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
     fi
 
     # Add any extra packages that you want to build in conjuction with the LBANN package
-    # spack add py-merlin
+    if [[ -n "${EXTERNALS:-}" ]]; then
+        CMD="source ${EXTERNALS}"
+        echo ${CMD} | tee -a ${LOG}
+        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+    fi
 fi
 
 CMD="spack solve -l ${LBANN_SPEC}"
-echo ${CMD} | tee -a ${LOG}
-if [[ -z "${DRY_RUN:-}" ]]; then
-    eval ${CMD} || exit_on_failure "${CMD}\nIf the error is that boostrapping failed try something like 'module load gcc/8.3.1; spack compiler add' and then rerunning"
+if [[ "${SPEC_ONLY}" == "TRUE" ]]; then
+   echo ${CMD} | tee -a ${LOG}
+   if [[ -z "${DRY_RUN:-}" ]]; then
+       eval ${CMD} || exit_on_failure "${CMD}\nIf the error is that boostrapping failed try something like 'module load gcc/8.3.1; spack compiler add' and then rerunning"
+   fi
 fi
 # Get the spack hash for LBANN
 LBANN_SPEC_HASH=$(spack solve -l ${LBANN_SPEC} | grep lbann | grep arch=${SPACK_ARCH_PLATFORM} | awk '{print $1}')
-[[ -z "${DRY_RUN:-}" && "${SPEC_ONLY}" == "TRUE" ]] && exit
+# If SPEC_ONLY was requested bail
+[[ -z "${DRY_RUN:-}" && "${SPEC_ONLY}" == "TRUE" ]] && exit_with_instructions
+
+CMD="spack concretize -f"
+if [[ "${CONCRETIZE_ONLY}" == "TRUE" ]]; then
+     echo ${CMD} | tee -a ${LOG}
+     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_with_instructions; }
+fi
+
+# If the user only wants to configure the environment
+[[ ${CONFIGURE_ONLY:-} ]] && exit_with_instructions
 
 LINK_DIR="${LINK_DIR:-${CORE_BUILD_PATH}}"
 BUILD_DIR=$(dirname ${LINK_DIR})
