@@ -526,34 +526,35 @@ void Layer::write_proto(lbann_data::Layer* proto) const {
   }
 }
 
-void Layer::fill_onnx_node(onnx::NodeProto& node) const {
+void Layer::fill_onnx_node(onnx::GraphProto& graph) const {
+
+  auto* node = graph.add_node();
   for(auto const* parent : this->get_parent_layers())
-    node.add_input(parent->get_name());
-  for(auto const* child : this->get_parent_layers())
-    node.add_output(child->get_name());
-  node.set_name(this->get_name());
+    node->add_input(parent->get_name());
+  for(auto const* child : this->get_child_layers())
+    node->add_output(child->get_name());
+  node->set_name(this->get_name());
 
   // FIXME: Do the names need formatting?
   //string op_type
-  node.set_op_type(this->get_onnx_op_type());
+  node->set_op_type(this->get_onnx_op_type());
 
-  // FIXME: Why does a layer need a domain?
   //string domain
-  node.set_domain(this->get_type());
+  node->set_domain("N/A");
 
   // FIXME: What goes here?
   //repeated AttributeProto attribute = 5;
 
   // FIXME: Do the layers need a doc_string?
   //string doc_string
-  node.set_doc_string(this->get_type());
+  node->set_doc_string(this->get_type());
 
 }
 
 std::string Layer::get_onnx_op_type() const {
   // FIXME: I can't find any docs that tell me what to return
   //        from the layers. Help!
-  return this->get_name();
+  return this->get_type();
 }
 
 const Layer& Layer::get_parent_layer(size_t index) const {

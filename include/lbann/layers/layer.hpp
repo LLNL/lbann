@@ -331,8 +331,8 @@ public:
   /** @brief Write layer to proto file */
   virtual void write_proto(lbann_data::Layer* proto) const;
 
-  /** @brief Add layer specific data to onnx node */
-  virtual void fill_onnx_node(onnx::NodeProto& node) const;
+  /** @brief Add layer specific data to onnx graph */
+  virtual void fill_onnx_node(onnx::GraphProto& graph) const;
 
   //** @brief Get ONNX operator type */
   virtual std::string get_onnx_op_type() const;
