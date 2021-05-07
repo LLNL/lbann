@@ -100,7 +100,7 @@ int main(int argc, char **argv) {
 
   // Load model and run inference on samples
   auto lbann_comm = lbann::initialize_lbann(MPI_COMM_WORLD);
-  auto m = lbann::load_inference_model(lbann_comm.get(), model_dir, mbs, {1, 28, 28}, {10});
+  auto m = lbann::load_inference_model(lbann_comm.get(), model_dir, mbs, {c, h, w}, {l});
   auto samples = random_samples(lbann_comm->get_trainer_grid(), n, c, h, w);
   auto labels = lbann::infer(m.get(), samples, mbs);
 
