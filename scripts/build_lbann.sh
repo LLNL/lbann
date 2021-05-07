@@ -54,28 +54,29 @@ Build LBANN: has preconfigured module lists for LLNL LC, OLCF, and NERSC systems
 ##########################################################################################
 Usage: ${SCRIPT} [options] -- [list of spack variants]
 Options:
-  ${C}--help${N}                  Display this help message and exit.
-  ${C}--clean-build${N}           Delete the local link to the build directory
-  ${C}--clean-deps${N}            Forcibly uninstall Hydrogen, Aluminum, and DiHydrogen dependencies
-  ${C}--concretize-only${N}       Stop after adding all packages and concretizing the environment
-  ${C}--confgigure-only${N}       Stop after adding all packages to the environment
-  ${C}-d | --define-env${N}       Define (create) a Spack environment, including the lbann dependencies, for building LBANN from local source
-  ${C}--dry-run${N}               Dry run the commands (no effect)
-  ${C}-e | --extras PATH${N}      Add other packages to the Spack environment Install the lbann dependencies in addition to building from local source
-  ${C}-j | --build-jobs N${N}     Number of parallel processes to use for compiling, e.g. -j \$((\$(nproc)+2))
-  ${C}-l | --label LABEL${N}      LBANN version label prefix: (default label is local-<SPACK_ARCH_TARGET>,
-                          and is built and installed in the spack environment lbann-<label>-<SPACK_ARCH_TARGET>
-  ${C}-m | --mirror PATH${N}      Specify a Spack mirror (and buildcache)
-  ${C}--no-modules${N}            Don't try to load any modules (use the existing users environment)
-  ${C}--tmp-build-dir${N}         Put the build directory in tmp space
-  ${C}--spec-only${N}             Stop after a spack spec command
-  ${C}-s | --stable${N}           Use the latest stable defaults not the head of Hydrogen, DiHydrogen and Aluminum repos
-  ${C}--test${N}                  Enable local unit tests
-  ${C}--hydrogen-repo PATH${N}    Use a local repository for the Hydrogen library
-  ${C}--dihydrogen-repo PATH${N}  Use a local repository for the DiHydrogen library
-  ${C}--aluminum-repo PATH${N}    Use a local repository for the Aluminum library
-  ${C}--update-buildcache${N}     Update a buildcache defined by the Spack mirror (Expert Only)
-  ${C}--${N}                      Pass all variants to spack after the dash dash (--)
+  ${C}--help${N}                    Display this help message and exit.
+  ${C}--clean-build${N}             Delete the local link to the build directory
+  ${C}--clean-deps${N}              Forcibly uninstall Hydrogen, Aluminum, and DiHydrogen dependencies
+  ${C}--concretize-only${N}         Stop after adding all packages and concretizing the environment
+  ${C}--confgigure-only${N}         Stop after adding all packages to the environment
+  ${C}-d | --define-env${N}         Define (create) a Spack environment, including the lbann dependencies, for building LBANN from local source
+  ${C}--dry-run${N}                 Dry run the commands (no effect)
+  ${C}-e | --extras <PATH>${N}      Add other packages from file at PATH to the Spack environment in addition to LBANN
+  ${C}-j | --build-jobs <N>${N}     Number of parallel processes to use for compiling, e.g. -j \$((\$(nproc)+2))
+  ${C}-l | --label <LABEL>${N}      LBANN version label prefix: (default label is local-<SPACK_ARCH_TARGET>,
+                            and is built and installed in the spack environment lbann-<label>-<SPACK_ARCH_TARGET>
+  ${C}-m | --mirror <PATH>${N}      Specify a Spack mirror (and buildcache)
+  ${C}--no-modules${N}              Don't try to load any modules (use the existing users environment)
+  ${C}-p | --pkg <PACKAGE>${N}      Add package PACKAGE to the Spack environment in addition to LBANN (Flag can be repeated)
+  ${C}--tmp-build-dir${N}           Put the build directory in tmp space
+  ${C}--spec-only${N}               Stop after a spack spec command
+  ${C}-s | --stable${N}             Use the latest stable defaults not the head of Hydrogen, DiHydrogen and Aluminum repos
+  ${C}--test${N}                    Enable local unit tests
+  ${C}--hydrogen-repo <PATH>${N}    Use a local repository for the Hydrogen library
+  ${C}--dihydrogen-repo <PATH>${N}  Use a local repository for the DiHydrogen library
+  ${C}--aluminum-repo <PATH>${N}    Use a local repository for the Aluminum library
+  ${C}--update-buildcache${N}       Update a buildcache defined by the Spack mirror (Expert Only)
+  ${C}--${N}                        Pass all variants to spack after the dash dash (--)
 EOF
 }
 
@@ -110,7 +111,7 @@ while :; do
             ;;
         -e|--extras)
             if [ -n "${2}" ]; then
-                EXTERNALS=${2}
+                EXTRAS=${2}
                 shift
             else
                 echo "\"${1}\" option requires a non-empty option argument" >&2
@@ -147,6 +148,15 @@ while :; do
             ;;
         --no-modules)
             SKIP_MODULES="TRUE"
+            ;;
+        -p|--pkg)
+            if [ -n "${2}" ]; then
+                PKG_LIST="${PKG_LIST} ${2}"
+                shift
+            else
+                echo "\"${1}\" option requires a non-empty option argument" >&2
+                exit 1
+            fi
             ;;
         --tmp-build-dir)
             CLEAN_BUILD="TRUE"
@@ -581,11 +591,21 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
         spack config add "config:install_tree:padded_length:128"
     fi
 
-    # Add any extra packages that you want to build in conjuction with the LBANN package
-    if [[ -n "${EXTERNALS:-}" ]]; then
-        CMD="source ${EXTERNALS}"
+    # Add any extra packages in file EXTRAS that you want to build in conjuction with the LBANN package
+    if [[ -n "${EXTRAS:-}" ]]; then
+        CMD="source ${EXTRAS}"
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+    fi
+
+    # Add any extra packages specified on the command line that you want to build in conjuction with the LBANN package
+    if [[ -n "${PKG_LIST:-}" ]]; then
+        for p in ${PKG_LIST}
+        do
+            CMD="spack add ${p}"
+            echo ${CMD} | tee -a ${LOG}
+            [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+        done
     fi
 fi
 
