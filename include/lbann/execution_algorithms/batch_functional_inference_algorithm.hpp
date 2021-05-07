@@ -37,10 +37,14 @@
 
 namespace lbann {
 
-/** @brief Class for LBANN batch inference algorithms. */
+/** @brief Class for LBANN batch inference algorithms. 
+ * This execution algorithm is meant for running inference using a trained
+ * model and samples passed by the user from an external application.  The
+ * algorithm currently assumes that there is only 1 input layer in the model,
+ * and the output layer is a softmax layer.
+ */
 class batch_functional_inference_algorithm {
 public:
-
   /** Constructor. */
   batch_functional_inference_algorithm() {};
   /** Copy constructor. */
@@ -53,16 +57,21 @@ public:
   batch_functional_inference_algorithm& operator=(batch_functional_inference_algorithm&& other) = default;
   /** Destructor. */
   virtual ~batch_functional_inference_algorithm() = default;
-  /** Copy training_algorithm. */
-  //  virtual batch_functional_inference_algorithm* copy() const = default;
 
   std::string get_name() const { return "batch_functional_inference"; }
+
+  std::string get_type() const { return "batch_functional_inference"; }
 
   // ===========================================
   // Execution
   // ===========================================
 
-  /** Infer on samples from a data coordinator with a given model. */
+  /** @brief Run model inference on samples and return predicted categories.
+   * @param[in] model A trained model
+   * @param[in] samples A distributed matrix containing samples for model input
+   * @param[in] mbs The max mini-batch size
+   * @return Matrix of predicted labels (by index)
+   */
   template <typename DataT, El::Dist CDist, El::Dist RDist, El::DistWrap DistView, El::Device Device>
   El::Matrix<int, El::Device::CPU>
   infer(observer_ptr<model> model,
@@ -99,7 +108,12 @@ public:
 
 protected:
 
-  /** Infer on one mini batch with a given model. */
+  /** @brief Run model inference on a single mini-batch of samples
+   * This method takes a mini-batch of samples, inserts them into the input
+   * layer of the model, and runs forward prop on the model.
+   * @param[in] model A trained model
+   * @param[in] samples A distributed matrix containing samples for model input
+   */
   template <typename DataT, El::Dist CDist, El::Dist RDist, El::DistWrap DistView, El::Device Device>
   void
   infer_mini_batch(model& model,
@@ -115,7 +129,10 @@ protected:
     model.forward_prop(execution_mode::inference);
   }
 
-  /** return label for a given row of softmax output. */
+  /** @brief Finds the predicted category in a models softmax layer
+   * @param[in] model A model that has been used for inference
+   * @param[in] labels A matrix to place predicted category labels
+   */
   void get_labels(model& model,\
                   El::Matrix<int, El::Device::CPU> &labels) {
     int pred_label;
