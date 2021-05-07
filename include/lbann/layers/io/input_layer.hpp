@@ -151,6 +151,9 @@ class input_layer : public data_type_layer<TensorDataType> {
 
   void fp_compute() override;
 
+  /** @brief Places samples in input tensors
+   *  @param samples Distributed Matrix of samples
+   */
   void set_samples(const El::AbstractDistMatrix<TensorDataType>& samples);
 
   /**
