@@ -42,120 +42,87 @@ public:
   hdf5_data_reader& operator=(const hdf5_data_reader&);
   hdf5_data_reader* copy() const override { return new hdf5_data_reader(*this); }
   void copy_members(const hdf5_data_reader &rhs);
-  ~hdf5_data_reader() override {}
+  ~hdf5_data_reader() override;
 
   std::string get_type() const override {
     return "hdf5_data_reader";
   }
 
-  /** Prints metadata and data-types for all fields (including packed) 
-   *  CAUTION: if you change the "os" parameter to other than cout, some 
+  /** @brief Prints metadata and data-types for all field-names 
+   *
+   *  Note: if you change the "os" parameter to other than cout, some 
    *  information will be lost; this is because conduit print() methods
-   *  do not take parameters, and print to cout.
+   *  do not take parameters; they only print to cout.
+   *  Note: this method is called internally (I forget from exactly where),
+   *  and can be disabled by the cmd line switch: --quiet
    */
   void print_metadata(std::ostream& os=std::cout);
 
   void load() override;
 
-  /** Returns a raw pointer to the requested data field or group. 
+  /** @brief Called by fetch_data, fetch_label, fetch_response 
+   *
+   * Note that 'which' is not confined to the three commonly used
+   * in lbann (datum, label, response); in general, it can be
+   * any pack field in the experiment schema: pack: <string>
    */
-  const void* get_raw_data(const size_t sample_id, const std::string &field_name, size_t &num_bytes) const; 
-  /** Returns a raw pointer to the data.  This is intended to eventually
-   *  replace fetch_datum(), etc. Once those are gone, the reader no longer
-   *  needs to know anyting about CPUMat
-   */
-  template<typename T>
-  void get_data(
-    const size_t sample_id_in, 
-    std::string field_name_in, 
-    size_t &num_elts_out,
-    T*& data_out) const; 
-
-  // TODO; should go away in future; implementation is only for
-  //       backwards compatibility and testing during development
-  bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
+  bool fetch(std::string which, CPUMat& Y, int data_id, int mb_idx);
 
 
-  // TODO: can go away in future; use get_data(...) instead;
-  //       overring for backwards compatibility
-  int fetch_responses(CPUMat& Y) override {
-    LBANN_ERROR("not implemented for this data reader; please use the form that takes an 'std::string name' as a parameter");
+  bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override {
+    return fetch("datum", X, data_id, mb_idx);
   }
 
-  // TODO: can go away in future; use get_data(...) instead;
-  //       overring for backwards compatibility
-  int fetch_labels(CPUMat& Y) override {
-    LBANN_ERROR("fetch_labels() is not implemented");
+  bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override {
+    return fetch("response", Y, data_id, mb_idx);
   }
 
+  bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override {
+    return fetch("label", Y, data_id, mb_idx);
+  }  
+
+  /** @brief Sets the name of the yaml experiment file */
   void set_experiment_schema_filename(std::string fn) {
     m_experiment_schema_filename = fn;
   }
+
+  /** @brief Returns the name of the yaml experiment file */
   const std::string& get_experiment_schema_filename() {
     return m_experiment_schema_filename;
   }
 
+  /** @brief Sets the name of the yaml data file */
   void set_data_schema_filename(std::string fn) {
     m_data_schema_filename = fn;
   }
+
+  /** @brief Returns the name of the yaml data file */
   const std::string& get_data_schema_filename() {
     return m_data_schema_filename;
   }
 
-  /** Returns the dimensions of the requested 'field.' Here, 'field'
-   *  can be either the name of a field from the original data
-   *  (which retains backwards compatibility), or a user-defined field
-   *  per the user-supplied schema, e.g, a packed field name.
-   *  In the latter case the returned vector will contains a single
-   *  entry, which is the linearized size of the combined data fields.
-   */
-  const std::vector<int> get_data_dims(std::string name="") const override; 
   const std::vector<int> get_data_dims() const override {
-    //hack! TODO XX this will break everything!! sooner or later!!!
     return get_data_dims("datum");
-    LBANN_ERROR("not implemented for this data reader; please use the form that takes an 'std::string name' as a parameter");
-    return std::vector<int>(0);
   }
-
-  int get_linearized_data_size(std::string name) const override;
 
   int get_linearized_data_size() const override {
-  if (is_master())std::cout<<"XX get_linearized_data_size: "<<get_linearized_data_size("datum")<<std::endl;
-    return get_linearized_data_size("datum");
+    return get_linearized_size("datum");
   }
 
-  /** Returns information on the dimensions and field names for the
-   *  requested field name. Currently not implemented, as it may not be 
-   *  needed or used
-   */
-  void get_packing_data(std::string group_name, std::vector<std::vector<int>> &sizes_out, std::vector<std::string> &field_names_out) const override;
-
-  int get_linearized_response_size(std::string name) const override {
-  if (is_master()) std::cout<< "get_linearized_response_size for: "<< get_linearized_data_size(name)<<std::endl;
-    return get_linearized_data_size(name);
-  }
-  // required for backwards compatibility
   int get_linearized_response_size() const override {
-  if (is_master()) std::cout<< "get_linearized_response_size(): "<<get_linearized_data_size("response")<<std::endl;
-    return get_linearized_data_size("response"); 
+    return get_linearized_size("response"); 
   }
 
-  int get_linearized_label_size(std::string name) const override {
-  if (is_master()) std::cout<< "get_linearized_label_size(): "<<name << "; "<<get_linearized_data_size(name)<<std::endl;
-    return get_linearized_data_size(name);
-  }
-  // required for backwards compatibility
   int get_linearized_label_size() const override {
-  if (is_master()) std::cout<< "get_linearized_label_size(): "<<get_linearized_data_size("label")<<std::endl;
-    return get_linearized_data_size("label");
+    return get_linearized_size("label");
   }
 
   int get_num_labels() const override {
-    return m_num_labels;
+    return get_linearized_label_size();
   }
 
   int get_num_responses() const override {
-    return m_num_responses;
+    return get_linearized_response_size();
   }
 
   /** @brief this method is made public for testing */
@@ -174,19 +141,13 @@ public:
 
 private:
 
-  /** num labels and responses can be specified in a metadata node attached to
-   *  the root of the experiment schema
-   */
-  int m_num_labels = 0;
-  int m_num_responses = 0;
-
   /** filled in by construct_linearized_size_lookup_tables; 
    *  used by get_data_dims()
    */
   std::unordered_map<std::string, std::vector<int>> m_data_dims_lookup_table;
 
   /** filled in by construct_linearized_size_lookup_tables; 
-   *  used by get_linearized_data_size()
+   *  used by get_linearized_size()
    */
   std::unordered_map<std::string, int> m_linearized_size_lookup_table;
 
@@ -224,6 +185,7 @@ private:
 
   /** maps: Node's path -> the Node */
   std::unordered_map<std::string, conduit::Node*> m_useme_node_map_ptrs;
+  /** maps: Node's path -> the Node */
   std::unordered_map<std::string, conduit::Node> m_useme_node_map;
 
   /** Schema supplied by the user; this contains a listing of the fields
@@ -245,43 +207,59 @@ private:
   // methods follow
   //=========================================================================
 
+  /** Returns a pointer to the requested data field.
+   *
+   *  The caller must cast to the appropriate type, as specified by 'dtype_out,'
+   *  which is one of: float32, float64, int32, int64, uint64, uint32
+   */
+  const void* get_data(
+    const size_t sample_id_in, 
+    std::string field_name_in, 
+    size_t &num_elts_out, 
+    std::string& dtype_out) const;
+
+  const std::vector<int> get_data_dims(std::string name="") const;
+
+  /** Returns the size of the requested field (datum, label, response, etc) */
+  int get_linearized_size(std::string name) const;
+
   /** P_0 reads and bcasts the schema */
   void load_sample_schema(conduit::Schema &s);
 
-  /** Fills in various data structures by parsing the m_data_schema and
-   *  m_experiment_schema
+  /** Fills in various data structures by parsing the schemas 
+   *  (i.e, km_data_schema and m_experiment_schema
    */
   void parse_schemas();
 
   /** get pointers to all nodes in the subtree rooted at the 'starting_node;'
-   *  keys are the pathnames; recursive. However, ignores any nodes named s_metadata_node_name
+   *  keys are the pathnames; recursive. However, ignores any nodes named 
+   *  "metadata" (or whatever 's_metadata_node_name' is set to). 
    */
   void get_schema_ptrs(conduit::Node* starting_node, std::unordered_map<std::string, conduit::Node*> &schema_name_map);
 
-  /** Returns, in leaves, the schemas for all leaf nodes in the tree rooted
-   *  at 'node_in.' However, ignores any nodes named s_metadata_node_name.
-   *  Keys are the pathnames to the leaf nodes.
+  /**  Returns, in leaves, the schemas for leaf nodes in the tree rooted
+   *  at 'node_in.'  Optionally ignores nodes named "metadata" (or whatever
+   *  's_metadata_node_name' is set to).
+   *  Keys in the filled-in map are the pathnames to the leaf nodes.
    */
   void get_leaves(conduit::Node* node_in, std::unordered_map<std::string, conduit::Node*> &leaves_out, bool ignore_metadata=false);
 
-  /** Functionality is similar to get_leaves(); this method differs in that
-   *  two conduit::Node hierarchies are searched for leaves. The leaves from 
+  /** Functionality is similar to get_leaves(). This method differs in that
+   *  two conduit::Node trees are searched for leaves. The leaves from 
    *  the first are found, and are then treated as starting points for 
-   *  continuing the search in the second hierarchy.
-   *
-   *  Applicability: a user's schema should be able to specify an "inputs"
-   *  node, without having to enumerate all the "inputs" leaves names
+   *  continuing the search in the second tree. In practice, the first tree
+   *  is defined by the experiment_schema, and the second by the data_schema.
    */
   void get_leaves_multi(
     conduit::Node* node_in, 
     std::unordered_map<std::string, conduit::Node*> &leaves_out, 
     bool ignore_metadata=false);
 
-  /** Fills in: m_packed_name_to_num_elts and m_field_name_to_num_elts */
   void do_preload_data_store() override;
 
-  /** loads a sample from file to a conduit::Node;
-   *  call normalize, coerce, pack, etc
+  /** Loads a sample from file to a conduit::Node; call normalize,
+   *  coerce, pack, etc. "ignore_failure" is only used for
+   *  by the call to print_metadata().
    */
   void load_sample(conduit::Node &node, size_t index, bool ignore_failure = false); 
 
@@ -295,19 +273,21 @@ private:
   void pack(conduit::Node &node, size_t index);
 
   /** Merges the contents of the two input nodes, either of which may be
-   *  a nullptr; if the input nodes contain a common fieldname, then the
+   *  a nullptr. If the input nodes contain a common field-name, then the
    *  value from node_B are used, and the value from node_A discarded.
    */
   conduit::Node merge_metadata_nodes(const conduit::Node *node_A, const conduit::Node *node_B);
 
-  /** on return, every Node will have a (possibly empty) child node named
+  /** On return, every Node will have a (possibly empty) child node named
    *  <s_metadata_node_name>. The rules: 1) a node inherits the metadata node 
-   *  of its parent; 2) if the node already had a metadata child, the contents
-   *  are preserved and, where applicable, over-rides the fields of the parent.
+   *  of its parent; 2) if the node already has a metadata child, the contents
+   *  are preserved; if both parent and child have the same named field,
+   *  the child's takes precedence.
    *  Recursive.
    */
   void adjust_metadata(conduit::Node* root);
 
+  /** Fills in m_packing_groups data structure */
   void build_packing_map(conduit::Node &node);
 
   /** repacks from HWC to CHW */
@@ -326,41 +306,47 @@ private:
     const std::string &path, 
     const conduit::Node& metadata);
 
-  // constructs m_data_dims_lookup_table and m_linearized_size_lookup_table,
+  /** Constructs m_data_dims_lookup_table and m_linearized_size_lookup_table */
   void construct_linearized_size_lookup_tables();
 
   //=========================================================================
-  // templates follow
+  // template declarations follow
   //=========================================================================
 
   template<typename T_from, typename T_to>
   void coerceme(const T_from* data_in, size_t n_bytes, std::vector<T_to> & data_out); 
 
-  //normalization for scalars and 1D arrays
+  /** Performs normalization for scalars and 1D arrays */
   template<typename T>
   void normalizeme(T* data, double scale, double bias, size_t n_bytes); 
 
-  //normalization for images with multiple channels
+  /** Performs normalization for images with multiple channels */
   template<typename T>
   void normalizeme(T* data, const double* scale, const double* bias, size_t n_bytes, size_t n_channels); 
 
   template<typename T>
   void repack_image(T* src_buf, size_t n_bytes, size_t n_rows, size_t n_cols, int n_channels); 
 
-  // packs all fields assigned to 'group_name' (e.g, 'datum') into a 1D vector 
+  /** Packs all fields assigned to 'group_name' (datum, label, response) 
+   *  into a 1D vector; the packed field is then inserted in a conduit
+   *  node, that is passed to the data_store
+   */
   template<typename T>
   void pack(std::string group_name, conduit::Node& node, size_t index);
 
-  // returns true if this is a node that was constructed from one or more
-  // original data fields
+  /** Returns true if this is a node that was constructed from one or more
+   * original data fields
+   */
   bool is_composite_node(const conduit::Node& node);
   bool is_composite_node(const conduit::Node* node) {
     return is_composite_node(*node);
   }
 
-}; // class hdf5_data_reader
+}; // END: class hdf5_data_reader
 
-//============================================================================
+//=========================================================================
+// templates definitions follow (from here to end of file)
+//=========================================================================
 
 template<typename T_from, typename T_to>
 void hdf5_data_reader::coerceme(const T_from* data_in, size_t n_bytes, std::vector<T_to> & data_out) {
@@ -372,7 +358,6 @@ void hdf5_data_reader::coerceme(const T_from* data_in, size_t n_bytes, std::vect
   }
 }
 
-//normalization for scalars and 1D arrays
 template<typename T>
 void hdf5_data_reader::normalizeme(T* data, double scale, double bias, size_t n_bytes) {
   size_t n_elts = n_bytes / sizeof(T);
@@ -381,7 +366,6 @@ void hdf5_data_reader::normalizeme(T* data, double scale, double bias, size_t n_
   }
 }
 
-//normalization for images with multiple channels
 template<typename T>
 void hdf5_data_reader::normalizeme(T* data, const double* scale, const double* bias, size_t n_bytes, size_t n_channels) {
   size_t n_elts = n_bytes / sizeof(T);
@@ -464,23 +448,6 @@ void hdf5_data_reader::pack(std::string group_name, conduit::Node& node, size_t 
   }
 }
 
-template<typename T>
-void hdf5_data_reader::get_data(
-    const size_t sample_id_in, 
-    std::string field_name_in, 
-    size_t &num_elts_out,
-    T*& data_out) const {
-  const conduit::Node& node = m_data_store->get_conduit_node(sample_id_in);
-  std::stringstream ss;
-  ss << node.name() << node.child(0).name() + "/" << field_name_in;
-  if (!node.has_path(ss.str())) {
-    LBANN_ERROR("no path: ", ss.str());
-  }
-  num_elts_out = node[ss.str()].dtype().number_of_elements();
-  const std::string& dtype = node[ss.str()].dtype().name();
-  void *d = const_cast<void*>(node[ss.str()].data_ptr());
-  data_out = reinterpret_cast<T*>(d);
-}
 
 } // namespace lbann 
 

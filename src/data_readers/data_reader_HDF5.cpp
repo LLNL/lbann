@@ -30,6 +30,9 @@
 
 namespace lbann {
 
+hdf5_data_reader::~hdf5_data_reader() {
+}
+
 hdf5_data_reader::hdf5_data_reader(bool shuffle) 
   : data_reader_sample_list(shuffle) {
 }
@@ -49,8 +52,6 @@ hdf5_data_reader& hdf5_data_reader::operator=(const hdf5_data_reader& rhs) {
 }
 
 void hdf5_data_reader::copy_members(const hdf5_data_reader &rhs) {
-  m_num_labels = rhs.m_num_labels;
-  m_num_responses = rhs.m_num_responses;
   m_data_dims_lookup_table = rhs.m_data_dims_lookup_table;
   m_linearized_size_lookup_table = rhs.m_linearized_size_lookup_table;
   m_experiment_schema_filename = rhs.m_experiment_schema_filename;
@@ -152,12 +153,13 @@ void hdf5_data_reader::do_preload_data_store() {
     }
   }
   // Once all of the data has been preloaded, close all of the file handles
+
   for (size_t idx=0; idx < m_shuffled_indices.size(); idx++) {
     int index = m_shuffled_indices[idx];
     if(m_data_store->get_index_owner(index) != get_rank()) {
       continue;
     }
-    close_file(index);
+    close_file(index);  //data_reader_sample_list::close_file
   }
 
   size_t nn = m_data_store->get_num_global_indices();
@@ -166,6 +168,7 @@ void hdf5_data_reader::do_preload_data_store() {
              << "num samples (local to this rank): "<< m_data_store->get_data_size()
              << "; global to this trainer: "<< nn << std::endl;
   }
+
 }
 
 // Loads the fields that are specified in the user supplied schema
@@ -196,7 +199,9 @@ void hdf5_data_reader::load_sample(conduit::Node &node, size_t index, bool ignor
   
       // note: this will throw an exception if the child node doesn't exist
       const conduit::Node& metadata = p.second.child(s_metadata_node_name);
-  
+
+      // optionally coerce the data, e.g, from double to float, per settings
+      // in the experiment_schema
       if (metadata.has_child(s_coerce_name)) {
         coerce(metadata, file_handle, original_path, new_pathname, node);
       } else {
@@ -227,16 +232,17 @@ void hdf5_data_reader::normalize(
 
   // treat this as a multi-channel image
   if (metadata.has_child("channels")) {
-    // sanity check; TODO: implement for other formats when needed
-    if (!metadata.has_child("hwc")) {
-      LBANN_ERROR("we only currently know how to deal with HWC input images");
-    }
-
+    
     // get number of channels, with sanity checking
     int64_t n_channels = metadata["channels"].value();
     int sanity = metadata["scale"].dtype().number_of_elements();
     if (sanity != n_channels) {
       LBANN_ERROR("sanity: ", sanity, " should equal ", n_channels, " but instead is: ", n_channels);
+    }
+
+    // sanity check; TODO: implement for other formats when needed
+    if (n_channels > 1 && !metadata.has_child("hwc")) {
+      LBANN_ERROR("we only currently know how to deal with HWC input images");
     }
 
     // get the scale and bias arrays
@@ -635,7 +641,7 @@ const std::vector<int> hdf5_data_reader::get_data_dims(std::string name) const {
   return iter->second;
 }
 
-int hdf5_data_reader::get_linearized_data_size(std::string name) const {
+int hdf5_data_reader::get_linearized_size(std::string name) const {
   std::unordered_map<std::string, int>::const_iterator iter = m_linearized_size_lookup_table.find(name);
   if (iter == m_linearized_size_lookup_table.end()) {
     LBANN_ERROR("get_linearized_data_size was asked for info about an unknown field name: ", name, "; table size: ", m_linearized_size_lookup_table.size(), " for role: ", get_role());
@@ -693,32 +699,46 @@ void hdf5_data_reader::construct_linearized_size_lookup_tables() {
   }
 }
 
-void hdf5_data_reader::get_packing_data(
-   std::string group_name, 
-   std::vector<std::vector<int>> &sizes_out, 
-   std::vector<std::string> &field_names_out) const {
-  LBANN_ERROR("not implemented");
-}
-
-bool hdf5_data_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
+bool hdf5_data_reader::fetch(std::string which, CPUMat& Y, int data_id, int mb_idx) {
   size_t n_elts = 0;
-  DataType *data;
-  get_data(data_id, "datum", n_elts, data);
-  for (size_t j = 0; j < n_elts; ++j) {
-    X(j, mb_idx) = data[j];
-  }
-  return true;
-}
+  std::string dtype;
+  const void* d = get_data(data_id, which, n_elts, dtype);
 
-const void* hdf5_data_reader::get_raw_data(const size_t sample_id, const std::string &field_name, size_t &num_bytes) const {
-  const conduit::Node &node = m_data_store->get_conduit_node(sample_id);
-  num_bytes = node.allocated_bytes();
-  std::stringstream ss;
-  ss << '/' << LBANN_DATA_ID_STR(sample_id) + '/' + field_name;
-  if (!node.has_path(ss.str())) {
-    LBANN_ERROR("you requested data for a non-existant data field or group: ", ss.str());
+  if (dtype == "float64") {
+    const conduit::float64* data = reinterpret_cast<const conduit::float64*>(d);
+    for (size_t j = 0; j < n_elts; ++j) {
+      Y(j, mb_idx) = data[j];
+    }
+  } else if (dtype == "float32") {
+    const conduit::float32* data = reinterpret_cast<const conduit::float32*>(d);
+    for (size_t j = 0; j < n_elts; ++j) {
+      Y(j, mb_idx) = data[j];
+    }
+  } else if (dtype == "int64") {
+    const conduit::int64* data = reinterpret_cast<const conduit::int64*>(d);
+    for (size_t j = 0; j < n_elts; ++j) {
+      Y(j, mb_idx) = data[j];
+    }
+  } else if (dtype == "int32") {
+    const conduit::int32* data = reinterpret_cast<const conduit::int32*>(d);
+    for (size_t j = 0; j < n_elts; ++j) {
+      Y(j, mb_idx) = data[j];
+    }
+  } else if (dtype == "uint64") {
+    const conduit::uint64* data = reinterpret_cast<const conduit::uint64*>(d);
+    for (size_t j = 0; j < n_elts; ++j) {
+      Y(j, mb_idx) = data[j];
+    }
+  } else if (dtype == "uint32") {
+    const conduit::uint32* data = reinterpret_cast<const conduit::uint32*>(d);
+    for (size_t j = 0; j < n_elts; ++j) {
+      Y(j, mb_idx) = data[j];
+    }
+  } else {
+    LBANN_ERROR("unknown dtype: ", dtype);
   }
-  return node[ss.str()].data_ptr();
+
+  return true;
 }
 
 void hdf5_data_reader::print_metadata(std::ostream& os) {
@@ -783,6 +803,44 @@ void hdf5_data_reader::set_data_schema(const conduit::Schema& s) {
 void hdf5_data_reader::set_experiment_schema(const conduit::Schema& s) {
   m_experiment_schema = s;
   parse_schemas();
+}
+
+//Note to developers and reviewer: this is very conduit-ishy; I keep thinking
+//there's a simpler, more elegant way to do this, but I'm not seeing it. 
+const void* hdf5_data_reader::get_data(
+    const size_t sample_id_in, 
+    std::string field_name_in, 
+    size_t &num_elts_out, 
+    std::string& dtype_out) const {
+
+  // get the pathname to the data, and verify it exists in the conduit::Node
+  const conduit::Node& node = m_data_store->get_conduit_node(sample_id_in);
+  std::stringstream ss;
+  ss << node.name() << node.child(0).name() + "/" << field_name_in;
+  if (!node.has_path(ss.str())) {
+    LBANN_ERROR("no path: ", ss.str());
+  }
+
+  num_elts_out = node[ss.str()].dtype().number_of_elements();
+
+  const void* r;
+  dtype_out = node[ss.str()].dtype().name();
+  if (dtype_out == "float64") {
+    r = reinterpret_cast<const void*>(node[ss.str()].as_float64_ptr());
+  } else if (dtype_out == "float32") {
+    r = reinterpret_cast<const void*>(node[ss.str()].as_float32_ptr());
+  } else if (dtype_out == "int64") {
+    r = reinterpret_cast<const void*>(node[ss.str()].as_int64_ptr());
+  } else if (dtype_out == "int32") {
+    r = reinterpret_cast<const void*>(node[ss.str()].as_int32_ptr());
+  } else if (dtype_out == "uint64") {
+    r = reinterpret_cast<const void*>(node[ss.str()].as_uint64_ptr());
+  } else if (dtype_out == "uint32") {
+    r = reinterpret_cast<const void*>(node[ss.str()].as_uint32_ptr());
+  } else {
+    LBANN_ERROR("unknown dtype; not float32/64, int32/64, or uint32/64; dtype is reported to be: ", dtype_out);
+  }
+  return r;
 }
 
 } // namespace lbann
