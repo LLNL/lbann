@@ -323,8 +323,10 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
     }
     if(valid_sample_count != included_samples) {
       LBANN_ERROR(
-        "Bundle file does not contain the correct number of included samples: expected ",
-        included_samples, " samples (per sample list), but found ", valid_sample_count, " (per looping over the sample IDs in the sample list)");
+        "Bundle file", filename,
+        " does not contain the correct number of included samples: expected ",
+        included_samples, " samples, but found ", valid_sample_count,
+        " (per looping over the sample IDs in the sample list)");
     }
 
     if(m_file_map.count(filename) > 0) {
