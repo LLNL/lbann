@@ -418,6 +418,10 @@ function exit_with_instructions()
     echo "  spack build-env lbann -- bash" | tee -a ${LOG}
     echo "  cd spack-build-${LBANN_SPEC_HASH}" | tee -a ${LOG}
     echo "  ninja install" | tee -a ${LOG}
+    echo "Once installed, to use this version of LBANN use the module system without the need for activating the environment (does not require being in an environment)" | tee -a ${LOG}
+    echo "  module load lbann/${LBANN_LABEL}-${LBANN_SPEC_HASH}" | tee -a ${LOG}
+    echo "or have spack load the module auto-magically. It is installed in a spack environment named ${LBANN_ENV}, access it via: (has to be executed from the environment)"  | tee -a ${LOG}
+    echo "  spack load lbann${AT_LBANN_LABEL} arch=${SPACK_ARCH}" | tee -a ${LOG}
     echo "##########################################################################################" | tee -a ${LOG}
     echo "All details of the run are logged to ${LOG}"
     echo "##########################################################################################"
