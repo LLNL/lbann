@@ -1,0 +1,16 @@
+std::string const hdf5_reader_prototext = R"ptext(
+data_reader {
+  reader {
+    name: "hdf5_data_reader"
+    role: "train"
+    shuffle: true
+    sample_list: "WORK_DIR/sample_list_fake.txt"
+    percent_of_data_to_use: 1.0
+    data_schema_filename: "WORK_DIR/hdf5_data_schema.yaml"
+    experiment_schema_filename: "WORK_DIR/hdf5_experiment_schema.yaml"
+    validation_percent: 0.1
+  }
+}
+)ptext";
+
+
