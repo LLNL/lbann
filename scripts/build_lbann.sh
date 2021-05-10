@@ -76,6 +76,7 @@ Options:
   ${C}--dihydrogen-repo <PATH>${N}  Use a local repository for the DiHydrogen library
   ${C}--aluminum-repo <PATH>${N}    Use a local repository for the Aluminum library
   ${C}--update-buildcache${N}       Update a buildcache defined by the Spack mirror (Expert Only)
+  ${C}-u | --user <VERSION>${N}     Build from the GitHub repo -- as a "user" not developer using optional <VERSION> tag
   ${C}--${N}                        Pass all variants to spack after the dash dash (--)
 EOF
 }
@@ -203,6 +204,19 @@ while :; do
             ;;
         --update-buildcache)
             UPDATE_BUILDCACHE="TRUE"
+            ;;
+        -u|--user)
+            USER_BUILD="TRUE"
+            if [ -n "${2}" ] && [ ${2:0:1} != "-" ]; then
+                LBANN_USER_LABEL=${2}
+                shift
+            else
+                # Use the latest released version
+                LBANN_USER_LABEL=
+                HYDROGEN_VER=
+                ALUMINUM_VER=
+                DIHYDROGEN_VER=
+            fi
             ;;
         --)
             shift
@@ -354,8 +368,19 @@ SPACK_ARCH_GENERIC_TARGET=$(spack python -c "import archspec.cpu as cpu; print(s
 # Create a modified spack arch with generic target architecture
 SPACK_ARCH_PLATFORM_GENERIC_TARGET="${SPACK_ARCH_PLATFORM}-${SPACK_ARCH_GENERIC_TARGET}"
 
-LBANN_LABEL="${LBANN_LABEL_PREFIX:-local}-${SPACK_ARCH_TARGET}"
-LBANN_ENV="${LBANN_ENV:-lbann-${LBANN_LABEL}}"
+if [[ -n "${USER_BUILD:-}" ]]; then
+    LBANN_LABEL="${LBANN_USER_LABEL}"
+    LBANN_ENV="${LBANN_ENV:-lbann-${LBANN_LABEL_PREFIX:-user}-${SPACK_ARCH_TARGET}}"
+else
+    LBANN_LABEL="${LBANN_LABEL_PREFIX:-local}-${SPACK_ARCH_TARGET}"
+    LBANN_ENV="${LBANN_ENV:-lbann-${LBANN_LABEL}}"
+fi
+# If a label is defined create a variable with a leading @ symbol
+if [[ -n "${LBANN_LABEL:-}" ]]; then
+    AT_LBANN_LABEL="@${LBANN_LABEL}"
+else
+    AT_LBANN_LABEL=""
+fi
 CORE_BUILD_PATH="${LBANN_HOME}/build/${CLUSTER}.${LBANN_ENV}"
 
 LOG="spack-build-${LBANN_ENV}.log"
@@ -463,21 +488,23 @@ EOF
 
 fi
 
-##########################################################################################
-# Uninstall any existing versions for this architecture with the same label -- note that
-# this has to be done outside of an environment
-# For finding the lbann version don't use the architecture because sometimes it is "downgraded"
-LBANN_FIND_CMD="spack find --format {hash:7} lbann@${LBANN_LABEL}"
-echo ${LBANN_FIND_CMD} | tee -a ${LOG}
-LBANN_HASH=$(${LBANN_FIND_CMD})
-if [[ -n "${LBANN_HASH}" && ! "${LBANN_HASH}" =~ "No package matches the query" ]]; then
-    LBANN_HASH_ARRAY=(${LBANN_HASH})
-    for h in ${LBANN_HASH_ARRAY[@]}
-    do
-        CMD="spack uninstall -y --force lbann@${LBANN_LABEL} /${h}"
-        echo ${CMD} | tee -a ${LOG}
-        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
-    done
+if [[ -z "${USER_BUILD:-}" ]]; then
+    ##########################################################################################
+    # For developer builds uninstall any existing versions for this architecture with the same label
+    # -- note that this has to be done outside of an environment
+    # For finding the lbann version don't use the architecture because sometimes it is "downgraded"
+    LBANN_FIND_CMD="spack find --format {hash:7} lbann${AT_LBANN_LABEL}"
+    echo ${LBANN_FIND_CMD} | tee -a ${LOG}
+    LBANN_HASH=$(${LBANN_FIND_CMD})
+    if [[ -n "${LBANN_HASH}" && ! "${LBANN_HASH}" =~ "No package matches the query" ]]; then
+        LBANN_HASH_ARRAY=(${LBANN_HASH})
+        for h in ${LBANN_HASH_ARRAY[@]}
+        do
+            CMD="spack uninstall -y --force lbann${AT_LBANN_LABEL} /${h}"
+            echo ${CMD} | tee -a ${LOG}
+            [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+        done
+    fi
 fi
 
 if [[ -n "${CLEAN_DEPS:-}" ]]; then
@@ -529,7 +556,7 @@ fi
 
 ##########################################################################################
 # Establish the spec for LBANN
-LBANN_SPEC="lbann@${LBANN_LABEL} ${CENTER_FLAGS} ${LBANN_VARIANTS} ${HYDROGEN} ${DIHYDROGEN} ${ALUMINUM} ${CENTER_DEPENDENCIES}"
+LBANN_SPEC="lbann${AT_LBANN_LABEL} ${CENTER_FLAGS} ${LBANN_VARIANTS} ${HYDROGEN} ${DIHYDROGEN} ${ALUMINUM} ${CENTER_DEPENDENCIES}"
 ##########################################################################################
 
 ##########################################################################################
@@ -581,9 +608,11 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
     # Explicitly mark lbann for development
-    CMD="spack develop --no-clone -p ${LBANN_HOME} ${LBANN_SPEC}"
-    echo ${CMD} | tee -a ${LOG}
-    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+    if [[ -z "${USER_BUILD:-}" ]]; then
+        CMD="spack develop --no-clone -p ${LBANN_HOME} ${LBANN_SPEC}"
+        echo ${CMD} | tee -a ${LOG}
+        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+    fi
 
     ##########################################################################################
     # If there is a local mirror, pad out the install tree so that it can be relocated
@@ -745,7 +774,7 @@ echo "  ninja install" | tee -a ${LOG}
 echo "To use this version of LBANN use the module system without the need for activating the environment (does not require being in an environment)" | tee -a ${LOG}
 echo "  module load lbann/${LBANN_LABEL}-${LBANN_SPEC_HASH}" | tee -a ${LOG}
 echo "or have spack load the module auto-magically. It is installed in a spack environment named ${LBANN_ENV}, access it via: (has to be executed from the environment)"  | tee -a ${LOG}
-echo "  spack load lbann@${LBANN_LABEL} arch=${SPACK_ARCH}" | tee -a ${LOG}
+echo "  spack load lbann${AT_LBANN_LABEL} arch=${SPACK_ARCH}" | tee -a ${LOG}
 echo "##########################################################################################" | tee -a ${LOG}
 echo "All details of the run are logged to ${LOG}"
 echo "##########################################################################################"
