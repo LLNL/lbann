@@ -649,8 +649,8 @@ if [[ "${SPEC_ONLY}" == "TRUE" ]]; then
        eval ${CMD} || exit_on_failure "${CMD}\nIf the error is that boostrapping failed try something like 'module load gcc/8.3.1; spack compiler add' and then rerunning"
    fi
 fi
-# Get the spack hash for LBANN
-LBANN_SPEC_HASH=$(spack solve -l ${LBANN_SPEC} | grep lbann | grep arch=${SPACK_ARCH_PLATFORM} | awk '{print $1}')
+# Get the spack hash for LBANN (use concretize command to ensure that any impact of external packages is factored in)
+LBANN_SPEC_HASH=$(spack concretize | grep lbann | grep arch=${SPACK_ARCH_PLATFORM} | awk '{print $2}')
 # If SPEC_ONLY was requested bail
 [[ -z "${DRY_RUN:-}" && "${SPEC_ONLY}" == "TRUE" ]] && exit_with_instructions
 
