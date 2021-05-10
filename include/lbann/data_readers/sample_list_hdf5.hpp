@@ -68,7 +68,7 @@ inline sample_list_hdf5<sample_name_t>::~sample_list_hdf5() {
   // Close the existing open files
 
 //DEBUG CODE BLOCK; SHOULD GO AWAY
-std::cerr << "XX WARNING: in include/lbann/sample_list_hdf5.hpp, the destructore is about to call close_file_handle(h) for " << m_file_id_stats_map.size() << " values of h; this may throw an exception.\n";
+std::cerr << "\nXX WARNING: in include/lbann/sample_list_hdf5.hpp, the destructor is about to call close_file_handle(h) for " << this->m_file_id_stats_map.size() << " values of h; this may throw an exception.\n\n";
 
   for(auto& f : this->m_file_id_stats_map) {
     file_handle_t& h = std::get<1>(f);
