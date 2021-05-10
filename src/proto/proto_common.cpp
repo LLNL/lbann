@@ -143,6 +143,8 @@ void init_data_readers(
       dr->keep_sample_order(readme.sample_list_keep_order());
       dr->set_experiment_schema_filename(readme.experiment_schema_filename());
       dr->set_data_schema_filename(readme.data_schema_filename());
+      dr->set_has_labels(readme.enable_labels());
+      dr->set_has_responses(readme.enable_responses());
       reader = dr;
       reader->set_data_sample_list(readme.sample_list());
     } else if (name == "ras_lipid") {
@@ -563,6 +565,12 @@ void init_data_readers(
 #endif // LBANN_HAS_EMBEDDED_PYTHON
           }
 
+          //this will save someone much grief someday:
+          if (split_reader == nullptr) {
+            LBANN_ERROR("split_reader == nullptr");
+          }
+
+
           if(m == execution_mode::validation) {
             split_reader->set_role("validate");
           }else if(m == execution_mode::tournament) {
@@ -591,6 +599,7 @@ void init_data_readers(
           }
 
           data_readers[m] = split_reader;
+std::cerr << "XX src/proto/proto_common.cpp: INSTANTIATED SPLIT READER!\n";
         }
       }
     }
