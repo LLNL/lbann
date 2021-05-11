@@ -62,10 +62,54 @@ Setup Spack (One-time setup)
           `Spack Documentation
           <https://spack.readthedocs.io/en/latest/configuration.html>`_.
 
+
+.. _install_lbann_as_user_known_center:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Building & Installing LBANN as a user at a known HPC Center
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+With Spack setup and installed into your path, it can be used to
+install the LBANN executables. This approach is appropriate for users
+that want to train new or existing models using the Python front-end
+and are working at know HPC Computing Centers (e.g. LLNL LC, OLCF,
+ALCF, RIKEN).  The scripts that are invoked load known modules to tie
+into system install packages (e.g. MPI).
+
+1. Download LBANN's build scripts:
+
+   .. code-block: bash
+
+      wget https://github.com/LLNL/lbann/raw/develop/scripts/build_lbann.sh
+           https://github.com/LLNL/lbann/raw/develop/scripts/customize_build_env.sh
+           https://github.com/LLNL/lbann/raw/develop/scripts/utilities.sh
+      chmod +x build_lbann.sh customize_build_env.sh utilities.sh
+
+2. Invoke the build script (in this case we will use the develop version):
+
+   .. code-block: bash
+
+      ./build_lbann.sh -d -u <version> -- <variants>
+      spack load lbann@<version>
+
+   .. note:: Executing the :code:`build_lbann.sh` script with the
+             :code:`-h` flag will provide a help note.
+
+.. note::
+
+   Here is an example of building LBANN with CUDA support and the head
+   of the develop branch.
+
+   .. code-block: bash
+
+      ./build_lbann.sh -d -u develop -- +cuda
+      spack load lbann@develop
+
+
 .. _install_lbann_as_user:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Building & Installing LBANN as a user
+Building & Installing LBANN as a user (with maximum flexiblity)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 With Spack setup and installed into your path, it can be used to
@@ -155,7 +199,9 @@ Please note that when getting LBANN to build as a user will encounter
 some issues with the Spack legacy concretizer and use of the new
 clingo concretizer is highly recommended :ref:`(see above)
 <setting_up_clingo>`. Using the legacy concretizer will require getting
-just the "right" invocation and we suggest using clingo.
+just the "right" invocation and we suggest using clingo.  Furthermore,
+it is typically best to have Spack reuse a version of MPI installed by
+the system administrators to ensure that it is properly configured.
 
 .. _build_lbann_from_source:
 
