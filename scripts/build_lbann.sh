@@ -745,15 +745,17 @@ fi
 # Don't use the output of this file since it will not exist if the compilation is not successful
 # LBANN_BUILD_DIR=$(grep "PROJECT_BINARY_DIR:" ${LBANN_HOME}/spack-build-out.txt | awk '{print $2}')
 
-if [[ -L "${LINK_DIR}" ]]; then
-    CMD="rm ${LINK_DIR}"
+if [[ -z "${USER_BUILD:-}" ]]; then
+    if [[ -L "${LINK_DIR}" ]]; then
+        CMD="rm ${LINK_DIR}"
+        echo ${CMD} | tee -a ${LOG}
+        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+    fi
+
+    CMD="ln -s ${LBANN_HOME}/spack-build-${LBANN_SPEC_HASH} ${LINK_DIR}"
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 fi
-
-CMD="ln -s ${LBANN_HOME}/spack-build-${LBANN_SPEC_HASH} ${LINK_DIR}"
-echo ${CMD} | tee -a ${LOG}
-[[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
 ##########################################################################################
 # Once LBANN is installed deactivate the environment and try to find the package to get the
@@ -771,10 +773,12 @@ echo ${CMD} | tee -a ${LOG}
 echo "##########################################################################################" | tee -a ${LOG}
 echo "LBANN is installed in a spack environment named ${LBANN_ENV}, access it via:" | tee -a ${LOG}
 echo "  spack env activate -p ${LBANN_ENV}" | tee -a ${LOG}
-echo "To rebuild LBANN from source drop into a shell with the spack build environment setup (requires active environment):" | tee -a ${LOG}
-echo "  spack build-env lbann -- bash" | tee -a ${LOG}
-echo "  cd spack-build-${LBANN_SPEC_HASH}" | tee -a ${LOG}
-echo "  ninja install" | tee -a ${LOG}
+if [[ -z "${USER_BUILD:-}" ]]; then
+    echo "To rebuild LBANN from source drop into a shell with the spack build environment setup (requires active environment):" | tee -a ${LOG}
+    echo "  spack build-env lbann -- bash" | tee -a ${LOG}
+    echo "  cd spack-build-${LBANN_SPEC_HASH}" | tee -a ${LOG}
+    echo "  ninja install" | tee -a ${LOG}
+fi
 echo "To use this version of LBANN use the module system without the need for activating the environment (does not require being in an environment)" | tee -a ${LOG}
 echo "  module load lbann/${LBANN_LABEL}-${LBANN_SPEC_HASH}" | tee -a ${LOG}
 echo "or have spack load the module auto-magically. It is installed in a spack environment named ${LBANN_ENV}, access it via: (has to be executed from the environment)"  | tee -a ${LOG}
@@ -783,7 +787,9 @@ echo "##########################################################################
 echo "All details of the run are logged to ${LOG}"
 echo "##########################################################################################"
 
-# Lastly, Save the log file in the build directory
-CMD="cp ${LOG} ${LBANN_HOME}/spack-build-${LBANN_SPEC_HASH}/${LOG}"
-echo ${CMD}
-[[ -z "${DRY_RUN:-}" ]] && ${CMD}
+if [[ -z "${USER_BUILD:-}" ]]; then
+    # Lastly, Save the log file in the build directory
+    CMD="cp ${LOG} ${LBANN_HOME}/spack-build-${LBANN_SPEC_HASH}/${LOG}"
+    echo ${CMD}
+    [[ -z "${DRY_RUN:-}" ]] && ${CMD}
+fi
