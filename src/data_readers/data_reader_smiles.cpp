@@ -111,7 +111,7 @@ void smiles_data_reader::load() {
 
   // m_has_header = !opts->get_bool("no_header");
   //  side effects -- hard code for now, relook later
-  m_has_header = true;
+  m_has_header = false;
 
   // get the total number of samples in the file
   const std::string infile = get_file_dir() + "/" + get_data_filename();
@@ -286,13 +286,11 @@ void smiles_data_reader::do_preload_data_store() {
 }
 
 bool smiles_data_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
-  short *data_ptr = nullptr;
   size_t sz = 0;
   std::vector<short> data;
   // no data_store: all data is stored locally
   if (m_data_store == nullptr) {
     get_sample(data_id, data);
-    data_ptr = data.data();
     sz = data.size();
   }
 
@@ -309,13 +307,12 @@ bool smiles_data_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
     const std::string &smiles_string = node["/" + LBANN_DATA_ID_STR(data_id) + "/data"].as_string();
     //const std::string &smiles_string = node["/data/" + LBANN_DATA_ID_STR(data_id) + "/data"].as_string();
     encode_smiles(smiles_string, data, data_id);
-    data_ptr = data.data();
     sz = data.size();
   }
 
   size_t j;
   for (j = 0; j < sz; ++j) {
-    X(j, mb_idx) = data_ptr[j];
+    X(j, mb_idx) = data[j];
   }
   for (; j<static_cast<size_t>(m_linearized_data_size); j++) {
     X(j, mb_idx) = m_pad;
