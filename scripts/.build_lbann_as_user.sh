@@ -45,6 +45,6 @@ if [[ -n "${LBANN_EXTRAS}" ]]; then
     EXTRAS="${LBANN_EXTRAS}"
 fi
 
-CMD="./build_lbann.sh -j $(($(nproc)+2)) -d -u ${VERSION} ${EXTRAS} -- ${VARIANTS}"
+CMD="./build_lbann.sh -j $(($(nproc)+2)) -d -s -u ${VERSION} ${EXTRAS} -- ${VARIANTS}"
 echo ${CMD}
 ${CMD}
