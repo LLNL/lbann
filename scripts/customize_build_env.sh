@@ -65,7 +65,8 @@ set_center_specific_gpu_arch()
                 CMAKE_GPU_ARCH="35"
                 ;;
             "zen" | "zen2") # Corona
-                GPU_ARCH_VARIANTS="amdgpu_target=gfx906"
+                # Use a HIP Clang variant
+                GPU_ARCH_VARIANTS="amdgpu_target=gfx906 %clang@amd"
                 ;;
             *)
                 ;;
@@ -136,22 +137,21 @@ set_center_specific_spack_dependencies()
     local spack_arch_target="$2"
 
     if [[ ${center} = "llnl_lc" ]]; then
-        MIRROR="/p/vast1/lbann/spack/mirror"
+        MIRRORS="/p/vast1/lbann/spack/mirror /p/vast1/atom/spack/mirror"
         case ${spack_arch_target} in
             "power9le" | "power8le") # Lassen, Ray
                 CENTER_DEPENDENCIES="^spectrum-mpi ^openblas@0.3.12 threads=openmp"
-                CENTER_FLAGS="ldflags=-fuse-ld=gold"
+                CENTER_FLAGS="+gold"
                 ;;
             "broadwell" | "haswell" | "sandybridge" | "ivybridge") # Pascal, RZHasGPU, Surface, Catalyst
                 # On LC the mvapich2 being used is built against HWLOC v1
                 CENTER_DEPENDENCIES="^mvapich2 ^hwloc@1.11.13"
-                CENTER_FLAGS="ldflags=-fuse-ld=gold"
+                CENTER_FLAGS="+gold"
                 ;;
             "zen" | "zen2") # Corona
                 # On LC the mvapich2 being used is built against HWLOC v1
                 CENTER_DEPENDENCIES="^openmpi ^hwloc@2.3.0"
-                # Don't overwrite the flag here since we set compiler specific flags
-                # CENTER_FLAGS="ldflags=-fuse-ld=lld"
+                CENTER_FLAGS="+lld"
                 ;;
             *)
                 echo "No center-specified CENTER_DEPENDENCIES."
@@ -195,10 +195,6 @@ set_center_specific_externals()
     local spack_arch_target="$2"
     local spack_arch="$3"
     local yaml="$4"
-
-    # Point compilers that don't have a fortran compiler a default one
-    sed -i.sed_bak -e 's/\(f[c7]7*:\)$/\1 \/usr\/bin\/gfortran/g' ${yaml}
-    echo "Updating Clang compiler's to see the gfortran compiler."
 
     if [[ ${center} = "llnl_lc" ]]; then
         case ${spack_arch_target} in
@@ -381,7 +377,7 @@ cleanup_clang_compilers()
     local yaml="$2"
 
     # Point compilers that don't have a fortran compiler a default one
-    sed -i.sed_bak -e 's/\(f[c7]7*:\)$/\1 \/usr\/bin\/gfortran/g' ${yaml}
+    sed -i.sed_bak -e 's/\(f[c7]7*:\s\)null$/\1 \/usr\/bin\/gfortran/g' ${yaml}
     echo "Updating Clang compiler's to see the gfortran compiler."
 
     if [[ ${center} = "llnl_lc" ]]; then
@@ -398,7 +394,6 @@ set_center_specific_variants()
 
     STD_USER_VARIANTS="+vision +numpy"
     if [[ ${center} = "llnl_lc" ]]; then
-        MIRRORS="/p/vast1/lbann/spack/mirror /p/vast1/atom/spack/mirror"
         case ${spack_arch_target} in
             "power9le" | "power8le" | "broadwell" | "haswell" | "sandybridge") # Lassen, Ray, Pascal, RZHasGPU, Surface
                 CENTER_USER_VARIANTS="+cuda"
