@@ -632,8 +632,8 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
     fi
 
     ##########################################################################################
-    # If there is a local mirror, pad out the install tree so that it can be relocated
-    if [[ -n "${UPDATE_BUILDCACHE:-}" ]]; then
+    # If there is a local mirror or buildcace, pad out the install tree so that it can be relocated
+    if [[ -n "${MIRRORS}" || -n "${UPDATE_BUILDCACHE:-}" ]]; then
         spack config add "config:install_tree:padded_length:128"
     fi
 
