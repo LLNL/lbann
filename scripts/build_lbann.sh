@@ -546,12 +546,14 @@ if [[ -n "${USER_MIRROR:-}" ]]; then
 fi
 
 if [[ -n "${INSTALL_DEPS:-}" && -n "${MIRRORS:-}" ]]; then
+    i=0
     for MIRROR in ${MIRRORS}
     do
         if [[ -r "${MIRROR:-}" ]]; then
-            CMD="spack mirror add lbann ${MIRROR}"
+            CMD="spack mirror add lbann${i} ${MIRROR}"
             echo ${CMD} | tee -a ${LOG}
             [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+            i=$((${i}+1))
 
             # Tell Spack to trust the keys in the build cache
             CMD="spack buildcache keys --install --trust"
