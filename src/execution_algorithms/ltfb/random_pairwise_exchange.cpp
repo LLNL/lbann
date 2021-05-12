@@ -44,6 +44,7 @@
 #include <sstream>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 namespace lbann {
 namespace ltfb {
@@ -64,6 +65,18 @@ namespace {
 template <typename... Args> void Output(std::ostream& os, Args&&... args)
 {
   (os << ... << args) << "\n";
+}
+
+template <typename PrintableT>
+std::string stringify(std::unordered_map<std::string, PrintableT> const& m_in)
+{
+  std::map<std::string, PrintableT> m(std::cbegin(m_in), std::cend(m_in));
+  std::ostringstream oss;
+  oss << "{";
+  for (auto const& [key,val] : m)
+    oss << " \"" << key << "\": " << val << ",";
+  oss << " }";
+  return oss.str();
 }
 
 std::string stringify(std::vector<std::string> const& v)
@@ -314,11 +327,11 @@ void RandomPairwiseExchange::select_next(model& m,
                            " (trainer ",
                            local_trainer,
                            " score = ",
-                           local_scores.begin()->second,
+                           stringify(local_scores),
                            ", trainer ",
                            partner_trainer,
                            " score = ",
-                           partner_scores.begin()->second,
+                           stringify(partner_scores),
                            ")");
 }
 
