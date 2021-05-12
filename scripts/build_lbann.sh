@@ -548,21 +548,23 @@ fi
 if [[ -n "${INSTALL_DEPS:-}" && -n "${MIRRORS:-}" && -r "${MIRRORS:-}" ]]; then
     for MIRROR in ${MIRRORS}
     do
-        CMD="spack mirror add lbann ${MIRROR}"
-        echo ${CMD} | tee -a ${LOG}
-        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
-
-        # Tell Spack to trust the keys in the build cache
-        CMD="spack buildcache keys --install --trust"
-        echo ${CMD} | tee -a ${LOG}
-        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
-
-        # Manually force Spack to trust the keys in the build cache - this is a hack until
-        # https://github.com/spack/spack/issues/23186 is fixed
-        if [[ -e "${MIRROR}/build_cache/_pgp/B180FE4A5ECF4C02D21E6A67F13D1FBB0E55F96F.pub" ]]; then
-            CMD="spack gpg trust ${MIRROR}/build_cache/_pgp/B180FE4A5ECF4C02D21E6A67F13D1FBB0E55F96F.pub"
+        if [[ -r "${MIRROR:-}" ]]; then
+            CMD="spack mirror add lbann ${MIRROR}"
             echo ${CMD} | tee -a ${LOG}
             [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+
+            # Tell Spack to trust the keys in the build cache
+            CMD="spack buildcache keys --install --trust"
+            echo ${CMD} | tee -a ${LOG}
+            [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+
+            # Manually force Spack to trust the keys in the build cache - this is a hack until
+            # https://github.com/spack/spack/issues/23186 is fixed
+            if [[ -e "${MIRROR}/build_cache/_pgp/B180FE4A5ECF4C02D21E6A67F13D1FBB0E55F96F.pub" ]]; then
+                CMD="spack gpg trust ${MIRROR}/build_cache/_pgp/B180FE4A5ECF4C02D21E6A67F13D1FBB0E55F96F.pub"
+                echo ${CMD} | tee -a ${LOG}
+                [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+            fi
         fi
     done
 fi
@@ -629,7 +631,7 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
 
     ##########################################################################################
     # If there is a local mirror, pad out the install tree so that it can be relocated
-    if [[ -n "${MIRRORS:-}" && -r "${MIRRORS:-}" && -n "${UPDATE_BUILDCACHE:-}" ]]; then
+    if [[ -n "${UPDATE_BUILDCACHE:-}" ]]; then
         spack config add "config:install_tree:padded_length:128"
     fi
 
@@ -658,6 +660,12 @@ if [[ "${SPEC_ONLY}" == "TRUE" ]]; then
        eval ${CMD} || exit_on_failure "${CMD}\nIf the error is that boostrapping failed try something like 'module load gcc/8.3.1; spack compiler add' and then rerunning"
    fi
 fi
+
+# Try to concretize the environment and catch the return code
+CMD="spack concretize"
+echo ${CMD} | tee -a ${LOG}
+[[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+
 # Get the spack hash for LBANN (use concretize command to ensure that any impact of external packages is factored in)
 LBANN_SPEC_HASH=$(spack concretize | grep lbann | grep arch=${SPACK_ARCH_PLATFORM} | awk '{print $2}')
 # If SPEC_ONLY was requested bail
@@ -706,15 +714,15 @@ CMD="spack install ${BUILD_JOBS}"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
-if [[ -n "${MIRRORS:-}" && -r "${MIRRORS:-}"  && -n "${UPDATE_BUILDCACHE:-}" ]]; then
+if [[ -n "${UPDATE_BUILDCACHE:-}" && -r "${UPDATE_BUILDCACHE:-}" ]]; then
     # Make sure that all of the packages in the environment are in the mirror
-    CMD="spack mirror create -d ${MIRROR} --all"
+    CMD="spack mirror create -d ${UPDATE_BUILDCACHE} --all"
     echo ${CMD} | tee -a ${LOG}
     # Don't check the return code of the mirror create command, it will fail to install some packages
     [[ -z "${DRY_RUN:-}" ]] && ${CMD}
 
-    if [[ ! -e "${MIRROR}/pubring.gpg" ]]; then
-        CMD="cp ${SPACK_ROOT}/opt/spack/gpg/pubring.gpg ${MIRROR}/pubring.gpg"
+    if [[ ! -e "${UPDATE_BUILDCACHE}/pubring.gpg" ]]; then
+        CMD="cp ${SPACK_ROOT}/opt/spack/gpg/pubring.gpg ${UPDATE_BUILDCACHE}/pubring.gpg"
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
     fi
@@ -733,20 +741,20 @@ if [[ -n "${MIRRORS:-}" && -r "${MIRRORS:-}"  && -n "${UPDATE_BUILDCACHE:-}" ]];
                 continue
                 ;;
         esac
-        CMD="spack buildcache check --rebuild-on-error --mirror-url file://${MIRROR} -s ${HASH}"
+        CMD="spack buildcache check --rebuild-on-error --mirror-url file://${UPDATE_BUILDCACHE} -s ${HASH}"
         echo -e "${NAME}:\t ${CMD}" | tee -a ${LOG}
         if [[ -z "${DRY_RUN:-}" ]]; then
             if ${CMD};
             then
                 true
             else
-                CMD="spack buildcache create -af -d ${MIRROR} --only=package ${HASH}"
+                CMD="spack buildcache create -af -d ${UPDATE_BUILDCACHE} --only=package ${HASH}"
                 echo ${CMD} | tee -a ${LOG}
                 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
             fi
         fi
     done
-    CMD="spack buildcache update-index -d ${MIRROR}"
+    CMD="spack buildcache update-index -d ${UPDATE_BUILDCACHE}"
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 fi
