@@ -8,12 +8,13 @@ chmod +x build_lbann.sh customize_build_env.sh utilities.sh
 # Identify the center that we are running at
 CENTER=
 # Customize the build based on the center
-source $(dirname ${BASH_SOURCE})/customize_build_env.sh
+source customize_build_env.sh
+#source $(dirname ${BASH_SOURCE})/customize_build_env.sh
 set_center_specific_fields
 
 if [[ -z "${CENTER}" ]]; then
     echo "Building at unknown HPC Center -- please setup appropriate externals and system installed packages"
-    echo "RTFM"
+    echo "https://lbann.readthedocs.io/en/latest/building_lbann.html#building-installing-lbann-as-a-user"
 else
     echo "Building using preconfigured defaults for ${CENTER}"
 fi
