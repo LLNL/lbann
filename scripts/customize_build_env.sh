@@ -390,3 +390,58 @@ cleanup_clang_compilers()
         perl -i.perl_bak -0pe 's/(- compiler:.*?spec: clang.*?flags:) (\{\})/$1 \{cflags: --gcc-toolchain=\/usr\/tce\/packages\/gcc\/gcc-8.1.0, cxxflags: --gcc-toolchain=\/usr\/tce\/packages\/gcc\/gcc-8.1.0\}/smg' ${yaml}
     fi
 }
+
+set_center_specific_variants()
+{
+    local center="$1"
+    local spack_arch_target="$2"
+
+    STD_USER_VARIANTS="+vision +numpy"
+    if [[ ${center} = "llnl_lc" ]]; then
+        MIRRORS="/p/vast1/lbann/spack/mirror /p/vast1/atom/spack/mirror"
+        case ${spack_arch_target} in
+            "power9le" | "power8le" | "broadwell" | "haswell" | "sandybridge") # Lassen, Ray, Pascal, RZHasGPU, Surface
+                CENTER_USER_VARIANTS="+cuda"
+                ;;
+            "ivybridge") # Catalyst
+                CENTER_USER_VARIANTS="+onednn"
+                ;;
+            "zen" | "zen2") # Corona
+                CENTER_USER_VARIANTS="+rocm"
+                ;;
+            *)
+                echo "No center-specified CENTER_USER_VARIANTS."
+                ;;
+        esac
+    elif [[ ${center} = "olcf" ]]; then
+        case ${spack_arch_target} in
+            "power9le") # Summit
+                CENTER_USER_VARIANTS="+cuda"
+                ;;
+            *)
+                echo "No center-specified CENTER_USER_VARIANTS."
+                ;;
+        esac
+    elif [[ ${center} = "nersc" ]]; then
+        case ${spack_arch_target} in
+            "skylake_avx512") # CoriGPU
+                CENTER_USER_VARIANTS="+cuda"
+                ;;
+            *)
+                echo "No center-specified CENTER_USER_VARIANTS."
+                ;;
+        esac
+    elif [[ ${center} = "riken" ]]; then
+        case ${spack_arch_target} in
+            "a64fx")
+                CENTER_USER_VARIANTS="+onednn"
+                ;;
+            *)
+                echo "No center-specified CENTER_USER_VARIANTS."
+                ;;
+        esac
+    else
+        echo "No center found and no center-specified CENTER_USER_VARIANTS."
+    fi
+    CENTER_USER_VARIANTS+=" ${STD_USER_VARIANTS}"
+}

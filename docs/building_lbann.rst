@@ -76,35 +76,33 @@ and are working at know HPC Computing Centers (e.g. LLNL LC, OLCF,
 ALCF, RIKEN).  The scripts that are invoked load known modules to tie
 into system install packages (e.g. MPI).
 
-1. Download LBANN's build scripts:
+1. Execute LBANN's user build script:
 
    .. code-block: bash
 
-      wget https://github.com/LLNL/lbann/raw/develop/scripts/build_lbann.sh
-           https://github.com/LLNL/lbann/raw/develop/scripts/customize_build_env.sh
-           https://github.com/LLNL/lbann/raw/develop/scripts/utilities.sh
-      chmod +x build_lbann.sh customize_build_env.sh utilities.sh
+      /bin/bash -c "$(curl -fsSL https://github.com/LLNL/lbann/raw/develop/scripts/.build_lbann_as_user.sh)
 
-2. Invoke the build script (in this case we will use the develop version):
+   .. note::
+
+      There are three environment variables that can be used to
+      override the default:
+        - version of LBANN being installed (LBANN_VERSION),
+        - the variants enabled (LBANN_VARIANTS),
+        - and extra packages to build in the same enviroment (LBANN_VARIANTS).
+      The following is an example of Using the variables:
+
+      .. code-block: bash
+
+         LBANN_VERSION="develop" \
+         LBANN_VARIANTS="+cuda +numpy" \
+         LBANN_EXTRAS="-p py-torch@1.7.1 -p py-numpy" \
+         /bin/bash -c "$(curl -fsSL https://github.com/LLNL/lbann/raw/develop/scripts/.build_lbann_as_user.sh)
+
+2. Once this is done, you can load LBANN:
 
    .. code-block: bash
 
-      ./build_lbann.sh -d -u <version> -- <variants>
       spack load lbann@<version>
-
-   .. note:: Executing the :code:`build_lbann.sh` script with the
-             :code:`-h` flag will provide a help note.
-
-.. note::
-
-   Here is an example of building LBANN with CUDA support and the head
-   of the develop branch.
-
-   .. code-block: bash
-
-      ./build_lbann.sh -d -u develop -- +cuda
-      spack load lbann@develop
-
 
 .. _install_lbann_as_user:
 

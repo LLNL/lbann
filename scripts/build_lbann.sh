@@ -54,30 +54,30 @@ Build LBANN: has preconfigured module lists for LLNL LC, OLCF, and NERSC systems
 ##########################################################################################
 Usage: ${SCRIPT} [options] -- [list of spack variants]
 Options:
-  ${C}--help${N}                    Display this help message and exit.
-  ${C}--clean-build${N}             Delete the local link to the build directory
-  ${C}--clean-deps${N}              Forcibly uninstall Hydrogen, Aluminum, and DiHydrogen dependencies
-  ${C}--concretize-only${N}         Stop after adding all packages and concretizing the environment
-  ${C}--confgigure-only${N}         Stop after adding all packages to the environment
-  ${C}-d | --define-env${N}         Define (create) a Spack environment, including the lbann dependencies, for building LBANN from local source
-  ${C}--dry-run${N}                 Dry run the commands (no effect)
-  ${C}-e | --extras <PATH>${N}      Add other packages from file at PATH to the Spack environment in addition to LBANN
-  ${C}-j | --build-jobs <N>${N}     Number of parallel processes to use for compiling, e.g. -j \$((\$(nproc)+2))
-  ${C}-l | --label <LABEL>${N}      LBANN version label prefix: (default label is local-<SPACK_ARCH_TARGET>,
-                            and is built and installed in the spack environment lbann-<label>-<SPACK_ARCH_TARGET>
-  ${C}-m | --mirror <PATH>${N}      Specify a Spack mirror (and buildcache)
-  ${C}--no-modules${N}              Don't try to load any modules (use the existing users environment)
-  ${C}-p | --pkg <PACKAGE>${N}      Add package PACKAGE to the Spack environment in addition to LBANN (Flag can be repeated)
-  ${C}--tmp-build-dir${N}           Put the build directory in tmp space
-  ${C}--spec-only${N}               Stop after a spack spec command
-  ${C}-s | --stable${N}             Use the latest stable defaults not the head of Hydrogen, DiHydrogen and Aluminum repos
-  ${C}--test${N}                    Enable local unit tests
-  ${C}--hydrogen-repo <PATH>${N}    Use a local repository for the Hydrogen library
-  ${C}--dihydrogen-repo <PATH>${N}  Use a local repository for the DiHydrogen library
-  ${C}--aluminum-repo <PATH>${N}    Use a local repository for the Aluminum library
-  ${C}--update-buildcache${N}       Update a buildcache defined by the Spack mirror (Expert Only)
-  ${C}-u | --user <VERSION>${N}     Build from the GitHub repo -- as a "user" not developer using optional <VERSION> tag
-  ${C}--${N}                        Pass all variants to spack after the dash dash (--)
+  ${C}--help${N}                     Display this help message and exit.
+  ${C}--clean-build${N}              Delete the local link to the build directory
+  ${C}--clean-deps${N}               Forcibly uninstall Hydrogen, Aluminum, and DiHydrogen dependencies
+  ${C}--concretize-only${N}          Stop after adding all packages and concretizing the environment
+  ${C}--confgigure-only${N}          Stop after adding all packages to the environment
+  ${C}-d | --define-env${N}          Define (create) a Spack environment, including the lbann dependencies, for building LBANN from local source
+  ${C}--dry-run${N}                  Dry run the commands (no effect)
+  ${C}-e | --extras <PATH>${N}       Add other packages from file at PATH to the Spack environment in addition to LBANN
+  ${C}-j | --build-jobs <N>${N}      Number of parallel processes to use for compiling, e.g. -j \$((\$(nproc)+2))
+  ${C}-l | --label <LABEL>${N}       LBANN version label prefix: (default label is local-<SPACK_ARCH_TARGET>,
+                             and is built and installed in the spack environment lbann-<label>-<SPACK_ARCH_TARGET>
+  ${C}-m | --mirror <PATH>${N}       Specify a Spack mirror (and buildcache)
+  ${C}--no-modules${N}               Don't try to load any modules (use the existing users environment)
+  ${C}-p | --pkg <PACKAGE>${N}       Add package PACKAGE to the Spack environment in addition to LBANN (Flag can be repeated)
+  ${C}--tmp-build-dir${N}            Put the build directory in tmp space
+  ${C}--spec-only${N}                Stop after a spack spec command
+  ${C}-s | --stable${N}              Use the latest stable defaults not the head of Hydrogen, DiHydrogen and Aluminum repos
+  ${C}--test${N}                     Enable local unit tests
+  ${C}--hydrogen-repo <PATH>${N}     Use a local repository for the Hydrogen library
+  ${C}--dihydrogen-repo <PATH>${N}   Use a local repository for the DiHydrogen library
+  ${C}--aluminum-repo <PATH>${N}     Use a local repository for the Aluminum library
+  ${C}--update-buildcache <PATH>${N} Update a buildcache defined by the Spack mirror (Expert Only)
+  ${C}-u | --user <VERSION>${N}      Build from the GitHub repo -- as a "user" not developer using optional <VERSION> tag
+  ${C}--${N}                         Pass all variants to spack after the dash dash (--)
 EOF
 }
 
@@ -203,7 +203,13 @@ while :; do
             fi
             ;;
         --update-buildcache)
-            UPDATE_BUILDCACHE="TRUE"
+            if [ -n "${2}" ] && [ ${2:0:1} != "-" ]; then
+                UPDATE_BUILDCACHE=${2}
+                shift
+            else
+                echo "\"${1}\" option requires a non-empty option argument" >&2
+                exit 1
+            fi
             ;;
         -u|--user)
             USER_BUILD="TRUE"
@@ -536,26 +542,29 @@ set_center_specific_spack_dependencies ${CENTER} ${SPACK_ARCH_TARGET}
 # See if the is a local spack mirror or buildcache
 if [[ -n "${USER_MIRROR:-}" ]]; then
     # Allow the user to overwrite a standard mirror
-    MIRROR=${USER_MIRROR}
+    MIRRORS="${MIRRORS:-} ${USER_MIRROR}"
 fi
 
-if [[ -n "${INSTALL_DEPS:-}" && -n "${MIRROR:-}" && -r "${MIRROR:-}" ]]; then
-    CMD="spack mirror add lbann ${MIRROR}"
-    echo ${CMD} | tee -a ${LOG}
-    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
-
-    # Tell Spack to trust the keys in the build cache
-    CMD="spack buildcache keys --install --trust"
-    echo ${CMD} | tee -a ${LOG}
-    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
-
-    # Manually force Spack to trust the keys in the build cache - this is a hack until
-    # https://github.com/spack/spack/issues/23186 is fixed
-    if [[ -e "${MIRROR}/build_cache/_pgp/B180FE4A5ECF4C02D21E6A67F13D1FBB0E55F96F.pub" ]]; then
-        CMD="spack gpg trust ${MIRROR}/build_cache/_pgp/B180FE4A5ECF4C02D21E6A67F13D1FBB0E55F96F.pub"
+if [[ -n "${INSTALL_DEPS:-}" && -n "${MIRRORS:-}" && -r "${MIRRORS:-}" ]]; then
+    for MIRROR in ${MIRRORS}
+    do
+        CMD="spack mirror add lbann ${MIRROR}"
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
-    fi
+
+        # Tell Spack to trust the keys in the build cache
+        CMD="spack buildcache keys --install --trust"
+        echo ${CMD} | tee -a ${LOG}
+        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+
+        # Manually force Spack to trust the keys in the build cache - this is a hack until
+        # https://github.com/spack/spack/issues/23186 is fixed
+        if [[ -e "${MIRROR}/build_cache/_pgp/B180FE4A5ECF4C02D21E6A67F13D1FBB0E55F96F.pub" ]]; then
+            CMD="spack gpg trust ${MIRROR}/build_cache/_pgp/B180FE4A5ECF4C02D21E6A67F13D1FBB0E55F96F.pub"
+            echo ${CMD} | tee -a ${LOG}
+            [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+        fi
+    done
 fi
 
 ##########################################################################################
@@ -620,7 +629,7 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
 
     ##########################################################################################
     # If there is a local mirror, pad out the install tree so that it can be relocated
-    if [[ -n "${MIRROR:-}" && -r "${MIRROR:-}" && -n "${UPDATE_BUILDCACHE:-}" ]]; then
+    if [[ -n "${MIRRORS:-}" && -r "${MIRRORS:-}" && -n "${UPDATE_BUILDCACHE:-}" ]]; then
         spack config add "config:install_tree:padded_length:128"
     fi
 
@@ -697,7 +706,7 @@ CMD="spack install ${BUILD_JOBS}"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
-if [[ -n "${MIRROR:-}" && -r "${MIRROR:-}"  && -n "${UPDATE_BUILDCACHE:-}" ]]; then
+if [[ -n "${MIRRORS:-}" && -r "${MIRRORS:-}"  && -n "${UPDATE_BUILDCACHE:-}" ]]; then
     # Make sure that all of the packages in the environment are in the mirror
     CMD="spack mirror create -d ${MIRROR} --all"
     echo ${CMD} | tee -a ${LOG}
