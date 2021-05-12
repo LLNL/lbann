@@ -599,7 +599,6 @@ void init_data_readers(
           }
 
           data_readers[m] = split_reader;
-std::cerr << "XX src/proto/proto_common.cpp: INSTANTIATED SPLIT READER!\n";
         }
       }
     }
