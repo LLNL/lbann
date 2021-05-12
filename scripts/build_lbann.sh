@@ -545,7 +545,7 @@ if [[ -n "${USER_MIRROR:-}" ]]; then
     MIRRORS="${MIRRORS:-} ${USER_MIRROR}"
 fi
 
-if [[ -n "${INSTALL_DEPS:-}" && -n "${MIRRORS:-}" && -r "${MIRRORS:-}" ]]; then
+if [[ -n "${INSTALL_DEPS:-}" && -n "${MIRRORS:-}" ]]; then
     for MIRROR in ${MIRRORS}
     do
         if [[ -r "${MIRROR:-}" ]]; then
