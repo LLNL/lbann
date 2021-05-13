@@ -1,8 +1,8 @@
 #LBANN_REPO_PATH="https://github.com/LLNL/lbann/raw/develop"
 LBANN_REPO_PATH="https://github.com/bvanessen/lbann/raw/extensible_build_script"
-wget ${LBANN_REPO_PATH}/scripts/build_lbann.sh \
-     ${LBANN_REPO_PATH}/scripts/customize_build_env.sh \
-     ${LBANN_REPO_PATH}/scripts/utilities.sh
+wget --backups=bak ${LBANN_REPO_PATH}/scripts/build_lbann.sh \
+    ${LBANN_REPO_PATH}/scripts/customize_build_env.sh \
+    ${LBANN_REPO_PATH}/scripts/utilities.sh
 chmod +x build_lbann.sh customize_build_env.sh utilities.sh
 
 # Identify the center that we are running at
