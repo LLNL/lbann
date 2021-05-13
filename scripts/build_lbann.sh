@@ -456,7 +456,13 @@ do
         set_center_specific_gpu_arch ${CENTER} ${SPACK_ARCH_TARGET}
         # Prepend the GPU_ARCH_VARIANTS for the LBANN variants if the +cuda variant is defined
         LBANN_VARIANTS=" ${GPU_ARCH_VARIANTS} ${LBANN_VARIANTS}"
-        DEPENDENT_PACKAGES_GPU_VARIANTS="${GPU_VARIANTS} ${GPU_ARCH_VARIANTS}"
+        if [[ "${GPU_VARIANTS}" == "+rocm" ]]; then
+            # For now, don't forward the amdgpu_target field to downstream packages
+            # Py-Torch does not support it
+            DEPENDENT_PACKAGES_GPU_VARIANTS="${GPU_VARIANTS}"
+        else
+            DEPENDENT_PACKAGES_GPU_VARIANTS="${GPU_VARIANTS} ${GPU_ARCH_VARIANTS}"
+        fi
     fi
 done
 
