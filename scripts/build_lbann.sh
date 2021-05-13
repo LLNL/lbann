@@ -57,7 +57,6 @@ Options:
   ${C}--help${N}                     Display this help message and exit.
   ${C}--clean-build${N}              Delete the local link to the build directory
   ${C}--clean-deps${N}               Forcibly uninstall Hydrogen, Aluminum, and DiHydrogen dependencies
-  ${C}--concretize-only${N}          Stop after adding all packages and concretizing the environment
   ${C}--confgigure-only${N}          Stop after adding all packages to the environment
   ${C}-d | --define-env${N}          Define (create) a Spack environment, including the lbann dependencies, for building LBANN from local source
   ${C}--dry-run${N}                  Dry run the commands (no effect)
@@ -97,9 +96,6 @@ while :; do
             ;;
         --clean-deps)
             CLEAN_DEPS="TRUE"
-            ;;
-        --concretize-only)
-            CONCRETIZE_ONLY="TRUE"
             ;;
         --configure-only)
             CONFIGURE_ONLY="TRUE"
@@ -664,7 +660,7 @@ if [[ "${SPEC_ONLY}" == "TRUE" ]]; then
 fi
 
 # Try to concretize the environment and catch the return code
-CMD="spack concretize"
+CMD="spack concretize -f"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
@@ -672,12 +668,6 @@ echo ${CMD} | tee -a ${LOG}
 LBANN_SPEC_HASH=$(spack find -cl | grep -v "\-\-\-\-\-\-" | grep lbann${AT_LBANN_LABEL} | awk '{print $1}')
 # If SPEC_ONLY was requested bail
 [[ -z "${DRY_RUN:-}" && "${SPEC_ONLY}" == "TRUE" ]] && exit_with_instructions
-
-CMD="spack concretize -f"
-if [[ "${CONCRETIZE_ONLY}" == "TRUE" ]]; then
-     echo ${CMD} | tee -a ${LOG}
-     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_with_instructions; }
-fi
 
 # If the user only wants to configure the environment
 [[ ${CONFIGURE_ONLY:-} ]] && exit_with_instructions
