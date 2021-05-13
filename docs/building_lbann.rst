@@ -62,11 +62,53 @@ Setup Spack (One-time setup)
           `Spack Documentation
           <https://spack.readthedocs.io/en/latest/configuration.html>`_.
 
+
+.. _install_lbann_as_user_known_center:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Building & Installing LBANN as a user at a known HPC Center
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+With Spack setup and installed into your path, it can be used to
+install the LBANN executables. This approach is appropriate for users
+that want to train new or existing models using the Python front-end
+and are working at know HPC Computing Centers (e.g. LLNL LC, OLCF,
+ALCF, RIKEN).  The scripts that are invoked load known modules to tie
+into system install packages (e.g. MPI).
+
+1. Execute LBANN's user build script:
+
+   .. code-block: bash
+
+      /bin/bash -c "$(curl -fsSL https://github.com/LLNL/lbann/raw/develop/scripts/.build_lbann_as_user.sh)"
+
+   .. note::
+
+      There are three environment variables that can be used to
+      override the default:
+        - version of LBANN being installed (LBANN_VERSION),
+        - the variants enabled (LBANN_VARIANTS),
+        - and extra packages to build in the same enviroment (LBANN_VARIANTS).
+      The following is an example of Using the variables:
+
+      .. code-block: bash
+
+         LBANN_VERSION="develop" \
+         LBANN_VARIANTS="+cuda +numpy" \
+         LBANN_EXTRAS="-p py-torch@1.7.1 -p py-numpy" \
+         /bin/bash -c "$(curl -fsSL https://github.com/LLNL/lbann/raw/develop/scripts/.build_lbann_as_user.sh)"
+
+2. Once this is done, you can load LBANN:
+
+   .. code-block: bash
+
+      spack load lbann@<version>
+
 .. _install_lbann_as_user:
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Building & Installing LBANN as a user
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Building & Installing LBANN as a user (with maximum flexiblity)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 With Spack setup and installed into your path, it can be used to
 install the LBANN executables. This approach is appropriate for users
@@ -155,7 +197,9 @@ Please note that when getting LBANN to build as a user will encounter
 some issues with the Spack legacy concretizer and use of the new
 clingo concretizer is highly recommended :ref:`(see above)
 <setting_up_clingo>`. Using the legacy concretizer will require getting
-just the "right" invocation and we suggest using clingo.
+just the "right" invocation and we suggest using clingo.  Furthermore,
+it is typically best to have Spack reuse a version of MPI installed by
+the system administrators to ensure that it is properly configured.
 
 .. _build_lbann_from_source:
 

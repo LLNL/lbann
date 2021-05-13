@@ -51,6 +51,15 @@ Build system:
  - C++14 or newer standard with CUDA (CMake: "-DCMAKE_CUDA_STANDARD=14")
  - OpenCV is now an optional dependency via CMake "LBANN_WITH_VISION"
  - CNPY is now an optional dependency via CMake "LBANN_WITH_CNPY"
+ - Adds support in the build_lbann.sh script for concretizing extra
+   packages with the primary LBANN installation
+ - New features in the build script to setup / configure the build
+   environment, but stop and allow the user to manually add extra
+   packages
+ - Add a set of user-focused build scripts that use the main
+   build_lbann.sh script to setup good defaults on known systems
+ - Added application specific build scripts for users such as ATOM
+ - Added support for pulling from Spack mirrors and setting them up
 
 Bug fixes:
  - Fixed a bug where LBANN didn't set the Hydrogen RNG seed
