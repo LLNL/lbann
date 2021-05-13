@@ -447,6 +447,7 @@ if [[ ! "${LBANN_VARIANTS}" =~ .*"^dihydrogen".* ]]; then
 fi
 
 GPU_VARIANTS_ARRAY=('+cuda' '+rocm')
+DEPENDENT_PACKAGES_GPU_VARIANTS=
 for GPU_VARIANTS in ${GPU_VARIANTS_ARRAY[@]}
 do
     if [[ "${LBANN_VARIANTS}" =~ .*"${GPU_VARIANTS}".* ]]; then
@@ -455,6 +456,7 @@ do
         set_center_specific_gpu_arch ${CENTER} ${SPACK_ARCH_TARGET}
         # Prepend the GPU_ARCH_VARIANTS for the LBANN variants if the +cuda variant is defined
         LBANN_VARIANTS=" ${GPU_ARCH_VARIANTS} ${LBANN_VARIANTS}"
+        DEPENDENT_PACKAGES_GPU_VARIANTS="${GPU_VARIANTS} ${GPU_ARCH_VARIANTS}"
     fi
 done
 
