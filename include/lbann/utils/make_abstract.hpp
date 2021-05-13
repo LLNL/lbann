@@ -23,3 +23,39 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
+#ifndef LBANN_UTILS_MAKE_ABSTRACT_HPP_INCLUDED
+#define LBANN_UTILS_MAKE_ABSTRACT_HPP_INCLUDED
+
+#include <google/protobuf/message.h>
+#include <type_traits>
+
+namespace lbann {
+/** @brief Template that always has a 'value' field that evaluates to
+ *         'false'.
+ *
+ *  This is mostly for static_asserts so the literal "false" isn't in
+ *  the "expression" argument. Some compilers also give better type
+ *  information when writing their own error messages.
+ */
+template <typename T> struct False : std::false_type
+{
+};
+
+template <class BaseClass>
+std::unique_ptr<BaseClass> make_abstract(google::protobuf::Message const& msg)
+{
+  static_assert(False<BaseClass>::value,
+                "There is no specialization of make_abstract() for this type.");
+  return nullptr; // silence compiler warnings
+}
+
+template <class ConcreteClass>
+std::unique_ptr<ConcreteClass> make(google::protobuf::Message const& msg)
+{
+  static_assert(False<ConcreteClass>::value,
+                "There is no specialization of make() for this type.");
+  return nullptr; // silence compiler warnings
+}
+
+} // namespace lbann
+#endif // LBANN_UTILS_MAKE_ABSTRACT_HPP_INCLUDED

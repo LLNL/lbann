@@ -56,5 +56,6 @@ from lbann.core.model import *
 from lbann.core.objective_function import *
 from lbann.core.optimizer import *
 from lbann.core.trainer import *
+from lbann.core.training_algorithm import *
 from lbann.core.weights import *
 from lbann.launcher import run

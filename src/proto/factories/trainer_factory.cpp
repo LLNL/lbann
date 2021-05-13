@@ -29,6 +29,7 @@
 #include "lbann/callbacks/callback.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/data_coordinator/buffered_data_coordinator.hpp"
+#include "lbann/execution_algorithms/factory.hpp"
 
 #include <trainer.pb.h>
 
@@ -57,9 +58,13 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm* comm,
 #undef TEMPLATE_INSTANTIATION
 
   // Instantiate trainer
-  auto t = make_unique<trainer>(comm,
-                                std::move(dc),
-                                proto_trainer.mini_batch_size());
+  auto t = make_unique<trainer>(
+    comm,
+    std::move(dc),
+    proto_trainer.mini_batch_size(),
+    (proto_trainer.has_training_algorithm()
+       ? make_abstract<training_algorithm>(proto_trainer.training_algorithm())
+       : nullptr));
   const auto& name = proto_trainer.name();
   if (!name.empty()) {
     t->set_name(name);
