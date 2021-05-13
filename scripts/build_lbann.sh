@@ -668,8 +668,8 @@ CMD="spack concretize"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
-# Get the spack hash for LBANN (use concretize command to ensure that any impact of external packages is factored in)
-LBANN_SPEC_HASH=$(spack concretize | grep lbann | grep arch=${SPACK_ARCH_PLATFORM} | awk '{print $2}')
+# Get the spack hash for LBANN (Ensure that the concretize command has been run so that any impact of external packages is factored in)
+LBANN_SPEC_HASH=$(spack find --format {hash:7} lbann arch=${SPACK_ARCH})
 # If SPEC_ONLY was requested bail
 [[ -z "${DRY_RUN:-}" && "${SPEC_ONLY}" == "TRUE" ]] && exit_with_instructions
 
