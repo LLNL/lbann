@@ -1,5 +1,4 @@
-#LBANN_REPO_PATH="https://github.com/LLNL/lbann/raw/develop"
-LBANN_REPO_PATH="https://github.com/bvanessen/lbann/raw/extensible_build_script"
+LBANN_REPO_PATH="https://github.com/LLNL/lbann/raw/develop"
 curl -fsSL -O ${LBANN_REPO_PATH}/scripts/build_lbann.sh
 curl -fsSL -O ${LBANN_REPO_PATH}/scripts/customize_build_env.sh
 curl -fsSL -O ${LBANN_REPO_PATH}/scripts/utilities.sh
@@ -11,7 +10,6 @@ chmod +x build_lbann.sh customize_build_env.sh utilities.sh external_packages_at
 CENTER=
 # Customize the build based on the center
 source customize_build_env.sh
-#source $(dirname ${BASH_SOURCE})/customize_build_env.sh
 set_center_specific_fields
 
 if [[ -z "${CENTER}" ]]; then
