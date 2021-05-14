@@ -1,6 +1,9 @@
 ============================== (Pending) Release Notes: v1.00 ==============================
 Support for new training algorithms:
  - LTFB is now a first-class training algorithm.
+ - LTFB now allows multiple metrics. The local algorithm is favored by
+   each trainer and a partner model must win every metric to be declared
+   the tournament winner.
  - The batched iterative optimizer (sgd_training_algorithm) was
    refactored for consistency.
  - Improved documentation of training algorithm infrastructure.
