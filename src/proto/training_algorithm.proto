@@ -73,9 +73,8 @@ message RandomPairwiseExchange {
     HIGHER_IS_BETTER = 1;
   }
 
-  string metric_name = 1;
-  MetricStrategy metric_strategy = 2;
-  ExchangeStrategy exchange_strategy = 3;
+  map<string, MetricStrategy> metric_name_strategy_map = 1;
+  ExchangeStrategy exchange_strategy = 2;
 
   // This uses the "oneof" strategy because we don't really want
   // downstreams adding strategies willy nilly.

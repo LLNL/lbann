@@ -295,30 +295,28 @@ class RandomPairwiseExchange(MetaLearningStrategy):
                 raise ValueError("Unknown strategy")
             return msg
 
-    def __init__(self, metric_name: str,
-                 metric_strategy: int = MetricStrategy.LOWER_IS_BETTER,
+    def __init__(self,
+                 metric_strategies: dict[str,int] = {},
                  exchange_strategy = ExchangeStrategy()):
         """Construct a new RandomPairwiseExchange metalearning strategy.
 
         Args:
-            metric_name:
-              The name of the metric to use for tournaments. Must be
-              present in all models seen by this strategy.
-            metric_strategy:
-              Criterion for picking a tournament winner.
+            metric_strategies:
+              Map from metric name to the criterion for picking a winner
+              with respect to this metric
             exchange_strategy:
               The algorithm used for exchanging models.
         """
 
-        self.metric_name = metric_name
-        self.metric_strategy = metric_strategy
+        self.metric_strategies = metric_strategies
         self.exchange_strategy = exchange_strategy
 
     def export_proto(self):
         """Get a protobuf representation of this object."""
 
         msg = AlgoProto.RandomPairwiseExchange()
-        msg.metric_name = self.metric_name
-        msg.metric_strategy = self.metric_strategy
+        for key, value in self.metric_strategies.items():
+            msg.metric_name_strategy_map[key] = value
+
         msg.exchange_strategy.CopyFrom(self.exchange_strategy.export_proto())
         return msg

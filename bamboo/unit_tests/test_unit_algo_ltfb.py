@@ -65,8 +65,7 @@ def setup_experiment(lbann):
     RPE = lbann.RandomPairwiseExchange
     SGD = lbann.BatchedIterativeOptimizer
     metalearning = RPE(
-        metric_name='random',
-        metric_strategy=RPE.MetricStrategy.HIGHER_IS_BETTER)
+        metric_strategies={'random': RPE.MetricStrategy.HIGHER_IS_BETTER})
     ltfb = lbann.LTFB("ltfb",
                       metalearning=metalearning,
                       local_algo=SGD("local sgd",
