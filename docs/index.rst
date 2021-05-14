@@ -38,6 +38,7 @@ Users are advised to view `the Doxygen API Documentation
    :caption: Python Front-End
 
    callbacks
+   data_transforms
    execution_algorithms
 
 .. toctree::
@@ -45,12 +46,6 @@ Users are advised to view `the Doxygen API Documentation
    :caption: Publications
 
    publications
-
-.. toctree::
-   :maxdepth: 2
-   :caption: User Documentation
-
-   userdocs/data_transforms
 
 .. toctree::
    :maxdepth: 2
