@@ -20,7 +20,7 @@ rebuild_doxygen = not os.path.isdir("doxy_out/xml") or not os.path.isdir("_stati
 
 if not os.path.isdir("_static"):
     os.makedirs("_static")
-    
+
 if rebuild_doxygen:
     os.makedirs("doxy_out/xml")
     subprocess.call('doxygen SourceTreeDoxyfile', shell=True)

@@ -38,6 +38,7 @@ Users are advised to view `the Doxygen API Documentation
    :caption: Python Front-End
 
    callbacks
+   data_transforms
    execution_algorithms
 
 .. toctree::
