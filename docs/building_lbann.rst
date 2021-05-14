@@ -322,4 +322,3 @@ build from local repositories:
    build_with_cmake
    build_containers
    build_llnl_idiosyncracies
-   build_spack_extra_config

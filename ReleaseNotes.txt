@@ -1,5 +1,9 @@
 ============================== (Pending) Release Notes: v1.00 ==============================
 Support for new training algorithms:
+ - LTFB is now a first-class training algorithm.
+ - The batched iterative optimizer (sgd_training_algorithm) was
+   refactored for consistency.
+ - Improved documentation of training algorithm infrastructure.
 
 Support for new network structures:
 
@@ -36,6 +40,8 @@ Internal features:
    templated code).  Specifically focused on serialization functions
    and comm class.  Reduced dependencies through over reaching header
    inclusions.
+ - The relationship of execution_contexts and training_algorithms was
+   clarified. There is still work to do here.
 
 I/O & data readers:
  - Experimental data reader that generates graph random walks with
