@@ -158,9 +158,6 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X, El::Matrix<El::Int>& indic
   const int mb_size = std::min(El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
       X.Width());
 
-  El::Zeros_seq(X, X.Height(), X.Width());
-  El::Zeros_seq(indices_fetched, mb_size, 1);
-
   /// Make sure that every rank participates in the data store prior
   /// to seeing if the local rank's position is valid.  Note that
   /// every rank will hold data that may be used in the last mini-batch
