@@ -19,6 +19,8 @@ Python front-end:
 Performance optimizations:
  - Use cuDNN 8 RNN API and CUDA Graphs in GRU layer
  - Cache CUDA Graphs for each active mini-batch size
+ - Tuned performance of slice, concatenate, and tessellate layers on
+   ARM processors.
 
 Model portability & usability:
 
