@@ -1,5 +1,12 @@
 ============================== (Pending) Release Notes: v1.00 ==============================
 Support for new training algorithms:
+ - LTFB is now a first-class training algorithm.
+ - LTFB now allows multiple metrics. The local algorithm is favored by
+   each trainer and a partner model must win every metric to be declared
+   the tournament winner.
+ - The batched iterative optimizer (sgd_training_algorithm) was
+   refactored for consistency.
+ - Improved documentation of training algorithm infrastructure.
 
 Support for new network structures:
 
@@ -12,6 +19,8 @@ Python front-end:
 Performance optimizations:
  - Use cuDNN 8 RNN API and CUDA Graphs in GRU layer
  - Cache CUDA Graphs for each active mini-batch size
+ - Tuned performance of slice, concatenate, and tessellate layers on
+   ARM processors.
 
 Model portability & usability:
 
@@ -36,6 +45,8 @@ Internal features:
    templated code).  Specifically focused on serialization functions
    and comm class.  Reduced dependencies through over reaching header
    inclusions.
+ - The relationship of execution_contexts and training_algorithms was
+   clarified. There is still work to do here.
 
 I/O & data readers:
  - Experimental data reader that generates graph random walks with
@@ -51,6 +62,15 @@ Build system:
  - C++14 or newer standard with CUDA (CMake: "-DCMAKE_CUDA_STANDARD=14")
  - OpenCV is now an optional dependency via CMake "LBANN_WITH_VISION"
  - CNPY is now an optional dependency via CMake "LBANN_WITH_CNPY"
+ - Adds support in the build_lbann.sh script for concretizing extra
+   packages with the primary LBANN installation
+ - New features in the build script to setup / configure the build
+   environment, but stop and allow the user to manually add extra
+   packages
+ - Add a set of user-focused build scripts that use the main
+   build_lbann.sh script to setup good defaults on known systems
+ - Added application specific build scripts for users such as ATOM
+ - Added support for pulling from Spack mirrors and setting them up
 
 Bug fixes:
  - Fixed a bug where LBANN didn't set the Hydrogen RNG seed

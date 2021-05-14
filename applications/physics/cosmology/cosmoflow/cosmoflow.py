@@ -253,7 +253,7 @@ def create_cosmoflow_data_reader(
     for reader_arg in reader_args:
         reader = lbann.reader_pb2.Reader(
             name="hdf5",
-            shuffle=role != "test",
+            shuffle=(reader_arg["role"] != "test"),
             validation_percent=0,
             absolute_sample_count=0,
             percent_of_data_to_use=1.0,

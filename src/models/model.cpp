@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/base.hpp"
 #include "lbann/comm_impl.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/trainers/trainer.hpp"
@@ -977,7 +978,7 @@ void model::add_split_layers(std::unordered_set<std::string>& layer_names) {
 // "Note that this is a temporary fix
 // for the current use of the tournament"
 void model::make_data_store_preloaded(execution_mode mode) {
-  data_coordinator& dc = get_execution_context().get_trainer().get_data_coordinator();
+  data_coordinator& dc = get_trainer().get_data_coordinator();
   auto *data_store = dc.get_data_reader(mode)->get_data_store_ptr();
   if(data_store != nullptr && !data_store->is_fully_loaded()) {
     dc.get_data_reader(mode)->get_data_store_ptr()->set_loading_is_complete();
@@ -989,7 +990,7 @@ void model::make_data_store_preloaded(execution_mode mode) {
 // "Note that this is a temporary fix
 // for the current use of the tournament"
 void model::mark_data_store_explicitly_loading(execution_mode mode) {
-  data_coordinator& dc = get_execution_context().get_trainer().get_data_coordinator();
+  data_coordinator& dc = get_trainer().get_data_coordinator();
   auto *data_store = dc.get_data_reader(mode)->get_data_store_ptr();
   if(data_store != nullptr && !data_store->is_fully_loaded()) {
     dc.get_data_reader(mode)->get_data_store_ptr()->set_is_explicitly_loading(true);
@@ -999,6 +1000,10 @@ void model::mark_data_store_explicitly_loading(execution_mode mode) {
 // At the start of the epoch, set the execution mode and make sure
 // that each layer points to this model
 void model::reset_mode(execution_context& context, execution_mode mode) {
+  if (mode == execution_mode::invalid) {
+    m_execution_context = nullptr;
+    return;
+  }
   m_execution_context = static_cast<observer_ptr<execution_context>>(&context);
   //  set_execution_mode(mode);
   for (El::Int i = 0; i < get_num_layers(); ++i) {

@@ -66,7 +66,7 @@ void print_statistics::setup(model *m) {
 
 void print_statistics::on_epoch_begin(model *m) {
   const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
-  data_coordinator& dc = m->get_execution_context().get_trainer().get_data_coordinator();
+  data_coordinator& dc = get_trainer().get_data_coordinator();
   lbann_comm *comm = m->get_comm();
   if (comm->am_world_master()) {
     // Print message

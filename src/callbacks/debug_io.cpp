@@ -63,7 +63,7 @@ void debug_io::on_forward_prop_begin(model *m, Layer *l) {
 
   const auto& c = m->get_execution_context();
   auto mode = c.get_execution_mode();
-  const data_coordinator& dc = c.get_trainer().get_data_coordinator();
+  const data_coordinator& dc = get_const_trainer().get_data_coordinator();
   if(m->get_comm()->get_rank_in_trainer() < dc.get_data_reader(mode)->get_num_parallel_readers()) {
     if(m_debug_phase == execution_mode::invalid || m_debug_phase == mode) {
       print_fp_start(m, input);
@@ -76,7 +76,7 @@ void debug_io::on_forward_prop_begin(model *m, Layer *l) {
 
 void debug_io::print_fp_start(model *m, input_layer<DataType> *input) {
   const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
-  const data_coordinator& dc = c.get_trainer().get_data_coordinator();
+  const data_coordinator& dc = get_const_trainer().get_data_coordinator();
   const auto& step = c.get_step();
   const auto mode = c.get_execution_mode();
   std::cout << "[" << m->get_comm()->get_trainer_rank()
@@ -99,7 +99,7 @@ void debug_io::print_fp_start(model *m, input_layer<DataType> *input) {
 //  179i @ 300s (=5m*60s) + 1i @ 100s (=5m*45s):offset <- num models
 void debug_io::print_phase_start(model *m, execution_mode mode) {
   const auto& c = m->get_execution_context();
-  const data_coordinator& dc = c.get_trainer().get_data_coordinator();
+  const data_coordinator& dc = get_const_trainer().get_data_coordinator();
   // Get data reader from first input layer in model
   generic_data_reader* data_reader = dc.get_data_reader(mode);
   const auto& step = c.get_step();
@@ -154,7 +154,7 @@ void debug_io::on_evaluate_forward_prop_begin(model *m, Layer *l) {
 
   const auto& c = m->get_execution_context();
   auto mode = c.get_execution_mode();
-  const data_coordinator& dc = c.get_trainer().get_data_coordinator();
+  const data_coordinator& dc = get_const_trainer().get_data_coordinator();
   if(m->get_comm()->get_rank_in_trainer() < dc.get_data_reader(mode)->get_num_parallel_readers()) {
     if(m_debug_phase == execution_mode::invalid || m_debug_phase == mode) {
       print_fp_start(m, input);

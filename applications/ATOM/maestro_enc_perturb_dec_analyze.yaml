@@ -1,0 +1,66 @@
+description:
+    name: infEngine
+    description: Given a trained model and validation dataset, enc->perturb->dec->analyze.
+
+env:
+    variables:
+        OUTPUT_PATH: ./atomExp
+        NUM_NODES: 4
+        BATCH_SIZE: 10000   
+        BASE_DIR: /path/to/trained/model/and/placei/to/dump/outputs
+        ENC_OUT_DUMP: $(BASE_DIR)/outputs/enc_sd
+        DEC_OUT_DUMP: $(BASE_DIR)/outputs/dec_sd
+        DATA_Z_DIR: trainer0/model0/sgd.testing.epoch.0.step.0_conc_out_output0_noise_sd_
+        MODEL_DIR:  $(BASE_DIR)/models
+        VOCAB_FILE: $(BASE_DIR)/vocab/enamine_all2018q1_2020q1-2_mpro_inhib_kekulized.vocab 
+        PT_VOCAB_FILE: $(BASE_DIR)/vocab/enamine_all2018q1_2020q1-2_mpro_inhib_kekulized.vocab.pt
+        ACCOUNT: exalearn 
+        PARTITION: pvis
+        SCHEDULER: slurm
+        HOST: pascal
+
+batch:
+    type: slurm
+    bank: exalearn
+    host: pascal
+    queue: pvis
+
+global.parameters:
+    NOISEFAC:
+        values : [0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.8,1.0]
+        label  : NOISEFAC.%%
+
+study:
+    - name: enc
+      description: encode x->z
+      run:
+          cmd: | 
+              #module or spack load LBANN here
+              python3 $(SPECROOT)/eval_atom_wae_enc.py --job-name=enc  --nodes=$(NUM_NODES) --dump-outputs-dir=$(ENC_OUT_DUMP) --dump-model-dir=$(MODEL_DIR) --batch-size=$(BATCH_SIZE) --sequence-length=100 --embedding-dim=42 --num-embeddings=42 --pad-index=40 --vocab=$(VOCAB_FILE) --data-reader-prototext=$(SPECROOT)/data_reader_mpro.prototext --time-limit=120 --scheduler=$(SCHEDULER) --partition=$(PARTITION) --account=$(ACCOUNT)  --delimiter=0
+    - name: perturb
+      description: perturb z
+      run:
+          cmd: | 
+              python3 $(SPECROOT)/perturb_latent.py --latent_file=$(ENC_OUT_DUMP)/trainer0/model0/sgd.testing.epoch.0.step.0_conc_out_output0.npy --noise_factor=$(NOISEFAC)
+
+          depends: [enc]
+
+    - name: dec
+      description: decode z->x'
+      run:
+          cmd: | 
+              #module or spack load LBANN here
+              python3 $(SPECROOT)/eval_atom_wae_dec.py --job-name=dec_sd$(NOISEFAC) --nodes=$(NUM_NODES) --dump-outputs-dir=$(DEC_OUT_DUMP)$(NOISEFAC) --dump-model-dir=$(MODEL_DIR) --data-config=$(SPECROOT)/mpro_data_config_local.json --batch-size=$(BATCH_SIZE) --sequence-length=102 --scheduler=$(SCHEDULER) --partition=$(PARTITION) --account=$(ACCOUNT) --delimiter=0 --data-path=$(ENC_OUT_DUMP)/$(DATA_Z_DIR)$(NOISEFAC).npy
+
+          depends: [perturb]
+
+
+    - name: analysis
+      description: smiles to tensor and post analysis
+      run:
+          cmd: | 
+              #This script converts LBANN tensor to SMILES string and do analysis on generated SMILES string
+              #RDKit is required 
+              python3 $(SPECROOT)/analyze_decoded_smiles.py $(DEC_OUT_DUMP)$(NOISEFAC)/trainer0/model0/ $(NOISEFAC) $(PT_VOCAB_FILE)
+
+          depends: [dec]

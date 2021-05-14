@@ -269,7 +269,7 @@ poly_learning_rate::poly_learning_rate(
 void poly_learning_rate::setup(model *m) {
   learning_rate::setup(m);
   if (m_max_iter == 0ull) {
-    data_coordinator& dc = m->get_execution_context().get_trainer().get_data_coordinator();
+    data_coordinator& dc = get_trainer().get_data_coordinator();
     m_max_iter = m_num_epochs * dc.get_num_iterations_per_epoch(execution_mode::training);
   }
 }

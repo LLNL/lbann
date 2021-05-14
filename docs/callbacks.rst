@@ -111,6 +111,7 @@ Available Callbacks
    Monitor io <callbacks/monitor_io>
    Perturb adam <callbacks/perturb_adam>
    Perturb dropout <callbacks/perturb_dropout>
+   Perturb learning rate  <callbacks/perturb_learning_rate>
    Print model description <callbacks/print_model_description>
    Print statistics <callbacks/print_statistics>
    Profiler <callbacks/profiler>
@@ -123,4 +124,5 @@ Available Callbacks
    Timeline <callbacks/timeline>
    Timer <callbacks/timer>
    Variable minibatch <callbacks/variable_minibatch>
+   Compute model size <callbacks/compute_model_size>
    

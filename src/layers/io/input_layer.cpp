@@ -26,8 +26,11 @@
 
 #define LBANN_INPUT_LAYER_INSTANTIATE
 #include "lbann/layers/io/input_layer.hpp"
-#include "lbann/utils/profiling.hpp"
+
 #include "lbann/callbacks/imcomm.hpp"
+#include "lbann/execution_contexts/execution_context.hpp"
+#include "lbann/execution_contexts/sgd_execution_context.hpp"
+#include "lbann/utils/profiling.hpp"
 #include "lbann/utils/serialize.hpp"
 
 namespace lbann {
@@ -63,9 +66,9 @@ void input_layer<TensorDataType, T_layout, Dev>::fp_setup_outputs(El::Int mini_b
   /// During model setup there is no valid execution context, but
   /// during execution there is a context
   if(this->m_model->has_valid_execution_context()) {
-    auto& c = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
+    auto& c = dynamic_cast<sgd_execution_context&>(this->m_model->get_execution_context());
     auto mode = c.get_execution_mode();
-    data_coordinator& dc = c.get_trainer().get_data_coordinator();
+    data_coordinator& dc = get_trainer().get_data_coordinator();
     // Determine model mini-batch size and effective mini-batch size
     // Note: If inter-model communication is activated, the effective
     // mini-batch is equal to the global mini-batch size.
@@ -92,9 +95,13 @@ void input_layer<TensorDataType, T_layout, Dev>::fp_setup_outputs(El::Int mini_b
 template <typename TensorDataType,
           data_layout T_layout,
           El::Device Dev>
-void input_layer<TensorDataType, T_layout, Dev>::fp_compute() {
-  execution_mode mode = this->m_model->get_execution_context().get_execution_mode();
-  buffered_data_coordinator<TensorDataType>& dc = static_cast<buffered_data_coordinator<TensorDataType>&>(this->m_model->get_execution_context().get_trainer().get_data_coordinator());
+void input_layer<TensorDataType, T_layout, Dev>::fp_compute()
+{
+  execution_mode const mode =
+    this->m_model->get_execution_context().get_execution_mode();
+  buffered_data_coordinator<TensorDataType>& dc =
+    static_cast<buffered_data_coordinator<TensorDataType>&>(
+      get_trainer().get_data_coordinator());
 
   //  partitioned_io_buffer<TensorDataType>* io_buffer = dc.get_active_buffer(mode);
   // generic_io_buffer<TensorDataType>* io_buffer = dc.m_io_buffers[dc.get_active_buffer_idx(mode) % dc.m_io_buffers.size()];
@@ -175,13 +182,13 @@ input_distconv_adapter<TensorDataType, T_layout, Dev>::get_shuffler(
   auto src_buf = m_shuffler_src_buf.get();
   auto dst_buf = m_shuffler_dst_buf.get();
   int shfl_idx = -1;
-  const auto& context = this->layer().get_model()->get_execution_context();
-  if (cur_mb_size == context.get_trainer().get_max_mini_batch_size()) {
+  if (cur_mb_size == get_trainer().get_max_mini_batch_size()) {
     shfl_idx = 0;
   } else {
     // The last remaining mini-batches for the train, validation, and
     // testing modes
-    auto mode = context.get_execution_mode();
+    auto mode =
+      this->layer().get_model()->get_execution_context().get_execution_mode();
     shfl_idx = 1 + static_cast<int>(mode);
   }
   assert_always(shfl_idx >= 0 && shfl_idx < 4);

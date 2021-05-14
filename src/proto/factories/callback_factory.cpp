@@ -34,6 +34,7 @@
 #include "lbann/callbacks/check_small.hpp"
 #include "lbann/callbacks/checkpoint.hpp"
 #include "lbann/callbacks/confusion_matrix.hpp"
+#include "lbann/callbacks/compute_model_size.hpp"
 #include "lbann/callbacks/debug.hpp"
 #include "lbann/callbacks/debug_io.hpp"
 #include "lbann/callbacks/dump_error_signals.hpp"
@@ -52,6 +53,7 @@
 #include "lbann/callbacks/monitor_io.hpp"
 #include "lbann/callbacks/perturb_adam.hpp"
 #include "lbann/callbacks/perturb_dropout.hpp"
+#include "lbann/callbacks/perturb_learning_rate.hpp"
 #include "lbann/callbacks/print_model_description.hpp"
 #include "lbann/callbacks/print_statistics.hpp"
 #include "lbann/callbacks/profiler.hpp"
@@ -115,6 +117,8 @@ void register_default_builders(factory_type& factory)
                            build_check_small_callback_from_pbuf);
   factory.register_builder("CallbackConfusionMatrix",
                            build_confusion_matrix_callback_from_pbuf);
+  factory.register_builder("CallbackComputeModelSize",
+                           build_compute_model_size_callback_from_pbuf);
   factory.register_builder("CallbackDebug",
                            build_debug_callback_from_pbuf);
   factory.register_builder("CallbackDebugIO",
@@ -159,6 +163,8 @@ void register_default_builders(factory_type& factory)
                            build_perturb_adam_callback_from_pbuf);
   factory.register_builder("CallbackPerturbDropout",
                            build_perturb_dropout_callback_from_pbuf);
+  factory.register_builder("CallbackPerturbLearningRate",
+                           build_perturb_learning_rate_callback_from_pbuf);
   factory.register_builder("CallbackPolyLearningRate",
                            build_poly_learning_rate_callback_from_pbuf);
   factory.register_builder("CallbackPrintModelDescription",

@@ -32,6 +32,8 @@ import "datatype.proto";
 
 import "callbacks.proto";
 
+import "training_algorithm.proto";
+
 message Trainer {
 
   // Unique identifier
@@ -66,4 +68,6 @@ message Trainer {
     DataType datatype = 1;
     string io_buffer = 2;         // Options: "partitioned" (default)
   }
+
+  TrainingAlgorithm training_algorithm = 300;
 }

@@ -226,6 +226,8 @@ std::string to_string(execution_mode m) {
     return "prediction";
   case execution_mode::tournament:
     return "tournament";
+  case execution_mode::inference:
+    return "inference";
   case execution_mode::invalid:
     return "invalid";
   default:
