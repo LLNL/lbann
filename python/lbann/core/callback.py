@@ -16,12 +16,13 @@ class Callback(abc.ABC):
 # Generate Callback sub-classes from lbann.proto
 # Note: The list of skip fields must be updated if any new fields are
 # added to the Callback message in lbann.proto
-classes = lbann.core.util.generate_classes_from_protobuf_message(
-    callbacks_pb2.Callback,
-    base_class = Callback,
-    base_has_export_proto = True)
-for c in classes:
-    globals()[c.__name__] = c
+if callbacks_pb2:
+    classes = lbann.core.util.generate_classes_from_protobuf_message(
+        callbacks_pb2.Callback,
+        base_class = Callback,
+        base_has_export_proto = True)
+    for c in classes:
+        globals()[c.__name__] = c
 
 class ImageSelectionStrategy(abc.ABC):
     """Image selection strategy for summarize images callback."""
@@ -34,9 +35,10 @@ class ImageSelectionStrategy(abc.ABC):
         return callbacks_pb2.Callback.CallbackSummarizeImages.SelectionStrategy()
 
 # Build all subclasses
-classes = lbann.core.util.generate_classes_from_protobuf_message(
-    callbacks_pb2.Callback.CallbackSummarizeImages.SelectionStrategy,
-    base_class = ImageSelectionStrategy,
-    base_has_export_proto = True)
-for c in classes:
-    globals()[c.__name__] = c
+if callbacks_pb2:
+    classes = lbann.core.util.generate_classes_from_protobuf_message(
+        callbacks_pb2.Callback.CallbackSummarizeImages.SelectionStrategy,
+        base_class = ImageSelectionStrategy,
+        base_has_export_proto = True)
+    for c in classes:
+        globals()[c.__name__] = c

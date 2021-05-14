@@ -125,6 +125,18 @@ class generic_compound_data_reader : public generic_data_reader {
     return false;
   }
 
+  void set_has_labels(const bool b) override {
+    for (auto&& reader : m_data_readers) {
+      reader->set_has_labels(b);
+    }
+  }
+  /// Whether or not a data reader has a response field
+  void set_has_responses(const bool b) override {
+    for (auto&& reader : m_data_readers) {
+      reader->set_has_responses(b);
+    }
+  }
+
   //************************************************************************
 
  protected:

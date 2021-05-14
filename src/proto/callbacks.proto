@@ -79,6 +79,8 @@ message Callback {
     CallbackSetWeightsValue set_weights_value = 47;
     CallbackSummarizeImages summarize_images = 48;
     CallbackDumpModelGraph dump_model_graph = 49;
+    CallbackPerturbLearningRate perturb_learning_rate = 50;
+    CallbackComputeModelSize compute_model_size = 51;
   }
 
   message CallbackLTFB {
@@ -392,6 +394,18 @@ message Callback {
   message CallbackDumpModelGraph {
     string basename = 1; // default: "model.dot"
     bool print = 2;
+  }
+
+  message CallbackPerturbLearningRate {
+    float learning_rate_factor = 1;   // Learning rate perturbation (in log space)
+    bool perturb_during_training = 2; // Whether to periodically perturb during training (default: False)
+    int64 batch_interval = 3;         // Frequency of perturbation if perturb_during_training is true
+    string weights = 4;               // Optimizer weights with lr to perturb (default: All)
+  }
+ 
+  message CallbackComputeModelSize {
+    string output_name = 1;
+    int64 batch_interval = 2;
   }
 
 }

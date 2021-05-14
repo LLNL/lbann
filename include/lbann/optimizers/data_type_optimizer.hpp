@@ -77,6 +77,7 @@ public:
    *  @param w Weights being optimized. If null, no change is made to
    *  the weights.
    */
+  void setup(weights* w) override;
   virtual void setup(data_type_weights<TensorDataType>* w = nullptr);
   void setup_base(data_type_weights<TensorDataType>* w);
   /** @name Weights management */

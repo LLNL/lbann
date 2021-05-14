@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.17)
 
 project(LBANN CXX)
 
+# C isn't required by LBANN but packages such as Conduit are forcing C dependencies in MPI
+enable_language(C)
+
 # Prevent in-source builds
 if (PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
   message(FATAL_ERROR
@@ -602,6 +605,7 @@ if (LBANN_WITH_UNIT_TESTING)
   include(CTest)
   include(Catch)
   add_subdirectory(src/callbacks/unit_test)
+  add_subdirectory(src/execution_algorithms/unit_test)
   add_subdirectory(src/layers/activations/unit_test)
   add_subdirectory(src/layers/learning/unit_test)
   add_subdirectory(src/layers/math/unit_test)

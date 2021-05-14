@@ -1,5 +1,6 @@
 # Add the source files for this directory
 set_full_path(THIS_DIR_SOURCES
+  AbstractDistMatrix.cpp
   CIRC_CIRC.cpp
   MC_MR.cpp
   MC_STAR.cpp

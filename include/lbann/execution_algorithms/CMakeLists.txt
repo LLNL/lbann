@@ -1,7 +1,9 @@
 # Add the headers for this directory
 set_full_path(THIS_DIR_HEADERS
-  training_algorithm.hpp
+  batch_functional_inference_algorithm.hpp
+  ltfb.hpp
   sgd_training_algorithm.hpp
+  training_algorithm.hpp
   )
 
 # Propagate the files up the tree

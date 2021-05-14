@@ -65,8 +65,6 @@ void numpy_npz_conduit_reader::copy_members(const numpy_npz_conduit_reader &rhs)
   m_num_features = rhs.m_num_features;
   m_num_labels = rhs.m_num_labels;
   m_num_response_features = rhs.m_num_response_features;
-  m_has_labels = rhs.m_has_labels;
-  m_has_responses = rhs.m_has_responses;
   m_data_dims = rhs.m_data_dims;
   m_data_word_size = rhs.m_data_word_size;
   m_response_word_size = rhs.m_response_word_size;
@@ -184,7 +182,7 @@ void numpy_npz_conduit_reader::do_preload_data_store() {
   // Nikoli says we're not using labels, so I'm commenting this section out
   // (this section is a mess, anyway)
   #if 0
-  if (m_has_labels) {
+  if (m_supported_input_types[input_data_type::LABELS]) {
 
     // get max element. Yes, I know you can do this with, e.g, lambda
     // expressions and c++11 and etc, etc. But that's just B-ugly and
@@ -303,7 +301,7 @@ bool numpy_npz_conduit_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
 }
 
 bool numpy_npz_conduit_reader::fetch_label(Mat& Y, int data_id, int mb_idx) {
-  if (!m_has_labels) {
+  if (!m_supported_input_types[input_data_type::LABELS]) {
     LBANN_ERROR("numpy_npz_conduit_reader: do not have labels");
   }
   if (m_num_labels == 0) {
@@ -320,7 +318,7 @@ bool numpy_npz_conduit_reader::fetch_label(Mat& Y, int data_id, int mb_idx) {
 }
 
 bool numpy_npz_conduit_reader::fetch_response(Mat& Y, int data_id, int mb_idx) {
-  if (!m_has_responses) {
+  if (!m_supported_input_types[input_data_type::RESPONSES]) {
     LBANN_ERROR("numpy_npz_conduit_reader: do not have responses");
   }
 
@@ -407,14 +405,14 @@ void numpy_npz_conduit_reader::fill_in_metadata() {
     std::cout << "data word size: " << m_data_word_size << "\n";
   }
 
-  if (m_has_labels) {
+  if (m_supported_input_types[input_data_type::LABELS]) {
     word_size = node[LBANN_DATA_ID_STR(data_id) + "/frm/word_size"].value();
     if (word_size != 4) {
       LBANN_ERROR("numpy_npz_conduit_reader: label should be in int32, but word_size= " + std::to_string(word_size));
     }
   }
 
-  if (m_has_responses) {
+  if (m_supported_input_types[input_data_type::RESPONSES]) {
     m_response_word_size = node[LBANN_DATA_ID_STR(data_id) + "/responses/word_size"].value();
     auto r_shape = node[LBANN_DATA_ID_STR(data_id) + "/responses/shape"].as_uint64_array();
     int n = r_shape.number_of_elements();

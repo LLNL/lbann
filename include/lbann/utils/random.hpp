@@ -169,6 +169,20 @@ template <typename TensorDataType>
 void uniform_fill_procdet(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::Int n,
                           TensorDataType center = 0.0, TensorDataType radius = 1.0);
 
+/**
+ * Make mat into an m x n matrix where each entry is independently
+ * drawn from a Gaussian distribution with given mean and standard
+ * deviation. Entries are generated in parallel, so there are no
+ * guarantees of thread/process indendence.
+ */
+template <typename TensorDataType>
+void gaussian_fill_parallel(
+  El::AbstractDistMatrix<TensorDataType>& mat,
+  El::Int m,
+  El::Int n,
+  TensorDataType mean = 0.0,
+  TensorDataType stddev = 1.0);
+
 bool save_rng_to_checkpoint_shared(persist& p, lbann_comm* comm);
 bool save_rng_to_checkpoint_distributed(persist& p, lbann_comm* comm);
 bool load_rng_from_checkpoint(persist& p, const lbann_comm* comm);
@@ -216,7 +230,8 @@ void rng_bernoulli(const float p, DistMat *m) {
   extern template void uniform_fill<T>(El::AbstractDistMatrix<T>& mat, El::Int m, El::Int n, T center, T radius);        \
   extern template void gaussian_fill_procdet<T>(El::AbstractDistMatrix<T>& mat, El::Int m, El::Int n, T mean, T stddev); \
   extern template void bernoulli_fill_procdet<T>(El::AbstractDistMatrix<T>& mat, El::Int m, El::Int n, double p);        \
-  extern template void uniform_fill_procdet<T>(El::AbstractDistMatrix<T>& mat, El::Int m, El::Int n, T center, T radius)
+  extern template void uniform_fill_procdet<T>(El::AbstractDistMatrix<T>& mat, El::Int m, El::Int n, T center, T radius); \
+  extern template void gaussian_fill_parallel<T>(El::AbstractDistMatrix<T>& mat, El::Int m, El::Int n, T mean, T stddev)
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF
