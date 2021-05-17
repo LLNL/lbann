@@ -27,12 +27,10 @@
 #ifndef LBANN_DATA_READERS_COMMUNITYGAN_HPP_INCLUDED
 #define LBANN_DATA_READERS_COMMUNITYGAN_HPP_INCLUDED
 
-
 #include "data_reader.hpp"
+#include "lbann/callbacks/setup_communitygan_data_reader.hpp"
 #ifdef LBANN_HAS_COMMUNITYGAN_WALKER
-
-// Forward declaration
-class CommunityGANWalker;
+#include "CommunityGANWalker.hpp"
 
 namespace lbann {
 
@@ -70,6 +68,8 @@ protected:
   bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;
 
 private:
+
+  friend class ::lbann::callback::setup_communitygan_data_reader;
 
   std::string m_embedding_weights_name;
   std::string m_motif_file;

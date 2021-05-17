@@ -61,13 +61,14 @@
 #include "lbann/callbacks/save_model.hpp"
 #include "lbann/callbacks/load_model.hpp"
 #include "lbann/callbacks/save_topk_models.hpp"
+#include "lbann/callbacks/set_weights_value.hpp"
+#include "lbann/callbacks/setup_communitygan_data_reader.hpp"
 #include "lbann/callbacks/summarize_images.hpp"
 #include "lbann/callbacks/summary.hpp"
 #include "lbann/callbacks/sync_layers.hpp"
 #include "lbann/callbacks/timeline.hpp"
 #include "lbann/callbacks/timer.hpp"
 #include "lbann/callbacks/variable_minibatch.hpp"
-#include "lbann/callbacks/set_weights_value.hpp"
 
 #include "lbann/proto/factories.hpp"
 #include "lbann/proto/helpers.hpp"
@@ -180,6 +181,10 @@ void register_default_builders(factory_type& factory)
                            build_load_model_callback_from_pbuf);
   factory.register_builder("CallbackSaveTopKModels",
                            build_save_topk_models_callback_from_pbuf);
+  factory.register_builder("CallbackSetWeightsValue",
+                           build_set_weights_value_callback_from_pbuf);
+  factory.register_builder("CallbackSetupCommunityGANDataReader",
+                           build_setup_communitygan_data_reader_callback_from_pbuf);
   factory.register_builder("CallbackStepLearningRate",
                            build_step_learning_rate_callback_from_pbuf);
   factory.register_builder("CallbackStepMinibatch",
@@ -194,8 +199,6 @@ void register_default_builders(factory_type& factory)
                            build_timeline_callback_from_pbuf);
   factory.register_builder("CallbackTimer",
                            build_timer_callback_from_pbuf);
-  factory.register_builder("CallbackSetWeightsValue",
-                           build_set_weights_value_callback_from_pbuf);
 }
 
 // Manage a global factory

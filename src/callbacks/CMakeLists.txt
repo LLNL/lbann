@@ -37,6 +37,7 @@ set_full_path(THIS_DIR_SOURCES
   save_model.cpp
   save_topk_models.cpp
   set_weights_value.cpp
+  setup_communitygan_data_reader.cpp
   summary.cpp
   summarize_images.cpp
   sync_layers.cpp

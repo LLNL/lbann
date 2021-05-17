@@ -36,6 +36,7 @@ set_full_path(THIS_DIR_HEADERS
   save_model.hpp
   save_topk_models.hpp
   set_weights_value.hpp
+  setup_communitygan_data_reader.hpp
   summary.hpp
   sync_layers.hpp
   timeline.hpp

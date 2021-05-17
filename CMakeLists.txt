@@ -709,6 +709,13 @@ if (LBANN_HAS_FFTW AND LBANN_HAS_CUDA)
     $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda>)
 endif (LBANN_HAS_FFTW AND LBANN_HAS_CUDA)
 
+# CommunityGAN data reader
+# Note (tym 5/7/21): This is hacked
+if (LBANN_COMMUNITYGAN_WALKER_DIR)
+  target_include_directories(lbann PUBLIC ${LBANN_COMMUNITYGAN_WALKER_DIR})
+  target_link_libraries(lbann PUBLIC ${LBANN_COMMUNITYGAN_WALKER_DIR}/libCommunityGANWalker.a)
+endif (LBANN_COMMUNITYGAN_WALKER_DIR)
+
 # Fix the -g issue with Clang on OSX
 if (APPLE)
   # Remove -g from the options

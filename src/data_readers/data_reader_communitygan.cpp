@@ -29,8 +29,6 @@
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/random.hpp"
 
-#include "CommunityGANWalker.hpp"
-
 namespace lbann {
 
 communitygan_reader::communitygan_reader(
@@ -140,7 +138,7 @@ void communitygan_reader::load() {
     // Objects for parsing line
     iss.str(line);
     size_t vertex;
-    iss >> vertex; // First index is motif ID
+    iss >> vertex; // First index is motif ID, so discard
     local_vertices.clear();
     remote_vertices.clear();
 
@@ -163,25 +161,19 @@ void communitygan_reader::load() {
 
   }
 
+  // Register with "setup CommunityGAN data reader" callback
+  ::lbann::callback::setup_communitygan_data_reader::register_communitygan_data_reader(this);
+
 }
 
 std::vector<std::vector<size_t>> communitygan_reader::generate_samples(
   const locked_io_rng_ref&) {
 
-  // Construct random walker if needed
+  // Check that CommunityGAN walker has been initialized
   if (m_walker == nullptr) {
-    auto& comm = *get_comm();
-    float* embedding_buffer = nullptr; /// @todo Implement
-    size_t num_embeddings = 0; /// @todo Implement (global or local?)
-    size_t embedding_dim = 0; /// @todo Implement
-    m_walker = make_unique<::CommunityGANWalker>(
-      comm.get_trainer_comm().GetMPIComm(),
-      m_graph_file,
-      embedding_buffer,
-      static_cast<int>(num_embeddings),
-      static_cast<int>(embedding_dim),
-      static_cast<int>(m_walk_length-1),
-      static_cast<int>(m_cache_size));
+    LBANN_ERROR(
+      "\"",get_type(),"\" data reader has uninitialized CommunityGAN walker. ",
+      "Make sure model has \"setup CommunityGAN data reader\" callback.");
   }
 
   // Allocate memory for samples and walk starts
@@ -224,6 +216,7 @@ std::vector<std::vector<size_t>> communitygan_reader::generate_samples(
   }
   for (size_t i=0; i<m_cache_size; ++i) {
     auto& sample = samples[i];
+    /// @todo Cache all walks from walker
     for (const auto& vertex : pick_random(walks.at(starts[i]))) {
       sample.push_back(vertex);
     }
