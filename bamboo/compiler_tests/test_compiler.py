@@ -12,7 +12,7 @@ def test_compiler_build_script(cluster, dirname):
         command = '%s/scripts/build_lbann.sh -d -l bamboo --test -- +cuda +deterministic +half +fft +vision +numpy > %s 2> %s' % (
             dirname, output_file_name, error_file_name)
     elif cluster in ['corona']:
-        command = '%s/scripts/build_lbann.sh -d -l bamboo --test -- +rocm +deterministic +half +fft +vision +numpy > %s 2> %s' % (
+        command = '%s/scripts/build_lbann.sh -d -l bamboo --test -- +rocm +deterministic +fft +vision +numpy > %s 2> %s' % (
             dirname, output_file_name, error_file_name)
     elif cluster in ['catalyst']:
         command = '%s/scripts/build_lbann.sh -d -l bamboo --test -- +onednn +deterministic +half +fft +vision +numpy > %s 2> %s' % (
