@@ -636,8 +636,9 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
     fi
 
     ##########################################################################################
-    # If there is a local mirror or buildcace, pad out the install tree so that it can be relocated
-    if [[ -n "${MIRRORS}" || -n "${UPDATE_BUILDCACHE:-}" ]]; then
+    # If this build is going to go to a buildcache, pad out the install tree so that it can be relocated
+    # Don't mix this with normal installtions, duplicate packages can get installed
+    if [[ -n "${UPDATE_BUILDCACHE:-}" ]]; then
         spack config add "config:install_tree:padded_length:128"
     fi
 
@@ -668,7 +669,7 @@ if [[ "${SPEC_ONLY}" == "TRUE" ]]; then
 fi
 
 # Try to concretize the environment and catch the return code
-CMD="spack concretize -f"
+CMD="spack concretize"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
