@@ -220,7 +220,7 @@ int main(int argc, char* argv[])
       stack_profiler::get()->print();
     }
   }
-  catch (exception& e) {
+  catch (::lbann::exception& e) {
     if (options::get()->get_bool("stack_trace_to_file")) {
       std::ostringstream ss("stack_trace");
       const auto& rank = get_rank_in_world();

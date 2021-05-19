@@ -11,20 +11,24 @@ def make_model(
         learn_rate,
         num_epochs,
         embeddings_dir,
+        online_walker,
+        embeddings_device='CPU',
 ):
 
     # Layer graph
     input_ = lbann.Slice(
-        lbann.Input(),
+        lbann.Input(device='CPU'),
         slice_points=str_list([0, motif_size, motif_size+walk_length]),
+        device='CPU',
     )
-    motif_indices = lbann.Identity(input_)
-    walk_indices = lbann.Identity(input_)
+    motif_indices = lbann.Identity(input_, device='CPU')
+    walk_indices = lbann.Identity(input_, device='CPU')
     gan = model.gan.CommunityGAN(
         num_vertices,
         motif_size,
         embed_dim,
         learn_rate,
+        embeddings_device=embeddings_device,
     )
     loss, real_disc_prob, fake_disc_prob, gen_prob = gan(
         motif_indices,
@@ -47,12 +51,8 @@ def make_model(
         lbann.CallbackDumpWeights(directory=embeddings_dir,
                                   epoch_interval=num_epochs),
     ]
-
-    # Perform computation at double precision
-    for l in lbann.traverse_layer_graph(input_):
-        l.datatype = lbann.DataType.DOUBLE
-        for w in l.weights:
-            w.datatype = lbann.DataType.DOUBLE
+    if online_walker:
+        callbacks.append(lbann.CallbackSetupCommunityGANDataReader())
 
     # Contruct model
     return lbann.Model(

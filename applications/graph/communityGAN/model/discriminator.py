@@ -11,11 +11,13 @@ class Discriminator(lbann.modules.Module):
             motif_size,
             embed_dim,
             learn_rate,
+            embeddings_device='CPU',
     ):
         super().__init__()
         self.num_vertices = num_vertices
         self.embed_dim = embed_dim
         self.learn_rate = learn_rate
+        self.embeddings_device = embeddings_device
 
         # Initialize weights
         # Note: The discriminator's probability estimate is
@@ -41,6 +43,7 @@ class Discriminator(lbann.modules.Module):
             embedding_dim=self.embed_dim,
             sparse_sgd=True,
             learning_rate=self.learn_rate,
+            device=self.embeddings_device
         )
 
     def forward(self, motif_size, motif_log_embeddings):

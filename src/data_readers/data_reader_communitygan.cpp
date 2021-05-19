@@ -164,6 +164,12 @@ void communitygan_reader::load() {
   // Register with "setup CommunityGAN data reader" callback
   ::lbann::callback::setup_communitygan_data_reader::register_communitygan_data_reader(this);
 
+  // Construct list of indices
+  m_shuffled_indices.resize(m_epoch_size);
+  std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
+  resize_shuffled_indices();
+  select_subset_of_data();
+
 }
 
 std::vector<std::vector<size_t>> communitygan_reader::generate_samples(

@@ -86,6 +86,7 @@ message Reader {
 
   PythonDataReader python = 501;
   Node2VecDataReader node2vec = 502;
+  CommunityGANDataReader communitygan = 503;
 
   repeated Transform transforms = 600;  // Ordered list of transforms to apply.
 
@@ -114,6 +115,15 @@ message Node2VecDataReader {
   double return_param = 4;
   double inout_param = 5;
   uint64 num_negative_samples = 6;
+}
+
+message CommunityGANDataReader {
+  string embedding_weights = 1;
+  string motif_file = 2;
+  string graph_file = 3;
+  uint64 motif_size = 4;
+  uint64 walk_length = 5;
+  uint64 epoch_size = 6;
 }
 
 message DataSetMetaData {

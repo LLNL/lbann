@@ -12,11 +12,13 @@ class Generator(lbann.modules.Module):
             num_vertices,
             embed_dim,
             learn_rate,
+            embeddings_device='CPU',
     ):
         super().__init__()
         self.num_vertices = num_vertices
         self.embed_dim = embed_dim
         self.learn_rate = learn_rate
+        self.embeddings_device = embeddings_device
 
         # Initialize weights
         # Note: The generator's confidence for adding vertex v to a
@@ -85,6 +87,7 @@ class Generator(lbann.modules.Module):
             embedding_dim=self.embed_dim,
             sparse_sgd=True,
             learning_rate=self.learn_rate,
+            device=self.embeddings_device,
         )
 
     def _expand_motif(

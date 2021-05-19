@@ -12,6 +12,7 @@ class CommunityGAN(lbann.modules.Module):
             motif_size,
             embed_dim,
             learn_rate,
+            embeddings_device='CPU',
     ):
         super().__init__()
         self.num_vertices = num_vertices
@@ -23,12 +24,14 @@ class CommunityGAN(lbann.modules.Module):
             num_vertices,
             embed_dim,
             learn_rate,
+            embeddings_device=embeddings_device,
         )
         self.discriminator = model.discriminator.Discriminator(
             num_vertices,
             motif_size,
             embed_dim,
             learn_rate,
+            embeddings_device=embeddings_device,
         )
 
     def forward(
@@ -47,7 +50,11 @@ class CommunityGAN(lbann.modules.Module):
         )
 
         # Get discriminator embeddings in log-space
-        all_motif_indices = lbann.Concatenation(motif_indices, fake_motif_indices)
+        all_motif_indices = lbann.Concatenation(
+            motif_indices,
+            fake_motif_indices,
+            device='CPU',
+        )
         all_motif_log_embeddings = self.discriminator.get_log_embeddings(all_motif_indices)
         all_motif_log_embeddings = lbann.Slice(
             all_motif_log_embeddings,

@@ -10,7 +10,7 @@ import lbann.contrib.args
 import lbann.contrib.launcher
 import numpy as np
 
-from data import make_data_reader
+import data
 from model import make_model
 
 root_dir = os.path.dirname(os.path.realpath(__file__))
@@ -169,10 +169,10 @@ def setup_motifs(script, config):
     ])
 
 # ----------------------------------------------------------
-# Perform random walks
+# Perform random walks offline
 # ----------------------------------------------------------
 
-def setup_walks(script, config):
+def setup_offline_walks(script, config):
     """Add random walker to batch script."""
 
     # Get parameters
@@ -194,7 +194,7 @@ def setup_walks(script, config):
 
     # Add random walker to batch script
     script.add_body_line('')
-    script.add_body_line('# Perform random walks')
+    script.add_body_line('# Perform random walks offline')
     script.add_parallel_command(['rm', '-rf', distributed_graph_dir], procs_per_node=1)
     script.add_parallel_command([
         graph_ingest_exec,
@@ -224,11 +224,12 @@ def setup_walks(script, config):
 # Train embeddings
 # ----------------------------------------------------------
 
-def setup_embeddings(script, config):
+def setup_lbann(script, config):
 
     # Get parameters
     num_vertices = config.getint('Graph', 'num_vertices')
     motif_size = config.getint('Motifs', 'motif_size')
+    use_online_walker = config.getboolean('Walks', 'use_online_walker')
     walk_length = config.getint('Walks', 'walk_length')
     embeddings_dir = config.get('Embeddings', 'embeddings_dir')
     embed_dim = config.getint('Embeddings', 'embed_dim')
@@ -255,9 +256,13 @@ def setup_embeddings(script, config):
         learn_rate,
         num_epochs,
         embeddings_dir,
+        use_online_walker,
     )
     optimizer = lbann.SGD(learn_rate=learn_rate)
-    data_reader = make_data_reader()
+    if use_online_walker:
+        data_reader = data.make_online_data_reader(config)
+    else:
+        data_reader = data.make_offline_data_reader()
 
     # Add LBANN invocation to batch script
     prototext_file = os.path.join(script.work_dir, 'experiment.prototext')
@@ -269,7 +274,7 @@ def setup_embeddings(script, config):
         optimizer=optimizer,
     )
     script.add_body_line('')
-    script.add_body_line('# Train embeddings')
+    script.add_body_line('# Train embeddings with LBANN')
     script.add_parallel_command([
         lbann.lbann_exe(),
         f'--prototext={prototext_file}',
@@ -296,8 +301,9 @@ if __name__ == '__main__':
         **kwargs,
     )
     setup_motifs(script, config)
-    setup_walks(script, config)
-    setup_embeddings(script, config)
+    if not config.getboolean('Walks', 'use_online_walker'):
+        setup_offline_walks(script, config)
+    setup_lbann(script, config)
 
     # Launch experiment
     if args.run:
