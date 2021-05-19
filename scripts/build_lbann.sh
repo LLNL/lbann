@@ -482,6 +482,8 @@ if [[ ! -n "${SKIP_MODULES:-}" ]]; then
     fi
 fi
 
+echo "My updated path is ${PATH}"
+
 # If the dependencies are being installed then you should clean things up
 if [[ -n "${INSTALL_DEPS:-}" ]]; then
     # Remove any old environment with the same name
