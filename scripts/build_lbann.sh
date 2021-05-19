@@ -17,6 +17,9 @@ fi
 LBANN_HOME=$(dirname ${SCRIPTS_DIR})
 #SPACK_ENV_DIR=${LBANN_HOME}/spack_environments
 
+echo "Here is my path"
+printenv $PATH
+
 SCRIPT=$(basename ${BASH_SOURCE})
 LBANN_ENV=
 INSTALL_DEPS=
