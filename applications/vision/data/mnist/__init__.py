@@ -19,10 +19,10 @@ def download_data():
 
     # MNIST data files and associated URLs
     urls = {
-        'train-images-idx3-ubyte': 'http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz',
-        'train-labels-idx1-ubyte': 'http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz',
-        't10k-images-idx3-ubyte': 'http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz',
-        't10k-labels-idx1-ubyte': 'http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz',
+        'train-images-idx3-ubyte': 'https://ossci-datasets.s3.amazonaws.com/mnist/train-images-idx3-ubyte.gz',
+        'train-labels-idx1-ubyte': 'https://ossci-datasets.s3.amazonaws.com/mnist/train-labels-idx1-ubyte.gz',
+        't10k-images-idx3-ubyte': 'https://ossci-datasets.s3.amazonaws.com/mnist/t10k-images-idx3-ubyte.gz',
+        't10k-labels-idx1-ubyte': 'https://ossci-datasets.s3.amazonaws.com/mnist/t10k-labels-idx1-ubyte.gz',
     }
 
     # Download and uncompress MNIST data files, if needed
