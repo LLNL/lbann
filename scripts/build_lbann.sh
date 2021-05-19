@@ -700,6 +700,13 @@ if [[ -L "${SPACK_BUILD_DIR}" ]]; then
   fi
 fi
 
+# If there is a directory there and we are told to clean it, remove the directory
+if [[ -d "${SPACK_BUILD_DIR}" && ! -z "${CLEAN_BUILD}" ]]; then
+    CMD="rm -r ${SPACK_BUILD_DIR}"
+    echo ${CMD}
+    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+fi
+
 # If the spack build directory does not exist, create a tmp directory and link it
 if [[ ! -e "${SPACK_BUILD_DIR}" && -n "${TMP_BUILD_DIR:-}" && -z "${DRY_RUN:-}" ]]; then
     tmp_dir=$(mktemp -d -t lbann-spack-build-${LBANN_SPEC_HASH}-$(date +%Y-%m-%d-%H%M%S)-XXXXXXXXXX)
