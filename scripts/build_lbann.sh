@@ -483,6 +483,7 @@ if [[ ! -n "${SKIP_MODULES:-}" ]]; then
 fi
 
 echo "My updated path is ${PATH}"
+echo "I have cmake at $(which cmake)"
 
 # If the dependencies are being installed then you should clean things up
 if [[ -n "${INSTALL_DEPS:-}" ]]; then
@@ -720,6 +721,8 @@ if [[ ! -e "${SPACK_BUILD_DIR}" && -n "${TMP_BUILD_DIR:-}" && -z "${DRY_RUN:-}" 
     echo ${CMD}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 fi
+
+echo "Even in the environment I have cmake at $(which cmake)"
 
 ##########################################################################################
 # Actually install LBANN from local source
