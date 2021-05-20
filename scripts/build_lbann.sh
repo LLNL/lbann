@@ -723,7 +723,7 @@ if [[ ! -e "${SPACK_BUILD_DIR}" && -n "${TMP_BUILD_DIR:-}" && -z "${DRY_RUN:-}" 
 fi
 
 echo "Even in the environment I have cmake at $(which cmake)"
-spack build-env lbann
+spack -d build-env lbann
 
 ##########################################################################################
 # Actually install LBANN from local source
