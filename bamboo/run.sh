@@ -62,6 +62,9 @@ $PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml
 # Find the correct module to load
 SPACK_ARCH=$(spack arch)
 SPACK_ARCH_TARGET=$(spack arch -t)
+SPACK_ENV_CMD="spack env activate -p lbann-bamboo-${SPACK_ARCH_TARGET}"
+echo ${SPACK_ENV_CMD} | tee -a ${LOG}
+${SPACK_ENV_CMD}
 SPACK_LOAD_CMD="spack load lbann@bamboo-${SPACK_ARCH_TARGET} arch=${SPACK_ARCH}"
 echo ${SPACK_LOAD_CMD} | tee -a ${LOG}
 ${SPACK_LOAD_CMD}
