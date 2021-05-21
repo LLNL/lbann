@@ -34,21 +34,11 @@
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/commify.hpp"
 #include "lbann/utils/lbann_library.hpp"
-#include "lbann/utils/jag_utils.hpp"
+#include "lbann/utils/vectorwrapbuf.hpp"
 #include <mutex>
 #include <cctype>
 
 namespace lbann {
-
-// cut-n-paste from data_reader_image.cpp and jag_data_reader;
-// TODO: refactor to a common file
-template<typename CharT, typename Traits = std::char_traits<CharT> >
-class vectorwrapbuf : public std::basic_streambuf<CharT, Traits> {
-public:
-    vectorwrapbuf(std::vector<CharT> &vec) {
-        this->setg(vec.data(), vec.data(), vec.data() + vec.size());
-    }
-};
 
 smiles_data_reader::smiles_data_reader(const bool shuffle)
   : generic_data_reader(shuffle) {}
