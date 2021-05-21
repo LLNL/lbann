@@ -31,6 +31,7 @@
 #include "lbann/data_readers/sample_list_open_files_impl.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
 #include "lbann/utils/argument_parser.hpp"
+#include "lbann/utils/file_utils.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/commify.hpp"
 #include "lbann/utils/lbann_library.hpp"
@@ -587,26 +588,6 @@ std::string smiles_data_reader::get_raw_sample(std::istream* istrm, size_t index
   return smiles_str;
 }
 
-void remove_multiple_slashes(std::string& str) {
-  std::stringstream s;
-  char last_char_was_slash = false;
-  for (size_t i=0; i<str.size(); i++) {
-    if (last_char_was_slash) {
-      if (str[i] != '/') {
-        s << str[i];
-      }
-    } else {
-      s << str[i];
-    }
-    if (str[i] == '/') {
-      last_char_was_slash = true;
-    } else {
-      last_char_was_slash = false;
-    }
-  }
-  str = s.str();
-}
-
 void smiles_data_reader::build_some_maps() {
   for (const auto& index : m_shuffled_indices) {
     const sample_t& sample = m_sample_list[index];
@@ -617,7 +598,7 @@ void smiles_data_reader::build_some_maps() {
     std::string filename = s.str();
     // this has bit me before, and can be an easy mistake to make
     // when writing sample lists:
-    remove_multiple_slashes(filename);
+    file::remove_multiple_slashes(filename);
     long long local_id = sample.second;
 
     // construct map entries
