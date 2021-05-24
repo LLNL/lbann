@@ -27,7 +27,7 @@ parser.add_argument(
 
 parser.add_argument(
     '--mini-batch-size', action='store', default=2048, type=int,
-    help="mini-batch size (default: 32)", metavar='NUM')
+    help="mini-batch size (default: 2048)", metavar='NUM')
 
 parser.add_argument(
     '--num-edges', action='store', default=118, type=int,
@@ -308,11 +308,11 @@ def NNConvLayer(node_features,
                                    name="gnn_weights_weights_{}".format(2))
 
     sequential_nn = \
-        [FC(64, weights=[nn_sq_1_weight], name="NN_SQ_1"),
+        [FC(64, weights=[nn_sq_1_weight], name="NN_SQ_1", bias=True),
          lbann.Relu,
-         FC(32, weights=[nn_sq_2_weight], name="NN_SQ_2"),
+         FC(32, weights=[nn_sq_2_weight], name="NN_SQ_2", bias=True),
          lbann.Relu,
-         FC(out_channel * in_channel, weights=[nn_sq_3_weight], name="NN_SQ_3")]
+         FC(out_channel * in_channel, weights=[nn_sq_3_weight], name="NN_SQ_3", bias=True)]
 
     nn_conv = NNConv(sequential_nn,
                      NUM_NODES,
