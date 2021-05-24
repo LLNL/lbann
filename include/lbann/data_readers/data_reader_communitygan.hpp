@@ -41,6 +41,7 @@ public:
     std::string embedding_weights_name,
     std::string motif_file,
     std::string graph_file,
+    size_t num_vertices,
     size_t motif_size,
     size_t walk_length,
     size_t epoch_size);
@@ -75,6 +76,7 @@ private:
   std::string m_motif_file;
   std::string m_graph_file;
 
+  size_t m_num_vertices;
   size_t m_motif_size;
 
   /** @brief Length of each random walk. */
@@ -91,9 +93,10 @@ private:
 
   std::unique_ptr<::CommunityGANWalker> m_walker;
 
-  std::vector<std::pair<std::vector<size_t>,std::vector<size_t>>> m_motifs;
+  std::vector<std::vector<size_t>> m_motifs;
 
-  size_t m_cache_size{0};
+  size_t m_walks_per_vertex = 64;
+  size_t m_cache_size = 1024;
 
   /** Cache of random walks.
    *

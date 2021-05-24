@@ -94,10 +94,10 @@ void setup_communitygan_data_reader::on_setup_end(model *m) {
       reader.get_comm()->get_trainer_comm().GetMPIComm(),
       reader.m_graph_file,
       embeddings.Buffer(),
-      static_cast<int>(embeddings.Width()),
+      static_cast<int>(embeddings.Height()*embeddings.LocalWidth()),
       static_cast<int>(embeddings.Height()),
       static_cast<int>(reader.m_walk_length-1),
-      static_cast<int>(reader.m_cache_size)));
+      static_cast<int>(reader.m_walks_per_vertex)));
 
 }
 

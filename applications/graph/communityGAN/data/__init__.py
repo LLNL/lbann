@@ -23,6 +23,7 @@ def make_online_data_reader(config):
     # Get parameters
     embedding_weights = 'generator_log_embeddings'
     graph_file = config.get('Graph', 'file')
+    num_vertices = config.getint('Graph', 'num_vertices')
     motif_file = config.get('Motifs', 'file')
     motif_size = config.getint('Motifs', 'motif_size')
     walk_length = config.getint('Walks', 'walk_length')
@@ -38,6 +39,7 @@ def make_online_data_reader(config):
     _reader.communitygan.embedding_weights = embedding_weights
     _reader.communitygan.motif_file = motif_file
     _reader.communitygan.graph_file = graph_file
+    _reader.communitygan.num_vertices = num_vertices
     _reader.communitygan.motif_size = motif_size
     _reader.communitygan.walk_length = walk_length
     _reader.communitygan.epoch_size = sgd_steps_per_epoch * mini_batch_size

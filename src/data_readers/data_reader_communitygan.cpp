@@ -35,6 +35,7 @@ communitygan_reader::communitygan_reader(
   std::string embedding_weights_name,
   std::string motif_file,
   std::string graph_file,
+  size_t num_vertices,
   size_t motif_size,
   size_t walk_length,
   size_t epoch_size)
@@ -42,6 +43,7 @@ communitygan_reader::communitygan_reader(
     m_embedding_weights_name(std::move(embedding_weights_name)),
     m_motif_file(std::move(motif_file)),
     m_graph_file(std::move(graph_file)),
+    m_num_vertices(num_vertices),
     m_motif_size(motif_size),
     m_walk_length(walk_length),
     m_epoch_size(epoch_size) {
@@ -120,43 +122,38 @@ void communitygan_reader::load() {
 
   // Trainer info
   auto& comm = *get_comm();
-  const size_t trainer_rank = comm.get_trainer_rank();
+  const size_t trainer_rank = comm.get_rank_in_trainer();
   const size_t trainer_size = comm.get_procs_per_trainer();
 
-  // Objects for parsing motif file
   m_motifs.clear();
-  std::ifstream ifs(m_motif_file.c_str());
-  std::istringstream iss;
-  std::string line;
-  std::vector<size_t> local_vertices, remote_vertices;
-  local_vertices.reserve(m_motif_size);
-  remote_vertices.reserve(m_motif_size);
 
   // Iterate through lines in file
+  std::ifstream ifs(m_motif_file.c_str());
+  std::string line;
+  std::vector<size_t> vertices;
+  vertices.reserve(m_motif_size);
   while (std::getline(ifs, line)) {
 
     // Objects for parsing line
-    iss.str(line);
+    std::istringstream iss(line);
     size_t vertex;
     iss >> vertex; // First index is motif ID, so discard
-    local_vertices.clear();
-    remote_vertices.clear();
 
     // Parse vertices in motif
     // Note: Keep track of vertices that are local or remote
+    bool has_local_vertex = false;
+    vertices.clear();
     for (size_t i=0; i<m_motif_size; ++i) {
       iss >> vertex;
+      vertices.push_back(vertex);
       if (vertex % trainer_size == trainer_rank) {
-        local_vertices.push_back(vertex);
-      }
-      else {
-        remote_vertices.push_back(vertex);
+        has_local_vertex = true;
       }
     }
 
     // Save motif if it has a local vertex
-    if (!local_vertices.empty()) {
-      m_motifs.emplace_back(local_vertices, remote_vertices);
+    if (has_local_vertex) {
+      m_motifs.emplace_back(vertices);
     }
 
   }
@@ -182,51 +179,52 @@ std::vector<std::vector<size_t>> communitygan_reader::generate_samples(
       "Make sure model has \"setup CommunityGAN data reader\" callback.");
   }
 
-  // Allocate memory for samples and walk starts
-  std::vector<std::vector<size_t>> samples;
+  // Trainer info
+  auto& comm = *get_comm();
+  const size_t trainer_rank = comm.get_rank_in_trainer();
+  const size_t trainer_size = comm.get_procs_per_trainer();
+
+  // Randomly choose start vertices
   std::vector<int> starts;
-  samples.reserve(m_cache_size);
-  starts.reserve(m_cache_size);
-
-  // Randomly choose motifs and walk starts
-  auto pick_random = [&] (const auto& vector) {
-    return vector.at(fast_rand_int(get_io_generator(), vector.size()));
-  };
-  for (size_t i=0; i<m_cache_size; ++i) {
-
-    // Allocate memory for sample
-    samples.emplace_back();
-    auto& sample = samples.back();
-    sample.reserve(m_motif_size + m_walk_length);
-
-    // Choose random motif
-    const auto& motif = pick_random(m_motifs);
-    const auto& local_vertices = motif.first;
-    const auto& remote_vertices = motif.second;
-    sample.insert(sample.end(), local_vertices.cbegin(), local_vertices.cend());
-    sample.insert(sample.end(), remote_vertices.cbegin(), remote_vertices.cend());
-    std::shuffle(sample.begin(), sample.end(), get_io_generator());
-
-    // Choose random walk start
-    starts.push_back(static_cast<int>(pick_random(local_vertices)));
-
+  const size_t num_starts = m_cache_size / m_walks_per_vertex;
+  starts.reserve(num_starts);
+  size_t num_local_vertices = m_num_vertices / trainer_size;
+  if (trainer_rank < m_num_vertices % trainer_size) {
+    ++num_local_vertices;
+  }
+  for (size_t i=0; i<num_starts; ++i) {
+    const size_t local_vertex_id = fast_rand_int(
+      get_io_generator(),
+      num_local_vertices);
+    starts.push_back(local_vertex_id * trainer_size + trainer_rank);
   }
 
   // Perform random walks
-  const auto walks = m_walker->run(starts);
-  if (walks.size() != m_cache_size) {
-    LBANN_ERROR(
-      "CommunityGAN data reader expected ",
-      m_cache_size," walks from walker, ",
-      "but got ",walks.size());
-  }
-  for (size_t i=0; i<m_cache_size; ++i) {
-    auto& sample = samples[i];
-    /// @todo Cache all walks from walker
-    for (const auto& vertex : pick_random(walks.at(starts[i]))) {
-      sample.push_back(vertex);
+  auto walks_ = m_walker->run(starts);
+  std::vector<std::vector<size_t>> walks;
+  for (auto it1=walks_.cbegin(); it1!=walks_.cend(); ++it1) {
+    const size_t start = it1->first;
+    for (auto it2=it1->second.cbegin(); it2!=it1->second.cend(); ++it2) {
+      walks.emplace_back();
+      auto& walk = walks.back();
+      walk.reserve(m_walk_length);
+      walk.push_back(start);
+      walk.insert(walk.end(), it2->cbegin(), it2->cend());
     }
-    sample.resize(m_motif_size + m_walk_length, -1);
+  }
+  std::shuffle(walks.begin(), walks.end(), get_io_generator());
+
+  // Construct samples by randomly choosing motifs
+  std::vector<std::vector<size_t>> samples;
+  samples.reserve(walks.size());
+  for (auto it=walks.cbegin(); it!=walks.cend(); ++it) {
+    samples.emplace_back();
+    auto& sample = samples.back();
+    const auto& motif = m_motifs[fast_rand_int(get_io_generator(), m_motifs.size())];
+    const auto& walk = *it;
+    sample.reserve(m_motif_size+m_walk_length);
+    sample.insert(sample.end(), motif.cbegin(), motif.cend());
+    sample.insert(sample.end(), walk.cbegin(), walk.cend());
   }
   return samples;
 
