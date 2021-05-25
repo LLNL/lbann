@@ -133,7 +133,7 @@ class NNConv(Module):
                 edge_index):
         """Apply NNConv layer.
         Args:
-            node_features (Layer); A 2D layer of node features of
+            node_features (Layer): A 2D layer of node features of
                                    shape (num_nodes, input_channels)
             neighbor_features (Layer): A 3D layer of node features of
                                        shape (num_edges, 1, input_channels)

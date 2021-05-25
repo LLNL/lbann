@@ -1,6 +1,6 @@
 import numpy as np 
 
-dataset = np.array(np.memmap("/p/vast1/lbann/LBANN_Data.bin",
+dataset = np.array(np.memmap("/p/vast1/zaman2/LBANN_Data.bin",
             dtype='float32',
             mode='r',
             shape=(3045360,1101)))

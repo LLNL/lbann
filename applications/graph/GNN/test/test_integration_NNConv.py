@@ -11,8 +11,10 @@ current_file = os.path.realpath(__file__)
 current_dir = os.path.dirname(current_file)
 root_dir = os.path.dirname(current_dir)
 
-import data.LSC_PPQM4M
-import OGB_LBANN_Trainer as trainer
+sys.path.append(root_dir)
+from NNConvModel import make_model 
+sys.path.append(os.path.join(root_dir,'data'))
+import LSC_PPQM4M
 
 graph_dir = os.path.dirname(root_dir)
 applications_dir = os.path.dirname(graph_dir)
@@ -22,12 +24,23 @@ sys.path.append(common_python_dir)
 import tools
 
 
-num_epochs = 100
+num_epochs = 3
 mini_batch_size = 2048
-num_nodes = 1
+
+compute_nodes = 1
+
+NUM_NODES = 51
+NUM_EDGES = 118
+NUM_NODES_FEATURES = 9
+NUM_EDGE_FEATURES = 3
+
+NUM_OUT_FEATURES = 32
+NUM_SAMPLES = 3045360
+EMBEDDING_DIM = 100
+EDGE_EMBEDDING_DIM = 16
 
 
-expected_accuracy_range = ( 0.5, 7)
+expected_accuracy_range = ( 0.2, 7)
 
 expected_mini_batch_times = {
        'ray' : 0.0372075
@@ -47,10 +60,16 @@ def setup_experiment(lbann):
     
     trainer = lbann.Trainer(mini_batch_size=mini_batch_size)
     
-    model = trainer.make_model()
-    reader = data.LSC_PPQM4M.make_data_reader("LSC_FULL_DATA")
+    model = make_model(NUM_NODES,
+                      NUM_EDGES,
+                      NUM_NODES_FEATURES,
+                      NUM_EDGE_FEATURES,
+                      EMBEDDING_DIM,
+                      EDGE_EMBEDDING_DIM,
+                      NUM_OUT_FEATURES,
+                      num_epochs)
+    reader = LSC_PPQM4M.make_data_reader("LSC_FULL_DATA")
     
-    # No validation set
 
     optimizer = lbann.Adam(learn_rate=0.01, beta1=0.9, beta2=0.99, eps=1e-8 )
     return trainer, model, reader, optimizer
@@ -84,9 +103,9 @@ def augment_test_func(test_func):
     test_name = test_func.__name__
 
     # Define test function
-    def func(cluster, exes, dirname):
+    def func(cluster, dirname):
         # Run LBANN experiment
-        experiment_output = test_func(cluster, exes, dirname)
+        experiment_output = test_func(cluster, dirname)
 
         # Parse LBANN log file
         train_accuracy = None
@@ -96,7 +115,7 @@ def augment_test_func(test_func):
 
         with open(experiment_output['stdout_log_file']) as f:
             for line in f:
-                match = re.search('training epoch [0-9]+  objective function : ([0-9.]+)', line)
+                match = re.search('training epoch [0-9]+ objective function : ([0-9.]+)', line)
                 if match:
                     train_accuracy = float(match.group(1))
                 match = re.search('training epoch [0-9]+ mini-batch time statistics : ([0-9.]+)s mean', line)
@@ -139,6 +158,6 @@ def augment_test_func(test_func):
 # Create test functions that can interact with PyTest
 for _test_func in tools.create_tests(setup_experiment,
                                      __file__,
-                                     nodes=num_nodes):
+                                     nodes=compute_nodes):
     globals()[_test_func.__name__] = augment_test_func(_test_func)
 
