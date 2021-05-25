@@ -31,7 +31,7 @@ endif ()
 
 if (LBANN_HAS_DISTCONV)
   list(APPEND THIS_DIR_SOURCES
-    "${CMAKE_CURRENT_SOURCE_DIR}/data_reader_hdf5.cpp")
+    "${CMAKE_CURRENT_SOURCE_DIR}/data_reader_hdf5_legacy.cpp")
 endif ()
 
 if (LBANN_HAS_OPENCV)

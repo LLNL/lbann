@@ -146,7 +146,8 @@
 #include "lbann/data_readers/data_reader_pilot2_molecular.hpp"
 #endif // LBANN_HAS_CNPY
 #ifdef LBANN_HAS_DISTCONV
-#include "lbann/data_readers/data_reader_hdf5.hpp"
+#include "lbann/data_readers/data_reader_hdf5_legacy.hpp"
+#include "lbann/data_readers/data_reader_HDF5.hpp"
 #endif // LBANN_HAS_DISTCONV
 #include "lbann/data_readers/data_reader_smiles.hpp"
 #include "lbann/data_readers/data_reader_node2vec.hpp"
