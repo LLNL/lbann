@@ -36,7 +36,6 @@ namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 convolution_layer<TensorDataType,Layout,Device>::convolution_layer(
-  lbann_comm *comm,
   int num_data_dims,
   int num_output_channels,
   int conv_dim,
@@ -45,8 +44,7 @@ convolution_layer<TensorDataType,Layout,Device>::convolution_layer(
   int dilation,
   int groups,
   bool has_bias)
-  : convolution_layer(comm,
-                      num_data_dims,
+  : convolution_layer(num_data_dims,
                       num_output_channels,
                       std::vector<int>(num_data_dims, conv_dim),
                       std::vector<int>(num_data_dims, pad),
@@ -58,7 +56,6 @@ convolution_layer<TensorDataType,Layout,Device>::convolution_layer(
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 convolution_layer<TensorDataType,Layout,Device>::convolution_layer(
-  lbann_comm *comm,
   int num_data_dims,
   int num_output_channels,
   std::vector<int> conv_dims,
@@ -68,7 +65,6 @@ convolution_layer<TensorDataType,Layout,Device>::convolution_layer(
   int groups,
   bool has_bias)
   : base_convolution_layer<TensorDataType, Device>(
-    comm,
     num_data_dims,
     num_output_channels,
     std::move(conv_dims),
@@ -77,6 +73,11 @@ convolution_layer<TensorDataType,Layout,Device>::convolution_layer(
     std::move(dilations),
     groups,
     has_bias)
+{}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+convolution_layer<TensorDataType,Layout,Device>::convolution_layer()
+  : convolution_layer(0, 0, {}, {}, {}, {}, 0, false)
 {}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -127,8 +128,8 @@ void convolution_layer<TensorDataType,Layout,Device>::fp_compute() {
       return;
     }
 #endif // LBANN_HAS_DISTCONV
-    BaseConvLayer::apply_convolution_cudnn(true);
-    BaseConvLayer::apply_bias_cudnn();
+    BaseConvLayer::apply_convolution_dnn(true);
+    BaseConvLayer::apply_bias_dnn();
   }
   else {
     BaseConvLayer::apply_convolution_im2col(true);
@@ -151,8 +152,8 @@ void convolution_layer<TensorDataType,Layout,Device>::bp_compute() {
       return;
     }
 #endif // LBANN_HAS_DISTCONV
-    BaseConvLayer::compute_gradients_cudnn(false);
-    BaseConvLayer::apply_transposed_convolution_cudnn(false);
+    BaseConvLayer::compute_gradients_dnn(false);
+    BaseConvLayer::apply_transposed_convolution_dnn(false);
   }
   else {
     BaseConvLayer::compute_gradients_im2col(false);
@@ -291,25 +292,6 @@ void convolution_distconv_adapter<TensorDataType, Layout, Device>::setup_layer(
 // Builder helper stuff
 namespace {
 
-#ifdef LBANN_HAS_CUDNN
-using ProtoTensorOpEnumType = decltype(lbann_data::DEFAULT_TENSOR_OPS);
-cudnnMathType_t convert_to_cudnn_math_type(ProtoTensorOpEnumType mt)
-{
-  switch (mt)
-  {
-  case lbann_data::DEFAULT_TENSOR_OPS:
-    return cudnn::get_default_convolution_math_type();
-  case lbann_data::NO_TENSOR_OPS:
-    return CUDNN_DEFAULT_MATH;
-  case lbann_data::USE_TENSOR_OPS:
-    return CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION;
-  default:
-    LBANN_ERROR("Bad math type value.");
-  }
-  return CUDNN_DEFAULT_MATH;
-}
-#endif // LBANN_HAS_CUDNN
-
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 struct ConvLayerBuilder
 {
@@ -332,18 +314,18 @@ struct ConvLayerBuilder
       if (dilations.empty()) {
         dilations.resize(dims.size(), 1);
       }
-#ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_DNN_LIB
       auto ret = lbann::make_unique<convolution_layer<TensorDataType, Layout, Device>>(
-        comm, dims.size(), num_output_channels,
+        dims.size(), num_output_channels,
         dims, pads, strides, dilations, num_groups, bias);
-      ret->set_cudnn_math_mode(
-        convert_to_cudnn_math_type(params.conv_tensor_op_mode()));
+      ret->set_dnn_math_mode(
+        dnn_lib::convert_to_dnn_math_type(params.conv_tensor_op_mode()));
       return ret;
 #else
       return lbann::make_unique<convolution_layer<TensorDataType, Layout, Device>>(
-        comm, dims.size(), num_output_channels,
+        dims.size(), num_output_channels,
         dims, pads, strides, dilations, num_groups, bias);
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_DNN_LIB
     }
     else {
       const auto& num_dims = params.num_dims();
@@ -354,18 +336,18 @@ struct ConvLayerBuilder
       if (dilation == 0) {
         dilation = 1;
       }
-#ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_DNN_LIB
       auto ret =lbann::make_unique<convolution_layer<TensorDataType, Layout, Device>>(
-        comm, num_dims, num_output_channels,
+        num_dims, num_output_channels,
         dim, pad, stride, dilation, num_groups, bias);
-      ret->set_cudnn_math_mode(
-        convert_to_cudnn_math_type(params.conv_tensor_op_mode()));
+      ret->set_dnn_math_mode(
+        dnn_lib::convert_to_dnn_math_type(params.conv_tensor_op_mode()));
       return ret;
 #else
       return lbann::make_unique<convolution_layer<TensorDataType, Layout, Device>>(
-        comm, num_dims, num_output_channels,
+        num_dims, num_output_channels,
         dim, pad, stride, dilation, num_groups, bias);
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_DNN_LIB
     }
   }
 };

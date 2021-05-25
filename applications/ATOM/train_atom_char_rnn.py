@@ -247,7 +247,6 @@ def main():
     trainer = lbann.Trainer(
         run_args.batch_size,
         name=None,
-        procs_per_trainer=run_args.procs_per_trainer,
     )
 
     # define data_reader
@@ -295,7 +294,7 @@ def main():
         procs_per_node=ppn,
         job_name=run_args.job_name,
         experiment_dir=experiment_dir,
-        lbann_args=f"--vocab={run_args.vocab} --num_samples={run_args.num_samples} --sequence_length={run_args.sequence_length}  --num_io_threads={run_args.num_io_threads} --no_header={run_args.no_header} --delimiter={run_args.delimiter}",
+        lbann_args=f"--procs_per_trainer={run_args.procs_per_trainer} --vocab={run_args.vocab} --num_samples={run_args.num_samples} --sequence_length={run_args.sequence_length}  --num_io_threads={run_args.num_io_threads} --no_header={run_args.no_header} --delimiter={run_args.delimiter}",
     )
 
     print("LBANN launcher status:\n" + str(status))

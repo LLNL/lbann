@@ -29,16 +29,14 @@
 
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
+#include "lbann/layers/layer.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/io/persist.hpp"
-#include <cereal/types/base_class.hpp>
-#include <cereal/types/map.hpp>
 
 namespace lbann {
 
 // Forward declarations
 class model;
-class Layer;
 
 /** Metric statistics. */
 struct metric_statistics {
@@ -60,10 +58,7 @@ struct metric_statistics {
   ~metric_statistics() = default;
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize( Archive & ar ) {
-    ar(CEREAL_NVP(m_sum),
-       CEREAL_NVP(m_num_samples));
-  }
+  template <class Archive> void serialize( Archive & ar );
 
   /** Add metric value to statistics. */
   void add_value(EvalType value, int num_samples = 1);
@@ -99,9 +94,7 @@ class metric {
   virtual metric* copy() const = 0;
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize( Archive & ar ) {
-    ar(CEREAL_NVP(m_statistics));
-  }
+  template <class Archive> void serialize( Archive & ar );
 
   /** Return a string name for this metric. */
   virtual std::string name() const = 0;
@@ -140,9 +133,9 @@ class metric {
   int get_statistics_num_samples(execution_mode mode) const;
 
   /** Get list of pointers to layers. */
-  virtual std::vector<Layer*> get_layer_pointers() const;
+  virtual std::vector<ViewingLayerPtr> get_layer_pointers() const;
   /** Set list of pointers to layers. */
-  virtual void set_layer_pointers(std::vector<Layer*> layers);
+  virtual void set_layer_pointers(std::vector<ViewingLayerPtr> layers);
 
   /** Get the time spent in evaluation for this metric (const). */
   EvalType get_evaluate_time() const { return m_evaluate_time; }

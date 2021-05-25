@@ -30,11 +30,7 @@ package lbann_data;
 
 import "google/protobuf/wrappers.proto";
 
-enum DataType {
-  FLOAT = 0;
-  DOUBLE = 1;
-  FP16 = 2;
-}
+import "datatype.proto";
 
 // Lives here because it's used by both Convolution and
 // Deconvolution.
@@ -94,6 +90,9 @@ message Layer {
     Sort sort = 325;
     WeightsLayer weights_layer = 326;
     Tessellate tessellate = 327;
+    Scatter scatter = 334;
+    Gather gather = 335;
+    BatchwiseReduceSum batchwise_reduce_sum = 336;
 
     // Learning layers
     FullyConnected fully_connected = 11;
@@ -148,6 +147,8 @@ message Layer {
     Acosh acosh = 426;
     Asinh asinh = 427;
     Atanh atanh = 428;
+    Erf erf = 429;
+    ErfInv erfinv = 430;
     Add add = 450;
     Subtract subtract = 451;
     Multiply multiply = 452;
@@ -207,6 +208,8 @@ message Layer {
     OneHot one_hot = 607;
     ChannelwiseSoftmax channelwise_softmax = 608;
     DistEmbedding dist_embedding = 609;
+    UniformHash uniform_hash = 610;
+    RowwiseWeightsNorms rowwise_weights_norms = 611;
 
   }
 
@@ -241,6 +244,8 @@ message Layer {
   message Acosh {}
   message Asinh {}
   message Atanh {}
+  message Erf {}
+  message ErfInv {}
   message Add {}
   message Subtract {}
   message Multiply {}
@@ -400,8 +405,7 @@ message Layer {
   // Input layers //
   //////////////////
   message Input {
-    string io_buffer = 2;         // Options: "partitioned" (default)
-    string target_mode = 3;       // Options: "classification" (default), "regression", "reconstruction", "label_reconstruction", "N/A"
+    string target_mode = 3;       // Options: "classification", "regression", "reconstruction", "label_reconstruction", "N/A" (default)
   }
 
   //////////////////////
@@ -432,9 +436,16 @@ message Layer {
     string pool_mode = 7;
   }
 
+  /** @brief Transpose of pooling layer
+   *
+   *  Requires that a pooling layer is set as the hint layer.
+   *
+   *  @warning This has not been well maintained and is probably
+   *  broken.
+   *  @todo GPU support.
+   */
   message Unpooling {
     int64 num_dims = 1;
-    string pooling_layer = 13; //should be name of the pooling layer
   }
 
 
@@ -469,8 +480,9 @@ message Layer {
     string num_neurons=2;
   }
 
+  /** @brief Reduce tensor to scalar. */
   message Reduction {
-    string mode=1; //"sum" or "average"
+    string mode=1; // "sum" (default) or "mean"
   }
 
   message Evaluation {
@@ -529,6 +541,55 @@ message Layer {
   message Tessellate {
     string dims = 1;
   }
+
+  /** @brief Scatter values to specified tensor indices.
+    *
+    *  @f[
+    *    y[i,\text{ind}[i]] = x[i]
+    *  @f]
+    *
+    *  The first input tensor is the values and the second is the
+    *  indices. The two input tensors must have the same dimensions. If
+    *  an index is out-of-range, it is ignored.
+    *
+    *  @todo Only flat tensors are currently supported. For higher-order
+    *  tensors, PyTorch
+    *  (https://pytorch.org/docs/master/tensors.html#torch.Tensor.scatter_)
+    *  and TensorFlow
+    *  (https://www.tensorflow.org/api_docs/python/tf/scatter_nd) will
+    *  scatter along a specified dimension.
+    */
+  message Scatter {
+    /// Output tensor dimensions
+    string dims = 1;
+  }
+
+  /** @brief Gather values from specified tensor indices.
+    *
+    *  @f[
+    *    y[i] = x[\text{ind}[i]]
+    *  @f]
+    *
+    *  The first input tensor is the values and the second is the
+    *  indices. The two input tensors must have the same number of
+    *  dimensions, and the output tensor will have the same dimensions as
+    *  the index tensor. If an index is out-of-range, the corresponding
+    *  output is set to zero.
+    *
+    *  @todo Only flat tensors are currently supported. For higher-order
+    *  tensors, PyTorch
+    *  (https://pytorch.org/docs/stable/generated/torch.gather.html) and
+    *  TensorFlow
+    *  (https://www.tensorflow.org/api_docs/python/tf/gather_nd) will
+    *  gather along a specified dimension.
+    */
+  message Gather {}
+
+  /** @brief Sum of tensor entries along batch dimension
+    *
+    *  Output tensor has same shape as input tensor.
+    */
+  message BatchwiseReduceSum {}
 
   /////////////////////
   // Learning layers //
@@ -775,6 +836,31 @@ message Layer {
     bool barrier_in_forward_prop = 5;
 
   }
+
+  /** @brief Apply a hash function to get uniformly distributed values
+   *
+   *  Each input entry is hashed with MD5 and scaled to [0,1).
+   *
+   *  @warning Currently only supported on GPU.
+   */
+  message UniformHash {}
+
+  /** @brief L2 norm of each row of a weights matrix.
+   *
+   *  @warning This layer is experimental and finnicky. It is intended
+   *  for use with the matrix weights from a fully-connected layer, and
+   *  other use-cases may have strange behavior.
+   *
+   *  Given a weights object, this layer computes the L2 norm for each
+   *  row of the underlying matrix. Note that the internal matrix may
+   *  have different dimensions than the logical weight dimensions.
+   *
+   *  This layer expects to have one weights object. During setup, that
+   *  weights object should be initialized by another layer before this
+   *  layer's setup phase. Setting a "hint layer" may be necessary to
+   *  enforce this ordering.
+   */
+  message RowwiseWeightsNorms {}
 
 } // message Layer
 

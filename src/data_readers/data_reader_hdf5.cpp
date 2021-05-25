@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 //
 /////////////////////////////////////////////////////////////////////////////////
+#include "lbann/comm_impl.hpp"
 #include "lbann/data_readers/data_reader_hdf5.hpp"
 #include "lbann/utils/profiling.hpp"
 #include "lbann/utils/distconv.hpp"
@@ -89,8 +90,6 @@ void hdf5_reader<TensorDataType>::copy_members(const hdf5_reader &rhs) {
   }
   m_data_store->set_data_reader_ptr(this);
 
-  m_has_labels = rhs.m_has_labels;
-  m_has_responses = rhs.m_has_responses;
   m_num_features = rhs.m_num_features;
   m_data_dims = rhs.m_data_dims;
   m_hyperslab_dims = rhs.m_hyperslab_dims;
@@ -157,13 +156,13 @@ void hdf5_reader<TensorDataType>::read_hdf5_sample(int data_id, TensorDataType *
   //close data set
   CHECK_HDF5(H5Dclose(h_data));
 
-  if (m_has_labels && labels != nullptr) {
+  if (this->has_labels() && labels != nullptr) {
     assert_always(m_hyperslab_labels);
     hid_t h_labels = CHECK_HDF5(H5Dopen(h_file, m_key_labels.c_str(), H5P_DEFAULT));
     hid_t filespace_labels = CHECK_HDF5(H5Dget_space(h_labels));
     read_hdf5_hyperslab(h_labels, filespace_labels, world_rank, labels);
     CHECK_HDF5(H5Dclose(h_labels));
-  } else if (m_has_responses) {
+  } else if (this->has_responses()) {
     assert_always(labels == nullptr);
     h_data = CHECK_HDF5(H5Dopen(h_file, m_key_responses.c_str(), H5P_DEFAULT));
     CHECK_HDF5(H5Dread(h_data, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &m_all_responses[0]));
@@ -244,7 +243,7 @@ void hdf5_reader<TensorDataType>::load() {
 
 template <typename TensorDataType>
 bool hdf5_reader<TensorDataType>::fetch_label(Mat& Y, int data_id, int mb_idx) {
-  if(!m_has_labels) {
+  if(!this->has_labels()) {
     return generic_data_reader::fetch_label(Y, data_id, mb_idx);
   }
 
@@ -299,7 +298,7 @@ void hdf5_reader<TensorDataType>::fetch_datum_conduit(Mat& X, int data_id) {
     conduit_obj.set(get_conduit_data_type(
         m_num_features / dc::get_number_of_io_partitions()));
     TensorDataType *sample_buf = conduit_obj.value();
-    if(m_has_labels) {
+    if(this->has_labels()) {
       assert_always(m_hyperslab_labels);
       auto &conduit_labels_obj = node[conduit_key + "/labels_slab"];
       conduit_labels_obj.set(get_conduit_data_type(
@@ -309,7 +308,7 @@ void hdf5_reader<TensorDataType>::fetch_datum_conduit(Mat& X, int data_id) {
     } else {
       read_hdf5_sample(data_id, sample_buf, nullptr);
     }
-    if(m_has_responses) {
+    if(this->has_responses()) {
       node[conduit_key + "/responses"].set(
           &m_all_responses[0],
           m_all_responses.size());
@@ -332,7 +331,7 @@ void hdf5_reader<TensorDataType>::fetch_datum_conduit(Mat& X, int data_id) {
 //get from a cached response
 template <typename TensorDataType>
 bool hdf5_reader<TensorDataType>::fetch_response(Mat& Y, int data_id, int mb_idx) {
-  if(!m_has_responses) {
+  if(!this->has_responses()) {
     return generic_data_reader::fetch_response(Y, data_id, mb_idx);
   }
 

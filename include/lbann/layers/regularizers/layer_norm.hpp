@@ -60,10 +60,9 @@ public:
 public:
 
   /**
-   *  @param comm       LBANN communicator
    *  @param epsilon    Small number to avoid division by zero
    */
-  layer_norm_layer(lbann_comm* comm, TensorDataType epsilon=1e-5);
+  layer_norm_layer(TensorDataType epsilon=El::To<TensorDataType>(1e-5));
 
   layer_norm_layer(const layer_norm_layer& other);
   layer_norm_layer& operator=(const layer_norm_layer& other);
@@ -73,6 +72,14 @@ public:
   data_layout get_data_layout() const override;
   El::Device get_device_allocation() const override;
   description get_description() const override;
+
+  /** @name Serialization */
+  ///@{
+
+   template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
 
 protected:
 
@@ -110,9 +117,8 @@ private:
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 layer_norm_layer<TensorDataType,Layout,Device>::layer_norm_layer(
-  lbann_comm* comm,
   TensorDataType epsilon)
-  : data_type_layer<TensorDataType>(comm), m_epsilon(epsilon)
+  : data_type_layer<TensorDataType>(nullptr), m_epsilon(epsilon)
 {}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>

@@ -26,6 +26,8 @@
 
 #include <catch2/catch.hpp>
 
+#include <lbann/comm_impl.hpp>
+
 #include "MPITestHelpers.hpp"
 
 TEST_CASE("Example: test of Broadcast", "[mpi][example]")

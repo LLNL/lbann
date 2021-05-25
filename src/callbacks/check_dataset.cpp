@@ -24,17 +24,32 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <vector>
+#include "lbann/comm_impl.hpp"
 #include "lbann/callbacks/check_dataset.hpp"
-#include "lbann/layers/io/io_layer.hpp"
-#include "lbann/layers/io/input/input_layer.hpp"
+#include "lbann/execution_contexts/execution_context.hpp"
+#include "lbann/layers/io/input_layer.hpp"
+#include "lbann/utils/serialize.hpp"
+
 #include <iomanip>
+#include <vector>
 
 namespace lbann {
 namespace callback {
 
+template <class Archive>
+void
+check_dataset::serialize(Archive & ar) {
+  ar(::cereal::make_nvp(
+       "BaseCallback",
+       ::cereal::base_class<callback_base>(this)),
+     CEREAL_NVP(m_basename),
+     CEREAL_NVP(training_set),
+     CEREAL_NVP(validation_set),
+     CEREAL_NVP(testing_set));
+}
+
 void check_dataset::add_to_set(model *m, Layer *l, int64_t step, std::set<long>& set) {
-  if (!dynamic_cast<io_layer<DataType>*>(l)) {
+  if (!dynamic_cast<input_layer<DataType>*>(l)) {
     return;
   }
 
@@ -83,9 +98,9 @@ void check_dataset::on_epoch_end(model *m) {
     "] : I have processed " << training_set.size() << " elements" << std::endl;
 
   // Get first input layer in model
-  generic_input_layer<DataType>* input = nullptr;
+  input_layer<DataType>* input = nullptr;
   for (auto&& l : m->get_layers()) {
-    input = dynamic_cast<generic_input_layer<DataType>*>(l);
+    input = dynamic_cast<input_layer<DataType>*>(l);
     if (input != nullptr) { break; }
   }
   if (input == nullptr) { LBANN_ERROR("could not get input layer"); }
@@ -122,10 +137,11 @@ void check_dataset::on_epoch_end(model *m) {
 
   std::cout << "Training: my local vector has size " << local_data.size() << std::endl;
   if (comm->am_trainer_master()) {
+    data_coordinator& dc = get_trainer().get_data_coordinator();
     // Build a vector large enough to hold all indices for the model.
     std::vector<int> model_training_set(
-      input->get_num_iterations_per_epoch(execution_mode::training) *
-      m->get_execution_context().get_trainer().get_max_mini_batch_size());
+      dc.get_num_iterations_per_epoch(execution_mode::training) *
+      get_trainer().get_max_mini_batch_size());
 
     std::cout << "Training: my model vector has size " << model_training_set.size() << std::endl;
     // comm->trainer_gatherv(local_data.data(), local_data.size(),
@@ -165,3 +181,6 @@ void check_dataset::on_test_end(model *m) {
 
 } // namespace callback
 } // namespace lbann
+
+#define LBANN_CLASS_NAME callback::check_dataset
+#include <lbann/macros/register_class_with_cereal.hpp>

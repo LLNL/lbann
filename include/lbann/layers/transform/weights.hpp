@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYER_WEIGHTS_HPP_INCLUDED
 #define LBANN_LAYER_WEIGHTS_HPP_INCLUDED
 
-#include "lbann/layers/transform/transform.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 #include "lbann/models/model.hpp"
 
 namespace lbann {
@@ -39,7 +39,7 @@ namespace lbann {
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class weights_layer : public transform_layer<TensorDataType> {
+class weights_layer : public data_type_layer<TensorDataType> {
 
 public:
   /** @name Public Types */
@@ -69,7 +69,7 @@ public:
 
  public:
   weights_layer(lbann_comm *comm, std::vector<El::Int> dims)
-    : transform_layer<TensorDataType>(comm) {
+    : data_type_layer<TensorDataType>(comm) {
     std::vector<int> dims_;
     for (const auto& d : dims) { dims_.push_back(d); }
     this->set_output_dims(dims_);
@@ -77,25 +77,39 @@ public:
   }
 
   weights_layer(const weights_layer& other)
-    : transform_layer<TensorDataType>(other),
+    : data_type_layer<TensorDataType>(other),
       m_gradient(other.m_gradient ? other.m_gradient->Copy() : nullptr) {
     m_workspace.SetMemoryMode(other.m_workspace.MemoryMode());
   }
   weights_layer& operator=(const weights_layer& other){
-    transform_layer<TensorDataType>::operator=(other);
+    data_type_layer<TensorDataType>::operator=(other);
     m_gradient.reset(other.m_gradient ? other.m_gradient->Copy() : nullptr);
     m_workspace.SetMemoryMode(other.m_workspace.MemoryMode());
     return *this;
   }
   weights_layer* copy() const override { return new weights_layer(*this); }
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
+
   std::string get_type() const override { return "weights"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
  protected:
 
+  friend class cereal::access;
+  weights_layer()
+    : weights_layer(nullptr, { 1 } )
+  {}
+
   void setup_matrices(const El::Grid& grid) override {
-    transform_layer<TensorDataType>::setup_matrices(grid);
+    data_type_layer<TensorDataType>::setup_matrices(grid);
 
     // Initialize weights gradient
     auto dist = this->get_activations().DistData();
@@ -110,17 +124,17 @@ public:
   }
 
   void setup_data(size_t max_mini_batch_size) override {
-    transform_layer<TensorDataType>::setup_data(max_mini_batch_size);
+    data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
 
     // Initialize default weights if none are provided
     if (!this->has_weights()) {
-      auto w = make_unique<WeightsType>(this->get_comm());
+      auto w = std::make_shared<WeightsType>(*this->get_comm());
       auto init = make_unique<constant_initializer<DataType>>(DataType(0));
       auto opt = this->m_model->template create_optimizer<TensorDataType>();
       w->set_name(this->get_name() + "_weights");
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
-      this->add_weights(w.get());
+      this->add_weights(w);
       this->m_model->add_weights(std::move(w));
     }
     if (this->num_weights() != 1) {
@@ -132,9 +146,11 @@ public:
     }
 
     // Setup weights and weights gradient
+    const auto& output_dims_ = this->get_output_dims();
+    std::vector<size_t> output_dims(output_dims_.begin(), output_dims_.end());
     m_gradient->AlignWith(this->get_activations());
     m_gradient->Resize(this->get_output_size(), 1);
-    this->get_weights(0).set_dims(this->get_output_dims());
+    this->get_weights(0).set_dims(output_dims);
     this->get_weights(0).set_matrix_distribution(m_gradient->DistData());
 
     // Initialize freeze state

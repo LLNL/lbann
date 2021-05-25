@@ -24,11 +24,14 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/utils/summary.hpp"
+#include "lbann/comm_impl.hpp"
+#include "lbann/utils/summary_impl.hpp"
 
 #include "lbann/utils/exception.hpp"
+#ifdef LBANN_HAS_OPENCV
 #include "lbann/utils/image.hpp"
-#include "lbann/utils/opencv.hpp"
+#endif // LBANN_HAS_OPENCV
+#include "lbann/utils/vision.hpp"
 
 namespace lbann {
 
@@ -51,6 +54,7 @@ lbann_summary::~lbann_summary() {
   }
 }
 
+#ifdef LBANN_HAS_OPENCV
 void lbann_summary::report_image(std::string const& tag,
                                  std::string const& img_format,
                                  CPUMat const& image,
@@ -70,6 +74,7 @@ void lbann_summary::report_image(std::string const& tag,
   m_sw->add_image(tag, img_str, dims, step);
 
 }
+#endif // LBANN_HAS_OPENCV
 
 void lbann_summary::flush() {
   flush_means();
@@ -96,7 +101,7 @@ void lbann_summary::flush_means() {
   if (m_comm->am_trainer_master()) {
     std::vector<float> global_sums(local_sums.size());
     m_comm->trainer_reduce(local_sums.data(), local_sums.size(),
-                           global_sums.data());
+                           global_sums.data(), El::mpi::SUM);
     // Compute the means in-place.
     for (unsigned i = 0; i < global_sums.size(); ++i) {
       global_sums[i] /= m_pending_means[i].num;
@@ -104,7 +109,7 @@ void lbann_summary::flush_means() {
     gather_scalar_summary(m_pending_means, global_sums);
   } else {
     m_comm->trainer_reduce(local_sums.data(), local_sums.size(),
-                         m_comm->get_trainer_master());
+                         m_comm->get_trainer_master(), El::mpi::SUM);
   }
   m_pending_means.clear();
 }
@@ -168,9 +173,9 @@ void lbann_summary::flush_stdevs() {
     std::vector<float> global_sums(local_sums.size());
     std::vector<float> global_sqsums(local_sqsums.size());
     m_comm->trainer_reduce(local_sums.data(), local_sums.size(),
-                           global_sums.data());
+                           global_sums.data(), El::mpi::SUM);
     m_comm->trainer_reduce(local_sqsums.data(), local_sqsums.size(),
-                           global_sqsums.data());
+                           global_sqsums.data(), El::mpi::SUM);
     // Re-use the global_sums vector for the standard deviation.
     for (unsigned i = 0; i < global_sums.size(); ++i) {
       global_sums[i] = El::Sqrt(
@@ -181,9 +186,9 @@ void lbann_summary::flush_stdevs() {
     gather_scalar_summary(m_pending_stdevs, global_sums);
   } else {
     m_comm->trainer_reduce(local_sums.data(), local_sums.size(),
-                         m_comm->get_trainer_master());
+                         m_comm->get_trainer_master(), El::mpi::SUM);
     m_comm->trainer_reduce(local_sqsums.data(), local_sqsums.size(),
-                         m_comm->get_trainer_master());
+                         m_comm->get_trainer_master(), El::mpi::SUM);
   }
   m_pending_stdevs.clear();
 }
@@ -213,11 +218,11 @@ void lbann_summary::flush_sum_scalars() {
   if (m_comm->am_trainer_master()) {
     std::vector<float> global_sums(local_sums.size());
     m_comm->trainer_reduce(local_sums.data(), local_sums.size(),
-                           global_sums.data());
+                           global_sums.data(), El::mpi::SUM);
     gather_scalar_summary(m_pending_sum_scalars, global_sums);
   } else {
     m_comm->trainer_reduce(local_sums.data(), local_sums.size(),
-                           m_comm->get_trainer_master());
+                           m_comm->get_trainer_master(), El::mpi::SUM);
   }
   m_pending_sum_scalars.clear();
 }
@@ -336,11 +341,11 @@ void lbann_summary::flush_histograms() {
     m_comm->trainer_reduce(local_maxes.data(), local_maxes.size(),
                          m_comm->get_trainer_master(), El::mpi::MAX);
     m_comm->trainer_reduce(local_sums.data(), local_sums.size(),
-                         m_comm->get_trainer_master());
+                         m_comm->get_trainer_master(), El::mpi::SUM);
     m_comm->trainer_reduce(local_sqsums.data(), local_sqsums.size(),
-                         m_comm->get_trainer_master());
+                         m_comm->get_trainer_master(), El::mpi::SUM);
     m_comm->trainer_reduce(buckets.data(), buckets.size(),
-                         m_comm->get_trainer_master());
+                         m_comm->get_trainer_master(), El::mpi::SUM);
   }
   m_pending_histograms.clear();
 }

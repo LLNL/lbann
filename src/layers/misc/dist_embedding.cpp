@@ -170,23 +170,32 @@ void dist_embedding_layer<TensorDataType,Layout,Device>::fp_compute() {
   const size_t rank = comm.get_rank_in_trainer();
   for (size_t j=0; j<local_mini_batch_size; ++j) {
     for (size_t i=0; i<input_size; ++i) {
-      const auto& global_index = static_cast<size_t>(std::floor(local_input(i,j)));
+      const El::Int global_index = static_cast<El::Int>(std::floor(local_input(i,j)));
       const auto& global_j = input.GlobalCol(j);
 
       // Figure out which process owns embedding vector
       auto& m = m_metadata_buffer[i + global_j*input_size];
-      m.source_rank = embeddings.Owner(0, global_index);
-      m.source_index = embeddings.LocalCol(global_index, m.source_rank);
       m.target_rank = rank;
       m.target_index = i + global_j*input_size;
-      m.is_active = true;
+      if (0 <= global_index
+          && global_index < static_cast<El::Int>(m_num_embeddings)) {
+        m.source_rank = embeddings.Owner(0, global_index);
+        m.source_index = embeddings.LocalCol(global_index, m.source_rank);
+        m.is_active = true;
+      }
 
       // Get embedding vector from owner process
-      shmem_getmem_nbi(
-        workspace.Buffer(0, m.target_index),
-        embeddings.LockedBuffer(0, m.source_index),
-        m_embedding_dim*sizeof(TensorDataType),
-        m.source_rank);
+      if (m.is_active) {
+        shmem_getmem_nbi(
+          workspace.Buffer(0, m.target_index),
+          embeddings.LockedBuffer(0, m.source_index),
+          m_embedding_dim*sizeof(TensorDataType),
+          m.source_rank);
+      }
+      else {
+        auto workspace_v = workspace(El::ALL, El::IR(m.target_index));
+        El::Zero(workspace_v);
+      }
 
     }
   }
@@ -241,16 +250,18 @@ void dist_embedding_layer<TensorDataType,Layout,Device>::bp_compute() {
     for (size_t i=0; i<input_size; ++i) {
       const auto& global_j = input.GlobalCol(j);
       auto& m = m_metadata_buffer[i + global_j*input_size];
-      shmem_putmem_nbi(
-        workspace.Buffer(0, i+global_j*input_size),
-        local_output_grad.LockedBuffer(i*m_embedding_dim, j),
-        m_embedding_dim*sizeof(TensorDataType),
-        m.source_rank);
-      shmem_putmem_nbi(
-        &m,
-        &m,
-        sizeof(vector_metadata),
-        m.source_rank);
+      if (m.is_active) {
+        shmem_putmem_nbi(
+          workspace.Buffer(0, i+global_j*input_size),
+          local_output_grad.LockedBuffer(i*m_embedding_dim, j),
+          m_embedding_dim*sizeof(TensorDataType),
+          m.source_rank);
+        shmem_putmem_nbi(
+          &m,
+          &m,
+          sizeof(vector_metadata),
+          m.source_rank);
+      }
     }
   }
   shmem_quiet();
@@ -399,7 +410,6 @@ std::unique_ptr<Layer> build_dist_embedding_layer_from_pbuf(
   LBANN_ASSERT_MSG_HAS_FIELD(proto_layer, dist_embedding);
   const auto& params = proto_layer.dist_embedding();
   return BuilderType::Build(
-    comm,
     params.num_embeddings(),
     params.embedding_dim(),
     params.sparse_sgd(),

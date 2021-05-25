@@ -90,6 +90,15 @@ public:
   }
 
   tessellate_layer* copy() const override { return new tessellate_layer(*this); }
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
+
   std::string get_type() const override { return "tessellate"; }
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
@@ -136,6 +145,11 @@ public:
   }
 
 protected:
+
+  friend class cereal::access;
+  tessellate_layer()
+    : tessellate_layer(nullptr)
+  {}
 
   void fp_compute() override {
 
@@ -194,7 +208,7 @@ protected:
 
     // Accumulate local error signals, if needed
     if (m_input_v->DistData() != gradient_wrt_input.DistData()) {
-      this->m_comm->allreduce(*m_input_v, m_input_v->RedundantComm());
+      this->get_comm()->allreduce(*m_input_v, m_input_v->RedundantComm());
       El::Copy(*m_input_v, gradient_wrt_input);
     }
 

@@ -26,7 +26,7 @@
 
 #include "lbann/utils/gpu/helpers.hpp"
 
-#ifdef LBANN_HAS_GPU
+#ifdef LBANN_HAS_CUDA
 
 namespace lbann {
 namespace cuda {
@@ -322,7 +322,7 @@ void ExecutableGraph::update(cudaGraph_t graph) {
 
 namespace {
 
-using int4 = cuda::array<int, 4>;
+using int4 = gpu_lib::array<int, 4>;
 
 /**
  *  Block dimensions: bdimx x bdimy x bdimz
@@ -461,4 +461,4 @@ void copy_tensor<cpu_fp16>(
 
 } // namespace cuda
 } // namespace lbann
-#endif // LBANN_HAS_GPU
+#endif // LBANN_HAS_CUDA

@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_ENTRYWISE_BATCH_NORMALIZATION_LAYER_INSTANTIATE
+#include "lbann/comm_impl.hpp"
 #include "lbann/layers/regularizers/entrywise_batch_normalization.hpp"
 #include "lbann/weights/weights_helpers.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
@@ -89,8 +90,8 @@ __global__ void compute_statistics_kernel(size_t size,
     mean = sum / statistics_count_dt;
     const auto sqmean = sqsum / statistics_count_dt;
     var = (sqmean - mean * mean) * statistics_count_dt / TensorDataType(statistics_count - 1);
-    _running_mean = decay * _running_mean + (TensorDataType{1} - decay) * mean;
-    _running_var = decay * _running_var + (TensorDataType{1} - decay) * var;
+    _running_mean = decay * _running_mean + (TensorDataType{1.f} - decay) * mean;
+    _running_var = decay * _running_var + (TensorDataType{1.f} - decay) * var;
   }
 }
 
@@ -645,7 +646,6 @@ void entrywise_batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_comp
   template class entrywise_batch_normalization_layer< \
     T, data_layout::MODEL_PARALLEL, El::Device::GPU>
 
-#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

@@ -24,7 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/optimizers/sgd.hpp"
+#include "lbann/optimizers/sgd_impl.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
 
@@ -169,56 +169,6 @@ void sgd<TensorDataType>::momentum_step_cpu(AbsDistMatrixType& values,
 
 }
 
-// =============================================
-// Checkpointing
-// =============================================
-
-template <typename TensorDataType>
-bool sgd<TensorDataType>::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
-  if (this->get_comm().am_trainer_master()) {
-    write_cereal_archive(*this, p, "sgd.xml");
-  }
-
-  char l_name[512];
-  sprintf(l_name, "%s_optimizer_velocity_%lldx%lld", name_prefix.c_str(), m_velocity->Height(), m_velocity->Width());
-  p.write_distmat(persist_type::train, l_name, m_velocity.get());
-
-  return true;
-}
-
-template <typename TensorDataType>
-bool sgd<TensorDataType>::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
-  load_from_shared_cereal_archive(*this, p, this->get_comm(), "sgd.xml");
-
-  char l_name[512];
-  sprintf(l_name, "%s_optimizer_velocity_%lldx%lld.bin", name_prefix.c_str(), m_velocity->Height(), m_velocity->Width());
-  p.read_distmat(persist_type::train, l_name, m_velocity.get());
-
-  return true;
-}
-
-template <typename TensorDataType>
-bool sgd<TensorDataType>::save_to_checkpoint_distributed(persist& p, std::string name_prefix) {
-  write_cereal_archive(*this, p, "sgd.xml");
-
-  char l_name[512];
-  sprintf(l_name, "%s_optimizer_velocity_%lldx%lld", name_prefix.c_str(), m_velocity->LocalHeight(), m_velocity->LocalWidth());
-  p.write_rank_distmat(persist_type::train, l_name, *m_velocity);
-
-  return true;
-}
-
-template <typename TensorDataType>
-bool sgd<TensorDataType>::load_from_checkpoint_distributed(persist& p, std::string name_prefix) {
-  read_cereal_archive(*this, p, "sgd.xml");
-
-  char l_name[512];
-  sprintf(l_name, "%s_optimizer_velocity_%lldx%lld", name_prefix.c_str(), m_velocity->LocalHeight(), m_velocity->LocalWidth());
-  p.read_rank_distmat(persist_type::train, l_name, *m_velocity);
-
-  return true;
-}
-
 template <typename TensorDataType>
 std::unique_ptr<optimizer>
 build_sgd_optimizer_from_pbuf(
@@ -229,13 +179,16 @@ build_sgd_optimizer_from_pbuf(
                                           params.nesterov());
 }
 
-#define PROTO(T)                                \
-  template class sgd<T>;                        \
-  template std::unique_ptr<optimizer>           \
-  build_sgd_optimizer_from_pbuf<T>(             \
+#define PROTO(T)                                                \
+  template class sgd<T>;                                        \
+  template std::unique_ptr<optimizer>                           \
+  build_sgd_optimizer_from_pbuf<T>(                             \
     google::protobuf::Message const&)
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
 } // namespace lbann
+
+#define LBANN_CLASS_NAME sgd
+#include <lbann/macros/register_template_class_with_cereal.hpp>

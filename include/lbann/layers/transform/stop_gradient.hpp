@@ -27,7 +27,7 @@
 #ifndef STOP_GRADIENT_HPP_INCLUDED
 #define STOP_GRADIENT_HPP_INCLUDED
 
-#include "lbann/layers/transform/transform.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
 
@@ -40,17 +40,32 @@ namespace lbann {
  *  gradients of the objective function.
  */
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-class stop_gradient_layer : public transform_layer<TensorDataType> {
+class stop_gradient_layer : public data_type_layer<TensorDataType> {
 public:
-  stop_gradient_layer(lbann_comm *comm) : transform_layer<TensorDataType>(comm) {}
+  stop_gradient_layer(lbann_comm *comm) : data_type_layer<TensorDataType>(comm) {}
   stop_gradient_layer* copy() const override { return new stop_gradient_layer(*this); }
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
+
   std::string get_type() const override { return "stop_gradient"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
 protected:
+
+  friend class cereal::access;
+  stop_gradient_layer()
+    : stop_gradient_layer(nullptr)
+  {}
+
   void setup_dims(DataReaderMetaData& dr_metadata) override {
-    transform_layer<TensorDataType>::setup_dims(dr_metadata);
+    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims(this->get_input_dims());
   }
   void fp_setup_outputs(El::Int mini_batch_size) override {

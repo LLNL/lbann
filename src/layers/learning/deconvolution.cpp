@@ -36,7 +36,6 @@ namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 deconvolution_layer<TensorDataType,Layout,Device>::deconvolution_layer(
-  lbann_comm *comm,
   int num_data_dims,
   int num_output_channels,
   int conv_dim,
@@ -45,8 +44,7 @@ deconvolution_layer<TensorDataType,Layout,Device>::deconvolution_layer(
   int dilation,
   int groups,
   bool has_bias)
-  : deconvolution_layer(comm,
-                        num_data_dims,
+  : deconvolution_layer(num_data_dims,
                         num_output_channels,
                         std::vector<int>(num_data_dims, conv_dim),
                         std::vector<int>(num_data_dims, pad),
@@ -58,7 +56,6 @@ deconvolution_layer<TensorDataType,Layout,Device>::deconvolution_layer(
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 deconvolution_layer<TensorDataType,Layout,Device>::deconvolution_layer(
-  lbann_comm *comm,
   int num_data_dims,
   int num_output_channels,
   std::vector<int> conv_dims,
@@ -68,7 +65,6 @@ deconvolution_layer<TensorDataType,Layout,Device>::deconvolution_layer(
   int groups,
   bool has_bias)
   : base_convolution_layer<TensorDataType, Device>(
-    comm,
     num_data_dims,
     num_output_channels,
     std::move(conv_dims),
@@ -77,6 +73,11 @@ deconvolution_layer<TensorDataType,Layout,Device>::deconvolution_layer(
     std::move(dilations),
     groups,
     has_bias)
+{}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+deconvolution_layer<TensorDataType,Layout,Device>::deconvolution_layer()
+  : deconvolution_layer(0, 0, {}, {}, {}, {}, 0, false)
 {}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -151,8 +152,8 @@ void deconvolution_layer<TensorDataType,Layout,Device>::fp_compute() {
       return;
     }
 #endif // LBANN_HAS_DISTCONV
-    BaseConvLayer::apply_transposed_convolution_cudnn(true);
-    BaseConvLayer::apply_bias_cudnn();
+    BaseConvLayer::apply_transposed_convolution_dnn(true);
+    BaseConvLayer::apply_bias_dnn();
   } else {
     BaseConvLayer::apply_transposed_convolution_im2col(true);
     BaseConvLayer::apply_bias_cpu();
@@ -174,8 +175,8 @@ void deconvolution_layer<TensorDataType,Layout,Device>::bp_compute() {
       return;
     }
 #endif // LBANN_HAS_DISTCONV
-    BaseConvLayer::compute_gradients_cudnn(true);
-    BaseConvLayer::apply_convolution_cudnn(false);
+    BaseConvLayer::compute_gradients_dnn(true);
+    BaseConvLayer::apply_convolution_dnn(false);
   } else {
     BaseConvLayer::compute_gradients_im2col(true);
     BaseConvLayer::apply_convolution_im2col(false);

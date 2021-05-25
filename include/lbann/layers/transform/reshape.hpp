@@ -27,7 +27,7 @@
 #ifndef RESHAPE_HPP_INCLUDED
 #define RESHAPE_HPP_INCLUDED
 
-#include "lbann/layers/transform/transform.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
 
@@ -37,22 +37,37 @@ namespace lbann {
  *  and hence are very cheap.
  */
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-class reshape_layer : public transform_layer<TensorDataType> {
+class reshape_layer : public data_type_layer<TensorDataType> {
 public:
   reshape_layer(lbann_comm *comm,
                 std::vector<int> dims)
-    : transform_layer<TensorDataType>(comm) {
+    : data_type_layer<TensorDataType>(comm) {
     this->set_output_dims(dims);
   }
   reshape_layer* copy() const override { return new reshape_layer(*this); }
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
+
   std::string get_type() const override { return "reshape"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
 protected:
 
+  friend class cereal::access;
+  reshape_layer()
+    : reshape_layer(nullptr, { 1 } )
+  {}
+
+
   void setup_dims(DataReaderMetaData& dr_metadata) override {
-    transform_layer<TensorDataType>::setup_dims(dr_metadata);
+    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
 
     const auto& input_dims = this->get_input_dims();
     auto output_dims = this->get_output_dims();

@@ -73,6 +73,15 @@ public:
   }
 
   variance_layer* copy() const override { return new variance_layer(*this); }
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
+
   std::string get_type() const override { return "variance"; }
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
@@ -84,6 +93,11 @@ public:
   }
 
 protected:
+
+  friend class cereal::access;
+  variance_layer()
+    : variance_layer(nullptr, false)
+  {}
 
   void setup_matrices(const El::Grid& grid) override {
     data_type_layer<TensorDataType>::setup_matrices(grid);

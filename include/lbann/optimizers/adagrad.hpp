@@ -69,22 +69,32 @@ public:
   ~adagrad() override = default;
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar) {
-    ar(cereal::base_class<data_type_optimizer<TensorDataType>>(this),
-       CEREAL_NVP(m_eps));
-  }
+  template <class Archive> void serialize(Archive & ar);
 
   /** Human-readable type name. */
   std::string get_type() const override { return "AdaGrad"; }
   /** Human-readable description. */
   description get_description() const override;
 
+  using OptimizerType::setup;
   void setup(WeightsType* w = nullptr) override;
 
 protected:
 
+  friend cereal::access;
+
+  /** @brief Default constructor.
+   *  @details This constructor exists as an implementation detail of
+   *  the serialization code. It is not for general use.
+   */
+  adagrad()
+    : adagrad(El::To<TensorDataType>(1.f),
+              El::To<TensorDataType>(1e-8))
+  {}
+
   /** Computation for an optimization step. */
-  void step_compute(AbsDistMatrixType& values, const AbsDistMatrixType& gradient) override;
+  void step_compute(AbsDistMatrixType& values,
+                    const AbsDistMatrixType& gradient) override;
 
 private:
 
@@ -95,19 +105,10 @@ private:
 
   /** CPU implementation of optimization step. */
   void step_compute_cpu(AbsDistMatrixType& values, const AbsDistMatrixType& gradient);
-#ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_DNN_LIB
   /** GPU implementation of optimization step. */
   void step_compute_gpu(AbsDistMatrixType& values, const AbsDistMatrixType& gradient);
-#endif // LBANN_HAS_CUDNN
-
-  // ===========================================
-  // Checkpointing
-  // ===========================================
-
-  bool save_to_checkpoint_shared(persist& p, std::string m_name) override;
-  bool load_from_checkpoint_shared(persist& p, std::string m_name) override;
-  bool save_to_checkpoint_distributed(persist& p, std::string m_name) override;
-  bool load_from_checkpoint_distributed(persist& p, std::string m_name) override;
+#endif // LBANN_HAS_DNN_LIB
 
 };
 

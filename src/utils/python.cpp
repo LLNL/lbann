@@ -25,7 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/utils/python.hpp"
-#ifdef LBANN_HAS_PYTHON
+#ifdef LBANN_HAS_EMBEDDED_PYTHON
 #include <sstream>
 #include "lbann/utils/exception.hpp"
 
@@ -260,4 +260,4 @@ object::operator double() {
 } // namespace python
 } // namespace lbann
 
-#endif // LBANN_HAS_PYTHON
+#endif // LBANN_HAS_EMBEDDED_PYTHON

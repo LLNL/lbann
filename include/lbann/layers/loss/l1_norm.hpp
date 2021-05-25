@@ -62,6 +62,15 @@ public:
   }
 
   l1_norm_layer* copy() const override { return new l1_norm_layer(*this); }
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
+
   std::string get_type() const override { return "L1 norm"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
@@ -118,6 +127,13 @@ public:
     m_workspace->Empty();
 
   }
+
+protected:
+
+  friend class cereal::access;
+  l1_norm_layer()
+    : l1_norm_layer(nullptr)
+  {}
 
 private:
 

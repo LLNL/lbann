@@ -29,6 +29,12 @@
 
 #include "lbann/optimizers/optimizer.hpp"
 
+// Forward declarations
+namespace cereal
+{
+  class access;
+}// namespace cereal
+
 namespace lbann {
 
 // Forward declarations
@@ -71,8 +77,9 @@ public:
    *  @param w Weights being optimized. If null, no change is made to
    *  the weights.
    */
+  void setup(weights* w) override;
   virtual void setup(data_type_weights<TensorDataType>* w = nullptr);
-
+  void setup_base(data_type_weights<TensorDataType>* w);
   /** @name Weights management */
   ///@{
 
@@ -106,9 +113,8 @@ public:
   ///@{
   /** @brief Archive for checkpoint and restart */
   template <class Archive>
-  void serialize(Archive & ar) {
-    ar(cereal::base_class<optimizer>(this), CEREAL_NVP(m_learning_rate));
-  }
+  void serialize(Archive & ar);
+
   ///@}
 
 protected:

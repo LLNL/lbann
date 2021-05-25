@@ -27,6 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_cifar10.hpp"
+#include "lbann/data_readers/sample_list_impl.hpp"
 
 namespace lbann {
 
@@ -43,6 +44,7 @@ void cifar10_reader::set_defaults() {
   m_image_num_channels = 3;
   set_linearized_image_size();
   m_num_labels = 10;
+  m_supported_input_types[input_data_type::LABELS] = true;
 }
 
 void cifar10_reader::load() {

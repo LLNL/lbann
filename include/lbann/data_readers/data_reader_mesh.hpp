@@ -62,6 +62,7 @@ class mesh_reader : public generic_data_reader {
   void set_random_flips(bool b) { m_random_flips = b; }
 
   void load() override;
+  void setup(int num_io_threads, observer_ptr<thread_pool> io_thread_pool) override;
   int get_linearized_data_size() const override {
     return m_channels.size() * m_data_height * m_data_width;
   }

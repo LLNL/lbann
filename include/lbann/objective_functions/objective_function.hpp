@@ -44,28 +44,17 @@ class objective_function {
   /** Copy assignment operator. */
   objective_function& operator=(const objective_function& other);
   /** Destructor. */
-  ~objective_function();
+  ~objective_function() = default;
   /** Copy function. */
   objective_function* copy() const { return new objective_function(*this); }
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize( Archive & ar ) {
-    ar(CEREAL_NVP(m_statistics));
+  template <class Archive> void serialize( Archive & ar );
 
-    // Serialized each objective function term object explicitly, not the pointer to
-    // the objective function term
-    for(auto&& t : m_terms) {
-      ar(CEREAL_NVP(*t));
-    }
-  }
-
-  /** Add a term to the objective function.
-   *  The objective function takes ownership of the objective function
-   *  term and deallocates it during destruction.
-   */
-  void add_term(objective_function_term* term) { m_terms.push_back(term); }
+  /** Add a term to the objective function. */
+  void add_term(std::unique_ptr<objective_function_term> term);
   /** Get list of objective function terms. */
-  std::vector<objective_function_term*> get_terms() { return m_terms; }
+  std::vector<objective_function_term*> get_terms();
 
   /** Setup objective function. */
   void setup(model& m);
@@ -112,13 +101,13 @@ class objective_function {
   int get_statistics_num_samples(execution_mode mode) const;
 
   /** Get list of pointers to layers. */
-  std::vector<Layer*> get_layer_pointers() const;
+  std::vector<ViewingLayerPtr> get_layer_pointers() const;
   /** Set list of pointers to layers. */
-  void set_layer_pointers(std::vector<Layer*> layers);
+  void set_layer_pointers(std::vector<ViewingLayerPtr> layers);
   /** Get list of pointers to weights. */
-  std::vector<weights*> get_weights_pointers() const;
+  std::vector<ViewingWeightsPtr> get_weights_pointers() const;
   /** Set list of pointers to weights. */
-  void set_weights_pointers(std::vector<weights*> w);
+  void set_weights_pointers(std::vector<ViewingWeightsPtr> w);
 
   /** Get the time spent evaluating the objective function. */
   EvalType get_evaluation_time() const { return m_evaluation_time; }
@@ -133,7 +122,7 @@ class objective_function {
  private:
 
   /** List of objective function terms. */
-  std::vector<objective_function_term*> m_terms;
+  std::vector<std::unique_ptr<objective_function_term>> m_terms;
 
   /** Objective funciton statistics. */
   std::map<execution_mode,metric_statistics> m_statistics;

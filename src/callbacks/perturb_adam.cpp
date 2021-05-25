@@ -24,9 +24,11 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/comm_impl.hpp"
 #include "lbann/callbacks/perturb_adam.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/random_number_generators.hpp"
+#include "lbann/utils/serialize.hpp"
 
 #include <callbacks.pb.h>
 
@@ -55,6 +57,23 @@ perturb_adam::perturb_adam(DataType learning_rate_factor,
     m_eps_factor(eps_factor),
     m_perturb_during_training(perturb_during_training),
     m_weights_names(std::move(weights_names)) {}
+
+perturb_adam::perturb_adam()
+  : perturb_adam(0, 0, 0, 0, false, 0)
+{}
+
+template <class Archive>
+void perturb_adam::serialize(Archive & ar) {
+  ar(::cereal::make_nvp(
+       "BaseCallback",
+       ::cereal::base_class<callback_base>(this)),
+     CEREAL_NVP(m_learning_rate_factor),
+     CEREAL_NVP(m_beta1_factor),
+     CEREAL_NVP(m_beta2_factor),
+     CEREAL_NVP(m_eps_factor),
+     CEREAL_NVP(m_perturb_during_training),
+     CEREAL_NVP(m_weights_names));
+}
 
 void perturb_adam::setup(model* m) {
   perturb(*m);
@@ -183,3 +202,6 @@ build_perturb_adam_callback_from_pbuf(
 
 } // namespace callback
 } // namespace lbann
+
+#define LBANN_CLASS_NAME callback::perturb_adam
+#include <lbann/macros/register_class_with_cereal.hpp>

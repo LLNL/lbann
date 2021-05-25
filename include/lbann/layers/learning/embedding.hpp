@@ -77,8 +77,7 @@ public:
    *                        objective function gradient w.r.t. this
    *                        embedding vector is always zero.
    */
-  embedding_layer(lbann_comm* comm,
-                  size_t num_embeddings,
+  embedding_layer(size_t num_embeddings,
                   size_t embedding_dim,
                   El::Int padding_idx=-1);
 
@@ -93,7 +92,18 @@ public:
 
   description get_description() const override;
 
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
+
 protected:
+
+  friend class cereal::access;
+  embedding_layer();
 
   void setup_matrices(const El::Grid& grid) override;
   void setup_dims(DataReaderMetaData& dr_metadata) override;
@@ -125,14 +135,18 @@ private:
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 embedding_layer<TensorDataType,Layout,Device>::embedding_layer(
-  lbann_comm* comm,
   size_t num_embeddings,
   size_t embedding_dim,
   El::Int padding_idx)
-  : data_type_layer<TensorDataType>(comm),
+  : data_type_layer<TensorDataType>(nullptr),
     m_num_embeddings{num_embeddings},
     m_embedding_dim{embedding_dim},
     m_padding_idx{padding_idx} {}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+embedding_layer<TensorDataType,Layout,Device>::embedding_layer()
+  : embedding_layer(0, 0, 0)
+{}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 embedding_layer<TensorDataType,Layout,Device>::embedding_layer(
@@ -203,14 +217,14 @@ void embedding_layer<TensorDataType,Layout,Device>::setup_data(size_t max_mini_b
   // Note: Randomly drawn from normal distribution with mean 0 and
   // standard deviation 1.
   if (!this->has_weights()) {
-    auto w = make_unique<WeightsType>(this->get_comm());
+    auto w = std::make_shared<WeightsType>(*this->get_comm());
     auto init = make_unique<normal_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::Zero(),
                                                                 El::TypeTraits<TensorDataType>::One());
     auto opt = this->m_model->template create_optimizer<TensorDataType>();
     w->set_name(this->get_name() + "_weights");
     w->set_initializer(std::move(init));
     w->set_optimizer(std::move(opt));
-    this->add_weights(w.get());
+    this->add_weights(w);
     this->m_model->add_weights(std::move(w));
   }
   if (this->num_weights() != 1) {
@@ -225,8 +239,7 @@ void embedding_layer<TensorDataType,Layout,Device>::setup_data(size_t max_mini_b
   auto matrix_dist = this->get_prev_activations().DistData();
   matrix_dist.colDist = El::STAR;
   matrix_dist.rowDist = El::STAR;
-  embeddings.set_dims({static_cast<int>(m_embedding_dim)},
-                      {static_cast<int>(m_num_embeddings)});
+  embeddings.set_dims({m_embedding_dim}, {m_num_embeddings});
   embeddings.set_matrix_distribution(matrix_dist);
   embeddings.setup();
 

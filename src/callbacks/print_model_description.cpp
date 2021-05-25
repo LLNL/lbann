@@ -26,10 +26,18 @@
 
 #include "lbann/callbacks/print_model_description.hpp"
 #include "lbann/models/model.hpp"
+#include "lbann/utils/serialize.hpp"
 #include <callbacks.pb.h>
 
 namespace lbann {
 namespace callback {
+
+template <class Archive>
+void print_model_description::serialize(Archive & ar) {
+  ar(::cereal::make_nvp(
+       "BaseCallback",
+       ::cereal::base_class<callback_base>(this)));
+}
 
 void print_model_description::on_setup_end(model *m) {
   if (m->get_comm()->am_world_master()) {
@@ -47,3 +55,6 @@ build_print_model_description_callback_from_pbuf(
 
 } // namespace callback
 } // namespace lbann
+
+#define LBANN_CLASS_NAME callback::print_model_description
+#include <lbann/macros/register_class_with_cereal.hpp>

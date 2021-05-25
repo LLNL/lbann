@@ -64,7 +64,6 @@ public:
    *                                weights matrix.
    */
   channelwise_fully_connected_layer(
-    lbann_comm* comm,
     std::vector<size_t> output_channel_dims,
     bool bias,
     bool transpose);
@@ -81,7 +80,18 @@ public:
   El::Device get_device_allocation() const override;
   description get_description() const override;
 
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
+
 protected:
+
+  friend class cereal::access;
+  channelwise_fully_connected_layer();
 
   void setup_dims(DataReaderMetaData& dr_metadata) override;
   void setup_data(size_t max_mini_batch_size) override;

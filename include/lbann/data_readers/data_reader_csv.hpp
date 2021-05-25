@@ -62,9 +62,15 @@ class csv_reader : public generic_data_reader {
   /// Set the response column.
   void set_response_col(int col) { m_response_col = col; }
   /// Disable fetching labels.
-  void disable_labels(bool b = true) { m_disable_labels = b; }
+  void disable_labels(bool b = true) {
+    m_supported_input_types[input_data_type::LABELS] = false;
+    m_disable_labels = b;
+  }
   /// Enable fetching responses (disabled by default).
-  void enable_responses(bool b = false) { m_disable_responses = b; }
+  void enable_responses(bool b = false) {
+    m_supported_input_types[input_data_type::RESPONSES] = true;
+    m_disable_responses = b;
+  }
   /// Set the column separator (default is ',').
   void set_separator(char sep) { m_separator = sep; }
   /// Set the number of columns (from the left) to skip; default 0.
@@ -103,6 +109,8 @@ class csv_reader : public generic_data_reader {
    * This parses the header of the CSV to determine column information.
    */
   void load() override;
+
+  void setup(int num_io_threads, observer_ptr<thread_pool> io_thread_pool) override;
 
   int get_num_labels() const override { return m_num_labels; }
   int get_linearized_data_size() const override {

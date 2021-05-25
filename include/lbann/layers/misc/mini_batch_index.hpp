@@ -48,11 +48,25 @@ public:
   }
 
   mini_batch_index_layer* copy() const override { return new mini_batch_index_layer(*this); }
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
+
   std::string get_type() const override { return "mini-batch index"; }
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
 
 protected:
+
+  friend class cereal::access;
+  mini_batch_index_layer()
+    : mini_batch_index_layer(nullptr)
+  {}
 
   void setup_dims(DataReaderMetaData& dr_metadata) override {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);

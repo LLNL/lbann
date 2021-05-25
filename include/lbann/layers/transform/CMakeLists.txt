@@ -1,5 +1,6 @@
 # Add the headers for this directory
 set_full_path(THIS_DIR_HEADERS
+  batchwise_reduce_sum.hpp
   concatenate.hpp
   pooling.hpp
   reshape.hpp
@@ -7,7 +8,6 @@ set_full_path(THIS_DIR_HEADERS
   split.hpp
   sum.hpp
   weighted_sum.hpp
-  transform.hpp
   unpooling.hpp
   constant.hpp
   dummy.hpp
@@ -25,6 +25,8 @@ set_full_path(THIS_DIR_HEADERS
   sort.hpp
   weights.hpp
   tessellate.hpp
+  scatter.hpp
+  gather.hpp
   )
 
 # Propagate the files up the tree

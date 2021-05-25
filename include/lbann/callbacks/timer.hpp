@@ -28,6 +28,7 @@
 #define LBANN_CALLBACKS_CALLBACK_TIMER_HPP_INCLUDED
 
 #include "lbann/callbacks/callback.hpp"
+
 #include <chrono>
 #include <map>
 #include <vector>
@@ -74,6 +75,14 @@ public:
 
   /** Callback name. */
   std::string name() const override { return "timer"; }
+
+  /** @name Serialization */
+  ///@{
+
+  /** @brief Store state to archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar);
+
+  ///@}
 
 private:
 

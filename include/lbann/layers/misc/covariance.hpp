@@ -76,6 +76,15 @@ public:
   }
 
   covariance_layer* copy() const override { return new covariance_layer(*this); }
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
+
   std::string get_type() const override { return "covariance"; }
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
@@ -87,6 +96,11 @@ public:
   }
 
 protected:
+
+  friend class cereal::access;
+  covariance_layer()
+    : covariance_layer(nullptr, false)
+  {}
 
   void setup_matrices(const El::Grid& grid) override {
     data_type_layer<TensorDataType>::setup_matrices(grid);

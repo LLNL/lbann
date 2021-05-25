@@ -2,7 +2,7 @@ import os, os.path
 import socket
 import lbann
 import lbann.launcher
-from lbann.util import make_iterable
+from lbann.util import make_iterable, nvprof_command
 
 # ==============================================
 # Detect the current compute center
@@ -49,16 +49,22 @@ _center = 'unknown'
 launcher = lbann.launcher
 if is_lc_center():
     _center = 'lc'
-    import lbann.contrib.lc.launcher
-    launcher = lbann.contrib.lc.launcher
+    import lbann.contrib.lc.systems
+    if lbann.contrib.lc.systems.is_lc_system():
+        import lbann.contrib.lc.launcher
+        launcher = lbann.contrib.lc.launcher
 elif is_nersc_center():
     _center = 'nersc'
-    import lbann.contrib.nersc.launcher
-    launcher = lbann.contrib.nersc.launcher
+    import lbann.contrib.nersc.systems
+    if lbann.contrib.nersc.systems.is_nersc_system():
+        import lbann.contrib.nersc.launcher
+        launcher = lbann.contrib.nersc.launcher
 elif is_olcf_center():
     _center = 'olcf'
-    import lbann.contrib.olcf.launcher
-    launcher = lbann.contrib.olcf.launcher
+    import lbann.contrib.olcf.systems
+    if lbann.contrib.olcf.systems.is_olcf_system():
+        import lbann.contrib.olcf.launcher
+        launcher = lbann.contrib.olcf.launcher
 
 def compute_center():
     """Name of organization that operates current system."""
@@ -75,9 +81,13 @@ def run(
     optimizer,
     lbann_exe=lbann.lbann_exe(),
     lbann_args=[],
+    procs_per_trainer=None,
     overwrite_script=False,
     setup_only=False,
     batch_job=False,
+    proto_file_name='experiment.prototext',
+    nvprof=False,
+    nvprof_output_name=None,
     *args,
     **kwargs,
 ):
@@ -97,14 +107,20 @@ def run(
 
     # Batch script invokes LBANN
     lbann_command = [lbann_exe]
+    if nvprof:
+        lbann_command = nvprof_command(
+            work_dir=script.work_dir,
+            output_name=nvprof_output_name)+lbann_command
     lbann_command.extend(make_iterable(lbann_args))
-    prototext_file = os.path.join(script.work_dir, 'experiment.prototext')
+    prototext_file = os.path.join(script.work_dir, proto_file_name)
     lbann.proto.save_prototext(prototext_file,
                                trainer=trainer,
                                model=model,
                                data_reader=data_reader,
                                optimizer=optimizer)
     lbann_command.append('--prototext={}'.format(prototext_file))
+    if procs_per_trainer is not None:
+        lbann_command.append(f'--procs_per_trainer={procs_per_trainer}')
     script.add_parallel_command(lbann_command)
     script.add_command('status=$?')
 

@@ -25,18 +25,21 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/comm_impl.hpp"
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"
-#include "lbann/io/data_buffers/partitioned_io_buffer.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/execution_contexts/sgd_execution_context.hpp"
 #include "lbann/utils/lbann_library.hpp"
-#include "lbann/utils/image.hpp"
-#include "lbann/utils/opencv.hpp"
+#include "lbann/utils/serialize.hpp"
+#include "lbann/utils/vision.hpp"
 #include "lbann/transforms/repack_HWC_to_CHW_layout.hpp"
 #include "lbann/transforms/scale_and_translate.hpp"
 
 #include "lbann/utils/file_utils.hpp" // for add_delimiter() in load()
+#include "lbann/data_readers/sample_list_impl.hpp"
+#include "lbann/data_readers/sample_list_open_files_impl.hpp"
+
 #include <limits>     // numeric_limits
 #include <algorithm>  // max_element
 #include <numeric>    // accumulate
@@ -51,8 +54,6 @@
 #include "conduit/conduit_relay.hpp"
 #include "conduit/conduit_relay_io_hdf5.hpp"
 
-
-#include <cereal/archives/binary.hpp>
 #include <sstream>
 #include <fstream>
 
@@ -88,10 +89,6 @@ const std::set<std::string> data_reader_jag_conduit::non_numeric_vars = {
   "solver_mode"
 };
 
-void data_reader_jag_conduit::set_io_buffer_type(const std::string io_buffer) {
-  m_io_buffer_type = io_buffer;
-}
-
 void data_reader_jag_conduit::set_local_id(const std::string role) {
   m_local_reader_id = m_num_local_readers[role]++;
 }
@@ -100,36 +97,14 @@ int data_reader_jag_conduit::get_local_id(const std::string role) const {
   return m_local_reader_id;
 }
 
-void data_reader_jag_conduit::set_leading_reader(data_reader_jag_conduit* r) {
-  m_leading_reader = r;
-}
-
-data_reader_jag_conduit* data_reader_jag_conduit::get_leading_reader() {
-  return m_leading_reader;
-}
-
 void data_reader_jag_conduit::shuffle_indices(rng_gen& gen) {
-  if ((m_leading_reader != this) && (m_leading_reader != nullptr)) {
-    m_shuffled_indices = m_leading_reader->get_shuffled_indices();
-    return;
-  }
   generic_data_reader::shuffle_indices(gen);
   m_sample_list.compute_epochs_file_usage(get_shuffled_indices(), get_mini_batch_size(), *m_comm);
 }
 
 int data_reader_jag_conduit::compute_max_num_parallel_readers() {
-  if (m_io_buffer_type == "partitioned") {
-#if 0
-    // @todo BVE FIXME - Why are we doing this here
-    set_num_parallel_readers(partitioned_io_buffer<DataType>::compute_max_num_parallel_readers(
-                             0, get_mini_batch_size(),
-                             get_num_parallel_readers(), get_comm()));
-#endif
-    set_sample_stride(get_num_parallel_readers());
-    set_iteration_stride(1);
-  } else {
-    LBANN_ERROR(get_type() + ":: unknown io_buffer type: " + m_io_buffer_type);
-  }
+  set_sample_stride(get_num_parallel_readers());
+  set_iteration_stride(1);
   return get_num_parallel_readers();
 }
 
@@ -168,10 +143,7 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
   m_scalar_prefix_filter = rhs.m_scalar_prefix_filter;
   m_input_filter = rhs.m_input_filter;
   m_input_prefix_filter = rhs.m_input_prefix_filter;
-  m_io_buffer_type = rhs.m_io_buffer_type;
   m_local_reader_id = rhs.m_local_reader_id;
-  //TODO: need  to make sure this is what we want
-  m_leading_reader = rhs.m_leading_reader;
 
   El::Copy(rhs.m_data_cache, m_data_cache);
   El::Copy(rhs.m_response_cache, m_response_cache);
@@ -243,9 +215,7 @@ void data_reader_jag_conduit::set_defaults() {
   m_scalar_prefix_filter.clear();
   m_input_filter.clear();
   m_input_prefix_filter.clear();
-  m_io_buffer_type = "";
   m_local_reader_id = 0;
-  m_leading_reader = this;
   m_cached_data_mb_size = 0;
   m_cached_response_mb_size = 0;
   m_cached_label_mb_size = 0;
@@ -257,6 +227,9 @@ void data_reader_jag_conduit::set_defaults() {
   //m_sample_list.clear();
   m_list_per_trainer = false;
   m_list_per_model = false;
+
+  m_supported_input_types[input_data_type::LABELS] = true;
+  m_supported_input_types[input_data_type::RESPONSES] = true;
 }
 
 void data_reader_jag_conduit::setup(int num_io_threads, observer_ptr<thread_pool> io_thread_pool) {
@@ -776,12 +749,6 @@ void data_reader_jag_conduit::load() {
               << m_gan_labelling <<" : " << m_gan_label_value << std::endl;
   }
 
-  if ((m_leading_reader != this) && (m_leading_reader != nullptr)) {
-    // The following member variables of the leadering reader should have been
-    // copied when this was copy-constructed: m_sample_list, and m_open_hdf5_files
-    return;
-  }
-
   m_shuffled_indices.clear();
 
   if(is_master()) {
@@ -1210,8 +1177,6 @@ std::string data_reader_jag_conduit::to_string(const std::vector< std::vector<da
 }
 
 std::string data_reader_jag_conduit::get_description() const {
-  std::stringstream leading_reader;
-  leading_reader << m_leading_reader;
   std::string ret = std::string("data_reader_jag_conduit:\n")
     + " - independent: " + data_reader_jag_conduit::to_string(m_independent_groups) + "\n"
     + " - dependent: " + data_reader_jag_conduit::to_string(m_dependent_groups) + "\n"
@@ -1223,8 +1188,7 @@ std::string data_reader_jag_conduit::get_description() const {
     + " - inputs: "   + std::to_string(get_linearized_input_size()) + "\n"
     + " - linearized data size: "   + std::to_string(get_linearized_data_size()) + "\n"
     + " - uniform_input_type: " + (m_uniform_input_type? "true" : "false") + "\n"
-    + " - leading DR: " + (m_leading_reader == this ? "true" : "false")
-    + " (ptr=" + leading_reader.str() + ")\n";
+    + ")\n";
   if (!m_scalar_filter.empty()) {
     ret += " - scalar filter:";
     for (const auto& f: m_scalar_filter) {
@@ -1313,7 +1277,7 @@ std::vector<data_reader_jag_conduit::scalar_t> data_reader_jag_conduit::get_scal
 
   auto tr = m_scalar_normalization_params.cbegin();
 
-  for(const auto key: m_scalar_keys) {
+  for(const auto& key: m_scalar_keys) {
     std::string conduit_field = m_output_scalar_prefix + key;
     std::string conduit_obj = '/' + LBANN_DATA_ID_STR(sample_id) + '/' + conduit_field;
     if(sample[conduit_obj].schema().dtype().is_empty()) {
@@ -1348,7 +1312,7 @@ std::vector<data_reader_jag_conduit::input_t> data_reader_jag_conduit::get_input
   // automatically determine which method to use based on if all the variables are of input_t
   if (m_uniform_input_type) {
     // avoid some overhead by taking advantage of the fact that all the variables are of the same type
-    for(const auto key: m_input_keys) {
+    for(const auto& key: m_input_keys) {
       const std::string conduit_field = m_input_prefix + key;
       const std::string conduit_obj = '/' + LBANN_DATA_ID_STR(sample_id) + '/' + conduit_field;
       if(sample[conduit_obj].schema().dtype().is_empty()) {
@@ -1370,7 +1334,7 @@ std::vector<data_reader_jag_conduit::input_t> data_reader_jag_conduit::get_input
       tr ++;
     }
   } else {
-    for(const auto key: m_input_keys) {
+    for(const auto& key: m_input_keys) {
       const std::string conduit_field = m_input_prefix + key;
       const std::string conduit_obj = '/' + LBANN_DATA_ID_STR(sample_id) + '/' + conduit_field;
       if(sample[conduit_obj].schema().dtype().is_empty()) {
@@ -1482,9 +1446,6 @@ int data_reader_jag_conduit::reuse_labels(CPUMat& Y) {
 }
 
 int data_reader_jag_conduit::fetch_data(CPUMat& X, El::Matrix<El::Int>& indices_fetched) {
-  if ((m_leading_reader != this) && (m_leading_reader != nullptr)) {
-    return m_leading_reader->reuse_data(X);
-  }
   m_cached_data_mb_size = generic_data_reader::fetch_data(X, indices_fetched);
   El::Copy(X, m_data_cache);
 
@@ -1492,9 +1453,6 @@ int data_reader_jag_conduit::fetch_data(CPUMat& X, El::Matrix<El::Int>& indices_
 }
 
 int data_reader_jag_conduit::fetch_responses(CPUMat& Y) {
-  if ((m_leading_reader != this) && (m_leading_reader != nullptr)) {
-    return m_leading_reader->reuse_responses(Y);
-  }
   m_cached_response_mb_size = generic_data_reader::fetch_responses(Y);
   El::Copy(Y, m_response_cache);
 
@@ -1502,9 +1460,6 @@ int data_reader_jag_conduit::fetch_responses(CPUMat& Y) {
 }
 
 int data_reader_jag_conduit::fetch_labels(CPUMat& Y) {
-  if ((m_leading_reader != this) && (m_leading_reader != nullptr)) {
-    return m_leading_reader->reuse_labels(Y);
-  }
   m_cached_label_mb_size = generic_data_reader::fetch_labels(Y);
   El::Copy(Y, m_label_cache);
 

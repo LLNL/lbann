@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYER_REGULARIZER_BATCH_NORMALIZATION_HPP_INCLUDED
 #define LBANN_LAYER_REGULARIZER_BATCH_NORMALIZATION_HPP_INCLUDED
 
-#include "lbann/layers/regularizers/regularizer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/distconv.hpp"
 
@@ -86,7 +86,7 @@ class batch_normalization_distconv_adapter: public data_type_distconv_adapter<Te
  *  pp. 448-456. 2015.
  */
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-class batch_normalization_layer : public regularizer_layer<TensorDataType> {
+class batch_normalization_layer : public data_type_layer<TensorDataType> {
   static_assert(T_layout == data_layout::DATA_PARALLEL,
                 "batch normalization only supports DATA_PARALLEL");
 public:
@@ -155,11 +155,10 @@ public:
    *  @param statistics_group_size Number of processors to aggregate
    *         statistics over. Defaults to 1 (i.e. local aggregation).
    */
-  batch_normalization_layer(lbann_comm *comm,
-                            TensorDataType decay=0.9,
+  batch_normalization_layer(TensorDataType decay=0.9,
                             TensorDataType epsilon=1e-5,
                             int statistics_group_size=1)
-    : regularizer_layer<TensorDataType>(comm),
+    : data_type_layer<TensorDataType>(nullptr),
       m_decay(decay),
       m_epsilon(epsilon),
       m_statistics_group_size(statistics_group_size) {
@@ -170,7 +169,7 @@ public:
   }
 
   batch_normalization_layer(const batch_normalization_layer& other)
-    : regularizer_layer<TensorDataType>(other),
+    : data_type_layer<TensorDataType>(other),
       m_decay(other.m_decay),
       m_epsilon(other.m_epsilon),
       m_statistics_group_size(other.m_statistics_group_size),
@@ -191,7 +190,7 @@ public:
                       other.m_bias_gradient->Copy() : nullptr) {}
 
   batch_normalization_layer& operator=(const batch_normalization_layer& other) {
-    regularizer_layer<TensorDataType>::operator=(other);
+    data_type_layer<TensorDataType>::operator=(other);
     m_decay = other.m_decay;
     m_epsilon = other.m_epsilon;
     m_statistics_group_size = other.m_statistics_group_size;
@@ -224,17 +223,25 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
   description get_description() const override {
-    auto desc = regularizer_layer<TensorDataType>::get_description();
+    auto desc = data_type_layer<TensorDataType>::get_description();
     desc.add("Decay", m_decay);
     desc.add("Epsilon", m_epsilon);
     desc.add("Statistics group size", m_statistics_group_size);
     return desc;
   }
 
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
+
 protected:
 
   void setup_matrices(const El::Grid& grid) override {
-    regularizer_layer<TensorDataType>::setup_matrices(grid);
+    data_type_layer<TensorDataType>::setup_matrices(grid);
     m_mean_and_var.reset(new StarMatDT<TensorDataType, Dev>(grid));
     m_mean_v.reset(new StarMatDT<TensorDataType, Dev>(grid));
     m_var_v.reset(new StarMatDT<TensorDataType, Dev>(grid));
@@ -246,12 +253,12 @@ protected:
   }
 
   void setup_dims(DataReaderMetaData& dr_metadata) override {
-    regularizer_layer<TensorDataType>::setup_dims(dr_metadata);
+    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims(this->get_input_dims());
   }
 
   void setup_data(size_t max_mini_batch_size) override {
-    regularizer_layer<TensorDataType>::setup_data(max_mini_batch_size);
+    data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
     const auto& output_dims = this->get_output_dims();
     const auto& num_channels = output_dims[0];
 
@@ -295,39 +302,39 @@ protected:
     }
     this->set_num_weights(4);
     if (!this->has_weights(0)) {
-      auto w = make_unique<WeightsType>(this->get_comm());
+      auto w = std::make_shared<WeightsType>(*this->get_comm());
       auto init = make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::One());
       auto opt = this->m_model->template create_optimizer<TensorDataType>();
       w->set_name(this->get_name() + "_scale");
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
-      this->set_weights(0, w.get());
+      this->set_weights(0, w);
       this->m_model->add_weights(std::move(w));
     }
     if (!this->has_weights(1)) {
-      auto w = make_unique<WeightsType>(this->get_comm());
+      auto w = std::make_shared<WeightsType>(*this->get_comm());
       auto init = make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::Zero());
       auto opt = this->m_model->template create_optimizer<TensorDataType>();
       w->set_name(this->get_name() + "_bias");
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
-      this->set_weights(1, w.get());
+      this->set_weights(1, w);
       this->m_model->add_weights(std::move(w));
     }
     if (!this->has_weights(2)) {
-      auto w = make_unique<WeightsType>(this->get_comm());
+      auto w = std::make_shared<WeightsType>(*this->get_comm());
       auto init = make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::Zero());
       w->set_name(this->get_name() + "_running_mean");
       w->set_initializer(std::move(init));
-      this->set_weights(2, w.get());
+      this->set_weights(2, w);
       this->m_model->add_weights(std::move(w));
     }
     if (!this->has_weights(3)) {
-      auto w = make_unique<WeightsType>(this->get_comm());
+      auto w = std::make_shared<WeightsType>(*this->get_comm());
       auto init = make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::One());
       w->set_name(this->get_name() + "_running_variance");
       w->set_initializer(std::move(init));
-      this->set_weights(3, w.get());
+      this->set_weights(3, w);
       this->m_model->add_weights(std::move(w));
     }
 
@@ -393,6 +400,7 @@ protected:
   batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>& get_distconv_adapter() override;
   const batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>& get_distconv_adapter() const override;
 #endif // LBANN_HAS_DISTCONV
+
 };
 
 #ifdef LBANN_HAS_DISTCONV

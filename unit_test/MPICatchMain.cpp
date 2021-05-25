@@ -32,6 +32,7 @@
 #include "ReplaceEscapes.hpp"
 
 #include <lbann/base.hpp>
+#include <lbann/utils/random_number_generators.hpp>
 #include <lbann/utils/system_info.hpp>
 
 // Just stand up MPI before running all tests; teardown after.
@@ -40,6 +41,7 @@ int main(int argc, char* argv[])
 {
   // Set up the communication domain
   auto world_comm = lbann::initialize(argc, argv);
+  lbann::init_random(13);
   expert::register_world_comm(*world_comm);
 
   // Initialize Catch2

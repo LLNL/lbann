@@ -5,7 +5,8 @@ This also contains modules for fully-connected and convolution layers.
 """
 import abc
 import lbann
-from lbann.util import make_iterable
+from lbann.util import make_iterable, str_list
+
 
 class Module(abc.ABC):
     """Base class for neural network modules.
@@ -76,11 +77,12 @@ class FullyConnectedModule(Module):
         self.size = size
         self.bias = bias
         self.transpose = transpose
+        self.data_layout = data_layout
+        self.parallel_strategy = parallel_strategy
+
         self.name = (name
                      if name
                      else 'fcmodule{0}'.format(FullyConnectedModule.global_count))
-        self.data_layout = data_layout
-        self.parallel_strategy = parallel_strategy
 
         # Initialize weights
         # Note: If weights are not provided, matrix weights are
@@ -129,6 +131,90 @@ class FullyConnectedModule(Module):
         else:
             return y
 
+class ChannelwiseFullyConnectedModule(Module):
+  """Basic block for channelwise fully-connected neural networks.
+
+    Applies a dense linearity channelwise and a nonlinear activation function.
+  
+  """
+
+  global_count = 0
+
+  def __init__(self,
+               size,
+               bias=False,
+               weights=[],
+               activation=None,
+               transpose=False,
+               name=None):
+    """Initalize channelwise fully connected module
+
+    Args:
+        size (int): Size of output tensor.
+        bias (bool): Whether to apply bias after linearity.
+        transpose (bool): Whether to apply transpose of weights
+                matrix.
+        weights (`Weights` or iterator of `Weights`): Weights in
+                fully-connected layer. There are at most two: the
+                matrix and the bias. If weights are not provided, the
+                matrix will be initialized with He normal
+                initialization and the bias with zeros.
+        activation (type): Layer class for activation function.
+        name (str): Default name is in the form 'fcmodule<index>'.
+        data_layout (str): Data layout.
+        parallel_strategy (dict): Data partitioning scheme.
+    """
+    super().__init__()
+    ChannelwiseFullyConnectedModule.global_count += 1
+    self.instance = 0
+    self.size = size
+    self.bias = bias
+    self.transpose = transpose
+    self.name = (name
+                 if name
+                 else 'channelwisefc{0}'.format(ChannelwiseFullyConnectedModule.global_count))
+    self.data_layout = 'data_parallel'
+
+    self.weights = list(make_iterable(weights))
+    if len(self.weights) > 2:
+        raise ValueError('`FullyConnectedModule` has '
+                         'at most two weights, '
+                         'but got {0}'.format(len(self.weights)))
+    if len(self.weights) == 0:
+        self.weights.append(
+            lbann.Weights(initializer=lbann.HeNormalInitializer(),
+                          name=self.name+'_matrix'))
+    if len(self.weights) == 1:
+        self.weights.append(
+            lbann.Weights(initializer=lbann.ConstantInitializer(value=0.0),
+                          name=self.name+'_bias'))
+    self.activation = None
+    if activation:
+        if isinstance(activation, type):
+            self.activation = activation
+        else:
+            self.activation = type(activation)
+        if not issubclass(self.activation, lbann.Layer):
+            raise ValueError('activation must be a layer')
+
+  def forward(self, x):
+    self.instance += 1
+    name = '{0}_instance{1}'.format(self.name, self.instance)
+    y = lbann.ChannelwiseFullyConnected(x,
+                                        weights=self.weights,
+                                        name=(name+'_fc' if self.activation else name),
+                                        data_layout=self.data_layout,
+                                        output_channel_dims=self.size,
+                                        bias=self.bias,
+                                        transpose=self.transpose)
+    if self.activation:
+        return self.activation(y,
+                               name=name+'_activation',
+                               data_layout=self.data_layout)
+    else:
+        return y
+
+
 class ConvolutionModule(Module):
     """Basic block for convolutional neural networks.
 
@@ -138,10 +224,19 @@ class ConvolutionModule(Module):
 
     global_count = 0  # Static counter, used for default names
 
-    def __init__(self, num_dims,
-                 out_channels, kernel_size,
-                 stride=1, padding=0, dilation=1, groups=1, bias=True,
-                 weights=[], activation=None, name=None, transpose=False,
+    def __init__(self,
+                 num_dims,
+                 out_channels,
+                 kernel_size,
+                 stride=1,
+                 padding=0,
+                 dilation=1,
+                 groups=1,
+                 bias=True,
+                 weights=[],
+                 activation=None,
+                 name=None,
+                 transpose=False,
                  parallel_strategy={}):
         """Initialize convolution module.
 
@@ -149,10 +244,12 @@ class ConvolutionModule(Module):
             num_dims (int): Number of dimensions.
             out_channels (int): Number of output channels, i.e. number
                 of filters.
-            kernel_size (int): Size of convolution kernel.
-            stride (int): Convolution stride.
-            padding (int): Convolution padding.
-            dilation (int): Convolution dilation.
+            kernel_size (int) or (list): Size of convolution kernel. Either an int for square kernel or list of size num_dims.
+            has_vector (bool): If true then call with non-square kernel
+              padding, stride, dilation, and padding
+            stride (int) or (list): Convolution stride. Either an int for square kernel or list of size num_dims.
+            padding (int) or (list): Convolution padding. Either an int for square kernel or list of size num_dims.
+            dilation (int) or (list): Convolution dilation. Either an int for square kernel or list of size num_dims.
             groups (int): Number of convolution groups.
             bias (bool): Whether to apply channel-wise bias after
                 convolution.
@@ -169,19 +266,46 @@ class ConvolutionModule(Module):
         """
         super().__init__()
         ConvolutionModule.global_count += 1
-        self.instance = 0
-        self.num_dims = num_dims
-        self.out_channels = out_channels
-        self.kernel_size = kernel_size
-        self.stride = stride
-        self.padding = padding
-        self.dilation = dilation
-        self.groups = groups
-        self.bias = bias
-        self.weights = list(make_iterable(weights))
         self.name = (name
                      if name
                      else 'convmodule{0}'.format(ConvolutionModule.global_count))
+
+        self.instance = 0
+        self.num_dims = num_dims
+        self.out_channels = out_channels
+
+        self.kernel_dims = list(make_iterable(kernel_size))
+
+        if (len(self.kernel_dims)) == 1:
+          self.kernel_dims = self.kernel_dims * self.num_dims
+        elif (len(self.kernel_dims)) != self.num_dims:
+          raise ValueError("Invalid kernel dimensions passed to {}".format(self.name))
+
+        self.stride = list(make_iterable(stride))
+        
+        if (len(self.stride)) == 1:
+          self.stride = self.stride * self.num_dims
+        elif (len(self.stride)) != self.num_dims:
+          raise ValueError("Invalid stride dimensions passed to {}".format(self.name))
+        
+        self.padding = list(make_iterable(padding))
+        
+        if (len(self.padding)) == 1:
+          self.padding = self.padding * self.num_dims
+        elif (len(self.stride)) != self.num_dims:
+          raise ValueError("Invalid padding dimensions passed to {}".format(self.name))
+        
+        self.dilation = list(make_iterable(dilation))
+        
+        if (len(self.dilation)) == 1:
+          self.dilation = self.dilation * self.num_dims
+        elif (len(self.dilation)) != self.num_dims:
+          raise ValueError("Invalid dilation dimensions passed to {}".format(self.name))
+        
+        self.groups = groups
+        
+        self.bias = bias
+        self.weights = list(make_iterable(weights))
         self.transpose = transpose
         self.parallel_strategy = parallel_strategy
 
@@ -216,34 +340,29 @@ class ConvolutionModule(Module):
     def forward(self, x):
         self.instance += 1
         name = '{0}_instance{1}'.format(self.name, self.instance)
+
+        convtype = ('_deconv' if self.transpose else '_conv')
+        kwargs = {}
+        kwargs['weights'] = self.weights
+
+        kwargs['name'] = (name+convtype if self.activation else name)
+        kwargs['num_dims'] = self.num_dims
+        kwargs['num_output_channels'] = self.out_channels
+        kwargs['has_bias'] = self.bias
+        kwargs['num_groups'] = self.groups
+        kwargs['parallel_strategy'] = self.parallel_strategy
+        kwargs['has_vectors'] = True
+
+        kwargs['conv_dims'] = str_list(self.kernel_dims)
+        kwargs['conv_pads'] = str_list(self.padding)
+        kwargs['conv_dilations'] = str_list(self.dilation)
+        kwargs['conv_strides'] = str_list(self.stride)
+
+
         if(self.transpose):
-          y = lbann.Deconvolution(x,
-                              weights=self.weights,
-                              name=(name+'_deconv' if self.activation else name),
-                              num_dims=self.num_dims,
-                              num_output_channels=self.out_channels,
-                              has_vectors=False,
-                              conv_dims_i=self.kernel_size,
-                              conv_pads_i=self.padding,
-                              conv_strides_i=self.stride,
-                              conv_dilations_i=self.dilation,
-                              num_groups=self.groups,
-                              has_bias=self.bias,
-                              parallel_strategy=self.parallel_strategy)
+          y = lbann.Deconvolution(x,**kwargs)
         else:
-          y = lbann.Convolution(x,
-                              weights=self.weights,
-                              name=(name+'_conv' if self.activation else name),
-                              num_dims=self.num_dims,
-                              num_output_channels=self.out_channels,
-                              has_vectors=False,
-                              conv_dims_i=self.kernel_size,
-                              conv_pads_i=self.padding,
-                              conv_strides_i=self.stride,
-                              conv_dilations_i=self.dilation,
-                              num_groups=self.groups,
-                              has_bias=self.bias,
-                              parallel_strategy=self.parallel_strategy)
+          y = lbann.Convolution(x,**kwargs)
         if self.activation:
             return self.activation(y, name=name+'_activation')
         else:

@@ -28,6 +28,7 @@
 
 #include "lbann/callbacks/profiler.hpp"
 #include "lbann/utils/profiling.hpp"
+#include "lbann/utils/serialize.hpp"
 
 #include <callbacks.pb.h>
 
@@ -52,6 +53,15 @@ profiler::profiler(bool sync, bool skip_init) :
   if (!m_skip_init) {
     prof_start();
   }
+}
+
+template <class Archive>
+void profiler::serialize(Archive & ar) {
+  ar(::cereal::make_nvp(
+       "BaseCallback",
+       ::cereal::base_class<callback_base>(this)),
+     CEREAL_NVP(m_sync),
+     CEREAL_NVP(m_skip_init));
 }
 
 void profiler::on_epoch_begin(model *m) {
@@ -220,3 +230,6 @@ build_profiler_callback_from_pbuf(
 
 } // namespace callback
 } // namespace lbann
+
+#define LBANN_CLASS_NAME callback::profiler
+#include <lbann/macros/register_class_with_cereal.hpp>

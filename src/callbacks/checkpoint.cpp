@@ -27,9 +27,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
+#include "lbann/comm_impl.hpp"
 #include "lbann/callbacks/checkpoint.hpp"
 
 #include "lbann/models/model.hpp"
+#include "lbann/utils/serialize.hpp"
 
 #include <callbacks.pb.h>
 
@@ -58,30 +60,39 @@ void checkpoint::on_train_begin(model *m) {
   restart(m);
 }
 
-// Interval defined with checkpoint_epochs or ckpt_dist_epochs
-void checkpoint::on_epoch_end(model *m) {
+void checkpoint::on_train_end(model *m) {
   auto& p = get_active_trainer().get_persist_obj();
   p.set_cb_type(callback_type::full_checkpoint);
   if(need_checkpoint(m, callback_phase::epoch)){
-    do_checkpoint(m);
+    do_checkpoint(m, visitor_hook::execution_mode_end);
+  }
+  p.set_cb_type(callback_type::invalid);
+}
+
+// Interval defined with checkpoint_epochs or ckpt_dist_epochs
+void checkpoint::on_epoch_begin(model *m) {
+  auto& p = get_active_trainer().get_persist_obj();
+  p.set_cb_type(callback_type::full_checkpoint);
+  if(need_checkpoint(m, callback_phase::epoch)){
+    do_checkpoint(m, visitor_hook::epoch_begin);
   }
   p.set_cb_type(callback_type::invalid);
 }
 // Interval defined with checkpoint_epochs or ckpt_dist_epochs
-void checkpoint::on_validation_end(model *m) {
+void checkpoint::on_validation_begin(model *m) {
   auto& p = get_active_trainer().get_persist_obj();
   p.set_cb_type(callback_type::full_checkpoint);
   if(need_checkpoint(m, callback_phase::validation)){
-    do_checkpoint(m);
+    do_checkpoint(m, visitor_hook::execution_mode_begin);
   }
   p.set_cb_type(callback_type::invalid);
 }
  // Interval defined with checkpoint_steps or ckpt_dist_steps
-void checkpoint::on_batch_end(model *m) {
+void checkpoint::on_batch_begin(model *m) {
   auto& p = get_active_trainer().get_persist_obj();
   p.set_cb_type(callback_type::full_checkpoint);
   if(need_checkpoint(m, callback_phase::batch)){
-    do_checkpoint(m);
+    do_checkpoint(m, visitor_hook::execution_mode_batch_begin);
   }
   p.set_cb_type(callback_type::invalid);
 }
@@ -141,11 +152,11 @@ bool checkpoint::need_checkpoint(model *m, callback_phase phase) {
 }
 
 // Checkpoint Shared/Distributed
-bool checkpoint::do_checkpoint(model *m) {
+bool checkpoint::do_checkpoint(model *m, visitor_hook hook) {
   auto& p = get_active_trainer().get_persist_obj();
-  auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
+  auto& c = dynamic_cast<sgd_execution_context&>(m->get_execution_context());
   auto& t = get_active_trainer();
-  if(&t != &c.get_trainer()) { LBANN_ERROR("Mismatched trainers"); }
+  if(&t != &get_trainer()) { LBANN_ERROR("Mismatched trainers"); }
   // if the checkpoint directory is not defined, bail
   if (get_checkpoint_dir().length() == 0 && m_per_rank_dir.length() == 0) {
     return false;
@@ -153,7 +164,6 @@ bool checkpoint::do_checkpoint(model *m) {
   // time how long this takes
   // read current epoch and step counters from model
   El::Timer timer;
-  char dir[1024];
   std::string epochdir;
   std::string latest_file;
   size_t epoch = std::numeric_limits<size_t>::max();
@@ -171,7 +181,7 @@ bool checkpoint::do_checkpoint(model *m) {
     timer.Start();
     std::cout << "[" << m->get_name()
               << "." << comm->get_trainer_rank()
-              << "] Checkpoint [" << to_string(c.get_execution_mode())
+              << "] Checkpoint [" << (is_execution_mode_hook(hook) ? to_string(hook, c.get_execution_mode()) : to_string(hook))
               << "] to " << get_checkpoint_dir()
               << " : epoch " << epoch << " step " << step << " ..." << std::endl;
     fflush(stdout);
@@ -180,69 +190,30 @@ bool checkpoint::do_checkpoint(model *m) {
   comm->trainer_broadcast(0, step);
 
   // Distributed ckpt
-  if(m_checkpoint_dist){
-    // prepend per rank directory with shared checkpoint dir name
-    // Per rank directory typically a cache location like node local SSDs
-    if(m_per_rank_dir.length() != 0){
-      /// @todo BVE FIXME this looks wrong  I think that the order
-      /// should be reversed
-      snprintf(dir, sizeof(dir), "%s/%s", m_per_rank_dir.c_str(), get_checkpoint_dir().c_str());
-    } else {
-      strcpy(dir, get_checkpoint_dir().c_str());
-    }
-    makedir(dir);
-    // create directories per ranks
-    epochdir = get_distributed_checkpoint_dirname(t.get_name(),
-                                                  get_active_training_algorithm().get_name(),
-                                                  m->get_comm()->get_rank_in_trainer(),
-                                                  dir, c.get_execution_mode(), epoch, step);
-    /** @todo BVE FIXME this should be refactored to only open the
-        checkpoints files that we care about */
-    p.open_checkpoint(epochdir.c_str(), true);
-    // Make sure that the master has had a chance to create the directories
-    comm->trainer_barrier();
-    // Call top level save to checkpoint function in model, in turn calls save to checkpoint functions for other model classes (weights, layers)
-    if(p.get_cb_type() == callback_type::model_only || p.get_cb_type() == callback_type::full_checkpoint) {
-      m->save_to_checkpoint_distributed(p);
-    }
-    if(p.get_cb_type() == callback_type::execution_context_only
-       || p.get_cb_type() == callback_type::full_checkpoint) {
-      t.save_to_checkpoint_distributed();
-    }
-    p.close_checkpoint();
-    // Print latest checkpoint to file
-    if (comm->am_trainer_master()) {
-      latest_file = get_last_distributed_checkpoint_filename(t.get_name(),
-                                                             get_active_training_algorithm().get_name(),
-                                                             dir);
-      write_latest(latest_file, c.get_execution_mode(), epoch, step);
-    }
+  if (m_checkpoint_dist)
+  {
+    this->do_distributed_checkpoint(
+      *comm,
+      t,  /* trainer */
+      *m, /* model   */
+      hook,  /* visitor hook */
+      c.get_execution_mode(),  /* mode */
+      p,  /* persist */
+      epoch,
+      step);
   }
-  // Shared checkpoint, logic identical to Distributed.
-  if(m_checkpoint_shared){
-    strcpy(dir, get_checkpoint_dir().c_str());
-    makedir(dir);
-    epochdir = get_shared_checkpoint_dirname(t.get_name(),
-                                             get_active_training_algorithm().get_name(),
-                                             dir, c.get_execution_mode(), epoch, step);
-    p.open_checkpoint(epochdir.c_str(), comm->am_trainer_master());
-    // Make sure that the master has had a chance to create the directories
-    comm->trainer_barrier();
-    if(p.get_cb_type() == callback_type::model_only || p.get_cb_type() == callback_type::full_checkpoint) {
-      m->save_to_checkpoint_shared(p);
-    }
-    if(p.get_cb_type() == callback_type::execution_context_only
-       || p.get_cb_type() == callback_type::full_checkpoint) {
-      t.save_to_checkpoint_shared();
-    }
-    // close our checkpoint
-    p.close_checkpoint();
-    if (comm->am_trainer_master()) {
-      latest_file = get_last_shared_checkpoint_filename(t.get_name(),
-                                                        get_active_training_algorithm().get_name(),
-                                                        dir);
-      write_latest(latest_file, c.get_execution_mode(), epoch, step);
-    }
+  // Shared checkpoint
+  if (m_checkpoint_shared)
+  {
+    this->do_shared_checkpoint(
+      *comm,
+      t,  /* trainer */
+      *m, /* model   */
+      hook,  /* visitor hook */
+      c.get_execution_mode(),  /* mode */
+      p,  /* persist */
+      epoch,
+      step);
   }
 
   uint64_t bytes_count = p.get_bytes();
@@ -255,7 +226,7 @@ bool checkpoint::do_checkpoint(model *m) {
     }
     std::cout << "[" << m->get_name()
               << "." << comm->get_trainer_rank()
-              << "] Checkpoint [" << to_string(c.get_execution_mode())
+              << "] Checkpoint [" << (is_execution_mode_hook(hook) ? to_string(hook, c.get_execution_mode()) : to_string(hook))
               << "] to " << get_checkpoint_dir()
               << " complete: Epoch=" << epoch
               << " Step=" << step
@@ -272,6 +243,7 @@ bool checkpoint::do_checkpoint(model *m) {
 std::string checkpoint::find_latest_checkpoint(lbann_comm& comm,
                                                const std::string& trainer_name,
                                                const std::string& alg_name,
+                                               visitor_hook& hook,
                                                execution_mode& mode,
                                                size_t &epoch,
                                                size_t& step,
@@ -287,12 +259,12 @@ std::string checkpoint::find_latest_checkpoint(lbann_comm& comm,
     if(m_per_rank_dir.length()){
       dir = get_distributed_checkpoint_rootdir();
       latest_file = get_last_distributed_checkpoint_filename(trainer_name, alg_name, dir);
-      read_latest(latest_file, &mode, &epoch_dist, &step_dist);
+      read_latest(latest_file, &hook, &mode, &epoch_dist, &step_dist);
     }
     if(get_restart_dir().length()){
       dir = get_shared_checkpoint_rootdir();
       latest_file = get_last_shared_checkpoint_filename(trainer_name, alg_name, dir);
-      read_latest(latest_file, &mode, &epoch, &step);
+      read_latest(latest_file, &hook, &mode, &epoch, &step);
     }
 
     if(epoch > epoch_dist){
@@ -317,6 +289,7 @@ std::string checkpoint::find_latest_checkpoint(lbann_comm& comm,
   std::memset(&header, 0x0, sizeof(header_t<max_len_dirname>));
 
   if (comm.am_trainer_master()) {
+    header.hook = hook;
     header.mode = mode;
     header.epoch = epoch;
     header.step = step;
@@ -327,6 +300,7 @@ std::string checkpoint::find_latest_checkpoint(lbann_comm& comm,
   comm.trainer_broadcast(0, header);
 
   if (!comm.am_trainer_master()) {
+    hook = header.hook;
     mode = header.mode;
     epoch = header.epoch;
     step = header.step;
@@ -356,12 +330,13 @@ bool checkpoint::open_latest_checkpoint(
   size_t epoch = std::numeric_limits<size_t>::max();
   size_t step = std::numeric_limits<size_t>::max();
   bool shared = true;
+  visitor_hook hook;
   execution_mode mode;
 
   std::string dir = find_latest_checkpoint(comm,
                                            trainer_name,
                                            alg_name,
-                                           mode, epoch, step, shared);
+                                           hook, mode, epoch, step, shared);
 
   // if we couldn't find the latest epoch, just return
   if (epoch == std::numeric_limits<size_t>::max()) {
@@ -372,7 +347,9 @@ bool checkpoint::open_latest_checkpoint(
   // let user know we're restarting from a checkpoint
   if (comm.am_trainer_master()) {
     timer.Start();
-    std::cout << task_label << " from " << get_restart_dir() << " : mode " << to_string(mode) << " epoch " << epoch << " step " << step << " ..." << std::endl;
+    std::cout << task_label << " from " << get_restart_dir() << " : hook "
+              << (is_execution_mode_hook(hook) ? to_string(hook, mode) : to_string(hook))
+              << " epoch " << epoch << " step " << step << " ..." << std::endl;
   }
 
   std::string epochdir;
@@ -381,20 +358,20 @@ bool checkpoint::open_latest_checkpoint(
     epochdir = get_distributed_checkpoint_dirname(trainer_name,
                                                   alg_name,
                                                   comm.get_rank_in_trainer(),
-                                                  dir, mode, epoch, step);
+                                                  dir, hook, mode, epoch, step);
     if(!file::directory_exists(epochdir)) {
       LBANN_WARNING(epochdir + " does not exist");
       return false;
     }
     p.open_restart(epochdir.c_str());
-    auto flag = reload_distributed_ckpt(p);
-    if(!flag) { LBANN_WARNING("Unable to reload distributed checkpoint ", epochdir); }
+    if (!reload_distributed_ckpt(p))
+      LBANN_WARNING("Unable to reload distributed checkpoint ", epochdir);
     p.close_restart();
   }
   else {
     epochdir = get_shared_checkpoint_dirname(trainer_name,
                                              alg_name,
-                                             dir, mode, epoch, step);
+                                             dir, hook, mode, epoch, step);
 
     if(!file::directory_exists(epochdir)) {
       LBANN_WARNING(epochdir + " does not exist");
@@ -407,9 +384,8 @@ bool checkpoint::open_latest_checkpoint(
     // // Ensure all ranks have access to checkpoint dir, needed for loading rank specific rng state
     //   p.m_checkpoint_dir = epochdir;
     // }
-    auto flag = reload_shared_ckpt(p);
-    if(!flag) { LBANN_WARNING("Unable to reload shared checkpoint ", epochdir); }
-    // if(comm->am_trainer_master()) {
+    if (!reload_shared_ckpt(p))
+      LBANN_WARNING("Unable to reload shared checkpoint ", epochdir);
     /// @todo For the moment let all ranks open the checkpoint files
     p.close_restart();
     // }
@@ -439,47 +415,25 @@ bool checkpoint::open_latest_checkpoint(
 
 // Reload a model from a Shared/Distributed checkpoint
 bool checkpoint::reload_model(model *m) {
-  auto reload_shared_model = std::function<bool(/*const */persist&)>
-    ([m](/*const */persist& p_ref)
-     ->bool {
-      auto flag = m->load_from_checkpoint_shared(p_ref);
-      return flag;
-    });
-
-  auto reload_distributed_model = std::function<bool(/*const */persist&)>
-    ([m](/*const */persist& p_ref)
-     ->bool {
-      auto flag = m->load_from_checkpoint_distributed(p_ref);
-      return flag;
-    });
-
-
-  auto flag = open_latest_checkpoint(*(m->get_comm()),
-                                     "Reloading Model " + m->get_name(),
-                                     get_active_trainer().get_name(),
-                                     get_active_training_algorithm().get_name(),
-                                     reload_shared_model,
-                                     reload_distributed_model);
-  return flag;
+  lbann::utils::grid_manager grid_raii(m->get_comm()->get_trainer_grid());
+  return open_latest_checkpoint(
+    *(m->get_comm()),
+    "Reloading Model " + m->get_name(),
+    get_active_trainer().get_name(),
+    get_active_training_algorithm().get_type(),
+    [m](persist& p_ref) {return m->load_from_checkpoint_shared(p_ref);},
+    [m](persist& p_ref) {return m->load_from_checkpoint_distributed(p_ref);});
 }
 
 // Reload a model from a Shared/Distributed checkpoint
 bool checkpoint::reload_trainer(trainer *t) {
-  auto reload_shared_trainer = [t](persist& p_ref) {
-      return t->load_from_checkpoint_shared(p_ref);
-    };
-
-  auto reload_distributed_trainer = [t](persist& p_ref) {
-      return t->load_from_checkpoint_distributed(p_ref);
-    };
-
-  auto flag = open_latest_checkpoint(*(t->get_comm()),
-                                     "Reloading Trainer",
-                                     t->get_name(),
-                                     "sgd",
-                                     reload_shared_trainer,
-                                     reload_distributed_trainer);
-  return flag;
+  return open_latest_checkpoint(
+    *(t->get_comm()),
+    "Reloading Trainer",
+    t->get_name(),
+    "sgd",
+    [t](persist& p_ref) {return t->load_from_checkpoint_shared(p_ref);},
+    [t](persist& p_ref) {return t->load_from_checkpoint_distributed(p_ref);});
 }
 
 // Restart previously saved Shared/Distributed execution contexts
@@ -489,28 +443,153 @@ bool checkpoint::restart(model *m) {
   // one.
   // Then setup the model with the proper one
   auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
+  return open_latest_checkpoint(
+    *(m->get_comm()),
+    "Restarting",
+    get_active_trainer().get_name(),
+    get_active_training_algorithm().get_type(),
+    [&m, &c](persist& p_ref) {
+      return get_trainer().load_from_checkpoint_shared(*m, c);
+    },
+    [&m, &c](persist& p_ref) {
+      return get_trainer().load_from_checkpoint_distributed(*m, c);
+    });
+}
 
-  auto restart_shared_model = [&m, &c](/*const */persist& p_ref)
-    ->bool {
-    auto flag = c.get_trainer().load_from_checkpoint_shared(*m, c);
-    return flag;
-  };
+void checkpoint::do_distributed_checkpoint(
+  lbann_comm& comm,
+  trainer& t,
+  model& m,
+  visitor_hook hook,
+  execution_mode mode,
+  persist& p,
+  size_t epoch,
+  size_t step)
+{
+  if(!m_checkpoint_dist)
+    return;
 
-  auto restart_distributed_model = [&m, &c](/*const */persist& p_ref)
-    ->bool {
-    auto flag = c.get_trainer().load_from_checkpoint_distributed(*m, c);
-    return flag;
-  };
+  // Prepend per rank directory with shared checkpoint dir name
+  // Per rank directory typically a cache location like node local SSDs
+  std::string dir;
+  {
+    std::ostringstream dir_oss;
+    if(m_per_rank_dir.length() != 0){
+      // @todo BVE FIXME this looks wrong  I think that the order
+      // should be reversed
+      dir_oss << m_per_rank_dir << "/";
+    }
+    dir_oss << this->get_checkpoint_dir();
+    dir = dir_oss.str();
+  }
 
+  // make the base directory
+  makedir(dir.c_str());
 
-  auto flag = open_latest_checkpoint(*(m->get_comm()),
-                                     "Restarting",
-                                     get_active_trainer().get_name(),
-                                     get_active_training_algorithm().get_name(),
-                                     restart_shared_model,
-                                     restart_distributed_model);
+  // now create directories per ranks
+  //
+  // NOTE: training_algorithm::get_type() is not entirely correct
+  // here. It could cause problems if multiple instances of the same
+  // callback are checkpointed at the same time, but currently we
+  // don't do this. The issue with "get_name()" is that we might not
+  // know the name of the training algorithm on restore (since the
+  // training algos themselves are not checkpointed).
+  auto const epochdir = get_distributed_checkpoint_dirname(
+    t.get_name(),
+    this->get_active_training_algorithm().get_type(),
+    comm.get_rank_in_trainer(),
+    dir,
+    hook,
+    mode,
+    epoch,
+    step);
 
-  return flag;
+  // @todo BVE FIXME this should be refactored to only open the
+  // checkpoints files that we care about
+  p.open_checkpoint(epochdir.c_str(), true);
+
+  // Make sure that the master has had a chance to create the directories
+  comm.trainer_barrier();
+
+  // Call top level save to checkpoint function in model, in turn
+  // calls save to checkpoint functions for other model classes
+  // (weights, layers)
+  if ((p.get_cb_type() == callback_type::model_only)
+      || (p.get_cb_type() == callback_type::full_checkpoint))
+  {
+    m.save_to_checkpoint_distributed(p);
+  }
+  if ((p.get_cb_type() == callback_type::execution_context_only)
+      || (p.get_cb_type() == callback_type::full_checkpoint))
+  {
+    t.save_to_checkpoint_distributed();
+  }
+  p.close_checkpoint();
+
+  // Print latest checkpoint to file
+  if (comm.am_trainer_master())
+  {
+    auto const latest_file = get_last_distributed_checkpoint_filename(
+      t.get_name(),
+      this->get_active_training_algorithm().get_type(),
+      dir);
+    write_latest(
+      latest_file,
+      hook,
+      mode,
+      epoch,
+      step);
+  }
+}
+
+void checkpoint::do_shared_checkpoint(
+  lbann_comm& comm,
+  trainer& t,
+  model& m,
+  visitor_hook hook,
+  execution_mode mode,
+  persist& p,
+  size_t epoch,
+  size_t step)
+{
+  if(!m_checkpoint_shared)
+    return;
+
+  auto const dir = this->get_checkpoint_dir();
+  makedir(dir.c_str());
+
+  auto const epochdir = get_shared_checkpoint_dirname(
+    t.get_name(),
+    this->get_active_training_algorithm().get_type(),
+    dir,
+    hook,
+    mode,
+    epoch,
+    step);
+  p.open_checkpoint(epochdir.c_str(), comm.am_trainer_master());
+
+  // Make sure that the master has had a chance to create the directories
+  comm.trainer_barrier();
+  if ((p.get_cb_type() == callback_type::model_only)
+      || (p.get_cb_type() == callback_type::full_checkpoint))
+  {
+    m.save_to_checkpoint_shared(p);
+  }
+  if ((p.get_cb_type() == callback_type::execution_context_only)
+      || (p.get_cb_type() == callback_type::full_checkpoint))
+  {
+    t.save_to_checkpoint_shared();
+  }
+
+  // close our checkpoint
+  p.close_checkpoint();
+  if (comm.am_trainer_master()) {
+    auto const latest_file = get_last_shared_checkpoint_filename(
+      t.get_name(),
+      this->get_active_training_algorithm().get_type(),
+      dir);
+    write_latest(latest_file, hook, mode, epoch, step);
+  }
 }
 
 std::unique_ptr<callback_base>

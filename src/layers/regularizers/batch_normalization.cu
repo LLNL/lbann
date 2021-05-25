@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_BATCH_NORMALIZATION_LAYER_INSTANTIATE
+#include "lbann/comm_impl.hpp"
 #include "lbann/layers/regularizers/batch_normalization.hpp"
 #include "lbann/weights/weights_helpers.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
@@ -377,7 +378,7 @@ void batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>::fp_com
                        m_var, is_training);
 
   if (l.m_statistics_group_size == 0) {
-    l.m_comm->allreduce(*l.m_mean_and_var, l.m_mean_and_var->RedundantComm(),
+    l.get_comm()->allreduce(*l.m_mean_and_var, l.m_mean_and_var->RedundantComm(),
                         El::mpi::SUM);
   } else if (l.m_statistics_group_size == 1) {
     // Local aggregation
@@ -417,7 +418,7 @@ void batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>::bp_com
   // Accumulate gradients
   if (is_training) {
     if (l.m_statistics_group_size == 0) {
-      l.m_comm->allreduce(*l.m_mean_and_var_gradient,
+      l.get_comm()->allreduce(*l.m_mean_and_var_gradient,
                           l.m_mean_and_var_gradient->RedundantComm(),
                           El::mpi::SUM);
     }
@@ -427,11 +428,11 @@ void batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>::bp_com
 
   auto* scale_optimizer = l.get_weights(0).get_optimizer();
   if (scale_optimizer != nullptr) {
-    scale_optimizer->add_to_gradient(*l.m_scale_gradient, TensorDataType{1}, true);
+    scale_optimizer->add_to_gradient(*l.m_scale_gradient, TensorDataType{1.f}, true);
   }
   auto* bias_optimizer = l.get_weights(1).get_optimizer();
   if (bias_optimizer != nullptr) {
-    bias_optimizer->add_to_gradient(*l.m_bias_gradient, TensorDataType{1}, true);
+    bias_optimizer->add_to_gradient(*l.m_bias_gradient, TensorDataType{1.f}, true);
   }
 
   m_bn->backward_stage2(this->get_prev_activations(), this->get_prev_error_signals(),
@@ -498,7 +499,7 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute() {
     int num_per_sum;
     if (this->m_statistics_group_size == 0) {
       // Global statistics aggregation; allreduce on fused buffer.
-      this->m_comm->allreduce(*this->m_mean_and_var,
+      this->get_comm()->allreduce(*this->m_mean_and_var,
                               this->m_mean_and_var->RedundantComm(),
                               El::mpi::SUM);
       num_per_sum = channel_size * width;
@@ -507,15 +508,15 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute() {
       num_per_sum = channel_size * local_width;
     } else {
       // Grouped batchnorm. Allreduce on fused buffer.
-      this->m_comm->allreduce(
+      this->get_comm()->allreduce(
         *this->m_mean_and_var,
-        this->m_comm->get_packed_group_comm(this->m_statistics_group_size),
+        this->get_comm()->get_packed_group_comm(this->m_statistics_group_size),
         El::mpi::SUM);
       if (this->m_num_per_sum_cache.count(width) == 0) {
         num_per_sum = channel_size * local_width;
-        num_per_sum = this->m_comm->allreduce(
+        num_per_sum = this->get_comm()->allreduce(
           num_per_sum,
-          this->m_comm->get_packed_group_comm(this->m_statistics_group_size));
+          this->get_comm()->get_packed_group_comm(this->m_statistics_group_size));
         this->m_num_per_sum_cache[width] = num_per_sum;
       } else {
         num_per_sum = this->m_num_per_sum_cache[width];
@@ -651,13 +652,13 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_compute() {
   if (is_training) {
     if (this->m_statistics_group_size == 0) {
       // Global aggregation; allreduce on fused buffer.
-      this->m_comm->allreduce(*this->m_mean_and_var_gradient,
+      this->get_comm()->allreduce(*this->m_mean_and_var_gradient,
                         this->m_mean_and_var_gradient->RedundantComm(),
                         El::mpi::SUM);
     } else if (this->m_statistics_group_size > 1) {
       // Grouped batchnorm; allreduce on fused buffer.
-      this->m_comm->allreduce(*this->m_mean_and_var_gradient,
-                        this->m_comm->get_packed_group_comm(this->m_statistics_group_size),
+      this->get_comm()->allreduce(*this->m_mean_and_var_gradient,
+                        this->get_comm()->get_packed_group_comm(this->m_statistics_group_size),
                         El::mpi::SUM);
     }
   } else {
@@ -711,7 +712,6 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_compute() {
 #define PROTO(T)                                      \
   template class batch_normalization_layer<T, data_layout::DATA_PARALLEL, El::Device::GPU>
 
-#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

@@ -75,7 +75,7 @@ public:
 
 public:
 
-  channelwise_scale_bias_layer(lbann_comm *comm);
+  channelwise_scale_bias_layer(lbann_comm *comm=nullptr);
   channelwise_scale_bias_layer(const channelwise_scale_bias_layer& other);
   channelwise_scale_bias_layer& operator=(
     const channelwise_scale_bias_layer& other);
@@ -90,6 +90,14 @@ public:
 
   void setup_matrices(const El::Grid& grid) override;
   void setup_data(size_t max_mini_batch_size) override;
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
 
 protected:
 
@@ -146,7 +154,7 @@ void channelwise_scale_bias_layer<TensorDataType, Layout, Dev>
   // Construct default weights if needed
   // Note: Scale is initialized to 1 and bias to 0
   if (!this->has_weights()) {
-    auto w = make_unique<WeightsType>(this->get_comm());
+    auto w = std::make_shared<WeightsType>(*this->get_comm());
     std::vector<TensorDataType> vals(2*num_channels,
                                      El::TypeTraits<TensorDataType>::Zero());
     std::fill(vals.begin(), vals.begin()+num_channels,
@@ -156,7 +164,7 @@ void channelwise_scale_bias_layer<TensorDataType, Layout, Dev>
     w->set_name(this->get_name() + "_weights");
     w->set_initializer(std::move(init));
     w->set_optimizer(std::move(opt));
-    this->add_weights(w.get());
+    this->add_weights(w);
     this->m_model->add_weights(std::move(w));
   }
   if (this->num_weights() != 1) {
@@ -170,7 +178,7 @@ void channelwise_scale_bias_layer<TensorDataType, Layout, Dev>
   auto dist = this->get_prev_activations().DistData();
   dist.colDist = El::STAR;
   dist.rowDist = El::STAR;
-  this->get_weights(0).set_dims({static_cast<int>(num_channels)}, {2});
+  this->get_weights(0).set_dims({static_cast<size_t>(num_channels)}, {2});
   this->get_weights(0).set_matrix_distribution(dist);
 
   // Setup gradient w.r.t. weights

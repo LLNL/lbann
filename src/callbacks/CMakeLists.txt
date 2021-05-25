@@ -9,11 +9,13 @@ set_full_path(THIS_DIR_SOURCES
   check_small.cpp
   checkpoint.cpp
   confusion_matrix.cpp
+  compute_model_size.cpp
   debug.cpp
   debug_io.cpp
   dump_error_signals.cpp
   dump_gradients.cpp
   dump_minibatch_sample_indices.cpp
+  dump_model_graph.cpp
   dump_outputs.cpp
   dump_weights.cpp
   early_stopping.cpp
@@ -27,6 +29,7 @@ set_full_path(THIS_DIR_SOURCES
   monitor_io.cpp
   perturb_adam.cpp
   perturb_dropout.cpp
+  perturb_learning_rate.cpp
   print_model_description.cpp
   print_statistics.cpp
   profiler.cpp

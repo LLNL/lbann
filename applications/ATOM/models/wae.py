@@ -87,7 +87,7 @@ class MolWAE(lbann.modules.Module):
     global_count = 0  # Static counter, used for default names
 
     def __init__(self, input_feature_dims,dictionary_size, embedding_size, 
-                 ignore_label,save_output=False, name=None):
+                 ignore_label,zdim= 512, gmean=0.0, gstd=1.0,save_output=False, name=None):
         """Initialize Molecular WAE.
 
         Args:
@@ -95,6 +95,9 @@ class MolWAE(lbann.modules.Module):
             dictionary_size (int): vocabulary size
             embedding_size (int): embedding size
             ignore_label (int): padding index
+            zdim (int): latent dimension
+            gmean (double): mean of Gaussian noise
+            gstd (double): std of Gaussian noise
             save_output (bool, optional): save or not save predictions
                 (default: False).
             name (str, optional): Module name
@@ -110,6 +113,9 @@ class MolWAE(lbann.modules.Module):
         self.embedding_size = embedding_size
         self.dictionary_size = dictionary_size
         self.label_to_ignore = ignore_label
+        self.zdim = zdim
+        self.gmean = gmean
+        self.gstd = gstd
         self.save_output = save_output
         self.datatype = lbann.DataType.FLOAT
         self.weights_datatype = lbann.DataType.FLOAT
@@ -125,8 +131,8 @@ class MolWAE(lbann.modules.Module):
             datatype=self.datatype,
             weights_datatype=self.weights_datatype,
         )
-        self.q_mu = fc(128,name='encoder_qmu')
-        self.q_logvar = fc(128,name='encoder_qlogvar')
+        self.q_mu = fc(zdim,name='encoder_qmu')
+        self.q_logvar = fc(zdim,name='encoder_qlogvar')
         for w in self.q_mu.weights + self.q_logvar.weights:
             w.datatype = self.weights_datatype
 
@@ -184,6 +190,9 @@ class MolWAE(lbann.modules.Module):
 
         # Encoder: x -> z, kl_loss
         z_sample = self.forward_encoder(x_emb)
+        
+        eps = lbann.Gaussian(mean=self.gmean, stdev=self.gstd,hint_layer=z_sample)
+        z_sample = lbann.Add([z_sample, eps])
 
         # Decoder: x, z -> recon_loss
         #pred = self.forward_decoder(x_emb, z_sample)
@@ -195,15 +204,15 @@ class MolWAE(lbann.modules.Module):
         recon_loss = lbann.Identity(recon_loss, device='CPU')
 
         z_prior = lbann.Tessellate(
-            lbann.Reshape(z, dims=str_list([1, 128])),
-            dims=str_list([self.input_feature_dims, 128]),
+            lbann.Reshape(z, dims=str_list([1, self.zdim])),
+            dims=str_list([self.input_feature_dims, self.zdim]),
         )
 
         d_real = self.discriminator0(lbann.Concatenation([x_emb,z_prior],axis=1))
 
         z_sample0 = lbann.Tessellate(
-            lbann.Reshape(z_sample, dims=str_list([1, 128])),
-            dims=str_list([self.input_feature_dims, 128]),
+            lbann.Reshape(z_sample, dims=str_list([1, self.zdim])),
+            dims=str_list([self.input_feature_dims, self.zdim]),
         )
         y_z_sample = lbann.Concatenation([x_emb,z_sample0],axis=1)
 
@@ -230,7 +239,6 @@ class MolWAE(lbann.modules.Module):
             axis=0,
         )
         h = lbann.Identity(h)
-
         z = self.q_mu(h)
         return z
 
@@ -246,8 +254,8 @@ class MolWAE(lbann.modules.Module):
         # z_0 = z.unsqueeze(1).repeat(1, x_emb.size(1), 1)
         # x_input = torch.cat([x_emb, z_0], dim=-1)
         z_0 = lbann.Tessellate(
-            lbann.Reshape(z, dims=str_list([1, 128])),
-            dims=str_list([self.input_feature_dims, 128]),
+            lbann.Reshape(z, dims=str_list([1, self.zdim])),
+            dims=str_list([self.input_feature_dims, self.zdim]),
         )
         x_input = lbann.Concatenation(x_emb, z_0, axis=1)
 
@@ -280,7 +288,7 @@ class MolWAE(lbann.modules.Module):
                 if parent not in in_stack and parent not in (x_emb, z):
                     stack.append(parent)
                     in_stack[parent] = True
-
+        print("WAE save output? ", self.save_output)
         # Find argmax 
         if(self.save_output):
           y_slice = lbann.Slice(
@@ -312,8 +320,7 @@ class MolWAE(lbann.modules.Module):
         )
         x = lbann.Identity(x)
 
-        # Convert indices in x to one-hot representation
-        # Note: Ignored indices result in zero vectors
+        # Figure out entries in x to ignore
         ignore_mask = lbann.Equal(
             x,
             self.constant(self.label_to_ignore, hint_layer=x),
@@ -321,22 +328,38 @@ class MolWAE(lbann.modules.Module):
         keep_mask = lbann.LogicalNot(ignore_mask)
         length = lbann.Reduction(keep_mask, mode='sum')
         length = lbann.Max(length, self.constant(1, [1]))
-        x = lbann.Add(
-            lbann.Multiply(keep_mask, x),
-            lbann.Multiply(ignore_mask, self.constant(-1, hint_layer=x)),
+
+        # Convert entries in x to indices in y
+        # Note: Ignored entries correspond to an index of -1.
+        offsets = [
+            row*self.dictionary_size
+            for row in range(self.input_feature_dims-1)
+        ]
+        offsets = lbann.Weights(
+            initializer=lbann.ValueInitializer(values=str_list(offsets)),
+            optimizer=lbann.NoOptimizer(),
         )
-        x = lbann.Slice(x, slice_points=str_list(range(self.input_feature_dims)))
-        x = [lbann.Identity(x) for _ in range(self.input_feature_dims-1)]
-        x = [lbann.OneHot(xi, size=self.dictionary_size) for xi in x]
-        x = [lbann.Reshape(xi, dims=str_list([1, self.dictionary_size])) for xi in x]
-        x = lbann.Concatenation(x, axis=0)
+        offsets = lbann.WeightsLayer(
+            dims=str_list([self.input_feature_dims-1]),
+            weights=offsets,
+        )
+        y_inds = lbann.Add(x, offsets)
+        y_inds = lbann.Add(
+            lbann.Multiply(keep_mask, y_inds),
+            lbann.Multiply(
+                ignore_mask,
+                self.constant(-1, hint_layer=y_inds),
+            ),
+        )
 
         # recon_loss = F.cross_entropy(
         #     y[:, :-1].contiguous().view(-1, y.size(-1)),
         #     x[:, 1:].contiguous().view(-1),
         #     ignore_index=self.pad
         # )
-        # Note: Ideally we'd shift y by y.max(-1) for numerical stability
+
+        # Shift y for numerical stability
+        # Note: We'd prefer to shift by y.max(-1)
         shifts = lbann.MatMul(
             lbann.Max(y, self.constant(0, hint_layer=y)),
             self.constant(
@@ -345,6 +368,8 @@ class MolWAE(lbann.modules.Module):
             ),
         )
         y = lbann.Subtract(y, shifts)
+
+        # Compute log of softmax denominator and sum
         z = lbann.MatMul(
             lbann.Exp(y),
             self.constant(1, [self.dictionary_size, 1]),
@@ -354,13 +379,15 @@ class MolWAE(lbann.modules.Module):
             lbann.Reshape(keep_mask, dims=str_list([1, -1])),
             z,
         )
-        recon_loss = lbann.MatMul(
-            lbann.Reshape(y, dims=str_list([1, -1])),
-            lbann.Reshape(x, dims=str_list([1, -1])),
-            transpose_b=True,
+        z = lbann.Reshape(z, dims=str_list([1]))
+
+        # Compute cross entropy
+        recon_loss = lbann.Gather(
+            lbann.Reshape(y, dims=str_list([-1])),
+            y_inds,
         )
+        recon_loss = lbann.Reduction(recon_loss, mode='sum')
         recon_loss = lbann.Subtract(z, recon_loss)
-        recon_loss = lbann.Reshape(recon_loss, dims=str_list([1]))
         recon_loss = lbann.Divide(recon_loss, length)
 
         return recon_loss
@@ -375,6 +402,6 @@ class MolWAE(lbann.modules.Module):
 
     def discriminator0(self,input):
         return self.d0_fc2(self.d0_fc1(self.d0_fc0(input)))
-
+        
     def discriminator1(self,input):
         return self.d1_fc2(self.d1_fc1(self.d1_fc0(input)))

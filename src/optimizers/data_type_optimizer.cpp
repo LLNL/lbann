@@ -25,7 +25,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_DATA_TYPE_OPTIMIZER_INSTANTIATE
+#include "lbann/comm_impl.hpp"
 #include "lbann/optimizers/data_type_optimizer.hpp"
+#include "lbann/optimizers/data_type_optimizer_impl.hpp"
 #include "lbann/weights/data_type_weights.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/io/persist.hpp"
@@ -99,7 +101,21 @@ auto data_type_optimizer<TensorDataType>::get_gradient() -> AbsDistMatrixType& {
 }
 
 template <typename TensorDataType>
+void data_type_optimizer<TensorDataType>::setup(weights* w_in)
+{
+  if (auto* w = dynamic_cast<WeightsType*>(w_in))
+    this->setup(w);
+  else
+    LBANN_ERROR("Incompatible weights type.");
+}
+
+template <typename TensorDataType>
 void data_type_optimizer<TensorDataType>::setup(WeightsType* w) {
+  this->setup_base(w);
+}
+
+template <typename TensorDataType>
+void data_type_optimizer<TensorDataType>::setup_base(WeightsType* w) {
   this->set_comm(w->get_comm());
   this->clear_gradient();
 
@@ -157,15 +173,16 @@ data_type_optimizer<TensorDataType>::get_matrix_info() const {
   };
 }
 
-// =============================
-// Checkpointing
-// =============================
+} // namespace lbann
 
-#define PROTO(T)                         \
-  template class data_type_optimizer<T>
+#undef PROTO
+#define PROTO(T)                                                                 \
+  template class lbann::data_type_optimizer<T>
+
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
 
-} // namespace lbann
+#define LBANN_CLASS_NAME data_type_optimizer
+#include <lbann/macros/register_template_class_with_cereal.hpp>

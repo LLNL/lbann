@@ -67,10 +67,7 @@ void customize_data_readers_sample_list(const lbann_comm& comm,
 void init_data_readers(
   lbann_comm *comm,
   const ::lbann_data::LbannPB& p,
-  std::map<execution_mode, generic_data_reader *>& data_readers,
-  bool is_shareable_training_data_reader,
-  bool is_shareable_testing_data_reader,
-  bool is_shareable_validation_data_reader = false);
+  std::map<execution_mode, generic_data_reader *>& data_readers);
 
 /** @brief adjusts the number of parallel data readers */
 void set_num_parallel_readers(const lbann_comm& comm, ::lbann_data::LbannPB& p);

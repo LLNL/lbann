@@ -26,7 +26,8 @@
 #ifndef LBANN_UTILS_DNN_LIB_CUDNN_DROPOUT_HPP_
 #define LBANN_UTILS_DNN_LIB_CUDNN_DROPOUT_HPP_
 
-#include "lbann/utils/cudnn.hpp"
+#include "lbann/utils/dnn_enums.hpp"
+#include "lbann/utils/dnn_lib/helpers.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
 
 #include "utils.hpp"
@@ -35,8 +36,10 @@ namespace lbann
 {
 
 #if defined LBANN_HAS_CUDNN
-namespace cudnn
+namespace dnn_lib
 {
+
+using namespace cudnn;
 
 inline size_t get_dropout_states_size()
 {
@@ -122,8 +125,8 @@ void dropout_backward(DropoutDescriptor const& dropoutDesc,
   dropout_backward(dropoutDesc, dyDesc, dy, dxDesc, dx, workSpace, multisync);
 }
 
-}// namespace cudnn
+}// namespace dnn_lib
 #endif // LBANN_HAS_CUDNN
-  
+
 }// namespace lbann
 #endif // LBANN_UTILS_DNN_LIB_CUDNN_DROPOUT_HPP_

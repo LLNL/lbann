@@ -36,15 +36,18 @@ namespace lbann {
   class LAYER_NAME : public data_type_layer<TensorDataType> {               \
   public:                                                                   \
   LAYER_NAME(lbann_comm *comm) : data_type_layer<TensorDataType>(comm) {}   \
+  LAYER_NAME() : LAYER_NAME(nullptr) {}                                     \
     LAYER_NAME* copy() const override {                                     \
       return new LAYER_NAME<TensorDataType,Layout,Device>(*this);           \
     }                                                                       \
     std::string get_type() const override { return LAYER_STRING; }          \
     data_layout get_data_layout() const override { return Layout; }         \
     El::Device get_device_allocation() const override { return Device; }    \
+    template <typename ArchiveT>                                            \
+    void serialize(ArchiveT& ar);                                           \
   protected:                                                                \
-    void setup_dims(DataReaderMetaData& dr_metadata) override {                                            \
-      data_type_layer<TensorDataType>::setup_dims(dr_metadata);                        \
+    void setup_dims(DataReaderMetaData& dr_metadata) override {             \
+      data_type_layer<TensorDataType>::setup_dims(dr_metadata);             \
       this->set_output_dims(this->get_input_dims());                        \
     }                                                                       \
     void fp_compute() override;                                             \
@@ -125,6 +128,10 @@ DEFINE_ENTRYWISE_UNARY_LAYER(tanh_layer,  "hyperbolic tangent");
 DEFINE_ENTRYWISE_UNARY_LAYER(acosh_layer, "hyperbolic arccosine");
 DEFINE_ENTRYWISE_UNARY_LAYER(asinh_layer, "hyperbolic arcsine");
 DEFINE_ENTRYWISE_UNARY_LAYER(atanh_layer, "hyperbolic arctangent");
+
+// Error function
+DEFINE_ENTRYWISE_UNARY_LAYER(erf_layer, "error function");
+DEFINE_ENTRYWISE_UNARY_LAYER(erfinv_layer, "inverse error function");
 
 } // namespace lbann
 

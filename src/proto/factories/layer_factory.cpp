@@ -38,9 +38,8 @@
 #include "lbann/layers/activations/log_softmax.hpp"
 #include "lbann/layers/activations/softmax.hpp"
 #include "lbann/layers/image/bilinear_resize.hpp"
-#include "lbann/layers/io/input/generic_input_layer.hpp"
-#include "lbann/layers/io/input/input_layer.hpp"
-#include "lbann/layers/io/io_layer.hpp"
+#include "lbann/layers/io/input_layer.hpp"
+#include "lbann/layers/learning/base_convolution.hpp"
 #include "lbann/layers/learning/channelwise_fully_connected.hpp"
 #include "lbann/layers/learning/channelwise_scale_bias.hpp"
 #include "lbann/layers/learning/convolution.hpp"
@@ -49,7 +48,6 @@
 #include "lbann/layers/learning/entrywise_scale_bias.hpp"
 #include "lbann/layers/learning/fully_connected.hpp"
 #include "lbann/layers/learning/gru.hpp"
-#include "lbann/layers/learning/learning.hpp"
 #include "lbann/layers/loss/categorical_accuracy.hpp"
 #include "lbann/layers/loss/cross_entropy.hpp"
 #include "lbann/layers/loss/entrywise.hpp"
@@ -58,29 +56,28 @@
 #include "lbann/layers/loss/mean_absolute_error.hpp"
 #include "lbann/layers/loss/mean_squared_error.hpp"
 #include "lbann/layers/loss/top_k_categorical_accuracy.hpp"
-#include "lbann/layers/math/binary.hpp"
-#include "lbann/layers/math/clamp.hpp"
-#include "lbann/layers/math/matmul.hpp"
-#include "lbann/layers/math/unary.hpp"
+#include "lbann/layers/math/math_builders.hpp"
+#include "lbann/layers/misc/argmax.hpp"
+#include "lbann/layers/misc/argmin.hpp"
 #include "lbann/layers/misc/channelwise_mean.hpp"
 #include "lbann/layers/misc/channelwise_softmax.hpp"
 #include "lbann/layers/misc/covariance.hpp"
+#include "lbann/layers/misc/dist_embedding.hpp"
 #include "lbann/layers/misc/dft_abs_builder.hpp"
 #include "lbann/layers/misc/mini_batch_index.hpp"
 #include "lbann/layers/misc/mini_batch_size.hpp"
-#include "lbann/layers/misc/variance.hpp"
-#include "lbann/layers/misc/argmax.hpp"
-#include "lbann/layers/misc/argmin.hpp"
 #include "lbann/layers/misc/one_hot.hpp"
-#include "lbann/layers/misc/dist_embedding.hpp"
+#include "lbann/layers/misc/rowwise_weights_norms.hpp"
+#include "lbann/layers/misc/uniform_hash.hpp"
+#include "lbann/layers/misc/variance.hpp"
 #include "lbann/layers/regularizers/batch_normalization.hpp"
 #include "lbann/layers/regularizers/dropout.hpp"
 #include "lbann/layers/regularizers/local_response_normalization.hpp"
-#include "lbann/layers/regularizers/regularizer.hpp"
 #include "lbann/layers/regularizers/selu_dropout.hpp"
 #include "lbann/layers/regularizers/entrywise_batch_normalization.hpp"
 #include "lbann/layers/regularizers/layer_norm.hpp"
 #include "lbann/layers/regularizers/instance_norm.hpp"
+#include "lbann/layers/transform/batchwise_reduce_sum.hpp"
 #include "lbann/layers/transform/bernoulli.hpp"
 #include "lbann/layers/transform/categorical_random.hpp"
 #include "lbann/layers/transform/concatenate.hpp"
@@ -89,19 +86,20 @@
 #include "lbann/layers/transform/discrete_random.hpp"
 #include "lbann/layers/transform/dummy.hpp"
 #include "lbann/layers/transform/evaluation.hpp"
+#include "lbann/layers/transform/gather.hpp"
 #include "lbann/layers/transform/gaussian.hpp"
 #include "lbann/layers/transform/hadamard.hpp"
 #include "lbann/layers/transform/in_top_k.hpp"
 #include "lbann/layers/transform/pooling.hpp"
 #include "lbann/layers/transform/reduction.hpp"
 #include "lbann/layers/transform/reshape.hpp"
+#include "lbann/layers/transform/scatter.hpp"
 #include "lbann/layers/transform/slice.hpp"
 #include "lbann/layers/transform/sort.hpp"
 #include "lbann/layers/transform/split.hpp"
 #include "lbann/layers/transform/stop_gradient.hpp"
 #include "lbann/layers/transform/sum.hpp"
 #include "lbann/layers/transform/tessellate.hpp"
-#include "lbann/layers/transform/transform.hpp"
 #include "lbann/layers/transform/uniform.hpp"
 #include "lbann/layers/transform/unpooling.hpp"
 #include "lbann/layers/transform/weighted_sum.hpp"
@@ -112,9 +110,9 @@
 
 #include <layers.pb.h>
 
-#ifdef LBANN_HAS_CUDNN
-#include <cudnn.h>
-#endif // LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_DNN_LIB
+#include "lbann/utils/dnn_lib/helpers.hpp"
+#endif // LBANN_HAS_DNN_LIB
 
 namespace lbann {
 namespace proto {
@@ -154,6 +152,13 @@ private:
 #define LBANN_REGISTER_DEFAULT_BUILDER(KEY, LAYER_NAME)                 \
     factory_.register_builder(                                          \
       #KEY,                                                             \
+      [](lbann_comm*,                                                   \
+         lbann_data::Layer const&){                                     \
+        return lbann::make_unique<LAYER_NAME##_layer<T,L,D>>();         \
+      })
+#define LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(KEY, LAYER_NAME)       \
+    factory_.register_builder(                                          \
+      #KEY,                                                             \
       [](lbann_comm* comm,                                              \
          lbann_data::Layer const&){                                     \
         return lbann::make_unique<LAYER_NAME##_layer<T,L,D>>(comm);     \
@@ -172,55 +177,60 @@ private:
     LBANN_REGISTER_BUILDER(GRU, gru);
 
     // Math layers
-    LBANN_REGISTER_DEFAULT_BUILDER(Abs, abs);
-    LBANN_REGISTER_DEFAULT_BUILDER(Acos, acos);
-    LBANN_REGISTER_DEFAULT_BUILDER(Acosh, acosh);
-    LBANN_REGISTER_DEFAULT_BUILDER(Add, add);
-    LBANN_REGISTER_DEFAULT_BUILDER(Asin, asin);
-    LBANN_REGISTER_DEFAULT_BUILDER(Asinh, asinh);
-    LBANN_REGISTER_DEFAULT_BUILDER(Atan, atan);
-    LBANN_REGISTER_DEFAULT_BUILDER(Atanh, atanh);
-    LBANN_REGISTER_DEFAULT_BUILDER(Ceil, ceil);
-    LBANN_REGISTER_DEFAULT_BUILDER(Cos, cos);
-    LBANN_REGISTER_DEFAULT_BUILDER(Cosh, cosh);
-    LBANN_REGISTER_DEFAULT_BUILDER(Divide, divide);
-    LBANN_REGISTER_DEFAULT_BUILDER(Equal, equal);
-    LBANN_REGISTER_DEFAULT_BUILDER(Exp, exp);
-    LBANN_REGISTER_DEFAULT_BUILDER(Expm1, expm1);
-    LBANN_REGISTER_DEFAULT_BUILDER(Floor, floor);
-    LBANN_REGISTER_DEFAULT_BUILDER(Greater, greater);
-    LBANN_REGISTER_DEFAULT_BUILDER(GreaterEqual, greater_equal);
-    LBANN_REGISTER_DEFAULT_BUILDER(Less, less);
-    LBANN_REGISTER_DEFAULT_BUILDER(LessEqual, less_equal);
-    LBANN_REGISTER_DEFAULT_BUILDER(Log, log);
-    LBANN_REGISTER_DEFAULT_BUILDER(Log1p, log1p);
-    LBANN_REGISTER_DEFAULT_BUILDER(LogicalAnd, logical_and);
-    LBANN_REGISTER_DEFAULT_BUILDER(LogicalNot, logical_not);
-    LBANN_REGISTER_DEFAULT_BUILDER(LogicalOr, logical_or);
-    LBANN_REGISTER_DEFAULT_BUILDER(LogicalXor, logical_xor);
-    LBANN_REGISTER_DEFAULT_BUILDER(Max, max);
-    LBANN_REGISTER_DEFAULT_BUILDER(Min, min);
-    LBANN_REGISTER_DEFAULT_BUILDER(Mod, mod);
-    LBANN_REGISTER_DEFAULT_BUILDER(Multiply, multiply);
-    LBANN_REGISTER_DEFAULT_BUILDER(Negative, negative);
-    LBANN_REGISTER_DEFAULT_BUILDER(NotEqual, not_equal);
-    LBANN_REGISTER_DEFAULT_BUILDER(Pow, pow);
-    LBANN_REGISTER_DEFAULT_BUILDER(Reciprocal, reciprocal);
-    LBANN_REGISTER_DEFAULT_BUILDER(Round, round);
-    LBANN_REGISTER_DEFAULT_BUILDER(Rsqrt, rsqrt);
-    LBANN_REGISTER_DEFAULT_BUILDER(SafeDivide, safe_divide);
-    LBANN_REGISTER_DEFAULT_BUILDER(SafeReciprocal, safe_reciprocal);
-    LBANN_REGISTER_DEFAULT_BUILDER(Sign, sign);
-    LBANN_REGISTER_DEFAULT_BUILDER(Sin, sin);
-    LBANN_REGISTER_DEFAULT_BUILDER(Sinh, sinh);
-    LBANN_REGISTER_DEFAULT_BUILDER(Sqrt, sqrt);
-    LBANN_REGISTER_DEFAULT_BUILDER(Square, square);
-    LBANN_REGISTER_DEFAULT_BUILDER(SquaredDifference, squared_difference);
-    LBANN_REGISTER_DEFAULT_BUILDER(Subtract, subtract);
-    LBANN_REGISTER_DEFAULT_BUILDER(Tan, tan);
-    LBANN_REGISTER_DEFAULT_BUILDER(Tanh, tanh);
+    LBANN_REGISTER_BUILDER(Abs, abs);
+    LBANN_REGISTER_BUILDER(Acos, acos);
+    LBANN_REGISTER_BUILDER(Acosh, acosh);
+    LBANN_REGISTER_BUILDER(Add, add);
+    LBANN_REGISTER_BUILDER(Asin, asin);
+    LBANN_REGISTER_BUILDER(Asinh, asinh);
+    LBANN_REGISTER_BUILDER(Atan, atan);
+    LBANN_REGISTER_BUILDER(Atanh, atanh);
+    LBANN_REGISTER_BUILDER(Ceil, ceil);
+    LBANN_REGISTER_BUILDER(Clamp, clamp);
+    LBANN_REGISTER_BUILDER(Cos, cos);
+    LBANN_REGISTER_BUILDER(Cosh, cosh);
+    LBANN_REGISTER_BUILDER(Divide, divide);
+    LBANN_REGISTER_BUILDER(Equal, equal);
+    LBANN_REGISTER_BUILDER(Exp, exp);
+    LBANN_REGISTER_BUILDER(Expm1, expm1);
+    LBANN_REGISTER_BUILDER(Floor, floor);
+    LBANN_REGISTER_BUILDER(Greater, greater);
+    LBANN_REGISTER_BUILDER(GreaterEqual, greater_equal);
+    LBANN_REGISTER_BUILDER(Erf, erf);
+    LBANN_REGISTER_BUILDER(ErfInv, erfinv);
+    LBANN_REGISTER_BUILDER(Less, less);
+    LBANN_REGISTER_BUILDER(LessEqual, less_equal);
+    LBANN_REGISTER_BUILDER(Log, log);
+    LBANN_REGISTER_BUILDER(Log1p, log1p);
+    LBANN_REGISTER_BUILDER(LogicalAnd, logical_and);
+    LBANN_REGISTER_BUILDER(LogicalNot, logical_not);
+    LBANN_REGISTER_BUILDER(LogicalOr, logical_or);
+    LBANN_REGISTER_BUILDER(LogicalXor, logical_xor);
+    LBANN_REGISTER_BUILDER(MatMul, matmul);
+    LBANN_REGISTER_BUILDER(Max, max);
+    LBANN_REGISTER_BUILDER(Min, min);
+    LBANN_REGISTER_BUILDER(Mod, mod);
+    LBANN_REGISTER_BUILDER(Multiply, multiply);
+    LBANN_REGISTER_BUILDER(Negative, negative);
+    LBANN_REGISTER_BUILDER(NotEqual, not_equal);
+    LBANN_REGISTER_BUILDER(Pow, pow);
+    LBANN_REGISTER_BUILDER(Reciprocal, reciprocal);
+    LBANN_REGISTER_BUILDER(Round, round);
+    LBANN_REGISTER_BUILDER(Rsqrt, rsqrt);
+    LBANN_REGISTER_BUILDER(SafeDivide, safe_divide);
+    LBANN_REGISTER_BUILDER(SafeReciprocal, safe_reciprocal);
+    LBANN_REGISTER_BUILDER(Sign, sign);
+    LBANN_REGISTER_BUILDER(Sin, sin);
+    LBANN_REGISTER_BUILDER(Sinh, sinh);
+    LBANN_REGISTER_BUILDER(Sqrt, sqrt);
+    LBANN_REGISTER_BUILDER(Square, square);
+    LBANN_REGISTER_BUILDER(SquaredDifference, squared_difference);
+    LBANN_REGISTER_BUILDER(Subtract, subtract);
+    LBANN_REGISTER_BUILDER(Tan, tan);
+    LBANN_REGISTER_BUILDER(Tanh, tanh);
 
     // Transform layers
+    LBANN_REGISTER_BUILDER(BatchwiseReduceSum, batchwise_reduce_sum);
     LBANN_REGISTER_BUILDER(Bernoulli, bernoulli);
     LBANN_REGISTER_BUILDER(CategoricalRandom, categorical_random);
     LBANN_REGISTER_BUILDER(Concatenation, concatenate);
@@ -228,8 +238,11 @@ private:
     LBANN_REGISTER_BUILDER(Crop, crop);
     LBANN_REGISTER_BUILDER(Dummy, dummy);
     LBANN_REGISTER_BUILDER(Evaluation, evaluation);
+    LBANN_REGISTER_BUILDER(Gather, gather);
     LBANN_REGISTER_BUILDER(Hadamard, hadamard);
     LBANN_REGISTER_BUILDER(Pooling, pooling);
+    LBANN_REGISTER_BUILDER(Reduction, reduction);
+    LBANN_REGISTER_BUILDER(Scatter, scatter);
     LBANN_REGISTER_BUILDER(Split, split);
     LBANN_REGISTER_BUILDER(StopGradient, stop_gradient);
     LBANN_REGISTER_BUILDER(Sum, sum);
@@ -238,43 +251,48 @@ private:
 
     // Activations
     LBANN_REGISTER_DEFAULT_BUILDER(Identity, identity);
-    LBANN_REGISTER_DEFAULT_BUILDER(LogSigmoid, log_sigmoid);
-    LBANN_REGISTER_DEFAULT_BUILDER(LogSoftmax, log_softmax);
-    LBANN_REGISTER_DEFAULT_BUILDER(Relu, relu);
-    LBANN_REGISTER_DEFAULT_BUILDER(Selu, selu);
-    LBANN_REGISTER_DEFAULT_BUILDER(Sigmoid, sigmoid);
+    LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(LogSigmoid, log_sigmoid);
+    LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(LogSoftmax, log_softmax);
+    LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(Relu, relu);
+    LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(Selu, selu);
+    LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(Sigmoid, sigmoid);
     LBANN_REGISTER_BUILDER(Softmax, softmax);
-    LBANN_REGISTER_DEFAULT_BUILDER(Softplus, softplus);
-    LBANN_REGISTER_DEFAULT_BUILDER(Softsign, softsign);
+    LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(Softplus, softplus);
+    LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(Softsign, softsign);
 
     // Loss Layers
-    LBANN_REGISTER_DEFAULT_BUILDER(BinaryCrossEntropy, binary_cross_entropy);
-    LBANN_REGISTER_DEFAULT_BUILDER(BooleanAccuracy, boolean_accuracy);
-    LBANN_REGISTER_DEFAULT_BUILDER(BooleanFalseNegative, boolean_false_negative);
-    LBANN_REGISTER_DEFAULT_BUILDER(BooleanFalsePositive, boolean_false_positive);
-    LBANN_REGISTER_DEFAULT_BUILDER(CategoricalAccuracy, categorical_accuracy);
-    LBANN_REGISTER_DEFAULT_BUILDER(L1Norm, l1_norm);
-    LBANN_REGISTER_DEFAULT_BUILDER(L2Norm2, l2_norm2);
-    LBANN_REGISTER_DEFAULT_BUILDER(MeanAbsoluteError, mean_absolute_error);
-    LBANN_REGISTER_DEFAULT_BUILDER(MeanSquaredError, mean_squared_error);
-    LBANN_REGISTER_DEFAULT_BUILDER(SigmoidBinaryCrossEntropy, sigmoid_binary_cross_entropy);
+    LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(BinaryCrossEntropy, binary_cross_entropy);
+    LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(BooleanAccuracy, boolean_accuracy);
+    LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(BooleanFalseNegative, boolean_false_negative);
+    LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(BooleanFalsePositive, boolean_false_positive);
+    LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(CategoricalAccuracy, categorical_accuracy);
+    LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(L1Norm, l1_norm);
+    LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(L2Norm2, l2_norm2);
+    LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(MeanAbsoluteError, mean_absolute_error);
+    LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(MeanSquaredError, mean_squared_error);
+    LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(SigmoidBinaryCrossEntropy, sigmoid_binary_cross_entropy);
 
     // Regularizer layers
     LBANN_REGISTER_BUILDER(Dropout, dropout);
     LBANN_REGISTER_BUILDER(InstanceNorm, instance_norm);
     LBANN_REGISTER_BUILDER(LocalResponseNormalization,
                            local_response_normalization);
+
     // Miscellaneous layers
-    LBANN_REGISTER_BUILDER(DFTAbs, dft_abs);
     LBANN_REGISTER_BUILDER(ChannelwiseSoftmax, channelwise_softmax);
-    LBANN_REGISTER_DEFAULT_BUILDER(MiniBatchIndex, mini_batch_index);
-    LBANN_REGISTER_DEFAULT_BUILDER(MiniBatchSize, mini_batch_size);
+    LBANN_REGISTER_BUILDER(DFTAbs, dft_abs);
     LBANN_REGISTER_BUILDER(DistEmbedding, dist_embedding);
+    LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(MiniBatchIndex, mini_batch_index);
+    LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM(MiniBatchSize, mini_batch_size);
+    LBANN_REGISTER_BUILDER(OneHot, one_hot);
+    LBANN_REGISTER_DEFAULT_BUILDER(RowwiseWeightsNorms, rowwise_weights_norms);
+    LBANN_REGISTER_BUILDER(UniformHash, uniform_hash);
 
   }
 
   // Just to be clear/safe.
 #undef LBANN_REGISTER_DEFAULT_BUILDER
+#undef LBANN_REGISTER_DEFAULT_BUILDER_WITH_COMM
 
 private:
   factory_type factory_;
@@ -287,28 +305,6 @@ factory_type const& get_layer_factory() noexcept
   return factory_mgr_.get();
 }
 
-// Some cuDNN stuff -- copied from convolution.cpp. To what common
-// location should this go?? The problem is it's the confluence of two
-// evils: protobuf and cudnn. I'd rather they never meet, but whatdya
-// gonna do.
-#ifdef LBANN_HAS_CUDNN
-using ProtoTensorOpEnumType = decltype(lbann_data::DEFAULT_TENSOR_OPS);
-cudnnMathType_t convert_to_cudnn_math_type(ProtoTensorOpEnumType mt)
-{
-  switch (mt)
-  {
-  case lbann_data::DEFAULT_TENSOR_OPS:
-    return cudnn::get_default_convolution_math_type();
-  case lbann_data::NO_TENSOR_OPS:
-    return CUDNN_DEFAULT_MATH;
-  case lbann_data::USE_TENSOR_OPS:
-    return CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION;
-  default:
-    LBANN_ERROR("Bad math type value.");
-  }
-  return CUDNN_DEFAULT_MATH;
-}
-#endif // LBANN_HAS_CUDNN
 } // namespace
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -325,38 +321,30 @@ std::unique_ptr<Layer> construct_layer_legacy(
   // arguments.
   if (proto_layer.has_input()) {
     const auto& params = proto_layer.input();
-    const auto& io_buffer = params.io_buffer();
     const auto& mode_str = params.target_mode();
-    data_reader_target_mode target_mode = data_reader_target_mode::CLASSIFICATION;
-    if (mode_str.empty() || mode_str == "classification") { target_mode = data_reader_target_mode::CLASSIFICATION; }
+    data_reader_target_mode target_mode = data_reader_target_mode::NA;
+    if (mode_str == "classification") { target_mode = data_reader_target_mode::CLASSIFICATION; }
     if (mode_str == "regression")                         { target_mode = data_reader_target_mode::REGRESSION; }
     if (mode_str == "reconstruction")                     { target_mode = data_reader_target_mode::RECONSTRUCTION; }
     if (mode_str == "label_reconstruction")               { target_mode = data_reader_target_mode::LABEL_RECONSTRUCTION; }
-    if (mode_str == "na" || mode_str == "NA" || mode_str == "N/A") { target_mode = data_reader_target_mode::NA; }
+    if (mode_str.empty() || mode_str == "na" || mode_str == "NA" || mode_str == "N/A") { target_mode = data_reader_target_mode::NA; }
     if (Layout != data_layout::DATA_PARALLEL) {
       LBANN_ERROR("input layer is only supported with "
                   "a data-parallel layout");
     }
-    if (io_buffer == "partitioned" || io_buffer.empty()) {
-      /// @todo Question for Tim Moon and Tom Benson, I had to change this line from Layout to
-      /// data_layout::DATA_PARALLEL to make it compile with clang on OS X, but it seems like
-      /// this is not related to this PR.
-      if ((typeid(TensorDataType) == typeid(DataType))
-          && (Layout == data_layout::DATA_PARALLEL)) {
-        return lbann::make_unique<input_layer<DataType,
-                                              partitioned_io_buffer<DataType>,
-                                              data_layout::DATA_PARALLEL,
-                                              Device>>(
-                                                comm,
-                                                num_parallel_readers,
-                                                target_mode);
-      }
-      else {
-        LBANN_ERROR("Input layers are only valid with "
+    /// @todo Question for Tim Moon and Tom Benson, I had to change this line from Layout to
+    /// data_layout::DATA_PARALLEL to make it compile with clang on OS X, but it seems like
+    /// this is not related to this PR.
+    if ((typeid(TensorDataType) == typeid(DataType))
+        && (Layout == data_layout::DATA_PARALLEL)) {
+      return lbann::make_unique<input_layer<DataType,
+                                            data_layout::DATA_PARALLEL,
+                                            Device>>(comm,
+                                                     target_mode);
+    }
+    else {
+      LBANN_ERROR("Input layers are only valid with "
                     "TensorDataType == DataType and Layout == DATA_PARALLEL");
-      }
-    } else {
-      LBANN_ERROR("invalid IO buffer type (" + io_buffer + ")");
     }
   }
 
@@ -389,18 +377,18 @@ std::unique_ptr<Layer> construct_layer_legacy(
       if (dilations.empty()) {
         dilations.resize(dims.size(), 1);
       }
-#ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_DNN_LIB
       auto ret = lbann::make_unique<deconvolution_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(
-        comm, dims.size(), num_output_channels,
+        dims.size(), num_output_channels,
         dims, pads, strides, dilations, num_groups, bias);
-      ret->set_cudnn_math_mode(
-        convert_to_cudnn_math_type(params.conv_tensor_op_mode()));
+      ret->set_dnn_math_mode(
+        dnn_lib::convert_to_dnn_math_type(params.conv_tensor_op_mode()));
       return ret;
 #else
       return lbann::make_unique<deconvolution_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(
-               comm, dims.size(), num_output_channels,
+               dims.size(), num_output_channels,
                dims, pads, strides, dilations, num_groups, bias);
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_DNN_LIB
 
     } else {
       const auto& num_dims = params.num_dims();
@@ -411,18 +399,18 @@ std::unique_ptr<Layer> construct_layer_legacy(
       if (dilation == 0) {
         dilation = 1;
       }
-#ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_DNN_LIB
       auto ret = lbann::make_unique<deconvolution_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(
-        comm, num_dims, num_output_channels,
+        num_dims, num_output_channels,
         dim, pad, stride, dilation, num_groups, bias);
-      ret->set_cudnn_math_mode(
-        convert_to_cudnn_math_type(params.conv_tensor_op_mode()));
+      ret->set_dnn_math_mode(
+        dnn_lib::convert_to_dnn_math_type(params.conv_tensor_op_mode()));
       return ret;
 #else
       return lbann::make_unique<deconvolution_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(
-        comm, num_dims, num_output_channels,
+        num_dims, num_output_channels,
         dim, pad, stride, dilation, num_groups, bias);
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_DNN_LIB
     }
   }
 
@@ -510,19 +498,6 @@ std::unique_ptr<Layer> construct_layer_legacy(
                   "a data-parallel layout and on CPU");
     }
   }
-  if (proto_layer.has_reduction()) {
-    const auto& params = proto_layer.reduction();
-    const auto& mode_str = params.mode();
-    reduction_mode mode = reduction_mode::INVALID;
-    if (mode_str == "sum" || mode_str.empty()) { mode = reduction_mode::SUM; }
-    if (mode_str == "average") { mode = reduction_mode::AVERAGE; }
-    if (Layout == data_layout::DATA_PARALLEL) {
-      return lbann::make_unique<reduction_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(comm, mode);
-    } else {
-      LBANN_ERROR("reduction layer is only supported with "
-                  "a data-parallel layout");
-    }
-  }
   if (proto_layer.has_discrete_random()) {
     const auto& params = proto_layer.discrete_random();
     const auto& values = parse_list<DataType>(params.values());
@@ -589,7 +564,6 @@ std::unique_ptr<Layer> construct_layer_legacy(
         epsilon = 1e-5;
       }
       return lbann::make_unique<batch_normalization_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(
-        comm,
         decay,
         epsilon,
         statistics_group_size);
@@ -604,38 +578,21 @@ std::unique_ptr<Layer> construct_layer_legacy(
     const auto& alpha = params.alpha();
     const auto& scale = params.scale();
     if (alpha != 0.0 && scale != 0.0) {
-      return lbann::make_unique<selu_dropout<TensorDataType, Layout, Device>>(comm, keep_prob, alpha, scale);
+      return lbann::make_unique<selu_dropout<TensorDataType, Layout, Device>>(keep_prob, alpha, scale);
     } else {
-      return lbann::make_unique<selu_dropout<TensorDataType, Layout, Device>>(comm, keep_prob);
+      return lbann::make_unique<selu_dropout<TensorDataType, Layout, Device>>(keep_prob);
     }
   }
   if (proto_layer.has_entrywise_batch_normalization()) {
     const auto& params = proto_layer.entrywise_batch_normalization();
-    return lbann::make_unique<entrywise_batch_normalization_layer<TensorDataType, Layout, Device>>(comm, params.decay(), params.epsilon());
+    return lbann::make_unique<entrywise_batch_normalization_layer<TensorDataType, Layout, Device>>(params.decay(), params.epsilon());
   }
   if (proto_layer.has_layer_norm()) {
     const auto& params = proto_layer.layer_norm();
     const double epsilon = (params.has_epsilon()
                             ? params.epsilon().value()
                             : 1e-5);
-    return lbann::make_unique<layer_norm_layer<TensorDataType, Layout, Device>>(comm, epsilon);
-  }
-
-  if (proto_layer.has_clamp()) {
-    const auto& params = proto_layer.clamp();
-    return lbann::make_unique<clamp_layer<TensorDataType, Layout, Device>>(comm, params.min(), params.max());
-  }
-  if (proto_layer.has_matmul()) {
-    if (Layout == data_layout::DATA_PARALLEL) {
-      const auto& params = proto_layer.matmul();
-      return lbann::make_unique<matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,Device>>(
-               comm,
-               params.transpose_a(),
-               params.transpose_b());
-    } else {
-      LBANN_ERROR("matrix multiply layer is only supported with "
-                  "a data-parallel layout");
-    }
+    return lbann::make_unique<layer_norm_layer<TensorDataType, Layout, Device>>(epsilon);
   }
 
   // Activation layers
@@ -711,15 +668,6 @@ std::unique_ptr<Layer> construct_layer_legacy(
     } else {
       LBANN_ERROR("argmin layer is only supported with "
                   "a data-parallel layout and on CPU");
-    }
-  }
-  if (proto_layer.has_one_hot()) {
-    if (Layout == data_layout::DATA_PARALLEL) {
-      const auto& params = proto_layer.one_hot();
-      return lbann::make_unique<one_hot_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(comm, params.size());
-    } else {
-      LBANN_ERROR("one-hot layer is only supported with "
-                  "a data-parallel layout");
     }
   }
 

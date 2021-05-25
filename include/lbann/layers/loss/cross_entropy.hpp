@@ -93,6 +93,15 @@ public:
   }
 
   cross_entropy_layer* copy() const override { return new cross_entropy_layer(*this); }
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
+
   std::string get_type() const override { return "cross entropy"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
@@ -215,6 +224,13 @@ public:
     // Compute local gradients
     local_bp_compute();
   }
+
+protected:
+
+  friend class cereal::access;
+  cross_entropy_layer()
+    : cross_entropy_layer(nullptr, false)
+  {}
 
 private:
 

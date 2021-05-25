@@ -74,13 +74,11 @@ namespace lbann {
 template <typename TensorDataType>
 class WeightsProxy
 {
-  /** @brief The data_type_weights type for which the proxy would just
-   *         be a view. */
-  using DataTypeWeights = data_type_weights<TensorDataType>;
   /** @brief The type of weights values. */
   using ValuesType = El::AbstractDistMatrix<TensorDataType>;
   /** @brief Convenience typedef for poitners to weights values. */
   using ValuesPtrType = std::unique_ptr<ValuesType>;
+
 public:
 
   /** @name Constructors */
@@ -94,38 +92,23 @@ public:
    *  @param w Master weights object, which must have a valid storage
    *           matrix initialized internally.
    */
-  WeightsProxy(weights const& w)
-    : master_weights_{&w},
-      values_{setup_values_(w)}
-  {}
-
-  /** @brief Construct a proxy given the master object.
-   *
-   *  This is a shortcut for the case that the master weights dynamic
-   *  type is already known.
-   *
-   *  @param w Master weights object, which must have a valid storage
-   *           matrix initialized internally.
-   *
-   *  @tparam T (Deduced) The type of the input weights object's
-   *                      values.
-   */
-  template <typename T>
-  WeightsProxy(data_type_weights<T> const& w)
-    : master_weights_{&w},
-      values_{setup_values_(w)}
-  {}
+  WeightsProxy(ViewingWeightsPtr const& w)
+  {
+    if (!w.expired()) {
+      this->setup(w);
+    }
+  }
 
   /** @brief Copy a WeightsProxy object.
    *
    *  Creates a new proxy to the same weights object.
    */
   WeightsProxy(WeightsProxy const& other)
-    : master_weights_(other.master_weights_),
-      values_(other.master_weights_
-              ? setup_values_(*other.master_weights_)
-              : nullptr)
-  {}
+  {
+    if (!other.master_weights_.expired()) {
+      this->setup(other.master_weights_);
+    }
+  }
 
   /** @brief Copy a WeightsProxy object.
    *
@@ -138,8 +121,10 @@ public:
   WeightsProxy(WeightsProxy<T> const& other)
     : WeightsProxy()
   {
-    if (!other.empty())
-      this->setup(other.master_weights());
+    auto ptr = other.master_weights_pointer();
+    if (!ptr.expired()) {
+      this->setup(ptr);
+    }
   }
 
   /** @brief Move a WeightsProxy object.
@@ -148,8 +133,8 @@ public:
    *  for WeightsProxy objects of the same static type.
    */
   WeightsProxy(WeightsProxy&& other) noexcept
-    : master_weights_{other.master_weights_},
-      values_{std::move(other.values_)}
+  : master_weights_{std::move(other.master_weights_)},
+    values_{std::move(other.values_)}
   {
     other.clear();
   }
@@ -187,25 +172,6 @@ public:
     return *this;
   }
 
-  /** @brief Assignment from data_type_weights object.
-   *
-   *  @tparam T (Deduced) The type of the input weights object's
-   *                      values.
-   */
-  template <typename T>
-  WeightsProxy& operator=(data_type_weights<T> const& w)
-  {
-    this->setup(w);
-    return *this;
-  }
-
-  /** @brief Assignment from data_type_weights object */
-  WeightsProxy& operator=(weights const& w)
-  {
-    this->setup(w);
-    return *this;
-  }
-
   /** @brief Move assignment from another proxy object. */
   WeightsProxy& operator=(WeightsProxy&& other) noexcept
   {
@@ -224,8 +190,8 @@ public:
    */
   void clear() noexcept
   {
+    master_weights_.reset();
     values_.reset();
-    master_weights_ = nullptr;
   }
 
   /** @brief Provide setup function for delayed construction.
@@ -234,24 +200,15 @@ public:
    *
    *  @param w The weights object to be proxied.
    */
-  void setup(weights const& w)
+  void setup(ViewingWeightsPtr const& w)
   {
-    this->internal_setup_(w);
-  }
-
-  /** @brief Provide setup function for delayed construction.
-   *
-   *  This overwrites any existing data.
-   *
-   *  @param w The weights object to be proxied.
-   *
-   *  @tparam T (Deduced) The type of the input weights object's
-   *                      values.
-   */
-  template <typename T>
-  void setup(data_type_weights<T> const& w)
-  {
-    this->internal_setup_(w);
+    master_weights_ = w;
+    if (master_weights_.expired()) {
+      values_.reset();
+    }
+    else {
+      values_ = setup_values_(*master_weights_.lock());
+    }
   }
 
   /** @brief Synchronize the held values with the master set.
@@ -263,7 +220,7 @@ public:
   void synchronize_with_master()
   {
     if (!empty()) {
-      const auto& master_values = master_weights_->get_values();
+      const auto& master_values = master_weights_.lock()->get_values();
       if (values_->Viewing()) {
         El::LockedView(*values_, dynamic_cast<const ValuesType&>(master_values));
       }
@@ -298,10 +255,16 @@ public:
    *  valid if not empty(). Users are expected to ensure this
    *  contract.
    */
-  weights const& master_weights() const noexcept(!LBANN_IN_DEBUG_MODE)
+  weights const& master_weights() const
   {
-    LBANN_DEBUG_ASSERT_POINTER(master_weights_);
-    return *master_weights_;
+    LBANN_DEBUG_ASSERT_POINTER(master_weights_.lock());
+    return *master_weights_.lock();
+  }
+
+  ViewingWeightsPtr master_weights_pointer() const noexcept(!LBANN_IN_DEBUG_MODE)
+  {
+    LBANN_DEBUG_ASSERT_POINTER(master_weights_.lock());
+    return master_weights_;
   }
 
   ///@}
@@ -321,25 +284,8 @@ private:
   /** @name Private setup functions */
   ///@{
 
-  /** @brief Internal mechanics of the setup routine.
-   *
-   *  The purpose for this simple indirection is to ignore a more
-   *  complicated SFINAE indirection in the public interface. This
-   *  function is only called by the public setup() functions.
-   *
-   *  @tparam WeightsType (Deduced) The type of the input weights
-   *                      object.
-   */
-  template <class WeightsType>
-  void internal_setup_(WeightsType const& w)
-  {
-    auto vals = setup_values_(w);
-    master_weights_ = &w;
-    std::swap(vals, values_);
-  }
-
   /** @brief Establish the view of the master data. */
-  ValuesPtrType setup_values_(DataTypeWeights const& dtw) const
+  ValuesPtrType setup_values_(data_type_weights<TensorDataType> const& dtw) const
   {
     auto const& vals = dtw.get_values();
     ValuesPtrType ret(vals.Construct(vals.Grid(), vals.Root()));
@@ -387,7 +333,7 @@ private:
   ///@{
 
   /** @brief The proxied master weights. */
-  weights const* master_weights_ = nullptr;
+  ViewingWeightsPtr master_weights_;
 
   /** @brief The values in this data type. */
   ValuesPtrType values_;

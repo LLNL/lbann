@@ -4,7 +4,7 @@
 // File being tested
 #include <lbann/utils/python.hpp>
 
-#ifdef LBANN_HAS_PYTHON
+#ifdef LBANN_HAS_EMBEDDED_PYTHON
 TEST_CASE ("Testing the embedded Python session", "[python][utilities]") {
 
   SECTION ("Initializing and finalizing the Python session") {
@@ -266,4 +266,4 @@ def make_syntax_error():
   }
 
 }
-#endif // LBANN_HAS_PYTHON
+#endif // LBANN_HAS_EMBEDDED_PYTHON

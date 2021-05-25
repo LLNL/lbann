@@ -32,6 +32,11 @@ LLVM, Open-MPI, ScaLAPACK, and CMake.
    brew install open-mpi
    brew install cmake
    brew install hwloc
+   brew install doxygen
+   brew install graphviz
+
+brew install modules
+source $(brew --prefix)/opt/modules/init/zsh
 
 Put the brew-based :code:`clang` in your path:
 
