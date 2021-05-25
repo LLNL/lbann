@@ -158,13 +158,6 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X, El::Matrix<El::Int>& indic
   const int mb_size = std::min(El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
       X.Width());
 
-  /// Make sure that every rank participates in the data store prior
-  /// to seeing if the local rank's position is valid.  Note that
-  /// every rank will hold data that may be used in the last mini-batch
-  if (data_store_active()) {
-    m_data_store->exchange_mini_batch_data(m_current_pos-m_base_offset-m_model_offset, loaded_batch_size);
-  }
-
   if(!position_valid()) {
     if(position_is_overrun()) {
       return 0;
