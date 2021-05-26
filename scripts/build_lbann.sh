@@ -24,8 +24,8 @@ DRY_RUN=
 CLEAN_BUILD=
 # Flag for passing subcommands to spack dev-build
 DEV_BUILD_FLAGS=
-# Flag for passing subcommands to spack install and dev-build
-INSTALL_DEV_BUILD_EXTRAS=
+# Flag for passing subcommands to spack install
+INSTALL_BUILD_EXTRAS=
 
 LBANN_VARIANTS=
 CMD_LINE_VARIANTS=
@@ -169,7 +169,7 @@ while :; do
             DIHYDROGEN_VER=
             ;;
         --test)
-            INSTALL_DEV_BUILD_EXTRAS="--test root"
+            INSTALL_BUILD_EXTRAS="--test root"
             ;;
         --hydrogen-repo)
             if [ -n "${2}" ]; then
@@ -718,7 +718,7 @@ fi
 
 ##########################################################################################
 # Actually install LBANN from local source
-CMD="spack install ${BUILD_JOBS}"
+CMD="spack install ${BUILD_JOBS} ${INSTALL_BUILD_EXTRAS}"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
