@@ -200,30 +200,37 @@ std::vector<std::vector<size_t>> communitygan_reader::generate_samples(
   }
 
   // Perform random walks
-  auto walks_ = m_walker->run(starts);
-  std::vector<std::vector<size_t>> walks;
-  for (auto it1=walks_.cbegin(); it1!=walks_.cend(); ++it1) {
-    for (auto it2=it1->second.cbegin(); it2!=it1->second.cend(); ++it2) {
-      walks.emplace_back();
-      auto& walk = walks.back();
-      walk.reserve(m_walk_length);
-      walk.insert(walk.end(), it2->cbegin(), it2->cend());
+  auto walks = m_walker->run(starts);
+
+  // Construct data samples
+  std::vector<std::vector<size_t>> samples;
+  for (const auto& start_vertex_walks : walks) {
+    const size_t start_vertex = start_vertex_walks.first;
+    for (const auto& walk : start_vertex_walks.second) {
+
+      // Remove duplicate vertices from walk
+      std::unordered_set<size_t> walk_vertices(walk.cbegin(), walk.cend());
+      if (walk_vertices.size() < m_motif_size) {
+        continue;
+      }
+      walk_vertices.erase(start_vertex);
+
+      // Construct sample with randomly chosen motif and walk
+      /// @todo Choose motif that contains start vertex
+      samples.emplace_back();
+      auto& sample = samples.back();
+      sample.reserve(m_motif_size+m_walk_length);
+      const auto& motif = m_motifs[fast_rand_int(get_io_generator(), m_motifs.size())];
+      sample.insert(sample.end(), motif.cbegin(), motif.cend());
+      sample.push_back(start_vertex);
+      sample.insert(sample.end(), walk_vertices.cbegin(), walk_vertices.cend());
+      sample.resize(m_motif_size+m_walk_length, -1);
+
     }
   }
-  std::shuffle(walks.begin(), walks.end(), get_io_generator());
 
-  // Construct samples by randomly choosing motifs
-  std::vector<std::vector<size_t>> samples;
-  samples.reserve(walks.size());
-  for (auto it=walks.cbegin(); it!=walks.cend(); ++it) {
-    samples.emplace_back();
-    auto& sample = samples.back();
-    const auto& motif = m_motifs[fast_rand_int(get_io_generator(), m_motifs.size())];
-    const auto& walk = *it;
-    sample.reserve(m_motif_size+m_walk_length);
-    sample.insert(sample.end(), motif.cbegin(), motif.cend());
-    sample.insert(sample.end(), walk.cbegin(), walk.cend());
-  }
+  // Shuffle samples
+  std::shuffle(samples.begin(), samples.end(), get_io_generator());
   return samples;
 
 }

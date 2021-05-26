@@ -71,7 +71,7 @@ class CommunityGAN(lbann.modules.Module):
 
         # Loss function
         # L_disc = - log(D(real)) - log(1-D(fake))
-        # L_gen = - log(G) * stop_gradient(log(1-D(fake)))
+        # L_gen = log(G) * stop_gradient(log(1-D(fake)))
         real_disc_log_prob \
             = lbann.Log(lbann.Clamp(real_disc_prob, min=1e-37, max=1))
         disc_loss = lbann.WeightedSum(

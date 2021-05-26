@@ -57,10 +57,17 @@ class Generator(lbann.modules.Module):
         motif_indices = [
             lbann.Slice(candidate_indices, slice_points=str_list([0,1])),
         ]
-        motif_mask = lbann.Concatenation(
-            lbann.Constant(value=1, num_neurons=str_list([1,1])),
-            lbann.Constant(value=0, num_neurons=str_list([num_candidates-1,1])),
+        motif_mask = lbann.Add(
+            lbann.Concatenation(
+                lbann.Constant(value=1, num_neurons=str(1)),
+                lbann.Constant(value=0, num_neurons=str(num_candidates-1)),
+            ),
+            lbann.Less(
+                candidate_indices,
+                lbann.Constant(value=0, num_neurons=str(num_candidates)),
+            ),
         )
+        motif_mask = lbann.Reshape(motif_mask, dims=str_list([num_candidates,1]))
 
         # Generate motif
         log_probs = []

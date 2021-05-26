@@ -49,7 +49,7 @@ def make_model(
         lbann.CallbackPrint(),
         lbann.CallbackTimer(),
         lbann.CallbackDumpWeights(directory=embeddings_dir,
-                                  epoch_interval=num_epochs),
+                                  epoch_interval=1),
     ]
     if online_walker:
         callbacks.append(lbann.CallbackSetupCommunityGANDataReader())
