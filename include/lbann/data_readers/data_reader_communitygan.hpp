@@ -30,7 +30,7 @@
 #include "data_reader.hpp"
 #include "lbann/callbacks/setup_communitygan_data_reader.hpp"
 #ifdef LBANN_HAS_COMMUNITYGAN_WALKER
-#include "CommunityGANWalker.hpp"
+#include "CommunityGANWalker-gen_walks.hpp"
 
 namespace lbann {
 
@@ -91,7 +91,7 @@ private:
    */
   size_t m_epoch_size;
 
-  std::unique_ptr<::CommunityGANWalker> m_walker;
+  std::unique_ptr<::CommunityGANWalker_gen_walks> m_walker;
 
   std::vector<std::vector<size_t>> m_motifs;
 

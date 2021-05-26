@@ -203,12 +203,10 @@ std::vector<std::vector<size_t>> communitygan_reader::generate_samples(
   auto walks_ = m_walker->run(starts);
   std::vector<std::vector<size_t>> walks;
   for (auto it1=walks_.cbegin(); it1!=walks_.cend(); ++it1) {
-    const size_t start = it1->first;
     for (auto it2=it1->second.cbegin(); it2!=it1->second.cend(); ++it2) {
       walks.emplace_back();
       auto& walk = walks.back();
       walk.reserve(m_walk_length);
-      walk.push_back(start);
       walk.insert(walk.end(), it2->cbegin(), it2->cend());
     }
   }

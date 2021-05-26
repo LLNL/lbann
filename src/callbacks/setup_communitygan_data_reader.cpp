@@ -33,7 +33,7 @@
 #include <callbacks.pb.h>
 #include "lbann/callbacks/callback.hpp"
 #ifdef LBANN_HAS_COMMUNITYGAN_WALKER
-#include "CommunityGANWalker.hpp"
+#include "CommunityGANWalker-gen_walks.hpp"
 #endif // LBANN_HAS_COMMUNITYGAN_WALKER
 
 namespace lbann {
@@ -90,13 +90,13 @@ void setup_communitygan_data_reader::on_setup_end(model *m) {
 
   // Construct CommunityGAN walker
   reader.m_walker.reset(
-    new ::CommunityGANWalker(
+    new ::CommunityGANWalker_gen_walks(
       reader.get_comm()->get_trainer_comm().GetMPIComm(),
       reader.m_graph_file,
       embeddings.Buffer(),
       static_cast<int>(embeddings.Height()*embeddings.LocalWidth()),
       static_cast<int>(embeddings.Height()),
-      static_cast<int>(reader.m_walk_length-1),
+      static_cast<int>(reader.m_walk_length),
       static_cast<int>(reader.m_walks_per_vertex)));
 
 }
