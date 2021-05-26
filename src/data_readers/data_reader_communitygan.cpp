@@ -109,6 +109,10 @@ bool communitygan_reader::fetch_data_block(
     for (size_t i=0; i<sample.size(); ++i) {
       X(i,j) = static_cast<float>(sample[i]);
     }
+    for (size_t i=sample.size(); i<m_motif_size+m_walk_length; ++i) {
+      X(i,j) = -1.f;
+    }
+
   }
 
   return true;
@@ -224,7 +228,6 @@ std::vector<std::vector<size_t>> communitygan_reader::generate_samples(
       sample.insert(sample.end(), motif.cbegin(), motif.cend());
       sample.push_back(start_vertex);
       sample.insert(sample.end(), walk_vertices.cbegin(), walk_vertices.cend());
-      sample.resize(m_motif_size+m_walk_length, -1);
 
     }
   }
