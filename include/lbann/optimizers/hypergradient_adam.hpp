@@ -77,37 +77,32 @@ public:
    *  @param eps                    Small factor to avoid division by
    *                                zero.
    */
-  hypergradient_adam(TensorDataType init_learning_rate = 1e-3,
-                     TensorDataType hyper_learning_rate = 1e-7,
-                     TensorDataType beta1 = 0.9,
-                     TensorDataType beta2 = 0.99,
-                     TensorDataType eps = 1e-8);
+  hypergradient_adam(
+    TensorDataType init_learning_rate = El::To<TensorDataType>(1e-3),
+    TensorDataType hyper_learning_rate = El::To<TensorDataType>(1e-7),
+    TensorDataType beta1 = El::To<TensorDataType>(0.9),
+    TensorDataType beta2 = El::To<TensorDataType>(0.99),
+    TensorDataType eps = El::To<TensorDataType>(1e-8));
   hypergradient_adam(const hypergradient_adam& other);
   hypergradient_adam& operator=(const hypergradient_adam& other);
   ~hypergradient_adam() override = default;
 
     /** Archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar) {
-    ar(cereal::base_class<data_type_optimizer<TensorDataType>>(this),
-       CEREAL_NVP(m_hyper_learning_rate),
-       CEREAL_NVP(m_beta1),
-       CEREAL_NVP(m_beta2),
-       CEREAL_NVP(m_eps),
-       CEREAL_NVP(m_current_beta1),
-       CEREAL_NVP(m_current_beta2));
-  }
+  template <class Archive> void serialize(Archive & ar);
 
   /** @brief Human-readable type name. */
   std::string get_type() const override { return "hypergradient Adam"; }
   /** @brief Human-readable description. */
   description get_description() const override;
 
+  using OptimizerType::setup;
   void setup(WeightsType* w = nullptr) override;
 
 protected:
 
   /** @brief Computation for an optimization step. */
-  void step_compute(AbsDistMatrixType& values, const AbsDistMatrixType& gradient) override;
+  void step_compute(AbsDistMatrixType& values,
+                    const AbsDistMatrixType& gradient) override;
 
 private:
 
@@ -129,15 +124,6 @@ private:
   std::unique_ptr<AbsDistMatrixType> m_moment2;
   /** @brief Gradient estimate from the prior step (for hypergradient). */
   std::unique_ptr<AbsDistMatrixType> m_old_gradient;
-
-  // ===========================================
-  // Checkpointing
-  // ===========================================
-
-  bool save_to_checkpoint_shared(persist& p, std::string m_name) override;
-  bool load_from_checkpoint_shared(persist& p, std::string m_name) override;
-  bool save_to_checkpoint_distributed(persist& p, std::string m_name) override;
-  bool load_from_checkpoint_distributed(persist& p, std::string m_name) override;
 
 };
 

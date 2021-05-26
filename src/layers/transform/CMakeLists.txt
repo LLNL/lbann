@@ -1,5 +1,7 @@
 # Add the source files for this directory
 set_full_path(THIS_DIR_SOURCES
+  batchwise_reduce_sum.cpp
+  batchwise_reduce_sum_builder.cpp
   bernoulli.cpp
   categorical_random.cpp
   concatenate.cpp
@@ -12,12 +14,16 @@ set_full_path(THIS_DIR_SOURCES
   discrete_random.cpp
   dummy.cpp
   evaluation.cpp
+  gather.cpp
+  gather_builder.cpp
   gaussian.cpp
   hadamard.cpp
   in_top_k.cpp
   pooling.cpp
   reduction.cpp
   reshape.cpp
+  scatter.cpp
+  scatter_builder.cpp
   slice.cpp
   sort.cpp
   split.cpp
@@ -31,15 +37,17 @@ set_full_path(THIS_DIR_SOURCES
   weights.cpp
   )
 
-if (LBANN_HAS_CUDA)
+if (LBANN_HAS_GPU)
   # Add the CUDA source files for this directory
   set_full_path(THIS_DIR_CU_SOURCES
     concatenate.cu
     crop.cu
     cross_grid_sum_slice.cu
     cross_grid_sum.cu
+    gather.cu
     in_top_k.cu
     sort.cu
+    scatter.cu
     slice.cu
     tessellate.cu
     split.cu
@@ -48,6 +56,9 @@ if (LBANN_HAS_CUDA)
     )
 endif ()
 
+# Add the subdirectories
+add_subdirectory(cereal_registration)
+
 # Propagate the files up the tree
 set(SOURCES "${SOURCES}" "${THIS_DIR_SOURCES}" PARENT_SCOPE)
-set(CUDA_SOURCES "${CUDA_SOURCES}" "${THIS_DIR_CU_SOURCES}" PARENT_SCOPE)
+set(GPU_SOURCES "${GPU_SOURCES}" "${THIS_DIR_CU_SOURCES}" PARENT_SCOPE)

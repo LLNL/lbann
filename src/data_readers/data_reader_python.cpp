@@ -26,7 +26,7 @@
 
 #include "lbann/data_readers/data_reader_python.hpp"
 #include "lbann/trainers/trainer.hpp"
-#ifdef LBANN_HAS_PYTHON
+#ifdef LBANN_HAS_EMBEDDED_PYTHON
 #include <cstdio>
 #include <algorithm>
 #include <regex>
@@ -327,4 +327,4 @@ void python_reader::load() {
 
 } // namespace lbann
 
-#endif // LBANN_HAS_PYTHON
+#endif // LBANN_HAS_EMBEDDED_PYTHON

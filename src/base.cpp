@@ -39,15 +39,15 @@
 #include <shmem.h>
 #endif // LBANN_HAS_SHMEM
 
-#include "lbann/comm.hpp"
+#include "lbann/comm_impl.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/omp_diagnostics.hpp"
 #include "lbann/utils/stack_trace.hpp"
 
-#ifdef LBANN_HAS_CUDNN
-#include "lbann/utils/cudnn.hpp"
-#endif
-#ifdef LBANN_HAS_PYTHON
+#ifdef LBANN_HAS_DNN_LIB
+#include "lbann/utils/dnn_lib/helpers.hpp"
+#endif // LBANN_HAS_DNN_LIB
+#ifdef LBANN_HAS_EMBEDDED_PYTHON
 #include "lbann/utils/python.hpp"
 #endif
 #ifdef LBANN_HAS_NVSHMEM
@@ -62,6 +62,12 @@
 #include <vector>
 
 namespace lbann {
+namespace {
+lbann_comm* world_comm_ = nullptr;
+}// namespace <anon>
+namespace utils {
+lbann_comm& get_current_comm() noexcept { return *world_comm_; }
+}// namespace utils
 
 MPI_Errhandler err_handle;
 
@@ -72,6 +78,7 @@ world_comm_ptr initialize(int& argc, char**& argv) {
   // Create a new comm object.
   // Initial creation with every process in one model.
   auto comm = world_comm_ptr{new lbann_comm(0), &lbann::finalize };
+  world_comm_ = comm.get();
 
   // Install MPI error handler
   MPI_Comm_create_errhandler(lbann_mpi_err_handler, &err_handle);
@@ -93,7 +100,7 @@ world_comm_ptr initialize(int& argc, char**& argv) {
   // We can adjust that later when we better understand the threaded perf.
   int ppn = comm->get_procs_per_node();
   if (num_numa_nodes > ppn) {
-    if (comm->get_rank_in_node() == 0) {
+    if (comm->get_rank_in_world() == 0) {
       std::cout << comm->get_rank_in_world() <<
                 ": WARNING: node has " << num_numa_nodes <<
                 " NUMA nodes but you have " << ppn << " processes per node" <<
@@ -129,10 +136,10 @@ void finalize(lbann_comm* comm) {
 #ifdef LBANN_HAS_DISTCONV
   dc::finalize();
 #endif
-#ifdef LBANN_HAS_CUDNN
-  cudnn::destroy();
+#ifdef LBANN_HAS_DNN_LIB
+  dnn_lib::destroy();
 #endif
-#ifdef LBANN_HAS_PYTHON
+#ifdef LBANN_HAS_EMBEDDED_PYTHON
   python::finalize();
 #endif
 #ifdef LBANN_HAS_NVSHMEM
@@ -145,17 +152,6 @@ void finalize(lbann_comm* comm) {
     delete comm;
   }
   El::Finalize();
-}
-
-/** hack to avoid long switch/case statement; users should ignore; of interest to developers */
-static std::vector<std::string> pool_mode_names = { "invalid", "max", "average", "average_no_pad" };
-
-/** returns a string representation of the pool_mode */
-std::string get_pool_mode_name(pool_mode m) {
-  if ((int)m < 1 or (int)m >= (int)pool_mode_names.size()) {
-    LBANN_ERROR("Invalid pool_mode");
-  }
-  return pool_mode_names[(int)m];
 }
 
 matrix_format data_layout_to_matrix_format(data_layout layout) {
@@ -228,6 +224,10 @@ std::string to_string(execution_mode m) {
     return "testing";
   case execution_mode::prediction:
     return "prediction";
+  case execution_mode::tournament:
+    return "tournament";
+  case execution_mode::inference:
+    return "inference";
   case execution_mode::invalid:
     return "invalid";
   default:
@@ -244,6 +244,8 @@ execution_mode exec_mode_from_string(std::string const& str) {
     return execution_mode::testing;
   else if (str == "prediction" || str == "predict")
     return execution_mode::prediction;
+  else if (str == "tournament")
+    return execution_mode::tournament;
   else if (str == "invalid")
     return execution_mode::invalid;
   else

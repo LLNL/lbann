@@ -63,7 +63,15 @@ public:
 
   description get_description() const override;
 
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
 protected:
+  friend class cereal::access;
+  matmul_layer()
+    : matmul_layer(nullptr, false, false)
+  {}
+
 
   void setup_dims(DataReaderMetaData& dr_metadata) override;
   void fp_compute() override;
@@ -158,8 +166,8 @@ void matmul_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& 
                 "have different numbers of dimensions ",
                 "(",print_inputs(),")");
   }
-  if (input0_dims.size() != 2) {
-    LBANN_ERROR("input tensors in ",print_name()," are not 2D ",
+  if (input0_dims.size() != 2 && input0_dims.size() != 3) {
+    LBANN_ERROR("input tensors in ",print_name()," are not 2D or 3D",
                 "(",print_inputs(),")");
   }
 

@@ -62,6 +62,15 @@ public:
   }
 
   l2_norm2_layer* copy() const override { return new l2_norm2_layer(*this); }
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
+
   std::string get_type() const override { return "L2 norm squared"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
@@ -118,6 +127,13 @@ public:
     m_workspace->Empty();
 
   }
+
+protected:
+
+  friend class cereal::access;
+  l2_norm2_layer()
+    : l2_norm2_layer(nullptr)
+  {}
 
 private:
 

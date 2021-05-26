@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_TOP_K_CATEGORICAL_ACCURACY_LAYER_INSTANTIATE
+#include "lbann/comm_impl.hpp"
 #include "lbann/layers/loss/top_k_categorical_accuracy.hpp"
 #include <algorithm>
 #include <limits>

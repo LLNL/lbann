@@ -24,6 +24,7 @@ def construct_lc_launcher_args():
     parser.add_argument("--partition", default=None)
     parser.add_argument("--account", default="hpcdl")
     parser.add_argument("--scheduler", type=str, default="slurm")
+    parser.add_argument("--reservation", type=None)
     parser.add_argument(
         "--data-module-file",
         default="dataset.py",
@@ -47,6 +48,9 @@ def construct_lc_launcher_args():
     parser.add_argument("--embedding-dim", type=int, default=None)
     parser.add_argument("--num-embeddings", type=int, default=None)
     parser.add_argument("--batch-size", type=int, default=512)
+    parser.add_argument("--z-dim", type=int, default=512, help="latent space dim")
+    parser.add_argument("--g-mean", type=float, default=0.0, help="Gaussian mean")
+    parser.add_argument("--g-std", type=float, default=1.0, help="Gaussian std")
     parser.add_argument("--num-epochs", type=int, default=20)
     parser.add_argument("--data-reader-prototext", default=None)
     parser.add_argument("--data-filedir", default=None)
@@ -55,12 +59,9 @@ def construct_lc_launcher_args():
     parser.add_argument("--sequence-length", type=int, default=None)
     parser.add_argument("--dump-weights-dir", type=str, default="weights")
     parser.add_argument("--dump-weights-interval", type=int, default=10)
-    parser.add_argument("--dump-outputs-dir", type=str, default=None)
+    parser.add_argument("--dump-outputs-dir", type=str, default="outputs")
     parser.add_argument("--dump-outputs-interval", type=int, default=10)
-    parser.add_argument("--dump-model-dir", type=str, default=None)
-    parser.add_argument("--num_samples", type=int, default=None)
-    parser.add_argument("--num_train_samples", type=int, default=None)
-    parser.add_argument("--num_test_samples", type=int, default=None)
+    parser.add_argument("--dump-model-dir", type=str, default="models")
     parser.add_argument("--num-io-threads", type=int, default=11)
     parser.add_argument("--vocab", default=None)
     parser.add_argument("--delimiter", default="c")
@@ -68,7 +69,8 @@ def construct_lc_launcher_args():
     parser.add_argument("--ltfb", type=bool, default=False)
     parser.add_argument("--ltfb-batch-interval", type=int, default=100)
     parser.add_argument("--weights-to-send", type=str, default='')
-
+    parser.add_argument("--warmup", type=bool, default=False)
+    parser.add_argument("--lamda", type=float, default=0.00157, help="weighting of adversarial loss")
     # these are specific to the Trainer object
     parser.add_argument(
         "--procs-per-trainer",
@@ -106,7 +108,6 @@ def construct_model(run_args):
     data_layout = "data_parallel"
     # Layer graph
     input_ = lbann.Identity(lbann.Input(name='inp',target_mode="N/A"), name='inp1')
-    vae_loss= []
     input_feature_dims = sequence_length
 
     embedding_size = run_args.embedding_dim
@@ -117,11 +118,16 @@ def construct_model(run_args):
     save_output = True if run_args.dump_outputs_dir else False
 
     print("save output? ", save_output, "out dir ",  run_args.dump_outputs_dir)
-    z = lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims="128")
-    recon, d1_real, d1_fake, d_adv, arg_max  = molwae.MolWAE(input_feature_dims,
-                                                           dictionary_size,
-                                                           embedding_size,
-                                                           pad_index,save_output)(input_,z)
+    z = lbann.Gaussian(mean=run_args.g_mean,stdev=run_args.g_std, neuron_dims=str(run_args.z_dim))
+    recon, d1_real, d1_fake, d_adv, arg_max  = molwae.MolWAE(
+        input_feature_dims,
+        dictionary_size,
+        embedding_size,
+        pad_index,
+        run_args.z_dim,
+        run_args.g_mean,
+        run_args.g_std,
+        save_output=save_output)(input_,z)
 
 
 
@@ -132,7 +138,7 @@ def construct_model(run_args):
     d1_fake_bce = lbann.SigmoidBinaryCrossEntropy([d1_fake,zero],name='d1_fake_bce')
     d_adv_bce = lbann.SigmoidBinaryCrossEntropy([d_adv,one],name='d_adv_bce')
 
-    vae_loss.append(recon)
+    #vae_loss.append(recon)
 
     layers = list(lbann.traverse_layer_graph(input_))
     # Setup objective function
@@ -148,23 +154,19 @@ def construct_model(run_args):
         for idx in range(len(l.weights)):
           l.weights[idx].optimizer = lbann.NoOptimizer()
       weights.update(l.weights)
-    l2_reg = lbann.L2WeightRegularization(weights=weights, scale=1e-4)
+    l2_weights = [w for w in weights if not isinstance(w.optimizer, lbann.NoOptimizer)]
+    l2_reg = lbann.L2WeightRegularization(weights=l2_weights, scale=1e-4)
 
-    vae_loss.append(d1_real_bce)
-    vae_loss.append(d_adv_bce)
-    vae_loss.append(d1_fake_bce)
-    vae_loss.append(l2_reg)
-    print("LEN vae loss ", len(vae_loss))
+    d_adv_bce = lbann.LayerTerm(d_adv_bce,scale=run_args.lamda)
 
-    obj = lbann.ObjectiveFunction(vae_loss)
+    obj = lbann.ObjectiveFunction([d1_real_bce,d1_fake_bce,d_adv_bce,recon,l2_reg])
 
     # Initialize check metric callback
-    metrics = [lbann.Metric(d_adv_bce, name='adv_loss'),
+    metrics = [
                lbann.Metric(recon, name='recon')
                 ]
 
     callbacks = [lbann.CallbackPrint(),
-                 #lbann.CallbackStepLearningRate(step=10, amt=0.5),
                  lbann.CallbackTimer()]
 
     if(run_args.dump_weights_interval > 0):
@@ -191,6 +193,12 @@ def construct_model(run_args):
       pred_tensor = lbann.Concatenation(arg_max, name='pred_tensor')
       callbacks.append(lbann.CallbackDumpOutputs(batch_interval=run_args.dump_outputs_interval,
                        execution_modes='test', directory=run_args.dump_outputs_dir,layers='inp pred_tensor'))
+
+    if(run_args.warmup):
+        callbacks.append(
+            lbann.CallbackLinearGrowthLearningRate(
+                target=run_args.lr / 512 * run_args.batch_size, num_epochs=5))
+
     # Construct model
     return lbann.Model(run_args.num_epochs,
                        weights=weights,
@@ -227,6 +235,7 @@ def construct_data_reader(run_args):
     data_reader.shuffle = True
     data_reader.percent_of_data_to_use = 1.0
     data_reader.validation_percent = 0.1
+    data_reader.tournament_percent = 0.1
     data_reader.python.module = module_name
     data_reader.python.module_dir = module_dir
     data_reader.python.sample_function = "get_sample"
@@ -250,7 +259,6 @@ def main():
     trainer = lbann.Trainer(
         run_args.batch_size,
         name=None,
-        procs_per_trainer=run_args.procs_per_trainer,
     )
 
     # define data_reader
@@ -288,11 +296,13 @@ def main():
       import torch
       torch.save(run_args, "{}/{}_config.pt".format(experiment_dir, run_args.job_name))
 
-    m_lbann_args=f"--vocab={run_args.vocab} --data_filedir={run_args.data_filedir} --data_filename_train={run_args.data_filename} --num_samples={run_args.num_samples} --sequence_length={run_args.sequence_length}  --num_io_threads={run_args.num_io_threads} --no_header={run_args.no_header} --delimiter={run_args.delimiter} --num_train_samples={run_args.num_train_samples} --num_test_samples={run_args.num_test_samples}"
+    m_lbann_args=f"--vocab={run_args.vocab} --data_filedir={run_args.data_filedir} --data_filename_train={run_args.data_filename} --sequence_length={run_args.sequence_length}  --num_io_threads={run_args.num_io_threads} --no_header={run_args.no_header} --delimiter={run_args.delimiter}"
     if(run_args.data_reader_prototext):
       m_lbann_args = " ".join((m_lbann_args, " --use_data_store --preload_data_store "))
     if(run_args.ltfb):
       m_lbann_args = " ".join((m_lbann_args, "--ltfb"))
+    if(run_args.procs_per_trainer):
+      m_lbann_args = " ".join((m_lbann_args, f"--procs_per_trainer={run_args.procs_per_trainer}"))
 
     status = lbann.contrib.launcher.run(
         trainer,
@@ -302,10 +312,11 @@ def main():
         partition=run_args.partition,
         scheduler=run_args.scheduler,
         account=run_args.account,
+        #reservation=run_args.reservation,
         time_limit=run_args.time_limit,
         nodes=run_args.nodes,
         procs_per_node=ppn,
-        batch_job = True,
+        #batch_job = True,
         #setup_only = True,
         job_name=run_args.job_name,
         experiment_dir=experiment_dir,

@@ -53,6 +53,14 @@ class dump_error_signals : public callback_base {
   /** Write error signals to file after each backward prop step. */
   void on_backward_prop_end(model *m, Layer *l) override;
 
+  /** @name Serialization */
+  ///@{
+
+  /** @brief Store state to archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar);
+
+  ///@}
+
  private:
   /** Basename for output files. */
   std::string m_basename;

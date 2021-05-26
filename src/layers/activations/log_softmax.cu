@@ -25,8 +25,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_LOG_SOFTMAX_LAYER_INSTANTIATE
+#include "lbann/comm_impl.hpp"
 #include "lbann/layers/activations/log_softmax.hpp"
-#include "lbann/utils/dnn_lib/cudnn/softmax.hpp"
+#ifdef LBANN_HAS_DNN_LIB
+#include "lbann/utils/dnn_lib/softmax.hpp"
+#endif // LBANN_HAS_DNN_LIB
 
 namespace lbann {
 
@@ -72,7 +75,7 @@ __global__ void reduce_max_kernel(size_t height,
   for (size_t col = bidy; col < width; col += nblocksy) {
 
     // Find largest value for each thread
-    TensorDataType thread_max_val{-gpu_lib::infinity<DataType>()};
+    TensorDataType thread_max_val{-gpu_lib::infinity<TensorDataType>()};
     for (size_t row = gidx; row < height; row += nthreadsx) {
       const auto& val = values[row+col*values_ldim];
       thread_max_val = gpu_lib::max(thread_max_val, val);
@@ -253,14 +256,14 @@ void fp_compute_impl(log_softmax_layer<TensorDataType, data_layout::DATA_PARALLE
   const TensorDataType one = 1;
   const auto& local_input = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_prev_activations());
   auto& local_output = dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_activations());
-  cudnn::softmax_forward(one,
-                         l.m_tensors_cudnn_desc.get_prev_activations(),
-                         local_input,
-                         zero,
-                         l.m_tensors_cudnn_desc.get_activations(),
-                         local_output,
-                         softmax_mode::INSTANCE,
-                         softmax_alg::LOG);
+  dnn_lib::softmax_forward(one,
+                           l.m_tensors_dnn_desc.get_prev_activations(),
+                           local_input,
+                           zero,
+                           l.m_tensors_dnn_desc.get_activations(),
+                           local_output,
+                           softmax_mode::INSTANCE,
+                           softmax_alg::LOG);
 }
 
 template <typename TensorDataType>
@@ -271,16 +274,16 @@ void bp_compute_impl(log_softmax_layer<TensorDataType, data_layout::DATA_PARALLE
   const auto& local_output = dynamic_cast<const GPUMatType&>(l.get_local_activations());
   const auto& local_gradient_wrt_output = dynamic_cast<const GPUMatType&>(l.get_local_prev_error_signals());
   auto& local_gradient_wrt_input = dynamic_cast<GPUMatType&>(l.get_local_error_signals());
-  cudnn::softmax_backward(one,
-                          l.m_tensors_cudnn_desc.get_activations(),
-                          local_output,
-                          l.m_tensors_cudnn_desc.get_prev_error_signals(),
-                          local_gradient_wrt_output,
-                          zero,
-                          l.m_tensors_cudnn_desc.get_error_signals(),
-                          local_gradient_wrt_input,
-                          softmax_mode::INSTANCE,
-                          softmax_alg::LOG);
+  dnn_lib::softmax_backward(one,
+                            l.m_tensors_dnn_desc.get_activations(),
+                            local_output,
+                            l.m_tensors_dnn_desc.get_prev_error_signals(),
+                            local_gradient_wrt_output,
+                            zero,
+                            l.m_tensors_dnn_desc.get_error_signals(),
+                            local_gradient_wrt_input,
+                            softmax_mode::INSTANCE,
+                            softmax_alg::LOG);
 }
 
 template <typename TensorDataType>

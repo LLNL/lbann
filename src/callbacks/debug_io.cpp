@@ -30,6 +30,7 @@
 
 #include "lbann/base.hpp"
 #include "lbann/utils/memory.hpp"
+#include "lbann/utils/serialize.hpp"
 
 #include <callbacks.pb.h>
 #include <iostream>
@@ -37,6 +38,15 @@
 
 namespace lbann {
 namespace callback {
+
+template <class Archive>
+void debug_io::serialize(Archive & ar) {
+  ar(::cereal::make_nvp(
+       "BaseCallback",
+       ::cereal::base_class<callback_base>(this)),
+     CEREAL_NVP(m_debug_phase),
+     CEREAL_NVP(m_debug_lvl));
+}
 
 /// BVE FIXME @todo The use of execution_mode invalid needs to be reconsidered
 void debug_io::on_epoch_begin(model *m) {
@@ -46,14 +56,16 @@ void debug_io::on_epoch_begin(model *m) {
 }
 
 void debug_io::on_forward_prop_begin(model *m, Layer *l) {
-  auto *input = dynamic_cast<generic_input_layer<DataType>*>(l);
+  auto *input = dynamic_cast<input_layer<DataType>*>(l);
   if (input == nullptr || m_debug_lvl < 1) {
     return;
   }
 
   const auto& c = m->get_execution_context();
-  if(m->get_comm()->get_rank_in_trainer() < input->get_data_reader()->get_num_parallel_readers()) {
-    if(m_debug_phase == execution_mode::invalid || m_debug_phase == c.get_execution_mode()) {
+  auto mode = c.get_execution_mode();
+  const data_coordinator& dc = get_const_trainer().get_data_coordinator();
+  if(m->get_comm()->get_rank_in_trainer() < dc.get_data_reader(mode)->get_num_parallel_readers()) {
+    if(m_debug_phase == execution_mode::invalid || m_debug_phase == mode) {
       print_fp_start(m, input);
     }
   }
@@ -62,40 +74,34 @@ void debug_io::on_forward_prop_begin(model *m, Layer *l) {
   /// I think that the reset mini batch index may be off
 }
 
-void debug_io::print_fp_start(model *m, generic_input_layer<DataType> *input) {
+void debug_io::print_fp_start(model *m, input_layer<DataType> *input) {
   const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
+  const data_coordinator& dc = get_const_trainer().get_data_coordinator();
   const auto& step = c.get_step();
+  const auto mode = c.get_execution_mode();
   std::cout << "[" << m->get_comm()->get_trainer_rank()
             << "." << m->get_comm()->get_rank_in_trainer()
             << "] @" << c.get_epoch() << "." << step
-            << " Phase: " << to_string(c.get_execution_mode())
+            << " Phase: " << to_string(mode)
             << " starting forward propagation for layer " << input->get_name()
             << " type: " << input->get_type()
-            << " iteration: " << input->get_data_reader()->get_current_mini_batch_index()
-            << " of " << input->get_num_iterations_per_epoch()
-            << " loading idx " << input->get_data_reader()->get_loaded_mini_batch_index()
-            << " bs=" << input->get_current_mini_batch_size() << "/"
-            << input->get_current_global_mini_batch_size()
-            << " @" << input->get_data_reader()->get_position()
+            << " iteration: " << dc.get_data_reader(mode)->get_current_mini_batch_index()
+            << " of " << dc.get_num_iterations_per_epoch(mode)
+            << " loading idx " << dc.get_data_reader(mode)->get_loaded_mini_batch_index()
+            << " bs=" << dc.get_current_mini_batch_size(mode) << "/"
+            << dc.get_current_global_mini_batch_size(mode)
+            << " @" << dc.get_data_reader(mode)->get_position()
     //              << " %" << input->get_data_reader()->get_batch_stride()
-            << " ^" << input->get_data_reader()->get_sample_stride()
+            << " ^" << dc.get_data_reader(mode)->get_sample_stride()
             << std::endl;
 }
 
 //  179i @ 300s (=5m*60s) + 1i @ 100s (=5m*45s):offset <- num models
 void debug_io::print_phase_start(model *m, execution_mode mode) {
   const auto& c = m->get_execution_context();
+  const data_coordinator& dc = get_const_trainer().get_data_coordinator();
   // Get data reader from first input layer in model
-  generic_data_reader* data_reader = nullptr;
-  for (auto&& l : m->get_layers()) {
-    auto&& input = dynamic_cast<generic_input_layer<DataType>*>(l);
-    if (input != nullptr) {
-      data_reader = input->get_data_reader(mode);
-      break;
-    }
-  }
-  if (data_reader == nullptr) { return; }
-
+  generic_data_reader* data_reader = dc.get_data_reader(mode);
   const auto& step = c.get_step();
 
   if(data_reader->get_rank() < data_reader->get_num_parallel_readers()) {
@@ -141,14 +147,16 @@ void debug_io::on_validation_begin(model *m) {
 }
 
 void debug_io::on_evaluate_forward_prop_begin(model *m, Layer *l) {
-  const auto& c = m->get_execution_context();
-  auto *input = dynamic_cast<generic_input_layer<DataType>*>(l);
+  auto *input = dynamic_cast<input_layer<DataType>*>(l);
   if (input == nullptr || m_debug_lvl < 1) {
     return;
   }
 
-  if(m->get_comm()->get_rank_in_trainer() < input->get_data_reader()->get_num_parallel_readers()) {
-    if(m_debug_phase == execution_mode::invalid || m_debug_phase == c.get_execution_mode()) {
+  const auto& c = m->get_execution_context();
+  auto mode = c.get_execution_mode();
+  const data_coordinator& dc = get_const_trainer().get_data_coordinator();
+  if(m->get_comm()->get_rank_in_trainer() < dc.get_data_reader(mode)->get_num_parallel_readers()) {
+    if(m_debug_phase == execution_mode::invalid || m_debug_phase == mode) {
       print_fp_start(m, input);
     }
   }
@@ -182,3 +190,6 @@ build_debug_io_callback_from_pbuf(
 
 } // namespace callback
 } // namespace lbann
+
+#define LBANN_CLASS_NAME callback::debug_io
+#include <lbann/macros/register_class_with_cereal.hpp>

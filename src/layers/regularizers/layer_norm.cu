@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_LAYER_NORM_LAYER_INSTANTIATE
+#include "lbann/comm_impl.hpp"
 #include "lbann/layers/regularizers/layer_norm.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
 
@@ -492,7 +493,6 @@ void layer_norm_layer<TensorDataType, Layout, Device>::bp_compute() {
   template class layer_norm_layer<                   \
     T, data_layout::MODEL_PARALLEL, El::Device::GPU>
 
-#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

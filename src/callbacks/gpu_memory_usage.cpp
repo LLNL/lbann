@@ -25,7 +25,9 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/comm_impl.hpp"
 #include "lbann/callbacks/gpu_memory_usage.hpp"
+#include "lbann/utils/serialize.hpp"
 #include <iomanip>
 #include <sstream>
 
@@ -54,6 +56,13 @@ T get_min(const std::vector<T> &v) {
 
 namespace lbann {
 namespace callback {
+
+template <class Archive>
+void gpu_memory_usage::serialize(Archive & ar) {
+  ar(::cereal::make_nvp(
+       "BaseCallback",
+       ::cereal::base_class<callback_base>(this)));
+}
 
 void gpu_memory_usage::on_epoch_begin(model *m) {
 #ifdef LBANN_HAS_CUDA
@@ -92,3 +101,6 @@ void gpu_memory_usage::on_epoch_begin(model *m) {
 
 } // namespace callback
 } // namespace lbann
+
+#define LBANN_CLASS_NAME callback::gpu_memory_usage
+#include <lbann/macros/register_class_with_cereal.hpp>

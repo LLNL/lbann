@@ -58,6 +58,15 @@ public:
   slice_layer& operator=(const slice_layer& other) = default;
 
   slice_layer* copy() const override;
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
+
   std::string get_type() const override;
   data_layout get_data_layout() const override;
   El::Device get_device_allocation() const override;
@@ -81,6 +90,11 @@ public:
 protected:
 
   El::SyncInfo<Device> syncSubGridCommunication = El::SyncInfo<Device>();
+
+  friend class cereal::access;
+  slice_layer()
+    : slice_layer(nullptr)
+  {}
 
   void setup_dims(DataReaderMetaData& dr_metadata) override;
 

@@ -3,6 +3,7 @@ import copy
 import math
 import os
 import re
+import socket
 import sys
 import numpy as np
 import pytest
@@ -20,7 +21,6 @@ def check_list(substrings, strings):
 
 
 def get_command(cluster,
-                executable,
                 # Allocation/Run Parameters
                 num_nodes=None,
                 num_processes=None,
@@ -64,7 +64,7 @@ def get_command(cluster,
     # would terminate the command and allow for an extra command
     blacklist = [';', '--']
     strings = [
-        cluster, executable,
+        cluster,
         # Allocation/Run Parameters
         num_nodes, num_processes, partition, time_limit,
         # LBANN Parameters
@@ -81,6 +81,7 @@ def get_command(cluster,
         # Misc. Parameters
         check_executable_existence, return_tuple,  skip_no_exe, weekly
     ]
+    executable = shutil.which('lbann')
     lbann_errors = []
     if extra_lbann_flags is not None:
         if not isinstance(extra_lbann_flags, dict):
@@ -240,16 +241,21 @@ def get_command(cluster,
                 option_cpu_per_resource = ' --cpu_per_rs ALL_CPUS'
                 option_gpu_per_resource = ' --gpu_per_rs ALL_GPUS'
                 option_launch_distribution = ' --launch_distribution packed'
+                # By default there should be 4 prcesses per node (especially when using GPUs)
+                resources_per_node = 4
+                if disable_cuda:
+                    # When CUDA is disabled, allow the number of resources per node to be overridden
+                    resources_per_node = math.ceil(float(num_processes)/num_nodes)
                 # Avoid `nrs (32) should not be greater than rs_per_host (1) * number of servers available (16).`
                 if num_nodes is None:
-                    num_nodes = 1
+                    num_nodes = math.ceil(float(num_processes)/resources_per_node)
                 # The "option_num_processes" is a misnomer for the LSF case. Rather than
                 # changing the rest of the code, set it to be the number of nodes. Within
                 # JSRUN, the correct number of processes will be obtained when combined
                 # with "option_tasks_per_resource".
                 option_num_processes = ' --nrs {n}'.format(n=num_nodes)
                 option_resources_per_host = ' --rs_per_host 1'
-                option_tasks_per_resource = ' --tasks_per_rs 4'
+                option_tasks_per_resource = ' --tasks_per_rs {n}'.format(n=resources_per_node)
                 if (num_processes%num_nodes) is not 0:
                     raise Exception('num_processes %s, is not divisible by num_nodes %d'
                                     % (num_processes, num_nodes))
@@ -575,68 +581,6 @@ def get_command(cluster,
         return command_string
 
 
-def process_executable(name, compiler_name, executables):
-    if compiler_name not in executables:
-        e = '{n}: default_exes[{c}] does not exist'.format(
-            n=name, c=compiler_name)
-        print('Skip - ' + e)
-        import pytest
-        pytest.skip(e)
-    executable_path = executables[compiler_name]
-    print('{n}: executable_path={e}'.format(n=name, e=executable_path))
-
-
-def get_spack_exes(default_dirname, cluster):
-    exes = {}
-
-    exes['clang6'] = '%s/bamboo/compiler_tests/builds/%s_clang-6.0.0_rel/build/model_zoo/lbann' % (default_dirname, cluster)
-    exes['gcc7'] = '%s/bamboo/compiler_tests/builds/%s_gcc-7.1.0_rel/build/model_zoo/lbann' % (default_dirname, cluster)
-    exes['intel19'] = '%s/bamboo/compiler_tests/builds/%s_intel-19.0.0_rel/build/model_zoo/lbann' % (default_dirname, cluster)
-
-    exes['clang6_debug'] = '%s/bamboo/compiler_tests/builds/%s_clang-6.0.0_debug/build/model_zoo/lbann' % (default_dirname, cluster)
-    exes['gcc7_debug'] = '%s/bamboo/compiler_tests/builds/%s_gcc-7.1.0_debug/build/model_zoo/lbann' % (default_dirname, cluster)
-    exes['intel19_debug'] = '%s/bamboo/compiler_tests/builds/%s_intel-19.0.0_debug/build/model_zoo/lbann' % (default_dirname, cluster)
-
-    return exes
-
-
-def get_default_exes(default_dirname, cluster):
-    exes = get_spack_exes(default_dirname, cluster)
-    # Use build script as a backup if the Spack build doesn't work.
-    if not os.path.exists(exes['clang6']):
-        exes['clang6'] = '%s/build/clang.Release.%s.llnl.gov/install/bin/lbann' % (default_dirname, cluster)
-    if not os.path.exists(exes['gcc7']):
-        exes['gcc7'] = '%s/build/gnu.Release.%s.llnl.gov/install/bin/lbann' % (default_dirname, cluster)
-    if not os.path.exists(exes['intel19']):
-        exes['intel19'] = '%s/build/intel.Release.%s.llnl.gov/install/bin/lbann' % (default_dirname, cluster)
-
-    if not os.path.exists(exes['clang6_debug']):
-        exes['clang6_debug'] = '%s/build/clang.Debug.%s.llnl.gov/install/bin/lbann' % (default_dirname, cluster)
-    if not os.path.exists(exes['gcc7_debug']):
-        exes['gcc7_debug'] = '%s/build/gnu.Debug.%s.llnl.gov/install/bin/lbann' % (default_dirname, cluster)
-    if not os.path.exists(exes['intel19_debug']):
-        exes['intel19_debug'] = '%s/build/intel.Debug.%s.llnl.gov/install/bin/lbann' % (default_dirname, cluster)
-
-    default_exes = {}
-    default_exes['default'] = '%s/build/gnu.Release.%s.llnl.gov/install/bin/lbann' % (default_dirname, cluster)
-    if cluster in ['catalyst', 'corona', 'lassen', 'pascal', 'ray']:
-        # Define all compilers.
-        # x86_cpu - catalyst
-        # x86_gpu_pascal - pascal
-        # ppc64le_gpu_lassen - lassen
-        default_exes['clang6'] = exes['clang6']
-        default_exes['gcc7'] = exes['gcc7']
-        default_exes['intel19'] = exes['intel19']
-
-        default_exes['clang6_debug'] = exes['clang6_debug']
-        default_exes['gcc7_debug'] = exes['gcc7_debug']
-        default_exes['intel19_debug'] = exes['intel19_debug']
-
-
-    print('default_exes={d}'.format(d=default_exes))
-    return default_exes
-
-
 def get_error_line(error_file_name):
     with open(error_file_name, 'r') as error_file:
         error_line = ''
@@ -733,32 +677,15 @@ def create_tests(setup_func,
         # Make sure test name is prefixed with 'test_'
         test_name_base = 'test_' + test_name_base
 
-    def test_func(cluster, executables, dir_name, compiler_name):
+    def test_func(cluster, dirname):
         """Function that can interact with PyTest.
 
         Returns a dict containing log files and other output data.
 
         """
-        process_executable(test_name_base, compiler_name, executables)
-        test_name = '{}_{}'.format(test_name_base, compiler_name)
+        test_name = '{}'.format(test_name_base)
 
         # Load LBANN Python frontend
-        build_names = {
-            'clang6': 'clang.Release.{}.llnl.gov'.format(cluster),
-            'clang6_debug': 'clang.Debug.{}.llnl.gov'.format(cluster),
-            'gcc7': 'gnu.Release.{}.llnl.gov'.format(cluster),
-            'gcc7_debug': 'gnu.Debug.{}.llnl.gov'.format(cluster),
-            'intel19': 'intel.Release.{}.llnl.gov'.format(cluster),
-            'intel19_debug': 'intel.Debug.{}.llnl.gov'.format(cluster),
-        }
-        python_frontend_path = os.path.join(dir_name,
-                                            'build',
-                                            build_names[compiler_name],
-                                            'install',
-                                            'lib',
-                                            'python3.7',
-                                            'site-packages')
-        sys.path.append(python_frontend_path)
         import lbann
         import lbann.contrib.launcher
 
@@ -805,21 +732,11 @@ def create_tests(setup_func,
             'stderr_log_file': stderr_log_file,
         }
 
-    # Specific test functions for different build configurations
-    def test_func_clang6(cluster, exes, dirname):
-        return test_func(cluster, exes, dirname, 'clang6')
-    def test_func_gcc7(cluster, exes, dirname):
-        return test_func(cluster, exes, dirname, 'gcc7')
-    def test_func_intel19(cluster, exes, dirname):
-        return test_func(cluster, exes, dirname, 'intel19')
-    test_func_clang6.__name__ = '{}_clang6'.format(test_name_base)
-    test_func_gcc7.__name__ = '{}_gcc7'.format(test_name_base)
-    test_func_intel19.__name__ = '{}_intel19'.format(test_name_base)
+    # Specific test functions name
+    test_func.__name__ = test_name_base
 
     return (
-        test_func_gcc7,
-        test_func_clang6,
-        test_func_intel19,
+        test_func,
     )
 
 
@@ -1011,6 +928,15 @@ def print_diff_files(dcmp):
             all_warns.append(d)
 
     return any_files_differ, all_diffs, all_warns
+
+
+def system(lbann):
+    """Name of compute system."""
+    compute_center = lbann.contrib.launcher.compute_center()
+    if compute_center != "unknown":
+        return getattr(lbann.contrib, compute_center).systems.system()
+    else:
+        return re.sub(r'\d+', '', socket.gethostname())
 
 
 # Get the number of GPUs per compute node.

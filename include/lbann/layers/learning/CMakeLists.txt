@@ -10,7 +10,6 @@ set_full_path(THIS_DIR_HEADERS
   fully_connected.hpp
   fully_connected_cuda.hpp
   gru.hpp
-  learning.hpp
   )
 
 # Propagate the files up the tree

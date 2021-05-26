@@ -24,7 +24,11 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/utils/cudnn.hpp"
+#include "lbann_config.hpp"
+
+#ifdef LBANN_HAS_CUDNN
+#include "lbann/utils/dnn_lib/helpers.hpp"
+#endif // LBANN_HAS_CUDNN
 #include "lbann/utils/number_theory.hpp"
 
 #include "El.hpp"
@@ -36,7 +40,9 @@
 #ifdef LBANN_HAS_CUDNN
 
 namespace lbann {
-namespace cudnn {
+namespace dnn_lib {
+
+using namespace cudnn;
 
 ////////////////////////////////////////////////////////////
 // Global cuDNN objects
@@ -246,19 +252,20 @@ FilterDescriptor::FilterDescriptor(const FilterDescriptor& other) {
     int num_dims;
     cudnnDataType_t data_type;
     cudnnTensorFormat_t format;
+    std::vector<int> dims(1);
     CHECK_CUDNN(
       cudnnGetFilterNdDescriptor(
         other.desc_,
-        0,          // nbDimsRequested
+        dims.size(),
         &data_type,
         &format,
         &num_dims,
-        nullptr));  // filterDimA
-    std::vector<int> dims(num_dims);
+        dims.data()));
+    dims.resize(num_dims);
     CHECK_CUDNN(
       cudnnGetFilterNdDescriptor(
         other.desc_,
-        num_dims,
+        dims.size(),
         &data_type,
         &format,
         &num_dims,
@@ -400,7 +407,10 @@ void DropoutDescriptor::set(
   float dropout,
   void* states,
   size_t states_size,
-  unsigned long long seed) {
+  unsigned long long seed,
+  bool /*use_mask*/, // these 3 unused for cuDNN
+  bool /*state_evo*/,
+  int /*rng_mode*/) {
   create();
   CHECK_CUDNN(
     cudnnSetDropoutDescriptor(
@@ -586,7 +596,9 @@ void RNNDataDescriptor::set(
       padding_fill));
 }
 
-// class ConvolutionDescriptor
+// -----------------------------
+// ConvolutionDescriptor
+// -----------------------------
 
 ConvolutionDescriptor::ConvolutionDescriptor(DescriptorHandle_t desc)
   : desc_{desc}
@@ -737,107 +749,9 @@ void swap(ConvolutionDescriptor& lhs, ConvolutionDescriptor& rhs)
   lhs.swap(rhs);
 }
 
-// class ActivationDescriptor
-
-ActivationDescriptor::ActivationDescriptor(DescriptorHandle_t desc)
-  : desc_{desc}
-{}
-
-ActivationDescriptor::~ActivationDescriptor()
-{
-  try
-  {
-    this->reset();
-  }
-  catch (std::exception const& e)
-  {
-    std::cerr << "Caught exception in ~ActivationDescriptor(). Shutting down."
-              << std::endl;
-    std::terminate();
-  }
-}
-
-ActivationDescriptor::ActivationDescriptor(const ActivationDescriptor& rhs)
-{
-  // Short-circuit
-  if (rhs.desc_ == nullptr)
-  {
-    desc_ = nullptr;
-    return;
-  }
-
-  cudnnActivationMode_t mode;
-  cudnnNanPropagation_t nan_prop;
-  double coeff;
-  CHECK_CUDNN(
-    cudnnGetActivationDescriptor(rhs.desc_, &mode, &nan_prop, &coeff));
-  this->set(mode, nan_prop, coeff);
-}
-
-ActivationDescriptor::ActivationDescriptor(ActivationDescriptor&& rhs)
-  : desc_{rhs.desc_}
-{
-  rhs.desc_ = nullptr;
-}
-
-ActivationDescriptor& ActivationDescriptor::operator=(ActivationDescriptor rhs)
-{
-  this->swap(rhs);
-  return *this;
-}
-
-auto ActivationDescriptor::release() noexcept -> DescriptorHandle_t
-{
-  auto tmp = desc_;
-  desc_ = nullptr;
-  return tmp;
-}
-
-auto ActivationDescriptor::get() const noexcept -> DescriptorHandle_t
-{
-  return desc_;
-}
-
-ActivationDescriptor::operator DescriptorHandle_t() const noexcept
-{
-  return desc_;
-}
-
-void ActivationDescriptor::swap(ActivationDescriptor& other)
-{
-  std::swap(desc_, other.desc_);
-}
-
-void ActivationDescriptor::reset(DescriptorHandle_t desc)
-{
-  if (desc_)
-    CHECK_CUDNN(cudnnDestroyActivationDescriptor(desc_));
-  desc_ = desc;
-}
-
-void ActivationDescriptor::create()
-{
-  if (!desc_)
-    CHECK_CUDNN(cudnnCreateActivationDescriptor(&desc_));
-}
-
-void ActivationDescriptor::set(
-    cudnnActivationMode_t mode,
-    cudnnNanPropagation_t nan_prop,
-    double coeff)
-{
-  this->create();
-  CHECK_CUDNN(
-    cudnnSetActivationDescriptor(desc_, mode, nan_prop, coeff));
-}
-
-/** @brief Swap two activation descriptors. */
-void swap(ActivationDescriptor& lhs, ActivationDescriptor& rhs)
-{
-  lhs.swap(rhs);
-}
-
-// class PoolingDescriptor
+// -----------------------------
+// PoolingDescriptor
+// -----------------------------
 
 PoolingDescriptor::PoolingDescriptor(DescriptorHandle_t desc)
   : desc_{desc}
@@ -877,7 +791,7 @@ PoolingDescriptor::PoolingDescriptor(const PoolingDescriptor& rhs)
     cudnnGetPoolingNdDescriptor(
       rhs.desc_, num_dims, &mode, &nan_prop, &num_dims,
       window_dims.data(), padding.data(), strides.data()));
-  this->set(mode, nan_prop, window_dims, padding, strides);
+  this->set(cudnn::from_cudnn(mode), nan_prop, window_dims, padding, strides);
 }
 
 PoolingDescriptor::PoolingDescriptor(PoolingDescriptor&& rhs)
@@ -929,7 +843,7 @@ void PoolingDescriptor::create()
 }
 
 void PoolingDescriptor::set(
-  cudnnPoolingMode_t mode,
+  pooling_mode mode,
   cudnnNanPropagation_t nan_prop,
   std::vector<int> const& window_dims,
   std::vector<int> const& padding,
@@ -942,7 +856,7 @@ void PoolingDescriptor::set(
 }
 
 void PoolingDescriptor::set(
-  cudnnPoolingMode_t mode,
+  pooling_mode mode,
   cudnnNanPropagation_t nan_prop,
   int num_dims,
   int const window_dims[],
@@ -952,7 +866,8 @@ void PoolingDescriptor::set(
   this->create();
   CHECK_CUDNN(
     cudnnSetPoolingNdDescriptor(
-      desc_, mode, nan_prop, num_dims, window_dims, padding, stride));
+      desc_, cudnn::to_cudnn(mode), nan_prop,
+      num_dims, window_dims, padding, stride));
 }
 
 void swap(PoolingDescriptor& lhs, PoolingDescriptor& rhs)
@@ -960,7 +875,9 @@ void swap(PoolingDescriptor& lhs, PoolingDescriptor& rhs)
   lhs.swap(rhs);
 }
 
-// class LRNDescriptor
+// -----------------------------
+// LRNDescriptor
+// -----------------------------
 
 LRNDescriptor::LRNDescriptor(DescriptorHandle_t desc)
   : desc_{desc}
@@ -1041,7 +958,8 @@ void LRNDescriptor::create()
     CHECK_CUDNN(cudnnCreateLRNDescriptor(&desc_));
 }
 
-void LRNDescriptor::set(unsigned n, double alpha, double beta, double k)
+void LRNDescriptor::set(unsigned n, double alpha, double beta,
+                        double k, cudnnLRNMode_t mode)
 {
   LBANN_ASSERT(n >= CUDNN_LRN_MIN_N);
   LBANN_ASSERT(n <= CUDNN_LRN_MAX_N);
@@ -1553,7 +1471,7 @@ cudnnConvolutionBwdFilterAlgo_t get_bwd_filter_algo_autotune(
 
 }  // namespace
 
-cudnnConvolutionFwdAlgo_t get_fwd_algorithm(
+fwd_conv_alg get_fwd_algorithm(
   bool autotune,
   bool deterministic,
   const TensorDescriptor& input_desc,
@@ -1565,20 +1483,22 @@ cudnnConvolutionFwdAlgo_t get_fwd_algorithm(
   void* output,
   size_t ws_size,
   void* ws) {
+  cudnnConvolutionFwdAlgo_t a;
   if (autotune) {
-    return get_fwd_algo_autotune(deterministic,
-                                 input_desc, input,
-                                 kernel_desc, kernel,
-                                 conv_desc,
-                                 output_desc, output,
-                                 ws_size, ws);
+    a = get_fwd_algo_autotune(deterministic,
+                              input_desc, input,
+                              kernel_desc, kernel,
+                              conv_desc,
+                              output_desc, output,
+                              ws_size, ws);
   } else {
-    return get_fwd_algo_heuristic(deterministic, input_desc, kernel_desc,
-                                  conv_desc, output_desc, ws_size);
+    a = get_fwd_algo_heuristic(deterministic, input_desc, kernel_desc,
+                               conv_desc, output_desc, ws_size);
   }
+  return from_cudnn(a);
 }
 
-cudnnConvolutionBwdDataAlgo_t get_bwd_data_algorithm(
+bwd_data_conv_alg get_bwd_data_algorithm(
   bool autotune,
   bool deterministic,
   const FilterDescriptor& kernel_desc,
@@ -1590,21 +1510,23 @@ cudnnConvolutionBwdDataAlgo_t get_bwd_data_algorithm(
   void* error_signal,
   size_t ws_size,
   void* ws) {
+  cudnnConvolutionBwdDataAlgo_t a;
   if (autotune) {
-    return get_bwd_data_algo_autotune(deterministic,
-                                      kernel_desc, kernel,
-                                      prev_error_signal_desc, prev_error_signal,
-                                      conv_desc,
-                                      error_signal_desc, error_signal,
-                                      ws_size, ws);
+    a = get_bwd_data_algo_autotune(deterministic,
+                                   kernel_desc, kernel,
+                                   prev_error_signal_desc, prev_error_signal,
+                                   conv_desc,
+                                   error_signal_desc, error_signal,
+                                   ws_size, ws);
   } else {
-    return get_bwd_data_algo_heuristic(deterministic, kernel_desc,
-                                       prev_error_signal_desc, conv_desc,
-                                       error_signal_desc, ws_size);
+    a = get_bwd_data_algo_heuristic(deterministic, kernel_desc,
+                                    prev_error_signal_desc, conv_desc,
+                                    error_signal_desc, ws_size);
   }
+  return from_cudnn(a);
 }
 
-cudnnConvolutionBwdFilterAlgo_t get_bwd_filter_algorithm(
+bwd_filter_conv_alg get_bwd_filter_algorithm(
   bool autotune,
   bool deterministic,
   const TensorDescriptor& input_desc,
@@ -1616,18 +1538,20 @@ cudnnConvolutionBwdFilterAlgo_t get_bwd_filter_algorithm(
   void* kernel_gradient,
   size_t ws_size,
   void* ws) {
+  cudnnConvolutionBwdFilterAlgo_t a;
   if (autotune) {
-    return get_bwd_filter_algo_autotune(deterministic,
-                                        input_desc, input,
-                                        prev_error_signal_desc, prev_error_signal,
-                                        conv_desc,
-                                        kernel_gradient_desc, kernel_gradient,
-                                        ws_size, ws);
+    a = get_bwd_filter_algo_autotune(deterministic,
+                                     input_desc, input,
+                                     prev_error_signal_desc, prev_error_signal,
+                                     conv_desc,
+                                     kernel_gradient_desc, kernel_gradient,
+                                     ws_size, ws);
   } else {
-    return get_bwd_filter_algo_heuristic(deterministic, input_desc,
-                                         prev_error_signal_desc, conv_desc,
-                                         kernel_gradient_desc, ws_size);
+    a = get_bwd_filter_algo_heuristic(deterministic, input_desc,
+                                      prev_error_signal_desc, conv_desc,
+                                      kernel_gradient_desc, ws_size);
   }
+  return from_cudnn(a);
 }
 
 namespace {
@@ -1644,8 +1568,24 @@ cudnnMathType_t get_default_convolution_math_type() noexcept
   return default_tensor_ops_mode;
 }
 
+using ProtoTensorOpEnumType = decltype(lbann_data::DEFAULT_TENSOR_OPS);
+cudnnMathType_t convert_to_dnn_math_type(ProtoTensorOpEnumType mt)
+{
+  switch (mt)
+  {
+  case lbann_data::DEFAULT_TENSOR_OPS:
+    return dnn_lib::get_default_convolution_math_type();
+  case lbann_data::NO_TENSOR_OPS:
+    return CUDNN_DEFAULT_MATH;
+  case lbann_data::USE_TENSOR_OPS:
+    return CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION;
+  default:
+    LBANN_ERROR("Bad math type value.");
+  }
+  return CUDNN_DEFAULT_MATH;
+}
+
 #define PROTO(T)                                        \
-  template cudnnDataType_t get_data_type<T>();          \
   template class layer_tensor_manager<T>;               \
   template class data_parallel_layer_tensor_manager<T>; \
   template class entrywise_layer_tensor_manager<T>
@@ -1654,7 +1594,7 @@ cudnnMathType_t get_default_convolution_math_type() noexcept
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
 
-} // namespace cudnn
+} // namespace dnn_lib
 } // namespace lbann
 
 #endif // LBANN_HAS_CUDNN

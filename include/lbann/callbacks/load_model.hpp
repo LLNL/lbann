@@ -47,7 +47,7 @@ namespace callback {
  * Load pretrained model from file
  */
 class load_model : public callback_base {
- public:
+public:
   /**
    * @param dir directory to load model
    * @param extension file extension e.g., model, state ......
@@ -73,22 +73,22 @@ class load_model : public callback_base {
 
   void on_test_begin(model *m) override;
 
-  /* ckptdir_is_fullpath flag if true
- * allow user to specify full path to model weights to load
- * and allow system to ignore appending trainer id, num of epochs/steps
- * to default ckpt_dir*/
-  static bool load_model_weights(const std::string& ckpt_dir,
-                                 const std::string& alg_name,
-                                 model *m,
-                                 bool ckptdir_is_fullpath=false);
-
   std::string name() const override { return "load model"; }
 
- protected:
+  /** @name Serialization */
+  ///@{
+
+  /** @brief Store state to archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar);
+
+  ///@}
+
+private:
   friend class lbann::model;
+  friend class cereal::access;
+  load_model() = default;
 
-
- private:
+private:
   std::vector<std::string> m_dirs; //director(ies) to load pretrained model(s)
   /// Disables the normal behavior of saving when training is complete
   std::string m_extension; //file extension

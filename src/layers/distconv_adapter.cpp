@@ -214,7 +214,7 @@ void distconv_adapter::adjust_parallel_strategy() {
       ps.depth_groups : 1;
   auto h = ps.height_groups != 0 ? ps.height_groups : 1;
   auto w = ps.width_groups != 0 ? ps.width_groups : 1;
-  auto np = layer().m_comm->get_procs_per_trainer();
+  auto np = layer().get_comm()->get_procs_per_trainer();
 
   const auto spatial_prod = d * h * w;
 
@@ -351,7 +351,7 @@ void distconv_adapter::impose_adjacent_overlap_constraints(
   for (auto &parent: l.get_parent_layers()) {
     if (parent->get_type() == "input") {
       const int child_index =
-          parent->find_child_layer_index(&l);
+          parent->find_child_layer_index(l);
       if (child_index == 1) continue;
       assert_eq(child_index, 0);
     }

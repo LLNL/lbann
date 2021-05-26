@@ -26,7 +26,10 @@
 
 #define LBANN_INSTANCE_NORM_LAYER_INSTANTIATE
 #include "lbann/layers/regularizers/instance_norm.hpp"
-#include "lbann/utils/h2_tmp.hpp"
+#include <h2/meta/Core.hpp>
+#include <h2/meta/TypeList.hpp>
+#include <h2/patterns/multimethods/SwitchDispatcher.hpp>
+#include "layers.pb.h"
 
 namespace lbann
 {
@@ -304,10 +307,12 @@ struct Builder<double,data_layout::DATA_PARALLEL,Device>
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 std::unique_ptr<Layer> build_instance_norm_layer_from_pbuf(
-  lbann_comm* comm, lbann_data::Layer const&)
+  lbann_comm* comm, lbann_data::Layer const& proto_layer)
 {
   using BuilderType = Builder<TensorDataType, Layout, Device>;
-  return BuilderType::Build(comm);
+  const auto& params = proto_layer.instance_norm();
+  const double epsilon = params.has_epsilon() ? params.epsilon().value() : 1e-5;
+  return BuilderType::Build(El::To<TensorDataType>(epsilon));
 }
 
 // =============================================

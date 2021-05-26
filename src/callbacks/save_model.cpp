@@ -28,7 +28,8 @@
 
 #include "lbann/callbacks/save_model.hpp"
 #include "lbann/callbacks/checkpoint.hpp" // Reuse the checkpoint naming scheme
-#include "lbann/training_algorithms/training_algorithm.hpp"
+#include "lbann/execution_algorithms/training_algorithm.hpp"
+#include "lbann/weights/data_type_weights.hpp"
 
 #include <callbacks.pb.h>
 #include <model.pb.h>
@@ -113,11 +114,20 @@ bool save_model::do_save_model_weights(model *m) {
 
   // Shared checkpoint, logic identical to Distributed.i
   makedir(m_dir.c_str());
-  std::string epochdir = get_save_model_dirname(c.get_trainer().get_name(),
+  std::string epochdir = get_save_model_dirname(get_const_trainer().get_name(),
                                                 m->get_name(),
                                                 m_dir.c_str());
   p.open_checkpoint_dir(epochdir.c_str(), comm->am_trainer_master());
-  m->save_weights(p);
+
+  for (weights *w : m->get_weights()) {
+    // create weight file name to match to weight list entry
+    const auto* dtw = dynamic_cast<const data_type_weights<DataType>*>(w);
+    auto file = El::BuildString(epochdir, "model_weights_", w->get_name(), "_",
+                                dtw->get_values().Height(), "x",
+                                dtw->get_values().Width());
+
+    El::Write(dtw->get_values(), file, El::BINARY);
+  }
 
   uint64_t bytes_count = p.get_bytes();
 

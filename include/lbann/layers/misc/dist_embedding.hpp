@@ -72,7 +72,6 @@ class dist_embedding_layer : public data_type_layer<TensorDataType> {
 public:
 
   dist_embedding_layer(
-    lbann_comm* comm,
     size_t num_embeddings,
     size_t embedding_dim,
     bool sparse_sgd,
@@ -84,13 +83,25 @@ public:
   ~dist_embedding_layer();
 
   dist_embedding_layer* copy() const override;
+
   std::string get_type() const override;
   data_layout get_data_layout() const override;
   El::Device get_device_allocation() const override;
 
   description get_description() const override;
 
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
+
 protected:
+
+  friend class cereal::access;
+  dist_embedding_layer();
 
   void setup_dims(DataReaderMetaData& dr_metadata) override;
   void setup_data(size_t max_mini_batch_size) override;
@@ -201,13 +212,12 @@ private:
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 dist_embedding_layer<TensorDataType,Layout,Device>::dist_embedding_layer(
-  lbann_comm* comm,
   size_t num_embeddings,
   size_t embedding_dim,
   bool sparse_sgd,
   DataType learning_rate,
   bool barrier_in_forward_prop)
-  : data_type_layer<TensorDataType>(comm),
+  : data_type_layer<TensorDataType>(nullptr),
     m_num_embeddings{num_embeddings},
     m_embedding_dim{embedding_dim},
     m_sparse_sgd{sparse_sgd},
@@ -220,6 +230,11 @@ dist_embedding_layer<TensorDataType,Layout,Device>::dist_embedding_layer(
   }
 
 }
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+dist_embedding_layer<TensorDataType,Layout,Device>::dist_embedding_layer()
+  : dist_embedding_layer(1, 1, false, El::To<DataType>(1), false)
+{}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 dist_embedding_layer<TensorDataType,Layout,Device>::dist_embedding_layer(
@@ -285,13 +300,13 @@ void dist_embedding_layer<TensorDataType,Layout,Device>::setup_data(size_t max_m
   // Note: Randomly drawn from normal distribution with mean 0 and
   // standard deviation 1.
   if (!this->has_weights()) {
-    auto w = make_unique<data_type_weights<TensorDataType>>(&comm);
+    auto w = std::make_shared<data_type_weights<TensorDataType>>(comm);
     auto init = make_unique<normal_initializer<TensorDataType>>(0,1);
     auto opt = this->m_model->template create_optimizer<TensorDataType>();
     w->set_name(this->get_name() + "_weights");
     w->set_initializer(std::move(init));
     w->set_optimizer(std::move(opt));
-    this->add_weights(w.get());
+    this->add_weights(w);
     this->m_model->add_weights(std::move(w));
   }
   if (this->num_weights() != 1) {
@@ -307,9 +322,7 @@ void dist_embedding_layer<TensorDataType,Layout,Device>::setup_data(size_t max_m
     auto dist = this->get_prev_activations().DistData();
     dist.colDist = El::STAR;
     dist.rowDist = El::VC;
-    embeddings.set_dims(
-      {static_cast<int>(m_embedding_dim)},
-      {static_cast<int>(m_num_embeddings)});
+    embeddings.set_dims({m_embedding_dim}, {m_num_embeddings});
     embeddings.set_matrix_distribution(dist);
   }
 
@@ -322,14 +335,14 @@ void dist_embedding_layer<TensorDataType,Layout,Device>::setup_data(size_t max_m
   // with no entries.
   if (m_sparse_sgd) {
     embeddings.set_optimizer(nullptr);
-    auto w = make_unique<data_type_weights<TensorDataType>>(&comm);
+    auto w = std::make_shared<data_type_weights<TensorDataType>>(comm);
     auto opt = make_unique<sgd<TensorDataType>>(0.);
     w->set_name(this->get_name() + "_dummy_weights");
     w->set_optimizer(std::move(opt));
     w->set_dims(1);
     w->set_matrix_distribution(embeddings.get_matrix_distribution());
     w->setup();
-    this->add_weights(w.get());
+    this->add_weights(w);
     this->m_model->add_weights(std::move(w));
   }
 

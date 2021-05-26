@@ -26,13 +26,15 @@
 // data_reader_image .hpp .cpp - generic data reader class for image dataset
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/comm_impl.hpp"
 #include "lbann/data_readers/data_reader_image.hpp"
-#include "lbann/utils/image.hpp"
-#include "lbann/utils/timer.hpp"
+#include "lbann/data_readers/sample_list_impl.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
 #include "lbann/utils/file_utils.hpp"
-#include "lbann/utils/threads/thread_utils.hpp"
 #include "lbann/utils/lbann_library.hpp"
+#include "lbann/utils/threads/thread_utils.hpp"
+#include "lbann/utils/timer.hpp"
+
 #include <fstream>
 
 namespace lbann {
@@ -232,7 +234,7 @@ void image_data_reader::do_preload_data_store() {
     if (is_master()) {
       std::cout << "mode: data_store_thread\n";
     }
-    std::shared_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(m_comm, opts);
+    std::shared_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(m_comm, opts, false);
     int num_threads = static_cast<int>(io_thread_pool->get_num_threads());
 
     std::vector<std::unordered_set<int>> data_ids(num_threads);

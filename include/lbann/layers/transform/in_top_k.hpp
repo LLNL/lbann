@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYER_IN_TOP_K_HPP_INCLUDED
 #define LBANN_LAYER_IN_TOP_K_HPP_INCLUDED
 
-#include "lbann/layers/transform/transform.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 #include "lbann/utils/exception.hpp"
 
 namespace lbann {
@@ -41,30 +41,42 @@ namespace lbann {
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class in_top_k_layer : public transform_layer<TensorDataType> {
+class in_top_k_layer : public data_type_layer<TensorDataType> {
  public:
 
   in_top_k_layer(lbann_comm *comm, El::Int k)
-    : transform_layer<TensorDataType>(comm), m_k(k) {
+    : data_type_layer<TensorDataType>(comm), m_k(k) {
     if (m_k < 0) {
-      std::stringstream err;
-      err << "invalid parameter for top-k search (k=" << m_k << ")";
-      LBANN_ERROR(err.str());
+      LBANN_ERROR("invalid parameter for top-k search (k=", m_k, ")");
     }
   }
 
   in_top_k_layer* copy() const override { return new in_top_k_layer(*this); }
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
+
   std::string get_type() const override { return "in_top_k"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
   description get_description() const override {
-    auto desc = transform_layer<TensorDataType>::get_description();
+    auto desc = data_type_layer<TensorDataType>::get_description();
     desc.add("k", m_k);
     return desc;
   }
 
  protected:
+
+  friend class cereal::access;
+  in_top_k_layer()
+    : in_top_k_layer(nullptr, 1)
+  {}
 
   void setup_dims(DataReaderMetaData& dr_metadata) override {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
@@ -76,7 +88,7 @@ class in_top_k_layer : public transform_layer<TensorDataType> {
  private:
 
   /** Parameter for top-k search. */
-  const El::Int m_k;
+  El::Int m_k;
 
 };
 

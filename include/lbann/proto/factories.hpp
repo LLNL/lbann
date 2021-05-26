@@ -27,6 +27,7 @@
 #ifndef LBANN_PROTO_FACTORIES_HPP_INCLUDED
 #define LBANN_PROTO_FACTORIES_HPP_INCLUDED
 
+#include "lbann/layers/layer.hpp"
 #include "lbann/data_readers/data_reader.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/transforms/transform.hpp"
@@ -74,7 +75,7 @@ std::unique_ptr<model> construct_model(
   const lbann_data::Model& proto_model);
 
 /** Construct a layer graph specified with a prototext. */
-std::vector<std::unique_ptr<Layer>> construct_layer_graph(
+std::vector<OwningLayerPtr> construct_layer_graph(
   lbann_comm* comm,
   int training_dr_linearized_data_size,
   const lbann_data::Trainer& proto_trainer,

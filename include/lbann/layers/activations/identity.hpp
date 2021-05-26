@@ -55,11 +55,20 @@ class identity_distconv_adapter: public data_type_distconv_adapter<TensorDataTyp
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 class identity_layer : public data_type_layer<TensorDataType> {
 public:
-  identity_layer(lbann_comm *comm) : data_type_layer<TensorDataType>(comm) {}
+  identity_layer() : data_type_layer<TensorDataType>(nullptr) {}
   identity_layer* copy() const override { return new identity_layer(*this); }
   std::string get_type() const override { return "identity"; }
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
+
 protected:
   void setup_dims(DataReaderMetaData& dr_metadata) override {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);

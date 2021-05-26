@@ -24,10 +24,12 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-// Included in the lbann namespace
-
 #ifndef LBANN_SUMMARY_IMPL_HPP_INCLUDED
 #define LBANN_SUMMARY_IMPL_HPP_INCLUDED
+
+#include "lbann/utils/summary.hpp"
+
+namespace lbann {
 
 #ifdef LBANN_HAS_TBINF
 
@@ -323,5 +325,7 @@ inline auto lbann_summary::local_2norm(const El::AbstractMatrix<TensorDataType>&
 }
 
 #endif  // LBANN_HAS_TBINF
+
+} // namespace lbann
 
 #endif // LBANN_SUMMARY_IMPL_HPP_INCLUDED

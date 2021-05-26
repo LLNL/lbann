@@ -24,7 +24,9 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/comm_impl.hpp"
 #include "lbann/optimizers/optimizer.hpp"
+#include "lbann/utils/serialize.hpp"
 #include "lbann/utils/timer.hpp"
 
 namespace lbann {
@@ -70,6 +72,11 @@ optimizer& optimizer::operator=(const optimizer& other) {
   return *this;
 }
 
+template <class Archive>
+void optimizer::serialize(Archive & ar) {
+  // Do not save the optimizer's step time
+}
+
 description optimizer::get_description() const {
   description desc(get_type() + " optimizer");
   return desc;
@@ -94,3 +101,6 @@ void optimizer::remove_gradient_source(const void* source) {
 }
 
 } // namespace lbann
+
+#define LBANN_CLASS_NAME optimizer
+#include <lbann/macros/register_class_with_cereal.hpp>

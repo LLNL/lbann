@@ -30,15 +30,74 @@
 #define LBANN_UTILS_TIMER_HPP_INCLUDED
 
 #include <chrono>
+#include <type_traits>
 
 namespace lbann {
 
-/** Return time in fractional seconds since an epoch. */
+/** @brief Return time in fractional seconds since an epoch. */
 inline double get_time() {
   using namespace std::chrono;
   return duration_cast<duration<double>>(
            steady_clock::now().time_since_epoch()).count();
 }
+
+/** @class Timer
+ *  @brief An exceedingly simple duration calculator.
+ *
+ *  This clock does not have a notion of "pause and restart". Calling
+ *  check() will not stop the counter; calling stop() will clear the
+ *  counter. Calling start() on a running timer will reset the clock
+ *  to zero.
+ */
+class Timer
+{
+public:
+  /** @brief The clock used for counting.
+   *
+   *  Per guidance from cppreference, this should be the steady clock
+   *  for measuring durations. The high-res clock can be unstable.
+   *  ([Source](https://en.cppreference.com/w/cpp/chrono/high_resolution_clock))
+   */
+  using ClockType = std::chrono::steady_clock;
+  /** @brief Simplifying typedef. */
+  using TimePoint = typename ClockType::time_point;
+public:
+  Timer() = default;
+  ~Timer() noexcept = default;
+  Timer(Timer const&) = delete;
+  Timer& operator=(Timer const&) = delete;
+  Timer(Timer&&) = default;
+  Timer& operator=(Timer&&) = default;
+
+  /** @brief Start counting time.
+   *
+   *  If the clock is already running, this will restart the counter.
+   */
+  void start() noexcept { m_start = ClockType::now(); }
+
+  /** @brief Get the total elapsed time in seconds.
+   *
+   *  Resets the counter, so a subsequent call to stop() or check()
+   *  without another start() will return 0.0.
+  */
+  double stop() noexcept
+  {
+    auto elapsed_time = this->check();
+    m_start = TimePoint();
+    return elapsed_time;
+  }
+
+  /** @brief Get the current elapsed time (seconds) without stopping. */
+  double check() const noexcept
+  {
+    using seconds_type = std::chrono::duration<double>;
+    return (m_start == TimePoint()
+            ? 0.0
+            : seconds_type(ClockType::now() -  m_start).count());
+  }
+private:
+  TimePoint m_start;
+};// class Timer
 
 }  // namespace lbann
 

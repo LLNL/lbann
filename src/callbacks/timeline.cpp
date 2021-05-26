@@ -30,6 +30,7 @@
 
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/timer.hpp"
+#include "lbann/utils/serialize.hpp"
 
 #include <callbacks.pb.h>
 
@@ -40,6 +41,25 @@
 
 namespace lbann {
 namespace callback {
+
+timeline::timeline()
+  : timeline("")
+{}
+
+template <class Archive>
+void timeline::serialize(Archive & ar) {
+  ar(::cereal::make_nvp(
+       "BaseCallback",
+       ::cereal::base_class<callback_base>(this)),
+     CEREAL_NVP(m_outdir),
+     CEREAL_NVP(m_start_time),
+     CEREAL_NVP(m_fp_start_time),
+     CEREAL_NVP(m_bp_start_time),
+     CEREAL_NVP(m_opt_start_time),
+     CEREAL_NVP(m_fp_times),
+     CEREAL_NVP(m_bp_times),
+     CEREAL_NVP(m_opt_times));
+}
 
 void timeline::on_train_begin(model *m) {
   // Set up layers and weights.
@@ -117,3 +137,6 @@ build_timeline_callback_from_pbuf(
 
 } // namespace callback
 } // namespace lbann
+
+#define LBANN_CLASS_NAME callback::timeline
+#include <lbann/macros/register_class_with_cereal.hpp>

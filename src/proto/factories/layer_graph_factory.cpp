@@ -28,8 +28,6 @@
 #include "lbann/proto/datatype_helpers.hpp"
 
 #include "lbann/layers/learning/fully_connected.hpp"
-#include "lbann/layers/transform/pooling.hpp"
-#include "lbann/layers/transform/unpooling.hpp"
 
 #include <model.pb.h>
 #include <trainer.pb.h>
@@ -46,8 +44,8 @@ namespace {
 /** Setup parent/child relationships between layers. */
 void setup_parents_and_children(
        lbann_comm* comm,
-       std::vector<Layer*>& layers,
-       std::unordered_map<std::string, Layer*>& names_to_layers,
+       const std::vector<OwningLayerPtr>& layers,
+       const std::unordered_map<std::string, ViewingLayerPtr>& names_to_layers,
        const lbann_data::Model& proto_model) {
   std::stringstream err;
   for (int i=0; i<proto_model.layer_size(); ++i) {
@@ -74,8 +72,8 @@ void setup_parents_and_children(
 }
 
 void setup_hints(
-       std::vector<Layer*>& layers,
-       const std::unordered_map<std::string, Layer*>& names_to_layers,
+       const std::vector<OwningLayerPtr>& layers,
+       const std::unordered_map<std::string, ViewingLayerPtr>& names_to_layers,
        const lbann_data::Model& proto_model) {
   std::stringstream err;
   for (int i=0; i<proto_model.layer_size(); ++i) {
@@ -92,51 +90,9 @@ void setup_hints(
   }
 }
 
-/** Setup paired pooling layers for unpooling layers. */
-void setup_unpooling_pointers(lbann_comm* comm,
-                              std::vector<Layer*>& layers,
-                              std::unordered_map<std::string, Layer*>& names_to_layers,
-                              const lbann_data::Model& proto_model) {
-  std::stringstream err;
-  for (int i=0; i<proto_model.layer_size(); ++i) {
-    {
-      unpooling_layer<DataType, data_layout::DATA_PARALLEL, El::Device::CPU>* unpool
-        = dynamic_cast<unpooling_layer<DataType, data_layout::DATA_PARALLEL, El::Device::CPU>*>(layers[i]);
-      if (unpool != nullptr) {
-        const auto& pool_name = proto_model.layer(i).unpooling().pooling_layer();
-        pooling_layer<DataType, data_layout::DATA_PARALLEL, El::Device::CPU>* pool
-          = dynamic_cast<pooling_layer<DataType, data_layout::DATA_PARALLEL, El::Device::CPU>*>(names_to_layers[pool_name]);
-        if (pool == nullptr) {
-          err << "could not find pooling layer " << pool_name << " "
-              << "to pair with unpooling layer " << unpool->get_name();
-          LBANN_ERROR(err.str());
-        }
-        unpool->set_pooling_layer(pool);
-      }
-    }
-#if defined(LBANN_HAS_GPU) && defined(LBANN_UNPOOLING_LAYER_SUPPORTS_GPU)
-    {
-      unpooling_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>* unpool
-        = dynamic_cast<unpooling_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>*>(layers[i]);
-      if (unpool != nullptr) {
-        const auto& pool_name = proto_model.layer(i).unpooling().pooling_layer();
-        pooling_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>* pool
-          = dynamic_cast<pooling_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>*>(names_to_layers[pool_name]);
-        if (pool == nullptr) {
-          err << "could not find pooling layer " << pool_name << " "
-              << "to pair with unpooling layer " << unpool->get_name();
-          LBANN_ERROR(err.str());
-        }
-        unpool->set_pooling_layer(pool);
-      }
-    }
-#endif // LBANN_HAS_GPU
-  }
-}
-
 } // namespace
 
-std::vector<std::unique_ptr<Layer>> construct_layer_graph(
+std::vector<OwningLayerPtr> construct_layer_graph(
   lbann_comm* comm,
   int training_dr_linearized_data_size,
   const lbann_data::Trainer& proto_trainer,
@@ -144,18 +100,18 @@ std::vector<std::unique_ptr<Layer>> construct_layer_graph(
   std::stringstream err;
 
   // List of layers
-  std::vector<std::unique_ptr<Layer>> layers;
+  std::vector<OwningLayerPtr> layers;
   layers.reserve(proto_model.layer_size());
 
   // Map from names to layer pointers
-  std::unordered_map<std::string, Layer*> names_to_layers;
+  std::unordered_map<std::string, ViewingLayerPtr> names_to_layers;
 
   // Create each layer in prototext
   for (int i=0; i<proto_model.layer_size(); ++i) {
     const auto& proto_layer = proto_model.layer(i);
 
     // Check that layer name is valid
-    auto name = proto_layer.name();
+    std::string name = proto_layer.name();
     const auto& parsed_name = parse_list<std::string>(name);
     if (!name.empty()) {
       if (parsed_name.empty() || parsed_name.front() != name) {
@@ -194,7 +150,7 @@ std::vector<std::unique_ptr<Layer>> construct_layer_graph(
     auto proto_datatype = proto_layer.datatype();
 
     // Construct layer
-    std::unique_ptr<Layer> l;
+    OwningLayerPtr l;
 #define TEMPLATE_INSTANTIATION(TensorDataType, T_layout, T_device)      \
     do {                                                                \
       if (proto_datatype == TypeToProtoDataType<TensorDataType>::value  \
@@ -205,8 +161,8 @@ std::vector<std::unique_ptr<Layer>> construct_layer_graph(
           training_dr_linearized_data_size,                             \
           num_parallel_readers,                                         \
           proto_layer);                                                 \
-      }                                                                 \
-    } while (0)
+  }                                                                     \
+} while (0)
 
 #define PROTO_DEVICE(T, Device) \
     TEMPLATE_INSTANTIATION(T, data_layout::DATA_PARALLEL, Device); \
@@ -252,7 +208,7 @@ std::vector<std::unique_ptr<Layer>> construct_layer_graph(
       err << "layer name \"" << name << "\" is not unique";
       LBANN_ERROR(err.str());
     }
-    names_to_layers[name] = l.get();
+    names_to_layers[name] = l;
 
     if (proto_layer.freeze()) {
       #ifdef LBANN_DEBUG
@@ -268,12 +224,8 @@ std::vector<std::unique_ptr<Layer>> construct_layer_graph(
   }
 
   // Setup pointers between layers
-  std::vector<Layer*> layer_pointers;
-  layer_pointers.reserve(layers.size());
-  for (auto&& ptr : layers) { layer_pointers.push_back(ptr.get()); }
-  setup_parents_and_children(comm, layer_pointers, names_to_layers, proto_model);
-  setup_hints(layer_pointers, names_to_layers, proto_model);
-  setup_unpooling_pointers(comm, layer_pointers, names_to_layers, proto_model);
+  setup_parents_and_children(comm, layers, names_to_layers, proto_model);
+  setup_hints(layers, names_to_layers, proto_model);
 
   // Return layer list
   return layers;

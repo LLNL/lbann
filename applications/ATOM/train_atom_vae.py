@@ -24,6 +24,7 @@ def construct_lc_launcher_args():
     parser.add_argument("--partition", default=None)
     parser.add_argument("--account", default="hpcdl")
     parser.add_argument("--scheduler", type=str, default="slurm")
+    parser.add_argument("--reservation", type=None)
     parser.add_argument(
         "--data-module-file",
         default="dataset.py",
@@ -65,6 +66,7 @@ def construct_lc_launcher_args():
     parser.add_argument("--ltfb", type=bool, default=False)
     parser.add_argument("--ltfb-batch-interval", type=int, default=100)
     parser.add_argument("--weights-to-send", type=str, default='')
+    parser.add_argument("--warmup", type=bool, default=False)
 
     # these are specific to the Trainer object
     parser.add_argument(
@@ -125,7 +127,8 @@ def construct_model(run_args):
     weights = set()
     for l in layers:
       weights.update(l.weights)
-    l2_reg = lbann.L2WeightRegularization(weights=weights, scale=5e-4)
+    l2_weights = [w for w in weights if not isinstance(w.optimizer, lbann.NoOptimizer)]
+    l2_reg = lbann.L2WeightRegularization(weights=l2_weights, scale=5e-4)
     obj = lbann.ObjectiveFunction(vae_loss)
 
     # Initialize check metric callback
@@ -137,7 +140,7 @@ def construct_model(run_args):
                  lbann.CallbackTimer()]
 
     if(run_args.dump_weights_interval > 0):
-      callbacks.append(lbann.CallbackDumpWeights(directory=run_args.dump_weights_dir, 
+      callbacks.append(lbann.CallbackDumpWeights(directory=run_args.dump_weights_dir,
                                               epoch_interval=run_args.dump_weights_interval))
     if(run_args.ltfb):
       send_name = ('' if run_args.weights_to_send == 'All' else run_args.weights_to_send) #hack for Merlin empty string
@@ -146,6 +149,12 @@ def construct_model(run_args):
       callbacks.append(lbann.CallbackLTFB(batch_interval=run_args.ltfb_batch_interval,metric='recon',
                                           weights = list2str(weights_to_ex),
                                           low_score_wins=True,exchange_hyperparameters=True))
+
+    if(run_args.warmup):
+        callbacks.append(
+            lbann.CallbackLinearGrowthLearningRate(
+                target=run_args.lr / 512 * run_args.batch_size, num_epochs=5))
+
     # Construct model
     return lbann.Model(run_args.num_epochs,
                        weights=weights,
@@ -182,6 +191,7 @@ def construct_data_reader(run_args):
     data_reader.shuffle = True
     data_reader.percent_of_data_to_use = 1.0
     data_reader.validation_percent = 0.1
+    data_reader.tournament_percent = 0.1
     data_reader.python.module = module_name
     data_reader.python.module_dir = module_dir
     data_reader.python.sample_function = "get_sample"
@@ -205,7 +215,6 @@ def main():
     trainer = lbann.Trainer(
         run_args.batch_size,
         name=None,
-        procs_per_trainer=run_args.procs_per_trainer,
     )
 
     # define data_reader
@@ -248,6 +257,8 @@ def main():
       m_lbann_args = " ".join((m_lbann_args, " --use_data_store --preload_data_store "))
     if(run_args.ltfb):
       m_lbann_args = " ".join((m_lbann_args, "--ltfb"))
+    if(run_args.procs_per_trainer):
+      m_lbann_args = " ".join((m_lbann_args, f"--procs_per_trainer={run_args.procs_per_trainer}"))
 
     status = lbann.contrib.launcher.run(
         trainer,
@@ -257,10 +268,11 @@ def main():
         partition=run_args.partition,
         scheduler=run_args.scheduler,
         #account=run_args.account,
+        reservation=run_args.reservation,
         time_limit=run_args.time_limit,
         nodes=run_args.nodes,
         procs_per_node=ppn,
-        #batch_job = True,
+        batch_job = True,
         #setup_only = True,
         job_name=run_args.job_name,
         experiment_dir=experiment_dir,

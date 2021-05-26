@@ -43,12 +43,7 @@ google::protobuf::FieldDescriptor const* get_oneof_field_descriptor(
   auto oneof_handle = desc->FindOneofByName(oneof_name);
   if (!oneof_handle)
   {
-    std::string msg_string;
-    google::protobuf::TextFormat::PrintToString(msg_in, &msg_string);
-    LBANN_ERROR("Message has no oneof field named \"",
-                oneof_name, "\"\n\nMessage(",
-                desc->DebugString(), "):\n\n",
-                msg_string);
+    return nullptr;
   }
 
   return reflex->GetOneofFieldDescriptor(msg_in, oneof_handle);
@@ -81,3 +76,28 @@ get_oneof_message(
 }// namespace helpers
 }// namespace proto
 }// namespace lbann
+
+namespace {
+std::string remove_scope_from_type(std::string const& type)
+{
+  auto pos = type.rfind('.');
+  if (pos == std::string::npos)
+    return type;// Assume the whole thing is just the type
+  else
+    return type.substr(pos+1);
+}
+} // namespace
+
+std::string lbann::proto::helpers::message_type(
+  google::protobuf::Message const& m)
+{
+  return m.GetDescriptor()->name();
+}
+
+std::string lbann::proto::helpers::message_type(
+  google::protobuf::Any const& m)
+{
+  std::string full_type;
+  google::protobuf::Any::ParseAnyTypeUrl(m.type_url(), &full_type);
+  return remove_scope_from_type(full_type);
+}

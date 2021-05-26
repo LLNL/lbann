@@ -62,9 +62,8 @@ public:
   l2_weight_regularization* copy() const override { return new l2_weight_regularization(*this); }
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize( Archive & ar ) {
-    ar(cereal::base_class<objective_function_term>(this));
-  }
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
 
   std::string name() const override { return "L2 weight regularization"; }
   void setup(model& m) override;

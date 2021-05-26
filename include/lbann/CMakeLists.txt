@@ -3,6 +3,7 @@ set_full_path(THIS_DIR_HEADERS
   Elemental_extensions.hpp
   base.hpp
   comm.hpp
+  comm_impl.hpp
   lbann.hpp
   )
 
@@ -21,7 +22,7 @@ add_subdirectory(objective_functions)
 add_subdirectory(optimizers)
 add_subdirectory(proto)
 add_subdirectory(trainers)
-add_subdirectory(training_algorithms)
+add_subdirectory(execution_algorithms)
 add_subdirectory(transforms)
 add_subdirectory(utils)
 add_subdirectory(weights)

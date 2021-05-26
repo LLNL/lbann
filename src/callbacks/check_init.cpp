@@ -26,8 +26,10 @@
 // check_init .hpp .cpp - Check multi-model init
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/comm_impl.hpp"
 #include "lbann/callbacks/check_init.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/serialize.hpp"
 #include "lbann/weights/data_type_weights.hpp"
 
 namespace lbann {
@@ -51,6 +53,13 @@ bool check_equal(const El::AbstractMatrix<TensorDataType>& x,
   return true;
 }
 }// namespace <anon>
+
+template <class Archive>
+void check_init::serialize(Archive & ar) {
+  ar(::cereal::make_nvp(
+       "BaseCallback",
+       ::cereal::base_class<callback_base>(this)));
+}
 
 void check_init::on_train_begin(model *m) {
   const auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
@@ -94,3 +103,6 @@ void check_init::on_train_begin(model *m) {
 
 } // namespace callback
 } // namespace lbann
+
+#define LBANN_CLASS_NAME callback::check_init
+#include <lbann/macros/register_class_with_cereal.hpp>

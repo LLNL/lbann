@@ -53,6 +53,14 @@ class print_statistics : public callback_base {
   void on_test_end(model *m) override;
   std::string name() const override { return "print_statistics"; }
 
+  /** @name Serialization */
+  ///@{
+
+  /** @brief Store state to archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar);
+
+  ///@}
+
  private:
   /** Print objective function and metrics to standard output. */
   void report_results(model *m);

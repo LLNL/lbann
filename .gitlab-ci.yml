@@ -1,0 +1,36 @@
+
+before_script:
+  - echo "=== before_script section ==="
+
+after_script:
+  - echo "=== after_script section ==="
+
+stages:
+  - compiler
+  - integration
+  - unit
+
+compilerRay:
+  stage: compiler
+  tags:
+    - ray
+    - shell
+  script:
+    - echo "=== compilerRay section ==="
+
+integrationRay:
+  stage: compiler
+  tags:
+    - ray
+    - shell
+  script:
+    - echo "=== integrationRay section ==="
+
+unitRay:
+  stage: compiler
+  tags:
+    - ray
+    - shell
+  script:
+    - echo "=== unitRay section ==="
+    - echo "FINISHED"

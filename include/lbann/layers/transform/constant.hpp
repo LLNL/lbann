@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYER_CONSTANT_HPP_INCLUDED
 #define LBANN_LAYER_CONSTANT_HPP_INCLUDED
 
-#include "lbann/layers/transform/transform.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
 
@@ -35,29 +35,44 @@ namespace lbann {
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class constant_layer : public transform_layer<TensorDataType> {
+class constant_layer : public data_type_layer<TensorDataType> {
 public:
 
   constant_layer(lbann_comm *comm,
                  TensorDataType value,
                  std::vector<int> dims)
-    : transform_layer<TensorDataType>(comm), m_value(value) {
+    : data_type_layer<TensorDataType>(comm), m_value(value) {
     this->set_output_dims(dims);
     this->m_expected_num_parent_layers = 0;
   }
 
   constant_layer* copy() const override { return new constant_layer(*this); }
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
+
   std::string get_type() const override { return "constant"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
   description get_description() const override {
-    auto desc = transform_layer<TensorDataType>::get_description();
+    auto desc = data_type_layer<TensorDataType>::get_description();
     desc.add("Value", m_value);
     return desc;
   }
 
 protected:
+
+  friend class cereal::access;
+  constant_layer()
+    : constant_layer(nullptr, El::To<TensorDataType>(0), { 1 } )
+  {}
+
 
   void fp_compute() override {
     if (m_value == EvalType(0)) {

@@ -32,7 +32,14 @@ Users are advised to view `the Doxygen API Documentation
    quick_start
    building_lbann
    running_lbann
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Python Front-End
+
    callbacks
+   data_transforms
+   execution_algorithms
 
 .. toctree::
    :maxdepth: 1

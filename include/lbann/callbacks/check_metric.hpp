@@ -53,7 +53,18 @@ public:
   void on_validation_end(model* m) override { do_check_metric(*m); }
   void on_test_end(model* m) override       { do_check_metric(*m); }
 
+  /** @name Serialization */
+  ///@{
+
+  /** @brief Store state to archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar);
+
+  ///@}
+
 private:
+
+  friend class cereal::access;
+  check_metric();
 
   /** Metric name. */
   std::string m_metric_name;

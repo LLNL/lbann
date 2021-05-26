@@ -70,8 +70,9 @@ def construct_model(lbann):
 
     # Manually override the global count so that each model is named the same
     lbann.models.LeNet.global_count = 0
+    lbann.Layer.global_count = 0
     # Layer graph
-    input_ = lbann.Input()
+    input_ = lbann.Input(target_mode='classification')
     images = lbann.Identity(input_)
     labels = lbann.Identity(input_)
     x = lbann.models.LeNet(10)(images)
@@ -161,13 +162,13 @@ def create_test_func(test_func):
     test_name = test_func.__name__
 
     # Define test function
-    def func(cluster, exes, dirname, weekly):
+    def func(cluster, dirname, weekly):
 
         # Run LBANN experiment baseline
         print('\n################################################################################')
         print('Running baseline model')
         print('################################################################################\n')
-        baseline_test_output = test_func(cluster, exes, dirname)
+        baseline_test_output = test_func(cluster, dirname)
         baseline_training_metrics = tools.collect_metrics_from_log_func(baseline_test_output['stdout_log_file'], 'training epoch [0-9]+ objective function')
         baseline_validation_metrics = tools.collect_metrics_from_log_func(baseline_test_output['stdout_log_file'], 'validation objective function')
         baseline_test_metrics = tools.collect_metrics_from_log_func(baseline_test_output['stdout_log_file'], 'test objective function')
@@ -185,7 +186,7 @@ def create_test_func(test_func):
             lbann_args=['--disable_cuda=True' + ' --num_epochs='+str(num_ckpt_epochs)],
         )
 
-        checkpoint_test_output = test_func_checkpoint[0](cluster, exes, dirname)
+        checkpoint_test_output = test_func_checkpoint[0](cluster, dirname)
         checkpoint_training_metrics = tools.collect_metrics_from_log_func(checkpoint_test_output['stdout_log_file'], 'training epoch [0-9]+ objective function')
         checkpoint_validation_metrics = tools.collect_metrics_from_log_func(checkpoint_test_output['stdout_log_file'], 'validation objective function')
         checkpoint_test_metrics = tools.collect_metrics_from_log_func(checkpoint_test_output['stdout_log_file'], 'test objective function')
@@ -206,7 +207,7 @@ def create_test_func(test_func):
         )
 
         # Restart LBANN model and run to completion
-        restart_test_output = test_func_restart[0](cluster, exes, dirname)
+        restart_test_output = test_func_restart[0](cluster, dirname)
         restart_training_metrics = tools.collect_metrics_from_log_func(restart_test_output['stdout_log_file'], 'training epoch [0-9]+ objective function')
         restart_validation_metrics = tools.collect_metrics_from_log_func(restart_test_output['stdout_log_file'], 'validation objective function')
         restart_test_metrics = tools.collect_metrics_from_log_func(restart_test_output['stdout_log_file'], 'test objective function')

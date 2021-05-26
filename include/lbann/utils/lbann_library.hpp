@@ -40,15 +40,21 @@ const int lbann_default_random_seed = 42;
 #define NUM_VALIDATE_SAMPLES "Num validate samples"
 #define NUM_TEST_SAMPLES "Num test samples"
 #define ALLOW_GLOBAL_STATISTICS "LTFB Allow global statistics"
+#define PROCS_PER_TRAINER "Processes per trainer"
+#define TRAINER_GRID_HEIGHT "Height of 2D process grid for each trainer"
 
 void construct_std_options();
 
-std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
-                                           lbann_data::Trainer* pb_trainer,
-                                           lbann_data::LbannPB &pb,
-                                           options *opts);
+int allocate_trainer_resources(lbann_comm *comm);
 
-std::unique_ptr<thread_pool> construct_io_thread_pool(lbann_comm *comm, options *opts);
+// The constructed trainer has global scope. This returns a reference
+// to this global trainer.
+trainer& construct_trainer(lbann_comm *comm,
+                           lbann_data::Trainer* pb_trainer,
+                           lbann_data::LbannPB &pb,
+                           options *opts);
+
+std::unique_ptr<thread_pool> construct_io_thread_pool(lbann_comm *comm, options *opts, bool serialized_io);
 
 std::unique_ptr<model> build_model_from_prototext(
     int argc, char **argv,

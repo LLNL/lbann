@@ -77,8 +77,7 @@ private:
 
 public:
 
-  convolution_layer(lbann_comm *comm,
-                    int num_data_dims,
+  convolution_layer(int num_data_dims,
                     int num_output_channels,
                     int conv_dim,
                     int pad,
@@ -87,8 +86,7 @@ public:
                     int groups,
                     bool has_bias = true);
 
-  convolution_layer(lbann_comm *comm,
-                    int num_data_dims,
+  convolution_layer(int num_data_dims,
                     int num_output_channels,
                     std::vector<int> conv_dims,
                     std::vector<int> pads,
@@ -105,7 +103,18 @@ public:
 
   El::Device get_device_allocation() const override { return Device; }
 
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
+
 protected:
+
+  friend class cereal::access;
+  convolution_layer();
 
   void setup_dims(DataReaderMetaData& dr_metadata) override;
   std::vector<int> get_kernel_dims() const override;

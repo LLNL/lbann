@@ -26,7 +26,8 @@
 #ifndef LBANN_UTILS_DNN_LIB_CUDNN_POOLING_HPP_
 #define LBANN_UTILS_DNN_LIB_CUDNN_POOLING_HPP_
 
-#include "lbann/utils/cudnn.hpp"
+#include "lbann/utils/dnn_enums.hpp"
+#include "lbann/utils/dnn_lib/helpers.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
 
 #include "utils.hpp"
@@ -35,8 +36,16 @@ namespace lbann
 {
 
 #ifdef LBANN_HAS_CUDNN
-namespace cudnn
+namespace dnn_lib
 {
+
+using namespace cudnn;
+
+inline size_t get_pooling_ws_size(PoolingDescriptor const& poolingDesc,
+                                  TensorDescriptor const& yDesc)
+{
+  return 0UL;
+}
 
 template <typename TensorDataType, typename ScalarParameterType>
 void pooling_forward(PoolingDescriptor const& poolingDesc,
@@ -46,9 +55,10 @@ void pooling_forward(PoolingDescriptor const& poolingDesc,
                      ScalarParameterType const& beta_in,
                      TensorDescriptor const& yDesc,
                      El::AbstractMatrix<TensorDataType>& y,
+                     El::Matrix<TensorDataType, El::Device::GPU>& workSpace,
                      El::SyncInfo<El::Device::GPU> const& si)
 {
-  using LibScalingParamT = cudnn::ScalingParamType<TensorDataType>;
+  using LibScalingParamT = dnn_lib::ScalingParamType<TensorDataType>;
   auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
   auto beta = El::To<LibScalingParamT>(beta_in);
@@ -69,13 +79,15 @@ void pooling_forward(PoolingDescriptor const& poolingDesc,
                      El::AbstractMatrix<TensorDataType> const& x,
                      ScalarParameterType const& beta_in,
                      TensorDescriptor const& yDesc,
-                     El::AbstractMatrix<TensorDataType>& y)
+                     El::AbstractMatrix<TensorDataType>& y,
+                     El::Matrix<TensorDataType, El::Device::GPU>& workSpace)
 {
   auto multisync = El::MakeMultiSync(gpu::get_sync_info(y),
                                      gpu::get_sync_info(x));
   pooling_forward(poolingDesc,
                   alpha_in, xDesc, x,
                   beta_in, yDesc, y,
+                  workSpace,
                   multisync);
 }
 
@@ -91,9 +103,10 @@ void pooling_backward(PoolingDescriptor const& poolingDesc,
                       ScalarParameterType const& beta_in,
                       TensorDescriptor const& dxDesc,
                       El::AbstractMatrix<TensorDataType>& dx,
+                      El::Matrix<TensorDataType, El::Device::GPU>& workSpace,
                       El::SyncInfo<El::Device::GPU> const& si)
 {
-  using LibScalingParamT = cudnn::ScalingParamType<TensorDataType>;
+  using LibScalingParamT = dnn_lib::ScalingParamType<TensorDataType>;
   auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
   auto beta = El::To<LibScalingParamT>(beta_in);
@@ -122,7 +135,8 @@ void pooling_backward(PoolingDescriptor const& poolingDesc,
                       El::AbstractMatrix<TensorDataType> const& x,
                       ScalarParameterType const& beta_in,
                       TensorDescriptor const& dxDesc,
-                      El::AbstractMatrix<TensorDataType>& dx)
+                      El::AbstractMatrix<TensorDataType>& dx,
+                      El::Matrix<TensorDataType, El::Device::GPU>& workSpace)
 {
   auto multisync = El::MakeMultiSync(gpu::get_sync_info(dx),
                                      gpu::get_sync_info(x),
@@ -131,10 +145,11 @@ void pooling_backward(PoolingDescriptor const& poolingDesc,
   pooling_backward(poolingDesc,
                    alpha_in, yDesc, y, dyDesc, dy,
                    xDesc, x, beta_in, dxDesc, dx,
+                   workSpace,
                    multisync);
 }
 
-}// namespace cudnn
+}// namespace dnn_lib
 #endif // LBANN_HAS_CUDNN
 }// namespace lbann
 #endif // LBANN_UTILS_DNN_LIB_CUDNN_POOLING_HPP_

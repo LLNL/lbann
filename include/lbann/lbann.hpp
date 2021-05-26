@@ -27,11 +27,14 @@
 #ifndef LBANN_LBANN_HPP_INCLUDED
 #define LBANN_LBANN_HPP_INCLUDED
 
+/// Templated communicator
+#include "lbann/comm_impl.hpp"
+
 /// Trainers
 #include "lbann/trainers/trainer.hpp"
 
 /// Training Algorithms
-#include "lbann/training_algorithms/training_algorithm.hpp"
+#include "lbann/execution_algorithms/training_algorithm.hpp"
 
 /// Models
 #include "lbann/models/directed_acyclic_graph.hpp"
@@ -107,7 +110,7 @@
 #include "lbann/layers/regularizers/instance_norm.hpp"
 
 /// Input layer
-#include "lbann/layers/io/input/input_layer.hpp"
+#include "lbann/layers/io/input_layer.hpp"
 
 /// Miscellaneous layers
 #include "lbann/layers/misc/covariance.hpp"
@@ -121,26 +124,31 @@
 #include "lbann/layers/misc/one_hot.hpp"
 
 /// Data readers
-#include "lbann/data_readers/data_reader_npz_ras_lipid.hpp"
-#include "lbann/data_readers/data_reader_imagenet.hpp"
 #include "lbann/data_readers/data_reader_cifar10.hpp"
 #include "lbann/data_readers/data_reader_mnist.hpp"
 #include "lbann/data_readers/data_reader_synthetic.hpp"
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"
 #include "lbann/data_readers/data_reader_nci.hpp"
-#include "lbann/data_readers/data_reader_numpy.hpp"
-#include "lbann/data_readers/data_reader_numpy_npz.hpp"
-#include "lbann/data_readers/data_reader_numpy_npz_conduit.hpp"
 #include "lbann/data_readers/data_reader_csv.hpp"
 #include "lbann/data_readers/data_reader_merge_samples.hpp"
 #include "lbann/data_readers/data_reader_merge_features.hpp"
-#include "lbann/data_readers/data_reader_pilot2_molecular.hpp"
 #include "lbann/data_readers/data_reader_mesh.hpp"
 #include "lbann/data_readers/data_reader_python.hpp"
+#ifdef LBANN_HAS_OPENCV
+#include "lbann/data_readers/data_reader_imagenet.hpp"
+#endif // LBANN_HAS_OPENCV
+#ifdef LBANN_HAS_CNPY
+#include "lbann/data_readers/data_reader_npz_ras_lipid.hpp"
+#include "lbann/data_readers/data_reader_numpy.hpp"
+#include "lbann/data_readers/data_reader_numpy_npz.hpp"
+#include "lbann/data_readers/data_reader_numpy_npz_conduit.hpp"
+#include "lbann/data_readers/data_reader_pilot2_molecular.hpp"
+#endif // LBANN_HAS_CNPY
 #ifdef LBANN_HAS_DISTCONV
 #include "lbann/data_readers/data_reader_hdf5.hpp"
 #endif // LBANN_HAS_DISTCONV
 #include "lbann/data_readers/data_reader_smiles.hpp"
+#include "lbann/data_readers/data_reader_node2vec.hpp"
 
 /// Data stores
 #include "lbann/data_store/data_store_conduit.hpp"
@@ -154,6 +162,7 @@
 #include "lbann/callbacks/check_small.hpp"
 #include "lbann/callbacks/checkpoint.hpp"
 #include "lbann/callbacks/confusion_matrix.hpp"
+#include "lbann/callbacks/compute_model_size.hpp"
 #include "lbann/callbacks/debug.hpp"
 #include "lbann/callbacks/debug_io.hpp"
 #include "lbann/callbacks/dump_error_signals.hpp"
