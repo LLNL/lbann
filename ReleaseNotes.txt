@@ -18,7 +18,7 @@ Support for new layers:
  - Adding support for 3D Matrix Multiplication
  - Added scatter and gather neural network layers
  - CPU-based GRU layers using oneDNN
- - batch-wise reduce-sum
+ - Added batch-wise reduce-sum
  - ArcFace loss
 
 Python front-end:
