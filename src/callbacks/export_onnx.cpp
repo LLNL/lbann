@@ -25,9 +25,9 @@
 //
 // export_onnx .hpp .cpp - Exports trained model to onnx format
 ////////////////////////////////////////////////////////////////////////////////
-//#include <catch2/catch.hpp>
 
 #include <iostream>
+#include <fstream>
 #include "lbann/callbacks/export_onnx.hpp"
 
 #include "lbann/layers/io/input_layer.hpp"
@@ -37,6 +37,8 @@
 #include "lbann/utils/summary_impl.hpp"
 
 #include <callbacks.pb.h>
+
+#include <string>
 
 
 namespace lbann {
@@ -75,22 +77,14 @@ void export_onnx::on_train_begin(model* m)
 {
   // graph info
   auto* gp = mp_.mutable_graph();
+  gp->set_name(m->get_name());
+  // FIXME: Use gp->initializer for for weights ?
+
   auto const layers = m->get_layers();
-  // node info
   for (auto const* layer : layers)
   {
     layer->fill_onnx_node(*gp);
   }
-  gp->set_name(m->get_name());
-
-  // FIXME: Use this for weights
-  auto* initializer = gp->add_initializer();
-  // Fake dims for initializer.dims
-  int32_t dims[] = {1, 2, 3};
-  for( auto dim : dims )
-    initializer->add_dims(dim);
-  // FIXME: Get TensorDataType?
-  initializer->set_data_type(0);
 
   // FIXME: We don't use sparse_initializer. Do we need to handle it since
   //        its a message type or just ignore it?
@@ -109,20 +103,23 @@ void export_onnx::on_train_begin(model* m)
   // FIXME: Name, layers, get_type
   gp->set_doc_string(m->get_name());
 
-  // FIXME: How do I get info from the input layer(s) for this?
-  auto* input = gp->add_input();
-  input->set_name(layers[0]->get_name());
-  auto* input_type = input->mutable_type();
+  // ValueInfoProto input will be filled with input layer info in
+  //    overridden fill_onnx_node func. in input_layer.hpp
 
   // FIXME: Not useful for now
-  auto* output = gp->add_output();
+  // auto* output = gp->add_output();
 
-  // FIXME:
-  auto* value_info = gp->add_value_info();
+  // FIXME: Not useful for now
+  // auto* value_info = gp->add_value_info();
 
-  auto* quantization_annotation = gp->add_quantization_annotation();
+  // Not useful for now
+  // auto* quantization_annotation = gp->add_quantization_annotation();
 
-  std::cout << gp->DebugString() << std::endl;
+  std::cout << mp_.DebugString() << std::endl;
+
+  std::ofstream onnx_out("./test_output.onnx");
+  mp_.SerializeToOstream(&onnx_out);
+
 }
 
 std::unique_ptr<callback_base>
