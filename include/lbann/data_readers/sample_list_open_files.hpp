@@ -48,6 +48,8 @@ class sample_list_open_files : public sample_list<sample_name_t> {
   /// Information for each file used by the sample list: includes the file name, file descriptor, and
   /// and a queue of each step and substep when data will be loaded from the file
   using file_id_stats_t = std::tuple<std::string, file_handle_t, std::deque<std::pair<int,int>>>;
+  /// Accessor macros for the file_id_stats_t tuple
+  enum fid_stats {FID_STATS_NAME = 0, FID_STATS_HANDLE = 1, FID_STATS_DEQUE = 2};
 
   /// Type for the list of samples
   using samples_t = typename sample_list<sample_name_t>::samples_t;
@@ -91,11 +93,11 @@ class sample_list_open_files : public sample_list<sample_name_t> {
 
   void delete_file_handle_pq_entry(sample_file_id_t id);
 
-  void manage_open_file_handles(sample_file_id_t id, bool pre_open_fd = false);
+  void manage_open_file_handles(sample_file_id_t id);
 
-  file_handle_t open_samples_file_handle(const size_t i, bool pre_open_fd = false);
+  file_handle_t open_samples_file_handle(const size_t i);
 
-  virtual void close_if_done_samples_file_handle(const size_t i);
+  virtual void close_samples_file_handle(const size_t i, bool check_if_in_use = false);
 
   void compute_epochs_file_usage(const std::vector<int>& shufled_indices, int mini_batch_size, const lbann_comm& comm);
 

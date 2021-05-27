@@ -33,7 +33,7 @@ namespace lbann {
 hdf5_data_reader::~hdf5_data_reader() {
 }
 
-hdf5_data_reader::hdf5_data_reader(bool shuffle) 
+hdf5_data_reader::hdf5_data_reader(bool shuffle)
   : data_reader_sample_list(shuffle) {
 }
 
@@ -82,7 +82,7 @@ void hdf5_data_reader::load() {
     m_delete_packed_fields = false;
   }
 
-  // May go away; for now, this reader only supports preloading mode 
+  // May go away; for now, this reader only supports preloading mode
   // with data store
   opts->set_option("preload_data_store", true);
 
@@ -113,10 +113,10 @@ void hdf5_data_reader::load() {
   parse_schemas();
 
   if (is_master()) {
-    std::cout << "time to load and parse the schemas: " << get_time() - tm11 
-              << std::endl << "hdf5_data_reader::load() time (total): " 
-              << (get_time() - tm1) 
-              << "\nnum samples: " << m_shuffled_indices.size() 
+    std::cout << "time to load and parse the schemas: " << get_time() - tm11
+              << std::endl << "hdf5_data_reader::load() time (total): "
+              << (get_time() - tm1)
+              << "\nnum samples: " << m_shuffled_indices.size()
               << "\nfor role: " << get_role() << std::endl;
   }
 
@@ -164,7 +164,7 @@ void hdf5_data_reader::do_preload_data_store() {
 
   size_t nn = m_data_store->get_num_global_indices();
   if (is_master()) {
-    std::cout << "loading data for role: " << get_role() << " took " << get_time() - tm1 << "s" 
+    std::cout << "loading data for role: " << get_role() << " took " << get_time() - tm1 << "s"
              << "num samples (local to this rank): "<< m_data_store->get_data_size()
              << "; global to this trainer: "<< nn << std::endl;
   }
@@ -196,7 +196,7 @@ void hdf5_data_reader::load_sample(conduit::Node &node, size_t index, bool ignor
       std::stringstream ss2;
       ss2 << LBANN_DATA_ID_STR(index) << '/' << pathname;
       const std::string new_pathname(ss2.str());
-  
+
       // note: this will throw an exception if the child node doesn't exist
       const conduit::Node& metadata = p.second.child(s_metadata_node_name);
 
@@ -207,12 +207,12 @@ void hdf5_data_reader::load_sample(conduit::Node &node, size_t index, bool ignor
       } else {
         conduit::relay::io::hdf5_read(file_handle, original_path, node[new_pathname]);
       }
-  
-      // optionally normalize 
+
+      // optionally normalize
       if (metadata.has_child("scale")) {
         normalize(node, new_pathname, metadata);
       }
-  
+
       // for images
       if (metadata.has_child("channels") && metadata["channels"].as_int64() > 1) {
         repack_image(node, new_pathname, metadata);
@@ -224,15 +224,15 @@ void hdf5_data_reader::load_sample(conduit::Node &node, size_t index, bool ignor
 }
 
 void hdf5_data_reader::normalize(
-  conduit::Node& node, 
-  const std::string &path, 
+  conduit::Node& node,
+  const std::string &path,
   const conduit::Node& metadata) {
   void* vals = node[path].data_ptr();
   size_t n_bytes = node[path].dtype().number_of_elements() * node[path].dtype().element_bytes();
 
   // treat this as a multi-channel image
   if (metadata.has_child("channels")) {
-    
+
     // get number of channels, with sanity checking
     int64_t n_channels = metadata["channels"].value();
     int sanity = metadata["scale"].dtype().number_of_elements();
@@ -289,7 +289,7 @@ void hdf5_data_reader::parse_schemas() {
   adjust_metadata(&m_data_schema);
   adjust_metadata(&m_experiment_schema);
 
-  // get pointers to all Nodes in the data schema (this is the user-supplied 
+  // get pointers to all Nodes in the data schema (this is the user-supplied
   // schema for the data as it resides on disk). On return, m_data_map maps:
   //       node_pathname -> Node*
   get_schema_ptrs(&m_data_schema, m_data_map);
@@ -328,7 +328,7 @@ void hdf5_data_reader::get_schema_ptrs(conduit::Node* input, std::unordered_map<
   if (path_name == "") {
     if (!input->is_root()) {
       LBANN_ERROR("node.path == '', but node is not root");
-    }  
+    }
   } else {
     if (schema_name_map.find(path_name) != schema_name_map.end()) {
       LBANN_ERROR("duplicate pathname: ", path_name);
@@ -347,8 +347,8 @@ void hdf5_data_reader::get_schema_ptrs(conduit::Node* input, std::unordered_map<
 
 
 void hdf5_data_reader::get_leaves_multi(
-    conduit::Node* node_in, 
-    std::unordered_map<std::string, conduit::Node*> &leaves_out, 
+    conduit::Node* node_in,
+    std::unordered_map<std::string, conduit::Node*> &leaves_out,
     bool ignore_metadata) {
   std::unordered_map<std::string, conduit::Node*> first;
   get_leaves(node_in, first, ignore_metadata);
@@ -373,7 +373,7 @@ void hdf5_data_reader::get_leaves_multi(
     conduit::Node* to_meta = node_for_recursion->fetch_ptr(s_metadata_node_name);
 
     // update the metadata node for the seed for the next search
-    // (in the data_schema) with the metadata node from the 
+    // (in the data_schema) with the metadata node from the
     // experiment_schema leaf
     for (int i=0; i<from_meta.number_of_children(); i++) {
       const std::string& field_name = from_meta.child(i).name();
@@ -424,7 +424,7 @@ void hdf5_data_reader::get_leaves(conduit::Node* node, std::unordered_map<std::s
   if (n == 1 && node->child(0).name() == s_metadata_node_name) {
     leaves_out[node->path()] = node ;
     return;
-  } 
+  }
 
   // recursion loop
   for (int j=0; j<node->number_of_children(); j++) {
@@ -457,7 +457,7 @@ void hdf5_data_reader::pack(conduit::Node &node, size_t index) {
 }
 
 struct PackingData {
-    PackingData(std::string s, int n_elts, size_t dt, int order) 
+    PackingData(std::string s, int n_elts, size_t dt, int order)
       : field_name(s), num_elts(n_elts), dtype(dt), ordering(order) {}
     PackingData() {}
     std::string field_name;
@@ -467,8 +467,8 @@ struct PackingData {
 };
 
 struct {
-  bool operator()(const PackingData& a, const PackingData& b) const { 
-    return a.ordering < b.ordering; 
+  bool operator()(const PackingData& a, const PackingData& b) const {
+    return a.ordering < b.ordering;
   }
 } less_oper;
 
@@ -546,15 +546,15 @@ void hdf5_data_reader::adjust_metadata(conduit::Node* node) {
 }
 
 void hdf5_data_reader::coerce(
-  const conduit::Node& metadata, 
-  hid_t file_handle, 
-  const std::string & original_path, 
-  const std::string &new_pathname, 
+  const conduit::Node& metadata,
+  hid_t file_handle,
+  const std::string & original_path,
+  const std::string &new_pathname,
   conduit::Node &node) {
   conduit::Node tmp;
   conduit::relay::io::hdf5_read(file_handle, original_path, tmp);
 
-  // yay! I finally get to use a void* 
+  // yay! I finally get to use a void*
   void* vals = tmp.data_ptr();
   size_t num_bytes = tmp.dtype().number_of_elements() * tmp.dtype().element_bytes();
 
@@ -580,7 +580,7 @@ void hdf5_data_reader::coerce(
     } else if (from_is_double) {
       const double* from = reinterpret_cast<double*>(vals);
       coerceme<double>(from, num_bytes, d);
-    }  
+    }
     node[new_pathname] = d;
   } else if (coerce_to == "double") {
     std::vector<double> d;
@@ -598,8 +598,8 @@ void hdf5_data_reader::coerce(
 }
 
 void hdf5_data_reader::repack_image(
-  conduit::Node& node, 
-  const std::string &path, 
+  conduit::Node& node,
+  const std::string &path,
   const conduit::Node& metadata) {
 
   // ==== start: sanity checking
@@ -682,8 +682,8 @@ void hdf5_data_reader::construct_linearized_size_lookup_tables() {
       if (!metadata->has_child("channels")) {
         m_data_dims_lookup_table[field_name].push_back(n_elts);
       }
-    
-      // error prone case; depends on user correctly writing schema 
+
+      // error prone case; depends on user correctly writing schema
       // data dims for JAG images are: {4, 64, 64}; they may have previously
       // been {64, 64}; this could be a problem
       else {
@@ -748,7 +748,7 @@ void hdf5_data_reader::print_metadata(std::ostream& os) {
   // need to do this so we can get the correct dtypes
   conduit::Node populated_node;
   size_t index = random() % m_shuffled_indices.size();
-  bool ignore_failure = true; 
+  bool ignore_failure = true;
   load_sample(populated_node, index, ignore_failure);
 
   // get all leaves (data fields)
@@ -806,11 +806,11 @@ void hdf5_data_reader::set_experiment_schema(const conduit::Schema& s) {
 }
 
 //Note to developers and reviewer: this is very conduit-ishy; I keep thinking
-//there's a simpler, more elegant way to do this, but I'm not seeing it. 
+//there's a simpler, more elegant way to do this, but I'm not seeing it.
 const void* hdf5_data_reader::get_data(
-    const size_t sample_id_in, 
-    std::string field_name_in, 
-    size_t &num_elts_out, 
+    const size_t sample_id_in,
+    std::string field_name_in,
+    size_t &num_elts_out,
     std::string& dtype_out) const {
 
   // get the pathname to the data, and verify it exists in the conduit::Node

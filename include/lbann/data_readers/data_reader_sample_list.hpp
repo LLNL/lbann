@@ -69,6 +69,11 @@ class data_reader_sample_list : public generic_data_reader {
   void open_file(size_t index_in, hid_t& file_handle_out, std::string& sample_name_out);
   void close_file(size_t index_in);
 
+  /**
+   * Override the shuffle indices function to update the sample list's
+   * file usage.
+   */
+  void shuffle_indices(rng_gen &gen);
 
   /** Developer's note: derived classes that override load() should
    * explicitly call data_reader_sample_list::load() at the
@@ -80,7 +85,7 @@ class data_reader_sample_list : public generic_data_reader {
 
   sample_list_t m_sample_list;
 
-  void load_list_of_samples(const std::string sample_list_file); 
+  void load_list_of_samples(const std::string sample_list_file);
 
   void load_list_of_samples_from_archive(const std::string& sample_list_archive);
 

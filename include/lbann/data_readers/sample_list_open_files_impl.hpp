@@ -325,8 +325,7 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
       LBANN_ERROR(
         "Bundle file", filename,
         " does not contain the correct number of included samples: expected ",
-        included_samples, " samples, but found ", valid_sample_count,
-        " (per looping over the sample IDs in the sample list)");
+        included_samples, " samples, but found ", valid_sample_count);
     }
 
     if(m_file_map.count(filename) > 0) {
@@ -374,7 +373,8 @@ void sample_list_open_files<sample_name_t, file_handle_t>
   std::vector<ar_file_stats_t> file_stats;
   file_stats.reserve(m_file_id_stats_map.size());
   for(auto&& e : m_file_id_stats_map) {
-    file_stats.emplace_back(std::make_tuple(std::get<0>(e), std::get<2>(e)));
+    // Only save the file name and the access deque
+    file_stats.emplace_back(std::make_tuple(std::get<FID_STATS_NAME>(e), std::get<FID_STATS_DEQUE>(e)));
   }
   ar(m_header, this->m_sample_list, file_stats);
 }
@@ -388,9 +388,8 @@ void sample_list_open_files<sample_name_t, file_handle_t>
   ar(m_header, this->m_sample_list, file_stats);
   m_file_id_stats_map.reserve(file_stats.size());
   for(auto&& e : file_stats) {
-    //m_file_id_stats_map.emplace_back(std::make_tuple(std::get<0>(e), uninitialized_file_handle<file_handle_t>(), std::deque<std::pair<int,int>>{}));
+    // Only the file name and the access deque were saved
     m_file_id_stats_map.emplace_back(std::make_tuple(std::get<0>(e), uninitialized_file_handle<file_handle_t>(), std::get<1>(e)));
-    //m_file_id_stats_map.emplace_back(std::make_tuple(std::get<0>(e), file_handle_t(), std::get<1>(e)));
   }
 }
 
@@ -511,20 +510,20 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
 template <typename sample_name_t, typename file_handle_t>
 inline const std::string& sample_list_open_files<sample_name_t, file_handle_t>
 ::get_samples_filename(sample_file_id_t id) const {
-  return std::get<0>(m_file_id_stats_map[id]);
+  return std::get<FID_STATS_NAME>(m_file_id_stats_map[id]);
 }
 
 template <typename sample_name_t, typename file_handle_t>
 inline file_handle_t sample_list_open_files<sample_name_t, file_handle_t>
 ::get_samples_file_handle(sample_file_id_t id) const {
-  file_handle_t h = std::get<1>(m_file_id_stats_map[id]);
+  file_handle_t h = std::get<FID_STATS_HANDLE>(m_file_id_stats_map[id]);
   return h;
 }
 
 template <typename sample_name_t, typename file_handle_t>
 inline void sample_list_open_files<sample_name_t, file_handle_t>
 ::set_samples_filename(sample_file_id_t id, const std::string& filename) {
-  std::get<0>(m_file_id_stats_map[id]) = filename;
+  std::get<FID_STATS_NAME>(m_file_id_stats_map[id]) = filename;
 }
 
 template <typename sample_name_t, typename file_handle_t>
@@ -559,13 +558,13 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
 ::set_files_handle(const std::string& filename, file_handle_t h) {
   sample_file_id_t id = sample_file_id_t(0);
   for (auto&& e : m_file_id_stats_map) {
-    if(std::get<0>(e) == filename) {
-      std::get<1>(e) = h;
+    if(std::get<FID_STATS_NAME>(e) == filename) {
+      std::get<FID_STATS_HANDLE>(e) = h;
       break;
     }
     id++;
   }
-  manage_open_file_handles(id, true);
+  manage_open_file_handles(id);
 }
 
 template <typename sample_name_t, typename file_handle_t>
@@ -667,11 +666,11 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
 
   // Close the existing open files
   for(auto&& e : m_file_id_stats_map) {
-    auto& h = std::get<1>(e);
+    auto& h = std::get<FID_STATS_HANDLE>(e);
     close_file_handle(h);
     clear_file_handle(h);
-    std::get<2>(e).clear();
-    my_files.emplace_back(std::get<0>(e));
+    std::get<FID_STATS_DEQUE>(e).clear();
+    my_files.emplace_back(std::get<FID_STATS_NAME>(e));
   }
   m_open_fd_pq.clear();
 
@@ -729,10 +728,10 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
                             int mini_batch_size,
                             const lbann_comm& comm) {
   for (auto&& e : m_file_id_stats_map) {
-    auto& h = std::get<1>(e);
+    auto& h = std::get<FID_STATS_HANDLE>(e);
     close_file_handle(h);
     clear_file_handle(h);
-    std::get<2>(e).clear();
+    std::get<FID_STATS_DEQUE>(e).clear();
   }
   // Once all of the file handles are closed, clear the priority queue
   m_open_fd_pq.clear();
@@ -745,7 +744,7 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
       /// Enqueue the iteration step when the sample will get used
       int step = i / mini_batch_size;
       int substep = (i % mini_batch_size) / comm.get_procs_per_trainer();
-      std::get<2>(m_file_id_stats_map[index]).emplace_back(std::make_pair(step, substep));
+      std::get<FID_STATS_DEQUE>(m_file_id_stats_map[index]).emplace_back(std::make_pair(step, substep));
     }
   }
 }
@@ -764,13 +763,13 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
 
 template <typename sample_name_t, typename file_handle_t>
 inline void sample_list_open_files<sample_name_t, file_handle_t>
-::manage_open_file_handles(sample_file_id_t id, bool pre_open_fd) {
+::manage_open_file_handles(sample_file_id_t id) {
   /// When we enter this function the priority queue is either empty or a heap
   if(!m_open_fd_pq.empty()) {
     if(m_open_fd_pq.size() > m_max_open_files) {
       auto& f = m_open_fd_pq.front();
       auto& victim = m_file_id_stats_map[f.first];
-      auto& victim_fd = std::get<1>(victim);
+      auto& victim_fd = std::get<FID_STATS_HANDLE>(victim);
       std::pop_heap(m_open_fd_pq.begin(), m_open_fd_pq.end(), pq_cmp);
       m_open_fd_pq.pop_back();
       close_file_handle(victim_fd);
@@ -787,11 +786,9 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
   std::make_heap(m_open_fd_pq.begin(), m_open_fd_pq.end(), pq_cmp);
 
   auto& e = m_file_id_stats_map[id];
-  auto& file_access_queue = std::get<2>(e);
+  auto& file_access_queue = std::get<FID_STATS_DEQUE>(e);
   if(!file_access_queue.empty()) {
-    if(!pre_open_fd) {
-      file_access_queue.pop_front();
-    }
+    file_access_queue.pop_front();
   }
   if(!file_access_queue.empty()) {
     m_open_fd_pq.emplace_back(std::make_pair(id,file_access_queue.front()));
@@ -806,7 +803,7 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
 
 template <typename sample_name_t, typename file_handle_t>
 inline file_handle_t sample_list_open_files<sample_name_t, file_handle_t>
-::open_samples_file_handle(const size_t i, bool pre_open_fd) {
+::open_samples_file_handle(const size_t i) {
   const sample_t& s = this->m_sample_list[i];
   sample_file_id_t id = s.first;
   file_handle_t h = get_samples_file_handle(id);
@@ -823,27 +820,24 @@ inline file_handle_t sample_list_open_files<sample_name_t, file_handle_t>
       LBANN_ERROR("data file '", file_path, "' could not be opened.");
     }
     auto& e = m_file_id_stats_map[id];
-    std::get<1>(e) = h;
+    std::get<FID_STATS_HANDLE>(e) = h;
     /// If a new file is opened, place it in the priority queue
-    manage_open_file_handles(id, pre_open_fd);
-   }
-  else {
-    std::cerr << "NPT VALID HANDLE!"<<std::endl;
+    manage_open_file_handles(id);
   }
   return h;
 }
 
 template <typename sample_name_t, typename file_handle_t>
 inline void sample_list_open_files<sample_name_t, file_handle_t>
-::close_if_done_samples_file_handle(const size_t i) {
+::close_samples_file_handle(const size_t i, bool check_if_in_use) {
   const sample_t& s = this->m_sample_list[i];
   sample_file_id_t id = s.first;
   auto h = get_samples_file_handle(id);
-  if (!is_file_handle_valid(h)) {
+  if (is_file_handle_valid(h)) {
     auto& e = m_file_id_stats_map[id];
-    auto& file_access_queue = std::get<2>(e);
-    if(file_access_queue.empty()) {
-      auto& fh = std::get<1>(e);
+    auto& file_access_queue = std::get<FID_STATS_DEQUE>(e);
+    if(!check_if_in_use || file_access_queue.empty()) {
+      auto& fh = std::get<FID_STATS_HANDLE>(e);
       close_file_handle(fh);
       clear_file_handle(fh);
       delete_file_handle_pq_entry(id);

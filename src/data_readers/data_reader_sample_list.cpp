@@ -65,6 +65,11 @@ void data_reader_sample_list::copy_members(const data_reader_sample_list &rhs) {
   m_sample_list.copy(rhs.m_sample_list);
 }
 
+void data_reader_sample_list::shuffle_indices(rng_gen& gen) {
+  generic_data_reader::shuffle_indices(gen);
+  m_sample_list.compute_epochs_file_usage(get_shuffled_indices(), get_mini_batch_size(), *m_comm);
+}
+
 void data_reader_sample_list::load() {
   if (is_master()) {
     std::cout << "starting data_reader_sample_list::load()\n";
@@ -142,7 +147,7 @@ void data_reader_sample_list::open_file(
   const sample_t& s = m_sample_list[index_in];
   sample_name_out = s.second;
   sample_file_id_t id = s.first;
-  m_sample_list.open_samples_file_handle(index_in, true);
+  m_sample_list.open_samples_file_handle(index_in);
   file_handle_out = m_sample_list.get_samples_file_handle(id);
   if (!m_sample_list.is_file_handle_valid(file_handle_out)) {
     LBANN_ERROR("file handle is invalid");
@@ -150,7 +155,7 @@ void data_reader_sample_list::open_file(
 }
 
 void data_reader_sample_list::close_file(size_t index) {
-  m_sample_list.close_if_done_samples_file_handle(index);
+  m_sample_list.close_samples_file_handle(index);
 }
 
 } // end of namespace lbann
