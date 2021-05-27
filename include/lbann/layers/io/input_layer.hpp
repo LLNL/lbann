@@ -123,6 +123,30 @@ class input_layer : public data_type_layer<TensorDataType> {
 
   std::string get_type() const override { return "input"; }
   std::string get_onnx_op_type() const override { return "Identity"; }
+  void fill_onnx_node(onnx::GraphProto& graph) const override {
+    auto* initializer = graph.add_initializer();
+    // FIXME: Get TensorDataType?
+    initializer->set_data_type(1);
+
+    auto* input = graph.add_input();
+    input->set_name(this->get_name());
+    auto* input_type = input->mutable_type();
+    // FIXME: enum type. 1 is float
+    input_type->mutable_tensor_type()->set_elem_type(1);
+
+    for( auto const& dim : this->get_output_dims() )
+    {
+      initializer->add_dims(dim);
+      auto* dims = input_type->mutable_tensor_type()->mutable_shape()->add_dim();
+      dims->set_dim_value(dim);
+      dims->set_denotation("N/A");
+    }
+    // message Sequence in message TypeProto: Do we need this?
+    //input_type->mutable_sequence_type()->mutable_elem_type();
+    input->set_doc_string("Input layer info");
+
+  }
+
   // description get_description() const override {
   //   auto desc = io_layer<TensorDataType>::get_description();
   //   return desc;

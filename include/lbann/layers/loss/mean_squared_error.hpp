@@ -104,7 +104,7 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
   void fill_onnx_node(onnx::GraphProto& graph) const override {
-    auto* diff = graph.add_node();
+     auto* diff = graph.add_node();
     // repeated string input
     for(auto const* parent : this->get_parent_layers())
       diff->add_input(parent->get_name());
@@ -124,8 +124,8 @@ public:
 
     auto* square = graph.add_node();
     // repeated string input
-    square->add_input(diff->name());
-    square->add_input(diff->name());
+    square->add_input(diff->output(0));
+    square->add_input(diff->output(0));
     // FIXME: Is this right?
     // repeated string output
     square->add_output("mse");
@@ -157,7 +157,7 @@ public:
     //repeated AttributeProto attribute = 5;
     //string doc_string
     mse->set_doc_string("Third node representing Mean Squared Error Layer");
-  }
+}
 
   void setup_dims(DataReaderMetaData& dr_metadata) override {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
