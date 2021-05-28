@@ -25,10 +25,11 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/debug.hpp"
-#include "lbann/comm.hpp"
+#include "lbann/comm_impl.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/weights/data_type_weights.hpp"
+#include "lbann/utils/serialize.hpp"
 
 #include "callbacks.pb.h"
 
@@ -77,6 +78,14 @@ std::string batch_step_string(const model& m) {
 }
 
 } // namespace
+
+template <class Archive>
+void debug::serialize(Archive & ar) {
+  ar(::cereal::make_nvp(
+       "BaseCallback",
+       ::cereal::base_class<callback_base>(this)),
+     CEREAL_NVP(m_modes));
+}
 
 // Status updates for batch beginnings/endings
 void debug::on_batch_begin(model *m) {
@@ -149,7 +158,7 @@ void debug::on_evaluate_forward_prop_begin(model *m, Layer *l) {
   on_forward_prop_begin(m, l);
 }
 void debug::on_evaluate_forward_prop_end(model *m, Layer *l) {
-  on_backward_prop_end(m, l);
+  on_forward_prop_end(m, l);
 }
 
 // Status updates for optimization step
@@ -182,3 +191,6 @@ build_debug_callback_from_pbuf(const google::protobuf::Message& proto_msg,
 
 } // namespace callback
 } // namespace lbann
+
+#define LBANN_CLASS_NAME callback::debug
+#include <lbann/macros/register_class_with_cereal.hpp>

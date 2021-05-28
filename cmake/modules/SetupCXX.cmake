@@ -41,31 +41,9 @@ endif ()
 
 execute_process(COMMAND ${CMAKE_CXX_COMPILER} -dumpversion OUTPUT_VARIABLE CXX_VERSION)
 
-if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-   if (NOT (CXX_VERSION VERSION_GREATER 4.9 OR CXX_VERSION VERSION_EQUAL 4.9))
-     message(FATAL_ERROR "LBANN & Elemental requires G++ Version >= 4.9")
-   endif ()
-elseif (CMAKE_CXX_COMPILER_ID MATCHES "Intel")
-   if (NOT (CXX_VERSION VERSION_GREATER 16.0 OR CXX_VERSION VERSION_EQUAL 16.0))
-     message(FATAL_ERROR "LBANN & Elemental requires icpc Version >= 16.0")
-   endif ()
-elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-   if (NOT (CXX_VERSION VERSION_GREATER 3.5 OR CXX_VERSION VERSION_EQUAL 3.5))
-     message(FATAL_ERROR "LBANN & Elemental requires clang Version >= 3.5")
-   endif ()
-   if (CMAKE_BUILD_TYPE MATCHES Debug)
-     lbann_check_and_append_flag(CMAKE_CXX_FLAGS
-       -fsanitize=address -fno-omit-frame-pointer -fsanitize-recover=address)
-   else()
-     lbann_check_and_append_flag(CMAKE_CXX_FLAGS -fno-omit-frame-pointer)
-   endif ()
-elseif (CMAKE_CXX_COMPILER_ID MATCHES "XL")
-  # Version requirement for xlc++? The latest compiler on ray is 14.1.0
-  if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 14.1.0)
-    message(WARNING "LBANN & Elemental may not work with xlc++ Version < 14.1.0")
-  endif ()
-else()
-   message(FATAL_ERROR "Unsupported compiler: Unknown compiler vendor (${CMAKE_CXX_COMPILER_ID})")
+if (LBANN_WITH_ADDRESS_SANITIZER)
+  lbann_check_and_append_flag(CMAKE_CXX_FLAGS
+    -fsanitize=address -fno-omit-frame-pointer -fsanitize-recover=address)
 endif ()
 
 ################################################################
@@ -73,25 +51,19 @@ endif ()
 ################################################################
 
 # Initialize C++ flags
+set(CMAKE_POSITION_INDEPENDENT_CODE ON) # -fPIC
 lbann_check_and_append_flag(CMAKE_CXX_FLAGS
-  -fPIC -g -Wall -Wextra -Wno-unused-parameter -Wnon-virtual-dtor -Wshadow
+  -g -Wall -Wextra -Wno-unused-parameter -Wnon-virtual-dtor -Wshadow
   -Wno-deprecated-declarations)
 
 # Disable all optimization in debug for better viewing under debuggers
 # (cmake already adds -g)
 lbann_check_and_append_flag(CMAKE_CXX_FLAGS_DEBUG -O0)
 
-if (${UPPER_PROJECT_NAME}_WARNINGS_AS_ERRORS)
-  lbann_check_and_append_flag(_WERROR_FLAGS -Werror)
-  separate_arguments(_WERROR_FLAGS NATIVE_COMMAND "${_WERROR_FLAGS}")
-  if (NOT TARGET LBANN_CXX_FLAGS_werror)
-    add_library(LBANN_CXX_FLAGS_werror INTERFACE)
-    set_property(TARGET LBANN_CXX_FLAGS_werror PROPERTY
-      INTERFACE_COMPILE_OPTIONS $<$<COMPILE_LANGUAGE:CXX>:${_WERROR_FLAGS}>)
-
-    # Add the "library" to the export
-    install(TARGETS LBANN_CXX_FLAGS_werror EXPORT LBANNTargets)
-  endif ()
+if (LBANN_WARNINGS_AS_ERRORS)
+  set(CMAKE_REQUIRED_LIBRARIES "-Werror")
+  check_cxx_compiler_flag("${flag}" LBANN_FLAG_Werror_OK)
+  unset(CMAKE_REQUIRED_LIBRARIES)
 endif ()
 
 # Some behavior is dependent on the compiler version.
@@ -101,19 +73,6 @@ if (NOT CMAKE_CXX_COMPILER_VERSION)
     OUTPUT_VARIABLE CXX_VERSION)
 else ()
   set(CXX_VERSION "${CMAKE_CXX_COMPILER_VERSION}")
-endif ()
-
-# Special handling if we're compiling with Clang's address sanitizer
-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-   if (NOT (CXX_VERSION VERSION_GREATER 3.5 OR CXX_VERSION VERSION_EQUAL 3.5))
-     message(FATAL_ERROR "LBANN & Elemental requires clang Version >= 3.5")
-   endif ()
-   if (CMAKE_BUILD_TYPE MATCHES Debug)
-     lbann_check_and_append_flag(CMAKE_CXX_FLAGS
-       -fsanitize=address -fno-omit-frame-pointer -fsanitize-recover=address)
-   else()
-     lbann_check_and_append_flag(CMAKE_CXX_FLAGS -fno-omit-frame-pointer)
-   endif ()
 endif ()
 
 # Turn off some annoying warnings
@@ -132,14 +91,14 @@ if (APPLE)
 endif ()
 
 # Use (i.e. don't skip) RPATH for build
-set(CMAKE_SKIP_BUILD_RPATH FALSE)
+set(CMAKE_SKIP_BUILD_RPATH OFF)
 
 # Use same RPATH for build and install
-set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+set(CMAKE_BUILD_WITH_INSTALL_RPATH OFF)
 
 # Add the automatically determined parts of the RPATH
 # which point to directories outside the build tree to the install RPATH
-set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)
 
 list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES
   "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}" _IS_SYSTEM_DIR)

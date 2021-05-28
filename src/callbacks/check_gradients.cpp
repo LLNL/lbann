@@ -26,11 +26,13 @@
 
 #include "lbann/callbacks/check_gradients.hpp"
 #include "lbann/data_readers/data_reader.hpp"
-#include "lbann/layers/io/input/generic_input_layer.hpp"
+#include "lbann/layers/io/input_layer.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/memory.hpp"
 
-#include "lbann/utils/h2_tmp.hpp"
+#include <cereal/types/set.hpp>
+#include "lbann/utils/serialize.hpp"
+#include <h2/patterns/multimethods/SwitchDispatcher.hpp>
 
 #include <callbacks.pb.h>
 
@@ -52,7 +54,7 @@ EvalType compute_objective_function(model& m) {
 
   // Forward prop, skipping input layers
   for (auto&& l : m.get_layers()) {
-    if (dynamic_cast<generic_input_layer<DataType>*>(l) == nullptr) {
+    if (dynamic_cast<input_layer<DataType>*>(l) == nullptr) {
       l->forward_prop();
     }
   }
@@ -195,10 +197,22 @@ check_gradients::check_gradients(std::set<execution_mode> modes,
     m_verbose(verbose),
     m_error_on_failure(error_on_failure) {}
 
+template <class Archive>
+void
+check_gradients::serialize(Archive & ar) {
+  ar(::cereal::make_nvp(
+       "BaseCallback",
+       ::cereal::base_class<callback_base>(this)),
+     CEREAL_NVP(m_modes),
+     CEREAL_NVP(m_step_size),
+     CEREAL_NVP(m_verbose),
+     CEREAL_NVP(m_error_on_failure));
+}
+
 void check_gradients::do_check_gradients(model& m) const {
 
   // Get objects from model
-  const auto& c = static_cast<sgd_execution_context&>(m.get_execution_context());
+  auto& c = static_cast<sgd_execution_context&>(m.get_execution_context());
   auto& comm = *m.get_comm();
   const auto mode = c.get_execution_mode();
   const auto& layers = m.get_layers();
@@ -217,8 +231,10 @@ void check_gradients::do_check_gradients(model& m) const {
   }
 
   // Load data in input layers
+  data_coordinator& dc = get_trainer().get_data_coordinator();
+  dc.fetch_data(mode);
   for (auto&& l : m.get_layers()) {
-    if (dynamic_cast<generic_input_layer<DataType>*>(l) != nullptr) {
+    if (dynamic_cast<input_layer<DataType>*>(l) != nullptr) {
       l->forward_prop();
     }
   }
@@ -288,14 +304,8 @@ void check_gradients::do_check_gradients(model& m) const {
   }
 
   // Clean up
-  /// @todo tym: I'm not sure if data readers are properly reset
-  for (auto&& l : m.get_layers()) {
-    auto&& input = dynamic_cast<generic_input_layer<DataType>*>(l);
-    if (input != nullptr) {
-      auto&& reader = input->get_data_reader(mode);
-      reader->set_initial_position();
-    }
-  }
+  auto&& reader = dc.get_data_reader(mode);
+  reader->set_initial_position();
   m.get_objective_function()->reset_statistics(mode);
   for (auto&& met : m.get_metrics()) {
     met->reset_statistics(mode);
@@ -319,3 +329,6 @@ build_check_gradients_callback_from_pbuf(
 
 } // namespace callback
 } // namespace lbann
+
+#define LBANN_CLASS_NAME callback::check_gradients
+#include <lbann/macros/register_class_with_cereal.hpp>

@@ -1,6 +1,9 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.17)
 
 project(LBANN CXX)
+
+# C isn't required by LBANN but packages such as Conduit are forcing C dependencies in MPI
+enable_language(C)
 
 # Prevent in-source builds
 if (PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
@@ -26,12 +29,6 @@ if (NOT DEFINED BUILD_SHARED_LIBS)
   set(BUILD_SHARED_LIBS ON)
 endif ()
 
-# Build with at least C++14 standard; allow newer standards.
-if (NOT CMAKE_CXX_STANDARD OR CMAKE_CXX_STANDARD EQUAL 98)
-  set(CMAKE_CXX_STANDARD 14)
-  set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
-endif ()
-
 # Convenience defines
 string(TOUPPER "${PROJECT_NAME}" UPPER_PROJECT_NAME)
 string(TOLOWER "${PROJECT_NAME}" LOWER_PROJECT_NAME)
@@ -48,7 +45,7 @@ endif ()
 #
 
 set(LBANN_VERSION_MAJOR 0)
-set(LBANN_VERSION_MINOR 101)
+set(LBANN_VERSION_MINOR 102)
 set(LBANN_VERSION_PATCH 0)
 
 set(LBANN_VERSION "${LBANN_VERSION_MAJOR}.${LBANN_VERSION_MINOR}.${LBANN_VERSION_PATCH}")
@@ -96,7 +93,8 @@ endif ()
 # Options
 #
 
-option(LBANN_WITH_ALUMINUM "Enable Aluminum all-reduce library" OFF)
+option(LBANN_WITH_CEREAL_XML "Enable the use of XML archives from Cereal" OFF)
+set(LBANN_HAS_CEREAL_XML_ARCHIVES ${LBANN_WITH_CEREAL_XML})
 
 option(LBANN_WITH_CNPY "Include cnpy" ON)
 
@@ -104,12 +102,8 @@ option(LBANN_WITH_CONDUIT "Enable Conduit library" ON)
 
 option(LBANN_WITH_CUDNN "Include Nvidia cuDNN" ON)
 
-option(LBANN_WITH_DIHYDROGEN "Build with DiHydrogen support" OFF)
-if (LBANN_WITH_DIHYDROGEN)
-  message(WARNING "DiHydrogen support is currently expermimental. "
-    "There is no stable interface. "
-    "Use caution before using any features.")
-endif (LBANN_WITH_DIHYDROGEN)
+# For now, we just assert CPU support.
+option(LBANN_WITH_ONEDNN "Include OneDNN API support" OFF)
 
 option(LBANN_WITH_DISTCONV "Enable DiHydrogen's Distconv" OFF)
 if (LBANN_WITH_DISTCONV)
@@ -118,22 +112,39 @@ if (LBANN_WITH_DISTCONV)
     "Use caution before using any features.")
 endif (LBANN_WITH_DISTCONV)
 
+option(LBANN_WITH_FFT "Build the FFT layer (requires FFTW)" OFF)
+
 option(LBANN_WITH_HWLOC
   "Enable topology-aware optimizations" ON)
 
 option(LBANN_WITH_NVPROF
   "Enable NVTX-based instrumentation for nvprof" OFF)
 
-option(LBANN_WITH_PYTHON
+option(LBANN_WITH_PYTHON_FRONTEND
   "Install Python frontend and enable embedded Python" ON)
 
-option(LBANN_WITH_TBINF "Include Tensorboard interface" ON)
+option(LBANN_WITH_EMBEDDED_PYTHON
+  "Enable embedded Python" ON)
+
+if (LBANN_WITH_EMBEDDED_PYTHON AND NOT LBANN_WITH_PYTHON_FRONTEND)
+  # (trb): This could also be an error.
+  message(WARNING
+    "Interesting combination of NOT LBANN_WITH_PYTHON_FRONTEND "
+    "and LBANN_WITH_EMBEDDED_PYTHON detected. This is just "
+    "to make sure you're aware.")
+endif (LBANN_WITH_EMBEDDED_PYTHON AND NOT LBANN_WITH_PYTHON_FRONTEND)
+
+option(LBANN_WITH_VISION "Include vision processing components" ON)
+option(LBANN_WITH_TBINF "Include Tensorboard interface" ${LBANN_WITH_VISION})
 
 option(LBANN_WITH_VTUNE
   "Link the Intel VTune profiling library" OFF)
 
 option(LBANN_WITH_UNIT_TESTING
   "Enable the unit testing framework (requires Catch2)" OFF)
+
+option(LBANN_WITH_ADDRESS_SANITIZER
+  "Try clang-style use of ASAN (-fsanitize=address)" OFF)
 
 # Use deterministic GPU algorithms and layer operations
 option(LBANN_DETERMINISTIC
@@ -142,6 +153,10 @@ option(LBANN_DETERMINISTIC
 option(LBANN_DEBUG_PRINT_SUBTARGETS
   "Turn on debugging output of internal target properties." OFF)
 mark_as_advanced(LBANN_DEBUG_PRINT_SUBTARGETS)
+
+option(LBANN_EXPLICIT_LIBDL
+  "Explicitly find and link to libdl" OFF)
+mark_as_advanced(LBANN_EXPLICIT_LIBDL)
 
 # This option is off by default because non-developers should not use
 # this option under normal circumstances.
@@ -188,75 +203,107 @@ set(LBANN_HAS_CEREAL ${CEREAL_FOUND})
 # The imported target is just called "cereal". Super.
 
 # Setup the linear algebra library
-find_package(Hydrogen 1.4.0 NO_MODULE QUIET
+find_package(Hydrogen 1.5.0 NO_MODULE QUIET
   HINTS ${Hydrogen_DIR} ${HYDROGEN_DIR} $ENV{Hydrogen_DIR} $ENV{HYDROGEN_DIR}
   PATH_SUFFIXES lib/cmake/hydrogen
   NO_DEFAULT_PATH)
 if (NOT Hydrogen_FOUND)
-  find_package(Hydrogen 1.4.0 NO_MODULE QUIET REQUIRED)
+  find_package(Hydrogen 1.5.0 NO_MODULE QUIET REQUIRED)
 endif ()
-message(STATUS "Found Hydrogen: ${Hydrogen_DIR}")
+message(STATUS "Found Hydrogen@${HYDROGEN_VERSION}: ${Hydrogen_DIR}")
 set(LBANN_HAS_HYDROGEN ${Hydrogen_FOUND})
 
-if (_HYDROGEN_HAVE_ROCM)
-  message(FATAL_ERROR "ROCm not yet supported in LBANN.")
-endif ()
-
 # DiHydrogen and Distconv
-if (LBANN_WITH_DISTCONV AND NOT LBANN_WITH_DIHYDROGEN)
-  message(FATAL_ERROR "Distconv requires DiHydrogen. Enable DiHydrogen to use Distconv.")
+if (LBANN_WITH_DISTCONV)
+  find_package(DiHydrogen QUIET CONFIG COMPONENTS Meta Patterns DistConv
+    HINTS ${DIHYDROGEN_DIR} $ENV{DIHYDROGEN_DIR}
+    ${H2_DIR} $ENV{H2_DIR}
+    PATH_SUFFIXES install/lib64/cmake install/lib/cmake
+    NO_DEFAULT_PATH)
+  find_package(DiHydrogen QUIET CONFIG REQUIRED
+    COMPONENTS Meta Patterns DistConv)
+  set(LBANN_HAS_DISTCONV TRUE)
+else ()
+  find_package(DiHydrogen QUIET CONFIG COMPONENTS Meta Patterns
+    HINTS ${DIHYDROGEN_DIR} $ENV{DIHYDROGEN_DIR}
+    ${H2_DIR} $ENV{H2_DIR}
+    PATH_SUFFIXES install/lib64/cmake install/lib/cmake
+    NO_DEFAULT_PATH)
+  find_package(DiHydrogen QUIET CONFIG REQUIRED COMPONENTS Meta Patterns)
 endif ()
-
-if (LBANN_WITH_DIHYDROGEN)
-  if (LBANN_WITH_DISTCONV)
-    find_package(DiHydrogen CONFIG COMPONENTS Meta Patterns DistConv
-      HINTS ${DIHYDROGEN_DIR} $ENV{DIHYDROGEN_DIR}
-      ${H2_DIR} $ENV{H2_DIR}
-      PATH_SUFFIXES install/lib64/cmake install/lib/cmake
-      NO_DEFAULT_PATH)
-    find_package(DiHydrogen CONFIG REQUIRED COMPONENTS Meta Patterns DistConv)
-    set(LBANN_HAS_DISTCONV TRUE)
-  else ()
-    find_package(DiHydrogen CONFIG COMPONENTS Meta Patterns
-      HINTS ${DIHYDROGEN_DIR} $ENV{DIHYDROGEN_DIR}
-      ${H2_DIR} $ENV{H2_DIR}
-      PATH_SUFFIXES install/lib64/cmake install/lib/cmake
-      NO_DEFAULT_PATH)
-    find_package(DiHydrogen CONFIG REQUIRED COMPONENTS Meta Patterns)
-  endif ()
-  set(LBANN_HAS_DIHYDROGEN TRUE)
-endif ()
+set(LBANN_HAS_DIHYDROGEN TRUE)
+message(STATUS "Found DiHydrogen: ${DiHydrogen_DIR}")
 
 # Inherit half-precision stuff from Hydrogen
 set(LBANN_HAS_HALF ${HYDROGEN_HAVE_HALF}) # This is CPU-only
 
-# Not the ideal fix, but should be fine for now.
 if (Aluminum_FOUND)
+  message(STATUS "Found Aluminum@${ALUMINUM_VERSION}: ${Aluminum_DIR}")
   message(STATUS "Aluminum found in Hydrogen. Using Aluminum.")
-  set(LBANN_WITH_ALUMINUM ON CACHE BOOL "Use aluminum." FORCE)
+  set(LBANN_HAS_ALUMINUM ON)
 endif ()
 
 include(SetupOpenMP)
 include(SetupMPI)
 include(SetupProtobuf)
 
+# Setup FFTW
+if (LBANN_WITH_FFT)
+  find_package(FFTW 3.3 REQUIRED)
+  set(LBANN_HAS_FFTW ${FFTW_FOUND})
+  if (TARGET FFTW::FFTW_FLOAT)
+    set(LBANN_HAS_FFTW_FLOAT TRUE)
+  endif ()
+  if (TARGET FFTW::FFTW_DOUBLE)
+    set(LBANN_HAS_FFTW_DOUBLE TRUE)
+  endif ()
+endif (LBANN_WITH_FFT)
+
 # OpenCV installs a CMake configure file we can exploit
-find_package(OpenCV NO_MODULE QUIET
-  HINTS ${OpenCV_DIR} ${OPENCV_DIR} $ENV{OpenCV_DIR} $ENV{OPENCV_DIR}
-  PATH_SUFFIXES share/OpenCV
-  NO_DEFAULT_PATH)
-if (NOT OpenCV_FOUND)
-  find_package(OpenCV NO_MODULE QUIET REQUIRED)
+if (LBANN_WITH_VISION)
+  find_package(OpenCV NO_MODULE QUIET
+    HINTS ${OpenCV_DIR} ${OPENCV_DIR} $ENV{OpenCV_DIR} $ENV{OPENCV_DIR}
+    PATH_SUFFIXES share/OpenCV
+    NO_DEFAULT_PATH)
+  if (NOT OpenCV_FOUND)
+    find_package(OpenCV NO_MODULE QUIET REQUIRED)
+  endif ()
+  message(STATUS "Found OpenCV: ${OpenCV_DIR}")
 endif ()
-message(STATUS "Found OpenCV: ${OpenCV_DIR}")
 set(LBANN_HAS_OPENCV ${OpenCV_FOUND})
 
-# CUDA-ness of LBANN is 1:1 with Hydrogen. Iff Hydrogen has CUDA, LBANN gets CUDA.
+# OneDNN stuff
+if (LBANN_WITH_ONEDNN)
+  find_package(DNNL 1.6.0 CONFIG)
+  set(LBANN_HAS_ONEDNN_V1 ${DNNL_FOUND})
+  if (NOT DNNL_FOUND)
+    find_package(DNNL 2.0.0 REQUIRED CONFIG)
+  endif ()
+  set(LBANN_HAS_ONEDNN ${DNNL_FOUND})
+  if (NOT DNNL_CPU_RUNTIME STREQUAL "NONE")
+    set(LBANN_HAS_ONEDNN_CPU TRUE)
+  else ()
+    set(LBANN_HAS_ONEDNN_CPU FALSE)
+  endif ()
+  if (NOT DNNL_GPU_RUNTIME STREQUAL "NONE")
+    set(LBANN_HAS_ONEDNN_GPU TRUE)
+  else ()
+    set(LBANN_HAS_ONEDNN_GPU FALSE)
+  endif ()
+endif ()
+
+# CUDA-ness of LBANN is 1:1 with Hydrogen. Iff Hydrogen has CUDA,
+# LBANN gets CUDA.
 set(LBANN_HAS_CUDA ${_HYDROGEN_HAVE_CUDA})
 set(LBANN_WITH_CUDA ${LBANN_HAS_CUDA})
 
+set(LBANN_HAS_ROCM ${_HYDROGEN_HAVE_ROCM})
+if (LBANN_HAS_CUDA OR LBANN_HAS_ROCM)
+  set(LBANN_HAS_GPU TRUE)
+endif ()
+
 # Only used if have GPU and have CPU half.
-if (LBANN_HAS_CUDA AND LBANN_HAS_HALF)
+if (LBANN_HAS_GPU AND LBANN_HAS_HALF)
   set(LBANN_HAS_GPU_FP16 ${HYDROGEN_GPU_USE_FP16})
 endif ()
 
@@ -270,49 +317,18 @@ if (LBANN_HAS_CUDA)
   set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
 endif ()
 
-if (LBANN_WITH_ALUMINUM)
-  # Aluminum may have already been found by Hydrogen
-  if (NOT Aluminum_FOUND)
+if (LBANN_HAS_ALUMINUM)
+  if (AL_HAS_CUDA AND NOT LBANN_HAS_CUDA)
     message(WARNING
-      "Using Aluminum without Hydrogen support may not be well-supported.")
-    find_package(Aluminum 0.4.0 NO_MODULE QUIET
-      HINTS ${Aluminum_DIR} ${ALUMINUM_DIR} ${AL_DIR}
-      $ENV{Aluminum_DIR} $ENV{ALUMINUM_DIR} $ENV{AL_DIR}
-      PATH_SUFFIXES lib64/cmake/aluminum lib/cmake/aluminum
-      NO_DEFAULT_PATH)
-    if (NOT Aluminum_FOUND)
-      find_package(Aluminum 0.4.0 NO_MODULE QUIET)
-    endif ()
+      "Aluminum has CUDA support but CUDA support has not been found.")
   endif ()
-  set(LBANN_HAS_ALUMINUM ${Aluminum_FOUND})
 
-  # Report failure.
-  if (NOT LBANN_HAS_ALUMINUM)
-    message(WARNING
-      "Requested LBANN_WITH_ALUMINUM but Aluminum not found. "
-      "Aluminum is now disabled. "
-      "Try specifying ALUMINUM_DIR as the root of an ALUMINUM install. "
-      "Alternatively, build with LBANN_WITH_ALUMINUM=OFF to suppress "
-      "this warning.")
-    set(LBANN_WITH_ALUMINUM OFF)
-
-  else ()
-
-    message(STATUS "Found Aluminum: ${Aluminum_DIR}")
-
-    if (AL_HAS_CUDA AND NOT LBANN_HAS_CUDA)
-      message(WARNING
-        "Aluminum has CUDA support but CUDA support has not been found.")
-    endif ()
-
-    option(LBANN_BUILT_WITH_SPECTRUM "LBANN was built with Spectrum MPI" OFF)
-    if (LBANN_BUILT_WITH_SPECTRUM)
-      set(LBANN_ALUMINUM_MPI_PASSTHROUGH ON)
-    endif (LBANN_BUILT_WITH_SPECTRUM)
-
-  endif (NOT LBANN_HAS_ALUMINUM)
-endif (LBANN_WITH_ALUMINUM)
-
+  option(LBANN_BUILT_WITH_SPECTRUM "LBANN was built with Spectrum MPI" OFF)
+  if (LBANN_BUILT_WITH_SPECTRUM)
+    set(LBANN_ALUMINUM_MPI_PASSTHROUGH ON)
+  endif (LBANN_BUILT_WITH_SPECTRUM)
+endif (LBANN_HAS_ALUMINUM)
+  
 # Setup some additional CUDA-y things
 if (LBANN_HAS_CUDA)
   if (NOT LBANN_WITH_CUDNN)
@@ -327,7 +343,8 @@ if (LBANN_HAS_CUDA)
 
   if (LBANN_HAS_GPU_FP16)
     set_property(TARGET cuda::toolkit PROPERTY
-      INTERFACE_COMPILE_OPTIONS $<$<COMPILE_LANGUAGE:CUDA>:-arch=sm_60>)
+      INTERFACE_COMPILE_OPTIONS
+      $<$<COMPILE_LANGUAGE:CUDA>:-arch=sm_60>)
   endif (LBANN_HAS_GPU_FP16)
 
   set(LBANN_HAS_CUDNN ${CUDNN_FOUND})
@@ -349,10 +366,26 @@ if (LBANN_HAS_CUDA)
 
 endif (LBANN_HAS_CUDA)
 
+if (LBANN_HAS_ROCM)
+  list(APPEND CMAKE_MODULE_PATH "/opt/rocm/hip/cmake")
+  find_package(HIP MODULE REQUIRED)
+  find_package(MIOpen CONFIG REQUIRED)
+  set(LBANN_HAS_MIOPEN TRUE)
+  if (LBANN_HAS_FFTW)
+    find_package(rocFFT CONFIG REQUIRED)
+  endif ()
+endif (LBANN_HAS_ROCM)
+
+if (LBANN_HAS_CUDNN OR LBANN_HAS_MIOPEN)
+  set(LBANN_HAS_DNN_LIB TRUE)
+else ()
+  set(LBANN_HAS_DNN_LIB FALSE)
+endif ()
+
 # This shouldn't be here, but is ok for now. This will occasionally be
 # part of another TPL's libraries (e.g., MKL), but it's no
 # guarantee. There's no harm including it multiple times.
-if (NOT DL_LIBRARY)
+if (LBANN_EXPLICIT_LIBDL AND NOT DL_LIBRARY)
   find_library(DL_LIBRARY dl DOC "The dynamic loader library.")
   if (DL_LIBRARY)
     message(STATUS "Found dl: ${DL_LIBRARY}")
@@ -364,19 +397,30 @@ if (NOT DL_LIBRARY)
 endif ()
 
 # Other optional dependencies
+# TODO: This probably shouldn't be the case and should disable specific
+# callbacks when OpenCV is not available
+if (LBANN_WITH_TBINF AND NOT LBANN_HAS_OPENCV)
+  message(FATAL_ERROR "TensorBoard requires OpenCV. "
+    "Enable LBANN_WITH_VISION to use TensorBoard.")
+endif ()
+
 if (LBANN_WITH_TBINF)
   add_subdirectory(external/TBinf)
 endif ()
 
 # Find Python
-# Note: This uses the Python module in cmake/modules, not the module
-# that comes included with CMake. See the file for a discussion of the
-# differences.
-if (LBANN_WITH_PYTHON)
-  find_package(Python REQUIRED)
-  set(LBANN_HAS_PYTHON "${Python_FOUND}")
+if (LBANN_WITH_PYTHON_FRONTEND OR LBANN_WITH_EMBEDDED_PYTHON)
+  find_package(Python REQUIRED COMPONENTS Interpreter Development)
+  if (LBANN_WITH_PYTHON_FRONTEND AND Python_FOUND)
+    set(LBANN_HAS_PYTHON_FRONTEND TRUE)
+  endif ()
+  if (LBANN_WITH_EMBEDDED_PYTHON AND Python_FOUND)
+    set(LBANN_HAS_EMBEDDED_PYTHON TRUE)
+  endif ()
+
   if (NOT Python_VERSION_MAJOR EQUAL 3)
-    set(LBANN_HAS_PYTHON FALSE)
+    set(LBANN_HAS_PYTHON_FRONTEND FALSE)
+    set(LBANN_HAS_EMBEDDED_PYTHON FALSE)
     message(FATAL_ERROR "Python 2 is not supported.")
   endif ()
 
@@ -389,7 +433,7 @@ if (LBANN_WITH_PYTHON)
     CACHE PATH
     "Relative path from PYTHON_INSTALL_PREFIX to the python package install")
 
-endif (LBANN_WITH_PYTHON)
+endif (LBANN_WITH_PYTHON_FRONTEND OR LBANN_WITH_EMBEDDED_PYTHON)
 
 if (LBANN_WITH_VTUNE)
   find_package(VTune MODULE)
@@ -515,6 +559,12 @@ if (LBANN_WITH_CONDUIT)
   set(CONDUIT_LIBRARIES conduit::conduit)
 endif (LBANN_WITH_CONDUIT)
 
+if (LBANN_WITH_BOOST)
+  # Boost (optional)
+  find_package(Boost QUIET)
+  set(LBANN_HAS_BOOST ${Boost_FOUND})
+endif (LBANN_WITH_BOOST)
+
 if (LBANN_WITH_UNIT_TESTING)
   find_package(Catch2 2.0.0 CONFIG QUIET
     HINTS ${CATCH2_DIR} $ENV{CATCH2_DIR} ${CATCH_DIR} $ENV{CATCH_DIR}
@@ -528,11 +578,21 @@ if (LBANN_WITH_UNIT_TESTING)
   # Now that Catch2 has been found, start adding the unit tests
   include(CTest)
   include(Catch)
+  add_subdirectory(src/callbacks/unit_test)
+  add_subdirectory(src/execution_algorithms/unit_test)
+  add_subdirectory(src/layers/activations/unit_test)
+  add_subdirectory(src/layers/learning/unit_test)
+  add_subdirectory(src/layers/math/unit_test)
+  add_subdirectory(src/layers/regularizers/unit_test)
+  add_subdirectory(src/models/unit_test)
   add_subdirectory(src/proto/unit_test)
+  add_subdirectory(src/optimizers/unit_test)
   add_subdirectory(src/utils/unit_test)
   add_subdirectory(src/weights/unit_test)
   add_subdirectory(src/transforms/unit_test)
-  add_subdirectory(src/transforms/vision/unit_test)
+  if (LBANN_HAS_OPENCV)
+    add_subdirectory(src/transforms/vision/unit_test)
+  endif ()
 
   # Add this one last
   add_subdirectory(unit_test)
@@ -556,12 +616,20 @@ configure_file(
   @ONLY)
 
 # Create the LBANN library
-add_library(lbann ${LBANN_SOURCES} ${LBANN_HEADERS} ${LBANN_CUDA_SOURCES})
+if (LBANN_HAS_ROCM)
+  hip_add_library(
+    lbann ${LBANN_SOURCES} ${LBANN_HEADERS} ${LBANN_GPU_SOURCES})
+else ()
+  add_library(lbann ${LBANN_SOURCES} ${LBANN_HEADERS} ${LBANN_GPU_SOURCES})
+endif ()
 
 target_include_directories(lbann PUBLIC
   $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}>
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}>)
+
+# The max of CXX_STANDARD and this value will be used.
+target_compile_features(lbann PUBLIC cxx_std_17)
 
 # Use the IMPORTED targets when possible.
 target_link_libraries(lbann PUBLIC LbannProto)
@@ -572,28 +640,32 @@ target_link_libraries(lbann PUBLIC OpenMP::OpenMP_CXX)
 target_link_libraries(lbann PUBLIC MPI::MPI_CXX)
 target_link_libraries(lbann PUBLIC protobuf::libprotobuf)
 target_link_libraries(lbann PUBLIC ${HYDROGEN_LIBRARIES})
-target_link_libraries(lbann PUBLIC ${OpenCV_LIBRARIES})
+if (LBANN_HAS_OPENCV)
+  target_link_libraries(lbann PUBLIC ${OpenCV_LIBRARIES})
+endif ()
 target_link_libraries(lbann PUBLIC ${CONDUIT_LIBRARIES})
 
 target_link_libraries(lbann PUBLIC
+  $<TARGET_NAME_IF_EXISTS:TBinf>
+
   $<TARGET_NAME_IF_EXISTS:H2::H2Meta>
   $<TARGET_NAME_IF_EXISTS:H2::H2Patterns>
+  $<TARGET_NAME_IF_EXISTS:H2::H2DistConv>
+
+  $<TARGET_NAME_IF_EXISTS:CNPY::CNPY>
+  $<TARGET_NAME_IF_EXISTS:FFTW::FFTW>
+  $<TARGET_NAME_IF_EXISTS:HWLOC::hwloc>
+  $<TARGET_NAME_IF_EXISTS:Python::Python>
+
+  $<TARGET_NAME_IF_EXISTS:MIOpen>
+  $<TARGET_NAME_IF_EXISTS:roc::rocfft>
+
+  $<TARGET_NAME_IF_EXISTS:DNNL::dnnl>
   )
 
-if (LBANN_WITH_DISTCONV)
-  target_link_libraries(lbann PUBLIC H2::H2DistConv)
-endif ()
-
-if (LBANN_HAS_TBINF)
-  target_link_libraries(lbann PUBLIC TBinf)
-endif ()
-
-if (LBANN_HAS_CNPY)
-  target_link_libraries(lbann PUBLIC CNPY::CNPY)
-endif ()
-
-if (LBANN_TOPO_AWARE)
-  target_link_libraries(lbann PUBLIC HWLOC::hwloc)
+if (LBANN_FLAG_Werror_OK)
+  target_compile_options(lbann
+    PRIVATE $<$<COMPILE_LANGUAGE:CXX>:$<BUILD_INTERFACE:-Werror>>)
 endif ()
 
 if (LBANN_HAS_ALUMINUM)
@@ -604,20 +676,19 @@ if (LBANN_HAS_VTUNE)
   target_link_libraries(lbann PUBLIC ${VTUNE_STATIC_LIB})
 endif ()
 
-if (LBANN_HAS_PYTHON)
-  target_link_libraries(lbann PUBLIC Python::Python)
-endif ()
-
 if (LBANN_HAS_NVSHMEM)
   set_property(TARGET lbann PROPERTY CUDA_SEPARABLE_COMPILATION ON)
   target_link_libraries(lbann PUBLIC NVSHMEM::NVSHMEM)
 endif ()
 
-if (TARGET LBANN_CXX_FLAGS_werror)
-  target_link_libraries(lbann PUBLIC LBANN_CXX_FLAGS_werror)
+if (LBANN_EXPLICIT_LIBDL)
+  target_link_libraries(lbann PUBLIC ${DL_LIBRARY})
 endif ()
 
-target_link_libraries(lbann PUBLIC ${DL_LIBRARY})
+if (LBANN_HAS_FFTW AND LBANN_HAS_CUDA)
+  target_compile_options(lbann PRIVATE
+    $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda>)
+endif (LBANN_HAS_FFTW AND LBANN_HAS_CUDA)
 
 # Fix the -g issue with Clang on OSX
 if (APPLE)
@@ -638,6 +709,14 @@ if (APPLE)
     set_source_files_properties(
       "${bad_file}" PROPERTIES COMPILE_OPTIONS "${_SRC_COMPILE_OPTS}")
   endforeach ()
+endif ()
+
+# Fix linking error with CUDA when building LBANN as static library
+# Note: CMake usually defers linking to device symbols when building
+# static libraries. However, the Catch2 executables don't correctly
+# link to CUDA objects, leading to linking errors.
+if (LBANN_HAS_CUDA AND NOT BUILD_SHARED_LIBS)
+  set_property(TARGET lbann PROPERTY CUDA_RESOLVE_DEVICE_SYMBOLS ON)
 endif ()
 
 # Clean things up
@@ -700,6 +779,12 @@ configure_package_config_file(cmake/configure_files/LBANNConfig.cmake.in
   INSTALL_DESTINATION "${CMAKE_INSTALL_DIR}"
   PATH_VARS INCLUDE_INSTALL_DIRS LIB_INSTALL_DIR)
 
+# Clang format
+include(LBANNClangFormat)
+if (CLANG_FORMAT_AVAILABLE)
+  add_clang_format(lbann)
+endif ()
+
 # Install library
 install(
   TARGETS lbann
@@ -750,7 +835,7 @@ install(
 # We go for option 3 since it's simple and lightweight, but it runs
 # counter to the intent of setuptools. If we learn about any nicer
 # approaches, we should use them.
-if (LBANN_HAS_PYTHON)
+if (LBANN_HAS_PYTHON_FRONTEND)
 
   # Construct config file
   # NOTE (trb): python_config.ini is installed by setup.py
@@ -791,7 +876,7 @@ this package, be sure to add this directory to your PYTHONPATH, e.g.:
   install(CODE
     "execute_process(COMMAND ${CMAKE_COMMAND} -E echo \"${_PY_INSTALL_MSG}\")")
 
-endif (LBANN_HAS_PYTHON)
+endif (LBANN_HAS_PYTHON_FRONTEND)
 
 # Install contributor list, license, readme
 install(
@@ -854,23 +939,32 @@ string(APPEND _str "\n")
 #Print the true/false guys
 append_str_tf(_str
   LBANN_GNU_LINUX
-  LBANN_HAS_DIHYDROGEN
-  LBANN_HAS_DISTCONV
-  LBANN_HAS_HYDROGEN
-  LBANN_HAS_OPENCV
+  LBANN_HAS_ALUMINUM
   LBANN_HAS_CEREAL
+  LBANN_HAS_CEREAL_XML_ARCHIVES
+  LBANN_HAS_CNPY
   LBANN_HAS_CUDA
   LBANN_HAS_CUDNN
+  LBANN_HAS_DIHYDROGEN
+  LBANN_HAS_DISTCONV
+  LBANN_HAS_DOXYGEN
+  LBANN_HAS_FFTW
+  LBANN_HAS_HYDROGEN
+  LBANN_HAS_LBANN_PROTO
   LBANN_HAS_NCCL2
+  LBANN_HAS_ONEDNN
+  LBANN_HAS_ONEDNN_CPU
+  LBANN_HAS_ONEDNN_GPU
+  LBANN_HAS_OPENCV
   LBANN_HAS_PROTOBUF
-  LBANN_HAS_CNPY
+  LBANN_HAS_PYTHON_FRONTEND
+  LBANN_HAS_EMBEDDED_PYTHON
+  LBANN_HAS_ROCM
   LBANN_HAS_TBINF
   LBANN_HAS_VTUNE
+  LBANN_HAS_BOOST
   LBANN_NVPROF
-  LBANN_HAS_DOXYGEN
-  LBANN_HAS_LBANN_PROTO
-  LBANN_HAS_ALUMINUM
-  LBANN_HAS_PYTHON)
+  )
 string(APPEND _str
   "\n== End LBANN Configuration Summary ==\n")
 
@@ -881,7 +975,7 @@ set(_str)
 #
 # Write a basic modulefile
 #
-set(LBANN_MODULEFILE_NAME "lbann-${LBANN_VERSION}.lua"
+set(LBANN_MODULEFILE_NAME "${LBANN_VERSION}.lua"
   CACHE STRING
   "The name of the LBANN modulefile to install. Must end in .lua.")
 
@@ -902,7 +996,7 @@ configure_file(
 
 install(FILES "${CMAKE_BINARY_DIR}/lbann_module.lua.install"
   RENAME "${LBANN_MODULEFILE_NAME}"
-  DESTINATION "${CMAKE_INSTALL_SYSCONFDIR}/modulefiles")
+  DESTINATION "${CMAKE_INSTALL_SYSCONFDIR}/modulefiles/lbann")
 install(FILES "${CMAKE_BINARY_DIR}/lbann_module.tcl.install"
   RENAME "${LBANN_VERSION}"
   DESTINATION "${CMAKE_INSTALL_SYSCONFDIR}/modulefiles/lbann")

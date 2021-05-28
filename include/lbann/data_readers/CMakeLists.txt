@@ -5,23 +5,35 @@ set_full_path(THIS_DIR_HEADERS
   data_reader_cifar10.hpp
   data_reader_csv.hpp
   data_reader_image.hpp
-  data_reader_imagenet.hpp
   data_reader_merge_features.hpp
   data_reader_merge_samples.hpp
   data_reader_mnist.hpp
   data_reader_nci.hpp
-  data_reader_numpy.hpp
-  data_reader_numpy_npz.hpp
-  data_reader_numpy_npz_conduit.hpp
-  data_reader_pilot2_molecular.hpp
+  data_reader_node2vec.hpp
   data_reader_python.hpp
   data_reader_synthetic.hpp
   data_reader_smiles.hpp
   )
 
+if (LBANN_HAS_CNPY)
+  set_full_path(CNPY_HDR_FILES
+    data_reader_npz_ras_lipid.hpp
+    data_reader_numpy.hpp
+    data_reader_numpy_npz.hpp
+    data_reader_numpy_npz_conduit.hpp
+    data_reader_pilot2_molecular.hpp
+    )
+  list(APPEND THIS_DIR_HEADERS ${CNPY_HDR_FILES})
+endif ()
+
 if (LBANN_HAS_DISTCONV)
   list(APPEND THIS_DIR_HEADERS
     "${CMAKE_CURRENT_SOURCE_DIR}/data_reader_hdf5.hpp")
+endif ()
+
+if (LBANN_HAS_OPENCV)
+  list(APPEND THIS_DIR_HEADERS
+    "${CMAKE_CURRENT_SOURCE_DIR}/data_reader_imagenet.hpp")
 endif ()
 
 # Propagate the files up the tree

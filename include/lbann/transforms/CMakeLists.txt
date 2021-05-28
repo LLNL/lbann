@@ -9,7 +9,9 @@ set_full_path(THIS_DIR_HEADERS
   transform_pipeline.hpp
   )
 
-add_subdirectory(vision)
+if (LBANN_HAS_OPENCV)
+  add_subdirectory(vision)
+endif ()
 
 # Propagate the files up the tree
 set(HEADERS "${HEADERS}" "${THIS_DIR_HEADERS}" PARENT_SCOPE)

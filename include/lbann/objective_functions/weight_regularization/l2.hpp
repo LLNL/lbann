@@ -62,9 +62,8 @@ public:
   l2_weight_regularization* copy() const override { return new l2_weight_regularization(*this); }
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize( Archive & ar ) {
-    ar(cereal::base_class<objective_function_term>(this));
-  }
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
 
   std::string name() const override { return "L2 weight regularization"; }
   void setup(model& m) override;
@@ -95,7 +94,7 @@ private:
   Al::request m_allreduce_req;
 #ifdef LBANN_HAS_GPU
   /** For non-blocking GPU-CPU memory copies. */
-  cuda::event_wrapper m_copy_event;
+  gpu_lib::event_wrapper m_copy_event;
 #endif // LBANN_HAS_GPU
 
   /** Add the sum of squares of @c vals to @c contribution.

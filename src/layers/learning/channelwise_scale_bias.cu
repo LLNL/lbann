@@ -26,8 +26,15 @@
 
 #define LBANN_CHANNELWISE_SCALE_BIAS_LAYER_INSTANTIATE
 #include "lbann/layers/learning/channelwise_scale_bias.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
+
 #ifdef HYDROGEN_HAVE_CUB
+#ifdef LBANN_HAS_CUDA
 #include "cub/block/block_reduce.cuh"
+#elif defined LBANN_HAS_ROCM
+#include "hipcub/block/block_reduce.hpp"
+namespace cub = hipcub;
+#endif // LBANN_HAS_CUDA
 #endif // HYDROGEN_HAVE_CUB
 
 namespace lbann {
@@ -133,12 +140,12 @@ __global__ void bp_kernel(size_t num_channels,
     __syncthreads();
     const auto da = BlockReduce(workspace).Sum(private_da);
     if (tid == 0) {
-      cuda::atomic_add(&gradient_wrt_scale[channel], da);
+      gpu_lib::atomic_add(&gradient_wrt_scale[channel], da);
     }
     __syncthreads();
     const auto db = BlockReduce(workspace).Sum(private_db);
     if (tid == 0) {
-      cuda::atomic_add(&gradient_wrt_bias[channel], db);
+      gpu_lib::atomic_add(&gradient_wrt_bias[channel], db);
     }
 #else
     __shared__ TensorDataType workspace[bsizex*bsizey];
@@ -150,7 +157,7 @@ __global__ void bp_kernel(size_t num_channels,
       }
     }
     if (tid == 0) {
-      cuda::atomic_add(&gradient_wrt_scale[channel], workspace[0]);
+      gpu_lib::atomic_add(&gradient_wrt_scale[channel], workspace[0]);
     }
     workspace[tid] = private_db;
     for (size_t stride = bsizex*bsizey/2; stride > 0; stride /= 2) {
@@ -160,7 +167,7 @@ __global__ void bp_kernel(size_t num_channels,
       }
     }
     if (tid == 0) {
-      cuda::atomic_add(&gradient_wrt_bias[channel], workspace[0]);
+      gpu_lib::atomic_add(&gradient_wrt_bias[channel], workspace[0]);
     }
 #endif // HYDROGEN_HAVE_CUB
 
@@ -203,13 +210,17 @@ void channelwise_scale_bias_layer<TensorDataType, T_layout, Dev>::fp_compute() {
     grid_dims.x = (channel_size + block_size_x - 1) / block_size_x;
     grid_dims.y = (local_width + block_size_y - 1) / block_size_y;
     grid_dims.z = num_channels;
-    fp_kernel
-      <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
-        num_channels, channel_size, local_width,
-        local_input.LockedBuffer(), local_input.LDim(),
-        local_output.Buffer(), local_output.LDim(),
-        local_scale.LockedBuffer(),
-        local_bias.LockedBuffer());
+    auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_input),
+                                       gpu::get_sync_info(local_output),
+                                       gpu::get_sync_info(local_weights));
+    hydrogen::gpu::LaunchKernel(
+      fp_kernel<TensorDataType>,
+      grid_dims, block_dims, 0, multisync,
+      num_channels, channel_size, local_width,
+      local_input.LockedBuffer(), local_input.LDim(),
+      local_output.Buffer(), local_output.LDim(),
+      local_scale.LockedBuffer(),
+      local_bias.LockedBuffer());
   }
 
 }
@@ -253,15 +264,22 @@ void channelwise_scale_bias_layer<TensorDataType, T_layout, Dev>::bp_compute() {
     grid_dims.x = (channel_size + block_size_x - 1) / block_size_x;
     grid_dims.y = (local_width + block_size_y - 1) / block_size_y;
     grid_dims.z = num_channels;
-    bp_kernel<block_size_x, block_size_y>
-      <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
-        num_channels, channel_size, local_width,
-        local_input.LockedBuffer(), local_input.LDim(),
-        local_gradient_wrt_output.LockedBuffer(), local_gradient_wrt_output.LDim(),
-        local_gradient_wrt_input.Buffer(), local_gradient_wrt_input.LDim(),
-        local_scale.LockedBuffer(),
-        local_gradient_wrt_scale.Buffer(),
-        local_gradient_wrt_bias.Buffer());
+    auto multisync = El::MakeMultiSync(
+      gpu::get_sync_info(local_input),
+      gpu::get_sync_info(local_gradient_wrt_output),
+      gpu::get_sync_info(local_gradient_wrt_input),
+      gpu::get_sync_info(local_gradient_wrt_weights),
+      gpu::get_sync_info(local_weights));
+    hydrogen::gpu::LaunchKernel(
+      bp_kernel<block_size_x, block_size_y, TensorDataType>,
+      grid_dims, block_dims, 0, multisync,
+      num_channels, channel_size, local_width,
+      local_input.LockedBuffer(), local_input.LDim(),
+      local_gradient_wrt_output.LockedBuffer(), local_gradient_wrt_output.LDim(),
+      local_gradient_wrt_input.Buffer(), local_gradient_wrt_input.LDim(),
+      local_scale.LockedBuffer(),
+      local_gradient_wrt_scale.Buffer(),
+      local_gradient_wrt_bias.Buffer());
   }
 
   // Update optimizer with gradient

@@ -1,7 +1,7 @@
 #from RSTDocsFlavorText import *
 
 import xml.etree.ElementTree as etree
-import os, runpy
+import os, runpy, re
 
 rst_docs_globals = runpy.run_path("RSTDocsFlavorText.py")
 lbann_rst_headers = rst_docs_globals["lbann_rst_headers"]
@@ -131,6 +131,12 @@ def is_public_class(class_name, xml_file):
 
     return is_public_class_from_element(class_element)
 
+# Clean up templates for filenames. Every "<" or ">" will be replaced
+# by underscores. So "Foo<Bar<Baz>>.rst" -> "Foo_Bar_Baz__.rst". Not
+# perfect, but it works. #Python.
+def fix_template_filename(filename):
+    return re.sub(r'(< | >)', '_', filename)
+
 # Write a simple RST file for a class
 def write_class_rst_file(class_name, breathe_project_name, *args, **kwargs):
     namespace = kwargs.get('namespace', '')
@@ -152,7 +158,7 @@ def write_class_rst_file(class_name, breathe_project_name, *args, **kwargs):
     full_class_name = namespace + class_name
 
     if output_filename == '':
-        output_filename = class_name + '.rst'
+        output_filename = fix_template_filename(class_name + '.rst')
 
     if header_string == '':
         header_string = "Documentation of "+display_name
@@ -182,7 +188,7 @@ def write_class_rst_file(class_name, breathe_project_name, *args, **kwargs):
                     sc_rst_path = os.path.join(
                         os.path.relpath(sc_out_dir, output_dir),
                         sc_no_ns);
-                f.write('    ' + sc_no_ns + ' <' + sc_rst_path + '>\n')
+                f.write('    ' + sc_no_ns + ' <' + fix_template_filename(sc_rst_path) + '>\n')
     return
 
 # Adds things from rhs into lhs. Keys are anything, values are lists
@@ -336,7 +342,7 @@ for d in all_dirs:
             f.write('    :maxdepth: 1'+'\n')
             f.write('    :caption: Abstract Classes\n\n')
             for cls in abstract_classes:
-                f.write('    class '+cls+' <'+cls+'>\n')
+                f.write('    class '+cls+' <'+fix_template_filename(cls)+'>\n')
 
         if len(concrete_classes) > 0:
             f.write('\n')
@@ -344,7 +350,7 @@ for d in all_dirs:
             f.write('    :maxdepth: 1'+'\n')
             f.write('    :caption: Concrete Classes\n\n')
             for cls in concrete_classes:
-                f.write('    class '+cls+' <'+cls+'>\n')
+                f.write('    class '+cls+' <'+fix_template_filename(cls)+'>\n')
 
         if len(subdirs) > 0:
             f.write('\n')

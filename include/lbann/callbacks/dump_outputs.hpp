@@ -89,7 +89,18 @@ public:
     }
   }
 
+  /** @name Serialization */
+  ///@{
+
+  /** @brief Store state to archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar);
+
+  ///@}
+
 private:
+
+  friend class cereal::access;
+  dump_outputs();
 
   /** @brief   Names of layers with output dumps.
    *  @details If empty, outputs will be dumped for all layers.

@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYER_UNIFORM_HPP_INCLUDED
 #define LBANN_LAYER_UNIFORM_HPP_INCLUDED
 
-#include "lbann/layers/transform/transform.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/random.hpp"
 
@@ -37,7 +37,7 @@ namespace lbann {
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class uniform_layer : public transform_layer<TensorDataType> {
+class uniform_layer : public data_type_layer<TensorDataType> {
 private:
   /** @brief Uniform distribution minimum. */
   TensorDataType m_min;
@@ -58,18 +58,27 @@ public:
                 TensorDataType min = El::TypeTraits<TensorDataType>::Zero(),
                 TensorDataType max = El::TypeTraits<TensorDataType>::One(),
                 bool training_only = false)
-    : transform_layer<TensorDataType>(comm),
+    : data_type_layer<TensorDataType>(comm),
       m_min(min), m_max(max), m_training_only(training_only) {
     this->set_output_dims(dims);
     this->m_expected_num_parent_layers = 0;
   }
   uniform_layer* copy() const override { return new uniform_layer(*this); }
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
+
   std::string get_type() const override { return "uniform"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
   description get_description() const override {
-    auto desc = transform_layer<TensorDataType>::get_description();
+    auto desc = data_type_layer<TensorDataType>::get_description();
     std::stringstream ss;
     ss << "[" << m_min << "," << m_max << ")";
     desc.add("Range", ss.str());
@@ -78,6 +87,11 @@ public:
   }
 
 protected:
+
+  friend class cereal::access;
+  uniform_layer()
+    : uniform_layer(nullptr, { 1 } )
+  {}
 
   void fp_compute() override {
     const auto& mean = (m_max + m_min) / El::To<TensorDataType>(2);

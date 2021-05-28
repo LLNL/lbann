@@ -39,12 +39,11 @@ namespace lbann {
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 fully_connected_layer<TensorDataType, T_layout, Dev>::fully_connected_layer(
-  lbann_comm *comm,
   int output_size,
   bool transpose,
   WeightsType* weight,
   bool has_bias)
-  : learning_layer<TensorDataType>(comm),
+  : data_type_layer<TensorDataType>(nullptr),
   m_bias_gradient(nullptr),
   m_transpose(transpose) {
 
@@ -58,9 +57,14 @@ fully_connected_layer<TensorDataType, T_layout, Dev>::fully_connected_layer(
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+fully_connected_layer<TensorDataType, T_layout, Dev>::fully_connected_layer()
+  : fully_connected_layer(0, false, nullptr, false)
+{}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 fully_connected_layer<TensorDataType, T_layout, Dev>::fully_connected_layer(
   const fully_connected_layer& other)
-  : learning_layer<TensorDataType>(other),
+  : data_type_layer<TensorDataType>(other),
   m_bias_scaling_factor(other.m_bias_scaling_factor),
   m_transpose(other.m_transpose) {
 
@@ -74,7 +78,7 @@ fully_connected_layer<TensorDataType, T_layout, Dev>::fully_connected_layer(
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 auto fully_connected_layer<TensorDataType, T_layout, Dev>::operator=(
   const fully_connected_layer& other) -> fully_connected_layer& {
-  learning_layer<TensorDataType>::operator=(other);
+  data_type_layer<TensorDataType>::operator=(other);
   m_bias_scaling_factor = other.m_bias_scaling_factor;
   m_transpose = other.m_transpose;
 
@@ -96,7 +100,7 @@ fully_connected_layer<TensorDataType, T_layout, Dev>::~fully_connected_layer() {
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 description
 fully_connected_layer<TensorDataType, T_layout, Dev>::get_description() const {
-  auto desc = learning_layer<TensorDataType>::get_description();
+  auto desc = data_type_layer<TensorDataType>::get_description();
   const auto& bias_str = (m_bias_scaling_factor == El::TypeTraits<TensorDataType>::Zero()
                           ? "disabled"
                           : "enabled");
@@ -107,7 +111,7 @@ fully_connected_layer<TensorDataType, T_layout, Dev>::get_description() const {
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void fully_connected_layer<TensorDataType, T_layout, Dev>
 ::setup_matrices(const El::Grid& grid) {
-  learning_layer<TensorDataType>::setup_matrices(grid);
+  data_type_layer<TensorDataType>::setup_matrices(grid);
   deallocate_matrices();
   if(Dev == El::Device::CPU) {
     if(T_layout == data_layout::MODEL_PARALLEL) {
@@ -131,7 +135,7 @@ void fully_connected_layer<TensorDataType, T_layout, Dev>
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void fully_connected_layer<TensorDataType, T_layout, Dev>
 ::setup_data(size_t max_mini_batch_size) {
-  learning_layer<TensorDataType>::setup_data(max_mini_batch_size);
+  data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
 
   // Initialize default weights if none are provided
   if (this->num_weights() > 2) {
@@ -143,13 +147,13 @@ void fully_connected_layer<TensorDataType, T_layout, Dev>
     this->set_num_weights(1);
   }
   if (!this->has_weights(0)) {
-    auto w = make_unique<WeightsType>(this->get_comm());
+    auto w = std::make_shared<WeightsType>(*this->get_comm());
     auto init = make_unique<he_initializer<TensorDataType>>(probability_distribution::gaussian);
     auto opt = this->m_model->template create_optimizer<TensorDataType>();
     w->set_name(this->get_name() + "_linearity_weights");
     w->set_initializer(std::move(init));
     w->set_optimizer(std::move(opt));
-    this->set_weights(0, w.get());
+    this->set_weights(0, w);
     this->m_model->add_weights(std::move(w));
   }
   auto& linearity_weights = this->get_weights(0);
@@ -160,6 +164,12 @@ void fully_connected_layer<TensorDataType, T_layout, Dev>
     set_fan_out(*initializer, this->get_output_size());
   }
 
+  // Input and output dimensions
+  const auto& input_dims_ = this->get_input_dims();
+  const auto& output_dims_ = this->get_output_dims();
+  std::vector<size_t> input_dims(input_dims_.begin(), input_dims_.end());
+  std::vector<size_t> output_dims(output_dims_.begin(), output_dims_.end());
+
   // Setup linearity weights
   auto linearity_dist = this->get_prev_activations().DistData();
   if (linearity_dist.colDist != El::MC
@@ -168,27 +178,27 @@ void fully_connected_layer<TensorDataType, T_layout, Dev>
     linearity_dist.rowDist = El::STAR;
   }
   if (m_transpose) {
-    linearity_weights.set_dims(this->get_input_dims(), this->get_output_dims());
+    linearity_weights.set_dims(input_dims, output_dims);
   } else {
-    linearity_weights.set_dims(this->get_output_dims(), this->get_input_dims());
+    linearity_weights.set_dims(output_dims, input_dims);
   }
   linearity_weights.set_matrix_distribution(linearity_dist);
 
   // Set up bias if needed.
   if (m_bias_scaling_factor != El::TypeTraits<TensorDataType>::Zero()) {
     if (!this->has_weights(1)) {
-      auto w = make_unique<WeightsType>(this->get_comm());
+      auto w = std::make_shared<WeightsType>(*this->get_comm());
       auto opt = this->m_model->template create_optimizer<TensorDataType>();
       w->set_name(this->get_name() + "_bias_weights");
       w->set_optimizer(std::move(opt));
-      this->set_weights(1, w.get());
+      this->set_weights(1, w);
       this->m_model->add_weights(std::move(w));
     }
     auto& bias_weights = this->get_weights(1);
     // Setup bias weights
     auto bias_dist = this->get_activations().DistData();
     bias_dist.rowDist = El::STAR;
-    bias_weights.set_dims(this->get_output_dims());
+    bias_weights.set_dims(output_dims);
     bias_weights.set_matrix_distribution(bias_dist);
     if (this->m_bias_gradient != nullptr) {
       El::Zeros(*this->m_bias_gradient,
@@ -642,7 +652,6 @@ std::unique_ptr<Layer> build_fully_connected_layer_from_pbuf(
   using LayerType = fully_connected_layer<TensorDataType, layout, device>;
   const auto& params = layer_msg.fully_connected();
   return lbann::make_unique<LayerType>(
-    comm,
     params.num_neurons(),
     params.transpose(),
     nullptr,

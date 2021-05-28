@@ -25,9 +25,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_ENTRYWISE_BATCH_NORMALIZATION_LAYER_INSTANTIATE
+#include "lbann/comm_impl.hpp"
 #include "lbann/layers/regularizers/entrywise_batch_normalization.hpp"
 #include "lbann/weights/weights_helpers.hpp"
-#include "lbann/utils/cuda.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 
 namespace lbann {
 
@@ -89,8 +90,8 @@ __global__ void compute_statistics_kernel(size_t size,
     mean = sum / statistics_count_dt;
     const auto sqmean = sqsum / statistics_count_dt;
     var = (sqmean - mean * mean) * statistics_count_dt / TensorDataType(statistics_count - 1);
-    _running_mean = decay * _running_mean + (TensorDataType{1} - decay) * mean;
-    _running_var = decay * _running_var + (TensorDataType{1} - decay) * var;
+    _running_mean = decay * _running_mean + (TensorDataType{1.f} - decay) * mean;
+    _running_var = decay * _running_var + (TensorDataType{1.f} - decay) * var;
   }
 }
 
@@ -122,18 +123,22 @@ void compute_batch_statistics(lbann_comm& comm,
   // Compute local sums
   El::Zero(batch_statistics);
   if (local_height > 0) {
+    auto multisync =
+      El::MakeMultiSync(gpu::get_sync_info(local_batch_statistics),
+                        gpu::get_sync_info(local_input));
     constexpr size_t block_size = 256;
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
     grid_dims.x = (local_height + block_size - 1) / block_size;
-    row_sums_kernel<TensorDataType>
-      <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
-        local_height,
-        local_width,
-        local_input.LockedBuffer(),
-        local_input.LDim(),
-        local_batch_mean.Buffer(),
-        local_batch_var.Buffer());
+    hydrogen::gpu::LaunchKernel(
+      row_sums_kernel<TensorDataType>,
+      grid_dims, block_dims, 0, multisync,
+      local_height,
+      local_width,
+      local_input.LockedBuffer(),
+      local_input.LDim(),
+      local_batch_mean.Buffer(),
+      local_batch_var.Buffer());
   }
 
   // Accumulate sums between processes
@@ -150,19 +155,25 @@ void compute_batch_statistics(lbann_comm& comm,
     El::Fill(local_batch_var, El::TypeTraits<TensorDataType>::One());
   } else {
     if (local_height > 0) {
+      auto multisync =
+        El::MakeMultiSync(gpu::get_sync_info(local_batch_statistics),
+                          gpu::get_sync_info(local_running_mean),
+                          gpu::get_sync_info(local_running_var));
+
       constexpr size_t block_size = 256;
       dim3 block_dims, grid_dims;
       block_dims.x = block_size;
       grid_dims.x = (local_height + block_size - 1) / block_size;
-      compute_statistics_kernel<TensorDataType>
-        <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
-          local_height,
-          statistics_count,
-          decay,
-          local_batch_mean.Buffer(),
-          local_batch_var.Buffer(),
-          local_running_mean.Buffer(),
-          local_running_var.Buffer());
+      hydrogen::gpu::LaunchKernel(
+        compute_statistics_kernel<TensorDataType>,
+        grid_dims, block_dims, 0, multisync,
+        local_height,
+        statistics_count,
+        decay,
+        local_batch_mean.Buffer(),
+        local_batch_var.Buffer(),
+        local_running_mean.Buffer(),
+        local_running_var.Buffer());
     }
   }
 
@@ -190,7 +201,7 @@ __global__ void batchnorm_kernel(size_t height,
   for (size_t row = gidx; row < height; row += nthreadsx) {
     const auto& _mean = mean[row];
     const auto& _var = var[row];
-    const auto inv_stdev = cuda::rsqrt(_var + epsilon);
+    const auto inv_stdev = gpu_lib::rsqrt(_var + epsilon);
     for (size_t col = gidy; col < width; col += nthreadsy) {
       const auto& x = input[row + col*input_ldim];
       auto& y = output[row + col*output_ldim];
@@ -209,6 +220,10 @@ void apply_batchnorm(DataType epsilon,
                      const El::Matrix<TensorDataType, El::Device::GPU>& local_mean,
                      const El::Matrix<TensorDataType, El::Device::GPU>& local_var) {
   if (!local_input.IsEmpty()) {
+    auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_output),
+                                       gpu::get_sync_info(local_input),
+                                       gpu::get_sync_info(local_mean),
+                                       gpu::get_sync_info(local_var));
     const size_t local_height = local_input.Height();
     const size_t local_width = local_input.Width();
     constexpr size_t block_size_x = 256;
@@ -218,17 +233,18 @@ void apply_batchnorm(DataType epsilon,
     block_dims.y = block_size_y;
     grid_dims.x = (local_height + block_size_x - 1) / block_size_x;
     grid_dims.y = (local_width + block_size_y - 1) / block_size_y;
-    batchnorm_kernel<TensorDataType>
-      <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
-        local_height,
-        local_width,
-        epsilon,
-        local_input.LockedBuffer(),
-        local_input.LDim(),
-        local_output.Buffer(),
-        local_output.LDim(),
-        local_mean.LockedBuffer(),
-        local_var.LockedBuffer());
+    hydrogen::gpu::LaunchKernel(
+      batchnorm_kernel<TensorDataType>,
+      grid_dims, block_dims, 0, multisync,
+      local_height,
+      local_width,
+      epsilon,
+      local_input.LockedBuffer(),
+      local_input.LDim(),
+      local_output.Buffer(),
+      local_output.LDim(),
+      local_mean.LockedBuffer(),
+      local_var.LockedBuffer());
   }
 }
 
@@ -314,7 +330,7 @@ __global__ void bp_training_stats_gradient_kernel(size_t height,
   for (size_t row = gid; row < height; row += nthreads) {
     const auto& _mean = mean[row];
     const auto& _var = var[row];
-    const auto inv_stdev = cuda::rsqrt(_var + epsilon);
+    const auto inv_stdev = gpu_lib::rsqrt(_var + epsilon);
     auto& dmean = gradient_wrt_mean[row];
     auto& dvar = gradient_wrt_var[row];
     for (size_t col = 0; col < width; ++col) {
@@ -359,7 +375,7 @@ __global__ void bp_training_error_signal_kernel(size_t height,
     const auto& _var = var[row];
     const auto& dmean = gradient_wrt_mean[row];
     const auto& dvar = gradient_wrt_var[row];
-    const auto inv_stdev = cuda::rsqrt(_var + epsilon);
+    const auto inv_stdev = gpu_lib::rsqrt(_var + epsilon);
     for (size_t col = gidy; col < width; col += nthreadsy) {
       const auto& x = input[row + col * input_ldim];
       const auto& dy = gradient_wrt_output[row + col * gradient_wrt_output_ldim];
@@ -414,23 +430,29 @@ void bp_training_impl(lbann_comm& comm,
   // Compute local gradient w.r.t. batch statistics
   El::Zero(gradient_wrt_statistics);
   if (local_height > 0) {
+    auto multisync =
+      El::MakeMultiSync(gpu::get_sync_info(local_gradient_wrt_statistics),
+                        gpu::get_sync_info(local_statistics),
+                        gpu::get_sync_info(local_gradient_wrt_output),
+                        gpu::get_sync_info(local_input));
     constexpr size_t block_size = 256;
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
     grid_dims.x = (local_height + block_size - 1) / block_size;
-    bp_training_stats_gradient_kernel<TensorDataType>
-      <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
-        local_height,
-        local_width,
-        epsilon,
-        local_input.LockedBuffer(),
-        local_input.LDim(),
-        local_gradient_wrt_output.LockedBuffer(),
-        local_gradient_wrt_output.LDim(),
-        local_mean.LockedBuffer(),
-        local_var.LockedBuffer(),
-        local_gradient_wrt_mean.Buffer(),
-        local_gradient_wrt_var.Buffer());
+    hydrogen::gpu::LaunchKernel(
+      bp_training_stats_gradient_kernel<TensorDataType>,
+      grid_dims, block_dims, 0, multisync,
+      local_height,
+      local_width,
+      epsilon,
+      local_input.LockedBuffer(),
+      local_input.LDim(),
+      local_gradient_wrt_output.LockedBuffer(),
+      local_gradient_wrt_output.LDim(),
+      local_mean.LockedBuffer(),
+      local_var.LockedBuffer(),
+      local_gradient_wrt_mean.Buffer(),
+      local_gradient_wrt_var.Buffer());
   }
 
   // Accumulate gradient w.r.t. statistics across processes
@@ -442,6 +464,12 @@ void bp_training_impl(lbann_comm& comm,
 
   // Compute gradient w.r.t. input
   if (!local_input.IsEmpty()) {
+    auto multisync =
+      El::MakeMultiSync(gpu::get_sync_info(local_gradient_wrt_input),
+                        gpu::get_sync_info(local_gradient_wrt_statistics),
+                        gpu::get_sync_info(local_statistics),
+                        gpu::get_sync_info(local_gradient_wrt_output),
+                        gpu::get_sync_info(local_input));
     const size_t local_height = local_input.Height();
     const size_t local_width = local_input.Width();
     constexpr size_t block_size_x = 256;
@@ -451,22 +479,23 @@ void bp_training_impl(lbann_comm& comm,
     block_dims.y = block_size_y;
     grid_dims.x = (local_height + block_size_x - 1) / block_size_x;
     grid_dims.y = (local_width + block_size_y - 1) / block_size_y;
-    bp_training_error_signal_kernel
-      <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
-        local_height,
-        local_width,
-        epsilon,
-        statistics_count,
-        local_input.LockedBuffer(),
-        local_input.LDim(),
-        local_gradient_wrt_output.LockedBuffer(),
-        local_gradient_wrt_output.LDim(),
-        local_gradient_wrt_input.Buffer(),
-        local_gradient_wrt_input.LDim(),
-        local_mean.LockedBuffer(),
-        local_var.LockedBuffer(),
-        local_gradient_wrt_mean.LockedBuffer(),
-        local_gradient_wrt_var.LockedBuffer());
+    hydrogen::gpu::LaunchKernel(
+      bp_training_error_signal_kernel<TensorDataType>,
+      grid_dims, block_dims, 0, multisync,
+      local_height,
+      local_width,
+      epsilon,
+      statistics_count,
+      local_input.LockedBuffer(),
+      local_input.LDim(),
+      local_gradient_wrt_output.LockedBuffer(),
+      local_gradient_wrt_output.LDim(),
+      local_gradient_wrt_input.Buffer(),
+      local_gradient_wrt_input.LDim(),
+      local_mean.LockedBuffer(),
+      local_var.LockedBuffer(),
+      local_gradient_wrt_mean.LockedBuffer(),
+      local_gradient_wrt_var.LockedBuffer());
   }
 
 }
@@ -493,7 +522,7 @@ __global__ void bp_inference_kernel(size_t height,
   const size_t nthreadsy = blockDim.y * gridDim.y;
   for (size_t row = gidx; row < height; row += nthreadsx) {
     const auto& var = running_var[row];
-    const auto inv_stdev = cuda::rsqrt(var + epsilon);
+    const auto inv_stdev = gpu_lib::rsqrt(var + epsilon);
     for (size_t col = gidy; col < width; col += nthreadsy) {
       const auto& dy = gradient_wrt_output[row + col * gradient_wrt_output_ldim];
       auto& dx = gradient_wrt_input[row + col * gradient_wrt_input_ldim];
@@ -520,6 +549,10 @@ void bp_inference_impl(DataType epsilon,
 
   // Compute gradient w.r.t. input
   if (!local_gradient_wrt_output.IsEmpty()) {
+    auto multisync =
+      El::MakeMultiSync(gpu::get_sync_info(local_gradient_wrt_input),
+                        gpu::get_sync_info(local_gradient_wrt_output),
+                        gpu::get_sync_info(local_running_var));
     const size_t local_height = local_gradient_wrt_output.Height();
     const size_t local_width = local_gradient_wrt_output.Width();
     constexpr size_t block_size_x = 256;
@@ -529,8 +562,9 @@ void bp_inference_impl(DataType epsilon,
     block_dims.y = block_size_y;
     grid_dims.x = (local_height + block_size_x - 1) / block_size_x;
     grid_dims.y = (local_width + block_size_y - 1) / block_size_y;
-    bp_inference_kernel<TensorDataType>
-      <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
+    hydrogen::gpu::LaunchKernel(
+      bp_inference_kernel<TensorDataType>,
+      grid_dims, block_dims, 0, multisync,
         local_height,
         local_width,
         epsilon,
@@ -612,7 +646,6 @@ void entrywise_batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_comp
   template class entrywise_batch_normalization_layer< \
     T, data_layout::MODEL_PARALLEL, El::Device::GPU>
 
-#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

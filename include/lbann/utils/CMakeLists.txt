@@ -3,11 +3,9 @@ set_full_path(THIS_DIR_HEADERS
   any.hpp
   argument_parser.hpp
   compiler_control.hpp
-  cublas.hpp
-  cuda.hpp
-  cudnn.hpp
   dataset.hpp
   description.hpp
+  dim_helpers.hpp
   entrywise_operator.hpp
   enum_iterator.hpp
   environment_variable.hpp
@@ -19,14 +17,12 @@ set_full_path(THIS_DIR_HEADERS
   glob.hpp
   hydrogen_utils.hpp
   im2col.hpp
-  image.hpp
   jag_utils.hpp
   lbann_library.hpp
   mild_exception.hpp
   number_theory.hpp
   nvshmem.hpp
   omp_diagnostics.hpp
-  opencv.hpp
   options.hpp
   nvshmem.hpp
   profiling.hpp
@@ -34,7 +30,7 @@ set_full_path(THIS_DIR_HEADERS
   python.hpp
   random.hpp
   random_number_generators.hpp
-  serialization.hpp
+  serialize.hpp
   statistics.hpp
   summary.hpp
   summary_impl.hpp
@@ -42,15 +38,26 @@ set_full_path(THIS_DIR_HEADERS
   trainer_file_utils.hpp
   type_erased_matrix.hpp
   typename.hpp
+  vision.hpp
+  visitor_hooks.hpp
   )
 
 if (LBANN_HAS_HALF)
   list(APPEND THIS_DIR_HEADERS
-    ${CMAKE_CURRENT_SOURCE_DIR}/serialization.hpp)
+    ${CMAKE_CURRENT_SOURCE_DIR}/serialize.hpp)
 endif (LBANN_HAS_HALF)
 
 if (LBANN_HAS_DISTCONV)
   list(APPEND THIS_DIR_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/distconv.hpp")
+endif ()
+
+if (LBANN_HAS_OPENCV)
+  list(APPEND THIS_DIR_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/opencv.hpp")
+  list(APPEND THIS_DIR_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/image.hpp")
+endif ()
+
+if (LBANN_HAS_CNPY)
+  list(APPEND THIS_DIR_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/cnpy_utils.hpp")
 endif ()
 
 # Add the subdirectories

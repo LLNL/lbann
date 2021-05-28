@@ -28,8 +28,11 @@
 #define LBANN_LAYER_LOCAL_RESPONSE_NORMALIZATION_HPP_INCLUDED
 
 #include <vector>
-#include "lbann/layers/regularizers/regularizer.hpp"
-#include "lbann/utils/cudnn.hpp"
+#include "lbann/layers/data_type_layer.hpp"
+#if defined LBANN_HAS_DNN_LIB
+#include "lbann/utils/dnn_lib/helpers.hpp"
+#include "lbann/utils/dnn_lib/local_response_normalization.hpp"
+#endif // LBANN_HAS_DNN_LIB
 #include "lbann/utils/exception.hpp"
 
 namespace lbann {
@@ -46,87 +49,61 @@ namespace lbann {
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class local_response_normalization_layer : public regularizer_layer<TensorDataType> {
-#ifdef LBANN_HAS_CUDNN
-  using ScalingType = cudnn::ScalingParamType<TensorDataType>;
+class local_response_normalization_layer : public data_type_layer<TensorDataType> {
+#ifdef LBANN_HAS_DNN_LIB
+  using ScalingType = dnn_lib::ScalingParamType<TensorDataType>;
 #else
   using ScalingType = TensorDataType;
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_DNN_LIB
 
   static_assert(T_layout == data_layout::DATA_PARALLEL,
                 "local_response_normalization only supports DATA_PARALLEL");
 public:
 
-  local_response_normalization_layer(lbann_comm *comm,
-                                     int window_width,
+  local_response_normalization_layer(int window_width,
                                      TensorDataType alpha,
                                      TensorDataType beta,
                                      TensorDataType k)
-    : regularizer_layer<TensorDataType>(comm),
+    : data_type_layer<TensorDataType>(nullptr),
       m_window_width(window_width), m_alpha(alpha), m_beta(beta), m_k(k)
-#ifdef LBANN_HAS_CUDNN
-    , m_lrn_cudnn_desc(nullptr),
-      m_tensors_cudnn_desc(this)
-#endif // LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_DNN_LIB
+    , m_tensors_dnn_desc(this)
+#endif // LBANN_HAS_DNN_LIB
   { }
 
-  local_response_normalization_layer(const local_response_normalization_layer& other)
-    : regularizer_layer<TensorDataType>(other),
+  local_response_normalization_layer(
+    const local_response_normalization_layer& other)
+    : data_type_layer<TensorDataType>(other),
       m_window_width(other.m_window_width),
       m_alpha(other.m_alpha),
       m_beta(other.m_beta),
       m_k(other.m_k)
-#ifdef LBANN_HAS_CUDNN
-    , m_lrn_cudnn_desc(nullptr),
-      m_tensors_cudnn_desc(other.m_tensors_cudnn_desc)
-#endif // LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_DNN_LIB
+    , m_lrn_dnn_desc(other.m_lrn_dnn_desc),
+      m_tensors_dnn_desc(other.m_tensors_dnn_desc)
+#endif // LBANN_HAS_DNN_LIB
   {
-#ifdef LBANN_HAS_CUDNN
-    if (other.m_lrn_cudnn_desc != nullptr) {
-      unsigned n;
-      double alpha, beta, k;
-      CHECK_CUDNN(cudnnCreateLRNDescriptor(&m_lrn_cudnn_desc));
-      CHECK_CUDNN(cudnnGetLRNDescriptor(other.m_lrn_cudnn_desc, &n, &alpha, &beta, &k));
-      CHECK_CUDNN(cudnnSetLRNDescriptor(m_lrn_cudnn_desc, n, alpha, beta, k));
-    }
-    m_tensors_cudnn_desc.set_layer(this);
-#endif // LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_DNN_LIB
+    m_tensors_dnn_desc.set_layer(this);
+#endif // LBANN_HAS_DNN_LIB
   }
 
-  local_response_normalization_layer& operator=(const local_response_normalization_layer& other) {
-    regularizer_layer<TensorDataType>::operator=(other);
+  local_response_normalization_layer& operator=(
+    const local_response_normalization_layer& other) {
+    data_type_layer<TensorDataType>::operator=(other);
     m_window_width = other.m_window_width;
     m_alpha = other.m_alpha;
     m_beta = other.m_beta;
     m_k = other.m_k;
-#ifdef LBANN_HAS_CUDNN
-    if (other.m_lrn_cudnn_desc != nullptr
-        && m_lrn_cudnn_desc == nullptr) {
-      CHECK_CUDNN(cudnnCreateLRNDescriptor(&m_lrn_cudnn_desc));
-    } else if (other.m_lrn_cudnn_desc == nullptr
-               && m_lrn_cudnn_desc != nullptr) {
-      CHECK_CUDNN(cudnnDestroyLRNDescriptor(m_lrn_cudnn_desc));
-      m_lrn_cudnn_desc = nullptr;
-    }
-    if (other.m_lrn_cudnn_desc != nullptr) {
-      unsigned n;
-      double alpha, beta, k;
-      CHECK_CUDNN(cudnnGetLRNDescriptor(other.m_lrn_cudnn_desc, &n, &alpha, &beta, &k));
-      CHECK_CUDNN(cudnnSetLRNDescriptor(m_lrn_cudnn_desc, n, alpha, beta, k));
-    }
-    m_tensors_cudnn_desc = other.m_tensors_cudnn_desc;
-    m_tensors_cudnn_desc.set_layer(this);
-#endif // LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_DNN_LIB
+    m_lrn_dnn_desc = other.m_lrn_dnn_desc;
+    m_tensors_dnn_desc = other.m_tensors_dnn_desc;
+    m_tensors_dnn_desc.set_layer(this);
+#endif // LBANN_HAS_DNN_LIB
     return *this;
   }
 
-  ~local_response_normalization_layer() override {
-#ifdef LBANN_HAS_CUDNN
-    if (m_lrn_cudnn_desc != nullptr) {
-      cudnnDestroyLRNDescriptor(m_lrn_cudnn_desc);
-    }
-#endif // LBANN_HAS_CUDNN
-  }
+  ~local_response_normalization_layer() override = default;
 
   local_response_normalization_layer* copy() const override {
     return new local_response_normalization_layer(*this);
@@ -136,47 +113,62 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
   description get_description() const override {
-    auto desc = regularizer_layer<TensorDataType>::get_description();
+    auto desc = data_type_layer<TensorDataType>::get_description();
     desc.add("alpha", m_alpha);
     desc.add("beta", m_beta);
     desc.add("k", m_k);
     return desc;
   }
 
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
+
 protected:
 
+  friend class cereal::access;
+  local_response_normalization_layer()
+    : local_response_normalization_layer(
+      5,
+      El::To<TensorDataType>(0.0001),
+      El::To<TensorDataType>(0.75),
+      El::To<TensorDataType>(2))
+  {}
+
   void setup_dims(DataReaderMetaData& dr_metadata) override {
-    regularizer_layer<TensorDataType>::setup_dims(dr_metadata);
+    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims(this->get_input_dims());
   }
 
   /// Initialize GPU objects
   void setup_gpu() override {
-    regularizer_layer<TensorDataType>::setup_gpu();
-#ifndef LBANN_HAS_CUDNN
-    LBANN_ERROR("cuDNN not detected");
+    data_type_layer<TensorDataType>::setup_gpu();
+#ifndef LBANN_HAS_DNN_LIB
+    LBANN_ERROR("DNN library not detected");
 #else
-    CHECK_CUDNN(cudnnCreateLRNDescriptor(&m_lrn_cudnn_desc));
-    CHECK_CUDNN(cudnnSetLRNDescriptor(m_lrn_cudnn_desc,
-                                      (unsigned int) m_window_width,
-                                      (double) m_alpha,
-                                      (double) m_beta,
-                                      (double) m_k));
-#endif // #ifndef LBANN_HAS_CUDNN
+    m_lrn_dnn_desc.set(m_window_width,
+                       m_alpha, m_beta, m_k);
+#endif // #ifndef LBANN_HAS_DNN_LIB
   }
 
   void fp_compute() override {
     if (this->using_gpus()) {
-      fp_compute_cudnn();
-    } else {
+      fp_compute_dnn();
+    }
+    else {
       fp_compute_cpu();
     }
   }
 
   void bp_compute() override {
     if (this->using_gpus()) {
-      bp_compute_cudnn();
-    } else {
+      bp_compute_dnn();
+    }
+    else {
       bp_compute_cpu();
     }
   }
@@ -192,41 +184,51 @@ private:
   /** LRN k parameter. */
   TensorDataType m_k;
 
-#ifdef LBANN_HAS_CUDNN
-  /** LRN cuDNN descriptor. */
-  cudnnLRNDescriptor_t m_lrn_cudnn_desc;
-  /** Tensor cuDNN descriptors. */
-  cudnn::data_parallel_layer_tensor_manager<TensorDataType> m_tensors_cudnn_desc;
-#endif // LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_DNN_LIB
+  /** LRN DNN library descriptor. */
+  dnn_lib::LRNDescriptor m_lrn_dnn_desc;
+  /** Tensor DNN libray descriptors. */
+  dnn_lib::data_parallel_layer_tensor_manager<TensorDataType> m_tensors_dnn_desc;
+#endif // LBANN_HAS_DNN_LIB
 
   /// GPU implementation of forward propagation
-  void fp_compute_cudnn() {
-#ifndef LBANN_HAS_CUDNN
-    LBANN_ERROR("cuDNN not detected");
+  void fp_compute_dnn() {
+#ifndef LBANN_HAS_DNN_LIB
+    LBANN_ERROR("DNN libary not detected");
 #else
+    // Initialize GPU workspace
+    El::Matrix<TensorDataType, El::Device::GPU> workspace;
+    size_t workspace_size = dnn_lib::get_lrn_ws_size(m_tensors_dnn_desc.get_activations());
+    workspace.Resize(workspace_size / sizeof(TensorDataType), 1);
+
     const auto& local_input = this->get_local_prev_activations();
     auto& local_output = this->get_local_activations();
     if (local_input.Height() > 0 && local_input.Width() > 0) {
       const ScalingType zero = El::TypeTraits<ScalingType>::Zero();
       const ScalingType one = El::TypeTraits<ScalingType>::One();
-      CHECK_CUDNN(cudnnLRNCrossChannelForward(cudnn::get_handle(),
-                                              m_lrn_cudnn_desc,
-                                              CUDNN_LRN_CROSS_CHANNEL_DIM1,
-                                              &one,
-                                              m_tensors_cudnn_desc.get_prev_activations(),
-                                              local_input.LockedBuffer(),
-                                              &zero,
-                                              m_tensors_cudnn_desc.get_activations(),
-                                              local_output.Buffer()));
+      dnn_lib::lrn_cross_channel_forward(
+        m_lrn_dnn_desc,
+        one,
+        m_tensors_dnn_desc.get_prev_activations(),
+        local_input,
+        zero,
+        m_tensors_dnn_desc.get_activations(),
+        local_output,
+        workspace);
     }
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_DNN_LIB
   }
 
   /// GPU implementation of backward propagation
-  void bp_compute_cudnn() {
-#ifndef LBANN_HAS_CUDNN
-    LBANN_ERROR("cuDNN not detected");
+  void bp_compute_dnn() {
+#ifndef LBANN_HAS_DNN_LIB
+    LBANN_ERROR("DNN library not detected");
 #else
+    // Initialize GPU workspace
+    El::Matrix<TensorDataType, El::Device::GPU> workspace;
+    size_t workspace_size = dnn_lib::get_lrn_ws_size(m_tensors_dnn_desc.get_activations());
+    workspace.Resize(workspace_size / sizeof(TensorDataType), 1);
+
     const auto& local_input = this->get_local_prev_activations();
     const auto& local_output = this->get_local_activations();
     const auto& local_gradient_wrt_output = this->get_local_prev_error_signals();
@@ -234,21 +236,21 @@ private:
     if (local_input.Height() > 0 && local_input.Width() > 0) {
       const ScalingType zero = El::TypeTraits<ScalingType>::Zero();
       const ScalingType one = El::TypeTraits<ScalingType>::One();
-      CHECK_CUDNN(cudnnLRNCrossChannelBackward(cudnn::get_handle(),
-                                               m_lrn_cudnn_desc,
-                                               CUDNN_LRN_CROSS_CHANNEL_DIM1,
-                                               &one,
-                                               m_tensors_cudnn_desc.get_prev_activations(),
-                                               local_input.LockedBuffer(),
-                                               m_tensors_cudnn_desc.get_prev_error_signals(),
-                                               local_gradient_wrt_output.LockedBuffer(),
-                                               m_tensors_cudnn_desc.get_activations(),
-                                               local_output.LockedBuffer(),
-                                               &zero,
-                                               m_tensors_cudnn_desc.get_error_signals(),
-                                               local_gradient_wrt_input.Buffer()));
+      dnn_lib::lrn_cross_channel_backward(
+        m_lrn_dnn_desc,
+        one,
+        m_tensors_dnn_desc.get_activations(),
+        local_output,
+        m_tensors_dnn_desc.get_prev_error_signals(),
+        local_gradient_wrt_output,
+        m_tensors_dnn_desc.get_prev_activations(),
+        local_input,
+        zero,
+        m_tensors_dnn_desc.get_error_signals(),
+        local_gradient_wrt_input,
+        workspace);
     }
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_DNN_LIB
   }
 
   /// CPU implementation of forward propagation

@@ -25,19 +25,22 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_SOFTMAX_LAYER_INSTANTIATE
+#include "lbann/comm_impl.hpp"
 #include "lbann/layers/activations/softmax.hpp"
+
+#include "lbann/utils/dnn_lib/softmax.hpp"
 
 namespace lbann {
 
 namespace {
 
 template <typename TensorDataType>
-void fp(lbann_comm& comm,
-        const El::AbstractDistMatrix<TensorDataType>& input,
-        El::AbstractDistMatrix<TensorDataType>& output,
-        El::AbstractDistMatrix<TensorDataType>& workspace,
-        TensorDataType threshold_val,
-        softmax_mode mode) {
+void fp_model_parallel(lbann_comm& comm,
+                       const El::AbstractDistMatrix<TensorDataType>& input,
+                       El::AbstractDistMatrix<TensorDataType>& output,
+                       El::AbstractDistMatrix<TensorDataType>& workspace,
+                       TensorDataType threshold_val,
+                       softmax_mode mode) {
 
   if(mode != softmax_mode::INSTANCE) {
     LBANN_ERROR("Unsupported softmax mode");
@@ -96,13 +99,15 @@ void fp(lbann_comm& comm,
 }
 
 template <typename TensorDataType>
-void bp(lbann_comm& comm,
-        const El::AbstractDistMatrix<TensorDataType>& output,
-        const El::AbstractDistMatrix<TensorDataType>& gradient_wrt_output,
-        El::AbstractDistMatrix<TensorDataType>& gradient_wrt_input,
-        El::AbstractDistMatrix<TensorDataType>& workspace,
-        TensorDataType threshold_val,
-        softmax_mode mode) {
+void bp_model_parallel(
+  lbann_comm& comm,
+  const El::AbstractDistMatrix<TensorDataType>& output,
+  const El::AbstractDistMatrix<TensorDataType>& gradient_wrt_output,
+  El::AbstractDistMatrix<TensorDataType>& gradient_wrt_input,
+  El::AbstractDistMatrix<TensorDataType>& workspace,
+  TensorDataType threshold_val,
+  softmax_mode mode)
+{
 
   if(mode != softmax_mode::INSTANCE) {
     LBANN_ERROR("Unsupported softmax mode");
@@ -140,30 +145,122 @@ void bp(lbann_comm& comm,
       dx = y * (dy - y_dot_dy);
     }
   }
-
 }
 
 } // namespace
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
+void softmax_layer<TensorDataType, Layout, Device>::setup_fp_dnn_descriptors()
+{
+  if constexpr ((Layout == data_layout::DATA_PARALLEL)
+                && (Device == El::Device::CPU))
+  {
+    auto const& input = this->get_prev_activations().LockedMatrix();
+    auto const& output = this->get_activations().LockedMatrix();
+    input_descriptor_.set(dnn_backend::template data_type<TensorDataType>(),
+                          std::vector<El::Int>{
+                            input.Width(),
+                            input.Height() },
+                          std::vector<El::Int>{
+                            input.LDim(),
+                            El::To<El::Int>(1) });
+    output_descriptor_.set(dnn_backend::template data_type<TensorDataType>(),
+                           std::vector<El::Int>{
+                             output.Width(),
+                             output.Height() },
+                           std::vector<El::Int>{
+                             output.LDim(),
+                             El::To<El::Int>(1) });
+  }
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void softmax_layer<TensorDataType, Layout, Device>::setup_bp_dnn_descriptors()
+{
+  if constexpr ((Layout == data_layout::DATA_PARALLEL)
+                && (Device == El::Device::CPU))
+  {
+    auto const& grad_wrt_output = this->get_prev_error_signals().LockedMatrix();
+    auto const& grad_wrt_input = this->get_error_signals().LockedMatrix();
+    auto const data_type = dnn_backend::template data_type<TensorDataType>();
+    grad_wrt_output_descriptor_.set(data_type,
+                                    std::vector<El::Int>{
+                                      grad_wrt_output.Width(),
+                                      grad_wrt_output.Height() },
+                                    std::vector<El::Int>{
+                                      grad_wrt_output.LDim(),
+                                      El::To<El::Int>(1) });
+    grad_wrt_input_descriptor_.set(data_type,
+                                   std::vector<El::Int>{
+                                     grad_wrt_input.Width(),
+                                     grad_wrt_input.Height() },
+                                   std::vector<El::Int>{
+                                     grad_wrt_input.LDim(),
+                                     El::To<El::Int>(1) });
+  }
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
 void softmax_layer<TensorDataType, Layout, Device>::fp_compute() {
-  fp(*this->get_comm(),
-     this->get_prev_activations(),
-     this->get_activations(),
-     *this->m_workspace,
-     this->threshold_val,
-     this->m_mode);
+  if constexpr (Layout == data_layout::DATA_PARALLEL)
+  {
+    const auto& local_input =
+      dynamic_cast<El::Matrix<TensorDataType, El::Device::CPU> const&>(
+        this->get_prev_activations().LockedMatrix());
+    auto& local_output =
+      dynamic_cast<El::Matrix<TensorDataType, El::Device::CPU>&>(
+        this->get_activations().Matrix());
+
+    dnn_lib::softmax_forward(1.f,
+                             this->input_descriptor_,
+                             local_input,
+                             0.f,
+                             this->output_descriptor_,
+                             local_output,
+                             this->m_mode);
+  }
+  else
+    fp_model_parallel(*this->get_comm(),
+                     this->get_prev_activations(),
+                     this->get_activations(),
+                     *this->m_workspace,
+                     this->threshold_val,
+                     this->m_mode);
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void softmax_layer<TensorDataType, Layout, Device>::bp_compute() {
-  bp(*this->get_comm(),
-     this->get_activations(),
-     this->get_prev_error_signals(),
-     this->get_error_signals(),
-     *this->m_workspace,
-     this->threshold_val,
-     this->m_mode);
+  if constexpr (Layout == data_layout::DATA_PARALLEL)
+  {
+    this->setup_bp_dnn_descriptors();
+    auto const& local_output =
+      dynamic_cast<El::Matrix<TensorDataType, El::Device::CPU> const&>(
+        this->get_activations().LockedMatrix());
+    auto const& local_grad_wrt_output =
+      dynamic_cast<El::Matrix<TensorDataType, El::Device::CPU> const&>(
+        this->get_prev_error_signals().LockedMatrix());
+    auto & local_grad_wrt_input =
+      dynamic_cast<El::Matrix<TensorDataType, El::Device::CPU>&>(
+        this->get_error_signals().Matrix());
+
+    dnn_lib::softmax_backward(1.f,
+                              this->output_descriptor_,
+                              local_output,
+                              this->grad_wrt_output_descriptor_,
+                              local_grad_wrt_output,
+                              0.f,
+                              this->grad_wrt_input_descriptor_,
+                              local_grad_wrt_input,
+                              this->m_mode);
+  }
+  else
+    bp_model_parallel(*this->get_comm(),
+                      this->get_activations(),
+                      this->get_prev_error_signals(),
+                      this->get_error_signals(),
+                      *this->m_workspace,
+                      this->threshold_val,
+                      this->m_mode);
 }
 
 #define PROTO(T)                                      \

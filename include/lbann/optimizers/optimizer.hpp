@@ -32,14 +32,12 @@
 #include "lbann/utils/cloneable.hpp"
 #include "lbann/utils/compiler_control.hpp"
 #ifdef LBANN_HAS_GPU
-#include "lbann/utils/cuda.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 #endif // LBANN_HAS_GPU
 #include "lbann/utils/description.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/weights/weights.hpp"
-
-#include <cereal/types/utility.hpp>
 
 #include <memory>
 #include <string>
@@ -96,6 +94,8 @@ public:
 
   /** @name Gradient update management */
   ///@{
+
+  virtual void setup(weights* w) = 0;
 
   /** @brief Add to the objective function gradient w.r.t. the weights.
    *  @param gradient           Contribution to gradient.
@@ -209,14 +209,8 @@ public:
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar) {
-    // Do not save the optimizer's step time
-  }
+  template <class Archive> void serialize(Archive & ar);
 
-  virtual bool save_to_checkpoint_shared(persist& p, std::string m_name) = 0;
-  virtual bool load_from_checkpoint_shared(persist& p, std::string m_name) = 0;
-  virtual bool save_to_checkpoint_distributed(persist& p, std::string m_name) = 0;
-  virtual bool load_from_checkpoint_distributed(persist& p, std::string m_name) = 0;
   ///@}
 
 protected:
@@ -283,7 +277,7 @@ protected:
                     "(" + to_string(this->get_status()) + ")");
       }
     }
-    void clear() {
+    void clear() override {
       this->set_status(optimizer_gradient_status::cleared);
     }
   private:

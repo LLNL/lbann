@@ -26,6 +26,7 @@
 
 #define LBANN_RELU_LAYER_INSTANTIATE
 #include "lbann/layers/activations/relu.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 
 namespace lbann {
 
@@ -35,7 +36,7 @@ namespace {
 template <typename TensorDataType>
 struct op {
   inline __device__ TensorDataType operator()(TensorDataType x) const {
-    return x > TensorDataType{0} ? x : TensorDataType{0};
+    return x > TensorDataType{0.f} ? x : TensorDataType{0.f};
   }
 };
 
@@ -47,7 +48,7 @@ struct op {
 template <typename TensorDataType>
 struct op_backprop {
   inline __device__ TensorDataType operator()(TensorDataType x, TensorDataType dy) const {
-    return x > TensorDataType{0} ? dy : TensorDataType{0};
+    return x > TensorDataType{0.f} ? dy : TensorDataType{0.f};
   }
 };
 
@@ -55,17 +56,17 @@ struct op_backprop {
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void fp_compute_distconv(relu_distconv_adapter<TensorDataType, Layout, Device> &dc) {
   assert_always(Layout == data_layout::DATA_PARALLEL);
-  dc.m_relu->forward(TensorDataType{1}, dc.get_prev_activations(),
-                     TensorDataType{0}, dc.get_activations());
+  dc.m_relu->forward(TensorDataType{1.f}, dc.get_prev_activations(),
+                     TensorDataType{0.f}, dc.get_activations());
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void bp_compute_distconv(relu_distconv_adapter<TensorDataType, Layout, Device> &dc) {
   assert_always(Layout == data_layout::DATA_PARALLEL);
-  dc.m_relu->backward(TensorDataType{1}, dc.get_activations(),
+  dc.m_relu->backward(TensorDataType{1.f}, dc.get_activations(),
                       dc.get_prev_error_signals(),
                       dc.get_prev_activations(),
-                      TensorDataType{0}, dc.get_error_signals());
+                      TensorDataType{0.f}, dc.get_error_signals());
 }
 #endif // LBANN_HAS_DISTCONV
 } // namespace
@@ -78,7 +79,7 @@ void relu_layer<TensorDataType, Layout, Device>::fp_compute() {
     return;
   }
 #endif // LBANN_HAS_DISTCONV
-  cuda::apply_entrywise_unary_operator<op, TensorDataType>(
+  gpu_lib::apply_entrywise_unary_operator<op, TensorDataType>(
       this->get_prev_activations(),
       this->get_activations());
 }
@@ -91,7 +92,7 @@ void relu_layer<TensorDataType, Layout, Device>::bp_compute() {
     return;
   }
 #endif // LBANN_HAS_DISTCONV
-  cuda::apply_entrywise_binary_operator<op_backprop, TensorDataType>(
+  gpu_lib::apply_entrywise_binary_operator<op_backprop, TensorDataType>(
       this->get_prev_activations(), this->get_prev_error_signals(),
       this->get_error_signals());
 }

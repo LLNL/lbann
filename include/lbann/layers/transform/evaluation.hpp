@@ -27,13 +27,13 @@
 #ifndef LBANN_LAYER_EVALUATION_HPP_INCLUDED
 #define LBANN_LAYER_EVALUATION_HPP_INCLUDED
 
-#include "lbann/layers/transform/transform.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
 
 /** @brief Interface with objective function and metrics. */
 template <typename TensorDataType>
-class abstract_evaluation_layer : public transform_layer<TensorDataType> {
+class abstract_evaluation_layer : public data_type_layer<TensorDataType> {
 public:
 #ifdef LBANN_DETERMINISTIC
   using EvalDataType = EvalType;
@@ -60,6 +60,19 @@ public:
 
 protected:
   abstract_evaluation_layer(lbann_comm *comm);
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
+
+  friend class cereal::access;
+  abstract_evaluation_layer()
+    : abstract_evaluation_layer(nullptr)
+  {}
+
   void setup_dims(DataReaderMetaData& dr_metadata) override;
   void setup_data(size_t max_mini_batch_size) override;
   void fp_compute() override;
@@ -77,7 +90,7 @@ private:
   Al::request m_allreduce_req;
 #ifdef LBANN_HAS_GPU
   /** CUDA event after a non-blocking GPU-CPU memory copy. */
-  cuda::event_wrapper m_copy_event;
+  gpu_lib::event_wrapper m_copy_event;
 #endif // LBANN_HAS_GPU
 
 };
@@ -93,9 +106,26 @@ class evaluation_layer : public abstract_evaluation_layer<TensorDataType> {
 public:
   evaluation_layer(lbann_comm *comm) : abstract_evaluation_layer<TensorDataType>(comm) {}
   evaluation_layer* copy() const override { return new evaluation_layer(*this); }
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
+
   std::string get_type() const override { return "evaluation"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
+
+protected:
+  friend class cereal::access;
+  evaluation_layer()
+    : evaluation_layer(nullptr)
+  {}
+
+
 };
 
 LBANN_DEFINE_LAYER_BUILDER(evaluation);

@@ -26,9 +26,16 @@
 
 #include "lbann/metrics/metric.hpp"
 #include "lbann/models/model.hpp"
+#include "lbann/utils/serialize.hpp"
 #include "lbann/utils/timer.hpp"
 
 namespace lbann {
+
+template <class Archive>
+void metric_statistics::serialize( Archive & ar ) {
+  ar(CEREAL_NVP(m_sum),
+     CEREAL_NVP(m_num_samples));
+}
 
 void metric_statistics::add_value(EvalType total_value, int num_samples) {
   m_sum += total_value;
@@ -52,6 +59,11 @@ void metric_statistics::reset() {
 
 metric::metric(lbann_comm *comm) : m_comm(comm) {}
 
+template <class Archive>
+void metric::serialize( Archive & ar ) {
+  ar(CEREAL_NVP(m_statistics));
+}
+
 EvalType metric::get_mean_value(execution_mode mode) const {
   if (m_statistics.count(mode) == 0
       || m_statistics.at(mode).get_num_samples() == 0) {
@@ -71,11 +83,11 @@ int metric::get_statistics_num_samples(execution_mode mode) const {
   }
 }
 
-std::vector<Layer*> metric::get_layer_pointers() const {
+std::vector<ViewingLayerPtr> metric::get_layer_pointers() const {
   return {};
 }
 
-void metric::set_layer_pointers(std::vector<Layer*> layers) {
+void metric::set_layer_pointers(std::vector<ViewingLayerPtr> layers) {
   if (!layers.empty()) {
     std::stringstream err;
     err << "attempted to set layer pointers for "
@@ -87,3 +99,12 @@ void metric::set_layer_pointers(std::vector<Layer*> layers) {
 }
 
 }  // namespace lbann
+
+#define LBANN_SKIP_CEREAL_REGISTRATION
+#define LBANN_CLASS_NAME metric
+#include <lbann/macros/register_class_with_cereal.hpp>
+
+#undef LBANN_CLASS_NAME
+#define LBANN_SKIP_CEREAL_REGISTRATION
+#define LBANN_CLASS_NAME metric_statistics
+#include <lbann/macros/register_class_with_cereal.hpp>

@@ -1,52 +1,48 @@
 #include <catch2/catch.hpp>
 
 #include <lbann/base.hpp> // half stuff is here.
-#include <lbann/utils/serialization.hpp>
+#include <lbann/utils/serialize.hpp>
 
-#include <cereal/archives/binary.hpp>
-#include <cereal/archives/json.hpp>
-#include <cereal/archives/xml.hpp>
-
-#include <lbann/utils/h2_tmp.hpp>
+#include <h2/meta/TypeList.hpp>
+#include <h2/patterns/multimethods/SwitchDispatcher.hpp>
 
 #include <sstream>
 
 using namespace h2::meta;
 
-// (NOTE trb 04/06/2020): There seems to be an issue with Catch2 where
-// this *must* be a parameter pack. This only appears to be true for
-// templated type aliases, not actual classes. I haven't looked into
-// it, but I don't care that much since this works around well.
-
-template <typename... ValueType>
-using BinaryArchiveTypes = TL<ValueType...,
-                              cereal::BinaryOutputArchive,
-                              cereal::BinaryInputArchive>;
-template <typename... ValueType>
-using JSONArchiveTypes = TL<ValueType...,
-                            cereal::JSONOutputArchive,
-                            cereal::JSONInputArchive>;
-template <typename... ValueType>
-using XMLArchiveTypes = TL<ValueType...,
-                           cereal::XMLOutputArchive,
-                           cereal::XMLInputArchive>;
-
-// This is not really elegant, but preprocessing macros inside
-// preprocessor blocks is "undefined behavior" so we duplicate the
-// whole thing.
+using Fp16Types = TL<lbann::cpu_fp16
 #ifdef LBANN_HAS_GPU_FP16
-TEMPLATE_PRODUCT_TEST_CASE(
-  "Serialization of half types",
-  "[utilities][half][serialize]",
-  (BinaryArchiveTypes, JSONArchiveTypes, XMLArchiveTypes),
-  (lbann::cpu_fp16, lbann::fp16))
+                     , lbann::fp16
+#endif // LBANN_HAS_GPU_FP16
+                     >;
+
+#ifdef LBANN_HAS_CEREAL_BINARY_ARCHIVES
+template <typename T>
+using BinaryArchiveTypeBundle = TL<T,
+                                   cereal::BinaryOutputArchive,
+                                   cereal::BinaryInputArchive>;
+using BinaryArchiveTypes = tlist::ExpandTL<BinaryArchiveTypeBundle, Fp16Types>;
 #else
-TEMPLATE_PRODUCT_TEST_CASE(
+using BinaryArchiveTypes = tlist::Empty;
+#endif // LBANN_HAS_CEREAL_BINARY_ARCHIVES
+
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
+template <typename T>
+using XMLArchiveTypeBundle = TL<T,
+                                cereal::XMLOutputArchive,
+                                cereal::XMLInputArchive>;
+using XMLArchiveTypes = tlist::ExpandTL<XMLArchiveTypeBundle, Fp16Types>;
+#else
+using XMLArchiveTypes = tlist::Empty;
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
+
+using AllArchiveTypes = tlist::Append<BinaryArchiveTypes,
+                                      XMLArchiveTypes>;
+
+TEMPLATE_LIST_TEST_CASE(
   "Serialization of half types",
   "[utilities][half][serialize]",
-  (BinaryArchiveTypes, JSONArchiveTypes, XMLArchiveTypes),
-  (lbann::cpu_fp16))
-#endif
+  AllArchiveTypes)
 {
   using ValueType = tlist::Car<TestType>;
   using ArchiveTypes = tlist::Cdr<TestType>;
@@ -59,7 +55,6 @@ TEMPLATE_PRODUCT_TEST_CASE(
   // Save
   {
     OutputArchiveT oarchive(ss);
-
     CHECK_NOTHROW(oarchive(val));
   }
 

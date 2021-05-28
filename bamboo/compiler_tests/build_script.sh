@@ -23,7 +23,7 @@ MPI_DIR=${COMPILER_DIR}/${MPI_LIBRARY}
 # most are MPI-independent).
 DEPENDENCY_DIR=${MPI_DIR}
 
-export CMAKE_PREFIX_PATH=${COMMON_DEPENDENCY_DIR}/catch2:${COMMON_DEPENDENCY_DIR}/cereal:${COMMON_DEPENDENCY_DIR}/clara:${COMMON_DEPENDENCY_DIR}/cub:${COMMON_DEPENDENCY_DIR}/half:${DEPENDENCY_DIR}/aluminum-0.4.0:${DEPENDENCY_DIR}/cnpy:${DEPENDENCY_DIR}/conduit:${DEPENDENCY_DIR}/hdf5:${DEPENDENCY_DIR}/hydrogen-1.4.0:${DEPENDENCY_DIR}/jpeg-turbo:${DEPENDENCY_DIR}/nccl:${DEPENDENCY_DIR}/openblas:${DEPENDENCY_DIR}/opencv:${DEPENDENCY_DIR}/protobuf:${CMAKE_PREFIX_PATH}
+export CMAKE_PREFIX_PATH=${COMMON_DEPENDENCY_DIR}/catch2:${COMMON_DEPENDENCY_DIR}/cereal:${COMMON_DEPENDENCY_DIR}/clara:${COMMON_DEPENDENCY_DIR}/cub:${COMMON_DEPENDENCY_DIR}/dihydrogen_core:${COMMON_DEPENDENCY_DIR}/half:${DEPENDENCY_DIR}/aluminum-dev:${DEPENDENCY_DIR}/cnpy:${DEPENDENCY_DIR}/conduit:${DEPENDENCY_DIR}/fftw:${DEPENDENCY_DIR}/hdf5:${DEPENDENCY_DIR}/hydrogen-dev:${DEPENDENCY_DIR}/jpeg-turbo:${DEPENDENCY_DIR}/nccl:${DEPENDENCY_DIR}/openblas:${DEPENDENCY_DIR}/opencv:${DEPENDENCY_DIR}/protobuf:${CMAKE_PREFIX_PATH}
 
 if [ -e ${DEPENDENCY_DIR} ];
 then
@@ -43,9 +43,8 @@ then
             MPI_MODULE=$(echo ${MPI_LIBRARY} | sed -e 's|-|/|g')
         fi
 
-        # Use the latest CUDA 10, since it's compatible with other
-        # CUDA 10.* libraries
-        CUDA_MODULE=$(ml --terse avail cuda |& sed -n '/\/10\./p' | tail -n1)
+        # Use the latest CUDA 11
+        CUDA_MODULE=$(ml --terse avail cuda |& sed -n '/\/11\./p' | tail -n1)
 
         # Load up the appropriate modules
         module load ${COMPILER_MODULE} ${MPI_MODULE} ${CUDA_MODULE} cmake/3.14.5
@@ -54,11 +53,9 @@ then
 
     BRAIN_DIR=/usr/workspace/wsb/brain
 
-    # CUDA-y things (Use the newest)
+    # Use the latest cuDNN 8
     ARCH=$(uname -i)
-    export NCCL_DIR=$(ls -d --color=no ${BRAIN_DIR}/nccl2/*cuda10*${ARCH} | tail -n1)
-    # Right now, we only support cuDNN 7 versions.
-    export CUDNN_DIR=$(find ${BRAIN_DIR}/cudnn -maxdepth 2 -type d | grep "cudnn-7.*/cuda-10.*_${ARCH}" | sort -r | head -1)
+    export CUDNN_DIR=$(find ${BRAIN_DIR}/cudnn -maxdepth 2 -type d | grep "cudnn-8.*/cuda-11.*_${ARCH}" | sort -r | head -1)
 
     # Unit testing framework
     export CLARA_DIR=${WORKSPACE_DIR}/stable_dependencies/clara
@@ -116,6 +113,7 @@ then
         -DLBANN_DATATYPE=float \
         -DLBANN_DETERMINISTIC=ON \
         -DLBANN_WARNINGS_AS_ERRORS=ON \
+        -DLBANN_WITH_FFT=ON \
         -DLBANN_WITH_CONDUIT=ON \
         -DLBANN_WITH_CUDA=ON \
         -DLBANN_WITH_NVPROF=OFF \

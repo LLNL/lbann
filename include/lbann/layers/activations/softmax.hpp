@@ -28,8 +28,13 @@
 #define LBANN_LAYERS_ACTIVATIONS_SOFTMAX_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
-#include "lbann/utils/cudnn.hpp"
 #include "lbann/utils/distconv.hpp"
+#include "lbann/utils/dnn_enums.hpp"
+#if defined LBANN_HAS_DNN_LIB
+#include "lbann/utils/dnn_lib/helpers.hpp"
+#include "lbann/utils/dnn_lib/softmax.hpp"
+#endif // defined LBANN_HAS_DNN_LIB
+#include "lbann/utils/dnn_lib/softmax.hpp"
 
 // Threshold outputs to a minimum value.
 
@@ -41,28 +46,6 @@
 #define LBANN_ENABLE_SOFTMAX_THRESHOLD
 
 namespace lbann {
-
-/** @brief Which tensor dimensions to apply softmax over. */
-enum class softmax_mode {
-  INVALID,
-  /** @brief Sample-wise softmax.
-   *
-   *  Slice tensor along the sample dimension (assuming data in NCHW
-   *  format) and apply softmax independently to each slice (once per
-   *  sample).
-   */
-  INSTANCE,
-  /** @brief Position-wise softmax.
-   *
-   *  Split tensor along all but the channel dimension (assuming data
-   *  in NCHW format) and apply softmax independently to each piece
-   *  (once per spatial position per sample).
-   *
-   *  This is not to be confused with @c channelwise_softmax, which
-   *  slices along the sample and channel dimensions.
-   */
-  CHANNEL
-};
 
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
@@ -100,9 +83,9 @@ public:
                 softmax_mode mode)
     : data_type_layer<TensorDataType>(comm),
       m_mode(mode)
-#ifdef LBANN_HAS_CUDNN
-    , m_tensors_cudnn_desc(this)
-#endif // LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_DNN_LIB
+    , m_tensors_dnn_desc(this)
+#endif // LBANN_HAS_DNN_LIB
   {
     if(mode == softmax_mode::INVALID) {
       LBANN_ERROR("invalid softmax mode");
@@ -114,28 +97,28 @@ public:
       m_mode(other.m_mode),
       m_workspace(other.m_workspace ?
                   other.m_workspace->Copy() : nullptr)
-#ifdef LBANN_HAS_CUDNN
-    , m_tensors_cudnn_desc(other.m_tensors_cudnn_desc)
-#endif // LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_DNN_LIB
+    , m_tensors_dnn_desc(other.m_tensors_dnn_desc)
+#endif // LBANN_HAS_DNN_LIB
   {
-#ifdef LBANN_HAS_CUDNN
-    m_tensors_cudnn_desc.set_layer(this);
-#endif // LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_DNN_LIB
+    m_tensors_dnn_desc.set_layer(this);
+#endif // LBANN_HAS_DNN_LIB
   }
 
   ~softmax_layer() = default;
 
-  softmax_layer* copy() const override { return new softmax_layer(*this); }
-  std::string get_type() const override { return "softmax"; }
-  data_layout get_data_layout() const override { return Layout; }
-  El::Device get_device_allocation() const override { return Device; }
+  softmax_layer* copy() const final { return new softmax_layer(*this); }
+  std::string get_type() const final { return "softmax"; }
+  data_layout get_data_layout() const final { return Layout; }
+  El::Device get_device_allocation() const final { return Device; }
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override {
+  void setup_dims(DataReaderMetaData& dr_metadata) final {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims(this->get_input_dims());
   }
 
-  void setup_matrices(const El::Grid& grid) override {
+  void setup_matrices(const El::Grid& grid) final {
     data_type_layer<TensorDataType>::setup_matrices(grid);
     auto dist = this->get_prev_activations().DistData();
     dist.colDist = El::STAR;
@@ -145,56 +128,101 @@ public:
       m_workspace->Matrix().SetMemoryMode(1); // CUB memory pool
     }
 #endif // HYDROGEN_HAVE_CUB
+#ifdef LBANN_HAS_DNN_LIB
+    if (!m_tensors_dnn_desc.get_layer())
+      m_tensors_dnn_desc.set_layer(this);
+#endif // LBANN_HAS_DNN_LIB
+
   }
 
-  void fp_setup_outputs(El::Int mini_batch_size) override {
+  void fp_setup_outputs(El::Int mini_batch_size) final {
     data_type_layer<TensorDataType>::fp_setup_outputs(mini_batch_size);
-    const auto& dist_data = this->get_prev_activations().DistData();
-    m_workspace->Empty(false);
-    m_workspace->AlignWith(dist_data);
-    m_workspace->Resize(1, mini_batch_size);
+    // The data parallel implementations do not use a workspace. Thus,
+    // we only need to allocate a workspace when we are in model
+    // parallel mode.
+    if constexpr (Layout == data_layout::MODEL_PARALLEL)
+    {
+      const auto& dist_data = this->get_prev_activations().DistData();
+      m_workspace->Empty(false);
+      m_workspace->AlignWith(dist_data);
+      m_workspace->Resize(1, mini_batch_size);
+    }
+
+    // Setup the descriptors
+    this->setup_fp_dnn_descriptors();
   }
 
-  void fp_compute() override;
-  void bp_compute() override;
+  void fp_compute() final;
+  void bp_compute() final;
 
   template <typename U>
   friend void fp_compute_impl(softmax_layer<U, Layout, Device>& l);
   template <typename U>
   friend void bp_compute_impl(softmax_layer<U, Layout, Device>& l);
 
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
+
 private:
+  /** @name DNN library stuff */
+  ///@{
+
+  //using dnn_backend = dnn_lib::get_backend<Device>;
+#ifdef LBANN_HAS_ONEDNN_CPU
+  using dnn_backend = onednn_backend<Device>;
+#else
+  using dnn_backend = openmp_backend;
+#endif
+  using dnnTensorDescriptor = typename dnn_backend::TensorDescriptor;
+
+  dnnTensorDescriptor input_descriptor_;
+  dnnTensorDescriptor output_descriptor_;
+  dnnTensorDescriptor grad_wrt_input_descriptor_;
+  dnnTensorDescriptor grad_wrt_output_descriptor_;
+
+  void setup_fp_dnn_descriptors();
+  void setup_bp_dnn_descriptors();
+
+  ///@}
+
+  friend cereal::access;
+  softmax_layer() : data_type_layer<TensorDataType>(nullptr) {}
 
   /** Softmax mode. */
-  const softmax_mode m_mode;
+  softmax_mode m_mode;
 
   /** Workspace for column-wise reductions. */
   std::unique_ptr<AbsDistMatrixType> m_workspace;
 
-#ifdef LBANN_HAS_CUDNN
-  /** Tensor cuDNN descriptors. */
-  cudnn::data_parallel_layer_tensor_manager<TensorDataType> m_tensors_cudnn_desc;
-#endif // LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_DNN_LIB
+  /** Tensor DNN library descriptors. */
+  dnn_lib::data_parallel_layer_tensor_manager<TensorDataType> m_tensors_dnn_desc;
+#endif // LBANN_HAS_DNN_LIB
 
 // Minimum output value to avoid denormalized floats
 #ifdef LBANN_ENABLE_SOFTMAX_THRESHOLD
-  const TensorDataType threshold_val = static_cast<TensorDataType>(El::Sqrt(std::numeric_limits<TensorDataType>::min()));
+  TensorDataType threshold_val = static_cast<TensorDataType>(El::Sqrt(std::numeric_limits<TensorDataType>::min()));
 #else
-  const TensorDataType threshold_val = El::TypeTraits<TensorDataType>::Zero();
+  TensorDataType threshold_val = El::TypeTraits<TensorDataType>::Zero();
 #endif // LBANN_ENABLE_SOFTMAX_THRESHOLD
 
 #ifdef LBANN_HAS_DISTCONV
   friend class softmax_distconv_adapter<TensorDataType, Layout, Device>;
  protected:
-  bool is_distconv_supported() const override {
+  bool is_distconv_supported() const final {
     return Device == El::Device::GPU && Layout == data_layout::DATA_PARALLEL;
   }
-  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override {
+  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) final {
     this->get_distconv_adapter_ptr() = make_unique<softmax_distconv_adapter<
       TensorDataType, Layout, Device>>(*this);
   }
-  softmax_distconv_adapter<TensorDataType, Layout, Device>& get_distconv_adapter() override;
-  const softmax_distconv_adapter<TensorDataType, Layout, Device>& get_distconv_adapter() const override;
+  softmax_distconv_adapter<TensorDataType, Layout, Device>& get_distconv_adapter() final;
+  const softmax_distconv_adapter<TensorDataType, Layout, Device>& get_distconv_adapter() const final;
 #endif // LBANN_HAS_DISTCONV
 };
 

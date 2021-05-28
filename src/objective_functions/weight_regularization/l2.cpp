@@ -27,11 +27,12 @@
 #include "lbann/objective_functions/weight_regularization/l2.hpp"
 #include "lbann/models/model.hpp"
 #ifdef LBANN_HAS_GPU
-#include "lbann/utils/cublas.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 #endif // LBANN_HAS_GPU
 #include "lbann/optimizers/data_type_optimizer.hpp"
 #include "lbann/weights/data_type_weights.hpp"
-#include "lbann/utils/h2_tmp.hpp"
+#include "lbann/utils/serialize.hpp"
+#include <h2/patterns/multimethods/SwitchDispatcher.hpp>
 
 namespace lbann {
 
@@ -66,6 +67,14 @@ void l2_weight_regularization::accumulate_contribution<El::Device::CPU>(const CP
 l2_weight_regularization::l2_weight_regularization(EvalType scale_factor)
   : objective_function_term(scale_factor) {}
 
+template <typename ArchiveT>
+void l2_weight_regularization::serialize(ArchiveT& ar)
+{
+  ar(::cereal::make_nvp(
+       "ObjectiveFunctionTerm",
+       cereal::base_class<objective_function_term>(this)));
+}
+
 void l2_weight_regularization::setup(model& m) {
   objective_function_term::setup(m);
 
@@ -76,13 +85,14 @@ void l2_weight_regularization::setup(model& m) {
   }
 
   // Add all weights in model if no weights pointers are provided
-  if (m_weights.empty()) {
-    m_weights = m.get_weights();
+  if (get_weights_pointers().empty()) {
+    set_weights_pointers(m.get_weights_pointers());
   }
 
   // Construct accumulation variables for each device
-  for (auto* w : m_weights) {
-    const auto& device = dynamic_cast<WeightsType*>(w)->get_values().GetLocalDevice();
+  for (const auto& ptr : get_weights_pointers()) {
+    const auto& w = dynamic_cast<const WeightsType&>(*ptr.lock());
+    const auto& device = w.get_values().GetLocalDevice();
     if (m_contributions.count(device) == 0) {
 #ifdef LBANN_HAS_GPU
       m_contributions[device].SetMemoryMode(1); // Pinned memory
@@ -102,7 +112,8 @@ void l2_weight_regularization::start_evaluation() {
     auto& contribution = m_contributions[El::Device::CPU];
     contribution(0, 0) = DataType(0);
     for (El::Int i = 0; i < num_weights; ++i) {
-      const auto& vals = dynamic_cast<WeightsType*>(m_weights[i])->get_values();
+      auto& w = dynamic_cast<WeightsType&>(*m_weights[i].lock());
+      const auto& vals = w.get_values();
       if (vals.GetLocalDevice() == El::Device::CPU
           && vals.Participating()
           && vals.RedundantRank() == i % vals.RedundantSize()) {
@@ -119,14 +130,15 @@ void l2_weight_regularization::start_evaluation() {
 #ifdef LBANN_HAS_GPU
   // Compute contributions from GPU weights
   if (m_contributions.count(El::Device::GPU) > 0) {
-    auto&& stream = hydrogen::cuda::GetDefaultStream();
     DMatType<El::Device::GPU> contribution;
 #ifdef HYDROGEN_HAVE_CUB
     contribution.SetMemoryMode(1); // CUB GPU memory pool
 #endif // HYDROGEN_HAVE_CUB
+    auto sync_info = gpu::get_sync_info(contribution);
     El::Zeros(contribution, 1, 1);
     for (El::Int i = 0; i < num_weights; ++i) {
-      const auto& vals = dynamic_cast<WeightsType*>(m_weights[i])->get_values();
+      auto& w = dynamic_cast<WeightsType&>(*m_weights[i].lock());
+      const auto& vals = w.get_values();
       if (vals.GetLocalDevice() == El::Device::GPU
           && vals.Participating()
           && vals.RedundantRank() == i % vals.RedundantSize()) {
@@ -137,12 +149,11 @@ void l2_weight_regularization::start_evaluation() {
     }
     get_comm().allreduce(static_cast<El::AbstractMatrix<AccumulateDataType>&>(contribution),
                          get_comm().get_trainer_comm());
-    CHECK_CUDA(cudaMemcpyAsync(m_contributions[El::Device::GPU].Buffer(),
-                               contribution.LockedBuffer(),
-                               sizeof(DataType),
-                               cudaMemcpyDeviceToHost,
-                               stream));
-    m_copy_event.record(stream);
+    ::hydrogen::gpu::Copy1DToHost(contribution.LockedBuffer(),
+                                  m_contributions[El::Device::GPU].Buffer(),
+                                  1,
+                                  sync_info);
+    m_copy_event.record(sync_info.Stream());
   }
 #endif // LBANN_HAS_GPU
 
@@ -207,12 +218,16 @@ using DispatcherType =
 
 void l2_weight_regularization::compute_weight_regularization() {
   if (m_scale_factor == EvalType(0)) { return; }
-  for (auto* w : m_weights) {
-    auto* opt = w->get_optimizer();
+  for (auto&& ptr : m_weights) {
+    auto& w = *ptr.lock();
+    auto* opt = w.get_optimizer();
     if (opt != nullptr) {
-      DispatcherType::Exec(AddToGrad(*opt, m_scale_factor), w->get_values());
+      DispatcherType::Exec(AddToGrad(*opt, m_scale_factor), w.get_values());
     }
   }
 }
 
 } // namespace lbann
+
+#define LBANN_CLASS_NAME l2_weight_regularization
+#include <lbann/macros/register_class_with_cereal.hpp>

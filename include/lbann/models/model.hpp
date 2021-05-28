@@ -42,7 +42,6 @@
 #include "lbann/proto/factories.hpp"
 #include "lbann/weights/weights.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
-#include <cereal/types/utility.hpp>
 
 // Note (trb): There's what is, IMO, an STL error in GCC in which the
 // dtor for unique_ptr is checking sizeof(T), so this must be a
@@ -80,13 +79,11 @@ public:
         std::unique_ptr<lbann_data::Optimizer> default_optimizer_msg = nullptr);
   model(const model& other);
   model& operator=(const model& other);
-  virtual ~model();
+  virtual ~model() = default;
   virtual std::unique_ptr<model> copy_model() const = 0;
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar) {
-    ar(CEREAL_NVP(*m_objective_function));
-  }
+  template <class Archive> void serialize(Archive & ar);
 
   // ===========================================
   // Access functions
@@ -118,9 +115,7 @@ public:
   }
 
   /** @brief Return the model's metrics. */
-  virtual const std::vector<metric*>& get_metrics() const {
-    return m_metrics;
-  }
+  std::vector<metric*> get_metrics() const;
 
   /** @brief Size of model's list of layers. */
   El::Int get_num_layers() const noexcept;
@@ -138,8 +133,8 @@ public:
   const std::vector<Layer*> get_layers() const;
 
   const std::vector<weights*> get_weights() const;
-
   std::vector<weights*> get_weights();
+  std::vector<ViewingWeightsPtr> get_weights_pointers() const;
 
   /** @brief Get the list of callbacks for the model. */
   virtual std::vector<observer_ptr<callback_base>> get_callbacks() {
@@ -183,10 +178,10 @@ public:
   // ===========================================
 
   /** @brief Add layer to model. */
-  virtual void add_layer(std::unique_ptr<Layer> l);
+  virtual void add_layer(OwningLayerPtr&& l);
 
   /** @brief Add weights to model. */
-  void add_weights(std::unique_ptr<weights> w);
+  void add_weights(OwningWeightsPtr&& w);
 
   /** @brief Register a new callback for the model. */
   void add_callback(std::shared_ptr<callback_base> cb);
@@ -195,10 +190,7 @@ public:
   //  void add_callbacks(std::vector<std::shared_ptr<callback_base>>& cb);
 
   /** @brief Register a new metric for the model. */
-  void add_metric(metric *m);
-
-  /** @brief Replace the model's weights. */
-  void replace_weights(std::vector<weights *>& w);
+  void add_metric(std::unique_ptr<metric> m);
 
   /** @brief Copy trained weights from input parameter w.
    *
@@ -228,7 +220,10 @@ public:
   /** @brief Are background I/O activities enabled by the input layers */
   bool background_io_activity_allowed() { return m_background_io_allowed; }
 
-  size_t get_num_iterations_per_epoch(execution_mode mode) const;
+  void swap_layers(model& other);
+  void swap_weights(model& other);
+  void swap_metrics(model& other);
+  void swap_objective_function(model& other);
 
   // ===========================================
   // Setup
@@ -236,7 +231,10 @@ public:
 
   /** @details Must be called after model specification and before
    *  execution. */
-  virtual void setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata);
+  virtual void setup(
+    size_t max_mini_batch_size,
+    DataReaderMetaData& dr_metadata,
+    bool force=false);
 
   virtual void make_data_store_preloaded(execution_mode mode);
 
@@ -269,13 +267,6 @@ public:
   virtual bool save_to_checkpoint_distributed(persist& p);
   virtual bool load_from_checkpoint_distributed(persist& p);
 
-  /** @brief Save the model's weight to file */
-  virtual bool save_weights(persist& p);
-
-  /** @brief Reload the model's weights from a file */
-  virtual bool reload_weights(const std::string latest,
-                              const std::vector<std::string>& weight_list);
-
   /** @brief Saves the model explicitly if the save_model callback is present */
   virtual bool save_model();
 
@@ -301,8 +292,9 @@ protected:
    *  maps. If a pointer is not a key in the corresponding map, the
    *  pointer is not changed.
    */
-  virtual void remap_pointers(const std::unordered_map<Layer*,Layer*>& layer_map,
-                              const std::unordered_map<weights*,weights*>& weights_map);
+  virtual void remap_pointers(
+    const std::unordered_map<Layer*,ViewingLayerPtr>& layer_map,
+    const std::unordered_map<weights*,ViewingWeightsPtr>& weights_map);
 
   /** @brief
    *
@@ -351,14 +343,6 @@ public:
   virtual void reset_mode(execution_context& context, execution_mode mode);
   /** @brief Reset model statistics for an epoch. */
   virtual void reset_epoch_statistics(execution_mode mode);
-
-  /** @brief Check if the trainer execution mode is valid for this model.
-    @todo this should be moved to the trainer when the data readers move. */
-  virtual bool is_execution_mode_valid(execution_mode mode) const;
-
-  /** @brief Complete any background I/O data fetch for the execution
-      mode requested */
-  virtual void collect_background_data_fetch(execution_mode mode);
 
   /** @brief Forward propagation step. */
   virtual void forward_prop(execution_mode mode);
@@ -437,10 +421,10 @@ private:
   /** @brief Tensor operations.
    *  @details The list is in execution order for forward propagation.
    */
-  std::vector<std::unique_ptr<Layer>> m_layers;
+  std::vector<OwningLayerPtr> m_layers;
 
   /** @brief Trainable parameters. */
-  std::vector<std::unique_ptr<weights>> m_weights;
+  std::vector<OwningWeightsPtr> m_weights;
 
   /** @details If a layer needs to construct an optimizer during
    *  setup, it will make a copy of the default optimizer. This object
@@ -455,7 +439,7 @@ private:
   /** @brief Numerical quantities to evaluate model performance.
    *  @details Does not affect training.
    */
-  std::vector<metric*> m_metrics;
+  std::vector<std::unique_ptr<metric>> m_metrics;
 
   /** @brief Current callbacks to process. */
   std::vector<std::shared_ptr<callback_base>> m_callbacks;

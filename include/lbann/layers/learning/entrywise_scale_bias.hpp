@@ -70,7 +70,7 @@ public:
 
 public:
 
-  entrywise_scale_bias_layer(lbann_comm *comm);
+  entrywise_scale_bias_layer(lbann_comm *comm=nullptr);
   entrywise_scale_bias_layer(const entrywise_scale_bias_layer& other);
   entrywise_scale_bias_layer& operator=(
     const entrywise_scale_bias_layer& other);
@@ -82,6 +82,14 @@ public:
   std::string get_type() const override { return "entry-wise scale/bias"; }
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
 
   void setup_matrices(const El::Grid& grid) override;
   void setup_data(size_t max_mini_batch_size) override;
@@ -101,7 +109,7 @@ private:
 
 };
 
-// Implementation
+// Template implementation
 template <typename TensorDataType, data_layout Layout, El::Device Dev>
 entrywise_scale_bias_layer<TensorDataType, Layout, Dev>
 ::entrywise_scale_bias_layer(lbann_comm *comm)
@@ -145,13 +153,14 @@ entrywise_scale_bias_layer<TensorDataType, Layout, Dev>
 
     // Initialize output dimensions
     this->set_output_dims(this->get_input_dims());
-    const auto output_dims = this->get_output_dims();
-    const El::Int output_size = this->get_output_size();
+    const auto& output_dims_ = this->get_output_dims();
+    std::vector<size_t> output_dims(output_dims_.begin(), output_dims_.end());
+    const auto output_size = this->get_output_size();
 
     // Construct default weights if needed
     // Note: Scale is initialized to 1 and bias to 0
     if (!this->has_weights()) {
-      auto w = make_unique<WeightsType>(this->get_comm());
+      auto w = std::make_shared<WeightsType>(*this->get_comm());
       std::vector<TensorDataType> vals(2*output_size,
                                        El::TypeTraits<TensorDataType>::Zero());
       std::fill(vals.begin(), vals.begin()+output_size,
@@ -161,7 +170,7 @@ entrywise_scale_bias_layer<TensorDataType, Layout, Dev>
       w->set_name(this->get_name() + "_weights");
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
-      this->add_weights(w.get());
+      this->add_weights(w);
       this->m_model->add_weights(std::move(w));
     }
     if (this->num_weights() != 1) {
@@ -175,7 +184,7 @@ entrywise_scale_bias_layer<TensorDataType, Layout, Dev>
     auto dist = this->get_prev_activations().DistData();
     dist.rowDist = El::STAR;
     this->get_weights(0).set_dims(output_dims,
-                                     {static_cast<int>(2)});
+                                  {static_cast<int>(2)});
     this->get_weights(0).set_matrix_distribution(dist);
 
     // Setup gradient w.r.t. weights

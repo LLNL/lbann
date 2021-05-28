@@ -28,6 +28,8 @@
 #include "lbann/layers/data_type_layer.hpp"
 
 #include "lbann/proto/proto_common.hpp"
+#include "lbann/utils/serialize.hpp"
+#include <cereal/types/polymorphic.hpp>
 
 #include <callbacks.pb.h>
 
@@ -146,6 +148,14 @@ save_images::save_images(std::vector<std::string> layer_names,
 #endif // LBANN_HAS_OPENCV
 }
 
+template <class Archive>
+void save_images::serialize(Archive & ar) {
+  ar(cereal::base_class<callback_base>(this),
+     CEREAL_NVP(m_layer_names),
+     CEREAL_NVP(m_image_format),
+     CEREAL_NVP(m_image_prefix));
+}
+
 void save_images::on_epoch_end(model *m) {
   const auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
   save_image(build_string(m_image_prefix, "epoch", c.get_epoch()),
@@ -175,3 +185,6 @@ build_save_images_callback_from_pbuf(
 
 } // namespace callback
 } // namespace lbann
+
+#define LBANN_CLASS_NAME callback::save_images
+#include <lbann/macros/register_class_with_cereal.hpp>

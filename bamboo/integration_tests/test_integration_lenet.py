@@ -73,7 +73,7 @@ def construct_model(lbann):
     import lbann.models
 
     # Layer graph
-    input_ = lbann.Input()
+    input_ = lbann.Input(target_mode='classification')
     images = lbann.Identity(input_)
     labels = lbann.Identity(input_)
     x = lbann.models.LeNet(10)(images)
@@ -121,10 +121,10 @@ def augment_test_func(test_func):
     test_name = test_func.__name__
 
     # Define test function
-    def func(cluster, exes, dirname):
+    def func(cluster, dirname):
 
         # Run LBANN experiment
-        experiment_output = test_func(cluster, exes, dirname)
+        experiment_output = test_func(cluster, dirname)
 
         # Parse LBANN log file
         train_accuracy = None

@@ -28,28 +28,23 @@ syntax = "proto3";
 
 package lbann_data;
 
+import "datatype.proto";
+
 import "callbacks.proto";
+
+import "training_algorithm.proto";
 
 message Trainer {
 
   // Unique identifier
   string name = 1;
 
-  // Parallel processes per trainer
-  //
-  // The number of processes per trainer must evenly divide the total
-  // number of MPI ranks. The number of resulting trainers is
-  // num_procs / procs_per_trainer.
-  //
-  // If procs_per_trainer is not provided, then all MPI ranks are
-  // assigned to one trainer.
-  int64 procs_per_trainer = 2;
-
   // I/O threads per parallel process
   //
   // These threads are typically used to perform data ingestion in the
   // background.
   int64 num_parallel_readers = 3;
+  bool  serialize_io = 101;
 
   repeated Callback callback = 20;
   int64 mini_batch_size = 12;
@@ -57,11 +52,6 @@ message Trainer {
   // -------------------------------
   // Advanced options
   // -------------------------------
-
-  // BVE FIXME these should go away
-  bool shareable_training_data_reader = 42; // Can the data reader be shared across multiple models( e.g. GAN)
-  bool shareable_testing_data_reader = 43; // Can the data reader be shared across multiple models (e.g. GAN)
-  bool shareable_validation_data_reader = 44; // Can the data reader be shared across multiple models (e.g. GAN)
 
   // If false, trainers will have their trainer rank mixed into their random seed.
   bool random_init_trainers_identically = 4;
@@ -71,4 +61,13 @@ message Trainer {
 
   // Algorithmic block size for Hydrogen
   int64 hydrogen_block_size = 100;
+
+  DataCoordinator data_coordinator = 200;
+
+  message DataCoordinator {
+    DataType datatype = 1;
+    string io_buffer = 2;         // Options: "partitioned" (default)
+  }
+
+  TrainingAlgorithm training_algorithm = 300;
 }

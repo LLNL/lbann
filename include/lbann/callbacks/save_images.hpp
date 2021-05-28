@@ -59,6 +59,19 @@ public:
   void on_test_end(model *m) override;
   std::string name() const override { return "save images"; }
 
+  /** @name Serialization */
+  ///@{
+
+  /** @brief Store state to archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar);
+
+  ///@}
+
+private:
+
+  friend class cereal::access;
+  save_images() = default;
+
 private:
 
   /** List of layer names to save as images. */

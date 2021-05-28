@@ -21,6 +21,7 @@ data_reader {
     index_list_per_model: false
 
     validation_percent: 0.1
+    tournament_percent: 0.1
     absolute_sample_count: 0
     percent_of_data_to_use: 1.0
     disable_responses: true
@@ -40,6 +41,7 @@ data_reader {
     index_list_per_model: false
 
     validation_percent: 0
+    tournament_percent: 0
     absolute_sample_count: 0
     percent_of_data_to_use: 0.1
     disable_responses: true

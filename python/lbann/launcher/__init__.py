@@ -3,9 +3,10 @@ import os, os.path
 import subprocess
 import lbann
 import lbann.proto
+import lbann.launcher.openmpi
 import lbann.launcher.slurm
 import lbann.launcher.lsf
-from lbann.util import make_iterable
+from lbann.util import make_iterable, nvprof_command
 
 # ==============================================
 # Run experiments
@@ -13,6 +14,7 @@ from lbann.util import make_iterable
 
 def run(trainer, model, data_reader, optimizer,
         work_dir=None,
+        proto_file_name='experiment.prototext',
         nodes=1,
         procs_per_node=1,
         time_limit=None,
@@ -24,11 +26,15 @@ def run(trainer, model, data_reader, optimizer,
         launcher_args=[],
         lbann_exe=lbann.lbann_exe(),
         lbann_args=[],
+        procs_per_trainer=None,
         environment={},
         overwrite_script=False,
         setup_only=False,
         batch_job=False,
-        experiment_dir=None):
+        nvprof=False,
+        nvprof_output_name=None,
+        experiment_dir=None,
+):
     """Run LBANN.
 
     This is intended to interface with job schedulers on HPC
@@ -62,6 +68,8 @@ def run(trainer, model, data_reader, optimizer,
         lbann_exe (str, optional): LBANN executable.
         lbann_args (str, optional): Command-line arguments to LBANN
             executable.
+        procs_per_trainer (int, optional): Number of processes per
+            LBANN trainer. Default is all processes in one trainer.
         environment (dict of {str: str}, optional): Environment
             variables.
         overwrite_script (bool, optional): Whether to overwrite script
@@ -70,6 +78,11 @@ def run(trainer, model, data_reader, optimizer,
             run after the experiment directory is initialized.
         batch_job (bool, optional): If true, the experiment is
             submitted to the scheduler as a batch job.
+        nvprof (bool, optional): If true, an nvprof command is added
+            to the beginning of LBANN executable.
+        nvprof_output_name (str, optional): nvprof output filename.
+            Filename should be unique to each process by using %q{ENV}
+            (see https://docs.nvidia.com/cuda/profiler-users-guide/).
         experiment_dir (str, optional, deprecated): See `work_dir`.
 
     Returns:
@@ -97,14 +110,21 @@ def run(trainer, model, data_reader, optimizer,
 
     # Batch script invokes LBANN
     lbann_command = [lbann_exe]
+    if nvprof:
+        lbann_command = nvprof_command(
+            work_dir=work_dir,
+            output_name=nvprof_output_name)+lbann_command
     lbann_command.extend(make_iterable(lbann_args))
-    prototext_file = os.path.join(script.work_dir, 'experiment.prototext')
+    prototext_file = os.path.join(script.work_dir, proto_file_name)
     lbann.proto.save_prototext(prototext_file,
                                trainer=trainer,
                                model=model,
                                data_reader=data_reader,
                                optimizer=optimizer)
     lbann_command.append('--prototext={}'.format(prototext_file))
+    if procs_per_trainer is not None:
+        lbann_command.append(f'--procs_per_trainer={procs_per_trainer}')
+
     script.add_parallel_command(lbann_command)
     script.add_command('status=$?')
 
@@ -171,6 +191,7 @@ def make_batch_script(script_file=None,
     """
 
     # Try detecting job scheduler if not provided
+    # Note: Fallback to OpenMPI launcher
     if not scheduler:
         try:
             subprocess.call(['sbatch', '--version'],
@@ -188,7 +209,7 @@ def make_batch_script(script_file=None,
         except:
             pass
     if not scheduler:
-        raise RuntimeError('could not detect job scheduler')
+        scheduler = 'openmpi'
 
     # Create work directory if not provided
     if not work_dir:
@@ -214,7 +235,14 @@ def make_batch_script(script_file=None,
     if not script_file:
         script_file = os.path.join(work_dir, 'batch.sh')
     script = None
-    if scheduler.lower() in ('slurm', 'srun', 'sbatch'):
+    if scheduler.lower() in ('openmpi',):
+        script = lbann.launcher.openmpi.OpenMPIBatchScript(
+            script_file=script_file,
+            work_dir=work_dir,
+            nodes=nodes,
+            procs_per_node=procs_per_node,
+            launcher_args=launcher_args)
+    elif scheduler.lower() in ('slurm', 'srun', 'sbatch'):
         script = lbann.launcher.slurm.SlurmBatchScript(
             script_file=script_file,
             work_dir=work_dir,

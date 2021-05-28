@@ -28,7 +28,8 @@
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/utils/exception.hpp"
 
-#include "lbann/utils/h2_tmp.hpp"
+#include "lbann/utils/serialize.hpp"
+#include <h2/patterns/multimethods/SwitchDispatcher.hpp>
 
 namespace lbann {
 namespace callback {
@@ -183,6 +184,13 @@ void dump_network(model *m) {
 }
 } // namespace
 
+template <class Archive>
+void check_nan::serialize(Archive & ar) {
+  ar(::cereal::make_nvp(
+       "BaseCallback",
+       ::cereal::base_class<callback_base>(this)));
+}
+
 void check_nan::on_forward_prop_end(model *m, Layer *l) {
   using proxy_type =
     El::AbstractDistMatrixReadDeviceProxy<DataType, El::Device::CPU>;
@@ -290,3 +298,6 @@ void check_nan::on_batch_end(model *m) {
 
 } // namespace callback
 } // namespace lbann
+
+#define LBANN_CLASS_NAME callback::check_nan
+#include <lbann/macros/register_class_with_cereal.hpp>

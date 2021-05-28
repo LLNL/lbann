@@ -8,6 +8,28 @@
 #if defined(HWLOC_API_VERSION) && (HWLOC_API_VERSION < 0x00010b00)
 #define HWLOC_OBJ_NUMANODE HWLOC_OBJ_NODE
 #endif
+
+std::string print_hwloc_version(unsigned long ver) {
+  return std::string{} + std::to_string(ver >> 16) + "." + std::to_string((ver & 0x00ff00) >> 8);
+}
+
+void check_hwloc_api_version() {
+#if HWLOC_API_VERSION >= 0x00020000
+  /* headers are recent */
+  if (hwloc_get_api_version() < 0x20000) {
+    LBANN_ERROR("HWLOC runtime library ", print_hwloc_version(hwloc_get_api_version()),
+                " is older than 2.0 but LBANN was compile with HWLOC API version ",
+                print_hwloc_version(HWLOC_API_VERSION));
+  }
+#else
+  /* headers are pre-2.0 */
+  if (hwloc_get_api_version() >= 0x20000) {
+    LBANN_ERROR("HWLOC runtime library ", print_hwloc_version(hwloc_get_api_version()),
+                " is more recent than 2.0 but LBANN was compile with HWLOC API version ",
+                print_hwloc_version(HWLOC_API_VERSION));
+  }
+#endif
+}
 #endif
 
 #include <algorithm>
@@ -78,6 +100,7 @@ void thread_pool::launch_pinned_threads(
   // hwloc_obj_t core = hwloc_get_obj_by_type(topo, HWLOC_OBJ_CORE, 0);
   m_threads_offset = PU_offset;
 
+  check_hwloc_api_version();
   //  hwloc_cpuset_t current_cpuset = get_local_cpuset_for_current_thread(topo);
   int i;
   //  hwloc_obj_t obj;
@@ -114,6 +137,7 @@ void thread_pool::launch_pinned_threads(
                             this, cnt, ht_topo, ht_cpuset);
     }
     hwloc_bitmap_free(iot_cpuset);
+    hwloc_bitmap_free(excluded_cpuset);
     hwloc_bitmap_free(allocated_cpuset);
   }
   catch(...)

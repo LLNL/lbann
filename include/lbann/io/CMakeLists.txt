@@ -2,6 +2,7 @@
 set_full_path(THIS_DIR_HEADERS
   file_io.hpp
   persist.hpp
+  persist_impl.hpp
   )
 
 # Propagate the files up the tree

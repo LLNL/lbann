@@ -27,9 +27,12 @@
 #ifndef LBANN_LAYER_REGULARIZER_DROPOUT_HPP_INCLUDED
 #define LBANN_LAYER_REGULARIZER_DROPOUT_HPP_INCLUDED
 
-#include "lbann/layers/regularizers/regularizer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 #include "lbann/models/model.hpp"
-#include "lbann/utils/cudnn.hpp"
+#ifdef LBANN_HAS_DNN_LIB
+#include "lbann/utils/dnn_lib/helpers.hpp"
+#include "lbann/utils/dnn_lib/dropout.hpp"
+#endif // LBANN_HAS_DNN_LIB
 #include "lbann/utils/random_number_generators.hpp"
 
 namespace lbann {
@@ -46,7 +49,7 @@ namespace lbann {
  *  Learning Research 15, no. 1 (2014): 1929-1958.
  */
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-class dropout : public regularizer_layer<TensorDataType> {
+class dropout : public data_type_layer<TensorDataType> {
 public:
   /** @name Public Types */
   ///@{
@@ -58,69 +61,51 @@ public:
 
 public:
   /** Keep units with probabiliy keep_prob. */
-  dropout(lbann_comm *comm,
-          EvalType keep_prob = EvalType(0.5))
-    : regularizer_layer<TensorDataType>(comm),
+  dropout(EvalType keep_prob = EvalType(0.5))
+    : data_type_layer<TensorDataType>(nullptr),
       m_keep_prob(keep_prob)
-#ifdef LBANN_HAS_CUDNN
-    , m_dropout_cudnn_desc(nullptr),
-      m_tensors_cudnn_desc(this)
-#endif // LBANN_HAS_CUDNN
-  {
-#if defined(LBANN_HAS_CUDNN) && defined(LBANN_DETERMINISTIC)
-    /// @todo GPU implementation of dropout with sequential consistency
-    if (Dev == El::Device::GPU && this->get_comm()->am_trainer_master()) {
-      std::cerr << "Warning: GPU dropout currently does not guarantee "
-                << "sequential consistency" << std::endl;
-    }
-#endif // defined(LBANN_HAS_CUDNN) && defined(LBANN_DETERMINISTIC)
-  }
+#ifdef LBANN_HAS_DNN_LIB
+    , m_tensors_dnn_desc(this)
+#endif // LBANN_HAS_DNN_LIB
+  {}
+
 
   dropout(const dropout& other)
-    : regularizer_layer<TensorDataType>(other),
+    : data_type_layer<TensorDataType>(other),
       m_keep_prob(other.m_keep_prob),
       m_mask(other.m_mask ? other.m_mask->Copy() : nullptr)
-#ifdef LBANN_HAS_CUDNN
-    , m_dropout_cudnn_desc(nullptr),
-      m_tensors_cudnn_desc(other.m_tensors_cudnn_desc)
-#endif // LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_DNN_LIB
+      ,
+      m_tensors_dnn_desc(other.m_tensors_dnn_desc)
+#endif // LBANN_HAS_DNN_LIB
   {
-#ifdef LBANN_HAS_CUDNN
-    m_tensors_cudnn_desc.set_layer(this);
+#ifdef LBANN_HAS_DNN_LIB
+    m_tensors_dnn_desc.set_layer(this);
     m_states = other.m_states;
     m_reserve_space = other.m_reserve_space;
-    if (other.m_dropout_cudnn_desc != nullptr) {
-      setup_dropout_cudnn_desc();
+    if (other.m_dropout_dnn_desc != nullptr) {
+      setup_dropout_dnn_desc();
     }
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_DNN_LIB
   }
 
   dropout& operator=(const dropout& other) {
-    regularizer_layer<TensorDataType>::operator=(other);
+    data_type_layer<TensorDataType>::operator=(other);
     m_keep_prob = other.m_keep_prob;
     m_mask = other.m_mask ? std::unique_ptr<AbsDistMatrixType>(other.m_mask->Copy()) : nullptr;
-#ifdef LBANN_HAS_CUDNN
-    m_tensors_cudnn_desc = other.m_tensors_cudnn_desc;
-    m_tensors_cudnn_desc.set_layer(this);
+#ifdef LBANN_HAS_DNN_LIB
+    m_tensors_dnn_desc = other.m_tensors_dnn_desc;
+    m_tensors_dnn_desc.set_layer(this);
     m_states = other.m_states;
     m_reserve_space = other.m_reserve_space;
-    if (other.m_dropout_cudnn_desc != nullptr) {
-      setup_dropout_cudnn_desc();
-    } else {
-      CHECK_CUDNN(cudnnDestroyDropoutDescriptor(m_dropout_cudnn_desc));
-      m_dropout_cudnn_desc = nullptr;
+    if (other.m_dropout_dnn_desc != nullptr) {
+      setup_dropout_dnn_desc();
     }
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_DNN_LIB
     return *this;
   }
 
-  ~dropout() override {
-#ifdef LBANN_HAS_CUDNN
-    if (m_dropout_cudnn_desc != nullptr) {
-      cudnnDestroyDropoutDescriptor(m_dropout_cudnn_desc);
-    }
-#endif // LBANN_HAS_CUDNN
-  }
+  ~dropout() override = default;
 
   dropout* copy() const override { return new dropout(*this); }
   std::string get_type() const override { return "dropout"; }
@@ -128,7 +113,7 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
   description get_description() const override {
-    auto desc = regularizer_layer<TensorDataType>::get_description();
+    auto desc = data_type_layer<TensorDataType>::get_description();
     desc.add("Keep probability", m_keep_prob);
     return desc;
   }
@@ -141,28 +126,45 @@ public:
     m_keep_prob = keep_prob;
   }
 
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
+
 protected:
 
   void setup_dims(DataReaderMetaData& dr_metadata) override {
-    regularizer_layer<TensorDataType>::setup_dims(dr_metadata);
+    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims(this->get_input_dims());
   }
 
   void setup_matrices(const El::Grid& grid) override {
-    regularizer_layer<TensorDataType>::setup_matrices(grid);
+    data_type_layer<TensorDataType>::setup_matrices(grid);
     m_mask = std::unique_ptr<AbsDistMatrixType>(this->get_activations().Copy());
   }
 
   void setup_gpu() override {
-    regularizer_layer<TensorDataType>::setup_gpu();
-#ifndef LBANN_HAS_CUDNN
-    LBANN_ERROR("cuDNN not detected");
+    data_type_layer<TensorDataType>::setup_gpu();
+#ifndef LBANN_HAS_DNN_LIB
+    LBANN_ERROR("DNN library not detected");
 #else
 
-    // Initialize cuDNN objects
-    setup_dropout_cudnn_desc();
+#ifdef LBANN_DETERMINISTIC
+    /// @todo GPU implementation of dropout with sequential consistency
+    if (this->get_comm()->am_trainer_master()) {
+      LBANN_WARNING(
+        this->get_type()," layer \"",this->get_name(),"\" ",
+        "does not guarantee sequential consistency");
+    }
+#endif // LBANN_DETERMINISTIC
 
-#endif // LBANN_HAVE_CUDNN
+    // Initialize DNN library objects
+    setup_dropout_dnn_desc();
+
+#endif // LBANN_HAS_DNN_LIB
   }
 
   void fp_compute () override {
@@ -232,8 +234,8 @@ protected:
   }
 
   void fp_compute_gpu() {
-#ifndef LBANN_HAS_CUDNN
-    LBANN_ERROR("cuDNN not detected");
+#ifndef LBANN_HAS_DNN_LIB
+    LBANN_ERROR("DNN library not detected");
 #else
 
     // Matrices
@@ -250,29 +252,26 @@ protected:
     }
     if (local_input.Height() < 1 || local_input.Width() < 1) { return; }
 
-    // Initialize cuDNN objects
-    auto&& input_desc = m_tensors_cudnn_desc.get_prev_activations();
-    auto&& output_desc = m_tensors_cudnn_desc.get_activations();
-    size_t size;
-    CHECK_CUDNN(cudnnDropoutGetReserveSpaceSize(input_desc, &size));
+    // Initialize DNN library objects
+    auto&& input_desc = m_tensors_dnn_desc.get_prev_activations();
+    auto&& output_desc = m_tensors_dnn_desc.get_activations();
+    size_t size = dnn_lib::get_dropout_reserve_space_size(input_desc);
     m_reserve_space.Resize((size + sizeof(TensorDataType) - 1) / sizeof(TensorDataType), 1);
 
     // Apply dropout on the GPU
-    CHECK_CUDNN(cudnnDropoutForward(cudnn::get_handle(),
-                                    m_dropout_cudnn_desc,
-                                    input_desc,
-                                    local_input.LockedBuffer(),
-                                    output_desc,
-                                    local_output.Buffer(),
-                                    m_reserve_space.Buffer(),
-                                    m_reserve_space.Height() * sizeof(TensorDataType)));
+    dnn_lib::dropout_forward(m_dropout_dnn_desc,
+                             input_desc,
+                             local_input,
+                             output_desc,
+                             local_output,
+                             m_reserve_space);
 
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_DNN_LIB
   }
 
   void bp_compute_gpu() {
-#ifndef LBANN_HAS_CUDNN
-    LBANN_ERROR("cuDNN not detected");
+#ifndef LBANN_HAS_DNN_LIB
+    LBANN_ERROR("DNN library not detected");
 #else
 
     // Matrices
@@ -288,62 +287,50 @@ protected:
     } else {
       if (local_gradient_wrt_input.Height() > 0
           && local_gradient_wrt_input.Width() > 0) {
-        CHECK_CUDNN(cudnnDropoutBackward(cudnn::get_handle(),
-                                         m_dropout_cudnn_desc,
-                                         m_tensors_cudnn_desc.get_prev_error_signals(),
-                                         local_gradient_wrt_output.LockedBuffer(),
-                                         m_tensors_cudnn_desc.get_error_signals(),
-                                         local_gradient_wrt_input.Buffer(),
-                                         m_reserve_space.Buffer(),
-                                         m_reserve_space.Height() * sizeof(TensorDataType)));
+        dnn_lib::dropout_backward(m_dropout_dnn_desc,
+                                  m_tensors_dnn_desc.get_prev_error_signals(),
+                                  local_gradient_wrt_output,
+                                  m_tensors_dnn_desc.get_error_signals(),
+                                  local_gradient_wrt_input,
+                                  m_reserve_space);
       }
     }
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_DNN_LIB
   }
 
-#ifdef LBANN_HAS_CUDNN
-  /** Setup cuDNN dropout descriptor and RNG state.
+#ifdef LBANN_HAS_DNN_LIB
+  /** Setup DNN library dropout descriptor and RNG state.
    */
-  void setup_dropout_cudnn_desc() {
-
-    // Deallocate dropout descriptor if needed
-    if (m_dropout_cudnn_desc != nullptr) {
-      CHECK_CUDNN(cudnnDestroyDropoutDescriptor(m_dropout_cudnn_desc));
-    }
-    m_dropout_cudnn_desc = nullptr;
+  void setup_dropout_dnn_desc() {
 
     // Setup RNG state
-    size_t size;
-    CHECK_CUDNN(cudnnDropoutGetStatesSize(cudnn::get_handle(), &size));
+    size_t size = dnn_lib::get_dropout_states_size();
     m_states.Resize((size + sizeof(TensorDataType) - 1) / sizeof(TensorDataType), 1);
 
     // Setup dropout descriptor
-    CHECK_CUDNN(cudnnCreateDropoutDescriptor(&m_dropout_cudnn_desc));
-    CHECK_CUDNN(cudnnSetDropoutDescriptor(m_dropout_cudnn_desc,
-                                          cudnn::get_handle(),
-                                          float(1 - m_keep_prob),
-                                          m_states.Buffer(),
-                                          m_states.Height() * sizeof(TensorDataType),
-                                          get_generator()()));
+    m_dropout_dnn_desc.set(float(1 - m_keep_prob),
+                             m_states.Buffer(),
+                             m_states.Height() * sizeof(TensorDataType),
+                             get_generator()());
 
   }
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_DNN_LIB
 
   /** Probability of keeping each unit. */
   EvalType m_keep_prob;
   /** Current dropout mask (a scaled Bernoulli random matrix). */
   std::unique_ptr<AbsDistMatrixType> m_mask;
 
-#ifdef LBANN_HAS_CUDNN
-  /** Dropout cuDNN descriptor. */
-  cudnnDropoutDescriptor_t m_dropout_cudnn_desc;
-  /** Tensor cuDNN descriptors. */
-  cudnn::entrywise_layer_tensor_manager<TensorDataType> m_tensors_cudnn_desc;
-  /** RNG state for cuDNN dropout. */
+#ifdef LBANN_HAS_DNN_LIB
+  /** Dropout DNN library descriptor. */
+  dnn_lib::DropoutDescriptor m_dropout_dnn_desc;
+  /** Tensor DNN library descriptors. */
+  dnn_lib::entrywise_layer_tensor_manager<TensorDataType> m_tensors_dnn_desc;
+  /** RNG state for DNN library dropout. */
   El::Matrix<TensorDataType, El::Device::GPU> m_states;
-  /** Work space for cuDNN dropout. */
+  /** Work space for DNN library dropout. */
   El::Matrix<TensorDataType, El::Device::GPU> m_reserve_space;
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_DNN_LIB
 
 };
 

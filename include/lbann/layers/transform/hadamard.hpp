@@ -28,7 +28,7 @@
 #define LBANN_LAYER_HADAMARD_HPP_INCLUDED
 
 #include <vector>
-#include "lbann/layers/transform/transform.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 #include "lbann/utils/exception.hpp"
 
 namespace lbann {
@@ -37,22 +37,37 @@ namespace lbann {
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class hadamard_layer : public transform_layer<TensorDataType> {
+class hadamard_layer : public data_type_layer<TensorDataType> {
 public:
 
-  hadamard_layer(lbann_comm *comm) : transform_layer<TensorDataType>(comm) {
+  hadamard_layer(lbann_comm *comm) : data_type_layer<TensorDataType>(comm) {
     this->m_expected_num_parent_layers = -1; // No limit on parents
   }
 
   hadamard_layer* copy() const override { return new hadamard_layer(*this); }
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
+
   std::string get_type() const override { return "Hadamard"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
 protected:
 
+  friend class cereal::access;
+  hadamard_layer()
+    : hadamard_layer(nullptr)
+  {}
+
+
   void setup_pointers() override {
-    transform_layer<TensorDataType>::setup_pointers();
+    data_type_layer<TensorDataType>::setup_pointers();
     if (this->get_num_parents() < 1) {
       std::stringstream err;
       err << get_type() << " layer \"" << this->get_name() << "\" "
@@ -62,7 +77,7 @@ protected:
   }
 
   void setup_dims(DataReaderMetaData& dr_metadata) override {
-    transform_layer<TensorDataType>::setup_dims(dr_metadata);
+    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims(this->get_input_dims());
 
     // Check that input dimensions match

@@ -51,14 +51,15 @@ class clamp_layer : public data_type_layer<TensorDataType> {
 #endif
 
 public:
-  clamp_layer(lbann_comm *comm, TensorDataType min, TensorDataType max)
-    : data_type_layer<TensorDataType>(comm), m_min(min), m_max(max) {
+  clamp_layer(TensorDataType min, TensorDataType max)
+    : data_type_layer<TensorDataType>(nullptr), m_min(min), m_max(max) {
     if (CompareType(m_min) > CompareType(m_max)) {
       std::stringstream err;
       err << "[" << m_min << "," << m_max << "] is an invalid range";
       LBANN_ERROR(err.str());
     }
   }
+
   clamp_layer* copy() const override { return new clamp_layer(*this); }
   std::string get_type() const override { return "clamp"; }
   data_layout get_data_layout() const override { return Layout; }
@@ -72,7 +73,20 @@ public:
     return desc;
   }
 
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
+
 protected:
+  friend class cereal::access;
+  clamp_layer()
+    : clamp_layer(El::To<TensorDataType>(0),El::To<TensorDataType>(1))
+  {}
+
   void setup_dims(DataReaderMetaData& dr_metadata) override {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims(this->get_input_dims());

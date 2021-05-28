@@ -25,14 +25,25 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/objective_functions/layer_term.hpp"
+#include "lbann/utils/serialize.hpp"
 
 namespace lbann {
 
 layer_term::layer_term(EvalType scale_factor)
   : objective_function_term(scale_factor) {}
 
-void layer_term::set_layer(Layer& l) {
-  set_layer_pointers({&l});
+template <typename ArchiveT>
+void layer_term::serialize(ArchiveT& ar)
+{
+  ar(::cereal::make_nvp(
+       "ObjectiveFunctionTerm",
+       ::cereal::base_class<objective_function_term>(this)));
+}
+
+void layer_term::set_layer(ViewingLayerPtr l) {
+  std::vector<ViewingLayerPtr> ptrs;
+  ptrs.emplace_back(std::move(l));
+  set_layer_pointers(ptrs);
 }
 
 Layer& layer_term::get_layer() {
@@ -40,13 +51,13 @@ Layer& layer_term::get_layer() {
   return *(const_cast<Layer*>(&static_cast<const layer_term&>(*this).get_layer()));
 }
 const Layer& layer_term::get_layer() const {
-  const auto& layer_pointers = get_layer_pointers();
-  if (layer_pointers.empty() || layer_pointers.front() == nullptr) {
+  const auto layer_pointers = get_layer_pointers();
+  if (layer_pointers.empty() || layer_pointers.front().expired()) {
     LBANN_ERROR("attempted to get the layer corresponding to "
                 "an objective function layer term, "
                 "but no such layer has been set");
   }
-  return *layer_pointers.front();
+  return *layer_pointers.front().lock();
 }
 
 /*abstract_evaluation_*/Layer& layer_term::get_evaluation_layer() {
@@ -86,3 +97,6 @@ void layer_term::differentiate() {
 }
 
 }  // namespace lbann
+
+#define LBANN_CLASS_NAME layer_term
+#include <lbann/macros/register_class_with_cereal.hpp>

@@ -101,19 +101,20 @@ class Layer(abc.ABC):
 # Generate Layer sub-classes from lbann.proto
 # Note: The list of skip fields must be updated if any new fields are
 # added to the Layer message in lbann.proto
-classes = lbann.core.util.generate_classes_from_protobuf_message(
-    layers_pb2.Layer,
-    skip_fields = set([
-        'name', 'parents', 'children', 'data_layout', 'device_allocation', 'datatype',
-        'weights', 'num_neurons_from_data_reader', 'freeze', 'hint_layer',
-        'parallel_strategy', 'weights_data', 'top', 'bottom', 'type', 'motif_layer']),
-    base_class = Layer,
-    base_kwargs = set([
-        'parents', 'children', 'weights',
-        'name', 'device', 'data_layout', 'datatype', 'hint_layer', 'parallel_strategy']),
-    base_has_export_proto = True)
-for c in classes:
-    globals()[c.__name__] = c
+if layers_pb2:
+    classes = lbann.core.util.generate_classes_from_protobuf_message(
+        layers_pb2.Layer,
+        skip_fields = set([
+            'name', 'parents', 'children', 'data_layout', 'device_allocation', 'datatype',
+            'weights', 'num_neurons_from_data_reader', 'freeze', 'hint_layer',
+            'parallel_strategy', 'weights_data', 'top', 'bottom', 'type', 'motif_layer']),
+        base_class = Layer,
+        base_kwargs = set([
+            'parents', 'children', 'weights',
+            'name', 'device', 'data_layout', 'datatype', 'hint_layer', 'parallel_strategy']),
+        base_has_export_proto = True)
+    for c in classes:
+        globals()[c.__name__] = c
 
 def traverse_layer_graph(layers):
     """Topologically ordered traversal of layer graph.

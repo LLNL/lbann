@@ -76,12 +76,12 @@ class generic_compound_data_reader : public generic_data_reader {
   //************************************************************************
   /// Apply operations to subsidiary data readers
   //************************************************************************
-  void set_validation_percent(double s) override {
-    generic_data_reader::set_validation_percent(s);
+  void set_execution_mode_split_percent(execution_mode m, double s) override {
+    generic_data_reader::set_execution_mode_split_percent(m, s);
     /// Don't propagate the validation percentage to subsidiary readers
     /// The percentage is applied at the top level
     for (auto&& reader : m_data_readers) {
-      reader->set_validation_percent(0);
+      reader->set_execution_mode_split_percent(m, 0);
     }
   }
 
@@ -109,6 +109,32 @@ class generic_compound_data_reader : public generic_data_reader {
   /// needed to support data_store_merge_samples
   std::vector<generic_data_reader*> & get_data_readers() {
     return m_data_readers;
+  }
+
+  bool has_labels() const override {
+    for (auto&& reader : m_data_readers) {
+      return reader->has_labels();
+    }
+    return false;
+  }
+
+  bool has_responses() const override {
+    for (auto&& reader : m_data_readers) {
+      return reader->has_responses();
+    }
+    return false;
+  }
+
+  void set_has_labels(const bool b) override {
+    for (auto&& reader : m_data_readers) {
+      reader->set_has_labels(b);
+    }
+  }
+  /// Whether or not a data reader has a response field
+  void set_has_responses(const bool b) override {
+    for (auto&& reader : m_data_readers) {
+      reader->set_has_responses(b);
+    }
   }
 
   //************************************************************************

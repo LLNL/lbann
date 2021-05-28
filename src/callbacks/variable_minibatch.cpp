@@ -28,7 +28,7 @@
 
 #include "lbann/callbacks/variable_minibatch.hpp"
 
-#include "lbann/layers/io/input/input_layer.hpp"
+#include "lbann/layers/io/input_layer.hpp"
 #include "lbann/utils/exception.hpp"
 
 #include <callbacks.pb.h>
@@ -47,12 +47,12 @@ void variable_minibatch::on_train_begin(model *m) {
   // Avoid issues with the train method being called multiple times.
   const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
   if (c.get_epoch() != 0) { return; }
-  const auto& t = c.get_trainer();
+  const auto& t = get_const_trainer();
 
   // Get first input layer in model
-  generic_input_layer<DataType>* input = nullptr;
+  input_layer<DataType>* input = nullptr;
   for (auto&& l : m->get_layers()) {
-    input = dynamic_cast<generic_input_layer<DataType>*>(l);
+    input = dynamic_cast<input_layer<DataType>*>(l);
     if (input != nullptr) { break; }
   }
   if (input == nullptr) { LBANN_ERROR("could not get input layer"); }
@@ -67,17 +67,17 @@ void variable_minibatch::on_train_begin(model *m) {
                 << "size and using variable-sized mini-batches" << std::endl;
     }
   }
-  m->get_execution_context().get_trainer().get_data_coordinator().calculate_num_iterations_per_epoch(m_starting_mbsize);
+  get_trainer().get_data_coordinator().calculate_num_iterations_per_epoch(m_starting_mbsize);
 }
 
 void variable_minibatch::on_epoch_end(model *m) {
   const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
-  const auto& t = c.get_trainer();
+  const auto& t = get_const_trainer();
 
   // Get first input layer in model
-  generic_input_layer<DataType>* input = nullptr;
+  input_layer<DataType>* input = nullptr;
   for (auto&& l : m->get_layers()) {
-    input = dynamic_cast<generic_input_layer<DataType>*>(l);
+    input = dynamic_cast<input_layer<DataType>*>(l);
     if (input != nullptr) { break; }
   }
   if (input == nullptr) { LBANN_ERROR("could not get input layer"); }
@@ -96,7 +96,7 @@ void variable_minibatch::on_epoch_end(model *m) {
       }
       new_mbsize = t.get_max_mini_batch_size();
     }
-    m->get_execution_context().get_trainer().get_data_coordinator().calculate_num_iterations_per_epoch(new_mbsize);
+    get_trainer().get_data_coordinator().calculate_num_iterations_per_epoch(new_mbsize);
     m_current_mini_batch_size = new_mbsize;
     m_ramp_count = ramp_time;
     if (new_lr != 0.0f) {

@@ -27,7 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <cstdlib>
-#include "lbann/comm.hpp"
+#include "lbann/comm_impl.hpp"
 #include "test_utils.hpp"
 
 using namespace lbann;

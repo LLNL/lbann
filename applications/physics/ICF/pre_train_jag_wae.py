@@ -155,8 +155,7 @@ def construct_model():
 if __name__ == '__main__':
     import lbann
 
-    trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size,
-                            procs_per_trainer=args.procs_per_trainer)
+    trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size)
     model = construct_model()
     # Setup optimizer
     opt = lbann.Adam(learn_rate=0.0001,beta1=0.9,beta2=0.99,eps=1e-8)
@@ -178,6 +177,7 @@ if __name__ == '__main__':
                                    f'--index_list_train={args.index_list_train}',
                                    f'--index_list_test={args.index_list_test}',
                                    f'--data_filedir_train={args.data_filedir_train}',
-                                   f'--data_filedir_test={args.data_filedir_test}'],
+                                   f'--data_filedir_test={args.data_filedir_test}',
+                                   f'--procs_per_trainer={run_args.procs_per_trainer}'],
                                    **kwargs)
     print(status)

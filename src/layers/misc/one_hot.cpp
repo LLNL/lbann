@@ -31,31 +31,54 @@ namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void one_hot_layer<TensorDataType, Layout, Device>::fp_compute() {
-  using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
 
   // Local matrices
-  const auto& local_input =
-    dynamic_cast<const CPUMatType&>(this->get_local_prev_activations());
-  auto& local_output = dynamic_cast<CPUMatType&>(this->get_local_activations());
-  const El::Int local_height = local_output.Height();
-  const El::Int local_width = local_output.Width();
+  using LocalMat = El::Matrix<TensorDataType, El::Device::CPU>;
+  const auto& input = this->get_prev_activations();
+  auto& output = this->get_activations();
+  auto& local_output = dynamic_cast<LocalMat&>(output.Matrix());
+  const El::Int local_mini_batch_size = output.LocalWidth();
+  const El::Int output_size = output.Height();
+
+  // Make sure all procs in column communicator have access to input
+  LocalMat local_input;
+  const auto& col_comm = input.ColComm();
+  const auto col_rank = El::mpi::Rank(col_comm);
+  const auto owner_rank = input.RowOwner(0);
+  if (col_rank == owner_rank) {
+    El::LockedView(local_input, input.LockedMatrix());
+  }
+  else {
+    local_input.Resize(1, input.LocalWidth());
+  }
+  /** @todo (tym1 3/12/21): We are working around a bug in Hydrogen.
+   *  Broadcast with Matrix<T,D> is not instatiated. */
+  El::Broadcast(
+    static_cast<El::AbstractMatrix<TensorDataType>&>(local_input),
+    col_comm,
+    owner_rank);
 
   // Populate one-hot vectors
-  El::Zero(local_output);
+  El::Zero(output);
   LBANN_OMP_PARALLEL_FOR
-  for (El::Int col = 0; col < local_width; ++col) {
-    const auto& ind = local_input(0, col);
-    if (El::TypeTraits<TensorDataType>::Zero() <= ind && ind < TensorDataType(local_height)) {
-      const El::Int row = static_cast<El::Int>(ind);
-      local_output(row, col) = El::TypeTraits<TensorDataType>::One();
+  for (El::Int j=0; j<local_mini_batch_size; ++j) {
+    const auto& x = local_input.CRef(0,j);
+    const auto i_global = static_cast<El::Int>(std::floor(x));
+    if (0 <= i_global
+        && i_global < output_size
+        && output.RowOwner(i_global) == col_rank) {
+      local_output(output.LocalRow(i_global), j)
+        = El::TypeTraits<TensorDataType>::One();
     }
   }
 
 }
 
-#define PROTO(T)                     \
-  template class one_hot_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>
-
+#define PROTO(T)                                            \
+  template class one_hot_layer<                             \
+    T, data_layout::DATA_PARALLEL, El::Device::CPU>;        \
+  template class one_hot_layer<                             \
+    T, data_layout::MODEL_PARALLEL, El::Device::CPU>
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"
 

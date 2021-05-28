@@ -8,16 +8,18 @@ class Trainer:
     def __init__(self,
                  mini_batch_size,
                  name=None,
-                 procs_per_trainer=None,
                  num_parallel_readers=None,
                  random_seed=None,
+                 serialize_io=None,
+                 training_algo=None,
                  callbacks=[]):
         self.name = name
-        self.procs_per_trainer = procs_per_trainer
         self.num_parallel_readers = num_parallel_readers
         self.random_seed = random_seed
+        self.serialize_io = serialize_io
         self.mini_batch_size = mini_batch_size
         self.hydrogen_block_size = None
+        self.training_algo = training_algo
         # Callbacks
         self.callbacks = make_iterable(callbacks)
 
@@ -27,8 +29,6 @@ class Trainer:
         trainer = trainer_pb2.Trainer()
         if self.name is not None:
             trainer.name = self.name
-        if self.procs_per_trainer is not None:
-            trainer.procs_per_trainer = self.procs_per_trainer
         if self.num_parallel_readers is not None:
             trainer.num_parallel_readers = self.num_parallel_readers
         if self.random_seed is not None:
@@ -37,6 +37,10 @@ class Trainer:
             trainer.mini_batch_size = self.mini_batch_size
         if self.hydrogen_block_size is not None:
             trainer.hydrogen_block_size = self.hydrogen_block_size
+        if self.serialize_io is not None:
+            trainer.serialize_io = self.serialize_io
+        if self.training_algo is not None:
+            trainer.training_algorithm.CopyFrom(self.training_algo.export_proto())
 
         # Add trainer components
         trainer.callback.extend([c.export_proto() for c in self.callbacks])

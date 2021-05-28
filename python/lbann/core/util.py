@@ -6,7 +6,7 @@ from Protobuf messages.
 """
 import google.protobuf.descriptor
 import google.protobuf.wrappers_pb2
-from lbann import lbann_pb2, callbacks_pb2, layers_pb2, metrics_pb2, model_pb2, objective_functions_pb2, optimizers_pb2, weights_pb2
+from lbann import lbann_pb2, callbacks_pb2, datatype_pb2, layers_pb2, metrics_pb2, model_pb2, objective_functions_pb2, optimizers_pb2, weights_pb2
 from lbann.util import make_iterable
 
 # Each field in a Protobuf message is labeled as 'optional',
@@ -249,3 +249,30 @@ def generate_classes_from_protobuf_message(message,
                                            base_kwargs,
                                            base_has_export_proto))
     return classes
+
+def get_parallel_strategy_args(**kwargs):
+    """A wrapper function to create parallel_strategy arguments for
+    Distconv-enabled layers.
+
+    Args:
+        {sample, depth, height, width, channel, filter}_groups (int):
+            The number of processes for the corresponding dimension.
+    """
+
+    dimension_names = [
+        "sample",
+        "depth",
+        "height",
+        "width",
+        "channel",
+        "filter",
+    ]
+    group_names = ["{}_groups".format(x) for x in dimension_names]
+    assert len(set(kwargs.keys())-set(group_names)) == 0
+
+    parallel_strategy = {}
+    for group_name in group_names:
+        parallel_strategy[group_name] = kwargs[group_name] \
+            if group_name in kwargs.keys() else 1
+
+    return parallel_strategy

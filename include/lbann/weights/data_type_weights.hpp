@@ -35,6 +35,11 @@ namespace lbann_data {
 class WeightsData;
 }
 
+namespace cereal
+{
+  class access;
+}// namespace cereal
+
 namespace lbann {
 
 // Forward declaration
@@ -79,7 +84,7 @@ public:
   ///@}
 
 public:
-  data_type_weights(lbann_comm* comm);
+  data_type_weights(lbann_comm& comm);
   data_type_weights(const data_type_weights& other);
   data_type_weights& operator=(const data_type_weights& other);
   virtual ~data_type_weights() = default;
@@ -125,15 +130,16 @@ public:
   AbsDistMatrixType& get_values() override;
   /** Get the weight matrix. */
   const AbsDistMatrixType& get_values() const override;
+  using weights::set_values;
   /** Set the weight matrix. */
   void set_values(const AbsDistMatrixType& values);
 
   /** Set a weight value. */
-  void set_value(TensorDataType value, int index);
+  void set_value(TensorDataType value, size_t index);
   /** Set an entry in the weight tensor. */
-  void set_value(TensorDataType value, std::vector<int> pos);
+  void set_value(TensorDataType value, std::vector<size_t> pos);
   /** Set an entry in the weight matrix. */
-  void set_value(TensorDataType value, int row, int col);
+  void set_value(TensorDataType value, size_t row, size_t col);
 
   /** Reconcile weight values.
    *  If weight values are duplicated across multiple processes, they
@@ -146,23 +152,35 @@ public:
    */
   void reconcile_values(Al::request& req) override;
 
-  // -----------------------------------------------
-  // Checkpointing
-  // -----------------------------------------------
-  bool save_to_checkpoint_shared(persist& p) override;
-  bool load_from_checkpoint_shared(persist& p) override;
+  bool load_from_save(std::string const& ckpt_dir, std::vector<std::string> const& weight_list, El::FileFormat el_mode);
   bool load_from_save(std::string const& ckpt_dir, std::vector<std::string> const& weight_list) override;
-  bool save_to_checkpoint_distributed(persist& p) override;
-  bool load_from_checkpoint_distributed(persist& p) override;
 
   /** Write weights to proto file */
   void write_proto(lbann_data::WeightsData* proto) const override;
 
+  /** @name Serialization */
+  ///@{
+
+  /** @brief Serialize the weights object to the archive.
+   *  @tparam ArchiveT (Inferred.) The archive type.
+   *  @param ar[in,out] The archive to which to write or from which to
+   *                    read.
+   */
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
+
 private:
+  friend cereal::access;
+  data_type_weights();
+
   void do_augment_description_(description&) const override;
   void do_setup_() override;
-  void do_set_dims_(std::vector<int> const& matrix_height_dims,
-                    std::vector<int> const& matrix_width_dims) override;
+  void do_set_dims_(std::vector<size_t> const& matrix_height_dims,
+                    std::vector<size_t> const& matrix_width_dims) override;
+  void do_move_values_(data_type_weights& other);
+  void do_steal_values_(weights& other) override;
 private:
 
   /** Weight matrix. */

@@ -25,11 +25,13 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/comm_impl.hpp"
 #include "lbann/data_readers/data_reader_smiles.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/commify.hpp"
 #include "lbann/utils/lbann_library.hpp"
+#include "lbann/utils/argument_parser.hpp"
 #include <mutex>
 #include <random>
 #include <time.h>
@@ -109,11 +111,24 @@ void smiles_data_reader::load() {
 
   // m_has_header = !opts->get_bool("no_header");
   //  side effects -- hard code for now, relook later
-  m_has_header = true;
+  m_has_header = false;
 
   // get the total number of samples in the file
   const std::string infile = get_file_dir() + "/" + get_data_filename();
-  int num_samples = get_num_lines(infile);
+  int num_samples = 0;
+  auto& arg_parser = global_argument_parser();
+  if (get_role() == "train") {
+    num_samples = arg_parser.get<int>(NUM_TRAIN_SAMPLES);
+  }
+  if (get_role() == "validate") {
+    num_samples = arg_parser.get<int>(NUM_VALIDATE_SAMPLES);
+  }
+  if (get_role() == "test") {
+    num_samples = arg_parser.get<int>(NUM_TEST_SAMPLES);
+  }
+  if(num_samples == 0) {
+    num_samples = get_num_lines(infile);
+  }
   if (m_has_header) {
     --num_samples;
   }
@@ -124,7 +139,7 @@ void smiles_data_reader::load() {
   resize_shuffled_indices();
 
   // Optionally run "poor man's" LTFB
-  if (opts->get_bool("ltfb")) {
+  if (opts->get_bool("ltfb") && get_role() != "test") {
     if (is_master()) {
       std::cout << "running poor man's LTFB\n";
     }
@@ -271,13 +286,11 @@ void smiles_data_reader::do_preload_data_store() {
 }
 
 bool smiles_data_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
-  short *data_ptr = nullptr;
   size_t sz = 0;
   std::vector<short> data;
   // no data_store: all data is stored locally
   if (m_data_store == nullptr) {
     get_sample(data_id, data);
-    data_ptr = data.data();
     sz = data.size();
   }
 
@@ -294,13 +307,12 @@ bool smiles_data_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
     const std::string &smiles_string = node["/" + LBANN_DATA_ID_STR(data_id) + "/data"].as_string();
     //const std::string &smiles_string = node["/data/" + LBANN_DATA_ID_STR(data_id) + "/data"].as_string();
     encode_smiles(smiles_string, data, data_id);
-    data_ptr = data.data();
     sz = data.size();
   }
 
   size_t j;
   for (j = 0; j < sz; ++j) {
-    X(j, mb_idx) = data_ptr[j];
+    X(j, mb_idx) = data[j];
   }
   for (; j<static_cast<size_t>(m_linearized_data_size); j++) {
     X(j, mb_idx) = m_pad;

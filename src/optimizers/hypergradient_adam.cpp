@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/optimizers/hypergradient_adam.hpp"
+#include "lbann/optimizers/hypergradient_adam_impl.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
 
@@ -150,74 +151,6 @@ void hypergradient_adam<TensorDataType>::step_compute(AbsDistMatrixType& values,
 }
 
 template <typename TensorDataType>
-bool hypergradient_adam<TensorDataType>::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
-  if (this->get_comm().am_trainer_master()) {
-    write_cereal_archive(*this, p, "hypergradient_adam.xml");
-  }
-
-  char l_name[512];
-  sprintf(l_name, "%s_optimizer_adam_moment1_%lldx%lld", name_prefix.c_str(), m_moment1->Height(), m_moment2->Width());
-  p.write_distmat(persist_type::train, l_name, m_moment1.get());
-
-  sprintf(l_name, "%s_optimizer_adam_moment2_%lldx%lld", name_prefix.c_str(), m_moment2->Height(), m_moment2->Width());
-  p.write_distmat(persist_type::train, l_name, m_moment2.get());
-
-  sprintf(l_name, "%s_optimizer_adam_old_gradient_%lldx%lld", name_prefix.c_str(), m_old_gradient->Height(), m_old_gradient->Width());
-  p.write_distmat(persist_type::train, l_name, m_old_gradient.get());
-
-  return true;
-}
-
-template <typename TensorDataType>
-bool hypergradient_adam<TensorDataType>::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
-  load_from_shared_cereal_archive(*this, p, this->get_comm(), "hypergradient_adam.xml");
-
-  char l_name[512];
-  sprintf(l_name, "%s_optimizer_adam_moment1_%lldx%lld.bin", name_prefix.c_str(), m_moment1->Height(), m_moment2->Width());
-  p.read_distmat(persist_type::train, l_name, m_moment1.get());
-
-  sprintf(l_name, "%s_optimizer_adam_moment2_%lldx%lld.bin", name_prefix.c_str(), m_moment2->Height(), m_moment2->Width());
-  p.read_distmat(persist_type::train, l_name, m_moment2.get());
-
-  sprintf(l_name, "%s_optimizer_adam_old_gradient_%lldx%lld.bin", name_prefix.c_str(), m_old_gradient->Height(), m_old_gradient->Width());
-  p.read_distmat(persist_type::train, l_name, m_old_gradient.get());
-  return true;
-}
-
-template <typename TensorDataType>
-bool hypergradient_adam<TensorDataType>::save_to_checkpoint_distributed(persist& p, std::string name_prefix) {
-  write_cereal_archive(*this, p, "hypergradient_adam.xml");
-
-  char l_name[512];
-  sprintf(l_name, "%s_optimizer_adam_moment1_%lldx%lld", name_prefix.c_str(), m_moment1->Height(), m_moment2->Width());
-  p.write_rank_distmat(persist_type::train, l_name, *m_moment1);
-
-  sprintf(l_name, "%s_optimizer_adam_moment2_%lldx%lld", name_prefix.c_str(), m_moment2->Height(), m_moment2->Width());
-  p.write_rank_distmat(persist_type::train, l_name, *m_moment2);
-
-  sprintf(l_name, "%s_optimizer_adam_old_gradient_%lldx%lld", name_prefix.c_str(), m_old_gradient->Height(), m_old_gradient->Width());
-  p.write_rank_distmat(persist_type::train, l_name, *m_old_gradient);
-
-  return true;
-}
-
-template <typename TensorDataType>
-bool hypergradient_adam<TensorDataType>::load_from_checkpoint_distributed(persist& p, std::string name_prefix) {
-  read_cereal_archive(*this, p, "hypergradient_adam.xml");
-
-  char l_name[512];
-  sprintf(l_name, "%s_optimizer_adam_moment1_%lldx%lld", name_prefix.c_str(), m_moment1->Height(), m_moment2->Width());
-  p.read_rank_distmat(persist_type::train, l_name, *m_moment1);
-
-  sprintf(l_name, "%s_optimizer_adam_moment2_%lldx%lld", name_prefix.c_str(), m_moment2->Height(), m_moment2->Width());
-  p.read_rank_distmat(persist_type::train, l_name, *m_moment2);
-
-  sprintf(l_name, "%s_optimizer_adam_old_gradient_%lldx%lld", name_prefix.c_str(), m_old_gradient->Height(), m_old_gradient->Width());
-  p.read_rank_distmat(persist_type::train, l_name, *m_old_gradient);
-  return true;
-}
-
-template <typename TensorDataType>
 std::unique_ptr<optimizer>
 build_hypergradient_adam_optimizer_from_pbuf(
   google::protobuf::Message const& msg) {
@@ -242,3 +175,6 @@ build_hypergradient_adam_optimizer_from_pbuf(
 #include "lbann/macros/instantiate.hpp"
 
 }  // namespace lbann
+
+#define LBANN_CLASS_NAME hypergradient_adam
+#include <lbann/macros/register_template_class_with_cereal.hpp>

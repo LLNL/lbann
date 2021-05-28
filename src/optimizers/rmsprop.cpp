@@ -24,7 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/optimizers/rmsprop.hpp"
+#include "lbann/optimizers/rmsprop_impl.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
 
@@ -75,9 +75,9 @@ void rmsprop<TensorDataType>::step_compute(AbsDistMatrixType& values,
                                            const AbsDistMatrixType& gradient) {
   switch (values.GetLocalDevice()) {
   case El::Device::CPU: step_compute_cpu(values, gradient); break;
-#ifdef LBANN_HAS_CUDA
+#ifdef LBANN_HAS_GPU
   case El::Device::GPU: step_compute_gpu(values, gradient); break;
-#endif // LBANN_HAS_CUDA
+#endif // LBANN_HAS_GPU
   default:
     std::ostringstream err;
     err << "unsupported device type "
@@ -115,56 +115,6 @@ void rmsprop<TensorDataType>::step_compute_cpu(AbsDistMatrixType& values,
 
 }
 
-// =============================================
-// Checkpointing
-// =============================================
-
-template <typename TensorDataType>
-bool rmsprop<TensorDataType>::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
-  if (this->get_comm().am_trainer_master()) {
-    write_cereal_archive(*this, p, "rmsprop.xml");
-  }
-
-  char l_name[512];
-  sprintf(l_name, "%s_optimizer_cache_%lldx%lld", name_prefix.c_str(), m_cache->Height(), m_cache->Width());
-  p.write_distmat(persist_type::train, l_name, m_cache.get());
-
-  return true;
-}
-
-template <typename TensorDataType>
-bool rmsprop<TensorDataType>::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
-  load_from_shared_cereal_archive(*this, p, this->get_comm(), "rmsprop.xml");
-
-  char l_name[512];
-  sprintf(l_name, "%s_optimizer_cache_%lldx%lld.bin", name_prefix.c_str(), m_cache->Height(), m_cache->Width());
-  p.read_distmat(persist_type::train, l_name, m_cache.get());
-
-  return true;
-}
-
-template <typename TensorDataType>
-bool rmsprop<TensorDataType>::save_to_checkpoint_distributed(persist& p, std::string name_prefix) {
-  write_cereal_archive(*this, p, "rmsprop.xml");
-
-  char l_name[512];
-  sprintf(l_name, "%s_optimizer_cache_%lldx%lld", name_prefix.c_str(), m_cache->Height(), m_cache->Width());
-  p.write_rank_distmat(persist_type::train, l_name, *m_cache);
-
-  return true;
-}
-
-template <typename TensorDataType>
-bool rmsprop<TensorDataType>::load_from_checkpoint_distributed(persist& p, std::string name_prefix) {
-  read_cereal_archive(*this, p, "rmsprop.xml");
-
-  char l_name[512];
-  sprintf(l_name, "%s_optimizer_cache_%lldx%lld", name_prefix.c_str(), m_cache->Height(), m_cache->Width());
-  p.read_rank_distmat(persist_type::train, l_name, *m_cache);
-
-  return true;
-}
-
 template <typename TensorDataType>
 std::unique_ptr<optimizer>
 build_rmsprop_optimizer_from_pbuf(
@@ -188,3 +138,6 @@ build_rmsprop_optimizer_from_pbuf(
 #include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann
+
+#define LBANN_CLASS_NAME rmsprop
+#include <lbann/macros/register_template_class_with_cereal.hpp>

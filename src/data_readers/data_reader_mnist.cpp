@@ -27,6 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_mnist.hpp"
+#include "lbann/data_readers/sample_list_impl.hpp"
 #include "lbann/utils/file_utils.hpp"
 #include <cstdio>
 
@@ -45,7 +46,8 @@ void mnist_reader::set_defaults() {
   m_image_height = 28;
   m_image_num_channels = 1;
   set_linearized_image_size();
-  m_num_labels=10;
+  m_num_labels = 10;
+  m_supported_input_types[input_data_type::LABELS] = true;
 }
 
 bool mnist_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx) {

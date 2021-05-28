@@ -25,46 +25,106 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/execution_contexts/sgd_execution_context.hpp"
-#include <cereal/types/base_class.hpp>
-#include <cereal/types/polymorphic.hpp>
-#include <cereal/archives/binary.hpp>
-#include <cereal/archives/xml.hpp>
+#include "lbann/base.hpp"
+#include "lbann/io/persist_impl.hpp"
+#include "lbann/trainers/trainer.hpp"
+#include "lbann/utils/serialize.hpp"
 
 namespace lbann {
 
-sgd_execution_context::sgd_execution_context(trainer& trainer,
-                                             training_algorithm& training_alg,
-                                             lbann_comm *comm,
-                                             execution_mode mode,
+sgd_execution_context::sgd_execution_context(execution_mode mode,
                                              size_t mini_batch_size)
-  : execution_context(trainer, training_alg, comm, mode),
-    m_current_mini_batch_size(mini_batch_size),
-    m_effective_mini_batch_size(mini_batch_size) {}
+  : m_current_mini_batch_size(mini_batch_size),
+    m_effective_mini_batch_size(mini_batch_size), m_execution_mode(mode)
+{}
+
+template <class Archive> void sgd_execution_context::serialize(Archive& ar)
+{
+  ar(cereal::base_class<execution_context>(this),
+     CEREAL_NVP(m_epoch),
+     CEREAL_NVP(m_current_mini_batch_size),
+     CEREAL_NVP(m_effective_mini_batch_size),
+     CEREAL_NVP(m_execution_mode));
+}
 
 ////////////////////////////////////////////////////////////
 // Checkpointing
 ////////////////////////////////////////////////////////////
 
-void sgd_execution_context::save_to_checkpoint_shared(persist& p) {
-  if (get_comm().am_trainer_master()) {
-    write_cereal_archive<sgd_execution_context>(*this, p, get_execution_mode(), "_ctx.xml");
+void sgd_execution_context::save_to_checkpoint_shared(persist& p)
+{
+  if (get_trainer().get_comm()->am_trainer_master()) {
+    write_cereal_archive<sgd_execution_context>(*this,
+                                                p,
+                                                get_execution_mode(),
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
+                                                "_ctx.xml"
+#else  // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
+                                                "_ctx.bin"
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
+    );
   }
   return;
 }
 
-void sgd_execution_context::load_from_checkpoint_shared(persist& p) {
-  load_from_shared_cereal_archive<sgd_execution_context>(*this, p, get_execution_mode(), get_comm(), "_ctx.xml");
+void sgd_execution_context::load_from_checkpoint_shared(persist& p)
+{
+  load_from_shared_cereal_archive<sgd_execution_context>(
+    *this,
+    p,
+    get_execution_mode(),
+    *(get_trainer().get_comm()),
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
+    "_ctx.xml"
+#else  // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
+    "_ctx.bin"
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
+  );
   return;
 }
 
-void sgd_execution_context::save_to_checkpoint_distributed(persist& p) {
-  write_cereal_archive<sgd_execution_context>(*this, p, get_execution_mode(), "_ctx.xml");
+void sgd_execution_context::save_to_checkpoint_distributed(persist& p)
+{
+  write_cereal_archive<sgd_execution_context>(*this,
+                                              p,
+                                              get_execution_mode(),
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
+                                              "_ctx.xml"
+#else  // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
+                                              "_ctx.bin"
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
+  );
   return;
 }
 
-void sgd_execution_context::load_from_checkpoint_distributed(persist& p) {
-  read_cereal_archive<sgd_execution_context>(*this, p, get_execution_mode(), "_ctx.xml");
+void sgd_execution_context::load_from_checkpoint_distributed(persist& p)
+{
+  read_cereal_archive<sgd_execution_context>(*this,
+                                             p,
+                                             get_execution_mode(),
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
+                                             "_ctx.xml"
+#else  // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
+                                             "_ctx.bin"
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
+  );
   return;
 }
 
-}  // namespace lbann
+std::string sgd_execution_context::get_type() const { return "sgd"; }
+
+bool seconds_termination_criteria::is_done(
+  sgd_execution_context const& c) const noexcept
+{
+  auto const& comm = *(get_const_trainer().get_comm());
+  int stop = (comm.am_trainer_master() &&
+              (c.get_current_execution_time() >= m_max_seconds));
+  if (comm.get_procs_per_trainer() > 1)
+    comm.trainer_broadcast(0, stop);
+  return (stop == 1);
+}
+
+} // namespace lbann
+
+#define LBANN_CLASS_NAME sgd_execution_context
+#include <lbann/macros/register_class_with_cereal.hpp>

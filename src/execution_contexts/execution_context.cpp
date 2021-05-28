@@ -24,23 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/training_algorithms/training_algorithm.hpp"
-#include "lbann/trainers/trainer.hpp"
-#include "lbann/callbacks/callback.hpp"
-#include "lbann/io/persist.hpp"
-#include <string>
-#include <unistd.h>
-#include <iomanip>
-#include <queue>
-#include <unordered_set>
-#include <lbann.pb.h>
-
-#include <cereal/archives/binary.hpp>
-#include <cereal/archives/xml.hpp>
-#include <cereal/types/base_class.hpp>
-#include <cereal/types/polymorphic.hpp>
-
-//#include <mpi.h>
+#include "lbann/execution_contexts/execution_context.hpp"
+#include "lbann/utils/serialize.hpp"
 
 namespace lbann {
 
@@ -48,57 +33,14 @@ namespace lbann {
 // Execution context
 //******************************************************************************
 
-execution_context::execution_context(trainer& trainer,
-                                     training_algorithm& training_algorithm,
-                                     lbann_comm *comm,
-                                     execution_mode mode)
-  : m_trainer(trainer),
-    m_training_algorithm(training_algorithm),
-    m_comm(comm),
-    m_execution_mode(mode),
-    m_terminate_training(false) {}
+execution_context::execution_context() : m_step{0UL} {}
 
-////////////////////////////////////////////////////////////
-// Training_Algorithm state
-////////////////////////////////////////////////////////////
-
-// observer_ptr<thread_pool> training_algorithm::get_io_thread_pool() {
-//   return m_trainer->get_io_thread_pool();
-// }
-
-thread_pool& execution_context::get_io_thread_pool() const {
-  return m_trainer.get_io_thread_pool();
+template <class Archive> void execution_context::serialize(Archive& ar)
+{
+  ar(CEREAL_NVP(m_step));
 }
 
-/** Are background I/O activities enabled by the input layers */
-bool execution_context::background_io_activity_allowed() {
-  return m_trainer.background_io_activity_allowed();
-}
+} // namespace lbann
 
-////////////////////////////////////////////////////////////
-// Checkpointing
-////////////////////////////////////////////////////////////
-
-void execution_context::save_to_checkpoint_shared(persist& p) {
-  if (get_comm().am_trainer_master()) {
-    write_cereal_archive<execution_context>(*this, p, get_execution_mode(), "_ctx.xml");
-  }
-  return;
-}
-
-void execution_context::load_from_checkpoint_shared(persist& p) {
-  load_from_shared_cereal_archive<execution_context>(*this, p, get_execution_mode(), get_comm(), "_ctx.xml");
-  return;
-}
-
-void execution_context::save_to_checkpoint_distributed(persist& p){
-  write_cereal_archive<execution_context>(*this, p, get_execution_mode(), "_ctx.xml");
-  return;
-}
-
-void execution_context::load_from_checkpoint_distributed(persist& p){
-  read_cereal_archive<execution_context>(*this, p, get_execution_mode(), "_ctx.xml");
-  return;
-}
-
-}  // namespace lbann
+#define LBANN_CLASS_NAME execution_context
+#include <lbann/macros/register_class_with_cereal.hpp>

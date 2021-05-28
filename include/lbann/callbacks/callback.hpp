@@ -50,6 +50,11 @@
     return lbann::make_unique<Class>();                          \
   }
 
+namespace cereal
+{
+  class access;
+}// namespace cereal
+
 namespace lbann {
 
 /** @class callback_base
@@ -186,19 +191,34 @@ public:
   virtual description get_description() const;
 
   ///@}
+  /** @name Serialization */
+  ///@{
+
+  /** @brief Store state to archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar);
+
+  ///@}
+
+  /** @brief Build a standard directory hierarchy including trainer ID.
+   */
+  inline std::string get_multi_trainer_path(const model& m,
+                                            const std::string& root_dir) {
+    std::string dir = root_dir;
+    if (dir.empty()) { dir = "./"; }
+    if (dir.back() != '/') { dir += "/"; }
+
+    return build_string(dir,
+                        get_const_trainer().get_name(), '/');
+  }
 
   /** @brief Build a standard directory hierachy including trainer,
    * execution context, and model information (in that order).
    */
   inline std::string get_multi_trainer_ec_model_path(const model& m,
                                                      const std::string& root_dir) {
-    std::string dir = root_dir;
-    if (dir.empty()) { dir = "./"; }
-    if (dir.back() != '/') { dir += "/"; }
-
+    std::string dir = get_multi_trainer_path(m, root_dir);
     const auto& c = static_cast<const sgd_execution_context&>(m.get_execution_context());
     return build_string(dir,
-                        c.get_trainer().get_name(), '/',
                         c.get_state_string(), '/',
                         m.get_name(), '/');
   }
@@ -208,16 +228,10 @@ public:
    */
   inline std::string get_multi_trainer_model_path(const model& m,
                                                   const std::string& root_dir) {
-    std::string dir = root_dir;
-    if (dir.empty()) { dir = "./"; }
-    if (dir.back() != '/') { dir += "/"; }
-
-    const auto& c = static_cast<const sgd_execution_context&>(m.get_execution_context());
+    std::string dir = get_multi_trainer_path(m, root_dir);
     return build_string(dir,
-                        c.get_trainer().get_name(), '/',
                         m.get_name(), '/');
   }
-
 
 protected:
 

@@ -63,6 +63,15 @@ public:
   concatenate_layer& operator=(const concatenate_layer& other) = default;
 
   concatenate_layer* copy() const override;
+
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
+
   std::string get_type() const override;
   data_layout get_data_layout() const override;
   El::Device get_device_allocation() const override;
@@ -70,6 +79,11 @@ public:
   description get_description() const override;
 
 protected:
+
+  friend class cereal::access;
+  concatenate_layer()
+    : concatenate_layer(nullptr, 0 )
+  {}
 
   void setup_pointers() override;
   void setup_dims(DataReaderMetaData& dr_metadata) override;
@@ -96,7 +110,7 @@ private:
    *  Makes sure asynchronous GPU memory transfers are completed
    *  before modifying workspace buffer.
    */
-  cuda::event_wrapper m_workspace_event;
+  gpu_lib::event_wrapper m_workspace_event;
 #endif // LBANN_HAS_GPU
 
   template <typename U>

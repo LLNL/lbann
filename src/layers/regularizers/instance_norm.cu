@@ -26,7 +26,7 @@
 
 #define LBANN_INSTANCE_NORM_LAYER_INSTANTIATE
 #include "lbann/layers/regularizers/instance_norm.hpp"
-#include "lbann/utils/cuda.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 
 #include <thrust/pair.h>
 
@@ -100,12 +100,12 @@ __global__ void fp_sums_kernel(
         sum_sqsum.first += x;
         sum_sqsum.second += x * x;
       }
-      sum_sqsum = cuda::block_reduce<bdimx,bdimy,bdimz,pair_t,pair_sum_t>(sum_sqsum);
+      sum_sqsum = gpu_lib::block_reduce<bdimx,bdimy,bdimz,pair_t,pair_sum_t>(sum_sqsum);
 
       // Output result to global memory
       if (tid == 0) {
-        cuda::atomic_add(&sums[j+k*sums_ldim], sum_sqsum.first);
-        cuda::atomic_add(&sqsums[j+k*sqsums_ldim], sum_sqsum.second);
+        gpu_lib::atomic_add(&sums[j+k*sums_ldim], sum_sqsum.first);
+        gpu_lib::atomic_add(&sqsums[j+k*sqsums_ldim], sum_sqsum.second);
       }
 
     }
@@ -154,8 +154,8 @@ __global__ void fp_output_kernel(
       const auto& mean = sum * mean_scale;
       const auto& sqmean = sqsum * mean_scale;
       auto var = (sqmean - mean*mean) * var_correction;
-      var = cuda::max(var, TensorDataType{0.});
-      const auto& inv_stdev = cuda::rsqrt(var + epsilon);
+      var = gpu_lib::max(var, TensorDataType{0.});
+      const auto& inv_stdev = gpu_lib::rsqrt(var + epsilon);
       for (size_t i = gidx; i < channel_size; i += nthreadsx) {
         const auto& x = input[i + j*channel_size + k*input_ldim];
         auto& y = output[i + j*channel_size + k*output_ldim];
@@ -201,29 +201,37 @@ void fp_impl(lbann_comm& comm,
                                El::IR(num_channels, 2*num_channels),
                                El::ALL);
   if (!local_input.IsEmpty()) {
+    auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_workspace),
+                                       gpu::get_sync_info(local_input));
     constexpr size_t block_size = 256;
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
     grid_dims.x = (channel_size + block_size - 1) / block_size;
     grid_dims.y = num_channels;
     grid_dims.z = local_mini_batch_size;
-    fp_sums_kernel<TensorDataType,block_size>
-      <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
-        local_mini_batch_size, num_channels, channel_size,
-        local_input.LockedBuffer(), local_input.LDim(),
-        local_sums.Buffer(), local_sums.LDim(),
-        local_sqsums.Buffer(), local_sqsums.LDim());
+    hydrogen::gpu::LaunchKernel(
+      fp_sums_kernel<TensorDataType, block_size>,
+      grid_dims, block_dims, 0, multisync,
+      local_mini_batch_size, num_channels, channel_size,
+      local_input.LockedBuffer(), local_input.LDim(),
+      local_sums.Buffer(), local_sums.LDim(),
+      local_sqsums.Buffer(), local_sqsums.LDim());
   }
 
   // Normalize output
   if (!local_output.IsEmpty()) {
+    auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_output),
+                                       gpu::get_sync_info(local_workspace),
+                                       gpu::get_sync_info(local_input));
     constexpr size_t block_size = 256;
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
     grid_dims.x = (channel_size + block_size - 1) / block_size;
     grid_dims.y = num_channels;
     grid_dims.z = local_mini_batch_size;
-    fp_output_kernel<<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
+    hydrogen::gpu::LaunchKernel(
+      fp_output_kernel<TensorDataType>,
+      grid_dims, block_dims, 0, multisync,
       local_mini_batch_size, num_channels, channel_size, epsilon,
       local_input.LockedBuffer(), local_input.LDim(),
       local_output.Buffer(), local_output.LDim(),
@@ -310,8 +318,8 @@ __global__ void bp_statistics_grad_kernel(
       const auto& mean = sum * mean_scale;
       const auto& sqmean = sqsum * mean_scale;
       auto var = (sqmean - mean*mean) * var_correction;
-      var = cuda::max(var, TensorDataType{0.});
-      const auto& inv_stdev = cuda::rsqrt(var + epsilon);
+      var = gpu_lib::max(var, TensorDataType{0.});
+      const auto& inv_stdev = gpu_lib::rsqrt(var + epsilon);
 
       // Accumulate sums and perform block-wide reduction
       using pair_t = thrust::pair<TensorDataType,TensorDataType>;
@@ -323,14 +331,14 @@ __global__ void bp_statistics_grad_kernel(
         dmean_dvar.first += dy;
         dmean_dvar.second += dy * (x - mean);
       }
-      dmean_dvar = cuda::block_reduce<bdimx,bdimy,bdimz,pair_t,pair_sum_t>(dmean_dvar);
+      dmean_dvar = gpu_lib::block_reduce<bdimx,bdimy,bdimz,pair_t,pair_sum_t>(dmean_dvar);
 
       // Output result to global memory
       if (tid == 0) {
         const TensorDataType dmean = -dmean_dvar.first * inv_stdev;
         const TensorDataType dvar = -dmean_dvar.second * inv_stdev*inv_stdev*inv_stdev / 2;
-        cuda::atomic_add(&means_grad[j+k*means_grad_ldim], dmean);
-        cuda::atomic_add(&vars_grad[j+k*vars_grad_ldim], dvar);
+        gpu_lib::atomic_add(&means_grad[j+k*means_grad_ldim], dmean);
+        gpu_lib::atomic_add(&vars_grad[j+k*vars_grad_ldim], dvar);
       }
 
     }
@@ -386,8 +394,8 @@ __global__ void bp_input_grad_kernel(
       const auto& mean = sum * mean_scale;
       const auto& sqmean = sqsum * mean_scale;
       auto var = (sqmean - mean*mean) * var_correction;
-      var = cuda::max(var, TensorDataType{0.});
-      const auto& inv_stdev = cuda::rsqrt(var + epsilon);
+      var = gpu_lib::max(var, TensorDataType{0.});
+      const auto& inv_stdev = gpu_lib::rsqrt(var + epsilon);
       const auto& dmean = means_grad[j+k*means_grad_ldim];
       const auto& dvar = vars_grad[j+k*vars_grad_ldim];
       for (size_t i = gidx; i < channel_size; i += nthreadsx) {
@@ -447,41 +455,54 @@ void bp_impl(lbann_comm& comm,
                                   El::IR(num_channels, 2*num_channels),
                                   El::ALL);
   if (!local_output_grad.IsEmpty()) {
+    auto multisync =
+      El::MakeMultiSync(gpu::get_sync_info(local_statistics_grad),
+                        gpu::get_sync_info(local_workspace),
+                        gpu::get_sync_info(local_output_grad),
+                        gpu::get_sync_info(local_input));
     constexpr size_t block_size = 256;
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
     grid_dims.x = (channel_size + block_size - 1) / block_size;
     grid_dims.y = num_channels;
     grid_dims.z = local_mini_batch_size;
-    bp_statistics_grad_kernel<TensorDataType,block_size>
-      <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
-        local_mini_batch_size, num_channels, channel_size, epsilon,
-        local_input.LockedBuffer(), local_input.LDim(),
-        local_output_grad.LockedBuffer(), local_output_grad.LDim(),
-        local_sums.LockedBuffer(), local_sums.LDim(),
-        local_sqsums.LockedBuffer(), local_sqsums.LDim(),
-        local_means_grad.Buffer(), local_means_grad.LDim(),
-        local_vars_grad.Buffer(), local_vars_grad.LDim());
+    hydrogen::gpu::LaunchKernel(
+      bp_statistics_grad_kernel<TensorDataType, block_size>,
+      grid_dims, block_dims, 0, multisync,
+      local_mini_batch_size, num_channels, channel_size, epsilon,
+      local_input.LockedBuffer(), local_input.LDim(),
+      local_output_grad.LockedBuffer(), local_output_grad.LDim(),
+      local_sums.LockedBuffer(), local_sums.LDim(),
+      local_sqsums.LockedBuffer(), local_sqsums.LDim(),
+      local_means_grad.Buffer(), local_means_grad.LDim(),
+      local_vars_grad.Buffer(), local_vars_grad.LDim());
   }
 
   // Compute gradient w.r.t. input
   if (!local_input_grad.IsEmpty()) {
+    auto multisync =
+      El::MakeMultiSync(gpu::get_sync_info(local_input_grad),
+                        gpu::get_sync_info(local_workspace),
+                        gpu::get_sync_info(local_statistics_grad),
+                        gpu::get_sync_info(local_output_grad),
+                        gpu::get_sync_info(local_input));
     constexpr size_t block_size = 256;
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
     grid_dims.x = (channel_size + block_size - 1) / block_size;
     grid_dims.y = num_channels;
     grid_dims.z = local_mini_batch_size;
-    bp_input_grad_kernel
-      <<<grid_dims, block_dims, 0, hydrogen::cuda::GetDefaultStream()>>>(
-        local_mini_batch_size, num_channels, channel_size, epsilon,
-        local_input.LockedBuffer(), local_input.LDim(),
-        local_output_grad.LockedBuffer(), local_output_grad.LDim(),
-        local_input_grad.Buffer(), local_input_grad.LDim(),
-        local_sums.LockedBuffer(), local_sums.LDim(),
-        local_sqsums.LockedBuffer(), local_sqsums.LDim(),
-        local_means_grad.LockedBuffer(), local_means_grad.LDim(),
-        local_vars_grad.LockedBuffer(), local_vars_grad.LDim());
+    hydrogen::gpu::LaunchKernel(
+      bp_input_grad_kernel<TensorDataType>,
+      grid_dims, block_dims, 0, multisync,
+      local_mini_batch_size, num_channels, channel_size, epsilon,
+      local_input.LockedBuffer(), local_input.LDim(),
+      local_output_grad.LockedBuffer(), local_output_grad.LDim(),
+      local_input_grad.Buffer(), local_input_grad.LDim(),
+      local_sums.LockedBuffer(), local_sums.LDim(),
+      local_sqsums.LockedBuffer(), local_sqsums.LDim(),
+      local_means_grad.LockedBuffer(), local_means_grad.LDim(),
+      local_vars_grad.LockedBuffer(), local_vars_grad.LDim());
   }
 
 }

@@ -55,7 +55,7 @@ class GRUModule(lbann.modules.Module):
         # Default initial hidden state
         self.zeros = lbann.Constant(
             value=0,
-            num_neurons=str(hidden_size),
+            num_neurons=str_list([num_layers, hidden_size]),
             name=f'{self.name}_zeros',
             device=self.device,
             datatype=self.datatype,
@@ -63,29 +63,19 @@ class GRUModule(lbann.modules.Module):
 
     def forward(self, x, h=None):
         self.instance += 1
-        name = f'{self.name}_instance{self.instance}'
-
-        # Initial hidden state
         if not h:
-            h = [self.zeros] * self.num_layers
-        if not isinstance(h, list) or len(h) != self.num_layers:
-            raise ValueError(
-                f'expected `h` to be a list with {self.num_layers} layers'
-            )
-
-        # Stacked GRU
-        ### @todo Replace with single GRU once LBANN supports stacked GRUs
-        for i in range(self.num_layers):
-            x = lbann.GRU(
-                x,
-                h[i],
-                hidden_size=self.hidden_size,
-                name=f'{name}_layer{i}',
-                weights=self.weights[4*i:4*(i+1)],
-                device=self.device,
-                datatype=self.datatype,
-            )
-        return x
+            h = self.zeros
+        y = lbann.GRU(
+            x,
+            h,
+            hidden_size=self.hidden_size,
+            num_layers=self.num_layers,
+            name=f'{self.name}_instance{self.instance}',
+            weights=self.weights,
+            device=self.device,
+            datatype=self.datatype,
+        )
+        return y
 
 class MolVAE(lbann.modules.Module):
     """Molecular VAE.
@@ -261,9 +251,12 @@ class MolVAE(lbann.modules.Module):
         x_input = lbann.Concatenation(x_emb, z_0, axis=1)
 
         h_0 = self.decoder_lat(z)
+        # h_0 = h_0.unsqueeze(0).repeat(self.decoder_rnn.num_layers, 1, 1)
+        h_0 = lbann.Reshape(h_0, dims=str_list([1, 512]))
+        h_0 = lbann.Tessellate(h_0, dims=str_list((3, 512)))
 
         # output, _ = self.decoder_rnn(x_input, h_0)
-        output = self.decoder_rnn(x_input, [h_0, h_0, h_0])
+        output = self.decoder_rnn(x_input, h_0)
 
         # y = self.decoder_fc(output)
         y = lbann.ChannelwiseFullyConnected(
@@ -306,8 +299,7 @@ class MolVAE(lbann.modules.Module):
         )
         x = lbann.Identity(x)
 
-        # Convert indices in x to one-hot representation
-        # Note: Ignored indices result in zero vectors
+        # Figure out entries in x to ignore
         ignore_mask = lbann.Equal(
             x,
             self.constant(self.label_to_ignore, hint_layer=x),
@@ -315,22 +307,38 @@ class MolVAE(lbann.modules.Module):
         keep_mask = lbann.LogicalNot(ignore_mask)
         length = lbann.Reduction(keep_mask, mode='sum')
         length = lbann.Max(length, self.constant(1, [1]))
-        x = lbann.Add(
-            lbann.Multiply(keep_mask, x),
-            lbann.Multiply(ignore_mask, self.constant(-1, hint_layer=x)),
+
+        # Convert entries in x to indices in y
+        # Note: Ignored entries correspond to an index of -1.
+        offsets = [
+            row*self.dictionary_size
+            for row in range(self.input_feature_dims-1)
+        ]
+        offsets = lbann.Weights(
+            initializer=lbann.ValueInitializer(values=str_list(offsets)),
+            optimizer=lbann.NoOptimizer(),
         )
-        x = lbann.Slice(x, slice_points=str_list(range(self.input_feature_dims)))
-        x = [lbann.Identity(x) for _ in range(self.input_feature_dims-1)]
-        x = [lbann.OneHot(xi, size=self.dictionary_size) for xi in x]
-        x = [lbann.Reshape(xi, dims=str_list([1, self.dictionary_size])) for xi in x]
-        x = lbann.Concatenation(x, axis=0)
+        offsets = lbann.WeightsLayer(
+            dims=str_list([self.input_feature_dims-1]),
+            weights=offsets,
+        )
+        y_inds = lbann.Add(x, offsets)
+        y_inds = lbann.Add(
+            lbann.Multiply(keep_mask, y_inds),
+            lbann.Multiply(
+                ignore_mask,
+                self.constant(-1, hint_layer=y_inds),
+            ),
+        )
 
         # recon_loss = F.cross_entropy(
         #     y[:, :-1].contiguous().view(-1, y.size(-1)),
         #     x[:, 1:].contiguous().view(-1),
         #     ignore_index=self.pad
         # )
-        # Note: Ideally we'd shift y by y.max(-1) for numerical stability
+
+        # Shift y for numerical stability
+        # Note: We'd prefer to shift by y.max(-1)
         shifts = lbann.MatMul(
             lbann.Max(y, self.constant(0, hint_layer=y)),
             self.constant(
@@ -339,6 +347,8 @@ class MolVAE(lbann.modules.Module):
             ),
         )
         y = lbann.Subtract(y, shifts)
+
+        # Compute log of softmax denominator and sum
         z = lbann.MatMul(
             lbann.Exp(y),
             self.constant(1, [self.dictionary_size, 1]),
@@ -348,13 +358,15 @@ class MolVAE(lbann.modules.Module):
             lbann.Reshape(keep_mask, dims=str_list([1, -1])),
             z,
         )
-        recon_loss = lbann.MatMul(
-            lbann.Reshape(y, dims=str_list([1, -1])),
-            lbann.Reshape(x, dims=str_list([1, -1])),
-            transpose_b=True,
+        z = lbann.Reshape(z, dims=str_list([1]))
+
+        # Compute cross entropy
+        recon_loss = lbann.Gather(
+            lbann.Reshape(y, dims=str_list([-1])),
+            y_inds,
         )
+        recon_loss = lbann.Reduction(recon_loss, mode='sum')
         recon_loss = lbann.Subtract(z, recon_loss)
-        recon_loss = lbann.Reshape(recon_loss, dims=str_list([1]))
         recon_loss = lbann.Divide(recon_loss, length)
 
         return recon_loss

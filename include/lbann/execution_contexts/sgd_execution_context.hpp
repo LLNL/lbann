@@ -27,87 +27,128 @@
 #ifndef LBANN_SGD_EXECUTION_CONTEXT_HPP
 #define LBANN_SGD_EXECUTION_CONTEXT_HPP
 
+#include "lbann/base.hpp"
 #include "lbann/execution_contexts/execution_context.hpp"
-#include <cereal/types/base_class.hpp>
+#include "lbann/utils/cloneable.hpp"
+#include "lbann/utils/timer.hpp"
+
+#include <cstddef>
+#include <limits>
+
 namespace lbann {
 
-class sgd_termination_criteria : public termination_criteria {
-public:
-  size_t num_epochs;
-};
-
-
 /** @brief SGD Uses the step to track the Current mini-batch step for
-  *  execution mode.
-  *  @details Step counts are not reset after each epoch.
-  */
-class sgd_execution_context final : public execution_context {
+ *  execution mode.
+ *  @details Step counts are not reset after each epoch.
+ */
+class sgd_execution_context final : public execution_context
+{
 public:
   /** Constructor. */
-  sgd_execution_context(trainer& trainer, training_algorithm& training_alg,
-                        lbann_comm *comm, execution_mode mode, size_t mini_batch_size);
+  sgd_execution_context(execution_mode mode, size_t mini_batch_size);
   /** Destructor. */
   virtual ~sgd_execution_context() = default;
 
-  /** Copy constructor. */
-  sgd_execution_context(const sgd_execution_context& other) = default;
-  /** Copy assignment operator. */
-  sgd_execution_context& operator=(const sgd_execution_context& other) = default;
   /** Move constructor. */
   sgd_execution_context(sgd_execution_context&& other) = default;
   /** Move assignment operator. */
   sgd_execution_context& operator=(sgd_execution_context&& other) = default;
-  /** Copy sgd_execution_context. */
-  virtual std::unique_ptr<execution_context> copy_execution_context() const { return make_unique<sgd_execution_context>(*this); }
+  /** @brief Get a clean sgd_execution_context. */
 
-  /** Archive for checkpoint and restart */
-  template <class Archive> void serialize( Archive & ar ) {
-    ar(cereal::base_class<execution_context>( this ),
-       CEREAL_NVP(m_epoch),
-       CEREAL_NVP(m_current_mini_batch_size),
-       CEREAL_NVP(m_effective_mini_batch_size));
+  /** Copy constructor -- deleted. */
+  sgd_execution_context(const sgd_execution_context& other) = delete;
+  /** Copy assignment operator -- deleted. */
+  sgd_execution_context&
+  operator=(const sgd_execution_context& other) = delete;
+
+  std::unique_ptr<execution_context> get_new() const override
+  {
+    return make_unique<sgd_execution_context>(execution_mode::invalid, 0UL);
   }
 
+  /** Archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive& ar);
+
   /** @brief Return the state of the execution context as a string */
-  std::string get_state_string() const noexcept override {
-    return build_string("sgd.", to_string(get_execution_mode()),
-                        ".epoch.", get_epoch(), ".step.", get_step());
+  std::string get_state_string() const noexcept override
+  {
+    return build_string("sgd.", to_string(get_execution_mode()), ".epoch.",
+                        get_epoch(), ".step.", get_step());
   }
 
   /** Number of times the training set has been traversed. */
   inline size_t get_epoch() const noexcept { return m_epoch; }
 
   /** @brief Increment the current epoch in the execution context
-    *  @details Increment the counter tracking the number of times
-    *  that the data set has been traversed.
-    */
+   *  @details Increment the counter tracking the number of times
+   *  that the data set has been traversed.
+   */
   void inc_epoch() noexcept { ++m_epoch; }
 
   /** Set the trainer's current mini-batch size. */
-  inline void set_current_mini_batch_size(size_t mini_batch_size) {
+  inline void set_current_mini_batch_size(size_t mini_batch_size)
+  {
     m_current_mini_batch_size = mini_batch_size;
   }
   /** Get the trainer's current mini-batch size. */
-  inline size_t get_current_mini_batch_size() const {
+  inline size_t get_current_mini_batch_size() const
+  {
     return m_current_mini_batch_size;
   }
   /** Get the trainer's effective mini-batch size. */
-  inline size_t get_effective_mini_batch_size() const {
+  inline size_t get_effective_mini_batch_size() const
+  {
     return m_effective_mini_batch_size;
   }
   /** Set the trainer's effective mini-batch size. */
-  inline void set_effective_mini_batch_size(size_t mini_batch_size) {
+  inline void set_effective_mini_batch_size(size_t mini_batch_size)
+  {
     m_effective_mini_batch_size = mini_batch_size;
   }
 
   /** Checkpoint training_algorithm to given file descriptor  */
-  virtual void save_to_checkpoint_shared(persist& p);
-  /** Restore training_algorithm by reading checkpoint from given file descriptor */
-  virtual void load_from_checkpoint_shared(persist& p);
-  virtual void save_to_checkpoint_distributed(persist& p);
-  virtual void load_from_checkpoint_distributed(persist& p);
+  void save_to_checkpoint_shared(persist& p) override;
+  /** Restore training_algorithm by reading checkpoint from given file
+   * descriptor */
+  void load_from_checkpoint_shared(persist& p) override;
+  void save_to_checkpoint_distributed(persist& p) override;
+  void load_from_checkpoint_distributed(persist& p) override;
+
+  std::string get_type() const override;
+
+  /** Get the mode that the trainer is currenting executing. */
+  void set_execution_mode(execution_mode mode) noexcept
+  {
+    m_execution_mode = mode;
+  }
+
+  /** Get the mode that the trainer is currenting executing. */
+  execution_mode get_execution_mode() const noexcept override
+  {
+    return m_execution_mode;
+  }
+
+  void set_early_stop(bool stop) noexcept
+  {
+    m_stop_early = stop;
+  }
+  bool get_early_stop() const noexcept
+  {
+    return m_stop_early;
+  }
+
+  void start_timer() noexcept { m_timer.start(); }
+  void stop_timer() noexcept { m_timer.stop(); }
+  double get_current_execution_time() const noexcept { return m_timer.check(); }
 
 private:
+  friend class cereal::access;
+  sgd_execution_context() = default;
+
+private:
+  /** @brief Timer tracking execution time. */
+  lbann::Timer m_timer;
+
   /** Number of times the training data set has been traversed. */
   size_t m_epoch = 0;
 
@@ -120,8 +161,81 @@ private:
    *  e.g.  correctly averaging gradients from multiple models.
    */
   size_t m_effective_mini_batch_size;
+
+  execution_mode m_execution_mode;
+
+  bool m_stop_early = false;
 };
 
-}  // namespace lbann
+/** @brief Base class for SGD stopping. */
+class sgd_termination_criteria
+  : public termination_criteria,
+    public Cloneable<HasAbstractFunction<sgd_termination_criteria>>
+{
+public:
+  sgd_termination_criteria() = default;
+  virtual ~sgd_termination_criteria() = default;
+  bool operator()(execution_context const& c_in) const final {
+    auto const& c = dynamic_cast<sgd_execution_context const&>(c_in);
+    return c.get_early_stop() || this->is_done(c);
+  }
+private:
+  virtual bool is_done(sgd_execution_context const& c) const noexcept = 0;
+};
 
-#endif  // LBANN_SGD_EXECUTION_CONTEXT_HPP
+/** @brief Stop SGD based on a fixed batch count.
+ *
+ *  The training algorithm still tracks the epoch count for other
+ *  parts of the code (e.g. at_epoch_begin/end callbacks).
+ */
+class batch_termination_criteria
+  : public Cloneable<batch_termination_criteria, sgd_termination_criteria>
+{
+public:
+  batch_termination_criteria(size_t num_batches)
+    : m_max_batches{num_batches}
+  {}
+
+private:
+  bool is_done(sgd_execution_context const& c) const noexcept final {
+    return c.get_step() >= m_max_batches;
+  }
+
+private:
+  size_t m_max_batches;
+};
+
+class epoch_termination_criteria
+  : public Cloneable<epoch_termination_criteria, sgd_termination_criteria>
+{
+public:
+  epoch_termination_criteria(size_t num_epochs)
+    : m_max_epochs{num_epochs}
+  {}
+
+private:
+  bool is_done(sgd_execution_context const& c) const noexcept final {
+    return c.get_epoch() >= m_max_epochs;
+  }
+
+private:
+  size_t m_max_epochs;
+};
+
+class seconds_termination_criteria
+  : public Cloneable<seconds_termination_criteria, sgd_termination_criteria>
+{
+public:
+  seconds_termination_criteria(double seconds)
+    : m_max_seconds{seconds}
+  {}
+
+private:
+  bool is_done(sgd_execution_context const& c) const noexcept final;
+
+private:
+  double m_max_seconds;
+};
+} // namespace lbann
+
+#endif // LBANN_SGD_EXECUTION_CONTEXT_HPP

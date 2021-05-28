@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_LEARNING_FULLY_CONNECTED_HPP_INCLUDED
 #define LBANN_LAYERS_LEARNING_FULLY_CONNECTED_HPP_INCLUDED
 
-#include "lbann/layers/learning/learning.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 #include "lbann/models/model.hpp"
 
 #include <string>
@@ -48,7 +48,7 @@ namespace lbann {
  *  initialized to zero.
  */
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-class fully_connected_layer : public learning_layer<TensorDataType> {
+class fully_connected_layer : public data_type_layer<TensorDataType> {
 public:
   /** @name Public Types */
   ///@{
@@ -67,11 +67,11 @@ public:
 public:
 
   /** @todo Accept a vector for output_size */
-  fully_connected_layer(lbann_comm *comm,
-                        int output_size,
-                        bool transpose = false,
-                        WeightsType* weight = nullptr,
-                        bool has_bias = true);
+  fully_connected_layer(
+    int output_size,
+    bool transpose = false,
+    WeightsType* weight = nullptr,
+    bool has_bias = true);
 
   fully_connected_layer(const fully_connected_layer& other);
 
@@ -89,7 +89,18 @@ public:
 
   description get_description() const override;
 
+  /** @name Serialization */
+  ///@{
+
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
+
+  ///@}
+
 protected:
+
+  friend class cereal::access;
+  fully_connected_layer();
 
   void setup_matrices(const El::Grid& grid) override;
   void setup_data(size_t max_mini_batch_size) override;

@@ -26,11 +26,20 @@
 
 #include "lbann/callbacks/dump_error_signals.hpp"
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/utils/serialize.hpp"
 
 #include <callbacks.pb.h>
 
 namespace lbann {
 namespace callback {
+
+template <class Archive>
+void dump_error_signals::serialize(Archive & ar) {
+  ar(::cereal::make_nvp(
+       "BaseCallback",
+       ::cereal::base_class<callback_base>(this)),
+     CEREAL_NVP(m_basename));
+}
 
 void dump_error_signals::on_backward_prop_end(model *m, Layer *l) {
   const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
@@ -66,3 +75,6 @@ build_dump_error_signals_callback_from_pbuf(
 
 } // namespace callback
 } // namespace lbann
+
+#define LBANN_CLASS_NAME callback::dump_error_signals
+#include <lbann/macros/register_class_with_cereal.hpp>

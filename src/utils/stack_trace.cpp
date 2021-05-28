@@ -26,7 +26,7 @@
 
 #include "lbann/utils/stack_trace.hpp"
 #include "lbann/utils/exception.hpp"
-#include "lbann/comm.hpp"
+#include "lbann/comm_impl.hpp"
 #include <algorithm>
 #include <vector>
 #include <string>

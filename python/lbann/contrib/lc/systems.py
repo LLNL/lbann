@@ -24,28 +24,27 @@ _system_params = {
     'ray':      SystemParams(40, 4, 'lsf'),
     'sierra':   SystemParams(44, 4, 'lsf'),
     'rzansel':  SystemParams(44, 4, 'lsf'),
+    'rzhasgpu': SystemParams(16, 2, 'slurm'),
 }
 
 # Detect system
 _system = re.sub(r'\d+', '', socket.gethostname())
-if _system not in _system_params.keys():
-    _system = None
 
 # ==============================================
 # Access functions
 # ==============================================
 
 def system():
-    """Name of LC system."""
-    if _system:
-        return _system
-    else:
-        raise RuntimeError('unknown system '
-                           '(' + socket.gethostname() + ')')
+    """Name of system.
+
+    Hostname with trailing digits removed.
+
+    """
+    return _system
 
 def is_lc_system(system = system()):
     """Whether current system is a supported LC system."""
-    return (system is not None) and (system in _system_params.keys())
+    return _system in _system_params.keys()
 
 def gpus_per_node(system = system()):
     """Number of GPUs per node."""
