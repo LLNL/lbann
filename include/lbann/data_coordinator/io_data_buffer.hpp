@@ -63,7 +63,7 @@ public:
       m_input_buffers[idt].reset(new StarVCMatDT<TensorDataType, El::Device::CPU>(comm->get_trainer_grid()));
 #if defined(LBANN_HAS_GPU)
       // Pin the memory so that we get efficient GPU data transfer
-      m_input_buffers[idt]->Matrix().SetMemoryMode(1);
+      m_input_buffers[idt]->Matrix().SetMemoryMode(3);
 #endif // LBANN_HAS_GPU
     }
   }

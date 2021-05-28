@@ -8,6 +8,8 @@ Support for new layers:
 Python front-end:
 
 Performance optimizations:
+ - Enabled the input layers to use a view of the I/O buffers in the
+ buffered data coordinator
 
 Model portability & usability:
 
