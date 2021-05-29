@@ -35,18 +35,22 @@ NUM_NODES_FEATURES = 9
 NUM_EDGE_FEATURES = 3
 
 NUM_OUT_FEATURES = 32
-NUM_SAMPLES = 3045360
+NUM_SAMPLES = 1000000
 EMBEDDING_DIM = 100
 EDGE_EMBEDDING_DIM = 16
 
 
-expected_accuracy_range = ( 0.2, 7)
+expected_accuracy_range = ( 3, 7)
 
 expected_mini_batch_times = {
-       'ray' : 0.0372075
+       'ray' : 0.0372,
+       'lassen' : 0.0182,
+       'pascal' : 0.08
        }
 expected_gpu_usage = {
-        'ray' : 4.89
+        'ray' : 5.38,
+        'lassen' :5.38,
+        'pascal' : 8
         }
 
 def setup_experiment(lbann):
@@ -68,7 +72,8 @@ def setup_experiment(lbann):
                       EDGE_EMBEDDING_DIM,
                       NUM_OUT_FEATURES,
                       num_epochs)
-    reader = LSC_PPQM4M.make_data_reader("LSC_FULL_DATA")
+    reader = LSC_PPQM4M.make_data_reader("LSC_100K",
+                                         validation_percent=0)
     
 
     optimizer = lbann.Adam(learn_rate=0.01, beta1=0.9, beta2=0.99, eps=1e-8 )
@@ -133,24 +138,23 @@ def augment_test_func(test_func):
        
         #Only tested on Ray. Skip if mini-batch test on another cluster. Change this when mini-batch values are available for other clusters 
 
-        if (cluster == 'ray'):
         # Check if mini-batch time is within expected range
         # Note: Skip first epoch since its runtime is usually an outlier
-            mini_batch_times = mini_batch_times[1:]
-            mini_batch_time = sum(mini_batch_times) / len(mini_batch_times)
-            assert (0.75 * expected_mini_batch_times[cluster]
-                    < mini_batch_time
-                    < 1.25 * expected_mini_batch_times[cluster]), \
-                    'average mini-batch time is outside expected range'
+        mini_batch_times = mini_batch_times[1:]
+        mini_batch_time = sum(mini_batch_times) / len(mini_batch_times)
+        assert (0.75 * expected_mini_batch_times[cluster]
+                < mini_batch_time
+                < 1.25 * expected_mini_batch_times[cluster]), \
+                'average mini-batch time is outside expected range'
         # Check for GPU usage and memory leaks 
         # Note: Skip first epoch 
-            gpu_usages = gpu_usages[1:] 
-            gpu_usage = sum(gpu_usages)/len(gpu_usages)
+        gpu_usages = gpu_usages[1:] 
+        gpu_usage = sum(gpu_usages)/len(gpu_usages)
 
-            assert (0.75 * expected_gpu_usage[cluster] 
-                    < gpu_usage 
-                    < 1.25 * expected_gpu_usage[cluster]),\
-                    'average gpu usage is outside expected range'
+        assert (0.75 * expected_gpu_usage[cluster] 
+                < gpu_usage 
+                < 1.25 * expected_gpu_usage[cluster]),\
+                'average gpu usage is outside expected range'
     # Return test function from factory function
     func.__name__ = test_name
     return func
@@ -158,6 +162,7 @@ def augment_test_func(test_func):
 # Create test functions that can interact with PyTest
 for _test_func in tools.create_tests(setup_experiment,
                                      __file__,
+                                     lbann_args=['--num_io_threads=1'],
                                      nodes=compute_nodes):
     globals()[_test_func.__name__] = augment_test_func(_test_func)
 

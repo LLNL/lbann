@@ -17,11 +17,9 @@ def pytest_addoption(parser):
     parser.addoption('--weekly', action='store_true', default=False,
                      help='--weekly specifies that the test should ONLY be run weekly, not nightly. Default False')
 
-
 @pytest.fixture
 def cluster(request):
     return request.config.getoption('--cluster')
-
 
 @pytest.fixture
 def dirname(request):
