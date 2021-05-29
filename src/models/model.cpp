@@ -710,7 +710,7 @@ void model::setup_layer_topology() {
 
 void model::get_parent_subgrid_tags(int layer_index ){
 	const auto& layers = this->get_layers();
-	std::vector<const Layer*>& parents = layers[layer_index]->get_parent_layers();
+	const std::vector<const Layer*>& parents = layers[layer_index]->get_parent_layers();
 	std::vector < std::set < int>> diff_subgrids;
 	std::vector<int> parent_tags(parents.size());
   
@@ -787,7 +787,12 @@ void model::setup_subgrid_layers_run_condition()
   const El::Int num_layers = layers.size();
   int myrank = El::mpi::Rank();
   for (El::Int node = 0; node < num_layers; ++node) {
-    if((*layers[node]->subgrid_ranks).find(myrank) != (*layers[node]->subgrid_ranks).end() || layers[node]->get_type()=="adds" || layers[node]->get_type()=="concatenates" || layers[node]->get_type()=="sums" || layers[node]->get_type()=="slices"|| layers[node]->get_name()=="layer1")
+    if((*layers[node]->subgrid_ranks).find(myrank) != (*layers[node]->subgrid_ranks).end() 
+          || layers[node]->get_type()=="adds" 
+          || layers[node]->get_type()=="concatenates" 
+          || layers[node]->get_type()=="sums" 
+          || layers[node]->get_type()=="slices"
+          || layers[node]->get_name()=="layer1")
     {
       // std::cout<<"Rank:"<<myrank<<" Layer type:"<<layers[node]->get_type()<<"\n";
       layers[node]->set_run_layer_in_subgraph();
@@ -798,7 +803,7 @@ void model::setup_subgrid_layers_run_condition()
         (layers[node]->get_type()=="split") )
     {
       //check child subgirds 
-      std::vector<const Layer*>& childs = layers[node]->get_child_layers();
+      const std::vector<const Layer*>& childs = layers[node]->get_child_layers();
       std::set<int> pooled_set;
 
       for(int child= 0; child < int(childs.size()); ++child)
@@ -821,7 +826,7 @@ void model::setup_subgrid_layers_run_condition()
     else if((layers[node]->get_type()=="concatenate") || 
         (layers[node]->get_type()=="sum") )
     {
-      std::vector<const Layer*>& parents = layers[node]->get_parent_layers();
+      const std::vector<const Layer*>& parents = layers[node]->get_parent_layers();
       std::set<int> pooled_set;
 
       for(int parent= 0; parent< int(parents.size());++parent)
@@ -1043,7 +1048,7 @@ void model::get_resources_for_spliting_point(std::vector<int> &parent_ranks,
 void model::get_resources_for_merge_layers(std::set<int>& pooled_set, int child_index, int num_subgrids)
 {
   const auto& layers = this->get_layers();
-  std::vector<const Layer*>& parents = layers[child_index]->get_parent_layers();
+  const std::vector<const Layer*>& parents = layers[child_index]->get_parent_layers();
 
 
   if(this->get_num_resources_non_branch_layers() != this->get_num_resources_branch_layers()
@@ -1131,7 +1136,7 @@ void model::setup_subcommunicators()
       else
       {
         subCommunicatorsSubgrids[one_index] = std::make_shared<El::mpi::Comm>();
-        auto& childs = layers[node]->get_child_layers();
+        const auto& childs = layers[node]->get_child_layers();
 
         int indexSubgrid = -1;
         for(int child = 0 ; child < layers[node]->get_num_children(); ++child )
@@ -1307,7 +1312,7 @@ void  model::setup_subgrids(){
         // A layer might be a common layer or 
         // there is no need to divide resources at this point (continuation of previous grids)
       {
-        std::vector<const Layer*>& parents = layers[node]->get_parent_layers();
+        const std::vector<const Layer*>& parents = layers[node]->get_parent_layers();
         auto mychilds = layers[node]->get_child_layers(); 
         //when layer has only one parent no branching copy everthing from parent 
 
@@ -1455,7 +1460,7 @@ void  model::setup_subgrids(){
       {
         //custom number of resources and edge cases not supported 
 
-        std::vector<const Layer*>& parents = layers[node]->get_parent_layers();
+        const std::vector<const Layer*>& parents = layers[node]->get_parent_layers();
         auto parent  = parents[0];
         int num_divisions = 1;
         auto childs = parents[0]->get_child_layers(); 

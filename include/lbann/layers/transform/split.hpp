@@ -76,14 +76,14 @@ public:
 
 protected:
 
-  El::SyncInfo<Dev> syncSubGridCommunication = El::SyncInfo<Dev>()
+  El::SyncInfo<Dev> syncSubGridCommunication = El::SyncInfo<Dev>();
 
   friend class cereal::access;
   split_layer()
     : split_layer(nullptr)
   {}
 
-
+  
   void setup_dims(DataReaderMetaData& dr_metadata) override {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     for (int i = 0; i < this->get_num_children(); ++i) {

@@ -72,9 +72,9 @@ message Layer {
     Slice slice = 301;
     Split split = 302;
     Sum sum = 303;
-    Dist_SOB dist_SOB = 334; 
-    Cross_Grid_Sum_Slice cross_grid_sum_slice = 336;
-    Cross_Grid_Sum cross_grid_sum = 335;
+    Dist_SOB dist_SOB = 337; 
+    Cross_Grid_Sum_Slice cross_grid_sum_slice = 338;
+    Cross_Grid_Sum cross_grid_sum = 339;
     WeightedSum weighted_sum = 323;
     Unpooling unpooling = 304;
     Hadamard hadamard = 308;
