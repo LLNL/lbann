@@ -409,6 +409,8 @@ else ()
   set(LBANN_HAS_DNN_LIB FALSE)
 endif ()
 
+find_package(ZSTR REQUIRED)
+
 # This shouldn't be here, but is ok for now. This will occasionally be
 # part of another TPL's libraries (e.g., MKL), but it's no
 # guarantee. There's no harm including it multiple times.
@@ -684,6 +686,7 @@ target_link_libraries(lbann PUBLIC
   $<TARGET_NAME_IF_EXISTS:FFTW::FFTW>
   $<TARGET_NAME_IF_EXISTS:HWLOC::hwloc>
   $<TARGET_NAME_IF_EXISTS:Python::Python>
+  $<TARGET_NAME_IF_EXISTS:ZSTR::ZSTR>
 
   $<TARGET_NAME_IF_EXISTS:MIOpen>
   $<TARGET_NAME_IF_EXISTS:roc::rocfft>
