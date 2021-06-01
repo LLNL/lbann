@@ -75,9 +75,9 @@ public:
   const std::vector<int> get_data_dims() const override {  return {get_linearized_data_size()}; }
   int get_num_labels() const override { return m_num_labels; }
 
-  void set_sequence_length(int n) { 
+  void set_sequence_length(int n) {
     m_sequence_length = n;
-    m_linearized_data_size = n+2; 
+    m_linearized_data_size = n+2;
   }
   int get_sequence_length() { return m_sequence_length; }
 
@@ -92,7 +92,7 @@ public:
     size_t& offset_out,
     short& length_out) const;
 
-  /** This method is for use during testing and development. 
+  /** This method is for use during testing and development.
    *  Returns the set of indices whose samples are cached in
    *  the data_store
    */
@@ -230,6 +230,10 @@ private:
     std::vector<size_t>& samples_per_file,
     std::vector<std::string>& data_filenames,
     std::vector<std::string>& offsets_filenames);
+
+  bool is_delimiter(const char c) {
+    return (isspace(c) || c == '\n' || c == '\t' || c == ',');
+  }
 };
 
 }  // namespace lbann

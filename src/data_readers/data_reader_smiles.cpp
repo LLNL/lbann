@@ -253,6 +253,7 @@ void smiles_data_reader::do_preload_data_store() {
 
         // Place all of the samples in the range into the data store
         for (const auto& [r_local, r_index] : samples_in_range) {
+          (void) r_local; // silence compiler warning about unused variable.
           // BVE CHECK THIS
           if (m_data_store->get_index_owner(r_index) != m_rank_in_model) {
             continue;
@@ -573,7 +574,7 @@ std::string smiles_data_reader::get_raw_sample(std::istream* istrm, size_t index
 
   //check that next char is a valid delimiter
   int c2 = istrm->peek();
-  if (! (istrm->eof() || isspace(c2) || c2 == '\n' || c2 == '\t' || c2 == ',') ) {
+  if (! (istrm->eof() || is_delimiter(c2)) ) {
     std::stringstream s;
     s << "string does not appear to be followed by a whitespace (or valid delimiter); "
       << "the string: >>>"  << smiles_str << "<<<; next char, as int: "
@@ -585,7 +586,17 @@ std::string smiles_data_reader::get_raw_sample(std::istream* istrm, size_t index
     }
     LBANN_ERROR(s.str());
   }
-  return smiles_str;
+  // Check the input string for any internal delimiters and truncate
+  // if found
+  size_t SMILES_len = smiles_str.length();
+  for(std::string::iterator it = smiles_str.begin(); it != smiles_str.end(); ++it) {
+    auto &c = *it;
+    if (is_delimiter(c)) {
+      SMILES_len = std::distance(smiles_str.begin(), it);
+      break;
+    }
+  }
+  return smiles_str.substr(0, SMILES_len);
 }
 
 void smiles_data_reader::build_some_maps() {

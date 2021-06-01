@@ -65,21 +65,21 @@ namespace pb = ::google::protobuf;
 
 // compute offsets and lengths and writes to binary file;
 // returns the number of sequences in the file
-int write_offsets(const std::string& smi, const std::string output_fn, const char *tmp_dir); 
+int write_offsets(const std::string& smi, const std::string output_fn, const char *tmp_dir);
 
 // write smiles strings to file: /tmp/<filename>
-void write_smiles_data_to_file(const std::string smi, const std::string output_fn, const char* tmp_dir); 
+void write_smiles_data_to_file(const std::string smi, const std::string output_fn, const char* tmp_dir);
 
-void test_fetch(lbann::generic_data_reader* reader); 
+void test_fetch(lbann::generic_data_reader* reader);
 
-// number of sequences in each input sequence file 
+// number of sequences in each input sequence file
 const int Num_seqs_per_file = 5;
 
 bool directory_exists(std::string s);
 
-TEST_CASE("functional black-box", "[.filesystem][data reader][mpi]")
+TEST_CASE("functional black-box", "[.filesystem][data reader][mpi][smiles]")
 {
-  //currently, tests are sequential; they can (should?) be expanded 
+  //currently, tests are sequential; they can (should?) be expanded
   //to multiple ranks
 
   auto& comm = unit_test::utilities::current_world_comm();
@@ -88,12 +88,12 @@ TEST_CASE("functional black-box", "[.filesystem][data reader][mpi]")
   lbann::construct_std_options();
 
   //make non-const copies
-  std::string smiles_reader_prototext(smiles_reader_prototext_const); 
+  std::string smiles_reader_prototext(smiles_reader_prototext_const);
   std::string sample_list(sample_list_const);
 
   //=========================================================================
-  // create directory: /tmp/smiles_reader_test_<pid>, 
-  // then write the input files that the reader expects, 
+  // create directory: /tmp/smiles_reader_test_<pid>,
+  // then write the input files that the reader expects,
   // during normal operation of a network with the lbann executable
   //=========================================================================
   pid_t pid = getpid();
@@ -151,15 +151,15 @@ TEST_CASE("functional black-box", "[.filesystem][data reader][mpi]")
   // construct metadata file contents
   std::stringstream meta;
   sprintf(b, "%s/", tdir);
-  meta << n_seqs_A << " " << b 
+  meta << n_seqs_A << " " << b
        << "A_smiles_reader.smi " << b << "A_smiles_reader.offsets" << std::endl
-       << n_seqs_D << " " << b 
+       << n_seqs_D << " " << b
        << "D_smiles_reader.smi " << b << "D_smiles_reader.offsets" << std::endl
-       << n_seqs_B << " " << b 
+       << n_seqs_B << " " << b
        << "B_smiles_reader.smi " << b << "B_smiles_reader.offsets" << std::endl
-       << n_seqs_C << " " << b 
+       << n_seqs_C << " " << b
        << "C_smiles_reader.smi " << b << "C_smiles_reader.offsets" << std::endl;
-  
+
   // write the metadata file
   sprintf(b, "%s/metadata", tdir);
   std::string metadata_fn(b);
@@ -253,7 +253,7 @@ int write_offsets(const std::string& smi, const std::string output_fn, const cha
   std::ofstream out(b, std::ios::binary);
   REQUIRE(out.good());
 
-  // compute and write contents of offset file for the input SMILES (smi) 
+  // compute and write contents of offset file for the input SMILES (smi)
   // string; at least one input data file (D_smiles_reader.smi) should have
   // at least one of each of the legal delimiters: space, comma, tab, newline
   std::stringstream ss(smi);
@@ -324,7 +324,7 @@ void test_fetch(lbann::generic_data_reader* reader) {
     size_t n = tmp_data.number_of_elements();
     for (size_t j=0; j<n; j++) {
       data.push_back(tmp_data[j]);
-    } 
+    }
     //at this point, 'data' contains the encoded smiles string;
     //note that this may contain fewer entries than the original
     //smiles string; this will happen if sequence_length is less than

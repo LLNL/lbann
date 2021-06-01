@@ -67,17 +67,6 @@ baz.txt 18 0 ... 5 7 ... 10 12 ... 19
 blah.txt 18 0 ... 4 6 ... 11 13 ... 19
 )ptext";
 
-/// /p/vast1/atom/arthor_dbs/REAL/S/H30/SH30M600.smi
-std::string const SH30M600_smi =
-R"smile(CC(=O)N[C@@H]1[C@@H](O)C[C@@](O)(C(=O)N2CCNC(=O)C2C(N)=O)O[C@H]1[C@H](O)[C@H](O)CO s_22____17553516____16656074
-CC(=O)N[C@@H]1[C@@H](O)C[C@@](O)(C(=O)N2CC(=O)NCC2C(N)=O)O[C@H]1[C@H](O)[C@H](O)CO s_22____14789470____16656074)smile";
-
-/// /p/vast1/atom/arthor_dbs/REAL/S/H30/SH30M600.smi - malformed with
-/// a % and a ' ' inserted into each string
-// std::string const SH30M600_smi_malformed =
-// R"smile(CC(=O)N[C@@H]1[C@@H](O)C[C@@](O)%(C(=O)N2CCNC(=O)C2C(N)=O)O[C@H]1[C@H](O)[C@H](O)CO s_22____17553516____16656074
-// CC(=O)N[C@@H]1[C@@H](O)C[C@@](O)(C(=O)N2CC (=O)NCC2C(N)=O)O[C@H]1[C@H](O)[C@H](O)CO s_22____14789470____16656074)smile";
-
 // std::vector<size_t,size_t> SH30M600_offsets = {{0,100}, {101, 75}}
 // std::vector<size_t,size_t> SH30M600_offsets_off_by_one_under = {{0,99}, {101, 75}}
 // std::vector<size_t,size_t> SH30M600_offsets_off_by_one_over = {{0,101}, {101, 75}}
@@ -86,7 +75,7 @@ CC(=O)N[C@@H]1[C@@H](O)C[C@@](O)(C(=O)N2CC(=O)NCC2C(N)=O)O[C@H]1[C@H](O)[C@H](O)
 }// namespace <anon>
 
 using unit_test::utilities::IsValidPtr;
-TEST_CASE("Sample list", "[mpi][data reader]")
+TEST_CASE("Sample list", "[mpi][data reader][smiles]")
 {
   //using DataType = float; commented out to silence compiler
 
@@ -146,28 +135,4 @@ TEST_CASE("Sample list", "[mpi][data reader]")
     smiles->get_sample_list().to_string(buf);
     CHECK(sample_list == buf);
   }
-  SECTION("Test SMILES ingestion")
-  {
-    // std::string const sample_list = multi_sample_inclusion_v2_list_multi_files;
-    // std::istringstream iss(sample_list);
-    // smiles->get_sample_list().load(iss, comm, true);
-    // std::string buf;
-    // smiles->get_sample_list().to_string(buf);
-    // CHECK(sample_list == buf);
-    std::string const smiles_str = SH30M600_smi;
-    std::istringstream iss(smiles_str);
-    //    smiles->get_raw_sample(iss, 0);
-  }
-  // SECTION("Test SMILES ingestion - malformed SMILE")
-  // {
-  //   // std::string const sample_list = multi_sample_inclusion_v2_list_multi_files;
-  //   // std::istringstream iss(sample_list);
-  //   // smiles->get_sample_list().load(iss, comm, true);
-  //   // std::string buf;
-  //   // smiles->get_sample_list().to_string(buf);
-  //   // CHECK(sample_list == buf);
-  //   std::string const smiles_str = SH30M600_smi_malformed;
-  //   std::istringstream iss(smiles_str);
-  //   //    smiles->get_raw_sample(iss, 0);
-  // }
 }

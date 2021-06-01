@@ -37,7 +37,7 @@
 
 namespace pb = ::google::protobuf;
 
-TEST_CASE("SMILES string encoder", "[data reader]")
+TEST_CASE("SMILES string encoder", "[data reader][smiles]")
 {
   //For what it's worth, smiles_data_reader::decode_smiles() isn't
   //used during normal operations (training, inferencing).
@@ -109,7 +109,7 @@ TEST_CASE("SMILES string encoder", "[data reader]")
   }
 }
 
-TEST_CASE("SMILES istream reader", "[data reader]")
+TEST_CASE("SMILES istream reader", "[data reader][smiles]")
 {
   lbann::smiles_data_reader *smiles = new lbann::smiles_data_reader(true);
 
@@ -144,3 +144,61 @@ TEST_CASE("SMILES istream reader", "[data reader]")
   }
 }
 
+TEST_CASE("SMILES ingestion - REAL/S/H30/SH30M600.smi", "[data reader][smiles]")
+{
+  lbann::smiles_data_reader *smiles = new lbann::smiles_data_reader(true);
+
+  /// /p/vast1/atom/arthor_dbs/REAL/S/H30/SH30M600.smi
+  std::string const SH30M600_smi =
+R"smile(CC(=O)N[C@@H]1[C@@H](O)C[C@@](O)(C(=O)N2CCNC(=O)C2C(N)=O)O[C@H]1[C@H](O)[C@H](O)CO s_22____17553516____16656074
+CC(=O)N[C@@H]1[C@@H](O)C[C@@](O)(C(=O)N2CC(=O)NCC2C(N)=O)O[C@H]1[C@H](O)[C@H](O)CO s_22____14789470____16656074)smile";
+
+  size_t const line_len = 111;
+  size_t const valid_chars = 82;
+
+  std::string const smiles_str = SH30M600_smi;
+  std::istringstream iss(smiles_str);
+  smiles->set_offset(0, 0, line_len);
+  smiles->set_offset(1, line_len+1, line_len);
+
+  SECTION("Sample 0")
+  {
+    std::string str = smiles->get_raw_sample(&iss, 0, 0);
+    CHECK(str == smiles_str.substr(0, valid_chars));
+  }
+  SECTION("Sample 1")
+  {
+    std::string str = smiles->get_raw_sample(&iss, 1, 0);
+    CHECK(str == smiles_str.substr(line_len+1, valid_chars));
+  }
+}
+
+TEST_CASE("SMILES ingestion - malformed REAL/S/H30/SH30M600.smi", "[data reader][smiles]")
+{
+  lbann::smiles_data_reader *smiles = new lbann::smiles_data_reader(true);
+
+/// /p/vast1/atom/arthor_dbs/REAL/S/H30/SH30M600.smi - malformed with
+/// a , and a ' ' inserted into each string
+  std::string const SH30M600_smi_malformed =
+R"smile(CC(=O)N[C@@H]1[C@@H](O)C[C@@](O),(C(=O)N2CCNC(=O)C2C(N)=O)O[C@H]1[C@H](O)[C@H](O)CO s_22____17553516____16656074
+CC(=O)N[C@@H]1[C@@H](O)C[C@@](O)(C(=O)N2CC (=O)NCC2C(N)=O)O[C@H]1[C@H](O)[C@H](O)CO s_22____14789470____16656074)smile";
+
+  size_t const line_len = 112;
+  size_t const sample_one_valid_chars = 32;
+  size_t const sample_two_valid_chars = 42;
+
+  std::string const smiles_str = SH30M600_smi_malformed;
+  std::istringstream iss(smiles_str);
+  smiles->set_offset(0, 0, line_len);
+  smiles->set_offset(1, line_len+1, line_len);
+  SECTION("Sample 0")
+  {
+    std::string str = smiles->get_raw_sample(&iss, 0, 0);
+    CHECK(str == smiles_str.substr(0, sample_one_valid_chars));
+  }
+  SECTION("Sample 1")
+  {
+    std::string str = smiles->get_raw_sample(&iss, 1, 0);
+    CHECK(str == smiles_str.substr(line_len+1, sample_two_valid_chars));
+  }
+}
