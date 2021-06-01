@@ -356,7 +356,7 @@ if (LBANN_HAS_CUDA)
 
   if (LBANN_WITH_NVSHMEM)
     find_package(NVSHMEM REQUIRED)
-    # This should ensure that all the __half functionality we need exists.
+    # This should ensure that all the CUDA functionality we for NVSHMEM need exists.
     list(APPEND CMAKE_CUDA_ARCHITECTURES 70)
     # Build LBANN as a static library to get around a bug in NVSHMEM
     set(BUILD_SHARED_LIBS OFF)
