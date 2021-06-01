@@ -436,10 +436,7 @@ void hdf5_data_reader::get_leaves(conduit::Node* node, std::unordered_map<std::s
 }
 
 void hdf5_data_reader::pack(conduit::Node &node, size_t index) {
-  static bool build_the_packing_map = true;
-
-  if (build_the_packing_map) {
-    build_the_packing_map = false;
+  if (m_packing_groups.size() == 0) {
     build_packing_map(node.child(0));
   }
   for (const auto& t : m_packing_groups) {

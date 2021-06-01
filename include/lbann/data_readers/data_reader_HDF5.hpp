@@ -203,6 +203,9 @@ private:
   /** Maps a node's pathname to the node for m_data_schema */
   std::unordered_map<std::string, conduit::Node*> m_data_map;
 
+  /** only used in pack() **/
+  std::unordered_set<std::string> m_add_to_map;
+
   //=========================================================================
   // methods follow
   //=========================================================================
@@ -412,7 +415,6 @@ void hdf5_data_reader::repack_image(T* src_buf, size_t n_bytes, size_t n_rows, s
 
 template<typename T>
 void hdf5_data_reader::pack(std::string group_name, conduit::Node& node, size_t index) {
-  static std::unordered_set<std::string> add_to_map;
   if (m_packing_groups.find(group_name) == m_packing_groups.end()) {
     LBANN_ERROR("(m_packing_groups.find(", group_name, ") failed");
   }
@@ -437,8 +439,8 @@ void hdf5_data_reader::pack(std::string group_name, conduit::Node& node, size_t 
   ss << '/' << LBANN_DATA_ID_STR(index) + '/' + group_name;
   node[ss.str()] = data;
 
-  if (add_to_map.find(group_name) == add_to_map.end()) {
-    add_to_map.insert(group_name);
+  if (m_add_to_map.find(group_name) == m_add_to_map.end()) {
+    m_add_to_map.insert(group_name);
     conduit::Node metadata;
     metadata[s_composite_node] = true;
     m_experiment_schema[group_name][s_metadata_node_name] = metadata;
