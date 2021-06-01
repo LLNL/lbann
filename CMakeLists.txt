@@ -342,9 +342,8 @@ if (LBANN_HAS_CUDA)
   include(SetupCUDAToolkit)
 
   if (LBANN_HAS_GPU_FP16)
-    set_property(TARGET cuda::toolkit PROPERTY
-      INTERFACE_COMPILE_OPTIONS
-      $<$<COMPILE_LANGUAGE:CUDA>:-arch=sm_60>)
+    # This should ensure that all the __half functionality we need exists.
+    list(APPEND CMAKE_CUDA_ARCHITECTURES 60)
   endif (LBANN_HAS_GPU_FP16)
 
   set(LBANN_HAS_CUDNN ${CUDNN_FOUND})
@@ -357,8 +356,8 @@ if (LBANN_HAS_CUDA)
 
   if (LBANN_WITH_NVSHMEM)
     find_package(NVSHMEM REQUIRED)
-    set_property(TARGET cuda::toolkit PROPERTY
-      INTERFACE_COMPILE_OPTIONS $<$<COMPILE_LANGUAGE:CUDA>:-arch=sm_70>)
+    # This should ensure that all the CUDA functionality we for NVSHMEM need exists.
+    list(APPEND CMAKE_CUDA_ARCHITECTURES 70)
     # Build LBANN as a static library to get around a bug in NVSHMEM
     set(BUILD_SHARED_LIBS OFF)
   endif ()
