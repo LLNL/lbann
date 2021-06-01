@@ -54,7 +54,7 @@
 #include <cereal/types/deque.hpp>
 #include <cereal/types/tuple.hpp>
 
-#include "zstr.hpp"
+#include <zstr.hpp>
 
 namespace lbann {
 
