@@ -72,14 +72,10 @@ public:
   ///@{
 
   /** @brief The tensor type expected in this object. */
-  using AbsDistMatrixType = El::AbstractDistMatrix<InputTensorDataType>;
   using InputAbsDistMatrixType = El::AbstractDistMatrix<InputTensorDataType>;
   using OutputAbsDistMatrixType = El::AbstractDistMatrix<OutputTensorDataType>;
 
   /** @brief The proxy tensor type expected in this object. */
-  template <El::Device D>
-  using AbsDistMatReadProxyType =
-    El::AbstractDistMatrixReadDeviceProxy<InputTensorDataType, D>;
   template <El::Device D>
   using InputAbsDistMatReadProxyType =
     El::AbstractDistMatrixReadDeviceProxy<InputTensorDataType, D>;
@@ -88,7 +84,6 @@ public:
     El::AbstractDistMatrixReadDeviceProxy<OutputTensorDataType, D>;
 
   /** @brief The local tensor type expected in this object. */
-  using AbsMatrixType = El::AbstractMatrix<InputTensorDataType>;
   using InputAbsMatrixType = El::AbstractMatrix<InputTensorDataType>;
   using OutputAbsMatrixType = El::AbstractMatrix<OutputTensorDataType>;
 
@@ -244,7 +239,7 @@ protected:
   // ===========================================================
 
   /** @brief Get the values matrix for a specific weights object */
-  AbsDistMatrixType const& weights_values(size_t idx) const {
+  InputAbsDistMatrixType const& weights_values(size_t idx) const {
     if (idx >= m_weights_proxy.size())
       LBANN_ERROR("Bad index ", idx, " "
                   "(size=" , m_weights_proxy.size(), ")");

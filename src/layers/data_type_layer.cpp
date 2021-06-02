@@ -302,7 +302,7 @@ get_activations(int child_index) -> OutputAbsDistMatrixType& {
 template <typename InputTensorDataType, typename OutputTensorDataType>
 auto data_type_layer<InputTensorDataType, OutputTensorDataType>::
 get_error_signals(int parent_index) -> InputAbsDistMatrixType& {
-  return const_cast<AbsDistMatrixType&>(static_cast<const data_type_layer<InputTensorDataType,
+  return const_cast<InputAbsDistMatrixType&>(static_cast<const data_type_layer<InputTensorDataType,
                                         OutputTensorDataType>&>(*this).get_error_signals(parent_index));
 }
 
@@ -586,7 +586,7 @@ fp_setup_inputs(El::Int mini_batch_size) {
     auto& input = *m_inputs[i];
     input.Empty(false);
     input.AlignWith(alignment_dist);
-    view_or_copy_tensor(parent_output, input);
+    view_or_copy_tensor<InputAbsDistMatrixType>(parent_output, input);
 
     // Check input matrix dimensions
     const auto& height = get_input_size(i);
