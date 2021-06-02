@@ -179,15 +179,16 @@ void kfac<Device>::on_backward_prop_end(model *m) {
         LBANN_ERROR(err.str());
       }
 
-      kfac_block<Device>* block;
+      std::shared_ptr<kfac_block<Device>> block;
       if(is_fc || is_conv) {
-        block = new kfac_block_fc_conv<Device>(
+        block = std::make_shared<kfac_block_fc_conv<Device>>(
             l, this, layer_id, proc_rank, is_conv);
       } else if(is_bn) {
-        block = new kfac_block_bn<Device>(l, this, layer_id, proc_rank);
+        block = std::make_shared<kfac_block_bn<Device>>(
+            l, this, layer_id, proc_rank);
       }
 
-      m_blocks.push_back(std::shared_ptr<kfac_block<Device>>(block));
+      m_blocks.push_back(std::move(block));
       if(m_inverse_strategy != kfac_inverse_strategy::ROOT)
         proc_rank = (proc_rank+1)%num_procs;
 

@@ -30,11 +30,128 @@
 #include "lbann/utils/timer.hpp"
 
 #include <cassert>
+#include <core/imports/mpi.hpp>
 #include <iomanip>
+#include <iterator>
 
 namespace lbann {
 namespace callback {
 namespace kfac_util {
+namespace {
+std::vector<int> intify_size_t_vector(std::vector<size_t> const& in_sizes)
+{
+  std::vector<int> out;
+  out.reserve(in_sizes.size());
+  std::transform(cbegin(in_sizes),
+                 cend(in_sizes),
+                 std::back_inserter(out),
+                 [](size_t const& x) {
+                   int out = static_cast<int>(x);
+                   if ((out < 0) || (static_cast<size_t>(out) != x))
+                     throw std::runtime_error(
+                       "MPI size not in dynamic range of int");
+                   return out;
+                 });
+  return out;
+}
+
+template <El::Device Device>
+void reduce_block_device(El::Matrix<DataType, Device>& block,
+                         const size_t count,
+                         const size_t root,
+                         const El::mpi::Comm& trainer_comm,
+                         const El::SyncInfo<Device>& sync_info)
+{
+  El::mpi::Reduce(block.Buffer(),
+                  count,
+                  El::mpi::SUM,
+                  root,
+                  trainer_comm,
+                  sync_info);
+}
+
+template <El::Device Device>
+void reduce_scatter_v_blocks_device(El::Matrix<DataType, Device>& blocks,
+                                    const std::vector<size_t>& recv_sizes,
+                                    const El::mpi::Comm& trainer_comm,
+                                    const El::SyncInfo<Device>& sync_info)
+{
+  El::mpi::ReduceScatter(blocks.LockedBuffer(),
+                         blocks.Buffer(),
+                         intify_size_t_vector(recv_sizes).data(),
+                         trainer_comm,
+                         sync_info);
+}
+
+template <El::Device Device>
+void allgather_v_blocks_device(const El::Matrix<DataType, Device>& send_block,
+                               El::Matrix<DataType, Device>& recv_blocks,
+                               const std::vector<size_t>& recv_sizes,
+                               const std::vector<size_t>& recv_offsets,
+                               const El::mpi::Comm& trainer_comm,
+                               const El::SyncInfo<Device>& sync_info)
+{
+  auto const int_sizes = intify_size_t_vector(recv_sizes);
+  auto const int_offsets = intify_size_t_vector(recv_offsets);
+  El::mpi::AllGather(send_block.LockedBuffer(),
+                     int_sizes[trainer_comm.Rank()],
+                     recv_blocks.Buffer(),
+                     int_sizes.data(),
+                     int_offsets.data(),
+                     trainer_comm,
+                     sync_info);
+}
+
+#if defined LBANN_HAS_GPU && defined LBANN_HAS_ALUMINUM
+template <>
+void reduce_block_device<El::Device::GPU>(
+  El::Matrix<DataType, El::Device::GPU>& block,
+  const size_t count,
+  const size_t root,
+  const El::mpi::Comm& trainer_comm,
+  const El::SyncInfo<El::Device::GPU>& sync_info)
+{
+  ::Al::Reduce<::Al::NCCLBackend>(
+    block.Buffer(),
+    count,
+    ::Al::ReductionOperator::sum,
+    root,
+    trainer_comm.template GetComm<::Al::NCCLBackend>(sync_info));
+}
+
+template <>
+void reduce_scatter_v_blocks_device(
+  El::Matrix<DataType, El::Device::GPU>& blocks,
+  const std::vector<size_t>& recv_sizes,
+  const El::mpi::Comm& trainer_comm,
+  const El::SyncInfo<El::Device::GPU>& sync_info)
+{
+  ::Al::Reduce_scatterv<::Al::NCCLBackend>(
+    blocks.Buffer(),
+    recv_sizes,
+    ::Al::ReductionOperator::sum,
+    trainer_comm.template GetComm<::Al::NCCLBackend>(sync_info));
+}
+
+template <>
+void allgather_v_blocks_device(
+  const El::Matrix<DataType, El::Device::GPU>& send_block,
+  El::Matrix<DataType, El::Device::GPU>& recv_blocks,
+  const std::vector<size_t>& recv_sizes,
+  const std::vector<size_t>& recv_offsets,
+  const El::mpi::Comm& trainer_comm,
+  const El::SyncInfo<El::Device::GPU>& sync_info)
+{
+  ::Al::Allgatherv<::Al::NCCLBackend>(
+    send_block.LockedBuffer(),
+    recv_blocks.Buffer(),
+    recv_sizes,
+    recv_offsets,
+    trainer_comm.template GetComm<::Al::NCCLBackend>(sync_info));
+}
+#endif // defined LBANN_HAS_GPU && defined LBANN_HAS_ALUMINUM
+
+} // namespace
 
 template <El::Device Device>
 void get_matrix_inverse(
@@ -157,14 +274,15 @@ void reduce_scatter_blocks(
     lbann_comm *comm,
     const kfac_reduce_scatter_mode mode) {
 
-  if(mode == kfac_reduce_scatter_mode::REDUCE) {
-    for(auto& block : blocks)
-      reduce_block_device<Device>(
-          *block.second,
-          block.second->Height(),
-          block.first,
-          comm->get_trainer_comm(),
-          El::SyncInfoFromMatrix(global_buffer));
+  if (mode == kfac_reduce_scatter_mode::REDUCE) {
+    for (auto& [block_root, block_mat] : blocks) {
+      auto& blk = dynamic_cast<El::Matrix<DataType, Device>&>(*block_mat);
+      reduce_block_device(blk,
+                          blk.Height(),
+                          block_root,
+                          comm->get_trainer_comm(),
+                          El::SyncInfoFromMatrix(global_buffer));
+    }
     return;
   }
 
@@ -282,7 +400,8 @@ void allgather_blocks(
     comm->allreduce(
         (El::AbstractMatrix<DataType>&) global_buffer,
         comm->get_trainer_comm());
-  } else {
+  }
+  else {
     std::vector<size_t> recv_sizes;
     recv_sizes.resize(comm->get_procs_per_trainer());
     for(auto& block : sorted_blocks)
@@ -291,9 +410,11 @@ void allgather_blocks(
     recv_offsets.resize(recv_sizes.size()+1);
     for(size_t i = 0; i <= recv_sizes.size(); i++)
       recv_offsets[i] = (i > 0 ? recv_offsets[i-1]+recv_sizes[i-1] : 0);
-    allgather_v_blocks_device<Device>(
-        local_buffer, global_buffer,
-        recv_sizes, recv_offsets,
+    allgather_v_blocks_device(
+        local_buffer,
+        global_buffer,
+        recv_sizes,
+        recv_offsets,
         comm->get_trainer_comm(),
         El::SyncInfoFromMatrix(local_buffer));
   }
@@ -310,50 +431,6 @@ void allgather_blocks(
     }
   }
 }
-
-#ifdef LBANN_HAS_GPU
-template <>
-void reduce_block_device(
-    El::Matrix<DataType, El::Device::GPU>& block,
-    const size_t count,
-    const size_t root,
-    const El::mpi::Comm& trainer_comm,
-    const El::SyncInfo<El::Device::GPU>& sync_info) {
-  ::Al::Reduce<::Al::NCCLBackend>(
-       block.Buffer(),
-       count,
-       ::Al::ReductionOperator::sum,
-       root,
-       trainer_comm.template GetComm<::Al::NCCLBackend>(sync_info));
-}
-
-template <>
-void reduce_scatter_v_blocks_device(
-    El::Matrix<DataType, El::Device::GPU>& blocks,
-    const std::vector<size_t>& recv_sizes,
-    const El::mpi::Comm& trainer_comm,
-    const El::SyncInfo<El::Device::GPU>& sync_info) {
-  ::Al::Reduce_scatterv<::Al::NCCLBackend>(
-       blocks.Buffer(),
-       recv_sizes,
-       ::Al::ReductionOperator::sum,
-       trainer_comm.template GetComm<::Al::NCCLBackend>(sync_info));
-}
-
-template <>
-void allgather_v_blocks_device(
-    const El::Matrix<DataType, El::Device::GPU>& send_block,
-    El::Matrix<DataType, El::Device::GPU>& recv_blocks,
-    const std::vector<size_t>& recv_sizes,
-    const std::vector<size_t>& recv_offsets,
-    const El::mpi::Comm& trainer_comm,
-    const El::SyncInfo<El::Device::GPU>& sync_info) {
-  ::Al::Allgatherv<::Al::NCCLBackend>(
-       send_block.LockedBuffer(), recv_blocks.Buffer(),
-       recv_sizes, recv_offsets,
-       trainer_comm.template GetComm<::Al::NCCLBackend>(sync_info));
-}
-#endif // LBANN_HAS_GPU
 
 template <>
 void add_to_diagonal(
@@ -428,48 +505,6 @@ void unpack_lower_tri(
         A(row+col*height, 0)
             = A(col+row*height, 0)
             = L(row+(2*height-(col-1))*col/2-col, 0);
-}
-
-template <>
-void reduce_block_device(
-    El::Matrix<DataType, El::Device::CPU>& block,
-    const size_t count,
-    const size_t root,
-    const El::mpi::Comm& trainer_comm,
-    const El::SyncInfo<El::Device::CPU>& sync_info) {
-  ::Al::Reduce<::Al::MPIBackend>(
-       block.Buffer(),
-       count,
-       ::Al::ReductionOperator::sum,
-       root,
-       trainer_comm.template GetComm<::Al::MPIBackend>(sync_info));
-}
-
-template <>
-void reduce_scatter_v_blocks_device(
-    El::Matrix<DataType, El::Device::CPU>& blocks,
-    const std::vector<size_t>& recv_sizes,
-    const El::mpi::Comm& trainer_comm,
-    const El::SyncInfo<El::Device::CPU>& sync_info) {
-  ::Al::Reduce_scatterv<::Al::MPIBackend>(
-       blocks.Buffer(),
-       recv_sizes,
-       ::Al::ReductionOperator::sum,
-       trainer_comm.template GetComm<::Al::MPIBackend>(sync_info));
-}
-
-template <>
-void allgather_v_blocks_device(
-    const El::Matrix<DataType, El::Device::CPU>& send_block,
-    El::Matrix<DataType, El::Device::CPU>& recv_blocks,
-    const std::vector<size_t>& recv_sizes,
-    const std::vector<size_t>& recv_offsets,
-    const El::mpi::Comm& trainer_comm,
-    const El::SyncInfo<El::Device::CPU>& sync_info) {
-  ::Al::Allgatherv<::Al::MPIBackend>(
-       send_block.LockedBuffer(), recv_blocks.Buffer(),
-       recv_sizes, recv_offsets,
-       trainer_comm.template GetComm<::Al::MPIBackend>(sync_info));
 }
 
 #define PROTO_DEVICE(T, Device)                 \
