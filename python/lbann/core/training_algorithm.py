@@ -271,7 +271,7 @@ class RandomPairwiseExchange(MetaLearningStrategy):
                   checkpoint files. Only applies to "checkpoint_file".
             """
             self.strategy = strategy
-            self.exchange_hyperparams = exchange_hyperparameters
+            self.exchange_hyperparameters = exchange_hyperparameters
             self.weights_names = make_iterable(weights_names)
             self.checkpoint_dir = checkpoint_dir
 
