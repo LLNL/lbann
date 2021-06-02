@@ -536,9 +536,6 @@ endif (LBANN_WITH_CNPY)
 if (LBANN_WITH_DYAD)
   find_package(DYAD REQUIRED)
   set(LBANN_HAS_DYAD ${DYAD_FOUND})
-  if (DYAD_FOUND)
-    target_link_libraries(lbann PUBLIC DYAD::DYAD)
-  endif (DYAD_FOUND)
 endif (LBANN_WITH_DYAD)
 
 if (LBANN_WITH_HWLOC)
@@ -705,6 +702,10 @@ get_target_property(LBANN_MPI_CXX_INCL_DIRS
 if (NOT LBANN_MPI_CXX_INCL_DIRS)
   target_include_directories(lbann PRIVATE $<$<COMPILE_LANGUAGE:HIP>:${MPI_CXX_COMPILER_INCLUDE_DIRS}>)
 endif ()
+
+if (DYAD_FOUND)
+  target_link_libraries(lbann PUBLIC DYAD::DYAD)
+endif (DYAD_FOUND)
 
 if (LBANN_FLAG_Werror_OK)
   target_compile_options(lbann
