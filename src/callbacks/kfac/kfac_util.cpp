@@ -46,11 +46,11 @@ std::vector<int> intify_size_t_vector(std::vector<size_t> const& in_sizes)
                  cend(in_sizes),
                  std::back_inserter(out),
                  [](size_t const& x) {
-                   int out = static_cast<int>(x);
-                   if ((out < 0) || (static_cast<size_t>(out) != x))
+                   int val = static_cast<int>(x);
+                   if ((val < 0) || (static_cast<size_t>(val) != x))
                      throw std::runtime_error(
                        "MPI size not in dynamic range of int");
-                   return out;
+                   return val;
                  });
   return out;
 }
