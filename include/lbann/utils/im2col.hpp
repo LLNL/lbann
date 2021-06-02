@@ -56,6 +56,30 @@ void im2col(const CPUMatDT<TensorDataType>& im,
             const int * window_dims,
             const int * window_strides);
 
+#ifdef LBANN_HAS_GPU
+template <typename TensorDataType>
+void im2col(const El::Matrix<TensorDataType, El::Device::GPU>& im,
+            El::Matrix<TensorDataType, El::Device::GPU>& col,
+            const int num_channels,
+            const int im_num_dims,
+            const int * im_dims,
+            const int * im_pads,
+            const int * window_dims,
+            const int * window_strides,
+            const cudaStream_t& stream);
+#endif // LBANN_HAS_GPU
+
+/** Get the height and the width of col matrix.
+ */
+std::pair<size_t, size_t> get_im2col_output_size(
+    const int num_samples,
+    const int num_channels,
+    const int im_num_dims,
+    const int * im_dims,
+    const int * im_pads,
+    const int * window_dims,
+    const int * window_strides);
+
 /// Rearrange matrix columns into image blocks
 /** This is approximately the inverse of im2col. The output tensor im
  *  is produced from the input matrix col by shifting a window across
