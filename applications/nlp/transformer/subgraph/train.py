@@ -27,7 +27,17 @@ def make_model(
     embed_dim,
     num_heads,
     label_smoothing,
+    branches,
+    subgraph_topology,
+    num_encoder_layers,
+    num_decoder_layers,
+    filter_size,
+    d_kv,
+    subgraph_num_common_resources,
+    ENABLE_ALLSUBGRAPH,
+    ENABLE_Concat
 ):
+    #branches = 4
 
     # Embedding weights
     var = 2 / (embed_dim + vocab_size) # Glorot initialization
@@ -68,10 +78,16 @@ def make_model(
     decoder_input = lbann.Identity(embeddings_slice)
 
     # Apply transformer model
-    transformer = lbann.models.Transformer(
+    transformer = lbann.models.subgraph.TransformerSubGraph(branches = branches,
         hidden_size=embed_dim,
         num_heads=num_heads,
+        num_encoder_layers = num_encoder_layers,
+        num_decoder_layers = num_decoder_layers,
+        filter_size = filter_size,
+        d_kv = d_kv,
         name='transformer',
+        ENABLE_ALLSUBGRAPH = ENABLE_ALLSUBGRAPH,
+        ENABLE_Concat = ENABLE_Concat
     )
     result = transformer(
         encoder_input, sequence_length,
@@ -134,8 +150,22 @@ def make_model(
     # Construct model
     metrics = []
     callbacks = [lbann.CallbackPrint(), lbann.CallbackTimer()]
+
+
+    # layers = list(lbann.traverse_layer_graph(input_))
+    # print("Subgrpah subgraph_topology",subgraph_topology)
+    # for l in layers:
+    #     for idx in range(len(l.weights)):
+    #         l.weights[idx].optimizer = lbann.NoOptimizer()
+
+
+    # for l in layers:
+    #     l.device = "GPU"
     return lbann.Model(
         num_epochs,
+        vector_communication=2,
+        subgraph_topology=subgraph_topology,
+        subgraph_num_common_resources = subgraph_num_common_resources,
         layers=lbann.traverse_layer_graph(input_),
         objective_function=loss,
         metrics=metrics,
@@ -167,7 +197,7 @@ def make_data_reader():
 def make_batch_script(trainer_params, model_params, script_params):
 
     # Create LBANN objects
-    trainer = lbann.Trainer(mini_batch_size=trainer_params.mini_batch_size)
+    trainer = lbann.Trainer(mini_batch_size=trainer_params['mini_batch_size'])
     model = make_model(**model_params)
     reader = make_data_reader()
 
@@ -176,6 +206,7 @@ def make_batch_script(trainer_params, model_params, script_params):
     #   embed_dim^-0.5 * min(step^-0.5, step*warmup^-1.5)
     # with embed_dim=512 and warmup=4000.
     opt = lbann.Adam(learn_rate=0.0001, beta1=0.9, beta2=0.98, eps=1e-9)
+    # opt = lbann.NoOptimizer()
     model.callbacks.append(
         lbann.CallbackDropFixedLearningRate(
             drop_epoch=[1],
@@ -190,20 +221,20 @@ def make_batch_script(trainer_params, model_params, script_params):
     )
 
     # Checkpoint after every epoch
-    trainer.callbacks.append(
-        lbann.CallbackCheckpoint(
-            checkpoint_dir=os.path.join(script_params['work_dir'], 'checkpoint'),
-            checkpoint_epochs=1,
-        )
-    )
+    # trainer.callbacks.append(
+    #     lbann.CallbackCheckpoint(
+    #         checkpoint_dir=os.path.join(script_params['work_dir'], 'checkpoint'),
+    #         checkpoint_epochs=1,
+    #     )
+    # )
 
     # Dump weights after every epoch
-    model.callbacks.append(
-        lbann.CallbackDumpWeights(
-            basename=os.path.join(script_params['work_dir'], 'weights'),
-            epoch_interval=1,
-        )
-    )
+    # model.callbacks.append(
+    #     lbann.CallbackDumpWeights(
+    #         basename=os.path.join(script_params['work_dir'], 'weights'),
+    #         epoch_interval=1,
+    #     )
+    # )
 
     # Create Protobuf file
     protobuf_file = os.path.join(script_params['work_dir'], 'experiment.prototext')

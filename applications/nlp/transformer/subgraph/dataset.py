@@ -1,13 +1,21 @@
 """WMT 2014 dataset for English-German translation."""
 import os.path
+import os
 import sys
 
 import numpy as np
 import torchnlp.datasets
 
+def env2int(env_list, default = -1):
+   for e in env_list:
+       val = int(os.environ.get(e, -1))
+       if val >= 0: return val
+   return default
+
+data_size = env2int(['DATA_SIZE'])
 # Local imports
 current_file = os.path.realpath(__file__)
-root_dir = os.path.dirname(os.path.dirname(current_file))
+root_dir = os.path.dirname(os.path.dirname(os.path.dirname(current_file)))
 sys.path.append(root_dir)
 import utils.paths
 
@@ -25,11 +33,18 @@ sequence_length = 64
 
 # Load WMT 2014 dataset
 data_dir = utils.paths.wmt_dir()
+print("Dataset dir", data_dir)
 dataset_train, dataset_val = torchnlp.datasets.wmt_dataset(
     directory=data_dir,
     train=True,
     dev=True,
 )
+
+
+if(data_size!=-1):
+
+    dataset_train = dataset_train[:data_size]
+    dataset_val = dataset_val[:1024]
 
 # Load token vocabulary
 with open(os.path.join(data_dir, 'vocab.bpe.32000')) as f:
@@ -111,7 +126,36 @@ def get_train_sample(index):
     sample[0:len(sample_en)] = sample_en
     sample[sequence_length:sequence_length+len(sample_de)] = sample_de
     return sample
+def get_test_sample(index):
+    """Token indices for a data sample from the training set.
 
+    The English and German text samples are tokenized,
+    padded/subsampled to sequence_length tokens, and concatenated.
+
+    """
+
+    # Tokenize text data
+    text = dataset_train[index]
+    sample_en = tokenize(text['en'])
+    sample_de = tokenize(text['de'])
+
+    # Randomly subsample sequences if they are too long
+    if len(sample_en) > sequence_length or len(sample_de) > sequence_length:
+        pos = np.random.rand()
+        if len(sample_en) > sequence_length:
+            offset = (len(sample_en) - sequence_length + 1) * pos
+            offset = int(np.floor(offset))
+            sample_en = sample_en[offset:offset+sequence_length]
+        if len(sample_de) > sequence_length:
+            offset = (len(sample_de) - sequence_length + 1) * pos
+            offset = int(np.floor(offset))
+            sample_de = sample_de[offset:offset+sequence_length]
+
+    # Concatenate sequences and return
+    sample = np.full(2*sequence_length, pad_index, dtype=int)
+    sample[0:len(sample_en)] = sample_en
+    sample[sequence_length:sequence_length+len(sample_de)] = sample_de
+    return sample
 def get_val_sample(index):
     """Token indices for a data sample from the validation set."""
     text = dataset_val[index]

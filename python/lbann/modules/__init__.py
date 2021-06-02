@@ -10,3 +10,4 @@ from lbann.modules.base import Module, FullyConnectedModule, ConvolutionModule, 
 from lbann.modules.rnn import LSTMCell, GRU
 from lbann.modules.transformer import MultiheadAttention
 from lbann.modules.graph import *
+from lbann.modules.subgraph import *

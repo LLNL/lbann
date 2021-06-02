@@ -5,7 +5,6 @@ import math
 import os
 import os.path
 import sys
-sys.path.append("/usr/WS1/jain8/internship/subgraph/transformers/github/test/ipdps/lbann//build/gnu.Release.lassen.llnl.gov/install/lib/python3.7/site-packages")
 import lbann
 import lbann.contrib.args
 

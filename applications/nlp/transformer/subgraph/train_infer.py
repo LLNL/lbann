@@ -78,7 +78,7 @@ def make_model(
     decoder_input = lbann.Identity(embeddings_slice)
 
     # Apply transformer model
-    transformer = lbann.models.Transformer(branches = branches,
+    transformer = lbann.models.subgraph.TransformerSubGraph(branches = branches,
         hidden_size=embed_dim,
         num_heads=num_heads,
         num_encoder_layers = num_encoder_layers,
