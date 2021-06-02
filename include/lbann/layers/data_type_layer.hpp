@@ -251,8 +251,6 @@ protected:
     return m_weights_proxy[idx].values();
   }
 
-  //void setup_weights(size_t idx, weights& w);
-
   /** @brief Get a specific master weights object.
    *
    *  This is sufficient for setting or accessing metadata about the
