@@ -106,7 +106,7 @@ class kfac_block_bn: public kfac_block<Device> {
       bool print_matrix_summary) override;
 
   const std::vector<El::AbstractMatrix<DataType>*>
-  get_local_kronecker_buffers() {
+  get_local_kronecker_buffers() override {
     std::vector<El::AbstractMatrix<DataType>*> ret = {&m_fisher_buf};
     return ret;
   }
