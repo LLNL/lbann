@@ -127,9 +127,9 @@ public:
   // ===========================================================
 
   /** Get activation tensor corresponding to child layer. */
-  const BaseDistMat& get_activations(const Layer& child) const override;
+  const OutputAbsDistMatrixType& get_activations(const Layer& child) const override;
   /** Get error signal tensor corresponding to parent layer. */
-  const BaseDistMat& get_error_signals(const Layer& parent) const override;
+  const InputAbsDistMatrixType& get_error_signals(const Layer& parent) const override;
 
   /** Get activation tensor. */
   OutputAbsDistMatrixType& get_activations(int child_index = 0);

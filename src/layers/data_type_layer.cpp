@@ -341,7 +341,7 @@ get_local_error_signals(int parent_index) const -> const InputAbsMatrixType& {
 // Accessing matrices corresponding to parent/child layer
 template <typename InputTensorDataType, typename OutputTensorDataType>
 auto data_type_layer<InputTensorDataType, OutputTensorDataType>::
-get_activations(const Layer& child) const -> const BaseDistMat& {
+get_activations(const Layer& child) const -> const OutputAbsDistMatrixType& {
   if (this->get_num_children() <= 0) {
     LBANN_ERROR("This layer has no children");
   }
@@ -358,7 +358,7 @@ get_activations(const Layer& child) const -> const BaseDistMat& {
 }
 template <typename InputTensorDataType, typename OutputTensorDataType>
 auto data_type_layer<InputTensorDataType, OutputTensorDataType>::
-get_error_signals(const Layer& parent) const -> const BaseDistMat& {
+get_error_signals(const Layer& parent) const -> const InputAbsDistMatrixType& {
   const int parent_index = find_parent_layer_index(parent);
   if (parent_index >= get_num_parents()) {
     LBANN_ERROR("attempted to get error signal tensor of "
