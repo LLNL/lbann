@@ -355,13 +355,12 @@ A simple example
     # ----------------------------------
 
     # Setup trainer
-    trainer = lbann.Trainer()
+    mini_batch_size = 64
+    trainer = lbann.Trainer(mini_batch_size)
 
     # Setup model
-    mini_batch_size = 64
     num_epochs = 5
-    model = lbann.Model(mini_batch_size,
-                        num_epochs,
+    model = lbann.Model(num_epochs,
                         layers=lbann.traverse_layer_graph(input),
                         objective_function=loss,
                         metrics=[lbann.Metric(acc, name='accuracy', unit='%')],
