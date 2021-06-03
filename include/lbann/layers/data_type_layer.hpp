@@ -380,10 +380,10 @@ private:
   bool m_persistent_error_signals = false;
 
 #ifdef LBANN_HAS_DISTCONV
-  friend class data_type_distconv_adapter<InputTensorDataType>;
+  friend class data_type_distconv_adapter<InputTensorDataType,OutputTensorDataType>;
  public:
-  data_type_distconv_adapter<InputTensorDataType>& get_distconv_adapter() override;
-  const data_type_distconv_adapter<InputTensorDataType& get_distconv_adapter() const override;
+  data_type_distconv_adapter<InputTensorDataType,OutputTensorDataType>& get_distconv_adapter() override;
+  const data_type_distconv_adapter<InputTensorDataType,OutputTensorDataType>& get_distconv_adapter() const override;
 
  protected:
   void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override;

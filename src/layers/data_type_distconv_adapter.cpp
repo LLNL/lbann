@@ -33,13 +33,15 @@
 namespace lbann {
 
 namespace {
-template <typename TensorDataType>
-using TensorDevPtr = std::unique_ptr<typename data_type_distconv_adapter<TensorDataType>::TensorDevType>;
+template <typename InputTensorDataType, typename OutputTensorDataType>
+using InputTensorDevPtr = std::unique_ptr<typename data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::InputTensorDevType>;
+template <typename InputTensorDataType, typename OutputTensorDataType>
+using OutputTensorDevPtr = std::unique_ptr<typename data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::OutputTensorDevType>;
 } // namespace
 
-template <typename TensorDataType>
-const typename data_type_distconv_adapter<TensorDataType>::TensorDevType&
-data_type_distconv_adapter<TensorDataType>::get_activations(const Layer& child) const {
+template <typename InputTensorDataType, typename OutputTensorDataType>
+const typename data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::OutputTensorDevType&
+data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::get_activations(const Layer& child) const {
   if (layer().get_num_children() == 0) {
     LBANN_ERROR("This layer has no children");
   }
@@ -53,9 +55,9 @@ data_type_distconv_adapter<TensorDataType>::get_activations(const Layer& child) 
   return get_activations(child_index);
 }
 
-template <typename TensorDataType>
-const typename data_type_distconv_adapter<TensorDataType>::TensorDevType&
-data_type_distconv_adapter<TensorDataType>::get_activations(int child_index) const {
+template <typename InputTensorDataType, typename OutputTensorDataType>
+const typename data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::OutputTensorDevType&
+data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::get_activations(int child_index) const {
   if (child_index < 0 || child_index >= (int) m_outputs.size()) {
     LBANN_ERROR("attempted to access invalid distconv activation tensor ",
                 "from ", get_name(), " ",
@@ -70,16 +72,16 @@ data_type_distconv_adapter<TensorDataType>::get_activations(int child_index) con
   return *tensor_ptr;
 }
 
-template <typename TensorDataType>
-typename data_type_distconv_adapter<TensorDataType>::TensorDevType&
-data_type_distconv_adapter<TensorDataType>::get_activations(int child_index) {
-  return const_cast<TensorDevType&>(
-      static_cast<const data_type_distconv_adapter<TensorDataType>&>(*this).get_activations(child_index));
+template <typename InputTensorDataType, typename OutputTensorDataType>
+typename data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::OutputTensorDevType&
+data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::get_activations(int child_index) {
+  return const_cast<OutputTensorDevType&>(
+      static_cast<const data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>&>(*this).get_activations(child_index));
 }
 
-template <typename TensorDataType>
-const typename data_type_distconv_adapter<TensorDataType>::TensorDevType&
-data_type_distconv_adapter<TensorDataType>::get_original_activations(
+template <typename InputTensorDataType, typename OutputTensorDataType>
+const typename data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::OutputTensorDevType&
+data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::get_original_activations(
     int child_index) const {
   if (child_index < 0 || child_index >= (int) m_original_outputs.size()) {
     LBANN_ERROR("attempted to access invalid original activation tensor ",
@@ -95,18 +97,18 @@ data_type_distconv_adapter<TensorDataType>::get_original_activations(
   return *tensor_ptr;
 }
 
-template <typename TensorDataType>
-typename data_type_distconv_adapter<TensorDataType>::TensorDevType&
-data_type_distconv_adapter<TensorDataType>::get_original_activations(
+template <typename InputTensorDataType, typename OutputTensorDataType>
+typename data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::OutputTensorDevType&
+data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::get_original_activations(
     int child_index) {
-  return const_cast<TensorDevType&>(
-      static_cast<const data_type_distconv_adapter<TensorDataType>&>(
+  return const_cast<OutputTensorDevType&>(
+      static_cast<const data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>&>(
           *this).get_original_activations(child_index));
 }
 
-template <typename TensorDataType>
-const typename data_type_distconv_adapter<TensorDataType>::TensorDevType&
-data_type_distconv_adapter<TensorDataType>::get_prev_activations(int parent_index) const {
+template <typename InputTensorDataType, typename OutputTensorDataType>
+const typename data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::InputTensorDevType&
+data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::get_prev_activations(int parent_index) const {
   if (parent_index < 0 || parent_index >= (int) m_inputs.size()) {
     LBANN_ERROR("attempted to access invalid distconv previous activation tensor ",
                 "from ", get_name(), " ",
@@ -121,17 +123,17 @@ data_type_distconv_adapter<TensorDataType>::get_prev_activations(int parent_inde
   return *tensor_ptr;
 }
 
-template <typename TensorDataType>
-typename data_type_distconv_adapter<TensorDataType>::TensorDevType&
-data_type_distconv_adapter<TensorDataType>::get_prev_activations(int parent_index) {
-  return const_cast<TensorDevType&>(
-      static_cast<const data_type_distconv_adapter<TensorDataType>&>(
+template <typename InputTensorDataType, typename OutputTensorDataType>
+typename data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::InputTensorDevType&
+data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::get_prev_activations(int parent_index) {
+  return const_cast<InputTensorDevType&>(
+      static_cast<const data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>&>(
           *this).get_prev_activations(parent_index));
 }
 
-template <typename TensorDataType>
-const typename data_type_distconv_adapter<TensorDataType>::TensorDevType&
-data_type_distconv_adapter<TensorDataType>::get_original_prev_activations(
+template <typename InputTensorDataType, typename OutputTensorDataType>
+const typename data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::InputTensorDevType&
+data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::get_original_prev_activations(
     int parent_index) const {
   if (parent_index < 0 || parent_index >= (int) m_original_inputs.size()) {
     LBANN_ERROR("attempted to access invalid original previous activation tensor ",
@@ -147,18 +149,18 @@ data_type_distconv_adapter<TensorDataType>::get_original_prev_activations(
   return *tensor_ptr;
 }
 
-template <typename TensorDataType>
-typename data_type_distconv_adapter<TensorDataType>::TensorDevType&
-data_type_distconv_adapter<TensorDataType>::get_original_prev_activations(
+template <typename InputTensorDataType, typename OutputTensorDataType>
+typename data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::InputTensorDevType&
+data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::get_original_prev_activations(
     int parent_index) {
-  return const_cast<TensorDevType&>(
-      static_cast<const data_type_distconv_adapter<TensorDataType>&>(
+  return const_cast<InputTensorDevType&>(
+      static_cast<const data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>&>(
           *this).get_original_prev_activations(parent_index));
 }
 
-template <typename TensorDataType>
-const typename data_type_distconv_adapter<TensorDataType>::TensorDevType&
-data_type_distconv_adapter<TensorDataType>::get_error_signals(const Layer& parent) const {
+template <typename InputTensorDataType, typename OutputTensorDataType>
+const typename data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::InputTensorDevType&
+data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::get_error_signals(const Layer& parent) const {
   if (layer().get_num_parents() == 0) {
     LBANN_ERROR("This layer has no parents");
   }
@@ -172,9 +174,9 @@ data_type_distconv_adapter<TensorDataType>::get_error_signals(const Layer& paren
   return get_error_signals(parent_index);
 }
 
-template <typename TensorDataType>
-const typename data_type_distconv_adapter<TensorDataType>::TensorDevType&
-data_type_distconv_adapter<TensorDataType>::get_error_signals(int parent_index) const {
+template <typename InputTensorDataType, typename OutputTensorDataType>
+const typename data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::InputTensorDevType&
+data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::get_error_signals(int parent_index) const {
   if (parent_index < 0 || parent_index >= (int) m_gradient_wrt_inputs.size()) {
     LBANN_ERROR("attempted to access invalid distconv error signal tensor ",
                 "from ", get_name(), " ",
@@ -189,17 +191,17 @@ data_type_distconv_adapter<TensorDataType>::get_error_signals(int parent_index) 
   return *tensor_ptr;
 }
 
-template <typename TensorDataType>
-typename data_type_distconv_adapter<TensorDataType>::TensorDevType&
-data_type_distconv_adapter<TensorDataType>::get_error_signals(int parent_index) {
-  return const_cast<TensorDevType&>(
-      static_cast<const data_type_distconv_adapter<TensorDataType>&>(
+template <typename InputTensorDataType, typename OutputTensorDataType>
+typename data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::InputTensorDevType&
+data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::get_error_signals(int parent_index) {
+  return const_cast<InputTensorDevType&>(
+      static_cast<const data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>&>(
           *this).get_error_signals(parent_index));
 }
 
-template <typename TensorDataType>
-const typename data_type_distconv_adapter<TensorDataType>::TensorDevType&
-data_type_distconv_adapter<TensorDataType>::get_original_error_signals(
+template <typename InputTensorDataType, typename OutputTensorDataType>
+const typename data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::InputTensorDevType&
+data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::get_original_error_signals(
     int parent_index) const {
   if (parent_index < 0 || parent_index >= (int) m_original_gradient_wrt_inputs.size()) {
     LBANN_ERROR("attempted to access invalid original error signal tensor ",
@@ -215,18 +217,18 @@ data_type_distconv_adapter<TensorDataType>::get_original_error_signals(
   return *tensor_ptr;
 }
 
-template <typename TensorDataType>
-typename data_type_distconv_adapter<TensorDataType>::TensorDevType&
-data_type_distconv_adapter<TensorDataType>::get_original_error_signals(
+template <typename InputTensorDataType, typename OutputTensorDataType>
+typename data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::InputTensorDevType&
+data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::get_original_error_signals(
     int parent_index) {
-  return const_cast<TensorDevType&>(
-      static_cast<const data_type_distconv_adapter<TensorDataType>&>(
+  return const_cast<InputTensorDevType&>(
+      static_cast<const data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>&>(
           *this).get_original_error_signals(parent_index));
 }
 
-template <typename TensorDataType>
-const typename data_type_distconv_adapter<TensorDataType>::TensorDevType&
-data_type_distconv_adapter<TensorDataType>::get_prev_error_signals(int child_index) const {
+template <typename InputTensorDataType, typename OutputTensorDataType>
+const typename data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::OutputTensorDevType&
+data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::get_prev_error_signals(int child_index) const {
   if (child_index < 0 || child_index >= (int) m_gradient_wrt_outputs.size()) {
     LBANN_ERROR("attempted to access invalid distconv previous error signal tensor ",
                 "from ", get_name(), " ",
@@ -241,17 +243,17 @@ data_type_distconv_adapter<TensorDataType>::get_prev_error_signals(int child_ind
   return *tensor_ptr;
 }
 
-template <typename TensorDataType>
-typename data_type_distconv_adapter<TensorDataType>::TensorDevType&
-data_type_distconv_adapter<TensorDataType>::get_prev_error_signals(int child_index) {
-  return const_cast<TensorDevType&>(
-      static_cast<const data_type_distconv_adapter<TensorDataType>&>(
+template <typename InputTensorDataType, typename OutputTensorDataType>
+typename data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::OutputTensorDevType&
+data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::get_prev_error_signals(int child_index) {
+  return const_cast<OutputTensorDevType&>(
+      static_cast<const data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>&>(
           *this).get_prev_error_signals(child_index));
 }
 
-template <typename TensorDataType>
-const typename data_type_distconv_adapter<TensorDataType>::TensorDevType&
-data_type_distconv_adapter<TensorDataType>::get_original_prev_error_signals(int child_index) const {
+template <typename InputTensorDataType, typename OutputTensorDataType>
+const typename data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::OutputTensorDevType&
+data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::get_original_prev_error_signals(int child_index) const {
   if (child_index < 0 || child_index >= (int) m_original_gradient_wrt_outputs.size()) {
     LBANN_ERROR("attempted to access invalid original previous error signal tensor ",
                 "from ", get_name(), " ",
@@ -266,26 +268,27 @@ data_type_distconv_adapter<TensorDataType>::get_original_prev_error_signals(int 
   return *tensor_ptr;
 }
 
-template <typename TensorDataType>
-typename data_type_distconv_adapter<TensorDataType>::TensorDevType&
-data_type_distconv_adapter<TensorDataType>::get_original_prev_error_signals(int child_index) {
-  return const_cast<TensorDevType&>(
-      static_cast<const data_type_distconv_adapter<TensorDataType>&>(
+template <typename InputTensorDataType, typename OutputTensorDataType>
+typename data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::OutputTensorDevType&
+data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::get_original_prev_error_signals(int child_index) {
+  return const_cast<OutputTensorDevType&>(
+      static_cast<const data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>&>(
           *this).get_original_prev_error_signals(child_index));
 }
 
-template <typename TensorDataType>
-void data_type_distconv_adapter<TensorDataType>::setup_original_prev_activations() {
+template <typename InputTensorDataType, typename OutputTensorDataType>
+void data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::setup_original_prev_activations() {
   m_original_inputs.clear();
   for (int i = 0; i < layer().get_num_parents(); ++i) {
     m_original_inputs.emplace_back(setup_original_prev_activations_i(i));
   }
 }
 
-template <typename TensorDataType>
-TensorDevPtr<TensorDataType> data_type_distconv_adapter<TensorDataType>::
+template <typename InputTensorDataType, typename OutputTensorDataType>
+InputTensorDevPtr<InputTensorDataType, OutputTensorDataType>
+data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::
 setup_original_prev_activations_i(int index) const {
-  TensorDevPtr<TensorDataType> t = nullptr;
+  InputTensorDevPtr<InputTensorDataType,OutputTensorDataType> t = nullptr;
   if (parent_copy_required(index)) {
     const auto shape = get_prev_activations_shape();
     auto local_shape = shape;
@@ -295,54 +298,55 @@ setup_original_prev_activations_i(int index) const {
     const auto dist = dc::get_hydrogen_data_parallel_distribution(
         dc::get_num_dims(layer()));
     const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
-    t = make_unique<TensorDevType>(shape, loc, dist, local_shape);
+    t = make_unique<InputTensorDevType>(shape, loc, dist, local_shape);
   } else if (parent_shuffle_required(index)) {
     // NOTE: previous activations are assumed to be of the same
     // tensor data type.
     // Create a shallow copy of the activations of the prev layer
     const auto &parent_activations =
-        dynamic_cast<const TensorDevType&>(
+        dynamic_cast<const InputTensorDevType&>(
             layer().get_parent_layers()[index]->get_distconv_adapter().get_activations(layer()));
-    t = make_unique<TensorDevType>(parent_activations);
+    t = make_unique<InputTensorDevType>(parent_activations);
   }
   return t;
 }
 
-template <typename TensorDataType>
-void data_type_distconv_adapter<TensorDataType>::setup_prev_activations() {
+template <typename InputTensorDataType, typename OutputTensorDataType>
+void data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::setup_prev_activations() {
   m_inputs.clear();
   for (int i = 0; i < layer().get_num_parents(); ++i) {
     m_inputs.emplace_back(setup_prev_activations_i(i));
   }
 }
 
-template <typename TensorDataType>
-TensorDevPtr<TensorDataType> data_type_distconv_adapter<TensorDataType>::
+template <typename InputTensorDataType, typename OutputTensorDataType>
+InputTensorDevPtr<InputTensorDataType,OutputTensorDataType>
+data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::
 setup_prev_activations_i(int index) const {
   const auto &dist = this->get_prev_activations_dist();
-  TensorDevPtr<TensorDataType> t = nullptr;
+  InputTensorDevPtr<InputTensorDataType,OutputTensorDataType> t = nullptr;
   if (parent_copy_required(index) || parent_shuffle_required(index)) {
     if (index != 0) LBANN_ERROR("Copyin of non-first tensor not supported yet");
     const auto shape = get_prev_activations_shape(index);
     const auto local_shape = get_prev_activations_local_shape(index);
     const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
-    t = make_unique<TensorDevType>(shape, loc, dist, local_shape);
+    t = make_unique<InputTensorDevType>(shape, loc, dist, local_shape);
     assert0(t->allocate());
     t->zero(hydrogen::cuda::GetDefaultStream());
   } else {
     // Create a shallow copy
     const auto &parent_activations =
-        dynamic_cast<const TensorDevType&>(
+        dynamic_cast<const InputTensorDevType&>(
             layer().get_parent_layers()[index]->get_distconv_adapter().get_activations(layer()));
     // Sanity check
     assert_always(parent_activations.get_distribution() == dist);
-    t = make_unique<TensorDevType>(parent_activations);
+    t = make_unique<InputTensorDevType>(parent_activations);
   }
   return t;
 }
 
-template <typename TensorDataType>
-dc::Shape data_type_distconv_adapter<TensorDataType>::get_prev_activations_shape(
+template <typename InputTensorDataType, typename OutputTensorDataType>
+dc::Shape data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::get_prev_activations_shape(
     int input_index) const {
   const auto input_dims = layer().get_input_dims(input_index);
   std::vector<int> input_tensor_shape_v(input_dims.rbegin(), input_dims.rend());
@@ -350,15 +354,15 @@ dc::Shape data_type_distconv_adapter<TensorDataType>::get_prev_activations_shape
   return dc::Shape(input_tensor_shape_v);
 }
 
-template <typename TensorDataType>
-dc::Shape data_type_distconv_adapter<TensorDataType>::get_prev_activations_local_shape(
+template <typename InputTensorDataType, typename OutputTensorDataType>
+dc::Shape data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::get_prev_activations_local_shape(
     int input_index) const {
   // No enforced local shape.
   return dc::Shape(dc::get_num_dims(layer()), 0);
 }
 
-template <typename TensorDataType>
-dc::Shape data_type_distconv_adapter<TensorDataType>::get_activations_shape(
+template <typename InputTensorDataType, typename OutputTensorDataType>
+dc::Shape data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::get_activations_shape(
     int output_index) const {
   const auto output_dims = layer().get_output_dims(output_index);
   std::vector<int> output_tensor_shape_v(output_dims.rbegin(), output_dims.rend());
@@ -366,8 +370,8 @@ dc::Shape data_type_distconv_adapter<TensorDataType>::get_activations_shape(
   return dc::Shape(output_tensor_shape_v);
 }
 
-template <typename TensorDataType>
-dc::Shape data_type_distconv_adapter<TensorDataType>::get_activations_local_shape(int index) const {
+template <typename InputTensorDataType, typename OutputTensorDataType>
+dc::Shape data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::get_activations_local_shape(int index) const {
   // Note that, as the default case, it is assumed that the local
   // shape is the same as the local shape of the first previous
   // activations.
@@ -377,71 +381,73 @@ dc::Shape data_type_distconv_adapter<TensorDataType>::get_activations_local_shap
   return get_prev_activations(0).get_local_shape();
 }
 
-template <typename TensorDataType>
-dc::Shape data_type_distconv_adapter<TensorDataType>::get_prev_error_signals_shape(
+template <typename InputTensorDataType, typename OutputTensorDataType>
+dc::Shape data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::get_prev_error_signals_shape(
     int index) const {
   // Activations and previous error signals should have the same shape.
   return get_activations_shape(index);
 }
 
-template <typename TensorDataType>
-dc::Shape data_type_distconv_adapter<TensorDataType>::get_prev_error_signals_local_shape(int index) const {
+template <typename InputTensorDataType, typename OutputTensorDataType>
+dc::Shape data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::get_prev_error_signals_local_shape(int index) const {
   // Activations and previous error signals should have the same local
   // shape.
   return get_activations_local_shape(index);
 }
 
-template <typename TensorDataType>
-dc::Shape data_type_distconv_adapter<TensorDataType>::get_error_signals_shape(
+template <typename InputTensorDataType, typename OutputTensorDataType>
+dc::Shape data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::get_error_signals_shape(
     int index) const {
   // Previous activations and error signals should have the same shape.
   return get_prev_activations_shape(index);
 }
 
-template <typename TensorDataType>
-dc::Shape data_type_distconv_adapter<TensorDataType>::get_error_signals_local_shape(int index) const {
+template <typename InputTensorDataType, typename OutputTensorDataType>
+dc::Shape data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::get_error_signals_local_shape(int index) const {
   // Previous activations and error signals should have the same local
   // shape.
   return get_prev_activations(index).get_local_shape();
 }
 
-template <typename TensorDataType>
-void data_type_distconv_adapter<TensorDataType>::setup_activations() {
+template <typename InputTensorDataType, typename OutputTensorDataType>
+void data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::setup_activations() {
   m_outputs.clear();
   for (int i = 0; i < layer().get_num_children(); ++i) {
     m_outputs.emplace_back(setup_activations_i(i));
   }
 }
 
-template <typename TensorDataType>
-TensorDevPtr<TensorDataType> data_type_distconv_adapter<TensorDataType>::
+template <typename InputTensorDataType, typename OutputTensorDataType>
+OutputTensorDevPtr<InputTensorDataType, OutputTensorDataType>
+data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::
 setup_activations_i(int index) const {
   const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
   const auto &dist = this->get_activations_dist();
   const auto shape = get_activations_shape(index);
   const auto local_shape = get_activations_local_shape(index);
-  auto t = make_unique<TensorDevType>(shape, loc, dist, local_shape);
+  auto t = make_unique<OutputTensorDevType>(shape, loc, dist, local_shape);
   assert0(t->allocate());
   t->zero(hydrogen::cuda::GetDefaultStream());
   return t;
 }
 
-template <typename TensorDataType>
-void data_type_distconv_adapter<TensorDataType>::setup_original_activations() {
+template <typename InputTensorDataType, typename OutputTensorDataType>
+void data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::setup_original_activations() {
   m_original_outputs.clear();
   for (int i = 0; i < layer().get_num_children(); ++i) {
     m_original_outputs.emplace_back(setup_original_activations_i(i));
   }
 }
 
-template <typename TensorDataType>
-TensorDevPtr<TensorDataType> data_type_distconv_adapter<TensorDataType>::
+template <typename InputTensorDataType, typename OutputTensorDataType>
+OutputTensorDevPtr<InputTensorDataType, OutputTensorDataType>
+data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::
 setup_original_activations_i(int index) const {
   // Create a original tensor only when copyout is needed. Note that
   // when the next layer is a distconv layer and has a different
   // distribution, tensor shuffling is necessary but is done at the
   // next layer.
-  TensorDevPtr<TensorDataType> t = nullptr;
+  OutputTensorDevPtr<InputTensorDataType,OutputTensorDataType> t = nullptr;
   if (child_copy_required(index)) {
     const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
     const auto dist = dc::get_hydrogen_data_parallel_distribution(dc::get_num_dims(layer()));
@@ -451,46 +457,47 @@ setup_original_activations_i(int index) const {
     // Set the sample dimension as 0 so that its actual value is
     // calculated by Distconv
     local_shape[-1] = 0;
-    t = make_unique<TensorDevType>(
+    t = make_unique<OutputTensorDevType>(
         shape, loc, dist, local_shape);
   }
   return t;
 }
 
-template <typename TensorDataType>
-void data_type_distconv_adapter<TensorDataType>::setup_prev_error_signals() {
+template <typename InputTensorDataType, typename OutputTensorDataType>
+void data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::setup_prev_error_signals() {
   m_gradient_wrt_outputs.clear();
   for (int i = 0; i < layer().get_num_children(); ++i) {
     m_gradient_wrt_outputs.emplace_back(setup_prev_error_signals_i(i));
   }
 }
 
-template <typename TensorDataType>
-TensorDevPtr<TensorDataType> data_type_distconv_adapter<TensorDataType>::
+template <typename InputTensorDataType, typename OutputTensorDataType>
+OutputTensorDevPtr<InputTensorDataType, OutputTensorDataType>
+data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::
 setup_prev_error_signals_i(int index) const {
-  TensorDevPtr<TensorDataType> t = nullptr;
+  OutputTensorDevPtr<InputTensorDataType, OutputTensorDataType> t = nullptr;
   const auto &dist = this->get_prev_error_signals_dist();
   if (child_copy_required(index) || child_shuffle_required(index)) {
     const auto shape = get_prev_error_signals_shape(index);
     const auto local_shape = get_prev_error_signals_local_shape(index);
     const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
-    t = make_unique<TensorDevType>(shape, loc, dist, local_shape);
+    t = make_unique<OutputTensorDevType>(shape, loc, dist, local_shape);
     assert0(t->allocate());
     t->zero(hydrogen::cuda::GetDefaultStream());
   } else {
     // Create a shallow copy
     const auto &child_error_signals =
-        dynamic_cast<const TensorDevType&>(
+      dynamic_cast<const OutputTensorDevType&>(
             layer().get_child_layers()[index]->get_distconv_adapter().get_error_signals(layer()));
     // Just sanity check
     assert_always(child_error_signals.get_distribution() == dist);
-    t = make_unique<TensorDevType>(child_error_signals);
+    t = make_unique<OutputTensorDevType>(child_error_signals);
   }
   return t;
 }
 
-template <typename TensorDataType>
-void data_type_distconv_adapter<TensorDataType>::setup_original_prev_error_signals() {
+template <typename InputTensorDataType, typename OutputTensorDataType>
+void data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::setup_original_prev_error_signals() {
  m_original_gradient_wrt_outputs.clear();
  for (int i = 0; i < layer().get_num_children(); ++i) {
    m_original_gradient_wrt_outputs.emplace_back(
@@ -498,10 +505,11 @@ void data_type_distconv_adapter<TensorDataType>::setup_original_prev_error_signa
  }
 }
 
-template <typename TensorDataType>
-TensorDevPtr<TensorDataType> data_type_distconv_adapter<TensorDataType>::
+template <typename InputTensorDataType, typename OutputTensorDataType>
+OutputTensorDevPtr<InputTensorDataType,OutputTensorDataType>
+data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::
 setup_original_prev_error_signals_i(int index) const {
-  TensorDevPtr<TensorDataType> t = nullptr;
+  OutputTensorDevPtr<InputTensorDataType,OutputTensorDataType> t = nullptr;
   if (this->child_copy_required(index)) {
     const auto shape = get_prev_error_signals_shape(index);
     const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
@@ -511,42 +519,44 @@ setup_original_prev_error_signals_i(int index) const {
     // Set the sample dimension as 0 so that its actual value is
     // calculated by Distconv
     local_shape[-1] = 0;
-    t = make_unique<TensorDevType>(shape, loc, dist, local_shape);
+    t = make_unique<OutputTensorDevType>(shape, loc, dist, local_shape);
   } else if (this->child_shuffle_required(index)) {
     // NOTE: previous activations are assumed to be of the same
     // tensor data type.
     // Create a shallow copy of the activations of the prev layer
     const auto &child_error_signals =
-        dynamic_cast<const TensorDevType&>(
+        dynamic_cast<const OutputTensorDevType&>(
             layer().get_child_layers()[index]->get_distconv_adapter().get_error_signals(layer()));
-    t = make_unique<TensorDevType>(child_error_signals);
+    t = make_unique<OutputTensorDevType>(child_error_signals);
   }
   return t;
 }
 
-template <typename TensorDataType>
-void data_type_distconv_adapter<TensorDataType>::setup_error_signals() {
+template <typename InputTensorDataType, typename OutputTensorDataType>
+void data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::setup_error_signals() {
   m_gradient_wrt_inputs.clear();
   for (int i = 0; i < layer().get_num_parents(); ++i) {
     m_gradient_wrt_inputs.emplace_back(setup_error_signals_i(i));
   }
 }
 
-template <typename TensorDataType>
-TensorDevPtr<TensorDataType> data_type_distconv_adapter<TensorDataType>::
+template <typename InputTensorDataType, typename OutputTensorDataType>
+InputTensorDevPtr<InputTensorDataType,OutputTensorDataType>
+data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::
 setup_error_signals_i(int index) const {
   const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
   const auto &dist = this->get_error_signals_dist();
   const auto shape = get_error_signals_shape(index);
   const auto local_shape = get_error_signals_local_shape(index);
-  auto t = make_unique<TensorDevType>(shape, loc, dist, local_shape);
+  auto t = make_unique<InputTensorDevType>(shape, loc, dist, local_shape);
   assert0(t->allocate());
   t->zero(hydrogen::cuda::GetDefaultStream());
   return t;
 }
 
-template <typename TensorDataType>
-void data_type_distconv_adapter<TensorDataType>::setup_original_error_signals() {
+template <typename InputTensorDataType, typename OutputTensorDataType>
+void data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::
+setup_original_error_signals() {
   m_original_gradient_wrt_inputs.clear();
   for (int i = 0; i < layer().get_num_parents(); ++i) {
     m_original_gradient_wrt_inputs.emplace_back(
@@ -554,10 +564,11 @@ void data_type_distconv_adapter<TensorDataType>::setup_original_error_signals() 
   }
 }
 
-template <typename TensorDataType>
-TensorDevPtr<TensorDataType> data_type_distconv_adapter<TensorDataType>::
+template <typename InputTensorDataType, typename OutputTensorDataType>
+InputTensorDevPtr<InputTensorDataType,OutputTensorDataType>
+data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::
 setup_original_error_signals_i(int index) const {
-  TensorDevPtr<TensorDataType> t = nullptr;
+  InputTensorDevPtr<InputTensorDataType,OutputTensorDataType> t = nullptr;
   if (parent_copy_required(index)) {
     const auto shape = get_error_signals_shape(index);
     const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
@@ -567,13 +578,13 @@ setup_original_error_signals_i(int index) const {
     // Set the sample dimension as 0 so that its actual value is
     // calculated by Distconv
     local_shape[-1] = 0;
-    t = make_unique<TensorDevType>(shape, loc, dist, local_shape);
+    t = make_unique<InputTensorDevType>(shape, loc, dist, local_shape);
   }
   return t;
 }
 
-template <typename TensorDataType>
-void data_type_distconv_adapter<TensorDataType>::
+template <typename InputTensorDataType, typename OutputTensorDataType>
+void data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::
 set_activations_outermost_dimension(size_t dim) {
   for (auto &t: m_inputs) {
     if (t == nullptr) continue;
@@ -597,8 +608,8 @@ set_activations_outermost_dimension(size_t dim) {
   }
 }
 
-template <typename TensorDataType>
-void data_type_distconv_adapter<TensorDataType>::
+template <typename InputTensorDataType, typename OutputTensorDataType>
+void data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::
 set_error_signals_outermost_dimension(size_t dim) {
   for (auto &t: m_gradient_wrt_outputs) {
     if (t == nullptr) continue;
@@ -622,9 +633,10 @@ set_error_signals_outermost_dimension(size_t dim) {
   }
 }
 
-template <typename TensorDataType>
-void data_type_distconv_adapter<TensorDataType>::fp_setup(El::Int mini_batch_size) {
-  const auto &l = dynamic_cast<data_type_layer<TensorDataType>&>(layer());
+template <typename InputTensorDataType, typename OutputTensorDataType>
+void data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::
+fp_setup(El::Int mini_batch_size) {
+  const auto &l = dynamic_cast<data_type_layer<InputTensorDataType,OutputTensorDataType>&>(layer());
   // Reconfigure the sample dimension as the mini batch size may vary
   // at the end of epoch
   set_activations_outermost_dimension(mini_batch_size);
@@ -655,14 +667,16 @@ void data_type_distconv_adapter<TensorDataType>::fp_setup(El::Int mini_batch_siz
   ensure_prev_activations();
 }
 
-template <typename TensorDataType>
-void data_type_distconv_adapter<TensorDataType>::fp_postprocess() {
+template <typename InputTensorDataType, typename OutputTensorDataType>
+void data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::
+fp_postprocess() {
   copy_out_activations();
 }
 
-template <typename TensorDataType>
-void data_type_distconv_adapter<TensorDataType>::bp_setup(El::Int mini_batch_size) {
-  const auto &l = dynamic_cast<data_type_layer<TensorDataType>&>(layer());
+template <typename InputTensorDataType, typename OutputTensorDataType>
+void data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::
+bp_setup(El::Int mini_batch_size) {
+  const auto &l = dynamic_cast<data_type_layer<InputTensorDataType,OutputTensorDataType>&>(layer());
   // Reconfigure the sample dimension as the mini batch size may vary
   // at the end of epoch
   set_error_signals_outermost_dimension(mini_batch_size);
@@ -690,8 +704,9 @@ void data_type_distconv_adapter<TensorDataType>::bp_setup(El::Int mini_batch_siz
   ensure_prev_error_signals();
 }
 
-template <typename TensorDataType>
-void data_type_distconv_adapter<TensorDataType>::bp_postprocess() {
+template <typename InputTensorDataType, typename OutputTensorDataType>
+void data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::
+bp_postprocess() {
   copy_out_error_signals();
 }
 
@@ -725,41 +740,45 @@ dc::TensorShuffler<TensorDataType> &get_shuffler(
 }
 } // namespace
 
-template <typename TensorDataType>
-dc::TensorShuffler<TensorDataType>& data_type_distconv_adapter<TensorDataType>::
+template <typename InputTensorDataType, typename OutputTensorDataType>
+dc::TensorShuffler<InputTensorDataType>&
+data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::
 get_prev_activations_shuffler(
-    const dc::TensorDev<TensorDataType> &src, const dc::TensorDev<TensorDataType> &dst) {
+    const dc::TensorDev<InputTensorDataType> &src, const dc::TensorDev<InputTensorDataType> &dst) {
   return get_shuffler(layer(), m_prev_activations_shufflers, src, dst,
                       get_max_mini_batch_size());
 }
 
-template <typename TensorDataType>
-dc::TensorShuffler<TensorDataType>& data_type_distconv_adapter<TensorDataType>::
+template <typename InputTensorDataType, typename OutputTensorDataType>
+dc::TensorShuffler<OutputTensorDataType>&
+data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::
 get_activations_shuffler(
-    const dc::TensorDev<TensorDataType> &src, const dc::TensorDev<TensorDataType> &dst) {
+    const dc::TensorDev<OutputTensorDataType> &src, const dc::TensorDev<OutputTensorDataType> &dst) {
   return get_shuffler(layer(), m_activations_shufflers, src, dst,
                       get_max_mini_batch_size());
 }
 
-template <typename TensorDataType>
-dc::TensorShuffler<TensorDataType>& data_type_distconv_adapter<TensorDataType>::
+template <typename InputTensorDataType, typename OutputTensorDataType>
+dc::TensorShuffler<OutputTensorDataType>&
+data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::
 get_prev_error_signals_shuffler(
-    const dc::TensorDev<TensorDataType> &src, const dc::TensorDev<TensorDataType> &dst) {
+    const dc::TensorDev<OutputTensorDataType> &src, const dc::TensorDev<OutputTensorDataType> &dst) {
   return get_shuffler(layer(), m_prev_error_signals_shufflers, src, dst,
                       get_max_mini_batch_size());
 }
 
-template <typename TensorDataType>
-dc::TensorShuffler<TensorDataType>& data_type_distconv_adapter<TensorDataType>::
+template <typename InputTensorDataType, typename OutputTensorDataType>
+dc::TensorShuffler<InputTensorDataType>&
+data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::
 get_error_signals_shuffler(
-    const dc::TensorDev<TensorDataType> &src, const dc::TensorDev<TensorDataType> &dst) {
+    const dc::TensorDev<InputTensorDataType> &src, const dc::TensorDev<InputTensorDataType> &dst) {
   return get_shuffler(layer(), m_error_signals_shufflers, src, dst,
                       get_max_mini_batch_size());
 }
 
-template <typename TensorDataType>
-void data_type_distconv_adapter<TensorDataType>::ensure_prev_activations() {
-  auto &l = dynamic_cast<data_type_layer<TensorDataType>&>(layer());
+template <typename InputTensorDataType, typename OutputTensorDataType>
+void data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::ensure_prev_activations() {
+  auto &l = dynamic_cast<data_type_layer<InputTensorDataType, OutputTensorDataType>&>(layer());
   for (int i = 0; i < l.get_num_parents(); ++i) {
     if (!(parent_copy_required(i) || parent_shuffle_required(i))) {
       continue;
@@ -784,9 +803,9 @@ void data_type_distconv_adapter<TensorDataType>::ensure_prev_activations() {
   }
 }
 
-template <typename TensorDataType>
-void data_type_distconv_adapter<TensorDataType>::copy_out_activations() {
-  auto &l = dynamic_cast<data_type_layer<TensorDataType>&>(layer());
+template <typename InputTensorDataType, typename OutputTensorDataType>
+void data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::copy_out_activations() {
+  auto &l = dynamic_cast<data_type_layer<InputTensorDataType, OutputTensorDataType>&>(layer());
   for (int i = 0; i < l.get_num_children(); ++i) {
     if (!child_copy_required(i)) continue;
     if (i != 0) {
@@ -806,9 +825,9 @@ void data_type_distconv_adapter<TensorDataType>::copy_out_activations() {
   }
 }
 
-template <typename TensorDataType>
-void data_type_distconv_adapter<TensorDataType>::ensure_prev_error_signals() {
-  auto &l = dynamic_cast<data_type_layer<TensorDataType>&>(layer());
+template <typename InputTensorDataType, typename OutputTensorDataType>
+void data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::ensure_prev_error_signals() {
+  auto &l = dynamic_cast<data_type_layer<InputTensorDataType, OutputTensorDataType>&>(layer());
   for (int i = 0; i < l.get_num_children(); ++i) {
     if (!(child_copy_required(i) || child_shuffle_required(i))) {
       continue;
@@ -833,9 +852,9 @@ void data_type_distconv_adapter<TensorDataType>::ensure_prev_error_signals() {
   }
 }
 
-template <typename TensorDataType>
-void data_type_distconv_adapter<TensorDataType>::copy_out_error_signals() {
-  auto &l = dynamic_cast<data_type_layer<TensorDataType>&>(layer());
+template <typename InputTensorDataType, typename OutputTensorDataType>
+void data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::copy_out_error_signals() {
+  auto &l = dynamic_cast<data_type_layer<InputTensorDataType, OutputTensorDataType>&>(layer());
   for (int i = 0; i < l.get_num_parents(); ++i) {
     if (!parent_copy_required(i)) continue;
     if (i != 0) {
@@ -856,36 +875,36 @@ void data_type_distconv_adapter<TensorDataType>::copy_out_error_signals() {
   }
 }
 
-template <typename TensorDataType>
-void data_type_distconv_adapter<TensorDataType>::dump_activations() const {
+template <typename InputTensorDataType, typename OutputTensorDataType>
+void data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::dump_activations() const {
   dc::dump_tensor(get_activations(), get_name() + "_activations");
 }
 
-template <typename TensorDataType>
-void data_type_distconv_adapter<TensorDataType>::dump_original_activations() {
-  const auto &l = dynamic_cast<const data_type_layer<TensorDataType>&>(layer());
+template <typename InputTensorDataType, typename OutputTensorDataType>
+void data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::dump_original_activations() {
+  const auto &l = dynamic_cast<const data_type_layer<InputTensorDataType, OutputTensorDataType>&>(layer());
   assert0(dc::tensor::View(
       get_original_activations(), l.get_activations().LockedBuffer()));
   dc::dump_tensor(get_original_activations(),
                   get_name() + "_activations_original");
 }
 
-template <typename TensorDataType>
-void data_type_distconv_adapter<TensorDataType>::dump_error_signals() const {
+template <typename InputTensorDataType, typename OutputTensorDataType>
+void data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::dump_error_signals() const {
   dc::dump_tensor(get_error_signals(0), get_name() + "_error_signals");
 }
 
-template <typename TensorDataType>
-void data_type_distconv_adapter<TensorDataType>::dump_original_error_signals() {
-  const auto &l = dynamic_cast<const data_type_layer<TensorDataType>&>(layer());
+template <typename InputTensorDataType, typename OutputTensorDataType>
+void data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::dump_original_error_signals() {
+  const auto &l = dynamic_cast<const data_type_layer<InputTensorDataType, OutputTensorDataType>&>(layer());
   assert0(dc::tensor::View(
       get_original_activations(), l.get_activations().LockedBuffer()));
   dc::dump_tensor(get_original_error_signals(0),
                   get_name() +  "_error_signals_original");
 }
 
-template <typename TensorDataType>
-size_t data_type_distconv_adapter<TensorDataType>::get_max_mini_batch_size() const {
+template <typename InputTensorDataType, typename OutputTensorDataType>
+size_t data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::get_max_mini_batch_size() const {
   return layer().get_model()->get_max_mini_batch_size_distconv();
 }
 

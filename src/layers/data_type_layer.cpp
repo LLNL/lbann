@@ -827,23 +827,23 @@ template <typename InputTensorDataType, typename OutputTensorDataType>
 void data_type_layer<InputTensorDataType, OutputTensorDataType>::
 setup_distconv_adapter(const DataReaderMetaData& dr_metadata) {
   this->get_distconv_adapter_ptr() = make_unique<data_type_distconv_adapter
-                                                 <InputTensorDataType>>(*this);
+                                                 <InputTensorDataType,OutputTensorDataType>>(*this);
 }
 
 template <typename InputTensorDataType, typename OutputTensorDataType>
-data_type_distconv_adapter<InputTensorDataType>&
+data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>&
 data_type_layer<InputTensorDataType, OutputTensorDataType>::
 get_distconv_adapter() {
-  return const_cast<data_type_distconv_adapter<InputTensorDataType>&>(
+  return const_cast<data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>&>(
       static_cast<const data_type_layer<InputTensorDataType, OutputTensorDataType>&>
       (*this).get_distconv_adapter());
 }
 
 template <typename InputTensorDataType, typename OutputTensorDataType>
-const data_type_distconv_adapter<InputTensorDataType>&
+const data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>&
 data_type_layer<InputTensorDataType, OutputTensorDataType>::
 get_distconv_adapter() const {
-  return dynamic_cast<const data_type_distconv_adapter<InputTensorDataType>&>
+  return dynamic_cast<const data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>&>
     (*get_distconv_adapter_ptr());
 }
 #endif // LBANN_HAS_DISTCONV
