@@ -124,7 +124,7 @@ inline miopenConvFwdAlgorithm_t to_miopen(fwd_conv_alg a)
 {
   switch (a)
   {
-  case fwd_conv_alg::IMPLICIT_GEMM: return miopenConvolutionFwdAlgoGEMM;
+  case fwd_conv_alg::IMPLICIT_GEMM: return miopenConvolutionFwdAlgoImplicitGEMM;
   case fwd_conv_alg::GEMM: return miopenConvolutionFwdAlgoGEMM;
   case fwd_conv_alg::DIRECT: return miopenConvolutionFwdAlgoDirect;
   case fwd_conv_alg::FFT: return miopenConvolutionFwdAlgoFFT;
@@ -141,6 +141,7 @@ inline fwd_conv_alg from_miopen(miopenConvFwdAlgorithm_t a)
   switch (a)
   {
   case miopenConvolutionFwdAlgoGEMM: return fwd_conv_alg::GEMM;
+  case miopenConvolutionFwdAlgoImplicitGEMM: return fwd_conv_alg::IMPLICIT_GEMM;
   case miopenConvolutionFwdAlgoDirect: return fwd_conv_alg::DIRECT;
   case miopenConvolutionFwdAlgoFFT: return fwd_conv_alg::FFT;
   case miopenConvolutionFwdAlgoWinograd: return fwd_conv_alg::WINOGRAD;
@@ -160,6 +161,7 @@ inline miopenConvBwdDataAlgorithm_t to_miopen(bwd_data_conv_alg a)
   case bwd_data_conv_alg::FFT: return miopenConvolutionBwdDataAlgoFFT;
   case bwd_data_conv_alg::WINOGRAD: return miopenConvolutionBwdDataAlgoWinograd;
   case bwd_data_conv_alg::WINOGRAD_NONFUSED: return miopenConvolutionBwdDataAlgoWinograd;
+  case bwd_data_conv_alg::IMPLICIT_GEMM: return miopenConvolutionBwdDataAlgoImplicitGEMM;
   default:
     LBANN_ERROR("Invalid backward convolution algorithm requested.");
   }
@@ -175,6 +177,7 @@ inline bwd_data_conv_alg from_miopen(miopenConvBwdDataAlgorithm_t a)
   case miopenConvolutionBwdDataAlgoDirect: return bwd_data_conv_alg::CUDNN_ALGO_1;
   case miopenConvolutionBwdDataAlgoFFT: return bwd_data_conv_alg::FFT;
   case miopenConvolutionBwdDataAlgoWinograd: return bwd_data_conv_alg::WINOGRAD;
+  case miopenConvolutionBwdDataAlgoImplicitGEMM: return bwd_data_conv_alg::IMPLICIT_GEMM;
   default:
     LBANN_ERROR("Invalid backward convolution algorithm requested.");
   }
@@ -190,6 +193,7 @@ inline miopenConvBwdWeightsAlgorithm_t to_miopen(bwd_filter_conv_alg a)
   case bwd_filter_conv_alg::CUDNN_ALGO_0: return miopenConvolutionBwdWeightsAlgoGEMM;
   case bwd_filter_conv_alg::CUDNN_ALGO_1: return miopenConvolutionBwdWeightsAlgoDirect;
   case bwd_filter_conv_alg::WINOGRAD: return miopenConvolutionBwdWeightsAlgoWinograd;
+  case bwd_filter_conv_alg::IMPLICIT_GEMM: return miopenConvolutionBwdWeightsAlgoImplicitGEMM;
   default:
     LBANN_ERROR("Invalid backward convolution filter requested.");
   }
@@ -204,6 +208,7 @@ inline bwd_filter_conv_alg from_miopen(miopenConvBwdWeightsAlgorithm_t a)
   case miopenConvolutionBwdWeightsAlgoGEMM: return bwd_filter_conv_alg::CUDNN_ALGO_0;
   case miopenConvolutionBwdWeightsAlgoDirect: return bwd_filter_conv_alg::CUDNN_ALGO_1;
   case miopenConvolutionBwdWeightsAlgoWinograd: return bwd_filter_conv_alg::WINOGRAD;
+  case miopenConvolutionBwdWeightsAlgoImplicitGEMM: return bwd_filter_conv_alg::IMPLICIT_GEMM;
   default:
     LBANN_ERROR("Invalid backward convolution filter requested.");
   }
