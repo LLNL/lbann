@@ -30,17 +30,9 @@
 #include "lbann/data_readers/sample_list_open_files_impl.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/serialize.hpp"
+#include "lbann/utils/vectorwrapbuf.hpp"
 
 namespace lbann {
-
-/// Allow streams to be constructed on an existing data buffer without copying
-template<typename CharT, typename Traits = std::char_traits<CharT> >
-class vectorwrapbuf : public std::basic_streambuf<CharT, Traits> {
-public:
-  vectorwrapbuf(std::vector<CharT> &vec) {
-    this->setg(vec.data(), vec.data(), vec.data() + vec.size());
-  }
-};
 
 data_reader_sample_list::data_reader_sample_list(bool shuffle)
   : generic_data_reader(shuffle) {
