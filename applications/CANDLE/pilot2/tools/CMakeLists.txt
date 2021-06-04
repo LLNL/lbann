@@ -34,7 +34,6 @@ install( TARGETS
   compute_ras_lipid_bbs_euclid_normalization
 
   OPTIONAL
-  #EXPORT LBANNTargets
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -47,4 +46,3 @@ install( TARGETS
 #
 # https://gitlab.kitware.com/cmake/cmake/issues/18258
 # https://cmake.org/pipermail/cmake/2011-August/046014.html
-
