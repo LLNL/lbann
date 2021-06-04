@@ -123,7 +123,7 @@ class sample_list {
   void load(const sample_list_header& header, std::istream& istrm, const lbann_comm& comm, bool interleave);
 
   /// Restore a sample list from a serialized string
-  void load_from_string(const std::string& samplelist);
+  void load_from_string(const std::string& samplelist, const lbann_comm& comm, bool interleave);
 
   /// Tells how many samples in the list
   virtual size_t size() const;

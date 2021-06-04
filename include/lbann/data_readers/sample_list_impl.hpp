@@ -345,10 +345,15 @@ inline void sample_list<sample_name_t>
 
 template <typename sample_name_t>
 inline void sample_list<sample_name_t>
-::load_from_string(const std::string& samplelist) {
+::load_from_string(const std::string& samplelist,
+                   const lbann_comm& comm,
+                   bool interleave) {
   m_header.set_sample_list_name("<LOAD_FROM_STRING>");
   std::istringstream istrm(samplelist);
-  load(istrm, 1ul, 0ul);
+  const size_t stride = interleave? comm.get_procs_per_trainer() : 1ul;
+  const size_t offset = interleave? comm.get_rank_in_trainer() : 0ul;
+  m_stride = stride;
+  load(istrm, stride, offset);
 }
 
 template <typename sample_name_t>
