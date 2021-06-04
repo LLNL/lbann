@@ -16,7 +16,11 @@ Experiments & Applications:
 Internal features:
 
 I/O & data readers:
-
+ - Updated SMILES data reader to use sample lists
+ - Added explicitly managed buffered reading and local unpacking for the
+   SMILES data reader to minimize file access
+ - Sample lists with integral indices can use range format (start ... end)
+ 
 Build system:
 
 Bug fixes:

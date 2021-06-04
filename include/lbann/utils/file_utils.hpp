@@ -170,6 +170,8 @@ bool directory_exists(const std::string& path);
  */
 void make_directory(const std::string& path);
 
+void remove_multiple_slashes(std::string& str);
+
 } // namespace file
 
 } // namespace lbann

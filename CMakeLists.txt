@@ -381,6 +381,8 @@ else ()
   set(LBANN_HAS_DNN_LIB FALSE)
 endif ()
 
+find_package(ZSTR REQUIRED)
+
 # This shouldn't be here, but is ok for now. This will occasionally be
 # part of another TPL's libraries (e.g., MKL), but it's no
 # guarantee. There's no harm including it multiple times.
@@ -579,6 +581,7 @@ if (LBANN_WITH_UNIT_TESTING)
   include(Catch)
   add_subdirectory(src/callbacks/unit_test)
   add_subdirectory(src/execution_algorithms/unit_test)
+  add_subdirectory(src/data_readers/unit_test)
   add_subdirectory(src/layers/activations/unit_test)
   add_subdirectory(src/layers/learning/unit_test)
   add_subdirectory(src/layers/math/unit_test)
@@ -655,6 +658,7 @@ target_link_libraries(lbann PUBLIC
   $<TARGET_NAME_IF_EXISTS:FFTW::FFTW>
   $<TARGET_NAME_IF_EXISTS:HWLOC::hwloc>
   $<TARGET_NAME_IF_EXISTS:Python::Python>
+  $<TARGET_NAME_IF_EXISTS:ZSTR::ZSTR>
 
   $<TARGET_NAME_IF_EXISTS:MIOpen>
   $<TARGET_NAME_IF_EXISTS:roc::rocfft>

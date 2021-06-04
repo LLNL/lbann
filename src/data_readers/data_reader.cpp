@@ -407,7 +407,7 @@ int generic_data_reader::get_next_position() const {
 void generic_data_reader::error_check_counts() const {
   size_t count = get_absolute_sample_count();
   double use_percent = get_use_percent();
-  if (count == 0 and use_percent == 0.0) {
+  if (count == 1 and use_percent == 0.0) {
       LBANN_ERROR("get_use_percent() and get_absolute_sample_count() are both zero; exactly one must be zero");
   }
   if (!(count == 0 or use_percent == 0.0)) {
@@ -434,7 +434,7 @@ size_t generic_data_reader::get_num_indices_to_use() const {
   } else if (use_percent) {
     r = use_percent*get_num_data();
     if (r == 0) {
-      LBANN_ERROR("get_num_indices_to_use() computed zero indices; probably: percent_of_data_to_use is too small WRT num_data");
+      LBANN_ERROR("get_num_indices_to_use() computed zero indices; probably: percent_of_data_to_use is too small WRT num_data;  get_absolute_sample_count: ", get_absolute_sample_count(), " use_percent: ", get_use_percent(), " num data: ", get_num_data(), " for role: ", get_role());
     }
   } else {
     LBANN_ERROR("it's impossible to be here");
@@ -456,6 +456,15 @@ void generic_data_reader::resize_shuffled_indices() {
 }
 
 void generic_data_reader::select_subset_of_data() {
+  // Calculate the total number of samples for subsets
+  double total_split_percent = 0.;
+  for(auto m : execution_mode_iterator()) {
+    total_split_percent += get_execution_mode_split_percent(m);
+  }
+  long total_num_data = get_num_data();
+  long total_unused = total_split_percent * total_num_data;
+  long total_used = total_num_data - total_unused;
+  auto starting_unused_offset = m_shuffled_indices.begin() + total_used;
   for(auto m : execution_mode_iterator()) {
     double split_percent = get_execution_mode_split_percent(m);
 
@@ -463,8 +472,8 @@ void generic_data_reader::select_subset_of_data() {
       continue;
     }
 
-    long unused = split_percent*get_num_data();
-    if (unused == 0) {
+    long split = split_percent*total_num_data;
+    if (split == 0) {
       LBANN_ERROR(to_string(m),
                   " % of ",
                   split_percent,
@@ -472,12 +481,15 @@ void generic_data_reader::select_subset_of_data() {
                   to_string(m),
                   " requested is too small wrt num_indices (aka, num samples)");
     }
-    long use_me = get_num_data() - unused;
-    if (unused > 0) {
-      m_unused_indices[m]=std::vector<int>(m_shuffled_indices.begin() + use_me, m_shuffled_indices.end());
-      m_shuffled_indices.resize(use_me);
+    if (split > 0) {
+      if(starting_unused_offset + split > m_shuffled_indices.end()) {
+        LBANN_ERROR("Split range exceeds the maximun numbrer of shuffled indices");
+      }
+      m_unused_indices[m]=std::vector<int>(starting_unused_offset, starting_unused_offset + split);
+      starting_unused_offset += split;
     }
   }
+  m_shuffled_indices.resize(total_used);
 
   if(!m_shuffle) {
     std::sort(m_shuffled_indices.begin(), m_shuffled_indices.end());

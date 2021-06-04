@@ -98,6 +98,12 @@ void construct_std_options() {
                         "Height of 2D process grid for each trainer. "
                         "Default grid is approximately square.",
                         -1);
+  arg_parser.add_option(SMILES_BUFFER_SIZE,
+                        {"--smiles_buffer_size"},
+                        utils::ENV("LBANN_SMILES_BUFFER_SIZE"),
+                        "Size of the read buffer for the SMILES "
+                        "data reader.",
+                        16*1024*1024UL);
 }
 
 /// Split the MPI communicator into trainers

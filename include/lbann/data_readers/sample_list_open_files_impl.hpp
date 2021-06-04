@@ -29,6 +29,7 @@
 
 #include "lbann/data_readers/sample_list_open_files.hpp"
 #include "lbann/data_readers/sample_list_impl.hpp" // to_sample_name_t
+#include <conduit/conduit.hpp>
 
 namespace lbann {
 
@@ -239,9 +240,13 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
     std::stringstream sstr(line.substr(0, end_of_str + 1)); // clear trailing spaces for accurate parsing
     std::string filename;
     size_t included_samples;
-    size_t excluded_samples;
+    size_t excluded_samples = 0;
 
-    sstr >> filename >> included_samples >> excluded_samples;
+    sstr >> filename >> included_samples;
+
+    if(m_header.has_unused_sample_fields()) {
+      sstr >> excluded_samples;
+    }
 
     const std::string file_path = add_delimiter(m_header.get_file_dir()) + filename;
 
@@ -251,7 +256,7 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
     }
 
     file_handle_t file_hnd = open_file_handle(file_path);
-    if (!is_file_handle_valid(file_hnd)) {
+    if (this->m_check_data_file && !is_file_handle_valid(file_hnd)) {
       continue; // skipping the file
     }
 
@@ -264,20 +269,62 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
 #ifdef VALIDATE_SAMPLE_LIST
     std::vector<std::string> sample_names;
 #endif
+    sample_name_t range_start = 0;
+    sample_name_t range_end = 0;
+    bool in_range = false;
     while(!sstr.eof()) {
       std::string sample_name_str;
       sstr >> sample_name_str;
-      this->m_sample_list.emplace_back(index, to_sample_name_t<sample_name_t>(sample_name_str));
+      /// Allow range base encoding for integral data types
+      if constexpr(std::is_integral_v<sample_name_t>) {
+        if(!in_range) {
+          if(sample_name_str == "...") {
+            in_range = true;
+          }else {
+            range_start = to_sample_name_t<sample_name_t>(sample_name_str);
+            range_end = range_start;
+          }
+        }else {
+          if(sample_name_str == "...") {
+            LBANN_ERROR("already in range");
+          }else {
+            range_end = to_sample_name_t<sample_name_t>(sample_name_str);
+          }
+        }
+        if(!in_range) {
+          this->m_sample_list.emplace_back(index, to_sample_name_t<sample_name_t>(sample_name_str));
 #ifdef VALIDATE_SAMPLE_LIST
-      sample_names.emplace_back(sample_name_str);
+          sample_names.emplace_back(sample_name_str);
 #endif
-      valid_sample_count++;
+          valid_sample_count++;
+        }else if(in_range && range_end == range_start) {
+          continue;
+        }else {
+          assert(in_range && range_end != range_start);
+          for(sample_name_t i = range_start + 1; i <= range_end; i++) {
+            this->m_sample_list.emplace_back(index, i);
+#ifdef VALIDATE_SAMPLE_LIST
+            sample_names.emplace_back(i);
+#endif
+            valid_sample_count++;
+          }
+          in_range = false;
+        }
+      }else {
+        this->m_sample_list.emplace_back(index, to_sample_name_t<sample_name_t>(sample_name_str));
+#ifdef VALIDATE_SAMPLE_LIST
+        sample_names.emplace_back(sample_name_str);
+#endif
+        valid_sample_count++;
+      }
+    }
+    if(in_range) {
+      LBANN_ERROR("Sample list terminated while in a range operator");
     }
     if(valid_sample_count != included_samples) {
-      LBANN_ERROR(std::string("Bundle file does not contain the correct number of included samples: expected ")
-                  + std::to_string(included_samples)
-                  + std::string(" samples, but found ")
-                  + std::to_string(valid_sample_count));
+      LBANN_ERROR(
+        "Bundle file does not contain the correct number of included samples: expected ",
+        included_samples, " samples (per sample list), but found ", valid_sample_count, " (per looping over the sample IDs in the sample list)");
     }
 
     if(m_file_map.count(filename) > 0) {
@@ -348,9 +395,13 @@ void sample_list_open_files<sample_name_t, file_handle_t>
 template <typename sample_name_t, typename file_handle_t>
 inline bool sample_list_open_files<sample_name_t, file_handle_t>
 ::to_string(std::string& sstr) const {
+  std::vector<std::string> file_map_sequence;
   std::map<std::string, std::template vector<sample_name_t>> tmp_file_map;
   for (const auto& s : this->m_sample_list) {
     const std::string& filename = get_samples_filename(s.first);
+    if(tmp_file_map.count(filename) == 0) {
+      file_map_sequence.emplace_back(filename);
+    }
     tmp_file_map[filename].emplace_back(s.second);
   }
 
@@ -386,16 +437,57 @@ inline bool sample_list_open_files<sample_name_t, file_handle_t>
   this->write_header(sstr, tmp_file_map.size());
 
   // write the list body
-  for (const auto& f : tmp_file_map) {
+  for (const auto& f : file_map_sequence) {
     // File name
-    sstr += f.first;
+    sstr += f;
     // Number of included samples
-    sstr += std::string(" ") + std::to_string(f.second.size());
-    // Number of excluded samples
-    sstr += std::string(" ") + std::to_string(m_file_map.at(f.first) - f.second.size());
+    const auto& samples = tmp_file_map[f];
+    sstr += std::string(" ") + std::to_string(samples.size());
+    if(m_header.has_unused_sample_fields()) {
+      // Number of excluded samples
+      sstr += std::string(" ") + std::to_string(m_file_map.at(f) - samples.size());
+    }
     // Inclusion sample list
-    for (const auto& s : f.second) {
-      sstr += ' ' + lbann::to_string(s);
+    if constexpr(std::is_integral_v<sample_name_t>) {
+      sample_name_t range_end = 0;
+      bool in_range = false;
+      for (const auto& s : samples) {
+        if(s == range_end + 1) {
+          in_range = true;
+          range_end = s;
+        }
+        else if (s == range_end) {
+          if(!in_range) {
+            range_end = s;
+            sstr += ' ' + lbann::to_string(s);
+          }else {
+            LBANN_ERROR("Unknown state in sample list range reconstruction");
+          }
+        }
+        else if (s < range_end) {
+          LBANN_ERROR("Sample list element ", s, " should not be smaller than range end ", range_end);
+        }
+        else { // s > range_end + 1
+          if(in_range) {
+            sstr += " ...";
+            sstr += ' ' + lbann::to_string(range_end);
+            in_range = false;
+          }
+          // Output the current ID and prepare for a new range
+          range_end = s;
+          sstr += ' ' + lbann::to_string(s);
+        }
+      }
+      // Ensure that if the list finishes in a range, output the end
+      if(in_range) {
+        sstr += " ...";
+        sstr += ' ' + lbann::to_string(range_end);
+      }
+    }
+    else {
+      for (const auto& s : samples) {
+        sstr += ' ' + lbann::to_string(s);
+      }
     }
     sstr += '\n';
   }
@@ -431,6 +523,33 @@ template <typename sample_name_t, typename file_handle_t>
 inline void sample_list_open_files<sample_name_t, file_handle_t>
 ::set_samples_filename(sample_file_id_t id, const std::string& filename) {
   std::get<0>(m_file_id_stats_map[id]) = filename;
+}
+
+template <typename sample_name_t, typename file_handle_t>
+inline void sample_list_open_files<sample_name_t, file_handle_t>
+::reorder() {
+  // Interleaving was done over files (all samples in a file are consecutive
+  if (this->m_stride > 1ul) { // undo interleaving
+    samples_t tmp_sample_list[this->m_stride];
+    sample_file_id_t last_index = 0;
+    size_t interleave_idx = 0;
+    for (const auto& s : this->m_sample_list) {
+      sample_file_id_t index = s.first;
+      if(index != last_index) {
+        interleave_idx = (interleave_idx + 1) % this->m_stride;
+      }
+      tmp_sample_list[interleave_idx].push_back(s);
+      last_index = index;
+    }
+
+    samples_t reordered_samples;
+    for(const auto& q : tmp_sample_list) {
+      for(const auto& s : q) {
+        reordered_samples.emplace_back(s);
+      }
+    }
+    std::swap(this->m_sample_list, reordered_samples);
+  }
 }
 
 template <typename sample_name_t, typename file_handle_t>
@@ -694,18 +813,20 @@ inline file_handle_t sample_list_open_files<sample_name_t, file_handle_t>
     const std::string& file_dir = this->get_samples_dirname();
     const std::string file_path = add_delimiter(file_dir) + file_name;
     if (file_name.empty() || !check_if_file_exists(file_path)) {
-      LBANN_ERROR(std::string{} + " :: data file '" + file_path + "' does not exist.");
+      LBANN_ERROR("data file '", file_path, "' does not exist.");
     }
-
     h = open_file_handle(file_path);
 
     if (!is_file_handle_valid(h)) {
-      LBANN_ERROR(std::string{} + " :: data file '" + file_path + "' could not be opened.");
+      LBANN_ERROR("data file '", file_path, "' could not be opened.");
     }
     auto& e = m_file_id_stats_map[id];
     std::get<1>(e) = h;
     /// If a new file is opened, place it in the priority queue
     manage_open_file_handles(id, pre_open_fd);
+   }
+  else {
+    std::cerr << "NPT VALID HANDLE!"<<std::endl;
   }
   return h;
 }
