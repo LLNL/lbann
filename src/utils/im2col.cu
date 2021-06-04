@@ -95,7 +95,7 @@ void im2col(const El::Matrix<TensorDataType, El::Device::GPU>& im,
             const int * im_pads,
             const int * window_dims,
             const int * window_strides,
-            const cudaStream_t& stream) {
+            const El::SyncInfo<El::Device::GPU>& sync_info) {
 
   // Input and output parameters
   const size_t num_samples = im.Width();
@@ -128,6 +128,20 @@ void im2col(const El::Matrix<TensorDataType, El::Device::GPU>& im,
   if(im_num_dims == 2) {
     constexpr size_t block_size = 256;
     const size_t grid_size = (output_num + block_size - 1) / block_size;
+    hydrogen::gpu::LaunchKernel(
+      im2col_2d_kernel<TensorDataType>,
+      grid_size, block_size, 0, sync_info,
+      im.LockedBuffer(), col.Buffer(),
+      im_dims[0], im_dims[1],
+      im_pads[0], im_pads[1],
+      num_channels,
+      window_dims[0], window_dims[1],
+      offset_stride[0], offset_stride[1],
+      offset_start[0], offset_start[1],
+      offset_end[0], offset_end[1],
+      offset_num[0], offset_num[1],
+      output_height, output_num);
+    /*
     im2col_2d_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
         im.LockedBuffer(), col.Buffer(),
         im_dims[0], im_dims[1],
@@ -139,6 +153,7 @@ void im2col(const El::Matrix<TensorDataType, El::Device::GPU>& im,
         offset_end[0], offset_end[1],
         offset_num[0], offset_num[1],
         output_height, output_num);
+        */
 
   } else {
     std::cerr << "im2col on GPU only accepts 2D layers." << std::endl;
@@ -156,7 +171,7 @@ void im2col(const El::Matrix<TensorDataType, El::Device::GPU>& im,
       const int * im_pads,                              \
       const int * window_dims,                          \
       const int * window_strides,                       \
-      const cudaStream_t& stream)
+      const El::SyncInfo<El::Device::GPU>& sync_info)
 
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
