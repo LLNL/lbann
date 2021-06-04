@@ -146,7 +146,9 @@ inline fwd_conv_alg from_miopen(miopenConvFwdAlgorithm_t a)
   case miopenConvolutionFwdAlgoFFT: return fwd_conv_alg::FFT;
   case miopenConvolutionFwdAlgoWinograd: return fwd_conv_alg::WINOGRAD;
   default:
-    LBANN_ERROR("Invalid forward convolution algorithm requested.");
+    std::ostringstream err;
+    err << "miopenConvFwdAlgorithm_t " << a << " is not supported by LBANN.";
+    LBANN_ERROR(err.str());
   }
 }
 
@@ -179,7 +181,9 @@ inline bwd_data_conv_alg from_miopen(miopenConvBwdDataAlgorithm_t a)
   case miopenConvolutionBwdDataAlgoWinograd: return bwd_data_conv_alg::WINOGRAD;
   case miopenConvolutionBwdDataAlgoImplicitGEMM: return bwd_data_conv_alg::IMPLICIT_GEMM;
   default:
-    LBANN_ERROR("Invalid backward convolution algorithm requested.");
+    std::ostringstream err;
+    err << "miopenConvBwdDataAlgorithm_t " << a << " is not supported by LBANN.";
+    LBANN_ERROR(err.str());
   }
 }
 
@@ -210,7 +214,9 @@ inline bwd_filter_conv_alg from_miopen(miopenConvBwdWeightsAlgorithm_t a)
   case miopenConvolutionBwdWeightsAlgoWinograd: return bwd_filter_conv_alg::WINOGRAD;
   case miopenConvolutionBwdWeightsAlgoImplicitGEMM: return bwd_filter_conv_alg::IMPLICIT_GEMM;
   default:
-    LBANN_ERROR("Invalid backward convolution filter requested.");
+    std::ostringstream err;
+    err << "miopenConvBwdWeightsAlgorithm_t " << a << " is not supported by LBANN.";
+    LBANN_ERROR(err.str());
   }
 }
 
