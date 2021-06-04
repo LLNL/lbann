@@ -16,7 +16,7 @@ find_path(ZSTR_INCLUDE_DIR zstr.hpp
 find_path(ZSTR_INCLUDE_DIR zstr.hpp)
 
 set(ZSTR_INCLUDE_DIRS "${ZSTR_INCLUDE_DIR}"
-  CACHE STRING "The list of paths required for ZSTR usage")
+  CACHE STRING "The list of paths required for ZSTR usage" FORCE)
 
 # Standard handling of the package arguments
 include(FindPackageHandleStandardArgs)
