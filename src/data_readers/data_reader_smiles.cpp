@@ -36,6 +36,7 @@
 #include "lbann/utils/commify.hpp"
 #include "lbann/utils/lbann_library.hpp"
 #include "lbann/utils/vectorwrapbuf.hpp"
+#include <algorithm>
 #include <mutex>
 #include <cctype>
 
