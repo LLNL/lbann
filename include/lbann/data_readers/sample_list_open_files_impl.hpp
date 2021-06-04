@@ -527,6 +527,33 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
 
 template <typename sample_name_t, typename file_handle_t>
 inline void sample_list_open_files<sample_name_t, file_handle_t>
+::reorder() {
+  // Interleaving was done over files (all samples in a file are consecutive
+  if (this->m_stride > 1ul) { // undo interleaving
+    samples_t tmp_sample_list[this->m_stride];
+    sample_file_id_t last_index = 0;
+    size_t interleave_idx = 0;
+    for (const auto& s : this->m_sample_list) {
+      sample_file_id_t index = s.first;
+      if(index != last_index) {
+        interleave_idx = (interleave_idx + 1) % this->m_stride;
+      }
+      tmp_sample_list[interleave_idx].push_back(s);
+      last_index = index;
+    }
+
+    samples_t reordered_samples;
+    for(const auto& q : tmp_sample_list) {
+      for(const auto& s : q) {
+        reordered_samples.emplace_back(s);
+      }
+    }
+    std::swap(this->m_sample_list, reordered_samples);
+  }
+}
+
+template <typename sample_name_t, typename file_handle_t>
+inline void sample_list_open_files<sample_name_t, file_handle_t>
 ::set_files_handle(const std::string& filename, file_handle_t h) {
   sample_file_id_t id = sample_file_id_t(0);
   for (auto&& e : m_file_id_stats_map) {

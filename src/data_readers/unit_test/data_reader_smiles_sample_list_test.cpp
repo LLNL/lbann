@@ -67,6 +67,15 @@ baz.txt 18 0 ... 5 7 ... 10 12 ... 19
 blah.txt 18 0 ... 4 6 ... 11 13 ... 19
 )ptext";
 
+std::string const multi_sample_inclusion_v2_list_many_files = R"ptext(MULTI-SAMPLE_INCLUSION_V2
+72 4
+/foo/bar/
+baz.txt 18 0 ... 5 7 ... 10 12 ... 19
+blah.txt 18 0 ... 4 6 ... 11 13 ... 19
+caffe.txt 18 0 ... 3 5 ... 12 14 ... 19
+babe.txt 18 0 ... 6 8 ... 14 16 ... 19
+)ptext";
+
 // std::vector<size_t,size_t> SH30M600_offsets = {{0,100}, {101, 75}}
 // std::vector<size_t,size_t> SH30M600_offsets_off_by_one_under = {{0,99}, {101, 75}}
 // std::vector<size_t,size_t> SH30M600_offsets_off_by_one_over = {{0,101}, {101, 75}}
@@ -95,6 +104,7 @@ TEST_CASE("Sample list", "[mpi][data reader][smiles]")
     std::string const sample_list = sample_list_one_range;
     std::istringstream iss(sample_list);
     smiles->get_sample_list().load(iss, comm, true);
+    smiles->get_sample_list().all_gather_packed_lists(comm);
     std::string buf;
     smiles->get_sample_list().to_string(buf);
     CHECK(sample_list == buf);
@@ -104,6 +114,7 @@ TEST_CASE("Sample list", "[mpi][data reader][smiles]")
     std::string const sample_list = sample_list_many_ranges;
     std::istringstream iss(sample_list);
     smiles->get_sample_list().load(iss, comm, true);
+    smiles->get_sample_list().all_gather_packed_lists(comm);
     std::string buf;
     smiles->get_sample_list().to_string(buf);
     CHECK(sample_list == buf);
@@ -111,7 +122,8 @@ TEST_CASE("Sample list", "[mpi][data reader][smiles]")
   SECTION("CONDUIT_HDF5_INCLUSION - load from string many ranges")
   {
     std::string const sample_list = sample_list_many_ranges;
-    smiles->get_sample_list().load_from_string(sample_list);
+    smiles->get_sample_list().load_from_string(sample_list, comm, true);
+    smiles->get_sample_list().all_gather_packed_lists(comm);
     std::string buf;
     smiles->get_sample_list().to_string(buf);
     CHECK(sample_list == buf);
@@ -122,6 +134,7 @@ TEST_CASE("Sample list", "[mpi][data reader][smiles]")
     std::string const sample_list = multi_sample_inclusion_v2_list;
     std::istringstream iss(sample_list);
     smiles->get_sample_list().load(iss, comm, true);
+    smiles->get_sample_list().all_gather_packed_lists(comm);
     std::string buf;
     smiles->get_sample_list().to_string(buf);
     CHECK(sample_list == buf);
@@ -131,6 +144,17 @@ TEST_CASE("Sample list", "[mpi][data reader][smiles]")
     std::string const sample_list = multi_sample_inclusion_v2_list_multi_files;
     std::istringstream iss(sample_list);
     smiles->get_sample_list().load(iss, comm, true);
+    smiles->get_sample_list().all_gather_packed_lists(comm);
+    std::string buf;
+    smiles->get_sample_list().to_string(buf);
+    CHECK(sample_list == buf);
+  }
+  SECTION("MULTI-SAMPLE_INCLUSION_V2 - many files")
+  {
+    std::string const sample_list = multi_sample_inclusion_v2_list_many_files;
+    std::istringstream iss(sample_list);
+    smiles->get_sample_list().load(iss, comm, true);
+    smiles->get_sample_list().all_gather_packed_lists(comm);
     std::string buf;
     smiles->get_sample_list().to_string(buf);
     CHECK(sample_list == buf);

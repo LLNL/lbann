@@ -107,6 +107,8 @@ class sample_list_open_files : public sample_list<sample_name_t> {
 
   void set_samples_filename(sample_file_id_t id, const std::string& filename) override;
 
+  void reorder() override;
+
   /// Get the list of samples from a specific type of bundle file
   virtual void obtain_sample_names(file_handle_t& h, std::vector<std::string>& sample_names) const = 0;
 
