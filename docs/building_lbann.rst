@@ -78,7 +78,7 @@ into system install packages (e.g. MPI).
 
 1. Execute LBANN's user build script:
 
-   .. code-block: bash
+   .. code-block:: bash
 
       /bin/bash -c "$(curl -fsSL https://github.com/LLNL/lbann/raw/develop/scripts/.build_lbann_as_user.sh)"
 
@@ -91,7 +91,7 @@ into system install packages (e.g. MPI).
         - and extra packages to build in the same enviroment (LBANN_VARIANTS).
       The following is an example of Using the variables:
 
-      .. code-block: bash
+      .. code-block:: bash
 
          LBANN_VERSION="develop" \
          LBANN_VARIANTS="+cuda +numpy" \
@@ -100,7 +100,7 @@ into system install packages (e.g. MPI).
 
 2. Once this is done, you can load LBANN:
 
-   .. code-block: bash
+   .. code-block:: bash
 
       spack load lbann@<version>
 
@@ -322,4 +322,3 @@ build from local repositories:
    build_with_cmake
    build_containers
    build_llnl_idiosyncracies
-   build_spack_extra_config

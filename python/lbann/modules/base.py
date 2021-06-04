@@ -184,7 +184,7 @@ class ChannelwiseFullyConnectedModule(Module):
         self.weights.append(
             lbann.Weights(initializer=lbann.HeNormalInitializer(),
                           name=self.name+'_matrix'))
-    if len(self.weights) == 1:
+    if self.bias and len(self.weights) == 1:
         self.weights.append(
             lbann.Weights(initializer=lbann.ConstantInitializer(value=0.0),
                           name=self.name+'_bias'))

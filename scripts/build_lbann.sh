@@ -24,8 +24,8 @@ DRY_RUN=
 CLEAN_BUILD=
 # Flag for passing subcommands to spack dev-build
 DEV_BUILD_FLAGS=
-# Flag for passing subcommands to spack install and dev-build
-INSTALL_DEV_BUILD_EXTRAS=
+# Flag for passing subcommands to spack install
+INSTALL_BUILD_EXTRAS=
 
 LBANN_VARIANTS=
 CMD_LINE_VARIANTS=
@@ -169,7 +169,7 @@ while :; do
             DIHYDROGEN_VER=
             ;;
         --test)
-            INSTALL_DEV_BUILD_EXTRAS="--test root"
+            INSTALL_BUILD_EXTRAS="--test root"
             ;;
         --hydrogen-repo)
             if [ -n "${2}" ]; then
@@ -636,8 +636,9 @@ if [[ -n "${INSTALL_DEPS:-}" ]]; then
     fi
 
     ##########################################################################################
-    # If there is a local mirror or buildcace, pad out the install tree so that it can be relocated
-    if [[ -n "${MIRRORS}" || -n "${UPDATE_BUILDCACHE:-}" ]]; then
+    # If this build is going to go to a buildcache, pad out the install tree so that it can be relocated
+    # Don't mix this with normal installtions, duplicate packages can get installed
+    if [[ -n "${UPDATE_BUILDCACHE:-}" ]]; then
         spack config add "config:install_tree:padded_length:128"
     fi
 
@@ -668,7 +669,7 @@ if [[ "${SPEC_ONLY}" == "TRUE" ]]; then
 fi
 
 # Try to concretize the environment and catch the return code
-CMD="spack concretize -f"
+CMD="spack concretize"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
@@ -699,6 +700,13 @@ if [[ -L "${SPACK_BUILD_DIR}" ]]; then
   fi
 fi
 
+# If there is a directory there and we are told to clean it, remove the directory
+if [[ -d "${SPACK_BUILD_DIR}" && ! -z "${CLEAN_BUILD}" ]]; then
+    CMD="rm -r ${SPACK_BUILD_DIR}"
+    echo ${CMD}
+    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+fi
+
 # If the spack build directory does not exist, create a tmp directory and link it
 if [[ ! -e "${SPACK_BUILD_DIR}" && -n "${TMP_BUILD_DIR:-}" && -z "${DRY_RUN:-}" ]]; then
     tmp_dir=$(mktemp -d -t lbann-spack-build-${LBANN_SPEC_HASH}-$(date +%Y-%m-%d-%H%M%S)-XXXXXXXXXX)
@@ -710,7 +718,7 @@ fi
 
 ##########################################################################################
 # Actually install LBANN from local source
-CMD="spack install ${BUILD_JOBS} ${INSTALL_DEV_BUILD_EXTRAS}"
+CMD="spack install ${BUILD_JOBS} ${INSTALL_BUILD_EXTRAS}"
 echo ${CMD} | tee -a ${LOG}
 [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 

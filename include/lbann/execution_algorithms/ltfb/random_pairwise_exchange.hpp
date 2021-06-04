@@ -32,6 +32,8 @@
 
 #include <cstddef>
 #include <memory>
+#include <string>
+#include <unordered_map>
 
 namespace lbann {
 namespace ltfb {
@@ -39,17 +41,19 @@ namespace ltfb {
 /** @class RandomPairwiseExchange
  *  @brief The original LTFB algorithm.
  *
- *  In this case, a metric is provided (by name) and the winner of the
- *  tournament is chosen based on the metric strategy. The assumption
- *  is that the metric outputs a single scalar and the winner is
- *  chosen by a simple ">" or "<" operation.
+ *  In this case, a collection of metrics are provided (by name) and
+ *  the winner of the tournament is chosen based on the metric
+ *  strategy associated with each of them. The assumption is that the
+ *  metric outputs a single scalar and the winner is chosen by a
+ *  simple ">" or "<" operation.
  *
  *  The tournament partners are chosen according to an internal
  *  algorithm. Partners exchange their models with each other,
  *  according to the selected communication scheme, and the winner at
- *  each rank is chosen based on evaluating the metric on the local
+ *  each rank is chosen based on evaluating the metrics on the local
  *  trainer's data (one consequence being that each partner might
- *  select a different winner).
+ *  select a different winner). The partner model must win ALL of the
+ *  metrics to be declared the tournament winner.
  */
 class RandomPairwiseExchange final
   : public Cloneable<RandomPairwiseExchange, MetaLearningStrategy>
@@ -123,6 +127,18 @@ public:
                          metric_strategy winner_strategy,
                          std::unique_ptr<ExchangeStrategy> comm_algo);
 
+  /** @brief Constructor
+   *  @param[in] metrics The list of metric/strategy pairs. A metric
+   *             with each given name must exist in the model passed
+   *             to apply(). The local model is favored. The partner
+   *             model must win ALL of the metric comparisons to be
+   *             declared the winner.
+   *  @param[in] comm_algo Algorithm for exchanging models.
+   */
+  RandomPairwiseExchange(
+    std::unordered_map<std::string, metric_strategy> metrics,
+    std::unique_ptr<ExchangeStrategy> comm_algo);
+
   ~RandomPairwiseExchange() = default;
   RandomPairwiseExchange(RandomPairwiseExchange const& other);
   ///@}
@@ -142,30 +158,32 @@ public:
 
 private:
   /** @brief Get the value of the given metric from the model. */
-  EvalType
+  std::unordered_map<std::string, EvalType>
   evaluate_model(model& m, ExecutionContext& ctxt, data_coordinator& dc) const;
   /** @brief Generate a new trainer partner from the comm. */
   El::Int get_partner_trainer(lbann_comm const& c) const noexcept;
   /** @brief Evaluate the output of two models according to the input
-   *         metric strategy.
+   *         metric strategies.
    *
    *  The local model is preferred if possible (to avoid a model
    *  move). That is, "<=" or ">=" is used.
    *
-   *  @param[in] local The metric output of the local model.
-   *  @param[in] remote The metric output of the remote model.
+   *  @param[in] local_scores The metric outputs of the local model.
+   *  @param[in] partner_scores The metric output of the remote model.
    *  @returns true if the local model is favored.
    */
-  bool local_is_better(EvalType local, EvalType remote) const;
+  bool local_is_better(
+    std::unordered_map<std::string, EvalType> const& local_scores,
+    std::unordered_map<std::string, EvalType> const& partner_scores) const;
 
 private:
-  /** @brief Strategy to decide if the local or remote value is better. */
-  metric_strategy m_metric_strategy;
-  /** @brief The name of the metric to be used to evaluate a model.
+  /** @brief The list of metric/strategy pairs.
    *
-   *  A metric with the given name must exist in every model seen.
+   *  Each metric gets its own strategy. A partner model must win
+   *  every metric to be declared the tournament winner.
    */
-  std::string m_metric_name;
+  std::unordered_map<std::string, metric_strategy> m_metrics;
+
   /** @brief The strategy for exchanging two models.
    *
    *  This is largely an implementation detail of moving models

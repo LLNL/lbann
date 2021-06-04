@@ -3,7 +3,7 @@
 
 #include <lbann_config.hpp>
 
-#ifdef LBANN_HAS_STD_ANY
+#if defined(LBANN_HAS_STD_ANY) && !defined(__CUDACC__)
 
 #include <any>
 
