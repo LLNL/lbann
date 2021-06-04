@@ -25,12 +25,46 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/lbann.hpp"
+#include "lbann/utils/argument_parser.hpp"
 #include <mpi.h>
 #include <stdio.h>
 
+void construct_opts(int argc, char **argv) {
+  auto& arg_parser = lbann::global_argument_parser();
+  arg_parser.add_option("samples",
+                        {"-n"},
+                        "Number of samples to run inference on",
+                        128);
+  arg_parser.add_option("channels",
+                        {"-c"},
+                        "Number of image channels in sample",
+                        1);
+  arg_parser.add_option("height",
+                        {"-h"},
+                        "Height of image in sample",
+                        28);
+  arg_parser.add_option("width",
+                        {"-w"},
+                        "Width of image in sample",
+                        28);
+  arg_parser.add_option("labels",
+                        {"-l"},
+                        "Number of labels in dataset",
+                        10);
+  arg_parser.add_option("minibatchsize",
+                        {"-mbs"},
+                        "Number of samples in a mini-batch",
+                        16);
+  arg_parser.add_required_argument<std::string>
+                                  ("model",
+                                   "Directory containing checkpointed model");
+  arg_parser.parse(argc, argv);
+}
+
 El::DistMatrix<float, El::STAR, El::STAR, El::ELEMENT, El::Device::CPU>
 random_samples(El::Grid const& g, int n, int c, int h, int w) {
-  El::DistMatrix<float, El::STAR, El::STAR, El::ELEMENT, El::Device::CPU> samples(n, c * h * w, g);
+  El::DistMatrix<float, El::STAR, El::STAR, El::ELEMENT, El::Device::CPU>
+    samples(n, c * h * w, g);
   El::MakeUniform(samples);
   return samples;
 }
@@ -45,64 +79,40 @@ int main(int argc, char **argv) {
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  // Input params
-  int n=128, c=1, h=28, w=28; // input dims
-  int l=10; // number of labels in dataset
-  int mbs = 16; // max mini-batch size
-  std::string model_dir; // location of model checkpoint
-
-  int opt;
-  while ((opt = getopt (argc, argv, "n:c:h:w:l:m:d:")) != -1)
-    switch (opt)
-    {
-      case 'n':
-        n = std::atoi(optarg);
-        break;
-      case 'c':
-        c = std::atoi(optarg);
-        break;
-      case 'h':
-        h = std::atoi(optarg);
-        break;
-      case 'w':
-        w = std::atoi(optarg);
-        break;
-      case 'l':
-        l = std::atoi(optarg);
-        break;
-      case 'm':
-        mbs = std::atoi(optarg);
-        break;
-      case 'd':
-        model_dir = optarg;
-        break;
-      case '?':
-        std::cerr << "Error: Unknown option -" << optopt << std::endl;
-      default:
-        abort();
-    }
-  if (model_dir.empty()) {
-    if (rank == 0) {
-      std::cerr << "-d requires model checkpoint directory" << std::endl;
-    }
-    MPI_Finalize();
-    abort();
-  }
+  // Get input arguments and print values
+  construct_opts(argc, argv);
+  auto& arg_parser = lbann::global_argument_parser();
   if (rank == 0) {
-    std::cout << "Running inference on model at: " << model_dir << std::endl;
-    std::cout << "N=" << n << ", ";
-    std::cout << "c=" << c << ", ";
-    std::cout << "h=" << h << ", ";
-    std::cout << "w=" << w << ", ";
-    std::cout << "label count=" << l << ", ";
-    std::cout << "max mini-batch size=" << mbs << "." << std::endl;
+    std::stringstream msg;
+    msg << "Model: " << arg_parser.get<std::string>("model") << std::endl;
+    msg << "{ N, c, h, w } = { " << arg_parser.get<int>("samples") << ", ";
+    msg << arg_parser.get<int>("channels") << ", ";
+    msg << arg_parser.get<int>("height") << ", ";
+    msg << arg_parser.get<int>("width") << " }" << std::endl;
+    msg << "label count = " << arg_parser.get<int>("labels") << std::endl;
+    msg << "max MBS = " << arg_parser.get<int>("minibatchsize") << std::endl;
+    std::cout << msg.str();
   }
 
   // Load model and run inference on samples
   auto lbann_comm = lbann::initialize_lbann(MPI_COMM_WORLD);
-  auto m = lbann::load_inference_model(lbann_comm.get(), model_dir, mbs, {c, h, w}, {l});
-  auto samples = random_samples(lbann_comm->get_trainer_grid(), n, c, h, w);
-  auto labels = lbann::infer(m.get(), samples, mbs);
+  auto m = lbann::load_inference_model(lbann_comm.get(),
+                                       arg_parser.get<std::string>("model"),
+                                       arg_parser.get<int>("minibatchsize"),
+                                       {
+                                         arg_parser.get<int>("channels"),
+                                         arg_parser.get<int>("height"),
+                                         arg_parser.get<int>("width")
+                                       },
+                                       {arg_parser.get<int>("labels")});
+  auto samples = random_samples(lbann_comm->get_trainer_grid(),
+                                arg_parser.get<int>("samples"),
+                                arg_parser.get<int>("channels"),
+                                arg_parser.get<int>("height"),
+                                arg_parser.get<int>("width"));
+  auto labels = lbann::infer(m.get(),
+                             samples,
+                             arg_parser.get<int>("minibatchsize"));
 
   // Print inference results
   if (lbann_comm->am_world_master()) {
