@@ -808,8 +808,7 @@ inline file_handle_t sample_list_open_files<sample_name_t, file_handle_t>
   const sample_t& s = this->m_sample_list[i];
   sample_file_id_t id = s.first;
   file_handle_t h = get_samples_file_handle(id);
-//XX  if (!is_file_handle_valid(h)) {
-if (true) {
+  if (!is_file_handle_valid(h)) {
     const std::string& file_name = get_samples_filename(id);
     const std::string& file_dir = this->get_samples_dirname();
     const std::string file_path = add_delimiter(file_dir) + file_name;
@@ -826,9 +825,9 @@ if (true) {
     /// If a new file is opened, place it in the priority queue
     manage_open_file_handles(id, pre_open_fd);
    }
-else {
-std::cerr << "NPT VALID HANDLE!"<<std::endl;
-}
+  else {
+    std::cerr << "NPT VALID HANDLE!"<<std::endl;
+  }
   return h;
 }
 
