@@ -38,10 +38,11 @@
 namespace lbann {
 
 /** @brief Class for LBANN batch inference algorithms. 
- * This execution algorithm is meant for running inference using a trained
- * model and samples passed by the user from an external application.  The
- * algorithm currently assumes that there is only 1 input layer in the model,
- * and the output layer is a softmax layer.
+ *
+ *  This execution algorithm is meant for running inference using a trained
+ *  model and samples passed by the user from an external application.  The
+ *  algorithm currently assumes that there is only 1 input layer in the model,
+ *  and the output layer is a softmax layer.
  */
 class batch_functional_inference_algorithm {
 public:
