@@ -215,6 +215,78 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
   m_header.m_is_exclusive = false;
 }
 
+template <typename sample_name_t, typename file_handle_t>
+inline size_t sample_list_open_files<sample_name_t, file_handle_t>
+::read_line_integral_type(std::istringstream& sstr, sample_file_id_t index) {
+  if constexpr(!std::is_integral_v<sample_name_t>) {
+    LBANN_ERROR("required sample_name_t to be integral type");
+  }
+  size_t valid_sample_count = 0u;
+  sample_name_t range_start{};
+  sample_name_t range_end{};
+  bool in_range = false;
+
+  while(!sstr.eof()) {
+    std::string sample_name_str;
+    sstr >> sample_name_str;
+    /// Allow range base encoding for integral data types
+    if constexpr(std::is_integral_v<sample_name_t>) {
+      if(!in_range) {
+        if(sample_name_str == "...") {
+          in_range = true;
+        }else {
+          range_start = to_sample_name_t<sample_name_t>(sample_name_str);
+          range_end = range_start;
+        }
+      }else {
+        if(sample_name_str == "...") {
+          LBANN_ERROR("already in range");
+        }else {
+          range_end = to_sample_name_t<sample_name_t>(sample_name_str);
+        }
+      }
+      if(!in_range) {
+        this->m_sample_list.emplace_back(index, to_sample_name_t<sample_name_t>(sample_name_str));
+#ifdef VALIDATE_SAMPLE_LIST
+        sample_names.emplace_back(sample_name_str);
+#endif
+        valid_sample_count++;
+      }else if(in_range && range_end == range_start) {
+        continue;
+      }else {
+        assert(in_range && range_end != range_start);
+        for(sample_name_t i = range_start + 1; i <= range_end; i++) {
+          this->m_sample_list.emplace_back(index, i);
+#ifdef VALIDATE_SAMPLE_LIST
+          sample_names.emplace_back(i);
+#endif
+          valid_sample_count++;
+        }
+        in_range = false;
+      }
+    }
+  }
+  if(in_range) {
+    LBANN_ERROR("Sample list terminated while in a range operator");
+  }
+  return valid_sample_count;
+}
+
+template <typename sample_name_t, typename file_handle_t>
+inline size_t sample_list_open_files<sample_name_t, file_handle_t>
+::read_line(std::istringstream& sstr, sample_file_id_t index) {
+  size_t valid_sample_count = 0u;
+  while(!sstr.eof()) {
+    std::string sample_name_str;
+    sstr >> sample_name_str;
+    this->m_sample_list.emplace_back(index, to_sample_name_t<sample_name_t>(sample_name_str));
+#ifdef VALIDATE_SAMPLE_LIST
+    sample_names.emplace_back(sample_name_str);
+#endif
+    valid_sample_count++;
+  }
+  return valid_sample_count;
+}
 
 template <typename sample_name_t, typename file_handle_t>
 inline void sample_list_open_files<sample_name_t, file_handle_t>
@@ -237,7 +309,7 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
       continue;
     }
 
-    std::stringstream sstr(line.substr(0, end_of_str + 1)); // clear trailing spaces for accurate parsing
+    std::istringstream sstr(line.substr(0, end_of_str + 1)); // clear trailing spaces for accurate parsing
     std::string filename;
     size_t included_samples;
     size_t excluded_samples = 0;
@@ -269,57 +341,10 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
 #ifdef VALIDATE_SAMPLE_LIST
     std::vector<std::string> sample_names;
 #endif
-    sample_name_t range_start{};
-    sample_name_t range_end{};
-    bool in_range = false;
-    while(!sstr.eof()) {
-      std::string sample_name_str;
-      sstr >> sample_name_str;
-      /// Allow range base encoding for integral data types
-      if constexpr(std::is_integral_v<sample_name_t>) {
-        if(!in_range) {
-          if(sample_name_str == "...") {
-            in_range = true;
-          }else {
-            range_start = to_sample_name_t<sample_name_t>(sample_name_str);
-            range_end = range_start;
-          }
-        }else {
-          if(sample_name_str == "...") {
-            LBANN_ERROR("already in range");
-          }else {
-            range_end = to_sample_name_t<sample_name_t>(sample_name_str);
-          }
-        }
-        if(!in_range) {
-          this->m_sample_list.emplace_back(index, to_sample_name_t<sample_name_t>(sample_name_str));
-#ifdef VALIDATE_SAMPLE_LIST
-          sample_names.emplace_back(sample_name_str);
-#endif
-          valid_sample_count++;
-        }else if(in_range && range_end == range_start) {
-          continue;
-        }else {
-          assert(in_range && range_end != range_start);
-          for(sample_name_t i = range_start + 1; i <= range_end; i++) {
-            this->m_sample_list.emplace_back(index, i);
-#ifdef VALIDATE_SAMPLE_LIST
-            sample_names.emplace_back(i);
-#endif
-            valid_sample_count++;
-          }
-          in_range = false;
-        }
-      }else {
-        this->m_sample_list.emplace_back(index, to_sample_name_t<sample_name_t>(sample_name_str));
-#ifdef VALIDATE_SAMPLE_LIST
-        sample_names.emplace_back(sample_name_str);
-#endif
-        valid_sample_count++;
-      }
-    }
-    if(in_range) {
-      LBANN_ERROR("Sample list terminated while in a range operator");
+    if constexpr(std::is_integral_v<sample_name_t>) {
+      valid_sample_count = read_line_integral_type(sstr, index);
+    }else {
+      valid_sample_count = read_line(sstr, index);
     }
     if(valid_sample_count != included_samples) {
       LBANN_ERROR(
@@ -727,6 +752,10 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
 ::compute_epochs_file_usage(const std::vector<int>& shuffled_indices,
                             int mini_batch_size,
                             const lbann_comm& comm) {
+  if(mini_batch_size == 0) {
+    LBANN_WARNING("Unable to compute file usage with empty mini-batch size");
+    return;
+  }
   for (auto&& e : m_file_id_stats_map) {
     auto& h = std::get<FID_STATS_HANDLE>(e);
     close_file_handle(h);

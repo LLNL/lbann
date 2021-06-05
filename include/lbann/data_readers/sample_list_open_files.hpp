@@ -122,6 +122,10 @@ class sample_list_open_files : public sample_list<sample_name_t> {
   /// Check that the list of samples given actually exist in a bundle file
   void validate_implicit_bundles_sample_names(std::string file_path, std::string filename, std::vector<std::string>& sample_names, size_t included_samples, size_t excluded_samples);
 
+  size_t read_line_integral_type(std::istringstream& sstr, sample_file_id_t index);
+
+  size_t read_line(std::istringstream& sstr, sample_file_id_t index);
+
   /// read the body of exclusive sample list
   void read_exclusive_list(std::istream& istrm, size_t stride=1, size_t offset=0);
 
