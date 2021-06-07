@@ -269,8 +269,8 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
 #ifdef VALIDATE_SAMPLE_LIST
     std::vector<std::string> sample_names;
 #endif
-    sample_name_t range_start = 0;
-    sample_name_t range_end = 0;
+    sample_name_t range_start{};
+    sample_name_t range_end{};
     bool in_range = false;
     while(!sstr.eof()) {
       std::string sample_name_str;
