@@ -1,325 +1,94 @@
-#include "mpi.h"
-#include "lbann/utils/options.hpp"
-#include "lbann/utils/exception.hpp"
-#include <ctime>
-#include <dirent.h>
-#include <iostream>
-#include <string>
-#include <sstream>
-#include <fstream>
-#include <cstring>
-#include <cstdlib>
-#include <stdexcept>
-#include <algorithm>
+////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
+// Written by the LBANN Research Team (B. Van Essen, et al.) listed in
+// the CONTRIBUTORS file. <lbann-dev@llnl.gov>
+//
+// LLNL-CODE-697807.
+// All rights reserved.
+//
+// This file is part of LBANN: Livermore Big Artificial Neural Network
+// Toolkit. For details, see http://software.llnl.gov/LBANN or
+// https://github.com/LLNL/LBANN.
+//
+// Licensed under the Apache License, Version 2.0 (the "Licensee"); you
+// may not use this file except in compliance with the License.  You may
+// obtain a copy of the License at:
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the license.
+////////////////////////////////////////////////////////////////////////////////
+
+#include "lbann/utils/argument_parser.hpp"
 
 namespace lbann {
 
-options * options::s_instance = new options;
+void construct_std_options() {
+  auto& arg_parser = global_argument_parser();
+  arg_parser.add_option(MAX_RNG_SEEDS_DISPLAY,
+                        {"--rng_seeds_per_trainer_to_display"},
+                        utils::ENV("LBANN_RNG_SEEDS_PER_TRAINER_TO_DISPLAY"),
+                        "Limit how many random seeds LBANN should display "
+                        "from each trainer",
+                        2);
+  arg_parser.add_option(NUM_IO_THREADS,
+                        {"--num_io_threads"},
+                        utils::ENV("LBANN_NUM_IO_THREADS"),
+                        "Number of threads available to both I/O and "
+                        "initial data transformations for each rank.",
+                        64);
+  arg_parser.add_option(NUM_TRAIN_SAMPLES,
+                        {"--num_train_samples"},
+                        utils::ENV("LBANN_NUM_TRAIN_SAMPLES"),
+                        "Set the number of training samples to ingest.",
+                        0);
+  arg_parser.add_option(NUM_VALIDATE_SAMPLES,
+                        {"--num_validate_samples"},
+                        utils::ENV("LBANN_NUM_VALIDATE_SAMPLES"),
+                        "Set the number of validate samples to ingest.",
+                        0);
+  arg_parser.add_option(NUM_TEST_SAMPLES,
+                        {"--num_test_samples"},
+                        utils::ENV("LBANN_NUM_TEST_SAMPLES"),
+                        "Set the number of testing samples to ingest.",
+                        0);
+  arg_parser.add_flag(ALLOW_GLOBAL_STATISTICS,
+                      {"--ltfb_allow_global_statistics"},
+                      utils::ENV("LBANN_LTFB_ALLOW_GLOBAL_STATISTICS"),
+                      "Allow the print_statistics callback to report "
+                      "global (inter-trainer) summary statistics.");
+  arg_parser.add_option(PROCS_PER_TRAINER,
+                        {"--procs_per_trainer"},
+                        utils::ENV("LBANN_PROCS_PER_TRAINER"),
+                        "Number of MPI ranks per LBANN trainer, "
+                        "If the field is not set (or set to 0) then "
+                        " all MPI ranks are assigned to one trainer."
+                        " The number of processes per trainer must "
+                        " evenly divide the total number of MPI ranks. "
+                        " The number of resulting trainers is "
+                        " num_procs / procs_per_trainer.",
+                        0);
+  arg_parser.add_option(TRAINER_GRID_HEIGHT,
+                        {"--trainer_grid_height"},
+                        utils::ENV("LBANN_TRAINER_GRID_HEIGHT"),
+                        "Height of 2D process grid for each trainer. "
+                        "Default grid is approximately square.",
+                        -1);
+  arg_parser.add_option(SMILES_BUFFER_SIZE,
+                        {"--smiles_buffer_size"},
+                        utils::ENV("LBANN_SMILES_BUFFER_SIZE"),
+                        "Size of the read buffer for the SMILES "
+                        "data reader.",
+                        16*1024*1024UL);
 
-//============================================================================
-
-namespace {
-
-void m_parse_opt(std::string tmp, std::string &key, std::string &val)
-{
-  key = "";
-  val = "";
-  if (tmp.size() > 4 and tmp.substr(0,4) == "# --") {
-    tmp = tmp.substr(2);
-  }
-  if (tmp.size() > 2 and tmp[0] == '-' and tmp[1] == '-') {
-    size_t n = tmp.find('=');
-    if (n == std::string::npos) {
-      key = tmp.substr(2);
-      val = "1";
-    } else {
-      key = tmp.substr(2, n-2);
-      val = tmp.substr(n+1, tmp.size()-n+1);
-      if (!val.size()) {
-        val = "1";
-      }
-    }
-  }
 }
 
-} // namespace
-
-void options::init(int argc, char **argv)
-{
-  MPI_Comm_rank(MPI_COMM_WORLD, &m_rank);
-  m_argc = argc;
-  m_argv = argv;
-
-  //save cmd line
-  std::string key;
-  std::string value;
-  std::string loadme;
-  for (int j=0; j<argc; j++) {
-    m_cmd_line.emplace_back(argv[j]);
-    m_parse_opt(argv[j], key, value);
-    if (key == "loadme") {
-      loadme = value;
-    }
-  }
-
-  //optionally init from file
-  if (loadme != "") {
-    m_parse_file(loadme.c_str());
-  }
-
-  //over-ride from cmd line
-  m_parse_cmd_line(argc, argv);
-}
-
-//============================================================================
-
-namespace {
-
-void lower(std::string &s)
-{
-  for (char & j : s) {
-    if (isalpha(j)) {
-      j = tolower(j);
-    }
-  }
-}
-
-} // namespace
-
-//============================================================================
-
-bool options::m_has_opt(std::string option)
-{
-  if (m_opts.find(option) == m_opts.end()) {
-    return false;
-  }
-  return true;
-}
-
-bool options::get_bool(std::string option, bool the_default)
-{
-  int result;
-  if (!m_test_int(option, result)) {
-    set_option(option, the_default);
-    return the_default;
-  }
-  return result;
-}
-
-bool options::get_bool(std::string option)
-{
-  if (m_opts.find(option) != m_opts.end()) {
-    std::string s1 = m_opts[option];
-    std::transform(s1.begin(), s1.end(), s1.begin(), ::tolower);
-    if (s1 == "true") return true;
-    if (s1 == "false") return false;
-  }
-  int result;
-  if (!m_test_int(option, result)) {
-    return false;
-  }
-  if (result == 0) return false;
-  return true;
-}
-
-int options::get_int(std::string option, int the_default)
-{
-  int result;
-  if (!m_test_int(option, result)) {
-    set_option(option, the_default);
-    return the_default;
-  }
-  return result;
-}
-
-int options::get_int(std::string option)
-{
-  int result;
-  if (!m_test_int(option, result)) {
-    LBANN_ERROR("options::get_int() - failed to find option: ", option, ", or to convert to int");
-  }
-  return result;
-}
-
-double options::get_double(std::string option, double the_default) {
-  double result;
-  if (!m_test_double(option, result)) {
-    set_option(option, the_default);
-    return the_default;
-  }
-  return result;
-}
-
-double options::get_double(std::string option)
-{
-  double result;
-  if (!m_test_double(option, result)) {
-    LBANN_ERROR("options::get_double() - failed to find option: ", option,  ", or to convert the value to double");
-  }
-  return result;
-}
-
-std::string options::get_string(std::string option, std::string the_default)
-{
-  std::string result;
-  if (!m_test_string(option, result)) {
-    return the_default;
-  }
-  return the_default;
-}
-
-std::string options::get_string(std::string option)
-{
-  std::string result;
-  if (!m_test_string(option, result)) {
-    LBANN_ERROR("options::get_string() - failed to find option: ", option);
-  }
-  return result;
-}
-
-//============================================================================
-
-bool options::m_test_int(std::string option, int &out)
-{
-  if (!m_has_opt(option)) {
-    return false;
-  }
-  bool is_good = true;
-  std::string val = m_opts[option];
-  for (char j : val) {
-    if (!isdigit(j)) {
-      is_good = false;
-      break;
-    }
-  }
-  if (!is_good) {
-    return false;
-  }
-
-  std::stringstream s(val);
-  if (! (s>>out)) {
-    return false;
-  }
-  return true;
-}
-
-bool options::m_test_double(std::string option, double &out)
-{
-  if (!m_has_opt(option)) return false;
-  std::string val(m_opts[option]);
-  lower(val);
-  for (char j : val) {
-    if (!(isdigit(j) or j == '-'
-             or tolower(j == 'e') or j == '.')) {
-      return false;
-    }
-  }
-  std::stringstream s(val);
-  if (! (s>>out)) {
-    return false;
-  }
-  return true;
-}
-
-bool options::m_test_string(std::string option, std::string &out)
-{
-  if (!m_has_opt(option)) return false;
-  out = m_opts[option];
-  return true;
-}
-
-bool options::has_int(std::string option)
-{
-  int test;
-  if (m_test_int(option, test)) return true;
-  return false;
-}
-
-bool options::has_string(std::string option) {
-  std::string test;
-  if (m_test_string(option, test)) return true;
-  return false;
-}
-
-bool options::has_double(std::string option) {
-
-  double test;
-  if (m_test_double(option, test)) return true;
-  return false;
-}
-
-//====================================================================
-void options::set_option(std::string name, int value) {
-  m_opts[name] = std::to_string(value);
-}
-
-void options::set_option(std::string name, bool value) {
-  m_opts[name] = std::to_string(value);
-}
-
-void options::set_option(std::string name, std::string value) {
-  m_opts[name] = value;
-}
-
-void options::set_option(std::string name, float value) {
-  m_opts[name] = std::to_string(value);
-}
-
-void options::set_option(std::string name, double value) {
-  m_opts[name] = std::to_string(value);
-}
-
-//====================================================================
-
-void options::m_parse_file(std::string fn)
-{
-  std::ifstream in(fn.c_str());
-  if (!in.is_open()) {
-    if (!m_rank) {
-      LBANN_ERROR("failed to open file for reading: ", fn);
-    }
-  }
-
-  std::string key, line, val;
-  while (in.good() and not in.eof()) {
-    getline(in, line);
-
-    //skip of commented out portion of the file
-    if (line.size() > 0 and line[0] == '>') {
-      while (in.good() and not in.eof()) {
-        getline(in, line);
-        if (line.size() > 0 and line[0] == '<') {
-          break;
-        }
-      }
-    }
-
-    m_parse_opt(line, key, val);
-    if (key != "") {
-      m_opts[key] = val;
-    }
-  }
-  in.close();
-}
-
-
-void options::m_parse_cmd_line(int argc, char **argv)
-{
-  std::string key, val;
-  for (int j=1; j<argc; j++) {
-    m_parse_opt(argv[j], key, val);
-    if (key != "") {
-      m_opts[key] = val;
-    }
-  }
-}
-
-void options::print(std::ostream &out) {
-  out << "# The following Options were used in the code\n";
-  for (auto t : m_opts) {
-    out << "--" << t.first << "=" << t.second << " ";
-  }
-  out << std::endl;
+void construct_vision_options() {
 }
 
 } // namespace lbann
