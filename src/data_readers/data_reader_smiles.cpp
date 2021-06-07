@@ -39,6 +39,7 @@
 #include <algorithm>
 #include <mutex>
 #include <cctype>
+#include <random>
 
 namespace lbann {
 
@@ -171,7 +172,9 @@ void smiles_data_reader::do_preload_data_store() {
     const std::string filename = fn_iter->first;
     my_ordering.push_back(filename);
   }
-  std::random_shuffle(my_ordering.begin(), my_ordering.end());
+  std::random_device rd;
+  std::mt19937 r(rd());
+  std::shuffle(my_ordering.begin(), my_ordering.end(), r);
 
   // load all samples that belong to this rank's data_store
   for (const auto &filename : my_ordering) {
