@@ -85,7 +85,10 @@ void construct_std_options() {
                         "Size of the read buffer for the SMILES "
                         "data reader.",
                         16*1024*1024UL);
-
+  arg_parser.add_option("mini_batch_size",
+                        {"--mini_batch_size"},
+                        "Size of mini batches",
+                        0);
 }
 
 void construct_vision_options() {
