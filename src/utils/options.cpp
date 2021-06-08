@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -30,6 +30,8 @@ namespace lbann {
 
 void construct_std_options() {
   auto& arg_parser = global_argument_parser();
+  arg_parser.add_required_argument("prototext",
+                                   "Prototext file containing experiment");
   arg_parser.add_option(MAX_RNG_SEEDS_DISPLAY,
                         {"--rng_seeds_per_trainer_to_display"},
                         utils::ENV("LBANN_RNG_SEEDS_PER_TRAINER_TO_DISPLAY"),
@@ -89,9 +91,132 @@ void construct_std_options() {
                         {"--mini_batch_size"},
                         "Size of mini batches",
                         0);
+  arg_parser.add_option("num_epochs",
+                        {"--num_epochs"},
+                        "Number of epochs to train model",
+                        0);
+  arg_parser.add_option("hydrogen_block_size",
+                        {"--hydrogen_block_size"},
+                        "Block size for Hydrogen",
+                        0);
+  arg_parser.add_option("num_parallel_readers",
+                        {"--num_parallel_readers"},
+                        "The number of parallel data readers",
+                        1);
+  arg_parser.add_option("random_seed",
+                        {"--random_seed"},
+                        "Value to seed RNG",
+                        -1);
+  arg_parser.add_option("objective_function",
+                        {"--objective_function"},
+                        "must be: categorical_cross_entropy or mean_squared_error",
+                        "categorical_cross_entropy");
+  arg_parser.add_option("data_layout",
+                        {"--data_layout"},
+                        "must be: data_parallel or model_parallel\n"
+                        "note: this will be applied to all layers, metrics (and others)\n"
+                        "that take DATA_PARALLEL or MODEL_PARALLEL as a template parameter",
+                        "data_parallel");
+  arg_parser.add_option("checkpoint_dir",
+                        {"--checkpoint_dir"},
+                        "Save to or restart from a specific checkpoint directory.\n"
+                        "Additionally, sets the output directory for dumping weights.\n"
+                        "Modifies callbacks: checkpoint, save_model, dump_weights\n",
+                        "");
+  arg_parser.add_option("restart_dir",
+                        {"--restart_dir"},
+                        "Restart from a checkpoint found in the given directory.\n"
+                        "If the directory doesn't exist or doesn't contain a checkpoint,\n"
+                        "an error will be thrown.\n",
+                        "");
+  arg_parser.add_option("load_model_weights_dir",
+                        {"--load_model_weights_dir"},
+                        "Load model wieghts found in the given directory.\n"
+                        "If the directory doesn't exist, doesn't contain valid weights,\n"
+                        "or doesn't contain a checkpoint,\n"
+                        "an error will be thrown.\n",
+                        "");
+  arg_parser.add_flag("serialize_io",
+                      {"--serialize_io"},
+                      "force data readers to use a single threader for I/O");
+  arg_parser.add_flag("disable_background_io_activity",
+                      {"--disable_background_io_activity"},
+                      "prevent the input layers from fetching data in the background");
+  arg_parser.add_flag("disable_cuda",
+                      {"--disable_cuda"},
+                      "has no effect unless LBANN was compiled with LBANN_HAS_CUDNN");
+  arg_parser.add_flag("print_affinity",
+                      {"--print_affinity"},
+                      "display information on how OpenMP threads are provisioned");
+  arg_parser.add_flag("use_data_store",
+                      {"--use_data_store"},
+                      "Enables the data store in-memory structure");
+  arg_parser.add_flag("preload_data_store",
+                      {"--preload_data_store"},
+                      "Preloads the data store in-memory structure druing data reader load time");
+  arg_parser.add_flag("super_node",
+                      {"--super_node"},
+                      "Enables the data store in-memory structure to use the supernode exchange structure");
+  arg_parser.add_flag("write_sample_list",
+                      {"--write_sample_list"},
+                      "Writes out the sample list that was loaded into the current directory");
+  arg_parser.add_flag("ltfb_verbose",
+                      {"--ltfb_verbose"},
+                      "Increases number of per-trainer messages that are reported");
+  arg_parser.add_flag("load_model_weights_dir_is_complete",
+                      {"--load_model_weights_dir_is_complete"},
+                      "Use load_model_weights_dir as given, ignoring checkpoint hierarchy");
 }
 
-void construct_vision_options() {
+void construct_datareader_options() {
+  auto& arg_parser = global_argument_parser();
+  arg_parser.add_option("data_filedir",
+                        {"--data_filedir"},
+                        "Sets the file direcotry for train and test data",
+                        "");
+  arg_parser.add_option("data_filedir_train",
+                        {"--data_filedir_train"},
+                        "TODO",
+                        "");
+  arg_parser.add_option("data_filename_train",
+                        {"--data_filename_train"},
+                        "TODO",
+                        "");
+  arg_parser.add_option("sample_list_train",
+                        {"--sample_list_train"},
+                        "TODO",
+                        "");
+  arg_parser.add_option("label_filename_train",
+                        {"--label_filename_train"},
+                        "TODO",
+                        "");
+  arg_parser.add_option("data_reader_percent",
+                        {"--data_reader_percent"},
+                        "TODO",
+                        0);
+  arg_parser.add_flag("share_testing_data_readers",
+                      {"--share_testing_data_readers"},
+                      "TODO");
+  arg_parser.add_flag("create_tarball",
+                      {"--create_tarball"},
+                      "TODO");
+  arg_parser.add_option("test_tarball",
+                        {"--test_tarball"},
+                        "TODO",
+                        0);
+}
+
+void construct_callback_options() {
+  auto& arg_parser = global_argument_parser();
+  arg_parser.add_option("image_dir",
+                        {"--image_dir"},
+                        "if the model has callback_save_images, this determines where the"
+                        "images are saved",
+                        "");
+  arg_parser.add_flag("no_im_comm",
+                      {"--no_im_comm"},
+                      "removed ImComm callback, if present; this is intended for"
+                      "running alexnet with a single model, but may be useful elsewhere");
 }
 
 } // namespace lbann
