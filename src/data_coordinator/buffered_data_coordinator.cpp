@@ -34,6 +34,7 @@
 #include "lbann/utils/profiling.hpp"
 #include "lbann/utils/distconv.hpp"
 #include "lbann/utils/serialize.hpp"
+#include "lbann/utils/tensor_impl.hpp"
 #include "lbann/io/persist_impl.hpp"
 
 namespace lbann {
@@ -285,7 +286,7 @@ void buffered_data_coordinator<TensorDataType>::distribute_from_local_matrix(exe
   for(auto idt : input_data_type_iterator()) {
     if(buf.m_input_buffers.count(idt)) {
       if(input_buffers.count(idt)) {
-        El::Copy(*buf.m_input_buffers[idt], *input_buffers[idt]);
+        view_or_copy_tensor(*buf.m_input_buffers[idt], *input_buffers[idt]);
       }
     }else {
       if(input_buffers.count(idt)) {

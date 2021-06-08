@@ -145,6 +145,10 @@ trainer const& get_const_trainer() {
   return *global_trainer_;
 }
 
+void finalize_trainer() {
+  global_trainer_.reset();
+}
+
 /// Construct a trainer that contains a lbann comm object and threadpool
 trainer& construct_trainer(lbann_comm *comm,
                            lbann_data::Trainer* pb_trainer,

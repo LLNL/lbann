@@ -62,6 +62,12 @@
 #include <vector>
 
 namespace lbann {
+
+// Declare the trainer finalization. It's declared here because it is
+// *not* for public consumption. It is implemented in
+// src/utils/lbann_library.cpp.
+void finalize_trainer();
+
 namespace {
 lbann_comm* world_comm_ = nullptr;
 }// namespace <anon>
@@ -129,6 +135,7 @@ world_comm_ptr initialize(int& argc, char**& argv) {
 }
 
 void finalize(lbann_comm* comm) {
+  finalize_trainer();
 #ifdef LBANN_HAS_NVSHMEM
   nvshmem::finalize();
 #endif // LBANN_HAS_NVSHMEM
