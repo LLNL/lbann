@@ -1,4 +1,8 @@
 ============================== (Pending) Release Notes: v1.00 ==============================
+C++ API:
+ - Added ability to load models and run inference from external C++ applcations
+ - Added inference-only execution algorithm
+
 Support for new training algorithms:
 
 Support for new network structures:

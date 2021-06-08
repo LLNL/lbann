@@ -151,6 +151,9 @@ void thread_pool::launch_pinned_threads(
 }
 
 void thread_pool::reap_threads() {
+  if (this->get_num_threads() == 0) {
+    return;
+  }
   all_work_done_ = true;
   do {
     global_work_queue_.wake_all(true);

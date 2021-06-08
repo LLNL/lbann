@@ -20,7 +20,6 @@ add_executable(construct_SMILES_offset_file
 install( 
   TARGETS compute_vocab construct_SMILES_offset_file
   OPTIONAL
-  EXPORT LBANNTargets
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -32,4 +31,3 @@ install(
 #
 # https://gitlab.kitware.com/cmake/cmake/issues/18258
 # https://cmake.org/pipermail/cmake/2011-August/046014.html
-

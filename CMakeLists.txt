@@ -635,6 +635,9 @@ target_compile_features(lbann PUBLIC cxx_std_17)
 
 # Use the IMPORTED targets when possible.
 target_link_libraries(lbann PUBLIC LbannProto)
+if (LBANN_HAS_TBINF)
+  target_link_libraries(lbann PUBLIC TBinf)
+endif ()
 target_link_libraries(lbann PUBLIC Threads::Threads)
 target_link_libraries(lbann PUBLIC clara::clara)
 target_link_libraries(lbann PUBLIC cereal)
@@ -648,6 +651,7 @@ endif ()
 target_link_libraries(lbann PUBLIC ${CONDUIT_LIBRARIES})
 
 target_link_libraries(lbann PUBLIC
+  $<TARGET_NAME_IF_EXISTS:LBANN_CXX_FLAGS_werror>
   $<TARGET_NAME_IF_EXISTS:TBinf>
 
   $<TARGET_NAME_IF_EXISTS:H2::H2Meta>

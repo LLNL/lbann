@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.18.0)
+project(my_lbann_test C CXX)
+find_package(LBANN 0.102.0 REQUIRED)
+add_executable(Main main.cpp)
+target_link_libraries(Main PRIVATE LBANN::lbann)
