@@ -2,12 +2,14 @@
 set_full_path(THIS_DIR_SOURCES
   batch_functional_inference_algorithm.cpp
   factory.cpp
+  kfac.cpp
   ltfb.cpp
   sgd_training_algorithm.cpp
   training_algorithm.cpp
   )
 
-# Add the LTFB support class implementations
+# Add the support class implementations
+add_subdirectory(kfac)
 add_subdirectory(ltfb)
 
 # Propagate the files up the tree

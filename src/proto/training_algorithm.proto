@@ -97,3 +97,7 @@ message RandomPairwiseExchange {
     }
   }// message ExchangeStrategy
 }// message RandomPairwiseExchange
+
+message KFAC {
+  SGD sgd = 1;
+}//message KFAC
