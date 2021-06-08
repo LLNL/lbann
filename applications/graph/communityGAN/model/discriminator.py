@@ -1,5 +1,6 @@
 import math
 import lbann
+import numpy as np
 
 from util import str_list
 
@@ -12,6 +13,7 @@ class Discriminator(lbann.modules.Module):
             embed_dim,
             learn_rate,
             embeddings_device='CPU',
+            initial_embeddings=None,
     ):
         super().__init__()
         self.num_vertices = num_vertices
@@ -20,18 +22,23 @@ class Discriminator(lbann.modules.Module):
         self.embeddings_device = embeddings_device
 
         # Initialize weights
-        # Note: The discriminator's probability estimate is
-        #   D = 1 - exp(-sum_j(prod_i(d_ij)))
-        # Treating the embeddings as i.i.d. random variables:
-        #   D = 1 - exp( -embed_dim * d^motif_size )
-        #   log(d) = log( -log(1-D) / embed_dim ) / motif_size
-        # We initialize the embeddings in log-space so that the
-        # discriminator's initial probability estimates have mean 0.5.
-        mean = math.log( -math.log(1-0.5) / embed_dim ) / motif_size
-        radius = math.log( -math.log(1-0.75) / embed_dim ) / motif_size - mean
+        if initial_embeddings is None:
+            # The discriminator's probability estimate is
+            #   D = 1 - exp(-sum_j(prod_i(d_ij)))
+            # Treating the embeddings as i.i.d. random variables:
+            #   D = 1 - exp( -embed_dim * d^motif_size )
+            #   log(d) = log( -log(1-D) / embed_dim ) / motif_size
+            # We initialize the embeddings in log-space so that the
+            # discriminator's initial probability estimates have mean 0.5.
+            mean = math.log( -math.log(1-0.5) / embed_dim ) / motif_size
+            radius = math.log( -math.log(1-0.75) / embed_dim ) / motif_size - mean
+            init = lbann.UniformInitializer(min=mean-radius, max=mean+radius)
+        else:
+            min_val = ( -math.log(1-0.5) / embed_dim ) ** (1/motif_size)
+            values = np.log(np.maximum(initial_embeddings, min_val))
+            init = lbann.ValueInitializer(values=str_list(np.nditer(values)))
         self.log_embedding_weights = lbann.Weights(
-            initializer=lbann.UniformInitializer(
-                min=mean-radius, max=mean+radius),
+            initializer=init,
             name='discriminator_log_embeddings',
         )
 

@@ -13,6 +13,7 @@ class CommunityGAN(lbann.modules.Module):
             embed_dim,
             learn_rate,
             embeddings_device='CPU',
+            initial_embeddings=None,
     ):
         super().__init__()
         self.num_vertices = num_vertices
@@ -25,6 +26,7 @@ class CommunityGAN(lbann.modules.Module):
             embed_dim,
             learn_rate,
             embeddings_device=embeddings_device,
+            initial_embeddings=initial_embeddings,
         )
         self.discriminator = model.discriminator.Discriminator(
             num_vertices,
@@ -32,6 +34,7 @@ class CommunityGAN(lbann.modules.Module):
             embed_dim,
             learn_rate,
             embeddings_device=embeddings_device,
+            initial_embeddings=initial_embeddings,
         )
 
     def forward(

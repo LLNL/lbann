@@ -233,6 +233,7 @@ def setup_lbann(script, config):
     walk_length = config.getint('Walks', 'walk_length')
     embeddings_dir = config.get('Embeddings', 'embeddings_dir')
     embed_dim = config.getint('Embeddings', 'embed_dim')
+    initial_embeddings_file = config.get('Embeddings', 'initial_embeddings_file')
     learn_rate = config.getfloat('Embeddings', 'learn_rate')
     mini_batch_size = config.getint('Embeddings', 'mini_batch_size')
     sgd_steps = config.getint('Embeddings', 'sgd_steps')
@@ -257,6 +258,7 @@ def setup_lbann(script, config):
         num_epochs,
         embeddings_dir,
         use_online_walker,
+        initial_embeddings_file=initial_embeddings_file,
     )
     optimizer = lbann.SGD(learn_rate=learn_rate)
     if use_online_walker:

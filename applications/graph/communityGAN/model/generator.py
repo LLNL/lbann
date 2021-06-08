@@ -13,6 +13,7 @@ class Generator(lbann.modules.Module):
             embed_dim,
             learn_rate,
             embeddings_device='CPU',
+            initial_embeddings=None,
     ):
         super().__init__()
         self.num_vertices = num_vertices
@@ -21,21 +22,26 @@ class Generator(lbann.modules.Module):
         self.embeddings_device = embeddings_device
 
         # Initialize weights
-        # Note: The generator's confidence for adding vertex v to a
-        # fake motif is
-        #   G(v) = G'(v) / sum_w(G'(w))
-        #   G'(v) = 1 - exp(-sum_j(prod_i(g_ij) * g_vj))
-        # Treating the embeddings as i.i.d. random variables:
-        #   G' = 1 - exp( -embed_dim * g^(motif_size+1) )
-        #   log(g) = log( -log(1-G') / embed_dim ) / (motif_size+1)
-        # We initialize the embeddings in log-space so that the
-        # numerator G' has mean 0.5 in the first generator step (i.e.
-        # motif_size=1).
-        mean = math.log( -math.log(1-0.5) / embed_dim ) / (1+1)
-        radius = math.log( -math.log(1-0.75) / embed_dim ) / (1+1) - mean
+        if initial_embeddings is None:
+            # The generator's confidence for adding vertex v to a
+            # fake motif is
+            #   G(v) = G'(v) / sum_w(G'(w))
+            #   G'(v) = 1 - exp(-sum_j(prod_i(g_ij) * g_vj))
+            # Treating the embeddings as i.i.d. random variables:
+            #   G' = 1 - exp( -embed_dim * g^(motif_size+1) )
+            #   log(g) = log( -log(1-G') / embed_dim ) / (motif_size+1)
+            # We initialize the embeddings in log-space so that the
+            # numerator G' has mean 0.5 in the first generator step
+            # (i.e. motif_size=1).
+            mean = math.log( -math.log(1-0.5) / embed_dim ) / (1+1)
+            radius = math.log( -math.log(1-0.75) / embed_dim ) / (1+1) - mean
+            init = lbann.UniformInitializer(min=mean-radius, max=mean+radius)
+        else:
+            min_val = ( -math.log(1-0.5) / embed_dim ) ** (1/(1+1))
+            values = np.log(np.maximum(initial_embeddings, min_val))
+            init = lbann.ValueInitializer(values=str_list(np.nditer(values)))
         self.log_embedding_weights = lbann.Weights(
-            initializer=lbann.UniformInitializer(
-                min=mean-radius, max=mean+radius),
+            initializer=init,
             name='generator_log_embeddings',
         )
 

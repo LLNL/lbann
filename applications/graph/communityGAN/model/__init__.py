@@ -1,4 +1,5 @@
 import lbann
+import numpy as np
 
 import model.gan
 from util import str_list
@@ -13,7 +14,14 @@ def make_model(
         embeddings_dir,
         online_walker,
         embeddings_device='CPU',
+        initial_embeddings_file=None,
 ):
+
+    # Load initial embeddings if provided
+    if initial_embeddings_file:
+        initial_embeddings = np.loadtxt(initial_embeddings_file, skiprows=1)
+    else:
+        initial_embeddings = None
 
     # Layer graph
     input_ = lbann.Slice(
@@ -29,6 +37,7 @@ def make_model(
         embed_dim,
         learn_rate,
         embeddings_device=embeddings_device,
+        initial_embeddings=initial_embeddings,
     )
     loss, real_disc_prob, fake_disc_prob, gen_prob = gan(
         motif_indices,
