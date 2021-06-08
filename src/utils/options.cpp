@@ -219,4 +219,10 @@ void construct_callback_options() {
                       "running alexnet with a single model, but may be useful elsewhere");
 }
 
+void construct_all_options() {
+  construct_callback_options();
+  construct_datareader_options();
+  construct_std_options();
+}
+
 } // namespace lbann
