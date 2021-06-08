@@ -223,13 +223,15 @@ void distconv_adapter::adjust_parallel_strategy() {
     n = c = f = h = w = d = 1;
   }
 
+  // Erasing this check for distconv channelwiseFC - Shehtab
+  /*
   if (c != f) {
     LBANN_ERROR("The numbers of channel and filter decomposition should be the same.");
   }
   if (c != 1 || f != 1) {
-    LBANN_ERROR("Distconv does not support channel/filter parallelization yet. Layer: ",
+    LBANN_ERROR("Distconv does not support filter parallelization yet. Layer: ",
                 get_name(), ", parallel strategy: ", ps);
-  }
+  }*/
   if (n * c * spatial_prod > np) {
     LBANN_ERROR("The number of MPI ranks must be at least as large as the number of processes implied by parallel strategy: ",
                 ps);
