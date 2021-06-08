@@ -586,7 +586,7 @@ fp_setup_inputs(El::Int mini_batch_size) {
     auto& input = *m_inputs[i];
     input.Empty(false);
     input.AlignWith(alignment_dist);
-    view_or_copy_tensor<InputAbsDistMatrixType>(parent_output, input);
+    view_or_copy_tensor(parent_output, input);
 
     // Check input matrix dimensions
     const auto& height = get_input_size(i);
@@ -667,7 +667,7 @@ view_or_copy_prev_error_signal_(
   // If the distributions are compatible, we can just view
   // things. Otherwise, deep-copy the data.
   auto& prev_error_sig = *m_gradient_wrt_outputs[layer_idx];
-  view_or_copy_tensor<OutputAbsDistMatrixType>(signal, prev_error_sig);
+  view_or_copy_tensor(signal, prev_error_sig);
 }
 
 template <typename InputTensorDataType, typename OutputTensorDataType>
