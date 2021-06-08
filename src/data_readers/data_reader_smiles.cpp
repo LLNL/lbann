@@ -27,14 +27,19 @@
 
 #include "lbann/comm_impl.hpp"
 #include "lbann/data_readers/data_reader_smiles.hpp"
+#include "lbann/data_readers/sample_list_impl.hpp"
+#include "lbann/data_readers/sample_list_open_files_impl.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
+#include "lbann/utils/argument_parser.hpp"
+#include "lbann/utils/file_utils.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/commify.hpp"
 #include "lbann/utils/lbann_library.hpp"
-#include "lbann/utils/argument_parser.hpp"
+#include "lbann/utils/vectorwrapbuf.hpp"
+#include <algorithm>
 #include <mutex>
+#include <cctype>
 #include <random>
-#include <time.h>
 
 namespace lbann {
 
@@ -83,10 +88,22 @@ void smiles_data_reader::copy_members(const smiles_data_reader &rhs) {
   m_bos = rhs.m_bos;
   m_eos = rhs.m_eos;
   m_has_header = rhs.m_has_header;
-  m_delimiter = rhs.m_delimiter;
   m_missing_char_in_vocab_count = rhs.m_missing_char_in_vocab_count;
   m_missing_chars = rhs.m_missing_chars;
   m_vocab = rhs.m_vocab;
+  m_vocab_inv = rhs.m_vocab_inv;
+
+  m_sample_list.copy(rhs.m_sample_list);
+  m_index_to_local_id = rhs.m_index_to_local_id;
+  m_local_to_index = rhs.m_local_to_index;
+  m_filename_to_local_id_set = rhs.m_filename_to_local_id_set;
+  m_index_to_filename = rhs.m_index_to_filename;
+
+  if(rhs.m_data_store != nullptr) {
+    m_data_store = new data_store_conduit(rhs.get_data_store());
+    m_data_store->set_data_reader_ptr(this);
+  }
+
 }
 
 void smiles_data_reader::load() {
@@ -96,110 +113,46 @@ void smiles_data_reader::load() {
 
   options *opts = options::get();
 
-  if (opts->get_bool("ltfb")) {
-    opts->set_option("use_data_store", 1);
-    opts->set_option("preload_data_store", 1);
-  }
+  // for now, only implemented for data store with preloading
+  set_use_data_store(true);
 
-  if (!opts->has_int("sequence_length")) {
-    LBANN_ERROR("you must pass --sequence_length=<int> on the cmd line");
+  if (m_sequence_length == 0) {
+    if (!opts->has_int("sequence_length")) {
+      LBANN_ERROR("you must pass --sequence_length=<int> on the cmd line or call set_sequence_length()");
+    }
+    m_sequence_length =  opts->get_int("sequence_length");
   }
-  m_linearized_data_size = opts->get_int("sequence_length") +2;
+  m_linearized_data_size = m_sequence_length+2;
 
   // load the vocabulary; this is a map: string -> short
-  load_vocab();
-
-  // m_has_header = !opts->get_bool("no_header");
-  //  side effects -- hard code for now, relook later
-  m_has_header = true;
-
-  // get the total number of samples in the file
-  const std::string infile = get_file_dir() + "/" + get_data_filename();
-  int num_samples = 0;
-  auto& arg_parser = global_argument_parser();
-  if (get_role() == "train") {
-    num_samples = arg_parser.get<int>(NUM_TRAIN_SAMPLES);
-  }
-  if (get_role() == "validate") {
-    num_samples = arg_parser.get<int>(NUM_VALIDATE_SAMPLES);
-  }
-  if (get_role() == "test") {
-    num_samples = arg_parser.get<int>(NUM_TEST_SAMPLES);
-  }
-  if(num_samples == 0) {
-    num_samples = get_num_lines(infile);
-  }
-  if (m_has_header) {
-    --num_samples;
+  if (m_vocab.size() == 0) {
+    if (!opts->has_string("vocab")) {
+      LBANN_ERROR("you must either pass --vocab=<string> on the command line or call load_vocab(...)");
+    }
+    const std::string fn = opts->get_string("vocab");
+    load_vocab(fn);
+  } else {
+    LBANN_ERROR("you passed --vocab=<string>, but it looks like load_vocab() was previously called. You must use one or the other.");
   }
 
+  // load the sample list
+  const std::string sample_list_file = get_data_sample_list();
+  if (sample_list_file.empty()) {
+    LBANN_ERROR("sample list file is empty");
+  }
+  load_list_of_samples(sample_list_file);
+
+  // do what we almost always do (TODO: this should be refactored as a method
   m_shuffled_indices.clear();
-  m_shuffled_indices.resize(num_samples);
+  m_shuffled_indices.resize(m_sample_list.size());
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
   resize_shuffled_indices();
-
-  // Optionally run "poor man's" LTFB
-  if (opts->get_bool("ltfb") && get_role() != "test") {
-    if (is_master()) {
-      std::cout << "running poor man's LTFB\n";
-    }
-    size_t my_trainer = m_comm->get_trainer_rank();
-    size_t num_trainers = m_comm->get_num_trainers();
-    std::set<int> my_trainers_indices;
-
-    // Use two loops here, to assure all trainers have
-    // the same number of samples
-    // ensure then number of samples is evenly divisible by
-    // the number of trainers
-    size_t n = m_shuffled_indices.size() / num_trainers;
-    size_t s3 = n*num_trainers;
-    if (m_shuffled_indices.size() != s3) {
-      if (is_master()) {
-        std::cout << "adjusting global sample size from " << m_shuffled_indices.size() << " to " << s3 << std::endl;
-      }
-      m_shuffled_indices.resize(s3);
-    }
-    for (size_t j=0; j<m_shuffled_indices.size(); j += num_trainers) {
-      for (size_t k=0; k<num_trainers; k++) {
-        int idx = j+k;
-        if (idx % num_trainers == my_trainer)
-          my_trainers_indices.insert(m_shuffled_indices[idx]);
-      }
-    }
-
-    m_shuffled_indices.clear();
-    for (const auto &t : my_trainers_indices) {
-      m_shuffled_indices.push_back(t);
-    }
-
-  } else {
-    if (is_master()) std::cout << "NOT running ltfb\n";
-  }
-
   instantiate_data_store();
   select_subset_of_data();
 
-  // get values for ad-hoc sanity checking; see: do_preload()
-  m_min_index = INT_MAX;
-  m_max_index = 0;
-  for (const auto &idx : m_shuffled_indices) {
-    if (idx < m_min_index) m_min_index = idx;
-    if (idx > m_max_index) m_max_index = idx;
-  }
-
-  get_delimiter();
-
-  // TODO: does this work if we carve off a validation set?
-  // NOTE: if ltfb is run, we've hard-coded above to use the
-  //       data-store
-  if (m_data_store == nullptr) {
-    double tm4 = get_time();
-    setup_local_cache();
-    if (is_master()) {
-      std::cout << "time for setup_local_cache(): " << get_time()-tm4
-                << "; num samples: " << m_sample_lookup.size() << std::endl;
-    }
-  }
+  // load various metadata
+  build_some_maps();
+  load_offsets_and_lengths();
   print_statistics();
 }
 
@@ -208,76 +161,122 @@ void smiles_data_reader::do_preload_data_store() {
   if (is_master()) {
     std::cout << "starting do_preload_data_store; num indices: "
               << utils::commify(m_shuffled_indices.size())
-              << " for role: " << get_role() << std::endl;
+              << "; role: " << get_role() << std::endl;
   }
 
-  m_data_store->set_node_sizes_vary();
-  //m_data_store->set_is_local_cache();
-  const std::string infile = get_file_dir() + "/" + get_data_filename();
-  std::ifstream in(infile.c_str());
-  if (!in) {
-    LBANN_ERROR("failed to open data file: ", infile, " for reading");
+  // Randomize the ordering in which this rank will open data files.
+  // Note that each rank will open each data file at most one time.
+  std::vector<std::string> my_ordering;
+  my_ordering.reserve(m_local_to_index.size());
+  for (std::unordered_map<std::string, std::map<size_t, size_t>>::const_iterator fn_iter = m_local_to_index.begin(); fn_iter != m_local_to_index.end(); ++fn_iter) {
+    const std::string filename = fn_iter->first;
+    my_ordering.push_back(filename);
   }
-  std::string line;
-  if (m_has_header) {
-    getline(in, line);
-  }
+  std::random_device rd;
+  std::mt19937 r(rd());
+  std::shuffle(my_ordering.begin(), my_ordering.end(), r);
 
-  // Collect the (global) set of sample_ids to be used in this experiment
-  std::unordered_set<int> valid_ids;
-  int sanity_min = INT_MAX;
-  int sanity_max = 0;
-  /*for (const auto &id : m_shuffled_indices) {
-    valid_ids.insert(id);
-    if (id < sanity_min) sanity_min = id;
-    if (id > sanity_max) sanity_max = id;
-  }*/
-  for (size_t idx=0; idx<m_shuffled_indices.size(); idx++) {
-    int id = m_shuffled_indices[idx];
-    if (id < sanity_min) sanity_min = id;
-    if (id > sanity_max) sanity_max = id;
-    if (m_data_store->get_index_owner(id) != m_comm->get_rank_in_trainer()) {
-      continue;
+  // load all samples that belong to this rank's data_store
+  for (const auto &filename : my_ordering) {
+    std::ifstream in;
+    auto& arg_parser = global_argument_parser();
+    size_t buf_size = arg_parser.get<size_t>(SMILES_BUFFER_SIZE);
+    char iobuffer [buf_size];
+    in.rdbuf()->pubsetbuf(iobuffer,buf_size);
+    in.open(filename.c_str(), std::ios::binary | std::ios::ate);
+    if (!in) {
+      LBANN_ERROR("failed to open ", filename, " for reading");
     }
-    valid_ids.insert(id);
-  }
-  int max_index = sanity_max;
 
-  // cheap sanity check
-  if ( (sanity_min != m_min_index || sanity_max != m_max_index)
-        &&
-        get_role() == "train") {
-    LBANN_ERROR("sanity_min != m_min_index || sanity_max != m_max_index: ", sanity_min, " ", m_min_index, " ", sanity_max, " ", m_max_index);
-  }
+    const std::map<size_t, size_t>& local_to_index =  m_local_to_index[filename];
+    size_t min_offset = std::numeric_limits<size_t>::max();
+    size_t max_offset = 0;
+    short len_of_last_offset = 0;
 
-  // Load the samples. As currently written, each rank loads all samples,
-  // hence, there will be no data exchange phases. This can be expanded
-  // in the future, to use the data store for sharding, instead of a purely
-  // local cache
-  int sample_id = -1;
-  size_t sanity = 0;
-  while (true) {
-    ++sample_id;
-    getline(in, line);
-    if (valid_ids.find(sample_id) != valid_ids.end()) {
-      conduit::Node &node = m_data_store->get_empty_node(sample_id);
-      construct_conduit_node(sample_id, line, node);
-      m_data_store->set_preloaded_conduit_node(sample_id, node);
-      ++sanity;
-    }
-    if (sample_id >= max_index) {
-      break;
-    }
-    if (is_master() && (sanity % 1000000 == 0) && sanity > 0) {
-      std::cout << sanity/1000000 << "M " << get_role() << " samples loaded" << std::endl;
-    }
-  }
-  in.close();
-  m_data_store->set_loading_is_complete();
+    // Create local batches for fetching from a contiguous buffer
+    std::map<size_t, size_t> samples_in_range;
 
-  // Sanity check
-  if (sanity != valid_ids.size()) {
-    LBANN_ERROR("sanity != valid_ids.size() (sanity=", sanity, "; valid_ids.size()=", valid_ids.size());
+    std::vector<std::pair<size_t, size_t>> loadme;
+    loadme.reserve(local_to_index.size());
+    for (auto const& [local, index] : local_to_index) {
+      loadme.push_back(std::make_pair(local, index));
+    }
+
+    for (size_t k=0; k<loadme.size(); k++) {
+      size_t local = loadme[k].first;
+      size_t index = loadme[k].second;
+      offset_map_t::const_iterator iter = m_sample_offsets.find(index);
+      if (iter == m_sample_offsets.end()) {
+        LBANN_ERROR("failed to find ", index, " in m_sample_offsets map; map size: ", m_sample_offsets.size());
+      }
+
+      samples_in_range[local] = index;
+
+      // Check to see if the current sample can be fetched as part
+      // of a range based fetch
+      const offset_t &d = iter->second;
+      const size_t offset = d.first;
+      if(offset < min_offset) {
+        min_offset = offset;
+      }
+
+      //dah - 'length' is length of the SMILES string, not necessarily
+      //      line length, which will be longer for non-trivial delimiters
+      size_t line_length = d.second;
+      if (k+1 < loadme.size()) {
+        size_t next_index = loadme[k+1].second;
+        offset_map_t::const_iterator next_iter = m_sample_offsets.find(next_index);
+        if (next_iter == m_sample_offsets.end()) {
+          LBANN_ERROR("failed to find ", index, " in m_sample_offsets map; map size: ", m_sample_offsets.size());
+        }
+        const offset_t &next_d = next_iter->second;
+        const size_t next_offset = next_d.first;
+        line_length = next_offset - offset;
+      }
+
+      //dah - "if len_of_last_offset == 0" deals with the edge case:
+      //      only one sample in the file
+      //      (should we check for empty file?)
+      if(offset > max_offset || len_of_last_offset == 0) {
+        max_offset = offset;
+        len_of_last_offset = line_length;
+      }
+
+      // Once enough samples have been identified in a range or the
+      // end of the map is reached:
+      // fetch a chunk of the buffer and load the samples
+      // Read in at least one extra character for validating the end
+      // of the string
+      size_t read_len = max_offset + len_of_last_offset - min_offset + sizeof(char);
+      if((read_len >= (buf_size - (m_linearized_data_size + sizeof(char)))) || local == local_to_index.rbegin()->first) {
+        // Read a large chunk from the file
+        in.seekg(min_offset, std::ios::beg);
+        std::vector<char> buffer(read_len);
+        in.read(buffer.data(), read_len);
+        std::istringstream buf_stream(buffer.data());
+
+        // Place all of the samples in the range into the data store
+        for (const auto& [r_local, r_index] : samples_in_range) {
+          (void) r_local; // silence compiler warning about unused variable.
+          // BVE CHECK THIS
+          if (m_data_store->get_index_owner(r_index) != m_rank_in_model) {
+            continue;
+          }
+
+          // build conduit node
+          conduit::Node & node = m_data_store->get_empty_node(r_index);
+          construct_conduit_node(node, &buf_stream, r_index, min_offset);
+          m_data_store->set_preloaded_conduit_node(r_index, node);
+        }
+
+        // The range is complete, reset
+        min_offset = std::numeric_limits<size_t>::max();
+        max_offset = 0;
+        len_of_last_offset = 0;
+        samples_in_range.clear();
+      }
+    } //for (auto const& [local, index] : local_to_index)
+    in.close();
   }
 
   if (is_master()) {
@@ -285,42 +284,32 @@ void smiles_data_reader::do_preload_data_store() {
   }
 }
 
-bool smiles_data_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
-  short *data_ptr = nullptr;
-  size_t sz = 0;
-  std::vector<short> data;
-  // no data_store: all data is stored locally
-  if (m_data_store == nullptr) {
-    get_sample(data_id, data);
-    data_ptr = data.data();
-    sz = data.size();
-  }
-
-  // get sample from the data_store
-  else {
-    if (! data_store_active()) {
-      LBANN_ERROR("it should be impossible you you to be here; please contact Dave Hysom");
+std::set<int> smiles_data_reader::get_my_indices() const {
+  std::set<int> s;
+  for (size_t j=0; j<m_shuffled_indices.size(); j++) {
+    const int index = m_shuffled_indices[j];
+    if (m_data_store->get_index_owner(index) == m_rank_in_model) {
+      s.insert(index);
     }
+  }
+  return s;
+}
 
-    //get data from node from data store
-    // TODO: change if/when using sharing:
-    //   node["/data/" + ...
-    const conduit::Node& node = m_data_store->get_conduit_node(data_id);
-    const std::string &smiles_string = node["/" + LBANN_DATA_ID_STR(data_id) + "/data"].as_string();
-    //const std::string &smiles_string = node["/data/" + LBANN_DATA_ID_STR(data_id) + "/data"].as_string();
-    encode_smiles(smiles_string, data, data_id);
-    data_ptr = data.data();
-    sz = data.size();
+bool smiles_data_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
+  if (! data_store_active()) {
+    LBANN_ERROR("it should be impossible you you to be here; please contact Dave Hysom");
   }
 
+  const conduit::Node& node = m_data_store->get_conduit_node(data_id);
+  const conduit::unsigned_short_array data = node["/" + LBANN_DATA_ID_STR(data_id) + "/data"].as_unsigned_short_array();
   size_t j;
-  for (j = 0; j < sz; ++j) {
-    X(j, mb_idx) = data_ptr[j];
+  size_t n = data.number_of_elements();
+  for (j = 0; j < n; ++j) {
+    X(j, mb_idx) = data[j];
   }
   for (; j<static_cast<size_t>(m_linearized_data_size); j++) {
     X(j, mb_idx) = m_pad;
   }
-
   return true;
 }
 
@@ -341,39 +330,33 @@ void smiles_data_reader::print_statistics() const {
     return;
   }
 
-  std::cout << "\n======================================================\n";
-  std::cout << "role: " << get_role() << std::endl;
-  //std::cout << "mem for data, lower bound: " << utils::commify(get_mem_usage()) << std::endl;
-  std::cout << "num samples per trainer: " << m_shuffled_indices.size() << std::endl;
-  std::cout << "max sequence length: " << utils::commify(m_linearized_data_size) << std::endl;
-  std::cout << "num features=" << utils::commify(m_linearized_data_size) << std::endl;
-  if (m_delimiter == '\t') {
-    std::cout << "delimiter: <tab>\n";
-  } else if (m_delimiter == ',') {
-    std::cout << "delimiter: <comma>\n";
-  } else if (m_delimiter == '\0') {
-    std::cout << "delimiter: <none>\n";
-  } else {
-    LBANN_ERROR("invalid delimiter character, as int: ", (int)m_delimiter);
-  }
-  std::cout << "pad index: " << m_pad << std::endl;
+  std::cerr << "\n======================================================\n";
+  std::cerr << "role: " << get_role() << std::endl;
+  //std::cerr << "mem for data, lower bound: " << utils::commify(get_mem_usage()) << std::endl;
+  std::cerr << "num samples per trainer: " << utils::commify(m_shuffled_indices.size()) << std::endl;
+  std::cerr << "max sequence length: " << utils::commify(m_linearized_data_size) << std::endl;
+  std::cerr << "num features=" << utils::commify(m_linearized_data_size) << std::endl;
+  std::cerr << "pad index: " << m_pad << std::endl;
 
   // +4 for <bos>, <eos>, <unk>, <pad>
-  std::cout << "vocab size: " << m_vocab.size() +4 << std::endl
+  std::cerr << "vocab size: " << m_vocab.size() +4 << std::endl
             << "    (includes +4 for <bos>, <eos>, <pad>, <unk>)" << std::endl
             << "======================================================\n\n";
 }
 
-void smiles_data_reader::load_vocab() {
-  options *opts = options::get();
-  if (!opts->has_string("vocab")) {
-    LBANN_ERROR("you must pass --vocab=<string> on the command line");
-  }
-  const std::string fn = opts->get_string("vocab");
+void smiles_data_reader::load_vocab(std::string fn) {
   std::ifstream in(fn.c_str());
   if (!in) {
     LBANN_ERROR("failed to open ", fn, " for reading; this is the vocabulary file");
   }
+  std::stringstream s;
+  s << in.rdbuf();
+  in.close();
+  load_vocab(s);
+}
+
+void smiles_data_reader::load_vocab(std::stringstream &in) {
+  // TODO: trainer master should read and bcast
   std::string token;
   short id;
   int sanity = 4;
@@ -399,80 +382,25 @@ void smiles_data_reader::load_vocab() {
       --sanity;
     }
   }
-  in.close();
   if (sanity) {
-    LBANN_ERROR("failed to find <pad> and/or <unk> and/or <bos> and/or <eos> in vocab file: ", fn);
-  }
-  if (opts->has_int("pad_index")) {
-    short tmp = opts->get_int("pad_index");
-    if (tmp != m_pad) {
-      LBANN_ERROR("you passed --pad_index=", tmp, " but we got --pad_index=", m_pad, " from the vocabulary file");
-    }
+    LBANN_ERROR("failed to find <pad> and/or <unk> and/or <bos> and/or <eos> in vocab input stream");
   }
 }
 
-int smiles_data_reader::get_num_lines(std::string fn) {
-  double tm1 = get_time();
-  int count = 0;
-  if (is_master()) {
-    std::ifstream in(fn.c_str());
-    if (!in) {
-      LBANN_ERROR("failed to open data file: ", fn, " for reading");
-    }
-    std::cout << "opened " << fn << " for reading\n";
-    std::string line;
-    while(getline(in,line)) {
-      ++count;
-    }
-    in.close();
-
-    std::cout << "smiles_data_reader::get_num_lines; num_lines: "
-              << utils::commify(count) << " time: " << get_time()-tm1 << std::endl;
-  }
-
-  //I'm putting temporary timing around the bcast, because it
-  //seems to be taking a long time
-  if (is_master()) std::cout << "XX calling bcast ..." << std::endl;
-  tm1 = get_time();
-  m_comm->broadcast<int>(0, &count, 1, m_comm->get_world_comm());
-  double tm = get_time() - tm1;
-  if (is_master()) std::cout << "XX DONE! calling bcast ... TIME: " << tm << std::endl;
-
-  //check if user want less than all samples in this file
-  //@todo, this (flag or entire function) should really be deprecated since it can be accomplished with absoulte sample count
-  options *opts = options::get();
-  int n_lines = INT_MAX;
-  if (opts->has_int("n_lines")) {
-     n_lines = opts->get_int("n_lines");
-     if(is_master() && count < n_lines) {
-       std::cout << "WARNING:: number of available samples (" << count
-                << " ) in file " << fn << " is less than number of samples requested (" << n_lines
-                << " ) I am returning number of available samples " << std::endl;
-       }
-  }
-  return std::min(count,n_lines);
+bool smiles_data_reader::encode_smiles(const std::string &smiles, std::vector<unsigned short> &data) {
+  return encode_smiles(smiles.data(), smiles.size(), data);
 }
 
-void smiles_data_reader::construct_conduit_node(int data_id, const std::string &line, conduit::Node &node) {
-  node.reset();
-  int sz = get_smiles_string_length(line, data_id);
-  const std::string sm = line.substr(0, sz);
-  node[LBANN_DATA_ID_STR(data_id) + "/data"] = sm;
-}
-
-void smiles_data_reader::encode_smiles(const std::string &smiles, std::vector<short> &data, int data_id) {
-  encode_smiles(smiles.data(), smiles.size(), data, data_id);
-}
-
-void smiles_data_reader::encode_smiles(const char *smiles, short size, std::vector<short> &data, int data_id) {
+bool smiles_data_reader::encode_smiles(const char *smiles, short size, std::vector<unsigned short> &data) {
   static int count = 0;
+  bool found_all_characters_in_vocab = true;
 
   int stop = size;
   if (stop+2 > m_linearized_data_size) { //+2 is for <bos> and <eos>
     stop = m_linearized_data_size-2;
     if (m_verbose && count < 20) {
       ++count;
-      LBANN_WARNING("data_id: ", data_id, " smiles string size is ", size, "; losing ", (size-(m_linearized_data_size-2)), " characters");
+      LBANN_WARNING("smiles string size is ", size, "; losing ", (size-(m_linearized_data_size-2)), " characters; m_sequence_length: ", m_linearized_data_size);
     }
   }
 
@@ -482,13 +410,14 @@ void smiles_data_reader::encode_smiles(const char *smiles, short size, std::vect
   for (int j=0; j<stop; j++) {
     const char &w = smiles[j];
     if (m_vocab.find(w) == m_vocab.end()) {
+      found_all_characters_in_vocab = false;
       {
         std::lock_guard<std::mutex> lock(m_mutex);
         m_missing_chars.insert(w);
         ++m_missing_char_in_vocab_count;
-        if (m_verbose && m_missing_char_in_vocab_count < 20) {
+        if (m_verbose && m_missing_char_in_vocab_count < 20 && m_comm != nullptr) {
           std::stringstream ss;
-          ss << "world rank: " << m_comm->get_rank_in_world() << "; character not in vocab >>" << w << "<<; idx: " << j << "; data_id: " << data_id << "; string length: " << size << "; will use length: " << stop << "; vocab size: " << m_vocab.size() << std::endl;
+          ss << "world rank: " << m_comm->get_rank_in_world() << "; character not in vocab >>" << w << "<<; idx: " << j << "; string length: " << size << "; will use length: " << stop << "; vocab size: " << m_vocab.size() << std::endl;
           std::cerr << ss.str();
         }
       }
@@ -498,262 +427,30 @@ void smiles_data_reader::encode_smiles(const char *smiles, short size, std::vect
     }
   }
   data.push_back(m_eos);
+
+  while (data.size() < static_cast<size_t>(m_linearized_data_size)) {
+    data.push_back(m_pad);
+  }
+  return found_all_characters_in_vocab;
 }
 
-void smiles_data_reader::get_sample(int sample_id, std::vector<short> &sample_out) {
-  std::unordered_map<int, std::pair<size_t, short>>::const_iterator iter = m_sample_lookup.find(sample_id);
-  if (iter == m_sample_lookup.end()) {
-    std::stringstream s;
-    s << "; m_sample_lookup.size: " << m_sample_lookup.size() << " known data_ids: ";
-    for (auto t : m_sample_lookup) s << t.first << " ";
-    LBANN_ERROR("failed to find data_id ", sample_id, " in m_sample_lookup", s.str());
-  }
-  size_t offset = iter->second.first;
-  short size = iter->second.second;
-  if (offset + size > m_data.size()) {
-    LBANN_ERROR("offset: ", offset, " + size: ", size, " is > m_data.size(): ", m_data.size());
-  }
-
-  const char *v = m_data.data()+offset;
-  const std::string smiles_string(v, size);
-  encode_smiles(v, size, sample_out, sample_id);
-}
-
-int smiles_data_reader::get_smiles_string_length(const std::string &line, int line_number) {
-  if (m_delimiter == '\0') {
-    return line.size();
-  }
-  size_t k = line.find(m_delimiter);
-  if (k == std::string::npos) {
-    LBANN_ERROR("failed to find delimit character; as an int: ", (int)m_delimiter, "; line: ", line, " which is line number ", line_number);
-  }
-  return k;
-}
-
-// TODO: break into several function calls ??
-// TODO: some/most of the following could/should be in the data_store ??
-void smiles_data_reader::setup_local_cache() {
-  double tm3 = get_time();
-  if (is_master()) {
-    std::cout << "\nSTARTING smiles_data_reader::setup_fast_experimental() " << std::endl << std::endl;
-  }
-
-  // This will hold: (dataum_id, datum_offset, datum length) for each sample
-  std::vector<size_t> sample_offsets(m_shuffled_indices.size()*3);
-
-  // Will hold size of above buffer, for bcasting
-  size_t buffer_size;
-
-  if (is_master()) {
-    double tm1 = get_time();
-
-    // Open input file and discard header line, if it exists
-    const std::string infile = get_file_dir() + "/" + get_data_filename();
-    std::ifstream in(infile.c_str());
-    if (!in) {
-      LBANN_ERROR("failed to open data file: ", infile, " for reading");
-    }
-    std::string line;
-    if (m_has_header) {
-      getline(in, line);
-    }
-
-    // Part 1: compute memory requirements for local cache
-
-    // Get max sample id, which will be the number of lines we need to
-    // read from file. This is needed if (1) not using 100% of data,
-    // and/or (2) carving off part of train data to use as validation.
-    std::unordered_set<int> samples_to_use;
-    int max_sample_id = 0;
-    for (size_t j=0; j<m_shuffled_indices.size(); j++) {
-      samples_to_use.insert(m_shuffled_indices[j]);
-      max_sample_id = m_shuffled_indices[j] > max_sample_id ? m_shuffled_indices[j] : max_sample_id;
-    }
-    ++max_sample_id;
-
-    // Construct sample_offsets vector
-    sample_offsets.clear();
-    size_t offset = 0;
-    for (int j=0; j<max_sample_id; j++) {
-      getline(in, line);
-      if (line.size() < 5) {
-        LBANN_ERROR("read ", j, " lines from file; could not read another. --num_samples is probably incorrect");
-      }
-      if (samples_to_use.find(j) != samples_to_use.end()) {
-        int k = get_smiles_string_length(line, j);
-        sample_offsets.push_back(j);
-        sample_offsets.push_back(offset);
-        sample_offsets.push_back(k);
-        offset += k;
-      }
-    }
-    buffer_size = offset;
-    m_data.resize(buffer_size);
-
-    // Part 2: Fill in the data buffer
-    in.seekg(0);
-    if (m_has_header) {
-      getline(in, line);
-    }
-    offset = 0;
-    for (int j=0; j<max_sample_id; j++) {
-      getline(in, line);
-      if (samples_to_use.find(j) != samples_to_use.end()) {
-        int k = get_smiles_string_length(line, j);
-        for (int n=0; n<k; n++) {
-          m_data[n+offset] = line[n];
-        }
-        offset += k;
-      }
-    }
-
-    if (sample_offsets.size()/3 != m_shuffled_indices.size()) {
-      LBANN_ERROR("sample_offsets.size()/3: ", sample_offsets.size()/3, " should be equal to m_shuffled_indices.size which is ", m_shuffled_indices.size());
-    }
-    std::cout << "P_0 time for computing sample sizes and filling buffer: " << get_time() - tm1 << std::endl;
-  }
-
-  // Construct lookup table for locating samples in the m_data vector (aka, the sample buffer)
-  m_comm->broadcast<size_t>(0, sample_offsets.data(), sample_offsets.size(), m_comm->get_world_comm());
-  for (size_t j=0; j<sample_offsets.size(); j += 3) {
-    m_sample_lookup[sample_offsets[j]] =
-      std::make_pair(sample_offsets[j+1], sample_offsets[j+2]);
-  }
-
-  // Bcast the sample buffer
-  m_comm->broadcast<size_t>(0, &buffer_size, 1, m_comm->get_world_comm());
-  m_data.resize(buffer_size);
-
-  int full_rounds = m_data.size() / INT_MAX;
-  int last_round = m_data.size() % INT_MAX;
-  size_t the_offset = 0;
-
-  for (int j=0; j<full_rounds; j++) {
-    m_comm->broadcast<char>(0, m_data.data()+the_offset, INT_MAX, m_comm->get_world_comm());
-    the_offset += INT_MAX;
-  }
-  if (last_round) {
-    m_comm->broadcast<char>(0, m_data.data()+the_offset, last_round, m_comm->get_world_comm());
-  }
-
-  if (is_master()) {
-    std::cout << "total time for loading data: " << get_time()-tm3 << std::endl
-              << "num samples: " << m_sample_lookup.size() << std::endl;
-  }
-
-  // Only used for testing/debugging during development
-  if (options::get()->get_bool("test_encode")) {
-    test_encode();
-  }
-
-  if (is_master()) {
-    pid_t p = getpid();
-    char buf[80];
-    sprintf(buf, "cat /proc/%d/status >& status.txt", p);
-    system(buf);
-    std::cout << "wrote proc/[pid]/status to 'status.txt'" << std::endl;
-  }
-}
-
-void smiles_data_reader::test_encode() {
-  // What this does: at this point, P_0 has read and bcast the data set,
-  // and each rank has built a lookup table. Below, P_1 looks up each
-  // data_id; encodes the string (E1); reads the string from file (S2);
-  // decodes E1 to produce string S1; compares S1 and S2 for equality.
-  double tm1 = get_time();
-  if (is_master()) {
-    std::cout << "STARTING TEST_ENCODE" << std::endl;
-  }
-  if (m_comm->get_rank_in_world() != 1) {
-    return;
-  }
-
-  // option: testing the test ;)
-  bool fail = options::get()->get_bool("make_test_fail");
-
-  // Build ordered set of data_ids so we can more easily iterate
-  // through the file -- instead of jumping around
-  std::set<int> data_ids;
-  for (auto t : m_sample_lookup) {
-    data_ids.insert(t.first);
-  }
-
-  // Open input file and discard header (if it exists)
-  const std::string infile = get_file_dir() + "/" + get_data_filename();
-  std::ifstream in(infile.c_str());
-  if (!in) {
-    LBANN_ERROR("failed to open ", infile, " for reading");
-  }
-  std::string line;
-  if (m_has_header) {
-    getline(in, line);
-  }
-
-  size_t num_tested = 0;
-
-  std::vector<short> encoded;
-  std::string decoded;
-  int sample_id = -1;
-  while (getline(in, line)) {
-    ++sample_id;
-
-    if (data_ids.find(sample_id) != data_ids.end()) {
-      ++num_tested;
-      // encode then decode the datum that is stored in memory
-      get_sample(sample_id, encoded);
-      decode_smiles(encoded, decoded);
-
-      // get datum length from the line we've just read from file
-      size_t k = get_smiles_string_length(line, sample_id);
-      std::string S2(line.data(), k);
-
-      // test the test! Optionally make the test fail;
-      // assumes smiles string contains at least 8 characters,
-      // and no string contains "~~~~"
-      if (num_tested > 10 && fail) {
-        for (size_t h=0; h<S2.size(); h++) {
-          S2[h] = '~';
-        }
-      }
-
-      // conduct tests
-      // It would be simpler to throw exceptions here, but currently that
-      // would cause all other procs to hang
-      if (S2.size() != decoded.size()) {
-        LBANN_ERROR("S2.size (", S2.size(), ") != decoded.size (", decoded.size());
-      }
-      if (S2 != decoded) {
-        LBANN_ERROR("test_encoded failed; string from memory: ", decoded, "; string from file: ", S2, "; should be equal");
-      }
-    }
-  }
-  in.close();
-
-  if (num_tested != m_sample_lookup.size()) {
-    LBANN_ERROR("num_tested= ", num_tested, "; m_sample_lookup.size()= ", m_sample_lookup.size(), "; should be equal");
-  }
-
-  std::cout << "ENDING TEST_ENCODE; time: " << get_time()-tm1
-            << " >>> TESTS PASSED <<< " << std::endl;
-}
-
-void smiles_data_reader::decode_smiles(const std::vector<short> &data, std::string &out) {
+void smiles_data_reader::decode_smiles(const std::vector<unsigned short> &data, std::string &out) {
   std::stringstream s;
   for (const auto &t : data) {
     if (!(t == m_eos || t == m_bos || t == m_pad || t == m_unk)) {
       if (m_vocab_inv.find(t) == m_vocab_inv.end()) {
-      std::stringstream s2;
-      s2 <<"failed to find: " << t <<" in m_vocab_inv for input data: ";
-      for (auto tt : data) {
-        s2 << tt << " ";
+        std::stringstream s2;
+        s2 <<"failed to find: " << t <<" in inv_map; here is the data: ";
+        for (auto tt : data) {
+          s2 << tt << " ";
+        }
+        s2 << "; m_vocab_inv.size(): " << m_vocab_inv.size()
+           << " m_vocab_inv keys: ";
+        for (auto tt : m_vocab_inv) {
+          s2 << tt.first << " ";
+        }
+        LBANN_ERROR(s2.str());
       }
-      s2 << "; m_vocab_inv.size(): " << m_vocab_inv.size()
-         << " m_vocab_inv keys: ";
-      for (auto tt : m_vocab_inv) {
-        s2 << tt.first << " ";
-      }
-      LBANN_ERROR(s2.str());
-    }
     }
     const std::string &x = m_vocab_inv[t];
     if (x == "<unk>") {
@@ -765,37 +462,340 @@ void smiles_data_reader::decode_smiles(const std::vector<short> &data, std::stri
   out = s.str();
 }
 
-size_t smiles_data_reader::get_mem_usage() const {
-  if (m_data_store == nullptr) {
-    return m_data.size();
+// this is boilerplate; see data_reader_image.cpp and
+// data_reader_jag_conduit.cpp; TODO: refactor into a common method (future PR)
+void smiles_data_reader::load_list_of_samples(const std::string sample_list_file) {
+  // load the sample list
+  double tm1 = get_time();
+
+  options *opts = options::get();
+
+  if (m_keep_sample_order || opts->has_string("keep_sample_order")) {
+    m_sample_list.keep_sample_order(true);
+  } else {
+    m_sample_list.keep_sample_order(false);
   }
-  return m_data_store->get_mem_usage();
+
+  std::vector<char> buffer;
+
+  if (opts->has_string("load_full_sample_list_once")) {
+    if (m_comm->am_trainer_master()) {
+      load_file(sample_list_file, buffer);
+    }
+    m_comm->trainer_broadcast(m_comm->get_trainer_master(), buffer);
+
+    vectorwrapbuf<char> strmbuf(buffer);
+    std::istream iss(&strmbuf);
+
+    m_sample_list.set_sample_list_name(sample_list_file);
+    m_sample_list.load(iss, *m_comm, true);
+  } else {
+    m_sample_list.load(sample_list_file, *m_comm, true);
+  }
+
+  double tm2 = get_time();
+  if (is_master()) {
+    std::cout << "Time to load sample list '" << sample_list_file << "': "
+              << tm2 - tm1 << std::endl;
+  }
+
+  /// Merge all the sample list pieces from the workers within the trainer
+  m_sample_list.all_gather_packed_lists(*m_comm);
+  set_file_dir(m_sample_list.get_samples_dirname());
+
+  double tm3 = get_time();
+  if(is_master()) {
+    std::cout << "Time to gather sample list '" << sample_list_file << "': "
+              << tm3 - tm2 << std::endl;
+  }
+  buffer.clear();
+  buffer.shrink_to_fit();
 }
 
-void smiles_data_reader::get_delimiter() {
-  // Get delimiter; default is none ('\0'), though it's likely
-  // to be ',' or '\t', since we're likely reading csv files
-  options *opts = options::get();
-  if (opts->has_string("delimiter")) {
-    const std::string d = options::get()->get_string("delimiter");
-    const char dd = d[0];
-    switch (dd) {
-      case 'c' :
-        m_delimiter = ',';
-        break;
-      case 't' :
-        m_delimiter = '\t';
-        break;
-      case '0' :
-        m_delimiter = '\0';
-        break;
-      default :
-        LBANN_ERROR("Invalid delimiter character; should be 'c', 't', '0'; you passed: ", d);
+void smiles_data_reader::load_offsets_and_lengths() {
+  // trainer P_0 fills in offset_data vector, then bcasts
+  std::vector<SampleData> offset_data;
+
+  if (m_comm->am_trainer_master()) {
+    read_offset_data(offset_data);
+  }
+  size_t n_samples = offset_data.size(); // only meaningful for root
+  m_comm->trainer_broadcast<size_t>(0, &n_samples, 1);
+  offset_data.resize(n_samples); // not meaningful for root
+  m_comm->trainer_broadcast<SampleData>(0, offset_data.data(), offset_data.size());
+
+  // fill in the m_sample_offsets map
+  for (size_t j=0; j<offset_data.size(); j++) {
+    const SampleData &d = offset_data[j];
+    m_sample_offsets[d.index] = std::make_pair(d.offset, d.length);
+  }
+}
+
+void smiles_data_reader::construct_conduit_node(conduit::Node &node, std::istream* istrm, size_t index, size_t buf_offset) {
+  std::vector<unsigned short> sample;
+  load_sample(istrm, index, sample, buf_offset);
+  node[LBANN_DATA_ID_STR(index) + "/data"] = sample;
+}
+
+void smiles_data_reader::load_sample(std::istream* istrm, size_t index, std::vector<unsigned short> &output, size_t buf_offset) {
+  const std::string smiles_str = get_raw_sample(istrm, index, buf_offset);
+  encode_smiles(smiles_str, output);
+}
+
+std::string smiles_data_reader::get_raw_sample(std::istream* istrm, size_t index, size_t buf_offset) {
+  offset_map_t::const_iterator iter = m_sample_offsets.find(index);
+  if (iter == m_sample_offsets.end()) {
+    LBANN_ERROR("failed to find ", index, " in m_sample_offsets map; map size: ", m_sample_offsets.size());
+  }
+  const offset_t &d = iter->second;
+  const long long &offset = d.first;
+  const short length = d.second;
+  size_t start = offset-buf_offset;
+  // check that string is at beginning of line
+  if (start) {
+    istrm->seekg(offset-buf_offset-1);
+    char c;
+    istrm->read((char*)&c, sizeof(char));
+    if (c != '\n') {
+      std::stringstream s;
+      s << "string does not start after a newline; previous char, as int: \n"
+        << "  offset: "<<offset<<" Length: " << length << " as int: "
+        << (int)c << " tellg: " << istrm->tellg();
+      if (isprint(c)) {
+        s << " as char: " << c;
+      } else {
+        s << " not a printable character";
+      }
+      LBANN_ERROR(s.str());
+    }
+  } else {
+    istrm->seekg(offset-buf_offset);
+  }
+
+  std::string smiles_str;
+  smiles_str.resize(length);
+  istrm->read((char*)smiles_str.data(), length);
+
+  //check that next char is a valid delimiter
+  int c2 = istrm->peek();
+  if (! (istrm->eof() || is_delimiter(c2)) ) {
+    std::stringstream s;
+    s << "string does not appear to be followed by a whitespace (or valid delimiter); "
+      << "the string: >>>"  << smiles_str << "<<<; next char, as int: "
+      << c2 << "; tellg: " << istrm->tellg();
+    if (isprint(c2)) {
+      s << " as char: " << (char)c2;
+    } else {
+      s << " not a printable character";
+    }
+    LBANN_ERROR(s.str());
+  }
+  // Check the input string for any internal delimiters and truncate
+  // if found
+  size_t SMILES_len = smiles_str.length();
+  for(std::string::iterator it = smiles_str.begin(); it != smiles_str.end(); ++it) {
+    auto &c = *it;
+    if (is_delimiter(c)) {
+      SMILES_len = std::distance(smiles_str.begin(), it);
+      break;
     }
   }
-  if (is_master()) {
-    std::cout << "USING delimiter character: (int)" << (int)m_delimiter << std::endl;
+  return smiles_str.substr(0, SMILES_len);
+}
+
+void smiles_data_reader::build_some_maps() {
+  for (const auto& index : m_shuffled_indices) {
+    const sample_t& sample = m_sample_list[index];
+    std::stringstream s;
+    const sample_file_id_t file_id = sample.first;
+    std::string dir = m_sample_list.get_samples_dirname();
+    s << dir << "/" << m_sample_list.get_samples_filename(file_id);
+    std::string filename = s.str();
+    // this has bit me before, and can be an easy mistake to make
+    // when writing sample lists:
+    file::remove_multiple_slashes(filename);
+    long long local_id = sample.second;
+
+    // construct map entries
+    m_index_to_local_id[index] = local_id;
+    m_local_to_index[filename][local_id] = index;
+    m_index_to_filename[index] = filename;
+    m_filename_to_local_id_set[filename].insert(local_id);
   }
+}
+
+void smiles_data_reader::read_offset_data(std::vector<SampleData> &data) {
+  data.clear();
+
+  // read the metadata file; each line contains: filename,
+  // corresponding offsets_filename, num_samples
+  std::vector<size_t> samples_per_file;
+  std::vector<std::string> data_filenames;
+  std::vector<std::string> offsets_filenames;
+  read_metadata_file(samples_per_file, data_filenames, offsets_filenames);
+
+  long long offset;
+  short length;
+  for (size_t j=0; j<data_filenames.size(); j++) {
+    if (m_filename_to_local_id_set.find(data_filenames[j]) != m_filename_to_local_id_set.end()) {
+      std::ifstream in;
+      auto& arg_parser = global_argument_parser();
+      size_t buf_size = arg_parser.get<size_t>(SMILES_BUFFER_SIZE);
+      char iobuffer [buf_size];
+      in.rdbuf()->pubsetbuf(iobuffer,buf_size);
+      in.open(offsets_filenames[j], std::ios::binary);
+
+      const std::set<size_t> &indices = m_filename_to_local_id_set[data_filenames[j]];
+
+      if(indices.size() == 0) { continue; }
+
+      std::set<size_t> indices_in_range;
+      size_t min_id = std::numeric_limits<size_t>::max();
+      size_t max_id = 0;
+
+      for (const auto &local_id : indices) {
+        indices_in_range.insert(local_id);
+        if(local_id < min_id) {
+          min_id = local_id;
+        }
+        if(local_id > max_id) {
+          max_id = local_id;
+        }
+        /// If the range of IDs exceeds the buffer fetch size, or we
+        /// are at the end of the indices:
+        /// Fetch the buffer and read out the offsets
+        size_t read_len = (max_id + 1 - min_id) * OffsetAndLengthBinarySize;
+        if((read_len >= (buf_size - OffsetAndLengthBinarySize)) || local_id == *(indices.rbegin())) {
+
+          // Read a large chunk from the file
+          size_t start_offset = min_id * OffsetAndLengthBinarySize;
+          in.seekg(start_offset, std::ios::beg);
+          std::vector<char> buffer(read_len);
+          if(!in.read(buffer.data(), read_len)) {
+            LBANN_ERROR("read buffer failed : ", offsets_filenames[j]);
+          }
+          std::istringstream buf_stream({buffer.data(), buffer.size()});
+
+          // Extract all of the indices in the range
+          for (const auto& r_local_id : indices_in_range) {
+            if(!buf_stream.seekg(r_local_id*OffsetAndLengthBinarySize-start_offset)) {
+              LBANN_ERROR("seek failed");
+            }
+            if(!buf_stream.read((char*)&offset, OffsetBinarySize)) {
+              LBANN_ERROR("read offset field failed");
+            }
+            if(!buf_stream.read((char*)&length, LengthBinarySize)) {
+              LBANN_ERROR("read length field failed");
+            }
+            size_t index = m_local_to_index[data_filenames[j]][r_local_id];
+            data.push_back(SampleData(index, offset, length));
+          }
+
+          // The range is complete, reset
+          min_id = std::numeric_limits<size_t>::max();
+          max_id = 0;
+          indices_in_range.clear();
+        }
+      }
+      in.close();
+    }
+  }
+}
+
+void smiles_data_reader::read_metadata_file(
+ std::vector<size_t>& samples_per_file,
+ std::vector<std::string>& data_filenames,
+ std::vector<std::string>& offsets_filenames) {
+  // open the metadata file
+  const std::string metadata_fn = get_label_filename();
+  if (metadata_fn.empty()) {
+    LBANN_ERROR("label filename is empty");
+  }
+  std::ifstream istrm(metadata_fn.c_str());
+  if (!istrm) {
+    LBANN_ERROR("failed to open ",  metadata_fn, " for reading");
+  }
+
+  // clear output variables
+  samples_per_file.clear();
+  data_filenames.clear();
+  offsets_filenames.clear();
+
+  std::string data_filename;
+  std::string offsets_filename;
+  size_t n_samples;
+  std::string line;
+  while (std::getline(istrm, line)) {
+    // skip comment and empty lines (3 is a magic number)
+    if (line.size() < 3 || line[0] == '#') {
+      continue;
+    }
+    std::stringstream s(line);
+    s >> n_samples >> data_filename >> offsets_filename;
+
+    data_filenames.push_back(data_filename);
+    offsets_filenames.push_back(offsets_filename);
+    samples_per_file.push_back(n_samples);
+  }
+  istrm.close();
+
+  // ======= sanity checks =======
+  for (size_t j=0; j<data_filenames.size(); j++) {
+    n_samples = samples_per_file[j];
+    std::ifstream in(offsets_filenames[j].c_str(), std::ios::binary);
+    if (!in) {
+      LBANN_ERROR("failed to open ", offsets_filenames[j], " for reading");
+    }
+    in.seekg(0, std::ios::end);
+    size_t bytes = in.tellg();
+    in.close();
+    size_t num_samples_cur_file = bytes / OffsetAndLengthBinarySize;
+    // Quick test: does the number of state samples match the count from the offsets file?
+    // This is mostly to detect off-by-one, or other, errors in the sample list
+    if (num_samples_cur_file != n_samples) {
+      LBANN_ERROR("total num samples in ", data_filenames[j], " from offsets file is ", num_samples_cur_file, " but metadata file claimed the number is ", n_samples);
+    }
+    // if (m_filename_to_local_id_set.find(data_filename) == m_filename_to_local_id_set.end()) {
+    //   LBANN_WARNING("Unused metadata mapping: failed to find ", data_filename, " in m_filename_to_local_id_set; ", " num keys: ", m_filename_to_local_id_set.size());
+    // }
+  }
+  // END ======= sanity checks =======
+}
+
+void smiles_data_reader::use_unused_index_set(execution_mode m) {
+  generic_data_reader::use_unused_index_set(m);
+  // Clear the existing data structures
+  m_index_to_local_id.clear();
+  m_local_to_index.clear();
+  m_filename_to_local_id_set.clear();
+  // Rebuild them on the previously used index set
+  build_some_maps();
+  load_offsets_and_lengths();
+  print_statistics();
+}
+
+void smiles_data_reader::get_sample_origin(
+    const size_t index_in,
+    std::string& filename_out,
+    size_t& offset_out,
+    short& length_out) const {
+
+  offset_map_t::const_iterator t2 = m_sample_offsets.find(index_in);
+  if (t2 == m_sample_offsets.end()) {
+    LBANN_ERROR("index ", index_in, " not found in m_sample_offsets");
+  }
+  std::unordered_map<size_t, std::string>::const_iterator t3 = m_index_to_filename.find(index_in);
+  if (t3 == m_index_to_filename.end()) {
+    LBANN_ERROR("index ", index_in, " not found in  m_index_to_filename");
+  }
+
+  offset_out = t2->second.first;
+  length_out = t2->second.second;
+  filename_out = t3->second;
+}
+
+void smiles_data_reader::set_offset(size_t index, long long offset, short length) {
+  m_sample_offsets[index] = std::make_pair(offset, length);
 }
 
 }  // namespace lbann

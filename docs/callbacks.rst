@@ -124,4 +124,5 @@ Available Callbacks
    Timeline <callbacks/timeline>
    Timer <callbacks/timer>
    Variable minibatch <callbacks/variable_minibatch>
+   Compute model size <callbacks/compute_model_size>
    

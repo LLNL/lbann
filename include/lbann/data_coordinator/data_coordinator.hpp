@@ -65,7 +65,8 @@ class data_coordinator {
     m_trainer(nullptr),
     m_comm(comm),
     m_data_set_processed(false),
-    m_execution_context(nullptr) {}
+    m_execution_context(nullptr),
+    m_io_thread_pool(nullptr) {}
 
   virtual ~data_coordinator() {
     // Synchronize the I/O thread pool

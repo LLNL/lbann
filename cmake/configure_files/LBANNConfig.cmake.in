@@ -45,6 +45,7 @@ set(LBANN_HAS_CUDA @LBANN_HAS_CUDA@)
 set(LBANN_HAS_CUDNN @LBANN_HAS_CUDNN@)
 set(LBANN_HAS_DOXYGEN @LBANN_HAS_DOXYGEN@)
 set(LBANN_HAS_HYDROGEN @LBANN_HAS_HYDROGEN@)
+set(LBANN_HAS_DIHYDROGEN @LBANN_HAS_DIHYDROGEN@)
 set(LBANN_HAS_LBANN_PROTO @LBANN_HAS_LBANN_PROTO@)
 set(LBANN_HAS_OPENCV @LBANN_HAS_OPENCV@)
 set(LBANN_HAS_NCCL2 @LBANN_HAS_NCCL2@)
@@ -55,9 +56,18 @@ set(LBANN_HAS_TBINF @LBANN_HAS_TBINF@)
 set(LBANN_HAS_VTUNE @LBANN_HAS_VTUNE@)
 set(LBANN_NVPROF @LBANN_NVPROF@)
 set(LBANN_TOPO_AWARE @LBANN_TOPO_AWARE@)
+set(LBANN_EXPLICIT_LIBDL @LBANN_EXPLICIT_LIBDL@)
 
 # Setup dependencies
+include(CMakeFindDependencyMacro)
+
 find_package(Threads REQUIRED)
+
+find_dependency(Clara)
+
+if (LBANN_HAS_PYTHON_FRONTEND OR LBANN_HAS_EMBEDDED_PYTHON)
+  find_package(Python REQUIRED COMPONENTS Interpreter Development)
+endif ()
 
 if (LBANN_HAS_CEREAL)
   find_package(CEREAL NO_MODULE QUIET
@@ -138,6 +148,23 @@ else ()
     "LBANN does not have LBANN_HAS_HYDROGEN set properly. "
     "This should not be possible.")
 endif (LBANN_HAS_HYDROGEN)
+
+if (LBANN_HAS_DIHYDROGEN)
+  set(MIN_H2_VERSION "@H2_VERSION@")
+  find_package(DiHydrogen NO_MODULE QUIET
+    HINTS ${DiHydrogen_DIR} ${DIHYDROGEN_DIR} ${H2_DIR}
+    $ENV{DiHydrogen_DIR} $ENV{DIHYDROGEN_DIR} $ENV{H2_DIR}
+    PATH_SUFFIXES lib64/cmake/dihydrogen lib/cmake/dihydrogen
+    NO_DEFAULT_PATH)
+  find_package(DiHydrogen NO_MODULE REQUIRED)
+
+  # Ensure DiHydrogen features match
+  if (H2_VERSION VERSION_LESS MIN_H2_VERSION)
+    message(FATAL_ERROR
+      "Incompatible DiHydrogen version found: ${H2_VERSION}. "
+      "Required minimum version is: ${MIN_H2_VERSION}")
+  endif ()
+endif (LBANN_HAS_DIHYDROGEN)
 
 # Start with Aluminum. If we can inherit MPI, OpenMPI, etc, from there, super.
 if (LBANN_HAS_ALUMINUM)
@@ -301,6 +328,17 @@ if (LBANN_HAS_CONDUIT)
 
   set(CONDUIT_LIBRARIES conduit::conduit)
 endif (LBANN_HAS_CONDUIT)
+
+if (LBANN_EXPLICIT_LIBDL AND NOT DL_LIBRARY)
+  find_library(DL_LIBRARY dl DOC "The dynamic loader library.")
+  if (DL_LIBRARY)
+    message(STATUS "Found dl: ${DL_LIBRARY}")
+  else ()
+    message(FATAL_ERROR
+      "dl library not found! This is a required library.\n"
+      "Please add the path to libdl to CMAKE_LIBRARY_PATH.")
+  endif (DL_LIBRARY)
+endif ()
 
 @PACKAGE_INIT@
 

@@ -49,8 +49,6 @@ namespace lbann {
     m_num_features(other.m_num_features),
     m_num_labels(other.m_num_labels),
     m_num_response_features(other.m_num_response_features),
-    m_has_labels(other.m_has_labels),
-    m_has_responses(other.m_has_responses),
     m_data(other.m_data),
     m_labels(other.m_labels),
     m_responses(other.m_responses),
@@ -62,8 +60,6 @@ namespace lbann {
     m_num_features = other.m_num_features;
     m_num_labels = other.m_num_labels;
     m_num_response_features = other.m_num_response_features;
-    m_has_labels = other.m_has_labels;
-    m_has_responses = other.m_has_responses;
     m_data = other.m_data;
     m_labels = other.m_labels;
     m_responses = other.m_responses;
@@ -85,8 +81,8 @@ namespace lbann {
 
     std::vector<std::tuple<const bool, const std::string, cnpy::NpyArray &> > npyLoadList;
     npyLoadList.push_back(std::forward_as_tuple(true,            NPZ_KEY_DATA,      m_data));
-    npyLoadList.push_back(std::forward_as_tuple(m_has_labels,    NPZ_KEY_LABELS,    m_labels));
-    npyLoadList.push_back(std::forward_as_tuple(m_has_responses, NPZ_KEY_RESPONSES, m_responses));
+    npyLoadList.push_back(std::forward_as_tuple(m_supported_input_types[input_data_type::LABELS],    NPZ_KEY_LABELS,    m_labels));
+    npyLoadList.push_back(std::forward_as_tuple(m_supported_input_types[input_data_type::RESPONSES], NPZ_KEY_RESPONSES, m_responses));
     for(const auto& npyLoad : npyLoadList) {
       // Check whether the tensor have to be loaded.
       if(!std::get<0>(npyLoad)) {
@@ -118,7 +114,7 @@ namespace lbann {
                                      m_data.shape.end(),
                                      (unsigned) 1,
                                      std::multiplies<unsigned>());
-    if(m_has_responses) {
+    if(m_supported_input_types[input_data_type::RESPONSES]) {
       m_num_response_features = std::accumulate(m_responses.shape.begin() + 1,
                                                 m_responses.shape.end(),
                                                 (unsigned) 1,
@@ -131,7 +127,7 @@ namespace lbann {
                             " not supported");
     }
 
-    if (m_has_labels) {
+    if (m_supported_input_types[input_data_type::LABELS]) {
       // Determine number of label classes.
       std::unordered_set<int> label_classes;
       if (m_labels.word_size != 4) {
@@ -187,7 +183,7 @@ namespace lbann {
   }
 
   bool numpy_npz_reader::fetch_label(Mat& Y, int data_id, int mb_idx) {
-    if (!m_has_labels) {
+    if (!m_supported_input_types[input_data_type::LABELS]) {
       throw lbann_exception("numpy_npz_reader: do not have labels");
     }
     const int label = m_labels.data<int>()[data_id];
@@ -196,7 +192,7 @@ namespace lbann {
   }
 
   bool numpy_npz_reader::fetch_response(Mat& Y, int data_id, int mb_idx) {
-    if (!m_has_responses) {
+    if (!m_supported_input_types[input_data_type::RESPONSES]) {
       throw lbann_exception("numpy_npz_reader: do not have responses");
     }
 

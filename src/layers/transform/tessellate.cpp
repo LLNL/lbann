@@ -35,78 +35,111 @@ void tessellate_layer<TensorDataType, T_layout, Dev>
                 const std::vector<int>& output_dims,
                 const El::AbstractMatrix<TensorDataType>& input,
                 El::AbstractDistMatrix<TensorDataType>& output) {
-  auto& local_output = output.Matrix();
-  const auto& local_height = local_output.Height();
-  const auto& local_width = local_output.Width();
-  LBANN_OMP_PARALLEL_FOR_COLLAPSE2
-    for (El::Int local_col = 0; local_col < local_width; ++local_col) {
-      for (El::Int local_row = 0; local_row < local_height; ++local_row) {
 
-        // Get output entry
-        const auto& output_index = output.GlobalRow(local_row);
-        const auto& output_pos2 = output_index % output_dims[2];
-        const auto& output_pos1 = (output_index / output_dims[2]) % output_dims[1];
-        const auto& output_pos0 = output_index / (output_dims[1] * output_dims[2]);
-        auto& y = local_output(local_row, local_col);
+  // Input matrix
+  const El::Int input_dim0 = input_dims[0];
+  const El::Int input_dim1 = input_dims[1];
+  const El::Int input_dim2 = input_dims[2];
+  const TensorDataType* __restrict__ input_buffer = input.LockedBuffer();
+  const El::Int input_ldim = input.LDim();
 
-        // Get corresponding input entry
-        const auto& input_pos0 = output_pos0 % input_dims[0];
-        const auto& input_pos1 = output_pos1 % input_dims[1];
-        const auto& input_pos2 = output_pos2 % input_dims[2];
-        const auto& input_index = (input_pos0 * input_dims[1] * input_dims[2]
-                                   + input_pos1 * input_dims[2]
-                                   + input_pos2);
-        const auto& x = input(input_index, local_col);
-        y = x;
+  // Output matrix
+  const El::Int output_dim1 = output_dims[1];
+  const El::Int output_dim2 = output_dims[2];
+  const El::Int local_output_height = output.LocalHeight();
+  const El::Int local_output_width = output.LocalWidth();
+  TensorDataType* __restrict__ output_buffer = output.Buffer();
+  const El::Int output_ldim = output.LDim();
+  const El::Int output_col_shift = output.ColShift();
+  const El::Int output_col_stride = output.ColStride();
 
-      }
+  // Populate local entries in output matrix
+  LBANN_OMP_PARALLEL_FOR
+  for (El::Int local_col = 0; local_col < local_output_width; ++local_col) {
+    for (El::Int local_row = 0; local_row < local_output_height; ++local_row) {
+
+      // Get output entry
+      const auto& output_index = (output_col_shift
+                                  + local_row * output_col_stride);
+      const auto& output_pos2 = output_index % output_dim2;
+      const auto& output_pos1 = (output_index / output_dim2) % output_dim1;
+      const auto& output_pos0 = output_index / (output_dim1 * output_dim2);
+      auto& y = output_buffer[local_row + local_col * output_ldim];
+
+      // Get corresponding input entry
+      const auto& input_pos0 = output_pos0 % input_dim0;
+      const auto& input_pos1 = output_pos1 % input_dim1;
+      const auto& input_pos2 = output_pos2 % input_dim2;
+      const auto& input_index = (input_pos0 * input_dim1 * input_dim2
+                                 + input_pos1 * input_dim2
+                                 + input_pos2);
+      const auto& x = input_buffer[input_index + local_col * input_ldim];
+      y = x;
+
     }
+  }
+
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void tessellate_layer<TensorDataType, T_layout, Dev>
 ::bp_compute_3d(const std::vector<int>& input_dims,
                 const std::vector<int>& output_dims,
-                const El::AbstractDistMatrix<TensorDataType>& gradient_wrt_output,
-                El::AbstractMatrix<TensorDataType>& gradient_wrt_input) {
+                const El::AbstractDistMatrix<TensorDataType>& output_grad,
+                El::AbstractMatrix<TensorDataType>& input_grad) {
 
-  // Local data
-  const auto& local_gradient_wrt_output = gradient_wrt_output.LockedMatrix();
-  const auto& local_height = local_gradient_wrt_output.Height();
-  const auto& local_width = local_gradient_wrt_output.Width();
+  // Input grad matrix
+  const El::Int input_dim0 = input_dims[0];
+  const El::Int input_dim1 = input_dims[1];
+  const El::Int input_dim2 = input_dims[2];
+  TensorDataType* __restrict__ input_grad_buffer = input_grad.Buffer();
+  const El::Int input_grad_ldim = input_grad.LDim();
+
+  // Output grad matrix
+  const El::Int output_dim1 = output_dims[1];
+  const El::Int output_dim2 = output_dims[2];
+  const El::Int local_output_grad_height = output_grad.LocalHeight();
+  const El::Int local_output_grad_width = output_grad.LocalWidth();
+  const TensorDataType* __restrict__ output_grad_buffer = output_grad.LockedBuffer();
+  const El::Int output_grad_ldim = output_grad.LDim();
+  const El::Int output_grad_col_shift = output_grad.ColShift();
+  const El::Int output_grad_col_stride = output_grad.ColStride();
 
   // Compute local contribution to error signal
-  El::Zero(gradient_wrt_input);
+  El::Zero(input_grad);
   LBANN_OMP_PARALLEL_FOR
-    for (El::Int local_col = 0; local_col < local_width; ++local_col) {
-      for (El::Int local_row = 0; local_row < local_height; ++local_row) {
+  for (El::Int local_col = 0; local_col < local_output_grad_width; ++local_col) {
+    for (El::Int local_row = 0; local_row < local_output_grad_height; ++local_row) {
 
-        // Get gradient w.r.t. output entry
-        const auto& output_index = gradient_wrt_output.GlobalRow(local_row);
-        const auto& output_pos2 = output_index % output_dims[2];
-        const auto& output_pos1 = (output_index / output_dims[2]) % output_dims[1];
-        const auto& output_pos0 = output_index / (output_dims[1] * output_dims[2]);
-        const auto& dy = local_gradient_wrt_output(local_row, local_col);
+      // Get gradient w.r.t. output entry
+      const auto& output_index = (output_grad_col_shift
+                                  + local_row * output_grad_col_stride);
+      const auto& output_pos2 = output_index % output_dim2;
+      const auto& output_pos1 = (output_index / output_dim2) % output_dim1;
+      const auto& output_pos0 = output_index / (output_dim1 * output_dim2);
+      const auto& dy = output_grad_buffer[local_row + local_col * output_grad_ldim];
 
-        // Update corresponding gradient w.r.t. input entry
-        const auto& input_pos0 = output_pos0 % input_dims[0];
-        const auto& input_pos1 = output_pos1 % input_dims[1];
-        const auto& input_pos2 = output_pos2 % input_dims[2];
-        const auto& input_index = (input_pos0 * input_dims[1] * input_dims[2]
-                                   + input_pos1 * input_dims[2]
-                                   + input_pos2);
-        auto& dx = gradient_wrt_input(input_index, local_col);
-        dx += dy;
+      // Update corresponding gradient w.r.t. input entry
+      const auto& input_pos0 = output_pos0 % input_dim0;
+      const auto& input_pos1 = output_pos1 % input_dim1;
+      const auto& input_pos2 = output_pos2 % input_dim2;
+      const auto& input_index = (input_pos0 * input_dim1 * input_dim2
+                                 + input_pos1 * input_dim2
+                                 + input_pos2);
+      auto& dx = input_grad_buffer[input_index + local_col * input_grad_ldim];
+      dx += dy;
 
-      }
     }
+  }
 
 }
 
-#define PROTO(T)                                      \
-  template class tessellate_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>; \
-  template class tessellate_layer<T, data_layout::MODEL_PARALLEL, El::Device::CPU>
-
+// Explicit template instantiation
+#define PROTO(T)                                        \
+  template class tessellate_layer<                      \
+    T, data_layout::DATA_PARALLEL, El::Device::CPU>;    \
+  template class tessellate_layer<                      \
+    T, data_layout::MODEL_PARALLEL, El::Device::CPU>
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"
 

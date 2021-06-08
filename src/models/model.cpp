@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/base.hpp"
 #include "lbann/comm_impl.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/trainers/trainer.hpp"
@@ -999,6 +1000,10 @@ void model::mark_data_store_explicitly_loading(execution_mode mode) {
 // At the start of the epoch, set the execution mode and make sure
 // that each layer points to this model
 void model::reset_mode(execution_context& context, execution_mode mode) {
+  if (mode == execution_mode::invalid) {
+    m_execution_context = nullptr;
+    return;
+  }
   m_execution_context = static_cast<observer_ptr<execution_context>>(&context);
   //  set_execution_mode(mode);
   for (El::Int i = 0; i < get_num_layers(); ++i) {

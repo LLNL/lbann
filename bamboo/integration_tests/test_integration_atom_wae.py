@@ -22,21 +22,23 @@ import tools
 num_epochs = 10
 mini_batch_size = 512
 num_nodes = 2
+num_decoder_layers = 3
 
 # Reconstruction loss
-expected_train_recon_range = (0.3, 0.4)
-expected_test_recon_range = (0.3, 0.4)
+expected_train_recon_range = (0.500, 0.521)
+expected_test_recon_range = (0.500, 0.521)
 
 # Average mini-batch time (in sec) for each LC system
 # Note that run times are with LBANN_DETERMINISTIC set
 # Commented out times are prior to thread safe RNGs
 expected_mini_batch_times = {
-    'lassen':   0.035,
+    'lassen':   0.20,
+    'pascal':   0.92,
 }
 
 #@todo: add other cluster if need be
 vocab_loc = {
-    'lassen': '/p/gpfs1/brainusr/datasets/atom/mpro_inhib/enamine_all2018q1_2020q1-2_mpro_inhib_kekulized.vocab'
+    'vast': '/p/vast1/lbann/datasets/atom/enamine_all2018q1_2020q1-2_mpro_inhib_kekulized.vocab',
 }
 # ==============================================
 # Setup LBANN experiment
@@ -51,14 +53,16 @@ def setup_experiment(lbann):
         lbann (module): Module for LBANN Python frontend
 
     """
-    if tools.system(lbann) != 'lassen':
-      message = f'{os.path.basename(__file__)} is only supported on lassen system'
+    if tools.system(lbann) != 'lassen' and tools.system(lbann) != 'pascal':
+      message = f'{os.path.basename(__file__)} is only supported on lassen and pascal systems'
       print('Skip - ' + message)
       pytest.skip(message)
 
     trainer = lbann.Trainer(mini_batch_size=mini_batch_size)
     model = construct_model(lbann)
 
+    #see: <LBANN>bamboo/common_python/data/atom/data_reader_mpro.prototext
+    #     for data_reader prototext
     import data.atom
     data_reader = data.atom.make_data_reader(lbann)
 
@@ -91,7 +95,8 @@ def construct_model(lbann):
     recon, d1_real, d1_fake, d_adv, _ = molwae.MolWAE(input_feature_dims,
                                                       dictionary_size,
                                                       embedding_size,
-                                                      pad_index)(input_,z)
+                                                      pad_index,
+                                                      num_decoder_layers)(input_,z)
 
     zero  = lbann.Constant(value=0.0,num_neurons='1',name='zero')
     one  = lbann.Constant(value=1.0,num_neurons='1',name='one')
@@ -228,7 +233,7 @@ def augment_test_func(test_func):
     func.__name__ = test_name
     return func
 
-m_lbann_args=f"--vocab={vocab_loc['lassen']} --sequence_length=100  --delimiter=0 "
+m_lbann_args=f"--vocab={vocab_loc['vast']} --sequence_length=100  --delimiter=0 --use_data_store --preload_data_store"
 # Create test functions that can interact with PyTest
 for _test_func in tools.create_tests(setup_experiment,
                                      __file__,

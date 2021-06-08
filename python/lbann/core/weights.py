@@ -14,12 +14,13 @@ class Initializer(abc.ABC):
         return weights_pb2.Initializer()
 
 # Generate Initializer sub-classes from weights.proto.
-classes = lbann.core.util.generate_classes_from_protobuf_message(
-    weights_pb2.Initializer,
-    base_class = Initializer,
-    base_has_export_proto = True)
-for c in classes:
-    globals()[c.__name__] = c
+if weights_pb2:
+    classes = lbann.core.util.generate_classes_from_protobuf_message(
+        weights_pb2.Initializer,
+        base_class = Initializer,
+        base_has_export_proto = True)
+    for c in classes:
+        globals()[c.__name__] = c
 
 class Weights:
     """Trainable parameters for neural network."""

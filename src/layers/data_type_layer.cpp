@@ -33,6 +33,7 @@
 #include "lbann/models/model.hpp"
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/summary_impl.hpp"
+#include "lbann/utils/tensor_impl.hpp"
 
 namespace lbann {
 
@@ -556,25 +557,7 @@ void data_type_layer<TensorDataType>::fp_setup_inputs(El::Int mini_batch_size) {
     auto& input = *m_inputs[i];
     input.Empty(false);
     input.AlignWith(alignment_dist);
-    if (parent_output.DistData() == input.DistData()) {
-      El::LockedView(input, dynamic_cast<const AbsDistMatrixType&>(parent_output));
-    } else {
-      bool async_copy = false;
-#if defined(LBANN_HAS_GPU) && defined(ASYNC_INPUT_MEMORY_TRANSFER)
-      // Asynchronously copy CPU data to GPU data if they are otherwise aligned
-      if (parent_output.GetLocalDevice() == El::Device::CPU
-          && input.GetLocalDevice() == El::Device::GPU) {
-        auto parent_dist_data = parent_output.DistData();
-        parent_dist_data.device = El::Device::GPU;
-        async_copy = parent_dist_data == input.DistData();
-      }
-#endif // defined(LBANN_HAS_GPU) && defined(ASYNC_INPUT_MEMORY_TRANSFER)
-      if (async_copy) {
-        El::CopyAsync(parent_output, input);
-      } else {
-        El::Copy(parent_output, input);
-      }
-    }
+    view_or_copy_tensor(parent_output, input);
 
     // Check input matrix dimensions
     const auto& height = get_input_size(i);
@@ -619,30 +602,6 @@ void data_type_layer<TensorDataType>::fp_setup_outputs(El::Int mini_batch_size) 
 // Implementation details for back-propagation.
 namespace {
 
-// There's some strange logic for whether to do this copy
-// asynchronously or not -- encapsulate it in this little function.
-template <typename TDT>
-void do_tensor_copy(const BaseDistMat& src,
-                    El::AbstractDistMatrix<TDT>& tgt) {
-  bool copy_async = false;
-#if defined(LBANN_HAS_GPU) && defined(ASYNC_INPUT_MEMORY_TRANSFER)
-  auto src_dist_data = src.DistData();
-  auto tgt_dist_data = tgt.DistData();
-  // Asynchronously copy CPU data to GPU data if they are otherwise aligned
-  if ((src.dist_data.device == El::Device::CPU)
-      && (tgt_dist_data.device == El::Device::GPU)) {
-    src_dist_data.device = El::Device::GPU;
-    copy_async = (src_dist_data == tgt_dist_data);
-  }
-#endif // defined(LBANN_HAS_GPU) && defined(ASYNC_INPUT_MEMORY_TRANSFER)
-  if (copy_async) {
-    El::CopyAsync(src, tgt);
-  }
-  else {
-    El::Copy(src, tgt);
-  }
-}
-
 // This was just cluttering up things.
 void assert_tensor_size(const BaseDistMat& mat,
                         El::Int expected_height, El::Int expected_width,
@@ -677,13 +636,7 @@ void data_type_layer<TensorDataType>::view_or_copy_prev_error_signal_(
   // If the distributions are compatible, we can just view
   // things. Otherwise, deep-copy the data.
   auto& prev_error_sig = *m_gradient_wrt_outputs[layer_idx];
-  if (signal.DistData() == prev_error_sig.DistData()) {
-    El::LockedView(prev_error_sig,
-                   dynamic_cast<const AbsDistMatrixType&>(signal));
-  }
-  else {
-    do_tensor_copy(signal, prev_error_sig);
-  }
+  view_or_copy_tensor(signal, prev_error_sig);
 }
 
 template <typename TensorDataType>

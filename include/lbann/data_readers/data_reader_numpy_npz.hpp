@@ -55,10 +55,6 @@ namespace lbann {
       return "numpy_npz_reader";
     }
 
-    /// Set whether to fetch labels.
-    void set_has_labels(bool b) { m_has_labels = b; }
-    /// Set whether to fetch responses.
-    void set_has_responses(bool b) { m_has_responses = b; }
     /// Set a scaling factor for int16 data.
     void set_scaling_factor_int16(DataType s) { m_scaling_factor_int16 = s; }
 
@@ -88,10 +84,6 @@ namespace lbann {
     int m_num_labels = 0;
     /// Number of features in each response.
     int m_num_response_features = 0;
-    /// Whether to fetch a label from the last column.
-    bool m_has_labels = true;
-    /// Whether to fetch a response from the last column.
-    bool m_has_responses = false;
     /**
      * Underlying numpy data.
      * Note raw data is managed with shared smart pointer semantics (relevant

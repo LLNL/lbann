@@ -1,0 +1,5 @@
+const std::string B_smi_const = R"ptext(O=C(CSc1nnc(-c2ccncc2)n1-c1ccc(F)cc1)N(c1ccccc1)c1ccccc1
+C=CCOc1ccc(Cn2c([C@H]3CCCO3)nnc2N(C)CC(=O)N2CCOCC2)cc1
+Cc1nc(N2CCOCC2)sc1-c1nnc(N(C)C2CCCCC2)n1CCS(=O)(=O)N(C)C
+CC(=O)Nc1cccc(C(=O)NC2CC[NH2+]CC2C(=O)c2ccc(-n3cccc3)cc2)c1
+CCC[NH+](CCC)CCCn1c([C@H]2CCCO2)nnc1N1CCCCC(C)C1 sss)ptext";
