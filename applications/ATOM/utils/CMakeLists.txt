@@ -6,9 +6,19 @@ add_executable(compute_vocab
   target_link_libraries(compute_vocab lbann)
   add_dependencies(atom-utils compute_vocab)
 
+add_executable(compute_vocab_parallel
+  EXCLUDE_FROM_ALL compute_vocab_parallel.cpp)
+  target_link_libraries(compute_vocab_parallel lbann)
+  add_dependencies(atom-utils compute_vocab_parallel)
+
+add_executable(construct_SMILES_offset_file 
+  EXCLUDE_FROM_ALL construct_SMILES_offset_file.cpp)
+  target_link_libraries(construct_SMILES_offset_file lbann)
+  add_dependencies(atom-utils construct_SMILES_offset_file)
+
 # Install the binaries
 install( 
-  TARGETS compute_vocab
+  TARGETS compute_vocab construct_SMILES_offset_file
   OPTIONAL
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}

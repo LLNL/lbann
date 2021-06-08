@@ -65,7 +65,8 @@ set_center_specific_gpu_arch()
                 CMAKE_GPU_ARCH="35"
                 ;;
             "zen" | "zen2") # Corona
-                GPU_ARCH_VARIANTS="amdgpu_target=gfx906"
+                # Use a HIP Clang variant
+                GPU_ARCH_VARIANTS="amdgpu_target=gfx906 %clang@amd"
                 ;;
             *)
                 ;;
@@ -92,7 +93,7 @@ set_center_specific_modules()
                 MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 mvapich2/2.3 python/3.7.2"
                 ;;
             "zen" | "zen2") # Corona
-                MODULE_CMD="module --force unload StdEnv; module load clang/11.0.0 python/3.7.2 opt rocm/4.0.0 openmpi-gnu/4.0"
+                MODULE_CMD="module --force unload StdEnv; module load clang/11.0.0 python/3.7.2 opt rocm/4.1.0 openmpi-gnu/4.0"
                 ;;
             *)
                 echo "No pre-specified modules found for this system. Make sure to setup your own"
@@ -136,22 +137,21 @@ set_center_specific_spack_dependencies()
     local spack_arch_target="$2"
 
     if [[ ${center} = "llnl_lc" ]]; then
-        MIRROR="/p/vast1/lbann/spack/mirror"
+        MIRRORS="/p/vast1/lbann/spack/mirror /p/vast1/atom/spack/mirror"
         case ${spack_arch_target} in
             "power9le" | "power8le") # Lassen, Ray
                 CENTER_DEPENDENCIES="^spectrum-mpi ^openblas@0.3.12 threads=openmp"
-                CENTER_FLAGS="ldflags=-fuse-ld=gold"
+                CENTER_FLAGS="+gold"
                 ;;
             "broadwell" | "haswell" | "sandybridge" | "ivybridge") # Pascal, RZHasGPU, Surface, Catalyst
                 # On LC the mvapich2 being used is built against HWLOC v1
                 CENTER_DEPENDENCIES="^mvapich2 ^hwloc@1.11.13"
-                CENTER_FLAGS="ldflags=-fuse-ld=gold"
+                CENTER_FLAGS="+gold"
                 ;;
             "zen" | "zen2") # Corona
                 # On LC the mvapich2 being used is built against HWLOC v1
                 CENTER_DEPENDENCIES="^openmpi ^hwloc@2.3.0"
-                # Don't overwrite the flag here since we set compiler specific flags
-                # CENTER_FLAGS="ldflags=-fuse-ld=lld"
+                CENTER_FLAGS="+lld"
                 ;;
             *)
                 echo "No center-specified CENTER_DEPENDENCIES."
@@ -196,10 +196,6 @@ set_center_specific_externals()
     local spack_arch="$3"
     local yaml="$4"
 
-    # Point compilers that don't have a fortran compiler a default one
-    sed -i.sed_bak -e 's/\(f[c7]7*:\)$/\1 \/usr\/bin\/gfortran/g' ${yaml}
-    echo "Updating Clang compiler's to see the gfortran compiler."
-
     if [[ ${center} = "llnl_lc" ]]; then
         case ${spack_arch_target} in
             "broadwell" | "haswell" | "sandybridge" | "power9le" | "power8le")
@@ -220,8 +216,8 @@ cat <<EOF  >> ${yaml}
     - compiler:
         spec: clang@amd
         paths:
-          cc: /opt/rocm-4.0.0/llvm/bin/clang
-          cxx: /opt/rocm-4.0.0/llvm/bin/clang++
+          cc: /opt/rocm-4.1.0/llvm/bin/clang
+          cxx: /opt/rocm-4.1.0/llvm/bin/clang++
           f77: /usr/bin/gfortran
           fc: /usr/bin/gfortran
         flags: {}
@@ -234,48 +230,48 @@ cat <<EOF  >> ${yaml}
     hip:
       buildable: False
       version:
-      - 4.0.0
+      - 4.1.0
       externals:
-      - spec: hip@4.0.0 arch=${spack_arch}
-        prefix: /opt/rocm-4.0.0/hip
+      - spec: hip@4.1.0 arch=${spack_arch}
+        prefix: /opt/rocm-4.1.0/hip
         extra_attributes:
           compilers:
-            c: /opt/rocm-4.0.0/llvm/bin/clang
-            c++: /opt/rocm-4.0.0/llvm/bin/clang++
-            hip: /opt/rocm-4.0.0/hip/bin/hipcc
+            c: /opt/rocm-4.1.0/llvm/bin/clang
+            c++: /opt/rocm-4.1.0/llvm/bin/clang++
+            hip: /opt/rocm-4.1.0/hip/bin/hipcc
     hipcub:
       buildable: False
       version:
-      - 4.0.0
+      - 4.1.0
       externals:
-      - spec: hipcub@4.0.0 arch=${spack_arch}
-        prefix: /opt/rocm-4.0.0/hipcub
+      - spec: hipcub@4.1.0 arch=${spack_arch}
+        prefix: /opt/rocm-4.1.0/hipcub
         extra_attributes:
           compilers:
-            c: /opt/rocm-4.0.0/llvm/bin/clang
-            c++: /opt/rocm-4.0.0/llvm/bin/clang++
+            c: /opt/rocm-4.1.0/llvm/bin/clang
+            c++: /opt/rocm-4.1.0/llvm/bin/clang++
     hsa-rocr-dev:
       buildable: False
       version:
-      - 4.0.0
+      - 4.1.0
       externals:
-      - spec: hsa-rocr-dev@4.0.0 arch=${spack_arch}
-        prefix: /opt/rocm-4.0.0
+      - spec: hsa-rocr-dev@4.1.0 arch=${spack_arch}
+        prefix: /opt/rocm-4.1.0
         extra_attributes:
           compilers:
-            c: /opt/rocm-4.0.0/llvm/bin/clang
-            c++: /opt/rocm-4.0.0/llvm/bin/clang++
+            c: /opt/rocm-4.1.0/llvm/bin/clang
+            c++: /opt/rocm-4.1.0/llvm/bin/clang++
     llvm-amdgpu:
       buildable: False
       version:
-      - 4.0.0
+      - 4.1.0
       externals:
-      - spec: llvm-amdgpu@4.0.0 arch=${spack_arch}
-        prefix: /opt/rocm-4.0.0/llvm
+      - spec: llvm-amdgpu@4.1.0 arch=${spack_arch}
+        prefix: /opt/rocm-4.1.0/llvm
         extra_attributes:
           compilers:
-            c: /opt/rocm-4.0.0/llvm/bin/clang
-            c++: /opt/rocm-4.0.0/llvm/bin/clang++
+            c: /opt/rocm-4.1.0/llvm/bin/clang
+            c++: /opt/rocm-4.1.0/llvm/bin/clang++
     rdma-core:
       buildable: False
       version:
@@ -381,7 +377,7 @@ cleanup_clang_compilers()
     local yaml="$2"
 
     # Point compilers that don't have a fortran compiler a default one
-    sed -i.sed_bak -e 's/\(f[c7]7*:\)$/\1 \/usr\/bin\/gfortran/g' ${yaml}
+    sed -i.sed_bak -e 's/\(f[c7]7*:\s\)null$/\1 \/usr\/bin\/gfortran/g' ${yaml}
     echo "Updating Clang compiler's to see the gfortran compiler."
 
     if [[ ${center} = "llnl_lc" ]]; then
@@ -389,4 +385,58 @@ cleanup_clang_compilers()
         # Also set LC clang compilers to use lld for faster linking ldflags: -fuse-ld=lld
         perl -i.perl_bak -0pe 's/(- compiler:.*?spec: clang.*?flags:) (\{\})/$1 \{cflags: --gcc-toolchain=\/usr\/tce\/packages\/gcc\/gcc-8.1.0, cxxflags: --gcc-toolchain=\/usr\/tce\/packages\/gcc\/gcc-8.1.0\}/smg' ${yaml}
     fi
+}
+
+set_center_specific_variants()
+{
+    local center="$1"
+    local spack_arch_target="$2"
+
+    STD_USER_VARIANTS="+vision +numpy"
+    if [[ ${center} = "llnl_lc" ]]; then
+        case ${spack_arch_target} in
+            "power9le" | "power8le" | "broadwell" | "haswell" | "sandybridge") # Lassen, Ray, Pascal, RZHasGPU, Surface
+                CENTER_USER_VARIANTS="+cuda"
+                ;;
+            "ivybridge") # Catalyst
+                CENTER_USER_VARIANTS="+onednn"
+                ;;
+            "zen" | "zen2") # Corona
+                CENTER_USER_VARIANTS="+rocm"
+                ;;
+            *)
+                echo "No center-specified CENTER_USER_VARIANTS."
+                ;;
+        esac
+    elif [[ ${center} = "olcf" ]]; then
+        case ${spack_arch_target} in
+            "power9le") # Summit
+                CENTER_USER_VARIANTS="+cuda"
+                ;;
+            *)
+                echo "No center-specified CENTER_USER_VARIANTS."
+                ;;
+        esac
+    elif [[ ${center} = "nersc" ]]; then
+        case ${spack_arch_target} in
+            "skylake_avx512") # CoriGPU
+                CENTER_USER_VARIANTS="+cuda"
+                ;;
+            *)
+                echo "No center-specified CENTER_USER_VARIANTS."
+                ;;
+        esac
+    elif [[ ${center} = "riken" ]]; then
+        case ${spack_arch_target} in
+            "a64fx")
+                CENTER_USER_VARIANTS="+onednn"
+                ;;
+            *)
+                echo "No center-specified CENTER_USER_VARIANTS."
+                ;;
+        esac
+    else
+        echo "No center found and no center-specified CENTER_USER_VARIANTS."
+    fi
+    CENTER_USER_VARIANTS+=" ${STD_USER_VARIANTS}"
 }

@@ -5,6 +5,11 @@ Models for training neural networks to suppor the [ATOM](https://atomscience.org
 The train_atom_char_rnn.py script implements GRU-based recurrent model for generating new SMILES strings. 
 Original neural network model and training hyperparameters are described in [MOSES benchmark](https://github.com/samadejacobs/moses/tree/master/moses/char_rnn). Please see LBANN documentations on how to install, build and run LBANN code. 
 
+### How to install LBANN for this application
+```bash
+/bin/bash -c "$(curl -fsSL https://github.com/LLNL/lbann/raw/develop/applications/ATOM/build_lbann_atom_user.sh)
+```
+
 ### How to train
 ```bash
 run python3 train_atom_char.rnn.py

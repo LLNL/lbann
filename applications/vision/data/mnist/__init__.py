@@ -19,10 +19,10 @@ def download_data():
 
     # MNIST data files and associated URLs
     urls = {
-        'train-images-idx3-ubyte': 'http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz',
-        'train-labels-idx1-ubyte': 'http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz',
-        't10k-images-idx3-ubyte': 'http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz',
-        't10k-labels-idx1-ubyte': 'http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz',
+        'train-images-idx3-ubyte': 'https://ossci-datasets.s3.amazonaws.com/mnist/train-images-idx3-ubyte.gz',
+        'train-labels-idx1-ubyte': 'https://ossci-datasets.s3.amazonaws.com/mnist/train-labels-idx1-ubyte.gz',
+        't10k-images-idx3-ubyte': 'https://ossci-datasets.s3.amazonaws.com/mnist/t10k-images-idx3-ubyte.gz',
+        't10k-labels-idx1-ubyte': 'https://ossci-datasets.s3.amazonaws.com/mnist/t10k-labels-idx1-ubyte.gz',
     }
 
     # Download and uncompress MNIST data files, if needed
@@ -41,10 +41,14 @@ def download_data():
                  open(data_file, 'wb') as out_file:
                 out_file.write(in_file.read())
 
-def make_data_reader():
+def make_data_reader(validation_percent=0.1):
     """Make Protobuf message for MNIST data reader.
 
     MNIST data is downloaded if needed.
+
+    Args:
+        validation_percent (float): The proportion of samples to be tested
+        as the validation dataset.
 
     """
 
@@ -57,6 +61,10 @@ def make_data_reader():
     with open(protobuf_file, 'r') as f:
         google.protobuf.text_format.Merge(f.read(), message)
     message = message.data_reader
+
+    if validation_percent is not None:
+        assert message.reader[0].role == "train"
+        message.reader[0].validation_percent = validation_percent
 
     # Set paths
     for reader in message.reader:

@@ -44,7 +44,7 @@ namespace lbann {
 // support for encoding data_id in conduit::Node, used by
 // conduit_data_store and associated code
 #define LBANN_SAMPLE_ID_PAD 9
-#define LBANN_DATA_ID_STR(data_id) pad(std::to_string(data_id), LBANN_SAMPLE_ID_PAD, '0')
+#define LBANN_DATA_ID_STR(data_id) lbann::pad(std::to_string(data_id), LBANN_SAMPLE_ID_PAD, '0')
 
 class generic_data_reader;
 
