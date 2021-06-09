@@ -18,6 +18,7 @@ Performance optimizations:
 Model portability & usability:
 
 Experiments & Applications:
+- Experimental support for distributed CommunityGAN walks.
 
 Internal features:
 
@@ -26,7 +27,7 @@ I/O & data readers:
  - Added explicitly managed buffered reading and local unpacking for the
    SMILES data reader to minimize file access
  - Sample lists with integral indices can use range format (start ... end)
- 
+
 Build system:
 
 Bug fixes:
