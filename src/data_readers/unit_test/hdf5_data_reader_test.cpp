@@ -24,7 +24,6 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#if 0
 #include <catch2/catch.hpp>
 
 #include "TestHelpers.hpp"
@@ -37,61 +36,62 @@
 #include <string.h>
 #include <cstdlib>
 
-
 #include "data_reader_common_catch2.hpp"
+#if 0
 #include "lbann/data_readers/data_reader_HDF5.hpp"
 
-// input data
-#include "test_data/hrrl_hdf5.prototext" //string experiment_prototext
-#include "test_data/hdf5_data_schema.yaml" //string data_schema
-#include "test_data/hdf5_experiment_schema.yaml" //string experiment_schema
+
+// input data; each of these files contains a single const std::string
+#include "test_data/hdf5_reader_hrrl.prototext" //experiment_prototext
+#include "test_data/hdf5_data_schema_hrrl.yaml" //data_schema
+#include "test_data/hdf5_experiment_schema_hrrl.yaml" //experiment_schema
+#include "test_data/hdf5_hrrl_train.sample_list" //sample_list_train
+#include "test_data/hdf5_hrrl_validate.sample_list" //sample_list_validate
+#include "test_data/hdf5_hrrl_test.sample_list" //sample_list_test
 
 namespace pb = ::google::protobuf;
-
-void write_file(std::string data, std::string dir, std::string fn); 
 
 TEST_CASE("hdf5 data reader schema tests", "[mpi][reader][hdf5][.filesystem]")
 {
   auto& comm = unit_test::utilities::current_world_comm();
   lbann::init_random(0, 2);
   lbann::init_data_seq_random(42);
-  //lbann::construct_std_options();
 
-  // create working directory (/tmp)
+  // create and test working directory 
   std::string work_dir = create_test_directory("hdf5_reader");
 
-  //=====================================================================
-  // instantiate the data readers
-  // (note: experiment_prototext contains a specification for a complete
-  // experiment, though here we are only using the data_reader portion)
-  lbann::options *opts = lbann::options::get();
-  opts->set_option("keep_packed_fields", false);
-  opts->set_option("preload_data_store", true);
-  lbann::generic_data_reader* train_ptr; 
-  lbann::generic_data_reader* validate_ptr;
-  lbann::generic_data_reader* test_ptr;
-
-  // fix filenames in the prototext
+  // fix directory names in the prototext
   std::string r_proto(experiment_prototext); //non-const copy
   size_t j1;
   while ((j1 = r_proto.find("WORK_DIR")) != std::string::npos) {
     r_proto.replace(j1, 8, work_dir);
   };
-  auto all_readers = instantiate_data_readers(r_proto, comm, train_ptr, validate_ptr, test_ptr);
+
+
+  // write input files to work directory
+  write_file(r_proto, work_dir, "hdf5_hrrl_reader.prototext")
+  write_file(data_schema, work_dir, "hdf5_hrrl_data_schema.yaml");
+  write_file(experiment_schema, work_dir, "hdf5_hrrl_experiment_schema.yaml");
+  write_file(sample_list_train, work_dir, "train_hrrl.sample_list")
+  write_file(sample_list_validate, work_dir, "validate_hrrl.sample_list")
+  write_file(sample_list_test, work_dir, "test.sample_list")
+
+  // instantiate the data readers
+  lbann::options *opts = lbann::options::get();
+  lbann::generic_data_reader* train_ptr; 
+  lbann::generic_data_reader* validate_ptr;
+  lbann::generic_data_reader* tournament_ptr;
+  lbann::generic_data_reader* test_ptr;
+  auto all_readers = instantiate_data_readers(r_proto, comm, train_ptr, validate_ptr, test_ptr, tournament_ptr);
   REQUIRE(train_ptr != nullptr);
   REQUIRE(validate_ptr != nullptr);
-  // (end) instantiate the data readers
-  //=====================================================================
+  REQUIRE(tournament_ptr != nullptr);
+  REQUIRE(test_ptr != nullptr);
 
-  std::stringstream sample_list; //TODO; 
-
-
-  write_file(data_schema, work_dir, "hdf5_data_schema.yaml");
-  write_file(experiment_schema, work_dir, "hdf5_experiment_schema.yaml");
-  write_file(sample_list.str(), work_dir, "sample_list_fake.txt");
 
   SECTION("experiment_schema_1")
   {
+  #if 0
     const conduit::Node& s1 = validate_ptr->get_experiment_schema();
     //make non-const copy
     conduit::Node s2(s1);
@@ -101,15 +101,7 @@ TEST_CASE("hdf5 data reader schema tests", "[mpi][reader][hdf5][.filesystem]")
     //set_XX_schema() will cause hdf5_data_reader::parse_schemas() to be
     //called, and that should detect errors in the schemas
     validate_ptr->set_experiment_schema(s2);
+    #endif
   }
-}
-
-void write_file(std::string data, std::string dir, std::string fn) {
-  std::stringstream s;
-  s << dir << "/" << fn;
-  std::ofstream out(s.str().c_str());
-  REQUIRE(out);
-  out << data;
-  out.close();
 }
 #endif

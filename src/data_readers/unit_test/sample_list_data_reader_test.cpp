@@ -37,13 +37,10 @@ namespace pb = ::google::protobuf;
 
 namespace {
 
-
-// "hdf5_reader" string is defined here as a "const std::string".
 #include "test_data/hdf5_reader.prototext.inc"
 
-auto make_data_reader(lbann::lbann_comm& comm)
+lbann_data::LbannPB parse_prototext(lbann::lbann_comm& comm)
 {
-std::cout << " starting make_data_reader\n";
   lbann_data::LbannPB reader;
   if (!pb::TextFormat::ParseFromString(hdf5_reader, &reader))
     throw "Parsing protobuf failed.";
@@ -54,10 +51,12 @@ std::cout << " starting make_data_reader\n";
 TEST_CASE("hdf5 data reader", "[mpi][reader][hdf5]")
 {
   auto& world_comm = unit_test::utilities::current_world_comm();
-  //  int rank_in_world = world_comm.get_rank_in_world();
+  int rank_in_world = world_comm.get_rank_in_world();
   WARN("in TEST_CASE");
 
-  auto reader = make_data_reader(world_comm);
+
+
+  auto reader_proto = parse_prototext(world_comm);
 
   SECTION("a test section")
   {

@@ -41,7 +41,8 @@ instantiate_data_readers(
   lbann::lbann_comm& comm_in,
   lbann::generic_data_reader* train_ptr,
   lbann::generic_data_reader* validate_ptr,
-  lbann::generic_data_reader* test_ptr)
+  lbann::generic_data_reader* test_ptr,
+  lbann::generic_data_reader* tournament_ptr)
 {
   lbann_data::LbannPB my_proto;
   if (!pb::TextFormat::ParseFromString(prototext_in, &my_proto)) {
@@ -62,6 +63,9 @@ instantiate_data_readers(
     if (t.second->get_role() == "validate") {
       validate_ptr = t.second;
     }
+    if (t.second->get_role() == "tournament") {
+      tournament_ptr = t.second;
+    }
     if (t.second->get_role() == "test") {
       test_ptr = t.second;
     }
@@ -69,5 +73,13 @@ instantiate_data_readers(
 
   return data_readers;
 }
+
+void write_file(std::string data, std::string dir, std::string fn) {
+  std::stringstream s;
+  s << dir << "/" << fn;
+  std::ofstream out(s.str().c_str());
+  REQUIRE(out);
+  out << data;
+  out.close();
 
 #endif //__DATA_READER_TEST_COMMON_HPP__
