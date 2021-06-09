@@ -438,6 +438,7 @@ message Callback {
     string disable_layers = 14; // List of layers to be ignored by the callback
 
     float learning_rate_factor = 15; // Factor to be multiplied to the learning rate
+  }
 
   message CallbackSetupCommunityGANDataReader {
   }
