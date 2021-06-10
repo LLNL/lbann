@@ -37,17 +37,15 @@
 #include <cstdlib>
 
 #include "data_reader_common_catch2.hpp"
-#if 0
 #include "lbann/data_readers/data_reader_HDF5.hpp"
 
-
-// input data; each of these files contains a single const std::string
-#include "test_data/hdf5_reader_hrrl.prototext" //experiment_prototext
-#include "test_data/hdf5_data_schema_hrrl.yaml" //data_schema
-#include "test_data/hdf5_experiment_schema_hrrl.yaml" //experiment_schema
-#include "test_data/hdf5_hrrl_train.sample_list" //sample_list_train
-#include "test_data/hdf5_hrrl_validate.sample_list" //sample_list_validate
-#include "test_data/hdf5_hrrl_test.sample_list" //sample_list_test
+// input data; each of these files contains a single: const std::string;
+#include "test_data/hdf5_hrrl_reader.prototext"
+#include "test_data/hdf5_hrrl_data_schema.yaml"
+#include "test_data/hdf5_hrrl_experiment_schema.yaml"
+#include "test_data/hdf5_hrrl_train.sample_list"
+#include "test_data/hdf5_hrrl_validate.sample_list"
+#include "test_data/hdf5_hrrl_test.sample_list"
 
 namespace pb = ::google::protobuf;
 
@@ -60,48 +58,68 @@ TEST_CASE("hdf5 data reader schema tests", "[mpi][reader][hdf5][.filesystem]")
   // create and test working directory 
   std::string work_dir = create_test_directory("hdf5_reader");
 
-  // fix directory names in the prototext
-  std::string r_proto(experiment_prototext); //non-const copy
+  // adjust directory names in the prototext string
+  std::string r_proto(hdf5_hrrl_data_reader_prototext); //non-const copy
   size_t j1;
   while ((j1 = r_proto.find("WORK_DIR")) != std::string::npos) {
     r_proto.replace(j1, 8, work_dir);
   };
 
-
   // write input files to work directory
-  write_file(r_proto, work_dir, "hdf5_hrrl_reader.prototext")
-  write_file(data_schema, work_dir, "hdf5_hrrl_data_schema.yaml");
-  write_file(experiment_schema, work_dir, "hdf5_hrrl_experiment_schema.yaml");
-  write_file(sample_list_train, work_dir, "train_hrrl.sample_list")
-  write_file(sample_list_validate, work_dir, "validate_hrrl.sample_list")
-  write_file(sample_list_test, work_dir, "test.sample_list")
+  write_file(r_proto, work_dir, "hdf5_hrrl_reader.prototext");
+  write_file(hdf5_hrrl_data_schema, work_dir, "hdf5_hrrl_data_schema.yaml");
+  write_file(hdf5_hrrl_experiment_schema, work_dir, "hdf5_hrrl_experiment_schema.yaml");
+  write_file(hdf5_hrrl_train_sample_list, work_dir, "hdf5_hrrl_train.sample_list");
+  write_file(hdf5_hrrl_validate_sample_list, work_dir, "hdf5_hrrl_validate.sample_list");
+  write_file(hdf5_hrrl_test_sample_list, work_dir, "hdf5_hrrl_test.sample_list");
 
   // instantiate the data readers
-  lbann::options *opts = lbann::options::get();
-  lbann::generic_data_reader* train_ptr; 
-  lbann::generic_data_reader* validate_ptr;
-  lbann::generic_data_reader* tournament_ptr;
-  lbann::generic_data_reader* test_ptr;
+  lbann::generic_data_reader* train_ptr = nullptr; 
+  lbann::generic_data_reader* validate_ptr = nullptr;
+  lbann::generic_data_reader* tournament_ptr = nullptr;
+  lbann::generic_data_reader* test_ptr = nullptr;
   auto all_readers = instantiate_data_readers(r_proto, comm, train_ptr, validate_ptr, test_ptr, tournament_ptr);
+
   REQUIRE(train_ptr != nullptr);
   REQUIRE(validate_ptr != nullptr);
   REQUIRE(tournament_ptr != nullptr);
   REQUIRE(test_ptr != nullptr);
 
-
-  SECTION("experiment_schema_1")
+  SECTION("experiment schema")
   {
-  #if 0
-    const conduit::Node& s1 = validate_ptr->get_experiment_schema();
-    //make non-const copy
-    conduit::Node s2(s1);
+    //This is a stub, as I'm unsure what to test, specifically, to what
+    //extent is it the user's responsibility to ensure correct inputs,
+    //and to what extent should we error check
 
-    //TODO: alter the schema "s2" in some way
+    lbann::hdf5_data_reader* reader = dynamic_cast<lbann::hdf5_data_reader*>(train_ptr);
+    REQUIRE(reader != nullptr);
+    conduit::Node experiment_schema =  reader->get_experiment_schema();
+    conduit::Node data_schema =  reader->get_data_schema();
 
-    //set_XX_schema() will cause hdf5_data_reader::parse_schemas() to be
-    //called, and that should detect errors in the schemas
-    validate_ptr->set_experiment_schema(s2);
-    #endif
+    experiment_schema.print();
+
+    //do things to the experiment and/or data schema, then call:
+    reader->set_experiment_schema(experiment_schema);
+    reader->set_data_schema(data_schema);
+
+    //note: the calls to set_XX_schema() calls parse_schemas(), 
+    //      which in turn calls the following:
+    //          adjust_metadata(data_schema)
+    //          adjust_metadata(experiment_schema)
+    //          get_schema_ptrs(experiment_schema)
+    //          get_leaves_multi
+    //            calls: get_leaves
+    //          construct_linearized_size_lookup_tables
+    //            calls: load_sample, get_leaves
+    //
+    //      At this point, each object in "m_useme_node_map_ptrs:"
+    //         1. is a leaf node whose values will be used in the experiment
+    //         2. has a "metatdata" child node that contains instructions for
+    //            munging the data, i.e: scale, bias, ordering, coersion, packing, etc.
+    //         3. munging, etc, takes place during calls to load_sample(),
+    //            which is called by construct_linearized_size_lookup_tables (above),
+    //            and also for each sample during preloading (below)
   }
+
+
 }
-#endif

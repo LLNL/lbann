@@ -292,6 +292,7 @@ void hdf5_data_reader::parse_schemas() {
   // get pointers to all Nodes in the data schema (this is the user-supplied
   // schema for the data as it resides on disk). On return, m_data_map maps:
   //       node_pathname -> Node*
+  m_data_map.clear();
   get_schema_ptrs(&m_data_schema, m_data_map);
 
   // Get the pathnames for the fields to be used in the current experiment;
@@ -792,12 +793,12 @@ bool hdf5_data_reader::is_composite_node(const conduit::Node& node) {
   return metadata.has_child(s_composite_node);
 }
 
-void hdf5_data_reader::set_data_schema(const conduit::Schema& s) {
+void hdf5_data_reader::set_data_schema(const conduit::Node& s) {
   m_data_schema = s;
   parse_schemas();
 }
 
-void hdf5_data_reader::set_experiment_schema(const conduit::Schema& s) {
+void hdf5_data_reader::set_experiment_schema(const conduit::Node& s) {
   m_experiment_schema = s;
   parse_schemas();
 }
