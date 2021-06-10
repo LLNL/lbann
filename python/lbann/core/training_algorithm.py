@@ -320,3 +320,18 @@ class RandomPairwiseExchange(MetaLearningStrategy):
 
         msg.exchange_strategy.CopyFrom(self.exchange_strategy.export_proto())
         return msg
+
+class KFAC(TrainingAlgorithm):
+
+    def __init__(self,
+                 name: str,
+                 first_order_optimizer: BatchedIterativeOptimizer):
+        self.name = name
+        self.first_order_optimizer = first_order_optimizer
+
+    def do_export_proto(self):
+        """Get a protobuf representation of this object."""
+        params = AlgoProto.KFAC()
+        first_order_optimizer_proto = self.first_order_optimizer.export_proto()
+        first_order_optimizer_proto.parameters.Unpack(params.sgd)
+        return params
