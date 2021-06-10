@@ -46,7 +46,7 @@ class Layer(abc.ABC):
         self.data_layout = data_layout
         self.datatype = datatype
         self.hint_layer = hint_layer
-        self.parallel_strategy = parallel_strategy
+        self.parallel_strategy = parallel_strategy if parallel_strategy else {}
 
         # Initialize parents, children, and weights
         for arg in args:
