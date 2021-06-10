@@ -34,17 +34,15 @@
 #include "distconv/tensor/tensor_mpi.hpp"
 
 namespace distconv{
-  namespace lbann{
   template <typename Backend, typename DataType>
   class Linear {
     public:
       Linear(Backend &backend);
-
-    template <typename Tensor, typename Nondc_Tensor>
+      
+    template <typename Tensor>
     int forward(bool transpose_A,
                bool transpose_B,
                typename Tensor::data_type alpha,
-               const Nondc_Tensor &weights,
                const Tensor &input,
                typename Tensor::data_type beta, 
                Tensor &output 
@@ -86,7 +84,6 @@ namespace distconv{
     }
 
   }; // class definition Linear
-} // namespace LBANN
 }  // namespace distconv
 #endif // LBANN_HAS_DISTCONV
 #endif // LBANN_LAYERS_LEARNING_DISTCONV_LAYERS
