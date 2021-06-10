@@ -517,7 +517,6 @@ void data_type_layer<TensorDataType>::setup_matrices(const El::Grid& grid) {
 
     //split layer 
     m_subgrid_tensors_split.clear();
-    //std::cout<<"Number of spliting groups:"<<childs[0]->num_spliting_groups<<"\n";
     m_subgrid_tensors_split.resize(childs[0]->num_spliting_groups);
 
     
@@ -559,10 +558,6 @@ void data_type_layer<TensorDataType>::setup_matrices(const El::Grid& grid) {
     }
 
     //create interprocess subgrid communicator
-    if(childs[0]->get_parallel_strategy().enable_subgraph)
-    {
-      // this->setup_inter_subgrid_comm_based_on_childs(grid);
-    }
     
   }
   else if( (get_type()=="cross_grid_sum"  || get_type()=="cross_grid_sum_slice") && this->get_model()->is_subgraph_parallelism_enabled())
@@ -604,15 +599,13 @@ void data_type_layer<TensorDataType>::setup_matrices(const El::Grid& grid) {
   }
   else if( (get_type()=="sum" || this->get_type()=="concatenate" ) && this->get_model()->is_subgraph_parallelism_enabled() && this->get_parallel_strategy().enable_subgraph==1)
   {
-    //split layer 
+    //sum layer 
     m_subgrid_tensors_split.clear();
-    //std::cout<<"Number of spliting groups Sum layer :"<<this->num_spliting_groups<<"\n";
     m_subgrid_tensors_split.resize(this->num_spliting_groups);
 
 
     int count = 0;
     for (auto& input : m_inputs) {
-    //input = mat_builder->MakeEmpty(grid, 0);
     input = mat_builder->MakeEmpty(*(parents[count]->mygrid), 0);
     count++;
     } 
@@ -635,8 +628,6 @@ void data_type_layer<TensorDataType>::setup_matrices(const El::Grid& grid) {
     temp_grad = mat_builder->MakeEmpty(grid, 0);
     }
     
-    //std::cout<<"Setup for Sum layer\n";
-
     auto subgrid_tags = *(this->parent_tags);
 
     count = 0;
@@ -645,7 +636,6 @@ void data_type_layer<TensorDataType>::setup_matrices(const El::Grid& grid) {
       {
         if(subgrid_tags[parent_index] == count)
         {
-          //std::cout<<"Parent index is:"<<parent_index<<" subgrid tag is:"<<subgrid_tags[parent_index]<<"\n";
           subgrid_tensor = mat_builder->MakeEmpty(*(parents[parent_index]->mygrid), 0);
           count++;
           break;
@@ -654,17 +644,10 @@ void data_type_layer<TensorDataType>::setup_matrices(const El::Grid& grid) {
     
     }
 
-  
-    
-    // this->setup_inter_subgrid_comm_based_on_parents(grid);
-    
-
   }
   else
   {
-    
-    
-    
+
     for (auto& input : m_inputs) {
     input = mat_builder->MakeEmpty(grid, 0);
     }
@@ -688,16 +671,9 @@ void data_type_layer<TensorDataType>::setup_matrices(const El::Grid& grid) {
     for (auto& subgrid_tensor : m_subgrid_tensors_split) {
     subgrid_tensor = mat_builder->MakeEmpty(grid, 0);
     }
-
-
-    
-
-    
-
   }
   
-  
-  //std::cout<<"In DT setup matrices, layer name:"<<this->get_name()<< "Grid:"<<grid.VCSize()<<"\n";
+
 }
 
 template <typename TensorDataType>
@@ -812,7 +788,6 @@ void data_type_layer<TensorDataType>::fp_setup_inputs(El::Int mini_batch_size) {
       }
 #endif // defined(LBANN_HAS_GPU) && defined(ASYNC_INPUT_MEMORY_TRANSFER)
       async_copy = false;	
-      //std::cout<<"In DT1, layer name:"<<this->get_name()<<" Rank:"<<El::mpi::Rank()<< " Input dimensions:"<<input.Height()<< " "<< input.Width() <<" output dimension:"<<parent_output.Height()<<" "<<parent_output.Width()<<"\n";
 
       if (async_copy) {
         El::CopyAsync(parent_output, input);
@@ -820,16 +795,13 @@ void data_type_layer<TensorDataType>::fp_setup_inputs(El::Int mini_batch_size) {
         El::Copy(dynamic_cast<const AbsDistMatrixType&>(parent_output), input);	
         //input = (El::AbstractDistMatrix<double>)parent_output;
       }
-      //std::cout<<"In DT2, layer name:"<<this->get_name()<<" Rank:"<<El::mpi::Rank()<< " Input dimensions:"<<input.Height()<< " "<< input.Width() <<" output dimension:"<<parent_output.Height()<<" "<<parent_output.Width()<<"\n";
 
     }
-    //std::cout<<"In DT, layer name:"<<this->get_name()<< " Input Grid:"<<input.Grid().VCSize()<<" output Grid:"<<parent_output.DistData().grid->VCSize()<<"\n";
 
     // Check input matrix dimensions
     const auto& height = get_input_size(i);
     const auto& width = mini_batch_size;
-    //std::cout<<"Layer name:"<<this->get_type()<<" batch size:"<<mini_batch_size<<"\n";
-    
+
     if ((input.Height() != height || input.Width() != width) ) {
 
       std::cout<<"Error layer parent output:"<<parent_output.Width()<<"\n";
@@ -865,13 +837,6 @@ void data_type_layer<TensorDataType>::fp_setup_outputs(El::Int mini_batch_size) 
     output.Empty(false);
     if (align_outputs) {
       output.AlignWith(alignment_dist); 
-      // if(this->get_type()!="add" && this->get_type()!="sum")
-      // { 
-      //   output.AlignWith(alignment_dist); 
-      // }
-      // else{
-      //   std::cout<<"Problem is here\n";
-      // }
     }
     output.Resize(get_output_size(i), mini_batch_size);
   }
@@ -1112,10 +1077,6 @@ void data_type_layer<TensorDataType>::bp_setup_gradient_wrt_inputs(
     auto& gradient_wrt_input = get_error_signals(i);
     gradient_wrt_input.Empty(false);
     gradient_wrt_input.AlignWith(get_prev_activations(i));
-    // if(get_type()=="sum")
-    // {
-    //   std::cout<<"In sum layer, Iput Size:"<<get_input_size(i)<<" Mini batch Size:"<<mini_batch_size<<"\n";
-    // }
     gradient_wrt_input.Resize(get_input_size(i), mini_batch_size);
   }
 }
@@ -1123,7 +1084,10 @@ void data_type_layer<TensorDataType>::bp_setup_gradient_wrt_inputs(
 
 template <typename TensorDataType>
 void data_type_layer<TensorDataType>::setup_inter_subgrid_comm_based_on_childs(const El::Grid& grid) {
-
+  //Now we are creating sub-communicators in model.cpp as this method will lead to several instances of 
+  //sub-communicators on same rank sets. 
+  //BUG: NCCL allocates some memory for each communicator, which lead to Out-of-memory (OOM) when we have large
+  //number of communicators
   const auto& childs = get_child_layers();
 
   int indexSubgrid = -1;
@@ -1138,13 +1102,16 @@ void data_type_layer<TensorDataType>::setup_inter_subgrid_comm_based_on_childs(c
   const int posInSubGrid = childs[indexSubgrid]->mygrid->VCRank();
   const int posInGrid = grid.ViewingRank();
   auto& interSubgridComm = this->get_subgrid_comm();
-  // std::cout<<"Based on childs Split GRP posInSubGrid:"<<posInSubGrid<<" posInGrid:"<<posInGrid<<"\n";
   El::mpi::Split(this->get_comm()->get_trainer_comm(), posInSubGrid, posInGrid, interSubgridComm); 
 
   }
 
 template <typename TensorDataType>
 void data_type_layer<TensorDataType>::setup_inter_subgrid_comm_based_on_parents(const El::Grid& grid) {
+  //Now we are creating sub-communicators in model.cpp as this method will lead to several instances of 
+  //sub-communicators on same rank sets. 
+  //BUG: NCCL allocates some memory for each communicator, which lead to Out-of-memory (OOM) when we have large
+  //number of communicators
 
   const auto& parents = get_parent_layers();
 
@@ -1159,9 +1126,7 @@ void data_type_layer<TensorDataType>::setup_inter_subgrid_comm_based_on_parents(
   const int posInSubGrid = parents[indexSubgrid]->mygrid->VCRank();
   const int posInGrid = grid.ViewingRank();
   auto& interSubgridComm = this->get_subgrid_comm();
-  // std::cout<<"Based on parents Split GRP posInSubGrid:"<<posInSubGrid<<" posInGrid:"<<posInGrid<<"\n";
   El::mpi::Split(this->get_comm()->get_trainer_comm(), posInSubGrid, posInGrid, interSubgridComm);
-
   }
 
 #ifdef LBANN_HAS_DISTCONV

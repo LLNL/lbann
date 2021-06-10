@@ -211,17 +211,11 @@ protected:
           El::Axpy(DataType(1), this->get_temp_grad(),
                    gradient_wrt_input);
         }
-
       }
-
-      
-
     }
 
     else
     {
-
-      
       if (this->get_num_children() > 0) {
         El::Copy(this->get_prev_error_signals(0), gradient_wrt_input);
       } else {
@@ -233,10 +227,6 @@ protected:
       }
 
     }
-    
-
-
-
   }
 
 #ifdef LBANN_HAS_DISTCONV

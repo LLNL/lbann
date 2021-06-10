@@ -136,12 +136,6 @@ protected:
       
       std::vector<bool> is_initialized_tensor(this->num_spliting_groups, false);
 
-      
-
-      
-
-
-
       //Copy data internally with same branch tag 
       for (int i = 0; i < this->get_num_parents(); ++i) {
         tag = subgrid_tags[i];
@@ -166,7 +160,6 @@ protected:
 
         }
       }
-
 
       // copy and add data from reduced gradients from same branch 
 
@@ -202,11 +195,6 @@ protected:
         }
 
       }
-
-
-
-      
-
     } //if subgraph parallelism is enabled 
     else
     {
@@ -257,14 +245,11 @@ protected:
       {
         auto const* ptr_gradient = dynamic_cast<El::DistMatrix<TensorDataType, El::STAR  , El::VC, El::ELEMENT, Dev> const*>(&gradient_wrt_output);
         El::copy::TranslateBetweenGridsBroadcast<TensorDataType,Dev,Dev>(*ptr_gradient,this->get_branch_tag_input_vector(),this->get_subgrid_comm(),syncSubGridCommunication);
-
       }
       else if(this->get_communication_flag()==1)
       {
         auto const* ptr_gradient = dynamic_cast<El::DistMatrix<TensorDataType, El::STAR  , El::VC, El::ELEMENT, Dev> const*>(&gradient_wrt_output);
         El::copy::TranslateBetweenGridsBroadcast<TensorDataType,Dev,Dev>(*ptr_gradient,this->get_branch_tag_input_vector());
-
-
       }
       else{
         for(int i = 0; i < this->num_spliting_groups; i++)
@@ -274,8 +259,6 @@ protected:
         }
 
       } //end vector copy condition
-      
-      
 
       for (int i = 0; i < this->get_num_parents(); ++i) {
         tag = subgrid_tags[i];
@@ -283,17 +266,14 @@ protected:
         El::LockedView(this->get_error_signals(i), this->get_branch_tag_input(tag));
         
       }
-      
     } 
     else
     {
       for (int i = 0; i < this->get_num_parents(); ++i) {
         
         El::LockedView(this->get_error_signals(i), gradient_wrt_output);
-
       }
     }
-
 
   }
 

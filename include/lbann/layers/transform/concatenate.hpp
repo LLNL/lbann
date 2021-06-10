@@ -312,10 +312,7 @@ void concatenate_layer<TensorDataType,Layout,Device>::bp_compute_subgrid() {
   else
   {
     El::copy::TranslateBetweenGridsScatter<TensorDataType,Device,Device>(*ptr_input_grad,this->get_all_error_signals(),split_dim,this->get_subgrid_comm(),syncSubGridCommunication,1);
-
   }
-
-  //El::copy::TranslateBetweenGridsScatterOptComm<TensorDataType,Device,Device>(*ptr_input_grad,this->get_all_error_signals(),split_dim,this->get_subgrid_comm(),syncSubGridCommunication);
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
