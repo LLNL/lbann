@@ -9,6 +9,8 @@ if (LBANN_HAS_DISTCONV)
     "${CMAKE_CURRENT_SOURCE_DIR}/distconv_adapter.hpp")
   list(APPEND THIS_DIR_HEADERS
     "${CMAKE_CURRENT_SOURCE_DIR}/data_type_distconv_adapter.hpp")
+  list(APPEND_THIS_DIR_HEADERS
+    "${CMAKE_CURRENT_SOURCE_DIR}/learning/distconv/distconv_layers.hpp")
 endif ()
 
 # Add the subdirectories

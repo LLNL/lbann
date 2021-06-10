@@ -35,6 +35,161 @@ namespace lbann
 {
 
 // =========================================================
+// DistConv-Adapter member functions
+// =========================================================
+
+#ifdef LBANN_HAS_DISTCONV
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void 
+channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
+::setup_distributions(tensor_overlap_constraints &constraints){
+  auto &layer = dynamic_cast<channelwise_fully_connected_layer<
+    TensorDataType, Layout, Device>&>(this->layer());
+
+  dc::IntVector overlap(dc::get_num_dims(layer),0); // NO OVERLAP
+  auto input_dist = this->get_prev_activations_dist();
+
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void 
+channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
+::setup_layer(){
+  auto &layer = dynamic_cast<channelwise_fully_connected_layer
+    <TensorDataType, Layout, Device>&>(this->layer()); 
+  m_linear = make_unique<dc::Linear>(dc::get_backend());
+
+
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void 
+channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
+::setup_fp_tensors(){
+
+}
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void 
+channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
+::setup_bp_tensors(){
+
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void 
+channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
+::fp_compute(){
+  auto &layer = dynamic_cast<channelwise_fully_connected_layer
+    <TensorDataType, Layout, Device>&>(this->layer());
+  m_linear_operator->forward(El::To<TensorDataType>(1),
+                             this->get_prev_activations(),
+                             *m_weight,
+                              El::To<TensorDataType>(0),
+                              this->get_activations());
+
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void 
+channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
+::bp_compute(){
+  auto &layer = dynamic_cast<channelwise_fully_connected_layer
+    <TensorDataType, Layout, Device>&>(this->layer());
+  m_linear_operator->backward(El::To<TensorDataType>(1),
+                             this->get_prev_activations(),
+                             *m_weight,
+                              El::To<TensorDataType>(0),
+                              this->get_activations());
+}
+
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+dc::Shape
+channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
+::get_activations_shape(){
+  auto input_shape = this->get_prev_activations().get_local_shape();
+  return input_shape;
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+dc::Shape
+channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
+::get_activations_local_shape(int index){
+  const auto &layer = dynamic_cast<const convolution_layer<
+    TensorDataType, Layout, Device>&>(this->layer());
+  
+  const auto& input_dims = layer.get_input_dims();
+  auto output_dims = layer.get_output_dims();
+
+  auto input_shape = this->get_prev_activations().get_local_shape();
+
+
+#if 1 //For debugging
+
+  std::cout << "output dim final dim: \t" << output_dims[output_dims.size()-1] << '\n';
+
+#endif
+
+  input_shape[input_shape.length()] = output_dims[output_dims.size()-1];
+  return input_shape;
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+dc::Shape
+channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
+::get_prev_activations_shape(int index){
+  return data_type_distconv_adapter<TensorDataType>::get_prev_activations_shape(0);
+}
+
+#endif // LBANN_HAS_DISTCONV
+
+
+// =========================================================
+// DistConv-enabled member functions
+// =========================================================
+
+#ifdef LBANN_HAS_DISTCONV
+
+
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void setup_layer
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+bool 
+channelwise_fully_connected_layer<TensorDataType, Layout, Device>
+::is_distconv_supported() const {
+  return Device==El::Device::GPU && Layout == data_layout::DATA_PARALLEL;
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override{
+  this->get_distconv_adapter_ptr() = make_unique<channelwise_fully_connected_distconv_adapter<
+    TensorDataType, Layout, Device>>(*this);
+
+}
+
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+const channelwise_fully_connected_distconv_adapter <TensorDataType, Layout, Device>&
+channelwise_fully_connected_layer<TensorDataType,Layout,Device>
+::get_distconv_adapter(){
+  return dynamic_cast<const channelwise_fully_connected_distconv_adapter<
+  TensorDataType, Layout, Device>&>();
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+channelwise_fully_connected_distconv_adapter <TensorDataType, Layout, Device>&
+channelwise_fully_connected_layer<TensorDataType,Layout,Device>
+::get_distconv_adapter(){
+  return const_cast<channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>&>(
+    static_cast<const channelwise_fully_connected_layer<TensorDataType, Layout, Device>&>(*this).get_distconv_adapter());
+}
+
+#endif //  LBANN_HAS_DISTCONV
+
+// =========================================================
 // Class member functions
 // =========================================================
 
@@ -240,6 +395,18 @@ void
 channelwise_fully_connected_layer<TensorDataType,Layout,Device>
 ::fp_compute()
 {
+
+#ifdef LBANN_HAS_DISTCONV
+
+  // if(this->using_gpus() && this->distconv_enabled()){
+  //   this->get_distconv_adapter().fp_compute();
+  //   this->get_distconv_adapter().fp_apply_bias();
+  //   return ;
+  // }else{
+  //   LBANN_ERROR("Distconv not compatible with CPU-only mode");
+  // }
+
+#endif // LBANN_HAS_DISTCONV
   const auto& zero = El::TypeTraits<TensorDataType>::Zero();
   const auto& one = El::TypeTraits<TensorDataType>::One();
 
@@ -315,6 +482,16 @@ void
 channelwise_fully_connected_layer<TensorDataType,Layout,Device>
 ::bp_compute()
 {
+#ifdef LBANN_HAS_DISTCONV
+
+  // if(this->using_gpus() && this->distconv_enabled){
+  //   this->get_distconv_adapter().bp_compute_channelwise_fully_connected();
+  // }else{
+  //   LBANN_ERROR("Distconv not compatible with CPU-only mode");
+  // }
+
+#endif  //LBANN_HAS_DISTCONV
+
   const auto& zero = El::TypeTraits<TensorDataType>::Zero();
   const auto& one = El::TypeTraits<TensorDataType>::One();
 

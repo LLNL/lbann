@@ -28,8 +28,41 @@
 #define LBANN_LAYERS_LEARNING_CHANNELWISE_FULLY_CONNECTED_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/layers/data_type_distconv_adapter.hpp"
+#include "lbann/layers/distconv/distconv_laters.hpp"
 
 namespace lbann {
+
+#ifdef LBANN_HAS_DISTCONV
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+class channelwise_fully_connected_distconv_adapter
+  : public data_type_distconv_adapter<TensorDataType> {
+
+  public:
+    using TensorDevType = typename data_type_distconv_adapter<TensorDataType>::TensorDevType;
+    channelwise_fully_connected_distconv_adapter(Layer& layer)
+      : data_type_distconv_adapter<TensorDataType>(layer){}
+    virtual ~channelwise_fully_connected_distconv_adapter() = default;
+
+    void setup_fp_tensors() override;
+    void setup_bp_tensors() override;
+
+    void fp_compute();
+    void bp_compute();
+
+    void setup_distributions(tensor_overlap_constraints &constraints) override;
+    void setup_layer(size_t workspace_capacity) override;
+
+    dc::Shape get_activations_local_shape(int index = 0) const override;
+    dc::Shape get_prev_activations_shape(int index) const override;
+    dc::Shape get_activations_shape(int index) const override;
+
+    std::unique_ptr<dc::Linear<TensorDataType>> m_linear_operator;
+    std::unique_ptr<TensorDevType> m_bias;
+
+  }; // class definition channelwise_fully_connected_distconv_adapter
+
+#endif  // LBANN_HAS_DISTCONV
 
 /** @brief Apply affine transformation to tensor channels.
  *
@@ -98,6 +131,13 @@ protected:
 
   void fp_compute() override;
   void bp_compute() override;
+
+#ifdef LBANN_HAS_DISTCONV
+  friend class channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>;
+protected:
+  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override;
+  bool is_distconv_supported() const override;
+#endif
 
 private:
 
