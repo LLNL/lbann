@@ -13,7 +13,7 @@ set_full_path(THIS_DIR_HEADERS
   )
 
 if (LBANN_HAS_DISTCONV)
-  add_subdirectory(activations)
+  add_subdirectory(distconv)
 endif()
 
 # Propagate the files up the tree

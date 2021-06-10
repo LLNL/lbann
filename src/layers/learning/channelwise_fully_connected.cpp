@@ -55,7 +55,7 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void 
 channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
-::setup_layer(){
+::setup_layer(size_t max_mini_batch_size){
   auto &layer = dynamic_cast<channelwise_fully_connected_layer
     <TensorDataType, Layout, Device>&>(this->layer()); 
   m_linear = make_unique<dc::Linear>(dc::get_backend());
@@ -82,11 +82,14 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
 ::fp_compute(){
   auto &layer = dynamic_cast<channelwise_fully_connected_layer
     <TensorDataType, Layout, Device>&>(this->layer());
+  const auto& linearity = layer.weights_values(0);
+  const auto& local_linearity = dynamic_cast<const LocalMat&>(linearity.LockedMatrix());
+
   m_linear_operator->forward(El::To<TensorDataType>(1),
                              this->get_prev_activations(),
-                             *m_weight,
-                              El::To<TensorDataType>(0),
-                              this->get_activations());
+                             local_linearity,
+                             El::To<TensorDataType>(0),
+                             this->get_activations());
 
 }
 
@@ -96,9 +99,12 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
 ::bp_compute(){
   auto &layer = dynamic_cast<channelwise_fully_connected_layer
     <TensorDataType, Layout, Device>&>(this->layer());
+  const auto& linearity = layer.weights_values(0);
+  const auto& local_linearity = dynamic_cast<const LocalMat&>(linearity.LockedMatrix());
+
   m_linear_operator->backward(El::To<TensorDataType>(1),
-                             this->get_prev_activations(),
-                             *m_weight,
+                              this->get_prev_activations(),
+                              local_linearity,
                               El::To<TensorDataType>(0),
                               this->get_activations());
 }
@@ -164,7 +170,7 @@ channelwise_fully_connected_layer<TensorDataType, Layout, Device>
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override{
+void setup_distconv_adapter(const DataReaderMetaData& dr_metadata){
   this->get_distconv_adapter_ptr() = make_unique<channelwise_fully_connected_distconv_adapter<
     TensorDataType, Layout, Device>>(*this);
 

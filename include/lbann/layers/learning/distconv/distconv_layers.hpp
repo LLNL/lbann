@@ -34,29 +34,44 @@
 #include "distconv/tensor/tensor_mpi.hpp"
 
 namespace distconv{
-  template <typename DataType>
+  namespace lbann{
+  template <typename Backend, typename DataType>
   class Linear {
     public:
       Linear(Backend &backend);
 
-    template <typename Tensor>
-    int forwad(bool transpose_A,
+    template <typename Tensor, typename Nondc_Tensor>
+    int forward(bool transpose_A,
                bool transpose_B,
                typename Tensor::data_type alpha,
-               const Tensor &weights,
+               const Nondc_Tensor &weights,
                const Tensor &input,
                typename Tensor::data_type beta, 
-               tensor &output 
+               Tensor &output 
                ){
+
+      const auto& one = El::TypeTraits<DataType>:: One();
+      const auto& zero = El::TypeTraits<DataType>:: Zero();
+
       if (input.get_local_size() == 0){
         return 0; // no op for empty input
       }
+      El::Gemm(
+        transpose_A ? El::TRANSPOSE : El::NORMAL,
+        El::NORMAL,
+        one,  weights, input,
+        zero, output);
 
       return 0;
     }
 
     template <typename Tensor>
-    int  apply_bias(const tensor ){
+    int  apply_bias(const Tensor &bias,
+                    Tensor &output){
+
+      using LocalMat = El::Matrix<TensorDataType, Device>;
+      LocalMat ones(local_mini_batch_size * num_channels, 1);
+
       return 0;
     }
 
@@ -71,6 +86,7 @@ namespace distconv{
     }
 
   }; // class definition Linear
+} // namespace LBANN
 }  // namespace distconv
 #endif // LBANN_HAS_DISTCONV
 #endif // LBANN_LAYERS_LEARNING_DISTCONV_LAYERS
