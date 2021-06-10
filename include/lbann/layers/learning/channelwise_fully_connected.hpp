@@ -29,7 +29,7 @@
 
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/layers/data_type_distconv_adapter.hpp"
-#include "lbann/layers/distconv/distconv_laters.hpp"
+#include "lbann/layers/distconv/distconv_layers.hpp"
 
 namespace lbann {
 
