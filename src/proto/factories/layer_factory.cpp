@@ -188,7 +188,6 @@ private:
     LBANN_REGISTER_BUILDER(Atan, atan);
     LBANN_REGISTER_BUILDER(Atanh, atanh);
     LBANN_REGISTER_BUILDER(Ceil, ceil);
-    LBANN_REGISTER_BUILDER(Clamp, clamp);
     LBANN_REGISTER_BUILDER(Cos, cos);
     LBANN_REGISTER_BUILDER(Cosh, cosh);
     LBANN_REGISTER_BUILDER(Divide, divide);

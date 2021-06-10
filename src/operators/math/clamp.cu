@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -24,8 +24,9 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#define LBANN_CLAMP_LAYER_INSTANTIATE
-#include "lbann/layers/math/clamp.hpp"
+#define LBANN_CLAMP_OPERATOR_INSTANTIATE
+#include "lbann/operators/math/clamp.hpp"
+#include "lbann/utils/gpu/sync_info_helpers.hpp"
 
 namespace lbann {
 
@@ -152,27 +153,29 @@ void local_bp(TensorDataType min,
 
 } // namespace
 
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void clamp_layer<TensorDataType, Layout, Device>::fp_compute() {
+template <typename TensorDataType>
+void ClampOperator<TensorDataType>::fp_compute_local(GPUMatrixType const& input,
+                                                     GPUMatrixType& output) const {
   local_fp(this->m_min, this->m_max,
-           this->get_local_prev_activations(),
-           this->get_local_activations());
+           input,
+           output);
 }
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void clamp_layer<TensorDataType, Layout, Device>::bp_compute() {
+
+template <typename TensorDataType>
+void ClampOperator<TensorDataType>::bp_compute_local(GPUMatrixType const& input,
+                                                     GPUMatrixType const& gradient_wrt_output,
+                                                     GPUMatrixType& gradient_wrt_input) const {
   local_bp(this->m_min, this->m_max,
-           this->get_local_prev_activations(),
-           this->get_local_prev_error_signals(),
-           this->get_local_error_signals());
+           input,
+           gradient_wrt_output,
+           gradient_wrt_input);
 }
 
 #define PROTO(T)                                     \
-  template class clamp_layer<                        \
-    T, data_layout::DATA_PARALLEL, El::Device::GPU>; \
-  template class clamp_layer<                        \
-    T, data_layout::MODEL_PARALLEL, El::Device::GPU>
+  template class ClampOperator<T>
 
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
+#undef PROTO
 
 } // namespace lbann

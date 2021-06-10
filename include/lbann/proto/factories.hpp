@@ -43,6 +43,7 @@ class Layer;
 class Model;
 class ObjectiveFunction;
 class Optimizer;
+class Operator;
 class Reader;
 class Transform;
 class Weights;
@@ -57,6 +58,7 @@ class lbann_summary;
 class model;
 class objective_function;
 class optimizer;
+class Operator;
 class trainer;
 class weights;
 
@@ -88,6 +90,11 @@ std::unique_ptr<Layer> construct_layer(
   int training_dr_linearized_data_size,
   int num_parallel_readers,
   const lbann_data::Layer& proto_layer);
+
+/** Construct an operator specified with prototext. */
+template <typename TensorDataType>
+std::unique_ptr<Operator> construct_operator(
+  const lbann_data::Operator& proto_operator);
 
 /** Construct weights specified with prototext. */
 std::unique_ptr<weights> construct_weights(

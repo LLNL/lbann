@@ -9,7 +9,6 @@ set_full_path(THIS_DIR_SOURCES
   atan.cpp
   atanh.cpp
   ceil.cpp
-  clamp.cpp
   cos.cpp
   cosh.cpp
   divide.cpp

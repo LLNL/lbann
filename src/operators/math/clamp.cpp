@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#define LBANN_CLAMP_LAYER_INSTANTIATE
-#include "lbann/layers/math/clamp.hpp"
+#define LBANN_CLAMP_OPERATOR_INSTANTIATE
+#include "lbann/operators/math/clamp.hpp"
 
 namespace lbann {
 
@@ -73,25 +73,26 @@ void local_bp(TensorDataType min,
 
 } // namespace
 
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void clamp_layer<TensorDataType, Layout, Device>::fp_compute() {
+template <typename TensorDataType>
+void ClampOperator<TensorDataType>::fp_compute_local(CPUMatrixType const& input,
+                                                      CPUMatrixType& output) const {
   local_fp(this->m_min, this->m_max,
-           this->get_local_prev_activations(),
-           this->get_local_activations());
+           input,
+           output);
 }
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void clamp_layer<TensorDataType, Layout, Device>::bp_compute() {
+
+template <typename TensorDataType>
+void ClampOperator<TensorDataType>::bp_compute_local(CPUMatrixType const& input,
+                                                      CPUMatrixType const& gradient_wrt_output,
+                                                      CPUMatrixType& gradient_wrt_input) const {
   local_bp(this->m_min, this->m_max,
-           this->get_local_prev_activations(),
-           this->get_local_prev_error_signals(),
-           this->get_local_error_signals());
+           input,
+           gradient_wrt_output,
+           gradient_wrt_input);
 }
 
 #define PROTO(T)                                     \
-  template class clamp_layer<                        \
-    T, data_layout::DATA_PARALLEL, El::Device::CPU>; \
-  template class clamp_layer<                        \
-    T, data_layout::MODEL_PARALLEL, El::Device::CPU>
+  template class ClampOperator<T>
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"

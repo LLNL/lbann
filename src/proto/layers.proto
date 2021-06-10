@@ -170,7 +170,6 @@ message Layer {
     LogicalAnd logical_and = 466;
     LogicalOr logical_or = 467;
     LogicalXor logical_xor = 468;
-    Clamp clamp = 469;
     MatMul matmul = 470;
     DFTAbs dft_abs = 471;
 
@@ -267,10 +266,6 @@ message Layer {
   message LogicalAnd {}
   message LogicalOr {}
   message LogicalXor {}
-  message Clamp {
-    double min = 1;
-    double max = 2;
-  }
   message DFTAbs {}
 
   /** @brief Matrix multiplication.
