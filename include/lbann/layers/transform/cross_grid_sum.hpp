@@ -30,35 +30,33 @@
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/utils/exception.hpp"
 
-
 namespace lbann {
-
-
 
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class cross_grid_sum_layer : public data_type_layer<TensorDataType> {
+class cross_grid_sum_layer : public data_type_layer<TensorDataType>
+{
 public:
-
-  cross_grid_sum_layer(lbann_comm *comm)
-    : data_type_layer<TensorDataType>(comm) {
-    this->m_expected_num_parent_layers = -1; // No limit on parents 
-    this->m_expected_num_child_layers = -1; // No limit on children
+  cross_grid_sum_layer(lbann_comm* comm) : data_type_layer<TensorDataType>(comm)
+  {
+    this->m_expected_num_parent_layers = -1; // No limit on parents
+    this->m_expected_num_child_layers = -1;  // No limit on children
   }
 
-  cross_grid_sum_layer* copy() const override { return new cross_grid_sum_layer(*this); }
+  cross_grid_sum_layer* copy() const override
+  {
+    return new cross_grid_sum_layer(*this);
+  }
   std::string get_type() const override { return "cross_grid_sum"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-
-
 protected:
   El::SyncInfo<Dev> syncSubGridCommunication = El::SyncInfo<Dev>();
 
-
-  void setup_pointers() override {
+  void setup_pointers() override
+  {
     data_type_layer<TensorDataType>::setup_pointers();
     if (this->get_num_parents() < 1) {
       std::stringstream err;
@@ -68,16 +66,16 @@ protected:
     }
   }
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override {
+  void setup_dims(DataReaderMetaData& dr_metadata) override
+  {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims(this->get_input_dims());
 
-    // print dims 
-    const auto& dims_print  = this->get_input_dims();
+    // print dims
+    const auto& dims_print = this->get_input_dims();
     int count = 0;
-    for (int dim : dims_print)
-    {
-      std::cout<<"Index:"<<count<<" dim"<<dim<<"\n";
+    for (int dim : dims_print) {
+      std::cout << "Index:" << count << " dim" << dim << "\n";
       count++;
     }
 
@@ -91,8 +89,8 @@ protected:
             << "has input tensors with incompatible dimensions (";
         for (int j = 0; j < this->get_num_parents(); ++j) {
           const auto& dims = this->get_input_dims(j);
-          err << (j > 0 ? ", " : "")
-              << "layer \"" << parents[j]->get_name() << "\" outputs ";
+          err << (j > 0 ? ", " : "") << "layer \"" << parents[j]->get_name()
+              << "\" outputs ";
           for (size_t k = 0; k < dims.size(); ++k) {
             err << (k > 0 ? " x " : "") << dims[k];
           }
@@ -101,13 +99,12 @@ protected:
         LBANN_ERROR(err.str());
       }
     }
-
   }
 
-  void fp_compute() override {
+  void fp_compute() override
+  {
 
-
-    int rank = El::mpi::Rank(this->get_subgrid_comm()); 
+    int rank = El::mpi::Rank(this->get_subgrid_comm());
     // std::cout<<"I am here and Rank is "<< rank<< "\n"<<std::flush;
 
     auto& output = this->get_activations(rank);
@@ -116,90 +113,86 @@ protected:
 
     // auto parents = this->get_parent_layers()[rank];
 
-
-    
-
-    El::DistMatrix<TensorDataType,El::STAR,El::VC,El::ELEMENT,Dev>* output_cast = 
-                    dynamic_cast<El::DistMatrix<TensorDataType,El::STAR,El::VC,El::ELEMENT,Dev>*>(&output);
-
+    El::DistMatrix<TensorDataType, El::STAR, El::VC, El::ELEMENT, Dev>*
+      output_cast = dynamic_cast<
+        El::DistMatrix<TensorDataType, El::STAR, El::VC, El::ELEMENT, Dev>*>(
+        &output);
 
     // El::mpi::Comm const& CommA = output_cast->Grid().ViewingComm();
-    El::SyncInfo<Dev> syncInfoOutput = El::SyncInfoFromMatrix(output_cast->LockedMatrix());
+    El::SyncInfo<Dev> syncInfoOutput =
+      El::SyncInfoFromMatrix(output_cast->LockedMatrix());
 
     const El::Int mloc = output_cast->LocalHeight();
     const El::Int nloc = output_cast->LocalWidth();
-    
 
+    El::Matrix<TensorDataType, Dev> temp_output(mloc, nloc);
 
-    El::Matrix<TensorDataType, Dev> temp_output(mloc,nloc);
-    
     El::Copy(output_cast->LockedMatrix(), temp_output);
-    
-    El::mpi::AllReduce(temp_output.Buffer(), output_cast->Buffer(), mloc*nloc, El::mpi::SUM, this->get_subgrid_comm(), syncInfoOutput);
 
-    
-    // El::mpi::AllReduce(input.LockedMatrix(), output_cast->Buffer(), mloc*nloc, El::mpi::SUM, CommA, syncInfoOutput);
-    // for (int i = 1; i < this->get_num_parents(); ++i) {
+    El::mpi::AllReduce(temp_output.Buffer(),
+                       output_cast->Buffer(),
+                       mloc * nloc,
+                       El::mpi::SUM,
+                       this->get_subgrid_comm(),
+                       syncInfoOutput);
+
+    // El::mpi::AllReduce(input.LockedMatrix(), output_cast->Buffer(),
+    // mloc*nloc, El::mpi::SUM, CommA, syncInfoOutput); for (int i = 1; i <
+    // this->get_num_parents(); ++i) {
     //   El::Axpy(DataType(1), this->get_prev_activations(i), output);
     // }
-
-  
-
   }
 
-  void fp_setup_outputs(El::Int mini_batch_size) override {
+  void fp_setup_outputs(El::Int mini_batch_size) override
+  {
 
-    if (this->get_num_children() < 1) { return; }
+    if (this->get_num_children() < 1) {
+      return;
+    }
     // Determine distributed matrix alignment
     // int rank = El::mpi::Rank(this->get_subgrid_comm());
     // const bool align_outputs = this->get_num_parents() > 0;
     // const auto& alignment_dist = (align_outputs ?
-    //                               this->get_prev_activations(rank).DistData() :
-    //                               this->get_activations(rank).DistData());
-
+    //                               this->get_prev_activations(rank).DistData()
+    //                               : this->get_activations(rank).DistData());
 
     // Initialize output tensors
     for (int i = 0; i < this->get_num_children(); ++i) {
 
       auto& output = this->get_activations(i);
       output.Empty(false);
-      // if ((align_outputs || this->get_parallel_strategy().enable_subgraph==0) && false ) { output.AlignWith(alignment_dist); }
+      // if ((align_outputs || this->get_parallel_strategy().enable_subgraph==0)
+      // && false ) { output.AlignWith(alignment_dist); }
       output.Resize(this->get_output_size(i), mini_batch_size);
-      }
-
+    }
   }
 
-  void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override {
+  void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override
+  {
     // int tag= 0 ;
-    int rank = El::mpi::Rank(this->get_subgrid_comm()); 
+    int rank = El::mpi::Rank(this->get_subgrid_comm());
     const auto& gradient_wrt_output = this->get_prev_error_signals(rank);
 
-    
-
-    
     // for (int i = 0; i < this->get_num_parents(); ++i) {
-      
+
     El::LockedView(this->get_error_signals(rank), gradient_wrt_output);
 
     // }
-    
-
-
   }
 
   void bp_compute() override {}
-
-
 };
-
-
 
 LBANN_DEFINE_LAYER_BUILDER(cross_grid_sum);
 
 #ifndef LBANN_CROSS_GRID_SUM_LAYER_INSTANTIATE
-#define PROTO_DEVICE(T, Device) \
-  extern template class cross_grid_sum_layer<T, data_layout::DATA_PARALLEL, Device>; \
-  extern template class cross_grid_sum_layer<T, data_layout::MODEL_PARALLEL, Device>
+#define PROTO_DEVICE(T, Device)                                                \
+  extern template class cross_grid_sum_layer<T,                                \
+                                             data_layout::DATA_PARALLEL,       \
+                                             Device>;                          \
+  extern template class cross_grid_sum_layer<T,                                \
+                                             data_layout::MODEL_PARALLEL,      \
+                                             Device>
 
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE

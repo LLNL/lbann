@@ -27,21 +27,24 @@
 #define LBANN_DIST_SOB_LAYER_INSTANTIATE
 #include "lbann/layers/transform/dist_SOB.hpp"
 
-#include <lbann/proto/proto_common.hpp>
 #include <lbann.pb.h>
+#include <lbann/proto/proto_common.hpp>
 
 namespace lbann {
 
 LBANN_LAYER_DEFAULT_BUILDER(dist_SOB)
 
-#define PROTO(T)                                    \
-  template class dist_SOB_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>; \
-  template class dist_SOB_layer<T, data_layout::MODEL_PARALLEL, El::Device::CPU>; \
+#define PROTO(T)                                                               \
+  template class dist_SOB_layer<T,                                             \
+                                data_layout::DATA_PARALLEL,                    \
+                                El::Device::CPU>;                              \
+  template class dist_SOB_layer<T,                                             \
+                                data_layout::MODEL_PARALLEL,                   \
+                                El::Device::CPU>;                              \
   LBANN_LAYER_BUILDER_ETI(dist_SOB, T, El::Device::CPU)
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"
 #undef PROTO
 
-
-}// namespace lbann
+} // namespace lbann

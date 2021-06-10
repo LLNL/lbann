@@ -27,21 +27,24 @@
 #define LBANN_CROSS_GRID_SUM_SLICE_LAYER_INSTANTIATE
 #include "lbann/layers/transform/cross_grid_sum_slice.hpp"
 
-#include <lbann/proto/proto_common.hpp>
 #include <lbann.pb.h>
+#include <lbann/proto/proto_common.hpp>
 
 namespace lbann {
 
 LBANN_LAYER_DEFAULT_BUILDER(cross_grid_sum_slice)
 
-#define PROTO(T)                                    \
-  template class cross_grid_sum_slice_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>; \
-  template class cross_grid_sum_slice_layer<T, data_layout::MODEL_PARALLEL, El::Device::CPU>; \
+#define PROTO(T)                                                               \
+  template class cross_grid_sum_slice_layer<T,                                 \
+                                            data_layout::DATA_PARALLEL,        \
+                                            El::Device::CPU>;                  \
+  template class cross_grid_sum_slice_layer<T,                                 \
+                                            data_layout::MODEL_PARALLEL,       \
+                                            El::Device::CPU>;                  \
   LBANN_LAYER_BUILDER_ETI(cross_grid_sum_slice, T, El::Device::CPU)
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"
 #undef PROTO
 
-
-}// namespace lbann
+} // namespace lbann
