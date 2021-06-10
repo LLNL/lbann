@@ -30,7 +30,7 @@ std::string create_test_directory(std::string base_name) {
 
 
 /** Instantiates one or more data readers from the input 'prototext' string. 
- *  Users should ensure that the appropriate options (is any) are set prior
+ *  Users should ensure that the appropriate options (if any) are set prior
  *  to calling this function, i.e: 
  *    lbann::options *opts = lbann::options::get();
  *    opts->set_option("preload_data_store", true);
@@ -39,10 +39,10 @@ std::map<lbann::execution_mode, lbann::generic_data_reader*>
 instantiate_data_readers(
   std::string prototext_in, 
   lbann::lbann_comm& comm_in,
-  lbann::generic_data_reader* train_ptr,
-  lbann::generic_data_reader* validate_ptr,
-  lbann::generic_data_reader* test_ptr,
-  lbann::generic_data_reader* tournament_ptr)
+  lbann::generic_data_reader*& train_ptr,
+  lbann::generic_data_reader*& validate_ptr,
+  lbann::generic_data_reader*& test_ptr,
+  lbann::generic_data_reader*& tournament_ptr)
 {
   lbann_data::LbannPB my_proto;
   if (!pb::TextFormat::ParseFromString(prototext_in, &my_proto)) {
@@ -81,5 +81,6 @@ void write_file(std::string data, std::string dir, std::string fn) {
   REQUIRE(out);
   out << data;
   out.close();
+}
 
 #endif //__DATA_READER_TEST_COMMON_HPP__
