@@ -87,6 +87,9 @@ public:
   ///@}
 
 protected:
+  using BaseType::fp_compute;
+  using BaseType::bp_compute;
+
   // ===========================================================
   // Distributed compute functions
   // ===========================================================
