@@ -74,21 +74,27 @@ void local_bp(TensorDataType min,
 } // namespace
 
 template <typename TensorDataType>
-void ClampOperator<TensorDataType>::fp_compute_local(CPUMatrixType const& input,
-                                                      CPUMatrixType& output) const {
+void ClampOperator<TensorDataType>::fp_compute_local(std::vector<CPUMatrixType const*>& inputs,
+                                                     std::vector<CPUMatrixType*>& outputs) const {
+  if(inputs.size() != 1 || outputs.size() != 1) {
+    LBANN_ERROR("Invalid argument list");
+  }
   local_fp(this->m_min, this->m_max,
-           input,
-           output);
+           *(inputs[0]),
+           *(outputs[0]));
 }
 
 template <typename TensorDataType>
-void ClampOperator<TensorDataType>::bp_compute_local(CPUMatrixType const& input,
-                                                      CPUMatrixType const& gradient_wrt_output,
-                                                      CPUMatrixType& gradient_wrt_input) const {
+void ClampOperator<TensorDataType>::bp_compute_local(std::vector<CPUMatrixType const*>& inputs,
+                                                     std::vector<CPUMatrixType const*>& gradient_wrt_outputs,
+                                                     std::vector<CPUMatrixType*>& gradient_wrt_inputs) const {
+  if(inputs.size() != 1 || gradient_wrt_outputs.size() != 1 || gradient_wrt_inputs.size() != 1) {
+    LBANN_ERROR("Invalid argument list");
+  }
   local_bp(this->m_min, this->m_max,
-           input,
-           gradient_wrt_output,
-           gradient_wrt_input);
+           *(inputs[0]),
+           *(gradient_wrt_outputs[0]),
+           *(gradient_wrt_inputs[0]));
 }
 
 #define PROTO(T)                                     \

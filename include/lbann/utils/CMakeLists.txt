@@ -40,6 +40,7 @@ set_full_path(THIS_DIR_HEADERS
   trainer_file_utils.hpp
   type_erased_matrix.hpp
   typename.hpp
+  vector_dynamic_cast.hpp
   vectorwrapbuf.hpp
   vision.hpp
   visitor_hooks.hpp

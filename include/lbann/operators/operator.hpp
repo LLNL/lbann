@@ -79,7 +79,7 @@ namespace lbann {
  * it takes a vector of input tensors and produces a vector of output
  * tensors.  In the backward direction they implement the differentiation
  * of the forward operation, applying the function to the operator's
- * forward input and gradient with respect to the output, to compute
+ * forward inputs and gradient with respect to the outputs, to compute
  * the gradient with respect to the input.
  * Operators act as curried functions, they can have state that
  * is defined during construction but do not hold internal state.
@@ -140,21 +140,21 @@ protected:
    *  Given the input tensors, the output tensors are populated with
    *  computed values.
    */
-  virtual void fp_compute(BaseDistMat const& input,
-                          BaseDistMat& output) const = 0;
+  virtual void fp_compute(std::vector<BaseDistMat const*>& inputs,
+                          std::vector<BaseDistMat*>& outputs) const = 0;
 
   // ===========================================================
   // Back prop compute function
   // ===========================================================
 
   /** @brief Compute operator's "backward" operation
-   *  Given the input, output, and gradient w.r.t. output tensors,
+   *  Given the inputs, outputs, and gradient w.r.t. output tensors,
    *  the gradient w.r.t. input tensors are populated with the
    *  computed values.
    */
-  virtual void bp_compute(BaseDistMat const& input,
-                          BaseDistMat const& gradient_wrt_output,
-                          BaseDistMat& gradient_wrt_input) const {};
+  virtual void bp_compute(std::vector<BaseDistMat const*>& inputs,
+                          std::vector<BaseDistMat const*>& gradient_wrt_outputs,
+                          std::vector<BaseDistMat*>& gradient_wrt_inputs) const {};
 
   // ===========================================================
   // Protected class members
