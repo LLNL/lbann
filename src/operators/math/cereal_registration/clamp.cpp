@@ -30,9 +30,7 @@ namespace lbann {
 
 template <typename TensorDataType>
 template <typename ArchiveT>
-void
-ClampOperator<TensorDataType>
-::serialize(ArchiveT& ar)
+void ClampOperator<TensorDataType>::serialize(ArchiveT& ar)
 {
   using DataTypeOperatorType = DataTypeOperator<TensorDataType>;
   ar(::cereal::make_nvp("DataTypeOperator",

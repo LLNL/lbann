@@ -36,7 +36,8 @@ template <typename TensorDataType>
 void local_fp(TensorDataType min,
               TensorDataType max,
               const El::AbstractMatrix<TensorDataType>& input,
-              El::AbstractMatrix<TensorDataType>& output) {
+              El::AbstractMatrix<TensorDataType>& output)
+{
   const auto& height = input.Height();
   const auto& width = input.Width();
   LBANN_OMP_PARALLEL_FOR_COLLAPSE2
@@ -44,9 +45,15 @@ void local_fp(TensorDataType min,
     for (El::Int row = 0; row < height; ++row) {
       const auto& x = input(row, col);
       auto& y = output(row, col);
-      if (x <= min)      { y = min; }
-      else if (x >= max) { y = max; }
-      else              { y = x;   }
+      if (x <= min) {
+        y = min;
+      }
+      else if (x >= max) {
+        y = max;
+      }
+      else {
+        y = x;
+      }
     }
   }
 }
@@ -57,7 +64,8 @@ void local_bp(TensorDataType min,
               TensorDataType max,
               const El::AbstractMatrix<TensorDataType>& input,
               const El::AbstractMatrix<TensorDataType>& gradient_wrt_output,
-              El::AbstractMatrix<TensorDataType>& gradient_wrt_input) {
+              El::AbstractMatrix<TensorDataType>& gradient_wrt_input)
+{
   const auto& height = input.Height();
   const auto& width = input.Width();
   LBANN_OMP_PARALLEL_FOR_COLLAPSE2
@@ -74,25 +82,27 @@ void local_bp(TensorDataType min,
 } // namespace
 
 template <typename TensorDataType>
-void ClampOperator<TensorDataType>::fp_compute_local(CPUMatrixType const& input,
-                                                      CPUMatrixType& output) const {
-  local_fp(this->m_min, this->m_max,
-           input,
-           output);
+void ClampOperator<TensorDataType>::fp_compute_local(
+  CPUMatrixType const& input,
+  CPUMatrixType& output) const
+{
+  local_fp(this->m_min, this->m_max, input, output);
 }
 
 template <typename TensorDataType>
-void ClampOperator<TensorDataType>::bp_compute_local(CPUMatrixType const& input,
-                                                      CPUMatrixType const& gradient_wrt_output,
-                                                      CPUMatrixType& gradient_wrt_input) const {
-  local_bp(this->m_min, this->m_max,
+void ClampOperator<TensorDataType>::bp_compute_local(
+  CPUMatrixType const& input,
+  CPUMatrixType const& gradient_wrt_output,
+  CPUMatrixType& gradient_wrt_input) const
+{
+  local_bp(this->m_min,
+           this->m_max,
            input,
            gradient_wrt_output,
            gradient_wrt_input);
 }
 
-#define PROTO(T)                                     \
-  template class ClampOperator<T>
+#define PROTO(T) template class ClampOperator<T>
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"

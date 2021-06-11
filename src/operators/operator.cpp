@@ -31,7 +31,8 @@
 
 namespace lbann {
 
-Operator::Operator() {
+Operator::Operator()
+{
 
   // Initialize operator name
   static int num_operators = 0;
@@ -39,7 +40,8 @@ Operator::Operator() {
   num_operators++;
 }
 
-description Operator::get_description() const {
+description Operator::get_description() const
+{
 
   // Construct description object
   std::stringstream ss;
@@ -52,4 +54,4 @@ description Operator::get_description() const {
   return desc;
 }
 
-}  // namespace lbann
+} // namespace lbann

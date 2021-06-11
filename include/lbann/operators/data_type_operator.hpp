@@ -32,10 +32,9 @@
 #include <h2/meta/Core.hpp>
 #include <h2/meta/TypeList.hpp>
 
-namespace cereal
-{
-  class access;
-}// namespace cereal
+namespace cereal {
+class access;
+} // namespace cereal
 
 namespace lbann {
 
@@ -46,7 +45,8 @@ using supported_operator_data_type = h2::meta::TL<
 #ifdef LBANN_HAS_HALF
   cpu_fp16,
 #endif
-  float, double>;
+  float,
+  double>;
 
 /**
  * @brief Data type specific tensor operation sub-class.
@@ -55,9 +55,12 @@ using supported_operator_data_type = h2::meta::TL<
  */
 template <typename InputTensorDataType,
           typename OutputTensorDataType = InputTensorDataType>
-class DataTypeOperator :
-    public Cloneable<HasAbstractFunction<DataTypeOperator<InputTensorDataType, OutputTensorDataType>>,
-                                         Operator> {
+class DataTypeOperator
+  : public Cloneable<
+      HasAbstractFunction<
+        DataTypeOperator<InputTensorDataType, OutputTensorDataType>>,
+      Operator>
+{
 public:
   /** @name Public Types */
   ///@{
@@ -73,39 +76,42 @@ public:
   ///@}
 
 public:
-  static_assert(
-    h2::meta::tlist::MemberV<InputTensorDataType, supported_operator_data_type>(),
-    "Must use a supported input type.");
-  static_assert(
-    h2::meta::tlist::MemberV<OutputTensorDataType, supported_operator_data_type>(),
-    "Must use a supported output type.");
+  static_assert(h2::meta::tlist::MemberV<InputTensorDataType,
+                                         supported_operator_data_type>(),
+                "Must use a supported input type.");
+  static_assert(h2::meta::tlist::MemberV<OutputTensorDataType,
+                                         supported_operator_data_type>(),
+                "Must use a supported output type.");
 
   DataTypeOperator() = default;
-  DataTypeOperator(const DataTypeOperator<InputTensorDataType, OutputTensorDataType>& other) = default;
-  DataTypeOperator& operator=(const DataTypeOperator<InputTensorDataType, OutputTensorDataType>& other) = default;
+  DataTypeOperator(
+    const DataTypeOperator<InputTensorDataType, OutputTensorDataType>& other) =
+    default;
+  DataTypeOperator& operator=(
+    const DataTypeOperator<InputTensorDataType, OutputTensorDataType>& other) =
+    default;
   virtual ~DataTypeOperator() = default;
 
   /** Get a string representing the operator datatype
    */
-  std::string get_datatype_name() const override {
+  std::string get_datatype_name() const override
+  {
     return TypeName<OutputTensorDataType>();
   };
 
   /** @name Serialization */
   ///@{
 
-  template <typename ArchiveT>
-  void serialize(ArchiveT& ar) {};
+  template <typename ArchiveT> void serialize(ArchiveT& ar){};
 
   ///@}
 
 protected:
-
   // ===========================================================
   // Forward prop compute function
   // ===========================================================
 
-  void fp_compute(BaseDistMat const& input, BaseDistMat& output) const override;
+  void fp_compute(BaseDistMat const& input, BaseDistMat& output) const final;
 
   /** @brief Refine the forward compute for specific data types
    */
@@ -118,20 +124,17 @@ protected:
 
   void bp_compute(BaseDistMat const& input,
                   BaseDistMat const& gradient_wrt_output,
-                  BaseDistMat& gradient_wrt_input) const override;
+                  BaseDistMat& gradient_wrt_input) const final;
 
   /** @brief Refine the backward compute for specific data types
    */
   virtual void bp_compute(InputAbsDistMatrixType const& input,
                           OutputAbsDistMatrixType const& gradient_wrt_output,
                           InputAbsDistMatrixType& gradient_wrt_input) const {};
-
 };
 
-
 #ifndef LBANN_DATA_TYPE_OPERATOR_INSTANTIATE
-#define PROTO(T)                                \
-  extern template class DataTypeOperator<T>
+#define PROTO(T) extern template class DataTypeOperator<T>
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF
