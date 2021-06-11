@@ -105,7 +105,7 @@ protected:
   // Forward prop compute function
   // ===========================================================
 
-  void fp_compute(BaseDistMat const& input, BaseDistMat& output) const override;
+  void fp_compute(BaseDistMat const& input, BaseDistMat& output) const final;
 
   /** @brief Refine the forward compute for specific data types
    */
@@ -118,7 +118,7 @@ protected:
 
   void bp_compute(BaseDistMat const& input,
                   BaseDistMat const& gradient_wrt_output,
-                  BaseDistMat& gradient_wrt_input) const override;
+                  BaseDistMat& gradient_wrt_input) const final;
 
   /** @brief Refine the backward compute for specific data types
    */

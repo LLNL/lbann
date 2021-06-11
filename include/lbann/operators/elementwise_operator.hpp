@@ -60,6 +60,10 @@ public:
   using OutputGPUMatrixType = El::Matrix<OutputTensorDataType, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 
+  using BaseType =
+    Cloneable<HasAbstractFunction<
+                ElementwiseOperator<InputTensorDataType, OutputTensorDataType>>,
+              DataTypeOperator<InputTensorDataType, OutputTensorDataType>>;
   ///@}
 
 public:
@@ -81,13 +85,16 @@ protected:
   // ===========================================================
   // Distributed compute functions
   // ===========================================================
+  using BaseType::fp_compute;
+  using BaseType::bp_compute;
+
   void fp_compute(InputAbsDistMatrixType const& input,
-                  OutputAbsDistMatrixType& output) const override;
+                  OutputAbsDistMatrixType& output) const final;
 
 
   void bp_compute(InputAbsDistMatrixType const& input,
                   OutputAbsDistMatrixType const& gradient_wrt_output,
-                  InputAbsDistMatrixType& gradient_wrt_input) const override;
+                  InputAbsDistMatrixType& gradient_wrt_input) const final;
 
 
   // ===========================================================
@@ -95,12 +102,12 @@ protected:
   // ===========================================================
   /** @brief Local forward compute function
    */
-  virtual void fp_compute_local(InputAbsMatrixType const& input,
+  void fp_compute_local(InputAbsMatrixType const& input,
                                 OutputAbsMatrixType& output) const;
 
   /** @brief Local backward compute function
    */
-  virtual void bp_compute_local(InputAbsMatrixType const& input,
+  void bp_compute_local(InputAbsMatrixType const& input,
                                 OutputAbsMatrixType const& gradient_wrt_output,
                                 InputAbsMatrixType& gradient_wrt_input) const;
 
