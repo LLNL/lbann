@@ -30,12 +30,51 @@
 
 namespace lbann {
 
+namespace {
+
+template <typename T>
+auto vector_dist_to_local(std::vector<El::AbstractDistMatrix<T>*>const& v_in) -> std::vector<El::AbstractMatrix<T>*>
+{
+  std::vector<El::AbstractMatrix<T>*> v;
+  v.reserve(v_in.size());
+  for (auto& e : v_in) {
+#ifdef LBANN_DEBUG
+    auto* ptr = &(e->Matrix());
+    LBANN_ASSERT(ptr);
+    v.push_back(ptr);
+#else
+    v.push_back(&(e->Matrix()));
+#endif
+  }
+  return v;
+}
+
+template <typename T>
+auto vector_dist_to_local_const(std::vector<El::AbstractDistMatrix<T> const*>const& v_in) -> std::vector<El::AbstractMatrix<T> const*>
+{
+  std::vector<El::AbstractMatrix<T> const*> v;
+  v.reserve(v_in.size());
+  for (auto& e : v_in) {
+#ifdef LBANN_DEBUG
+    auto* ptr = &(e->LockedMatrix());
+    LBANN_ASSERT(ptr);
+    v.push_back(ptr);
+#else
+    v.push_back(&(e->LockedMatrix()));
+#endif
+  }
+  return v;
+}
+
+} // anonymous
 
 template <typename InputTensorDataType, typename OutputTensorDataType>
 void ElementwiseOperator<InputTensorDataType, OutputTensorDataType>::
 fp_compute(std::vector<InputAbsDistMatrixType const*> inputs,
            std::vector<OutputAbsDistMatrixType*> outputs) const {
-  // fp_compute_local(input.LockedMatrix(), output.Matrix());
+  auto local_inputs = vector_dist_to_local_const<InputTensorDataType>(inputs);
+  auto local_outputs = vector_dist_to_local<OutputTensorDataType>(outputs);
+  fp_compute_local(local_inputs, local_outputs);
 };
 
 template <typename InputTensorDataType, typename OutputTensorDataType>
@@ -43,9 +82,12 @@ void ElementwiseOperator<InputTensorDataType, OutputTensorDataType>::
 bp_compute(std::vector<InputAbsDistMatrixType const*> inputs,
            std::vector<OutputAbsDistMatrixType const*> gradient_wrt_outputs,
            std::vector<InputAbsDistMatrixType*> gradient_wrt_inputs) const {
-  // bp_compute_local(input.LockedMatrix(),
-  //                  gradient_wrt_output.LockedMatrix(),
-  //                  gradient_wrt_input.Matrix());
+  auto local_inputs = vector_dist_to_local_const<InputTensorDataType>(inputs);
+  auto local_gradient_wrt_outputs = vector_dist_to_local_const<OutputTensorDataType>(gradient_wrt_outputs);
+  auto local_gradient_wrt_inputs = vector_dist_to_local<InputTensorDataType>(gradient_wrt_inputs);
+  bp_compute_local(local_inputs,
+                   local_gradient_wrt_outputs,
+                   local_gradient_wrt_inputs);
 };
 
 /////////////////////////////////////////////////////////////////////////////////
