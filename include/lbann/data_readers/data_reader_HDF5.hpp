@@ -126,15 +126,15 @@ public:
   }
 
   /** @brief this method is made public for testing */
-  conduit::Node get_experiment_schema() { return m_experiment_schema; }
+  conduit::Node get_experiment_schema() const { return m_experiment_schema; }
   /** @brief this method is made public for testing */
-  conduit::Node get_data_schema() { return m_data_schema; }
+  conduit::Node get_data_schema() const{ return m_data_schema; }
   /** @brief this method is made public for testing */
   void set_experiment_schema(const conduit::Node& s);
   /** @brief this method is made public for testing */
   void set_data_schema(const conduit::Node& s);
   /** @brief this method is made public for testing */
-  const std::unordered_map<std::string, conduit::Node>& get_node_map() { 
+  std::unordered_map<std::string, conduit::Node> get_node_map() const { 
     return  m_useme_node_map; 
   }
 
