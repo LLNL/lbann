@@ -43,14 +43,11 @@ namespace lbann {
  *  @f]
  */
 template <typename TensorDataType>
-class ClampOperator : public Cloneable<ClampOperator<TensorDataType>,
-                                       ElementwiseOperator<TensorDataType>>
-{
+class ClampOperator :
+    public Cloneable<ClampOperator<TensorDataType>,
+                     ElementwiseOperator<TensorDataType>> {
 #ifdef LBANN_HAS_GPU_FP16
-  using CompareType =
-    typename std::conditional<std::is_same<TensorDataType, fp16>::value,
-                              float,
-                              TensorDataType>::type;
+  using CompareType = typename std::conditional<std::is_same<TensorDataType, fp16>::value, float, TensorDataType>::type;
 #else
   using CompareType = TensorDataType;
 #endif
@@ -66,13 +63,12 @@ class ClampOperator : public Cloneable<ClampOperator<TensorDataType>,
   using GPUMatrixType = El::Matrix<TensorDataType, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 
-  using BaseType = Cloneable<ClampOperator<TensorDataType>,
-                             ElementwiseOperator<TensorDataType>>;
+  using BaseType = Cloneable<ClampOperator<TensorDataType>, ElementwiseOperator<TensorDataType>>;
   ///@}
 
 public:
-  ClampOperator(TensorDataType min, TensorDataType max) : m_min(min), m_max(max)
-  {
+  ClampOperator(TensorDataType min, TensorDataType max)
+    : m_min(min), m_max(max) {
     if (CompareType(m_min) > CompareType(m_max)) {
       std::stringstream err;
       err << "[" << m_min << "," << m_max << "] is an invalid range";
@@ -82,8 +78,7 @@ public:
 
   std::string get_type() const override { return "clamp"; }
 
-  description get_description() const override
-  {
+  description get_description() const override {
     auto desc = DataTypeOperator<TensorDataType>::get_description();
     std::stringstream ss;
     ss << "[" << m_min << "," << m_max << "]";
@@ -96,14 +91,15 @@ public:
   /** @name Serialization */
   ///@{
 
-  template <typename ArchiveT> void serialize(ArchiveT& ar);
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
 
   ///@}
 
 protected:
   friend class cereal::access;
   ClampOperator()
-    : ClampOperator(El::To<TensorDataType>(0), El::To<TensorDataType>(1))
+    : ClampOperator(El::To<TensorDataType>(0),El::To<TensorDataType>(1))
   {}
 
   /** CPU-specific function instantiations */
@@ -124,16 +120,19 @@ protected:
                         GPUMatrixType& gradient_wrt_input) const override;
 #endif // LBANN_HAS_GPU
 
+
 private:
   /** Minimum output. */
   TensorDataType m_min;
   /** Maximum output. */
   TensorDataType m_max;
+
 };
 
 #ifndef LBANN_CLAMP_OPERATOR_INSTANTIATE
 
-#define PROTO(T) extern template class ClampOperator<T>
+#define PROTO(T)             \
+  extern template class ClampOperator<T>
 
 #include "lbann/macros/instantiate.hpp"
 #undef PROTO

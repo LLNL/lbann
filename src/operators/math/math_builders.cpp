@@ -30,19 +30,23 @@
 #include <lbann/proto/proto_common.hpp>
 #include <operators.pb.h>
 
-namespace lbann {
+namespace lbann
+{
 
 template <typename TensorDataType>
-std::unique_ptr<Operator>
-build_clamp_operator_from_pbuf(lbann_data::Operator const& proto_operator)
+std::unique_ptr<Operator> build_clamp_operator_from_pbuf(
+  lbann_data::Operator const& proto_operator)
 {
   LBANN_ASSERT_MSG_HAS_FIELD(proto_operator, clamp);
   using OperatorType = ClampOperator<TensorDataType>;
   auto const& params = proto_operator.clamp();
-  return lbann::make_unique<OperatorType>(El::To<TensorDataType>(params.min()),
-                                          El::To<TensorDataType>(params.max()));
+  return lbann::make_unique<OperatorType>(
+    El::To<TensorDataType>(params.min()),
+    El::To<TensorDataType>(params.max()));
 }
 
-#define PROTO(T) LBANN_OPERATOR_BUILDER_ETI(clamp, T);
+
+#define PROTO(T)                               \
+  LBANN_OPERATOR_BUILDER_ETI(clamp, T);
 #include <lbann/macros/instantiate.hpp>
 } // namespace lbann

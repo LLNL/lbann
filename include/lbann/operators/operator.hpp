@@ -37,29 +37,30 @@
 
 /** @brief A utility macro for easily defining default-constructed sub-class
  *  builders.*/
-#define LBANN_DEFINE_OPERATOR_BUILDER(OPERATOR_NAME)                           \
-  template <typename TensorDataType>                                           \
-  std::unique_ptr<Operator> build_##OPERATOR_NAME##_operator_from_pbuf(        \
+#define LBANN_DEFINE_OPERATOR_BUILDER(OPERATOR_NAME)                          \
+  template <typename TensorDataType> \
+  std::unique_ptr<Operator> build_##OPERATOR_NAME##_operator_from_pbuf( \
     lbann_data::Operator const&)
 
 /** @brief A utility macro for easily defining "default" builders.
  *  @note Must be called inside lbann namespace.
  */
-#define LBANN_OPERATOR_DEFAULT_BUILDER(OPERATOR_NAME)                          \
-  template <typename TensorDataType>                                           \
-  std::unique_ptr<Operator> build_##OPERATOR_NAME##_operator_from_pbuf(        \
-    lbann_data::Operator const&)                                               \
-  {                                                                            \
-    using OperatorType = OPERATOR_NAME##_operator<TensorDataType>;             \
-    return make_unique<OperatorType>();                                        \
+#define LBANN_OPERATOR_DEFAULT_BUILDER(OPERATOR_NAME) \
+  template <typename TensorDataType> \
+  std::unique_ptr<Operator> build_##OPERATOR_NAME##_operator_from_pbuf(          \
+    lbann_data::Operator const&)                         \
+  {                                                                     \
+    using OperatorType = OPERATOR_NAME##_operator<TensorDataType>; \
+    return make_unique<OperatorType>();                                \
   }
 
 /** @brief A utility macro for easily adding ETI for operator builders
  *  @note Must be called inside lbann namespace.
  */
-#define LBANN_OPERATOR_BUILDER_ETI(OPERATOR_NAME, T)                           \
-  template std::unique_ptr<Operator>                                           \
-    build_##OPERATOR_NAME##_operator_from_pbuf<T>(lbann_data::Operator const&)
+#define LBANN_OPERATOR_BUILDER_ETI(OPERATOR_NAME, T)                  \
+  template std::unique_ptr<Operator>                                       \
+  build_##OPERATOR_NAME##_operator_from_pbuf<T>( \
+    lbann_data::Operator const&)
 
 // Forward-declare protobuf classes
 namespace lbann_data {
@@ -87,9 +88,9 @@ namespace lbann {
  * function gradients w.r.t. the inputs ("error signals"). This allows
  * the model to perform automatic differentiation.
  */
-class Operator : public Cloneable<HasAbstractFunction<Operator>>
-{
+class Operator: public Cloneable<HasAbstractFunction<Operator>> {
 public:
+
   Operator();
   Operator(const Operator& other) = default;
   Operator& operator=(const Operator& other) = default;
@@ -111,8 +112,7 @@ public:
    */
   inline void set_name(const std::string name) { m_name = name; }
   /** @brief Get a string representing the operator datatype */
-  virtual std::string get_datatype_name() const
-  {
+  virtual std::string get_datatype_name() const {
     return TypeName<DataType>();
   };
 
@@ -125,11 +125,13 @@ public:
   /** @name Serialization */
   ///@{
 
-  template <typename ArchiveT> void serialize(ArchiveT& ar);
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar);
 
   ///@}
 
 protected:
+
   // ===========================================================
   // Forward prop compute function
   // ===========================================================

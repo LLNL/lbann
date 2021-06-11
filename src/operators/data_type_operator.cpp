@@ -29,28 +29,26 @@
 
 namespace lbann {
 
+
 template <typename InputTensorDataType, typename OutputTensorDataType>
-void DataTypeOperator<InputTensorDataType, OutputTensorDataType>::fp_compute(
-  BaseDistMat const& input,
-  BaseDistMat& output) const
-{
+void DataTypeOperator<InputTensorDataType, OutputTensorDataType>::
+fp_compute(BaseDistMat const& input, BaseDistMat& output) const {
   return fp_compute(dynamic_cast<InputAbsDistMatrixType const&>(input),
                     dynamic_cast<OutputAbsDistMatrixType&>(output));
 }
 
 template <typename InputTensorDataType, typename OutputTensorDataType>
-void DataTypeOperator<InputTensorDataType, OutputTensorDataType>::bp_compute(
-  BaseDistMat const& input,
-  BaseDistMat const& gradient_wrt_output,
-  BaseDistMat& gradient_wrt_input) const
-{
-  return bp_compute(
-    dynamic_cast<InputAbsDistMatrixType const&>(input),
-    dynamic_cast<OutputAbsDistMatrixType const&>(gradient_wrt_output),
-    dynamic_cast<InputAbsDistMatrixType&>(gradient_wrt_input));
+void DataTypeOperator<InputTensorDataType, OutputTensorDataType>::
+bp_compute(BaseDistMat const& input,
+           BaseDistMat const& gradient_wrt_output,
+           BaseDistMat& gradient_wrt_input) const {
+  return bp_compute(dynamic_cast<InputAbsDistMatrixType const&>(input),
+                    dynamic_cast<OutputAbsDistMatrixType const&>(gradient_wrt_output),
+                    dynamic_cast<InputAbsDistMatrixType&>(gradient_wrt_input));
 };
 
-#define PROTO(T) template class DataTypeOperator<T>
+#define PROTO(T)                     \
+  template class DataTypeOperator<T>
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF

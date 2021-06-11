@@ -38,12 +38,9 @@ namespace lbann {
  */
 template <typename InputTensorDataType,
           typename OutputTensorDataType = InputTensorDataType>
-class ElementwiseOperator
-  : public Cloneable<
-      HasAbstractFunction<
-        ElementwiseOperator<InputTensorDataType, OutputTensorDataType>>,
-      DataTypeOperator<InputTensorDataType, OutputTensorDataType>>
-{
+class ElementwiseOperator :
+    public Cloneable<HasAbstractFunction<ElementwiseOperator<InputTensorDataType, OutputTensorDataType>>,
+                                         DataTypeOperator<InputTensorDataType, OutputTensorDataType>> {
 public:
   /** @name Public Types */
   ///@{
@@ -63,32 +60,23 @@ public:
   using OutputGPUMatrixType = El::Matrix<OutputTensorDataType, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 
-  using BaseType =
-    Cloneable<HasAbstractFunction<
-                ElementwiseOperator<InputTensorDataType, OutputTensorDataType>>,
-              DataTypeOperator<InputTensorDataType, OutputTensorDataType>>;
   ///@}
 
 public:
   ElementwiseOperator() = default;
-  ElementwiseOperator(
-    const ElementwiseOperator<InputTensorDataType, OutputTensorDataType>&
-      other) = default;
-  ElementwiseOperator&
-  operator=(const ElementwiseOperator<InputTensorDataType,
-                                      OutputTensorDataType>& other) = default;
+  ElementwiseOperator(const ElementwiseOperator<InputTensorDataType, OutputTensorDataType>& other) = default;
+  ElementwiseOperator& operator=(const ElementwiseOperator<InputTensorDataType, OutputTensorDataType>& other) = default;
   virtual ~ElementwiseOperator() = default;
 
   /** @name Serialization */
   ///@{
 
-  template <typename ArchiveT> void serialize(ArchiveT& ar){};
+  template <typename ArchiveT>
+  void serialize(ArchiveT& ar) {};
 
   ///@}
 
 protected:
-  using BaseType::fp_compute;
-  using BaseType::bp_compute;
 
   // ===========================================================
   // Distributed compute functions
@@ -96,23 +84,25 @@ protected:
   void fp_compute(InputAbsDistMatrixType const& input,
                   OutputAbsDistMatrixType& output) const override;
 
+
   void bp_compute(InputAbsDistMatrixType const& input,
                   OutputAbsDistMatrixType const& gradient_wrt_output,
                   InputAbsDistMatrixType& gradient_wrt_input) const override;
+
 
   // ===========================================================
   // Local compute functions
   // ===========================================================
   /** @brief Local forward compute function
    */
-  void fp_compute_local(InputAbsMatrixType const& input,
-                        OutputAbsMatrixType& output) const;
+  virtual void fp_compute_local(InputAbsMatrixType const& input,
+                                OutputAbsMatrixType& output) const;
 
   /** @brief Local backward compute function
    */
-  void bp_compute_local(InputAbsMatrixType const& input,
-                        OutputAbsMatrixType const& gradient_wrt_output,
-                        InputAbsMatrixType& gradient_wrt_input) const;
+  virtual void bp_compute_local(InputAbsMatrixType const& input,
+                                OutputAbsMatrixType const& gradient_wrt_output,
+                                InputAbsMatrixType& gradient_wrt_input) const;
 
   /** CPU-specific function instantiations */
   /** @brief Refine the forward compute for CPU-specific data types
@@ -139,10 +129,13 @@ protected:
                                 const OutputGPUMatrixType& gradient_wrt_output,
                                 InputGPUMatrixType& gradient_wrt_input) const;
 #endif // LBANN_HAS_GPU
+
 };
 
+
 #ifndef LBANN_ELEMENTWISE_OPERATOR_INSTANTIATE
-#define PROTO(T) extern template class ElementwiseOperator<T>
+#define PROTO(T)                                \
+  extern template class ElementwiseOperator<T>
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF

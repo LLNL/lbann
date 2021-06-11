@@ -29,20 +29,19 @@
 
 namespace lbann {
 
+
 template <typename InputTensorDataType, typename OutputTensorDataType>
-void ElementwiseOperator<InputTensorDataType, OutputTensorDataType>::fp_compute(
-  InputAbsDistMatrixType const& input,
-  OutputAbsDistMatrixType& output) const
-{
+void ElementwiseOperator<InputTensorDataType, OutputTensorDataType>::
+fp_compute(InputAbsDistMatrixType const& input,
+           OutputAbsDistMatrixType& output) const {
   fp_compute_local(input.LockedMatrix(), output.Matrix());
 };
 
 template <typename InputTensorDataType, typename OutputTensorDataType>
-void ElementwiseOperator<InputTensorDataType, OutputTensorDataType>::bp_compute(
-  InputAbsDistMatrixType const& input,
-  OutputAbsDistMatrixType const& gradient_wrt_output,
-  InputAbsDistMatrixType& gradient_wrt_input) const
-{
+void ElementwiseOperator<InputTensorDataType, OutputTensorDataType>::
+bp_compute(InputAbsDistMatrixType const& input,
+           OutputAbsDistMatrixType const& gradient_wrt_output,
+           InputAbsDistMatrixType& gradient_wrt_input) const {
   bp_compute_local(input.LockedMatrix(),
                    gradient_wrt_output.LockedMatrix(),
                    gradient_wrt_input.Matrix());
@@ -54,9 +53,8 @@ void ElementwiseOperator<InputTensorDataType, OutputTensorDataType>::bp_compute(
 /////////////////////////////////////////////////////////////////////////////////
 template <typename InputTensorDataType, typename OutputTensorDataType>
 void ElementwiseOperator<InputTensorDataType, OutputTensorDataType>::
-  fp_compute_local(InputAbsMatrixType const& input,
-                   OutputAbsMatrixType& output) const
-{
+fp_compute_local(InputAbsMatrixType const& input,
+                 OutputAbsMatrixType& output) const {
 
   switch (output.GetDevice()) {
   case El::Device::CPU:
@@ -74,23 +72,20 @@ void ElementwiseOperator<InputTensorDataType, OutputTensorDataType>::
 
 template <typename InputTensorDataType, typename OutputTensorDataType>
 void ElementwiseOperator<InputTensorDataType, OutputTensorDataType>::
-  bp_compute_local(InputAbsMatrixType const& input,
-                   OutputAbsMatrixType const& gradient_wrt_output,
-                   InputAbsMatrixType& gradient_wrt_input) const
-{
+bp_compute_local(InputAbsMatrixType const& input,
+                 OutputAbsMatrixType const& gradient_wrt_output,
+                 InputAbsMatrixType& gradient_wrt_input) const {
   switch (gradient_wrt_input.GetDevice()) {
   case El::Device::CPU:
-    return bp_compute_local(
-      static_cast<InputCPUMatrixType const&>(input),
-      static_cast<OutputCPUMatrixType const&>(gradient_wrt_output),
-      static_cast<InputCPUMatrixType&>(gradient_wrt_input));
+    return bp_compute_local(static_cast<InputCPUMatrixType const&>(input),
+                            static_cast<OutputCPUMatrixType const&>(gradient_wrt_output),
+                            static_cast<InputCPUMatrixType&>(gradient_wrt_input));
     break;
 #ifdef LBANN_HAS_GPU
   case El::Device::GPU:
-    return bp_compute_local(
-      static_cast<InputGPUMatrixType const&>(input),
-      static_cast<OutputGPUMatrixType const&>(gradient_wrt_output),
-      static_cast<InputGPUMatrixType&>(gradient_wrt_input));
+    return bp_compute_local(static_cast<InputGPUMatrixType const&>(input),
+                            static_cast<OutputGPUMatrixType const&>(gradient_wrt_output),
+                            static_cast<InputGPUMatrixType&>(gradient_wrt_input));
     break;
 #endif // LBANN_HAS_GPU
   default:
@@ -100,41 +95,39 @@ void ElementwiseOperator<InputTensorDataType, OutputTensorDataType>::
 
 template <typename InputTensorDataType, typename OutputTensorDataType>
 void ElementwiseOperator<InputTensorDataType, OutputTensorDataType>::
-  fp_compute_local(InputCPUMatrixType const& input,
-                   OutputCPUMatrixType& output) const
-{
+fp_compute_local(InputCPUMatrixType const& input,
+                 OutputCPUMatrixType& output) const {
   LBANN_ERROR("Unsupported CPU matrix type");
 }
 
 template <typename InputTensorDataType, typename OutputTensorDataType>
 void ElementwiseOperator<InputTensorDataType, OutputTensorDataType>::
-  bp_compute_local(InputCPUMatrixType const& input,
-                   OutputCPUMatrixType const& gradient_wrt_output,
-                   InputCPUMatrixType& gradient_wrt_input) const
-{
+bp_compute_local(InputCPUMatrixType const& input,
+                 OutputCPUMatrixType const& gradient_wrt_output,
+                 InputCPUMatrixType& gradient_wrt_input) const {
   LBANN_ERROR("Unsupported CPU matrix type");
 }
 
 #ifdef LBANN_HAS_GPU
 template <typename InputTensorDataType, typename OutputTensorDataType>
 void ElementwiseOperator<InputTensorDataType, OutputTensorDataType>::
-  fp_compute_local(InputGPUMatrixType const& input,
-                   OutputGPUMatrixType& output) const
-{
+fp_compute_local(InputGPUMatrixType const& input,
+                 OutputGPUMatrixType& output) const {
   LBANN_ERROR("Unsupported GPU matrix type");
 }
 
 template <typename InputTensorDataType, typename OutputTensorDataType>
 void ElementwiseOperator<InputTensorDataType, OutputTensorDataType>::
-  bp_compute_local(InputGPUMatrixType const& input,
-                   OutputGPUMatrixType const& gradient_wrt_output,
-                   InputGPUMatrixType& gradient_wrt_input) const
-{
+bp_compute_local(InputGPUMatrixType const& input,
+                 OutputGPUMatrixType const& gradient_wrt_output,
+                 InputGPUMatrixType& gradient_wrt_input) const {
   LBANN_ERROR("Unsupported GPU matrix type");
 }
 #endif // LBANN_HAS_GPU
 
-#define PROTO(T) template class ElementwiseOperator<T>
+
+#define PROTO(T)                     \
+  template class ElementwiseOperator<T>
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF
