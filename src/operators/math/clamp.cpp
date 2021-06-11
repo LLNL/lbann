@@ -74,8 +74,8 @@ void local_bp(TensorDataType min,
 } // namespace
 
 template <typename TensorDataType>
-void ClampOperator<TensorDataType>::fp_compute_local(std::vector<CPUMatrixType const*>& inputs,
-                                                     std::vector<CPUMatrixType*>& outputs) const {
+void ClampOperator<TensorDataType>::fp_compute_local(std::vector<CPUMatrixType const*> inputs,
+                                                     std::vector<CPUMatrixType*> outputs) const {
   if(inputs.size() != 1 || outputs.size() != 1) {
     LBANN_ERROR("Invalid argument list");
   }
@@ -85,9 +85,9 @@ void ClampOperator<TensorDataType>::fp_compute_local(std::vector<CPUMatrixType c
 }
 
 template <typename TensorDataType>
-void ClampOperator<TensorDataType>::bp_compute_local(std::vector<CPUMatrixType const*>& inputs,
-                                                     std::vector<CPUMatrixType const*>& gradient_wrt_outputs,
-                                                     std::vector<CPUMatrixType*>& gradient_wrt_inputs) const {
+void ClampOperator<TensorDataType>::bp_compute_local(std::vector<CPUMatrixType const*> inputs,
+                                                     std::vector<CPUMatrixType const*> gradient_wrt_outputs,
+                                                     std::vector<CPUMatrixType*> gradient_wrt_inputs) const {
   if(inputs.size() != 1 || gradient_wrt_outputs.size() != 1 || gradient_wrt_inputs.size() != 1) {
     LBANN_ERROR("Invalid argument list");
   }

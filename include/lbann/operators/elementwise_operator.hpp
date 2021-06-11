@@ -88,12 +88,12 @@ protected:
   using BaseType::fp_compute;
   using BaseType::bp_compute;
 
-  void fp_compute(std::vector<InputAbsDistMatrixType const*>& input,
-                  std::vector<OutputAbsDistMatrixType*>& output) const final;
+  void fp_compute(std::vector<InputAbsDistMatrixType const*> input,
+                  std::vector<OutputAbsDistMatrixType*> output) const final;
 
-  void bp_compute(std::vector<InputAbsDistMatrixType const*>& input,
-                  std::vector<OutputAbsDistMatrixType const*>& gradient_wrt_output,
-                  std::vector<InputAbsDistMatrixType*>& gradient_wrt_input) const final;
+  void bp_compute(std::vector<InputAbsDistMatrixType const*> input,
+                  std::vector<OutputAbsDistMatrixType const*> gradient_wrt_output,
+                  std::vector<InputAbsDistMatrixType*> gradient_wrt_input) const final;
 
 
   // ===========================================================
@@ -101,39 +101,39 @@ protected:
   // ===========================================================
   /** @brief Local forward compute function
    */
-  void fp_compute_local(std::vector<InputAbsMatrixType const*>& input,
-                        std::vector<OutputAbsMatrixType*>& output) const;
+  void fp_compute_local(std::vector<InputAbsMatrixType const*> input,
+                        std::vector<OutputAbsMatrixType*> output) const;
 
   /** @brief Local backward compute function
    */
-  void bp_compute_local(std::vector<InputAbsMatrixType const*>& input,
-                        std::vector<OutputAbsMatrixType const*>& gradient_wrt_output,
-                        std::vector<InputAbsMatrixType*>& gradient_wrt_input) const;
+  void bp_compute_local(std::vector<InputAbsMatrixType const*> input,
+                        std::vector<OutputAbsMatrixType const*> gradient_wrt_output,
+                        std::vector<InputAbsMatrixType*> gradient_wrt_input) const;
 
   /** CPU-specific function instantiations */
   /** @brief Refine the forward compute for CPU-specific data types
    */
-  virtual void fp_compute_local(std::vector<InputCPUMatrixType const*>& input,
-                                std::vector<OutputCPUMatrixType*>& output) const;
+  virtual void fp_compute_local(std::vector<InputCPUMatrixType const*> input,
+                                std::vector<OutputCPUMatrixType*> output) const;
 
   /** @brief Refine the backward compute for CPU-specific data types
    */
-  virtual void bp_compute_local(std::vector<InputCPUMatrixType const*>& input,
-                                std::vector<OutputCPUMatrixType const*>& gradient_wrt_output,
-                                std::vector<InputCPUMatrixType*>& gradient_wrt_input) const;
+  virtual void bp_compute_local(std::vector<InputCPUMatrixType const*> input,
+                                std::vector<OutputCPUMatrixType const*> gradient_wrt_output,
+                                std::vector<InputCPUMatrixType*> gradient_wrt_input) const;
 
 #ifdef LBANN_HAS_GPU
   /** GPU-specific function instantiations */
   /** @brief Refine the forward compute for GPU-specific data types
    */
-  virtual void fp_compute_local(std::vector<InputGPUMatrixType const*>& input,
-                                std::vector<OutputGPUMatrixType*>& output) const;
+  virtual void fp_compute_local(std::vector<InputGPUMatrixType const*> input,
+                                std::vector<OutputGPUMatrixType*> output) const;
 
   /** @brief Refine the backward compute for GPU-specific data types
    */
-  virtual void bp_compute_local(std::vector<InputGPUMatrixType const*>& input,
-                                std::vector<OutputGPUMatrixType const*>& gradient_wrt_output,
-                                std::vector<InputGPUMatrixType*>& gradient_wrt_input) const;
+  virtual void bp_compute_local(std::vector<InputGPUMatrixType const*> input,
+                                std::vector<OutputGPUMatrixType const*> gradient_wrt_output,
+                                std::vector<InputGPUMatrixType*> gradient_wrt_input) const;
 #endif // LBANN_HAS_GPU
 
 };

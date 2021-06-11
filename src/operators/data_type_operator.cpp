@@ -26,6 +26,7 @@
 
 #define LBANN_DATA_TYPE_OPERATOR_INSTANTIATE
 #include "lbann/operators/data_type_operator.hpp"
+#include "lbann/utils/vector_dynamic_cast.hpp"
 
 namespace lbann {
 
@@ -34,8 +35,8 @@ template <typename InputTensorDataType, typename OutputTensorDataType>
 void DataTypeOperator<InputTensorDataType, OutputTensorDataType>::
 fp_compute(std::vector<BaseDistMat const*>& inputs,
            std::vector<BaseDistMat*>& outputs) const {
-  return fp_compute(dynamic_cast<InputAbsDistMatrixType const*>&(inputs),
-                    dynamic_cast<OutputAbsDistMatrixType*>&(outputs));
+  return fp_compute(vector_dynamic_cast<InputAbsDistMatrixType const>(inputs),
+                    vector_dynamic_cast<OutputAbsDistMatrixType>(outputs));
 }
 
 template <typename InputTensorDataType, typename OutputTensorDataType>
@@ -43,9 +44,9 @@ void DataTypeOperator<InputTensorDataType, OutputTensorDataType>::
 bp_compute(std::vector<BaseDistMat const*>& inputs,
            std::vector<BaseDistMat const*>& gradient_wrt_outputs,
            std::vector<BaseDistMat*>& gradient_wrt_inputs) const {
-  return bp_compute(dynamic_cast<InputAbsDistMatrixType const*>&(inputs),
-                    dynamic_cast<OutputAbsDistMatrixType const*>&(gradient_wrt_outputs),
-                    dynamic_cast<InputAbsDistMatrixType*>&(gradient_wrt_inputs));
+  return bp_compute(vector_dynamic_cast<InputAbsDistMatrixType const>(inputs),
+                    vector_dynamic_cast<OutputAbsDistMatrixType const>(gradient_wrt_outputs),
+                    vector_dynamic_cast<InputAbsDistMatrixType>(gradient_wrt_inputs));
 };
 
 #define PROTO(T)                     \

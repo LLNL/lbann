@@ -103,21 +103,21 @@ protected:
   {}
 
   /** CPU-specific function instantiations */
-  void fp_compute_local(std::vector<CPUMatrixType const*>& inputs,
-                        std::vector<CPUMatrixType*>& outputs) const override;
+  void fp_compute_local(std::vector<CPUMatrixType const*> inputs,
+                        std::vector<CPUMatrixType*> outputs) const override;
 
-  void bp_compute_local(std::vector<CPUMatrixType const*>& inputs,
-                        std::vector<CPUMatrixType const*>& gradient_wrt_outputs,
-                        std::vector<CPUMatrixType*>& gradient_wrt_inputs) const override;
+  void bp_compute_local(std::vector<CPUMatrixType const*> inputs,
+                        std::vector<CPUMatrixType const*> gradient_wrt_outputs,
+                        std::vector<CPUMatrixType*> gradient_wrt_inputs) const override;
 
 #ifdef LBANN_HAS_GPU
   /** GPU-specific function instantiations */
-  void fp_compute_local(std::vector<GPUMatrixType const*>& inputs,
-                        std::vector<GPUMatrixType*>& outputs) const override;
+  void fp_compute_local(std::vector<GPUMatrixType const*> inputs,
+                        std::vector<GPUMatrixType*> outputs) const override;
 
-  void bp_compute_local(std::vector<GPUMatrixType const*>& inputs,
-                        std::vector<GPUMatrixType const*>& gradient_wrt_outputs,
-                        std::vector<GPUMatrixType*>& gradient_wrt_inputs) const override;
+  void bp_compute_local(std::vector<GPUMatrixType const*> inputs,
+                        std::vector<GPUMatrixType const*> gradient_wrt_outputs,
+                        std::vector<GPUMatrixType*> gradient_wrt_inputs) const override;
 #endif // LBANN_HAS_GPU
 
 
