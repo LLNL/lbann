@@ -99,7 +99,6 @@
 #include "lbann/layers/transform/split.hpp"
 #include "lbann/layers/transform/stop_gradient.hpp"
 #include "lbann/layers/transform/sum.hpp"
-#include "lbann/layers/transform/dist_SOB.hpp"
 #include "lbann/layers/transform/cross_grid_sum_slice.hpp"
 #include "lbann/layers/transform/cross_grid_sum.hpp"
 #include "lbann/layers/transform/tessellate.hpp"
@@ -251,7 +250,6 @@ private:
     LBANN_REGISTER_BUILDER(Split, split);
     LBANN_REGISTER_BUILDER(StopGradient, stop_gradient);
     LBANN_REGISTER_BUILDER(Sum, sum);
-    LBANN_REGISTER_BUILDER(Dist_SOB, dist_SOB);
     LBANN_REGISTER_BUILDER(WeightedSum, weighted_sum);
     LBANN_REGISTER_BUILDER(WeightsLayer, weights);
 

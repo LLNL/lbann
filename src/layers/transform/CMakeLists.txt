@@ -29,7 +29,6 @@ set_full_path(THIS_DIR_SOURCES
   split.cpp
   stop_gradient.cpp
   sum.cpp
-  dist_SOB.cpp
   tessellate.cpp
   uniform.cpp
   unpooling.cpp
@@ -52,7 +51,6 @@ if (LBANN_HAS_GPU)
     tessellate.cu
     split.cu
     sum.cu
-    dist_SOB.cu
     )
 endif ()
 

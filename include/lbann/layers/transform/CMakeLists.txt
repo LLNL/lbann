@@ -9,7 +9,6 @@ set_full_path(THIS_DIR_HEADERS
   slice.hpp
   split.hpp
   sum.hpp
-  dist_SOB.hpp
   weighted_sum.hpp
   unpooling.hpp
   constant.hpp
