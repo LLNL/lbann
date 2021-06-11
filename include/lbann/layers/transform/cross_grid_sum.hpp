@@ -32,10 +32,8 @@
 
 namespace lbann {
 
-template <typename TensorDataType,
-          data_layout T_layout = data_layout::DATA_PARALLEL,
-          El::Device Dev = El::Device::CPU>
-class cross_grid_sum_layer : public data_type_layer<TensorDataType>
+template <typename TensorDataType, El::Device Dev>
+class cross_grid_sum_layer final : public data_type_layer<TensorDataType>
 {
 public:
   cross_grid_sum_layer(lbann_comm* comm) : data_type_layer<TensorDataType>(comm)
@@ -44,40 +42,44 @@ public:
     this->m_expected_num_child_layers = -1;  // No limit on children
   }
 
-  cross_grid_sum_layer* copy() const override
+  cross_grid_sum_layer* copy() const final
   {
     return new cross_grid_sum_layer(*this);
   }
-  std::string get_type() const override { return "cross_grid_sum"; }
-  data_layout get_data_layout() const override { return T_layout; }
-  El::Device get_device_allocation() const override { return Dev; }
+  std::string get_type() const final { return "cross_grid_sum"; }
+  constexpr data_layout get_data_layout() const final
+  {
+    return data_layout::DATA_PARALLEL;
+  }
+  El::Device get_device_allocation() const final { return Dev; }
 
-protected:
-  El::SyncInfo<Dev> syncSubGridCommunication = El::SyncInfo<Dev>();
-
-  void setup_pointers() override
+private:
+  void setup_pointers() final
   {
     data_type_layer<TensorDataType>::setup_pointers();
     if (this->get_num_parents() < 1) {
-      std::stringstream err;
-      err << get_type() << " layer \"" << this->get_name() << "\" "
-          << "has no parent layers";
-      LBANN_ERROR(err.str());
+      LBANN_ERROR(get_type(),
+                  " layer \"",
+                  this->get_name(),
+                  "\" has no parent layers");
     }
   }
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override
+  void setup_dims(DataReaderMetaData& dr_metadata) final
   {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims(this->get_input_dims());
 
     // print dims
-    const auto& dims_print = this->get_input_dims();
-    int count = 0;
-    for (int dim : dims_print) {
-      std::cout << "Index:" << count << " dim" << dim << "\n";
-      count++;
+#ifdef LBANN_DEBUG
+    {
+      const auto& dims_print = this->get_input_dims();
+      auto const dims_size = dims_print.size();
+      for (auto ii = 0UL; ii < dims_size; ++ii) {
+        std::cout << "Index:" << ii << " dim" << dims_print[ii] << "\n";
+      }
     }
+#endif // LBANN_DEBUG
 
     // Check that input dimensions match
     const auto& output_dims = this->get_output_dims();
@@ -101,25 +103,19 @@ protected:
     }
   }
 
-  void fp_compute() override
+  void fp_compute() final
   {
-
-    int rank = El::mpi::Rank(this->get_subgrid_comm());
-    // std::cout<<"I am here and Rank is "<< rank<< "\n"<<std::flush;
+    int const rank = El::mpi::Rank(this->get_subgrid_comm());
 
     auto& output = this->get_activations(rank);
     auto& input = this->get_prev_activations(rank);
     El::Copy(input, output);
 
-    // auto parents = this->get_parent_layers()[rank];
+    auto* const output_cast = dynamic_cast<
+      El::DistMatrix<TensorDataType, El::STAR, El::VC, El::ELEMENT, Dev>*>(
+      &output);
 
-    El::DistMatrix<TensorDataType, El::STAR, El::VC, El::ELEMENT, Dev>*
-      output_cast = dynamic_cast<
-        El::DistMatrix<TensorDataType, El::STAR, El::VC, El::ELEMENT, Dev>*>(
-        &output);
-
-    // El::mpi::Comm const& CommA = output_cast->Grid().ViewingComm();
-    El::SyncInfo<Dev> syncInfoOutput =
+    auto const syncInfoOutput =
       El::SyncInfoFromMatrix(output_cast->LockedMatrix());
 
     const El::Int mloc = output_cast->LocalHeight();
@@ -143,7 +139,7 @@ protected:
     // }
   }
 
-  void fp_setup_outputs(El::Int mini_batch_size) override
+  void fp_setup_outputs(El::Int mini_batch_size) final
   {
 
     if (this->get_num_children() < 1) {
@@ -167,7 +163,7 @@ protected:
     }
   }
 
-  void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override
+  void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) final
   {
     // int tag= 0 ;
     int rank = El::mpi::Rank(this->get_subgrid_comm());
@@ -180,19 +176,14 @@ protected:
     // }
   }
 
-  void bp_compute() override {}
+  using data_type_layer<TensorDataType>::bp_compute;
 };
 
 LBANN_DEFINE_LAYER_BUILDER(cross_grid_sum);
 
 #ifndef LBANN_CROSS_GRID_SUM_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device)                                                \
-  extern template class cross_grid_sum_layer<T,                                \
-                                             data_layout::DATA_PARALLEL,       \
-                                             Device>;                          \
-  extern template class cross_grid_sum_layer<T,                                \
-                                             data_layout::MODEL_PARALLEL,      \
-                                             Device>
+  extern template class cross_grid_sum_layer<T, Device>
 
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE

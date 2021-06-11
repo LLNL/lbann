@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/base.hpp"
 #define LBANN_CROSS_GRID_SUM_LAYER_INSTANTIATE
 #include "lbann/layers/transform/cross_grid_sum.hpp"
 
@@ -32,19 +33,27 @@
 
 namespace lbann {
 
-LBANN_LAYER_DEFAULT_BUILDER(cross_grid_sum)
+template <typename TensorDataType, data_layout Layout, El ::Device Device>
+std ::unique_ptr<Layer>
+build_cross_grid_sum_layer_from_pbuf(lbann_comm* comm,
+                                     lbann_data ::Layer const&)
+{
+  if constexpr (Layout != data_layout::DATA_PARALLEL) {
+    LBANN_ERROR("cross_grid_sum_layer only supports DATA_PARALLEL layout");
+    return nullptr;
+  }
 
-#define PROTO(T)                                                               \
-  template class cross_grid_sum_layer<T,                                       \
-                                      data_layout::DATA_PARALLEL,              \
-                                      El::Device::CPU>;                        \
-  template class cross_grid_sum_layer<T,                                       \
-                                      data_layout::MODEL_PARALLEL,             \
-                                      El::Device::CPU>;                        \
-  LBANN_LAYER_BUILDER_ETI(cross_grid_sum, T, El::Device::CPU)
+  using LayerType = cross_grid_sum_layer<TensorDataType, Device>;
+  return make_unique<LayerType>(comm);
+}
+
+#define PROTO_DEVICE(T, D)                                                     \
+  template class cross_grid_sum_layer<T, D>;                                   \
+  LBANN_LAYER_BUILDER_ETI(cross_grid_sum, T, D)
 
 #define LBANN_INSTANTIATE_CPU_HALF
-#include "lbann/macros/instantiate.hpp"
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate_device.hpp"
 #undef PROTO
 
 } // namespace lbann

@@ -32,9 +32,7 @@
 
 namespace lbann {
 
-template <typename TensorDataType,
-          data_layout T_layout = data_layout::DATA_PARALLEL,
-          El::Device Dev = El::Device::CPU>
+template <typename TensorDataType, El::Device Dev>
 class cross_grid_sum_slice_layer : public data_type_layer<TensorDataType>
 {
 public:
@@ -50,7 +48,10 @@ public:
     return new cross_grid_sum_slice_layer(*this);
   }
   std::string get_type() const override { return "cross_grid_sum_slice"; }
-  data_layout get_data_layout() const override { return T_layout; }
+  constexpr data_layout get_data_layout() const override
+  {
+    return data_layout::DATA_PARALLEL;
+  }
   El::Device get_device_allocation() const override { return Dev; }
 
 protected:
@@ -60,10 +61,10 @@ protected:
   {
     data_type_layer<TensorDataType>::setup_pointers();
     if (this->get_num_parents() < 1) {
-      std::stringstream err;
-      err << get_type() << " layer \"" << this->get_name() << "\" "
-          << "has no parent layers";
-      LBANN_ERROR(err.str());
+      LBANN_ERROR(get_type(),
+                  " layer \"",
+                  this->get_name(),
+                  "\" has no parent layers");
     }
   }
 
@@ -71,7 +72,7 @@ protected:
   {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
 
-    // SLice along last dimension
+    // Slice along last dimension
     int subgridCommSize = El::mpi::Size(this->get_subgrid_comm());
     const auto input_dims = this->get_input_dims();
     std::vector<int> output_dims_slice(input_dims);
@@ -104,24 +105,18 @@ protected:
 
   void fp_compute() override
   {
+    auto const subgrid_comm_rank = El::mpi::Rank(this->get_subgrid_comm());
+    auto const subgrid_comm_size = El::mpi::Size(this->get_subgrid_comm());
 
-    int subgridCommRank = El::mpi::Rank(this->get_subgrid_comm());
-    int subgridCommSize = El::mpi::Size(this->get_subgrid_comm());
-    // std::cout<<"I am here and Rank is "<< rank<< "\n"<<std::flush;
-
-    auto& output = this->get_activations(subgridCommRank);
-    auto& input = this->get_prev_activations(subgridCommRank);
+    auto& output = this->get_activations(subgrid_comm_rank);
+    auto& input = this->get_prev_activations(subgrid_comm_rank);
     // El::Copy(input, output);
 
-    // auto parents = this->get_parent_layers()[rank];
+    auto* const output_cast = dynamic_cast<
+      El::DistMatrix<TensorDataType, El::STAR, El::VC, El::ELEMENT, Dev>*>(
+      &output);
 
-    El::DistMatrix<TensorDataType, El::STAR, El::VC, El::ELEMENT, Dev>*
-      output_cast = dynamic_cast<
-        El::DistMatrix<TensorDataType, El::STAR, El::VC, El::ELEMENT, Dev>*>(
-        &output);
-
-    // El::mpi::Comm const& CommA = output_cast->Grid().ViewingComm();
-    El::SyncInfo<Dev> syncInfoOutput =
+    auto const sync_info_output =
       El::SyncInfoFromMatrix(output_cast->LockedMatrix());
 
     const El::Int mloc = input.LocalHeight();
@@ -137,26 +132,28 @@ protected:
                        mloc * nloc,
                        El::mpi::SUM,
                        this->get_subgrid_comm(),
-                       syncInfoOutput);
+                       sync_info_output);
 
     const auto input_dims = this->get_input_dims();
-    int lastDim = input_dims.back();
+    int last_dim = input_dims.back();
 
-    int lastDimStartPoint = 1;
+    int last_dim_start_point = 1;
     for (int i = 0; i < int(input_dims.size()) - 1; ++i) {
-      lastDimStartPoint = lastDimStartPoint * input_dims[i];
+      last_dim_start_point = last_dim_start_point * input_dims[i];
     }
 
-    if (lastDim % subgridCommSize != 0)
+    if (last_dim % subgrid_comm_size != 0)
       LBANN_ERROR("cross_grid_sum_slice layer: last dimension should be "
                   "divided by the number of branches in subgraph");
 
-    int numRowElements = lastDimStartPoint * (lastDim / subgridCommSize);
+    int const num_row_elements =
+      last_dim_start_point * (last_dim / subgrid_comm_size);
 
-    int colStride = (lastDimStartPoint * lastDim) - numRowElements;
+    int const col_stride = (last_dim_start_point * last_dim) - num_row_elements;
 
-    int lastDimIndex =
-      lastDimStartPoint * int(lastDim / subgridCommSize) * subgridCommRank;
+    int const last_dim_index = last_dim_start_point *
+                               int(last_dim / subgrid_comm_size) *
+                               subgrid_comm_rank;
 
     // int rank = El::mpi::Rank(this->get_subgrid_comm());
     // std::cout<<"I am here and Rank is "<< rank<< "\n"<<std::flush;
@@ -175,15 +172,15 @@ protected:
     // El::SyncInfoFromMatrix(output_cast->LockedMatrix());
 
     El::copy::util::InterleaveMatrix(
-      numRowElements,
+      num_row_elements,
       input.LocalWidth(),
-      after_allreduce.LockedBuffer(lastDimIndex, 0),
+      after_allreduce.LockedBuffer(last_dim_index, 0),
       1,
-      colStride,
+      col_stride,
       output_cast->Buffer(),
       1,
-      numRowElements,
-      syncInfoOutput);
+      num_row_elements,
+      sync_info_output);
   }
 
   void fp_setup_outputs(El::Int mini_batch_size) override
@@ -196,7 +193,6 @@ protected:
 
     // Initialize output tensors
     for (int i = 0; i < this->get_num_children(); ++i) {
-
       auto& output = this->get_activations(i);
       output.Empty(false);
       output.Resize(this->get_output_size(i), mini_batch_size);
@@ -205,30 +201,26 @@ protected:
 
   void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override
   {
+    auto const subgrid_comm_rank = El::mpi::Rank(this->get_subgrid_comm());
+    auto const subgrid_comm_size = El::mpi::Size(this->get_subgrid_comm());
 
-    int subgridCommRank = El::mpi::Rank(this->get_subgrid_comm());
-    int subgridCommSize = El::mpi::Size(this->get_subgrid_comm());
-
-    auto& input_grad = this->get_error_signals(subgridCommRank);
+    auto& input_grad = this->get_error_signals(subgrid_comm_rank);
     const auto& gradient_wrt_output =
-      this->get_prev_error_signals(subgridCommRank);
+      this->get_prev_error_signals(subgrid_comm_rank);
 
-    const El::DistMatrix<TensorDataType, El::STAR, El::VC, El::ELEMENT, Dev>*
-      gradient_wrt_output_cast = dynamic_cast<
-        const El::
-          DistMatrix<TensorDataType, El::STAR, El::VC, El::ELEMENT, Dev>*>(
-        &gradient_wrt_output);
+    using MatrixType =
+      El::DistMatrix<TensorDataType, El::STAR, El::VC, El::ELEMENT, Dev>;
+    auto const* const gradient_wrt_output_cast =
+      dynamic_cast<const MatrixType*>(&gradient_wrt_output);
 
-    El::DistMatrix<TensorDataType, El::STAR, El::VC, El::ELEMENT, Dev>*
-      gradient_wrt_input_cast = dynamic_cast<
-        El::DistMatrix<TensorDataType, El::STAR, El::VC, El::ELEMENT, Dev>*>(
-        &input_grad);
+    auto* const gradient_wrt_input_cast =
+      dynamic_cast<MatrixType*>(&input_grad);
 
     int mloc = gradient_wrt_output_cast->LocalHeight();
     int nloc = gradient_wrt_output_cast->LocalWidth();
 
     El::Matrix<TensorDataType, Dev> temp_input(nloc, mloc),
-      temp_output(nloc, mloc * subgridCommSize);
+      temp_output(nloc, mloc * subgrid_comm_size);
 
     El::Transpose(gradient_wrt_output_cast->LockedMatrix(), temp_input);
 
@@ -244,20 +236,14 @@ protected:
     El::Transpose(temp_output, gradient_wrt_input_cast->Matrix());
   }
 
-  void bp_compute() override {}
+  using data_type_layer<TensorDataType>::bp_compute;
 };
 
 LBANN_DEFINE_LAYER_BUILDER(cross_grid_sum_slice);
 
 #ifndef LBANN_CROSS_GRID_SUM_SLICE_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device)                                                \
-  extern template class cross_grid_sum_slice_layer<T,                          \
-                                                   data_layout::DATA_PARALLEL, \
-                                                   Device>;                    \
-  extern template class cross_grid_sum_slice_layer<                            \
-    T,                                                                         \
-    data_layout::MODEL_PARALLEL,                                               \
-    Device>
+  extern template class cross_grid_sum_slice_layer<T, Device>
 
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE
