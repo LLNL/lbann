@@ -58,7 +58,6 @@ class channelwise_fully_connected_distconv_adapter
     dc::Shape get_activations_shape(int index) const override;
 
     std::unique_ptr<dc::Linear<TensorDataType>> m_linear_operator;
-    std::unique_ptr<TensorDevType> m_bias;
 
   }; // class definition channelwise_fully_connected_distconv_adapter
 
@@ -137,6 +136,9 @@ protected:
 protected:
   void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override;
   bool is_distconv_supported() const override;
+  using channelwiseFCadapterType = channelwise_fully_connected_distconv_adapter<TensorDataType,Layout,Device> ; 
+  channelwiseFCadapterType& get_distconv_adapter() override;
+  const channelwiseFCadapterType& get_distconv_adapter() override;
 #endif
 
 private:

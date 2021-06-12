@@ -38,50 +38,69 @@ namespace distconv{
   class Linear {
     public:
       Linear(Backend &backend);
-      
-    template <typename Tensor>
-    int forward(bool transpose_A,
-               bool transpose_B,
-               typename Tensor::data_type alpha,
-               const Tensor &input,
-               typename Tensor::data_type beta, 
-               Tensor &output 
-               ){
 
-      const auto& one = El::TypeTraits<DataType>:: One();
-      const auto& zero = El::TypeTraits<DataType>:: Zero();
+      template <typename Tensor>
+      int forward(bool transpose_A,
+                  bool transpose_B,
+                  typename Tensor::data_type alpha,
+                  const Tensor &input,
+                  typename Tensor::data_type beta, 
+                  Tensor &output,
+                  int local_mini_batch_size, 
+                 ){
 
-      if (input.get_local_size() == 0){
-        return 0; // no op for empty input
+        const auto& one = El::TypeTraits<DataType>:: One();
+        const auto& zero = El::TypeTraits<DataType>:: Zero();
+
+        if (input.get_local_size() == 0){
+          return 0; // no op for empty input
+        }
+        ::El::Matrix(input_size, local_mini_batch_size*num_local_channels, input.get_buffer(), input_size);
+        ::El::Matrix(output_size, local_mini_batch_size*num_local_channels, output.get_buffer(), output_size);
+        ::El::Matrix();
+
+        ::El::Gemm(
+          transpose_A ? El::TRANSPOSE : El::NORMAL,
+          El::NORMAL,
+          one,  m_weights, input,
+          zero, output);
+
+        return 0;
       }
-      El::Gemm(
-        transpose_A ? El::TRANSPOSE : El::NORMAL,
-        El::NORMAL,
-        one,  weights, input,
-        zero, output);
 
-      return 0;
-    }
+      template <typename Tensor>
+      int  apply_bias(const Tensor &bias,
+                      Tensor &output){
 
-    template <typename Tensor>
-    int  apply_bias(const Tensor &bias,
-                    Tensor &output){
+        return 0;
+      }
 
-      using LocalMat = El::Matrix<TensorDataType, Device>;
-      LocalMat ones(local_mini_batch_size * num_channels, 1);
+      template <typename Tensor>
+      int backward(){
+        return 0;
+      }
 
-      return 0;
-    }
+      template <typename Tensor>
+      int backward_bias(){
+        return 0;
+      }
+      template <typename Tensor>
+      void setup(const Tensor weights,
+                 int num_local_channels;
+                 size_t ws_size){
+        m_num_local_channels = num_local_channels;
+        m_weights = weights;
+      }
 
-    template <typename Tensor>
-    int backward(){
-      return 0;
-    }
+      template <typename Tensor>
+      void setup_bias(const Tensor bias){
+      }
 
-    template <typename Tensor>
-    int backward_bias(){
-      return 0;
-    }
+  protected:
+    Tensor<DataType> m_weights;
+    Tensor<DataType> m_bias; 
+    int m_num_local_channels;
+
 
   }; // class definition Linear
 }  // namespace distconv

@@ -56,9 +56,12 @@ template <typename TensorDataType, data_layout Layout, El::Device Device>
 void 
 channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
 ::setup_layer(size_t max_mini_batch_size){
-  auto &layer = dynamic_cast<channelwise_fully_connected_layer
-    <TensorDataType, Layout, Device>&>(this->layer()); 
+  auto &layer = dynamic_cast<
+    channelwise_fully_connected_layer<TensorDataType, Layout, Device>&>(this->layer()); 
+  
   m_linear = make_unique<dc::Linear>(dc::get_backend());
+
+  m_linear->
 
 
 }
@@ -68,20 +71,31 @@ void
 channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
 ::setup_fp_tensors(){
 
+  auto &layer = dynamic_cast<
+    channelwise_fully_connected_layer<TensorDataType, Device>&>(this->layer());
+
+  // Setup up forward pass tensors here 
+
 }
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void 
 channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
 ::setup_bp_tensors(){
 
+  auto &layer = dynamic_cast<
+    channelwise_fully_connected_layer<TensorDataType, Layout, Device>&>(this->layer());
+
+  //  Setup backward pass tensors here 
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void 
 channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
 ::fp_compute(){
-  auto &layer = dynamic_cast<channelwise_fully_connected_layer
-    <TensorDataType, Layout, Device>&>(this->layer());
+  
+  auto &layer = dynamic_cast<
+    channelwise_fully_connected_layer<TensorDataType, Layout, Device>&>(this->layer());
+  
   const auto& linearity = layer.weights_values(0);
   const auto& local_linearity = dynamic_cast<const LocalMat&>(linearity.LockedMatrix());
 
@@ -148,19 +162,11 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
   return data_type_distconv_adapter<TensorDataType>::get_prev_activations_shape(0);
 }
 
-#endif // LBANN_HAS_DISTCONV
 
+// =============================================================
+// DistConv-enabled Channelwise fullyconnected member functions
+// =============================================================
 
-// =========================================================
-// DistConv-enabled member functions
-// =========================================================
-
-#ifdef LBANN_HAS_DISTCONV
-
-
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void setup_layer
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 bool 
