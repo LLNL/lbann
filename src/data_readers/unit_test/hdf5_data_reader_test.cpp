@@ -64,10 +64,6 @@ TEST_CASE("hdf5 data reader schema tests", "[reader][hdf5][.filesystem]")
   lbann::init_random(0, 2);
   lbann::init_data_seq_random(42);
 
-  // silence some default print-outs from the reader
-  lbann::options *opts = lbann::options::get();
-  opts->set_option("quiet", true);
-
   // create working directory 
   std::string work_dir = create_test_directory("hdf5_reader");
 

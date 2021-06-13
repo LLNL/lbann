@@ -431,8 +431,11 @@ void hdf5_data_reader::pack(std::string group_name, conduit::Node& node, size_t 
     if (!node.has_path(ss.str())) {
       LBANN_ERROR("no leaf for path: ", ss.str());
     }
-    const conduit::Node& leaf = node[ss.str()];
+    conduit::Node& leaf = node[ss.str()];
     memcpy(data.data()+idx, leaf.data_ptr(), n_elts*sizeof(T));
+    if (m_delete_packed_fields) {
+      node.remove(ss.str());
+    }
     idx += n_elts;
   }
   if (idx != g.n_elts) {
@@ -442,6 +445,7 @@ void hdf5_data_reader::pack(std::string group_name, conduit::Node& node, size_t 
   ss << '/' << LBANN_DATA_ID_STR(index) + '/' + group_name;
   node[ss.str()] = data;
 
+  // this is clumsy and should be done better
   if (m_add_to_map.find(group_name) == m_add_to_map.end()) {
     m_add_to_map.insert(group_name);
     conduit::Node metadata;

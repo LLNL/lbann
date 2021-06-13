@@ -762,7 +762,7 @@ void hdf5_data_reader::print_metadata(std::ostream& os) {
       std::string yaml_dtype = nd->dtype().to_yaml();
     os << "\nDataType Info:\n--------------\n" << yaml_dtype;
     } else  {
-      LBANN_ERROR("mp.find(", name, " failed");
+      os << "\nThis field has been packed, per 'pack:' entry (above)\n";
     }
     os << std::endl;
   }
