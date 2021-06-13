@@ -91,7 +91,6 @@ void hdf5_data_reader::load() {
   if (is_master()) {
     std::cout << "time to load sample list: " << get_time() - tm11 << std::endl;
   }
-  tm11 = get_time();
 
   // the usual boilerplate (we should wrap this in a function)
   m_shuffled_indices.clear();
@@ -102,6 +101,7 @@ void hdf5_data_reader::load() {
   select_subset_of_data();
 
   // Load and parse the user-supplied schemas
+  tm11 = get_time();
   if (get_data_schema_filename().empty()) {
     LBANN_ERROR("you must include 'data_schema_filename' in your data reader prototext file");
   }
@@ -114,10 +114,9 @@ void hdf5_data_reader::load() {
 
   if (is_master()) {
     std::cout << "time to load and parse the schemas: " << get_time() - tm11
-              << std::endl << "hdf5_data_reader::load() time (total): "
-              << (get_time() - tm1)
-              << "\nnum samples: " << m_shuffled_indices.size()
-              << "\nfor role: " << get_role() << std::endl;
+              << " for role: " << get_role() << std::endl;
+    std::cout << "hdf5_data_reader::load() time: " << (get_time() - tm1)
+              << "; num samples: " << m_shuffled_indices.size() << std::endl;
   }
 
   if (!opts->get_bool("quiet") && is_master()) {
@@ -285,30 +284,33 @@ void hdf5_data_reader::normalize(
   }
 }
 
+// recursive
+void hdf5_data_reader::test_that_all_nodes_contain_metadata(conduit::Node& node) {
+  if (!node.has_child(s_metadata_node_name)) {
+    LBANN_ERROR("missing metadata node for: ", node.path());
+  }
+
+  // recurse for each child
+  int n_children = node.number_of_children();
+  for (int j=0; j<n_children; j++) {
+    if (node.child_ptr(j)->name() != s_metadata_node_name) {
+      test_that_all_nodes_contain_metadata(node.child(j));
+    }
+  }
+}
+
 void hdf5_data_reader::parse_schemas() {
   adjust_metadata(&m_data_schema);
   adjust_metadata(&m_experiment_schema);
+  test_that_all_nodes_contain_metadata(m_data_schema);
+  test_that_all_nodes_contain_metadata(m_experiment_schema);
 
   // get pointers to all Nodes in the data schema (this is the user-supplied
   // schema for the data as it resides on disk). On return, m_data_map maps:
   //       node_pathname -> Node*
   m_data_map.clear();
   get_schema_ptrs(&m_data_schema, m_data_map);
-
-  // Get the pathnames for the fields to be used in the current experiment;
   get_leaves_multi(&m_experiment_schema, m_useme_node_map_ptrs);
-
-  // sanity checks
-  std::unordered_set<std::string> sanity;
-  for (const auto nd : m_useme_node_map_ptrs) {
-    const std::string &path =  nd.first;
-    if (sanity.find(path) != sanity.end()) {
-      LBANN_ERROR("sanity.find(path) != sanity.end() for path: ", path);
-    }
-    if (!nd.second->has_child(s_metadata_node_name)) {
-      LBANN_ERROR("missing metadata child node for: ", path);
-    }
-  }
 
   // At this point, each object in "m_useme_node_map_ptrs:"
   //   1. is a leaf node whose values will be used in the experiment
@@ -319,11 +321,20 @@ void hdf5_data_reader::parse_schemas() {
   for (const auto &t : m_useme_node_map_ptrs) {
     m_useme_node_map[t.first] = *t.second;
   }
+
+  // sanity checks
+  for (const auto nd : m_useme_node_map) {
+    if (!nd.second.has_child(s_metadata_node_name)) {
+      LBANN_ERROR("missing metadata child node for: ", nd.first);
+    }
+  }
+
   construct_linearized_size_lookup_tables();
 }
 
 // recursive
 void hdf5_data_reader::get_schema_ptrs(conduit::Node* input, std::unordered_map<std::string, conduit::Node*> &schema_name_map) {
+
   // add the input node to the output map
   const std::string &path_name = input->path();
   if (path_name == "") {
@@ -349,73 +360,40 @@ void hdf5_data_reader::get_schema_ptrs(conduit::Node* input, std::unordered_map<
 
 void hdf5_data_reader::get_leaves_multi(
     conduit::Node* node_in,
-    std::unordered_map<std::string, conduit::Node*> &leaves_out,
-    bool ignore_metadata) {
-  std::unordered_map<std::string, conduit::Node*> first;
-  get_leaves(node_in, first, ignore_metadata);
+    std::unordered_map<std::string, conduit::Node*> &leaves_out) {
 
-  // "first" contains pointers to leaf nodes from "m_experiment_schema;"
-  // we use these as starting nodes for searchs in m_data_schema.
+  std::unordered_map<std::string, conduit::Node*> experiment_leaves;
+  get_leaves(node_in, experiment_leaves);
+  // "experiment_leaves" contains pointers to leaf nodes from "m_experiment_schema;"
+  // We next use these as starting nodes for searchs in m_data_schema.
   // (recall, m_experiment_schema is a trimmed version of m_data_schema)
-
-  for (const auto& leaf : first) {
+  for (const auto& leaf : experiment_leaves) {
     std::string path_name = leaf.first;
     if (m_data_map.find(path_name) == m_data_map.end()) {
       LBANN_ERROR("pathname: ", path_name, " was not found in m_data_map; num map entries: ", m_data_map.size(), "; role: ", get_role());
     }
-
-    const conduit::Node& from_meta = leaf.second->child(s_metadata_node_name);
     conduit::Node* node_for_recursion = m_data_map[path_name];
-    // "fetch_ptr" creates the node if it doesn't exist (though it should
-    // exist at this point)
+
     if (!node_for_recursion->has_child(s_metadata_node_name)) {
-      LBANN_ERROR("Node with path: ", node_for_recursion->path(), " is missing its metadata node");
+      LBANN_ERROR("Node with path: ", node_for_recursion->path(), " is missing metadata node");
     }
-    conduit::Node* to_meta = node_for_recursion->fetch_ptr(s_metadata_node_name);
 
-    // update the metadata node for the seed for the next search
-    // (in the data_schema) with the metadata node from the
-    // experiment_schema leaf
-    for (int i=0; i<from_meta.number_of_children(); i++) {
-      const std::string& field_name = from_meta.child(i).name();
-      if (!to_meta->has_child(field_name)) {
-        (*to_meta)[field_name] = from_meta[field_name];
+    const conduit::Node& metadata = leaf.second->child(s_metadata_node_name);
+    std::unordered_map<std::string, conduit::Node*> final_leaves;
+    get_leaves(node_for_recursion, final_leaves);
+    for (auto t : final_leaves) {
+      conduit::Node& end_metadata = (*t.second)["metadata"];
+      for (int j=0; j<metadata.number_of_children(); j++) {
+        const std::string &field_name = metadata.child(j).name();
+        end_metadata[field_name] = metadata[field_name];
       }
-    }
-
-    // recursion
-    std::unordered_map<std::string, conduit::Node*> second;
-    get_leaves(m_data_map[path_name], second);
-    for (auto t : second) {
       leaves_out[t.first] = t.second;
     }
   }
 }
 
 // recursive
-void hdf5_data_reader::get_leaves(conduit::Node* node, std::unordered_map<std::string, conduit::Node*> &leaves_out, bool ignore_metadata) {
-
-  // merge fields from parent's metadata node to this node's metadata node,
-  // but only if they don't already exist (existing fields takes precedence)
-  if (!ignore_metadata) {
-    if (!node->has_child(s_metadata_node_name)) {
-    LBANN_ERROR("missing metadata child node for node with path: ", node->path());
-    }
-    conduit::Node& metadata = node->child(s_metadata_node_name);
-    if (!node->is_root()) {
-      const conduit::Node &parents_metadata = node->parent()->child(s_metadata_node_name);
-      if (parents_metadata.has_child(s_metadata_node_name)) {
-       LBANN_ERROR("metadata nodes may not be chained");
-      }
-      for (int k=0; k<parents_metadata.number_of_children(); k++) {
-        const std::string& field_name = parents_metadata.child(k).name();
-        if (! metadata.has_child(field_name)) {
-          metadata[field_name] = parents_metadata[field_name];
-        }
-      }
-    }
-  } // end, deal with metadata
-
+void hdf5_data_reader::get_leaves(conduit::Node* node, std::unordered_map<std::string, conduit::Node*> &leaves_out) {
   // end of recusion conditions: no children, or only child is "metadata"
   int n = node->number_of_children();
   if (n == 0) {
@@ -431,7 +409,7 @@ void hdf5_data_reader::get_leaves(conduit::Node* node, std::unordered_map<std::s
   for (int j=0; j<node->number_of_children(); j++) {
     conduit::Node* child = node->child_ptr(j);
     if (child->name() != s_metadata_node_name) {
-      get_leaves(child, leaves_out, ignore_metadata);
+      get_leaves(child, leaves_out);
     }
   }
 }
@@ -518,19 +496,21 @@ void hdf5_data_reader::build_packing_map(conduit::Node &node) {
 }
 
 
-// Union your parent's metadata with yours; in case of
-// a key conflict, the child's values prevail
+// Union your parent's metadata with yours; in case of a key conflict, 
+// the child's values prevail.
+// At the conclusion of recursion, every node in the tree will
+// contain a metadata child node
 // (recursive)
 void hdf5_data_reader::adjust_metadata(conduit::Node* node) {
   //note: next call creates the node if it doesn't exist
   conduit::Node* metadata = node->fetch_ptr(s_metadata_node_name);
 
   if (!node->is_root()) {
-    const conduit::Node* parents_metadata = node->parent()->fetch_ptr(s_metadata_node_name);
-    for (int j=0; j<parents_metadata->number_of_children(); j++) {
-      const std::string &field_name = parents_metadata->child(j).name();
+    const conduit::Node& parents_metadata = *(node->parent()->fetch_ptr(s_metadata_node_name));
+    for (int j=0; j<parents_metadata.number_of_children(); j++) {
+      const std::string &field_name = parents_metadata.child(j).name();
       if (!metadata->has_child(field_name)) {
-        (*metadata)[field_name] = (*parents_metadata)[field_name];
+        (*metadata)[field_name] = parents_metadata[field_name];
       }
     }
   }
@@ -654,9 +634,13 @@ void hdf5_data_reader::construct_linearized_size_lookup_tables() {
 
   conduit::Node node;
   size_t index = random() % m_shuffled_indices.size();
-  load_sample(node, index);
+
+  // must load a sample to get data sizes. Alternatively, this metadata
+  // could be included in the schemas
+  load_sample(node, index); 
+
   std::unordered_map<std::string, conduit::Node*> leaves;
-  get_leaves(&node, leaves, true);
+  get_leaves(&node, leaves);
 
   std::stringstream ss;
   ss << '/' << LBANN_DATA_ID_STR(0);
@@ -751,7 +735,7 @@ void hdf5_data_reader::print_metadata(std::ostream& os) {
 
   // get all leaves (data fields)
   std::unordered_map<std::string, conduit::Node*> leaves;
-  get_leaves(&populated_node, leaves, true);
+  get_leaves(&populated_node, leaves);
 
   // build map: field_name -> Node
   std::unordered_map<std::string,conduit::Node*> mp;

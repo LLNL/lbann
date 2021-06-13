@@ -138,6 +138,16 @@ public:
     return  m_useme_node_map; 
   }
 
+  /** @brief this method is made public for testing
+   *
+   *  On return, every Node will have a (possibly empty) child node named
+   *  <s_metadata_node_name>. The rules: 1) a node inherits the metadata node 
+   *  of its parent; 2) if the node already has a metadata child, the contents
+   *  are preserved; if both parent and child have the same named field,
+   *  the child's takes precedence.
+   *  Recursive.
+   */
+  void adjust_metadata(conduit::Node* root);
 
 private:
 
@@ -245,7 +255,7 @@ private:
    *  's_metadata_node_name' is set to).
    *  Keys in the filled-in map are the pathnames to the leaf nodes.
    */
-  void get_leaves(conduit::Node* node_in, std::unordered_map<std::string, conduit::Node*> &leaves_out, bool ignore_metadata=false);
+  void get_leaves(conduit::Node* node_in, std::unordered_map<std::string, conduit::Node*> &leaves_out);
 
   /** Functionality is similar to get_leaves(). This method differs in that
    *  two conduit::Node trees are searched for leaves. The leaves from 
@@ -255,8 +265,7 @@ private:
    */
   void get_leaves_multi(
     conduit::Node* node_in, 
-    std::unordered_map<std::string, conduit::Node*> &leaves_out, 
-    bool ignore_metadata=false);
+    std::unordered_map<std::string, conduit::Node*> &leaves_out);
 
   void do_preload_data_store() override;
 
@@ -281,15 +290,6 @@ private:
    */
   conduit::Node merge_metadata_nodes(const conduit::Node *node_A, const conduit::Node *node_B);
 
-  /** On return, every Node will have a (possibly empty) child node named
-   *  <s_metadata_node_name>. The rules: 1) a node inherits the metadata node 
-   *  of its parent; 2) if the node already has a metadata child, the contents
-   *  are preserved; if both parent and child have the same named field,
-   *  the child's takes precedence.
-   *  Recursive.
-   */
-  void adjust_metadata(conduit::Node* root);
-
   /** Fills in m_packing_groups data structure */
   void build_packing_map(conduit::Node &node);
 
@@ -311,6 +311,9 @@ private:
 
   /** Constructs m_data_dims_lookup_table and m_linearized_size_lookup_table */
   void construct_linearized_size_lookup_tables();
+
+  /** sanity check; call after adjust_metadata */
+  void test_that_all_nodes_contain_metadata(conduit::Node& node); 
 
   //=========================================================================
   // template declarations follow

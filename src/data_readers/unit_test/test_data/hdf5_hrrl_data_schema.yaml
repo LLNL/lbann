@@ -13,6 +13,7 @@ const std::string hdf5_hrrl_data_schema = R"AurthurDent(
 # be reasonably static, while the experiment_schema species the
 # subset of values to use in an experiment
 #
+#
 Image:
   metadata:
     dims: [300,300]
@@ -52,10 +53,4 @@ Xshift:
 Yshift:
   metadata:
     ordering: 80
-sigma:
-  metadata:
-    ordering: 90
-Rotation:
-  metadata:
-    ordering: 100
 )AurthurDent";
