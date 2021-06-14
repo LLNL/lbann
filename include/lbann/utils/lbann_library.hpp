@@ -94,7 +94,6 @@ std::unique_ptr<model> build_model_from_prototext(
     const lbann_data::Trainer* pb_trainer,
     lbann_data::LbannPB &pb,
     lbann_comm *comm,
-    options *opts,
     thread_pool& io_thread_pool,
     std::vector<std::shared_ptr<callback_base>>& shared_callbacks,
     int training_dr_linearized_data_size);

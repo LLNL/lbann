@@ -109,9 +109,9 @@ int main(int argc, char* argv[])
 
   try {
     // Initialize options db (this parses the command line)
-    options* opts = options::get();
-    opts->init(argc, argv);
-    if (opts->has_string("h") or opts->has_string("help") or argc == 1) {
+    options::construct_all_options();
+    auto& arg_parser = global_argument_parser();
+    if (arg_parser.get<bool>("help") or argc == 1) {
       if (master)
         std::cout << arg_parser << std::endl;
       print_help(*comm);
@@ -138,10 +138,10 @@ int main(int argc, char* argv[])
       El::gpu_blas::RequestTensorOperations();
 #endif // LBANN_HAS_CUDA
 
-    // this must be called after call to opts->init();
-    if (!opts->get_bool("disable_signal_handler")) {
+    // this must be called after call to arg_parser.parse();
+    if (!arg_parser.get<bool>("disable_signal_handler")) {
       std::string file_base =
-        (opts->get_bool("stack_trace_to_file") ? "stack_trace" : "");
+        (arg_parser.get<bool>("stack_trace_to_file") ? "stack_trace" : "");
       stack_trace::register_signal_handler(file_base);
     }
 
@@ -152,7 +152,7 @@ int main(int argc, char* argv[])
     allocate_trainer_resources(comm.get());
 
     int trainer_rank = 0;
-    if (opts->get_bool("generate_multi_proto")) {
+    if (arg_parser.get<bool>("generate_multi_proto")) {
       trainer_rank = comm->get_trainer_rank();
     }
     // Load the prototexts specificed on the command line
@@ -167,7 +167,7 @@ int main(int argc, char* argv[])
 
     // Construct the trainer
     auto& trainer =
-      construct_trainer(comm.get(), pb_trainer, pb, opts);
+      construct_trainer(comm.get(), pb_trainer, pb);
 
     thread_pool& io_thread_pool = trainer.get_io_thread_pool();
 
