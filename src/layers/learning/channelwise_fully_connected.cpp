@@ -44,6 +44,9 @@ template <typename TensorDataType, data_layout Layout, El::Device Device>
 void 
 channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
 ::setup_distributions(tensor_overlap_constraints &constraints){
+
+  data_type_distconv_adapter<TensorDataType>::setup_distributions(constraints);
+
   auto &layer = dynamic_cast<channelwise_fully_connected_layer<
     TensorDataType, Layout, Device>&>(this->layer());
 
@@ -59,10 +62,9 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
   auto &layer = dynamic_cast<
     channelwise_fully_connected_layer<TensorDataType, Layout, Device>&>(this->layer()); 
   
-  m_linear = make_unique<dc::Linear>(dc::get_backend());
+  m_linear_operator = make_unique<dc::Linear<TensorDataType>>(dc::get_backend());
 
-  m_linear->
-
+  // Done for now
 
 }
 
@@ -70,22 +72,88 @@ template <typename TensorDataType, data_layout Layout, El::Device Device>
 void 
 channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
 ::setup_fp_tensors(){
-
+  data_type_distconv_adapter<TensorDataType>::setup_fp_tensors();
+  
   auto &layer = dynamic_cast<
-    channelwise_fully_connected_layer<TensorDataType, Device>&>(this->layer());
+    channelwise_fully_connected_layer<TensorDataType, Layout, Device>&>(this->layer());
+  const auto &input_dist = this->get_prev_activations_dist();
 
-  // Setup up forward pass tensors here 
+  // Setup up forward pass tensors here
+
+  // Get shape of the linear weights
+
+  const auto& linearity_dims = layer.get_linearity_dims();
+  dc::Shape linearity_shape(linearity_dims);
+
+  // Create shared distribution from distconv
+  const auto shared_dist = dc::Dist::make_shared_distribution(
+    input_dist.get_locale_shape());
+  // Create LocaleMPI via distconv 
+
+  const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
+
+  // Create new distconv tensor using shared distribution 
+
+  m_linear = make_unique<TensorDevType>(linearity_shape, loc, shared_dist);
+
+  // This distconv tensor m_linear will be Viewed during forward compute 
+
+  if(layer.m_has_bias){
+    // get bias shape 
+    const auto& bias_dims = layer.get_bias_dims();
+    dc::Shape bias_shape(bias_dims);
+    m_bias = make_unique<TensorDevType>(bias_shape, loc, shared_dist);
+  }
+  // Done
 
 }
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void 
 channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
 ::setup_bp_tensors(){
+  data_type_distconv_adapter<TensorDataType>::setup_bp_tensors();
 
   auto &layer = dynamic_cast<
     channelwise_fully_connected_layer<TensorDataType, Layout, Device>&>(this->layer());
 
+
   //  Setup backward pass tensors here 
+
+  const auto shared_dist = dc::Dist::make_shared_distribution(
+    this->get_prev_error_signals_dist().get_locale_shape());
+  
+  // create LocaleMPI from distconv
+
+  const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
+
+  // Get shape of the linear weights
+
+  const auto& linearity_dims = layer.get_linearity_dims();
+  dc::Shape linearity_shape(linearity_dims);
+
+  m_linearity_gradient = make_unique<TensorDevType>(linearity_shape, loc, shared_dist);
+
+  auto* linearity_optimizer = static_cast<data_type_optimizer<TensorDataType>*>(layer.get_weights(0).get_optimizer());
+
+  assert0(dc::tensor::View(*m_linearity_gradient,
+                           linearity_optimizer->get_gradient().Buffer()));
+  if(layer.m_has_bias){
+    // Get bias optimizer 
+    auto *bias_optimizer = static_cast<data_type_optimizer<TensorDataType>*>(layer.get_weights(1).get_optimizer());
+
+    if(bias_optimizer != nullptr){
+      // create shape for bias grad 
+      const auto& bias_dims = layer.get_bias_dims();
+      dc::Shape bias_shape(bias_dims );
+      m_bias_gradient = make_unique<TensorDevType>(bias_shape, loc, shared_dist);
+
+      // Copy over bias gradients
+      assert0(dc::tensor::View(*m_bias_gradient,
+                                bias_optimizer->get_gradient().Buffer()));
+
+    }
+  }
+  // Done for now
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -97,14 +165,29 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
     channelwise_fully_connected_layer<TensorDataType, Layout, Device>&>(this->layer());
   
   const auto& linearity = layer.weights_values(0);
-  const auto& local_linearity = dynamic_cast<const LocalMat&>(linearity.LockedMatrix());
+  // const auto& local_linearity = dynamic_cast<const LocalMat&>(linearity.LockedMatrix());
 
-  m_linear_operator->forward(El::To<TensorDataType>(1),
+  const auto local_mini_batch_size = linearity.Width();
+
+  // TO DO: Check if input and output tensors are contiguous 
+  
+  assert0(dc::tensor::View(
+    *m_linear,linearity.LockedBuffer()));
+  // const auto input = this->get_prev_activations();
+  // auto output = this->get_activations();
+
+
+  m_linear_operator->forward(layer.m_transpose,
                              this->get_prev_activations(),
-                             local_linearity,
-                             El::To<TensorDataType>(0),
-                             this->get_activations());
+                             *m_linear,
+                             this->get_activations(),
+                             local_mini_batch_size);
 
+  if(layer.m_has_bias){
+    m_linear_operator->apply_bias();
+  }
+
+  // Done for now 
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -114,20 +197,28 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
   auto &layer = dynamic_cast<channelwise_fully_connected_layer
     <TensorDataType, Layout, Device>&>(this->layer());
   const auto& linearity = layer.weights_values(0);
-  const auto& local_linearity = dynamic_cast<const LocalMat&>(linearity.LockedMatrix());
 
-  m_linear_operator->backward(El::To<TensorDataType>(1),
-                              this->get_prev_activations(),
-                              local_linearity,
-                              El::To<TensorDataType>(0),
-                              this->get_activations());
+
+  // TO DO: Check if input and output tensors are contiguous 
+
+
+ 
+  m_linear_operator->backward_wrt_input();
+
+  m_linear_operator->backward_wrt_weight();
+
+  if(layer.m_has_bias){
+    m_linear_operator->backward_wrt_bias();
+  }
+  // Done for now
+
 }
 
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 dc::Shape
 channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
-::get_activations_shape(){
+::get_activations_shape(int index){
   auto input_shape = this->get_prev_activations().get_local_shape();
   return input_shape;
 }
@@ -136,7 +227,7 @@ template <typename TensorDataType, data_layout Layout, El::Device Device>
 dc::Shape
 channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
 ::get_activations_local_shape(int index){
-  const auto &layer = dynamic_cast<const convolution_layer<
+  const auto &layer = dynamic_cast<const channelwise_fully_connected_layer<
     TensorDataType, Layout, Device>&>(this->layer());
   
   const auto& input_dims = layer.get_input_dims();
@@ -176,7 +267,9 @@ channelwise_fully_connected_layer<TensorDataType, Layout, Device>
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void setup_distconv_adapter(const DataReaderMetaData& dr_metadata){
+void
+channelwise_fully_connected_layer<TensorDataType,Layout,Device>
+::setup_distconv_adapter(const DataReaderMetaData& dr_metadata){
   this->get_distconv_adapter_ptr() = make_unique<channelwise_fully_connected_distconv_adapter<
     TensorDataType, Layout, Device>>(*this);
 
@@ -186,9 +279,9 @@ void setup_distconv_adapter(const DataReaderMetaData& dr_metadata){
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 const channelwise_fully_connected_distconv_adapter <TensorDataType, Layout, Device>&
 channelwise_fully_connected_layer<TensorDataType,Layout,Device>
-::get_distconv_adapter(){
+::get_distconv_adapter() const{
   return dynamic_cast<const channelwise_fully_connected_distconv_adapter<
-  TensorDataType, Layout, Device>&>();
+  TensorDataType, Layout, Device>&>(data_type_layer<TensorDataType>::get_distconv_adapter());
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -278,6 +371,51 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
   desc.add("Transpose", m_transpose);
   return desc;
 }
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+std::vector<int>
+channelwise_fully_connected_layer<TensorDataType,Layout,Device>
+::get_linearity_dims() const
+{
+  const auto& input_dims = this->get_input_dims();
+  const auto& output_dims = this->get_output_dims();
+  
+  const std::vector<size_t> input_channel_dims(
+    input_dims.begin()+1, input_dims.end());
+  
+  const std::vector<size_t> output_channel_dims(
+    output_dims.begin()+1, output_dims.end());
+  
+  const auto& input_channel_size = std::accumulate(
+    input_channel_dims.begin(), input_channel_dims.end(),
+    1, std::multiplies<size_t>());
+  
+  const auto& output_channel_size = std::accumulate(
+    output_channel_dims.begin(), output_channel_dims.end(),
+    1, std::multiplies<size_t>());
+  
+  std::vector<int> linearity_dims{input_channel_size, output_channel_size};
+  return linearity_dims;
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+std::vector<int>
+channelwise_fully_connected_layer<TensorDataType,Layout,Device>
+::get_bias_dims() const
+{
+  const auto& output_dims = this->get_output_dims();
+  
+  const std::vector<size_t> output_channel_dims(
+    output_dims.begin()+1, output_dims.end());
+
+  const auto& output_channel_size = std::accumulate(
+    output_channel_dims.begin()+1, output_channel_dims.end(),
+    1, std::multiplies<size_t>());
+
+  std::vector<int> bias_dims{output_channel_size};
+  return bias_dims;
+}
+
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void
@@ -409,16 +547,16 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
 {
 
 #ifdef LBANN_HAS_DISTCONV
-
-  // if(this->using_gpus() && this->distconv_enabled()){
-  //   this->get_distconv_adapter().fp_compute();
-  //   this->get_distconv_adapter().fp_apply_bias();
-  //   return ;
-  // }else{
-  //   LBANN_ERROR("Distconv not compatible with CPU-only mode");
-  // }
+  // We are guaranteed to have 
+  if(this->using_gpus() && this->distconv_enabled()){
+    this->get_distconv_adapter().fp_compute();
+    return ;
+  }else{
+    LBANN_ERROR("Distconv not compatible with CPU-only mode");
+  }  
 
 #endif // LBANN_HAS_DISTCONV
+
   const auto& zero = El::TypeTraits<TensorDataType>::Zero();
   const auto& one = El::TypeTraits<TensorDataType>::One();
 
@@ -468,7 +606,6 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
     LBANN_ERROR(this->get_type()," layer \"",this->get_name(),"\" ",
                 "has a non-contiguous output tensor");
   }
-
   // Apply linearity
   El::Gemm(
     m_transpose ? El::TRANSPOSE : El::NORMAL,
@@ -677,6 +814,16 @@ std::unique_ptr<Layer> build_channelwise_fully_connected_layer_from_pbuf(
 // =========================================================
 // Explicit template instantiation
 // =========================================================
+
+#ifdef LBANN_HAS_DISTCONV
+
+#define PROTO_DEVICE(T, Device)            \
+  template class channelwise_fully_connected_distconv_adapter<         \
+    T,data_layout::DATA_PARALLEL, Device>                             
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+
+#endif //  LBANN_HAS_DISTCONV
 
 #define PROTO_DEVICE(T, Device)                                         \
   template class channelwise_fully_connected_layer<                     \

@@ -40,6 +40,7 @@ class channelwise_fully_connected_distconv_adapter
 
   public:
     using TensorDevType = typename data_type_distconv_adapter<TensorDataType>::TensorDevType;
+    
     channelwise_fully_connected_distconv_adapter(Layer& layer)
       : data_type_distconv_adapter<TensorDataType>(layer){}
     virtual ~channelwise_fully_connected_distconv_adapter() = default;
@@ -50,14 +51,22 @@ class channelwise_fully_connected_distconv_adapter
     void fp_compute();
     void bp_compute();
 
+    void fp_apply_bias();
+    void bp_apply_bias();
+
     void setup_distributions(tensor_overlap_constraints &constraints) override;
     void setup_layer(size_t workspace_capacity) override;
 
-    dc::Shape get_activations_local_shape(int index = 0) const override;
-    dc::Shape get_prev_activations_shape(int index) const override;
-    dc::Shape get_activations_shape(int index) const override;
+    dc::Shape get_activations_local_shape(int index = 0);
+    dc::Shape get_prev_activations_shape(int index);
+    dc::Shape get_activations_shape(int index);
 
     std::unique_ptr<dc::Linear<TensorDataType>> m_linear_operator;
+    std::unique_ptr<TensorDevType> m_linear; 
+    std::unique_ptr<TensorDevType> m_bias;
+    std::unique_ptr<TensorDevType> m_linearity_gradient;
+    std::unique_ptr<TensorDevType> m_bias_gradient;
+
 
   }; // class definition channelwise_fully_connected_distconv_adapter
 
@@ -130,15 +139,16 @@ protected:
 
   void fp_compute() override;
   void bp_compute() override;
+  std::vector<int> get_linearity_dims() const;
+  std::vector<int> get_bias_dims() const;
 
 #ifdef LBANN_HAS_DISTCONV
   friend class channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>;
 protected:
   void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override;
-  bool is_distconv_supported() const override;
-  using channelwiseFCadapterType = channelwise_fully_connected_distconv_adapter<TensorDataType,Layout,Device> ; 
-  channelwiseFCadapterType& get_distconv_adapter() override;
-  const channelwiseFCadapterType& get_distconv_adapter() override;
+  bool is_distconv_supported() const override; 
+  channelwise_fully_connected_distconv_adapter<TensorDataType,Layout,Device>& get_distconv_adapter() override;
+  const channelwise_fully_connected_distconv_adapter<TensorDataType,Layout,Device>& get_distconv_adapter() const override;
 #endif
 
 private:

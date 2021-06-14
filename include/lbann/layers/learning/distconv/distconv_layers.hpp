@@ -36,17 +36,17 @@
 namespace distconv{
   template <typename Backend, typename DataType>
   class Linear {
+      using LocaleMPI = tensor::LocaleMPI;
+
     public:
       Linear(Backend &backend);
 
-      template <typename Tensor>
+      template <typename Allocator>
       int forward(bool transpose_A,
-                  bool transpose_B,
-                  typename Tensor::data_type alpha,
-                  const Tensor &input,
-                  typename Tensor::data_type beta, 
-                  Tensor &output,
-                  int local_mini_batch_size, 
+                  tensor::Tensor<DataType, LocaleMPI, Allocator> &input,
+                  const tensor::Tensor<DataType, LocaleMPI, Allocator> &linearity,
+                  tensor::Tensor<DataType, LocaleMPI, Allocator> &output,
+                  int local_mini_batch_size 
                  ){
 
         const auto& one = El::TypeTraits<DataType>:: One();
@@ -55,54 +55,70 @@ namespace distconv{
         if (input.get_local_size() == 0){
           return 0; // no op for empty input
         }
-        ::El::Matrix(input_size, local_mini_batch_size*num_local_channels, input.get_buffer(), input_size);
-        ::El::Matrix(output_size, local_mini_batch_size*num_local_channels, output.get_buffer(), output_size);
-        ::El::Matrix();
+        const auto& input_dims = input.get_local_shape();
+        const auto& output_dims = output.get_local_shape();
 
-        ::El::Gemm(
-          transpose_A ? El::TRANSPOSE : El::NORMAL,
-          El::NORMAL,
-          one,  m_weights, input,
-          zero, output);
+        const auto& input_size = std::accumulate(input_dims.begin()+1, input_dims.end(), 1, std::multiplies<size_t>());
+        const auto& output_size = std::accumulate(output_dims.begin()+1, output_dims.end(), 1, std::multiplies<size_t>());
+
+        ::El::Matrix<DataType> in_mat(input_size, local_mini_batch_size*m_num_local_channels, input.get_buffer(), input_size);
+        ::El::Matrix<DataType> out_mat(output_size, local_mini_batch_size*m_num_local_channels, output.get_buffer(), output_size);
+        ::El::Matrix<DataType> weights(input_size, output_size, linearity.get_buffer(), input_size);
+
+        // ::El::Gemm(
+        //   transpose_A ? El::TRANSPOSE : El::NORMAL,
+        //   El::NORMAL,
+        //   one,  weights, in_mat,
+        //   zero, out_mat);
 
         return 0;
       }
 
-      template <typename Tensor>
-      int  apply_bias(const Tensor &bias,
-                      Tensor &output){
+      // template <typename Tensor>
+      int apply_bias(){
 
         return 0;
       }
 
-      template <typename Tensor>
-      int backward(){
+      // template <typename Tensor>
+      int backward_wrt_input(){
         return 0;
       }
 
-      template <typename Tensor>
-      int backward_bias(){
+      // template<typename Tensor>
+      int backward_wrt_weight(){
         return 0;
       }
-      template <typename Tensor>
-      void setup(const Tensor weights,
-                 int num_local_channels;
+
+      // template<typename Tensor>
+      int backward_wrt_bias(){
+        return 0;
+      }
+
+
+      template <typename Allocator>
+      void setup(int num_local_channels,
                  size_t ws_size){
         m_num_local_channels = num_local_channels;
-        m_weights = weights;
       }
 
       template <typename Tensor>
-      void setup_bias(const Tensor bias){
+      void setup_bias(){ 
       }
 
   protected:
-    Tensor<DataType> m_weights;
-    Tensor<DataType> m_bias; 
-    int m_num_local_channels;
+    int m_num_local_channels; // Set in setup() 
+    int m_num_out_channels; // Set in setup()
 
 
   }; // class definition Linear
+  // template <typename DataType, typename locale, typename Allocator>
+  // tensor::Shape 
+  // get_fc_output_local_tensor_shape(const tensor::Tensor<DataType, Locale, Allocator> &input,
+  //                                  const int_vector
+  //                                  int num_groups){
+
+  // }
 }  // namespace distconv
 #endif // LBANN_HAS_DISTCONV
 #endif // LBANN_LAYERS_LEARNING_DISTCONV_LAYERS
