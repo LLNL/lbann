@@ -39,7 +39,7 @@ namespace distconv{
       using LocaleMPI = tensor::LocaleMPI;
 
     public:
-      Linear(Backend &backend);
+      Linear(Backend &backend){};
 
       template <typename Allocator>
       int forward(bool transpose_A,
