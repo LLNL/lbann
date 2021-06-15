@@ -153,17 +153,18 @@ void kfac_gru_util::get_g(
   constexpr size_t block_size = 256;
   const size_t count = hidden_size*seq_length*local_batch_size;
   const size_t grid_size = (count + block_size - 1) / block_size;
-  get_g_kernel<DataType>
-      <<<grid_size, block_size, 0, sync_info.Stream()>>>(
-          h.LockedBuffer(),
-          h0.LockedBuffer(),
-          dh.LockedBuffer(),
-          hfc.LockedBuffer(),
-          r.LockedBuffer(),
-          i.LockedBuffer(),
-          g_Rr.Buffer(), g_Ri.Buffer(), g_Rh.Buffer(),
-          g_Wr.Buffer(), g_Wi.Buffer(), g_Wh.Buffer(),
-          hidden_size, seq_length, local_batch_size);
+  hydrogen::gpu::LaunchKernel(
+    get_g_kernel<DataType>,
+    grid_size, block_size, 0, sync_info,
+    h.LockedBuffer(),
+    h0.LockedBuffer(),
+    dh.LockedBuffer(),
+    hfc.LockedBuffer(),
+    r.LockedBuffer(),
+    i.LockedBuffer(),
+    g_Rr.Buffer(), g_Ri.Buffer(), g_Rh.Buffer(),
+    g_Wr.Buffer(), g_Wi.Buffer(), g_Wh.Buffer(),
+    hidden_size, seq_length, local_batch_size);
 }
 
 template <>
@@ -186,14 +187,15 @@ void kfac_gru_util::unpack_reserve_space(
 
   constexpr size_t block_size = 256;
   const size_t grid_size = (count + block_size - 1) / block_size;
-  unpack_reserve_space_kernel<DataType>
-      <<<grid_size, block_size, 0, sync_info.Stream()>>>(
-          reserve_space_fwd+offset*sizeof(DataType),
-          r.Buffer(),
-          i.Buffer(),
-          hidden_size,
-          seq_length,
-          local_batch_size);
+  hydrogen::gpu::LaunchKernel(
+    unpack_reserve_space_kernel<DataType>,
+    grid_size, block_size, 0, sync_info,
+    reserve_space_fwd+offset*sizeof(DataType),
+    r.Buffer(),
+    i.Buffer(),
+    hidden_size,
+    seq_length,
+    local_batch_size);
 }
 
 } // namespace callback
