@@ -161,9 +161,14 @@ void tessellate_layer<TensorDataType, T_layout, Dev>
 
     const auto& local_height = local_gradient_wrt_output.Height();
     const auto& local_width = local_gradient_wrt_output.Width();
-    const auto& block_size = 256;
-    const auto& grid_size =
+#ifdef LBANN_DETERMINISTIC
+    const size_t block_size = 1;
+    const size_t grid_size = 1;
+#else
+    const size_t block_size = 256;
+    const size_t grid_size =
       (local_height * local_width + block_size - 1) / block_size;
+#endif // LBANN_DETERMINISTIC
     hydrogen::gpu::LaunchKernel(
       bp_gpu_3d_kernel<TensorDataType>,
       grid_size, block_size, 0, multisync,

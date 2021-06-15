@@ -184,9 +184,13 @@ void embedding_layer<TensorDataType, T_layout, Dev>::bp_compute() {
     constexpr size_t block_size = 256;
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
+#ifdef LBANN_DETERMINISTIC
+    grid_dims.x = 1;
+#else
     grid_dims.x = (this->m_embedding_dim + block_size - 1) / block_size;
     grid_dims.y = input_size;
     grid_dims.z = local_mini_batch_size;
+#endif // LBANN_DETERMINISTIC
     hydrogen::gpu::LaunchKernel(
       bp_kernel<TensorDataType>,
       grid_dims, block_dims, 0, multisync,

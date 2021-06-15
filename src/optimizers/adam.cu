@@ -46,20 +46,21 @@ __global__ void adam_noncontiguous_kernel(size_t height,
                                           size_t moment1_ldim,
                                           TensorDataType * __restrict__ moment2,
                                           size_t moment2_ldim) {
+  const TensorDataType one(1.0);
   const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
-  if (gid < height * width) {
-    const auto& row = gid % height;
-    const auto& col = gid / height;
-    const auto& g = gradient[row + col * gradient_ldim] + eps;
-    if (gpu_lib::isinf(g) || gpu_lib::isnan(g)) {
-      return;
+  const size_t nthreads = blockDim.x * gridDim.x;
+  for (size_t i=gid; i<height*width; i+=nthreads) {
+    const auto row = i % height;
+    const auto col = i / height;
+    const auto g = gradient[row + col * gradient_ldim] + eps;
+    if (gpu_lib::isfinite(g)) {
+      auto& x = values[row + col * values_ldim];
+      auto& m1 = moment1[row + col * moment1_ldim];
+      auto& m2 = moment2[row + col * moment2_ldim];
+      m1 = beta1 * m1 + (one - beta1) * g;
+      m2 = beta2 * m2 + (one - beta2) * g * g;
+      x -= correction * m1 / (gpu_lib::sqrt(m2) + eps);
     }
-    auto& m1 = moment1[row + col * moment1_ldim];
-    auto& m2 = moment2[row + col * moment2_ldim];
-    auto& x = values[row + col * values_ldim];
-    m1 = beta1 * m1 + (TensorDataType(1) - beta1) * g;
-    m2 = beta2 * m2 + (TensorDataType(1) - beta2) * g * g;
-    x -= correction * m1 / (gpu_lib::sqrt(m2) + eps);
   }
 }
 
@@ -73,18 +74,19 @@ __global__ void adam_contiguous_kernel(size_t size,
                                        const TensorDataType * __restrict__ gradient,
                                        TensorDataType * __restrict__ moment1,
                                        TensorDataType * __restrict__ moment2) {
+  const TensorDataType one(1.0);
   const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
-  if (gid < size) {
-    const auto& g = gradient[gid] + eps;
-    if (gpu_lib::isinf(g) || gpu_lib::isnan(g)) {
-      return;
+  const size_t nthreads = blockDim.x * gridDim.x;
+  for (size_t i=gid; i<size; i+=nthreads) {
+    const auto g = gradient[i] + eps;
+    if (gpu_lib::isfinite(g)) {
+      auto& x = values[i];
+      auto& m1 = moment1[i];
+      auto& m2 = moment2[i];
+      m1 = beta1 * m1 + (one - beta1) * g;
+      m2 = beta2 * m2 + (one - beta2) * g * g;
+      x -= correction * m1 / (gpu_lib::sqrt(m2) + eps);
     }
-    auto& m1 = moment1[gid];
-    auto& m2 = moment2[gid];
-    auto& x = values[gid];
-    m1 = beta1 * m1 + (TensorDataType(1) - beta1) * g;
-    m2 = beta2 * m2 + (TensorDataType(1) - beta2) * g * g;
-    x -= correction * m1 / (gpu_lib::sqrt(m2) + eps);
   }
 }
 
@@ -104,7 +106,9 @@ void adam<TensorDataType>::step_compute_gpu(AbsDistMatrixType& values,
   constexpr size_t block_size = 256;
   const size_t grid_size = (local_size + block_size - 1) / block_size;
   auto multisync = El::MakeMultiSync(gpu::get_sync_info(values),
-                                     gpu::get_sync_info(gradient));
+                                     gpu::get_sync_info(gradient),
+                                     gpu::get_sync_info(*m_moment1),
+                                     gpu::get_sync_info(*m_moment2));
   if (values.Contiguous() && gradient.Contiguous()
       && m_moment1->Contiguous() && m_moment2->Contiguous()) {
     hydrogen::gpu::LaunchKernel(
