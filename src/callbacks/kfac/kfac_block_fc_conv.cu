@@ -69,9 +69,15 @@ void kfac_fc_conv_util::get_diagonal<El::Device::GPU>(
   constexpr size_t block_size = 256;
   const size_t num_threads = height;
   const size_t grid_size = (num_threads + block_size - 1) / block_size;
+  hydrogen::gpu::LaunchKernel(
+    kfac_get_diagonal_kernel<DataType>,
+    grid_size, block_size, 0, sync_info,
+    diag.Buffer(), A.LockedBuffer(), height);
+  /*
   kfac_get_diagonal_kernel<DataType>
       <<<grid_size, block_size, 0, sync_info.Stream()>>>(
           diag.Buffer(), A.LockedBuffer(), height);
+          */
 }
 
 template <>
@@ -84,10 +90,18 @@ void kfac_fc_conv_util::conv_transpose<El::Device::GPU>(
   constexpr size_t block_size = 256;
   const size_t num_elems = mini_batch_size*num_channels*spatial_prod;
   const size_t grid_size = (num_elems + block_size - 1) / block_size;
+  hydrogen::gpu::LaunchKernel(
+    kfac_conv_transpose_kernel<DataType>,
+    grid_size, block_size, 0, sync_info,
+    activations.LockedBuffer(), act_columns.Buffer(),
+    mini_batch_size, num_channels, spatial_prod,
+    num_elems);
+  /*
   kfac_conv_transpose_kernel<DataType><<<grid_size, block_size, 0, sync_info.Stream()>>>(
       activations.LockedBuffer(), act_columns.Buffer(),
       mini_batch_size, num_channels, spatial_prod,
       num_elems);
+      */
 }
 
 } // namespace callback
