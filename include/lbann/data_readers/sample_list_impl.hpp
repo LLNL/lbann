@@ -54,6 +54,8 @@
 #include <cereal/types/deque.hpp>
 #include <cereal/types/tuple.hpp>
 
+#include <zstr.hpp>
+
 namespace lbann {
 
 template<typename T>
@@ -142,20 +144,26 @@ inline void sample_list_header::set_sample_list_type(const std::string& line1) {
   m_is_multi_sample = false;
   m_is_exclusive = false;
   m_no_label_header = false;
+  m_has_unused_sample_fields = true;
 
   if (sample_list_type == single_sample) {
-  } else if (sample_list_type == multi_sample_inclusion) {
+  } else if (sample_list_type == multi_sample_inclusion ||
+             sample_list_type == multi_sample_inclusion_v2) {
     m_is_multi_sample = true;
     m_is_exclusive = false;
+    if(sample_list_type == multi_sample_inclusion_v2) {
+      m_no_label_header = true;
+      m_has_unused_sample_fields = false;
+    }
   } else if (sample_list_type == multi_sample_exclusion) {
     m_is_multi_sample = true;
     m_is_exclusive = true;
-  } else if (sample_list_type == "CONDUIT_HDF5_INCLUSION") {
+  } else if (sample_list_type == conduit_hdf5_inclusion) {
     // For backward compatibility
     m_is_multi_sample = true;
     m_is_exclusive = false;
     m_no_label_header = true; // old format does not use a line for label file
-  } else if (sample_list_type == "CONDUIT_HDF5_EXCLUSION") {
+  } else if (sample_list_type == conduit_hdf5_exclusion) {
     // For backward compatibility
     m_is_multi_sample = true;
     m_is_exclusive = true;
@@ -169,7 +177,11 @@ inline void sample_list_header::set_sample_count(const std::string& line2) {
   std::stringstream header2(line2);
   if (m_is_multi_sample) {
     header2 >> m_included_sample_count;
-    header2 >> m_excluded_sample_count;
+    if(m_has_unused_sample_fields) {
+      header2 >> m_excluded_sample_count;
+    }else {
+      m_excluded_sample_count = 0ul;
+    }
   }
   header2 >> m_num_files;
 
@@ -199,6 +211,10 @@ inline bool sample_list_header::is_exclusive() const {
 
 inline bool sample_list_header::use_label_header() const {
   return !m_no_label_header;
+}
+
+inline bool sample_list_header::has_unused_sample_fields() const {
+  return m_has_unused_sample_fields;
 }
 
 inline size_t sample_list_header::get_sample_count() const {
@@ -296,9 +312,11 @@ inline void sample_list<sample_name_t>
        const lbann_comm& comm,
        bool interleave) {
   m_header.set_sample_list_name(samplelist_file);
-  std::ifstream istrm(samplelist_file);
+  zstr::ifstream istrm(samplelist_file);
+  //std::ifstream istrm(samplelist_file);
   load(istrm, comm, interleave);
-  istrm.close();
+  //zstr doesn't provide a close; odd but true
+  //istrm.close();
 }
 
 template <typename sample_name_t>
@@ -327,10 +345,15 @@ inline void sample_list<sample_name_t>
 
 template <typename sample_name_t>
 inline void sample_list<sample_name_t>
-::load_from_string(const std::string& samplelist) {
+::load_from_string(const std::string& samplelist,
+                   const lbann_comm& comm,
+                   bool interleave) {
   m_header.set_sample_list_name("<LOAD_FROM_STRING>");
   std::istringstream istrm(samplelist);
-  load(istrm, 1ul, 0ul);
+  const size_t stride = interleave? comm.get_procs_per_trainer() : 1ul;
+  const size_t offset = interleave? comm.get_rank_in_trainer() : 0ul;
+  m_stride = stride;
+  load(istrm, stride, offset);
 }
 
 template <typename sample_name_t>
@@ -357,17 +380,14 @@ inline std::string sample_list<sample_name_t>
                    const std::string& listname,
                    const std::string& info) {
   if (!istrm.good()) {
-    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
-                          + " :: unable to read the header line of sample list " + listname + " for " + info);
+    LBANN_ERROR("unable to read the header line of sample list ", listname, " for ", info, " because !istrm.good()");
   }
 
   std::string line;
   std::getline(istrm, line);
 
   if (line.empty()) {
-    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
-                          + " :: unable to read the header line of sample list " + listname + " for " + info
-                          + " -- the line was empty");
+    LBANN_ERROR("unable to read the header line of sample list ", listname, " for ", info, " -- the line was empty");
   }
   return line;
 }
@@ -391,7 +411,7 @@ inline void sample_list<sample_name_t>
     m_header.set_label_filename(line4);
   }
 
-  if (m_header.get_file_dir().empty() || !check_if_dir_exists(m_header.get_file_dir())) {
+  if (m_header.get_file_dir().empty() || (m_check_data_file && !check_if_dir_exists(m_header.get_file_dir()))) {
     LBANN_ERROR(std::string{} + "file " + listname
                  + " :: data root directory '" + m_header.get_file_dir() + "' does not exist.");
   }
@@ -429,8 +449,7 @@ inline void sample_list<sample_name_t>
     const std::string file_path = add_delimiter(m_header.get_file_dir()) + filename;
 
     if (filename.empty() || (m_check_data_file && !check_if_file_exists(file_path))) {
-      throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
-                            + " :: data file '" + file_path + "' does not exist.");
+      LBANN_ERROR("data file '", file_path, "' does not exist.");
     }
 
     const sample_file_id_t index = m_file_id_stats_map.size();
@@ -547,9 +566,6 @@ inline void sample_list<sample_name_t>
   for (auto t : packed_sizes) {
     g += t;
   }
-  if (me == comm.get_trainer_master()) {
-    std::cout << "global archive size: " << g << std::endl;
-  }
 
   for (int p=0; p<np; p++) {
     gathered_archive[p].resize(packed_sizes[p]);
@@ -557,6 +573,9 @@ inline void sample_list<sample_name_t>
       gathered_archive[p] = archive;
     }
     int sz = packed_sizes[p];
+    if (sz > INT_MAX) {
+      LBANN_ERROR("packed_sizes[", p, "] size is: ", sz, "  which is larger than INMAX, hence, broacast doesn't work; must be done in rounds");
+    }
     char *data = const_cast<char*>(gathered_archive[p].data());
     comm.trainer_broadcast<char>(p, data, sz);
   }
@@ -581,11 +600,6 @@ inline void sample_list<sample_name_t>
     if (p != me) {
       gathered_archive[p].resize(packed_sizes[p]);
     }
-else {
-std::cout << "XX me: " << me << " rounds: ";
-for (auto t : rounds) std::cout << t << " ";
-std::cout << std::endl;
-}
     size_t offset = 0;
     for (size_t k=0; k<rounds.size(); k++) {
       if (me == p) {
@@ -596,9 +610,6 @@ std::cout << std::endl;
         comm.trainer_broadcast<char>(p, data, rounds[k]);
       }
       offset += rounds[k];
-if (me == p) {
-std::cout << "XX finished round" << std::endl;
-}
     }
   }
 #endif
@@ -660,18 +671,34 @@ inline void sample_list<sample_name_t>
   // The fourth line contains the path to the label file when applicable
 
   if (m_header.is_multi_sample()) {
-    sstr += (m_header.is_exclusive()? multi_sample_exclusion + "\n" : multi_sample_inclusion + "\n");
-
+    if(m_header.use_label_header()) {
+      sstr += (m_header.is_exclusive()? multi_sample_exclusion + "\n" : multi_sample_inclusion + "\n");
+    }
+    else {
+      if(m_header.has_unused_sample_fields()) {
+        sstr += (m_header.is_exclusive()? conduit_hdf5_exclusion + "\n" : conduit_hdf5_inclusion + "\n");
+      }
+      else {
+        if(m_header.is_exclusive()) { LBANN_ERROR("Unknown header format"); }
+        sstr += multi_sample_inclusion_v2 + "\n";
+      }
+    }
     size_t total, included, excluded;
     get_num_samples(total, included, excluded);
 
-    sstr += std::to_string(included) + ' '  + std::to_string(excluded) + ' '  + std::to_string(num_files) + '\n';
+    sstr += std::to_string(included);
+    if(m_header.has_unused_sample_fields()) {
+      sstr += ' '  + std::to_string(excluded);
+    }
+    sstr += ' '  + std::to_string(num_files) + '\n';
   } else {
     sstr += single_sample + "\n";
     sstr += std::to_string(num_files) + '\n';
   }
   sstr += m_header.get_file_dir() + '\n';
-  sstr += m_header.get_label_filename() + '\n';
+  if(m_header.use_label_header()) {
+    sstr += m_header.get_label_filename() + '\n';
+  }
 }
 
 template <typename sample_name_t>
@@ -868,12 +895,15 @@ inline sample_name_t uninitialized_sample_name() {
 template <typename sample_name_t>
 inline void sample_list<sample_name_t>
 ::all_gather_packed_lists(lbann_comm& comm) {
+std::cerr << "starting sample_list<sample_name_t> ::all_gather_packed_lists\n";
   int num_ranks = comm.get_procs_per_trainer();
   typename std::vector<samples_t> per_rank_samples(num_ranks);
   typename std::vector<std::vector<std::string>> per_rank_files(num_ranks);
 
   size_t num_samples = all_gather_field(m_sample_list, per_rank_samples, comm);
+  std::cout << "DONE! num_samples: "<<num_samples<<std::endl;
   size_t num_ids = all_gather_field(m_file_id_stats_map, per_rank_files, comm);
+  std::cout << "DONE! num_ids: "<<num_ids<<std::endl;
 
   m_sample_list.clear();
   m_file_id_stats_map.clear();
@@ -882,6 +912,7 @@ inline void sample_list<sample_name_t>
   m_file_id_stats_map.reserve(num_ids);
 
   for(int r = 0; r < num_ranks; r++) {
+
     const samples_t& s_list = per_rank_samples[r];
     const auto& files = per_rank_files[r];
     for (const auto& s : s_list) {

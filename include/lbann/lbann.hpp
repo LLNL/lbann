@@ -35,6 +35,7 @@
 
 /// Training Algorithms
 #include "lbann/execution_algorithms/training_algorithm.hpp"
+#include "lbann/execution_algorithms/batch_functional_inference_algorithm.hpp"
 
 /// Models
 #include "lbann/models/directed_acyclic_graph.hpp"

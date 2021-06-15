@@ -61,6 +61,8 @@ def setup_experiment(lbann):
     trainer = lbann.Trainer(mini_batch_size=mini_batch_size)
     model = construct_model(lbann)
 
+    #see: <LBANN>bamboo/common_python/data/atom/data_reader_mpro.prototext
+    #     for data_reader prototext
     import data.atom
     data_reader = data.atom.make_data_reader(lbann)
 
@@ -231,7 +233,7 @@ def augment_test_func(test_func):
     func.__name__ = test_name
     return func
 
-m_lbann_args=f"--vocab={vocab_loc['vast']} --sequence_length=100  --delimiter=0 "
+m_lbann_args=f"--vocab={vocab_loc['vast']} --sequence_length=100  --delimiter=0 --use_data_store --preload_data_store"
 # Create test functions that can interact with PyTest
 for _test_func in tools.create_tests(setup_experiment,
                                      __file__,

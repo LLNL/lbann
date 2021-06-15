@@ -592,7 +592,7 @@ void im2col(const El::Matrix<DataType, El::Device::GPU>& im,
       num_channels, im_num_dims,
       im_dims, im_pads,
       window_dims, window_strides,
-      sync_info.Stream());
+      sync_info);
 }
 #endif // LBANN_HAS_GPU
 

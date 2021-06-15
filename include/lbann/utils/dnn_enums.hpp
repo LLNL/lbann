@@ -51,6 +51,7 @@ enum class bwd_data_conv_alg
   FFT_TILING,
   WINOGRAD,
   WINOGRAD_NONFUSED,
+  IMPLICIT_GEMM,
 };// enum class bwd_conv_alg
 
 /** @brief Which backward convolution filter algorithm to use. */
@@ -63,6 +64,7 @@ enum class bwd_filter_conv_alg
   WINOGRAD,
   WINOGRAD_NONFUSED,
   FFT_TILING,
+  IMPLICIT_GEMM,
 };// enum class bwd_conv_filter
 
 /** @brief Internal LBANN names for supported LRN layer modes.  */

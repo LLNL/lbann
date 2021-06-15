@@ -134,6 +134,8 @@ void init_data_readers(
     } else if (name == "smiles") {
       smiles_data_reader * smiles = new smiles_data_reader(shuffle);
       reader = smiles;
+      reader->set_data_sample_list(readme.sample_list());
+      reader->set_label_filename(readme.label_filename());
     } else if (name == "ras_lipid") {
 #ifdef LBANN_HAS_CNPY
       auto *ras_lipid = new ras_lipid_conduit_data_reader(shuffle);
