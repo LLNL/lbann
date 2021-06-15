@@ -34,7 +34,7 @@ namespace lbann
 {
 
 template <typename TensorDataType>
-std::unique_ptr<Operator> build_clamp_operator_from_pbuf(
+std::unique_ptr<Operator<TensorDataType>> build_clamp_operator_from_pbuf(
   lbann_data::Operator const& proto_operator)
 {
   LBANN_ASSERT_MSG_HAS_FIELD(proto_operator, clamp);

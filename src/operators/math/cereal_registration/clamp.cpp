@@ -34,9 +34,9 @@ void
 ClampOperator<TensorDataType>
 ::serialize(ArchiveT& ar)
 {
-  using DataTypeOperatorType = DataTypeOperator<TensorDataType>;
+  using OperatorType = Operator<TensorDataType>;
   ar(::cereal::make_nvp("DataTypeOperator",
-                        ::cereal::base_class<DataTypeOperatorType>(this)),
+                        ::cereal::base_class<OperatorType>(this)),
      CEREAL_NVP(m_min),
      CEREAL_NVP(m_max));
 }

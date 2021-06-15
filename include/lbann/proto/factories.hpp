@@ -32,6 +32,7 @@
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/transforms/transform.hpp"
 #include "lbann/transforms/transform_pipeline.hpp"
+#include "lbann/operators/operator.hpp"
 
 #include <google/protobuf/message.h>
 
@@ -58,7 +59,6 @@ class lbann_summary;
 class model;
 class objective_function;
 class optimizer;
-class Operator;
 class trainer;
 class weights;
 
@@ -93,7 +93,7 @@ std::unique_ptr<Layer> construct_layer(
 
 /** Construct an operator specified with prototext. */
 template <typename TensorDataType>
-std::unique_ptr<Operator> construct_operator(
+std::unique_ptr<Operator<TensorDataType>> construct_operator(
   const lbann_data::Operator& proto_operator);
 
 /** Construct weights specified with prototext. */

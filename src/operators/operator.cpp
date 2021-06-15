@@ -24,26 +24,22 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_DATA_TYPE_OPERATOR_INSTANTIATE
 #include "lbann/operators/operator.hpp"
+#include "lbann/utils/vector_dynamic_cast.hpp"
 
 #include <sstream>
 #include <string>
 
 namespace lbann {
 
-Operator::Operator() {
-
-  // Initialize operator name
-  static int num_operators = 0;
-  m_name = "operator" + std::to_string(num_operators);
-  num_operators++;
-}
-
-description Operator::get_description() const {
+template <typename InputTensorDataType, typename OutputTensorDataType>
+description Operator<InputTensorDataType, OutputTensorDataType>::
+get_description() const {
 
   // Construct description object
   std::stringstream ss;
-  ss << get_name() << " (" << get_type() << ")";
+  ss << get_type();
   description desc(ss.str());
 
   // DataType
@@ -52,4 +48,11 @@ description Operator::get_description() const {
   return desc;
 }
 
-}  // namespace lbann
+#define PROTO(T)                     \
+  template class Operator<T>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
+
+} // namespace lbann

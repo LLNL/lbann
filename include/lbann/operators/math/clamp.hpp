@@ -79,7 +79,7 @@ public:
   std::string get_type() const override { return "clamp"; }
 
   description get_description() const override {
-    auto desc = DataTypeOperator<TensorDataType>::get_description();
+    auto desc = Operator<TensorDataType>::get_description();
     std::stringstream ss;
     ss << "[" << m_min << "," << m_max << "]";
     desc.add("Range", ss.str());

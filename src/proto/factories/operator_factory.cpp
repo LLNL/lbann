@@ -46,10 +46,11 @@ namespace proto {
 namespace {
 
 // Define the factory type.
+template <typename T>
 using factory_type = lbann::generic_factory<
-  lbann::Operator,
+  lbann::Operator<T>,
   std::string,
-  generate_builder_type<lbann::Operator,
+  generate_builder_type<lbann::Operator<T>,
                         const lbann_data::Operator&>,
   nullptr_key_error_policy>;
 
@@ -66,7 +67,7 @@ class factory_manager
 public:
 
   factory_manager() { register_default_builders(); }
-  factory_type const& get() const noexcept { return factory_; }
+  factory_type<T> const& get() const noexcept { return factory_; }
 
 private:
 
@@ -93,11 +94,11 @@ private:
 #undef LBANN_REGISTER_DEFAULT_BUILDER
 
 private:
-  factory_type factory_;
+  factory_type<T> factory_;
 }; // class factory_manager
 
 template <typename T>
-factory_type const& get_operator_factory() noexcept
+factory_type<T> const& get_operator_factory() noexcept
 {
   static factory_manager<T> factory_mgr_;
   return factory_mgr_.get();
@@ -106,21 +107,21 @@ factory_type const& get_operator_factory() noexcept
 } // namespace
 
 template <typename TensorDataType>
-std::unique_ptr<Operator> construct_operator(
+std::unique_ptr<Operator<TensorDataType>> construct_operator(
   const lbann_data::Operator& proto_operator) {
 
   auto const& factory = get_operator_factory<TensorDataType>();
   auto const& msg =
     helpers::get_oneof_message(proto_operator, "operator_type");
 
-  std::unique_ptr<Operator> o = factory.create_object(
+  std::unique_ptr<Operator<TensorDataType>> o = factory.create_object(
     msg.GetDescriptor()->name(), proto_operator);
   return o;
 }
 
 // Template instantiation
 #define PROTO(T) \
-  template std::unique_ptr<Operator> construct_operator<T>( \
+  template std::unique_ptr<Operator<T>> construct_operator<T>(  \
     const lbann_data::Operator& proto_operator              \
   )
 

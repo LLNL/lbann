@@ -27,7 +27,7 @@
 #ifndef LBANN_OPERATORS_ELEMENTWISE_OPERATOR_HPP_INCLUDED
 #define LBANN_OPERATORS_ELEMENTWISE_OPERATOR_HPP_INCLUDED
 
-#include "lbann/operators/data_type_operator.hpp"
+#include "lbann/operators/operator.hpp"
 
 namespace lbann {
 
@@ -40,7 +40,7 @@ template <typename InputTensorDataType,
           typename OutputTensorDataType = InputTensorDataType>
 class ElementwiseOperator :
     public Cloneable<HasAbstractFunction<ElementwiseOperator<InputTensorDataType, OutputTensorDataType>>,
-                                         DataTypeOperator<InputTensorDataType, OutputTensorDataType>> {
+                                         Operator<InputTensorDataType, OutputTensorDataType>> {
 public:
   /** @name Public Types */
   ///@{
@@ -63,7 +63,7 @@ public:
   using BaseType =
     Cloneable<HasAbstractFunction<
                 ElementwiseOperator<InputTensorDataType, OutputTensorDataType>>,
-              DataTypeOperator<InputTensorDataType, OutputTensorDataType>>;
+              Operator<InputTensorDataType, OutputTensorDataType>>;
   ///@}
 
 public:

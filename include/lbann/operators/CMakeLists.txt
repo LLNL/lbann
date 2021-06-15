@@ -1,6 +1,5 @@
 # Add the headers for this directory
 set_full_path(THIS_DIR_HEADERS
-  data_type_operator.hpp
   elementwise_operator.hpp
   operator.hpp
   )
