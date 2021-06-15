@@ -12,6 +12,7 @@ class CommunityGAN(lbann.modules.Module):
             motif_size,
             embed_dim,
             learn_rate,
+            generator_type='greedy',
             embeddings_device='CPU',
             initial_embeddings=None,
     ):
@@ -20,14 +21,28 @@ class CommunityGAN(lbann.modules.Module):
         self.embed_dim = embed_dim
         self.learn_rate = learn_rate
 
-        # Construct generator and discriminator
-        self.generator = model.generator.Generator(
-            num_vertices,
-            embed_dim,
-            learn_rate,
-            embeddings_device=embeddings_device,
-            initial_embeddings=initial_embeddings,
-        )
+        # Construct generator
+        if generator_type == 'greedy':
+            self.generator = model.generator.GreedyGenerator(
+                num_vertices,
+                embed_dim,
+                learn_rate,
+                embeddings_device=embeddings_device,
+                initial_embeddings=initial_embeddings,
+            )
+        elif generator_type == 'trivial':
+            self.generator = model.generator.TrivialGenerator(
+                num_vertices,
+                motif_size,
+                embed_dim,
+                learn_rate,
+                embeddings_device=embeddings_device,
+                initial_embeddings=initial_embeddings,
+            )
+        else:
+            raise ValueError(f'Unrecognized generator type ({generator_type})')
+
+        # Construct discriminator
         self.discriminator = model.discriminator.Discriminator(
             num_vertices,
             motif_size,

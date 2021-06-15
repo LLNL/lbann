@@ -13,6 +13,7 @@ def make_model(
         num_epochs,
         embeddings_dir,
         online_walker,
+        generator_type='greedy',
         embeddings_device='CPU',
         initial_embeddings_file=None,
 ):
@@ -36,6 +37,7 @@ def make_model(
         motif_size,
         embed_dim,
         learn_rate,
+        generator_type=generator_type,
         embeddings_device=embeddings_device,
         initial_embeddings=initial_embeddings,
     )
