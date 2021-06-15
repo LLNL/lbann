@@ -99,19 +99,12 @@ public:
 
   ///@}
 
-protected:
-
   // ===========================================================
   // Forward prop compute function
   // ===========================================================
 
   void fp_compute(std::vector<BaseDistMat const*>& inputs,
                   std::vector<BaseDistMat*>& outputs) const final;
-
-  /** @brief Refine the forward compute for specific data types
-   */
-  virtual void fp_compute(std::vector<InputAbsDistMatrixType const*> inputs,
-                          std::vector<OutputAbsDistMatrixType*> outputs) const = 0;
 
   // ===========================================================
   // Back prop compute function
@@ -120,6 +113,13 @@ protected:
   void bp_compute(std::vector<BaseDistMat const*>& inputs,
                   std::vector<BaseDistMat const*>& gradient_wrt_outputs,
                   std::vector<BaseDistMat*>& gradient_wrt_inputs) const final;
+
+protected:
+
+  /** @brief Refine the forward compute for specific data types
+   */
+  virtual void fp_compute(std::vector<InputAbsDistMatrixType const*> inputs,
+                          std::vector<OutputAbsDistMatrixType*> outputs) const = 0;
 
   /** @brief Refine the backward compute for specific data types
    */

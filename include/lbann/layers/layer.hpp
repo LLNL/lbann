@@ -53,6 +53,12 @@
   std::unique_ptr<Layer> build_##LAYER_NAME##_layer_from_pbuf( \
     lbann_comm*, lbann_data::Layer const&)
 
+#define LBANN_DEFINE_LAYER_BUILDER_MIXED_PRECISION(LAYER_NAME)                          \
+  template <typename InputTensorDataType, typename OutputTensorDataType, data_layout Layout, El::Device Device> \
+  std::unique_ptr<Layer> build_##LAYER_NAME##_layer_from_pbuf( \
+    lbann_comm*, lbann_data::Layer const&)
+
+
 /** @brief A utility macro for easily defining "default" builders.
  *  @note Must be called inside lbann namespace.
  */
@@ -74,6 +80,18 @@
     lbann_comm*, lbann_data::Layer const&);                             \
   template std::unique_ptr<Layer>                                       \
   build_##LAYER_NAME##_layer_from_pbuf<T,::lbann::data_layout::MODEL_PARALLEL,Device>( \
+    lbann_comm*, lbann_data::Layer const&)
+
+/** @brief A utility macro for easily adding ETI for layer builders with different input
+ *  and output data types
+ *  @note Must be called inside lbann namespace.
+ */
+#define LBANN_LAYER_BUILDER_MIXED_PRECISION_ETI(LAYER_NAME, IT, OT, Device) \
+  template std::unique_ptr<Layer>                                       \
+  build_##LAYER_NAME##_layer_from_pbuf<IT, OT, ::lbann::data_layout::DATA_PARALLEL,Device>( \
+    lbann_comm*, lbann_data::Layer const&);                             \
+  template std::unique_ptr<Layer>                                       \
+  build_##LAYER_NAME##_layer_from_pbuf<IT, OT, ::lbann::data_layout::MODEL_PARALLEL,Device>( \
     lbann_comm*, lbann_data::Layer const&)
 
 // Forward-declare protobuf classes

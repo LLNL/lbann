@@ -65,6 +65,9 @@ message Layer {
     // Input layers
     Input input = 2;
 
+    // Operator layers
+    Doer doer = 701;
+
     // Transform layers
     Reshape reshape = 306;
     Pooling pooling = 12;
@@ -213,6 +216,11 @@ message Layer {
     RowwiseWeightsNorms rowwise_weights_norms = 611;
 
   }
+
+  ///////////////////////
+  // Operator layers       //
+  ///////////////////////
+  message Doer {}
 
   ///////////////////////
   // Math layers       //

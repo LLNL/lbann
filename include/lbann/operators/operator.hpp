@@ -130,8 +130,6 @@ public:
 
   ///@}
 
-protected:
-
   // ===========================================================
   // Forward prop compute function
   // ===========================================================
@@ -155,6 +153,8 @@ protected:
   virtual void bp_compute(std::vector<BaseDistMat const*>& inputs,
                           std::vector<BaseDistMat const*>& gradient_wrt_outputs,
                           std::vector<BaseDistMat*>& gradient_wrt_inputs) const {};
+
+protected:
 
   // ===========================================================
   // Protected class members
