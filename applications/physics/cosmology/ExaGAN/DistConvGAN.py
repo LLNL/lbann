@@ -183,7 +183,7 @@ class Exa3DGAN(lbann.modules.Module):
                             name='gen_img',transpose=True,
                             weights=[lbann.Weights(initializer=self.inits['convT'])])
 
-    def forward(self, img, z=None):
+    def forward(self, img, z):
         d1_real = self.forward_discriminator1(img)  #instance1
         gen_img = self.forward_generator(z,self.g_ps)
         d1_fake = self.forward_discriminator1(lbann.StopGradient(gen_img,name='stop_gradient')) #instance2
