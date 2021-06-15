@@ -48,77 +48,6 @@
 
 namespace lbann {
 
-void construct_std_options() {
-  auto& arg_parser = global_argument_parser();
-  arg_parser.add_option(MAX_RNG_SEEDS_DISPLAY,
-                        {"--rng_seeds_per_trainer_to_display"},
-                        utils::ENV("LBANN_RNG_SEEDS_PER_TRAINER_TO_DISPLAY"),
-                        "Limit how many random seeds LBANN should display "
-                        "from each trainer",
-                        2);
-  arg_parser.add_option(NUM_IO_THREADS,
-                        {"--num_io_threads"},
-                        utils::ENV("LBANN_NUM_IO_THREADS"),
-                        "Number of threads available to both I/O and "
-                        "initial data transformations for each rank.",
-                        64);
-  arg_parser.add_option(NUM_TRAIN_SAMPLES,
-                        {"--num_train_samples"},
-                        utils::ENV("LBANN_NUM_TRAIN_SAMPLES"),
-                        "Set the number of training samples to ingest.",
-                        0);
-  arg_parser.add_option(NUM_VALIDATE_SAMPLES,
-                        {"--num_validate_samples"},
-                        utils::ENV("LBANN_NUM_VALIDATE_SAMPLES"),
-                        "Set the number of validate samples to ingest.",
-                        0);
-  arg_parser.add_option(NUM_TEST_SAMPLES,
-                        {"--num_test_samples"},
-                        utils::ENV("LBANN_NUM_TEST_SAMPLES"),
-                        "Set the number of testing samples to ingest.",
-                        0);
-  arg_parser.add_flag(ALLOW_GLOBAL_STATISTICS,
-                      {"--ltfb_allow_global_statistics"},
-                      utils::ENV("LBANN_LTFB_ALLOW_GLOBAL_STATISTICS"),
-                      "Allow the print_statistics callback to report "
-                      "global (inter-trainer) summary statistics.");
-  arg_parser.add_option(PROCS_PER_TRAINER,
-                        {"--procs_per_trainer"},
-                        utils::ENV("LBANN_PROCS_PER_TRAINER"),
-                        "Number of MPI ranks per LBANN trainer, "
-                        "If the field is not set (or set to 0) then "
-                        " all MPI ranks are assigned to one trainer."
-                        " The number of processes per trainer must "
-                        " evenly divide the total number of MPI ranks. "
-                        " The number of resulting trainers is "
-                        " num_procs / procs_per_trainer.",
-                        0);
-  arg_parser.add_option(TRAINER_GRID_HEIGHT,
-                        {"--trainer_grid_height"},
-                        utils::ENV("LBANN_TRAINER_GRID_HEIGHT"),
-                        "Height of 2D process grid for each trainer. "
-                        "Default grid is approximately square.",
-                        -1);
-  arg_parser.add_option(TRAINER_PRIMARY_GRID_SIZE,
-                        {"--trainer_primary_grid_size"},
-                        utils::ENV("LBANN_TRAINER_PRIMARY_GRID_SIZE"),
-                        "Primary grid size per trainer. "
-                        "Disables Sub-grid parallelism, when it is 0",
-                        0);
-  arg_parser.add_option(TRAINER_CREATE_TWO_MODELS,
-                        {"--trainer_create_two_models"},
-                        utils::ENV("LBANN_TRAINER_CREATE_TWO_MODELS"),
-                        "Create two models (one each for primary and secondary grid). "
-                        "Default is False.",
-                        false);
-  arg_parser.add_option(SMILES_BUFFER_SIZE,
-                        {"--smiles_buffer_size"},
-                        utils::ENV("LBANN_SMILES_BUFFER_SIZE"),
-                        "Size of the read buffer for the SMILES "
-                        "data reader.",
-                        16*1024*1024UL);
-}
-
 // Creates a datareader metadata to get around the need for an actual
 // datareader in inference only mode
 auto mock_dr_metadata(std::vector<int> input_dims,
@@ -171,7 +100,7 @@ int allocate_trainer_resources(lbann_comm *comm) {
       || trainer_grid_height != comm->get_trainer_grid().Height()) {
     comm->split_trainers(procs_per_trainer, trainer_grid_height);
   }
-  
+
   // Split trainer when sub-grid parallelism is enabled
   if(trainer_primary_grid_size > 0) {
     comm->split_trainer_grid(trainer_primary_grid_size, trainer_create_two_models);
@@ -430,12 +359,12 @@ std::unique_ptr<model> build_model_from_prototext(
 
   // If the checkpoint directory has been overridden reset it before
   // setting up the model
-  if (arg_parser.get<string>("ckpt_dir") != "") {
+  if (arg_parser.get<std::string>("ckpt_dir") != "") {
     for (auto&& c : ret_model->get_callbacks()) {
       {
         auto* cb = dynamic_cast<callback::dump_weights*>(c);
         if(cb != nullptr) {
-          cb->set_target_dir(arg_parser.get<string>("ckpt_dir"));
+          cb->set_target_dir(arg_parser.get<std::string>("ckpt_dir"));
           if(comm->am_trainer_master()) {
             std::cout << "Setting the dump weights directory to " << cb->get_target_dir() << std::endl;
           }
@@ -444,7 +373,7 @@ std::unique_ptr<model> build_model_from_prototext(
       {
         auto* cb = dynamic_cast<callback::save_model*>(c);
         if(cb != nullptr) {
-          cb->set_target_dir(arg_parser.get<string>("ckpt_dir"));
+          cb->set_target_dir(arg_parser.get<std::string>("ckpt_dir"));
           if(comm->am_trainer_master()) {
             std::cout << "Setting the dump weights directory to " << cb->get_target_dir() << std::endl;
           }
@@ -453,7 +382,7 @@ std::unique_ptr<model> build_model_from_prototext(
     }
   }
 
-  if (arg_parser.get<string>("load_model_weights_dir") != "") {
+  if (arg_parser.get<std::string>("load_model_weights_dir") != "") {
     callback::load_model* cb = nullptr;
     for (auto&& c : ret_model->get_callbacks()) {
       cb = dynamic_cast<callback::load_model*>(c);
@@ -463,7 +392,7 @@ std::unique_ptr<model> build_model_from_prototext(
     }
 
     std::string active_load_model_dir;
-    std::string load_model_dir = arg_parser.get<string>("load_model_weights_dir");
+    std::string load_model_dir = arg_parser.get<std::string>("load_model_weights_dir");
     if(arg_parser.get<bool>("load_model_weights_dir_is_complete")) {
       active_load_model_dir = load_model_dir;
     }else {
@@ -494,7 +423,7 @@ std::unique_ptr<model> build_model_from_prototext(
       }
 #endif
     }else {
-      cb->add_dir(arg_parser.get<string>("load_model_weights_dir"));
+      cb->add_dir(arg_parser.get<std::string>("load_model_weights_dir"));
     }
   }
 

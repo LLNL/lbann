@@ -112,26 +112,25 @@ void smiles_data_reader::load() {
     std::cout << "starting load for role: " << get_role() << std::endl;
   }
 
-  double tm1 = get_time();
-  options *opts = options::get();
+  auto& arg_parser = global_argument_parser();
 
   // for now, only implemented for data store with preloading
   set_use_data_store(true);
 
   if (m_sequence_length == 0) {
-    if (!opts->has_int("sequence_length")) {
+    if (arg_parser.get<int>("sequence_length") == 0) {
       LBANN_ERROR("you must pass --sequence_length=<int> on the cmd line or call set_sequence_length()");
     }
-    m_sequence_length =  opts->get_int("sequence_length");
+    m_sequence_length =  arg_parser.get<int>("sequence_length");
   }
   m_linearized_data_size = m_sequence_length+2;
 
   // load the vocabulary; this is a map: string -> short
   if (m_vocab.size() == 0) {
-    if (!opts->has_string("vocab")) {
+    if (arg_parser.get<std::string>("vocab") == "") {
       LBANN_ERROR("you must either pass --vocab=<string> on the command line or call load_vocab(...)");
     }
-    const std::string fn = opts->get_string("vocab");
+    const std::string fn = arg_parser.get<std::string>("vocab");
     load_vocab(fn);
   } else {
     LBANN_ERROR("you passed --vocab=<string>, but it looks like load_vocab() was previously called. You must use one or the other.");

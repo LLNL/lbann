@@ -24,13 +24,15 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/utils/options.hpp"
 #include "lbann/utils/argument_parser.hpp"
 
 namespace lbann {
 
 void construct_std_options() {
   auto& arg_parser = global_argument_parser();
-  arg_parser.add_required_argument("prototext",
+  arg_parser.add_required_argument<std::string>
+                                  ("prototext",
                                    "Prototext file containing experiment");
   arg_parser.add_option(MAX_RNG_SEEDS_DISPLAY,
                         {"--rng_seeds_per_trainer_to_display"},
@@ -81,7 +83,7 @@ void construct_std_options() {
                         "Height of 2D process grid for each trainer. "
                         "Default grid is approximately square.",
                         -1);
-  arg_parser.add_option(SMILES_BUFFER_SIZE,
+  arg_parser.add_option("smiles_buffer_size",
                         {"--smiles_buffer_size"},
                         utils::ENV("LBANN_SMILES_BUFFER_SIZE"),
                         "Size of the read buffer for the SMILES "

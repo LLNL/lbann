@@ -109,8 +109,7 @@ int main(int argc, char* argv[])
 
   try {
     // Initialize options db (this parses the command line)
-    options::construct_all_options();
-    auto& arg_parser = global_argument_parser();
+    construct_all_options();
     if (arg_parser.get<bool>("help") or argc == 1) {
       if (master)
         std::cout << arg_parser << std::endl;
@@ -185,16 +184,15 @@ int main(int argc, char* argv[])
                                  pb_trainer,
                                  pb,
                                  comm.get(),
-                                 opts,
                                  io_thread_pool,
                                  trainer.get_callbacks_with_ownership(),
                                  training_dr_linearized_data_size);
 
-    if (opts->has_string("create_tarball")) {
+    if (arg_parser.get<bool>("create_tarball")) {
       return EXIT_SUCCESS;
     }
 
-    if (!opts->get_bool("exit_after_setup")) {
+    if (!arg_parser.get<bool>("exit_after_setup")) {
 
       // Train model
       trainer.train(model.get(), pb_model->num_epochs());
@@ -221,7 +219,7 @@ int main(int argc, char* argv[])
     }
   }
   catch (exception& e) {
-    if (options::get()->get_bool("stack_trace_to_file")) {
+    if (arg_parser.get<bool>("stack_trace_to_file")) {
       std::ostringstream ss("stack_trace");
       const auto& rank = get_rank_in_world();
       if (rank >= 0) {

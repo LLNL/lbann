@@ -719,27 +719,27 @@ void set_data_readers_filenames(
     if (r->role() == which) {
       std::ostringstream s;
       s << "data_filedir_" << which;
-      if (arg_parser.get<string>(s.str()) != "") {
-        r->set_data_filedir(arg_parser.get<string>(s.str()));
+      if (arg_parser.get<std::string>(s.str()) != "") {
+        r->set_data_filedir(arg_parser.get<std::string>(s.str()));
       }else {
         s.clear();
         s.str("");
         s << "data_filedir";
-        if (arg_parser.get<string>(s.str()) != "") {
-          r->set_data_filedir(arg_parser.get<string>(s.str()));
+        if (arg_parser.get<std::string>(s.str()) != "") {
+          r->set_data_filedir(arg_parser.get<std::string>(s.str()));
         }
       }
       s.clear();
       s.str("");
       s << "data_filename_" << which;
-      if (arg_parser.get<string>(s.str()) != "") {
-        r->set_data_filename(arg_parser.get<string>(s.str()));
+      if (arg_parser.get<std::string>(s.str()) != "") {
+        r->set_data_filename(arg_parser.get<std::string>(s.str()));
       }
       s.clear();
       s.str("");
       s << "label_filename_" << which;
-      if (arg_parser.get<string>(s.str()) != "") {
-        r->set_label_filename(arg_parser.get<string>(s.str()));
+      if (arg_parser.get<std::string>(s.str()) != "") {
+        r->set_label_filename(arg_parser.get<std::string>(s.str()));
       }
     }
   }
@@ -756,14 +756,14 @@ void set_data_readers_sample_list(
   for (int j=0; j<size; j++) {
     lbann_data::Reader *r = readers->mutable_reader(j);
     if (r->role() == which) {
-      r->set_sample_list(arg_parser.get<string>(key_role));
+      r->set_sample_list(arg_parser.get<std::string>(key_role));
     }
   }
 }
 
 void set_data_readers_percent(lbann_data::LbannPB& p)
 {
-  options *opts = options::get();
+  auto& arg_parser = global_argument_parser();
   double percent = arg_parser.get<float>("data_reader_percent");
   if (percent <= 0 || percent > 1.0) {
       std::ostringstream err;
@@ -829,31 +829,31 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
     }
   }
 
-  if ((arg_parser.get<string>("data_filedir") != "")
-      or (arg_parser.get<string>("data_filedir_train") != "")
-      or (arg_parser.get<string>("data_filename_train") != "")
-      or (arg_parser.get<string>("label_filename_train") != "")) {
+  if ((arg_parser.get<std::string>("data_filedir") != "")
+      or (arg_parser.get<std::string>("data_filedir_train") != "")
+      or (arg_parser.get<std::string>("data_filename_train") != "")
+      or (arg_parser.get<std::string>("label_filename_train") != "")) {
     set_data_readers_filenames("train", p);
   }
-  if ((arg_parser.get<string>("data_filedir") != "")
-      or (arg_parser.get<string>("data_filedir_validate") != "")
-      or (arg_parser.get<string>("data_filename_validate") != "")
-      or (arg_parser.get<string>("label_filename_validate") != "")) {
+  if ((arg_parser.get<std::string>("data_filedir") != "")
+      or (arg_parser.get<std::string>("data_filedir_validate") != "")
+      or (arg_parser.get<std::string>("data_filename_validate") != "")
+      or (arg_parser.get<std::string>("label_filename_validate") != "")) {
     set_data_readers_filenames("validate", p);
   }
-  if ((arg_parser.get<string>("data_filedir") != "")
-      or (arg_parser.get<string>("data_filedir_test") != "")
-      or (arg_parser.get<string>("data_filename_test") != "")
-      or (arg_parser.get<string>("label_filename_test") != "")) {
+  if ((arg_parser.get<std::string>("data_filedir") != "")
+      or (arg_parser.get<std::string>("data_filedir_test") != "")
+      or (arg_parser.get<std::string>("data_filename_test") != "")
+      or (arg_parser.get<std::string>("label_filename_test") != "")) {
     set_data_readers_filenames("test", p);
   }
-  if (arg_parser.get<string>("sample_list_train") != "") {
+  if (arg_parser.get<std::string>("sample_list_train") != "") {
     set_data_readers_sample_list("train", p);
   }
-  if (arg_parser.get<string>("sample_list_validate") != "") {
+  if (arg_parser.get<std::string>("sample_list_validate") != "") {
     set_data_readers_sample_list("validate", p);
   }
-  if (arg_parser.get<string>("sample_list_test") != "") {
+  if (arg_parser.get<std::string>("sample_list_test") != "") {
     set_data_readers_sample_list("test", p);
   }
   if (arg_parser.get<float>("data_reader_percent") != 0.) {
@@ -1072,11 +1072,11 @@ void save_session(const lbann_comm& comm, const int argc, char * const* argv, lb
     return;
   }
 
-  options *opts = options::get();
+  auto& arg_parser = global_argument_parser();
 
   //do not write output file for a repeated experiment;
   //may want to revisit this decision later ...
-  if (arg_parser.get<string>("prototext") != "") {
+  if (arg_parser.get<std::string>("prototext") != "") {
     return;
   }
 
