@@ -28,11 +28,27 @@
 
 #include "lbann/execution_contexts/execution_context.hpp"
 #include "lbann/execution_contexts/sgd_execution_context.hpp"
+#include "lbann/callbacks/kfac/kfac_block.hpp" /// @todo Move into execution_algorithm dir
+#include "lbann/callbacks/kfac/kfac_util.hpp" /// @todo Move into execution_algorithm dir
 #include <memory>
 #include <string>
 
+// Forward declaration
+namespace lbann {
+class KFAC;
+}
+
 namespace lbann {
 namespace kfac {
+
+// Typedefs
+#ifdef LBANN_HAS_GPU
+constexpr El::Device Device = El::Device::GPU;
+#else
+constexpr El::Device Device = El::Device::CPU;
+#endif // LBANN_HAS_GPU
+template <El::Device Device>
+using kfac_block = ::lbann::callback::kfac_block<Device>;
 
 /** @class ExecutionContext
  *  @brief The execution context for an KFAC algorithm.
@@ -40,8 +56,15 @@ namespace kfac {
 class ExecutionContext final : public lbann::execution_context
 {
 public:
+  friend class ::lbann::KFAC;
+
   /** Constructor. */
-  ExecutionContext(size_t mini_batch_size);
+  ExecutionContext(
+    size_t mini_batch_size,
+    double damping_act,
+    double damping_err,
+    double damping_bn_act,
+    double damping_bn_err);
   /** Destructor. */
   ~ExecutionContext() = default;
 
@@ -87,6 +110,24 @@ public:
 private:
 
   sgd_execution_context m_sgd_execution_context;
+
+  /** @brief The current damping values. */
+  double m_damping_act, m_damping_err,
+    m_damping_bn_act, m_damping_bn_err;
+
+  /** @brief The current update interval. */
+  size_t m_update_interval;
+
+  /** @brief K-FAC per-layer blocks. */
+  std::vector<std::shared_ptr<kfac_block<Device>>> m_blocks;
+
+  /** @brief Workspace matrices that are used by m_blocks. */
+  std::unordered_map<std::string,
+                     El::Matrix<DataType, Device>> m_workspace;
+
+  /** @brief Copy of lbann_comm::get_rank_in_trainer() for internal
+      functions. TODO: Get the rank from lbann_comm directly */
+  int m_rank;
 
 }; // class ExecutionContext
 

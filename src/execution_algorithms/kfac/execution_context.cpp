@@ -33,13 +33,22 @@ namespace kfac {
 // Life cycle
 // =============================================
 
-ExecutionContext::ExecutionContext(size_t mini_batch_size)
-  : m_sgd_execution_context(execution_mode::training, mini_batch_size)
+ExecutionContext::ExecutionContext(
+  size_t mini_batch_size,
+  double damping_act,
+  double damping_err,
+  double damping_bn_act,
+  double damping_bn_err)
+  : m_sgd_execution_context(execution_mode::training, mini_batch_size),
+    m_damping_act{damping_act},
+    m_damping_err{damping_err},
+    m_damping_bn_act{damping_bn_act},
+    m_damping_bn_err{damping_bn_err}
 {}
 
 std::unique_ptr<execution_context> ExecutionContext::get_new() const
 {
-    return std::make_unique<ExecutionContext>(0UL);
+    return std::make_unique<ExecutionContext>(0UL, 0.0, 0.0, 0.0, 0.0);
 }
 
 // =============================================
