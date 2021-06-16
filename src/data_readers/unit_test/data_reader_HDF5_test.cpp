@@ -37,7 +37,7 @@
 #include <cstdlib>
 
 #include "data_reader_common_catch2.hpp"
-#include "lbann/data_readers/data_reader_HDF5_impl.hpp"
+#include "lbann/data_readers/data_reader_HDF5.hpp"
 
 // input data; each of these contain a single variable: "const std::string"
 #include "test_data/hdf5_hrrl_reader.prototext"

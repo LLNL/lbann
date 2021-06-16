@@ -335,12 +335,12 @@ private:
    *  node, that is passed to the data_store
    */
   template <typename T>
-  void pack(std::string group_name, conduit::Node& node, size_t index);
+  void pack(std::string const& group_name, conduit::Node& node, size_t index);
 
   /** Returns true if this is a node that was constructed from one or more
    * original data fields
    */
-  bool is_composite_node(const conduit::Node& node);
+  bool is_composite_node(const conduit::Node& node) const;
 
 }; // END: class hdf5_data_reader
 

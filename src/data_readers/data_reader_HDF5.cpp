@@ -113,9 +113,9 @@ void do_repack_image(T* const src_buf,
 } // namespace
 
 template <typename T>
-void hdf5_data_reader::pack(std::string group_name,
+void hdf5_data_reader::pack(std::string const& group_name,
                             conduit::Node& node,
-                            size_t index)
+                            size_t const index)
 {
   if (m_packing_groups.find(group_name) == m_packing_groups.end()) {
     LBANN_ERROR("(m_packing_groups.find(", group_name, ") failed");
@@ -124,16 +124,15 @@ void hdf5_data_reader::pack(std::string group_name,
   std::vector<T> data(g.n_elts);
   size_t idx = 0;
   for (size_t k = 0; k < g.names.size(); k++) {
-    size_t n_elts = g.sizes[k];
-    std::ostringstream ss;
-    ss << node.name() << node.child(0).name() + "/" << g.names[k];
-    if (!node.has_path(ss.str())) {
-      LBANN_ERROR("no leaf for path: ", ss.str());
+    size_t const n_elts = g.sizes[k];
+    auto path = build_string(node.name(), node.child(0).name(), '/', g.names[k]);
+    if (!node.has_path(path)) {
+      LBANN_ERROR("no leaf for path: ", path);
     }
-    conduit::Node& leaf = node[ss.str()];
+    conduit::Node& leaf = node[path];
     memcpy(data.data() + idx, leaf.data_ptr(), n_elts * sizeof(T));
     if (m_delete_packed_fields) {
-      node.remove(ss.str());
+      node.remove(path);
     }
     idx += n_elts;
   }
@@ -142,7 +141,7 @@ void hdf5_data_reader::pack(std::string group_name,
   }
   std::ostringstream ss;
   ss << '/' << LBANN_DATA_ID_STR(index) + '/' + group_name;
-  node[ss.str()] = data;
+  node[ss.str()] = std::move(data);
 
   // this is clumsy and should be done better
   if (m_add_to_map.find(group_name) == m_add_to_map.end()) {
@@ -992,7 +991,7 @@ void hdf5_data_reader::print_metadata(std::ostream& os)
     << "==================================================================\n\n";
 }
 
-bool hdf5_data_reader::is_composite_node(const conduit::Node& node)
+bool hdf5_data_reader::is_composite_node(const conduit::Node& node) const
 {
   if (!node.has_child(s_metadata_node_name)) {
     LBANN_ERROR("node with path: ",

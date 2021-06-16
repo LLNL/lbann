@@ -29,7 +29,7 @@
 #include "TestHelpers.hpp"
 #include "MPITestHelpers.hpp"
 #include <lbann/base.hpp>
-#include "lbann/data_readers/data_reader_HDF5_impl.hpp"
+#include "lbann/data_readers/data_reader_HDF5.hpp"
 #include "lbann/data_readers/sample_list_impl.hpp"
 #include "lbann/data_readers/sample_list_open_files_impl.hpp"
 #include <lbann.pb.h>
