@@ -24,14 +24,10 @@ add_executable( lbann-inf-bin lbann_inf.cpp )
 target_link_libraries(lbann-inf-bin lbann )
 set_target_properties(lbann-inf-bin PROPERTIES OUTPUT_NAME lbann_inf)
 
-add_executable( test-bed-data-reader-bin test_bed_data_reader.cpp )
-target_link_libraries(test-bed-data-reader-bin lbann )
-set_target_properties(test-bed-data-reader-bin PROPERTIES OUTPUT_NAME test_bed_data_reader)
-
 # Install the binaries
 install(
   TARGETS lbann-bin lbann-gan-bin lbann-cycgan-bin lbann-aecycgan-bin
-  lbann-help lbann-inf-bin test-bed-data-reader-bin
+  lbann-help lbann-inf-bin
   EXPORT LBANNTargets
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
