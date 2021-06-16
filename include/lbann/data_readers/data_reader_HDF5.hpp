@@ -33,18 +33,20 @@ namespace lbann {
 /**
  * A generalized data reader for data stored in HDF5 files.
  */
-class hdf5_data_reader : public data_reader_sample_list {
+class hdf5_data_reader : public data_reader_sample_list
+{
 public:
   hdf5_data_reader(bool shuffle = true);
   hdf5_data_reader(const hdf5_data_reader&);
   hdf5_data_reader& operator=(const hdf5_data_reader&);
-  hdf5_data_reader* copy() const override { return new hdf5_data_reader(*this); }
-  void copy_members(const hdf5_data_reader &rhs);
+  hdf5_data_reader* copy() const override
+  {
+    return new hdf5_data_reader(*this);
+  }
+  void copy_members(const hdf5_data_reader& rhs);
   ~hdf5_data_reader() override;
 
-  std::string get_type() const override {
-    return "hdf5_data_reader";
-  }
+  std::string get_type() const override { return "hdf5_data_reader"; }
 
   /** @brief Prints metadata and data-types for all field-names
    *
@@ -54,7 +56,7 @@ public:
    *  Note: this method is called internally (I forget from exactly where),
    *  and can be disabled by the cmd line switch: --quiet
    */
-  void print_metadata(std::ostream& os=std::cout);
+  void print_metadata(std::ostream& os = std::cout);
 
   void load() override;
 
@@ -66,74 +68,81 @@ public:
    */
   bool fetch(std::string which, CPUMat& Y, int data_id, int mb_idx);
 
-
-  bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override {
+  bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override
+  {
     return fetch("datum", X, data_id, mb_idx);
   }
 
-  bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override {
+  bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override
+  {
     return fetch("response", Y, data_id, mb_idx);
   }
 
-  bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override {
+  bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override
+  {
     return fetch("label", Y, data_id, mb_idx);
   }
 
   /** @brief Sets the name of the yaml experiment file */
-  void set_experiment_schema_filename(std::string fn) {
+  void set_experiment_schema_filename(std::string fn)
+  {
     m_experiment_schema_filename = fn;
   }
 
   /** @brief Returns the name of the yaml experiment file */
-  const std::string& get_experiment_schema_filename() {
+  const std::string& get_experiment_schema_filename()
+  {
     return m_experiment_schema_filename;
   }
 
   /** @brief Sets the name of the yaml data file */
-  void set_data_schema_filename(std::string fn) {
-    m_data_schema_filename = fn;
-  }
+  void set_data_schema_filename(std::string fn) { m_data_schema_filename = fn; }
 
   /** @brief Returns the name of the yaml data file */
-  const std::string& get_data_schema_filename() {
+  const std::string& get_data_schema_filename()
+  {
     return m_data_schema_filename;
   }
 
-  const std::vector<int> get_data_dims() const override {
+  const std::vector<int> get_data_dims() const override
+  {
     return get_data_dims("datum");
   }
 
-  int get_linearized_data_size() const override {
+  int get_linearized_data_size() const override
+  {
     return get_linearized_size("datum");
   }
 
-  int get_linearized_response_size() const override {
+  int get_linearized_response_size() const override
+  {
     return get_linearized_size("response");
   }
 
-  int get_linearized_label_size() const override {
+  int get_linearized_label_size() const override
+  {
     return get_linearized_size("label");
   }
 
-  int get_num_labels() const override {
-    return get_linearized_label_size();
-  }
+  int get_num_labels() const override { return get_linearized_label_size(); }
 
-  int get_num_responses() const override {
+  int get_num_responses() const override
+  {
     return get_linearized_response_size();
   }
 
   /** @brief this method is made public for testing */
   conduit::Node get_experiment_schema() const { return m_experiment_schema; }
   /** @brief this method is made public for testing */
-  conduit::Node get_data_schema() const{ return m_data_schema; }
+  conduit::Node get_data_schema() const { return m_data_schema; }
   /** @brief this method is made public for testing */
   void set_experiment_schema(const conduit::Node& s);
   /** @brief this method is made public for testing */
   void set_data_schema(const conduit::Node& s);
   /** @brief this method is made public for testing */
-  std::unordered_map<std::string, conduit::Node> get_node_map() const {
-    return  m_useme_node_map;
+  std::unordered_map<std::string, conduit::Node> get_node_map() const
+  {
+    return m_useme_node_map;
   }
 
   /** @brief this method is made public for testing
@@ -148,7 +157,6 @@ public:
   void adjust_metadata(conduit::Node* root);
 
 private:
-
   /** filled in by construct_linearized_size_lookup_tables;
    *  used by get_data_dims()
    */
@@ -168,10 +176,11 @@ private:
   // field if it's been packed, but someone else might ...
   // note that setting to 'false' invokes both a memory and communication
   // penalty
-  //TODO: not yet implemented
+  // TODO: not yet implemented
   bool m_delete_packed_fields = true;
 
-  struct PackingGroup {
+  struct PackingGroup
+  {
     std::string group_name;
     conduit::index_t data_type;
     size_t n_elts;
@@ -223,19 +232,18 @@ private:
    *  The caller must cast to the appropriate type, as specified by 'dtype_out,'
    *  which is one of: float32, float64, int32, int64, uint64, uint32
    */
-  const void* get_data(
-    const size_t sample_id_in,
-    std::string field_name_in,
-    size_t &num_elts_out,
-    std::string& dtype_out) const;
+  const void* get_data(const size_t sample_id_in,
+                       std::string field_name_in,
+                       size_t& num_elts_out,
+                       std::string& dtype_out) const;
 
-  const std::vector<int> get_data_dims(std::string name="") const;
+  const std::vector<int> get_data_dims(std::string name = "") const;
 
   /** Returns the size of the requested field (datum, label, response, etc) */
-  int get_linearized_size(std::string name) const;
+  int get_linearized_size(std::string const& name) const override;
 
   /** P_0 reads and bcasts the schema */
-  void load_sample_schema(conduit::Schema &s);
+  void load_sample_schema(conduit::Schema& s);
 
   /** Fills in various data structures by parsing the schemas
    *  (i.e, km_data_schema and m_experiment_schema
@@ -246,14 +254,17 @@ private:
    *  keys are the pathnames; recursive. However, ignores any nodes named
    *  "metadata" (or whatever 's_metadata_node_name' is set to).
    */
-  void get_schema_ptrs(conduit::Node* starting_node, std::unordered_map<std::string, conduit::Node*> &schema_name_map);
+  void get_schema_ptrs(
+    conduit::Node* starting_node,
+    std::unordered_map<std::string, conduit::Node*>& schema_name_map);
 
   /**  Returns, in leaves, the schemas for leaf nodes in the tree rooted
    *  at 'node_in.'  Optionally ignores nodes named "metadata" (or whatever
    *  's_metadata_node_name' is set to).
    *  Keys in the filled-in map are the pathnames to the leaf nodes.
    */
-  void get_leaves(conduit::Node* node_in, std::unordered_map<std::string, conduit::Node*> &leaves_out);
+  void get_leaves(conduit::Node* node_in,
+                  std::unordered_map<std::string, conduit::Node*>& leaves_out);
 
   /** Functionality is similar to get_leaves(). This method differs in that
    *  two conduit::Node trees are searched for leaves. The leaves from
@@ -261,9 +272,9 @@ private:
    *  continuing the search in the second tree. In practice, the first tree
    *  is defined by the experiment_schema, and the second by the data_schema.
    */
-  void get_leaves_multi(
-    conduit::Node* node_in,
-    std::unordered_map<std::string, conduit::Node*> &leaves_out);
+  void
+  get_leaves_multi(conduit::Node* node_in,
+                   std::unordered_map<std::string, conduit::Node*>& leaves_out);
 
   void do_preload_data_store() override;
 
@@ -271,41 +282,43 @@ private:
    *  coerce, pack, etc. "ignore_failure" is only used for
    *  by the call to print_metadata().
    */
-  void load_sample(conduit::Node &node, size_t index, bool ignore_failure = false);
+  void
+  load_sample(conduit::Node& node, size_t index, bool ignore_failure = false);
 
   /** Performs packing, normalization, etc. Called by load_sample. */
-  void pack_data(conduit::Node &node_in_out);
+  void pack_data(conduit::Node& node_in_out);
 
   /** loads a schema from file */
-  void load_schema(std::string filename, conduit::Node &schema);
+  void load_schema(std::string filename, conduit::Node& schema);
 
   /** pack the data; this is for all 'groups' in the node */
-  void pack(conduit::Node &node, size_t index);
+  void pack(conduit::Node& node, size_t index);
 
   /** Merges the contents of the two input nodes, either of which may be
    *  a nullptr. If the input nodes contain a common field-name, then the
    *  value from node_B are used, and the value from node_A discarded.
    */
-  conduit::Node merge_metadata_nodes(const conduit::Node *node_A, const conduit::Node *node_B);
+  conduit::Node merge_metadata_nodes(const conduit::Node* node_A,
+                                     const conduit::Node* node_B);
 
   /** Fills in m_packing_groups data structure */
-  void build_packing_map(conduit::Node &node);
+  void build_packing_map(conduit::Node& node);
 
   /** repacks from HWC to CHW */
-  void repack_image(conduit::Node& node, const std::string &path, const conduit::Node& metadata);
+  void repack_image(conduit::Node& node,
+                    const std::string& path,
+                    const conduit::Node& metadata);
 
   /** called from load_sample */
-  void coerce(
-    const conduit::Node& metadata,
-    hid_t file_handle,
-    const std::string & original_path,
-    const std::string &new_pathname,
-    conduit::Node &node);
+  void coerce(const conduit::Node& metadata,
+              hid_t file_handle,
+              const std::string& original_path,
+              const std::string& new_pathname,
+              conduit::Node& node);
 
-  void normalize(
-    conduit::Node& node,
-    const std::string &path,
-    const conduit::Node& metadata);
+  void normalize(conduit::Node& node,
+                 const std::string& path,
+                 const conduit::Node& metadata);
 
   /** Constructs m_data_dims_lookup_table and m_linearized_size_lookup_table */
   void construct_linearized_size_lookup_tables();
@@ -317,37 +330,42 @@ private:
   // template declarations follow
   //=========================================================================
 
-  template<typename T_from, typename T_to>
-  void coerceme(const T_from* data_in, size_t n_bytes, std::vector<T_to> & data_out);
-
   /** Performs normalization for scalars and 1D arrays */
-  template<typename T>
+  template <typename T>
   void normalizeme(T* data, double scale, double bias, size_t n_bytes);
 
   /** Performs normalization for images with multiple channels */
-  template<typename T>
-  void normalizeme(T* data, const double* scale, const double* bias, size_t n_bytes, size_t n_channels);
+  template <typename T>
+  void normalizeme(T* data,
+                   const double* scale,
+                   const double* bias,
+                   size_t n_bytes,
+                   size_t n_channels);
 
-  template<typename T>
-  void repack_image(T* src_buf, size_t n_bytes, size_t n_rows, size_t n_cols, int n_channels);
+  template <typename T>
+  void repack_image(T* src_buf,
+                    size_t n_bytes,
+                    size_t n_rows,
+                    size_t n_cols,
+                    int n_channels);
 
   /** Packs all fields assigned to 'group_name' (datum, label, response)
    *  into a 1D vector; the packed field is then inserted in a conduit
    *  node, that is passed to the data_store
    */
-  template<typename T>
+  template <typename T>
   void pack(std::string group_name, conduit::Node& node, size_t index);
 
   /** Returns true if this is a node that was constructed from one or more
    * original data fields
    */
   bool is_composite_node(const conduit::Node& node);
-  bool is_composite_node(const conduit::Node* node) {
+  bool is_composite_node(const conduit::Node* node)
+  {
     return is_composite_node(*node);
   }
 
 }; // END: class hdf5_data_reader
-
 
 } // namespace lbann
 
