@@ -73,7 +73,7 @@ class data_reader_sample_list : public generic_data_reader {
    * Override the shuffle indices function to update the sample list's
    * file usage.
    */
-  void shuffle_indices(rng_gen &gen);
+  void shuffle_indices(rng_gen &gen) override;
 
   /** Developer's note: derived classes that override load() should
    * explicitly call data_reader_sample_list::load() at the
