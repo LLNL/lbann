@@ -24,7 +24,7 @@
 // permissions and limitations under the license.
 //
 /////////////////////////////////////////////////////////////////////////////////
-#include "lbann/data_readers/data_reader_HDF5.hpp"
+#include "lbann/data_readers/data_reader_HDF5_impl.hpp"
 #include "lbann/utils/timer.hpp"
 #include "conduit/conduit_relay_mpi.hpp"
 
@@ -496,7 +496,7 @@ void hdf5_data_reader::build_packing_map(conduit::Node &node) {
 }
 
 
-// Union your parent's metadata with yours; in case of a key conflict, 
+// Union your parent's metadata with yours; in case of a key conflict,
 // the child's values prevail.
 // At the conclusion of recursion, every node in the tree will
 // contain a metadata child node
@@ -637,7 +637,7 @@ void hdf5_data_reader::construct_linearized_size_lookup_tables() {
 
   // must load a sample to get data sizes. Alternatively, this metadata
   // could be included in the schemas
-  load_sample(node, index); 
+  load_sample(node, index);
 
   std::unordered_map<std::string, conduit::Node*> leaves;
   get_leaves(&node, leaves);
