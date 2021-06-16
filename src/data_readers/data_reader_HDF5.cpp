@@ -25,7 +25,7 @@
 //
 /////////////////////////////////////////////////////////////////////////////////
 #include "conduit/conduit_relay_mpi.hpp"
-#include "lbann/data_readers/data_reader_HDF5_impl.hpp"
+#include "lbann/data_readers/data_reader_HDF5.hpp"
 #include "lbann/utils/timer.hpp"
 
 namespace lbann {
@@ -39,16 +39,17 @@ namespace {
  *  @returns A clean copy of the input data with a new type.
  */
 template <typename ToType, typename FromType>
-std::vector<ToType> coerceme(FromType const* const data_in, size_t num_elements)
+std::vector<ToType> do_coerce(FromType const* const data_in,
+                              size_t const num_elements)
 {
   return std::vector<ToType>{data_in, data_in + num_elements};
 }
 
 template <typename T>
-void normalizeme(T* const data,
-                 double const scale,
-                 double const bias,
-                 size_t const n_elts)
+void do_normalize(T* const data,
+                  double const scale,
+                  double const bias,
+                  size_t const n_elts)
 {
   std::for_each(data, data + n_elts, [scale, bias](auto& x) {
     x = x * scale + bias;
@@ -56,13 +57,12 @@ void normalizeme(T* const data,
 }
 
 template <typename T>
-void normalizeme(T* data,
-                 const double* scale,
-                 const double* bias,
-                 size_t n_bytes,
-                 size_t n_channels)
+void do_normalize(T* const data,
+                  const double* scale,
+                  const double* bias,
+                  size_t const n_elts,
+                  size_t const n_channels)
 {
-  size_t const n_elts = n_bytes / sizeof(T);
   size_t const n_elts_per_channel = n_elts / n_channels;
   for (size_t j = 0; j < n_elts_per_channel; j++) {
     for (size_t k = 0; k < n_channels; k++) {
@@ -74,13 +74,12 @@ void normalizeme(T* data,
 
 template <typename T>
 void do_repack_image(T* const src_buf,
-                     size_t const n_bytes,
+                     size_t const n_elts,
                      size_t const n_rows,
                      size_t const n_cols,
                      int const n_channels)
 {
   size_t const size = n_rows * n_cols;
-  size_t const n_elts = n_bytes / sizeof(T);
   std::vector<T> work;
   work.reserve(n_elts);
   T* const dst_buf = work.data();
@@ -376,8 +375,7 @@ void hdf5_data_reader::normalize(conduit::Node& node,
                                  const conduit::Node& metadata)
 {
   void* vals = node[path].data_ptr();
-  size_t n_bytes = node[path].dtype().number_of_elements() *
-                   node[path].dtype().element_bytes();
+  size_t n_elements = node[path].dtype().number_of_elements();
 
   // treat this as a multi-channel image
   if (metadata.has_child("channels")) {
@@ -410,11 +408,11 @@ void hdf5_data_reader::normalize(conduit::Node& node,
     // perform the normalization
     if (node[path].dtype().is_float32()) {
       float* data = reinterpret_cast<float*>(vals);
-      normalizeme<float>(data, scale, bias, n_bytes, n_channels);
+      do_normalize(data, scale, bias, n_elements, n_channels);
     }
     else if (node[path].dtype().is_float64()) {
       double* data = reinterpret_cast<double*>(vals);
-      normalizeme<double>(data, scale, bias, n_bytes, n_channels);
+      do_normalize(data, scale, bias, n_elements, n_channels);
     }
     else {
       LBANN_ERROR(
@@ -432,11 +430,11 @@ void hdf5_data_reader::normalize(conduit::Node& node,
 
     if (node[path].dtype().is_float32()) {
       float* data = reinterpret_cast<float*>(vals);
-      normalizeme(data, scale, bias, n_bytes / sizeof(float));
+      do_normalize(data, scale, bias, n_elements);
     }
     else if (node[path].dtype().is_float64()) {
       double* data = reinterpret_cast<double*>(vals);
-      normalizeme(data, scale, bias, n_bytes / sizeof(double));
+      do_normalize(data, scale, bias, n_elements);
     }
     else {
       LBANN_ERROR(
@@ -746,18 +744,18 @@ void hdf5_data_reader::coerce(const conduit::Node& metadata,
   const std::string& coerce_to = cc.substr(1, cc.size() - 2);
 
   // this is just ugly, but I don't know how to make it better; would
-  // like to have a single call to coerceme<>
+  // like to have a single call to do_coerce<>
   if (coerce_to == "float") {
     node[new_pathname] =
       (from_is_float
-         ? coerceme<float>(reinterpret_cast<float*>(vals), num_elements)
-         : coerceme<float>(reinterpret_cast<double*>(vals), num_elements));
+         ? do_coerce<float>(reinterpret_cast<float*>(vals), num_elements)
+         : do_coerce<float>(reinterpret_cast<double*>(vals), num_elements));
   }
   else if (coerce_to == "double") {
     node[new_pathname] =
       (from_is_float
-         ? coerceme<double>(reinterpret_cast<float*>(vals), num_elements)
-         : coerceme<double>(reinterpret_cast<double*>(vals), num_elements));
+         ? do_coerce<double>(reinterpret_cast<float*>(vals), num_elements)
+         : do_coerce<double>(reinterpret_cast<double*>(vals), num_elements));
   }
   else {
     LBANN_ERROR("Un-implemented type requested for coercion: ",
