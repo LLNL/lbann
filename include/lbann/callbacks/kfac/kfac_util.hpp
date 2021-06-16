@@ -31,6 +31,13 @@
 
 #include "lbann/base.hpp"
 #include "lbann/callbacks/kfac/kfac.hpp"
+#include "lbann/layers/learning/convolution.hpp"
+#include "lbann/layers/learning/fully_connected.hpp"
+#include "lbann/layers/learning/gru.hpp"
+#include "lbann/layers/regularizers/batch_normalization.hpp"
+#include "lbann/callbacks/kfac/kfac_block_fc_conv.hpp"
+#include "lbann/callbacks/kfac/kfac_block_bn.hpp"
+#include "lbann/callbacks/kfac/kfac_block_gru.hpp"
 
 namespace lbann {
 namespace callback {

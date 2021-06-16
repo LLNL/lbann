@@ -94,6 +94,8 @@ template <hydrogen::Device Device>
 class kfac_block_fc_conv;
 template <hydrogen::Device Device>
 class kfac_block_bn;
+template <hydrogen::Device Device>
+class kfac_block_gru;
 } // namespace callback
 
 /** @brief Smart pointer to manage ownership of a layer object
@@ -217,6 +219,8 @@ class Layer {
   friend class callback::kfac_block_fc_conv;
   template <hydrogen::Device Device>
   friend class callback::kfac_block_bn;
+  template <hydrogen::Device Device>
+  friend class callback::kfac_block_gru;
 
 public:
 

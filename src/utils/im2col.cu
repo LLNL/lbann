@@ -128,21 +128,10 @@ void im2col(const El::Matrix<TensorDataType, El::Device::GPU>& im,
   if(im_num_dims == 2) {
     constexpr size_t block_size = 256;
     const size_t grid_size = (output_num + block_size - 1) / block_size;
-    hydrogen::gpu::LaunchKernel(
-      im2col_2d_kernel<TensorDataType>,
-      grid_size, block_size, 0, sync_info,
-      im.LockedBuffer(), col.Buffer(),
-      im_dims[0], im_dims[1],
-      im_pads[0], im_pads[1],
-      num_channels,
-      window_dims[0], window_dims[1],
-      offset_stride[0], offset_stride[1],
-      offset_start[0], offset_start[1],
-      offset_end[0], offset_end[1],
-      offset_num[0], offset_num[1],
-      output_height, output_num);
-    /*
-    im2col_2d_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
+    if (grid_size > 0) {
+      hydrogen::gpu::LaunchKernel(
+        im2col_2d_kernel<TensorDataType>,
+        grid_size, block_size, 0, sync_info,
         im.LockedBuffer(), col.Buffer(),
         im_dims[0], im_dims[1],
         im_pads[0], im_pads[1],
@@ -153,8 +142,7 @@ void im2col(const El::Matrix<TensorDataType, El::Device::GPU>& im,
         offset_end[0], offset_end[1],
         offset_num[0], offset_num[1],
         output_height, output_num);
-        */
-
+    }
   } else {
     std::cerr << "im2col on GPU only accepts 2D layers." << std::endl;
     abort();
