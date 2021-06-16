@@ -68,7 +68,7 @@ int guess_global_rank() noexcept
 int main(int argc, char* argv[])
 {
   auto& arg_parser = global_argument_parser();
-  construct_std_options();
+  construct_all_options();
   auto use_cudnn_tensor_ops =
     arg_parser.add_flag("use cudnn tensor ops",
                         {"--use-cudnn-tensor-ops"},
@@ -109,6 +109,8 @@ int main(int argc, char* argv[])
 
   try {
     // Initialize options db (this parses the command line)
+    // TODO MRW
+    /*
     construct_all_options();
     if (arg_parser.get<bool>("help") or argc == 1) {
       if (master)
@@ -116,6 +118,7 @@ int main(int argc, char* argv[])
       print_help(*comm);
       return EXIT_SUCCESS;
     }
+    */
 
     // Setup cuDNN and cuBLAS defaults
     if (master) {
