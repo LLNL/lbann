@@ -61,7 +61,8 @@ def setup_experiment(lbann):
 
 
 def create_parallel_strategy(num_channel_groups):
-    return {"channel_groups": num_channel_groups}
+    return {"channel_groups": num_channel_groups,
+            "filter_groups": num_channel_groups }
 
 
 def construct_model(lbann):
@@ -100,7 +101,7 @@ def construct_model(lbann):
 
     # Input and output dimensions
     input_channel_dims = _sample_dims[1:]
-    output_channel_dims = (2, 5)
+    output_channel_dims = (1, 10)
     input_channel_size = functools.reduce(operator.mul, input_channel_dims)
     output_channel_size = functools.reduce(operator.mul, output_channel_dims)
 
@@ -168,107 +169,6 @@ def construct_model(lbann):
         error_on_failure=True,
         execution_modes='test'))
 
-    # ------------------------------------------
-    # Data-parallel layout, non-transpose, no bias
-    # ------------------------------------------
-
-    # LBANN implementation
-    linearity_weights = lbann.Weights(
-        optimizer=lbann.SGD(),
-        initializer=lbann.ValueInitializer(
-            values=tools.str_list(np.nditer(linearity, order='F'))
-        )
-    )
-    x = x_lbann
-    y = lbann.ChannelwiseFullyConnected(
-        x,
-        weights=(linearity_weights),
-        output_channel_dims=output_channel_dims,
-        bias=False,
-    )
-    z = lbann.L2Norm2(y)
-    obj.append(z)
-    metrics.append(lbann.Metric(z, name='data-parallel layout, non-transpose, no bias'))
-
-    # NumPy implementation
-    tol = 8 * val_without_bias * np.finfo(np.float32).eps
-    callbacks.append(lbann.CallbackCheckMetric(
-        metric=metrics[-1].name,
-        lower_bound=val_without_bias - tol,
-        upper_bound=val_without_bias + tol,
-        error_on_failure=True,
-        execution_modes='test'))
-
-    # ------------------------------------------
-    # Data-parallel layout, transpose, bias
-    # ------------------------------------------
-
-    # LBANN implementation
-    linearity_weights = lbann.Weights(
-        optimizer=lbann.SGD(),
-        initializer=lbann.ValueInitializer(
-            values=tools.str_list(np.nditer(linearity, order='C'))
-        )
-    )
-    bias_weights = lbann.Weights(
-        optimizer=lbann.SGD(),
-        initializer=lbann.ValueInitializer(
-            values=tools.str_list(np.nditer(bias))
-        )
-    )
-    x = x_lbann
-    y = lbann.ChannelwiseFullyConnected(
-        x,
-        weights=(linearity_weights, bias_weights),
-        output_channel_dims=output_channel_dims,
-        transpose=True,
-        parallel_strategy=create_parallel_strategy(num_height_groups)
-    )
-    z = lbann.L2Norm2(y)
-    obj.append(z)
-    metrics.append(lbann.Metric(z, name='data-parallel layout, transpose, bias'))
-
-    # NumPy implementation
-    tol = 8 * val_with_bias * np.finfo(np.float32).eps
-    callbacks.append(lbann.CallbackCheckMetric(
-        metric=metrics[-1].name,
-        lower_bound=val_with_bias - tol,
-        upper_bound=val_with_bias + tol,
-        error_on_failure=True,
-        execution_modes='test'))
-
-    # ------------------------------------------
-    # Data-parallel layout, transpose, no bias
-    # ------------------------------------------
-
-    # LBANN implementation
-    linearity_weights = lbann.Weights(
-        optimizer=lbann.SGD(),
-        initializer=lbann.ValueInitializer(
-            values=tools.str_list(np.nditer(linearity, order='C'))
-        )
-    )
-    x = x_lbann
-    y = lbann.ChannelwiseFullyConnected(
-        x,
-        weights=(linearity_weights),
-        output_channel_dims=output_channel_dims,
-        bias=False,
-        transpose=True,
-        parallel_strategy=create_parallel_strategy(num_height_groups)
-    )
-    z = lbann.L2Norm2(y)
-    obj.append(z)
-    metrics.append(lbann.Metric(z, name='data-parallel layout, transpose, no bias'))
-
-    # NumPy implementation
-    tol = 8 * val_without_bias * np.finfo(np.float32).eps
-    callbacks.append(lbann.CallbackCheckMetric(
-        metric=metrics[-1].name,
-        lower_bound=val_without_bias - tol,
-        upper_bound=val_without_bias + tol,
-        error_on_failure=True,
-        execution_modes='test'))
 
     # ------------------------------------------
     # Gradient checking

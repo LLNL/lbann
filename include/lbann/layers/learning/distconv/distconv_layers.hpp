@@ -49,12 +49,29 @@ namespace distconv{
                   int local_mini_batch_size 
                  ){
 
-        util::MPIPrintStreamDebug()
+        util::MPIRootPrintStreamInfo()
           << "input tensor. global_shape: "
           << input.get_shape()
           << ", local shape: " << input.get_local_shape()
           << ", local real shape: " << input.get_local_real_shape()
           << ", dist: " << input.get_distribution();
+
+        util::MPIRootPrintStreamInfo()
+          << "linearity tensor. global_shape: "
+          << linearity.get_shape()
+          << ", local shape: " << linearity.get_local_shape()
+          << ", local real shape: " << linearity.get_local_real_shape()
+          << ", dist: " << linearity.get_distribution();
+
+        util::MPIRootPrintStreamInfo()
+          << "output tensor. global_shape: "
+          << output.get_shape()
+          << ", local shape: " << output.get_local_shape()
+          << ", local real shape: " << output.get_local_real_shape()
+          << ", dist: " << output.get_distribution();
+
+
+
 
         const auto& one = El::TypeTraits<DataType>::One();
         const auto& zero = El::TypeTraits<DataType>::Zero();
@@ -65,8 +82,8 @@ namespace distconv{
         const auto& input_dims = input.get_local_shape();
         const auto& output_dims = output.get_local_shape();
 
-        const auto& input_size = std::accumulate(input_dims.begin()+1, input_dims.end(), 1, std::multiplies<size_t>());
-        const auto& output_size = std::accumulate(output_dims.begin()+1, output_dims.end(), 1, std::multiplies<size_t>());
+        const auto& input_size = std::accumulate(input_dims.begin(), input_dims.end()-1, 1, std::multiplies<size_t>());
+        const auto& output_size = std::accumulate(output_dims.begin(), output_dims.end()-1, 1, std::multiplies<size_t>());
 
         El::Matrix<DataType> in_mat(input_size, local_mini_batch_size*m_num_local_channels, input.get_buffer(), input_size);
         El::Matrix<DataType> out_mat(output_size, local_mini_batch_size*m_num_local_channels, output.get_buffer(), output_size);

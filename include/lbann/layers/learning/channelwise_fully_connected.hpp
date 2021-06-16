@@ -54,9 +54,9 @@ class channelwise_fully_connected_distconv_adapter
     void bp_compute();
 
 
-    dc::Shape get_activations_local_shape(int index = 0);
-    dc::Shape get_prev_activations_shape(int index);
-    dc::Shape get_activations_shape(int index);
+    dc::Shape get_activations_local_shape(int index=0) const override;
+    dc::Shape get_prev_activations_shape(int index) const override;
+    dc::Shape get_activations_shape(int index) const override;
 
     std::unique_ptr<dc::Linear<TensorDataType>> m_linear_operator;
     std::unique_ptr<TensorDevType> m_linear; 

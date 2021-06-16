@@ -232,6 +232,13 @@ void distconv_adapter::adjust_parallel_strategy() {
     LBANN_ERROR("Distconv does not support filter parallelization yet. Layer: ",
                 get_name(), ", parallel strategy: ", ps);
   }*/
+  // std::cout<< "Number of Channel Groups:  " << c << std::endl;
+  // std::cout<< "Number of Depth Groups: " << d << std::endl;
+  // std::cout<< "Number of Height Groups: " << h << std::endl;
+  // std::cout<< "Number of Width Groups: " << w << std::endl;
+
+  // std::cout<< "Number of processes: " << n * c * spatial_prod << std::endl;
+
   if (n * c * spatial_prod > np) {
     LBANN_ERROR("The number of MPI ranks must be at least as large as the number of processes implied by parallel strategy: ",
                 ps);
@@ -246,7 +253,8 @@ void distconv_adapter::adjust_parallel_strategy() {
   }
 
   assert_always(spatial_prod * n * c == np);
-  assert_always(spatial_prod * n * f == np);
+  // TO DO: Reinsert checks for conv layer only
+  // assert_always(spatial_prod * n * f == np);
 
   ps.sample_groups = n;
   ps.channel_groups = c;
