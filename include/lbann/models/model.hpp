@@ -498,7 +498,7 @@ public:
 #endif
 
 	
-public:	
+private:	
   // map to store all distinct grids in the model
   std::unordered_map<std::string, std::shared_ptr<El::Grid>> grids; 
 

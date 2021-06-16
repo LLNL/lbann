@@ -113,7 +113,7 @@ protected:
       }
       else
       {
-        for(int i = 0; i < childs[0]->num_spliting_groups; i++)
+        for(int i = 0; i < childs[0]->get_num_spliting_groups(); i++)
         {
           
           El::Copy( input,this->get_branch_tag_input(i));
@@ -161,7 +161,7 @@ protected:
     {
       int tag=0;
       
-      std::vector<bool> is_initialized_tensor(childs[0]->num_spliting_groups, false);
+      std::vector<bool> is_initialized_tensor(childs[0]->get_num_spliting_groups(), false);
 
       //Copy data internally with same branch tag 
       for (int i = 0; i < this->get_num_children(); ++i) {
@@ -204,7 +204,7 @@ protected:
           El::Zero(gradient_wrt_input);
         }
 
-        for(int i = 1; i < childs[0]->num_spliting_groups; i++)
+        for(int i = 1; i < childs[0]->get_num_spliting_groups(); i++)
         {
           
           El::Copy( this->get_branch_tag_input(i), this->get_temp_grad());

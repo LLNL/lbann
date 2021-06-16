@@ -219,18 +219,6 @@ class Layer {
   friend class callback::sync_layers;
 
 public:
-  /** Ranks in grid for the sub-graph */  
-  std::unique_ptr<std::set <int>> subgrid_ranks; 
-  std::unique_ptr<std::vector<int>> parent_tags;
-  std::string subgrid_index="";
-  El::Int num_spliting_groups=1;
-
-
-  std::shared_ptr<El::Grid> mygrid;
-
-  std::shared_ptr<El::mpi::Comm>  interSubGridVCComm;
-  
-
 
   Layer();
 
@@ -276,6 +264,66 @@ public:
 
   }
 
+  void reset_subgrid_ranks(std::set<int> sub_grid_rank)
+  { 
+    m_subgrid_ranks.reset(new std::set<int>(sub_grid_rank.begin(),sub_grid_rank.end()));
+  }
+
+  std::set<int> get_subgrid_ranks() const
+  { 
+    return *m_subgrid_ranks;
+  }
+
+  void reset_parent_tags(std::vector<int> tags)
+  { 
+    m_parent_tags.reset(new std::vector<int>(tags.begin(),tags.end()));
+  }
+
+  std::vector<int> get_parent_tags() const
+  { 
+    return *m_parent_tags;
+  }
+
+  void set_num_spliting_groups(El::Int spliting_groups)
+  { 
+    m_num_spliting_groups = spliting_groups;
+  }
+
+  El::Int get_num_spliting_groups() const
+  { 
+    return m_num_spliting_groups;
+  }
+
+  void set_subgrid_index(std::string index)
+  { 
+    m_subgrid_index = index;
+  }
+
+  std::string get_subgrid_index() const
+  { 
+    return m_subgrid_index;
+  }
+
+  void reset_mygrid(std::shared_ptr<El::Grid> grid)
+  { 
+    m_mygrid = grid;
+  }
+
+  std::shared_ptr<El::Grid> get_mygrid() const
+  { 
+    return m_mygrid;
+  }
+
+  void reset_inter_subgrid_vc_comm(std::shared_ptr<El::mpi::Comm> mpi_comm)
+  { 
+    m_interSubGridVCComm = mpi_comm;
+  }
+
+  std::shared_ptr<El::mpi::Comm> get_inter_subgrid_vc_comm() const
+  { 
+    return m_interSubGridVCComm;
+  }
+
   void enable_subgraph_parallelism()
   {
     apply_subgraph_parallelism = true;
@@ -305,7 +353,7 @@ public:
 
   void set_num_spliting_groups(int num_grps)
   {
-    num_spliting_groups = num_grps;
+    m_num_spliting_groups = num_grps;
   }
   //enable subgraph parallelism for this layer 
   //to set variable for ssplit layer
@@ -720,6 +768,15 @@ protected:
   bool apply_subgraph_parallelism = false;
 
   bool run_layer_in_subgraph = false;
+
+  /** Ranks in grid for the sub-graph */  
+  std::unique_ptr<std::set <int>> m_subgrid_ranks; 
+  std::unique_ptr<std::vector<int>> m_parent_tags;
+  std::string m_subgrid_index="";
+  El::Int m_num_spliting_groups=1;
+  std::shared_ptr<El::Grid> m_mygrid;
+  std::shared_ptr<El::mpi::Comm>  m_interSubGridVCComm;
+
 
 private:
 

@@ -41,8 +41,6 @@ if (LBANN_HAS_GPU)
   set_full_path(THIS_DIR_CU_SOURCES
     concatenate.cu
     crop.cu
-    cross_grid_sum_slice.cu
-    cross_grid_sum.cu
     gather.cu
     in_top_k.cu
     sort.cu

@@ -131,10 +131,10 @@ protected:
 
     if(this->is_subgraph_parallelism_enabled() && this->get_parallel_strategy().enable_subgraph==1)
     {
-      auto subgrid_tags = (*this->parent_tags);
+      auto subgrid_tags = (*this->m_parent_tags);
       int tag=0;
       
-      std::vector<bool> is_initialized_tensor(this->num_spliting_groups, false);
+      std::vector<bool> is_initialized_tensor(this->m_num_spliting_groups, false);
 
       //Copy data internally with same branch tag 
       for (int i = 0; i < this->get_num_parents(); ++i) {
@@ -147,7 +147,6 @@ protected:
           {
             El::Axpy(DataType(1), this->get_prev_activations(i),
                     this->get_branch_tag_input(tag));
-            El::Print( this->get_prev_activations(i), "Sum Layer Input" );
           }
         }
         else
@@ -186,7 +185,7 @@ protected:
           El::Zero(output);
         }
 
-        for(int i = 1; i < this->num_spliting_groups; i++)
+        for(int i = 1; i < this->m_num_spliting_groups; i++)
         {
           
           El::Copy( this->get_branch_tag_input(i), this->get_temp_grad());
@@ -238,7 +237,7 @@ protected:
 
     if(this->is_subgraph_parallelism_enabled() && this->get_parallel_strategy().enable_subgraph==1)
     {
-      auto subgrid_tags = (*this->parent_tags);
+      auto subgrid_tags = (*this->m_parent_tags);
       
       if(this->get_communication_flag())
       //If vector copy is enable, broadcast the gradients from parent grid to multiple subgrids
@@ -252,7 +251,7 @@ protected:
         El::copy::TranslateBetweenGridsBroadcast<TensorDataType,Dev,Dev>(*ptr_gradient,this->get_branch_tag_input_vector());
       }
       else{
-        for(int i = 0; i < this->num_spliting_groups; i++)
+        for(int i = 0; i < this->m_num_spliting_groups; i++)
         {
           
           El::Copy( gradient_wrt_output, this->get_branch_tag_input(i));

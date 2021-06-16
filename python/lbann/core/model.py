@@ -7,12 +7,13 @@ import lbann.core.objective_function
 class Model:
     """Neural network model."""
 
-    def __init__(self, epochs,vector_communication=0,
-                 subgraph_topology = 0,
-                 subgraph_num_common_resources = 0, 
+    def __init__(self, epochs, 
                  layers=[], weights=[], objective_function=None,
                  metrics=[], callbacks=[],
-                 summary_dir=None):
+                 summary_dir=None,
+                 vector_communication=0,
+                 subgraph_topology=0,
+                 subgraph_num_common_resources=0):
 
         # Scalar fields
         self.epochs = epochs

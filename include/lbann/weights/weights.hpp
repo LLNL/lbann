@@ -109,18 +109,6 @@ public:
    */
   void set_name(std::string name) { m_name = name; }
 
-  /*
-  Create a set of ranks on which weight data exists
-  */
-  // void set_resources(std::set <int, std::greater <int> > ranks )
-  // {
-  //   subgrid_ranks.reset(new std::set<int,std::greater <int>> (ranks.begin(),ranks.end()));
-  // }
-
-  // std::set <int, std::greater <int> >  get_resources ()
-  // {
-  //   return *subgrid_ranks;
-  // }
   /** Get weights name. */
   std::string get_name() const { return m_name; }
 
@@ -315,9 +303,6 @@ private:
   virtual void do_steal_values_(weights& other) = 0;
   
 private:
-
-  //std::unique_ptr<std::set <int, std::greater <int> >> subgrid_ranks; 
-
   /** Weights name.
    *  Each set of weights in a model should have a unique,
    *  human-readable name.

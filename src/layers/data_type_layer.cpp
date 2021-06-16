@@ -517,7 +517,7 @@ void data_type_layer<TensorDataType>::setup_matrices(const El::Grid& grid) {
 
     //split layer 
     m_subgrid_tensors_split.clear();
-    m_subgrid_tensors_split.resize(childs[0]->num_spliting_groups);
+    m_subgrid_tensors_split.resize(childs[0]->get_num_spliting_groups());
 
     
     for (auto& input : m_inputs) {
@@ -527,12 +527,12 @@ void data_type_layer<TensorDataType>::setup_matrices(const El::Grid& grid) {
     int count = 0;
 
     for (auto& output : m_outputs) {
-      output = mat_builder->MakeEmpty(*(childs[count]->mygrid), 0);
+      output = mat_builder->MakeEmpty(*(childs[count]->get_mygrid()), 0);
       count++;
     }
     count = 0;
     for (auto& grad_wrt_output : m_gradient_wrt_outputs) {
-      grad_wrt_output = mat_builder->MakeEmpty(*(childs[count]->mygrid), 0);
+      grad_wrt_output = mat_builder->MakeEmpty(*(childs[count]->get_mygrid()), 0);
       count++;
     }
 
@@ -549,7 +549,7 @@ void data_type_layer<TensorDataType>::setup_matrices(const El::Grid& grid) {
       {
         if(childs[child_index]->get_parallel_strategy().sub_branch_tag == count+1)
         {
-          subgrid_tensor = mat_builder->MakeEmpty(*(childs[child_index]->mygrid), 0);
+          subgrid_tensor = mat_builder->MakeEmpty(*(childs[child_index]->get_mygrid()), 0);
           count++;
           break;
         }
@@ -562,32 +562,30 @@ void data_type_layer<TensorDataType>::setup_matrices(const El::Grid& grid) {
   }
   else if( (get_type()=="cross_grid_sum"  || get_type()=="cross_grid_sum_slice") && this->get_model()->is_subgraph_parallelism_enabled())
   {
-    std::cout<<"Running setup matric with:"<< get_type()<<"\n";
     m_subgrid_tensors_split.clear();
-    //std::cout<<"Number of spliting groups:"<<childs[0]->num_spliting_groups<<"\n";
-    m_subgrid_tensors_split.resize(childs[0]->num_spliting_groups);
+    m_subgrid_tensors_split.resize(childs[0]->get_num_spliting_groups());
 
     int count = 0;
     for (auto& input : m_inputs) {
-    input = mat_builder->MakeEmpty(*(parents[count]->mygrid), 0);
+    input = mat_builder->MakeEmpty(*(parents[count]->get_mygrid()), 0);
     count++;
     } 
 
     count = 0;
 
     for (auto& output : m_outputs) {
-      output = mat_builder->MakeEmpty(*(childs[count]->mygrid), 0);
+      output = mat_builder->MakeEmpty(*(childs[count]->get_mygrid()), 0);
       count++;
     }
     count = 0;
     for (auto& grad_wrt_output : m_gradient_wrt_outputs) {
-      grad_wrt_output = mat_builder->MakeEmpty(*(childs[count]->mygrid), 0);
+      grad_wrt_output = mat_builder->MakeEmpty(*(childs[count]->get_mygrid()), 0);
       count++;
     }
 
     count = 0;
     for (auto& grad_wrt_input : m_gradient_wrt_inputs) {
-    grad_wrt_input = mat_builder->MakeEmpty(*(parents[count]->mygrid), 0);
+    grad_wrt_input = mat_builder->MakeEmpty(*(parents[count]->get_mygrid()), 0);
     count++;
     }
 
@@ -601,12 +599,12 @@ void data_type_layer<TensorDataType>::setup_matrices(const El::Grid& grid) {
   {
     //sum layer 
     m_subgrid_tensors_split.clear();
-    m_subgrid_tensors_split.resize(this->num_spliting_groups);
+    m_subgrid_tensors_split.resize(this->get_num_spliting_groups());
 
 
     int count = 0;
     for (auto& input : m_inputs) {
-    input = mat_builder->MakeEmpty(*(parents[count]->mygrid), 0);
+    input = mat_builder->MakeEmpty(*(parents[count]->get_mygrid()), 0);
     count++;
     } 
 
@@ -620,7 +618,7 @@ void data_type_layer<TensorDataType>::setup_matrices(const El::Grid& grid) {
 
     count = 0;
     for (auto& grad_wrt_input : m_gradient_wrt_inputs) {
-    grad_wrt_input = mat_builder->MakeEmpty(*(parents[count]->mygrid), 0);
+    grad_wrt_input = mat_builder->MakeEmpty(*(parents[count]->get_mygrid()), 0);
     count++;
     }
 
@@ -628,7 +626,7 @@ void data_type_layer<TensorDataType>::setup_matrices(const El::Grid& grid) {
     temp_grad = mat_builder->MakeEmpty(grid, 0);
     }
     
-    auto subgrid_tags = *(this->parent_tags);
+    auto subgrid_tags = *(this->m_parent_tags);
 
     count = 0;
     for (auto& subgrid_tensor : m_subgrid_tensors_split) {
@@ -636,7 +634,7 @@ void data_type_layer<TensorDataType>::setup_matrices(const El::Grid& grid) {
       {
         if(subgrid_tags[parent_index] == count)
         {
-          subgrid_tensor = mat_builder->MakeEmpty(*(parents[parent_index]->mygrid), 0);
+          subgrid_tensor = mat_builder->MakeEmpty(*(parents[parent_index]->get_mygrid()), 0);
           count++;
           break;
         }
@@ -764,16 +762,12 @@ void data_type_layer<TensorDataType>::fp_setup_inputs(El::Int mini_batch_size) {
     // Initialize input tensor
     const auto& parent = get_parent_layer(i);
     const auto& parent_output = parent.get_activations(*this);
-    //const El::DistMatrix<double,STAR,VC,ELEMENT,Device::GPU>& parent_output = parent.get_activations(*this);
     auto& input = *m_inputs[i];
     input.Empty(false);
-    //if(El::GridCompare(input.Grid(),parent_output.DistData().grid))	
-    if(this->get_type()!="adds" && this->get_type()!="sums")	
-    {	
-      input.AlignWith(alignment_dist);	
+    if(this->is_subgraph_parallelism_enabled()==false){
+      input.AlignWith(alignment_dist);
     }
     if (parent_output.DistData() == input.DistData()) {
-      //std::cout<<"Not Copying: Layer name"<<this->get_name()<<" Rank:"<<El::mpi::Rank()<<"\n";
 
       El::LockedView(input, dynamic_cast<const AbsDistMatrixType&>(parent_output));
     } else {
@@ -787,13 +781,12 @@ void data_type_layer<TensorDataType>::fp_setup_inputs(El::Int mini_batch_size) {
         async_copy = parent_dist_data == input.DistData();
       }
 #endif // defined(LBANN_HAS_GPU) && defined(ASYNC_INPUT_MEMORY_TRANSFER)
-      async_copy = false;	
 
       if (async_copy) {
         El::CopyAsync(parent_output, input);
       } else {
-        El::Copy(dynamic_cast<const AbsDistMatrixType&>(parent_output), input);	
-        //input = (El::AbstractDistMatrix<double>)parent_output;
+        El::Copy(parent_output, input);	
+
       }
 
     }
@@ -803,8 +796,6 @@ void data_type_layer<TensorDataType>::fp_setup_inputs(El::Int mini_batch_size) {
     const auto& width = mini_batch_size;
 
     if ((input.Height() != height || input.Width() != width) ) {
-
-      std::cout<<"Error layer parent output:"<<parent_output.Width()<<"\n";
       std::stringstream err;
       err << "layer \"" << get_name() << "\" "
           << "expected an input tensor stored in a "
@@ -1037,12 +1028,11 @@ void data_type_layer<TensorDataType>::allocate_new_gradients_() {
     if (!m_gradient_wrt_inputs[i]) {
       if(get_type()=="sum" && this->get_parallel_strategy().enable_subgraph==1)
       {
-        //std::cout<<"Initializing Sum layer grads in allocate new gradients\n";
         m_gradient_wrt_inputs[i] =
           MakeMatBuilder<TensorDataType>(
             this->get_data_layout(),
             this->get_device_allocation())->MakeEmpty(
-              *(parents[i]->mygrid), 0);
+              *(parents[i]->get_mygrid()), 0);
       }
       else
       {
@@ -1093,13 +1083,13 @@ void data_type_layer<TensorDataType>::setup_inter_subgrid_comm_based_on_childs(c
   int indexSubgrid = -1;
   for(int child = 0 ; child < this->get_num_children(); ++child )
   {
-    if(childs[child]->mygrid->InGrid())
+    if(childs[child]->get_mygrid()->InGrid())
     
     {
       indexSubgrid = child;
     }
   }
-  const int posInSubGrid = childs[indexSubgrid]->mygrid->VCRank();
+  const int posInSubGrid = childs[indexSubgrid]->get_mygrid()->VCRank();
   const int posInGrid = grid.ViewingRank();
   auto& interSubgridComm = this->get_subgrid_comm();
   El::mpi::Split(this->get_comm()->get_trainer_comm(), posInSubGrid, posInGrid, interSubgridComm); 
@@ -1118,12 +1108,12 @@ void data_type_layer<TensorDataType>::setup_inter_subgrid_comm_based_on_parents(
   int indexSubgrid = -1;
   for(int parent = 0 ; parent < this->get_num_parents(); ++parent )
   {
-    if(parents[parent]->mygrid->InGrid())    
+    if(parents[parent]->get_mygrid()->InGrid())    
     {
       indexSubgrid = parent;
     }
   }
-  const int posInSubGrid = parents[indexSubgrid]->mygrid->VCRank();
+  const int posInSubGrid = parents[indexSubgrid]->get_mygrid()->VCRank();
   const int posInGrid = grid.ViewingRank();
   auto& interSubgridComm = this->get_subgrid_comm();
   El::mpi::Split(this->get_comm()->get_trainer_comm(), posInSubGrid, posInGrid, interSubgridComm);

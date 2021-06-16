@@ -723,7 +723,7 @@ void model::get_parent_subgrid_tags(int layer_index ){
   
 	for (int i = 0; i < int(parents.size()); ++i)
 	{
-		std::set<int> parent_subgrid_ranks_set = *(parents[i]->subgrid_ranks);
+		std::set<int> parent_subgrid_ranks_set = parents[i]->get_subgrid_ranks();
 		if(diff_subgrids.size()==0)
 		{
 		    diff_subgrids.push_back(parent_subgrid_ranks_set);
@@ -751,9 +751,9 @@ void model::get_parent_subgrid_tags(int layer_index ){
 		}
 	}
 
-  layers[layer_index]->parent_tags.reset(
-  							new std::vector<int>(parent_tags.begin(),parent_tags.end()) );
-  layers[layer_index]->num_spliting_groups = int(diff_subgrids.size());
+  layers[layer_index]->reset_parent_tags(
+  							std::vector<int>(parent_tags.begin(),parent_tags.end()) );
+  layers[layer_index]->set_num_spliting_groups(int(diff_subgrids.size()));
 
 
 }
@@ -781,7 +781,8 @@ void model::setup_subgrid_layers_run_condition()
   const El::Int num_layers = layers.size();
   int myrank = El::mpi::Rank();
   for (El::Int node = 0; node < num_layers; ++node) {
-    if((*layers[node]->subgrid_ranks).find(myrank) != (*layers[node]->subgrid_ranks).end() 
+    auto layer_subgrid_ranks = layers[node]->get_subgrid_ranks();
+    if(layer_subgrid_ranks.find(myrank) != layer_subgrid_ranks.end() 
           || layers[node]->get_name()=="layer1")
     {
 
@@ -800,10 +801,10 @@ void model::setup_subgrid_layers_run_condition()
       {
         std::set<int> temp_set(pooled_set.begin(),pooled_set.end());
         pooled_set.clear();
-
+        auto child_subgrid_ranks = childs[child]->get_subgrid_ranks();
         std::set_union(temp_set.begin(), temp_set.end(),
-                    (*childs[child]->subgrid_ranks).begin(), 
-                    (*childs[child]->subgrid_ranks).end(),
+                    child_subgrid_ranks.begin(), 
+                    child_subgrid_ranks.end(),
                     std::inserter(pooled_set, pooled_set.begin()));
       }
       if(pooled_set.find(myrank)!= pooled_set.end())
@@ -823,10 +824,10 @@ void model::setup_subgrid_layers_run_condition()
       {
         std::set<int> temp_set(pooled_set.begin(),pooled_set.end());
         pooled_set.clear();
-
+        auto parent_subgrid_ranks = parents[parent]->get_subgrid_ranks();
         std::set_union(temp_set.begin(), temp_set.end(),
-                    (*parents[parent]->subgrid_ranks).begin(), 
-                    (*parents[parent]->subgrid_ranks).end(),
+                    parent_subgrid_ranks.begin(), 
+                    parent_subgrid_ranks.end(),
                     std::inserter(pooled_set, pooled_set.begin()));
       }
       if(pooled_set.find(myrank)!= pooled_set.end())
@@ -846,7 +847,7 @@ void model::setup_subgrid_layers_run_condition()
 
     for (El::Int node = 0; node < num_layers; ++node) {
       std::cout<<"Rank:"<<myrank<<" Layer name:"<<layers[node]->get_name()<<" Subgrid Ranks:";
-      for (int const& rank : (*layers[node]->subgrid_ranks))
+      for (int const& rank : (layers[node]->get_subgrid_ranks()))
       {
           std::cout << rank << ' ';
       }
@@ -1031,9 +1032,9 @@ void model::get_resources_for_merge_layers(std::set<int>& pooled_set, int child_
   const auto& layers = this->get_layers();
   const std::vector<const Layer*>& parents = layers[child_index]->get_parent_layers();
 
-
+  std::vector<int> child_parent_tags = layers[child_index]->get_parent_tags();
   if(this->get_num_resources_non_branch_layers() != this->get_num_resources_branch_layers()
-      && *std::max_element((*layers[child_index]->parent_tags).begin(), (*layers[child_index]->parent_tags).end()) > 0)
+      && *std::max_element(child_parent_tags.begin(), child_parent_tags.end()) > 0)
   // Two level subgrid support only
   // subgrids in parent layers should be different 
   //modify to create subgrid within subgrids 
@@ -1055,10 +1056,10 @@ void model::get_resources_for_merge_layers(std::set<int>& pooled_set, int child_
     {
       std::set<int> temp_set(pooled_set.begin(),pooled_set.end());
       pooled_set.clear();
-
+      auto parent_subgrid_ranks = parents[parent]->get_subgrid_ranks();
       std::set_union(temp_set.begin(), temp_set.end(),
-                  (*parents[parent]->subgrid_ranks).begin(), 
-                  (*parents[parent]->subgrid_ranks).end(),
+                  parent_subgrid_ranks.begin(), 
+                  parent_subgrid_ranks.end(),
                   std::inserter(pooled_set, pooled_set.begin()));
     }
   }
@@ -1106,7 +1107,7 @@ void model::setup_subcommunicators()
     {
       if(subCommunicatorsSubgrids.find(one_index) != subCommunicatorsSubgrids.end())
       {
-        layers[node]->interSubGridVCComm = subCommunicatorsSubgrids[one_index];
+        layers[node]->reset_inter_subgrid_vc_comm(subCommunicatorsSubgrids[one_index]);
       }
       else
       {
@@ -1116,28 +1117,28 @@ void model::setup_subcommunicators()
         int indexSubgrid = -1;
         for(int child = 0 ; child < layers[node]->get_num_children(); ++child )
         {
-          if(childs[child]->mygrid->InGrid())
+          if(childs[child]->get_mygrid()->InGrid())
           
           {
             indexSubgrid = child;
           }
         }
 
-        const int posInSubGrid = childs[indexSubgrid]->mygrid->VCRank();
-        const int posInGrid = layers[node]->mygrid->ViewingRank();
+        const int posInSubGrid = childs[indexSubgrid]->get_mygrid()->VCRank();
+        const int posInGrid = layers[node]->get_mygrid()->ViewingRank();
         El::mpi::Split(layers[node]->get_comm()->get_trainer_comm(), 
                         posInSubGrid, 
                         posInGrid, 
                         *subCommunicatorsSubgrids[one_index]); 
 
-        layers[node]->interSubGridVCComm = subCommunicatorsSubgrids[one_index];
+        layers[node]->reset_inter_subgrid_vc_comm(subCommunicatorsSubgrids[one_index]);
       }
     }
 
     if(layers[node]->get_type()=="cross_grid_sum" || 
       layers[node]->get_type()=="cross_grid_sum_slice")
     {
-      layers[node]->interSubGridVCComm = subCommunicatorsSubgrids[one_index];
+      layers[node]->reset_inter_subgrid_vc_comm(subCommunicatorsSubgrids[one_index]);
     }
 
 
@@ -1241,9 +1242,10 @@ void  model::setup_subgrids(){
       }
       else
       {
-        layers[node]->subgrid_ranks.reset(new std::set<int >(initial_ranks_global.begin(),initial_ranks_global.end()));
-        layers[node]->subgrid_index = grid_global_index;
-        layers[node]->mygrid = grids[grid_global_index];
+        // layers[node]->subgrid_ranks.reset(new std::set<int >(initial_ranks_global.begin(),initial_ranks_global.end()));
+        layers[node]->reset_subgrid_ranks(initial_ranks_global);
+        layers[node]->set_subgrid_index(grid_global_index);
+        layers[node]->reset_mygrid(grids[grid_global_index]);
       }
 
       
@@ -1261,9 +1263,11 @@ void  model::setup_subgrids(){
 
         if(parents.size()==0)
         {
-          layers[node]->subgrid_ranks.reset(new std::set<int >(initial_ranks_global.begin(),initial_ranks_global.end()));
-          layers[node]->subgrid_index = grid_global_index;
-          layers[node]->mygrid = grids[grid_global_index];
+          // layers[node]->subgrid_ranks.reset(new std::set<int >(initial_ranks_global.begin(),initial_ranks_global.end()));
+          layers[node]->reset_subgrid_ranks(initial_ranks_global);
+          layers[node]->set_subgrid_index(grid_global_index);
+          // layers[node]->mygrid = grids[grid_global_index];
+          layers[node]->reset_mygrid(grids[grid_global_index]);
 
         }
         else if(parents[0]->get_type() == "cross_grid_sum" || parents[0]->get_type() == "cross_grid_sum_slice")
@@ -1281,21 +1285,23 @@ void  model::setup_subgrids(){
           
 
           const Layer* parent_with_same_subgrid = parents[0]->get_parent_layers()[subgrid_number];
-          std::cout<<"Rank:"<<rank<<" On Child Layer:"<< layers[node]->get_name() <<" Subgrid index is:"<<parent_with_same_subgrid->subgrid_index<<"\n";
+          std::cout<<"Rank:"<<rank<<" On Child Layer:"<< layers[node]->get_name() <<" Subgrid index is:"<<parent_with_same_subgrid->get_subgrid_index()<<"\n";
 
-          std::set <int > layer_ranks = *(parent_with_same_subgrid->subgrid_ranks);
-          layers[node]->subgrid_ranks.reset(new std::set<int>(layer_ranks.begin(),layer_ranks.end()));
-          layers[node]->subgrid_index = parent_with_same_subgrid->subgrid_index;
-          layers[node]->mygrid = grids[layers[node]->subgrid_index];
+          std::set <int > layer_ranks = parent_with_same_subgrid->get_subgrid_ranks();
+          layers[node]->reset_subgrid_ranks(layer_ranks);
+          layers[node]->set_subgrid_index(parent_with_same_subgrid->get_subgrid_index());
+          layers[node]->reset_mygrid(grids[layers[node]->get_subgrid_index()]);
 
         }
         else if(parents.size()==1)
         {
 
-          std::set <int > layer_ranks = *(parents[0]->subgrid_ranks);
-          layers[node]->subgrid_ranks.reset(new std::set<int>(layer_ranks.begin(),layer_ranks.end()));
-          layers[node]->subgrid_index = parents[0]->subgrid_index;
-          layers[node]->mygrid = grids[layers[node]->subgrid_index];
+          std::set <int > layer_ranks = parents[0]->get_subgrid_ranks();
+          // layers[node]->subgrid_ranks.reset(new std::set<int>(layer_ranks.begin(),layer_ranks.end()));
+          layers[node]->reset_subgrid_ranks(layer_ranks);
+          layers[node]->set_subgrid_index(parents[0]->get_subgrid_index());
+          // layers[node]->mygrid = grids[layers[node]->subgrid_index];
+          layers[node]->reset_mygrid(grids[layers[node]->get_subgrid_index()]);
         }
         else if( parents.size() == mychilds.size() && 
                  parents.size() > 1 )
@@ -1317,7 +1323,7 @@ void  model::setup_subgrids(){
 
           for (int parent_index = 0; parent_index < int(parents.size()); ++parent_index)
           {
-            std::set <int > layer_ranks = *(parents[parent_index]->subgrid_ranks);
+            std::set <int > layer_ranks = parents[parent_index]->get_subgrid_ranks();
             if(layer_ranks.find(rank) != layer_ranks.end())
             {
               my_parent_based_rank = parent_index;
@@ -1325,10 +1331,10 @@ void  model::setup_subgrids(){
           }
           std::cout<<"Parent_index is:"<<my_parent_based_rank<<"\n";
           // Initialize the subgrid of common layers like cross_grid_sum with the subgrid based on own rank 
-          std::set <int > layer_ranks = *(parents[my_parent_based_rank]->subgrid_ranks);
-          layers[node]->subgrid_ranks.reset(new std::set<int>(layer_ranks.begin(),layer_ranks.end()));
-          layers[node]->subgrid_index = parents[my_parent_based_rank]->subgrid_index;
-          layers[node]->mygrid = grids[layers[node]->subgrid_index];
+          std::set <int > layer_ranks = parents[my_parent_based_rank]->get_subgrid_ranks();
+          layers[node]->reset_subgrid_ranks(layer_ranks);
+          layers[node]->set_subgrid_index(parents[my_parent_based_rank]->get_subgrid_index());
+          layers[node]->reset_mygrid(grids[layers[node]->get_subgrid_index()]);
 
         }
         
@@ -1343,18 +1349,19 @@ void  model::setup_subgrids(){
           this->get_resources_for_merge_layers(pooled_set,node,max_branches);
 
 
-          layers[node]->subgrid_ranks.reset(new std::set<int> (pooled_set.begin(),pooled_set.end()));
+          // layers[node]->subgrid_ranks.reset(new std::set<int> (pooled_set.begin(),pooled_set.end()));
+          layers[node]->reset_subgrid_ranks(pooled_set);
 
           //create new grid 
           std::vector<int > ranks_in_grid(pooled_set.begin(), pooled_set.end());
 
-          if(layers[node]->num_spliting_groups == 1)
+          if(layers[node]->get_num_spliting_groups() == 1)
           {
-            getOrderFromIndex(ranks_in_grid,parents[0]->subgrid_index);
+            getOrderFromIndex(ranks_in_grid,parents[0]->get_subgrid_index());
           }
           else
           {
-            get_subgrids_order(ranks_in_grid, layers[node]->num_spliting_groups);
+            get_subgrids_order(ranks_in_grid, layers[node]->get_num_spliting_groups());
           }
 
           
@@ -1366,8 +1373,9 @@ void  model::setup_subgrids(){
           if(grids.find(grid_temp_index) != grids.end())
           //subgrid already exist with required resources
           {
-            layers[node]->subgrid_index = grid_temp_index;
-            layers[node]->mygrid = grids[grid_temp_index];
+            layers[node]->set_subgrid_index(grid_temp_index);
+            // layers[node]->mygrid = grids[grid_temp_index];
+            layers[node]->reset_mygrid(grids[grid_temp_index]);
           }
           else
           {
@@ -1377,8 +1385,9 @@ void  model::setup_subgrids(){
             
 
             grids[grid_temp_index] = std::make_shared<El::Grid>(El::mpi::NewWorldComm(),*grids_mpi_groups[grid_temp_index], ranks_in_grid.size(), orderGrid );
-            layers[node]->subgrid_index = grid_temp_index;
-            layers[node]->mygrid = grids[grid_temp_index];
+            layers[node]->set_subgrid_index(grid_temp_index);
+            // layers[node]->mygrid = grids[grid_temp_index];
+            layers[node]->reset_mygrid(grids[grid_temp_index]);
 
             std::string temp_print;
 
@@ -1403,7 +1412,7 @@ void  model::setup_subgrids(){
         auto parent  = parents[0];
         int num_divisions = 1;
         auto childs = parents[0]->get_child_layers(); 
-        std::set <int> parent_layer_ranks = *(parents[0]->subgrid_ranks);
+        std::set <int> parent_layer_ranks = parents[0]->get_subgrid_ranks();
         std::vector <int> my_sub_ranks ;
 
         
@@ -1415,12 +1424,12 @@ void  model::setup_subgrids(){
           num_divisions = std::max(num_divisions, int(childs[child]->get_parallel_strategy().sub_branch_tag));
 
           //check if the grid is initialized for the childs with similar tag
-          if(childs[child]->subgrid_index != "" && int(childs[child]->get_parallel_strategy().sub_branch_tag) == (layers[node]->get_parallel_strategy().sub_branch_tag ))
+          if(childs[child]->get_subgrid_index() != "" && int(childs[child]->get_parallel_strategy().sub_branch_tag) == (layers[node]->get_parallel_strategy().sub_branch_tag ))
           {
-            layers[node]->subgrid_index = childs[child]->subgrid_index;
-            layers[node]->subgrid_ranks.reset(new std::set<int> (  (*childs[child]->subgrid_ranks).begin()  ,(*childs[child]->subgrid_ranks).end())    );
-            layers[node]->mygrid = grids[childs[child]->subgrid_index];
-            layers[node]->num_spliting_groups = childs[child]->num_spliting_groups;
+            layers[node]->set_subgrid_index(childs[child]->get_subgrid_index());
+            layers[node]->reset_subgrid_ranks(childs[child]->get_subgrid_ranks());
+            layers[node]->reset_mygrid(grids[childs[child]->get_subgrid_index()]);
+            layers[node]->set_num_spliting_groups(childs[child]->get_num_spliting_groups());
             flag_subgrid_found = true;
 
           }
@@ -1431,7 +1440,7 @@ void  model::setup_subgrids(){
           continue;
         }
 
-        int number_ranks_in_grid = ( (*parent[0].subgrid_ranks).size())/num_divisions;
+        int number_ranks_in_grid = ( parent[0].get_subgrid_ranks().size())/num_divisions;
 
         std::vector<int> parent_ranks_vec(parent_layer_ranks.begin(),parent_layer_ranks.end());
 
@@ -1455,10 +1464,10 @@ void  model::setup_subgrids(){
         if(grids.find(grid_temp_index) != grids.end())
         //subgrid already exist with required resources
         {
-          layers[node]->subgrid_index = grid_temp_index;
-          layers[node]->mygrid = grids[grid_temp_index];
-          layers[node]->num_spliting_groups=num_divisions;
-          layers[node]->subgrid_ranks.reset(new std::set<int> (my_sub_ranks.begin(),my_sub_ranks.end()));
+          layers[node]->set_subgrid_index(grid_temp_index);
+          layers[node]->reset_mygrid(grids[grid_temp_index]);
+          layers[node]->set_num_spliting_groups(num_divisions);
+          layers[node]->reset_subgrid_ranks(std::set<int> (my_sub_ranks.begin(),my_sub_ranks.end()));
         }
         else
         {
@@ -1467,11 +1476,10 @@ void  model::setup_subgrids(){
 
           grids[grid_temp_index] = std::make_shared<El::Grid>(El::mpi::NewWorldComm(),*grids_mpi_groups[grid_temp_index], ranks_in_grid.size(), orderGrid );
 
-          layers[node]->subgrid_index = grid_temp_index;
-          layers[node]->subgrid_ranks.reset(new std::set<int> (my_sub_ranks.begin(),my_sub_ranks.end()));
-
-          layers[node]->mygrid = grids[grid_temp_index];
-          layers[node]->num_spliting_groups=num_divisions;
+          layers[node]->set_subgrid_index(grid_temp_index);
+          layers[node]->reset_subgrid_ranks(std::set<int>(my_sub_ranks.begin(),my_sub_ranks.end()));
+          layers[node]->reset_mygrid(grids[grid_temp_index]);
+          layers[node]->set_num_spliting_groups(num_divisions);
 
         }
 
@@ -1534,7 +1542,7 @@ void model::setup_layers(size_t max_mini_batch_size, DataReaderMetaData& dr_meta
 
     if(this->is_subgraph_parallelism_enabled())
     {
-      l.setup(max_mini_batch_size, dr_metadata,*(grids[l.subgrid_index]));
+      l.setup(max_mini_batch_size, dr_metadata,*(grids[l.get_subgrid_index()]));
     }
     else
     {
@@ -1962,7 +1970,6 @@ void model::update_weights() {
   // after a weights gradient has been computed. Thus, iterating in
   // reverse order will use gradients that have already finished their
   // allreduce, giving more time for more recent allreduces to finish.
-  int counter = 0;
   for (auto rit = m_weights.rbegin(); rit != m_weights.rend(); ++rit) {
     auto& w = **rit;
     auto&& opt = w.get_optimizer();
@@ -1971,7 +1978,6 @@ void model::update_weights() {
       do_weight_optimize_begin_cbs(&w);
       opt->step();
       do_weight_optimize_end_cbs(&w);
-      counter++;
     }
   }
 

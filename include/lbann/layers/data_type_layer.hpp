@@ -164,7 +164,7 @@ public:
   void set_keep_error_signals(bool) override;
 
 
-  El::mpi::Comm& get_subgrid_comm() { return *interSubGridVCComm; }
+  El::mpi::Comm& get_subgrid_comm() { return *m_interSubGridVCComm; }
 
   /** @name Serialization */
   ///@{

@@ -203,7 +203,6 @@ void fp_compute_impl(
     output_dims_list.push_back({rdims[3], rdims[2], rdims[1], rdims[0]});
     output_strides_list.push_back(
       {rstrides[3], rstrides[2], rstrides[1], rstrides[0]});
-    std::cout<<"Slice layer dims num:"<<j<<" "<<rdims[3]<<" "<<rdims[2]<<" "<<rdims[1]<<" "<<rdims[0]<<"\n";
   }
 
   // Get strides for input tensor
@@ -238,12 +237,6 @@ void fp_compute_impl(
     output_buffer_list,
     output_dims_list,
     output_strides_list);
-
-  
-
-  //std::cout<<"FP output of slice layer:"<<l.get_activations(0).Width()<<"\n";
-
-
 }
 
 template <typename TensorDataType>
