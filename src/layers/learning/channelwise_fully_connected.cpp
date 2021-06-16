@@ -50,8 +50,29 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
   auto &layer = dynamic_cast<channelwise_fully_connected_layer<
     TensorDataType, Layout, Device>&>(this->layer());
 
-  dc::IntVector overlap(dc::get_num_dims(layer),0); // NO OVERLAP
-  auto input_dist = this->get_prev_activations_dist();
+  // dc::IntVector overlap(dc::get_num_dims(layer),0); // NO OVERLAP
+
+
+  for (auto &d: this->m_prev_activations_dists) {
+    d.clear_overlap();
+    constraints.mark_updated(d);
+    constraints.mark_invariant(d);
+  }
+  for (auto &d: this->m_activations_dists) {
+    d.clear_overlap();
+    constraints.mark_updated(d);
+    constraints.mark_invariant(d);
+  }
+  for (auto &d: this->m_prev_error_signals_dists) {
+    d.clear_overlap();
+    constraints.mark_updated(d);
+    constraints.mark_invariant(d);
+  }
+  for (auto &d: this->m_error_signals_dists) {
+    d.clear_overlap();
+    constraints.mark_updated(d);
+    constraints.mark_invariant(d);
+  }
 
 }
 
@@ -59,8 +80,6 @@ template <typename TensorDataType, data_layout Layout, El::Device Device>
 void 
 channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
 ::setup_layer(size_t max_mini_batch_size){
-  auto &layer = dynamic_cast<
-    channelwise_fully_connected_layer<TensorDataType, Layout, Device>&>(this->layer()); 
   
   m_linear_operator = make_unique<dc::Linear<TensorDataType>>(dc::get_backend());
 
@@ -98,10 +117,12 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
 
   // This distconv tensor m_linear will be Viewed during forward compute 
 
+  // Apply bias
   if(layer.m_has_bias){
     // get bias shape 
     const auto& bias_dims = layer.get_bias_dims();
     dc::Shape bias_shape(bias_dims);
+
     m_bias = make_unique<TensorDevType>(bias_shape, loc, shared_dist);
   }
   // Done
@@ -160,7 +181,7 @@ template <typename TensorDataType, data_layout Layout, El::Device Device>
 void 
 channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
 ::fp_compute(){
-  
+
   auto &layer = dynamic_cast<
     channelwise_fully_connected_layer<TensorDataType, Layout, Device>&>(this->layer());
   
@@ -171,11 +192,7 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
 
   // TO DO: Check if input and output tensors are contiguous 
   
-  assert0(dc::tensor::View(
-    *m_linear,linearity.LockedBuffer()));
-  // const auto input = this->get_prev_activations();
-  // auto output = this->get_activations();
-
+  assert0(dc::tensor::View(*m_linear,linearity.LockedBuffer()));
 
   m_linear_operator->forward(layer.m_transpose,
                              this->get_prev_activations(),
@@ -184,7 +201,12 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
                              local_mini_batch_size);
 
   if(layer.m_has_bias){
-    m_linear_operator->apply_bias();
+    const auto& bias = layer.weights_values(1);
+    assert0(dc::tensor::View(*m_bias, bias.LockedBuffer()));
+
+    m_linear_operator->apply_bias(*m_bias,
+                                  this->get_activations(), 
+                                  local_mini_batch_size);
   }
 
   // Done for now 
@@ -196,19 +218,43 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
 ::bp_compute(){
   auto &layer = dynamic_cast<channelwise_fully_connected_layer
     <TensorDataType, Layout, Device>&>(this->layer());
+
+  using LocalMat = El::Matrix<TensorDataType, Device>;
+
   const auto& linearity = layer.weights_values(0);
 
 
   // TO DO: Check if input and output tensors are contiguous 
 
+  // const auto& local_linearity = dynamic_cast<const LocalMat&>(linearity.LockedMatrix());
 
+  const auto local_mini_batch_size = linearity.Width();
+
+  assert0(dc::tensor::View(
+    *m_linear,linearity.LockedBuffer()));
+
+  TensorDataType dst_scale, gradient_scale;
  
-  m_linear_operator->backward_wrt_input();
+  m_linear_operator->backward_wrt_input(layer.m_transpose,
+                                        this->get_prev_error_signals(),
+                                        *m_linear,
+                                        this->get_error_signals(),                
+                                        local_mini_batch_size);
 
-  m_linear_operator->backward_wrt_weight();
+  m_linear_operator->backward_wrt_weight(layer.m_transpose,
+                                         dst_scale,
+                                         gradient_scale,
+                                         this->get_prev_activations(),
+                                         this->get_prev_error_signals(),
+                                         *m_linearity_gradient,
+                                         local_mini_batch_size);
 
   if(layer.m_has_bias){
-    m_linear_operator->backward_wrt_bias();
+    m_linear_operator->backward_wrt_bias(gradient_scale,
+                                         dst_scale,
+                                         this->get_prev_error_signals(),
+                                         *m_bias_gradient,
+                                         local_mini_batch_size);
   }
   // Done for now
 
@@ -633,11 +679,11 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
 {
 #ifdef LBANN_HAS_DISTCONV
 
-  // if(this->using_gpus() && this->distconv_enabled){
-  //   this->get_distconv_adapter().bp_compute_channelwise_fully_connected();
-  // }else{
-  //   LBANN_ERROR("Distconv not compatible with CPU-only mode");
-  // }
+  if(this->using_gpus() && this->distconv_enabled()){
+    this->get_distconv_adapter().bp_compute();
+  }else{
+    LBANN_ERROR("Distconv not compatible with CPU-only mode");
+  }
 
 #endif  //LBANN_HAS_DISTCONV
 

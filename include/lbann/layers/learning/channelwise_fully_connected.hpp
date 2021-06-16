@@ -47,15 +47,12 @@ class channelwise_fully_connected_distconv_adapter
 
     void setup_fp_tensors() override;
     void setup_bp_tensors() override;
+    void setup_distributions(tensor_overlap_constraints &constraints) override;
+    void setup_layer(size_t workspace_capacity) override;
 
     void fp_compute();
     void bp_compute();
 
-    void fp_apply_bias();
-    void bp_apply_bias();
-
-    void setup_distributions(tensor_overlap_constraints &constraints) override;
-    void setup_layer(size_t workspace_capacity) override;
 
     dc::Shape get_activations_local_shape(int index = 0);
     dc::Shape get_prev_activations_shape(int index);
