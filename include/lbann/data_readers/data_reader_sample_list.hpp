@@ -81,6 +81,8 @@ class data_reader_sample_list : public generic_data_reader {
    */
   void load() override;
 
+  sample_list_t& get_sample_list() { return m_sample_list; }
+
  protected:
 
   sample_list_t m_sample_list;
