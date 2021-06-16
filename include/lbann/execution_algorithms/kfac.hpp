@@ -108,6 +108,12 @@ public:
              TermCriteriaType const& term);
   ///@}
 
+#ifdef LBANN_HAS_GPU
+  constexpr static const El::Device Device = El::Device::GPU;
+#else
+  constexpr static const El::Device Device = El::Device::CPU;
+#endif // LBANN_HAS_GPU
+
   /** @brief The default parameters of a Tikhonov damping technique. */
   constexpr static const double damping_0_default = 3e-2;
   constexpr static const size_t damping_warmup_steps_default = 100;
@@ -152,9 +158,13 @@ private:
 
 #if 1
   /** @todo Break up into more manageable pieces */
+  void on_forward_prop_end(
+    ExeContextType& context,
+    model& model);
   void on_backward_prop_end(
     ExeContextType& context,
     model& model);
+
 #else
   /** @brief Compute Kronecker factors */
   void compute_kronecker_factors(
@@ -171,6 +181,14 @@ private:
     ExeContextType& context,
     model& model);
 #endif // 0
+
+  /** @brief Gets the Kronecker factor matrix of a FC layer.
+   *  The same key is tied with the same matrix instance. */
+  El::Matrix<DataType,Device>& get_workspace_matrix(
+    ExeContextType& context,
+    const std::string& key,
+    const size_t height,
+    const size_t width);
 
   /** @brief The KFAC stopping criteria. */
   std::unique_ptr<TermCriteriaType> m_stopping_criteria;

@@ -125,10 +125,6 @@ private:
   std::unordered_map<std::string,
                      El::Matrix<DataType, Device>> m_workspace;
 
-  /** @brief Copy of lbann_comm::get_rank_in_trainer() for internal
-      functions. TODO: Get the rank from lbann_comm directly */
-  int m_rank;
-
 }; // class ExecutionContext
 
 } // namespace kfac

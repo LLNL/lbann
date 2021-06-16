@@ -31,8 +31,9 @@
 #include "lbann/base.hpp"
 #include "lbann/callbacks/callback.hpp"
 #include "lbann/callbacks/kfac/kfac_block.hpp" /// @todo Move into execution_algorithm dir
-#include "lbann/callbacks/kfac/kfac_block_fc_conv.hpp" /// @todo Move into execution_algorithm dir
 #include "lbann/callbacks/kfac/kfac_block_bn.hpp" /// @todo Move into execution_algorithm dir
+#include "lbann/callbacks/kfac/kfac_block_fc_conv.hpp" /// @todo Move into execution_algorithm dir
+#include "lbann/callbacks/kfac/kfac_block_gru.hpp" /// @todo Move into execution_algorithm dir
 #include "lbann/callbacks/kfac/kfac_util.hpp" /// @todo Move into execution_algorithm dir
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/layers/learning/fully_connected.hpp"
@@ -56,6 +57,14 @@ template <El::Device Device>
 using kfac_block_bn = callback::kfac_block_bn<Device>;
 template <El::Device Device>
 using kfac_block_fc_conv = callback::kfac_block_fc_conv<Device>;
+template <El::Device Device>
+using kfac_block_gru = callback::kfac_block_gru<Device>;
+
+#ifdef LBANN_HAS_GPU
+  constexpr static const El::Device Device = El::Device::GPU;
+#else
+  constexpr static const El::Device Device = El::Device::CPU;
+#endif // LBANN_HAS_GPU
 
 /// @todo Initialize properly
 KFAC::KFAC(
@@ -285,6 +294,7 @@ bool KFAC::train_mini_batch(
       // Forward prop step
       model.clear_gradients();
       model.forward_prop(execution_mode::training);
+      on_forward_prop_end(kfac_context, model);
       // check if the data coordinator has finished the epoch and kickoff
       // background I/O
       finished = dc.epoch_complete(execution_mode::training);
@@ -297,6 +307,7 @@ bool KFAC::train_mini_batch(
       // Backward prop step
       model.get_objective_function()->differentiate();
       model.backward_prop();
+      on_backward_prop_end(kfac_context, model);
       model.get_objective_function()->compute_weight_regularization();
 
       // Finish evaluation.
@@ -378,46 +389,105 @@ void KFAC::do_batch_end_cbs(model& model)
 // KFAC implementation
 // =============================================
 
-void KFAC::on_backward_prop_end(
+void KFAC::on_forward_prop_end(
   ExeContextType& context,
   model& model) {
 
-#ifdef LBANN_HAS_GPU
-  constexpr El::Device Device = El::Device::GPU;
-#else
-  constexpr El::Device Device = El::Device::CPU;
-#endif // LBANN_HAS_GPU
+  auto& comm = *model.get_comm();
+  const auto layers = model.get_layers();
+
+  // List up layers to be updated
+  if(context.m_blocks.size() == 0){
+    prof_region_begin("kfac-setup", prof_color, prof_sync);
+    const size_t num_procs = comm.get_procs_per_trainer();
+    std::unordered_map<std::string, int> proc_ranks;
+    for(auto i_layer = layers.begin(); i_layer != layers.end(); i_layer++) {
+      const size_t layer_id = std::distance(layers.begin(), i_layer);
+      const auto &l = *i_layer;
+      const auto l_fc = dynamic_cast<fully_connected_layer<DataType, data_layout::DATA_PARALLEL, Device>*>(l);
+      const auto l_conv = dynamic_cast<convolution_layer<DataType, data_layout::DATA_PARALLEL, Device>*>(l);
+      const auto l_bn = dynamic_cast<batch_normalization_layer<DataType, data_layout::DATA_PARALLEL, Device>*>(l);
+      const auto l_gru = dynamic_cast<gru_layer<DataType, data_layout::DATA_PARALLEL, Device>*>(l);
+      const bool is_fc = (l_fc != nullptr);
+      const bool is_conv = (l_conv != nullptr);
+      const bool is_bn = (l_bn != nullptr);
+      const bool is_gru = (l_gru != nullptr);
+      if(!(is_fc || is_conv || is_bn || is_gru))
+        continue;
+
+      if(std::find(m_disable_layers.begin(), m_disable_layers.end(), l->get_name()) != m_disable_layers.end()) {
+        if(comm.am_trainer_master())
+          std::cout << "K-fac callback: " << l->get_name() << " is ignored to optimize with K-FAC." << std::endl;
+        continue;
+      }
+
+      prof_region_begin(("kfac-setup/" + l->get_name()).c_str(), prof_color, prof_sync);
+
+      // Ignore layers without optimizers
+      const auto& weights = l->get_weights(0);
+      const optimizer *w_optimizer = weights.get_optimizer();
+      if(w_optimizer == nullptr)
+        continue;
+
+      std::string proc_rank_key = "all";
+      if(m_inverse_strategy == kfac_inverse_strategy::EACH)
+        proc_rank_key = l->get_type();
+      if(proc_ranks.find(proc_rank_key) == proc_ranks.end())
+        proc_ranks[proc_rank_key] = 0;
+      int& proc_rank = proc_ranks[proc_rank_key];
+
+      // Check layer property
+      if((l->get_num_parents() != 1 || l->get_num_children() != 1) && !is_gru) {
+        std::stringstream err;
+        err << "The K-FAC callback expects layers who have exact one parent and child."
+            << " layer: " << l->get_name()
+            << ", #parent: " << l->get_num_parents()
+            << ", #child: " << l->get_num_children();
+        LBANN_ERROR(err.str());
+      }
+
+      std::shared_ptr<kfac_block<Device>> block;
+      if(is_fc || is_conv) {
+        block = std::make_shared<kfac_block_fc_conv<Device>>(
+            l, this, layer_id, proc_rank, is_conv);
+      } else if(is_bn) {
+        block = std::make_shared<kfac_block_bn<Device>>(
+            l, this, layer_id, proc_rank);
+      } else if(is_gru) {
+        block = std::make_shared<kfac_block_gru<Device>>(
+            l, this, layer_id, proc_rank);
+      }
+
+      context.m_blocks.push_back(std::move(block));
+      if(m_inverse_strategy != kfac_inverse_strategy::ROOT)
+        proc_rank = (proc_rank+1)%num_procs;
+
+      prof_region_end(("kfac-setup/" + l->get_name()).c_str(), prof_sync);
+    }
+
+    if(comm.am_trainer_master()) {
+      for(const auto& block : context.m_blocks)
+        std::cout << "K-FAC callback setup: "
+                  << block->get_info() << std::endl;
+    }
+
+    prof_region_end("kfac-setup", prof_sync);
+  }
+
+  for(auto& block : context.m_blocks)
+    block->on_forward_prop_end();
+
+}
+
+void KFAC::on_backward_prop_end(
+  ExeContextType& context,
+  model& model) {
 
   // Get some configs
   auto& comm = *model.get_comm();
   const auto& sgd_context = context.get_sgd_execution_context();
   const size_t num_steps = sgd_context.get_step();
   const auto layers = model.get_layers();
-
-  const auto get_workspace_matrix
-    = [&](
-      const std::string& key,
-      const size_t height,
-      const size_t width) -> auto& {
-    if(context.m_workspace.find(key) == context.m_workspace.end()) {
-      std::ostringstream oss;
-      oss << "K-FAC callback workspace allocation (rank=" << comm.get_rank_in_trainer()
-      << "): " << key << " (" << height << "x" << width << ")" << std::endl;
-      std::cout << oss.str();
-      context.m_workspace.emplace(
-        key, El::Matrix<DataType, Device>(height, width));
-#ifdef HYDROGEN_HAVE_CUB
-      context.m_workspace[key].SetMemoryMode(1); // Use CUB GPU memory pool if possible
-#endif // HYDROGEN_HAVE_CUB
-    }
-    auto& ret = context.m_workspace[key];
-    if((size_t) ret.Height() != height || (size_t) ret.Width() != width) {
-      // Make sure that no kernels are using this workspace.
-      El::Synchronize(El::SyncInfoFromMatrix(ret));
-      ret.Resize(height, width);
-    }
-    return ret;
-  };
 
   // Update the damping value
   // using a modified Tikhonov damping tequnique from
@@ -563,10 +633,11 @@ void KFAC::on_backward_prop_end(
     prof_region_begin("kfac-update/reduce-scatter", prof_color, prof_sync);
     const auto reduce_scatter_mode = kfac_reduce_scatter_mode::ALLREDUCE;
     El::Matrix<DataType, Device>& global_buffer =
-        get_workspace_matrix(
-            "reduce_scatter_send_buffer",
-            callback::kfac_util::is_reduce_scatter_buffer_required(reduce_scatter_mode) ? global_buffer_size : 0,
-            1);
+      get_workspace_matrix(
+        context,
+        "reduce_scatter_send_buffer",
+        callback::kfac_util::is_reduce_scatter_buffer_required(reduce_scatter_mode) ? global_buffer_size : 0,
+        1);
     callback::kfac_util::reduce_scatter_blocks(
         buffers, global_buffer, &comm, reduce_scatter_mode);
     prof_region_end("kfac-update/reduce-scatter", prof_sync);
@@ -640,17 +711,19 @@ void KFAC::on_backward_prop_end(
     const auto allgather_mode = kfac_allgather_mode::ALLREDUCE;
     const auto is_buffer_needed = callback::kfac_util::is_allgather_buffer_required(allgather_mode);
     El::Matrix<DataType, Device>& local_buffer =
-        get_workspace_matrix(
-            "allgather_send_buffer",
-            is_buffer_needed.first ? local_buffer_size : 0,
-            1);
+      get_workspace_matrix(
+        context,
+        "allgather_send_buffer",
+        is_buffer_needed.first ? local_buffer_size : 0,
+        1);
     El::Matrix<DataType, Device>& global_buffer =
-        get_workspace_matrix(
-            "allgather_recv_buffer",
-            is_buffer_needed.second ? global_buffer_size : 0,
-            1);
+      get_workspace_matrix(
+        context,
+        "allgather_recv_buffer",
+        is_buffer_needed.second ? global_buffer_size : 0,
+        1);
     callback::kfac_util::allgather_blocks(
-        buffers, local_buffer, global_buffer, &comm, allgather_mode);
+      buffers, local_buffer, global_buffer, &comm, allgather_mode);
   }
   prof_region_end("kfac-allgather", prof_sync);
 
@@ -679,6 +752,32 @@ void KFAC::on_backward_prop_end(
     }
   }
 
+}
+
+El::Matrix<DataType,Device>& KFAC::get_workspace_matrix(
+  ExeContextType& context,
+  const std::string& key,
+  const size_t height,
+  const size_t width) {
+  auto& workspace = context.m_workspace;
+  if(workspace.find(key) == workspace.end()) {
+    // std::ostringstream oss;
+    // oss << "K-FAC callback workspace allocation (rank=" << m_rank
+    //     << "): " << key << " (" << height << "x" << width << ")" << std::endl;
+    // std::cout << oss.str();
+    workspace.emplace(
+        key, El::Matrix<DataType, Device>(height, width));
+#ifdef HYDROGEN_HAVE_CUB
+    workspace[key].SetMemoryMode(1); // Use CUB GPU memory pool if possible
+#endif // HYDROGEN_HAVE_CUB
+  }
+  auto& ret = workspace[key];
+  if((size_t) ret.Height() != height || (size_t) ret.Width() != width) {
+    // Make sure that no kernels are using this workspace.
+    El::Synchronize(El::SyncInfoFromMatrix(ret));
+    ret.Resize(height, width);
+  }
+  return ret;
 }
 
 } // namespace lbann
