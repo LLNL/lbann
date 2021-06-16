@@ -24,12 +24,12 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef _DATA_READER_SAMPLE_LIST_HPP_
-#define _DATA_READER_SAMPLE_LIST_HPP_
+#ifndef LBANN_DATA_READER_SAMPLE_LIST_HPP
+#define LBANN_DATA_READER_SAMPLE_LIST_HPP
 
-#include "lbann_config.hpp"
-#include "data_reader.hpp"
-#include "conduit/conduit.hpp"
+//#include "lbann_config.hpp"
+#include "lbann/data_readers/data_reader.hpp"
+#include <conduit/conduit.hpp>
 
 #ifdef _USE_IO_HANDLE_
 #include "lbann/data_readers/sample_list_conduit_io_handle.hpp"
@@ -93,4 +93,4 @@ class data_reader_sample_list : public generic_data_reader {
 
 } // end of namespace lbann
 
-#endif // _DATA_READER_SAMPLE_LIST_HPP_
+#endif // LBANN_DATA_READER_SAMPLE_LIST_HPP

@@ -1,5 +1,4 @@
-//////////////////////////////////////////////////////////////////////////////
-//
+////////////////////////////////////////////////////////////////////////////////
 // Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
@@ -23,10 +22,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
 ////////////////////////////////////////////////////////////////////////////////
-#ifndef __REVISED_LBANN_DATA_READER_HDF5_IMPL_HPP__
-#define __REVISED_LBANN_DATA_READER_HDF5_IMPL_HPP__
+#ifndef LBANN_DATA_READER_HDF5_REVISED_IMPL_HPP
+#define LBANN_DATA_READER_HDF5_REVISED_IMPL_HPP
 
 #include "lbann/data_readers/data_reader_HDF5.hpp"
 
@@ -137,4 +135,4 @@ void hdf5_data_reader::pack(std::string group_name, conduit::Node& node, size_t 
 
 } // namespace lbann
 
-#endif // __REVISED_LBANN_DATA_READER_HDF5_IMPL_HPP__
+#endif // LBANN_DATA_READER_HDF5_REVISED_IMPL_HPP

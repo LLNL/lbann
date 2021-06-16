@@ -37,7 +37,7 @@
 #include <cstdlib>
 
 #include "data_reader_common_catch2.hpp"
-#include "lbann/data_readers/data_reader_HDF5.hpp"
+#include "lbann/data_readers/data_reader_HDF5_impl.hpp"
 
 // input data; each of these contain a single variable: "const std::string"
 #include "test_data/hdf5_hrrl_reader.prototext"
@@ -49,25 +49,25 @@
 
 namespace pb = ::google::protobuf;
 
-double get_bias_from_node_map(const lbann::hdf5_data_reader* reader, const std::string field_name); 
+double get_bias_from_node_map(const lbann::hdf5_data_reader* reader, const std::string field_name);
 
-void test_change_bias_value(lbann::hdf5_data_reader* reader, const std::string field_name); 
+void test_change_bias_value(lbann::hdf5_data_reader* reader, const std::string field_name);
 
-void new_metadata_field(conduit::Node schema, lbann::hdf5_data_reader* reader); 
+void new_metadata_field(conduit::Node schema, lbann::hdf5_data_reader* reader);
 
 std::string test_field_name("alpha");
 
-TEST_CASE("hdf5 data reader schema tests", "[reader][hdf5][.filesystem]")
+TEST_CASE("hdf5 data reader schema tests", "[mpi][data_reader][hdf5][.filesystem]")
 {
   // initialize stuff (boilerplate)
   auto& comm = unit_test::utilities::current_world_comm();
   lbann::init_random(0, 2);
   lbann::init_data_seq_random(42);
 
-  // create working directory 
+  // create working directory
   std::string work_dir = create_test_directory("hdf5_reader");
 
-  // adjust directory names in the prototext 
+  // adjust directory names in the prototext
   std::string prototext(hdf5_hrrl_data_reader_prototext); //non-const copy
   size_t j1;
   while ((j1 = prototext.find("WORK_DIR")) != std::string::npos) {
@@ -83,7 +83,7 @@ TEST_CASE("hdf5 data reader schema tests", "[reader][hdf5][.filesystem]")
   write_file(hdf5_hrrl_test_sample_list, work_dir, "hdf5_hrrl_test.sample_list");
 
   // instantiate the data readers
-  lbann::generic_data_reader* train_ptr = nullptr; 
+  lbann::generic_data_reader* train_ptr = nullptr;
   lbann::generic_data_reader* validate_ptr = nullptr;
   lbann::generic_data_reader* tournament_ptr = nullptr;
   lbann::generic_data_reader* test_ptr = nullptr;
@@ -105,7 +105,7 @@ TEST_CASE("hdf5 data reader schema tests", "[reader][hdf5][.filesystem]")
   SECTION("hdf5_reader: metadata inheritance")
   {
     // Code in this section tests the inheritance mechanism in the
-    // hdf5_data_reader::adjust_metadata() method.  Here, "inheritance" 
+    // hdf5_data_reader::adjust_metadata() method.  Here, "inheritance"
     // refers to the data and experiment schemas. The inheritance policy
     // is: nodes inherit metadata from parents, disallowing overrides.
     // adjust_metadata() works on each schema independently, so we
@@ -122,7 +122,7 @@ TEST_CASE("hdf5 data reader schema tests", "[reader][hdf5][.filesystem]")
 
     SECTION("hdf5_reader: inheritance missing metadata")
     {
-      // tests: nodes without metadata inherit from parent 
+      // tests: nodes without metadata inherit from parent
       REQUIRE(data_schema["Epmax"].has_child("horse") == false);
       data_schema["Epmax"]["horse"];
       data_schema["Epmax"]["horse"]["carrot"] = 1.1 ;
@@ -180,8 +180,8 @@ TEST_CASE("hdf5 data reader schema tests", "[reader][hdf5][.filesystem]")
   // disk, along with metadata information, when load_sample() is called.
   //
   // These tests exercise these pathways:
-  //   parse_schemas(), get_schema_ptrs(), get_leaves_multi(), get_leaves(), 
-  //   adjust_metadata(), load_sample(), and possibly others. 
+  //   parse_schemas(), get_schema_ptrs(), get_leaves_multi(), get_leaves(),
+  //   adjust_metadata(), load_sample(), and possibly others.
   //
   // Note: the reader set() and get() methods operate with copies, not references
 
@@ -216,7 +216,7 @@ TEST_CASE("hdf5 data reader schema tests", "[reader][hdf5][.filesystem]")
     REQUIRE(nd["metadata"].has_child("xyz") == false);
     REQUIRE(nd["metadata"].has_child("bias") == true);
 
-    SECTION("hdf5_reader: inheritance_plus") 
+    SECTION("hdf5_reader: inheritance_plus")
     {
       //add metadata field to existing nodes
       // add xyz to data_schema
@@ -234,10 +234,10 @@ TEST_CASE("hdf5 data reader schema tests", "[reader][hdf5][.filesystem]")
       REQUIRE(test_val == 1234.5678);
     }
 
-    SECTION("hdf5_reader: override") 
+    SECTION("hdf5_reader: override")
     {
       //values in the experiment schema should override those in the data schema
-      // metadata fields in the experiment_schema take precedence over fields in the 
+      // metadata fields in the experiment_schema take precedence over fields in the
       // data_schema, during construction of the node_map.
 
       conduit::Node data_schema = train_reader->get_data_schema();
