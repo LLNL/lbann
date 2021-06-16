@@ -44,7 +44,118 @@ std::vector<ToType> coerceme(FromType const* const data_in, size_t num_elements)
   return std::vector<ToType>{data_in, data_in + num_elements};
 }
 
+template <typename T>
+void normalizeme(T* const data,
+                 double const scale,
+                 double const bias,
+                 size_t const n_elts)
+{
+  std::for_each(data, data + n_elts, [scale, bias](auto& x) {
+    x = x * scale + bias;
+  });
+}
+
+template <typename T>
+void normalizeme(T* data,
+                 const double* scale,
+                 const double* bias,
+                 size_t n_bytes,
+                 size_t n_channels)
+{
+  size_t const n_elts = n_bytes / sizeof(T);
+  size_t const n_elts_per_channel = n_elts / n_channels;
+  for (size_t j = 0; j < n_elts_per_channel; j++) {
+    for (size_t k = 0; k < n_channels; k++) {
+      size_t const idx = j * n_channels + k;
+      data[idx] = (data[idx] * scale[k] + bias[k]);
+    }
+  }
+}
+
+template <typename T>
+void do_repack_image(T* const src_buf,
+                     size_t const n_bytes,
+                     size_t const n_rows,
+                     size_t const n_cols,
+                     int const n_channels)
+{
+  size_t const size = n_rows * n_cols;
+  size_t const n_elts = n_bytes / sizeof(T);
+  std::vector<T> work;
+  work.reserve(n_elts);
+  T* const dst_buf = work.data();
+  for (size_t row = 0; row < n_rows; ++row) {
+    for (size_t col = 0; col < n_cols; ++col) {
+      int N = n_channels;
+      // Multiply by N because there are N channels.
+      const size_t src_base = N * (row + col * n_rows);
+      const size_t dst_base = row + col * n_rows;
+      switch (N) {
+      case 4:
+        dst_buf[dst_base + 3 * size] = src_buf[src_base + 3];
+        [[fallthrough]];
+      case 3:
+        dst_buf[dst_base + 2 * size] = src_buf[src_base + 2];
+        [[fallthrough]];
+      case 2:
+        dst_buf[dst_base + size] = src_buf[src_base + 1];
+        [[fallthrough]];
+      case 1:
+        dst_buf[dst_base] = src_buf[src_base];
+        break;
+      default:
+        LBANN_ERROR("Unsupported number of channels");
+      }
+    }
+  }
+  std::copy_n(dst_buf, n_elts, src_buf);
+}
+
 } // namespace
+
+template <typename T>
+void hdf5_data_reader::pack(std::string group_name,
+                            conduit::Node& node,
+                            size_t index)
+{
+  if (m_packing_groups.find(group_name) == m_packing_groups.end()) {
+    LBANN_ERROR("(m_packing_groups.find(", group_name, ") failed");
+  }
+  const PackingGroup& g = m_packing_groups[group_name];
+  std::vector<T> data(g.n_elts);
+  size_t idx = 0;
+  for (size_t k = 0; k < g.names.size(); k++) {
+    size_t n_elts = g.sizes[k];
+    std::ostringstream ss;
+    ss << node.name() << node.child(0).name() + "/" << g.names[k];
+    if (!node.has_path(ss.str())) {
+      LBANN_ERROR("no leaf for path: ", ss.str());
+    }
+    conduit::Node& leaf = node[ss.str()];
+    memcpy(data.data() + idx, leaf.data_ptr(), n_elts * sizeof(T));
+    if (m_delete_packed_fields) {
+      node.remove(ss.str());
+    }
+    idx += n_elts;
+  }
+  if (idx != g.n_elts) {
+    LBANN_ERROR("idx != g.n_elts*sizeof(T): ", idx, " ", g.n_elts * sizeof(T));
+  }
+  std::ostringstream ss;
+  ss << '/' << LBANN_DATA_ID_STR(index) + '/' + group_name;
+  node[ss.str()] = data;
+
+  // this is clumsy and should be done better
+  if (m_add_to_map.find(group_name) == m_add_to_map.end()) {
+    m_add_to_map.insert(group_name);
+    conduit::Node metadata;
+    metadata[s_composite_node] = true;
+    m_experiment_schema[group_name][s_metadata_node_name] = metadata;
+    m_data_schema[group_name][s_metadata_node_name] = metadata;
+    m_useme_node_map[group_name] = m_experiment_schema[group_name];
+    m_useme_node_map_ptrs[group_name] = &(m_experiment_schema[group_name]);
+  }
+}
 
 hdf5_data_reader::~hdf5_data_reader() {}
 
@@ -212,12 +323,11 @@ void hdf5_data_reader::load_sample(conduit::Node& node,
 
   data_reader_sample_list::open_file(index, file_handle, sample_name);
   // load data for the field names specified in the user's experiment-schema
-  for (const auto& p : m_useme_node_map) {
+  for (auto& [pathname, node] : m_useme_node_map) {
     // do not load a "packed" field, as it doesn't exist on disk!
-    if (!is_composite_node(p.second)) {
+    if (!is_composite_node(node)) {
 
       // check that the requested data (pathname) exists on disk
-      const std::string pathname = p.first;
       const std::string original_path = "/" + sample_name + "/" + pathname;
       if (!conduit::relay::io::hdf5_has_path(file_handle, original_path)) {
         if (ignore_failure) {
@@ -227,12 +337,12 @@ void hdf5_data_reader::load_sample(conduit::Node& node,
       }
 
       // get the new path-name (prepend the index)
-      std::stringstream ss2;
+      std::ostringstream ss2;
       ss2 << LBANN_DATA_ID_STR(index) << '/' << pathname;
       const std::string new_pathname(ss2.str());
 
       // note: this will throw an exception if the child node doesn't exist
-      const conduit::Node& metadata = p.second.child(s_metadata_node_name);
+      const conduit::Node& metadata = node.child(s_metadata_node_name);
 
       // optionally coerce the data, e.g, from double to float, per settings
       // in the experiment_schema
@@ -322,11 +432,11 @@ void hdf5_data_reader::normalize(conduit::Node& node,
 
     if (node[path].dtype().is_float32()) {
       float* data = reinterpret_cast<float*>(vals);
-      normalizeme(data, scale, bias, n_bytes);
+      normalizeme(data, scale, bias, n_bytes / sizeof(float));
     }
     else if (node[path].dtype().is_float64()) {
       double* data = reinterpret_cast<double*>(vals);
-      normalizeme(data, scale, bias, n_bytes);
+      normalizeme(data, scale, bias, n_bytes / sizeof(double));
     }
     else {
       LBANN_ERROR(
@@ -685,11 +795,11 @@ void hdf5_data_reader::repack_image(conduit::Node& node,
 
   if (node[path].dtype().is_float32()) {
     float* data = reinterpret_cast<float*>(vals);
-    repack_image<float>(data, n_bytes, row_dim, col_dim, n_channels);
+    do_repack_image(data, n_bytes, row_dim, col_dim, n_channels);
   }
   else if (node[path].dtype().is_float64()) {
     double* data = reinterpret_cast<double*>(vals);
-    repack_image<double>(data, n_bytes, row_dim, col_dim, n_channels);
+    do_repack_image(data, n_bytes, row_dim, col_dim, n_channels);
   }
   else {
     LBANN_ERROR(
@@ -741,9 +851,9 @@ void hdf5_data_reader::construct_linearized_size_lookup_tables()
   std::unordered_map<std::string, conduit::Node*> leaves;
   get_leaves(&node, leaves);
 
-  std::stringstream ss;
+  std::ostringstream ss;
   ss << '/' << LBANN_DATA_ID_STR(0);
-  size_t sz = ss.str().size();
+  size_t const sz = ss.str().size();
 
   // loop over the data-fields (aka, leaves)
   for (const auto& t : leaves) {
@@ -917,7 +1027,7 @@ const void* hdf5_data_reader::get_data(const size_t sample_id_in,
 
   // get the pathname to the data, and verify it exists in the conduit::Node
   const conduit::Node& node = m_data_store->get_conduit_node(sample_id_in);
-  std::stringstream ss;
+  std::ostringstream ss;
   ss << node.name() << node.child(0).name() + "/" << field_name_in;
   if (!node.has_path(ss.str())) {
     LBANN_ERROR("no path: ", ss.str());

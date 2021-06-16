@@ -330,25 +330,6 @@ private:
   // template declarations follow
   //=========================================================================
 
-  /** Performs normalization for scalars and 1D arrays */
-  template <typename T>
-  void normalizeme(T* data, double scale, double bias, size_t n_bytes);
-
-  /** Performs normalization for images with multiple channels */
-  template <typename T>
-  void normalizeme(T* data,
-                   const double* scale,
-                   const double* bias,
-                   size_t n_bytes,
-                   size_t n_channels);
-
-  template <typename T>
-  void repack_image(T* src_buf,
-                    size_t n_bytes,
-                    size_t n_rows,
-                    size_t n_cols,
-                    int n_channels);
-
   /** Packs all fields assigned to 'group_name' (datum, label, response)
    *  into a 1D vector; the packed field is then inserted in a conduit
    *  node, that is passed to the data_store
@@ -360,10 +341,6 @@ private:
    * original data fields
    */
   bool is_composite_node(const conduit::Node& node);
-  bool is_composite_node(const conduit::Node* node)
-  {
-    return is_composite_node(*node);
-  }
 
 }; // END: class hdf5_data_reader
 
