@@ -357,7 +357,6 @@ void allgather_blocks(
     El::Matrix<DataType, Device>& global_buffer,
     lbann_comm *comm,
     const kfac_allgather_mode mode) {
-
   if(mode == kfac_allgather_mode::BROADCAST) {
     for(auto& block : blocks)
       El::Broadcast(

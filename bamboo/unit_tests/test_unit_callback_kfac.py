@@ -269,8 +269,9 @@ def construct_data_reader(lbann):
 # ==============================================
 
 # Create test functions that can interact with PyTest
-environment = {"LBANN_KEEP_ERROR_SIGNALS": 1}
-for _test_func in tools.create_tests(setup_experiment,
-                                     __file__,
-                                     environment=environment):
+for _test_func in tools.create_tests(
+        setup_experiment,
+        __file__,
+        environment={"LBANN_KEEP_ERROR_SIGNALS": 1},
+):
     globals()[_test_func.__name__] = _test_func

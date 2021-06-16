@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -23,30 +23,28 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
-#include "lbann/utils/serialize.hpp"
-#include <lbann/layers/data_type_layer.hpp>
+
+#ifndef LBANN_UTILS_TENSOR_HPP
+#define LBANN_UTILS_TENSOR_HPP
+
+#include "lbann/base.hpp"
 
 namespace lbann {
 
-template <typename InputTensorDataType, typename OutputTensorDataType>
-template <typename ArchiveT>
-void data_type_layer<InputTensorDataType, OutputTensorDataType>::serialize(ArchiveT& ar)
-{
-  ar(::cereal::make_nvp("BaseLayer",
-                        ::cereal::base_class<Layer>(this)),
-     CEREAL_NVP(m_persistent_error_signals));
-  // Members not serialized:
-  //   m_weights_proxy
-  //   m_inputs
-  //   m_outputs
-  //   m_gradient_wrt_outputs
-  //   m_gradient_wrt_inputs;
+/// @brief Function to efficiently select the best method for copying between
+/// two distributed tensors. Enable selection between synchronous and
+/// asynchronous copies based on tensor distribution and
+/// pre-processing macros
+template <typename TDT>
+void do_tensor_copy(const BaseDistMat& src,
+                    El::AbstractDistMatrix<TDT>& tgt);
+
+/// @brief If distributed tensors have the same distribution setup the
+/// target to use a view to the source tensor, otherwise copy the src
+/// to target.
+template <typename TDT>
+void view_or_copy_tensor(const BaseDistMat& src,
+                         El::AbstractDistMatrix<TDT>& tgt);
 }
 
-} // namespace lbann
-
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
-
-#define LBANN_CLASS_NAME data_type_layer
-#include <lbann/macros/register_template_class_with_cereal.hpp>
+#endif // LBANN_UTILS_TENSOR_HPP

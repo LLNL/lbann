@@ -94,6 +94,8 @@ template <hydrogen::Device Device>
 class kfac_block_fc_conv;
 template <hydrogen::Device Device>
 class kfac_block_bn;
+template <hydrogen::Device Device>
+class kfac_block_gru;
 } // namespace callback
 class KFAC;
 
@@ -218,6 +220,8 @@ class Layer {
   friend class callback::kfac_block_fc_conv;
   template <hydrogen::Device Device>
   friend class callback::kfac_block_bn;
+  template <hydrogen::Device Device>
+  friend class callback::kfac_block_gru;
   friend class KFAC;
 
 public:

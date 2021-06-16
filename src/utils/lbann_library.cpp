@@ -27,6 +27,7 @@
 #include "lbann/comm.hpp"
 #include "lbann/comm_impl.hpp"
 #include "lbann/data_readers/data_reader.hpp"
+#include "lbann/models/directed_acyclic_graph.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/lbann_library.hpp"
 
@@ -106,6 +107,38 @@ void construct_std_options() {
                         16*1024*1024UL);
 }
 
+// Creates a datareader metadata to get around the need for an actual
+// datareader in inference only mode
+auto mock_dr_metadata(std::vector<int> input_dims,
+                      std::vector<int> output_dims) {
+  DataReaderMetaData drmd;
+  auto& md_dims = drmd.data_dims;
+  md_dims[data_reader_target_mode::INPUT] = input_dims;
+  md_dims[data_reader_target_mode::CLASSIFICATION] = output_dims;
+  return drmd;
+}
+
+// Loads a model from checkpoint and sets up model for inference
+std::unique_ptr<model>
+load_inference_model(lbann_comm* lc,
+                     std::string cp_dir,
+                     int mbs,
+                     std::vector<int> input_dims,
+                     std::vector<int> output_dims) {
+  persist p;
+  p.open_restart(cp_dir.c_str());
+  auto m = make_unique<directed_acyclic_graph_model>(lc, nullptr, nullptr);
+  m->load_from_checkpoint_shared(p);
+  p.close_restart();
+
+  // Must use a mock datareader with input and output dims for setup
+  // TODO: avoid need for datareader altogether
+  auto dr_metadata = mock_dr_metadata(input_dims, output_dims);
+  m->setup(mbs, dr_metadata);
+
+  return m;
+}
+
 /// Split the MPI communicator into trainers
 /// Return the
 int allocate_trainer_resources(lbann_comm *comm) {
@@ -143,6 +176,10 @@ trainer& get_trainer() {
 trainer const& get_const_trainer() {
   LBANN_ASSERT(global_trainer_);
   return *global_trainer_;
+}
+
+void finalize_trainer() {
+  global_trainer_.reset();
 }
 
 /// Construct a trainer that contains a lbann comm object and threadpool
