@@ -72,7 +72,8 @@ public:
     size_t update_interval_steps,
     kfac::kfac_inverse_strategy inverse_strategy,
     std::vector<std::string> disable_layers,
-    double learning_rate_factor);
+    double learning_rate_factor,
+    double learning_rate_factor_gru);
 
   KFAC(KFAC const& other);
   KFAC& operator=(const KFAC& other);
@@ -213,8 +214,8 @@ private:
   /** @brief List of layers to be ignored by the callback. */
   std::vector<std::string> m_disable_layers;
 
-  /** @brief Factor to be multiplied to the learning rate */
-  double m_learning_rate_factor;
+  /** @brief Factors to be multiplied to the learning rate */
+  double m_learning_rate_factor, m_learning_rate_factor_gru;
 
   /** @brief Whether inverse of Kronecker factors are available. */
   bool m_has_kronecker_inverse;

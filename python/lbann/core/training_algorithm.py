@@ -323,15 +323,62 @@ class RandomPairwiseExchange(MetaLearningStrategy):
 
 class KFAC(TrainingAlgorithm):
 
-    def __init__(self,
-                 name: str,
-                 first_order_optimizer: BatchedIterativeOptimizer):
+    def __init__(
+            self,
+            name: str,
+            first_order_optimizer: BatchedIterativeOptimizer,
+            damping_act : str = '',
+            damping_err : str = '',
+            damping_bn_act : str = '',
+            damping_bn_err : str = '',
+            damping_warmup_steps : int = 0,
+            kronecker_decay : float = 0.,
+            print_time : bool = False,
+            print_matrix : bool = False,
+            print_matrix_summary : bool = False,
+            use_pi : bool = False,
+            update_intervals : str = '',
+            update_interval_steps : int = 0,
+            inverse_strategy : str = '',
+            disable_layers : str = '',
+            learning_rate_factor : float = 0,
+    ):
         self.name = name
         self.first_order_optimizer = first_order_optimizer
+        self.damping_act = damping_act
+        self.damping_err = damping_err
+        self.damping_bn_act = damping_bn_act
+        self.damping_bn_err = damping_bn_err
+        self.damping_warmup_steps = damping_warmup_steps
+        self.kronecker_decay = kronecker_decay
+        self.print_time = print_time
+        self.print_matrix = print_matrix
+        self.print_matrix_summary = print_matrix_summary
+        self.use_pi = use_pi
+        self.update_intervals = update_intervals
+        self.update_interval_steps = update_interval_steps
+        self.inverse_strategy = inverse_strategy
+        self.disable_layers = disable_layers
+        self.learning_rate_factor = learning_rate_factor
 
     def do_export_proto(self):
         """Get a protobuf representation of this object."""
         params = AlgoProto.KFAC()
         first_order_optimizer_proto = self.first_order_optimizer.export_proto()
         first_order_optimizer_proto.parameters.Unpack(params.sgd)
+        params.damping_act = self.damping_act
+        params.damping_err = self.damping_err
+        params.damping_bn_act = self.damping_bn_act
+        params.damping_bn_err = self.damping_bn_err
+        params.damping_warmup_steps = self.damping_warmup_steps
+        params.kronecker_decay = self.kronecker_decay
+        params.print_time = self.print_time
+        params.print_matrix = self.print_matrix
+        params.print_matrix_summary = self.print_matrix_summary
+        params.use_pi = self.use_pi
+        params.update_intervals = self.update_intervals
+        params.update_interval_steps = self.update_interval_steps
+        params.inverse_strategy = self.inverse_strategy
+        params.disable_layers = self.disable_layers
+        params.learning_rate_factor = self.learning_rate_factor
         return params

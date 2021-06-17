@@ -72,7 +72,8 @@ KFAC::KFAC(
   size_t update_interval_steps,
   kfac::kfac_inverse_strategy inverse_strategy,
   std::vector<std::string> disable_layers,
-  double learning_rate_factor)
+  double learning_rate_factor,
+  double learning_rate_factor_gru)
   : BaseType{std::move(name)},
     m_stopping_criteria{std::move(stop)},
     m_damping_act_params{std::move(damping_act_params)},
@@ -89,7 +90,8 @@ KFAC::KFAC(
     m_update_interval_steps{update_interval_steps},
     m_inverse_strategy{inverse_strategy},
     m_disable_layers{std::move(disable_layers)},
-    m_learning_rate_factor{learning_rate_factor}
+    m_learning_rate_factor{learning_rate_factor},
+    m_learning_rate_factor_gru{learning_rate_factor_gru}
 {}
 
 KFAC::KFAC(KFAC const& other)
@@ -511,75 +513,7 @@ void KFAC::on_backward_prop_end(
 
   // List up layers to be updated
   if(context.m_blocks.size() == 0){
-    prof_region_begin("kfac-setup", prof_color, prof_sync);
-    const size_t num_procs = comm.get_procs_per_trainer();
-    std::unordered_map<std::string, int> proc_ranks;
-    for(auto i_layer = layers.begin(); i_layer != layers.end(); i_layer++) {
-      const size_t layer_id = std::distance(layers.begin(), i_layer);
-      const auto &l = *i_layer;
-      const auto l_fc = dynamic_cast<fully_connected_layer<DataType, data_layout::DATA_PARALLEL, Device>*>(l);
-      const auto l_conv = dynamic_cast<convolution_layer<DataType, data_layout::DATA_PARALLEL, Device>*>(l);
-      const auto l_bn = dynamic_cast<batch_normalization_layer<DataType, data_layout::DATA_PARALLEL, Device>*>(l);
-      const bool is_fc = (l_fc != nullptr);
-      const bool is_conv = (l_conv != nullptr);
-      const bool is_bn = (l_bn != nullptr);
-      if(!(is_fc || is_conv || is_bn))
-        continue;
-
-      if(std::find(m_disable_layers.begin(), m_disable_layers.end(), l->get_name()) != m_disable_layers.end()) {
-        if(comm.am_trainer_master())
-          std::cout << "K-fac: " << l->get_name() << " is ignored to optimize with K-FAC." << std::endl;
-        continue;
-      }
-
-      prof_region_begin(("kfac-setup/" + l->get_name()).c_str(), prof_color, prof_sync);
-
-      // Ignore layers without optimizers
-      const auto& weights = l->get_weights(0);
-      const optimizer *w_optimizer = weights.get_optimizer();
-      if(w_optimizer == nullptr)
-        continue;
-
-      std::string proc_rank_key = "all";
-      if(m_inverse_strategy == kfac::kfac_inverse_strategy::EACH)
-        proc_rank_key = (is_fc ? "fc" : (is_conv ? "conv" : "bn"));
-      if(proc_ranks.find(proc_rank_key) == proc_ranks.end())
-        proc_ranks[proc_rank_key] = 0;
-      int& proc_rank = proc_ranks[proc_rank_key];
-
-      // Check layer property
-      if(l->get_num_parents() != 1 || l->get_num_children() != 1) {
-        std::stringstream err;
-        err << "The K-FAC only supports layers who have exact one parent and child."
-            << " layer: " << l->get_name()
-            << ", #parent: " << l->get_num_parents()
-            << ", #child: " << l->get_num_children();
-        LBANN_ERROR(err.str());
-      }
-
-      std::shared_ptr<kfac_block<Device>> block;
-      if(is_fc || is_conv) {
-        block = std::make_shared<kfac_block_fc_conv<Device>>(
-            l, &context, layer_id, proc_rank, is_conv);
-      } else if(is_bn) {
-        block = std::make_shared<kfac_block_bn<Device>>(
-            l, &context, layer_id, proc_rank);
-      }
-
-      context.m_blocks.push_back(std::move(block));
-      if(m_inverse_strategy != kfac::kfac_inverse_strategy::ROOT)
-        proc_rank = (proc_rank+1)%num_procs;
-
-      prof_region_end(("kfac-setup/" + l->get_name()).c_str(), prof_sync);
-    }
-
-    if(comm.am_trainer_master()) {
-      for(const auto& block : context.m_blocks)
-        std::cout << "K-FAC setup: "
-                  << block->get_info() << std::endl;
-    }
-
-    prof_region_end("kfac-setup", prof_sync);
+    LBANN_ERROR("K-FAC blocks have not been setup");
   }
 
   prof_region_begin("kfac-step", prof_color, prof_sync);
@@ -661,11 +595,12 @@ void KFAC::on_backward_prop_end(
     prof_region_begin(("kfac-inverse/" + block->get_name()).c_str(), prof_color, prof_sync);
     // TODO: Add kfac_block::is_bn?
     const bool is_bn = dynamic_cast<kfac_block_bn<Device>*>(block.get()) != nullptr;
+    const bool is_gru = dynamic_cast<kfac_block_gru<Device>*>(block.get()) != nullptr;
     block->update_kronecker_inverse(
         &comm, m_use_pi,
         is_bn ? context.m_damping_bn_act : context.m_damping_act,
         is_bn ? context.m_damping_bn_err : context.m_damping_err,
-        m_learning_rate_factor,
+        is_gru ? m_learning_rate_factor_gru : m_learning_rate_factor,
         m_print_matrix, m_print_matrix_summary,
         m_print_time);
     prof_region_end(("kfac-inverse/" + block->get_name()).c_str(), prof_sync);
@@ -835,8 +770,11 @@ std::unique_ptr<lbann::KFAC> lbann::make<lbann::KFAC>(
       parse_list<std::string>(kfac_params.disable_layers());
 
   double learning_rate_factor = kfac_params.learning_rate_factor();
+  double learning_rate_factor_gru = kfac_params.learning_rate_factor_gru();
   if(learning_rate_factor == 0.0)
     learning_rate_factor = 1.0;
+  if(learning_rate_factor_gru == 0.0)
+    learning_rate_factor_gru = learning_rate_factor;
 
   return make_unique<AlgoType>(
     params.name(),
@@ -855,6 +793,7 @@ std::unique_ptr<lbann::KFAC> lbann::make<lbann::KFAC>(
     update_interval_steps,
     inverse_strategy,
     std::move(disable_layers),
-    learning_rate_factor);
+    learning_rate_factor,
+    learning_rate_factor_gru);
 
 }

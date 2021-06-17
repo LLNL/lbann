@@ -129,5 +129,8 @@ message KFAC {
   string disable_layers = 15; // List of layers to be ignored by the callback
 
   float learning_rate_factor = 16; // Factor to be multiplied to the learning rate
+  // Factor to be multiplied to the learning rate for GRU layers
+  // (default: learning_rate_factor)
+  float learning_rate_factor_gru = 17;
 
 }//message KFAC
