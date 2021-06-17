@@ -44,8 +44,5 @@ set_full_path(THIS_DIR_HEADERS
   variable_minibatch.hpp
   )
 
-# Add the subdirectories
-add_subdirectory(kfac)
-
 # Propagate the files up the tree
 set(HEADERS "${HEADERS}" "${THIS_DIR_HEADERS}" PARENT_SCOPE)

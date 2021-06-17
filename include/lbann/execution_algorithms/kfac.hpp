@@ -35,17 +35,11 @@
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/cloneable.hpp"
 #include "lbann/utils/make_abstract.hpp"
-#include "lbann/callbacks/kfac/kfac.hpp" /// @todo Move into execution_algorithm dir
 
 #include <google/protobuf/message.h>
 #include <memory>
 
 namespace lbann {
-
-// Typedefs
-using kfac_inverse_strategy = callback::kfac_inverse_strategy;
-using kfac_reduce_scatter_mode = callback::kfac_reduce_scatter_mode;
-using kfac_allgather_mode = callback::kfac_allgather_mode;
 
 /** @class KFAC
  *  @brief An implementation of the KFAC second-order optimization algorithm
@@ -76,7 +70,7 @@ public:
     bool use_pi,
     std::vector<size_t> update_intervals,
     size_t update_interval_steps,
-    kfac_inverse_strategy inverse_strategy,
+    kfac::kfac_inverse_strategy inverse_strategy,
     std::vector<std::string> disable_layers,
     double learning_rate_factor);
 
@@ -182,14 +176,6 @@ private:
     model& model);
 #endif // 0
 
-  /** @brief Gets the Kronecker factor matrix of a FC layer.
-   *  The same key is tied with the same matrix instance. */
-  El::Matrix<DataType,Device>& get_workspace_matrix(
-    ExeContextType& context,
-    const std::string& key,
-    const size_t height,
-    const size_t width);
-
   /** @brief The KFAC stopping criteria. */
   std::unique_ptr<TermCriteriaType> m_stopping_criteria;
 
@@ -222,7 +208,7 @@ private:
   size_t m_update_interval_steps;
 
   /** @brief Assignment strategy for the model-parallel part. */
-  kfac_inverse_strategy m_inverse_strategy;
+  kfac::kfac_inverse_strategy m_inverse_strategy;
 
   /** @brief List of layers to be ignored by the callback. */
   std::vector<std::string> m_disable_layers;

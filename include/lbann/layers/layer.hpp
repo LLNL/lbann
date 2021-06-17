@@ -88,16 +88,14 @@ class Layer;
 class model;
 namespace callback {
 class sync_layers;
-template <hydrogen::Device Device>
-class kfac;
+} // namespace callback
+class KFAC;
 template <hydrogen::Device Device>
 class kfac_block_fc_conv;
 template <hydrogen::Device Device>
 class kfac_block_bn;
 template <hydrogen::Device Device>
 class kfac_block_gru;
-} // namespace callback
-class KFAC;
 
 /** @brief Smart pointer to manage ownership of a layer object
  *
@@ -214,15 +212,13 @@ inline std::ostream &operator<<(std::ostream &os,
  */
 class Layer {
   friend class callback::sync_layers;
-  template <hydrogen::Device Device>
-  friend class callback::kfac;
-  template <hydrogen::Device Device>
-  friend class callback::kfac_block_fc_conv;
-  template <hydrogen::Device Device>
-  friend class callback::kfac_block_bn;
-  template <hydrogen::Device Device>
-  friend class callback::kfac_block_gru;
   friend class KFAC;
+  template <hydrogen::Device Device>
+  friend class kfac_block_fc_conv;
+  template <hydrogen::Device Device>
+  friend class kfac_block_bn;
+  template <hydrogen::Device Device>
+  friend class kfac_block_gru;
 
 public:
 

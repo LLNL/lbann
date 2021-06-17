@@ -76,6 +76,7 @@ class kfac_block;
  */
 template <El::Device Device>
 class kfac : public callback_base {
+
  public:
 
   /** Constructor.

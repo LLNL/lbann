@@ -30,11 +30,11 @@
 
 #include "lbann/base.hpp"
 #include "lbann/callbacks/callback.hpp"
-#include "lbann/callbacks/kfac/kfac_block.hpp" /// @todo Move into execution_algorithm dir
-#include "lbann/callbacks/kfac/kfac_block_bn.hpp" /// @todo Move into execution_algorithm dir
-#include "lbann/callbacks/kfac/kfac_block_fc_conv.hpp" /// @todo Move into execution_algorithm dir
-#include "lbann/callbacks/kfac/kfac_block_gru.hpp" /// @todo Move into execution_algorithm dir
-#include "lbann/callbacks/kfac/kfac_util.hpp" /// @todo Move into execution_algorithm dir
+#include "lbann/execution_algorithms/kfac/kfac_block.hpp"
+#include "lbann/execution_algorithms/kfac/kfac_block_bn.hpp"
+#include "lbann/execution_algorithms/kfac/kfac_block_fc_conv.hpp"
+#include "lbann/execution_algorithms/kfac/kfac_block_gru.hpp"
+#include "lbann/execution_algorithms/kfac/kfac_util.hpp"
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/layers/learning/fully_connected.hpp"
 #include "lbann/layers/learning/convolution.hpp"
@@ -49,16 +49,6 @@
 #include <limits>
 
 namespace lbann {
-
-// Typedefs
-template <El::Device Device>
-using kfac_block = callback::kfac_block<Device>;
-template <El::Device Device>
-using kfac_block_bn = callback::kfac_block_bn<Device>;
-template <El::Device Device>
-using kfac_block_fc_conv = callback::kfac_block_fc_conv<Device>;
-template <El::Device Device>
-using kfac_block_gru = callback::kfac_block_gru<Device>;
 
 #ifdef LBANN_HAS_GPU
   constexpr static const El::Device Device = El::Device::GPU;
@@ -80,7 +70,7 @@ KFAC::KFAC(
   bool use_pi,
   std::vector<size_t> update_intervals,
   size_t update_interval_steps,
-  kfac_inverse_strategy inverse_strategy,
+  kfac::kfac_inverse_strategy inverse_strategy,
   std::vector<std::string> disable_layers,
   double learning_rate_factor)
   : BaseType{std::move(name)},
@@ -417,7 +407,7 @@ void KFAC::on_forward_prop_end(
 
       if(std::find(m_disable_layers.begin(), m_disable_layers.end(), l->get_name()) != m_disable_layers.end()) {
         if(comm.am_trainer_master())
-          std::cout << "K-fac callback: " << l->get_name() << " is ignored to optimize with K-FAC." << std::endl;
+          std::cout << "K-fac: " << l->get_name() << " is ignored to optimize with K-FAC." << std::endl;
         continue;
       }
 
@@ -430,7 +420,7 @@ void KFAC::on_forward_prop_end(
         continue;
 
       std::string proc_rank_key = "all";
-      if(m_inverse_strategy == kfac_inverse_strategy::EACH)
+      if(m_inverse_strategy == kfac::kfac_inverse_strategy::EACH)
         proc_rank_key = l->get_type();
       if(proc_ranks.find(proc_rank_key) == proc_ranks.end())
         proc_ranks[proc_rank_key] = 0;
@@ -439,7 +429,7 @@ void KFAC::on_forward_prop_end(
       // Check layer property
       if((l->get_num_parents() != 1 || l->get_num_children() != 1) && !is_gru) {
         std::stringstream err;
-        err << "The K-FAC callback expects layers who have exact one parent and child."
+        err << "K-FAC expects layers who have exact one parent and child."
             << " layer: " << l->get_name()
             << ", #parent: " << l->get_num_parents()
             << ", #child: " << l->get_num_children();
@@ -449,17 +439,17 @@ void KFAC::on_forward_prop_end(
       std::shared_ptr<kfac_block<Device>> block;
       if(is_fc || is_conv) {
         block = std::make_shared<kfac_block_fc_conv<Device>>(
-            l, this, layer_id, proc_rank, is_conv);
+            l, &context, layer_id, proc_rank, is_conv);
       } else if(is_bn) {
         block = std::make_shared<kfac_block_bn<Device>>(
-            l, this, layer_id, proc_rank);
+            l, &context, layer_id, proc_rank);
       } else if(is_gru) {
         block = std::make_shared<kfac_block_gru<Device>>(
-            l, this, layer_id, proc_rank);
+            l, &context, layer_id, proc_rank);
       }
 
       context.m_blocks.push_back(std::move(block));
-      if(m_inverse_strategy != kfac_inverse_strategy::ROOT)
+      if(m_inverse_strategy != kfac::kfac_inverse_strategy::ROOT)
         proc_rank = (proc_rank+1)%num_procs;
 
       prof_region_end(("kfac-setup/" + l->get_name()).c_str(), prof_sync);
@@ -467,7 +457,7 @@ void KFAC::on_forward_prop_end(
 
     if(comm.am_trainer_master()) {
       for(const auto& block : context.m_blocks)
-        std::cout << "K-FAC callback setup: "
+        std::cout << "K-FAC setup: "
                   << block->get_info() << std::endl;
     }
 
@@ -538,7 +528,7 @@ void KFAC::on_backward_prop_end(
 
       if(std::find(m_disable_layers.begin(), m_disable_layers.end(), l->get_name()) != m_disable_layers.end()) {
         if(comm.am_trainer_master())
-          std::cout << "K-fac callback: " << l->get_name() << " is ignored to optimize with K-FAC." << std::endl;
+          std::cout << "K-fac: " << l->get_name() << " is ignored to optimize with K-FAC." << std::endl;
         continue;
       }
 
@@ -551,7 +541,7 @@ void KFAC::on_backward_prop_end(
         continue;
 
       std::string proc_rank_key = "all";
-      if(m_inverse_strategy == kfac_inverse_strategy::EACH)
+      if(m_inverse_strategy == kfac::kfac_inverse_strategy::EACH)
         proc_rank_key = (is_fc ? "fc" : (is_conv ? "conv" : "bn"));
       if(proc_ranks.find(proc_rank_key) == proc_ranks.end())
         proc_ranks[proc_rank_key] = 0;
@@ -560,7 +550,7 @@ void KFAC::on_backward_prop_end(
       // Check layer property
       if(l->get_num_parents() != 1 || l->get_num_children() != 1) {
         std::stringstream err;
-        err << "The K-FAC callback only supports layers who have exact one parent and child."
+        err << "The K-FAC only supports layers who have exact one parent and child."
             << " layer: " << l->get_name()
             << ", #parent: " << l->get_num_parents()
             << ", #child: " << l->get_num_children();
@@ -570,14 +560,14 @@ void KFAC::on_backward_prop_end(
       std::shared_ptr<kfac_block<Device>> block;
       if(is_fc || is_conv) {
         block = std::make_shared<kfac_block_fc_conv<Device>>(
-            l, this, layer_id, proc_rank, is_conv);
+            l, &context, layer_id, proc_rank, is_conv);
       } else if(is_bn) {
         block = std::make_shared<kfac_block_bn<Device>>(
-            l, this, layer_id, proc_rank);
+            l, &context, layer_id, proc_rank);
       }
 
       context.m_blocks.push_back(std::move(block));
-      if(m_inverse_strategy != kfac_inverse_strategy::ROOT)
+      if(m_inverse_strategy != kfac::kfac_inverse_strategy::ROOT)
         proc_rank = (proc_rank+1)%num_procs;
 
       prof_region_end(("kfac-setup/" + l->get_name()).c_str(), prof_sync);
@@ -585,7 +575,7 @@ void KFAC::on_backward_prop_end(
 
     if(comm.am_trainer_master()) {
       for(const auto& block : context.m_blocks)
-        std::cout << "K-FAC callback setup: "
+        std::cout << "K-FAC setup: "
                   << block->get_info() << std::endl;
     }
 
@@ -631,14 +621,13 @@ void KFAC::on_backward_prop_end(
 
     // Perform reduce-scatter.
     prof_region_begin("kfac-update/reduce-scatter", prof_color, prof_sync);
-    const auto reduce_scatter_mode = kfac_reduce_scatter_mode::ALLREDUCE;
+    const auto reduce_scatter_mode = kfac::kfac_reduce_scatter_mode::ALLREDUCE;
     El::Matrix<DataType, Device>& global_buffer =
-      get_workspace_matrix(
-        context,
+      context.get_workspace_matrix(
         "reduce_scatter_send_buffer",
-        callback::kfac_util::is_reduce_scatter_buffer_required(reduce_scatter_mode) ? global_buffer_size : 0,
+        kfac::is_reduce_scatter_buffer_required(reduce_scatter_mode) ? global_buffer_size : 0,
         1);
-    callback::kfac_util::reduce_scatter_blocks(
+    kfac::reduce_scatter_blocks(
         buffers, global_buffer, &comm, reduce_scatter_mode);
     prof_region_end("kfac-update/reduce-scatter", prof_sync);
 
@@ -708,21 +697,19 @@ void KFAC::on_backward_prop_end(
       }
 
     // Perform allgather.
-    const auto allgather_mode = kfac_allgather_mode::ALLREDUCE;
-    const auto is_buffer_needed = callback::kfac_util::is_allgather_buffer_required(allgather_mode);
+    const auto allgather_mode = kfac::kfac_allgather_mode::ALLREDUCE;
+    const auto is_buffer_needed = kfac::is_allgather_buffer_required(allgather_mode);
     El::Matrix<DataType, Device>& local_buffer =
-      get_workspace_matrix(
-        context,
+      context.get_workspace_matrix(
         "allgather_send_buffer",
         is_buffer_needed.first ? local_buffer_size : 0,
         1);
     El::Matrix<DataType, Device>& global_buffer =
-      get_workspace_matrix(
-        context,
+      context.get_workspace_matrix(
         "allgather_recv_buffer",
         is_buffer_needed.second ? global_buffer_size : 0,
         1);
-    callback::kfac_util::allgather_blocks(
+    kfac::allgather_blocks(
       buffers, local_buffer, global_buffer, &comm, allgather_mode);
   }
   prof_region_end("kfac-allgather", prof_sync);
@@ -740,7 +727,7 @@ void KFAC::on_backward_prop_end(
     for(auto& block : context.m_blocks) {
       for(auto& info : block->get_internal_matrix_info()) {
         std::ostringstream oss;
-        oss << "K-FAC callback matrix allocation (rank="
+        oss << "K-FAC matrix allocation (rank="
             << comm.get_rank_in_trainer()
             << "): " << block->get_name()
             << " " << std::get<0>(info)
@@ -752,32 +739,6 @@ void KFAC::on_backward_prop_end(
     }
   }
 
-}
-
-El::Matrix<DataType,Device>& KFAC::get_workspace_matrix(
-  ExeContextType& context,
-  const std::string& key,
-  const size_t height,
-  const size_t width) {
-  auto& workspace = context.m_workspace;
-  if(workspace.find(key) == workspace.end()) {
-    // std::ostringstream oss;
-    // oss << "K-FAC callback workspace allocation (rank=" << m_rank
-    //     << "): " << key << " (" << height << "x" << width << ")" << std::endl;
-    // std::cout << oss.str();
-    workspace.emplace(
-        key, El::Matrix<DataType, Device>(height, width));
-#ifdef HYDROGEN_HAVE_CUB
-    workspace[key].SetMemoryMode(1); // Use CUB GPU memory pool if possible
-#endif // HYDROGEN_HAVE_CUB
-  }
-  auto& ret = workspace[key];
-  if((size_t) ret.Height() != height || (size_t) ret.Width() != width) {
-    // Make sure that no kernels are using this workspace.
-    El::Synchronize(El::SyncInfoFromMatrix(ret));
-    ret.Resize(height, width);
-  }
-  return ret;
 }
 
 } // namespace lbann
@@ -856,13 +817,13 @@ std::unique_ptr<lbann::KFAC> lbann::make<lbann::KFAC>(
   const size_t update_interval_steps = kfac_params.update_interval_steps();
 
   const std::string inverse_strategy_str = kfac_params.inverse_strategy();
-  kfac_inverse_strategy inverse_strategy;
+  kfac::kfac_inverse_strategy inverse_strategy;
   if(inverse_strategy_str == "" || inverse_strategy_str == "all")
-    inverse_strategy = kfac_inverse_strategy::ALL;
+    inverse_strategy = kfac::kfac_inverse_strategy::ALL;
   else if(inverse_strategy_str == "each")
-    inverse_strategy = kfac_inverse_strategy::EACH;
+    inverse_strategy = kfac::kfac_inverse_strategy::EACH;
   else if(inverse_strategy_str == "root")
-    inverse_strategy = kfac_inverse_strategy::ROOT;
+    inverse_strategy = kfac::kfac_inverse_strategy::ROOT;
   else {
     std::stringstream err;
     err << "Invalid inverse strategy type: "

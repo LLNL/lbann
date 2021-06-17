@@ -46,7 +46,7 @@ ExecutionContext::ExecutionContext(
     m_damping_bn_err{damping_bn_err}
 {}
 
-std::unique_ptr<execution_context> ExecutionContext::get_new() const
+std::unique_ptr<lbann::execution_context> ExecutionContext::get_new() const
 {
     return std::make_unique<ExecutionContext>(0UL, 0.0, 0.0, 0.0, 0.0);
 }
@@ -63,6 +63,30 @@ std::string ExecutionContext::get_type() const
 std::string ExecutionContext::get_state_string() const noexcept
 {
   return build_string(this->get_type(), ".step.", m_sgd_execution_context.get_step());
+}
+
+El::Matrix<DataType,Device>& ExecutionContext::get_workspace_matrix(
+  const std::string& key,
+  const size_t height,
+  const size_t width) {
+  if(m_workspace.find(key) == m_workspace.end()) {
+    // std::ostringstream oss;
+    // oss << "K-FAC workspace allocation (rank=" << m_rank
+    //     << "): " << key << " (" << height << "x" << width << ")" << std::endl;
+    // std::cout << oss.str();
+    m_workspace.emplace(
+        key, El::Matrix<DataType, Device>(height, width));
+#ifdef HYDROGEN_HAVE_CUB
+    m_workspace[key].SetMemoryMode(1); // Use CUB GPU memory pool if possible
+#endif // HYDROGEN_HAVE_CUB
+  }
+  auto& ret = m_workspace[key];
+  if((size_t) ret.Height() != height || (size_t) ret.Width() != width) {
+    // Make sure that no kernels are using this workspace.
+    El::Synchronize(El::SyncInfoFromMatrix(ret));
+    ret.Resize(height, width);
+  }
+  return ret;
 }
 
 // =============================================

@@ -28,14 +28,16 @@
 
 #include "lbann/execution_contexts/execution_context.hpp"
 #include "lbann/execution_contexts/sgd_execution_context.hpp"
-#include "lbann/callbacks/kfac/kfac_block.hpp" /// @todo Move into execution_algorithm dir
-#include "lbann/callbacks/kfac/kfac_util.hpp" /// @todo Move into execution_algorithm dir
+#include "lbann/execution_algorithms/kfac/kfac_block.hpp"
+#include "lbann/execution_algorithms/kfac/kfac_util.hpp"
 #include <memory>
 #include <string>
 
-// Forward declaration
+// Forward declarations
 namespace lbann {
 class KFAC;
+template <El::Device Device>
+class kfac_block;
 }
 
 namespace lbann {
@@ -47,8 +49,6 @@ constexpr El::Device Device = El::Device::GPU;
 #else
 constexpr El::Device Device = El::Device::CPU;
 #endif // LBANN_HAS_GPU
-template <El::Device Device>
-using kfac_block = ::lbann::callback::kfac_block<Device>;
 
 /** @class ExecutionContext
  *  @brief The execution context for an KFAC algorithm.
@@ -90,6 +90,13 @@ public:
   {
     return m_sgd_execution_context;
   }
+
+  /** @brief Gets the Kronecker factor matrix of a FC layer.
+   *  The same key is tied with the same matrix instance. */
+  El::Matrix<DataType,Device>& get_workspace_matrix(
+    const std::string& key,
+    const size_t height,
+    const size_t width);
 
   /** @name Checkpointing and Serialization */
   ///@{

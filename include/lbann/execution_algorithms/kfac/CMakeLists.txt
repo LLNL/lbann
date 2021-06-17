@@ -1,13 +1,13 @@
 # Add the headers for this directory
 set_full_path(THIS_DIR_HEADERS
-  batch_functional_inference_algorithm.hpp
+  execution_context.hpp
   kfac.hpp
-  ltfb.hpp
-  sgd_training_algorithm.hpp
-  training_algorithm.hpp
+  kfac_block.hpp
+  kfac_block_bn.hpp
+  kfac_block_fc_conv.hpp
+  kfac_block_gru.hpp
+  kfac_util.hpp
   )
-
-add_subdirectory(kfac)
 
 # Propagate the files up the tree
 set(HEADERS "${HEADERS}" "${THIS_DIR_HEADERS}" PARENT_SCOPE)
