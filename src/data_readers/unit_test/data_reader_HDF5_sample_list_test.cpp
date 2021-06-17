@@ -26,15 +26,14 @@
 
 #include <catch2/catch.hpp>
 
-#include "TestHelpers.hpp"
 #include "MPITestHelpers.hpp"
-#include <lbann/base.hpp>
+#include "TestHelpers.hpp"
 #include "lbann/data_readers/data_reader_HDF5.hpp"
 #include "lbann/data_readers/sample_list_impl.hpp"
 #include "lbann/data_readers/sample_list_open_files_impl.hpp"
-#include <lbann.pb.h>
 #include <google/protobuf/text_format.h>
-
+#include <lbann.pb.h>
+#include <lbann/base.hpp>
 
 namespace pb = ::google::protobuf;
 
@@ -50,7 +49,8 @@ lbann_data::LbannPB parse_prototext(lbann::lbann_comm& comm)
   return reader;
 }
 
-std::string const probies_hdf5_legacy_sample_list = R"ptext(CONDUIT_HDF5_INCLUSION
+std::string const probies_hdf5_legacy_sample_list =
+  R"ptext(CONDUIT_HDF5_INCLUSION
 12 0 3
 /p/vast1/lbann/datasets/PROBIES/h5_data/
 h5out_30.h5 4 0 RUN_ID/000000138 RUN_ID/000000139 RUN_ID/000000140 RUN_ID/000000141
@@ -58,7 +58,8 @@ h5out_31.h5 4 0 RUN_ID/000000000 RUN_ID/000000001 RUN_ID/000000002 RUN_ID/000000
 h5out_32.h5 4 0 RUN_ID/000000004 RUN_ID/000000005 RUN_ID/000000006 RUN_ID/000000007
 )ptext";
 
-std::string const probies_hdf5_multi_sample_inclusion_v2_sample_list = R"ptext(MULTI-SAMPLE_INCLUSION_V2
+std::string const probies_hdf5_multi_sample_inclusion_v2_sample_list =
+  R"ptext(MULTI-SAMPLE_INCLUSION_V2
 12 3
 /p/vast1/lbann/datasets/PROBIES/h5_data/
 h5out_30.h5 4 RUN_ID/000000138 RUN_ID/000000139 RUN_ID/000000140 RUN_ID/000000141
@@ -70,11 +71,10 @@ TEST_CASE("hdf5 data reader", "[mpi][data reader][sample_list][hdf5]")
 {
   auto& comm = unit_test::utilities::current_world_comm();
 
-  lbann::hdf5_data_reader *hdf5_dr = new lbann::hdf5_data_reader();
+  lbann::hdf5_data_reader* hdf5_dr = new lbann::hdf5_data_reader();
   // Avoid the sample list code checking that the files really exist
   // in the file system
   hdf5_dr->get_sample_list().unset_data_file_check();
-
 
   SECTION("CONDUIT_HDF5_INCLUSION")
   {
@@ -89,7 +89,8 @@ TEST_CASE("hdf5 data reader", "[mpi][data reader][sample_list][hdf5]")
 
   SECTION("MULTI-SAMPLE_INCLUSION_V2")
   {
-    std::string const sample_list = probies_hdf5_multi_sample_inclusion_v2_sample_list;
+    std::string const sample_list =
+      probies_hdf5_multi_sample_inclusion_v2_sample_list;
     std::istringstream iss(sample_list);
     hdf5_dr->get_sample_list().load(iss, comm, true);
     hdf5_dr->get_sample_list().all_gather_packed_lists(comm);
@@ -99,4 +100,4 @@ TEST_CASE("hdf5 data reader", "[mpi][data reader][sample_list][hdf5]")
   }
 }
 
-} // namespace {
+} // namespace

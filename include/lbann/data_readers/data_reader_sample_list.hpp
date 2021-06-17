@@ -42,9 +42,9 @@ namespace lbann {
 /**
  * Base class for all readers that employ sample lists
  */
-class data_reader_sample_list : public generic_data_reader {
- public:
-
+class data_reader_sample_list : public generic_data_reader
+{
+public:
   using sample_name_t = std::string;
 #ifdef _USE_IO_HANDLE_
   using sample_list_t = sample_list_conduit_io_handle<sample_name_t>;
@@ -58,22 +58,25 @@ class data_reader_sample_list : public generic_data_reader {
   data_reader_sample_list(bool shuffle = true);
   data_reader_sample_list(const data_reader_sample_list&);
   data_reader_sample_list& operator=(const data_reader_sample_list&);
-  ~data_reader_sample_list() override {};
-  data_reader_sample_list* copy() const override { return new data_reader_sample_list(*this); }
-  void copy_members(const data_reader_sample_list &rhs);
-
-  std::string get_type() const override {
-    return "data_reader_sample_list";
+  ~data_reader_sample_list() override{};
+  data_reader_sample_list* copy() const override
+  {
+    return new data_reader_sample_list(*this);
   }
+  void copy_members(const data_reader_sample_list& rhs);
 
-  void open_file(size_t index_in, hid_t& file_handle_out, std::string& sample_name_out);
+  std::string get_type() const override { return "data_reader_sample_list"; }
+
+  void open_file(size_t index_in,
+                 hid_t& file_handle_out,
+                 std::string& sample_name_out);
   void close_file(size_t index_in);
 
   /**
    * Override the shuffle indices function to update the sample list's
    * file usage.
    */
-  void shuffle_indices(rng_gen &gen) override;
+  void shuffle_indices(rng_gen& gen) override;
 
   /** Developer's note: derived classes that override load() should
    * explicitly call data_reader_sample_list::load() at the
@@ -83,13 +86,13 @@ class data_reader_sample_list : public generic_data_reader {
 
   sample_list_t& get_sample_list() { return m_sample_list; }
 
- protected:
-
+protected:
   sample_list_t m_sample_list;
 
   void load_list_of_samples(const std::string sample_list_file);
 
-  void load_list_of_samples_from_archive(const std::string& sample_list_archive);
+  void
+  load_list_of_samples_from_archive(const std::string& sample_list_archive);
 
 }; // class data_reader_sample_list
 

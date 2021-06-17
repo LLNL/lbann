@@ -25,6 +25,7 @@
 //
 /////////////////////////////////////////////////////////////////////////////////
 #include "conduit/conduit_relay_mpi.hpp"
+
 #include "lbann/data_readers/data_reader_HDF5.hpp"
 #include "lbann/utils/timer.hpp"
 
@@ -125,7 +126,8 @@ void hdf5_data_reader::pack(std::string const& group_name,
   size_t idx = 0;
   for (size_t k = 0; k < g.names.size(); k++) {
     size_t const n_elts = g.sizes[k];
-    auto path = build_string(node.name(), node.child(0).name(), '/', g.names[k]);
+    auto path =
+      build_string(node.name(), node.child(0).name(), '/', g.names[k]);
     if (!node.has_path(path)) {
       LBANN_ERROR("no leaf for path: ", path);
     }

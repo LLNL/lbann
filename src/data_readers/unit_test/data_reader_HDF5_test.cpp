@@ -26,38 +26,41 @@
 
 #include <catch2/catch.hpp>
 
-#include "TestHelpers.hpp"
 #include "MPITestHelpers.hpp"
+#include "TestHelpers.hpp"
 #include "lbann/proto/proto_common.hpp"
-#include <lbann.pb.h>
 #include <google/protobuf/text_format.h>
+#include <lbann.pb.h>
 
+#include <cstdlib>
 #include <errno.h>
 #include <string.h>
-#include <cstdlib>
 
 #include "data_reader_common_catch2.hpp"
 #include "lbann/data_readers/data_reader_HDF5.hpp"
 
 // input data; each of these contain a single variable: "const std::string"
-#include "test_data/hdf5_hrrl_reader.prototext"
 #include "test_data/hdf5_hrrl_data_schema.yaml"
 #include "test_data/hdf5_hrrl_experiment_schema.yaml"
+#include "test_data/hdf5_hrrl_reader.prototext"
+#include "test_data/hdf5_hrrl_test.sample_list"
 #include "test_data/hdf5_hrrl_train.sample_list"
 #include "test_data/hdf5_hrrl_validate.sample_list"
-#include "test_data/hdf5_hrrl_test.sample_list"
 
 namespace pb = ::google::protobuf;
 
-double get_bias_from_node_map(const lbann::hdf5_data_reader* reader, const std::string field_name);
+double get_bias_from_node_map(const lbann::hdf5_data_reader* reader,
+                              const std::string field_name);
 
-void test_change_bias_value(lbann::hdf5_data_reader* reader, const std::string field_name);
+void test_change_bias_value(lbann::hdf5_data_reader* reader,
+                            const std::string field_name);
 
 void new_metadata_field(conduit::Node schema, lbann::hdf5_data_reader* reader);
 
 std::string test_field_name("alpha");
 
-TEST_CASE("hdf5 data reader schema tests", "[mpi][data_reader][hdf5][.filesystem]")
+TEST_CASE("hdf5 data reader schema tests",
+          "[mpi][data_reader][hdf5][.filesystem]")
 {
   // initialize stuff (boilerplate)
   auto& comm = unit_test::utilities::current_world_comm();
@@ -68,7 +71,7 @@ TEST_CASE("hdf5 data reader schema tests", "[mpi][data_reader][hdf5][.filesystem
   std::string work_dir = create_test_directory("hdf5_reader");
 
   // adjust directory names in the prototext
-  std::string prototext(hdf5_hrrl_data_reader_prototext); //non-const copy
+  std::string prototext(hdf5_hrrl_data_reader_prototext); // non-const copy
   size_t j1;
   while ((j1 = prototext.find("WORK_DIR")) != std::string::npos) {
     prototext.replace(j1, 8, work_dir);
@@ -77,26 +80,43 @@ TEST_CASE("hdf5 data reader schema tests", "[mpi][data_reader][hdf5][.filesystem
   // write input files to work directory
   write_file(prototext, work_dir, "hdf5_hrrl_reader.prototext");
   write_file(hdf5_hrrl_data_schema, work_dir, "hdf5_hrrl_data_schema.yaml");
-  write_file(hdf5_hrrl_experiment_schema, work_dir, "hdf5_hrrl_experiment_schema.yaml");
-  write_file(hdf5_hrrl_train_sample_list, work_dir, "hdf5_hrrl_train.sample_list");
-  write_file(hdf5_hrrl_validate_sample_list, work_dir, "hdf5_hrrl_validate.sample_list");
-  write_file(hdf5_hrrl_test_sample_list, work_dir, "hdf5_hrrl_test.sample_list");
+  write_file(hdf5_hrrl_experiment_schema,
+             work_dir,
+             "hdf5_hrrl_experiment_schema.yaml");
+  write_file(hdf5_hrrl_train_sample_list,
+             work_dir,
+             "hdf5_hrrl_train.sample_list");
+  write_file(hdf5_hrrl_validate_sample_list,
+             work_dir,
+             "hdf5_hrrl_validate.sample_list");
+  write_file(hdf5_hrrl_test_sample_list,
+             work_dir,
+             "hdf5_hrrl_test.sample_list");
 
   // instantiate the data readers
   lbann::generic_data_reader* train_ptr = nullptr;
   lbann::generic_data_reader* validate_ptr = nullptr;
   lbann::generic_data_reader* tournament_ptr = nullptr;
   lbann::generic_data_reader* test_ptr = nullptr;
-  auto all_readers = instantiate_data_readers(prototext, comm, train_ptr, validate_ptr, test_ptr, tournament_ptr);
+  auto all_readers = instantiate_data_readers(prototext,
+                                              comm,
+                                              train_ptr,
+                                              validate_ptr,
+                                              test_ptr,
+                                              tournament_ptr);
 
   REQUIRE(train_ptr != nullptr);
   REQUIRE(validate_ptr != nullptr);
   REQUIRE(tournament_ptr != nullptr);
   REQUIRE(test_ptr != nullptr);
-  lbann::hdf5_data_reader* train_reader = dynamic_cast<lbann::hdf5_data_reader*>(train_ptr);
-  lbann::hdf5_data_reader* validate_reader = dynamic_cast<lbann::hdf5_data_reader*>(validate_ptr);
-  lbann::hdf5_data_reader* tournament_reader = dynamic_cast<lbann::hdf5_data_reader*>(tournament_ptr);
-  lbann::hdf5_data_reader* test_reader = dynamic_cast<lbann::hdf5_data_reader*>(test_ptr);
+  lbann::hdf5_data_reader* train_reader =
+    dynamic_cast<lbann::hdf5_data_reader*>(train_ptr);
+  lbann::hdf5_data_reader* validate_reader =
+    dynamic_cast<lbann::hdf5_data_reader*>(validate_ptr);
+  lbann::hdf5_data_reader* tournament_reader =
+    dynamic_cast<lbann::hdf5_data_reader*>(tournament_ptr);
+  lbann::hdf5_data_reader* test_reader =
+    dynamic_cast<lbann::hdf5_data_reader*>(test_ptr);
   REQUIRE(train_reader != nullptr);
   REQUIRE(validate_reader != nullptr);
   REQUIRE(tournament_reader != nullptr);
@@ -111,7 +131,7 @@ TEST_CASE("hdf5 data reader schema tests", "[mpi][data_reader][hdf5][.filesystem
     // adjust_metadata() works on each schema independently, so we
     // only need test the data schema.
 
-    //setup: get copies of data_schema, bias, and scale for the Epmax field
+    // setup: get copies of data_schema, bias, and scale for the Epmax field
     conduit::Node data_schema = train_reader->get_data_schema();
     REQUIRE(data_schema.has_child("Epmax"));
     REQUIRE(data_schema["Epmax"].has_child("metadata"));
@@ -125,16 +145,19 @@ TEST_CASE("hdf5 data reader schema tests", "[mpi][data_reader][hdf5][.filesystem
       // tests: nodes without metadata inherit from parent
       REQUIRE(data_schema["Epmax"].has_child("horse") == false);
       data_schema["Epmax"]["horse"];
-      data_schema["Epmax"]["horse"]["carrot"] = 1.1 ;
+      data_schema["Epmax"]["horse"]["carrot"] = 1.1;
       REQUIRE(data_schema["Epmax"]["horse"].has_child("metadata") == false);
-      REQUIRE(data_schema["Epmax"]["horse"]["carrot"].has_child("metadata") == false);
+      REQUIRE(data_schema["Epmax"]["horse"]["carrot"].has_child("metadata") ==
+              false);
       train_reader->adjust_metadata(&data_schema);
 
       REQUIRE(data_schema["Epmax"]["horse"].has_child("metadata") == true);
-      REQUIRE(data_schema["Epmax"]["horse"]["carrot"].has_child("metadata") == true);
+      REQUIRE(data_schema["Epmax"]["horse"]["carrot"].has_child("metadata") ==
+              true);
 
       REQUIRE(data_schema["Epmax"]["horse"]["metadata"].has_child("bias"));
-      double carrot_bias = data_schema["Epmax"]["horse"]["carrot"]["metadata"]["bias"].value();
+      double carrot_bias =
+        data_schema["Epmax"]["horse"]["carrot"]["metadata"]["bias"].value();
       REQUIRE(carrot_bias == parent_bias);
     }
 
@@ -144,12 +167,15 @@ TEST_CASE("hdf5 data reader schema tests", "[mpi][data_reader][hdf5][.filesystem
       REQUIRE(data_schema["Epmax"].has_child("horse") == false);
       data_schema["Epmax"]["horse"];
       data_schema["Epmax"]["horse"]["metadata"];
-      REQUIRE(data_schema["Epmax"]["horse"]["metadata"].has_child("bias") == false);
+      REQUIRE(data_schema["Epmax"]["horse"]["metadata"].has_child("bias") ==
+              false);
 
       train_reader->adjust_metadata(&data_schema);
 
-      REQUIRE(data_schema["Epmax"]["horse"]["metadata"].has_child("bias") == true);
-      double horse_bias = data_schema["Epmax"]["horse"]["metadata"]["bias"].value();
+      REQUIRE(data_schema["Epmax"]["horse"]["metadata"].has_child("bias") ==
+              true);
+      double horse_bias =
+        data_schema["Epmax"]["horse"]["metadata"]["bias"].value();
       REQUIRE(horse_bias == parent_bias);
     }
 
@@ -163,8 +189,10 @@ TEST_CASE("hdf5 data reader schema tests", "[mpi][data_reader][hdf5][.filesystem
 
       train_reader->adjust_metadata(&data_schema);
 
-      double horse_bias = data_schema["Epmax"]["horse"]["metadata"]["bias"].value();
-      double horse_scale = data_schema["Epmax"]["horse"]["metadata"]["scale"].value();
+      double horse_bias =
+        data_schema["Epmax"]["horse"]["metadata"]["bias"].value();
+      double horse_scale =
+        data_schema["Epmax"]["horse"]["metadata"]["scale"].value();
       REQUIRE(horse_bias == 1234.5);
       REQUIRE(horse_bias != parent_bias);
       REQUIRE(horse_scale == parent_scale);
@@ -172,9 +200,8 @@ TEST_CASE("hdf5 data reader schema tests", "[mpi][data_reader][hdf5][.filesystem
 
   } // SECTION("hdf5_reader: metadata inheritance")
 
-
-  // What the following sectional tests do (mostly): modify values in input schemas,
-  // which result in modifications to entries in the "node_map."
+  // What the following sectional tests do (mostly): modify values in input
+  // schemas, which result in modifications to entries in the "node_map."
   //
   // The "node_map" contains the names of the fields that will be loaded from
   // disk, along with metadata information, when load_sample() is called.
@@ -183,7 +210,8 @@ TEST_CASE("hdf5 data reader schema tests", "[mpi][data_reader][hdf5][.filesystem
   //   parse_schemas(), get_schema_ptrs(), get_leaves_multi(), get_leaves(),
   //   adjust_metadata(), load_sample(), and possibly others.
   //
-  // Note: the reader set() and get() methods operate with copies, not references
+  // Note: the reader set() and get() methods operate with copies, not
+  // references
 
   SECTION("hdf5_reader: node_map_bias_existence")
   {
@@ -199,7 +227,7 @@ TEST_CASE("hdf5 data reader schema tests", "[mpi][data_reader][hdf5][.filesystem
 
   SECTION("hdf5_reader: modify_existing")
   {
-    //change field value in data_schema, test for change in node_map
+    // change field value in data_schema, test for change in node_map
     test_change_bias_value(train_reader, test_field_name);
     test_change_bias_value(validate_reader, test_field_name);
     test_change_bias_value(tournament_reader, test_field_name);
@@ -218,8 +246,8 @@ TEST_CASE("hdf5 data reader schema tests", "[mpi][data_reader][hdf5][.filesystem
 
     SECTION("hdf5_reader: inheritance_plus")
     {
-      //add metadata field to existing nodes
-      // add xyz to data_schema
+      // add metadata field to existing nodes
+      //  add xyz to data_schema
       conduit::Node data_schema = train_reader->get_data_schema();
       data_schema[test_field_name]["metadata"]["xyz"] = 1234.5678;
       train_reader->set_data_schema(data_schema);
@@ -236,16 +264,19 @@ TEST_CASE("hdf5 data reader schema tests", "[mpi][data_reader][hdf5][.filesystem
 
     SECTION("hdf5_reader: override")
     {
-      //values in the experiment schema should override those in the data schema
-      // metadata fields in the experiment_schema take precedence over fields in the
-      // data_schema, during construction of the node_map.
+      // values in the experiment schema should override those in the data
+      // schema
+      //  metadata fields in the experiment_schema take precedence over fields
+      //  in the data_schema, during construction of the node_map.
 
       conduit::Node data_schema = train_reader->get_data_schema();
-      const double old_val = data_schema[test_field_name]["metadata"]["bias"].value();
-      const double new_val = old_val *1.23;
+      const double old_val =
+        data_schema[test_field_name]["metadata"]["bias"].value();
+      const double new_val = old_val * 1.23;
 
       conduit::Node experiment_schema = train_reader->get_experiment_schema();
-      REQUIRE(experiment_schema[test_field_name]["metadata"].has_child("bias") == false);
+      REQUIRE(experiment_schema[test_field_name]["metadata"].has_child(
+                "bias") == false);
       experiment_schema[test_field_name]["metadata"]["bias"] = new_val;
 
       train_reader->set_data_schema(data_schema);
@@ -264,7 +295,9 @@ TEST_CASE("hdf5 data reader schema tests", "[mpi][data_reader][hdf5][.filesystem
 
 //==========================================================================
 
-double get_bias_from_node_map(const lbann::hdf5_data_reader* reader, const std::string field_name) {
+double get_bias_from_node_map(const lbann::hdf5_data_reader* reader,
+                              const std::string field_name)
+{
   auto node_map = reader->get_node_map();
   REQUIRE(node_map.find(field_name) != node_map.end());
   conduit::Node a1(node_map[field_name]);
@@ -274,7 +307,9 @@ double get_bias_from_node_map(const lbann::hdf5_data_reader* reader, const std::
   return bias;
 }
 
-void test_change_bias_value(lbann::hdf5_data_reader* reader, const std::string field_name) {
+void test_change_bias_value(lbann::hdf5_data_reader* reader,
+                            const std::string field_name)
+{
   // change the value in the schema
   conduit::Node schema = reader->get_data_schema();
   schema[field_name]["metadata"]["bias"] = 77.2;
@@ -285,14 +320,15 @@ void test_change_bias_value(lbann::hdf5_data_reader* reader, const std::string f
   REQUIRE(bias == 77.2);
 }
 
-void alter(conduit::Node schema, lbann::hdf5_data_reader* reader) {
+void alter(conduit::Node schema, lbann::hdf5_data_reader* reader)
+{
   REQUIRE(schema.has_child(test_field_name));
   REQUIRE(schema[test_field_name].has_child("metadata"));
   REQUIRE(schema[test_field_name]["metadata"].has_child("phoo") == false);
 
   schema[test_field_name]["metadata"]["phoo"] = 42;
   reader->set_data_schema(schema);
-  conduit::Node schema_TEST =  reader->get_data_schema();
+  conduit::Node schema_TEST = reader->get_data_schema();
   REQUIRE(schema_TEST.has_child(test_field_name));
   REQUIRE(schema_TEST[test_field_name].has_child("metadata"));
   REQUIRE(schema_TEST[test_field_name]["metadata"].has_child("phoo"));
