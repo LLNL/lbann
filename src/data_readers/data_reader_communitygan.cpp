@@ -38,6 +38,7 @@ communitygan_reader::communitygan_reader(
   size_t num_vertices,
   size_t motif_size,
   size_t walk_length,
+  size_t walks_per_vertex,
   size_t epoch_size)
   : generic_data_reader(true),
     m_embedding_weights_name(std::move(embedding_weights_name)),
@@ -46,6 +47,7 @@ communitygan_reader::communitygan_reader(
     m_num_vertices(num_vertices),
     m_motif_size(motif_size),
     m_walk_length(walk_length),
+    m_walks_per_vertex(walks_per_vertex),
     m_epoch_size(epoch_size) {
 }
 
@@ -86,33 +88,31 @@ bool communitygan_reader::fetch_data_block(
 
   // Only run on first IO thread
   if (block_offset != 0) { return true; }
-  const size_t mb_size_ = mb_size;
 
-  // Generate samples and add to cache
-  /// @todo Use larger cache and don't generate samples every
-  /// mini-batch
-  if (m_cache_size <= 0) {
-    m_cache_size = mb_size;
+  // Generate new samples once per epoch
+  if (this->get_current_step_in_epoch() == 0) {
+    m_cache = generate_samples(io_rng);
+    m_cache_pos = m_cache.size();
   }
-  auto samples = generate_samples(io_rng);
-  for (auto& sample : samples) {
-    if (m_sample_cache.size() >= m_cache_size) {
-      m_sample_cache.pop_front();
-    }
-    m_sample_cache.emplace_back(std::move(sample));
+  if (m_cache.empty()) {
+    LBANN_ERROR("CommunityGAN data reader has empty data cache");
   }
 
   // Populate output tensor
-  /// @todo Parallelize
+  const size_t mb_size_ = mb_size;
   for (size_t j=0; j<mb_size_; ++j) {
-    const auto& sample = m_sample_cache[j % m_sample_cache.size()];
+    if (m_cache_pos >= m_cache.size()) {
+      m_cache_pos = 0;
+      std::shuffle(m_cache.begin(), m_cache.end(), get_io_generator());
+    }
+    const auto& sample = m_cache[m_cache_pos];
+    ++m_cache_pos;
     for (size_t i=0; i<sample.size(); ++i) {
       X(i,j) = static_cast<float>(sample[i]);
     }
     for (size_t i=sample.size(); i<m_motif_size+m_walk_length; ++i) {
       X(i,j) = -1.f;
     }
-
   }
 
   return true;
@@ -129,6 +129,7 @@ void communitygan_reader::load() {
   const size_t trainer_rank = comm.get_rank_in_trainer();
   const size_t trainer_size = comm.get_procs_per_trainer();
 
+  // Reset motifs
   m_motifs.clear();
 
   // Iterate through lines in file
@@ -188,19 +189,15 @@ std::vector<std::vector<size_t>> communitygan_reader::generate_samples(
   const size_t trainer_rank = comm.get_rank_in_trainer();
   const size_t trainer_size = comm.get_procs_per_trainer();
 
-  // Randomly choose start vertices
-  std::vector<int> starts;
-  const size_t num_starts = m_cache_size / m_walks_per_vertex;
-  starts.reserve(num_starts);
+  // Start walks from local vertices
   size_t num_local_vertices = m_num_vertices / trainer_size;
   if (trainer_rank < m_num_vertices % trainer_size) {
     ++num_local_vertices;
   }
-  for (size_t i=0; i<num_starts; ++i) {
-    const size_t local_vertex_id = fast_rand_int(
-      get_io_generator(),
-      num_local_vertices);
-    starts.push_back(local_vertex_id * trainer_size + trainer_rank);
+  std::vector<int> starts;
+  starts.reserve(num_local_vertices);
+  for (size_t i=0; i<num_local_vertices; ++i) {
+    starts.push_back(i * trainer_size + trainer_rank);
   }
 
   // Perform random walks
@@ -214,6 +211,7 @@ std::vector<std::vector<size_t>> communitygan_reader::generate_samples(
 
       // Remove duplicate vertices from walk
       std::unordered_set<size_t> walk_vertices(walk.cbegin(), walk.cend());
+      walk_vertices.insert(start_vertex);
       if (walk_vertices.size() < m_motif_size) {
         continue;
       }
@@ -232,8 +230,6 @@ std::vector<std::vector<size_t>> communitygan_reader::generate_samples(
     }
   }
 
-  // Shuffle samples
-  std::shuffle(samples.begin(), samples.end(), get_io_generator());
   return samples;
 
 }

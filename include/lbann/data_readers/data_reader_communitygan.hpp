@@ -30,7 +30,7 @@
 #include "data_reader.hpp"
 #include "lbann/callbacks/setup_communitygan_data_reader.hpp"
 #ifdef LBANN_HAS_COMMUNITYGAN_WALKER
-#include "CommunityGANWalker-gen_walks.hpp"
+#include "CommunityGANWalker.hpp"
 
 namespace lbann {
 
@@ -44,6 +44,7 @@ public:
     size_t num_vertices,
     size_t motif_size,
     size_t walk_length,
+    size_t walks_per_vertex,
     size_t epoch_size);
   communitygan_reader(const communitygan_reader&) = delete;
   communitygan_reader& operator=(const communitygan_reader&) = delete;
@@ -76,40 +77,33 @@ private:
   std::string m_motif_file;
   std::string m_graph_file;
 
+  /** @brief Number of vertices in graph. */
   size_t m_num_vertices;
+  /** @brief Number of vertices in motifs. */
   size_t m_motif_size;
 
   /** @brief Length of each random walk. */
   size_t m_walk_length;
+  /** @brief Number of walks to start on each local vertex. */
+  size_t m_walks_per_vertex;
 
   /** @brief Number of data samples per "epoch".
    *
-   *  LBANN assumes that datasets are static and have fixed size. Even
-   *  though this data reader involves streaming data, it is
-   *  convenient to group data samples into "epochs" so that we don't
-   *  need to change the data model.
+   *  Random walks are generated once per epoch.
    */
   size_t m_epoch_size;
 
-  std::unique_ptr<::CommunityGANWalker_gen_walks> m_walker;
+  std::unique_ptr<::CommunityGANWalker> m_walker;
 
   std::vector<std::vector<size_t>> m_motifs;
 
-  size_t m_walks_per_vertex = 64;
-  size_t m_cache_size = 1024;
+  /** @brief Data samples for current training epoch. */
+  std::vector<std::vector<size_t>> m_cache;
 
-  /** Cache of random walks.
-   *
-   *  The random walker does not output the same number of walks as
-   *  the number of start vertices. I presume this is because walks
-   *  starting from local vertices may finish on remote processes and
-   *  there is not a step to gather them to the original process. To
-   *  handle cases where the walker returns no walks, we cache walks
-   *  from previous mini-batch iterations.
-   */
-  std::deque<std::vector<size_t>> m_sample_cache;
+  /** @brief Current position in sample cache. */
+  size_t m_cache_pos = 0;
 
-  /** Perform random walks, starting from random local vertices.
+  /** @brief Perform random walks, starting from local vertices.
    *
    *  This uses IO RNG objects internally, so we have to make sure
    *  that the caller has acquired control of the IO RNG.

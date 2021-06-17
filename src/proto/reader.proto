@@ -124,7 +124,8 @@ message CommunityGANDataReader {
   uint64 num_vertices = 4;
   uint64 motif_size = 5;
   uint64 walk_length = 6;
-  uint64 epoch_size = 7;
+  uint64 walks_per_vertex = 7;
+  uint64 epoch_size = 8;
 }
 
 message DataSetMetaData {
