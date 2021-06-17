@@ -76,15 +76,18 @@ void kfac_bn_util::compute_bn_factor_data2col(
   constexpr size_t block_size = 256;
   const size_t num_threads = batch_size * num_channels * spatial_prod;
   const size_t grid_size = (num_threads + block_size - 1) / block_size;
-  kfac_compute_bn_factor_data2col_kernel<DataType>
-      <<<grid_size, block_size, 0, sync_info.Stream()>>>(
-          activations.LockedBuffer(),
-          errors.LockedBuffer(),
-          scales.LockedBuffer(),
-          biases.LockedBuffer(),
-          cols.Buffer(),
-          batch_size, num_channels, spatial_prod,
-          num_threads);
+  if (grid_size > 0) {
+    hydrogen::gpu::LaunchKernel(
+      kfac_compute_bn_factor_data2col_kernel<DataType>,
+      grid_size, block_size, 0, sync_info,
+      activations.LockedBuffer(),
+      errors.LockedBuffer(),
+      scales.LockedBuffer(),
+      biases.LockedBuffer(),
+      cols.Buffer(),
+      batch_size, num_channels, spatial_prod,
+      num_threads);
+  }
 }
 
 } // namespace callback
