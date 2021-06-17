@@ -174,12 +174,12 @@ class Exa3DGAN(lbann.modules.Module):
        padding=0
        self.g_convT = [conv(g_channels[i], kernel_size, stride, padding, transpose=True,
                         name=self.name+'_gen'+str(i),
-                        parallel_strategy=self.g_ps,device=self.g_device,
+                        parallel_strategy=self.g_ps,
                        weights=[lbann.Weights(initializer=self.inits['convT'])])
                        for i in range(len(g_channels))] 
 
        self.g_convT3 = conv(input_channel, kernel_size, stride, padding, activation=lbann.Tanh,
-                            parallel_strategy=self.g_ps,device=self.g_device,
+                            parallel_strategy=self.g_ps,
                             name='gen_img',transpose=True,
                             weights=[lbann.Weights(initializer=self.inits['convT'])])
 
