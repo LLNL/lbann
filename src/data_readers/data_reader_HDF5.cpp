@@ -321,9 +321,9 @@ void hdf5_data_reader::load_sample(conduit::Node& node,
 
   data_reader_sample_list::open_file(index, file_handle, sample_name);
   // load data for the field names specified in the user's experiment-schema
-  for (auto& [pathname, node] : m_useme_node_map) {
+  for (auto& [pathname, path_node] : m_useme_node_map) {
     // do not load a "packed" field, as it doesn't exist on disk!
-    if (!is_composite_node(node)) {
+    if (!is_composite_node(path_node)) {
 
       // check that the requested data (pathname) exists on disk
       const std::string original_path = "/" + sample_name + "/" + pathname;
@@ -340,7 +340,7 @@ void hdf5_data_reader::load_sample(conduit::Node& node,
       const std::string new_pathname(ss2.str());
 
       // note: this will throw an exception if the child node doesn't exist
-      const conduit::Node& metadata = node.child(s_metadata_node_name);
+      const conduit::Node& metadata = path_node.child(s_metadata_node_name);
 
       // optionally coerce the data, e.g, from double to float, per settings
       // in the experiment_schema
