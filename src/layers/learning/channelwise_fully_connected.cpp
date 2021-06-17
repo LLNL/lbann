@@ -164,6 +164,7 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
 
   auto* linearity_optimizer = static_cast<data_type_optimizer<TensorDataType>*>(layer.get_weights(0).get_optimizer());
 
+
   assert0(dc::tensor::View(*m_linearity_gradient,
                            linearity_optimizer->get_gradient().Buffer()));
   if(layer.m_has_bias){
@@ -182,7 +183,7 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
 
     }
   }
-  dc::MPIRootPrintStreamInfo() << "STARTING SETTING UP BP TENSORS " << "\n";
+  dc::MPIRootPrintStreamInfo() << "Finished SETTING UP BP TENSORS " << "\n";
 
   // Done for now
 }
@@ -200,7 +201,7 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
   const auto& linearity = layer.weights_values(0);
   // const auto& local_linearity = dynamic_cast<const LocalMat&>(linearity.LockedMatrix());
 
-  const auto local_mini_batch_size = linearity.Width();
+  const auto local_mini_batch_size = layer.get_prev_activations(0).Width();
 
   // TO DO: Check if input and output tensors are contiguous 
   
@@ -248,7 +249,17 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
   assert0(dc::tensor::View(
     *m_linear,linearity.LockedBuffer()));
 
+
+
   TensorDataType dst_scale, gradient_scale;
+
+  auto* linearity_optimizer = static_cast<data_type_optimizer<TensorDataType>*>(layer.get_weights(0).get_optimizer());
+
+  auto& linearity_gradient = linearity_optimizer->get_gradient_buffer(
+      dst_scale, gradient_scale, true);
+
+  assert0(dc::tensor::View(*m_linearity_gradient, linearity_gradient.Buffer()));
+
  
   m_linear_operator->backward_wrt_input(layer.m_transpose,
                                         this->get_prev_error_signals(),
@@ -265,6 +276,13 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
                                          local_mini_batch_size);
 
   if(layer.m_has_bias){
+    auto* bias_optimizer = static_cast<data_type_optimizer<TensorDataType>*>(layer.get_weights(1).get_optimizer());
+
+    auto& bias_gradient = bias_optimizer->get_gradient_buffer(
+        dst_scale, gradient_scale, true);
+
+    assert0(dc::tensor::View(*m_bias_gradient, bias_gradient.Buffer()));
+
     m_linear_operator->backward_wrt_bias(gradient_scale,
                                          dst_scale,
                                          this->get_prev_error_signals(),
@@ -284,19 +302,20 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
 
   // The default case assumes that the local is shape is the same as 
   // the local shape of the first previous activations 
-  auto output_shape = this->get_activations().get_local_shape();
 
   // Need to update such that the height and width dimensions match 
-  // match the output dimensions expected   
+  // match the output dimensions expected  
 
   const auto &layer = dynamic_cast<const channelwise_fully_connected_layer
     <TensorDataType, Layout, Device>&>(this->layer());
 
-    const auto& output_dims = layer.get_output_dims();
+  auto linearity_dims = layer.get_linearity_dims();
 
-    output_shape[0] = output_dims[output_dims.size()];
-    output_shape[1] = output_dims[output_dims.size()-1];
-    dc::MPIRootPrintStreamInfo() << output_shape << std::endl;
+  std::reverse(std::begin(linearity_dims), std::end(linearity_dims));
+  const auto output_shape = 
+    ::distconv::get_fc_output_local_tensor_shape(this->get_prev_activations(), linearity_dims);
+  
+  dc::MPIRootPrintStreamInfo() << "SHAPE LOCAL: \t"<<output_shape << std::endl;
 
   return output_shape;
 }

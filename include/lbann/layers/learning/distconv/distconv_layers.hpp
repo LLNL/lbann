@@ -48,6 +48,20 @@ namespace distconv{
                   tensor::Tensor<DataType, LocaleMPI, Allocator> &output,
                   int local_mini_batch_size 
                  ){
+        const auto& one = El::TypeTraits<DataType>::One();
+        const auto& zero = El::TypeTraits<DataType>::Zero();
+
+        if (input.get_local_size() == 0){
+          return 0; // no op for empty input
+        }
+        const auto& input_dims = input.get_local_shape();
+        const auto& output_dims = output.get_local_shape();
+
+        const auto& input_size = std::accumulate(input_dims.begin(), input_dims.begin()+1, 1, std::multiplies<size_t>());
+        const auto& output_size = std::accumulate(output_dims.begin(), output_dims.begin()+1, 1, std::multiplies<size_t>());
+
+
+        const auto num_local_channels = output_dims[2];
 
         util::MPIRootPrintStreamInfo()
           << "input tensor. global_shape: "
@@ -68,26 +82,18 @@ namespace distconv{
           << output.get_shape()
           << ", local shape: " << output.get_local_shape()
           << ", local real shape: " << output.get_local_real_shape()
-          << ", dist: " << output.get_distribution();
+          << ", dist: " << output.get_distribution() << "\n local mini batch size: " << local_mini_batch_size
+          << "\n num local channels: " << num_local_channels
+          << "\n input_size: " << input_size
+          << "\n output_size: " << output_size;
 
 
 
 
-        const auto& one = El::TypeTraits<DataType>::One();
-        const auto& zero = El::TypeTraits<DataType>::Zero();
 
-        if (input.get_local_size() == 0){
-          return 0; // no op for empty input
-        }
-        const auto& input_dims = input.get_local_shape();
-        const auto& output_dims = output.get_local_shape();
-
-        const auto& input_size = std::accumulate(input_dims.begin(), input_dims.end()-1, 1, std::multiplies<size_t>());
-        const auto& output_size = std::accumulate(output_dims.begin(), output_dims.end()-1, 1, std::multiplies<size_t>());
-
-        El::Matrix<DataType> in_mat(input_size, local_mini_batch_size*m_num_local_channels, input.get_buffer(), input_size);
-        El::Matrix<DataType> out_mat(output_size, local_mini_batch_size*m_num_local_channels, output.get_buffer(), output_size);
-        El::Matrix<DataType> weights(input_size, output_size, linearity.get_buffer(), input_size);
+        El::Matrix<DataType> in_mat(input_size, local_mini_batch_size*num_local_channels, input.get_buffer(), input_size);
+        El::Matrix<DataType> out_mat(output_size, local_mini_batch_size*num_local_channels, output.get_buffer(), output_size);
+        El::Matrix<DataType> weights(output_size, input_size, linearity.get_buffer(), input_size);
 
         El::Gemm(transpose_A ? El::TRANSPOSE: El::NORMAL,
                    El::NORMAL,
@@ -111,10 +117,11 @@ namespace distconv{
 
         const auto& output_size = std::accumulate(output_dims.begin()+1, output_dims.end(), 1, std::multiplies<size_t>());
 
+        const auto num_local_channels = output_dims[2];
 
         El::Matrix<DataType> ones(local_mini_batch_size * m_num_local_channels, 1);
 
-        El::Matrix<DataType> out_mat(output_size, local_mini_batch_size*m_num_local_channels, output.get_buffer(), output_size);
+        El::Matrix<DataType> out_mat(output_size, local_mini_batch_size*num_local_channels, output.get_buffer(), output_size);
         El::Matrix<DataType> bias_vec(output_size, 1, bias.get_buffer(), output_size);
 
         El::Fill(ones, one);
@@ -147,7 +154,9 @@ namespace distconv{
         const auto& input_size = std::accumulate(input_dims.begin()+1, input_dims.end(), 1, std::multiplies<size_t>());
         const auto& output_size = std::accumulate(output_dims.begin()+1, output_dims.end(), 1, std::multiplies<size_t>());
 
-        El::Matrix<DataType> output_grad_mat(output_size, local_mini_batch_size*m_num_local_channels, output_grad.get_buffer(),output_size);
+        const auto num_local_channels = output_dims[2];
+
+        El::Matrix<DataType> output_grad_mat(output_size, local_mini_batch_size*num_local_channels, output_grad.get_buffer(),output_size);
         El::Matrix<DataType> weights(input_size, output_size, linearity.get_buffer(), input_size);
         El::Matrix<DataType> input_grad_mat(input_size, local_mini_batch_size*m_num_local_channels, input_grad.get_buffer(), input_size);
 
@@ -176,8 +185,10 @@ namespace distconv{
         const auto& input_size = std::accumulate(input_dims.begin()+1, input_dims.end(), 1, std::multiplies<size_t>());
         const auto& output_size = std::accumulate(output_dims.begin()+1, output_dims.end(), 1, std::multiplies<size_t>());
 
-        El::Matrix<DataType> input_mat(input_size, local_mini_batch_size*m_num_local_channels, input.get_buffer(), input_size);
-        El::Matrix<DataType> output_grad_mat(output_size, local_mini_batch_size*m_num_local_channels, output_grad.get_buffer(), output_size);
+        const auto num_local_channels = output_dims[2];
+
+        El::Matrix<DataType> input_mat(input_size, local_mini_batch_size*num_local_channels, input.get_buffer(), input_size);
+        El::Matrix<DataType> output_grad_mat(output_size, local_mini_batch_size*num_local_channels, output_grad.get_buffer(), output_size);
         El::Matrix<DataType> linearity_grad_mat(input_size, output_size, linearity_grad.get_buffer(), input_size);
 
 
@@ -212,7 +223,9 @@ namespace distconv{
         const auto& output_dims = output_grad.get_local_shape();
         const auto& output_size = std::accumulate(output_dims.begin()+1, output_dims.end(), 1, std::multiplies<size_t>());
 
-        El::Matrix<DataType> out_grad_mat(output_size, local_mini_batch_size*m_num_local_channels, output_grad.get_buffer(), output_size);
+        const auto num_local_channels = output_dims[2];
+
+        El::Matrix<DataType> out_grad_mat(output_size, local_mini_batch_size*num_local_channels, output_grad.get_buffer(), output_size);
         El::Matrix<DataType> bias_grad_vec(output_size, 1, bias_grad.get_buffer(), output_size);
 
         El::Gemv(El::NORMAL,
@@ -239,13 +252,22 @@ namespace distconv{
 
 
   }; // class definition Linear
-  // template <typename DataType, typename locale, typename Allocator>
-  // tensor::Shape 
-  // get_fc_output_local_tensor_shape(const tensor::Tensor<DataType, Locale, Allocator> &input,
-  //                                  const int_vector
-  //                                  int num_groups){
+  template <typename DataType, typename locale, typename Allocator>
+  tensor::Shape 
+  get_fc_output_local_tensor_shape(const tensor::Tensor<DataType, locale, Allocator> &input,
+                                   const int_vector &linearity_dims){
 
-  // }
+    //https://github.com/LLNL/DiHydrogen/blob/7f86db1f9701ac3afb5e16aefdd57563d57a1698/legacy/include/distconv/distconv.hpp#L173
+
+    //Get the input layer local tensor shape 
+
+    auto output_local_shape = input.get_local_shape();
+
+      
+    output_local_shape[0] = linearity_dims[0];
+
+    return output_local_shape;
+  }
 }  // namespace distconv
 #endif // LBANN_HAS_DISTCONV
 #endif // LBANN_LAYERS_LEARNING_DISTCONV_LAYERS
