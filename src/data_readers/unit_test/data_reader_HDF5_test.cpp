@@ -36,16 +36,16 @@
 #include <errno.h>
 #include <string.h>
 
-#include "data_reader_common_catch2.hpp"
+#include "./data_reader_common_catch2.hpp"
 #include "lbann/data_readers/data_reader_HDF5.hpp"
 
 // input data; each of these contain a single variable: "const std::string"
-#include "test_data/hdf5_hrrl_data_schema.yaml"
-#include "test_data/hdf5_hrrl_experiment_schema.yaml"
-#include "test_data/hdf5_hrrl_reader.prototext"
-#include "test_data/hdf5_hrrl_test.sample_list"
-#include "test_data/hdf5_hrrl_train.sample_list"
-#include "test_data/hdf5_hrrl_validate.sample_list"
+#include "./test_data/hdf5_hrrl_data_schema.yaml"
+#include "./test_data/hdf5_hrrl_experiment_schema.yaml"
+#include "./test_data/hdf5_hrrl_reader.prototext"
+#include "./test_data/hdf5_hrrl_test.sample_list"
+#include "./test_data/hdf5_hrrl_train.sample_list"
+#include "./test_data/hdf5_hrrl_validate.sample_list"
 
 namespace pb = ::google::protobuf;
 
