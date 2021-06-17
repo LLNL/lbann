@@ -107,8 +107,8 @@ then
         -DCMAKE_CUDA_COMPILER=$(which nvcc) \
         -DCMAKE_CUDA_HOST_COMPILER=$(which g++) \
         \
-        -DCMAKE_CXX_STANDARD=14 \
-        -DCMAKE_CUDA_STANDARD=14 \
+        -DCMAKE_CXX_STANDARD=17 \
+        -DCMAKE_CUDA_STANDARD=17 \
         \
         -DLBANN_DATATYPE=float \
         -DLBANN_DETERMINISTIC=ON \
