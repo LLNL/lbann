@@ -43,6 +43,19 @@ namespace lbann {
 
 /** @class KFAC
  *  @brief An implementation of the KFAC second-order optimization algorithm
+ *
+ *  Martens, James and Roger Grosse. "Optimizing neural networks with
+ *  kronecker-factored approximate curvature." International
+ *  conference on machine learning. 2015.
+ *
+ *  Grosse, Roger, and James Martens. "A kronecker-factored
+ *  approximate fisher matrix for convolution layers." International
+ *  Conference on Machine Learning. 2016.
+ *
+ *  Osawa, Kazuki, et al. "Large-scale distributed second-order
+ *  optimization using kronecker-factored approximate curvature for
+ *  deep convolutional neural networks." Proceedings of the IEEE
+ *  Conference on Computer Vision and Pattern Recognition. 2019.
  */
 class KFAC final : public Cloneable<KFAC, training_algorithm>
 {
