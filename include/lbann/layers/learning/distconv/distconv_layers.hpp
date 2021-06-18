@@ -89,11 +89,27 @@ namespace distconv{
 
 
 
-
+        // Check if buffer is not null possibly 
 
         El::Matrix<DataType> in_mat(input_size, local_mini_batch_size*num_local_channels, input.get_buffer(), input_size);
         El::Matrix<DataType> out_mat(output_size, local_mini_batch_size*num_local_channels, output.get_buffer(), output_size);
         El::Matrix<DataType> weights(output_size, input_size, linearity.get_buffer(), input_size);
+        
+       /**
+         *  Ensure local matrices are contiguous by performing a copy
+         *
+         *
+         * if (in_mat.Contiguous()){
+         *   El::Matrix<DataType> in_mat_reshaped, out_mat_reshaped; 
+         *   El::Copy(in_mat, in_mat_reshaped);
+         *   in_mat_reshape.Resize(input_size, local_mini_batch_size * num_channels);
+         *
+         *   El::Copy(out_mat, out_mat_reshaped);
+         *   out_mat_reshaped.Resize(output_size, local_mini_batch_size * num_channels); 
+         * }
+         *
+        **/
+
 
         El::Gemm(transpose_A ? El::TRANSPOSE: El::NORMAL,
                    El::NORMAL,
@@ -187,6 +203,9 @@ namespace distconv{
 
         const auto num_local_channels = output_dims[2];
 
+        El::Matrix<DataType> input_mat_reshaped; 
+        El::Matrix<DataType> output_grad_mat_reshaped;
+
         El::Matrix<DataType> input_mat(input_size, local_mini_batch_size*num_local_channels, input.get_buffer(), input_size);
         El::Matrix<DataType> output_grad_mat(output_size, local_mini_batch_size*num_local_channels, output_grad.get_buffer(), output_size);
         El::Matrix<DataType> linearity_grad_mat(input_size, output_size, linearity_grad.get_buffer(), input_size);
@@ -224,7 +243,8 @@ namespace distconv{
         const auto& output_size = std::accumulate(output_dims.begin()+1, output_dims.end(), 1, std::multiplies<size_t>());
 
         const auto num_local_channels = output_dims[2];
-
+        
+        
         El::Matrix<DataType> out_grad_mat(output_size, local_mini_batch_size*num_local_channels, output_grad.get_buffer(), output_size);
         El::Matrix<DataType> bias_grad_vec(output_size, 1, bias_grad.get_buffer(), output_size);
 

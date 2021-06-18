@@ -133,8 +133,8 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
 
   dc::MPIRootPrintStreamInfo() << "FINISHED SETTING UP FP TENSORS \n";
   // Done
-
 }
+
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void 
 channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
@@ -199,7 +199,6 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
   dc::MPIRootPrintStreamInfo() << "STARTING FP COMPUTE " << std::endl;
 
   const auto& linearity = layer.weights_values(0);
-  // const auto& local_linearity = dynamic_cast<const LocalMat&>(linearity.LockedMatrix());
 
   const auto local_mini_batch_size = layer.get_prev_activations(0).Width();
 
@@ -248,7 +247,6 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
 
   assert0(dc::tensor::View(
     *m_linear,linearity.LockedBuffer()));
-
 
 
   TensorDataType dst_scale, gradient_scale;
@@ -314,9 +312,6 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
   std::reverse(std::begin(linearity_dims), std::end(linearity_dims));
   const auto output_shape = 
     ::distconv::get_fc_output_local_tensor_shape(this->get_prev_activations(), linearity_dims);
-  
-  dc::MPIRootPrintStreamInfo() << "SHAPE LOCAL: \t"<<output_shape << std::endl;
-
   return output_shape;
 }
 
