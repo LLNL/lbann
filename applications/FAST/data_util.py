@@ -4,22 +4,43 @@ from lbann.modules import GraphVertexData
 
 def slice_graph_data(input_layer,
                      num_nodes=4,
+                     num_edges=10,
                      node_features=19,
                      edge_features=1):
+    
+    slice_points = []
+
     # Slice points for node features
-    node_fts = [i * node_features for i in range(num_nodes)]
-    node_ft_end = node_fts[-1] + node_features
+    
+    node_ft_end = num_nodes * node_features
+
+    slice_points.append(node_ft_end)
+
     # Slice points for covalent adj matrix
-    cov_adj_mat_end = node_ft_end + (num_nodes ** 2)
-    cov_adj_mat = [node_ft_end, cov_adj_mat_end]
+    
+    cov_adj_mat_sources = node_ft_end + num_edges 
+
+    cov_adj_mat_targets = cov_adj_mat_sources + num_edges 
+    
+    slice_points.append(cov_adj_mat_sources)
+    slice_points.append(cov_adj_mat_targets)
+    
     # Slice points for noncovalent adj matrix
-    noncov_adj_mat_end = cov_adj_mat_end + (num_nodes ** 2)
-    noncov_adj_mat = [noncov_adj_mat_end]
+    
+    noncov_adj_mat_sources = cov_adj_mat_targets + num_edges
+
+    noncov_adj_mat_target = noncov_adj_mat_sources + num_edges
+    
+    slice_points.append(noncov_adj_mat_sources)
+    slice_points.append(noncov_adj_mat_target)
+    
     # Slice points for edge features
-    num_edges = int(num_nodes * (num_nodes - 1) / 2)
-    edge_fts = \
-        [(noncov_adj_mat_end+(i+1)*edge_features) for i in range(num_edges)]
-    edge_ft_end = edge_fts[-1]
+
+    edge_ft_end = noncov_adj_mat_end + num_edges * edge_features
+
+    slice_points.append(edge_ft_end)
+
+    
     # Slice points for edge_adjacencies
     # This should be num_nodes * (num_nodes ** 2)
     prev_end = edge_ft_end
@@ -32,15 +53,8 @@ def slice_graph_data(input_layer,
     # Slice for binding energy target
     target_end = ligand_only_end + 1
     target = [target_end]
-    slice_points = []
-    slice_points.extend(node_fts)
-    slice_points.extend(cov_adj_mat)
-    slice_points.extend(noncov_adj_mat)
-    slice_points.extend(edge_fts)
-    slice_points.extend(edge_adj)
-    slice_points.extend(ligand_only)
-    slice_points.extend(target)
 
+    
     sliced_input = \
         lbann.Slice(input_layer, slice_points=str_list(slice_points))
 

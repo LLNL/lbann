@@ -1,9 +1,9 @@
 import lbann
-from lbann.modules import Module
+from lbann.modules import Module, NNConv
 from lbann.util import str_list
 import lbann.modules as nn
-from lbann.modules.graph import GraphVertexData
 import math
+import warnings
 
 
 class Sequential(Module):
@@ -26,133 +26,40 @@ class Sequential(Module):
 
 
 class global_add_pool(Module):
-    """docstring  """
+    """Combines the node feature matrix into a single vector with 
+        addition along the column axis
+        
+    """
     global_count = 0
 
     def __init__(self,
-                 num_nodes,
+                 mask=None,
+                 num_nodes=None,
                  name=None):
+        """
+
+            params:
+                mask (Layer): (default: None)
+                num_nodes (int): (default : None)
+                name (string): (default: None)
+        """
         super().__init__()
         global_add_pool.global_count += 1
         self.name = (name if name else
                      "global_add_pool")
-        self.reduction = lbann.Constant(value=1,
-                                        num_neurons=str_list([1, num_nodes]),
-                                        name=self.name)
+        if mask is None:
+            if num_nodes is None:
+                ValueError("Either requires one of mask or num_nodes must be set")
+            self.reduction = lbann.Constant(value=1,
+                                            num_neurons=str_list([1, num_nodes]),
+                                            name=self.name)
+        else:
+            if num_nodes is None:
+                warnings.warn("Only one of mask or num_nodes should be set. Using mask value")
+            self.reduction = mask 
 
     def forward(self, x):
-        return lbann.MatMul(self.reduction, x, name=self.name+"_matmul")
-
-
-class NN_Conv(Module):
-    """docstring for NN_Conv"""
-    global_count = 0
-
-    def __init__(self,
-                 num_nodes,
-                 output_channels,
-                 edge_nn,
-                 name=None):
-        super(NN_Conv, self).__init__()
-        NN_Conv.global_count += 1
-        self.name = (name
-                     if name
-                     else 'NNConv_{}'.format(NN_Conv.global_count))
-        self.num_nodes = num_nodes
-        self.output_channels = output_channels
-        self.theta_1 = nn.FullyConnectedModule(self.output_channels)
-        self.edge_nn = edge_nn
-        self.reduction_vector = \
-            lbann.Constant(value=1,
-                           num_neurons=str_list([1, num_nodes]),
-                           name="Reduction_Vector_{}".format(self.name))
-
-        self.edge_index = []
-
-        counter = 0
-        for i in range(num_nodes):
-            temp = [(i, j) for j in range(counter, num_nodes)]
-            counter += 1
-            self.edge_index.extend(temp)
-
-    def forward(self,
-                node_features,
-                edge_feature_mat,
-                node_neighbors_mat):
-
-        input_features = node_features.size(1)
-        num_nodes = self.num_nodes
-
-        # print(self.output_channels, input_features)
-        # x_i = theta_1 * x_i + \sum_{j} f(e_{ij}) * x_j
-        for x_i in range(num_nodes):
-            edges_indices = self.__edge_scatter(x_i)
-            updated_features = []
-            for edge in edges_indices:
-                x_j = edge
-                nn_conv_weights = self.edge_nn(edge_feature_mat[edge])
-                
-                if (input_features < self.output_channels):
-                    input_features = self.output_channels
-
-                nn_conv_weights = \
-                    lbann.Reshape(nn_conv_weights,
-                                  dims=str_list([input_features,
-                                                self.output_channels]))
-                # f(e_{ij}) * x_j
-                # print(input_features)
-                node_ft = lbann.Reshape(node_features[x_j],
-                                        dims="1 {}".format(input_features),
-                                        name=self.name+"_node_ft_reshape_{}_{}".format(x_i,x_j))
-
-                updated_features.append(lbann.MatMul(node_ft,
-                                                     nn_conv_weights,
-                                                     name=self.name+"edge_ft_{}_{}".format(x_i, x_j)))
-
-            updated_features = GraphVertexData(updated_features,
-                                               self.output_channels)
-            updated_features = updated_features.get_mat()
-            # sum_{j} f(e_{ij}) * x_j
-            message = lbann.MatMul(node_neighbors_mat[x_i],
-                                   updated_features,
-                                   name=self.name+"_updated_edge_{}".format(x_i))
-            reduction = \
-                lbann.Reshape(lbann.MatMul(self.reduction_vector, message),
-                              dims="{}".format(self.output_channels))
-            # theta_1 * x_i
-            node_features[x_i] = self.theta_1(node_features[x_i])
-
-            node_features[x_i] = lbann.Sum(reduction, node_features[x_i])
-        # Housekeeping to track the change in node feature dimension
-        node_features.update_num_features(self.output_channels)
-        return node_features
-
-    def __edge_scatter(self, node_i):
-        """ returns the indices of edges in a fully connected graph
-            that contains node_i
-        """
-        num_nodes = self.num_nodes
-        indices = []
-        for i in range(num_nodes):
-            ind = 0
-            if (node_i < i):
-                ind = 1
-            index = self.edge_index[self.__scatter_helper(node_i, i)][ind]
-            indices.append(index)
-        return indices
-
-    def __scatter_helper(self, row, column):
-        # Replace this with more efficient implementation later
-        if (row < column):
-            return column - row + self.__scatter_helper(row,  row)
-        elif (row == column):
-            if (row == 0):
-                return 0
-            else:
-                return self.__scatter_helper(row-1, column-1) \
-                    + self.num_nodes - row + 1
-        elif (row > column):
-            return self.__scatter_helper(column, row)
+        return lbann.MatMul(self.reduction, x, name=self.name + "_matmul")
 
 
 class Graph_Conv(Module):
