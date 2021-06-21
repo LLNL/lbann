@@ -56,17 +56,17 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  options *opts = options::get();
-  opts->init(argc, argv);
+  auto& arg_parser = global_argument_parser();
+  arg_parser.parse(argc, argv);
 
   // sanity check invocation
-  if (!opts->has_string("filename")) {
+  if (arg_parser.get<std::string>("filename") == "") {
     if (master) {
       throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: usage: " + argv[0] + " --filename=<string>\ne.g: --filename=/p/lscratchh/brainusr/datasets/conduit_test/from_100M.bundle");
     }
   }
 
-    const std::string filename = opts->get_string("filename");
+    const std::string filename = arg_parser.get<std::string>("filename");
 
     // get lists of inputs and scalars to read from file
     std::unordered_set<std::string> input_names;

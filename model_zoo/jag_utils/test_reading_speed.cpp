@@ -58,17 +58,17 @@ void test_jag(string filename);
 int main(int argc, char *argv[]) {
   world_comm_ptr comm = initialize(argc, argv);
 
-  options *opts = options::get();
-  opts->init(argc, argv);
+  auto& arg_parser = global_argument_parser();
+  arg_parser.parse(argc, argv);
 
-  if (!(opts->has_string("filelist") && opts->has_int("jag"))) {
-    LBANN_ERROR("usage: test_speed_hydra_ --filelist=<string> --jag=<0|1>");
+  if (arg_parser.get<std::string>("filelist") == "") {
+    LBANN_ERROR("usage: test_speed_hydra_ --filelist=<string> --jag");
   }
 
-  if (opts->get_int("jag")) {
-    test_jag(opts->get_string("filelist"));
+  if (arg_parser.get<bool>("jag")) {
+    test_jag(arg_parser.get<std::string>("filelist"));
   } else {
-    test_hydra(opts->get_string("filelist"));
+    test_hydra(arg_parser.get<std::string>("filelist"));
   }
   return EXIT_SUCCESS;
 }

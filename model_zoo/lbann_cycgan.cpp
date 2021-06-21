@@ -95,17 +95,13 @@ int main(int argc, char *argv[]) {
     // Split MPI into trainers
     allocate_trainer_resources(comm.get());
 
-    // Initialize options db (this parses the command line)
-    options *opts = options::get();
-    opts->init(argc, argv);
-    if (opts->has_string("h") or opts->has_string("help") or argc == 1) {
+    if (arg_parser.get<bool>("help") or argc == 1) {
       print_help(*comm);
       return EXIT_SUCCESS;
     }
 
-    //this must be called after call to opts->init();
-    if (!opts->get_bool("disable_signal_handler")) {
-      std::string file_base = (opts->get_bool("stack_trace_to_file") ?
+    if (!arg_parser.get<bool>("disable_signal_handler")) {
+      std::string file_base = (arg_parser.get<bool>("stack_trace_to_file") ?
                                "stack_trace" : "");
       stack_trace::register_signal_handler(file_base);
     }
@@ -125,7 +121,7 @@ int main(int argc, char *argv[]) {
     lbann_data::Trainer *pb_trainer = pb.mutable_trainer();
 
     // Construct the trainer
-    auto& trainer = construct_trainer(comm.get(), pb_trainer, *(pbs[0]), opts);
+    auto& trainer = construct_trainer(comm.get(), pb_trainer, *(pbs[0]));
 
     thread_pool& io_thread_pool = trainer.get_io_thread_pool();
 
@@ -136,7 +132,7 @@ int main(int argc, char *argv[]) {
     }
 
     auto model_1 = build_model_from_prototext(argc, argv, pb_trainer, *(pbs[0]),
-                                              comm.get(), opts, io_thread_pool,
+                                              comm.get(), io_thread_pool,
                                               trainer.get_callbacks_with_ownership(),
                                               training_dr_linearized_data_size); //D1 solver
     //hack, overide model name to make reporting easy, what can break?"
@@ -149,28 +145,28 @@ int main(int argc, char *argv[]) {
 
     if (pbs.size() > 1) {
       model_2 = build_model_from_prototext(argc, argv, pb_trainer, *(pbs[1]),
-                                           comm.get(), opts, io_thread_pool,
+                                           comm.get(), io_thread_pool,
                                            trainer.get_callbacks_with_ownership(),
                                            training_dr_linearized_data_size);
     }
 
     if (pbs.size() > 2) {
       model_3 = build_model_from_prototext(argc, argv, pb_trainer, *(pbs[2]),
-                                           comm.get(), opts, io_thread_pool,
+                                           comm.get(), io_thread_pool,
                                            trainer.get_callbacks_with_ownership(),
                                            training_dr_linearized_data_size);
     }
 
     if (pbs.size() > 3) {
       ae_model = build_model_from_prototext(argc, argv, pb_trainer, *(pbs[3]),
-                                            comm.get(), opts, io_thread_pool,
+                                            comm.get(), io_thread_pool,
                                             trainer.get_callbacks_with_ownership(),
                                             training_dr_linearized_data_size);
     }
 
     if (pbs.size() > 4) {
       ae_cycgan_model = build_model_from_prototext(argc, argv, pb_trainer, *(pbs[4]),
-                                                   comm.get(), opts, io_thread_pool,
+                                                   comm.get(), io_thread_pool,
                                                    trainer.get_callbacks_with_ownership(),
                                                    training_dr_linearized_data_size);
     }

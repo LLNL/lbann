@@ -77,11 +77,11 @@ int main(int argc, char **argv) {
       LBANN_ERROR("please run with a single processor");
     }
 
-    options *opts = options::get();
-    opts->init(argc, argv);
+    auto& arg_parser = global_argument_parser();
+    arg_parser.parse(argc, argv);
 
     // check for proper invocation, print help message
-    if (opts->get_bool("h") || opts->get_bool("help") || argc == 1) {
+    if (arg_parser.get<bool>("help") || argc == 1) {
       cout << help_msg();
       return EXIT_FAILURE;
     }
@@ -113,7 +113,7 @@ int main(int argc, char **argv) {
     build_index_maps(index_map_keep, index_map_exclude, string_to_index, filename_data);
 
     // partition the randomly selected samples into "num_lists" sets
-    int num_lists = opts->get_int("num_lists");
+    int num_lists = arg_parser.get<int>("num_lists");
     vector<unordered_map<string, unordered_set<int>>> subsets(num_lists);
     divide_selected_samples(index_map_keep, subsets);
 
@@ -149,32 +149,35 @@ int main(int argc, char **argv) {
 
 // sanity check the cmd line
 void check_cmd_line() {
-  options *opts = options::get();
+  auto& arg_parser = global_argument_parser();
   stringstream err;
-  if (! (opts->has_string("index_fn") && opts->has_string("mapping_fn")
-         && opts->has_int("num_samples_per_list") && opts->has_int("num_lists")
-         && opts->has_int("random_seed")
-         && opts->has_string("output_dir") && opts->has_string("output_base_fn"))) {
+  if (! (arg_parser.get<std::string>("index_fn") != "" &&
+         arg_parser.get<std::string>("mapping_fn") != "" &&
+         arg_parser.get<int>("num_samples_per_list") != -1 &&
+         arg_parser.get<int>("num_lists") != -1 &&
+         arg_parser.get<int>("random_seed") != -1 &&
+         arg_parser.get<std::string>("output_dir") != "" &&
+         arg_parser.get<std::string>("output_base_fn") != "")) {
     cout << help_msg();
-    if (!opts->has_string("index_fn")) {
+    if (arg_parser.get<std::string>("index_fn") == "") {
       cout << "missing --index_fn=<string> \n";
     }
-    if (!opts->has_string("mapping_fn")) {
+    if (arg_parser.get<std::string>("mapping_fn") == "") {
       cout << "missing --mapping_fn=<string> \n";
     }
-    if (!opts->has_string("num_samples_per_list")) {
+    if (arg_parser.get<int>("num_samples_per_list") == -1) {
       cout << "missing --num_samples_per_list=<int> \n";
     }
-    if (!opts->has_string("num_lists")) {
+    if (arg_parser.get<int>("num_lists") == -1) {
       cout << "missing --num_lists=<int> \n";
     }
-    if (!opts->has_string("random_seed")) {
+    if (arg_parser.get<int>("random_seed") == -1) {
       cout << "missing --random_seed=<int> \n";
     }
-    if (!opts->has_string("output_dir")) {
+    if (arg_parser.get<std::string>("output_dir") == "") {
       cout << "missing --output_dir=<string> \n";
     }
-    if (!opts->has_string("output_base_fn")) {
+    if (arg_parser.get<std::string>("output_base_fn") == "") {
       cout << "missing --output_base_fn=<string> \n";
     }
     cout << "\n";

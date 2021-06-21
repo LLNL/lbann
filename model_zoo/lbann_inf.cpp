@@ -42,7 +42,7 @@ using namespace lbann;
 
 int main(int argc, char *argv[]) {
   auto& arg_parser = global_argument_parser();
-  construct_std_options();
+  construct_all_options();
 
   try {
     arg_parser.parse(argc, argv);
@@ -60,10 +60,7 @@ int main(int argc, char *argv[]) {
     // Split MPI into trainers
     allocate_trainer_resources(comm.get());
 
-    // Initialize options db (this parses the command line)
-    options *opts = options::get();
-    opts->init(argc, argv);
-    if (opts->has_string("h") or opts->has_string("help") or argc == 1) {
+    if (arg_parser.get<bool>("help") or argc == 1) {
       print_help(*comm);
       return EXIT_SUCCESS;
     }
@@ -80,7 +77,7 @@ int main(int argc, char *argv[]) {
     lbann_data::Trainer *pb_trainer = pb.mutable_trainer();
 
     // Construct the trainer
-    auto& trainer = construct_trainer(comm.get(), pb_trainer, *(pbs[0]), opts);
+    auto& trainer = construct_trainer(comm.get(), pb_trainer, *(pbs[0]));
 
     thread_pool& io_thread_pool = trainer.get_io_thread_pool();
     int training_dr_linearized_data_size = -1;
@@ -95,7 +92,7 @@ int main(int argc, char *argv[]) {
     for(auto&& pb_model : pbs) {
       models.emplace_back(
         build_model_from_prototext(argc, argv, pb_trainer, *pb_model,
-                                   comm.get(), opts, io_thread_pool,
+                                   comm.get(), io_thread_pool,
                                    trainer.get_callbacks_with_ownership(),
                                    training_dr_linearized_data_size));
     }
