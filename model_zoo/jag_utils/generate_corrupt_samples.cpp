@@ -51,11 +51,12 @@ int main(int argc, char *argv[]) {
   }
 
   std::stringstream err;
-  options *opts = options::get();
-  opts->init(argc, argv);
+  auto& arg_parser = global_argument_parser();
+  construct_all_options();
+  arg_parser.parse(argc, argv);
 
   // sanity check invocation
-  if (!opts->has_string("filelist")) {
+  if (arg_parser.get<std::string>("filelist") == "") {
     if (master) {
       err << " :: usage: " << argv[0] << " --filelist=<string>\n"
           << "WARNING: this driver deletes the directory 'corrupt_jag_samples' if it exists "
@@ -66,7 +67,7 @@ int main(int argc, char *argv[]) {
 
   // read list of conduit filenames
   std::vector<std::string> files;
-  const std::string fn = opts->get_string("filelist");
+  const std::string fn = arg_parser.get<std::string>("filelist");
   read_filelist(comm.get(), fn, files);
 
   int ee = system("rm -rf corrupt_jag_samples");

@@ -46,10 +46,11 @@ int main(int argc, char *argv[]) {
 
   try {
     // Initialize options db (this parses the command line)
-    options *opts = options::get();
-    opts->init(argc, argv);
+    auto& arg_parser = global_argument_parser();
+    construct_all_options();
+    arg_parser.parse(argc, argv);
 
-    if (! opts->has_string("filelist")) {
+    if (arg_parser.get<std::string>("filelist") == "") {
       if (master) {
         std::cerr << "usage: " << argv[1] << " --filelist=<string>\n"
                   << "function: converts npz files to conduit\n";
@@ -58,7 +59,7 @@ int main(int argc, char *argv[]) {
       return EXIT_FAILURE;
     }
 
-    const std::string input_fn = opts->get_string("filelist");
+    const std::string input_fn = arg_parser.get<std::string>("filelist");
 
     int rank = comm->get_rank_in_world();
     int np = comm->get_procs_in_world();

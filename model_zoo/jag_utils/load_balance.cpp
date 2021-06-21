@@ -47,20 +47,23 @@ int main(int argc, char *argv[]) {
   const int np = comm->get_procs_in_world();
 
   try {
-    options *opts = options::get();
-    opts->init(argc, argv);
+    auto& arg_parser = global_argument_parser();
+    construct_all_options();
+    arg_parser.parse(argc, argv);
 
     // sanity check invocation
-    if (!(opts->has_string("filelist") && opts->has_string("output_base_dir")
-         && opts->has_int("num_subdirs") && opts->has_string("samples_per_file"))) {
+    if (arg_parser.get<std::string>("filelist") == "" ||
+        arg_parser.get<std::string>("output_base_dir") == "" ||
+        arg_parser.get<int>("num_subdirs") == -1 ||
+        arg_parser.get<int>("samples_per_file") == -1) {
       if (master) {
         throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: usage: " + argv[0] + " --filelist=<string> --output_base_dir=<string> --num_subdirs=<int> --samples_per_file=<int>");
       }
     }
 
-    const int num_dirs = opts->get_int("num_subdirs");
-    const std::string base = opts->get_string("output_base_dir");
-    const int samples_per_file = opts->get_int("samples_per_file");
+    const int num_dirs = arg_parser.get<int>("num_subdirs");
+    const std::string base = arg_parser.get<std::string>("output_base_dir");
+    const int samples_per_file = arg_parser.get<int>("samples_per_file");
 
     // master creates output directory structure
     if (master) {
@@ -83,9 +86,9 @@ int main(int argc, char *argv[]) {
     int size;
     if (master) {
       std::stringstream s;
-      std::ifstream in(opts->get_string("filelist").c_str());
+      std::ifstream in(arg_parser.get<std::string>("filelist").c_str());
       if (!in) {
-          throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: failed to open " + opts->get_string("filelist") + " for reading");
+          throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: failed to open " + arg_parser.get<std::string>("filelist") + " for reading");
       }
       std::string line;
       while (getline(in, line)) {

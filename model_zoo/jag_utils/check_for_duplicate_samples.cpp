@@ -55,11 +55,12 @@ int main(int argc, char *argv[]) {
   }
 
   try {
-    options *opts = options::get();
-    opts->init(argc, argv);
+    auto& arg_parser = global_argument_parser();
+    construct_all_options();
+    arg_parser.parse(argc, argv);
 
     // sanity check invocation
-    if (!opts->has_string("filelist")) {
+    if (arg_parser.get<std::string>("filelist") == "") {
       if (master) {
         throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: usage: " + argv[0] + " --filelist=<string>");
       }
@@ -67,7 +68,7 @@ int main(int argc, char *argv[]) {
 
     // read list of conduit filenames
     std::vector<std::string> files;
-    const std::string fn = opts->get_string("filelist");
+    const std::string fn = arg_parser.get<std::string>("filelist");
     read_filelist(comm.get(), fn, files);
 
     std::unordered_set<std::string> input_names;

@@ -54,17 +54,18 @@ int main(int argc, char *argv[]) {
   const int np = comm->get_procs_in_world();
 
   try {
-    options *opts = options::get();
-    opts->init(argc, argv);
+    auto& arg_parser = global_argument_parser();
+    construct_all_options();
+    arg_parser.parse(argc, argv);
 
     // sanity check invocation
-    if (!opts->has_string("filelist")) {
+    if (arg_parser.get<std::string>("filelist") == "") {
       if (master) {
         throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: usage: " + argv[0] + " --filelist=<string> \nwhere: 'filelist' is a file that contains the fully qualified filenames of the conduit *'bundle' files that are to be inspected.\nfunction: attemptsto detect and report currupt files and/or samples within those files.");
       }
     }
 
-    const std::string fn = opts->get_string("filelist");
+    const std::string fn = arg_parser.get<std::string>("filelist");
     std::vector<std::string> filenames;
     read_filelist(comm.get(), fn, filenames);
 

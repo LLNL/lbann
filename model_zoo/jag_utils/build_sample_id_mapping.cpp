@@ -25,8 +25,9 @@ int main(int argc, char **argv) {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &np);
 
-  options *opts = options::get();
-  opts->init(argc, argv);
+  auto& arg_parser = global_argument_parser();
+  construct_all_options();
+  arg_parser.parse(argc, argv);
 
   // sanity check the cmd line
   if (argc < 2) {
@@ -50,7 +51,7 @@ int total = 0;
   // get list of conduit filenames
   if (master) cerr << "reading filelist\n";
   vector<string> filenames;
-  string base_dir = opts->get_string("base_dir");
+  string base_dir = arg_parser.get<std::string>("base_dir");
   if (base_dir.back() != '/') {
     base_dir += '/';
   }

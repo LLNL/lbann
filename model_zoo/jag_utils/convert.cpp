@@ -58,16 +58,19 @@ void test_jag(string filename);
 int main(int argc, char *argv[]) {
   world_comm_ptr comm = initialize(argc, argv);
 
-  options *opts = options::get();
-  opts->init(argc, argv);
+  auto& arg_parser = global_argument_parser();
+  construct_all_options();
+  arg_parser.parse(argc, argv);
 
-  if (!(opts->has_string("filelist") && opts->has_string("output_dir") && opts->has_string("format"))) {
+  if (arg_parser.get<std::string>("filelist") == "" ||
+      arg_parser.get<std::string>("output_dir") == "" ||
+      arg_parser.get<std::string>("format") == "") {
     LBANN_ERROR("usage: test_speed_hydra_ --filelist=<string> --output_dir=<string> --format=<hdf5|conduit_bin>");
   }
 
-  string filelist = opts->get_string("filelist");
-  string format = opts->get_string("format");
-  string output_dir = opts->get_string("output_dir");
+  string filelist = arg_parser.get<std::string>("filelist");
+  string format = arg_parser.get<std::string>("format");
+  string output_dir = arg_parser.get<std::string>("output_dir");
   stringstream s;
   s << "mkdir -p " << output_dir;
   system(s.str().c_str());

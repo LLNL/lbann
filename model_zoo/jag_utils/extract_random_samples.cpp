@@ -41,6 +41,7 @@
 using namespace lbann;
 
 #define NUM_OUTPUT_DIRS 100
+// TODO MRW
 #define NUM_SAMPLES_PER_FILE 1000
 
 //==========================================================================
@@ -96,11 +97,12 @@ int main(int argc, char *argv[]) {
       return EXIT_SUCCESS;
     }
 
-    options *opts = options::get();
-    opts->init(argc, argv);
+    auto& arg_parser = global_argument_parser();
+    construct_all_options();
+    arg_parser.parse(argc, argv);
 
     // ensure the db contains "num_samples_per_file"
-    opts->get_int("num_samples_per_file", NUM_SAMPLES_PER_FILE);
+    arg_parser.get<int>("num_samples_per_file");
 
     int num_output_dirs;
     if (master) {
@@ -108,7 +110,8 @@ int main(int argc, char *argv[]) {
       num_output_dirs = construct_output_directories(np);
     }
     comm->world_broadcast<int>(0, &num_output_dirs, 1);
-    opts->set_option("num_output_dirs", num_output_dirs);
+    // TODO MRW
+    //opts->set_option("num_output_dirs", num_output_dirs);
 
     // get the set of global indices for the samples in our extracted set
     std::set<int> indices;
@@ -119,7 +122,7 @@ int main(int argc, char *argv[]) {
 
     build_exclusion_set(exclude);
     std::vector<int> indices_v;
-    size_t num_samples = options::get()->get_int("num_samples");
+    size_t num_samples = arg_parser.get<int>("num_samples");
     indices_v.reserve(num_samples);
 
     get_random_sample_indices(exclude, indices, global_num_samples);
@@ -127,7 +130,7 @@ int main(int argc, char *argv[]) {
     if (master) {
       // write set of random indices to file; these can be used
       // as an exclusion set for a subsequent run
-      const std::string base_dir = opts->get_string("output_base_dir");
+      const std::string base_dir = arg_parser.get<std::string>("output_base_dir");
       const std::string fn = base_dir + "/random_indices.txt";
       std::ofstream out(fn.c_str());
       if (!out) {
@@ -203,9 +206,9 @@ void build_exclusion_set(std::unordered_set<int> &exclude) {
 }
 
 int construct_output_directories(int np) {
-  options *opts = options::get();
-  int num_samples_per_file = opts->get_int("num_samples_per_file");
-  int num_samples = opts->get_int("num_samples");
+  auto& arg_parser = global_argument_parser();
+  int num_samples_per_file = arg_parser.get<int>("num_samples_per_file");
+  int num_samples = arg_parser.get<int>("num_samples");
   const std::string base_dir = options::get()->get_string("output_base_dir");
   int num_output_dirs = ((num_samples / num_samples_per_file + 1) / np) *2;
 
@@ -270,8 +273,11 @@ void build_sample_mapping(
 }
 
 void check_invocation(bool master) {
-  options *opts = options::get();
-  if (! (opts->has_string("index_fn") && opts->has_int("num_samples") && opts->has_string("output_base_dir") && opts->has_int("rand_seed"))) {
+  auto& arg_parser = global_argument_parser();
+  if (arg_parser.get<std::string>("index_fn") == "" ||
+      arg_parser.get<int>("num_samples") == -1 ||
+      arg_parser.get<std::string>("output_base_dir") == "" ||
+      arg_parser.get<int>("rand_seed") == -1) {
     if (master) {
       throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: improper invocation; see usage message below\n\n " + usage() + "\n\n");
     }

@@ -55,15 +55,16 @@ int main(int argc, char *argv[]) {
   bool master = comm->am_world_master();
   const int rank = comm->get_rank_in_world();
 
-    options *opts = options::get();
-    opts->init(argc, argv);
+    auto& arg_parser = global_argument_parser();
+    construct_all_options();
+    arg_parser.parse(argc, argv);
 
     ofstream out("normalize.txt");
     if (!out) {
       LBANN_ERROR("failed to open: normalize.txt for writing");
     }
 
-    if (!(opts->has_string("filelist"))) {
+    if (arg_parser.get<std::string>("filelist") == "") {
       if (master) {
         throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: usage: " + argv[0] + " --filelist=<string>");
       }
@@ -96,9 +97,9 @@ int main(int argc, char *argv[]) {
       images_v_min[h].resize(MAGIC_NUMBER, DBL_MAX);
     }
 
-    ifstream in(opts->get_string("filelist").c_str());
+    ifstream in(arg_parser.get<std::string>("filelist").c_str());
     if (!in) {
-      LBANN_ERROR("failed to open " + opts->get_string("filelist") + " for reading");
+      LBANN_ERROR("failed to open " + arg_parser.get<std::string>("filelist") + " for reading");
     }
 
     size_t hhh = 0;

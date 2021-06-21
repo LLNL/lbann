@@ -55,8 +55,9 @@ int main(int argc, char *argv[]) {
 
   try {
     // Initialize options db (this parses the command line)
-    options *opts = options::get();
-    opts->init(argc, argv);
+    auto& arg_parser = global_argument_parser();
+    construct_all_options();
+    arg_parser.parse(argc, argv);
 
     if (argc == 1) {
       if (master) {
@@ -70,13 +71,15 @@ int main(int argc, char *argv[]) {
       return EXIT_SUCCESS;
     }
 
-    if (! (opts->has_string("filelist") && opts->has_string("output_fn") &&  opts->has_string("base_dir") )) {
+    if (arg_parser.get<std::string>("filelist") == "" ||
+        arg_parser.get<std::string>("output_fn") == "" ||
+        arg_parser.get<std::string>("base_dir")) {
       throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: improper invocation; run with no cmd line args for proper invocation");
     }
 
-    const std::string input_fn = opts->get_string("filelist");
-    const std::string output_fn = opts->get_string("output_fn");
-    const std::string base_dir = opts->get_string("base_dir");
+    const std::string input_fn = arg_parser.get<std::string>("filelist");
+    const std::string output_fn = arg_parser.get<std::string>("output_fn");
+    const std::string base_dir = arg_parser.get<std::string>("base_dir");
 
     int rank = comm->get_rank_in_world();
     std::stringstream ss;
