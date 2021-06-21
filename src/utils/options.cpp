@@ -34,6 +34,12 @@ void construct_std_options() {
   arg_parser.add_required_argument<std::string>
                                   ("prototext",
                                    "Prototext file containing experiment");
+  arg_parser.add_flag("help",
+                      {"--help", "-h"},
+                      "Prints the help message");
+  arg_parser.add_flag("verbose",
+                      {"--verbose"},
+                      "Turns on verbose mode");
   arg_parser.add_option(MAX_RNG_SEEDS_DISPLAY,
                         {"--rng_seeds_per_trainer_to_display"},
                         utils::ENV("LBANN_RNG_SEEDS_PER_TRAINER_TO_DISPLAY"),
@@ -206,6 +212,103 @@ void construct_datareader_options() {
                         {"--test_tarball"},
                         "TODO",
                         0);
+  arg_parser.add_flag("all_gather_old",
+                      {"--all_gather_old"},
+                      "TODO");
+  arg_parser.add_flag("disable_signal_handler",
+                      {"--disable_signal_handler"},
+                      "TODO");
+  arg_parser.add_flag("stack_trace_to_file",
+                      {"--stack_trace_to_file"},
+                      "TODO");
+  arg_parser.add_flag("generate_multi_proto",
+                      {"--generate_multi_proto"},
+                      "TODO");
+  arg_parser.add_flag("exit_after_setup",
+                      {"--exit_after_setup"},
+                      "TODO");
+  arg_parser.add_flag("node_sizes_vary",
+                      {"--node_size_vary"},
+                      "TODO");
+}
+
+void construct_jag_options() {
+  auto& arg_parser = global_argument_parser();
+  arg_parser.add_flag("jag",
+                      {"--jag"},
+                      "TODO");
+  arg_parser.add_option("filelist",
+                        {"--filelist"},
+                        "TODO",
+                        "");
+  arg_parser.add_option("filename",
+                        {"--filename"},
+                        "TODO",
+                        "");
+  arg_parser.add_option("output_fn",
+                        {"--output_fn"},
+                        "TODO",
+                        "");
+  arg_parser.add_option("index_fn",
+                        {"--index_fn"},
+                        "TODO",
+                        "");
+  arg_parser.add_option("mapping_fn",
+                        {"--mapping_fn"},
+                        "TODO",
+                        "");
+  arg_parser.add_option("base_dir",
+                        {"--base_dir"},
+                        "TODO",
+                        "");
+  arg_parser.add_option("output_dir",
+                        {"--output_dir"},
+                        "TODO",
+                        "");
+  arg_parser.add_option("output_base_dir",
+                        {"--output_base_dir"},
+                        "TODO",
+                        "");
+  arg_parser.add_option("output_base_fn",
+                        {"--output_base_fn"},
+                        "TODO",
+                        "");
+  arg_parser.add_option("num_lists",
+                        {"--num_lists"},
+                        "TODO",
+                        -1);
+  arg_parser.add_option("num_subdirs",
+                        {"--num_subdirs"},
+                        "TODO",
+                        -1);
+  arg_parser.add_option("format",
+                        {"--format"},
+                        "TODO",
+                        "");
+  arg_parser.add_option("num_samples_per_file",
+                        {"--num_samples_per_file"},
+                        "TODO",
+                        -1);
+  arg_parser.add_option("num_samples_per_list",
+                        {"--num_samples_per_list"},
+                        "TODO",
+                        -1);
+  arg_parser.add_option("samples_per_file",
+                        {"--samples_per_file"},
+                        "TODO",
+                        -1);
+  arg_parser.add_option("num_samples",
+                        {"--num_samples"},
+                        "TODO",
+                        -1);
+  arg_parser.add_option("rand_seed",
+                        {"--rand_seed"},
+                        "TODO",
+                        -1);
+  arg_parser.add_option("random_seed",
+                        {"--random_seed"},
+                        "TODO",
+                        -1);
 }
 
 void construct_callback_options() {
@@ -224,6 +327,7 @@ void construct_callback_options() {
 void construct_all_options() {
   construct_callback_options();
   construct_datareader_options();
+  construct_jag_options();
   construct_std_options();
 }
 
