@@ -1,6 +1,6 @@
 import lbann
 from lbann.util import str_list
-from lbann.modules import GraphVertexData
+
 
 def slice_graph_data(input_layer,
                      num_nodes=4,
@@ -36,68 +36,56 @@ def slice_graph_data(input_layer,
     
     # Slice points for edge features
 
-    edge_ft_end = noncov_adj_mat_end + num_edges * edge_features
+    edge_ft_end = noncov_adj_mat_target + num_edges * edge_features
 
     slice_points.append(edge_ft_end)
 
-    
+  
     # Slice points for edge_adjacencies
     # This should be num_nodes * (num_nodes ** 2)
     prev_end = edge_ft_end
-    edge_adj = [(prev_end+(i+1)*(num_nodes**2)) for i in range(num_nodes)]
-    prev_end = edge_adj[-1]
+  
     # Slice points for ligand_only mat
-    edge_adj_end = edge_adj[-1]
-    ligand_only_end = edge_adj_end + (num_nodes ** 2)
-    ligand_only = [ligand_only_end]
-    # Slice for binding energy target
-    target_end = ligand_only_end + 1
-    target = [target_end]
+    ligand_only_sources = prev_end + num_edges
+    ligand_only_targets = ligand_only_sources + num_edges
 
+    slice_points.append(ligand_only_sources)
+    slice_points.append(ligand_only_targets)
+
+    # Slice for binding energy target
+    target_end = ligand_only_targets + 1
     
+    slice_points.append(target_end)
+
     sliced_input = \
         lbann.Slice(input_layer, slice_points=str_list(slice_points))
 
     node_fts = \
-        [lbann.Identity(sliced_input, name="Node_{}".format(i))
-         for i in range(num_nodes)]
-
-    cov_adj_mat = lbann.Identity(sliced_input, name="Covalent_Adj")
-
-    noncov_adj_mat = lbann.Identity(sliced_input, name="NonCovalent_Adj")
-
-    edge_fts = \
-        [lbann.Identity(sliced_input, name="Edge_{}".format(i))
-         for i in range(num_edges)]
-
-    edge_adj = \
-        [lbann.Identity(sliced_input, name="Adj_Mat_{}".format(i))
-         for i in range(num_nodes)]
-
-    ligand_ID = lbann.Identity(sliced_input, name="Ligand_only_nodes")
-
-    target = lbann.Identity(sliced_input, name="Target")
+        lbann.Identity(sliced_input, name="Node_fts_input")
 
     node_fts = \
-        [lbann.Reshape(i, dims=str_list([1, node_features]))
-         for i in node_fts]
+        lbann.Reshape(node_fts, dims=str_list([num_nodes, node_features]), name="Node_fts_mat")
 
-    cov_adj_mat = \
-        lbann.Reshape(cov_adj_mat, dims=str_list([num_nodes, num_nodes]))
+    cov_adj_sources = lbann.Identity(sliced_input, name="Covalent_Adj_sources_input")
+    cov_adj_targets = lbann.Identity(sliced_input, name="Covalent_Adj_targets_input")
 
-    noncov_adj_mat = \
-        lbann.Reshape(noncov_adj_mat, dims=str_list([num_nodes, num_nodes]))
+    cov_adj_sources = lbann.Reshape(cov_adj_sources, dims=str_list([num_edges]), names="Covalent_Adj_sources")
+    cov_adj_targets = lbann.Reshape(cov_adj_targets, dims=str_list([num_edges]), names="Covalent_Adj_targets")
 
-    edge_features = \
-        [lbann.Reshape(i, dims=str_list([1, edge_features])) for i in edge_fts]
-    edge_adj = \
-        [lbann.Reshape(i, dims=str_list([num_nodes, num_nodes]))
-         for i in edge_adj]
-    ligand_only = \
-        lbann.Reshape(ligand_ID, dims=str_list([num_nodes, num_nodes]))
-    target = lbann.Reshape(target, dims="1")
+    noncov_adj_mat_sources = lbann.Reshape(lbann.Identity(sliced_input), dims=str_list([num_edges]), name="Noncovalent_adj_sources")
+    noncov_adj_mat_targets = lbann.Reshape(lbann.Identity(sliced_input), dims=str_list([num_edges]), name="Noncovalent_adj_targets")
 
-    node_fts = GraphVertexData(node_fts, node_features)
+    edge_fts_inp = lbann.Identity(sliced_input)
+
+    edge_fts = lbann.Reshape(edge_fts_inp, dims=str_list([num_edges, edge_features]), name="Edgee_FTS")
+    
+    ligand_source = lbann.Reshape(lbann.Identity(sliced_input), dims=str_list([num_edges]),name="Ligand_only_sources")
+    ligand_target = lbann.Reshape(lbann.Identity(sliced_input), dims=str_list([num_edges]), name="Ligand_only_target")
+    
+    target = lbann.Reshape(lbann.Identity(sliced_input),dims="1", name="Target")
+
+
+
     return node_fts, cov_adj_mat, noncov_adj_mat, \
         edge_features, edge_adj, ligand_only, target
 
