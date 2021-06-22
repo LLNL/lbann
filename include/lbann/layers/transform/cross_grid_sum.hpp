@@ -131,12 +131,6 @@ private:
                        El::mpi::SUM,
                        this->get_subgrid_comm(),
                        syncInfoOutput);
-
-    // El::mpi::AllReduce(input.LockedMatrix(), output_cast->Buffer(),
-    // mloc*nloc, El::mpi::SUM, CommA, syncInfoOutput); for (int i = 1; i <
-    // this->get_num_parents(); ++i) {
-    //   El::Axpy(DataType(1), this->get_prev_activations(i), output);
-    // }
   }
 
   void fp_setup_outputs(El::Int mini_batch_size) final
@@ -145,38 +139,45 @@ private:
     if (this->get_num_children() < 1) {
       return;
     }
-    // Determine distributed matrix alignment
-    // int rank = El::mpi::Rank(this->get_subgrid_comm());
-    // const bool align_outputs = this->get_num_parents() > 0;
-    // const auto& alignment_dist = (align_outputs ?
-    //                               this->get_prev_activations(rank).DistData()
-    //                               : this->get_activations(rank).DistData());
 
     // Initialize output tensors
     for (int i = 0; i < this->get_num_children(); ++i) {
 
       auto& output = this->get_activations(i);
       output.Empty(false);
-      // if ((align_outputs || this->get_parallel_strategy().enable_subgraph==0)
-      // && false ) { output.AlignWith(alignment_dist); }
       output.Resize(this->get_output_size(i), mini_batch_size);
     }
   }
 
   void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) final
   {
-    // int tag= 0 ;
     int rank = El::mpi::Rank(this->get_subgrid_comm());
     const auto& gradient_wrt_output = this->get_prev_error_signals(rank);
+    auto& gradient_wrt_input = this->get_error_signals(rank);
+    El::Copy(gradient_wrt_output, gradient_wrt_input);
 
-    // for (int i = 0; i < this->get_num_parents(); ++i) {
+    auto* const gradient_wrt_input_cast = dynamic_cast<
+      El::DistMatrix<TensorDataType, El::STAR, El::VC, El::ELEMENT, Dev>*>(
+      &gradient_wrt_input);
 
-    El::LockedView(this->get_error_signals(rank), gradient_wrt_output);
+    
 
-    // }
+    const El::Int mloc = gradient_wrt_input_cast->LocalHeight();
+    const El::Int nloc = gradient_wrt_input_cast->LocalWidth();
+
+    El::Matrix<TensorDataType, Dev> temp_output(mloc, nloc);
+
+    El::Copy(gradient_wrt_input_cast->LockedMatrix(), temp_output);
+
+    auto const syncInfoOutput =
+      El::SyncInfoFromMatrix(temp_output);
+
+    El::AllReduce(gradient_wrt_input,
+                       this->get_subgrid_comm(),
+                       El::mpi::SUM);
   }
 
-  using data_type_layer<TensorDataType>::bp_compute;
+  void bp_compute() final { }
 };
 
 LBANN_DEFINE_LAYER_BUILDER(cross_grid_sum);

@@ -403,17 +403,7 @@ private:
    *
    *  The default behavior is dynamic allocation.
    */
-  bool m_persistent_error_signals = false;
-
-  /** Inter subgrids comm for STAR,VC distribution
-  */
-  // El::mpi::Comm interSubGridVCComm;
-  // std::shared_ptr<El::mpi::Comm>  interSubGridVCComm;
-
-
-
-
-  
+  bool m_persistent_error_signals = false;  
 
 #ifdef LBANN_HAS_DISTCONV
   friend class data_type_distconv_adapter<TensorDataType>;

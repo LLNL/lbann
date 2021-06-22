@@ -80,27 +80,6 @@ protected:
 
     for (int i = 0; i < this->get_num_children(); ++i)
       this->set_output_dims(output_dims_slice, i);
-
-    // // Check that input dimensions match
-    // const auto& output_dims = this->get_output_dims();
-    // for (int i = 0; i < this->get_num_parents(); ++i) {
-    //   if (this->get_input_dims(i) != output_dims) {
-    //     const auto& parents = this->get_parent_layers();
-    //     std::stringstream err;
-    //     err << get_type() << " layer \"" << this->get_name() << "\" "
-    //         << "has input tensors with incompatible dimensions (";
-    //     for (int j = 0; j < this->get_num_parents(); ++j) {
-    //       const auto& dims = this->get_input_dims(j);
-    //       err << (j > 0 ? ", " : "")
-    //           << "layer \"" << parents[j]->get_name() << "\" outputs ";
-    //       for (size_t k = 0; k < dims.size(); ++k) {
-    //         err << (k > 0 ? " x " : "") << dims[k];
-    //       }
-    //     }
-    //     err << ")";
-    //     LBANN_ERROR(err.str());
-    //   }
-    // }
   }
 
   void fp_compute() override
@@ -151,35 +130,18 @@ protected:
 
     int const col_stride = (last_dim_start_point * last_dim) - num_row_elements;
 
-    int const last_dim_index = last_dim_start_point *
-                               int(last_dim / subgrid_comm_size) *
+    int const last_dim_index = int(last_dim / subgrid_comm_size) *
                                subgrid_comm_rank;
 
-    // int rank = El::mpi::Rank(this->get_subgrid_comm());
-    // std::cout<<"I am here and Rank is "<< rank<< "\n"<<std::flush;
-
-    // auto& output = this->get_activations(rank);
-    // auto& input = this->get_prev_activations(rank);
-
-    // auto parents = this->get_parent_layers()[rank];
-
-    // El::DistMatrix<TensorDataType,El::STAR,El::VC,El::ELEMENT,Dev>*
-    // output_cast =
-    //                 dynamic_cast<El::DistMatrix<TensorDataType,El::STAR,El::VC,El::ELEMENT,Dev>*>(&output);
-
-    // El::mpi::Comm const& CommA = output_cast->Grid().ViewingComm();
-    // El::SyncInfo<Dev> syncInfoOutput =
-    // El::SyncInfoFromMatrix(output_cast->LockedMatrix());
-
     El::copy::util::InterleaveMatrix(
-      num_row_elements,
-      input.LocalWidth(),
+      (last_dim / subgrid_comm_size),
+      input.LocalWidth() * last_dim_start_point,
       after_allreduce.LockedBuffer(last_dim_index, 0),
       1,
-      col_stride,
+      last_dim ,
       output_cast->Buffer(),
       1,
-      num_row_elements,
+      (last_dim / subgrid_comm_size),
       sync_info_output);
   }
 
@@ -203,6 +165,8 @@ protected:
   {
     auto const subgrid_comm_rank = El::mpi::Rank(this->get_subgrid_comm());
     auto const subgrid_comm_size = El::mpi::Size(this->get_subgrid_comm());
+    const auto input_dims = this->get_input_dims();
+    int last_dim = input_dims.back();
 
     auto& input_grad = this->get_error_signals(subgrid_comm_rank);
     const auto& gradient_wrt_output =
@@ -218,25 +182,33 @@ protected:
 
     int mloc = gradient_wrt_output_cast->LocalHeight();
     int nloc = gradient_wrt_output_cast->LocalWidth();
+    int per_grid_last_dim = last_dim/subgrid_comm_size;
 
     El::Matrix<TensorDataType, Dev> temp_input(nloc, mloc),
-      temp_output(nloc, mloc * subgrid_comm_size);
+      temp_output(nloc*(mloc/per_grid_last_dim), last_dim),
+      transposed(nloc*(mloc/per_grid_last_dim), per_grid_last_dim),
+      transposed_output(last_dim, nloc*(mloc/per_grid_last_dim));
 
-    El::Transpose(gradient_wrt_output_cast->LockedMatrix(), temp_input);
+    El::Copy(gradient_wrt_output_cast->LockedMatrix(), temp_input);
+    temp_input.Resize(per_grid_last_dim, nloc*(mloc/per_grid_last_dim));
 
-    El::mpi::AllGather(temp_input.Buffer(),
+    El::Transpose(temp_input, transposed);
+
+    El::mpi::AllGather(transposed.Buffer(),
                        mloc * nloc,
                        temp_output.Buffer(),
                        mloc * nloc,
                        this->get_subgrid_comm(),
                        syncSubGridCommunication);
 
-    gradient_wrt_input_cast->Resize(this->get_input_size(), mini_batch_size);
+    El::Transpose(temp_output, transposed_output);
+    transposed_output.Resize(mloc*subgrid_comm_size, nloc);
 
-    El::Transpose(temp_output, gradient_wrt_input_cast->Matrix());
+    gradient_wrt_input_cast->Resize(this->get_input_size(), mini_batch_size);
+    El::Copy(transposed_output, gradient_wrt_input_cast->Matrix());
   }
 
-  using data_type_layer<TensorDataType>::bp_compute;
+  void bp_compute() final {}
 };
 
 LBANN_DEFINE_LAYER_BUILDER(cross_grid_sum_slice);
