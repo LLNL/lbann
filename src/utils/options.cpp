@@ -171,6 +171,18 @@ void construct_std_options() {
   arg_parser.add_flag("ltfb_verbose",
                       {"--ltfb_verbose"},
                       "Increases number of per-trainer messages that are reported");
+  arg_parser.add_flag("ltfb",
+                      {"--ltfb"},
+                      "TODO");
+  arg_parser.add_flag("st_on",
+                      {"--st_on"},
+                      "TODO");
+  arg_parser.add_flag("st_full_trace",
+                      {"--st_full_trace"},
+                      "TODO");
+  arg_parser.add_flag("fn",
+                      {"--fn"},
+                      "TODO");
   arg_parser.add_flag("load_model_weights_dir_is_complete",
                       {"--load_model_weights_dir_is_complete"},
                       "Use load_model_weights_dir as given, ignoring checkpoint hierarchy");
@@ -178,6 +190,75 @@ void construct_std_options() {
 
 void construct_datareader_options() {
   auto& arg_parser = global_argument_parser();
+  arg_parser.add_flag("write_sample_label_list",
+                      {"--write_sample_label_list"},
+                      "TODO");
+  arg_parser.add_flag("keep_sample_order",
+                      {"--keep_sample_order"},
+                      "TODO");
+  arg_parser.add_flag("data_store_no_thread",
+                      {"--data_store_no_thread"},
+                      "TODO");
+  arg_parser.add_flag("data_store_fail",
+                      {"--data_store_fail"},
+                      "TODO");
+  arg_parser.add_flag("data_store_test_checkpoint",
+                      {"--data_store_test_checkpoint"},
+                      "TODO");
+  arg_parser.add_flag("data_store_spill",
+                      {"--data_store_spill"},
+                      "TODO");
+  arg_parser.add_flag("data_store_cache",
+                      {"--data_store_cache"},
+                      "TODO");
+  arg_parser.add_flag("data_store_profile",
+                      {"--data_store_profile"},
+                      "TODO");
+  arg_parser.add_flag("data_store_test_cache",
+                      {"--data_store_test_cache"},
+                      "TODO");
+  arg_parser.add_flag("data_store_min_max_timing",
+                      {"--data_store_min_max_timing"},
+                      "TODO");
+  arg_parser.add_flag("data_store_debug",
+                      {"--data_store_debug"},
+                      "TODO");
+  arg_parser.add_flag("check_data",
+                      {"--check_data"},
+                      "TODO");
+  arg_parser.add_flag("load_full_sample_list_once",
+                      {"--load_full_sample_list_once"},
+                      "TODO");
+  arg_parser.add_flag("test_encode",
+                      {"--test_encode"},
+                      "TODO");
+  arg_parser.add_flag("make_test_fail",
+                      {"--make_test_fail"},
+                      "TODO");
+  arg_parser.add_option("image_sizes_filename",
+                        {"--image_sizes_filename"},
+                        "TODO",
+                        "");
+  arg_parser.add_option("delimiter",
+                        {"--delimiter"},
+                        "TODO",
+                        "");
+  arg_parser.add_option("sequence_length",
+                        {"--sequence_length"},
+                        "TODO",
+                        -1);
+  arg_parser.add_option("n_lines",
+                        {"--n_lines"},
+                        "TODO",
+                        -1);
+  arg_parser.add_option("pad_index",
+                        {"--pad_index"},
+                        "TODO",
+                        -1);
+  arg_parser.add_option("vocab",
+                        {"--vocab"},
+                        "TODO",
+                        "");
   arg_parser.add_option("data_filedir",
                         {"--data_filedir"},
                         "Sets the file direcotry for train and test data",
@@ -186,20 +267,56 @@ void construct_datareader_options() {
                         {"--data_filedir_train"},
                         "TODO",
                         "");
+  arg_parser.add_option("data_filedir_test",
+                        {"--data_filedir_test"},
+                        "TODO",
+                        "");
+  arg_parser.add_option("data_filedir_validate",
+                        {"--data_filedir_validate"},
+                        "TODO",
+                        "");
   arg_parser.add_option("data_filename_train",
                         {"--data_filename_train"},
+                        "TODO",
+                        "");
+  arg_parser.add_option("data_filename_test",
+                        {"--data_filename_test"},
+                        "TODO",
+                        "");
+  arg_parser.add_option("data_filename_validate",
+                        {"--data_filename_validate"},
                         "TODO",
                         "");
   arg_parser.add_option("sample_list_train",
                         {"--sample_list_train"},
                         "TODO",
                         "");
+  arg_parser.add_option("sample_list_test",
+                        {"--sample_list_test"},
+                        "TODO",
+                        "");
+  arg_parser.add_option("sample_list_validate",
+                        {"--sample_list_validate"},
+                        "TODO",
+                        "");
   arg_parser.add_option("label_filename_train",
                         {"--label_filename_train"},
                         "TODO",
                         "");
+  arg_parser.add_option("label_filename_test",
+                        {"--label_filename_test"},
+                        "TODO",
+                        "");
+  arg_parser.add_option("label_filename_validate",
+                        {"--label_filename_validate"},
+                        "TODO",
+                        "");
   arg_parser.add_option("data_reader_percent",
                         {"--data_reader_percent"},
+                        "TODO",
+                        0);
+  arg_parser.add_option("absolute_sample_count",
+                        {"--absolute_sample_count"},
                         "TODO",
                         0);
   arg_parser.add_flag("share_testing_data_readers",
@@ -236,6 +353,9 @@ void construct_jag_options() {
   auto& arg_parser = global_argument_parser();
   arg_parser.add_flag("jag",
                       {"--jag"},
+                      "TODO");
+  arg_parser.add_flag("jag_partitioned",
+                      {"--jag_partitioned"},
                       "TODO");
   arg_parser.add_option("filelist",
                         {"--filelist"},
@@ -317,6 +437,10 @@ void construct_callback_options() {
                         {"--image_dir"},
                         "if the model has callback_save_images, this determines where the"
                         "images are saved",
+                        "");
+  arg_parser.add_option("ckpt_dir",
+                        {"--ckpt_dir"},
+                        "TODO",
                         "");
   arg_parser.add_flag("no_im_comm",
                       {"--no_im_comm"},
