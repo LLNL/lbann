@@ -132,6 +132,10 @@ def setup_motifs(script, config):
     distributed_graph_dir = config.get('Motifs', 'distributed_graph_dir')
     prunejuice_exec = config.get('Motifs', 'prunejuice_exec')
     prunejuice_output_dir = config.get('Motifs', 'prunejuice_output_dir')
+
+    # Skip if motif file already exists
+    if motif_file and os.path.exists(motif_file):
+        return
     assert (graph_file and motif_file and pattern_dir
             and graph_ingest_exec and distributed_graph_dir
             and prunejuice_exec and prunejuice_output_dir), \

@@ -163,6 +163,12 @@ void communitygan_reader::load() {
 
   }
 
+  if (m_motifs.empty()) {
+    LBANN_ERROR(
+      "CommunityGAN data reader found no local vertices ",
+      "in motif file ",m_motif_file);
+  }
+
   // Register with "setup CommunityGAN data reader" callback
   ::lbann::callback::setup_communitygan_data_reader::register_communitygan_data_reader(this);
 
