@@ -39,7 +39,7 @@ using Dim3 = gpu_lib::array<size_t, 3>;
  *
  *  output(j,indices(j,i)) = values(j,i)
  *
- *  Block dimensions: bdimx x bdimy x 1
+ *  Block dimensions: bdimx x bdimy x bdimz
  *
  *  Grid dimensions: (values_dim[1] / bdimx) x (values_dim[0] / bdimy) x 1
  */
@@ -70,21 +70,17 @@ __global__ void scatter2d_kernel(
   auto num_value_columns = values_dims[2];
 
 
-  for (size_t j=gidy; j<mini_batch_size; j+=nthreadsz) {
-    for (size_t k=gidx; k<num_rows; k+=nthreadsx) {
-      for (size_t i=gidz; i<num_value_columns; i+=nthreadsy ){
-
+  for (size_t batch = gidz; batch < mini_batch_size; batch+=nthreadsz){
+    for(size_t row = gidy; row < num_rows; row+=nthreadsy){
+      for (size_t i = gidx; i < num_value_columns; i+=nthreadsx){
         const auto ind = static_cast<El::Int>(
           gpu_lib::floor(
-            indices[j*indices_strides[0] + i*indices_strides[1]]));
-        
-        if (0<=ind && ind<static_cast<El::Int>(num_out_columns)) {
-
-          const auto& x = values[j*values_strides[0] + k*values_strides[1] + i*values_strides[2]];
-
-          auto& y = output[j*output_strides[0] + k*output_strides[1]+ind*output_strides[2]];
+            indices[batch*indices_strides[0] + i*indices_strides[1]]));
+        if (0<=ind && ind < static_cast<El::Int>(num_out_columns)){
+          const auto& x = values[batch*values_strides[0] + row*values_strides[1] + i*values_strides[2]];
+          auto &y = output[batch*output_strides[0] + row*output_strides[1] + ind*output_strides[2]];
           gpu_lib::atomic_add(&y, x);
-        }        
+        }
       }
     }
   }
@@ -175,15 +171,19 @@ void scatter_layer<TensorDataType, Layout, Device>::fp_compute() {
     auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_output),
                                        gpu::get_sync_info(local_values),
                                        gpu::get_sync_info(local_indices));
-    constexpr size_t block_size = 8;
+    constexpr size_t block_size_x = 32;
+    constexpr size_t block_size_y = 8;
+    
     dim3 block_dims, grid_dims;
-    block_dims.x = 1;
-    block_dims.y = block_size;
+    block_dims.x = block_size_x;
+    block_dims.y = block_size_y;
     block_dims.z = 1;
 
-    grid_dims.x = (num_rows + block_dims.x - 1) / block_dims.x;
-    grid_dims.y = (values_size + block_dims.y - 1) / block_dims.y;
+    grid_dims.x = (values_size + block_dims.x - 1) / block_dims.x;
+    grid_dims.y = (num_rows + block_dims.y - 1) / block_dims.y;
     grid_dims.z = (local_mini_batch_size + block_dims.z - 1) / block_dims.z; 
+
+
 
     std::cout << "Num Rows " << num_rows 
               << " Num Y columns " << output_size 
