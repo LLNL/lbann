@@ -165,7 +165,7 @@ int main(int argc, char *argv[]) {
 
 void get_random_sample_indices(const std::unordered_set<int> &exclude, std::set<int> &indices, int global_num_samples) {
   size_t num_samples = options::get()->get_int("num_samples");
-  int seed = options::get()->get_int("rand_seed");
+  int seed = options::get()->get_int("random_seed");
   srand(seed);
   while (indices.size() < num_samples) {
     int v = rand() % global_num_samples;
@@ -178,12 +178,12 @@ void get_random_sample_indices(const std::unordered_set<int> &exclude, std::set<
 std::string usage() {
     std::string u =
       "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n"
-      "usage: extract_random_samples --index_fn=<string> --num_samples=<int> --output_base_dir=<string> --rand_seed=<int> [ --exclude=<string> ] [ --num_samples_per_output_file=<int> ]\n"
+      "usage: extract_random_samples --index_fn=<string> --num_samples=<int> --output_base_dir=<string> --random_seed=<int> [ --exclude=<string> ] [ --num_samples_per_output_file=<int> ]\n"
       "where: --index_fn is the output file from the build_index executable\n"
       "       --num_samples is the number of random samples to be extracted\n"
       "       --output_base_dir will be created if it doesn't exist\n"
       "       --exclude is an optional filename containing IDs of samples that should not appear in the output\n"
-      "       --rand_seed is required to ensure all procs generate identical random sample indices.\n"
+      "       --random_seed is required to ensure all procs generate identical random sample indices.\n"
       "       --num_samples_per_file is number of samples per output file; default is 1000 (a maximum of one output file per processor may contain fewer)\n"
       "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n\n";
     return u;
@@ -277,7 +277,7 @@ void check_invocation(bool master) {
   if (arg_parser.get<std::string>("index_fn") == "" ||
       arg_parser.get<int>("num_samples") == -1 ||
       arg_parser.get<std::string>("output_base_dir") == "" ||
-      arg_parser.get<int>("rand_seed") == -1) {
+      arg_parser.get<int>("random_seed") == -1) {
     if (master) {
       throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: improper invocation; see usage message below\n\n " + usage() + "\n\n");
     }
