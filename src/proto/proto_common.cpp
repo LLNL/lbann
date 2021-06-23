@@ -856,7 +856,7 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
   if (arg_parser.get<std::string>("sample_list_test") != "") {
     set_data_readers_sample_list("test", p);
   }
-  if (arg_parser.get<float>("data_reader_percent") != 0.) {
+  if (arg_parser.get<float>("data_reader_percent") != 0.0) {
     set_data_readers_percent(p);
   }
   if (arg_parser.get<bool>("no_im_comm")) {

@@ -31,9 +31,26 @@ namespace lbann {
 
 void construct_std_options() {
   auto& arg_parser = global_argument_parser();
-  arg_parser.add_required_argument<std::string>
-                                  ("prototext",
-                                   "Prototext file containing experiment");
+  arg_parser.add_option("prototext",
+                        {"--prototext"},
+                        "Prototext file containing experiment",
+                        "");
+  arg_parser.add_option("model",
+                        {"--model"},
+                        "TODO",
+                        "");
+  arg_parser.add_option("reader",
+                        {"--reader"},
+                        "TODO",
+                        "");
+  arg_parser.add_option("metadata",
+                        {"--metadata"},
+                        "TODO",
+                        "");
+  arg_parser.add_option("optimizer",
+                        {"--optimizer"},
+                        "TODO",
+                        "");
   arg_parser.add_flag("help",
                       {"--help", "-h"},
                       "Prints the help message");
@@ -314,7 +331,7 @@ void construct_datareader_options() {
   arg_parser.add_option("data_reader_percent",
                         {"--data_reader_percent"},
                         "TODO",
-                        0);
+                        (float)0);
   arg_parser.add_option("absolute_sample_count",
                         {"--absolute_sample_count"},
                         "TODO",

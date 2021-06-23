@@ -20,6 +20,7 @@ namespace lbann {
 #define TRAINER_GRID_HEIGHT "Height of 2D process grid for each trainer"
 
 void construct_callback_options();
+void construct_jag_options();
 void construct_datareader_options();
 void construct_std_options();
 void construct_all_options();

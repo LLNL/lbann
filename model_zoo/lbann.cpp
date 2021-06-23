@@ -158,7 +158,7 @@ int main(int argc, char* argv[])
       trainer_rank = comm->get_trainer_rank();
     }
     // Load the prototexts specificed on the command line
-    auto pbs = protobuf_utils::load_prototext(master, argc, argv, trainer_rank);
+    auto pbs = protobuf_utils::load_prototext(master, trainer_rank);
     // Optionally over-ride some values in the prototext for each model
     for (size_t i = 0; i < pbs.size(); i++) {
       get_cmdline_overrides(*comm, *(pbs[i]));

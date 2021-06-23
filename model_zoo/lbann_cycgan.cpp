@@ -111,7 +111,7 @@ int main(int argc, char *argv[]) {
 
     std::ostringstream err;
 
-    auto pbs = protobuf_utils::load_prototext(master, argc, argv);
+    auto pbs = protobuf_utils::load_prototext(master);
     // Optionally over-ride some values in the prototext for each model
     for(size_t i = 0; i < pbs.size(); i++) {
       get_cmdline_overrides(*comm, *(pbs[i]));
