@@ -316,10 +316,12 @@ private:
               const std::string& new_pathname,
               conduit::Node& node);
 
+public:
   void normalize(conduit::Node& node,
                  const std::string& path,
                  const conduit::Node& metadata);
 
+private:
   /** Constructs m_data_dims_lookup_table and m_linearized_size_lookup_table */
   void construct_linearized_size_lookup_tables();
 
