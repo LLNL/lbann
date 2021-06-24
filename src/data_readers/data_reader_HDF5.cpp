@@ -132,7 +132,7 @@ void hdf5_data_reader::pack(std::string const& group_name,
       LBANN_ERROR("no leaf for path: ", path);
     }
     conduit::Node& leaf = node[path];
-    memcpy(data.data() + idx, leaf.data_ptr(), n_elts * sizeof(T));
+    memcpy(data.data() + idx, leaf.element_ptr(0), n_elts * sizeof(T));
     if (m_delete_packed_fields) {
       node.remove(path);
     }
@@ -375,7 +375,7 @@ void hdf5_data_reader::normalize(conduit::Node& node,
                                  const std::string& path,
                                  const conduit::Node& metadata)
 {
-  void* vals = node[path].data_ptr();
+  void* vals = node[path].element_ptr(0);
   size_t n_elements = node[path].dtype().number_of_elements();
 
   // treat this as a multi-channel image
@@ -728,7 +728,7 @@ void hdf5_data_reader::coerce(const conduit::Node& metadata,
   conduit::relay::io::hdf5_read(file_handle, original_path, tmp);
 
   // yay! I finally get to use a void*
-  void* vals = tmp.data_ptr();
+  void* vals = tmp.element_ptr(0);
   size_t num_elements = tmp.dtype().number_of_elements();
 
   // get data type for data from disk
@@ -784,7 +784,7 @@ void hdf5_data_reader::repack_image(conduit::Node& node,
   }
   // ==== end: sanity checking
 
-  void* vals = node[path].data_ptr();
+  void* vals = node[path].element_ptr(0);
   size_t n_bytes = node[path].dtype().number_of_elements() *
                    node[path].dtype().element_bytes();
   int64_t n_channels = metadata["channels"].value();
