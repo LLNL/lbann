@@ -216,32 +216,32 @@ void construct_datastore_options() {
   auto& arg_parser = global_argument_parser();
 
   // Bool flags
-  arg_parser.add_flag("data_store_no_thread",
-                      {"--data_store_no_thread"},
-                      "TODO");
-  arg_parser.add_flag("data_store_fail",
-                      {"--data_store_fail"},
-                      "TODO");
-  arg_parser.add_flag("data_store_test_checkpoint",
-                      {"--data_store_test_checkpoint"},
-                      "TODO");
-  arg_parser.add_flag("data_store_spill",
-                      {"--data_store_spill"},
-                      "TODO");
-  arg_parser.add_flag("data_store_cache",
+  arg_parser.add_flag(DATA_STORE_CACHE,
                       {"--data_store_cache"},
                       "TODO");
-  arg_parser.add_flag("data_store_profile",
-                      {"--data_store_profile"},
+  arg_parser.add_flag(DATA_STORE_DEBUG,
+                      {"--data_store_debug"},
                       "TODO");
-  arg_parser.add_flag("data_store_test_cache",
-                      {"--data_store_test_cache"},
+  arg_parser.add_flag(DATA_STORE_FAIL,
+                      {"--data_store_fail"},
                       "TODO");
-  arg_parser.add_flag("data_store_min_max_timing",
+  arg_parser.add_flag(DATA_STORE_MIN_MAX_TIMING,
                       {"--data_store_min_max_timing"},
                       "TODO");
-  arg_parser.add_flag("data_store_debug",
-                      {"--data_store_debug"},
+  arg_parser.add_flag(DATA_STORE_NO_THREAD,
+                      {"--data_store_no_thread"},
+                      "TODO");
+  arg_parser.add_flag(DATA_STORE_PROFILE,
+                      {"--data_store_profile"},
+                      "TODO");
+  arg_parser.add_flag(DATA_STORE_SPILL,
+                      {"--data_store_spill"},
+                      "TODO");
+  arg_parser.add_flag(DATA_STORE_TEST_CACHE,
+                      {"--data_store_test_cache"},
+                      "TODO");
+  arg_parser.add_flag(DATA_STORE_TEST_CHECKPOINT,
+                      {"--data_store_test_checkpoint"},
                       "TODO");
 }
 
@@ -249,138 +249,138 @@ void construct_datareader_options() {
   auto& arg_parser = global_argument_parser();
 
   // Bool flags
-  arg_parser.add_flag("share_testing_data_readers",
-                      {"--share_testing_data_readers"},
-                      "TODO");
-  arg_parser.add_flag("create_tarball",
-                      {"--create_tarball"},
-                      "TODO");
-  arg_parser.add_flag("all_gather_old",
+  arg_parser.add_flag(ALL_GATHER_OLD,
                       {"--all_gather_old"},
                       "TODO");
-  arg_parser.add_flag("disable_signal_handler",
-                      {"--disable_signal_handler"},
-                      "TODO");
-  arg_parser.add_flag("stack_trace_to_file",
-                      {"--stack_trace_to_file"},
-                      "TODO");
-  arg_parser.add_flag("generate_multi_proto",
-                      {"--generate_multi_proto"},
-                      "TODO");
-  arg_parser.add_flag("exit_after_setup",
-                      {"--exit_after_setup"},
-                      "TODO");
-  arg_parser.add_flag("node_sizes_vary",
-                      {"--node_size_vary"},
-                      "TODO");
-  arg_parser.add_flag("write_sample_label_list",
-                      {"--write_sample_label_list"},
-                      "TODO");
-  arg_parser.add_flag("keep_sample_order",
-                      {"--keep_sample_order"},
-                      "TODO");
-  arg_parser.add_flag("check_data",
+  arg_parser.add_flag(CHECK_DATA,
                       {"--check_data"},
                       "TODO");
-  arg_parser.add_flag("load_full_sample_list_once",
+  arg_parser.add_flag(CREATE_TARBALL,
+                      {"--create_tarball"},
+                      "TODO");
+  arg_parser.add_flag(DISABLE_SIGNAL_HANDLER,
+                      {"--disable_signal_handler"},
+                      "TODO");
+  arg_parser.add_flag(EXIT_AFTER_SETUP,
+                      {"--exit_after_setup"},
+                      "TODO");
+  arg_parser.add_flag(GENERATE_MULTI_PROTO,
+                      {"--generate_multi_proto"},
+                      "TODO");
+  arg_parser.add_flag(KEEP_SAMPLE_ORDER,
+                      {"--keep_sample_order"},
+                      "TODO");
+  arg_parser.add_flag(LOAD_FULL_SAMPLE_LIST_ONCE,
                       {"--load_full_sample_list_once"},
                       "TODO");
-  arg_parser.add_flag("test_encode",
+  arg_parser.add_flag(MAKE_TEST_FAIL,
+                      {"--make_test_fail"},
+                      "TODO");
+  arg_parser.add_flag(NODE_SIZES_VARY,
+                      {"--node_size_vary"},
+                      "TODO");
+  arg_parser.add_flag(SHARE_TESTING_DATA_READERS,
+                      {"--share_testing_data_readers"},
+                      "TODO");
+  arg_parser.add_flag(STACK_TRACE_TO_FILE,
+                      {"--stack_trace_to_file"},
+                      "TODO");
+  arg_parser.add_flag(TEST_ENCODE,
                       {"--test_encode"},
                       "TODO");
-  arg_parser.add_flag("make_test_fail",
-                      {"--make_test_fail"},
+  arg_parser.add_flag(WRITE_SAMPLE_LABEL_LIST,
+                      {"--write_sample_label_list"},
                       "TODO");
 
   // Input options
-  arg_parser.add_option("image_sizes_filename",
-                        {"--image_sizes_filename"},
-                        "TODO",
-                        "");
-  arg_parser.add_option("delimiter",
-                        {"--delimiter"},
-                        "TODO",
-                        "");
-  arg_parser.add_option("sequence_length",
-                        {"--sequence_length"},
-                        "TODO",
-                        -1);
-  arg_parser.add_option("n_lines",
-                        {"--n_lines"},
-                        "TODO",
-                        -1);
-  arg_parser.add_option("pad_index",
-                        {"--pad_index"},
-                        "TODO",
-                        -1);
-  arg_parser.add_option("vocab",
-                        {"--vocab"},
-                        "TODO",
-                        "");
-  arg_parser.add_option("data_filedir",
-                        {"--data_filedir"},
-                        "Sets the file direcotry for train and test data",
-                        "");
-  arg_parser.add_option("data_filedir_train",
-                        {"--data_filedir_train"},
-                        "TODO",
-                        "");
-  arg_parser.add_option("data_filedir_test",
-                        {"--data_filedir_test"},
-                        "TODO",
-                        "");
-  arg_parser.add_option("data_filedir_validate",
-                        {"--data_filedir_validate"},
-                        "TODO",
-                        "");
-  arg_parser.add_option("data_filename_train",
-                        {"--data_filename_train"},
-                        "TODO",
-                        "");
-  arg_parser.add_option("data_filename_test",
-                        {"--data_filename_test"},
-                        "TODO",
-                        "");
-  arg_parser.add_option("data_filename_validate",
-                        {"--data_filename_validate"},
-                        "TODO",
-                        "");
-  arg_parser.add_option("sample_list_train",
-                        {"--sample_list_train"},
-                        "TODO",
-                        "");
-  arg_parser.add_option("sample_list_test",
-                        {"--sample_list_test"},
-                        "TODO",
-                        "");
-  arg_parser.add_option("sample_list_validate",
-                        {"--sample_list_validate"},
-                        "TODO",
-                        "");
-  arg_parser.add_option("label_filename_train",
-                        {"--label_filename_train"},
-                        "TODO",
-                        "");
-  arg_parser.add_option("label_filename_test",
-                        {"--label_filename_test"},
-                        "TODO",
-                        "");
-  arg_parser.add_option("label_filename_validate",
-                        {"--label_filename_validate"},
-                        "TODO",
-                        "");
-  arg_parser.add_option("data_reader_percent",
-                        {"--data_reader_percent"},
-                        "TODO",
-                        (float)0);
-  arg_parser.add_option("absolute_sample_count",
+  arg_parser.add_option(ABSOLUTE_SAMPLE_COUNT,
                         {"--absolute_sample_count"},
                         "TODO",
                         0);
-  arg_parser.add_option("test_tarball",
+  arg_parser.add_option(DATA_FILEDIR,
+                        {"--data_filedir"},
+                        "Sets the file direcotry for train and test data",
+                        "");
+  arg_parser.add_option(DATA_FILEDIR_TEST,
+                        {"--data_filedir_test"},
+                        "TODO",
+                        "");
+  arg_parser.add_option(DATA_FILEDIR_TRAIN,
+                        {"--data_filedir_train"},
+                        "TODO",
+                        "");
+  arg_parser.add_option(DATA_FILEDIR_VALIDATE,
+                        {"--data_filedir_validate"},
+                        "TODO",
+                        "");
+  arg_parser.add_option(DATA_FILENAME_TEST,
+                        {"--data_filename_test"},
+                        "TODO",
+                        "");
+  arg_parser.add_option(DATA_FILENAME_TRAIN,
+                        {"--data_filename_train"},
+                        "TODO",
+                        "");
+  arg_parser.add_option(DATA_FILENAME_VALIDATE,
+                        {"--data_filename_validate"},
+                        "TODO",
+                        "");
+  arg_parser.add_option(DATA_READER_PERCENT,
+                        {"--data_reader_percent"},
+                        "TODO",
+                        (float)0);
+  arg_parser.add_option(DELIMITER,
+                        {"--delimiter"},
+                        "TODO",
+                        "");
+  arg_parser.add_option(IMAGE_SIZES_FILENAME,
+                        {"--image_sizes_filename"},
+                        "TODO",
+                        "");
+  arg_parser.add_option(LABEL_FILENAME_TEST,
+                        {"--label_filename_test"},
+                        "TODO",
+                        "");
+  arg_parser.add_option(LABEL_FILENAME_TRAIN,
+                        {"--label_filename_train"},
+                        "TODO",
+                        "");
+  arg_parser.add_option(LABEL_FILENAME_VALIDATE,
+                        {"--label_filename_validate"},
+                        "TODO",
+                        "");
+  arg_parser.add_option(N_LINES,
+                        {"--n_lines"},
+                        "TODO",
+                        -1);
+  arg_parser.add_option(PAD_INDEX,
+                        {"--pad_index"},
+                        "TODO",
+                        -1);
+  arg_parser.add_option(SAMPLE_LIST_TEST,
+                        {"--sample_list_test"},
+                        "TODO",
+                        "");
+  arg_parser.add_option(SAMPLE_LIST_TRAIN,
+                        {"--sample_list_train"},
+                        "TODO",
+                        "");
+  arg_parser.add_option(SAMPLE_LIST_VALIDATE,
+                        {"--sample_list_validate"},
+                        "TODO",
+                        "");
+  arg_parser.add_option(SEAUENCE_LENGTH,
+                        {"--sequence_length"},
+                        "TODO",
+                        -1);
+  arg_parser.add_option(TEST_TARBALL,
                         {"--test_tarball"},
                         "TODO",
                         0);
+  arg_parser.add_option(VOCAB,
+                        {"--vocab"},
+                        "TODO",
+                        "");
 }
 
 void construct_jag_options() {

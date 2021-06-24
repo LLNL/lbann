@@ -57,10 +57,64 @@ namespace lbann {
 #define ALLOW_GLOBAL_STATISTICS "LTFB Allow global statistics"
 #define SUPER_NODE "super_node"
 
-void construct_callback_options();
-void construct_jag_options();
-void construct_datareader_options();
+/****** datastore options ******/
+// Bool flags
+#define DATA_STORE_CACHE "data_store_cache"
+#define DATA_STORE_DEBUG "data_store_debug"
+#define DATA_STORE_FAIL "data_store_fail"
+#define DATA_STORE_MIN_MAX_TIMING "data_store_min_max_timing"
+#define DATA_STORE_NO_THREAD "data_store_no_thread"
+#define DATA_STORE_PROFILE "data_store_profile"
+#define DATA_STORE_SPILL "data_store_spill"
+#define DATA_STORE_TEST_CACHE "data_store_test_cache"
+#define DATA_STORE_TEST_CHECKPOINT "data_store_test_checkpoint"
+
+/****** datareader options ******/
+// Bool flags
+#define ALL_GATHER_OLD "all_gather_old"
+#define CHECK_DATA "check_data"
+#define CREATE_TARBALL "create_tarball"
+#define DISABLE_SIGNAL_HANDLER "disable_signal_handler"
+#define EXIT_AFTER_SETUP "exit_after_setup"
+#define GENERATE_MULTI_PROTO "generate_multi_proto"
+#define KEEP_SAMPLE_ORDER "keep_sample_order"
+#define LOAD_FULL_SAMPLE_LIST_ONCE "load_full_sample_list_once"
+#define MAKE_TEST_FAIL "make_test_fail"
+#define NODE_SIZES_VARY "node_sizes_vary"
+#define SHARE_TESTING_DATA_READERS "share_testing_data_readers"
+#define STACK_TRACE_TO_FILE "stack_trace_to_file"
+#define TEST_ENCODE "test_encode"
+#define WRITE_SAMPLE_LABEL_LIST "write_samples_label_list"
+
+// Input options
+#define ABSOLUTE_SAMPLE_COUNT "absolute_sample_count"
+#define DATA_FILEDIR "data_filedir"
+#define DATA_FILEDIR_TEST "data_filedir_test"
+#define DATA_FILEDIR_TRAIN "data_filedir_train"
+#define DATA_FILEDIR_VALIDATE "data_filedir_validate"
+#define DATA_FILENAME_TEST "data_filename_test"
+#define DATA_FILENAME_TRAIN "data_filename_train"
+#define DATA_FILENAME_VALIDATE "data_filename_validate"
+#define DATA_READER_PERCENT "data_reader_percent"
+#define DELIMITER "delimiter"
+#define IMAGE_SIZES_FILENAME "image_sizes_filename"
+#define LABEL_FILENAME_TEST "label_filename_test"
+#define LABEL_FILENAME_TRAIN "label_filename_train"
+#define LABEL_FILENAME_VALIDATE "label_filename_validate"
+#define N_LINES "n_lines"
+#define PAD_INDEX "pad_index"
+#define SAMPLE_LIST_TEST "sample_list_test"
+#define SAMPLE_LIST_TRAIN "sample_list_train"
+#define SAMPLE_LIST_VALIDATE "sample_list_validate"
+#define SEQUENCE_LENGTH "sequence_length"
+#define TEST_TARBALL "test_tarball"
+#define VOCAB "vocab"
+
 void construct_std_options();
+void construct_datastore_options();
+void construct_datareader_options();
+void construct_jag_options();
+void construct_callback_options();
 void construct_all_options();
 
 } // namespace lbann
