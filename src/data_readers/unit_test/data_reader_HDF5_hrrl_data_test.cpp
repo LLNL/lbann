@@ -125,106 +125,58 @@ TEST_CASE("hdf5 data reader transform tests",
           "[mpi][data_reader][hdf5][hrrl][.filesystem]")
 {
   // initialize stuff (boilerplate)
-  //  auto& comm = unit_test::utilities::current_world_comm();
   lbann::init_random(0, 2);
   lbann::init_data_seq_random(42);
-
-  // // create working directory
-  // std::string work_dir = create_test_directory("hdf5_reader");
-
-  // // adjust directory names in the prototext
-  // std::string prototext(hdf5_hrrl_data_reader_prototext); // non-const copy
-  // size_t j1;
-  // while ((j1 = prototext.find("WORK_DIR")) != std::string::npos) {
-  //   prototext.replace(j1, 8, work_dir);
-  // };
-
-  // conduit::Node node;
-  // node["Epmax"] = 15.2486634101312;
-  // node["Etot"] = 0.0426354341969429;
-  // node["Image"] = {456.288777930614, 231.340700217946, 113.528447010204, 115.115911382861, 116.716861149023, 118.331222098325, 120.52874207647, 122.175220756304, 123.834871115725, 125.507597035081, 126.011234474661, 123.587537036166};
-  // node["N"] = 64037572840.4818;
-  // node["T"] = 5.34505173275895;
-  // node["alpha"] =  32.6826031770453;
-
-  // conduit::Node n2;
-  // n2 = node;
-
-  // auto epmax = n2["Epmax"].value();
-  // n2["Epmax"] = 22.;
 
   conduit::Node node;
   node.parse(hdf5_hrrl_data_sample, "yaml");
 
   lbann::hdf5_data_reader* hdf5_dr = new lbann::hdf5_data_reader();
-  // Avoid the sample list code checking that the files really exist
-  // in the file system
-  //hdf5_dr->get_sample_list().unset_data_file_check();
-
   conduit::Node schema;
   schema.parse(hdf5_hrrl_data_schema_test, "yaml");
 
-  conduit::Node foo;
-  foo.parse(hdf5_hrrl_data_sample, "yaml");
-
-  SECTION("HRRL conduit node")
+  SECTION("HRRL conduit node normalize")
   {
-    //    node.print();
-    //    n2.print();
-    //    schema.print();
-    //    std::cout << "Here is the original version of foo" << std::endl;
-    //    foo.print();
-
-  //     conduit::Node data_schema = train_reader->get_data_schema();
-  //     const double old_val =
-  //       data_schema[test_field_name]["metadata"]["bias"].value();
-  //     const double new_val = old_val * 1.23;
-
-  //     conduit::Node experiment_schema = train_reader->get_experiment_schema();
-  //     REQUIRE(experiment_schema[test_field_name]["metadata"].has_child(
-  //               "bias") == false);
-  //     experiment_schema[test_field_name]["metadata"]["bias"] = new_val;
-
-  //     train_reader->set_data_schema(data_schema);
-  //     train_reader->set_experiment_schema(experiment_schema);
-
-    #if 0
-    {
-    std::ostringstream ss2;
-    ss2 << "RUN_ID/000000334" << '/' << "Image";
-    //    ss2 << LBANN_DATA_ID_STR(index) << '/' << pathname;
-    const std::string new_pathname(ss2.str());
-    // conduit::Node image = foo[ss2.str()];
-    // std::cout << "Here is the image part" << std::endl;
-    // image.print();
-    conduit::Node metadata = schema["Image/metadata"];
-    metadata.print();
-    if (metadata.has_child("scale")) {
-      hdf5_dr->normalize(foo, new_pathname, metadata);
-    }
-    std::cout << "I have run the normalize code" << std::endl;
-    foo.print();
-    }
-    #endif
-    std::vector<std::string>fields = {"Epmax", "Etot", "N", "T", "alpha"};
+    // Check to see if each field of the HRRL data set can be properly normalized and
+    // avoid clobbering other fields
+    std::vector<std::string>fields = {"Epmax", "Etot", "Image", "N", "T", "alpha"};
     for (auto f : fields) {
-      std::cout << "I am going to look at " << f << std::endl;
-      std::ostringstream ss2;
-      ss2 << "RUN_ID/000000334" << '/' << f;
-      const std::string new_pathname(ss2.str());
+      const std::string test_pathname("RUN_ID/000000334/" + f);
+      // Instantiate a fresh copy of the sample
+      conduit::Node test_node;
+      test_node.parse(hdf5_hrrl_data_sample, "yaml");
+      // Select the metadata for a field and transform the sample
       const std::string metadata_path = f + "/metadata";
       conduit::Node metadata = schema[metadata_path];
-      //      metadata.print();
       if (metadata.has_child("scale")) {
-        hdf5_dr->normalize(foo, new_pathname, metadata);
+        hdf5_dr->normalize(test_node, test_pathname, metadata);
       }
-      //      std::cout << "I have run the normalize code" << std::endl;
-      //      foo.print();
-      double check = node[ss2.str()].as_double() * metadata["scale"].as_double() + metadata["bias"].as_double();
-      //      std::cout << foo[ss2.str()].as_double() << " =?= " << check << std::endl;
-      CHECK(foo[ss2.str()].as_double() == Approx(check));
-      // std::cout << foo[ss2.str()].as_double() << " =?= " << node[ss2.str()].as_double() * metadata["scale"].as_double()+ metadata["bias"].as_double() << std::endl;
-      // CHECK(foo[ss2.str()].as_double() == (node[ss2.str()].as_double() * metadata["scale"].as_double() + metadata["bias"].as_double()));
+      // Check to make sure that each element in the transformed field are properly normalized
+      size_t num_elements = node[test_pathname].dtype().number_of_elements();
+      if(num_elements > 1) {
+        for(size_t i = 0; i < num_elements; i++) {
+          double check = node[test_pathname].as_double_array()[i] * metadata["scale"].as_double() + metadata["bias"].as_double();
+          CHECK(test_node[test_pathname].as_double_array()[i] == Approx(check));
+        }
+      }else {
+        double check = node[test_pathname].as_double() * metadata["scale"].as_double() + metadata["bias"].as_double();
+        CHECK(test_node[test_pathname].as_double() == Approx(check));
+      }
+      // Check to make sure that none of the other fields have accidentally changed
+      for(auto nf : fields) {
+        if(nf != f) {
+          const std::string ref_pathname("RUN_ID/000000334/" + nf);
+          size_t ref_num_elements = node[ref_pathname].dtype().number_of_elements();
+          if(ref_num_elements > 1) {
+            for(size_t i = 0; i < ref_num_elements; i++) {
+              CHECK(test_node[ref_pathname].as_double_array()[i] == node[ref_pathname].as_double_array()[i]);
+            }
+          }
+          else {
+            CHECK(test_node[ref_pathname].as_double() == node[ref_pathname].as_double());
+          }
+        }
+      }
     }
 
   }
