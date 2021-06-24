@@ -29,6 +29,9 @@
 #include "lbann/data_readers/data_reader_sample_list.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
 
+// Forward declaration
+class DataReaderHDF5WhiteboxTester;
+
 namespace lbann {
 /**
  * A generalized data reader for data stored in HDF5 files.
@@ -315,12 +318,10 @@ private:
               const std::string& new_pathname,
               conduit::Node& node);
 
-public:
   void normalize(conduit::Node& node,
                  const std::string& path,
                  const conduit::Node& metadata);
 
-private:
   /** Constructs m_data_dims_lookup_table and m_linearized_size_lookup_table */
   void construct_linearized_size_lookup_tables();
 
@@ -342,6 +343,9 @@ private:
    * original data fields
    */
   bool is_composite_node(const conduit::Node& node) const;
+
+  // Designate a whitebox testing friend
+  friend class ::DataReaderHDF5WhiteboxTester;
 
 }; // END: class hdf5_data_reader
 

@@ -119,7 +119,15 @@ Yshift:
     ordering: 80
 )AurthurDent";
 
-
+class DataReaderHDF5WhiteboxTester
+{
+public:
+  void Normalize(lbann::hdf5_data_reader& x,
+                 conduit::Node& node,
+                 const std::string& path,
+                 const conduit::Node& metadata)
+  { x.normalize(node, path, metadata); }
+};
 
 TEST_CASE("hdf5 data reader transform tests",
           "[mpi][data_reader][hdf5][hrrl][.filesystem]")
@@ -132,6 +140,8 @@ TEST_CASE("hdf5 data reader transform tests",
   node.parse(hdf5_hrrl_data_sample, "yaml");
 
   lbann::hdf5_data_reader* hdf5_dr = new lbann::hdf5_data_reader();
+  DataReaderHDF5WhiteboxTester white_box_tester;
+
   conduit::Node schema;
   schema.parse(hdf5_hrrl_data_schema_test, "yaml");
 
@@ -149,7 +159,7 @@ TEST_CASE("hdf5 data reader transform tests",
       const std::string metadata_path = f + "/metadata";
       conduit::Node metadata = schema[metadata_path];
       if (metadata.has_child("scale")) {
-        hdf5_dr->normalize(test_node, test_pathname, metadata);
+        REQUIRE_NOTHROW(white_box_tester.Normalize(*hdf5_dr, test_node, test_pathname, metadata));
       }
       // Check to make sure that each element in the transformed field are properly normalized
       size_t num_elements = node[test_pathname].dtype().number_of_elements();
