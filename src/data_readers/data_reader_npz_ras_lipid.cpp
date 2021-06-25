@@ -83,7 +83,7 @@ void ras_lipid_conduit_data_reader::load() {
   }
 
   options *opts = options::get();
-  opts->set_option("preload_data_store", 1);
+  opts->set_option(PRELOAD_DATA_STORE, 1);
 
   // Error check some settings
   size_t count = get_absolute_sample_count();

@@ -79,7 +79,7 @@ void numpy_npz_conduit_reader::load() {
 
   options *opts = options::get();
 
-  if (! (opts->get_bool("preload_data_store") || opts->get_bool("use_data_store"))) {
+  if (! (opts->get_bool(PRELOAD_DATA_STORE) || opts->get_bool(USE_DATA_STORE))) {
     LBANN_ERROR("numpy_npz_conduit_reader requires data_store; please pass either --use_data_store or --preload_data_store on the cmd line");
   }
 
@@ -103,7 +103,7 @@ void numpy_npz_conduit_reader::load() {
   resize_shuffled_indices();
   m_num_samples = m_shuffled_indices.size();
 
-  if (m_num_labels == 0 && !opts->get_bool("preload_data_store") && opts->get_bool("use_data_store")) {
+  if (m_num_labels == 0 && !opts->get_bool(PRELOAD_DATA_STORE) && opts->get_bool(USE_DATA_STORE)) {
     LBANN_WARNING("when not preloading you must specify the number of labels in the prototext file if you are doing classification");
   }
 

@@ -686,7 +686,7 @@ double generic_data_reader::get_use_percent() const {
 void generic_data_reader::instantiate_data_store() {
   double tm1 = get_time();
   auto& arg_parser = global_argument_parser();
-  if (! (arg_parser.get<bool>("use_data_store") || arg_parser.get<bool>("preload_data_store") || arg_parser.get<bool>("data_store_cache") || arg_parser.get<bool>("data_store_spill"))) {
+  if (! (arg_parser.get<bool>(USE_DATA_STORE) || arg_parser.get<bool>(PRELOAD_DATA_STORE) || arg_parser.get<bool>("data_store_cache") || arg_parser.get<bool>("data_store_spill"))) {
     if (m_data_store != nullptr) {
       delete m_data_store;
       m_data_store = nullptr;

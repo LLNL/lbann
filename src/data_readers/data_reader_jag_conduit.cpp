@@ -801,7 +801,7 @@ void data_reader_jag_conduit::do_preload_data_store() {
   auto& arg_parser = global_argument_parser();
   double tm1 = get_time();
   if (get_comm()->am_world_master() ||
-      (arg_parser.get<bool>("ltfb_verbose") && get_comm()->am_trainer_master())) {
+      (arg_parser.get<bool>(LTFB_VERBOSE) && get_comm()->am_trainer_master())) {
     LBANN_WARNING("starting preload for role: ", get_role());
   }
 
@@ -839,7 +839,7 @@ void data_reader_jag_conduit::do_preload_data_store() {
   }
 
   if (get_comm()->am_world_master() ||
-      (arg_parser.get<bool>("ltfb_verbose") && get_comm()->am_trainer_master())) {
+      (arg_parser.get<bool>(LTFB_VERBOSE) && get_comm()->am_trainer_master())) {
     std::stringstream msg;
     msg << " loading data for role: " << get_role() << " took " << get_time() - tm1 << "s";
     LBANN_WARNING(msg.str());

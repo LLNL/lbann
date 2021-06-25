@@ -81,7 +81,7 @@ int main(int argc, char **argv) {
     arg_parser.parse(argc, argv);
 
     // check for proper invocation, print help message
-    if (arg_parser.get<bool>("help") || argc == 1) {
+    if (arg_parser.get<bool>(HELP) || argc == 1) {
       cout << help_msg();
       return EXIT_FAILURE;
     }

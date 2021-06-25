@@ -868,26 +868,26 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
       }
     }
   }
-  if (arg_parser.get<int>("mini_batch_size") != 0) {
+  if (arg_parser.get<int>("mini_batch_size") != -1) {
     trainer->set_mini_batch_size(arg_parser.get<int>("mini_batch_size"));
   }
-  if (arg_parser.get<int>("num_epochs") != 0) {
+  if (arg_parser.get<int>("num_epochs") != -1) {
     model->set_num_epochs(arg_parser.get<int>("num_epochs"));
   }
-  if (arg_parser.get<int>("hydrogen_block_size") != 0) {
+  if (arg_parser.get<int>("hydrogen_block_size") != -1) {
     trainer->set_hydrogen_block_size(arg_parser.get<int>("hydrogen_block_size"));
   }
-  if (arg_parser.get<int>("num_parallel_readers") != 0) {
+  if (arg_parser.get<int>("num_parallel_readers") != -1) {
     trainer->set_num_parallel_readers(arg_parser.get<int>("num_parallel_readers"));
   }
-  if (arg_parser.get<bool>("disable_cuda")) {
-    model->set_disable_cuda(arg_parser.get<bool>("disable_cuda"));
+  if (arg_parser.get<bool>(DISABLE_CUDA)) {
+    model->set_disable_cuda(arg_parser.get<bool>(DISABLE_CUDA));
   }
   if (arg_parser.get<int>("random_seed") == -1) {
     trainer->set_random_seed(arg_parser.get<int>("random_seed"));
   }
-  if(arg_parser.get<bool>("serialize_io")) {
-    trainer->set_serialize_io(arg_parser.get<bool>("serialize_io"));
+  if(arg_parser.get<bool>(SERIALIZE_IO)) {
+    trainer->set_serialize_io(arg_parser.get<bool>(SERIALIZE_IO));
   }
 
 }

@@ -96,7 +96,7 @@ data_store_conduit::data_store_conduit(
   }
 
   set_is_local_cache(arg_parser.get<bool>("data_store_cache"));
-  set_is_preloading(arg_parser.get<bool>("preload_data_store"));
+  set_is_preloading(arg_parser.get<bool>(PRELOAD_DATA_STORE));
   set_is_explicitly_loading(! is_preloading());
 
   if (is_local_cache()) {

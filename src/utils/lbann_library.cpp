@@ -272,7 +272,7 @@ trainer& construct_trainer(lbann_comm *comm,
 
   global_trainer_->setup(std::move(io_thread_pool), data_readers);
 
-  if(arg_parser.get<bool>("disable_background_io_activity")) {
+  if(arg_parser.get<bool>(DISABLE_BACKGROUND_IO_ACTIVITY) {
     global_trainer_->allow_background_io_activity(false);
   }
 
@@ -341,7 +341,7 @@ std::unique_ptr<model> build_model_from_prototext(
 
   // Display how the OpenMP threads are provisioned
   auto& arg_parser = global_argument_parser();
-  if (arg_parser.get<bool>("print_affinity")) {
+  if (arg_parser.get<bool>(PRINT_AFFINITY)) {
     display_omp_setup();
   }
 
@@ -393,7 +393,7 @@ std::unique_ptr<model> build_model_from_prototext(
 
     std::string active_load_model_dir;
     std::string load_model_dir = arg_parser.get<std::string>("load_model_weights_dir");
-    if(arg_parser.get<bool>("load_model_weights_dir_is_complete")) {
+    if(arg_parser.get<bool>(LOAD_MODEL_WEIGHTS_DIR_IS_COMPLETE)) {
       active_load_model_dir = load_model_dir;
     }else {
       size_t epochLast = std::numeric_limits<size_t>::max();;

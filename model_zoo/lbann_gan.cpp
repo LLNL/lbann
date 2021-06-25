@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
     // Split MPI into trainers
     allocate_trainer_resources(comm.get());
 
-    if (arg_parser.get<bool>("help") or argc == 1) {
+    if (arg_parser.get<bool>(HELP) or argc == 1) {
       print_help(*comm);
       return EXIT_SUCCESS;
     }

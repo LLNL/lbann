@@ -112,7 +112,7 @@ int main(int argc, char* argv[])
     // TODO MRW
     /*
     construct_all_options();
-    if (arg_parser.get<bool>("help") or argc == 1) {
+    if (arg_parser.get<bool>(HELP) or argc == 1) {
       if (master)
         std::cout << arg_parser << std::endl;
       print_help(*comm);
