@@ -258,4 +258,6 @@ namespace distconv{
   }
 template class Linear<::distconv::cudnn::BackendCUDNN, float>;
 template class Linear<::distconv::cudnn::BackendCUDNN, double>;
+
+template <typename U, typename T> int distconv::Linear<U, T>::forward(bool, distconv::tensor::Tensor<T, distconv::tensor::LocaleMPI, distconv::tensor::CUDAAllocator> const&, distconv::tensor::Tensor<T, distconv::tensor::LocaleMPI, distconv::tensor::CUDAAllocator> const&, distconv::tensor::Tensor<T, distconv::tensor::LocaleMPI, distconv::tensor::CUDAAllocator>&, int); 
 } // namespace distconv

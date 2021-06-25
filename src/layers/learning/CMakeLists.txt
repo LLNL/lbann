@@ -22,10 +22,10 @@ if (LBANN_HAS_GPU)
     )
 endif ()
 
-if (LBANN_HAS_DISTCONV)
+# if (LBANN_HAS_DISTCONV)
   # ADD the Distconv layer  subdirectory sources
-   add_subdirectory(distconv)
-endif()
+  # add_subdirectory(distconv)
+#endif()
 
 add_subdirectory(cereal_registration)
 
