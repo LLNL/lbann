@@ -176,7 +176,6 @@ private:
   // field if it's been packed, but someone else might ...
   // note that setting to 'false' invokes both a memory and communication
   // penalty
-  // TODO: not yet implemented
   bool m_delete_packed_fields = true;
 
   struct PackingGroup
