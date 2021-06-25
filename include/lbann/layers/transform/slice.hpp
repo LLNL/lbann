@@ -314,11 +314,11 @@ void slice_layer<TensorDataType,Layout,Device>::fp_compute_subgrid( )
 
   auto const* ptr_input = dynamic_cast<El::DistMatrix<TensorDataType, El::STAR  , El::VC, El::ELEMENT, Device> const *>(&input);
 
-  if(this->get_communication_flag()==2)
+  if(this->get_communication_flag()==COLL_OPT)
   {
     El::copy::TranslateBetweenGridsScatter<TensorDataType,Device,Device>(*ptr_input,this->get_all_activations(),split_dim,this->get_subgrid_comm(),syncSubGridCommunication,3);
   }
-  else if(this->get_communication_flag()==1)
+  else if(this->get_communication_flag()==COLL)
   {
     El::copy::TranslateBetweenGridsScatter<TensorDataType,Device,Device>(*ptr_input,this->get_all_activations(),split_dim,this->get_subgrid_comm(),syncSubGridCommunication,2);
   }
@@ -337,7 +337,7 @@ void slice_layer<TensorDataType,Layout,Device>::fp_compute() {
   const auto& input_dims = this->get_input_dims();
   const size_t num_dims = input_dims.size();
 
-  if(this->m_slice_dim==num_dims-1 && this->get_parallel_strategy().enable_subgraph==1)
+  if(this->m_slice_dim==num_dims-1 && this->get_parallel_strategy().enable_subgraph==true)
   {
     fp_compute_subgrid();
   }
@@ -360,7 +360,11 @@ void slice_layer<TensorDataType,Layout,Device>::bp_compute_subgrid( )
 
   auto * ptr_input_grad = dynamic_cast<El::DistMatrix<TensorDataType, El::STAR  , El::VC, El::ELEMENT, Device>  *>(&input_grad);
 
-  El::copy::TranslateBetweenGridsGather<TensorDataType,Device,Device>(*ptr_input_grad,this->get_all_prev_error_signals(),split_dim,this->get_subgrid_comm(),syncSubGridCommunication);
+  El::copy::TranslateBetweenGridsGather<TensorDataType,Device,Device>(*ptr_input_grad,
+                                                                        this->get_all_prev_error_signals(),
+                                                                        split_dim,
+                                                                        this->get_subgrid_comm(),
+                                                                        syncSubGridCommunication);
 
 }
 
@@ -380,7 +384,7 @@ void slice_layer<TensorDataType,Layout,Device>::bp_compute() {
   const auto& input_dims = this->get_input_dims();
   const size_t num_dims = input_dims.size();
 
-  if(this->m_slice_dim==num_dims-1 && this->get_parallel_strategy().enable_subgraph==1)
+  if(this->m_slice_dim==num_dims-1 && this->get_parallel_strategy().enable_subgraph==true)
   {
     bp_compute_subgrid();
   }

@@ -108,7 +108,7 @@ public:
 
   void set_subgrid_communication_type(int type)
   {
-    vector_communication_subgraph =type;
+    vector_communication_subgraph = type;
   }
 
   int get_subgrid_communication_type()
@@ -126,14 +126,14 @@ public:
     return subgraph_num_resources_parent;
   }
 
-  void set_subgrid_topology(int type)
+  void set_subgrid_topology(bool type)
   {
-    subgraph_topology = type;
+    enable_subgraph_topology = type;
   }
 
-  int get_subgrid_topology()
+  bool get_subgrid_topology()
   {
-    return subgraph_topology;
+    return enable_subgraph_topology;
   }
 
   void enable_subgraph_parallelism()
@@ -519,7 +519,7 @@ private:
   /*experimental code for Sub graph*/
   /** Enable vector communication for the subgraph parallelism */
   //0: send-recv based subgrid communication
-  //1: collective based subgrid communication without optimization that requires specific assumptions like subgrids should have same size
+  //1: collective based subgrid communication without optimization that requires specific assumptions like subgrids should have same size and creates sub-communicators everytime 
   //2: collective based subgrid communication with optimization
 
   int vector_communication_subgraph = 0;
@@ -530,7 +530,7 @@ private:
 
   //0: no topology aware design
   //1: master grid in round robin manner of nodes (GPUs per node 4)  1 3 5 7, 2 4 6 8     
-  int subgraph_topology = 0;
+  bool enable_subgraph_topology = false;
 
   // whether subgraph parallelism is enabled or not for the model 
   bool apply_subgraph_parallelism = false;

@@ -99,15 +99,15 @@ protected:
 
     int tag=0;
     auto childs = this->get_child_layers(); 
-    if(this->get_parallel_strategy().enable_subgraph==1)
+    if(this->get_parallel_strategy().enable_subgraph==true)
     {
       //if subgraph parallelism is enabled 
 
-      if(this->get_communication_flag()==2)
+      if(this->get_communication_flag()==COLL_OPT)
       {
         El::copy::TranslateBetweenGridsBroadcast<TensorDataType,Dev,Dev>(*ptr_input,this->get_branch_tag_input_vector(),this->get_subgrid_comm(),syncSubGridCommunication);
       }
-      else if(this->get_communication_flag()==1)
+      else if(this->get_communication_flag()==COLL)
       {
         El::copy::TranslateBetweenGridsBroadcast<TensorDataType,Dev,Dev>(*ptr_input,this->get_branch_tag_input_vector());
       }
@@ -157,7 +157,7 @@ protected:
     auto& gradient_wrt_input = this->get_error_signals();
     auto childs = this->get_child_layers(); 
 
-    if(this->get_parallel_strategy().enable_subgraph==1)
+    if(this->get_parallel_strategy().enable_subgraph==true)
     {
       int tag=0;
       
@@ -182,14 +182,14 @@ protected:
 
       // copy and add data from reduced gradients from same branch 
 
-      if(this->get_communication_flag()==2)
+      if(this->get_communication_flag()==COLL_OPT)
       //If vector is enabled copy data using allreduce operation from aggregated subgrids to the gradient_wrt_input
       {
         auto * ptr_gradient = dynamic_cast<El::DistMatrix<TensorDataType, El::STAR  , El::VC, El::ELEMENT, Dev> *>(&gradient_wrt_input);
 
         El::copy::TranslateBetweenGridsAllreduce<TensorDataType,Dev,Dev>(*ptr_gradient,this->get_branch_tag_input_vector(),this->get_subgrid_comm(),syncSubGridCommunication);
       }
-      else if(this->get_communication_flag()==1)
+      else if(this->get_communication_flag()==COLL)
       {
         auto * ptr_gradient = dynamic_cast<El::DistMatrix<TensorDataType, El::STAR  , El::VC, El::ELEMENT, Dev> *>(&gradient_wrt_input);
 

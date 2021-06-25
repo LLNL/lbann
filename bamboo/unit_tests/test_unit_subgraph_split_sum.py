@@ -83,12 +83,12 @@ def construct_model(lbann):
     x = x_lbann
     y = lbann.Identity(x, data_layout='data_parallel')
 
-    branch1 = lbann.Identity(y, data_layout='data_parallel',parallel_strategy = {'sub_branch_tag':1,'enable_subgraph':1})
-    branch2 = lbann.Identity(y, data_layout='data_parallel',parallel_strategy = {'sub_branch_tag':2,'enable_subgraph':1})
-    branch3 = lbann.Identity(y, data_layout='data_parallel',parallel_strategy = {'sub_branch_tag':3,'enable_subgraph':1})
-    branch4 = lbann.Identity(y, data_layout='data_parallel',parallel_strategy = {'sub_branch_tag':4,'enable_subgraph':1})
+    branch1 = lbann.Identity(y, data_layout='data_parallel',parallel_strategy = {'sub_branch_tag':1,'enable_subgraph':True})
+    branch2 = lbann.Identity(y, data_layout='data_parallel',parallel_strategy = {'sub_branch_tag':2,'enable_subgraph':True})
+    branch3 = lbann.Identity(y, data_layout='data_parallel',parallel_strategy = {'sub_branch_tag':3,'enable_subgraph':True})
+    branch4 = lbann.Identity(y, data_layout='data_parallel',parallel_strategy = {'sub_branch_tag':4,'enable_subgraph':True})
 
-    sum_branch = lbann.Sum([branch1,branch2,branch3,branch4],parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':1})
+    sum_branch = lbann.Sum([branch1,branch2,branch3,branch4],parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':True})
     z = lbann.L2Norm2(sum_branch)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='data-parallel layout'))
@@ -122,7 +122,7 @@ def construct_model(lbann):
     # ------------------------------------------
 
     num_epochs = 0
-    return lbann.Model(num_epochs,vector_communication=2,
+    return lbann.Model(num_epochs,subgraph_communication=lbann.SubgraphCommunication.COLL_OPT,
                        layers=lbann.traverse_layer_graph(x_lbann),
                        objective_function=obj,
                        metrics=metrics,

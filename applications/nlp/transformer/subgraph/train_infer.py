@@ -163,7 +163,7 @@ def make_model(
     #     l.device = "GPU"
     return lbann.Model(
         num_epochs,
-        vector_communication=2,
+        subgraph_communication=lbann.SubgraphCommunication.COLL_OPT,
         subgraph_topology=subgraph_topology,
         subgraph_num_common_resources = subgraph_num_common_resources,
         layers=lbann.traverse_layer_graph(input_),

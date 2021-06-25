@@ -224,7 +224,7 @@ class TransformerEncoderLayerAllSubgraph(lbann.modules.Module):
 			lbann.Layer: Sequence of output vectors.
 
 		"""
-		ENABLE_SUBGRAPH = 1
+		ENABLE_SUBGRAPH = True
 		self.instance += 1
 		name = f'{self.name}_instance{self.instance}'
 
@@ -326,7 +326,7 @@ class TransformerEncoderLayerAllSubgraph(lbann.modules.Module):
 			attentions = lbann.Concatenation(
 					branch_outputs,
 					axis=1,
-					name=f'{name}_heads_concat',parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':1}
+					name=f'{name}_heads_concat',parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':True}
 				)
 
 
@@ -426,7 +426,7 @@ class TransformerEncoderLayerAllSubgraphInputSubGrids(lbann.modules.Module):
 			lbann.Layer: Sequence of output vectors.
 
 		"""
-		ENABLE_SUBGRAPH = 1
+		ENABLE_SUBGRAPH = True
 		self.instance += 1
 		name = f'{self.name}_instance{self.instance}'
 
@@ -518,7 +518,7 @@ class TransformerEncoderLayerAllSubgraphInputSubGrids(lbann.modules.Module):
 			attentions = lbann.Concatenation(
 					branch_outputs,
 					axis=1,
-					name=f'{name}_heads_concat',parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':1}
+					name=f'{name}_heads_concat',parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':True}
 				)
 
 
@@ -776,7 +776,7 @@ class TransformerDecoderLayerAllSubGraph(lbann.modules.Module):
 
 		"""
 		self.instance += 1
-		ENABLE_SUBGRAPH = 1 
+		ENABLE_SUBGRAPH = True
 		name = f'{self.name}_instance{self.instance}'
 
 
@@ -903,7 +903,7 @@ class TransformerDecoderLayerAllSubGraph(lbann.modules.Module):
 			attentions = lbann.Concatenation(
 					branch_outputs2,
 					axis=1,
-					name=f'{name}_heads_concat',parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':1}
+					name=f'{name}_heads_concat',parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':True}
 				)
 
 
@@ -1015,7 +1015,7 @@ class TransformerDecoderLayerAllSubGraphInputSubGrids(lbann.modules.Module):
 
 		"""
 		self.instance += 1
-		ENABLE_SUBGRAPH = 1 
+		ENABLE_SUBGRAPH = True
 		name = f'{self.name}_instance{self.instance}'
 
 
@@ -1142,7 +1142,7 @@ class TransformerDecoderLayerAllSubGraphInputSubGrids(lbann.modules.Module):
 			attentions = lbann.Concatenation(
 					branch_outputs2,
 					axis=1,
-					name=f'{name}_heads_concat',parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':1}
+					name=f'{name}_heads_concat',parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':True}
 				)
 
 
@@ -1485,7 +1485,7 @@ class Transformer(lbann.modules.Module):
 		if(self.branches>0):
 			for i in range(self.branches):
 				subgraph_masks[i+1] = lbann.Identity(self._subsequent_mask(target_length),name="mylayer"+str(i) ,
-									parallel_strategy = {'sub_branch_tag':i+1,'enable_subgraph':1})
+									parallel_strategy = {'sub_branch_tag':i+1,'enable_subgraph':True})
 				subgraph_masks[i+1] = lbann.Identity(subgraph_masks[i+1])
 			
 

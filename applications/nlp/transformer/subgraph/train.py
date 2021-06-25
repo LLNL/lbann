@@ -152,18 +152,9 @@ def make_model(
     callbacks = [lbann.CallbackPrint(), lbann.CallbackTimer()]
 
 
-    # layers = list(lbann.traverse_layer_graph(input_))
-    # print("Subgrpah subgraph_topology",subgraph_topology)
-    # for l in layers:
-    #     for idx in range(len(l.weights)):
-    #         l.weights[idx].optimizer = lbann.NoOptimizer()
-
-
-    # for l in layers:
-    #     l.device = "GPU"
     return lbann.Model(
         num_epochs,
-        vector_communication=2,
+        subgraph_communication=lbann.SubgraphCommunication.COLL_OPT,
         subgraph_topology=subgraph_topology,
         subgraph_num_common_resources = subgraph_num_common_resources,
         layers=lbann.traverse_layer_graph(input_),

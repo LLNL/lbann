@@ -110,7 +110,7 @@ model_params = {
     'num_heads': args.num_attention_heads,
     'label_smoothing': label_smoothing,
     'branches': args.branches,
-    'subgraph_topology':args.subgraph_topology,
+    'subgraph_topology':args.subgraph_topology==1,
     'subgraph_num_common_resources': args.subgraph_parent_resources,
     'num_encoder_layers':args.encoder_layers,
     'num_decoder_layers':args.decoder_layers,

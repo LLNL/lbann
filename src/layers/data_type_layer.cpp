@@ -512,7 +512,7 @@ void data_type_layer<TensorDataType>::setup_matrices(const El::Grid& grid) {
   auto parents = get_parent_layers();
 
   
-  if((get_name().find("split")!= std::string::npos || this->get_type()=="slice")  && this->get_model()->is_subgraph_parallelism_enabled()  && this->get_parallel_strategy().enable_subgraph==1)
+  if((get_name().find("split")!= std::string::npos || this->get_type()=="slice")  && this->get_model()->is_subgraph_parallelism_enabled()  && this->get_parallel_strategy().enable_subgraph==true)
   {
 
     //split layer 
@@ -595,7 +595,7 @@ void data_type_layer<TensorDataType>::setup_matrices(const El::Grid& grid) {
     
 
   }
-  else if( (get_type()=="sum" || this->get_type()=="concatenate" ) && this->get_model()->is_subgraph_parallelism_enabled() && this->get_parallel_strategy().enable_subgraph==1)
+  else if( (get_type()=="sum" || this->get_type()=="concatenate" ) && this->get_model()->is_subgraph_parallelism_enabled() && this->get_parallel_strategy().enable_subgraph==true)
   {
     //sum layer 
     m_subgrid_tensors_split.clear();
@@ -1026,7 +1026,7 @@ void data_type_layer<TensorDataType>::allocate_new_gradients_() {
     if (!keep_original_gradient_wrt_inputs(i)) continue;
 #endif // LBANN_HAS_DISTCONV
     if (!m_gradient_wrt_inputs[i]) {
-      if(get_type()=="sum" && this->get_parallel_strategy().enable_subgraph==1)
+      if(get_type()=="sum" && this->get_parallel_strategy().enable_subgraph==true)
       {
         m_gradient_wrt_inputs[i] =
           MakeMatBuilder<TensorDataType>(
@@ -1045,7 +1045,7 @@ void data_type_layer<TensorDataType>::allocate_new_gradients_() {
     }
     auto& gradient_wrt_input = get_error_signals(i);
     gradient_wrt_input.Empty(false);
-    if(get_type()=="sum" && this->get_parallel_strategy().enable_subgraph==1)
+    if(get_type()=="sum" && this->get_parallel_strategy().enable_subgraph==true)
     {
       
     }

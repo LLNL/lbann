@@ -148,7 +148,7 @@ struct ParallelStrategy {
   /** Number of times the layer is replicated (for FC layers right now). */
   int replications = 0;
       /** Enable subgraph for the layer. */ 
-  int enable_subgraph = 0;  
+  bool enable_subgraph = false;  
   /** Branch number in the sub graph. */  
   int sub_branch_tag = 0; 
   /** percentage of parent resources to be allocated to this branch. */ 
@@ -197,6 +197,8 @@ inline std::ostream &operator<<(std::ostream &os,
      << "}";
   return os;
 }
+
+enum SubGraphCommunication{PT2PT=0, COLL=10, COLL_OPT=2};
 
 /**
  * @brief Neural network tensor operation.
@@ -254,13 +256,13 @@ public:
 
   void set_communication_flag(int type)
   {
-    enable_vector_copy = type;
+    subgraph_communication_method = static_cast<SubGraphCommunication>(type);
 
   }
 
-  int get_communication_flag()
+  SubGraphCommunication get_communication_flag()
   {
-    return enable_vector_copy;
+    return subgraph_communication_method;
 
   }
 
@@ -359,7 +361,7 @@ public:
   //to set variable for ssplit layer
   void set_enable_subgraph_variable()
   {
-    m_parallel_strategy.enable_subgraph=1;
+    m_parallel_strategy.enable_subgraph=true;
   }
 
 
@@ -763,7 +765,7 @@ protected:
    */
   std::string m_name;
 
-  int enable_vector_copy = 0;
+  SubGraphCommunication subgraph_communication_method = PT2PT;
 
   bool apply_subgraph_parallelism = false;
 

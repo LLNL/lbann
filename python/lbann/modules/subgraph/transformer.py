@@ -47,10 +47,10 @@ class MultiheadAttention(Module):
             self.head_dim = d_kv
 
         if(branches==0):
-            self.ENABLE_SUBGRAPH=0
+            self.ENABLE_SUBGRAPH=False
             self.BRANCHES=0
         else:
-            self.ENABLE_SUBGRAPH=1
+            self.ENABLE_SUBGRAPH=True
             self.BRANCHES = branches
 
         # Module name
@@ -284,10 +284,10 @@ class MultiheadAttentionAllSubGraph(Module):
             self.head_dim = d_kv
 
         if(branches==0):
-            self.ENABLE_SUBGRAPH=0
+            self.ENABLE_SUBGRAPH=False
             self.BRANCHES=0
         else:
-            self.ENABLE_SUBGRAPH=1
+            self.ENABLE_SUBGRAPH=True
             self.BRANCHES = branches
 
         # Module name
@@ -466,7 +466,7 @@ class MultiheadAttentionAllSubGraph(Module):
                 attention_single_subgrid = lbann.Concatenation(
                     temp_attention,
                     axis=1,
-                    name=f'{name}_subgrid_heads_concat{count}',parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':0}
+                    name=f'{name}_subgrid_heads_concat{count}',parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':False}
                 )
 
             attention_single_subgrid = lbann.ChannelwiseFullyConnected(
@@ -489,26 +489,6 @@ class MultiheadAttentionAllSubGraph(Module):
         for head in range(self.BRANCHES):
             attentions.append( lbann.Identity(grid_sum_slice) )
 
-        # Concatenate heads and apply fully-connected layer
-        # if(ENABLE_SUBGRAPH):
-        #     attentions = lbann.Concatenation(
-        #         attentions,
-        #         axis=1,
-        #         name=f'{name}_heads_concat',parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':ENABLE_SUBGRAPH}
-        #     )
-        # else:
-        #     attentions = lbann.Concatenation(
-        #         attentions,
-        #         axis=1,
-        #         name=f'{name}_heads_concat',
-        #     )
-
-        # outputs_fc = lbann.ChannelwiseFullyConnected(
-        #     attentions,
-        #     weights=self.output_weights,
-        #     output_channel_dims=[self.embed_dim],
-        #     name=f'{name}',
-        # )
         return attentions
 
 
@@ -560,10 +540,10 @@ class MultiheadAttentionAllSubGraphInputSubGrids(Module):
             self.head_dim = d_kv
 
         if(branches==0):
-            self.ENABLE_SUBGRAPH=0
+            self.ENABLE_SUBGRAPH=False
             self.BRANCHES=0
         else:
-            self.ENABLE_SUBGRAPH=1
+            self.ENABLE_SUBGRAPH=True
             self.BRANCHES = branches
 
         # Module name
@@ -821,7 +801,7 @@ class MultiheadAttentionAllSubGraphInputSubGrids(Module):
                 attention_single_subgrid = lbann.Concatenation(
                     temp_attention,
                     axis=1,
-                    name=f'{name}_subgrid_heads_concat{count}',parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':0}
+                    name=f'{name}_subgrid_heads_concat{count}',parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':False}
                 )
 
             attention_single_subgrid = lbann.ChannelwiseFullyConnected(
@@ -843,25 +823,5 @@ class MultiheadAttentionAllSubGraphInputSubGrids(Module):
 
         for head in range(self.BRANCHES):
             attentions.append( lbann.Identity(grid_sum_slice) )
-
-        # Concatenate heads and apply fully-connected layer
-        # if(ENABLE_SUBGRAPH):
-        #     attentions = lbann.Concatenation(
-        #         attentions,
-        #         axis=1,
-        #         name=f'{name}_heads_concat',parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':ENABLE_SUBGRAPH}
-        #     )
-        # else:
-        #     attentions = lbann.Concatenation(
-        #         attentions,
-        #         axis=1,
-        #         name=f'{name}_heads_concat',
-        #     )
-
-        # outputs_fc = lbann.ChannelwiseFullyConnected(
-        #     attentions,
-        #     weights=self.output_weights,
-        #     output_channel_dims=[self.embed_dim],
-        #     name=f'{name}',
-        # )
+            
         return attentions
