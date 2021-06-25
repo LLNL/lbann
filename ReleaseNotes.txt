@@ -4,6 +4,8 @@ C++ API:
  - Added inference-only execution algorithm
 
 Support for new training algorithms:
+ - Experimental support for 2nd-order optimization with KFAC.
+   Currently supports fully-connected, convolution, and GRU layers.
 
 Support for new network structures:
 

@@ -59,6 +59,8 @@ class kfac_block {
   }
   virtual ~kfac_block() = default;
 
+  virtual void on_forward_prop_end() {}
+
   /** @brief Compute Kronecker factors. */
   virtual void compute_local_kronecker_factors(
       lbann_comm* comm,

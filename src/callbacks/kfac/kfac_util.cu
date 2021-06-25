@@ -137,10 +137,13 @@ void add_to_diagonal(
   const size_t height = A.Height();
   constexpr size_t block_size = 256;
   const size_t grid_size = (height + block_size - 1) / block_size;
-  kfac_add_to_diagonal_kernel<DataType>
-      <<<grid_size, block_size, 0, sync_info.Stream()>>>(
+  if (grid_size > 0) {
+    hydrogen::gpu::LaunchKernel(
+      kfac_add_to_diagonal_kernel<DataType>,
+      grid_size, block_size, 0, sync_info,
       A.Buffer(), height, damping,
       damping_bn_err, is_bn);
+  }
 }
 
 template <>
@@ -151,9 +154,12 @@ void fill_upper_tri(
   constexpr size_t block_size = 256;
   // TODO: Launch N^2/2 threads instead of N^2
   const size_t grid_size = (height*height + block_size - 1) / block_size;
-  kfac_fill_upper_tri_kernel<DataType>
-      <<<grid_size, block_size, 0, sync_info.Stream()>>>(
+  if (grid_size > 0) {
+    hydrogen::gpu::LaunchKernel(
+      kfac_fill_upper_tri_kernel<DataType>,
+      grid_size, block_size, 0, sync_info,
       A.Buffer(), height);
+  }
 }
 
 template <>
@@ -164,9 +170,12 @@ void update_kronecker_average(
     const El::SyncInfo<El::Device::GPU>& sync_info) {
   constexpr size_t block_size = 256;
   const size_t grid_size = (count + block_size - 1) / block_size;
-  kfac_update_kronecker_average_kernel<DataType>
-      <<<grid_size, block_size, 0, sync_info.Stream()>>>(
+  if (grid_size > 0) {
+    hydrogen::gpu::LaunchKernel(
+      kfac_update_kronecker_average_kernel<DataType>,
+      grid_size, block_size, 0, sync_info,
       Aave.Buffer(), A.LockedBuffer(), count, decay);
+  }
 }
 
 template <>
@@ -177,9 +186,12 @@ void identity(
   constexpr size_t block_size = 256;
   const size_t num_threads = height*height;
   const size_t grid_size = (num_threads + block_size - 1) / block_size;
-  kfac_identity_kernel<DataType>
-      <<<grid_size, block_size, 0, sync_info.Stream()>>>(
-          A.Buffer(), height);
+  if (grid_size > 0) {
+    hydrogen::gpu::LaunchKernel(
+      kfac_identity_kernel<DataType>,
+      grid_size, block_size, 0, sync_info,
+      A.Buffer(), height);
+  }
 }
 
 template <>
@@ -192,9 +204,12 @@ void pack_lower_tri(
   const size_t num_threads = height*height;
   const size_t grid_size = (num_threads + block_size - 1) / block_size;
   // TODO: Launch N^2/2 threads instead of N^2
-  kfac_pack_lower_tri_kernel<DataType>
-      <<<grid_size, block_size, 0, sync_info.Stream()>>>(
-          L.Buffer(), A.LockedBuffer(), height);
+  if (grid_size > 0) {
+    hydrogen::gpu::LaunchKernel(
+      kfac_pack_lower_tri_kernel<DataType>,
+      grid_size, block_size, 0, sync_info,
+      L.Buffer(), A.LockedBuffer(), height);
+  }
 }
 
 template <>
@@ -207,9 +222,12 @@ void unpack_lower_tri(
   const size_t num_threads = height*height;
   const size_t grid_size = (num_threads + block_size - 1) / block_size;
   // TODO: Launch N^2/2 threads instead of N^2
-  kfac_unpack_lower_tri_kernel<DataType>
-      <<<grid_size, block_size, 0, sync_info.Stream()>>>(
-          A.Buffer(), L.LockedBuffer(), height);
+  if (grid_size > 0) {
+    hydrogen::gpu::LaunchKernel(
+      kfac_unpack_lower_tri_kernel<DataType>,
+      grid_size, block_size, 0, sync_info,
+      A.Buffer(), L.LockedBuffer(), height);
+  }
 }
 
 } // namespace kfac_util

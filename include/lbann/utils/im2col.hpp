@@ -66,7 +66,7 @@ void im2col(const El::Matrix<TensorDataType, El::Device::GPU>& im,
             const int * im_pads,
             const int * window_dims,
             const int * window_strides,
-            const cudaStream_t& stream);
+            const El::SyncInfo<El::Device::GPU>& sync_info);
 #endif // LBANN_HAS_GPU
 
 /** Get the height and the width of col matrix.
