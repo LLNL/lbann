@@ -106,7 +106,11 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
   // Get shape of the linear weights
 
   const auto& linearity_dims = layer.get_linearity_dims();
+  
+  const auto &input_dist = this->get_prev_activations_dist();
+  
   dc::Shape linearity_shape(linearity_dims);
+
 
 
   // Create distribution from distconv
@@ -470,7 +474,7 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
     output_channel_dims.begin(), output_channel_dims.end(),
     1, std::multiplies<size_t>());
   
-  std::vector<int> linearity_dims{input_channel_size, output_channel_size};
+  std::vector<int> linearity_dims{1, 1, input_channel_size, output_channel_size};
   return linearity_dims;
 }
 
@@ -488,7 +492,7 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
     output_channel_dims.begin()+1, output_channel_dims.end(),
     1, std::multiplies<size_t>());
 
-  std::vector<int> bias_dims{1, output_channel_size};
+  std::vector<int> bias_dims{1,1,1, output_channel_size};
   return bias_dims;
 }
 
