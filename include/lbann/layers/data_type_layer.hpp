@@ -132,18 +132,18 @@ public:
   const InputAbsDistMatrixType& get_error_signals(const Layer& parent) const override;
 
   /** Get temp Grad Tensor. */
-  AbsDistMatrixType& get_temp_grad() ;
+  OutputAbsDistMatrixType& get_temp_grad() ;
   /** Get transfered input for each branch tag **/
-  AbsDistMatrixType& get_branch_tag_input(int tag) ;
+  InputAbsDistMatrixType& get_branch_tag_input(int tag) ;
 
-  std::vector<std::unique_ptr<AbsDistMatrixType>>& get_branch_tag_input_vector() ;
+  std::vector<std::unique_ptr<InputAbsDistMatrixType>>& get_branch_tag_input_vector() ;
 
   /** return all activations/errors for a layer
       Used in subgraph parallelism to implement collective communication in split, sum, ... layers*/
-  std::vector<std::unique_ptr<AbsDistMatrixType>>& get_all_activations() ;
-  std::vector<std::unique_ptr<AbsDistMatrixType>>& get_all_prev_activations() ;
-  std::vector<std::unique_ptr<AbsDistMatrixType>>& get_all_prev_error_signals() ;
-  std::vector<std::unique_ptr<AbsDistMatrixType>>& get_all_error_signals() ;
+  std::vector<std::unique_ptr<OutputAbsDistMatrixType>>& get_all_activations() ;
+  std::vector<std::unique_ptr<InputAbsDistMatrixType>>& get_all_prev_activations() ;
+  std::vector<std::unique_ptr<OutputAbsDistMatrixType>>& get_all_prev_error_signals() ;
+  std::vector<std::unique_ptr<InputAbsDistMatrixType>>& get_all_error_signals() ;
 
   /** Get activation tensor. */
   OutputAbsDistMatrixType& get_activations(int child_index = 0);
@@ -398,19 +398,19 @@ private:
   /** Temp grad tensor for Split Layer
    *  Each matrix column corresponds to a flattened mini-batch sample.
    */
-  std::vector<std::unique_ptr<AbsDistMatrixType>> m_temp_grad;
+  std::vector<std::unique_ptr<OutputAbsDistMatrixType>> m_temp_grad;
 
   /** For Split layer create a tensor for each branch_tag (opt for not transfering data for each branch)
    *  Each matrix column corresponds to a flattened mini-batch sample.
    */
-  std::vector<std::unique_ptr<AbsDistMatrixType>> m_subgrid_tensors_split;
+  std::vector<std::unique_ptr<OutputAbsDistMatrixType>> m_subgrid_tensors_split;
 
   /** @brief Whether to keep persistent error signals or dynamically
    *         allocate/deallocate them.
    *
    *  The default behavior is dynamic allocation.
    */
-  bool m_persistent_error_signals = false;  
+  bool m_persistent_error_signals = false;
 
 #ifdef LBANN_HAS_DISTCONV
   friend class data_type_distconv_adapter<InputTensorDataType,OutputTensorDataType>;

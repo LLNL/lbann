@@ -291,28 +291,28 @@ get_error_signals(int parent_index) const
 
 template <typename TensorDataType>
 auto data_type_layer<TensorDataType>::get_temp_grad()
-  ->  AbsDistMatrixType& {
+  ->  OutputAbsDistMatrixType& {
 
   return *m_temp_grad[0];
 }
 
 template <typename TensorDataType>
 auto data_type_layer<TensorDataType>::get_branch_tag_input(int tag)
-  ->  AbsDistMatrixType& {
+  ->  InputAbsDistMatrixType& {
 
   return *m_subgrid_tensors_split[tag];
 }
 
 template <typename TensorDataType>
 auto data_type_layer<TensorDataType>::get_branch_tag_input_vector()
-  ->    std::vector<std::unique_ptr<AbsDistMatrixType>>& {
+  ->    std::vector<std::unique_ptr<InputAbsDistMatrixType>>& {
 
   return m_subgrid_tensors_split;
 }
 
 template <typename TensorDataType>
 auto data_type_layer<TensorDataType>::get_all_activations()
-  ->    std::vector<std::unique_ptr<AbsDistMatrixType>>& {
+  ->    std::vector<std::unique_ptr<OutputAbsDistMatrixType>>& {
 
   return m_outputs;
 
@@ -320,21 +320,21 @@ auto data_type_layer<TensorDataType>::get_all_activations()
 
 template <typename TensorDataType>
 auto data_type_layer<TensorDataType>::get_all_prev_activations()
-  ->    std::vector<std::unique_ptr<AbsDistMatrixType>>& {
+  ->    std::vector<std::unique_ptr<InputAbsDistMatrixType>>& {
 
   return m_inputs;
 }
 
 template <typename TensorDataType>
 auto data_type_layer<TensorDataType>::get_all_prev_error_signals()
-  ->    std::vector<std::unique_ptr<AbsDistMatrixType>>& {
+  ->    std::vector<std::unique_ptr<OutputAbsDistMatrixType>>& {
 
   return m_gradient_wrt_outputs;
 }
 
 template <typename TensorDataType>
 auto data_type_layer<TensorDataType>::get_all_error_signals()
-  ->    std::vector<std::unique_ptr<AbsDistMatrixType>>& {
+  ->    std::vector<std::unique_ptr<InputAbsDistMatrixType>>& {
 
   return m_gradient_wrt_inputs;
 }
@@ -569,7 +569,7 @@ setup_matrices(const El::Grid& grid) {
     }
 
     for (auto& temp_grad : m_temp_grad) {
-    temp_grad = input_mat_builder->MakeEmpty(grid, 0);
+    temp_grad = output_mat_builder->MakeEmpty(grid, 0);
     }
     count = 0;
     for (auto& subgrid_tensor : m_subgrid_tensors_split) {
@@ -618,7 +618,7 @@ setup_matrices(const El::Grid& grid) {
     }
 
     for (auto& temp_grad : m_temp_grad) {
-    temp_grad = input_mat_builder->MakeEmpty(grid, 0);
+    temp_grad = output_mat_builder->MakeEmpty(grid, 0);
     }
 
 
@@ -651,7 +651,7 @@ setup_matrices(const El::Grid& grid) {
     }
 
     for (auto& temp_grad : m_temp_grad) {
-    temp_grad = input_mat_builder->MakeEmpty(grid, 0);
+    temp_grad = output_mat_builder->MakeEmpty(grid, 0);
     }
 
     auto subgrid_tags = *(this->m_parent_tags);
@@ -692,7 +692,7 @@ setup_matrices(const El::Grid& grid) {
     }
 
     for (auto& temp_grad : m_temp_grad) {
-    temp_grad = input_mat_builder->MakeEmpty(grid, 0);
+    temp_grad = output_mat_builder->MakeEmpty(grid, 0);
     }
     for (auto& subgrid_tensor : m_subgrid_tensors_split) {
     subgrid_tensor = output_mat_builder->MakeEmpty(grid, 0);
