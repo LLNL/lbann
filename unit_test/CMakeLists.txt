@@ -7,7 +7,10 @@ add_executable(seq-catch-tests
 target_link_libraries(seq-catch-tests
   PRIVATE unit_test_utilities lbann Catch2::Catch2)
 
-catch_discover_tests(seq-catch-tests)
+# Don't have ctest automatically run the catch test this allows
+# a Spack-based install to fail when using the --test option if a
+# catch2 test fails
+# catch_discover_tests(seq-catch-tests)
 
 # There's an example MPI test
 add_subdirectory(example)

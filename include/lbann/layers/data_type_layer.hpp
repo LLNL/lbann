@@ -64,44 +64,51 @@ using supported_layer_data_type = h2::meta::TL<
 #endif
   float, double>;
 
-template <typename TensorDataType>
+template <typename InputTensorDataType,
+          typename OutputTensorDataType = InputTensorDataType>
 class data_type_layer : public Layer {
 public:
   /** @name Public Types */
   ///@{
 
   /** @brief The tensor type expected in this object. */
-  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+  using InputAbsDistMatrixType = El::AbstractDistMatrix<InputTensorDataType>;
+  using OutputAbsDistMatrixType = El::AbstractDistMatrix<OutputTensorDataType>;
 
   /** @brief The proxy tensor type expected in this object. */
   template <El::Device D>
-  using AbsDistMatReadProxyType = El::AbstractDistMatrixReadDeviceProxy<TensorDataType, D>;
+  using InputAbsDistMatReadProxyType =
+    El::AbstractDistMatrixReadDeviceProxy<InputTensorDataType, D>;
+  template <El::Device D>
+  using OutputAbsDistMatReadProxyType =
+    El::AbstractDistMatrixReadDeviceProxy<OutputTensorDataType, D>;
 
   /** @brief The local tensor type expected in this object. */
-  using AbsMatrixType = El::AbstractMatrix<TensorDataType>;
+  using InputAbsMatrixType = El::AbstractMatrix<InputTensorDataType>;
+  using OutputAbsMatrixType = El::AbstractMatrix<OutputTensorDataType>;
 
   /** @brief The proxy type for weights used by this object. */
-  using WeightsProxyType = weights_proxy<TensorDataType>;
+  using WeightsProxyType = weights_proxy<InputTensorDataType>;
 
   ///@}
 
 public:
   static_assert(
-    h2::meta::tlist::MemberV<TensorDataType, supported_layer_data_type>(),
+    h2::meta::tlist::MemberV<InputTensorDataType, supported_layer_data_type>(),
     "Must use a supported type.");
 
   data_type_layer(lbann_comm* /*comm*/, bool persistent_error_signals=false)
     : Layer(),
       m_persistent_error_signals{persistent_error_signals}
   {}
-  data_type_layer(const data_type_layer<TensorDataType>& other);
-  data_type_layer& operator=(const data_type_layer<TensorDataType>& other);
+  data_type_layer(const data_type_layer<InputTensorDataType, OutputTensorDataType>& other);
+  data_type_layer& operator=(const data_type_layer<InputTensorDataType, OutputTensorDataType>& other);
   virtual ~data_type_layer() = default;
 
   /** Get a string representing the layer datatype
    */
   std::string get_datatype_name() const override {
-    return TypeName<TensorDataType>();
+    return TypeName<OutputTensorDataType>();
   };
 
   /** Forward propagation step.
@@ -120,9 +127,9 @@ public:
   // ===========================================================
 
   /** Get activation tensor corresponding to child layer. */
-  const BaseDistMat& get_activations(const Layer& child) const override;
+  const OutputAbsDistMatrixType& get_activations(const Layer& child) const override;
   /** Get error signal tensor corresponding to parent layer. */
-  const BaseDistMat& get_error_signals(const Layer& parent) const override;
+  const InputAbsDistMatrixType& get_error_signals(const Layer& parent) const override;
 
   /** Get temp Grad Tensor. */
   AbsDistMatrixType& get_temp_grad() ;
@@ -139,22 +146,22 @@ public:
   std::vector<std::unique_ptr<AbsDistMatrixType>>& get_all_error_signals() ;
 
   /** Get activation tensor. */
-  AbsDistMatrixType& get_activations(int child_index = 0);
+  OutputAbsDistMatrixType& get_activations(int child_index = 0);
   /** Get error signal tensor. */
-  AbsDistMatrixType& get_error_signals(int parent_index = 0);
+  InputAbsDistMatrixType& get_error_signals(int parent_index = 0);
   /** Get activation tensor. */
-  const AbsDistMatrixType& get_activations(int child_index = 0) const;
+  const OutputAbsDistMatrixType& get_activations(int child_index = 0) const;
   /** Get error signal tensor. */
-  const AbsDistMatrixType& get_error_signals(int parent_index = 0) const;
+  const InputAbsDistMatrixType& get_error_signals(int parent_index = 0) const;
 
   /** Get local portion of activation tensor. */
-  AbsMatrixType& get_local_activations(int child_index = 0);
+  OutputAbsMatrixType& get_local_activations(int child_index = 0);
   /** Get local portion of error signal tensor. */
-  AbsMatrixType& get_local_error_signals(int parent_index = 0);
+  InputAbsMatrixType& get_local_error_signals(int parent_index = 0);
   /** Get local portion of activation tensor. */
-  const AbsMatrixType& get_local_activations(int child_index = 0) const;
+  const OutputAbsMatrixType& get_local_activations(int child_index = 0) const;
   /** Get local portion of error signal tensor. */
-  const AbsMatrixType& get_local_error_signals(int parent_index = 0) const;
+  const InputAbsMatrixType& get_local_error_signals(int parent_index = 0) const;
 
   /** @brief Set whether to keep or dynamically reallocate error signals.
    *
@@ -181,14 +188,14 @@ protected:
   // ===========================================================
 
   /** Get previous activation tensor. */
-  const AbsDistMatrixType& get_prev_activations(int parent_index = 0) const;
+  const InputAbsDistMatrixType& get_prev_activations(int parent_index = 0) const;
   /** Get previous error signal tensor. */
-  const AbsDistMatrixType& get_prev_error_signals(int child_index = 0) const;
+  const OutputAbsDistMatrixType& get_prev_error_signals(int child_index = 0) const;
 
   /** Get local portion of previous activation tensor. */
-  const AbsMatrixType& get_local_prev_activations(int parent_index = 0) const;
+  const InputAbsMatrixType& get_local_prev_activations(int parent_index = 0) const;
   /** Get local portion of previous error signal tensor. */
-  const AbsMatrixType& get_local_prev_error_signals(int child_index = 0) const;
+  const OutputAbsMatrixType& get_local_prev_error_signals(int child_index = 0) const;
 
 protected:
 
@@ -249,7 +256,7 @@ protected:
   // ===========================================================
 
   /** @brief Get the values matrix for a specific weights object */
-  AbsDistMatrixType const& weights_values(size_t idx) const {
+  InputAbsDistMatrixType const& weights_values(size_t idx) const {
     if (idx >= m_weights_proxy.size())
       LBANN_ERROR("Bad index ", idx, " "
                   "(size=" , m_weights_proxy.size(), ")");
@@ -374,19 +381,19 @@ private:
   /** Input tensors.
    *  Each matrix column corresponds to a flattened mini-batch sample.
    */
-  std::vector<std::unique_ptr<AbsDistMatrixType>> m_inputs;
+  std::vector<std::unique_ptr<InputAbsDistMatrixType>> m_inputs;
   /** Output tensors.
    *  Each matrix column corresponds to a flattened mini-batch sample.
    */
-  std::vector<std::unique_ptr<AbsDistMatrixType>> m_outputs;
+  std::vector<std::unique_ptr<OutputAbsDistMatrixType>> m_outputs;
   /** Objective function gradients w.r.t. the output tensors.
    *  Each matrix column corresponds to a flattened mini-batch sample.
    */
-  std::vector<std::unique_ptr<AbsDistMatrixType>> m_gradient_wrt_outputs;
+  std::vector<std::unique_ptr<OutputAbsDistMatrixType>> m_gradient_wrt_outputs;
   /** Objective function gradients w.r.t. the input tensors.
    *  Each matrix column corresponds to a flattened mini-batch sample.
    */
-  std::vector<std::unique_ptr<AbsDistMatrixType>> m_gradient_wrt_inputs;
+  std::vector<std::unique_ptr<InputAbsDistMatrixType>> m_gradient_wrt_inputs;
 
   /** Temp grad tensor for Split Layer
    *  Each matrix column corresponds to a flattened mini-batch sample.
@@ -406,10 +413,10 @@ private:
   bool m_persistent_error_signals = false;  
 
 #ifdef LBANN_HAS_DISTCONV
-  friend class data_type_distconv_adapter<TensorDataType>;
+  friend class data_type_distconv_adapter<InputTensorDataType,OutputTensorDataType>;
  public:
-  data_type_distconv_adapter<TensorDataType>& get_distconv_adapter() override;
-  const data_type_distconv_adapter<TensorDataType>& get_distconv_adapter() const override;
+  data_type_distconv_adapter<InputTensorDataType,OutputTensorDataType>& get_distconv_adapter() override;
+  const data_type_distconv_adapter<InputTensorDataType,OutputTensorDataType>& get_distconv_adapter() const override;
 
  protected:
   void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override;

@@ -1,0 +1,4 @@
+const std::string A_smi_const = R"v0gon(C2nnc(Cc3ccccn3)n2CCNS(=O)(=O)c2ccccc2)
+1c1ccccc1-c1nnc(N2CC[NH+](C3CCOCC3)C[C@
+CC(=O)Nc1cccc(N2C(=O)C(Sc3nc(C)cc(C)n3)
+cc1cc(C)nc(-c2cccc(C(=O)NCCC[NH+]3CCC(O)v0gon"; 

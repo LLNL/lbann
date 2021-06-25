@@ -61,6 +61,10 @@ public:
     //    by the data reader
     for(auto idt : input_data_type_iterator()) {
       m_input_buffers[idt].reset(new StarVCMatDT<TensorDataType, El::Device::CPU>(comm->get_trainer_grid()));
+#if defined(LBANN_HAS_GPU)
+      // Pin the memory so that we get efficient GPU data transfer
+      m_input_buffers[idt]->Matrix().SetMemoryMode(1);
+#endif // LBANN_HAS_GPU
     }
   }
 

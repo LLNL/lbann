@@ -1,4 +1,47 @@
 ============================== (Pending) Release Notes: v1.00 ==============================
+C++ API:
+ - Added ability to load models and run inference from external C++ applcations
+ - Added inference-only execution algorithm
+
+Support for new training algorithms:
+ - Experimental support for 2nd-order optimization with KFAC.
+   Currently supports fully-connected, convolution, and GRU layers.
+ - Added Sub-graph parallelism support for multi-branch architectures
+   (split, slice, sum, and concat layers)
+ - Data + sub-graph parallelism for in-core models (D&SP and D&SP-cSub)
+ - Initial sub-graph parallelism support for common layers in
+   Transformers
+
+Support for new network structures:
+
+Support for new layers:
+
+Python front-end:
+
+Performance optimizations:
+ - Enabled the input layers to use a view of the I/O buffers in the
+ buffered data coordinator
+
+Model portability & usability:
+
+Experiments & Applications:
+ - Example for training Transformer model with D&SP and D&SP-cSub
+
+Internal features:
+
+I/O & data readers:
+ - Updated SMILES data reader to use sample lists
+ - Added explicitly managed buffered reading and local unpacking for the
+   SMILES data reader to minimize file access
+ - Sample lists with integral indices can use range format (start ... end)
+
+Build system:
+
+Bug fixes:
+
+Retired features:
+
+============================== Release Notes: v0.102 ==============================
 Support for new training algorithms:
  - LTFB is now a first-class training algorithm.
  - LTFB now allows multiple metrics. The local algorithm is favored by
@@ -9,26 +52,39 @@ Support for new training algorithms:
  - Improved documentation of training algorithm infrastructure.
 
 Support for new network structures:
+ - ATOM WAE model - character-based Wasserstein Autoencoder
+ - Community GAN model for graph data sets
 
 Support for new layers:
  - "DFTAbs" layer that computes the absolute value of the channel-wise
    DFT of the input data
+ - Adding support for 3D Matrix Multiplication
+ - Added scatter and gather neural network layers
+ - CPU-based GRU layers using oneDNN
+ - Added batch-wise reduce-sum
+ - ArcFace loss
 
 Python front-end:
+ - Added 3D U-Net Model
+ - Added Cosmoflow Model
+ - Ported CANDLE Pilot1 models
+ - Support nvprof
+ - Added channelwise fully connected layer
+ - Added support for non square kernels, padding, stride, and
+   dilation for the convolution module
+ - Support for OpenMPI launcher
 
 Performance optimizations:
  - Use cuDNN 8 RNN API and CUDA Graphs in GRU layer
  - Cache CUDA Graphs for each active mini-batch size
  - Tuned performance of slice, concatenate, and tessellate layers on
-   ARM processors.
- - Added Sub-graph parallelism support for multi-branch architectures
-   (split, slice, sum, and concat layers)
- - Data + sub-graph parallelism for in-core models (D&SP and D&SP-cSub) 
- - Initial sub-graph parallelism support for common layers in 
-   Transformers
+   ARM processors
+ - Parallelize computation of Gaussian random numbers
+ - Optimizing tessellate, concatenate, and slice layers on CPU
 
-Model portability & usability:
- - Example for training Transformer model with D&SP and D&SP-cSub
+Experiments & Applications:
+ - Added experiment scripts for ATOM cWAE Gordon Bell simulations
+ - LBANN-ATOM model inference and analysis
 
 Internal features:
  - Wrapper classes for CUDA Graphs API
@@ -43,8 +99,11 @@ Internal features:
    hook) in the name rather than the current execution context.
  - Added in-memory binary model exchange for LTFB.
  - Added support for ROCm and MIOpen
+ - Added support for oneDNN
  - Updated the bamboo test environment to use local executable rather
    than hard coded executables
+ - Overhauled and refactored serialization throughout code to use
+   Cereal serialization library
  - Significant cleanup and refactoring of code base to improve compile
    times.  Moving to ensure  that code adheres to standard split of
    header between declaration and implementation functions (for
@@ -53,6 +112,13 @@ Internal features:
    inclusions.
  - The relationship of execution_contexts and training_algorithms was
    clarified. There is still work to do here.
+ - Added DistConv tests both convolution and pooling layers
+ - Support padding in distributed embedding layer
+ - Added dump model graph callback
+ - Added perturb learning rate callback
+ - Added batched inference algorithm
+ - Switched ATOM tests to use CPU embedding and tessellate layers to
+   minimize noise
 
 I/O & data readers:
  - Experimental data reader that generates graph random walks with
@@ -60,10 +126,11 @@ I/O & data readers:
  - Added explict tournament execution mode
  - Added support to split training data reader into validation and
    tournament readers
+ - node2vec data reader
 
 Build system:
- - Hydrogen v1.5.0
- - Aluminum v0.5.0
+ - Hydrogen v1.5.0+
+ - Aluminum v0.5.0+
  - DiHydrogen v0.2.0 is required
  - C++14 or newer standard with CUDA (CMake: "-DCMAKE_CUDA_STANDARD=14")
  - OpenCV is now an optional dependency via CMake "LBANN_WITH_VISION"
@@ -77,6 +144,8 @@ Build system:
    build_lbann.sh script to setup good defaults on known systems
  - Added application specific build scripts for users such as ATOM
  - Added support for pulling from Spack mirrors and setting them up
+ - Split embedded Python support from Python Front End
+ - Switched Spack-based build script to use Spack's clingo concretizer
 
 Bug fixes:
  - Fixed a bug where LBANN didn't set the Hydrogen RNG seed
@@ -86,6 +155,7 @@ Bug fixes:
    types
  - Fixed calculation of the linearized response size
  - Fixed the data coordinator's interface to input_layer
+ - Fixed error with deterministic execution of dropout layers
 
 Retired features:
  - Removed deprecated JAG leader mode which was made obsolete when the

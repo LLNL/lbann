@@ -68,21 +68,23 @@ void input_layer<TensorDataType, T_layout, Dev>::fp_setup_outputs(El::Int mini_b
   if(this->m_model->has_valid_execution_context()) {
     auto& c = dynamic_cast<sgd_execution_context&>(this->m_model->get_execution_context());
     auto mode = c.get_execution_mode();
-    data_coordinator& dc = get_trainer().get_data_coordinator();
-    // Determine model mini-batch size and effective mini-batch size
-    // Note: If inter-model communication is activated, the effective
-    // mini-batch is equal to the global mini-batch size.
-    /// @todo This functionality should probably be moved elsewhere
-    mini_batch_size = dc.get_current_mini_batch_size(mode);
-
     auto effective_mini_batch_size = mini_batch_size;
-    for (auto&& cb : this->m_model->get_callbacks()) {
-      if (dynamic_cast<callback::imcomm*>(cb) != nullptr) {
-        effective_mini_batch_size = dc.get_current_global_mini_batch_size(mode);
-        break;
+    if (!(mode==execution_mode::inference)) {
+      data_coordinator& dc = get_trainer().get_data_coordinator();
+      // Determine model mini-batch size and effective mini-batch size
+      // Note: If inter-model communication is activated, the effective
+      // mini-batch is equal to the global mini-batch size.
+      /// @todo This functionality should probably be moved elsewhere
+      mini_batch_size = dc.get_current_mini_batch_size(mode);
+
+      effective_mini_batch_size = mini_batch_size;
+      for (auto&& cb : this->m_model->get_callbacks()) {
+        if (dynamic_cast<callback::imcomm*>(cb) != nullptr) {
+          effective_mini_batch_size = dc.get_current_global_mini_batch_size(mode);
+          break;
+        }
       }
     }
-
     // Set mini-batch size in model
     c.set_current_mini_batch_size(mini_batch_size);
     c.set_effective_mini_batch_size(effective_mini_batch_size);
@@ -97,38 +99,49 @@ template <typename TensorDataType,
           El::Device Dev>
 void input_layer<TensorDataType, T_layout, Dev>::fp_compute()
 {
-  execution_mode const mode =
-    this->m_model->get_execution_context().get_execution_mode();
-  buffered_data_coordinator<TensorDataType>& dc =
-    static_cast<buffered_data_coordinator<TensorDataType>&>(
-      get_trainer().get_data_coordinator());
+  if (!this->m_samples_loaded) {
+    execution_mode const mode =
+      this->m_model->get_execution_context().get_execution_mode();
+    buffered_data_coordinator<TensorDataType>& dc =
+      static_cast<buffered_data_coordinator<TensorDataType>&>(
+        get_trainer().get_data_coordinator());
 
-  //  partitioned_io_buffer<TensorDataType>* io_buffer = dc.get_active_buffer(mode);
-  // generic_io_buffer<TensorDataType>* io_buffer = dc.m_io_buffers[dc.get_active_buffer_idx(mode) % dc.m_io_buffers.size()];
+    //  partitioned_io_buffer<TensorDataType>* io_buffer = dc.get_active_buffer(mode);
+    // generic_io_buffer<TensorDataType>* io_buffer = dc.m_io_buffers[dc.get_active_buffer_idx(mode) % dc.m_io_buffers.size()];
 
-  // if(dynamic_cast<partitioned_io_buffer<TensorDataType>*>(io_buffer) != nullptr) {
-  // Use the predetermined size of the mini-batch to set the current
-  // batch size for the neural network
-  int num_samples_in_batch = dc.get_current_mini_batch_size(mode);
+    // if(dynamic_cast<partitioned_io_buffer<TensorDataType>*>(io_buffer) != nullptr) {
+    // Use the predetermined size of the mini-batch to set the current
+    // batch size for the neural network
+    int num_samples_in_batch = dc.get_current_mini_batch_size(mode);
 
-  dc.update_num_samples_processed(mode, num_samples_in_batch);
-  std::map<input_data_type, AbsDistMatrixType*> input_buffers;
-  input_buffers[input_data_type::SAMPLES] = &(this->get_activations(0));
-  if(this->m_expected_num_child_layers > 1) {
-    if(is_for_regression()) {
-      input_buffers[input_data_type::RESPONSES] = &(this->get_activations(1));
-    }else {
-      input_buffers[input_data_type::LABELS] = &(this->get_activations(1));
+    dc.update_num_samples_processed(mode, num_samples_in_batch);
+    std::map<input_data_type, AbsDistMatrixType*> input_buffers;
+    input_buffers[input_data_type::SAMPLES] = &(this->get_activations(0));
+    if(this->m_expected_num_child_layers > 1) {
+      if(is_for_regression()) {
+        input_buffers[input_data_type::RESPONSES] = &(this->get_activations(1));
+      }else {
+        input_buffers[input_data_type::LABELS] = &(this->get_activations(1));
+      }
     }
-  }
 
-  dc.distribute_from_local_matrix(mode, input_buffers);
+    dc.distribute_from_local_matrix(mode, input_buffers);
 
 #ifdef LBANN_HAS_DISTCONV
-  if (this->distconv_enabled()) {
-    get_distconv_adapter().fp_compute();
-  }
+    if (this->distconv_enabled()) {
+      get_distconv_adapter().fp_compute();
+    }
 #endif // LBANN_HAS_DISTCONV
+  }
+}
+
+template <typename TensorDataType,
+          data_layout T_layout,
+          El::Device Dev>
+void input_layer<TensorDataType, T_layout, Dev>::
+set_samples(const El::AbstractDistMatrix<TensorDataType>& samples) {
+  El::Copy(samples, this->get_activations(0));
+  this->m_samples_loaded = true;
 }
 
 template <typename TensorDataType,

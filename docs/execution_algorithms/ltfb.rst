@@ -80,8 +80,7 @@ metalearning steps (i.e., "tournaments").
    # Construct the metalearning strategy. This assumes the model has
    # an lbann.Metric attached to it with the name set to "accuracy".
    pairwise_exchange = ClassicalLTFB(
-       metric_name='accuracy',
-       metric_strategy=ClassicalLTFB.MetricStrategy.HIGHER_IS_BETTER)
+       metric_strategies={'accuracy': RPE.MetricStrategy.HIGHER_IS_BETTER})
 
    # Construct the training algorithm and pass it to the trainer.
    LTFB = lbann.LTFB("ltfb",

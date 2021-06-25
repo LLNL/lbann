@@ -96,6 +96,21 @@ public:
 
   ///@}
 
+  size_t get_hidden_size() const {
+    return m_hidden_size;
+  }
+  size_t get_num_layers() const {
+    return m_num_layers;
+  }
+  const hydrogen::simple_buffer<El::byte, Device>&
+  get_reserve_space() const {
+#ifdef LBANN_GRU_LAYER_CUDNN_SUPPORTED
+    return m_cudnn_objects->reserve_space;
+#else // LBANN_GRU_LAYER_CUDNN_SUPPORTED
+    LBANN_ERROR("GRU layers' reserve space is not available without cuDNN.");
+#endif // LBANN_GRU_LAYER_CUDNN_SUPPORTED
+  }
+
 protected:
 
   friend class cereal::access;

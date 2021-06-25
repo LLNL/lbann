@@ -45,7 +45,7 @@ endif ()
 #
 
 set(LBANN_VERSION_MAJOR 0)
-set(LBANN_VERSION_MINOR 102)
+set(LBANN_VERSION_MINOR 103)
 set(LBANN_VERSION_PATCH 0)
 
 set(LBANN_VERSION "${LBANN_VERSION_MAJOR}.${LBANN_VERSION_MINOR}.${LBANN_VERSION_PATCH}")
@@ -342,9 +342,8 @@ if (LBANN_HAS_CUDA)
   include(SetupCUDAToolkit)
 
   if (LBANN_HAS_GPU_FP16)
-    set_property(TARGET cuda::toolkit PROPERTY
-      INTERFACE_COMPILE_OPTIONS
-      $<$<COMPILE_LANGUAGE:CUDA>:-arch=sm_60>)
+    # This should ensure that all the __half functionality we need exists.
+    list(APPEND CMAKE_CUDA_ARCHITECTURES 60)
   endif (LBANN_HAS_GPU_FP16)
 
   set(LBANN_HAS_CUDNN ${CUDNN_FOUND})
@@ -357,8 +356,8 @@ if (LBANN_HAS_CUDA)
 
   if (LBANN_WITH_NVSHMEM)
     find_package(NVSHMEM REQUIRED)
-    set_property(TARGET cuda::toolkit PROPERTY
-      INTERFACE_COMPILE_OPTIONS $<$<COMPILE_LANGUAGE:CUDA>:-arch=sm_70>)
+    # This should ensure that all the CUDA functionality we for NVSHMEM need exists.
+    list(APPEND CMAKE_CUDA_ARCHITECTURES 70)
     # Build LBANN as a static library to get around a bug in NVSHMEM
     set(BUILD_SHARED_LIBS OFF)
   endif ()
@@ -381,6 +380,8 @@ if (LBANN_HAS_CUDNN OR LBANN_HAS_MIOPEN)
 else ()
   set(LBANN_HAS_DNN_LIB FALSE)
 endif ()
+
+find_package(ZSTR REQUIRED)
 
 # This shouldn't be here, but is ok for now. This will occasionally be
 # part of another TPL's libraries (e.g., MKL), but it's no
@@ -580,6 +581,7 @@ if (LBANN_WITH_UNIT_TESTING)
   include(Catch)
   add_subdirectory(src/callbacks/unit_test)
   add_subdirectory(src/execution_algorithms/unit_test)
+  add_subdirectory(src/data_readers/unit_test)
   add_subdirectory(src/layers/activations/unit_test)
   add_subdirectory(src/layers/learning/unit_test)
   add_subdirectory(src/layers/math/unit_test)
@@ -633,6 +635,9 @@ target_compile_features(lbann PUBLIC cxx_std_17)
 
 # Use the IMPORTED targets when possible.
 target_link_libraries(lbann PUBLIC LbannProto)
+if (LBANN_HAS_TBINF)
+  target_link_libraries(lbann PUBLIC TBinf)
+endif ()
 target_link_libraries(lbann PUBLIC Threads::Threads)
 target_link_libraries(lbann PUBLIC clara::clara)
 target_link_libraries(lbann PUBLIC cereal)
@@ -646,6 +651,7 @@ endif ()
 target_link_libraries(lbann PUBLIC ${CONDUIT_LIBRARIES})
 
 target_link_libraries(lbann PUBLIC
+  $<TARGET_NAME_IF_EXISTS:LBANN_CXX_FLAGS_werror>
   $<TARGET_NAME_IF_EXISTS:TBinf>
 
   $<TARGET_NAME_IF_EXISTS:H2::H2Meta>
@@ -656,6 +662,7 @@ target_link_libraries(lbann PUBLIC
   $<TARGET_NAME_IF_EXISTS:FFTW::FFTW>
   $<TARGET_NAME_IF_EXISTS:HWLOC::hwloc>
   $<TARGET_NAME_IF_EXISTS:Python::Python>
+  $<TARGET_NAME_IF_EXISTS:ZSTR::ZSTR>
 
   $<TARGET_NAME_IF_EXISTS:MIOpen>
   $<TARGET_NAME_IF_EXISTS:roc::rocfft>

@@ -135,6 +135,12 @@ void sgd_training_algorithm::train(sgd_execution_context& c,
                  dc,
                  execution_mode::validation,
                  epoch_termination_criteria(num_validation_epochs));
+
+        // FIXME (trb 06/07/21): The early stopping callback is part
+        // of the evaluation callbacks but it's meant to affect
+        // training. This fixes a bug in which the training context
+        // was meant to stop but was never properly told.
+        c.set_early_stop(evaluation_context.get_early_stop());
       }
 
       // Trigger new epoch stuff next iteration (if there is one).

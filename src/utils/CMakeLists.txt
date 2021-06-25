@@ -39,12 +39,14 @@ if (LBANN_HAS_CUDA)
   set_full_path(THIS_DIR_CU_SOURCES
     cuda.cu
     nvshmem.cu
+    im2col.cu
     )
 endif ()
 
 if (LBANN_HAS_ROCM)
   # Add the ROCM source files for this directory
   set_full_path(THIS_DIR_CU_SOURCES
+    im2col.cu
     rocm.cpp
     )
 endif ()
