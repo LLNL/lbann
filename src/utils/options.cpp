@@ -48,9 +48,6 @@ void construct_std_options() {
   arg_parser.add_flag(LOAD_MODEL_WEIGHTS_DIR_IS_COMPLETE,
                       {"--load_model_weights_dir_is_complete"},
                       "Use load_model_weights_dir as given, ignoring checkpoint hierarchy");
-  arg_parser.add_flag(LTFB,
-                      {"--ltfb"},
-                      "TODO");
   arg_parser.add_flag(LTFB_VERBOSE,
                       {"--ltfb_verbose"},
                       "Increases number of per-trainer messages that are reported");
@@ -72,6 +69,9 @@ void construct_std_options() {
   arg_parser.add_flag(USE_DATA_STORE,
                       {"--use_data_store"},
                       "Enables the data store in-memory structure");
+  arg_parser.add_flag(USE_LTFB,
+                      {"--ltfb"},
+                      "TODO");
   arg_parser.add_flag(VERBOSE,
                       {"--verbose"},
                       "Turns on verbose mode");
@@ -130,6 +130,7 @@ void construct_std_options() {
                         utils::ENV("LBANN_NUM_IO_THREADS"),
                         "Number of threads available to both I/O and "
                         "initial data transformations for each rank.",
+                        64);
   arg_parser.add_option(NUM_PARALLEL_READERS,
                         {"--num_parallel_readers"},
                         "The number of parallel data readers",
@@ -149,7 +150,6 @@ void construct_std_options() {
                         utils::ENV("LBANN_NUM_VALIDATE_SAMPLES"),
                         "Set the number of validate samples to ingest.",
                         0);
-                        64);
   arg_parser.add_option(OBJECTIVE_FUNCTION,
                         {"--objective_function"},
                         "must be: categorical_cross_entropy or mean_squared_error",
@@ -369,7 +369,7 @@ void construct_datareader_options() {
                         {"--sample_list_validate"},
                         "TODO",
                         "");
-  arg_parser.add_option(SEAUENCE_LENGTH,
+  arg_parser.add_option(SEQUENCE_LENGTH,
                         {"--sequence_length"},
                         "TODO",
                         -1);
@@ -385,93 +385,101 @@ void construct_datareader_options() {
 
 void construct_jag_options() {
   auto& arg_parser = global_argument_parser();
-  arg_parser.add_flag("jag",
+
+  // Bool flags
+  arg_parser.add_flag(JAG,
                       {"--jag"},
                       "TODO");
-  arg_parser.add_flag("jag_partitioned",
+  arg_parser.add_flag(JAG_PARTITIONED,
                       {"--jag_partitioned"},
                       "TODO");
-  arg_parser.add_option("filelist",
-                        {"--filelist"},
-                        "TODO",
-                        "");
-  arg_parser.add_option("filename",
-                        {"--filename"},
-                        "TODO",
-                        "");
-  arg_parser.add_option("output_fn",
-                        {"--output_fn"},
-                        "TODO",
-                        "");
-  arg_parser.add_option("index_fn",
-                        {"--index_fn"},
-                        "TODO",
-                        "");
-  arg_parser.add_option("mapping_fn",
-                        {"--mapping_fn"},
-                        "TODO",
-                        "");
-  arg_parser.add_option("base_dir",
+
+  // Input options
+  arg_parser.add_option(BASE_DIR,
                         {"--base_dir"},
                         "TODO",
                         "");
-  arg_parser.add_option("output_dir",
-                        {"--output_dir"},
+  arg_parser.add_option(FILELIST,
+                        {"--filelist"},
                         "TODO",
                         "");
-  arg_parser.add_option("output_base_dir",
-                        {"--output_base_dir"},
+  arg_parser.add_option(FILENAME,
+                        {"--filename"},
                         "TODO",
                         "");
-  arg_parser.add_option("output_base_fn",
-                        {"--output_base_fn"},
-                        "TODO",
-                        "");
-  arg_parser.add_option("num_lists",
-                        {"--num_lists"},
-                        "TODO",
-                        -1);
-  arg_parser.add_option("num_subdirs",
-                        {"--num_subdirs"},
-                        "TODO",
-                        -1);
-  arg_parser.add_option("format",
+  arg_parser.add_option(FORMAT,
                         {"--format"},
                         "TODO",
                         "");
-  arg_parser.add_option("num_samples_per_file",
+  arg_parser.add_option(INDEX_FN,
+                        {"--index_fn"},
+                        "TODO",
+                        "");
+  arg_parser.add_option(MAPPING_FN,
+                        {"--mapping_fn"},
+                        "TODO",
+                        "");
+  arg_parser.add_option(NUM_LISTS,
+                        {"--num_lists"},
+                        "TODO",
+                        -1);
+  arg_parser.add_option(NUM_SAMPLES,
+                        {"--num_samples"},
+                        "TODO",
+                        -1);
+  arg_parser.add_option(NUM_SAMPLES_PER_FILE,
                         {"--num_samples_per_file"},
                         "TODO",
                         -1);
-  arg_parser.add_option("num_samples_per_list",
+  arg_parser.add_option(NUM_SAMPLES_PER_LIST,
                         {"--num_samples_per_list"},
                         "TODO",
                         -1);
-  arg_parser.add_option("samples_per_file",
-                        {"--samples_per_file"},
+  arg_parser.add_option(NUM_SUBDIRS,
+                        {"--num_subdirs"},
                         "TODO",
                         -1);
-  arg_parser.add_option("num_samples",
-                        {"--num_samples"},
+  arg_parser.add_option(OUTPUT_BASE_DIR,
+                        {"--output_base_dir"},
+                        "TODO",
+                        "");
+  arg_parser.add_option(OUTPUT_BASE_FN,
+                        {"--output_base_fn"},
+                        "TODO",
+                        "");
+  arg_parser.add_option(OUTPUT_DIR,
+                        {"--output_dir"},
+                        "TODO",
+                        "");
+  arg_parser.add_option(OUTPUT_FN,
+                        {"--output_fn"},
+                        "TODO",
+                        "");
+  arg_parser.add_option(SAMPLES_PER_FILE,
+                        {"--samples_per_file"},
                         "TODO",
                         -1);
 }
 
 void construct_callback_options() {
   auto& arg_parser = global_argument_parser();
-  arg_parser.add_option("image_dir",
+
+  // Bool flags
+  arg_parser.add_flag(NO_IM_COMM,
+                      {"--no_im_comm"},
+                      "removed ImComm callback, if present; this is intended for"
+                      "running alexnet with a single model, but may be useful elsewhere");
+
+  // Input options
+  arg_parser.add_option(CKPT_DIR,
+                        {"--ckpt_dir"},
+                        "TODO",
+                        "");
+  arg_parser.add_option(IMAGE_DIR,
                         {"--image_dir"},
                         "if the model has callback_save_images, this determines where the"
                         "images are saved",
                         "");
-  arg_parser.add_option("ckpt_dir",
-                        {"--ckpt_dir"},
-                        "TODO",
-                        "");
-  arg_parser.add_flag("no_im_comm",
-                      {"--no_im_comm"},
-                      "removed ImComm callback, if present; this is intended for"
-                      "running alexnet with a single model, but may be useful elsewhere");
 }
 
 void construct_all_options() {

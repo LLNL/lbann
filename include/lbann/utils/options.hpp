@@ -17,7 +17,6 @@ namespace lbann {
 #define FN "fn"
 #define HELP "help"
 #define LOAD_MODEL_WEIGHTS_DIR_IS_COMPLETE "load_model_weights_dir_is_complete"
-#define LTFB "ltfb"
 #define LTFB_VERBOSE "ltfb_verbose"
 #define PRELOAD_DATA_STORE "preload_data_store"
 #define PRINT_AFFINITY "print_affinity"
@@ -25,6 +24,7 @@ namespace lbann {
 #define ST_FULL_TRACE "st_full_trace"
 #define ST_ON "st_on"
 #define USE_DATA_STORE "use_data_store"
+#define USE_LTFB "ltfb"
 #define VERBOSE "verbose"
 #define WRITE_SAMPLE_LIST "write_sample_list"
 
@@ -109,6 +109,37 @@ namespace lbann {
 #define SEQUENCE_LENGTH "sequence_length"
 #define TEST_TARBALL "test_tarball"
 #define VOCAB "vocab"
+
+/****** datareader options ******/
+// Bool flags
+#define JAG "jag"
+#define JAG_PARTITIONED "jag_partitioned"
+
+// Input options
+#define BASE_DIR "base_dir"
+#define FILELIST "filelist"
+#define FILENAME "filename"
+#define FORMAT "format"
+#define INDEX_FN "index_fn"
+#define MAPPING_FN "mapping_fn"
+#define NUM_LISTS "num_lists"
+#define NUM_SAMPLES "num_samples"
+#define NUM_SAMPLES_PER_FILE "num_samples_per_file"
+#define NUM_SAMPLES_PER_LIST "num_samples_per_list"
+#define NUM_SUBDIRS "num_subdirs"
+#define OUTPUT_BASE_DIR "output_base_dir"
+#define OUTPUT_BASE_FN "output_base_fn"
+#define OUTPUT_DIR "output_dir"
+#define OUTPUT_FN "output_fn"
+#define SAMPLES_PER_FILE "samples_per_file"
+
+/****** callback options ******/
+// Bool flags
+#define NO_IM_COMM "no_im_comm"
+
+// Input options
+#define CKPT_DIR "ckpt_dir"
+#define IMAGE_DIR "image_dir"
 
 void construct_std_options();
 void construct_datastore_options();
