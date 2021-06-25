@@ -119,27 +119,24 @@ __global__ void gather2d_kernel(
   auto num_out_columns = output_dims[2];
   auto num_value_columns = values_dims[2];
 
-
-  for (size_t j=gidz; j<mini_batch_size; j+=nthreadsz) { //Every sample in MB 
-    for (size_t k=gidx; k<output_dims[1]; k+=nthreadsx) { // Every row
-      for (size_t i = gidy; i < output_dims[2]; i+=nthreadsy){ // Every column
+  for (size_t batch = gidz; batch < mini_batch_size; batch+=nthreadsz){
+    for(size_t row = gidy; row < num_rows; row+=nthreadsy){
+      for (size_t i = gidx; i < num_out_columns; i+=nthreadsx){
         const auto ind = static_cast<El::Int>(
           gpu_lib::floor(
-            indices[j*indices_strides[0] + i*indices_strides[1]]));
+            indices[batch*indices_strides[0] + i*indices_strides[1]]));
         
-        auto& y = output[j*output_strides[0] + k*output_strides[1] + i * output_strides[2]];
-        
-        if (0<=ind && ind<static_cast<El::Int>(values_dims[2])) {
-          y = values[j*values_strides[0] + k*values_strides[1] + ind*values_strides[2]];
-        }
-        else {
+        auto &y = output[batch*output_strides[0] + row*output_strides[1] + i*output_strides[2]];
+
+        if (0<=ind && ind < static_cast<El::Int>(num_value_columns)){
+          y = values[batch*values_strides[0] + row*values_strides[1] + ind*values_strides[2]];
+        }else{
           y = T{0.f};
         }
       }
     }
   }
 }
-
 } // namespace <anon>
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -184,17 +181,6 @@ void scatter_layer<TensorDataType, Layout, Device>::fp_compute() {
     grid_dims.z = (local_mini_batch_size + block_dims.z - 1) / block_dims.z; 
 
 
-
-    std::cout << "Num Rows " << num_rows 
-              << " Num Y columns " << output_size 
-              << " Num X columns " << values_size
-              << std::endl;
-
-    std::cout << " Strides : \t" << local_indices.LDim() <<
-                  "\tValues LDIM: \t" << local_values.LDim() << 
-                  "\t Values Stride 2\t" << value_stride_2 <<
-                  "\tOutput LDIM: \t" <<local_output.LDim() << 
-                  "\t Output Stride 2\t" << output_stride_2 << std::endl; 
     hydrogen::gpu::LaunchKernel(
       scatter2d_kernel<TensorDataType>,
       grid_dims, block_dims, 0, multisync,
@@ -207,7 +193,6 @@ void scatter_layer<TensorDataType, Layout, Device>::fp_compute() {
       Dim3{local_mini_batch_size, num_rows, output_size},
       Dim3{static_cast<size_t>(local_output.LDim()), output_stride_2, 1});
   }
-
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -232,6 +217,9 @@ void scatter_layer<TensorDataType, Layout, Device>::bp_compute() {
   // Zero out gradient w.r.t. indices
   El::Zero(local_indices_grad);
 
+  const size_t value_stride_2 = (input_dims.size()>1) ? values_size : 0;
+  const size_t output_stride_2 = (input_dims.size()>1) ? output_size : 0;
+
   // Gather into gradient w.r.t. values
   if (!local_values_grad.IsEmpty()) {
     auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_values_grad),
@@ -243,9 +231,11 @@ void scatter_layer<TensorDataType, Layout, Device>::bp_compute() {
     block_dims.y = block_size;
     block_dims.z = 1;
 
-    grid_dims.x = (num_rows + block_dims.y - 1) / block_dims.y;
-    grid_dims.y = (values_size + block_dims.x - 1) / block_dims.x;
+    grid_dims.x = (num_rows + block_dims.x - 1) / block_dims.x;
+    grid_dims.y = (values_size + block_dims.y - 1) / block_dims.y;
     grid_dims.z = (local_mini_batch_size + block_dims.z - 1) / block_dims.z;
+
+
     
     hydrogen::gpu::LaunchKernel(
       gather2d_kernel<TensorDataType>,
@@ -254,10 +244,10 @@ void scatter_layer<TensorDataType, Layout, Device>::bp_compute() {
       Dim2{static_cast<size_t>(local_indices.LDim()), 1},
       local_output_grad.LockedBuffer(),
       Dim3{local_mini_batch_size, num_rows, output_size},
-      Dim3{static_cast<size_t>(local_output_grad.LDim()), output_size, 1},
+      Dim3{static_cast<size_t>(local_output_grad.LDim()), output_stride_2, 1},
       local_values_grad.Buffer(),
       Dim3{local_mini_batch_size, num_rows, values_size},
-      Dim3{static_cast<size_t>(local_values_grad.LDim()), num_rows, 1});
+      Dim3{static_cast<size_t>(local_values_grad.LDim()), value_stride_2, 1});
   }
 
 }
