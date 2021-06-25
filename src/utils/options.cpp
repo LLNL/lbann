@@ -39,6 +39,9 @@ void construct_std_options() {
   arg_parser.add_flag(DISABLE_CUDA,
                       {"--disable_cuda"},
                       "has no effect unless LBANN was compiled with LBANN_HAS_CUDNN");
+  arg_parser.add_flag(FN,
+                      {"--fn"},
+                      "TODO");
   arg_parser.add_flag(HELP,
                       {"--help", "-h"},
                       "Prints the help message");
@@ -194,9 +197,6 @@ void construct_std_options() {
                         "note: this will be applied to all layers, metrics (and others)\n"
                         "that take DATA_PARALLEL or MODEL_PARALLEL as a template parameter",
                         "data_parallel");
-  arg_parser.add_flag(FN,
-                      {"--fn"},
-                      "TODO");
   arg_parser.add_option(OBJECTIVE_FUNCTION,
                         {"--objective_function"},
                         "must be: categorical_cross_entropy or mean_squared_error",

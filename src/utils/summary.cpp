@@ -352,7 +352,7 @@ void lbann_summary::flush_histograms() {
 
 std::string lbann_summary::prepend_model(const std::string tag,
                                          int model) const {
-  return MODEL + std::to_string(model) + "/" + tag;
+  return "model" + std::to_string(model) + "/" + tag;
 }
 
 void lbann_summary::gather_scalar_summary(

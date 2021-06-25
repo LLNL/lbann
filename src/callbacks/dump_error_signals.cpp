@@ -50,7 +50,7 @@ void dump_error_signals::on_backward_prop_end(model *m, Layer *l) {
     // File name
     std::stringstream file;
     file << m_basename
-         << MODEL << m->get_comm()->get_trainer_rank() << "-"
+         << "model" << m->get_comm()->get_trainer_rank() << "-"
          << "epoch" << c.get_epoch() << "-"
          << "step" << c.get_step() << "-"
          << l->get_name() << "-"

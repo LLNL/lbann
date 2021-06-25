@@ -108,17 +108,12 @@ int main(int argc, char* argv[])
   }
 
   try {
-    // Initialize options db (this parses the command line)
-    // TODO MRW
-    /*
-    construct_all_options();
     if (arg_parser.get<bool>(HELP) or argc == 1) {
       if (master)
         std::cout << arg_parser << std::endl;
       print_help(*comm);
       return EXIT_SUCCESS;
     }
-    */
 
     // Setup cuDNN and cuBLAS defaults
     if (master) {

@@ -55,7 +55,7 @@ class save_model : public callback_base {
    */
   save_model(std::string dir,
                             bool disable_save_after_training,
-                            std::string extension=PROTOTEXT) :
+                            std::string extension="prototext") :
     callback_base(), m_dir(std::move(dir)),
     m_disable_save_after_training(disable_save_after_training),
     m_extension(std::move(extension))

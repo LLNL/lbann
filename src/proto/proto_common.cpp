@@ -724,7 +724,7 @@ void set_data_readers_filenames(
       }else {
         s.clear();
         s.str("");
-        s << DATA_FILEDIR;
+        s << "data_filedir";
         if (arg_parser.get<std::string>(s.str()) != "") {
           r->set_data_filedir(arg_parser.get<std::string>(s.str()));
         }
@@ -1083,7 +1083,7 @@ void save_session(const lbann_comm& comm, const int argc, char * const* argv, lb
   //setup file name
   // Note: If the file name is not unique, append numbers until it is.
   std::string model_name = p.model().name();
-  if (model_name.empty()) { model_name = MODEL; };
+  if (model_name.empty()) { model_name = "model"; };
   std::string file_name = model_name + ".prototext";
   El::Int file_name_index = 1;
   while (std::ifstream(file_name.c_str())) {

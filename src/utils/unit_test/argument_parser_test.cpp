@@ -319,10 +319,10 @@ TEMPLATE_TEST_CASE ("Testing the argument parser", "[parser][utilities]",
     using TestENV = lbann::utils::EnvVariable<PresetEnvAccessor>;
 
     auto verbose =
-      parser.add_flag(VERBOSE, {"-v"},
+      parser.add_flag("verbose", {"-v"},
                       TestENV("VALUE_IS_TRUE"), "");
 
-    CHECK(parser.option_is_defined(VERBOSE));
+    CHECK(parser.option_is_defined("verbose"));
     CHECK(verbose);
 
     SECTION("Command line flag overrides environment variable")
@@ -332,7 +332,7 @@ TEMPLATE_TEST_CASE ("Testing the argument parser", "[parser][utilities]",
       int const argc = sizeof(argv) / sizeof(argv[0]);
 
       REQUIRE_NOTHROW(parser.parse(argc, argv));
-      CHECK(parser.template get<bool>(VERBOSE));
+      CHECK(parser.template get<bool>("verbose"));
       CHECK(verbose);
     }
   }
@@ -343,10 +343,10 @@ TEMPLATE_TEST_CASE ("Testing the argument parser", "[parser][utilities]",
     using TestENV = lbann::utils::EnvVariable<PresetEnvAccessor>;
 
     auto verbose =
-      parser.add_flag(VERBOSE, {"-v"},
+      parser.add_flag("verbose", {"-v"},
                       TestENV("VALUE_IS_FALSE"), "");
 
-    CHECK(parser.option_is_defined(VERBOSE));
+    CHECK(parser.option_is_defined("verbose"));
     CHECK_FALSE(verbose);
 
     SECTION("Command line flag overrides environment variable")
@@ -356,7 +356,7 @@ TEMPLATE_TEST_CASE ("Testing the argument parser", "[parser][utilities]",
       int const argc = sizeof(argv) / sizeof(argv[0]);
 
       REQUIRE_NOTHROW(parser.parse(argc, argv));
-      CHECK(parser.template get<bool>(VERBOSE));
+      CHECK(parser.template get<bool>("verbose"));
       CHECK(verbose);
     }
   }
@@ -367,10 +367,10 @@ TEMPLATE_TEST_CASE ("Testing the argument parser", "[parser][utilities]",
     using TestENV = lbann::utils::EnvVariable<PresetEnvAccessor>;
 
     auto verbose =
-      parser.add_flag(VERBOSE, {"-v"},
+      parser.add_flag("verbose", {"-v"},
                       TestENV("VALUE_IS_UNDEFINED"), "");
 
-    CHECK(parser.option_is_defined(VERBOSE));
+    CHECK(parser.option_is_defined("verbose"));
     CHECK_FALSE(verbose);
 
     SECTION("Command line flag overrides environment variable")
@@ -380,7 +380,7 @@ TEMPLATE_TEST_CASE ("Testing the argument parser", "[parser][utilities]",
       int const argc = sizeof(argv) / sizeof(argv[0]);
 
       REQUIRE_NOTHROW(parser.parse(argc, argv));
-      CHECK(parser.template get<bool>(VERBOSE));
+      CHECK(parser.template get<bool>("verbose"));
       CHECK(verbose);
     }
   }

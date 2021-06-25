@@ -52,13 +52,13 @@ int main(int argc, char *argv[]) {
     // Initialize options db (this parses the command line)
     construct_all_options();
     auto& arg_parser = global_argument_parser();
-    if (arg_parser.get<bool>("help") or argc == 1) {
+    if (arg_parser.get<bool>(HELP) or argc == 1) {
       print_help(*comm);
       return EXIT_SUCCESS;
     }
 
     //read data_reader prototext file
-    if (arg_parser.get<std::string>("fn") == "") {
+    if (arg_parser.get<std::string>(FN) == "") {
       std::cerr << __FILE__ << " " << __LINE__ << " :: "
                 << "you must run with: --fn=<string> where <string> is\n"
                 << "a data_reader prototext filePathName\n";
@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
     }
 
     lbann_data::LbannPB pb;
-    std::string reader_fn(arg_parser.get<std::string>("fn").c_str());
+    std::string reader_fn(arg_parser.get<std::string>(FN).c_str());
     read_prototext_file(reader_fn.c_str(), pb, master);
     const lbann_data::DataReader & d_reader = pb.data_reader();
 

@@ -76,7 +76,7 @@ model::model(lbann_comm* comm,
   m_objective_function = std::move(obj_fn);
   // Default model name
   static El::Int num_models = 0;
-  m_name = MODEL + std::to_string(num_models);
+  m_name = "model" + std::to_string(num_models);
   num_models++;
 
 
