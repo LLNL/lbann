@@ -56,16 +56,16 @@ int main(int argc, char *argv[]) {
     construct_all_options();
     arg_parser.parse(argc, argv);
 
-    if (arg_parser.get<std::string>("filelist")) {
+    if (arg_parser.get<std::string>(FILELIST)) {
       if (master) {
         throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: usage: " + argv[0] + " --filelist");
       }
     }
 
     std::vector<std::string> files;
-    std::ifstream in(arg_parser.get<std::string>("filelist").c_str());
+    std::ifstream in(arg_parser.get<std::string>(FILELIST).c_str());
     if (!in) {
-        throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: failed to open " + arg_parser.get<std::string>("filelist") + " for reading");
+        throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: failed to open " + arg_parser.get<std::string>(FILELIST) + " for reading");
     }
     std::string line;
     while (getline(in, line)) {

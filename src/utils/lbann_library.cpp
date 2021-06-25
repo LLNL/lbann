@@ -150,7 +150,7 @@ trainer& construct_trainer(lbann_comm *comm,
   }
 
   // Initalize a per-trainer I/O thread pool
-  std::unique_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(comm, opts, serialized_io);
+  std::unique_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(comm, serialized_io);
 
   // Setup I/O threads
   auto io_threads_per_process = io_thread_pool->get_num_threads();
@@ -180,12 +180,12 @@ trainer& construct_trainer(lbann_comm *comm,
 
   // If the checkpoint directory has been overridden reset it before
   // setting up the trainer
-  if (arg_parser.get<string>("ckpt_dir") != "") {
+  if (arg_parser.get<string>(CKPT_DIR) != "") {
     for (auto&& c : global_trainer_->get_callbacks()) {
       {
         auto* cb = dynamic_cast<callback::checkpoint*>(c);
         if(cb != nullptr) {
-          cb->set_checkpoint_dir(arg_parser.get<string>("ckpt_dir"));
+          cb->set_checkpoint_dir(arg_parser.get<string>(CKPT_DIR));
           if(comm->am_trainer_master()) {
             std::cout << "Setting the checkpoint directory to " << cb->get_checkpoint_dir() << std::endl;
           }
@@ -193,12 +193,12 @@ trainer& construct_trainer(lbann_comm *comm,
       }
     }
   }
-  if (arg_parser.get<string>("restart_dir") != "") {
+  if (arg_parser.get<string>(RESTART_DIR) != "") {
     for (auto&& c : global_trainer_->get_callbacks()) {
       {
         auto* cb = dynamic_cast<callback::checkpoint*>(c);
         if(cb != nullptr) {
-          cb->set_restart_dir(arg_parser.get<string>("restart_dir"));
+          cb->set_restart_dir(arg_parser.get<string>(RESTART_DIR));
           if(comm->am_trainer_master()) {
             std::cout << "Setting the restart directory to " << cb->get_restart_dir() << std::endl;
           }
@@ -359,12 +359,12 @@ std::unique_ptr<model> build_model_from_prototext(
 
   // If the checkpoint directory has been overridden reset it before
   // setting up the model
-  if (arg_parser.get<std::string>("ckpt_dir") != "") {
+  if (arg_parser.get<std::string>(CKPT_DIR) != "") {
     for (auto&& c : ret_model->get_callbacks()) {
       {
         auto* cb = dynamic_cast<callback::dump_weights*>(c);
         if(cb != nullptr) {
-          cb->set_target_dir(arg_parser.get<std::string>("ckpt_dir"));
+          cb->set_target_dir(arg_parser.get<std::string>(CKPT_DIR));
           if(comm->am_trainer_master()) {
             std::cout << "Setting the dump weights directory to " << cb->get_target_dir() << std::endl;
           }
@@ -373,7 +373,7 @@ std::unique_ptr<model> build_model_from_prototext(
       {
         auto* cb = dynamic_cast<callback::save_model*>(c);
         if(cb != nullptr) {
-          cb->set_target_dir(arg_parser.get<std::string>("ckpt_dir"));
+          cb->set_target_dir(arg_parser.get<std::string>(CKPT_DIR));
           if(comm->am_trainer_master()) {
             std::cout << "Setting the dump weights directory to " << cb->get_target_dir() << std::endl;
           }
@@ -382,7 +382,7 @@ std::unique_ptr<model> build_model_from_prototext(
     }
   }
 
-  if (arg_parser.get<std::string>("load_model_weights_dir") != "") {
+  if (arg_parser.get<std::string>(LOAD_MODEL_WEIGHTS_DIR) != "") {
     callback::load_model* cb = nullptr;
     for (auto&& c : ret_model->get_callbacks()) {
       cb = dynamic_cast<callback::load_model*>(c);
@@ -392,7 +392,7 @@ std::unique_ptr<model> build_model_from_prototext(
     }
 
     std::string active_load_model_dir;
-    std::string load_model_dir = arg_parser.get<std::string>("load_model_weights_dir");
+    std::string load_model_dir = arg_parser.get<std::string>(LOAD_MODEL_WEIGHTS_DIR);
     if(arg_parser.get<bool>(LOAD_MODEL_WEIGHTS_DIR_IS_COMPLETE)) {
       active_load_model_dir = load_model_dir;
     }else {
@@ -423,7 +423,7 @@ std::unique_ptr<model> build_model_from_prototext(
       }
 #endif
     }else {
-      cb->add_dir(arg_parser.get<std::string>("load_model_weights_dir"));
+      cb->add_dir(arg_parser.get<std::string>(LOAD_MODEL_WEIGHTS_DIR));
     }
   }
 

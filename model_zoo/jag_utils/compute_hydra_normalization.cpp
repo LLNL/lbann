@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
       LBANN_ERROR("failed to open: normalize.txt for writing");
     }
 
-    if (arg_parser.get<std::string>("filelist") == "") {
+    if (arg_parser.get<std::string>(FILELIST) == "") {
       if (master) {
         throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: usage: " + argv[0] + " --filelist=<string>");
       }
@@ -97,9 +97,9 @@ int main(int argc, char *argv[]) {
       images_v_min[h].resize(MAGIC_NUMBER, DBL_MAX);
     }
 
-    ifstream in(arg_parser.get<std::string>("filelist").c_str());
+    ifstream in(arg_parser.get<std::string>(FILELIST).c_str());
     if (!in) {
-      LBANN_ERROR("failed to open " + arg_parser.get<std::string>("filelist") + " for reading");
+      LBANN_ERROR("failed to open " + arg_parser.get<std::string>(FILELIST) + " for reading");
     }
 
     size_t hhh = 0;

@@ -53,7 +53,7 @@ public:
    * @param extension file extension e.g., model, state ......
    */
   load_model(std::vector<std::string> dirs,
-             std::string extension="prototext") :
+             std::string extension=PROTOTEXT) :
     callback_base(), m_dirs(std::move(dirs)),
     m_extension(std::move(extension)),
     m_loaded(false)

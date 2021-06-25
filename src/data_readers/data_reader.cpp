@@ -686,7 +686,7 @@ double generic_data_reader::get_use_percent() const {
 void generic_data_reader::instantiate_data_store() {
   double tm1 = get_time();
   auto& arg_parser = global_argument_parser();
-  if (! (arg_parser.get<bool>(USE_DATA_STORE) || arg_parser.get<bool>(PRELOAD_DATA_STORE) || arg_parser.get<bool>("data_store_cache") || arg_parser.get<bool>("data_store_spill"))) {
+  if (! (arg_parser.get<bool>(USE_DATA_STORE) || arg_parser.get<bool>(PRELOAD_DATA_STORE) || arg_parser.get<bool>(DATA_STORE_CACHE) || arg_parser.get<bool>(DATA_STORE_SPILL))) {
     if (m_data_store != nullptr) {
       delete m_data_store;
       m_data_store = nullptr;
@@ -702,7 +702,7 @@ void generic_data_reader::instantiate_data_store() {
     LBANN_ERROR("shuffled_indices.size() == 0");
   }
 
-  if (arg_parser.get<bool>("node_sizes_vary")) {
+  if (arg_parser.get<bool>(NODE_SIZES_VARY)) {
     m_data_store->set_node_sizes_vary();
   }
 
@@ -774,7 +774,7 @@ void generic_data_reader::set_mini_batch_size(const int s) {
 
 void generic_data_reader::set_role(std::string role) {
   m_role = role;
-  if (global_argument_parser().get<bool>("jag_partitioned")
+  if (global_argument_parser().get<bool>(JAG_PARTITIONED)
       && get_role() == "train") {
     m_jag_partitioned = true;
     if (is_master()) {

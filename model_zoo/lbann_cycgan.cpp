@@ -100,8 +100,8 @@ int main(int argc, char *argv[]) {
       return EXIT_SUCCESS;
     }
 
-    if (!arg_parser.get<bool>("disable_signal_handler")) {
-      std::string file_base = (arg_parser.get<bool>("stack_trace_to_file") ?
+    if (!arg_parser.get<bool>(DISABLE_SIGNAL_HANDLER)) {
+      std::string file_base = (arg_parser.get<bool>(STACK_TRACE_TO_FILE) ?
                                "stack_trace" : "");
       stack_trace::register_signal_handler(file_base);
     }

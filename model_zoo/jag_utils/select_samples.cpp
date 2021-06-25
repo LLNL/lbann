@@ -112,8 +112,8 @@ int main(int argc, char **argv) {
     std::unordered_map<std::string, std::string> filename_data;
     build_index_maps(index_map_keep, index_map_exclude, string_to_index, filename_data);
 
-    // partition the randomly selected samples into "num_lists" sets
-    int num_lists = arg_parser.get<int>("num_lists");
+    // partition the randomly selected samples into NUM_LISTS sets
+    int num_lists = arg_parser.get<int>(NUM_LISTS);
     vector<unordered_map<string, unordered_set<int>>> subsets(num_lists);
     divide_selected_samples(index_map_keep, subsets);
 
@@ -127,7 +127,7 @@ int main(int argc, char **argv) {
     cout << "SUCESS - FINISHED!\n";
 
   } catch (lbann::exception& e) {
-    if (options::get()->get_bool("stack_trace_to_file")) {
+    if (options::get()->get_bool(STACK_TRACE_TO_FILE)) {
       ostringstream ss("stack_trace");
       const auto& rank = lbann::get_rank_in_world();
       if (rank >= 0) {
@@ -151,33 +151,33 @@ int main(int argc, char **argv) {
 void check_cmd_line() {
   auto& arg_parser = global_argument_parser();
   stringstream err;
-  if (! (arg_parser.get<std::string>("index_fn") != "" &&
-         arg_parser.get<std::string>("mapping_fn") != "" &&
-         arg_parser.get<int>("num_samples_per_list") != -1 &&
-         arg_parser.get<int>("num_lists") != -1 &&
-         arg_parser.get<int>("random_seed") != -1 &&
-         arg_parser.get<std::string>("output_dir") != "" &&
-         arg_parser.get<std::string>("output_base_fn") != "")) {
+  if (! (arg_parser.get<std::string>(INDEX_FN) != "" &&
+         arg_parser.get<std::string>(MAPPING_FN) != "" &&
+         arg_parser.get<int>(NUM_SAMPLES_PER_LIST) != -1 &&
+         arg_parser.get<int>(NUM_LISTS) != -1 &&
+         arg_parser.get<int>(RANDOM_SEED) != -1 &&
+         arg_parser.get<std::string>(OUTPUT_DIR) != "" &&
+         arg_parser.get<std::string>(OUTPUT_BASE_FN) != "")) {
     cout << help_msg();
-    if (arg_parser.get<std::string>("index_fn") == "") {
+    if (arg_parser.get<std::string>(INDEX_FN) == "") {
       cout << "missing --index_fn=<string> \n";
     }
-    if (arg_parser.get<std::string>("mapping_fn") == "") {
+    if (arg_parser.get<std::string>(MAPPING_FN) == "") {
       cout << "missing --mapping_fn=<string> \n";
     }
-    if (arg_parser.get<int>("num_samples_per_list") == -1) {
+    if (arg_parser.get<int>(NUM_SAMPLES_PER_LIST) == -1) {
       cout << "missing --num_samples_per_list=<int> \n";
     }
-    if (arg_parser.get<int>("num_lists") == -1) {
+    if (arg_parser.get<int>(NUM_LISTS) == -1) {
       cout << "missing --num_lists=<int> \n";
     }
-    if (arg_parser.get<int>("random_seed") == -1) {
+    if (arg_parser.get<int>(RANDOM_SEED) == -1) {
       cout << "missing --random_seed=<int> \n";
     }
-    if (arg_parser.get<std::string>("output_dir") == "") {
+    if (arg_parser.get<std::string>(OUTPUT_DIR) == "") {
       cout << "missing --output_dir=<string> \n";
     }
-    if (arg_parser.get<std::string>("output_base_fn") == "") {
+    if (arg_parser.get<std::string>(OUTPUT_BASE_FN) == "") {
       cout << "missing --output_base_fn=<string> \n";
     }
     cout << "\n";
@@ -204,7 +204,7 @@ string help_msg() {
 void read_mapping_file(unordered_map<string, unordered_set<string>> &sample_mapping, unordered_map<string, vector<string>> &sample_mapping_v, unordered_map<string, int>& string_to_index) {
   cout << "starting read_mapping_file\n";
   double tm1 = lbann::get_time();
-  const string mapping_fn = options::get()->get_string("mapping_fn");
+  const string mapping_fn = options::get()->get_string(MAPPING_FN);
   ifstream in(mapping_fn.c_str());
   if (!in) {
     LBANN_ERROR("failed to open ", mapping_fn, " for reading");
@@ -247,12 +247,12 @@ void build_index_maps(
   cout << "starting build_index_maps\n";
   double tm1 = lbann::get_time();
 
-  int samples_per_list = options::get()->get_int("num_samples_per_list");
-  int num_lists = options::get()->get_int("num_lists");
+  int samples_per_list = options::get()->get_int(NUM_SAMPLES_PER_LIST);
+  int num_lists = options::get()->get_int(NUM_LISTS);
   size_t num_samples = samples_per_list * num_lists;
 
   //open input file
-  const string index_fn = options::get()->get_string("index_fn").c_str();
+  const string index_fn = options::get()->get_string(INDEX_FN).c_str();
   ifstream in(index_fn.c_str());
   if (!in) {
     LBANN_ERROR("failed to open ", index_fn, " for reading");
@@ -269,13 +269,13 @@ void build_index_maps(
   getline(in, line);  //discard newline
   string base_dir;
   getline(in, base_dir);
-  options::get()->set_option("base_dir", base_dir);
+  options::get()->set_option(BASE_DIR, base_dir);
   cout << "input index file contains " << num_valid << " valid samples\n";
 
   cout << "generating random indices ...\n";
   double tm2 = lbann::get_time();
   unordered_set<int> random_indices;
-  srandom(options::get()->get_int("random_seed"));
+  srandom(options::get()->get_int(RANDOM_SEED));
   while (true) {
     int v = random() % num_valid;
     random_indices.insert(v);
@@ -338,7 +338,7 @@ void build_index_maps(
 }
 
 void sanity_test_request() {
-  const string index_fn = options::get()->get_string("index_fn").c_str();
+  const string index_fn = options::get()->get_string(INDEX_FN).c_str();
   ifstream in(index_fn.c_str());
   if (!in) {
     LBANN_ERROR("failed to open ", index_fn, " for reading");
@@ -352,8 +352,8 @@ void sanity_test_request() {
 
   int num_valid, num_invalid, num_files;
   in >> num_valid >> num_invalid >> num_files;
-  int samples_per_list = options::get()->get_int("num_samples_per_list");
-  int num_lists = options::get()->get_int("num_lists");
+  int samples_per_list = options::get()->get_int(NUM_SAMPLES_PER_LIST);
+  int num_lists = options::get()->get_int(NUM_LISTS);
   int num_samples = samples_per_list * num_lists;
   if (num_samples > num_valid) {
     LBANN_ERROR("you requested a total of ", num_samples, " samples, but only ", num_valid, " are available");
@@ -363,7 +363,7 @@ void sanity_test_request() {
 void divide_selected_samples(
     const unordered_map<string, unordered_set<int>> &index_map_keep,
     vector<unordered_map<string, unordered_set<int>>> &sets) {
-  size_t samples_per_list = options::get()->get_int("num_samples_per_list");
+  size_t samples_per_list = options::get()->get_int(NUM_SAMPLES_PER_LIST);
   size_t which = 0;
   size_t count = 0;
   size_t total = 0;
@@ -402,8 +402,8 @@ void write_sample_list(
     const vector<unordered_map<string, unordered_set<int>>> &subsets,
     const unordered_map<string, vector<string>> &sample_mapping_v,
     const std::unordered_map<std::string, std::string> &filename_data) {
-  const string dir = options::get()->get_string("output_dir");
-  const string fn = options::get()->get_string("output_base_fn");
+  const string dir = options::get()->get_string(OUTPUT_DIR);
+  const string fn = options::get()->get_string(OUTPUT_BASE_FN);
   stringstream s;
   s << dir << '/' << "t" << n << '_' << fn;
   ofstream out(s.str().c_str());
@@ -476,7 +476,7 @@ void write_sample_list(
     }
   }
 
-  const string base_dir = options::get()->get_string("base_dir");
+  const string base_dir = options::get()->get_string(BASE_DIR);
 
   out << total_good << " " << total_bad << " " << num_include_files
       << "\n" << base_dir << "\n" << sout.str();
@@ -515,7 +515,7 @@ void make_dir(char *cpath) {
 void test_output_dir() {
   cout << "\nChecking if output diretory path exists;\n"
           " if not, we'll attempt to create it.\n";
-  const string dir = options::get()->get_string("output_dir");
+  const string dir = options::get()->get_string(OUTPUT_DIR);
   char *cpath = strdup(dir.c_str());
   char *pp = cpath;
   if (pp[0] == '/') {
@@ -558,8 +558,8 @@ void write_bar_files(
 
   unordered_set<string> all_excluded;
 
-  const string dir = options::get()->get_string("output_dir");
-  const string base_fn = options::get()->get_string("output_base_fn");
+  const string dir = options::get()->get_string(OUTPUT_DIR);
+  const string base_fn = options::get()->get_string(OUTPUT_BASE_FN);
   stringstream s;
   s << dir << '/' << "t_exclusion_" << base_fn << "_bar";
   std::cerr << "\nWRITING exclusion bar file: " << s.str() << "\n";
@@ -610,7 +610,7 @@ void write_bar_files(
     }
   }
 
-  const string base_dir = options::get()->get_string("base_dir");
+  const string base_dir = options::get()->get_string(BASE_DIR);
   out << total_good << " " << total_bad << " " << num_include_files << "\n"
       << base_dir << endl << sout.str();
   out.close();

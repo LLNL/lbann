@@ -39,9 +39,6 @@ void construct_std_options() {
   arg_parser.add_flag(DISABLE_CUDA,
                       {"--disable_cuda"},
                       "has no effect unless LBANN was compiled with LBANN_HAS_CUDNN");
-  arg_parser.add_flag(FN,
-                      {"--fn"},
-                      "TODO");
   arg_parser.add_flag(HELP,
                       {"--help", "-h"},
                       "Prints the help message");
@@ -80,18 +77,6 @@ void construct_std_options() {
                       "Writes out the sample list that was loaded into the current directory");
 
   // Input options
-  arg_parser.add_option(CHECKPOINT_DIR,
-                        {"--checkpoint_dir"},
-                        "Save to or restart from a specific checkpoint directory.\n"
-                        "Additionally, sets the output directory for dumping weights.\n"
-                        "Modifies callbacks: checkpoint, save_model, dump_weights\n",
-                        "");
-  arg_parser.add_option(DATA_LAYOUT,
-                        {"--data_layout"},
-                        "must be: data_parallel or model_parallel\n"
-                        "note: this will be applied to all layers, metrics (and others)\n"
-                        "that take DATA_PARALLEL or MODEL_PARALLEL as a template parameter",
-                        "data_parallel");
   arg_parser.add_option(HYDROGEN_BLOCK_SIZE,
                         {"--hydrogen_block_size"},
                         "Block size for Hydrogen",
@@ -150,10 +135,6 @@ void construct_std_options() {
                         utils::ENV("LBANN_NUM_VALIDATE_SAMPLES"),
                         "Set the number of validate samples to ingest.",
                         0);
-  arg_parser.add_option(OBJECTIVE_FUNCTION,
-                        {"--objective_function"},
-                        "must be: categorical_cross_entropy or mean_squared_error",
-                        "categorical_cross_entropy");
   arg_parser.add_option(OPTIMIZER,
                         {"--optimizer"},
                         "TODO",
@@ -187,12 +168,6 @@ void construct_std_options() {
                         "If the directory doesn't exist or doesn't contain a checkpoint,\n"
                         "an error will be thrown.\n",
                         "");
-  arg_parser.add_option(SMILES_BUFFER_SIZE,
-                        {"--smiles_buffer_size"},
-                        utils::ENV("LBANN_SMILES_BUFFER_SIZE"),
-                        "Size of the read buffer for the SMILES "
-                        "data reader.",
-                        16*1024*1024UL);
   arg_parser.add_option(TRAINER_GRID_HEIGHT,
                         {"--trainer_grid_height"},
                         utils::ENV("LBANN_TRAINER_GRID_HEIGHT"),
@@ -207,6 +182,31 @@ void construct_std_options() {
                       utils::ENV("LBANN_LTFB_ALLOW_GLOBAL_STATISTICS"),
                       "Allow the print_statistics callback to report "
                       "global (inter-trainer) summary statistics.");
+  arg_parser.add_option(CHECKPOINT_DIR,
+                        {"--checkpoint_dir"},
+                        "Save to or restart from a specific checkpoint directory.\n"
+                        "Additionally, sets the output directory for dumping weights.\n"
+                        "Modifies callbacks: checkpoint, save_model, dump_weights\n",
+                        "");
+  arg_parser.add_option(DATA_LAYOUT,
+                        {"--data_layout"},
+                        "must be: data_parallel or model_parallel\n"
+                        "note: this will be applied to all layers, metrics (and others)\n"
+                        "that take DATA_PARALLEL or MODEL_PARALLEL as a template parameter",
+                        "data_parallel");
+  arg_parser.add_flag(FN,
+                      {"--fn"},
+                      "TODO");
+  arg_parser.add_option(OBJECTIVE_FUNCTION,
+                        {"--objective_function"},
+                        "must be: categorical_cross_entropy or mean_squared_error",
+                        "categorical_cross_entropy");
+  arg_parser.add_option(SMILES_BUFFER_SIZE,
+                        {"--smiles_buffer_size"},
+                        utils::ENV("LBANN_SMILES_BUFFER_SIZE"),
+                        "Size of the read buffer for the SMILES "
+                        "data reader.",
+                        16*1024*1024UL);
   arg_parser.add_flag(SUPER_NODE,
                       {"--super_node"},
                       "Enables the data store in-memory structure to use the supernode exchange structure");
@@ -279,17 +279,11 @@ void construct_datareader_options() {
   arg_parser.add_flag(NODE_SIZES_VARY,
                       {"--node_size_vary"},
                       "TODO");
-  arg_parser.add_flag(SHARE_TESTING_DATA_READERS,
-                      {"--share_testing_data_readers"},
-                      "TODO");
   arg_parser.add_flag(STACK_TRACE_TO_FILE,
                       {"--stack_trace_to_file"},
                       "TODO");
   arg_parser.add_flag(TEST_ENCODE,
                       {"--test_encode"},
-                      "TODO");
-  arg_parser.add_flag(WRITE_SAMPLE_LABEL_LIST,
-                      {"--write_sample_label_list"},
                       "TODO");
 
   // Input options
@@ -381,6 +375,14 @@ void construct_datareader_options() {
                         {"--vocab"},
                         "TODO",
                         "");
+
+  // Unused (?) options
+  arg_parser.add_flag(SHARE_TESTING_DATA_READERS,
+                      {"--share_testing_data_readers"},
+                      "TODO");
+  arg_parser.add_flag(WRITE_SAMPLE_LABEL_LIST,
+                      {"--write_sample_label_list"},
+                      "TODO");
 }
 
 void construct_jag_options() {
@@ -475,6 +477,8 @@ void construct_callback_options() {
                         {"--ckpt_dir"},
                         "TODO",
                         "");
+
+  // Unused (?) options
   arg_parser.add_option(IMAGE_DIR,
                         {"--image_dir"},
                         "if the model has callback_save_images, this determines where the"

@@ -141,9 +141,9 @@ int main(int argc, char* argv[])
 #endif // LBANN_HAS_CUDA
 
     // this must be called after call to arg_parser.parse();
-    if (!arg_parser.get<bool>("disable_signal_handler")) {
+    if (!arg_parser.get<bool>(DISABLE_SIGNAL_HANDLER)) {
       std::string file_base =
-        (arg_parser.get<bool>("stack_trace_to_file") ? "stack_trace" : "");
+        (arg_parser.get<bool>(STACK_TRACE_TO_FILE) ? "stack_trace" : "");
       stack_trace::register_signal_handler(file_base);
     }
 
@@ -154,7 +154,7 @@ int main(int argc, char* argv[])
     allocate_trainer_resources(comm.get());
 
     int trainer_rank = 0;
-    if (arg_parser.get<bool>("generate_multi_proto")) {
+    if (arg_parser.get<bool>(GENERATE_MULTI_PROTO)) {
       trainer_rank = comm->get_trainer_rank();
     }
     // Load the prototexts specificed on the command line
@@ -191,11 +191,11 @@ int main(int argc, char* argv[])
                                  trainer.get_callbacks_with_ownership(),
                                  training_dr_linearized_data_size);
 
-    if (arg_parser.get<bool>("create_tarball")) {
+    if (arg_parser.get<bool>(CREATE_TARBALL)) {
       return EXIT_SUCCESS;
     }
 
-    if (!arg_parser.get<bool>("exit_after_setup")) {
+    if (!arg_parser.get<bool>(EXIT_AFTER_SETUP)) {
 
       // Train model
       trainer.train(model.get(), pb_model->num_epochs());
@@ -222,7 +222,7 @@ int main(int argc, char* argv[])
     }
   }
   catch (exception& e) {
-    if (arg_parser.get<bool>("stack_trace_to_file")) {
+    if (arg_parser.get<bool>(STACK_TRACE_TO_FILE)) {
       std::ostringstream ss("stack_trace");
       const auto& rank = get_rank_in_world();
       if (rank >= 0) {

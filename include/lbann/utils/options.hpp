@@ -14,7 +14,6 @@ namespace lbann {
 // Bool flags
 #define DISABLE_BACKGROUND_IO_ACTIVITY "disable_background_io_activity"
 #define DISABLE_CUDA "disable_cuda"
-#define FN "fn"
 #define HELP "help"
 #define LOAD_MODEL_WEIGHTS_DIR_IS_COMPLETE "load_model_weights_dir_is_complete"
 #define LTFB_VERBOSE "ltfb_verbose"
@@ -29,8 +28,6 @@ namespace lbann {
 #define WRITE_SAMPLE_LIST "write_sample_list"
 
 // Input options
-#define CHECKPOINT_DIR "checkpoint_dir"
-#define DATA_LAYOUT "data_layout"
 #define HYDROGEN_BLOCK_SIZE "hydrogen_block_size"
 #define LOAD_MODEL_WEIGHTS_DIR "load_model_weights_dir"
 #define MAX_RNG_SEEDS_DISPLAY "RNG seeds per trainer to display"
@@ -43,18 +40,21 @@ namespace lbann {
 #define NUM_TEST_SAMPLES "Num test samples"
 #define NUM_TRAIN_SAMPLES "Num train samples"
 #define NUM_VALIDATE_SAMPLES "Num validate samples"
-#define OBJECTIVE_FUNCTION "objective_function"
 #define OPTIMIZER "optimizer"
 #define PROCS_PER_TRAINER "Processes per trainer"
 #define PROTOTEXT "prototext"
 #define RANDOM_SEED "random_seed"
 #define READER "reader"
 #define RESTART_DIR "restart_dir"
-#define SMILES_BUFFER_SIZE "smiles_buffer_size"
 #define TRAINER_GRID_HEIGHT "Height of 2D process grid for each trainer"
 
 // Unused options
 #define ALLOW_GLOBAL_STATISTICS "LTFB Allow global statistics"
+#define CHECKPOINT_DIR "checkpoint_dir"
+#define DATA_LAYOUT "data_layout"
+#define FN "fn"
+#define OBJECTIVE_FUNCTION "objective_function"
+#define SMILES_BUFFER_SIZE "smiles_buffer_size"
 #define SUPER_NODE "super_node"
 
 /****** datastore options ******/
@@ -81,10 +81,12 @@ namespace lbann {
 #define LOAD_FULL_SAMPLE_LIST_ONCE "load_full_sample_list_once"
 #define MAKE_TEST_FAIL "make_test_fail"
 #define NODE_SIZES_VARY "node_sizes_vary"
-#define SHARE_TESTING_DATA_READERS "share_testing_data_readers"
 #define STACK_TRACE_TO_FILE "stack_trace_to_file"
 #define TEST_ENCODE "test_encode"
-#define WRITE_SAMPLE_LABEL_LIST "write_samples_label_list"
+
+// Unused options
+#define SHARE_TESTING_DATA_READERS "share_testing_data_readers"
+#define WRITE_SAMPLE_LABEL_LIST "write_sample_label_list"
 
 // Input options
 #define ABSOLUTE_SAMPLE_COUNT "absolute_sample_count"
@@ -139,6 +141,8 @@ namespace lbann {
 
 // Input options
 #define CKPT_DIR "ckpt_dir"
+
+// Unused options
 #define IMAGE_DIR "image_dir"
 
 void construct_std_options();

@@ -49,7 +49,7 @@ parse_prototext_filenames_from_command_line(
   std::vector<std::string> data_set_metadata;
   bool single_file_load = false;
 
-  std::string params[] = { "prototext", "model", "reader", "metadata", "optimizer" };
+  std::string params[] = { PROTOTEXT, MODEL, READER, METADATA, OPTIMIZER };
   for(auto & which : params) {
     std::string fn = arg_parser.get<std::string>(which);
     if (fn != "") {
@@ -59,20 +59,20 @@ parse_prototext_filenames_from_command_line(
         std::string fname = fn.substr(0,t_pos+7)+ std::to_string(trainer_rank);
         fn = fname;
       }
-      if (which == "prototext") {
+      if (which == PROTOTEXT) {
         models.push_back(fn);
         single_file_load = true;
       }
-      if (which == "model") {
+      if (which == MODEL) {
         models.push_back(fn);
       }
-      if (which == "reader") {
+      if (which == READER) {
         readers.push_back(fn);
       }
-      if (which == "metadata") {
+      if (which == METADATA) {
         data_set_metadata.push_back(fn);
       }
-      if (which == "optimizer") {
+      if (which == OPTIMIZER) {
         optimizers.push_back(fn);
       }
     }

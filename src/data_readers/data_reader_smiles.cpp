@@ -118,10 +118,10 @@ void smiles_data_reader::load() {
   set_use_data_store(true);
 
   if (m_sequence_length == 0) {
-    if (arg_parser.get<int>("sequence_length") == 0) {
+    if (arg_parser.get<int>(SEQUENCE_LENGTH) == 0) {
       LBANN_ERROR("you must pass --sequence_length=<int> on the cmd line or call set_sequence_length()");
     }
-    m_sequence_length =  arg_parser.get<int>("sequence_length");
+    m_sequence_length =  arg_parser.get<int>(SEQUENCE_LENGTH);
   }
   m_linearized_data_size = m_sequence_length+2;
 

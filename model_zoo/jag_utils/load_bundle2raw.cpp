@@ -58,18 +58,18 @@ int main(int argc, char *argv[]) {
     construct_all_options();
     arg_parser.parse(argc, argv);
 
-    if (arg_parser.get<std::string>("filelist") == "" ||
-        arg_parser.get<std::string>("output_dir") == "") {
+    if (arg_parser.get<std::string>(FILELIST) == "" ||
+        arg_parser.get<std::string>(OUTPUT_DIR) == "") {
       if (master) {
         throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: usage: " + argv[0] + " --filelist=<string> --output_dir=<string>");
       }
     }
 
-    const std::string dir = arg_parser.get<std::string>("output_dir");
+    const std::string dir = arg_parser.get<std::string>(OUTPUT_DIR);
 
     if (master) {
       std::stringstream s;
-      s << "mkdir -p " << arg_parser.get<std::string>("output_dir");
+      s << "mkdir -p " << arg_parser.get<std::string>(OUTPUT_DIR);
       int r = system(s.str().c_str());
       if (r != 0) {
         throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: system call failed: " + s.str());
@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
     }
 
     std::vector<std::string> files;
-    const std::string fn = arg_parser.get<std::string>("filelist");
+    const std::string fn = arg_parser.get<std::string>(FILELIST);
     read_filelist(comm.get(), fn, files);
 
     std::vector<std::string> scalar_names;

@@ -80,22 +80,22 @@ data_store_conduit::data_store_conduit(
   auto& arg_parser = global_argument_parser();
 
   // For use in testing
-  if (arg_parser.get<bool>("data_store_fail")) {
+  if (arg_parser.get<bool>(DATA_STORE_FAIL)) {
     LBANN_ERROR("data_store_conduit is throwing a fake exception; this is for use during testing");
   }
 
-  if (arg_parser.get<std::string>("data_store_test_checkpoint") != ""
-      && arg_parser.get<std::string>("data_store_spill") != "") {
+  if (arg_parser.get<std::string>(DATA_STORE_TEST_CHECKPOINT) != ""
+      && arg_parser.get<std::string>(DATA_STORE_SPILL) != "") {
     LBANN_ERROR("you passed both --data_store_test_checkpoint and --data_store_spill; please use one or the other or none, but not both");
   }
-  if (arg_parser.get<std::string>("data_store_test_checkpoint") != "") {
+  if (arg_parser.get<std::string>(DATA_STORE_TEST_CHECKPOINT) != "") {
     setup_checkpoint_test();
   }
-  if (arg_parser.get<std::string>("data_store_spill") != "") {
-    setup_spill(arg_parser.get<std::string>("data_store_spill"));
+  if (arg_parser.get<std::string>(DATA_STORE_SPILL) != "") {
+    setup_spill(arg_parser.get<std::string>(DATA_STORE_SPILL));
   }
 
-  set_is_local_cache(arg_parser.get<bool>("data_store_cache"));
+  set_is_local_cache(arg_parser.get<bool>(DATA_STORE_CACHE));
   set_is_preloading(arg_parser.get<bool>(PRELOAD_DATA_STORE));
   set_is_explicitly_loading(! is_preloading());
 
@@ -134,7 +134,7 @@ data_store_conduit::~data_store_conduit() {
 
 void data_store_conduit::setup_checkpoint_test() {
   auto& arg_parser = global_argument_parser();
-  std::string c = arg_parser.get<std::string>("data_store_test_checkpoint");
+  std::string c = arg_parser.get<std::string>(DATA_STORE_TEST_CHECKPOINT);
   // TODO MRW
   if (c == "1") {
     LBANN_ERROR("--data_store_test_checkpoint=1; you probably forgot to specify the spill directory; you must specify --data_store_test_checkpoint=<string>'");
@@ -982,7 +982,7 @@ bool data_store_conduit::is_fully_loaded() const {
 void data_store_conduit::get_image_sizes(map_is_t &file_sizes, std::vector<std::vector<int>> &indices) {
   auto& arg_parser = global_argument_parser();
   /// this block fires if image sizes have been precomputed
-  if (arg_parser.get<std::string>("image_sizes_filename") != "") {
+  if (arg_parser.get<std::string>(IMAGE_SIZES_FILENAME) != "") {
     LBANN_ERROR("not yet implemented");
     //TODO dah - implement, if this becomes a bottleneck (but I don't think it will)
   }
@@ -1199,7 +1199,7 @@ void data_store_conduit::exchange_local_caches() {
   set_loading_is_complete();
 
   auto& arg_parser = global_argument_parser();
-  if (arg_parser.get<bool>("data_store_test_cache")) {
+  if (arg_parser.get<bool>(DATA_STORE_TEST_CACHE)) {
     test_local_cache_imagenet(20);
   }
 }
@@ -1435,7 +1435,7 @@ void data_store_conduit::profile_timing() {
         "  wait alls:                ", m_wait_all_time, "\n",
         "  unpacking rcvd nodes:     ", m_rebuild_time, "\n\n");
 
-    if (arg_parser.get<bool>("data_store_min_max_timing")) {
+    if (arg_parser.get<bool>(DATA_STORE_MIN_MAX_TIMING)) {
       std::vector<double> send;
       static int count = 5;
       send.reserve(count);
@@ -1866,7 +1866,7 @@ void data_store_conduit::open_informational_files() {
   }
 
   // optionally, each <rank, reader_role> pair opens a debug file
-  if (arg_parser.get<bool>("data_store_debug") && !m_debug && m_reader != nullptr) {
+  if (arg_parser.get<bool>(DATA_STORE_DEBUG) && !m_debug && m_reader != nullptr) {
     m_debug_filename = m_debug_filename_base + "_" + m_reader->get_role() + "." + std::to_string(m_comm->get_rank_in_world()) + ".txt";
     m_debug = new std::ofstream(m_debug_filename.c_str());
     if (!m_debug) {
@@ -1875,7 +1875,7 @@ void data_store_conduit::open_informational_files() {
   }
 
   // optionally, <P_0, reader_role> pair opens a file for writing
-  if (arg_parser.get<bool>("data_store_profile") && m_world_master && !m_profile && m_reader != nullptr) {
+  if (arg_parser.get<bool>(DATA_STORE_PROFILE) && m_world_master && !m_profile && m_reader != nullptr) {
     m_profile_filename = m_profile_filename_base + "_" + m_reader->get_role() + ".txt";
     m_profile = new std::ofstream(m_profile_filename.c_str());
     if (!m_profile) {

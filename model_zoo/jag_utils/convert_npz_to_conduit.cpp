@@ -50,7 +50,7 @@ int main(int argc, char *argv[]) {
     construct_all_options();
     arg_parser.parse(argc, argv);
 
-    if (arg_parser.get<std::string>("filelist") == "") {
+    if (arg_parser.get<std::string>(FILELIST) == "") {
       if (master) {
         std::cerr << "usage: " << argv[1] << " --filelist=<string>\n"
                   << "function: converts npz files to conduit\n";
@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
       return EXIT_FAILURE;
     }
 
-    const std::string input_fn = arg_parser.get<std::string>("filelist");
+    const std::string input_fn = arg_parser.get<std::string>(FILELIST);
 
     int rank = comm->get_rank_in_world();
     int np = comm->get_procs_in_world();

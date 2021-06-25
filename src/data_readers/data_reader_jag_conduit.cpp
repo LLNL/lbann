@@ -764,7 +764,7 @@ void data_reader_jag_conduit::load() {
   load_list_of_samples(sample_list_file);
 
   auto& arg_parser = global_argument_parser();
-  if (arg_parser.get<bool>("write_sample_list") && m_comm->am_trainer_master()) {
+  if (arg_parser.get<bool>(WRITE_SAMPLE_LIST) && m_comm->am_trainer_master()) {
     {
       const std::string msg = " writing sample list " + sample_list_file;
       LBANN_WARNING(msg);
@@ -882,13 +882,13 @@ void data_reader_jag_conduit::load_list_of_samples(const std::string sample_list
 
   auto& arg_parser = global_argument_parser();
 
-  if (this->m_keep_sample_order || arg_parser.get<bool>("keep_sample_order")) {
+  if (this->m_keep_sample_order || arg_parser.get<bool>(KEEP_SAMPLE_ORDER)) {
     m_sample_list.keep_sample_order(true);
   } else {
     m_sample_list.keep_sample_order(false);
   }
 
-  const bool check_data = arg_parser.get<bool>("check_data");
+  const bool check_data = arg_parser.get<bool>(CHECK_DATA);
 
   if (check_data) {
     m_sample_list.set_data_file_check();
@@ -896,7 +896,7 @@ void data_reader_jag_conduit::load_list_of_samples(const std::string sample_list
 
   std::vector<char> buffer;
 
-  if (arg_parser.get<bool>("load_full_sample_list_once")) {
+  if (arg_parser.get<bool>(LOAD_FULL_SAMPLE_LIST_ONCE)) {
     if (m_comm->am_trainer_master()) {
       load_file(sample_list_file, buffer);
     }

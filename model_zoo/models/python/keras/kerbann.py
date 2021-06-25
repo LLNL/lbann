@@ -265,7 +265,7 @@ def keras_tuple_to_protobuf(inp):
     return ' '.join(map(str,inp))
 
 def out_model():
-    out_file = sys.argv[0][:-2] + "prototext"
+    out_file = sys.argv[0][:-2] + PROTOTEXT
     with open(out_file, "w") as f:
         f.write(txtf.MessageToString(pb))
     print('Created LBANN prototext: ' + out_file + '. usage: "srun -n <mpi_rank> lbann --model=' + out_file +' --reader=<path to data reader --optimizer=<path to optimizer>"')

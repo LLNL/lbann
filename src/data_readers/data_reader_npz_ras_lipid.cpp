@@ -221,7 +221,7 @@ data types, from python+numpy:
   }
 
   // Variables only used for user feedback
-  bool verbose = options::get()->get_bool("verbose");
+  bool verbose = options::get()->get_bool(VERBOSE);
   int np = m_comm->get_procs_per_trainer();
   size_t nn = 0;
 

@@ -61,14 +61,14 @@ int main(int argc, char *argv[]) {
   auto& arg_parser = global_argument_parser();
   arg_parser.parse(argc, argv);
 
-  if (arg_parser.get<std::string>("filelist") == "") {
+  if (arg_parser.get<std::string>(FILELIST) == "") {
     LBANN_ERROR("usage: test_speed_hydra_ --filelist=<string> --jag");
   }
 
-  if (arg_parser.get<bool>("jag")) {
-    test_jag(arg_parser.get<std::string>("filelist"));
+  if (arg_parser.get<bool>(JAG)) {
+    test_jag(arg_parser.get<std::string>(FILELIST));
   } else {
-    test_hydra(arg_parser.get<std::string>("filelist"));
+    test_hydra(arg_parser.get<std::string>(FILELIST));
   }
   return EXIT_SUCCESS;
 }
