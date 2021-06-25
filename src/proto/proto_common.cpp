@@ -418,7 +418,7 @@ void init_data_readers(
     }
 
     if (arg_parser.get<bool>(CREATE_TARBALL)) {
-      if (arg_parser.get<int>(TEST_TARBALL) != 0) {
+      if (arg_parser.get<int>(TEST_TARBALL) != -1) {
         reader->set_absolute_sample_count(arg_parser.get<int>(TEST_TARBALL));
         reader->set_use_percent( 0. );
         reader->set_first_n(0);
@@ -820,7 +820,7 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
   lbann_data::DataReader *d_reader = p.mutable_data_reader();
   int size = d_reader->reader_size();
 
-  if (arg_parser.get<int>(ABSOLUTE_SAMPLE_COUNT) != 0) {
+  if (arg_parser.get<int>(ABSOLUTE_SAMPLE_COUNT) != -1) {
     for (int j=0; j<size; j++) {
       int n = arg_parser.get<int>(ABSOLUTE_SAMPLE_COUNT);
       lbann_data::Reader *readme = d_reader->mutable_reader(j);
@@ -856,7 +856,7 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
   if (arg_parser.get<std::string>(SAMPLE_LIST_TEST) != "") {
     set_data_readers_sample_list("test", p);
   }
-  if (arg_parser.get<float>(DATA_READER_PERCENT) != 0.0) {
+  if (arg_parser.get<float>(DATA_READER_PERCENT) != -1.0) {
     set_data_readers_percent(p);
   }
   if (arg_parser.get<bool>(NO_IM_COMM)) {

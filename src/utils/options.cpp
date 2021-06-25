@@ -104,7 +104,7 @@ void construct_std_options() {
   arg_parser.add_option(MINI_BATCH_SIZE,
                         {"--mini_batch_size"},
                         "Size of mini batches",
-                        0);
+                        -1);
   arg_parser.add_option(MODEL,
                         {"--model"},
                         "TODO",
@@ -112,7 +112,7 @@ void construct_std_options() {
   arg_parser.add_option(NUM_EPOCHS,
                         {"--num_epochs"},
                         "Number of epochs to train model",
-                        0);
+                        -1);
   arg_parser.add_option(NUM_IO_THREADS,
                         {"--num_io_threads"},
                         utils::ENV("LBANN_NUM_IO_THREADS"),
@@ -127,17 +127,17 @@ void construct_std_options() {
                         {"--num_test_samples"},
                         utils::ENV("LBANN_NUM_TEST_SAMPLES"),
                         "Set the number of testing samples to ingest.",
-                        0);
+                        -1);
   arg_parser.add_option(NUM_TRAIN_SAMPLES,
                         {"--num_train_samples"},
                         utils::ENV("LBANN_NUM_TRAIN_SAMPLES"),
                         "Set the number of training samples to ingest.",
-                        0);
+                        -1);
   arg_parser.add_option(NUM_VALIDATE_SAMPLES,
                         {"--num_validate_samples"},
                         utils::ENV("LBANN_NUM_VALIDATE_SAMPLES"),
                         "Set the number of validate samples to ingest.",
-                        0);
+                        -1);
   arg_parser.add_option(OPTIMIZER,
                         {"--optimizer"},
                         "TODO",
@@ -152,7 +152,7 @@ void construct_std_options() {
                         " evenly divide the total number of MPI ranks. "
                         " The number of resulting trainers is "
                         " num_procs / procs_per_trainer.",
-                        0);
+                        -1);
   arg_parser.add_option(PROTOTEXT,
                         {"--prototext"},
                         "Prototext file containing experiment",
@@ -290,7 +290,7 @@ void construct_datareader_options() {
   arg_parser.add_option(ABSOLUTE_SAMPLE_COUNT,
                         {"--absolute_sample_count"},
                         "TODO",
-                        0);
+                        -1);
   arg_parser.add_option(DATA_FILEDIR,
                         {"--data_filedir"},
                         "Sets the file direcotry for train and test data",
@@ -322,7 +322,7 @@ void construct_datareader_options() {
   arg_parser.add_option(DATA_READER_PERCENT,
                         {"--data_reader_percent"},
                         "TODO",
-                        (float)0);
+                        (float)-1);
   arg_parser.add_option(DELIMITER,
                         {"--delimiter"},
                         "TODO",
@@ -370,7 +370,7 @@ void construct_datareader_options() {
   arg_parser.add_option(TEST_TARBALL,
                         {"--test_tarball"},
                         "TODO",
-                        0);
+                        -1);
   arg_parser.add_option(VOCAB,
                         {"--vocab"},
                         "TODO",
