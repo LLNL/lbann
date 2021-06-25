@@ -41,7 +41,7 @@ using Dim3 = gpu_lib::array<size_t, 3>;
  *
  *  Block dimensions: bdimx x bdimy x bdimz
  *
- *  Grid dimensions: (values_dim[1] / bdimx) x (values_dim[0] / bdimy) x 1
+ *  Grid dimensions: (num_columns_input_mat / bdimx) x (num_rows / bdimy) x mb_size /bdimz
  */
 template <typename T>
 __global__ void scatter2d_kernel(
@@ -63,12 +63,10 @@ __global__ void scatter2d_kernel(
   const size_t nthreadsy = gridDim.y * blockDim.y;
   const size_t nthreadsz = gridDim.z * blockDim.z;
 
-
   auto mini_batch_size = output_dims[0];
   auto num_rows = output_dims[1];
   auto num_out_columns = output_dims[2];
   auto num_value_columns = values_dims[2];
-
 
   for (size_t batch = gidz; batch < mini_batch_size; batch+=nthreadsz){
     for(size_t row = gidy; row < num_rows; row+=nthreadsy){
@@ -90,9 +88,9 @@ __global__ void scatter2d_kernel(
  *
  *  output(j,i) = values(j,indices(j,i))
  *
- *  Block dimensions: bdimx x bdimy x 1
+ *  Block dimensions: bdimx x bdimy x bdimz
  *
- *  Grid dimensions: (output_dim[1] / bdimx) x (output_dim[0] / bdimy) x 1
+ *  Grid dimensions: (num_columns_output_mat / bdimx) x (num_rows / bdimy) x mb_size /bdimz
  */
 template <typename T>
 __global__ void gather2d_kernel(
@@ -160,8 +158,6 @@ void scatter_layer<TensorDataType, Layout, Device>::fp_compute() {
   const size_t value_stride_2 = (input_dims.size()>1) ? values_size : 0;
   const size_t output_stride_2 = (input_dims.size()>1) ? output_size : 0;
 
-
-
   // Scatter into output matrix
   El::Zero(local_output);
   if (!local_values.IsEmpty()) {
@@ -179,7 +175,6 @@ void scatter_layer<TensorDataType, Layout, Device>::fp_compute() {
     grid_dims.x = (values_size + block_dims.x - 1) / block_dims.x;
     grid_dims.y = (num_rows + block_dims.y - 1) / block_dims.y;
     grid_dims.z = (local_mini_batch_size + block_dims.z - 1) / block_dims.z; 
-
 
     hydrogen::gpu::LaunchKernel(
       scatter2d_kernel<TensorDataType>,
@@ -235,8 +230,6 @@ void scatter_layer<TensorDataType, Layout, Device>::bp_compute() {
     grid_dims.y = (values_size + block_dims.y - 1) / block_dims.y;
     grid_dims.z = (local_mini_batch_size + block_dims.z - 1) / block_dims.z;
 
-
-    
     hydrogen::gpu::LaunchKernel(
       gather2d_kernel<TensorDataType>,
       grid_dims, block_dims, 0, multisync,

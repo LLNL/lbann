@@ -184,7 +184,7 @@ def construct_model(lbann):
         execution_modes='test'))
 
     # Gradient checking
-    callbacks.append(lbann.CallbackDumpOutputs(layers=tools.str_list(["Scatter_2D"]), batch_interval=1, directory="outputs", format="csv"))
+    
     callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
 
     # Construct model
