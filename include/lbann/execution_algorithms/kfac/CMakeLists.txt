@@ -1,5 +1,6 @@
 # Add the headers for this directory
 set_full_path(THIS_DIR_HEADERS
+  execution_context.hpp
   kfac.hpp
   kfac_block.hpp
   kfac_block_bn.hpp

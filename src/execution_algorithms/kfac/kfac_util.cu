@@ -25,11 +25,10 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/callbacks/kfac/kfac_util.hpp"
+#include "lbann/execution_algorithms/kfac/kfac_util.hpp"
 
 namespace lbann {
-namespace callback {
-namespace kfac_util {
+namespace kfac {
 
 namespace {
 
@@ -230,6 +229,5 @@ void unpack_lower_tri(
   }
 }
 
-} // namespace kfac_util
-} // namespace callback
+} // namespace kfac
 } // namespace lbann

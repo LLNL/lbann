@@ -22,19 +22,16 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// kfac_block_bn .hpp .cpp - A BN building block for the K-FAC method
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_CALLBACKS_CALLBACK_KFAC_BLOCK_BN_HPP_INCLUDED
-#define LBANN_CALLBACKS_CALLBACK_KFAC_BLOCK_BN_HPP_INCLUDED
+#ifndef LBANN_EXECUTION_ALGORITHMS_KFAC_KFAC_BLOCK_BN_HPP_INCLUDED
+#define LBANN_EXECUTION_ALGORITHMS_KFAC_KFAC_BLOCK_BN_HPP_INCLUDED
 
-#include "lbann/callbacks/kfac/kfac_block.hpp"
+#include "lbann/execution_algorithms/kfac/kfac_block.hpp"
 #include "lbann/layers/learning/fully_connected.hpp"
 #include "lbann/layers/learning/convolution.hpp"
 
 namespace lbann {
-namespace callback {
 
 namespace kfac_bn_util {
 
@@ -62,11 +59,11 @@ class kfac_block_bn: public kfac_block<Device> {
 
   /** Constructor.
    */
-  kfac_block_bn(Layer *layer,
-                kfac<Device> *callback,
+  kfac_block_bn(Layer* layer,
+                kfac::ExecutionContext* context,
                 size_t layer_id,
                 size_t inverse_proc_rank)
-      : kfac_block<Device>(layer, callback, layer_id, inverse_proc_rank) {
+      : kfac_block<Device>(layer, context, layer_id, inverse_proc_rank) {
     const auto parent = layer->get_parent_layers()[0];
     const bool is_after_fc =
         (dynamic_cast<const fully_connected_layer<DataType,
@@ -76,7 +73,7 @@ class kfac_block_bn: public kfac_block<Device> {
          data_layout::DATA_PARALLEL, Device>*>(parent) != nullptr);
     if(!is_after_fc && !m_is_after_conv) {
       std::stringstream err;
-      err << "The K-FAC callback only supports batch-normalization layers after "
+      err << "The K-FAC only supports batch-normalization layers after "
           << "fully-connected layers or convolutional layers."
           << " layer: " << layer->get_name()
           << " parent type: " << parent->get_type();
@@ -159,7 +156,6 @@ class kfac_block_bn: public kfac_block<Device> {
 
 };
 
-} // namespace callback
 } // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_KFAC_BLOCK_BN_HPP_INCLUDED
+#endif  // LBANN_EXECUTION_ALGORITHMS_KFAC_KFAC_BLOCK_BN_HPP_INCLUDED

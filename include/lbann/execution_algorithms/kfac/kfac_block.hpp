@@ -22,22 +22,20 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// kfac_block .hpp .cpp - A building block for the K-FAC method
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_CALLBACKS_CALLBACK_KFAC_BLOCK_HPP_INCLUDED
-#define LBANN_CALLBACKS_CALLBACK_KFAC_BLOCK_HPP_INCLUDED
+#ifndef LBANN_EXECUTION_ALGORITHMS_KFAC_KFAC_BLOCK_HPP_INCLUDED
+#define LBANN_EXECUTION_ALGORITHMS_KFAC_KFAC_BLOCK_HPP_INCLUDED
 
-#include "lbann/callbacks/kfac/kfac.hpp"
+#include "lbann/execution_algorithms/kfac/execution_context.hpp"
+#include "lbann/layers/layer.hpp"
 
 namespace lbann {
-namespace callback {
 
-// Forward declarations
-// TODO: Remove if kfac_block no longer refers kfac
-template <El::Device Device>
-class kfac;
+// Forward declaration
+namespace kfac {
+class ExecutionContext;
+}
 
 /** A building block for K-FAC.
  */
@@ -47,14 +45,14 @@ class kfac_block {
 
   /** Constructor.
    */
-  kfac_block(Layer *layer,
-             kfac<Device> *callback,
+  kfac_block(Layer* layer,
+             kfac::ExecutionContext* context,
              size_t layer_id,
              size_t inverse_proc_rank)
       : m_layer(layer),
         m_layer_id(layer_id),
         m_inverse_proc_rank(inverse_proc_rank),
-        m_callback(callback) {
+        m_context(context) {
     m_has_kronecker_inverse = false;
   }
   virtual ~kfac_block() = default;
@@ -153,13 +151,12 @@ class kfac_block {
 
  private:
 
-  /** @brief The parent callback.
-   * TODO: Use its own workspace and remove this pointer. */
-  kfac<Device> *m_callback;
+  /** @brief The execution context that created this block.
+   *  TODO: Use its own workspace and remove this pointer. */
+  kfac::ExecutionContext* m_context;
 
 };
 
-} // namespace callback
 } // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_KFAC_BLOCK_HPP_INCLUDED
+#endif  // LBANN_EXECUTION_ALGORITHMS_KFAC_KFAC_BLOCK_HPP_INCLUDED

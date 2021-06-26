@@ -25,7 +25,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/callbacks/kfac/kfac_util.hpp"
+#include "lbann/execution_algorithms/kfac/kfac_util.hpp"
 #include "lbann/base.hpp"
 #include "lbann/utils/timer.hpp"
 
@@ -35,8 +35,7 @@
 #include <iterator>
 
 namespace lbann {
-namespace callback {
-namespace kfac_util {
+namespace kfac {
 namespace {
 std::vector<int> intify_size_t_vector(std::vector<size_t> const& in_sizes)
 {
@@ -104,7 +103,7 @@ void allgather_v_blocks_device(const El::Matrix<DataType, Device>& send_block,
 
 #if defined LBANN_HAS_GPU && defined LBANN_HAS_ALUMINUM
 template <>
-void reduce_block_device<El::Device::GPU>(
+void reduce_block_device(
   El::Matrix<DataType, El::Device::GPU>& block,
   const size_t count,
   const size_t root,
@@ -211,7 +210,7 @@ void get_matrix_inverse(
   const double t_fill = get_time();
 
   if(report_time) {
-    std::cout << "K-FAC callback: get_matrix_inverse of"
+    std::cout << "K-FAC: get_matrix_inverse of"
               << " " << A.Height() << "x" << A.Width()
               << " using Hydrogen"
               << " (damping=" << damping << "): "
@@ -543,6 +542,5 @@ PROTO_DEVICE(DataType, El::Device::CPU);
 PROTO_DEVICE(DataType, El::Device::GPU);
 #endif // LBANN_HAS_GPU
 
-} // namespace kfac_util
-} // namespace callback
+} // namespace kfac
 } // namespace lbann

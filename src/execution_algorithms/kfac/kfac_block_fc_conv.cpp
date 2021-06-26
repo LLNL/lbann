@@ -25,13 +25,12 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/callbacks/kfac/kfac_block_fc_conv.hpp"
-#include "lbann/callbacks/kfac/kfac_util.hpp"
+#include "lbann/execution_algorithms/kfac/kfac_block_fc_conv.hpp"
+#include "lbann/execution_algorithms/kfac/kfac_util.hpp"
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/utils/im2col.hpp"
 
 namespace lbann {
-namespace callback {
 
 template <El::Device Device>
 void kfac_block_fc_conv<Device>::compute_local_kronecker_factors(
@@ -120,8 +119,8 @@ void kfac_block_fc_conv<Device>::compute_local_kronecker_factors(
 
   m_kronecker_factor_buf_A.Resize(A.Height()*(A.Height()+1)/2, 1);
   m_kronecker_factor_buf_G.Resize(G.Height()*(G.Height()+1)/2, 1);
-  kfac_util::pack_lower_tri(m_kronecker_factor_buf_A, A, sync_info);
-  kfac_util::pack_lower_tri(m_kronecker_factor_buf_G, G, sync_info);
+  kfac::pack_lower_tri(m_kronecker_factor_buf_A, A, sync_info);
+  kfac::pack_lower_tri(m_kronecker_factor_buf_G, G, sync_info);
 
   // Dump L2 norm of matrices
   if(comm->am_trainer_master() && print_matrix_summary) {
@@ -129,12 +128,12 @@ void kfac_block_fc_conv<Device>::compute_local_kronecker_factors(
     // const auto &dtw = dynamic_cast<data_type_weights<DataType>*>(&weights);
     // const auto &w_values = dtw->get_values();
     std::ostringstream oss;
-    oss << "K-FAC callback: L2 norm @ "<< this->m_layer->get_name() << ": "
-        // << kfac_util::get_matrix_stat(w_values.LockedMatrix(), "W")
-        << kfac_util::get_matrix_stat((const El::Matrix<DataType, Device>&) local_activations, "acts")
-        << ", " << kfac_util::get_matrix_stat((const El::Matrix<DataType, Device>&) local_errors, "errs")
-        << ", " << kfac_util::get_matrix_stat((const El::Matrix<DataType, Device>&) A, "A")
-        << ", " << kfac_util::get_matrix_stat((const El::Matrix<DataType, Device>&) G, "G")
+    oss << "K-FAC: L2 norm @ "<< this->m_layer->get_name() << ": "
+        // << kfac::get_matrix_stat(w_values.LockedMatrix(), "W")
+        << kfac::get_matrix_stat((const El::Matrix<DataType, Device>&) local_activations, "acts")
+        << ", " << kfac::get_matrix_stat((const El::Matrix<DataType, Device>&) local_errors, "errs")
+        << ", " << kfac::get_matrix_stat((const El::Matrix<DataType, Device>&) A, "A")
+        << ", " << kfac::get_matrix_stat((const El::Matrix<DataType, Device>&) G, "G")
         << std::endl;
     std::cout << oss.str();
   }
@@ -154,8 +153,8 @@ void kfac_block_fc_conv<Device>::update_kronecker_average(
   auto& G = this->get_workspace_matrix(
       "G", m_height_G, m_height_G);
 
-  kfac_util::unpack_lower_tri(A, m_kronecker_factor_buf_A, sync_info);
-  kfac_util::unpack_lower_tri(G, m_kronecker_factor_buf_G, sync_info);
+  kfac::unpack_lower_tri(A, m_kronecker_factor_buf_A, sync_info);
+  kfac::unpack_lower_tri(G, m_kronecker_factor_buf_G, sync_info);
 
   // Update average Kronecker factors
   if(!this->m_has_kronecker_inverse) {
@@ -164,9 +163,9 @@ void kfac_block_fc_conv<Device>::update_kronecker_average(
   }
   auto &Aave = m_kronecker_average_A;
   auto &Gave = m_kronecker_average_G;
-  kfac_util::update_kronecker_average(
+  kfac::update_kronecker_average(
       Aave, A, A.Height()*A.Width(), kronecker_decay, sync_info);
-  kfac_util::update_kronecker_average(
+  kfac::update_kronecker_average(
       Gave, G, G.Height()*G.Width(), kronecker_decay, sync_info);
 
   // Dump matrices for debugging
@@ -183,9 +182,9 @@ void kfac_block_fc_conv<Device>::update_kronecker_average(
   // Dump L2 norm of matrices
   if(comm->am_trainer_master() && print_matrix_summary) {
     std::ostringstream oss;
-    oss << "K-FAC callback: L2 norm @ "<< this->m_layer->get_name() << ": "
-        << kfac_util::get_matrix_stat(Aave, "Aave")
-        << ", " << kfac_util::get_matrix_stat(Gave, "Gave")
+    oss << "K-FAC: L2 norm @ "<< this->m_layer->get_name() << ": "
+        << kfac::get_matrix_stat(Aave, "Aave")
+        << ", " << kfac::get_matrix_stat(Gave, "Gave")
         << std::endl;
     std::cout << oss.str();
   }
@@ -241,18 +240,18 @@ void kfac_block_fc_conv<Device>::update_kronecker_inverse(
       "ALinv", Aave.Height(), Aave.Height());
   auto& GLinv = this->get_workspace_matrix(
       "GLinv", Gave.Height(), Gave.Height());
-  kfac_util::get_matrix_inverse(
+  kfac::get_matrix_inverse(
       Ainv, ALinv, Aave, comm->am_trainer_master() && print_time,
       DataType(damping_act*pi), 0,
       false, sync_info);
-  kfac_util::get_matrix_inverse(
+  kfac::get_matrix_inverse(
       Ginv, GLinv, Gave, comm->am_trainer_master() && print_time,
       DataType(damping_err/pi), 0,
       false, sync_info);
 
   if(print_matrix_summary) {
     std::ostringstream oss;
-    oss << "K-FAC callback: pi=" << pi << " @ "<< this->m_layer->get_name() << std::endl;
+    oss << "K-FAC: pi=" << pi << " @ "<< this->m_layer->get_name() << std::endl;
     std::cout << oss.str();
   }
 
@@ -359,12 +358,12 @@ void kfac_block_fc_conv<Device>::update_kronecker_inverse(
     const auto &dtw = dynamic_cast<data_type_weights<DataType>*>(&weights);
     const auto &w_values = dtw->get_values();
     std::ostringstream oss;
-    oss << "K-FAC callback: L2 norm @ "<< this->m_layer->get_name() << ": "
-        << kfac_util::get_matrix_stat((const El::Matrix<DataType, Device>&) w_values.LockedMatrix(), "W")
-        << ", " << kfac_util::get_matrix_stat(Ainv, "Ainv")
-        << ", " << kfac_util::get_matrix_stat(Ginv, "Ginv")
-        << ", " << kfac_util::get_matrix_stat(w_gradients, "grad")
-        << ", " << kfac_util::get_matrix_stat(Fgrad, "Finvgrad")
+    oss << "K-FAC: L2 norm @ "<< this->m_layer->get_name() << ": "
+        << kfac::get_matrix_stat((const El::Matrix<DataType, Device>&) w_values.LockedMatrix(), "W")
+        << ", " << kfac::get_matrix_stat(Ainv, "Ainv")
+        << ", " << kfac::get_matrix_stat(Ginv, "Ginv")
+        << ", " << kfac::get_matrix_stat(w_gradients, "grad")
+        << ", " << kfac::get_matrix_stat(Fgrad, "Finvgrad")
         << std::endl;
     std::cout << oss.str();
   }
@@ -429,7 +428,7 @@ void kfac_block_fc_conv<Device>::get_kronecker_factor_conv(
   for(auto i = dilations.begin(); i != dilations.end(); i++)
     if(*i != 1) {
       std::stringstream err;
-      err << "The K-FAC callback onky supports dilation width of 1."
+      err << "K-FAC only supports dilation width of 1."
           << " layer: " << l_conv->get_name();
       LBANN_ERROR(err.str());
     }
@@ -603,5 +602,4 @@ template class kfac_block_fc_conv<El::Device::CPU>;
 template class kfac_block_fc_conv<El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 
-} // namespace callback
 } // namespace lbann

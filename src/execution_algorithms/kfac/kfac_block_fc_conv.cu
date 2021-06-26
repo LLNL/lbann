@@ -25,11 +25,10 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/callbacks/kfac/kfac_block_fc_conv.hpp"
+#include "lbann/execution_algorithms/kfac/kfac_block_fc_conv.hpp"
 
 
 namespace lbann {
-namespace callback {
 
 namespace {
 
@@ -100,5 +99,4 @@ void kfac_fc_conv_util::conv_transpose<El::Device::GPU>(
   }
 }
 
-} // namespace callback
 } // namespace lbann

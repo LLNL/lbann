@@ -25,11 +25,10 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/callbacks/kfac/kfac_block_gru.hpp"
-#include "lbann/callbacks/kfac/kfac_util.hpp"
+#include "lbann/execution_algorithms/kfac/kfac_block_gru.hpp"
+#include "lbann/execution_algorithms/kfac/kfac_util.hpp"
 
 namespace lbann {
-namespace callback {
 
 namespace {
 
@@ -216,12 +215,12 @@ void kfac_block_gru<Device>::compute_local_kronecker_factors(
 
   m_kronecker_factor_buf_A_h.Resize(A_h.Height()*(A_h.Height()+1)/2, 1);
   m_kronecker_factor_buf_A_x.Resize(A_x.Height()*(A_x.Height()+1)/2, 1);
-  kfac_util::pack_lower_tri(m_kronecker_factor_buf_A_h, A_h, sync_info);
-  kfac_util::pack_lower_tri(m_kronecker_factor_buf_A_x, A_x, sync_info);
+  kfac::pack_lower_tri(m_kronecker_factor_buf_A_h, A_h, sync_info);
+  kfac::pack_lower_tri(m_kronecker_factor_buf_A_x, A_x, sync_info);
   for(auto& matrix_type : kfac_gru_util::LEARNABLE_MATRICES) {
     auto& G = *Gs[matrix_type];
     m_kronecker_factor_buf_G[matrix_type].Resize(G.Height()*(G.Height()+1)/2, 1);
-    kfac_util::pack_lower_tri(m_kronecker_factor_buf_G[matrix_type], G, sync_info);
+    kfac::pack_lower_tri(m_kronecker_factor_buf_G[matrix_type], G, sync_info);
   }
 
   // Dump matrices for debugging
@@ -237,25 +236,25 @@ void kfac_block_gru<Device>::compute_local_kronecker_factors(
   // Dump L2 norm of matrices
   if(print_matrix_summary) {
     std::ostringstream oss;
-    oss << "K-FAC callback: L2 norm @ "<< this->m_layer->get_name()
+    oss << "K-FAC: L2 norm @ "<< this->m_layer->get_name()
         << " (process " << comm->get_rank_in_trainer() << ")"
-        << ": " << kfac_util::get_matrix_stat((const El::Matrix<DataType, Device>&) local_outputs, "h")
-        << ": " << kfac_util::get_matrix_stat((const El::Matrix<DataType, Device>&) local_errors, "dh")
-        << ": " << kfac_util::get_matrix_stat((const El::Matrix<DataType, Device>&) hfc, "hfc")
-        << ", " << kfac_util::get_matrix_stat((const El::Matrix<DataType, Device>&) A_h, "A_h")
-        << ", " << kfac_util::get_matrix_stat((const El::Matrix<DataType, Device>&) A_x, "A_x")
-        << ", " << kfac_util::get_matrix_stat((const El::Matrix<DataType, Device>&) r, "r")
-        << ", " << kfac_util::get_matrix_stat((const El::Matrix<DataType, Device>&) i, "i")
+        << ": " << kfac::get_matrix_stat((const El::Matrix<DataType, Device>&) local_outputs, "h")
+        << ": " << kfac::get_matrix_stat((const El::Matrix<DataType, Device>&) local_errors, "dh")
+        << ": " << kfac::get_matrix_stat((const El::Matrix<DataType, Device>&) hfc, "hfc")
+        << ", " << kfac::get_matrix_stat((const El::Matrix<DataType, Device>&) A_h, "A_h")
+        << ", " << kfac::get_matrix_stat((const El::Matrix<DataType, Device>&) A_x, "A_x")
+        << ", " << kfac::get_matrix_stat((const El::Matrix<DataType, Device>&) r, "r")
+        << ", " << kfac::get_matrix_stat((const El::Matrix<DataType, Device>&) i, "i")
         << std::endl;
 
     for(auto& matrix_type : kfac_gru_util::LEARNABLE_MATRICES) {
       const auto mname = kfac_gru_util::get_matrix_type_name(matrix_type);
-      oss << "K-FAC callback: L2 norm @ "<< this->m_layer->get_name()
+      oss << "K-FAC: L2 norm @ "<< this->m_layer->get_name()
           << " (process " << comm->get_rank_in_trainer() << ")"
-          << ": " << kfac_util::get_matrix_stat(
+          << ": " << kfac::get_matrix_stat(
               (const El::Matrix<DataType, Device>&) *gs[matrix_type],
               (std::string("g_")+mname).c_str())
-          << ", " << kfac_util::get_matrix_stat(
+          << ", " << kfac::get_matrix_stat(
               (const El::Matrix<DataType, Device>&) *Gs[matrix_type],
               (std::string("G")+mname).c_str())
           << std::endl;
@@ -277,17 +276,17 @@ void kfac_block_gru<Device>::update_kronecker_average(
 
   auto& A_h = this->get_workspace_matrix("Ah", hidden_size, hidden_size);
   auto& A_x = this->get_workspace_matrix("Ax", input_size, input_size);
-  kfac_util::unpack_lower_tri(A_h, m_kronecker_factor_buf_A_h, sync_info);
-  kfac_util::unpack_lower_tri(A_x, m_kronecker_factor_buf_A_x, sync_info);
+  kfac::unpack_lower_tri(A_h, m_kronecker_factor_buf_A_h, sync_info);
+  kfac::unpack_lower_tri(A_x, m_kronecker_factor_buf_A_x, sync_info);
   if(!this->m_has_kronecker_inverse) {
     El::Copy(A_h, m_kronecker_average_A_h);
     El::Copy(A_x, m_kronecker_average_A_x);
   }
   auto &Aave_h = m_kronecker_average_A_h;
   auto &Aave_x = m_kronecker_average_A_x;
-  kfac_util::update_kronecker_average(
+  kfac::update_kronecker_average(
       Aave_h, A_h, A_h.Height()*A_h.Width(), kronecker_decay, sync_info);
-  kfac_util::update_kronecker_average(
+  kfac::update_kronecker_average(
       Aave_x, A_x, A_x.Height()*A_x.Width(), kronecker_decay, sync_info);
 
   // Dump matrices for debugging
@@ -303,9 +302,9 @@ void kfac_block_gru<Device>::update_kronecker_average(
   // Dump L2 norm of matrices
   if(comm->am_trainer_master() && print_matrix_summary) {
     std::ostringstream oss;
-    oss << "K-FAC callback: L2 norm @ "<< this->m_layer->get_name()
-        << ": " << kfac_util::get_matrix_stat(Aave_h, "Aave_h")
-        << ", " << kfac_util::get_matrix_stat(Aave_x, "Aave_x");
+    oss << "K-FAC: L2 norm @ "<< this->m_layer->get_name()
+        << ": " << kfac::get_matrix_stat(Aave_h, "Aave_h")
+        << ", " << kfac::get_matrix_stat(Aave_x, "Aave_x");
     oss << std::endl;
     std::cout << oss.str();
   }
@@ -317,13 +316,13 @@ void kfac_block_gru<Device>::update_kronecker_average(
     auto& G = this->get_workspace_matrix(
         std::string("G_")+mname,
         height, height);
-    kfac_util::unpack_lower_tri(
+    kfac::unpack_lower_tri(
         G, m_kronecker_factor_buf_G[matrix_type],
         sync_info);
     if(!this->m_has_kronecker_inverse)
       El::Copy(G, m_kronecker_average_G[matrix_type]);
     auto &Gave = m_kronecker_average_G[matrix_type];
-    kfac_util::update_kronecker_average(
+    kfac::update_kronecker_average(
         Gave, G, G.Height()*G.Width(), kronecker_decay, sync_info);
 
     // Dump matrices for debugging
@@ -336,9 +335,9 @@ void kfac_block_gru<Device>::update_kronecker_average(
     // Dump L2 norm of matrices
     if(comm->am_trainer_master() && print_matrix_summary) {
       std::ostringstream oss;
-      oss << "K-FAC callback: L2 norm @ "<< this->m_layer->get_name()
-          << ": " << kfac_util::get_matrix_stat(G, (std::string("G_")+mname).c_str())
-          << ": " << kfac_util::get_matrix_stat(Gave, (std::string("Gave_")+mname).c_str())
+      oss << "K-FAC: L2 norm @ "<< this->m_layer->get_name()
+          << ": " << kfac::get_matrix_stat(G, (std::string("G_")+mname).c_str())
+          << ": " << kfac::get_matrix_stat(Gave, (std::string("Gave_")+mname).c_str())
           << std::endl;
       std::cout << oss.str();
     }
@@ -364,15 +363,15 @@ void kfac_block_gru<Device>::update_kronecker_inverse(
   }
   const DataType pi = 1.0;
   if(use_pi)
-    LBANN_ERROR("The GRU K-FAC callback does not currently support use_pi.");
+    LBANN_ERROR("The GRU K-FAC implementation does not currently support use_pi.");
   auto& Ainv_h = m_kronecker_inverse_A_h;
   auto& Ainv_x = m_kronecker_inverse_A_x;
   auto& ALinv_h = this->get_workspace_matrix("ALinv_h", Aave_h.Height(), Aave_h.Height());
   auto& ALinv_x = this->get_workspace_matrix("ALinv_x", Aave_x.Height(), Aave_x.Height());
-  kfac_util::get_matrix_inverse(
+  kfac::get_matrix_inverse(
       Ainv_h, ALinv_h, Aave_h, comm->am_trainer_master() && print_time,
       DataType(damping_act*pi), 0, false, sync_info);
-  kfac_util::get_matrix_inverse(
+  kfac::get_matrix_inverse(
       Ainv_x, ALinv_x, Aave_x, comm->am_trainer_master() && print_time,
       DataType(damping_act*pi), 0, false, sync_info);
 
@@ -386,9 +385,9 @@ void kfac_block_gru<Device>::update_kronecker_inverse(
   // Dump L2 norm of matrices
   if(print_matrix_summary) {
     std::ostringstream oss;
-    oss << "K-FAC callback: L2 norm @ "<< this->m_layer->get_name()
-        << ": " << kfac_util::get_matrix_stat(Ainv_h, "Ainv_h")
-        << ", " << kfac_util::get_matrix_stat(Ainv_x, "Ainv_x")
+    oss << "K-FAC: L2 norm @ "<< this->m_layer->get_name()
+        << ": " << kfac::get_matrix_stat(Ainv_h, "Ainv_h")
+        << ", " << kfac::get_matrix_stat(Ainv_x, "Ainv_x")
         << std::endl;
     std::cout << oss.str();
   }
@@ -402,7 +401,7 @@ void kfac_block_gru<Device>::update_kronecker_inverse(
     auto& GLinv = this->get_workspace_matrix(
         std::string("GLinv_"+mname),
         Gave.Height(), Gave.Height());
-    kfac_util::get_matrix_inverse(
+    kfac::get_matrix_inverse(
         Ginv, GLinv, Gave, comm->am_trainer_master() && print_time,
         DataType(damping_err/pi), 0,
         false, sync_info);
@@ -440,11 +439,11 @@ void kfac_block_gru<Device>::update_kronecker_inverse(
       El::Matrix<DataType, Device> weights_mat;
       get_weight_matrix(matrix_type, weights_mat);
       std::ostringstream oss;
-      oss << "K-FAC callback: L2 norm @ "<< this->m_layer->get_name()
-          << ": " << kfac_util::get_matrix_stat((const El::Matrix<DataType, Device>&) weights_mat, mname.c_str())
-          << ", " << kfac_util::get_matrix_stat(Ginv, (std::string("Ginv_")+mname).c_str())
-          << ", " << kfac_util::get_matrix_stat(gradients_mat, (std::string("grad_")+mname).c_str())
-          << ", " << kfac_util::get_matrix_stat(Fgrad, (std::string("Finvgrad_")+mname).c_str())
+      oss << "K-FAC: L2 norm @ "<< this->m_layer->get_name()
+          << ": " << kfac::get_matrix_stat((const El::Matrix<DataType, Device>&) weights_mat, mname.c_str())
+          << ", " << kfac::get_matrix_stat(Ginv, (std::string("Ginv_")+mname).c_str())
+          << ", " << kfac::get_matrix_stat(gradients_mat, (std::string("grad_")+mname).c_str())
+          << ", " << kfac::get_matrix_stat(Fgrad, (std::string("Finvgrad_")+mname).c_str())
           << std::endl;
       std::cout << oss.str();
     }
@@ -524,11 +523,11 @@ void kfac_block_gru<El::Device::GPU>::check_dnn_lib_spec() const {
   if(math_type != CUDNN_DEFAULT_MATH) {
     std::stringstream ss;
     ss << "The structure of cuDNN's reserve space might not be"
-       << " what the GRU K-FAC callback expects when Tensor Cores are enabled.";
+       << " what the GRU K-FAC implementation expects when Tensor Cores are enabled.";
     LBANN_WARNING(ss.str());
   }
 #else // LBANN_HAS_DNN_LIB
-  LBANN_ERROR("cuDNN should be enabled to use this callback with GPUs.");
+  LBANN_ERROR("cuDNN should be enabled to use K-FAC with GPUs.");
 #endif // LBANN_HAS_DNN_LIB
 }
 #endif // LBANN_HAS_GPU
@@ -807,5 +806,4 @@ template class kfac_block_gru<El::Device::CPU>;
 template class kfac_block_gru<El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 
-} // namespace callback
 } // namespace lbann

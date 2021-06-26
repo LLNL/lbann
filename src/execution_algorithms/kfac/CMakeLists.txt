@@ -1,6 +1,6 @@
 # Add the source files for this directory
 set_full_path(THIS_DIR_SOURCES
-  kfac.cpp
+  execution_context.cpp
   kfac_block.cpp
   kfac_block_bn.cpp
   kfac_block_fc_conv.cpp

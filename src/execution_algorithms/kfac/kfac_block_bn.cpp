@@ -25,12 +25,11 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/callbacks/kfac/kfac_block_bn.hpp"
-#include "lbann/callbacks/kfac/kfac_util.hpp"
+#include "lbann/execution_algorithms/kfac/kfac_block_bn.hpp"
+#include "lbann/execution_algorithms/kfac/kfac_util.hpp"
 #include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
-namespace callback {
 
 template <El::Device Device>
 void kfac_block_bn<Device>::compute_local_kronecker_factors(
@@ -109,17 +108,17 @@ void kfac_block_bn<Device>::compute_local_kronecker_factors(
       El::TypeTraits<DataType>::Zero(), fisher_block);
 
   m_fisher_buf.Resize(fisher_block.Height()*(fisher_block.Height()+1)/2, 1);
-  kfac_util::pack_lower_tri(
+  kfac::pack_lower_tri(
       m_fisher_buf, fisher_block, sync_info);
 
   // dump L2 norm of matrices
   if(comm->am_trainer_master() && print_matrix_summary) {
     std::ostringstream oss;
-    oss << "K-FAC callback: L2 norm @ "<< this->m_layer->get_name() << ": "
-        << kfac_util::get_matrix_stat((const El::Matrix<DataType, Device>&) scale_values.LockedMatrix(), "scale")
-        << ", " << kfac_util::get_matrix_stat((const El::Matrix<DataType, Device>&) bias_values.LockedMatrix(), "bias")
-        << ", " << kfac_util::get_matrix_stat((const El::Matrix<DataType, Device>&) local_activations, "acts")
-        << ", " << kfac_util::get_matrix_stat((const El::Matrix<DataType, Device>&) local_errors, "errs")
+    oss << "K-FAC: L2 norm @ "<< this->m_layer->get_name() << ": "
+        << kfac::get_matrix_stat((const El::Matrix<DataType, Device>&) scale_values.LockedMatrix(), "scale")
+        << ", " << kfac::get_matrix_stat((const El::Matrix<DataType, Device>&) bias_values.LockedMatrix(), "bias")
+        << ", " << kfac::get_matrix_stat((const El::Matrix<DataType, Device>&) local_activations, "acts")
+        << ", " << kfac::get_matrix_stat((const El::Matrix<DataType, Device>&) local_errors, "errs")
         << std::endl;
     std::cout << oss.str();
   }
@@ -138,7 +137,7 @@ void kfac_block_bn<Device>::update_kronecker_average(
   auto& fisher_block = this->get_workspace_matrix(
       "bn_fisher_block",
       m_num_channels*2, m_num_channels*2);
-  kfac_util::unpack_lower_tri(
+  kfac::unpack_lower_tri(
       fisher_block, m_fisher_buf, sync_info);
 
   // Update average Kronecker factors
@@ -146,7 +145,7 @@ void kfac_block_bn<Device>::update_kronecker_average(
     El::Copy(fisher_block, m_fisher_average);
   }
   auto &Fave = m_fisher_average;
-  kfac_util::update_kronecker_average(
+  kfac::update_kronecker_average(
       Fave, fisher_block,
       fisher_block.Height()*fisher_block.Width(),
       kronecker_decay, sync_info);
@@ -174,7 +173,7 @@ void kfac_block_bn<Device>::update_kronecker_inverse(
   auto& FLinv = this->get_workspace_matrix(
       "bn_FLinv",
       Fave.Height(), Fave.Height());
-  kfac_util::get_matrix_inverse(
+  kfac::get_matrix_inverse(
       Finv, FLinv, Fave, comm->am_trainer_master() && print_time,
       DataType(damping_act), DataType(damping_err),
       true, sync_info);
@@ -182,8 +181,8 @@ void kfac_block_bn<Device>::update_kronecker_inverse(
   // dump L2 norm of matrices
   if(comm->am_trainer_master() && print_matrix_summary) {
     std::ostringstream oss;
-    oss << "K-FAC callback: L2 norm @ "<< this->m_layer->get_name() << ": "
-        << kfac_util::get_matrix_stat(Fave, "Fave")
+    oss << "K-FAC: L2 norm @ "<< this->m_layer->get_name() << ": "
+        << kfac::get_matrix_stat(Fave, "Fave")
         << std::endl;
     std::cout << oss.str();
   }
@@ -229,11 +228,11 @@ void kfac_block_bn<Device>::update_kronecker_inverse(
   // dump L2 norm of matrices
   if(comm->am_trainer_master() && print_matrix_summary) {
     std::ostringstream oss;
-    oss << "K-FAC callback: L2 norm @ "<< this->m_layer->get_name() << ": "
-        << ", " << kfac_util::get_matrix_stat(Finv, "Finv")
-        << ", " << kfac_util::get_matrix_stat(Fgrad, "Fgrad")
-        << ", " << kfac_util::get_matrix_stat(s_gradients, "scale_grad")
-        << ", " << kfac_util::get_matrix_stat(b_gradients, "bias_grad")
+    oss << "K-FAC: L2 norm @ "<< this->m_layer->get_name() << ": "
+        << ", " << kfac::get_matrix_stat(Finv, "Finv")
+        << ", " << kfac::get_matrix_stat(Fgrad, "Fgrad")
+        << ", " << kfac::get_matrix_stat(s_gradients, "scale_grad")
+        << ", " << kfac::get_matrix_stat(b_gradients, "bias_grad")
         << std::endl;
     std::cout << oss.str();
   }
@@ -305,5 +304,4 @@ template class kfac_block_bn<El::Device::CPU>;
 template class kfac_block_bn<El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 
-} // namespace callback
 } // namespace lbann

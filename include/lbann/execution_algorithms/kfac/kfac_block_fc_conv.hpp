@@ -22,18 +22,15 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// kfac_block_fc_conv .hpp .cpp - An FC/conv building block for the K-FAC method
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_CALLBACKS_CALLBACK_KFAC_BLOCK_FC_CONV_HPP_INCLUDED
-#define LBANN_CALLBACKS_CALLBACK_KFAC_BLOCK_FC_CONV_HPP_INCLUDED
+#ifndef LBANN_EXECUTION_ALGORITHMS_KFAC_KFAC_BLOCK_FC_CONV_HPP_INCLUDED
+#define LBANN_EXECUTION_ALGORITHMS_KFAC_KFAC_BLOCK_FC_CONV_HPP_INCLUDED
 
-#include "lbann/callbacks/kfac/kfac_block.hpp"
+#include "lbann/execution_algorithms/kfac/kfac_block.hpp"
 #include "lbann/layers/learning/convolution.hpp"
 
 namespace lbann {
-namespace callback {
 
 namespace kfac_fc_conv_util {
 
@@ -77,12 +74,12 @@ class kfac_block_fc_conv: public kfac_block<Device> {
 
   /** Constructor.
    */
-  kfac_block_fc_conv(Layer *layer,
-                     kfac<Device> *callback,
+  kfac_block_fc_conv(Layer* layer,
+                     kfac::ExecutionContext* context,
                      const size_t layer_id,
                      const size_t inverse_proc_rank,
                      const bool is_conv)
-      : kfac_block<Device>(layer, callback, layer_id, inverse_proc_rank),
+      : kfac_block<Device>(layer, context, layer_id, inverse_proc_rank),
         m_is_conv(is_conv), m_has_bias(layer->num_weights() > 1) {
     if(m_is_conv) {
       m_conv_input_spatial_prod = 1;
@@ -101,7 +98,7 @@ class kfac_block_fc_conv: public kfac_block<Device> {
 
       if(input_dims.size() != 3 && input_dims.size() != 4) {
         std::stringstream err;
-        err << "The K-FAC callback only supports 2D or 3D tensors."
+        err << "The K-FAC only supports 2D or 3D tensors."
             << " layer: " << layer->get_name()
             << ", input_dims: ";
         for(auto i = input_dims.begin(); i != input_dims.end(); i++)
@@ -112,7 +109,7 @@ class kfac_block_fc_conv: public kfac_block<Device> {
 
     if(m_is_conv && m_has_bias) {
       std::stringstream err;
-      err << "The K-FAC callback does not currently support biases for convolutional layers."
+      err << "The K-FAC does not currently support biases for convolutional layers."
           << " layer: " << layer->get_name();
       LBANN_ERROR(err.str());
     }
@@ -220,7 +217,6 @@ class kfac_block_fc_conv: public kfac_block<Device> {
 
 };
 
-} // namespace callback
 } // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_KFAC_BLOCK_FC_CONV_HPP_INCLUDED
+#endif  // LBANN_EXECUTION_ALGORITHMS_KFAC_KFAC_BLOCK_FC_CONV_HPP_INCLUDED

@@ -25,15 +25,15 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/callbacks/kfac/kfac_block.hpp"
+#include "lbann/execution_algorithms/kfac/kfac_block.hpp"
+#include "lbann/execution_algorithms/kfac/execution_context.hpp"
 
 namespace lbann {
-namespace callback {
 
 template <El::Device Device>
 El::Matrix<DataType, Device>& kfac_block<Device>::get_workspace_matrix(
     const std::string& key, const size_t height, const size_t width) {
-  return m_callback->get_workspace_matrix(get_name()+" "+key, height, width);
+  return m_context->get_workspace_matrix(get_name()+" "+key, height, width);
 }
 
 template <>
@@ -53,5 +53,4 @@ template class kfac_block<El::Device::CPU>;
 template class kfac_block<El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 
-} // namespace callback
 } // namespace lbann

@@ -22,18 +22,15 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// kfac_block_gru .hpp .cpp - A GRU building block for the K-FAC method
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_CALLBACKS_CALLBACK_KFAC_BLOCK_GRU_HPP_INCLUDED
-#define LBANN_CALLBACKS_CALLBACK_KFAC_BLOCK_GRU_HPP_INCLUDED
+#ifndef LBANN_EXECUTION_ALGORITHMS_KFAC_KFAC_BLOCK_GRU_HPP_INCLUDED
+#define LBANN_EXECUTION_ALGORITHMS_KFAC_KFAC_BLOCK_GRU_HPP_INCLUDED
 
-#include "lbann/callbacks/kfac/kfac_block.hpp"
+#include "lbann/execution_algorithms/kfac/kfac_block.hpp"
 #include "lbann/layers/learning/gru.hpp"
 
 namespace lbann {
-namespace callback {
 
 namespace kfac_gru_util {
 
@@ -116,18 +113,18 @@ class kfac_block_gru: public kfac_block<Device> {
 
   /** Constructor.
    */
-  kfac_block_gru(Layer *layer,
-                 kfac<Device> *callback,
+  kfac_block_gru(Layer* layer,
+                 kfac::ExecutionContext* context,
                  size_t layer_id,
                  size_t inverse_proc_rank)
-      : kfac_block<Device>(layer, callback, layer_id, inverse_proc_rank) {
+      : kfac_block<Device>(layer, context, layer_id, inverse_proc_rank) {
 
     check_dnn_lib_spec();
 
     const auto num_layers = get_gru_layer()->get_num_layers();
     if(num_layers > 1) {
       std::stringstream err;
-      err << "The K-FAC callback only supports single-layer GRU layer."
+      err << "The K-FAC only supports single-layer GRU layer."
           << " layer: " << layer->get_name()
           << ", num_layers: "
           << num_layers;
@@ -251,7 +248,6 @@ class kfac_block_gru: public kfac_block<Device> {
 
 };
 
-} // namespace callback
 } // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_KFAC_BLOCK_GRU_HPP_INCLUDED
+#endif  // LBANN_EXECUTION_ALGORITHMS_KFAC_KFAC_BLOCK_GRU_HPP_INCLUDED

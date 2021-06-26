@@ -25,10 +25,9 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/callbacks/kfac/kfac_block_gru.hpp"
+#include "lbann/execution_algorithms/kfac/kfac_block_gru.hpp"
 
 namespace lbann {
-namespace callback {
 
 namespace {
 
@@ -202,5 +201,4 @@ void kfac_gru_util::unpack_reserve_space(
   }
 }
 
-} // namespace callback
 } // namespace lbann

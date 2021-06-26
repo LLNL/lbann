@@ -66,12 +66,37 @@ def setup_experiment(lbann):
         lbann (module): Module for LBANN Python frontend
 
     """
-    mini_batch_size = num_samples() // 2
-    trainer = lbann.Trainer(mini_batch_size)
+    trainer = construct_trainer(lbann)
     model = construct_model(lbann)
     data_reader = construct_data_reader(lbann)
     optimizer = lbann.NoOptimizer()
     return trainer, model, data_reader, optimizer
+
+def construct_trainer(lbann, ):
+    """Construct LBANN trainer and training algorithm.
+
+    Args:
+        lbann (module): Module for LBANN Python frontend
+
+    """
+    num_epochs = 1
+    mini_batch_size = num_samples() // 2
+    algo = lbann.KFAC(
+        "kfac",
+        lbann.BatchedIterativeOptimizer("sgd", epoch_count=num_epochs),
+        damping_act="1e-2",
+        damping_err="2e-2 2e-3",
+        damping_bn_act="3e-2",
+        damping_bn_err="4e-2 4e-3",
+        damping_warmup_steps=500,
+        kronecker_decay=0.6,
+        print_time=True,
+        print_matrix=False,
+        print_matrix_summary=True,
+        use_pi=True,
+    )
+    trainer = lbann.Trainer(mini_batch_size, training_algo=algo)
+    return trainer
 
 def construct_model(lbann):
     """Construct LBANN model.
@@ -204,24 +229,11 @@ def construct_model(lbann):
     z = lbann.L2Norm2(y)
     obj.append(z)
 
-    callbacks.append(lbann.CallbackKFAC(
-        damping_act="1e-2",
-        damping_err="2e-2 2e-3",
-        damping_bn_act="3e-2",
-        damping_bn_err="4e-2 4e-3",
-        damping_warmup_steps=500,
-        kronecker_decay=0.6,
-        print_time=True,
-        print_matrix=False,
-        print_matrix_summary=True,
-        use_pi=True,
-    ))
-
     # ------------------------------------------
     # Construct model
     # ------------------------------------------
 
-    num_epochs = 1
+    num_epochs = 1 ### @todo Remove
     return lbann.Model(num_epochs,
                        layers=lbann.traverse_layer_graph(x),
                        objective_function=obj,
@@ -269,7 +281,6 @@ def construct_data_reader(lbann):
 # ==============================================
 
 # Create test functions that can interact with PyTest
-# Note: Create test name by removing ".py" from file name
 for _test_func in tools.create_tests(
         setup_experiment,
         __file__,

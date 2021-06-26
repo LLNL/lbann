@@ -25,11 +25,10 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/callbacks/kfac/kfac_block_bn.hpp"
+#include "lbann/execution_algorithms/kfac/kfac_block_bn.hpp"
 
 
 namespace lbann {
-namespace callback {
 
 namespace {
 
@@ -90,5 +89,4 @@ void kfac_bn_util::compute_bn_factor_data2col(
   }
 }
 
-} // namespace callback
 } // namespace lbann

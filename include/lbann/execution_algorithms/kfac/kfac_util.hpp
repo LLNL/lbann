@@ -22,26 +22,38 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// kfac_util .hpp .cpp - Utility (GPU) functions for the K-FAC callback.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_CALLBACKS_CALLBACK_KFAC_UTIL_HPP_INCLUDED
-#define LBANN_CALLBACKS_CALLBACK_KFAC_UTIL_HPP_INCLUDED
+#ifndef LBANN_EXECUTION_ALGORITHMS_KFAC_KFAC_UTIL_HPP_INCLUDED
+#define LBANN_EXECUTION_ALGORITHMS_KFAC_KFAC_UTIL_HPP_INCLUDED
 
 #include "lbann/base.hpp"
-#include "lbann/callbacks/kfac/kfac.hpp"
 #include "lbann/layers/learning/convolution.hpp"
 #include "lbann/layers/learning/fully_connected.hpp"
 #include "lbann/layers/learning/gru.hpp"
 #include "lbann/layers/regularizers/batch_normalization.hpp"
-#include "lbann/callbacks/kfac/kfac_block_fc_conv.hpp"
-#include "lbann/callbacks/kfac/kfac_block_bn.hpp"
-#include "lbann/callbacks/kfac/kfac_block_gru.hpp"
 
 namespace lbann {
-namespace callback {
-namespace kfac_util {
+namespace kfac {
+
+enum class kfac_inverse_strategy {
+  ALL,  // Apply round-robin assingment to all of the layers. may cause load imbalance.
+  EACH, // Apply round-robin assingment to every type of layers. may
+  // not work well for small networks.
+  ROOT, // Use only the root GPU. This is only for testing.
+};
+
+enum class kfac_reduce_scatter_mode {
+  ALLREDUCE, // Use lbann_comm::allreduce
+  REDUCE_SCATTER, // Use El::ReduceScatter
+  REDUCE, // Use El::Reduce for each block
+};
+
+enum class kfac_allgather_mode {
+  ALLREDUCE, // Use lbann_comm::allreduce
+  ALLGATHER, // Use El::ReduceScatter
+  BROADCAST // Use El::Broadcast for each block
+};
 
 /** @brief Gets the inverse matrix of A. **/
 template <El::Device Device>
@@ -140,8 +152,7 @@ void unpack_lower_tri(
     const El::Matrix<DataType, Device>& L,
     const El::SyncInfo<Device>& sync_info);
 
-} // namespace kfac_util
-} // namespace callback
+} // namespace kfac
 } // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_KFAC_UTIL_HPP_INCLUDED
+#endif  // LBANN_EXECUTION_ALGORITHMS_KFAC_KFAC_UTIL_HPP_INCLUDED
