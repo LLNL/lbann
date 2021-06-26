@@ -75,6 +75,7 @@ namespace lbann {
 #define CHECK_DATA "check_data"
 #define CREATE_TARBALL "create_tarball"
 #define DISABLE_SIGNAL_HANDLER "disable_signal_handler"
+#define DEBUG_CONCATENATE "debug_concatenate"
 #define EXIT_AFTER_SETUP "exit_after_setup"
 #define GENERATE_MULTI_PROTO "generate_multi_proto"
 #define KEEP_SAMPLE_ORDER "keep_sample_order"
@@ -83,10 +84,7 @@ namespace lbann {
 #define NODE_SIZES_VARY "node_sizes_vary"
 #define STACK_TRACE_TO_FILE "stack_trace_to_file"
 #define TEST_ENCODE "test_encode"
-
-// Unused options
-#define SHARE_TESTING_DATA_READERS "share_testing_data_readers"
-#define WRITE_SAMPLE_LABEL_LIST "write_sample_label_list"
+#define Z_SCORE "z_score"
 
 // Input options
 #define ABSOLUTE_SAMPLE_COUNT "absolute_sample_count"
@@ -103,8 +101,11 @@ namespace lbann {
 #define LABEL_FILENAME_TEST "label_filename_test"
 #define LABEL_FILENAME_TRAIN "label_filename_train"
 #define LABEL_FILENAME_VALIDATE "label_filename_validate"
+#define NORMALIZATION "normalization"
 #define N_LINES "n_lines"
 #define PAD_INDEX "pad_index"
+#define PILOT2_READ_FILE_SIZES "pilot2_read_file_sizes"
+#define PILOT2_SAVE_FILE_SIZES "pilot2_save_file_sizes"
 #define SAMPLE_LIST_TEST "sample_list_test"
 #define SAMPLE_LIST_TRAIN "sample_list_train"
 #define SAMPLE_LIST_VALIDATE "sample_list_validate"
@@ -112,7 +113,11 @@ namespace lbann {
 #define TEST_TARBALL "test_tarball"
 #define VOCAB "vocab"
 
-/****** datareader options ******/
+// Unused options
+#define SHARE_TESTING_DATA_READERS "share_testing_data_readers"
+#define WRITE_SAMPLE_LABEL_LIST "write_sample_label_list"
+
+/****** jag options ******/
 // Bool flags
 #define JAG "jag"
 #define JAG_PARTITIONED "jag_partitioned"

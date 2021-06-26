@@ -77,9 +77,9 @@ void numpy_npz_conduit_reader::load() {
     std::cout << "starting load" << std::endl;
   }
 
-  options *opts = options::get();
+  auto& arg_parser = global_argument_parser();
 
-  if (! (opts->get_bool(PRELOAD_DATA_STORE) || opts->get_bool(USE_DATA_STORE))) {
+  if (! (arg_parser.get<bool>(PRELOAD_DATA_STORE) || arg_parser.get<bool>(USE_DATA_STORE))) {
     LBANN_ERROR("numpy_npz_conduit_reader requires data_store; please pass either --use_data_store or --preload_data_store on the cmd line");
   }
 
@@ -127,7 +127,7 @@ void numpy_npz_conduit_reader::do_preload_data_store() {
 
   std::unordered_set<int> label_classes;
 
-  bool threaded = ! options::get()->get_bool(DATA_STORE_NO_THREAD);
+  bool threaded = ! global_argument_parser().get<bool>(DATA_STORE_NO_THREAD);
 
   //threaded mode
   if (threaded) {

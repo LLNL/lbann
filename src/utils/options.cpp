@@ -73,7 +73,7 @@ void construct_std_options() {
                       {"--ltfb"},
                       "TODO");
   arg_parser.add_flag(VERBOSE,
-                      {"--verbose"},
+                      {"--verbose", "--verbose_print"},
                       "Turns on verbose mode");
   arg_parser.add_flag(WRITE_SAMPLE_LIST,
                       {"--write_sample_list"},
@@ -258,6 +258,9 @@ void construct_datareader_options() {
   arg_parser.add_flag(CREATE_TARBALL,
                       {"--create_tarball"},
                       "TODO");
+  arg_parser.add_flag(DEBUG_CONCATENATE,
+                      {"--debug_concatenate"},
+                      "TODO");
   arg_parser.add_flag(DISABLE_SIGNAL_HANDLER,
                       {"--disable_signal_handler"},
                       "TODO");
@@ -284,6 +287,9 @@ void construct_datareader_options() {
                       "TODO");
   arg_parser.add_flag(TEST_ENCODE,
                       {"--test_encode"},
+                      "TODO");
+  arg_parser.add_flag(Z_SCORE,
+                      {"--z_score"},
                       "TODO");
 
   // Input options
@@ -343,6 +349,10 @@ void construct_datareader_options() {
                         {"--label_filename_validate"},
                         "TODO",
                         "");
+  arg_parser.add_option(NORMALIZATION,
+                        {"--normalization"},
+                        "TODO",
+                        "");
   arg_parser.add_option(N_LINES,
                         {"--n_lines"},
                         "TODO",
@@ -351,6 +361,14 @@ void construct_datareader_options() {
                         {"--pad_index"},
                         "TODO",
                         -1);
+  arg_parser.add_option(PILOT2_READ_FILE_SIZES,
+                        {"--pilot2_read_file_sizes"},
+                        "TODO",
+                        "");
+  arg_parser.add_option(PILOT2_SAVE_FILE_SIZES,
+                        {"--pilot2_save_file_sizes"},
+                        "TODO",
+                        "");
   arg_parser.add_option(SAMPLE_LIST_TEST,
                         {"--sample_list_test"},
                         "TODO",
@@ -364,7 +382,7 @@ void construct_datareader_options() {
                         "TODO",
                         "");
   arg_parser.add_option(SEQUENCE_LENGTH,
-                        {"--sequence_length"},
+                        {"--sequence_length", "--seq_len"},
                         "TODO",
                         -1);
   arg_parser.add_option(TEST_TARBALL,
