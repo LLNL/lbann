@@ -34,6 +34,7 @@
 #include "lbann/utils/lbann_library.hpp"
 #include "lbann/utils/threads/thread_utils.hpp"
 #include "lbann/utils/timer.hpp"
+#include "lbann/utils/vectorwrapbuf.hpp"
 
 #include <fstream>
 
@@ -310,15 +311,6 @@ void image_data_reader::load_conduit_node_from_file(int data_id, conduit::Node &
   node[LBANN_DATA_ID_STR(data_id) + "/buffer"].set(data);
   node[LBANN_DATA_ID_STR(data_id) + "/buffer_size"] = data.size();
 }
-
-/// Allow streams to be constructed on an existing data buffer without copying
-template<typename CharT, typename Traits = std::char_traits<CharT> >
-class vectorwrapbuf : public std::basic_streambuf<CharT, Traits> {
-public:
-    vectorwrapbuf(std::vector<CharT> &vec) {
-        this->setg(vec.data(), vec.data(), vec.data() + vec.size());
-    }
-};
 
 /**
  * Load a sample list and then load labels from a separate file using `load_labels()`

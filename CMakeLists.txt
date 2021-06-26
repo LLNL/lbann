@@ -381,6 +381,8 @@ else ()
   set(LBANN_HAS_DNN_LIB FALSE)
 endif ()
 
+find_package(ZSTR REQUIRED)
+
 # This shouldn't be here, but is ok for now. This will occasionally be
 # part of another TPL's libraries (e.g., MKL), but it's no
 # guarantee. There's no harm including it multiple times.
@@ -579,6 +581,7 @@ if (LBANN_WITH_UNIT_TESTING)
   include(Catch)
   add_subdirectory(src/callbacks/unit_test)
   add_subdirectory(src/execution_algorithms/unit_test)
+  add_subdirectory(src/data_readers/unit_test)
   add_subdirectory(src/layers/activations/unit_test)
   add_subdirectory(src/layers/learning/unit_test)
   add_subdirectory(src/layers/math/unit_test)
@@ -632,6 +635,9 @@ target_compile_features(lbann PUBLIC cxx_std_17)
 
 # Use the IMPORTED targets when possible.
 target_link_libraries(lbann PUBLIC LbannProto)
+if (LBANN_HAS_TBINF)
+  target_link_libraries(lbann PUBLIC TBinf)
+endif ()
 target_link_libraries(lbann PUBLIC Threads::Threads)
 target_link_libraries(lbann PUBLIC clara::clara)
 target_link_libraries(lbann PUBLIC cereal)
@@ -645,6 +651,7 @@ endif ()
 target_link_libraries(lbann PUBLIC ${CONDUIT_LIBRARIES})
 
 target_link_libraries(lbann PUBLIC
+  $<TARGET_NAME_IF_EXISTS:LBANN_CXX_FLAGS_werror>
   $<TARGET_NAME_IF_EXISTS:TBinf>
 
   $<TARGET_NAME_IF_EXISTS:H2::H2Meta>
@@ -655,6 +662,7 @@ target_link_libraries(lbann PUBLIC
   $<TARGET_NAME_IF_EXISTS:FFTW::FFTW>
   $<TARGET_NAME_IF_EXISTS:HWLOC::hwloc>
   $<TARGET_NAME_IF_EXISTS:Python::Python>
+  $<TARGET_NAME_IF_EXISTS:ZSTR::ZSTR>
 
   $<TARGET_NAME_IF_EXISTS:MIOpen>
   $<TARGET_NAME_IF_EXISTS:roc::rocfft>

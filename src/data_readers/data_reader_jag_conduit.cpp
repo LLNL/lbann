@@ -39,6 +39,7 @@
 #include "lbann/utils/file_utils.hpp" // for add_delimiter() in load()
 #include "lbann/data_readers/sample_list_impl.hpp"
 #include "lbann/data_readers/sample_list_open_files_impl.hpp"
+#include "lbann/utils/vectorwrapbuf.hpp"
 
 #include <limits>     // numeric_limits
 #include <algorithm>  // max_element
@@ -874,14 +875,6 @@ void data_reader_jag_conduit::sample_schema_check(const bool check_data) {
     m_sample_list.close_if_done_samples_file_handle(0);
   }
 }
-
-template<typename CharT, typename Traits = std::char_traits<CharT> >
-class vectorwrapbuf : public std::basic_streambuf<CharT, Traits> {
-public:
-    vectorwrapbuf(std::vector<CharT> &vec) {
-        this->setg(vec.data(), vec.data(), vec.data() + vec.size());
-    }
-};
 
 void data_reader_jag_conduit::load_list_of_samples(const std::string sample_list_file) {
   // load the sample list

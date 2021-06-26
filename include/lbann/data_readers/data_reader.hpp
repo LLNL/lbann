@@ -840,6 +840,8 @@ class generic_data_reader {
   friend class data_reader_merge_features;
   friend class data_reader_merge_samples;
 
+  void set_use_data_store(bool s) { m_use_data_store = s; }
+
 private:
 
   virtual void do_preload_data_store() {
@@ -847,6 +849,9 @@ private:
   }
 
  protected :
+
+  bool m_use_data_store = false;
+
   /** @brief Holds a true value for each input data type that is supported.
    *  Use an ordered map so that checkpoints are stable. */
   std::map<input_data_type, bool> m_supported_input_types;

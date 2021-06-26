@@ -27,6 +27,7 @@
 #ifndef LBANN_LIBRARY_HPP
 #define LBANN_LIBRARY_HPP
 
+#include "lbann/execution_algorithms/batch_functional_inference_algorithm.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/proto/proto_common.hpp"
 
@@ -42,8 +43,38 @@ const int lbann_default_random_seed = 42;
 #define ALLOW_GLOBAL_STATISTICS "LTFB Allow global statistics"
 #define PROCS_PER_TRAINER "Processes per trainer"
 #define TRAINER_GRID_HEIGHT "Height of 2D process grid for each trainer"
+#define SMILES_BUFFER_SIZE "SMILES Data Reader buffer size"
 
 void construct_std_options();
+
+/** @brief Loads a trained model from checkpoint for inference only
+ * @param[in] lc An LBANN Communicator
+ * @param[in] cp_dir The model checkpoint directory
+ * @param[in] mbs The max mini-batch size
+ * @param[in] input_dims The dimension of the input tensor
+ * @param[in] output_dims The dimension of the output tensor
+ * @return Model loaded from checkpoint
+ */
+std::unique_ptr<model> load_inference_model(lbann_comm* lc,
+                                            std::string cp_dir,
+                                            int mbs,
+                                            std::vector<int> input_dims,
+                                            std::vector<int> output_dims);
+
+/** @brief Creates execution algorithm and infers on samples using a model
+ * @param[in] model A trained model
+ * @param[in] samples A distributed matrix containing samples for model input
+ * @param[in] mbs The max mini-batch size
+ * @return Matrix of predicted labels
+ */
+template <typename DataT, El::Dist CDist, El::Dist RDist, El::DistWrap DistView, El::Device Device>
+El::Matrix<int, El::Device::CPU>
+infer(observer_ptr<model> model,
+      El::DistMatrix<DataT, CDist, RDist, DistView, Device> const& samples,
+      size_t mbs) {
+  auto inf_alg = batch_functional_inference_algorithm();
+  return inf_alg.infer(model, samples, mbs);
+}
 
 int allocate_trainer_resources(lbann_comm *comm);
 

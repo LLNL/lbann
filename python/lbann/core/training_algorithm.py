@@ -320,3 +320,44 @@ class RandomPairwiseExchange(MetaLearningStrategy):
 
         msg.exchange_strategy.CopyFrom(self.exchange_strategy.export_proto())
         return msg
+
+class KFAC(TrainingAlgorithm):
+    """Kronecker-Factored Approximate Curvature algorithm.
+
+    Applies second-order information to improve the quality of
+    gradients in SGD-like optimizers.
+
+    """
+
+    def __init__(
+            self,
+            name: str,
+            first_order_optimizer: BatchedIterativeOptimizer,
+            **kfac_args,
+    ):
+        """Construct a new KFAC algorithm.
+
+        Args:
+            name:
+              A user-defined name to identify this object in logs.
+            first_order_optimizer:
+              The SGD-like algorithm to apply.
+
+            **kfac_args:
+              See the KFAC message in
+              lbann/src/proto/training_algorithm.proto for list of
+              kwargs.
+
+        """
+        self.name = name
+        self.first_order_optimizer = first_order_optimizer
+        self.kfac_args = kfac_args
+
+    def do_export_proto(self):
+        """Get a protobuf representation of this object."""
+        params = AlgoProto.KFAC()
+        first_order_optimizer_proto = self.first_order_optimizer.export_proto()
+        first_order_optimizer_proto.parameters.Unpack(params.sgd)
+        for key, value in self.kfac_args.items():
+            setattr(params, key, value)
+        return params

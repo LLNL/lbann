@@ -97,3 +97,40 @@ message RandomPairwiseExchange {
     }
   }// message ExchangeStrategy
 }// message RandomPairwiseExchange
+
+message KFAC {
+
+  SGD sgd = 1;
+
+  // Space-separated pairs of the initial and the target damping value.
+  // If only one value is specified, it will be used throughout training.
+  // default: "callback::kfac::damping_0_default"
+  string damping_act = 2;
+  string damping_err = 3;
+  string damping_bn_act = 4;
+  string damping_bn_err = 5;
+
+  uint64 damping_warmup_steps = 6; // default: damping_warmup_steps_default
+  double kronecker_decay = 7; // default: callback::kfac::kronecker_decay_default
+
+  bool print_time = 8; // default: false
+  bool print_matrix = 9; // default: false
+  bool print_matrix_summary = 10; // default: false
+
+  bool use_pi = 11; // default: false
+
+  // Space-separated pairs of the initial and the target update intervals.
+  // If only one value is specified, it will be used throughout training.
+  string update_intervals = 12; // default: "1"
+  uint64 update_interval_steps = 13; // default: 0
+
+  string inverse_strategy = 14; // Options: all, each, root (default: all)
+
+  string disable_layers = 15; // List of layers to be ignored by the callback
+
+  float learning_rate_factor = 16; // Factor to be multiplied to the learning rate
+  // Factor to be multiplied to the learning rate for GRU layers
+  // (default: learning_rate_factor)
+  float learning_rate_factor_gru = 17;
+
+}//message KFAC

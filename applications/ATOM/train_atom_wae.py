@@ -130,7 +130,6 @@ def construct_model(run_args):
         save_output=save_output)(input_,z)
 
 
-
     zero  = lbann.Constant(value=0.0,num_neurons='1',name='zero')
     one  = lbann.Constant(value=1.0,num_neurons='1',name='one')
 

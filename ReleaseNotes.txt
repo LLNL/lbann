@@ -1,5 +1,11 @@
 ============================== (Pending) Release Notes: v1.00 ==============================
+C++ API:
+ - Added ability to load models and run inference from external C++ applcations
+ - Added inference-only execution algorithm
+
 Support for new training algorithms:
+ - Experimental support for 2nd-order optimization with KFAC.
+   Currently supports fully-connected, convolution, and GRU layers.
 
 Support for new network structures:
 
@@ -8,6 +14,8 @@ Support for new layers:
 Python front-end:
 
 Performance optimizations:
+ - Enabled the input layers to use a view of the I/O buffers in the
+ buffered data coordinator
 
 Model portability & usability:
 
@@ -16,6 +24,10 @@ Experiments & Applications:
 Internal features:
 
 I/O & data readers:
+ - Updated SMILES data reader to use sample lists
+ - Added explicitly managed buffered reading and local unpacking for the
+   SMILES data reader to minimize file access
+ - Sample lists with integral indices can use range format (start ... end)
 
 Build system:
 
