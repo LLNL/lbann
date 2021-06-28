@@ -28,6 +28,14 @@
 #define LBANN_OPERATORS_MATH_CLAMP_HPP_INCLUDED
 
 #include "lbann/operators/elementwise_operator.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
+#include "lbann/utils/cloneable.hpp"
+
+#include <operators.pb.h>
+
+#include <h2/meta/core/IfThenElse.hpp>
+
+#include <google/protobuf/message.h>
 
 namespace lbann {
 
@@ -42,51 +50,39 @@ namespace lbann {
  *      \end{cases}
  *  @f]
  */
-template <typename TensorDataType>
-class ClampOperator :
-    public Cloneable<ClampOperator<TensorDataType>,
-                     ElementwiseOperator<TensorDataType>> {
+template <typename DataT, El::Device D>
+class ClampOperator : public Cloneable<ClampOperator<DataT, D>,
+                                       ElementwiseOperator<DataT, DataT, D>>
+{
 #ifdef LBANN_HAS_GPU_FP16
-  using CompareType = typename std::conditional<std::is_same<TensorDataType, fp16>::value, float, TensorDataType>::type;
+  using CompareType =
+    h2::meta::IfThenElse<std::is_same_v<DataT, fp16>, float, DataT>;
 #else
-  using CompareType = TensorDataType;
+  using CompareType = DataT;
 #endif
 
-  /** @name Public Types */
+  /** @name Private Types */
   ///@{
 
-  /** @brief The local tensor type expected in this object. */
-  using AbsMatrixType = El::AbstractMatrix<TensorDataType>;
+  using BaseType =
+    Cloneable<ClampOperator<DataT, D>, ElementwiseOperator<DataT, DataT, D>>;
 
-  using CPUMatrixType = El::Matrix<TensorDataType, El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
-  using GPUMatrixType = El::Matrix<TensorDataType, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+  using LocalInputTensorType = typename BaseType::LocalInputTensorType;
+  using LocalOutputTensorType = typename BaseType::LocalOutputTensorType;
+  using ConstLocalInputTensorType =
+    typename BaseType::ConstLocalInputTensorType;
+  using ConstLocalOutputTensorType =
+    typename BaseType::ConstLocalOutputTensorType;
 
-  using BaseType = Cloneable<ClampOperator<TensorDataType>, ElementwiseOperator<TensorDataType>>;
   ///@}
 
 public:
-  ClampOperator(TensorDataType min, TensorDataType max)
-    : m_min(min), m_max(max) {
-    if (CompareType(m_min) > CompareType(m_max)) {
-      std::stringstream err;
-      err << "[" << m_min << "," << m_max << "] is an invalid range";
-      LBANN_ERROR(err.str());
-    }
+  ClampOperator(DataT min, DataT max) : m_min(min), m_max(max)
+  {
+    LBANN_ASSERT(CompareType(m_min) <= CompareType(m_max));
   }
 
   std::string get_type() const override { return "clamp"; }
-
-  description get_description() const override {
-    auto desc = Operator<TensorDataType>::get_description();
-    std::stringstream ss;
-    ss << "[" << m_min << "," << m_max << "]";
-    desc.add("Range", ss.str());
-    return desc;
-  }
-
-  void write_proto(lbann_data::Operator* proto) const override {}
 
   /** @name Serialization */
   ///@{
@@ -98,45 +94,46 @@ public:
 
 protected:
   friend class cereal::access;
-  ClampOperator()
-    : ClampOperator(El::To<TensorDataType>(0),El::To<TensorDataType>(1))
-  {}
+  ClampOperator() : ClampOperator(El::To<DataT>(0), El::To<DataT>(1)) {}
 
-  /** CPU-specific function instantiations */
-  void fp_compute_local(std::vector<CPUMatrixType const*> inputs,
-                        std::vector<CPUMatrixType*> outputs) const override;
+private:
+  /** @brief Local forward compute function */
+  virtual void
+  fp_compute_local(std::vector<ConstLocalInputTensorType> input,
+                   std::vector<LocalOutputTensorType> output) const override;
 
-  void bp_compute_local(std::vector<CPUMatrixType const*> inputs,
-                        std::vector<CPUMatrixType const*> gradient_wrt_outputs,
-                        std::vector<CPUMatrixType*> gradient_wrt_inputs) const override;
+  /** @brief Local backward compute function */
+  void bp_compute_local(
+    std::vector<ConstLocalInputTensorType> input,
+    std::vector<ConstLocalOutputTensorType> gradient_wrt_output,
+    std::vector<LocalInputTensorType> gradient_wrt_input) const override;
 
-#ifdef LBANN_HAS_GPU
-  /** GPU-specific function instantiations */
-  void fp_compute_local(std::vector<GPUMatrixType const*> inputs,
-                        std::vector<GPUMatrixType*> outputs) const override;
+  void set_proto_params(lbann_data::Operator& msg) const override
+  {
+    lbann_data::ClampOperator clamp_msg;
+    clamp_msg.set_min(m_min);
+    clamp_msg.set_max(m_max);
+    msg.mutable_parameters()->PackFrom(clamp_msg);
+  }
 
-  void bp_compute_local(std::vector<GPUMatrixType const*> inputs,
-                        std::vector<GPUMatrixType const*> gradient_wrt_outputs,
-                        std::vector<GPUMatrixType*> gradient_wrt_inputs) const override;
-#endif // LBANN_HAS_GPU
-
+  void do_fill_description(description& desc) const override
+  {
+    std::ostringstream oss;
+    oss << "[" << m_min << "," << m_max << "]";
+    desc.add("Range", oss.str());
+  }
 
 private:
   /** Minimum output. */
-  TensorDataType m_min;
+  DataT m_min;
   /** Maximum output. */
-  TensorDataType m_max;
-
-};
+  DataT m_max;
+}; // class ClampOperator
 
 #ifndef LBANN_CLAMP_OPERATOR_INSTANTIATE
-
-#define PROTO(T)             \
-  extern template class ClampOperator<T>
-
-#include "lbann/macros/instantiate.hpp"
-#undef PROTO
-
+#define PROTO_DEVICE(T, D) extern template class ClampOperator<T, D>
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
 #endif // LBANN_CLAMP_OPERATOR_INSTANTIATE
 
 } // namespace lbann

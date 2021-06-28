@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -23,40 +23,29 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
+#ifndef LBANN_UTILS_DESCRIBABLE_HPP_INCLUDED
+#define LBANN_UTILS_DESCRIBABLE_HPP_INCLUDED
 
-#ifndef LBANN_UTILS_TYPENAME_HPP_INCLUDED
-#define LBANN_UTILS_TYPENAME_HPP_INCLUDED
-
-#include <lbann_config.hpp>
-#include <complex>
-#include <string>
-#include <typeinfo>
+#include "lbann/utils/description.hpp"
 
 namespace lbann {
-namespace details {
-std::string get_type_name(std::type_info const&);
-}
 
-template <typename T>
-std::string TypeName()
+/** @brief Non-intrusive capitalization fix. */
+using Description = description;
+
+/** @brief A class that can generate self-descriptions. */
+class Describable
 {
-  return details::get_type_name(typeid(T));
+public:
+  virtual ~Describable() = default;
+  /** @brief Generate a human-readable description. */
+  virtual Description get_description() const = 0;
+}; // class Describable
+
+inline std::ostream& operator<<(std::ostream& os, Describable const& obj)
+{
+  return os << obj.get_description();
 }
-
-#define ADD_TYPENAME_INST(Type)                                     \
-  template <> inline std::string TypeName<Type>() { return #Type; }
-
-ADD_TYPENAME_INST(float)
-ADD_TYPENAME_INST(double)
-#ifdef LBANN_HAS_HALF
-ADD_TYPENAME_INST(cpu_fp16)
-#endif
-#ifdef LBANN_HAS_GPU_FP16
-ADD_TYPENAME_INST(fp16)
-#endif
-ADD_TYPENAME_INST(std::complex<float>)
-ADD_TYPENAME_INST(std::complex<double>)
 
 } // namespace lbann
-
-#endif // LBANN_UTILS_TYPENAME_HPP_INCLUDED
+#endif // LBANN_UTILS_DESCRIBABLE_HPP_INCLUDED

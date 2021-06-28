@@ -28,130 +28,134 @@
 #define LBANN_OPERATORS_ELEMENTWISE_OPERATOR_HPP_INCLUDED
 
 #include "lbann/operators/operator.hpp"
+#include <cereal/types/base_class.hpp>
+#include <functional>
+#include <iterator>
+#include <type_traits>
 
 namespace lbann {
 
-/**
- * @brief Element-wise specific tensor operation sub-class.
+/** @brief Element-wise specific tensor operation sub-class.
  *
- * Specialize an operator class for element-wise operations.
+ *  This layer manages some of the
  */
-template <typename InputTensorDataType,
-          typename OutputTensorDataType = InputTensorDataType>
-class ElementwiseOperator :
-    public Cloneable<HasAbstractFunction<ElementwiseOperator<InputTensorDataType, OutputTensorDataType>>,
-                                         Operator<InputTensorDataType, OutputTensorDataType>> {
+template <typename InputT, typename OutputT, El::Device D>
+class ElementwiseOperator
+  : public AbstractCloneableBase<ElementwiseOperator<InputT, OutputT, D>,
+                                 Operator<InputT, OutputT, D>>
+{
 public:
   /** @name Public Types */
   ///@{
 
-  /** @brief The tensor type expected in this object. */
-  using InputAbsDistMatrixType = El::AbstractDistMatrix<InputTensorDataType>;
-  using OutputAbsDistMatrixType = El::AbstractDistMatrix<OutputTensorDataType>;
-
-  /** @brief The local tensor type expected in this object. */
-  using InputAbsMatrixType = El::AbstractMatrix<InputTensorDataType>;
-  using OutputAbsMatrixType = El::AbstractMatrix<OutputTensorDataType>;
-
-  using InputCPUMatrixType = El::Matrix<InputTensorDataType, El::Device::CPU>;
-  using OutputCPUMatrixType = El::Matrix<OutputTensorDataType, El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
-  using InputGPUMatrixType = El::Matrix<InputTensorDataType, El::Device::GPU>;
-  using OutputGPUMatrixType = El::Matrix<OutputTensorDataType, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
-
   using BaseType =
-    Cloneable<HasAbstractFunction<
-                ElementwiseOperator<InputTensorDataType, OutputTensorDataType>>,
-              Operator<InputTensorDataType, OutputTensorDataType>>;
+    Cloneable<HasAbstractFunction<ElementwiseOperator<InputT, OutputT, D>>,
+              Operator<InputT, OutputT, D>>;
+
+  using InputTensorType = typename BaseType::InputTensorType;
+  using OutputTensorType = typename BaseType::OutputTensorType;
+  using ConstInputTensorType = typename BaseType::ConstInputTensorType;
+  using ConstOutputTensorType = typename BaseType::ConstOutputTensorType;
+
+  using LocalInputTensorType = utils::TensorView<InputT, D>;
+  using LocalOutputTensorType = utils::TensorView<OutputT, D>;
+  using ConstLocalInputTensorType = utils::ConstTensorView<InputT, D>;
+  using ConstLocalOutputTensorType = utils::ConstTensorView<OutputT, D>;
+
   ///@}
 
 public:
   ElementwiseOperator() = default;
-  ElementwiseOperator(const ElementwiseOperator<InputTensorDataType, OutputTensorDataType>& other) = default;
-  ElementwiseOperator& operator=(const ElementwiseOperator<InputTensorDataType, OutputTensorDataType>& other) = default;
   virtual ~ElementwiseOperator() = default;
 
   /** @name Serialization */
   ///@{
 
   template <typename ArchiveT>
-  void serialize(ArchiveT& ar) {};
+  void serialize(ArchiveT& ar)
+  {
+    ar(cereal::base_class<Operator<InputT, OutputT, D>>(this));
+  };
+
+  ///@}
+
+  /** @name Virtual compute interface */
+  ///@{
+  using BaseType::bp_compute;
+  using BaseType::fp_compute;
+
+  template <typename TensorViewType>
+  static auto get_local_tensor_views(std::vector<TensorViewType> const& in)
+  {
+    using LocalViewType = std::decay_t<decltype(in[0].local_data())>;
+
+    std::vector<LocalViewType> local_views;
+    local_views.reserve(in.size());
+    std::transform(cbegin(in),
+                   cend(in),
+                   std::back_inserter(local_views),
+                   [](auto const& x) { return x.local_data(); });
+    return local_views;
+  }
+
+  /** @brief Apply operator's forward operation.
+   *  @details Given the input tensors, the output tensors are
+   *           populated with computed values.
+   */
+  void fp_compute(std::vector<ConstInputTensorType> const& inputs,
+                  std::vector<OutputTensorType>& outputs) const final
+  {
+    return fp_compute_local(get_local_tensor_views(inputs),
+                            get_local_tensor_views(outputs));
+  }
+
+  // ===========================================================
+  // Back prop compute function
+  // ===========================================================
+
+  /** @brief Compute operator's "backward" operation
+   *  @details Given the inputs, outputs, and gradient w.r.t. output
+   *           tensors, the gradient w.r.t. input tensors are
+   *           populated with the computed values.
+   */
+  void
+  bp_compute(std::vector<ConstInputTensorType> const& inputs,
+             std::vector<ConstOutputTensorType> const& gradient_wrt_outputs,
+             std::vector<InputTensorType>& gradient_wrt_inputs) const final
+  {
+    return bp_compute_local(get_local_tensor_views(inputs),
+                            get_local_tensor_views(gradient_wrt_outputs),
+                            get_local_tensor_views(gradient_wrt_inputs));
+  }
 
   ///@}
 
 protected:
+  /** @name Lifecycle management. */
+  ///@{
+  ElementwiseOperator(ElementwiseOperator const&) = default;
+  ElementwiseOperator& operator=(ElementwiseOperator const&) = default;
+  ElementwiseOperator(ElementwiseOperator&&) = default;
+  ElementwiseOperator& operator=(ElementwiseOperator&&) = default;
+  ///@}
 
-  // ===========================================================
-  // Distributed compute functions
-  // ===========================================================
-  using BaseType::fp_compute;
-  using BaseType::bp_compute;
+  /** @name Local compute interface */
+  ///@{
 
-  void fp_compute(std::vector<InputAbsDistMatrixType const*> input,
-                  std::vector<OutputAbsDistMatrixType*> output) const final;
+  /** @brief Local forward compute function */
+  virtual void
+  fp_compute_local(std::vector<ConstLocalInputTensorType> input,
+                   std::vector<LocalOutputTensorType> output) const = 0;
 
-  void bp_compute(std::vector<InputAbsDistMatrixType const*> input,
-                  std::vector<OutputAbsDistMatrixType const*> gradient_wrt_output,
-                  std::vector<InputAbsDistMatrixType*> gradient_wrt_input) const final;
+  /** @brief Local backward compute function */
+  virtual void bp_compute_local(
+    std::vector<ConstLocalInputTensorType> input,
+    std::vector<ConstLocalOutputTensorType> gradient_wrt_output,
+    std::vector<LocalInputTensorType> gradient_wrt_input) const = 0;
 
+  ///@}
 
-  // ===========================================================
-  // Local compute functions
-  // ===========================================================
-  /** @brief Local forward compute function
-   */
-  void fp_compute_local(std::vector<InputAbsMatrixType const*> input,
-                        std::vector<OutputAbsMatrixType*> output) const;
-
-  /** @brief Local backward compute function
-   */
-  void bp_compute_local(std::vector<InputAbsMatrixType const*> input,
-                        std::vector<OutputAbsMatrixType const*> gradient_wrt_output,
-                        std::vector<InputAbsMatrixType*> gradient_wrt_input) const;
-
-  /** CPU-specific function instantiations */
-  /** @brief Refine the forward compute for CPU-specific data types
-   */
-  virtual void fp_compute_local(std::vector<InputCPUMatrixType const*> input,
-                                std::vector<OutputCPUMatrixType*> output) const;
-
-  /** @brief Refine the backward compute for CPU-specific data types
-   */
-  virtual void bp_compute_local(std::vector<InputCPUMatrixType const*> input,
-                                std::vector<OutputCPUMatrixType const*> gradient_wrt_output,
-                                std::vector<InputCPUMatrixType*> gradient_wrt_input) const;
-
-#ifdef LBANN_HAS_GPU
-  /** GPU-specific function instantiations */
-  /** @brief Refine the forward compute for GPU-specific data types
-   */
-  virtual void fp_compute_local(std::vector<InputGPUMatrixType const*> input,
-                                std::vector<OutputGPUMatrixType*> output) const;
-
-  /** @brief Refine the backward compute for GPU-specific data types
-   */
-  virtual void bp_compute_local(std::vector<InputGPUMatrixType const*> input,
-                                std::vector<OutputGPUMatrixType const*> gradient_wrt_output,
-                                std::vector<InputGPUMatrixType*> gradient_wrt_input) const;
-#endif // LBANN_HAS_GPU
-
-};
-
-
-#ifndef LBANN_ELEMENTWISE_OPERATOR_INSTANTIATE
-#define PROTO(T)                                \
-  extern template class ElementwiseOperator<T>
-
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
-#include "lbann/macros/instantiate.hpp"
-#undef PROTO
-#undef LBANN_INSTANTIATE_CPU_HALF
-#undef LBANN_INSTANTIATE_GPU_HALF
-
-#endif // LBANN_ELEMENTWISE_OPERATOR_INSTANTIATE
+}; // class ElementwiseOperator
 
 } // namespace lbann
-
 #endif // LBANN_OPERATORS_ELEMENTWISE_OPERATOR_HPP_INCLUDED

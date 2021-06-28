@@ -28,28 +28,19 @@ syntax = "proto3";
 
 package lbann_data;
 
-import "google/protobuf/wrappers.proto";
+import "google/protobuf/any.proto";
 
 import "datatype.proto";
 
 message Operator {
-  string name = 50;
-  DataType datatype = 57;
-  string top = 154;
-  string bottom = 155;
-  string type = 156;
+  DataType input_datatype = 1;
+  DataType output_datatype = 2;
+  DeviceAllocation device_allocation = 3;
 
-  oneof operator_type {
-    // Math layers
-    Clamp clamp = 469;
-  }
+  google.protobuf.Any parameters = 4;
+}
 
-  ///////////////////////
-  // Math layers       //
-  ///////////////////////
-  message Clamp {
-    double min = 1;
-    double max = 2;
-  }
-
-} // message Operator
+message ClampOperator {
+  double min = 1;
+  double max = 2;
+}

@@ -27,7 +27,9 @@
 #ifndef LBANN_PROTO_DATATYPE_HELPERS_HPP_INCLUDED
 #define LBANN_PROTO_DATATYPE_HELPERS_HPP_INCLUDED
 
-#include <model.pb.h>
+#include "lbann/base.hpp"
+
+#include <datatype.pb.h>
 
 namespace lbann
 {
@@ -64,6 +66,29 @@ struct TypeToProtoDataType<fp16>
   static constexpr auto value = lbann_data::FP16;
 };
 #endif // LBANN_HAS_GPU_FP16
+
+template <typename T>
+auto ProtoDataType = TypeToProtoDataType<T>::value;
+
+template <El::Device D>
+struct DeviceToProtoDevice;
+
+template <>
+struct DeviceToProtoDevice<El::Device::CPU>
+{
+  static constexpr auto value = lbann_data::CPU;
+};
+
+#ifdef LBANN_HAS_GPU
+template <>
+struct DeviceToProtoDevice<El::Device::GPU>
+{
+  static constexpr auto value = lbann_data::GPU;
+};
+#endif
+
+template <El::Device D>
+auto ProtoDevice = DeviceToProtoDevice<D>::value;
 
 }// namespace proto
 }// namespace lbann

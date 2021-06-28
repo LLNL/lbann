@@ -24,35 +24,46 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#define LBANN_DATA_TYPE_OPERATOR_INSTANTIATE
-#include "lbann/operators/operator.hpp"
-#include "lbann/utils/vector_dynamic_cast.hpp"
+#include "lbann/utils/typename.hpp"
 
-#include <sstream>
-#include <string>
+#include "lbann/utils/exception.hpp"
+#include "lbann/utils/memory.hpp"
+
+#if __has_include(<cxxabi.h>)
+#include <cxxabi.h>
+#define LBANN_HAS_CXXABI_H_INCLUDE
+
+std::string demangle(char const* str)
+{
+  // RAII hack to manage the memory returned by __cxa_demangle.
+  using c_str_ptr = std::unique_ptr<char, void (*)(void*)>;
+
+  int status;
+  c_str_ptr demangled_name{abi::__cxa_demangle(str, nullptr, nullptr, &status),
+                           free};
+  if (status) {
+    LBANN_ERROR("__cxa_demangle reports nonzero status: ", status);
+  }
+
+  return demangled_name.get();
+}
+#else
+#undef LBANN_HAS_CXXABI_H_INCLUDE
+#endif
 
 namespace lbann {
 
-template <typename InputTensorDataType, typename OutputTensorDataType>
-description Operator<InputTensorDataType, OutputTensorDataType>::
-get_description() const {
+namespace details {
 
-  // Construct description object
-  std::stringstream ss;
-  ss << get_type();
-  description desc(ss.str());
-
-  // DataType
-  desc.add("Data type", get_datatype_name());
-
-  return desc;
+std::string get_type_name(const std::type_info& info)
+{
+#ifdef LBANN_HAS_CXXABI_H_INCLUDE
+  return demangle(info.name());
+#else
+  return info.name();
+#endif
 }
 
-#define PROTO(T)                     \
-  template class Operator<T>
-
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
-#include "lbann/macros/instantiate.hpp"
+} // namespace details
 
 } // namespace lbann

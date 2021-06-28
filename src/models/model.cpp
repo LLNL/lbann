@@ -46,6 +46,7 @@
 #include "lbann/utils/serialize.hpp"
 #include "lbann/utils/summary_impl.hpp"
 
+#include <core.hpp>
 #include <model.pb.h>
 #include <optimizers.pb.h>
 
@@ -58,6 +59,7 @@
 #include <unordered_set>
 
 #include "lbann/utils/distconv.hpp"
+#include "lbann/utils/tensor.hpp"
 
 namespace lbann {
 
@@ -2530,6 +2532,25 @@ void model::print_distributions() const {
   dc::MPIRootPrintStreamDebug() << ss.str();
 }
 #endif // LBANN_HAS_DISTCONV
+
+void foofoobar(El::AbstractMatrix<float>& x) {
+  El::Matrix<float, El::Device::CPU>& y = x;
+  (void) y;
+  utils::TensorView<float, El::Device::CPU> view(x);
+  for (auto const& d : view.dims())
+  {
+    std::cout << "Dim: " << d << std::endl;
+  }
+  utils::ConstTensorView<float, El::Device::CPU> cview(x);
+  for (auto const& d : cview.dims())
+  {
+    std::cout << "Dim: " << d << std::endl;
+  }
+
+  El::DistMatrix<float,El::Dist::MC,El::Dist::MR,El::DistWrap::ELEMENT,El::Device::CPU> q;
+  utils::DistTensorView<float, El::Device::CPU> dview(q);
+  utils::ConstDistTensorView<float, El::Device::CPU> cdview(q);
+}
 
 }  // namespace lbann
 

@@ -28,6 +28,13 @@
 #define LBANN_UTILS_TENSOR_HPP
 
 #include "lbann/base.hpp"
+#include "lbann/utils/dim_helpers.hpp"
+#include "lbann/utils/exception.hpp"
+#include "lbann/utils/typename.hpp"
+
+#include <core/DistMatrix/AbstractDistMatrix.hpp>
+#include <iterator>
+#include <type_traits>
 
 namespace lbann {
 
@@ -36,8 +43,7 @@ namespace lbann {
 /// asynchronous copies based on tensor distribution and
 /// pre-processing macros
 template <typename TDT>
-void do_tensor_copy(const BaseDistMat& src,
-                    El::AbstractDistMatrix<TDT>& tgt);
+void do_tensor_copy(const BaseDistMat& src, El::AbstractDistMatrix<TDT>& tgt);
 
 /// @brief If distributed tensors have the same distribution setup the
 /// target to use a view to the source tensor, otherwise copy the src
@@ -45,6 +51,263 @@ void do_tensor_copy(const BaseDistMat& src,
 template <typename TDT>
 void view_or_copy_tensor(const BaseDistMat& src,
                          El::AbstractDistMatrix<TDT>& tgt);
+
+namespace utils {
+namespace details {
+
+/** @brief Interpret the matrix as a tensor and return the tensor-ized
+ *         dimensions.
+ *  @param[in] A The matrix.
+ *  @returns The dimensions of the matrix interpreted as a tensor.
+ */
+template <typename MatrixT>
+std::vector<size_t> get_tensor_dims(MatrixT const& A)
+{
+  return {El::To<size_t>(A.Width()), El::To<size_t>(A.Height())};
 }
 
+/** @brief Get the tensor-ized dimensions of the given matrix.
+ *
+ *  LBANN assumes that the first dimension is the sample dimension of
+ *  a minibatch, which is further assumed to be the column dimension
+ *  of the input matrix. A "leading dimension" is allowed. The
+ *  subsequent tensor dimensions are linearized, and assumed to be
+ *  packed. At this time, this interface does not support non-unit
+ *  striding in tensors.
+ *
+ *  To accommodate LBANN's use-cases of tensors, two modes are
+ *  allowed. If the leading dimension in the input dimension vector
+ *  matches the width of the matrix, the input dimension vector is
+ *  returned. If the linearied size of the input dimension vector is
+ *  equal to the height of the input matrix, then the width dimension
+ *  of the input vector is prepended to the input dimension vector and
+ *  returned. Otherwise, an exception is thrown.
+ *
+ *  Obviously the first check is open to abuse. However, computing the
+ *  linearized size of the dimensions is a relatively expensive
+ *  operation. To keep things sane, however, there's a check in Debug
+ *  mode to verify that the dimensions are correct.
+ *
+ *  @param[in] A The input tensor as a matrix. It may be a local or a
+ *               distributed matrix.
+ *  @param[in] dims The initial dimension array.
+ *  @returns The correct dimension array for the input tensor.
+ */
+template <typename MatrixT>
+std::vector<size_t> verify_and_get_dims(MatrixT const& A,
+                                        std::vector<size_t> const& dims)
+{
+  auto const A_height = A.Height();
+  auto const A_width = A.Width();
+  if (dims[0] == El::To<size_t>(A_width)) {
+#ifdef LBANN_DEBUG
+    LBANN_ASSERT(get_linear_size(dims) == A_height * A_width);
+#endif
+    return dims;
+  }
+  else if (get_linear_size(dims) == El::To<size_t>(A_height)) {
+    std::vector<size_t> out;
+    out.reserve(dims.size() + 1UL);
+    out.push_back(El::To<size_t>(A_width));
+    std::copy(cbegin(dims), cend(dims), std::back_inserter(out));
+    return out;
+  }
+  else {
+    LBANN_ERROR("Invalid input dimensions vector.");
+    return {};
+  }
+}
+
+template <typename T>
+std::vector<size_t> localize_dims(El::AbstractDistMatrix<T> const& A,
+                                  std::vector<size_t> const& dims)
+{
+  if (A.ColDist() == El::Dist::STAR) {
+    std::vector<size_t> out = dims;
+    out.front() = A.LocalWidth();
+    return out;
+  }
+  else if (dims.size() == 2UL) {
+    return get_tensor_dims(A.LockedMatrix());
+  }
+  else {
+    LBANN_WARNING("Dimension localization is ill-posed.");
+    return dims;
+  }
+}
+
+template <typename MatrixOutT, typename MatrixInT>
+struct SafeMatrixCaster
+{
+  static MatrixOutT& cast(MatrixInT& in) { return in; }
+  static MatrixOutT const& cast(MatrixInT const& in) { return in; }
+};
+
+template <typename OutDataType, El::Device D, typename InDataType>
+struct SafeMatrixCaster<El::Matrix<OutDataType, D>,
+                        El::AbstractMatrix<InDataType>>
+{
+  using OutType = El::Matrix<OutDataType, D>;
+  using InType = El::AbstractMatrix<InDataType>;
+  static OutType& cast(InType& in)
+  {
+    LBANN_ASSERT(in.GetDevice() == D);
+    return static_cast<OutType&>(in);
+  }
+  static OutType const& cast(InType const& in)
+  {
+    LBANN_ASSERT(in.GetDevice() == D);
+    return static_cast<OutType const&>(in);
+  }
+};
+
+template <typename MatrixOutT, typename MatrixInT>
+MatrixOutT& SafeMatrixCast(MatrixInT& in)
+{
+  using OutType = std::decay_t<MatrixOutT>;
+  using InType = std::decay_t<MatrixInT>;
+  return SafeMatrixCaster<OutType, InType>::cast(in);
+}
+
+/** @brief Manage a reference to a (possibly const) matrix */
+template <typename MatrixT>
+class MatrixReferenceWrapper
+{
+public:
+  using matrix_type = MatrixT;
+
+public:
+  template <typename MatT>
+  MatrixReferenceWrapper(MatT&& x)
+    : m_data{SafeMatrixCast<matrix_type&>(std::forward<MatT>(x))}
+  {}
+  operator matrix_type&() const noexcept { return m_data; }
+  matrix_type& data() const noexcept { return m_data; }
+
+private:
+  std::reference_wrapper<matrix_type> m_data;
+};
+
+/** @brief Interpret a matrix as a tensor. */
+template <typename MatrixT>
+class MatrixAsTensorView : public MatrixReferenceWrapper<MatrixT>
+{
+public:
+  template <typename MatT>
+  MatrixAsTensorView(MatT&& mat, std::vector<size_t> const& dims)
+    : MatrixReferenceWrapper<MatrixT>{std::forward<MatT>(mat)},
+      m_dims{verify_and_get_dims(mat, dims)}
+  {}
+
+  std::vector<size_t> const& dims() const noexcept { return m_dims; }
+  size_t rank() const noexcept { return m_dims.size(); };
+
+private:
+  std::vector<size_t> m_dims;
+}; // MatrixAsTensorView
+
+} // namespace details
+
+template <typename T, El::Device D>
+class TensorView : public details::MatrixAsTensorView<El::Matrix<T, D>>
+{
+  using base_type = details::MatrixAsTensorView<El::Matrix<T, D>>;
+
+public:
+  template <typename MatT>
+  TensorView(MatT&& mat)
+    : TensorView{std::forward<MatT>(mat), details::get_tensor_dims(mat)}
+  {}
+  template <typename MatT>
+  TensorView(MatT&& mat, std::vector<size_t> const& dims)
+    : base_type{std::forward<MatT>(mat), dims}
+  {}
+};
+
+template <typename T, El::Device D>
+class ConstTensorView
+  : public details::MatrixAsTensorView<El::Matrix<T, D> const>
+{
+  using base_type = details::MatrixAsTensorView<El::Matrix<T, D> const>;
+
+public:
+  template <typename MatT>
+  ConstTensorView(MatT&& mat)
+    : ConstTensorView{std::forward<MatT>(mat), details::get_tensor_dims(mat)}
+  {}
+  template <typename MatT>
+  ConstTensorView(MatT&& mat, std::vector<size_t> const& dims)
+    : base_type{std::forward<MatT>(mat), dims}
+  {}
+};
+
+// There's a clever laziness here -- the dist matrix will never be
+// directly checked for device allocation sanity. However, when the
+// local tensor view is constructed around the local matrix, _that_
+// matrix will be checked for device allocation sanity, thereby
+// guaranteeing the sanity of the whole object.
+//
+// FIXME (trb 06/25/21): If we wanted to be VERY rigorous, we'd adjust
+// the local tensor dimension vector in a distribution-specific
+// way. But we shouldn't be doing tensor-y things with MC,MR matrices,
+// just matrix-y things (i.e., we can expect that the samples are 1-D
+// when we encounter MC,MR matrices).
+
+template <typename T, El::Device D>
+class DistTensorView
+  : public details::MatrixAsTensorView<El::AbstractDistMatrix<T>>
+{
+  using base_type = details::MatrixAsTensorView<El::AbstractDistMatrix<T>>;
+
+public:
+  template <typename MatT>
+  DistTensorView(MatT&& mat)
+    : DistTensorView{std::forward<MatT>(mat), details::get_tensor_dims(mat)}
+  {}
+  template <typename MatT>
+  DistTensorView(MatT&& mat, std::vector<size_t> const& dims)
+    : base_type{std::forward<MatT>(mat), dims},
+      m_local_data{mat.Matrix(), details::localize_dims(mat, this->dims())}
+  {}
+
+  /** @brief Access the local tensor data. */
+  TensorView<T, D> const& local_data() const noexcept { return m_local_data; }
+
+private:
+  TensorView<T, D> m_local_data;
+
+}; // DistTensorView<T,D>
+
+template <typename T, El::Device D>
+class ConstDistTensorView
+  : public details::MatrixAsTensorView<El::AbstractDistMatrix<T>>
+{
+  using base_type = details::MatrixAsTensorView<El::AbstractDistMatrix<T>>;
+
+public:
+  template <typename MatT>
+  ConstDistTensorView(MatT&& mat)
+    : ConstDistTensorView{std::forward<MatT>(mat),
+                          details::get_tensor_dims(mat)}
+  {}
+  template <typename MatT>
+  ConstDistTensorView(MatT&& mat, std::vector<size_t> const& dims)
+    : base_type{std::forward<MatT>(mat), dims},
+      m_local_data{mat.LockedMatrix(),
+                   details::localize_dims(mat, this->dims())}
+  {}
+
+  ConstTensorView<T, D> const& local_data() const noexcept
+  {
+    return m_local_data;
+  }
+
+private:
+  ConstTensorView<T, D> m_local_data;
+
+}; // ConstDistTensorView
+
+} // namespace utils
+
+} // namespace lbann
 #endif // LBANN_UTILS_TENSOR_HPP

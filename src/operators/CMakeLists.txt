@@ -1,8 +1,5 @@
 # Add the source files for this directory
-set_full_path(THIS_DIR_SOURCES
-  elementwise_operator.cpp
-  operator.cpp
-)
+set(THIS_DIR_SOURCES)
 
 # Add the subdirectories
 add_subdirectory(math)
