@@ -103,7 +103,7 @@ void numpy_npz_conduit_reader::load() {
   resize_shuffled_indices();
   m_num_samples = m_shuffled_indices.size();
 
-  if (m_num_labels == 0 && !opts->get_bool(PRELOAD_DATA_STORE) && opts->get_bool(USE_DATA_STORE)) {
+  if (m_num_labels == 0 && !arg_parser.get<bool>(PRELOAD_DATA_STORE) && arg_parser.get<bool>(USE_DATA_STORE)) {
     LBANN_WARNING("when not preloading you must specify the number of labels in the prototext file if you are doing classification");
   }
 
