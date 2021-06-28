@@ -226,6 +226,19 @@ public:
   void swap_objective_function(model& other);
 
   // ===========================================
+  // Model modification 
+  // ===========================================
+
+  /** @brief Insert layer in model. */
+  void insert_layer(OwningLayerPtr&& l, std::string const& name);
+
+  /** @brief Remove layer from model. */
+  void remove_layer(std::string const& name);
+
+  /** @brief Replace layer in model. */
+  void replace_layer(OwningLayerPtr&& l, std::string const& name);
+
+  // ===========================================
   // Setup
   // ===========================================
 
