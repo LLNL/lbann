@@ -30,11 +30,13 @@
 #include "lbann/operators/elementwise_operator.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/utils/cloneable.hpp"
+#include "lbann_config.hpp"
 
 #include <operators.pb.h>
 
 #include <h2/meta/core/IfThenElse.hpp>
 
+#include <cereal/cereal.hpp>
 #include <google/protobuf/message.h>
 
 namespace lbann {
@@ -88,7 +90,14 @@ public:
   ///@{
 
   template <typename ArchiveT>
-  void serialize(ArchiveT& ar);
+  void serialize(ArchiveT& ar)
+  {
+    using OperatorType = ElementwiseOperator<DataT, DataT, D>;
+    ar(::cereal::make_nvp("DataTypeOperator",
+                          ::cereal::base_class<OperatorType>(this)),
+       CEREAL_NVP(m_min),
+       CEREAL_NVP(m_max));
+  }
 
   ///@}
 

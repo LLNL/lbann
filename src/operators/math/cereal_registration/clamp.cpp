@@ -23,25 +23,10 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
+
+#include "lbann/operators/math/clamp.hpp"
+
 #include "lbann/utils/serialize.hpp"
-#include <lbann/operators/math/clamp.hpp>
-
-namespace lbann {
-
-template <typename TensorDataType>
-template <typename ArchiveT>
-void
-ClampOperator<TensorDataType>
-::serialize(ArchiveT& ar)
-{
-  using OperatorType = Operator<TensorDataType>;
-  ar(::cereal::make_nvp("DataTypeOperator",
-                        ::cereal::base_class<OperatorType>(this)),
-     CEREAL_NVP(m_min),
-     CEREAL_NVP(m_max));
-}
-
-} // namespace lbann
 
 #define LBANN_OPERATOR_NAME ClampOperator
 #include <lbann/macros/register_operator_with_cereal.hpp>
