@@ -134,7 +134,7 @@ void numpy_npz_conduit_reader::do_preload_data_store() {
     if (is_master()) {
       std::cout << "mode: data_store_thread\n";
     }
-    std::shared_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(m_comm, options::get(), false);
+    std::shared_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(m_comm, false);
     int num_threads = static_cast<int>(io_thread_pool->get_num_threads());
 
     //collect the set of indices that belong to this rank
