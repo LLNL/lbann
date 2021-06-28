@@ -123,7 +123,19 @@ void gather_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& 
   // Tensor dimensions
   const auto& input0_dims = this->get_input_dims(0);
   const auto& input1_dims = this->get_input_dims(1);
-  this->set_output_dims(input1_dims);
+  // Only support 1D indices
+  const auto is_indices_not_1D = input1_dims.size() != 1;
+  
+  // Only support 1D or 2D values
+  const auto is_values_1D =  input0_dims.size() == 1;
+  const auto is_values_2D = input0_dims.size() == 2; 
+  
+  if(is_values_1D){
+    this->set_output_dims(input1_dims);
+  }else{
+    this->set_output_dims(std::vector<int>{input0_dims[0],input1_dims[0]});
+  }
+  
   auto dims_to_str = [] (const std::vector<int>& dims) -> std::string {
     std::ostringstream ss;
     for (size_t i=0; i<dims.size(); ++i) {
@@ -132,8 +144,12 @@ void gather_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& 
     return ss.str();
   };
 
-  // Make sure input tensors have same numbers of dimensions
-  if (input0_dims.size() != input1_dims.size()) {
+  // Make sure input tensors have supported numbers of dimensions
+
+
+
+
+  if (is_indices_not_1D || !(is_values_1D || is_values_2D)) {
     const auto& parent0 = this->get_parent_layer(0);
     const auto& parent1 = this->get_parent_layer(1);
     LBANN_ERROR(
@@ -147,13 +163,13 @@ void gather_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& 
 
   // Check that tensors are 1D
   /// @todo Support gathering from/into higher-order tensors
-  if (input0_dims.size() != 1) {
+  if (!is_values_1D && !is_values_2D) {
     LBANN_ERROR(
       this->get_type()," layer \"",this->get_name(),"\" ",
       "attempted to gather from a ",input0_dims.size(),"-D tensor ",
       "(",dims_to_str(input0_dims),"), "
       "but the gather layer currently only supports ",
-      "gathering from a 1-D tensor");
+      "gathering from a 1-D oe 2-D tensor");
   }
 
 }
