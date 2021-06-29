@@ -39,7 +39,7 @@ namespace distconv{
       using LocaleMPI = tensor::LocaleMPI;
 
     public:
-      Linear(Backend &backend){};
+      Linear(Backend &backend):m_be(backend){};
 
       template <typename Allocator>
       void setup(int num_local_channels,
@@ -127,14 +127,22 @@ namespace distconv{
     int apply_bias(const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &bias, 
                  tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output,
                  int local_mini_batch_size){
-      const auto& one = El::TypeTraits<DataType>::One();
+    
+    if (output.get_local_size() == 0) return 0;
+
+    const auto& one = El::TypeTraits<DataType>::One();
 
     const auto& output_dims = output.get_local_shape();
 
-    const auto& output_size = std::accumulate(output_dims.begin()+1, output_dims.end(), 1, std::multiplies<size_t>());
+    const auto& output_size = std::accumulate(output_dims.begin(), output_dims.begin()+1, 1, std::multiplies<size_t>());
 
     const auto num_local_channels = output_dims[2];
 
+    util::MPIRootPrintStreamInfo() 
+      << " Bias Global Shape" << bias.get_shape()
+      << " Bias local shape" << bias.get_local_shape()
+      << " Bias real local shape"  << bias.get_local_real_shape()
+      << " Bias distribution" << bias.get_distribution();
     El::Matrix<DataType, El::Device::GPU>  ones(local_mini_batch_size * num_local_channels, 1);
 
     El::Matrix<DataType, El::Device::GPU>  out_mat(output_size, local_mini_batch_size*num_local_channels, output.get_buffer(), output_size);
@@ -166,13 +174,13 @@ namespace distconv{
     const auto& output_dims = output_grad.get_local_shape();
 
 
-    const auto& input_size = std::accumulate(input_dims.begin()+1, input_dims.end(), 1, std::multiplies<size_t>());
-    const auto& output_size = std::accumulate(output_dims.begin()+1, output_dims.end(), 1, std::multiplies<size_t>());
+    const auto& input_size = std::accumulate(input_dims.begin(), input_dims.begin()+1, 1, std::multiplies<size_t>());
+    const auto& output_size = std::accumulate(output_dims.begin(), output_dims.begin()+1, 1, std::multiplies<size_t>());
 
     const auto num_local_channels = output_dims[2];
 
     El::Matrix<DataType, El::Device::GPU>  output_grad_mat(output_size, local_mini_batch_size*num_local_channels, output_grad.get_buffer(),output_size);
-    El::Matrix<DataType, El::Device::GPU>  weights(input_size, output_size, linearity.get_buffer(), input_size);
+    El::Matrix<DataType, El::Device::GPU>  weights(output_size, input_size, linearity.get_buffer(), output_size);
     El::Matrix<DataType, El::Device::GPU>  input_grad_mat(input_size, local_mini_batch_size*num_local_channels, input_grad.get_buffer(), input_size);
 
     El::Gemm(transpose_A ? El::NORMAL : El::TRANSPOSE,
@@ -194,11 +202,24 @@ namespace distconv{
                           const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output_grad,
                           tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &linearity_grad,
                           int local_mini_batch_size){
+
+    const auto is_empty_input = input.get_local_size() == 0;
+    const auto is_empty_grad = output_grad.get_local_size() == 0;
+    const auto is_empty_weights = linearity_grad.get_local_size() == 0;
+    if(is_empty_input ||
+       is_empty_weights ||
+       is_empty_grad){
+      // No op 
+      linearity_grad.zero(m_be.get_stream());
+      allreduce_gradients(linearity_grad);
+      return 0;
+    }
+
     const auto& input_dims = input.get_local_shape();
     const auto& output_dims = output_grad.get_local_shape();
 
-    const auto& input_size = std::accumulate(input_dims.begin()+1, input_dims.end(), 1, std::multiplies<size_t>());
-    const auto& output_size = std::accumulate(output_dims.begin()+1, output_dims.end(), 1, std::multiplies<size_t>());
+    const auto& input_size = std::accumulate(input_dims.begin(), input_dims.begin()+1, 1, std::multiplies<size_t>());
+    const auto& output_size = std::accumulate(output_dims.begin(), output_dims.begin()+1, 1, std::multiplies<size_t>());
 
     const auto num_local_channels = output_dims[2];
 
@@ -207,7 +228,7 @@ namespace distconv{
 
     El::Matrix<DataType, El::Device::GPU>  input_mat(input_size, local_mini_batch_size*num_local_channels, input.get_buffer(), input_size);
     El::Matrix<DataType, El::Device::GPU>  output_grad_mat(output_size, local_mini_batch_size*num_local_channels, output_grad.get_buffer(), output_size);
-    El::Matrix<DataType, El::Device::GPU>  linearity_grad_mat(input_size, output_size, linearity_grad.get_buffer(), input_size);
+    El::Matrix<DataType, El::Device::GPU>  linearity_grad_mat(output_size, input_size, linearity_grad.get_buffer(), output_size);
 
 
     if(transpose){
@@ -221,7 +242,7 @@ namespace distconv{
                dst_scale, linearity_grad_mat);
     }
 
-
+    allreduce_gradients(linearity_grad);
     return 0;
     }
 
@@ -231,12 +252,19 @@ namespace distconv{
                         const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output_grad,
                         tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &bias_grad,
                         int local_mini_batch_size){
+
+    const auto is_output_grad_empty = output_grad.get_local_size() == 0;
+    const auto is_bias_grad_empty = bias_grad.get_local_size() == 0;
+
+    if(is_output_grad_empty ||
+       is_bias_grad_empty){
+      bias_grad.zero(m_be.get_stream());
+      allreduce_gradients(bias_grad);
+    }
+
     const auto& one = El::TypeTraits<DataType>::One();
-
-
-
     const auto& output_dims = output_grad.get_local_shape();
-    const auto& output_size = std::accumulate(output_dims.begin()+1, output_dims.end(), 1, std::multiplies<size_t>());
+    const auto& output_size = std::accumulate(output_dims.begin(), output_dims.begin()+1, 1, std::multiplies<size_t>());
 
     const auto num_local_channels = output_dims[2];
     
@@ -250,12 +278,26 @@ namespace distconv{
              gradient_scale, out_grad_mat, ones,
              dst_scale, bias_grad_vec);
 
+    allreduce_gradients(bias_grad);
+
     return 0;
     }
+
+  template <typename Allocator>
+  void allreduce_gradients(
+    tensor::Tensor<DataType, LocaleMPI, Allocator> &gradients){
+
+    Al::Allreduce<Al::NCCLBackend, DataType>(
+      gradients.get_base_ptr(),
+      gradients.get_size(),
+      Al::ReductionOperator::sum,
+      m_be.get_al_nccl_comm());
+  } 
 
   protected:
     int m_num_local_channels; // Set in setup() 
     int m_num_out_channels; // Set in setup()
+    Backend &m_be;
 
 
   }; // class definition Linear

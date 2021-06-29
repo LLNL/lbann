@@ -114,7 +114,8 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
 
 
   // Create distribution from distconv
-  const auto shared_dist = dc::Dist::make_shared_distribution(linearity_shape);
+  auto shared_dist = dc::Dist::make_shared_distribution(
+    input_dist.get_locale_shape());
   // Create LocaleMPI via distconv 
 
   const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
@@ -257,6 +258,8 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
 
   auto* linearity_optimizer = static_cast<data_type_optimizer<TensorDataType>*>(layer.get_weights(0).get_optimizer());
 
+  if (linearity_optimizer == nullptr) return;
+
   auto& linearity_gradient = linearity_optimizer->get_gradient_buffer(
       dst_scale, gradient_scale, true);
 
@@ -280,6 +283,8 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
   if(layer.m_has_bias){
     auto* bias_optimizer = static_cast<data_type_optimizer<TensorDataType>*>(layer.get_weights(1).get_optimizer());
 
+    if (bias_optimizer == nullptr) return;
+    
     auto& bias_gradient = bias_optimizer->get_gradient_buffer(
         dst_scale, gradient_scale, true);
 
@@ -492,7 +497,7 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
     output_channel_dims.begin()+1, output_channel_dims.end(),
     1, std::multiplies<size_t>());
 
-  std::vector<int> bias_dims{1,1,1, output_channel_size};
+  std::vector<int> bias_dims{1,1,output_channel_size,1};
   return bias_dims;
 }
 
@@ -715,6 +720,8 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
 
   if(this->using_gpus() && this->distconv_enabled()){
     this->get_distconv_adapter().bp_compute();
+
+    return ;
   }else{
     LBANN_ERROR("Distconv not compatible with CPU-only mode");
   }

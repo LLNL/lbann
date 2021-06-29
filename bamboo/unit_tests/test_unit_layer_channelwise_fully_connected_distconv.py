@@ -21,7 +21,7 @@ import tools
 # Data
 np.random.seed(20200113)
 _num_samples = 17
-_sample_dims = (16, 1, 3)
+_sample_dims = (8, 1, 3)
 _sample_size = functools.reduce(operator.mul, _sample_dims)
 _samples = np.random.normal(size=(_num_samples, _sample_size)).astype(np.float32)
 _scale = np.random.normal(loc=1, size=(_sample_dims[0], 1, 1)).astype(np.float32)
@@ -101,7 +101,7 @@ def construct_model(lbann):
 
     # Input and output dimensions
     input_channel_dims = _sample_dims[1:]
-    output_channel_dims = (1, 10)
+    output_channel_dims = (1, 2)
     input_channel_size = functools.reduce(operator.mul, input_channel_dims)
     output_channel_size = functools.reduce(operator.mul, output_channel_dims)
 
@@ -112,14 +112,18 @@ def construct_model(lbann):
     bias = np.random.normal(size=(output_channel_size, 1)).astype(np.float32)
 
     # With bias
+
     x = (_samples
          .reshape((-1, input_channel_size))
          .transpose()
          .astype(np.float64))
-    print("Linearity shape: ", linearity.shape)
-    print("Bias shape: ", bias.shape)
+
     y = np.matmul(linearity.astype(np.float64), x) + bias.astype(np.float64)
 
+    print(linearity)
+    print(bias)
+    np.save("linearity.npy", linearity)
+    np.save("bias.npy", bias)
     z = tools.numpy_l2norm2(y) / _num_samples
     val_with_bias = z
 
@@ -154,7 +158,8 @@ def construct_model(lbann):
         x,
         weights=(linearity_weights, bias_weights),
         output_channel_dims=output_channel_dims,
-        parallel_strategy=create_parallel_strategy(num_height_groups)
+        parallel_strategy=create_parallel_strategy(num_height_groups),
+        name="bias"
     )
     z = lbann.L2Norm2(y)
     obj.append(z)
@@ -169,12 +174,51 @@ def construct_model(lbann):
         error_on_failure=True,
         execution_modes='test'))
 
+    # ------------------------------------------
+    # Data-parallel distconv layout, non-transpose, no bias
+    # ------------------------------------------
 
+    # LBANN implementation
+    linearity_weights = lbann.Weights(
+        optimizer=lbann.SGD(),
+        initializer=lbann.ValueInitializer(
+            values=tools.str_list(np.nditer(linearity, order='F'))
+        )
+    )
+
+    x = x_lbann
+    y = lbann.ChannelwiseFullyConnected(
+        x,
+        weights=(linearity_weights),
+        output_channel_dims=output_channel_dims,
+        parallel_strategy=create_parallel_strategy(num_height_groups),
+        name="no_bias"
+    )
+    z = lbann.L2Norm2(y)
+    obj.append(z)
+    metrics.append(lbann.Metric(z, name='data-parallel layout, non-transpose, no bias'))
+
+    # NumPy implementation
+    tol = 8 * val_without_bias * np.finfo(np.float32).eps
+    callbacks.append(lbann.CallbackCheckMetric(
+        metric=metrics[-1].name,
+        lower_bound=val_without_bias - tol,
+        upper_bound=val_without_bias + tol,
+        error_on_failure=True,
+        execution_modes='test'))
+
+    # ------------------------------------------
+    # Dump Outputs and weights
+    # ------------------------------------------
+
+    # callbacks.append(lbann.CallbackDumpOutputs(layers=tools.str_list(["bias", "no_bias"]), directory="outputs"))
+
+    # callbacks.append(lbann.CallbackDumpWeights(directory="outputs"))
     # ------------------------------------------
     # Gradient checking
     # ------------------------------------------
 
-    # callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
+    callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
 
     # ------------------------------------------
     # Construct model
