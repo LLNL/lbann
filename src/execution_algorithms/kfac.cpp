@@ -285,6 +285,7 @@ bool KFAC::train_mini_batch(
 #endif
       // Forward prop step
       model.clear_gradients();
+      sync_weights_model(model, model.get_comm());
       model.forward_prop(execution_mode::training);
       on_forward_prop_end(kfac_context, model);
       // check if the data coordinator has finished the epoch and kickoff
@@ -375,6 +376,277 @@ void KFAC::do_batch_end_cbs(model& model)
       cb->on_batch_end(&model);
     }
   }
+}
+
+// =============================================
+// Sub-grid implementation
+// =============================================
+
+void KFAC::sync_weights_model(model& model, lbann_comm *comm){
+  //Does not support Model parallel only Data Parallel
+
+  const auto layers = model.get_layers();
+  const El::mpi::Comm & combined_comm = comm->get_combined_grid_comm();
+  const El::mpi::Comm & trainer_comm = comm->get_trainer_comm();
+  const int comm_size = El::mpi::Size(comm->get_trainer_comm().GetMPIComm());
+  const int comm_rank = El::mpi::Rank(comm->get_trainer_comm().GetMPIComm());
+
+  std::vector<int> primary_grid_ranks = comm->get_primary_grid_ranks();
+  std::vector<int> secondary_grid_ranks = comm->get_secondary_grid_ranks();
+
+  int num_process_primary_grid = (int)primary_grid_ranks.size();
+  int num_process_secondary_grid = (int)secondary_grid_ranks.size();
+
+  //Computing size of global buffer
+  int global_buffer_size = 0;
+  for(auto i_layer = layers.begin(); i_layer != layers.end(); i_layer++) 
+  {
+    const auto &layer = *i_layer;
+    const size_t num_weights = layer->num_weights();
+    for (int idx_weight = 0; idx_weight < num_weights; ++idx_weight)
+    {
+      auto& weights = layer->get_weights(idx_weight);
+
+      //Ignore weights without optimizer
+      // const optimizer *w_optimizer = weights.get_optimizer();
+      // if(w_optimizer == nullptr)
+      //   continue;
+
+      int height = weights.get_matrix_height();
+      int width = weights.get_matrix_width();
+      global_buffer_size += height*width;
+    }
+  }
+
+  // std::cout<<"Size of global buffer:"<<global_buffer_size<<"\n";
+
+  El::Matrix<DataType, Device> global_buffer(global_buffer_size, 1);
+  El::SyncInfo<Device> sync_info =El::SyncInfoFromMatrix(global_buffer);
+
+
+
+
+  size_t offset = 0;
+  //copy weights to global buffers
+  for(auto i_layer = layers.begin(); i_layer != layers.end(); i_layer++) 
+  {
+    const auto &layer = *i_layer;
+    const size_t num_weights = layer->num_weights();
+    for (int idx_weight = 0; idx_weight < num_weights; ++idx_weight)
+    {
+      auto& weights = layer->get_weights(idx_weight);
+
+      //Ignore weights without optimizer
+      // const optimizer *w_optimizer = weights.get_optimizer();
+      // if(w_optimizer == nullptr)
+      //   continue;
+
+      data_type_weights<DataType>* weights_dt = dynamic_cast<data_type_weights<DataType>*>(&weights);
+
+      int height = weights.get_matrix_height();
+      int width = weights.get_matrix_width();
+
+      El::AbstractDistMatrix<DataType>& weight_values = weights_dt->get_values();
+      El::DistMatrix<DataType,El::STAR,El::STAR,El::ELEMENT,Device>* weight_values_ = dynamic_cast<El::DistMatrix<DataType,El::STAR,El::STAR,El::ELEMENT,Device>*>(&weight_values);
+
+      auto view = El::View(global_buffer, El::IR(offset, offset+height*width), El::ALL);
+      offset += height*width;
+
+      // El::Copy(weight_values.LockedMatrix(), view);
+      El::copy::util::InterleaveMatrix(
+                                height, width,
+                                weight_values_->LockedBuffer(), 1, height,
+                                view.Buffer(),
+                                1, height,
+                                sync_info);
+    }
+  }
+
+
+  if(comm->get_grid_type() == PRIMARY_GRID)
+  {
+    int num_sends = (int)std::ceil((float)num_process_secondary_grid/(float)num_process_primary_grid);
+    for(int num_send = 0; num_send<num_sends; num_send++){
+
+
+      if(comm_rank + num_send*num_process_primary_grid < num_process_secondary_grid){
+        int to_send_index = comm_rank + num_send*num_process_primary_grid;
+        // std::cout<<"My CommRank:"<<comm_rank<<" Send:"<<secondary_grid_ranks[to_send_index]<<"\n";
+        ::El::mpi::Send(
+           (DataType*)global_buffer.Buffer(),
+           global_buffer_size,
+           secondary_grid_ranks[to_send_index],
+           combined_comm,
+           sync_info);
+      }
+    }
+
+  }
+  if(comm->get_grid_type() == SECONDARY_GRID)
+  {
+    int recv_index = comm_rank % num_process_primary_grid;
+    // std::cout<<"My CommRank:"<<comm_rank<<" Recv:"<<primary_grid_ranks[recv_index]<<"\n";
+    ::El::mpi::Recv(
+       (DataType*)global_buffer.Buffer(),
+       global_buffer_size,
+       primary_grid_ranks[recv_index],
+       combined_comm,
+       sync_info);
+  }
+
+
+
+
+  //copy weights to global buffers
+  offset = 0;
+  for(auto i_layer = layers.begin(); i_layer != layers.end(); i_layer++) 
+  {
+    const auto &layer = *i_layer;
+    const size_t num_weights = layer->num_weights();
+    for (int idx_weight = 0; idx_weight < num_weights; ++idx_weight)
+    {
+      auto& weights = layer->get_weights(idx_weight);
+
+      //Ignore weights without optimizer
+      // const optimizer *w_optimizer = weights.get_optimizer();
+      // if(w_optimizer == nullptr)
+      //   continue;
+
+      data_type_weights<DataType>* weights_dt = dynamic_cast<data_type_weights<DataType>*>(&weights);
+
+      int height = weights.get_matrix_height();
+      int width = weights.get_matrix_width();
+
+      El::Matrix<DataType, Device> weight_buffer(height, width);
+
+      El::AbstractDistMatrix<DataType>& weight_values = weights_dt->get_values();
+      El::DistMatrix<DataType,El::STAR,El::STAR,El::ELEMENT,Device>* weight_values_ = dynamic_cast<El::DistMatrix<DataType,El::STAR,El::STAR,El::ELEMENT,Device>*>(&weight_values);
+
+      auto view = El::View(global_buffer, El::IR(offset, offset+height*width), El::ALL);
+      offset += height*width;
+
+      El::copy::util::InterleaveMatrix(
+                                height, width,
+                                view.Buffer(), 1, height,
+                                weight_values_->Buffer(),
+                                1, height,
+                                sync_info);
+      // weights.set_values(weight_buffer);
+    }
+  }
+
+
+}
+
+template <typename DataType, El::Device Device>
+void send_recv_precomputed_gradients(
+    const std::vector<std::pair<size_t, El::AbstractMatrix<DataType>*>>&  blocks,
+    El::Matrix<DataType, Device>& global_buffer,
+    const int data_size,
+    lbann_comm *comm,
+    const kfac::kfac_allgather_mode& mode) {
+
+  const int comm_size = El::mpi::Size(comm->get_trainer_comm().GetMPIComm());
+  const int comm_rank = El::mpi::Rank(comm->get_trainer_comm().GetMPIComm());
+  const int combined_rank = El::mpi::Rank(comm->get_combined_grid_comm().GetMPIComm());
+
+  std::vector<int> primary_grid_ranks = comm->get_primary_grid_ranks();
+  std::vector<int> secondary_grid_ranks = comm->get_secondary_grid_ranks();
+
+  int num_process_primary_grid = (int)primary_grid_ranks.size();
+  int num_process_secondary_grid = (int)secondary_grid_ranks.size();
+
+  const El::mpi::Comm & combined_comm = comm->get_combined_grid_comm();
+  const El::mpi::Comm & trainer_comm = comm->get_trainer_comm();
+
+
+
+
+  // 
+
+  if(comm->get_grid_type() == SECONDARY_GRID)
+  {
+    int num_sends = (int)std::ceil((float)num_process_primary_grid/(float)num_process_secondary_grid);
+
+    for(int num_send = 0; num_send<num_sends; num_send++){
+
+      if(comm_rank + num_send*num_process_secondary_grid < num_process_primary_grid){
+
+        El::Matrix<DataType, Device> global_buffer_local(data_size, 1);
+        El::SyncInfo<Device> sync_info =El::SyncInfoFromMatrix(global_buffer_local);
+
+        El::copy::util::InterleaveMatrix(
+                                      data_size, 1,
+                                      global_buffer.Buffer(), 1, data_size,
+                                      global_buffer_local.Buffer(),
+                                      1, data_size,
+                                      sync_info);
+
+
+        int to_send_index = comm_rank + num_send*num_process_secondary_grid;
+        // std::cout<<"My CommRank:"<<comm_rank <<" "<<combined_rank<<" Send:"<<primary_grid_ranks[to_send_index]<<"\n";
+        ::El::mpi::TaggedSend(
+           (DataType*)global_buffer_local.Buffer(),
+           data_size,
+           primary_grid_ranks[to_send_index],
+           primary_grid_ranks[to_send_index],
+           combined_comm,
+           sync_info);
+        // ::El::Send(
+        //    global_buffer_local,
+        //    combined_comm,
+        //    primary_grid_ranks[to_send_index]);
+        // std::cout<<"Comp My CommRank:"<<comm_rank <<" "<<combined_rank<<" Send:"<<primary_grid_ranks[to_send_index]<<"\n";
+      }
+    }
+    // ::El::mpi::Barrier(combined_comm.GetMPIComm());
+
+  }
+  if(comm->get_grid_type() == PRIMARY_GRID)
+  {
+    El::SyncInfo<Device> sync_info =El::SyncInfoFromMatrix(global_buffer);
+    int recv_index = comm_rank % num_process_secondary_grid;
+    // std::cout<<"My CommRank:"<<comm_rank <<" "<<combined_rank<<" Recv:"<<secondary_grid_ranks[recv_index]<<"\n";
+    ::El::mpi::TaggedRecv(
+       (DataType*)global_buffer.Buffer(),
+       data_size,
+       secondary_grid_ranks[recv_index],
+       combined_rank,
+       combined_comm,
+       sync_info);
+    // ::El::Recv(
+    //    global_buffer,
+    //    combined_comm,
+    //    secondary_grid_ranks[recv_index]);
+    // std::cout<<"Comp My CommRank:"<<comm_rank <<" "<<combined_rank<<" Recv:"<<secondary_grid_ranks[recv_index]<<"\n";
+
+    // ::El::mpi::Barrier(combined_comm.GetMPIComm());
+
+    // Sort blocks so that received blocks per process become
+    // contiguous.
+    std::vector<std::pair<size_t, El::AbstractMatrix<DataType>*>> sorted_blocks(blocks.size());
+    std::copy(blocks.begin(), blocks.end(), sorted_blocks.begin());
+    if(mode == kfac::kfac_allgather_mode::ALLGATHER)
+      std::stable_sort(
+          sorted_blocks.begin(), sorted_blocks.end(),
+          [](const std::pair<size_t, El::AbstractMatrix<DataType>*>& lhs,
+             const std::pair<size_t, El::AbstractMatrix<DataType>*>& rhs) {
+            return lhs.first < rhs.first;
+          });
+
+    // Copy blocks from the buffer.
+    {
+      size_t offset = 0;
+      for(auto& block : sorted_blocks) {
+        if(block.first != (size_t) comm->get_rank_in_trainer()) {
+          const auto view = El::LockedView(global_buffer, El::IR(offset, offset+block.second->Height()), El::ALL);
+          El::Copy(view, *block.second);
+        }
+        offset += block.second->Height();
+      }
+    }
+  }
+
 }
 
 // =============================================
@@ -480,6 +752,7 @@ void KFAC::on_backward_prop_end(
   const auto& sgd_context = context.get_sgd_execution_context();
   const size_t num_steps = sgd_context.get_step();
   const auto layers = model.get_layers();
+  const bool is_first_step = (!m_has_kronecker_inverse);
 
   // Update the damping value
   // using a modified Tikhonov damping tequnique from
@@ -516,11 +789,14 @@ void KFAC::on_backward_prop_end(
     LBANN_ERROR("K-FAC blocks have not been setup");
   }
 
+
+  if(comm.get_grid_type() == SECONDARY_GRID )
+  {
   prof_region_begin("kfac-step", prof_color, prof_sync);
 
   // Step 1: Ensure that each process has averaged Kronecker factors
   // for the model-parallel part.
-  const bool is_first_step = (!m_has_kronecker_inverse);
+  // const bool is_first_step = (!m_has_kronecker_inverse);
   const bool is_kronecker_update_required =
       ((num_steps%context.m_update_interval) == 0 || !m_has_kronecker_inverse);
   if(is_kronecker_update_required) {
@@ -614,6 +890,11 @@ void KFAC::on_backward_prop_end(
   comm.trainer_barrier();
   prof_region_end("kfac-inverse-barrier", prof_sync);
 #endif // LBANN_NVPROF
+  }
+  else{
+    m_has_kronecker_inverse = true;
+    // std::cout<<"Primary grid\n";
+  }
 
   // Step 3: All-gather of each preconditioned gradient tensor
   prof_region_begin("kfac-allgather", prof_color, prof_sync);
@@ -644,8 +925,21 @@ void KFAC::on_backward_prop_end(
         "allgather_recv_buffer",
         is_buffer_needed.second ? global_buffer_size : 0,
         1);
-    kfac::allgather_blocks(
-      buffers, local_buffer, global_buffer, &comm, allgather_mode);
+
+    if(comm.get_grid_type() == SECONDARY_GRID ){
+      kfac::allgather_blocks(
+        buffers, local_buffer, global_buffer, &comm, allgather_mode);
+    }
+
+    //Send precomputed gradients from secondary grid to primary grid 
+    // sync_weights_model(model, model.get_comm());
+    send_recv_precomputed_gradients(buffers, 
+                                    global_buffer, 
+                                    global_buffer_size, 
+                                    model.get_comm(),
+                                    allgather_mode);
+
+    
   }
   prof_region_end("kfac-allgather", prof_sync);
 

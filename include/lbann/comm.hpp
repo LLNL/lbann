@@ -49,6 +49,15 @@ namespace lbann {
 ::Al::ReductionOperator mpi_op_to_al_op(El::mpi::Op op);
 #endif
 
+/** Grid types in sub-grid parallelism (2nd order) */
+enum GridType 
+{   
+  NO_GRID = 0, 
+  PRIMARY_GRID = 1, 
+  SECONDARY_GRID = 2
+};
+
+
 namespace Al {
 
 /** Dummy Aluminum backend. */
@@ -96,7 +105,6 @@ struct request
   nccl_req_type nccl_req = nccl_null_req;
   mpicuda_req_type mpicuda_req = mpicuda_null_req;
 };
-
 } // namespace Al
 
 /* Notes on Synchronization
@@ -168,6 +176,12 @@ public:
    *  approximately square.
    */
   void split_trainers(int procs_per_trainer=-1, int trainer_grid_height=-1);
+
+  /** Split the commicator for the given trainer into primary and seconday*/
+  void split_trainer_grid(int num_process_primary_grid=0, int num_process_secondary_grid=0);
+
+  /** Get trainer grid number (0: no primary/secondary grid, 1: part of primary grid, 2: part of secondary grid). */
+  inline GridType get_grid_type() const noexcept { return m_grid_type; }
 
   /** Get which trainer this process is in. */
   inline int get_trainer_rank() const noexcept { return m_trainer_rank; }
@@ -870,11 +884,23 @@ public:
     return m_trainer_comm;
   }
 
+  /** Return the combined grid communicator for a trainer. */
+  const El::mpi::Comm& get_combined_grid_comm() const noexcept
+  {
+    return m_combined_grid_comm;
+  }
+
   /** Return the world communicator. */
   const El::mpi::Comm& get_world_comm() const noexcept { return m_world_comm; }
 
   /** Return the communicator for this node. */
   const El::mpi::Comm& get_node_comm() const noexcept { return m_node_comm; }
+
+  /** Return the ranks of primary grid in the trainer */
+  std::vector<int> get_primary_grid_ranks(){ return m_primary_grid_ranks; }
+
+  /** Return the ranks of secondary grid in the trainer */
+  std::vector<int> get_secondary_grid_ranks(){ return m_secondary_grid_ranks; }
 
   /**
    * Return a communicator containing num_per_group processors.
@@ -906,6 +932,12 @@ private:
   El::mpi::Comm m_intertrainer_comm;
   /** Communicator for every process in the same compute node. */
   El::mpi::Comm m_node_comm;
+  /** Communicator for primary grid in each trainer */
+  El::mpi::Comm m_primary_grid_comm;
+  /** Communicator for secondary grid in each trainer */
+  El::mpi::Comm m_secondary_grid_comm;
+  /** Combined communicator for primary and secondary grid in each trainer */
+  El::mpi::Comm m_combined_grid_comm;
   /** Packed group communicators. */
   mutable std::unordered_map<int, El::mpi::Comm> m_group_communicators;
   /** Grid for this trainer. */
@@ -930,6 +962,15 @@ private:
    *  num_threads directive has not been provided.
    */
   int m_threads_per_proc;
+
+  /** Grid typer for current process when sub-grid parallelism is enabled */
+  GridType m_grid_type = NO_GRID;
+
+  /**
+  Ranks in primary and secondary grids
+  */
+  std::vector<int> m_primary_grid_ranks;
+  std::vector<int> m_secondary_grid_ranks; 
 
   // Various statistics counters.
   mutable size_t m_num_trainer_barriers;

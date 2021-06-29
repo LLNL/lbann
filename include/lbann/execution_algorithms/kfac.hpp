@@ -190,6 +190,8 @@ private:
     model& model);
 #endif // 0
 
+  void sync_weights_model(model& model, lbann_comm *comm);
+
   /** @brief The KFAC stopping criteria. */
   std::unique_ptr<TermCriteriaType> m_stopping_criteria;
 

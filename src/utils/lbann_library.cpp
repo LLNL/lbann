@@ -99,6 +99,12 @@ void construct_std_options() {
                         "Height of 2D process grid for each trainer. "
                         "Default grid is approximately square.",
                         -1);
+  arg_parser.add_option(TRAINER_PRIMARY_GRID_SIZE,
+                        {"--trainer_primary_grid_size"},
+                        utils::ENV("LBANN_TRAINER_PRIMARY_GRID_SIZE"),
+                        "Primary grid size per trainer. "
+                        "Default primary grid size is half (if enabled).",
+                        0);
   arg_parser.add_option(SMILES_BUFFER_SIZE,
                         {"--smiles_buffer_size"},
                         utils::ENV("LBANN_SMILES_BUFFER_SIZE"),
@@ -145,6 +151,7 @@ int allocate_trainer_resources(lbann_comm *comm) {
   auto& arg_parser = global_argument_parser();
   int procs_per_trainer = arg_parser.get<int>(PROCS_PER_TRAINER);
   int trainer_grid_height = arg_parser.get<int>(TRAINER_GRID_HEIGHT);
+  int trainer_primary_grid_size = arg_parser.get<int>(TRAINER_PRIMARY_GRID_SIZE);
 
   if (procs_per_trainer == 0) {
     procs_per_trainer = comm->get_procs_in_world();
@@ -157,6 +164,8 @@ int allocate_trainer_resources(lbann_comm *comm) {
       || trainer_grid_height != comm->get_trainer_grid().Height()) {
     comm->split_trainers(procs_per_trainer, trainer_grid_height);
   }
+  std::cout<<"LBANN Primary Grid Size:"<<trainer_primary_grid_size<<"\n";
+  comm->split_trainer_grid(trainer_primary_grid_size,0);
 
   return procs_per_trainer;
 }

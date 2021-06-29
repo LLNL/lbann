@@ -43,6 +43,7 @@ const int lbann_default_random_seed = 42;
 #define ALLOW_GLOBAL_STATISTICS "LTFB Allow global statistics"
 #define PROCS_PER_TRAINER "Processes per trainer"
 #define TRAINER_GRID_HEIGHT "Height of 2D process grid for each trainer"
+#define TRAINER_PRIMARY_GRID_SIZE "Primary Grid Size per trainer"
 #define SMILES_BUFFER_SIZE "SMILES Data Reader buffer size"
 
 void construct_std_options();
