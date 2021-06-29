@@ -21,11 +21,10 @@ import tools
 # Data
 np.random.seed(20200113)
 _num_samples = 17
-_sample_dims = (4, 1, 1)
+_sample_dims = (8, 1, 2)
 _sample_size = functools.reduce(operator.mul, _sample_dims)
 _samples = np.ones((_num_samples, _sample_size)).astype(np.float32)
 _bias = np.random.normal(loc=0, size=(_sample_dims[0], 1, 1)).astype(np.float32)
-
 
 # Sample access functions
 def get_sample(index):
@@ -61,7 +60,7 @@ def setup_experiment(lbann):
 
 def create_parallel_strategy(num_channel_groups):
     return {"channel_groups": num_channel_groups,
-            "filter_groups": num_channel_groups }
+            "filter_groups": num_channel_groups}
 
 
 def construct_model(lbann):
@@ -80,8 +79,8 @@ def construct_model(lbann):
                               name='input_weights')
     x0 = lbann.WeightsLayer(weights=x_weights,
                             dims=tools.str_list(_sample_dims))
-    x1 = lbann.Reshape(lbann.Input(), dims=tools.str_list(_sample_dims))
-    x = lbann.Sum(x0, x1)
+    x1 = lbann.Reshape(lbann.Input(), dims=tools.str_list(_sample_dims), name="Input_layer")
+    x = lbann.Sum(x0, x1, name="Adding_weight_layer")
     x_lbann = x
 
     # Objects for LBANN model
@@ -100,7 +99,7 @@ def construct_model(lbann):
 
     # Input and output dimensions
     input_channel_dims = _sample_dims[1:]
-    output_channel_dims = (1, 1)
+    output_channel_dims = (1, 3)
     input_channel_size = functools.reduce(operator.mul, input_channel_dims)
     output_channel_size = functools.reduce(operator.mul, output_channel_dims)
 
@@ -125,6 +124,8 @@ def construct_model(lbann):
     np.save("bias.npy", bias)
     z = tools.numpy_l2norm2(y) / _num_samples
     val_with_bias = z
+
+    print(val_with_bias)
 
     # Without bias
     x = (_samples
@@ -160,7 +161,7 @@ def construct_model(lbann):
         parallel_strategy=create_parallel_strategy(num_height_groups),
         name="bias"
     )
-    z = lbann.L2Norm2(y)
+    z = lbann.L2Norm2(y, name="L2Norm")
     obj.append(z)
     metrics.append(lbann.Metric(z, name='data-parallel layout, non-transpose, bias'))
 
@@ -173,10 +174,11 @@ def construct_model(lbann):
         error_on_failure=True,
         execution_modes='test'))
 
-    callbacks.append(lbann.CallbackDumpErrorSignals(basename="signals"))
-    callbacks.append(lbann.CallbackDumpGradients(basename="grads"))
-    callbacks.append(lbann.CallbackDumpOutputs(layers=tools.str_list(["bias"]), directory="outputs"))
-    '''
+    ### Extra callbacks for debugging
+    # callbacks.append(lbann.CallbackDumpErrorSignals(basename="signals"))
+    # callbacks.append(lbann.CallbackDumpOutputs(layers=tools.str_list(["bias", "L2Norm"]), directory="outputs"))
+    # callbacks.append(lbann.CallbackDumpGradients(basename="grads"))
+
     # ------------------------------------------
     # Data-parallel distconv layout, non-transpose, no bias
     # ------------------------------------------
@@ -209,7 +211,6 @@ def construct_model(lbann):
         upper_bound=val_without_bias + tol,
         error_on_failure=True,
         execution_modes='test'))
-    '''
     # ------------------------------------------
     # Dump Outputs and weights
     # ------------------------------------------
@@ -221,13 +222,13 @@ def construct_model(lbann):
     # Gradient checking
     # ------------------------------------------
 
-    # callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
+    callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
 
     # ------------------------------------------
     # Construct model
     # ------------------------------------------
 
-    num_epochs = 0
+    num_epochs = 1
     return lbann.Model(num_epochs,
                        layers=lbann.traverse_layer_graph(x_lbann),
                        objective_function=obj,

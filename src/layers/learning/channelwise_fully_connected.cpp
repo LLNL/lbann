@@ -246,29 +246,29 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
 
   // TO DO: Check if input and output tensors are contiguous 
 
-  const auto local_mini_batch_size = linearity.Width();
-
-  assert0(dc::tensor::View(
-    *m_linear,linearity.LockedBuffer()));
+  const auto local_mini_batch_size = layer.get_prev_activations(0).Width();
 
 
   TensorDataType dst_scale, gradient_scale;
 
-  auto* linearity_optimizer = static_cast<data_type_optimizer<TensorDataType>*>(layer.get_weights(0).get_optimizer());
 
-  if (linearity_optimizer == nullptr) return;
-
-  auto& linearity_gradient = linearity_optimizer->get_gradient_buffer(
-      dst_scale, gradient_scale, true);
   assert0(dc::tensor::View(*m_linear,linearity.LockedBuffer()));
-  assert0(dc::tensor::View(*m_linearity_gradient, linearity_gradient.Buffer()));
 
   m_linear_operator->backward_wrt_input(layer.m_transpose,
                                         this->get_prev_error_signals(),
                                         *m_linear,
                                         this->get_error_signals(),                
                                         local_mini_batch_size);
+  auto* linearity_optimizer = static_cast<data_type_optimizer<TensorDataType>*>(layer.get_weights(0).get_optimizer());
 
+  if (linearity_optimizer == nullptr){
+    dc::MPIRootPrintStreamInfo() << "Weights optimizer null. Exiting ...." << std::endl;
+    return;
+  } 
+  auto& linearity_gradient = linearity_optimizer->get_gradient_buffer(
+      dst_scale, gradient_scale, true);
+
+  assert0(dc::tensor::View(*m_linearity_gradient, linearity_gradient.Buffer()));
   m_linear_operator->backward_wrt_weight(layer.m_transpose,
                                          dst_scale,
                                          gradient_scale,

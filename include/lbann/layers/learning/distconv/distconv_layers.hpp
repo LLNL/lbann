@@ -234,8 +234,6 @@ namespace distconv{
        is_empty_weights ||
        is_empty_grad){
       // No op 
-      linearity_grad.zero(m_be.get_stream());
-      allreduce_gradients(linearity_grad);
       return 0;
     }
 
@@ -247,6 +245,21 @@ namespace distconv{
 
     const auto num_local_channels = output_dims[2];
 
+    util::MPIRootPrintStreamInfo()
+    << " Output Grad shapes :" << output_grad.get_shape() 
+    << " " << output_grad.get_local_shape()
+    << '\t' << output_grad.get_distribution()
+    << "\t Sanity check: " << output_size;
+
+    util::MPIRootPrintStreamInfo() << "Num local channels \t" << num_local_channels; 
+    util::MPIRootPrintStreamInfo() << "local_mini_batch_size\t" << local_mini_batch_size;
+
+    util::MPIRootPrintStreamInfo()
+    << " Linearity dims: " << linearity_grad.get_shape()
+    << " (local shape)" << linearity_grad.get_local_shape()
+    << '\t' << linearity_grad.get_distribution()
+    << " \t Sanity check " << input_dims; 
+
     El::Matrix<DataType, El::Device::GPU>  input_mat_reshaped; 
     El::Matrix<DataType, El::Device::GPU>  output_grad_mat_reshaped;
 
@@ -254,8 +267,8 @@ namespace distconv{
     El::Matrix<DataType, El::Device::GPU>  output_grad_mat(output_size, local_mini_batch_size*num_local_channels, output_grad.get_buffer(), output_size);
     El::Matrix<DataType, El::Device::GPU>  linearity_grad_mat(output_size, input_size, linearity_grad.get_buffer(), output_size);
 
-
-     if(transpose){
+    
+    if(transpose){
       El::Gemm(El::NORMAL, El::TRANSPOSE,
                gradient_scale, input_mat, output_grad_mat,
                dst_scale, linearity_grad_mat);
@@ -266,7 +279,7 @@ namespace distconv{
                dst_scale, linearity_grad_mat);
     }
 
-    allreduce_gradients(linearity_grad);
+
     return 0;
     }
 
@@ -282,8 +295,8 @@ namespace distconv{
 
     if(is_output_grad_empty ||
        is_bias_grad_empty){
-      bias_grad.zero(m_be.get_stream());
-      allreduce_gradients(bias_grad);
+
+      return 0;
     }
 
     const auto& one = El::TypeTraits<DataType>::One();
@@ -296,13 +309,11 @@ namespace distconv{
     
     El::Matrix<DataType, El::Device::GPU>  out_grad_mat(output_size, local_mini_batch_size*num_local_channels, output_grad.get_buffer(), output_size);
     El::Matrix<DataType, El::Device::GPU>  bias_grad_vec(output_size, 1, bias_grad.get_buffer(), output_size);
-
+    
     El::Fill(ones, one);
     El::Gemv(El::NORMAL,
              gradient_scale, out_grad_mat, ones,
              dst_scale, bias_grad_vec);
-
-    allreduce_gradients(bias_grad);
 
     return 0;
     }
