@@ -83,20 +83,17 @@ parse_prototext_filenames_from_command_line(
     if (! (optimizers.size() == 1 || optimizers.size() == n)) {
       LBANN_ERROR(
         "you specified ", n, " model filenames, and ", optimizers.size(), 
-        " optimizer filenames; you must specify either one or ", 
-       n, " optimizer filenames");
+        " optimizer filenames; you must specify 1 optimizer filenames");
     }
     if (! (readers.size() == 1 || readers.size() == n)) {
       LBANN_ERROR(
         "you specified ", n, " model filenames, and ", readers.size(),
-        " reader filenames; you must specify either one or ", n,
-        " reader filenames");
+        " reader filenames; you must specify 1 reader filenames");
     }
     if (! (data_set_metadata.size() == 0 || data_set_metadata.size() == 1 || data_set_metadata.size() == n)) {
       LBANN_ERROR(
         "you specified ", n, " model filenames, and ", data_set_metadata.size(),
-        " data set metadata filenames; you must specify either zero, one, or ",
-        n, " data set metadata filenames");
+        " data set metadata filenames; you must specify 1 data set metadata filenames");
     }
   }
 
