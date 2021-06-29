@@ -17,9 +17,6 @@ fi
 LBANN_HOME=$(dirname ${SCRIPTS_DIR})
 #SPACK_ENV_DIR=${LBANN_HOME}/spack_environments
 
-echo "Here is my path"
-echo "$PATH"
-
 SCRIPT=$(basename ${BASH_SOURCE})
 LBANN_ENV=
 INSTALL_DEPS=
@@ -482,9 +479,6 @@ if [[ ! -n "${SKIP_MODULES:-}" ]]; then
     fi
 fi
 
-echo "My updated path is ${PATH}"
-echo "I have cmake at $(which cmake)"
-
 # If the dependencies are being installed then you should clean things up
 if [[ -n "${INSTALL_DEPS:-}" ]]; then
     # Remove any old environment with the same name
@@ -721,9 +715,6 @@ if [[ ! -e "${SPACK_BUILD_DIR}" && -n "${TMP_BUILD_DIR:-}" && -z "${DRY_RUN:-}" 
     echo ${CMD}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 fi
-
-echo "Even in the environment I have cmake at $(which cmake)"
-spack -d build-env lbann
 
 ##########################################################################################
 # Actually install LBANN from local source
