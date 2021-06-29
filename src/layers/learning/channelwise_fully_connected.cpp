@@ -163,8 +163,8 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
   const auto& linearity_dims = layer.get_linearity_dims();
   dc::Shape linearity_shape(linearity_dims);
 
-  const auto shared_dist = dc::Dist::make_shared_distribution(linearity_shape);
-  
+  const auto shared_dist = dc::Dist::make_shared_distribution(
+     this->get_prev_error_signals_dist().get_locale_shape());
   m_linearity_gradient = make_unique<TensorDevType>(linearity_shape, loc, shared_dist);
 
   auto* linearity_optimizer = static_cast<data_type_optimizer<TensorDataType>*>(layer.get_weights(0).get_optimizer());
@@ -246,8 +246,6 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
 
   // TO DO: Check if input and output tensors are contiguous 
 
-  // const auto& local_linearity = dynamic_cast<const LocalMat&>(linearity.LockedMatrix());
-
   const auto local_mini_batch_size = linearity.Width();
 
   assert0(dc::tensor::View(
@@ -262,10 +260,9 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
 
   auto& linearity_gradient = linearity_optimizer->get_gradient_buffer(
       dst_scale, gradient_scale, true);
-
+  assert0(dc::tensor::View(*m_linear,linearity.LockedBuffer()));
   assert0(dc::tensor::View(*m_linearity_gradient, linearity_gradient.Buffer()));
 
- 
   m_linear_operator->backward_wrt_input(layer.m_transpose,
                                         this->get_prev_error_signals(),
                                         *m_linear,
@@ -282,7 +279,6 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
 
   if(layer.m_has_bias){
     auto* bias_optimizer = static_cast<data_type_optimizer<TensorDataType>*>(layer.get_weights(1).get_optimizer());
-
     if (bias_optimizer == nullptr) return;
     
     auto& bias_gradient = bias_optimizer->get_gradient_buffer(

@@ -53,8 +53,8 @@ namespace distconv{
             const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &linearity,
             tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output,
             int local_mini_batch_size){
-      const auto& one = El::TypeTraits<DataType>::One();
-        const auto& zero = El::TypeTraits<DataType>::Zero();
+    const auto& one = El::TypeTraits<DataType>::One();
+    const auto& zero = El::TypeTraits<DataType>::Zero();
 
     if (input.get_local_size() == 0){
       return 0; // no op for empty input
@@ -65,35 +65,31 @@ namespace distconv{
     const auto& input_size = std::accumulate(input_dims.begin(), input_dims.begin()+1, 1, std::multiplies<size_t>());
     const auto& output_size = std::accumulate(output_dims.begin(), output_dims.begin()+1, 1, std::multiplies<size_t>());
 
-
     const auto num_local_channels = output_dims[2];
 
-    util::MPIRootPrintStreamInfo()
-      << "input tensor. global_shape: "
-      << input.get_shape()
-      << ", local shape: " << input.get_local_shape()
-      << ", local real shape: " << input.get_local_real_shape()
-      << ", dist: " << input.get_distribution();
+    // util::MPIRootPrintStreamInfo()
+    //   << "input tensor. global_shape: "
+    //   << input.get_shape()
+    //   << ", local shape: " << input.get_local_shape()
+    //   << ", local real shape: " << input.get_local_real_shape()
+    //   << ", dist: " << input.get_distribution();
 
-    util::MPIRootPrintStreamInfo()
-      << "linearity tensor. global_shape: "
-      << linearity.get_shape()
-      << ", local shape: " << linearity.get_local_shape()
-      << ", local real shape: " << linearity.get_local_real_shape()
-      << ", dist: " << linearity.get_distribution();
+    // util::MPIRootPrintStreamInfo()
+    //   << "linearity tensor. global_shape: "
+    //   << linearity.get_shape()
+    //   << ", local shape: " << linearity.get_local_shape()
+    //   << ", local real shape: " << linearity.get_local_real_shape()
+    //   << ", dist: " << linearity.get_distribution();
 
-    util::MPIRootPrintStreamInfo()
-      << "output tensor. global_shape: "
-      << output.get_shape()
-      << ", local shape: " << output.get_local_shape()
-      << ", local real shape: " << output.get_local_real_shape()
-      << ", dist: " << output.get_distribution() << "\n local mini batch size: " << local_mini_batch_size
-      << "\n num local channels: " << num_local_channels
-      << "\n input_size: " << input_size
-      << "\n output_size: " << output_size;
-
-
-
+    // util::MPIRootPrintStreamInfo()
+    //   << "output tensor. global_shape: "
+    //   << output.get_shape()
+    //   << ", local shape: " << output.get_local_shape()
+    //   << ", local real shape: " << output.get_local_real_shape()
+    //   << ", dist: " << output.get_distribution() << "\n local mini batch size: " << local_mini_batch_size
+    //   << "\n num local channels: " << num_local_channels
+    //   << "\n input_size: " << input_size
+    //   << "\n output_size: " << output_size;
     // Check if buffer is not null possibly 
 
     if(!output.get_buffer() || output.get_buffer() == nullptr){
@@ -167,7 +163,7 @@ namespace distconv{
                          const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &linearity,
                          tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &input_grad,
                          int local_mini_batch_size ){
-      const auto& one = El::TypeTraits<DataType>:: One();
+    const auto& one = El::TypeTraits<DataType>:: One();
     const auto& zero = El::TypeTraits<DataType>:: Zero();
 
     const auto& input_dims = input_grad.get_local_shape();
@@ -178,10 +174,38 @@ namespace distconv{
     const auto& output_size = std::accumulate(output_dims.begin(), output_dims.begin()+1, 1, std::multiplies<size_t>());
 
     const auto num_local_channels = output_dims[2];
+    
+    util::MPIRootPrintStreamInfo()
+    << " Output Grad shapes :" << output_grad.get_shape() 
+    << " " << output_grad.get_local_shape()
+    << '\t' << output_grad.get_distribution()
+    << "\t Sanity check: " << output_size;
+
+    util::MPIRootPrintStreamInfo()
+    << " Input Graph shape : " << input_grad.get_shape()
+    << '\t' << input_grad.get_local_shape() 
+    << '\t' << input_grad.get_distribution()
+    << "\t Sanity check: " << input_size;
 
     El::Matrix<DataType, El::Device::GPU>  output_grad_mat(output_size, local_mini_batch_size*num_local_channels, output_grad.get_buffer(),output_size);
     El::Matrix<DataType, El::Device::GPU>  weights(output_size, input_size, linearity.get_buffer(), output_size);
     El::Matrix<DataType, El::Device::GPU>  input_grad_mat(input_size, local_mini_batch_size*num_local_channels, input_grad.get_buffer(), input_size);
+    
+    El::Matrix<DataType, El::Device::GPU> output_grad_mat_reshaped;
+
+    if (output_grad_mat.Contiguous()) {
+      output_grad_mat_reshaped.LockedAttach(
+      output_size,
+      local_mini_batch_size * num_local_channels,
+      output_grad_mat.LockedBuffer(),
+      output_size);
+    }
+    else {
+      El::Copy(output_grad_mat, output_grad_mat_reshaped);
+      output_grad_mat_reshaped.Resize(
+      output_size,
+      local_mini_batch_size * num_local_channels);
+    }
 
     El::Gemm(transpose_A ? El::NORMAL : El::TRANSPOSE,
              El::NORMAL,
@@ -231,7 +255,7 @@ namespace distconv{
     El::Matrix<DataType, El::Device::GPU>  linearity_grad_mat(output_size, input_size, linearity_grad.get_buffer(), output_size);
 
 
-    if(transpose){
+     if(transpose){
       El::Gemm(El::NORMAL, El::TRANSPOSE,
                gradient_scale, input_mat, output_grad_mat,
                dst_scale, linearity_grad_mat);

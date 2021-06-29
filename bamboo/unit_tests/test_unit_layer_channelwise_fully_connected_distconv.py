@@ -21,7 +21,7 @@ import tools
 # Data
 np.random.seed(20200113)
 _num_samples = 17
-_sample_dims = (8, 1, 3)
+_sample_dims = (4, 1, 1)
 _sample_size = functools.reduce(operator.mul, _sample_dims)
 _samples = np.ones((_num_samples, _sample_size)).astype(np.float32)
 _bias = np.random.normal(loc=0, size=(_sample_dims[0], 1, 1)).astype(np.float32)
@@ -100,7 +100,7 @@ def construct_model(lbann):
 
     # Input and output dimensions
     input_channel_dims = _sample_dims[1:]
-    output_channel_dims = (1, 10)
+    output_channel_dims = (1, 1)
     input_channel_size = functools.reduce(operator.mul, input_channel_dims)
     output_channel_size = functools.reduce(operator.mul, output_channel_dims)
 
@@ -173,6 +173,10 @@ def construct_model(lbann):
         error_on_failure=True,
         execution_modes='test'))
 
+    callbacks.append(lbann.CallbackDumpErrorSignals(basename="signals"))
+    callbacks.append(lbann.CallbackDumpGradients(basename="grads"))
+    callbacks.append(lbann.CallbackDumpOutputs(layers=tools.str_list(["bias"]), directory="outputs"))
+    '''
     # ------------------------------------------
     # Data-parallel distconv layout, non-transpose, no bias
     # ------------------------------------------
@@ -205,7 +209,7 @@ def construct_model(lbann):
         upper_bound=val_without_bias + tol,
         error_on_failure=True,
         execution_modes='test'))
-
+    '''
     # ------------------------------------------
     # Dump Outputs and weights
     # ------------------------------------------
@@ -217,7 +221,7 @@ def construct_model(lbann):
     # Gradient checking
     # ------------------------------------------
 
-    callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
+    # callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
 
     # ------------------------------------------
     # Construct model
