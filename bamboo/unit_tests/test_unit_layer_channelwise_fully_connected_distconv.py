@@ -23,8 +23,7 @@ np.random.seed(20200113)
 _num_samples = 17
 _sample_dims = (8, 1, 3)
 _sample_size = functools.reduce(operator.mul, _sample_dims)
-_samples = np.random.normal(size=(_num_samples, _sample_size)).astype(np.float32)
-_scale = np.random.normal(loc=1, size=(_sample_dims[0], 1, 1)).astype(np.float32)
+_samples = np.ones((_num_samples, _sample_size)).astype(np.float32)
 _bias = np.random.normal(loc=0, size=(_sample_dims[0], 1, 1)).astype(np.float32)
 
 
@@ -101,7 +100,7 @@ def construct_model(lbann):
 
     # Input and output dimensions
     input_channel_dims = _sample_dims[1:]
-    output_channel_dims = (1, 2)
+    output_channel_dims = (1, 10)
     input_channel_size = functools.reduce(operator.mul, input_channel_dims)
     output_channel_size = functools.reduce(operator.mul, output_channel_dims)
 
@@ -213,7 +212,7 @@ def construct_model(lbann):
 
     # callbacks.append(lbann.CallbackDumpOutputs(layers=tools.str_list(["bias", "no_bias"]), directory="outputs"))
 
-    # callbacks.append(lbann.CallbackDumpWeights(directory="outputs"))
+    #callbacks.append(lbann.CallbackDumpErrorSignals(directory="outputs"))
     # ------------------------------------------
     # Gradient checking
     # ------------------------------------------
@@ -274,5 +273,5 @@ def construct_data_reader(lbann):
 
 
 # Create test functions that can interact with PyTest
-for _test_func in tools.create_tests(setup_experiment, __file__):
+for _test_func in tools.create_tests(setup_experiment, __file__, environment=tools.get_distconv_environment()):
     globals()[_test_func.__name__] = _test_func
