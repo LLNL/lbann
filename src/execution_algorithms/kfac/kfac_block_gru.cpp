@@ -68,12 +68,14 @@ void kfac_block_gru<El::Device::GPU>::on_forward_prop_end() {
   if(m_reserve_space_fwd.size() != reserve_space.size())
     m_reserve_space_fwd.allocate(reserve_space.size());
   const auto& sync_info = this->get_sync_info();
-  CHECK_CUDA(cudaMemcpyAsync(
+  gpu_lib::mem
+  /*CHECK_CUDA(cudaMemcpyAsync(
       m_reserve_space_fwd.data(),
       reserve_space.data(),
       reserve_space.size(),
       cudaMemcpyDeviceToDevice,
       sync_info.Stream()));
+      */
 }
 #endif // LBANN_HAS_GPU
 
@@ -520,7 +522,7 @@ template <>
 void kfac_block_gru<El::Device::GPU>::check_dnn_lib_spec() const {
 #ifdef LBANN_HAS_DNN_LIB
   const auto math_type = dnn_lib::get_default_convolution_math_type();
-  if(math_type != CUDNN_DEFAULT_MATH) {
+  if(math_type != dnn_lib::DNN_DEFAULT_MATH) {
     std::stringstream ss;
     ss << "The structure of cuDNN's reserve space might not be"
        << " what the GRU K-FAC implementation expects when Tensor Cores are enabled.";

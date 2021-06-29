@@ -140,6 +140,14 @@ void copy_tensor(
   TensorDataType* output,
   const std::vector<size_t>& output_strides);
 
+template <typename TensorDataType>
+void mem_copy_async(
+  TensorDataType* output,
+  const TensorDataType* input,
+  const std::vecotr<size_t>& dims,
+  hipMemcpyKind kind,
+  hipStream_t stream);
+
 // -------------------------------------------------------------
 // Utilities for Thrust
 // -------------------------------------------------------------

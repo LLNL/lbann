@@ -113,6 +113,7 @@ constexpr dnnMathType_t DNN_DEFAULT_MATH = CUDNN_DEFAULT_MATH;
 constexpr dnnTensorFormat_t DNN_TENSOR_NCHW = CUDNN_TENSOR_NCHW;
 constexpr dnnRNGType_t DNN_RNG_PSEUDO_XORWOW = 0;
 constexpr dnnLRNMode_t DNN_LRN_CROSS_CHANNEL = CUDNN_LRN_CROSS_CHANNEL_DIM1;
+constexpr dnnMathType_t DNN_TENSOR_OP_MATH_ALLOW_CONVERSION = CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION;
 
 ////////////////////////////////////////////////////////////
 // Functions for to/from cuDNN types conversion
