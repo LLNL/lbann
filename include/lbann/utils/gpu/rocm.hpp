@@ -96,6 +96,8 @@
 namespace lbann {
 namespace rocm {
 
+constexpr hipMemcpyKind GPU_MEMCPY_DEVICE_TO_DEVICE = hipMemcpyDeviceToDevice;
+
 // -------------------------------------------------------------
 // Wrapper classes
 // -------------------------------------------------------------
@@ -140,11 +142,10 @@ void copy_tensor(
   TensorDataType* output,
   const std::vector<size_t>& output_strides);
 
-template <typename TensorDataType>
 void mem_copy_async(
-  TensorDataType* output,
-  const TensorDataType* input,
-  const std::vecotr<size_t>& dims,
+  void* output,
+  const void* input,
+  const size_t count,
   hipMemcpyKind kind,
   hipStream_t stream);
 

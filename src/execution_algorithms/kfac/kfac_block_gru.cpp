@@ -27,6 +27,7 @@
 
 #include "lbann/execution_algorithms/kfac/kfac_block_gru.hpp"
 #include "lbann/execution_algorithms/kfac/kfac_util.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 
 namespace lbann {
 
@@ -68,7 +69,12 @@ void kfac_block_gru<El::Device::GPU>::on_forward_prop_end() {
   if(m_reserve_space_fwd.size() != reserve_space.size())
     m_reserve_space_fwd.allocate(reserve_space.size());
   const auto& sync_info = this->get_sync_info();
-  gpu_lib::mem
+  gpu_lib::mem_copy_async(
+      m_reserve_space_fwd.data(),
+      reserve_space.data(),
+      reserve_space.size(),
+      gpu_lib::GPU_MEMCPY_DEVICE_TO_DEVICE,
+      sync_info.Stream());
   /*CHECK_CUDA(cudaMemcpyAsync(
       m_reserve_space_fwd.data(),
       reserve_space.data(),
