@@ -50,12 +50,6 @@
 
 namespace lbann {
 
-#ifdef LBANN_HAS_GPU
-  constexpr static const El::Device Device = El::Device::GPU;
-#else
-  constexpr static const El::Device Device = El::Device::CPU;
-#endif // LBANN_HAS_GPU
-
 /// @todo Initialize properly
 KFAC::KFAC(
   std::string name,
