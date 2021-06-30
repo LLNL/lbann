@@ -26,11 +26,10 @@
 #ifndef LBANN_LAYERS_OPERATOR_LAYER_HPP_INCLUDED
 #define LBANN_LAYERS_OPERATOR_LAYER_HPP_INCLUDED
 
-#include "lbann/base.hpp"
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/layers/layer.hpp"
 #include "lbann/operators/operator.hpp"
-#include "lbann/utils/description.hpp"
-#include "lbann/utils/exception.hpp"
+#include "lbann/utils/describable.hpp"
 #include "lbann/utils/tensor.hpp"
 
 #include <algorithm>
@@ -44,118 +43,44 @@ class OperatorLayer : public data_type_layer<InputT, OutputT>
 {
 private:
   using DataTypeLayer = data_type_layer<InputT, OutputT>;
-  using OperatorPtr = std::unique_ptr<Operator<InputT, OutputT, D>>;
+  using OperatorType = Operator<InputT, OutputT, D>;
+  using OperatorPtr = std::unique_ptr<OperatorType>;
 
 private:
   std::vector<OperatorPtr> m_ops;
 
 public:
-  OperatorLayer(lbann_comm& comm, OperatorPtr op)
-    : DataTypeLayer(&comm)
-  {
-    m_ops.reserve(1);
-    m_ops.emplace_back(std::move(op));
-  }
-  OperatorLayer(lbann_comm& comm, std::vector<OperatorPtr> operators)
-    : DataTypeLayer(&comm), m_ops{std::move(operators)}
-  {
-    LBANN_ASSERT(m_ops.size() == 1UL); // For starters.
-  }
-  OperatorLayer(OperatorLayer const& other)
-    : DataTypeLayer(other), m_ops{clone_ops(other.m_ops)}
-  {}
+  OperatorLayer(lbann_comm& comm, OperatorPtr op);
+  OperatorLayer(lbann_comm& comm, std::vector<OperatorPtr> operators);
+  OperatorLayer(OperatorLayer const& other);
 
   ~OperatorLayer() = default;
 
-  OperatorLayer* copy() const override
-  {
-    return new OperatorLayer<InputT, OutputT, Layout, D>(*this);
-  }
-  std::string get_type() const override { return "operator"; }
-  data_layout get_data_layout() const override { return Layout; }
-  El::Device get_device_allocation() const override { return D; }
+  OperatorLayer* copy() const override;
+  std::string get_type() const override;
+  data_layout get_data_layout() const override;
+  El::Device get_device_allocation() const override;
 
-  void fp_compute() override
-  {
-    return m_ops[0]->fp_compute(this->get_inputs(), this->get_outputs());
-  }
+  void fp_compute() override;
+  void bp_compute() override;
 
-  void bp_compute() override
-  {
-    return m_ops[0]->bp_compute(this->get_inputs(),
-                                this->get_grad_wrt_outputs(),
-                                this->get_grad_wrt_inputs());
-  }
-
-  description get_description() const override
-  {
-    auto desc = DataTypeLayer::get_description();
-    for (auto const& op : m_ops)
-      desc.add(op->get_description());
-    return desc;
-  }
+  description get_description() const override;
 
 private:
-  static auto clone_ops(std::vector<OperatorPtr> const& ops)
-  {
-    std::vector<OperatorPtr> out;
-    out.reserve(ops.size());
-    for (auto const& x : ops) {
-      out.emplace_back(x->clone());
-    }
-    return out;
-  }
+  static std::vector<OperatorPtr>
+  clone_ops(std::vector<OperatorPtr> const& ops);
 
-  static auto fix_type(std::vector<int> const& in)
-  {
-    return std::vector<size_t>{cbegin(in), cend(in)};
-  }
+  static std::vector<size_t> fix_type(std::vector<int> const& in);
 
-  std::vector<utils::ConstDistTensorView<InputT, D>> get_inputs() const
-  {
-    auto n_parents = this->get_num_parents();
-    std::vector<utils::ConstDistTensorView<InputT, D>> out;
-    out.reserve(n_parents);
-    for (int p = 0; p < n_parents; ++p)
-      out.emplace_back(this->get_prev_activations(p),
-                       fix_type(this->get_input_dims(p)));
-    return out;
-  }
-  std::vector<utils::DistTensorView<OutputT, D>> get_outputs()
-  {
-    auto n_children = this->get_num_children();
-    std::vector<utils::DistTensorView<OutputT, D>> out;
-    out.reserve(n_children);
-    for (int c = 0; c < n_children; ++c)
-      out.emplace_back(this->get_activations(c),
-                       fix_type(this->get_output_dims(c)));
-    return out;
-  }
-
+  std::vector<utils::ConstDistTensorView<InputT, D>> get_inputs() const;
+  std::vector<utils::DistTensorView<OutputT, D>> get_outputs();
   std::vector<utils::ConstDistTensorView<OutputT, D>>
-  get_grad_wrt_outputs() const
-  {
-    auto n_children = this->get_num_children();
-    std::vector<utils::ConstDistTensorView<OutputT, D>> out;
-    out.reserve(n_children);
-    for (int c = 0; c < n_children; ++c)
-      out.emplace_back(this->get_prev_error_signals(c),
-                       fix_type(this->get_output_dims(c)));
-    return out;
-  }
-
-  std::vector<utils::DistTensorView<InputT, D>> get_grad_wrt_inputs()
-  {
-    auto n_parents = this->get_num_parents();
-    std::vector<utils::DistTensorView<InputT, D>> out;
-    out.reserve(n_parents);
-    for (int p = 0; p < n_parents; ++p)
-      out.emplace_back(this->get_error_signals(p),
-                       fix_type(this->get_input_dims(p)));
-    return out;
-  }
+  get_grad_wrt_outputs() const;
+  std::vector<utils::DistTensorView<InputT, D>> get_grad_wrt_inputs();
 
 }; // class OperatorLayer
+
+LBANN_DEFINE_LAYER_BUILDER(operator);
 
 } // namespace lbann
 #endif // LBANN_LAYERS_OPERATOR_LAYER_HPP_INCLUDED

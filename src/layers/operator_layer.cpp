@@ -23,14 +23,16 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
-#include "lbann/layers/operator_layer.hpp"
-#include "lbann/base.hpp"
+
+#define LBANN_INSTANTIATE_OPERATOR_LAYER
+#include "lbann/layers/operator_layer_impl.hpp"
 
 namespace lbann {
 
-template class OperatorLayer<float,
-                             float,
-                             data_layout::DATA_PARALLEL,
-                             El::Device::CPU>;
+#define PROTO_DEVICE(T, D)                                                     \
+  template class OperatorLayer<T, T, data_layout::DATA_PARALLEL, D>;           \
+  template class OperatorLayer<T, T, data_layout::MODEL_PARALLEL, D>
+
+#include "lbann/macros/instantiate_device.hpp"
 
 } // namespace lbann
