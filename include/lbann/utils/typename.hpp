@@ -28,6 +28,9 @@
 #define LBANN_UTILS_TYPENAME_HPP_INCLUDED
 
 #include <lbann_config.hpp>
+
+#include "lbann/base.hpp"
+
 #include <complex>
 #include <string>
 #include <typeinfo>
