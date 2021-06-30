@@ -126,23 +126,23 @@ protected:
     }
 #endif // LBANN_HAS_DISTCONV
     auto& output = this->get_activations();
-    auto parents = this->get_parent_layers(); 
+    auto parents = this->get_parent_layers();
 
 
     if(this->is_subgraph_parallelism_enabled() && this->get_parallel_strategy().enable_subgraph==1)
     {
       auto subgrid_tags = (*this->m_parent_tags);
       int tag=0;
-      
+
       std::vector<bool> is_initialized_tensor(this->m_num_spliting_groups, false);
 
-      //Copy data internally with same branch tag 
+      //Copy data internally with same branch tag
       for (int i = 0; i < this->get_num_parents(); ++i) {
         tag = subgrid_tags[i];
 
         if(is_initialized_tensor[tag])
         {
-          
+
           if(this->get_prev_activations(i).Participating())
           {
             El::Axpy(DataType(1), this->get_prev_activations(i),
@@ -160,7 +160,7 @@ protected:
         }
       }
 
-      // copy and add data from reduced gradients from same branch 
+      // copy and add data from reduced gradients from same branch
 
       if(this->get_communication_flag()==2)
       //If vector is enabled copy data using allreduce operation from aggregated subgrids to the output
@@ -187,14 +187,14 @@ protected:
 
         for(int i = 1; i < this->m_num_spliting_groups; i++)
         {
-          
+
           El::Copy( this->get_branch_tag_input(i), this->get_temp_grad());
           El::Axpy(DataType(1), this->get_temp_grad(),
                    output);
         }
 
       }
-    } //if subgraph parallelism is enabled 
+    } //if subgraph parallelism is enabled
     else
     {
       El::Copy(this->get_prev_activations(0), output);
@@ -219,7 +219,7 @@ protected:
     // Initialize output tensors
     for (int i = 0; i < this->get_num_children(); ++i) {
 #ifdef LBANN_HAS_DISTCONV
-    if (!keep_original_outputs(i)) continue;
+    if (!this->keep_original_outputs(i)) continue;
 #endif // LBANN_HAS_DISTCONV
 
       auto& output = this->get_activations(i);
@@ -233,12 +233,12 @@ protected:
   void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override {
     int tag= 0 ;
     const auto& gradient_wrt_output = this->get_prev_error_signals();
-    
+
 
     if(this->is_subgraph_parallelism_enabled() && this->get_parallel_strategy().enable_subgraph==1)
     {
       auto subgrid_tags = (*this->m_parent_tags);
-      
+
       if(this->get_communication_flag())
       //If vector copy is enable, broadcast the gradients from parent grid to multiple subgrids
       {
@@ -253,7 +253,7 @@ protected:
       else{
         for(int i = 0; i < this->m_num_spliting_groups; i++)
         {
-          
+
           El::Copy( gradient_wrt_output, this->get_branch_tag_input(i));
         }
 
@@ -261,15 +261,15 @@ protected:
 
       for (int i = 0; i < this->get_num_parents(); ++i) {
         tag = subgrid_tags[i];
-        
+
         El::LockedView(this->get_error_signals(i), this->get_branch_tag_input(tag));
-        
+
       }
-    } 
+    }
     else
     {
       for (int i = 0; i < this->get_num_parents(); ++i) {
-        
+
         El::LockedView(this->get_error_signals(i), gradient_wrt_output);
       }
     }
