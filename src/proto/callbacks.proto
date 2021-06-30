@@ -81,11 +81,8 @@ message Callback {
     CallbackDumpModelGraph dump_model_graph = 49;
     CallbackPerturbLearningRate perturb_learning_rate = 50;
     CallbackComputeModelSize compute_model_size = 51;
-<<<<<<< HEAD
     CallbackKFAC kfac = 52;
     CallbackPerturbWeights perturb_weights = 53;
-=======
->>>>>>> cedf56dfc7ca6379440fafb0c282953fd1d4e543
   }
 
   message CallbackLTFB {
@@ -413,7 +410,6 @@ message Callback {
     int64 batch_interval = 2;
   }
 
-<<<<<<< HEAD
   message CallbackKFAC {
     // Space-separated pairs of the initial and the target damping value.
     // If only one value is specified, it will be used throughout training.
@@ -453,7 +449,4 @@ message Callback {
     string output_name = 1;
     int64 batch_interval = 2;
   }
-
-=======
->>>>>>> cedf56dfc7ca6379440fafb0c282953fd1d4e543
 }
