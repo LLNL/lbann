@@ -81,7 +81,7 @@ private:
 
 // Builder function
 std::unique_ptr<callback_base>
-build_perturb_weight_callback_from_pbuf(
+build_perturb_weights_callback_from_pbuf(
   const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
 
 } // namespace callback
