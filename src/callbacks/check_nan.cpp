@@ -156,6 +156,8 @@ struct DumpWeightsFunctor : DefaultErrorReporter
   }
 }; // struct DumpWeightsFunctor
 
+template <typename T> using SingleTypeDataTypeLayer = data_type_layer<T, T>;
+
 /** Dump the local network matrices for debugging.
  *  Dump only the local matrices because not every rank will
  *  necessarily have bad data, and the check is purely local.
@@ -165,7 +167,8 @@ void dump_network(model *m) {
 
   const auto& c = dynamic_cast<sgd_execution_context&>(m->get_execution_context());
   for (auto* l : m->get_layers()) {
-    using LayerTypes = h2::meta::tlist::ExpandTL<data_type_layer, ValidFPTypes>;
+    using LayerTypes = h2::meta::tlist::ExpandTL<SingleTypeDataTypeLayer,
+                                                           ValidFPTypes>;
     using Dispatcher = h2::multimethods::SwitchDispatcher<DumpLayerFunctor,
                                                           void,
                                                           Layer,
