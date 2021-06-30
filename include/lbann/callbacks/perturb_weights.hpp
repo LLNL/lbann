@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_CALLBACKS_CALLBACK_PERTURB_WEIGHT_HPP_INCLUDED
-#define LBANN_CALLBACKS_CALLBACK_PERTURB_WEIGHT_HPP_INCLUDED
+#ifndef LBANN_CALLBACKS_CALLBACK_PERTURB_WEIGHTS_HPP_INCLUDED
+#define LBANN_CALLBACKS_CALLBACK_PERTURB_WEIGHTS_HPP_INCLUDED
 
 #include "lbann/callbacks/callback.hpp"
 #include "lbann/weights/weights.hpp"
