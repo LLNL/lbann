@@ -30,22 +30,10 @@
 #include "lbann/operators/math/math_builders.hpp"
 #include "lbann/operators/operator.hpp"
 
-#define LBANN_ETI_SINGLE_TYPE_OPERATOR_FACTORY(TYPE, DEVICE)                   \
-  template lbann::proto::OperatorFactory<TYPE, TYPE, DEVICE>&                  \
-  lbann::proto::get_operator_factory()
-
-LBANN_ETI_SINGLE_TYPE_OPERATOR_FACTORY(float, El::Device::CPU);
-LBANN_ETI_SINGLE_TYPE_OPERATOR_FACTORY(double, El::Device::CPU);
-
-#ifdef LBANN_HAS_HALF
-LBANN_ETI_SINGLE_TYPE_OPERATOR_FACTORY(lbann::cpu_fp16, El::Device::CPU);
-#endif
-
-#ifdef LBANN_HAS_GPU
-LBANN_ETI_SINGLE_TYPE_OPERATOR_FACTORY(float, El::Device::GPU);
-LBANN_ETI_SINGLE_TYPE_OPERATOR_FACTORY(double, El::Device::GPU);
-
-#ifdef LBANN_HAS_HALF
-LBANN_ETI_SINGLE_TYPE_OPERATOR_FACTORY(lbann::fp16, El::Device::GPU);
-#endif
-#endif // LBANN_HAS_GPU
+namespace lbann {
+#define PROTO_DEVICE(T, D)                                                     \
+  template proto::OperatorFactory<T, T, D>& proto::get_operator_factory();     \
+  template std::unique_ptr<Operator<T, T, D>> proto::construct_operator(       \
+    lbann_data::Operator const& msg)
+#include <lbann/macros/instantiate_device.hpp>
+} // namespace lbann

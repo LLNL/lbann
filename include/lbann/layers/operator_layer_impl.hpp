@@ -26,7 +26,13 @@
 #ifndef LBANN_LAYERS_OPERATOR_LAYER_IMPL_HPP_INCLUDED
 #define LBANN_LAYERS_OPERATOR_LAYER_IMPL_HPP_INCLUDED
 
+#include "lbann/proto/factories.hpp"
+#include "lbann/proto/operator_factory.hpp"
+#include "lbann/utils/exception.hpp"
 #include "operator_layer.hpp"
+
+#include <layers.pb.h>
+#include <memory>
 
 namespace lbann {
 
@@ -47,6 +53,7 @@ OperatorLayer<InputT, OutputT, Layout, D>::OperatorLayer(
 {
   LBANN_ASSERT(m_ops.size() == 1UL); // For starters.
 }
+
 template <typename InputT, typename OutputT, data_layout Layout, El::Device D>
 OperatorLayer<InputT, OutputT, Layout, D>::OperatorLayer(
   OperatorLayer const& other)
@@ -172,13 +179,53 @@ OperatorLayer<InputT, OutputT, Layout, D>::get_grad_wrt_inputs()
   return out;
 }
 
+} // namespace lbann
+
+template <typename InputT,
+          typename OutputT,
+          lbann::data_layout Layout,
+          El::Device D>
+auto lbann::build_operator_layer_from_pbuf(lbann_comm* comm,
+                                           lbann_data::Layer const& msg)
+  -> std::unique_ptr<Layer>
+{
+  using LayerType = OperatorLayer<InputT, OutputT, Layout, D>;
+  using OperatorType = Operator<InputT, OutputT, D>;
+  using OperatorPtr = std::unique_ptr<OperatorType>;
+
+  LBANN_ASSERT((bool)comm); // Sanity check
+
+  // Build up the list of operators for this layer.
+  auto const& params = msg.operator_layer();
+
+  auto const num_ops = params.ops_size();
+  std::vector<OperatorPtr> ops;
+  ops.reserve(num_ops);
+  for (int ii = 0; ii < num_ops; ++ii) {
+    ops.emplace_back(
+      proto::construct_operator<InputT, OutputT, D>(params.ops(ii)));
+  }
+  return std::make_unique<LayerType>(*comm, std::move(ops));
+}
+
 #ifndef LBANN_INSTANTIATE_OPERATOR_LAYER
+namespace lbann {
 
 #define PROTO_DEVICE(T, D)                                                     \
   extern template class OperatorLayer<T, T, data_layout::DATA_PARALLEL, D>;    \
-  extern template class OperatorLayer<T, T, data_layout::MODEL_PARALLEL, D>
+  extern template class OperatorLayer<T, T, data_layout::MODEL_PARALLEL, D>;   \
+  extern template std::unique_ptr<Layer>                                       \
+  build_operator_layer_from_pbuf<T, T, data_layout::DATA_PARALLEL, D>(         \
+    lbann_comm*,                                                               \
+    lbann_data::Layer const&);                                                 \
+  extern template std::unique_ptr<Layer>                                       \
+  build_operator_layer_from_pbuf<T, T, data_layout::MODEL_PARALLEL, D>(        \
+    lbann_comm*,                                                               \
+    lbann_data::Layer const&)
+
 #include "lbann/macros/instantiate_device.hpp"
 
-#endif // LBANN_INSTANTIATE_OPERATOR_LAYER
 } // namespace lbann
+#endif // LBANN_INSTANTIATE_OPERATOR_LAYER
+
 #endif // LBANN_LAYERS_OPERATOR_LAYER_IMPL_HPP_INCLUDED

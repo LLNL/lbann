@@ -23,11 +23,17 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
+#ifndef LBANN_PROTO_OPERATOR_FACTORY_IMPL_HPP_INCLUDED
+#define LBANN_PROTO_OPERATOR_FACTORY_IMPL_HPP_INCLUDED
 
+#include "lbann/proto/factories.hpp"
 #include "lbann/proto/operator_factory.hpp"
 
 #include "lbann/operators/math/math_builders.hpp"
 #include "lbann/operators/operator.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
+#include "lbann/proto/helpers.hpp"
+#include "lbann_config.hpp"
 
 namespace lbann {
 namespace proto {
@@ -49,9 +55,32 @@ OperatorFactory<InT, OutT, D> build_default_factory()
 } // namespace lbann
 
 template <typename InT, typename OutT, El::Device D>
-lbann::proto::OperatorFactory<InT, OutT, D>&
-lbann::proto::get_operator_factory()
+auto lbann::proto::get_operator_factory() -> OperatorFactory<InT, OutT, D>&
 {
   static auto factory = details::build_default_factory<InT, OutT, D>();
   return factory;
 }
+
+template <typename InputT, typename OutputT, El::Device D>
+auto lbann::proto::construct_operator(lbann_data::Operator const& msg)
+  -> std::unique_ptr<Operator<InputT, OutputT, D>>
+{
+  LBANN_ASSERT(ProtoDataType<InputT> == msg.input_datatype());
+  LBANN_ASSERT(ProtoDataType<OutputT> == msg.output_datatype());
+  LBANN_ASSERT(ProtoDevice<D> == msg.device_allocation());
+
+  auto const name = proto::helpers::message_type(msg.parameters());
+  return get_operator_factory<InputT, OutputT, D>().create_object(name, msg);
+}
+
+#ifndef LBANN_INSTANTIATE_DEFAULT_OPERATOR_FACTORIES
+namespace lbann {
+#define PROTO_DEVICE(T, DEVICE)                                             \
+  extern template proto::OperatorFactory<T, T, DEVICE>&                  \
+  proto::get_operator_factory();                                               \
+  extern template std::unique_ptr<Operator<T, T, DEVICE>>                \
+  proto::construct_operator(lbann_data::Operator const& msg)
+#include <lbann/macros/instantiate_device.hpp>
+} // namespace lbann
+#endif //  LBANN_INSTANTIATE_DEFAULT_OPERATOR_FACTORIES
+#endif // LBANN_PROTO_OPERATOR_FACTORY_IMPL_HPP_INCLUDED

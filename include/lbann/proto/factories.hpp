@@ -93,8 +93,8 @@ std::unique_ptr<Layer> construct_layer(
 
 /** Construct an operator specified with prototext. */
 template <typename InputT, typename OutputT, El::Device D>
-std::unique_ptr<Operator<InputT, OutputT, D>> construct_operator(
-  const lbann_data::Operator& proto_operator);
+auto construct_operator(const lbann_data::Operator& proto_operator)
+  -> std::unique_ptr<Operator<InputT, OutputT, D>>;
 
 /** Construct weights specified with prototext. */
 std::unique_ptr<weights> construct_weights(

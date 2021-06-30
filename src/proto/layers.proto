@@ -31,6 +31,7 @@ package lbann_data;
 import "google/protobuf/wrappers.proto";
 
 import "datatype.proto";
+import "operators.proto";
 
 // Lives here because it's used by both Convolution and
 // Deconvolution.
@@ -66,7 +67,7 @@ message Layer {
     Input input = 2;
 
     // Operator layers
-    Doer doer = 701;
+    OperatorLayer operator_layer = 701; // Name chosen to avoid collision
 
     // Transform layers
     Reshape reshape = 306;
@@ -218,9 +219,11 @@ message Layer {
   }
 
   ///////////////////////
-  // Operator layers       //
+  // Operator layers   //
   ///////////////////////
-  message Doer {}
+  message OperatorLayer {
+    repeated Operator ops = 1;
+  }
 
   ///////////////////////
   // Math layers       //

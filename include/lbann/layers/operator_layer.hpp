@@ -80,7 +80,9 @@ private:
 
 }; // class OperatorLayer
 
-LBANN_DEFINE_LAYER_BUILDER(operator);
+template <typename InputT, typename OutputT, data_layout Layout, El ::Device Device>
+std::unique_ptr<Layer>
+build_operator_layer_from_pbuf(lbann_comm*, lbann_data::Layer const&);
 
 } // namespace lbann
 #endif // LBANN_LAYERS_OPERATOR_LAYER_HPP_INCLUDED

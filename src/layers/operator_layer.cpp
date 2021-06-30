@@ -31,7 +31,15 @@ namespace lbann {
 
 #define PROTO_DEVICE(T, D)                                                     \
   template class OperatorLayer<T, T, data_layout::DATA_PARALLEL, D>;           \
-  template class OperatorLayer<T, T, data_layout::MODEL_PARALLEL, D>
+  template class OperatorLayer<T, T, data_layout::MODEL_PARALLEL, D>;          \
+  template std::unique_ptr<Layer>                                              \
+  build_operator_layer_from_pbuf<T, T, data_layout::DATA_PARALLEL, D>(         \
+    lbann_comm*,                                                               \
+    lbann_data::Layer const&);                                                 \
+  template std::unique_ptr<Layer>                                              \
+  build_operator_layer_from_pbuf<T, T, data_layout::MODEL_PARALLEL, D>(        \
+    lbann_comm*,                                                               \
+    lbann_data::Layer const&)
 
 #include "lbann/macros/instantiate_device.hpp"
 
