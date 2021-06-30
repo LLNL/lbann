@@ -125,9 +125,6 @@ protected:
       LBANN_ERROR("cross_grid_sum_slice layer: last dimension should be "
                   "divided by the number of branches in subgraph");
 
-    int const num_row_elements =
-      last_dim_start_point * (last_dim / subgrid_comm_size);
-
     int const last_dim_index = int(last_dim / subgrid_comm_size) *
                                subgrid_comm_rank;
 
