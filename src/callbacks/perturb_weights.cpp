@@ -89,8 +89,7 @@ void perturb_weights::perturbed(model& m){
   auto& gen = get_generator();
   std::normal_distribution<DataType> dist(zero, one);
   
-  //size_t perturbed_weight = 0; //size_t  
-  
+   
   for (auto* w : m.get_weights()) {
     if (w == nullptr) {
       LBANN_ERROR("callback \"", name(), "\" "
@@ -126,7 +125,7 @@ void perturb_weights::perturbed(model& m){
 	                std::cout << "Trainer [ " << m.get_comm()->get_trainer_rank() << " ], Step " << m.get_execution_context().get_step();
 		        std::cout << "Weight " << val << " Perturbed weight  " <<  perturbed_val << std::endl;
 		
-			//
+			// cast local value back
 			auto& new_values_2 = dynamic_cast<El::AbstractDistMatrix<DataType>&>(local_values);
 		
 			// Communicate new weight from trainer master processes
