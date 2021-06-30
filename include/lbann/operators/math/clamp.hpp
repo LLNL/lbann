@@ -79,7 +79,8 @@ class ClampOperator : public Cloneable<ClampOperator<DataT, D>,
   ///@}
 
 public:
-  ClampOperator(DataT min, DataT max) : m_min(min), m_max(max)
+  ClampOperator(double min, double max)
+    : m_min{El::To<DataT>(min)}, m_max{El::To<DataT>(max)}
   {
     LBANN_ASSERT(CompareType(m_min) <= CompareType(m_max));
   }
