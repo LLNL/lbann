@@ -228,7 +228,7 @@ inline miopenPoolingMode_t to_miopen(pooling_mode m)
   {
   case pooling_mode::MAX: return miopenPoolingMax;
 #ifdef LBANN_DETERMINISTIC
-    LBANN_ERROR("Deterministic max pooling mode not supported in MIOpen");
+    LBANN_WARNING("Deterministic max pooling mode not supported in MIOpen");
     return miopenPoolingMax;
 #else
     return miopenPoolingMax;
@@ -236,7 +236,7 @@ inline miopenPoolingMode_t to_miopen(pooling_mode m)
   case pooling_mode::AVERAGE_COUNT_INCLUDE_PADDING: return miopenPoolingAverageInclusive;
   case pooling_mode::AVERAGE_COUNT_EXCLUDE_PADDING: return miopenPoolingAverage;
   case pooling_mode::MAX_DETERMINISTIC:
-    LBANN_ERROR("Deterministic max pooling mode not supported in MIOpen");
+    LBANN_WARNING("Deterministic max pooling mode not supported in MIOpen");
     return miopenPoolingMax;
   default:
     LBANN_ERROR("Invalid pooling mode requested");
