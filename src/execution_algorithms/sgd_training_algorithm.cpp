@@ -83,6 +83,13 @@ void sgd_training_algorithm::train(sgd_execution_context& c,
                                    data_coordinator& dc,
                                    sgd_termination_criteria const& term)
 {
+  // Setup a "training-global" validation context:
+  using ValidationContext = sgd_execution_context;
+  ValidationContext evaluation_context(
+    execution_mode::validation,
+    dc.get_mini_batch_size(execution_mode::validation));
+  size_t num_validation_epochs = 1UL;
+
   // Initialize some state so it knows we're training now.
   c.set_execution_mode(execution_mode::training);
   model.reset_mode(c, execution_mode::training);
@@ -120,21 +127,12 @@ void sgd_training_algorithm::train(sgd_execution_context& c,
       // "evaluation policy" or something of that nature, ideally with
       // its own context that we needn't know about.
       if (dc.is_execution_mode_valid(execution_mode::validation)) {
-        sgd_execution_context evaluation_context(
-          execution_mode::validation,
-          dc.get_mini_batch_size(execution_mode::validation));
-        // FIXME (trb 05/05/2021): This hacks around a bad assumption
-        // in the data store.
-        size_t num_validation_epochs = 1UL;
-        if (c.get_epoch() > 1UL) {
-          evaluation_context.inc_epoch();
-          ++num_validation_epochs;
-        }
         evaluate(evaluation_context,
                  model,
                  dc,
                  execution_mode::validation,
                  epoch_termination_criteria(num_validation_epochs));
+        ++num_validation_epochs;
 
         // FIXME (trb 06/07/21): The early stopping callback is part
         // of the evaluation callbacks but it's meant to affect
