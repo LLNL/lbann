@@ -25,10 +25,17 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/operators/operator.hpp"
+#include <memory>
 
-namespace lbann
-{
+// Forward declaration
+namespace lbann_data {
+class Operator;
+} // namespace lbann_data
 
-LBANN_DEFINE_OPERATOR_BUILDER(clamp);
+namespace lbann {
 
-}// namespace lbann
+template <typename DataT, El::Device D>
+std::unique_ptr<Operator<DataT, DataT, D>>
+build_clamp_operator(lbann_data::Operator const& op);
+
+} // namespace lbann

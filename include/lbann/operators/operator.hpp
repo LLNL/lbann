@@ -65,9 +65,9 @@
 /** @brief A utility macro for easily adding ETI for operator builders
  *  @note Must be called inside lbann namespace.
  */
-#define LBANN_OPERATOR_BUILDER_ETI(OPERATOR_NAME, T, D)                        \
+#define LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(OPERATOR_NAME, T, D)            \
   template std::unique_ptr<Operator<T, T, D>>                                  \
-    build_##OPERATOR_NAME##_operator<T, T, D>(lbann_data::Operator const&)
+    build_##OPERATOR_NAME##_operator<T, D>(lbann_data::Operator const&)
 
 namespace lbann {
 
@@ -146,7 +146,8 @@ public:
   /** @brief Get the description of the operator. */
   Description get_description() const override;
 
-  void write_proto(google::protobuf::Message& msg) const override {
+  void write_proto(google::protobuf::Message& msg) const final
+  {
     lbann_data::Operator operator_msg;
     operator_msg.set_input_datatype(proto::ProtoDataType<InputT>);
     operator_msg.set_output_datatype(proto::ProtoDataType<OutputT>);
@@ -172,8 +173,9 @@ public:
    *  @details Given the input tensors, the output tensors are
    *           populated with computed values.
    */
-  virtual void fp_compute(std::vector<ConstInputTensorType> const& inputs,
-                          std::vector<OutputTensorType>& outputs) const = 0;
+  virtual void
+  fp_compute(std::vector<ConstInputTensorType> const& inputs,
+             std::vector<OutputTensorType> const& outputs) const = 0;
 
   // ===========================================================
   // Back prop compute function
@@ -187,7 +189,7 @@ public:
   virtual void
   bp_compute(std::vector<ConstInputTensorType> const& inputs,
              std::vector<ConstOutputTensorType> const& gradient_wrt_outputs,
-             std::vector<InputTensorType>& gradient_wrt_inputs) const {};
+             std::vector<InputTensorType> const& gradient_wrt_inputs) const {};
 
 protected:
   Operator(Operator&& other) noexcept = default;

@@ -83,8 +83,11 @@ public:
   {
     LBANN_ASSERT(CompareType(m_min) <= CompareType(m_max));
   }
+  ClampOperator(ClampOperator&&) = default;
+  ClampOperator(ClampOperator const&) = default;
+  ~ClampOperator() = default;
 
-  std::string get_type() const override { return "clamp"; }
+  std::string get_type() const final { return "clamp"; }
 
   /** @name Serialization */
   ///@{

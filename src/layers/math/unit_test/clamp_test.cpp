@@ -24,6 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#if 0
+
 #include <catch2/catch.hpp>
 
 #include "TestHelpers.hpp"
@@ -146,3 +148,5 @@ TEMPLATE_LIST_TEST_CASE("Serializing Clamp layer",
   }
 #endif // LBANN_HAS_CEREAL_XML_ARCHIVES
 }
+
+#endif // 0

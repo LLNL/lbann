@@ -24,28 +24,24 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#define LBANN_INSTANTIATE_DEFAULT_OPERATOR_FACTORIES
-#include "lbann/proto/operator_factory_impl.hpp"
-
 #include "lbann/operators/math/math_builders.hpp"
+#include "lbann/operators/math/clamp.hpp"
 #include "lbann/operators/operator.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 
-#define LBANN_ETI_SINGLE_TYPE_OPERATOR_FACTORY(TYPE, DEVICE)                   \
-  template lbann::proto::OperatorFactory<TYPE, TYPE, DEVICE>&                  \
-  lbann::proto::get_operator_factory()
+#include <memory>
 
-LBANN_ETI_SINGLE_TYPE_OPERATOR_FACTORY(float, El::Device::CPU);
-LBANN_ETI_SINGLE_TYPE_OPERATOR_FACTORY(double, El::Device::CPU);
+#include <operators.pb.h>
 
-#ifdef LBANN_HAS_HALF
-LBANN_ETI_SINGLE_TYPE_OPERATOR_FACTORY(cpu_fp16, El::Device::CPU);
-#endif
+template <typename DataT, El::Device D>
+std::unique_ptr<lbann::Operator<DataT, DataT, D>>
+lbann::build_clamp_operator(lbann_data::Operator const& op)
+{
+  LBANN_ASSERT(proto::ProtoDataType<DataT> == op.input_datatype());
+  LBANN_ASSERT(proto::ProtoDataType<DataT> == op.output_datatype());
+  LBANN_ASSERT(proto::ProtoDevice<D> == op.device_allocation());
 
-#ifdef LBANN_HAS_GPU
-LBANN_ETI_SINGLE_TYPE_OPERATOR_FACTORY(float, El::Device::GPU);
-LBANN_ETI_SINGLE_TYPE_OPERATOR_FACTORY(double, El::Device::GPU);
-
-#ifdef LBANN_HAS_HALF
-LBANN_ETI_SINGLE_TYPE_OPERATOR_FACTORY(fp16, El::Device::GPU);
-#endif
-#endif // LBANN_HAS_GPU
+  lbann_data::ClampOperator params;
+  LBANN_ASSERT(op.parameters().UnpackTo(&params));
+  return std::make_unique<ClampOperator<DataT, D>>(params.min(), params.max());
+}

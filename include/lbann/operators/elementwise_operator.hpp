@@ -103,7 +103,7 @@ public:
    *           populated with computed values.
    */
   void fp_compute(std::vector<ConstInputTensorType> const& inputs,
-                  std::vector<OutputTensorType>& outputs) const final
+                  std::vector<OutputTensorType> const& outputs) const final
   {
     return fp_compute_local(get_local_tensor_views(inputs),
                             get_local_tensor_views(outputs));
@@ -121,7 +121,7 @@ public:
   void
   bp_compute(std::vector<ConstInputTensorType> const& inputs,
              std::vector<ConstOutputTensorType> const& gradient_wrt_outputs,
-             std::vector<InputTensorType>& gradient_wrt_inputs) const final
+             std::vector<InputTensorType> const& gradient_wrt_inputs) const final
   {
     return bp_compute_local(get_local_tensor_views(inputs),
                             get_local_tensor_views(gradient_wrt_outputs),

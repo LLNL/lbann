@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -23,29 +23,36 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
+#ifndef LBANN_PROTO_OPERATOR_FACTORY_HPP_INCLUDED
+#define LBANN_PROTO_OPERATOR_FACTORY_HPP_INCLUDED
 
-#define LBANN_INSTANTIATE_DEFAULT_OPERATOR_FACTORIES
-#include "lbann/proto/operator_factory_impl.hpp"
-
-#include "lbann/operators/math/math_builders.hpp"
 #include "lbann/operators/operator.hpp"
 
-#define LBANN_ETI_SINGLE_TYPE_OPERATOR_FACTORY(TYPE, DEVICE)                   \
-  template lbann::proto::OperatorFactory<TYPE, TYPE, DEVICE>&                  \
-  lbann::proto::get_operator_factory()
+#include "lbann/proto/helpers.hpp"
+#include "lbann/utils/factory.hpp"
 
-LBANN_ETI_SINGLE_TYPE_OPERATOR_FACTORY(float, El::Device::CPU);
-LBANN_ETI_SINGLE_TYPE_OPERATOR_FACTORY(double, El::Device::CPU);
+#include <string>
 
-#ifdef LBANN_HAS_HALF
-LBANN_ETI_SINGLE_TYPE_OPERATOR_FACTORY(cpu_fp16, El::Device::CPU);
-#endif
+namespace lbann {
+namespace proto {
 
-#ifdef LBANN_HAS_GPU
-LBANN_ETI_SINGLE_TYPE_OPERATOR_FACTORY(float, El::Device::GPU);
-LBANN_ETI_SINGLE_TYPE_OPERATOR_FACTORY(double, El::Device::GPU);
+// Define the factory type.
+template <typename InT, typename OutT, El::Device D>
+using OperatorFactory =
+  generic_factory<Operator<InT, OutT, D>,
+                  std::string,
+                  proto::generate_builder_type<Operator<InT, OutT, D>,
+                                               lbann_data::Operator const&>>;
 
-#ifdef LBANN_HAS_HALF
-LBANN_ETI_SINGLE_TYPE_OPERATOR_FACTORY(fp16, El::Device::GPU);
-#endif
-#endif // LBANN_HAS_GPU
+/** @brief Access the global operator factory for these types.
+ *
+ *  LBANN will include instantiations for the case that
+ *  `std::is_same_v<InT, OutT>` and the data type is `float`,
+ *  `double`, or the FP16 type that matches the selected device.
+ */
+template <typename InT, typename OutT, El::Device D>
+OperatorFactory<InT, OutT, D>& get_operator_factory();
+
+} // namespace proto
+} // namespace lbann
+#endif // LBANN_PROTO_OPERATOR_FACTORY_HPP_INCLUDED

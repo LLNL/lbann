@@ -280,9 +280,9 @@ private:
 
 template <typename T, El::Device D>
 class ConstDistTensorView
-  : public details::MatrixAsTensorView<El::AbstractDistMatrix<T>>
+  : public details::MatrixAsTensorView<El::AbstractDistMatrix<T> const>
 {
-  using base_type = details::MatrixAsTensorView<El::AbstractDistMatrix<T>>;
+  using base_type = details::MatrixAsTensorView<El::AbstractDistMatrix<T> const>;
 
 public:
   template <typename MatT>

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -23,29 +23,14 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
+#include "lbann/layers/operator_layer.hpp"
+#include "lbann/base.hpp"
 
-#define LBANN_INSTANTIATE_DEFAULT_OPERATOR_FACTORIES
-#include "lbann/proto/operator_factory_impl.hpp"
+namespace lbann {
 
-#include "lbann/operators/math/math_builders.hpp"
-#include "lbann/operators/operator.hpp"
+template class OperatorLayer<float,
+                             float,
+                             data_layout::DATA_PARALLEL,
+                             El::Device::CPU>;
 
-#define LBANN_ETI_SINGLE_TYPE_OPERATOR_FACTORY(TYPE, DEVICE)                   \
-  template lbann::proto::OperatorFactory<TYPE, TYPE, DEVICE>&                  \
-  lbann::proto::get_operator_factory()
-
-LBANN_ETI_SINGLE_TYPE_OPERATOR_FACTORY(float, El::Device::CPU);
-LBANN_ETI_SINGLE_TYPE_OPERATOR_FACTORY(double, El::Device::CPU);
-
-#ifdef LBANN_HAS_HALF
-LBANN_ETI_SINGLE_TYPE_OPERATOR_FACTORY(cpu_fp16, El::Device::CPU);
-#endif
-
-#ifdef LBANN_HAS_GPU
-LBANN_ETI_SINGLE_TYPE_OPERATOR_FACTORY(float, El::Device::GPU);
-LBANN_ETI_SINGLE_TYPE_OPERATOR_FACTORY(double, El::Device::GPU);
-
-#ifdef LBANN_HAS_HALF
-LBANN_ETI_SINGLE_TYPE_OPERATOR_FACTORY(fp16, El::Device::GPU);
-#endif
-#endif // LBANN_HAS_GPU
+} // namespace lbann

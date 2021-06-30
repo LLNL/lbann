@@ -24,28 +24,34 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#define LBANN_INSTANTIATE_DEFAULT_OPERATOR_FACTORIES
-#include "lbann/proto/operator_factory_impl.hpp"
+#include "lbann/proto/operator_factory.hpp"
 
 #include "lbann/operators/math/math_builders.hpp"
 #include "lbann/operators/operator.hpp"
 
-#define LBANN_ETI_SINGLE_TYPE_OPERATOR_FACTORY(TYPE, DEVICE)                   \
-  template lbann::proto::OperatorFactory<TYPE, TYPE, DEVICE>&                  \
-  lbann::proto::get_operator_factory()
+namespace lbann {
+namespace proto {
+namespace details {
 
-LBANN_ETI_SINGLE_TYPE_OPERATOR_FACTORY(float, El::Device::CPU);
-LBANN_ETI_SINGLE_TYPE_OPERATOR_FACTORY(double, El::Device::CPU);
+template <typename InT, typename OutT, El::Device D>
+OperatorFactory<InT, OutT, D> build_default_factory()
+{
+  OperatorFactory<InT, OutT, D> factory;
 
-#ifdef LBANN_HAS_HALF
-LBANN_ETI_SINGLE_TYPE_OPERATOR_FACTORY(cpu_fp16, El::Device::CPU);
-#endif
+  if constexpr (std::is_same_v<InT, OutT>) {
+    factory.register_builder("ClampOperator", build_clamp_operator<InT, D>);
+  }
+  return factory;
+}
 
-#ifdef LBANN_HAS_GPU
-LBANN_ETI_SINGLE_TYPE_OPERATOR_FACTORY(float, El::Device::GPU);
-LBANN_ETI_SINGLE_TYPE_OPERATOR_FACTORY(double, El::Device::GPU);
+} // namespace details
+} // namespace proto
+} // namespace lbann
 
-#ifdef LBANN_HAS_HALF
-LBANN_ETI_SINGLE_TYPE_OPERATOR_FACTORY(fp16, El::Device::GPU);
-#endif
-#endif // LBANN_HAS_GPU
+template <typename InT, typename OutT, El::Device D>
+lbann::proto::OperatorFactory<InT, OutT, D>&
+lbann::proto::get_operator_factory()
+{
+  static auto factory = details::build_default_factory<InT, OutT, D>();
+  return factory;
+}
