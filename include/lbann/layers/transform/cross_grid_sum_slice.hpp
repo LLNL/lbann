@@ -128,8 +128,6 @@ protected:
     int const num_row_elements =
       last_dim_start_point * (last_dim / subgrid_comm_size);
 
-    int const col_stride = (last_dim_start_point * last_dim) - num_row_elements;
-
     int const last_dim_index = int(last_dim / subgrid_comm_size) *
                                subgrid_comm_rank;
 

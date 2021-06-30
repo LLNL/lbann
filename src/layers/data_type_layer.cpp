@@ -289,53 +289,50 @@ get_error_signals(int parent_index) const
   return *m_gradient_wrt_inputs[parent_index];
 }
 
-template <typename TensorDataType>
-auto data_type_layer<TensorDataType>::get_temp_grad()
-  ->  OutputAbsDistMatrixType& {
-
+template <typename InputTensorDataType, typename OutputTensorDataType>
+auto data_type_layer<InputTensorDataType, OutputTensorDataType>::
+get_temp_grad() -> OutputAbsDistMatrixType& {
   return *m_temp_grad[0];
 }
 
-template <typename TensorDataType>
-auto data_type_layer<TensorDataType>::get_branch_tag_input(int tag)
-  ->  InputAbsDistMatrixType& {
-
+template <typename InputTensorDataType, typename OutputTensorDataType>
+auto data_type_layer<InputTensorDataType, OutputTensorDataType>::
+get_branch_tag_input(int tag) -> InputAbsDistMatrixType& {
   return *m_subgrid_tensors_split[tag];
 }
 
-template <typename TensorDataType>
-auto data_type_layer<TensorDataType>::get_branch_tag_input_vector()
-  ->    std::vector<std::unique_ptr<InputAbsDistMatrixType>>& {
-
+template <typename InputTensorDataType, typename OutputTensorDataType>
+auto data_type_layer<InputTensorDataType, OutputTensorDataType>::
+get_branch_tag_input_vector()
+  -> std::vector<std::unique_ptr<InputAbsDistMatrixType>>& {
   return m_subgrid_tensors_split;
 }
 
-template <typename TensorDataType>
-auto data_type_layer<TensorDataType>::get_all_activations()
-  ->    std::vector<std::unique_ptr<OutputAbsDistMatrixType>>& {
-
+template <typename InputTensorDataType, typename OutputTensorDataType>
+auto data_type_layer<InputTensorDataType, OutputTensorDataType>::
+get_all_activations()
+  -> std::vector<std::unique_ptr<OutputAbsDistMatrixType>>& {
   return m_outputs;
-
 }
 
-template <typename TensorDataType>
-auto data_type_layer<TensorDataType>::get_all_prev_activations()
-  ->    std::vector<std::unique_ptr<InputAbsDistMatrixType>>& {
-
+template <typename InputTensorDataType, typename OutputTensorDataType>
+auto data_type_layer<InputTensorDataType, OutputTensorDataType>::
+get_all_prev_activations()
+  -> std::vector<std::unique_ptr<InputAbsDistMatrixType>>& {
   return m_inputs;
 }
 
-template <typename TensorDataType>
-auto data_type_layer<TensorDataType>::get_all_prev_error_signals()
-  ->    std::vector<std::unique_ptr<OutputAbsDistMatrixType>>& {
-
+template <typename InputTensorDataType, typename OutputTensorDataType>
+auto data_type_layer<InputTensorDataType, OutputTensorDataType>::
+get_all_prev_error_signals()
+  -> std::vector<std::unique_ptr<OutputAbsDistMatrixType>>& {
   return m_gradient_wrt_outputs;
 }
 
-template <typename TensorDataType>
-auto data_type_layer<TensorDataType>::get_all_error_signals()
-  ->    std::vector<std::unique_ptr<InputAbsDistMatrixType>>& {
-
+template <typename InputTensorDataType, typename OutputTensorDataType>
+auto data_type_layer<InputTensorDataType, OutputTensorDataType>::
+get_all_error_signals()
+  -> std::vector<std::unique_ptr<InputAbsDistMatrixType>>& {
   return m_gradient_wrt_inputs;
 }
 
@@ -662,7 +659,7 @@ setup_matrices(const El::Grid& grid) {
       {
         if(subgrid_tags[parent_index] == count)
         {
-          subgrid_tensor = input__mat_builder->MakeEmpty(*(parents[parent_index]->get_mygrid()), 0);
+          subgrid_tensor = input_mat_builder->MakeEmpty(*(parents[parent_index]->get_mygrid()), 0);
           count++;
           break;
         }
@@ -1059,8 +1056,9 @@ bp_setup_gradient_wrt_inputs(
 }
 
 
-template <typename TensorDataType>
-void data_type_layer<TensorDataType>::setup_inter_subgrid_comm_based_on_childs(const El::Grid& grid) {
+template <typename InputTensorDataType, typename OutputTensorDataType>
+void data_type_layer<InputTensorDataType, OutputTensorDataType>::
+setup_inter_subgrid_comm_based_on_childs(const El::Grid& grid) {
   //Now we are creating sub-communicators in model.cpp as this method will lead to several instances of
   //sub-communicators on same rank sets.
   //BUG: NCCL allocates some memory for each communicator, which lead to Out-of-memory (OOM) when we have large
@@ -1083,8 +1081,9 @@ void data_type_layer<TensorDataType>::setup_inter_subgrid_comm_based_on_childs(c
 
   }
 
-template <typename TensorDataType>
-void data_type_layer<TensorDataType>::setup_inter_subgrid_comm_based_on_parents(const El::Grid& grid) {
+template <typename InputTensorDataType, typename OutputTensorDataType>
+void data_type_layer<InputTensorDataType, OutputTensorDataType>::
+setup_inter_subgrid_comm_based_on_parents(const El::Grid& grid) {
   //Now we are creating sub-communicators in model.cpp as this method will lead to several instances of
   //sub-communicators on same rank sets.
   //BUG: NCCL allocates some memory for each communicator, which lead to Out-of-memory (OOM) when we have large
