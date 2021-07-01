@@ -26,10 +26,11 @@
 #ifndef LBANN_LAYERS_OPERATOR_LAYER_IMPL_HPP_INCLUDED
 #define LBANN_LAYERS_OPERATOR_LAYER_IMPL_HPP_INCLUDED
 
+#include "lbann/layers/operator_layer.hpp"
+
 #include "lbann/proto/factories.hpp"
 #include "lbann/proto/operator_factory.hpp"
 #include "lbann/utils/exception.hpp"
-#include "operator_layer.hpp"
 
 #include <layers.pb.h>
 #include <memory>
@@ -193,7 +194,7 @@ auto lbann::build_operator_layer_from_pbuf(lbann_comm* comm,
   using OperatorType = Operator<InputT, OutputT, D>;
   using OperatorPtr = std::unique_ptr<OperatorType>;
 
-  LBANN_ASSERT((bool)comm); // Sanity check
+  LBANN_ASSERT(comm); // Sanity check
 
   // Build up the list of operators for this layer.
   auto const& params = msg.operator_layer();
@@ -202,6 +203,10 @@ auto lbann::build_operator_layer_from_pbuf(lbann_comm* comm,
   std::vector<OperatorPtr> ops;
   ops.reserve(num_ops);
   for (int ii = 0; ii < num_ops; ++ii) {
+#ifdef LBANN_DEBUG
+    LBANN_ASSERT(msg.datatype() == params.ops(ii).input_datatype());
+    LBANN_ASSERT(msg.datatype() == params.ops(ii).output_datatype());
+#endif
     ops.emplace_back(
       proto::construct_operator<InputT, OutputT, D>(params.ops(ii)));
   }
