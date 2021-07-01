@@ -67,7 +67,8 @@ auto lbann::proto::construct_operator(lbann_data::Operator const& msg)
 {
   LBANN_ASSERT(ProtoDataType<InputT> == msg.input_datatype());
   LBANN_ASSERT(ProtoDataType<OutputT> == msg.output_datatype());
-  LBANN_ASSERT(ProtoDevice<D> == msg.device_allocation());
+  LBANN_ASSERT(ProtoDevice<D> ==
+               proto::resolve_default_device(msg.device_allocation()));
 
   auto const name = proto::helpers::message_type(msg.parameters());
   return get_operator_factory<InputT, OutputT, D>().create_object(name, msg);
@@ -75,10 +76,10 @@ auto lbann::proto::construct_operator(lbann_data::Operator const& msg)
 
 #ifndef LBANN_INSTANTIATE_DEFAULT_OPERATOR_FACTORIES
 namespace lbann {
-#define PROTO_DEVICE(T, DEVICE)                                             \
-  extern template proto::OperatorFactory<T, T, DEVICE>&                  \
+#define PROTO_DEVICE(T, DEVICE)                                                \
+  extern template proto::OperatorFactory<T, T, DEVICE>&                        \
   proto::get_operator_factory();                                               \
-  extern template std::unique_ptr<Operator<T, T, DEVICE>>                \
+  extern template std::unique_ptr<Operator<T, T, DEVICE>>                      \
   proto::construct_operator(lbann_data::Operator const& msg)
 #include <lbann/macros/instantiate_device.hpp>
 } // namespace lbann

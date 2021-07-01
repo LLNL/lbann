@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/operators/math/math_builders.hpp"
 #include "lbann/operators/math/clamp.hpp"
+#include "lbann/operators/math/math_builders.hpp"
 #include "lbann/operators/operator.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
 
@@ -39,7 +39,8 @@ lbann::build_clamp_operator(lbann_data::Operator const& op)
 {
   LBANN_ASSERT(proto::ProtoDataType<DataT> == op.input_datatype());
   LBANN_ASSERT(proto::ProtoDataType<DataT> == op.output_datatype());
-  LBANN_ASSERT(proto::ProtoDevice<D> == op.device_allocation());
+  LBANN_ASSERT(proto::ProtoDevice<D> ==
+               proto::resolve_default_device(op.device_allocation()));
 
   lbann_data::ClampOperator params;
   LBANN_ASSERT(op.parameters().UnpackTo(&params));

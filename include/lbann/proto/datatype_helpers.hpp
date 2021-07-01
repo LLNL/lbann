@@ -31,10 +31,8 @@
 
 #include <datatype.pb.h>
 
-namespace lbann
-{
-namespace proto
-{
+namespace lbann {
+namespace proto {
 
 template <typename T>
 struct TypeToProtoDataType;
@@ -88,8 +86,21 @@ struct DeviceToProtoDevice<El::Device::GPU>
 #endif
 
 template <El::Device D>
-auto ProtoDevice = DeviceToProtoDevice<D>::value;
+constexpr auto ProtoDevice = DeviceToProtoDevice<D>::value;
 
-}// namespace proto
-}// namespace lbann
+inline constexpr lbann_data::DeviceAllocation
+resolve_default_device(lbann_data::DeviceAllocation in)
+{
+  constexpr auto default_device =
+#ifdef LBANN_HAS_GPU
+    ProtoDevice<El::Device::GPU>
+#else
+    ProtoDevice<El::Device::CPU>
+#endif // LBANN HAS_GPU
+    ;
+  return (in == lbann_data::DEFAULT_DEVICE ? default_device : in);
+}
+
+} // namespace proto
+} // namespace lbann
 #endif /* LBANN_PROTO_DATATYPE_HELPERS_HPP_INCLUDED */
