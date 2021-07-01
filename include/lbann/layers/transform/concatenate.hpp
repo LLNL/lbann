@@ -266,7 +266,7 @@ void concatenate_layer<TensorDataType,Layout,Device>::fp_setup_outputs(El::Int m
     El::LockedView(output, input0);
   }
   else {
-    if(this->is_subgraph_parallelism_enabled()==false || this->get_parallel_strategy().enable_subgraph==0)
+    if(this->is_subgraph_parallelism_enabled()==false || this->get_parallel_strategy().enable_subgraph==false)
     {
       output.AlignWith(input0);
     }
@@ -301,11 +301,11 @@ void concatenate_layer<TensorDataType,Layout,Device>::bp_compute_subgrid() {
 
   auto const* ptr_input_grad = dynamic_cast<El::DistMatrix<TensorDataType, El::STAR  , El::VC, El::ELEMENT, Device> const *>(&input_grad);
 
-  if(this->get_communication_flag()==2)
+  if(this->get_communication_flag()==COLL_OPT)
   {
     El::copy::TranslateBetweenGridsScatter<TensorDataType,Device,Device>(*ptr_input_grad,this->get_all_error_signals(),split_dim,this->get_subgrid_comm(),syncSubGridCommunication,3);
   }
-  else if(this->get_communication_flag()==1)
+  else if(this->get_communication_flag()==COLL)
   {
     El::copy::TranslateBetweenGridsScatter<TensorDataType,Device,Device>(*ptr_input_grad,this->get_all_error_signals(),split_dim,this->get_subgrid_comm(),syncSubGridCommunication,2);
   }
@@ -333,7 +333,7 @@ void concatenate_layer<TensorDataType,Layout,Device>::fp_compute() {
   }
 
   // Perform concatenation
-  if(m_concat_dim==num_dims-1 && this->is_subgraph_parallelism_enabled() && this->get_parallel_strategy().enable_subgraph==1)
+  if(m_concat_dim==num_dims-1 && this->is_subgraph_parallelism_enabled() && this->get_parallel_strategy().enable_subgraph==true)
   {
     this->fp_compute_subgrid();
   }
@@ -387,7 +387,7 @@ void bp_setup_gradient_wrt_inputs_impl(
       if (!l.keep_original_gradient_wrt_inputs(j)) continue;
 #endif
       auto& input_grad = l.get_error_signals(j);
-      if (l.get_parallel_strategy().enable_subgraph==0) { input_grad.AlignWith(output_grad); }
+      if (l.get_parallel_strategy().enable_subgraph==false) { input_grad.AlignWith(output_grad); }
       input_grad.Resize(l.get_input_size(j), output_grad.Width());
     }
   }
@@ -419,7 +419,7 @@ void concatenate_layer<TensorDataType,Layout,Device>::bp_compute() {
   }
 
   // Perform slice
-  if(m_concat_dim==num_dims-1 && this->is_subgraph_parallelism_enabled() &&  this->get_parallel_strategy().enable_subgraph==1)
+  if(m_concat_dim==num_dims-1 && this->is_subgraph_parallelism_enabled() &&  this->get_parallel_strategy().enable_subgraph==true)
   {
     this->bp_compute_subgrid();
   }

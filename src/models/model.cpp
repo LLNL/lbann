@@ -874,7 +874,7 @@ void model::get_subgrids_order(std::vector<int> &ranks_order, int num_branches)
 
   //No need to order when parent's total resources are less than subgrids
   //Topology aware design for this case is implemented in get_input_resources and merge_resources layer 
-  if(this->get_subgrid_topology()==1 && 
+  if(this->get_subgrid_topology()==true && 
     (this->get_num_resources_non_branch_layers() == this->get_num_resources_branch_layers()
       || cond_parent_have_more_resources))
   {
@@ -928,7 +928,7 @@ void model::get_subgraph_subgrids_ranks(std::vector<int> &parent_ranks,
     const int num_branches = parent_ranks.size() / number_ranks_in_grid;
     subgrid_ranks.resize(number_ranks_in_grid);
 
-    if(this->get_subgrid_topology()==1)
+    if(this->get_subgrid_topology()==true)
     {
     	for(int i = 0; i < number_ranks_in_grid; ++i)
     	{
@@ -989,7 +989,7 @@ void model::get_resources_for_spliting_point(std::vector<int> &parent_ranks,
   if(this->get_num_resources_non_branch_layers() != this->get_num_resources_branch_layers())
   {
     //branch tag of first subgrid is 1 
-    if(this->get_subgrid_topology()==1)
+    if(this->get_subgrid_topology()==true)
     {
       int sub_branch_tag = layers[layer_index]->get_parallel_strategy().sub_branch_tag -1;
       int num_ranks = this->get_num_resources_branch_layers() / num_subgrids;
@@ -1071,7 +1071,7 @@ void model::get_resources_for_input_layer(std::vector<int>& masterSubGrid, int n
 
   if(this->get_num_resources_non_branch_layers() != this->get_num_resources_branch_layers())
   {
-    if(this->get_subgrid_topology()==1)
+    if(this->get_subgrid_topology()==true)
     {
       int ranks_per_grid = this->get_num_resources_branch_layers() / num_subgrids;
       int offset = num_subgrids /  (this->get_num_resources_non_branch_layers() / ranks_per_grid); 
@@ -1103,7 +1103,7 @@ void model::setup_subcommunicators()
         || layers[node]->get_type()=="split"
         || layers[node]->get_type()=="concatenate"
         || layers[node]->get_type()=="sum")
-      && layers[node]->get_parallel_strategy().enable_subgraph==1)
+      && layers[node]->get_parallel_strategy().enable_subgraph==true)
     {
       if(subCommunicatorsSubgrids.find(one_index) != subCommunicatorsSubgrids.end())
       {

@@ -86,19 +86,19 @@ def construct_model(lbann):
     y = lbann.Identity(x, data_layout='data_parallel')
 
     slice_points = (0, 2, 4, 6, 8)
-    x_slice = lbann.Slice(x, axis=2, slice_points=tools.str_list(slice_points),parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':1})
+    x_slice = lbann.Slice(x, axis=2, slice_points=tools.str_list(slice_points),parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':True})
 
-    branch1 = lbann.Identity(x_slice, data_layout='data_parallel',parallel_strategy = {'sub_branch_tag':1,'enable_subgraph':1})
-    branch2 = lbann.Identity(x_slice, data_layout='data_parallel',parallel_strategy = {'sub_branch_tag':2,'enable_subgraph':1})
-    branch3 = lbann.Identity(x_slice, data_layout='data_parallel',parallel_strategy = {'sub_branch_tag':3,'enable_subgraph':1})
-    branch4 = lbann.Identity(x_slice, data_layout='data_parallel',parallel_strategy = {'sub_branch_tag':4,'enable_subgraph':1})
+    branch1 = lbann.Identity(x_slice, data_layout='data_parallel',parallel_strategy = {'sub_branch_tag':1,'enable_subgraph':True})
+    branch2 = lbann.Identity(x_slice, data_layout='data_parallel',parallel_strategy = {'sub_branch_tag':2,'enable_subgraph':True})
+    branch3 = lbann.Identity(x_slice, data_layout='data_parallel',parallel_strategy = {'sub_branch_tag':3,'enable_subgraph':True})
+    branch4 = lbann.Identity(x_slice, data_layout='data_parallel',parallel_strategy = {'sub_branch_tag':4,'enable_subgraph':True})
 
     branch1 = lbann.L2Norm2(branch1)
     branch2 = lbann.L2Norm2(branch2)
     branch3 = lbann.L2Norm2(branch3)
     branch4 = lbann.L2Norm2(branch4)
 
-    concat_branch = lbann.Concatenation([branch1,branch2,branch3,branch4],parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':1})
+    concat_branch = lbann.Concatenation([branch1,branch2,branch3,branch4],parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':True})
     z = lbann.L2Norm2(concat_branch)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='data-parallel layout'))
@@ -140,7 +140,7 @@ def construct_model(lbann):
     # ------------------------------------------
 
     num_epochs = 0
-    return lbann.Model(num_epochs,vector_communication=2,
+    return lbann.Model(num_epochs,subgraph_communication=lbann.SubgraphCommunication.COLL_OPT,
                        layers=lbann.traverse_layer_graph(x_lbann),
                        objective_function=obj,
                        metrics=metrics,
