@@ -128,14 +128,14 @@ void perturb_weights::perturbed(model& m){
 	}
 
 	// Communicate new weight from trainer master processes
-	comm->trainer_broadcast(comm->get_trainer_master(), new_values);  
-	std::cout << "Broadcasted" << std::endl;
+	//comm->trainer_broadcast(comm->get_trainer_master(), new_values);  
+	El::Broadcast(new_values, comm->get_trainer_comm(), 0);
+	//std::cout << "Broadcasted" << std::endl;
 		
 	// Update weight
-	auto& out_w = dynamic_cast<data_type_weights<DataType>&>(*m_output);
-	//out_w.set_value(local_values);		
+	auto& out_w = dynamic_cast<data_type_weights<DataType>&>(*m_output);	
 	out_w.set_values(new_values);		
-	std::cout << "Updated" << std::endl;
+	//std::cout << "Updated" << std::endl;
 
 	break;
 
