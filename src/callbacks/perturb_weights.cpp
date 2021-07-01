@@ -95,7 +95,8 @@ void perturb_weights::perturbed(model& m){
     	LBANN_ERROR("callback \"", name(), "\" "
                   "got a weights pointer that is a null pointer");
     }
-	
+
+    // Check layer name
     if(w->get_name() == m_output_name) {
 	auto& values = w->get_values();
 	auto& new_values = dynamic_cast<El::AbstractDistMatrix<float>&>(values);
@@ -105,6 +106,7 @@ void perturb_weights::perturbed(model& m){
 	El::Matrix<float,El::Device::CPU> temp;
 	El::Copy(local_values, temp);
 
+	// Perturb weights on master process
 	if (comm->am_trainer_master()) {
 		// perturb
 		auto val = temp.Get(0,0);
