@@ -390,7 +390,7 @@ void Layer::setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata, c
   setup_pointers();
   setup_dims(dr_metadata);
   setup_matrices(grid);
-  
+
 #ifdef LBANN_HAS_DISTCONV
   prepare_distconv(dr_metadata);
 #endif // LBANN_HAS_DISTCONV
@@ -508,9 +508,9 @@ void Layer::check_setup() {
 void Layer::back_prop() {
   allocate_new_gradients_();
   back_prop_impl_();
-  propagate_error_signals_to_parents_(); 
+  propagate_error_signals_to_parents_();
   clear_prev_error_signals_();
-  
+
 }
 
 void Layer::write_proto(lbann_data::Layer* proto) const {
@@ -738,29 +738,26 @@ void Layer::prepare_distconv(const DataReaderMetaData& dr_metadata) {
 }
 
 bool Layer::distconv_enabled() const {
-  if (!m_distconv_enabled_set) {
-    // Distconv is disabled if no parallel strategy is defined. When no
-    // strategy is defined, the layer has the default strategy of all
-    // zeros, which is invalid, thus should not be used when distconv is
-    // used.
-    const auto &ps = get_parallel_strategy();
-    ParallelStrategy default_zero_ps;
-    if (ps == default_zero_ps) {
-      dc::MPIRootPrintStreamDebug()
-          << "Disable " << get_name()
-          << " as it does not have a parallel strategy.";
-      m_distconv_enabled = false;
-      m_distconv_enabled_set = true;
-    }
+
+  // Return immediately if distconv support is known
+  if (m_distconv_enabled_set) {
+    return m_distconv_enabled;
   }
 
-  if (!m_distconv_enabled_set) {
-    // Finally, check whether a layer is supported by distconv.
+  // Check if distconv is enabled
+  const auto &ps = get_parallel_strategy();
+  ParallelStrategy default_zero_ps;
+  if (ps == default_zero_ps || ps.enable_subgraph) {
+    // Distconv is disabled if no parallel strategy is defined or if
+    // sub-graph parallelism is enabled
+    m_distconv_enabled = false;
+  }
+  else {
     m_distconv_enabled = is_distconv_supported();
-    m_distconv_enabled_set = true;
   }
-
+  m_distconv_enabled_set = true;
   return m_distconv_enabled;
+
 }
 
 bool Layer::keep_original_inputs(int index) const {
