@@ -129,11 +129,10 @@ void perturb_weights::perturbed(model& m){
 			//auto& new_values_2 = dynamic_cast<El::AbstractDistMatrix<DataType>&>(local_values);
 		
 			// Communicate new weight from trainer master processes
-        		comm->trainer_broadcast(comm->get_trainer_master(), new_values); // local_values);
+        		comm->trainer_broadcast(comm->get_trainer_master(), new_values);
 		
 			// Update weight
-			auto& out_w = dynamic_cast<data_type_weights<DataType>&>(*m_output);
-			//out_w.set_value(local_values);		
+			auto& out_w = dynamic_cast<data_type_weights<DataType>&>(*m_output);	
 			out_w.set_values(new_values);		
 
 			break;
