@@ -328,7 +328,7 @@ if (LBANN_HAS_ALUMINUM)
     set(LBANN_ALUMINUM_MPI_PASSTHROUGH ON)
   endif (LBANN_BUILT_WITH_SPECTRUM)
 endif (LBANN_HAS_ALUMINUM)
-  
+
 # Setup some additional CUDA-y things
 if (LBANN_HAS_CUDA)
   if (NOT LBANN_WITH_CUDNN)
@@ -588,6 +588,7 @@ if (LBANN_WITH_UNIT_TESTING)
   add_subdirectory(src/layers/regularizers/unit_test)
   add_subdirectory(src/models/unit_test)
   add_subdirectory(src/proto/unit_test)
+  add_subdirectory(src/operators/math/unit_test)
   add_subdirectory(src/optimizers/unit_test)
   add_subdirectory(src/utils/unit_test)
   add_subdirectory(src/weights/unit_test)
