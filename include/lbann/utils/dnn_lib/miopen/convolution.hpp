@@ -262,11 +262,12 @@ void add_tensor(ScalarParameterType const& alpha_in,
   auto handle_manager = internal::make_default_handle_manager(si);
   auto alpha = El::To<LibScalingParamT>(alpha_in);
   auto beta = El::To<LibScalingParamT>(beta_in);
+  const auto zero = El::TypeTraits<LibScalingParamT>::Zero();
   CHECK_MIOPEN(miopenOpTensor(handle_manager.get(),
                               miopenTensorOpAdd,
-                              &alpha,
+                              &zero,
                               cDesc,
-                              C.Buffer(),
+                              C.LockedBuffer(),
                               &alpha,
                               aDesc,
                               A.LockedBuffer(),
