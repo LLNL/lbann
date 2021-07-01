@@ -78,66 +78,66 @@ void perturb_weights::on_batch_begin(model* m) {
 }
 
 void perturb_weights::perturbed(model& m){
-	
+
   auto* comm = m.get_comm();
- 
-  // Useful constants
+
+   // Useful constants
   constexpr DataType zero = 0;
   constexpr DataType one = 1;
 
   // RNG
   auto& gen = get_generator();
   std::normal_distribution<DataType> dist(zero, one);
-  
-   
+
+
   for (auto* w : m.get_weights()) {
     if (w == nullptr) {
-      LBANN_ERROR("callback \"", name(), "\" "
+    	LBANN_ERROR("callback \"", name(), "\" "
                   "got a weights pointer that is a null pointer");
     }
 	
-	
-	if (comm->am_trainer_master()) {	
-		if(w->get_name() == m_output_name) {
-			auto& values = w->get_values();
-			//auto& new_values = dynamic_cast<El::AbstractDistMatrix<float>&>(values);
-			auto& new_values = dynamic_cast<El::AbstractDistMatrix<DataType>&>(values);
+    if(w->get_name() == m_output_name) {
+	auto& values = w->get_values();
+	auto& new_values = dynamic_cast<El::AbstractDistMatrix<float>&>(values);
+	//auto& new_values = dynamic_cast<El::AbstractDistMatrix<DataType>&>(values);
 
-			auto& local_values = new_values.Matrix();//values.Matrix();
-			El::Matrix<float,El::Device::CPU> temp;
-			El::Copy(local_values, temp);
-	
-			// perturb
-			auto val = temp.Get(0,0);
-			auto perturbed_val = val;
-			
-			if (dist(gen) > 0.5){
-				perturbed_val = val * 1.2;
-			}
-			else {
-				perturbed_val = val * 0.8;
-			}
+	auto& local_values = new_values.Matrix();
+	El::Matrix<float,El::Device::CPU> temp;
+	El::Copy(local_values, temp);
 
-			temp.Set(0,0,perturbed_val);
-			
-			El::Copy(temp, local_values); 
-	  
-	                std::cout << "Trainer [ " << m.get_comm()->get_trainer_rank() << " ], Step " << m.get_execution_context().get_step();
-		        std::cout << "Weight " << val << " Perturbed weight  " <<  perturbed_val << std::endl;
+	if (comm->am_trainer_master()) {
+		// perturb
+		auto val = temp.Get(0,0);
+		auto perturbed_val = val;
 		
-			// cast local value back
-			//auto& new_values_2 = dynamic_cast<El::AbstractDistMatrix<DataType>&>(local_values);
-		
-			// Communicate new weight from trainer master processes
-        		comm->trainer_broadcast(comm->get_trainer_master(), new_values);
-		
-			// Update weight
-			auto& out_w = dynamic_cast<data_type_weights<DataType>&>(*m_output);	
-			out_w.set_values(new_values);		
-
-			break;
+		if (dist(gen) > 0.5){
+			perturbed_val = val * 1.2;
 		}
+		else {
+			perturbed_val = val * 0.8;
+		}
+
+		temp.Set(0,0,perturbed_val);
+		El::Copy(temp, local_values); 
+ 
+		std::cout << "Trainer [ " << m.get_comm()->get_trainer_rank() << " ], Step " << m.get_execution_context().get_step();
+		std::cout << "Weight " << val << " Perturbed weight  " <<  perturbed_val << std::endl;
+
 	}
+
+	// Communicate new weight from trainer master processes
+	comm->trainer_broadcast(comm->get_trainer_master(), new_values);  
+	std::cout << "Broadcasted" << std::endl;
+		
+	// Update weight
+	auto& out_w = dynamic_cast<data_type_weights<DataType>&>(*m_output);
+	//out_w.set_value(local_values);		
+	out_w.set_values(new_values);		
+	std::cout << "Updated" << std::endl;
+
+	break;
+
+    }
   } 
 }
 
