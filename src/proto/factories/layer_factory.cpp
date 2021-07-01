@@ -30,6 +30,7 @@
 #include "lbann/utils/typename.hpp"
 
 #include "lbann/layers/layer.hpp"
+#include "lbann/layers/operator_layer.hpp"
 #include "lbann/layers/activations/activations.hpp"
 #include "lbann/layers/activations/elu.hpp"
 #include "lbann/layers/activations/identity.hpp"
@@ -168,6 +169,16 @@ private:
 
   // Builder registration happens here
   void register_default_builders() {
+
+    // For now, we add a custom builder that will use the same
+    // input/output type for the multi-precision-capable
+    // OperatorLayer. This is temporary, until more of the factory
+    // infrastructure considers multiple in/out types.
+    factory_.register_builder(
+      "OperatorLayer",
+      [](lbann_comm* c, lbann_data::Layer const& params) {
+        return build_operator_layer_from_pbuf<T, T, L, D>(c, params);
+      });
 
     // Learning layers
     LBANN_REGISTER_BUILDER(Convolution, convolution);
