@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <hydrogen/utils/SimpleBuffer.hpp>
 #define LBANN_GRU_LAYER_INSTANTIATE
 #include "lbann/layers/learning/gru.hpp"
 #include "lbann/models/model.hpp"
@@ -123,6 +124,20 @@ gru_layer<TensorDataType,Layout,Device>
   desc.add("Hidden size", m_hidden_size);
   desc.add("Num layers", m_num_layers);
   return desc;
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+const hydrogen::simple_buffer<El::byte, Device>&
+gru_layer<TensorDataType,Layout,Device>
+::get_reserve_space() const {
+#ifdef LBANN_GRU_LAYER_CUDNN_SUPPORTED
+  if constexpr (Device == El::Device::GPU) {
+    return m_cudnn_objects->reserve_space;
+  }
+#endif // LBANN_GRU_LAYER_CUDNN_SUPPORTED
+  LBANN_ERROR("GRU layers' reserve space is not available without cuDNN.");
+  static hydrogen::simple_buffer<El::byte, Device> invalid;
+  return invalid; // silence compiler warnings
 }
 
 // =========================================================
