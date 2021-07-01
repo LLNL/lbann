@@ -4,6 +4,7 @@ This submodule mostly contains helper functions to generate classes
 from Protobuf messages.
 
 """
+import pdb
 import google.protobuf.descriptor
 import google.protobuf.wrappers_pb2
 from lbann import lbann_pb2, callbacks_pb2, datatype_pb2, layers_pb2, metrics_pb2, model_pb2, objective_functions_pb2, optimizers_pb2, weights_pb2
@@ -153,7 +154,7 @@ def _generate_class(message_descriptor,
             # elsewhere. But this code either works or doesn't get
             # executed now, so I vote delaying this fix until a need
             # arises.
-            proto_modules = [callbacks_pb2, layers_pb2, metrics_pb2, model_pb2, objective_functions_pb2, optimizers_pb2, weights_pb2]
+            proto_modules = [callbacks_pb2, layers_pb2, metrics_pb2, model_pb2, objective_functions_pb2, operators_pb2, optimizers_pb2, training_algorithm_pb2, weights_pb2]
             proto_type = None
             while proto_type is None:
                 proto_type = getattr(proto_modules.pop(), message_name, None)
@@ -171,7 +172,11 @@ def _generate_class(message_descriptor,
                         field.SetInParent()
                         field.value = val
                     elif field_descriptor.label == google.protobuf.descriptor.FieldDescriptor.LABEL_REPEATED:
-                        field.extend(make_iterable(val))
+                        iterable_val = make_iterable(val)
+                        if field_descriptor.type == field_descriptor.TYPE_MESSAGE:
+                            field.extend([x.export_proto() for x in iterable_val])
+                        else:
+                            field.extend(iterable_val)
                     elif isinstance(val, google.protobuf.message.Message):
                         getattr(message, field_name).MergeFrom(val)
                     elif callable(getattr(val, "export_proto", None)):

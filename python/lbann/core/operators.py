@@ -53,11 +53,11 @@ class Clamp(Operator):
                  input_type: DataType = DataType.FLOAT,
                  output_type: DataType = None,
                  device: str = None,
-                 val_min: float = 0.0,
-                 val_max: float = 1.0):
+                 min: float = 0.0,
+                 max: float = 1.0):
         super().__init__(input_type, output_type, device)
-        self.min = val_min
-        self.max = val_max
+        self.min = min
+        self.max = max
 
     def do_export_proto(self):
         params = OpProto.ClampOperator()
