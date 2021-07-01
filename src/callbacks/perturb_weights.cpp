@@ -123,7 +123,7 @@ void perturb_weights::perturbed(model& m){
 		El::Copy(temp, local_values); 
  
 		std::cout << "Trainer [ " << m.get_comm()->get_trainer_rank() << " ], Step " << m.get_execution_context().get_step();
-		std::cout << "Weight " << val << " Perturbed weight  " <<  perturbed_val << std::endl;
+		std::cout << " Weight " << val << " Perturbed weight  " <<  perturbed_val << std::endl;
 
 	}
 
