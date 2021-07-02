@@ -84,7 +84,8 @@ void perturb_weights::perturbed(model& m){
    // Useful constants
   constexpr DataType zero = 0;
   constexpr DataType one = 1;
-
+  const auto range = 3;
+  
   // RNG
   auto& gen = get_generator();
   std::normal_distribution<DataType> dist(zero, one);
@@ -109,22 +110,23 @@ void perturb_weights::perturbed(model& m){
 	// Perturb weights on master process
 	if (comm->am_trainer_master()) {
 		// perturb
-		auto val = temp.Get(0,0);
-		auto perturbed_val = val;
+		for (auto i = 0; i < range; i++){
+			auto val = temp.Get(i,0);
+			auto perturbed_val = val;
 		
-		if (dist(gen) > 0.5){
-			perturbed_val = val * 1.2;
-		}
-		else {
-			perturbed_val = val * 0.8;
-		}
+			if (dist(gen) > 0.5){
+				perturbed_val = val * 1.2;
+			}
+			else {
+				perturbed_val = val * 0.8;
+			}
 
-		temp.Set(0,0,perturbed_val);
-		El::Copy(temp, local_values); 
+			temp.Set(i,0,perturbed_val);
+			El::Copy(temp, local_values); 
  
-		std::cout << "Trainer [ " << m.get_comm()->get_trainer_rank() << " ], Step " << m.get_execution_context().get_step();
-		std::cout << " Weight " << val << " Perturbed weight  " <<  perturbed_val << std::endl;
-
+			std::cout << "Trainer [ " << m.get_comm()->get_trainer_rank() << " ], Step " << m.get_execution_context().get_step();
+			std::cout << " Weight "  << i << ": " << val << " Perturbed weight  " <<  perturbed_val << std::endl;
+		}
 	}
 
 	// Communicate new weight from trainer master processes
