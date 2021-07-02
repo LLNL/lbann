@@ -47,7 +47,7 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
 
   data_type_distconv_adapter<TensorDataType>::setup_distributions(constraints);
 
-  dc::MPIRootPrintStreamInfo() << "STARTING SETTING UP DISTRIBUTION " << std::endl;
+  // dc::MPIRootPrintStreamInfo() << "STARTING SETTING UP DISTRIBUTION " << std::endl;
 
   // dc::IntVector overlap(dc::get_num_dims(layer),0); // NO OVERLAP
 
@@ -73,7 +73,7 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
     constraints.mark_invariant(d);
   }
 
-  dc::MPIRootPrintStreamInfo() << "FINISHED SETTING UP DISTRIBUTION " << std::endl;
+  // dc::MPIRootPrintStreamInfo() << "FINISHED SETTING UP DISTRIBUTION " << std::endl;
 
 }
 
@@ -84,9 +84,9 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
   
   data_type_distconv_adapter<TensorDataType>::setup_layer(workspace_capacity);
 
-  dc::MPIRootPrintStreamInfo() << "STARTING SETTING UP LAYER " << std::endl;
+  // dc::MPIRootPrintStreamInfo() << "STARTING SETTING UP LAYER " << std::endl;
   m_linear_operator = make_unique<dc::Linear<TensorDataType>>(dc::get_backend());
-  dc::MPIRootPrintStreamInfo() << "COMPLETED SETTING UP LAYER " << std::endl;
+  // dc::MPIRootPrintStreamInfo() << "COMPLETED SETTING UP LAYER " << std::endl;
   // Done for now
 
 }
@@ -97,7 +97,7 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
 ::setup_fp_tensors(){
   data_type_distconv_adapter<TensorDataType>::setup_fp_tensors();
   
-  dc::MPIRootPrintStreamInfo() << "STARTING SETTING UP FP TENSORS " << std::endl;
+  // dc::MPIRootPrintStreamInfo() << "STARTING SETTING UP FP TENSORS " << std::endl;
 
   auto &layer = dynamic_cast<
     channelwise_fully_connected_layer<TensorDataType, Layout, Device>&>(this->layer());
@@ -136,7 +136,7 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
     m_bias = make_unique<TensorDevType>(bias_shape, loc, shared_dist);
   }
 
-  dc::MPIRootPrintStreamInfo() << "FINISHED SETTING UP FP TENSORS \n";
+  // dc::MPIRootPrintStreamInfo() << "FINISHED SETTING UP FP TENSORS \n";
   // Done
 }
 
@@ -154,7 +154,7 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
 
   // create LocaleMPI from distconv
 
-  dc::MPIRootPrintStreamInfo() << "STARTING SETTING UP BP TENSORS" << "\n";
+  // dc::MPIRootPrintStreamInfo() << "STARTING SETTING UP BP TENSORS" << "\n";
 
   const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
 
@@ -188,7 +188,7 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
 
     }
   }
-  dc::MPIRootPrintStreamInfo() << "Finished SETTING UP BP TENSORS " << "\n";
+  // dc::MPIRootPrintStreamInfo() << "Finished SETTING UP BP TENSORS " << "\n";
 
   // Done for now
 }
@@ -201,7 +201,7 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
   auto &layer = dynamic_cast<
     channelwise_fully_connected_layer<TensorDataType, Layout, Device>&>(this->layer());
   
-  dc::MPIRootPrintStreamInfo() << "STARTING FP COMPUTE " << std::endl;
+  // dc::MPIRootPrintStreamInfo() << "STARTING FP COMPUTE " << std::endl;
 
   const auto& linearity = layer.weights_values(0);
 
@@ -226,7 +226,7 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
                                   local_mini_batch_size);
   }
 
-  dc::MPIRootPrintStreamInfo() << "FINISHED FP COMPUTE " << std::endl;
+  // dc::MPIRootPrintStreamInfo() << "FINISHED FP COMPUTE " << std::endl;
 
   // Done for now 
 }
@@ -239,7 +239,7 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
     <TensorDataType, Layout, Device>&>(this->layer());
 
 
-  dc::MPIRootPrintStreamInfo() << "STARTING BP COMPUTE " << std::endl;
+  // dc::MPIRootPrintStreamInfo() << "STARTING BP COMPUTE " << std::endl;
 
   const auto& linearity = layer.weights_values(0);
 
@@ -294,7 +294,7 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
   }
   // Done for now
 
-  dc::MPIRootPrintStreamInfo() << "FINISHED BP COMPUTE " << std::endl;
+  // dc::MPIRootPrintStreamInfo() << "FINISHED BP COMPUTE " << std::endl;
 }
 
 

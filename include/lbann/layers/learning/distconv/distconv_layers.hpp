@@ -52,7 +52,7 @@ namespace distconv{
             const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &input,
             const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &linearity,
             tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output,
-            int local_mini_batch_size){
+            int mini_batch_size){
     const auto& one = El::TypeTraits<DataType>::One();
     const auto& zero = El::TypeTraits<DataType>::Zero();
 
@@ -66,22 +66,23 @@ namespace distconv{
     const auto& output_size = std::accumulate(output_dims.begin(), output_dims.begin()+1, 1, std::multiplies<size_t>());
 
     const auto num_local_channels = output_dims[2];
+    const auto local_mini_batch_size = output_dims[3];
 
-    // util::MPIRootPrintStreamInfo()
+    // util::MPIPrintStreamInfo()
     //   << "input tensor. global_shape: "
     //   << input.get_shape()
     //   << ", local shape: " << input.get_local_shape()
     //   << ", local real shape: " << input.get_local_real_shape()
     //   << ", dist: " << input.get_distribution();
 
-    // util::MPIRootPrintStreamInfo()
+    // util::MPIPrintStreamInfo()
     //   << "linearity tensor. global_shape: "
     //   << linearity.get_shape()
     //   << ", local shape: " << linearity.get_local_shape()
     //   << ", local real shape: " << linearity.get_local_real_shape()
     //   << ", dist: " << linearity.get_distribution();
 
-    // util::MPIRootPrintStreamInfo()
+    // util::MPIPrintStreamInfo()
     //   << "output tensor. global_shape: "
     //   << output.get_shape()
     //   << ", local shape: " << output.get_local_shape()
@@ -122,7 +123,7 @@ namespace distconv{
     template <typename Allocator>
     int apply_bias(const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &bias, 
                  tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output,
-                 int local_mini_batch_size){
+                 int mini_batch_size){
     
     if (output.get_local_size() == 0) return 0;
 
@@ -133,12 +134,13 @@ namespace distconv{
     const auto& output_size = std::accumulate(output_dims.begin(), output_dims.begin()+1, 1, std::multiplies<size_t>());
 
     const auto num_local_channels = output_dims[2];
+    const auto local_mini_batch_size = output_dims[3];
 
-    util::MPIRootPrintStreamInfo() 
-      << " Bias Global Shape" << bias.get_shape()
-      << " Bias local shape" << bias.get_local_shape()
-      << " Bias real local shape"  << bias.get_local_real_shape()
-      << " Bias distribution" << bias.get_distribution();
+    // util::MPIPrintStreamInfo() 
+    //   << " Bias Global Shape" << bias.get_shape()
+    //   << " Bias local shape" << bias.get_local_shape()
+    //   << " Bias real local shape"  << bias.get_local_real_shape()
+    //   << " Bias distribution" << bias.get_distribution();
     El::Matrix<DataType, El::Device::GPU>  ones(local_mini_batch_size * num_local_channels, 1);
 
     El::Matrix<DataType, El::Device::GPU>  out_mat(output_size, local_mini_batch_size*num_local_channels, output.get_buffer(), output_size);
@@ -162,7 +164,7 @@ namespace distconv{
                          const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output_grad,
                          const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &linearity,
                          tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &input_grad,
-                         int local_mini_batch_size ){
+                         int mini_batch_size ){
     const auto& one = El::TypeTraits<DataType>:: One();
     const auto& zero = El::TypeTraits<DataType>:: Zero();
 
@@ -174,18 +176,19 @@ namespace distconv{
     const auto& output_size = std::accumulate(output_dims.begin(), output_dims.begin()+1, 1, std::multiplies<size_t>());
 
     const auto num_local_channels = output_dims[2];
+    const auto local_mini_batch_size = output_dims[3];
     
-    util::MPIRootPrintStreamInfo()
-    << " Output Grad shapes :" << output_grad.get_shape() 
-    << " " << output_grad.get_local_shape()
-    << '\t' << output_grad.get_distribution()
-    << "\t Sanity check: " << output_size;
+     // util::MPIRootPrintStreamInfo()
+     // << " Output Grad shapes :" << output_grad.get_shape() 
+     // << " " << output_grad.get_local_shape()
+     // << '\t' << output_grad.get_distribution()
+     // << "\t Sanity check: " << output_size;
 
-    util::MPIRootPrintStreamInfo()
-    << " Input Graph shape : " << input_grad.get_shape()
-    << '\t' << input_grad.get_local_shape() 
-    << '\t' << input_grad.get_distribution()
-    << "\t Sanity check: " << input_size;
+     // util::MPIRootPrintStreamInfo()
+     // << " Input Graph shape : " << input_grad.get_shape()
+     // << '\t' << input_grad.get_local_shape() 
+     // << '\t' << input_grad.get_distribution()
+     // << "\t Sanity check: " << input_size;
 
     El::Matrix<DataType, El::Device::GPU>  output_grad_mat(output_size, local_mini_batch_size*num_local_channels, output_grad.get_buffer(),output_size);
     El::Matrix<DataType, El::Device::GPU>  weights(output_size, input_size, linearity.get_buffer(), output_size);
@@ -225,7 +228,7 @@ namespace distconv{
                           const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &input, 
                           const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output_grad,
                           tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &linearity_grad,
-                          int local_mini_batch_size){
+                          int mini_batch_size){
 
     const auto is_empty_input = input.get_local_size() == 0;
     const auto is_empty_grad = output_grad.get_local_size() == 0;
@@ -244,21 +247,22 @@ namespace distconv{
     const auto& output_size = std::accumulate(output_dims.begin(), output_dims.begin()+1, 1, std::multiplies<size_t>());
 
     const auto num_local_channels = output_dims[2];
+    const auto local_mini_batch_size = output_dims[3];
 
-    util::MPIRootPrintStreamInfo()
-    << " Output Grad shapes :" << output_grad.get_shape() 
-    << " " << output_grad.get_local_shape()
-    << '\t' << output_grad.get_distribution()
-    << "\t Sanity check: " << output_size;
+    // util::MPIRootPrintStreamInfo()
+    // << " Output Grad shapes :" << output_grad.get_shape() 
+    // << " " << output_grad.get_local_shape()
+    // << '\t' << output_grad.get_distribution()
+    // << "\t Sanity check: " << output_size;
 
-    util::MPIRootPrintStreamInfo() << "Num local channels \t" << num_local_channels; 
-    util::MPIRootPrintStreamInfo() << "local_mini_batch_size\t" << local_mini_batch_size;
+    // util::MPIRootPrintStreamInfo() << "Num local channels \t" << num_local_channels; 
+    // util::MPIRootPrintStreamInfo() << "local_mini_batch_size\t" << local_mini_batch_size;
 
-    util::MPIRootPrintStreamInfo()
-    << " Linearity dims: " << linearity_grad.get_shape()
-    << " (local shape)" << linearity_grad.get_local_shape()
-    << '\t' << linearity_grad.get_distribution()
-    << " \t Sanity check " << input_dims; 
+    // util::MPIRootPrintStreamInfo()
+    // << " Linearity dims: " << linearity_grad.get_shape()
+    // << " (local shape)" << linearity_grad.get_local_shape()
+    // << '\t' << linearity_grad.get_distribution()
+    // << " \t Sanity check " << input_dims; 
 
     El::Matrix<DataType, El::Device::GPU>  input_mat_reshaped; 
     El::Matrix<DataType, El::Device::GPU>  output_grad_mat_reshaped;
@@ -288,7 +292,7 @@ namespace distconv{
                         DataType dst_scale,
                         const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output_grad,
                         tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &bias_grad,
-                        int local_mini_batch_size){
+                        int mini_batch_size){
 
     const auto is_output_grad_empty = output_grad.get_local_size() == 0;
     const auto is_bias_grad_empty = bias_grad.get_local_size() == 0;
@@ -304,7 +308,8 @@ namespace distconv{
     const auto& output_size = std::accumulate(output_dims.begin(), output_dims.begin()+1, 1, std::multiplies<size_t>());
 
     const auto num_local_channels = output_dims[2];
-    
+    const auto local_mini_batch_size = output_dims[3];
+
     El::Matrix<DataType, El::Device::GPU>  ones(local_mini_batch_size * num_local_channels, 1);
     
     El::Matrix<DataType, El::Device::GPU>  out_grad_mat(output_size, local_mini_batch_size*num_local_channels, output_grad.get_buffer(), output_size);
