@@ -220,10 +220,12 @@ void scatter_layer<TensorDataType, Layout, Device>::bp_compute() {
     auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_values_grad),
                                        gpu::get_sync_info(local_output_grad),
                                        gpu::get_sync_info(local_indices));
-    constexpr size_t block_size = 16;
+    constexpr size_t block_size_x = 32;
+    constexpr size_t block_size_y = 8;
+    
     dim3 block_dims, grid_dims;
-    block_dims.x = block_size;
-    block_dims.y = block_size;
+    block_dims.x = block_size_x;
+    block_dims.y = block_size_y;
     block_dims.z = 1;
 
     grid_dims.x = (num_rows + block_dims.x - 1) / block_dims.x;

@@ -10,6 +10,7 @@ Support for new training algorithms:
 Support for new network structures:
 
 Support for new layers:
+- Added support for 2D Matrices for Scatter and Gather layers
 
 Python front-end:
 

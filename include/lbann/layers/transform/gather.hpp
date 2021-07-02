@@ -169,7 +169,7 @@ void gather_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& 
       "attempted to gather from a ",input0_dims.size(),"-D tensor ",
       "(",dims_to_str(input0_dims),"), "
       "but the gather layer currently only supports ",
-      "gathering from a 1-D oe 2-D tensor");
+      "gathering from a 1-D or 2-D tensor");
   }
 
 }

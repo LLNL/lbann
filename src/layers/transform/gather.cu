@@ -164,12 +164,18 @@ void gather_layer<TensorDataType, Layout, Device>::fp_compute() {
     auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_output),
                                        gpu::get_sync_info(local_values),
                                        gpu::get_sync_info(local_indices));
-    constexpr size_t block_size = 256;
+    constexpr size_t block_size_x = 32;
+    constexpr size_t block_size_y = 8;
+    
     dim3 block_dims, grid_dims;
-    block_dims.x = block_size;
-    block_dims.y = 1;
-    grid_dims.x = (output_size + block_dims.x - 1) / block_dims.x;
-    grid_dims.y = (local_mini_batch_size + block_dims.y - 1) / block_dims.y;
+    block_dims.x = block_size_x;
+    block_dims.y = block_size_y;
+    block_dims.z = 1;
+
+    grid_dims.x = (values_size + block_dims.x - 1) / block_dims.x;
+    grid_dims.y = (num_rows + block_dims.y - 1) / block_dims.y;
+    grid_dims.z = (local_mini_batch_size + block_dims.z - 1) / block_dims.z;
+
     hydrogen::gpu::LaunchKernel(
       gather2d_kernel<TensorDataType>,
       grid_dims, block_dims, 0, multisync,
@@ -217,12 +223,18 @@ void gather_layer<TensorDataType, Layout, Device>::bp_compute() {
     auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_values_grad),
                                        gpu::get_sync_info(local_output_grad),
                                        gpu::get_sync_info(local_indices));
-    constexpr size_t block_size = 64;
+    constexpr size_t block_size_x = 32;
+    constexpr size_t block_size_y = 8;
+    
     dim3 block_dims, grid_dims;
-    block_dims.x = block_size;
-    block_dims.y = 1;
+    block_dims.x = block_size_x;
+    block_dims.y = block_size_y;
+    block_dims.z = 1;
+
     grid_dims.x = (output_size + block_dims.x - 1) / block_dims.x;
-    grid_dims.y = (local_mini_batch_size + block_dims.y - 1) / block_dims.y;
+    grid_dims.y = (num_rows + block_dims.y - 1) / block_dims.y;
+    grid_dims.z = (local_mini_batch_size + block_dims.z - 1) / block_dims.z;
+
     hydrogen::gpu::LaunchKernel(
       scatter2d_kernel<TensorDataType>,
       grid_dims, block_dims, 0, multisync,

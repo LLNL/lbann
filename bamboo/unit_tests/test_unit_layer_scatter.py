@@ -169,7 +169,6 @@ def construct_model(lbann):
             for j in range(height):
                 if 0 <= x1[i] < output_size:
                     y0[j][int(x1[i])] += x0[j][i]
-        print(y0)
         z = 0 
         for i in range(height * output_size):
             z += ((i + 1) * y0.flatten()[i])**2
