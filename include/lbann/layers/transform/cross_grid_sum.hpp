@@ -160,7 +160,7 @@ private:
       El::DistMatrix<TensorDataType, El::STAR, El::VC, El::ELEMENT, Dev>*>(
       &gradient_wrt_input);
 
-    
+
 
     const El::Int mloc = gradient_wrt_input_cast->LocalHeight();
     const El::Int nloc = gradient_wrt_input_cast->LocalWidth();
@@ -168,9 +168,6 @@ private:
     El::Matrix<TensorDataType, Dev> temp_output(mloc, nloc);
 
     El::Copy(gradient_wrt_input_cast->LockedMatrix(), temp_output);
-
-    auto const syncInfoOutput =
-      El::SyncInfoFromMatrix(temp_output);
 
     El::AllReduce(gradient_wrt_input,
                        this->get_subgrid_comm(),
