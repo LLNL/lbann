@@ -205,8 +205,6 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
 
   const auto& linearity = layer.weights_values(0);
 
-  const auto local_mini_batch_size = layer.get_prev_activations(0).Width();
-
   // TO DO: Check if input and output tensors are contiguous 
   
   assert0(dc::tensor::View(*m_linear,linearity.LockedBuffer()));
@@ -214,16 +212,14 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
   m_linear_operator->forward(layer.m_transpose,
                              this->get_prev_activations(),
                              *m_linear,
-                             this->get_activations(),
-                             local_mini_batch_size);
+                             this->get_activations());
 
   if(layer.m_has_bias){
     const auto& bias = layer.weights_values(1);
     assert0(dc::tensor::View(*m_bias, bias.LockedBuffer()));
 
     m_linear_operator->apply_bias(*m_bias,
-                                  this->get_activations(), 
-                                  local_mini_batch_size);
+                                  this->get_activations());
   }
 
   // dc::MPIRootPrintStreamInfo() << "FINISHED FP COMPUTE " << std::endl;
@@ -244,10 +240,7 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
   const auto& linearity = layer.weights_values(0);
 
 
-  // TO DO: Check if input and output tensors are contiguous 
-
-  const auto local_mini_batch_size = layer.get_prev_activations(0).Width();
-
+  // Assuming the matrices are contiguous (May need to add checks or reshape)
 
   TensorDataType dst_scale, gradient_scale;
 
@@ -257,8 +250,7 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
   m_linear_operator->backward_wrt_input(layer.m_transpose,
                                         this->get_prev_error_signals(),
                                         *m_linear,
-                                        this->get_error_signals(),                
-                                        local_mini_batch_size);
+                                        this->get_error_signals());
   auto* linearity_optimizer = static_cast<data_type_optimizer<TensorDataType>*>(layer.get_weights(0).get_optimizer());
 
   if (linearity_optimizer == nullptr){
@@ -274,8 +266,7 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
                                          gradient_scale,
                                          this->get_prev_activations(),
                                          this->get_prev_error_signals(),
-                                         *m_linearity_gradient,
-                                         local_mini_batch_size);
+                                         *m_linearity_gradient);
 
   if(layer.m_has_bias){
     auto* bias_optimizer = static_cast<data_type_optimizer<TensorDataType>*>(layer.get_weights(1).get_optimizer());
@@ -289,8 +280,7 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
     m_linear_operator->backward_wrt_bias(gradient_scale,
                                          dst_scale,
                                          this->get_prev_error_signals(),
-                                         *m_bias_gradient,
-                                         local_mini_batch_size);
+                                         *m_bias_gradient);
   }
   // Done for now
 
@@ -316,7 +306,8 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
 
   std::reverse(std::begin(linearity_dims), std::end(linearity_dims));
   const auto output_shape = 
-    ::distconv::get_fc_output_local_tensor_shape(this->get_prev_activations(), linearity_dims);
+    ::distconv::get_fc_output_local_tensor_shape(
+      this->get_prev_activations(), linearity_dims, layer.m_transpose);
   return output_shape;
 }
 
@@ -633,7 +624,9 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
     this->get_distconv_adapter().fp_compute();
     return ;
   }else{
-    LBANN_ERROR("Distconv not compatible with CPU-only mode");
+    LBANN_ERROR("Distconv not compatible with CPU-only mode or distconv not enabled", 
+      "Is using GPU: \t ", this->using_gpus(),
+      "Is distconv enabled: \t" , this->distconv_enabled());
   }  
 
 #endif // LBANN_HAS_DISTCONV

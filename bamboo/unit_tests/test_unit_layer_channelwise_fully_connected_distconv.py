@@ -23,7 +23,7 @@ np.random.seed(20200113)
 _num_samples = 17
 _sample_dims = (8, 1, 2)
 _sample_size = functools.reduce(operator.mul, _sample_dims)
-_samples = np.ones((_num_samples, _sample_size)).astype(np.float32)
+_samples = np.random.normal(size=(_num_samples, _sample_size)).astype(np.float32)
 _bias = np.random.normal(loc=0, size=(_sample_dims[0], 1, 1)).astype(np.float32)
 
 # Sample access functions
@@ -118,14 +118,8 @@ def construct_model(lbann):
 
     y = np.matmul(linearity.astype(np.float64), x) + bias.astype(np.float64)
 
-    print(linearity)
-    print(bias)
-    np.save("linearity.npy", linearity)
-    np.save("bias.npy", bias)
     z = tools.numpy_l2norm2(y) / _num_samples
     val_with_bias = z
-
-    print(val_with_bias)
 
     # Without bias
     x = (_samples
@@ -174,11 +168,6 @@ def construct_model(lbann):
         error_on_failure=True,
         execution_modes='test'))
 
-    ### Extra callbacks for debugging
-    # callbacks.append(lbann.CallbackDumpErrorSignals(basename="signals"))
-    # callbacks.append(lbann.CallbackDumpOutputs(layers=tools.str_list(["bias", "L2Norm"]), directory="outputs"))
-    # callbacks.append(lbann.CallbackDumpGradients(basename="grads"))
-
     # ------------------------------------------
     # Data-parallel distconv layout, non-transpose, no bias
     # ------------------------------------------
@@ -211,13 +200,77 @@ def construct_model(lbann):
         upper_bound=val_without_bias + tol,
         error_on_failure=True,
         execution_modes='test'))
+    # # ------------------------------------------
+    # # Data-parallel layout, transpose, bias
+    # # ------------------------------------------
+
+    # # LBANN implementation
+    # linearity_weights = lbann.Weights(
+    #     optimizer=lbann.SGD(),
+    #     initializer=lbann.ValueInitializer(
+    #         values=tools.str_list(np.nditer(linearity, order='C'))
+    #     )
+    # )
+    # bias_weights = lbann.Weights(
+    #     optimizer=lbann.SGD(),
+    #     initializer=lbann.ValueInitializer(
+    #         values=tools.str_list(np.nditer(bias))
+    #     )
+    # )
+    # x = x_lbann
+    # y = lbann.ChannelwiseFullyConnected(
+    #     x,
+    #     weights=(linearity_weights, bias_weights),
+    #     output_channel_dims=output_channel_dims,
+    #     parallel_strategy=create_parallel_strategy(num_height_groups),
+    #     transpose=True,
+    # )
+    # z = lbann.L2Norm2(y)
+    # obj.append(z)
+    # metrics.append(lbann.Metric(z, name='data-parallel layout, transpose, bias'))
+
+    # # NumPy implementation
+    # tol = 8 * val_with_bias * np.finfo(np.float32).eps
+    # callbacks.append(lbann.CallbackCheckMetric(
+    #     metric=metrics[-1].name,
+    #     lower_bound=val_with_bias-tol,
+    #     upper_bound=val_with_bias+tol,
+    #     error_on_failure=True,
+    #     execution_modes='test'))
+
     # ------------------------------------------
-    # Dump Outputs and weights
+    # Data-parallel layout, transpose, no bias
     # ------------------------------------------
 
-    # callbacks.append(lbann.CallbackDumpOutputs(layers=tools.str_list(["bias", "no_bias"]), directory="outputs"))
+    # LBANN implementation
+    # linearity_weights = lbann.Weights(
+    #     optimizer=lbann.SGD(),
+    #     initializer=lbann.ValueInitializer(
+    #         values=tools.str_list(np.nditer(linearity, order='C'))
+    #     )
+    # )
+    # x = x_lbann
+    # y = lbann.ChannelwiseFullyConnected(
+    #     x,
+    #     weights=(linearity_weights),
+    #     output_channel_dims=output_channel_dims,
+    #     parallel_strategy=create_parallel_strategy(num_height_groups),
+    #     bias=False,
+    #     transpose=True
+    # )
+    # z = lbann.L2Norm2(y)
+    # obj.append(z)
+    # metrics.append(lbann.Metric(z, name='data-parallel layout, non-transpose, no bias'))
 
-    #callbacks.append(lbann.CallbackDumpErrorSignals(directory="outputs"))
+    # # NumPy implementation
+    # tol = 8 * val_without_bias * np.finfo(np.float32).eps
+    # callbacks.append(lbann.CallbackCheckMetric(
+    #     metric=metrics[-1].name,
+    #     lower_bound=val_without_bias-tol,
+    #     upper_bound=val_without_bias+tol,
+    #     error_on_failure=True,
+    #     execution_modes='test'))
+
     # ------------------------------------------
     # Gradient checking
     # ------------------------------------------
@@ -275,7 +328,6 @@ def construct_data_reader(lbann):
 # ==============================================
 # Setup PyTest
 # ==============================================
-
 
 # Create test functions that can interact with PyTest
 for _test_func in tools.create_tests(setup_experiment, __file__, environment=tools.get_distconv_environment()):
