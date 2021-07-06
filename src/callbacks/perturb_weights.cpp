@@ -81,10 +81,13 @@ void perturb_weights::perturbed(model& m){
 
   auto* comm = m.get_comm();
 
-   // Useful constants
+  // Useful constants
   constexpr DataType zero = 0;
   constexpr DataType one = 1;
   const auto range = 3;
+  const auto thres = 0.5;
+  const auto lower = 0.3;
+  const auto upper = 0.7;
   
   // RNG
   auto& gen = get_generator();
@@ -100,47 +103,47 @@ void perturb_weights::perturbed(model& m){
     // Check layer name
     if(w->get_name() == m_output_name) {
 	auto& values = w->get_values();
-	auto& new_values = dynamic_cast<El::AbstractDistMatrix<float>&>(values);
-	//auto& new_values = dynamic_cast<El::AbstractDistMatrix<DataType>&>(values);
+	auto& new_values = dynamic_cast<El::AbstractDistMatrix<DataType>&>(values);
 
 	auto& local_values = new_values.Matrix();
-	El::Matrix<float,El::Device::CPU> temp;
+	El::Matrix<DataType,El::Device::CPU> temp;
 	El::Copy(local_values, temp);
 
-	// Perturb weights on master process
+	// Perturb weights on master process		
 	if (comm->am_trainer_master()) {
-		// perturb
-		for (auto i = 0; i < range; i++){
+		for (auto i = 0; i < range; i++){		
+			
+			// perturb				
 			auto val = temp.Get(i,0);
 			auto perturbed_val = val;
-		
-			if (dist(gen) > 0.5){
-				perturbed_val = val * 1.2;
+			
+			if(val >= lower && val <= upper){	
+				if (dist(gen) > thres){
+					perturbed_val = val * 1.1;
+				}
+				else {
+					perturbed_val = val * 0.9;
+				}
 			}
-			else {
-				perturbed_val = val * 0.8;
-			}
-
+			
 			temp.Set(i,0,perturbed_val);
+				
 			El::Copy(temp, local_values); 
- 
+			  
 			std::cout << "Trainer [ " << m.get_comm()->get_trainer_rank() << " ], Step " << m.get_execution_context().get_step();
-			std::cout << " Weight "  << i << ": " << val << " Perturbed weight  " <<  perturbed_val << std::endl;
+			std::cout << " Weight " << i << ": " << val << " Perturbed weight  " <<  perturbed_val << std::endl;
+
 		}
 	}
 
 	// Communicate new weight from trainer master processes
-	//comm->trainer_broadcast(comm->get_trainer_master(), new_values);  
 	El::Broadcast(new_values, comm->get_trainer_comm(), 0);
-	//std::cout << "Broadcasted" << std::endl;
 		
 	// Update weight
 	auto& out_w = dynamic_cast<data_type_weights<DataType>&>(*m_output);	
 	out_w.set_values(new_values);		
-	//std::cout << "Updated" << std::endl;
 
 	break;
-
     }
   } 
 }
