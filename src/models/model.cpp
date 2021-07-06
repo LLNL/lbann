@@ -1042,8 +1042,7 @@ void model::remove_layer(std::string const& removable_layer_name) {
 
   // Setup relationship between parent layer and child layer
   child.replace_parent_layer(l.get_parent_layer_pointer(0), child.find_parent_layer_index(l));
-  parent.clear_child_layers();
-  parent.add_child_layer(l.get_child_layer_pointer(0));
+  parent.replace_child_layer(l.get_child_layer_pointer(0), parent.find_child_layer_index(l));
 
   // Destroy memory of removable layer - for now, remove from m_layers
   m_layers.erase(m_layers.cbegin()+removable_layer_index); 
@@ -1083,8 +1082,7 @@ void model::replace_layer(OwningLayerPtr&& new_layer, std::string const& old_lay
   child.replace_parent_layer(new_layer, child.find_parent_layer_index(l));
 
   // Setup relationship between parent of old layer (which becomes parent of new layer) and new layer
-  parent.clear_child_layers();
-  parent.add_child_layer(new_layer);
+  parent.replace_child_layer(new_layer, parent.find_child_layer_index(l));
   new_layer->add_parent_layer(m_layers[old_layer_index-1]);
 
   // Add new layer to layer list
