@@ -56,6 +56,10 @@ namespace distconv{
     const auto& input_size = std::accumulate(input_dims.begin(), input_dims.begin()+1, 1, std::multiplies<size_t>());
     const auto& output_size = std::accumulate(output_dims.begin(), output_dims.begin()+1, 1, std::multiplies<size_t>());
 
+    const auto linearity_input_size = transpose_A ? output_size : input_size;
+    const auto linearity_output_size = transpose_A ? input_size : output_size;
+
+
     const auto num_local_channels = output_dims[2];
     const auto local_mini_batch_size = output_dims[3];
 
@@ -75,7 +79,7 @@ namespace distconv{
 
     El::Matrix<DataType, El::Device::GPU> in_mat(input_size, local_mini_batch_size*num_local_channels, input.get_buffer(), input_size);
     El::Matrix<DataType, El::Device::GPU> out_mat(output_size, local_mini_batch_size*num_local_channels, output.get_buffer(), output_size);
-    El::Matrix<DataType, El::Device::GPU> weights(output_size, input_size, linearity.get_buffer(), output_size);
+    El::Matrix<DataType, El::Device::GPU> weights(linearity_output_size, linearity_input_size, linearity.get_buffer(), linearity_output_size);
 
     El::Gemm(transpose_A ? El::TRANSPOSE: El::NORMAL,
                El::NORMAL,
@@ -128,9 +132,9 @@ namespace distconv{
   int
   Linear<Backend, DataType>::
   backward_wrt_input(bool transpose_A,
-                         const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output_grad,
-                         const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &linearity,
-                         tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &input_grad)
+                     const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output_grad,
+                     const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &linearity,
+                     tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &input_grad)
   {
     const auto& one = El::TypeTraits<DataType>:: One();
     const auto& zero = El::TypeTraits<DataType>:: Zero();
@@ -141,12 +145,15 @@ namespace distconv{
     const auto& input_size = std::accumulate(input_dims.begin(), input_dims.begin()+1, 1, std::multiplies<size_t>());
     const auto& output_size = std::accumulate(output_dims.begin(), output_dims.begin()+1, 1, std::multiplies<size_t>());
 
+    const auto linearity_input_size = transpose_A ? output_size : input_size;
+    const auto linearity_output_size = transpose_A ? input_size : output_size;
+
     const auto num_local_channels = output_dims[2];
     const auto local_mini_batch_size = output_dims[3];
 
     El::Matrix<DataType, El::Device::GPU>  output_grad_mat(output_size, local_mini_batch_size*num_local_channels, output_grad.get_buffer(),output_size);
-    El::Matrix<DataType, El::Device::GPU>  weights(output_size, input_size, linearity.get_buffer(), output_size);
     El::Matrix<DataType, El::Device::GPU>  input_grad_mat(input_size, local_mini_batch_size*num_local_channels, input_grad.get_buffer(), input_size);
+    El::Matrix<DataType, El::Device::GPU>  weights(linearity_output_size, linearity_input_size, linearity.get_buffer(), linearity_output_size);
     
     El::Matrix<DataType, El::Device::GPU> output_grad_mat_reshaped;
 
@@ -178,12 +185,12 @@ namespace distconv{
   template <typename Allocator>
   int
   Linear<Backend, DataType>::
-  backward_wrt_weight(bool transpose,
-                          DataType dst_scale,
-                          DataType gradient_scale,
-                          const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &input, 
-                          const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output_grad,
-                          tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &linearity_grad)
+  backward_wrt_weight(bool transpose_A,
+                      DataType dst_scale,
+                      DataType gradient_scale,
+                      const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &input, 
+                      const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output_grad,
+                      tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &linearity_grad)
   {
     const auto is_empty_input = input.get_local_size() == 0;
     const auto is_empty_grad = output_grad.get_local_size() == 0;
@@ -201,6 +208,9 @@ namespace distconv{
     const auto& input_size = std::accumulate(input_dims.begin(), input_dims.begin()+1, 1, std::multiplies<size_t>());
     const auto& output_size = std::accumulate(output_dims.begin(), output_dims.begin()+1, 1, std::multiplies<size_t>());
 
+    const auto linearity_input_size = transpose_A ? output_size : input_size;
+    const auto linearity_output_size = transpose_A ? input_size : output_size;
+
     const auto num_local_channels = output_dims[2];
     const auto local_mini_batch_size = output_dims[3];
 
@@ -209,9 +219,9 @@ namespace distconv{
 
     El::Matrix<DataType, El::Device::GPU>  input_mat(input_size, local_mini_batch_size*num_local_channels, input.get_buffer(), input_size);
     El::Matrix<DataType, El::Device::GPU>  output_grad_mat(output_size, local_mini_batch_size*num_local_channels, output_grad.get_buffer(), output_size);
-    El::Matrix<DataType, El::Device::GPU>  linearity_grad_mat(output_size, input_size, linearity_grad.get_buffer(), output_size);
+    El::Matrix<DataType, El::Device::GPU>  linearity_grad_mat(linearity_output_size, linearity_input_size, linearity_grad.get_buffer(), linearity_output_size);
     
-    if(transpose){
+    if(transpose_A){
       El::Gemm(El::NORMAL, El::TRANSPOSE,
                gradient_scale, input_mat, output_grad_mat,
                dst_scale, linearity_grad_mat);

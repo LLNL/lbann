@@ -109,7 +109,7 @@ namespace distconv{
     //Get the input layer local tensor shape 
 
     auto output_local_shape = input.get_local_shape();
-    output_local_shape[0] = transpose ? linearity_dims[1] : linearity_dims[0];
+    output_local_shape[0] = linearity_dims[0];
     return output_local_shape;
   }
 extern template class Linear<::distconv::cudnn::BackendCUDNN, float>;
