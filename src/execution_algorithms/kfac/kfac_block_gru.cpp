@@ -494,7 +494,7 @@ kfac_block_gru<Device>::get_internal_matrix_info() const {
         list.emplace_back(name, m.Height(), m.Width());
       };
   const auto emplace_if_available =
-      [&list, &emplace](
+      [&emplace](
           const std::string& name,
           const std::unordered_map<kfac_gru_util::weight_type,
           El::Matrix<DataType, Device>>& map,
