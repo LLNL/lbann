@@ -27,16 +27,16 @@
 #ifndef LBANN_OPERATORS_MATH_CLAMP_HPP_INCLUDED
 #define LBANN_OPERATORS_MATH_CLAMP_HPP_INCLUDED
 
+#include "lbann_config.hpp"
+
 #include "lbann/operators/elementwise_operator.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/utils/cloneable.hpp"
-#include "lbann_config.hpp"
 
 #include <operators.pb.h>
 
-#include <h2/meta/core/IfThenElse.hpp>
+#include <h2/meta/Core.hpp>
 
-#include <cereal/cereal.hpp>
 #include <google/protobuf/message.h>
 
 namespace lbann {
@@ -79,6 +79,9 @@ class ClampOperator : public Cloneable<ClampOperator<DataT, D>,
   ///@}
 
 public:
+  /** @name Lifecycle */
+  ///@{
+
   ClampOperator(double min, double max)
     : m_min{El::To<DataT>(min)}, m_max{El::To<DataT>(max)}
   {
@@ -86,10 +89,21 @@ public:
   }
   ClampOperator(ClampOperator&&) = default;
   ClampOperator(ClampOperator const&) = default;
+
+  ClampOperator& operator=(ClampOperator&&) = default;
+  ClampOperator& operator=(ClampOperator const&) = default;
+
   ~ClampOperator() = default;
 
-  std::string get_type() const final { return "clamp"; }
+  ///@}
+  /** @name Queries */
+  ///@{
 
+  std::string get_type() const final { return "clamp"; }
+  DataT get_min() const noexcept { return m_min; }
+  DataT get_max() const noexcept { return m_max; }
+
+  ///@}
   /** @name Serialization */
   ///@{
 

@@ -28,7 +28,9 @@
 #define LBANN_OPERATORS_ELEMENTWISE_OPERATOR_HPP_INCLUDED
 
 #include "lbann/operators/operator.hpp"
-#include <cereal/types/base_class.hpp>
+
+#include <cereal/cereal.hpp>
+
 #include <functional>
 #include <iterator>
 #include <type_traits>
