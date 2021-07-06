@@ -971,6 +971,127 @@ void model::add_split_layers(std::unordered_set<std::string>& layer_names) {
   }
 }
 
+void model::insert_layer(OwningLayerPtr&& new_layer, std::string const& preceding_layer_name) {
+
+  // Find preceding layer after which to insert new layer
+  int preceding_layer_index = -1;
+  for (int i=0; i<this->get_num_layers(); ++i) {
+    if (this->get_layer(i).get_name() == preceding_layer_name) {
+      preceding_layer_index = i;
+      break;
+    }
+  }
+  if (preceding_layer_index < 0) {
+    LBANN_ERROR(
+      "Attempted to insert layer after ",
+      "layer \"",preceding_layer_name,"\", ",
+      "but no such layer exists");
+  }
+
+  auto& l = get_layer(preceding_layer_index);
+
+  // Set checks to ensure there is only one parent and one child
+  LBANN_ASSERT(l.get_num_parents() == 1);
+  LBANN_ASSERT(l.get_num_children() == 1);
+
+  // Child of preceding layer
+  auto& child = const_cast<Layer&>(l.get_child_layer(0)); // assuming only one child 
+   
+  // Setup relationship between new layer and child layer
+  new_layer->add_child_layer(l.get_child_layer_pointer(0));
+  child.replace_parent_layer(new_layer, child.find_parent_layer_index(l));
+
+  // Setup relationship between current (parent) layer and new layer
+  l.clear_child_layers();
+  l.add_child_layer(new_layer);
+  new_layer->add_parent_layer(m_layers[preceding_layer_index]);
+
+  // Add new_layer to layer list
+  add_layer(std::move(new_layer));
+
+}
+
+void model::remove_layer(std::string const& removable_layer_name) {
+
+  // Find index of removable layer
+  int removable_layer_index = -1;
+  for (int i=0; i<this->get_num_layers(); ++i) {
+    if (this->get_layer(i).get_name() == removable_layer_name) {
+      removable_layer_index = i;
+      break;
+    }
+  }
+  if (removable_layer_index < 0) {
+    LBANN_ERROR(
+      "Attempted to remove layer",
+      " \"",removable_layer_name,"\", ",
+      "but no such layer exists");
+  }
+
+  auto& l = get_layer(removable_layer_index);
+
+  // Set checks to ensure there is only one parent and one child
+  LBANN_ASSERT(l.get_num_parents() == 1);
+  LBANN_ASSERT(l.get_num_children() == 1);
+
+  // Other checks also have to be done - like cannot delete activation function between two layers, etc
+
+  // Parent and child of removable layer
+  auto& parent = const_cast<Layer&>(l.get_parent_layer(0)); // assuming only one parent
+  auto& child = const_cast<Layer&>(l.get_child_layer(0)); // assuming only one child
+
+  // Setup relationship between parent layer and child layer
+  child.replace_parent_layer(l.get_parent_layer_pointer(0), child.find_parent_layer_index(l));
+  parent.replace_child_layer(l.get_child_layer_pointer(0), parent.find_child_layer_index(l));
+
+  // Destroy memory of removable layer - for now, remove from m_layers
+  m_layers.erase(m_layers.cbegin()+removable_layer_index); 
+}
+
+void model::replace_layer(OwningLayerPtr&& new_layer, std::string const& old_layer_name) {
+
+  // Find old layer
+  int old_layer_index = -1;
+  for (int i=0; i<this->get_num_layers(); ++i) {
+    if (this->get_layer(i).get_name() == old_layer_name) {
+      old_layer_index = i;
+      break;
+    }
+  }
+  
+  if (old_layer_index < 0) {
+    LBANN_ERROR(
+      "Attempted to replace layer",
+      " \"",old_layer_name,"\", ",
+      "but no such layer exists");
+  }
+
+  // Old Layer
+  auto& l = get_layer(old_layer_index);  
+
+  // Set checks to ensure there is only one parent and one child
+  LBANN_ASSERT(l.get_num_parents() == 1);
+  LBANN_ASSERT(l.get_num_children() == 1);
+
+  // Parent and child of old Layer
+  auto& parent = const_cast<Layer&>(l.get_parent_layer(0)); // assuming only one parent
+  auto& child = const_cast<Layer&>(l.get_child_layer(0)); // assuming only one child
+  
+  // Setup relationship between the new layer and child of old layer (which becomes child of new layer)
+  new_layer->add_child_layer(l.get_child_layer_pointer(0));
+  child.replace_parent_layer(new_layer, child.find_parent_layer_index(l));
+
+  // Setup relationship between parent of old layer (which becomes parent of new layer) and new layer
+  parent.replace_child_layer(new_layer, parent.find_child_layer_index(l));
+  new_layer->add_parent_layer(m_layers[old_layer_index-1]);
+
+  // Add new layer to layer list
+  add_layer(std::move(new_layer));
+
+  // Destroy memory of old layer - for now, remove from m_layers
+  m_layers.erase(m_layers.cbegin()+old_layer_index);
+}
+
 // =============================================
 // Execution
 // =============================================
