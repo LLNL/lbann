@@ -27,8 +27,6 @@
 #include "lbann/utils/distconv.hpp"
 #include "lbann/base.hpp"
 #include "lbann/layers/learning/distconv/distconv_layers.hpp"
-#include <layers.pb.h>
-
 
 namespace distconv{
 

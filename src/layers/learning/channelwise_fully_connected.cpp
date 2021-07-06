@@ -47,11 +47,6 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
 
   data_type_distconv_adapter<TensorDataType>::setup_distributions(constraints);
 
-  // dc::MPIRootPrintStreamInfo() << "STARTING SETTING UP DISTRIBUTION " << std::endl;
-
-  // dc::IntVector overlap(dc::get_num_dims(layer),0); // NO OVERLAP
-
-
   for (auto &d: this->m_prev_activations_dists) {
     d.clear_overlap();
     constraints.mark_updated(d);
@@ -72,22 +67,15 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
     constraints.mark_updated(d);
     constraints.mark_invariant(d);
   }
-
-  // dc::MPIRootPrintStreamInfo() << "FINISHED SETTING UP DISTRIBUTION " << std::endl;
-
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void 
 channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
 ::setup_layer(size_t workspace_capacity){
-  
   data_type_distconv_adapter<TensorDataType>::setup_layer(workspace_capacity);
 
-  // dc::MPIRootPrintStreamInfo() << "STARTING SETTING UP LAYER " << std::endl;
   m_linear_operator = make_unique<dc::Linear<TensorDataType>>(dc::get_backend());
-  // dc::MPIRootPrintStreamInfo() << "COMPLETED SETTING UP LAYER " << std::endl;
-  // Done for now
 
 }
 
@@ -106,12 +94,8 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
   // Get shape of the linear weights
 
   const auto& linearity_dims = layer.get_linearity_dims();
-  
   const auto &input_dist = this->get_prev_activations_dist();
-  
   dc::Shape linearity_shape(linearity_dims);
-
-
 
   // Create distribution from distconv
   auto shared_dist = dc::Dist::make_shared_distribution(
@@ -131,13 +115,8 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
     // get bias shape 
     const auto& bias_dims = layer.get_bias_dims();
     dc::Shape bias_shape(bias_dims);
-
-
     m_bias = make_unique<TensorDevType>(bias_shape, loc, shared_dist);
   }
-
-  // dc::MPIRootPrintStreamInfo() << "FINISHED SETTING UP FP TENSORS \n";
-  // Done
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -149,13 +128,9 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
   auto &layer = dynamic_cast<
     channelwise_fully_connected_layer<TensorDataType, Layout, Device>&>(this->layer());
 
-
   //  Setup backward pass tensors here 
 
   // create LocaleMPI from distconv
-
-  // dc::MPIRootPrintStreamInfo() << "STARTING SETTING UP BP TENSORS" << "\n";
-
   const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
 
   // Get shape of the linear weights
@@ -168,7 +143,6 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
   m_linearity_gradient = make_unique<TensorDevType>(linearity_shape, loc, shared_dist);
 
   auto* linearity_optimizer = static_cast<data_type_optimizer<TensorDataType>*>(layer.get_weights(0).get_optimizer());
-
 
   assert0(dc::tensor::View(*m_linearity_gradient,
                            linearity_optimizer->get_gradient().Buffer()));
@@ -188,9 +162,6 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
 
     }
   }
-  // dc::MPIRootPrintStreamInfo() << "Finished SETTING UP BP TENSORS " << "\n";
-
-  // Done for now
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -201,8 +172,6 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
   auto &layer = dynamic_cast<
     channelwise_fully_connected_layer<TensorDataType, Layout, Device>&>(this->layer());
   
-  // dc::MPIRootPrintStreamInfo() << "STARTING FP COMPUTE " << std::endl;
-
   const auto& linearity = layer.weights_values(0);
 
   // TO DO: Check if input and output tensors are contiguous 
@@ -221,10 +190,6 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
     m_linear_operator->apply_bias(*m_bias,
                                   this->get_activations());
   }
-
-  // dc::MPIRootPrintStreamInfo() << "FINISHED FP COMPUTE " << std::endl;
-
-  // Done for now 
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -233,9 +198,6 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
 ::bp_compute(){
   auto &layer = dynamic_cast<channelwise_fully_connected_layer
     <TensorDataType, Layout, Device>&>(this->layer());
-
-
-  // dc::MPIRootPrintStreamInfo() << "STARTING BP COMPUTE " << std::endl;
 
   const auto& linearity = layer.weights_values(0);
 
@@ -282,9 +244,6 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
                                          this->get_prev_error_signals(),
                                          *m_bias_gradient);
   }
-  // Done for now
-
-  // dc::MPIRootPrintStreamInfo() << "FINISHED BP COMPUTE " << std::endl;
 }
 
 
@@ -512,6 +471,19 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
                 "but it has been configured ",
                 "as a ",output_dims.size(),"-D tensor");
   }
+
+  #ifdef LBANN_HAS_DISTCONV
+
+  if (this->distconv_enabled()){
+    if (input_dims.size() != 3 || output_dims.size() != 3){
+      LBANN_ERROR(this->get_type()," layer \"",this->get_name(),"\" ",
+                  "expects an input and output tensor with 4 dimensions (batch, channel, *, *), "
+                  "but it has been configured as a ",
+                  input_dims.size(), "-D input tensor and ",
+                  output_dims.size(),"-D output tensor");
+    }
+  }
+  #endif // LBANN_HAS_DISTCONV
 
   // Input and output tensors have same number of channels
   output_dims[0] = input_dims[0];
