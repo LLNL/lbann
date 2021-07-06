@@ -85,22 +85,18 @@ def construct_model(lbann):
     x = x_lbann
     y = lbann.Identity(x, data_layout='data_parallel')
 
-    slice_points = (0, 2, 4, 6, 8)
+    slice_points = (0, 4, 8)
     x_slice = lbann.Slice(x, axis=2, slice_points=tools.str_list(slice_points),parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':True})
 
     branch1 = lbann.Identity(x_slice, data_layout='data_parallel',parallel_strategy = {'sub_branch_tag':1,'enable_subgraph':True})
     branch2 = lbann.Identity(x_slice, data_layout='data_parallel',parallel_strategy = {'sub_branch_tag':2,'enable_subgraph':True})
-    branch3 = lbann.Identity(x_slice, data_layout='data_parallel',parallel_strategy = {'sub_branch_tag':3,'enable_subgraph':True})
-    branch4 = lbann.Identity(x_slice, data_layout='data_parallel',parallel_strategy = {'sub_branch_tag':4,'enable_subgraph':True})
 
-    grid_sum = lbann.Cross_Grid_Sum([branch1,branch2,branch3,branch4],parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':True})
+    grid_sum = lbann.Cross_Grid_Sum([branch1,branch2],parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':True})
 
     branch1 = lbann.Identity(grid_sum)
     branch2 = lbann.Identity(grid_sum)
-    branch3 = lbann.Identity(grid_sum)
-    branch4 = lbann.Identity(grid_sum)
 
-    sum_branch = lbann.Sum([branch1,branch2,branch3,branch4],parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':True})
+    sum_branch = lbann.Sum([branch1,branch2],parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':True})
     z = lbann.L2Norm2(sum_branch)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='data-parallel layout'))
@@ -120,7 +116,7 @@ def construct_model(lbann):
             else:
                 cross_sum += x_slice
 
-        z = 4*cross_sum
+        z = 2*cross_sum
         z = tools.numpy_l2norm2(z)
         vals.append(z)
 
@@ -133,7 +129,7 @@ def construct_model(lbann):
         error_on_failure=True,
         execution_modes='test'))
 
-    
+
 
     # ------------------------------------------
     # Gradient checking
@@ -193,5 +189,5 @@ def construct_data_reader(lbann):
 # ==============================================
 
 # Create test functions that can interact with PyTest
-for test in tools.create_tests(setup_experiment, __file__):
-    globals()[test.__name__] = test
+for _test_func in tools.create_tests(setup_experiment, __file__):
+    globals()[_test_func.__name__] = _test_func

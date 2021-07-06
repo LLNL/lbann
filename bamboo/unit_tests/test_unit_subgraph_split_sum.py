@@ -85,10 +85,8 @@ def construct_model(lbann):
 
     branch1 = lbann.Identity(y, data_layout='data_parallel',parallel_strategy = {'sub_branch_tag':1,'enable_subgraph':True})
     branch2 = lbann.Identity(y, data_layout='data_parallel',parallel_strategy = {'sub_branch_tag':2,'enable_subgraph':True})
-    branch3 = lbann.Identity(y, data_layout='data_parallel',parallel_strategy = {'sub_branch_tag':3,'enable_subgraph':True})
-    branch4 = lbann.Identity(y, data_layout='data_parallel',parallel_strategy = {'sub_branch_tag':4,'enable_subgraph':True})
 
-    sum_branch = lbann.Sum([branch1,branch2,branch3,branch4],parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':True})
+    sum_branch = lbann.Sum([branch1,branch2],parallel_strategy = {'sub_branch_tag':0,'enable_subgraph':True})
     z = lbann.L2Norm2(sum_branch)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='data-parallel layout'))
@@ -98,7 +96,7 @@ def construct_model(lbann):
     for i in range(num_samples()):
         x = get_sample(i).astype(np.float64)
         y = x
-        z = tools.numpy_l2norm2(4*y)
+        z = tools.numpy_l2norm2(2*y)
         vals.append(z)
     val = np.mean(vals)
     tol = 8 * val * np.finfo(np.float32).eps
@@ -109,7 +107,7 @@ def construct_model(lbann):
         error_on_failure=True,
         execution_modes='test'))
 
-    
+
 
     # ------------------------------------------
     # Gradient checking
@@ -169,5 +167,5 @@ def construct_data_reader(lbann):
 # ==============================================
 
 # Create test functions that can interact with PyTest
-for test in tools.create_tests(setup_experiment, __file__):
-    globals()[test.__name__] = test
+for _test_func in tools.create_tests(setup_experiment, __file__):
+    globals()[_test_func.__name__] = _test_func
