@@ -477,7 +477,7 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
   if (this->distconv_enabled()){
     if (input_dims.size() != 3 || output_dims.size() != 3){
       LBANN_ERROR(this->get_type()," layer \"",this->get_name(),"\" ",
-                  "expects an input and output tensor with 4 dimensions (batch, channel, *, *), "
+                  "expects an input and output tensor with 3 dimensions (channel, *, *), "
                   "but it has been configured as a ",
                   input_dims.size(), "-D input tensor and ",
                   output_dims.size(),"-D output tensor");
