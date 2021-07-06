@@ -35,6 +35,7 @@
 #include "lbann/operators/math/clamp.hpp"
 
 // Other stuff
+#include "lbann/proto/factories.hpp"
 #include "lbann/utils/serialize.hpp"
 
 #include <h2/meta/Core.hpp>
@@ -43,6 +44,7 @@
 #include <functional>
 #include <memory>
 #include <numeric>
+#include <operators.pb.h>
 
 // Define the list of operators to test. Basically this is
 // {float,double}x{CPU,GPU}.
@@ -91,8 +93,75 @@ using TensorType = typename OperatorTraits<OpT>::tensor_type;
 template <typename OpT>
 using ConstTensorType = typename OperatorTraits<OpT>::const_tensor_type;
 
+// Save some typing.
+using unit_test::utilities::IsValidPtr;
+
+TEMPLATE_LIST_TEST_CASE("Clamp operator lifecycle",
+                        "[mpi][operator][math][clamp][lifecycle]",
+                        AllClampOpTypes)
+{
+  using ThisOpType = TestType;
+  using DataType = ValueType<ThisOpType>;
+
+  SECTION("Construction with valid arguments")
+  {
+    std::unique_ptr<ThisOpType> op_ptr = nullptr;
+    REQUIRE_NOTHROW(
+      [](auto& x) { x = std::make_unique<ThisOpType>(0., 1.); }(op_ptr));
+    REQUIRE(IsValidPtr(op_ptr));
+    CHECK(op_ptr->get_min() == El::To<DataType>(0.0));
+    CHECK(op_ptr->get_max() == El::To<DataType>(1.0));
+
+    REQUIRE_NOTHROW(
+      [](auto& x) { x = std::make_unique<ThisOpType>(1., 1.); }(op_ptr));
+    REQUIRE(IsValidPtr(op_ptr));
+    CHECK(op_ptr->get_min() == El::To<DataType>(1.0));
+    CHECK(op_ptr->get_max() == El::To<DataType>(1.0));
+  }
+  SECTION("Construction with invalid arguments")
+  {
+    std::unique_ptr<ThisOpType> op_ptr = nullptr;
+    CHECK_THROWS(
+      [](auto& x) { x = std::make_unique<ThisOpType>(1.0, 0.0); }(op_ptr));
+    CHECK_FALSE(IsValidPtr(op_ptr));
+  }
+  SECTION("Copy interface")
+  {
+    std::unique_ptr<ThisOpType> clone_ptr = nullptr;
+    REQUIRE_NOTHROW(
+      [](auto& x) { x = ThisOpType(1.0, 3.0).clone(); }(clone_ptr));
+    CHECK(clone_ptr->get_min() == El::To<DataType>(1.0));
+    CHECK(clone_ptr->get_max() == El::To<DataType>(3.0));
+
+    ThisOpType op(0.0, 1.0);
+    REQUIRE_NOTHROW([](auto& target, auto const& source) {
+      target = source;
+    }(op, *clone_ptr));
+    CHECK(op.get_min() == El::To<DataType>(1.0));
+    CHECK(op.get_max() == El::To<DataType>(3.0));
+  }
+  SECTION("Construct from protobuf")
+  {
+    constexpr auto D = DeviceAlloc<ThisOpType>;
+    lbann_data::Operator proto_op;
+    ThisOpType(-2.0, 5.0).write_proto(proto_op);
+
+    std::unique_ptr<BaseOperatorType<ThisOpType>> base_ptr = nullptr;
+    REQUIRE_NOTHROW([&proto_op](auto& x) {
+      x = lbann::proto::construct_operator<DataType, DataType, D>(proto_op);
+    }(base_ptr));
+    CHECK(base_ptr->get_type() == "clamp");
+
+    auto* specific_ptr = dynamic_cast<ThisOpType*>(base_ptr.get());
+    CHECK((bool) specific_ptr);
+    CHECK(specific_ptr->get_min() == El::To<DataType>(-2.0));
+    CHECK(specific_ptr->get_max() == El::To<DataType>(5.0));
+
+  }
+}
+
 TEMPLATE_LIST_TEST_CASE("Clamp operator action",
-                        "[mpi][operator][math][action]",
+                        "[mpi][operator][math][clamp][action]",
                         AllClampOpTypes)
 {
   using ThisOpType = TestType;
@@ -101,44 +170,39 @@ TEMPLATE_LIST_TEST_CASE("Clamp operator action",
   auto& world_comm = unit_test::utilities::current_world_comm();
   auto const& g = world_comm.get_trainer_grid();
 
+  // Some common data
+  ThisOpType op(El::To<DataType>(-1.0), El::To<DataType>(1.0));
+
+  El::Int const height = 13;
+  El::Int const width = 17;
+  DataParallelMatType<ThisOpType> input(height, width, g, 0),
+    output(height, width, g, 0), grad_wrt_output(height, width, g, 0),
+    grad_wrt_input(height, width, g, 0), true_output(height, width, g, 0),
+    true_grad_wrt_input(height, width, g, 0);
+
   SECTION("Data parallel - all values in range")
   {
-    El::Int const height = 13;
-    El::Int const width = 17;
-
-    ThisOpType op(El::To<DataType>(-1.0), El::To<DataType>(1.0));
-
-    DataParallelMatType<ThisOpType> input(height, width, g, 0),
-      output(height, width, g, 0), grad_wrt_output(height, width, g, 0),
-      grad_wrt_input(height, width, g, 0);
-
     // Setup inputs/outputs
     El::MakeUniform(input);
+    true_output = input; // Operator has no effect.
+
     El::MakeUniform(grad_wrt_output);
+    true_grad_wrt_input = grad_wrt_output;
+
     El::Fill(output, El::To<DataType>(2.0));         // Fill out of range.
     El::Fill(grad_wrt_input, El::To<DataType>(4.0)); // Fill out of range.
 
-    CHECK_FALSE(input == output);
+    CHECK_FALSE(true_output == output);
     REQUIRE_NOTHROW(op.fp_compute({input}, {output}));
-    CHECK(input == output);
+    CHECK(true_output == output);
 
     REQUIRE_NOTHROW(
       op.bp_compute({input}, {grad_wrt_output}, {grad_wrt_input}));
-    CHECK(grad_wrt_output == grad_wrt_input);
+    CHECK(true_grad_wrt_input == grad_wrt_input);
   }
 
   SECTION("Data parallel - all values out of range")
   {
-    El::Int const height = 13;
-    El::Int const width = 17;
-
-    ThisOpType op(El::To<DataType>(-1.0), El::To<DataType>(1.0));
-
-    DataParallelMatType<ThisOpType> input(height, width, g, 0),
-      output(height, width, g, 0), grad_wrt_output(height, width, g, 0),
-      grad_wrt_input(height, width, g, 0), true_output(height, width, g, 0),
-      true_grad_wrt_input(height, width, g, 0);
-
     // Setup inputs/outputs
     El::MakeUniform(input, El::To<DataType>(4), El::To<DataType>(1));
     El::Fill(output, El::To<DataType>(-2.0));
@@ -148,7 +212,7 @@ TEMPLATE_LIST_TEST_CASE("Clamp operator action",
     El::Fill(grad_wrt_input, El::To<DataType>(-1.0));
     El::Fill(true_grad_wrt_input, El::To<DataType>(0.0));
 
-    CHECK_FALSE(input == true_output);
+    CHECK_FALSE(true_output == output);
     REQUIRE_NOTHROW(op.fp_compute({input}, {output}));
     CHECK(true_output == output);
 
@@ -158,10 +222,8 @@ TEMPLATE_LIST_TEST_CASE("Clamp operator action",
   }
 }
 
-// Save some typing.
-using unit_test::utilities::IsValidPtr;
-TEMPLATE_LIST_TEST_CASE("Serializing Clamp operator",
-                        "[mpi][operator][math][serialize]",
+TEMPLATE_LIST_TEST_CASE("Clamp operator serialization",
+                        "[mpi][operator][math][clamp][serialize]",
                         AllClampOpTypes)
 {
   using ThisOpType = TestType;
