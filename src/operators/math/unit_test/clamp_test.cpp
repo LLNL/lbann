@@ -28,6 +28,7 @@
 #include <catch2/catch.hpp>
 
 #include "MPITestHelpers.hpp"
+#include "MatrixHelpers.hpp"
 #include "TestHelpers.hpp"
 
 // CUT
@@ -42,19 +43,6 @@
 #include <functional>
 #include <memory>
 #include <numeric>
-
-// Build the input/expected output matrices.
-template <typename T, El::Dist U, El::Dist V>
-auto get_input(El::DistMatrix<T, U, V, El::ELEMENT, El::Device::CPU>& mat,
-               std::vector<size_t> const& size,
-               std::size_t ldim_factor = 0UL)
-{
-  auto width = size[0];
-  auto height =
-    std::accumulate(cbegin(size) + 1, cend(size), 1, std::multiplies<size_t>());
-  auto ldim = height + ldim_factor;
-  mat.Resize(height, width, ldim);
-}
 
 // Define the list of operators to test. Basically this is
 // {float,double}x{CPU,GPU}.
@@ -81,8 +69,8 @@ struct OperatorTraits<lbann::ClampOperator<T, D>>
     El::DistMatrix<T, El::Dist::STAR, El::Dist::VC, El::DistWrap::ELEMENT, D>;
   using model_parallel_mat_type =
     El::DistMatrix<T, El::Dist::MC, El::Dist::MR, El::DistWrap::ELEMENT, D>;
-  using tensor_type = lbann::utils::DistTensorView<T,D>;
-  using const_tensor_type = lbann::utils::ConstDistTensorView<T,D>;
+  using tensor_type = lbann::utils::DistTensorView<T, D>;
+  using const_tensor_type = lbann::utils::ConstDistTensorView<T, D>;
   static constexpr El::Device device = D;
 };
 
@@ -103,7 +91,7 @@ using TensorType = typename OperatorTraits<OpT>::tensor_type;
 template <typename OpT>
 using ConstTensorType = typename OperatorTraits<OpT>::const_tensor_type;
 
-TEMPLATE_LIST_TEST_CASE("Clamp operator forward action",
+TEMPLATE_LIST_TEST_CASE("Clamp operator action",
                         "[mpi][operator][math][action]",
                         AllClampOpTypes)
 {
@@ -121,16 +109,52 @@ TEMPLATE_LIST_TEST_CASE("Clamp operator forward action",
     ThisOpType op(El::To<DataType>(-1.0), El::To<DataType>(1.0));
 
     DataParallelMatType<ThisOpType> input(height, width, g, 0),
-      output(height, width, g, 0);
+      output(height, width, g, 0), grad_wrt_output(height, width, g, 0),
+      grad_wrt_input(height, width, g, 0);
 
     // Setup inputs/outputs
     El::MakeUniform(input);
-    El::Fill(output, El::To<DataType>(2.0)); // Fill out of range.
+    El::MakeUniform(grad_wrt_output);
+    El::Fill(output, El::To<DataType>(2.0));         // Fill out of range.
+    El::Fill(grad_wrt_input, El::To<DataType>(4.0)); // Fill out of range.
 
-    El::break_on_me();
     CHECK_FALSE(input == output);
     REQUIRE_NOTHROW(op.fp_compute({input}, {output}));
     CHECK(input == output);
+
+    REQUIRE_NOTHROW(
+      op.bp_compute({input}, {grad_wrt_output}, {grad_wrt_input}));
+    CHECK(grad_wrt_output == grad_wrt_input);
+  }
+
+  SECTION("Data parallel - all values out of range")
+  {
+    El::Int const height = 13;
+    El::Int const width = 17;
+
+    ThisOpType op(El::To<DataType>(-1.0), El::To<DataType>(1.0));
+
+    DataParallelMatType<ThisOpType> input(height, width, g, 0),
+      output(height, width, g, 0), grad_wrt_output(height, width, g, 0),
+      grad_wrt_input(height, width, g, 0), true_output(height, width, g, 0),
+      true_grad_wrt_input(height, width, g, 0);
+
+    // Setup inputs/outputs
+    El::MakeUniform(input, El::To<DataType>(4), El::To<DataType>(1));
+    El::Fill(output, El::To<DataType>(-2.0));
+    El::Fill(true_output, El::To<DataType>(1.0));
+
+    El::MakeUniform(grad_wrt_output);
+    El::Fill(grad_wrt_input, El::To<DataType>(-1.0));
+    El::Fill(true_grad_wrt_input, El::To<DataType>(0.0));
+
+    CHECK_FALSE(input == true_output);
+    REQUIRE_NOTHROW(op.fp_compute({input}, {output}));
+    CHECK(true_output == output);
+
+    REQUIRE_NOTHROW(
+      op.bp_compute({input}, {grad_wrt_output}, {grad_wrt_input}));
+    CHECK(true_grad_wrt_input == grad_wrt_input);
   }
 }
 
