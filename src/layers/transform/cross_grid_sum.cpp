@@ -24,55 +24,36 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-syntax = "proto3";
+#include "lbann/base.hpp"
+#define LBANN_CROSS_GRID_SUM_LAYER_INSTANTIATE
+#include "lbann/layers/transform/cross_grid_sum.hpp"
 
-package lbann_data;
+#include <lbann.pb.h>
+#include <lbann/proto/proto_common.hpp>
 
-import "callbacks.proto";
-import "layers.proto";
-import "metrics.proto";
-import "objective_functions.proto";
-import "weights.proto";
+namespace lbann {
 
-enum SubGraphCommunication {
-  // Use the global default. Use pt2pt operations.
-  PT2PT = 0;
-  // Use collective operations
-  COLL = 1;
-  // Use optimized collective opeations 
-  COLL_OPT = 2;
-}
-
-message Model {
-  message Summarizer {
-    string dir = 1;
+template <typename TensorDataType, data_layout Layout, El ::Device Device>
+std ::unique_ptr<Layer>
+build_cross_grid_sum_layer_from_pbuf(lbann_comm* comm,
+                                     lbann_data ::Layer const&)
+{
+  if constexpr (Layout != data_layout::DATA_PARALLEL) {
+    LBANN_ERROR("cross_grid_sum_layer only supports DATA_PARALLEL layout");
+    return nullptr;
   }
 
-  string type = 1;
-  string name = 3;
-  ObjectiveFunction objective_function = 2;
-  repeated Metric metric = 5;
-  string data_layout = 6;
-
-  int64 num_epochs = 4;
-  int64 super_steps = 121; //multiple steps/epochs currently use in GAN
-  int64 num_batches = 122; //multiple batches/sub epoch
-  int64 evaluation_frequency = 54;
-
-  
-  SubGraphCommunication subgraph_communication = 13;  //Subgrid communication flag
-  bool enable_subgraph_topology = 27;
-  int64 subgraph_parent_grid_resources = 29; //Num resources for parent grid (0: use all resources) 
-  
-
-
-  bool disable_cuda = 8;
-
-  repeated Layer layer = 10;
-
-  repeated Weights weights = 11;
-
-  repeated Callback callback = 20;
-
-  Summarizer summarizer = 32;
+  using LayerType = cross_grid_sum_layer<TensorDataType, Device>;
+  return make_unique<LayerType>(comm);
 }
+
+#define PROTO_DEVICE(T, D)                                                     \
+  template class cross_grid_sum_layer<T, D>;                                   \
+  LBANN_LAYER_BUILDER_ETI(cross_grid_sum, T, D)
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO
+
+} // namespace lbann

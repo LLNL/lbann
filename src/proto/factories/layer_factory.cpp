@@ -99,6 +99,8 @@
 #include "lbann/layers/transform/split.hpp"
 #include "lbann/layers/transform/stop_gradient.hpp"
 #include "lbann/layers/transform/sum.hpp"
+#include "lbann/layers/transform/cross_grid_sum_slice.hpp"
+#include "lbann/layers/transform/cross_grid_sum.hpp"
 #include "lbann/layers/transform/tessellate.hpp"
 #include "lbann/layers/transform/uniform.hpp"
 #include "lbann/layers/transform/unpooling.hpp"
@@ -236,6 +238,8 @@ private:
     LBANN_REGISTER_BUILDER(Concatenation, concatenate);
     LBANN_REGISTER_BUILDER(Constant, constant);
     LBANN_REGISTER_BUILDER(Crop, crop);
+    LBANN_REGISTER_BUILDER(Cross_Grid_Sum_Slice, cross_grid_sum_slice);
+    LBANN_REGISTER_BUILDER(Cross_Grid_Sum, cross_grid_sum);
     LBANN_REGISTER_BUILDER(Dummy, dummy);
     LBANN_REGISTER_BUILDER(Evaluation, evaluation);
     LBANN_REGISTER_BUILDER(Gather, gather);

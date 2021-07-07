@@ -72,6 +72,8 @@ message Layer {
     Slice slice = 301;
     Split split = 302;
     Sum sum = 303;
+    Cross_Grid_Sum_Slice cross_grid_sum_slice = 338;
+    Cross_Grid_Sum cross_grid_sum = 339;
     WeightedSum weighted_sum = 323;
     Unpooling unpooling = 304;
     Hadamard hadamard = 308;
@@ -465,6 +467,12 @@ message Layer {
   }
 
   message Sum {
+  }
+
+  message Cross_Grid_Sum_Slice {
+  }
+
+  message Cross_Grid_Sum {
   }
 
   message WeightedSum {
@@ -910,4 +918,7 @@ message ParallelStrategy {
   int64 procs_per_replica = 12;
   int64 depth_groups = 13;
   int64 depth_splits = 14;
+  int64 sub_branch_tag = 15;
+  int64 sub_branch_resource_percentage = 16;
+  bool enable_subgraph = 17;
 }
