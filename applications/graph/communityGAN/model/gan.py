@@ -11,7 +11,8 @@ class CommunityGAN(lbann.modules.Module):
             num_vertices,
             motif_size,
             embed_dim,
-            learn_rate,
+            discriminator_learn_rate,
+            generator_learn_rate,
             generator_type='greedy',
             embeddings_device='CPU',
             initial_embeddings=None,
@@ -19,14 +20,15 @@ class CommunityGAN(lbann.modules.Module):
         super().__init__()
         self.num_vertices = num_vertices
         self.embed_dim = embed_dim
-        self.learn_rate = learn_rate
+        self.discriminator_learn_rate = discriminator_learn_rate
+        self.generator_learn_rate = generator_learn_rate
 
         # Construct generator
         if generator_type == 'greedy':
             self.generator = model.generator.GreedyGenerator(
                 num_vertices,
                 embed_dim,
-                learn_rate,
+                generator_learn_rate,
                 embeddings_device=embeddings_device,
                 initial_embeddings=initial_embeddings,
             )
@@ -35,7 +37,7 @@ class CommunityGAN(lbann.modules.Module):
                 num_vertices,
                 motif_size,
                 embed_dim,
-                learn_rate,
+                generator_learn_rate,
                 embeddings_device=embeddings_device,
                 initial_embeddings=initial_embeddings,
             )
@@ -47,7 +49,7 @@ class CommunityGAN(lbann.modules.Module):
             num_vertices,
             motif_size,
             embed_dim,
-            learn_rate,
+            discriminator_learn_rate,
             embeddings_device=embeddings_device,
             initial_embeddings=initial_embeddings,
         )

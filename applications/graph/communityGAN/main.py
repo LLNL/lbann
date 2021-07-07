@@ -108,6 +108,12 @@ def setup_config(args, work_dir):
     embeddings_dir = os.path.realpath(embeddings_dir)
     config.set('Embeddings', 'embeddings_dir', embeddings_dir)
 
+    # Default generator learning rate
+    generator_learn_rate = config.get('Embeddings', 'generator_learn_rate')
+    if not generator_learn_rate:
+        learn_rate = config.get('Embeddings', 'learn_rate')
+        config.set('Embeddings', 'generator_learn_rate', learn_rate)
+
     # Write config file to work directory
     config_file = os.path.join(work_dir, 'experiment.config')
     with open(config_file, 'w') as f:
@@ -239,7 +245,8 @@ def setup_lbann(script, config):
     embed_dim = config.getint('Embeddings', 'embed_dim')
     initial_embeddings_file = config.get('Embeddings', 'initial_embeddings_file')
     generator_type = config.get('Embeddings', 'generator_type')
-    learn_rate = config.getfloat('Embeddings', 'learn_rate')
+    discriminator_learn_rate = config.getfloat('Embeddings', 'learn_rate')
+    generator_learn_rate = config.getfloat('Embeddings', 'generator_learn_rate')
     mini_batch_size = config.getint('Embeddings', 'mini_batch_size')
     sgd_steps = config.getint('Embeddings', 'sgd_steps')
     sgd_steps_per_epoch = config.getint('Embeddings', 'sgd_steps_per_epoch')
@@ -259,14 +266,15 @@ def setup_lbann(script, config):
         walk_length,
         num_vertices,
         embed_dim,
-        learn_rate,
+        discriminator_learn_rate,
+        generator_learn_rate,
         num_epochs,
         embeddings_dir,
         use_online_walker,
         generator_type=generator_type,
         initial_embeddings_file=initial_embeddings_file,
     )
-    optimizer = lbann.SGD(learn_rate=learn_rate)
+    optimizer = lbann.SGD(learn_rate=discriminator_learn_rate)
     if use_online_walker:
         data_reader = data.make_online_data_reader(config)
     else:
