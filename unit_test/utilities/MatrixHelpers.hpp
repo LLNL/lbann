@@ -67,31 +67,6 @@ bool compare_values(Matrix<T, Device::CPU> const& A,
 //   4. A_ij == B_ij for each i,j. Comparison is `operator==` for the
 //      appropriate data type.
 
-template <typename T, Device D>
-bool operator==(Matrix<T, D> const& A, Matrix<T, D> const& B)
-#ifdef HYDROGEN_RELEASE_BUILD
-  noexcept
-#endif
-{
-  return compare_values(A, B);
-}
-
-template <typename T, El::Device D>
-bool operator==(AbstractMatrix<T> const& A, Matrix<T, D> const& B)
-{
-  switch (A.GetDevice()) {
-  case Device::CPU:
-    return static_cast<Matrix<T, Device::CPU> const&>(A) == B;
-#ifdef LBANN_HAS_GPU
-  case Device::GPU:
-    return static_cast<Matrix<T, Device::GPU> const&>(A) == B;
-#endif // LBANN_HAS_GPU
-  default:
-    throw "Invalid device";
-  }
-  return false;
-}
-
 template <typename S, typename T>
 bool operator==(AbstractMatrix<S> const& A, AbstractMatrix<T> const& B) noexcept
 {
@@ -104,15 +79,15 @@ bool operator==(AbstractMatrix<T> const& A, AbstractMatrix<T> const& B)
   noexcept
 #endif
 {
-  switch (B.GetDevice()) {
-  case Device::CPU:
-    return A == static_cast<Matrix<T, Device::CPU> const&>(B);
-#ifdef LBANN_HAS_GPU
-  case Device::GPU:
-    return A == static_cast<Matrix<T, Device::GPU> const&>(B);
-#endif // LBANN_HAS_GPU
-  }
-  return false;
+  using Proxy = AbstractMatrixReadDeviceProxy<T, Device::CPU>;
+  if (&A == &B) // Short-circuit when testing reflexively.
+    return true;
+
+  if ((A.GetDevice() != B.GetDevice()) || (A.Height() != B.Height()) ||
+      (A.Width() != B.Width()))
+    return false;
+
+  return compare_values(Proxy(A).GetLocked(), Proxy(B).GetLocked());
 }
 
 // Two DistMatrices are equivalent under `operator==` iff their

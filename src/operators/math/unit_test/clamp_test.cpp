@@ -156,7 +156,6 @@ TEMPLATE_LIST_TEST_CASE("Clamp operator lifecycle",
     CHECK((bool) specific_ptr);
     CHECK(specific_ptr->get_min() == El::To<DataType>(-2.0));
     CHECK(specific_ptr->get_max() == El::To<DataType>(5.0));
-
   }
 }
 
