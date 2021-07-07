@@ -21,7 +21,7 @@ def make_offline_data_reader():
 def make_online_data_reader(config):
 
     # Get parameters
-    embedding_weights = 'generator_log_embeddings'
+    embedding_weights = 'generator_embeddings'
     graph_file = config.get('Graph', 'file')
     num_vertices = config.getint('Graph', 'num_vertices')
     motif_file = config.get('Motifs', 'file')

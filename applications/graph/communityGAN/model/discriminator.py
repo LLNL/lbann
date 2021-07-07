@@ -30,28 +30,36 @@ class Discriminator(lbann.modules.Module):
             #   log(d) = log( -log(1-D) / embed_dim ) / motif_size
             # We initialize the embeddings in log-space so that the
             # discriminator's initial probability estimates have mean 0.5.
-            mean = math.log( -math.log(1-0.5) / embed_dim ) / motif_size
-            radius = math.log( -math.log(1-0.75) / embed_dim ) / motif_size - mean
+            mean = ( -math.log(1-0.5) / embed_dim ) ** (1/motif_size)
+            radius = ( -math.log(1-0.75) / embed_dim ) ** (1/motif_size) - mean
             init = lbann.UniformInitializer(min=mean-radius, max=mean+radius)
         else:
-            min_val = ( -math.log(1-0.5) / embed_dim ) ** (1/motif_size)
-            values = np.log(np.maximum(initial_embeddings, min_val))
-            init = lbann.ValueInitializer(values=str_list(np.nditer(values)))
-        self.log_embedding_weights = lbann.Weights(
+            init = lbann.ValueInitializer(values=str_list(np.nditer(initial_embeddings)))
+        self.embedding_weights = lbann.Weights(
             initializer=init,
-            name='discriminator_log_embeddings',
+            name='discriminator_embeddings',
         )
 
-    def get_log_embeddings(self, indices):
-        return lbann.DistEmbedding(
+    def get_embeddings(self, indices):
+        embeddings = lbann.DistEmbedding(
             indices,
-            weights=self.log_embedding_weights,
+            weights=self.embedding_weights,
             num_embeddings=self.num_vertices,
             embedding_dim=self.embed_dim,
             sparse_sgd=True,
             learning_rate=self.learn_rate,
             device=self.embeddings_device
         )
+
+        # Force embeddings to be positive
+        # Note: Propagate gradients even when embeddings are negative
+        epsilon = 0.1
+        embeddings = lbann.Sum(
+            embeddings,
+            lbann.Relu(lbann.Negative(lbann.StopGradient(embeddings))),
+            lbann.Constant(value=epsilon, hint_layer=embeddings),
+        )
+        return embeddings
 
     def forward(self, motif_size, motif_log_embeddings):
         """Predict whether a motif is real.

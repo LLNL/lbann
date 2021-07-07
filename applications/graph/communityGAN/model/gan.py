@@ -73,7 +73,8 @@ class CommunityGAN(lbann.modules.Module):
             fake_motif_indices,
             device='CPU',
         )
-        all_motif_log_embeddings = self.discriminator.get_log_embeddings(all_motif_indices)
+        all_motif_embeddings = self.discriminator.get_embeddings(all_motif_indices)
+        all_motif_log_embeddings = lbann.Log(all_motif_embeddings)
         all_motif_log_embeddings = lbann.Slice(
             all_motif_log_embeddings,
             slice_points=str_list([0, motif_size, 2*motif_size]),

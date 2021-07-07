@@ -38,16 +38,14 @@ class GreedyGenerator(lbann.modules.Module):
             # We initialize the embeddings in log-space so that the
             # numerator G' has mean 0.5 in the first generator step
             # (i.e. motif_size=1).
-            mean = math.log( -math.log(1-0.5) / embed_dim ) / (1+1)
-            radius = math.log( -math.log(1-0.75) / embed_dim ) / (1+1) - mean
+            mean = ( -math.log(1-0.5) / embed_dim ) ** (1/(1+1))
+            radius = ( -math.log(1-0.75) / embed_dim ) ** (1/(1+1)) - mean
             init = lbann.UniformInitializer(min=mean-radius, max=mean+radius)
         else:
-            min_val = ( -math.log(1-0.5) / embed_dim ) ** (1/(1+1))
-            values = np.log(np.maximum(initial_embeddings, min_val))
-            init = lbann.ValueInitializer(values=str_list(np.nditer(values)))
-        self.log_embedding_weights = lbann.Weights(
+            init = lbann.ValueInitializer(values=str_list(np.nditer(initial_embeddings)))
+        self.embedding_weights = lbann.Weights(
             initializer=init,
-            name='generator_log_embeddings',
+            name='generator_embeddings',
         )
 
         # Initialize caches for helper functions
@@ -62,7 +60,8 @@ class GreedyGenerator(lbann.modules.Module):
     ):
 
         # Get log of embeddings for candidate vertices
-        candidate_log_embeddings = self._get_log_embeddings(candidate_indices)
+        candidate_embeddings = self._get_embeddings(candidate_indices)
+        candidate_log_embeddings = lbann.Log(candidate_embeddings)
 
         # Initialize motif with first candidate vertex
         motif_indices = [
@@ -97,16 +96,26 @@ class GreedyGenerator(lbann.modules.Module):
 
         return motif_indices, prob, log_prob
 
-    def _get_log_embeddings(self, indices):
-        return lbann.DistEmbedding(
+    def _get_embeddings(self, indices):
+        embeddings = lbann.DistEmbedding(
             indices,
-            weights=self.log_embedding_weights,
+            weights=self.embedding_weights,
             num_embeddings=self.num_vertices,
             embedding_dim=self.embed_dim,
             sparse_sgd=True,
             learning_rate=self.learn_rate,
             device=self.embeddings_device,
         )
+
+        # Force embeddings to be positive
+        # Note: Propagate gradients even when embeddings are negative
+        epsilon = 0.1
+        embeddings = lbann.Sum(
+            embeddings,
+            lbann.Relu(lbann.Negative(lbann.StopGradient(embeddings))),
+            lbann.Constant(value=epsilon, hint_layer=embeddings),
+        )
+        return embeddings
 
     def _expand_motif(
             self,
@@ -239,28 +248,36 @@ class TrivialGenerator(lbann.modules.Module):
             #   log(g) = log( -log(1-G) / embed_dim ) / motif_size
             # We initialize the embeddings in log-space so that the
             # generator's initial confidence has mean 0.5.
-            mean = math.log( -math.log(1-0.5) / embed_dim ) / motif_size
-            radius = math.log( -math.log(1-0.75) / embed_dim ) / motif_size - mean
+            mean = ( -math.log(1-0.5) / embed_dim ) ** (1/motif_size)
+            radius = ( -math.log(1-0.75) / embed_dim ) ** (1/motif_size) - mean
             init = lbann.UniformInitializer(min=mean-radius, max=mean+radius)
         else:
-            min_val = ( -math.log(1-0.5) / embed_dim ) ** (1/motif_size)
-            values = np.log(np.maximum(initial_embeddings, min_val))
-            init = lbann.ValueInitializer(values=str_list(np.nditer(values)))
-        self.log_embedding_weights = lbann.Weights(
+            init = lbann.ValueInitializer(values=str_list(np.nditer(initial_embeddings)))
+        self.embedding_weights = lbann.Weights(
             initializer=init,
-            name='generator_log_embeddings',
+            name='generator_embeddings',
         )
 
-    def _get_log_embeddings(self, indices):
-        return lbann.DistEmbedding(
+    def _get_embeddings(self, indices):
+        embeddings = lbann.DistEmbedding(
             indices,
-            weights=self.log_embedding_weights,
+            weights=self.embedding_weights,
             num_embeddings=self.num_vertices,
             embedding_dim=self.embed_dim,
             sparse_sgd=True,
             learning_rate=self.learn_rate,
             device=self.embeddings_device,
         )
+
+        # Force embeddings to be positive
+        # Note: Propagate gradients even when embeddings are negative
+        epsilon = 0.1
+        embeddings = lbann.Sum(
+            embeddings,
+            lbann.Relu(lbann.Negative(lbann.StopGradient(embeddings))),
+            lbann.Constant(value=epsilon, hint_layer=embeddings),
+        )
+        return embeddings
 
     def forward(
             self,
@@ -272,7 +289,8 @@ class TrivialGenerator(lbann.modules.Module):
             'Trivial generator expects to recieve a fake motif'
 
         # Get log of embeddings for candidate vertices
-        motif_log_embeddings = self._get_log_embeddings(candidate_indices)
+        motif_embeddings = self._get_embeddings(candidate_indices)
+        motif_log_embeddings = lbann.Log(motif_embeddings)
 
         # G = 1 - exp(-sum_j(prod_i(g_ij)))
         # log(1-G) = -sum_j(exp(sum_i(log(g_ij))))
