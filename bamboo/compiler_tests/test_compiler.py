@@ -3,11 +3,12 @@ sys.path.insert(0, '../common_python')
 import tools
 import pytest
 import os, re
+import shutil
 
 def test_compiler_build_script(cluster, dirname):
-    bamboo_base_dir = '%s/bamboo/compiler_tests' % (dirname)
-    output_file_name = '%s/output/build_script_output.txt' % (bamboo_base_dir)
-    error_file_name = '%s/error/build_script_error.txt' % (bamboo_base_dir)
+    bamboo_base_dir = os.path.join(dirname, 'bamboo', 'compiler_tests')
+    output_file_name = os.path.join(bamboo_base_dir, 'output', 'build_script_output.txt')
+    error_file_name = os.path.join(bamboo_base_dir, 'error', 'build_script_error.txt')
 
     # Get environment variables
     BAMBOO_AGENT = os.getenv('bamboo_agentId')
@@ -26,8 +27,13 @@ def test_compiler_build_script(cluster, dirname):
 
     return_code = os.system(command)
 
-    gather_artifacts_cmd = 'cp %s/spack-*.txt %s/output' % (dirname, bamboo_base_dir)
-    os.system(gather_artifacts_cmd)
+    artifact_dir = os.path.join(bamboo_base_dir, 'output')
+    with os.scandir(dirname) as it:
+        for entry in it:
+            if entry.is_file() and re.match(r'spack-.*txt', entry.name):
+                (base, ext) = os.path.splitext(entry.name)
+                new_file_name = base + '_output' + ext
+                shutil.copyfile(entry.path, os.path.join(artifact_dir, new_file_name))
 
     tools.assert_success(return_code, error_file_name)
 
