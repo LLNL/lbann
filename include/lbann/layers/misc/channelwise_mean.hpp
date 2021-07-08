@@ -41,7 +41,7 @@ class channelwise_mean_layer : public data_type_layer<TensorDataType> {
                 "data-parallel data layout");
 public:
 
-  channelwise_mean_layer()
+  channelwise_mean_layer(lbann_comm* = nullptr)
     : data_type_layer<TensorDataType>(nullptr) {
   }
 
