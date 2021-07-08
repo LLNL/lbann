@@ -48,7 +48,7 @@ public:
     return new cross_grid_sum_slice_layer(*this);
   }
   std::string get_type() const override { return "cross_grid_sum_slice"; }
-  constexpr data_layout get_data_layout() const override
+  data_layout get_data_layout() const override
   {
     return data_layout::DATA_PARALLEL;
   }

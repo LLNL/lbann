@@ -47,7 +47,7 @@ public:
     return new cross_grid_sum_layer(*this);
   }
   std::string get_type() const final { return "cross_grid_sum"; }
-  constexpr data_layout get_data_layout() const final
+  data_layout get_data_layout() const final
   {
     return data_layout::DATA_PARALLEL;
   }
