@@ -445,7 +445,7 @@ void KFAC::on_forward_prop_end(
             l, &context, layer_id, proc_rank);
 #else
         if constexpr (Device == El::Device::CPU) {
-          block = std::make_shared<kfac_block_gru<El::Device::CPU>>(
+          block = std::make_shared<kfac_block_gru<Device>>(
             l, &context, layer_id, proc_rank);
         }
         else {
