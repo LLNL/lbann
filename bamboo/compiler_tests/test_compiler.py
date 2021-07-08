@@ -2,8 +2,7 @@ import sys
 sys.path.insert(0, '../common_python')
 import tools
 import pytest
-import os, re, subprocess
-
+import os, re
 
 def test_compiler_build_script(cluster, dirname):
     bamboo_base_dir = '%s/bamboo/compiler_tests' % (dirname)
@@ -15,11 +14,11 @@ def test_compiler_build_script(cluster, dirname):
 
     common_cmd = '%s/scripts/build_lbann.sh -d -l bamboo-%s --test --clean-build -j $(($(nproc)+2)) -- +deterministic +vision +numpy' % (dirname, BAMBOO_AGENT)
     if cluster in ['lassen', 'pascal', 'ray']:
-        command = '%s +cuda +half +fft ^hydrogen@develop > %s 2> %s' % (common_cmd, output_file_name, error_file_name)
+        command = '%s +cuda +half +fft > %s 2> %s' % (common_cmd, output_file_name, error_file_name)
     elif cluster in ['corona']:
-        command = '%s +rocm ^hydrogen@develop > %s 2> %s' % (common_cmd, output_file_name, error_file_name)
+        command = '%s +rocm > %s 2> %s' % (common_cmd, output_file_name, error_file_name)
     elif cluster in ['catalyst']:
-        command = '%s +onednn +half +fft ^hydrogen@develop > %s 2> %s' % (common_cmd, output_file_name, error_file_name)
+        command = '%s +onednn +half +fft > %s 2> %s' % (common_cmd, output_file_name, error_file_name)
     else:
         e = 'test_compiler_build_script: Unsupported Cluster %s' % cluster
         print('Skip - ' + e)
