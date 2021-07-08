@@ -62,7 +62,7 @@ template <>
 void kfac_block_gru<El::Device::CPU>::on_forward_prop_end() {
 }
 
-#ifdef LBANN_HAS_GPU
+#ifdef LBANN_GRU_LAYER_CUDNN_SUPPORTED
 template <>
 void kfac_block_gru<El::Device::GPU>::on_forward_prop_end() {
   const auto& reserve_space = get_gru_layer()->get_reserve_space();
@@ -83,7 +83,7 @@ void kfac_block_gru<El::Device::GPU>::on_forward_prop_end() {
       sync_info.Stream()));
       */
 }
-#endif // LBANN_HAS_GPU
+#endif // LBANN_GRU_LAYER_CUDNN_SUPPORTED
 
 template <El::Device Device>
 const std::vector<El::AbstractMatrix<DataType>*>
@@ -523,7 +523,7 @@ template <>
 void kfac_block_gru<El::Device::CPU>::check_dnn_lib_spec() const {
 }
 
-#ifdef LBANN_HAS_GPU
+#ifdef LBANN_GRU_LAYER_CUDNN_SUPPORTED
 template <>
 void kfac_block_gru<El::Device::GPU>::check_dnn_lib_spec() const {
 #ifdef LBANN_HAS_DNN_LIB
@@ -538,7 +538,7 @@ void kfac_block_gru<El::Device::GPU>::check_dnn_lib_spec() const {
   LBANN_ERROR("cuDNN should be enabled to use K-FAC with GPUs.");
 #endif // LBANN_HAS_DNN_LIB
 }
-#endif // LBANN_HAS_GPU
+#endif // LBANN_GRU_LAYER_CUDNN_SUPPORTED
 
 template <>
 void kfac_block_gru<El::Device::CPU>::get_r_i(
@@ -587,7 +587,7 @@ void kfac_block_gru<El::Device::CPU>::get_r_i(
   }
 }
 
-#ifdef LBANN_HAS_GPU
+#ifdef LBANN_GRU_LAYER_CUDNN_SUPPORTED
 template <>
 void kfac_block_gru<El::Device::GPU>::get_r_i(
     El::Matrix<DataType, El::Device::GPU>& r,
@@ -605,7 +605,7 @@ void kfac_block_gru<El::Device::GPU>::get_r_i(
       local_batch_size,
       sync_info);
 }
-#endif // LBANN_HAS_GPU
+#endif // LBANN_GRU_LAYER_CUDNN_SUPPORTED
 
 template <El::Device Device>
 void kfac_block_gru<Device>::get_weight_matrix(
@@ -810,8 +810,8 @@ void kfac_gru_util::get_g(
 }
 
 template class kfac_block_gru<El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
+#ifdef LBANN_GRU_LAYER_CUDNN_SUPPORTED
 template class kfac_block_gru<El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+#endif // LBANN_GRU_LAYER_CUDNN_SUPPORTED
 
 } // namespace lbann
