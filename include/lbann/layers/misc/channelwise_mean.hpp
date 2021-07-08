@@ -41,15 +41,13 @@ class channelwise_mean_layer : public data_type_layer<TensorDataType> {
                 "data-parallel data layout");
 public:
 
-  channelwise_mean_layer(lbann_comm *comm)
-    : data_type_layer<TensorDataType>(comm) {
-    if (comm->am_trainer_master()) {
-      LBANN_WARNING("channelwise_mean_layer is experimental "
-                    "and may be deprecated at any time");
-    }
+  channelwise_mean_layer()
+    : data_type_layer<TensorDataType>(nullptr) {
   }
 
-  channelwise_mean_layer* copy() const override { return new channelwise_mean_layer(*this); }
+  channelwise_mean_layer* copy() const override {
+    return new channelwise_mean_layer(*this);
+  }
 
   /** @name Serialization */
   ///@{
@@ -64,11 +62,6 @@ public:
   El::Device get_device_allocation() const override { return Device; }
 
 protected:
-
-  friend class cereal::access;
-  channelwise_mean_layer()
-    : channelwise_mean_layer(nullptr)
-  {}
 
   void setup_dims(DataReaderMetaData& dr_metadata) override {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
