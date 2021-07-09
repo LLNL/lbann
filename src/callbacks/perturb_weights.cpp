@@ -32,6 +32,7 @@
 
 #include <callbacks.pb.h>
 
+#include <algorithm>
 
 namespace lbann {
 namespace callback {
@@ -40,7 +41,6 @@ perturb_weights::perturb_weights(std::string output_name,
                            El::Int batch_interval)
   : callback_base(batch_interval),
     m_output_name(std::move(output_name)) {
-    m_output = nullptr;
 }
 
 perturb_weights::perturb_weights()
@@ -56,6 +56,8 @@ void perturb_weights::serialize(Archive & ar) {
 }
 
 void perturb_weights::setup(model* m) {
+   weights* m_output = nullptr;
+   
    for (auto* w : m->get_weights()) {
       if(w->get_name() == m_output_name){
         m_output = w;
@@ -70,6 +72,15 @@ void perturb_weights::setup(model* m) {
 
 void perturb_weights::on_batch_begin(model* m) {
   const auto& c = m->get_execution_context();
+  weights* m_output = nullptr;
+
+  for (auto* w : m->get_weights()) {
+      if(w->get_name() == m_output_name){
+        m_output = w;
+        break;
+      }
+   }  
+  
   if (m_output != nullptr && 
       c.get_step() % m_batch_interval == 0 &&
       c.get_step() >= 0) {
@@ -84,10 +95,8 @@ void perturb_weights::perturb(model& m){
   // Useful constants
   constexpr DataType zero = 0;
   constexpr DataType one = 1;
-  const auto range = 3;
-  const auto thres = 0.5;
-  const auto lower = 0.3;
-  const auto upper = 0.7;
+  constexpr DataType lower = 0.3;
+  constexpr DataType upper = 0.7;
   
   // RNG
   auto& gen = get_generator();
@@ -135,7 +144,7 @@ void perturb_weights::perturb(model& m){
 	El::Broadcast(new_values, comm->get_trainer_comm(), 0);
 		
 	// Update weight
-	auto& out_w = dynamic_cast<data_type_weights<DataType>&>(*m_output);	
+	auto& out_w = dynamic_cast<data_type_weights<DataType>&>(*w);	
 	out_w.set_values(new_values);		
 
 	break;
