@@ -115,7 +115,7 @@ using LeakyReLU = ::distconv::LeakyReLU<Backend>;
 template <typename TensorDataType>
 using Convolution = ::distconv::Convolution<Backend, TensorDataType>;
 template <typename TensorDataType>
-using Linear = ::distconv::Linear<Backend, TensorDataType>;
+using ChannelwiseFullyConnected = ::distconv::ChannelwiseFullyConnected<Backend, TensorDataType>;
 template <typename TensorDataType>
 using Pooling = ::distconv::Pooling<Backend, TensorDataType>;
 template <typename TensorDataType>

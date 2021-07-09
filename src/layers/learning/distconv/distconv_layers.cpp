@@ -33,7 +33,7 @@ namespace distconv{
   template <typename Backend, typename DataType>
   template <typename Allocator>
   int
-  Linear <Backend, DataType>
+  ChannelwiseFullyConnected<Backend, DataType>
   ::forward(bool transpose_A,
             const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &input,
             const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &linearity,
@@ -93,7 +93,7 @@ namespace distconv{
   template <typename Backend, typename DataType>
   template <typename Allocator>
   int
-  Linear<Backend, DataType>
+  ChannelwiseFullyConnected<Backend, DataType>
   ::apply_bias(const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &bias, 
                  tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output)
   { 
@@ -128,7 +128,7 @@ namespace distconv{
   template <typename Backend, typename DataType>
   template <typename Allocator>
   int
-  Linear<Backend, DataType>::
+  ChannelwiseFullyConnected<Backend, DataType>::
   backward_wrt_input(bool transpose_A,
                      const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output_grad,
                      const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &linearity,
@@ -182,7 +182,7 @@ namespace distconv{
   template <typename Backend, typename DataType>
   template <typename Allocator>
   int
-  Linear<Backend, DataType>::
+  ChannelwiseFullyConnected<Backend, DataType>::
   backward_wrt_weight(bool transpose_A,
                       DataType dst_scale,
                       DataType gradient_scale,
@@ -235,7 +235,7 @@ namespace distconv{
   template <typename Backend, typename DataType>
   template <typename Allocator>
   int
-  Linear<Backend, DataType>::
+  ChannelwiseFullyConnected<Backend, DataType>::
   backward_wrt_bias(DataType gradient_scale,
                         DataType dst_scale,
                         const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output_grad,
@@ -273,28 +273,28 @@ namespace distconv{
 //Explicit template instantiation
 
 #define ETI(T, Backend)                                                                 \
-  template class Linear<Backend, T>;                                                    \
-  template int Linear<Backend, T>::forward<tensor::CUDAAllocator>(                      \
+  template class ChannelwiseFullyConnected<Backend, T>;                                                    \
+  template int ChannelwiseFullyConnected<Backend, T>::forward<tensor::CUDAAllocator>(                      \
     bool transpose,                                                                     \
     const tensor::Tensor<T, tensor::LocaleMPI, tensor::CUDAAllocator> &input,           \
     const tensor::Tensor<T, tensor::LocaleMPI, tensor::CUDAAllocator> &linearity,       \
     tensor::Tensor<T, tensor::LocaleMPI, tensor::CUDAAllocator> &output);               \
-  template int Linear<Backend, T>::apply_bias<tensor::CUDAAllocator>(                   \
+  template int ChannelwiseFullyConnected<Backend, T>::apply_bias<tensor::CUDAAllocator>(                   \
     const tensor::Tensor<T, tensor::LocaleMPI, tensor::CUDAAllocator> &bias,            \
     tensor::Tensor<T, tensor::LocaleMPI, tensor::CUDAAllocator> &output);               \
-  template int Linear<Backend, T>::backward_wrt_input<tensor::CUDAAllocator>(           \
+  template int ChannelwiseFullyConnected<Backend, T>::backward_wrt_input<tensor::CUDAAllocator>(           \
     bool transpose,                                                                     \
     const tensor::Tensor<T, tensor::LocaleMPI, tensor::CUDAAllocator> &output_gradient, \
     const tensor::Tensor<T, tensor::LocaleMPI, tensor::CUDAAllocator> &linearity,       \
     tensor::Tensor<T, tensor::LocaleMPI, tensor::CUDAAllocator> &input_grad);           \
-  template int Linear<Backend, T>::backward_wrt_weight<tensor::CUDAAllocator>(          \
+  template int ChannelwiseFullyConnected<Backend, T>::backward_wrt_weight<tensor::CUDAAllocator>(          \
     bool transpose,                                                                     \
     T dst_scale,                                                                        \
     T gradient_scale,                                                                   \
     const tensor::Tensor<T, tensor::LocaleMPI, tensor::CUDAAllocator> &input,           \
     const tensor::Tensor<T, tensor::LocaleMPI, tensor::CUDAAllocator> &output_grad,     \
     tensor::Tensor<T, tensor::LocaleMPI, tensor::CUDAAllocator> &linearity_grad);       \
-  template int Linear<Backend, T>::backward_wrt_bias<tensor::CUDAAllocator>(            \
+  template int ChannelwiseFullyConnected<Backend, T>::backward_wrt_bias<tensor::CUDAAllocator>(            \
     T gradient_scale,                                                                   \
     T dst_scale,                                                                        \
     const tensor::Tensor<T, tensor::LocaleMPI, tensor::CUDAAllocator> &output_gradient, \

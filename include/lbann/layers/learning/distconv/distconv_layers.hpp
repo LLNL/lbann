@@ -35,17 +35,11 @@
 #ifdef LBANN_HAS_DISTCONV
 namespace distconv{
   template <typename Backend, typename DataType>
-  class Linear {
+  class ChannelwiseFullyConnected {
       using LocaleMPI = tensor::LocaleMPI;
 
     public:
-      Linear(Backend &backend):m_be(backend){};
-
-      template <typename Allocator>
-      void setup(int num_local_channels,
-                 size_t ws_size){
-        m_num_local_channels = num_local_channels;
-      }
+      ChannelwiseFullyConnected(Backend &backend):m_be(backend){};
 
     template <typename Allocator>
     int forward(bool transpose_A,
@@ -80,22 +74,9 @@ namespace distconv{
       const tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &output_grad,
       tensor::Tensor<DataType, tensor::LocaleMPI, Allocator> &bias_grad);
 
-    template <typename Allocator>
-    void allreduce_gradients(
-      tensor::Tensor<DataType, LocaleMPI, Allocator> &gradients)
-    {
-      Al::Allreduce<Al::NCCLBackend, DataType>(
-        gradients.get_base_ptr(),
-        gradients.get_size(),
-        Al::ReductionOperator::sum,
-        m_be.get_al_nccl_comm());
-    } 
-
   protected:
-    int m_num_local_channels; // Set in setup() 
-    int m_num_out_channels; // Set in setup()
     Backend &m_be;
-  }; // class definition Linear
+  }; // class definition ChannelwiseFullyConnected
 
 
   template <typename DataType, typename locale, typename Allocator>
@@ -109,11 +90,11 @@ namespace distconv{
     //Get the input layer local tensor shape 
 
     auto output_local_shape = input.get_local_shape();
-    output_local_shape[0] = linearity_dims[0];
+    output_local_shape[0] = transpose? linearity_dims[1] : linearity_dims[0];
     return output_local_shape;
   }
-extern template class Linear<::distconv::cudnn::BackendCUDNN, float>;
-extern template class Linear<::distconv::cudnn::BackendCUDNN, double>;
+extern template class ChannelwiseFullyConnected<::distconv::cudnn::BackendCUDNN, float>;
+extern template class ChannelwiseFullyConnected<::distconv::cudnn::BackendCUDNN, double>;
 }  // namespace distconv
 
 #endif // LBANN_HAS_DISTCONV

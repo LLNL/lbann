@@ -75,7 +75,7 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
 ::setup_layer(size_t workspace_capacity){
   data_type_distconv_adapter<TensorDataType>::setup_layer(workspace_capacity);
 
-  m_linear_operator = make_unique<dc::Linear<TensorDataType>>(dc::get_backend());
+  m_linear_operator = make_unique<dc::ChannelwiseFullyConnected<TensorDataType>>(dc::get_backend());
 
 }
 
@@ -270,21 +270,6 @@ channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
   return output_shape;
 }
 
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-dc::Shape
-channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
-::get_activations_shape(int index) const{
-  return data_type_distconv_adapter<TensorDataType>::get_activations_shape();
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-dc::Shape
-channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>
-::get_prev_activations_shape(int index) const{
-  return data_type_distconv_adapter<TensorDataType>::get_prev_activations_shape(0);
-}
-
-
 // =============================================================
 // DistConv-enabled Channelwise fullyconnected member functions
 // =============================================================
@@ -425,7 +410,9 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
     output_channel_dims.begin(), output_channel_dims.end(),
     1, std::multiplies<size_t>());
   
-  std::vector<int> linearity_dims{1, 1, input_channel_size, output_channel_size};
+  const auto linearity_dim_rows = this->m_transpose ? output_channel_size : input_channel_size;
+  const auto linearity_dims_cols = this->m_transpose ? input_channel_size : output_channel_size;
+  std::vector<int> linearity_dims{1, 1, linearity_dim_rows, linearity_dims_cols};
   return linearity_dims;
 }
 
@@ -439,11 +426,11 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
   const std::vector<size_t> output_channel_dims(
     output_dims.begin()+1, output_dims.end());
 
-  const auto& output_channel_size = std::accumulate(
-    output_channel_dims.begin()+1, output_channel_dims.end(),
+  const auto& bias_size = std::accumulate(
+    output_channel_dims.begin(), output_channel_dims.end(),
     1, std::multiplies<size_t>());
 
-  std::vector<int> bias_dims{1,1,output_channel_size,1};
+  std::vector<int> bias_dims{1,1,bias_size,1};
   return bias_dims;
 }
 
@@ -592,14 +579,10 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
 
 #ifdef LBANN_HAS_DISTCONV
   // We are guaranteed to have 
-  if(this->using_gpus() && this->distconv_enabled()){
+  if(this->distconv_enabled()){
     this->get_distconv_adapter().fp_compute();
     return ;
-  }else{
-    LBANN_ERROR("Distconv not compatible with CPU-only mode or distconv not enabled", 
-      "Is using GPU: \t ", this->using_gpus(),
-      "Is distconv enabled: \t" , this->distconv_enabled());
-  }  
+  } 
 
 #endif // LBANN_HAS_DISTCONV
 
@@ -679,14 +662,11 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
 {
 #ifdef LBANN_HAS_DISTCONV
 
-  if(this->using_gpus() && this->distconv_enabled()){
+  if(this->distconv_enabled()){
     this->get_distconv_adapter().bp_compute();
 
     return ;
-  }else{
-    LBANN_ERROR("Distconv not compatible with CPU-only mode");
   }
-
 #endif  //LBANN_HAS_DISTCONV
 
   const auto& zero = El::TypeTraits<TensorDataType>::Zero();

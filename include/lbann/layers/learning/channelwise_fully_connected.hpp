@@ -54,18 +54,13 @@ class channelwise_fully_connected_distconv_adapter
     void fp_compute();
     void bp_compute();
 
-
     dc::Shape get_activations_local_shape(int index=0) const override;
-    dc::Shape get_prev_activations_shape(int index) const override;
-    dc::Shape get_activations_shape(int index) const override;
-
-    std::unique_ptr<dc::Linear<TensorDataType>> m_linear_operator;
+ 
+    std::unique_ptr<dc::ChannelwiseFullyConnected<TensorDataType>> m_linear_operator;
     std::unique_ptr<TensorDevType> m_linear; 
     std::unique_ptr<TensorDevType> m_bias;
     std::unique_ptr<TensorDevType> m_linearity_gradient;
     std::unique_ptr<TensorDevType> m_bias_gradient;
-
-
   }; // class definition channelwise_fully_connected_distconv_adapter
 
 #endif  // LBANN_HAS_DISTCONV
