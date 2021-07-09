@@ -71,9 +71,7 @@ private:
    *  output_name.
    */
   std::string m_output_name;
-  
-  weights* m_output;
-  
+   
   void perturb(model& m);
 
   
