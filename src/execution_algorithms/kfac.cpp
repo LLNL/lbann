@@ -440,8 +440,19 @@ void KFAC::on_forward_prop_end(
         block = std::make_shared<kfac_block_bn<Device>>(
             l, &context, layer_id, proc_rank);
       } else if(is_gru) {
+#ifdef LBANN_GRU_LAYER_CUDNN_SUPPORTED
         block = std::make_shared<kfac_block_gru<Device>>(
             l, &context, layer_id, proc_rank);
+#else
+        if constexpr (Device == El::Device::CPU) {
+          block = std::make_shared<kfac_block_gru<Device>>(
+            l, &context, layer_id, proc_rank);
+        }
+        else {
+          block = nullptr;
+          LBANN_ERROR("GRU not supported on GPU without cuDNN support.");
+        }
+#endif
       }
 
       context.m_blocks.push_back(std::move(block));
