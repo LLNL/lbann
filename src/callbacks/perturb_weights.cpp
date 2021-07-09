@@ -117,14 +117,8 @@ void perturb_weights::perturbed(model& m){
 			auto val = temp.Get(i,0);
 			auto perturbed_val = val;
 			
-			if(val >= lower && val <= upper){	
-				if (dist(gen) > thres){
-					perturbed_val = val * 1.1;
-				}
-				else {
-					perturbed_val = val * 0.9;
-				}
-			}
+			perturbed_val += dist(gen); // dist is a std::normal_distribution
+			perturbed_val = std::min(std::max(perturbed_val, lower), upper);
 			
 			temp.Set(i,0,perturbed_val);
 				
