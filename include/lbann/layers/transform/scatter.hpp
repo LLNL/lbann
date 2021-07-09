@@ -124,7 +124,19 @@ void scatter_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData&
   // Tensor dimensions
   const auto& input0_dims = this->get_input_dims(0);
   const auto& input1_dims = this->get_input_dims(1);
+
+  // Check if value matrix is 1D or 2D
+
+  const auto is_values_1D = input0_dims.size() == 1;
+  const auto is_values_2D = input0_dims.size() == 2;
+
+
   const auto& output_dims = this->get_output_dims();
+  // Check if output matrix is 1D or 2D 
+
+  const auto is_output_1D = output_dims.size() == 1;
+  const auto is_output_2D = output_dims.size() == 2;
+
   auto dims_to_str = [] (const std::vector<int>& dims) -> std::string {
     std::ostringstream ss;
     for (size_t i=0; i<dims.size(); ++i) {
@@ -135,34 +147,40 @@ void scatter_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData&
 
   // Make sure input tensors have same dimensions
   if (input0_dims != input1_dims) {
-    const auto& parent0 = this->get_parent_layer(0);
-    const auto& parent1 = this->get_parent_layer(1);
-    LBANN_ERROR(
-      this->get_type()," layer \"",this->get_name(),"\" ",
-      "has input tensors with different dimensions ",
-      "(",parent0.get_type()," layer \"",parent0.get_name(),"\" ",
-      "outputs ",dims_to_str(input0_dims),", ",
-      parent1.get_type()," layer \"",parent1.get_name(),"\" ",
-      "outputs ",dims_to_str(input1_dims),")");
+
+    // If input tensors are not same, make sure it's 2D and 1D
+
+    if(input0_dims[1] != input1_dims[0]){
+      const auto& parent0 = this->get_parent_layer(0);
+      const auto& parent1 = this->get_parent_layer(1);
+      LBANN_ERROR(
+        this->get_type()," layer \"",this->get_name(),"\" ",
+        "has input tensors with different outer dimensions ",
+        "(",parent0.get_type()," layer \"",parent0.get_name(),"\" ",
+        "outputs ",dims_to_str(input0_dims),", ",
+        parent1.get_type()," layer \"",parent1.get_name(),"\" ",
+        "outputs ",dims_to_str(input1_dims),")");
+    }
   }
 
   // Check that tensors are 1D
   /// @todo Support scattering from/into higher-order tensors
-  if (input0_dims.size() != 1) {
+  if (input1_dims.size() != 1 || (!is_values_1D && !is_values_2D)) {
     LBANN_ERROR(
       this->get_type()," layer \"",this->get_name(),"\" ",
       "attempted to scatter from a ",input0_dims.size(),"-D tensor ",
       "(",dims_to_str(input0_dims),"), "
       "but the scatter layer currently only supports ",
-      "scattering from a 1-D tensor");
+      "scattering from a 1-D or 2-D tensor");
   }
-  if (output_dims.size() != 1) {
+  // Check if either output is 1D or the first dim matches for input and output
+  if ( ! is_output_1D && (is_output_2D == 2 && output_dims[0] != input0_dims[0])) {
     LBANN_ERROR(
       this->get_type()," layer \"",this->get_name(),"\" ",
       "attempted to scatter into a ",output_dims.size(),"-D tensor ",
       "(",dims_to_str(output_dims),"), "
       "but the scatter layer currently only supports ",
-      "scattering into a 1-D tensor");
+      "scattering into a 1-D or 2-D tensor");
   }
 
 }
