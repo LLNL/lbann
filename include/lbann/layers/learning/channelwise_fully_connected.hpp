@@ -28,9 +28,10 @@
 #define LBANN_LAYERS_LEARNING_CHANNELWISE_FULLY_CONNECTED_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#ifdef LBANN_HAS_DISTCONV
 #include "lbann/layers/data_type_distconv_adapter.hpp"
 #include "lbann/layers/learning/distconv/distconv_layers.hpp"
-
+#endif
 namespace lbann {
 
 #ifdef LBANN_HAS_DISTCONV
