@@ -86,7 +86,9 @@ def construct_model(lbann):
 
     # LBANN implementation
     x = x_lbann
-    y = lbann.Clamp(x, min=-2, max=2, data_layout='data_parallel')
+    y = lbann.OperatorLayer(x,
+                            data_layout='data_parallel',
+                            ops=[lbann.Clamp(min=-2, max=2)]);
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='data-parallel output'))
@@ -113,7 +115,9 @@ def construct_model(lbann):
 
     # LBANN implementation
     x = x_lbann
-    y = lbann.Clamp(x, min=0, max=4, data_layout='model_parallel')
+    y = lbann.OperatorLayer(x,
+                            data_layout='model_parallel',
+                            ops=[lbann.Clamp(min=0, max=4)])
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='model-parallel output'))
