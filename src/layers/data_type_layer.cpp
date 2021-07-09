@@ -776,12 +776,11 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::
 fp_setup_inputs(El::Int mini_batch_size) {
   if (get_num_parents() < 1) { return; }
 
+  // Determine distributed matrix alignment
+  const auto& alignment_dist = get_parent_layer().get_activations(*this).DistData();
 
   // Iterate through input tensors
   for (int i = 0; i < get_num_parents(); ++i) {
-    // Determine distributed matrix alignment
-    //Moved aligmnment_dist inside the loop as parents can have different alignments in sub-graph parallelism
-    const auto& alignment_dist = get_parent_layer(i).get_activations(*this).DistData();
 #ifdef LBANN_HAS_DISTCONV
     if (!keep_original_inputs(i)) continue;
 #endif // LBANN_HAS_DISTCONV
@@ -790,7 +789,7 @@ fp_setup_inputs(El::Int mini_batch_size) {
     const auto& parent_output = parent.get_activations(*this);
     auto& input = *m_inputs[i];
     input.Empty(false);
-    if(this->is_subgraph_parallelism_enabled()==false){
+    if(!this->is_subgraph_parallelism_enabled()){
       input.AlignWith(alignment_dist);
     }
     view_or_copy_tensor(parent_output, input);
