@@ -30,6 +30,7 @@ set_full_path(THIS_DIR_SOURCES
   perturb_adam.cpp
   perturb_dropout.cpp
   perturb_learning_rate.cpp
+  perturb_weights.cpp
   print_model_description.cpp
   print_statistics.cpp
   profiler.cpp
