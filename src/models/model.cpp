@@ -38,6 +38,8 @@
 #include "lbann/layers/transform/evaluation.hpp"
 #include "lbann/objective_functions/layer_term.hpp"
 #include "lbann/metrics/layer_metric.hpp"
+
+
 #include "lbann/utils/omp_diagnostics.hpp"
 #include "lbann/utils/description.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
@@ -76,7 +78,11 @@ model::model(lbann_comm* comm,
   static El::Int num_models = 0;
   m_name = "model" + std::to_string(num_models);
   num_models++;
+  
 
+
+
+  
 }
 
 model::model(const model& other) :
@@ -124,9 +130,12 @@ model::model(const model& other) :
     m_weights.emplace_back(std::make_shared<data_type_weights<DataType>>(dynamic_cast<data_type_weights<DataType>&>(*other_weights)));
     weights_map[other_weights.get()] = m_weights.back();
   }
+  
 
   // Fix pointers
   remap_pointers(layer_map, weights_map);
+
+
 
 }
 
@@ -183,8 +192,12 @@ model& model::operator=(const model& other) {
     weights_map[other_weights.get()] = m_weights.back();
   }
 
+  
+
   // Fix pointers
   remap_pointers(layer_map, weights_map);
+
+
 
   return *this;
 }
@@ -597,10 +610,19 @@ void model::setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata, b
       cb->setup(this);
   }
 
+  check_subgraph_parallelism();
+
   // Setup layers
+
   setup_layer_topology();
   setup_layer_execution_order();
+  if(this->is_subgraph_parallelism_enabled())
+  {
+    setup_subgrids();
+  }
+  
   setup_layers(max_mini_batch_size, dr_metadata);
+
 
   // Setup weights
   setup_weights();
@@ -686,6 +708,810 @@ void model::setup_layer_topology() {
 
 }
 
+void model::get_parent_subgrid_tags(int layer_index ){
+  // Finds sub-graph tags of parents
+  
+  // If a layer has multiple parents then each parent can have tag either similar to previous parents
+  // or can have a different tag
+
+  // This function finds number of different sub-grids in parents and assign a unique tag to each parent 
+  // based on the ranks of parent
+	const auto& layers = this->get_layers();
+	const std::vector<const Layer*>& parents = layers[layer_index]->get_parent_layers();
+	std::vector < std::set < int>> diff_subgrids;
+	std::vector<int> parent_tags(parents.size());
+  
+	for (int i = 0; i < int(parents.size()); ++i)
+	{
+		std::set<int> parent_subgrid_ranks_set = parents[i]->get_subgrid_ranks();
+		if(diff_subgrids.size()==0)
+		{
+		    diff_subgrids.push_back(parent_subgrid_ranks_set);
+        parent_tags[i] = 0;
+		}
+		else
+		{
+		    
+		    bool flag_found = false;
+		    for(int j=0; j< int(diff_subgrids.size()); ++j)
+		    {
+		        if(parent_subgrid_ranks_set==diff_subgrids[j])
+		        {
+		            parent_tags[i] = j;
+		            flag_found = true;
+		            break;
+		        }
+		    }
+		    
+		    if(flag_found==false)
+		    {
+		        parent_tags[i] = int(diff_subgrids.size());
+		        diff_subgrids.push_back(parent_subgrid_ranks_set);
+		    } 
+		}
+	}
+
+  layers[layer_index]->reset_parent_tags(
+  							std::vector<int>(parent_tags.begin(),parent_tags.end()) );
+  layers[layer_index]->set_num_spliting_groups(int(diff_subgrids.size()));
+
+
+}
+
+void model::check_subgraph_parallelism(){
+  // Enables sub-graph parallelism if a layer has a sub-graph tag greater than zero
+  const auto& layers = this->get_layers();
+  const El::Int num_layers = layers.size();
+  for (El::Int node = 0; node < num_layers; ++node) {
+    if(layers[node]->get_parallel_strategy().sub_branch_tag != 0)
+    {
+      this->enable_subgraph_parallelism();
+      break;
+    }
+
+  }
+  std::cout<<"Is subgraph parallelism enabled:"<<this->is_subgraph_parallelism_enabled()<<"\n";
+
+}
+
+void model::setup_subgrid_layers_run_condition()
+{
+  // This function setups sub-grid run condition for a layer in forward and backward pass 
+  const auto& layers = this->get_layers();
+  const El::Int num_layers = layers.size();
+  int myrank = El::mpi::Rank();
+  for (El::Int node = 0; node < num_layers; ++node) {
+    auto layer_subgrid_ranks = layers[node]->get_subgrid_ranks();
+    if(layer_subgrid_ranks.find(myrank) != layer_subgrid_ranks.end() 
+          || layers[node]->get_name()=="layer1")
+    {
+
+      layers[node]->set_run_layer_in_subgraph();
+    }
+
+
+    else if((layers[node]->get_type()=="slice") || 
+        (layers[node]->get_type()=="split") )
+    {
+      //check child subgrids 
+      const std::vector<const Layer*>& childs = layers[node]->get_child_layers();
+      std::set<int> pooled_set;
+
+      for(int child= 0; child < int(childs.size()); ++child)
+      {
+        std::set<int> temp_set(pooled_set.begin(),pooled_set.end());
+        pooled_set.clear();
+        auto child_subgrid_ranks = childs[child]->get_subgrid_ranks();
+        std::set_union(temp_set.begin(), temp_set.end(),
+                    child_subgrid_ranks.begin(), 
+                    child_subgrid_ranks.end(),
+                    std::inserter(pooled_set, pooled_set.begin()));
+      }
+      if(pooled_set.find(myrank)!= pooled_set.end())
+      {
+        layers[node]->set_run_layer_in_subgraph();
+      }
+    }
+
+
+    else if((layers[node]->get_type()=="concatenate") || 
+        (layers[node]->get_type()=="sum") )
+    {
+      const std::vector<const Layer*>& parents = layers[node]->get_parent_layers();
+      std::set<int> pooled_set;
+
+      for(int parent= 0; parent< int(parents.size());++parent)
+      {
+        std::set<int> temp_set(pooled_set.begin(),pooled_set.end());
+        pooled_set.clear();
+        auto parent_subgrid_ranks = parents[parent]->get_subgrid_ranks();
+        std::set_union(temp_set.begin(), temp_set.end(),
+                    parent_subgrid_ranks.begin(), 
+                    parent_subgrid_ranks.end(),
+                    std::inserter(pooled_set, pooled_set.begin()));
+      }
+      if(pooled_set.find(myrank)!= pooled_set.end())
+      {
+        layers[node]->set_run_layer_in_subgraph();
+      }
+    }
+
+
+  }
+
+  //Print the layer and associated ranks on which it will run
+
+  if(myrank==0)
+  {
+
+
+    for (El::Int node = 0; node < num_layers; ++node) {
+      std::cout<<"Rank:"<<myrank<<" Layer name:"<<layers[node]->get_name()<<" Subgrid Ranks:";
+      for (int const& rank : (layers[node]->get_subgrid_ranks()))
+      {
+          std::cout << rank << ' ';
+      }
+      std::cout<<"\n";
+    }
+  }
+
+
+}
+
+void model::get_subgrids_order(std::vector<int> &ranks_order, int num_branches)
+{
+  // function to get ranks in order according to the topology 
+  // more topology aware designs can be defined here 
+  // currently there is only one design 
+  int size_grid = ranks_order.size();
+
+  std::vector<int> temp_ranks(ranks_order.begin(), ranks_order.end());
+  std::sort(temp_ranks.begin(),temp_ranks.end());
+  int rank = 0;
+
+  //parent grid has more ranks than subgrids but less than total number of ranks 
+  bool cond_parent_have_more_resources = (size_grid / (this->get_num_resources_branch_layers()/num_branches) ) > 1;
+
+  //No need to order when parent's total resources are less than subgrids
+  //Topology aware design for this case is implemented in get_input_resources and merge_resources layer 
+  if(this->get_subgrid_topology()==true && 
+    (this->get_num_resources_non_branch_layers() == this->get_num_resources_branch_layers()
+      || cond_parent_have_more_resources))
+  {
+   
+    int size_branch = size_grid / num_branches;
+    for (int i =0; i < size_branch; ++i)
+    {
+        for (int j=0; j< num_branches; ++j)
+        {
+            ranks_order[j*size_branch + i] = temp_ranks[rank];
+            rank++;
+        }
+        
+    }
+
+  }
+  else
+  {
+    for(El::Int i = 0; i < size_grid; ++i)
+    {
+      ranks_order[i] = temp_ranks[rank];
+      rank++;
+    }
+  }
+
+
+}
+
+int model::get_max_subgraph_branches()
+{
+  //gives max number of subgraph branches 
+	const auto& layers = this->get_layers();
+	const El::Int num_layers = layers.size();
+	int max_branches = 1;
+
+	for (El::Int node = 0; node < num_layers; ++node) {
+		max_branches = std::max(max_branches, layers[node]->get_parallel_strategy().sub_branch_tag);
+	}
+	return max_branches;
+}
+
+void model::get_subgraph_subgrids_ranks(std::vector<int> &parent_ranks, 
+									std::vector<int> &subgrid_ranks, 
+									int layer_index,
+									int number_ranks_in_grid
+									)
+{
+    //assings ranks to the subgrids 
+    //Assumes Parents ranks are in sorted order
+    const auto& layers = this->get_layers();
+    const int num_branches = parent_ranks.size() / number_ranks_in_grid;
+    subgrid_ranks.resize(number_ranks_in_grid);
+
+    if(this->get_subgrid_topology()==true)
+    {
+    	for(int i = 0; i < number_ranks_in_grid; ++i)
+    	{
+    		subgrid_ranks[i] = parent_ranks[ i*num_branches 
+    							+ layers[layer_index]->get_parallel_strategy().sub_branch_tag 
+    							- 1];
+
+    	}
+
+    }
+    else
+    {
+    	subgrid_ranks.clear();
+
+    	for (int i = 0; i<int(parent_ranks.size()); ++i) 
+	    {
+  			if(i >= (layers[layer_index]->get_parallel_strategy().sub_branch_tag - 1)*number_ranks_in_grid  
+  				&& i < (layers[layer_index]->get_parallel_strategy().sub_branch_tag )*number_ranks_in_grid)
+    			{
+    				subgrid_ranks.push_back(parent_ranks[i]);
+    			}
+	    }
+    }    
+}
+
+void getOrderFromIndex(std::vector<int> &rankOrder, std::string str) 
+{ 
+   std::string word = ""; 
+   rankOrder.clear();
+   for (auto x : str) 
+   { 
+       if (x == ' ') 
+       { 
+           if(word!="")
+           {
+              rankOrder.push_back(std::stoi(word));
+           }
+            
+           word = ""; 
+       } 
+       else
+       { 
+           word = word + x; 
+       } 
+   }  
+   rankOrder.push_back(std::stoi(word));
+}
+
+void model::get_resources_for_spliting_point(std::vector<int> &parent_ranks, 
+                  std::vector<int> &subgrid_ranks, 
+                  int layer_index,
+                  int number_ranks_in_grid,
+                  int num_subgrids
+                  )
+{
+  const auto& layers = this->get_layers();
+
+  if(this->get_num_resources_non_branch_layers() != this->get_num_resources_branch_layers())
+  {
+    //branch tag of first subgrid is 1 
+    if(this->get_subgrid_topology()==true)
+    {
+      int sub_branch_tag = layers[layer_index]->get_parallel_strategy().sub_branch_tag -1;
+      int num_ranks = this->get_num_resources_branch_layers() / num_subgrids;
+    
+      subgrid_ranks.clear();
+      subgrid_ranks.resize(num_ranks);
+
+      for(int rank=0; rank<num_ranks; ++rank)
+      {
+        subgrid_ranks[rank] = (rank*num_subgrids)  + sub_branch_tag;
+      }
+
+    }
+    else
+    {
+      int sub_branch_tag = layers[layer_index]->get_parallel_strategy().sub_branch_tag -1;
+      int num_ranks = this->get_num_resources_branch_layers() / num_subgrids;
+      const int start_rank = sub_branch_tag * num_ranks;
+      subgrid_ranks.clear();
+      subgrid_ranks.resize(num_ranks);
+
+      for(int rank=0; rank<num_ranks; ++rank)
+      {
+        subgrid_ranks[rank] = rank+start_rank;
+      }
+    }
+  }
+  else
+  {
+    this->get_subgraph_subgrids_ranks(parent_ranks, 
+                                      subgrid_ranks, 
+                                      layer_index,
+                                      number_ranks_in_grid);
+  }
+}
+
+
+void model::get_resources_for_merge_layers(std::set<int>& pooled_set, int child_index, int num_subgrids)
+{
+  const auto& layers = this->get_layers();
+  const std::vector<const Layer*>& parents = layers[child_index]->get_parent_layers();
+
+  std::vector<int> child_parent_tags = layers[child_index]->get_parent_tags();
+  if(this->get_num_resources_non_branch_layers() != this->get_num_resources_branch_layers()
+      && *std::max_element(child_parent_tags.begin(), child_parent_tags.end()) > 0)
+  // Two level subgrid support only
+  // subgrids in parent layers should be different 
+  //modify to create subgrid within subgrids 
+  {
+
+    std::vector<int> pooled_vector;
+
+    this->get_resources_for_input_layer(pooled_vector,num_subgrids);
+
+    pooled_set.clear();
+
+    for (int i = 0 ; i < int(pooled_vector.size()); i++) pooled_set.insert(pooled_vector[i]);
+
+
+  }
+  else
+  {
+    for(int parent= 0; parent< int(parents.size());++parent)
+    {
+      std::set<int> temp_set(pooled_set.begin(),pooled_set.end());
+      pooled_set.clear();
+      auto parent_subgrid_ranks = parents[parent]->get_subgrid_ranks();
+      std::set_union(temp_set.begin(), temp_set.end(),
+                  parent_subgrid_ranks.begin(), 
+                  parent_subgrid_ranks.end(),
+                  std::inserter(pooled_set, pooled_set.begin()));
+    }
+  }
+}
+
+void model::get_resources_for_input_layer(std::vector<int>& masterSubGrid, int num_subgrids)
+{
+  masterSubGrid.resize(this->get_num_resources_non_branch_layers());
+
+  if(this->get_num_resources_non_branch_layers() != this->get_num_resources_branch_layers())
+  {
+    if(this->get_subgrid_topology()==true)
+    {
+      int ranks_per_grid = this->get_num_resources_branch_layers() / num_subgrids;
+      int offset = num_subgrids /  (this->get_num_resources_non_branch_layers() / ranks_per_grid); 
+      for (int i = 0; i<this->get_num_resources_non_branch_layers(); ++i) masterSubGrid[i] = i*offset;
+    }
+    else
+    {
+      for (int i = 0; i<this->get_num_resources_non_branch_layers(); ++i) masterSubGrid[i] = i;
+    }
+    
+  }
+  else
+  {
+     for (int i = 0; i<this->get_num_resources_non_branch_layers(); ++i) masterSubGrid[i] = i;
+  }
+}
+
+void model::setup_subcommunicators()
+{
+  // Because of this optimization we cannot have dynamic number of sub-graph in a model 
+  // For example: In a model, module1 cannnot different number of sub-graphs than module2 
+  std::string one_index = "1";
+  
+  const auto& layers = this->get_layers();
+  const El::Int num_layers = layers.size();
+
+  for (El::Int node = 0; node < num_layers; ++node) {
+    if((layers[node]->get_type()=="slice" 
+        || layers[node]->get_type()=="split"
+        || layers[node]->get_type()=="concatenate"
+        || layers[node]->get_type()=="sum")
+      && layers[node]->get_parallel_strategy().enable_subgraph==true)
+    {
+      if(subCommunicatorsSubgrids.find(one_index) != subCommunicatorsSubgrids.end())
+      {
+        layers[node]->reset_inter_subgrid_vc_comm(subCommunicatorsSubgrids[one_index]);
+      }
+      else
+      {
+        subCommunicatorsSubgrids[one_index] = std::make_shared<El::mpi::Comm>();
+        const auto& childs = layers[node]->get_child_layers();
+
+        int indexSubgrid = -1;
+        for(int child = 0 ; child < layers[node]->get_num_children(); ++child )
+        {
+          if(childs[child]->get_mygrid()->InGrid())
+          
+          {
+            indexSubgrid = child;
+          }
+        }
+
+        const int posInSubGrid = childs[indexSubgrid]->get_mygrid()->VCRank();
+        const int posInGrid = layers[node]->get_mygrid()->ViewingRank();
+        El::mpi::Split(layers[node]->get_comm()->get_trainer_comm(), 
+                        posInSubGrid, 
+                        posInGrid, 
+                        *subCommunicatorsSubgrids[one_index]); 
+
+        layers[node]->reset_inter_subgrid_vc_comm(subCommunicatorsSubgrids[one_index]);
+      }
+    }
+
+    if(layers[node]->get_type()=="cross_grid_sum" || 
+      layers[node]->get_type()=="cross_grid_sum_slice")
+    {
+      layers[node]->reset_inter_subgrid_vc_comm(subCommunicatorsSubgrids[one_index]);
+    }
+
+
+  }
+
+}
+
+void  model::setup_subgrids(){
+
+  // Function to setup subgrids when subgraph parallelism is enabled 
+
+  const auto& layers = this->get_layers();
+  const El::Int num_layers = layers.size();
+  const El::GridOrder orderGrid =  El::COLUMN_MAJOR;
+  const int rank = m_comm->get_rank_in_trainer();
+
+  std::string grid_global_index = "";
+  std::string grid_temp_index = "";
+  El::mpi::Group worldGroup; 
+
+  El::mpi::Comm sub_comm = El::mpi::NewWorldComm();
+  El::Int commSize = El::mpi::Size( sub_comm);
+
+  if(this->get_subgraph_num_parent_resources()==0)
+  {
+    //does not matter resources for branch layer as long as it is smaller than non branch layers
+    this->set_num_resources_branch_layers(commSize);
+    this->set_num_resources_non_branch_layers(commSize);
+  }
+  else
+  {
+    this->set_num_resources_branch_layers(commSize);
+    this->set_num_resources_non_branch_layers(this->get_subgraph_num_parent_resources());
+  }
+  
+
+  std::vector<int> masterSubGridRankOrder;  
+
+  int max_branches = this->get_max_subgraph_branches();
+
+  this->get_resources_for_input_layer(masterSubGridRankOrder, max_branches);
+
+  get_subgrids_order(masterSubGridRankOrder, max_branches);
+
+  //Start will all the ranks for the layer 
+  //std::set <int > initial_ranks;
+  std::set <int > initial_ranks_global(masterSubGridRankOrder.begin(),masterSubGridRankOrder.end());
+
+  // index based on ranks 
+  for (auto it=masterSubGridRankOrder.begin(); it != masterSubGridRankOrder.end(); ++it) 
+        grid_global_index += " " + std::to_string(*it);
+
+  grids_mpi_groups[grid_global_index] = std::unique_ptr<El::mpi::Group>(new El::mpi::Group);
+
+  El::mpi::CommGroup( El::mpi::NewWorldComm(), worldGroup);
+
+
+  //  Not changing the order in the index as it will create problem for layers such as concatenate
+  //  and sum. 
+  El::mpi::Incl( worldGroup, masterSubGridRankOrder.size(), masterSubGridRankOrder.data(), 
+                    *grids_mpi_groups[grid_global_index] );
+          
+  
+  std::unique_ptr<El::Grid> temp_ptr;
+
+  grids[grid_global_index] = std::make_shared<El::Grid>(El::mpi::NewWorldComm(),
+                                                        *grids_mpi_groups[grid_global_index], 
+                                                        masterSubGridRankOrder.size(), 
+                                                        orderGrid );
+
+  for (El::Int node = 0; node < num_layers; ++node) {
+    layers[node]->enable_subgraph_parallelism();
+
+    //special cases
+    if(layers[node]->get_type()=="split" || layers[node]->get_type()=="sum" || layers[node]->get_type()=="slice" || layers[node]->get_type()=="concatenate")
+    {
+      layers[node]->set_communication_flag(this->get_subgrid_communication_type());
+
+      //set enable subgrpah parallelism variable for split layers
+      if(layers[node]->get_type()=="split")
+      {
+        auto childs = layers[node]->get_child_layers();
+        if(childs[0]->get_parallel_strategy().sub_branch_tag > 0)
+        {
+          layers[node]->set_enable_subgraph_variable();
+        }
+      }
+
+    }
+
+
+    //these layers have global grid. Grid that has every rank
+    if(layers[node]->get_type() == "input" || layers[node]->get_type() == "constant" )
+    {
+      if(this->get_num_resources_non_branch_layers() < this->get_num_resources_branch_layers() 
+         && layers[node]->get_type() == "inputs" )
+      {
+        // layers[node]->subgrid_ranks.reset(new std::set<int >(initial_ranks_input.begin(),initial_ranks_input.end()));
+        // layers[node]->subgrid_index = grid_input_index;
+        // layers[node]->mygrid = grids[grid_input_index];
+      }
+      else
+      {
+        // layers[node]->subgrid_ranks.reset(new std::set<int >(initial_ranks_global.begin(),initial_ranks_global.end()));
+        layers[node]->reset_subgrid_ranks(initial_ranks_global);
+        layers[node]->set_subgrid_index(grid_global_index);
+        layers[node]->reset_mygrid(grids[grid_global_index]);
+      }
+
+      
+
+    }
+    else
+    {
+      if(layers[node]->get_parallel_strategy().sub_branch_tag == 0)
+        // A layer might be a common layer or 
+        // there is no need to divide resources at this point (continuation of previous grids)
+      {
+        const std::vector<const Layer*>& parents = layers[node]->get_parent_layers();
+        auto mychilds = layers[node]->get_child_layers(); 
+        //when layer has only one parent no branching copy everthing from parent 
+
+        if(parents.size()==0)
+        {
+          // layers[node]->subgrid_ranks.reset(new std::set<int >(initial_ranks_global.begin(),initial_ranks_global.end()));
+          layers[node]->reset_subgrid_ranks(initial_ranks_global);
+          layers[node]->set_subgrid_index(grid_global_index);
+          // layers[node]->mygrid = grids[grid_global_index];
+          layers[node]->reset_mygrid(grids[grid_global_index]);
+
+        }
+        else if(parents[0]->get_type() == "cross_grid_sum" || parents[0]->get_type() == "cross_grid_sum_slice")
+        {
+          //layers name are unique
+          std::vector<const Layer*> allchilds =  parents[0]->get_child_layers();
+          int subgrid_number = -1;
+          for (int child_index = 0; child_index < int(allchilds.size()); ++child_index)
+          {
+            if(allchilds[child_index]->get_name() == layers[node]->get_name())
+            {
+              subgrid_number = child_index;
+            }
+          }
+          
+
+          const Layer* parent_with_same_subgrid = parents[0]->get_parent_layers()[subgrid_number];
+          std::cout<<"Rank:"<<rank<<" On Child Layer:"<< layers[node]->get_name() <<" Subgrid index is:"<<parent_with_same_subgrid->get_subgrid_index()<<"\n";
+
+          std::set <int > layer_ranks = parent_with_same_subgrid->get_subgrid_ranks();
+          layers[node]->reset_subgrid_ranks(layer_ranks);
+          layers[node]->set_subgrid_index(parent_with_same_subgrid->get_subgrid_index());
+          layers[node]->reset_mygrid(grids[layers[node]->get_subgrid_index()]);
+
+        }
+        else if(parents.size()==1)
+        {
+
+          std::set <int > layer_ranks = parents[0]->get_subgrid_ranks();
+          // layers[node]->subgrid_ranks.reset(new std::set<int>(layer_ranks.begin(),layer_ranks.end()));
+          layers[node]->reset_subgrid_ranks(layer_ranks);
+          layers[node]->set_subgrid_index(parents[0]->get_subgrid_index());
+          // layers[node]->mygrid = grids[layers[node]->subgrid_index];
+          layers[node]->reset_mygrid(grids[layers[node]->get_subgrid_index()]);
+        }
+        else if( parents.size() == mychilds.size() && 
+                 parents.size() > 1 )
+        {
+          
+          // parent for each rank will be based on subgrid it belongs to in previous layer 
+          // Starting rank will have the parent that belongs to first sub-grid
+          
+          // Example: S# (Sub-grid number #), 8 ranks, topology-aware
+          // S1: 0,4 
+          // S2: 1,5
+          // S3: 2,6
+          // S4: 3,7
+
+          // cross_grid_sum layer will have 4 parents and 4 childs
+          // Rank4: will have sub-grid 1. First parent and child will be used for computation and communication
+          // Rank2 will have sub-grid 3. Third parent and child will be used for computation and communication  
+          int my_parent_based_rank = -1;
+
+          for (int parent_index = 0; parent_index < int(parents.size()); ++parent_index)
+          {
+            std::set <int > layer_ranks = parents[parent_index]->get_subgrid_ranks();
+            if(layer_ranks.find(rank) != layer_ranks.end())
+            {
+              my_parent_based_rank = parent_index;
+            }
+          }
+          std::cout<<"Parent_index is:"<<my_parent_based_rank<<"\n";
+          // Initialize the subgrid of common layers like cross_grid_sum with the subgrid based on own rank 
+          std::set <int > layer_ranks = parents[my_parent_based_rank]->get_subgrid_ranks();
+          layers[node]->reset_subgrid_ranks(layer_ranks);
+          layers[node]->set_subgrid_index(parents[my_parent_based_rank]->get_subgrid_index());
+          layers[node]->reset_mygrid(grids[layers[node]->get_subgrid_index()]);
+
+        }
+        
+        else
+        {
+
+          get_parent_subgrid_tags(node );
+
+          //when layer has multiple parents, pool resources (ranks) from parents 
+          std::set<int> pooled_set;
+          
+          this->get_resources_for_merge_layers(pooled_set,node,max_branches);
+
+
+          // layers[node]->subgrid_ranks.reset(new std::set<int> (pooled_set.begin(),pooled_set.end()));
+          layers[node]->reset_subgrid_ranks(pooled_set);
+
+          //create new grid 
+          std::vector<int > ranks_in_grid(pooled_set.begin(), pooled_set.end());
+
+          if(layers[node]->get_num_spliting_groups() == 1)
+          {
+            getOrderFromIndex(ranks_in_grid,parents[0]->get_subgrid_index());
+          }
+          else
+          {
+            get_subgrids_order(ranks_in_grid, layers[node]->get_num_spliting_groups());
+          }
+
+          
+
+          grid_temp_index = "";
+          for (auto it=ranks_in_grid.begin(); it != ranks_in_grid.end(); ++it) 
+            grid_temp_index += " " + std::to_string(*it);
+
+          if(grids.find(grid_temp_index) != grids.end())
+          //subgrid already exist with required resources
+          {
+            layers[node]->set_subgrid_index(grid_temp_index);
+            // layers[node]->mygrid = grids[grid_temp_index];
+            layers[node]->reset_mygrid(grids[grid_temp_index]);
+          }
+          else
+          {
+            
+            grids_mpi_groups[grid_temp_index] = std::unique_ptr<El::mpi::Group>(new El::mpi::Group);
+            El::mpi::Incl( worldGroup, ranks_in_grid.size(), ranks_in_grid.data(), *grids_mpi_groups[grid_temp_index] );
+            
+
+            grids[grid_temp_index] = std::make_shared<El::Grid>(El::mpi::NewWorldComm(),*grids_mpi_groups[grid_temp_index], ranks_in_grid.size(), orderGrid );
+            layers[node]->set_subgrid_index(grid_temp_index);
+            // layers[node]->mygrid = grids[grid_temp_index];
+            layers[node]->reset_mygrid(grids[grid_temp_index]);
+
+            std::string temp_print;
+
+            for(int vec_index = 0; vec_index<int(ranks_in_grid.size());++vec_index)
+            {
+              std::string s = std::to_string(ranks_in_grid[vec_index]);
+              temp_print.append(s);
+              temp_print.append(" ");
+            }
+
+
+          }
+
+        }
+      }
+
+      else
+      {
+        //custom number of resources and edge cases not supported 
+
+        const std::vector<const Layer*>& parents = layers[node]->get_parent_layers();
+        auto parent  = parents[0];
+        int num_divisions = 1;
+        auto childs = parents[0]->get_child_layers(); 
+        std::set <int> parent_layer_ranks = parents[0]->get_subgrid_ranks();
+        std::vector <int> my_sub_ranks ;
+
+        
+
+        bool flag_subgrid_found  = false;
+
+        for(El::Int child = 0; child<int(childs.size());++child)
+        {
+          num_divisions = std::max(num_divisions, int(childs[child]->get_parallel_strategy().sub_branch_tag));
+
+          //check if the grid is initialized for the childs with similar tag
+          if(childs[child]->get_subgrid_index() != "" && int(childs[child]->get_parallel_strategy().sub_branch_tag) == (layers[node]->get_parallel_strategy().sub_branch_tag ))
+          {
+            layers[node]->set_subgrid_index(childs[child]->get_subgrid_index());
+            layers[node]->reset_subgrid_ranks(childs[child]->get_subgrid_ranks());
+            layers[node]->reset_mygrid(grids[childs[child]->get_subgrid_index()]);
+            layers[node]->set_num_spliting_groups(childs[child]->get_num_spliting_groups());
+            flag_subgrid_found = true;
+
+          }
+
+        }
+
+        if(flag_subgrid_found){
+          continue;
+        }
+
+        int number_ranks_in_grid = ( parent[0].get_subgrid_ranks().size())/num_divisions;
+
+        std::vector<int> parent_ranks_vec(parent_layer_ranks.begin(),parent_layer_ranks.end());
+
+        this->get_resources_for_spliting_point(
+        							parent_ranks_vec, 
+									my_sub_ranks, 
+									node,
+									number_ranks_in_grid,
+                  num_divisions
+									);
+
+        
+        
+        //create new grid 
+        std::vector<int> ranks_in_grid(my_sub_ranks.begin(), my_sub_ranks.end());
+        grid_temp_index = "";
+        for (auto it=ranks_in_grid.begin(); it != ranks_in_grid.end(); ++it) 
+          grid_temp_index += " " + std::to_string(*it);
+
+
+        if(grids.find(grid_temp_index) != grids.end())
+        //subgrid already exist with required resources
+        {
+          layers[node]->set_subgrid_index(grid_temp_index);
+          layers[node]->reset_mygrid(grids[grid_temp_index]);
+          layers[node]->set_num_spliting_groups(num_divisions);
+          layers[node]->reset_subgrid_ranks(std::set<int> (my_sub_ranks.begin(),my_sub_ranks.end()));
+        }
+        else
+        {
+          grids_mpi_groups[grid_temp_index] = std::unique_ptr<El::mpi::Group>(new El::mpi::Group);
+          El::mpi::Incl( worldGroup, ranks_in_grid.size(), ranks_in_grid.data(), *grids_mpi_groups[grid_temp_index] );
+
+          grids[grid_temp_index] = std::make_shared<El::Grid>(El::mpi::NewWorldComm(),*grids_mpi_groups[grid_temp_index], ranks_in_grid.size(), orderGrid );
+
+          layers[node]->set_subgrid_index(grid_temp_index);
+          layers[node]->reset_subgrid_ranks(std::set<int>(my_sub_ranks.begin(),my_sub_ranks.end()));
+          layers[node]->reset_mygrid(grids[grid_temp_index]);
+          layers[node]->set_num_spliting_groups(num_divisions);
+
+        }
+
+        std::string temp_print;
+
+        for(int vec_index = 0; vec_index<int(ranks_in_grid.size());++vec_index)
+        {
+          std::string s = std::to_string(ranks_in_grid[vec_index]);
+          temp_print.append(s);
+          temp_print.append(" ");
+        }
+
+      }
+
+    }
+
+  }
+
+
+  if(El::mpi::Rank()==0)
+  {
+    std::cout<<"Number of subgrids created:"<<grids.size()<<"\n";
+    for (auto const& pair: grids) {
+      std::cout << "{" << pair.first << ": "  << "}\n";
+    }
+  }
+  
+  this->setup_subgrid_layers_run_condition();
+  this->setup_subcommunicators();
+
+}
+
 void model::setup_layer_execution_order() {
 
   // Find input layers
@@ -709,15 +1535,26 @@ void model::setup_layer_execution_order() {
 }
 
 void model::setup_layers(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata) {
+
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     auto& l = get_layer(i);
     l.set_model(this);
-    l.setup(max_mini_batch_size, dr_metadata);
+
+    if(this->is_subgraph_parallelism_enabled())
+    {
+      l.setup(max_mini_batch_size, dr_metadata,*(grids[l.get_subgrid_index()]));
+    }
+    else
+    {
+      l.setup(max_mini_batch_size, dr_metadata,m_comm->get_trainer_grid());
+    }
     l.check_setup();
   }
 }
 
 void model::setup_weights() {
+
+
 
   // Sort weights by name
   // Note: For run-to-run consistency. Names are assumed to be unique.
@@ -971,6 +1808,127 @@ void model::add_split_layers(std::unordered_set<std::string>& layer_names) {
   }
 }
 
+void model::insert_layer(OwningLayerPtr&& new_layer, std::string const& preceding_layer_name) {
+
+  // Find preceding layer after which to insert new layer
+  int preceding_layer_index = -1;
+  for (int i=0; i<this->get_num_layers(); ++i) {
+    if (this->get_layer(i).get_name() == preceding_layer_name) {
+      preceding_layer_index = i;
+      break;
+    }
+  }
+  if (preceding_layer_index < 0) {
+    LBANN_ERROR(
+      "Attempted to insert layer after ",
+      "layer \"",preceding_layer_name,"\", ",
+      "but no such layer exists");
+  }
+
+  auto& l = get_layer(preceding_layer_index);
+
+  // Set checks to ensure there is only one parent and one child
+  LBANN_ASSERT(l.get_num_parents() == 1);
+  LBANN_ASSERT(l.get_num_children() == 1);
+
+  // Child of preceding layer
+  auto& child = const_cast<Layer&>(l.get_child_layer(0)); // assuming only one child 
+   
+  // Setup relationship between new layer and child layer
+  new_layer->add_child_layer(l.get_child_layer_pointer(0));
+  child.replace_parent_layer(new_layer, child.find_parent_layer_index(l));
+
+  // Setup relationship between current (parent) layer and new layer
+  l.clear_child_layers();
+  l.add_child_layer(new_layer);
+  new_layer->add_parent_layer(m_layers[preceding_layer_index]);
+
+  // Add new_layer to layer list
+  add_layer(std::move(new_layer));
+
+}
+
+void model::remove_layer(std::string const& removable_layer_name) {
+
+  // Find index of removable layer
+  int removable_layer_index = -1;
+  for (int i=0; i<this->get_num_layers(); ++i) {
+    if (this->get_layer(i).get_name() == removable_layer_name) {
+      removable_layer_index = i;
+      break;
+    }
+  }
+  if (removable_layer_index < 0) {
+    LBANN_ERROR(
+      "Attempted to remove layer",
+      " \"",removable_layer_name,"\", ",
+      "but no such layer exists");
+  }
+
+  auto& l = get_layer(removable_layer_index);
+
+  // Set checks to ensure there is only one parent and one child
+  LBANN_ASSERT(l.get_num_parents() == 1);
+  LBANN_ASSERT(l.get_num_children() == 1);
+
+  // Other checks also have to be done - like cannot delete activation function between two layers, etc
+
+  // Parent and child of removable layer
+  auto& parent = const_cast<Layer&>(l.get_parent_layer(0)); // assuming only one parent
+  auto& child = const_cast<Layer&>(l.get_child_layer(0)); // assuming only one child
+
+  // Setup relationship between parent layer and child layer
+  child.replace_parent_layer(l.get_parent_layer_pointer(0), child.find_parent_layer_index(l));
+  parent.replace_child_layer(l.get_child_layer_pointer(0), parent.find_child_layer_index(l));
+
+  // Destroy memory of removable layer - for now, remove from m_layers
+  m_layers.erase(m_layers.cbegin()+removable_layer_index); 
+}
+
+void model::replace_layer(OwningLayerPtr&& new_layer, std::string const& old_layer_name) {
+
+  // Find old layer
+  int old_layer_index = -1;
+  for (int i=0; i<this->get_num_layers(); ++i) {
+    if (this->get_layer(i).get_name() == old_layer_name) {
+      old_layer_index = i;
+      break;
+    }
+  }
+  
+  if (old_layer_index < 0) {
+    LBANN_ERROR(
+      "Attempted to replace layer",
+      " \"",old_layer_name,"\", ",
+      "but no such layer exists");
+  }
+
+  // Old Layer
+  auto& l = get_layer(old_layer_index);  
+
+  // Set checks to ensure there is only one parent and one child
+  LBANN_ASSERT(l.get_num_parents() == 1);
+  LBANN_ASSERT(l.get_num_children() == 1);
+
+  // Parent and child of old Layer
+  auto& parent = const_cast<Layer&>(l.get_parent_layer(0)); // assuming only one parent
+  auto& child = const_cast<Layer&>(l.get_child_layer(0)); // assuming only one child
+  
+  // Setup relationship between the new layer and child of old layer (which becomes child of new layer)
+  new_layer->add_child_layer(l.get_child_layer_pointer(0));
+  child.replace_parent_layer(new_layer, child.find_parent_layer_index(l));
+
+  // Setup relationship between parent of old layer (which becomes parent of new layer) and new layer
+  parent.replace_child_layer(new_layer, parent.find_child_layer_index(l));
+  new_layer->add_parent_layer(m_layers[old_layer_index-1]);
+
+  // Add new layer to layer list
+  add_layer(std::move(new_layer));
+
+  // Destroy memory of old layer - for now, remove from m_layers
+  m_layers.erase(m_layers.cbegin()+old_layer_index);
+}
+
 // =============================================
 // Execution
 // =============================================
@@ -1034,25 +1992,71 @@ void model::clear_gradients() {
 
 void model::forward_prop(execution_mode mode) {
   do_model_forward_prop_begin_cbs(mode);
+
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     auto& l = get_layer(i);
-    do_layer_forward_prop_begin_cbs(mode, &l);
-    l.forward_prop();
-    do_layer_forward_prop_end_cbs(mode, &l);
+  
+    if(this->is_subgraph_parallelism_enabled())
+    {
+      if(l.get_run_layer_in_subgraph() || l.get_name()=="layer1")
+      {
+        do_layer_forward_prop_begin_cbs(mode, &l);
+        l.forward_prop();
+        do_layer_forward_prop_end_cbs(mode, &l);
+
+      }
+      else
+      {
+        // To Do: Fix last batch problem in sub-graph parallelism
+        //experimental code to fix last batch problem in subgraph parallelism
+      }
+
+    }
+    else
+    {
+      do_layer_forward_prop_begin_cbs(mode, &l);
+      l.forward_prop();
+      do_layer_forward_prop_end_cbs(mode, &l);
+
+    }
   }
   do_model_forward_prop_end_cbs(mode);
+
 }
 
 void model::backward_prop() {
+
   do_model_backward_prop_begin_cbs();
+
   for (El::Int i = get_num_layers()-1; i >= 0; --i) {
 
     // Perform backward prop step on current layer
     auto& l = get_layer(i);
-    do_layer_backward_prop_begin_cbs(&l);
-    l.back_prop();
-    do_layer_backward_prop_end_cbs(&l);
 
+    if(this->is_subgraph_parallelism_enabled())
+    {
+
+      if(l.get_run_layer_in_subgraph())
+      {
+        do_layer_backward_prop_begin_cbs(&l);
+        l.back_prop();
+        do_layer_backward_prop_end_cbs(&l);
+      }
+      else
+      {
+        // To Do: Fix last batch problem in sub-graph parallelism
+        //experimental code to fix last batch problem in subgraph parallelism
+      }
+
+    }
+    else
+    {
+      do_layer_backward_prop_begin_cbs(&l);
+      l.back_prop();
+      do_layer_backward_prop_end_cbs(&l);
+    }
+    
+    
     // Terminate early if all gradients have been computed
     bool all_gradients_computed = true;
     for (auto&& w : m_weights) {
@@ -1062,10 +2066,19 @@ void model::backward_prop() {
         break;
       }
     }
-    if (all_gradients_computed) { break; }
+
+    //in parent having less resources case 
+    //last slice layer does not run as gradients are not present for ranks that are not 
+    // in parent grid leading to hang 
+
+    //Tim or Tom: What is your suggestation?
+    if (all_gradients_computed  && this->is_subgraph_parallelism_enabled()==false) { break; }
 
   }
+
   do_model_backward_prop_end_cbs();
+
+  
 }
 
 void model::update_weights() {
@@ -1081,6 +2094,7 @@ void model::update_weights() {
   for (auto rit = m_weights.rbegin(); rit != m_weights.rend(); ++rit) {
     auto& w = **rit;
     auto&& opt = w.get_optimizer();
+
     if (opt != nullptr) {
       do_weight_optimize_begin_cbs(&w);
       opt->step();

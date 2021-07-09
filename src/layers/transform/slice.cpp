@@ -237,7 +237,6 @@ void fp_compute_impl(
     output_buffer_list,
     output_dims_list,
     output_strides_list);
-
 }
 
 template <typename TensorDataType>
