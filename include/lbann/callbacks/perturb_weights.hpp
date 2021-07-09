@@ -74,8 +74,8 @@ private:
   
   weights* m_output;
   
-  /** Compute model size. */
-  void perturbed(model& m);
+  void perturb(model& m);
+
   
 };
 
