@@ -73,11 +73,11 @@ void perturb_weights::on_batch_begin(model* m) {
   if (m_output != nullptr && 
       c.get_step() % m_batch_interval == 0 &&
       c.get_step() >= 0) {
-    perturbed(*m);
+    perturb(*m);
   }
 }
 
-void perturb_weights::perturbed(model& m){
+void perturb_weights::perturb(model& m){
 
   auto* comm = m.get_comm();
 
