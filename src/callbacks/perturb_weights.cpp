@@ -111,7 +111,8 @@ void perturb_weights::perturbed(model& m){
 
 	// Perturb weights on master process		
 	if (comm->am_trainer_master()) {
-		for (auto i = 0; i < range; i++){		
+		for (auto i = 0; i < temp.Height(); i++){		
+
 			
 			// perturb				
 			auto val = temp.Get(i,0);
