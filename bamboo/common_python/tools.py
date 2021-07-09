@@ -699,6 +699,13 @@ def create_tests(setup_func,
                                                'experiments',
                                                test_name)
 
+        if 'skip_clusters' in _kwargs:
+            if cluster in _kwargs['skip_clusters']:
+                e = "test \"%s\" not supported on cluster \"%s\"" % (test_name, cluster)
+                print('Skip - ' + e)
+                pytest.skip(e)
+            _kwargs.remove("skip_clusters")
+
         # If the user provided a suffix for the work directory, append it
         if 'work_subdir' in _kwargs:
             _kwargs['work_dir'] = os.path.join(_kwargs['work_dir'], _kwargs['work_subdir'])
