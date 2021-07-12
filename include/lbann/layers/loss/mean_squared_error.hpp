@@ -110,6 +110,7 @@ public:
       size_t idx = parent->find_child_layer_index(*this);
       diff->add_input(parent->get_name() + "_" + std::to_string(idx));
     }
+
     diff->add_output(this->get_name() + "diff_0");
     diff->set_name(this->get_name() + "diff");
     diff->set_op_type("Sub");

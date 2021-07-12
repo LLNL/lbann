@@ -133,6 +133,7 @@ class input_layer : public data_type_layer<TensorDataType> {
   std::string get_onnx_op_type() const override { return "Identity"; }
   void fill_onnx_node(onnx::GraphProto& graph) const override {
     auto child_layers = this->get_child_layers();
+
     for(auto const* child : this->get_child_layers()) {
       auto idx = this->find_child_layer_index(*child);
       auto* input = graph.add_input();
@@ -143,11 +144,12 @@ class input_layer : public data_type_layer<TensorDataType> {
 
       auto* dims = input_type->mutable_tensor_type()->mutable_shape()->add_dim();
       dims->set_dim_param("batch");
+
       for( auto const& dim : this->get_output_dims(idx) ) {
         dims = input_type->mutable_tensor_type()->mutable_shape()->add_dim();
         dims->set_dim_value(dim);
       }
-      input->set_doc_string("Input layer info");
+     input->set_doc_string("Input layer info");
     }
   }
 #endif // LBANN_HAS_ONNX

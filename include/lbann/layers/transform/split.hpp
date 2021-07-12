@@ -71,7 +71,21 @@ public:
   std::string get_type() const override { return "split"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
-  std::string get_onnx_op_type() const override { return "Split"; }
+  std::string get_onnx_op_type() const override { return "Identity"; }
+
+  void fill_onnx_node(onnx::GraphProto& graph) const override {
+    for(auto const* child : this->get_child_layers()) {
+      auto* node = graph.add_node();
+      for(auto const* parent : this->get_parent_layers())
+        node->add_input(parent->get_name() + "_0");
+      size_t idx = this->find_child_layer_index(*child);
+      node->add_output(this->get_name() + "_" + std::to_string(idx));
+      node->set_name(this->get_name() + std::to_string(idx));
+      node->set_op_type(this->get_onnx_op_type());
+      node->set_domain("");
+      node->set_doc_string(this->get_type());
+    }
+  }
 
 #ifdef LBANN_HAS_ONNX
   std::string get_onnx_op_type() const override { return "Identity"; }
