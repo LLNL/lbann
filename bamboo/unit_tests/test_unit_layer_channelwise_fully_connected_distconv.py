@@ -89,7 +89,7 @@ def construct_model(lbann):
     callbacks = []
 
     num_channel_groups = tools.gpus_per_node(lbann)
-    if num_height_groups == 0:
+    if num_channel_groups == 0:
         e = 'this test requires GPUs.'
         print('Skip - ' + e)
         pytest.skip(e)
@@ -152,7 +152,7 @@ def construct_model(lbann):
         x,
         weights=(linearity_weights, bias_weights),
         output_channel_dims=output_channel_dims,
-        parallel_strategy=create_parallel_strategy(num_height_groups),
+        parallel_strategy=create_parallel_strategy(num_channel_groups),
         name="bias"
     )
     z = lbann.L2Norm2(y, name="L2Norm")
@@ -185,7 +185,7 @@ def construct_model(lbann):
         x,
         weights=(linearity_weights),
         output_channel_dims=output_channel_dims,
-        parallel_strategy=create_parallel_strategy(num_height_groups),
+        parallel_strategy=create_parallel_strategy(num_channel_groups),
         name="no_bias"
     )
     z = lbann.L2Norm2(y)
@@ -222,7 +222,7 @@ def construct_model(lbann):
         x,
         weights=(linearity_weights, bias_weights),
         output_channel_dims=output_channel_dims,
-        parallel_strategy=create_parallel_strategy(num_height_groups),
+        parallel_strategy=create_parallel_strategy(num_channel_groups),
         transpose=True,
     )
     z = lbann.L2Norm2(y)
@@ -254,7 +254,7 @@ def construct_model(lbann):
         x,
         weights=(linearity_weights),
         output_channel_dims=output_channel_dims,
-        parallel_strategy=create_parallel_strategy(num_height_groups),
+        parallel_strategy=create_parallel_strategy(num_channel_groups),
         bias=False,
         transpose=True
     )
