@@ -60,7 +60,8 @@ public:
   std::string get_type() const override { return "identity"; }
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
-  std::string get_onnx_op_type() const override { return "FIXME"; }
+  std::string get_onnx_op_type() const override { return "Identity"; }
+
   /** @name Serialization */
   ///@{
 

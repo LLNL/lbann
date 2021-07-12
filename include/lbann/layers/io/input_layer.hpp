@@ -124,27 +124,34 @@ class input_layer : public data_type_layer<TensorDataType> {
   std::string get_type() const override { return "input"; }
   std::string get_onnx_op_type() const override { return "Identity"; }
   void fill_onnx_node(onnx::GraphProto& graph) const override {
-    auto* initializer = graph.add_initializer();
-    // FIXME: Get TensorDataType?
-    initializer->set_data_type(1);
+    auto child_layers = this->get_child_layers();
+    std::cout << "Num child layers: " << child_layers.size() << std::endl;
+    for(auto const* child : this->get_child_layers()) {
+      auto idx = this->find_child_layer_index(*child);
+      //auto* initializer = graph.add_initializer();
+      // FIXME: Get TensorDataType?
+      //initializer->set_data_type(1);
+      //initializer->set_name(this->get_name() + "_" + std::to_string(idx));
+      auto* input = graph.add_input();
+      input->set_name(this->get_name() + "_" + std::to_string(idx));
+      std::cout << "NAME: " << child->get_name() << std::endl;
+      auto* input_type = input->mutable_type();
+      // FIXME: enum type. 1 is float
+      input_type->mutable_tensor_type()->set_elem_type(1);
 
-    auto* input = graph.add_input();
-    input->set_name(this->get_name());
-    auto* input_type = input->mutable_type();
-    // FIXME: enum type. 1 is float
-    input_type->mutable_tensor_type()->set_elem_type(1);
-
-    for( auto const& dim : this->get_output_dims() )
-    {
-      initializer->add_dims(dim);
       auto* dims = input_type->mutable_tensor_type()->mutable_shape()->add_dim();
-      dims->set_dim_value(dim);
-      dims->set_denotation("N/A");
+      dims->set_dim_param("batch");
+      //initializer->add_dims(1);
+      for( auto const& dim : child->get_output_dims() ) {
+        //initializer->add_dims(dim);
+        dims = input_type->mutable_tensor_type()->mutable_shape()->add_dim();
+        dims->set_dim_value(dim);
+        //dims->set_denotation("N/A");
+      }
+      // message Sequence in message TypeProto: Do we need this?
+      //input_type->mutable_sequence_type()->mutable_elem_type();
+      input->set_doc_string("Input layer info");
     }
-    // message Sequence in message TypeProto: Do we need this?
-    //input_type->mutable_sequence_type()->mutable_elem_type();
-    input->set_doc_string("Input layer info");
-
   }
 
   // description get_description() const override {

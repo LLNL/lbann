@@ -120,12 +120,50 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
   std::string get_onnx_op_type() const override { return "Identity"; }
 
+  void fill_onnx_node(onnx::GraphProto& graph) const override {
+    auto* node = graph.add_node();
+    for(auto const* parent : this->get_parent_layers()) {
+      size_t idx = parent->find_child_layer_index(*this);
+      node->add_input(parent->get_name() + "_" + std::to_string(idx));
+    }
+    node->add_output(this->get_name());
+    node->set_name(this->get_name());
+    node->set_op_type(this->get_onnx_op_type());
+    node->set_domain("");
+    node->set_doc_string(this->get_type());
+
+    // Add graph output
+    auto graph_output = graph.add_output();
+    graph_output->set_name(this->get_name());
+    auto* graph_output_type = graph_output->mutable_type();
+    // FIXME: enum type. 1 is float
+    graph_output_type->mutable_tensor_type()->set_elem_type(1);
+
+    auto* dims = graph_output_type->mutable_tensor_type()->mutable_shape()->add_dim();
+    dims->set_dim_param("batch");
+    dims = graph_output_type->mutable_tensor_type()->mutable_shape()->add_dim();
+    dims->set_dim_value(1);
+    dims = graph_output_type->mutable_tensor_type()->mutable_shape()->add_dim();
+    dims->set_dim_value(28);
+    dims = graph_output_type->mutable_tensor_type()->mutable_shape()->add_dim();
+    dims->set_dim_value(28);
+
+    //initializer->add_dims(1);
+    //auto const parents = this->get_parent_layers();
+    //for( auto const& dim : parents[0]->get_output_dims() ) {
+      //initializer->add_dims(dim);
+      //dims = graph_output_type->mutable_tensor_type()->mutable_shape()->add_dim();
+      //dims->set_dim_value(dim);
+      //dims->set_denotation("N/A");
+    // }
+
+  }
+
 protected:
   friend class cereal::access;
   evaluation_layer()
     : evaluation_layer(nullptr)
   {}
-
 
 };
 

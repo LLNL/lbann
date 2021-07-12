@@ -58,6 +58,7 @@ public:
   std::string get_type() const override { return "ReLU"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
+  std::string get_onnx_op_type() const override { return "Relu"; }
 
   /** @name Serialization */
   ///@{
