@@ -63,15 +63,15 @@ namespace distconv{
 
     // Check if buffer is not null possibly 
 
-    if(!output.get_buffer() || output.get_buffer() == nullptr){
+    if(output.get_buffer() == nullptr){
       util::MPIRootPrintStreamInfo()<< "output buffer is null";
     }
 
-    if(!input.get_buffer() || input.get_buffer() == nullptr){
+    if(input.get_buffer() == nullptr){
       util::MPIRootPrintStreamInfo() << "input buffer is null";
     }
 
-    if(!linearity.get_buffer() || linearity.get_buffer() == nullptr){
+    if(linearity.get_buffer() == nullptr){
       util::MPIRootPrintStreamInfo() <<"linearity buffer is null";
     }
 
@@ -152,22 +152,6 @@ namespace distconv{
     El::Matrix<DataType, El::Device::GPU>  output_grad_mat(output_size, local_mini_batch_size*num_local_channels, output_grad.get_buffer(),output_size);
     El::Matrix<DataType, El::Device::GPU>  input_grad_mat(input_size, local_mini_batch_size*num_local_channels, input_grad.get_buffer(), input_size);
     El::Matrix<DataType, El::Device::GPU>  weights(linearity_output_size, linearity_input_size, linearity.get_buffer(), linearity_output_size);
-    
-    El::Matrix<DataType, El::Device::GPU> output_grad_mat_reshaped;
-
-    if (output_grad_mat.Contiguous()) {
-      output_grad_mat_reshaped.LockedAttach(
-      output_size,
-      local_mini_batch_size * num_local_channels,
-      output_grad_mat.LockedBuffer(),
-      output_size);
-    }
-    else {
-      El::Copy(output_grad_mat, output_grad_mat_reshaped);
-      output_grad_mat_reshaped.Resize(
-      output_size,
-      local_mini_batch_size * num_local_channels);
-    }
 
     El::Gemm(transpose_A ? El::NORMAL : El::TRANSPOSE,
              El::NORMAL,
@@ -211,9 +195,6 @@ namespace distconv{
 
     const auto num_local_channels = output_dims[2];
     const auto local_mini_batch_size = output_dims[3];
-
-    El::Matrix<DataType, El::Device::GPU>  input_mat_reshaped; 
-    El::Matrix<DataType, El::Device::GPU>  output_grad_mat_reshaped;
 
     El::Matrix<DataType, El::Device::GPU>  input_mat(input_size, local_mini_batch_size*num_local_channels, input.get_buffer(), input_size);
     El::Matrix<DataType, El::Device::GPU>  output_grad_mat(output_size, local_mini_batch_size*num_local_channels, output_grad.get_buffer(), output_size);

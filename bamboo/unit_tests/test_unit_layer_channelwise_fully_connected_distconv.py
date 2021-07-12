@@ -88,7 +88,7 @@ def construct_model(lbann):
     metrics = []
     callbacks = []
 
-    num_height_groups = tools.gpus_per_node(lbann)
+    num_channel_groups = tools.gpus_per_node(lbann)
     if num_height_groups == 0:
         e = 'this test requires GPUs.'
         print('Skip - ' + e)
@@ -131,7 +131,7 @@ def construct_model(lbann):
     val_without_bias = z
 
     # ------------------------------------------
-    # Data-parallel distconv layout, non-transpose, bias
+    # Non-transpose, bias
     # ------------------------------------------
 
     # LBANN implementation
@@ -157,7 +157,7 @@ def construct_model(lbann):
     )
     z = lbann.L2Norm2(y, name="L2Norm")
     obj.append(z)
-    metrics.append(lbann.Metric(z, name='data-parallel layout, non-transpose, bias'))
+    metrics.append(lbann.Metric(z, name='non-transpose, bias'))
 
     # NumPy implementation
     tol = 8 * val_with_bias * np.finfo(np.float32).eps
@@ -169,7 +169,7 @@ def construct_model(lbann):
         execution_modes='test'))
 
     # ------------------------------------------
-    # Data-parallel distconv layout, non-transpose, no bias
+    # Non-transpose, no bias
     # ------------------------------------------
 
     # LBANN implementation
@@ -190,7 +190,7 @@ def construct_model(lbann):
     )
     z = lbann.L2Norm2(y)
     obj.append(z)
-    metrics.append(lbann.Metric(z, name='data-parallel layout, non-transpose, no bias'))
+    metrics.append(lbann.Metric(z, name='non-transpose, no bias'))
 
     # NumPy implementation
     tol = 8 * val_without_bias * np.finfo(np.float32).eps
@@ -201,7 +201,7 @@ def construct_model(lbann):
         error_on_failure=True,
         execution_modes='test'))
     # ------------------------------------------
-    # Data-parallel layout, transpose, bias
+    # Transpose, bias
     # ------------------------------------------
 
     # LBANN implementation
@@ -227,7 +227,7 @@ def construct_model(lbann):
     )
     z = lbann.L2Norm2(y)
     obj.append(z)
-    metrics.append(lbann.Metric(z, name='data-parallel layout, transpose, bias'))
+    metrics.append(lbann.Metric(z, name='transpose, bias'))
 
     # NumPy implementation
     tol = 8 * val_with_bias * np.finfo(np.float32).eps
@@ -239,7 +239,7 @@ def construct_model(lbann):
         execution_modes='test'))
 
     # ------------------------------------------
-    # Data-parallel layout, transpose, no bias
+    # Transpose, no bias
     # ------------------------------------------
 
     # LBANN implementation
@@ -260,7 +260,7 @@ def construct_model(lbann):
     )
     z = lbann.L2Norm2(y)
     obj.append(z)
-    metrics.append(lbann.Metric(z, name='data-parallel layout, non-transpose, no bias'))
+    metrics.append(lbann.Metric(z, name='Non-transpose, no bias'))
 
     # NumPy implementation
     tol = 8 * val_without_bias * np.finfo(np.float32).eps

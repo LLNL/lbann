@@ -242,9 +242,9 @@ void distconv_adapter::adjust_parallel_strategy() {
       if (layer().get_comm()->am_trainer_master()) {
         LBANN_WARNING("The number of channel and filter decomposition should be the same. Setting",
         " the filter decomposition to channel decomposition: ", c);
-        ps.filter_groups = c;
-        f = c;
       }
+      ps.filter_groups = c;
+      f = c;
     }
 
     if (spatial_prod != 1){
