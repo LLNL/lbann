@@ -527,20 +527,22 @@ void Layer::write_proto(lbann_data::Layer* proto) const {
 }
 
 void Layer::fill_onnx_node(onnx::GraphProto& graph) const {
-
   auto* node = graph.add_node();
-  for(auto const* parent : this->get_parent_layers())
-    node->add_input(parent->get_name());
-  for(auto const* child : this->get_child_layers())
-    node->add_output(child->get_name());
-  node->set_name(this->get_name());
-
+  for(auto const* parent : this->get_parent_layers()) {
+    size_t idx = parent->find_child_layer_index(*this);
+    node->add_input(parent->get_name() + "_" + std::to_string(idx));
+  }
+  for(auto const* child : this->get_child_layers()) {
+    size_t idx = this->find_child_layer_index(*child);
+    node->add_output(this->get_name() + "_" + std::to_string(idx));
+  }
   // FIXME: Do the names need formatting?
+  node->set_name(this->get_name());
   //string op_type
   node->set_op_type(this->get_onnx_op_type());
 
   //string domain
-  node->set_domain("N/A");
+  node->set_domain("");
 
   // FIXME: What goes here?
   //repeated AttributeProto attribute = 5;

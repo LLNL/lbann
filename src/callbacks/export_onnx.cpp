@@ -58,7 +58,7 @@ void export_onnx::on_setup_end(model* m)
   // provide vendor-specific extensions to ONNX)
   auto* opset = mp_.add_opset_import();
   opset->set_domain("");
-  opset->set_version(1);
+  opset->set_version(11);
 
   mp_.set_producer_name("LBANN");
   mp_.set_producer_version(LBANN_MAKE_STR(LBANN_VERSION));
@@ -106,7 +106,7 @@ void export_onnx::on_train_begin(model* m)
   // ValueInfoProto input will be filled with input layer info in
   //    overridden fill_onnx_node func. in input_layer.hpp
 
-  // FIXME: Not useful for now
+  // FIXME: Used in eval layer
   // auto* output = gp->add_output();
 
   // FIXME: Not useful for now
