@@ -52,11 +52,11 @@ class base_convolution_adapter: public data_type_distconv_adapter<TensorDataType
   void setup_bp_tensors() override;
   void setup_layer(size_t workspace_capacity) override;
 
-  void fp_compute_convolution();
+  void compute_convolution(TensorDevType& input, TensorDevType& output);
   void fp_apply_bias();
 
-  void bp_compute_convolution_data();
-  void bp_compute_convolution_filter();
+  void compute_convolution_transpose(TensorDevType& input, TensorDevType& output);
+  void bp_compute_gradients(bool convolution_transpose);
 
   std::unique_ptr<dc::Convolution<TensorDataType>> m_conv;
   std::unique_ptr<TensorDevType> m_kernel;
