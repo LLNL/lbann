@@ -52,6 +52,7 @@
 #include "distconv/tensor/shuffle_mpi_cuda_hybrid.hpp"
 #endif // DISTCONV_HAS_P2P
 
+#include "lbann/layers/learning/distconv/distconv_layers.hpp"
 namespace lbann {
 
 class Layer;
@@ -113,6 +114,8 @@ using ReLU = ::distconv::ReLU<Backend>;
 using LeakyReLU = ::distconv::LeakyReLU<Backend>;
 template <typename TensorDataType>
 using Convolution = ::distconv::Convolution<Backend, TensorDataType>;
+template <typename TensorDataType>
+using ChannelwiseFullyConnected = ::distconv::ChannelwiseFullyConnected<Backend, TensorDataType>;
 template <typename TensorDataType>
 using Pooling = ::distconv::Pooling<Backend, TensorDataType>;
 template <typename TensorDataType>

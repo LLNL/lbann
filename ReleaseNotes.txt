@@ -16,6 +16,7 @@ Support for new network structures:
 
 Support for new layers:
 - Added support for 2D Matrices for Scatter and Gather layers
+- Added distributed tensor parallelism with channelwise decomposition for channelwise fully connected layer
 
 Python front-end:
 
