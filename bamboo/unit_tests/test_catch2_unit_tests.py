@@ -13,7 +13,7 @@ def hack_find_spack_build_dir(basedir):
 
 def get_system_seq_launch(cluster):
     if cluster in ['lassen', 'ray']:
-        return ['lrun', '-1']
+        return ['lrun', '-1', '--smpiargs=\"-disable_gpu_hooks\"']
     return ['srun', '-N1', '-n1', '--mpibind=off']
 
 def get_system_mpi_launch(cluster):
