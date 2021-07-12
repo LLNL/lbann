@@ -234,15 +234,19 @@ void construct_datastore_options() {
   arg_parser.add_flag(DATA_STORE_PROFILE,
                       {"--data_store_profile"},
                       "TODO");
-  arg_parser.add_flag(DATA_STORE_SPILL,
-                      {"--data_store_spill"},
-                      "TODO");
   arg_parser.add_flag(DATA_STORE_TEST_CACHE,
                       {"--data_store_test_cache"},
                       "TODO");
-  arg_parser.add_flag(DATA_STORE_TEST_CHECKPOINT,
-                      {"--data_store_test_checkpoint"},
-                      "TODO");
+
+  // Input options
+  arg_parser.add_option(DATA_STORE_SPILL,
+                        {"--data_store_spill"},
+                        "TODO",
+                        "");
+  arg_parser.add_option(DATA_STORE_TEST_CHECKPOINT,
+                        {"--data_store_test_checkpoint"},
+                        "TODO",
+                        "");
 }
 
 void construct_datareader_options() {
