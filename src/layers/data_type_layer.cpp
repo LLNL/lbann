@@ -40,9 +40,9 @@ namespace lbann {
 
 template <typename InputTensorDataType, typename OutputTensorDataType>
 data_type_layer<InputTensorDataType, OutputTensorDataType>::
-data_type_layer(const data_type_layer<InputTensorDataType, OutputTensorDataType>& other) :
-  Layer(other),
-  m_persistent_error_signals(other.m_persistent_error_signals) {
+data_type_layer(data_type_layer const& other)
+  : Layer(other),
+    m_persistent_error_signals(other.m_persistent_error_signals) {
 
   // Deep matrix copies
   m_inputs.reserve(other.m_inputs.size());
@@ -66,7 +66,7 @@ data_type_layer(const data_type_layer<InputTensorDataType, OutputTensorDataType>
 template <typename InputTensorDataType, typename OutputTensorDataType>
 data_type_layer<InputTensorDataType, OutputTensorDataType>&
 data_type_layer<InputTensorDataType, OutputTensorDataType>::
-operator=(const data_type_layer<InputTensorDataType, OutputTensorDataType>& other) {
+operator=(data_type_layer const& other) {
   Layer::operator=(other);
 
   // Deep matrix copies

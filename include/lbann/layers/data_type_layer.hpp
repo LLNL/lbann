@@ -101,8 +101,6 @@ public:
     : Layer(),
       m_persistent_error_signals{persistent_error_signals}
   {}
-  data_type_layer(const data_type_layer<InputTensorDataType, OutputTensorDataType>& other);
-  data_type_layer& operator=(const data_type_layer<InputTensorDataType, OutputTensorDataType>& other);
   virtual ~data_type_layer() = default;
 
   /** Get a string representing the layer datatype
@@ -182,6 +180,15 @@ public:
   ///@}
 
 protected:
+
+  /** @brief Protected lifecycle functions */
+  ///@{
+  data_type_layer(data_type_layer&& other) = default;
+  data_type_layer(data_type_layer const& other);
+
+  data_type_layer& operator=(data_type_layer&& other) = default;
+  data_type_layer& operator=(data_type_layer const& other);
+  ///@}
 
   // ===========================================================
   // Protected Tensor access functions
