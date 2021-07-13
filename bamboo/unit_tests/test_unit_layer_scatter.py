@@ -18,8 +18,10 @@ import tools
 # the functions below to ingest data.
 
 # Data
-input_size = 11
-output_size = 15
+width = 20
+height = 5
+input_size = width * height 
+output_size = 5
 seed = 20210127
 
 # Sample access functions
@@ -79,10 +81,13 @@ def construct_model(lbann):
         lbann.Identity(x_slice),
         lbann.WeightsLayer(weights=x0_weights, dims=tools.str_list(input_size)),
     )
+
     x1 = lbann.Identity(x_slice)
+    x0_lbann = x0
+    x1_lbann = x1
 
     # Apply scatter
-    y0 = lbann.Scatter(x0, x1, dims=tools.str_list(output_size))
+    y0 = lbann.Scatter(x0, x1, dims=tools.str_list(output_size), name="Scatter_1D")
     y1 = lbann.Concatenation([
         lbann.Constant(value=i+1, num_neurons='1')
         for i in range(output_size)
@@ -91,43 +96,104 @@ def construct_model(lbann):
     z = lbann.L2Norm2(y)
 
     # Objects for LBANN model
-    layers = list(lbann.traverse_layer_graph(x))
-    metric = lbann.Metric(z, name='obj')
-    obj = lbann.ObjectiveFunction(z)
+
+    
+    obj = []
+    metrics = []
     callbacks = []
+
+    metrics.append(lbann.Metric(z, name='obj'))
+    obj.append(z)
 
     # Compute expected metric value
     vals = []
     for i in range(num_samples()):
-        x = get_sample(i)
-        x0 = x[:input_size]
-        x1 = x[input_size:]
+        _x = get_sample(i)
+        x0 = _x[:input_size]
+        x1 = _x[input_size:]
         y0 = np.zeros(output_size)
         for i in range(input_size):
             if 0 <= x1[i] < output_size:
                 y0[int(x1[i])] += x0[i]
         z = 0
+        print(y0)
         for i in range(output_size):
             z += ((i+1)*y0[i]) ** 2
         vals.append(z)
     val = np.mean(vals)
     tol = 8 * val * np.finfo(np.float32).eps
     callbacks.append(lbann.CallbackCheckMetric(
-        metric=metric.name,
+        metric=metrics[-1].name,
+        lower_bound=val-tol,
+        upper_bound=val+tol,
+        error_on_failure=True,
+        execution_modes='test'))
+
+    ######################################################################
+    #
+    #          2D Values , 1D Input 
+    #
+    ######################################################################
+
+    x0 = lbann.Reshape(x0_lbann, dims=tools.str_list([height, width]))
+    x_resliced = lbann.Slice(x1_lbann, slice_points=tools.str_list([0, width, input_size]))
+    x1 = lbann.Identity(x_resliced, name="indices_2D")
+
+    y0 = lbann.Scatter(x0, x1, dims=tools.str_list([height, output_size]), name="Scatter_2D") # output should be (height, output_size)
+
+    y1 = lbann.Concatenation([
+        lbann.Constant(value=i+1, num_neurons='1')
+        for i in range(output_size * height)
+    ])
+
+    y1 = lbann.Reshape(y1, dims=tools.str_list([height * output_size]))
+    y0 = lbann.Reshape(y0, dims=tools.str_list([height * output_size]))
+
+    y = lbann.Multiply(y0, y1)
+
+    z = lbann.L2Norm2(y)
+
+    obj.append(z)
+    metrics.append(lbann.Metric(z, name='obj_2'))
+
+    vals = [] 
+
+    for i in range(num_samples()):
+        _x = get_sample(i)
+        x0 = np.array(_x[:input_size]).reshape((height, width))
+        x1 = _x[input_size:input_size + width]
+
+
+        y0 = np.zeros((height, output_size))
+        for i in range(width):
+            for j in range(height):
+                if 0 <= x1[i] < output_size:
+                    y0[j][int(x1[i])] += x0[j][i]
+        z = 0 
+        for i in range(height * output_size):
+            z += ((i + 1) * y0.flatten()[i])**2
+        vals.append(z)
+    val = np.mean(vals)
+    tol = 8 * val * np.finfo(np.float32).eps
+    callbacks.append(lbann.CallbackCheckMetric(
+        metric=metrics[-1].name,
         lower_bound=val-tol,
         upper_bound=val+tol,
         error_on_failure=True,
         execution_modes='test'))
 
     # Gradient checking
+    
     callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
 
     # Construct model
     num_epochs = 0
+    layers = list(lbann.traverse_layer_graph(x))
+
     return lbann.Model(num_epochs,
                        layers=layers,
                        objective_function=obj,
-                       metrics=[metric],
+                       metrics=metrics,
                        callbacks=callbacks)
 
 def construct_data_reader(lbann):
