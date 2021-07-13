@@ -284,7 +284,7 @@ void construct_datareader_options() {
                       {"--make_test_fail"},
                       "TODO");
   arg_parser.add_flag(NODE_SIZES_VARY,
-                      {"--node_size_vary"},
+                      {"--node_sizes_vary"},
                       "TODO");
   arg_parser.add_flag(STACK_TRACE_TO_FILE,
                       {"--stack_trace_to_file"},
