@@ -26,6 +26,7 @@
 #ifndef LBANN_LAYERS_OPERATOR_LAYER_IMPL_HPP_INCLUDED
 #define LBANN_LAYERS_OPERATOR_LAYER_IMPL_HPP_INCLUDED
 
+#include "lbann/layers/data_type_layer.hpp"
 #include "lbann/layers/operator_layer.hpp"
 
 #include "lbann/proto/factories.hpp"
@@ -60,6 +61,16 @@ OperatorLayer<InputT, OutputT, Layout, D>::OperatorLayer(
   OperatorLayer const& other)
   : DataTypeLayer(other), m_ops{clone_ops(other.m_ops)}
 {}
+
+template <typename InputT, typename OutputT, data_layout Layout, El::Device D>
+auto OperatorLayer<InputT, OutputT, Layout, D>::operator=(
+  OperatorLayer const& other) -> OperatorLayer&
+{
+  // This is self-assignment safe
+  data_type_layer<InputT, OutputT>::operator=(*this);
+  m_ops = clone_ops(other.m_ops);
+  return *this;
+}
 
 template <typename InputT, typename OutputT, data_layout Layout, El::Device D>
 auto OperatorLayer<InputT, OutputT, Layout, D>::copy() const -> OperatorLayer*

@@ -39,7 +39,7 @@
 namespace lbann {
 
 template <typename InputT, typename OutputT, data_layout Layout, El::Device D>
-class OperatorLayer : public data_type_layer<InputT, OutputT>
+class OperatorLayer final : public data_type_layer<InputT, OutputT>
 {
 private:
   using DataTypeLayer = data_type_layer<InputT, OutputT>;
@@ -50,21 +50,38 @@ private:
   std::vector<OperatorPtr> m_ops;
 
 public:
+  /** @name Lifecycle functions */
+  ///@{
+  /** @brief Construct from a single operator. */
   OperatorLayer(lbann_comm& comm, OperatorPtr op);
+  /** @brief Construct from a vector of operators. */
   OperatorLayer(lbann_comm& comm, std::vector<OperatorPtr> operators);
-  OperatorLayer(OperatorLayer const& other);
 
+  /** @brief Copy constructor. */
+  OperatorLayer(OperatorLayer const& other);
+  /** @brief Copy assignment. */
+  OperatorLayer& operator=(OperatorLayer const& other);
+
+  /** @brief Move constructor. */
+  OperatorLayer(OperatorLayer&& other) = default;
+  /** @brief Move assignment. */
+  OperatorLayer& operator=(OperatorLayer&& other) = default;
+
+  /** @brief Destructor. */
   ~OperatorLayer() = default;
 
-  OperatorLayer* copy() const override;
-  std::string get_type() const override;
-  data_layout get_data_layout() const override;
-  El::Device get_device_allocation() const override;
+  /** @brief Polymorphic copy. */
+  OperatorLayer* copy() const final;
+  ///@}
 
-  void fp_compute() override;
-  void bp_compute() override;
+  std::string get_type() const final;
+  data_layout get_data_layout() const final;
+  El::Device get_device_allocation() const final;
 
-  description get_description() const override;
+  void fp_compute() final;
+  void bp_compute() final;
+
+  description get_description() const final;
 
 private:
   static std::vector<OperatorPtr>
@@ -80,9 +97,12 @@ private:
 
 }; // class OperatorLayer
 
-template <typename InputT, typename OutputT, data_layout Layout, El ::Device Device>
-std::unique_ptr<Layer>
-build_operator_layer_from_pbuf(lbann_comm*, lbann_data::Layer const&);
+template <typename InputT,
+          typename OutputT,
+          data_layout Layout,
+          El ::Device Device>
+std::unique_ptr<Layer> build_operator_layer_from_pbuf(lbann_comm*,
+                                                      lbann_data::Layer const&);
 
 } // namespace lbann
 #endif // LBANN_LAYERS_OPERATOR_LAYER_HPP_INCLUDED

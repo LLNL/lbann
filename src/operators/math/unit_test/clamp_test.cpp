@@ -106,14 +106,12 @@ TEMPLATE_LIST_TEST_CASE("Clamp operator lifecycle",
   SECTION("Construction with valid arguments")
   {
     std::unique_ptr<ThisOpType> op_ptr = nullptr;
-    REQUIRE_NOTHROW(
-      [](auto& x) { x = std::make_unique<ThisOpType>(0., 1.); }(op_ptr));
+    REQUIRE_NOTHROW(op_ptr = std::make_unique<ThisOpType>(0., 1.));
     REQUIRE(IsValidPtr(op_ptr));
     CHECK(op_ptr->get_min() == El::To<DataType>(0.0));
     CHECK(op_ptr->get_max() == El::To<DataType>(1.0));
 
-    REQUIRE_NOTHROW(
-      [](auto& x) { x = std::make_unique<ThisOpType>(1., 1.); }(op_ptr));
+    REQUIRE_NOTHROW(op_ptr = std::make_unique<ThisOpType>(1., 1.));
     REQUIRE(IsValidPtr(op_ptr));
     CHECK(op_ptr->get_min() == El::To<DataType>(1.0));
     CHECK(op_ptr->get_max() == El::To<DataType>(1.0));
@@ -121,22 +119,19 @@ TEMPLATE_LIST_TEST_CASE("Clamp operator lifecycle",
   SECTION("Construction with invalid arguments")
   {
     std::unique_ptr<ThisOpType> op_ptr = nullptr;
-    CHECK_THROWS(
-      [](auto& x) { x = std::make_unique<ThisOpType>(1.0, 0.0); }(op_ptr));
+    CHECK_THROWS(op_ptr = std::make_unique<ThisOpType>(1.0, 0.0));
     CHECK_FALSE(IsValidPtr(op_ptr));
   }
   SECTION("Copy interface")
   {
     std::unique_ptr<ThisOpType> clone_ptr = nullptr;
-    REQUIRE_NOTHROW(
-      [](auto& x) { x = ThisOpType(1.0, 3.0).clone(); }(clone_ptr));
+    REQUIRE_NOTHROW(clone_ptr = ThisOpType(1.0, 3.0).clone());
     CHECK(clone_ptr->get_min() == El::To<DataType>(1.0));
     CHECK(clone_ptr->get_max() == El::To<DataType>(3.0));
 
     ThisOpType op(0.0, 1.0);
-    REQUIRE_NOTHROW([](auto& target, auto const& source) {
-      target = source;
-    }(op, *clone_ptr));
+    REQUIRE_NOTHROW(op = *clone_ptr);
+
     CHECK(op.get_min() == El::To<DataType>(1.0));
     CHECK(op.get_max() == El::To<DataType>(3.0));
   }
@@ -147,13 +142,13 @@ TEMPLATE_LIST_TEST_CASE("Clamp operator lifecycle",
     ThisOpType(-2.0, 5.0).write_proto(proto_op);
 
     std::unique_ptr<BaseOperatorType<ThisOpType>> base_ptr = nullptr;
-    REQUIRE_NOTHROW([&proto_op](auto& x) {
-      x = lbann::proto::construct_operator<DataType, DataType, D>(proto_op);
-    }(base_ptr));
+    REQUIRE_NOTHROW(
+      base_ptr =
+        lbann::proto::construct_operator<DataType, DataType, D>(proto_op));
     CHECK(base_ptr->get_type() == "clamp");
 
     auto* specific_ptr = dynamic_cast<ThisOpType*>(base_ptr.get());
-    CHECK((bool) specific_ptr);
+    CHECK((bool)specific_ptr);
     CHECK(specific_ptr->get_min() == El::To<DataType>(-2.0));
     CHECK(specific_ptr->get_max() == El::To<DataType>(5.0));
   }
