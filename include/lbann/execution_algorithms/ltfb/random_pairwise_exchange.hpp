@@ -35,6 +35,10 @@
 #include <string>
 #include <unordered_map>
 
+#ifdef LBANN_HAS_DYAD
+#include "dyad_stream_api.hpp"
+#endif // LBANN_HAS_DYAD
+
 namespace lbann {
 namespace ltfb {
 
@@ -255,6 +259,31 @@ public:
 private:
   std::string ckpt_basedir_;
 }; // class CheckpointFile
+
+#ifdef LBANN_HAS_DYAD
+/// See @c lbann::callbacks::ltfb::communication_algorithm::checkpoint_file_dyad
+class CheckpointFileDyad final
+  : public Cloneable<CheckpointFileDyad, RandomPairwiseExchange::ExchangeStrategy>
+{
+  using BaseType =
+    Cloneable<CheckpointFileDyad, RandomPairwiseExchange::ExchangeStrategy>;
+
+public:
+  CheckpointFileDyad(std::set<std::string> const& weights_names,
+                     const dyad::dyad_params& dparams);
+  CheckpointFileDyad(std::set<std::string>&& weights_names,
+                     const dyad::dyad_params& dparams);
+  std::unique_ptr<model>
+  get_partner_model(model const& m, El::Int partner_trainer, size_t step) final;
+
+  dyad::dyad_stream_core& get_dyad();
+
+private:
+  std::string ckpt_basedir_;
+
+  dyad::dyad_stream_core m_dyad;
+}; // class CheckpointFileDyad
+#endif // LBANN_HAS_DYAD
 
 class CheckpointBinary final
   : public Cloneable<CheckpointBinary, RandomPairwiseExchange::ExchangeStrategy>

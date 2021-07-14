@@ -102,6 +102,8 @@ option(LBANN_WITH_CONDUIT "Enable Conduit library" ON)
 
 option(LBANN_WITH_CUDNN "Include Nvidia cuDNN" ON)
 
+option(LBANN_WITH_DYAD "Enable DYAD (depends on flux-core)" OFF)
+
 # For now, we just assert CPU support.
 option(LBANN_WITH_ONEDNN "Include OneDNN API support" OFF)
 
@@ -463,6 +465,11 @@ if (LBANN_WITH_CNPY)
   set(LBANN_HAS_CNPY ${CNPY_FOUND})
 endif (LBANN_WITH_CNPY)
 
+if (LBANN_WITH_DYAD)
+  find_package(DYAD REQUIRED)
+  set(LBANN_HAS_DYAD ${DYAD_FOUND})
+endif (LBANN_WITH_DYAD)
+
 if (LBANN_WITH_HWLOC)
   find_package(HWLOC REQUIRED)
   set(LBANN_TOPO_AWARE ${HWLOC_FOUND})
@@ -659,6 +666,7 @@ target_link_libraries(lbann PUBLIC
   $<TARGET_NAME_IF_EXISTS:H2::H2DistConv>
 
   $<TARGET_NAME_IF_EXISTS:CNPY::CNPY>
+  $<TARGET_NAME_IF_EXISTS:DYAD::DYAD>
   $<TARGET_NAME_IF_EXISTS:FFTW::FFTW>
   $<TARGET_NAME_IF_EXISTS:HWLOC::hwloc>
   $<TARGET_NAME_IF_EXISTS:Python::Python>
@@ -955,6 +963,7 @@ append_str_tf(_str
   LBANN_HAS_DIHYDROGEN
   LBANN_HAS_DISTCONV
   LBANN_HAS_DOXYGEN
+  LBANN_HAS_DYAD
   LBANN_HAS_FFTW
   LBANN_HAS_HYDROGEN
   LBANN_HAS_LBANN_PROTO

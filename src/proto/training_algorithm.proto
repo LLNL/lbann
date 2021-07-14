@@ -88,12 +88,21 @@ message RandomPairwiseExchange {
     message CheckpointFile {
       string base_dir = 1;
     }
+    message CheckpointFileDyad {
+      string base_dir = 1;
+      string kvs_namespace = 2;
+      uint32 key_depth = 3;
+      uint32 key_bins = 4;
+      bool shared_storage = 5;
+      bool debug = 6;
+    }
 
     repeated string weights_name = 1;
     oneof strategy {
       SendRecvWeights sendrecv_weights = 2;
       CheckpointBinary checkpoint_binary = 3;
       CheckpointFile checkpoint_file = 4;
+      CheckpointFileDyad checkpoint_file_dyad = 5;
     }
   }// message ExchangeStrategy
 }// message RandomPairwiseExchange

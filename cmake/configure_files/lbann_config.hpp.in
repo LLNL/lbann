@@ -32,6 +32,7 @@
 #endif // LBANN_HAS_CEREAL
 
 #cmakedefine LBANN_HAS_DIHYDROGEN
+#cmakedefine LBANN_HAS_DYAD
 #cmakedefine LBANN_HAS_OPENCV
 #cmakedefine LBANN_HAS_TBINF
 #cmakedefine LBANN_HAS_CNPY

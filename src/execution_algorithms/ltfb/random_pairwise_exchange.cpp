@@ -370,6 +370,41 @@ make_checkpoint_file(std::set<std::string> weights_names,
                                                        params.base_dir());
 }
 
+#ifdef LBANN_HAS_DYAD
+std::unique_ptr<lbann::ltfb::CheckpointFileDyad>
+make_checkpoint_file_dyad(std::set<std::string> weights_names,
+                          google::protobuf::Message const& msg)
+{
+  using CkptFile =
+    lbann_data::RandomPairwiseExchange::ExchangeStrategy::CheckpointFileDyad;
+  auto const& params = dynamic_cast<CkptFile const&>(msg);
+  // TODO: further DYAD parameterization can happen here
+  dyad::dyad_params dparams;
+  dparams.m_dyad_path_cons = params.base_dir();
+  dparams.m_dyad_path_prod = params.base_dir();
+  dparams.m_kvs_namespace = params.kvs_namespace();
+  dparams.m_key_depth = params.key_depth();
+  dparams.m_key_bins = params.key_bins();
+  dparams.m_shared_storage = params.shared_storage();
+  dparams.m_debug = params.debug();
+  return std::make_unique<lbann::ltfb::CheckpointFileDyad>(std::move(weights_names),
+                                                           dparams);
+}
+#else
+std::unique_ptr<lbann::ltfb::CheckpointFile>
+make_checkpoint_file_dyad(std::set<std::string> weights_names,
+                          google::protobuf::Message const& msg)
+{
+ #if 1
+  LBANN_ERROR("Cannot use the exchange strategy 'checkpoint_file_dyad' ",
+              "because DYAD is not enabled.");
+  return nullptr;
+ #else
+  return make_checkpoint_file(weights_names, msg);
+ #endif
+}
+#endif // LBANN_HAS_DYAD
+
 std::unique_ptr<lbann::ltfb::SendRecvWeights>
 make_sendrecv_weights(std::set<std::string> weights_names,
                       google::protobuf::Message const& msg)
@@ -403,6 +438,7 @@ ExchangeStrategyFactory build_default_exchange_factory()
   ExchangeStrategyFactory factory;
   factory.register_builder("CheckpointBinary", make_checkpoint_binary);
   factory.register_builder("CheckpointFile", make_checkpoint_file);
+  factory.register_builder("CheckpointFileDyad", make_checkpoint_file_dyad);
   factory.register_builder("SendRecvWeights", make_sendrecv_weights);
   return factory;
 }

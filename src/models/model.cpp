@@ -2395,6 +2395,79 @@ bool model::load_from_checkpoint_shared(persist& p) {
   return true;
 }
 
+#ifdef LBANN_HAS_DYAD
+bool model::save_to_checkpoint_dyad(persist& p, dyad::dyad_stream_core& dyad) {
+  if (! dyad.m_initialized) {
+    return save_to_checkpoint_shared(p);
+  }
+
+  const std::string trainer_dir = p.get_checkpoint_dir();
+
+  // This "pushes" the model-specific directory to the "stack". After
+  // the call, p.get_checkpoint_dir() returns the model-specific
+  // directory.
+  p.open_checkpoint_dir(
+    file::join_path(trainer_dir, this->get_name()),
+    m_comm->am_trainer_master());
+
+  // Make sure that the master has had a chance to create the directories
+  // (trb 12/14/2020): I don't think this matters; all output is from
+  //                   the trainer master...
+  m_comm->trainer_barrier();
+
+  // Open the stream for writing
+  dyad::ofstream_dyad ofs_dyad;
+  ofs_dyad.init(dyad);
+  std::ofstream& ofs = ofs_dyad.get_stream();
+  if (m_comm->am_trainer_master())
+  {
+    ofs_dyad.open(file::join_path(p.get_checkpoint_dir(), "model.bin"));
+    LBANN_ASSERT(ofs.good());
+  }
+
+  // Write the checkpoint
+  {
+    lbann::RootedBinaryOutputArchive ar(ofs, m_comm->get_trainer_grid());
+    ar(*this);
+  }
+
+  p.open_checkpoint_dir(trainer_dir, false);
+  return true;
+}
+
+bool model::load_from_checkpoint_dyad(persist& p, dyad::dyad_stream_core& dyad) {
+  if (! dyad.m_initialized) {
+    return load_from_checkpoint_shared(p);
+  }
+
+  const std::string trainer_dir = p.get_checkpoint_dir();
+  p.open_restart(file::join_path(trainer_dir, get_name()));
+  // Assume checkpoint reload from epoch end not step end
+
+  dyad::ifstream_dyad ifs_dyad;
+  ifs_dyad.init(dyad);
+  std::ifstream& ifs = ifs_dyad.get_stream();
+  if (m_comm->am_trainer_master())
+  {
+    ifs_dyad.open(file::join_path(p.get_checkpoint_dir(), "model.bin"));
+    LBANN_ASSERT(ifs.good());
+  }
+
+  // Restore the checkpoint
+  {
+    lbann::RootedBinaryInputArchive ar(ifs, m_comm->get_trainer_grid());
+    ar(*this);
+  }
+
+  m_model_is_setup = false;
+  p.set_restart_dir(trainer_dir);
+#ifdef LBANN_HAS_GPU
+  hydrogen::gpu::SynchronizeDevice();
+#endif // LBANN_HAS_GPU
+  return true;
+}
+#endif // LBANN_HAS_DYAD
+
 bool model::save_to_checkpoint_distributed(persist& p){
   const std::string trainer_dir = p.get_checkpoint_dir();
   p.open_checkpoint_dir(file::join_path(trainer_dir, get_name()), true);
