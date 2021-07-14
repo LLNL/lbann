@@ -75,7 +75,8 @@ from lbann.core.layer import *
 from lbann.core.metric import *
 from lbann.core.model import *
 from lbann.core.objective_function import *
-from lbann.core.operators import *
+import lbann.core.operators as ops
+from lbann.core.operator_layers import *
 from lbann.core.optimizer import *
 from lbann.core.trainer import *
 from lbann.core.training_algorithm import *
