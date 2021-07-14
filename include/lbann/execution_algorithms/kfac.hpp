@@ -86,7 +86,8 @@ public:
     kfac::kfac_inverse_strategy inverse_strategy,
     std::vector<std::string> disable_layers,
     double learning_rate_factor,
-    double learning_rate_factor_gru);
+    double learning_rate_factor_gru,
+    size_t compute_interval);
 
   KFAC(KFAC const& other);
   KFAC& operator=(const KFAC& other);
@@ -162,6 +163,8 @@ protected:
    */
   kfac::ExecutionContext* do_get_new_execution_context() const final;
 
+  void send_recv_kfac_inputs(model& model, lbann_comm *comm);
+
 private:
 
 #if 1
@@ -234,6 +237,7 @@ private:
 
   /** @brief Whether inverse of Kronecker factors are available. */
   bool m_has_kronecker_inverse;
+  size_t m_compute_interval;
 
 }; // class KFAC
 

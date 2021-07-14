@@ -32,6 +32,14 @@
 #include "lbann/layers/learning/fully_connected.hpp"
 #include "lbann/layers/learning/gru.hpp"
 #include "lbann/layers/regularizers/batch_normalization.hpp"
+#include "lbann/execution_algorithms/kfac/kfac_block.hpp"
+
+// Forward declarations
+namespace lbann {
+class KFAC;
+template <El::Device Device>
+class kfac_block;
+}
 
 namespace lbann {
 namespace kfac {
@@ -103,6 +111,13 @@ void allgather_blocks(
     El::Matrix<DataType, Device>& recv_buffer,
     lbann_comm *comm,
     kfac_allgather_mode mode);
+
+/** @brief Perform allgather for inverse matrices **/
+template <El::Device Device>
+void allgather_inverse_matrices(
+    const std::vector<std::shared_ptr<kfac_block<Device>>>& blocks,
+    El::Matrix<DataType, Device>& global_buffer,
+    lbann_comm *comm);
 
 /** @brief Add the damping value to the diagonal elements of A. **/
 template <El::Device Device>

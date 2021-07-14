@@ -252,7 +252,7 @@ void allreduce_lower_tri(El::AbstractMatrix<DataType>& A,
   assert(AL.Height() == A.Height()*(A.Height()+1)/2);
   assert(AL.Width() == 1);
   pack_lower_tri<Device>(AL, A, sync_info);
-  comm->allreduce(AL, comm->get_trainer_comm());
+  comm->allreduce(AL, comm->get_KFAC_comm());
   unpack_lower_tri<Device>(A, AL, sync_info);
 }
 
@@ -279,7 +279,7 @@ void reduce_scatter_blocks(
       reduce_block_device(blk,
                           blk.Height(),
                           block_root,
-                          comm->get_trainer_comm(),
+                          comm->get_KFAC_comm(),
                           El::SyncInfoFromMatrix(global_buffer));
     }
     return;
@@ -309,7 +309,7 @@ void reduce_scatter_blocks(
   if(mode == kfac_reduce_scatter_mode::ALLREDUCE) {
     comm->allreduce(
         (El::AbstractMatrix<DataType>&) global_buffer,
-        comm->get_trainer_comm());
+        comm->get_KFAC_comm());
   } else {
     std::vector<size_t> recv_sizes;
     recv_sizes.resize(comm->get_procs_per_trainer());
@@ -318,7 +318,7 @@ void reduce_scatter_blocks(
     reduce_scatter_v_blocks_device(
         global_buffer,
         recv_sizes,
-        comm->get_trainer_comm(),
+        comm->get_KFAC_comm(),
         El::SyncInfoFromMatrix(global_buffer));
   }
 
@@ -359,7 +359,7 @@ void allgather_blocks(
   if(mode == kfac_allgather_mode::BROADCAST) {
     for(auto& block : blocks)
       El::Broadcast(
-          *block.second, comm->get_trainer_comm(),
+          *block.second, comm->get_KFAC_comm(),
           block.first);
     return;
   }
@@ -397,7 +397,7 @@ void allgather_blocks(
   if(mode == kfac_allgather_mode::ALLREDUCE) {
     comm->allreduce(
         (El::AbstractMatrix<DataType>&) global_buffer,
-        comm->get_trainer_comm());
+        comm->get_KFAC_comm());
   }
   else {
     std::vector<size_t> recv_sizes;
@@ -413,7 +413,7 @@ void allgather_blocks(
         global_buffer,
         recv_sizes,
         recv_offsets,
-        comm->get_trainer_comm(),
+        comm->get_KFAC_comm(),
         El::SyncInfoFromMatrix(local_buffer));
   }
 
@@ -429,6 +429,50 @@ void allgather_blocks(
     }
   }
 }
+
+template <El::Device Device>
+void allgather_inverse_matrices(
+    const std::vector<std::shared_ptr<kfac_block<Device>>>& blocks,
+    El::Matrix<DataType, Device>& global_buffer,
+    lbann_comm *comm) {
+
+  // std::cout<<"Print here1\n";
+
+  // Copy blocks to the send buffer.
+  {
+
+    El::Zeros(global_buffer, global_buffer.Height(), global_buffer.Width());
+    size_t offset = 0;
+    for(auto& block : blocks) {
+      const bool is_my_block = (block->get_inverse_proc_rank() == (size_t) comm->get_rank_in_trainer());
+      if(is_my_block) {
+        offset += block->get_inverse_matrices(global_buffer, offset);
+      }
+      else{
+        offset += block->get_inverse_matrices_size(comm);
+      }
+    }
+  }
+
+  // std::cout<<"Start Allreduce\n";
+
+  comm->allreduce(
+      (El::AbstractMatrix<DataType>&) global_buffer,
+      comm->get_KFAC_comm());
+  
+  // std::cout<<"Print here2\n";
+
+  // Copy blocks from the buffer.
+  {
+    size_t offset = 0;
+    for(auto& block : blocks) {
+      offset += block->set_inverse_matrices(global_buffer, offset, comm);
+    }
+  }
+  // El::Print(global_buffer);
+  // std::cout<<"Print here Comp\n";
+}
+
 
 template <>
 void add_to_diagonal(
@@ -535,7 +579,12 @@ void unpack_lower_tri(
       El::Matrix<T, Device>& local_buffer,      \
       El::Matrix<T, Device>& global_buffer,     \
       lbann_comm *comm,                         \
-      const kfac_allgather_mode mode);
+      const kfac_allgather_mode mode);          \
+  template void allgather_inverse_matrices(     \
+      const std::vector<std::shared_ptr         \
+      <kfac_block<Device>>>& blocks,            \
+      El::Matrix<T, Device>& global_buffer,     \
+      lbann_comm *comm);
 
 PROTO_DEVICE(DataType, El::Device::CPU);
 #ifdef LBANN_HAS_GPU

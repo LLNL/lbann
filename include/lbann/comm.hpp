@@ -178,7 +178,7 @@ public:
   void split_trainers(int procs_per_trainer=-1, int trainer_grid_height=-1);
 
   /** Split the commicator for the given trainer into primary and seconday*/
-  void split_trainer_grid(int num_process_primary_grid=0, int num_process_secondary_grid=0);
+  void split_trainer_grid(int num_process_primary_grid=0, int num_process_secondary_grid=0, bool create_two_models=false);
 
   /** Get trainer grid number (0: no primary/secondary grid, 1: part of primary grid, 2: part of secondary grid). */
   inline GridType get_grid_type() const noexcept { return m_grid_type; }
@@ -227,6 +227,10 @@ public:
   inline El::Grid& get_trainer_grid() { return *m_grid; }
   /** Return a read-only grid to use for this trainer. */
   inline const El::Grid& get_trainer_grid() const { return *m_grid; }
+  /** Return secondary grid to use for this trainer. */
+  inline El::Grid& get_secondary_grid() { return *m_secondary_grid; }
+  /** Return read-only secondary grid to use for this trainer. */
+  inline const El::Grid& get_secondary_grid() const { return *m_secondary_grid; }
   /** Return the total number of trainers. */
   inline int get_num_trainers() const noexcept { return m_num_trainers; }
   /* Return the number of processes in a trainer. */
@@ -896,11 +900,23 @@ public:
   /** Return the communicator for this node. */
   const El::mpi::Comm& get_node_comm() const noexcept { return m_node_comm; }
 
+  /** Return the communicator for this node. */
+  const El::mpi::Comm& get_KFAC_comm() const noexcept {
+    if(m_create_two_models or m_grid_type==PRIMARY_GRID or true){
+      return m_trainer_comm;
+    }
+    else{
+      return m_secondary_grid_comm;
+     }
+  }
+
   /** Return the ranks of primary grid in the trainer */
   std::vector<int> get_primary_grid_ranks(){ return m_primary_grid_ranks; }
 
   /** Return the ranks of secondary grid in the trainer */
   std::vector<int> get_secondary_grid_ranks(){ return m_secondary_grid_ranks; }
+
+  bool get_KFAC_subgrid_create_two_models(){ return m_create_two_models; }
 
   /**
    * Return a communicator containing num_per_group processors.
@@ -965,6 +981,10 @@ private:
 
   /** Grid typer for current process when sub-grid parallelism is enabled */
   GridType m_grid_type = NO_GRID;
+
+  bool m_create_two_models=false;
+
+  std::unique_ptr<El::Grid> m_secondary_grid;
 
   /**
   Ranks in primary and secondary grids

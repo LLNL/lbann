@@ -145,8 +145,37 @@ class kfac_block_fc_conv: public kfac_block<Device> {
       bool print_matrix_summary,
       bool print_time) override;
 
+  void compute_preconditioned_gradients(
+      lbann_comm* comm,
+      DataType learning_rate_factor,
+      bool print_matrix,
+      bool print_matrix_summary,
+      bool print_time) override;
+
+  void initialize_activations_and_errors(
+      lbann_comm* comm,
+      int num_local_activations,
+      int num_local_errors,
+      int num_weights) override;
+
+  void send_recv_block_inputs(
+      model& model,
+      lbann_comm* comm) override;
+  
+
   const std::vector<El::AbstractMatrix<DataType>*>
   get_preconditioned_grad_buffers() override;
+
+  int get_inverse_matrices(
+      El::Matrix<DataType, Device>& output,
+      int offset) override;
+
+  int get_inverse_matrices_size(lbann_comm *comm) override;
+
+  int set_inverse_matrices(
+      El::Matrix<DataType, Device>& output,
+      int offset,
+      lbann_comm *comm) override;
 
   std::string get_info() const override {
     std::ostringstream oss;
@@ -210,6 +239,9 @@ class kfac_block_fc_conv: public kfac_block<Device> {
   /** @brief Inverse of the average Kronecker factors. */
   El::Matrix<DataType, Device>
   m_kronecker_inverse_A, m_kronecker_inverse_G;
+
+  /** @brief Size and height of inverse matrices. */
+  size_t m_Ainv_height, m_Ainv_width, m_Ginv_height, m_Ginv_width;
 
   /** @brief Vectorized gradient buffer (only for fully-connecter layers). */
   El::Matrix<DataType, Device>
