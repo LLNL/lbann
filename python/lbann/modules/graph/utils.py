@@ -78,7 +78,7 @@ class GraphVertexData:
 
         for i,node in enumerate(self.layers):
             temp = lbann.Split(node)
-            layers[i] = lbann.Identity(temp)
+            self.layers[i] = lbann.Identity(temp)
             cloned_layers.append(lbann.Identity(temp))
 
 
