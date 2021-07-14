@@ -43,6 +43,7 @@ OperatorLayer<InputT, OutputT, Layout, D>::OperatorLayer(lbann_comm& comm,
                                                          OperatorPtr op)
   : DataTypeLayer(&comm)
 {
+  LBANN_ASSERT(op);
   m_ops.reserve(1);
   m_ops.emplace_back(std::move(op));
 }
@@ -54,6 +55,7 @@ OperatorLayer<InputT, OutputT, Layout, D>::OperatorLayer(
   : DataTypeLayer(&comm), m_ops{std::move(operators)}
 {
   LBANN_ASSERT(m_ops.size() == 1UL); // For starters.
+  LBANN_ASSERT(m_ops[0]);
 }
 
 template <typename InputT, typename OutputT, data_layout Layout, El::Device D>
