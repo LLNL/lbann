@@ -704,6 +704,15 @@ def create_tests(setup_func,
                                                'experiments',
                                                test_name)
 
+        # Print full stack on error
+        if 'lbann_args' in _kwargs:
+            if isinstance(_kwargs['lbann_args'], str):
+                _kwargs['lbann_args'] += ' --print_stack_on_throw'
+            else:
+                _kwargs['lbann_args'].append('--print_stack_on_throw')
+        else:
+            _kwargs['lbann_args'] = ['--print_stack_on_throw']
+
         # If the user provided a suffix for the work directory, append it
         if 'work_subdir' in _kwargs:
             _kwargs['work_dir'] = os.path.join(_kwargs['work_dir'], _kwargs['work_subdir'])
