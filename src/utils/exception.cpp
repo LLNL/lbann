@@ -26,11 +26,15 @@
 
 #include "lbann/utils/exception.hpp"
 #include "lbann/comm_impl.hpp"
+#include "lbann/utils/argument_parser.hpp"
 #include "lbann/utils/stack_trace.hpp"
 
 namespace lbann {
 namespace {
-bool print_stack_on_throw() noexcept { return true; }
+bool print_stack_on_throw() noexcept {
+  static const bool val = global_argument_parser().get<bool>("print stack on throw");
+  return val;
+}
 } // namespace
 
 exception::exception(std::string message)

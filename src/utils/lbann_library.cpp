@@ -28,6 +28,7 @@
 #include "lbann/comm_impl.hpp"
 #include "lbann/data_readers/data_reader.hpp"
 #include "lbann/models/directed_acyclic_graph.hpp"
+#include "lbann/utils/environment_variable.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/lbann_library.hpp"
 
@@ -50,6 +51,10 @@ namespace lbann {
 
 void construct_std_options() {
   auto& arg_parser = global_argument_parser();
+  arg_parser.add_flag("print stack on throw",
+                      {"--print_stack_on_throw"},
+                      utils::ENV("LBANN_PRINT_STACK_TRACE_ON_THROW"),
+                      "Print a stack trace when constructing an LBANN exception");
   arg_parser.add_option(MAX_RNG_SEEDS_DISPLAY,
                         {"--rng_seeds_per_trainer_to_display"},
                         utils::ENV("LBANN_RNG_SEEDS_PER_TRAINER_TO_DISPLAY"),

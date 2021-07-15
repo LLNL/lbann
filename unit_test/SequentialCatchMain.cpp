@@ -24,8 +24,11 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/utils/lbann_library.hpp"
 #define CATCH_CONFIG_RUNNER
 #include <catch2/catch.hpp>
+
+#include "lbann/utils/argument_parser.hpp"
 #include <lbann/utils/dnn_lib/helpers.hpp>
 #include <lbann/utils/random_number_generators.hpp>
 
@@ -35,14 +38,14 @@ int main(int argc, char* argv[]) {
   lbann::dnn_lib::initialize();
 #endif // LBANN_HAS_DNN_LIB
 
+  lbann::construct_std_options();
 
   // Initialize the general RNGs and the data sequence RNGs
-  int random_seed = 42;
+  int const random_seed = 42;
   lbann::init_random(random_seed);
   lbann::init_data_seq_random(random_seed);
 
-  int result = Catch::Session().run(argc, argv);
-
+  int const result = Catch::Session().run(argc, argv);
 
 #ifdef LBANN_HAS_DNN_LIB
   lbann::dnn_lib::destroy();
