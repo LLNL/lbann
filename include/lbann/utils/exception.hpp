@@ -94,7 +94,7 @@ public:
    *  By default, a human-readable report is immediately printed to
    *  the standard error stream.
    */
-  exception(std::string message = "", bool print = true);
+  exception(std::string message = "");
   const char* what() const noexcept override;
 
   /** Print human-readable report to stream.
@@ -112,6 +112,11 @@ private:
 
 };
 using lbann_exception = exception;
+
+inline std::ostream& operator<<(std::ostream& os, exception const& e) {
+  e.print_report(os);
+  return os;
+}
 
 /** @brief Build a string from the arguments.
  *

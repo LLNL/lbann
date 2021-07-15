@@ -25,18 +25,21 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/utils/exception.hpp"
-#include "lbann/utils/stack_trace.hpp"
 #include "lbann/comm_impl.hpp"
+#include "lbann/utils/stack_trace.hpp"
 
 namespace lbann {
+namespace {
+bool print_stack_on_throw() noexcept { return true; }
+} // namespace
 
-exception::exception(std::string message, bool print)
-  : m_message(message),
-    m_stack_trace(stack_trace::get()) {
+exception::exception(std::string message)
+  : m_message(message), m_stack_trace(stack_trace::get())
+{
 
   // Construct default message if none is provided
   if (m_message.empty()) {
-    std::stringstream ss("LBANN exception");
+    std::ostringstream ss("LBANN exception");
     const auto& rank = get_rank_in_world();
     if (rank >= 0) {
       ss << " on rank " << rank;
@@ -45,26 +48,22 @@ exception::exception(std::string message, bool print)
   }
 
   // Print report to standard error stream
-  if (print) { print_report(std::cerr); }
-
-}
-
-const char* exception::what() const noexcept {
-  return m_message.c_str();
-}
-
-void exception::print_report(std::ostream& os) const {
-  std::stringstream ss;
-  ss << "****************************************************************"
-     << std::endl
-     << m_message << std::endl;
-  if (!m_stack_trace.empty()) {
-    ss << "Stack trace:" << std::endl
-       << m_stack_trace;
+  if (print_stack_on_throw()) {
+    print_report(std::cerr);
   }
-  ss << "****************************************************************"
+}
+
+const char* exception::what() const noexcept { return m_message.c_str(); }
+
+void exception::print_report(std::ostream& os) const
+{
+  os << std::string(64, '*') << '\n'
+     << m_message << '\n';
+  if (!m_stack_trace.empty()) {
+    os << "Stack trace:\n" << m_stack_trace;
+  }
+  os << std::string(64, '*')
      << std::endl;
-  os << ss.str();
 }
 
 } // namespace lbann
