@@ -52,9 +52,9 @@ using LayerTypeAllLayoutsAndDevice = h2::meta::tlist::Append<
 using AllLayerTypes = h2::meta::tlist::Append<
 #ifdef LBANN_HAS_HALF
 #ifdef LBANN_HAS_GPU
-  LayerTypeAllLayoutsAndDevice<fp16>,
+  LayerTypeAllLayoutsAndDevice<lbann::fp16>,
 #endif // LBANN_HAS_GPU
-  LayerTypeAllLayoutsAndDevice<cpu_fp16>,
+  LayerTypeAllLayoutsAndDevice<lbann::cpu_fp16>,
 #endif // LBANN_HAS_HALF
   LayerTypeAllLayoutsAndDevice<float>,
   LayerTypeAllLayoutsAndDevice<double>>;
@@ -136,8 +136,8 @@ TEMPLATE_LIST_TEST_CASE("OperatorLayer lifecycle",
     LayerPtr layer = nullptr;
     OperatorLayer src_layer(world_comm,
                             std::make_unique<ClampOpType>(-1.0, 1.0));
-    REQUIRE_THROWS(layer =
-                     std::make_unique<OperatorLayer>(std::move(src_layer)));
+    REQUIRE_NOTHROW(layer =
+                      std::make_unique<OperatorLayer>(std::move(src_layer)));
     CHECK(IsValidPtr(layer));
   }
   SECTION("Copy assignment")
