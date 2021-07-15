@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 #include <catch2/catch.hpp>
+#include <h2/meta/core/Lazy.hpp>
 #include <memory>
 
 #include "lbann/base.hpp"
@@ -34,15 +35,44 @@
 #include "MPITestHelpers.hpp"
 #include "TestHelpers.hpp"
 
+// FIXME (trb 07/15/21): Move this somewhere else so it's more generally useful.
+template <typename T, El::Device D>
+struct RealTypeT
+{
+  using type = T;
+};
+
+template <typename T, El::Device D>
+using RealType = h2::meta::Force<RealTypeT<T, D>>;
+
+#ifdef LBANN_HAS_HALF
+// Flag type for FP16
+struct FP16Type
+{
+};
+template <>
+struct RealTypeT<FP16Type, El::Device::CPU>
+{
+  using type = lbann::cpu_fp16;
+};
+#ifdef LBANN_HAS_GPU
+template <>
+struct RealTypeT<FP16Type, El::Device::GPU>
+{
+  using type = lbann::fp16;
+};
+#endif // LBANN_HAS_GPU
+#endif // LBANN_HAS_HALF
+
 template <typename T, lbann::data_layout L, El::Device D>
 using LayerType = lbann::OperatorLayer<T, T, L, D>;
 
 template <typename T, lbann::data_layout L>
 using LayerTypeAllDevices = h2::meta::TL<
 #ifdef LBANN_HAS_GPU
-  LayerType<T, L, El::Device::GPU>,
+  LayerType<RealType<T, El::Device::GPU>, L, El::Device::GPU>,
 #endif // LBANN_HAS_GPU
-  LayerType<T, L, El::Device::CPU>>;
+  LayerType<RealType<T, El::Device::CPU>, L, El::Device::CPU>>;
 
 template <typename T>
 using LayerTypeAllLayoutsAndDevice = h2::meta::tlist::Append<
@@ -51,10 +81,7 @@ using LayerTypeAllLayoutsAndDevice = h2::meta::tlist::Append<
 
 using AllLayerTypes = h2::meta::tlist::Append<
 #ifdef LBANN_HAS_HALF
-#ifdef LBANN_HAS_GPU
-  LayerTypeAllLayoutsAndDevice<lbann::fp16>,
-#endif // LBANN_HAS_GPU
-  LayerTypeAllLayoutsAndDevice<lbann::cpu_fp16>,
+  LayerTypeAllLayoutsAndDevice<FP16Type>,
 #endif // LBANN_HAS_HALF
   LayerTypeAllLayoutsAndDevice<float>,
   LayerTypeAllLayoutsAndDevice<double>>;
