@@ -6,10 +6,17 @@ C++ API:
 Support for new training algorithms:
  - Experimental support for 2nd-order optimization with KFAC.
    Currently supports fully-connected, convolution, and GRU layers.
+ - Added Sub-graph parallelism support for multi-branch architectures
+   (split, slice, sum, and concat layers)
+ - Data + sub-graph parallelism for in-core models (D&SP and D&SP-cSub)
+ - Initial sub-graph parallelism support for common layers in
+   Transformers
 
 Support for new network structures:
 
 Support for new layers:
+- Added support for 2D Matrices for Scatter and Gather layers
+- Added distributed tensor parallelism with channelwise decomposition for channelwise fully connected layer
 
 Python front-end:
 
@@ -20,7 +27,8 @@ Performance optimizations:
 Model portability & usability:
 
 Experiments & Applications:
-- Experimental support for distributed CommunityGAN walks.
+ - Example for training Transformer model with D&SP and D&SP-cSub
+ - Experimental support for distributed CommunityGAN walks.
 
 Internal features:
 

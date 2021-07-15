@@ -57,7 +57,7 @@ Options:
   ${C}--help${N}                     Display this help message and exit.
   ${C}--clean-build${N}              Delete the local link to the build directory
   ${C}--clean-deps${N}               Forcibly uninstall Hydrogen, Aluminum, and DiHydrogen dependencies
-  ${C}--confgigure-only${N}          Stop after adding all packages to the environment
+  ${C}--configure-only${N}           Stop after adding all packages to the environment
   ${C}-d | --define-env${N}          Define (create) a Spack environment, including the lbann dependencies, for building LBANN from local source
   ${C}--dry-run${N}                  Dry run the commands (no effect)
   ${C}-e | --extras <PATH>${N}       Add other packages from file at PATH to the Spack environment in addition to LBANN

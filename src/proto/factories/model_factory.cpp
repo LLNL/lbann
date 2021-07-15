@@ -294,6 +294,10 @@ std::unique_ptr<model> construct_model(
   if (!name.empty()) {
     m->set_name(name);
   }
+  m->set_subgrid_communication_type(proto_model.subgraph_communication());
+  m->set_subgrid_topology(proto_model.enable_subgraph_topology());
+  m->set_subgraph_num_parent_resources(proto_model.subgraph_parent_grid_resources());
+
   return m;
 
 }

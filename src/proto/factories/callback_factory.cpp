@@ -54,6 +54,7 @@
 #include "lbann/callbacks/perturb_adam.hpp"
 #include "lbann/callbacks/perturb_dropout.hpp"
 #include "lbann/callbacks/perturb_learning_rate.hpp"
+#include "lbann/callbacks/perturb_weights.hpp"
 #include "lbann/callbacks/print_model_description.hpp"
 #include "lbann/callbacks/print_statistics.hpp"
 #include "lbann/callbacks/profiler.hpp"
@@ -71,7 +72,6 @@
 #include "lbann/callbacks/timer.hpp"
 #include "lbann/callbacks/variable_minibatch.hpp"
 #include "lbann/callbacks/set_weights_value.hpp"
-#include "lbann/callbacks/kfac/kfac.hpp"
 
 #include "lbann/proto/factories.hpp"
 #include "lbann/proto/helpers.hpp"
@@ -168,6 +168,8 @@ void register_default_builders(factory_type& factory)
                            build_perturb_dropout_callback_from_pbuf);
   factory.register_builder("CallbackPerturbLearningRate",
                            build_perturb_learning_rate_callback_from_pbuf);
+    factory.register_builder("CallbackPerturbWeights",
+                           build_perturb_weights_callback_from_pbuf);
   factory.register_builder("CallbackPolyLearningRate",
                            build_poly_learning_rate_callback_from_pbuf);
   factory.register_builder("CallbackPrintModelDescription",
@@ -206,8 +208,6 @@ void register_default_builders(factory_type& factory)
                            build_timer_callback_from_pbuf);
   factory.register_builder("CallbackSetWeightsValue",
                            build_set_weights_value_callback_from_pbuf);
-  factory.register_builder("CallbackKFAC",
-                           build_kfac_callback_from_pbuf);
 }
 
 // Manage a global factory

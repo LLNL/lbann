@@ -30,6 +30,7 @@ set_full_path(THIS_DIR_SOURCES
   perturb_adam.cpp
   perturb_dropout.cpp
   perturb_learning_rate.cpp
+  perturb_weights.cpp
   print_model_description.cpp
   print_statistics.cpp
   profiler.cpp
@@ -46,9 +47,6 @@ set_full_path(THIS_DIR_SOURCES
   timer.cpp
   variable_minibatch.cpp
 )
-
-# Add the subdirectories
-add_subdirectory(kfac)
 
 # Propagate the files up the tree
 set(SOURCES "${SOURCES}" "${THIS_DIR_SOURCES}" PARENT_SCOPE)

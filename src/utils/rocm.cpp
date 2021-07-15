@@ -220,6 +220,20 @@ void copy_tensor<cpu_fp16>(
 #include "lbann/macros/instantiate.hpp"
 #undef PROTO
 
+void mem_copy_async(
+  void* output,
+  const void* input,
+  const size_t count,
+  hipMemcpyKind kind,
+  hipStream_t stream) {
+  CHECK_ROCM(hipMemcpyAsync(
+    output,
+    input,
+    count,
+    kind,
+    stream));
+}
+
 } // namespace rocm
 } // namespace lbann
 #endif // LBANN_HAS_ROCM

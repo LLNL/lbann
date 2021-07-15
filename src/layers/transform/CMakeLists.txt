@@ -9,6 +9,8 @@ set_full_path(THIS_DIR_SOURCES
   constant.cpp
   crop.cpp
   crop_builder.cpp
+  cross_grid_sum_slice.cpp
+  cross_grid_sum.cpp
   discrete_random.cpp
   dummy.cpp
   evaluation.cpp
