@@ -414,7 +414,7 @@ function exit_with_instructions()
     echo "##########################################################################################" | tee -a ${LOG}
     echo "LBANN is being installed in a spack environment named ${LBANN_ENV}, access it via:" | tee -a ${LOG}
     echo "  spack env activate -p ${LBANN_ENV}" | tee -a ${LOG}
-    echo "To finish installing  LBANN and it's dependencies (requires active environment):" | tee -a ${LOG}
+    echo "To finish installing LBANN and its dependencies (requires active environment):" | tee -a ${LOG}
     echo "  spack install" | tee -a ${LOG}
     echo "Once the initial installation is complete, to rebuild LBANN from source drop into a shell with the spack build environment setup (requires active environment):" | tee -a ${LOG}
     echo "  spack build-env lbann -- bash" | tee -a ${LOG}
