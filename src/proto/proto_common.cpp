@@ -59,9 +59,7 @@ void init_data_readers(
   const bool master = comm->am_world_master();
   std::ostringstream err;
 
-  options *opts = options::get();
-  const bool create_tarball
-    = opts->has_string("create_tarball") ? true : false;
+  auto& arg_parser = global_argument_parser();
 
   const lbann_data::DataReader & d_reader = p.data_reader();
   const int size = d_reader.reader_size();
@@ -408,9 +406,9 @@ void init_data_readers(
       reader->set_local_file_dir( readme.data_local_filedir() );
     }
 
-    if (create_tarball) {
-      if (opts->has_int("test_tarball")) {
-        reader->set_absolute_sample_count( opts->get_int("test_tarball"));
+    if (arg_parser.get<bool>(CREATE_TARBALL)) {
+      if (arg_parser.get<int>(TEST_TARBALL) != -1) {
+        reader->set_absolute_sample_count(arg_parser.get<int>(TEST_TARBALL));
         reader->set_use_percent( 0. );
         reader->set_first_n(0);
       } else {
@@ -439,12 +437,12 @@ void init_data_readers(
       reader->set_role("error");
     }
     if (readme.role() == "train") {
-      if (create_tarball || separate_validation) {
+      if (arg_parser.get<bool>(CREATE_TARBALL) || separate_validation) {
         reader->set_execution_mode_split_percent(execution_mode::validation, 0. );
       } else {
         reader->set_execution_mode_split_percent(execution_mode::validation, readme.validation_percent() );
       }
-      if (create_tarball || separate_tournament) {
+      if (arg_parser.get<bool>(CREATE_TARBALL) || separate_tournament) {
         reader->set_execution_mode_split_percent(execution_mode::tournament, 0. );
       } else {
         reader->set_execution_mode_split_percent(execution_mode::tournament, readme.tournament_percent() );
@@ -469,7 +467,7 @@ void init_data_readers(
       data_readers[execution_mode::tournament] = reader;
     }
 
-    if (readme.role() == "train" && !create_tarball) {
+    if (readme.role() == "train" && !arg_parser.get<bool>(CREATE_TARBALL)) {
       for(auto m : execution_mode_iterator()) {
         if((m == execution_mode::validation && readme.validation_percent() > 0. && !separate_validation)
            || (m == execution_mode::tournament && readme.tournament_percent() > 0. && !separate_tournament)) {
@@ -693,7 +691,7 @@ int get_requested_num_parallel_readers(const lbann_comm& comm, const lbann_data:
 void set_data_readers_filenames(
   const std::string& which, lbann_data::LbannPB& p)
 {
-  options *opts = options::get();
+  auto& arg_parser = global_argument_parser();
   lbann_data::DataReader *readers = p.mutable_data_reader();
   int size = readers->reader_size();
   for (int j=0; j<size; j++) {
@@ -701,27 +699,27 @@ void set_data_readers_filenames(
     if (r->role() == which) {
       std::ostringstream s;
       s << "data_filedir_" << which;
-      if (opts->has_string(s.str())) {
-        r->set_data_filedir(opts->get_string(s.str()));
+      if (arg_parser.get<std::string>(s.str()) != "") {
+        r->set_data_filedir(arg_parser.get<std::string>(s.str()));
       }else {
         s.clear();
         s.str("");
         s << "data_filedir";
-        if (opts->has_string(s.str())) {
-          r->set_data_filedir(opts->get_string(s.str()));
+        if (arg_parser.get<std::string>(s.str()) != "") {
+          r->set_data_filedir(arg_parser.get<std::string>(s.str()));
         }
       }
       s.clear();
       s.str("");
       s << "data_filename_" << which;
-      if (opts->has_string(s.str())) {
-        r->set_data_filename(opts->get_string(s.str()));
+      if (arg_parser.get<std::string>(s.str()) != "") {
+        r->set_data_filename(arg_parser.get<std::string>(s.str()));
       }
       s.clear();
       s.str("");
       s << "label_filename_" << which;
-      if (opts->has_string(s.str())) {
-        r->set_label_filename(opts->get_string(s.str()));
+      if (arg_parser.get<std::string>(s.str()) != "") {
+        r->set_label_filename(arg_parser.get<std::string>(s.str()));
       }
     }
   }
@@ -730,7 +728,7 @@ void set_data_readers_filenames(
 void set_data_readers_sample_list(
   const std::string& which, lbann_data::LbannPB& p)
 {
-  options *opts = options::get();
+  auto& arg_parser = global_argument_parser();
   lbann_data::DataReader *readers = p.mutable_data_reader();
   int size = readers->reader_size();
   const std::string key_role = "sample_list_" + which;
@@ -738,15 +736,15 @@ void set_data_readers_sample_list(
   for (int j=0; j<size; j++) {
     lbann_data::Reader *r = readers->mutable_reader(j);
     if (r->role() == which) {
-      r->set_sample_list(opts->get_string(key_role));
+      r->set_sample_list(arg_parser.get<std::string>(key_role));
     }
   }
 }
 
 void set_data_readers_percent(lbann_data::LbannPB& p)
 {
-  options *opts = options::get();
-  double percent = opts->get_float("data_reader_percent");
+  auto& arg_parser = global_argument_parser();
+  double percent = arg_parser.get<float>(DATA_READER_PERCENT);
   if (percent <= 0 || percent > 1.0) {
       std::ostringstream err;
       err << __FILE__ << " " << __LINE__ << " :: "
@@ -796,52 +794,52 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
 {
   std::ostringstream err;
 
-  options *opts = options::get();
+  auto& arg_parser = global_argument_parser();
   lbann_data::Trainer *trainer = p.mutable_trainer();
   lbann_data::Model *model = p.mutable_model();
   lbann_data::DataReader *d_reader = p.mutable_data_reader();
   int size = d_reader->reader_size();
 
-  if (opts->has_int("absolute_sample_count")) {
+  if (arg_parser.get<int>(ABSOLUTE_SAMPLE_COUNT) != -1) {
     for (int j=0; j<size; j++) {
-      int n = opts->get_int("absolute_sample_count");
+      int n = arg_parser.get<int>(ABSOLUTE_SAMPLE_COUNT);
       lbann_data::Reader *readme = d_reader->mutable_reader(j);
       readme->set_percent_of_data_to_use(0.0);
       readme->set_absolute_sample_count(n);
     }
   }
 
-  if (opts->has_string("data_filedir")
-      or opts->has_string("data_filedir_train")
-      or opts->has_string("data_filename_train")
-      or opts->has_string("label_filename_train")) {
+  if ((arg_parser.get<std::string>(DATA_FILEDIR) != "")
+      or (arg_parser.get<std::string>(DATA_FILEDIR_TRAIN) != "")
+      or (arg_parser.get<std::string>(DATA_FILENAME_TRAIN) != "")
+      or (arg_parser.get<std::string>(LABEL_FILENAME_TRAIN) != "")) {
     set_data_readers_filenames("train", p);
   }
-  if (opts->has_string("data_filedir")
-      or opts->has_string("data_filedir_validate")
-      or opts->has_string("data_filename_validate")
-      or opts->has_string("label_filename_validate")) {
+  if ((arg_parser.get<std::string>(DATA_FILEDIR) != "")
+      or (arg_parser.get<std::string>(DATA_FILEDIR_VALIDATE) != "")
+      or (arg_parser.get<std::string>(DATA_FILENAME_VALIDATE) != "")
+      or (arg_parser.get<std::string>(LABEL_FILENAME_VALIDATE) != "")) {
     set_data_readers_filenames("validate", p);
   }
-  if (opts->has_string("data_filedir")
-      or opts->has_string("data_filedir_test")
-      or opts->has_string("data_filename_test")
-      or opts->has_string("label_filename_test")) {
+  if ((arg_parser.get<std::string>(DATA_FILEDIR) != "")
+      or (arg_parser.get<std::string>(DATA_FILEDIR_TEST) != "")
+      or (arg_parser.get<std::string>(DATA_FILENAME_TEST) != "")
+      or (arg_parser.get<std::string>(LABEL_FILENAME_TEST) != "")) {
     set_data_readers_filenames("test", p);
   }
-  if (opts->has_string("sample_list_train")) {
+  if (arg_parser.get<std::string>(SAMPLE_LIST_TRAIN) != "") {
     set_data_readers_sample_list("train", p);
   }
-  if (opts->has_string("sample_list_validate")) {
+  if (arg_parser.get<std::string>(SAMPLE_LIST_VALIDATE) != "") {
     set_data_readers_sample_list("validate", p);
   }
-  if (opts->has_string("sample_list_test")) {
+  if (arg_parser.get<std::string>(SAMPLE_LIST_TEST) != "") {
     set_data_readers_sample_list("test", p);
   }
-  if (opts->has_string("data_reader_percent")) {
+  if (arg_parser.get<float>(DATA_READER_PERCENT) != -1.0) {
     set_data_readers_percent(p);
   }
-  if (opts->get_bool("no_im_comm")) {
+  if (arg_parser.get<bool>(NO_IM_COMM)) {
     int sz = model->callback_size();
     for (int j=0; j<sz; j++) {
       lbann_data::Callback *c = model->mutable_callback(j);
@@ -850,26 +848,26 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
       }
     }
   }
-  if (opts->has_int("mini_batch_size")) {
-    trainer->set_mini_batch_size(opts->get_int("mini_batch_size"));
+  if (arg_parser.get<int>(MINI_BATCH_SIZE) != -1) {
+    trainer->set_mini_batch_size(arg_parser.get<int>(MINI_BATCH_SIZE));
   }
-  if (opts->has_int("num_epochs")) {
-    model->set_num_epochs(opts->get_int("num_epochs"));
+  if (arg_parser.get<int>(NUM_EPOCHS) != -1) {
+    model->set_num_epochs(arg_parser.get<int>(NUM_EPOCHS));
   }
-  if (opts->has_int("hydrogen_block_size")) {
-    trainer->set_hydrogen_block_size(opts->get_int("hydrogen_block_size"));
+  if (arg_parser.get<int>(HYDROGEN_BLOCK_SIZE) != -1) {
+    trainer->set_hydrogen_block_size(arg_parser.get<int>(HYDROGEN_BLOCK_SIZE));
   }
-  if (opts->has_int("num_parallel_readers")) {
-    trainer->set_num_parallel_readers(opts->get_int("num_parallel_readers"));
+  if (arg_parser.get<int>(NUM_PARALLEL_READERS) != -1) {
+    trainer->set_num_parallel_readers(arg_parser.get<int>(NUM_PARALLEL_READERS));
   }
-  if (opts->get_bool("disable_cuda")) {
-    model->set_disable_cuda(opts->get_bool("disable_cuda"));
+  if (arg_parser.get<bool>(DISABLE_CUDA)) {
+    model->set_disable_cuda(arg_parser.get<bool>(DISABLE_CUDA));
   }
-  if (opts->has_int("random_seed")) {
-    trainer->set_random_seed(opts->get_int("random_seed"));
+  if (arg_parser.get<int>(RANDOM_SEED) == -1) {
+    trainer->set_random_seed(arg_parser.get<int>(RANDOM_SEED));
   }
-  if(opts->get_bool("serialize_io")) {
-    trainer->set_serialize_io(opts->get_bool("serialize_io"));
+  if(arg_parser.get<bool>(SERIALIZE_IO)) {
+    trainer->set_serialize_io(arg_parser.get<bool>(SERIALIZE_IO));
   }
 
 }
@@ -1054,11 +1052,11 @@ void save_session(const lbann_comm& comm, const int argc, char * const* argv, lb
     return;
   }
 
-  options *opts = options::get();
+  auto& arg_parser = global_argument_parser();
 
   //do not write output file for a repeated experiment;
   //may want to revisit this decision later ...
-  if (opts->has_string("prototext")) {
+  if (arg_parser.get<std::string>(PROTOTEXT) != "") {
     return;
   }
 

@@ -477,7 +477,8 @@ def get_command(cluster,
     if restart_dir is not None:
         option_restart_dir = ' --restart_dir=%s' % restart_dir
     if disable_cuda is not None:
-        option_disable_cuda = ' --disable_cuda=%d' % int(bool(disable_cuda))
+        if bool(disable_cuda):
+            option_disable_cuda = ' --disable_cuda'
     extra_options = ''
     if extra_lbann_flags is not None:
         # If extra_lbann_flags is not a dict, then we have already appended

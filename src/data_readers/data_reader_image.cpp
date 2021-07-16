@@ -154,7 +154,7 @@ void image_data_reader::dump_sample_label_list(const std::string& dump_file_name
 }
 
 void image_data_reader::load() {
-  options *opts = options::get();
+  auto& arg_parser = global_argument_parser();
 
   // Load sample list
   const std::string sample_list_file = get_data_sample_list();
@@ -165,7 +165,7 @@ void image_data_reader::load() {
     load_list_of_samples(sample_list_file);
   }
 
-  if (opts->has_string("write_sample_list") && m_comm->am_trainer_master()) {
+  if (arg_parser.get<bool>(WRITE_SAMPLE_LIST) && m_comm->am_trainer_master()) {
     const std::string slist_name = (m_sample_list.get_header()).get_sample_list_name();
     std::stringstream s;
     std::string basename = get_basename_without_ext(slist_name);
@@ -178,8 +178,8 @@ void image_data_reader::load() {
     }
     m_sample_list.write(s.str());
   }
-  if (opts->has_string("write_sample_label_list") && m_comm->am_trainer_master()) {
-    if (!(m_keep_sample_order || opts->has_string("keep_sample_order"))) {
+  if (arg_parser.get<bool>("write_sample_label_list") && m_comm->am_trainer_master()) {
+    if (!(m_keep_sample_order || arg_parser.get<bool>(KEEP_SAMPLE_ORDER))) {
     std::cout << "Writting sample label list without the option "
               << "`keep_sample_order' set." << std::endl;
     }
@@ -195,7 +195,8 @@ void image_data_reader::load() {
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
   resize_shuffled_indices();
 
-  opts->set_option("node_sizes_vary", 1);
+  // TODO MRW
+  // opts->set_option(NODE_SIZES_VARY, 1);
   instantiate_data_store();
 
   select_subset_of_data();
@@ -226,16 +227,16 @@ void read_raw_data(const std::string &filename, std::vector<char> &data) {
 
 
 void image_data_reader::do_preload_data_store() {
-  options *opts = options::get();
+  auto& arg_parser = global_argument_parser();
 
   int rank = m_comm->get_rank_in_trainer();
 
-  bool threaded = ! options::get()->get_bool("data_store_no_thread");
+  bool threaded = ! arg_parser.get<bool>(DATA_STORE_NO_THREAD);
   if (threaded) {
     if (is_master()) {
       std::cout << "mode: data_store_thread\n";
     }
-    std::shared_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(m_comm, opts, false);
+    std::shared_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(m_comm, false);
     int num_threads = static_cast<int>(io_thread_pool->get_num_threads());
 
     std::vector<std::unordered_set<int>> data_ids(num_threads);
@@ -328,21 +329,21 @@ void image_data_reader::load_list_of_samples(const std::string sample_list_file)
   // load the sample list
   double tm1 = get_time();
 
-  options *opts = options::get();
+  auto& arg_parser = global_argument_parser();
 
-  if (m_keep_sample_order || opts->has_string("keep_sample_order")) {
+  if (m_keep_sample_order || arg_parser.get<bool>(KEEP_SAMPLE_ORDER)) {
     m_sample_list.keep_sample_order(true);
   } else {
     m_sample_list.keep_sample_order(false);
   }
 
-  if (opts->get_bool("check_data")) {
+  if (arg_parser.get<bool>(CHECK_DATA)) {
     m_sample_list.set_data_file_check();
   }
 
   std::vector<char> buffer;
 
-  if (opts->has_string("load_full_sample_list_once")) {
+  if (arg_parser.get<bool>(LOAD_FULL_SAMPLE_LIST_ONCE)) {
     if (m_comm->am_trainer_master()) {
       load_file(sample_list_file, buffer);
     }
@@ -419,21 +420,21 @@ void image_data_reader::gen_list_of_samples() {
   const std::string sample_list_file = imageListFile;
   header.set_sample_list_name(sample_list_file);
 
-  options *opts = options::get();
+  auto& arg_parser = global_argument_parser();
 
-  if (m_keep_sample_order || opts->has_string("keep_sample_order")) {
+  if (m_keep_sample_order || arg_parser.get<bool>(KEEP_SAMPLE_ORDER)) {
     m_sample_list.keep_sample_order(true);
   } else {
     m_sample_list.keep_sample_order(false);
   }
 
-  if (opts->get_bool("check_data")) {
+  if (arg_parser.get<bool>(CHECK_DATA)) {
     m_sample_list.set_data_file_check();
   }
 
   std::vector<char> buffer;
 
-  if (opts->has_string("load_full_sample_list_once")) {
+  if (arg_parser.get<bool>(LOAD_FULL_SAMPLE_LIST_ONCE)) {
     // The trainer master loads the entire file into a buffer in the memory
     if (m_comm->am_trainer_master()) {
       load_file(imageListFile, buffer);
@@ -501,8 +502,8 @@ void image_data_reader::read_labels(std::istream& istrm) {
   // the index of the corresponding item in the sample list
   m_sample_list.build_sample_map_from_name_to_index();
 
-  options *opts = options::get();
-  const bool check_data = opts->get_bool("check_data");
+  auto& arg_parser = global_argument_parser();
+  const bool check_data = arg_parser.get<bool>(CHECK_DATA);
 
   m_labels.clear();
   m_labels.resize(num_samples);

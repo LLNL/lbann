@@ -183,7 +183,7 @@ def create_test_func(test_func):
             test_name_base=test_name_base,
             nodes=num_nodes,
             work_subdir='checkpoint',
-            lbann_args=['--disable_cuda=True' + ' --num_epochs='+str(num_ckpt_epochs)],
+            lbann_args=['--disable_cuda' + ' --num_epochs='+str(num_ckpt_epochs)],
         )
 
         checkpoint_test_output = test_func_checkpoint[0](cluster, dirname)
@@ -200,7 +200,7 @@ def create_test_func(test_func):
             test_name_base=test_name_base,
             nodes=num_nodes,
             work_subdir='restart',
-            lbann_args=['--disable_cuda=True'
+            lbann_args=['--disable_cuda'
                         + ' --restart_dir='
                         + os.path.join(checkpoint_test_output['work_dir'], checkpoint_dir)
                         + ' --num_epochs='+str(num_epochs)],
@@ -258,5 +258,5 @@ for _test_func in tools.create_tests(setup_experiment,
                                      test_name_base=test_name_base,
                                      nodes=num_nodes,
                                      work_subdir='baseline',
-                                     lbann_args=['--disable_cuda=True']):
+                                     lbann_args=['--disable_cuda']):
     globals()[_test_func.__name__] = create_test_func(_test_func)
