@@ -38,6 +38,7 @@
 #include "lbann/layers/activations/log_softmax.hpp"
 #include "lbann/layers/activations/softmax.hpp"
 #include "lbann/layers/image/bilinear_resize.hpp"
+#include "lbann/layers/image/rotate.hpp"
 #include "lbann/layers/io/input_layer.hpp"
 #include "lbann/layers/learning/base_convolution.hpp"
 #include "lbann/layers/learning/channelwise_fully_connected.hpp"
@@ -291,6 +292,9 @@ private:
     LBANN_REGISTER_BUILDER(OneHot, one_hot);
     LBANN_REGISTER_DEFAULT_BUILDER(RowwiseWeightsNorms, rowwise_weights_norms);
     LBANN_REGISTER_BUILDER(UniformHash, uniform_hash);
+    
+    // Image layers
+    LBANN_REGISTER_DEFAULT_BUILDER(Rotate, rotate);
 
   }
 
