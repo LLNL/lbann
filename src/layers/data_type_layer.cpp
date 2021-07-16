@@ -36,60 +36,44 @@
 #include "lbann/utils/summary_impl.hpp"
 #include "lbann/utils/tensor_impl.hpp"
 
+namespace {
+template <typename MatrixPtrT>
+std::vector<MatrixPtrT> copy_all(std::vector<MatrixPtrT> const& in)
+{
+  std::vector<MatrixPtrT> out;
+  out.reserve(in.size());
+  for (auto const& m : in)
+    out.emplace_back(m ? m->Copy() : nullptr);
+  return out;
+}
+} // namespace
+
 namespace lbann {
 
 template <typename InputTensorDataType, typename OutputTensorDataType>
 data_type_layer<InputTensorDataType, OutputTensorDataType>::
-data_type_layer(const data_type_layer<InputTensorDataType, OutputTensorDataType>& other) :
-  Layer(other),
-  m_persistent_error_signals(other.m_persistent_error_signals) {
+data_type_layer(data_type_layer const& other)
+  : Layer(other),
+    m_persistent_error_signals(other.m_persistent_error_signals) {
 
   // Deep matrix copies
-  m_inputs.reserve(other.m_inputs.size());
-  m_outputs.reserve(other.m_outputs.size());
-  m_gradient_wrt_outputs.reserve(other.m_gradient_wrt_outputs.size());
-  m_gradient_wrt_inputs.reserve(other.m_gradient_wrt_inputs.size());
-  for (const auto& ptr : other.m_inputs) {
-    m_inputs.emplace_back(ptr ? ptr->Copy() : nullptr);
-  }
-  for (const auto& ptr : other.m_outputs) {
-    m_outputs.emplace_back(ptr ? ptr->Copy() : nullptr);
-  }
-  for (const auto& ptr : other.m_gradient_wrt_outputs) {
-    m_gradient_wrt_outputs.emplace_back(ptr ? ptr->Copy() : nullptr);
-  }
-  for (const auto& ptr : other.m_gradient_wrt_inputs) {
-    m_gradient_wrt_inputs.emplace_back(ptr ? ptr->Copy() : nullptr);
-  }
+  m_inputs = copy_all(other.m_inputs);
+  m_outputs = copy_all(other.m_outputs);
+  m_gradient_wrt_outputs = copy_all(other.m_gradient_wrt_outputs);
+  m_gradient_wrt_inputs = copy_all(other.m_gradient_wrt_inputs);
 }
 
 template <typename InputTensorDataType, typename OutputTensorDataType>
 data_type_layer<InputTensorDataType, OutputTensorDataType>&
 data_type_layer<InputTensorDataType, OutputTensorDataType>::
-operator=(const data_type_layer<InputTensorDataType, OutputTensorDataType>& other) {
+operator=(data_type_layer const& other) {
   Layer::operator=(other);
 
   // Deep matrix copies
-  m_inputs.clear();
-  m_outputs.clear();
-  m_gradient_wrt_outputs.clear();
-  m_gradient_wrt_inputs.clear();
-  m_inputs.reserve(other.m_inputs.size());
-  m_outputs.reserve(other.m_outputs.size());
-  m_gradient_wrt_outputs.reserve(other.m_gradient_wrt_outputs.size());
-  m_gradient_wrt_inputs.reserve(other.m_gradient_wrt_inputs.size());
-  for (const auto& ptr : other.m_inputs) {
-    m_inputs.emplace_back(ptr ? ptr->Copy() : nullptr);
-  }
-  for (const auto& ptr : other.m_outputs) {
-    m_outputs.emplace_back(ptr ? ptr->Copy() : nullptr);
-  }
-  for (const auto& ptr : other.m_gradient_wrt_outputs) {
-    m_gradient_wrt_outputs.emplace_back(ptr ? ptr->Copy() : nullptr);
-  }
-  for (const auto& ptr : other.m_gradient_wrt_inputs) {
-    m_gradient_wrt_inputs.emplace_back(ptr ? ptr->Copy() : nullptr);
-  }
+  m_inputs = copy_all(other.m_inputs);
+  m_outputs = copy_all(other.m_outputs);
+  m_gradient_wrt_outputs = copy_all(other.m_gradient_wrt_outputs);
+  m_gradient_wrt_inputs = copy_all(other.m_gradient_wrt_inputs);
   m_persistent_error_signals = other.m_persistent_error_signals;
   return *this;
 }

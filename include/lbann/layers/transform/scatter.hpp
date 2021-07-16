@@ -132,7 +132,7 @@ void scatter_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData&
 
 
   const auto& output_dims = this->get_output_dims();
-  // Check if output matrix is 1D or 2D 
+  // Check if output matrix is 1D or 2D
 
   const auto is_output_1D = output_dims.size() == 1;
   const auto is_output_2D = output_dims.size() == 2;
@@ -174,7 +174,7 @@ void scatter_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData&
       "scattering from a 1-D or 2-D tensor");
   }
   // Check if either output is 1D or the first dim matches for input and output
-  if ( ! is_output_1D && (is_output_2D == 2 && output_dims[0] != input0_dims[0])) {
+  if ( ! is_output_1D && (is_output_2D && output_dims[0] != input0_dims[0])) {
     LBANN_ERROR(
       this->get_type()," layer \"",this->get_name(),"\" ",
       "attempted to scatter into a ",output_dims.size(),"-D tensor ",
