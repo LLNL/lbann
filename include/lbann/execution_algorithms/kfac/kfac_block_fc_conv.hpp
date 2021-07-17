@@ -172,6 +172,11 @@ class kfac_block_fc_conv: public kfac_block<Device> {
 
   int get_inverse_matrices_size(lbann_comm *comm) override;
 
+  std::vector<int> get_inverse_matrices_size_vector(lbann_comm *comm) override;
+
+  void resize_inverse_matrices_size(El::Matrix<double, El::Device::CPU>& inverse_matrices_size, int block_number) override;
+
+
   int set_inverse_matrices(
       El::Matrix<DataType, Device>& output,
       int offset,
@@ -241,7 +246,7 @@ class kfac_block_fc_conv: public kfac_block<Device> {
   m_kronecker_inverse_A, m_kronecker_inverse_G;
 
   /** @brief Size and height of inverse matrices. */
-  size_t m_Ainv_height, m_Ainv_width, m_Ginv_height, m_Ginv_width;
+  size_t m_Ainv_height=0, m_Ainv_width=0, m_Ginv_height=0, m_Ginv_width=0;
 
   /** @brief Vectorized gradient buffer (only for fully-connecter layers). */
   El::Matrix<DataType, Device>

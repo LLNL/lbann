@@ -239,6 +239,8 @@ private:
   bool m_has_kronecker_inverse;
   size_t m_compute_interval;
 
+  El::Matrix<double, El::Device::CPU> m_inverse_matrices_size; 
+
 }; // class KFAC
 
 } // namespace lbann

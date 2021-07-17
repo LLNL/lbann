@@ -312,7 +312,6 @@ bool KFAC::train_mini_batch(
       }
       if(compute_inverse)
         on_forward_prop_end(kfac_context, model);
-      // std::cout<<"End Forward rank:"<<El::mpi::Rank(comm.get_combined_grid_comm())<<"\n";
 
       if(comm.get_grid_type()==PRIMARY_GRID 
         or comm.get_KFAC_subgrid_create_two_models() 
@@ -487,8 +486,6 @@ void KFAC::sync_weights_model(model& model, lbann_comm *comm){
     }
   }
 
-  // std::cout<<"Size of global buffer:"<<global_buffer_size<<"\n";
-
   El::Matrix<DataType, Device> global_buffer(global_buffer_size, 1);
   El::SyncInfo<Device> sync_info =El::SyncInfoFromMatrix(global_buffer);
 
@@ -540,7 +537,6 @@ void KFAC::sync_weights_model(model& model, lbann_comm *comm){
 
       if(comm_rank + num_send*num_process_primary_grid < num_process_secondary_grid){
         int to_send_index = comm_rank + num_send*num_process_primary_grid;
-        // std::cout<<"My CommRank:"<<comm_rank<<" Send:"<<secondary_grid_ranks[to_send_index]<<"\n";
         ::El::mpi::Send(
            (DataType*)global_buffer.Buffer(),
            global_buffer_size,
@@ -655,22 +651,15 @@ void send_recv_precomputed_gradients(
            primary_grid_ranks[to_send_index],
            primary_grid_ranks[to_send_index],
            combined_comm,
-           sync_info);
-        // ::El::Send(
-        //    global_buffer_local,
-        //    combined_comm,
-        //    primary_grid_ranks[to_send_index]);
-        // std::cout<<"Comp My CommRank:"<<comm_rank <<" "<<combined_rank<<" Send:"<<primary_grid_ranks[to_send_index]<<"\n";
+           sync_info);    
       }
     }
-    // ::El::mpi::Barrier(combined_comm.GetMPIComm());
 
   }
   if(comm->get_grid_type() == PRIMARY_GRID)
   {
     El::SyncInfo<Device> sync_info =El::SyncInfoFromMatrix(global_buffer);
     int recv_index = comm_rank % num_process_secondary_grid;
-    // std::cout<<"My CommRank:"<<comm_rank <<" "<<combined_rank<<" Recv:"<<secondary_grid_ranks[recv_index]<<"\n";
     ::El::mpi::TaggedRecv(
        (DataType*)global_buffer.Buffer(),
        data_size,
@@ -678,11 +667,7 @@ void send_recv_precomputed_gradients(
        combined_rank,
        combined_comm,
        sync_info);
-    // ::El::Recv(
-    //    global_buffer,
-    //    combined_comm,
-    //    secondary_grid_ranks[recv_index]);
-    // std::cout<<"Comp My CommRank:"<<comm_rank <<" "<<combined_rank<<" Recv:"<<secondary_grid_ranks[recv_index]<<"\n";
+
     // Sort blocks so that received blocks per process become
     // contiguous.
     std::vector<std::pair<size_t, El::AbstractMatrix<DataType>*>> sorted_blocks(blocks.size());
@@ -707,7 +692,6 @@ void send_recv_precomputed_gradients(
       }
     }
   }
-
 }
 
 template <typename DataType, El::Device Device>
@@ -717,8 +701,6 @@ void send_recv_inverse_matrices(
     const int data_size,
     lbann_comm *comm) {
 
-  // const int comm_size = El::mpi::Size(comm->get_KFAC_comm().GetMPIComm());
-  // const int comm_rank = El::mpi::Rank(comm->get_KFAC_comm().GetMPIComm());
   const int comm_rank = comm->get_rank_in_trainer();
   const int combined_rank = El::mpi::Rank(comm->get_combined_grid_comm());
 
@@ -743,7 +725,6 @@ void send_recv_inverse_matrices(
         El::SyncInfo<Device> sync_info =El::SyncInfoFromMatrix(global_buffer);
 
         int to_send_index = comm_rank + num_send*num_process_secondary_grid;
-        // std::cout<<"my rank:"<<combined_rank<<"Send rank:"<<primary_grid_ranks[to_send_index]<<"\n";
         ::El::mpi::TaggedSend(
            (DataType*)global_buffer.Buffer(),
            data_size,
@@ -760,7 +741,6 @@ void send_recv_inverse_matrices(
   {
     El::SyncInfo<Device> sync_info =El::SyncInfoFromMatrix(global_buffer);
     int recv_index = comm_rank % num_process_secondary_grid;
-    // std::cout<<"my rank:"<<combined_rank<<"Recv rank:"<<secondary_grid_ranks[recv_index]<<"\n";
     ::El::mpi::TaggedRecv(
        (DataType*)global_buffer.Buffer(),
        data_size,
@@ -773,7 +753,7 @@ void send_recv_inverse_matrices(
     {
       size_t offset = 0;
       for(auto& block : blocks) {
-        offset += block->set_inverse_matrices(global_buffer, offset,comm);
+        offset = block->set_inverse_matrices(global_buffer, offset,comm);
       }
     }
   }
@@ -1017,9 +997,17 @@ void KFAC::on_backward_prop_end(
         m_print_time);
     prof_region_end(("kfac-inverse/" + block->get_name()).c_str(), prof_sync);
   }
-  // std::cout<<"All gather begin rank:"<<El::mpi::Rank(comm.get_combined_grid_comm())<<"\n";
 
   //allgather inverse matrices 
+  if(is_first_step and false){
+    kfac::allgather_inverse_matrices_sizes(context.m_blocks, m_inverse_matrices_size, &comm);
+    int block_number = 0;
+    for(auto& block : context.m_blocks){
+      block->resize_inverse_matrices_size(m_inverse_matrices_size, block_number);
+      block_number++;
+    }
+  }
+
   int global_buffer_inverses_size = 0;
 
   for(auto& block : context.m_blocks){
@@ -1048,7 +1036,6 @@ void KFAC::on_backward_prop_end(
   }
   else{
     m_has_kronecker_inverse = true;
-    // std::cout<<"Primary grid\n";
   }
 
   if(comm.get_grid_type() == SECONDARY_GRID or comm.get_grid_type() == PRIMARY_GRID)
@@ -1067,93 +1054,30 @@ void KFAC::on_backward_prop_end(
 
     size_t offset = 0;
     for(auto& block : context.m_blocks) {
-      offset += block->get_inverse_matrices(global_buffer_inverse, offset);
+      offset = block->get_inverse_matrices(global_buffer_inverse, offset);
     }
-
-    // std::cout<<"Send Recv inverse rank:"<<El::mpi::Rank(comm.get_combined_grid_comm())<<" "<<global_buffer_inverses_size<<"\n";
 
     send_recv_inverse_matrices(
         context.m_blocks,
         global_buffer_inverse,
         global_buffer_inverses_size,
         model.get_comm());
-
-    // std::cout<<"End Send Recv inverse rank:"<<El::mpi::Rank(comm.get_combined_grid_comm())<<" "<<global_buffer_inverses_size<<"\n";
-    
   }
+
 
   if(comm.get_KFAC_subgrid_create_two_models() or comm.get_grid_type() == PRIMARY_GRID or comm.get_grid_type() == NO_GRID){
     for(auto& block : context.m_blocks){
+
+      {
         const bool is_gru = dynamic_cast<kfac_block_gru<Device>*>(block.get()) != nullptr;
         block->compute_preconditioned_gradients(
             &comm,
             is_gru ? m_learning_rate_factor_gru : m_learning_rate_factor,
             m_print_matrix, m_print_matrix_summary,
             m_print_time); 
+    	}
     }
   }
-
-  
-  
-  /*
-  
-  // Step 3: All-gather of each preconditioned gradient tensor
-  prof_region_begin("kfac-allgather", prof_color, prof_sync);
-  {
-    // List-up buffers to synchronize.
-    std::vector<std::pair<size_t, El::AbstractMatrix<DataType>*>> buffers;
-    int local_buffer_size = 0, global_buffer_size = 0;
-    for(auto& block : context.m_blocks){
-      for(auto L : block->get_preconditioned_grad_buffers()) {
-        const size_t rank = block->get_inverse_proc_rank();
-        buffers.emplace_back(rank, L);
-        assert(L->Width() == 1);
-        if(rank == (size_t) comm.get_rank_in_trainer())
-          local_buffer_size += L->Height();
-        global_buffer_size += L->Height();
-      }
-    }
-
-    // Perform allgather.
-    const auto allgather_mode = kfac::kfac_allgather_mode::ALLREDUCE;
-    const auto is_buffer_needed = kfac::is_allgather_buffer_required(allgather_mode);
-    El::Matrix<DataType, Device>& local_buffer =
-      context.get_workspace_matrix(
-        "allgather_send_buffer",
-        is_buffer_needed.first ? local_buffer_size : 0,
-        1);
-    El::Matrix<DataType, Device>& global_buffer =
-      context.get_workspace_matrix(
-        "allgather_recv_buffer",
-        is_buffer_needed.second ? global_buffer_size : 0,
-        1);
-
-    if(comm.get_grid_type() == SECONDARY_GRID and false){
-      kfac::allgather_blocks(
-        buffers, local_buffer, global_buffer, &comm, allgather_mode);
-    }
-    //Send precomputed gradients from secondary grid to primary grid 
-    // sync_weights_model(model, model.get_comm());
-    
-    // send_recv_precomputed_gradients(buffers, 
-    //                                 global_buffer, 
-    //                                 global_buffer_size, 
-    //                                 model.get_comm(),
-    //                                 allgather_mode);
-
-    
-  }
-  prof_region_end("kfac-allgather", prof_sync);
-  */
-
-#ifdef LBANN_NVPROF
-  prof_region_begin("kfac-allgather-barrier", prof_color, prof_sync);
-  CHECK_CUDA(cudaDeviceSynchronize());
-  comm.trainer_barrier();
-  prof_region_end("kfac-allgather-barrier", prof_sync);
-#endif // LBANN_NVPROF
-
-  prof_region_end("kfac-step", prof_sync);
 
   if(is_first_step) {
     for(auto& block : context.m_blocks) {

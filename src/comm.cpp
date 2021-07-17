@@ -152,8 +152,6 @@ void lbann_comm::split_trainer_grid(
   num_process_primary_grid = world_size/2; 
   }
 
-  std::cout<<"M trainer rank"<<m_rank_in_trainer<<" Primary grid:"<<num_process_primary_grid<<" world_size:"<<world_size<<"\n";
-
   // Check if parameters are valid
   if (num_process_primary_grid +  num_process_secondary_grid > world_size) {
     LBANN_ERROR(
@@ -176,10 +174,6 @@ void lbann_comm::split_trainer_grid(
     num_process_secondary_grid = world_size - num_process_primary_grid;
   }
 
-  // m_trainer_rank = El::mpi::Rank(m_trainer_comm.GetMPIComm());
-
-
-  // int color = -1;
   int rank_in_split_comm;
   if(m_rank_in_trainer < num_process_primary_grid){
     // color = 0;
@@ -226,11 +220,6 @@ void lbann_comm::split_trainer_grid(
   El::mpi::Create(m_trainer_comm, primary_grid_group, m_primary_grid_comm);
   El::mpi::Create(m_trainer_comm, secondary_grid_group, m_secondary_grid_comm);
 
-  // Split comm between primary and secondary grid
-  // El::mpi::Split(m_trainer_comm,
-  //                color,
-  //                rank_in_split_comm,
-  //                m_primary_grid_comm);
 
   El::mpi::Dup(m_trainer_comm, m_combined_grid_comm);
   if(m_create_two_models){
@@ -263,8 +252,6 @@ void lbann_comm::split_trainer_grid(
       num_process_secondary_grid, El::COLUMN_MAJOR);
   }
 
-  // El::mpi::Dup(m_primary_grid_comm, m_trainer_comm);
-  // El::mpi::Dup(m_primary_grid_comm, m_world_comm);
 }
 
 void lbann_comm::intertrainer_sum_matrix(AbsMat& mat) const

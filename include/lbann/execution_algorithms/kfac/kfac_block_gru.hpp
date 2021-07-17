@@ -160,6 +160,35 @@ class kfac_block_gru: public kfac_block<Device> {
       bool print_matrix_summary,
       bool print_time) override;
 
+  void compute_preconditioned_gradients(
+      lbann_comm* comm,
+      DataType learning_rate_factor,
+      bool print_matrix,
+      bool print_matrix_summary,
+      bool print_time) override;
+
+  void initialize_activations_and_errors(
+      lbann_comm* comm,
+      int num_local_activations,
+      int num_local_errors,
+      int num_weights) override{};
+
+  /** @brief Copy inverse matrices to output buffer. */
+  int get_inverse_matrices(
+      El::Matrix<DataType, Device>& output,
+      int offset) override;
+  
+
+  /** @brief Get inverse matrices size (offset). */
+  int get_inverse_matrices_size(lbann_comm *comm) override;
+
+  int set_inverse_matrices(
+      El::Matrix<DataType, Device>& output,
+      int offset,
+      lbann_comm *comm) override;
+
+    
+
   const std::vector<El::AbstractMatrix<DataType>*>
   get_preconditioned_grad_buffers() override;
 

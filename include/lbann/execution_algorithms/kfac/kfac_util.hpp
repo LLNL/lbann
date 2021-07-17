@@ -119,6 +119,13 @@ void allgather_inverse_matrices(
     El::Matrix<DataType, Device>& global_buffer,
     lbann_comm *comm);
 
+/** @brief Perform allgather for inverse matrices size**/
+template <El::Device Device>
+void allgather_inverse_matrices_sizes(
+    const std::vector<std::shared_ptr<kfac_block<Device>>>& blocks,
+    El::Matrix<double, El::Device::CPU>& global_buffer,
+    lbann_comm *comm);
+
 /** @brief Add the damping value to the diagonal elements of A. **/
 template <El::Device Device>
 void add_to_diagonal(

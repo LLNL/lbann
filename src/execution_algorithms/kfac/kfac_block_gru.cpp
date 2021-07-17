@@ -405,6 +405,31 @@ void kfac_block_gru<Device>::update_kronecker_inverse(
         Ginv, GLinv, Gave, comm->am_trainer_master() && print_time,
         DataType(damping_err/pi), 0,
         false, sync_info);
+  }
+
+  if(!this->m_has_kronecker_inverse)
+    this->m_has_kronecker_inverse = true;
+}
+
+template <El::Device Device>
+void kfac_block_gru<Device>::compute_preconditioned_gradients(
+      lbann_comm* comm,
+      DataType learning_rate_factor,
+      bool print_matrix,
+      bool print_matrix_summary,
+      bool print_time) {
+  
+  auto& Ainv_h = m_kronecker_inverse_A_h;
+  auto& Ainv_x = m_kronecker_inverse_A_x;
+
+  for(auto& matrix_type : kfac_gru_util::LEARNABLE_MATRICES) {
+    const auto mname = kfac_gru_util::get_matrix_type_name(matrix_type);
+    auto& Ginv = m_kronecker_inverse_G[matrix_type];
+    const auto &Gave = m_kronecker_average_G[matrix_type];
+    auto& GLinv = this->get_workspace_matrix(
+        std::string("GLinv_"+mname),
+        Gave.Height(), Gave.Height());
+    
 
     // Compute preconditioned gradients
     El::Matrix<DataType, Device> gradients_mat;
@@ -455,9 +480,6 @@ void kfac_block_gru<Device>::update_kronecker_inverse(
     assert(Fgrad.Width() == grad_buffer_mat.Width());
     El::Copy(Fgrad, grad_buffer_mat);
   }
-
-  if(!this->m_has_kronecker_inverse)
-    this->m_has_kronecker_inverse = true;
 }
 
 template <El::Device Device>
@@ -474,6 +496,133 @@ kfac_block_gru<Device>::get_preconditioned_grad_buffers() {
     ret.push_back(&buf);
   }
   return ret;
+}
+
+template <El::Device Device>
+int kfac_block_gru<Device>::get_inverse_matrices(El::Matrix<DataType, Device>& output, int offset)
+{
+  const size_t input_size = get_input_size();
+  const size_t hidden_size = get_hidden_size();
+
+  for(auto& matrix_type : kfac_gru_util::LEARNABLE_MATRICES) {
+    El::SyncInfo<Device> sync_info =El::SyncInfoFromMatrix(m_kronecker_inverse_G[matrix_type]);
+    const  size_t height = m_kronecker_inverse_G[matrix_type].Height();
+    const  size_t size_inv = height*height;
+
+    El::copy::util::InterleaveMatrix(
+                                size_inv, 1,
+                                m_kronecker_inverse_G[matrix_type].LockedBuffer(), 1, size_inv,                                
+                                output.Buffer(offset,0),
+                                1, size_inv,
+                                sync_info);
+    offset+=size_inv;
+  }
+
+  {
+    const  size_t size_inv = hidden_size*hidden_size;
+    El::SyncInfo<Device> sync_info = El::SyncInfoFromMatrix(m_kronecker_inverse_A_h);
+    El::copy::util::InterleaveMatrix(
+                                size_inv, 1,
+                                m_kronecker_inverse_A_h.LockedBuffer(), 1, size_inv,
+                                output.Buffer(offset,0),
+                                1, size_inv,
+                                sync_info);
+    offset+=size_inv;
+  }
+
+  {
+    El::SyncInfo<Device> sync_info = El::SyncInfoFromMatrix(m_kronecker_inverse_A_x);
+    const  size_t size_inv = input_size*input_size;
+    El::copy::util::InterleaveMatrix(
+                                size_inv, 1,
+                                m_kronecker_inverse_A_x.LockedBuffer(), 1, size_inv,
+                                output.Buffer(offset,0),
+                                1, size_inv,
+                                sync_info);
+    offset+=size_inv;
+  }
+
+  return offset;
+}
+
+template <El::Device Device>
+int kfac_block_gru<Device>::set_inverse_matrices(El::Matrix<DataType, Device>& output, 
+                          int offset,
+                          lbann_comm *comm)
+{
+  const size_t input_size = get_input_size();
+  const size_t hidden_size = get_hidden_size();
+
+  for(auto& matrix_type : kfac_gru_util::LEARNABLE_MATRICES) {
+    El::SyncInfo<Device> sync_info =El::SyncInfoFromMatrix(m_kronecker_inverse_G[matrix_type]);
+    const size_t height = kfac_gru_util::is_matrix_height_hidden(matrix_type)
+        ? hidden_size : input_size;
+    const  size_t size_inv = height*height;
+
+    if(m_kronecker_inverse_G[matrix_type].Height()==0)
+      m_kronecker_inverse_G[matrix_type].Resize(height, height);
+
+
+    El::copy::util::InterleaveMatrix(
+                                size_inv, 1,
+                                output.LockedBuffer(offset,0), 1, size_inv,
+                                m_kronecker_inverse_G[matrix_type].Buffer(),
+                                1, size_inv,
+                                sync_info);
+    offset+=size_inv;
+  }
+
+  {
+    El::SyncInfo<Device> sync_info = El::SyncInfoFromMatrix(m_kronecker_inverse_A_h);
+    const  size_t size_inv = hidden_size*hidden_size;
+    if(m_kronecker_inverse_A_h.Height()==0)
+      m_kronecker_inverse_A_h.Resize(hidden_size, hidden_size);
+    El::copy::util::InterleaveMatrix(
+                                size_inv, 1,
+                                output.LockedBuffer(offset,0), 1, size_inv,
+                                m_kronecker_inverse_A_h.Buffer(),
+                                1, size_inv,
+                                sync_info);
+    offset+=size_inv;
+  }
+
+  {
+    El::SyncInfo<Device> sync_info = El::SyncInfoFromMatrix(m_kronecker_inverse_A_x);
+    const  size_t size_inv = input_size*input_size;
+    if(m_kronecker_inverse_A_x.Height()==0)
+      m_kronecker_inverse_A_x.Resize(input_size, input_size);
+    El::copy::util::InterleaveMatrix(
+                                size_inv, 1,
+                                output.LockedBuffer(offset,0), 1, size_inv,
+                                m_kronecker_inverse_A_x.Buffer(),
+                                1, size_inv,
+                                sync_info);
+    offset+=size_inv;
+  }
+
+  return offset;
+
+}
+
+template <El::Device Device>
+int kfac_block_gru<Device>::get_inverse_matrices_size(lbann_comm *comm)
+{
+  const size_t input_size = get_input_size();
+  const size_t hidden_size = get_hidden_size();
+
+  int inverse_size = 0;
+
+  for(auto& matrix_type : kfac_gru_util::LEARNABLE_MATRICES) {
+    El::SyncInfo<Device> sync_info =El::SyncInfoFromMatrix(m_kronecker_inverse_G[matrix_type]);
+    const size_t height = kfac_gru_util::is_matrix_height_hidden(matrix_type)
+        ? hidden_size : input_size;
+    const  size_t size_inv = height*height;
+    inverse_size += size_inv;
+  }
+
+  inverse_size +=  input_size*input_size + hidden_size*hidden_size;
+
+  return inverse_size;
 }
 
 template <El::Device Device>

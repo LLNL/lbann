@@ -141,6 +141,18 @@ class kfac_block {
     LBANN_ERROR("this function should be called via a sub-class.");
   }
 
+  /** @brief Get inverse matrices size vector */
+  virtual std::vector<int> 
+  get_inverse_matrices_size_vector(lbann_comm *comm) {
+    LBANN_ERROR("this function should be called via a sub-class.");
+  }
+
+  /** @brief Get inverse matrices size vector */
+  virtual void
+  resize_inverse_matrices_size(El::Matrix<double, El::Device::CPU>& inverse_matrices_size, int block_number) {
+    LBANN_ERROR("this function should be called via a sub-class.");
+  }
+
   /** @brief Copy inverse matrices from output buffer. */
   virtual int
   set_inverse_matrices(

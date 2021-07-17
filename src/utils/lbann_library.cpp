@@ -174,7 +174,6 @@ int allocate_trainer_resources(lbann_comm *comm) {
   
   // Split trainer when sub-grid parallelism is enabled
   if(trainer_primary_grid_size > 0) {
-    std::cout<<"LBANN Primary Grid Size:"<<trainer_primary_grid_size<<"\n";
     comm->split_trainer_grid(trainer_primary_grid_size, 0, trainer_create_two_models);
   }
 

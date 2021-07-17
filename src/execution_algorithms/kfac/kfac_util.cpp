@@ -431,22 +431,45 @@ void allgather_blocks(
 }
 
 template <El::Device Device>
+void allgather_inverse_matrices_sizes(
+    const std::vector<std::shared_ptr<kfac_block<Device>>>& blocks,
+    El::Matrix<double, El::Device::CPU>& global_buffer,
+    lbann_comm *comm) {
+
+  const size_t num_blocks = blocks.size();
+  global_buffer.Resize(num_blocks, 4);
+  El::Zeros(global_buffer, global_buffer.Height(), global_buffer.Width());
+
+  int iter=0; 
+  for(auto& block : blocks) {
+    const bool is_my_block = (block->get_inverse_proc_rank() == (size_t) comm->get_rank_in_trainer());
+    if(is_my_block) {
+      auto inverse_size = block->get_inverse_matrices_size_vector(comm);
+
+      for (int i=0; i<4; ++i)
+        global_buffer(iter,i) = inverse_size[i];
+    }
+    iter++;
+  }
+
+  comm->allreduce(
+      (El::AbstractMatrix<double>&) global_buffer,
+      comm->get_KFAC_comm());
+}
+
+template <El::Device Device>
 void allgather_inverse_matrices(
     const std::vector<std::shared_ptr<kfac_block<Device>>>& blocks,
     El::Matrix<DataType, Device>& global_buffer,
     lbann_comm *comm) {
 
-  // std::cout<<"Print here1\n";
-
-  // Copy blocks to the send buffer.
   {
-
     El::Zeros(global_buffer, global_buffer.Height(), global_buffer.Width());
     size_t offset = 0;
     for(auto& block : blocks) {
       const bool is_my_block = (block->get_inverse_proc_rank() == (size_t) comm->get_rank_in_trainer());
       if(is_my_block) {
-        offset += block->get_inverse_matrices(global_buffer, offset);
+        offset = block->get_inverse_matrices(global_buffer, offset);
       }
       else{
         offset += block->get_inverse_matrices_size(comm);
@@ -454,23 +477,16 @@ void allgather_inverse_matrices(
     }
   }
 
-  // std::cout<<"Start Allreduce\n";
 
   comm->allreduce(
       (El::AbstractMatrix<DataType>&) global_buffer,
       comm->get_KFAC_comm());
-  
-  // std::cout<<"Print here2\n";
-
-  // Copy blocks from the buffer.
   {
     size_t offset = 0;
     for(auto& block : blocks) {
-      offset += block->set_inverse_matrices(global_buffer, offset, comm);
+      offset = block->set_inverse_matrices(global_buffer, offset, comm);
     }
   }
-  // El::Print(global_buffer);
-  // std::cout<<"Print here Comp\n";
 }
 
 
@@ -580,10 +596,17 @@ void unpack_lower_tri(
       El::Matrix<T, Device>& global_buffer,     \
       lbann_comm *comm,                         \
       const kfac_allgather_mode mode);          \
+  template                                      \
+  void allgather_inverse_matrices_sizes(        \
+      const std::vector<std::shared_ptr         \
+      <kfac_block<Device>>>& blocks,            \
+      El::Matrix<double>& global_buffer,                            \
+      lbann_comm *comm);                        \
   template void allgather_inverse_matrices(     \
       const std::vector<std::shared_ptr         \
       <kfac_block<Device>>>& blocks,            \
-      El::Matrix<T, Device>& global_buffer,     \
+      El::Matrix<T, Device>&                    \
+      global_buffer,                            \
       lbann_comm *comm);
 
 PROTO_DEVICE(DataType, El::Device::CPU);
