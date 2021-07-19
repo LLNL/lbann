@@ -5,36 +5,47 @@ import lbann.modules
 
 from util import str_list
 
-class Generator(lbann.modules.Module):
+class GreedyGenerator(lbann.modules.Module):
+    """Greedily construct fake motif one vertex at a time.
+
+    Picks vertices that maximize generator score.
+
+    """
 
     def __init__(
             self,
             num_vertices,
             embed_dim,
             learn_rate,
+            embeddings_device='CPU',
+            initial_embeddings=None,
     ):
         super().__init__()
         self.num_vertices = num_vertices
         self.embed_dim = embed_dim
         self.learn_rate = learn_rate
+        self.embeddings_device = embeddings_device
 
         # Initialize weights
-        # Note: The generator's confidence for adding vertex v to a
-        # fake motif is
-        #   G(v) = G'(v) / sum_w(G'(w))
-        #   G'(v) = 1 - exp(-sum_j(prod_i(g_ij) * g_vj))
-        # Treating the embeddings as i.i.d. random variables:
-        #   G' = 1 - exp( -embed_dim * g^(motif_size+1) )
-        #   log(g) = log( -log(1-G') / embed_dim ) / (motif_size+1)
-        # We initialize the embeddings in log-space so that the
-        # numerator G' has mean 0.5 in the first generator step (i.e.
-        # motif_size=1).
-        mean = math.log( -math.log(1-0.5) / embed_dim ) / (1+1)
-        radius = math.log( -math.log(1-0.75) / embed_dim ) / (1+1) - mean
-        self.log_embedding_weights = lbann.Weights(
-            initializer=lbann.UniformInitializer(
-                min=mean-radius, max=mean+radius),
-            name='generator_log_embeddings',
+        if initial_embeddings is None:
+            # The generator's confidence for adding vertex v to a
+            # fake motif is
+            #   G(v) = G'(v) / sum_w(G'(w))
+            #   G'(v) = 1 - exp(-sum_j(prod_i(g_ij) * g_vj))
+            # Treating the embeddings as i.i.d. random variables:
+            #   G' = 1 - exp( -embed_dim * g^(motif_size+1) )
+            #   log(g) = log( -log(1-G') / embed_dim ) / (motif_size+1)
+            # We initialize the embeddings in log-space so that the
+            # numerator G' has mean 0.5 in the first generator step
+            # (i.e. motif_size=1).
+            mean = ( -math.log(1-0.5) / embed_dim ) ** (1/(1+1))
+            radius = ( -math.log(1-0.75) / embed_dim ) ** (1/(1+1)) - mean
+            init = lbann.UniformInitializer(min=mean-radius, max=mean+radius)
+        else:
+            init = lbann.ValueInitializer(values=str_list(np.nditer(initial_embeddings)))
+        self.embedding_weights = lbann.Weights(
+            initializer=init,
+            name='generator_embeddings',
         )
 
         # Initialize caches for helper functions
@@ -49,16 +60,24 @@ class Generator(lbann.modules.Module):
     ):
 
         # Get log of embeddings for candidate vertices
-        candidate_log_embeddings = self._get_log_embeddings(candidate_indices)
+        candidate_embeddings = self._get_embeddings(candidate_indices)
+        candidate_log_embeddings = lbann.Log(candidate_embeddings)
 
         # Initialize motif with first candidate vertex
         motif_indices = [
             lbann.Slice(candidate_indices, slice_points=str_list([0,1])),
         ]
-        motif_mask = lbann.Concatenation(
-            lbann.Constant(value=1, num_neurons=str_list([1,1])),
-            lbann.Constant(value=0, num_neurons=str_list([num_candidates-1,1])),
+        motif_mask = lbann.Add(
+            lbann.Concatenation(
+                lbann.Constant(value=1, num_neurons=str(1)),
+                lbann.Constant(value=0, num_neurons=str(num_candidates-1)),
+            ),
+            lbann.Less(
+                candidate_indices,
+                lbann.Constant(value=0, num_neurons=str(num_candidates)),
+            ),
         )
+        motif_mask = lbann.Reshape(motif_mask, dims=str_list([num_candidates,1]))
 
         # Generate motif
         log_probs = []
@@ -77,15 +96,26 @@ class Generator(lbann.modules.Module):
 
         return motif_indices, prob, log_prob
 
-    def _get_log_embeddings(self, indices):
-        return lbann.DistEmbedding(
+    def _get_embeddings(self, indices):
+        embeddings = lbann.DistEmbedding(
             indices,
-            weights=self.log_embedding_weights,
+            weights=self.embedding_weights,
             num_embeddings=self.num_vertices,
             embedding_dim=self.embed_dim,
             sparse_sgd=True,
             learning_rate=self.learn_rate,
+            device=self.embeddings_device,
         )
+
+        # Force embeddings to be positive
+        # Note: Propagate gradients even when embeddings are negative
+        epsilon = 0.1
+        embeddings = lbann.Sum(
+            embeddings,
+            lbann.Relu(lbann.Negative(lbann.StopGradient(embeddings))),
+            lbann.Constant(value=epsilon, hint_layer=embeddings),
+        )
+        return embeddings
 
     def _expand_motif(
             self,
@@ -185,3 +215,94 @@ class Generator(lbann.modules.Module):
                 device='CPU',
             )
         return self.iota_cache[size]
+
+class TrivialGenerator(lbann.modules.Module):
+    """Return candidate vertices as fake motif
+
+    Number of candidate vertices must match motif size. Generator
+    score is approximated by removing softmax denominator.
+
+    """
+
+    def __init__(
+            self,
+            num_vertices,
+            motif_size,
+            embed_dim,
+            learn_rate,
+            embeddings_device='CPU',
+            initial_embeddings=None,
+    ):
+        super().__init__()
+        self.num_vertices = num_vertices
+        self.embed_dim = embed_dim
+        self.learn_rate = learn_rate
+        self.embeddings_device = embeddings_device
+
+        # Initialize weights
+        if initial_embeddings is None:
+            # The generator's confidence is approximated with
+            #   G = 1 - exp(-sum_j(prod_i(g_ij)))
+            # Treating the embeddings as i.i.d. random variables:
+            #   G = 1 - exp( -embed_dim * d^motif_size )
+            #   log(g) = log( -log(1-G) / embed_dim ) / motif_size
+            # We initialize the embeddings in log-space so that the
+            # generator's initial confidence has mean 0.5.
+            mean = ( -math.log(1-0.5) / embed_dim ) ** (1/motif_size)
+            radius = ( -math.log(1-0.75) / embed_dim ) ** (1/motif_size) - mean
+            init = lbann.UniformInitializer(min=mean-radius, max=mean+radius)
+        else:
+            init = lbann.ValueInitializer(values=str_list(np.nditer(initial_embeddings)))
+        self.embedding_weights = lbann.Weights(
+            initializer=init,
+            name='generator_embeddings',
+        )
+
+    def _get_embeddings(self, indices):
+        embeddings = lbann.DistEmbedding(
+            indices,
+            weights=self.embedding_weights,
+            num_embeddings=self.num_vertices,
+            embedding_dim=self.embed_dim,
+            sparse_sgd=True,
+            learning_rate=self.learn_rate,
+            device=self.embeddings_device,
+        )
+
+        # Force embeddings to be positive
+        # Note: Propagate gradients even when embeddings are negative
+        epsilon = 0.1
+        embeddings = lbann.Sum(
+            embeddings,
+            lbann.Relu(lbann.Negative(lbann.StopGradient(embeddings))),
+            lbann.Constant(value=epsilon, hint_layer=embeddings),
+        )
+        return embeddings
+
+    def forward(
+            self,
+            num_candidates,
+            candidate_indices,
+            motif_size,
+    ):
+        assert num_candidates == motif_size, \
+            'Trivial generator expects to recieve a fake motif'
+
+        # Get log of embeddings for candidate vertices
+        motif_embeddings = self._get_embeddings(candidate_indices)
+        motif_log_embeddings = lbann.Log(motif_embeddings)
+
+        # G = 1 - exp(-sum_j(prod_i(g_ij)))
+        # log(1-G) = -sum_j(exp(sum_i(log(g_ij))))
+        x = lbann.MatMul(
+            lbann.Constant(value=1, num_neurons=str_list([1, motif_size])),
+            motif_log_embeddings,
+        )
+        x = lbann.Exp(x)
+        x = lbann.Reduction(x, mode='sum')
+        x = lbann.Negative(x)
+        log_not_prob = x
+        prob = lbann.Negative(lbann.Expm1(log_not_prob))
+        log_prob = lbann.Log(prob)
+
+        return candidate_indices, prob, log_prob

@@ -28,6 +28,7 @@ Model portability & usability:
 
 Experiments & Applications:
  - Example for training Transformer model with D&SP and D&SP-cSub
+ - Experimental support for distributed CommunityGAN walks.
 
 Internal features:
 

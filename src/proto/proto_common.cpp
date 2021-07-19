@@ -382,6 +382,22 @@ void init_data_readers(
                   "but LBANN is not built with "
                   "largescale_node2vec or HavoqGT");
 #endif // LBANN_HAS_LARGESCALE_NODE2VEC
+    } else if (name == "communitygan") {
+#ifdef LBANN_HAS_COMMUNITYGAN_WALKER
+      const auto& params = readme.communitygan();
+      reader = new communitygan_reader(
+        params.embedding_weights(),
+        params.motif_file(),
+        params.graph_file(),
+        params.num_vertices(),
+        params.motif_size(),
+        params.walk_length(),
+        params.walks_per_vertex(),
+        params.epoch_size());
+#else
+      LBANN_ERROR("attempted to construct CommunityGAN data reader, "
+                  "but LBANN is not built with CommunityGAN walker");
+#endif // LBANN_HAS_COMMUNITYGAN_WALKER
     } else {
         err << __FILE__ << " " << __LINE__ << " :: unknown name for data reader: "
             << name;

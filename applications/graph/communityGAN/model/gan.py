@@ -11,24 +11,47 @@ class CommunityGAN(lbann.modules.Module):
             num_vertices,
             motif_size,
             embed_dim,
-            learn_rate,
+            discriminator_learn_rate,
+            generator_learn_rate,
+            generator_type='greedy',
+            embeddings_device='CPU',
+            initial_embeddings=None,
     ):
         super().__init__()
         self.num_vertices = num_vertices
         self.embed_dim = embed_dim
-        self.learn_rate = learn_rate
+        self.discriminator_learn_rate = discriminator_learn_rate
+        self.generator_learn_rate = generator_learn_rate
 
-        # Construct generator and discriminator
-        self.generator = model.generator.Generator(
-            num_vertices,
-            embed_dim,
-            learn_rate,
-        )
+        # Construct generator
+        if generator_type == 'greedy':
+            self.generator = model.generator.GreedyGenerator(
+                num_vertices,
+                embed_dim,
+                generator_learn_rate,
+                embeddings_device=embeddings_device,
+                initial_embeddings=initial_embeddings,
+            )
+        elif generator_type == 'trivial':
+            self.generator = model.generator.TrivialGenerator(
+                num_vertices,
+                motif_size,
+                embed_dim,
+                generator_learn_rate,
+                embeddings_device=embeddings_device,
+                initial_embeddings=initial_embeddings,
+            )
+        else:
+            raise ValueError(f'Unrecognized generator type ({generator_type})')
+
+        # Construct discriminator
         self.discriminator = model.discriminator.Discriminator(
             num_vertices,
             motif_size,
             embed_dim,
-            learn_rate,
+            discriminator_learn_rate,
+            embeddings_device=embeddings_device,
+            initial_embeddings=initial_embeddings,
         )
 
     def forward(
@@ -47,8 +70,13 @@ class CommunityGAN(lbann.modules.Module):
         )
 
         # Get discriminator embeddings in log-space
-        all_motif_indices = lbann.Concatenation(motif_indices, fake_motif_indices)
-        all_motif_log_embeddings = self.discriminator.get_log_embeddings(all_motif_indices)
+        all_motif_indices = lbann.Concatenation(
+            motif_indices,
+            fake_motif_indices,
+            device='CPU',
+        )
+        all_motif_embeddings = self.discriminator.get_embeddings(all_motif_indices)
+        all_motif_log_embeddings = lbann.Log(all_motif_embeddings)
         all_motif_log_embeddings = lbann.Slice(
             all_motif_log_embeddings,
             slice_points=str_list([0, motif_size, 2*motif_size]),
@@ -64,7 +92,7 @@ class CommunityGAN(lbann.modules.Module):
 
         # Loss function
         # L_disc = - log(D(real)) - log(1-D(fake))
-        # L_gen = - log(G) * stop_gradient(log(1-D(fake)))
+        # L_gen = log(G) * stop_gradient(log(1-D(fake)))
         real_disc_log_prob \
             = lbann.Log(lbann.Clamp(real_disc_prob, min=1e-37, max=1))
         disc_loss = lbann.WeightedSum(
