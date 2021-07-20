@@ -42,9 +42,9 @@
 
 using namespace std;
 
-const std::string sample_list_inclusive_fn("inclusive.sample_list");
-const std::string sample_list_exclusive_fn("exclusive.sample_list");
-const std::string yaml_fn("data_schema.yaml");
+const string sample_list_inclusive_fn("inclusive.sample_list");
+const string sample_list_exclusive_fn("exclusive.sample_list");
+const string yaml_fn("data_schema.yaml");
 
 const conduit::Node* get_sample(const vector<string>& tokens,
                                 const conduit::Node& nd)
@@ -242,7 +242,7 @@ string get_base_dir(const string& filelist)
   // for finding longest common prefix; but this is easy to code.
 
   // get vector containing hdf5 filenames
-  std::vector<string> f;
+  vector<string> f;
   ifstream in(filelist);
   string filename;
   while (in >> filename) {
@@ -332,7 +332,7 @@ int main(int argc, char** argv)
   conduit::relay::io::load(filename, "hdf5", nd);
 
   // tokenize the sample id: split on the '/' character
-  std::replace(sample_id.begin(), sample_id.end(), '/', ' ');
+  replace(sample_id.begin(), sample_id.end(), '/', ' ');
   istringstream iss(sample_id);
   string w;
   vector<string> tokens;
