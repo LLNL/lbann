@@ -38,6 +38,7 @@ void rotation_layer<TensorDataType, Layout, Device>::fp_compute() {
   constexpr DataType Pi = M_PI;
   constexpr DataType degree = 180;
   constexpr DataType half = 0.5;
+  constexpr DataType zero = 0;
   
   // Input and output tensors
   const auto& local_input = this->get_local_prev_activations();
