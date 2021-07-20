@@ -43,6 +43,12 @@ Users are advised to view `the Doxygen API Documentation
 
 .. toctree::
    :maxdepth: 1
+   :caption: Data Ingestion
+
+   data_ingestion
+
+.. toctree::
+   :maxdepth: 1
    :caption: Publications
 
    publications
