@@ -24,16 +24,17 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 #include <catch2/catch.hpp>
-#include <h2/meta/core/Lazy.hpp>
-#include <memory>
 
 #include "lbann/base.hpp"
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/layers/operator_layer.hpp"
 #include "lbann/operators/math/clamp.hpp"
+#include "lbann/utils/serialize.hpp"
 
 #include "MPITestHelpers.hpp"
 #include "TestHelpers.hpp"
+
+#include <memory>
 
 // FIXME (trb 07/15/21): Move this somewhere else so it's more generally useful.
 template <typename T, El::Device D>
@@ -179,4 +180,99 @@ TEMPLATE_LIST_TEST_CASE("OperatorLayer lifecycle",
     OperatorLayer tgt(world_comm, std::make_unique<ClampOpType>(-2.0, 2.0));
     REQUIRE_NOTHROW(tgt = std::move(src));
   }
+}
+
+TEMPLATE_LIST_TEST_CASE("Serializing Clamp layer",
+                        "[mpi][layer][serialize]",
+                        AllLayerTypes)
+{
+  using LayerPtr = std::unique_ptr<lbann::Layer>;
+  using OperatorLayer = TestType;
+  using ValueType = ValueType<TestType>;
+  constexpr auto DeviceAlloc = Device<TestType>;
+
+  using ClampOpType = lbann::ClampOperator<ValueType, DeviceAlloc>;
+
+  auto& world_comm = unit_test::utilities::current_world_comm();
+
+  auto const& g = world_comm.get_trainer_grid();
+  lbann::utils::grid_manager mgr(g);
+
+  std::stringstream ss;
+
+  // Create the objects
+  OperatorLayer src_layer(world_comm, std::make_unique<ClampOpType>(1.0, 2.0)),
+    tgt_layer(world_comm, std::make_unique<ClampOpType>(0.0, 1.0));
+  LayerPtr src_layer_ptr = std::make_unique<OperatorLayer>(
+             world_comm,
+             std::make_unique<ClampOpType>(3.0, 4.0)),
+           tgt_layer_ptr;
+
+#ifdef LBANN_HAS_CEREAL_BINARY_ARCHIVES
+  SECTION("Binary archive")
+  {
+    {
+      cereal::BinaryOutputArchive oarchive(ss);
+      REQUIRE_NOTHROW(oarchive(src_layer));
+      REQUIRE_NOTHROW(oarchive(src_layer_ptr));
+    }
+
+    {
+      cereal::BinaryInputArchive iarchive(ss);
+      REQUIRE_NOTHROW(iarchive(tgt_layer));
+      REQUIRE_NOTHROW(iarchive(tgt_layer_ptr));
+      CHECK(IsValidPtr(tgt_layer_ptr));
+    }
+  }
+
+  SECTION("Rooted binary archive")
+  {
+    {
+      lbann::RootedBinaryOutputArchive oarchive(ss, g);
+      REQUIRE_NOTHROW(oarchive(src_layer));
+      REQUIRE_NOTHROW(oarchive(src_layer_ptr));
+    }
+
+    {
+      lbann::RootedBinaryInputArchive iarchive(ss, g);
+      REQUIRE_NOTHROW(iarchive(tgt_layer));
+      REQUIRE_NOTHROW(iarchive(tgt_layer_ptr));
+      CHECK(IsValidPtr(tgt_layer_ptr));
+    }
+  }
+#endif // LBANN_HAS_CEREAL_BINARY_ARCHIVES
+
+#ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
+  SECTION("XML archive")
+  {
+    {
+      cereal::XMLOutputArchive oarchive(ss);
+      REQUIRE_NOTHROW(oarchive(src_layer));
+      REQUIRE_NOTHROW(oarchive(src_layer_ptr));
+    }
+
+    {
+      cereal::XMLInputArchive iarchive(ss);
+      REQUIRE_NOTHROW(iarchive(tgt_layer));
+      REQUIRE_NOTHROW(iarchive(tgt_layer_ptr));
+      CHECK(IsValidPtr(tgt_layer_ptr));
+    }
+  }
+
+  SECTION("Rooted XML archive")
+  {
+    {
+      lbann::RootedXMLOutputArchive oarchive(ss, g);
+      REQUIRE_NOTHROW(oarchive(src_layer));
+      REQUIRE_NOTHROW(oarchive(src_layer_ptr));
+    }
+
+    {
+      lbann::RootedXMLInputArchive iarchive(ss, g);
+      REQUIRE_NOTHROW(iarchive(tgt_layer));
+      REQUIRE_NOTHROW(iarchive(tgt_layer_ptr));
+      CHECK(IsValidPtr(tgt_layer_ptr));
+    }
+  }
+#endif // LBANN_HAS_CEREAL_XML_ARCHIVES
 }
