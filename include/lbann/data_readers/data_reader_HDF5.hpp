@@ -202,6 +202,9 @@ private:
 
   const std::string s_coerce_name = "coerce";
 
+  /** Refers to data that will be used for the experiment.
+   *  Combination of hte data & experimental schema.
+   *  One of the two maps is redundant (the pointer or non-pointer one) */
   /** maps: Node's path -> the Node */
   std::unordered_map<std::string, conduit::Node*> m_useme_node_map_ptrs;
   /** maps: Node's path -> the Node */
@@ -209,7 +212,8 @@ private:
 
   /** Schema supplied by the user; this contains a listing of the fields
    *  that will be used in an experiment; additionally may contain processing
-   *  directives related to type coercion, packing, etc. */
+   *  directives related to type coercion, packing, etc.
+   *  Takes precidences over m_data_schema and inherits from m_data_schema */
   conduit::Node m_experiment_schema;
 
   /** Schema supplied by the user; this contains a listing of all fields
@@ -219,6 +223,8 @@ private:
    */
   conduit::Node m_data_schema;
 
+  /** Used internally in the construction of the other node maps - refers
+   *  to nodes that don't contain data */
   /** Maps a node's pathname to the node for m_data_schema */
   std::unordered_map<std::string, conduit::Node*> m_data_map;
 
@@ -248,7 +254,7 @@ private:
   void load_sample_schema(conduit::Schema& s);
 
   /** Fills in various data structures by parsing the schemas
-   *  (i.e, km_data_schema and m_experiment_schema
+   *  (i.e, m_data_schema and m_experiment_schema
    */
   void parse_schemas();
 
