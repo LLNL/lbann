@@ -168,7 +168,7 @@ void dump_network(model *m) {
   const auto& c = dynamic_cast<sgd_execution_context&>(m->get_execution_context());
   for (auto* l : m->get_layers()) {
     using LayerTypes = h2::meta::tlist::ExpandTL<SingleTypeDataTypeLayer,
-                                                           ValidFPTypes>;
+                                                 ValidFPTypes>;
     using Dispatcher = h2::multimethods::SwitchDispatcher<DumpLayerFunctor,
                                                           void,
                                                           Layer,

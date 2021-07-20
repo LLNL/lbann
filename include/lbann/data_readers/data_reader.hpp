@@ -634,11 +634,17 @@ class generic_data_reader {
   bool load_from_checkpoint_distributed(persist& p, execution_mode mode);
 
   /// returns a const ref to the data store
-  virtual const data_store_conduit& get_data_store() const {
+  const data_store_conduit& get_data_store() const {
     if (m_data_store == nullptr) {
       LBANN_ERROR("m_data_store is nullptr");
     }
     return *m_data_store;
+  }
+
+  /// returns a non-const ref to the data store
+  data_store_conduit& get_data_store() {
+    return const_cast<data_store_conduit&>(
+      static_cast<const generic_data_reader&>(*this).get_data_store());
   }
 
   data_store_conduit* get_data_store_ptr() const {
@@ -673,10 +679,6 @@ class generic_data_reader {
     if(m_trainer == nullptr) { LBANN_ERROR("get_trainer called with nullptr"); }
     return *m_trainer;
   }
-
-  /// experimental; used to ensure all readers for jag_conduit_hdf5
-  /// have identical shuffled indices
-  virtual void post_update() {}
 
   /** Set the transform pipeline this data reader will use. */
   void set_transform_pipeline(transform::transform_pipeline&& tp) {

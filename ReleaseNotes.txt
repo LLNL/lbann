@@ -36,6 +36,10 @@ I/O & data readers:
  - Added explicitly managed buffered reading and local unpacking for the
    SMILES data reader to minimize file access
  - Sample lists with integral indices can use range format (start ... end)
+ - Added a new extensible HDF5 data reader that uses a data set schema
+ and experiment schema files to define how the data is represented.
+ This allows the user to change the representation of data without
+ changing the data reader.
 
 Build system:
 

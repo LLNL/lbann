@@ -175,7 +175,7 @@ bool create_dir(const std::string dirname) {
 bool load_file(const std::string filename, std::vector<char>& buf, bool append) {
   std::ifstream file(filename, std::ios::binary);
   if (!file.good()) {
-    return false;
+    LBANN_ERROR("!file.good() for filename: ", filename);
   }
 
   file.unsetf(std::ios::skipws);

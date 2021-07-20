@@ -494,7 +494,8 @@ void print_lbann_configuration(lbann_comm *comm, int io_threads_per_process, int
             << "  Total number of processes  : " << comm->get_procs_in_world() << std::endl
             << "  OpenMP threads per process : " << omp_get_max_threads() << std::endl
             << "  I/O threads per process (+offset) : " << io_threads_per_process
-            << " (+" << io_threads_offset << ")" << std::endl;
+            << " (+" << io_threads_offset << ")" << std::endl
+            << "  Background I/O enabled     : " << get_trainer().background_io_activity_allowed() << std::endl;
 #ifdef HYDROGEN_HAVE_GPU
   std::cout << "  GPUs on node               : " << hydrogen::gpu::DeviceCount() << std::endl;
 #endif // HYDROGEN_HAVE_GPU
