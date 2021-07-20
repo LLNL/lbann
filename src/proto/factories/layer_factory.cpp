@@ -292,9 +292,6 @@ private:
     LBANN_REGISTER_BUILDER(OneHot, one_hot);
     LBANN_REGISTER_DEFAULT_BUILDER(RowwiseWeightsNorms, rowwise_weights_norms);
     LBANN_REGISTER_BUILDER(UniformHash, uniform_hash);
-    
-    // Image layers
-    LBANN_REGISTER_DEFAULT_BUILDER(Rotate, rotate);
 
   }
 
