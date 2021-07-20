@@ -78,9 +78,7 @@ void rotation_layer<TensorDataType, Layout, Device>::fp_compute() {
 
           // Find input pixels near rotation point
           auto input_col = static_cast<El::Int>(std::floor(rotated_col - half));
-          input_col = std::min(std::max(input_col, El::Int(0)),input_width-1);
           auto input_row = static_cast<El::Int>(std::floor(rotated_row - half));
-          input_row = std::min(std::max(input_row, El::Int(0)),input_height-1);
 
           // Input and output pixels
           auto& pixel_output = local_output(channel * input_height * input_width
@@ -88,13 +86,17 @@ void rotation_layer<TensorDataType, Layout, Device>::fp_compute() {
                                                 + output_col,
                                                 sample);
 
-	  
-          auto& pixel_input = local_input(channel * input_height * input_width
+	  if((input_row > 0 && input_row < input_height) && (input_col > 0 && input_col < input_width)){
+          	auto& pixel_input = local_input(channel * input_height * input_width
                                        	     	  + input_row * input_width
                                            	  + input_col,
                                                   sample);
 
-          pixel_output = pixel_input;	 
+          	pixel_output = pixel_input;
+	  }
+	  else {
+          	pixel_output = zero;
+	  }	 
         }
       }
     }
