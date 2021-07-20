@@ -133,4 +133,6 @@ message KFAC {
   // (default: learning_rate_factor)
   float learning_rate_factor_gru = 17;
 
+  int64 compute_interval = 18; // default:1
+
 }//message KFAC

@@ -243,17 +243,26 @@ void trainer::train(observer_ptr<model> model,
   // checkpoint/restart mechanisms. This needs to be refactored to be
   // agnostic to the training algorithm. At this time, only SGD is
   // properly C/R-able.
-  if (m_training_alg->get_type() == "sgd") {
-    auto key = check_and_build_execution_context(*m_training_alg,
-                                                 model,
-                                                 execution_mode::training);
-    m_training_alg->apply(*(m_model_execution_context[key]),
-                          *model,
-                          get_data_coordinator(),
-                          execution_mode::training);
+
+  if(   m_comm->get_grid_type() == NO_GRID or 
+        m_comm->get_grid_type() == PRIMARY_GRID or 
+        m_comm->get_grid_type() == SECONDARY_GRID) {
+
+    if (m_training_alg->get_type() == "sgd") {
+      auto key = check_and_build_execution_context(*m_training_alg,
+                                                   model,
+                                                   execution_mode::training);
+      m_training_alg->apply(*(m_model_execution_context[key]),
+                            *model,
+                            get_data_coordinator(),
+                            execution_mode::training);
+    }
+    else {
+      m_training_alg->apply(*model, get_data_coordinator());
+    }
   }
-  else {
-    m_training_alg->apply(*model, get_data_coordinator());
+  else{
+    //No training for secondary grid
   }
 }
 
@@ -275,8 +284,11 @@ void trainer::evaluate(observer_ptr<model> model,
 
   DataReaderMetaData dr_metadata = get_data_coordinator().get_dr_metadata();
   sgd->setup_models({model}, get_max_mini_batch_size(), dr_metadata);
-  sgd->evaluate(*ctxt, *model, get_data_coordinator(), mode,
-                epoch_termination_criteria(/*num_epochs=*/1UL));
+
+  if(m_comm->get_grid_type() == NO_GRID or m_comm->get_grid_type() == PRIMARY_GRID){
+    sgd->evaluate(*ctxt, *model, get_data_coordinator(), mode,
+                  epoch_termination_criteria(/*num_epochs=*/1UL));
+  }
 }
 
 // =============================================
