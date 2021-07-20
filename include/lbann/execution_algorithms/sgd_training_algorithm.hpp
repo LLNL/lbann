@@ -50,7 +50,9 @@ public:
   sgd_training_algorithm(std::string name,
                          std::unique_ptr<sgd_termination_criteria> stop)
     : BaseType{std::move(name)},
-      m_stopping_criteria{std::move(stop)}
+      m_stopping_criteria{std::move(stop)},
+      m_validation_context{execution_mode::validation, 1UL},
+      m_validation_epochs{1UL}
   {}
 
   sgd_training_algorithm(const sgd_training_algorithm& other);
@@ -140,6 +142,13 @@ protected:
 
 private:
   std::unique_ptr<sgd_termination_criteria> m_stopping_criteria;
+
+  // FIXME (trb 07/20/21): This is a hack. These aren't actually
+  // copyable objects (it wouldn't make sense), so when the training
+  // algorithm is copied, these are reset to defaults. "In the
+  // future", we'll externalize validation and this won't be an issue.
+  sgd_execution_context m_validation_context;
+  size_t m_validation_epochs;
 };
 
 template <>

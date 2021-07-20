@@ -36,13 +36,16 @@
 
 #include <cstddef>
 #include <limits>
+#include <unordered_map>
 
 namespace lbann {
 
 sgd_training_algorithm::sgd_training_algorithm(
   sgd_training_algorithm const& other)
   : BaseType(other.get_name()),
-    m_stopping_criteria{other.m_stopping_criteria->clone()}
+    m_stopping_criteria{other.m_stopping_criteria->clone()},
+    m_validation_context{execution_mode::validation, 1UL},
+    m_validation_epochs{1UL}
 {}
 
 sgd_training_algorithm&
@@ -50,6 +53,8 @@ sgd_training_algorithm::operator=(sgd_training_algorithm const& other)
 {
   BaseType::operator=(other);
   m_stopping_criteria = other.m_stopping_criteria->clone();
+  m_validation_context = sgd_execution_context{execution_mode::validation, 1UL};
+  m_validation_epochs = 1UL;
   return *this;
 }
 
@@ -84,12 +89,12 @@ void sgd_training_algorithm::train(sgd_execution_context& c,
                                    data_coordinator& dc,
                                    sgd_termination_criteria const& term)
 {
-  // Setup a "training-global" validation context:
-  using ValidationContext = sgd_execution_context;
-  static ValidationContext evaluation_context(
-    execution_mode::validation,
+  auto& evaluation_context = m_validation_context;
+  auto& num_validation_epochs = m_validation_epochs;
+  evaluation_context.set_current_mini_batch_size(
     dc.get_mini_batch_size(execution_mode::validation));
-  static size_t num_validation_epochs = 1UL;
+  evaluation_context.set_effective_mini_batch_size(
+    dc.get_mini_batch_size(execution_mode::validation));
 
   // Initialize some state so it knows we're training now.
   c.set_execution_mode(execution_mode::training);
