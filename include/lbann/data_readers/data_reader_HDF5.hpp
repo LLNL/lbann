@@ -204,7 +204,13 @@ private:
 
   /** Refers to data that will be used for the experiment.
    *  Combination of hte data & experimental schema.
-   *  One of the two maps is redundant (the pointer or non-pointer one) */
+   *
+   *  DAH (7/20/21) m_useme_node_map_ptr should be completely replaced
+   *  by m_useme_node_map (background: m_useme_node_map_ptrs was what
+   *  I 1st coded, then realized that you shouldn't copy pointers in
+   *  copy_members)
+   *
+   *  BVE @todo - cleanup node map pointers  */
   /** maps: Node's path -> the Node */
   std::unordered_map<std::string, conduit::Node*> m_useme_node_map_ptrs;
   /** maps: Node's path -> the Node */
