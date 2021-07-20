@@ -31,7 +31,7 @@
 
 namespace lbann {
 
-/** brief Rotate a image around its center with a defined angle.
+/** brief Rotate a image around its center with a defined angle clockwise.
  *
  *  Tensors are assumed to be image data in CHW format. 
  */
