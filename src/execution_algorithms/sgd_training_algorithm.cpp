@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/execution_algorithms/sgd_training_algorithm.hpp"
+
 #include "lbann/base.hpp"
 #include "lbann/callbacks/callback.hpp"
 #include "lbann/execution_contexts/sgd_execution_context.hpp"
@@ -85,10 +86,10 @@ void sgd_training_algorithm::train(sgd_execution_context& c,
 {
   // Setup a "training-global" validation context:
   using ValidationContext = sgd_execution_context;
-  ValidationContext evaluation_context(
+  static ValidationContext evaluation_context(
     execution_mode::validation,
     dc.get_mini_batch_size(execution_mode::validation));
-  size_t num_validation_epochs = 1UL;
+  static size_t num_validation_epochs = 1UL;
 
   // Initialize some state so it knows we're training now.
   c.set_execution_mode(execution_mode::training);
