@@ -101,8 +101,6 @@ public:
     : Layer(),
       m_persistent_error_signals{persistent_error_signals}
   {}
-  data_type_layer(const data_type_layer<InputTensorDataType, OutputTensorDataType>& other);
-  data_type_layer& operator=(const data_type_layer<InputTensorDataType, OutputTensorDataType>& other);
   virtual ~data_type_layer() = default;
 
   /** Get a string representing the layer datatype
@@ -131,6 +129,20 @@ public:
   /** Get error signal tensor corresponding to parent layer. */
   const InputAbsDistMatrixType& get_error_signals(const Layer& parent) const override;
 
+  /** Get temp Grad Tensor. */
+  OutputAbsDistMatrixType& get_temp_grad() ;
+  /** Get transfered input for each branch tag **/
+  InputAbsDistMatrixType& get_branch_tag_input(int tag) ;
+
+  std::vector<std::unique_ptr<InputAbsDistMatrixType>>& get_branch_tag_input_vector() ;
+
+  /** return all activations/errors for a layer
+      Used in subgraph parallelism to implement collective communication in split, sum, ... layers*/
+  std::vector<std::unique_ptr<OutputAbsDistMatrixType>>& get_all_activations() ;
+  std::vector<std::unique_ptr<InputAbsDistMatrixType>>& get_all_prev_activations() ;
+  std::vector<std::unique_ptr<OutputAbsDistMatrixType>>& get_all_prev_error_signals() ;
+  std::vector<std::unique_ptr<InputAbsDistMatrixType>>& get_all_error_signals() ;
+
   /** Get activation tensor. */
   OutputAbsDistMatrixType& get_activations(int child_index = 0);
   /** Get error signal tensor. */
@@ -156,6 +168,9 @@ public:
    */
   void set_keep_error_signals(bool) override;
 
+
+  El::mpi::Comm& get_subgrid_comm() { return *m_interSubGridVCComm; }
+
   /** @name Serialization */
   ///@{
 
@@ -165,6 +180,15 @@ public:
   ///@}
 
 protected:
+
+  /** @brief Protected lifecycle functions */
+  ///@{
+  data_type_layer(data_type_layer&& other) = default;
+  data_type_layer(data_type_layer const& other);
+
+  data_type_layer& operator=(data_type_layer&& other) = default;
+  data_type_layer& operator=(data_type_layer const& other);
+  ///@}
 
   // ===========================================================
   // Protected Tensor access functions
@@ -258,6 +282,10 @@ protected:
     return get_weights(idx);
   }
 
+  void setup_inter_subgrid_comm_based_on_childs(const El::Grid& grid);
+  void setup_inter_subgrid_comm_based_on_parents(const El::Grid& grid);
+
+
 private:
 
   /** @brief Attempt to take ownership of the previous error signal.
@@ -337,6 +365,8 @@ private:
    */
   void back_prop_impl_() final;
 
+
+
   // ===========================================================
   // Private class members
   // ===========================================================
@@ -371,6 +401,16 @@ private:
    *  Each matrix column corresponds to a flattened mini-batch sample.
    */
   std::vector<std::unique_ptr<InputAbsDistMatrixType>> m_gradient_wrt_inputs;
+
+  /** Temp grad tensor for Split Layer
+   *  Each matrix column corresponds to a flattened mini-batch sample.
+   */
+  std::vector<std::unique_ptr<OutputAbsDistMatrixType>> m_temp_grad;
+
+  /** For Split layer create a tensor for each branch_tag (opt for not transfering data for each branch)
+   *  Each matrix column corresponds to a flattened mini-batch sample.
+   */
+  std::vector<std::unique_ptr<OutputAbsDistMatrixType>> m_subgrid_tensors_split;
 
   /** @brief Whether to keep persistent error signals or dynamically
    *         allocate/deallocate them.

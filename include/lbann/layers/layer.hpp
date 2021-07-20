@@ -88,13 +88,14 @@ class Layer;
 class model;
 namespace callback {
 class sync_layers;
-template <hydrogen::Device Device>
-class kfac;
+} // namespace callback
+class KFAC;
 template <hydrogen::Device Device>
 class kfac_block_fc_conv;
 template <hydrogen::Device Device>
 class kfac_block_bn;
-} // namespace callback
+template <hydrogen::Device Device>
+class kfac_block_gru;
 
 /** @brief Smart pointer to manage ownership of a layer object
  *
@@ -153,6 +154,12 @@ struct ParallelStrategy {
   int filter_splits = 0;
   /** Number of times the layer is replicated (for FC layers right now). */
   int replications = 0;
+      /** Enable subgraph for the layer. */
+  bool enable_subgraph = false;
+  /** Branch number in the sub graph. */
+  int sub_branch_tag = 0;
+  /** percentage of parent resources to be allocated to this branch. */
+  int sub_branch_resource_percentage = 0;
   bool operator==(const ParallelStrategy &ps) const {
     return sample_groups == ps.sample_groups &&
         sample_splits == ps.sample_splits &&
@@ -166,7 +173,10 @@ struct ParallelStrategy {
         channel_splits == ps.channel_splits &&
         filter_groups == ps.filter_groups &&
         filter_splits == ps.filter_splits &&
-        replications == ps.replications;
+        replications == ps.replications &&
+        sub_branch_tag == ps.sub_branch_tag &&
+        sub_branch_resource_percentage == ps.sub_branch_resource_percentage &&
+        enable_subgraph == ps.enable_subgraph;
   }
   bool operator!=(const ParallelStrategy &ps) const {
     return !(*this == ps);
@@ -188,9 +198,14 @@ inline std::ostream &operator<<(std::ostream &os,
      << ", " << ps.filter_groups
      << "/" << ps.filter_splits
      << ", " << ps.replications
+     << "/" << ps.sub_branch_tag
+     << "," << ps.sub_branch_resource_percentage
+     << "/" << ps.enable_subgraph
      << "}";
   return os;
 }
+
+enum SubGraphCommunication{PT2PT=0, COLL=10, COLL_OPT=2};
 
 /**
  * @brief Neural network tensor operation.
@@ -211,18 +226,17 @@ inline std::ostream &operator<<(std::ostream &os,
  */
 class Layer {
   friend class callback::sync_layers;
+  friend class KFAC;
   template <hydrogen::Device Device>
-  friend class callback::kfac;
+  friend class kfac_block_fc_conv;
   template <hydrogen::Device Device>
-  friend class callback::kfac_block_fc_conv;
+  friend class kfac_block_bn;
   template <hydrogen::Device Device>
-  friend class callback::kfac_block_bn;
+  friend class kfac_block_gru;
 
 public:
 
   Layer();
-  Layer(const Layer& other);
-  Layer& operator=(const Layer& other);
   virtual ~Layer() = default;
 
   /** @brief Copy function.
@@ -247,12 +261,123 @@ public:
    *  human-readable, name.
    */
   inline void set_name(const std::string name) { m_name = name; }
+
+  /** Get a string representing the layer datatype
+   */
+
+  void set_communication_flag(int type)
+  {
+    subgraph_communication_method = static_cast<SubGraphCommunication>(type);
+
+  }
+
+  SubGraphCommunication get_communication_flag()
+  {
+    return subgraph_communication_method;
+
+  }
+
+  void reset_subgrid_ranks(std::set<int> sub_grid_rank)
+  {
+    m_subgrid_ranks.reset(new std::set<int>(sub_grid_rank.begin(),sub_grid_rank.end()));
+  }
+
+  std::set<int> get_subgrid_ranks() const
+  {
+    return *m_subgrid_ranks;
+  }
+
+  void reset_parent_tags(std::vector<int> tags)
+  {
+    m_parent_tags.reset(new std::vector<int>(tags.begin(),tags.end()));
+  }
+
+  std::vector<int> get_parent_tags() const
+  {
+    return *m_parent_tags;
+  }
+
+  void set_num_spliting_groups(El::Int spliting_groups)
+  {
+    m_num_spliting_groups = spliting_groups;
+  }
+
+  El::Int get_num_spliting_groups() const
+  {
+    return m_num_spliting_groups;
+  }
+
+  void set_subgrid_index(std::string index)
+  {
+    m_subgrid_index = index;
+  }
+
+  std::string get_subgrid_index() const
+  {
+    return m_subgrid_index;
+  }
+
+  void reset_mygrid(std::shared_ptr<El::Grid> grid)
+  {
+    m_mygrid = grid;
+  }
+
+  std::shared_ptr<El::Grid> get_mygrid() const
+  {
+    return m_mygrid;
+  }
+
+  void reset_inter_subgrid_vc_comm(std::shared_ptr<El::mpi::Comm> mpi_comm)
+  {
+    m_interSubGridVCComm = mpi_comm;
+  }
+
+  std::shared_ptr<El::mpi::Comm> get_inter_subgrid_vc_comm() const
+  {
+    return m_interSubGridVCComm;
+  }
+
+  void enable_subgraph_parallelism()
+  {
+    apply_subgraph_parallelism = true;
+  }
+  //model wide sub graph parallelism enabled
+  bool is_subgraph_parallelism_enabled()
+  {
+    return apply_subgraph_parallelism;
+  }
+
+  void set_run_layer_in_subgraph()
+  {
+    run_layer_in_subgraph = true;
+  }
+
+  bool get_run_layer_in_subgraph()
+  {
+    return run_layer_in_subgraph;
+  }
+
   /** @brief Get a string representing the layer datatype */
+
   virtual std::string get_datatype_name() const {
     return TypeName<DataType>();
   };
 
+
+  void set_num_spliting_groups(int num_grps)
+  {
+    m_num_spliting_groups = num_grps;
+  }
+  //enable subgraph parallelism for this layer
+  //to set variable for ssplit layer
+  void set_enable_subgraph_variable()
+  {
+    m_parallel_strategy.enable_subgraph=true;
+  }
+
+
   /** @brief Human-readable description. */
+
   virtual description get_description() const;
 
   /** @brief Get the parallel strategy for the layer. */
@@ -292,8 +417,11 @@ public:
    *  assumed that pointers to parent/child layers have already been
    *  initialized.
    */
-  virtual void setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata);
+
+  virtual void setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata,const El::Grid& grid);
   /** @brief Check that the setup is reasonable. */
+
+
   virtual void check_setup();
 
   /** @brief Get data layout of the data tensors.
@@ -477,6 +605,14 @@ public:
 
 protected:
 
+  /** @name Protected lifecycle functions */
+  ///@{
+  Layer(Layer&& other) = default;
+  Layer(Layer const& other);
+  Layer& operator=(Layer&& other) = default;
+  Layer& operator=(Layer const& other);
+  ///@}
+
   /** @name Weights-related accessors */
   ///@{
   void add_weights(ViewingWeightsPtr w) {
@@ -647,6 +783,21 @@ protected:
    *  human-readable, name.
    */
   std::string m_name;
+
+  SubGraphCommunication subgraph_communication_method = PT2PT;
+
+  bool apply_subgraph_parallelism = false;
+
+  bool run_layer_in_subgraph = false;
+
+  /** Ranks in grid for the sub-graph */
+  std::unique_ptr<std::set <int>> m_subgrid_ranks;
+  std::unique_ptr<std::vector<int>> m_parent_tags;
+  std::string m_subgrid_index="";
+  El::Int m_num_spliting_groups=1;
+  std::shared_ptr<El::Grid> m_mygrid;
+  std::shared_ptr<El::mpi::Comm>  m_interSubGridVCComm;
+
 
 private:
 

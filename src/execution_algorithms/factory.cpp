@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 #include "lbann/execution_algorithms/factory.hpp"
+#include "lbann/execution_algorithms/kfac.hpp"
 #include "lbann/execution_algorithms/ltfb.hpp"
 #include "lbann/execution_algorithms/sgd_training_algorithm.hpp"
 #include "lbann/proto/helpers.hpp"
@@ -40,6 +41,7 @@ lbann::TrainingAlgorithmFactory build_default_factory()
   lbann::TrainingAlgorithmFactory fact;
   fact.register_builder("SGD", lbann::make<lbann::sgd_training_algorithm>);
   fact.register_builder("LTFB", lbann::make<lbann::LTFB>);
+  fact.register_builder("KFAC", lbann::make<lbann::KFAC>);
   return fact;
 }
 

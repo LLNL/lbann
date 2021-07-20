@@ -459,6 +459,20 @@ void copy_tensor<cpu_fp16>(
 #include "lbann/macros/instantiate.hpp"
 #undef PROTO
 
+void mem_copy_async(
+  void* output,
+  const void* input,
+  const size_t count,
+  cudaMemcpyKind kind,
+  cudaStream_t stream) {
+  CHECK_CUDA(cudaMemcpyAsync(
+    output,
+    input,
+    count,
+    kind,
+    stream));
+}
+
 } // namespace cuda
 } // namespace lbann
 #endif // LBANN_HAS_CUDA

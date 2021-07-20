@@ -29,6 +29,7 @@ set_full_path(THIS_DIR_HEADERS
   perturb_adam.hpp
   perturb_dropout.hpp
   perturb_learning_rate.hpp
+  perturb_weights.hpp
   print_model_description.hpp
   print_statistics.hpp
   profiler.hpp
@@ -43,9 +44,6 @@ set_full_path(THIS_DIR_HEADERS
   timer.hpp
   variable_minibatch.hpp
   )
-
-# Add the subdirectories
-add_subdirectory(kfac)
 
 # Propagate the files up the tree
 set(HEADERS "${HEADERS}" "${THIS_DIR_HEADERS}" PARENT_SCOPE)

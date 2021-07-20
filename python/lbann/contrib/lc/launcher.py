@@ -93,6 +93,7 @@ def make_batch_script(
         set_environment('OMP_NUM_THREADS', cores_per_proc)
         if scheduler == 'lsf':
             launcher_args.append('--bind packed:{}'.format(cores_per_proc))
+            launcher_args.append('--smpiargs="-gpu"')
 
         # Hack to enable process forking
         # Note: InfiniBand is known to experience hangs if an MPI
@@ -113,6 +114,8 @@ def make_batch_script(
 
         # Configure NVSHMEM to load Spectrum MPI
         set_environment('NVSHMEM_MPI_LIB_NAME', 'libmpi_ibm.so')
+
+
 
     return lbann.launcher.make_batch_script(
         procs_per_node=procs_per_node,

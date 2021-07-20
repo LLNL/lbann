@@ -1063,10 +1063,10 @@ namespace {
 // Non-deterministic algorithms.
 std::vector<miopenConvFwdAlgorithm_t> nondet_fwd_algos = {};
 std::vector<miopenConvBwdDataAlgorithm_t> nondet_bwd_data_algos = {
-  miopenConvolutionBwdDataAlgoGEMM
+  //miopenConvolutionBwdDataAlgoGEMM
 };
 std::vector<miopenConvBwdWeightsAlgorithm_t> nondet_bwd_filter_algos = {
-  miopenConvolutionBwdWeightsAlgoGEMM
+  //miopenConvolutionBwdWeightsAlgoGEMM
   //HIPDNN_CONVOLUTION_BWD_FILTER_ALGO_3
 };
 
@@ -1150,7 +1150,16 @@ AlgoType find_best_algorithm(
     }
   }
   if (time_map.empty()) {
-    LBANN_ERROR("No valid convolution algorithms.");
+    if (deterministic) {
+      LBANN_WARNING("No valid deterministic convolution algorithms, "
+                    "trying again with deterministic=false");
+      return find_best_algorithm(perf_results,
+                                 nondeterministic_algos,
+                                 false,
+                                 max_ws_size);
+    } else {
+      LBANN_ERROR("No valid convolution algorithms.");
+    }
   }
   AlgoType best_algo = time_map.begin()->first;
   float min_time = std::numeric_limits<float>::max();

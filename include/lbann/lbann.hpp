@@ -147,6 +147,7 @@
 #endif // LBANN_HAS_CNPY
 #ifdef LBANN_HAS_DISTCONV
 #include "lbann/data_readers/data_reader_hdf5_legacy.hpp"
+#include "lbann/layers/learning/distconv/distconv_layers.hpp"
 #endif // LBANN_HAS_DISTCONV
 #include "lbann/data_readers/data_reader_HDF5.hpp"
 #include "lbann/data_readers/data_reader_smiles.hpp"

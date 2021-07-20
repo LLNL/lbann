@@ -44,8 +44,8 @@ parser.add_argument("--kfac-update-interval-steps", type=int, default=1,
                     help="the number of steps to interpolate -init and -target intervals")
 
 # Job configs.
-parser.add_argument("--job-name", action="store", default="lbann", type=str,
-                    help="scheduler job name (default: lbann)")
+parser.add_argument("--job-name", action="store", default="lbann_lenet_kfac", type=str,
+                    help="scheduler job name (default: lbann_lenet_kfac)")
 parser.add_argument("--batch-job", dest="batch_job",
                     action="store_const",
                     const=True, default=False,
@@ -142,6 +142,8 @@ callbacks = [
     lbann.CallbackGPUMemoryUsage(),
 ]
 
+# Setup training algorithm
+algo = lbann.BatchedIterativeOptimizer("sgd", epoch_count=args.num_epochs)
 if args.kfac:
     kfac_args = {}
     if args.kfac_use_pi:
@@ -162,7 +164,7 @@ if args.kfac:
         )
     if args.kfac_update_interval_steps != 1:
         kfac_args["update_interval_steps"] = args.kfac_update_interval_steps
-    callbacks.append(lbann.CallbackKFAC(**kfac_args))
+    algo = lbann.KFAC("kfac", algo, **kfac_args)
 
 # Setup model
 model = lbann.Model(
@@ -176,7 +178,7 @@ model = lbann.Model(
 opt = lbann.contrib.args.create_optimizer(args)
 
 # Setup trainer
-trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size)
+trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size, training_algo=algo)
 
 # Setup environment variables
 environment = {"LBANN_KEEP_ERROR_SIGNALS": 1}

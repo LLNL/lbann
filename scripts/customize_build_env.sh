@@ -137,10 +137,12 @@ set_center_specific_spack_dependencies()
     local spack_arch_target="$2"
 
     if [[ ${center} = "llnl_lc" ]]; then
-        MIRRORS="/p/vast1/lbann/spack/mirror /p/vast1/atom/spack/mirror"
+        # Note (tym1 7/7/21): Emergency bugfix. Restore once the
+        # buildcache for Hydrogen has been updated.
+        # MIRRORS="/p/vast1/lbann/spack/mirror /p/vast1/atom/spack/mirror"
         case ${spack_arch_target} in
             "power9le" | "power8le") # Lassen, Ray
-                CENTER_DEPENDENCIES="^spectrum-mpi ^openblas@0.3.12 threads=openmp"
+                CENTER_DEPENDENCIES="^spectrum-mpi ^openblas@0.3.12 threads=openmp ^cuda@11.1.105"
                 CENTER_FLAGS="+gold"
                 ;;
             "broadwell" | "haswell" | "sandybridge" | "ivybridge") # Pascal, RZHasGPU, Surface, Catalyst
