@@ -68,6 +68,8 @@ message Reader {
   int32 response_col = 107;
   bool disable_labels = 108;
   bool disable_responses = 109;
+  bool enable_labels = 99108;
+  bool enable_responses = 99109;
   string format = 110; // numpy, csv
   string data_file_pattern = 111;
   int64 num_neighbors = 112; // pilot2_molecular_reader
@@ -96,6 +98,11 @@ message Reader {
   bool hdf5_hyperslab_labels = 703;
   int32 num_responses = 704;
   //------------- end of only for HDF5 data reader ------------------
+
+  //-------- start of only for new (generalized) HDF5 data reader -------------
+  string data_schema_filename = 800; 
+  string experiment_schema_filename = 801; 
+  //-------- end of only for new (generalized) HDF5 data reader -------------
 
 }
 

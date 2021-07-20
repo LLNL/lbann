@@ -14,6 +14,8 @@ set_full_path(THIS_DIR_SOURCES
   data_reader_synthetic.cpp
   data_reader_python.cpp
   data_reader_smiles.cpp
+  data_reader_HDF5.cpp
+  data_reader_sample_list.cpp
   )
 
 if (LBANN_HAS_CNPY)
@@ -29,7 +31,7 @@ endif ()
 
 if (LBANN_HAS_DISTCONV)
   list(APPEND THIS_DIR_SOURCES
-    "${CMAKE_CURRENT_SOURCE_DIR}/data_reader_hdf5.cpp")
+    "${CMAKE_CURRENT_SOURCE_DIR}/data_reader_hdf5_legacy.cpp")
 endif ()
 
 if (LBANN_HAS_OPENCV)
