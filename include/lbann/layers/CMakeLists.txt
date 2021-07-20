@@ -1,7 +1,6 @@
 # Add the headers for this directory
 set_full_path(THIS_DIR_HEADERS
   data_type_layer.hpp
-  doer.hpp
   layer.hpp
   )
 
