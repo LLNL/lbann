@@ -29,10 +29,22 @@
 
 #include <lbann_config.hpp>
 
+#include "lbann/base.hpp"
+
+#include <complex>
+#include <string>
+#include <typeinfo>
+
 namespace lbann {
+namespace details {
+std::string get_type_name(std::type_info const&);
+}
 
 template <typename T>
-std::string TypeName();
+std::string TypeName()
+{
+  return details::get_type_name(typeid(T));
+}
 
 #define ADD_TYPENAME_INST(Type)                                     \
   template <> inline std::string TypeName<Type>() { return #Type; }

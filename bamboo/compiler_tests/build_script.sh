@@ -123,7 +123,7 @@ then
         \
         -Dprotobuf_MODULE_COMPATIBLE=ON \
         \
-        ${LBANN_DIR} && ${LAUNCH_CMD} ninja && ${LAUNCH_CMD} ninja install && ${LAUNCH_CMD} ./unit_test/seq-catch-tests -r junit -o ${CATCH2_OUTPUT_DIR}/seq_catch_tests_output-${CLUSTER}.xml ; ${PARALLEL_LAUNCH_CMD} ./unit_test/mpi-catch-tests -r junit -o "${CATCH2_OUTPUT_DIR}/mpi_catch_tests_output-${CLUSTER}-rank=%r-size=%s.xml"
+        ${LBANN_DIR} && ${LAUNCH_CMD} ninja -k 0 && ${LAUNCH_CMD} ninja install && ${LAUNCH_CMD} ./unit_test/seq-catch-tests -r junit -o ${CATCH2_OUTPUT_DIR}/seq_catch_tests_output-${CLUSTER}.xml ; ${PARALLEL_LAUNCH_CMD} ./unit_test/mpi-catch-tests -r junit -o "${CATCH2_OUTPUT_DIR}/mpi_catch_tests_output-${CLUSTER}-rank=%r-size=%s.xml"
 else
     ${LBANN_DIR}/scripts/build_lbann_lc.sh --with-conduit
 fi

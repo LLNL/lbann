@@ -2,6 +2,7 @@
 set_full_path(THIS_DIR_SOURCES
   data_type_layer.cpp
   layer.cpp
+  operator_layer.cpp
   )
 
 if (LBANN_HAS_DISTCONV)

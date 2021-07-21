@@ -24,40 +24,39 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#define LBANN_CLAMP_LAYER_INSTANTIATE
-#include "lbann/layers/math/clamp.hpp"
+#define LBANN_CLAMP_OPERATOR_INSTANTIATE
+#include "lbann/operators/math/clamp.hpp"
 
 namespace lbann {
 
 namespace {
 
 /** Local forward prop computation. */
-template <typename TensorDataType>
-void local_fp(TensorDataType min,
-              TensorDataType max,
-              const El::AbstractMatrix<TensorDataType>& input,
-              El::AbstractMatrix<TensorDataType>& output) {
+template <typename DataT>
+void local_fp(DataT min,
+              DataT max,
+              El::Matrix<DataT, El::Device::CPU> const& input,
+              El::Matrix<DataT, El::Device::CPU>& output)
+{
   const auto& height = input.Height();
   const auto& width = input.Width();
   LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (El::Int col = 0; col < width; ++col) {
     for (El::Int row = 0; row < height; ++row) {
       const auto& x = input(row, col);
-      auto& y = output(row, col);
-      if (x <= min)      { y = min; }
-      else if (x >= max) { y = max; }
-      else              { y = x;   }
+      output(row, col) = std::max(min, std::min(max, x));
     }
   }
 }
 
 /** Local backprop computation. */
-template <typename TensorDataType>
-void local_bp(TensorDataType min,
-              TensorDataType max,
-              const El::AbstractMatrix<TensorDataType>& input,
-              const El::AbstractMatrix<TensorDataType>& gradient_wrt_output,
-              El::AbstractMatrix<TensorDataType>& gradient_wrt_input) {
+template <typename DataT>
+void local_bp(DataT min,
+              DataT max,
+              El::Matrix<DataT, El::Device::CPU> const& input,
+              El::Matrix<DataT, El::Device::CPU> const& gradient_wrt_output,
+              El::Matrix<DataT, El::Device::CPU>& gradient_wrt_input)
+{
   const auto& height = input.Height();
   const auto& width = input.Width();
   LBANN_OMP_PARALLEL_FOR_COLLAPSE2
@@ -66,32 +65,42 @@ void local_bp(TensorDataType min,
       const auto& x = input(row, col);
       const auto& dy = gradient_wrt_output(row, col);
       auto& dx = gradient_wrt_input(row, col);
-      dx = (x <= min || x >= max) ? El::TypeTraits<TensorDataType>::Zero() : dy;
+      dx = (x <= min || x >= max) ? El::TypeTraits<DataT>::Zero() : dy;
     }
   }
 }
 
 } // namespace
 
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void clamp_layer<TensorDataType, Layout, Device>::fp_compute() {
-  local_fp(this->m_min, this->m_max,
-           this->get_local_prev_activations(),
-           this->get_local_activations());
-}
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void clamp_layer<TensorDataType, Layout, Device>::bp_compute() {
-  local_bp(this->m_min, this->m_max,
-           this->get_local_prev_activations(),
-           this->get_local_prev_error_signals(),
-           this->get_local_error_signals());
+template <typename DataT, El::Device D>
+void ClampOperator<DataT, D>::fp_compute_local(
+  std::vector<ConstLocalInputTensorType> inputs,
+  std::vector<LocalOutputTensorType> outputs) const
+{
+  LBANN_ASSERT(inputs.size() == 1 && outputs.size() == 1);
+  local_fp(this->m_min,
+           this->m_max,
+           inputs.front().data(),
+           outputs.front().data());
 }
 
-#define PROTO(T)                                     \
-  template class clamp_layer<                        \
-    T, data_layout::DATA_PARALLEL, El::Device::CPU>; \
-  template class clamp_layer<                        \
-    T, data_layout::MODEL_PARALLEL, El::Device::CPU>
+template <typename DataT, El::Device D>
+void ClampOperator<DataT, D>::bp_compute_local(
+  std::vector<ConstLocalInputTensorType> inputs,
+  std::vector<ConstLocalOutputTensorType> gradient_wrt_outputs,
+  std::vector<LocalInputTensorType> gradient_wrt_inputs) const
+{
+  LBANN_ASSERT(inputs.size() == 1 && gradient_wrt_outputs.size() == 1 &&
+               gradient_wrt_inputs.size() == 1);
+
+  local_bp(this->m_min,
+           this->m_max,
+           inputs.front().data(),
+           gradient_wrt_outputs.front().data(),
+           gradient_wrt_inputs.front().data());
+}
+
+#define PROTO(T) template class ClampOperator<T, El::Device::CPU>
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"

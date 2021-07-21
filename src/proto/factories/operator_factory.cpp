@@ -23,25 +23,17 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
-#include "lbann/utils/serialize.hpp"
-#include <lbann/layers/math/clamp.hpp>
+
+#define LBANN_INSTANTIATE_DEFAULT_OPERATOR_FACTORIES
+#include "lbann/proto/operator_factory_impl.hpp"
+
+#include "lbann/operators/math/math_builders.hpp"
+#include "lbann/operators/operator.hpp"
 
 namespace lbann {
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-template <typename ArchiveT>
-void
-clamp_layer<TensorDataType,Layout,Device>
-::serialize(ArchiveT& ar)
-{
-  using DataTypeLayer = data_type_layer<TensorDataType>;
-  ar(::cereal::make_nvp("DataTypeLayer",
-                        ::cereal::base_class<DataTypeLayer>(this)),
-     CEREAL_NVP(m_min),
-     CEREAL_NVP(m_max));
-}
-
+#define PROTO_DEVICE(T, D)                                                     \
+  template proto::OperatorFactory<T, T, D>& proto::get_operator_factory();     \
+  template std::unique_ptr<Operator<T, T, D>> proto::construct_operator(       \
+    lbann_data::Operator const& msg)
+#include <lbann/macros/instantiate_device.hpp>
 } // namespace lbann
-
-#define LBANN_LAYER_NAME clamp_layer
-#include <lbann/macros/register_layer_with_cereal.hpp>

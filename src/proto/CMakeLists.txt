@@ -14,6 +14,7 @@ if (LBANN_HAS_PROTOBUF)
     metrics.proto
     model.proto
     objective_functions.proto
+    operators.proto
     optimizers.proto
     reader.proto
     trainer.proto

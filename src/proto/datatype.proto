@@ -33,3 +33,9 @@ enum DataType {
   DOUBLE = 1;
   FP16 = 2;
 }
+
+enum DeviceAllocation {
+  DEFAULT_DEVICE = 0;
+  CPU = 1;
+  GPU = 2;
+}

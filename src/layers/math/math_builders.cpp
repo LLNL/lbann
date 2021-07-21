@@ -25,7 +25,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <lbann/layers/math/binary.hpp>
-#include <lbann/layers/math/clamp.hpp>
 #include <lbann/layers/math/math_builders.hpp>
 #include <lbann/layers/math/matmul.hpp>
 #include <lbann/layers/math/unary.hpp>
@@ -35,18 +34,6 @@
 
 namespace lbann
 {
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-std::unique_ptr<Layer> build_clamp_layer_from_pbuf(
-  lbann_comm* /*comm*/, lbann_data::Layer const& proto_layer)
-{
-  LBANN_ASSERT_MSG_HAS_FIELD(proto_layer, clamp);
-  using LayerType = clamp_layer<TensorDataType, Layout, Device>;
-  auto const& params = proto_layer.clamp();
-  return lbann::make_unique<LayerType>(
-    El::To<TensorDataType>(params.min()),
-    El::To<TensorDataType>(params.max()));
-}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 std::unique_ptr<Layer> build_matmul_layer_from_pbuf(
@@ -129,7 +116,6 @@ LBANN_LAYER_DEFAULT_BUILDER(tanh);
   LBANN_LAYER_BUILDER_ETI(atan, T, D);                  \
   LBANN_LAYER_BUILDER_ETI(atanh, T, D);                 \
   LBANN_LAYER_BUILDER_ETI(ceil, T, D);                  \
-  LBANN_LAYER_BUILDER_ETI(clamp, T, D);                 \
   LBANN_LAYER_BUILDER_ETI(cos, T, D);                   \
   LBANN_LAYER_BUILDER_ETI(cosh, T, D);                  \
   LBANN_LAYER_BUILDER_ETI(divide, T, D);                \

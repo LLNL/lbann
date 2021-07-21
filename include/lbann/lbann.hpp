@@ -73,7 +73,6 @@
 /// Math layers
 #include "lbann/layers/math/unary.hpp"
 #include "lbann/layers/math/binary.hpp"
-#include "lbann/layers/math/clamp.hpp"
 
 /// Transform layers
 #include "lbann/layers/transform/reshape.hpp"
@@ -123,6 +122,9 @@
 #include "lbann/layers/misc/argmax.hpp"
 #include "lbann/layers/misc/argmin.hpp"
 #include "lbann/layers/misc/one_hot.hpp"
+
+/// Math Operators
+#include "lbann/operators/math/clamp.hpp"
 
 /// Data readers
 #include "lbann/data_readers/data_reader_cifar10.hpp"
