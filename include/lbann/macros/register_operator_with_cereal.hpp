@@ -44,27 +44,17 @@
 #define LBANN_COMMA ,
 
 #define LBANN_REGISTER_OPERATOR_WITH_CEREAL_BASE(NAME, TYPE, DEVICE)           \
-  LBANN_ADD_ALL_SERIALIZE_ETI(                                                 \
-    ::lbann::NAME<TYPE LBANN_COMMA El::Device::DEVICE>);                       \
-  CEREAL_REGISTER_TYPE_WITH_NAME(                                              \
-    ::lbann::NAME<TYPE LBANN_COMMA El::Device::DEVICE>,                        \
-    #NAME "(" #TYPE "," #DEVICE ")")
+  LBANN_ADD_ALL_SERIALIZE_ETI(::lbann::NAME<TYPE LBANN_COMMA DEVICE>);         \
+  CEREAL_REGISTER_TYPE_WITH_NAME(::lbann::NAME<TYPE LBANN_COMMA DEVICE>,       \
+                                 #NAME "(" #TYPE "," #DEVICE ")")
 
 #define LBANN_REGISTER_OPERATOR_WITH_CEREAL(NAME, TYPE, DEVICE)                \
   LBANN_REGISTER_OPERATOR_WITH_CEREAL_BASE(NAME, TYPE, DEVICE)
 
-#ifdef LBANN_HAS_GPU
-#define LBANN_REGISTER_GPU_OPERATOR_WITH_CEREAL(NAME, TYPE)                    \
-  LBANN_REGISTER_OPERATOR_WITH_CEREAL(NAME, TYPE, GPU)
-#else
-#define LBANN_REGISTER_GPU_OPERATOR_WITH_CEREAL(NAME, TYPE)
-#endif // LBANN_HAS_GPU
+#define PROTO_DEVICE(T, D)                                                     \
+  LBANN_REGISTER_OPERATOR_WITH_CEREAL(LBANN_OPERATOR_NAME, T, D)
 
-#define PROTO(T)                                                               \
-  LBANN_REGISTER_OPERATOR_WITH_CEREAL(LBANN_OPERATOR_NAME, T, CPU);            \
-  LBANN_REGISTER_GPU_OPERATOR_WITH_CEREAL(LBANN_OPERATOR_NAME, T)
-
-#include "lbann/macros/instantiate.hpp"
+#include "lbann/macros/instantiate_device.hpp"
 #undef PROTO
 #undef LBANN_REGISTER_OPERATOR_WITH_CEREAL
 #undef LBANN_REGISTER_OPERATOR_WITH_CEREAL_BASE
