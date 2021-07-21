@@ -33,6 +33,7 @@
 #include "lbann/utils/tensor.hpp"
 
 #include <algorithm>
+#include <cereal/access.hpp>
 #include <memory>
 #include <vector>
 
@@ -41,12 +42,10 @@ namespace lbann {
 template <typename InputT, typename OutputT, data_layout Layout, El::Device D>
 class OperatorLayer final : public data_type_layer<InputT, OutputT>
 {
-private:
   using DataTypeLayer = data_type_layer<InputT, OutputT>;
   using OperatorType = Operator<InputT, OutputT, D>;
   using OperatorPtr = std::unique_ptr<OperatorType>;
 
-private:
   std::vector<OperatorPtr> m_ops;
 
 public:
@@ -83,7 +82,13 @@ public:
 
   description get_description() const final;
 
+  template <typename ArchiveT>
+  void serialize(ArchiveT&);
+
 private:
+  friend cereal::access;
+  OperatorLayer();
+
   static std::vector<OperatorPtr>
   clone_ops(std::vector<OperatorPtr> const& ops);
 

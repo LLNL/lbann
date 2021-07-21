@@ -2,6 +2,7 @@
 set_full_path(THIS_DIR_HEADERS
   data_type_layer.hpp
   layer.hpp
+  operator_layer.hpp
   )
 
 if (LBANN_HAS_DISTCONV)

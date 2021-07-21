@@ -29,10 +29,12 @@
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/layers/operator_layer.hpp"
 
+#include "lbann/operators/elementwise_operator.hpp"
 #include "lbann/proto/factories.hpp"
 #include "lbann/proto/operator_factory.hpp"
 #include "lbann/utils/exception.hpp"
 
+#include <cereal/types/base_class.hpp>
 #include <layers.pb.h>
 #include <memory>
 
@@ -120,6 +122,20 @@ description OperatorLayer<InputT, OutputT, Layout, D>::get_description() const
   for (auto const& op : m_ops)
     desc.add(op->get_description());
   return desc;
+}
+
+template <typename InputT, typename OutputT, data_layout Layout, El::Device D>
+template <typename ArchiveT>
+void OperatorLayer<InputT, OutputT, Layout, D>::serialize(ArchiveT& ar)
+{
+  ar(cereal::base_class<DataTypeLayer>(this), m_ops);
+}
+
+template <typename InputT, typename OutputT, data_layout Layout, El::Device D>
+OperatorLayer<InputT, OutputT, Layout, D>::OperatorLayer()
+  : DataTypeLayer(nullptr)
+{
+  m_ops.reserve(1);
 }
 
 template <typename InputT, typename OutputT, data_layout Layout, El::Device D>
