@@ -328,7 +328,7 @@ if (LBANN_HAS_ALUMINUM)
     set(LBANN_ALUMINUM_MPI_PASSTHROUGH ON)
   endif (LBANN_BUILT_WITH_SPECTRUM)
 endif (LBANN_HAS_ALUMINUM)
-  
+
 # Setup some additional CUDA-y things
 if (LBANN_HAS_CUDA)
   if (NOT LBANN_WITH_CUDNN)
@@ -741,6 +741,7 @@ if (LBANN_DEBUG_PRINT_SUBTARGETS)
 endif ()
 
 # Add the rest of the things
+add_subdirectory(data_utils)
 add_subdirectory(model_zoo)
 add_subdirectory(model_zoo/tests)
 add_subdirectory(model_zoo/jag_utils)
