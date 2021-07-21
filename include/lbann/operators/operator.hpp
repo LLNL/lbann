@@ -32,6 +32,7 @@
 #include "lbann/utils/cloneable.hpp"
 #include "lbann/utils/describable.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/protobuf_serializable.hpp"
 #include "lbann/utils/tensor.hpp"
 #include "lbann/utils/typename.hpp"
 
@@ -53,14 +54,6 @@
     build_##OPERATOR_NAME##_operator<T, D>(lbann_data::Operator const&)
 
 namespace lbann {
-
-class ProtobufSerializable
-{
-public:
-  virtual ~ProtobufSerializable() = default;
-  /** @brief Write the object to proto file. */
-  virtual void write_proto(google::protobuf::Message& proto) const = 0;
-}; // class ProtobufSerializable
 
 using supported_operator_data_type = h2::meta::TL<
 #ifdef LBANN_HAS_GPU_FP16
@@ -129,17 +122,12 @@ public:
   /** @brief Get the description of the operator. */
   Description get_description() const override;
 
-  void write_proto(google::protobuf::Message& msg) const final
-  {
-    lbann_data::Operator operator_msg;
-    operator_msg.set_input_datatype(proto::ProtoDataType<InputT>);
-    operator_msg.set_output_datatype(proto::ProtoDataType<OutputT>);
-    operator_msg.set_device_allocation(proto::ProtoDevice<D>);
-
-    this->set_proto_params(operator_msg);
-
-    msg.CopyFrom(operator_msg);
-  }
+  /** @brief Write a protobuf description of the operator.
+   *
+   *  This should be able to be passed back to LBANN to exactly recreate this
+   *  operator from protobuf.
+   */
+  void write_proto(google::protobuf::Message& msg) const final;
   /** @name Serialization */
   ///@{
 
@@ -181,9 +169,25 @@ protected:
   Operator& operator=(Operator const& other) = default;
 
 private:
+  /** @brief Fill the concrete operator parameters. */
   virtual void set_proto_params(lbann_data::Operator&) const = 0;
+  /** @brief Concrete operator description. */
   virtual void do_fill_description(Description&) const = 0;
 };
+
+template <typename InputT, typename OutputT, El::Device D>
+void Operator<InputT, OutputT, D>::write_proto(
+  google::protobuf::Message& msg) const
+{
+  lbann_data::Operator operator_msg;
+  operator_msg.set_input_datatype(proto::ProtoDataType<InputT>);
+  operator_msg.set_output_datatype(proto::ProtoDataType<OutputT>);
+  operator_msg.set_device_allocation(proto::ProtoDevice<D>);
+
+  this->set_proto_params(operator_msg);
+
+  msg.CopyFrom(operator_msg);
+}
 
 template <typename InputT, typename OutputT, El::Device D>
 Description Operator<InputT, OutputT, D>::get_description() const
