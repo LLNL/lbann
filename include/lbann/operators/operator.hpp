@@ -45,23 +45,6 @@
 #include <string>
 #include <vector>
 
-/** @brief A utility macro for easily defining default-constructed sub-class
- *  builders.*/
-#define LBANN_OPERATOR_BUILDER_DECL(OPERATOR_NAME)                             \
-  template <typename InputT, typename OutputT, El::Device D>                   \
-  std::unique_ptr<Operator<InputT, OutputT, El::Device D>>                     \
-    build_##OPERATOR_NAME##_operator(lbann_data::Operator const&)
-
-/** @brief A utility macro for easily defining "default" builders.
- *  @note Must be called inside lbann namespace.
- */
-#define LBANN_OPERATOR_DEFAULT_BUILDER_IMPL(OPERATOR_NAME)                     \
-  LBANN_OPERATOR_BUILDER_DECL(OPERATOR_NAME)                                   \
-  {                                                                            \
-    using OperatorType = OPERATOR_NAME##_operator<InputT, OutputT, D>;         \
-    return make_unique<OperatorType>();                                        \
-  }
-
 /** @brief A utility macro for easily adding ETI for operator builders
  *  @note Must be called inside lbann namespace.
  */
