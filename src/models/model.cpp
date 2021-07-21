@@ -46,7 +46,6 @@
 #include "lbann/utils/serialize.hpp"
 #include "lbann/utils/summary_impl.hpp"
 
-#include <core.hpp>
 #include <model.pb.h>
 #include <optimizers.pb.h>
 
@@ -59,7 +58,6 @@
 #include <unordered_set>
 
 #include "lbann/utils/distconv.hpp"
-#include "lbann/utils/tensor.hpp"
 
 namespace lbann {
 
