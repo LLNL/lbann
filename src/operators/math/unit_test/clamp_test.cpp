@@ -223,6 +223,7 @@ TEMPLATE_LIST_TEST_CASE("Clamp operator serialization",
   using ThisOpType = TestType;
   using BaseOpType = BaseOperatorType<ThisOpType>;
   using BaseOpPtr = std::unique_ptr<BaseOpType>;
+  using DataType = ValueType<ThisOpType>;
 
   auto& world_comm = unit_test::utilities::current_world_comm();
   // int const size_of_world = world_comm.get_procs_in_world();
@@ -233,41 +234,65 @@ TEMPLATE_LIST_TEST_CASE("Clamp operator serialization",
   std::stringstream ss;
 
   // Create the objects
-  ThisOpType src_layer(1.f, 2.f), tgt_layer(0.f, 1.f);
-  BaseOpPtr src_layer_ptr = std::make_unique<ThisOpType>(3.f, 4.f),
-            tgt_layer_ptr;
+  ThisOpType src_operator(1.f, 2.f), tgt_operator(0.f, 1.f);
+  BaseOpPtr src_operator_ptr = std::make_unique<ThisOpType>(3.f, 4.f),
+            tgt_operator_ptr;
 
 #ifdef LBANN_HAS_CEREAL_BINARY_ARCHIVES
   SECTION("Binary archive")
   {
     {
       cereal::BinaryOutputArchive oarchive(ss);
-      REQUIRE_NOTHROW(oarchive(src_layer));
-      REQUIRE_NOTHROW(oarchive(src_layer_ptr));
+      REQUIRE_NOTHROW(oarchive(src_operator));
+      REQUIRE_NOTHROW(oarchive(src_operator_ptr));
     }
 
     {
       cereal::BinaryInputArchive iarchive(ss);
-      REQUIRE_NOTHROW(iarchive(tgt_layer));
-      REQUIRE_NOTHROW(iarchive(tgt_layer_ptr));
-      CHECK(IsValidPtr(tgt_layer_ptr));
+      REQUIRE_NOTHROW(iarchive(tgt_operator));
+      REQUIRE_NOTHROW(iarchive(tgt_operator_ptr));
+      CHECK(IsValidPtr(tgt_operator_ptr));
     }
+
+    // Check the by-value serialization.
+    CHECK(tgt_operator.get_min() == src_operator.get_min());
+    CHECK(tgt_operator.get_max() == src_operator.get_max());
+
+    // Check the by-base-ptr serialization.
+    ThisOpType const& src_op =
+      dynamic_cast<ThisOpType const&>(*src_operator_ptr);
+    ThisOpType const& tgt_op =
+      dynamic_cast<ThisOpType const&>(*tgt_operator_ptr);
+    CHECK(tgt_op.get_min() == src_op.get_min());
+    CHECK(tgt_op.get_max() == src_op.get_max());
   }
 
   SECTION("Rooted binary archive")
   {
     {
       lbann::RootedBinaryOutputArchive oarchive(ss, g);
-      REQUIRE_NOTHROW(oarchive(src_layer));
-      REQUIRE_NOTHROW(oarchive(src_layer_ptr));
+      REQUIRE_NOTHROW(oarchive(src_operator));
+      REQUIRE_NOTHROW(oarchive(src_operator_ptr));
     }
 
     {
       lbann::RootedBinaryInputArchive iarchive(ss, g);
-      REQUIRE_NOTHROW(iarchive(tgt_layer));
-      REQUIRE_NOTHROW(iarchive(tgt_layer_ptr));
-      CHECK(IsValidPtr(tgt_layer_ptr));
+      REQUIRE_NOTHROW(iarchive(tgt_operator));
+      REQUIRE_NOTHROW(iarchive(tgt_operator_ptr));
+      CHECK(IsValidPtr(tgt_operator_ptr));
     }
+
+    // Check the by-value serialization.
+    CHECK(tgt_operator.get_min() == src_operator.get_min());
+    CHECK(tgt_operator.get_max() == src_operator.get_max());
+
+    // Check the by-base-ptr serialization.
+    ThisOpType const& src_op =
+      dynamic_cast<ThisOpType const&>(*src_operator_ptr);
+    ThisOpType const& tgt_op =
+      dynamic_cast<ThisOpType const&>(*tgt_operator_ptr);
+    CHECK(tgt_op.get_min() == src_op.get_min());
+    CHECK(tgt_op.get_max() == src_op.get_max());
   }
 #endif // LBANN_HAS_CEREAL_BINARY_ARCHIVES
 
@@ -276,32 +301,56 @@ TEMPLATE_LIST_TEST_CASE("Clamp operator serialization",
   {
     {
       cereal::XMLOutputArchive oarchive(ss);
-      REQUIRE_NOTHROW(oarchive(src_layer));
-      REQUIRE_NOTHROW(oarchive(src_layer_ptr));
+      REQUIRE_NOTHROW(oarchive(src_operator));
+      REQUIRE_NOTHROW(oarchive(src_operator_ptr));
     }
 
     {
       cereal::XMLInputArchive iarchive(ss);
-      REQUIRE_NOTHROW(iarchive(tgt_layer));
-      REQUIRE_NOTHROW(iarchive(tgt_layer_ptr));
-      CHECK(IsValidPtr(tgt_layer_ptr));
+      REQUIRE_NOTHROW(iarchive(tgt_operator));
+      REQUIRE_NOTHROW(iarchive(tgt_operator_ptr));
+      CHECK(IsValidPtr(tgt_operator_ptr));
     }
+
+    // Check the by-value serialization.
+    CHECK(tgt_operator.get_min() == src_operator.get_min());
+    CHECK(tgt_operator.get_max() == src_operator.get_max());
+
+    // Check the by-base-ptr serialization.
+    ThisOpType const& src_op =
+      dynamic_cast<ThisOpType const&>(*src_operator_ptr);
+    ThisOpType const& tgt_op =
+      dynamic_cast<ThisOpType const&>(*tgt_operator_ptr);
+    CHECK(tgt_op.get_min() == src_op.get_min());
+    CHECK(tgt_op.get_max() == src_op.get_max());
   }
 
   SECTION("Rooted XML archive")
   {
     {
       lbann::RootedXMLOutputArchive oarchive(ss, g);
-      REQUIRE_NOTHROW(oarchive(src_layer));
-      REQUIRE_NOTHROW(oarchive(src_layer_ptr));
+      REQUIRE_NOTHROW(oarchive(src_operator));
+      REQUIRE_NOTHROW(oarchive(src_operator_ptr));
     }
 
     {
       lbann::RootedXMLInputArchive iarchive(ss, g);
-      REQUIRE_NOTHROW(iarchive(tgt_layer));
-      REQUIRE_NOTHROW(iarchive(tgt_layer_ptr));
-      CHECK(IsValidPtr(tgt_layer_ptr));
+      REQUIRE_NOTHROW(iarchive(tgt_operator));
+      REQUIRE_NOTHROW(iarchive(tgt_operator_ptr));
+      CHECK(IsValidPtr(tgt_operator_ptr));
     }
+
+    // Check the by-value serialization.
+    CHECK(tgt_operator.get_min() == src_operator.get_min());
+    CHECK(tgt_operator.get_max() == src_operator.get_max());
+
+    // Check the by-base-ptr serialization.
+    ThisOpType const& src_op =
+      dynamic_cast<ThisOpType const&>(*src_operator_ptr);
+    ThisOpType const& tgt_op =
+      dynamic_cast<ThisOpType const&>(*tgt_operator_ptr);
+    CHECK(tgt_op.get_min() == src_op.get_min());
+    CHECK(tgt_op.get_max() == src_op.get_max());
   }
 #endif // LBANN_HAS_CEREAL_XML_ARCHIVES
 }
