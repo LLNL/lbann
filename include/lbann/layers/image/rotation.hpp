@@ -75,7 +75,6 @@ public:
   El::Device get_device_allocation() const override { return Device; }
 
   void fp_compute() override;
-  void bp_compute() override;
 
 protected:
 
