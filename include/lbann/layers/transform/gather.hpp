@@ -59,7 +59,7 @@ class gather_layer : public data_type_layer<TensorDataType> {
                 "gather layer only supports data parallel layout");
 public:
 
-  gather_layer();
+  gather_layer(const size_t axis=0);
   gather_layer(const gather_layer& other) = default;
   gather_layer& operator=(const gather_layer& other) = default;
 
@@ -83,6 +83,8 @@ protected:
 
   void fp_compute() override;
   void bp_compute() override;
+private:
+  size_t m_gather_axis;
 
 };
 
@@ -91,8 +93,9 @@ protected:
 // =========================================================
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-gather_layer<TensorDataType,Layout,Device>::gather_layer()
-  : data_type_layer<TensorDataType>(nullptr) {
+gather_layer<TensorDataType,Layout,Device>::gather_layer(const size_t axis)
+  : data_type_layer<TensorDataType>(nullptr),
+    m_gather_axis{axis} {
   this->m_expected_num_parent_layers = 2;
 }
 
@@ -130,10 +133,18 @@ void gather_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& 
   const auto is_values_1D =  input0_dims.size() == 1;
   const auto is_values_2D = input0_dims.size() == 2; 
   
+  const bool along_axis_0 = this->m_gather_axis == 0;
+
   if(is_values_1D){
     this->set_output_dims(input1_dims);
   }else{
-    this->set_output_dims(std::vector<int>{input0_dims[0],input1_dims[0]});
+    //
+    if(along_axis_0){
+      this->set_output_dims(std::vector<int>{input1_dims[0], input0_dims[1]});
+    }
+    else{
+      this->set_output_dims(std::vector<int>{input0_dims[0],input1_dims[0]});
+    }
   }
   
   auto dims_to_str = [] (const std::vector<int>& dims) -> std::string {
@@ -145,9 +156,6 @@ void gather_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& 
   };
 
   // Make sure input tensors have supported numbers of dimensions
-
-
-
 
   if (is_indices_not_1D || !(is_values_1D || is_values_2D)) {
     const auto& parent0 = this->get_parent_layer(0);
