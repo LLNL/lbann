@@ -96,9 +96,9 @@ protected:
 
     // Check that dimensions and angles are valid
     std::stringstream err;
-    if (num_dims < 1) {
+    if (num_dims != 3) {
       err << get_type() << " layer \"" << this->get_name() << "\" "
-          << "expects input with at least one dimensions, "
+          << "expects 3D input in CHW format, "
           << "but input dimensions are ";
       for (size_t i = 0; i < num_dims; ++i) {
         err << (i > 0 ? " x " : "") << dims[i];
