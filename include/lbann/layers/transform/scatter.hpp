@@ -58,7 +58,7 @@ class scatter_layer : public data_type_layer<TensorDataType> {
                 "scatter layer only supports data parallel layout");
 public:
 
-  scatter_layer(const std::vector<int>& dims={1});
+  scatter_layer(const std::vector<int>& dims={1}, const size_t axis=0);
   scatter_layer(const scatter_layer& other) = default;
   scatter_layer& operator=(const scatter_layer& other) = default;
 
@@ -82,6 +82,8 @@ protected:
 
   void fp_compute() override;
   void bp_compute() override;
+private:
+  size_t m_scatter_axis;
 
 };
 
@@ -91,8 +93,9 @@ protected:
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 scatter_layer<TensorDataType,Layout,Device>::scatter_layer(
-  const std::vector<int>& dims)
-  : data_type_layer<TensorDataType>(nullptr) {
+  const std::vector<int>& dims, const size_t axis)
+  : data_type_layer<TensorDataType>(nullptr),
+    m_scatter_axis{axis} {
   this->m_expected_num_parent_layers = 2;
   this->set_output_dims(dims);
 }
@@ -149,8 +152,8 @@ void scatter_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData&
   if (input0_dims != input1_dims) {
 
     // If input tensors are not same, make sure it's 2D and 1D
-
-    if(input0_dims[1] != input1_dims[0]){
+    const auto matching_dim = this->m_scatter_axis == 0? 0 : 1;
+    if(input0_dims[matching_dim] != input1_dims[0]){
       const auto& parent0 = this->get_parent_layer(0);
       const auto& parent1 = this->get_parent_layer(1);
       LBANN_ERROR(
@@ -165,23 +168,30 @@ void scatter_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData&
 
   // Check that tensors are 1D
   /// @todo Support scattering from/into higher-order tensors
-  if (input1_dims.size() != 1 || (!is_values_1D && !is_values_2D)) {
+  if (input1_dims.size() != 1 || 
+      !(is_values_1D || is_values_2D) || 
+      input0_dims.size() != output_dims.size()) {
     LBANN_ERROR(
       this->get_type()," layer \"",this->get_name(),"\" ",
       "attempted to scatter from a ",input0_dims.size(),"-D tensor ",
-      "(",dims_to_str(input0_dims),"), "
+      "(",dims_to_str(input0_dims),"), to a ", output_dims.size(),"-D tensor", 
       "but the scatter layer currently only supports ",
-      "scattering from a 1-D or 2-D tensor");
+      "scattering to and from a 1-D or 2-D tensor and the input and output tensors",
+      "must have the same number of dimensions");
   }
   // Check if either output is 1D or the first dim matches for input and output
   if ( ! is_output_1D && (is_output_2D && output_dims[0] != input0_dims[0])) {
-    LBANN_ERROR(
-      this->get_type()," layer \"",this->get_name(),"\" ",
-      "attempted to scatter into a ",output_dims.size(),"-D tensor ",
-      "(",dims_to_str(output_dims),"), "
-      "but the scatter layer currently only supports ",
-      "scattering into a 1-D or 2-D tensor");
-  }
+    const auto matching_dim = this->m_scatter_axis == 0? 1 : 0;
+    if (output_dims[matching_dim] != input0_dims[matching_dim]){
+
+      LBANN_ERROR(
+        this->get_type()," layer \"",this->get_name(),"\" ",
+        "attempted to scatter into a ",output_dims.size(),"-D tensor ",
+        "(",dims_to_str(output_dims),"), "
+        "but expected ", input0_dims[matching_dim], " on axis ",
+        matching_dim);
+      }
+    }
 
 }
 

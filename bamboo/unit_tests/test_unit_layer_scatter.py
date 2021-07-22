@@ -18,10 +18,10 @@ import tools
 # the functions below to ingest data.
 
 # Data
-width = 20
-height = 5
+width = 10
+height = 7
 input_size = width * height 
-output_size = 5
+output_size = 7
 seed = 20210127
 
 # Sample access functions
@@ -131,15 +131,67 @@ def construct_model(lbann):
 
     ######################################################################
     #
-    #          2D Values , 1D Input 
+    #          2D Values , 1D Input, Axis = 0 
+    #
+    ######################################################################
+
+    x0 = lbann.Reshape(x0_lbann, dims=tools.str_list([height, width]))
+    x_resliced = lbann.Slice(x1_lbann, slice_points=tools.str_list([0, height, input_size]))
+    x1 = lbann.Identity(x_resliced, name="indices_2D_axis_0")
+
+    y0 = lbann.Scatter(x0, x1, dims=tools.str_list([output_size, width]), axis=0, name="Scatter_2D_axis_0") # output should be (height, output_size)
+
+    y1 = lbann.Concatenation([
+        lbann.Constant(value=i+1, num_neurons='1')
+        for i in range(output_size * width)
+    ])
+
+    y1 = lbann.Reshape(y1, dims=tools.str_list([width * output_size]))
+    y0 = lbann.Reshape(y0, dims=tools.str_list([width * output_size]))
+
+    y = lbann.Multiply(y0, y1)
+
+    z = lbann.L2Norm2(y)
+
+    obj.append(z)
+    metrics.append(lbann.Metric(z, name='obj_2'))
+
+    vals = [] 
+
+    for i in range(num_samples()):
+        _x = get_sample(i)
+        x0 = np.array(_x[:input_size]).reshape((height, width))
+        x1 = _x[input_size:input_size + height]
+
+        y0 = np.zeros((output_size, width))
+
+        for i in range(height):
+            if 0 <= x1[i] < output_size:
+                for j in range(width):                
+                    y0[int(x1[i])][j] += x0[i][j]
+        z = 0 
+        for i in range(width * output_size):
+            z += ((i + 1) * y0.flatten()[i])**2
+        vals.append(z)
+    val = np.mean(vals)
+    tol = 8 * val * np.finfo(np.float32).eps
+    callbacks.append(lbann.CallbackCheckMetric(
+        metric=metrics[-1].name,
+        lower_bound=val-tol,
+        upper_bound=val+tol,
+        error_on_failure=True,
+        execution_modes='test'))
+    ######################################################################
+    #
+    #          2D Values , 1D Input, Axis = 1 
     #
     ######################################################################
 
     x0 = lbann.Reshape(x0_lbann, dims=tools.str_list([height, width]))
     x_resliced = lbann.Slice(x1_lbann, slice_points=tools.str_list([0, width, input_size]))
-    x1 = lbann.Identity(x_resliced, name="indices_2D")
+    x1 = lbann.Identity(x_resliced, name="indices_2D_axis_1")
 
-    y0 = lbann.Scatter(x0, x1, dims=tools.str_list([height, output_size]), name="Scatter_2D") # output should be (height, output_size)
+    y0 = lbann.Scatter(x0, x1, dims=tools.str_list([height, output_size]), axis=1, name="Scatter_2D_axis_1") # output should be (height, output_size)
 
     y1 = lbann.Concatenation([
         lbann.Constant(value=i+1, num_neurons='1')
@@ -154,7 +206,7 @@ def construct_model(lbann):
     z = lbann.L2Norm2(y)
 
     obj.append(z)
-    metrics.append(lbann.Metric(z, name='obj_2'))
+    metrics.append(lbann.Metric(z, name='obj_3'))
 
     vals = [] 
 
@@ -181,7 +233,6 @@ def construct_model(lbann):
         upper_bound=val+tol,
         error_on_failure=True,
         execution_modes='test'))
-
     # Gradient checking
     
     callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
