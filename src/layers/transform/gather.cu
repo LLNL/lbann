@@ -215,7 +215,7 @@ void gather_layer<TensorDataType, Layout, Device>::fp_compute() {
       Dim3{static_cast<size_t>(local_values.LDim()), value_stride_2, 1},
       local_output.Buffer(),
       Dim3{local_mini_batch_size,num_output_rows, values_size},
-      Dim3{static_cast<size_t>(local_output.LDim()), value_stride_2, 1});
+      Dim3{static_cast<size_t>(local_output.LDim()), output_stride_2, 1});
     }
     else{
     hydrogen::gpu::LaunchKernel(
@@ -291,8 +291,8 @@ void gather_layer<TensorDataType, Layout, Device>::bp_compute() {
         local_indices.LockedBuffer(),
         Dim2{static_cast<size_t>(local_indices.LDim()), 1},
         local_output_grad.LockedBuffer(),
-        Dim3{local_mini_batch_size, num_output_rows, values_size},
-        Dim3{static_cast<size_t>(local_output_grad.LDim()),value_stride_2, 1},
+        Dim3{local_mini_batch_size, num_output_rows, output_size},
+        Dim3{static_cast<size_t>(local_output_grad.LDim()),output_stride_2, 1},
         local_values_grad.Buffer(),
         Dim3{local_mini_batch_size, num_rows, values_size},
         Dim3{static_cast<size_t>(local_values_grad.LDim()),value_stride_2, 1});
@@ -304,7 +304,7 @@ void gather_layer<TensorDataType, Layout, Device>::bp_compute() {
         local_indices.LockedBuffer(),
         Dim2{static_cast<size_t>(local_indices.LDim()), 1},
         local_output_grad.LockedBuffer(),
-        Dim3{local_mini_batch_size, num_rows, output_size},
+        Dim3{local_mini_batch_size, num_output_rows, output_size},
         Dim3{static_cast<size_t>(local_output_grad.LDim()),output_stride_2, 1},
         local_values_grad.Buffer(),
         Dim3{local_mini_batch_size, num_rows, values_size},

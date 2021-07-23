@@ -615,13 +615,6 @@ message Layer {
     *  to the axis. For an (m,n) values input, and a (k) indices input, 
     *  the output tensor will be (k,n) for Axis == 0 and (m, k) for
     *  Axis == 1  
-    *
-    *  @todo Only flat tensors are currently supported. For higher-order
-    *  tensors, PyTorch
-    *  (https://pytorch.org/docs/stable/generated/torch.gather.html) and
-    *  TensorFlow
-    *  (https://www.tensorflow.org/api_docs/python/tf/gather_nd) will
-    *  gather along a specified dimension.
     */
   message Gather {
 
