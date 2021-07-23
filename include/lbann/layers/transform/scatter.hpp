@@ -166,8 +166,7 @@ void scatter_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData&
     }
   }
 
-  // Check that tensors are 1D
-  /// @todo Support scattering from/into higher-order tensors
+  // Check tensor dimensions
   if (input1_dims.size() != 1 || 
       !(is_values_1D || is_values_2D) || 
       input0_dims.size() != output_dims.size()) {

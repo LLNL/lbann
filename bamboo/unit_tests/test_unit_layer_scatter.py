@@ -18,10 +18,10 @@ import tools
 # the functions below to ingest data.
 
 # Data
-width = 10
+width = 13
 height = 7
 input_size = width * height 
-output_size = 7
+output_size = 23
 seed = 20210127
 
 # Sample access functions

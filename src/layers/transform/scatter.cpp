@@ -95,12 +95,16 @@ void scatter_layer<TensorDataType, Layout, Device>::bp_compute() {
   std::vector<size_t> input_dims(input_dims_.begin(), input_dims_.end());
   std::vector<size_t> output_dims(output_dims_.begin(), output_dims_.end());
 
-  const bool is_axis_0 = (input_dims.size()>1 && this->m_scatter_axis == 0);
+  const bool is_2D = input_dims.size()>1;
+  const bool is_axis_0 = (is_2D && this->m_scatter_axis == 0);
 
-  const size_t num_values_cols = (input_dims.size() > 1) ? input_dims[1] : this->get_input_size(0);
-  const size_t num_values_rows = (input_dims.size() > 1) ? input_dims[0] : 1;
+  const size_t num_values_cols = is_2D ? input_dims[1] : this->get_input_size(0);
+  const size_t num_values_rows = is_2D ? input_dims[0] : 1;
   
-  const El::Int output_size = (input_dims.size() > 1) ?  this->get_output_dims()[1] : this->get_output_size();
+  const El::Int num_output_cols = is_2D ?  this->get_output_dims()[1] : this->get_output_size();
+  const El::Int num_output_rows = is_2D ? this->get_output_dims()[0] : 1;
+
+  const El::Int bounds = is_axis_0? num_output_rows: num_output_cols;
 
   // Zero out gradient w.r.t. indices
   El::Zero(local_indices_grad);
@@ -114,11 +118,11 @@ void scatter_layer<TensorDataType, Layout, Device>::bp_compute() {
         const auto& index_val = is_axis_0 ? k : i; 
         const auto ind = static_cast<El::Int>(std::floor(local_indices(index_val,j)));
 
-        if (0<=ind && ind<output_size) {
+        if (0<=ind && ind<bounds) {
           if (is_axis_0){
-            local_values_grad(i+k*num_values_cols,j) = local_output_grad(i+ind*output_size,j);
+            local_values_grad(i+k*num_values_cols,j) = local_output_grad(i+ind*num_output_cols,j);
           }else{
-            local_values_grad(i+k*num_values_cols,j) = local_output_grad(ind+k*output_size,j);
+            local_values_grad(i+k*num_values_cols,j) = local_output_grad(ind+k*num_output_cols,j);
           }
         }
         else {
