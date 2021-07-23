@@ -18,7 +18,7 @@ import tools
 # the functions below to ingest data.
 
 # Data
-num_rows = 10
+num_rows = 11
 num_columns = 5
 input_size = num_rows * num_columns
 output_size = 7

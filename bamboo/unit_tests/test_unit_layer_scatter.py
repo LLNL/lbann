@@ -154,7 +154,7 @@ def construct_model(lbann):
     z = lbann.L2Norm2(y)
 
     obj.append(z)
-    metrics.append(lbann.Metric(z, name='obj_2'))
+    metrics.append(lbann.Metric(z, name='2D, axis=0'))
 
     vals = [] 
 
@@ -206,7 +206,7 @@ def construct_model(lbann):
     z = lbann.L2Norm2(y)
 
     obj.append(z)
-    metrics.append(lbann.Metric(z, name='obj_3'))
+    metrics.append(lbann.Metric(z, name='2D, axis=1'))
 
     vals = [] 
 
