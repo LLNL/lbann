@@ -71,7 +71,7 @@ auto OperatorLayer<InputT, OutputT, Layout, D>::operator=(
   OperatorLayer const& other) -> OperatorLayer&
 {
   // This is self-assignment safe
-  data_type_layer<InputT, OutputT>::operator=(*this);
+  data_type_layer<InputT, OutputT>::operator=(other);
   m_ops = clone_ops(other.m_ops);
   return *this;
 }
