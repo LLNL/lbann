@@ -53,7 +53,7 @@ void rotation_layer<TensorDataType, Layout, Device>::fp_compute() {
   const El::Int input_width = input_dims[2];
 
   // Get rotation angle
-  const auto& angles = this->get_prev_activations(1);
+  const auto& angles = this->get_local_prev_activations(1);
 	
   // Perform rotation for each input pixel based on the center pixel
   LBANN_OMP_PARALLEL_FOR_COLLAPSE4
