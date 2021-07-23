@@ -104,15 +104,6 @@ protected:
       }
       LBANN_ERROR(err.str());
     } 
-	
-    for (size_t i = 0; i < num_angle_dims; ++i) {
-      if(angle_dims[i] < 0) {
-	    err << get_type() << " layer \"" << this->get_name() << "\" "
-            << "attempted to rotate with "
-            << "negative angle (" << angle_dims[i] << ")";
-        LBANN_ERROR(err.str());
-      }		  
-    }
   }
 };
 
