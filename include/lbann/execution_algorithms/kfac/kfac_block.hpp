@@ -57,7 +57,7 @@ class kfac_block {
   }
   virtual ~kfac_block() = default;
 
-  virtual void on_forward_prop_end() {}
+  virtual void on_forward_prop_end(lbann_comm* comm) {}
 
   /** @brief Compute Kronecker factors. */
   virtual void compute_local_kronecker_factors(
@@ -227,9 +227,14 @@ class kfac_block {
   /** @brief Whether this block already has an inverse history. */
   bool m_has_kronecker_inverse;
 
-  /** @brief local activations, weights, and gradients. */
+  /** @brief distributed martices for activations and gradients. */
   std::vector<std::unique_ptr<AbsDistMat>> m_parent_local_activations,
-    m_child_local_errors, m_weight_values, m_weight_gradients;
+    m_child_local_errors, m_weight_gradients;
+
+  /** @brief Translatebetweengrid  funciton has a basic implementation for STAR,STAR
+   * distributed matrices. Therefore, using local matrices for weights  */
+  std::vector<std::unique_ptr<El::Matrix<DataType, Device>>> m_weight_values;
+  
 
  private:
 

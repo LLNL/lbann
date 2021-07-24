@@ -135,7 +135,7 @@ class kfac_block_gru: public kfac_block<Device> {
   kfac_block_gru(const kfac_block_gru&) = default;
   kfac_block_gru& operator=(const kfac_block_gru&) = default;
 
-  void on_forward_prop_end() override;
+  void on_forward_prop_end(lbann_comm* comm) override;
 
   const std::vector<El::AbstractMatrix<DataType>*>
   get_local_kronecker_buffers();
@@ -171,7 +171,7 @@ class kfac_block_gru: public kfac_block<Device> {
       lbann_comm* comm,
       int num_local_activations,
       int num_local_errors,
-      int num_weights) override{};
+      int num_weights) override;
 
   /** @brief Copy inverse matrices to output buffer. */
   int get_inverse_matrices(
@@ -187,10 +187,13 @@ class kfac_block_gru: public kfac_block<Device> {
       int offset,
       lbann_comm *comm) override;
 
+  void send_recv_weights(lbann_comm *comm);
+
     
 
   const std::vector<El::AbstractMatrix<DataType>*>
   get_preconditioned_grad_buffers() override;
+
 
  private:
 
@@ -212,6 +215,7 @@ class kfac_block_gru: public kfac_block<Device> {
   void get_weight_matrix(
       kfac_gru_util::weight_type matrix_type,
       El::Matrix<DataType, Device>& view);
+  
   void get_gradient_matrix(
       kfac_gru_util::weight_type matrix_type,
       El::Matrix<DataType, Device>& view);
@@ -239,6 +243,8 @@ class kfac_block_gru: public kfac_block<Device> {
     const auto input_dims = this->m_layer->get_input_dims();
     return input_dims[0];
   }
+
+  void send_recv_reserve_space(lbann_comm *comm);
 
   /** @brief A copy of the reserve space after forward passes. */
   hydrogen::simple_buffer<El::byte, Device>
@@ -274,6 +280,8 @@ class kfac_block_gru: public kfac_block<Device> {
     kfac_gru_util::weight_type,
     El::Matrix<DataType, Device>>
   m_grad_buffer_G;
+
+  size_t m_reserve_space_fwd_size=0;
 
 };
 

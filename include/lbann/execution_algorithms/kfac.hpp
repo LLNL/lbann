@@ -164,6 +164,10 @@ protected:
   kfac::ExecutionContext* do_get_new_execution_context() const final;
 
   void send_recv_kfac_inputs(model& model, lbann_comm *comm);
+  
+  void send_recv_inverse_matrices(
+    ExeContextType& context,
+    lbann_comm *comm);
 
 private:
 
@@ -236,7 +240,7 @@ private:
   double m_learning_rate_factor, m_learning_rate_factor_gru;
 
   /** @brief Whether inverse of Kronecker factors are available. */
-  bool m_has_kronecker_inverse;
+  bool m_has_kronecker_inverse=false;
   size_t m_compute_interval;
 
   El::Matrix<double, El::Device::CPU> m_inverse_matrices_size; 

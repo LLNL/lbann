@@ -332,7 +332,7 @@ bool KFAC::train_mini_batch(
 
       if(compute_inverse)
         on_backward_prop_end(kfac_context, model);
-      else
+      else if(comm.get_grid_type()==NO_GRID or m_has_kronecker_inverse==true)
       {
         if(comm.get_KFAC_subgrid_create_two_models() or comm.get_grid_type() == PRIMARY_GRID or comm.get_grid_type() == NO_GRID){
           for(auto& block : kfac_context.m_blocks){
@@ -694,12 +694,32 @@ void send_recv_precomputed_gradients(
   }
 }
 
-template <typename DataType, El::Device Device>
-void send_recv_inverse_matrices(
-    const std::vector<std::shared_ptr<kfac_block<Device>>>& blocks,
-    El::Matrix<DataType, Device>& global_buffer,
-    const int data_size,
-    lbann_comm *comm) {
+
+void KFAC::send_recv_inverse_matrices(
+  ExeContextType& context,
+  lbann_comm *comm) {
+
+  int global_buffer_inverses_size = 0;
+
+  //calculate the size of the buffer
+  for(auto& block : context.m_blocks){
+      global_buffer_inverses_size += block->get_inverse_matrices_size(comm);
+    }
+
+  El::Matrix<DataType, Device>& global_buffer_inverse =
+      context.get_workspace_matrix(
+        "allgather_inverse_recv_buffer",
+        global_buffer_inverses_size,
+        1);
+
+  size_t offset = 0;
+  //Copy data into buffer
+  if(comm->get_grid_type() == SECONDARY_GRID)
+  {
+    for(auto& block : context.m_blocks) {
+      offset = block->get_inverse_matrices(global_buffer_inverse, offset);
+    }
+  }
 
   const int comm_rank = comm->get_rank_in_trainer();
   const int combined_rank = El::mpi::Rank(comm->get_combined_grid_comm());
@@ -722,12 +742,12 @@ void send_recv_inverse_matrices(
 
       if(comm_rank + num_send*num_process_secondary_grid < num_process_primary_grid){
 
-        El::SyncInfo<Device> sync_info =El::SyncInfoFromMatrix(global_buffer);
+        El::SyncInfo<Device> sync_info =El::SyncInfoFromMatrix(global_buffer_inverse);
 
         int to_send_index = comm_rank + num_send*num_process_secondary_grid;
         ::El::mpi::TaggedSend(
-           (DataType*)global_buffer.Buffer(),
-           data_size,
+           (DataType*)global_buffer_inverse.Buffer(),
+           global_buffer_inverses_size,
            primary_grid_ranks[to_send_index],
            primary_grid_ranks[to_send_index],
            combined_comm,
@@ -739,11 +759,11 @@ void send_recv_inverse_matrices(
   }
   if(comm->get_grid_type() == PRIMARY_GRID)
   {
-    El::SyncInfo<Device> sync_info =El::SyncInfoFromMatrix(global_buffer);
+    El::SyncInfo<Device> sync_info =El::SyncInfoFromMatrix(global_buffer_inverse);
     int recv_index = comm_rank % num_process_secondary_grid;
     ::El::mpi::TaggedRecv(
-       (DataType*)global_buffer.Buffer(),
-       data_size,
+       (DataType*)global_buffer_inverse.Buffer(),
+       global_buffer_inverses_size,
        secondary_grid_ranks[recv_index],
        combined_rank,
        combined_comm,
@@ -752,8 +772,8 @@ void send_recv_inverse_matrices(
     // Copy blocks from the buffer.
     {
       size_t offset = 0;
-      for(auto& block : blocks) {
-        offset = block->set_inverse_matrices(global_buffer, offset,comm);
+      for(auto& block : context.m_blocks) {
+        offset = block->set_inverse_matrices(global_buffer_inverse, offset,comm);
       }
     }
   }
@@ -850,7 +870,13 @@ void KFAC::on_forward_prop_end(
   }
 
   for(auto& block : context.m_blocks)
-    block->on_forward_prop_end();
+    block->on_forward_prop_end(&comm);
+
+  if(context.get_step()>1 and 
+    (comm.get_grid_type()==PRIMARY_GRID or comm.get_grid_type()==SECONDARY_GRID)){
+    send_recv_inverse_matrices(context, &comm);
+    m_has_kronecker_inverse = true;
+  }
 
 }
 
@@ -1035,40 +1061,23 @@ void KFAC::on_backward_prop_end(
 #endif // LBANN_NVPROF
   }
   else{
-    m_has_kronecker_inverse = true;
+    // Primary grid does nothing
+    // m_has_kronecker_inverse = true;
   }
 
   if(comm.get_grid_type() == SECONDARY_GRID or comm.get_grid_type() == PRIMARY_GRID)
   {
-    int global_buffer_inverses_size = 0;
-
-    for(auto& block : context.m_blocks){
-      global_buffer_inverses_size += block->get_inverse_matrices_size(&comm);
-    }
-
-    El::Matrix<DataType, Device>& global_buffer_inverse =
-      context.get_workspace_matrix(
-        "allgather_inverse_recv_buffer",
-        global_buffer_inverses_size,
-        1);
-
-    size_t offset = 0;
-    for(auto& block : context.m_blocks) {
-      offset = block->get_inverse_matrices(global_buffer_inverse, offset);
-    }
-
-    send_recv_inverse_matrices(
-        context.m_blocks,
-        global_buffer_inverse,
-        global_buffer_inverses_size,
-        model.get_comm());
+    // send_recv_inverse_matrices(
+    //     context,
+    //     model.get_comm());
   }
 
-
   if(comm.get_KFAC_subgrid_create_two_models() or comm.get_grid_type() == PRIMARY_GRID or comm.get_grid_type() == NO_GRID){
-    for(auto& block : context.m_blocks){
-
+    if(m_has_kronecker_inverse==true)
+    {
+      for(auto& block : context.m_blocks)
       {
+        // std::cout<<"Rank:"<<El::mpi::Rank(comm.get_combined_grid_comm())<<"KInside  for\n";
         const bool is_gru = dynamic_cast<kfac_block_gru<Device>*>(block.get()) != nullptr;
         block->compute_preconditioned_gradients(
             &comm,

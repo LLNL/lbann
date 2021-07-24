@@ -57,23 +57,133 @@ inline TensorDataType tanh_inv(const TensorDataType& x) {
 
 }
 
+//////////////////////////////////////////////////////////////////////////////////
+////  Sub-Grid Parallelism Communicatton Functions
+//////////////////////////////////////////////////////////////////////////////////
+
 template <>
-void kfac_block_gru<El::Device::CPU>::on_forward_prop_end() {
+void kfac_block_gru<El::Device::CPU>::send_recv_reserve_space(lbann_comm *comm){
 }
 
 #ifdef LBANN_HAS_GPU
 template <>
-void kfac_block_gru<El::Device::GPU>::on_forward_prop_end() {
-  const auto& reserve_space = get_gru_layer()->get_reserve_space();
-  if(m_reserve_space_fwd.size() != reserve_space.size())
-    m_reserve_space_fwd.allocate(reserve_space.size());
+void kfac_block_gru<El::Device::GPU>::send_recv_reserve_space(lbann_comm *comm){
+  //Does not support Model parallel only Data Parallel
+  if(this->m_layer->get_data_layout()!=data_layout::DATA_PARALLEL)
+    LBANN_ERROR("send_recv_reserve_space function in",
+      " kfac_block_gru.cpp only supports Data Parallelism");
+
+  const El::mpi::Comm & combined_comm = comm->get_combined_grid_comm();
+  const int comm_rank = El::mpi::Rank(comm->get_KFAC_comm());
+
+  std::vector<int> primary_grid_ranks = comm->get_primary_grid_ranks();
+  std::vector<int> secondary_grid_ranks = comm->get_secondary_grid_ranks();
+
+  int num_process_primary_grid = (int)primary_grid_ranks.size();
+  int num_process_secondary_grid = (int)secondary_grid_ranks.size();
+
+
+  //Send the size of reserve space to secondary  grid
+  if(m_reserve_space_fwd_size==0){
+    
+    El::Matrix<DataType,  El::Device::CPU> reserve_size(1,1);
+    
+
+    El::SyncInfo<El::Device::CPU> sync_info =El::SyncInfoFromMatrix(reserve_size);
+
+    if(comm->get_grid_type() == PRIMARY_GRID){
+      const auto& reserve_space = get_gru_layer()->get_reserve_space();
+      reserve_size(0,0)= reserve_space.size();
+      int num_sends = (int)std::ceil((float)num_process_secondary_grid/(float)num_process_primary_grid);
+      for(int num_send = 0; num_send<num_sends; num_send++){
+        if(comm_rank + num_send*num_process_primary_grid < num_process_secondary_grid){
+          int to_send_index = comm_rank + num_send*num_process_primary_grid;
+          ::El::mpi::Send(
+             (DataType*)reserve_size.Buffer(),
+             1,
+             secondary_grid_ranks[to_send_index],
+             combined_comm,
+             sync_info);
+        }
+      }
+    }
+
+    if(comm->get_grid_type() == SECONDARY_GRID)
+    {
+      int recv_index = comm_rank % num_process_primary_grid;
+      ::El::mpi::Recv(
+         (DataType*)reserve_size.Buffer(),
+         1,
+         primary_grid_ranks[recv_index],
+         combined_comm,
+         sync_info);
+    }
+    m_reserve_space_fwd_size = (size_t)reserve_size(0,0);
+  }
+
   const auto& sync_info = this->get_sync_info();
-  CHECK_CUDA(cudaMemcpyAsync(
-      m_reserve_space_fwd.data(),
-      reserve_space.data(),
-      reserve_space.size(),
-      cudaMemcpyDeviceToDevice,
-      sync_info.Stream()));
+
+  //Send reserve space to secondary  grid
+  if(comm->get_grid_type() == PRIMARY_GRID)
+  {
+    const auto& reserve_space = get_gru_layer()->get_reserve_space();
+
+    int num_sends = (int)std::ceil((float)num_process_secondary_grid/(float)num_process_primary_grid);
+    for(int num_send = 0; num_send<num_sends; num_send++){
+
+
+      if(comm_rank + num_send*num_process_primary_grid < num_process_secondary_grid){
+        int to_send_index = comm_rank + num_send*num_process_primary_grid;
+        ::El::mpi::Send(
+           (El::byte*)reserve_space.data(),
+           m_reserve_space_fwd_size,
+           secondary_grid_ranks[to_send_index],
+           combined_comm,
+           sync_info);
+      }
+    }
+
+  }
+  if(comm->get_grid_type() == SECONDARY_GRID)
+  {
+    m_reserve_space_fwd.allocate(m_reserve_space_fwd_size);
+    int recv_index = comm_rank % num_process_primary_grid;
+    ::El::mpi::Recv(
+       (El::byte*)m_reserve_space_fwd.data(),
+       m_reserve_space_fwd_size,
+       primary_grid_ranks[recv_index],
+       combined_comm,
+       sync_info);
+  }
+}
+#endif // LBANN_HAS_GPU
+
+template <>
+void kfac_block_gru<El::Device::CPU>::on_forward_prop_end(lbann_comm *comm) {
+}
+
+#ifdef LBANN_HAS_GPU
+template <>
+void kfac_block_gru<El::Device::GPU>::on_forward_prop_end(lbann_comm *comm) {
+
+  if(comm->get_grid_type()==NO_GRID)
+  {
+    const auto& reserve_space = get_gru_layer()->get_reserve_space();
+    if(m_reserve_space_fwd.size() != reserve_space.size())
+      m_reserve_space_fwd.allocate(reserve_space.size());
+    const auto& sync_info = this->get_sync_info();
+    CHECK_CUDA(cudaMemcpyAsync(
+        m_reserve_space_fwd.data(),
+        reserve_space.data(),
+        reserve_space.size(),
+        cudaMemcpyDeviceToDevice,
+        sync_info.Stream()));
+  }
+  else
+  {
+    send_recv_reserve_space(comm);
+  }
+
 }
 #endif // LBANN_HAS_GPU
 
@@ -105,17 +215,10 @@ void kfac_block_gru<Device>::compute_local_kronecker_factors(
   const size_t hidden_size = get_hidden_size();
   const size_t seq_length = get_seq_length();
 
-  const auto parent = this->m_layer->get_parent_layers()[0];
-  const auto parent_h0 = this->m_layer->get_parent_layers()[1];
-  const auto child = this->m_layer->get_child_layers()[0];
-  const auto& dtl_parent = dynamic_cast<const data_type_layer<DataType>&>(*parent);
-  const auto& dtl_parent_h0 = dynamic_cast<const data_type_layer<DataType>&>(*parent_h0);
-  const auto& dtl_child = dynamic_cast<const data_type_layer<DataType>&>(*child);
-  const auto& dtl = dynamic_cast<const data_type_layer<DataType>&>(*this->m_layer);
-  const El::AbstractMatrix<DataType>& local_inputs = dtl_parent.get_local_activations();
-  const El::AbstractMatrix<DataType>& h0 = dtl_parent_h0.get_local_activations();
-  const El::AbstractMatrix<DataType>& local_outputs = dtl.get_local_activations();
-  const El::AbstractMatrix<DataType>& local_errors = dtl_child.get_local_error_signals();
+  const El::Matrix<DataType,Device>& local_inputs = this->m_parent_local_activations[0]->LockedMatrix();
+  const El::Matrix<DataType,Device>& h0 = this->m_parent_local_activations[1]->LockedMatrix();
+  const El::Matrix<DataType,Device>& local_outputs = this->m_parent_local_activations[2]->LockedMatrix();
+  const El::Matrix<DataType,Device>& local_errors = this->m_child_local_errors[0]->LockedMatrix();
   const auto local_batch_size = local_inputs.Width();
 
   auto& A_h = this->get_workspace_matrix("A_h", hidden_size, hidden_size);
@@ -133,6 +236,7 @@ void kfac_block_gru<Device>::compute_local_kronecker_factors(
   auto& i = this->get_workspace_matrix("i", hidden_size*local_batch_size, seq_length);
   auto& biases_ones = this->get_workspace_matrix("b_ones", 1, local_batch_size);
   El::Ones(biases_ones, 1, local_batch_size);
+
   get_r_i(r, i, biases_ones,
           local_inputs, local_outputs, h0,
           local_batch_size, sync_info);
@@ -141,9 +245,13 @@ void kfac_block_gru<Device>::compute_local_kronecker_factors(
   // weights_Rh: hidden_size x hidden_size
   // biases_Rh: hidden_size x 1
   auto& hfc = this->get_workspace_matrix("hfc_t", hidden_size, local_batch_size*seq_length);
+
+
+  
   El::Matrix<DataType, Device> weights_Rh, biases_Rh;
   get_weight_matrix(kfac_gru_util::weight_type::Rh, weights_Rh);
   get_weight_matrix(kfac_gru_util::weight_type::bRh, biases_Rh);
+
 
   // Recompute hfc = R_h h_t + b_Rh
   // OPTIMIZE: compute with a single GEMM call
@@ -309,6 +417,7 @@ void kfac_block_gru<Device>::update_kronecker_average(
     std::cout << oss.str();
   }
 
+
   for(auto& matrix_type : kfac_gru_util::LEARNABLE_MATRICES) {
     const auto mname = kfac_gru_util::get_matrix_type_name(matrix_type);
     const size_t height = kfac_gru_util::is_matrix_height_hidden(matrix_type)
@@ -361,6 +470,7 @@ void kfac_block_gru<Device>::update_kronecker_inverse(
     m_kronecker_inverse_A_h.Resize(Aave_h.Height(), Aave_h.Width());
     m_kronecker_inverse_A_x.Resize(Aave_x.Height(), Aave_x.Width());
   }
+
   const DataType pi = 1.0;
   if(use_pi)
     LBANN_ERROR("The GRU K-FAC implementation does not currently support use_pi.");
@@ -409,6 +519,7 @@ void kfac_block_gru<Device>::update_kronecker_inverse(
 
   if(!this->m_has_kronecker_inverse)
     this->m_has_kronecker_inverse = true;
+
 }
 
 template <El::Device Device>
@@ -425,11 +536,6 @@ void kfac_block_gru<Device>::compute_preconditioned_gradients(
   for(auto& matrix_type : kfac_gru_util::LEARNABLE_MATRICES) {
     const auto mname = kfac_gru_util::get_matrix_type_name(matrix_type);
     auto& Ginv = m_kronecker_inverse_G[matrix_type];
-    const auto &Gave = m_kronecker_average_G[matrix_type];
-    auto& GLinv = this->get_workspace_matrix(
-        std::string("GLinv_"+mname),
-        Gave.Height(), Gave.Height());
-    
 
     // Compute preconditioned gradients
     El::Matrix<DataType, Device> gradients_mat;
@@ -613,7 +719,6 @@ int kfac_block_gru<Device>::get_inverse_matrices_size(lbann_comm *comm)
   int inverse_size = 0;
 
   for(auto& matrix_type : kfac_gru_util::LEARNABLE_MATRICES) {
-    El::SyncInfo<Device> sync_info =El::SyncInfoFromMatrix(m_kronecker_inverse_G[matrix_type]);
     const size_t height = kfac_gru_util::is_matrix_height_hidden(matrix_type)
         ? hidden_size : input_size;
     const  size_t size_inv = height*height;
@@ -739,6 +844,7 @@ void kfac_block_gru<El::Device::GPU>::get_r_i(
     const El::Matrix<DataType, El::Device::GPU>& h0,
     const size_t local_batch_size,
     const El::SyncInfo<El::Device::GPU>& sync_info) {
+
   kfac_gru_util::unpack_reserve_space(
       (const DataType *) m_reserve_space_fwd.data(),
       r, i,
@@ -754,13 +860,11 @@ void kfac_block_gru<Device>::get_weight_matrix(
     El::Matrix<DataType, Device>& view) {
   const size_t hidden_size = get_hidden_size();
   const auto ids = kfac_gru_util::get_gru_weight_offset(matrix_type);
-  auto& weights = this->m_layer->get_weights(ids.first);
-  const auto& dtw = dynamic_cast<data_type_weights<DataType>*>(&weights);
-  const auto& weight_matrix = dtw->get_values().LockedMatrix();
   const auto& weights_mat = El::LockedView(
-      (El::Matrix<DataType, Device>&) weight_matrix,
+      *this->m_weight_values[ids.first],
       El::IR(hidden_size*ids.second, hidden_size*(ids.second+1)), El::ALL);
   El::LockedView(view, weights_mat);
+  
 }
 
 template <El::Device Device>
@@ -954,5 +1058,217 @@ template class kfac_block_gru<El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
 template class kfac_block_gru<El::Device::GPU>;
 #endif // LBANN_HAS_GPU
+
+
+//////////////////////////////////////////////////////////////////////////////////
+////  Sub-Grid Parallelism Functions
+//////////////////////////////////////////////////////////////////////////////////
+
+template <El::Device Device>
+void kfac_block_gru<Device>::send_recv_weights(lbann_comm *comm){
+  //Does not support Model parallel only Data Parallel
+  if(this->m_layer->get_data_layout()!=data_layout::DATA_PARALLEL)
+    LBANN_ERROR("Send_recv_weights function in kfac_block_gru.cpp only supports Data Parallelism");
+
+  const El::mpi::Comm & combined_comm = comm->get_combined_grid_comm();
+  const int comm_rank = El::mpi::Rank(comm->get_KFAC_comm());
+
+  std::vector<int> primary_grid_ranks = comm->get_primary_grid_ranks();
+  std::vector<int> secondary_grid_ranks = comm->get_secondary_grid_ranks();
+
+  int num_process_primary_grid = (int)primary_grid_ranks.size();
+  int num_process_secondary_grid = (int)secondary_grid_ranks.size();
+
+  //Computing size of global buffer
+  int global_buffer_size = 0;
+  for(int i=0; i<4; ++i) 
+  {
+    auto& weights = this->m_layer->get_weights(i);
+    const auto& dtw = dynamic_cast<data_type_weights<DataType>*>(&weights);
+    auto height =  dtw->get_values().Height();
+    auto width  =  dtw->get_values().Width();
+
+    global_buffer_size += height*width;
+  }
+
+  El::Matrix<DataType, Device> global_buffer(global_buffer_size, 1);
+  El::SyncInfo<Device> sync_info =El::SyncInfoFromMatrix(global_buffer);
+
+  size_t offset = 0;
+  //copy weights to global buffers
+  if(comm->get_grid_type() == PRIMARY_GRID)
+  {
+    for(int i=0; i<4; ++i) 
+    {
+      auto& weights = this->m_layer->get_weights(i);
+      const auto& dtw = dynamic_cast<data_type_weights<DataType>*>(&weights);
+      const auto& values = dynamic_cast<DMat<Device>*>(&(dtw->get_values().Matrix()));
+      auto height =  dtw->get_values().Height();
+      auto width  =  dtw->get_values().Width();
+      auto view = El::View(global_buffer, El::IR(offset, offset+height*width), El::ALL);
+
+      El::copy::util::InterleaveMatrix(
+                  height*width, 1,
+                  values->LockedBuffer(), 1, height*width,
+                  view.Buffer(),
+                  1, height*width,
+                  sync_info);
+      offset += height*width;
+    }
+  }
+
+
+  if(comm->get_grid_type() == PRIMARY_GRID)
+  {
+    int num_sends = (int)std::ceil((float)num_process_secondary_grid/(float)num_process_primary_grid);
+    for(int num_send = 0; num_send<num_sends; num_send++){
+      if(comm_rank + num_send*num_process_primary_grid < num_process_secondary_grid){
+        int to_send_index = comm_rank + num_send*num_process_primary_grid;
+        ::El::mpi::Send(
+           (DataType*)global_buffer.Buffer(),
+           global_buffer_size,
+           secondary_grid_ranks[to_send_index],
+           combined_comm,
+           sync_info);
+      }
+    }
+
+  }
+  if(comm->get_grid_type() == SECONDARY_GRID)
+  {
+    int recv_index = comm_rank % num_process_primary_grid;
+    ::El::mpi::Recv(
+       (DataType*)global_buffer.Buffer(),
+       global_buffer_size,
+       primary_grid_ranks[recv_index],
+       combined_comm,
+       sync_info);
+  }
+
+  offset = 0;
+  //copy weights from global buffers
+  if(comm->get_grid_type() == SECONDARY_GRID)
+  {
+    for(int i=0; i<4; ++i) 
+    {
+      auto& weights = this->m_layer->get_weights(i);
+      const auto& dtw = dynamic_cast<data_type_weights<DataType>*>(&weights);
+      int height =  dtw->get_values().Height();
+      int width  =  dtw->get_values().Width();
+      this->m_weight_values[i]->Resize(height,width);
+      const El::Matrix<DataType, Device>& view = El::LockedView(global_buffer, El::IR(offset, offset+(height*width)), El::ALL);
+      El::Copy(view,*this->m_weight_values[i]);
+      this->m_weight_values[i]->Resize(height,width);
+      offset += height*width;
+    }
+  }
+
+}
+
+template <El::Device Device>
+void kfac_block_gru<Device>::initialize_activations_and_errors(
+    lbann_comm* comm,
+    int num_local_activations,
+    int num_local_errors,
+    int num_weights) {
+
+  num_local_activations=3;
+  num_local_errors=1;
+  num_weights=4;
+
+
+  const auto parent = this->m_layer->get_parent_layers()[0];
+  const auto parent_h0 = this->m_layer->get_parent_layers()[1];
+  const auto child = this->m_layer->get_child_layers()[0];
+  const auto& dtl_parent = dynamic_cast<const data_type_layer<DataType>&>(*parent);
+  const auto& dtl_parent_h0 = dynamic_cast<const data_type_layer<DataType>&>(*parent_h0);
+  const auto& dtl_child = dynamic_cast<const data_type_layer<DataType>&>(*child);
+  const auto& dtl = dynamic_cast<const data_type_layer<DataType>&>(*this->m_layer);
+  const auto& local_inputs = dtl_parent.get_activations();
+  const auto& h0 = dtl_parent_h0.get_activations();
+  const auto& local_outputs = dtl.get_activations();
+  const auto& local_errors = dtl_child.get_error_signals();
+
+  if(comm->get_KFAC_subgrid_create_two_models() or comm->get_grid_type() == NO_GRID ){
+    this->m_parent_local_activations.resize(num_local_activations);
+    this->m_child_local_errors.resize(num_local_errors);
+    this->m_weight_values.resize(num_weights);
+  }
+  else{
+    if(this->m_parent_local_activations.size()==0 ){
+      //Resize vectors
+      this->m_parent_local_activations.resize(num_local_activations);
+      this->m_child_local_errors.resize(num_local_errors);
+      this->m_weight_values.resize(num_weights);
+
+      //Initialize Dist Matrices
+      for (auto& input : this->m_parent_local_activations) {
+        if(dtl_parent.get_data_layout() == data_layout::DATA_PARALLEL)
+          input = make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
+        else
+          input = make_unique<El::DistMatrix<DataType, El::MC  , El::MR, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
+      }
+
+      for (auto& error : this->m_child_local_errors) {
+        
+        if(dtl_child.get_data_layout() == data_layout::DATA_PARALLEL)
+          error = make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
+        else
+          error = make_unique<El::DistMatrix<DataType, El::MC  , El::MR, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
+      }
+
+      int iter = 0;
+      for (auto& weight : this->m_weight_values) {
+        auto& weights = this->m_layer->get_weights(iter);
+        const auto& dtw = dynamic_cast<data_type_weights<DataType>*>(&weights);
+        weight = make_unique<El::Matrix<DataType, Device>>(dtw->get_values().Height(),dtw->get_values().Width());
+        iter++;
+      }
+    }
+
+    El::Copy(local_inputs,*this->m_parent_local_activations[0]);
+    El::Copy(h0,*this->m_parent_local_activations[1]);
+    El::Copy(local_outputs,*this->m_parent_local_activations[2]);
+    El::Copy(local_errors,*this->m_child_local_errors[0]);
+
+    send_recv_weights(comm);
+    
+  }
+
+  
+
+  if(comm->get_grid_type() == NO_GRID ){
+
+    for (auto& input : this->m_parent_local_activations) {
+      if(dtl_parent.get_data_layout() == data_layout::DATA_PARALLEL)
+        input = make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
+      else
+        input = make_unique<El::DistMatrix<DataType, El::MC  , El::MR, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
+    }
+
+    for (auto& error : this->m_child_local_errors) {
+      if(dtl_child.get_data_layout() == data_layout::DATA_PARALLEL)
+        error = make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
+      else
+        error = make_unique<El::DistMatrix<DataType, El::MC  , El::MR, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
+    }
+    for (auto& weight : this->m_weight_values) {
+        weight = make_unique<El::Matrix<DataType, Device>>();
+      }
+
+
+
+    El::LockedView( *(this->m_parent_local_activations[0]), local_inputs);
+    El::LockedView( *(this->m_parent_local_activations[1]), h0);
+    El::LockedView( *(this->m_parent_local_activations[2]), local_outputs);
+    El::LockedView( *(this->m_child_local_errors[0]),local_errors );
+
+    for(int i = 0; i<num_weights; ++i){
+      auto& weights = this->m_layer->get_weights(i);
+      const auto& dtw = dynamic_cast<data_type_weights<DataType>*>(&weights);
+      El::LockedView(*this->m_weight_values[i], dtw->get_values().LockedMatrix());
+    }
+  }
+}
 
 } // namespace lbann
