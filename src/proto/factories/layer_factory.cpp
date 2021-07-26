@@ -38,6 +38,7 @@
 #include "lbann/layers/activations/log_softmax.hpp"
 #include "lbann/layers/activations/softmax.hpp"
 #include "lbann/layers/image/bilinear_resize.hpp"
+#include "lbann/layers/image/rotation.hpp"
 #include "lbann/layers/io/input_layer.hpp"
 #include "lbann/layers/learning/base_convolution.hpp"
 #include "lbann/layers/learning/channelwise_fully_connected.hpp"
@@ -638,6 +639,15 @@ std::unique_ptr<Layer> construct_layer_legacy(
     } else {
       LBANN_ERROR("bilinear resize layer is only supported with "
                   "a data-parallel layout");
+    }
+  }
+  
+  if (proto_layer.has_rotation()) {
+    if (Layout == data_layout::DATA_PARALLEL && Device == El::Device::CPU) {
+      return lbann::make_unique<rotation_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>>(comm);
+    } else {
+      LBANN_ERROR("rotation layer is only supported with "
+                  "a data-parallel layout and on CPU");
     }
   }
 

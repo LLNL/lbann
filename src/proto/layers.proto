@@ -198,6 +198,7 @@ message Layer {
 
     // Image layers
     BilinearResize bilinear_resize = 500;
+    Rotation rotation = 501;
 
     // Miscellaneous layers
     Covariance covariance = 600;
@@ -771,6 +772,8 @@ message Layer {
     int64 height = 1;
     int64 width = 2;
   }
+  
+  message Rotation {}
 
   //////////////////////////
   // Miscellaneous layers //
