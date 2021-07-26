@@ -93,7 +93,7 @@ protected:
     const auto& num_dims = dims.size();
     const auto& num_angle_dims = angle_dims.size();
 
-    // Check that dimensions and angles are valid
+    // Check that dimensions are valid
     std::stringstream err;
     if (num_dims != 3) {
       err << get_type() << " layer \"" << this->get_name() << "\" "
