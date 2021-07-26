@@ -43,12 +43,6 @@ namespace lbann {
  *  the input and output tensors must have the same number of
  *  dimensions. If an index is out-of-range, it is ignored.
  *
- *  @todo Only flat tensors are currently supported. For higher-order
- *  tensors, PyTorch
- *  (https://pytorch.org/docs/master/tensors.html#torch.Tensor.scatter_)
- *  and TensorFlow
- *  (https://www.tensorflow.org/api_docs/python/tf/scatter_nd) will
- *  scatter along a specified dimension.
  */
 template <typename TensorDataType,
           data_layout Layout = data_layout::DATA_PARALLEL,

@@ -44,12 +44,6 @@ namespace lbann {
  *  the index tensor. If an index is out-of-range, the corresponding
  *  output is set to zero.
  *
- *  @todo Only flat tensors are currently supported. For higher-order
- *  tensors, PyTorch
- *  (https://pytorch.org/docs/stable/generated/torch.gather.html) and
- *  TensorFlow
- *  (https://www.tensorflow.org/api_docs/python/tf/gather_nd) will
- *  gather along a specified dimension.
  */
 template <typename TensorDataType,
           data_layout Layout = data_layout::DATA_PARALLEL,
