@@ -39,15 +39,10 @@
 #include <conduit/conduit_schema.hpp>
 #include <conduit/conduit_utils.hpp>
 
-#include <algorithm>
-#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <map>
-#include <set>
-#include <sstream>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 using conduit::Node;
@@ -57,8 +52,7 @@ string const sample_list_inclusive_fn("inclusive.sample_list");
 string const sample_list_exclusive_fn("exclusive.sample_list");
 string const yaml_fn("data_schema.yaml");
 
-conduit::Node build_node_from_file(std::string const& filename,
-                                   std::string const& protocol = "")
+Node build_node_from_file(string const& filename, string const& protocol = "")
 {
   conduit::Node node;
   if (protocol.empty())
@@ -86,7 +80,7 @@ map<string, vector<string>> get_all_sample_ids(conduit::Schema const& schema,
 
 void print_leading_spaces(ostream& out, size_t n) { out << string(n, ' '); }
 
-bool is_leaf(Node const& nd) { return nd.number_of_children() == 0L; }
+bool is_leaf(Node const& nd) noexcept { return nd.number_of_children() == 0L; }
 
 void write_yaml_header(ostream& out)
 {
@@ -233,11 +227,12 @@ int main(int argc, char** argv)
   }
 
   if (print_help || sample_id.empty() || filelist.empty()) {
+    auto const& exe_name = cli.m_exeName.name();
     cout << cli << endl
          << "example invocations:\n"
-         << "  generate_yaml filelist_PROBIES.txt RUN_ID/000000000\n"
-         << "  generate_yaml filelist_carbon.txt e1/s100\n"
-         << "  generate_yaml filelist_jag.txt 0.0.96.7.0:1\n"
+         << "  " << exe_name << " filelist_PROBIES.txt RUN_ID/000000000\n"
+         << "  " << exe_name << " filelist_carbon.txt e1/s100\n"
+         << "  " << exe_name << " filelist_jag.txt 0.0.96.7.0:1\n"
          << endl;
     return EXIT_FAILURE;
   }

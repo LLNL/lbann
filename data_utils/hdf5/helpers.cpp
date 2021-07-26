@@ -8,11 +8,11 @@ void get_matching_node_paths_impl(conduit::Node const& node,
                                   conduit::Schema const& prototype,
                                   std::vector<std::string>& sample_ids)
 {
-  std::string const candidate = node.schema().to_string();
   if (node.schema().equals(prototype)) {
     sample_ids.push_back(node.path());
     return; // Break the recursion
   }
+
   // recursion
   conduit::NodeConstIterator child = node.children();
   while (child.has_next()) {
