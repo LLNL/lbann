@@ -59,7 +59,7 @@ class gather_layer : public data_type_layer<TensorDataType> {
                 "gather layer only supports data parallel layout");
 public:
 
-  gather_layer(const size_t axis=0);
+  gather_layer(const size_t axis);
   gather_layer(const gather_layer& other) = default;
   gather_layer& operator=(const gather_layer& other) = default;
 
@@ -134,7 +134,14 @@ void gather_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& 
   const auto is_values_2D = input0_dims.size() == 2; 
   
   const bool along_axis_0 = this->m_gather_axis == 0;
-
+  if(is_values_2D){
+    if(this->m_gather_axis == -1){
+      LBANN_ERROR(
+        this->get_type(), " Layer \"", this->get_name(),"\" ",
+        "has 2D input, but does not set a  gather axis.",
+        "Axis must be either set to 0 or 1");
+    }
+  }
   if(is_values_1D){
     this->set_output_dims(input1_dims);
   }else{

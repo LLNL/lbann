@@ -68,7 +68,11 @@ std::unique_ptr<Layer> build_gather_layer_from_pbuf(
 {
   LBANN_ASSERT_MSG_HAS_FIELD(proto_layer, gather);
   using BuilderType = Builder<TensorDataType, Layout, Device>;
-  auto axis = proto_layer.gather().axis().value();
+  const auto& params = proto_layer.gather();
+  int axis = -1;
+  if (params.has_axis()){
+    axis = params.axis().value();
+  }
   return BuilderType::Build(axis);
 }
 

@@ -58,7 +58,7 @@ class scatter_layer : public data_type_layer<TensorDataType> {
                 "scatter layer only supports data parallel layout");
 public:
 
-  scatter_layer(const std::vector<int>& dims={1}, const size_t axis=0);
+  scatter_layer(const std::vector<int>& dims={1}, const size_t axis);
   scatter_layer(const scatter_layer& other) = default;
   scatter_layer& operator=(const scatter_layer& other) = default;
 
@@ -147,7 +147,15 @@ void scatter_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData&
     }
     return ss.str();
   };
-
+  
+  if(is_values_2D){
+    if(this->m_scatter_axis == -1){
+      LBANN_ERROR(
+        this->get_type(), " Layer \"", this->get_name(),"\" ",
+        "has 2D input, but does not set a scatter axis.",
+        "Axis must be either set to 0 or 1");
+    }
+  }
   // Make sure input tensors have same dimensions
   if (input0_dims != input1_dims) {
 
