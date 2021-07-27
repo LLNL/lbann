@@ -138,6 +138,112 @@ void lbann_comm::split_trainers(
 
 }
 
+void lbann_comm::split_trainer_grid(
+  int num_process_primary_grid,
+  bool create_two_models)
+{
+  const int world_size = El::mpi::Size(m_trainer_comm.GetMPIComm());
+  m_create_two_models = create_two_models;
+
+  // If primary grid size is not given then split resources equally between
+  // primary and secondary grid
+  if (num_process_primary_grid == 0){
+  num_process_primary_grid = world_size/2; 
+  }
+
+  
+  if (num_process_primary_grid == 0) {
+    LBANN_ERROR("Procs for primary grid in a trainer cannot be zero.");
+  }
+
+  if(num_process_primary_grid == world_size){
+    return ;
+  }
+
+  
+  int num_process_secondary_grid = world_size - num_process_primary_grid;
+  
+
+  int rank_in_split_comm;
+  if(m_rank_in_trainer < num_process_primary_grid){
+    // color = 0;
+    rank_in_split_comm = m_rank_in_trainer % num_process_primary_grid;
+    m_grid_type = GridType::PRIMARY_GRID;
+    m_rank_in_trainer = rank_in_split_comm;
+    m_procs_per_trainer = num_process_primary_grid;
+  }
+  else{
+    // color = 1;
+    rank_in_split_comm = (m_rank_in_trainer - num_process_primary_grid) % num_process_secondary_grid;
+    m_grid_type = GridType::SECONDARY_GRID;
+    m_rank_in_trainer = rank_in_split_comm;
+    m_procs_per_trainer = num_process_secondary_grid;
+  }
+
+  // Update ranks in primary and secondary grids
+  for (int rank = 0; rank < num_process_primary_grid; ++rank){
+    m_primary_grid_ranks.push_back(rank);
+  }
+  for (int rank = num_process_primary_grid; 
+        rank < num_process_primary_grid + num_process_secondary_grid; 
+        ++rank){
+    m_secondary_grid_ranks.push_back(rank);
+  }
+
+  std::cout<<"Primary Grid:";
+  for (auto it = m_primary_grid_ranks.begin(); it != m_primary_grid_ranks.end(); it++)
+        std::cout << *it << " ";
+  std::cout<<"\n";
+
+  std::cout<<"Secondary Grid:";
+  for (auto it = m_secondary_grid_ranks.begin(); it != m_secondary_grid_ranks.end(); it++)
+        std::cout << *it << " ";
+  std::cout<<"\n";
+
+  //Create Groups to form communicators
+  El::mpi::Group trainer_group, primary_grid_group, secondary_grid_group;
+  El::mpi::CommGroup( m_trainer_comm, trainer_group );
+  El::mpi::Incl( trainer_group, m_primary_grid_ranks.size(), m_primary_grid_ranks.data(), primary_grid_group);
+  El::mpi::Incl( trainer_group, m_secondary_grid_ranks.size(), m_secondary_grid_ranks.data(), secondary_grid_group);
+
+  //Create communicators (one each for primary and secondary grid)
+  El::mpi::Create(m_trainer_comm, primary_grid_group, m_primary_grid_comm);
+  El::mpi::Create(m_trainer_comm, secondary_grid_group, m_secondary_grid_comm);
+
+
+  El::mpi::Dup(m_trainer_comm, m_combined_grid_comm);
+  if(m_create_two_models){
+    if(m_grid_type==GridType::PRIMARY_GRID){
+      El::mpi::Dup(m_primary_grid_comm, m_trainer_comm);
+    }
+    else{
+      El::mpi::Dup(m_secondary_grid_comm, m_trainer_comm);
+    }
+    // Initialize Elemental grid for trainer
+    m_grid = make_unique<El::Grid>(
+      m_trainer_comm.GetMPIComm(), 1);
+  }
+  else{
+    if(m_grid_type==GridType::PRIMARY_GRID){
+      El::mpi::Dup(m_primary_grid_comm, m_trainer_comm);
+    }
+    else{
+      El::mpi::Dup(m_secondary_grid_comm, m_trainer_comm);
+    }
+    // Initialize Elemental grid for trainer
+    m_grid = make_unique<El::Grid>(
+      m_combined_grid_comm.GetMPIComm(), 
+      primary_grid_group, 
+      num_process_primary_grid, El::COLUMN_MAJOR);
+
+    m_secondary_grid = make_unique<El::Grid>(
+      m_combined_grid_comm.GetMPIComm(), 
+      secondary_grid_group, 
+      num_process_secondary_grid, El::COLUMN_MAJOR);
+  }
+
+}
+
 void lbann_comm::intertrainer_sum_matrix(AbsMat& mat) const
 {
   m_bytes_sent += sizeof(DataType) * mat.Height() * mat.Width();
