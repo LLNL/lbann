@@ -27,7 +27,7 @@
 #define LBANN_ROTATION_LAYER_INSTANTIATE
 #include "lbann/layers/image/rotation.hpp"
 
-#include <math.h>  
+#include <math.h>
 
 namespace lbann {
 
@@ -39,28 +39,27 @@ void rotation_layer<TensorDataType, Layout, Device>::fp_compute() {
   constexpr DataType degree = 180;
   constexpr DataType half = 0.5;
   constexpr DataType zero = 0;
-  
+
   // Input and output tensors
   const auto& local_input = this->get_local_prev_activations();
   auto& local_output = this->get_local_activations();
 
   // Tensor dimensions
   const auto& input_dims = this->get_input_dims(0);
-  const El::Int num_dims = input_dims.size();
   const auto& num_samples = local_input.Width();
-  const El::Int num_channels = input_dims[0]
+  const El::Int num_channels = input_dims[0];
   const El::Int input_height = input_dims[1];
   const El::Int input_width = input_dims[2];
 
   // Get rotation angle
   const auto& angles = this->get_local_prev_activations(1);
-	
+
   // Perform rotation for each input pixel based on the center pixel
   LBANN_OMP_PARALLEL_FOR_COLLAPSE4
   for (El::Int sample = 0; sample < num_samples; ++sample) {
     for (El::Int channel = 0; channel < num_channels; ++channel) {
       for (El::Int output_row = 0; output_row < input_height; ++output_row) {
-        for (El::Int output_col = 0; output_col < input_width; ++output_col) {	
+        for (El::Int output_col = 0; output_col < input_width; ++output_col) {
 
           // Convert to rad
           const auto& angle = angles.Get(0, sample);
@@ -94,18 +93,12 @@ void rotation_layer<TensorDataType, Layout, Device>::fp_compute() {
 	  }
 	  else {
           	pixel_output = zero;
-	  }	 
+	  }
         }
       }
     }
   }
 }
-
-template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void rotation_layer<TensorDataType, T_layout, Dev>::bp_compute() {
-
-}
-
 
 #define PROTO(T) \
   template class rotation_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>
