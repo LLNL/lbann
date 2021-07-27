@@ -52,7 +52,7 @@ class scatter_layer : public data_type_layer<TensorDataType> {
                 "scatter layer only supports data parallel layout");
 public:
 
-  scatter_layer(const std::vector<int>& dims={1}, const size_t axis);
+  scatter_layer(const std::vector<int>& dims, const int axis);
   scatter_layer(const scatter_layer& other) = default;
   scatter_layer& operator=(const scatter_layer& other) = default;
 
@@ -71,13 +71,15 @@ public:
   El::Device get_device_allocation() const override;
 
 protected:
-
+  friend class cereal::access;
+  scatter_layer()
+    : scatter_layer({1},-1)
+  {}
   void setup_dims(DataReaderMetaData& dr_metadata) override;
-
   void fp_compute() override;
   void bp_compute() override;
 private:
-  size_t m_scatter_axis;
+  int m_scatter_axis;
 
 };
 
@@ -87,7 +89,7 @@ private:
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 scatter_layer<TensorDataType,Layout,Device>::scatter_layer(
-  const std::vector<int>& dims, const size_t axis)
+  const std::vector<int>& dims, const int axis)
   : data_type_layer<TensorDataType>(nullptr),
     m_scatter_axis{axis} {
   this->m_expected_num_parent_layers = 2;
@@ -147,7 +149,7 @@ void scatter_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData&
       LBANN_ERROR(
         this->get_type(), " Layer \"", this->get_name(),"\" ",
         "has 2D input, but does not set a scatter axis.",
-        "Axis must be either set to 0 or 1");
+        " Axis must be either set to 0 or 1");
     }
   }
   // Make sure input tensors have same dimensions

@@ -53,7 +53,7 @@ class gather_layer : public data_type_layer<TensorDataType> {
                 "gather layer only supports data parallel layout");
 public:
 
-  gather_layer(const size_t axis);
+  gather_layer(const int axis);
   gather_layer(const gather_layer& other) = default;
   gather_layer& operator=(const gather_layer& other) = default;
 
@@ -72,13 +72,15 @@ public:
   El::Device get_device_allocation() const override;
 
 protected:
-
+  friend class cereal::access;
+  gather_layer()
+    : gather_layer(-1)
+  {}
   void setup_dims(DataReaderMetaData& dr_metadata) override;
-
   void fp_compute() override;
   void bp_compute() override;
 private:
-  size_t m_gather_axis;
+  int m_gather_axis;
 
 };
 
@@ -87,7 +89,7 @@ private:
 // =========================================================
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-gather_layer<TensorDataType,Layout,Device>::gather_layer(const size_t axis)
+gather_layer<TensorDataType,Layout,Device>::gather_layer(const int axis)
   : data_type_layer<TensorDataType>(nullptr),
     m_gather_axis{axis} {
   this->m_expected_num_parent_layers = 2;
