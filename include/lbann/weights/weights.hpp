@@ -108,6 +108,7 @@ public:
    *  human-readable name.
    */
   void set_name(std::string name) { m_name = name; }
+
   /** Get weights name. */
   std::string get_name() const { return m_name; }
 
@@ -296,11 +297,12 @@ protected:
 private:
   virtual void do_augment_description_(description&) const = 0;
   virtual void do_setup_() = 0;
+
   virtual void do_set_dims_(std::vector<size_t> const& matrix_height_dims,
                             std::vector<size_t> const& matrix_width_dims) = 0;
   virtual void do_steal_values_(weights& other) = 0;
+  
 private:
-
   /** Weights name.
    *  Each set of weights in a model should have a unique,
    *  human-readable name.

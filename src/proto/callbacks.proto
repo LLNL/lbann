@@ -81,6 +81,7 @@ message Callback {
     CallbackDumpModelGraph dump_model_graph = 49;
     CallbackPerturbLearningRate perturb_learning_rate = 50;
     CallbackComputeModelSize compute_model_size = 51;
+    CallbackPerturbWeights perturb_weights = 52;
   }
 
   message CallbackLTFB {
@@ -408,4 +409,8 @@ message Callback {
     int64 batch_interval = 2;
   }
 
+  message CallbackPerturbWeights {
+    string output_name = 1;
+    int64 batch_interval = 2;
+  }
 }

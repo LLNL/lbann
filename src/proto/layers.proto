@@ -72,6 +72,8 @@ message Layer {
     Slice slice = 301;
     Split split = 302;
     Sum sum = 303;
+    Cross_Grid_Sum_Slice cross_grid_sum_slice = 338;
+    Cross_Grid_Sum cross_grid_sum = 339;
     WeightedSum weighted_sum = 323;
     Unpooling unpooling = 304;
     Hadamard hadamard = 308;
@@ -196,6 +198,7 @@ message Layer {
 
     // Image layers
     BilinearResize bilinear_resize = 500;
+    Rotation rotation = 501;
 
     // Miscellaneous layers
     Covariance covariance = 600;
@@ -465,6 +468,12 @@ message Layer {
   }
 
   message Sum {
+  }
+
+  message Cross_Grid_Sum_Slice {
+  }
+
+  message Cross_Grid_Sum {
   }
 
   message WeightedSum {
@@ -764,6 +773,13 @@ message Layer {
     int64 width = 2;
   }
 
+  /** @brief Rotate a image clockwise around its center
+   *
+   *  Expects two inputs: a 3D image tensor in CHW format and a scalar
+   *  rotation angle.
+   */
+  message Rotation {}
+
   //////////////////////////
   // Miscellaneous layers //
   //////////////////////////
@@ -910,4 +926,7 @@ message ParallelStrategy {
   int64 procs_per_replica = 12;
   int64 depth_groups = 13;
   int64 depth_splits = 14;
+  int64 sub_branch_tag = 15;
+  int64 sub_branch_resource_percentage = 16;
+  bool enable_subgraph = 17;
 }

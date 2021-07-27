@@ -138,7 +138,7 @@ class kfac_block_gru: public kfac_block<Device> {
   void on_forward_prop_end() override;
 
   const std::vector<El::AbstractMatrix<DataType>*>
-  get_local_kronecker_buffers();
+  get_local_kronecker_buffers() override;
 
   void compute_local_kronecker_factors(
       lbann_comm* comm,

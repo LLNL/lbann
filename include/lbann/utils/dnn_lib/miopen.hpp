@@ -113,6 +113,7 @@ constexpr dnnMathType_t DNN_DEFAULT_MATH = 0;
 constexpr dnnTensorFormat_t DNN_TENSOR_NCHW = 0;
 constexpr dnnRNGType_t DNN_RNG_PSEUDO_XORWOW = MIOPEN_RNG_PSEUDO_XORWOW;
 constexpr dnnLRNMode_t DNN_LRN_CROSS_CHANNEL = miopenLRNCrossChannel;
+constexpr dnnMathType_t DNN_TENSOR_OP_MATH_ALLOW_CONVERSION = -1; // not supported with ROCm
 
 ////////////////////////////////////////////////////////////
 // Functions for to/from MIOpen types conversion
@@ -227,7 +228,7 @@ inline miopenPoolingMode_t to_miopen(pooling_mode m)
   {
   case pooling_mode::MAX: return miopenPoolingMax;
 #ifdef LBANN_DETERMINISTIC
-    LBANN_ERROR("Deterministic max pooling mode not supported in MIOpen");
+    LBANN_WARNING("Deterministic max pooling mode not supported in MIOpen");
     return miopenPoolingMax;
 #else
     return miopenPoolingMax;
@@ -235,7 +236,7 @@ inline miopenPoolingMode_t to_miopen(pooling_mode m)
   case pooling_mode::AVERAGE_COUNT_INCLUDE_PADDING: return miopenPoolingAverageInclusive;
   case pooling_mode::AVERAGE_COUNT_EXCLUDE_PADDING: return miopenPoolingAverage;
   case pooling_mode::MAX_DETERMINISTIC:
-    LBANN_ERROR("Deterministic max pooling mode not supported in MIOpen");
+    LBANN_WARNING("Deterministic max pooling mode not supported in MIOpen");
     return miopenPoolingMax;
   default:
     LBANN_ERROR("Invalid pooling mode requested");

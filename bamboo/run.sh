@@ -27,6 +27,29 @@ while :; do
     shift
 done
 
+# "spack" is just a shell function; it may not be exported to this
+# scope. Just to be sure, reload the shell integration.
+if [ -n "${SPACK_ROOT}" ]; then
+    source ${SPACK_ROOT}/share/spack/setup-env.sh
+else
+    echo "Spack required.  Please set SPACK_ROOT environment variable"
+    exit 1
+fi
+
+SPACK_VERSION=$(spack --version | sed 's/-.*//g')
+MIN_SPACK_VERSION=0.16.0
+
+LBANN_DIR=$(git rev-parse --show-toplevel)
+source ${LBANN_DIR}/scripts/utilities.sh
+
+compare_versions ${SPACK_VERSION} ${MIN_SPACK_VERSION}
+VALID_SPACK=$?
+
+if [[ ${VALID_SPACK} -eq 2 ]]; then
+    echo "Newer version of Spack required.  Detected version ${SPACK_VERSION} requires at least ${MIN_SPACK_VERSION}"
+    exit 1
+fi
+
 echo "run.sh WEEKLY="
 echo $WEEKLY
 
@@ -36,16 +59,17 @@ echo "Task: Cleaning"
 echo "Task: Compiler Tests"
 cd compiler_tests
 $PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml
-LBANN_DIR=$(git rev-parse --show-toplevel)
-BUILD_DIR_BASE=${LBANN_DIR}/build/gnu.Release.${CLUSTER}.llnl.gov
-BUILD_DIR=${BUILD_DIR_BASE}/lbann/build
-INSTALL_DIR=${BUILD_DIR_BASE}/install
-CMD="module use ${INSTALL_DIR}/etc/modulefiles"
-echo ${CMD}
-${CMD}
-CMD="module load lbann"
-echo ${CMD}
-${CMD}
+# Find the correct module to load
+SPACK_ARCH=$(spack arch)
+SPACK_ARCH_TARGET=$(spack arch -t)
+BAMBOO_AGENT=${bamboo_agentId}
+SPACK_ENV_CMD="spack env activate -p lbann-bamboo-${BAMBOO_AGENT}-${SPACK_ARCH_TARGET}"
+echo ${SPACK_ENV_CMD} | tee -a ${LOG}
+${SPACK_ENV_CMD}
+SPACK_LOAD_CMD="spack load lbann@bamboo-${BAMBOO_AGENT}-${SPACK_ARCH_TARGET} arch=${SPACK_ARCH}"
+echo ${SPACK_LOAD_CMD} | tee -a ${LOG}
+${SPACK_LOAD_CMD}
+echo "Testing $(which lbann)"
 cd ..
 
 echo "Task: Integration Tests"

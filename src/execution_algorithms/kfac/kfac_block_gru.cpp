@@ -27,6 +27,7 @@
 
 #include "lbann/execution_algorithms/kfac/kfac_block_gru.hpp"
 #include "lbann/execution_algorithms/kfac/kfac_util.hpp"
+#include "lbann/utils/gpu/helpers.hpp"
 
 namespace lbann {
 
@@ -61,21 +62,28 @@ template <>
 void kfac_block_gru<El::Device::CPU>::on_forward_prop_end() {
 }
 
-#ifdef LBANN_HAS_GPU
+#ifdef LBANN_GRU_LAYER_CUDNN_SUPPORTED
 template <>
 void kfac_block_gru<El::Device::GPU>::on_forward_prop_end() {
   const auto& reserve_space = get_gru_layer()->get_reserve_space();
   if(m_reserve_space_fwd.size() != reserve_space.size())
     m_reserve_space_fwd.allocate(reserve_space.size());
   const auto& sync_info = this->get_sync_info();
-  CHECK_CUDA(cudaMemcpyAsync(
+  gpu_lib::mem_copy_async(
+      m_reserve_space_fwd.data(),
+      reserve_space.data(),
+      reserve_space.size(),
+      gpu_lib::GPU_MEMCPY_DEVICE_TO_DEVICE,
+      sync_info.Stream());
+  /*CHECK_CUDA(cudaMemcpyAsync(
       m_reserve_space_fwd.data(),
       reserve_space.data(),
       reserve_space.size(),
       cudaMemcpyDeviceToDevice,
       sync_info.Stream()));
+      */
 }
-#endif // LBANN_HAS_GPU
+#endif // LBANN_GRU_LAYER_CUDNN_SUPPORTED
 
 template <El::Device Device>
 const std::vector<El::AbstractMatrix<DataType>*>
@@ -486,7 +494,7 @@ kfac_block_gru<Device>::get_internal_matrix_info() const {
         list.emplace_back(name, m.Height(), m.Width());
       };
   const auto emplace_if_available =
-      [&list, &emplace](
+      [&emplace](
           const std::string& name,
           const std::unordered_map<kfac_gru_util::weight_type,
           El::Matrix<DataType, Device>>& map,
@@ -515,12 +523,12 @@ template <>
 void kfac_block_gru<El::Device::CPU>::check_dnn_lib_spec() const {
 }
 
-#ifdef LBANN_HAS_GPU
+#ifdef LBANN_GRU_LAYER_CUDNN_SUPPORTED
 template <>
 void kfac_block_gru<El::Device::GPU>::check_dnn_lib_spec() const {
 #ifdef LBANN_HAS_DNN_LIB
   const auto math_type = dnn_lib::get_default_convolution_math_type();
-  if(math_type != CUDNN_DEFAULT_MATH) {
+  if(math_type != dnn_lib::DNN_DEFAULT_MATH) {
     std::stringstream ss;
     ss << "The structure of cuDNN's reserve space might not be"
        << " what the GRU K-FAC implementation expects when Tensor Cores are enabled.";
@@ -530,7 +538,7 @@ void kfac_block_gru<El::Device::GPU>::check_dnn_lib_spec() const {
   LBANN_ERROR("cuDNN should be enabled to use K-FAC with GPUs.");
 #endif // LBANN_HAS_DNN_LIB
 }
-#endif // LBANN_HAS_GPU
+#endif // LBANN_GRU_LAYER_CUDNN_SUPPORTED
 
 template <>
 void kfac_block_gru<El::Device::CPU>::get_r_i(
@@ -579,7 +587,7 @@ void kfac_block_gru<El::Device::CPU>::get_r_i(
   }
 }
 
-#ifdef LBANN_HAS_GPU
+#ifdef LBANN_GRU_LAYER_CUDNN_SUPPORTED
 template <>
 void kfac_block_gru<El::Device::GPU>::get_r_i(
     El::Matrix<DataType, El::Device::GPU>& r,
@@ -597,7 +605,7 @@ void kfac_block_gru<El::Device::GPU>::get_r_i(
       local_batch_size,
       sync_info);
 }
-#endif // LBANN_HAS_GPU
+#endif // LBANN_GRU_LAYER_CUDNN_SUPPORTED
 
 template <El::Device Device>
 void kfac_block_gru<Device>::get_weight_matrix(
@@ -802,8 +810,8 @@ void kfac_gru_util::get_g(
 }
 
 template class kfac_block_gru<El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
+#ifdef LBANN_GRU_LAYER_CUDNN_SUPPORTED
 template class kfac_block_gru<El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+#endif // LBANN_GRU_LAYER_CUDNN_SUPPORTED
 
 } // namespace lbann

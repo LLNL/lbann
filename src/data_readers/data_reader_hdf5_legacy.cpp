@@ -25,7 +25,7 @@
 //
 /////////////////////////////////////////////////////////////////////////////////
 #include "lbann/comm_impl.hpp"
-#include "lbann/data_readers/data_reader_hdf5.hpp"
+#include "lbann/data_readers/data_reader_hdf5_legacy.hpp"
 #include "lbann/utils/profiling.hpp"
 #include "lbann/utils/distconv.hpp"
 #include "conduit/conduit_relay.hpp"
