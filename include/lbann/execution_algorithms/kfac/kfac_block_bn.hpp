@@ -135,6 +135,45 @@ class kfac_block_bn: public kfac_block<Device> {
         << ", is_after_conv=" << m_is_after_conv;
     return oss.str();
   }
+  /** @brief Copy inverse matrices to output buffer. */
+  int
+  get_inverse_matrices(
+      El::Matrix<DataType, Device>& output,
+      int offset) override
+  {
+    LBANN_ERROR("Sub-grid parallelism  is not implemented for BN layer");
+  }
+
+  /** @brief Get inverse matrices size (offset). */
+  int
+  get_inverse_matrices_size(lbann_comm *comm) override
+  {
+    LBANN_ERROR("Sub-grid parallelism  is not implemented for BN layer");
+  }
+
+  /** @brief Get inverse matrices size vector */
+  std::vector<int> 
+  get_inverse_matrices_size_vector(lbann_comm *comm) override
+  {
+    LBANN_ERROR("Sub-grid parallelism  is not implemented for BN layer");
+  }
+
+  /** @brief Get inverse matrices size vector */
+  void
+  resize_inverse_matrices_size(El::Matrix<double, El::Device::CPU>& inverse_matrices_size, int block_number) override
+  {
+    LBANN_ERROR("Sub-grid parallelism  is not implemented for BN layer");
+  }
+
+  /** @brief Copy inverse matrices from output buffer. */
+  int
+  set_inverse_matrices(
+      El::Matrix<DataType, Device>& workspace,
+      int offset,
+      lbann_comm *comm) override
+  {
+    LBANN_ERROR("Sub-grid parallelism  is not implemented for BN layer");
+  }
 
  private:
 

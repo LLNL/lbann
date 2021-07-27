@@ -124,36 +124,26 @@ class kfac_block {
   virtual int
   get_inverse_matrices(
       El::Matrix<DataType, Device>& output,
-      int offset) {
-    LBANN_ERROR("this function should be called via a sub-class.");
-  }
+      int offset) = 0;
 
   /** @brief Get inverse matrices size (offset). */
   virtual int
-  get_inverse_matrices_size(lbann_comm *comm) {
-    LBANN_ERROR("this function should be called via a sub-class.");
-  }
+  get_inverse_matrices_size(lbann_comm *comm) = 0; 
 
   /** @brief Get inverse matrices size vector */
   virtual std::vector<int> 
-  get_inverse_matrices_size_vector(lbann_comm *comm) {
-    LBANN_ERROR("this function should be called via a sub-class.");
-  }
+  get_inverse_matrices_size_vector(lbann_comm *comm) = 0;
 
   /** @brief Get inverse matrices size vector */
   virtual void
-  resize_inverse_matrices_size(El::Matrix<double, El::Device::CPU>& inverse_matrices_size, int block_number) {
-    LBANN_ERROR("this function should be called via a sub-class.");
-  }
+  resize_inverse_matrices_size(El::Matrix<double, El::Device::CPU>& inverse_matrices_size, int block_number) = 0;
 
   /** @brief Copy inverse matrices from output buffer. */
   virtual int
   set_inverse_matrices(
       El::Matrix<DataType, Device>& workspace,
       int offset,
-      lbann_comm *comm) {
-    LBANN_ERROR("this function should be called via a sub-class.");
-  }
+      lbann_comm *comm) = 0;
 
   /** @brief Get block's information in one line. */
   virtual std::string get_info() const {

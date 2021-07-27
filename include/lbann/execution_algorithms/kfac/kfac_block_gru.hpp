@@ -189,6 +189,20 @@ class kfac_block_gru: public kfac_block<Device> {
 
   void send_recv_weights(lbann_comm *comm);
 
+  /** @brief Get inverse matrices size vector */
+  std::vector<int> 
+  get_inverse_matrices_size_vector(lbann_comm *comm) override
+  {
+    LBANN_ERROR("This function is not yet implemented for GRU layer");
+  }
+
+  /** @brief Get inverse matrices size vector */
+  void
+  resize_inverse_matrices_size(El::Matrix<double, El::Device::CPU>& inverse_matrices_size, int block_number) override
+  {
+    LBANN_ERROR("This function is not yet implemented for GRU layer");
+  }
+
     
 
   const std::vector<El::AbstractMatrix<DataType>*>
