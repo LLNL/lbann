@@ -772,7 +772,12 @@ message Layer {
     int64 height = 1;
     int64 width = 2;
   }
-  
+
+  /** @brief Rotate a image clockwise around its center
+   *
+   *  Expects two inputs: a 3D image tensor in CHW format and a scalar
+   *  rotation angle.
+   */
   message Rotation {}
 
   //////////////////////////
