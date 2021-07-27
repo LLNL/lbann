@@ -211,7 +211,7 @@ void KFAC::train(
       do_epoch_begin_cbs(model);
       is_start_of_epoch = false;
       //sync weights if we have a separate model for primary and secondary grid  
-      if(comm.get_KFAC_subgrid_create_two_models() and comm.get_grid_type()!=NO_GRID)
+      if(comm.get_KFAC_subgrid_create_two_models() and comm.get_grid_type()!=GridType::NO_GRID)
         sync_weights_model(model, model.get_comm());
     }
 
@@ -222,8 +222,8 @@ void KFAC::train(
       sgd_context.inc_epoch();
 
       if(comm.get_KFAC_subgrid_create_two_models() 
-        or comm.get_grid_type()==NO_GRID
-        or comm.get_grid_type()==PRIMARY_GRID)
+        or comm.get_grid_type()==GridType::NO_GRID
+        or comm.get_grid_type()==GridType::PRIMARY_GRID)
       {
         model.reconcile_weight_values();
         do_epoch_end_cbs(model);
@@ -302,9 +302,9 @@ bool KFAC::train_mini_batch(
 #pragma omp single
     {
 #endif
-      if(comm.get_grid_type()==PRIMARY_GRID 
+      if(comm.get_grid_type()==GridType::PRIMARY_GRID 
         or comm.get_KFAC_subgrid_create_two_models() 
-        or comm.get_grid_type() == NO_GRID){
+        or comm.get_grid_type() == GridType::NO_GRID){
         // Forward prop step
         model.clear_gradients();
         // sync_weights_model(model, model.get_comm());
@@ -313,9 +313,9 @@ bool KFAC::train_mini_batch(
       if(compute_inverse)
         on_forward_prop_end(kfac_context, model);
 
-      if(comm.get_grid_type()==PRIMARY_GRID 
+      if(comm.get_grid_type()==GridType::PRIMARY_GRID 
         or comm.get_KFAC_subgrid_create_two_models() 
-        or comm.get_grid_type() == NO_GRID){
+        or comm.get_grid_type() == GridType::NO_GRID){
         // check if the data coordinator has finished the epoch and kickoff
         // background I/O
         finished = dc.epoch_complete(execution_mode::training);
@@ -332,9 +332,9 @@ bool KFAC::train_mini_batch(
 
       if(compute_inverse)
         on_backward_prop_end(kfac_context, model);
-      else if(comm.get_grid_type()==NO_GRID or m_has_kronecker_inverse==true)
+      else if(comm.get_grid_type()==GridType::NO_GRID or m_has_kronecker_inverse==true)
       {
-        if(comm.get_KFAC_subgrid_create_two_models() or comm.get_grid_type() == PRIMARY_GRID or comm.get_grid_type() == NO_GRID){
+        if(comm.get_KFAC_subgrid_create_two_models() or comm.get_grid_type() == GridType::PRIMARY_GRID or comm.get_grid_type() == GridType::NO_GRID){
           for(auto& block : kfac_context.m_blocks){
               const bool is_gru = dynamic_cast<kfac_block_gru<Device>*>(block.get()) != nullptr;
               block->compute_preconditioned_gradients(
@@ -347,9 +347,9 @@ bool KFAC::train_mini_batch(
       }
 
 
-      if(comm.get_grid_type()==PRIMARY_GRID 
+      if(comm.get_grid_type()==GridType::PRIMARY_GRID 
         or comm.get_KFAC_subgrid_create_two_models() 
-        or comm.get_grid_type() == NO_GRID){
+        or comm.get_grid_type() == GridType::NO_GRID){
         model.get_objective_function()->compute_weight_regularization();
 
         // Finish evaluation.
@@ -375,8 +375,8 @@ bool KFAC::train_mini_batch(
   sgd_context.inc_step();
 
   if(comm.get_KFAC_subgrid_create_two_models() 
-        or comm.get_grid_type()==NO_GRID
-        or comm.get_grid_type()==PRIMARY_GRID)
+        or comm.get_grid_type()==GridType::NO_GRID
+        or comm.get_grid_type()==GridType::PRIMARY_GRID)
     do_batch_end_cbs(model);
   return finished;
 }
@@ -439,24 +439,13 @@ void KFAC::do_batch_end_cbs(model& model)
 // Sub-grid implementation
 // =============================================
 
-void KFAC::send_recv_kfac_inputs(model& model, lbann_comm *comm){
-  //Does not support Model parallel only Data Parallel
-
-  const auto layers = model.get_layers();
-  const El::mpi::Comm & combined_comm = comm->get_combined_grid_comm();
-  const El::mpi::Comm & trainer_comm = comm->get_KFAC_comm();
-  const int comm_size = El::mpi::Size(comm->get_KFAC_comm());
-  const int comm_rank = El::mpi::Rank(comm->get_KFAC_comm());
-}
-
-
 void KFAC::sync_weights_model(model& model, lbann_comm *comm){
   //Does not support Model parallel only Data Parallel
 
   const auto layers = model.get_layers();
   const El::mpi::Comm & combined_comm = comm->get_combined_grid_comm();
-  const El::mpi::Comm & trainer_comm = comm->get_KFAC_comm();
-  const int comm_size = El::mpi::Size(comm->get_KFAC_comm());
+  // const El::mpi::Comm & trainer_comm = comm->get_KFAC_comm();
+  // const int comm_size = El::mpi::Size(comm->get_KFAC_comm());
   const int comm_rank = El::mpi::Rank(comm->get_KFAC_comm());
 
   std::vector<int> primary_grid_ranks = comm->get_primary_grid_ranks();
@@ -471,7 +460,7 @@ void KFAC::sync_weights_model(model& model, lbann_comm *comm){
   {
     const auto &layer = *i_layer;
     const size_t num_weights = layer->num_weights();
-    for (int idx_weight = 0; idx_weight < num_weights; ++idx_weight)
+    for (size_t idx_weight = 0; idx_weight < num_weights; ++idx_weight)
     {
       auto& weights = layer->get_weights(idx_weight);
 
@@ -498,7 +487,7 @@ void KFAC::sync_weights_model(model& model, lbann_comm *comm){
   {
     const auto &layer = *i_layer;
     const size_t num_weights = layer->num_weights();
-    for (int idx_weight = 0; idx_weight < num_weights; ++idx_weight)
+    for (size_t idx_weight = 0; idx_weight < num_weights; ++idx_weight)
     {
       auto& weights = layer->get_weights(idx_weight);
 
@@ -529,7 +518,7 @@ void KFAC::sync_weights_model(model& model, lbann_comm *comm){
   }
 
 
-  if(comm->get_grid_type() == PRIMARY_GRID)
+  if(comm->get_grid_type() == GridType::PRIMARY_GRID)
   {
     int num_sends = (int)std::ceil((float)num_process_secondary_grid/(float)num_process_primary_grid);
     for(int num_send = 0; num_send<num_sends; num_send++){
@@ -547,7 +536,7 @@ void KFAC::sync_weights_model(model& model, lbann_comm *comm){
     }
 
   }
-  if(comm->get_grid_type() == SECONDARY_GRID)
+  if(comm->get_grid_type() == GridType::SECONDARY_GRID)
   {
     int recv_index = comm_rank % num_process_primary_grid;
     // std::cout<<"My CommRank:"<<comm_rank<<" Recv:"<<primary_grid_ranks[recv_index]<<"\n";
@@ -562,13 +551,13 @@ void KFAC::sync_weights_model(model& model, lbann_comm *comm){
 
 
 
-  //copy weights to global buffers
+  //copy weights from global buffers
   offset = 0;
   for(auto i_layer = layers.begin(); i_layer != layers.end(); i_layer++) 
   {
     const auto &layer = *i_layer;
     const size_t num_weights = layer->num_weights();
-    for (int idx_weight = 0; idx_weight < num_weights; ++idx_weight)
+    for (size_t idx_weight = 0; idx_weight < num_weights; ++idx_weight)
     {
       auto& weights = layer->get_weights(idx_weight);
 
@@ -625,7 +614,7 @@ void send_recv_precomputed_gradients(
   const El::mpi::Comm & trainer_comm = comm->get_KFAC_comm();
 
 
-  if(comm->get_grid_type() == SECONDARY_GRID)
+  if(comm->get_grid_type() == GridType::SECONDARY_GRID)
   {
     int num_sends = (int)std::ceil((float)num_process_primary_grid/(float)num_process_secondary_grid);
 
@@ -656,7 +645,7 @@ void send_recv_precomputed_gradients(
     }
 
   }
-  if(comm->get_grid_type() == PRIMARY_GRID)
+  if(comm->get_grid_type() == GridType::PRIMARY_GRID)
   {
     El::SyncInfo<Device> sync_info =El::SyncInfoFromMatrix(global_buffer);
     int recv_index = comm_rank % num_process_secondary_grid;
@@ -714,7 +703,7 @@ void KFAC::send_recv_inverse_matrices(
 
   size_t offset = 0;
   //Copy data into buffer
-  if(comm->get_grid_type() == SECONDARY_GRID)
+  if(comm->get_grid_type() == GridType::SECONDARY_GRID)
   {
     for(auto& block : context.m_blocks) {
       offset = block->get_inverse_matrices(global_buffer_inverse, offset);
@@ -731,10 +720,9 @@ void KFAC::send_recv_inverse_matrices(
   int num_process_secondary_grid = (int)secondary_grid_ranks.size();
 
   const El::mpi::Comm & combined_comm = comm->get_combined_grid_comm();
-  const El::mpi::Comm & trainer_comm = comm->get_KFAC_comm();
 
 
-  if(comm->get_grid_type() == SECONDARY_GRID)
+  if(comm->get_grid_type() == GridType::SECONDARY_GRID)
   {
     int num_sends = (int)std::ceil((float)num_process_primary_grid/(float)num_process_secondary_grid);
 
@@ -757,7 +745,7 @@ void KFAC::send_recv_inverse_matrices(
 
 
   }
-  if(comm->get_grid_type() == PRIMARY_GRID)
+  if(comm->get_grid_type() == GridType::PRIMARY_GRID)
   {
     El::SyncInfo<Device> sync_info =El::SyncInfoFromMatrix(global_buffer_inverse);
     int recv_index = comm_rank % num_process_secondary_grid;
@@ -771,7 +759,7 @@ void KFAC::send_recv_inverse_matrices(
 
     // Copy blocks from the buffer.
     {
-      size_t offset = 0;
+      offset = 0;
       for(auto& block : context.m_blocks) {
         offset = block->set_inverse_matrices(global_buffer_inverse, offset,comm);
       }
@@ -873,7 +861,7 @@ void KFAC::on_forward_prop_end(
     block->on_forward_prop_end(&comm);
 
   if(context.get_step()>1 and 
-    (comm.get_grid_type()==PRIMARY_GRID or comm.get_grid_type()==SECONDARY_GRID)){
+    (comm.get_grid_type()==GridType::PRIMARY_GRID or comm.get_grid_type()==GridType::SECONDARY_GRID)){
     send_recv_inverse_matrices(context, &comm);
     m_has_kronecker_inverse = true;
   }
@@ -931,7 +919,7 @@ void KFAC::on_backward_prop_end(
   }
 
 
-  if(comm.get_grid_type() == SECONDARY_GRID or comm.get_grid_type() == NO_GRID)
+  if(comm.get_grid_type() == GridType::SECONDARY_GRID or comm.get_grid_type() == GridType::NO_GRID)
   {
   prof_region_begin("kfac-step", prof_color, prof_sync);
 
@@ -1065,14 +1053,14 @@ void KFAC::on_backward_prop_end(
     // m_has_kronecker_inverse = true;
   }
 
-  if(comm.get_grid_type() == SECONDARY_GRID or comm.get_grid_type() == PRIMARY_GRID)
+  if(comm.get_grid_type() == GridType::SECONDARY_GRID or comm.get_grid_type() == GridType::PRIMARY_GRID)
   {
     // send_recv_inverse_matrices(
     //     context,
     //     model.get_comm());
   }
 
-  if(comm.get_KFAC_subgrid_create_two_models() or comm.get_grid_type() == PRIMARY_GRID or comm.get_grid_type() == NO_GRID){
+  if(comm.get_KFAC_subgrid_create_two_models() or comm.get_grid_type() == GridType::PRIMARY_GRID or comm.get_grid_type() == GridType::NO_GRID){
     if(m_has_kronecker_inverse==true)
     {
       for(auto& block : context.m_blocks)

@@ -162,8 +162,6 @@ protected:
    *         `get_new_exection_context()`.
    */
   kfac::ExecutionContext* do_get_new_execution_context() const final;
-
-  void send_recv_kfac_inputs(model& model, lbann_comm *comm);
   
   void send_recv_inverse_matrices(
     ExeContextType& context,

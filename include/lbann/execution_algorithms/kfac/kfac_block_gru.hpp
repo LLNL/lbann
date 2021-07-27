@@ -183,7 +183,7 @@ class kfac_block_gru: public kfac_block<Device> {
   int get_inverse_matrices_size(lbann_comm *comm) override;
 
   int set_inverse_matrices(
-      El::Matrix<DataType, Device>& output,
+      El::Matrix<DataType, Device>& workspace,
       int offset,
       lbann_comm *comm) override;
 

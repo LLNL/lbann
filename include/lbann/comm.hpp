@@ -50,7 +50,7 @@ namespace lbann {
 #endif
 
 /** Grid types in sub-grid parallelism (2nd order) */
-enum GridType 
+enum class GridType 
 {   
   NO_GRID = 0, 
   PRIMARY_GRID = 1, 
@@ -178,7 +178,7 @@ public:
   void split_trainers(int procs_per_trainer=-1, int trainer_grid_height=-1);
 
   /** Split the commicator for the given trainer into primary and seconday*/
-  void split_trainer_grid(int num_process_primary_grid=0, int num_process_secondary_grid=0, bool create_two_models=false);
+  void split_trainer_grid(int num_process_primary_grid=0, bool create_two_models=false);
 
   /** Get trainer grid number (0: no primary/secondary grid, 1: part of primary grid, 2: part of secondary grid). */
   inline GridType get_grid_type() const noexcept { return m_grid_type; }
@@ -900,15 +900,8 @@ public:
   /** Return the communicator for this node. */
   const El::mpi::Comm& get_node_comm() const noexcept { return m_node_comm; }
 
-  /** Return the communicator for this node. */
-  const El::mpi::Comm& get_KFAC_comm() const noexcept {
-    if(m_create_two_models or m_grid_type==PRIMARY_GRID or true){
-      return m_trainer_comm;
-    }
-    else{
-      return m_secondary_grid_comm;
-     }
-  }
+  /** Return the communicator for this grid in sub-grid parallelism. */
+  const El::mpi::Comm& get_KFAC_comm() const noexcept { return m_trainer_comm;  }
 
   /** Return the ranks of primary grid in the trainer */
   std::vector<int> get_primary_grid_ranks(){ return m_primary_grid_ranks; }
@@ -980,7 +973,7 @@ private:
   int m_threads_per_proc;
 
   /** Grid typer for current process when sub-grid parallelism is enabled */
-  GridType m_grid_type = NO_GRID;
+  GridType m_grid_type = GridType::NO_GRID;
 
   bool m_create_two_models=false;
 

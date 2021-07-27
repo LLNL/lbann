@@ -140,7 +140,6 @@ void lbann_comm::split_trainers(
 
 void lbann_comm::split_trainer_grid(
   int num_process_primary_grid,
-  int num_process_secondary_grid,
   bool create_two_models)
 {
   const int world_size = El::mpi::Size(m_trainer_comm.GetMPIComm());
@@ -152,40 +151,31 @@ void lbann_comm::split_trainer_grid(
   num_process_primary_grid = world_size/2; 
   }
 
-  // Check if parameters are valid
-  if (num_process_primary_grid +  num_process_secondary_grid > world_size) {
-    LBANN_ERROR(
-      "Not enough processes to split the trainer; procs_per_trainer: ",
-      world_size,
-      " is smaller than sum of num processes for primary grid: ",
-      num_process_primary_grid,
-      " and secondary grid: ",
-      num_process_secondary_grid);
-  }
+  
   if (num_process_primary_grid == 0) {
     LBANN_ERROR("Procs for primary grid in a trainer cannot be zero.");
   }
 
-  if(num_process_secondary_grid == 0 and (num_process_primary_grid == world_size)){
+  if(num_process_primary_grid == world_size){
     return ;
   }
 
-  if(num_process_secondary_grid==0){
-    num_process_secondary_grid = world_size - num_process_primary_grid;
-  }
+  
+  int num_process_secondary_grid = world_size - num_process_primary_grid;
+  
 
   int rank_in_split_comm;
   if(m_rank_in_trainer < num_process_primary_grid){
     // color = 0;
     rank_in_split_comm = m_rank_in_trainer % num_process_primary_grid;
-    m_grid_type = PRIMARY_GRID;
+    m_grid_type = GridType::PRIMARY_GRID;
     m_rank_in_trainer = rank_in_split_comm;
     m_procs_per_trainer = num_process_primary_grid;
   }
   else{
     // color = 1;
     rank_in_split_comm = (m_rank_in_trainer - num_process_primary_grid) % num_process_secondary_grid;
-    m_grid_type = SECONDARY_GRID;
+    m_grid_type = GridType::SECONDARY_GRID;
     m_rank_in_trainer = rank_in_split_comm;
     m_procs_per_trainer = num_process_secondary_grid;
   }
@@ -223,7 +213,7 @@ void lbann_comm::split_trainer_grid(
 
   El::mpi::Dup(m_trainer_comm, m_combined_grid_comm);
   if(m_create_two_models){
-    if(m_grid_type==PRIMARY_GRID){
+    if(m_grid_type==GridType::PRIMARY_GRID){
       El::mpi::Dup(m_primary_grid_comm, m_trainer_comm);
     }
     else{
@@ -234,7 +224,7 @@ void lbann_comm::split_trainer_grid(
       m_trainer_comm.GetMPIComm(), 1);
   }
   else{
-    if(m_grid_type==PRIMARY_GRID){
+    if(m_grid_type==GridType::PRIMARY_GRID){
       El::mpi::Dup(m_primary_grid_comm, m_trainer_comm);
     }
     else{

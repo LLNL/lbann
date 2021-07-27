@@ -91,7 +91,7 @@ void kfac_block_gru<El::Device::GPU>::send_recv_reserve_space(lbann_comm *comm){
 
     El::SyncInfo<El::Device::CPU> sync_info =El::SyncInfoFromMatrix(reserve_size);
 
-    if(comm->get_grid_type() == PRIMARY_GRID){
+    if(comm->get_grid_type() == GridType::PRIMARY_GRID){
       const auto& reserve_space = get_gru_layer()->get_reserve_space();
       reserve_size(0,0)= reserve_space.size();
       int num_sends = (int)std::ceil((float)num_process_secondary_grid/(float)num_process_primary_grid);
@@ -108,7 +108,7 @@ void kfac_block_gru<El::Device::GPU>::send_recv_reserve_space(lbann_comm *comm){
       }
     }
 
-    if(comm->get_grid_type() == SECONDARY_GRID)
+    if(comm->get_grid_type() == GridType::SECONDARY_GRID)
     {
       int recv_index = comm_rank % num_process_primary_grid;
       ::El::mpi::Recv(
@@ -124,7 +124,7 @@ void kfac_block_gru<El::Device::GPU>::send_recv_reserve_space(lbann_comm *comm){
   const auto& sync_info = this->get_sync_info();
 
   //Send reserve space to secondary  grid
-  if(comm->get_grid_type() == PRIMARY_GRID)
+  if(comm->get_grid_type() == GridType::PRIMARY_GRID)
   {
     const auto& reserve_space = get_gru_layer()->get_reserve_space();
 
@@ -144,7 +144,7 @@ void kfac_block_gru<El::Device::GPU>::send_recv_reserve_space(lbann_comm *comm){
     }
 
   }
-  if(comm->get_grid_type() == SECONDARY_GRID)
+  if(comm->get_grid_type() == GridType::SECONDARY_GRID)
   {
     m_reserve_space_fwd.allocate(m_reserve_space_fwd_size);
     int recv_index = comm_rank % num_process_primary_grid;
@@ -166,7 +166,7 @@ void kfac_block_gru<El::Device::CPU>::on_forward_prop_end(lbann_comm *comm) {
 template <>
 void kfac_block_gru<El::Device::GPU>::on_forward_prop_end(lbann_comm *comm) {
 
-  if(comm->get_grid_type()==NO_GRID)
+  if(comm->get_grid_type()==GridType::NO_GRID)
   {
     const auto& reserve_space = get_gru_layer()->get_reserve_space();
     if(m_reserve_space_fwd.size() != reserve_space.size())
@@ -652,7 +652,7 @@ int kfac_block_gru<Device>::get_inverse_matrices(El::Matrix<DataType, Device>& o
 }
 
 template <El::Device Device>
-int kfac_block_gru<Device>::set_inverse_matrices(El::Matrix<DataType, Device>& output, 
+int kfac_block_gru<Device>::set_inverse_matrices(El::Matrix<DataType, Device>& workspace, 
                           int offset,
                           lbann_comm *comm)
 {
@@ -671,7 +671,7 @@ int kfac_block_gru<Device>::set_inverse_matrices(El::Matrix<DataType, Device>& o
 
     El::copy::util::InterleaveMatrix(
                                 size_inv, 1,
-                                output.LockedBuffer(offset,0), 1, size_inv,
+                                workspace.LockedBuffer(offset,0), 1, size_inv,
                                 m_kronecker_inverse_G[matrix_type].Buffer(),
                                 1, size_inv,
                                 sync_info);
@@ -685,7 +685,7 @@ int kfac_block_gru<Device>::set_inverse_matrices(El::Matrix<DataType, Device>& o
       m_kronecker_inverse_A_h.Resize(hidden_size, hidden_size);
     El::copy::util::InterleaveMatrix(
                                 size_inv, 1,
-                                output.LockedBuffer(offset,0), 1, size_inv,
+                                workspace.LockedBuffer(offset,0), 1, size_inv,
                                 m_kronecker_inverse_A_h.Buffer(),
                                 1, size_inv,
                                 sync_info);
@@ -699,7 +699,7 @@ int kfac_block_gru<Device>::set_inverse_matrices(El::Matrix<DataType, Device>& o
       m_kronecker_inverse_A_x.Resize(input_size, input_size);
     El::copy::util::InterleaveMatrix(
                                 size_inv, 1,
-                                output.LockedBuffer(offset,0), 1, size_inv,
+                                workspace.LockedBuffer(offset,0), 1, size_inv,
                                 m_kronecker_inverse_A_x.Buffer(),
                                 1, size_inv,
                                 sync_info);
@@ -1096,7 +1096,7 @@ void kfac_block_gru<Device>::send_recv_weights(lbann_comm *comm){
 
   size_t offset = 0;
   //copy weights to global buffers
-  if(comm->get_grid_type() == PRIMARY_GRID)
+  if(comm->get_grid_type() == GridType::PRIMARY_GRID)
   {
     for(int i=0; i<4; ++i) 
     {
@@ -1118,7 +1118,7 @@ void kfac_block_gru<Device>::send_recv_weights(lbann_comm *comm){
   }
 
 
-  if(comm->get_grid_type() == PRIMARY_GRID)
+  if(comm->get_grid_type() == GridType::PRIMARY_GRID)
   {
     int num_sends = (int)std::ceil((float)num_process_secondary_grid/(float)num_process_primary_grid);
     for(int num_send = 0; num_send<num_sends; num_send++){
@@ -1134,7 +1134,7 @@ void kfac_block_gru<Device>::send_recv_weights(lbann_comm *comm){
     }
 
   }
-  if(comm->get_grid_type() == SECONDARY_GRID)
+  if(comm->get_grid_type() == GridType::SECONDARY_GRID)
   {
     int recv_index = comm_rank % num_process_primary_grid;
     ::El::mpi::Recv(
@@ -1147,7 +1147,7 @@ void kfac_block_gru<Device>::send_recv_weights(lbann_comm *comm){
 
   offset = 0;
   //copy weights from global buffers
-  if(comm->get_grid_type() == SECONDARY_GRID)
+  if(comm->get_grid_type() == GridType::SECONDARY_GRID)
   {
     for(int i=0; i<4; ++i) 
     {
@@ -1189,7 +1189,7 @@ void kfac_block_gru<Device>::initialize_activations_and_errors(
   const auto& local_outputs = dtl.get_activations();
   const auto& local_errors = dtl_child.get_error_signals();
 
-  if(comm->get_KFAC_subgrid_create_two_models() or comm->get_grid_type() == NO_GRID ){
+  if(comm->get_KFAC_subgrid_create_two_models() or comm->get_grid_type() == GridType::NO_GRID ){
     this->m_parent_local_activations.resize(num_local_activations);
     this->m_child_local_errors.resize(num_local_errors);
     this->m_weight_values.resize(num_weights);
@@ -1237,7 +1237,7 @@ void kfac_block_gru<Device>::initialize_activations_and_errors(
 
   
 
-  if(comm->get_grid_type() == NO_GRID ){
+  if(comm->get_grid_type() == GridType::NO_GRID ){
 
     for (auto& input : this->m_parent_local_activations) {
       if(dtl_parent.get_data_layout() == data_layout::DATA_PARALLEL)

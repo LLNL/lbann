@@ -156,12 +156,7 @@ class kfac_block_fc_conv: public kfac_block<Device> {
       lbann_comm* comm,
       int num_local_activations,
       int num_local_errors,
-      int num_weights) override;
-
-  void send_recv_block_inputs(
-      model& model,
-      lbann_comm* comm) override;
-  
+      int num_weights) override;  
 
   const std::vector<El::AbstractMatrix<DataType>*>
   get_preconditioned_grad_buffers() override;
@@ -178,7 +173,7 @@ class kfac_block_fc_conv: public kfac_block<Device> {
 
 
   int set_inverse_matrices(
-      El::Matrix<DataType, Device>& output,
+      El::Matrix<DataType, Device>& workspace,
       int offset,
       lbann_comm *comm) override;
 

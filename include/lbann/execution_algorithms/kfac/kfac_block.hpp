@@ -114,13 +114,6 @@ class kfac_block {
     LBANN_ERROR("this function should be called via a sub-class.");
   }
 
-  virtual void send_recv_block_inputs(
-      model& model,
-      lbann_comm* comm){
-    LBANN_ERROR("this function should be called via a sub-class.");
-  }
-
-
   /** @brief Get buffers of preconditioned parameter gradients. */
   virtual const std::vector<El::AbstractMatrix<DataType>*>
   get_preconditioned_grad_buffers() {
@@ -156,7 +149,7 @@ class kfac_block {
   /** @brief Copy inverse matrices from output buffer. */
   virtual int
   set_inverse_matrices(
-      El::Matrix<DataType, Device>& output,
+      El::Matrix<DataType, Device>& workspace,
       int offset,
       lbann_comm *comm) {
     LBANN_ERROR("this function should be called via a sub-class.");
