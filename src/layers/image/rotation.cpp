@@ -48,7 +48,7 @@ void rotation_layer<TensorDataType, Layout, Device>::fp_compute() {
   const auto& input_dims = this->get_input_dims(0);
   const El::Int num_dims = input_dims.size();
   const auto& num_samples = local_input.Width();
-  const El::Int num_channels = input_dims[0]
+  const El::Int num_channels = input_dims[0];
   const El::Int input_height = input_dims[1];
   const El::Int input_width = input_dims[2];
 
