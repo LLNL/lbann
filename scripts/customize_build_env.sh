@@ -93,7 +93,7 @@ set_center_specific_modules()
                 MODULE_CMD="module --force unload StdEnv; module load gcc/8.3.1 mvapich2/2.3 python/3.7.2"
                 ;;
             "zen" | "zen2") # Corona
-                MODULE_CMD="module --force unload StdEnv; module load clang/11.0.0 python/3.7.2 opt rocm/4.1.0 openmpi-gnu/4.0"
+                MODULE_CMD="module --force unload StdEnv; module load clang/11.0.0 python/3.7.2 opt rocm/4.2.0 openmpi-gnu/4.0"
                 ;;
             *)
                 echo "No pre-specified modules found for this system. Make sure to setup your own"
@@ -218,8 +218,8 @@ cat <<EOF  >> ${yaml}
     - compiler:
         spec: clang@amd
         paths:
-          cc: /opt/rocm-4.1.0/llvm/bin/clang
-          cxx: /opt/rocm-4.1.0/llvm/bin/clang++
+          cc: /opt/rocm-4.2.0/llvm/bin/clang
+          cxx: /opt/rocm-4.2.0/llvm/bin/clang++
           f77: /usr/bin/gfortran
           fc: /usr/bin/gfortran
         flags: {}
@@ -232,48 +232,48 @@ cat <<EOF  >> ${yaml}
     hip:
       buildable: False
       version:
-      - 4.1.0
+      - 4.2.0
       externals:
-      - spec: hip@4.1.0 arch=${spack_arch}
-        prefix: /opt/rocm-4.1.0/hip
+      - spec: hip@4.2.0 arch=${spack_arch}
+        prefix: /opt/rocm-4.2.0/hip
         extra_attributes:
           compilers:
-            c: /opt/rocm-4.1.0/llvm/bin/clang
-            c++: /opt/rocm-4.1.0/llvm/bin/clang++
-            hip: /opt/rocm-4.1.0/hip/bin/hipcc
+            c: /opt/rocm-4.2.0/llvm/bin/clang
+            c++: /opt/rocm-4.2.0/llvm/bin/clang++
+            hip: /opt/rocm-4.2.0/hip/bin/hipcc
     hipcub:
       buildable: False
       version:
-      - 4.1.0
+      - 4.2.0
       externals:
-      - spec: hipcub@4.1.0 arch=${spack_arch}
-        prefix: /opt/rocm-4.1.0/hipcub
+      - spec: hipcub@4.2.0 arch=${spack_arch}
+        prefix: /opt/rocm-4.2.0/hipcub
         extra_attributes:
           compilers:
-            c: /opt/rocm-4.1.0/llvm/bin/clang
-            c++: /opt/rocm-4.1.0/llvm/bin/clang++
+            c: /opt/rocm-4.2.0/llvm/bin/clang
+            c++: /opt/rocm-4.2.0/llvm/bin/clang++
     hsa-rocr-dev:
       buildable: False
       version:
-      - 4.1.0
+      - 4.2.0
       externals:
-      - spec: hsa-rocr-dev@4.1.0 arch=${spack_arch}
-        prefix: /opt/rocm-4.1.0
+      - spec: hsa-rocr-dev@4.2.0 arch=${spack_arch}
+        prefix: /opt/rocm-4.2.0
         extra_attributes:
           compilers:
-            c: /opt/rocm-4.1.0/llvm/bin/clang
-            c++: /opt/rocm-4.1.0/llvm/bin/clang++
+            c: /opt/rocm-4.2.0/llvm/bin/clang
+            c++: /opt/rocm-4.2.0/llvm/bin/clang++
     llvm-amdgpu:
       buildable: False
       version:
-      - 4.1.0
+      - 4.2.0
       externals:
-      - spec: llvm-amdgpu@4.1.0 arch=${spack_arch}
-        prefix: /opt/rocm-4.1.0/llvm
+      - spec: llvm-amdgpu@4.2.0 arch=${spack_arch}
+        prefix: /opt/rocm-4.2.0/llvm
         extra_attributes:
           compilers:
-            c: /opt/rocm-4.1.0/llvm/bin/clang
-            c++: /opt/rocm-4.1.0/llvm/bin/clang++
+            c: /opt/rocm-4.2.0/llvm/bin/clang
+            c++: /opt/rocm-4.2.0/llvm/bin/clang++
     rdma-core:
       buildable: False
       version:
