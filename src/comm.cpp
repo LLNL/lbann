@@ -142,16 +142,16 @@ void lbann_comm::split_trainer_grid(
   int num_process_primary_grid,
   bool create_two_models)
 {
-  const int world_size = El::mpi::Size(m_trainer_comm.GetMPIComm());
+  const int world_size = El::mpi::Size(m_trainer_comm);
   m_create_two_models = create_two_models;
 
   // If primary grid size is not given then split resources equally between
   // primary and secondary grid
   if (num_process_primary_grid == 0){
-  num_process_primary_grid = world_size/2; 
+  num_process_primary_grid = world_size/2;
   }
 
-  
+
   if (num_process_primary_grid == 0) {
     LBANN_ERROR("Procs for primary grid in a trainer cannot be zero.");
   }
@@ -160,9 +160,9 @@ void lbann_comm::split_trainer_grid(
     return ;
   }
 
-  
+
   int num_process_secondary_grid = world_size - num_process_primary_grid;
-  
+
 
   int rank_in_split_comm;
   if(m_rank_in_trainer < num_process_primary_grid){
@@ -184,8 +184,8 @@ void lbann_comm::split_trainer_grid(
   for (int rank = 0; rank < num_process_primary_grid; ++rank){
     m_primary_grid_ranks.push_back(rank);
   }
-  for (int rank = num_process_primary_grid; 
-        rank < num_process_primary_grid + num_process_secondary_grid; 
+  for (int rank = num_process_primary_grid;
+        rank < num_process_primary_grid + num_process_secondary_grid;
         ++rank){
     m_secondary_grid_ranks.push_back(rank);
   }
@@ -232,13 +232,13 @@ void lbann_comm::split_trainer_grid(
     }
     // Initialize Elemental grid for trainer
     m_grid = make_unique<El::Grid>(
-      m_combined_grid_comm.GetMPIComm(), 
-      primary_grid_group, 
+      m_combined_grid_comm.GetMPIComm(),
+      primary_grid_group,
       num_process_primary_grid, El::COLUMN_MAJOR);
 
     m_secondary_grid = make_unique<El::Grid>(
-      m_combined_grid_comm.GetMPIComm(), 
-      secondary_grid_group, 
+      m_combined_grid_comm.GetMPIComm(),
+      secondary_grid_group,
       num_process_secondary_grid, El::COLUMN_MAJOR);
   }
 
