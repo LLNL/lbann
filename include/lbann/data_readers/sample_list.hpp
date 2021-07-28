@@ -88,6 +88,7 @@ struct sample_list_header {
 template <typename sample_name_t>
 class sample_list {
  public:
+  using name_t = sample_name_t;
   /// The type for the index assigned to each sample file
   using sample_file_id_t = std::size_t;
   /** To describe a sample as the id of the file to which it belongs.

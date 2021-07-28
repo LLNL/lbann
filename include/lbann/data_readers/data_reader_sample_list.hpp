@@ -31,29 +31,19 @@
 #include "lbann/data_readers/data_reader.hpp"
 #include <conduit/conduit.hpp>
 
-#ifdef _USE_IO_HANDLE_
-#include "lbann/data_readers/sample_list_conduit_io_handle.hpp"
-#else
-#include "lbann/data_readers/sample_list_hdf5.hpp"
-#endif
-
 namespace lbann {
 
 /**
  * Base class for all readers that employ sample lists
  */
+template <typename SampleListT>
 class data_reader_sample_list : public generic_data_reader
 {
 public:
-  using sample_name_t = std::string;
-#ifdef _USE_IO_HANDLE_
-  using sample_list_t = sample_list_conduit_io_handle<sample_name_t>;
-#else
-  using sample_list_t = sample_list_hdf5<sample_name_t>;
-#endif
-  using sample_t = std::pair<sample_list_t::sample_file_id_t, sample_name_t>;
-  using sample_file_id_t = sample_list_t::sample_file_id_t;
-  using file_handle_t = sample_list_t::file_handle_t;
+  using sample_name_type = typename SampleListT::name_t;
+  using sample_file_id_type = typename SampleListT::sample_file_id_t;
+  using sample_type = std::pair<sample_file_id_type, sample_name_type>;
+  using file_handle_type = typename SampleListT::file_handle_t;
 
   data_reader_sample_list(bool shuffle = true);
   data_reader_sample_list(const data_reader_sample_list&);
@@ -67,9 +57,11 @@ public:
 
   std::string get_type() const override { return "data_reader_sample_list"; }
 
-  void open_file(size_t index_in,
-                 hid_t& file_handle_out,
-                 std::string& sample_name_out);
+  /** @brief Open the file and get the sample name for the given index.
+   *  @returns A pair containing the file handle and the name of the
+   *           sample.
+   */
+  std::pair<file_handle_type, sample_name_type> open_file(size_t index);
   void close_file(size_t index_in);
 
   /**
@@ -84,10 +76,10 @@ public:
    */
   void load() override;
 
-  sample_list_t& get_sample_list() { return m_sample_list; }
+  SampleListT& get_sample_list() { return m_sample_list; }
 
 protected:
-  sample_list_t m_sample_list;
+  SampleListT m_sample_list;
 
   void load_list_of_samples(const std::string sample_list_file);
 
