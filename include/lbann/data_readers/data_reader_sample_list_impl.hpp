@@ -37,22 +37,23 @@
 
 namespace lbann {
 
-template<typename sample_list_t>
-data_reader_sample_list<sample_list_t>::data_reader_sample_list(bool shuffle)
+template <typename SampleListT>
+data_reader_sample_list<SampleListT>::data_reader_sample_list(bool shuffle)
   : generic_data_reader(shuffle)
 {}
 
-template<typename sample_list_t>
-data_reader_sample_list<sample_list_t>::data_reader_sample_list(
+template <typename SampleListT>
+data_reader_sample_list<SampleListT>::data_reader_sample_list(
   const data_reader_sample_list& rhs)
   : generic_data_reader(rhs)
 {
   copy_members(rhs);
 }
 
-template<typename sample_list_t>
-data_reader_sample_list<sample_list_t>&
-data_reader_sample_list<sample_list_t>::operator=(const data_reader_sample_list<sample_list_t>& rhs)
+template <typename SampleListT>
+data_reader_sample_list<SampleListT>&
+data_reader_sample_list<SampleListT>::operator=(
+  const data_reader_sample_list<SampleListT>& rhs)
 {
   // check for self-assignment
   if (this == &rhs) {
@@ -63,14 +64,15 @@ data_reader_sample_list<sample_list_t>::operator=(const data_reader_sample_list<
   return (*this);
 }
 
-template<typename sample_list_t>
-void data_reader_sample_list<sample_list_t>::copy_members(const data_reader_sample_list& rhs)
+template <typename SampleListT>
+void data_reader_sample_list<SampleListT>::copy_members(
+  const data_reader_sample_list& rhs)
 {
   m_sample_list.copy(rhs.m_sample_list);
 }
 
-template<typename sample_list_t>
-void data_reader_sample_list<sample_list_t>::shuffle_indices(rng_gen& gen)
+template <typename SampleListT>
+void data_reader_sample_list<SampleListT>::shuffle_indices(rng_gen& gen)
 {
   generic_data_reader::shuffle_indices(gen);
   m_sample_list.compute_epochs_file_usage(get_shuffled_indices(),
@@ -78,8 +80,8 @@ void data_reader_sample_list<sample_list_t>::shuffle_indices(rng_gen& gen)
                                           *m_comm);
 }
 
-template<typename sample_list_t>
-void data_reader_sample_list<sample_list_t>::load()
+template <typename SampleListT>
+void data_reader_sample_list<SampleListT>::load()
 {
   if (is_master()) {
     std::cout << "starting data_reader_sample_list::load()\n";
@@ -91,8 +93,8 @@ void data_reader_sample_list<sample_list_t>::load()
   load_list_of_samples(sample_list_file);
 }
 
-template<typename sample_list_t>
-void data_reader_sample_list<sample_list_t>::load_list_of_samples(
+template <typename SampleListT>
+void data_reader_sample_list<SampleListT>::load_list_of_samples(
   const std::string sample_list_file)
 {
   // load the sample list
@@ -143,15 +145,15 @@ void data_reader_sample_list<sample_list_t>::load_list_of_samples(
   generic_data_reader::set_file_dir(m_sample_list.get_samples_dirname());
 }
 
-template<typename sample_list_t>
-void data_reader_sample_list<sample_list_t>::load_list_of_samples_from_archive(
+template <typename SampleListT>
+void data_reader_sample_list<SampleListT>::load_list_of_samples_from_archive(
   const std::string& sample_list_archive)
 {
   // load the sample list
   double tm1 = get_time();
-  std::stringstream ss(sample_list_archive); // any stream can be used
+  std::istringstream iss(sample_list_archive); // any stream can be used
 
-  cereal::BinaryInputArchive iarchive(ss); // Create an input archive
+  cereal::BinaryInputArchive iarchive(iss); // Create an input archive
 
   iarchive(m_sample_list); // Read the data from the archive
   double tm2 = get_time();
@@ -162,14 +164,15 @@ void data_reader_sample_list<sample_list_t>::load_list_of_samples_from_archive(
   }
 }
 
-template<typename sample_list_t>
-void data_reader_sample_list<sample_list_t>::open_file(size_t index_in,
-                                        hid_t& file_handle_out,
-                                        std::string& sample_name_out)
+template <typename SampleListT>
+void data_reader_sample_list<SampleListT>::open_file(
+  size_t index_in,
+  file_handle_type& file_handle_out,
+  std::string& sample_name_out)
 {
-  const sample_t& s = m_sample_list[index_in];
+  const sample_type& s = m_sample_list[index_in];
   sample_name_out = s.second;
-  sample_file_id_t id = s.first;
+  sample_file_id_type id = s.first;
   m_sample_list.open_samples_file_handle(index_in);
   file_handle_out = m_sample_list.get_samples_file_handle(id);
   if (!m_sample_list.is_file_handle_valid(file_handle_out)) {
@@ -177,8 +180,8 @@ void data_reader_sample_list<sample_list_t>::open_file(size_t index_in,
   }
 }
 
-template<typename sample_list_t>
-void data_reader_sample_list<sample_list_t>::close_file(size_t index)
+template <typename SampleListT>
+void data_reader_sample_list<SampleListT>::close_file(size_t index)
 {
   m_sample_list.close_samples_file_handle(index);
 }

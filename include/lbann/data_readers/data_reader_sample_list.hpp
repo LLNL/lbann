@@ -36,14 +36,14 @@ namespace lbann {
 /**
  * Base class for all readers that employ sample lists
  */
-template<typename sample_list_t>
+template <typename SampleListT>
 class data_reader_sample_list : public generic_data_reader
 {
 public:
-  using sample_name_t = typename sample_list_t::name_t;
-  using sample_t = std::pair<typename sample_list_t::sample_file_id_t, sample_name_t>;
-  using sample_file_id_t = typename sample_list_t::sample_file_id_t;
-  using file_handle_t = typename sample_list_t::file_handle_t;
+  using sample_name_type = typename SampleListT::name_t;
+  using sample_file_id_type = typename SampleListT::sample_file_id_t;
+  using sample_type = std::pair<sample_file_id_type, sample_name_type>;
+  using file_handle_type = typename SampleListT::file_handle_t;
 
   data_reader_sample_list(bool shuffle = true);
   data_reader_sample_list(const data_reader_sample_list&);
@@ -58,7 +58,7 @@ public:
   std::string get_type() const override { return "data_reader_sample_list"; }
 
   void open_file(size_t index_in,
-                 hid_t& file_handle_out,
+                 file_handle_type& file_handle_out,
                  std::string& sample_name_out);
   void close_file(size_t index_in);
 
@@ -74,10 +74,10 @@ public:
    */
   void load() override;
 
-  sample_list_t& get_sample_list() { return m_sample_list; }
+  SampleListT& get_sample_list() { return m_sample_list; }
 
 protected:
-  sample_list_t m_sample_list;
+  SampleListT m_sample_list;
 
   void load_list_of_samples(const std::string sample_list_file);
 
