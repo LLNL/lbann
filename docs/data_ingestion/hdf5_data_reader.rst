@@ -1,3 +1,5 @@
+.. _sec:hdf5_data_reader:
+
 ================
 HDF5 Data Reader
 ================
@@ -99,7 +101,7 @@ Prior to discussing metadata further, here is an example *experiment_schema*.
 As stated above, this schema specifies the data fields to be used in
 an experiment. Algorithmically, the data fields are determined thusly:
 a tree traversal is conducted on the *experiment_schema*. If a leaf in
-the experiment_schema is an internal node int the *data_schema*, then
+the experiment_schema is an internal node in the *data_schema*, then
 the traversal is "continued" at that point in the *data_schema* (of
 course, bringing metadata nodes along).
 
@@ -137,9 +139,10 @@ keys in the metadata nodes, which we group as follows.
    be one of datum, label, response.  The *ordering* directives(below)
    determine the order in which concatanation occurs. All data fields
    in a packing group must be of the same primitive datatype. If not,
-   ensure that they are *coerced* (below) REVIEWERS: SHOULD WE RELAX
-   THIS? Ie, specifying the type in one place, and let the coercion
-   happen automagically?
+   ensure that they are *coerced* (below)
+   # REVIEWERS: SHOULD WE RELAX
+   # THIS? Ie, specifying the type in one place, and let the coercion
+   # happen automagically?
 
 
 2. ordering - the *ordering* directive is a numeric field that
@@ -159,7 +162,7 @@ keys in the metadata nodes, which we group as follows.
 4. coercing - the *coerce* directive transforms data from its original
    type (i.e, as stored on media) to some other type, which is stored
    in memory and available upon request.  By example, if there's a
-   "phoo" data field on disk, of type float64_array, and the metadata
+   "foo" data field on disk, of type float64_array, and the metadata
    contains "coerce: float32", then the data will be converted to a
    float32_array. Note that a *coerce* directive's value refers to a
    primitive scalar type; all data fields are assumed to be scalars or
