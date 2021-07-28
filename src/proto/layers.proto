@@ -31,6 +31,7 @@ package lbann_data;
 import "google/protobuf/wrappers.proto";
 
 import "datatype.proto";
+import "operators.proto";
 
 // Lives here because it's used by both Convolution and
 // Deconvolution.
@@ -64,6 +65,9 @@ message Layer {
   oneof layer_type {
     // Input layers
     Input input = 2;
+
+    // Operator layers
+    OperatorLayer operator_layer = 701; // Name chosen to avoid collision
 
     // Transform layers
     Reshape reshape = 306;
@@ -170,7 +174,6 @@ message Layer {
     LogicalAnd logical_and = 466;
     LogicalOr logical_or = 467;
     LogicalXor logical_xor = 468;
-    Clamp clamp = 469;
     MatMul matmul = 470;
     DFTAbs dft_abs = 471;
 
@@ -214,6 +217,13 @@ message Layer {
     UniformHash uniform_hash = 610;
     RowwiseWeightsNorms rowwise_weights_norms = 611;
 
+  }
+
+  ///////////////////////
+  // Operator layers   //
+  ///////////////////////
+  message OperatorLayer {
+    repeated Operator ops = 1;
   }
 
   ///////////////////////
@@ -268,10 +278,6 @@ message Layer {
   message LogicalAnd {}
   message LogicalOr {}
   message LogicalXor {}
-  message Clamp {
-    double min = 1;
-    double max = 2;
-  }
   message DFTAbs {}
 
   /** @brief Matrix multiplication.

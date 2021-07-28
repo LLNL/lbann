@@ -30,6 +30,7 @@ Experiments & Applications:
  - Example for training Transformer model with D&SP and D&SP-cSub
 
 Internal features:
+ - Added operator class
 
 I/O & data readers:
  - Updated SMILES data reader to use sample lists
