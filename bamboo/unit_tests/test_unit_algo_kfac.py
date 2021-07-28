@@ -196,9 +196,9 @@ def construct_model(lbann):
         conv_pads=tools.str_list(pads),
         conv_dilations=tools.str_list(dilations),
         has_bias=False)
-    y = lbann.BatchNormalization(
-        y,
-        weights=create_bn_weights("bn1", kernel_dims[0]))
+    # y = lbann.BatchNormalization(
+    #     y,
+    #     weights=create_bn_weights("bn1", kernel_dims[0]))
     y = lbann.Relu(y)
     y = lbann.FullyConnected(
         y,
@@ -206,9 +206,9 @@ def construct_model(lbann):
         data_layout='data_parallel',
         num_neurons=_output_size,
         has_bias=False)
-    y = lbann.BatchNormalization(
-        y,
-        weights=create_bn_weights("bn2", _output_size))
+    # y = lbann.BatchNormalization(
+    #     y,
+    #     weights=create_bn_weights("bn2", _output_size))
     y = lbann.Relu(y)
     y = lbann.FullyConnected(
         y,
@@ -216,9 +216,9 @@ def construct_model(lbann):
         data_layout='data_parallel',
         num_neurons=_output_size,
         has_bias=True)
-    y = lbann.BatchNormalization(
-        y,
-        weights=create_bn_weights("bn3", _output_size))
+    # y = lbann.BatchNormalization(
+    #     y,
+    #     weights=create_bn_weights("bn3", _output_size))
     y = lbann.Relu(y)
     y = lbann.FullyConnected(
         y,
