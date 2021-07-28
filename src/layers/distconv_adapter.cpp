@@ -218,18 +218,41 @@ void distconv_adapter::adjust_parallel_strategy() {
 
   const auto spatial_prod = d * h * w;
 
+  const auto layer_type = layer().get_type();
+
   // if only one process is used, do not parallelize
   if (np == 1) {
     n = c = f = h = w = d = 1;
   }
 
-  if (c != f) {
-    LBANN_ERROR("The numbers of channel and filter decomposition should be the same.");
+  
+  if (layer_type == "convolution" || layer_type == "deconvolution"){
+    if (c != f) {
+      LBANN_ERROR("The numbers of channel and filter decomposition should be the same.");
+    }
+
+    if (c != 1 || f != 1) {
+      LBANN_ERROR("Distconv does not support filter parallelization yet. Layer: ",
+                  get_name(), ", parallel strategy: ", ps);
+    }
   }
-  if (c != 1 || f != 1) {
-    LBANN_ERROR("Distconv does not support channel/filter parallelization yet. Layer: ",
-                get_name(), ", parallel strategy: ", ps);
+
+  else if (layer_type == "channel-wise fully-connected"){
+    if (c != f){
+      if (layer().get_comm()->am_trainer_master()) {
+        LBANN_WARNING("The number of channel and filter decomposition should be the same. Setting",
+        " the filter decomposition to channel decomposition: ", c);
+      }
+      ps.filter_groups = c;
+      f = c;
+    }
+
+    if (spatial_prod != 1){
+      LBANN_ERROR("Distributed channel-wise fully-connected layer does not support spatial (column-wise) ",
+        "parallelization: ", get_name(), ", parallel strategy: ", ps);
+    } 
   }
+
   if (n * c * spatial_prod > np) {
     LBANN_ERROR("The number of MPI ranks must be at least as large as the number of processes implied by parallel strategy: ",
                 ps);

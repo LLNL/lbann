@@ -71,9 +71,6 @@ void write_smiles_data_to_file(const std::string smi, const std::string output_f
 
 void test_fetch(lbann::generic_data_reader* reader);
 
-// number of sequences in each input sequence file
-const int Num_seqs_per_file = 5;
-
 bool directory_exists(std::string s);
 
 TEST_CASE("functional black-box", "[.filesystem][data reader][mpi][smiles]")

@@ -57,7 +57,7 @@ Options:
   ${C}--help${N}                     Display this help message and exit.
   ${C}--clean-build${N}              Delete the local link to the build directory
   ${C}--clean-deps${N}               Forcibly uninstall Hydrogen, Aluminum, and DiHydrogen dependencies
-  ${C}--confgigure-only${N}          Stop after adding all packages to the environment
+  ${C}--configure-only${N}           Stop after adding all packages to the environment
   ${C}-d | --define-env${N}          Define (create) a Spack environment, including the lbann dependencies, for building LBANN from local source
   ${C}--dry-run${N}                  Dry run the commands (no effect)
   ${C}-e | --extras <PATH>${N}       Add other packages from file at PATH to the Spack environment in addition to LBANN
@@ -414,7 +414,7 @@ function exit_with_instructions()
     echo "##########################################################################################" | tee -a ${LOG}
     echo "LBANN is being installed in a spack environment named ${LBANN_ENV}, access it via:" | tee -a ${LOG}
     echo "  spack env activate -p ${LBANN_ENV}" | tee -a ${LOG}
-    echo "To finish installing  LBANN and it's dependencies (requires active environment):" | tee -a ${LOG}
+    echo "To finish installing LBANN and its dependencies (requires active environment):" | tee -a ${LOG}
     echo "  spack install" | tee -a ${LOG}
     echo "Once the initial installation is complete, to rebuild LBANN from source drop into a shell with the spack build environment setup (requires active environment):" | tee -a ${LOG}
     echo "  spack build-env lbann -- bash" | tee -a ${LOG}

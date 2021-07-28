@@ -104,6 +104,7 @@ struct request
   mpi_req_type mpi_req = mpi_null_req;
   nccl_req_type nccl_req = nccl_null_req;
   mpicuda_req_type mpicuda_req = mpicuda_null_req;
+  MPI_Request raw_mpi_req = MPI_REQUEST_NULL;
 };
 } // namespace Al
 
@@ -875,6 +876,11 @@ public:
   {
     return is_sendable(dist_mat.LockedMatrix());
   }
+
+  /** Developer's note: to get the raw MPI communicator, which may be needed
+   *  when working with external libraries, by example:
+   *     comm->get_intertrainer_comm().GetMPIComm()
+   */
 
   /** Return the intertrainer communicator. */
   const El::mpi::Comm& get_intertrainer_comm() const noexcept

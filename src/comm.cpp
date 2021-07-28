@@ -325,13 +325,25 @@ void allreduce_impl(El::Matrix<T, D>& m,
   return El::AllReduce(m, c, op);
 }
 
-template <typename T, El::Device D>
-void nb_allreduce_impl(El::Matrix<T, D>& m,
+template <typename T>
+void nb_allreduce_impl(El::Matrix<T, El::Device::CPU>& m,
                        const El::mpi::Comm& c,
-                       Al::request&,
+                       Al::request& req,
                        El::mpi::Op const& op)
 {
-  return El::AllReduce(m, c, op);
+  if (m.Height() == m.LDim() || m.Width() == 1) {
+    auto const count = m.Height() * m.Width();
+    MPI_Iallreduce(MPI_IN_PLACE,
+                   m.Buffer(),
+                   count,
+                   El::mpi::TypeMap<T>(),
+                   op.op,
+                   c.GetMPIComm(),
+                   &(req.raw_mpi_req));
+  }
+  else {
+    return El::AllReduce(m, c, op);
+  }
 }
 
 #if defined(LBANN_HAS_GPU) && defined(LBANN_HAS_ALUMINUM)
@@ -558,6 +570,9 @@ void lbann_comm::wait(Al::request& req) const
   }
 #endif // AL_HAS_MPI_CUDA
 #endif // LBANN_HAS_ALUMINUM
+  if (req.raw_mpi_req != MPI_REQUEST_NULL) {
+    MPI_Wait(&(req.raw_mpi_req), MPI_STATUS_IGNORE);;
+  }
 }
 
 bool lbann_comm::test(Al::request& req) const
@@ -578,6 +593,11 @@ bool lbann_comm::test(Al::request& req) const
   }
 #endif // AL_HAS_MPI_CUDA
 #endif // LBANN_HAS_ALUMINUM
+  if (req.raw_mpi_req != MPI_REQUEST_NULL) {
+    int flag = 0;
+    MPI_Test(&(req.raw_mpi_req), &flag, MPI_STATUS_IGNORE);
+    req_test = flag;
+  }
   return req_test;
 }
 

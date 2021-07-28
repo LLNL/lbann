@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/execution_algorithms/sgd_training_algorithm.hpp"
+
 #include "lbann/base.hpp"
 #include "lbann/callbacks/callback.hpp"
 #include "lbann/execution_contexts/sgd_execution_context.hpp"
@@ -35,13 +36,16 @@
 
 #include <cstddef>
 #include <limits>
+#include <unordered_map>
 
 namespace lbann {
 
 sgd_training_algorithm::sgd_training_algorithm(
   sgd_training_algorithm const& other)
   : BaseType(other.get_name()),
-    m_stopping_criteria{other.m_stopping_criteria->clone()}
+    m_stopping_criteria{other.m_stopping_criteria->clone()},
+    m_validation_context{execution_mode::validation, 1UL},
+    m_validation_epochs{1UL}
 {}
 
 sgd_training_algorithm&
@@ -49,6 +53,8 @@ sgd_training_algorithm::operator=(sgd_training_algorithm const& other)
 {
   BaseType::operator=(other);
   m_stopping_criteria = other.m_stopping_criteria->clone();
+  m_validation_context = sgd_execution_context{execution_mode::validation, 1UL};
+  m_validation_epochs = 1UL;
   return *this;
 }
 
@@ -83,6 +89,13 @@ void sgd_training_algorithm::train(sgd_execution_context& c,
                                    data_coordinator& dc,
                                    sgd_termination_criteria const& term)
 {
+  auto& evaluation_context = m_validation_context;
+  auto& num_validation_epochs = m_validation_epochs;
+  evaluation_context.set_current_mini_batch_size(
+    dc.get_mini_batch_size(execution_mode::validation));
+  evaluation_context.set_effective_mini_batch_size(
+    dc.get_mini_batch_size(execution_mode::validation));
+
   // Initialize some state so it knows we're training now.
   c.set_execution_mode(execution_mode::training);
   model.reset_mode(c, execution_mode::training);
@@ -120,21 +133,12 @@ void sgd_training_algorithm::train(sgd_execution_context& c,
       // "evaluation policy" or something of that nature, ideally with
       // its own context that we needn't know about.
       if (dc.is_execution_mode_valid(execution_mode::validation)) {
-        sgd_execution_context evaluation_context(
-          execution_mode::validation,
-          dc.get_mini_batch_size(execution_mode::validation));
-        // FIXME (trb 05/05/2021): This hacks around a bad assumption
-        // in the data store.
-        size_t num_validation_epochs = 1UL;
-        if (c.get_epoch() > 1UL) {
-          evaluation_context.inc_epoch();
-          ++num_validation_epochs;
-        }
         evaluate(evaluation_context,
                  model,
                  dc,
                  execution_mode::validation,
                  epoch_termination_criteria(num_validation_epochs));
+        ++num_validation_epochs;
 
         // FIXME (trb 06/07/21): The early stopping callback is part
         // of the evaluation callbacks but it's meant to affect

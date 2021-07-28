@@ -631,6 +631,7 @@ def assert_failure(return_code, expected_error, error_file_name):
 def create_tests(setup_func,
                  test_file,
                  test_name_base=None,
+                 skip_clusters=[],
                  **kwargs):
     """Create functions that can interact with PyTest
 
@@ -684,6 +685,10 @@ def create_tests(setup_func,
 
         """
         test_name = '{}'.format(test_name_base)
+        if cluster in skip_clusters:
+            e = "test \"%s\" not supported on cluster \"%s\"" % (test_name, cluster)
+            print('Skip - ' + e)
+            pytest.skip(e)
 
         # Load LBANN Python frontend
         import lbann
