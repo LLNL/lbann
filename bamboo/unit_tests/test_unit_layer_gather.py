@@ -18,10 +18,10 @@ import tools
 # the functions below to ingest data.
 
 # Data
-num_rows = 5
-num_columns = 20
+num_rows = 11
+num_columns = 5
 input_size = num_rows * num_columns
-output_size = 15
+output_size = 7
 seed = 202101280
 
 # Sample access functions
@@ -127,7 +127,59 @@ def construct_model(lbann):
 
     ######################################################################
     #
-    #          2D Values , 1D Input 
+    #          2D Values , 1D Input, Axis = 0 
+    #
+    ######################################################################
+
+    x0 = lbann.Reshape(x0_lbann, dims=tools.str_list([num_rows, num_columns]))
+    
+    x1 = lbann.Identity(x1_lbann, name="indices_2D_axis_0")
+
+    y0 = lbann.Gather(x0,x1, name="Gather_2D_axis_0", axis=0)
+
+    y1 = lbann.Concatenation([
+        lbann.Constant(value=i+1, num_neurons='1')
+        for i in range(num_columns * output_size)])
+
+    y0 = lbann.Reshape(y0, dims=tools.str_list([num_columns * output_size]))
+    y1 = lbann.Reshape(y1, dims=tools.str_list([num_columns * output_size]))
+
+    y = lbann.Multiply(y0, y1)
+
+    z = lbann.L2Norm2(y)
+
+    objs.append(z)
+    metrics.append(lbann.Metric(z, name="2D_obj_axis_0"))
+
+    vals = []
+    for i in range(num_samples()):
+        sample = get_sample(i)
+        x0 = np.array(sample[:input_size]).reshape((num_rows, num_columns))
+        x1 = sample[input_size:input_size + output_size]
+
+        y0 = np.zeros((output_size, num_columns))
+
+        for i in range(output_size):
+            if 0 <= x1[i] <= num_rows:
+                for j in range(num_columns):
+                        y0[i][j] = x0[int(x1[i])][j]
+        z = 0
+        for i in range(num_columns * output_size):
+            z += ((i+1)*y0.flatten()[i])**2
+        vals.append(z)
+
+    val = np.mean(vals)
+    tol = 8 * val * np.finfo(np.float32).eps
+    callbacks.append(lbann.CallbackCheckMetric(
+        metric=metrics[-1].name,
+        lower_bound=val-tol,
+        upper_bound=val+tol,
+        error_on_failure=True,
+        execution_modes='test'))
+
+    ######################################################################
+    #
+    #          2D Values , 1D Input, Axis = 1 
     #
     ######################################################################
 
@@ -135,7 +187,7 @@ def construct_model(lbann):
     
     x1 = lbann.Identity(x1_lbann, name="Indices_2D")
 
-    y0 = lbann.Gather(x0,x1, name="Gather_2D")
+    y0 = lbann.Gather(x0,x1, name="Gather_2D", axis=1)
 
     y1 = lbann.Concatenation([
         lbann.Constant(value=i+1, num_neurons='1')
@@ -149,7 +201,7 @@ def construct_model(lbann):
     z = lbann.L2Norm2(y)
 
     objs.append(z)
-    metrics.append(lbann.Metric(z, name="2D_obj"))
+    metrics.append(lbann.Metric(z, name="2D_obj_axis_1"))
 
     vals = []
     for i in range(num_samples()):

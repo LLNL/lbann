@@ -560,13 +560,29 @@ message Layer {
   /** @brief Scatter values to specified tensor indices.
     *
     *  @f[
-    *    y[i,\text{ind}[i]] = x[i]
+    *    y[\text{ind}[i]] = x[i]
+    *  @f]
+    *
+    *  If 2D and Axis = 0
+    *  @f[
+    *    y[\text{ind}[i],j] = x[i,j]
+    *  @f]
+    *
+    *  If 2D and Axis = 1
+    *  @f[
+    *    y[i,\text{ind}[j]] = x[i,j]
     *  @f]
     *
     *  The first input tensor is the values and the second is the
-    *  indices. The two input tensors must have the same dimensions. If
+    *  indices. For the 1D case the inputs must have the same dimensions.
+    *  For the 2D case, the inputs must have either the same number of 
+    *  columns (axis=0) or the same number of rows (axis=1). If
     *  an index is out-of-range, it is ignored.
     *
+    *  @note: In the 2D case the output dimensions change depending on the 
+    *  axis. For an (m,n) values input, the output dims are expected to 
+    *  be (*,n) for Axis == 0 and (m,*) for Axis == 1. 
+    *   
     *  @todo Only flat tensors are currently supported. For higher-order
     *  tensors, PyTorch
     *  (https://pytorch.org/docs/master/tensors.html#torch.Tensor.scatter_)
@@ -577,6 +593,7 @@ message Layer {
   message Scatter {
     /// Output tensor dimensions
     string dims = 1;
+    google.protobuf.UInt64Value axis = 2;
   }
 
   /** @brief Gather values from specified tensor indices.
@@ -585,20 +602,31 @@ message Layer {
     *    y[i] = x[\text{ind}[i]]
     *  @f]
     *
+    *  If 2D and Axis = 0
+    *  @f[
+    *    y[i,j] = x[\text{ind}[i],j]
+    *  @f]
+    *
+    *  If 2D and Axis = 1
+    *  @f[
+    *    y[i,j] = x[i,\text{ind}[j]]
+    *  @f]
+    *
     *  The first input tensor is the values and the second is the
     *  indices. The two input tensors must have the same number of
     *  dimensions, and the output tensor will have the same dimensions as
     *  the index tensor. If an index is out-of-range, the corresponding
     *  output is set to zero.
     *
-    *  @todo Only flat tensors are currently supported. For higher-order
-    *  tensors, PyTorch
-    *  (https://pytorch.org/docs/stable/generated/torch.gather.html) and
-    *  TensorFlow
-    *  (https://www.tensorflow.org/api_docs/python/tf/gather_nd) will
-    *  gather along a specified dimension.
+    *  @note: In the 2D case, the output dimension changes according 
+    *  to the axis. For an (m,n) values input, and a (k) indices input, 
+    *  the output tensor will be (k,n) for Axis == 0 and (m, k) for
+    *  Axis == 1  
     */
-  message Gather {}
+  message Gather {
+
+    google.protobuf.UInt64Value axis = 1;
+  }
 
   /** @brief Sum of tensor entries along batch dimension
     *
