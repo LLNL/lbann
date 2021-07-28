@@ -33,7 +33,8 @@ template <typename ArchiveT>
 void scatter_layer<TensorDataType,Layout,Device>::serialize(ArchiveT& ar) {
   using DataTypeLayer = data_type_layer<TensorDataType>;
   ar(::cereal::make_nvp("DataTypeLayer",
-                        ::cereal::base_class<DataTypeLayer>(this)));
+                        ::cereal::base_class<DataTypeLayer>(this)),
+    CEREAL_NVP(m_scatter_axis));
 }
 
 } // namespace lbann

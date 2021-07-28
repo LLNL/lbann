@@ -32,6 +32,7 @@
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/transforms/transform.hpp"
 #include "lbann/transforms/transform_pipeline.hpp"
+#include "lbann/operators/operator.hpp"
 
 #include <google/protobuf/message.h>
 
@@ -43,6 +44,7 @@ class Layer;
 class Model;
 class ObjectiveFunction;
 class Optimizer;
+class Operator;
 class Reader;
 class Transform;
 class Weights;
@@ -88,6 +90,11 @@ std::unique_ptr<Layer> construct_layer(
   int training_dr_linearized_data_size,
   int num_parallel_readers,
   const lbann_data::Layer& proto_layer);
+
+/** Construct an operator specified with prototext. */
+template <typename InputT, typename OutputT, El::Device D>
+auto construct_operator(const lbann_data::Operator& proto_operator)
+  -> std::unique_ptr<Operator<InputT, OutputT, D>>;
 
 /** Construct weights specified with prototext. */
 std::unique_ptr<weights> construct_weights(
