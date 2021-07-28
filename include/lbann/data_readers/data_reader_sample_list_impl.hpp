@@ -165,19 +165,14 @@ void data_reader_sample_list<SampleListT>::load_list_of_samples_from_archive(
 }
 
 template <typename SampleListT>
-void data_reader_sample_list<SampleListT>::open_file(
-  size_t index_in,
-  file_handle_type& file_handle_out,
-  std::string& sample_name_out)
+auto data_reader_sample_list<SampleListT>::open_file(size_t index)
+  -> std::pair<file_handle_type, sample_name_type>
 {
-  const sample_type& s = m_sample_list[index_in];
-  sample_name_out = s.second;
-  sample_file_id_type id = s.first;
-  m_sample_list.open_samples_file_handle(index_in);
-  file_handle_out = m_sample_list.get_samples_file_handle(id);
-  if (!m_sample_list.is_file_handle_valid(file_handle_out)) {
-    LBANN_ERROR("file handle is invalid");
-  }
+  auto [sample_id, sample_name] = m_sample_list[index];
+  m_sample_list.open_samples_file_handle(index);
+  auto file_handle_out = m_sample_list.get_samples_file_handle(sample_id);
+  LBANN_ASSERT(m_sample_list.is_file_handle_valid(file_handle_out));
+  return std::make_pair(file_handle_out, std::move(sample_name));
 }
 
 template <typename SampleListT>

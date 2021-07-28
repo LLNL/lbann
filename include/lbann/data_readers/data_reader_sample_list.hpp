@@ -57,9 +57,11 @@ public:
 
   std::string get_type() const override { return "data_reader_sample_list"; }
 
-  void open_file(size_t index_in,
-                 file_handle_type& file_handle_out,
-                 std::string& sample_name_out);
+  /** @brief Open the file and get the sample name for the given index.
+   *  @returns A pair containing the file handle and the name of the
+   *           sample.
+   */
+  std::pair<file_handle_type, sample_name_type> open_file(size_t index);
   void close_file(size_t index_in);
 
   /**
