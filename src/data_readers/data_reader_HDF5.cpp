@@ -27,6 +27,7 @@
 #include "conduit/conduit_relay_mpi.hpp"
 
 #include "lbann/data_readers/data_reader_HDF5.hpp"
+#include "lbann/data_readers/data_reader_sample_list_impl.hpp"
 #include "lbann/data_readers/sample_list_impl.hpp"
 #include "lbann/data_readers/sample_list_open_files_impl.hpp"
 #include "lbann/utils/timer.hpp"

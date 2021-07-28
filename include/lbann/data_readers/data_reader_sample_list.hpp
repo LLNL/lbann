@@ -31,29 +31,19 @@
 #include "lbann/data_readers/data_reader.hpp"
 #include <conduit/conduit.hpp>
 
-#ifdef _USE_IO_HANDLE_
-#include "lbann/data_readers/sample_list_conduit_io_handle.hpp"
-#else
-#include "lbann/data_readers/sample_list_hdf5.hpp"
-#endif
-
 namespace lbann {
 
 /**
  * Base class for all readers that employ sample lists
  */
+template<typename sample_list_t>
 class data_reader_sample_list : public generic_data_reader
 {
 public:
-  using sample_name_t = std::string;
-#ifdef _USE_IO_HANDLE_
-  using sample_list_t = sample_list_conduit_io_handle<sample_name_t>;
-#else
-  using sample_list_t = sample_list_hdf5<sample_name_t>;
-#endif
-  using sample_t = std::pair<sample_list_t::sample_file_id_t, sample_name_t>;
-  using sample_file_id_t = sample_list_t::sample_file_id_t;
-  using file_handle_t = sample_list_t::file_handle_t;
+  using sample_name_t = typename sample_list_t::name_t;
+  using sample_t = std::pair<typename sample_list_t::sample_file_id_t, sample_name_t>;
+  using sample_file_id_t = typename sample_list_t::sample_file_id_t;
+  using file_handle_t = typename sample_list_t::file_handle_t;
 
   data_reader_sample_list(bool shuffle = true);
   data_reader_sample_list(const data_reader_sample_list&);
