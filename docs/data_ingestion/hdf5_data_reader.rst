@@ -19,24 +19,25 @@ HDF5 Schema files
 -----------------------
 
 This section describes the two *Schemas* that users must supply to run
-LBANN with HDF5 data. A *Schema* is a yaml description of the hdf5
-data hierarchy, along with additional transformational information
-(e.g, normalization values).
+LBANN with HDF5 data. A *Schema* is a YAML description of the HDF5
+data hierarchy along with additional transformational information
+(e.g., normalization values).
 
-The *data_schema.yaml* file contains a description of the hdf5 data
+The *data_schema.yaml* file contains a description of the HDF5 data
 hierarchy as it exists on disk.  The *experiment_schema.yaml* file
 contains a specification of a subset of the data that is to be used in
 an experiment.  We refer to these as the the data fields.
 (*data_schema.yaml* and *experiment_schema.yaml* are stand-ins for the
 user's filenames of choice.)
 
-.. note:: it follows from above that the
-  *data_schema* need only
-  describe that portion of the data set that is of interest to a
-  common set of experiments. But, there is no penalty for supplying a
-  schema with excess information.
+.. note::
 
-An example *data_schema* follows.
+   It follows from above that the *data_schema.yaml* need only
+   describe that portion of the data set that is of interest to a
+   common set of experiments. But, there is no penalty for supplying a
+   schema with excess information.
+
+An example *data_schema.yaml* follows.
 
 .. code-block:: yaml
 
@@ -66,27 +67,29 @@ An example *data_schema* follows.
         img_3:
 
 
-The "metadata" nodes are not part of the hdf5 hierarchy, but are
+The ``metadata`` nodes are not part of the HDF5 hierarchy, but are
 optionally added by the user.  For brevity, we only show two metadata
 nodes. Metadata nodes:
 
-1. are optional
+* are optional,
+* contain transformational information supplied by the user (i.e., are
+  not part of the HDF5 hierarchy), and
+* are inherited from their parents.
 
-2. contain transformational information supplied by the user (i.e, are not part of the HDF5 hierarchy)
-
-3. are inherited from their parents
-
-Regarding the last point, internally, every regular node (node from
-the hdf5 hierarchy) contains a metadata node as a child. Where not
-explicitly stated in the schema, empty nodes are
-created. Algorithmically, a node inherits its parent's
+Regarding inheritance, every regular node (i.e., node from the HDF5
+hierarchy) internally contains a metadata node as a child. Where not
+explicitly stated in the schema, empty nodes are created. If a node
+does not provide a ``metadata`` node, it inherits its parent's
 metadata. However, if both contain the same field name, the child's
 value prevails. We'll call this the "trickle-down rule". Hence, in the
-above, the metadata *dims*, *channels*, and *scale* will be applied to
-all three images (e.g, "image" is "img_1's" parent, and the "metadata"
-node belongs to the parent (is the parent's child).
+above example, the metadata fields ``dims``, ``channels``, and
+``scale`` will be applied to all three images. Specifically, ``image``
+is ``img_1``'s parent. Since ``img_1`` does not have its own
+``metadata`` node, it will inherit the ``metadata`` node belonging to
+``image``.
 
-Prior to discussing metadata further, here is an example *experiment_schema*.
+Prior to discussing metadata further, here is an example
+*experiment_schema.yaml*.
 
 .. code-block:: yaml
 
@@ -101,13 +104,15 @@ Prior to discussing metadata further, here is an example *experiment_schema*.
      images:
 
 As stated above, this schema specifies the data fields to be used in
-an experiment. Algorithmically, the data fields are determined thusly:
-a tree traversal is conducted on the *experiment_schema*. If a leaf in
-the experiment_schema is an internal node in the *data_schema*, then
-the traversal is "continued" at that point in the *data_schema* (of
-course, bringing metadata nodes along).
+an experiment. The data fields are determined by the following
+algorithm.  A tree traversal is conducted on the
+*experiment_schema.yaml*. If a leaf in the *experiment_schema.yaml* is
+an internal node in the *data_schema.yaml*, then the traversal is
+"continued" at that point in the *data_schema.yaml* (of course,
+bringing metadata nodes along).
 
-The following data fields are thus available per the *experiment_schema*:
+In the above example, the following data fields are available per the
+*experiment_schema.yaml*:
 
 1. inputs: initial_modes, trans_u, trans_v
 2. outputs/scalars: MT/B4, MT/after
@@ -115,16 +120,16 @@ The following data fields are thus available per the *experiment_schema*:
 
 A point to note is that, because the user specified
 outputs/scalars/MT, we only "continue the traversal" for the MT child
-of the outputs/scalars node; i.e, we do not traverse the BWx, BT, or
+of the outputs/scalars node; i.e., we do not traverse the BWx, BT, or
 tMAXt child nodes.
 
 A primary design consideration of the two-schema plan was to enable
 users to easily alter the selection, ordering, and transformations of
-input data. In this regard, the *data_schema* will most likely be
-static, i.e, it's metadata contains directives that are unlikely to
-change from experiment to experiment; think: normalization values. The
-*experiment_schema* can be thought of as a more minimalist approach to
-specifying data fields and metadata. That said, users have
+input data. In this regard, the *data_schema.yaml* will most likely be
+static, as its metadata contains directives that are unlikely to
+change from experiment to experiment (e.g., normalization values). The
+*experiment_schema.yaml* can be thought of as a more minimalist
+approach to specifying data fields and metadata. That said, users have
 considerable latitude as to how and where they specify metadata; just
 bear in mind the trickle-down rule.  :numref:`transference`
 illustrates how metadata trickles down the sample's hierarchy.
@@ -148,47 +153,51 @@ Metadata Directives
 By *Metadata Directive*, or more simply *directive*, we refer to the
 keys in the metadata nodes, which we group as follows.
 
-1. packing - the *pack* directive requests the concatenation of
+#. Packing. The *pack* directive requests the concatenation of
    multiple data fields. The resulting(composite) field can be
    retrieved by a call that contains the directive's value, which must
    be one of datum, label, response.  The *ordering* directives(below)
    determine the order in which concatenation occurs. All data fields
    in a packing group must be of the same primitive data type. If not,
-   ensure that they are *coerced* (below)
+   ensure that they are *coerced* (below).
 
 
-2. ordering - the *ordering* directive is a numeric field that
+#. Ordering. The *ordering* directive is a numeric field that
    determines how data is packed. This directive lets the user
-   determine "the order in which things are stuffed into the tensor."
+   determine "the order in which things are stuffed into the tensor".
    The directive's values need be neither consecutive nor
-   unique. Advice: this optional field is perhaps best placed in the
-   *data_schema*, with desired over-rides in the
-   *experiment_schema*. Use widely spaced numbers in the *data_schema*
-   so you can easily over-ride (rearrange your data) in the
-   experiment_schema.
+   unique.
 
-3. normalization - we recognize the two numeric directives: *scale*
+   .. note::
+
+      Advice: this optional field is perhaps best placed in the
+      *data_schema.yaml*, with desired overrides in the
+      *experiment_schema.yaml*. Use widely spaced numbers in the
+      *data_schema.yaml* so it is easy to override (rearrange the
+      data) in the *experiment_schema.yaml*.
+
+#. Normalization. We recognize the two numeric directives: *scale*
    and *bias*, which have their usual meanings. The values should be
    scalars or, for images, etc, lists of scalars.
 
-4. coercing - the *coerce* directive transforms data from its original
-   type (i.e, as stored on media) to some other type, which is stored
+#. Coercing. The *coerce* directive transforms data from its original
+   type (i.e., as stored on media) to some other type, which is stored
    in memory and available upon request.  By example, if there's a
-   "foo" data field on disk, of type float64_array, and the metadata
-   contains "coerce: float32", then the data will be converted to a
-   float32_array. Note that a *coerce* directive's value refers to a
-   primitive scalar type; all data fields are assumed to be scalars or
-   arrays of scalars (arrays, aka: 1D tensors, vectors, lists,
-   etc). One effect of our example is a reduction in memory use,
-   though coercing in the other direction would have increased
-   memory. As mentioned above, coercion may be necessary in
-   conjunction with *pack* directives.
+   "foo" data field on disk, of type ``float64_array``, and the
+   metadata contains "coerce: float32", then the data will be
+   converted to a ``float32_array``. Note that a *coerce* directive's
+   value refers to a primitive scalar type; all data fields are
+   assumed to be scalars or 1D arrays of scalars. One effect of our
+   example is a reduction in memory use, though coercing in the other
+   direction would have increased memory. As mentioned above, coercion
+   may be necessary in conjunction with *pack* directives.
 
-5. images - in addition to the *scale* and *bias* directives, images
+#. Images. In addition to the *scale* and *bias* directives, images
    may contain *dims*, *channels*, and *hwc* directives. If the *hwc*
-   directive specifies the images will be converted from
-   height-width-channel encoding to some other format; at present, the
-   only transformational format we support is channel-height-width.
+   directive is specified the images will be converted from
+   height-width-channel encoding to some other format. At present, the
+   only transformational format we support is channel-height-width
+   ("chw").
 
 --------------
 Larger Example
@@ -196,7 +205,7 @@ Larger Example
 
 We conclude this section with a more fleshed-out example of the schemas.
 
-*data_schema*:
+*data_schema.yaml*:
 
 .. code-block:: yaml
 
@@ -257,7 +266,7 @@ We conclude this section with a more fleshed-out example of the schemas.
            metadata:
              ordering: 301
 
-*experiment_schema*:
+*experiment_schema.yaml*:
 
 .. code-block:: yaml
 
