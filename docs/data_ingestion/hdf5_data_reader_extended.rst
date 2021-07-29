@@ -12,6 +12,10 @@ you in constructing the following derived input files.
    See Section :ref:`Sample Lists<sec:sample-lists>` for details.
 
 .. code-block:: bash
+   :caption: Example of a inclusive sample list with 7 valid samples
+             from 3 files.  Note that 23 samples in the 3 files were
+             excluded.
+   :name: hdf5_inclusive_other
 
    CONDUIT_HDF5_INCLUSION
    7 23 3
@@ -20,47 +24,84 @@ you in constructing the following derived input files.
    file_2.h5 2 8 runid/005 runid/006
    file_3.h5 2 8 runid/000 runid/002
 
-.. figure:: sample-list.png
-     :align: center
+-  The **schema yaml** file(s) contain :ref:`schemas<sec:hdf5_schema>`
+   that are descriptions of your hdf5 data hierarchy, along with
+   additional metadata that describes such things as transformations
+   (e.g, normalization); which data fields should be used as inputs,
+   labels, or responses; etc.
 
-     Example of a small sample list
-
--  The **yaml** file(s) contain *schemas* that are descriptions of your
-   hdf5 data hierarchy, along with additional metadata that describes such
-   things as transformations (e.g, normalization); which data fields
-   should be used as inputs, labels, or responses; etc.
-
-   While the reader only requires a single **yaml** file,
+   While the reader only requires a single *Schema* file (e.g. :numref:`hdf5_schema`),
    as discussed in :ref:`Using multiple yaml files <sec:yaml-multiple>`,
    it may be useful to break this file in two.
 
-.. figure:: yaml.png
-     :align: center
 
-     Example *yaml* file
+.. code-block:: bash
+   :caption: Example *schema* file in yaml format.
+   :name: hdf5_schema
+
+   inputs:
+     image:
+       ordering: 100
+       channels: 2
+       dims: [300, 300]
+       scale: [1.2, 1.3]
+       bias: [-2, -3]
+       coerce: float
+   outputs:
+     X1:
+       ordering: 200
+     X2:
+       ordering: 300
 
 
 Sample IDs and samples: the hdf5 file
 =====================================
 
 With regard to the data hierarchy, we make a distinction between
-*samples* and *sample IDs*; see Figures `[fig:1]`_ and `[fig:2]`_. Each
-sample contains identical data fields, while each sample ID is unique.
-It is important to understand this distinction because (1) our script
-requires you to specify a sample ID as input, and (2) you were likely
-not thinking in these terms when producing your hdf5 file [2]_.
+*samples* and *sample IDs*; see :numref:`hdf5_hrrl_example_1` and
+:numref:`hdf5_jag_example_2`. Each sample contains identical data
+fields, while each sample ID is unique.  It is important to understand
+this distinction because (1) our script requires you to specify a
+sample ID as input, and (2) you were likely not thinking in these
+terms when producing your hdf5 file.
+
+.. figure:: hrrl_example_1.png
+     :align: center
+     :name: hdf5_hrrl_example_1
+
+     **HRRL example** - Screen shot from executing **hdfview
+     hrrl\_example\_1.hdf5**. Seven sample IDs are shown
+     (*RUN\_ID/000000000*, *RUN\_ID/000000001*, etc.), along with an
+     expansion of the first two samples.
+
+.. figure:: jag_example_2.png
+     :align: center
+     :name: hdf5_jag_example_2
+
+     **JAG example** - Screen shot from executing **hdfview
+     jag\_example\_2.hdf5**, with a partial expansion of the 5th sample.
+
+
 
 Running the script
 ==================
 
-The *generate_yaml* script (which generates both yaml and sample list
-files) takes as input (1) an hdf5 filename, and (2) a sample ID. For the
-example from Figure `[fig:1]`_ a command line could be:
+The *generate_schema_and_sample_list* script (which generates both schema and sample list
+files) takes as input (1) an hdf5 filename, and (2) a
+sample ID. :numref:`generate_schema` shows a set of example command
+line options:
 
-.. math:: \textrm{generate\_yaml example-1.h5 RUN\_ID/000000003}
+.. code-block:: bash
+   :caption: Example commands to generate schema and sample list from
+             data sample
+   :name: generate_schema
+
+   generate_schema_and_sample_list filelist_PROBIES.txt RUN_ID/000000000
+   generate_schema_and_sample_list filelist_carbon.txt e1/s100
+   generate_schema_and_sample_list filelist_jag.txt 0.0.96.7.0:1
 
 The choice of sample ID is arbitrary, i.e, you could use either
-*RUN_ID/000000003* or RUN_ID/000000042. The script generates the
+*RUN_ID/000000003* or *RUN_ID/000000042*. The script generates the
 following files:
 
 -  inclusion.sample_list
@@ -72,14 +113,15 @@ following files:
 Editing the yaml file
 ---------------------
 
-The metadata entries in the yaml file require editing prior to use [1]_.
-As mentioned above, the metadata entries (which are not part of the
-actual hdf5 data hierarchy) serve three purposes. First, they identify
-which data fields are to use in an experiment. Second, they specify
-transformations (i.e, normalization). Third, they specify the order in
-which the data is packed into tensors. As generated, metadata entries
-(except for the ordering fields) are commented out. You need to
-uncomment these and add values as appropriate.
+The metadata entries in the yaml file require editing prior to use
+:numref:`transference`.  As mentioned in :ref:`HDF5
+Schemas<sec:hdf5_schema>`, the metadata entries (which are not part of
+the actual hdf5 data hierarchy) serve three purposes. First, they
+identify which data fields are to use in an experiment. Second, they
+specify transformations (i.e, normalization). Third, they specify the
+order in which the data is packed into tensors. As generated, metadata
+entries (except for the ordering fields) are commented out. You need
+to uncomment these and add values as appropriate.
 
 The *pack* fields can take one of the following labels: datum (fields
 that are used to train your model); label; response. Uncommenting and
@@ -88,11 +130,11 @@ there are data fields that you do not wish to use, leave their *pack*
 fields commented out. Alternatively, you can erase such fields from the
 file.
 
-When lbann is executed, metadata entries are propagated from internal to
-leaf nodes. However, existing values are not overridden. Figure
-`[fig:transference]`_ illustrates this concept. This feature enables you
-to specify that multiple fields should be used for training your model
-by modifying a single *pack* field.
+When lbann is executed, metadata entries are propagated from internal
+to leaf nodes. However, existing values are not
+overridden. :numref:`transference` illustrates this concept. This
+feature enables you to specify that multiple fields should be used for
+training your model by modifying a single *pack* field.
 
 Data type coercion
 ------------------
@@ -102,89 +144,22 @@ writing, is *float*), then you should add **coerce: float** to the
 appropriate metadata fields. This will ensure that you data is properly
 cast to the desired type.
 
-.. _sec:yaml-multiple:
-
-Using multiple yaml files
--------------------------
-
-TODO
-
-.. _sec:sample-lists:
-
-..
-   Sample Lists
-   ============
-
-   Figure `[fig:sample-list]`_ contains a sample list example. Sample lists
-   are formatted as follows.The first line is either CONDUIT_HDF5_INCLUSION
-   or CONDUIT_HDF5_EXCLUSION. The second line contains: total number of
-   samples to use (included samples); total number of samples NOT used
-   (excluded samples); number of hdf5 files. The third line contains the
-   base directory, that is, the directory in which your hdf5 files are
-   located. This directory may contain subdirectories.
-
-   The remaining lines contain: an hdf5 pathname (hence a file's complete
-   pathname is the third line concatentated with this pathname); number of
-   samples to use (included samples); number of samples to exclude.
-   Remaining entries on the line a listing of the sample IDs to either
-   include or exclude, depending on whether the first line contains
-   CONDUIT_HDF5_INCLUSION or CONDUIT_HDF5_EXCLUSION.
-
-   If you are using all or a majority of the samples, it's best to use the
-   EXCLUSION version. The generated sample lists assume you are using all
-   samples in all files. Hence, the inclusion version contains all sample
-   IDs from all hdf5 file. If you are using all samples from your hdf5 file
-   you can use either generated list as is; else, you will need to edit to
-   indicate which samples to include or exclude.
 
 Relationships between hdf5, yaml, and sample list files
 =======================================================
 
-Figure `[fig:relationships]`_ illustrates the relationships between a
+:numref:`relationships` illustrates the relationships between a
 user's hdf5 files and the generated yaml and sample list files.
 
-.. figure:: example-1.png
-     :align: center
-
-     Example *yaml* file
-
-
-.. figure:: example-1.png
-     :align: center
-
-     Screen shot from executing \textbf{hdfview example\_1.hdf5}. Seven sample IDs are shown (RUN\_ID/000000000, RUN\_ID/000000001, etc.), along with an expansion of the first two samples.
-
-.. figure:: example-2.png
-     :align: center
-
-     Screen shot from executing \textbf{hdfview example\_2.hdf5}, with a partial expansion of the 5th sample.
-
-.. figure:: transference.png
-     :align: center
-
-     Metadata transference. Upper diagram: example yaml file. Neither the \textit{scalars} nor \textit{images} fields contain metadata entries. Additionally, none of the leaf nodes contain pack fields. Lower diagram: the functional yaml file, after it is massaged during lbann execution. Note that the \textit{pack} entry for \textit{field\_C} is not overridden.
 
 .. figure:: relationships.png
      :align: center
+     :name: relationships
 
-     This figure illustrates the relationships between a user's hdf5 files and the generated yaml and sample list files. The numbers on the second line of the sample list file are the total number of included samples, excluded samples, and hdf5 files. Assume each hdf5 file contains 10 samples. The metadata entries are not shown, because they are value-added, i.e, not part of the hdf5 data hierarchy.
-
-.. _`[fig:relationships]`: #fig:relationships
-.. _`[fig:transference]`: #fig:transference
-.. _`[fig:sample-list]`: #fig:sample-list
-
-.. _`[fig:sample-list]`: #fig:sample-list
-.. _`[fig:yaml]`: #fig:yaml
-.. _`[fig:1]`: #fig:1
-.. _`[fig:2]`: #fig:2
-
-
-
-.. |beginfigref| raw:: latex
-
-                     \begin{minipage}{\textwidth}
-
-
-.. |endfigref| raw:: latex
-
-                   \end{minipage}
+     This figure illustrates the relationships between a user's HDF5
+     files and the generated schema yaml and sample list files. The
+     numbers on the second line of the sample list file are the total
+     number of included samples, excluded samples, and HDF5
+     files. Assume each HDF5 file contains 10 samples. The metadata
+     entries are not shown, because they are value-added, i.e. not
+     part of the hdf5 data hierarchy.

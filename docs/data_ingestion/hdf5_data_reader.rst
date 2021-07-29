@@ -12,9 +12,11 @@ files to allow the users to specify both the structure of a sample for
 a given data set, as well as which fields of the sample to use for any
 given experiment.
 
-=======================
+.. _sec:hdf5_schema:
+
+-----------------------
 HDF5 Schema files
-=======================
+-----------------------
 
 This section describes the two *Schemas* that users must supply to run
 LBANN with HDF5 data. A *Schema* is a yaml description of the hdf5
@@ -109,7 +111,7 @@ The following data fields are thus available per the *experiment_schema*:
 
 1. inputs: initial_modes, trans_u, trans_v
 2. outputs/scalars: MT/B4, MT/after
-3. outputs/images: imag_1, img_2, img3
+3. outputs/images: img1, img2, img3
 
 A point to note is that, because the user specified
 outputs/scalars/MT, we only "continue the transveral" for the MT child
@@ -124,7 +126,20 @@ change from experiment to experiment; think: normalization values. The
 *experiment_schema* can be thought of as a more minimalist approach to
 specifying data fields and metadata. That said, users have
 considerable latitude as to how and where they specify metadata; just
-bear in mind the trickle-down rule.
+bear in mind the trickle-down rule.  :numref:`transference`
+illustrates how metadate trickles down the sample's hirearchy.
+
+.. figure:: transference.png
+     :align: center
+     :name: transference
+
+     Example of metadata trickle-down in *schema* files. Upper
+     diagram: example yaml file. Neither the *scalars* nor *images*
+     fields contain metadata entries. Additionally, none of the leaf
+     nodes contain pack fields. Lower diagram: the functional yaml
+     file, after it is massaged during lbann execution. Note that the
+     *pack* entry for *field\_C* is not overridden.
+
 
 -------------------
 Metadata Directives
@@ -140,9 +155,6 @@ keys in the metadata nodes, which we group as follows.
    determine the order in which concatanation occurs. All data fields
    in a packing group must be of the same primitive datatype. If not,
    ensure that they are *coerced* (below)
-   # REVIEWERS: SHOULD WE RELAX
-   # THIS? Ie, specifying the type in one place, and let the coercion
-   # happen automagically?
 
 
 2. ordering - the *ordering* directive is a numeric field that
