@@ -154,7 +154,7 @@ By *Metadata Directive*, or more simply *directive*, we refer to the
 keys in the metadata nodes, which we group as follows.
 
 #. Packing. The *pack* directive requests the concatenation of
-   multiple data fields. The resulting(composite) field can be
+   multiple data fields. The resulting (composite) field can be
    retrieved by a call that contains the directive's value, which must
    be one of datum, label, response.  The *ordering* directives(below)
    determine the order in which concatenation occurs. All data fields
