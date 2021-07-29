@@ -82,7 +82,6 @@ message Callback {
     CallbackPerturbLearningRate perturb_learning_rate = 50;
     CallbackComputeModelSize compute_model_size = 51;
     CallbackPerturbWeights perturb_weights = 52;
-    CallbackExportOnnx export_onnx = 50;
     CallbackExportOnnx export_onnx = 53;
   }
 
