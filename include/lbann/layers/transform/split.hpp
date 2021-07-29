@@ -71,6 +71,8 @@ public:
   std::string get_type() const override { return "split"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
+
+#ifdef LBANN_HAS_ONNX
   std::string get_onnx_op_type() const override { return "Identity"; }
 
   void fill_onnx_node(onnx::GraphProto& graph) const override {
@@ -86,6 +88,7 @@ public:
       node->set_doc_string(this->get_type());
     }
   }
+#endif // LBANN_HAS_ONNX
 
 #ifdef LBANN_HAS_ONNX
   std::string get_onnx_op_type() const override { return "Identity"; }

@@ -498,6 +498,7 @@ public:
 
   //** @brief Get ONNX operator type */
   virtual std::string get_onnx_op_type() const;
+#endif // LBANN_HAS_ONNX
 
   const Layer& get_parent_layer(size_t index=0) const;
   const Layer& get_child_layer(size_t index=0) const;
