@@ -103,6 +103,7 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
+#ifdef LBANN_HAS_ONNX
   void fill_onnx_node(onnx::GraphProto& graph) const override {
     auto* diff = graph.add_node();
     for(auto const* parent : this->get_parent_layers()) {
@@ -113,8 +114,6 @@ public:
     diff->set_name("diff");
     diff->set_op_type("Sub");
     diff->set_domain("");
-    // FIXME: What goes here?
-    //repeated AttributeProto attribute = 5;
     diff->set_doc_string("First node representing Mean Squared Error Layer");
 
     auto* square = graph.add_node();
@@ -124,8 +123,6 @@ public:
     square->set_name("square");
     square->set_op_type("Mul");
     square->set_domain("");
-    // FIXME: What goes here?
-    //repeated AttributeProto attribute = 5;
     square->set_doc_string("Second node representing Mean Squared Error Layer");
 
     auto* mse = graph.add_node();
@@ -137,10 +134,9 @@ public:
     mse->set_name("mse");
     mse->set_op_type("Mean");
     mse->set_domain("");
-    // FIXME: What goes here?
-    //repeated AttributeProto attribute = 5;
     mse->set_doc_string("Third node representing Mean Squared Error Layer");
-}
+  }
+#endif // LBANN_HAS_ONNX
 
   void setup_dims(DataReaderMetaData& dr_metadata) override {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);

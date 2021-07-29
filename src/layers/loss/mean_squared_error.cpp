@@ -102,11 +102,6 @@ void mean_squared_error_layer<TensorDataType, T_layout, Dev>::local_bp_compute()
                this->get_local_error_signals(1));
 }
 
-// FIXME: Calls to 'this->get_child_layers() wouldn't work so I put it back
-//        in mean_squared_error.hpp
-// void mean_squared_error::fill_onnx_node(onnx::GraphProto& graph) const {
-
-
 #define PROTO(T)                                      \
   template class mean_squared_error_layer<            \
     T, data_layout::DATA_PARALLEL, El::Device::CPU>;  \
