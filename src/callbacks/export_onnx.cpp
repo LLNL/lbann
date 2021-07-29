@@ -100,5 +100,6 @@ build_export_onnx_callback_from_pbuf(
     params.print_debug_string(),
     params.output_file());
 }
+
 }// namespace callback
 }// namespace lbann
