@@ -87,13 +87,13 @@ void export_onnx::on_train_begin(model* m)
   }
 
   // FIXME: Name, layers, get_type
-  std:string model_name = "Model Name: " + m->get_name() + ", ";
+  std::string model_name = "Model Name: " + m->get_name() + ", ";
   std::string layer_names = "Model Layers: ";
   for( auto const* layer : layers) {
     layer_names.append(layer->get_name() + ", ");
   }
   std::string model_type = "Model Type: " + m->get_type();
-  gp->set_doc_string(model_name + layer_names, + model_type);
+  gp->set_doc_string(model_name + layer_names + model_type);
 
   std::cout << mp_.DebugString() << std::endl;
 
