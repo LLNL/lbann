@@ -48,7 +48,7 @@ Users are advised to view `the Doxygen API Documentation
    data_ingestion
    data_ingestion/sample_lists
    data_ingestion/hdf5_data_reader
-   data_ingestion/hdf5_data_reader_extended
+   data_ingestion/hdf5_generate_schema_and_sample_list
 
 .. toctree::
    :maxdepth: 1
