@@ -6,7 +6,7 @@ Sample Lists
 A sample list is a text file that is used to describe how
 many data samples are used in a LBANN run, and where they exist on
 parallel file system.  The use of a sample list allows the user to
-quickly change the data set used via a human readable and editable
+quickly change the data set used via a human readable and edit-able
 format.  Figures :numref:`hdf5_inclusive` and :numref:`hdf5_exclusive`
 contains sample list examples. Sample lists are formatted as follows.
 The first line is contains a control field dictating the format of the
@@ -41,7 +41,7 @@ directory in which your hdf5 files are located. This directory may
 contain subdirectories.
 
 The remaining lines contain: an hdf5 pathname (hence a file's complete
-pathname is the third line concatentated with this pathname); number of
+pathname is the third line concatenated with this pathname); number of
 samples to use (included samples); number of samples to exclude.
 Remaining entries on the line a listing of the sample IDs to either
 include or exclude, depending on whether the first line contains

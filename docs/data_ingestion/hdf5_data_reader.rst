@@ -27,7 +27,7 @@ The *data_schema.yaml* file contains a description of the hdf5 data
 hierarchy as it exists on disk.  The *experiment_schema.yaml* file
 contains a specification of a subset of the data that is to be used in
 an experiment.  We refer to these as the the data fields.
-(*data_schema.yaml* and *experiment_schema.yaml* are standins for the
+(*data_schema.yaml* and *experiment_schema.yaml* are stand-ins for the
 user's filenames of choice.)
 
 .. note:: it follows from above that the
@@ -114,7 +114,7 @@ The following data fields are thus available per the *experiment_schema*:
 3. outputs/images: img1, img2, img3
 
 A point to note is that, because the user specified
-outputs/scalars/MT, we only "continue the transveral" for the MT child
+outputs/scalars/MT, we only "continue the traversal" for the MT child
 of the outputs/scalars node; i.e, we do not traverse the BWx, BT, or
 tMAXt child nodes.
 
@@ -127,7 +127,7 @@ change from experiment to experiment; think: normalization values. The
 specifying data fields and metadata. That said, users have
 considerable latitude as to how and where they specify metadata; just
 bear in mind the trickle-down rule.  :numref:`transference`
-illustrates how metadate trickles down the sample's hirearchy.
+illustrates how metadata trickles down the sample's hierarchy.
 
 .. figure:: transference.png
      :align: center
@@ -137,7 +137,7 @@ illustrates how metadate trickles down the sample's hirearchy.
      diagram: example yaml file. Neither the *scalars* nor *images*
      fields contain metadata entries. Additionally, none of the leaf
      nodes contain pack fields. Lower diagram: the functional yaml
-     file, after it is massaged during lbann execution. Note that the
+     file, after it is massaged during LBANN execution. Note that the
      *pack* entry for *field\_C* is not overridden.
 
 
@@ -148,12 +148,12 @@ Metadata Directives
 By *Metadata Directive*, or more simply *directive*, we refer to the
 keys in the metadata nodes, which we group as follows.
 
-1. packing - the *pack* directive requests the concatanation of
+1. packing - the *pack* directive requests the concatenation of
    multiple data fields. The resulting(composite) field can be
    retrieved by a call that contains the directive's value, which must
    be one of datum, label, response.  The *ordering* directives(below)
-   determine the order in which concatanation occurs. All data fields
-   in a packing group must be of the same primitive datatype. If not,
+   determine the order in which concatenation occurs. All data fields
+   in a packing group must be of the same primitive data type. If not,
    ensure that they are *coerced* (below)
 
 

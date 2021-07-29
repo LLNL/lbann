@@ -130,7 +130,7 @@ there are data fields that you do not wish to use, leave their *pack*
 fields commented out. Alternatively, you can erase such fields from the
 file.
 
-When lbann is executed, metadata entries are propagated from internal
+When LBANN is executed, metadata entries are propagated from internal
 to leaf nodes. However, existing values are not
 overridden. :numref:`transference` illustrates this concept. This
 feature enables you to specify that multiple fields should be used for
@@ -139,7 +139,7 @@ training your model by modifying a single *pack* field.
 Data type coercion
 ------------------
 
-If your data type is not the same as lbann's default (which, as of this
+If your data type is not the same as LBANN's default (which, as of this
 writing, is *float*), then you should add **coerce: float** to the
 appropriate metadata fields. This will ensure that you data is properly
 cast to the desired type.
