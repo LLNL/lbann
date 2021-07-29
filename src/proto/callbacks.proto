@@ -418,8 +418,4 @@ message Callback {
     string output_name = 1;
     int64 batch_interval = 2;
   }
-  /** @brief Export trained model in onnx format */
-  message CallbackExportOnnx {
-  }
-
 }
