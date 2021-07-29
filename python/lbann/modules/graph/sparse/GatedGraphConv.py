@@ -1,7 +1,6 @@
 import lbann 
 from lbann.modules import Module 
 from lbann.util import str_list
-from lbann.modules.graph.utils import GraphVertexData
 import lbann.modules
 import math 
 
@@ -16,8 +15,10 @@ class GatedGraphConv(Module):
     master/torch_geometric/nn/conv/gated_graph_conv.py 
     """
     global_count = 0
-    def __init__(self, 
+    def __init__(self,
+                 input_channels, 
                  output_channels,
+                 num_nodes,
                  num_layers = 1,
                  name = None):
         """Initialize GatedGraph layer
@@ -37,13 +38,14 @@ class GatedGraphConv(Module):
 
 
         ## Add variables
-        self.output_channels = output_channels
-        self.rnn  = lbann.modules.GRU(output_channels)
+        self.output_channel_size = output_channels
+        self.input_channel_size = input_channels
+        self.num_nodes = num_nodes
+
+        self.rnn  = lbann.modules.ChannelwiseGRU(output_channels, num_nodes)
 
         self.num_layers = num_layers
-        self.data_layout = data_layout
-
-        self.weights = [] 
+        self.nns = [] 
 
         for i in range(num_layers):
             
@@ -56,43 +58,31 @@ class GatedGraphConv(Module):
             self.weights.append(weight_layer)
         
 
-    def forward(self, X, A):
+    def forward(self, node_feature_mat, source_indices, target_indices):
         """Call the GatedGraphConv
         Args:
-            X (GraphVertexData): LBANN Data object, which is a collection of Layers. Each Layer is of
-                                 the shape (1,input_channels) 
-            A (Layer): Adjacency matrix input with shape (num_nodes, num_nodes)
-        Returns: 
-            LBANN_Data_Mat: The output after Gated Graph Kernel. 
-                        The output can passed into another Graph Conv layer directly
-
+            node_feature_mat (Layer): Node feature matrix with the shape of (num_nodes,input_channels) 
+            source_indices (Layer): Source node indices of the edges with shape (num_nodes)
+            target_indices (Layer): Target node indices of the edges with shape (num_nodes)
+        Returns:     
+            (Layer) : The output after kernel ops. The output can passed into another Graph Conv layer
+                          directly
         """
 
-        input_features = X.size(1)
-        num_nodes = X.size(0)
-
-        if (input_features < self.output_channels):
-            for i in range(num_nodes):
-                num_zeros = self.output_channels - input_features 
-                zeros = lbann.Constant(value = 0, num_neurons = str_list([1,num_zeros]), name = self.name+'_zero_'+str(i))
-                X[i] = lbann.Concatenation(X[i], zeros, axis = 1)       
+        if (self.input_channel_size < self.output_channel_size):
+            num_zeros = self.output_channels - self.input_channel_size 
+            zeros = lbann.Constant(value = 0, num_neurons = str_list([self.num_nodes,num_zeros]), name = self.name+'_padded')
+            node_feature_mat = lbann.Concatenation(node_feature_mat, zeros, axis = 1)       
+            
         elif (input_features > self.output_channels):
             ValueError('The feature size of the nodes {} cannot be greater than the output dimension {}'.
                         format(input_features, self.output_channels))
-        
-        X.update_num_features(self.output_channels)
 
         for layer in range(self.num_layers): 
-            ##
-            X_mat = X.get_mat()
-            messages = lbann.MatMul(X_mat, self.weights[layer]) 
-            aggregate = lbann.MatMul(A,messages)
-
-            M = GraphVertexData.matrix_to_graph(aggregate, num_nodes, self.output_channels)
-
-            for i in range(num_nodes):
-                X[i] = lbann.Reshape(X[i], dims = str(self.output_channels))
-                X[i] = lbann.Reshape(self.rnn(M[i], X[i])[1],
-                                        dims = str_list([1, self.output_channels]))
         
-        return X
+            messages = self.nns(node_feature_mat) 
+            neighborhoods = GraphExpand(neighborhoods, target_indices)
+            aggregate = GraphReduce(neighborhoods,source_indices, [self.num_nodes, self.output_channel_size])
+            node_feature_mat = self.rnn(aggregate, node_feature_mat)
+        
+        return node_feature_mat

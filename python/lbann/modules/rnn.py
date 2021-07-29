@@ -305,3 +305,116 @@ class GRU(Module):
 
         # Return output
         return ht, ht
+
+class ChannelwiseGRU(Module):
+    global_count = 0
+
+    def __init__(self, num_channels, size, bias=True, weights=[], name=None):
+
+        super().__init()
+        ChannelwiseGRU.global_count += 1 
+        self.step = 0
+        self.size = size
+        self.num_channels = num_channels 
+        self.name = (name if name else f'gru{ChannelwiseGRU.global_count}')
+
+        scale = 1 / math.sqrt(self.size)
+
+        self.weights = list(make_iterable(weights))
+
+        weight_name = ['_ih_matrix', '_ih_bias', '_hh_matrix', '_hh_bias']
+        for i in range(4):
+            if (len(self.weights) == i):
+                self.weights.append(lbann.Weights(initializer=lbann.UniformInitializer(min=-scale,
+                                                                                       max=scale),
+                                                  name=self.name+weight_name[i])
+                )
+
+        self.ih_fc = ChannelwiseFullyConnectedModule(3*size,
+                                                     bias=bias,
+                                                     weights=self.weights[:2],
+                                                     self.name=self.name + '_ih_fc')
+        self.hh_fc = ChannelwiseFullyConnectedModule(3*size,
+                                                     bias=bias,
+                                                     weights=self.weights[2:],
+                                                     self.name=self.name + '_hh_fc')
+        self.ones = lbann.Constant(
+            values=1.0,
+            num_neurons = str(size * num_channels),
+            name=self.name+'_ones')
+
+    def forward(self, x, prev_state):
+        """ Apply GRU step channelwise 
+        Args: 
+            x (Layer): Input (shape: (num_channels, *))
+            prev_state (Layer): Sate from previous GRU step  (shape: (num_channels, size))
+        Returns:
+            (Layer, Layer): The output (out) and state (hn). The state can be passed directly into the next GRU step
+        """
+
+        self.step += 1
+
+        name = f"{self.name}_step{self.step}"
+
+        mat_size = self.num_channels * self.size
+
+        prev_state = lbann.Reshape(prev_state, dims=f"{mat_size}", name=name+"_prev_state_reshape")
+
+        fc1 = lbann.Reshape(self.ih_fc(x), dims=f"{mat_size * 3}")
+        fc2 = lbann.Reshape(self.hh_fc(prev_state),dims==f"{mat_size * 3}")
+
+        fc1_slice = lbann.Slice(fc1, 
+                                slice_points=str_list([0, mat_size, 2*mat_size, 3*mat_size]))
+        
+        Wir_x =lbann.Identity(fc1_slice, name=name+'_Wx')
+        Wiz_z =lbann.Identity(fc1_slice, name=name+'_Wx')
+        Win_x =lbann.Identity(fc1_slice, name=name+'_Wx')
+        fc2_slice = lbann.Slice(fc2, 
+                                slice_points=str_list([0, mat_size, 2*mat_size, 3*mat_size]))
+
+        Whr_x =lbann.Identity(fc2_slice, name=name+'_Wh')   
+        Whz_z =lbann.Identity(fc2_slice, name=name+'_Wh') 
+        Whn_x =lbann.Identity(fc2_slice, name=name+'_Wh')
+
+        rt = \
+            lbann.Sigmoid(
+                lbann.Add(Wir_x, Whr_prev, data_layout=self.data_layout),
+                name=name + '_reset_gate',
+                data_layout=self.data_layout
+            )
+
+        zt = \
+            lbann.Sigmoid(
+                lbann.Add(Wiz_x, Whz_prev, data_layout=self.data_layout),
+                name=name + '_update_gate',
+                data_layout=self.data_layout,
+            )
+
+        nt = \
+            lbann.Tanh(
+                lbann.Add(
+                    Win_x,
+                    lbann.Multiply(rt, Whn_prev, data_layout=self.data_layout),
+                    data_layout=self.data_layout,
+                ),
+                name=name + '_new_gate', data_layout=self.data_layout,
+            )
+
+        ht = \
+            lbann.Add(
+                lbann.Multiply(
+                    lbann.WeightedSum(
+                        self.ones,
+                        zt,
+                        scaling_factors='1 -1', data_layout=self.data_layout
+                    ),
+                    nt,
+                    data_layout=self.data_layout
+                ),
+                lbann.Multiply(zt, prev_state, data_layout=self.data_layout),
+                name=name+ '_output', data_layout=self.data_layout,
+            )
+
+        ht = lbann.Reshape(ht, dims=str_list([self.num_channels, self.size]))
+
+        return ht, ht

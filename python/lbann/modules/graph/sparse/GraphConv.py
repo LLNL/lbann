@@ -1,6 +1,6 @@
 import lbann
-from lbann.modules import Module
-from lbann.modules.graph.utils import GraphVertexData
+from lbann.modules import Module, ChannelwiseFullyConnectedModule
+from lbann.modules.graph.utils import GraphExpand, GraphReduce
 from lbann.util import str_list
 import lbann.modules.base
 import math 
@@ -17,28 +17,28 @@ class GraphConv(Module):
     def __init__(self,
                  input_channels,
                  output_channels,
+                 num_nodes,
                  bias=True,
                  activation = lbann.Relu,
-                 name=None,
-                 data_layout = 'data_parallel'):
+                 name=None):
         """Initialize Graph layer
 
         Args: 
             input_channels (int): The size of the input node features 
             output_channels (int): The output size  of the node features 
-            bias (bool): Whether to apply biases after MatMul 
-            name (str): Default name of the layer is GCN_{number}
-            data_layout (str): Data layout
+            num_nodes (int): Number of vertices in the graph
+            bias (bool): Whether to apply biases after weights transform 
             activation (type): Activation layer for the node features. If None, then no activation is 
                                 applied. (default: lbann.Relu)
+            name (str): Default name of the layer is Graph_{number}
         """
         super().__init__()
         
         ## Add variables
         
-        self.input_channels = input_channels
-        self.output_channels = output_channels
-        self.data_layout = data_layout
+        self.input_channel_size = input_channels
+        self.output_channel_size = output_channels
+        self.num_nodes = num_nodes
 
         ## Add Name for the components for the layer
         GraphConv.global_count +=1
@@ -49,37 +49,26 @@ class GraphConv(Module):
         ## Initialize weights for the matrix
         value  = math.sqrt(6/ (input_channels + output_channels))
 
-        self.mat_weights = lbann.Weights(initializer = lbann.UniformInitializer(
+        mat_weights = []
+        id_weights = []
+
+        mat_weights.append(lbann.Weights(initializer = lbann.UniformInitializer(
                                                        min = -value,
                                                        max = value),
-                                         name = self.name+'_Weights')
+                                         name = self.name+'_Weights'))
 
-        self.weights1 = lbann.WeightsLayer(dims = str_list([input_channels, output_channels]),
-                                    name = self.name+'_layer',
-                                    weights = self.mat_weights)
-
-        self.id_weights = lbann.Weights(initializer = lbann.UniformInitializer(
+        id_weights.append(lbann.Weights(initializer = lbann.UniformInitializer(
                                                       min  = -value,
                                                       max = value),
-                                         name = self.name+'_ID_Weights')
-
-        self.weights2 = lbann.WeightsLayer(dims = str_list([input_channels, output_channels]),
-                                    name = self.name+'_ID_layer',
-                                    weights = self.id_weights) 
+                                         name = self.name+'_ID_Weights'))
         
         ## Initialize bias variables
         self.has_bias = bias
-        self.bias_weights = None
-        self.bias = None
 
         if (self.has_bias):
-            self.bias_weights = lbann.Weights(initializer = lbann.ConstantInitializer(
+            mat_weights.append(lbann.Weights(initializer = lbann.ConstantInitializer(
                                                             value = 0.0),
-                                              name = self.name+'_bias_weights')
-            self.bias = lbann.WeightsLayer(dims = str_list([1,output_channels]), 
-                                           weights = self.bias_weights, 
-                                           name = self.name+'_bias_layer')
-        
+                                              name = self.name+'_bias_weights'))
         self.activation = None 
 
         if activation:
@@ -89,44 +78,40 @@ class GraphConv(Module):
                 self.activation = type(actvation)
             if not issubclass(self.activation, lbann.Layer):
                 raise ValueError('activation must be a layer')
-    
-    def forward(self, X, A):
-        """Apply Graph Conv Layer to X and use A for message passing
+        self.id_nn = \
+            ChannelwiseFullyConnectedModule(self.output_channels,
+                                            bias=False,
+                                            weights=id_weights,
+                                            activation=self.activation,
+                                            name=self.name+"_ID_FC_layer")
+        self.mat_nn = \
+            ChannelwiseFullyConnectedModule(self.output_channels,
+                                            bias=self.has_bias,
+                                            weights=mat_weights,
+                                            activation=self.activation,
+                                            name=self.name+"_Message_FC_layer")
+
+    def forward(self, node_feature_mat, source_indices, target_indices):
+        """Apply Graph Conv Layer
 
         Args:
-            X (GraphVertexData): LBANN Data object, which is a collection of Layers. Each Layer is of
-                                 the shape (1,input_channels) 
-
-            A (Layer): Adjacency matrix input with shape (num_nodes, num_nodes)
-
-        Returns: 
-            
-            GraphVertexData: The output after convolution. The output can passed into another Graph Conv layer
+            node_feature_mat (Layer): Node feature matrix with the shape of (num_nodes,input_channels) 
+            source_indices (Layer): Source node indices of the edges with shape (num_nodes)
+            target_indices (Layer): Target node indices of the edges with shape (num_nodes)
+        Returns:     
+            (Layer) : The output after kernel ops. The output can passed into another Graph Conv layer
                           directly
         """ 
         
+
+        new_self_features = self.id_nn(node_feature_mat)
+
+        new_neighbor_features = self.mat_nn(node_feature_mat)
+        # Place the new features on to neighborhoods
+        neighborhoods = GraphExpand(new_neighbor_features, target_indices)
         # Accumulate Messages from Neighboring Nodes
-        out = X.get_mat()
-        out = lbann.MatMul(out,self.weights1, name = self.name+"_Graph_MATMUL")
-        message  = lbann.MatMul(A, out, name = self.name+"_Graph_Message")
-        message = GraphVertexData.matrix_to_graph(message, X.shape[0], self.output_channels)
+        reduced_features = GraphReduce(neighborhoods, source_indices, [self.num_nodes, sel.output_channel_size])
 
-        # Assume X is a GraphVertexData object
-        
-        for node_feature in range(X.shape[0]):
-            X[node_feature] = lbann.MatMul(X[node_feature], self.weights2)
-        
-        for node_feature in range(X.shape[0]):
-            if (self.bias):
-                message[node_feature] = lbann.Sum(message[node_feature], 
-                                                  self.bias,
-                                                  name=self.name+'_message_bias_'+str(node_feature))
-            X[node_feature] = lbann.Sum(X[node_feature], message[node_feature])
- 
-        if self.activation:
-            for node_feature in range(X.shape[0]):
-                X[node_feature] = self.activation(X[node_feature])
-
-        X.update_num_features(self.output_channels) 
-        return X
+        out_features = lbann.Sum(new_self_features, reduced_features) 
+        return out_features
 
