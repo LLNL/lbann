@@ -55,12 +55,13 @@ public:
   ///@}
 
   std::string get_type() const override { return "dummy"; }
-  //std::string get_onnx_op_type() const override { return "Identity"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
-  void fill_onnx_node(onnx::GraphProto& graph) const override {
-    std::cout << "Dummy layer" << std::endl;
-  }
+
+#ifdef LBANN_HAS_ONNX
+  void fill_onnx_node(onnx::GraphProto& graph) const override {}
+#endif // LBANN_HAS_ONNX
+
 protected:
 
   friend class cereal::access;

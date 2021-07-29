@@ -29,16 +29,15 @@
 #ifndef LBANN_CALLBACKS_EXPORT_ONNX_HPP_INCLUDED
 #define LBANN_CALLBACKS_EXPORT_ONNX_HPP_INCLUDED
 
+#ifdef LBANN_HAS_ONNX
+#include <onnx/onnx_pb.h>
+#endif // LBANN_HAS_ONNX
 #include "lbann/callbacks/callback.hpp"
-
 #include <google/protobuf/message.h>
 #include <lbann/base.hpp>
-#include <onnx/onnx_pb.h>
 #include <iostream>
 #include <memory>
 #include <vector>
-
-using namespace onnx;
 
 namespace lbann {
 namespace callback {
@@ -61,6 +60,7 @@ public:
   /** @brief Return name of callback */
   std::string name() const override { return "export_onnx"; }
 
+#ifdef LBANN_HAS_ONNX
   /* @brief gather model info */
   void on_setup_end(model* m) override;
 
@@ -71,10 +71,10 @@ private:
 
   /* @brief onnx ModelProto object */
   onnx::ModelProto mp_;
+#endif // LBANN_HAS_ONNX
 
   /* @brief lbann_summary object */
   std::shared_ptr<lbann_summary> m_summarizer;
-
 
 }; // class export_onnx
 

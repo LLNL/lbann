@@ -28,8 +28,8 @@
 
 #include <iostream>
 #include <fstream>
-#include "lbann/callbacks/export_onnx.hpp"
 
+#include "lbann/callbacks/export_onnx.hpp"
 #include "lbann/layers/io/input_layer.hpp"
 
 #include "lbann/proto/helpers.hpp"
@@ -46,25 +46,27 @@ namespace callback {
 
 export_onnx::export_onnx(std::shared_ptr<lbann_summary> const& summarizer)
   : m_summarizer(summarizer)
-{}
+{
+#ifndef LBANN_HAS_ONNX
+  std::cout << "TESTING CALLBACK: ONNX NOT DEF " << std::endl;
+#endif
+}
 
+#ifdef LBANN_HAS_ONNX
 void export_onnx::on_setup_end(model* m)
 {
   mp_.set_ir_version(7);
-  //FIXME: what goes here? ONNX operators?
+  auto* opset = mp_.add_opset_import();
   // The empty string ("") domain indicates the operators defined
   // as part of the ONNX specification; other domains correspond
   // to operator sets of other vendors (e.g., they can be used to
   // provide vendor-specific extensions to ONNX)
-  auto* opset = mp_.add_opset_import();
   opset->set_domain("");
   opset->set_version(11);
 
   mp_.set_producer_name("LBANN");
   mp_.set_producer_version(LBANN_MAKE_STR(LBANN_VERSION));
   mp_.set_domain("lbann/LLNL/com.github");
-  // FIXME: model version is version of graph encoded.
-  //        Should this be passed in?
   mp_.set_model_version(1);
   mp_.set_doc_string("Livermore Big Artificial Neural Network");
   // FIXME: what should go here??
@@ -78,42 +80,20 @@ void export_onnx::on_train_begin(model* m)
   // graph info
   auto* gp = mp_.mutable_graph();
   gp->set_name(m->get_name());
-  // FIXME: Use gp->initializer for for weights ?
 
   auto const layers = m->get_layers();
-  for (auto const* layer : layers)
-  {
+  for (auto const* layer : layers) {
     layer->fill_onnx_node(*gp);
   }
 
-  // FIXME: We don't use sparse_initializer. Do we need to handle it since
-  //        its a message type or just ignore it?
-  /*
-  auto* sparse_initializer = gp->add_sparse_initializer();
-  auto* sparse_values = sparse_initializer->mutable_values();
-  for( auto dim : dims )
-    sparse_values->add_dims(dim);
-  sparse_values->set_data_type(0);
-  auto* sparse_indices = sparse_initializer->mutable_indices();
-  for( auto dim : dims )
-    sparse_indices->add_dims(dim);
-  sparse_indices->set_data_type(0);
-  */
-
   // FIXME: Name, layers, get_type
-  gp->set_doc_string(m->get_name());
-
-  // ValueInfoProto input will be filled with input layer info in
-  //    overridden fill_onnx_node func. in input_layer.hpp
-
-  // FIXME: Used in eval layer
-  // auto* output = gp->add_output();
-
-  // FIXME: Not useful for now
-  // auto* value_info = gp->add_value_info();
-
-  // Not useful for now
-  // auto* quantization_annotation = gp->add_quantization_annotation();
+  std:string model_name = "Model Name: " + m->get_name() + ", ";
+  std::string layer_names = "Model Layers: ";
+  for( auto const* layer : layers) {
+    layer_names.append(layer->get_name() + ", ");
+  }
+  std::string model_type = "Model Type: " + m->get_type();
+  gp->set_doc_string(model_name + layer_names, + model_type);
 
   std::cout << mp_.DebugString() << std::endl;
 
@@ -121,6 +101,7 @@ void export_onnx::on_train_begin(model* m)
   mp_.SerializeToOstream(&onnx_out);
 
 }
+#endif // LBANN_HAS_ONNX
 
 std::unique_ptr<callback_base>
 build_export_onnx_callback_from_pbuf(
