@@ -188,6 +188,7 @@ hdf5_data_reader& hdf5_data_reader::operator=(const hdf5_data_reader& rhs)
 
 void hdf5_data_reader::copy_members(const hdf5_data_reader& rhs)
 {
+  data_reader_sample_list::copy_members(rhs);
   m_data_dims_lookup_table = rhs.m_data_dims_lookup_table;
   m_linearized_size_lookup_table = rhs.m_linearized_size_lookup_table;
   m_experiment_schema_filename = rhs.m_experiment_schema_filename;

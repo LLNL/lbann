@@ -78,6 +78,12 @@ public:
 
   SampleListT& get_sample_list() { return m_sample_list; }
 
+  sample_type get_sample(size_t index) { return m_sample_list[index]; }
+
+  sample_file_id_type get_sample_file_id(size_t index) { return get_sample(index).first; }
+
+  sample_name_type get_sample_name(size_t index) { return get_sample(index).second; }
+
 protected:
   SampleListT m_sample_list;
 
