@@ -204,7 +204,7 @@ void KFAC::train(
       dc.reset_mode(sgd_context);
       do_epoch_begin_cbs(model);
       is_start_of_epoch = false;
-      //sync weights if we have a separate model for primary and secondary grid  
+      //sync weights if we have a separate model for primary and secondary grid
       if(comm.get_KFAC_subgrid_create_two_models() and comm.get_grid_type()!=GridType::NO_GRID)
         sync_weights_model(model, model.get_comm());
     }
@@ -215,7 +215,7 @@ void KFAC::train(
       // Finalize epoch
       sgd_context.inc_epoch();
 
-      if(comm.get_KFAC_subgrid_create_two_models() 
+      if(comm.get_KFAC_subgrid_create_two_models()
         or comm.get_grid_type()==GridType::NO_GRID
         or comm.get_grid_type()==GridType::PRIMARY_GRID)
       {
@@ -285,7 +285,7 @@ bool KFAC::train_mini_batch(
 
   bool finished = false;
   auto& comm = *model.get_comm();
-  const bool compute_inverse = sgd_context.get_step() % this->m_compute_interval == 0; 
+  const bool compute_inverse = sgd_context.get_step() % this->m_compute_interval == 0;
 
 
   dc.fetch_data(execution_mode::training);
@@ -296,8 +296,8 @@ bool KFAC::train_mini_batch(
 #pragma omp single
     {
 #endif
-      if(comm.get_grid_type()==GridType::PRIMARY_GRID 
-        or comm.get_KFAC_subgrid_create_two_models() 
+      if(comm.get_grid_type()==GridType::PRIMARY_GRID
+        or comm.get_KFAC_subgrid_create_two_models()
         or comm.get_grid_type() == GridType::NO_GRID){
         // Forward prop step
         model.clear_gradients();
@@ -307,8 +307,8 @@ bool KFAC::train_mini_batch(
       if(compute_inverse)
         on_forward_prop_end(kfac_context, model);
 
-      if(comm.get_grid_type()==GridType::PRIMARY_GRID 
-        or comm.get_KFAC_subgrid_create_two_models() 
+      if(comm.get_grid_type()==GridType::PRIMARY_GRID
+        or comm.get_KFAC_subgrid_create_two_models()
         or comm.get_grid_type() == GridType::NO_GRID){
         // check if the data coordinator has finished the epoch and kickoff
         // background I/O
@@ -335,14 +335,14 @@ bool KFAC::train_mini_batch(
                   &comm,
                   is_gru ? m_learning_rate_factor_gru : m_learning_rate_factor,
                   m_print_matrix, m_print_matrix_summary,
-                  m_print_time); 
+                  m_print_time);
           }
         }
       }
 
 
-      if(comm.get_grid_type()==GridType::PRIMARY_GRID 
-        or comm.get_KFAC_subgrid_create_two_models() 
+      if(comm.get_grid_type()==GridType::PRIMARY_GRID
+        or comm.get_KFAC_subgrid_create_two_models()
         or comm.get_grid_type() == GridType::NO_GRID){
         model.get_objective_function()->compute_weight_regularization();
 
@@ -361,14 +361,14 @@ bool KFAC::train_mini_batch(
     }
   }
 #endif
-  
+
   if(compute_inverse){
     kfac_context.inc_step();
   }
 
   sgd_context.inc_step();
 
-  if(comm.get_KFAC_subgrid_create_two_models() 
+  if(comm.get_KFAC_subgrid_create_two_models()
         or comm.get_grid_type()==GridType::NO_GRID
         or comm.get_grid_type()==GridType::PRIMARY_GRID)
     do_batch_end_cbs(model);
@@ -450,7 +450,7 @@ void KFAC::sync_weights_model(model& model, lbann_comm *comm){
 
   //Computing size of global buffer
   int global_buffer_size = 0;
-  for(auto i_layer = layers.begin(); i_layer != layers.end(); i_layer++) 
+  for(auto i_layer = layers.begin(); i_layer != layers.end(); i_layer++)
   {
     const auto &layer = *i_layer;
     const size_t num_weights = layer->num_weights();
@@ -477,7 +477,7 @@ void KFAC::sync_weights_model(model& model, lbann_comm *comm){
 
   size_t offset = 0;
   //copy weights to global buffers
-  for(auto i_layer = layers.begin(); i_layer != layers.end(); i_layer++) 
+  for(auto i_layer = layers.begin(); i_layer != layers.end(); i_layer++)
   {
     const auto &layer = *i_layer;
     const size_t num_weights = layer->num_weights();
@@ -547,7 +547,7 @@ void KFAC::sync_weights_model(model& model, lbann_comm *comm){
 
   //copy weights from global buffers
   offset = 0;
-  for(auto i_layer = layers.begin(); i_layer != layers.end(); i_layer++) 
+  for(auto i_layer = layers.begin(); i_layer != layers.end(); i_layer++)
   {
     const auto &layer = *i_layer;
     const size_t num_weights = layer->num_weights();
@@ -634,7 +634,7 @@ void send_recv_precomputed_gradients(
            primary_grid_ranks[to_send_index],
            primary_grid_ranks[to_send_index],
            combined_comm,
-           sync_info);    
+           sync_info);
       }
     }
 
@@ -749,7 +749,7 @@ void KFAC::send_recv_inverse_matrices(
        secondary_grid_ranks[recv_index],
        combined_rank,
        combined_comm,
-       sync_info);  
+       sync_info);
 
     // Copy blocks from the buffer.
     {
@@ -865,7 +865,7 @@ void KFAC::on_forward_prop_end(
   for(auto& block : context.m_blocks)
     block->on_forward_prop_end(&comm);
 
-  if(context.get_step()>1 and 
+  if(context.get_step()>1 and
     (comm.get_grid_type()==GridType::PRIMARY_GRID or comm.get_grid_type()==GridType::SECONDARY_GRID)){
     send_recv_inverse_matrices(context, &comm);
     m_has_kronecker_inverse = true;
@@ -939,7 +939,7 @@ void KFAC::on_backward_prop_end(
     prof_region_begin("kfac-update/local", prof_color, prof_sync);
     for(auto& block : context.m_blocks) {
       prof_region_begin(("kfac-update/local/" + block->get_name()).c_str(), prof_color, prof_sync);
-      
+
       block->compute_local_kronecker_factors(
         &comm,  m_print_matrix, m_print_matrix_summary);
       prof_region_end(("kfac-update/local/" + block->get_name()).c_str(), prof_sync);
@@ -1017,7 +1017,7 @@ void KFAC::on_backward_prop_end(
     prof_region_end(("kfac-inverse/" + block->get_name()).c_str(), prof_sync);
   }
 
-  //allgather inverse matrices 
+  //allgather inverse matrices
   if(is_first_step and false){
     kfac::allgather_inverse_matrices_sizes(context.m_blocks, m_inverse_matrices_size, &comm);
     int block_number = 0;
@@ -1076,7 +1076,7 @@ void KFAC::on_backward_prop_end(
             &comm,
             is_gru ? m_learning_rate_factor_gru : m_learning_rate_factor,
             m_print_matrix, m_print_matrix_summary,
-            m_print_time); 
+            m_print_time);
     	}
     }
   }
@@ -1173,7 +1173,7 @@ std::unique_ptr<lbann::KFAC> lbann::make<lbann::KFAC>(
   const bool use_pi = kfac_params.use_pi();
   const std::vector<size_t> update_intervals = parse_update_intervals(kfac_params.update_intervals());
   const size_t update_interval_steps = kfac_params.update_interval_steps();
-  const size_t compute_interval = kfac_params.compute_interval();
+  const size_t compute_interval = El::Max(kfac_params.compute_interval(), 1);
 
   const std::string inverse_strategy_str = kfac_params.inverse_strategy();
   kfac::kfac_inverse_strategy inverse_strategy;
