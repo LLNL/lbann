@@ -1,5 +1,5 @@
 import lbann 
-from lbann.modules import Module 
+from lbann.modules import Module, ChannelwiseFullyConnectedModule 
 from lbann.util import str_list
 import lbann.modules
 import math 
@@ -49,13 +49,14 @@ class GatedGraphConv(Module):
 
         for i in range(num_layers):
             
-            weight_init = lbann.Weights(initializer = lbann.UniformInitializer(min =-1/(math.sqrt(output_channels)), 
+            weights = lbann.Weights(initializer = lbann.UniformInitializer(min =-1/(math.sqrt(output_channels)), 
                                                                                max = 1/(math.sqrt(output_channels))))
-            weight_layer = lbann.WeightsLayer(dims = str_list([output_channels, output_channels]),
-                                              weights = weight_init, 
-                                              name = self.name+'_'+str(i)+'_weight',
-                                              data_layout = self.data_layout)
-            self.weights.append(weight_layer)
+            nn = \
+                ChannelwiseFullyConnectedModule(self.output_channels,
+                                                bias=False,
+                                                weights=[weights],
+                                                name=f"{self.name}_nn_{i}")
+            self.nns.append(nn)
         
 
     def forward(self, node_feature_mat, source_indices, target_indices):

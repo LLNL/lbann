@@ -333,11 +333,11 @@ class ChannelwiseGRU(Module):
         self.ih_fc = ChannelwiseFullyConnectedModule(3*size,
                                                      bias=bias,
                                                      weights=self.weights[:2],
-                                                     self.name=self.name + '_ih_fc')
+                                                     name=self.name + '_ih_fc')
         self.hh_fc = ChannelwiseFullyConnectedModule(3*size,
                                                      bias=bias,
                                                      weights=self.weights[2:],
-                                                     self.name=self.name + '_hh_fc')
+                                                     name=self.name + '_hh_fc')
         self.ones = lbann.Constant(
             values=1.0,
             num_neurons = str(size * num_channels),

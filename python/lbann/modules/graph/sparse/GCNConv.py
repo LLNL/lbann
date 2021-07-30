@@ -59,7 +59,6 @@ class GCNConv(Module):
             weights.append(lbann.Weights(initializer = lbann.ConstantInitializer(value = 0.0),
                                                                                  name = self.name+'_bias_weights'))
 
-
         self.activation = None 
 
         if activation:

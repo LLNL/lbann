@@ -1,6 +1,6 @@
 import lbann 
 from lbann.modules import Module 
-from lbann.modules.graph.utils import GraphVertexData
+from lbann.modules.graph.utils import GraphExpand, GraphReduce
 from lbann.util import str_list
 
 class GINConv(Module):
@@ -11,15 +11,18 @@ class GINConv(Module):
 
     def __init__(self, 
                  sequential_nn,
+                 input_channels,
                  output_channels,
+                 num_nodes,
                  eps = 1e-6,
-                 name = None,
-                 data_layout = 'data_parallel'):
+                 name = None):
         """Initialize graph kernel as described in Graph Isomorphism Network.
            
         Args:
-            sequential_nn ([Module] or (Module)): A list or tuple of layer modules to be used  
+            sequential_nn ([Module] or (Module)): A list or tuple of layer modules to be used
+            input_channels (int): The size of the input node features  
             output_channels (int): The output size of the node features
+            num_nodes (int): Number of vertices in the graph
             eps (float): Default value is 1e-6
             name (str): Default name of the layer is GIN_{number}
             data_layout (str): Data layout
@@ -28,49 +31,54 @@ class GINConv(Module):
         self.name = (name 
                      if name 
                      else 'GIN_{}'.format(GINConv.global_count))
-        self.data_layout = data_layout
         self.nn = sequential_nn
         self.eps = eps 
-        self.output_channels = output_channels
+        self.input_channel_size = input_channels
+        self.output_channel_size = output_channels
+        self.num_nodes = num_nodes
 
-
-    def forward(self, X, A, activation = lbann.Relu):
+    def forward(self,
+                node_feature_mat,
+                source_indices,
+                target_indices,
+                activation = lbann.Relu):
         """Apply GIN  Layer. 
         
         Args:
-            X (GraphVertexData): LBANN Data object, which is a collection of Layers. Each Layer is of
-                                 the shape (1,input_channels) 
-
-            A (Layer): Adjacency matrix input with shape (num_nodes, num_nodes)
-
+            node_feature_mat (Layer): Node feature matrix with the shape of (num_nodes,input_channels) 
+            source_indices (Layer): Source node indices of the edges with shape (num_nodes)
+            target_indices (Layer): Target node indices of the edges with shape (num_nodes
             activation (Layer): Activation layer for the node features. If None, then no activation is 
                                 applied. (default: lbann.Relu) 
         Returns: 
-            
-            (GraphVertexData): The output after GCN. The output can passed into another Graph Conv layer
+            (Layer) : The output after kernel ops. The output can passed into another Graph Conv layer
                           directly
         """
-        in_channel = X.shape[1]
 
         # Accumulate Messages from Neighboring Nodes
-        out = X.get_mat()
-        out = lbann.MatMul(A,out, name = self.name+"_GIN_MATMUL")
-        message = GraphVertexData.matrix_to_graph(out, X.shape[0], in_channel)
+        
 
         # Aggregate Messages into node features  
-        eps = lbann.Constant(value=(1+self.eps),num_neurons = str_list([1, in_channel]))
-        for node_feature in range(X.shape[0]):
-            eps_val = lbann.Multiply(eps, X[node_feature])
-            X[node_feature] = lbann.Sum(message[node_feature], eps_val)
+        eps = lbann.Constant(value=(1+self.eps),
+                             num_neurons = str_list([self.num_nodes, 
+                                                     self.input_channel_size]))
+        
+        eps_node_features = lbann.Multiply(node_feature_mat, eps, name=self.name+"_epl_mult")
+
+        neighborhoods = GraphExpand(node_feature_mat, target_indices)
+        reduced_features = GraphReduce(neighborhoods, source_indices, [self.num_nodes, 
+                                                                       self.input_channel_size])
+
+
+        aggregated_node_features = lbann.Sum(neighborhoods, reduced_features)
         
         # Transform with the sequence of linear layers
         for layer in self.nn:
-            for node_feature in range(X.shape[0]):
-                X[node_feature] = layer(X[node_feature])
+            aggregated_node_features = layer(aggregated_node_features)
+
         
         ## Apply activation 
         if activation:
-            for node_feature in range(X.shape[0]):
-                X[node_feature] = activation(X[node_feature])
-        X.update_num_features(self.output_channels) 
-        return X
+            aggregated_node_features = activation(aggregated_node_features)
+        
+        return aggregated_node_features

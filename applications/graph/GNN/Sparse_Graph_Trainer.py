@@ -1,8 +1,6 @@
 import lbann 
 from lbann.util import str_list 
 from lbann.modules.graph import GINConv, GCNConv, GraphConv, GatedGraphConv
-from lbann.modules.graph import GraphVertexData
-from graph_data_util import lbann_Graph_Data
 
 def GINConvLayer(X,A):
     """An example GIN kernel with 4 layer deep sequential nn.  

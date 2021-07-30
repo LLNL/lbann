@@ -88,7 +88,7 @@ def process_training_data(): # Process Training File
 
         # Convert y to target with one hot encoding and shape (60000, 10)
 
-        targets = np.zeros ( (num_data, 10), dtype=np.float)
+    targets = np.zeros ( (num_data, 10), dtype=np.float)
 
     for i, target in enumerate(y):
         print("{}/{} completed".format(i+1, len(y)), end='') 
