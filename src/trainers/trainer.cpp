@@ -275,8 +275,12 @@ void trainer::evaluate(observer_ptr<model> model,
 
   DataReaderMetaData dr_metadata = get_data_coordinator().get_dr_metadata();
   sgd->setup_models({model}, get_max_mini_batch_size(), dr_metadata);
-  sgd->evaluate(*ctxt, *model, get_data_coordinator(), mode,
-                epoch_termination_criteria(/*num_epochs=*/1UL));
+
+  if(m_comm->get_grid_type() == GridType::NO_GRID or 
+     m_comm->get_grid_type() == GridType::PRIMARY_GRID){
+    sgd->evaluate(*ctxt, *model, get_data_coordinator(), mode,
+                  epoch_termination_criteria(/*num_epochs=*/1UL));
+  }
 }
 
 // =============================================
