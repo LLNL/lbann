@@ -259,12 +259,17 @@ void KFAC::train(
       }
     }
   }
+
   sgd_context.stop_timer();
+  
 
   // Reset the model back to the training execution context prior to
   // end of training callbacks
   model.reset_mode(sgd_context, execution_mode::training);
-  do_train_end_cbs(model);
+  if(comm.get_KFAC_subgrid_create_two_models()
+        or comm.get_grid_type()==GridType::NO_GRID
+        or comm.get_grid_type()==GridType::PRIMARY_GRID)
+    do_train_end_cbs(model);
 }
 
 // =============================================
@@ -322,6 +327,9 @@ bool KFAC::train_mini_batch(
         // Backward prop step
         model.get_objective_function()->differentiate();
         model.backward_prop();
+      }
+      else{
+        finished = dc.epoch_complete(execution_mode::training);
       }
 
       if(compute_inverse)
