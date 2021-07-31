@@ -98,6 +98,17 @@ message RandomPairwiseExchange {
   }// message ExchangeStrategy
 }// message RandomPairwiseExchange
 
+// Truncation selection strategy Implements MetaLearningStrategy.
+message TruncationSelectionExchange {
+  enum MetricStrategy {
+    LOWER_IS_BETTER = 0;
+    HIGHER_IS_BETTER = 1;
+  }
+
+  map<string, MetricStrategy> metric_name_strategy_map = 1;
+  uint64 truncation_k = 2; //what should be default, 1?
+}// message TruncationSelectionExchange
+
 message KFAC {
 
   SGD sgd = 1;
