@@ -44,8 +44,12 @@ public:
   /** 
    *  @param batch_interval Number of training mini-batch steps 
    *  @param output_name   Name of weight layer
+   *  @param upper   Upper bound of the perturbed weight
+   *  @param lower   Lower bound of the perturbed weight 
+   *  @param scale   Scale of normal distribution N(1,0) for the perturbed weight
+   *  @param perturb_probability   The probability of perturbing the weight 
    */
-  perturb_weights(EvalType upper, EvalType lower, EvalType scale, 
+  perturb_weights(EvalType upper, EvalType lower, EvalType scale, EvalType perturb_probability,
 		  std::string output_name,
                   El::Int batch_interval = 1);
 
@@ -73,10 +77,16 @@ private:
    */
   std::string m_output_name;
 
-
+   /*
+   *  upper.
+   *  lower.
+   *  scale.
+   *  perturb_probability.
+   */	
   EvalType m_upper;
   EvalType m_lower;
   EvalType m_scale;
+  EvalType m_perturb_probability;
    
   void perturb(model& m);
 
