@@ -52,7 +52,7 @@ Users are advised to view `the Doxygen API Documentation
    :caption: Developer Documentation
 
    lbann
-   lbann/lbann
+   lbann-api
    style_guide
    continuous_integration
    documentation_building
