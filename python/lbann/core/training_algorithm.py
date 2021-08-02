@@ -188,7 +188,11 @@ class LTFB(TrainingAlgorithm):
 
 class MutationStrategy:
     """The strategy for mutation after a tournament in LTFB.
-       INSERT FURTHER DESCRIPTION HERE.
+       
+       When a trainer loses in a LTFB tournament, the winning model is 
+       copied over to it and this mutation strategy is applied to the
+       copied model to explore a new model. This is relevant to neural
+       architecture search (NAS).
     """
 
     def __init__(self, strategy: str = "null_mutation"):
@@ -330,7 +334,7 @@ class RandomPairwiseExchange(MetaLearningStrategy):
               with respect to this metric
             exchange_strategy:
               The algorithm used for exchanging models.
-            mutate_strategy:
+            mutation_strategy:
               The algorithm used for mutating models.
         """
 

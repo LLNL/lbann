@@ -200,7 +200,12 @@ private:
    */
   std::unique_ptr<ExchangeStrategy> m_comm_algo;
 
-  /** @brief The strategy for mutation of a model - insert more details later
+  /** @brief The strategy for mutation of a model
+   *
+   *  When a trainer loses in a LTFB tournament, the winning model is 
+   *  copied over to it and this mutation strategy is applied to the
+   *  copied model to explore a new model. This is relevant to neural
+   *  architecture search (NAS). 
    */
   std::unique_ptr<MutationStrategy> m_mutate_algo;  
 
