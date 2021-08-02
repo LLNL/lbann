@@ -37,14 +37,18 @@
 namespace lbann {
 namespace callback {
 
-perturb_weights::perturb_weights(std::string output_name,
+perturb_weights::perturb_weights(EvalType upper, EvalType lower, EvalType scale, 
+			   std::string output_name,
                            El::Int batch_interval)
   : callback_base(batch_interval),
+    m_upper(upper),
+    m_lower(lower),
+    m_scale(scale),
     m_output_name(std::move(output_name)) {
 }
 
 perturb_weights::perturb_weights()
-  : perturb_weights("",0)
+  : perturb_weights(0,0,0,"",0)
 {}
 
 template <class Archive>
@@ -52,7 +56,10 @@ void perturb_weights::serialize(Archive & ar) {
   ar(::cereal::make_nvp(
        "BaseCallback",
        ::cereal::base_class<callback_base>(this)),
-     CEREAL_NVP(m_output_name));
+     CEREAL_NVP(m_output_name),
+     CEREAL_NVP(m_upper),
+     CEREAL_NVP(m_lower),
+     CEREAL_NVP(m_scale));
 }
 
 void perturb_weights::setup(model* m) {
@@ -82,7 +89,8 @@ void perturb_weights::on_batch_begin(model* m) {
    }
 
   if (m_output != nullptr &&
-      c.get_step() % m_batch_interval == 0) {
+      c.get_step() % m_batch_interval == 0 &&
+      c.get_execution_mode() == execution_mode::training) {
     perturb(*m);
   }
 }
@@ -94,8 +102,11 @@ void perturb_weights::perturb(model& m){
   // Useful constants
   constexpr DataType zero = 0;
   constexpr DataType one = 1;
-  constexpr DataType lower = 0.3;
-  constexpr DataType upper = 0.7;
+  DataType lower = m_lower;
+  DataType upper = m_upper;
+  DataType scale = m_scale;
+
+
 
   // RNG
   auto& gen = get_generator();
@@ -126,8 +137,11 @@ void perturb_weights::perturb(model& m){
 			auto val = temp.Get(i,0);
 			auto perturbed_val = val;
 
-			perturbed_val += dist(gen); // dist is a std::normal_distribution
-			perturbed_val = std::min(std::max(perturbed_val, lower), upper);
+			if(dist(gen) > 0.5){
+				perturbed_val += dist(gen)*scale; // dist is a std::normal_distribution
+				perturbed_val = std::min(std::max(perturbed_val, lower), upper);
+			}
+
 
 			temp.Set(i,0,perturbed_val);
 
@@ -158,6 +172,9 @@ build_perturb_weights_callback_from_pbuf(
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackPerturbWeights&>(proto_msg);
   return make_unique<perturb_weights>(
+    params.upper(),
+    params.lower(), 
+    params.scale(),
     params.output_name(),
     params.batch_interval());
 }
