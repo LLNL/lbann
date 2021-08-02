@@ -45,8 +45,9 @@ public:
    *  @param batch_interval Number of training mini-batch steps 
    *  @param output_name   Name of weight layer
    */
-  perturb_weights(std::string output_name,
-               El::Int batch_interval = 1);
+  perturb_weights(EvalType upper, EvalType lower, EvalType scale, 
+		  std::string output_name,
+                  El::Int batch_interval = 1);
 
   perturb_weights* copy() const override { return new perturb_weights(*this); }
   std::string name() const override { return "perturb weights"; }
@@ -71,6 +72,11 @@ private:
    *  output_name.
    */
   std::string m_output_name;
+
+
+  EvalType m_upper;
+  EvalType m_lower;
+  EvalType m_scale;
    
   void perturb(model& m);
 
