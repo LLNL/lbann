@@ -556,15 +556,14 @@ std::string smiles_data_reader::get_raw_sample(std::istream* istrm, size_t index
 
 void smiles_data_reader::build_some_maps() {
   for (const auto& index : m_shuffled_indices) {
+    auto const [file_id, local_id] = get_sample(index);
     std::stringstream s;
-    const sample_file_id_type file_id = get_sample_file_id(index);
     std::string dir = m_sample_list.get_samples_dirname();
     s << dir << "/" << m_sample_list.get_samples_filename(file_id);
     std::string filename = s.str();
     // this has bit me before, and can be an easy mistake to make
     // when writing sample lists:
     file::remove_multiple_slashes(filename);
-    long long local_id = get_sample_name(index);
 
     // construct map entries
     m_index_to_local_id[index] = local_id;
