@@ -413,7 +413,8 @@ message Callback {
     float upper = 1; // Upper bound for weight value
     float lower = 2; // Lower bound for weight value
     float scale = 3; // Scale of normal distribution N(1,0)
-    string output_name = 4;
-    int64 batch_interval = 5;
+    float perturb_probability = 4; // Probability of perturbing the weight
+    string output_name = 5;
+    int64 batch_interval = 6;
   }
 }
