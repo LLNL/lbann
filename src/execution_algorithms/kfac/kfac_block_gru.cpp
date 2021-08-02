@@ -66,9 +66,11 @@ template <>
 void kfac_block_gru<El::Device::CPU>::send_recv_reserve_space(lbann_comm *comm){
 }
 
-#ifdef LBANN_GRU_LAYER_CUDNN_SUPPORTED
 template <>
 void kfac_block_gru<El::Device::GPU>::send_recv_reserve_space(lbann_comm *comm){
+#ifndef LBANN_GRU_LAYER_CUDNN_SUPPORTED
+  LBANN_ERROR("GRU not supported on GPU without cuDNN support.");
+#else
   //Does not support Model parallel only Data Parallel
   if(this->m_layer->get_data_layout()!=data_layout::DATA_PARALLEL)
     LBANN_ERROR("send_recv_reserve_space function in",
@@ -86,9 +88,9 @@ void kfac_block_gru<El::Device::GPU>::send_recv_reserve_space(lbann_comm *comm){
 
   //Send the size of reserve space to secondary  grid
   if(m_reserve_space_fwd_size==0){
-    
+
     El::Matrix<DataType,  El::Device::CPU> reserve_size(1,1);
-    
+
 
     El::SyncInfo<El::Device::CPU> sync_info =El::SyncInfoFromMatrix(reserve_size);
 
@@ -156,16 +158,18 @@ void kfac_block_gru<El::Device::GPU>::send_recv_reserve_space(lbann_comm *comm){
        combined_comm,
        sync_info);
   }
+#endif // LBANN_GRU_LAYER_CUDNN_SUPPORTED
 }
-#endif // LBANN_HAS_GPU
 
 template <>
 void kfac_block_gru<El::Device::CPU>::on_forward_prop_end(lbann_comm *comm) {
 }
 
-#ifdef LBANN_HAS_GPU
 template <>
 void kfac_block_gru<El::Device::GPU>::on_forward_prop_end(lbann_comm *comm) {
+#ifndef LBANN_GRU_LAYER_CUDNN_SUPPORTED
+  LBANN_ERROR("GRU not supported on GPU without cuDNN support.");
+#else
 
   if(comm->get_grid_type()==GridType::NO_GRID)
   {
@@ -190,8 +194,8 @@ void kfac_block_gru<El::Device::GPU>::on_forward_prop_end(lbann_comm *comm) {
   {
     send_recv_reserve_space(comm);
   }
-}
 #endif // LBANN_GRU_LAYER_CUDNN_SUPPORTED
+}
 
 template <El::Device Device>
 const std::vector<El::AbstractMatrix<DataType>*>
@@ -253,7 +257,7 @@ void kfac_block_gru<Device>::compute_local_kronecker_factors(
   auto& hfc = this->get_workspace_matrix("hfc_t", hidden_size, local_batch_size*seq_length);
 
 
-  
+
   El::Matrix<DataType, Device> weights_Rh, biases_Rh;
   get_weight_matrix(kfac_gru_util::weight_type::Rh, weights_Rh);
   get_weight_matrix(kfac_gru_util::weight_type::bRh, biases_Rh);
@@ -535,7 +539,7 @@ void kfac_block_gru<Device>::compute_preconditioned_gradients(
       bool print_matrix,
       bool print_matrix_summary,
       bool print_time) {
-  
+
   auto& Ainv_h = m_kronecker_inverse_A_h;
   auto& Ainv_x = m_kronecker_inverse_A_x;
 
@@ -623,7 +627,7 @@ int kfac_block_gru<Device>::get_inverse_matrices(El::Matrix<DataType, Device>& o
 
     El::copy::util::InterleaveMatrix(
                                 size_inv, 1,
-                                m_kronecker_inverse_G[matrix_type].LockedBuffer(), 1, size_inv,                                
+                                m_kronecker_inverse_G[matrix_type].LockedBuffer(), 1, size_inv,
                                 output.Buffer(offset,0),
                                 1, size_inv,
                                 sync_info);
@@ -658,7 +662,7 @@ int kfac_block_gru<Device>::get_inverse_matrices(El::Matrix<DataType, Device>& o
 }
 
 template <El::Device Device>
-int kfac_block_gru<Device>::set_inverse_matrices(El::Matrix<DataType, Device>& workspace, 
+int kfac_block_gru<Device>::set_inverse_matrices(El::Matrix<DataType, Device>& workspace,
                           int offset,
                           lbann_comm *comm)
 {
@@ -775,10 +779,9 @@ template <>
 void kfac_block_gru<El::Device::CPU>::check_dnn_lib_spec() const {
 }
 
-#ifdef LBANN_GRU_LAYER_CUDNN_SUPPORTED
 template <>
 void kfac_block_gru<El::Device::GPU>::check_dnn_lib_spec() const {
-#ifdef LBANN_HAS_DNN_LIB
+#if defined(LBANN_GRU_LAYER_CUDNN_SUPPORTED) && defined(LBANN_HAS_DNN_LIB)
   const auto math_type = dnn_lib::get_default_convolution_math_type();
   if(math_type != dnn_lib::DNN_DEFAULT_MATH) {
     std::stringstream ss;
@@ -786,11 +789,10 @@ void kfac_block_gru<El::Device::GPU>::check_dnn_lib_spec() const {
        << " what the GRU K-FAC implementation expects when Tensor Cores are enabled.";
     LBANN_WARNING(ss.str());
   }
-#else // LBANN_HAS_DNN_LIB
+#else // defined(LBANN_GRU_LAYER_CUDNN_SUPPORTED) && defined(LBANN_HAS_DNN_LIB)
   LBANN_ERROR("cuDNN should be enabled to use K-FAC with GPUs.");
-#endif // LBANN_HAS_DNN_LIB
+#endif // defined(LBANN_GRU_LAYER_CUDNN_SUPPORTED) && defined(LBANN_HAS_DNN_LIB)
 }
-#endif // LBANN_GRU_LAYER_CUDNN_SUPPORTED
 
 template <>
 void kfac_block_gru<El::Device::CPU>::get_r_i(
@@ -839,7 +841,6 @@ void kfac_block_gru<El::Device::CPU>::get_r_i(
   }
 }
 
-#ifdef LBANN_GRU_LAYER_CUDNN_SUPPORTED
 template <>
 void kfac_block_gru<El::Device::GPU>::get_r_i(
     El::Matrix<DataType, El::Device::GPU>& r,
@@ -850,15 +851,17 @@ void kfac_block_gru<El::Device::GPU>::get_r_i(
     const El::Matrix<DataType, El::Device::GPU>& h0,
     const size_t local_batch_size,
     const El::SyncInfo<El::Device::GPU>& sync_info) {
-
+#ifndef LBANN_GRU_LAYER_CUDNN_SUPPORTED
+  LBANN_ERROR("cuDNN should be enabled to use K-FAC with GPUs.");
+#else
   kfac_gru_util::unpack_reserve_space(
       (const DataType *) m_reserve_space_fwd.data(),
       r, i,
       get_hidden_size(), get_seq_length(),
       local_batch_size,
       sync_info);
-}
 #endif // LBANN_GRU_LAYER_CUDNN_SUPPORTED
+}
 
 template <El::Device Device>
 void kfac_block_gru<Device>::get_weight_matrix(
@@ -870,7 +873,6 @@ void kfac_block_gru<Device>::get_weight_matrix(
       *this->m_weight_values[ids.first],
       El::IR(hidden_size*ids.second, hidden_size*(ids.second+1)), El::ALL);
   El::LockedView(view, weights_mat);
-  
 }
 
 template <El::Device Device>
@@ -1061,9 +1063,9 @@ void kfac_gru_util::get_g(
 }
 
 template class kfac_block_gru<El::Device::CPU>;
-#ifdef LBANN_GRU_LAYER_CUDNN_SUPPORTED
+#ifdef LBANN_HAS_GPU
 template class kfac_block_gru<El::Device::GPU>;
-#endif // LBANN_GRU_LAYER_CUDNN_SUPPORTED
+#endif // LBANN_HAS_GPU
 
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -1087,7 +1089,7 @@ void kfac_block_gru<Device>::send_recv_weights(lbann_comm *comm){
 
   //Computing size of global buffer
   int global_buffer_size = 0;
-  for(int i=0; i<4; ++i) 
+  for(int i=0; i<4; ++i)
   {
     auto& weights = this->m_layer->get_weights(i);
     const auto& dtw = dynamic_cast<data_type_weights<DataType>*>(&weights);
@@ -1104,7 +1106,7 @@ void kfac_block_gru<Device>::send_recv_weights(lbann_comm *comm){
   //copy weights to global buffers
   if(comm->get_grid_type() == GridType::PRIMARY_GRID)
   {
-    for(int i=0; i<4; ++i) 
+    for(int i=0; i<4; ++i)
     {
       auto& weights = this->m_layer->get_weights(i);
       const auto& dtw = dynamic_cast<data_type_weights<DataType>*>(&weights);
@@ -1155,7 +1157,7 @@ void kfac_block_gru<Device>::send_recv_weights(lbann_comm *comm){
   //copy weights from global buffers
   if(comm->get_grid_type() == GridType::SECONDARY_GRID)
   {
-    for(int i=0; i<4; ++i) 
+    for(int i=0; i<4; ++i)
     {
       auto& weights = this->m_layer->get_weights(i);
       const auto& dtw = dynamic_cast<data_type_weights<DataType>*>(&weights);
@@ -1216,7 +1218,7 @@ void kfac_block_gru<Device>::initialize_activations_and_errors(
       }
 
       for (auto& error : this->m_child_local_errors) {
-        
+
         if(dtl_child.get_data_layout() == data_layout::DATA_PARALLEL)
           error = make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
         else
@@ -1238,10 +1240,10 @@ void kfac_block_gru<Device>::initialize_activations_and_errors(
     El::Copy(local_errors,*this->m_child_local_errors[0]);
 
     send_recv_weights(comm);
-    
+
   }
 
-  
+
 
   if(comm->get_grid_type() == GridType::NO_GRID ){
 
