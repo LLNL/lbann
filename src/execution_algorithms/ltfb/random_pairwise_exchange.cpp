@@ -312,15 +312,19 @@ void RandomPairwiseExchange::select_next(model& m,
     // FIXME (trb 03/18/21): This is ... not great. We need to
     // unravel the "fake" polymorphism in the model non-hierarchy
     // soon.
+    using DAGModel = directed_acyclic_graph_model;
+    auto& local_model = dynamic_cast<DAGModel&>(m);
+    auto& partner_dag_model = dynamic_cast<DAGModel&>(*partner_model);
+    local_model = std::move(partner_dag_model);
     
     // Losing model mutates according to mutation strategy
-    m_mutate_algo->mutate(m, step);
+    m_mutate_algo->mutate(local_model, step);
 
     auto& trainer = get_trainer();
     auto&& metadata = trainer.get_data_coordinator().get_dr_metadata();
     m.setup(trainer.get_max_mini_batch_size(),
             metadata,
-            true); 
+            /*force*/true); 
   }
 
   LBANN_LOG_TRAINER_MASTER(comm,
