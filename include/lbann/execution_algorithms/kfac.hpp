@@ -86,7 +86,8 @@ public:
     kfac::kfac_inverse_strategy inverse_strategy,
     std::vector<std::string> disable_layers,
     double learning_rate_factor,
-    double learning_rate_factor_gru);
+    double learning_rate_factor_gru,
+    size_t compute_interval);
 
   KFAC(KFAC const& other);
   KFAC& operator=(const KFAC& other);
@@ -161,6 +162,10 @@ protected:
    *         `get_new_exection_context()`.
    */
   kfac::ExecutionContext* do_get_new_execution_context() const final;
+  
+  void send_recv_inverse_matrices(
+    ExeContextType& context,
+    lbann_comm *comm);
 
 private:
 
@@ -189,6 +194,8 @@ private:
     ExeContextType& context,
     model& model);
 #endif // 0
+
+  void sync_weights_model(model& model, lbann_comm *comm);
 
   /** @brief The KFAC stopping criteria. */
   std::unique_ptr<TermCriteriaType> m_stopping_criteria;
@@ -231,7 +238,10 @@ private:
   double m_learning_rate_factor, m_learning_rate_factor_gru;
 
   /** @brief Whether inverse of Kronecker factors are available. */
-  bool m_has_kronecker_inverse;
+  bool m_has_kronecker_inverse=false;
+  size_t m_compute_interval;
+
+  El::Matrix<double, El::Device::CPU> m_inverse_matrices_size; 
 
 }; // class KFAC
 
