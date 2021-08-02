@@ -37,18 +37,19 @@
 namespace lbann {
 namespace callback {
 
-perturb_weights::perturb_weights(EvalType upper, EvalType lower, EvalType scale, 
+perturb_weights::perturb_weights(EvalType upper, EvalType lower, EvalType scale, EvalType perturb_probability,
 			   std::string output_name,
                            El::Int batch_interval)
   : callback_base(batch_interval),
     m_upper(upper),
     m_lower(lower),
     m_scale(scale),
+    m_perturb_probability(perturb_probability),
     m_output_name(std::move(output_name)) {
 }
 
 perturb_weights::perturb_weights()
-  : perturb_weights(0,0,0,"",0)
+  : perturb_weights(0,0,0,0,"",0)
 {}
 
 template <class Archive>
@@ -59,7 +60,8 @@ void perturb_weights::serialize(Archive & ar) {
      CEREAL_NVP(m_output_name),
      CEREAL_NVP(m_upper),
      CEREAL_NVP(m_lower),
-     CEREAL_NVP(m_scale));
+     CEREAL_NVP(m_scale),
+     CEREAL_NVP(m_perturb_probability));
 }
 
 void perturb_weights::setup(model* m) {
@@ -105,12 +107,14 @@ void perturb_weights::perturb(model& m){
   DataType lower = m_lower;
   DataType upper = m_upper;
   DataType scale = m_scale;
+  DataType thres = one - m_perturb_probability;
 
 
 
   // RNG
   auto& gen = get_generator();
-  std::normal_distribution<DataType> dist(zero, one);
+  std::normal_distribution<DataType> norm(zero, one);
+  std::uniform_real_distribution<DataType> uni(zero,one);
 
 
   for (auto* w : m.get_weights()) {
@@ -137,8 +141,8 @@ void perturb_weights::perturb(model& m){
 			auto val = temp.Get(i,0);
 			auto perturbed_val = val;
 
-			if(dist(gen) > 0.5){
-				perturbed_val += dist(gen)*scale; // dist is a std::normal_distribution
+			if(uni(gen) > thres){
+				perturbed_val += norm(gen)*scale; 
 				perturbed_val = std::min(std::max(perturbed_val, lower), upper);
 			}
 
@@ -175,6 +179,7 @@ build_perturb_weights_callback_from_pbuf(
     params.upper(),
     params.lower(), 
     params.scale(),
+    params.perturb_probability(),
     params.output_name(),
     params.batch_interval());
 }
