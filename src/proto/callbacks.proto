@@ -410,7 +410,10 @@ message Callback {
   }
 
   message CallbackPerturbWeights {
-    string output_name = 1;
-    int64 batch_interval = 2;
+    float upper = 1; // Upper bound for weight value
+    float lower = 2; // Lower bound for weight value
+    float scale = 3; // Scale of normal distribution N(1,0)
+    string output_name = 4;
+    int64 batch_interval = 5;
   }
 }
