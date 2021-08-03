@@ -38,11 +38,18 @@
 
 namespace lbann {
 namespace ltfb {
+namespace {
 
+/** @brief Construct a new activation layer.
+ *  @param[in] comm The current communicator
+ *  @param[in] new_type The type of the new activation layer (ReLU or tanh
+ * etc)
+ *  @param[in] new_name The name of the new activation layer
+ */
 std::unique_ptr<lbann::Layer>
-ReplaceActivation::make_new_activation_layer(lbann::lbann_comm& comm,
-                                             std::string const& new_type,
-                                             std::string const& new_name)
+make_new_activation_layer(lbann_comm& comm,
+                          std::string const& new_type,
+                          std::string const& new_name)
 {
 #ifdef LBANN_HAS_GPU
   constexpr El::Device Dev = El::Device::GPU;
@@ -50,39 +57,41 @@ ReplaceActivation::make_new_activation_layer(lbann::lbann_comm& comm,
   constexpr El::Device Dev = El::Device::CPU;
 #endif
 
-  std::unique_ptr<lbann::Layer> layer;
+  std::unique_ptr<Layer> layer;
 
   if (new_type == "relu") {
-    layer = std::make_unique<
-      lbann::relu_layer<DataType, data_layout::DATA_PARALLEL, Dev>>(&comm);
+    layer =
+      std::make_unique<relu_layer<DataType, data_layout::DATA_PARALLEL, Dev>>(
+        &comm);
   }
   else if (new_type == "tanh") {
-    layer = std::make_unique<
-      lbann::tanh_layer<DataType, data_layout::DATA_PARALLEL, Dev>>(&comm);
+    layer =
+      std::make_unique<tanh_layer<DataType, data_layout::DATA_PARALLEL, Dev>>(
+        &comm);
   }
   else if (new_type == "softmax") {
     layer = std::make_unique<
-      lbann::softmax_layer<DataType, data_layout::DATA_PARALLEL, Dev>>(
+      softmax_layer<DataType, data_layout::DATA_PARALLEL, Dev>>(
       &comm,
       softmax_mode::INSTANCE);
   }
   else if (new_type == "elu") {
-    layer = std::make_unique<
-      lbann::elu_layer<DataType, data_layout::DATA_PARALLEL, Dev>>(&comm, 1);
+    layer =
+      std::make_unique<elu_layer<DataType, data_layout::DATA_PARALLEL, Dev>>(
+        &comm,
+        1);
   }
   else if (new_type == "leaky relu") {
     layer = std::make_unique<
-      lbann::leaky_relu_layer<DataType, data_layout::DATA_PARALLEL, Dev>>(&comm,
-                                                                          0.01);
+      leaky_relu_layer<DataType, data_layout::DATA_PARALLEL, Dev>>(&comm, 0.01);
   }
   else if (new_type == "log softmax") {
     layer = std::make_unique<
-      lbann::log_softmax_layer<DataType, data_layout::DATA_PARALLEL, Dev>>(
-      &comm);
+      log_softmax_layer<DataType, data_layout::DATA_PARALLEL, Dev>>(&comm);
   }
   else if (new_type == "sigmoid") {
     layer = std::make_unique<
-      lbann::sigmoid_layer<DataType, data_layout::DATA_PARALLEL, Dev>>(&comm);
+      sigmoid_layer<DataType, data_layout::DATA_PARALLEL, Dev>>(&comm);
   }
   else {
     LBANN_ERROR("Unknown new layer type: ", new_type);
@@ -91,13 +100,15 @@ ReplaceActivation::make_new_activation_layer(lbann::lbann_comm& comm,
   return layer;
 }
 
+} // namespace
+
 void ReplaceActivation::mutate(model& m, const int& step)
 {
-  std::vector<std::string> activation_types = {"relu",
-                                               "tanh",
-                                               "elu",
-                                               "sigmoid",
-                                               "leaky relu"};
+  static std::vector<std::string> const activation_types = {"relu",
+                                                            "tanh",
+                                                            "elu",
+                                                            "sigmoid",
+                                                            "leaky relu"};
   std::vector<std::string> activation_layer_names;
 
   auto& comm = *m.get_comm();

@@ -26,7 +26,8 @@
 #ifndef LBANN_EXECUTION_ALGORITHMS_LTFB_MUTATION_STRATEGY_HPP_INCLUDED
 #define LBANN_EXECUTION_ALGORITHMS_LTFB_MUTATION_STRATEGY_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/models/model.hpp"
+#include "lbann/utils/cloneable.hpp"
 
 namespace lbann {
 namespace ltfb {
@@ -37,7 +38,6 @@ public:
   MutationStrategy(){};
   virtual ~MutationStrategy() = default;
 
-public:
   /** @brief Apply a change to the model.
    *  @param[in,out] m The model to change.
    *  @param[in] step The current execution step in LTFB
@@ -46,32 +46,21 @@ public:
 };
 
 // No Mutation
-class NullMutation : public Cloneable<NullMutation, MutationStrategy>
+class NullMutation final : public Cloneable<NullMutation, MutationStrategy>
 {
 
 public:
   NullMutation() = default;
-  void mutate(model&, const int&) override {}
+  void mutate(model& m, const int& step) final {}
 };
 
 // Replace activation layers
-class ReplaceActivation : public Cloneable<ReplaceActivation, MutationStrategy>
+class ReplaceActivation final
+  : public Cloneable<ReplaceActivation, MutationStrategy>
 {
 public:
   ReplaceActivation() = default;
-
-  /** @brief Construct a new activation layer.
-   *  @param[in] comm The current communicator
-   *  @param[in] new_type The type of the new activation layer (ReLU or tanh
-   * etc)
-   *  @param[in] new_name The name of the new activation layer
-   */
-
-  std::unique_ptr<lbann::Layer>
-  make_new_activation_layer(lbann::lbann_comm& comm,
-                            std::string const& new_type,
-                            std::string const& new_name);
-  void mutate(model& m, const int& step);
+  void mutate(model& m, const int& step) final;
 };
 
 } // namespace ltfb

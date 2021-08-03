@@ -138,7 +138,9 @@ RandomPairwiseExchange::RandomPairwiseExchange(
   std::unordered_map<std::string, metric_strategy> metrics,
   std::unique_ptr<ExchangeStrategy> comm_algo,
   std::unique_ptr<MutationStrategy> mutate_algo)
-  : m_metrics{std::move(metrics)}, m_comm_algo{std::move(comm_algo)}, m_mutate_algo{std::move(mutate_algo)}
+  : m_metrics{std::move(metrics)}, 
+    m_comm_algo{std::move(comm_algo)}, 
+    m_mutate_algo{std::move(mutate_algo)}
 {
   LBANN_ASSERT(m_metrics.size());
 }
@@ -149,12 +151,14 @@ RandomPairwiseExchange::RandomPairwiseExchange(
   std::unique_ptr<ExchangeStrategy> comm_algo,
   std::unique_ptr<MutationStrategy> mutate_algo)
   : RandomPairwiseExchange({{metric_name, winner_strategy}},
-                           std::move(comm_algo), std::move(mutate_algo))
+                           std::move(comm_algo), 
+                           std::move(mutate_algo))
 {}
 
 RandomPairwiseExchange::RandomPairwiseExchange(
   RandomPairwiseExchange const& other)
-  : m_metrics{other.m_metrics}, m_comm_algo{other.m_comm_algo->clone()},
+  : m_metrics{other.m_metrics}, 
+    m_comm_algo{other.m_comm_algo->clone()},
     m_mutate_algo{other.m_mutate_algo->clone()}
 {}
 
@@ -317,14 +321,14 @@ void RandomPairwiseExchange::select_next(model& m,
     auto& partner_dag_model = dynamic_cast<DAGModel&>(*partner_model);
     local_model = std::move(partner_dag_model);
 
-    // Losing model mutates according to mutation strategy
+    // Winning model mutates according to mutation strategy
     m_mutate_algo->mutate(m, step);
 
     auto& trainer = get_trainer();
     auto&& metadata = trainer.get_data_coordinator().get_dr_metadata();
     m.setup(trainer.get_max_mini_batch_size(),
             metadata,
-            /*force*/true); 
+            /*force*/true);
   }
 
   LBANN_LOG_TRAINER_MASTER(comm,
