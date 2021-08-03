@@ -75,9 +75,11 @@ template <typename SampleListT>
 void data_reader_sample_list<SampleListT>::shuffle_indices(rng_gen& gen)
 {
   generic_data_reader::shuffle_indices(gen);
-  m_sample_list.compute_epochs_file_usage(get_shuffled_indices(),
-                                          get_mini_batch_size(),
-                                          *m_comm);
+  if(get_mini_batch_size() != 0) {
+    m_sample_list.compute_epochs_file_usage(get_shuffled_indices(),
+                                            get_mini_batch_size(),
+                                            *m_comm);
+  }
 }
 
 template <typename SampleListT>
