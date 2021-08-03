@@ -151,7 +151,7 @@ class ChannelwiseFullyConnectedModule(Module):
     """Initalize channelwise fully connected module
 
     Args:
-        size (int): Size of output tensor.
+        size (int or list): Dimension of the output tensor
         bias (bool): Whether to apply bias after linearity.
         transpose (bool): Whether to apply transpose of weights
                 matrix.
