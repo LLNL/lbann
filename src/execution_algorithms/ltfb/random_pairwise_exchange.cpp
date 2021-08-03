@@ -316,9 +316,9 @@ void RandomPairwiseExchange::select_next(model& m,
     auto& local_model = dynamic_cast<DAGModel&>(m);
     auto& partner_dag_model = dynamic_cast<DAGModel&>(*partner_model);
     local_model = std::move(partner_dag_model);
-    
+
     // Losing model mutates according to mutation strategy
-    m_mutate_algo->mutate(local_model, step);
+    m_mutate_algo->mutate(m, step);
 
     auto& trainer = get_trainer();
     auto&& metadata = trainer.get_data_coordinator().get_dr_metadata();
