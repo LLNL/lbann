@@ -48,7 +48,7 @@ get_fwd_conv_workspace_size(TensorDescriptor const& wDesc,
                             TensorDescriptor const& yDesc,
                             El::SyncInfo<El::Device::GPU> const& si)
 {
-  size_t size = 1 << 30 // @todo Allocate largest free block
+  size_t size = 1 << 30; // @todo Allocate largest free block
   return size;
 }
 
@@ -59,7 +59,7 @@ get_bwd_data_conv_workspace_size(TensorDescriptor const& dyDesc,
                                  TensorDescriptor const& dxDesc,
                                  El::SyncInfo<El::Device::GPU> const& si)
 {
-  size_t size = 1 << 30 // @todo Allocate largest free block
+  size_t size = 1 << 30; // @todo Allocate largest free block
   return size;
 }
 
@@ -70,7 +70,7 @@ get_bwd_weights_conv_workspace_size(TensorDescriptor const& dyDesc,
                                     TensorDescriptor const& dwDesc,
                                     El::SyncInfo<El::Device::GPU> const& si)
 {
-  size_t size = 1 << 30 // @todo Allocate largest free block
+  size_t size = 1 << 30; // @todo Allocate largest free block
   return size;
 }
 
