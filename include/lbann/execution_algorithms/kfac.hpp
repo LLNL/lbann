@@ -163,7 +163,10 @@ protected:
    */
   kfac::KFACExecutionContext* do_get_new_execution_context() const final;
 
-  void send_recv_inverse_matrices(
+  void start_send_recv_inverse_matrices(
+    ExeContextType& context,
+    lbann_comm *comm);
+  void end_send_recv_inverse_matrices(
     ExeContextType& context,
     lbann_comm *comm);
 
@@ -196,6 +199,9 @@ private:
 #endif // 0
 
   void sync_weights_model(model& model, lbann_comm *comm);
+
+  void start_sync_weights_async(model& model, lbann_comm *comm);
+  void end_sync_weights_async(model& model, lbann_comm *comm);
 
   /** @brief The KFAC stopping criteria. */
   std::unique_ptr<TermCriteriaType> m_stopping_criteria;
@@ -242,6 +248,10 @@ private:
   size_t m_compute_interval;
 
   El::Matrix<double, El::Device::CPU> m_inverse_matrices_size;
+
+  int m_global_inverse_buffer_size=0;
+
+  std::vector<El::mpi::Request<DataType>> m_inverse_matrix_communication_reqs, m_weights_communication_reqs;
 
 }; // class KFAC
 

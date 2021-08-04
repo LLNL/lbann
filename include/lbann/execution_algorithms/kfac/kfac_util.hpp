@@ -174,6 +174,31 @@ void unpack_lower_tri(
     const El::Matrix<DataType, Device>& L,
     const El::SyncInfo<Device>& sync_info);
 
+template<typename T, El::Device Device>
+void TranslateBetweenGridsVCAsync
+( const El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& A,
+  El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& B,
+  El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& subset,
+  std::vector<El::mpi::Request<T>>& Requests);
+
+template<typename T, El::Device Device>
+void TranslateBetweenGridsSTARAsync
+(const El::DistMatrix<T,El::STAR,El::STAR,El::ELEMENT,Device>& A,
+  El::DistMatrix<T,El::STAR,El::STAR,El::ELEMENT,Device>& B,
+  std::vector<El::mpi::Request<T>>& Requests);
+
+template<typename T, El::Device Device>
+void TranslateBetweenGridsKFACAsync
+(const El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& A,
+  El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& B,
+  std::vector<El::mpi::Request<T>>& Requests);
+
+template<typename T, El::Device Device>
+void TranslateBetweenGridsVC
+(El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device> const& A,
+  El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& B);
+
+
 } // namespace kfac
 } // namespace lbann
 

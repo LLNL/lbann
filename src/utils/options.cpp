@@ -218,20 +218,18 @@ void construct_std_options()
                         {"--reader"},
                         "[STD] Data reader input file",
                         "");
-  arg_parser.add_option(
-    LBANN_OPTION_RESTART_DIR,
-    {"--restart_dir"},
-    "[STD] Restart from a checkpoint found in the given directory.\n"
-    "If the directory doesn't exist or doesn't contain a checkpoint,\n"
-    "an error will be thrown.\n",
-    "");
-  arg_parser.add_option(
-    LBANN_OPTION_TRAINER_CREATE_TWO_MODELS,
-    {"--trainer_create_two_models"},
-    utils::ENV("LBANN_TRAINER_CREATE_TWO_MODELS"),
-    "[STD] Create two models (one each for primary and secondary grid). "
-    "Default is False.",
-    false);
+  arg_parser.add_option(LBANN_OPTION_RESTART_DIR,
+                        {"--restart_dir"},
+                        "[STD] Restart from a checkpoint found in the given directory.\n"
+                        "If the directory doesn't exist or doesn't contain a checkpoint,\n"
+                        "an error will be thrown.\n",
+                        "");
+  arg_parser.add_option(LBANN_OPTION_TRAINER_CREATE_TWO_MODELS,
+                        {"--trainer_create_two_models"},
+                        utils::ENV("LBANN_TRAINER_CREATE_TWO_MODELS"),
+                        "[STD] Create two models (one each for primary and secondary grid). "
+                        "Default is False.",
+                         false);
   arg_parser.add_option(LBANN_OPTION_TRAINER_GRID_HEIGHT,
                         {"--trainer_grid_height"},
                         utils::ENV("LBANN_TRAINER_GRID_HEIGHT"),
@@ -244,6 +242,12 @@ void construct_std_options()
                         "[STD] Primary grid size per trainer. "
                         "Disables Sub-grid parallelism, when it is 0",
                         0);
+  arg_parser.add_option(LBANN_OPTION_TRAINER_ENABLE_SUBGRID_ASYNC_COMM,
+                        {"--trainer_enable_subgrid_async_comm"},
+                        utils::ENV("LBANN_TRAINER_ENABLE_SUBGRID_ASYNC_COMM"),
+                        "Enable asynchronous communication in sub-grid parallelism. "
+                        "Default is False.",
+                        false);
   arg_parser.add_option(LBANN_OPTION_NUM_SUBGRIDS_BLOCK_ORDER,
                         {"--num-subgrids", "--num-subgrids-block-order"},
                         utils::ENV("LBANN_NUM_SUBGRIDS"),

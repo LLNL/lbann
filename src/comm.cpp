@@ -140,10 +140,12 @@ void lbann_comm::split_trainers(
 
 void lbann_comm::split_trainer_grid(
   int num_process_primary_grid,
-  bool create_two_models)
+  bool create_two_models,
+  bool enable_async_comm)
 {
   const int world_size = El::mpi::Size(m_trainer_comm);
   m_create_two_models = create_two_models;
+  m_subgrid_async_progress = enable_async_comm;
 
   // If primary grid size is not given then split resources equally between
   // primary and secondary grid
@@ -201,7 +203,7 @@ void lbann_comm::split_trainer_grid(
   std::cout<<"\n";
 
   //Create Groups to form communicators
-  El::mpi::Group trainer_group, primary_grid_group, secondary_grid_group;
+  El::mpi::Group trainer_group, primary_grid_group, secondary_grid_group, subset_grid_group;
   El::mpi::CommGroup( m_trainer_comm, trainer_group );
   El::mpi::Incl( trainer_group, m_primary_grid_ranks.size(), m_primary_grid_ranks.data(), primary_grid_group);
   El::mpi::Incl( trainer_group, m_secondary_grid_ranks.size(), m_secondary_grid_ranks.data(), secondary_grid_group);
@@ -240,6 +242,31 @@ void lbann_comm::split_trainer_grid(
       m_combined_grid_comm.GetMPIComm(),
       secondary_grid_group,
       num_process_secondary_grid, El::COLUMN_MAJOR);
+  }
+
+  if(m_subgrid_async_progress){
+    std::vector<int> subset_ranks;
+
+    int start_rank;
+    if(num_process_primary_grid>num_process_secondary_grid)
+      start_rank=0;
+    else
+      start_rank=num_process_primary_grid;
+    int subset_grid_size = std::min(num_process_primary_grid, 
+                            num_process_secondary_grid);
+    for(int i=0; i<subset_grid_size; ++i){
+      subset_ranks.push_back(i+start_rank);
+    }
+    El::mpi::Incl( trainer_group, 
+                    subset_ranks.size(), 
+                    subset_ranks.data(), 
+                    subset_grid_group);
+    
+    m_subset_grid = make_unique<El::Grid>(
+      m_combined_grid_comm.GetMPIComm(),
+      subset_grid_group,
+      subset_grid_size, El::COLUMN_MAJOR);
+
   }
 
 }

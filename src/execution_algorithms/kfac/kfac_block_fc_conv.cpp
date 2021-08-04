@@ -388,6 +388,181 @@ void kfac_block_fc_conv<Device>::compute_preconditioned_gradients(
 }
 
 template <El::Device Device>
+void kfac_block_fc_conv<Device>::start_communication_forward_end(
+    lbann_comm* comm) {
+  int num_local_activations = 1;
+  const auto parent = this->m_layer->get_parent_layers()[0];
+  const auto& dtl_parent = dynamic_cast<const data_type_layer<DataType>&>(*parent);
+  const auto& local_activations = dtl_parent.get_activations();
+
+  if(comm->get_KFAC_subgrid_create_two_models() or comm->get_grid_type() == GridType::NO_GRID ){
+    this->m_parent_local_activations.resize(num_local_activations);
+  }
+  else{
+    if(this->m_parent_local_activations.size()==0){
+      //Resize vectors
+      this->m_parent_local_activations.resize(num_local_activations);
+
+      //Initialize Dist Matrices
+      for (auto& input : this->m_parent_local_activations) {
+        if(dtl_parent.get_data_layout() == data_layout::DATA_PARALLEL){
+          input = make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
+          if(comm->enable_subgrid_async_communication())
+            this->m_subset_matrix.push_back(
+                make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_subset_grid(), 0));
+        }
+        else{
+          input = make_unique<El::DistMatrix<DataType, El::MC  , El::MR, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
+          if(comm->enable_subgrid_async_communication())
+            LBANN_ERROR("Async prgoress is not supported for model-parallel layer layout in sub-grid parallelism");
+        }
+      }
+    }
+
+    std::vector<El::mpi::Request<DataType>> requests;
+
+    if(comm->enable_subgrid_async_communication()==false)
+    {
+      El::Copy(local_activations,*this->m_parent_local_activations[0]);
+    }
+    else{
+      const auto local_activations_vc = dynamic_cast<const El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(local_activations));
+      auto local_activations0 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_parent_local_activations[0]));
+      auto subset0 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_subset_matrix[0]));
+
+      kfac::TranslateBetweenGridsVCAsync(*local_activations_vc,
+                                              *local_activations0,
+                                              *subset0,
+                                              this->m_requests_forward_end);
+
+
+    }//Async progress
+  }
+
+  if(comm->get_grid_type() == GridType::NO_GRID or comm->get_KFAC_subgrid_create_two_models()){
+
+    for (auto& input : this->m_parent_local_activations) {
+      if(dtl_parent.get_data_layout() == data_layout::DATA_PARALLEL)
+        input = make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
+      else
+        input = make_unique<El::DistMatrix<DataType, El::MC  , El::MR, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
+    }
+    El::LockedView( *(this->m_parent_local_activations[0]), local_activations );
+  }
+
+}
+
+template <El::Device Device>
+void kfac_block_fc_conv<Device>::end_communication_forward_end(
+    lbann_comm* comm) {
+  if((comm->get_grid_type() == GridType::SECONDARY_GRID or comm->get_grid_type() == GridType::PRIMARY_GRID)
+      and comm->enable_subgrid_async_communication()
+      and comm->get_KFAC_subgrid_create_two_models()==false){
+    auto primary_grid_ranks = comm->get_primary_grid_ranks();
+    auto secondary_grid_ranks = comm->get_secondary_grid_ranks();
+
+    for(auto& req:this->m_requests_forward_end){
+      El::mpi::Wait(req);
+    }
+
+    if(primary_grid_ranks.size() < secondary_grid_ranks.size()){
+      auto local_activations0 = dynamic_cast<
+          El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_parent_local_activations[0]));
+      auto subset0 = dynamic_cast<
+          El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_subset_matrix[0]));
+      kfac::TranslateBetweenGridsVC(*subset0,
+                                    *local_activations0);
+    }
+    this->m_requests_forward_end.clear();
+  }
+}
+
+template <El::Device Device>
+void kfac_block_fc_conv<Device>::start_communication_backward_end(
+    lbann_comm* comm) {
+  int num_local_errors = 1;
+  const auto child = this->m_layer->get_child_layers()[0];
+  const auto& dtl_child = dynamic_cast<const data_type_layer<DataType>&>(*child);
+  const auto& local_errors = dtl_child.get_error_signals();
+
+  if(comm->get_KFAC_subgrid_create_two_models() or comm->get_grid_type() == GridType::NO_GRID ){
+    this->m_child_local_errors.resize(num_local_errors);
+  }
+  else{
+    if(this->m_child_local_errors.size()==0){
+      //Resize vectors
+      this->m_child_local_errors.resize(num_local_errors);
+
+      //Initialize Dist Matrices
+      for (auto& error : this->m_child_local_errors) {
+
+        if(dtl_child.get_data_layout() == data_layout::DATA_PARALLEL){
+          error = make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
+          if(comm->enable_subgrid_async_communication())
+            this->m_subset_matrix.push_back(
+                    make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_subset_grid(), 0));
+        }
+        else{
+          error = make_unique<El::DistMatrix<DataType, El::MC  , El::MR, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
+          if(comm->enable_subgrid_async_communication())
+            LBANN_ERROR("Async prgoress is not supported for model-parallel layer layout in sub-grid parallelism");
+        }
+      }
+    }
+
+    if(comm->enable_subgrid_async_communication()==false)
+    {
+      El::Copy(local_errors,*this->m_child_local_errors[0]);
+    }
+    else{
+      const auto local_errors_vc = dynamic_cast<const El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(local_errors));
+      auto local_errors0 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_child_local_errors[0]));
+      auto subset1 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_subset_matrix[1]));
+
+      kfac::TranslateBetweenGridsVCAsync(*local_errors_vc,
+                                              *local_errors0,
+                                              *subset1,
+                                              this->m_requests_backward_end);
+    }//Async progress
+  }
+
+  if(comm->get_grid_type() == GridType::NO_GRID  or comm->get_KFAC_subgrid_create_two_models()){
+    for (auto& error : this->m_child_local_errors) {
+      if(dtl_child.get_data_layout() == data_layout::DATA_PARALLEL)
+        error = make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
+      else
+        error = make_unique<El::DistMatrix<DataType, El::MC  , El::MR, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
+    }
+    El::LockedView( *(this->m_child_local_errors[0]),local_errors );
+  }
+}
+
+template <El::Device Device>
+void kfac_block_fc_conv<Device>::end_communication_backward_end(
+    lbann_comm* comm) {
+  if((comm->get_grid_type() == GridType::SECONDARY_GRID or comm->get_grid_type() == GridType::PRIMARY_GRID)
+      and comm->enable_subgrid_async_communication()
+      and comm->get_KFAC_subgrid_create_two_models()==false){
+    auto primary_grid_ranks = comm->get_primary_grid_ranks();
+    auto secondary_grid_ranks = comm->get_secondary_grid_ranks();
+
+    for(auto& req:this->m_requests_backward_end){
+      El::mpi::Wait(req);
+    }
+
+    if(primary_grid_ranks.size() < secondary_grid_ranks.size()){
+      auto local_errors0 = dynamic_cast<
+          El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_child_local_errors[0]));
+      auto subset1 = dynamic_cast<
+          El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_subset_matrix[1]));
+      kfac::TranslateBetweenGridsVC(*subset1,
+                                    *local_errors0);
+    }
+    this->m_requests_backward_end.clear();
+  }
+}
+
+template <El::Device Device>
 void kfac_block_fc_conv<Device>::initialize_activations_and_errors(
     lbann_comm* comm,
     int num_local_activations,
@@ -413,25 +588,69 @@ void kfac_block_fc_conv<Device>::initialize_activations_and_errors(
 
       //Initialize Dist Matrices
       for (auto& input : this->m_parent_local_activations) {
-        if(dtl_parent.get_data_layout() == data_layout::DATA_PARALLEL)
+        if(dtl_parent.get_data_layout() == data_layout::DATA_PARALLEL){
           input = std::make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
+          this->m_subset_matrix.push_back(std::make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_subset_grid(), 0));
+        }
         else
           input = std::make_unique<El::DistMatrix<DataType, El::MC  , El::MR, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
       }
 
       for (auto& error : this->m_child_local_errors) {
 
-        if(dtl_child.get_data_layout() == data_layout::DATA_PARALLEL)
+        if(dtl_child.get_data_layout() == data_layout::DATA_PARALLEL){
           error = std::make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
+          this->m_subset_matrix.push_back(std::make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_subset_grid(), 0));
+        }
         else
           error = std::make_unique<El::DistMatrix<DataType, El::MC  , El::MR, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
       }
     }
-    El::Copy(local_activations,*this->m_parent_local_activations[0]);
-    El::Copy(local_errors,*this->m_child_local_errors[0]);
+
+    int async_progress = true;
+
+    std::vector<El::mpi::Request<DataType>> Requests, requests_subset;
+
+    if(async_progress==false)
+    {
+      El::Copy(local_activations,*this->m_parent_local_activations[0]);
+      El::Copy(local_errors,*this->m_child_local_errors[0]);
+    }
+    else{
+      const auto local_activations_vc = dynamic_cast<const El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(local_activations));
+      const auto local_errors_vc = dynamic_cast<const El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(local_errors));
+      auto local_activations0 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_parent_local_activations[0]));
+      auto local_errors0 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_child_local_errors[0]));
+      auto subset0 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_subset_matrix[0]));
+      auto subset1 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_subset_matrix[1]));
+
+      kfac::TranslateBetweenGridsVCAsync(*local_activations_vc,
+                                              *local_activations0,
+                                              *subset0,
+                                              Requests);
+      for(auto& req:Requests){
+        El::mpi::Wait(req);
+      }
+      Requests.clear();
+      kfac::TranslateBetweenGridsVCAsync(*local_errors_vc,
+                                              *local_errors0,
+                                              *subset1,
+                                              Requests);
+      auto primary_grid_ranks = comm->get_primary_grid_ranks();
+      auto secondary_grid_ranks = comm->get_secondary_grid_ranks();
+
+      for(auto& req:Requests){
+        El::mpi::Wait(req);
+      }
+
+      if(async_progress and primary_grid_ranks.size() < secondary_grid_ranks.size()){
+        kfac::TranslateBetweenGridsVC(*subset0,
+                                                *local_activations0);
+        kfac::TranslateBetweenGridsVC(*subset1,
+                                                *local_errors0);
+      }
+    }//Async progress
   }
-
-
 
   if(comm->get_grid_type() == GridType::NO_GRID ){
 

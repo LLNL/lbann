@@ -187,7 +187,16 @@ class kfac_block_gru: public kfac_block<Device> {
       int offset,
       lbann_comm *comm) override;
 
-  void send_recv_weights(lbann_comm *comm);
+  // void send_recv_weights(lbann_comm *comm);
+  
+  void start_communication_forward_end(
+      lbann_comm* comm) override;
+  void end_communication_forward_end(
+      lbann_comm* comm) override;
+  void start_communication_backward_end(
+      lbann_comm* comm) override;
+  void end_communication_backward_end(
+      lbann_comm* comm) override;
 
   /** @brief Get inverse matrices size vector */
   std::vector<int>
@@ -296,6 +305,8 @@ class kfac_block_gru: public kfac_block<Device> {
   m_grad_buffer_G;
 
   size_t m_reserve_space_fwd_size=0;
+
+  std::vector<El::mpi::Request<El::byte>> m_requests_workspace;
 
 };
 

@@ -158,6 +158,15 @@ class kfac_block_fc_conv: public kfac_block<Device> {
       int num_local_errors,
       int num_weights) override;
 
+  void start_communication_forward_end(
+      lbann_comm* comm) override;
+  void end_communication_forward_end(
+      lbann_comm* comm) override;
+  void start_communication_backward_end(
+      lbann_comm* comm) override;
+  void end_communication_backward_end(
+      lbann_comm* comm) override;
+
   const std::vector<El::AbstractMatrix<DataType>*>
   get_preconditioned_grad_buffers() override;
 

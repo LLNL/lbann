@@ -163,8 +163,8 @@ void KFAC::train(
       do_epoch_begin_cbs(model);
       is_start_of_epoch = false;
       //sync weights if we have a separate model for primary and secondary grid
-      if(comm.get_KFAC_subgrid_create_two_models() and comm.get_grid_type()!=GridType::NO_GRID)
-        sync_weights_model(model, model.get_comm());
+      // if(comm.get_KFAC_subgrid_create_two_models() and comm.get_grid_type()!=GridType::NO_GRID)
+      // start_sync_weights_async(model, model.get_comm());
     }
 
     // Train a mini batch. Returns "true" if the data_coordinator
@@ -261,18 +261,38 @@ bool KFAC::train_mini_batch(
     {
 #endif
       if(comm.get_grid_type()==GridType::PRIMARY_GRID
-        or comm.get_KFAC_subgrid_create_two_models()
+        or (comm.get_KFAC_subgrid_create_two_models() and compute_inverse)
         or comm.get_grid_type() == GridType::NO_GRID){
+
+        //Send weights from primary grid to secondary grid in sub-grid parallelism 
+        if(comm.get_KFAC_subgrid_create_two_models() 
+            and comm.get_grid_type()!=GridType::NO_GRID 
+            and compute_inverse
+            and comm.enable_subgrid_async_communication()){
+          start_sync_weights_async(model, model.get_comm());
+          if(comm.get_grid_type()==GridType::SECONDARY_GRID)
+            end_sync_weights_async(model, model.get_comm());
+        }
+
+        //sync model when async communication is disbaled and two models are created
+        if(comm.get_KFAC_subgrid_create_two_models() and comm.enable_subgrid_async_communication()==false and compute_inverse)
+          sync_weights_model(model, model.get_comm());
+          
         // Forward prop step
         model.clear_gradients();
         // sync_weights_model(model, model.get_comm());
         model.forward_prop(execution_mode::training);
       }
+      if(comm.get_KFAC_subgrid_create_two_models() 
+          and comm.get_grid_type()==GridType::PRIMARY_GRID 
+          and compute_inverse
+          and comm.enable_subgrid_async_communication())
+          end_sync_weights_async(model, model.get_comm());
       if(compute_inverse)
         on_forward_prop_end(kfac_context, model);
 
       if(comm.get_grid_type()==GridType::PRIMARY_GRID
-        or comm.get_KFAC_subgrid_create_two_models()
+        or (comm.get_KFAC_subgrid_create_two_models() and compute_inverse)
         or comm.get_grid_type() == GridType::NO_GRID){
         // check if the data coordinator has finished the epoch and kickoff
         // background I/O
@@ -309,7 +329,7 @@ bool KFAC::train_mini_batch(
 
 
       if(comm.get_grid_type()==GridType::PRIMARY_GRID
-        or comm.get_KFAC_subgrid_create_two_models()
+        or (comm.get_KFAC_subgrid_create_two_models() and compute_inverse)
         or comm.get_grid_type() == GridType::NO_GRID){
         model.get_objective_function()->compute_weight_regularization();
 
@@ -402,11 +422,8 @@ void KFAC::do_batch_end_cbs(model& model)
 
 void KFAC::sync_weights_model(model& model, lbann_comm *comm){
   //Does not support Model parallel only Data Parallel
-
   const auto layers = model.get_layers();
   const El::mpi::Comm & combined_comm = comm->get_combined_grid_comm();
-  // const El::mpi::Comm & trainer_comm = comm->get_KFAC_comm();
-  // const int comm_size = El::mpi::Size(comm->get_KFAC_comm());
   const int comm_rank = El::mpi::Rank(comm->get_KFAC_comm());
 
   std::vector<int> primary_grid_ranks = comm->get_primary_grid_ranks();
@@ -438,9 +455,6 @@ void KFAC::sync_weights_model(model& model, lbann_comm *comm){
 
   El::Matrix<DataType, Device> global_buffer(global_buffer_size, 1);
   El::SyncInfo<Device> sync_info =El::SyncInfoFromMatrix(global_buffer);
-
-
-
 
   size_t offset = 0;
   //copy weights to global buffers
@@ -478,7 +492,6 @@ void KFAC::sync_weights_model(model& model, lbann_comm *comm){
     }
   }
 
-
   if(comm->get_grid_type() == GridType::PRIMARY_GRID)
   {
     int num_sends = (int)std::ceil((float)num_process_secondary_grid/(float)num_process_primary_grid);
@@ -495,12 +508,10 @@ void KFAC::sync_weights_model(model& model, lbann_comm *comm){
            sync_info);
       }
     }
-
   }
   if(comm->get_grid_type() == GridType::SECONDARY_GRID)
   {
     int recv_index = comm_rank % num_process_primary_grid;
-    // std::cout<<"My CommRank:"<<comm_rank<<" Recv:"<<primary_grid_ranks[recv_index]<<"\n";
     ::El::mpi::Recv(
        (DataType*)global_buffer.Buffer(),
        global_buffer_size,
@@ -509,48 +520,113 @@ void KFAC::sync_weights_model(model& model, lbann_comm *comm){
        sync_info);
   }
 
-
-
-
-  //copy weights from global buffers
-  offset = 0;
-  for(auto i_layer = layers.begin(); i_layer != layers.end(); i_layer++)
-  {
-    const auto &layer = *i_layer;
-    const size_t num_weights = layer->num_weights();
-    for (size_t idx_weight = 0; idx_weight < num_weights; ++idx_weight)
+  if(comm->get_grid_type() == GridType::SECONDARY_GRID){
+    //copy weights from global buffers
+    offset = 0;
+    for(auto i_layer = layers.begin(); i_layer != layers.end(); i_layer++)
     {
-      auto& weights = layer->get_weights(idx_weight);
+      const auto &layer = *i_layer;
+      const size_t num_weights = layer->num_weights();
+      for (size_t idx_weight = 0; idx_weight < num_weights; ++idx_weight)
+      {
+        auto& weights = layer->get_weights(idx_weight);
 
-      //Ignore weights without optimizer
-      // const optimizer *w_optimizer = weights.get_optimizer();
-      // if(w_optimizer == nullptr)
-      //   continue;
+        //Ignore weights without optimizer
+        // const optimizer *w_optimizer = weights.get_optimizer();
+        // if(w_optimizer == nullptr)
+        //   continue;
 
-      data_type_weights<DataType>* weights_dt = dynamic_cast<data_type_weights<DataType>*>(&weights);
+        data_type_weights<DataType>* weights_dt = dynamic_cast<data_type_weights<DataType>*>(&weights);
 
-      int height = weights.get_matrix_height();
-      int width = weights.get_matrix_width();
+        int height = weights.get_matrix_height();
+        int width = weights.get_matrix_width();
 
-      El::Matrix<DataType, Device> weight_buffer(height, width);
+        El::Matrix<DataType, Device> weight_buffer(height, width);
 
-      El::AbstractDistMatrix<DataType>& weight_values = weights_dt->get_values();
-      El::DistMatrix<DataType,El::STAR,El::STAR,El::ELEMENT,Device>* weight_values_ = dynamic_cast<El::DistMatrix<DataType,El::STAR,El::STAR,El::ELEMENT,Device>*>(&weight_values);
+        El::AbstractDistMatrix<DataType>& weight_values = weights_dt->get_values();
+        El::DistMatrix<DataType,El::STAR,El::STAR,El::ELEMENT,Device>* weight_values_ = dynamic_cast<El::DistMatrix<DataType,El::STAR,El::STAR,El::ELEMENT,Device>*>(&weight_values);
 
-      auto view = El::View(global_buffer, El::IR(offset, offset+height*width), El::ALL);
-      offset += height*width;
+        auto view = El::View(global_buffer, El::IR(offset, offset+height*width), El::ALL);
+        offset += height*width;
 
-      El::copy::util::InterleaveMatrix(
-                                height, width,
-                                view.Buffer(), 1, height,
-                                weight_values_->Buffer(),
-                                1, height,
-                                sync_info);
-      // weights.set_values(weight_buffer);
+        El::copy::util::InterleaveMatrix(
+                                  height, width,
+                                  view.Buffer(), 1, height,
+                                  weight_values_->Buffer(),
+                                  1, height,
+                                  sync_info);
+      }
     }
   }
+}
 
 
+void KFAC::start_sync_weights_async(model& model, lbann_comm *comm){
+  //Does not support Model parallel only Data Parallel
+  const auto layers = model.get_layers();
+  const El::mpi::Comm & combined_comm = comm->get_combined_grid_comm();
+  const int comm_rank = El::mpi::Rank(comm->get_KFAC_comm());
+
+  std::vector<int> primary_grid_ranks = comm->get_primary_grid_ranks();
+  std::vector<int> secondary_grid_ranks = comm->get_secondary_grid_ranks();
+
+  int num_process_primary_grid = (int)primary_grid_ranks.size();
+  int num_process_secondary_grid = (int)secondary_grid_ranks.size();
+
+  if(comm->get_grid_type() == GridType::PRIMARY_GRID)
+  {
+    int num_sends = (int)std::ceil((float)num_process_secondary_grid/(float)num_process_primary_grid);
+    for(weights* weight:model.get_weights()){
+      int height = weight->get_matrix_height();
+      int width = weight->get_matrix_width();
+      auto dtw = dynamic_cast<data_type_weights<DataType>*>(&(*weight));
+      auto& weight_values = dtw->get_values().Matrix();
+      
+      for(int num_send = 0; num_send<num_sends; num_send++){
+
+        if(comm_rank + num_send*num_process_primary_grid < num_process_secondary_grid){
+          El::mpi::Request<DataType> send_req;
+          m_weights_communication_reqs.push_back(send_req);
+          int to_send_index = comm_rank + num_send*num_process_primary_grid;
+          ::El::mpi::ISend(
+             weight_values.Buffer(),
+             height*width,
+             secondary_grid_ranks[to_send_index],
+             combined_comm,
+             m_weights_communication_reqs.back());
+        }
+      }
+      
+    }
+  }
+  if(comm->get_grid_type() == GridType::SECONDARY_GRID)
+  {
+    int recv_index = comm_rank % num_process_primary_grid;
+    for(weights* weight:model.get_weights()){
+      int height = weight->get_matrix_height();
+      int width = weight->get_matrix_width();
+      auto dtw = dynamic_cast<data_type_weights<DataType>*>(&(*weight));
+      auto& weight_values = dtw->get_values().Matrix();
+      El::mpi::Request<DataType> recv_req;
+      m_weights_communication_reqs.push_back(recv_req);
+
+      ::El::mpi::IRecv(
+         (DataType*)weight_values.Buffer(),
+         height*width,
+         primary_grid_ranks[recv_index],
+         combined_comm,
+         m_weights_communication_reqs.back());
+    }
+    
+  }
+
+  
+}
+void KFAC::end_sync_weights_async(model& model, lbann_comm *comm){
+  for(auto& req:m_weights_communication_reqs){
+    El::mpi::Wait(req);
+  }
+  m_weights_communication_reqs.clear();
 }
 
 template <typename DataType, El::Device Device>
@@ -642,16 +718,21 @@ void send_recv_precomputed_gradients(
 }
 
 
-void KFAC::send_recv_inverse_matrices(
+void KFAC::start_send_recv_inverse_matrices(
   ExeContextType& context,
   lbann_comm *comm) {
 
-  int global_buffer_inverses_size = 0;
+  int global_buffer_inverses_size = m_global_inverse_buffer_size;
+  m_inverse_matrix_communication_reqs.clear();
 
   //calculate the size of the buffer
-  for(auto& block : context.m_blocks){
+  if(global_buffer_inverses_size == 0 ){
+    for(auto& block : context.m_blocks){
       global_buffer_inverses_size += block->get_inverse_matrices_size(comm);
     }
+    m_global_inverse_buffer_size = global_buffer_inverses_size;
+  }
+  
 
   El::Matrix<DataType, Device>& global_buffer_inverse =
       context.get_workspace_matrix(
@@ -673,12 +754,10 @@ void KFAC::send_recv_inverse_matrices(
 
   std::vector<int> primary_grid_ranks = comm->get_primary_grid_ranks();
   std::vector<int> secondary_grid_ranks = comm->get_secondary_grid_ranks();
-
   int num_process_primary_grid = (int)primary_grid_ranks.size();
   int num_process_secondary_grid = (int)secondary_grid_ranks.size();
 
   const El::mpi::Comm & combined_comm = comm->get_combined_grid_comm();
-
 
   if(comm->get_grid_type() == GridType::SECONDARY_GRID)
   {
@@ -689,38 +768,74 @@ void KFAC::send_recv_inverse_matrices(
       if(comm_rank + num_send*num_process_secondary_grid < num_process_primary_grid){
 
         El::SyncInfo<Device> sync_info =El::SyncInfoFromMatrix(global_buffer_inverse);
-
+        El::Synchronize(sync_info);
         int to_send_index = comm_rank + num_send*num_process_secondary_grid;
-        ::El::mpi::TaggedSend(
+        if(comm->enable_subgrid_async_communication()){
+          El::mpi::Request<DataType> send_request;
+          m_inverse_matrix_communication_reqs.push_back(send_request);
+          ::El::mpi::ISend(
            (DataType*)global_buffer_inverse.Buffer(),
            global_buffer_inverses_size,
            primary_grid_ranks[to_send_index],
+           combined_comm,
+           m_inverse_matrix_communication_reqs.back());
+        }
+        else{
+          ::El::mpi::Send(
+           (DataType*)global_buffer_inverse.Buffer(),
+           global_buffer_inverses_size,
            primary_grid_ranks[to_send_index],
            combined_comm,
            sync_info);
+        } 
       }
     }
-
-
   }
   if(comm->get_grid_type() == GridType::PRIMARY_GRID)
   {
     El::SyncInfo<Device> sync_info =El::SyncInfoFromMatrix(global_buffer_inverse);
     int recv_index = comm_rank % num_process_secondary_grid;
-    ::El::mpi::TaggedRecv(
-       (DataType*)global_buffer_inverse.Buffer(),
-       global_buffer_inverses_size,
-       secondary_grid_ranks[recv_index],
-       combined_rank,
-       combined_comm,
-       sync_info);
 
-    // Copy blocks from the buffer.
-    {
-      offset = 0;
-      for(auto& block : context.m_blocks) {
-        offset = block->set_inverse_matrices(global_buffer_inverse, offset,comm);
-      }
+    if(comm->enable_subgrid_async_communication()){
+      El::mpi::Request<DataType> recv_request;
+      m_inverse_matrix_communication_reqs.push_back(recv_request);
+      ::El::mpi::IRecv(
+         (DataType*)global_buffer_inverse.Buffer(),
+         global_buffer_inverses_size,
+         secondary_grid_ranks[recv_index],
+         combined_comm,
+         m_inverse_matrix_communication_reqs.back());
+    }
+    else{
+      ::El::mpi::Recv(
+         (DataType*)global_buffer_inverse.Buffer(),
+         global_buffer_inverses_size,
+         secondary_grid_ranks[recv_index],
+         combined_comm,
+         sync_info);
+    } 
+  }
+}
+
+void KFAC::end_send_recv_inverse_matrices(
+  ExeContextType& context,
+  lbann_comm *comm) {
+  if(comm->enable_subgrid_async_communication()){
+    for(auto& req: m_inverse_matrix_communication_reqs)
+      El::mpi::Wait(req);
+  }
+  El::Matrix<DataType, Device>& global_buffer_inverse =
+      context.get_workspace_matrix(
+        "allgather_inverse_recv_buffer",
+        m_global_inverse_buffer_size,
+        1);
+
+  // Copy blocks from the buffer.
+  if(comm->get_grid_type() == GridType::PRIMARY_GRID)
+  {
+    int offset = 0;
+    for(auto& block : context.m_blocks) {
+      offset = block->set_inverse_matrices(global_buffer_inverse, offset,comm);
     }
   }
 
@@ -820,8 +935,13 @@ void KFAC::on_forward_prop_end(
 
   if(context.get_step()>1 and
     (comm.get_grid_type()==GridType::PRIMARY_GRID or comm.get_grid_type()==GridType::SECONDARY_GRID)){
-    send_recv_inverse_matrices(context, &comm);
+    start_send_recv_inverse_matrices(context, &comm);
+    // end_send_recv_inverse_matrices(context, &comm);
     m_has_kronecker_inverse = true;
+  }
+  for(auto& block : context.m_blocks) {
+    // Start forward end exchange (like activations and weights)
+    block->start_communication_forward_end(&comm);
   }
 
 }
@@ -867,13 +987,23 @@ void KFAC::on_backward_prop_end(
         * std::min((double) num_steps/ m_update_interval_steps, 1.0);
   }
 
+  if(context.get_step()>1 and
+    (comm.get_grid_type()==GridType::PRIMARY_GRID or comm.get_grid_type()==GridType::SECONDARY_GRID)){
+
+      end_send_recv_inverse_matrices(context, &comm);
+    }
+
   // List up layers to be updated
   if(context.m_blocks.size() == 0){
     LBANN_ERROR("K-FAC blocks have not been setup");
   }
   for(auto& block : context.m_blocks) {
     // Exchange activations and errors
-    block->initialize_activations_and_errors(&comm, 1, 1, 0);
+    // block->initialize_activations_and_errors(&comm, 1, 1, 0);
+    block->end_communication_forward_end(&comm);
+    block->start_communication_backward_end(&comm);
+    if(comm.get_grid_type() == GridType::SECONDARY_GRID)
+      block->end_communication_backward_end(&comm);
   }
 
 
@@ -1031,6 +1161,12 @@ void KFAC::on_backward_prop_end(
             m_print_matrix, m_print_matrix_summary,
             m_print_time);
     	}
+    }
+    for(auto& block : context.m_blocks) {
+      // Exchange activations and errors
+      // block->initialize_activations_and_errors(&comm, 1, 1, 0);
+      if(comm.get_grid_type() == GridType::PRIMARY_GRID)
+        block->end_communication_backward_end(&comm);
     }
   }
 

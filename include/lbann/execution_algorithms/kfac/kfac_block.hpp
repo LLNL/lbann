@@ -114,6 +114,24 @@ class kfac_block {
     LBANN_ERROR("this function should be called via a sub-class.");
   }
 
+  virtual void start_communication_forward_end(
+      lbann_comm* comm){
+    LBANN_ERROR("this function should be called via a sub-class.");
+  }
+  virtual void end_communication_forward_end(
+      lbann_comm* comm){
+    LBANN_ERROR("this function should be called via a sub-class.");
+  }
+  virtual void start_communication_backward_end(
+      lbann_comm* comm){
+    LBANN_ERROR("this function should be called via a sub-class.");
+  }
+  virtual void end_communication_backward_end(
+      lbann_comm* comm){
+    LBANN_ERROR("this function should be called via a sub-class.");
+  }
+
+
   /** @brief Get buffers of preconditioned parameter gradients. */
   virtual const std::vector<El::AbstractMatrix<DataType>*>
   get_preconditioned_grad_buffers() {
@@ -212,12 +230,14 @@ class kfac_block {
 
   /** @brief distributed martices for activations and gradients. */
   std::vector<std::unique_ptr<AbsDistMat>> m_parent_local_activations,
-    m_child_local_errors, m_weight_gradients;
+    m_child_local_errors, m_weight_gradients, m_subset_matrix;
 
   /** @brief Translatebetweengrid  funciton has a basic implementation for STAR,STAR
    * distributed matrices. Therefore, using local matrices for weights  */
-  std::vector<std::unique_ptr<El::Matrix<DataType, Device>>> m_weight_values;
+  // std::vector<std::unique_ptr<El::Matrix<DataType, Device>>> m_weight_values;
+  std::vector<std::unique_ptr<AbsDistMat>> m_weight_values;
 
+  std::vector<El::mpi::Request<DataType>> m_requests_forward_end, m_requests_backward_end;
 
  private:
 

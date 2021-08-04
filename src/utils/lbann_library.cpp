@@ -88,6 +88,8 @@ int allocate_trainer_resources(lbann_comm *comm) {
   int trainer_grid_height = arg_parser.get<int>(LBANN_OPTION_TRAINER_GRID_HEIGHT);
   int trainer_primary_grid_size = arg_parser.get<int>(LBANN_OPTION_TRAINER_PRIMARY_GRID_SIZE);
   bool trainer_create_two_models = arg_parser.get<bool>(LBANN_OPTION_TRAINER_CREATE_TWO_MODELS);
+  bool trainer_async_comm_subgrid = arg_parser.get<bool>(LBANN_OPTION_TRAINER_ENABLE_SUBGRID_ASYNC_COMM);
+on of model on both primary and secondary grids)
 
   if (procs_per_trainer == 0) {
     procs_per_trainer = comm->get_procs_in_world();
@@ -103,7 +105,9 @@ int allocate_trainer_resources(lbann_comm *comm) {
 
   // Split trainer when sub-grid parallelism is enabled
   if(trainer_primary_grid_size > 0) {
-    comm->split_trainer_grid(trainer_primary_grid_size, trainer_create_two_models);
+    comm->split_trainer_grid( trainer_primary_grid_size,
+                              trainer_create_two_models,
+                              trainer_async_comm_subgrid);
   }
 
   return procs_per_trainer;
