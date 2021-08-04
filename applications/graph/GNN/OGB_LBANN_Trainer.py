@@ -53,11 +53,9 @@ parser.add_argument(
     '--num-samples', action='store', default=100000, type=int,
     help='number of Samples (deafult: 100000)', metavar='NUM')
 
-
 parser.add_argument(
     '--node-embeddings', action='store', default=100, type=int,
     help='dimensionality of node feature embedding (deafult: 100)', metavar='NUM')
-
 
 parser.add_argument(
     '--edge-embeddings', action='store', default=16, type=int,
@@ -66,6 +64,15 @@ parser.add_argument(
 parser.add_argument(
     '--job-name', action='store', default="NN_Conv", type=str,
     help="Job name for scheduler", metavar='NAME')
+
+parser.add_argument(
+    '--enable-distconv', action='store_true',
+    help="Enables distconv-mode for graph kernels")
+
+parser.add_argument(
+    '--process-groups', action='store', default=0, type=int,
+    help="Number of parallel groups for distconv", metavar='NUM')
+
 
 args = parser.parse_args()
 
@@ -106,6 +113,23 @@ with open(_file_name, 'w') as configfile:
 
 os.environ['LBANN_LSC_CONFIG_FILE'] = _file_name
 
+# ----------------------------------------
+
+# Enabling distconv
+
+# ----------------------------------------
+
+if (not args.enable_distconv and args.process_groups > 0):
+    raise ValueError('Cannot have non-zero process-groups with distconv disabled. Enable distconv with --distconv')
+
+NUM_PROCESS_GROUPS = args.process_groups
+    
+
+# ---------------------------------------------------
+
+# Create model, data reader, optimizer, and trainer
+
+# ---------------------------------------------------
 
 model = make_model(NUM_NODES,
                    NUM_EDGES,
@@ -114,7 +138,8 @@ model = make_model(NUM_NODES,
                    EMBEDDING_DIM,
                    EDGE_EMBEDDING_DIM,
                    NUM_OUT_FEATURES,
-                   NUM_EPOCHS)
+                   NUM_EPOCHS,
+                   NUM_PROCESS_GROUPS)
 
 optimizer = lbann.SGD(learn_rate=1e-4)
 data_reader = data.LSC_PPQM4M.make_data_reader("LSC_100K")

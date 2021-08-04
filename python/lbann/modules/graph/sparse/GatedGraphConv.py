@@ -1,5 +1,6 @@
 import lbann 
-from lbann.modules import Module, ChannelwiseFullyConnectedModule 
+from lbann.modules import Module, ChannelwiseFullyConnectedModule
+from lbann.modules.graph.utils import GraphExpand, GraphReduce 
 from lbann.util import str_list
 import lbann.modules
 import math 
@@ -22,8 +23,10 @@ class GatedGraphConv(Module):
                  num_layers = 1,
                  name = None):
         """Initialize GatedGraph layer
-        Args: 
-            output_channels (int): The output size of the node features 
+        Args:
+            input_channels (int): The size of the input node features 
+            output_channels (int): The output size of the node features
+            num_nodes (int): Number of vertices in the graph  
             num_layers (int): Number of passes through the GRU (default: 1) 
             name (str): Name of the layers and prefix to use for the layers. 
             data_layout (str): Data layout (default: data parallel)  
@@ -42,7 +45,7 @@ class GatedGraphConv(Module):
         self.input_channel_size = input_channels
         self.num_nodes = num_nodes
 
-        self.rnn  = lbann.modules.ChannelwiseGRU(output_channels, num_nodes)
+        self.rnn  = lbann.modules.ChannelwiseGRU(num_nodes, output_channels)
 
         self.num_layers = num_layers
         self.nns = [] 
@@ -52,7 +55,7 @@ class GatedGraphConv(Module):
             weights = lbann.Weights(initializer = lbann.UniformInitializer(min =-1/(math.sqrt(output_channels)), 
                                                                                max = 1/(math.sqrt(output_channels))))
             nn = \
-                ChannelwiseFullyConnectedModule(self.output_channels,
+                ChannelwiseFullyConnectedModule(self.output_channel_size,
                                                 bias=False,
                                                 weights=[weights],
                                                 name=f"{self.name}_nn_{i}")
@@ -71,19 +74,21 @@ class GatedGraphConv(Module):
         """
 
         if (self.input_channel_size < self.output_channel_size):
-            num_zeros = self.output_channels - self.input_channel_size 
+            num_zeros = self.output_channel_size - self.input_channel_size
+            print(num_zeros)
             zeros = lbann.Constant(value = 0, num_neurons = str_list([self.num_nodes,num_zeros]), name = self.name+'_padded')
             node_feature_mat = lbann.Concatenation(node_feature_mat, zeros, axis = 1)       
             
-        elif (input_features > self.output_channels):
+        elif (input_features > self.output_channel_size):
             ValueError('The feature size of the nodes {} cannot be greater than the output dimension {}'.
-                        format(input_features, self.output_channels))
+                        format(input_features, self.output_channel_size))
 
         for layer in range(self.num_layers): 
         
-            messages = self.nns(node_feature_mat) 
-            neighborhoods = GraphExpand(neighborhoods, target_indices)
+            messages = self.nns[layer](node_feature_mat) 
+            neighborhoods = GraphExpand(messages, target_indices)
             aggregate = GraphReduce(neighborhoods,source_indices, [self.num_nodes, self.output_channel_size])
+
             node_feature_mat = self.rnn(aggregate, node_feature_mat)
         
         return node_feature_mat

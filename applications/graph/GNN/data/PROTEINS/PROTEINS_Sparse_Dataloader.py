@@ -19,3 +19,6 @@ if __name__ == '__main__':
 	print("Dataset info: ")
 	print("Total Number of samples: ", num_train_samples())
 	print("Sample size: ", sample_data_dims())
+	print("Max number of edges: ",protein_data.max_edges )
+
+	print(get_train(0).shape)

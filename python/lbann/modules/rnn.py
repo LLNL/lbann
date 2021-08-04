@@ -2,7 +2,7 @@
 
 import math
 import lbann
-from .base import Module, FullyConnectedModule
+from .base import Module, FullyConnectedModule, ChannelwiseFullyConnectedModule
 from lbann.util import make_iterable, str_list
 
 class LSTMCell(Module):
@@ -311,13 +311,13 @@ class ChannelwiseGRU(Module):
 
     def __init__(self, num_channels, size, bias=True, weights=[], name=None):
 
-        super().__init()
+        super().__init__()
         ChannelwiseGRU.global_count += 1 
         self.step = 0
         self.size = size
         self.num_channels = num_channels 
         self.name = (name if name else f'gru{ChannelwiseGRU.global_count}')
-
+        self.data_layout = 'data_parallel'
         scale = 1 / math.sqrt(self.size)
 
         self.weights = list(make_iterable(weights))
@@ -339,8 +339,8 @@ class ChannelwiseGRU(Module):
                                                      weights=self.weights[2:],
                                                      name=self.name + '_hh_fc')
         self.ones = lbann.Constant(
-            values=1.0,
-            num_neurons = str(size * num_channels),
+            value=1.0,
+            num_neurons = str_list([num_channels, size]),
             name=self.name+'_ones')
 
     def forward(self, x, prev_state):
@@ -358,34 +358,53 @@ class ChannelwiseGRU(Module):
 
         mat_size = self.num_channels * self.size
 
-        prev_state = lbann.Reshape(prev_state, dims=f"{mat_size}", name=name+"_prev_state_reshape")
+        prev_state = lbann.Reshape(prev_state,
+                                   dims=str_list([self.num_channels, self.size]),
+                                   name=name+"_prev_state_reshape")
 
-        fc1 = lbann.Reshape(self.ih_fc(x), dims=f"{mat_size * 3}")
-        fc2 = lbann.Reshape(self.hh_fc(prev_state),dims==f"{mat_size * 3}")
+        fc1 = lbann.Reshape(self.ih_fc(x),
+                            dims=str_list([mat_size*3]),
+                            name=f"{name}_reshape_input")
+        
+        fc2 = lbann.Reshape(self.hh_fc(prev_state),
+                            dims=str_list([mat_size*3]),
+                            name=f"{name}_reshape_prev_state")
 
         fc1_slice = lbann.Slice(fc1, 
                                 slice_points=str_list([0, mat_size, 2*mat_size, 3*mat_size]))
         
-        Wir_x =lbann.Identity(fc1_slice, name=name+'_Wx')
-        Wiz_z =lbann.Identity(fc1_slice, name=name+'_Wx')
-        Win_x =lbann.Identity(fc1_slice, name=name+'_Wx')
+        Wir_x =lbann.Reshape(lbann.Identity(fc1_slice), 
+                             dims=str_list([self.num_channels, self.size]),
+                             name=name+'_Wir_x')
+        Wiz_z =lbann.Reshape(lbann.Identity(fc1_slice), 
+                             dims=str_list([self.num_channels, self.size]),
+                             name=name+'_Wiz_z')
+        Win_x =lbann.Reshape(lbann.Identity(fc1_slice), 
+                             dims=str_list([self.num_channels, self.size]),
+                             name=name+'_Win_x')
         fc2_slice = lbann.Slice(fc2, 
                                 slice_points=str_list([0, mat_size, 2*mat_size, 3*mat_size]))
 
-        Whr_x =lbann.Identity(fc2_slice, name=name+'_Wh')   
-        Whz_z =lbann.Identity(fc2_slice, name=name+'_Wh') 
-        Whn_x =lbann.Identity(fc2_slice, name=name+'_Wh')
+        Whr_x =lbann.Reshape(lbann.Identity(fc2_slice),
+                             dims=str_list([self.num_channels, self.size]),
+                             name=name+'_Whr_x')   
+        Whz_z =lbann.Reshape(lbann.Identity(fc2_slice),
+                             dims=str_list([self.num_channels, self.size]),
+                             name=name+'_Whz_z') 
+        Whn_x =lbann.Reshape(lbann.Identity(fc2_slice),
+                             dims=str_list([self.num_channels, self.size]),
+                             name=name+'_Whn_x')
 
         rt = \
             lbann.Sigmoid(
-                lbann.Add(Wir_x, Whr_prev, data_layout=self.data_layout),
+                lbann.Add(Wir_x, Whr_x, data_layout=self.data_layout),
                 name=name + '_reset_gate',
                 data_layout=self.data_layout
             )
 
         zt = \
             lbann.Sigmoid(
-                lbann.Add(Wiz_x, Whz_prev, data_layout=self.data_layout),
+                lbann.Add(Wiz_z, Whz_z, data_layout=self.data_layout),
                 name=name + '_update_gate',
                 data_layout=self.data_layout,
             )
@@ -394,7 +413,7 @@ class ChannelwiseGRU(Module):
             lbann.Tanh(
                 lbann.Add(
                     Win_x,
-                    lbann.Multiply(rt, Whn_prev, data_layout=self.data_layout),
+                    lbann.Multiply(rt, Whn_x, data_layout=self.data_layout),
                     data_layout=self.data_layout,
                 ),
                 name=name + '_new_gate', data_layout=self.data_layout,

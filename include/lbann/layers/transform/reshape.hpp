@@ -101,6 +101,7 @@ protected:
         err << (i > 0 ? "x" : "") << output_dims[i];
       }
       err << ")";
+      err << " in Layer" << this->get_name(); 
       LBANN_ERROR(err.str());
     }
 

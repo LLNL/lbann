@@ -19,8 +19,9 @@ class GCNConv(Module):
                  output_channels,
                  num_nodes,
                  bias=True,
-                 activation = lbann.Relu,
-                 name=None):
+                 activation=lbann.Relu,
+                 name=None,
+                 parallel_strategy = {}):
         """Initialize GCN layer
         
         Args: 
@@ -31,6 +32,7 @@ class GCNConv(Module):
             activation (type): Activation leyer for the node features. If None, then no activation is 
                                 applied. (default: lbann.Relu)
             name (str): Default name of the layer is GCN_{number}
+            parallel_strategy (dict): Data partitioning scheme.
         """
         super().__init__()
         
@@ -39,6 +41,13 @@ class GCNConv(Module):
         self.input_channel_size = input_channels
         self.output_channel_size = output_channels
         self.num_nodes = num_nodes
+        self.parallel_strategy = parallel_strategy
+        self.instance = 0
+        self.is_distconv = False 
+
+        if parallel_strategy:
+            if list(parallel_strategy.values()[0]) > 0:
+                self.is_distconv = True
 
         ## Add Name for the components for the layer
         GCNConv.global_count +=1
@@ -67,13 +76,23 @@ class GCNConv(Module):
             else:
                 self.activation = type(actvation)
             if not issubclass(self.activation, lbann.Layer):
-                raise ValueError('activation must be a layer')  
+                raise ValueError('activation must be a layer')
+
+        # Distconv channelwise fully connected expects 3D tensors as input
+        # and output. This check adds an extra dimention to enable 
+        # channel-wise data partitioning 
+
+        self.output_channels = self.output_channel_size
+        if self.is_distconv:
+            self.output_channels = [1, self.output_channel_size]
+
         self.nn = \
             ChannelwiseFullyConnectedModule(self.output_channels,
                                             bias=self.has_bias,
                                             weights=weights,
                                             activation=self.activation,
-                                            name=self.name+"_FC_layer")
+                                            name=self.name+"_FC_layer",
+                                            parallel_strategy=self.parallel_strategy)
     
     def forward(self, node_feature_mat, source_indices, target_indices):
         """Apply GCN
@@ -87,8 +106,18 @@ class GCNConv(Module):
                           directly
         """
         
-        
+        self.instance += 1
+        name = f"{self.name}_{self.instance}"
         new_features = self.nn(node_feature_mat) # W \times node_feature_mat
+        
+        # If distconv enabled, the output dimensions of the feature matrix are 3D
+        # We convert it to 2D for the graph expan and reduce operations
+        # Note: This check will be obsolete once distconv scatter-gather is supported          
+        if self.is_distconv:
+            new_features = lbann.Reshape(new_features,
+                                         dims=str_list([self.num_nodes, self.output_channel_size]),
+                                         name=f"{name}+_distconv_reshape")
+
         neighborhoods = GraphExpand(new_features, target_indices)
         reduced_features = GraphReduce(neighborhoods, source_indices, [self.num_nodes, self.output_channel_size])
 

@@ -7,6 +7,7 @@ The datasets used to test the graph layers are:
 
 1. MNIST Superpixel 
 2. PROTEINS
+3. OGB
 
 To automatically download the MNIST Superpixel dataset: 
 
@@ -39,6 +40,7 @@ python3 main.py --dataset (Proteins/MNIST) --model (GCN/GIN/GRAPH/GATEDGRAPH) --
 
 ```
 
+## Edge Conditioned Neural Networks 
 
 ## Links 
 

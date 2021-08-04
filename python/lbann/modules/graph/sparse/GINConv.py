@@ -70,7 +70,7 @@ class GINConv(Module):
                                                                        self.input_channel_size])
 
 
-        aggregated_node_features = lbann.Sum(neighborhoods, reduced_features)
+        aggregated_node_features = lbann.Sum(node_feature_mat, reduced_features)
         
         # Transform with the sequence of linear layers
         for layer in self.nn:

@@ -11,6 +11,7 @@ current_file = os.path.realpath(__file__)
 current_dir = os.path.dirname(current_file)
 root_dir = os.path.dirname(current_dir)
 
+sys.path.append(root_dir)
 import data.PROTEINS
 import Sparse_Graph_Trainer
 
@@ -24,13 +25,13 @@ import tools
 
 num_epochs = 100
 mini_batch_size = 64
-num_nodes = 2
+num_nodes = 1
 
 
 expected_accuracy_range = (58, 75)
 
 expected_mini_batch_times = {
-       'ray' : 0.04
+       'ray' : 0.0023
        }
 expected_gpu_usage = {
         'ray' : 0.554
@@ -93,9 +94,9 @@ def augment_test_func(test_func):
     test_name = test_func.__name__
 
     # Define test function
-    def func(cluster, exes, dirname):
+    def func(cluster, dirname):
         # Run LBANN experiment
-        experiment_output = test_func(cluster, exes, dirname)
+        experiment_output = test_func(cluster, dirname)
 
         # Parse LBANN log file
         train_accuracy = None

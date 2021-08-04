@@ -1,6 +1,8 @@
 import lbann 
 from lbann.util import str_list 
 from lbann.modules.graph import GINConv, GCNConv, GraphConv, GatedGraphConv
+from itertools import accumulate
+
 
 def Graph_Data_Parser(_lbann_input_,
                       num_nodes, 
@@ -23,8 +25,7 @@ def Graph_Data_Parser(_lbann_input_,
                      target_indices, and targets  
     """
     slice_points = [0, num_nodes*node_feature_size, max_edges, max_edges, num_classes]
-    shifted_slice_points = [slice_points[i]+slice_points[i-1] for i in range(1, len(slice_points))]
-
+    shifted_slice_points = list(accumulate(slice_points))
     sliced_input = lbann.Slice(_lbann_input_,
                                slice_points=str_list(shifted_slice_points),
                                name="Sliced_Graph_Input")
@@ -38,7 +39,7 @@ def Graph_Data_Parser(_lbann_input_,
     graph_data = {"node_features":node_features,
                   "source_indices":source_indices,
                   "target_indices":target_indices,
-                  "targets":targets}
+                  "target":targets}
     return graph_data
 
 
@@ -47,12 +48,16 @@ def GINConvLayer(node_features,
                  source_indices,
                  target_indices,
                  num_nodes,
+                 input_channels,
                  output_channels):
     """An example GIN kernel with 4 layer deep sequential nn.  
     Args:
-        X (GraphVertexData): Contains all the node feaures of the graph 
-        A (Layer): Adjancency matrix layer. Should have the shape: 
-                   (num_nodes, num_nodes)
+        node_feature (Layer): Node feature matrix with the shape of (num_nodes,input_channels) 
+        source_indices (Layer): Source node indices of the edges with shape (num_nodes)
+        target_indices (Layer): Target node indices of the edges with shape (num_nodes)
+        num_nodes (int): Number of vertices in the graph
+        input_channels (int): The size of the input node features
+        output_channels (int): The number of output channels of the node features 
     Returns: 
         (GraphVertexData): Returns the new embedding of the node features 
     """
@@ -64,11 +69,14 @@ def GINConvLayer(node_features,
                      lbann.Relu,
                      FC(32),
                      lbann.Relu,
-                     FC(16),
+                     FC(output_channels),
                      lbann.Relu]
 
-    gin = GINConv(sequential_nn, output_channels = output_channel)
-    return gin(node_features,source_indices, target_indices)
+    gin = GINConv(sequential_nn,
+                  input_channels = input_channels, 
+                  output_channels = output_channels,
+                  num_nodes = num_nodes)
+    return gin(node_features, source_indices, target_indices)
 
 
 def GCNConvLayer(node_features,
@@ -79,11 +87,14 @@ def GCNConvLayer(node_features,
                  output_channels):
     """An example 2-layer GCN kernel.
     Args:
-        X (GraphVertexData): Contains all the node feaures of the graph
-        A (Layer): Adjancency matrix layer. Should have the shape: 
-                   (num_nodes, num_nodes)
+        node_feature (Layer): Node feature matrix with the shape of (num_nodes,input_channels) 
+        source_indices (Layer): Source node indices of the edges with shape (num_nodes)
+        target_indices (Layer): Target node indices of the edges with shape (num_nodes)
+        num_nodes (int): Number of vertices in the graph
+        input_channels (int): The size of the input node features
+        output_channels (int): The number of output channels of the node features 
     Returns: 
-        (GraphVertexData): Returns the new embedding of the node features
+        (Layer) : The resultant node features after message passing kernel ops
     """
     input_channels_1 = input_channels
     out_channels_1 = 8
@@ -94,14 +105,12 @@ def GCNConvLayer(node_features,
                     num_nodes,
                     bias = True,
                     activation = lbann.Relu,
-                    name = 'GCN_1',
-                    data_layout = 'data_parallel')
+                    name = 'GCN_1')
     gcn_2 = GCNConv(input_channels_2,out_channels_2,
                     num_nodes,
                     bias = True, 
                     activation = lbann.Relu,
-                    name = 'GCN_2',
-                    data_layout = 'data_parallel')
+                    name = 'GCN_2')
     X = gcn_1(node_features,source_indices, target_indices)
     return  gcn_2(X,source_indices, target_indices)
 
@@ -114,11 +123,14 @@ def GraphConvLayer(node_features,
                    output_channels):
     """An example 2-layer Graph kernel.
     Args:
-        X (GraphVertexData): Contains all the node feaures of the graph
-        A (Layer): Adjancency matrix layer. Should have the shape: 
-                   (num_nodes, num_nodes)
+        node_feature (Layer): Node feature matrix with the shape of (num_nodes,input_channels) 
+        source_indices (Layer): Source node indices of the edges with shape (num_nodes)
+        target_indices (Layer): Target node indices of the edges with shape (num_nodes)
+        num_nodes (int): Number of vertices in the graph
+        input_channels (int): The size of the input node features
+        output_channels (int): The number of output channels of the node features
     Returns: 
-        (GraphVertexData): Returns the new embedding of the node features
+        (Layer) : The resultant node features after message passing kernel ops
     """
     input_channels_1 = input_channels
     out_channels_1 = 8 
@@ -126,15 +138,15 @@ def GraphConvLayer(node_features,
     out_channels_2 = output_channels
     
     graph_1 = GraphConv(input_channels_1, out_channels_1,
+                        num_nodes,
                         bias = True,
                         activation = lbann.Relu,
-                        name = 'Graph_kernel_1',
-                        data_layout = 'data_parallel')
-    graph_2 = GraphConv(input_channels_2, out_channels_2,
+                        name = 'Graph_kernel_1')
+    graph_2 = GraphConv(input_channels_2, out_channels_2, 
+                        num_nodes,
                         bias = True,
                         activation = lbann.Relu, 
-                        name = 'Graph_Kernel_2',
-                        data_layout = 'data_parallel')
+                        name = 'Graph_Kernel_2')
 
     X = graph_1(node_features,source_indices, target_indices)
     return graph_2(X,source_indices, target_indices)
@@ -147,20 +159,23 @@ def GATConvLayer(node_features,
                  output_channels):
     """An example single layer GatedGraph kernel.
     Args:
-        X (GraphVertexData): Contains all the node feaures of the graph
-        A (Layer): Adjancency matrix layer. Should have the shape: 
-                   (num_nodes, num_nodes)
+        node_feature (Layer): Node feature matrix with the shape of (num_nodes,input_channels) 
+        source_indices (Layer): Source node indices of the edges with shape (num_nodes)
+        target_indices (Layer): Target node indices of the edges with shape (num_nodes)
+        num_nodes (int): Number of vertices in the graph
+        input_channels (int): The size of the input node features
+        output_channels (int): The number of output channels of the node features
     Returns: 
-        (GraphVertexData): Returns the new embedding of the node features
+        (Layer) : The resultant node features after message passing kernel ops
     """    
     num_layers = 3
     name = 'GatedGraph'
     data_layout = 'data_parallel' 
 
-    graph_kernel = GatedGraphConv(output_channels,
+    graph_kernel = GatedGraphConv(input_channels, output_channels,
+                                  num_nodes, 
                                   num_layers = num_layers,
-                                  name = name, 
-                                  data_layout = data_layout)
+                                  name = name)
     return graph_kernel(node_features,source_indices, target_indices)
 
 def make_model(num_vertices = None, 
@@ -186,7 +201,7 @@ def make_model(num_vertices = None,
                           (default: None)                    
         num_epochs (int): Number of epochs to run (default: 1)
     Returns:
-        (lbann Model Object: A model object with the supplied callbacks, dataset
+        (lbann.Model) : A model object with the supplied callbacks, dataset
                                presets, and graph kernels. 
     '''
 
@@ -195,80 +210,66 @@ def make_model(num_vertices = None,
     if dataset is not None:
         assert num_vertices is None
 
-        if dataset == 'MNIST':
-            num_vertices = 75
-            num_classes = 10
-            node_features = 1
-            max_edges = 100
-
-        elif dataset == 'PROTEINS':
+        if dataset == 'PROTEINS':
             num_vertices = 100
             num_classes = 2
-            node_features = 3
-            max_edges = 144
+            node_feature_size = 3
+            max_edges = 415
         else:
             raise Exception("Unkown Dataset")
 
     assert num_vertices is not None
     assert num_classes is not None 
-    assert node_features is not None 
+    assert node_feature_size is not None 
 
     #----------------------------------
     # Reshape and Slice Input Tensor 
     #----------------------------------
 
-    input_ = lbann.Input(target_mode = 'classification')
+    input_ = lbann.Input(target_mode="N/A")
 
-    # Input dimensions should be (num_vertices * node_features + num_vertices^2 + num_classes )    
-    # Input should have atleast two children since the target is classification 
+    # Input dimensions should be (num_vertices * node_features + num_vertices^2 + num_classes )     
     
     data = Graph_Data_Parser(input_,
                              num_vertices,
-                             node_features,
+                             node_feature_size,
                              max_edges,
                              num_classes)
     
     feature_matrix = data['node_features'] 
     source_indices = data['source_indices']
     target_indices = data['target_indices']
-    target = data['target'] 
+    target = data['target']
+
+    #----------------------------------
+    # Select Graph Convolution
+    #----------------------------------
+
    
+
+    output_channels = 16
+    graph_kernel_op = None
+    if kernel_type == 'GIN':
+        graph_kernel_op = GINConvLayer 
+    elif kernel_type == 'GCN':
+        graph_kernel_op = GCNConvLayer
+    elif kernel_type == 'Graph':
+        graph_kernel_op = GraphConvLayer 
+    elif kernel_type == 'GatedGraph':
+        graph_kernel_op = GATConvLayer 
+    else:
+        raise ValueError('Invalid Graph kernel specifier "{}" recieved. Expected one of:\
+                    GIN,GCN,Graph or GatedGraph'.format(kernel_type))
     #----------------------------------
     # Perform Graph Convolution
     #----------------------------------
-
-    out_channel = 16
-    if kernel_type == 'GIN':
-        x = GINConvLayer(node_features,
-                         source_indices,
-                         target_indices,
-                         num_nodes,
-                         output_channels) 
-    elif kernel_type == 'GCN':
-        x = GCNConvLayer(node_features,
-                         source_indices,
-                         target_indices,
-                         num_nodes,
-                         input_channels,
-                         output_channels)
-    elif kernel_type == 'Graph':
-        x = GraphConvLayer(node_features,
-                           source_indices,
-                           target_indices,
-                           num_nodes,
-                           input_channels,
-                           output_channels) 
-    elif kernel_type == 'GatedGraph':
-        x = GATConvLayer(node_features,
-                         source_indices,
-                         target_indices,
-                         num_nodes,
-                         input_channels,
-                         output_channels) 
-    else:
-        ValueError('Invalid Graph kernel specifier "{}" recieved. Expected one of:\
-                    GIN,GCN,Graph or GatedGraph'.format(kernel_type))
     
+    x = graph_kernel_op(feature_matrix,
+                        source_indices,
+                        target_indices,
+                        num_vertices,
+                        node_feature_size,
+                        output_channels)
     #----------------------------------
     # Apply Reduction on Node Features
     #----------------------------------
@@ -281,7 +282,7 @@ def make_model(num_vertices = None,
     
     # X is now a vector with output_channel dimensions 
     
-    x = lbann.Reshape(x, dims = str_list([out_channel]), name = "Squeeze")
+    x = lbann.Reshape(x, dims = str_list([output_channels]), name = "Squeeze")
     x = lbann.FullyConnected(x, num_neurons = 64, name = "hidden_layer_1")
     x = lbann.Relu(x, name = "hidden_layer_1_activation")
     x = lbann.FullyConnected(x, num_neurons = num_classes,
@@ -318,10 +319,3 @@ def make_model(num_vertices = None,
                        callbacks = callbacks
                        )
     return model
-
-if __name__ == '__main__':
-    # Quick check to see if model generates correctly
-    model_1 = make_model(dataset="MNIST", kernel_type = 'GIN')
-    model_1 = make_model(dataset="MNIST", kernel_type = 'GCN')
-    model_1 = make_model(dataset="MNIST", kernel_type = 'Graph')
-    model_1 = make_model(dataset="MNIST", kernel_type = 'GatedGraph')

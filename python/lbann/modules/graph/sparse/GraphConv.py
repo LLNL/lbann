@@ -79,13 +79,13 @@ class GraphConv(Module):
             if not issubclass(self.activation, lbann.Layer):
                 raise ValueError('activation must be a layer')
         self.id_nn = \
-            ChannelwiseFullyConnectedModule(self.output_channels,
+            ChannelwiseFullyConnectedModule(self.output_channel_size,
                                             bias=False,
                                             weights=id_weights,
                                             activation=self.activation,
                                             name=self.name+"_ID_FC_layer")
         self.mat_nn = \
-            ChannelwiseFullyConnectedModule(self.output_channels,
+            ChannelwiseFullyConnectedModule(self.output_channel_size,
                                             bias=self.has_bias,
                                             weights=mat_weights,
                                             activation=self.activation,
@@ -110,7 +110,7 @@ class GraphConv(Module):
         # Place the new features on to neighborhoods
         neighborhoods = GraphExpand(new_neighbor_features, target_indices)
         # Accumulate Messages from Neighboring Nodes
-        reduced_features = GraphReduce(neighborhoods, source_indices, [self.num_nodes, sel.output_channel_size])
+        reduced_features = GraphReduce(neighborhoods, source_indices, [self.num_nodes, self.output_channel_size])
 
         out_features = lbann.Sum(new_self_features, reduced_features) 
         return out_features
