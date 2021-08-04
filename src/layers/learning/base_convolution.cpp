@@ -449,9 +449,6 @@ base_convolution_layer<TensorDataType,Device>
 #ifdef HYDROGEN_HAVE_CUB
   workspace.SetMemoryMode(1);
 #endif // HYDROGEN_HAVE_CUB
-  size_t workspace_size = 1 << 30; /// @todo Allocate largest free block
-  workspace.Resize(workspace_size / sizeof(TensorDataType), 1);
-  workspace_size = workspace.Height() * sizeof(TensorDataType);
 
   // Convolution parameters
   std::vector<int> input_dims, output_dims;
@@ -469,6 +466,17 @@ base_convolution_layer<TensorDataType,Device>
   auto& output_desc = (during_forward_prop
                        ? m_tensors_dnn_desc.get_activations()
                        : m_tensors_dnn_desc.get_error_signals());
+
+  // Get workspace size
+  auto multisync = El::MakeMultiSync(gpu::get_sync_info(workspace));
+  size_t workspace_size =
+    dnn_lib::get_fwd_conv_workspace_size(m_kernel_dnn_desc,
+                                         input_desc,
+                                         m_convolution_dnn_desc,
+                                         output_desc,
+                                         multisync);
+  workspace.Resize(workspace_size / sizeof(TensorDataType), 1);
+  workspace_size = workspace.Height() * sizeof(TensorDataType);
 
   // Perform convolution on the GPU
   // Determine convolution algorithm
@@ -528,9 +536,6 @@ apply_transposed_convolution_dnn(bool during_forward_prop) {
 #ifdef HYDROGEN_HAVE_CUB
   workspace.SetMemoryMode(1);
 #endif // HYDROGEN_HAVE_CUB
-  size_t workspace_size = 1 << 30; /// @todo Allocate largest free block
-  workspace.Resize(workspace_size / sizeof(TensorDataType), 1);
-  workspace_size = workspace.Height() * sizeof(TensorDataType);
 
   // Convolution transpose parameters
   std::vector<int> input_dims, output_dims;
@@ -548,6 +553,17 @@ apply_transposed_convolution_dnn(bool during_forward_prop) {
   auto& output_desc = (during_forward_prop
                        ? m_tensors_dnn_desc.get_activations()
                        : m_tensors_dnn_desc.get_error_signals());
+
+  // Get workspace size
+  auto multisync = El::MakeMultiSync(gpu::get_sync_info(workspace));
+  size_t workspace_size =
+    dnn_lib::get_bwd_data_conv_workspace_size(m_kernel_dnn_desc,
+                                              input_desc,
+                                              m_convolution_dnn_desc,
+                                              output_desc,
+                                              multisync);
+  workspace.Resize(workspace_size / sizeof(TensorDataType), 1);
+  workspace_size = workspace.Height() * sizeof(TensorDataType);
 
   // Perform transposed convolution on the GPU
   // Determine transposed convolution algorithm
@@ -647,15 +663,23 @@ base_convolution_layer<TensorDataType,Device>
 #ifdef HYDROGEN_HAVE_CUB
       workspace.SetMemoryMode(1); // CUB GPU memory pool
 #endif // HYDROGEN_HAVE_CUB
-      size_t workspace_size = 1 << 30; /// @todo Allocate largest free block
-      workspace.Resize(workspace_size / sizeof(TensorDataType), 1);
-      workspace_size = workspace.Height() * sizeof(TensorDataType);
 
       // Initialize DNN library objects
       auto&& input_desc = m_tensors_dnn_desc.get_prev_activations();
       auto&& gradient_wrt_output_desc = m_tensors_dnn_desc.get_prev_error_signals();
 
       auto dst_scale = ScalingType(dst_scale_dt), gradient_scale = ScalingType(gradient_scale_dt);
+
+      // Get workspace size
+      auto multisync = El::MakeMultiSync(gpu::get_sync_info(workspace));
+      size_t workspace_size =
+        dnn_lib::get_bwd_weight_conv_workspace_size(gradient_wrt_output_desc,
+                                                    input_desc,
+                                                    m_convolution_dnn_desc,
+                                                    m_kernel_dnn_desc,
+                                                    multisync);
+      workspace.Resize(workspace_size / sizeof(TensorDataType), 1);
+      workspace_size = workspace.Height() * sizeof(TensorDataType);
 
       // Determine algorithm and compute kernel gradient
       if (using_transposed_convolution) {
