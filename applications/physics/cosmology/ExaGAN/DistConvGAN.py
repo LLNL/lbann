@@ -81,33 +81,21 @@ class ConvBNRelu(lbann.modules.Module):
                 name='{0}_bn_instance{1}'.format(
                     self.name, self.instance))
 
-        # Strided 1x1x1 pooling
+        # Strided pooling
         # Note: Ideally we would do this immediately after the
         # convolution, but we run into issues since the tensor
         # overlaps don't match.
         ### @todo Support strided convolution in distconv
         if self.stride != 1:
-            # layer = lbann.Pooling(
-            #     layer,
-            #     num_dims=3,
-            #     pool_dims_i=1,
-            #     pool_strides_i=self.stride,
-            #     pool_mode='max',
-            #     parallel_strategy=self.ps,
-            #     name='{0}_pool_instance{1}'.format(
-            #     self.name, self.instance)
-            # )
-            layer = lbann.Convolution(
+            layer = lbann.Pooling(
                 layer,
                 num_dims=3,
-                num_output_channels=self.conv.out_channels,
-                conv_dims_i=1,
-                conv_strides_i=2,
-                conv_dilations_i=1,
-                num_groups=1,
+                pool_dims_i=self.stride,
+                pool_strides_i=self.stride,
+                pool_mode='max',
                 parallel_strategy=self.ps,
                 name='{0}_pool_instance{1}'.format(
-                    self.name, self.instance),
+                self.name, self.instance)
             )
 
         # Activation
