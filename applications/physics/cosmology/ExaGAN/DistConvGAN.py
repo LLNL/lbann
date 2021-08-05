@@ -39,6 +39,7 @@ class ConvBNRelu(lbann.modules.Module):
         super().__init__()
         self.name = name
         self.instance = 0
+        self.stride = stride
         self.bn_statistics_group_size = bn_statistics_group_size
         self.activation = activation
         self.use_bn = use_bn
@@ -48,8 +49,8 @@ class ConvBNRelu(lbann.modules.Module):
         # Initialize convolution
         self.conv = lbann.modules.Convolution3dModule(
             out_channels, kernel_size,
-            stride=stride, padding=padding,
-            bias=False, parallel_strategy=self.ps, 
+            stride=1, padding=padding,
+            bias=False, parallel_strategy=self.ps,
             weights=self.conv_weights,
             name=self.name + '_conv')
 
@@ -66,7 +67,11 @@ class ConvBNRelu(lbann.modules.Module):
 
     def forward(self, x):
         self.instance += 1
+
+        # Convolution
         layer = self.conv(x)
+
+        # Batchnorm
         if self.use_bn:
             layer = lbann.BatchNormalization(
                 layer, weights=self.bn_weights,
@@ -75,12 +80,32 @@ class ConvBNRelu(lbann.modules.Module):
                 parallel_strategy=self.ps,
                 name='{0}_bn_instance{1}'.format(
                     self.name, self.instance))
+
+        # Strided pooling
+        # Note: Ideally we would do this immediately after the
+        # convolution, but we run into issues since the tensor
+        # overlaps don't match.
+        ### @todo Support strided convolution in distconv
+        if self.stride != 1:
+            layer = lbann.Pooling(
+                layer,
+                num_dims=3,
+                pool_dims_i=self.stride,
+                pool_strides_i=self.stride,
+                pool_mode='max',
+                parallel_strategy=self.ps,
+                name='{0}_pool_instance{1}'.format(
+                self.name, self.instance)
+            )
+
+        # Activation
         if self.activation:
             layer = self.activation(
                 layer,
                 parallel_strategy=self.ps,
                 name='{0}_activation_instance{1}'.format(
                     self.name, self.instance))
+
         return layer
 
 class Deconvolution3dModule(lbann.modules.ConvolutionModule):
@@ -126,48 +151,48 @@ class Exa3DGAN(lbann.modules.Module):
 
        self.g_device = gen_device
        #Set parallel strategy
-       self.d_ps = disc_ps 
-       self.g_ps = gen_ps 
+       self.d_ps = disc_ps
+       self.g_ps = gen_ps
        self.use_bn = use_bn
 
        assert self.input_width in [64,128, 256, 512]
 
-       w = [int(self.input_width/16)]*3 #filter size in last disc conv and first gen conv 
+       w = [int(self.input_width/16)]*3 #filter size in last disc conv and first gen conv
        w.insert(0,512) ##num filters in last disc conv and first gen conv
        self.outc_dims = w
-      
+
 
 
        self.inits = {'dense': lbann.NormalInitializer(mean=0,standard_deviation=0.02),
-                      'conv': lbann.NormalInitializer(mean=0,standard_deviation=0.02), 
+                      'conv': lbann.NormalInitializer(mean=0,standard_deviation=0.02),
                       'convT':lbann.NormalInitializer(mean=0,standard_deviation=0.02)}
-      
-       #Discriminator 
+
+       #Discriminator
        d_channels = [64,128,256,512]
        kernel_size=5
        padding = 2
        stride = 2
        self.d1_conv = [convbnrelu(d_channels[i], kernel_size, stride, padding, self.use_bn, bn_stats_grp_sz, False,
-                                  name=self.name+'_disc1_conv'+str(i), 
+                                  name=self.name+'_disc1_conv'+str(i),
                                   activation=lbann.Relu,
                                   parallel_strategy=self.d_ps,
                                   conv_weights=[lbann.Weights(initializer=self.inits['conv'])])
-                   for i in range(len(d_channels))] 
+                   for i in range(len(d_channels))]
        self.d1_fc = fc(1,name=self.name+'_disc1_fc',
                        weights=[lbann.Weights(initializer=self.inits['dense'])])
 
-       #stacked_discriminator, this will be frozen, no optimizer, 
+       #stacked_discriminator, this will be frozen, no optimizer,
        #layer has to be named for callback
        self.d2_conv = [convbnrelu(d_channels[i], kernel_size, stride, padding, self.use_bn, bn_stats_grp_sz, False,
-                                  name=self.name+'_disc2_conv'+str(i), 
+                                  name=self.name+'_disc2_conv'+str(i),
                                   activation=lbann.Relu,
                                   parallel_strategy=self.d_ps,
                                   conv_weights=[lbann.Weights(initializer=self.inits['conv'])])
-                   for i in range(len(d_channels))] 
+                   for i in range(len(d_channels))]
 
        self.d2_fc = fc(1,name=self.name+'_disc2_fc',
                        weights=[lbann.Weights(initializer=self.inits['dense'])])
-        
+
 
        g_channels = [256,128,64]
        kernel_size=2
@@ -176,7 +201,7 @@ class Exa3DGAN(lbann.modules.Module):
                         name=self.name+'_gen'+str(i),
                         parallel_strategy=self.g_ps,
                        weights=[lbann.Weights(initializer=self.inits['convT'])])
-                       for i in range(len(g_channels))] 
+                       for i in range(len(g_channels))]
 
        self.g_convT3 = conv(input_channel, kernel_size, stride, padding, activation=lbann.Tanh,
                             parallel_strategy=self.g_ps,
@@ -196,13 +221,12 @@ class Exa3DGAN(lbann.modules.Module):
 
     def forward_discriminator2(self,y):
         x = self.d2_conv[3](self.d2_conv[2](self.d2_conv[1](self.d2_conv[0](y))))
-        return self.d2_fc(x) 
- 
+        return self.d2_fc(x)
+
     def forward_generator(self,z,ps=None):
         x = lbann.FullyConnected(z, num_neurons = np.prod(self.outc_dims), has_bias = True, device=self.g_device)
-        x = lbann.Reshape(x, dims=list2str(self.outc_dims),name='gen_zin_reshape',device=self.g_device) 
+        x = lbann.Reshape(x, dims=list2str(self.outc_dims),name='gen_zin_reshape',device=self.g_device)
         x = lbann.Relu(self.g_convT[0](x), name='g_relu0',parallel_strategy=ps,device=self.g_device)
         x = lbann.Relu(self.g_convT[1](x), name='g_relu1',parallel_strategy=ps,device=self.g_device)
         x = lbann.Relu(self.g_convT[2](x), name='g_relu2',parallel_strategy=ps,device=self.g_device)
-        return self.g_convT3(x) 
-
+        return self.g_convT3(x)

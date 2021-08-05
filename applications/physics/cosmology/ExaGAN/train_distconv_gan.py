@@ -72,7 +72,7 @@ def construct_model(args):
     metrics = []
     callbacks = []
 
-    w  = [args.input_width]*3 
+    w  = [args.input_width]*3
     w.insert(0,args.input_channel)
     _sample_dims = w
 
@@ -81,7 +81,7 @@ def construct_model(args):
     if(args.use_distconv):
       ps = get_parallel_strategy_args(
                 sample_groups=args.mini_batch_size,
-                height_groups=args.depth_groups)
+                depth_groups=args.depth_groups)
 
     g_device = 'GPU'
     input_ = lbann.Input(name='input', device=g_device)
@@ -94,12 +94,12 @@ def construct_model(args):
 
     z = lbann.Reshape(lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims="64", name='noise_vec', device=g_device),
                       dims='1 64', name='noise_vec_reshape',device=g_device)
-    print("RUN ARGS ", args) 
+    print("RUN ARGS ", args)
 
     d1_real,d1_fake,d_adv, gen_img = model.Exa3DGAN(args.input_width,args.input_channel,
                              g_device,ps,use_bn=args.use_bn)(x1,z)
-    
-    layers=list(lbann.traverse_layer_graph(input_))
+
+    layers=list(lbann.traverse_layer_graph([d1_real, d1_fake]))
    # Setup objective function
     weights = set()
     src_layers = []
@@ -134,7 +134,6 @@ def construct_model(args):
     callbacks.append(lbann.CallbackPrint())
     callbacks.append(lbann.CallbackTimer())
     callbacks.append(lbann.CallbackGPUMemoryUsage())
-
 
     # ------------------------------------------
     # Construct model
@@ -176,7 +175,7 @@ if __name__ == '__main__':
     #Remove cosmoflow/hdf5 stuff
     environment.pop('LBANN_DISTCONV_COSMOFLOW_PARALLEL_IO')
     environment.pop('LBANN_DISTCONV_NUM_IO_PARTITIONS')
-    lbann_args = ['--io_thread=1']
+    lbann_args = ['--num_io_threads=1']
 
     print('LBANN args ', lbann_args)
     print("LBANN ENV VAR ", environment)
