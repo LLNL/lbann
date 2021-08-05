@@ -32,7 +32,15 @@ python3 OGB_LBANN_Trainer.py --mini-batch-size MB --num-epochs N --ps P
 ```
 
 For P > 0, the graph kernel utilizes channelwise distributed tensors for the the graph kernel. 
- 
+
+## Integration Tests
+
+The tests directory contains integration tests for GCN, GIN, GRAPH, GATEDGRAPH, DGCN, DGRAPH, and NNCONV kernels.
+
+The tests can be run through:  
+```
+python3 -m pytest
+``` 
 ## Links 
 
 - Li, Yujia, et al. "Gated graph sequence neural networks." arXiv preprint arXiv:1511.05493 (2015).

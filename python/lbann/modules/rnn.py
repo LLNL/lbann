@@ -307,9 +307,29 @@ class GRU(Module):
         return ht, ht
 
 class ChannelwiseGRU(Module):
+    """Channelwise extension of Gated-recurrent unit for 2D input.
+       Implementation mostly taken from:
+       https://pytorch.org/docs/stable/nn.html#gru"""
     global_count = 0
 
     def __init__(self, num_channels, size, bias=True, weights=[], name=None):
+        """Initialize GRU cell.
+
+        Args:
+            num_channels (int): The number of rows in the matrix to perform GRU 
+            size (int): Size of output tensor.
+            bias (bool): Whether to apply biases after linearity.
+            weights (`Weights` or iterator of `Weights`): Weights in
+                fully-connected layer. There are at most four - two
+                matrices ((3*size) x (input_size) and (3*size) x (size) dimensions) each and two
+                biases (3*size entries) each. If weights are not provided,
+                the matrix and bias will be initialized in a similar
+                manner as PyTorch (uniform random values from
+                [-1/sqrt(size), 1/sqrt(size)]).
+            name (str): Default name is in the form 'gru<index>'.
+            data_layout (str): Data layout.
+
+        """
 
         super().__init__()
         ChannelwiseGRU.global_count += 1 
