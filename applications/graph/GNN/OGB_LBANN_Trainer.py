@@ -124,7 +124,6 @@ if (not args.enable_distconv and args.process_groups > 0):
 
 NUM_PROCESS_GROUPS = args.process_groups
     
-
 # ---------------------------------------------------
 
 # Create model, data reader, optimizer, and trainer

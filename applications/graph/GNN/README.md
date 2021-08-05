@@ -5,43 +5,34 @@ geometric deep learning on LBANN.
 ## Datasets
 The datasets used to test the graph layers are: 
 
-1. MNIST Superpixel 
-2. PROTEINS
-3. OGB
 
-To automatically download the MNIST Superpixel dataset: 
+1. PROTEINS
+2. OGB-PCQM4M-LSC
 
-```
-cd data/MNIST_Superpixel
-python3 MNIST_Superpixel_Dataset.py
-```
-
-To add self loops and normalize the adjacency matrix, run: 
-
-```
-python3 update_adj_mat.py
-```
-
-To automatically download the PROTEINS dataset: 
-```
-cd data/PROTEINS
-python3 PROTEINS_Dataset.py
-```
 
 Note: Both datasets require significant amount of preprocessing post download, so 
 the download and processing step should be run using the scheduler. 
 
 
 ## Running Instructions 
-To run the a model with a graph kernel and a dataset: 
+To run the a model with a graph kernel: 
 
 ```
-python3 main.py --dataset (Proteins/MNIST) --model (GCN/GIN/GRAPH/GATEDGRAPH) --mini-batch-size MB --num-epochs N
+python3 main.py --model (GCN/GIN/GRAPH/GATEDGRAPH) --mini-batch-size MB --num-epochs N
 
 ```
 
 ## Edge Conditioned Neural Networks 
 
+To run the edge conditioned network for OGB-PCQM4M-LSC dataset
+
+```
+python3 OGB_LBANN_Trainer.py --mini-batch-size MB --num-epochs N --ps P
+
+```
+
+For P > 0, the graph kernel utilizes channelwise distributed tensors for the the graph kernel. 
+ 
 ## Links 
 
 - Li, Yujia, et al. "Gated graph sequence neural networks." arXiv preprint arXiv:1511.05493 (2015).

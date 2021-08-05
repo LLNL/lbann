@@ -48,6 +48,7 @@ def GINConvLayer(node_features,
                  source_indices,
                  target_indices,
                  num_nodes,
+                 num_edges,
                  input_channels,
                  output_channels):
     """An example GIN kernel with 4 layer deep sequential nn.  
@@ -75,7 +76,8 @@ def GINConvLayer(node_features,
     gin = GINConv(sequential_nn,
                   input_channels = input_channels, 
                   output_channels = output_channels,
-                  num_nodes = num_nodes)
+                  num_nodes = num_nodes,
+                  num_edges = num_edges)
     return gin(node_features, source_indices, target_indices)
 
 
@@ -83,6 +85,7 @@ def GCNConvLayer(node_features,
                  source_indices,
                  target_indices,
                  num_nodes,
+                 num_edges,
                  input_channels,
                  output_channels):
     """An example 2-layer GCN kernel.
@@ -119,6 +122,7 @@ def GraphConvLayer(node_features,
                    source_indices,
                    target_indices,
                    num_nodes,
+                   num_edges,
                    input_channels,
                    output_channels):
     """An example 2-layer Graph kernel.
@@ -155,6 +159,7 @@ def GATConvLayer(node_features,
                  source_indices,
                  target_indices,
                  num_nodes,
+                 num_edges,
                  input_channels,
                  output_channels):
     """An example single layer GatedGraph kernel.
@@ -181,7 +186,6 @@ def GATConvLayer(node_features,
 def make_model(num_vertices = None, 
                node_features = None, 
                num_classes = None,
-               dataset = None,
                kernel_type = 'GCN',
                callbacks = None,
                num_epochs = 1):
@@ -191,9 +195,7 @@ def make_model(num_vertices = None,
         num_vertices (int): Number of vertices of each graph (default: None) 
         node_features (int): Number of features per noded (default: None)
         num_classes (int): Number of classes as targets (default: None)
-        dataset (str): Preset data set to use. Either a datset parameter has to be 
-                       supplied or all of num_vertices, node_features, and 
-                       num_classes have to be supplied. (default: None) 
+        
         kernel_type (str): Graph Kernel to use in model. Expected one of 
                             GCN, GIN, Graph, or GatedGraph (deafult: GCN)
         callbacks (list): Callbacks for the model. If set to None the model description, 
@@ -205,22 +207,10 @@ def make_model(num_vertices = None,
                                presets, and graph kernels. 
     '''
 
-    assert num_vertices != dataset #Ensure atleast one of the values is set 
-
-    if dataset is not None:
-        assert num_vertices is None
-
-        if dataset == 'PROTEINS':
-            num_vertices = 100
-            num_classes = 2
-            node_feature_size = 3
-            max_edges = 415
-        else:
-            raise Exception("Unkown Dataset")
-
-    assert num_vertices is not None
-    assert num_classes is not None 
-    assert node_feature_size is not None 
+    num_vertices = 100
+    num_classes = 2
+    node_feature_size = 3
+    max_edges = 415  
 
     #----------------------------------
     # Reshape and Slice Input Tensor 
@@ -268,6 +258,7 @@ def make_model(num_vertices = None,
                         source_indices,
                         target_indices,
                         num_vertices,
+                        max_edges,
                         node_feature_size,
                         output_channels)
     #----------------------------------

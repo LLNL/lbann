@@ -44,8 +44,9 @@ class PROTEINS_Sparse_Dataset():
         self.pad_edge_lists()
 
     def generate_dataset(self):
+        files = PROTEINS_Sparse_Dataset.files
         save_dir = os.path.join(data_dir, 'PROTEINS')        
-        data = utils.TUDataset_Parser(save_dir, 'PROTEINS', 2, "sparse")
+        data = utils.TUDataset_Parser(save_dir, 'PROTEINS', 2, graph_format="sparse")
         
         for file_name, _graph_data_i in zip(files, data):
             np.save(os.path.join(save_dir, file_name), _graph_data_i)
@@ -75,7 +76,8 @@ class PROTEINS_Dense_Dataset():
     def __init__(self):
         # Check is data is downloaded and processed
         # Load if data exists 
-        # Else download and process data  
+        # Else download and process data
+        files = PROTEINS_Dense_Dataset.files  
         for npy_file in files:
             if not os.path.isfile(os.path.join(data_dir,"PROTEINS/"+npy_file)):
                 get_data()
@@ -86,8 +88,9 @@ class PROTEINS_Dense_Dataset():
         self.targets = np.load(os.path.join(data_dir, "PROTEINS/"+files[2]))
 
     def generate_dataset(self):
+        files = PROTEINS_Dense_Dataset.files
         save_dir = os.path.join(data_dir, 'PROTEINS')        
-        data = utils.TUDataset_Parser(save_dir, 'PROTEINS', 2, "dense")
+        data = utils.TUDataset_Parser(save_dir, 'PROTEINS', 2, graph_format="dense")
         
         for file_name, _graph_data_i in zip(files, data):
             np.save(os.path.join(save_dir, file_name), _graph_data_i)
@@ -101,25 +104,3 @@ class PROTEINS_Dense_Dataset():
         adj = np.float32(self.adjs[index].flatten())
 
         return np.concatenate((x,adj,y), axis=0)
-
-# training_data = PROTEINS_Dataset()
-
-# def get_train(index):
-#     return training_data[index]
-
-# def num_train_samples():
-#     return len(training_data)
-
-# def sample_dims():
-#     adjacency_matrix_size = 100 * 100 
-#     node_feature_size = 100 * 3 
-#     target_size = 2
-#     return (adjacency_matrix_size + node_feature_size + target_size, )
-
-# if __name__== '__main__':
-#     print(len(training_data))
-#     print(training_data.node_features[0].shape)
-#     print(training_data.adjs[0].shape)
-#     print(training_data.targets[0].shape)
-#     print(type(training_data[0][0]))
-#     print(sys.getsizeof(training_data[0][0]))

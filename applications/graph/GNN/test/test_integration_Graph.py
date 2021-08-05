@@ -56,8 +56,7 @@ def setup_experiment(lbann):
     
 
     
-    model = Sparse_Graph_Trainer.make_model(dataset = 'PROTEINS',
-                                            kernel_type = 'Graph',
+    model = Sparse_Graph_Trainer.make_model(kernel_type = 'Graph',
                                             num_epochs = num_epochs,
                                             callbacks = callbacks)
     reader = data.PROTEINS.make_data_reader()

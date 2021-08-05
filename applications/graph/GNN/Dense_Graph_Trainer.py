@@ -70,7 +70,6 @@ def DGraph_Layer(feature_matrix,adj_matrix, node_features):
 def make_model(num_vertices = None, 
                node_features = None, 
                num_classes = None,
-               dataset = None,
                kernel_type = 'GCN',
                callbacks = None,
                num_epochs = 1):
@@ -80,9 +79,6 @@ def make_model(num_vertices = None,
         num_vertices (int): Number of vertices of each graph (default: None) 
         node_features (int): Number of features per noded (default: None)
         num_classes (int): Number of classes as targets (default: None)
-        dataset (str): Preset data set to use. Either a datset parameter has to be 
-                       supplied or all of num_vertices, node_features, and 
-                       num_classes have to be supplied. (default: None) 
         kernel_type (str): Graph Kernel to use in model. Expected one of 
                             GCN, or Graph (deafult: GCN)
         callbacks (list): Callbacks for the model. If set to None the model description, 
@@ -94,22 +90,9 @@ def make_model(num_vertices = None,
                                presets, and graph kernels. 
     '''   
     
-    assert num_vertices != dataset #Ensure atleast one of the values is set 
-
-    if dataset is not None:
-        assert num_vertices is None
-
-        if dataset == 'MNIST':
-            num_vertices = 75
-            num_classes = 10
-            node_features = 1
-
-        elif dataset == 'PROTEINS':
-            num_vertices = 100
-            num_classes = 2
-            node_features = 3
-        else:
-            raise Exception("Unkown Dataset")
+    num_vertices = 100
+    num_classes = 2
+    node_features = 3
 
     assert num_vertices is not None
     assert num_classes is not None 
@@ -120,7 +103,7 @@ def make_model(num_vertices = None,
     # Reshape and Slice Input Tensor 
     #----------------------------------
 
-    input_ = lbann.Input(target_mode = 'classification')
+    input_ = lbann.Input(target_mode='N/A')
 
     # Input dimensions should be (num_vertices * node_features + num_vertices^2 + num_classes )
     # input should have atleast two children since the target is classification 

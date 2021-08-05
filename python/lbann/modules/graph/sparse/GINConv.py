@@ -14,6 +14,7 @@ class GINConv(Module):
                  input_channels,
                  output_channels,
                  num_nodes,
+                 num_edges,
                  eps = 1e-6,
                  name = None):
         """Initialize graph kernel as described in Graph Isomorphism Network.
@@ -36,6 +37,7 @@ class GINConv(Module):
         self.input_channel_size = input_channels
         self.output_channel_size = output_channels
         self.num_nodes = num_nodes
+        self.num_edges = num_edges
 
     def forward(self,
                 node_feature_mat,
@@ -53,30 +55,25 @@ class GINConv(Module):
         Returns: 
             (Layer) : The output after kernel ops. The output can passed into another Graph Conv layer
                           directly
-        """
-
-        # Accumulate Messages from Neighboring Nodes
-        
-
-        # Aggregate Messages into node features  
+        """ 
         eps = lbann.Constant(value=(1+self.eps),
                              num_neurons = str_list([self.num_nodes, 
                                                      self.input_channel_size]))
         
         eps_node_features = lbann.Multiply(node_feature_mat, eps, name=self.name+"_epl_mult")
 
-        neighborhoods = GraphExpand(node_feature_mat, target_indices)
-        reduced_features = GraphReduce(neighborhoods, source_indices, [self.num_nodes, 
-                                                                       self.input_channel_size])
+        node_feature_mat = lbann.Sum(eps_node_features, node_feature_mat)
 
-
-        aggregated_node_features = lbann.Sum(node_feature_mat, reduced_features)
-        
         # Transform with the sequence of linear layers
         for layer in self.nn:
-            aggregated_node_features = layer(aggregated_node_features)
+            node_feature_mat = layer(node_feature_mat)
 
+        neighborhoods = GraphExpand(node_feature_mat, target_indices)
         
+        neighborhoods = lbann.Reshape(neighborhoods, dims=str_list([self.num_edges, self.output_channel_size]))
+
+        aggregated_node_features = GraphReduce(neighborhoods, source_indices, [self.num_nodes, 
+                                                                       self.output_channel_size])
         ## Apply activation 
         if activation:
             aggregated_node_features = activation(aggregated_node_features)

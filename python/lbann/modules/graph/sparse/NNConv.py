@@ -16,6 +16,7 @@ class NNConv(Module):
                  num_edges,
                  input_channels,
                  output_channels,
+                 edge_input_channels,
                  activation=lbann.Relu,
                  name=None,
                  parallel_strategy={}):
@@ -51,6 +52,7 @@ class NNConv(Module):
 
         self.num_nodes = num_nodes
         self.num_edges = num_edges
+        self.edge_input_channels = edge_input_channels
 
         self.node_activation = activation
         self.parallel_strategy = parallel_strategy
@@ -130,6 +132,7 @@ class NNConv(Module):
         edge_reduce = lbann.Scatter(edge_values,
                                     edge_indices,
                                     dims=str_list(node_feature_dims),
+                                    axis=0,
                                     name=self.name+"_aggregate")
 
         return edge_reduce

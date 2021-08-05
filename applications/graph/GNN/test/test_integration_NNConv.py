@@ -40,7 +40,7 @@ EMBEDDING_DIM = 100
 EDGE_EMBEDDING_DIM = 16
 
 
-expected_accuracy_range = ( 2, 7)
+expected_accuracy_range = ( 0.05, 1.3)
 
 expected_mini_batch_times = {
        'ray' : 0.0372,
