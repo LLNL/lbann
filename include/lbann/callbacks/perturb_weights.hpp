@@ -77,15 +77,13 @@ private:
    */
   std::string m_output_name;
 
-   /*
-   *  upper.
-   *  lower.
-   *  scale.
-   *  perturb_probability.
-   */	
+  /// Upper bound of the perturbed weight
   EvalType m_upper;
+  /// Lower bound of the perturbed weight
   EvalType m_lower;
+  /// Scale of normal distribution N(1,0) for the perturbed weight
   EvalType m_scale;
+  /// The probability of perturbing the weight
   EvalType m_perturb_probability;
 
    
