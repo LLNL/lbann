@@ -86,7 +86,7 @@ message RandomPairwiseExchange {
       // No extra params
     }
     message CheckpointFile {
-      string base_dir = 1;
+      string checkpoint_dir = 1;
     }
 
     repeated string weights_name = 1;

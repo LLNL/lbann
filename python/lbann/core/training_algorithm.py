@@ -321,6 +321,56 @@ class RandomPairwiseExchange(MetaLearningStrategy):
         msg.exchange_strategy.CopyFrom(self.exchange_strategy.export_proto())
         return msg
 
+class TruncationSelectionExchange(MetaLearningStrategy):
+    """Truncation selection  metalearning strategy.
+
+    Rank all trainers in a population of trainers 
+    Ranking is done using specified metric strategy
+    Models/topologies of any trainer at ranking below truncation_k 
+    are replaced with trainers for top of the ranking list 
+
+    """
+
+    # Fake an enum, maybe?
+    class MetricStrategy:
+        LOWER_IS_BETTER: int = 0
+        HIGHER_IS_BETTER: int = 1
+
+
+    def __init__(self,
+                 metric_strategies: dict[str,int] = {},
+                 truncation_k: int=0);
+        """Construct a new TruncationSelectionExchange metalearning strategy.
+
+        Args:
+            metric_strategies:
+              Map from metric name to the criterion for picking a winner
+              with respect to this metric
+            truncation_k:
+              partition between winning and loosing trainer.
+        """
+
+        self.metric_strategies = metric_strategies
+        self.truncation_k = truncation_k
+
+    def export_proto(self):
+        """Get a protobuf representation of this object."""
+
+        msg = AlgoProto.TruncationSelectionExchange()
+        for key, value in self.metric_strategies.items():
+            msg.metric_name_strategy_map[key] = value
+        msg.truncation_k = self.truncation_k
+        return msg
+
+class KFAC(TrainingAlgorithm):
+    """Kronecker-Factored Approximate Curvature algorithm.
+
+    Applies second-order information to improve the quality of
+    gradients in SGD-like optimizers.
+
+    """
+
+
 class KFAC(TrainingAlgorithm):
     """Kronecker-Factored Approximate Curvature algorithm.
 
