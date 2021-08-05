@@ -26,6 +26,8 @@
 
 #include "lbann/execution_algorithms/ltfb/mutation_strategy.hpp"
 
+#include "lbann/comm_impl.hpp"
+
 #include "lbann/layers/activations/activations.hpp"
 #include "lbann/layers/activations/elu.hpp"
 #include "lbann/layers/activations/leaky_relu.hpp"
@@ -130,10 +132,21 @@ void ReplaceActivation::mutate(model& m, const int& step)
 
   // Generate two random numbers - one for new layer type and one for old layer
   // name
-  int const type_index =
-    fast_rand_int(get_fast_generator(), activation_types.size());
-  int const name_index =
-    fast_rand_int(get_fast_generator(), activation_layer_names.size());
+  int type_index;
+  int name_index;
+
+  // Generate the random numbers only in the master proc of trainer and
+  // broadcast them so that all procs in a trainer are undergoing the same
+  // mutation
+  if (m.get_comm()->am_trainer_master()) {
+    type_index = fast_rand_int(get_fast_generator(), activation_types.size());
+    name_index =
+      fast_rand_int(get_fast_generator(), activation_layer_names.size());
+  }
+  m.get_comm()->trainer_broadcast(m.get_comm()->get_trainer_master(),
+                                  type_index);
+  m.get_comm()->trainer_broadcast(m.get_comm()->get_trainer_master(),
+                                  name_index);
 
   // Print mutation
   std::cout << "Changing type of activation layer "
