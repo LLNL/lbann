@@ -339,7 +339,7 @@ class TruncationSelectionExchange(MetaLearningStrategy):
 
     def __init__(self,
                  metric_strategies: dict[str,int] = {},
-                 truncation_k: int=0);
+                 truncation_k = 0):
         """Construct a new TruncationSelectionExchange metalearning strategy.
 
         Args:

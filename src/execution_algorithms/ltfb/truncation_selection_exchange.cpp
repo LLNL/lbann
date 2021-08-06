@@ -125,21 +125,21 @@ void unpack(model& m, std::string const& str)
 // TruncationSelectionExchange implementation
 
 TruncationSelectionExchange::TruncationSelectionExchange(
-  std::unordered_map<std::string, metric_strategy> metrics)
-  : m_metrics{std::move(metrics)}
+  std::unordered_map<std::string, metric_strategy> metrics, int truncation_k)
+  : m_metrics{std::move(metrics)},m_truncation_k{std::move(truncation_k)}
 {
   LBANN_ASSERT(m_metrics.size()==1); //only single (1) metric is supported at this time
 }
 
 TruncationSelectionExchange::TruncationSelectionExchange(
   std::string metric_name,
-  metric_strategy winner_strategy)
-  : TruncationSelectionExchange({{metric_name, winner_strategy}})
+  metric_strategy winner_strategy,int truncation_k)
+  : TruncationSelectionExchange({{metric_name, winner_strategy}},truncation_k)
 {}
 
 TruncationSelectionExchange::TruncationSelectionExchange(
   TruncationSelectionExchange const& other)
-  : m_metrics{other.m_metrics}
+  : m_metrics{other.m_metrics}, m_truncation_k{other.m_truncation_k}
 {}
 
 EvalType TruncationSelectionExchange::evaluate_model(model& m,
@@ -166,7 +166,7 @@ EvalType TruncationSelectionExchange::evaluate_model(model& m,
 
   // Get metric values
   bool found_metric = false;
-  EvalType score;
+  EvalType score=0.f;
   std::string metric_name;
   for (const auto& met : m.get_metrics()) {
     metric_name = met->name();
@@ -242,26 +242,25 @@ void TruncationSelectionExchange::select_next(model& m,
   auto itr2 = std::find(top_scores.begin(), top_scores.end(), score_list[trainer_id]);
   auto trainer_score_pos = std::distance(top_scores.begin(),itr2);
   
-  unsigned int k = 2; //hack
-  if(trainer_score_pos < k) {
+  if(trainer_score_pos < m_truncation_k) {
     //Winner (in top-k)
     //for each loosing trainer
-    for(unsigned int i=k; i < num_trainers; i++) {
-      if(trainer_score_pos == i % k) {
+    for(unsigned int i=m_truncation_k; i < num_trainers; i++) {
+      if(trainer_score_pos == i % m_truncation_k) {
       //One of partners is trainer that owns score at top_scores[i]
         auto dest = std::distance(score_list.begin(),
                                   std::find(score_list.begin(), score_list.end(), top_scores[i]));
   
         auto model_string = pack(m);
         send_string(comm, model_string, dest);
-        std::cout << "Trainer " << trainer_id << "with score " << score_list[trainer_id]; 
+        std::cout << "Trainer " << trainer_id << " with score " << score_list[trainer_id]; 
         std::cout << " sends model to trainer : " << dest << " with score " << score_list[dest] << std::endl;
       }
 
     }
   } else { //not in top-k, receive
       auto src = std::distance(score_list.begin(),
-                               std::find(score_list.begin(), score_list.end(),top_scores[trainer_score_pos % k])); 
+                               std::find(score_list.begin(), score_list.end(),top_scores[trainer_score_pos % m_truncation_k])); 
       std::cout << "Trainer " << trainer_id << " receive weights from trainer : " << src << std::endl;
       
       auto rcv_str = recv_string(comm, src);
@@ -340,5 +339,5 @@ lbann::make<lbann::ltfb::TruncationSelectionExchange>(
                  });
 
   return make_unique<lbann::ltfb::TruncationSelectionExchange>(
-    std::move(metric_map));
+    std::move(metric_map),msg.truncation_k());
 }

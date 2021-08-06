@@ -62,10 +62,12 @@ public:
    *             model passed to apply().
    *  @param[in] winner_strategy Strategy for determining the winner
    *             of a tournament.
+   *  @param[in] truncation_k  Partitions ranking list
    */
   //Use this if only one metric is supported
   TruncationSelectionExchange(std::string metric_name,
-                         metric_strategy winner_strategy);
+                         metric_strategy winner_strategy,
+                         int truncation_k);
 
   /** @brief Constructor
    *  @param[in] metrics The metric/strategy pairs. A metric
@@ -73,7 +75,8 @@ public:
    *             to apply(). 
    */
   TruncationSelectionExchange(
-    std::unordered_map<std::string, metric_strategy> metrics);
+    std::unordered_map<std::string, metric_strategy> metrics,
+    int truncation_k);
 
   ~TruncationSelectionExchange() = default;
   TruncationSelectionExchange(TruncationSelectionExchange const& other);
@@ -103,7 +106,10 @@ private:
    *  every metric to be declared the tournament winner.
    */
   std::unordered_map<std::string, metric_strategy> m_metrics;
-
+ 
+  /* partitions ranking of trainers to top (winners) and below (loosers) 
+   */
+  int m_truncation_k;
 
 }; // class TruncationSelectionExchange
 
