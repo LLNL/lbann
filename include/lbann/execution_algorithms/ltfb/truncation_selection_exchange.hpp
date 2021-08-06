@@ -39,7 +39,10 @@ namespace lbann {
 namespace ltfb {
 
 /** @class TruncationSelectionExchange
- *  @brief todo summarize algo.
+ *  A variant of classic LTFB or exploitation mechanism in population-based training.
+ *  All trainers in the population set are ranked using specified evaluation metric
+ *  Model, training hyperparameters and or topologies of any trainer in 
+ *  the bottom rank is replaced by that of a (random) trainer in the top rank.
  *
  */
 class TruncationSelectionExchange final
@@ -62,9 +65,8 @@ public:
    *             model passed to apply().
    *  @param[in] winner_strategy Strategy for determining the winner
    *             of a tournament.
-   *  @param[in] truncation_k  Partitions ranking list
+   *  @param[in] truncation_k  Partitions ranking list to top(winners)/bottom(losers)
    */
-  //Use this if only one metric is supported
   TruncationSelectionExchange(std::string metric_name,
                          metric_strategy winner_strategy,
                          int truncation_k);
@@ -82,10 +84,10 @@ public:
   TruncationSelectionExchange(TruncationSelectionExchange const& other);
   ///@}
 
-  /** @brief Engage in a tournament with a partner trainer.
+  /** @brief Engage in a ranked tournament with a population of trainers.
 
    *  @param[in,out] m On input, the locally computed model. On
-   *                 output, the winning model with respect to the
+   *                 output, the selected (winning model) with respect to the
    *                 tournament.
    *  @param[in,out] ctxt The execution context for the outer LTFB
    *                 wrapper.
@@ -102,8 +104,10 @@ private:
 private:
   /** @brief The list of metric/strategy pairs.
    *
-   *  Each metric gets its own strategy. A partner model must win
-   *  every metric to be declared the tournament winner.
+   *  Each metric gets its own strategy. 
+   *  Note, only one metric and strategy pair is currently supported.
+   *  List (map) is for compatibility with classic LTFB (RPE)
+   *  And as a placeholder for when multiple metrics are needed.
    */
   std::unordered_map<std::string, metric_strategy> m_metrics;
  
@@ -130,4 +134,4 @@ make(google::protobuf::Message const&);
 ///@}
 
 } // namespace lbann
-#endif // LBANN_EXECUTION_ALGORITHMS_LTFB_RANDOM_PAIRWISE_EXCHANGE_HPP_INCLUDED
+#endif // LBANN_EXECUTION_ALGORITHMS_LTFB_TRUNCATION_SELECTION_EXCHANGE_HPP_INCLUDED

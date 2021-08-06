@@ -326,8 +326,9 @@ class TruncationSelectionExchange(MetaLearningStrategy):
 
     Rank all trainers in a population of trainers 
     Ranking is done using specified metric strategy
-    Models/topologies of any trainer at ranking below truncation_k 
-    are replaced with trainers for top of the ranking list 
+    Models/topologies/training hyperparameters of any 
+    trainer at ranking below truncation_k are replaced 
+    with that of a trainer from top of the ranking list. 
 
     """
 
@@ -347,7 +348,7 @@ class TruncationSelectionExchange(MetaLearningStrategy):
               Map from metric name to the criterion for picking a winner
               with respect to this metric
             truncation_k:
-              partition between winning and loosing trainer.
+              Partitions ranking list to top(winners)/bottom(losers)
         """
 
         self.metric_strategies = metric_strategies

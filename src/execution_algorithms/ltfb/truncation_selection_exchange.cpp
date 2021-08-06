@@ -50,21 +50,7 @@
 namespace lbann {
 namespace ltfb {
 namespace {
-/*
-// FIXME (trb 03/18/21): Move these out of here.
-#define LBANN_LOG_WORLD_MASTER(comm_ref, ...)                                  \
-  do {                                                                         \
-    if (comm_ref.am_world_master())                                            \
-      Output(std::cout, __VA_ARGS__);                                          \
-  } while (0)
 
-#define LBANN_LOG_TRAINER_MASTER(comm_ref, ...)                                \
-  do {                                                                         \
-    if (comm_ref.am_trainer_master())                                          \
-      Output(std::cout, __VA_ARGS__);                                          \
-  } while (0)
-
-*/
 bool low_score_wins(
                 TruncationSelectionExchange::metric_strategy strategy)
 {
@@ -80,6 +66,7 @@ bool low_score_wins(
   return true; // Silence compiler warning about no return.
 }
 
+// Pack model to ship off
 std::string pack(model const& m)  
 {
   std::ostringstream oss;
@@ -111,7 +98,7 @@ std::string recv_string(lbann_comm const& comm,
   comm.recv(reinterpret_cast<El::byte*>(buf.data()), size, src_trainer);
   return buf;
 }
-
+// Unpack received model
 void unpack(model& m, std::string const& str) 
 {
   std::istringstream iss(str);
@@ -185,7 +172,6 @@ EvalType TruncationSelectionExchange::evaluate_model(model& m,
     LBANN_ERROR(err.str());
   }
 
-  // Is this marking still necessary? can we substitute validation for testing
   m.make_data_store_preloaded(execution_mode::testing);
 
   // Clean up and return metric score
@@ -202,15 +188,6 @@ void TruncationSelectionExchange::select_next(model& m,
   const unsigned int num_trainers = comm.get_num_trainers();
   const int trainer_id = comm.get_trainer_rank();
   auto const step = ctxt.get_step();
-  const std::string message_prefix =
-    (comm.am_trainer_master() || comm.am_world_master()
-       ? build_string("LTFB (model \"",
-                      m.get_name(),
-                      "\", "
-                      "step ",
-                      step,
-                      "): ")
-       : "");
 
   auto score = evaluate_model(m, ctxt, dc);
   
@@ -253,15 +230,21 @@ void TruncationSelectionExchange::select_next(model& m,
   
         auto model_string = pack(m);
         send_string(comm, model_string, dest);
-        std::cout << "Trainer " << trainer_id << " with score " << score_list[trainer_id]; 
-        std::cout << " sends model to trainer : " << dest << " with score " << score_list[dest] << std::endl;
+        if(comm.am_trainer_master()) {
+          std::cout << "In LTFB TSE step " << step << ", trainer " << trainer_id << " with score " << score_list[trainer_id]; 
+          std::cout << " sends model to trainer  " << dest << " with score " << score_list[dest] << std::endl;
+        }
       }
 
     }
   } else { //not in top-k, receive
       auto src = std::distance(score_list.begin(),
-                               std::find(score_list.begin(), score_list.end(),top_scores[trainer_score_pos % m_truncation_k])); 
-      std::cout << "Trainer " << trainer_id << " receive weights from trainer : " << src << std::endl;
+                               std::find(score_list.begin(), score_list.end(),top_scores[trainer_score_pos % m_truncation_k]));
+
+      if(comm.am_trainer_master()) { 
+        std::cout << "In LTFB TSE step " << step << ", trainer " << trainer_id << " with score " << score_list[trainer_id]; 
+        std::cout << " receives model from trainer " << src << " with score " << score_list[src] << std::endl;
+      }
       
       auto rcv_str = recv_string(comm, src);
      
@@ -275,20 +258,6 @@ void TruncationSelectionExchange::select_next(model& m,
              metadata,
             /*force=*/true);
       
-      /*LBANN_LOG_TRAINER_MASTER(comm,
-                           message_prefix,
-                           "trainer ",
-                           trainer_id,
-                           " selected model from trainer ",
-                           src,
-                           " (trainer ",
-                           trainer_id,
-                           " score = ",
-                           score,
-                           ", trainer ",
-                           src,
-                           " score = ",
-                           score_list[src])*/
   }
 }
 
