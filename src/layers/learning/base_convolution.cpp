@@ -557,8 +557,8 @@ apply_transposed_convolution_dnn(bool during_forward_prop) {
   // Get workspace size
   auto multisync = El::MakeMultiSync(gpu::get_sync_info(workspace));
   size_t workspace_size =
-    dnn_lib::get_bwd_data_conv_workspace_size(m_kernel_dnn_desc,
-                                              input_desc,
+    dnn_lib::get_bwd_data_conv_workspace_size(input_desc,
+                                              m_kernel_dnn_desc,
                                               m_convolution_dnn_desc,
                                               output_desc,
                                               multisync);
