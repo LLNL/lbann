@@ -37,16 +37,20 @@
 namespace lbann {
 namespace callback {
 
-perturb_weights::perturb_weights(EvalType upper, EvalType lower, EvalType scale, EvalType perturb_probability,
-			   std::string output_name,
-                           El::Int batch_interval)
+perturb_weights::perturb_weights(
+  EvalType upper,
+  EvalType lower,
+  EvalType scale,
+  EvalType perturb_probability,
+  std::string output_name,
+  El::Int batch_interval)
   : callback_base(batch_interval),
+    m_output_name(std::move(output_name)),
     m_upper(upper),
     m_lower(lower),
     m_scale(scale),
-    m_perturb_probability(perturb_probability),
-    m_output_name(std::move(output_name)) {
-}
+    m_perturb_probability(perturb_probability)
+{}
 
 perturb_weights::perturb_weights()
   : perturb_weights(0,0,0,0,"",0)
@@ -142,7 +146,7 @@ void perturb_weights::perturb(model& m){
 			auto perturbed_val = val;
 
 			if(uni(gen) > thres){
-				perturbed_val += norm(gen)*scale; 
+				perturbed_val += norm(gen)*scale;
 				perturbed_val = std::min(std::max(perturbed_val, lower), upper);
 			}
 
@@ -177,7 +181,7 @@ build_perturb_weights_callback_from_pbuf(
     dynamic_cast<const lbann_data::Callback::CallbackPerturbWeights&>(proto_msg);
   return make_unique<perturb_weights>(
     params.upper(),
-    params.lower(), 
+    params.lower(),
     params.scale(),
     params.perturb_probability(),
     params.output_name(),
