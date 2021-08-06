@@ -68,12 +68,13 @@ get_bwd_data_conv_workspace_size(TensorDescriptor const& dyDesc,
 {
   size_t size;
   auto handle_manager = internal::make_default_handle_manager(si);
-  CHECK_MIOPEN(miopenConvolutionForwardGetWorkSpaceSize(handle_manager.get(),
-                                                        dyDesc,
-                                                        wDesc,
-                                                        convDesc,
-                                                        dxDesc,
-                                                        &size));
+  CHECK_MIOPEN(
+    miopenConvolutionBackwardDataGetWorkSpaceSize(handle_manager.get(),
+                                                  dyDesc,
+                                                  wDesc,
+                                                  convDesc,
+                                                  dxDesc,
+                                                  &size));
   return size;
 }
 
@@ -86,12 +87,13 @@ get_bwd_weights_conv_workspace_size(TensorDescriptor const& dyDesc,
 {
   size_t size;
   auto handle_manager = internal::make_default_handle_manager(si);
-  CHECK_MIOPEN(miopenConvolutionForwardGetWorkSpaceSize(handle_manager.get(),
-                                                        dyDesc,
-                                                        xDesc,
-                                                        convDesc,
-                                                        dwDesc,
-                                                        &size));
+  CHECK_MIOPEN(
+    miopenConvolutionBackwardWeightsGetWorkSpaceSize(handle_manager.get(),
+                                                    dyDesc,
+                                                    xDesc,
+                                                    convDesc,
+                                                    dwDesc,
+                                                    &size));
   return size;
 }
 
