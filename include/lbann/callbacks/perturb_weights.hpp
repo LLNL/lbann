@@ -30,24 +30,27 @@
 #include "lbann/callbacks/callback.hpp"
 #include "lbann/weights/weights.hpp"
 
-
 namespace lbann {
 namespace callback {
 
-/** @brief Perturb weights for a specific layer in model.
+/** @brief Perturb values in a weights tensor.
  *
- *  
+ *  Each entry of the weights tensor has a probability of being
+ *  perturbed by a normal random number. The resulting values are
+ *  clamped within a range.
  */
 class perturb_weights : public callback_base {
 public:
 
-  /** 
-   *  @param batch_interval Number of training mini-batch steps 
-   *  @param output_name   Name of weight layer
-   *  @param upper   Upper bound of the perturbed weight
-   *  @param lower   Lower bound of the perturbed weight 
-   *  @param scale   Scale of normal distribution N(1,0) for the perturbed weight
-   *  @param perturb_probability   The probability of perturbing the weight 
+  /**
+   *  @param batch_interval Number of training mini-batch steps
+   *                        between perturbations
+   *  @param output_name    Name of weights being perturbed
+   *  @param upper          Upper bound for weights values
+   *  @param lower          Lower bound for weights values
+   *  @param scale          Standard deviation of normal perturbations
+   *  @param perturb_probability    Probability of applying
+   *                        perturbation to a given weights value
    */
   perturb_weights(EvalType upper, EvalType lower, EvalType scale, EvalType perturb_probability,
 		  std::string output_name,
@@ -72,24 +75,20 @@ private:
   friend class cereal::access;
   perturb_weights();
 
-   /*
-   *  output_name.
-   */
+  /// @brief Name of weights being perturbed
   std::string m_output_name;
 
-  /// Upper bound of the perturbed weight
+  /// @brief Upper bound for weights values
   EvalType m_upper;
-  /// Lower bound of the perturbed weight
+  /// @brief Lower bound for weights values
   EvalType m_lower;
-  /// Scale of normal distribution N(1,0) for the perturbed weight
+  /// @brief Standard deviation of normal perturbations
   EvalType m_scale;
-  /// The probability of perturbing the weight
+  /// @brief Probability of applying perturbation to a given value
   EvalType m_perturb_probability;
 
-   
   void perturb(model& m);
 
-  
 };
 
 // Builder function
