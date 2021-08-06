@@ -18,12 +18,14 @@ install(TARGETS generate_schema_and_sample_list
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 # Testing
-add_executable(helpers_tests test_main.cpp test_helpers.cpp helpers.cpp)
-set_target_properties(helpers_tests
-  PROPERTIES
-  RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/unit_test)
-target_link_libraries(helpers_tests
-  PRIVATE
-  conduit::conduit
-  Catch2::Catch2)
-target_compile_features(helpers_tests PRIVATE cxx_std_17)
+if (LBANN_WITH_UNIT_TESTING)
+  add_executable(helpers_tests test_main.cpp test_helpers.cpp helpers.cpp)
+  set_target_properties(helpers_tests
+    PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/unit_test)
+  target_link_libraries(helpers_tests
+    PRIVATE
+    conduit::conduit
+    Catch2::Catch2)
+  target_compile_features(helpers_tests PRIVATE cxx_std_17)
+endif ()
