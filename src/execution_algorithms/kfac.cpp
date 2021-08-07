@@ -496,6 +496,8 @@ void KFAC::sync_weights_model(model& model, lbann_comm *comm){
     }
   }
 
+  BackendT::comm_type& backend_comm = combined_comm.template GetComm<BackendT>(sync_info);
+
   if(comm->get_grid_type() == GridType::PRIMARY_GRID)
   {
     int num_sends = (int)std::ceil((float)num_process_secondary_grid/(float)num_process_primary_grid);
@@ -508,7 +510,7 @@ void KFAC::sync_weights_model(model& model, lbann_comm *comm){
            (DataType*)global_buffer.Buffer(),
            global_buffer_size,
            secondary_grid_ranks[to_send_index],
-           combined_comm.template GetComm<BackendT>(sync_info));
+           backend_comm);
       }
     }
   }
@@ -519,7 +521,7 @@ void KFAC::sync_weights_model(model& model, lbann_comm *comm){
        (DataType*)global_buffer.Buffer(),
        global_buffer_size,
        primary_grid_ranks[recv_index],
-       combined_comm.template GetComm<BackendT>(sync_info));
+       backend_comm);
   }
 
   if(comm->get_grid_type() == GridType::SECONDARY_GRID){
@@ -575,6 +577,8 @@ void KFAC::start_sync_weights_async(model& model, lbann_comm *comm){
   int num_process_primary_grid = (int)primary_grid_ranks.size();
   int num_process_secondary_grid = (int)secondary_grid_ranks.size();
 
+
+
   if(comm->get_grid_type() == GridType::PRIMARY_GRID)
   {
     int num_sends = (int)std::ceil((float)num_process_secondary_grid/(float)num_process_primary_grid);
@@ -585,6 +589,7 @@ void KFAC::start_sync_weights_async(model& model, lbann_comm *comm){
       auto& weight_values = dtw->get_values().Matrix();
       El::Matrix<DataType,Device>* weight_values_ = dynamic_cast<El::Matrix<DataType,Device>*>(&weight_values);
       El::SyncInfo<Device> sync_info = El::SyncInfoFromMatrix(*weight_values_);
+      BackendT::comm_type& backend_comm = combined_comm.template GetComm<BackendT>(sync_info);
       
       for(int num_send = 0; num_send<num_sends; num_send++){
 
@@ -596,7 +601,7 @@ void KFAC::start_sync_weights_async(model& model, lbann_comm *comm){
              weight_values_->Buffer(),
              height*width,
              secondary_grid_ranks[to_send_index],
-             combined_comm.template GetComm<BackendT>(sync_info),
+             backend_comm,
              m_weights_communication_reqs.back());
         }
       }
@@ -613,6 +618,7 @@ void KFAC::start_sync_weights_async(model& model, lbann_comm *comm){
       auto& weight_values = dtw->get_values().Matrix();
       El::Matrix<DataType,Device>* weight_values_ = dynamic_cast<El::Matrix<DataType,Device>*>(&weight_values);
       El::SyncInfo<Device> sync_info = El::SyncInfoFromMatrix(*weight_values_);
+      BackendT::comm_type& backend_comm = combined_comm.template GetComm<BackendT>(sync_info);
       BackendT::req_type recv_req;
       m_weights_communication_reqs.push_back(recv_req);
 
@@ -620,7 +626,7 @@ void KFAC::start_sync_weights_async(model& model, lbann_comm *comm){
          (DataType*)weight_values_->Buffer(),
          height*width,
          primary_grid_ranks[recv_index],
-         combined_comm.template GetComm<BackendT>(sync_info),
+         backend_comm,
          m_weights_communication_reqs.back());
     }
     

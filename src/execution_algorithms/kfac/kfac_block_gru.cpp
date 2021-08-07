@@ -1291,7 +1291,7 @@ void kfac_block_gru<Device>::start_communication_forward_end(
         auto& weight_values = dtw->get_values();
         const auto weight_ptr = dynamic_cast<const El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*>(&weight_values);
         auto weight_input_ptr = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*>(&(*weight));
-        El::Copy(dtw->get_values(),*weight);
+        // El::Copy(dtw->get_values(),*weight);
         kfac::TranslateBetweenGridsSTARAsync( *weight_ptr,
                                             *weight_input_ptr,
                                             this->m_requests_forward_end);
@@ -1421,7 +1421,7 @@ void kfac_block_gru<Device>::start_communication_backward_end(
     else{
       const auto local_errors_vc = dynamic_cast<const El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(local_errors));
       auto local_errors0 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_child_local_errors[0]));
-      auto subset1 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_subset_matrix[1]));
+      auto subset1 = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_subset_matrix[3]));
 
       kfac::TranslateBetweenGridsVCAsync(*local_errors_vc,
                                               *local_errors0,
@@ -1458,7 +1458,7 @@ void kfac_block_gru<Device>::end_communication_backward_end(
       auto local_errors0 = dynamic_cast<
           El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_child_local_errors[0]));
       auto subset1 = dynamic_cast<
-          El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_subset_matrix[1]));
+          El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>*>(&(*this->m_subset_matrix[3]));
       kfac::TranslateBetweenGridsVC(*subset1,
                                     *local_errors0);
     }
