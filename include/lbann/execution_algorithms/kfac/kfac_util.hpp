@@ -41,6 +41,16 @@ template <El::Device Device>
 class kfac_block;
 }
 
+#if defined AL_HAS_NCCL
+using BackendT = ::Al::NCCLBackend;
+#elif defined AL_HAS_HOST_TRANSFER
+using BackendT = ::Al::HostTransferBackend;
+#else
+using BackendT = ::Al::MPIBackend;
+#endif
+
+using ReqT = typename BackendT::req_type;
+
 namespace lbann {
 namespace kfac {
 
@@ -179,19 +189,19 @@ void TranslateBetweenGridsVCAsync
 ( const El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& A,
   El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& B,
   El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& subset,
-  std::vector<El::mpi::Request<T>>& Requests);
+  std::vector<ReqT>& Requests);
 
 template<typename T, El::Device Device>
 void TranslateBetweenGridsSTARAsync
 (const El::DistMatrix<T,El::STAR,El::STAR,El::ELEMENT,Device>& A,
   El::DistMatrix<T,El::STAR,El::STAR,El::ELEMENT,Device>& B,
-  std::vector<El::mpi::Request<T>>& Requests);
+  std::vector<ReqT>& Requests);
 
 template<typename T, El::Device Device>
 void TranslateBetweenGridsKFACAsync
 (const El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& A,
   El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& B,
-  std::vector<El::mpi::Request<T>>& Requests);
+  std::vector<ReqT>& Requests);
 
 template<typename T, El::Device Device>
 void TranslateBetweenGridsVC

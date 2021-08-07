@@ -37,6 +37,16 @@ namespace kfac {
 class KFACExecutionContext;
 }
 
+#if defined AL_HAS_NCCL
+using BackendT = ::Al::NCCLBackend;
+#elif defined AL_HAS_HOST_TRANSFER
+using BackendT = ::Al::HostTransferBackend;
+#else
+using BackendT = ::Al::MPIBackend;
+#endif
+
+using ReqT = typename BackendT::req_type;
+
 /** A building block for K-FAC.
  */
 template <El::Device Device>
@@ -237,7 +247,7 @@ class kfac_block {
   // std::vector<std::unique_ptr<El::Matrix<DataType, Device>>> m_weight_values;
   std::vector<std::unique_ptr<AbsDistMat>> m_weight_values;
 
-  std::vector<El::mpi::Request<DataType>> m_requests_forward_end, m_requests_backward_end;
+  std::vector<ReqT> m_requests_forward_end, m_requests_backward_end;
 
  private:
 

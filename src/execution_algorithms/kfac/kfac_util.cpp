@@ -110,12 +110,12 @@ void reduce_block_device(
   const El::mpi::Comm& trainer_comm,
   const El::SyncInfo<El::Device::GPU>& sync_info)
 {
-  ::Al::Reduce<::Al::NCCLBackend>(
+  ::Al::Reduce<BackendT>(
     block.Buffer(),
     count,
     ::Al::ReductionOperator::sum,
     root,
-    trainer_comm.template GetComm<::Al::NCCLBackend>(sync_info));
+    trainer_comm.template GetComm<BackendT>(sync_info));
 }
 
 template <>
@@ -125,11 +125,11 @@ void reduce_scatter_v_blocks_device(
   const El::mpi::Comm& trainer_comm,
   const El::SyncInfo<El::Device::GPU>& sync_info)
 {
-  ::Al::Reduce_scatterv<::Al::NCCLBackend>(
+  ::Al::Reduce_scatterv<BackendT>(
     blocks.Buffer(),
     recv_sizes,
     ::Al::ReductionOperator::sum,
-    trainer_comm.template GetComm<::Al::NCCLBackend>(sync_info));
+    trainer_comm.template GetComm<BackendT>(sync_info));
 }
 
 template <>
@@ -141,12 +141,12 @@ void allgather_v_blocks_device(
   const El::mpi::Comm& trainer_comm,
   const El::SyncInfo<El::Device::GPU>& sync_info)
 {
-  ::Al::Allgatherv<::Al::NCCLBackend>(
+  ::Al::Allgatherv<BackendT>(
     send_block.LockedBuffer(),
     recv_blocks.Buffer(),
     recv_sizes,
     recv_offsets,
-    trainer_comm.template GetComm<::Al::NCCLBackend>(sync_info));
+    trainer_comm.template GetComm<BackendT>(sync_info));
 }
 #endif // defined LBANN_HAS_GPU && defined LBANN_HAS_ALUMINUM
 
@@ -489,6 +489,11 @@ void allgather_inverse_matrices(
   }
 }
 
+template<>
+void TranslateBetweenGridsVC
+(El::DistMatrix<DataType,El::STAR,El::VC,El::ELEMENT,El::Device::CPU> const& A,
+  El::DistMatrix<DataType,El::STAR,El::VC,El::ELEMENT,El::Device::CPU>& B){}
+
 template<typename T, El::Device Device>
 void TranslateBetweenGridsVC
 (El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device> const& A,
@@ -659,9 +664,11 @@ void TranslateBetweenGridsVC
                                             floor(n/rowLCM) : floor(n/rowLCM)+1;
 
                     // std::cout<<"Rank:"<<myRankViewing<<" Recv Data Size:"<<m*sendWidth<<" Rank to send:"<<recvRankItr->first<<"\n";                    
-                    El::mpi::Recv(
-                        recvBuf, m*sendWidth, recvRankItr->first,
-                        viewingCommB, syncInfoB);
+                    // ::Al::Recv<::Al::MPIBackend>(
+                    //     recvBuf, m*sendWidth, recvRankItr->first,
+                    //     viewingCommB.template GetComm<::Al::MPIBackend>(syncInfoB));
+                    El::mpi::Recv(recvBuf, m*sendWidth, recvRankItr->first, 
+                                  viewingCommB, syncInfoB);
 
                     // Unpack the data
                     El::copy::util::InterleaveMatrix(
@@ -686,8 +693,11 @@ void TranslateBetweenGridsVC
                             A.LockedBuffer(0,sendRankItr->second),
                             1, numRowSends*A.LDim(),
                             sendBuf, 1, mLocA, syncInfoA);
+
+                    // ::Al::Send<::Al::MPIBackend>(sendBuf, mLocA*sendWidth, sendRankItr->first,
+                    //   viewingCommB.template GetComm<::Al::MPIBackend>(syncInfoA));
                     El::mpi::Send(sendBuf, mLocA*sendWidth, sendRankItr->first,
-                      viewingCommB,syncInfoA);
+                      viewingCommB, syncInfoA);
                 }
                 sendRankItr++;
             }
@@ -708,8 +718,11 @@ void TranslateBetweenGridsVC
                         A.LockedBuffer(0,sendRankItr->second),
                         1, numRowSends*A.LDim(),
                         sendBuf, 1, mLocA, syncInfoA);
+                //Al hangs in GetComm function as it is a universal operation
+                // ::Al::Send<::Al::MPIBackend>(sendBuf, mLocA*sendWidth, sendRankItr->first,
+                //   viewingCommB.template GetComm<::Al::MPIBackend>(syncInfoA));
                 El::mpi::Send(sendBuf, mLocA*sendWidth, sendRankItr->first,
-                  viewingCommB,syncInfoA);
+                      viewingCommB, syncInfoA);
 
             }
             sendRankItr++;
@@ -717,12 +730,20 @@ void TranslateBetweenGridsVC
     }
 }
 
+template<>
+void TranslateBetweenGridsVCAsync
+( const El::DistMatrix<DataType,El::STAR,El::VC,El::ELEMENT,El::Device::CPU>& A,
+  El::DistMatrix<DataType,El::STAR,El::VC,El::ELEMENT,El::Device::CPU>& B,
+  El::DistMatrix<DataType,El::STAR,El::VC,El::ELEMENT,El::Device::CPU>& subset,
+  std::vector<ReqT>& Requests)
+{}
+
 template<typename T, El::Device Device>
 void TranslateBetweenGridsVCAsync
 ( const El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& A,
   El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& B,
   El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& subset,
-  std::vector<El::mpi::Request<T>>& Requests)
+  std::vector<ReqT>& Requests)
 {
     int height = A.Height();
     int width = A.Width();
@@ -733,6 +754,8 @@ void TranslateBetweenGridsVCAsync
     El::mpi::Comm const& viewingCommB = B.Grid().ViewingComm();
     const int commSizeA = A.Grid().VCSize();
     const int commSizeB = B.Grid().VCSize();
+    El::SyncInfo<Device> syncInfoA = El::SyncInfoFromMatrix(A.LockedMatrix());
+    El::SyncInfo<Device> syncInfoB = El::SyncInfoFromMatrix(B.LockedMatrix());
 
     El::SyncInfo<Device> syncGeneral = El::SyncInfo<Device>();
 
@@ -774,6 +797,9 @@ void TranslateBetweenGridsVCAsync
     if(commSizeA>commSizeB)
         TranslateBetweenGridsVC(A, subset);
 
+    BackendT::comm_type& backend_commB = activeCommB.template GetComm<BackendT>(syncInfoB);
+    BackendT::comm_type& backend_commA = activeCommB.template GetComm<BackendT>(syncInfoA);
+
     if(inAGrid)
     {
     const El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& send_mat = commSizeA > commSizeB ? subset : A;
@@ -784,22 +810,22 @@ void TranslateBetweenGridsVCAsync
       subset.LocalHeight()*subset.LocalWidth() : A.LocalHeight()*A.LocalWidth();
 
     if(in_send_grid){
-      El::mpi::Request<T> sendRequest;
+      ReqT sendRequest;
       Requests.push_back(sendRequest);
       int to_send_index = send_mat.Grid().VCRank();
       const int sendViewingRank = B.Grid().VCToViewing(to_send_index);
-      El::mpi::ISend(
-       (T*)send_mat.LockedBuffer(),
-       transferSize,
-       sendViewingRank,
-       activeCommB,
-       Requests.back());
+      ::Al::NonblockingSend<BackendT>(
+         (T*)send_mat.LockedBuffer(),
+         transferSize,
+         sendViewingRank,
+         backend_commA,
+         Requests.back());
     }
     }
 
     if(inBGrid)
     {
-    El::mpi::Request<T> recv_request;
+    ReqT recv_request;
     El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& recv_mat = commSizeA < commSizeB ? subset : B;
     
 
@@ -813,22 +839,27 @@ void TranslateBetweenGridsVCAsync
         if(in_recv_grid)
         {
             Requests.push_back(recv_request);
-            El::mpi::IRecv(
-             (T*)recv_mat.Buffer(),
-             transferSize,
-             recvViewingRank,
-             activeCommB,
-             Requests.back());
+            ::Al::NonblockingRecv<BackendT>(
+               (T*)recv_mat.Buffer(),
+               transferSize,
+               recvViewingRank,
+               backend_commB,
+               Requests.back());
         }
     }
 }
 
+template<>
+void TranslateBetweenGridsSTARAsync
+(const El::DistMatrix<DataType,El::STAR,El::STAR,El::ELEMENT,El::Device::CPU>& A,
+  El::DistMatrix<DataType,El::STAR,El::STAR,El::ELEMENT,El::Device::CPU>& B,
+  std::vector<ReqT>& Requests){}
 
 template<typename T, El::Device Device>
 void TranslateBetweenGridsSTARAsync
 (const El::DistMatrix<T,El::STAR,El::STAR,El::ELEMENT,Device>& A,
   El::DistMatrix<T,El::STAR,El::STAR,El::ELEMENT,Device>& B,
-  std::vector<El::mpi::Request<T>>& Requests)
+  std::vector<ReqT>& Requests)
 {
     const int height = A.Height();
     const int width = A.Width();
@@ -842,6 +873,8 @@ void TranslateBetweenGridsSTARAsync
     const bool inBGrid = B.Participating();
     const bool inAGrid = A.Participating();
     const int transferSize = A.Height() * A.Width();
+    El::SyncInfo<Device> syncInfoA = El::SyncInfoFromMatrix(A.LockedMatrix());
+    El::SyncInfo<Device> syncInfoB = El::SyncInfoFromMatrix(B.LockedMatrix());
 
     if(inAGrid==inBGrid){
         LBANN_ERROR("TranslateBetweenGridsAsync: A rank cannnot be the part of both grids or it must be the part of one grid");
@@ -859,21 +892,24 @@ void TranslateBetweenGridsSTARAsync
     const int rankA = A.Grid().VCRank();
     const int rankB = B.Grid().VCRank();
 
+    BackendT::comm_type& backend_commB = activeCommB.template GetComm<BackendT>(syncInfoB);
+    BackendT::comm_type& backend_commA = activeCommB.template GetComm<BackendT>(syncInfoA);
+
     if(inAGrid)
     {
       int num_sends = (int)std::ceil((float)commSizeB/(float)commSizeA);
 
       for(int num_send = 0; num_send<num_sends; num_send++){
         if(rankA + num_send*commSizeA < commSizeB){
-          El::mpi::Request<T> sendRequest;
+          ReqT sendRequest;
           Requests.push_back(sendRequest);
           int to_send_index = rankA + num_send*commSizeA;
           const int sendViewingRank = B.Grid().VCToViewing(to_send_index);
-          El::mpi::ISend(
+          ::Al::NonblockingSend<BackendT>(
              (T*)A.LockedBuffer(),
              transferSize,
              sendViewingRank,
-             activeCommB,
+             backend_commA,
              Requests.back());
         }
       }
@@ -881,26 +917,33 @@ void TranslateBetweenGridsSTARAsync
 
     if(inBGrid)
     {
-      El::mpi::Request<T> recvRequest;
+      ReqT recvRequest;
       Requests.push_back(recvRequest);
       int recv_index = rankB % commSizeA;
       const int recvViewingRank = A.Grid().VCToViewing(recv_index);
 
-      El::mpi::IRecv(
+      ::Al::NonblockingRecv<BackendT>(
          (T*)B.Buffer(),
          transferSize,
          recvViewingRank,
-         activeCommB,
+         backend_commA,
          Requests.back());      
     }
 }
+
+template<>
+void TranslateBetweenGridsKFACAsync
+(const El::DistMatrix<DataType,El::STAR,El::VC,El::ELEMENT,El::Device::CPU>& A,
+  El::DistMatrix<DataType,El::STAR,El::VC,El::ELEMENT,El::Device::CPU>& B,
+  std::vector<ReqT>& Requests)
+{}
 
 
 template<typename T, El::Device Device>
 void TranslateBetweenGridsKFACAsync
 (const El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& A,
   El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& B,
-  std::vector<El::mpi::Request<T>>& Requests)
+  std::vector<ReqT>& Requests)
 {
     //Transfers matrix A to B without keeping the order of columns 
     //It should be used when column order does not matter
@@ -919,6 +962,8 @@ void TranslateBetweenGridsKFACAsync
     int transferSize = A.Height() * A.Width();
     const int rankA = A.Grid().VCRank();
     const int rankB = B.Grid().VCRank();
+    El::SyncInfo<Device> syncInfoA = El::SyncInfoFromMatrix(A.LockedMatrix());
+    El::SyncInfo<Device> syncInfoB = El::SyncInfoFromMatrix(B.LockedMatrix());
 
     if(inAGrid==inBGrid){
         LBANN_ERROR("TranslateBetweenGridsAsync: A rank cannnot be the part of both grids or it must be the part of one grid");
@@ -1021,16 +1066,16 @@ void TranslateBetweenGridsKFACAsync
     if(inAGrid)
     {
         for(int num_send = 0; num_send<(int)ranksToSendData.size(); num_send++){ 
-            El::mpi::Request<T> sendRequest;
+            ReqT sendRequest;
             Requests.push_back(sendRequest);
             const int sendViewingRank = B.Grid().VCToViewing(ranksToSendData[num_send]);
             transferSize = height*dataToSendRanks[num_send];
-            El::mpi::ISend(
-             (T*)A.LockedBuffer(0,initialIndex),
-             transferSize,
-             sendViewingRank,
-             activeCommB,
-             Requests[num_send]); 
+            ::Al::NonblockingSend<BackendT>(
+               (T*)A.LockedBuffer(0,initialIndex),
+               transferSize,
+               sendViewingRank,
+               activeCommB.template GetComm<BackendT>(syncInfoA),
+               Requests.back()); 
             initialIndex +=dataToSendRanks[num_send];      
       }
     }
@@ -1038,18 +1083,18 @@ void TranslateBetweenGridsKFACAsync
     if(inBGrid)
     {
         for(int num_recv = 0; num_recv<(int)ranksFromRecvData.size(); num_recv++){ 
-            El::mpi::Request<T> recvRequest;
+            ReqT recvRequest;
             Requests.push_back(recvRequest);
             
             const int recvViewingRank = A.Grid().VCToViewing(ranksFromRecvData[num_recv]);
             transferSize = height*dataToRecvRanks[num_recv];
 
-            El::mpi::IRecv(
-             (T*)B.Buffer(0,initialIndex),
-             transferSize,
-             recvViewingRank,
-             activeCommB,
-             Requests[num_recv]); 
+            ::Al::NonblockingRecv<BackendT>(
+               (T*)B.Buffer(0,initialIndex),
+               transferSize,
+               recvViewingRank,
+               activeCommB.template GetComm<BackendT>(syncInfoB),
+               Requests.back()); 
 
             initialIndex +=dataToRecvRanks[num_recv]; 
         }
@@ -1174,27 +1219,31 @@ void unpack_lower_tri(
       <kfac_block<Device>>>& blocks,            \
       El::Matrix<T, Device>&                    \
       global_buffer,                            \
-      lbann_comm *comm);                        \
+      lbann_comm *comm);                        
+#define PROTO_DEVICECOMM(T, Device)                 \
   template void TranslateBetweenGridsVCAsync(                       \
       const El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& A,      \
       El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& B,      \
       El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& subset, \
-      std::vector<El::mpi::Request<T>>& Requests);                      \
+      std::vector<ReqT>& Requests);                      \
   template void TranslateBetweenGridsKFACAsync(                     \
       const El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& A,      \
       El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& B,      \
-      std::vector<El::mpi::Request<T>>& Requests);                      \
+      std::vector<ReqT>& Requests);                      \
   template void TranslateBetweenGridsSTARAsync(                         \
       const El::DistMatrix<T,El::STAR,El::STAR,El::ELEMENT,Device>& A,    \
       El::DistMatrix<T,El::STAR,El::STAR,El::ELEMENT,Device>& B,    \
-      std::vector<El::mpi::Request<T>>& Requests);                  \
+      std::vector<ReqT>& Requests);                  \
   template void TranslateBetweenGridsVC(                         \
       const El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& A,    \
       El::DistMatrix<T,El::STAR,El::VC,El::ELEMENT,Device>& B); 
 
+
+
 PROTO_DEVICE(DataType, El::Device::CPU);
 #ifdef LBANN_HAS_GPU
 PROTO_DEVICE(DataType, El::Device::GPU);
+PROTO_DEVICECOMM(DataType, El::Device::GPU);
 #endif // LBANN_HAS_GPU
 
 } // namespace kfac

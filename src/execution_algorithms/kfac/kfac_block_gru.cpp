@@ -139,22 +139,21 @@ void kfac_block_gru<El::Device::GPU>::send_recv_reserve_space(lbann_comm *comm){
       if(comm_rank + num_send*num_process_primary_grid < num_process_secondary_grid){
         int to_send_index = comm_rank + num_send*num_process_primary_grid;
         if(comm->enable_subgrid_async_communication()==true){
-          El::mpi::Request<El::byte> send_request;
+          ReqT send_request;
           m_requests_workspace.push_back(send_request);
-          ::El::mpi::ISend(
+          ::Al::NonblockingSend<BackendT>(
              (El::byte*)reserve_space.data(),
              m_reserve_space_fwd_size,
              secondary_grid_ranks[to_send_index],
-             combined_comm,
+             combined_comm.template GetComm<BackendT>(sync_info),
              m_requests_workspace.back());
         }
         else
-          ::El::mpi::Send(
+          ::Al::Send<BackendT>(
              (El::byte*)reserve_space.data(),
              m_reserve_space_fwd_size,
              secondary_grid_ranks[to_send_index],
-             combined_comm,
-             sync_info);
+             combined_comm.template GetComm<BackendT>(sync_info));
       }
     }
 
@@ -165,22 +164,21 @@ void kfac_block_gru<El::Device::GPU>::send_recv_reserve_space(lbann_comm *comm){
     int recv_index = comm_rank % num_process_primary_grid;
     if(comm->enable_subgrid_async_communication()==true){
       El::Synchronize(sync_info);
-      El::mpi::Request<El::byte> recv_request;
+      ReqT recv_request;
       m_requests_workspace.push_back(recv_request);
-      ::El::mpi::IRecv(
+      ::Al::NonblockingRecv<BackendT>(
          (El::byte*)m_reserve_space_fwd.data(),
          m_reserve_space_fwd_size,
          primary_grid_ranks[recv_index],
-         combined_comm,
+         combined_comm.template GetComm<BackendT>(sync_info),
          m_requests_workspace.back());
     }
     else{
-      ::El::mpi::Recv(
+      ::Al::Recv<BackendT>(
          (El::byte*)m_reserve_space_fwd.data(),
          m_reserve_space_fwd_size,
          primary_grid_ranks[recv_index],
-         combined_comm,
-         sync_info);
+         combined_comm.template GetComm<BackendT>(sync_info));
     }
   }
 #endif // LBANN_GRU_LAYER_CUDNN_SUPPORTED
@@ -1359,10 +1357,10 @@ void kfac_block_gru<Device>::end_communication_forward_end(
     auto secondary_grid_ranks = comm->get_secondary_grid_ranks();
 
     for(auto& req:this->m_requests_forward_end){
-      El::mpi::Wait(req);
+      ::Al::Wait<BackendT>(req);
     }
     for(auto& req:m_requests_workspace){
-      El::mpi::Wait(req);
+      ::Al::Wait<BackendT>(req);
     }
 
     if(primary_grid_ranks.size() < secondary_grid_ranks.size()){
@@ -1453,7 +1451,7 @@ void kfac_block_gru<Device>::end_communication_backward_end(
     auto secondary_grid_ranks = comm->get_secondary_grid_ranks();
 
     for(auto& req:this->m_requests_backward_end){
-      El::mpi::Wait(req);
+      ::Al::Wait<BackendT>(req);
     }
 
     if(primary_grid_ranks.size() < secondary_grid_ranks.size()){

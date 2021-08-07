@@ -462,7 +462,7 @@ void kfac_block_fc_conv<Device>::end_communication_forward_end(
     auto secondary_grid_ranks = comm->get_secondary_grid_ranks();
 
     for(auto& req:this->m_requests_forward_end){
-      El::mpi::Wait(req);
+      ::Al::Wait<::Al::NCCLBackend>(req);
     }
 
     if(primary_grid_ranks.size() < secondary_grid_ranks.size()){
@@ -547,7 +547,7 @@ void kfac_block_fc_conv<Device>::end_communication_backward_end(
     auto secondary_grid_ranks = comm->get_secondary_grid_ranks();
 
     for(auto& req:this->m_requests_backward_end){
-      El::mpi::Wait(req);
+      ::Al::Wait<::Al::NCCLBackend>(req);
     }
 
     if(primary_grid_ranks.size() < secondary_grid_ranks.size()){
@@ -609,7 +609,7 @@ void kfac_block_fc_conv<Device>::initialize_activations_and_errors(
 
     int async_progress = true;
 
-    std::vector<El::mpi::Request<DataType>> Requests, requests_subset;
+    std::vector<::Al::NCCLBackend::req_type> Requests, requests_subset;
 
     if(async_progress==false)
     {
@@ -629,7 +629,7 @@ void kfac_block_fc_conv<Device>::initialize_activations_and_errors(
                                               *subset0,
                                               Requests);
       for(auto& req:Requests){
-        El::mpi::Wait(req);
+        ::Al::Wait<::Al::NCCLBackend>(req);
       }
       Requests.clear();
       kfac::TranslateBetweenGridsVCAsync(*local_errors_vc,
@@ -640,7 +640,7 @@ void kfac_block_fc_conv<Device>::initialize_activations_and_errors(
       auto secondary_grid_ranks = comm->get_secondary_grid_ranks();
 
       for(auto& req:Requests){
-        El::mpi::Wait(req);
+        ::Al::Wait<::Al::NCCLBackend>(req);
       }
 
       if(async_progress and primary_grid_ranks.size() < secondary_grid_ranks.size()){

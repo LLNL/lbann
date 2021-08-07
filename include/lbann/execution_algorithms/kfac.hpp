@@ -251,7 +251,10 @@ private:
 
   int m_global_inverse_buffer_size=0;
 
-  std::vector<El::mpi::Request<DataType>> m_inverse_matrix_communication_reqs, m_weights_communication_reqs;
+  // std::vector<El::mpi::Request<DataType>> m_inverse_matrix_communication_reqs, m_weights_communication_reqs;
+  std::vector<ReqT>m_inverse_matrix_communication_reqs, m_weights_communication_reqs;
+
+  int m_time_span_inverse_comm=0,m_time_span_inverse_send_recv=0;
 
 }; // class KFAC
 
