@@ -197,7 +197,6 @@ void TruncationSelectionExchange::select_next(model& m,
   std::vector<EvalType> score_list(num_trainers);
   if(comm.am_trainer_master()) {
     comm.all_gather<EvalType>(score, score_list,comm.get_intertrainer_comm());
-    std::cout << "Trainer " << trainer_id << " score: " << score << std::endl;
   }
   // Communicate trainer score list from trainer master processes
   comm.trainer_broadcast(comm.get_trainer_master(), score_list.data(),num_trainers);
