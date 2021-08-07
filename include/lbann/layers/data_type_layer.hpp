@@ -265,8 +265,12 @@ protected:
   /** @brief Get the values matrix for a specific weights object */
   InputAbsDistMatrixType const& weights_values(size_t idx) const {
     if (idx >= m_weights_proxy.size())
-      LBANN_ERROR("Bad index ", idx, " "
-                  "(size=" , m_weights_proxy.size(), ")");
+    {
+      LBANN_ERROR(
+        this->get_type()," layer \"",this->get_name(),"\" ",
+        "attempted to access weights ",idx,", ",
+        "but there are only ",m_weights_proxy.size()," weights");
+    }
     return m_weights_proxy[idx].values();
   }
 

@@ -57,7 +57,7 @@ class kfac_block {
   }
   virtual ~kfac_block() = default;
 
-  virtual void on_forward_prop_end() {}
+  virtual void on_forward_prop_end(lbann_comm* comm) {}
 
   /** @brief Compute Kronecker factors. */
   virtual void compute_local_kronecker_factors(
@@ -94,11 +94,56 @@ class kfac_block {
     LBANN_ERROR("this function should be called via a sub-class.");
   }
 
+  /** @brief Compute the inverse of the average Kronecker factors. */
+  virtual void compute_preconditioned_gradients(
+      lbann_comm* comm,
+      DataType learning_rate_factor,
+      bool print_matrix,
+      bool print_matrix_summary,
+      bool print_time) {
+    LBANN_ERROR("this function should be called via a sub-class.");
+  }
+
+  /** @brief Copies activations, errors, and weights from model class to 
+  private variables to be used in KFAC computation. */
+  virtual void initialize_activations_and_errors(
+      lbann_comm* comm,
+      int num_local_activations,
+      int num_local_errors,
+      int num_weights){
+    LBANN_ERROR("this function should be called via a sub-class.");
+  }
+
   /** @brief Get buffers of preconditioned parameter gradients. */
   virtual const std::vector<El::AbstractMatrix<DataType>*>
   get_preconditioned_grad_buffers() {
     LBANN_ERROR("this function should be called via a sub-class.");
   }
+
+  /** @brief Copy inverse matrices to output buffer. */
+  virtual int
+  get_inverse_matrices(
+      El::Matrix<DataType, Device>& output,
+      int offset) = 0;
+
+  /** @brief Get inverse matrices size (offset). */
+  virtual int
+  get_inverse_matrices_size(lbann_comm *comm) = 0; 
+
+  /** @brief Get inverse matrices size vector */
+  virtual std::vector<int> 
+  get_inverse_matrices_size_vector(lbann_comm *comm) = 0;
+
+  /** @brief Get inverse matrices size vector */
+  virtual void
+  resize_inverse_matrices_size(El::Matrix<double, El::Device::CPU>& inverse_matrices_size, int block_number) = 0;
+
+  /** @brief Copy inverse matrices from output buffer. */
+  virtual int
+  set_inverse_matrices(
+      El::Matrix<DataType, Device>& workspace,
+      int offset,
+      lbann_comm *comm) = 0;
 
   /** @brief Get block's information in one line. */
   virtual std::string get_info() const {
@@ -116,6 +161,22 @@ class kfac_block {
 
   size_t get_inverse_proc_rank() const {
     return m_inverse_proc_rank;
+  }
+
+  DataType* get_local_activation_buffer(int index){
+    return m_parent_local_activations[index]->Buffer();
+  }
+
+  DataType* get_local_error_buffer(int index){
+    return m_child_local_errors[index]->Buffer();
+  }
+
+  DataType* get_weight_buffer(int index){
+    return m_weight_values[index]->Buffer();
+  }
+
+  DataType* get_gradient_wrt_weight_buffer(int index){
+    return m_weight_gradients[index]->Buffer();
   }
 
   /** @brief Return the list of internal matrices' (name, height,
@@ -148,6 +209,15 @@ class kfac_block {
 
   /** @brief Whether this block already has an inverse history. */
   bool m_has_kronecker_inverse;
+
+  /** @brief distributed martices for activations and gradients. */
+  std::vector<std::unique_ptr<AbsDistMat>> m_parent_local_activations,
+    m_child_local_errors, m_weight_gradients;
+
+  /** @brief Translatebetweengrid  funciton has a basic implementation for STAR,STAR
+   * distributed matrices. Therefore, using local matrices for weights  */
+  std::vector<std::unique_ptr<El::Matrix<DataType, Device>>> m_weight_values;
+  
 
  private:
 

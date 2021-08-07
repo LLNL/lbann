@@ -14,6 +14,8 @@ set_full_path(THIS_DIR_HEADERS
   data_reader_python.hpp
   data_reader_synthetic.hpp
   data_reader_smiles.hpp
+  data_reader_sample_list.hpp
+  data_reader_sample_list_impl.hpp
   )
 
 if (LBANN_HAS_CNPY)

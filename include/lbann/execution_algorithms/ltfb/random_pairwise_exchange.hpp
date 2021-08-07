@@ -26,6 +26,8 @@
 #ifndef LBANN_EXECUTION_ALGORITHMS_LTFB_RANDOM_PAIRWISE_EXCHANGE_HPP_INCLUDED
 #define LBANN_EXECUTION_ALGORITHMS_LTFB_RANDOM_PAIRWISE_EXCHANGE_HPP_INCLUDED
 
+#include "mutation_strategy.hpp"
+
 #include "meta_learning_strategy.hpp"
 
 #include <google/protobuf/message.h>
@@ -122,10 +124,12 @@ public:
    *  @param[in] winner_strategy Strategy for determining the winner
    *             of a tournament.
    *  @param[in] comm_algo Algorithm for exchanging models.
+   *  @param[in] mutate_algo Algorithm for mutating models.
    */
   RandomPairwiseExchange(std::string metric_name,
                          metric_strategy winner_strategy,
-                         std::unique_ptr<ExchangeStrategy> comm_algo);
+                         std::unique_ptr<ExchangeStrategy> comm_algo,
+                         std::unique_ptr<MutationStrategy> mutate_algo);
 
   /** @brief Constructor
    *  @param[in] metrics The list of metric/strategy pairs. A metric
@@ -134,10 +138,12 @@ public:
    *             model must win ALL of the metric comparisons to be
    *             declared the winner.
    *  @param[in] comm_algo Algorithm for exchanging models.
+   *  @param[in] mutate_algo Algorithm for mutating models.
    */
   RandomPairwiseExchange(
     std::unordered_map<std::string, metric_strategy> metrics,
-    std::unique_ptr<ExchangeStrategy> comm_algo);
+    std::unique_ptr<ExchangeStrategy> comm_algo,
+    std::unique_ptr<MutationStrategy> mutate_algo);
 
   ~RandomPairwiseExchange() = default;
   RandomPairwiseExchange(RandomPairwiseExchange const& other);
@@ -193,6 +199,15 @@ private:
    *  pretend such a thing exists; it makes me feel better, anyway).
    */
   std::unique_ptr<ExchangeStrategy> m_comm_algo;
+
+  /** @brief The strategy for mutation of a model
+   *
+   *  When a trainer loses in a LTFB tournament, the winning model is 
+   *  copied over to it and this mutation strategy is applied to the
+   *  copied model to explore a new model. This is relevant to neural
+   *  architecture search (NAS). 
+   */
+  std::unique_ptr<MutationStrategy> m_mutate_algo;  
 
 }; // class RandomPairwiseExchange
 

@@ -30,6 +30,7 @@
 #include "lbann/utils/typename.hpp"
 
 #include "lbann/layers/layer.hpp"
+#include "lbann/layers/operator_layer.hpp"
 #include "lbann/layers/activations/activations.hpp"
 #include "lbann/layers/activations/elu.hpp"
 #include "lbann/layers/activations/identity.hpp"
@@ -38,6 +39,7 @@
 #include "lbann/layers/activations/log_softmax.hpp"
 #include "lbann/layers/activations/softmax.hpp"
 #include "lbann/layers/image/bilinear_resize.hpp"
+#include "lbann/layers/image/rotation.hpp"
 #include "lbann/layers/io/input_layer.hpp"
 #include "lbann/layers/learning/base_convolution.hpp"
 #include "lbann/layers/learning/channelwise_fully_connected.hpp"
@@ -169,6 +171,16 @@ private:
   // Builder registration happens here
   void register_default_builders() {
 
+    // For now, we add a custom builder that will use the same
+    // input/output type for the multi-precision-capable
+    // OperatorLayer. This is temporary, until more of the factory
+    // infrastructure considers multiple in/out types.
+    factory_.register_builder(
+      "OperatorLayer",
+      [](lbann_comm* c, lbann_data::Layer const& params) {
+        return build_operator_layer_from_pbuf<T, T, L, D>(c, params);
+      });
+
     // Learning layers
     LBANN_REGISTER_BUILDER(Convolution, convolution);
     LBANN_REGISTER_BUILDER(ChannelwiseFullyConnected, channelwise_fully_connected);
@@ -188,7 +200,6 @@ private:
     LBANN_REGISTER_BUILDER(Atan, atan);
     LBANN_REGISTER_BUILDER(Atanh, atanh);
     LBANN_REGISTER_BUILDER(Ceil, ceil);
-    LBANN_REGISTER_BUILDER(Clamp, clamp);
     LBANN_REGISTER_BUILDER(Cos, cos);
     LBANN_REGISTER_BUILDER(Cosh, cosh);
     LBANN_REGISTER_BUILDER(Divide, divide);
@@ -638,6 +649,15 @@ std::unique_ptr<Layer> construct_layer_legacy(
     } else {
       LBANN_ERROR("bilinear resize layer is only supported with "
                   "a data-parallel layout");
+    }
+  }
+  
+  if (proto_layer.has_rotation()) {
+    if (Layout == data_layout::DATA_PARALLEL && Device == El::Device::CPU) {
+      return lbann::make_unique<rotation_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>>(comm);
+    } else {
+      LBANN_ERROR("rotation layer is only supported with "
+                  "a data-parallel layout and on CPU");
     }
   }
 

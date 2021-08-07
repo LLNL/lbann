@@ -69,7 +69,12 @@ std::unique_ptr<Layer> build_scatter_layer_from_pbuf(
   LBANN_ASSERT_MSG_HAS_FIELD(proto_layer, scatter);
   using BuilderType = Builder<TensorDataType, Layout, Device>;
   auto dims = parse_list<int>(proto_layer.scatter().dims());
-  return BuilderType::Build(dims);
+  const auto& params = proto_layer.scatter();
+  int axis = -1;
+  if (params.has_axis()){
+    axis = params.axis().value();
+  }
+  return BuilderType::Build(dims, axis);
 }
 
 #define PROTO_DEVICE(T, Device) \

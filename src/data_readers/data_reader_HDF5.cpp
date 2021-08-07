@@ -27,6 +27,7 @@
 #include "conduit/conduit_relay_mpi.hpp"
 
 #include "lbann/data_readers/data_reader_HDF5.hpp"
+#include "lbann/data_readers/data_reader_sample_list_impl.hpp"
 #include "lbann/data_readers/sample_list_impl.hpp"
 #include "lbann/data_readers/sample_list_open_files_impl.hpp"
 #include "lbann/utils/timer.hpp"
@@ -187,6 +188,7 @@ hdf5_data_reader& hdf5_data_reader::operator=(const hdf5_data_reader& rhs)
 
 void hdf5_data_reader::copy_members(const hdf5_data_reader& rhs)
 {
+  data_reader_sample_list::copy_members(rhs);
   m_data_dims_lookup_table = rhs.m_data_dims_lookup_table;
   m_linearized_size_lookup_table = rhs.m_linearized_size_lookup_table;
   m_experiment_schema_filename = rhs.m_experiment_schema_filename;
@@ -324,10 +326,7 @@ void hdf5_data_reader::load_sample(conduit::Node& node,
                                    size_t index,
                                    bool ignore_failure)
 {
-  hid_t file_handle;
-  std::string sample_name;
-
-  data_reader_sample_list::open_file(index, file_handle, sample_name);
+  auto [file_handle,sample_name] = data_reader_sample_list::open_file(index);
   // load data for the field names specified in the user's experiment-schema
   for (auto& [pathname, path_node] : m_useme_node_map) {
     // do not load a "packed" field, as it doesn't exist on disk!

@@ -30,23 +30,31 @@
 #include "lbann/callbacks/callback.hpp"
 #include "lbann/weights/weights.hpp"
 
-
 namespace lbann {
 namespace callback {
 
-/** @brief Perturb weights for a specific layer in model.
+/** @brief Perturb values in a weights tensor.
  *
- *  
+ *  Each entry of the weights tensor has a probability of being
+ *  perturbed by a normal random number. The resulting values are
+ *  clamped within a range.
  */
 class perturb_weights : public callback_base {
 public:
 
-  /** 
-   *  @param batch_interval Number of training mini-batch steps 
-   *  @param output_name   Name of weight layer
+  /**
+   *  @param batch_interval Number of training mini-batch steps
+   *                        between perturbations
+   *  @param output_name    Name of weights being perturbed
+   *  @param upper          Upper bound for weights values
+   *  @param lower          Lower bound for weights values
+   *  @param scale          Standard deviation of normal perturbations
+   *  @param perturb_probability    Probability of applying
+   *                        perturbation to a given weights value
    */
-  perturb_weights(std::string output_name,
-               El::Int batch_interval = 1);
+  perturb_weights(EvalType upper, EvalType lower, EvalType scale, EvalType perturb_probability,
+		  std::string output_name,
+                  El::Int batch_interval = 1);
 
   perturb_weights* copy() const override { return new perturb_weights(*this); }
   std::string name() const override { return "perturb weights"; }
@@ -67,14 +75,20 @@ private:
   friend class cereal::access;
   perturb_weights();
 
-   /*
-   *  output_name.
-   */
+  /// @brief Name of weights being perturbed
   std::string m_output_name;
-   
+
+  /// @brief Upper bound for weights values
+  EvalType m_upper;
+  /// @brief Lower bound for weights values
+  EvalType m_lower;
+  /// @brief Standard deviation of normal perturbations
+  EvalType m_scale;
+  /// @brief Probability of applying perturbation to a given value
+  EvalType m_perturb_probability;
+
   void perturb(model& m);
 
-  
 };
 
 // Builder function

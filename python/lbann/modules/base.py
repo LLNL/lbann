@@ -146,11 +146,12 @@ class ChannelwiseFullyConnectedModule(Module):
                weights=[],
                activation=None,
                transpose=False,
-               name=None):
+               name=None,
+               parallel_strategy={}):
     """Initalize channelwise fully connected module
 
     Args:
-        size (int): Size of output tensor.
+        size (int or list): Dimension of the output tensor
         bias (bool): Whether to apply bias after linearity.
         transpose (bool): Whether to apply transpose of weights
                 matrix.
@@ -160,8 +161,7 @@ class ChannelwiseFullyConnectedModule(Module):
                 matrix will be initialized with He normal
                 initialization and the bias with zeros.
         activation (type): Layer class for activation function.
-        name (str): Default name is in the form 'fcmodule<index>'.
-        data_layout (str): Data layout.
+        name (str): Default name is in the form 'channelwisefc<index>'.
         parallel_strategy (dict): Data partitioning scheme.
     """
     super().__init__()
@@ -170,6 +170,7 @@ class ChannelwiseFullyConnectedModule(Module):
     self.size = size
     self.bias = bias
     self.transpose = transpose
+    self.parallel_strategy = parallel_strategy
     self.name = (name
                  if name
                  else 'channelwisefc{0}'.format(ChannelwiseFullyConnectedModule.global_count))
@@ -206,11 +207,13 @@ class ChannelwiseFullyConnectedModule(Module):
                                         data_layout=self.data_layout,
                                         output_channel_dims=self.size,
                                         bias=self.bias,
-                                        transpose=self.transpose)
+                                        transpose=self.transpose,
+                                        parallel_strategy=self.parallel_strategy)
     if self.activation:
         return self.activation(y,
                                name=name+'_activation',
-                               data_layout=self.data_layout)
+                               data_layout=self.data_layout,
+                               parallel_strategy=self.parallel_strategy)
     else:
         return y
 

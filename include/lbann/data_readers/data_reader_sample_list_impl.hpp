@@ -25,6 +25,9 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+#ifndef LBANN_DATA_READER_SAMPLE_LIST_IMPL_HPP
+#define LBANN_DATA_READER_SAMPLE_LIST_IMPL_HPP
+
 #include "lbann/data_readers/data_reader_sample_list.hpp"
 #include "lbann/data_readers/sample_list_impl.hpp"
 #include "lbann/data_readers/sample_list_open_files_impl.hpp"
@@ -34,19 +37,23 @@
 
 namespace lbann {
 
-data_reader_sample_list::data_reader_sample_list(bool shuffle)
+template <typename SampleListT>
+data_reader_sample_list<SampleListT>::data_reader_sample_list(bool shuffle)
   : generic_data_reader(shuffle)
 {}
 
-data_reader_sample_list::data_reader_sample_list(
+template <typename SampleListT>
+data_reader_sample_list<SampleListT>::data_reader_sample_list(
   const data_reader_sample_list& rhs)
   : generic_data_reader(rhs)
 {
   copy_members(rhs);
 }
 
-data_reader_sample_list&
-data_reader_sample_list::operator=(const data_reader_sample_list& rhs)
+template <typename SampleListT>
+data_reader_sample_list<SampleListT>&
+data_reader_sample_list<SampleListT>::operator=(
+  const data_reader_sample_list<SampleListT>& rhs)
 {
   // check for self-assignment
   if (this == &rhs) {
@@ -57,20 +64,26 @@ data_reader_sample_list::operator=(const data_reader_sample_list& rhs)
   return (*this);
 }
 
-void data_reader_sample_list::copy_members(const data_reader_sample_list& rhs)
+template <typename SampleListT>
+void data_reader_sample_list<SampleListT>::copy_members(
+  const data_reader_sample_list& rhs)
 {
   m_sample_list.copy(rhs.m_sample_list);
 }
 
-void data_reader_sample_list::shuffle_indices(rng_gen& gen)
+template <typename SampleListT>
+void data_reader_sample_list<SampleListT>::shuffle_indices(rng_gen& gen)
 {
   generic_data_reader::shuffle_indices(gen);
-  m_sample_list.compute_epochs_file_usage(get_shuffled_indices(),
-                                          get_mini_batch_size(),
-                                          *m_comm);
+  if(get_mini_batch_size() != 0) {
+    m_sample_list.compute_epochs_file_usage(get_shuffled_indices(),
+                                            get_mini_batch_size(),
+                                            *m_comm);
+  }
 }
 
-void data_reader_sample_list::load()
+template <typename SampleListT>
+void data_reader_sample_list<SampleListT>::load()
 {
   if (is_master()) {
     std::cout << "starting data_reader_sample_list::load()\n";
@@ -82,7 +95,8 @@ void data_reader_sample_list::load()
   load_list_of_samples(sample_list_file);
 }
 
-void data_reader_sample_list::load_list_of_samples(
+template <typename SampleListT>
+void data_reader_sample_list<SampleListT>::load_list_of_samples(
   const std::string sample_list_file)
 {
   // load the sample list
@@ -99,7 +113,7 @@ void data_reader_sample_list::load_list_of_samples(
   }
 
   // Load the sample list
-  if (opts->has_string("slosload_full_sample_list_once")) {
+  if (opts->has_string("load_full_sample_list_once")) {
     std::vector<char> buffer;
     if (m_comm->am_trainer_master()) {
       load_file(sample_list_file, buffer);
@@ -133,14 +147,15 @@ void data_reader_sample_list::load_list_of_samples(
   generic_data_reader::set_file_dir(m_sample_list.get_samples_dirname());
 }
 
-void data_reader_sample_list::load_list_of_samples_from_archive(
+template <typename SampleListT>
+void data_reader_sample_list<SampleListT>::load_list_of_samples_from_archive(
   const std::string& sample_list_archive)
 {
   // load the sample list
   double tm1 = get_time();
-  std::stringstream ss(sample_list_archive); // any stream can be used
+  std::istringstream iss(sample_list_archive); // any stream can be used
 
-  cereal::BinaryInputArchive iarchive(ss); // Create an input archive
+  cereal::BinaryInputArchive iarchive(iss); // Create an input archive
 
   iarchive(m_sample_list); // Read the data from the archive
   double tm2 = get_time();
@@ -150,23 +165,24 @@ void data_reader_sample_list::load_list_of_samples_from_archive(
               << std::endl;
   }
 }
-void data_reader_sample_list::open_file(size_t index_in,
-                                        hid_t& file_handle_out,
-                                        std::string& sample_name_out)
+
+template <typename SampleListT>
+auto data_reader_sample_list<SampleListT>::open_file(size_t index)
+  -> std::pair<file_handle_type, sample_name_type>
 {
-  const sample_t& s = m_sample_list[index_in];
-  sample_name_out = s.second;
-  sample_file_id_t id = s.first;
-  m_sample_list.open_samples_file_handle(index_in);
-  file_handle_out = m_sample_list.get_samples_file_handle(id);
-  if (!m_sample_list.is_file_handle_valid(file_handle_out)) {
-    LBANN_ERROR("file handle is invalid");
-  }
+  auto [sample_id, sample_name] = m_sample_list[index];
+  m_sample_list.open_samples_file_handle(index);
+  auto file_handle_out = m_sample_list.get_samples_file_handle(sample_id);
+  LBANN_ASSERT(m_sample_list.is_file_handle_valid(file_handle_out));
+  return std::make_pair(file_handle_out, std::move(sample_name));
 }
 
-void data_reader_sample_list::close_file(size_t index)
+template <typename SampleListT>
+void data_reader_sample_list<SampleListT>::close_file(size_t index)
 {
   m_sample_list.close_samples_file_handle(index);
 }
 
 } // end of namespace lbann
+
+#endif // LBANN_DATA_READER_SAMPLE_LIST_IMPL_HPP
