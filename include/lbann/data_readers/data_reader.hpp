@@ -307,6 +307,11 @@ class generic_data_reader {
   virtual bool has_labels() const { return m_supported_input_types.at(input_data_type::LABELS); }
   virtual bool has_responses() const { return m_supported_input_types.at(input_data_type::RESPONSES); }
 
+  /// Whether or not a data reader has labels
+  virtual void set_has_labels(const bool b) { m_supported_input_types[input_data_type::LABELS] = b; }
+  /// Whether or not a data reader has a response field
+  virtual void set_has_responses(const bool b) { m_supported_input_types[input_data_type::RESPONSES] = b; }
+
   /**
    * During the network's update phase, the data reader will
    * advanced the current position pointer.  If the pointer wraps
@@ -629,11 +634,17 @@ class generic_data_reader {
   bool load_from_checkpoint_distributed(persist& p, execution_mode mode);
 
   /// returns a const ref to the data store
-  virtual const data_store_conduit& get_data_store() const {
+  const data_store_conduit& get_data_store() const {
     if (m_data_store == nullptr) {
       LBANN_ERROR("m_data_store is nullptr");
     }
     return *m_data_store;
+  }
+
+  /// returns a non-const ref to the data store
+  data_store_conduit& get_data_store() {
+    return const_cast<data_store_conduit&>(
+      static_cast<const generic_data_reader&>(*this).get_data_store());
   }
 
   data_store_conduit* get_data_store_ptr() const {
@@ -668,10 +679,6 @@ class generic_data_reader {
     if(m_trainer == nullptr) { LBANN_ERROR("get_trainer called with nullptr"); }
     return *m_trainer;
   }
-
-  /// experimental; used to ensure all readers for jag_conduit_hdf5
-  /// have identical shuffled indices
-  virtual void post_update() {}
 
   /** Set the transform pipeline this data reader will use. */
   void set_transform_pipeline(transform::transform_pipeline&& tp) {
@@ -835,6 +842,8 @@ class generic_data_reader {
   friend class data_reader_merge_features;
   friend class data_reader_merge_samples;
 
+  void set_use_data_store(bool s) { m_use_data_store = s; }
+
 private:
 
   virtual void do_preload_data_store() {
@@ -842,6 +851,9 @@ private:
   }
 
  protected :
+
+  bool m_use_data_store = false;
+
   /** @brief Holds a true value for each input data type that is supported.
    *  Use an ordered map so that checkpoints are stable. */
   std::map<input_data_type, bool> m_supported_input_types;

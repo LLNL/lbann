@@ -29,6 +29,7 @@
 
 #include "lbann/data_readers/sample_list_open_files.hpp"
 #include "lbann/data_readers/sample_list_impl.hpp" // to_sample_name_t
+#include <conduit/conduit.hpp>
 
 namespace lbann {
 
@@ -214,6 +215,78 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
   m_header.m_is_exclusive = false;
 }
 
+template <typename sample_name_t, typename file_handle_t>
+inline size_t sample_list_open_files<sample_name_t, file_handle_t>
+::read_line_integral_type(std::istringstream& sstr, sample_file_id_t index) {
+  if constexpr(!std::is_integral_v<sample_name_t>) {
+    LBANN_ERROR("required sample_name_t to be integral type");
+  }
+  size_t valid_sample_count = 0u;
+  sample_name_t range_start{};
+  sample_name_t range_end{};
+  bool in_range = false;
+
+  while(!sstr.eof()) {
+    std::string sample_name_str;
+    sstr >> sample_name_str;
+    /// Allow range base encoding for integral data types
+    if constexpr(std::is_integral_v<sample_name_t>) {
+      if(!in_range) {
+        if(sample_name_str == "...") {
+          in_range = true;
+        }else {
+          range_start = to_sample_name_t<sample_name_t>(sample_name_str);
+          range_end = range_start;
+        }
+      }else {
+        if(sample_name_str == "...") {
+          LBANN_ERROR("already in range");
+        }else {
+          range_end = to_sample_name_t<sample_name_t>(sample_name_str);
+        }
+      }
+      if(!in_range) {
+        this->m_sample_list.emplace_back(index, to_sample_name_t<sample_name_t>(sample_name_str));
+#ifdef VALIDATE_SAMPLE_LIST
+        sample_names.emplace_back(sample_name_str);
+#endif
+        valid_sample_count++;
+      }else if(in_range && range_end == range_start) {
+        continue;
+      }else {
+        assert(in_range && range_end != range_start);
+        for(sample_name_t i = range_start + 1; i <= range_end; i++) {
+          this->m_sample_list.emplace_back(index, i);
+#ifdef VALIDATE_SAMPLE_LIST
+          sample_names.emplace_back(i);
+#endif
+          valid_sample_count++;
+        }
+        in_range = false;
+      }
+    }
+  }
+  if(in_range) {
+    LBANN_ERROR("Sample list terminated while in a range operator");
+  }
+  return valid_sample_count;
+}
+
+template <typename sample_name_t, typename file_handle_t>
+inline size_t sample_list_open_files<sample_name_t, file_handle_t>
+::read_line(std::istringstream& sstr, sample_file_id_t index) {
+  size_t valid_sample_count = 0u;
+  while(!sstr.eof()) {
+    std::string sample_name_str;
+    sstr >> sample_name_str;
+    this->m_sample_list.emplace_back(index, to_sample_name_t<sample_name_t>(sample_name_str));
+#ifdef VALIDATE_SAMPLE_LIST
+    sample_names.emplace_back(sample_name_str);
+#endif
+    valid_sample_count++;
+  }
+  return valid_sample_count;
+}
 
 template <typename sample_name_t, typename file_handle_t>
 inline void sample_list_open_files<sample_name_t, file_handle_t>
@@ -236,12 +309,16 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
       continue;
     }
 
-    std::stringstream sstr(line.substr(0, end_of_str + 1)); // clear trailing spaces for accurate parsing
+    std::istringstream sstr(line.substr(0, end_of_str + 1)); // clear trailing spaces for accurate parsing
     std::string filename;
     size_t included_samples;
-    size_t excluded_samples;
+    size_t excluded_samples = 0;
 
-    sstr >> filename >> included_samples >> excluded_samples;
+    sstr >> filename >> included_samples;
+
+    if(m_header.has_unused_sample_fields()) {
+      sstr >> excluded_samples;
+    }
 
     const std::string file_path = add_delimiter(m_header.get_file_dir()) + filename;
 
@@ -251,7 +328,7 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
     }
 
     file_handle_t file_hnd = open_file_handle(file_path);
-    if (!is_file_handle_valid(file_hnd)) {
+    if (this->m_check_data_file && !is_file_handle_valid(file_hnd)) {
       continue; // skipping the file
     }
 
@@ -264,20 +341,16 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
 #ifdef VALIDATE_SAMPLE_LIST
     std::vector<std::string> sample_names;
 #endif
-    while(!sstr.eof()) {
-      std::string sample_name_str;
-      sstr >> sample_name_str;
-      this->m_sample_list.emplace_back(index, to_sample_name_t<sample_name_t>(sample_name_str));
-#ifdef VALIDATE_SAMPLE_LIST
-      sample_names.emplace_back(sample_name_str);
-#endif
-      valid_sample_count++;
+    if constexpr(std::is_integral_v<sample_name_t>) {
+      valid_sample_count = read_line_integral_type(sstr, index);
+    }else {
+      valid_sample_count = read_line(sstr, index);
     }
     if(valid_sample_count != included_samples) {
-      LBANN_ERROR(std::string("Bundle file does not contain the correct number of included samples: expected ")
-                  + std::to_string(included_samples)
-                  + std::string(" samples, but found ")
-                  + std::to_string(valid_sample_count));
+      LBANN_ERROR(
+        "Bundle file", filename,
+        " does not contain the correct number of included samples: expected ",
+        included_samples, " samples, but found ", valid_sample_count);
     }
 
     if(m_file_map.count(filename) > 0) {
@@ -325,7 +398,8 @@ void sample_list_open_files<sample_name_t, file_handle_t>
   std::vector<ar_file_stats_t> file_stats;
   file_stats.reserve(m_file_id_stats_map.size());
   for(auto&& e : m_file_id_stats_map) {
-    file_stats.emplace_back(std::make_tuple(std::get<0>(e), std::get<2>(e)));
+    // Only save the file name and the access deque
+    file_stats.emplace_back(std::make_tuple(std::get<FID_STATS_NAME>(e), std::get<FID_STATS_DEQUE>(e)));
   }
   ar(m_header, this->m_sample_list, file_stats);
 }
@@ -339,18 +413,21 @@ void sample_list_open_files<sample_name_t, file_handle_t>
   ar(m_header, this->m_sample_list, file_stats);
   m_file_id_stats_map.reserve(file_stats.size());
   for(auto&& e : file_stats) {
-    //m_file_id_stats_map.emplace_back(std::make_tuple(std::get<0>(e), uninitialized_file_handle<file_handle_t>(), std::deque<std::pair<int,int>>{}));
+    // Only the file name and the access deque were saved
     m_file_id_stats_map.emplace_back(std::make_tuple(std::get<0>(e), uninitialized_file_handle<file_handle_t>(), std::get<1>(e)));
-    //m_file_id_stats_map.emplace_back(std::make_tuple(std::get<0>(e), file_handle_t(), std::get<1>(e)));
   }
 }
 
 template <typename sample_name_t, typename file_handle_t>
 inline bool sample_list_open_files<sample_name_t, file_handle_t>
 ::to_string(std::string& sstr) const {
+  std::vector<std::string> file_map_sequence;
   std::map<std::string, std::template vector<sample_name_t>> tmp_file_map;
   for (const auto& s : this->m_sample_list) {
     const std::string& filename = get_samples_filename(s.first);
+    if(tmp_file_map.count(filename) == 0) {
+      file_map_sequence.emplace_back(filename);
+    }
     tmp_file_map[filename].emplace_back(s.second);
   }
 
@@ -386,16 +463,57 @@ inline bool sample_list_open_files<sample_name_t, file_handle_t>
   this->write_header(sstr, tmp_file_map.size());
 
   // write the list body
-  for (const auto& f : tmp_file_map) {
+  for (const auto& f : file_map_sequence) {
     // File name
-    sstr += f.first;
+    sstr += f;
     // Number of included samples
-    sstr += std::string(" ") + std::to_string(f.second.size());
-    // Number of excluded samples
-    sstr += std::string(" ") + std::to_string(m_file_map.at(f.first) - f.second.size());
+    const auto& samples = tmp_file_map[f];
+    sstr += std::string(" ") + std::to_string(samples.size());
+    if(m_header.has_unused_sample_fields()) {
+      // Number of excluded samples
+      sstr += std::string(" ") + std::to_string(m_file_map.at(f) - samples.size());
+    }
     // Inclusion sample list
-    for (const auto& s : f.second) {
-      sstr += ' ' + lbann::to_string(s);
+    if constexpr(std::is_integral_v<sample_name_t>) {
+      sample_name_t range_end = 0;
+      bool in_range = false;
+      for (const auto& s : samples) {
+        if(s == range_end + 1) {
+          in_range = true;
+          range_end = s;
+        }
+        else if (s == range_end) {
+          if(!in_range) {
+            range_end = s;
+            sstr += ' ' + lbann::to_string(s);
+          }else {
+            LBANN_ERROR("Unknown state in sample list range reconstruction");
+          }
+        }
+        else if (s < range_end) {
+          LBANN_ERROR("Sample list element ", s, " should not be smaller than range end ", range_end);
+        }
+        else { // s > range_end + 1
+          if(in_range) {
+            sstr += " ...";
+            sstr += ' ' + lbann::to_string(range_end);
+            in_range = false;
+          }
+          // Output the current ID and prepare for a new range
+          range_end = s;
+          sstr += ' ' + lbann::to_string(s);
+        }
+      }
+      // Ensure that if the list finishes in a range, output the end
+      if(in_range) {
+        sstr += " ...";
+        sstr += ' ' + lbann::to_string(range_end);
+      }
+    }
+    else {
+      for (const auto& s : samples) {
+        sstr += ' ' + lbann::to_string(s);
+      }
     }
     sstr += '\n';
   }
@@ -417,20 +535,47 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
 template <typename sample_name_t, typename file_handle_t>
 inline const std::string& sample_list_open_files<sample_name_t, file_handle_t>
 ::get_samples_filename(sample_file_id_t id) const {
-  return std::get<0>(m_file_id_stats_map[id]);
+  return std::get<FID_STATS_NAME>(m_file_id_stats_map[id]);
 }
 
 template <typename sample_name_t, typename file_handle_t>
 inline file_handle_t sample_list_open_files<sample_name_t, file_handle_t>
 ::get_samples_file_handle(sample_file_id_t id) const {
-  file_handle_t h = std::get<1>(m_file_id_stats_map[id]);
+  file_handle_t h = std::get<FID_STATS_HANDLE>(m_file_id_stats_map[id]);
   return h;
 }
 
 template <typename sample_name_t, typename file_handle_t>
 inline void sample_list_open_files<sample_name_t, file_handle_t>
 ::set_samples_filename(sample_file_id_t id, const std::string& filename) {
-  std::get<0>(m_file_id_stats_map[id]) = filename;
+  std::get<FID_STATS_NAME>(m_file_id_stats_map[id]) = filename;
+}
+
+template <typename sample_name_t, typename file_handle_t>
+inline void sample_list_open_files<sample_name_t, file_handle_t>
+::reorder() {
+  // Interleaving was done over files (all samples in a file are consecutive
+  if (this->m_stride > 1ul) { // undo interleaving
+    samples_t tmp_sample_list[this->m_stride];
+    sample_file_id_t last_index = 0;
+    size_t interleave_idx = 0;
+    for (const auto& s : this->m_sample_list) {
+      sample_file_id_t index = s.first;
+      if(index != last_index) {
+        interleave_idx = (interleave_idx + 1) % this->m_stride;
+      }
+      tmp_sample_list[interleave_idx].push_back(s);
+      last_index = index;
+    }
+
+    samples_t reordered_samples;
+    for(const auto& q : tmp_sample_list) {
+      for(const auto& s : q) {
+        reordered_samples.emplace_back(s);
+      }
+    }
+    std::swap(this->m_sample_list, reordered_samples);
+  }
 }
 
 template <typename sample_name_t, typename file_handle_t>
@@ -438,13 +583,13 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
 ::set_files_handle(const std::string& filename, file_handle_t h) {
   sample_file_id_t id = sample_file_id_t(0);
   for (auto&& e : m_file_id_stats_map) {
-    if(std::get<0>(e) == filename) {
-      std::get<1>(e) = h;
+    if(std::get<FID_STATS_NAME>(e) == filename) {
+      std::get<FID_STATS_HANDLE>(e) = h;
       break;
     }
     id++;
   }
-  manage_open_file_handles(id, true);
+  manage_open_file_handles(id);
 }
 
 template <typename sample_name_t, typename file_handle_t>
@@ -546,11 +691,11 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
 
   // Close the existing open files
   for(auto&& e : m_file_id_stats_map) {
-    auto& h = std::get<1>(e);
+    auto& h = std::get<FID_STATS_HANDLE>(e);
     close_file_handle(h);
     clear_file_handle(h);
-    std::get<2>(e).clear();
-    my_files.emplace_back(std::get<0>(e));
+    std::get<FID_STATS_DEQUE>(e).clear();
+    my_files.emplace_back(std::get<FID_STATS_NAME>(e));
   }
   m_open_fd_pq.clear();
 
@@ -607,11 +752,15 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
 ::compute_epochs_file_usage(const std::vector<int>& shuffled_indices,
                             int mini_batch_size,
                             const lbann_comm& comm) {
+  if(mini_batch_size == 0) {
+    LBANN_WARNING("Unable to compute file usage with empty mini-batch size");
+    return;
+  }
   for (auto&& e : m_file_id_stats_map) {
-    auto& h = std::get<1>(e);
+    auto& h = std::get<FID_STATS_HANDLE>(e);
     close_file_handle(h);
     clear_file_handle(h);
-    std::get<2>(e).clear();
+    std::get<FID_STATS_DEQUE>(e).clear();
   }
   // Once all of the file handles are closed, clear the priority queue
   m_open_fd_pq.clear();
@@ -624,7 +773,7 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
       /// Enqueue the iteration step when the sample will get used
       int step = i / mini_batch_size;
       int substep = (i % mini_batch_size) / comm.get_procs_per_trainer();
-      std::get<2>(m_file_id_stats_map[index]).emplace_back(std::make_pair(step, substep));
+      std::get<FID_STATS_DEQUE>(m_file_id_stats_map[index]).emplace_back(std::make_pair(step, substep));
     }
   }
 }
@@ -643,13 +792,13 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
 
 template <typename sample_name_t, typename file_handle_t>
 inline void sample_list_open_files<sample_name_t, file_handle_t>
-::manage_open_file_handles(sample_file_id_t id, bool pre_open_fd) {
+::manage_open_file_handles(sample_file_id_t id) {
   /// When we enter this function the priority queue is either empty or a heap
   if(!m_open_fd_pq.empty()) {
     if(m_open_fd_pq.size() > m_max_open_files) {
       auto& f = m_open_fd_pq.front();
       auto& victim = m_file_id_stats_map[f.first];
-      auto& victim_fd = std::get<1>(victim);
+      auto& victim_fd = std::get<FID_STATS_HANDLE>(victim);
       std::pop_heap(m_open_fd_pq.begin(), m_open_fd_pq.end(), pq_cmp);
       m_open_fd_pq.pop_back();
       close_file_handle(victim_fd);
@@ -666,11 +815,9 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
   std::make_heap(m_open_fd_pq.begin(), m_open_fd_pq.end(), pq_cmp);
 
   auto& e = m_file_id_stats_map[id];
-  auto& file_access_queue = std::get<2>(e);
+  auto& file_access_queue = std::get<FID_STATS_DEQUE>(e);
   if(!file_access_queue.empty()) {
-    if(!pre_open_fd) {
-      file_access_queue.pop_front();
-    }
+    file_access_queue.pop_front();
   }
   if(!file_access_queue.empty()) {
     m_open_fd_pq.emplace_back(std::make_pair(id,file_access_queue.front()));
@@ -685,7 +832,7 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
 
 template <typename sample_name_t, typename file_handle_t>
 inline file_handle_t sample_list_open_files<sample_name_t, file_handle_t>
-::open_samples_file_handle(const size_t i, bool pre_open_fd) {
+::open_samples_file_handle(const size_t i) {
   const sample_t& s = this->m_sample_list[i];
   sample_file_id_t id = s.first;
   file_handle_t h = get_samples_file_handle(id);
@@ -694,33 +841,32 @@ inline file_handle_t sample_list_open_files<sample_name_t, file_handle_t>
     const std::string& file_dir = this->get_samples_dirname();
     const std::string file_path = add_delimiter(file_dir) + file_name;
     if (file_name.empty() || !check_if_file_exists(file_path)) {
-      LBANN_ERROR(std::string{} + " :: data file '" + file_path + "' does not exist.");
+      LBANN_ERROR("data file '", file_path, "' does not exist.");
     }
-
     h = open_file_handle(file_path);
 
     if (!is_file_handle_valid(h)) {
-      LBANN_ERROR(std::string{} + " :: data file '" + file_path + "' could not be opened.");
+      LBANN_ERROR("data file '", file_path, "' could not be opened.");
     }
     auto& e = m_file_id_stats_map[id];
-    std::get<1>(e) = h;
+    std::get<FID_STATS_HANDLE>(e) = h;
     /// If a new file is opened, place it in the priority queue
-    manage_open_file_handles(id, pre_open_fd);
+    manage_open_file_handles(id);
   }
   return h;
 }
 
 template <typename sample_name_t, typename file_handle_t>
 inline void sample_list_open_files<sample_name_t, file_handle_t>
-::close_if_done_samples_file_handle(const size_t i) {
+::close_samples_file_handle(const size_t i, bool check_if_in_use) {
   const sample_t& s = this->m_sample_list[i];
   sample_file_id_t id = s.first;
   auto h = get_samples_file_handle(id);
-  if (!is_file_handle_valid(h)) {
+  if (is_file_handle_valid(h)) {
     auto& e = m_file_id_stats_map[id];
-    auto& file_access_queue = std::get<2>(e);
-    if(file_access_queue.empty()) {
-      auto& fh = std::get<1>(e);
+    auto& file_access_queue = std::get<FID_STATS_DEQUE>(e);
+    if(!check_if_in_use || file_access_queue.empty()) {
+      auto& fh = std::get<FID_STATS_HANDLE>(e);
       close_file_handle(fh);
       clear_file_handle(fh);
       delete_file_handle_pq_entry(id);

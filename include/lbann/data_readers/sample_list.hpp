@@ -41,6 +41,9 @@ namespace lbann {
 static const std::string multi_sample_exclusion = "MULTI-SAMPLE_EXCLUSION";
 static const std::string multi_sample_inclusion = "MULTI-SAMPLE_INCLUSION";
 static const std::string single_sample = "SINGLE-SAMPLE";
+static const std::string multi_sample_inclusion_v2 = "MULTI-SAMPLE_INCLUSION_V2";
+static const std::string conduit_hdf5_exclusion = "CONDUIT_HDF5_EXCLUSION";
+static const std::string conduit_hdf5_inclusion = "CONDUIT_HDF5_INCLUSION";
 
 struct sample_list_header {
   /// Whether each data file includes multiple samples
@@ -49,6 +52,8 @@ struct sample_list_header {
   bool m_is_exclusive;
   /// Whether to read the header line for a label file
   bool m_no_label_header;
+  /// Whether the sample list has fields to represent unused samples
+  bool m_has_unused_sample_fields;
   /// Number of included samples
   size_t m_included_sample_count;
   /// Number of excluded samples
@@ -69,6 +74,7 @@ struct sample_list_header {
   bool is_multi_sample() const;
   bool is_exclusive() const;
   bool use_label_header() const;
+  bool has_unused_sample_fields() const;
   size_t get_sample_count() const;
   size_t get_num_files() const;
   const std::string& get_file_dir() const;
@@ -82,6 +88,7 @@ struct sample_list_header {
 template <typename sample_name_t>
 class sample_list {
  public:
+  using name_t = sample_name_t;
   /// The type for the index assigned to each sample file
   using sample_file_id_t = std::size_t;
   /** To describe a sample as the id of the file to which it belongs.
@@ -117,7 +124,7 @@ class sample_list {
   void load(const sample_list_header& header, std::istream& istrm, const lbann_comm& comm, bool interleave);
 
   /// Restore a sample list from a serialized string
-  void load_from_string(const std::string& samplelist);
+  void load_from_string(const std::string& samplelist, const lbann_comm& comm, bool interleave);
 
   /// Tells how many samples in the list
   virtual size_t size() const;

@@ -1,0 +1,53 @@
+{
+    "inputs": 
+    {
+      "shape_model_initial_modes:(4,3)": {"dtype":"float64","number_of_elements": 1,"offset": 0,"stride": 8,"element_bytes": 8,"endianness": "little"},
+      "betti_prl15_trans_u": {"dtype":"float64","number_of_elements": 1,"offset": 0,"stride": 8,"element_bytes": 8,"endianness": "little"},
+      "betti_prl15_trans_v": {"dtype":"float64","number_of_elements": 1,"offset": 0,"stride": 8,"element_bytes": 8,"endianness": "little"},
+      "shape_model_initial_modes:(2,1)": {"dtype":"float64","number_of_elements": 1,"offset": 0,"stride": 8,"element_bytes": 8,"endianness": "little"},
+      "shape_model_initial_modes:(1,0)": {"dtype":"float64","number_of_elements": 1,"offset": 0,"stride": 8,"element_bytes": 8,"endianness": "little"}
+    },
+    "outputs": 
+    {
+      "scalars": 
+      {
+        "BWx": {"dtype":"float64","number_of_elements": 1,"offset": 0,"stride": 8,"element_bytes": 8,"endianness": "little"},
+        "BT": {"dtype":"float64","number_of_elements": 1,"offset": 0,"stride": 8,"element_bytes": 8,"endianness": "little"},
+        "tMAXt": {"dtype":"float64","number_of_elements": 1,"offset": 0,"stride": 8,"element_bytes": 8,"endianness": "little"},
+        "BWn": {"dtype":"float64","number_of_elements": 1,"offset": 0,"stride": 8,"element_bytes": 8,"endianness": "little"},
+        "MAXpressure": {"dtype":"float64","number_of_elements": 1,"offset": 0,"stride": 8,"element_bytes": 8,"endianness": "little"},
+        "tMAXpressure": {"dtype":"float64","number_of_elements": 1,"offset": 0,"stride": 8,"element_bytes": 8,"endianness": "little"},
+        "BAt": {"dtype":"float64","number_of_elements": 1,"offset": 0,"stride": 8,"element_bytes": 8,"endianness": "little"},
+        "Yn": {"dtype":"float64","number_of_elements": 1,"offset": 0,"stride": 8,"element_bytes": 8,"endianness": "little"},
+        "Ye": {"dtype":"float64","number_of_elements": 1,"offset": 0,"stride": 8,"element_bytes": 8,"endianness": "little"},
+        "Yx": {"dtype":"float64","number_of_elements": 1,"offset": 0,"stride": 8,"element_bytes": 8,"endianness": "little"},
+        "BTx": {"dtype":"float64","number_of_elements": 1,"offset": 0,"stride": 8,"element_bytes": 8,"endianness": "little"},
+        "MAXt": {"dtype":"float64","number_of_elements": 1,"offset": 0,"stride": 8,"element_bytes": 8,"endianness": "little"},
+        "BApressure": {"dtype":"float64","number_of_elements": 1,"offset": 0,"stride": 8,"element_bytes": 8,"endianness": "little"},
+        "tMINradius": {"dtype":"float64","number_of_elements": 1,"offset": 0,"stride": 8,"element_bytes": 8,"endianness": "little"},
+        "MINradius": {"dtype":"float64","number_of_elements": 1,"offset": 0,"stride": 8,"element_bytes": 8,"endianness": "little"}
+      },
+      "images": 
+      {
+        "(0.0, 0.0)": { "0.0": { "emi": {"dtype":"float32","number_of_elements": 16384,"offset": 0,"stride": 4,"element_bytes": 4,"endianness": "little"} } },
+        "(90.0, 0.0)": { "0.0": { "emi": {"dtype":"float32","number_of_elements": 16384,"offset": 0,"stride": 4,"element_bytes": 4,"endianness": "little"} } },
+        "(90.0, 78.0)": { "0.0": { "emi": {"dtype":"float32","number_of_elements": 16384,"offset": 0,"stride": 4,"element_bytes": 4,"endianness": "little"} } }
+      },
+      "lbann_metadata_unused_scalars": 
+      {
+        "shape_model_initial_modes:(4,3)": {"dtype":"float64","number_of_elements": 1,"offset": 0,"stride": 8,"element_bytes": 8,"endianness": "little"},
+        "betti_prl15_trans_u": {"dtype":"float64","number_of_elements": 1,"offset": 0,"stride": 8,"element_bytes": 8,"endianness": "little"},
+        "betti_prl15_trans_v": {"dtype":"float64","number_of_elements": 1,"offset": 0,"stride": 8,"element_bytes": 8,"endianness": "little"},
+        "shape_model_initial_modes:(2,1)": {"dtype":"float64","number_of_elements": 1,"offset": 0,"stride": 8,"element_bytes": 8,"endianness": "little"},
+        "shape_model_initial_modes:(1,0)": {"dtype":"float64","number_of_elements": 1,"offset": 0,"stride": 8,"element_bytes": 8,"endianness": "little"},
+        "tMAXte": {"dtype":"float64","number_of_elements": 1,"offset": 0,"stride": 8,"element_bytes": 8,"endianness": "little"},
+        "BAtion": {"dtype":"float64","number_of_elements": 1,"offset": 0,"stride": 8,"element_bytes": 8,"endianness": "little"},
+        "iBT": {"dtype":"int64","number_of_elements": 1,"offset": 0,"stride": 8,"element_bytes": 8,"endianness": "little"},
+        "MAXte": {"dtype":"float64","number_of_elements": 1,"offset": 0,"stride": 8,"element_bytes": 8,"endianness": "little"},
+        "BAte": {"dtype":"float64","number_of_elements": 1,"offset": 0,"stride": 8,"element_bytes": 8,"endianness": "little"},
+        "tMAXtion": {"dtype":"float64","number_of_elements": 1,"offset": 0,"stride": 8,"element_bytes": 8,"endianness": "little"},
+        "BTn": {"dtype":"float64","number_of_elements": 1,"offset": 0,"stride": 8,"element_bytes": 8,"endianness": "little"},
+        "MAXtion": {"dtype":"float64","number_of_elements": 1,"offset": 0,"stride": 8,"element_bytes": 8,"endianness": "little"}
+      },
+    }
+}

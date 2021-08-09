@@ -39,6 +39,7 @@
 #include "lbann/utils/file_utils.hpp" // for add_delimiter() in load()
 #include "lbann/data_readers/sample_list_impl.hpp"
 #include "lbann/data_readers/sample_list_open_files_impl.hpp"
+#include "lbann/utils/vectorwrapbuf.hpp"
 
 #include <limits>     // numeric_limits
 #include <algorithm>  // max_element
@@ -813,7 +814,7 @@ void data_reader_jag_conduit::do_preload_data_store() {
       const sample_t& s = m_sample_list[index];
       const std::string& sample_name = s.second;
       sample_file_id_t id = s.first;
-      m_sample_list.open_samples_file_handle(index, true);
+      m_sample_list.open_samples_file_handle(index);
       auto h = m_sample_list.get_samples_file_handle(id);
       conduit::Node & node = m_data_store->get_empty_node(index);
 
@@ -834,7 +835,7 @@ void data_reader_jag_conduit::do_preload_data_store() {
     if(m_data_store->get_index_owner(index) != m_rank_in_model) {
       continue;
     }
-    m_sample_list.close_if_done_samples_file_handle(index);
+    m_sample_list.close_samples_file_handle(index, true);
   }
 
   if (get_comm()->am_world_master() ||
@@ -851,7 +852,7 @@ void data_reader_jag_conduit::sample_schema_check(const bool check_data) {
     m_is_data_loaded = true;
 
     /// Open the first sample to make sure that all of the fields are correct
-    m_sample_list.open_samples_file_handle(0, true);
+    m_sample_list.open_samples_file_handle(0);
 
     if (m_scalar_keys.size() == 0u) {
       set_all_scalar_choices(); // use all by default if none is specified
@@ -871,17 +872,9 @@ void data_reader_jag_conduit::sample_schema_check(const bool check_data) {
       check_image_data();
     }
 
-    m_sample_list.close_if_done_samples_file_handle(0);
+    m_sample_list.close_samples_file_handle(0, true);
   }
 }
-
-template<typename CharT, typename Traits = std::char_traits<CharT> >
-class vectorwrapbuf : public std::basic_streambuf<CharT, Traits> {
-public:
-    vectorwrapbuf(std::vector<CharT> &vec) {
-        this->setg(vec.data(), vec.data(), vec.data() + vec.size());
-    }
-};
 
 void data_reader_jag_conduit::load_list_of_samples(const std::string sample_list_file) {
   // load the sample list
@@ -1491,7 +1484,7 @@ bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
     m_data_store->set_conduit_node(data_id, node);
   }
 
-  m_sample_list.close_if_done_samples_file_handle(data_id);
+  m_sample_list.close_samples_file_handle(data_id, true);
   m_using_random_node.erase(m_io_thread_pool->get_local_thread_id());
   return ok;
 }

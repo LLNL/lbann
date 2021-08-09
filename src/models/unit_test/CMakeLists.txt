@@ -1,5 +1,6 @@
 set_full_path(THIS_DIR_MPI_CATCH2_TEST_FILES
   model_test.cpp
+  modify_test.cpp
   )
 
 set(LBANN_MPI_CATCH2_TEST_FILES

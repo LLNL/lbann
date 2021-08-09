@@ -11,9 +11,10 @@ class Optimizer(abc.ABC):
 # Generate Optimizer sub-classes from lbann.proto
 # Note: The list of skip fields must be updated if any new fields are
 # added to the Optimizer message in lbann.proto
-classes = lbann.core.util.generate_classes_from_protobuf_message(
-    optimizers_pb2.Optimizer,
-    base_class = Optimizer,
-    base_has_export_proto = True)
-for c in classes:
-    globals()[c.__name__] = c
+if optimizers_pb2:
+    classes = lbann.core.util.generate_classes_from_protobuf_message(
+        optimizers_pb2.Optimizer,
+        base_class = Optimizer,
+        base_has_export_proto = True)
+    for c in classes:
+        globals()[c.__name__] = c

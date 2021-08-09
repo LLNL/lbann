@@ -31,12 +31,14 @@
 #include "lbann/comm.hpp"
 #include "lbann/data_coordinator/data_coordinator.hpp"
 #include "lbann/detect_El_mpi.hpp"
+#include "lbann/execution_algorithms/training_algorithm.hpp"
 #include "lbann/execution_contexts/execution_context.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/hash.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
 #include <lbann.pb.h>
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -69,10 +71,9 @@ public:
    */
   trainer(lbann_comm* comm,
           std::unique_ptr<data_coordinator> dc,
-          size_t mini_batch_size);
+          size_t mini_batch_size,
+          std::unique_ptr<training_algorithm> alg = nullptr);
 
-  trainer(const trainer& other);
-  trainer& operator=(const trainer& other);
   ~trainer();
 
   ///@}
@@ -222,11 +223,6 @@ public:
   /** @name Training and evaluation interface */
   ///@{
 
-  void apply(training_algorithm& alg,
-             observer_ptr<model> model,
-             execution_mode mode,
-             termination_criteria const& term_criteria);
-
   void
   train(observer_ptr<model> model, El::Int num_epochs, El::Int num_batches = 0);
 
@@ -297,6 +293,12 @@ private:
 
   /** @brief Data Coordinator holding trainers data readers */
   std::unique_ptr<data_coordinator> m_data_coordinator;
+
+  /** @brief The training algorithm being used. May be null.
+   *  @details If null, a different type of execution algorithm is
+   *  being used (e.g., inference).
+   */
+  std::unique_ptr<training_algorithm> m_training_alg;
 
   /** @brief Communication domain for the trainer. */
   lbann_comm* m_comm;

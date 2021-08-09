@@ -9,6 +9,7 @@ set_full_path(THIS_DIR_HEADERS
   check_small.hpp
   checkpoint.hpp
   confusion_matrix.hpp
+  compute_model_size.hpp
   debug.hpp
   debug_io.hpp
   dump_error_signals.hpp
@@ -29,6 +30,7 @@ set_full_path(THIS_DIR_HEADERS
   perturb_adam.hpp
   perturb_dropout.hpp
   perturb_learning_rate.hpp
+  perturb_weights.hpp
   print_model_description.hpp
   print_statistics.hpp
   profiler.hpp

@@ -73,6 +73,30 @@ using world_comm_ptr =
  */
 world_comm_ptr initialize(int& argc, char**& argv);
 
+/** @brief Initialize LBANN for use with external applcations
+ *  @param argc Command line arguments.
+ *  @param argv Number of command line arguments.
+ *  @return LBANN communicator
+ */
+std::unique_ptr<lbann_comm> initialize_lbann(int& argc, char**& argv);
+
+/** @brief Initialize LBANN for use with external applcations
+ *  @param[in] c MPI communicator
+ *  @return LBANN communicator using provided MPI comm
+ */
+std::unique_ptr<lbann_comm> initialize_lbann(MPI_Comm c);
+
+/** @brief Initialize LBANN for use with external applcations
+ *  @param[in] c Hydrogen MPI communicator
+ *  @return LBANN communicator using provided Hydrogen comm
+ */
+std::unique_ptr<lbann_comm> initialize_lbann(El::mpi::Comm&& c);
+
+/** @brief Destroy LBANN communicator for external application
+ *  @param[in] comm LBANN communicator
+ */
+void finalize_lbann(lbann_comm* comm = nullptr);
+
 /** Destroy LBANN communicator.
  *
  *  Finalizes Elemental, which in turn finalizes MPI, Aluminum, and

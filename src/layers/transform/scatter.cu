@@ -33,89 +33,132 @@ namespace lbann {
 namespace {
 
 using Dim2 = gpu_lib::array<size_t, 2>;
+using Dim3 = gpu_lib::array<size_t, 3>;
 
-/** @brief Kernel for scattering a 2D tensor along dim 1
+/** @brief Kernel for scattering a 3D tensor 
  *
- *  output(j,indices(j,i)) = values(j,i)
+ *  output(k,indices(k,j),j) = values(k,j,i) if axis == 0
+ *  output(k,j,indices(k,i)) = values(k,j,i) if axis == 1
  *
- *  Block dimensions: bdimx x bdimy x 1
+ *  Block dimensions: bdimx x bdimy x bdimz
  *
- *  Grid dimensions: (values_dim[1] / bdimx) x (values_dim[0] / bdimy) x 1
+ *  Grid dimensions: (num_columns_input_mat / bdimx) x (num_rows / bdimy) x mb_size /bdimz
  */
-template <typename T>
-__global__ void scatter2d_kernel(
+template <typename T, bool has_row_vectors>
+__global__ void scatter3d_kernel(
   const T* __restrict__ indices,
   Dim2 indices_strides,
   const T* __restrict__ values,
-  Dim2 values_dims,
-  Dim2 values_strides,
+  Dim3 values_dims,
+  Dim3 values_strides,
   T* __restrict__ output,
-  Dim2 output_dims,
-  Dim2 output_strides) {
+  Dim3 output_dims,
+  Dim3 output_strides) {
 
   // Indices
   const size_t gidx = threadIdx.x + blockIdx.x * blockDim.x;
   const size_t gidy = threadIdx.y + blockIdx.y * blockDim.y;
+  const size_t gidz = threadIdx.z + blockIdx.z * blockDim.z;
+
   const size_t nthreadsx = gridDim.x * blockDim.x;
   const size_t nthreadsy = gridDim.y * blockDim.y;
+  const size_t nthreadsz = gridDim.z * blockDim.z;
 
-  for (size_t j=gidy; j<values_dims[0]; j+=nthreadsy) {
-    for (size_t i=gidx; i<values_dims[1]; i+=nthreadsx) {
-      const auto ind = static_cast<El::Int>(
-        gpu_lib::floor(
-          indices[j*indices_strides[0] + i*indices_strides[1]]));
-      if (0<=ind && ind<static_cast<El::Int>(output_dims[1])) {
-        const auto& x = values[j*values_strides[0] + i*values_strides[1]];
-        auto& y = output[j*output_strides[0] + ind*output_strides[1]];
-        gpu_lib::atomic_add(&y, x);
+  auto mini_batch_size = output_dims[0];
+  auto num_rows = values_dims[1];
+  auto num_value_columns = values_dims[2];
+  
+  auto bounds = has_row_vectors? output_dims[1] : output_dims[2];
+
+  for (size_t batch = gidz; batch < mini_batch_size; batch+=nthreadsz){
+    for(size_t row = gidy; row < num_rows; row+=nthreadsy){
+      for (size_t i = gidx; i < num_value_columns; i+=nthreadsx){
+        const auto axis = has_row_vectors? row: i;
+        const auto index_offest = axis*indices_strides[1];  
+        
+        const auto ind = static_cast<El::Int>(
+          gpu_lib::floor(
+            indices[batch*indices_strides[0] + index_offest]));
+
+
+        if (0<=ind && ind < static_cast<El::Int>(bounds)){
+          const auto output_axis_1 = has_row_vectors? ind : static_cast<El::Int>(row);
+          const auto output_axis_2 = has_row_vectors? static_cast<El::Int>(i): ind;
+          const auto output_offset = output_axis_1 * output_strides[1] + output_axis_2 * output_strides[2];
+          
+          const auto& x = values[batch*values_strides[0] + row*values_strides[1] + i*values_strides[2]];
+          auto &y = output[batch*output_strides[0] + output_offset];
+          gpu_lib::atomic_add(&y, x);
+        }
       }
     }
   }
+} 
 
-}
-
-/** @brief Kernel for gathering a 2D tensor along dim 1
+/** @brief Kernel for gathering a 3D tensor
  *
- *  output(j,i) = values(j,indices(j,i))
+ *  output(k, j, i) = values(k, indices(k,j), i) axis == 0
+ *  output(k, j, i) = values(k, j, indices(k,i)) axis == 1
  *
- *  Block dimensions: bdimx x bdimy x 1
+ *  Block dimensions: bdimx x bdimy x bdimz
  *
- *  Grid dimensions: (output_dim[1] / bdimx) x (output_dim[0] / bdimy) x 1
+ *  Grid dimensions: (num_columns_output_mat / bdimx) x (num_rows / bdimy) x mb_size /bdimz
  */
-template <typename T>
-__global__ void gather2d_kernel(
+template <typename T, bool has_row_vectors>
+__global__ void gather3d_kernel(
   const T* __restrict__ indices,
   Dim2 indices_strides,
   const T* __restrict__ values,
-  Dim2 values_dims,
-  Dim2 values_strides,
+  Dim3 values_dims,
+  Dim3 values_strides,
   T* __restrict__ output,
-  Dim2 output_dims,
-  Dim2 output_strides) {
+  Dim3 output_dims,
+  Dim3 output_strides) {
 
   // Indices
   const size_t gidx = threadIdx.x + blockIdx.x * blockDim.x;
   const size_t gidy = threadIdx.y + blockIdx.y * blockDim.y;
+  const size_t gidz = threadIdx.z + blockIdx.z * blockDim.z;
+
   const size_t nthreadsx = gridDim.x * blockDim.x;
   const size_t nthreadsy = gridDim.y * blockDim.y;
+  const size_t nthreadsz = gridDim.z * blockDim.z;
 
-  for (size_t j=gidy; j<output_dims[0]; j+=nthreadsy) {
-    for (size_t i=gidx; i<output_dims[1]; i+=nthreadsx) {
-      const auto ind = static_cast<El::Int>(
-        gpu_lib::floor(
-          indices[j*indices_strides[0] + i*indices_strides[1]]));
-      auto& y = output[j*output_strides[0] + i*output_strides[1]];
-      if (0<=ind && ind<static_cast<El::Int>(values_dims[1])) {
-        y = values[j*values_strides[0] + ind*values_strides[1]];
-      }
-      else {
-        y = T{0.f};
+  auto mini_batch_size = output_dims[0];
+  auto num_rows = output_dims[1];
+  auto num_out_columns = output_dims[2];
+  // If gathering along dim 0, the bounds are the number of row, otherwise bounds are
+  // the columns
+  auto bounds = has_row_vectors? values_dims[1]: values_dims[2];
+
+  for (size_t batch = gidz; batch < mini_batch_size; batch+=nthreadsz){
+    for(size_t row = gidy; row < num_rows; row+=nthreadsy){
+      for (size_t i = gidx; i < num_out_columns; i+=nthreadsx){
+         
+        // If gatherin along dim 0, the len(ind) == num_rows
+        const auto& axis = has_row_vectors? row: i;
+        const auto& index_offest = axis*indices_strides[1];
+
+        const auto ind = static_cast<El::Int>(
+          gpu_lib::floor(
+            indices[batch*indices_strides[0] + index_offest]));
+        
+        auto &y = output[batch*output_strides[0] + row*output_strides[1] + i*output_strides[2]];
+
+        const auto& output_axis_1 = has_row_vectors? ind : static_cast<El::Int>(row);
+        const auto& output_axis_2 = has_row_vectors? static_cast<El::Int>(i): ind;
+
+        const auto& values_offset = output_axis_1 * values_strides[1] + output_axis_2 * values_strides[2];
+
+        if (0<=ind && ind < static_cast<El::Int>(bounds)){
+          y = values[batch*values_strides[0] + values_offset];
+        }else{
+          y = T{0.f};
+        }
       }
     }
   }
-
 }
-
 } // namespace <anon>
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -125,9 +168,25 @@ void scatter_layer<TensorDataType, Layout, Device>::fp_compute() {
   const auto& local_values = this->get_local_prev_activations(0);
   const auto& local_indices = this->get_local_prev_activations(1);
   auto& local_output = this->get_local_activations();
-  const size_t values_size = this->get_input_size(0);
-  const size_t output_size = this->get_output_size();
+
+  const auto& input_dims_ = this->get_input_dims();
+  const auto& output_dims_ = this->get_output_dims();
+  std::vector<size_t> input_dims(input_dims_.begin(), input_dims_.end());
+  std::vector<size_t> output_dims(output_dims_.begin(), output_dims_.end());
+
   const size_t local_mini_batch_size = local_indices.Width();
+
+  const bool is_2D = input_dims.size()>1;
+  const bool has_row_vectors = (is_2D && m_scatter_axis == 0);
+
+  const size_t values_size = is_2D ? input_dims[1] : this->get_input_size(0);
+  const size_t output_size = is_2D ?  this->get_output_dims()[1] : this->get_output_size();
+  
+  const size_t num_rows = is_2D ? input_dims[0] : 1;
+  const size_t num_output_rows = has_row_vectors ? this->get_output_dims()[0]: num_rows; 
+  
+  const size_t value_stride_2 = is_2D ? values_size : 0;
+  const size_t output_stride_2 = is_2D ? output_size : 0;
 
   // Scatter into output matrix
   El::Zero(local_output);
@@ -135,25 +194,46 @@ void scatter_layer<TensorDataType, Layout, Device>::fp_compute() {
     auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_output),
                                        gpu::get_sync_info(local_values),
                                        gpu::get_sync_info(local_indices));
-    constexpr size_t block_size = 64;
+    constexpr size_t block_size_x = 32;
+    constexpr size_t block_size_y = 8;
+    
     dim3 block_dims, grid_dims;
-    block_dims.x = block_size;
-    block_dims.y = 1;
-    grid_dims.x = (values_size + block_dims.x - 1) / block_dims.x;
-    grid_dims.y = (local_mini_batch_size + block_dims.y - 1) / block_dims.y;
-    hydrogen::gpu::LaunchKernel(
-      scatter2d_kernel<TensorDataType>,
-      grid_dims, block_dims, 0, multisync,
-      local_indices.LockedBuffer(),
-      Dim2{static_cast<size_t>(local_indices.LDim()), 1},
-      local_values.LockedBuffer(),
-      Dim2{local_mini_batch_size, values_size},
-      Dim2{static_cast<size_t>(local_values.LDim()), 1},
-      local_output.Buffer(),
-      Dim2{local_mini_batch_size, output_size},
-      Dim2{static_cast<size_t>(local_output.LDim()), 1});
-  }
+    block_dims.x = block_size_x;
+    block_dims.y = block_size_y;
+    block_dims.z = 1;
 
+    grid_dims.x = (values_size + block_dims.x - 1) / block_dims.x;
+    grid_dims.y = (num_rows + block_dims.y - 1) / block_dims.y;
+    grid_dims.z = (local_mini_batch_size + block_dims.z - 1) / block_dims.z; 
+
+    if (has_row_vectors)
+    {
+      hydrogen::gpu::LaunchKernel(
+        scatter3d_kernel<TensorDataType, true>,
+        grid_dims, block_dims, 0, multisync,
+        local_indices.LockedBuffer(),
+        Dim2{static_cast<size_t>(local_indices.LDim()), 1},
+        local_values.LockedBuffer(),
+        Dim3{local_mini_batch_size, num_rows, values_size},
+        Dim3{static_cast<size_t>(local_values.LDim()), value_stride_2, 1},
+        local_output.Buffer(),
+        Dim3{local_mini_batch_size, num_output_rows, output_size},
+        Dim3{static_cast<size_t>(local_output.LDim()), output_stride_2, 1});
+    }else{
+      hydrogen::gpu::LaunchKernel(
+        scatter3d_kernel<TensorDataType, false>,
+        grid_dims, block_dims, 0, multisync,
+        local_indices.LockedBuffer(),
+        Dim2{static_cast<size_t>(local_indices.LDim()), 1},
+        local_values.LockedBuffer(),
+        Dim3{local_mini_batch_size, num_rows, values_size},
+        Dim3{static_cast<size_t>(local_values.LDim()), value_stride_2, 1},
+        local_output.Buffer(),
+        Dim3{local_mini_batch_size, num_output_rows, output_size},
+        Dim3{static_cast<size_t>(local_output.LDim()), output_stride_2, 1});
+
+    }
+  }
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -164,35 +244,72 @@ void scatter_layer<TensorDataType, Layout, Device>::bp_compute() {
   const auto& local_output_grad = this->get_local_prev_error_signals();
   auto& local_values_grad = this->get_local_error_signals(0);
   auto& local_indices_grad = this->get_local_error_signals(1);
-  const size_t values_size = this->get_input_size(0);
-  const size_t output_size = this->get_output_size();
+  
+  const auto& input_dims_ = this->get_input_dims();
+  const auto& output_dims_ = this->get_output_dims();
+  std::vector<size_t> input_dims(input_dims_.begin(), input_dims_.end());
+  std::vector<size_t> output_dims(output_dims_.begin(), output_dims_.end());
+
   const size_t local_mini_batch_size = local_indices.Width();
+
+  const bool is_2D = input_dims.size()>1;
+  const bool has_row_vectors = (is_2D && m_scatter_axis == 0);
+
+  const size_t values_size = (is_2D) ? input_dims[1] : this->get_input_size(0);
+  const size_t output_size = (is_2D) ?  this->get_output_dims()[1] : this->get_output_size();
+  
+  const size_t num_rows = (is_2D) ? input_dims[0] : 1;
+  const size_t num_output_rows = has_row_vectors ? this->get_output_dims()[0]: num_rows;
+
+  const size_t value_stride_2 = (is_2D) ? values_size : 0;
+  const size_t output_stride_2 = (is_2D) ? output_size : 0;
+
 
   // Zero out gradient w.r.t. indices
   El::Zero(local_indices_grad);
-
   // Gather into gradient w.r.t. values
   if (!local_values_grad.IsEmpty()) {
     auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_values_grad),
                                        gpu::get_sync_info(local_output_grad),
                                        gpu::get_sync_info(local_indices));
-    constexpr size_t block_size = 256;
+    constexpr size_t block_size_x = 32;
+    constexpr size_t block_size_y = 8;
+    
     dim3 block_dims, grid_dims;
-    block_dims.x = block_size;
-    block_dims.y = 1;
-    grid_dims.x = (values_size + block_dims.x - 1) / block_dims.x;
-    grid_dims.y = (local_mini_batch_size + block_dims.y - 1) / block_dims.y;
-    hydrogen::gpu::LaunchKernel(
-      gather2d_kernel<TensorDataType>,
-      grid_dims, block_dims, 0, multisync,
-      local_indices.LockedBuffer(),
-      Dim2{static_cast<size_t>(local_indices.LDim()), 1},
-      local_output_grad.LockedBuffer(),
-      Dim2{local_mini_batch_size, output_size},
-      Dim2{static_cast<size_t>(local_output_grad.LDim()), 1},
-      local_values_grad.Buffer(),
-      Dim2{local_mini_batch_size, values_size},
-      Dim2{static_cast<size_t>(local_values_grad.LDim()), 1});
+    block_dims.x = block_size_x;
+    block_dims.y = block_size_y;
+    block_dims.z = 1;
+
+    grid_dims.x = (num_rows + block_dims.x - 1) / block_dims.x;
+    grid_dims.y = (values_size + block_dims.y - 1) / block_dims.y;
+    grid_dims.z = (local_mini_batch_size + block_dims.z - 1) / block_dims.z;
+
+    if (has_row_vectors){
+      hydrogen::gpu::LaunchKernel(
+        gather3d_kernel<TensorDataType, true>,
+        grid_dims, block_dims, 0, multisync,
+        local_indices.LockedBuffer(),
+        Dim2{static_cast<size_t>(local_indices.LDim()), 1},
+        local_output_grad.LockedBuffer(),
+        Dim3{local_mini_batch_size, num_output_rows, output_size},
+        Dim3{static_cast<size_t>(local_output_grad.LDim()), output_stride_2, 1},
+        local_values_grad.Buffer(),
+        Dim3{local_mini_batch_size, num_rows, values_size},
+        Dim3{static_cast<size_t>(local_values_grad.LDim()), value_stride_2, 1});
+    }else{
+      hydrogen::gpu::LaunchKernel(
+        gather3d_kernel<TensorDataType, false>,
+        grid_dims, block_dims, 0, multisync,
+        local_indices.LockedBuffer(),
+        Dim2{static_cast<size_t>(local_indices.LDim()), 1},
+        local_output_grad.LockedBuffer(),
+        Dim3{local_mini_batch_size, num_output_rows, output_size},
+        Dim3{static_cast<size_t>(local_output_grad.LDim()), output_stride_2, 1},
+        local_values_grad.Buffer(),
+        Dim3{local_mini_batch_size, num_rows, values_size},
+        Dim3{static_cast<size_t>(local_values_grad.LDim()), value_stride_2, 1});
+
+    }
   }
 
 }

@@ -175,7 +175,7 @@ bool create_dir(const std::string dirname) {
 bool load_file(const std::string filename, std::vector<char>& buf, bool append) {
   std::ifstream file(filename, std::ios::binary);
   if (!file.good()) {
-    return false;
+    LBANN_ERROR("!file.good() for filename: ", filename);
   }
 
   file.unsetf(std::ios::skipws);
@@ -247,6 +247,26 @@ void make_directory(const std::string& path) {
     LBANN_ERROR(err.str());
   }
 
+}
+
+void remove_multiple_slashes(std::string& str) {
+  std::stringstream s;
+  char last_char_was_slash = false;
+  for (size_t i=0; i<str.size(); i++) {
+    if (last_char_was_slash) {
+      if (str[i] != '/') {
+        s << str[i];
+      }
+    } else {
+      s << str[i];
+    }
+    if (str[i] == '/') {
+      last_char_was_slash = true;
+    } else {
+      last_char_was_slash = false;
+    }
+  }
+  str = s.str();
 }
 
 } // namespace file

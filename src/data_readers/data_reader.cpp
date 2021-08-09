@@ -158,16 +158,6 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X, El::Matrix<El::Int>& indic
   const int mb_size = std::min(El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
       X.Width());
 
-  El::Zeros_seq(X, X.Height(), X.Width());
-  El::Zeros_seq(indices_fetched, mb_size, 1);
-
-  /// Make sure that every rank participates in the data store prior
-  /// to seeing if the local rank's position is valid.  Note that
-  /// every rank will hold data that may be used in the last mini-batch
-  if (data_store_active()) {
-    m_data_store->exchange_mini_batch_data(m_current_pos-m_base_offset-m_model_offset, loaded_batch_size);
-  }
-
   if(!position_valid()) {
     if(position_is_overrun()) {
       return 0;
@@ -355,8 +345,6 @@ bool generic_data_reader::update(bool is_active_reader) {
     set_initial_position();
   }
 
-  post_update();
-
   return reader_not_done;
 }
 
@@ -410,7 +398,7 @@ int generic_data_reader::get_next_position() const {
 void generic_data_reader::error_check_counts() const {
   size_t count = get_absolute_sample_count();
   double use_percent = get_use_percent();
-  if (count == 0 and use_percent == 0.0) {
+  if (count == 1 and use_percent == 0.0) {
       LBANN_ERROR("get_use_percent() and get_absolute_sample_count() are both zero; exactly one must be zero");
   }
   if (!(count == 0 or use_percent == 0.0)) {
@@ -437,7 +425,7 @@ size_t generic_data_reader::get_num_indices_to_use() const {
   } else if (use_percent) {
     r = use_percent*get_num_data();
     if (r == 0) {
-      LBANN_ERROR("get_num_indices_to_use() computed zero indices; probably: percent_of_data_to_use is too small WRT num_data");
+      LBANN_ERROR("get_num_indices_to_use() computed zero indices; probably: percent_of_data_to_use is too small WRT num_data;  get_absolute_sample_count: ", get_absolute_sample_count(), " use_percent: ", get_use_percent(), " num data: ", get_num_data(), " for role: ", get_role());
     }
   } else {
     LBANN_ERROR("it's impossible to be here");
@@ -459,6 +447,15 @@ void generic_data_reader::resize_shuffled_indices() {
 }
 
 void generic_data_reader::select_subset_of_data() {
+  // Calculate the total number of samples for subsets
+  double total_split_percent = 0.;
+  for(auto m : execution_mode_iterator()) {
+    total_split_percent += get_execution_mode_split_percent(m);
+  }
+  long total_num_data = get_num_data();
+  long total_unused = total_split_percent * total_num_data;
+  long total_used = total_num_data - total_unused;
+  auto starting_unused_offset = m_shuffled_indices.begin() + total_used;
   for(auto m : execution_mode_iterator()) {
     double split_percent = get_execution_mode_split_percent(m);
 
@@ -466,8 +463,8 @@ void generic_data_reader::select_subset_of_data() {
       continue;
     }
 
-    long unused = split_percent*get_num_data();
-    if (unused == 0) {
+    long split = split_percent*total_num_data;
+    if (split == 0) {
       LBANN_ERROR(to_string(m),
                   " % of ",
                   split_percent,
@@ -475,12 +472,15 @@ void generic_data_reader::select_subset_of_data() {
                   to_string(m),
                   " requested is too small wrt num_indices (aka, num samples)");
     }
-    long use_me = get_num_data() - unused;
-    if (unused > 0) {
-      m_unused_indices[m]=std::vector<int>(m_shuffled_indices.begin() + use_me, m_shuffled_indices.end());
-      m_shuffled_indices.resize(use_me);
+    if (split > 0) {
+      if(starting_unused_offset + split > m_shuffled_indices.end()) {
+        LBANN_ERROR("Split range exceeds the maximun numbrer of shuffled indices");
+      }
+      m_unused_indices[m]=std::vector<int>(starting_unused_offset, starting_unused_offset + split);
+      starting_unused_offset += split;
     }
   }
+  m_shuffled_indices.resize(total_used);
 
   if(!m_shuffle) {
     std::sort(m_shuffled_indices.begin(), m_shuffled_indices.end());
@@ -725,12 +725,6 @@ void generic_data_reader::setup_data_store(int mini_batch_size) {
     std::stringstream s;
     s << "Preload complete; time: " << get_time() - tm2;
     m_data_store->set_profile_msg(s.str());
-    /*
-    size_t n = m_data_store->get_num_global_indices();
-    if (n != m_shuffled_indices.size()) {
-      LBANN_ERROR("num samples loaded in the data_store: ", n, " != shuffled-indices.size(): ", m_shuffled_indices.size(), " for role: ", get_role());
-    }
-*/
   }
 
   m_data_store->setup(mini_batch_size);

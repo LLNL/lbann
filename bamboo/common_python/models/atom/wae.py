@@ -86,8 +86,8 @@ class MolWAE(lbann.modules.Module):
 
     global_count = 0  # Static counter, used for default names
 
-    def __init__(self, input_feature_dims,dictionary_size, embedding_size, 
-                 ignore_label,save_output=False, name=None):
+    def __init__(self, input_feature_dims,dictionary_size, embedding_size,
+                 ignore_label,num_decoder_layers=3,save_output=False, name=None):
         """Initialize Molecular WAE.
 
         Args:
@@ -95,6 +95,8 @@ class MolWAE(lbann.modules.Module):
             dictionary_size (int): vocabulary size
             embedding_size (int): embedding size
             ignore_label (int): padding index
+            num_decoder_layers (int, optional) : Number of decoder layers
+                (default: 3)
             save_output (bool, optional): save or not save predictions
                 (default: False).
             name (str, optional): Module name
@@ -110,6 +112,7 @@ class MolWAE(lbann.modules.Module):
         self.embedding_size = embedding_size
         self.dictionary_size = dictionary_size
         self.label_to_ignore = ignore_label
+        self.num_decoder_layers = num_decoder_layers
         self.save_output = save_output
         self.datatype = lbann.DataType.FLOAT
         self.weights_datatype = lbann.DataType.FLOAT
@@ -133,7 +136,7 @@ class MolWAE(lbann.modules.Module):
         #Decoder
         self.decoder_rnn = gru(
             hidden_size=512,
-            num_layers=3,
+            num_layers=self.num_decoder_layers,
             name=self.name+'_decoder_rnn',
             datatype=self.datatype,
             weights_datatype=self.weights_datatype,
@@ -253,7 +256,7 @@ class MolWAE(lbann.modules.Module):
         h_0 = self.decoder_lat(z)
         # h_0 = h_0.unsqueeze(0).repeat(self.decoder_rnn.num_layers, 1, 1)
         h_0 = lbann.Reshape(h_0, dims=str_list([1, 512]))
-        h_0 = lbann.Tessellate(h_0, dims=str_list((3, 512)))
+        h_0 = lbann.Tessellate(h_0, dims=str_list((self.num_decoder_layers, 512)))
 
         # output, _ = self.decoder_rnn(x_input, h_0)
         output = self.decoder_rnn(x_input, h_0)
@@ -280,7 +283,7 @@ class MolWAE(lbann.modules.Module):
                     stack.append(parent)
                     in_stack[parent] = True
 
-        # Find argmax 
+        # Find argmax
         if(self.save_output):
           y_slice = lbann.Slice(
               y,
@@ -374,6 +377,6 @@ class MolWAE(lbann.modules.Module):
 
     def discriminator0(self,input):
         return self.d0_fc2(self.d0_fc1(self.d0_fc0(input)))
-        
+
     def discriminator1(self,input):
         return self.d1_fc2(self.d1_fc1(self.d1_fc0(input)))

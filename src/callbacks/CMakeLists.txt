@@ -10,6 +10,7 @@ set_full_path(THIS_DIR_SOURCES
   check_small.cpp
   checkpoint.cpp
   confusion_matrix.cpp
+  compute_model_size.cpp
   debug.cpp
   debug_io.cpp
   dump_error_signals.cpp
@@ -31,6 +32,7 @@ set_full_path(THIS_DIR_SOURCES
   perturb_adam.cpp
   perturb_dropout.cpp
   perturb_learning_rate.cpp
+  perturb_weights.cpp
   print_model_description.cpp
   print_statistics.cpp
   profiler.cpp
@@ -49,3 +51,4 @@ set_full_path(THIS_DIR_SOURCES
 
 # Propagate the files up the tree
 set(SOURCES "${SOURCES}" "${THIS_DIR_SOURCES}" PARENT_SCOPE)
+set(GPU_SOURCES "${GPU_SOURCES}" "${THIS_DIR_CU_SOURCES}" PARENT_SCOPE)

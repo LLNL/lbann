@@ -77,8 +77,6 @@ void export_onnx::on_train_begin(model* m)
   for (auto const* layer : layers) {
     layer->fill_onnx_node(*gp);
   }
-
-  // FIXME: Name, layers, get_type
   std::string model_name = "Model Name: " + m->get_name() + ", ";
   std::string layer_names = "Model Layers: ";
   for( auto const* layer : layers) {

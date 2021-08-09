@@ -34,6 +34,8 @@
 #include "lbann/utils/file_utils.hpp"
 #include "lbann/utils/argument_parser.hpp"
 
+#include "lbann/data_readers/data_reader_HDF5.hpp"
+
 #include <lbann.pb.h>
 #include <reader.pb.h>
 
@@ -134,6 +136,17 @@ void init_data_readers(
     } else if (name == "smiles") {
       smiles_data_reader * smiles = new smiles_data_reader(shuffle);
       reader = smiles;
+      reader->set_data_sample_list(readme.sample_list());
+      reader->set_label_filename(readme.label_filename());
+    } else if (name == "hdf5_data_reader") {
+      hdf5_data_reader* dr = new hdf5_data_reader(shuffle);
+      dr->keep_sample_order(readme.sample_list_keep_order());
+      dr->set_experiment_schema_filename(readme.experiment_schema_filename());
+      dr->set_data_schema_filename(readme.data_schema_filename());
+      dr->set_has_labels(readme.enable_labels());
+      dr->set_has_responses(readme.enable_responses());
+      reader = dr;
+      reader->set_data_sample_list(readme.sample_list());
     } else if (name == "ras_lipid") {
 #ifdef LBANN_HAS_CNPY
       auto *ras_lipid = new ras_lipid_conduit_data_reader(shuffle);
@@ -509,6 +522,9 @@ void init_data_readers(
           } else if (name == "nci") {
             split_reader = new data_reader_nci(shuffle);
             (*(data_reader_nci *)split_reader) = (*(data_reader_nci *)reader);
+          } else if (name == "hdf5_data_reader") {
+            split_reader = new hdf5_data_reader(shuffle);
+            (*(hdf5_data_reader*)split_reader) = (*(hdf5_data_reader *)reader);
           } else if (name == "csv") {
             split_reader = new csv_reader(shuffle);
             (*(csv_reader *)split_reader) = (*(csv_reader *)reader);
@@ -548,6 +564,12 @@ void init_data_readers(
                         "but LBANN is not built with Python/C API");
 #endif // LBANN_HAS_EMBEDDED_PYTHON
           }
+
+          //this will save someone much grief someday:
+          if (split_reader == nullptr) {
+            LBANN_ERROR("split_reader == nullptr");
+          }
+
 
           if(m == execution_mode::validation) {
             split_reader->set_role("validate");

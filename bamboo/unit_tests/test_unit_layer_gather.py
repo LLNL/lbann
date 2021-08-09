@@ -1,9 +1,9 @@
-import functools
 import operator
 import os
 import os.path
 import sys
 import numpy as np
+import functools
 
 # Bamboo utilities
 current_file = os.path.realpath(__file__)
@@ -18,8 +18,10 @@ import tools
 # the functions below to ingest data.
 
 # Data
-input_size = 23
-output_size = 15
+num_rows = 11
+num_columns = 5
+input_size = num_rows * num_columns
+output_size = 7
 seed = 202101280
 
 # Sample access functions
@@ -81,6 +83,9 @@ def construct_model(lbann):
     )
     x1 = lbann.Identity(x_slice)
 
+    x0_lbann = x0
+    x1_lbann = x1
+
     # Apply gather
     y0 = lbann.Gather(x0, x1)
     y1 = lbann.Concatenation([
@@ -91,17 +96,18 @@ def construct_model(lbann):
     z = lbann.L2Norm2(y)
 
     # Objects for LBANN model
-    layers = list(lbann.traverse_layer_graph(x))
-    metric = lbann.Metric(z, name='obj')
-    obj = lbann.ObjectiveFunction(z)
+    metrics = []
     callbacks = []
+    objs = []
 
+    metrics.append(lbann.Metric(z, name='1D_obj'))
+    objs.append(lbann.ObjectiveFunction(z))
     # Compute expected metric value
     vals = []
     for i in range(num_samples()):
-        x = get_sample(i)
-        x0 = x[:input_size]
-        x1 = x[input_size:]
+        sample = get_sample(i)
+        x0 = sample[:input_size]
+        x1 = sample[input_size:]
         y0 = np.zeros(output_size)
         for i in range(output_size):
             if 0 <= x1[i] < input_size:
@@ -113,7 +119,111 @@ def construct_model(lbann):
     val = np.mean(vals)
     tol = 8 * val * np.finfo(np.float32).eps
     callbacks.append(lbann.CallbackCheckMetric(
-        metric=metric.name,
+        metric=metrics[-1].name,
+        lower_bound=val-tol,
+        upper_bound=val+tol,
+        error_on_failure=True,
+        execution_modes='test'))
+
+    ######################################################################
+    #
+    #          2D Values , 1D Input, Axis = 0 
+    #
+    ######################################################################
+
+    x0 = lbann.Reshape(x0_lbann, dims=tools.str_list([num_rows, num_columns]))
+    
+    x1 = lbann.Identity(x1_lbann, name="indices_2D_axis_0")
+
+    y0 = lbann.Gather(x0,x1, name="Gather_2D_axis_0", axis=0)
+
+    y1 = lbann.Concatenation([
+        lbann.Constant(value=i+1, num_neurons='1')
+        for i in range(num_columns * output_size)])
+
+    y0 = lbann.Reshape(y0, dims=tools.str_list([num_columns * output_size]))
+    y1 = lbann.Reshape(y1, dims=tools.str_list([num_columns * output_size]))
+
+    y = lbann.Multiply(y0, y1)
+
+    z = lbann.L2Norm2(y)
+
+    objs.append(z)
+    metrics.append(lbann.Metric(z, name="2D_obj_axis_0"))
+
+    vals = []
+    for i in range(num_samples()):
+        sample = get_sample(i)
+        x0 = np.array(sample[:input_size]).reshape((num_rows, num_columns))
+        x1 = sample[input_size:input_size + output_size]
+
+        y0 = np.zeros((output_size, num_columns))
+
+        for i in range(output_size):
+            if 0 <= x1[i] <= num_rows:
+                for j in range(num_columns):
+                        y0[i][j] = x0[int(x1[i])][j]
+        z = 0
+        for i in range(num_columns * output_size):
+            z += ((i+1)*y0.flatten()[i])**2
+        vals.append(z)
+
+    val = np.mean(vals)
+    tol = 8 * val * np.finfo(np.float32).eps
+    callbacks.append(lbann.CallbackCheckMetric(
+        metric=metrics[-1].name,
+        lower_bound=val-tol,
+        upper_bound=val+tol,
+        error_on_failure=True,
+        execution_modes='test'))
+
+    ######################################################################
+    #
+    #          2D Values , 1D Input, Axis = 1 
+    #
+    ######################################################################
+
+    x0 = lbann.Reshape(x0_lbann, dims=tools.str_list([num_rows, num_columns]))
+    
+    x1 = lbann.Identity(x1_lbann, name="Indices_2D")
+
+    y0 = lbann.Gather(x0,x1, name="Gather_2D", axis=1)
+
+    y1 = lbann.Concatenation([
+        lbann.Constant(value=i+1, num_neurons='1')
+        for i in range(num_rows * output_size)])
+
+    y0 = lbann.Reshape(y0, dims=tools.str_list([num_rows * output_size]))
+    y1 = lbann.Reshape(y1, dims=tools.str_list([num_rows * output_size]))
+
+    y = lbann.Multiply(y0, y1)
+
+    z = lbann.L2Norm2(y)
+
+    objs.append(z)
+    metrics.append(lbann.Metric(z, name="2D_obj_axis_1"))
+
+    vals = []
+    for i in range(num_samples()):
+        sample = get_sample(i)
+        x0 = np.array(sample[:input_size]).reshape((num_rows, num_columns))
+        x1 = sample[input_size:input_size + output_size]
+
+        y0 = np.zeros((num_rows, output_size))
+
+        for i in range(num_rows):
+            for j in range(output_size):
+                if 0 <= x1[j] <= num_columns:
+                    y0[i][j] = x0[i][int(x1[j])]
+        z = 0
+        for i in range(num_rows * output_size):
+            z += ((i+1)*y0.flatten()[i])**2
+        vals.append(z)
+
+    val = np.mean(vals)
+    tol = 8 * val * np.finfo(np.float32).eps
+    callbacks.append(lbann.CallbackCheckMetric(
+        metric=metrics[-1].name,
         lower_bound=val-tol,
         upper_bound=val+tol,
         error_on_failure=True,
@@ -124,10 +234,11 @@ def construct_model(lbann):
 
     # Construct model
     num_epochs = 0
+    layers = list(lbann.traverse_layer_graph(x))
     return lbann.Model(num_epochs,
                        layers=layers,
-                       objective_function=obj,
-                       metrics=[metric],
+                       objective_function=objs,
+                       metrics=metrics,
                        callbacks=callbacks)
 
 def construct_data_reader(lbann):

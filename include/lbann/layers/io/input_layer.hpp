@@ -157,7 +157,6 @@ class input_layer : public data_type_layer<TensorDataType> {
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-
   void setup_dims(DataReaderMetaData& dr_metadata) override;
 
   void setup_data(size_t max_mini_batch_size) override;
@@ -168,6 +167,11 @@ class input_layer : public data_type_layer<TensorDataType> {
   void fp_setup_outputs(El::Int mini_batch_size) override;
 
   void fp_compute() override;
+
+  /** @brief Places samples in input tensors
+   *  @param samples Distributed Matrix of samples
+   */
+  void set_samples(const El::AbstractDistMatrix<TensorDataType>& samples);
 
   /**
    * Get the dimensions of the underlying data.
@@ -193,6 +197,10 @@ class input_layer : public data_type_layer<TensorDataType> {
   input_layer()
     : input_layer(nullptr, data_reader_target_mode::NA)
   {}
+
+  // This is to track if samples are loaded with set_samples(), if so the
+  // fp_compute() sample loading is no longer necessary
+  bool m_samples_loaded = false;
 
 #ifdef LBANN_HAS_DISTCONV
  public:

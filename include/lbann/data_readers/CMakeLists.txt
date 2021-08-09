@@ -5,6 +5,7 @@ set_full_path(THIS_DIR_HEADERS
   data_reader_cifar10.hpp
   data_reader_csv.hpp
   data_reader_image.hpp
+  data_reader_HDF5.hpp
   data_reader_merge_features.hpp
   data_reader_merge_samples.hpp
   data_reader_mnist.hpp
@@ -13,6 +14,8 @@ set_full_path(THIS_DIR_HEADERS
   data_reader_python.hpp
   data_reader_synthetic.hpp
   data_reader_smiles.hpp
+  data_reader_sample_list.hpp
+  data_reader_sample_list_impl.hpp
   )
 
 if (LBANN_HAS_CNPY)
@@ -28,7 +31,7 @@ endif ()
 
 if (LBANN_HAS_DISTCONV)
   list(APPEND THIS_DIR_HEADERS
-    "${CMAKE_CURRENT_SOURCE_DIR}/data_reader_hdf5.hpp")
+    "${CMAKE_CURRENT_SOURCE_DIR}/data_reader_hdf5_legacy.hpp")
 endif ()
 
 if (LBANN_HAS_OPENCV)

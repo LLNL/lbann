@@ -32,7 +32,23 @@ Users are advised to view `the Doxygen API Documentation
    quick_start
    building_lbann
    running_lbann
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Python Front-End
+
    callbacks
+   data_transforms
+   execution_algorithms
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Data Ingestion
+
+   data_ingestion
+   data_ingestion/sample_lists
+   data_ingestion/hdf5_data_reader
+   data_ingestion/hdf5_generate_schema_and_sample_list
 
 .. toctree::
    :maxdepth: 1

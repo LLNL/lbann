@@ -45,7 +45,7 @@ endif ()
 #
 
 set(LBANN_VERSION_MAJOR 0)
-set(LBANN_VERSION_MINOR 102)
+set(LBANN_VERSION_MINOR 103)
 set(LBANN_VERSION_PATCH 0)
 
 set(LBANN_VERSION "${LBANN_VERSION_MAJOR}.${LBANN_VERSION_MINOR}.${LBANN_VERSION_PATCH}")
@@ -93,8 +93,6 @@ endif ()
 # Options
 #
 
-option(LBANN_WITH_ALUMINUM "Enable Aluminum all-reduce library" OFF)
-
 option(LBANN_WITH_CEREAL_XML "Enable the use of XML archives from Cereal" OFF)
 set(LBANN_HAS_CEREAL_XML_ARCHIVES ${LBANN_WITH_CEREAL_XML})
 
@@ -136,15 +134,17 @@ if (LBANN_WITH_EMBEDDED_PYTHON AND NOT LBANN_WITH_PYTHON_FRONTEND)
     "to make sure you're aware.")
 endif (LBANN_WITH_EMBEDDED_PYTHON AND NOT LBANN_WITH_PYTHON_FRONTEND)
 
-option(LBANN_WITH_TBINF "Include Tensorboard interface" ON)
-
 option(LBANN_WITH_VISION "Include vision processing components" ON)
+option(LBANN_WITH_TBINF "Include Tensorboard interface" ${LBANN_WITH_VISION})
 
 option(LBANN_WITH_VTUNE
   "Link the Intel VTune profiling library" OFF)
 
 option(LBANN_WITH_UNIT_TESTING
   "Enable the unit testing framework (requires Catch2)" OFF)
+
+option(LBANN_WITH_ADDRESS_SANITIZER
+  "Try clang-style use of ASAN (-fsanitize=address)" OFF)
 
 option(LBANN_WITH_ONNX
   "Enable exporting onnx model." OFF)
@@ -156,6 +156,10 @@ option(LBANN_DETERMINISTIC
 option(LBANN_DEBUG_PRINT_SUBTARGETS
   "Turn on debugging output of internal target properties." OFF)
 mark_as_advanced(LBANN_DEBUG_PRINT_SUBTARGETS)
+
+option(LBANN_EXPLICIT_LIBDL
+  "Explicitly find and link to libdl" OFF)
+mark_as_advanced(LBANN_EXPLICIT_LIBDL)
 
 # This option is off by default because non-developers should not use
 # this option under normal circumstances.
@@ -209,7 +213,7 @@ find_package(Hydrogen 1.5.0 NO_MODULE QUIET
 if (NOT Hydrogen_FOUND)
   find_package(Hydrogen 1.5.0 NO_MODULE QUIET REQUIRED)
 endif ()
-message(STATUS "Found Hydrogen: ${Hydrogen_DIR}")
+message(STATUS "Found Hydrogen@${HYDROGEN_VERSION}: ${Hydrogen_DIR}")
 set(LBANN_HAS_HYDROGEN ${Hydrogen_FOUND})
 
 # DiHydrogen and Distconv
@@ -236,10 +240,10 @@ message(STATUS "Found DiHydrogen: ${DiHydrogen_DIR}")
 # Inherit half-precision stuff from Hydrogen
 set(LBANN_HAS_HALF ${HYDROGEN_HAVE_HALF}) # This is CPU-only
 
-# Not the ideal fix, but should be fine for now.
 if (Aluminum_FOUND)
+  message(STATUS "Found Aluminum@${ALUMINUM_VERSION}: ${Aluminum_DIR}")
   message(STATUS "Aluminum found in Hydrogen. Using Aluminum.")
-  set(LBANN_WITH_ALUMINUM ON CACHE BOOL "Use aluminum." FORCE)
+  set(LBANN_HAS_ALUMINUM ON)
 endif ()
 
 include(SetupOpenMP)
@@ -316,48 +320,17 @@ if (LBANN_HAS_CUDA)
   set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
 endif ()
 
-if (LBANN_WITH_ALUMINUM)
-  # Aluminum may have already been found by Hydrogen
-  if (NOT Aluminum_FOUND)
+if (LBANN_HAS_ALUMINUM)
+  if (AL_HAS_CUDA AND NOT LBANN_HAS_CUDA)
     message(WARNING
-      "Using Aluminum without Hydrogen support may not be well-supported.")
-    find_package(Aluminum 0.5.0 NO_MODULE QUIET
-      HINTS ${Aluminum_DIR} ${ALUMINUM_DIR} ${AL_DIR}
-      $ENV{Aluminum_DIR} $ENV{ALUMINUM_DIR} $ENV{AL_DIR}
-      PATH_SUFFIXES lib64/cmake/aluminum lib/cmake/aluminum
-      NO_DEFAULT_PATH)
-    if (NOT Aluminum_FOUND)
-      find_package(Aluminum 0.5.0 NO_MODULE QUIET)
-    endif ()
+      "Aluminum has CUDA support but CUDA support has not been found.")
   endif ()
-  set(LBANN_HAS_ALUMINUM ${Aluminum_FOUND})
 
-  # Report failure.
-  if (NOT LBANN_HAS_ALUMINUM)
-    message(WARNING
-      "Requested LBANN_WITH_ALUMINUM but Aluminum not found. "
-      "Aluminum is now disabled. "
-      "Try specifying ALUMINUM_DIR as the root of an ALUMINUM install. "
-      "Alternatively, build with LBANN_WITH_ALUMINUM=OFF to suppress "
-      "this warning.")
-    set(LBANN_WITH_ALUMINUM OFF)
-
-  else ()
-
-    message(STATUS "Found Aluminum: ${Aluminum_DIR}")
-
-    if (AL_HAS_CUDA AND NOT LBANN_HAS_CUDA)
-      message(WARNING
-        "Aluminum has CUDA support but CUDA support has not been found.")
-    endif ()
-
-    option(LBANN_BUILT_WITH_SPECTRUM "LBANN was built with Spectrum MPI" OFF)
-    if (LBANN_BUILT_WITH_SPECTRUM)
-      set(LBANN_ALUMINUM_MPI_PASSTHROUGH ON)
-    endif (LBANN_BUILT_WITH_SPECTRUM)
-
-  endif (NOT LBANN_HAS_ALUMINUM)
-endif (LBANN_WITH_ALUMINUM)
+  option(LBANN_BUILT_WITH_SPECTRUM "LBANN was built with Spectrum MPI" OFF)
+  if (LBANN_BUILT_WITH_SPECTRUM)
+    set(LBANN_ALUMINUM_MPI_PASSTHROUGH ON)
+  endif (LBANN_BUILT_WITH_SPECTRUM)
+endif (LBANN_HAS_ALUMINUM)
 
 # Setup some additional CUDA-y things
 if (LBANN_HAS_CUDA)
@@ -372,9 +345,8 @@ if (LBANN_HAS_CUDA)
   include(SetupCUDAToolkit)
 
   if (LBANN_HAS_GPU_FP16)
-    set_property(TARGET cuda::toolkit PROPERTY
-      INTERFACE_COMPILE_OPTIONS
-      $<$<COMPILE_LANGUAGE:CUDA>:-arch=sm_60>)
+    # This should ensure that all the __half functionality we need exists.
+    list(APPEND CMAKE_CUDA_ARCHITECTURES 60)
   endif (LBANN_HAS_GPU_FP16)
 
   set(LBANN_HAS_CUDNN ${CUDNN_FOUND})
@@ -387,8 +359,8 @@ if (LBANN_HAS_CUDA)
 
   if (LBANN_WITH_NVSHMEM)
     find_package(NVSHMEM REQUIRED)
-    set_property(TARGET cuda::toolkit PROPERTY
-      INTERFACE_COMPILE_OPTIONS $<$<COMPILE_LANGUAGE:CUDA>:-arch=sm_70>)
+    # This should ensure that all the CUDA functionality we for NVSHMEM need exists.
+    list(APPEND CMAKE_CUDA_ARCHITECTURES 70)
     # Build LBANN as a static library to get around a bug in NVSHMEM
     set(BUILD_SHARED_LIBS OFF)
   endif ()
@@ -412,10 +384,12 @@ else ()
   set(LBANN_HAS_DNN_LIB FALSE)
 endif ()
 
+find_package(ZSTR REQUIRED)
+
 # This shouldn't be here, but is ok for now. This will occasionally be
 # part of another TPL's libraries (e.g., MKL), but it's no
 # guarantee. There's no harm including it multiple times.
-if (NOT DL_LIBRARY)
+if (LBANN_EXPLICIT_LIBDL AND NOT DL_LIBRARY)
   find_library(DL_LIBRARY dl DOC "The dynamic loader library.")
   if (DL_LIBRARY)
     message(STATUS "Found dl: ${DL_LIBRARY}")
@@ -430,7 +404,8 @@ endif ()
 # TODO: This probably shouldn't be the case and should disable specific
 # callbacks when OpenCV is not available
 if (LBANN_WITH_TBINF AND NOT LBANN_HAS_OPENCV)
-  message(FATAL_ERROR "TensorBoard requires OpenCV. Enable LBANN_WITH_VISION to use TensorBoard.")
+  message(FATAL_ERROR "TensorBoard requires OpenCV. "
+    "Enable LBANN_WITH_VISION to use TensorBoard.")
 endif ()
 
 if (LBANN_WITH_TBINF)
@@ -608,12 +583,15 @@ if (LBANN_WITH_UNIT_TESTING)
   include(CTest)
   include(Catch)
   add_subdirectory(src/callbacks/unit_test)
+  add_subdirectory(src/execution_algorithms/unit_test)
+  add_subdirectory(src/data_readers/unit_test)
+  add_subdirectory(src/layers/unit_test)
   add_subdirectory(src/layers/activations/unit_test)
   add_subdirectory(src/layers/learning/unit_test)
-  add_subdirectory(src/layers/math/unit_test)
   add_subdirectory(src/layers/regularizers/unit_test)
   add_subdirectory(src/models/unit_test)
   add_subdirectory(src/proto/unit_test)
+  add_subdirectory(src/operators/math/unit_test)
   add_subdirectory(src/optimizers/unit_test)
   add_subdirectory(src/utils/unit_test)
   add_subdirectory(src/weights/unit_test)
@@ -670,6 +648,9 @@ if (LBANN_HAS_ONNX)
   target_link_libraries(lbann PUBLIC onnx)
 endif ()
 target_link_libraries(lbann PUBLIC LbannProto)
+if (LBANN_HAS_TBINF)
+  target_link_libraries(lbann PUBLIC TBinf)
+endif ()
 target_link_libraries(lbann PUBLIC Threads::Threads)
 target_link_libraries(lbann PUBLIC clara::clara)
 target_link_libraries(lbann PUBLIC cereal)
@@ -694,12 +675,18 @@ target_link_libraries(lbann PUBLIC
   $<TARGET_NAME_IF_EXISTS:FFTW::FFTW>
   $<TARGET_NAME_IF_EXISTS:HWLOC::hwloc>
   $<TARGET_NAME_IF_EXISTS:Python::Python>
+  $<TARGET_NAME_IF_EXISTS:ZSTR::ZSTR>
 
   $<TARGET_NAME_IF_EXISTS:MIOpen>
   $<TARGET_NAME_IF_EXISTS:roc::rocfft>
 
   $<TARGET_NAME_IF_EXISTS:DNNL::dnnl>
   )
+
+if (LBANN_FLAG_Werror_OK)
+  target_compile_options(lbann
+    PRIVATE $<$<COMPILE_LANGUAGE:CXX>:$<BUILD_INTERFACE:-Werror>>)
+endif ()
 
 if (LBANN_HAS_ALUMINUM)
   target_link_libraries(lbann PUBLIC ${Aluminum_LIBRARIES})
@@ -714,7 +701,9 @@ if (LBANN_HAS_NVSHMEM)
   target_link_libraries(lbann PUBLIC NVSHMEM::NVSHMEM)
 endif ()
 
-target_link_libraries(lbann PUBLIC ${DL_LIBRARY})
+if (LBANN_EXPLICIT_LIBDL)
+  target_link_libraries(lbann PUBLIC ${DL_LIBRARY})
+endif ()
 
 if (LBANN_HAS_FFTW AND LBANN_HAS_CUDA)
   target_compile_options(lbann PRIVATE
@@ -809,6 +798,12 @@ configure_package_config_file(cmake/configure_files/LBANNConfig.cmake.in
   "${CMAKE_BINARY_DIR}/LBANNConfig.cmake.install"
   INSTALL_DESTINATION "${CMAKE_INSTALL_DIR}"
   PATH_VARS INCLUDE_INSTALL_DIRS LIB_INSTALL_DIR)
+
+# Clang format
+include(LBANNClangFormat)
+if (CLANG_FORMAT_AVAILABLE)
+  add_clang_format(lbann)
+endif ()
 
 # Install library
 install(

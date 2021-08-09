@@ -28,9 +28,9 @@
 
 namespace lbann {
 
-template <typename TensorDataType>
+template <typename InputTensorDataType, typename OutputTensorDataType>
 template <typename ArchiveT>
-void data_type_layer<TensorDataType>::serialize(ArchiveT& ar)
+void data_type_layer<InputTensorDataType, OutputTensorDataType>::serialize(ArchiveT& ar)
 {
   ar(::cereal::make_nvp("BaseLayer",
                         ::cereal::base_class<Layer>(this)),

@@ -8,13 +8,11 @@
 
 # -- Path setup --------------------------------------------------------------
 
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-#
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
+# Point autodoc to the LBANN python module. It is importable enough
+# for Sphinx/Autodoc/Napoleon to do its thing and very little else.
+import os
+import sys
+sys.path.insert(0, os.path.abspath('../python'))
 
 import subprocess, os, runpy
 
@@ -22,7 +20,7 @@ rebuild_doxygen = not os.path.isdir("doxy_out/xml") or not os.path.isdir("_stati
 
 if not os.path.isdir("_static"):
     os.makedirs("_static")
-    
+
 if rebuild_doxygen:
     os.makedirs("doxy_out/xml")
     subprocess.call('doxygen SourceTreeDoxyfile', shell=True)
@@ -80,6 +78,8 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 pygments_style = 'sphinx'
 
 html_static_path = ['_static']
+
+numfig = True
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -175,4 +175,4 @@ breathe_default_project = "lbann"
 breathe_projects = {
     "lbann":"doxy_out/xml/",
 }
-extensions = [ 'breathe', 'sphinx.ext.mathjax' ]
+extensions = [ 'breathe', 'sphinx.ext.mathjax', 'sphinx.ext.napoleon' ]

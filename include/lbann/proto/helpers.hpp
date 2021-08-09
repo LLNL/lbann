@@ -27,6 +27,7 @@
 #ifndef LBANN_PROTO_HELPERS_HPP_INCLUDED
 #define LBANN_PROTO_HELPERS_HPP_INCLUDED
 
+#include <google/protobuf/any.pb.h>
 #include <google/protobuf/message.h>
 
 #include <functional>
@@ -59,6 +60,10 @@ bool has_oneof(
 google::protobuf::Message const&
 get_oneof_message(
   google::protobuf::Message const& msg_in, std::string const& oneof_name);
+
+/** @brief Get the name of the message type as a string. */
+std::string message_type(google::protobuf::Message const& m);
+std::string message_type(google::protobuf::Any const& m);
 
 }// namespace helpers
 }// namespace proto

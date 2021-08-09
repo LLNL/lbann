@@ -3,16 +3,16 @@ data_reader {
     name: "smiles"
     role: "train"
     shuffle: true
-    percent_of_data_to_use: 1.0
-    data_filedir: "/p/gpfs1/brainusr/datasets/atom/mpro_inhib"
-    data_filename: "mpro_inhib_kekulized_train_smiles.txt"
+    percent_of_data_to_use: 0.1
+    sample_list: "/p/vast1/lbann/datasets/atom/mpro_inhib/mpro_inhib_kekulized_train_smiles.sample_list"
+    label_filename: "/p/vast1/lbann/datasets/atom/mpro_inhib/mpro_inhib_kekulized_train_smiles.metadata"
   }
   reader {
     name: "smiles"
     role: "test"
     shuffle: false
     percent_of_data_to_use: 0.01
-    data_filedir: "/p/gpfs1/brainusr/datasets/atom/mpro_inhib"
-    data_filename: "mpro_inhib_kekulized_test_smiles.txt"
+    sample_list: "/p/vast1/lbann/datasets/atom/mpro_inhib/mpro_inhib_kekulized_test_smiles.sample_list"
+    label_filename: "/p/vast1/lbann/datasets/atom/mpro_inhib/mpro_inhib_kekulized_test_smiles.metadata"
   }
 }

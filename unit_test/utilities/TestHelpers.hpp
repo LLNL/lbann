@@ -23,6 +23,8 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
+#ifndef LBANN_UNIT_TEST_UTILITIES_TEST_HELPERS_HPP_INCLUDED
+#define LBANN_UNIT_TEST_UTILITIES_TEST_HELPERS_HPP_INCLUDED
 
 #include <lbann/utils/memory.hpp>
 
@@ -39,3 +41,4 @@ bool IsValidPtr(std::unique_ptr<T> const& ptr) noexcept
 
 } // namespace utilities
 } // namespace unit_test
+#endif // LBANN_UNIT_TEST_UTILITIES_TEST_HELPERS_HPP_INCLUDED

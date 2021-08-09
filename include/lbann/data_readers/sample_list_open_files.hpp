@@ -48,6 +48,8 @@ class sample_list_open_files : public sample_list<sample_name_t> {
   /// Information for each file used by the sample list: includes the file name, file descriptor, and
   /// and a queue of each step and substep when data will be loaded from the file
   using file_id_stats_t = std::tuple<std::string, file_handle_t, std::deque<std::pair<int,int>>>;
+  /// Accessor macros for the file_id_stats_t tuple
+  enum fid_stats {FID_STATS_NAME = 0, FID_STATS_HANDLE = 1, FID_STATS_DEQUE = 2};
 
   /// Type for the list of samples
   using samples_t = typename sample_list<sample_name_t>::samples_t;
@@ -91,11 +93,11 @@ class sample_list_open_files : public sample_list<sample_name_t> {
 
   void delete_file_handle_pq_entry(sample_file_id_t id);
 
-  void manage_open_file_handles(sample_file_id_t id, bool pre_open_fd = false);
+  void manage_open_file_handles(sample_file_id_t id);
 
-  file_handle_t open_samples_file_handle(const size_t i, bool pre_open_fd = false);
+  file_handle_t open_samples_file_handle(const size_t i);
 
-  virtual void close_if_done_samples_file_handle(const size_t i);
+  virtual void close_samples_file_handle(const size_t i, bool check_if_in_use = false);
 
   void compute_epochs_file_usage(const std::vector<int>& shufled_indices, int mini_batch_size, const lbann_comm& comm);
 
@@ -107,6 +109,8 @@ class sample_list_open_files : public sample_list<sample_name_t> {
 
   void set_samples_filename(sample_file_id_t id, const std::string& filename) override;
 
+  void reorder() override;
+
   /// Get the list of samples from a specific type of bundle file
   virtual void obtain_sample_names(file_handle_t& h, std::vector<std::string>& sample_names) const = 0;
 
@@ -117,6 +121,10 @@ class sample_list_open_files : public sample_list<sample_name_t> {
 
   /// Check that the list of samples given actually exist in a bundle file
   void validate_implicit_bundles_sample_names(std::string file_path, std::string filename, std::vector<std::string>& sample_names, size_t included_samples, size_t excluded_samples);
+
+  size_t read_line_integral_type(std::istringstream& sstr, sample_file_id_t index);
+
+  size_t read_line(std::istringstream& sstr, sample_file_id_t index);
 
   /// read the body of exclusive sample list
   void read_exclusive_list(std::istream& istrm, size_t stride=1, size_t offset=0);

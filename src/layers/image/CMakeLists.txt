@@ -1,6 +1,7 @@
 # Add the source files for this directory
 set_full_path(THIS_DIR_SOURCES
   bilinear_resize.cpp
+  rotation.cpp
   )
 
 if (LBANN_HAS_GPU)

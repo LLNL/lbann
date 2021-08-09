@@ -28,9 +28,11 @@
 #include "lbann/trainers/trainer.hpp"
 
 // LBANN dependencies
+#include "lbann/base.hpp"
 #include "lbann/callbacks/callback.hpp"
 #include "lbann/data_coordinator/data_coordinator_metadata.hpp"
 #include "lbann/execution_algorithms/sgd_training_algorithm.hpp"
+#include "lbann/execution_algorithms/training_algorithm.hpp"
 #include "lbann/execution_contexts/sgd_execution_context.hpp"
 #include "lbann/io/persist_impl.hpp"
 #include "lbann/utils/description.hpp"
@@ -42,6 +44,7 @@
 
 // STL
 #include <functional>
+#include <memory>
 #include <string>
 
 namespace lbann {
@@ -52,48 +55,17 @@ namespace lbann {
 
 trainer::trainer(lbann_comm* comm,
                  std::unique_ptr<data_coordinator> dc,
-                 size_t mini_batch_size)
-  : m_data_coordinator{std::move(dc)}, m_comm{comm},
-    m_max_mini_batch_size{mini_batch_size}, m_background_io_allowed{true}
+                 size_t mini_batch_size,
+                 std::unique_ptr<training_algorithm> alg)
+  : m_data_coordinator{std::move(dc)},
+    m_training_alg{std::move(alg)},
+    m_comm{comm},
+    m_max_mini_batch_size{mini_batch_size},
+    m_background_io_allowed{true}
 {
   // Default trainer name
   m_name = "trainer" + std::to_string(m_comm->get_trainer_rank());
   m_data_coordinator->set_trainer(*this);
-}
-
-trainer::trainer(const trainer& other)
-  : m_comm(other.m_comm), m_max_mini_batch_size(other.m_max_mini_batch_size),
-    m_background_io_allowed(other.m_background_io_allowed)
-{
-
-  //  m_data_coordinator = other.m_data_coordinator;
-
-  // Deep copies
-  // m_io_thread_pool = (other.m_io_thread_pool ?
-  //                     other.m_io_thread_pool->copy() : nullptr);
-  m_callbacks.reserve(other.m_callbacks.size());
-  for (auto const& cb : other.m_callbacks) {
-    m_callbacks.emplace_back(cb->copy());
-  }
-}
-
-trainer& trainer::operator=(const trainer& other)
-{
-
-  // Shallow copies
-  m_comm = other.m_comm;
-  m_max_mini_batch_size = other.m_max_mini_batch_size;
-  m_background_io_allowed = other.m_background_io_allowed;
-
-  // Deep copies
-  // m_io_thread_pool = (other.m_io_thread_pool ?
-  //                     other.m_io_thread_pool->copy() : nullptr);
-  m_callbacks.reserve(other.m_callbacks.size());
-  for (auto const& cb : other.m_callbacks) {
-    m_callbacks.emplace_back(cb->copy());
-  }
-
-  return *this;
 }
 
 trainer::~trainer() {}
@@ -248,57 +220,63 @@ void trainer::for_each_execution_context(
 ////////////////////////////////////////////////////////////
 // Evaluation and training
 ////////////////////////////////////////////////////////////
-void trainer::apply(training_algorithm& alg,
-                    observer_ptr<model> model,
-                    execution_mode mode,
-                    termination_criteria const& term_criteria)
-{
-
-  auto key = check_and_build_execution_context(alg, model, mode);
-  DataReaderMetaData dr_metadata = get_data_coordinator().get_dr_metadata();
-  alg.setup_models({model}, get_max_mini_batch_size(), dr_metadata);
-  /// Apply the training algorithm to train the model
-  alg.apply(*(m_model_execution_context[key].get()),
-            *model,
-            get_data_coordinator(),
-            mode,
-            term_criteria);
-}
 
 void trainer::train(observer_ptr<model> model,
                     El::Int num_epochs,
                     El::Int num_batches)
 {
-  auto sgd = make_unique<sgd_training_algorithm>("sgd_train");
-  auto key = check_and_build_execution_context(*sgd.get(),
-                                               model,
-                                               execution_mode::training);
+  // FIXME (trb 04/22/21): This is a temporary fix to support old PFE
+  // model descriptions.
+  if (!m_training_alg) {
+    std::unique_ptr<sgd_termination_criteria> stopping;
+    if (num_epochs)
+      stopping = make_unique<epoch_termination_criteria>(num_epochs);
+    else
+      stopping = make_unique<batch_termination_criteria>(num_batches);
+
+    m_training_alg = std::make_unique<sgd_training_algorithm>(
+      "sgd_train", std::move(stopping));
+  }
   DataReaderMetaData dr_metadata = get_data_coordinator().get_dr_metadata();
-  sgd.get()->setup_models({model}, get_max_mini_batch_size(), dr_metadata);
-  /// Apply the training algorithm to train the model
-  sgd.get()->train(static_cast<sgd_execution_context&>(
-                     *(m_model_execution_context[key].get())),
-                   *model,
-                   get_data_coordinator(),
-                   num_epochs,
-                   num_batches);
+  m_training_alg->setup_models({model}, get_max_mini_batch_size(), dr_metadata);
+  // FIXME (trb 04/27/2021): This is a hack to support the current
+  // checkpoint/restart mechanisms. This needs to be refactored to be
+  // agnostic to the training algorithm. At this time, only SGD is
+  // properly C/R-able.
+  if (m_training_alg->get_type() == "sgd") {
+    auto key = check_and_build_execution_context(*m_training_alg,
+                                                 model,
+                                                 execution_mode::training);
+    m_training_alg->apply(*(m_model_execution_context[key]),
+                          *model,
+                          get_data_coordinator(),
+                          execution_mode::training);
+  }
+  else {
+    m_training_alg->apply(*model, get_data_coordinator());
+  }
 }
 
+// NOTE (trb 04/19/2021): Currently, "evaluate" is just defined as
+// "run forward prop and look at objective
+// functions/metrics/etc". This is currently implemented in
+// `sgd_training_algorithm`, so we just exploit that for now. This
+// could should be refactored in the future.
 void trainer::evaluate(observer_ptr<model> model,
                        execution_mode mode,
                        El::Int num_batches)
 {
-  auto sgd = make_unique<sgd_training_algorithm>("sgd_evaluate");
-  auto key = check_and_build_execution_context(*sgd.get(), model, mode);
+  auto sgd = make_unique<sgd_training_algorithm>(
+    "sgd_evaluate",
+    make_unique<epoch_termination_criteria>(/*num_epochs=*/1UL));
+  auto ctxt = sgd->get_new_execution_context();
+  ctxt->set_execution_mode(mode);
+  model->reset_mode(*ctxt, execution_mode::invalid);
+
   DataReaderMetaData dr_metadata = get_data_coordinator().get_dr_metadata();
-  sgd.get()->setup_models({model}, get_max_mini_batch_size(), dr_metadata);
-  /// Apply the training algorithm to evaluate the model
-  sgd.get()->evaluate(static_cast<sgd_execution_context&>(
-                        *(m_model_execution_context[key].get())),
-                      *model,
-                      get_data_coordinator(),
-                      mode,
-                      num_batches);
+  sgd->setup_models({model}, get_max_mini_batch_size(), dr_metadata);
+  sgd->evaluate(*ctxt, *model, get_data_coordinator(), mode,
+                epoch_termination_criteria(/*num_epochs=*/1UL));
 }
 
 // =============================================

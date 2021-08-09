@@ -31,7 +31,7 @@
 #include "lbann/utils/dataset.hpp"
 #include "lbann/execution_contexts/execution_context.hpp"
 #ifdef LBANN_HAS_DISTCONV
-#include "lbann/data_readers/data_reader_hdf5.hpp"
+#include "lbann/data_readers/data_reader_hdf5_legacy.hpp"
 #endif // LBANN_HAS_DISTCONV
 
 /** Design docs:
@@ -65,7 +65,8 @@ class data_coordinator {
     m_trainer(nullptr),
     m_comm(comm),
     m_data_set_processed(false),
-    m_execution_context(nullptr) {}
+    m_execution_context(nullptr),
+    m_io_thread_pool(nullptr) {}
 
   virtual ~data_coordinator() {
     // Synchronize the I/O thread pool

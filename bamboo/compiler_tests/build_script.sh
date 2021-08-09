@@ -23,7 +23,7 @@ MPI_DIR=${COMPILER_DIR}/${MPI_LIBRARY}
 # most are MPI-independent).
 DEPENDENCY_DIR=${MPI_DIR}
 
-export CMAKE_PREFIX_PATH=${COMMON_DEPENDENCY_DIR}/catch2:${COMMON_DEPENDENCY_DIR}/cereal:${COMMON_DEPENDENCY_DIR}/clara:${COMMON_DEPENDENCY_DIR}/cub:${COMMON_DEPENDENCY_DIR}/dihydrogen_core:${COMMON_DEPENDENCY_DIR}/half:${DEPENDENCY_DIR}/aluminum-dev:${DEPENDENCY_DIR}/cnpy:${DEPENDENCY_DIR}/conduit:${DEPENDENCY_DIR}/fftw:${DEPENDENCY_DIR}/hdf5:${DEPENDENCY_DIR}/hydrogen-dev:${DEPENDENCY_DIR}/jpeg-turbo:${DEPENDENCY_DIR}/nccl:${DEPENDENCY_DIR}/openblas:${DEPENDENCY_DIR}/opencv:${DEPENDENCY_DIR}/protobuf:${CMAKE_PREFIX_PATH}
+export CMAKE_PREFIX_PATH=${COMMON_DEPENDENCY_DIR}/catch2:${COMMON_DEPENDENCY_DIR}/cereal:${COMMON_DEPENDENCY_DIR}/clara:${COMMON_DEPENDENCY_DIR}/cub:${COMMON_DEPENDENCY_DIR}/dihydrogen_core:${COMMON_DEPENDENCY_DIR}/half:${DEPENDENCY_DIR}/aluminum-dev:${DEPENDENCY_DIR}/cnpy:${DEPENDENCY_DIR}/conduit:${DEPENDENCY_DIR}/fftw:${DEPENDENCY_DIR}/hdf5:${DEPENDENCY_DIR}/hydrogen-dev:${DEPENDENCY_DIR}/jpeg-turbo:${DEPENDENCY_DIR}/nccl:${DEPENDENCY_DIR}/openblas:${DEPENDENCY_DIR}/opencv:${DEPENDENCY_DIR}/protobuf:${COMMON_DEPENDENCY_DIR}/zstr:${CMAKE_PREFIX_PATH}
 
 if [ -e ${DEPENDENCY_DIR} ];
 then
@@ -107,8 +107,8 @@ then
         -DCMAKE_CUDA_COMPILER=$(which nvcc) \
         -DCMAKE_CUDA_HOST_COMPILER=$(which g++) \
         \
-        -DCMAKE_CXX_STANDARD=14 \
-        -DCMAKE_CUDA_STANDARD=14 \
+        -DCMAKE_CXX_STANDARD=17 \
+        -DCMAKE_CUDA_STANDARD=17 \
         \
         -DLBANN_DATATYPE=float \
         -DLBANN_DETERMINISTIC=ON \
@@ -123,7 +123,7 @@ then
         \
         -Dprotobuf_MODULE_COMPATIBLE=ON \
         \
-        ${LBANN_DIR} && ${LAUNCH_CMD} ninja && ${LAUNCH_CMD} ninja install && ${LAUNCH_CMD} ./unit_test/seq-catch-tests -r junit -o ${CATCH2_OUTPUT_DIR}/seq_catch_tests_output-${CLUSTER}.xml ; ${PARALLEL_LAUNCH_CMD} ./unit_test/mpi-catch-tests -r junit -o "${CATCH2_OUTPUT_DIR}/mpi_catch_tests_output-${CLUSTER}-rank=%r-size=%s.xml"
+        ${LBANN_DIR} && ${LAUNCH_CMD} ninja -k 0 && ${LAUNCH_CMD} ninja install && ${LAUNCH_CMD} ./unit_test/seq-catch-tests -r junit -o ${CATCH2_OUTPUT_DIR}/seq_catch_tests_output-${CLUSTER}.xml ; ${PARALLEL_LAUNCH_CMD} ./unit_test/mpi-catch-tests -r junit -o "${CATCH2_OUTPUT_DIR}/mpi_catch_tests_output-${CLUSTER}-rank=%r-size=%s.xml"
 else
     ${LBANN_DIR}/scripts/build_lbann_lc.sh --with-conduit
 fi
