@@ -416,5 +416,6 @@ message Callback {
 
   /** @brief Export trained model in onnx format */
   message CallbackExportOnnx {
+
   }
 }
