@@ -46,11 +46,7 @@ namespace callback {
 
 export_onnx::export_onnx(std::shared_ptr<lbann_summary> const& summarizer)
   : m_summarizer(summarizer)
-{
-#ifndef LBANN_HAS_ONNX
-  std::cout << "TESTING CALLBACK: ONNX NOT DEF " << std::endl;
-#endif
-}
+{}
 
 #ifdef LBANN_HAS_ONNX
 void export_onnx::on_setup_end(model* m)
@@ -69,10 +65,6 @@ void export_onnx::on_setup_end(model* m)
   mp_.set_domain("lbann/LLNL/com.github");
   mp_.set_model_version(1);
   mp_.set_doc_string("Livermore Big Artificial Neural Network");
-  // FIXME: what should go here??
-  auto* metadata = mp_.add_metadata_props();
-  metadata->set_key("name of thing");
-  metadata->set_value("thing");
 }
 
 void export_onnx::on_train_begin(model* m)
@@ -95,11 +87,11 @@ void export_onnx::on_train_begin(model* m)
   std::string model_type = "Model Type: " + m->get_type();
   gp->set_doc_string(model_name + layer_names + model_type);
 
-  std::cout << mp_.DebugString() << std::endl;
-
-  std::ofstream onnx_out("./test_output.onnx");
-  mp_.SerializeToOstream(&onnx_out);
-
+  auto rank = m->get_comm()->get_rank_in_trainer();
+  if( rank == 0 ) {
+    std::ofstream onnx_out("./test_output.onnx");
+    mp_.SerializeToOstream(&onnx_out);
+  }
 }
 #endif // LBANN_HAS_ONNX
 

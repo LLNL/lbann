@@ -132,12 +132,10 @@ class input_layer : public data_type_layer<TensorDataType> {
   std::string get_onnx_op_type() const override { return "Identity"; }
   void fill_onnx_node(onnx::GraphProto& graph) const override {
     auto child_layers = this->get_child_layers();
-    std::cout << "Num child layers: " << child_layers.size() << std::endl;
     for(auto const* child : this->get_child_layers()) {
       auto idx = this->find_child_layer_index(*child);
       auto* input = graph.add_input();
       input->set_name(this->get_name() + "_" + std::to_string(idx));
-      std::cout << "NAME: " << child->get_name() << std::endl;
       auto* input_type = input->mutable_type();
       // FIXME: enum type. 1 is float. Get TensorDataType?
       input_type->mutable_tensor_type()->set_elem_type(1);
