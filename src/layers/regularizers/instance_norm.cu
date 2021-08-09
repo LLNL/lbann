@@ -207,8 +207,8 @@ void fp_impl(lbann_comm& comm,
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
     grid_dims.x = (channel_size + block_size - 1) / block_size;
-    grid_dims.y = num_channels;
-    grid_dims.z = local_mini_batch_size;
+    grid_dims.y = El::Min(num_channels, 65535);
+    grid_dims.z = El::Min(local_mini_batch_size, 65535);
     hydrogen::gpu::LaunchKernel(
       fp_sums_kernel<TensorDataType, block_size>,
       grid_dims, block_dims, 0, multisync,
@@ -227,8 +227,8 @@ void fp_impl(lbann_comm& comm,
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
     grid_dims.x = (channel_size + block_size - 1) / block_size;
-    grid_dims.y = num_channels;
-    grid_dims.z = local_mini_batch_size;
+    grid_dims.y = El::Min(num_channels, 65535);
+    grid_dims.z = El::Min(local_mini_batch_size, 65535);
     hydrogen::gpu::LaunchKernel(
       fp_output_kernel<TensorDataType>,
       grid_dims, block_dims, 0, multisync,
@@ -464,8 +464,8 @@ void bp_impl(lbann_comm& comm,
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
     grid_dims.x = (channel_size + block_size - 1) / block_size;
-    grid_dims.y = num_channels;
-    grid_dims.z = local_mini_batch_size;
+    grid_dims.y = El::Min(num_channels, 65535);
+    grid_dims.z = El::Min(local_mini_batch_size, 65535);
     hydrogen::gpu::LaunchKernel(
       bp_statistics_grad_kernel<TensorDataType, block_size>,
       grid_dims, block_dims, 0, multisync,
@@ -490,8 +490,8 @@ void bp_impl(lbann_comm& comm,
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
     grid_dims.x = (channel_size + block_size - 1) / block_size;
-    grid_dims.y = num_channels;
-    grid_dims.z = local_mini_batch_size;
+    grid_dims.y = El::Min(num_channels, 65535);
+    grid_dims.z = El::Min(local_mini_batch_size, 65535);
     hydrogen::gpu::LaunchKernel(
       bp_input_grad_kernel<TensorDataType>,
       grid_dims, block_dims, 0, multisync,
