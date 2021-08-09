@@ -40,8 +40,8 @@ namespace ltfb {
 
 /** @class TruncationSelectionExchange
  *  A variant of classic LTFB or exploitation mechanism in population-based training.
- *  All trainers in the population set are ranked using specified evaluation metric
- *  Model, training hyperparameters and or topologies of any trainer in 
+ *  All trainers in the population set are ranked using specified evaluation metric.
+ *  Model parameters, training hyperparameters and or topologies of any trainer in 
  *  the bottom rank is replaced by that of a (random) trainer in the top rank.
  *
  */
