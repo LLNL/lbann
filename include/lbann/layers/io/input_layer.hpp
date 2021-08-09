@@ -133,7 +133,6 @@ class input_layer : public data_type_layer<TensorDataType> {
   std::string get_onnx_op_type() const override { return "Identity"; }
   void fill_onnx_node(onnx::GraphProto& graph) const override {
     auto child_layers = this->get_child_layers();
-
     for(auto const* child : this->get_child_layers()) {
       auto idx = this->find_child_layer_index(*child);
       auto* input = graph.add_input();
