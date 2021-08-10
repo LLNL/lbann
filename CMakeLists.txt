@@ -632,7 +632,9 @@ target_link_libraries(lbann PUBLIC Threads::Threads)
 target_link_libraries(lbann PUBLIC clara::clara)
 target_link_libraries(lbann PUBLIC cereal)
 target_link_libraries(lbann PUBLIC OpenMP::OpenMP_CXX)
-target_link_libraries(lbann PUBLIC MPI::MPI_CXX)
+target_link_libraries(lbann PUBLIC
+  $<TARGET_NAME_IF_EXISTS:HWLOC::hwloc>
+  MPI::MPI_CXX)
 target_link_libraries(lbann PUBLIC protobuf::libprotobuf)
 target_link_libraries(lbann PUBLIC ${HYDROGEN_LIBRARIES})
 if (LBANN_HAS_OPENCV)
@@ -650,7 +652,6 @@ target_link_libraries(lbann PUBLIC
 
   $<TARGET_NAME_IF_EXISTS:CNPY::CNPY>
   $<TARGET_NAME_IF_EXISTS:FFTW::FFTW>
-  $<TARGET_NAME_IF_EXISTS:HWLOC::hwloc>
   $<TARGET_NAME_IF_EXISTS:Python::Python>
   $<TARGET_NAME_IF_EXISTS:ZSTR::ZSTR>
 
