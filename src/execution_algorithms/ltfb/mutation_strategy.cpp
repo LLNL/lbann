@@ -307,7 +307,7 @@ void ReplaceConvolution::mutate(model& m, const int& step)
 
     const std::string shim_layer_name = name + "_shim";
 
-    // old_channels should be equal to child_of_shim_channels since
+    // old_channels should be equal to shim_channels since
     // this block should get executed only once
     m.insert_layer(
       make_new_convolution_layer(1, 0, 1, old_channels, 1, 1, shim_layer_name),
