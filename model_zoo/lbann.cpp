@@ -68,19 +68,7 @@ int guess_global_rank() noexcept
 int main(int argc, char* argv[])
 {
   auto& arg_parser = global_argument_parser();
-  construct_all_options();
-  auto use_cudnn_tensor_ops =
-    arg_parser.add_flag("use cudnn tensor ops",
-                        {"--use-cudnn-tensor-ops"},
-                        utils::ENV("LBANN_USE_CUDNN_TENSOR_OPS"),
-                        "Set the default cuDNN math mode to use "
-                        "Tensor Core operations when available.");
-  auto use_cublas_tensor_ops =
-    arg_parser.add_flag("use cublas tensor ops",
-                        {"--use-cublas-tensor-ops"},
-                        utils::ENV("LBANN_USE_CUBLAS_TENSOR_OPS"),
-                        "Set the default cuBLAS math mode to use "
-                        "Tensor Core operations when available.");
+  construct_std_options();
   try {
     arg_parser.parse(argc, argv);
   }
@@ -116,6 +104,8 @@ int main(int argc, char* argv[])
     }
 
     // Setup cuDNN and cuBLAS defaults
+    auto use_cudnn_tensor_ops = arg_parser.get<bool>(USE_CUDNN_TENSOR_OPS);
+    auto use_cublas_tensor_ops = arg_parser.get<bool>(USE_CUBLAS_TENSOR_OPS);
     if (master) {
       std::cout << "Default tensor core settings:\n"
                 << "   cuDNN: " << (use_cudnn_tensor_ops ? "" : "NOT ")
