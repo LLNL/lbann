@@ -62,13 +62,6 @@ make_new_activation_layer(lbann_comm& comm,
                           std::string const& new_type,
                           std::string const& new_name)
 {
-/*
-#ifdef LBANN_HAS_GPU
-  constexpr El::Device Dev = El::Device::GPU;
-#else
-  constexpr El::Device Dev = El::Device::CPU;
-#endif
-*/
   std::unique_ptr<Layer> layer;
 
   if (new_type == "relu") {
@@ -131,13 +124,6 @@ make_new_convolution_layer(int const& old_kernel,
                            int const& dilation,
                            std::string const& new_name)
 {
-/*
-#ifdef LBANN_HAS_GPU
-  constexpr El::Device Dev = El::Device::GPU;
-#else
-  constexpr El::Device Dev = El::Device::CPU;
-#endif
-*/
   const int new_pad = old_pad + (new_kernel - old_kernel) / 2;
   std::vector<int> layer_kernel{new_kernel, new_kernel},
     layer_pads{new_pad, new_pad}, layer_strides{stride, stride},
@@ -216,13 +202,6 @@ void ReplaceActivation::mutate(model& m, const int& step)
 
 void ReplaceConvolution::mutate(model& m, const int& step)
 {
-/*
-#ifdef LBANN_HAS_GPU
-  constexpr El::Device Dev = El::Device::GPU;
-#else
-  constexpr El::Device Dev = El::Device::CPU;
-#endif
-*/
   static std::vector<int> const kernels = {5, 7, 9};
   static std::vector<int> const channels = {6, 16, 32};
 
