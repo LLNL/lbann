@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -22,36 +22,47 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
 ////////////////////////////////////////////////////////////////////////////////
+#ifndef LBANN_EXECUTION_ALGORITHMS_LTFB_MUTATION_STRATEGY_HPP_INCLUDED
+#define LBANN_EXECUTION_ALGORITHMS_LTFB_MUTATION_STRATEGY_HPP_INCLUDED
 
-#include "lbann/execution_algorithms/kfac/kfac_block.hpp"
-#include "lbann/execution_algorithms/kfac/execution_context.hpp"
+#include "lbann/models/model.hpp"
+#include "lbann/utils/cloneable.hpp"
 
 namespace lbann {
+namespace ltfb {
 
-template <El::Device Device>
-El::Matrix<DataType, Device>& kfac_block<Device>::get_workspace_matrix(
-    const std::string& key, const size_t height, const size_t width) {
-  return m_context->get_workspace_matrix(get_name()+" "+key, height, width);
-}
+class MutationStrategy : public Cloneable<HasAbstractFunction<MutationStrategy>>
+{
+public:
+  MutationStrategy(){};
+  virtual ~MutationStrategy() = default;
 
+  /** @brief Apply a change to the model.
+   *  @param[in,out] m The model to change.
+   *  @param[in] step The current execution step in LTFB
+   */
+  virtual void mutate(model& m, const int& step) = 0;
+};
 
-template <>
-El::SyncInfo<El::Device::CPU> kfac_block<El::Device::CPU>::get_sync_info() {
-  return El::SyncInfo<El::Device::CPU>{};
-}
+// No Mutation
+class NullMutation final : public Cloneable<NullMutation, MutationStrategy>
+{
 
-#ifdef LBANN_HAS_GPU
-template <>
-El::SyncInfo<El::Device::GPU> kfac_block<El::Device::GPU>::get_sync_info() {
-  return El::gpu::DefaultSyncInfo();
-}
-#endif // LBANN_HAS_GPU
+public:
+  NullMutation() = default;
+  void mutate(model& m, const int& step) final {}
+};
 
-template class kfac_block<El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
-template class kfac_block<El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+// Replace activation layers
+class ReplaceActivation final
+  : public Cloneable<ReplaceActivation, MutationStrategy>
+{
+public:
+  ReplaceActivation() = default;
+  void mutate(model& m, const int& step) final;
+};
 
+} // namespace ltfb
 } // namespace lbann
+#endif // LBANN_EXECUTION_ALGORITHMS_LTFB_MUTATION_STRATEGY_HPP_INCLUDED

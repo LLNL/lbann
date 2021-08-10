@@ -1920,11 +1920,11 @@ void model::replace_layer(OwningLayerPtr&& new_layer, std::string const& old_lay
   parent.replace_child_layer(new_layer, parent.find_child_layer_index(l));
   new_layer->add_parent_layer(m_layers[old_layer_index-1]);
 
+  // Destroy memory of old layer - for now, remove from m_layers
+  m_layers.erase(m_layers.cbegin()+old_layer_index); 
+
   // Add new layer to layer list
   add_layer(std::move(new_layer));
-
-  // Destroy memory of old layer - for now, remove from m_layers
-  m_layers.erase(m_layers.cbegin()+old_layer_index);
 }
 
 // =============================================

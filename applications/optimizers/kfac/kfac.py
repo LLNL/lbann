@@ -13,6 +13,12 @@ vision_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
 sys.path.append(vision_dir)
 import data.mnist
 
+from lbann.util import make_iterable
+
+def str_list(l):
+    """Convert an iterable object to a space-separated string."""
+    return ' '.join(str(i) for i in make_iterable(l))
+
 # ----------------------------------
 # Command-line arguments
 # ----------------------------------
@@ -42,6 +48,8 @@ parser.add_argument("--kfac-update-interval-target", type=int, default=1,
                     help="the target update interval of Kronecker factors")
 parser.add_argument("--kfac-update-interval-steps", type=int, default=1,
                     help="the number of steps to interpolate -init and -target intervals")
+parser.add_argument("--kfac-compute-interval-steps", type=int, default=1,
+                    help="the number of steps after inverse matrices are calculated")
 
 # Job configs.
 parser.add_argument("--job-name", action="store", default="lbann_lenet_kfac", type=str,
@@ -57,7 +65,7 @@ parser.add_argument("--num_epochs", type=int, default=20,
 parser.add_argument("--mini_batch_size", type=int, default=100,
                     help="the mini-batch size")
 parser.add_argument("--model", type=str,
-                    choices=["mlp", "cnn"], default="mlp",
+                    choices=["mlp", "cnn", "gru"], default="mlp",
                     help="the model type (default: mlp)")
 
 # Debugging configs.
@@ -71,7 +79,7 @@ parser.add_argument("--print-matrix-summary", dest="print_matrix_summary",
 lbann.contrib.args.add_optimizer_arguments(
     parser,
     default_optimizer="adam",
-    default_learning_rate=0.001,
+    default_learning_rate=0.0001,
 )
 args = parser.parse_args()
 
@@ -122,6 +130,22 @@ elif args.model == "cnn":
             x, num_neurons=num_neurons,
             has_bias=has_bias, name="ip{}".format(i+1),
             weights=[lbann.Weights(initializer=lbann.LeCunNormalInitializer())])
+elif args.model == "gru":
+    zeros = lbann.Constant(
+            value=0,
+            num_neurons=str_list([1, 28]),
+            name=f'_zeros'
+        )
+    x = lbann.Reshape(x, dims='28 28')
+    x = lbann.GRU(x, zeros,hidden_size=28)
+    x = lbann.Relu(x)
+    x = lbann.FullyConnected(
+            x, num_neurons=10,
+            has_bias=has_bias, name="ip{}".format(0+1),
+            weights=[lbann.Weights(initializer=lbann.LeCunNormalInitializer())])
+
+
+
 
 probs = lbann.Softmax(x)
 
@@ -164,6 +188,7 @@ if args.kfac:
         )
     if args.kfac_update_interval_steps != 1:
         kfac_args["update_interval_steps"] = args.kfac_update_interval_steps
+    kfac_args["compute_interval"] = args.kfac_compute_interval_steps
     algo = lbann.KFAC("kfac", algo, **kfac_args)
 
 # Setup model

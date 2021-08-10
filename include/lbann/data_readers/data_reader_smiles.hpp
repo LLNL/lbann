@@ -28,7 +28,7 @@
 #ifndef LBANN_DATA_READER_SMILES_HPP
 #define LBANN_DATA_READER_SMILES_HPP
 
-#include "lbann/data_readers/data_reader.hpp"
+#include "lbann/data_readers/data_reader_sample_list.hpp"
 #include "lbann/data_readers/sample_list_ifstream.hpp"
 
 namespace lbann {
@@ -41,17 +41,8 @@ namespace lbann {
    *   "global_id" (aka, sample_id, etc) refers to an index from the
    *               m_shuffled_indices vector.
    */
-class smiles_data_reader : public generic_data_reader {
-
+class smiles_data_reader : public data_reader_sample_list<sample_list_ifstream<long long>> {
 public:
-  /// Types for the sample_list
-  using sample_name_t = long long;
-  using sample_list_t = sample_list_ifstream<sample_name_t>;
-
-  /// Types for a sample
-  using sample_file_id_t = sample_list_t::sample_file_id_t;
-  using sample_t = std::pair<sample_file_id_t, sample_name_t>;
-
   // Types for mapping a sample id to an <offset,length> locator
   using offset_t = std::pair<long long, short>;
   using offset_map_t = std::unordered_map<size_t, offset_t>;
@@ -82,8 +73,6 @@ public:
   int get_sequence_length() { return m_sequence_length; }
 
   void use_unused_index_set(execution_mode m) override;
-
-  sample_list_t& get_sample_list() { return m_sample_list; }
 
   /** This method is for use during testing and development */
   void get_sample_origin(
@@ -149,8 +138,6 @@ private:
     long long offset;
     short length;
   };
-
-  sample_list_t m_sample_list;
 
   int m_linearized_data_size = 0;
   int m_linearized_label_size = 0;

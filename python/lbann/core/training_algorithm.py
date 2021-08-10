@@ -186,6 +186,33 @@ class LTFB(TrainingAlgorithm):
         params.local_training_algorithm.CopyFrom(self.local_algo.export_proto())
         return params
 
+class MutationStrategy:
+    """The strategy for mutation after a tournament in LTFB.
+       
+       When a trainer loses in a LTFB tournament, the winning model is 
+       copied over to it and this mutation strategy is applied to the
+       copied model to explore a new model. This is relevant to neural
+       architecture search (NAS).
+    """
+
+    def __init__(self, strategy: str = "null_mutation"):
+        self.strategy = strategy
+
+    def export_proto(self):
+        """Get a protobuf representation of this object."""
+
+        MutationStrategyMsg = AlgoProto.MutationStrategy
+        msg = MutationStrategyMsg()
+        if self.strategy == "null_mutation":
+            NullMutationMsg = MutationStrategyMsg.NullMutation
+            msg.null_mutation.CopyFrom(NullMutationMsg())
+        elif self.strategy == "replace_activation":
+            ReplaceActivationMsg = MutationStrategyMsg.ReplaceActivation
+            msg.replace_activation.CopyFrom(ReplaceActivationMsg())
+        else:
+            raise ValueError("Unknown Strategy")
+        return msg
+
 class RandomPairwiseExchange(MetaLearningStrategy):
     """The classic LTFB pairwise tourament metalearning strategy.
 
@@ -297,7 +324,8 @@ class RandomPairwiseExchange(MetaLearningStrategy):
 
     def __init__(self,
                  metric_strategies: dict[str,int] = {},
-                 exchange_strategy = ExchangeStrategy()):
+                 exchange_strategy = ExchangeStrategy(),
+                 mutation_strategy = MutationStrategy()):
         """Construct a new RandomPairwiseExchange metalearning strategy.
 
         Args:
@@ -306,10 +334,13 @@ class RandomPairwiseExchange(MetaLearningStrategy):
               with respect to this metric
             exchange_strategy:
               The algorithm used for exchanging models.
+            mutation_strategy:
+              The algorithm used for mutating models.
         """
 
         self.metric_strategies = metric_strategies
         self.exchange_strategy = exchange_strategy
+        self.mutation_strategy = mutation_strategy
 
     def export_proto(self):
         """Get a protobuf representation of this object."""
@@ -319,6 +350,7 @@ class RandomPairwiseExchange(MetaLearningStrategy):
             msg.metric_name_strategy_map[key] = value
 
         msg.exchange_strategy.CopyFrom(self.exchange_strategy.export_proto())
+        msg.mutation_strategy.CopyFrom(self.mutation_strategy.export_proto())
         return msg
 
 class KFAC(TrainingAlgorithm):

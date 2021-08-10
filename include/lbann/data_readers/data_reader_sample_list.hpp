@@ -78,6 +78,8 @@ public:
 
   SampleListT& get_sample_list() { return m_sample_list; }
 
+  sample_type get_sample(size_t index) { return m_sample_list[index]; }
+
 protected:
   SampleListT m_sample_list;
 

@@ -754,6 +754,7 @@ if (LBANN_DEBUG_PRINT_SUBTARGETS)
 endif ()
 
 # Add the rest of the things
+add_subdirectory(data_utils)
 add_subdirectory(model_zoo)
 add_subdirectory(model_zoo/tests)
 add_subdirectory(model_zoo/jag_utils)

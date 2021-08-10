@@ -30,6 +30,7 @@
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/utils/im2col.hpp"
 
+
 namespace lbann {
 
 template <El::Device Device>
@@ -41,13 +42,11 @@ void kfac_block_fc_conv<Device>::compute_local_kronecker_factors(
   const auto& sync_info = this->get_sync_info();
 
   const auto parent = this->m_layer->get_parent_layers()[0];
-  const auto child = this->m_layer->get_child_layers()[0];
   const auto& dtl_parent = dynamic_cast<const data_type_layer<DataType>&>(*parent);
-  const auto& dtl_child = dynamic_cast<const data_type_layer<DataType>&>(*child);
-  const El::AbstractMatrix<DataType>& local_activations = dtl_parent.get_local_activations();
-  const El::AbstractMatrix<DataType>& local_errors = dtl_child.get_local_error_signals();
+  const El::Matrix<DataType,Device>& local_activations = this->m_parent_local_activations[0]->Matrix();
+  const El::Matrix<DataType,Device>& local_errors = this->m_child_local_errors[0]->Matrix();
+
   const auto mini_batch_size = dtl_parent.get_activations().Width();
-  assert(mini_batch_size == dtl_child.get_error_signals().Width());
   const auto local_batch_size = local_activations.Width();
 
   // Compute Kronecker factors, assuming that local_errors are
@@ -202,10 +201,6 @@ void kfac_block_fc_conv<Device>::update_kronecker_inverse(
 
   const auto& sync_info = this->get_sync_info();
 
-  auto& weights = this->m_layer->get_weights(0);
-  optimizer *w_optimizer = weights.get_optimizer();
-  auto* w_dto = dynamic_cast<data_type_optimizer<DataType>*>(w_optimizer);
-
   // TODO: Refactoring
   const auto &Aave = m_kronecker_average_A;
   const auto &Gave = m_kronecker_average_G;
@@ -254,6 +249,30 @@ void kfac_block_fc_conv<Device>::update_kronecker_inverse(
     oss << "K-FAC: pi=" << pi << " @ "<< this->m_layer->get_name() << std::endl;
     std::cout << oss.str();
   }
+}
+
+template <El::Device Device>
+void kfac_block_fc_conv<Device>::compute_preconditioned_gradients(
+    lbann_comm* comm,
+    const DataType learning_rate_factor,
+    const bool print_matrix,
+    const bool print_matrix_summary,
+    const bool print_time) {
+
+  // const auto& sync_info = this->get_sync_info();
+  auto& weights = this->m_layer->get_weights(0);
+  optimizer *w_optimizer = weights.get_optimizer();
+  auto* w_dto = dynamic_cast<data_type_optimizer<DataType>*>(w_optimizer);
+
+  // const auto &Aave = m_kronecker_average_A;
+  // const auto &Gave = m_kronecker_average_G;
+  auto& Ainv = m_kronecker_inverse_A;
+  auto& Ginv = m_kronecker_inverse_G;
+
+  // auto& ALinv = this->get_workspace_matrix(
+  //     "ALinv", Aave.Height(), Aave.Height());
+  // auto& GLinv = this->get_workspace_matrix(
+  //     "GLinv", Gave.Height(), Gave.Height());
 
   const auto& w_grads_orig = w_dto->get_gradient().LockedMatrix();
   El::Matrix<DataType, Device> w_gradients;
@@ -370,6 +389,74 @@ void kfac_block_fc_conv<Device>::update_kronecker_inverse(
 }
 
 template <El::Device Device>
+void kfac_block_fc_conv<Device>::initialize_activations_and_errors(
+    lbann_comm* comm,
+    int num_local_activations,
+    int num_local_errors,
+    int num_weights) {
+
+  const auto parent = this->m_layer->get_parent_layers()[0];
+  const auto child = this->m_layer->get_child_layers()[0];
+  const auto& dtl_parent = dynamic_cast<const data_type_layer<DataType>&>(*parent);
+  const auto& dtl_child = dynamic_cast<const data_type_layer<DataType>&>(*child);
+  const auto& local_activations = dtl_parent.get_activations();
+  const auto& local_errors = dtl_child.get_error_signals();
+
+  if(comm->get_KFAC_subgrid_create_two_models() or comm->get_grid_type() == GridType::NO_GRID ){
+    this->m_parent_local_activations.resize(num_local_activations);
+    this->m_child_local_errors.resize(num_local_errors);
+  }
+  else{
+    if(this->m_parent_local_activations.size()==0){
+      //Resize vectors
+      this->m_parent_local_activations.resize(num_local_activations);
+      this->m_child_local_errors.resize(num_local_errors);
+
+      //Initialize Dist Matrices
+      for (auto& input : this->m_parent_local_activations) {
+        if(dtl_parent.get_data_layout() == data_layout::DATA_PARALLEL)
+          input = make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
+        else
+          input = make_unique<El::DistMatrix<DataType, El::MC  , El::MR, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
+      }
+
+      for (auto& error : this->m_child_local_errors) {
+        
+        if(dtl_child.get_data_layout() == data_layout::DATA_PARALLEL)
+          error = make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
+        else
+          error = make_unique<El::DistMatrix<DataType, El::MC  , El::MR, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
+      }
+    }
+    El::Copy(local_activations,*this->m_parent_local_activations[0]);
+    El::Copy(local_errors,*this->m_child_local_errors[0]);
+  }
+
+  
+
+  if(comm->get_grid_type() == GridType::NO_GRID ){
+
+    for (auto& input : this->m_parent_local_activations) {
+      if(dtl_parent.get_data_layout() == data_layout::DATA_PARALLEL)
+        input = make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
+      else
+        input = make_unique<El::DistMatrix<DataType, El::MC  , El::MR, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
+    }
+
+    for (auto& error : this->m_child_local_errors) {
+      if(dtl_child.get_data_layout() == data_layout::DATA_PARALLEL)
+        error = make_unique<El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
+      else
+        error = make_unique<El::DistMatrix<DataType, El::MC  , El::MR, El::ELEMENT, Device>>(comm->get_trainer_grid(), 0);
+    }
+
+    El::LockedView( *(this->m_parent_local_activations[0]), local_activations );
+    El::LockedView( *(this->m_child_local_errors[0]),local_errors );
+  }
+}
+
+
+template <El::Device Device>
 const std::vector<El::AbstractMatrix<DataType>*>
 kfac_block_fc_conv<Device>::get_preconditioned_grad_buffers() {
   auto& weights = this->m_layer->get_weights(0);
@@ -397,6 +484,164 @@ kfac_block_fc_conv<Device>::get_preconditioned_grad_buffers() {
     return ret;
   }
 }
+
+//////////////////////////////////////////////////////////////
+// Communication functions
+//////////////////////////////////////////////////////////////
+
+template <El::Device Device>
+int kfac_block_fc_conv<Device>::get_inverse_matrices(El::Matrix<DataType, Device>& output, int offset)
+{
+  const int size_Ainv = m_kronecker_inverse_A.Height() * m_kronecker_inverse_A.Width(); 
+  const int size_Ginv = m_kronecker_inverse_G.Height() * m_kronecker_inverse_G.Width();
+
+  
+  El::SyncInfo<Device> sync_info =El::SyncInfoFromMatrix(output);
+
+  {
+    auto view = El::View(output, El::IR(offset, offset+size_Ainv), El::ALL);
+    // El::Copy(m_kronecker_inverse_A, view);
+    El::copy::util::InterleaveMatrix(
+                                size_Ainv, 1,
+                                m_kronecker_inverse_A.LockedBuffer(), 1, size_Ainv,
+                                output.Buffer(offset,0),
+                                1, size_Ainv,
+                                sync_info);
+  }
+  
+  offset += size_Ainv;
+
+  {
+    auto view = El::View(output, El::IR(offset, offset+size_Ginv), El::ALL);
+    // El::Copy(m_kronecker_inverse_G, view);
+    El::copy::util::InterleaveMatrix(
+                                size_Ginv, 1,
+                                m_kronecker_inverse_G.LockedBuffer(), 1, size_Ginv,
+                                output.Buffer(offset,0),
+                                1, size_Ginv,
+                                sync_info);
+  }
+  return offset + size_Ginv;
+}
+
+template <El::Device Device>
+std::vector<int>  kfac_block_fc_conv<Device>::get_inverse_matrices_size_vector(lbann_comm *comm)
+{
+  std::vector<int> inverse_matrices_sizes;
+  inverse_matrices_sizes.push_back(m_kronecker_inverse_A.Height());
+  inverse_matrices_sizes.push_back(m_kronecker_inverse_A.Width());
+  inverse_matrices_sizes.push_back(m_kronecker_inverse_G.Height());
+  inverse_matrices_sizes.push_back(m_kronecker_inverse_G.Width());
+  return inverse_matrices_sizes;
+}
+
+template <El::Device Device>
+void kfac_block_fc_conv<Device>::resize_inverse_matrices_size(El::Matrix<double,El::Device::CPU>& inverse_matrices_size, 
+  int block_number)
+{
+  m_kronecker_inverse_A.Resize(inverse_matrices_size(block_number,0), inverse_matrices_size(block_number,1));
+  m_kronecker_inverse_G.Resize(inverse_matrices_size(block_number,2), inverse_matrices_size(block_number,3));
+
+  m_Ainv_height = inverse_matrices_size(block_number,0);
+  m_Ainv_width  = inverse_matrices_size(block_number,1);
+  m_Ginv_height = inverse_matrices_size(block_number,2);
+  m_Ginv_width  = inverse_matrices_size(block_number,3);
+}
+
+template <El::Device Device>
+int kfac_block_fc_conv<Device>::get_inverse_matrices_size(lbann_comm *comm)
+{
+  if(this->m_Ainv_height > 0){
+    return m_Ainv_height*m_Ainv_width + m_Ginv_height*m_Ginv_width;
+  }
+  const auto input_dims = this->m_layer->get_input_dims(); // CHW
+  const size_t num_input_channels = input_dims[0];
+
+  const auto parent = this->m_layer->get_parent_layers()[0];
+  const auto child = this->m_layer->get_child_layers()[0];
+  const auto& dtl_parent = dynamic_cast<const data_type_layer<DataType>&>(*parent);
+  const auto& dtl_child = dynamic_cast<const data_type_layer<DataType>&>(*child);
+
+  const El::Matrix<DataType,Device>& local_activations = comm->get_grid_type()==GridType::PRIMARY_GRID ? \
+    dtl_parent.get_local_activations() : this->m_parent_local_activations[0]->Matrix(); 
+
+  const El::Matrix<DataType,Device>& local_errors = comm->get_grid_type()==GridType::PRIMARY_GRID ? \
+    dtl_child.get_local_error_signals() : this->m_child_local_errors[0]->Matrix(); 
+
+
+  int my_height_A = local_activations.Height();
+  const auto output_dims = this->m_layer->get_output_dims(); // KH'W'
+  const size_t num_output_channels = output_dims[0];
+
+  if(m_is_conv) {
+    const auto conv_dims = get_conv_layer()->get_conv_dims();
+    my_height_A = num_input_channels
+        *std::accumulate(conv_dims.begin(), conv_dims.end(),
+                         1, std::multiplies<int>());
+  }
+  if(m_has_bias)
+    my_height_A++;
+
+
+  int my_height_G = !m_is_conv ? local_errors.Height() : num_output_channels;
+
+  this->m_Ainv_height = my_height_A;
+  this->m_Ainv_width = my_height_A;
+  this->m_Ginv_height = my_height_G;
+  this->m_Ginv_width = my_height_G;
+
+  return my_height_A*my_height_A + my_height_G*my_height_G;
+}
+
+template <El::Device Device>
+int kfac_block_fc_conv<Device>::set_inverse_matrices(El::Matrix<DataType, Device>& workspace, 
+                          int offset,
+                          lbann_comm *comm)
+{
+  this->get_inverse_matrices_size(comm);
+  El::SyncInfo<Device> sync_infoA =El::SyncInfoFromMatrix(m_kronecker_inverse_A);
+  El::SyncInfo<Device> sync_infoG =El::SyncInfoFromMatrix(m_kronecker_inverse_G);
+  if(m_kronecker_inverse_A.Height() > 0 ){
+    if( (size_t)m_kronecker_inverse_A.Height() == m_Ainv_height and
+        (size_t)m_kronecker_inverse_A.Width() == m_Ainv_width and
+        (size_t)m_kronecker_inverse_G.Height() == m_Ginv_height and
+        (size_t)m_kronecker_inverse_G.Width() == m_Ginv_width)
+    {
+      
+    }
+    else{
+      LBANN_ERROR("Size mismatch");
+    }
+  }
+  m_kronecker_inverse_A.Resize(m_Ainv_height,m_Ainv_width);
+  m_kronecker_inverse_G.Resize(m_Ginv_height,m_Ginv_width);
+
+  const int size_Ainv = m_Ainv_height * m_Ainv_width; 
+  const int size_Ginv = m_Ginv_height * m_Ginv_width;
+
+  {
+    El::copy::util::InterleaveMatrix(
+                                size_Ainv, 1,
+                                workspace.LockedBuffer(offset,0), 1, size_Ainv,
+                                m_kronecker_inverse_A.Buffer(),
+                                1, size_Ainv,
+                                sync_infoA);
+  }
+
+  offset += size_Ainv;
+
+  {
+    El::copy::util::InterleaveMatrix(
+                                size_Ginv, 1,
+                                workspace.LockedBuffer(offset,0), 1, size_Ginv,
+                                m_kronecker_inverse_G.Buffer(),
+                                1, size_Ginv,
+                                sync_infoG);
+  }
+  return offset + size_Ginv;
+}
+
+//////////////////////////////////////////////////////////////
 
 template <El::Device Device>
 void kfac_block_fc_conv<Device>::get_kronecker_factor_fc(

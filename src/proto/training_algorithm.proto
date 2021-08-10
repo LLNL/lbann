@@ -66,6 +66,19 @@ message LTFB {
   TerminationCriteria stopping_criteria = 3;
 }// message LTFB
 
+message MutationStrategy {
+  message NullMutation {
+  }
+
+  message ReplaceActivation {
+  }
+
+  oneof strategy {
+    NullMutation null_mutation = 1;
+    ReplaceActivation replace_activation = 2;
+  }
+} //message Mutation Strategy
+
 // The classic LTFB algorithm. Implements MetaLearningStrategy.
 message RandomPairwiseExchange {
   enum MetricStrategy {
@@ -75,6 +88,7 @@ message RandomPairwiseExchange {
 
   map<string, MetricStrategy> metric_name_strategy_map = 1;
   ExchangeStrategy exchange_strategy = 2;
+  MutationStrategy mutation_strategy = 3;
 
   // This uses the "oneof" strategy because we don't really want
   // downstreams adding strategies willy nilly.
@@ -132,5 +146,7 @@ message KFAC {
   // Factor to be multiplied to the learning rate for GRU layers
   // (default: learning_rate_factor)
   float learning_rate_factor_gru = 17;
+
+  int64 compute_interval = 18; // default:1
 
 }//message KFAC

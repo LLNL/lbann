@@ -292,6 +292,16 @@ void deconvolution_distconv_adapter<TensorDataType, Layout, Device>::setup_layer
   std::vector<int> dilations = layer.m_dilations;
   std::reverse(dilations.begin(), dilations.end());
 
+  // Allocate temporary buffer for kernel gradient buffer, if needed
+  // Note: Needed for autotuning the convolution algorithm
+  El::simple_buffer<TensorDataType,Device> temp;
+  TensorDataType* kernel_gradient_buffer = this->m_kernel_gradient->get_buffer();
+  if (kernel_gradient_buffer == nullptr) {
+    temp.allocate(this->m_kernel_gradient->get_local_size());
+    assert0(dc::tensor::View(*this->m_kernel_gradient, temp.data()));
+  }
+
+  // Setup
   this->m_conv->setup(this->get_prev_activations(),
                       *(this->m_kernel), this->get_activations(),
                       this->get_error_signals(),
@@ -301,6 +311,10 @@ void deconvolution_distconv_adapter<TensorDataType, Layout, Device>::setup_layer
                       this->m_fwd_algo, this->m_bwd_data_algo,
                       this->m_bwd_filter_algo,
                       workspace_capacity, false, true);
+
+  // Clean up
+  assert0(dc::tensor::View(*this->m_kernel_gradient, kernel_gradient_buffer));
+
 }
 #endif // defined LBANN_HAS_DISTCONV
 
