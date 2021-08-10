@@ -214,15 +214,16 @@ void hdf5_data_reader::load()
   }
   double tm1 = get_time();
   double tm11 = tm1;
-  options* opts = options::get();
+  auto& arg_parser = global_argument_parser();
 
-  if (opts->has_string("keep_packed_fields")) {
+  if (arg_parser.get<bool>(KEEP_PACKED_FIELDS)) {
     m_delete_packed_fields = false;
   }
 
   // May go away; for now, this reader only supports preloading mode
   // with data store
-  opts->set_option("preload_data_store", true);
+  // TODO MRW
+  //opts->set_option("preload_data_store", true);
 
   // Load the sample list(s)
   data_reader_sample_list::load();
@@ -259,7 +260,7 @@ void hdf5_data_reader::load()
               << "; num samples: " << m_shuffled_indices.size() << std::endl;
   }
 
-  if (!opts->get_bool("quiet") && is_master()) {
+  if (!arg_parser.get<bool>(QUIET) && is_master()) {
     print_metadata();
   }
 }

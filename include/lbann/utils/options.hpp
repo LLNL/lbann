@@ -47,7 +47,9 @@ namespace lbann {
 #define RANDOM_SEED "random_seed"
 #define READER "reader"
 #define RESTART_DIR "restart_dir"
+#define TRAINER_CREATE_TWO_MODELS "Create two models in Sub-grid parallelism"
 #define TRAINER_GRID_HEIGHT "Height of 2D process grid for each trainer"
+#define TRAINER_PRIMARY_GRID_SIZE "Primary Grid Size per trainer"
 
 // Unused options
 #define ALLOW_GLOBAL_STATISTICS "LTFB Allow global statistics"
@@ -79,9 +81,11 @@ namespace lbann {
 #define EXIT_AFTER_SETUP "exit_after_setup"
 #define GENERATE_MULTI_PROTO "generate_multi_proto"
 #define KEEP_SAMPLE_ORDER "keep_sample_order"
+#define KEEP_PACKED_FIELDS "keep_packed_fields"
 #define LOAD_FULL_SAMPLE_LIST_ONCE "load_full_sample_list_once"
 #define MAKE_TEST_FAIL "make_test_fail"
 #define NODE_SIZES_VARY "node_sizes_vary"
+#define QUIET "quiet"
 #define STACK_TRACE_TO_FILE "stack_trace_to_file"
 #define TEST_ENCODE "test_encode"
 #define Z_SCORE "z_score"

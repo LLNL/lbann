@@ -171,12 +171,24 @@ void construct_std_options() {
                         "If the directory doesn't exist or doesn't contain a checkpoint,\n"
                         "an error will be thrown.\n",
                         "");
+  arg_parser.add_option(TRAINER_CREATE_TWO_MODELS,
+                        {"--trainer_create_two_models"},
+                        utils::ENV("LBANN_TRAINER_CREATE_TWO_MODELS"),
+                        "Create two models (one each for primary and secondary grid). "
+                        "Default is False.",
+                        false);
   arg_parser.add_option(TRAINER_GRID_HEIGHT,
                         {"--trainer_grid_height"},
                         utils::ENV("LBANN_TRAINER_GRID_HEIGHT"),
                         "Height of 2D process grid for each trainer. "
                         "Default grid is approximately square.",
                         -1);
+  arg_parser.add_option(TRAINER_PRIMARY_GRID_SIZE,
+                        {"--trainer_primary_grid_size"},
+                        utils::ENV("LBANN_TRAINER_PRIMARY_GRID_SIZE"),
+                        "Primary grid size per trainer. "
+                        "Disables Sub-grid parallelism, when it is 0",
+                        0);
 
 
   // Unused (?) options
@@ -277,6 +289,9 @@ void construct_datareader_options() {
   arg_parser.add_flag(KEEP_SAMPLE_ORDER,
                       {"--keep_sample_order"},
                       "TODO");
+  arg_parser.add_flag(KEEP_PACKED_FIELDS,
+                      {"--keep_packed_fields"},
+                      "TODO");
   arg_parser.add_flag(LOAD_FULL_SAMPLE_LIST_ONCE,
                       {"--load_full_sample_list_once"},
                       "TODO");
@@ -285,6 +300,9 @@ void construct_datareader_options() {
                       "TODO");
   arg_parser.add_flag(NODE_SIZES_VARY,
                       {"--node_sizes_vary"},
+                      "TODO");
+  arg_parser.add_flag(QUIET,
+                      {"--quiet"},
                       "TODO");
   arg_parser.add_flag(STACK_TRACE_TO_FILE,
                       {"--stack_trace_to_file"},

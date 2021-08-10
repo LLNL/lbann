@@ -112,6 +112,7 @@ void smiles_data_reader::load() {
     std::cout << "starting load for role: " << get_role() << std::endl;
   }
 
+  double tm1 = get_time();
   auto& arg_parser = global_argument_parser();
 
   // for now, only implemented for data store with preloading
@@ -127,10 +128,10 @@ void smiles_data_reader::load() {
 
   // load the vocabulary; this is a map: string -> short
   if (m_vocab.size() == 0) {
-    if (arg_parser.get<std::string>("vocab") == "") {
+    if (arg_parser.get<std::string>(VOCAB) == "") {
       LBANN_ERROR("you must either pass --vocab=<string> on the command line or call load_vocab(...)");
     }
-    const std::string fn = arg_parser.get<std::string>("vocab");
+    const std::string fn = arg_parser.get<std::string>(VOCAB);
     load_vocab(fn);
   } else {
     LBANN_ERROR("you passed --vocab=<string>, but it looks like load_vocab() was previously called. You must use one or the other.");
