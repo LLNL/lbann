@@ -245,6 +245,9 @@ public:
   /** @brief Add weights to model. */
   void add_weights(OwningWeightsPtr&& w);
 
+  /** @brief Remove weights from model. */
+  void remove_weights(std::string const& name);
+
   /** @brief Register a new callback for the model. */
   void add_callback(std::shared_ptr<callback_base> cb);
 

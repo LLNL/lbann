@@ -451,6 +451,22 @@ void model::add_weights(OwningWeightsPtr&& ptr) {
 
 }
 
+void model::remove_weights(std::string const& removable_weight_name) {
+  auto const removable_weight_iterator = std::find_if(
+                             cbegin(m_weights),
+                             cend(m_weights),
+                             [&removable_weight_name](auto const& w) {
+                               return w->get_name() == removable_weight_name;
+                             });
+  if (removable_weight_iterator != cend(m_weights))
+    m_weights.erase(removable_weight_iterator);
+  else
+    LBANN_ERROR(
+      "Attempted to remove weight",
+      " \"", removable_weight_name, "\", ",
+      "but no such weight exists");
+}                                        
+
 void model::add_callback(std::shared_ptr<callback_base> cb) {
   if (cb == nullptr) {
     LBANN_ERROR(
@@ -1879,6 +1895,12 @@ void model::remove_layer(std::string const& removable_layer_name) {
   child.replace_parent_layer(l.get_parent_layer_pointer(0), child.find_parent_layer_index(l));
   parent.replace_child_layer(l.get_child_layer_pointer(0), parent.find_child_layer_index(l));
 
+  // Remove weights for the old layer
+  auto old_weights_ptrs = m_layers[removable_layer_index]->get_weights_pointers();
+  for (const auto w : old_weights_ptrs) {
+     this->remove_weights(std::shared_ptr<weights>(w)->get_name());
+  }
+
   // Destroy memory of removable layer - for now, remove from m_layers
   m_layers.erase(m_layers.cbegin()+removable_layer_index);
 }
@@ -1919,6 +1941,12 @@ void model::replace_layer(OwningLayerPtr&& new_layer, std::string const& old_lay
   // Setup relationship between parent of old layer (which becomes parent of new layer) and new layer
   parent.replace_child_layer(new_layer, parent.find_child_layer_index(l));
   new_layer->add_parent_layer(m_layers[old_layer_index-1]);
+
+  // Remove weights for the old layer
+  auto old_weights_ptrs = m_layers[old_layer_index]->get_weights_pointers();
+  for (const auto w : old_weights_ptrs) {
+     this->remove_weights(std::shared_ptr<weights>(w)->get_name());
+  }
 
   // Destroy memory of old layer - for now, remove from m_layers
   m_layers.erase(m_layers.cbegin()+old_layer_index); 

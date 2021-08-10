@@ -73,9 +73,13 @@ message MutationStrategy {
   message ReplaceActivation {
   }
 
+  message ReplaceConvolution {
+  }
+
   oneof strategy {
     NullMutation null_mutation = 1;
     ReplaceActivation replace_activation = 2;
+    ReplaceConvolution replace_convolution = 3;
   }
 } //message Mutation Strategy
 

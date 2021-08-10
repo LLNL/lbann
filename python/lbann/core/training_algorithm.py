@@ -209,6 +209,9 @@ class MutationStrategy:
         elif self.strategy == "replace_activation":
             ReplaceActivationMsg = MutationStrategyMsg.ReplaceActivation
             msg.replace_activation.CopyFrom(ReplaceActivationMsg())
+        elif self.strategy == "replace_convolution":
+            ReplaceConvolutionMsg = MutationStrategyMsg.ReplaceConvolution
+            msg.replace_convolution.CopyFrom(ReplaceConvolutionMsg())
         else:
             raise ValueError("Unknown Strategy")
         return msg

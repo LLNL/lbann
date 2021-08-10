@@ -63,6 +63,14 @@ public:
   void mutate(model& m, const int& step) final;
 };
 
+// Replace Convolution layers
+class ReplaceConvolution final : public Cloneable<ReplaceConvolution, MutationStrategy>
+{
+public:
+  ReplaceConvolution() = default;
+  void mutate(model& m, const int& step) final;
+};
+
 } // namespace ltfb
 } // namespace lbann
 #endif // LBANN_EXECUTION_ALGORITHMS_LTFB_MUTATION_STRATEGY_HPP_INCLUDED
