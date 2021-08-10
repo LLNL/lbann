@@ -23,6 +23,8 @@ namespace lbann {
 #define SERIALIZE_IO "serialize_io"
 #define ST_FULL_TRACE "st_full_trace"
 #define ST_ON "st_on"
+#define USE_CUBLAS_TENSOR_OPS "use_cublas_tensor_ops"
+#define USE_CUDNN_TENSOR_OPS "use_cudnn_tensor_ops"
 #define USE_DATA_STORE "use_data_store"
 #define USE_LTFB "ltfb"
 #define VERBOSE "verbose"

@@ -39,9 +39,6 @@ void construct_std_options() {
   arg_parser.add_flag(DISABLE_CUDA,
                       {"--disable_cuda"},
                       "has no effect unless LBANN was compiled with LBANN_HAS_CUDNN");
-  arg_parser.add_flag(FN,
-                      {"--fn"},
-                      "TODO");
   arg_parser.add_flag(HELP,
                       {"--help", "-h"},
                       "Prints the help message");
@@ -66,6 +63,16 @@ void construct_std_options() {
   arg_parser.add_flag(ST_ON,
                       {"--st_on"},
                       "TODO");
+	arg_parser.add_flag(USE_CUBLAS_TENSOR_OPS,
+											{"--use-cublas-tensor-ops"},
+											utils::ENV("LBANN_USE_CUBLAS_TENSOR_OPS"),
+											"Set the default cuBLAS math mode to use "
+											"Tensor Core operations when available.");
+	arg_parser.add_flag(USE_CUDNN_TENSOR_OPS,
+											{"--use-cudnn-tensor-ops"},
+											utils::ENV("LBANN_USE_CUDNN_TENSOR_OPS"),
+											"Set the default cuDNN math mode to use "
+											"Tensor Core operations when available.");
   arg_parser.add_flag(USE_DATA_STORE,
                       {"--use_data_store"},
                       "Enables the data store in-memory structure");
@@ -80,6 +87,11 @@ void construct_std_options() {
                       "Writes out the sample list that was loaded into the current directory");
 
   // Input options
+  arg_parser.add_flag(ALLOW_GLOBAL_STATISTICS,
+                      {"--ltfb_allow_global_statistics"},
+                      utils::ENV("LBANN_LTFB_ALLOW_GLOBAL_STATISTICS"),
+                      "Allow the print_statistics callback to report "
+                      "global (inter-trainer) summary statistics.");
   arg_parser.add_option(HYDROGEN_BLOCK_SIZE,
                         {"--hydrogen_block_size"},
                         "Block size for Hydrogen",
@@ -192,11 +204,6 @@ void construct_std_options() {
 
 
   // Unused (?) options
-  arg_parser.add_flag(ALLOW_GLOBAL_STATISTICS,
-                      {"--ltfb_allow_global_statistics"},
-                      utils::ENV("LBANN_LTFB_ALLOW_GLOBAL_STATISTICS"),
-                      "Allow the print_statistics callback to report "
-                      "global (inter-trainer) summary statistics.");
   arg_parser.add_option(CHECKPOINT_DIR,
                         {"--checkpoint_dir"},
                         "Save to or restart from a specific checkpoint directory.\n"

@@ -50,8 +50,13 @@ int main(int argc, char *argv[]) {
 
   try {
     // Initialize options db (this parses the command line)
-    construct_all_options();
     auto& arg_parser = global_argument_parser();
+    construct_all_options();
+		arg_parser.add_flag(FN,
+												{"--fn"},
+												"TODO");
+    arg_parser.parse(argc, argv);
+
     if (arg_parser.get<bool>(HELP) or argc == 1) {
       print_help(*comm);
       return EXIT_SUCCESS;
