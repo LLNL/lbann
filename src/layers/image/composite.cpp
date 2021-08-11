@@ -108,7 +108,7 @@ void composite_layer<TensorDataType, Layout, Device>::fp_compute() {
                                                 + output_col,
                                                 sample);
 
-	  if((input_row >= 0 && input_row < input_height) && (input_col >= 0 && input_col < input_width)){
+	  if((input_row >= 0 && input_row < input_height-1) && (input_col >= 0 && input_col < input_width-1)){
 
           	const El::Int input_col0 = std::max(input_col, El::Int(0));
           	const El::Int input_col1 = std::min(input_col+1, input_width-1);
