@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
     // Split MPI into trainers
     allocate_trainer_resources(comm.get());
 
-    if (arg_parser.get<bool>(HELP) or argc == 1) {
+    if (arg_parser.help_requested() or argc == 1) {
       if (master)
         std::cout << arg_parser << std::endl;
       return EXIT_SUCCESS;

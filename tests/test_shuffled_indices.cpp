@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
 												"TODO");
     arg_parser.parse(argc, argv);
 
-    if (arg_parser.get<bool>(HELP) or argc == 1) {
+    if (arg_parser.help_requested() or argc == 1) {
       if (master)
         std::cout << arg_parser << std::endl;
       return EXIT_SUCCESS;

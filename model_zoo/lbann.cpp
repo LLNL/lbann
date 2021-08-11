@@ -69,6 +69,8 @@ int main(int argc, char* argv[])
 {
   auto& arg_parser = global_argument_parser();
   construct_std_options();
+  construct_datastore_options();
+  construct_datareader_options();
   try {
     arg_parser.parse(argc, argv);
   }
@@ -96,7 +98,7 @@ int main(int argc, char* argv[])
   }
 
   try {
-    if (arg_parser.get<bool>(HELP) or argc == 1) {
+    if (arg_parser.help_requested() or argc == 1) {
       if (master)
         std::cout << arg_parser << std::endl;
       return EXIT_SUCCESS;

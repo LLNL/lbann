@@ -12,7 +12,6 @@ namespace lbann {
 
 /****** std options ******/
 // Bool flags
-#define HELP "help"
 #define DISABLE_BACKGROUND_IO_ACTIVITY "disable_background_io_activity"
 #define DISABLE_CUDA "disable_cuda"
 #define FN "fn"

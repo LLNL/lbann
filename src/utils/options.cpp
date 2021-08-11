@@ -33,9 +33,6 @@ void construct_std_options() {
   auto& arg_parser = global_argument_parser();
 
   // Bool flags
-  arg_parser.add_flag(HELP,
-                      {"--help", "-h"},
-                      "Prints the help message");
   arg_parser.add_flag(DISABLE_BACKGROUND_IO_ACTIVITY,
                       {"--disable_background_io_activity"},
                       "[STD] prevent the input layers from fetching data in the background");
