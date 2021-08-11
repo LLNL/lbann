@@ -96,7 +96,8 @@ int main(int argc, char *argv[]) {
     allocate_trainer_resources(comm.get());
 
     if (arg_parser.get<bool>(HELP) or argc == 1) {
-      print_help(*comm);
+      if (master)
+        std::cout << arg_parser << std::endl;
       return EXIT_SUCCESS;
     }
 

@@ -12,12 +12,14 @@ namespace lbann {
 
 /****** std options ******/
 // Bool flags
+#define HELP "help"
 #define DISABLE_BACKGROUND_IO_ACTIVITY "disable_background_io_activity"
 #define DISABLE_CUDA "disable_cuda"
-#define HELP "help"
 #define FN "fn"
 #define LOAD_MODEL_WEIGHTS_DIR_IS_COMPLETE "load_model_weights_dir_is_complete"
+#define LTFB_ALLOW_GLOBAL_STATISTICS "LTFB Allow global statistics"
 #define LTFB_VERBOSE "ltfb_verbose"
+#define NO_IM_COMM "no_im_comm"
 #define PRELOAD_DATA_STORE "preload_data_store"
 #define PRINT_AFFINITY "print_affinity"
 #define SERIALIZE_IO "serialize_io"
@@ -31,6 +33,7 @@ namespace lbann {
 #define WRITE_SAMPLE_LIST "write_sample_list"
 
 // Input options
+#define CKPT_DIR "ckpt_dir"
 #define HYDROGEN_BLOCK_SIZE "hydrogen_block_size"
 #define LOAD_MODEL_WEIGHTS_DIR "load_model_weights_dir"
 #define MAX_RNG_SEEDS_DISPLAY "RNG seeds per trainer to display"
@@ -52,14 +55,6 @@ namespace lbann {
 #define TRAINER_CREATE_TWO_MODELS "Create two models in Sub-grid parallelism"
 #define TRAINER_GRID_HEIGHT "Height of 2D process grid for each trainer"
 #define TRAINER_PRIMARY_GRID_SIZE "Primary Grid Size per trainer"
-
-// Unused options
-#define ALLOW_GLOBAL_STATISTICS "LTFB Allow global statistics"
-#define CHECKPOINT_DIR "checkpoint_dir"
-#define DATA_LAYOUT "data_layout"
-#define OBJECTIVE_FUNCTION "objective_function"
-#define SMILES_BUFFER_SIZE "smiles_buffer_size"
-#define SUPER_NODE "super_node"
 
 /****** datastore options ******/
 // Bool flags
@@ -90,6 +85,7 @@ namespace lbann {
 #define QUIET "quiet"
 #define STACK_TRACE_TO_FILE "stack_trace_to_file"
 #define TEST_ENCODE "test_encode"
+#define WRITE_SAMPLE_LABEL_LIST "write_sample_label_list"
 #define Z_SCORE "z_score"
 
 // Input options
@@ -116,12 +112,9 @@ namespace lbann {
 #define SAMPLE_LIST_TRAIN "sample_list_train"
 #define SAMPLE_LIST_VALIDATE "sample_list_validate"
 #define SEQUENCE_LENGTH "sequence_length"
+#define SMILES_BUFFER_SIZE "smiles_buffer_size"
 #define TEST_TARBALL "test_tarball"
 #define VOCAB "vocab"
-
-// Unused options
-#define SHARE_TESTING_DATA_READERS "share_testing_data_readers"
-#define WRITE_SAMPLE_LABEL_LIST "write_sample_label_list"
 
 /****** jag options ******/
 // Bool flags
@@ -146,21 +139,10 @@ namespace lbann {
 #define OUTPUT_FN "output_fn"
 #define SAMPLES_PER_FILE "samples_per_file"
 
-/****** callback options ******/
-// Bool flags
-#define NO_IM_COMM "no_im_comm"
-
-// Input options
-#define CKPT_DIR "ckpt_dir"
-
-// Unused options
-#define IMAGE_DIR "image_dir"
-
 void construct_std_options();
 void construct_datastore_options();
 void construct_datareader_options();
 void construct_jag_options();
-void construct_callback_options();
 void construct_all_options();
 
 } // namespace lbann

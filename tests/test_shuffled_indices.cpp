@@ -58,7 +58,8 @@ int main(int argc, char *argv[]) {
     arg_parser.parse(argc, argv);
 
     if (arg_parser.get<bool>(HELP) or argc == 1) {
-      print_help(*comm);
+      if (master)
+        std::cout << arg_parser << std::endl;
       return EXIT_SUCCESS;
     }
 
