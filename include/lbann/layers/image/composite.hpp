@@ -90,7 +90,6 @@ protected:
 
     // Get input dimensions
     auto dims = this->get_input_dims(0);
-    const auto& angle_dims = this->get_input_dims(1);
 
     // Check that dimensions are valid
     if (dims.size() != 3) {
