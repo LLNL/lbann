@@ -403,15 +403,6 @@ class KFAC(TrainingAlgorithm):
 
     """
 
-
-class KFAC(TrainingAlgorithm):
-    """Kronecker-Factored Approximate Curvature algorithm.
-
-    Applies second-order information to improve the quality of
-    gradients in SGD-like optimizers.
-
-    """
-
     def __init__(
             self,
             name: str,
