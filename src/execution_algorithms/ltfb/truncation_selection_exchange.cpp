@@ -226,8 +226,8 @@ void TruncationSelectionExchange::select_next(model& m,
                                   std::find(score_list.begin(), score_list.end(), top_scores[i]));
   
         auto model_string = pack(m);
-        send_string(comm, model_string, dest);
         if(comm.am_trainer_master()) {
+          send_string(comm, model_string, dest);
           std::cout << "In LTFB TSE step " << step << ", trainer " << trainer_id << " with score " << score_list[trainer_id]; 
           std::cout << " sends model to trainer  " << dest << " with score " << score_list[dest] << std::endl;
         }
@@ -238,12 +238,13 @@ void TruncationSelectionExchange::select_next(model& m,
       auto src = std::distance(score_list.begin(),
                                std::find(score_list.begin(), score_list.end(),top_scores[trainer_score_pos % m_truncation_k]));
 
+      std::string rcv_str;
       if(comm.am_trainer_master()) { 
+        rcv_str = recv_string(comm, src);
         std::cout << "In LTFB TSE step " << step << ", trainer " << trainer_id << " with score " << score_list[trainer_id]; 
         std::cout << " receives model from trainer " << src << " with score " << score_list[src] << std::endl;
       }
       
-      auto rcv_str = recv_string(comm, src);
      
 
       auto partner_model_ptr = m.copy_model();
