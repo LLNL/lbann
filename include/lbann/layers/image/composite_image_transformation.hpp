@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_LAYERS_IMAGE_COMPOSITE_HPP_INCLUDED
-#define LBANN_LAYERS_IMAGE_COMPOSITE_HPP_INCLUDED
+#ifndef LBANN_LAYERS_IMAGE_COMPOSITE_IMAGE_TRANSFORMATION_HPP_INCLUDED
+#define LBANN_LAYERS_IMAGE_COMPOSITE_IMAGE_TRANSFORMATION_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
 
@@ -38,11 +38,11 @@ namespace lbann {
  *  for (X,Y) translate. 
  */
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-class composite_layer : public data_type_layer<TensorDataType> {
+class composite_image_transformation_layer : public data_type_layer<TensorDataType> {
   static_assert(Layout == data_layout::DATA_PARALLEL,
-                "composite_layer only supports DATA_PARALLEL");
+                "composite_image_transformation_layer only supports DATA_PARALLEL");
   static_assert(Device == El::Device::CPU,
-                "composite_layer only supports CPU");
+                "composite_image_transformation_layer only supports CPU");
 public:
   /** @name Public Types */
   ///@{
@@ -55,13 +55,13 @@ public:
 
 public:
 
-  composite_layer(lbann_comm *comm)
+  composite_image_transformation_layer(lbann_comm *comm)
     : data_type_layer<TensorDataType>(comm) {
 		 this->m_expected_num_parent_layers = 4;
   }
 
-  composite_layer* copy() const override {
-    return new composite_layer(*this);
+  composite_image_transformation_layer* copy() const override {
+    return new composite_image_transformation_layer(*this);
   }
 
   /** @name Serialization */
@@ -72,7 +72,7 @@ public:
 
   ///@}
 
-  std::string get_type() const override { return "composite"; }
+  std::string get_type() const override { return "composite image transformation"; }
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
 
@@ -81,8 +81,8 @@ public:
 protected:
 
   friend class cereal::access;
-  composite_layer()
-    : composite_layer(nullptr)
+  composite_image_transformation_layer()
+    : composite_image_transformation_layer(nullptr)
   {}
 
   void setup_dims(DataReaderMetaData& dr_metadata) override {
@@ -104,14 +104,14 @@ protected:
   }
 };
 
-#ifndef LBANN_COMPOSITE_LAYER_INSTANTIATE
+#ifndef LBANN_COMPOSITE_IMAGE_TRANSFORMATION_LAYER_INSTANTIATE
 #define PROTO(T) \
-  extern template class composite_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>
+  extern template class composite_image_transformation_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>
 
 #include "lbann/macros/instantiate.hpp"
 #undef PROTO
-#endif // LBANN_COMPOSITE_LAYER_INSTANTIATE
+#endif // LBANN_COMPOSITE_IMAGE_TRANSFORMATION_LAYER_INSTANTIATE
 
 } // namespace lbann
 
-#endif // LBANN_LAYERS_IMAGE_COMPOSITE_HPP_INCLUDED
+#endif // LBANN_LAYERS_IMAGE_COMPOSITE_IMAGE_TRANSFORMATION_HPP_INCLUDED

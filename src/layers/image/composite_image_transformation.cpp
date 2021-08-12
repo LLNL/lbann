@@ -24,15 +24,15 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#define LBANN_COMPOSITE_LAYER_INSTANTIATE
-#include "lbann/layers/image/composite.hpp"
+#define LBANN_COMPOSITE_IMAGE_TRANSFORMATION_LAYER_INSTANTIATE
+#include "lbann/layers/image/composite_image_transformation.hpp"
 
 #include <math.h>
 
 namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void composite_layer<TensorDataType, Layout, Device>::fp_compute() {
+void composite_image_transformation_layer<TensorDataType, Layout, Device>::fp_compute() {
 
   // Useful constants
   constexpr DataType Pi = M_PI;
@@ -82,25 +82,25 @@ void composite_layer<TensorDataType, Layout, Device>::fp_compute() {
 
 
           // Get center pixel for rotation
-          const El::Int row_center = input_height/2;
           const El::Int col_center = input_width/2;
+          const El::Int row_center = input_height/2;
 
           // Rotate point relative to input pixel centers
-          const auto& rotated_row =  (output_row - row_center) * cos(angle_rad) - (output_col - col_center) * sin(angle_rad) + row_center;
           const auto& rotated_col = (output_row - row_center) * sin(angle_rad) + (output_col - col_center) * cos(angle_rad) + col_center;
+          const auto& rotated_row =  (output_row - row_center) * cos(angle_rad) - (output_col - col_center) * sin(angle_rad) + row_center;
 
 	  // Shear the rotated point 
-          const auto& shear_row = rotated_row + shear_Y*rotated_col;
           const auto& shear_col = rotated_col + shear_X*rotated_row;
+          const auto& shear_row = rotated_row + shear_Y*rotated_col;
 
 	  // Translate the shear point 
-          const auto& translated_row = shear_row + translate_X;
-          const auto& translated_col = shear_col + translate_Y;
+          const auto& translated_col = shear_col + translate_X;
+          const auto& translated_row = shear_row + translate_Y;
 
 
           // Find input pixels near output point
-          const auto input_row = static_cast<El::Int>(std::floor(translated_row));
           const auto input_col = static_cast<El::Int>(std::floor(translated_col));
+          const auto input_row = static_cast<El::Int>(std::floor(translated_row));
 
           // Input and output pixels
           auto& pixel_output = local_output(channel * input_height * input_width
@@ -116,16 +116,16 @@ void composite_layer<TensorDataType, Layout, Device>::fp_compute() {
          	const El::Int input_row0 = std::max(input_row, El::Int(0));
          	const El::Int input_row1 = std::min(input_row+1, input_height-1);
 
-          	// Rotation point relative to input pixel centers
-         	const auto& unit_col = shear_col - input_col;
-          	const auto& unit_row = shear_row - input_row;
+          	// Point relative to input pixel centers
+         	const auto& unit_col = translated_col - input_col;
+          	const auto& unit_row = translated_row - input_row;
 
                	auto& pixel00 = local_input(channel * input_height * input_width
                                            	+ input_row0 * input_width
                                             	+ input_col0,
                                             	sample);
 	  
-          	auto& pixel01 = local_input(channel * input_height * input_width
+               	auto& pixel01 = local_input(channel * input_height * input_width
                                             	+ input_row0 * input_width
                                             	+ input_col1,
                                            	 sample);	
@@ -158,7 +158,7 @@ void composite_layer<TensorDataType, Layout, Device>::fp_compute() {
 }
 
 #define PROTO(T) \
-  template class composite_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>
+  template class composite_image_transformation_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>
 
 #include "lbann/macros/instantiate.hpp"
 #undef PROTO

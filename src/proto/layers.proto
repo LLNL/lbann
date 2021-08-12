@@ -202,7 +202,7 @@ message Layer {
     // Image layers
     BilinearResize bilinear_resize = 500;
     Rotation rotation = 501;
-    Composite composite = 502;
+    CompositeImageTransformation composite_image_transformation = 502;
 
     // Miscellaneous layers
     Covariance covariance = 600;
@@ -821,7 +821,7 @@ message Layer {
    *  rotation angle, a tensor for (X,Y) shear factor, a tensor 
    *  for (X,Y) translate. 
    */
-  message Composite {}
+  message CompositeImageTransformation {}
 
   //////////////////////////
   // Miscellaneous layers //
