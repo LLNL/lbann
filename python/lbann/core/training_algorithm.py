@@ -236,14 +236,14 @@ class RandomPairwiseExchange(MetaLearningStrategy):
 
     """
 
-    # Fake an enum, maybe?
+#Fake an enum, maybe ?
     class MetricStrategy:
         LOWER_IS_BETTER: int = 0
         HIGHER_IS_BETTER: int = 1
 
-    # This is supposed to go away. I don't want to make it any more
-    # visible than this. In the same vein, I don't want more "class"
-    # stuff for the different strategies.
+#This is supposed to go away.I don't want to make it any more
+#visible than this.In the same vein, I don't want more "class"
+#stuff for the different strategies.
     class ExchangeStrategy:
         """The algorithm for exchanging model data in RandomPairwiseExchange.
 
@@ -364,7 +364,7 @@ class TruncationSelectionExchange(MetaLearningStrategy):
 
     """
 
-    # Fake an enum, maybe?
+#Fake an enum, maybe ?
     class MetricStrategy:
         LOWER_IS_BETTER: int = 0
         HIGHER_IS_BETTER: int = 1

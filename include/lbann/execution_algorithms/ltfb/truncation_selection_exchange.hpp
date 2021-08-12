@@ -39,17 +39,17 @@ namespace lbann {
 namespace ltfb {
 
 /** @class TruncationSelectionExchange
- *  A variant of classic LTFB or exploitation mechanism in population-based training.
- *  All trainers in the population set are ranked using specified evaluation metric.
- *  Model parameters, training hyperparameters and or topologies of any trainer in 
- *  the bottom rank is replaced by that of a (random) trainer in the top rank.
+ *  A variant of classic LTFB or exploitation mechanism in population-based
+ * training. All trainers in the population set are ranked using specified
+ * evaluation metric. Model parameters, training hyperparameters and or
+ * topologies of any trainer in the bottom rank is replaced by that of a
+ * (random) trainer in the top rank.
  *
  */
 class TruncationSelectionExchange final
   : public Cloneable<TruncationSelectionExchange, MetaLearningStrategy>
 {
 public:
-
   enum class metric_strategy
   {
     LOWER_IS_BETTER,
@@ -65,7 +65,8 @@ public:
    *             model passed to apply().
    *  @param[in] winner_strategy Strategy for determining the winner
    *             of a tournament.
-   *  @param[in] truncation_k  Partitions ranking list to top(winners)/bottom(losers)
+   *  @param[in] truncation_k  Partitions ranking list to
+   * top(winners)/bottom(losers)
    */
   TruncationSelectionExchange(std::string metric_name,
                               metric_strategy winner_strategy,
@@ -74,10 +75,11 @@ public:
   /** @brief Constructor
    *  @param[in] metrics The metric/strategy pairs. A metric
    *             with each given name must exist in the model passed
-   *             to apply(). 
+   *             to apply().
    */
-  TruncationSelectionExchange(std::unordered_map<std::string, metric_strategy> metrics,
-                              int truncation_k);
+  TruncationSelectionExchange(
+    std::unordered_map<std::string, metric_strategy> metrics,
+    int truncation_k);
 
   ~TruncationSelectionExchange() = default;
   TruncationSelectionExchange(TruncationSelectionExchange const& other);
@@ -100,25 +102,22 @@ private:
   /** @brief Get the value of the given metric from the model. */
   EvalType
   evaluate_model(model& m, ExecutionContext& ctxt, data_coordinator& dc) const;
+
 private:
   /** @brief The list of metric/strategy pairs.
    *
-   *  Each metric gets its own strategy. 
+   *  Each metric gets its own strategy.
    *  Note, only one metric and strategy pair is currently supported.
    *  List (map) is for compatibility with classic LTFB (RPE)
    *  And as a placeholder for when multiple metrics are needed.
    */
   std::unordered_map<std::string, metric_strategy> m_metrics;
- 
-  /* partitions ranking of trainers to top (winners) and below (loosers) 
+
+  /* partitions ranking of trainers to top (winners) and below (loosers)
    */
   int m_truncation_k;
 
 }; // class TruncationSelectionExchange
-
-
-
-
 
 } // namespace ltfb
 

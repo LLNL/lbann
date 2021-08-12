@@ -51,8 +51,7 @@ namespace lbann {
 namespace ltfb {
 namespace {
 
-bool low_score_wins(
-                TruncationSelectionExchange::metric_strategy strategy)
+bool low_score_wins(TruncationSelectionExchange::metric_strategy strategy)
 {
   using MetricStrategy = TruncationSelectionExchange::metric_strategy;
   switch (strategy) {
@@ -67,7 +66,7 @@ bool low_score_wins(
 }
 
 // Pack model to ship off
-std::string pack(model const& m)  
+std::string pack(model const& m)
 {
   std::ostringstream oss;
   {
@@ -78,18 +77,19 @@ std::string pack(model const& m)
 }
 
 // Send a string to the root of the destination trainer
-void send_string(lbann_comm const& comm, 
-                 std::string const& str, 
-                 int destination_trainer) 
+void send_string(lbann_comm const& comm,
+                 std::string const& str,
+                 int destination_trainer)
 {
   size_t size = str.length();
   comm.send(&size, 1, destination_trainer, /*rank=*/0);
   comm.send(reinterpret_cast<El::byte const*>(str.data()),
-            size, destination_trainer, /*rank=*/0);
+            size,
+            destination_trainer,
+            /*rank=*/0);
 }
 // Receive a string from the root of src_trainer
-std::string recv_string(lbann_comm const& comm, 
-                        int src_trainer) 
+std::string recv_string(lbann_comm const& comm, int src_trainer)
 {
   size_t size = 0;
   comm.recv(&size, 1, src_trainer);
@@ -99,7 +99,7 @@ std::string recv_string(lbann_comm const& comm,
   return buf;
 }
 // Unpack received model
-void unpack(model& m, std::string const& str) 
+void unpack(model& m, std::string const& str)
 {
   std::istringstream iss(str);
   {
@@ -112,10 +112,12 @@ void unpack(model& m, std::string const& str)
 // TruncationSelectionExchange implementation
 
 TruncationSelectionExchange::TruncationSelectionExchange(
-  std::unordered_map<std::string, metric_strategy> metrics, int truncation_k)
-  : m_metrics{std::move(metrics)},m_truncation_k{std::move(truncation_k)}
+  std::unordered_map<std::string, metric_strategy> metrics,
+  int truncation_k)
+  : m_metrics{std::move(metrics)}, m_truncation_k{std::move(truncation_k)}
 {
-  LBANN_ASSERT(m_metrics.size()==1); //only single (1) metric is supported at this time
+  LBANN_ASSERT(m_metrics.size() ==
+               1); // only single (1) metric is supported at this time
 }
 
 TruncationSelectionExchange::TruncationSelectionExchange(
@@ -123,7 +125,7 @@ TruncationSelectionExchange::TruncationSelectionExchange(
   metric_strategy winner_strategy,
   int truncation_k)
   : TruncationSelectionExchange({{std::move(metric_name), winner_strategy}},
-    truncation_k)
+                                truncation_k)
 {}
 
 TruncationSelectionExchange::TruncationSelectionExchange(
@@ -139,7 +141,7 @@ EvalType TruncationSelectionExchange::evaluate_model(model& m,
   const auto original_mode = ctxt.get_execution_mode();
   dc.collect_background_data_fetch(original_mode);
 
-  //Can use validation if it is global
+  // Can use validation if it is global
   if (!dc.is_execution_mode_valid(execution_mode::testing)) {
     LBANN_ERROR("LTFB truncation selection requires ",
                 to_string(execution_mode::testing),
@@ -155,7 +157,7 @@ EvalType TruncationSelectionExchange::evaluate_model(model& m,
 
   // Get metric values
   bool found_metric = false;
-  EvalType score=0.f;
+  EvalType score = 0.f;
   std::string metric_name;
   for (const auto& met : m.get_metrics()) {
     metric_name = met->name();
@@ -166,10 +168,14 @@ EvalType TruncationSelectionExchange::evaluate_model(model& m,
     }
   }
 
-  //sanity check
+  // sanity check
   if (!found_metric) {
-    LBANN_ERROR("could not find metric \"", metric_name, "\" "
-                "in model \"", m.get_name(),  "\"");
+    LBANN_ERROR("could not find metric \"",
+                metric_name,
+                "\" "
+                "in model \"",
+                m.get_name(),
+                "\"");
   }
 
   m.make_data_store_preloaded(execution_mode::testing);
@@ -190,90 +196,102 @@ void TruncationSelectionExchange::select_next(model& m,
   auto const step = ctxt.get_step();
 
   auto score = evaluate_model(m, ctxt, dc);
-  
-  //epsilon, avoid (close) duplicity in score
-  score += 0.00000001*trainer_id;
-  //trainer master computes trainer metric score rank/position
+
+  // epsilon, avoid (close) duplicity in score
+  score += 0.00000001 * trainer_id;
+  // trainer master computes trainer metric score rank/position
   std::vector<EvalType> score_list(num_trainers);
-  comm.trainer_barrier(); 
-  if(comm.am_trainer_master()) {
-    comm.all_gather<EvalType>(score, score_list,comm.get_intertrainer_comm());
+  comm.trainer_barrier();
+  if (comm.am_trainer_master()) {
+    comm.all_gather<EvalType>(score, score_list, comm.get_intertrainer_comm());
   }
   // Communicate trainer score list from trainer master processes
-  comm.trainer_broadcast(comm.get_trainer_master(), score_list.data(),num_trainers);
+  comm.trainer_broadcast(comm.get_trainer_master(),
+                         score_list.data(),
+                         num_trainers);
   std::vector<EvalType> top_scores = score_list;
-  //top-k in an ascending order
-  //supports of singular metric value (for now)
-  auto met_strategy = m_metrics.begin()->second;  
-  if(low_score_wins(met_strategy)) std::sort(top_scores.begin(), top_scores.end(),std::less<EvalType>());
-  //top-k in an descending order
-  else  std::sort(top_scores.begin(), top_scores.end(),std::greater<EvalType>());
+  // top-k in an ascending order
+  // supports of singular metric value (for now)
+  auto met_strategy = m_metrics.begin()->second;
+  if (low_score_wins(met_strategy))
+    std::sort(top_scores.begin(), top_scores.end(), std::less<EvalType>());
+  // top-k in an descending order
+  else
+    std::sort(top_scores.begin(), top_scores.end(), std::greater<EvalType>());
   auto itr1 = std::adjacent_find(top_scores.begin(), top_scores.end());
   if (itr1 != top_scores.end()) {
-    LBANN_ERROR("truncation tournament exchange currently works if trainers scores are unique");
+    LBANN_ERROR("truncation tournament exchange currently works if trainers "
+                "scores are unique");
   }
-  
-  auto itr2 = std::find(top_scores.begin(), top_scores.end(), score_list[trainer_id]);
-  auto trainer_score_pos = std::distance(top_scores.begin(),itr2);
-  
-  if(trainer_score_pos < m_truncation_k) {
-    //Winner (in top-k)
-    //for each loosing trainer
-    for(unsigned int i=m_truncation_k; i < num_trainers; i++) {
-      if(trainer_score_pos == i % m_truncation_k) {
-      //One of partners is trainer that owns score at top_scores[i]
-        auto dest = std::distance(score_list.begin(),
-                                  std::find(score_list.begin(), score_list.end(), top_scores[i]));
-  
+
+  auto itr2 =
+    std::find(top_scores.begin(), top_scores.end(), score_list[trainer_id]);
+  auto trainer_score_pos = std::distance(top_scores.begin(), itr2);
+
+  if (trainer_score_pos < m_truncation_k) {
+    // Winner (in top-k)
+    // for each loosing trainer
+    for (unsigned int i = m_truncation_k; i < num_trainers; i++) {
+      if (trainer_score_pos == i % m_truncation_k) {
+        // One of partners is trainer that owns score at top_scores[i]
+        auto dest = std::distance(
+          score_list.begin(),
+          std::find(score_list.begin(), score_list.end(), top_scores[i]));
+
         auto model_string = pack(m);
-        if(comm.am_trainer_master()) {
+        if (comm.am_trainer_master()) {
           send_string(comm, model_string, dest);
-          std::cout << "In LTFB TSE step " << step << ", trainer " << trainer_id << " with score " << score_list[trainer_id]; 
-          std::cout << " sends model to trainer  " << dest << " with score " << score_list[dest] << std::endl;
+          std::cout << "In LTFB TSE step " << step << ", trainer " << trainer_id
+                    << " with score " << score_list[trainer_id];
+          std::cout << " sends model to trainer  " << dest << " with score "
+                    << score_list[dest] << std::endl;
         }
       }
-
     }
-  } else { //not in top-k, receive
-      auto src = std::distance(score_list.begin(),
-                               std::find(score_list.begin(), score_list.end(),top_scores[trainer_score_pos % m_truncation_k]));
+  }
+  else { // not in top-k, receive
+    auto src =
+      std::distance(score_list.begin(),
+                    std::find(score_list.begin(),
+                              score_list.end(),
+                              top_scores[trainer_score_pos % m_truncation_k]));
 
-      std::string rcv_str;
-      if(comm.am_trainer_master()) { 
-        rcv_str = recv_string(comm, src);
-        std::cout << "In LTFB TSE step " << step << ", trainer " << trainer_id << " with score " << score_list[trainer_id]; 
-        std::cout << " receives model from trainer " << src << " with score " << score_list[src] << std::endl;
-      }
-      
-     
+    std::string rcv_str;
+    if (comm.am_trainer_master()) {
+      rcv_str = recv_string(comm, src);
+      std::cout << "In LTFB TSE step " << step << ", trainer " << trainer_id
+                << " with score " << score_list[trainer_id];
+      std::cout << " receives model from trainer " << src << " with score "
+                << score_list[src] << std::endl;
+    }
 
-      auto partner_model_ptr = m.copy_model();
-      auto& partner_model = *partner_model_ptr;
-      unpack(partner_model, rcv_str);
-      auto& trainer = get_trainer();
-      auto&& metadata = trainer.get_data_coordinator().get_dr_metadata();
-      m.setup(trainer.get_max_mini_batch_size(),
-             metadata,
+    auto partner_model_ptr = m.copy_model();
+    auto& partner_model = *partner_model_ptr;
+    unpack(partner_model, rcv_str);
+    auto& trainer = get_trainer();
+    auto&& metadata = trainer.get_data_coordinator().get_dr_metadata();
+    m.setup(trainer.get_max_mini_batch_size(),
+            metadata,
             /*force=*/true);
-      
   }
 }
 
-
 } // namespace ltfb
 } // namespace lbann
-
 
 namespace {
 lbann::ltfb::TruncationSelectionExchange::metric_strategy
 to_lbann(lbann_data::TruncationSelectionExchange::MetricStrategy strategy)
 {
-  using LBANNEnumType = lbann::ltfb::TruncationSelectionExchange::metric_strategy;
+  using LBANNEnumType =
+    lbann::ltfb::TruncationSelectionExchange::metric_strategy;
   using ProtoEnumType = lbann_data::TruncationSelectionExchange::MetricStrategy;
   switch (strategy) {
-  case ProtoEnumType::TruncationSelectionExchange_MetricStrategy_LOWER_IS_BETTER:
+  case ProtoEnumType::
+    TruncationSelectionExchange_MetricStrategy_LOWER_IS_BETTER:
     return LBANNEnumType::LOWER_IS_BETTER;
-  case ProtoEnumType::TruncationSelectionExchange_MetricStrategy_HIGHER_IS_BETTER:
+  case ProtoEnumType::
+    TruncationSelectionExchange_MetricStrategy_HIGHER_IS_BETTER:
     return LBANNEnumType::HIGHER_IS_BETTER;
   default:
     LBANN_ERROR("Unknown enum value: ", static_cast<int>(strategy));
@@ -282,7 +300,6 @@ to_lbann(lbann_data::TruncationSelectionExchange::MetricStrategy strategy)
 }
 
 } // namespace
-
 
 template <>
 std::unique_ptr<lbann::ltfb::TruncationSelectionExchange>
@@ -300,11 +317,13 @@ lbann::make<lbann::ltfb::TruncationSelectionExchange>(
                  msg.metric_name_strategy_map().cend(),
                  std::inserter(metric_map, metric_map.end()),
                  [](auto const& kvp) {
-                   using MapType = std::unordered_map<std::string, MetricStrategy>;
+                   using MapType =
+                     std::unordered_map<std::string, MetricStrategy>;
                    using ValueType = typename MapType::value_type;
-                   return ValueType{ kvp.first, to_lbann(kvp.second) };
+                   return ValueType{kvp.first, to_lbann(kvp.second)};
                  });
 
   return make_unique<lbann::ltfb::TruncationSelectionExchange>(
-    std::move(metric_map),msg.truncation_k());
+    std::move(metric_map),
+    msg.truncation_k());
 }
