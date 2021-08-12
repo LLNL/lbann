@@ -168,8 +168,8 @@ EvalType TruncationSelectionExchange::evaluate_model(model& m,
 
   //sanity check
   if (!found_metric) {
-    LBANN_ERROR("could not find metric \"" << metric_name << "\""
-        << "in model \"" << m.get_name() << "\"");
+    LBANN_ERROR("could not find metric \"", metric_name, "\" "
+                "in model \"", m.get_name(),  "\"");
   }
 
   m.make_data_store_preloaded(execution_mode::testing);
@@ -210,10 +210,7 @@ void TruncationSelectionExchange::select_next(model& m,
   else  std::sort(top_scores.begin(), top_scores.end(),std::greater<EvalType>());
   auto itr1 = std::adjacent_find(top_scores.begin(), top_scores.end());
   if (itr1 != top_scores.end()) {
-    std::stringstream err;
-    err << "truncation tournament exchange currently works "
-        << "if trainers scores are unique";
-    LBANN_ERROR(err.str());
+    LBANN_ERROR("truncation tournament exchange currently works if trainers scores are unique");
   }
   
   auto itr2 = std::find(top_scores.begin(), top_scores.end(), score_list[trainer_id]);
