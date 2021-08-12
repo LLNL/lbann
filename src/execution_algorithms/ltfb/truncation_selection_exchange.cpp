@@ -120,8 +120,10 @@ TruncationSelectionExchange::TruncationSelectionExchange(
 
 TruncationSelectionExchange::TruncationSelectionExchange(
   std::string metric_name,
-  metric_strategy winner_strategy,int truncation_k)
-  : TruncationSelectionExchange({{metric_name, winner_strategy}},truncation_k)
+  metric_strategy winner_strategy,
+  int truncation_k)
+  : TruncationSelectionExchange({{std::move(metric_name), winner_strategy}},
+    truncation_k)
 {}
 
 TruncationSelectionExchange::TruncationSelectionExchange(
@@ -130,8 +132,8 @@ TruncationSelectionExchange::TruncationSelectionExchange(
 {}
 
 EvalType TruncationSelectionExchange::evaluate_model(model& m,
-                                       ExecutionContext& ctxt,
-                                       data_coordinator& dc) const
+                                                     ExecutionContext& ctxt,
+                                                     data_coordinator& dc) const
 {
   // Make sure data readers finish asynchronous work
   const auto original_mode = ctxt.get_execution_mode();
@@ -166,10 +168,8 @@ EvalType TruncationSelectionExchange::evaluate_model(model& m,
 
   //sanity check
   if (!found_metric) {
-    std::stringstream err;
-    err << "could not find metric \"" << metric_name << "\""
-        << "in model \"" << m.get_name() << "\"";
-    LBANN_ERROR(err.str());
+    LBANN_ERROR("could not find metric \"" << metric_name << "\""
+        << "in model \"" << m.get_name() << "\"");
   }
 
   m.make_data_store_preloaded(execution_mode::testing);
@@ -181,8 +181,8 @@ EvalType TruncationSelectionExchange::evaluate_model(model& m,
 }
 
 void TruncationSelectionExchange::select_next(model& m,
-                                         ltfb::ExecutionContext& ctxt,
-                                         data_coordinator& dc) const
+                                              ltfb::ExecutionContext& ctxt,
+                                              data_coordinator& dc) const
 {
   auto const& comm = *(m.get_comm());
   const unsigned int num_trainers = comm.get_num_trainers();
@@ -195,6 +195,7 @@ void TruncationSelectionExchange::select_next(model& m,
   score += 0.00000001*trainer_id;
   //trainer master computes trainer metric score rank/position
   std::vector<EvalType> score_list(num_trainers);
+  comm.trainer_barrier(); 
   if(comm.am_trainer_master()) {
     comm.all_gather<EvalType>(score, score_list,comm.get_intertrainer_comm());
   }

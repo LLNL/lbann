@@ -68,17 +68,16 @@ public:
    *  @param[in] truncation_k  Partitions ranking list to top(winners)/bottom(losers)
    */
   TruncationSelectionExchange(std::string metric_name,
-                         metric_strategy winner_strategy,
-                         int truncation_k);
+                              metric_strategy winner_strategy,
+                              int truncation_k);
 
   /** @brief Constructor
    *  @param[in] metrics The metric/strategy pairs. A metric
    *             with each given name must exist in the model passed
    *             to apply(). 
    */
-  TruncationSelectionExchange(
-    std::unordered_map<std::string, metric_strategy> metrics,
-    int truncation_k);
+  TruncationSelectionExchange(std::unordered_map<std::string, metric_strategy> metrics,
+                              int truncation_k);
 
   ~TruncationSelectionExchange() = default;
   TruncationSelectionExchange(TruncationSelectionExchange const& other);
