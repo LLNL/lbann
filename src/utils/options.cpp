@@ -248,6 +248,12 @@ void construct_std_options()
                         "Enable asynchronous communication in sub-grid parallelism. "
                         "Default is False.",
                         false);
+  arg_parser.add_option(LBANN_OPTION_TRAINER_ENABLE_TOPO_AWARE_SUBGRID,
+                        {"--trainer_enable_topo_aware_subgrid"},
+                        utils::ENV("LBANN_TRAINER_ENABLE_TOPO_AWARE_SUBGRID"),
+                        "Enable topology aware process placement in sub-grid parallelism. "
+                        "Default is False.",
+                        false);
   arg_parser.add_option(LBANN_OPTION_NUM_SUBGRIDS_BLOCK_ORDER,
                         {"--num-subgrids", "--num-subgrids-block-order"},
                         utils::ENV("LBANN_NUM_SUBGRIDS"),

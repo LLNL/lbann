@@ -141,11 +141,13 @@ void lbann_comm::split_trainers(
 void lbann_comm::split_trainer_grid(
   int num_process_primary_grid,
   bool create_two_models,
-  bool enable_async_comm)
+  bool enable_async_comm,
+  bool enable_topo_aware)
 {
   const int world_size = El::mpi::Size(m_trainer_comm);
   m_create_two_models = create_two_models;
   m_subgrid_async_progress = enable_async_comm;
+  bool enable_topology_aware = enable_topo_aware; 
 
   // If primary grid size is not given then split resources equally between
   // primary and secondary grid
@@ -167,30 +169,63 @@ void lbann_comm::split_trainer_grid(
 
 
   int rank_in_split_comm;
-  if(m_rank_in_trainer < num_process_primary_grid){
-    // color = 0;
-    rank_in_split_comm = m_rank_in_trainer % num_process_primary_grid;
-    m_grid_type = GridType::PRIMARY_GRID;
-    m_rank_in_trainer = rank_in_split_comm;
-    m_procs_per_trainer = num_process_primary_grid;
-  }
-  else{
-    // color = 1;
-    rank_in_split_comm = (m_rank_in_trainer - num_process_primary_grid) % num_process_secondary_grid;
-    m_grid_type = GridType::SECONDARY_GRID;
-    m_rank_in_trainer = rank_in_split_comm;
-    m_procs_per_trainer = num_process_secondary_grid;
-  }
+  
 
-  // Update ranks in primary and secondary grids
-  for (int rank = 0; rank < num_process_primary_grid; ++rank){
-    m_primary_grid_ranks.push_back(rank);
+  
+  if(enable_topology_aware==false){
+    if(m_rank_in_trainer < num_process_primary_grid){
+      rank_in_split_comm = m_rank_in_trainer % num_process_primary_grid;
+      m_grid_type = GridType::PRIMARY_GRID;
+      m_rank_in_trainer = rank_in_split_comm;
+      m_procs_per_trainer = num_process_primary_grid;
+    }
+    else{
+      rank_in_split_comm = (m_rank_in_trainer - num_process_primary_grid) % num_process_secondary_grid;
+      m_grid_type = GridType::SECONDARY_GRID;
+      m_rank_in_trainer = rank_in_split_comm;
+      m_procs_per_trainer = num_process_secondary_grid;
+    }
+    // Update ranks in primary and secondary grids
+    for (int rank = 0; rank < num_process_primary_grid; ++rank){
+      m_primary_grid_ranks.push_back(rank);
+    }
+    for (int rank = num_process_primary_grid;
+          rank < num_process_primary_grid + num_process_secondary_grid;
+          ++rank){
+      m_secondary_grid_ranks.push_back(rank);
+    }
   }
-  for (int rank = num_process_primary_grid;
-        rank < num_process_primary_grid + num_process_secondary_grid;
-        ++rank){
-    m_secondary_grid_ranks.push_back(rank);
+  else{//topology aware
+    
+    // Update ranks in primary and secondary grids
+    for (int rank = 0;
+          rank < num_process_primary_grid + num_process_secondary_grid;
+          ++rank){
+      if((rank%2==0 and rank < 2*num_process_primary_grid) 
+          or m_secondary_grid_ranks.size()==num_process_secondary_grid)
+        m_primary_grid_ranks.push_back(rank);
+      else
+        m_secondary_grid_ranks.push_back(rank);
+    }
+    if(std::find(m_primary_grid_ranks.begin(), m_primary_grid_ranks.end(), m_rank_in_trainer) !=
+        m_primary_grid_ranks.end() ){//Primary grid
+
+      auto pos = std::find(m_primary_grid_ranks.begin(), m_primary_grid_ranks.end(), m_rank_in_trainer);
+      rank_in_split_comm = pos - m_primary_grid_ranks.begin();
+      m_grid_type = GridType::PRIMARY_GRID;
+      m_rank_in_trainer = rank_in_split_comm;
+      m_procs_per_trainer = num_process_primary_grid;
+    }
+    else{
+
+      auto pos = std::find(m_secondary_grid_ranks.begin(), m_secondary_grid_ranks.end(), m_rank_in_trainer);
+      rank_in_split_comm = pos - m_secondary_grid_ranks.begin();
+      m_grid_type = GridType::SECONDARY_GRID;
+      m_rank_in_trainer = rank_in_split_comm;
+      m_procs_per_trainer = num_process_secondary_grid;
+    }
   }
+  
 
   std::cout<<"Primary Grid:";
   for (auto it = m_primary_grid_ranks.begin(); it != m_primary_grid_ranks.end(); it++)
@@ -247,16 +282,21 @@ void lbann_comm::split_trainer_grid(
   if(m_subgrid_async_progress){
     std::vector<int> subset_ranks;
 
-    int start_rank;
-    if(num_process_primary_grid>num_process_secondary_grid)
-      start_rank=0;
-    else
-      start_rank=num_process_primary_grid;
     int subset_grid_size = std::min(num_process_primary_grid, 
                             num_process_secondary_grid);
-    for(int i=0; i<subset_grid_size; ++i){
-      subset_ranks.push_back(i+start_rank);
+    if(num_process_primary_grid>num_process_secondary_grid){
+      for(int i=0; i<subset_grid_size; ++i){
+        subset_ranks.push_back(m_primary_grid_ranks[i]);
+      }
     }
+
+    else{
+      for(int i=0; i<subset_grid_size; ++i){
+        subset_ranks.push_back(m_secondary_grid_ranks[i]);
+      }
+    }
+    
+    
     El::mpi::Incl( trainer_group, 
                     subset_ranks.size(), 
                     subset_ranks.data(), 

@@ -203,6 +203,9 @@ private:
   void start_sync_weights_async(model& model, lbann_comm *comm);
   void end_sync_weights_async(model& model, lbann_comm *comm);
 
+  void start_old_async_weights_model(model& model, lbann_comm *comm,ExeContextType& context);
+  void end_old_async_weights_model(model& model, lbann_comm *comm,ExeContextType& context);
+
   /** @brief The KFAC stopping criteria. */
   std::unique_ptr<TermCriteriaType> m_stopping_criteria;
 
@@ -249,7 +252,7 @@ private:
 
   El::Matrix<double, El::Device::CPU> m_inverse_matrices_size;
 
-  int m_global_inverse_buffer_size=0;
+  int m_global_inverse_buffer_size=0, m_weight_matrices_buffer_size=0;
 
   // std::vector<El::mpi::Request<DataType>> m_inverse_matrix_communication_reqs, m_weights_communication_reqs;
   std::vector<ReqT>m_inverse_matrix_communication_reqs, m_weights_communication_reqs;

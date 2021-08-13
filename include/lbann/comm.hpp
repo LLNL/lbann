@@ -181,7 +181,8 @@ public:
   /** Split the commicator for the given trainer into primary and seconday*/
   void split_trainer_grid(int num_process_primary_grid=0, 
                           bool create_two_models=false,
-                          bool enable_async_comm=false);
+                          bool enable_async_comm=false,
+                          bool enable_topo_aware=false);
 
   /** Get trainer grid number (0: no primary/secondary grid, 1: part of primary grid, 2: part of secondary grid). */
   inline GridType get_grid_type() const noexcept { return m_grid_type; }
