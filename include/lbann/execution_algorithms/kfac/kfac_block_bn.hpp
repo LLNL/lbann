@@ -122,6 +122,23 @@ class kfac_block_bn: public kfac_block<Device> {
       bool print_matrix,
       bool print_matrix_summary,
       bool print_time) override;
+  
+  void compute_preconditioned_gradients(
+      lbann_comm* comm,
+      DataType learning_rate_factor,
+      bool print_matrix,
+      bool print_matrix_summary,
+      bool print_time) override;
+
+  void start_communication_forward_end(
+      lbann_comm* comm) override;
+  void end_communication_forward_end(
+      lbann_comm* comm) override;
+  void start_communication_backward_end(
+      lbann_comm* comm) override;
+  void end_communication_backward_end(
+      lbann_comm* comm) override;
+
 
   const std::vector<El::AbstractMatrix<DataType>*>
   get_preconditioned_grad_buffers() override;
@@ -139,17 +156,11 @@ class kfac_block_bn: public kfac_block<Device> {
   int
   get_inverse_matrices(
       El::Matrix<DataType, Device>& output,
-      int offset) override
-  {
-    LBANN_ERROR("Sub-grid parallelism  is not implemented for BN layer");
-  }
+      int offset) override;
 
   /** @brief Get inverse matrices size (offset). */
   int
-  get_inverse_matrices_size(lbann_comm *comm) override
-  {
-    LBANN_ERROR("Sub-grid parallelism  is not implemented for BN layer");
-  }
+  get_inverse_matrices_size(lbann_comm *comm) override;
 
   /** @brief Get inverse matrices size vector */
   std::vector<int>
@@ -170,10 +181,7 @@ class kfac_block_bn: public kfac_block<Device> {
   set_inverse_matrices(
       El::Matrix<DataType, Device>& workspace,
       int offset,
-      lbann_comm *comm) override
-  {
-    LBANN_ERROR("Sub-grid parallelism  is not implemented for BN layer");
-  }
+      lbann_comm *comm) override;
 
  private:
 
