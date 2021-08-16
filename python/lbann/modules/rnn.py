@@ -382,16 +382,12 @@ class ChannelwiseGRU(Module):
                                    dims=str_list([self.num_channels, self.size]),
                                    name=name+"_prev_state_reshape")
 
-        fc1 = lbann.Reshape(self.ih_fc(x),
-                            dims=str_list([mat_size*3]),
-                            name=f"{name}_reshape_input")
-        
-        fc2 = lbann.Reshape(self.hh_fc(prev_state),
-                            dims=str_list([mat_size*3]),
-                            name=f"{name}_reshape_prev_state")
+        fc1 = self.ih_fc(x)
+        fc2 = self.hh_fc(prev_state)
 
-        fc1_slice = lbann.Slice(fc1, 
-                                slice_points=str_list([0, mat_size, 2*mat_size, 3*mat_size]))
+        fc1_slice = lbann.Slice(fc1,
+                                axis=1,
+                                slice_points=str_list([0, self.size, 2*self.size, 3*self.size]))
         
         Wir_x =lbann.Reshape(lbann.Identity(fc1_slice), 
                              dims=str_list([self.num_channels, self.size]),
@@ -402,8 +398,9 @@ class ChannelwiseGRU(Module):
         Win_x =lbann.Reshape(lbann.Identity(fc1_slice), 
                              dims=str_list([self.num_channels, self.size]),
                              name=name+'_Win_x')
-        fc2_slice = lbann.Slice(fc2, 
-                                slice_points=str_list([0, mat_size, 2*mat_size, 3*mat_size]))
+        fc2_slice = lbann.Slice(fc2,
+                                axis=1,
+                                slice_points=str_list([0, self.size, 2*self.size, 3*self.size]))
 
         Whr_x =lbann.Reshape(lbann.Identity(fc2_slice),
                              dims=str_list([self.num_channels, self.size]),

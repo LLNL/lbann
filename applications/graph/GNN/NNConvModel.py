@@ -105,7 +105,8 @@ def graph_data_splitter(_input,
 		      	NUM_EDGES (int): The number of edges in the largest graph in the dataset (118 for LSC-PPQM4M)
 		      	NUM_NODE_FEATURES (int): The dimensionality of the input node features vector (9 for LSC-PPQM4M)
 		      	NUM_EDGE_FEATURES (int): The dimensionality of the input edge feature vectors (3 for LSC-PPQM4M)
-		      	EMBEDDOIN_DIM (int): The embedding dimensionality of the node feature vector
+		      	EMBEDDING_DIM (int): The embedding dimensionality of the node feature vector
+
 		      	EDGE_EMBEDDING_DIM (int): The embedding dimensionality of the edge feature vector 
 			Returns:
 				(Layer, Layer, Layer, Layer, Layer): Returns 5 Layers. The embedded node feature matrix, the 
