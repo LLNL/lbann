@@ -202,6 +202,7 @@ message Layer {
     // Image layers
     BilinearResize bilinear_resize = 500;
     Rotation rotation = 501;
+    CompositeImageTransformation composite_image_transformation = 502;
 
     // Miscellaneous layers
     Covariance covariance = 600;
@@ -813,6 +814,14 @@ message Layer {
    *  rotation angle.
    */
   message Rotation {}
+
+  /** @brief Rotate a image clockwise around its center, then shear , then translate
+   *
+   *  Expects 4 inputs: a 3D image tensor in CHW format, a scalar
+   *  rotation angle, a tensor for (X,Y) shear factor, a tensor 
+   *  for (X,Y) translate. 
+   */
+  message CompositeImageTransformation {}
 
   //////////////////////////
   // Miscellaneous layers //
