@@ -11,6 +11,7 @@ Support for new training algorithms:
  - Data + sub-graph parallelism for in-core models (D&SP and D&SP-cSub)
  - Initial sub-graph parallelism support for common layers in
    Transformers
+ - Truncation selection exchange for LTFB/Population Based Training (PBT)
 
 Support for new network structures:
 
