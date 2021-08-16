@@ -309,7 +309,7 @@ class GRU(Module):
 class ChannelwiseGRU(Module):
     """Channelwise extension of Gated-recurrent unit for 2D input.
        Implementation mostly taken from:
-       https://pytorch.org/docs/stable/nn.html#gru"""
+       https://pytorch.org/docs/stable/generated/torch.nn.GRUCell.html#torch.nn.GRUCell"""
     global_count = 0
 
     def __init__(self, num_channels, size, bias=True, weights=[], name=None):
