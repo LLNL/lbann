@@ -42,9 +42,9 @@
 #include "lbann/utils/random.hpp"
 
 #ifdef LBANN_HAS_GPU
-  constexpr El::Device Dev = El::Device::GPU;
+constexpr El::Device Dev = El::Device::GPU;
 #else
-  constexpr El::Device Dev = El::Device::CPU;
+constexpr El::Device Dev = El::Device::CPU;
 #endif
 
 namespace lbann {
@@ -202,7 +202,7 @@ void ReplaceActivation::mutate(model& m, const int& step)
 
 void ReplaceConvolution::mutate(model& m, const int& step)
 {
-  static std::vector<int> const kernels = {5, 7, 9};
+  static std::vector<int> const kernels = {3, 5, 7, 9};
   static std::vector<int> const channels = {6, 16, 32};
 
   std::vector<int> conv_layer_indices; // Indices of all convolution layers
@@ -292,15 +292,9 @@ void ReplaceConvolution::mutate(model& m, const int& step)
     auto shim_channels = child.get_output_dims(0)[0];
 
     // Replace shim layer: O/P channels stay the same but I/P channels change
-    m.remove_layer(shim_layer_name);
-    m.insert_layer(make_new_convolution_layer(1,
-                                              0,
-                                              1,
-                                              shim_channels,
-                                              1,
-                                              1,
-                                              shim_layer_name),
-                   name);
+    m.replace_layer(
+      make_new_convolution_layer(1, 0, 1, shim_channels, 1, 1, shim_layer_name),
+      shim_layer_name);
   }
   else {
     std::cout << "Creating shim layer for layer " << name << std::endl;
