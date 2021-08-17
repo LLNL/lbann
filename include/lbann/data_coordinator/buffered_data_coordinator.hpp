@@ -135,7 +135,8 @@ class buffered_data_coordinator : public data_coordinator {
 
 
   void distribute_from_local_matrix(execution_mode mode,
-                                    std::map<input_data_type, AbsDistMatrixType*>& input_buffers);
+                                    data_field_type data_field,
+                                    AbsDistMatrixType& input_buffer);
 
 protected:
   int fetch_to_local_matrix(data_buffer_map_t& buffer_map, const execution_mode mode);

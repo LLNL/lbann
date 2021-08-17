@@ -29,6 +29,7 @@
 
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/data_coordinator/buffered_data_coordinator.hpp"
+#include "lbann/data_readers/utils/input_data_type.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/distconv.hpp"
 #include "lbann/models/model.hpp"
@@ -106,19 +107,13 @@ class input_layer : public data_type_layer<TensorDataType> {
 
   /// @todo make the map and vector references
   input_layer(lbann_comm *comm,
-              data_reader_target_mode dr_mode = data_reader_target_mode::NA)
+              std::string const data_field = "")
     : data_type_layer<TensorDataType>(comm),
-    m_data_reader_mode(dr_mode) {
+    m_data_field(data_field) {
 
     // Input layers have no parents
     this->m_expected_num_parent_layers = 0;
-    if(dr_mode == data_reader_target_mode::NA) {
-      this->m_expected_num_child_layers = 1;
-    }else {
-      // Input layers output a sample and target, which could be the
-      // original value, categorical label, or regression value
-      this->m_expected_num_child_layers = 2;
-    }
+    this->m_expected_num_child_layers = 1;
   }
 
   input_layer(const input_layer&) = default;
@@ -173,12 +168,14 @@ class input_layer : public data_type_layer<TensorDataType> {
  private:
   friend cereal::access;
   input_layer()
-    : input_layer(nullptr, data_reader_target_mode::NA)
+    : input_layer(nullptr)
   {}
 
   // This is to track if samples are loaded with set_samples(), if so the
   // fp_compute() sample loading is no longer necessary
   bool m_samples_loaded = false;
+
+  data_field_type m_data_field;
 
 #ifdef LBANN_HAS_DISTCONV
  public:

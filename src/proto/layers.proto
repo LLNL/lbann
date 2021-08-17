@@ -415,7 +415,7 @@ message Layer {
   // Input layers //
   //////////////////
   message Input {
-    string target_mode = 3;       // Options: "classification", "regression", "reconstruction", "label_reconstruction", "N/A" (default)
+    string data_field = 1; // legacy names are: datum, label, regression
   }
 
   //////////////////////
@@ -576,14 +576,14 @@ message Layer {
     *
     *  The first input tensor is the values and the second is the
     *  indices. For the 1D case the inputs must have the same dimensions.
-    *  For the 2D case, the inputs must have either the same number of 
+    *  For the 2D case, the inputs must have either the same number of
     *  columns (axis=0) or the same number of rows (axis=1). If
     *  an index is out-of-range, it is ignored.
     *
-    *  @note: In the 2D case the output dimensions change depending on the 
-    *  axis. For an (m,n) values input, the output dims are expected to 
-    *  be (*,n) for Axis == 0 and (m,*) for Axis == 1. 
-    *   
+    *  @note: In the 2D case the output dimensions change depending on the
+    *  axis. For an (m,n) values input, the output dims are expected to
+    *  be (*,n) for Axis == 0 and (m,*) for Axis == 1.
+    *
     *  @todo Only flat tensors are currently supported. For higher-order
     *  tensors, PyTorch
     *  (https://pytorch.org/docs/master/tensors.html#torch.Tensor.scatter_)
@@ -619,10 +619,10 @@ message Layer {
     *  the index tensor. If an index is out-of-range, the corresponding
     *  output is set to zero.
     *
-    *  @note: In the 2D case, the output dimension changes according 
-    *  to the axis. For an (m,n) values input, and a (k) indices input, 
+    *  @note: In the 2D case, the output dimension changes according
+    *  to the axis. For an (m,n) values input, and a (k) indices input,
     *  the output tensor will be (k,n) for Axis == 0 and (m, k) for
-    *  Axis == 1  
+    *  Axis == 1
     */
   message Gather {
 

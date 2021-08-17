@@ -75,6 +75,9 @@ void buffered_data_coordinator<TensorDataType>::setup(thread_pool& io_thread_poo
     const data_buffer_map_t& buffer_map = buf_map;
     for (const auto& b : buffer_map) {
       observer_ptr<data_buffer<IODataType>> data_buffer = b.second.get();
+      // for(auto idt : data_buffer->m_input_buffers.keys()) {
+      //   // BVE FIXME
+      // }
       // for(auto idt : input_data_type_iterator()) {
       data_buffer->m_input_buffers[input_data_type::SAMPLES]->Resize(num_neurons, max_mini_batch_size);
       if(has_labels()) {
@@ -202,6 +205,12 @@ void buffered_data_coordinator<TensorDataType>::fetch_data(execution_mode mode) 
 
 template <typename TensorDataType>
 bool buffered_data_coordinator<TensorDataType>::epoch_complete(execution_mode mode) {
+      // Use the predetermined size of the mini-batch to set the current
+    // batch size for the neural network
+  //    int num_samples_in_batch = dc.get_current_mini_batch_size(mode);
+  // BVE When we finish the epoch we can increment the number of
+  //samples that have been
+  //dc.update_num_samples_processed(mode, num_samples_in_batch);
   m_data_set_processed = update_data_set(get_data_reader(mode), mode);
 
   // Kick off background I/O once the forward prop phase is complete.
@@ -290,21 +299,20 @@ bool buffered_data_coordinator<TensorDataType>::update_data_set(generic_data_rea
 }
 
 template <typename TensorDataType>
-void buffered_data_coordinator<TensorDataType>::distribute_from_local_matrix(execution_mode mode, std::map<input_data_type, AbsDistMatrixType*>& input_buffers) {
+void buffered_data_coordinator<TensorDataType>::distribute_from_local_matrix(execution_mode mode, data_field_type data_field, AbsDistMatrixType& input_buffer) {
   prof_region_begin("distribute_from_local_matrix", prof_colors[3], false);
   data_buffer<IODataType>& buf = get_active_buffer(mode);
-  for(auto idt : input_data_type_iterator()) {
-    if(buf.m_input_buffers.count(idt)) {
-      if(input_buffers.count(idt)) {
-        view_or_copy_tensor(*buf.m_input_buffers[idt], *input_buffers[idt]);
-      }
-    }else {
-      if(input_buffers.count(idt)) {
-        LBANN_ERROR("Requested input data of type ", to_string(idt), " - no data in data coordinator");
-      }
-    }
+  if(data_field.compare(INPUT_DATA_TYPE_SAMPLES) == 0) {
+    view_or_copy_tensor(*buf.m_input_buffers[input_data_type::SAMPLES], input_buffer);
+  }else if(data_field.compare(INPUT_DATA_TYPE_LABELS) == 0) {
+    view_or_copy_tensor(*buf.m_input_buffers[input_data_type::LABELS], input_buffer);
+  }else if(data_field.compare( INPUT_DATA_TYPE_RESPONSES) == 0) {
+    view_or_copy_tensor(*buf.m_input_buffers[input_data_type::RESPONSES], input_buffer);
+  }else {
+    LBANN_ERROR("Unknown data_field_type value provided: " + data_field);
   }
 #ifdef LBANN_HAS_DISTCONV
+  // BVE FIXME
   if (dc::is_cosmoflow_parallel_io_enabled() && input_buffers.count(input_data_type::RESPONSES)) {
     auto& response = *(input_buffers[input_data_type::RESPONSES]);
     El::Int new_width = response.Width() / dc::get_number_of_io_partitions();
