@@ -576,6 +576,11 @@ if (LBANN_WITH_UNIT_TESTING)
   endif ()
   message(STATUS "Found Catch2: ${Catch2_DIR}")
 
+  if (CMAKE_CXX_COMPILER_ID MATCHES "ROCMClang")
+    set_target_properties(Catch2::Catch2
+      PROPERTIES INTERFACE_COMPILE_FEATURES "cxx_std_17")
+  endif()
+
   # Now that Catch2 has been found, start adding the unit tests
   include(CTest)
   include(Catch)

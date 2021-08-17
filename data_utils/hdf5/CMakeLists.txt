@@ -27,5 +27,10 @@ if (LBANN_WITH_UNIT_TESTING)
     PRIVATE
     conduit::conduit
     Catch2::Catch2)
-  target_compile_features(helpers_tests PRIVATE cxx_std_17)
+  if ("cxx_std_17" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
+    target_compile_features(helpers_tests PRIVATE cxx_std_17)
+  else ()
+    lbann_check_and_append_flag(LBANN_CXX17_FLAG "-std=c++17")
+    target_compile_options(helpers_tests PRIVATE ${LBANN_CXX17_FLAG})
+  endif ()
 endif ()
