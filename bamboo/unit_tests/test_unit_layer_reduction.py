@@ -61,7 +61,7 @@ def construct_model(lbann):
     # Note: Slice to separate the last entry in the input tensor. Sum
     # with a weights layer so that gradient checking will verify that
     # error signals are correct.
-    x = lbann.Identity(lbann.Input())
+    x = lbann.Identity(lbann.Input(data_field='datum'))
     x = lbann.Slice(x, slice_points=tools.str_list([0,_sample_size-1,_sample_size]))
     x1 = lbann.Identity(x)
     x2 = lbann.Identity(x)

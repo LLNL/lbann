@@ -59,7 +59,7 @@ def construct_model(lbann):
     """
 
     # Input data
-    x = lbann.Identity(lbann.Input())
+    x = lbann.Identity(lbann.Input(data_field='datum'))
     x_lbann = x
 
     # Objects for LBANN model

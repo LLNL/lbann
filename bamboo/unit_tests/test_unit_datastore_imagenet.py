@@ -53,7 +53,7 @@ def construct_model(lbann):
     import lbann.models
 
     # Layer graph
-    input_ = lbann.Input()
+    input_ = lbann.Input(data_field='datum')
     x = lbann.Identity(input_)
     y = lbann.L2Norm2(x)
     z = lbann.Multiply(y, lbann.Sqrt(lbann.MiniBatchIndex()))

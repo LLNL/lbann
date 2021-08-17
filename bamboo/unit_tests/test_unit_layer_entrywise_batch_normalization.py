@@ -64,7 +64,7 @@ def construct_model(lbann):
     # object, construct a zero-valued tensor, and add it to the
     # input. To make sure that batchnorm is non-trivial, we multiply
     # the zero-valued tensor by the mini-batch index.
-    x = lbann.Reshape(lbann.Input(), dims=tools.str_list(_sample_dims))
+    x = lbann.Reshape(lbann.Input(data_field='datum'), dims=tools.str_list(_sample_dims))
     x_weights = lbann.Weights(optimizer=lbann.SGD(),
                               initializer=lbann.ConstantInitializer(value=0.0),
                               name='input_weights')

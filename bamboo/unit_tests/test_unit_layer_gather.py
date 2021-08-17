@@ -67,7 +67,7 @@ def construct_model(lbann):
     # Input data
     # Note: Sum with a weights layer so that gradient checking will
     # verify that error signals are correct.
-    x = lbann.Identity(lbann.Input())
+    x = lbann.Identity(lbann.Input(data_field='datum'))
     x_slice = lbann.Slice(
         x,
         slice_points=tools.str_list([0,input_size,input_size+output_size]),
@@ -127,12 +127,12 @@ def construct_model(lbann):
 
     ######################################################################
     #
-    #          2D Values , 1D Input, Axis = 0 
+    #          2D Values , 1D Input, Axis = 0
     #
     ######################################################################
 
     x0 = lbann.Reshape(x0_lbann, dims=tools.str_list([num_rows, num_columns]))
-    
+
     x1 = lbann.Identity(x1_lbann, name="indices_2D_axis_0")
 
     y0 = lbann.Gather(x0,x1, name="Gather_2D_axis_0", axis=0)
@@ -179,12 +179,12 @@ def construct_model(lbann):
 
     ######################################################################
     #
-    #          2D Values , 1D Input, Axis = 1 
+    #          2D Values , 1D Input, Axis = 1
     #
     ######################################################################
 
     x0 = lbann.Reshape(x0_lbann, dims=tools.str_list([num_rows, num_columns]))
-    
+
     x1 = lbann.Identity(x1_lbann, name="Indices_2D")
 
     y0 = lbann.Gather(x0,x1, name="Gather_2D", axis=1)
