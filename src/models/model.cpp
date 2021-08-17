@@ -1896,6 +1896,7 @@ void model::remove_layer(std::string const& removable_layer_name) {
   parent.replace_child_layer(l.get_child_layer_pointer(0), parent.find_child_layer_index(l));
 
   // Remove weights for the old layer
+  // NOTE : We assume that layers do not share weights
   auto old_weights_ptrs = m_layers[removable_layer_index]->get_weights_pointers();
   for (const auto w : old_weights_ptrs) {
      this->remove_weights(std::shared_ptr<weights>(w)->get_name());
