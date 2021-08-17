@@ -1940,7 +1940,7 @@ void model::replace_layer(OwningLayerPtr&& new_layer, std::string const& old_lay
 
   // Setup relationship between parent of old layer (which becomes parent of new layer) and new layer
   parent.replace_child_layer(new_layer, parent.find_child_layer_index(l));
-  new_layer->add_parent_layer(m_layers[old_layer_index-1]);
+  new_layer->add_parent_layer(l.get_parent_layer_pointer(0));
 
   // Remove weights for the old layer
   auto old_weights_ptrs = m_layers[old_layer_index]->get_weights_pointers();
