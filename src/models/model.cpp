@@ -1943,6 +1943,7 @@ void model::replace_layer(OwningLayerPtr&& new_layer, std::string const& old_lay
   new_layer->add_parent_layer(l.get_parent_layer_pointer(0));
 
   // Remove weights for the old layer
+  // NOTE : We assume that layers do not share weights
   auto old_weights_ptrs = m_layers[old_layer_index]->get_weights_pointers();
   for (const auto w : old_weights_ptrs) {
      this->remove_weights(std::shared_ptr<weights>(w)->get_name());
