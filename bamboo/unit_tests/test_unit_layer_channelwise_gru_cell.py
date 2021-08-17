@@ -6,7 +6,6 @@ import sys
 import numpy as np
 import scipy.special
 import pytest
-from lbann.modules.rnn import ChannelwiseGRU
 
 # Bamboo utilities
 current_file = os.path.realpath(__file__)
@@ -45,7 +44,7 @@ def sample_dims():
 def numpy_gru_cell(x, h, w):
     #
     # This implements a 2 dimensional analogue of the PyTorch.nn.GRUCell
-    # See here for more details: 
+    # See here for more details:
     # https://pytorch.org/docs/stable/generated/torch.nn.GRUCell.html#torch.nn.GRUCell
     #
     # Dimensions
@@ -97,6 +96,7 @@ def construct_model(lbann):
         lbann (module): Module for LBANN Python frontend
 
     """
+    from lbann.modules.rnn import ChannelwiseGRU
 
     # Input data
     # Note: Sum with a weights layer so that gradient checking will
