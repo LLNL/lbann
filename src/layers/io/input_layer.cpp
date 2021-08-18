@@ -106,15 +106,6 @@ void input_layer<TensorDataType, T_layout, Dev>::fp_compute()
       static_cast<buffered_data_coordinator<TensorDataType>&>(
         get_trainer().get_data_coordinator());
 
-    //  partitioned_io_buffer<TensorDataType>* io_buffer = dc.get_active_buffer(mode);
-    // generic_io_buffer<TensorDataType>* io_buffer = dc.m_io_buffers[dc.get_active_buffer_idx(mode) % dc.m_io_buffers.size()];
-
-    // if(dynamic_cast<partitioned_io_buffer<TensorDataType>*>(io_buffer) != nullptr) {
-    // Use the predetermined size of the mini-batch to set the current
-    // batch size for the neural network
-    int num_samples_in_batch = dc.get_current_mini_batch_size(mode);
-
-    dc.update_num_samples_processed(mode, num_samples_in_batch);
     dc.distribute_from_local_matrix(mode, m_data_field, this->get_activations(0));
 
 #ifdef LBANN_HAS_DISTCONV
@@ -139,12 +130,15 @@ template <typename TensorDataType,
           El::Device Dev>
 std::vector<int> input_layer<TensorDataType, T_layout, Dev>::
 get_data_dims(DataReaderMetaData& dr_metadata, int child_index) const {
-  if(child_index == 0) {
+  if(child_index != 0) {LBANN_ERROR("get_data_dims: Invalid child index"); }
+  if(m_data_field.compare(INPUT_DATA_TYPE_SAMPLES) == 0) {
     return dr_metadata.data_dims[data_reader_target_mode::INPUT];
-  }else if(child_index == 1) {
-    return dr_metadata.data_dims[this->m_data_reader_mode];
+  }else if(m_data_field.compare(INPUT_DATA_TYPE_LABELS) == 0) {
+    return dr_metadata.data_dims[data_reader_target_mode::CLASSIFICATION];
+  }else if(m_data_field.compare( INPUT_DATA_TYPE_RESPONSES) == 0) {
+    return dr_metadata.data_dims[data_reader_target_mode::REGRESSION];
   }else {
-    LBANN_ERROR("get_data_dims: Invalid child index");
+    LBANN_ERROR("Unknown data_field_type value provided: " + m_data_field);
   }
   return std::vector<int>(1, 0);
 }

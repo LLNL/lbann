@@ -207,10 +207,10 @@ template <typename TensorDataType>
 bool buffered_data_coordinator<TensorDataType>::epoch_complete(execution_mode mode) {
       // Use the predetermined size of the mini-batch to set the current
     // batch size for the neural network
-  //    int num_samples_in_batch = dc.get_current_mini_batch_size(mode);
+  int num_samples_in_batch = get_current_mini_batch_size(mode);
   // BVE When we finish the epoch we can increment the number of
   //samples that have been
-  //dc.update_num_samples_processed(mode, num_samples_in_batch);
+  update_num_samples_processed(mode, num_samples_in_batch);
   m_data_set_processed = update_data_set(get_data_reader(mode), mode);
 
   // Kick off background I/O once the forward prop phase is complete.

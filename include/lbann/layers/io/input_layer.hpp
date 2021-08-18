@@ -151,10 +151,6 @@ class input_layer : public data_type_layer<TensorDataType> {
    */
   std::vector<int> get_data_dims(DataReaderMetaData& dr_metadata, int child_index = 0) const;
 
-  bool is_for_regression() const {
-    return (m_data_reader_mode == data_reader_target_mode::REGRESSION);
-  }
-
   /** @name Serialization */
   ///@{
 
@@ -162,8 +158,6 @@ class input_layer : public data_type_layer<TensorDataType> {
   void serialize(ArchiveT& ar);
 
   ///@}
- protected:
-  data_reader_target_mode m_data_reader_mode;
 
  private:
   friend cereal::access;

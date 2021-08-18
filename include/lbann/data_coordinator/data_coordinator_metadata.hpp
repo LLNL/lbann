@@ -38,6 +38,7 @@
 
 namespace lbann {
 
+// BVE FIXME
 // NA - Not applicable, used for input layers that don't produce a second output
 enum class data_reader_target_mode {CLASSIFICATION, REGRESSION, RECONSTRUCTION, LABEL_RECONSTRUCTION, INPUT, NA};
 std::string to_string(data_reader_target_mode m);

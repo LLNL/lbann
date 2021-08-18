@@ -37,7 +37,7 @@ input_layer<TensorDataType,Layout,Device>
   using DataTypeLayer = data_type_layer<TensorDataType>;
   ar(::cereal::make_nvp("DataTypeLayer",
                         ::cereal::base_class<DataTypeLayer>(this)),
-     CEREAL_NVP(m_data_reader_mode));
+     CEREAL_NVP(m_data_field));
 }
 
 } // namespace lbann
