@@ -109,7 +109,7 @@ def construct_model(run_args):
     print("sequence length is {}, which is training sequence len + bos + eos".format(sequence_length))
     data_layout = "data_parallel"
     # Layer graph
-    input_ = lbann.Input(data_field='datum',name='inp_data')
+    input_ = lbann.Input(data_field='samples',name='inp_data')
     #Note input assumes to come from encoder script concatenation of input smiles + z
     inp_slice = lbann.Slice(input_, axis=0,
                              slice_points=str_list([0, sequence_length, sequence_length+run_args.z_dim]),

@@ -106,7 +106,7 @@ def construct_model(run_args):
     print("sequence length is {}".format(sequence_length))
     data_layout = "data_parallel"
     # Layer graph
-    input_ = lbann.Identity(lbann.Input(name='inp',data_field='datum'), name='inp1')
+    input_ = lbann.Identity(lbann.Input(name='inp',data_field='samples'), name='inp1')
     wae_loss= []
     input_feature_dims = sequence_length
 

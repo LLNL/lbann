@@ -18,7 +18,7 @@ def setup(data_reader_file,
           checkpoint_interval=None):
 
     # Setup input data
-    images = lbann.Input(data_field='datum')
+    images = lbann.Input(data_field='samples')
     labels = lbann.Input(data_field='labels')
 
     # Classification network

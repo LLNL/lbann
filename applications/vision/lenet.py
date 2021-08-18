@@ -21,7 +21,7 @@ args = parser.parse_args()
 # ----------------------------------
 
 # Input data
-images = lbann.Input(data_field='datum')
+images = lbann.Input(data_field='samples')
 labels = lbann.Input(data_field='labels')
 
 # LeNet

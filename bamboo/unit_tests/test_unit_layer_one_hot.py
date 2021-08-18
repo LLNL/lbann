@@ -58,7 +58,7 @@ def construct_model(lbann):
     """
 
     # Input data
-    x_lbann = lbann.Identity(lbann.Input(data_field='datum'))
+    x_lbann = lbann.Identity(lbann.Input(data_field='samples'))
     y_numpy = np.random.normal(size=one_hot_size).astype(np.float32)
     y_numpy[:] = 1 ### @todo Remove
     y_lbann = lbann.Weights(

@@ -33,7 +33,7 @@ args = parser.parse_args()
 imagenet_labels = 1000
 
 # Construct layer graph
-images = lbann.Input(data_field='datum')
+images = lbann.Input(data_field='samples')
 labels = lbann.Input(data_field='labels')
 preds = lbann.models.AlexNet(imagenet_labels)(images)
 probs = lbann.Softmax(preds)

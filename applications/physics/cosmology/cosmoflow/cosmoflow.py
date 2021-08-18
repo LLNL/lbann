@@ -335,7 +335,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Construct layer graph
-    universes = lbann.Input(data_field='datum')
+    universes = lbann.Input(data_field='samples')
     secrets = lbann.Input(data_field='responses')
     statistics_group_size = 1 if args.local_batchnorm else -1
     preds = CosmoFlow(

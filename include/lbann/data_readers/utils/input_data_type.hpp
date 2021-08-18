@@ -33,7 +33,7 @@
 namespace lbann {
 
 using data_field_type = std::string;
-#define INPUT_DATA_TYPE_SAMPLES "datum"
+#define INPUT_DATA_TYPE_SAMPLES "samples"
 #define INPUT_DATA_TYPE_LABELS "labels"
 #define INPUT_DATA_TYPE_RESPONSES "responses"
 

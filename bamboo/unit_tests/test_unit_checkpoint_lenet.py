@@ -72,7 +72,7 @@ def construct_model(lbann):
     lbann.models.LeNet.global_count = 0
     lbann.Layer.global_count = 0
     # Layer graph
-    images = lbann.Input(data_field='datum')
+    images = lbann.Input(data_field='samples')
     labels = lbann.Input(data_field='labels')
     x = lbann.models.LeNet(10)(images)
     probs = lbann.Softmax(x)

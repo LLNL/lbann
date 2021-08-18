@@ -69,7 +69,7 @@ def construct_model(lbann):
         name='input_weights'
     )
     x = lbann.Multiply(
-        lbann.Input(data_field='datum'),
+        lbann.Input(data_field='samples'),
         lbann.WeightsLayer(weights=x_weights, dims=tools.str_list(_sample_size)),
     )
 

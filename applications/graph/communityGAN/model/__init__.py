@@ -15,7 +15,7 @@ def make_model(
 
     # Layer graph
     input_ = lbann.Slice(
-        lbann.Input(data_field='datum'),
+        lbann.Input(data_field='samples'),
         slice_points=str_list([0, motif_size, motif_size+walk_length]),
     )
     motif_indices = lbann.Identity(input_)

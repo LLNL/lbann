@@ -68,7 +68,7 @@ def construct_model(lbann):
     x1_weights = lbann.Weights(optimizer=lbann.SGD(),
                                initializer=lbann.ConstantInitializer(value=0.0),
                                name='input1_weights')
-    x_slice = lbann.Slice(lbann.Input(data_field='datum'),
+    x_slice = lbann.Slice(lbann.Input(data_field='samples'),
                           slice_points=tools.str_list([0, _N*_m*_k, _N*_m*_k+_N*_k*_n]))
     x0 = lbann.Sum(x_slice,
                    lbann.WeightsLayer(weights=x0_weights, dims=str(_N*_m*_k)))

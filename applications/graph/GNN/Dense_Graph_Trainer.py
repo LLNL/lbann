@@ -103,7 +103,7 @@ def make_model(num_vertices = None,
     # Reshape and Slice Input Tensor
     #----------------------------------
 
-    input_ = lbann.Input(data_field='datum')
+    input_ = lbann.Input(data_field='samples')
 
     # Input dimensions should be (num_vertices * node_features + num_vertices^2 + num_classes )
     # input should have atleast two children since the target is classification

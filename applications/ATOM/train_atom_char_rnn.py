@@ -111,7 +111,7 @@ def construct_model(run_args):
     data_layout = "data_parallel"
 
     # Layer graph
-    _input = lbann.Input(name="inp_tensor", data_field='datum')
+    _input = lbann.Input(name="inp_tensor", data_field='samples')
     print(sequence_length)
     x_slice = lbann.Slice(
         _input,

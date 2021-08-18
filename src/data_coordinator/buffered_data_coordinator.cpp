@@ -302,11 +302,11 @@ template <typename TensorDataType>
 void buffered_data_coordinator<TensorDataType>::distribute_from_local_matrix(execution_mode mode, data_field_type data_field, AbsDistMatrixType& input_buffer) {
   prof_region_begin("distribute_from_local_matrix", prof_colors[3], false);
   data_buffer<IODataType>& buf = get_active_buffer(mode);
-  if(data_field.compare(INPUT_DATA_TYPE_SAMPLES) == 0) {
+  if(data_field == INPUT_DATA_TYPE_SAMPLES) {
     view_or_copy_tensor(*buf.m_input_buffers[input_data_type::SAMPLES], input_buffer);
-  }else if(data_field.compare(INPUT_DATA_TYPE_LABELS) == 0) {
+  }else if(data_field == INPUT_DATA_TYPE_LABELS) {
     view_or_copy_tensor(*buf.m_input_buffers[input_data_type::LABELS], input_buffer);
-  }else if(data_field.compare( INPUT_DATA_TYPE_RESPONSES) == 0) {
+  }else if(data_field == INPUT_DATA_TYPE_RESPONSES) {
     view_or_copy_tensor(*buf.m_input_buffers[input_data_type::RESPONSES], input_buffer);
   }else {
     LBANN_ERROR("Unknown data_field_type value provided: " + data_field);

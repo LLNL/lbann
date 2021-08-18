@@ -68,7 +68,7 @@ def construct_model(lbann):
         return np.inner(x, x)
 
     # LBANN implementation
-    x = lbann.Reshape(lbann.Input(data_field='datum'), dims=tools.str_list(_sample_dims))
+    x = lbann.Reshape(lbann.Input(data_field='samples'), dims=tools.str_list(_sample_dims))
     y = lbann.Argmax(x, device='cpu')
     z = lbann.L2Norm2(y)
 

@@ -24,7 +24,7 @@ def construct_model():
     import lbann
 
     # Layer graph
-    data = lbann.Input(data_field='datum')
+    data = lbann.Input(data_field='samples')
     responses = lbann.Input(data_field='responses')
 
     pred = combo.Combo()(data)

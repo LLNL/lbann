@@ -92,7 +92,7 @@ data_reader = data.mnist.make_data_reader(validation_percent=0)
 num_classes = 10
 
 # Input data
-images = lbann.Input(data_field='datum')
+images = lbann.Input(data_field='samples')
 labels = lbann.Input(data_field='labels')
 has_bias = False
 x = images

@@ -281,7 +281,7 @@ def make_model(NUM_NODES,
 	out_channel = NUM_OUT_FEATURES
 	output_dimension = 1
 
-	_input = lbann.Input(data_field='datum')
+	_input = lbann.Input(data_field='samples')
 	node_feature_mat, neighbor_feature_mat, edge_feature_mat, edge_indices, target = \
 		graph_data_splitter(_input,
 												NUM_NODES,

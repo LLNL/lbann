@@ -77,7 +77,7 @@ def construct_model(lbann):
     """
 
     # Input data
-    x_lbann = lbann.Identity(lbann.Input(data_field='datum'))
+    x_lbann = lbann.Identity(lbann.Input(data_field='samples'))
 
     # Objects for LBANN model
     obj = []

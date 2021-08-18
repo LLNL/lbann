@@ -422,7 +422,7 @@ def main():
     # Construct layer graph
     # ----------------------------------
 
-    images = lbann.Input(data_field='datum')
+    images = lbann.Input(data_field='samples')
     # Start counting cumulative layers at 1.
     cumulative_layer_num = 1
     log('Input(datum). cumulative_layer_num={n}'.format(n=cumulative_layer_num))

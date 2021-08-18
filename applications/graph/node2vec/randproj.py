@@ -115,7 +115,7 @@ metrics = []
 
 # Autoencoder
 # Note: Input is sequence of vertex IDs
-input_ = lbann.Identity(lbann.Input(data_field='datum'))
+input_ = lbann.Identity(lbann.Input(data_field='samples'))
 proj = model.random_projection.random_projection(
     input_,
     sample_size,

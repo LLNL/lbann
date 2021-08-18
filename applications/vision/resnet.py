@@ -101,7 +101,7 @@ else:
         width=args.width)
 
 # Construct layer graph
-images = lbann.Input(data_field='datum')
+images = lbann.Input(data_field='samples')
 labels = lbann.Input(data_field='labels')
 preds = resnet(images)
 probs = lbann.Softmax(preds)
