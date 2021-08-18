@@ -72,9 +72,8 @@ def construct_model(lbann):
     import lbann.models
 
     # Layer graph
-    input_ = lbann.Input(target_mode='classification')
-    images = lbann.Identity(input_)
-    labels = lbann.Identity(input_)
+    images = lbann.Input(data_field='datum')
+    labels = lbann.Input(data_field='labels')
     x = lbann.models.ResNet50(1000, bn_statistics_group_size=-1)(images)
     probs = lbann.Softmax(x)
     cross_entropy = lbann.CrossEntropy(probs, labels)

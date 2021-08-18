@@ -70,24 +70,19 @@ model {
   ###################################################
 
   layer {
-    name: "data"
-    children: "image label"
-    data_layout: "data_parallel"
-    input {
-      target_mode: "classification"
-    }
-  }
-  layer {
-    parents: "data"
     name: "image"
     data_layout: "data_parallel"
-    split {}
+    input {
+      data_field: "datum"
+    }
   }
+
   layer {
-    parents: "data"
     name: "label"
     data_layout: "data_parallel"
-    split {}
+    input {
+      data_field: "labels"
+    }
   }
 
   layer {
