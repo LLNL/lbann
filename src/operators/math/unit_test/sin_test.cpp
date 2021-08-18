@@ -34,7 +34,7 @@
 #include "OperatorTraits.hpp"
 
 // CUT
-#include "lbann/operators/math/clamp.hpp"
+#include "lbann/operators/math/unary.hpp"
 
 // Other stuff
 #include "lbann/proto/factories.hpp"
@@ -44,127 +44,135 @@
 #include <h2/meta/TypeList.hpp>
 
 #include <functional>
+#include <h2/meta/core/Lazy.hpp>
 #include <memory>
 #include <numeric>
 #include <operators.pb.h>
+
+#include <math.h>
+#if defined M_PI_2
+#define LBANN_PI_2 M_PI_2
+#else
+#define LBANN_PI 3.14159265358979323846264338327
+#define LBANN_PI_2 LBANN_PI / 2.0
+#endif // defined M_PI_2
 
 using namespace lbann;
 
 // Define the list of operators to test. Basically this is
 // {float,double}x{CPU,GPU}.
 template <typename T>
-using ClampOperatorAllDevices = h2::meta::TL<
+using SinOperatorAllDevices = h2::meta::TL<
 #ifdef LBANN_HAS_GPU
-  ClampOperator<T, El::Device::GPU>,
+  SinOperator<T, El::Device::GPU>,
 #endif // LBANN_HAS_GPU
-  ClampOperator<T, El::Device::CPU>>;
+  SinOperator<T, El::Device::CPU>>;
 
-using AllClampOpTypes =
-  h2::meta::tlist::Append<ClampOperatorAllDevices<float>,
-                          ClampOperatorAllDevices<double>>;
+using AllSinOpTypes = h2::meta::tlist::Append<SinOperatorAllDevices<float>,
+                                              SinOperatorAllDevices<double>>;
 
 namespace lbann {
 template <typename T, El::Device D>
-struct OperatorTraits<ClampOperator<T, D>> : OperatorTraits<Operator<T, T, D>>
+struct OperatorTraits<SinOperator<T, D>> : OperatorTraits<Operator<T, T, D>>
 {
 };
 } // namespace lbann
 
+template <typename SinOpT>
+struct MakeCosOpT
+{
+  using type = CosOperator<InputValueType<SinOpT>, Device<SinOpT>>;
+};
+
+template <typename SinOpT>
+using GetCosOperator = h2::meta::Force<MakeCosOpT<SinOpT>>;
+
 // Save some typing.
 using unit_test::utilities::IsValidPtr;
 
-TEMPLATE_LIST_TEST_CASE("Clamp operator lifecycle",
-                        "[mpi][operator][math][clamp][lifecycle]",
-                        AllClampOpTypes)
+TEMPLATE_LIST_TEST_CASE("Sin operator lifecycle",
+                        "[mpi][operator][math][sine][lifecycle]",
+                        AllSinOpTypes)
 {
   using ThisOpType = TestType;
-  using InOutDataType = InputValueType<ThisOpType>;
 
-  auto AsOkType = [](auto const& x) { return El::To<InOutDataType>(x); };
   SECTION("Construction with valid arguments")
   {
     std::unique_ptr<ThisOpType> op_ptr = nullptr;
-    REQUIRE_NOTHROW(op_ptr = std::make_unique<ThisOpType>(0., 1.));
+    REQUIRE_NOTHROW(op_ptr = std::make_unique<ThisOpType>());
     REQUIRE(IsValidPtr(op_ptr));
-    CHECK(op_ptr->get_min() == AsOkType(0.));
-    CHECK(op_ptr->get_max() == AsOkType(1.));
 
-    REQUIRE_NOTHROW(op_ptr = std::make_unique<ThisOpType>(1., 1.));
+    REQUIRE_NOTHROW(op_ptr = std::make_unique<ThisOpType>());
     REQUIRE(IsValidPtr(op_ptr));
-    CHECK(op_ptr->get_min() == AsOkType(1.));
-    CHECK(op_ptr->get_max() == AsOkType(1.));
-  }
-  SECTION("Construction with invalid arguments")
-  {
-    std::unique_ptr<ThisOpType> op_ptr = nullptr;
-    CHECK_THROWS(op_ptr = std::make_unique<ThisOpType>(1., 0.));
-    CHECK_FALSE(IsValidPtr(op_ptr));
   }
   SECTION("Copy interface")
   {
     std::unique_ptr<ThisOpType> clone_ptr = nullptr;
-    REQUIRE_NOTHROW(clone_ptr = ThisOpType{1., 3.}.clone());
-    CHECK(clone_ptr->get_min() == AsOkType(1.));
-    CHECK(clone_ptr->get_max() == AsOkType(3.));
+    REQUIRE_NOTHROW(clone_ptr = ThisOpType{}.clone());
 
-    ThisOpType op(0., 1.);
+    ThisOpType op;
     REQUIRE_NOTHROW(op = *clone_ptr);
-
-    CHECK(op.get_min() == AsOkType(1.));
-    CHECK(op.get_max() == AsOkType(3.));
   }
   SECTION("Construct from protobuf")
   {
     constexpr auto D = Device<ThisOpType>;
+    using InT = InputValueType<ThisOpType>;
+    using OutT = OutputValueType<ThisOpType>;
+
     lbann_data::Operator proto_op;
-    ThisOpType{-2., 5.}.write_proto(proto_op);
+    ThisOpType{}.write_proto(proto_op);
 
     std::unique_ptr<BaseOperatorType<ThisOpType>> base_ptr = nullptr;
-    REQUIRE_NOTHROW(
-      base_ptr =
-        proto::construct_operator<InOutDataType, InOutDataType, D>(proto_op));
-    CHECK(base_ptr->get_type() == "clamp");
+    REQUIRE_NOTHROW(base_ptr =
+                      proto::construct_operator<InT, OutT, D>(proto_op));
+    CHECK(base_ptr->get_type() == "sine");
 
     auto* specific_ptr = dynamic_cast<ThisOpType*>(base_ptr.get());
     CHECK(IsValidPtr(specific_ptr));
-    CHECK(specific_ptr->get_min() == AsOkType(-2.));
-    CHECK(specific_ptr->get_max() == AsOkType(5.));
   }
 }
 
-TEMPLATE_LIST_TEST_CASE("Clamp operator action",
-                        "[mpi][operator][math][clamp][action]",
-                        AllClampOpTypes)
+TEMPLATE_LIST_TEST_CASE("Sin operator action",
+                        "[mpi][operator][math][sine][action]",
+                        AllSinOpTypes)
 {
   using ThisOpType = TestType;
   using InOutDataType = InputValueType<ThisOpType>;
+  using CosOpType = GetCosOperator<ThisOpType>;
 
   auto& world_comm = unit_test::utilities::current_world_comm();
   auto const& g = world_comm.get_trainer_grid();
 
   // Some common data
-  ThisOpType op(-1., 1.);
+  ThisOpType op;
+  CosOpType cos_op;
 
   El::Int const height = 13;
   El::Int const width = 17;
-  InputDataParallelMatType<ThisOpType> input(height, width, g, 0),
-    grad_wrt_input(height, width, g, 0),
-    true_grad_wrt_input(height, width, g, 0);
-  OutputDataParallelMatType<ThisOpType> output(height, width, g, 0),
-    grad_wrt_output(height, width, g, 0), true_output(height, width, g, 0);
 
-  auto AsOkType = [](auto const& x) { return El::To<InOutDataType>(x); };
-  SECTION("Data parallel - all values in range")
+  SECTION("Data parallel")
   {
+    // Main objects
+    InputDataParallelMatType<ThisOpType> input(height, width, g, 0),
+      grad_wrt_input(height, width, g, 0),
+      true_grad_wrt_input(height, width, g, 0);
+    OutputDataParallelMatType<ThisOpType> output(height, width, g, 0),
+      grad_wrt_output(height, width, g, 0), true_output(height, width, g, 0);
+
     // Setup inputs/outputs
-    El::MakeUniform(input);
-    true_output = input; // Operator has no effect.
+    El::Fill(input, El::To<InOutDataType>(M_PI_2));
+    El::Fill(true_output, El::To<InOutDataType>(1.));
 
     El::MakeUniform(grad_wrt_output);
-    true_grad_wrt_input = grad_wrt_output;
 
-    El::Fill(output, AsOkType(2.));         // Fill out of range.
-    El::Fill(grad_wrt_input, AsOkType(4.)); // Fill out of range.
+    // Compute the true gradient wrt input
+    cos_op.fp_compute({input}, {output});
+    El::Hadamard(grad_wrt_output, output, true_grad_wrt_input);
+
+    // Fill the output with garbage.
+    El::Fill(output, El::To<InOutDataType>(-32.)); // Fill out of range.
+    El::Fill(grad_wrt_input,
+             El::To<InOutDataType>(-42.)); // Fill out of range.
 
     CHECK_FALSE(true_output == output);
     REQUIRE_NOTHROW(op.fp_compute({input}, {output}));
@@ -175,16 +183,26 @@ TEMPLATE_LIST_TEST_CASE("Clamp operator action",
     CHECK(true_grad_wrt_input == grad_wrt_input);
   }
 
-  SECTION("Data parallel - all values out of range")
+  SECTION("Model parallel")
   {
+    InputModelParallelMatType<ThisOpType> input(height, width, g, 0),
+      grad_wrt_input(height, width, g, 0),
+      true_grad_wrt_input(height, width, g, 0);
+    OutputModelParallelMatType<ThisOpType> output(height, width, g, 0),
+      grad_wrt_output(height, width, g, 0), true_output(height, width, g, 0);
+
     // Setup inputs/outputs
-    El::MakeUniform(input, AsOkType(4), AsOkType(1));
-    El::Fill(output, AsOkType(-2.));
-    El::Fill(true_output, AsOkType(1.));
+    El::Fill(input, El::To<InOutDataType>(3. * LBANN_PI_2));
+    El::Fill(true_output, El::To<InOutDataType>(-1.));
 
     El::MakeUniform(grad_wrt_output);
-    El::Fill(grad_wrt_input, AsOkType(-1.));
-    El::Fill(true_grad_wrt_input, AsOkType(0.));
+
+    cos_op.fp_compute({input}, {output});
+    El::Hadamard(grad_wrt_output, output, true_grad_wrt_input);
+
+    El::Fill(output, El::To<InOutDataType>(-32.)); // Fill out of range.
+    El::Fill(grad_wrt_input,
+             El::To<InOutDataType>(-42.)); // Fill out of range.
 
     CHECK_FALSE(true_output == output);
     REQUIRE_NOTHROW(op.fp_compute({input}, {output}));
@@ -196,16 +214,15 @@ TEMPLATE_LIST_TEST_CASE("Clamp operator action",
   }
 }
 
-TEMPLATE_LIST_TEST_CASE("Clamp operator serialization",
-                        "[mpi][operator][math][clamp][serialize]",
-                        AllClampOpTypes)
+TEMPLATE_LIST_TEST_CASE("Sin operator serialization",
+                        "[mpi][operator][math][sine][serialize]",
+                        AllSinOpTypes)
 {
   using ThisOpType = TestType;
   using BaseOpType = BaseOperatorType<ThisOpType>;
   using BaseOpPtr = std::unique_ptr<BaseOpType>;
 
   auto& world_comm = unit_test::utilities::current_world_comm();
-  // int const size_of_world = world_comm.get_procs_in_world();
 
   auto const& g = world_comm.get_trainer_grid();
   utils::grid_manager mgr(g);
@@ -213,9 +230,8 @@ TEMPLATE_LIST_TEST_CASE("Clamp operator serialization",
   std::stringstream ss;
 
   // Create the objects
-  ThisOpType src_operator(1., 2.), tgt_operator(0., 1.);
-  BaseOpPtr src_operator_ptr = std::make_unique<ThisOpType>(3., 4.),
-            tgt_operator_ptr;
+  ThisOpType src_operator, tgt_operator;
+  BaseOpPtr src_operator_ptr = std::make_unique<ThisOpType>(), tgt_operator_ptr;
 
 #ifdef LBANN_HAS_CEREAL_BINARY_ARCHIVES
   SECTION("Binary archive")
@@ -233,17 +249,9 @@ TEMPLATE_LIST_TEST_CASE("Clamp operator serialization",
       CHECK(IsValidPtr(tgt_operator_ptr));
     }
 
-    // Check the by-value serialization.
-    CHECK(tgt_operator.get_min() == src_operator.get_min());
-    CHECK(tgt_operator.get_max() == src_operator.get_max());
-
     // Check the by-base-ptr serialization.
-    ThisOpType const& src_op =
-      dynamic_cast<ThisOpType const&>(*src_operator_ptr);
-    ThisOpType const& tgt_op =
-      dynamic_cast<ThisOpType const&>(*tgt_operator_ptr);
-    CHECK(tgt_op.get_min() == src_op.get_min());
-    CHECK(tgt_op.get_max() == src_op.get_max());
+    REQUIRE(IsValidPtr(tgt_operator_ptr));
+    CHECK(IsValidPtr(dynamic_cast<ThisOpType const*>(tgt_operator_ptr.get())));
   }
 
   SECTION("Rooted binary archive")
@@ -261,17 +269,9 @@ TEMPLATE_LIST_TEST_CASE("Clamp operator serialization",
       CHECK(IsValidPtr(tgt_operator_ptr));
     }
 
-    // Check the by-value serialization.
-    CHECK(tgt_operator.get_min() == src_operator.get_min());
-    CHECK(tgt_operator.get_max() == src_operator.get_max());
-
     // Check the by-base-ptr serialization.
-    ThisOpType const& src_op =
-      dynamic_cast<ThisOpType const&>(*src_operator_ptr);
-    ThisOpType const& tgt_op =
-      dynamic_cast<ThisOpType const&>(*tgt_operator_ptr);
-    CHECK(tgt_op.get_min() == src_op.get_min());
-    CHECK(tgt_op.get_max() == src_op.get_max());
+    REQUIRE(IsValidPtr(tgt_operator_ptr));
+    CHECK(IsValidPtr(dynamic_cast<ThisOpType const*>(tgt_operator_ptr.get())));
   }
 #endif // LBANN_HAS_CEREAL_BINARY_ARCHIVES
 
@@ -291,17 +291,9 @@ TEMPLATE_LIST_TEST_CASE("Clamp operator serialization",
       CHECK(IsValidPtr(tgt_operator_ptr));
     }
 
-    // Check the by-value serialization.
-    CHECK(tgt_operator.get_min() == src_operator.get_min());
-    CHECK(tgt_operator.get_max() == src_operator.get_max());
-
     // Check the by-base-ptr serialization.
-    ThisOpType const& src_op =
-      dynamic_cast<ThisOpType const&>(*src_operator_ptr);
-    ThisOpType const& tgt_op =
-      dynamic_cast<ThisOpType const&>(*tgt_operator_ptr);
-    CHECK(tgt_op.get_min() == src_op.get_min());
-    CHECK(tgt_op.get_max() == src_op.get_max());
+    REQUIRE(IsValidPtr(tgt_operator_ptr));
+    CHECK(IsValidPtr(dynamic_cast<ThisOpType const*>(tgt_operator_ptr.get())));
   }
 
   SECTION("Rooted XML archive")
@@ -319,17 +311,9 @@ TEMPLATE_LIST_TEST_CASE("Clamp operator serialization",
       CHECK(IsValidPtr(tgt_operator_ptr));
     }
 
-    // Check the by-value serialization.
-    CHECK(tgt_operator.get_min() == src_operator.get_min());
-    CHECK(tgt_operator.get_max() == src_operator.get_max());
-
     // Check the by-base-ptr serialization.
-    ThisOpType const& src_op =
-      dynamic_cast<ThisOpType const&>(*src_operator_ptr);
-    ThisOpType const& tgt_op =
-      dynamic_cast<ThisOpType const&>(*tgt_operator_ptr);
-    CHECK(tgt_op.get_min() == src_op.get_min());
-    CHECK(tgt_op.get_max() == src_op.get_max());
+    REQUIRE(IsValidPtr(tgt_operator_ptr));
+    CHECK(IsValidPtr(dynamic_cast<ThisOpType const*>(tgt_operator_ptr.get())));
   }
 #endif // LBANN_HAS_CEREAL_XML_ARCHIVES
 }

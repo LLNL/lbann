@@ -40,7 +40,67 @@ message Operator {
   google.protobuf.Any parameters = 4;
 }
 
+/// @name Unary math layers.
+/// @{
+
 message ClampOperator {
   double min = 1;
   double max = 2;
 }
+
+message LogicalNotOperator {}
+message AbsOperator {}
+message NegativeOperator {}
+message SignOperator {}
+message RoundOperator {}
+message CeilOperator {}
+message FloorOperator {}
+message ReciprocalOperator {}
+message SquareOperator {}
+message SqrtOperator {}
+message RsqrtOperator {}
+message SafeReciprocalOperator {}
+message ExpOperator {}
+message Expm1Operator {}
+message LogOperator {}
+message Log1pOperator {}
+message CosOperator {}
+message SinOperator {}
+message TanOperator {}
+message AcosOperator {}
+message AsinOperator {}
+message AtanOperator {}
+message CoshOperator {}
+message SinhOperator {}
+message TanhOperator {}
+message AcoshOperator {}
+message AsinhOperator {}
+message AtanhOperator {}
+message ErfOperator {}
+message ErfInvOperator {}
+
+/// @}
+/// @name Binary math layers.
+/// @{
+
+message AddOperator {}
+message SubtractOperator {}
+message MultiplyOperator {}
+message DivideOperator {}
+message ModOperator {}
+message PowOperator {}
+message SafeDivideOperator {}
+message SquaredDifferenceOperator {}
+message MaxOperator {}
+message MinOperator {}
+message EqualOperator {}
+message NotEqualOperator {}
+message LessOperator {}
+message LessEqualOperator {}
+message GreaterOperator {}
+message GreaterEqualOperator {}
+message LogicalAndOperator {}
+message LogicalOrOperator {}
+message LogicalXorOperator {}
+
+/// @}

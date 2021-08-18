@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -24,20 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-syntax = "proto3";
+#include "lbann/utils/serialize.hpp"
+#include "lbann/operators/math/unary.hpp"
 
-package lbann_data;
-
-enum DataType {
-  FLOAT = 0;
-  DOUBLE = 1;
-  FP16 = 2;
-  COMPLEX_FLOAT = 3;
-  COMPLEX_DOUBLE = 4;
-}
-
-enum DeviceAllocation {
-  DEFAULT_DEVICE = 0;
-  CPU = 1;
-  GPU = 2;
-}
+#define LBANN_OPERATOR_NAME Log1pOperator
+#include <lbann/macros/register_operator_with_cereal.hpp>

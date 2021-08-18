@@ -63,7 +63,9 @@ using supported_operator_data_type = h2::meta::TL<
   cpu_fp16,
 #endif
   float,
-  double>;
+  double,
+  El::Complex<float>,
+  El::Complex<double>>;
 
 /** @brief Neural network tensor operation.
  *
