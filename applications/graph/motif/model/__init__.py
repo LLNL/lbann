@@ -8,7 +8,7 @@ def make_model(
 ):
 
     # Layer graph
-    data = lbann.Identity(lbann.Input())
+    data = lbann.Identity(lbann.Input(data_field='datum'))
     autoencoder = model.autoencoder.FullyConnectedAutoencoder(
         data_dim,
         latent_dim,

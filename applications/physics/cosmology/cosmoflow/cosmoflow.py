@@ -335,10 +335,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Construct layer graph
-    input = lbann.Input(
-        target_mode='regression')
-    universes = lbann.Identity(input)
-    secrets = lbann.Identity(input)
+    universes = lbann.Input(data_field='datum')
+    secrets = lbann.Input(data_field='responses')
     statistics_group_size = 1 if args.local_batchnorm else -1
     preds = CosmoFlow(
         input_width=args.input_width,
@@ -347,7 +345,7 @@ if __name__ == "__main__":
         bn_statistics_group_size=statistics_group_size)(universes)
     mse = lbann.MeanSquaredError([preds, secrets])
     obj = lbann.ObjectiveFunction([mse])
-    layers = list(lbann.traverse_layer_graph(input))
+    layers = list(lbann.traverse_layer_graph([universes, secrets]))
 
     # Set parallel_strategy
     parallel_strategy = get_parallel_strategy_args(

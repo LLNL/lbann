@@ -98,18 +98,18 @@ def graph_data_splitter(_input,
 	 					NUM_EDGE_FEATURES,
 	 					EMBEDDING_DIM,
 	 					EDGE_EMBEDDING_DIM):
-		"""Helper function to split the input data into  
+		"""Helper function to split the input data into
 
-			Args: 
+			Args:
 				NUM_NODES (int): The number of nodes in the largest graph in the dataset (51 for LSC-PPQM4M)
 		      	NUM_EDGES (int): The number of edges in the largest graph in the dataset (118 for LSC-PPQM4M)
 		      	NUM_NODE_FEATURES (int): The dimensionality of the input node features vector (9 for LSC-PPQM4M)
 		      	NUM_EDGE_FEATURES (int): The dimensionality of the input edge feature vectors (3 for LSC-PPQM4M)
 		      	EMBEDDING_DIM (int): The embedding dimensionality of the node feature vector
 
-		      	EDGE_EMBEDDING_DIM (int): The embedding dimensionality of the edge feature vector 
+		      	EDGE_EMBEDDING_DIM (int): The embedding dimensionality of the edge feature vector
 			Returns:
-				(Layer, Layer, Layer, Layer, Layer): Returns 5 Layers. The embedded node feature matrix, the 
+				(Layer, Layer, Layer, Layer, Layer): Returns 5 Layers. The embedded node feature matrix, the
 													 neighbord nodes feature tensor, the embedded edge feature matrix,
 													 the source node index vector, and the label
 		"""
@@ -175,7 +175,7 @@ def graph_data_splitter(_input,
 
 def create_parallel_strategy(num_channel_groups):
     """Helper function to create channelwise fully connected layer distconv
-       parallel strategy 
+       parallel strategy
     """
     if (num_channel_groups > 0):
       return {"channel_groups": num_channel_groups,
@@ -199,12 +199,12 @@ def NNConvLayer(node_features,
 	Args: node_features (Layer): Layer containing the node featue matrix of the graph (NUM_NODES, in_channel)
 	      neighbor_features (Layer): Layer containing the neighbor feature tensor of the graph of shape (NUM_EDGES, 1, in_channel)
 	      edge_features (Layer): Layer containing the edge feature matrix of the graph of shape (NUM_EDGES, EMBEDDED_EDGE_FEATURES)
-	      edge_index (Layer): Layer contain the source edge index vector of the graph of shape (NUM_EDGES) 
+	      edge_index (Layer): Layer contain the source edge index vector of the graph of shape (NUM_EDGES)
 	      in_channel (int): The embedding dimensionality of the node feature vector
 	      out_channel (int): The dimensionality of the node feature vectors after graph convolutions
 	      NUM_NODES (int): The number of nodes in the largest graph in the dataset (51 for LSC-PPQM4M)
 	      NUM_EDGES (int): The number of edges in the largest graph in the dataset (118 for LSC-PPQM4M)
-	      NUM_GROUPS (int): The number of channel groups for distconv channelwise  fully connected layer (default : 0) 
+	      NUM_GROUPS (int): The number of channel groups for distconv channelwise  fully connected layer (default : 0)
 	      """
 	FC = ChannelwiseFullyConnectedModule
 
@@ -225,19 +225,19 @@ def NNConvLayer(node_features,
 		FC1 = [1, FC1]
 		FC2 = [1, FC2]
 		FC3 = [1, FC3]
-	
+
 	sequential_nn = \
-	[FC(FC1, weights=[nn_sq_1_weight], 
-			name="NN_SQ_1", bias=True, 
-			activation=lbann.Relu, 
+	[FC(FC1, weights=[nn_sq_1_weight],
+			name="NN_SQ_1", bias=True,
+			activation=lbann.Relu,
 			parallel_strategy=create_parallel_strategy(NUM_GROUPS)),
-	 FC(FC2, weights=[nn_sq_2_weight], 
-	 		name="NN_SQ_2", bias=True, 
-	 		activation=lbann.Relu, 
+	 FC(FC2, weights=[nn_sq_2_weight],
+	 		name="NN_SQ_2", bias=True,
+	 		activation=lbann.Relu,
 	 		parallel_strategy=create_parallel_strategy(NUM_GROUPS)),
-	 FC(FC3, weights=[nn_sq_3_weight], 
-	 		name="NN_SQ_3", bias=True, 
-	 		activation=lbann.Relu, 
+	 FC(FC3, weights=[nn_sq_3_weight],
+	 		name="NN_SQ_3", bias=True,
+	 		activation=lbann.Relu,
 	 		parallel_strategy=create_parallel_strategy(NUM_GROUPS))]
 
 	nn_conv = NNConv(sequential_nn,
@@ -264,16 +264,16 @@ def make_model(NUM_NODES,
 						   NUM_GROUPS=0):
 	""" Creates an LBANN model for the OGB-LSC PPQM4M Dataset
 
-	Args: 
+	Args:
 		NUM_NODES (int): The number of nodes in the largest graph in the dataset (51 for LSC-PPQM4M)
   	NUM_EDGES (int): The number of edges in the largest graph in the dataset (118 for LSC-PPQM4M)
   	NUM_NODES_FEATURES (int): The dimensionality of the input node features vector (9 for LSC-PPQM4M)
   	NUM_EDGE_FEATURES (int): The dimensionality of the input edge feature vectors (3 for LSC-PPQM4M)
   	EMBEDDING_DIM (int): The embedding dimensionality of the node feature vector
   	EDGE_EMBEDDING_DIM (int): The embedding dimensionality of the edge feature vector
-  	NUM_OUT_FEATURES (int): The dimensionality of the node feature vectors after graph convolutions 
+  	NUM_OUT_FEATURES (int): The dimensionality of the node feature vectors after graph convolutions
   	NUM_EPOCHS (int): The number of epochs to train the network
-  	NUM_GROUPS (int): The number of channel groups for distconv channelwise  fully connected layer (default : 0)  
+  	NUM_GROUPS (int): The number of channel groups for distconv channelwise  fully connected layer (default : 0)
 	Returns:
 		(Model): lbann model object
 		"""
@@ -281,7 +281,7 @@ def make_model(NUM_NODES,
 	out_channel = NUM_OUT_FEATURES
 	output_dimension = 1
 
-	_input = lbann.Input(target_mode='N/A')
+	_input = lbann.Input(data_field='datum')
 	node_feature_mat, neighbor_feature_mat, edge_feature_mat, edge_indices, target = \
 		graph_data_splitter(_input,
 												NUM_NODES,

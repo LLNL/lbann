@@ -47,7 +47,7 @@ def make_model(
     )
 
     # Input is two sequences of token IDs
-    input_ = lbann.Identity(lbann.Input())
+    input_ = lbann.Identity(lbann.Input(data_field='datum'))
 
     # Get sequences of embedding vectors
     # Note: Scale embeddings by sqrt(embed_dim).
@@ -250,5 +250,5 @@ def make_batch_script(trainer_params, model_params, script_params):
                        batch_job=False,)
                                    # **kwargs)
 
-   
+
     print(status)

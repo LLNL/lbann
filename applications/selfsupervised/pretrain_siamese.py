@@ -22,7 +22,7 @@ def setup(num_patches=3,
     num_labels = patch_generator.num_labels(num_patches)
 
     # Extract tensors from data sample
-    input = lbann.Input()
+    input = lbann.Input(data_field='datum')
     slice_points = [0]
     for _ in range(num_patches):
         patch_size = functools.reduce(operator.mul, patch_dims)

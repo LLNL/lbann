@@ -18,9 +18,8 @@ def setup(data_reader_file,
           checkpoint_interval=None):
 
     # Setup input data
-    input = lbann.Input(target_mode = 'classification')
-    images = lbann.Identity(input)
-    labels = lbann.Identity(input)
+    images = lbann.Input(data_field='datum')
+    labels = lbann.Input(data_field='labels')
 
     # Classification network
     head_cnn = modules.ResNet(bn_statistics_group_size=bn_statistics_group_size)
@@ -34,7 +33,7 @@ def setup(data_reader_file,
     # Setup objective function
     cross_entropy = lbann.CrossEntropy([probs, labels])
     l2_reg_weights = set()
-    for l in lbann.traverse_layer_graph(input):
+    for l in lbann.traverse_layer_graph([images, labels]):
         if type(l) == lbann.Convolution or type(l) == lbann.FullyConnected:
             l2_reg_weights.update(l.weights)
     l2_reg = lbann.L2WeightRegularization(weights=l2_reg_weights, scale=0.0002)

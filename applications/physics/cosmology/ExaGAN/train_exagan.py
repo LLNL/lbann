@@ -18,7 +18,7 @@ def construct_model():
     import lbann
 
     # Layer graph
-    input = lbann.Input(target_mode='N/A',name='inp_img')
+    input = lbann.Input(data_field='datum',name='inp_img')
     #label flipping
     label_flip_rand = lbann.Uniform(min=0,max=1, neuron_dims='1')
     label_flip_prob = lbann.Constant(value=0.01, num_neurons='1')

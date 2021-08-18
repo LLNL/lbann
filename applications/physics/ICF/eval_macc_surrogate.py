@@ -102,7 +102,7 @@ def construct_model():
     import lbann
 
     # Layer graph
-    input = lbann.Input(target_mode='N/A',name='inp_data')
+    input = lbann.Input(data_field='datum',name='inp_data')
     # data is 64*64*4 images + 15 scalar + 5 param
     inp_slice = lbann.Slice(input, axis=0, slice_points=str_list([0,args.ydim,args.ydim+args.xdim]),name='inp_slice')
     gt_y = lbann.Identity(inp_slice,name='gt_y')
