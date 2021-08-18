@@ -449,11 +449,20 @@ make_replace_activation(google::protobuf::Message const& msg)
   return std::make_unique<lbann::ltfb::ReplaceActivation>();
 }
 
+std::unique_ptr<lbann::ltfb::ReplaceConvolution>
+make_replace_convolution(google::protobuf::Message const& msg)
+{
+  using ReplaceConvolution = lbann_data::MutationStrategy::ReplaceConvolution;
+  LBANN_ASSERT(dynamic_cast<ReplaceConvolution const*>(&msg));
+  return std::make_unique<lbann::ltfb::ReplaceConvolution>();
+}
+
 MutationStrategyFactory build_default_mutation_factory()
 {
   MutationStrategyFactory factory;
   factory.register_builder("NullMutation", make_null_mutation);
   factory.register_builder("ReplaceActivation", make_replace_activation);
+  factory.register_builder("ReplaceConvolution", make_replace_convolution);
   return factory;
 }
 
