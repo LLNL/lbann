@@ -104,7 +104,7 @@ evaluation metric. Model parameters, training hyperparameters and or
 topologies of any trainer in the bottom rank is replaced by that of a
 (random) trainer in the top rank.
 
-Python front end is similar to above. simply replace RPE with TSE:
+Python front end is similar to above, simply replace RPE with TSE:
 
 .. code-block:: python
 
