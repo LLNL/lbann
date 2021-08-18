@@ -29,6 +29,7 @@
 #include "lbann/data_coordinator/buffered_data_coordinator_impl.hpp"
 #include "lbann/data_coordinator/io_data_buffer_impl.hpp"
 #include "lbann/data_readers/utils/input_data_type.hpp"
+#include "lbann/data_store/data_store_conduit.hpp"
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/profiling.hpp"
@@ -92,13 +93,22 @@ void buffered_data_coordinator<TensorDataType>::setup(thread_pool& io_thread_poo
 
 template <typename TensorDataType>
 int buffered_data_coordinator<TensorDataType>::fetch_to_local_matrix(data_buffer_map_t& buffer_map, const execution_mode mode) {
-  generic_data_reader *data_reader = get_data_reader(mode);
-  int num_parallel_readers = data_reader->get_num_parallel_readers();
+  generic_data_reader *dr = get_data_reader(mode);
+  int num_parallel_readers = dr->get_num_parallel_readers();
 
   prof_region_begin("fetch_to_local_matrix", prof_colors[2], false);
   /// Coordinate all available readers so that they perform I/O in the same step
   /// Check to make sure that the local matrix has space for data
   data_buffer<IODataType>& buf = get_data_buffer(buffer_map, mode);
+
+  /// Make sure that every rank participates in the data store prior
+  /// to seeing if the local rank's position is valid.  Note that
+  /// every rank will hold data that may be used in the last mini-batch
+  if (dr->data_store_active()) {
+    dr->get_data_store().exchange_mini_batch_data(dr->get_position() - dr->get_base_offset() - dr->get_model_offset(),
+                                                  dr->get_loaded_mini_batch_size());
+  }
+
   buf.m_num_samples_fetched = 0;
   if (this->m_comm->get_rank_in_trainer() < num_parallel_readers
       && (buf.m_input_buffers[input_data_type::SAMPLES]->LocalHeight() != 0 && buf.m_input_buffers[input_data_type::SAMPLES]->LocalWidth() != 0)) {
@@ -108,7 +118,7 @@ int buffered_data_coordinator<TensorDataType>::fetch_to_local_matrix(data_buffer
       local_input_buffers[b.first] = static_cast<CPUMat*>(&(b.second->Matrix()));
     }
     /** @brief Each rank will fetch a mini-batch worth of data into it's buffer */
-    buf.m_num_samples_fetched = data_reader->fetch(local_input_buffers, buf.m_indices_fetched_per_mb);
+    buf.m_num_samples_fetched = dr->fetch(local_input_buffers, buf.m_indices_fetched_per_mb);
 
     bool data_valid = (buf.m_num_samples_fetched > 0);
     if(data_valid) {
@@ -297,8 +307,13 @@ void buffered_data_coordinator<TensorDataType>::distribute_from_local_matrix(exe
 #ifdef LBANN_HAS_DISTCONV
   if (dc::is_cosmoflow_parallel_io_enabled() && input_buffers.count(input_data_type::RESPONSES)) {
     auto& response = *(input_buffers[input_data_type::RESPONSES]);
-    response.Resize(response.Height(), response.Width() /
-                    dc::get_number_of_io_partitions());
+    El::Int new_width = response.Width() / dc::get_number_of_io_partitions();
+    if (response.Viewing()) {
+      El::LockedView(response, response, El::ALL, El::IR(0, new_width));
+    }
+    else {
+      response.Resize(response.Height(), new_width);
+    }
   }
 #endif
   buf.m_num_samples_fetched = 0;

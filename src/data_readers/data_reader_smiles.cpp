@@ -26,6 +26,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/comm_impl.hpp"
+#include "lbann/data_readers/data_reader_sample_list_impl.hpp"
 #include "lbann/data_readers/data_reader_smiles.hpp"
 #include "lbann/data_readers/sample_list_impl.hpp"
 #include "lbann/data_readers/sample_list_open_files_impl.hpp"
@@ -44,9 +45,9 @@
 namespace lbann {
 
 smiles_data_reader::smiles_data_reader(const bool shuffle)
-  : generic_data_reader(shuffle) {}
+  : data_reader_sample_list(shuffle) {}
 
-smiles_data_reader::smiles_data_reader(const smiles_data_reader& rhs)  : generic_data_reader(rhs) {
+smiles_data_reader::smiles_data_reader(const smiles_data_reader& rhs)  : data_reader_sample_list(rhs) {
   copy_members(rhs);
 }
 
@@ -67,13 +68,14 @@ smiles_data_reader& smiles_data_reader::operator=(const smiles_data_reader& rhs)
   if (this == &rhs) {
     return (*this);
   }
-  generic_data_reader::operator=(rhs);
+  data_reader_sample_list::operator=(rhs);
   copy_members(rhs);
   return (*this);
 }
 
 
 void smiles_data_reader::copy_members(const smiles_data_reader &rhs) {
+  data_reader_sample_list::copy_members(rhs);
   m_data_store = nullptr;
   if (rhs.m_data_store != nullptr) {
       m_data_store = new data_store_conduit(rhs.get_data_store());
@@ -93,7 +95,6 @@ void smiles_data_reader::copy_members(const smiles_data_reader &rhs) {
   m_vocab = rhs.m_vocab;
   m_vocab_inv = rhs.m_vocab_inv;
 
-  m_sample_list.copy(rhs.m_sample_list);
   m_index_to_local_id = rhs.m_index_to_local_id;
   m_local_to_index = rhs.m_local_to_index;
   m_filename_to_local_id_set = rhs.m_filename_to_local_id_set;
@@ -111,6 +112,7 @@ void smiles_data_reader::load() {
     std::cout << "starting load for role: " << get_role() << std::endl;
   }
 
+  double tm1 = get_time();
   options *opts = options::get();
 
   // for now, only implemented for data store with preloading
@@ -135,12 +137,11 @@ void smiles_data_reader::load() {
     LBANN_ERROR("you passed --vocab=<string>, but it looks like load_vocab() was previously called. You must use one or the other.");
   }
 
-  // load the sample list
-  const std::string sample_list_file = get_data_sample_list();
-  if (sample_list_file.empty()) {
-    LBANN_ERROR("sample list file is empty");
+  // Load the sample list(s)
+  data_reader_sample_list::load();
+  if (is_master()) {
+    std::cout << "time to load sample list: " << get_time() - tm1 << std::endl;
   }
-  load_list_of_samples(sample_list_file);
 
   // do what we almost always do (TODO: this should be refactored as a method
   m_shuffled_indices.clear();
@@ -462,56 +463,6 @@ void smiles_data_reader::decode_smiles(const std::vector<unsigned short> &data, 
   out = s.str();
 }
 
-// this is boilerplate; see data_reader_image.cpp and
-// data_reader_jag_conduit.cpp; TODO: refactor into a common method (future PR)
-void smiles_data_reader::load_list_of_samples(const std::string sample_list_file) {
-  // load the sample list
-  double tm1 = get_time();
-
-  options *opts = options::get();
-
-  if (m_keep_sample_order || opts->has_string("keep_sample_order")) {
-    m_sample_list.keep_sample_order(true);
-  } else {
-    m_sample_list.keep_sample_order(false);
-  }
-
-  std::vector<char> buffer;
-
-  if (opts->has_string("load_full_sample_list_once")) {
-    if (m_comm->am_trainer_master()) {
-      load_file(sample_list_file, buffer);
-    }
-    m_comm->trainer_broadcast(m_comm->get_trainer_master(), buffer);
-
-    vectorwrapbuf<char> strmbuf(buffer);
-    std::istream iss(&strmbuf);
-
-    m_sample_list.set_sample_list_name(sample_list_file);
-    m_sample_list.load(iss, *m_comm, true);
-  } else {
-    m_sample_list.load(sample_list_file, *m_comm, true);
-  }
-
-  double tm2 = get_time();
-  if (is_master()) {
-    std::cout << "Time to load sample list '" << sample_list_file << "': "
-              << tm2 - tm1 << std::endl;
-  }
-
-  /// Merge all the sample list pieces from the workers within the trainer
-  m_sample_list.all_gather_packed_lists(*m_comm);
-  set_file_dir(m_sample_list.get_samples_dirname());
-
-  double tm3 = get_time();
-  if(is_master()) {
-    std::cout << "Time to gather sample list '" << sample_list_file << "': "
-              << tm3 - tm2 << std::endl;
-  }
-  buffer.clear();
-  buffer.shrink_to_fit();
-}
-
 void smiles_data_reader::load_offsets_and_lengths() {
   // trainer P_0 fills in offset_data vector, then bcasts
   std::vector<SampleData> offset_data;
@@ -605,16 +556,14 @@ std::string smiles_data_reader::get_raw_sample(std::istream* istrm, size_t index
 
 void smiles_data_reader::build_some_maps() {
   for (const auto& index : m_shuffled_indices) {
-    const sample_t& sample = m_sample_list[index];
+    auto const [file_id, local_id] = get_sample(index);
     std::stringstream s;
-    const sample_file_id_t file_id = sample.first;
     std::string dir = m_sample_list.get_samples_dirname();
     s << dir << "/" << m_sample_list.get_samples_filename(file_id);
     std::string filename = s.str();
     // this has bit me before, and can be an easy mistake to make
     // when writing sample lists:
     file::remove_multiple_slashes(filename);
-    long long local_id = sample.second;
 
     // construct map entries
     m_index_to_local_id[index] = local_id;
@@ -763,7 +712,7 @@ void smiles_data_reader::read_metadata_file(
 }
 
 void smiles_data_reader::use_unused_index_set(execution_mode m) {
-  generic_data_reader::use_unused_index_set(m);
+  data_reader_sample_list::use_unused_index_set(m);
   // Clear the existing data structures
   m_index_to_local_id.clear();
   m_local_to_index.clear();

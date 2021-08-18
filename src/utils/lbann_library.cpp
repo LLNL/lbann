@@ -99,6 +99,18 @@ void construct_std_options() {
                         "Height of 2D process grid for each trainer. "
                         "Default grid is approximately square.",
                         -1);
+  arg_parser.add_option(TRAINER_PRIMARY_GRID_SIZE,
+                        {"--trainer_primary_grid_size"},
+                        utils::ENV("LBANN_TRAINER_PRIMARY_GRID_SIZE"),
+                        "Primary grid size per trainer. "
+                        "Disables Sub-grid parallelism, when it is 0",
+                        0);
+  arg_parser.add_option(TRAINER_CREATE_TWO_MODELS,
+                        {"--trainer_create_two_models"},
+                        utils::ENV("LBANN_TRAINER_CREATE_TWO_MODELS"),
+                        "Create two models (one each for primary and secondary grid). "
+                        "Default is False.",
+                        false);
   arg_parser.add_option(SMILES_BUFFER_SIZE,
                         {"--smiles_buffer_size"},
                         utils::ENV("LBANN_SMILES_BUFFER_SIZE"),
@@ -145,6 +157,8 @@ int allocate_trainer_resources(lbann_comm *comm) {
   auto& arg_parser = global_argument_parser();
   int procs_per_trainer = arg_parser.get<int>(PROCS_PER_TRAINER);
   int trainer_grid_height = arg_parser.get<int>(TRAINER_GRID_HEIGHT);
+  int trainer_primary_grid_size = arg_parser.get<int>(TRAINER_PRIMARY_GRID_SIZE);
+  bool trainer_create_two_models = arg_parser.get<bool>(TRAINER_CREATE_TWO_MODELS);
 
   if (procs_per_trainer == 0) {
     procs_per_trainer = comm->get_procs_in_world();
@@ -156,6 +170,11 @@ int allocate_trainer_resources(lbann_comm *comm) {
   if (procs_per_trainer != comm->get_procs_per_trainer()
       || trainer_grid_height != comm->get_trainer_grid().Height()) {
     comm->split_trainers(procs_per_trainer, trainer_grid_height);
+  }
+  
+  // Split trainer when sub-grid parallelism is enabled
+  if(trainer_primary_grid_size > 0) {
+    comm->split_trainer_grid(trainer_primary_grid_size, trainer_create_two_models);
   }
 
   return procs_per_trainer;
@@ -494,7 +513,8 @@ void print_lbann_configuration(lbann_comm *comm, int io_threads_per_process, int
             << "  Total number of processes  : " << comm->get_procs_in_world() << std::endl
             << "  OpenMP threads per process : " << omp_get_max_threads() << std::endl
             << "  I/O threads per process (+offset) : " << io_threads_per_process
-            << " (+" << io_threads_offset << ")" << std::endl;
+            << " (+" << io_threads_offset << ")" << std::endl
+            << "  Background I/O enabled     : " << get_trainer().background_io_activity_allowed() << std::endl;
 #ifdef HYDROGEN_HAVE_GPU
   std::cout << "  GPUs on node               : " << hydrogen::gpu::DeviceCount() << std::endl;
 #endif // HYDROGEN_HAVE_GPU

@@ -37,14 +37,23 @@
 namespace lbann {
 namespace callback {
 
-perturb_weights::perturb_weights(std::string output_name,
-                           El::Int batch_interval)
+perturb_weights::perturb_weights(
+  EvalType upper,
+  EvalType lower,
+  EvalType scale,
+  EvalType perturb_probability,
+  std::string output_name,
+  El::Int batch_interval)
   : callback_base(batch_interval),
-    m_output_name(std::move(output_name)) {
-}
+    m_output_name(std::move(output_name)),
+    m_upper(upper),
+    m_lower(lower),
+    m_scale(scale),
+    m_perturb_probability(perturb_probability)
+{}
 
 perturb_weights::perturb_weights()
-  : perturb_weights("",0)
+  : perturb_weights(0,0,0,0,"",0)
 {}
 
 template <class Archive>
@@ -52,12 +61,16 @@ void perturb_weights::serialize(Archive & ar) {
   ar(::cereal::make_nvp(
        "BaseCallback",
        ::cereal::base_class<callback_base>(this)),
-     CEREAL_NVP(m_output_name));
+     CEREAL_NVP(m_output_name),
+     CEREAL_NVP(m_upper),
+     CEREAL_NVP(m_lower),
+     CEREAL_NVP(m_scale),
+     CEREAL_NVP(m_perturb_probability));
 }
 
 void perturb_weights::setup(model* m) {
    weights* m_output = nullptr;
-   
+
    for (auto* w : m->get_weights()) {
       if(w->get_name() == m_output_name){
         m_output = w;
@@ -79,11 +92,11 @@ void perturb_weights::on_batch_begin(model* m) {
         m_output = w;
         break;
       }
-   }  
-  
-  if (m_output != nullptr && 
+   }
+
+  if (m_output != nullptr &&
       c.get_step() % m_batch_interval == 0 &&
-      c.get_step() >= 0) {
+      c.get_execution_mode() == execution_mode::training) {
     perturb(*m);
   }
 }
@@ -95,12 +108,17 @@ void perturb_weights::perturb(model& m){
   // Useful constants
   constexpr DataType zero = 0;
   constexpr DataType one = 1;
-  constexpr DataType lower = 0.3;
-  constexpr DataType upper = 0.7;
-  
+  DataType lower = m_lower;
+  DataType upper = m_upper;
+  DataType scale = m_scale;
+  DataType thres = one - m_perturb_probability;
+
+
+
   // RNG
   auto& gen = get_generator();
-  std::normal_distribution<DataType> dist(zero, one);
+  std::normal_distribution<DataType> norm(zero, one);
+  std::uniform_real_distribution<DataType> uni(zero,one);
 
 
   for (auto* w : m.get_weights()) {
@@ -118,22 +136,25 @@ void perturb_weights::perturb(model& m){
 	El::Matrix<DataType,El::Device::CPU> temp;
 	El::Copy(local_values, temp);
 
-	// Perturb weights on master process		
+	// Perturb weights on master process
 	if (comm->am_trainer_master()) {
-		for (auto i = 0; i < temp.Height(); i++){		
+		for (auto i = 0; i < temp.Height(); i++){
 
-			
-			// perturb				
+
+			// perturb
 			auto val = temp.Get(i,0);
 			auto perturbed_val = val;
-			
-			perturbed_val += dist(gen); // dist is a std::normal_distribution
-			perturbed_val = std::min(std::max(perturbed_val, lower), upper);
-			
+
+			if(uni(gen) > thres){
+				perturbed_val += norm(gen)*scale;
+				perturbed_val = std::min(std::max(perturbed_val, lower), upper);
+			}
+
+
 			temp.Set(i,0,perturbed_val);
-				
-			El::Copy(temp, local_values); 
-			  
+
+			El::Copy(temp, local_values);
+
 			std::cout << "Trainer [ " << m.get_comm()->get_trainer_rank() << " ], Step " << m.get_execution_context().get_step();
 			std::cout << " Weight " << i << ": " << val << " Perturbed weight  " <<  perturbed_val << std::endl;
 
@@ -142,14 +163,14 @@ void perturb_weights::perturb(model& m){
 
 	// Communicate new weight from trainer master processes
 	El::Broadcast(new_values, comm->get_trainer_comm(), 0);
-		
+
 	// Update weight
-	auto& out_w = dynamic_cast<data_type_weights<DataType>&>(*w);	
-	out_w.set_values(new_values);		
+	auto& out_w = dynamic_cast<data_type_weights<DataType>&>(*w);
+	out_w.set_values(new_values);
 
 	break;
     }
-  } 
+  }
 }
 
 
@@ -159,6 +180,10 @@ build_perturb_weights_callback_from_pbuf(
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackPerturbWeights&>(proto_msg);
   return make_unique<perturb_weights>(
+    params.upper(),
+    params.lower(),
+    params.scale(),
+    params.perturb_probability(),
     params.output_name(),
     params.batch_interval());
 }

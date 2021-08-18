@@ -34,6 +34,7 @@
 #include <lbann/base.hpp>
 #include <lbann/utils/random_number_generators.hpp>
 #include <lbann/utils/system_info.hpp>
+#include <lbann/utils/options.hpp>
 
 // Just stand up MPI before running all tests; teardown after.
 using namespace unit_test::utilities;
@@ -43,6 +44,9 @@ int main(int argc, char* argv[])
   auto world_comm = lbann::initialize(argc, argv);
   lbann::init_random(13);
   expert::register_world_comm(*world_comm);
+
+  // as of Mar 2021, required for data_readers
+  lbann::options::get()->init(argc, argv);
 
   // Initialize Catch2
   Catch::Session session;

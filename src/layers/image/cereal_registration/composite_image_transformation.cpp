@@ -24,24 +24,22 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 #include "lbann/utils/serialize.hpp"
-#include <lbann/layers/math/clamp.hpp>
+#include <lbann/layers/image/composite_image_transformation.hpp>
 
 namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 template <typename ArchiveT>
 void
-clamp_layer<TensorDataType,Layout,Device>
+composite_image_transformation_layer<TensorDataType,Layout,Device>
 ::serialize(ArchiveT& ar)
 {
   using DataTypeLayer = data_type_layer<TensorDataType>;
   ar(::cereal::make_nvp("DataTypeLayer",
-                        ::cereal::base_class<DataTypeLayer>(this)),
-     CEREAL_NVP(m_min),
-     CEREAL_NVP(m_max));
+                        ::cereal::base_class<DataTypeLayer>(this)));
 }
 
 } // namespace lbann
 
-#define LBANN_LAYER_NAME clamp_layer
-#include <lbann/macros/register_layer_with_cereal.hpp>
+#define LBANN_LAYER_NAME composite_image_transformation_layer
+#include <lbann/macros/register_layer_with_cereal_data_parallel_cpu_only.hpp>

@@ -328,7 +328,7 @@ if (LBANN_HAS_ALUMINUM)
     set(LBANN_ALUMINUM_MPI_PASSTHROUGH ON)
   endif (LBANN_BUILT_WITH_SPECTRUM)
 endif (LBANN_HAS_ALUMINUM)
-  
+
 # Setup some additional CUDA-y things
 if (LBANN_HAS_CUDA)
   if (NOT LBANN_WITH_CUDNN)
@@ -576,18 +576,24 @@ if (LBANN_WITH_UNIT_TESTING)
   endif ()
   message(STATUS "Found Catch2: ${Catch2_DIR}")
 
+  if (CMAKE_CXX_COMPILER_ID MATCHES "ROCMClang")
+    set_target_properties(Catch2::Catch2
+      PROPERTIES INTERFACE_COMPILE_FEATURES "cxx_std_17")
+  endif()
+
   # Now that Catch2 has been found, start adding the unit tests
   include(CTest)
   include(Catch)
   add_subdirectory(src/callbacks/unit_test)
   add_subdirectory(src/execution_algorithms/unit_test)
   add_subdirectory(src/data_readers/unit_test)
+  add_subdirectory(src/layers/unit_test)
   add_subdirectory(src/layers/activations/unit_test)
   add_subdirectory(src/layers/learning/unit_test)
-  add_subdirectory(src/layers/math/unit_test)
   add_subdirectory(src/layers/regularizers/unit_test)
   add_subdirectory(src/models/unit_test)
   add_subdirectory(src/proto/unit_test)
+  add_subdirectory(src/operators/math/unit_test)
   add_subdirectory(src/optimizers/unit_test)
   add_subdirectory(src/utils/unit_test)
   add_subdirectory(src/weights/unit_test)
@@ -748,6 +754,7 @@ if (LBANN_DEBUG_PRINT_SUBTARGETS)
 endif ()
 
 # Add the rest of the things
+add_subdirectory(data_utils)
 add_subdirectory(model_zoo)
 add_subdirectory(model_zoo/tests)
 add_subdirectory(model_zoo/jag_utils)

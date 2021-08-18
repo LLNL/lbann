@@ -230,5 +230,11 @@ struct IsCloneableT
 template <typename T>
 constexpr bool IsCloneable_v() { return IsCloneableT<T>::value; };
 
+/** @brief Helper metafunction for describing the top of a hierarchy
+ *         that's cloneable.
+ */
+template <typename T, typename... Bases>
+using AbstractCloneableBase = Cloneable<HasAbstractFunction<T>, Bases...>;
+
 }// namespace lbann
 #endif // LBANN_UTILS_CLONEABLE_HPP_INCLUDED

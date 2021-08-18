@@ -36,6 +36,7 @@ El::Matrix<DataType, Device>& kfac_block<Device>::get_workspace_matrix(
   return m_context->get_workspace_matrix(get_name()+" "+key, height, width);
 }
 
+
 template <>
 El::SyncInfo<El::Device::CPU> kfac_block<El::Device::CPU>::get_sync_info() {
   return El::SyncInfo<El::Device::CPU>{};

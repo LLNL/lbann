@@ -414,7 +414,7 @@ function exit_with_instructions()
     echo "##########################################################################################" | tee -a ${LOG}
     echo "LBANN is being installed in a spack environment named ${LBANN_ENV}, access it via:" | tee -a ${LOG}
     echo "  spack env activate -p ${LBANN_ENV}" | tee -a ${LOG}
-    echo "To finish installing  LBANN and it's dependencies (requires active environment):" | tee -a ${LOG}
+    echo "To finish installing LBANN and its dependencies (requires active environment):" | tee -a ${LOG}
     echo "  spack install" | tee -a ${LOG}
     echo "Once the initial installation is complete, to rebuild LBANN from source drop into a shell with the spack build environment setup (requires active environment):" | tee -a ${LOG}
     echo "  spack build-env lbann -- bash" | tee -a ${LOG}
@@ -681,12 +681,15 @@ LBANN_SPEC_HASH=$(spack find -cl | grep -v "\-\-\-\-\-\-" | grep lbann${AT_LBANN
 # If the user only wants to configure the environment
 [[ ${CONFIGURE_ONLY:-} ]] && exit_with_instructions
 
-LINK_DIR="${LINK_DIR:-${CORE_BUILD_PATH}}"
-BUILD_DIR=$(dirname ${LINK_DIR})
-if [[ ! -d "${BUILD_DIR}" ]]; then
-    CMD="mkdir -p ${BUILD_DIR}"
-    echo ${CMD}
-    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+# For developer builds create a user friendly link to the spack build directory
+if [[ -z "${USER_BUILD:-}" ]]; then
+    LINK_DIR="${LINK_DIR:-${CORE_BUILD_PATH}}"
+    BUILD_DIR=$(dirname ${LINK_DIR})
+    if [[ ! -d "${BUILD_DIR}" ]]; then
+        CMD="mkdir -p ${BUILD_DIR}"
+        echo ${CMD}
+        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+    fi
 fi
 
 # Check to see if the link to the build directory exists and is valid
