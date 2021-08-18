@@ -78,6 +78,12 @@
   if (!(cond))                                          \
     LBANN_ERROR("The assertion " #cond " failed.")
 
+#ifdef LBANN_DEBUG
+#define LBANN_ASSERT_DEBUG(cond) LBANN_ASSERT(cond)
+#else
+#define LBANN_ASSERT_DEBUG(cond)
+#endif
+
 #define LBANN_ASSERT_WARNING(cond)                      \
   if (!(cond))                                          \
     LBANN_WARNING("The assertion " #cond " failed.")

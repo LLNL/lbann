@@ -148,7 +148,7 @@ TEMPLATE_LIST_TEST_CASE("Clamp operator lifecycle",
     CHECK(base_ptr->get_type() == "clamp");
 
     auto* specific_ptr = dynamic_cast<ThisOpType*>(base_ptr.get());
-    CHECK((bool)specific_ptr);
+    CHECK(IsValidPtr(specific_ptr));
     CHECK(specific_ptr->get_min() == El::To<DataType>(-2.0));
     CHECK(specific_ptr->get_max() == El::To<DataType>(5.0));
   }
