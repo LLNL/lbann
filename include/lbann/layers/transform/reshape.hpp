@@ -101,6 +101,8 @@ protected:
         err << (i > 0 ? "x" : "") << output_dims[i];
       }
       err << ")";
+      err << " in " << this->get_type() << " layer "
+            << "\"" << this->get_name() << "\""; 
       LBANN_ERROR(err.str());
     }
 
