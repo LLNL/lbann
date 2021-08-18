@@ -72,23 +72,46 @@ metalearning steps (i.e., "tournaments").
 
    # Aliases for simplicity
    SGD = lbann.BatchedIterativeOptimizer
-   ClassicalLTFB = lbann.RandomPairwiseExchange
+   RPE = lbann.RandomPairwiseExchange
 
    # Construct the local training algorithm
    local_sgd = SGD("local sgd", num_iterations=10)
 
    # Construct the metalearning strategy. This assumes the model has
    # an lbann.Metric attached to it with the name set to "accuracy".
-   pairwise_exchange = ClassicalLTFB(
+   meta_learning = RPE(
        metric_strategies={'accuracy': RPE.MetricStrategy.HIGHER_IS_BETTER})
 
    # Construct the training algorithm and pass it to the trainer.
    LTFB = lbann.LTFB("ltfb",
                      local_algo=local_sgd,
-                     metalearning=pairwise_exchange,
+                     metalearning=meta_learning,
                      metalearning_steps=13)
    trainer = lbann.Trainer(mini_batch_size=64,
                            training_algo=LTFB)
+
+
+
+---------------------------------------------------
+Truncation Selection Exchange (TSE) Variant of LTFB 
+---------------------------------------------------
+
+TSE is a variant of basic LTFB that replaces random pairwise exchange (RPE)
+strategy in LTFB with truncation selection exchange strategy.
+
+In TSE, all trainers in the population set are ranked using specified
+evaluation metric. Model parameters, training hyperparameters and or
+topologies of any trainer in the bottom rank is replaced by that of a
+(random) trainer in the top rank.
+
+Python front end is similar to above. simply replace RPE with TSE:
+
+.. code-block:: python
+
+   TSE = lbann.TruncationSelectionExchange
+   meta_learning = TSE(
+        metric_strategies={'random': TSE.MetricStrategy.HIGHER_IS_BETTER},
+        truncation_k=2)
 
 
 ----------------------------------------

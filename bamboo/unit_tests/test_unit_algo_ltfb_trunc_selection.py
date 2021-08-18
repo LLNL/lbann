@@ -44,7 +44,7 @@ _mini_batch_size = 2
 _num_epochs = 5
 def get_sample(index):
     initialize_rng()
-    return (random.gauss(0,1),)
+    return (random.uniform(0,1),)
 def num_samples():
     return _mini_batch_size
 def sample_dims():
@@ -97,7 +97,6 @@ def construct_model(lbann):
 
     # Model objects
     metrics = [
-        #lbann.Metric(weight, name='weight'),
         lbann.Metric(rand, name='random'),
     ]
     callbacks = [
@@ -194,18 +193,27 @@ def augment_test_func(test_func):
                     sending_partner = [[] for _ in range(num_trainers)]
                     tournament_metrics = [[] for _ in range(num_trainers)]
              
-                #Match receiver (many) with sender (one)
+                #sender 
                 match = re.search(
-                    'LTFB .* '
-                    'trainer ([0-9]+) with score. * receives model from trainer ([0-9]+) '
-                    '\\with score.*\\)',
+                    'In LTFB TSE .* '
+                    'trainer ([0-9]+) with score .* sends model to trainer  ([0-9]+) '
+                    'with score .*',
                     line)
-
+                if match:
+                    trainer = int(match.group(1))
+                    sending_partner[trainer].append(trainer) #ltfb_sender
+                
+                #receiver
+                match = re.search(
+                    'In LTFB TSE .* '
+                    'trainer ([0-9]+) with score .* receives model from trainer ([0-9]+) '
+                    'with score .*',
+                    line)
                 if match:
                     receiver = looser = trainer = int(match.group(1))
                     sender = winner = partner = int(match.group(2))
                     sending_partner[trainer].append(sender) #ltfb_sender
-
+                
                 # Metric value on tournament (test) set
                 match = re.search(
                     'model0 \\(instance ([0-9]+)\\) test random : '
@@ -214,7 +222,6 @@ def augment_test_func(test_func):
                 if match:
                     trainer = int(match.group(1))
                     tournament_metrics[trainer].append(float(match.group(2)))
-
 
         # Make sure file has been parsed correctly
         assert num_trainers, \
@@ -234,13 +241,12 @@ def augment_test_func(test_func):
         # Here we test that the model exchanges between winners and lossers are correct
         for step in range(_num_epochs-1):
             for trainer in range(num_trainers):
-                partner = sending_partner[trainer][step]
-                print("TRAINER, PARTNER ", trainer, " ", partner)
-                if(partner): #this is a winner
-                  local_score = tournament_metric[trainer][step]
-                  winning_score = tournament_metric[partner][step]
+                if (len(sending_partner[trainer]) != 0):
+                  sender_at_step = sending_partner[trainer][step]
+                  trainer_score = tournament_metrics[trainer][step]
+                  winning_score = tournament_metrics[sender_at_step][step]
                     
-                  assert local_score < winning_score, \
+                  assert trainer_score <= winning_score, \
                       'Incorrect metric value for LTFB tournament'
 
     # Return test function from factory function
@@ -250,6 +256,6 @@ def augment_test_func(test_func):
 # Create test functions that can interact with PyTest
 for _test_func in tools.create_tests(setup_experiment,
                                __file__,
-                               nodes=4,
+                               nodes=2,
                                lbann_args='--procs_per_trainer=2'):
     globals()[_test_func.__name__] = augment_test_func(_test_func)
