@@ -380,7 +380,7 @@ make_checkpoint_file(std::set<std::string> weights_names,
     lbann_data::RandomPairwiseExchange::ExchangeStrategy::CheckpointFile;
   auto const& params = dynamic_cast<CkptFile const&>(msg);
   return std::make_unique<lbann::ltfb::CheckpointFile>(std::move(weights_names),
-                                                       params.base_dir());
+                                                       params.checkpoint_dir());
 }
 
 std::unique_ptr<lbann::ltfb::SendRecvWeights>
