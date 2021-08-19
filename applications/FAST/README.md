@@ -11,6 +11,22 @@ The pre-processed PDBBind data prequisites are:
 - pyh5 
 - pybel 
 
+### Data Description 
+
+#### Grid-Structured Data 
+
+#### Graph-Strucured Data 
+
+- Node Features:  
+- Edge Features:  
+- Covalent Edge COO List
+    - Covalent Edge Sources:  
+    - Covalent Edge Targets: 
+- Non-Covalent Edge COO List
+    - Non-Covalent Edge Sources:
+    - Non-Covalent Edge Targets:  
+- Ligand Only: 
+- Target 
 
 ### Running the models 
 

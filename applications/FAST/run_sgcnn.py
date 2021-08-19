@@ -2,10 +2,12 @@ import argparse
 import lbann
 import lbann.contrib.launcher
 import lbann.contrib.args
-from SGCNN.model import SGCNN
-from data_util import slice_graph_data
+import configparser
 import os
 import os.path as osp
+from SGCNN.model import SGCNN
+from data_util import slice_graph_data
+
 
 desc = ("Training SGCNN on a Protein-ligand graphs using LBANN")
 parser = argparse.ArgumentParser(description=desc)
@@ -47,28 +49,45 @@ def make_data_reader(module_name='SIM_SGCNN_Dataset',
     return reader
 
 
-def make_model(num_epochs):
-    num_nodes = 100
-    sgcnn_model = SGCNN(
-                  num_nodes=num_nodes)
+def make_model(num_epochs,
+               num_nodes, 
+               num_cov_edges,
+               num_non_cov_edges, 
+               num_node_features, 
+               num_edge_features):
+    sgcnn_model = SGCNN(num_nodes=num_nodes,
+                        num_covalent_edges=num_cov_edges,
+                        num_non_covalent_edges=num_non_cov_edges,
+                        input_channels=num_node_features,
+                        )
 
     input_ = lbann.Input(target_mode='N/A')
-    X, cov_adj, noncov_adj, edge_ft, edge_adj, ligand_only, target = \
-        slice_graph_data(input_,
-                         num_nodes=num_nodes)
+    graph_data = slice_graph_data(input_, 
+                                  num_nodes=num_nodes,
+                                  )
 
-    predicted = sgcnn_model(X,
-                            cov_adj,
-                            noncov_adj,
-                            edge_ft,
-                            edge_adj,
-                            ligand_only)
+    node_features = graph_data['node_features']
+    edge_features = graph_data['edge_features']
+    covalent_sources = graph_data['covalent_sources']  
+    covalent_targets = graph_data['covalent_targets']
+    non_covalent_sources = graph_data['non_covalent_sources']
+    non_covalent_targets = graph_data['non_covalent_targets']
+    ligand_only_nodes = graph_data['ligand_only_nodes']
+    target = graph_data['target']
+    predicted = sgcnn_model(node_features,
+                            edge_features,
+                            covalent_sources,
+                            covalent_targets,
+                            non_covalent_sources,
+                            non_covalent_targets,
+                            ligand_only_nodes,
+                            target)
 
     loss = lbann.MeanAbsoluteError([predicted, target], name='MAE_loss')
     layers = lbann.traverse_layer_graph(input_)
     metrics = [lbann.Metric(loss, name='MAE')]
     # Prints initial Model after Setup
-    print_model = lbann.CallbackPrintModelDescription()
+    # print_model = lbann.CallbackPrintModelDescription()
     # Prints training progress
     training_output = lbann.CallbackPrint(interval=1,
                                           print_global_stat_only=False)
@@ -79,21 +98,47 @@ def make_model(num_epochs):
                         layers=layers,
                         objective_function=loss,
                         metrics=metrics,
-                        callbacks=callbacks
-                        )
+                        callbacks=callbacks)
     return model
 
 
 def main():
+    num_samples = 1000
+    num_nodes = 100
+    num_covalent_edges = 100
+    num_non_covalent_edges = 500
+    num_node_features = 19
+    num_edge_features = 1
+
+    # Generate a config file for the data generator to read 
+    # and dynamically generate synthetic data with different 
+    # sizes 
+    config = configparser.ConfigParser()
+    config['Graph'] = {"num_samples": str(num_samples),
+                       "num_nodes": str(num_nodes),
+                       "num_cov_edges": str(num_covalent_edges),
+                       "num_non_cov_edges": str(num_non_covalent_edges),
+                       "num_node_features": str(num_node_features),
+                       "num_edge_features": str(num_edge_features)}
+    
+    with open("SIM_SGCNN_Config.ini",'w') as configfile:
+        config.write(configfile)    
+
     optimizer = lbann.Adam(learn_rate=1e-3,
                            beta1=0.9,
                            beta2=0.99,
+            
                            eps=1e-8)
     mini_batch_size = args.mini_batch_size
     num_epochs = args.num_epochs
     job_name = args.job_name
     data_reader = make_data_reader()
-    model = make_model(num_epochs)
+    model = make_model(num_epochs,
+                       num_nodes,
+                       num_covalent_edges,
+                       num_non_covalent_edges,
+                       num_node_features,
+                       num_edge_features)
     trainer = lbann.Trainer(mini_batch_size=mini_batch_size)
 
     lbann.contrib.launcher.run(trainer, model, data_reader, optimizer,

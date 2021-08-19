@@ -1,4 +1,25 @@
 import numpy as np
+import configparser
+import os.path as osp
+import os
+
+
+data_dir = osp.dirname(osp.realpath(__file__))
+config_dir = osp.dirname(data_dir)
+
+config = configparser.ConfigParser()
+_file_name = "SIM_SGCNN_Config.ini" 
+
+conf_file = osp.join(config_dir, _file_name)
+print("Initializing using: ", conf_file)
+config.read(conf_file)
+
+NUM_SAMPLES = int(config['Graph']['num_samples'])
+NUM_NODES = int(config['Graph']['num_nodes'])
+NUM_COV_EDGES = int(config['Graph']['num_cov_edges'])
+NUM_NON_COV_EDGES = int(config['Graph']['num_non_cov_edges'])
+NUM_NODE_FEATURES = int(config['Graph']['num_node_features'])
+NUM_EDGE_FEATURES = int(config['Graph']['num_edge_features'])
 
 
 class Sim_GCNN_Dataset(object):
@@ -6,6 +27,8 @@ class Sim_GCNN_Dataset(object):
     def __init__(self,
                  num_samples,
                  num_nodes,
+                 num_cov_edges,
+                 num_non_cov_edges,   
                  node_features,
                  edge_features):
         super(Sim_GCNN_Dataset, self).__init__()
@@ -13,6 +36,8 @@ class Sim_GCNN_Dataset(object):
         self.num_nodes = num_nodes
         self.node_features = node_features
         self.edge_features = edge_features
+        self.num_covalent_edges = num_cov_edges
+        self.num_non_covalent_edges = num_non_cov_edges
         self.data = self.__generate_data()
 
     def __generate_data(self):
@@ -26,18 +51,24 @@ class Sim_GCNN_Dataset(object):
         return self.data[index].flatten()
 
     def sample_size(self):
-        number_edges = int((self.num_nodes*(self.num_nodes-1))/2)
-        node_feat_mat = self.num_nodes * self.node_features
-        edge_feat_mat = number_edges * self.edge_features
-        edge_adj = self.num_nodes * (self.num_nodes ** 2)
-        covalent_mat = self.num_nodes ** 2
-        non_covalent_mat = self.num_nodes ** 2
-        ligand_only_mat = self.num_nodes ** 2
-        return node_feat_mat + edge_feat_mat + edge_adj + covalent_mat \
-            + non_covalent_mat + ligand_only_mat + 1
+
+        node_features_mat = self.num_nodes * self.node_features
+        edge_features_mat = self.num_non_covalent_edges * self.edge_features
+
+        covalent_edge_COO = 2 * self.num_covalent_edges
+        non_covalent_edge_COO = 2 * self.num_non_covalent_edges
+        ligand_only_mask = self.num_nodes
+
+        return node_features_mat + edge_features_mat + covalent_edge_COO + non_covalent_edge_COO \
+            + ligand_only_mask + 1
 
 
-dataset = Sim_GCNN_Dataset(100, 100, 19, 1)
+dataset = Sim_GCNN_Dataset(num_samples=NUM_SAMPLES, 
+                           num_nodes=NUM_NODES,
+                           num_cov_edges=NUM_COV_EDGES,
+                           num_non_cov_edges=NUM_NON_COV_EDGES,
+                           node_features=NUM_NODE_FEATURES,
+                           edge_features=NUM_EDGE_FEATURES)
 
 
 def get_train(index):
@@ -51,18 +82,6 @@ def num_train_samples():
 def sample_dims():
     return (dataset.sample_size(),)
 
+
 if __name__ == '__main__':
-    import sys
-    dataset = Sim_GCNN_Dataset(1,4,2,1)
     print(len(dataset[0]))
-    # print("10: ",sys.getsizeof(dataset[0]) / (1024**2))
-    # dataset = Sim_GCNN_Dataset(1,20,19,1)
-    # print("20: ",sys.getsizeof(dataset[0]) / (1024**2))
-    # dataset = Sim_GCNN_Dataset(1,30,19,1)
-    # print("30: ",sys.getsizeof(dataset[0]) / (1024**2))
-    # dataset = Sim_GCNN_Dataset(1,50,19,1)
-    # print("50: ",sys.getsizeof(dataset[0]) / (1024**2))
-    # dataset = Sim_GCNN_Dataset(1,75,19,1)
-    # print("75: ",sys.getsizeof(dataset[0]) / (1024**2))
-    # dataset = Sim_GCNN_Dataset(1,100,19,1)
-    # print("100: ",sys.getsizeof(dataset[0]) / (1024**2))

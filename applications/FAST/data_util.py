@@ -4,9 +4,21 @@ from lbann.util import str_list
 
 def slice_graph_data(input_layer,
                      num_nodes=4,
-                     num_edges=10,
+                     num_cov_edges=10,
+                     num_non_cov_edges=20, 
                      node_features=19,
                      edge_features=1):
+    """Utility function to slice the graph structured Protein data 
+        Args: 
+            input_layer (Layer): The input layer to 
+            num_nodes (int): 
+            num_cov_edges (int): 
+            num_non_cov_edges (int): 
+            node_features (int): 
+            edge_features (int): 
+        Returns: 
+            dict: Returns a dictionary of LBANN Layer objects
+    """
     
     slice_points = []
 
@@ -18,42 +30,39 @@ def slice_graph_data(input_layer,
 
     # Slice points for covalent adj matrix
     
-    cov_adj_mat_sources = node_ft_end + num_edges 
+    cov_adj_mat_sources = node_ft_end + num_cov_edges 
 
-    cov_adj_mat_targets = cov_adj_mat_sources + num_edges 
+    cov_adj_mat_targets = cov_adj_mat_sources + num_cov_edges 
     
     slice_points.append(cov_adj_mat_sources)
     slice_points.append(cov_adj_mat_targets)
     
     # Slice points for noncovalent adj matrix
     
-    noncov_adj_mat_sources = cov_adj_mat_targets + num_edges
+    noncov_adj_mat_sources = cov_adj_mat_targets + num_non_cov_edges
 
-    noncov_adj_mat_target = noncov_adj_mat_sources + num_edges
+    noncov_adj_mat_target = noncov_adj_mat_sources + num_non_cov_edges
     
     slice_points.append(noncov_adj_mat_sources)
     slice_points.append(noncov_adj_mat_target)
     
     # Slice points for edge features
 
-    edge_ft_end = noncov_adj_mat_target + num_edges * edge_features
+    edge_ft_end = noncov_adj_mat_target + num_non_cov_edges * edge_features
 
     slice_points.append(edge_ft_end)
 
-  
     # Slice points for edge_adjacencies
     # This should be num_nodes * (num_nodes ** 2)
     prev_end = edge_ft_end
   
     # Slice points for ligand_only mat
-    ligand_only_sources = prev_end + num_edges
-    ligand_only_targets = ligand_only_sources + num_edges
+    ligand_only_nodes = prev_end + num_nodes
 
-    slice_points.append(ligand_only_sources)
-    slice_points.append(ligand_only_targets)
+    slice_points.append(ligand_only_nodes)
 
     # Slice for binding energy target
-    target_end = ligand_only_targets + 1
+    target_end = ligand_only_nodes + 1
     
     slice_points.append(target_end)
 
@@ -69,25 +78,32 @@ def slice_graph_data(input_layer,
     cov_adj_sources = lbann.Identity(sliced_input, name="Covalent_Adj_sources_input")
     cov_adj_targets = lbann.Identity(sliced_input, name="Covalent_Adj_targets_input")
 
-    cov_adj_sources = lbann.Reshape(cov_adj_sources, dims=str_list([num_edges]), names="Covalent_Adj_sources")
-    cov_adj_targets = lbann.Reshape(cov_adj_targets, dims=str_list([num_edges]), names="Covalent_Adj_targets")
+    cov_adj_sources = lbann.Reshape(cov_adj_sources, dims=str_list([num_cov_edges]), names="Covalent_Adj_sources")
+    cov_adj_targets = lbann.Reshape(cov_adj_targets, dims=str_list([num_cov_edges]), names="Covalent_Adj_targets")
 
-    noncov_adj_mat_sources = lbann.Reshape(lbann.Identity(sliced_input), dims=str_list([num_edges]), name="Noncovalent_adj_sources")
-    noncov_adj_mat_targets = lbann.Reshape(lbann.Identity(sliced_input), dims=str_list([num_edges]), name="Noncovalent_adj_targets")
+    noncov_adj_mat_sources = lbann.Reshape(lbann.Identity(sliced_input), dims=str_list([num_non_cov_edges]), name="Noncovalent_adj_sources")
+    noncov_adj_mat_targets = lbann.Reshape(lbann.Identity(sliced_input), dims=str_list([num_non_cov_edges]), name="Noncovalent_adj_targets")
 
     edge_fts_inp = lbann.Identity(sliced_input)
 
-    edge_fts = lbann.Reshape(edge_fts_inp, dims=str_list([num_edges, edge_features]), name="Edgee_FTS")
+    edge_fts = lbann.Reshape(edge_fts_inp, dims=str_list([num_non_cov_edges, 1, edge_features]), name="Edge_FTS")
     
-    ligand_source = lbann.Reshape(lbann.Identity(sliced_input), dims=str_list([num_edges]),name="Ligand_only_sources")
-    ligand_target = lbann.Reshape(lbann.Identity(sliced_input), dims=str_list([num_edges]), name="Ligand_only_target")
+    ligand_only_nodes = lbann.Reshape(lbann.Identity(sliced_input), dims=str_list([1, ligand_only_nodes]), name="Ligand_only_nodes")
     
-    target = lbann.Reshape(lbann.Identity(sliced_input),dims="1", name="Target")
+    target = lbann.Reshape(lbann.Identity(sliced_input), dims="1", name="Target")
 
+    sgcnn_data = {
+        "node_features": node_fts,
+        "edge_features": edge_fts,
+        "covalent_sources": cov_adj_sources,
+        "covalent_targets": cov_adj_targets,
+        "non_covalent_sources": noncov_adj_mat_sources,
+        "non_covalent_targets": noncov_adj_mat_targets,
+        "ligand_only_nodes": ligand_only_nodes,
+        "target": target 
+    }
 
-
-    return node_fts, cov_adj_mat, noncov_adj_mat, \
-        edge_features, edge_adj, ligand_only, target
+    return sgcnn_data
 
 
 def slice_3D_data(data,
@@ -128,11 +144,18 @@ def slice_FAST_data(data,
     grid_data = lbann.Identity(sliced_data, name="grid_data_sample")
     graph_data = lbann.Identity(sliced_data, name="graph_data_sample")
 
+    fast_data = {} 
     grid_data = \
         lbann.Reshape(grid_data,
                       dims="{0} {1} {1} {1}".format(grid_size, num_features))
-    node_ft, cov_adj, noncov_adj, edge_ft, edge_adj, ligand_only, target = \
-        slice_graph_data(graph_data)
 
-    return grid_data, node_ft, \
-        cov_adj, noncov_adj, edge_ft, edge_adj, ligand_only, target
+    fast_data['grid'] = grid_data
+
+    sgcnn_data = slice_graph_data(graph_data)
+
+    fast_data.update(sgcnn_data,
+                     num_nodes=num_nodes,
+                     node_features=node_features,
+                     edge_features=edge_features)
+
+    return fast_data
