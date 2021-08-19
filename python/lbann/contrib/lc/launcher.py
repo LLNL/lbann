@@ -55,7 +55,7 @@ def make_batch_script(
     if scheduler == 'slurm' and has_gpu(system):
         launcher_args.extend(['--mpibind=off'])
         if system != 'corona':
-            laucher_args.extend(['--nvidia_compute_mode=default'])
+            launcher_args.extend(['--nvidia_compute_mode=default'])
 
     # Optimized thread affinity for Pascal
     # Note: Both GPUs are on socket 0, so we only use cores on that
