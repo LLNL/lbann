@@ -106,10 +106,7 @@ class buffered_data_coordinator : public data_coordinator {
   /** Archive for checkpoint and restart */
   template <class Archive> void serialize( Archive & ar );
 
-  void setup(
-    thread_pool& io_thread_pool,
-    int max_mini_batch_size,
-    std::map<execution_mode, generic_data_reader *> data_readers) override;
+  void setup_data_fields(int max_mini_batch_size) override;
 
   void fp_setup_data(data_buffer<IODataType>& buffer, El::Int cur_mini_batch_size);
 

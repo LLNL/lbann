@@ -41,8 +41,10 @@
 namespace lbann {
 
 template <typename TensorDataType>
-void buffered_data_coordinator<TensorDataType>::setup(thread_pool& io_thread_pool, int max_mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers) {
-  data_coordinator::setup(io_thread_pool, max_mini_batch_size, data_readers);
+void buffered_data_coordinator<TensorDataType>::setup_data_fields(int max_mini_batch_size) {
+  if(m_active_data_fields.size() == 0) {
+    LBANN_ERROR("Models have not registered data fields with the data coordinator");
+  }
 
   El::Int num_neurons = get_linearized_data_size();
 #ifdef LBANN_HAS_DISTCONV
@@ -67,29 +69,38 @@ void buffered_data_coordinator<TensorDataType>::setup(thread_pool& io_thread_poo
     assert_eq(partial_mini_batch_size, 0);
   }
 #endif // LBANN_HAS_DISTCONV
-  if(partial_mini_batch_size > 0 && this->m_comm->get_rank_in_trainer() < partial_mini_batch_size) {
-    local_mini_batch_size++;
-  }
-  // generic_data_reader *data_reader = get_data_reader(mode);
-  for (const auto& buf_map : m_data_buffers) {
-    const data_buffer_map_t& buffer_map = buf_map;
-    for (const auto& b : buffer_map) {
-      observer_ptr<data_buffer<IODataType>> data_buffer = b.second.get();
-      // for(auto idt : data_buffer->m_input_buffers.keys()) {
-      //   // BVE FIXME
-      // }
-      // for(auto idt : input_data_type_iterator()) {
-      data_buffer->m_input_buffers[input_data_type::SAMPLES]->Resize(num_neurons, max_mini_batch_size);
-      if(has_labels()) {
-        data_buffer->m_input_buffers[input_data_type::LABELS]->Resize(get_linearized_label_size(), max_mini_batch_size);
+
+  for(auto& data_field : m_active_data_fields) {
+    std::cout << "data coordinator has the following active fields " << data_field << std::endl;
+    for (const auto& buf_map : m_data_buffers) {
+      const data_buffer_map_t& buffer_map = buf_map;
+      for (const auto& b : buffer_map) {
+        observer_ptr<data_buffer<IODataType>> data_buffer = b.second.get();
+        if (data_field == INPUT_DATA_TYPE_SAMPLES) {
+          data_buffer->m_input_buffers[input_data_type::SAMPLES]->Resize(
+            num_neurons,
+            max_mini_batch_size);
+        }
+        else if (data_field == INPUT_DATA_TYPE_LABELS && has_labels()) {
+          data_buffer->m_input_buffers[input_data_type::LABELS]->Resize(
+            get_linearized_label_size(),
+            max_mini_batch_size);
+        }
+        else if (data_field == INPUT_DATA_TYPE_LABELS && has_responses()) {
+          data_buffer->m_input_buffers[input_data_type::RESPONSES]->Resize(
+            get_linearized_response_size(),
+            max_mini_batch_size);
+        }
+        else {
+          LBANN_ERROR("Unknown data_field_type value provided: " + data_field);
+        }
+        /// The amount of space needed will vary based on input layer type,
+        /// but the batch size is the maximum space necessary
+        El::Zeros_seq(data_buffer->m_indices_fetched_per_mb,
+                      local_mini_batch_size,
+                      1);
+        // }
       }
-      if(has_responses()){
-        data_buffer->m_input_buffers[input_data_type::RESPONSES]->Resize(get_linearized_response_size(), max_mini_batch_size);
-      }
-      /// The amount of space needed will vary based on input layer type,
-      /// but the batch size is the maximum space necessary
-      El::Zeros_seq(data_buffer->m_indices_fetched_per_mb, local_mini_batch_size, 1);
-      // }
     }
   }
 }
@@ -299,7 +310,7 @@ bool buffered_data_coordinator<TensorDataType>::update_data_set(generic_data_rea
 }
 
 template <typename TensorDataType>
-void buffered_data_coordinator<TensorDataType>::distribute_from_local_matrix(execution_mode mode, data_field_type data_field, AbsDistMatrixType& input_buffer) {
+void buffered_data_coordinator<TensorDataType>::distribute_from_local_matrix(execution_mode mode, data_field_type const data_field, AbsDistMatrixType& input_buffer) {
   prof_region_begin("distribute_from_local_matrix", prof_colors[3], false);
   data_buffer<IODataType>& buf = get_active_buffer(mode);
   if(data_field == INPUT_DATA_TYPE_SAMPLES) {

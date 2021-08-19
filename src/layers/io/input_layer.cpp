@@ -44,6 +44,7 @@ setup_dims(DataReaderMetaData& dr_metadata) {
   for (int i = 0; i < this->get_num_children(); ++i) {
     this->set_output_dims(get_data_dims(dr_metadata, i), i);
   }
+  get_trainer().get_data_coordinator().register_active_data_field(m_data_field);
 }
 
 template <typename TensorDataType,
@@ -131,11 +132,11 @@ template <typename TensorDataType,
 std::vector<int> input_layer<TensorDataType, T_layout, Dev>::
 get_data_dims(DataReaderMetaData& dr_metadata, int child_index) const {
   if(child_index != 0) {LBANN_ERROR("get_data_dims: Invalid child index"); }
-  if(m_data_field.compare(INPUT_DATA_TYPE_SAMPLES) == 0) {
+  if(m_data_field == INPUT_DATA_TYPE_SAMPLES) {
     return dr_metadata.data_dims[data_reader_target_mode::INPUT];
-  }else if(m_data_field.compare(INPUT_DATA_TYPE_LABELS) == 0) {
+  }else if(m_data_field == INPUT_DATA_TYPE_LABELS) {
     return dr_metadata.data_dims[data_reader_target_mode::CLASSIFICATION];
-  }else if(m_data_field.compare( INPUT_DATA_TYPE_RESPONSES) == 0) {
+  }else if(m_data_field == INPUT_DATA_TYPE_RESPONSES) {
     return dr_metadata.data_dims[data_reader_target_mode::REGRESSION];
   }else {
     LBANN_ERROR("Unknown data_field_type value provided: " + m_data_field);

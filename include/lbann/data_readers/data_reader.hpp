@@ -350,13 +350,15 @@ class generic_data_reader {
     return 1;
   }
   /// get the linearized size of what is identified by desc.
-  virtual int get_linearized_size(const std::string& desc) const {
-    if (desc == "data") {
+  virtual int get_linearized_size(data_field_type const& data_field) const {
+    if(data_field == INPUT_DATA_TYPE_SAMPLES) {
       return get_linearized_data_size();
-    } else if (desc == "label") {
+    }else if(data_field == INPUT_DATA_TYPE_LABELS) {
       return get_linearized_label_size();
-    } else if (desc == "response") {
+    }else if(data_field == INPUT_DATA_TYPE_RESPONSES) {
       return get_linearized_response_size();
+    }else {
+      LBANN_ERROR("Unknown data_field_type value provided: " + data_field);
     }
     return 0;
   }

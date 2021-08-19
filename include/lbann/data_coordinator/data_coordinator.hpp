@@ -105,7 +105,14 @@ class data_coordinator {
   /** Archive for checkpoint and restart */
   template <class Archive> void serialize( Archive & ar );
 
+  /** Setup the thread pool and data readers within the data coordinator */
   virtual void setup(thread_pool& io_thread_pool, int max_mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers);
+
+  /** Once all of the models that are served by this data coordinator are
+   *  setup and have registered which data fields are required, setup the local
+   *  buffers in the data coordinator for each data field.
+   */
+  virtual void setup_data_fields(int max_mini_batch_size) = 0;
 
   void set_trainer(trainer &trainer) { m_trainer = &trainer; }
 
@@ -439,6 +446,11 @@ class data_coordinator {
     return at_new_epoch(execution_mode::training);
   }
 
+  void register_active_data_field(data_field_type const data_field){
+    m_active_data_fields.insert(data_field);
+  }
+
+
   //************************************************************************
   //
   //************************************************************************
@@ -456,10 +468,13 @@ class data_coordinator {
   /** Pointer to LBANN communicator. */
   lbann_comm *m_comm;
 
+  /// Datasets hold the active statistics and metadata for each data reader
   dataset_map_t m_datasets;
 
   data_reader_map_t m_data_readers;
  //  std::map<execution_mode, dataset_stats> m_dataset_stats;
+
+  std::set<data_field_type> m_active_data_fields;
 
 public:  // @todo BVE FIXME
   bool m_data_set_processed;
