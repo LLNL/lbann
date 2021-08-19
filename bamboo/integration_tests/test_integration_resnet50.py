@@ -72,7 +72,7 @@ def construct_model(lbann):
     import lbann.models
 
     # Layer graph
-    images = lbann.Input(data_field='datum')
+    images = lbann.Input(data_field='samples')
     labels = lbann.Input(data_field='labels')
     x = lbann.models.ResNet50(1000, bn_statistics_group_size=-1)(images)
     probs = lbann.Softmax(x)

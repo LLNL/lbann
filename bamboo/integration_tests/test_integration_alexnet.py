@@ -74,7 +74,7 @@ def construct_model(lbann):
     import lbann.models
 
     # Layer graph
-    images = lbann.Input(data_field='datum')
+    images = lbann.Input(data_field='samples')
     labels = lbann.Input(data_field='labels')
     x = lbann.models.AlexNet(1000)(images)
     probs = lbann.Softmax(x)
