@@ -2,6 +2,7 @@
 set_full_path(THIS_DIR_SOURCES
   bilinear_resize.cpp
   rotation.cpp
+  composite_image_transformation.cpp
   )
 
 # Propagate the files up the tree

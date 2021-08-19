@@ -7,7 +7,6 @@ import os
 
 import Sparse_Graph_Trainer 
 import Dense_Graph_Trainer
-import data.MNIST_Superpixel
 import data.PROTEINS
 
 desc = (" Training a Graph Convolutional Model using LBANN" )
@@ -26,10 +25,6 @@ parser.add_argument(
     help="mini-batch size (default: 32)", metavar='NUM')
 
 parser.add_argument(
-    '--dataset', action='store', default='MNIST', type=str,
-    help="Dataset for model (default: MNIST)", metavar='NAME')
-
-parser.add_argument(
     '--job-name', action='store', default="GCN_TEST", type=str,
     help="Job name for scheduler", metavar='NAME')
 
@@ -42,7 +37,6 @@ args = parser.parse_args()
 
 kwargs = lbann.contrib.args.get_scheduler_kwargs(args) 
 
-dataset = args.dataset
 num_epochs = args.num_epochs
 mini_batch_size = args.mini_batch_size 
 job_name = args.job_name
@@ -51,37 +45,36 @@ model_arch = args.model
 
 ## Get Model
 
+data_reader = None
 if (model_arch == 'GRAPH'):
-    model = Sparse_Graph_Trainer.make_model(dataset = 'PROTEINS',
-                                            kernel_type = 'Graph',
+    model = Sparse_Graph_Trainer.make_model(kernel_type = 'Graph',
                                             num_epochs = num_epochs)
 elif(model_arch=='GIN'):
-    model = Sparse_Graph_Trainer.make_model(dataset = 'PROTEINS',
-                                            kernel_type = 'GIN',
+    model = Sparse_Graph_Trainer.make_model(kernel_type = 'GIN',
                                             num_epochs = num_epochs)
 elif(model_arch=='GATEDGRAPH'):
     model = Sparse_Graph_Trainer.make_model(dataset = 'PROTEINS',
                                             kernel_type = 'GatedGraph',
                                             num_epochs = num_epochs)
 elif (model_arch =='DGCN'):
-    model = Dense_Graph_Trainer.make_model(dataset = 'PROTEINS',
-                                           kernel_type = 'GCN',
+    model = Dense_Graph_Trainer.make_model(kernel_type = 'GCN',
                                            num_epochs = num_epochs)
+    data_reader = data.PROTEINS.make_data_reader("Dense")
 elif (model_arch == 'DGRAPH'):
-    model = Dense_Graph_Trainer.make_model(dataset = 'PROTEINS',
-                                           kernel_type = 'Graph',
+    model = Dense_Graph_Trainer.make_model(kernel_type = 'Graph',
                                            num_epochs = num_epochs)
+    data_reader = data.PROTEINS.make_data_reader("Dense")
+
 else:   
-    model = Sparse_Graph_Trainer.make_model(dataset = 'PROTEINS',
-                                            kernel_type = 'GCN',
+    model = Sparse_Graph_Trainer.make_model(kernel_type = 'GCN',
                                             num_epochs=num_epochs)
 
+if data_reader is None:
+    data_reader = data.PROTEINS.make_data_reader()
 
 optimizer = lbann.SGD(learn_rate = 1e-3)
 
 #add logic for choosing a dataset 
-
-data_reader = data.PROTEINS.make_data_reader()
 
 trainer = lbann.Trainer(mini_batch_size = mini_batch_size)
 

@@ -8,7 +8,7 @@ def get_sample_func(index):
 
 
 def num_samples_func():
-  return 10000
+  return 100000
 
 
 def sample_dims_func():

@@ -16,8 +16,10 @@ class NNConv(Module):
                  num_edges,
                  input_channels,
                  output_channels,
+                 edge_input_channels,
                  activation=lbann.Relu,
-                 name=None):
+                 name=None,
+                 parallel_strategy={}):
         """Inititalize  the edge conditioned graph kernel with edge data
            represented with pseudo-COO format. The reduction over edge
            features are performed via the scatter layer
@@ -37,6 +39,7 @@ class NNConv(Module):
                                 transformed with learnable weights
             activation (type): The activation function of the node features
             name (str): Default name of the layer is NN_{number}
+            parallel_strategy (dict): Data partitioning scheme.
         """
         NNConv.global_count += 1
 
@@ -49,14 +52,17 @@ class NNConv(Module):
 
         self.num_nodes = num_nodes
         self.num_edges = num_edges
+        self.edge_input_channels = edge_input_channels
 
         self.node_activation = activation
+        self.parallel_strategy = parallel_strategy
 
         self.node_nn = \
             ChannelwiseFullyConnectedModule(self.output_channels,
                                             bias=False,
                                             activation=self.node_activation,
-                                            name=self.name+"_node_weights")
+                                            name=self.name+"_node_weights",
+                                            parallel_strategy=self.parallel_strategy)
         self.edge_nn = sequential_nn
 
     def message(self,
@@ -76,6 +82,12 @@ class NNConv(Module):
             (Layer, Layer): Returns the updated node features and the messages
             for each node.
         """
+
+        ## These reshapes do not change the nn output but enables channelwise partitioning 
+        ## for distconv channelwiseFC natively 
+        
+        node_features = lbann.Reshape(node_features, dims=str_list([self.num_nodes, 1, self.input_channels]))
+        edge_features = lbann.Reshape(edge_features, dims=str_list([self.num_edges, 1, self.edge_input_channels]))
 
         updated_node_features = self.node_nn(node_features)
 
@@ -102,28 +114,27 @@ class NNConv(Module):
                   edge_indices):
         """Aggregate the messages from the neighbors of the nodes
         Args:
-            edge_values (Layer): A 2D layer of edge features of
+            edge_values (Layer): A layer of edge features of
                                    shape (num_edges, edge_features)
             edge_indices (Layer): A 1D layer of node features of
-                                shape (num_edges * output_channels).
+                                shape (num_edges).
                                 The indices used for reduction
         Returns:
             (Layer): A 2D layer of updated node features
         """
 
-        node_feature_size = self.num_nodes * self.output_channels
-        edge_feature_size = self.num_edges * self.output_channels
+        node_feature_dims = [self.num_nodes , self.output_channels]
+        edge_feature_dims = [self.num_edges , self.output_channels]
 
         edge_values = lbann.Reshape(edge_values,
-                                    dims=str_list([edge_feature_size]),
+                                    dims=str_list(edge_feature_dims),
                                     name=self.name+"_neighbor_features")
         edge_reduce = lbann.Scatter(edge_values,
                                     edge_indices,
-                                    dims=str_list([node_feature_size]),
+                                    dims=str_list(node_feature_dims),
+                                    axis=0,
                                     name=self.name+"_aggregate")
-        edge_reduce = lbann.Reshape(edge_reduce,
-                                    dims=str_list([self.num_nodes,
-                                                   self.output_channels]))
+
         return edge_reduce
 
     def forward(self,

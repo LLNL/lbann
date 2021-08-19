@@ -469,22 +469,6 @@ if (LBANN_WITH_HWLOC)
 endif (LBANN_WITH_HWLOC)
 
 if (LBANN_WITH_CONDUIT)
-  # Apparently we have to find HDF5, too.
-  find_package(HDF5 CONFIG QUIET
-    HINTS ${HDF5_DIR} $ENV{HDF5_DIR}
-    PATH_SUFFIXES share/cmake/hdf5
-    NO_DEFAULT_PATH)
-  if (NOT HDF5_FOUND)
-    find_package(HDF5 CONFIG QUIET)
-  endif ()
-  if (NOT HDF5_FOUND)
-    enable_language(C) # WHY??????????????
-    find_package(HDF5 REQUIRED)
-    set(HDF5_FOUND_WITH_MODULE TRUE)
-  else ()
-    message(STATUS "Found HDF5: ${HDF5_DIR}")
-  endif ()
-
   find_package(Conduit CONFIG QUIET
     HINTS ${Conduit_DIR} $ENV{Conduit_DIR} ${CONDUIT_DIR} $ENV{CONDUIT_DIR}
     PATH_SUFFIXES lib64/cmake lib/cmake
@@ -576,6 +560,11 @@ if (LBANN_WITH_UNIT_TESTING)
   endif ()
   message(STATUS "Found Catch2: ${Catch2_DIR}")
 
+  if (CMAKE_CXX_COMPILER_ID MATCHES "ROCMClang")
+    set_target_properties(Catch2::Catch2
+      PROPERTIES INTERFACE_COMPILE_FEATURES "cxx_std_17")
+  endif()
+
   # Now that Catch2 has been found, start adding the unit tests
   include(CTest)
   include(Catch)
@@ -643,7 +632,9 @@ target_link_libraries(lbann PUBLIC Threads::Threads)
 target_link_libraries(lbann PUBLIC clara::clara)
 target_link_libraries(lbann PUBLIC cereal)
 target_link_libraries(lbann PUBLIC OpenMP::OpenMP_CXX)
-target_link_libraries(lbann PUBLIC MPI::MPI_CXX)
+target_link_libraries(lbann PUBLIC
+  $<TARGET_NAME_IF_EXISTS:HWLOC::hwloc>
+  MPI::MPI_CXX)
 target_link_libraries(lbann PUBLIC protobuf::libprotobuf)
 target_link_libraries(lbann PUBLIC ${HYDROGEN_LIBRARIES})
 if (LBANN_HAS_OPENCV)
@@ -661,7 +652,6 @@ target_link_libraries(lbann PUBLIC
 
   $<TARGET_NAME_IF_EXISTS:CNPY::CNPY>
   $<TARGET_NAME_IF_EXISTS:FFTW::FFTW>
-  $<TARGET_NAME_IF_EXISTS:HWLOC::hwloc>
   $<TARGET_NAME_IF_EXISTS:Python::Python>
   $<TARGET_NAME_IF_EXISTS:ZSTR::ZSTR>
 

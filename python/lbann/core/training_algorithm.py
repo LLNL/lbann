@@ -209,6 +209,9 @@ class MutationStrategy:
         elif self.strategy == "replace_activation":
             ReplaceActivationMsg = MutationStrategyMsg.ReplaceActivation
             msg.replace_activation.CopyFrom(ReplaceActivationMsg())
+        elif self.strategy == "replace_convolution":
+            ReplaceConvolutionMsg = MutationStrategyMsg.ReplaceConvolution
+            msg.replace_convolution.CopyFrom(ReplaceConvolutionMsg())
         else:
             raise ValueError("Unknown Strategy")
         return msg
@@ -236,14 +239,14 @@ class RandomPairwiseExchange(MetaLearningStrategy):
 
     """
 
-    # Fake an enum, maybe?
+#Fake an enum, maybe ?
     class MetricStrategy:
         LOWER_IS_BETTER: int = 0
         HIGHER_IS_BETTER: int = 1
 
-    # This is supposed to go away. I don't want to make it any more
-    # visible than this. In the same vein, I don't want more "class"
-    # stuff for the different strategies.
+#This is supposed to go away.I don't want to make it any more
+#visible than this.In the same vein, I don't want more "class"
+#stuff for the different strategies.
     class ExchangeStrategy:
         """The algorithm for exchanging model data in RandomPairwiseExchange.
 
@@ -351,6 +354,48 @@ class RandomPairwiseExchange(MetaLearningStrategy):
 
         msg.exchange_strategy.CopyFrom(self.exchange_strategy.export_proto())
         msg.mutation_strategy.CopyFrom(self.mutation_strategy.export_proto())
+        return msg
+
+class TruncationSelectionExchange(MetaLearningStrategy):
+    """Truncation selection  metalearning strategy.
+
+    Rank all trainers in a population of trainers 
+    Ranking is done using specified metric strategy
+    Models/topologies/training hyperparameters of any 
+    trainer at ranking below truncation_k are replaced 
+    with that of a trainer from top of the ranking list. 
+
+    """
+
+#Fake an enum, maybe ?
+    class MetricStrategy:
+        LOWER_IS_BETTER: int = 0
+        HIGHER_IS_BETTER: int = 1
+
+
+    def __init__(self,
+                 metric_strategies: dict[str,int] = {},
+                 truncation_k = 0):
+        """Construct a new TruncationSelectionExchange metalearning strategy.
+
+        Args:
+            metric_strategies:
+              Map from metric name to the criterion for picking a winner
+              with respect to this metric
+            truncation_k:
+              Partitions ranking list to top(winners)/bottom(losers)
+        """
+
+        self.metric_strategies = metric_strategies
+        self.truncation_k = truncation_k
+
+    def export_proto(self):
+        """Get a protobuf representation of this object."""
+
+        msg = AlgoProto.TruncationSelectionExchange()
+        for key, value in self.metric_strategies.items():
+            msg.metric_name_strategy_map[key] = value
+        msg.truncation_k = self.truncation_k
         return msg
 
 class KFAC(TrainingAlgorithm):

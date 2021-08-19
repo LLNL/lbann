@@ -307,8 +307,13 @@ void buffered_data_coordinator<TensorDataType>::distribute_from_local_matrix(exe
 #ifdef LBANN_HAS_DISTCONV
   if (dc::is_cosmoflow_parallel_io_enabled() && input_buffers.count(input_data_type::RESPONSES)) {
     auto& response = *(input_buffers[input_data_type::RESPONSES]);
-    response.Resize(response.Height(), response.Width() /
-                    dc::get_number_of_io_partitions());
+    El::Int new_width = response.Width() / dc::get_number_of_io_partitions();
+    if (response.Viewing()) {
+      El::LockedView(response, response, El::ALL, El::IR(0, new_width));
+    }
+    else {
+      response.Resize(response.Height(), new_width);
+    }
   }
 #endif
   buf.m_num_samples_fetched = 0;
