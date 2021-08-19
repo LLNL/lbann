@@ -139,8 +139,9 @@ void channelwise_mean_layer<TensorDataType, Layout, Device>::fp_compute() {
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
     grid_dims.x = (channel_size + block_size - 1) / block_size;
-    grid_dims.y = El::Min(num_channels, 65535);
-    grid_dims.z = El::Min(local_width, 65535);
+    grid_dims.y = num_channels;
+    grid_dims.z = local_width;
+    gpu_lib::clip_grid_dims(grid_dims);
     hydrogen::gpu::LaunchKernel(
       mean_kernel<block_size, TensorDataType>,
       grid_dims, block_dims, 0, multisync,
@@ -176,8 +177,9 @@ void channelwise_mean_layer<TensorDataType, Layout, Device>::bp_compute() {
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
     grid_dims.x = (channel_size + block_size - 1) / block_size;
-    grid_dims.y = El::Min(num_channels, 65535);
-    grid_dims.z = El::Min(local_width, 65535);
+    grid_dims.y = num_channels;
+    grid_dims.z = local_width;
+    gpu_lib::clip_grid_dims(grid_dims);
     hydrogen::gpu::LaunchKernel(
       backprop_kernel<TensorDataType>,
       grid_dims, block_dims, 0, multisync,

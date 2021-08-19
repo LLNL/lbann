@@ -209,8 +209,8 @@ void channelwise_scale_bias_layer<TensorDataType, T_layout, Dev>::fp_compute() {
     block_dims.y = block_size_y;
     grid_dims.x = (channel_size + block_size_x - 1) / block_size_x;
     grid_dims.y = (local_width + block_size_y - 1) / block_size_y;
-    grid_dims.y = El::Min(grid_dims.y, 65535);
-    grid_dims.z = El::Min(num_channels, 65535);
+    grid_dims.z = num_channels;
+    gpu_lib::clip_grid_dims(grid_dims);
     auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_input),
                                        gpu::get_sync_info(local_output),
                                        gpu::get_sync_info(local_weights));
@@ -264,8 +264,8 @@ void channelwise_scale_bias_layer<TensorDataType, T_layout, Dev>::bp_compute() {
     block_dims.y = block_size_y;
     grid_dims.x = (channel_size + block_size_x - 1) / block_size_x;
     grid_dims.y = (local_width + block_size_y - 1) / block_size_y;
-    grid_dims.y = El::Min(grid_dims.y, 65535);
-    grid_dims.z = El::Min(num_channels, 65535);
+    grid_dims.z = num_channels;
+    gpu_lib::clip_grid_dims(grid_dims);
     auto multisync = El::MakeMultiSync(
       gpu::get_sync_info(local_input),
       gpu::get_sync_info(local_gradient_wrt_output),
