@@ -356,7 +356,6 @@ void kfac_block_bn<Device>::start_communication_forward_end(
 
       int iter = 0;
       for (auto& weight : this->m_weight_values) {
-        // weight = make_unique<El::Matrix<DataType, Device>>(dtw->get_values().Height(),dtw->get_values().Width());
         weight = make_unique<El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
         iter++;
       }
@@ -496,7 +495,6 @@ void kfac_block_bn<Device>::start_communication_backward_end(
       //Initialize gradients 
       int iter = 0;
       for (auto& gradient : this->m_weight_gradients) {
-        // weight = make_unique<El::Matrix<DataType, Device>>(dtw->get_values().Height(),dtw->get_values().Width());
         gradient = make_unique<El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
         iter++;
       }
@@ -534,7 +532,6 @@ void kfac_block_bn<Device>::start_communication_backward_end(
         auto& gradient_values = dto->get_gradient();
         const auto gradient_ptr = dynamic_cast<const El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*>(&gradient_values);
         auto gradient_input_ptr = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*>(&(*gradient));
-        // El::Copy(dtw->get_values(),*weight);
         kfac::TranslateBetweenGridsSTARAsync( *gradient_ptr,
                                             *gradient_input_ptr,
                                             this->m_requests_backward_end);

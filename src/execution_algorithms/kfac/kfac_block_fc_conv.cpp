@@ -258,21 +258,12 @@ void kfac_block_fc_conv<Device>::compute_preconditioned_gradients(
     const bool print_matrix_summary,
     const bool print_time) {
 
-  // const auto& sync_info = this->get_sync_info();
+
   auto& weights = this->m_layer->get_weights(0);
   optimizer *w_optimizer = weights.get_optimizer();
   auto* w_dto = dynamic_cast<data_type_optimizer<DataType>*>(w_optimizer);
-
-  // const auto &Aave = m_kronecker_average_A;
-  // const auto &Gave = m_kronecker_average_G;
   auto& Ainv = m_kronecker_inverse_A;
   auto& Ginv = m_kronecker_inverse_G;
-
-  // auto& ALinv = this->get_workspace_matrix(
-  //     "ALinv", Aave.Height(), Aave.Height());
-  // auto& GLinv = this->get_workspace_matrix(
-  //     "GLinv", Gave.Height(), Gave.Height());
-
   const auto& w_grads_orig = w_dto->get_gradient().LockedMatrix();
   El::Matrix<DataType, Device> w_gradients;
   // w_gradients is already synchronized among processes.

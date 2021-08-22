@@ -1106,107 +1106,6 @@ template class kfac_block_gru<El::Device::GPU>;
 ////  Sub-Grid Parallelism Functions
 //////////////////////////////////////////////////////////////////////////////////
 
-// template <El::Device Device>
-// void kfac_block_gru<Device>::send_recv_weights(lbann_comm *comm){
-//   //Does not support Model parallel only Data Parallel
-//   if(this->m_layer->get_data_layout()!=data_layout::DATA_PARALLEL)
-//     LBANN_ERROR("Send_recv_weights function in kfac_block_gru.cpp only supports Data Parallelism");
-
-//   const El::mpi::Comm & combined_comm = comm->get_combined_grid_comm();
-//   const int comm_rank = El::mpi::Rank(comm->get_KFAC_comm());
-
-//   std::vector<int> primary_grid_ranks = comm->get_primary_grid_ranks();
-//   std::vector<int> secondary_grid_ranks = comm->get_secondary_grid_ranks();
-
-//   int num_process_primary_grid = (int)primary_grid_ranks.size();
-//   int num_process_secondary_grid = (int)secondary_grid_ranks.size();
-
-//   //Computing size of global buffer
-//   int global_buffer_size = 0;
-//   for(int i=0; i<4; ++i)
-//   {
-//     auto& weights = this->m_layer->get_weights(i);
-//     const auto& dtw = dynamic_cast<data_type_weights<DataType>*>(&weights);
-//     auto height =  dtw->get_values().Height();
-//     auto width  =  dtw->get_values().Width();
-
-//     global_buffer_size += height*width;
-//   }
-
-//   El::Matrix<DataType, Device> global_buffer(global_buffer_size, 1);
-//   El::SyncInfo<Device> sync_info =El::SyncInfoFromMatrix(global_buffer);
-
-//   size_t offset = 0;
-//   //copy weights to global buffers
-//   if(comm->get_grid_type() == GridType::PRIMARY_GRID)
-//   {
-//     for(int i=0; i<4; ++i)
-//     {
-//       auto& weights = this->m_layer->get_weights(i);
-//       const auto& dtw = dynamic_cast<data_type_weights<DataType>*>(&weights);
-//       const auto& values = dynamic_cast<DMat<Device>*>(&(dtw->get_values().Matrix()));
-//       auto height =  dtw->get_values().Height();
-//       auto width  =  dtw->get_values().Width();
-//       auto view = El::View(global_buffer, El::IR(offset, offset+height*width), El::ALL);
-
-//       El::copy::util::InterleaveMatrix(
-//                   height*width, 1,
-//                   values->LockedBuffer(), 1, height*width,
-//                   view.Buffer(),
-//                   1, height*width,
-//                   sync_info);
-//       offset += height*width;
-//     }
-//   }
-
-
-//   if(comm->get_grid_type() == GridType::PRIMARY_GRID)
-//   {
-//     int num_sends = (int)std::ceil((float)num_process_secondary_grid/(float)num_process_primary_grid);
-//     for(int num_send = 0; num_send<num_sends; num_send++){
-//       if(comm_rank + num_send*num_process_primary_grid < num_process_secondary_grid){
-//         int to_send_index = comm_rank + num_send*num_process_primary_grid;
-//         ::El::mpi::Send(
-//            (DataType*)global_buffer.Buffer(),
-//            global_buffer_size,
-//            secondary_grid_ranks[to_send_index],
-//            combined_comm,
-//            sync_info);
-//       }
-//     }
-
-//   }
-//   if(comm->get_grid_type() == GridType::SECONDARY_GRID)
-//   {
-//     int recv_index = comm_rank % num_process_primary_grid;
-//     ::El::mpi::Recv(
-//        (DataType*)global_buffer.Buffer(),
-//        global_buffer_size,
-//        primary_grid_ranks[recv_index],
-//        combined_comm,
-//        sync_info);
-//   }
-
-//   offset = 0;
-//   //copy weights from global buffers
-//   if(comm->get_grid_type() == GridType::SECONDARY_GRID)
-//   {
-//     for(int i=0; i<4; ++i)
-//     {
-//       auto& weights = this->m_layer->get_weights(i);
-//       const auto& dtw = dynamic_cast<data_type_weights<DataType>*>(&weights);
-//       int height =  dtw->get_values().Height();
-//       int width  =  dtw->get_values().Width();
-//       this->m_weight_values[i]->Resize(height,width);
-//       const El::Matrix<DataType, Device>& view = El::LockedView(global_buffer, El::IR(offset, offset+(height*width)), El::ALL);
-//       El::Copy(view,*this->m_weight_values[i]);
-//       this->m_weight_values[i]->Resize(height,width);
-//       offset += height*width;
-//     }
-//   }
-
-// }
-
 template <El::Device Device>
 void kfac_block_gru<Device>::start_communication_forward_end(
     lbann_comm* comm) {
@@ -1252,8 +1151,7 @@ void kfac_block_gru<Device>::start_communication_forward_end(
 
       int iter = 0;
       for (auto& weight : this->m_weight_values) {
-        // weight = std::make_unqiue<El::Matrix<DataType, Device>>(dtw->get_values().Height(),dtw->get_values().Width());
-        weight = std::make_unqiue<El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
+        weight = std::make_unique<El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>>(comm->get_secondary_grid(), 0);
         iter++;
       }
     }
@@ -1291,7 +1189,6 @@ void kfac_block_gru<Device>::start_communication_forward_end(
         auto& weight_values = dtw->get_values();
         const auto weight_ptr = dynamic_cast<const El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*>(&weight_values);
         auto weight_input_ptr = dynamic_cast<El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*>(&(*weight));
-        // El::Copy(dtw->get_values(),*weight);
         kfac::TranslateBetweenGridsSTARAsync( *weight_ptr,
                                             *weight_input_ptr,
                                             this->m_requests_forward_end);
@@ -1530,9 +1427,6 @@ void kfac_block_gru<Device>::initialize_activations_and_errors(
     El::Copy(h0,*this->m_parent_local_activations[1]);
     El::Copy(local_outputs,*this->m_parent_local_activations[2]);
     El::Copy(local_errors,*this->m_child_local_errors[0]);
-
-    // send_recv_weights(comm);
-
   }
 
 

@@ -492,7 +492,9 @@ void allgather_inverse_matrices(
 template<>
 void TranslateBetweenGridsVC
 (El::DistMatrix<DataType,El::STAR,El::VC,El::ELEMENT,El::Device::CPU> const& A,
-  El::DistMatrix<DataType,El::STAR,El::VC,El::ELEMENT,El::Device::CPU>& B){}
+  El::DistMatrix<DataType,El::STAR,El::VC,El::ELEMENT,El::Device::CPU>& B){
+  LBANN_ERROR("TranslateBetweenGridsVC function is not implemented for CPUs");
+}
 
 template<typename T, El::Device Device>
 void TranslateBetweenGridsVC
@@ -663,10 +665,6 @@ void TranslateBetweenGridsVC
                     const int sendWidth = ((recvRankItr->second*rowStrideB + numInB)>= El::Mod(n,rowLCM)) ?
                                             floor(n/rowLCM) : floor(n/rowLCM)+1;
 
-                    // std::cout<<"Rank:"<<myRankViewing<<" Recv Data Size:"<<m*sendWidth<<" Rank to send:"<<recvRankItr->first<<"\n";                    
-                    // ::Al::Recv<::Al::MPIBackend>(
-                    //     recvBuf, m*sendWidth, recvRankItr->first,
-                    //     viewingCommB.template GetComm<::Al::MPIBackend>(syncInfoB));
                     El::mpi::Recv(recvBuf, m*sendWidth, recvRankItr->first, 
                                   viewingCommB, syncInfoB);
 
@@ -694,8 +692,6 @@ void TranslateBetweenGridsVC
                             1, numRowSends*A.LDim(),
                             sendBuf, 1, mLocA, syncInfoA);
 
-                    // ::Al::Send<::Al::MPIBackend>(sendBuf, mLocA*sendWidth, sendRankItr->first,
-                    //   viewingCommB.template GetComm<::Al::MPIBackend>(syncInfoA));
                     El::mpi::Send(sendBuf, mLocA*sendWidth, sendRankItr->first,
                       viewingCommB, syncInfoA);
                 }
@@ -736,7 +732,9 @@ void TranslateBetweenGridsVCAsync
   El::DistMatrix<DataType,El::STAR,El::VC,El::ELEMENT,El::Device::CPU>& B,
   El::DistMatrix<DataType,El::STAR,El::VC,El::ELEMENT,El::Device::CPU>& subset,
   std::vector<ReqT>& Requests)
-{}
+{
+  LBANN_ERROR("TranslateBetweenGridsVCAsync function is not implemented for CPUs");
+}
 
 template<typename T, El::Device Device>
 void TranslateBetweenGridsVCAsync
@@ -853,7 +851,9 @@ template<>
 void TranslateBetweenGridsSTARAsync
 (const El::DistMatrix<DataType,El::STAR,El::STAR,El::ELEMENT,El::Device::CPU>& A,
   El::DistMatrix<DataType,El::STAR,El::STAR,El::ELEMENT,El::Device::CPU>& B,
-  std::vector<ReqT>& Requests){}
+  std::vector<ReqT>& Requests){
+  LBANN_ERROR("TranslateBetweenGridsSTARAsync function is not implemented for CPUs");
+}
 
 template<typename T, El::Device Device>
 void TranslateBetweenGridsSTARAsync
@@ -936,7 +936,9 @@ void TranslateBetweenGridsKFACAsync
 (const El::DistMatrix<DataType,El::STAR,El::VC,El::ELEMENT,El::Device::CPU>& A,
   El::DistMatrix<DataType,El::STAR,El::VC,El::ELEMENT,El::Device::CPU>& B,
   std::vector<ReqT>& Requests)
-{}
+{
+  LBANN_ERROR("TranslateBetweenGridsKFACAsync function is not implemented for CPUs");
+}
 
 
 template<typename T, El::Device Device>
