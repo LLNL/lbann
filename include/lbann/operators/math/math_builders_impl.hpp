@@ -35,25 +35,6 @@
 
 #include "lbann/proto/datatype_helpers.hpp"
 
-#include <memory>
-
-#include <operators.pb.h>
-
-namespace lbann {
-namespace details {
-
-template <typename InputT, typename OutputT, El::Device D>
-void AssertConsistentTypeParameters(lbann_data::Operator const& op)
-{
-  LBANN_ASSERT(proto::ProtoDataType<InputT> == op.input_datatype());
-  LBANN_ASSERT(proto::ProtoDataType<OutputT> == op.output_datatype());
-  LBANN_ASSERT(proto::ProtoDevice<D> ==
-               proto::resolve_default_device(op.device_allocation()));
-}
-
-} // namespace details
-} // namespace lbann
-
 template <typename DataT, El::Device D>
 std::unique_ptr<lbann::Operator<DataT, DataT, D>>
 lbann::build_clamp_operator(lbann_data::Operator const& op)
@@ -71,15 +52,6 @@ lbann::build_abs_operator(lbann_data::Operator const& op)
   details::AssertConsistentTypeParameters<DataT, El::Base<DataT>, D>(op);
   return std::make_unique<AbsOperator<DataT, D>>();
 }
-
-#define LBANN_DEFINE_OPERATOR_BUILDER(OP_LOWER, OP_NAME)                       \
-  template <typename DataT, El::Device D>                                      \
-  std::unique_ptr<lbann::Operator<DataT, DataT, D>>                            \
-    lbann::build_##OP_LOWER##_operator(lbann_data::Operator const& op)         \
-  {                                                                            \
-    details::AssertConsistentTypeParameters<DataT, DataT, D>(op);              \
-    return std::make_unique<OP_NAME##Operator<DataT, D>>();                    \
-  }
 
 LBANN_DEFINE_OPERATOR_BUILDER(acos, Acos)
 LBANN_DEFINE_OPERATOR_BUILDER(acosh, Acosh)

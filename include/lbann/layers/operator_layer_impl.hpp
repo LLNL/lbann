@@ -263,5 +263,4 @@ namespace lbann {
 
 } // namespace lbann
 #endif // LBANN_INSTANTIATE_OPERATOR_LAYER
-
 #endif // LBANN_LAYERS_OPERATOR_LAYER_IMPL_HPP_INCLUDED

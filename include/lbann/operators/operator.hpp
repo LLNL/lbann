@@ -46,13 +46,6 @@
 #include <string>
 #include <vector>
 
-/** @brief A utility macro for easily adding ETI for operator builders
- *  @note Must be called inside lbann namespace.
- */
-#define LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(OPERATOR_NAME, T, D)            \
-  template std::unique_ptr<Operator<T, T, D>>                                  \
-    build_##OPERATOR_NAME##_operator<T, D>(lbann_data::Operator const&)
-
 namespace lbann {
 
 using supported_operator_data_type = h2::meta::TL<

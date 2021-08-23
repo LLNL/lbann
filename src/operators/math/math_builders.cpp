@@ -26,24 +26,21 @@
 
 #include <lbann/operators/math/math_builders_impl.hpp>
 
-namespace lbann {
-
-#define LBANN_ABS_OP_ETI(D)                                                    \
-  template std::unique_ptr<Operator<float, float, D>>                          \
-  build_abs_operator<float, D>(lbann_data::Operator const&);                   \
-  template std::unique_ptr<Operator<double, double, D>>                        \
-  build_abs_operator<double, D>(lbann_data::Operator const&);                  \
-  template std::unique_ptr<Operator<El::Complex<float>, float, D>>             \
-  build_abs_operator<El::Complex<float>, D>(lbann_data::Operator const&);      \
-  template std::unique_ptr<Operator<El::Complex<double>, double, D>>           \
-  build_abs_operator<El::Complex<double>, D>(lbann_data::Operator const&)
-LBANN_ABS_OP_ETI(El::Device::CPU);
+#define LBANN_ABS_OP_COMPLEX_ETI(D)                                            \
+  template std::unique_ptr<lbann::Operator<El::Complex<float>, float, D>>      \
+  lbann::build_abs_operator<El::Complex<float>, D>(                            \
+    lbann_data::Operator const&);                                              \
+  template std::unique_ptr<lbann::Operator<El::Complex<double>, double, D>>    \
+  lbann::build_abs_operator<El::Complex<double>, D>(                           \
+    lbann_data::Operator const&)
+LBANN_ABS_OP_COMPLEX_ETI(El::Device::CPU);
 #ifdef LBANN_HAS_GPU
-LBANN_ABS_OP_ETI(El::Device::GPU);
+LBANN_ABS_OP_COMPLEX_ETI(El::Device::GPU);
 #endif
-#undef LBANN_ABS_OP_ETI
+#undef LBANN_ABS_OP_COMPLEX_ETI
 
 #define PROTO_DEVICE(T, D)                                                     \
+  LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(abs, T, D);                           \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(acos, T, D);                          \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(acosh, T, D);                         \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(add, T, D);                           \
@@ -95,5 +92,3 @@ LBANN_ABS_OP_ETI(El::Device::GPU);
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(tanh, T, D)
 
 #include <lbann/macros/instantiate_device.hpp>
-
-} // namespace lbann

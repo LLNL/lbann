@@ -27,19 +27,9 @@
 #define LBANN_INCLUDE_LBANN_OPERATORS_MATH_MATH_BUILDERS_HPP_INCLUDED
 
 #include "lbann/operators/operator.hpp"
-
-#include <memory>
-
-// Forward declaration
-namespace lbann_data {
-class Operator;
-} // namespace lbann_data
+#include "lbann/operators/builder_macros.hpp"
 
 namespace lbann {
-#define LBANN_DECLARE_OPERATOR_BUILDER(OP_NAME)                 \
-  template <typename DataT, El::Device D>                       \
-  std::unique_ptr<Operator<DataT, DataT, D>>                    \
-  build_##OP_NAME##_operator(lbann_data::Operator const& op)
 
 template <typename DataT, El::Device D>
 std::unique_ptr<Operator<DataT, El::Base<DataT>, D>>
@@ -95,7 +85,6 @@ LBANN_DECLARE_OPERATOR_BUILDER(subtract);
 LBANN_DECLARE_OPERATOR_BUILDER(tan);
 LBANN_DECLARE_OPERATOR_BUILDER(tanh);
 
-#undef LBANN_DECLARE_OPERATOR_BUILDER
 } // namespace lbann
 
 #endif // LBANN_INCLUDE_LBANN_OPERATORS_MATH_MATH_BUILDERS_HPP_INCLUDED

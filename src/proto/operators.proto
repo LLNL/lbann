@@ -104,3 +104,32 @@ message LogicalOrOperator {}
 message LogicalXorOperator {}
 
 /// @}
+/** @name Activation Operators */
+message LogSigmoidOperator {}
+
+/** @brief Logarithm of softmax function.
+ *
+ *  @f[ \log \text{softmax}(x)_i = x_i - \log \sum_j e^{x_j} @f]
+ */
+message LogSoftmaxOperator {}
+
+message SeluOperator {}
+message SigmoidOperator {}
+
+message SoftplusOperator {}
+message SoftsignOperator {}
+
+// message ReluOperator {}
+
+/**
+ *  @f[ \text{softmax}(x)_i = \frac{e^{x_i}}{\sum_j e^{x_j}} @f]
+ */
+// message SoftmaxOperator {
+//   enum SoftmaxMode {
+//     INSTANCE = 0;
+//     CHANNEL = 1;
+//   }
+//   SoftmaxMode softmax_mode = 1;
+// }
+
+///@}

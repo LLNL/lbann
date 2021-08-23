@@ -29,6 +29,7 @@
 #include "lbann/proto/factories.hpp"
 #include "lbann/proto/operator_factory.hpp"
 
+#include "lbann/operators/activations/activation_builders.hpp"
 #include "lbann/operators/math/math_builders.hpp"
 #include "lbann/operators/operator.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
@@ -73,6 +74,7 @@ OperatorFactory<InT, OutT, D> build_default_factory()
     LBANN_REGISTER_BUILDER(LessEqual, less_equal);
     LBANN_REGISTER_BUILDER(Log, log);
     LBANN_REGISTER_BUILDER(Log1p, log1p);
+    LBANN_REGISTER_BUILDER(LogSigmoid, log_sigmoid);
     LBANN_REGISTER_BUILDER(LogicalAnd, logical_and);
     LBANN_REGISTER_BUILDER(LogicalNot, logical_not);
     LBANN_REGISTER_BUILDER(LogicalOr, logical_or);
@@ -89,9 +91,13 @@ OperatorFactory<InT, OutT, D> build_default_factory()
     LBANN_REGISTER_BUILDER(Rsqrt, rsqrt);
     LBANN_REGISTER_BUILDER(SafeDivide, safe_divide);
     LBANN_REGISTER_BUILDER(SafeReciprocal, safe_reciprocal);
+    LBANN_REGISTER_BUILDER(Selu, selu);
+    LBANN_REGISTER_BUILDER(Sigmoid, sigmoid);
     LBANN_REGISTER_BUILDER(Sign, sign);
     LBANN_REGISTER_BUILDER(Sin, sin);
     LBANN_REGISTER_BUILDER(Sinh, sinh);
+    LBANN_REGISTER_BUILDER(Softplus, softplus);
+    LBANN_REGISTER_BUILDER(Softsign, softsign);
     LBANN_REGISTER_BUILDER(Sqrt, sqrt);
     LBANN_REGISTER_BUILDER(Square, square);
     LBANN_REGISTER_BUILDER(SquaredDifference, squared_difference);
