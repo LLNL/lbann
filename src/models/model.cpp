@@ -465,7 +465,7 @@ void model::remove_weights(std::string const& removable_weight_name) {
       "Attempted to remove weight",
       " \"", removable_weight_name, "\", ",
       "but no such weight exists");
-}                                        
+}
 
 void model::add_callback(std::shared_ptr<callback_base> cb) {
   if (cb == nullptr) {
@@ -1898,7 +1898,7 @@ void model::remove_layer(std::string const& removable_layer_name) {
   // Remove weights for the old layer
   // NOTE : We assume that layers do not share weights
   auto old_weights_ptrs = m_layers[removable_layer_index]->get_weights_pointers();
-  for (const auto w : old_weights_ptrs) {
+  for (auto const& w : old_weights_ptrs) {
      this->remove_weights(std::shared_ptr<weights>(w)->get_name());
   }
 
@@ -1946,12 +1946,12 @@ void model::replace_layer(OwningLayerPtr&& new_layer, std::string const& old_lay
   // Remove weights for the old layer
   // NOTE : We assume that layers do not share weights
   auto old_weights_ptrs = m_layers[old_layer_index]->get_weights_pointers();
-  for (const auto w : old_weights_ptrs) {
+  for (auto const& w : old_weights_ptrs) {
      this->remove_weights(std::shared_ptr<weights>(w)->get_name());
   }
 
   // Destroy memory of old layer - for now, remove from m_layers
-  m_layers.erase(m_layers.cbegin()+old_layer_index); 
+  m_layers.erase(m_layers.cbegin()+old_layer_index);
 
   // Add new layer to layer list
   add_layer(std::move(new_layer));
