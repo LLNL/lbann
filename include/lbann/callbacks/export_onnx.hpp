@@ -48,8 +48,12 @@ namespace callback {
 class export_onnx : public callback_base {
 
 public:
-  /** @brief export_onnx Constructor. */
-  export_onnx(std::shared_ptr<lbann_summary> const& summarizer);
+  /** @brief export_onnx Constructor.
+   *  @param output_file Output filename (default = lbann_output.onnx)
+   *  @param print_debug_string Option to print debug string to stdout
+   */
+  export_onnx(bool print_debug_string = false,
+              std::string output_file = "lbann_output.onnx");
 
   /** @brief Copy constructor */
   callback_base* copy() const override {
@@ -69,19 +73,23 @@ public:
 
 private:
 
+  /* @brief option to print onnx debug string */
+  bool m_print_debug_string;
+
+  /* @brief name of output file. Default = lbann_output.onnx */
+  std::string m_output_file;
+
   /* @brief onnx ModelProto object */
   onnx::ModelProto mp_;
-#endif // LBANN_HAS_ONNX
 
-  /* @brief lbann_summary object */
-  std::shared_ptr<lbann_summary> m_summarizer;
+#endif // LBANN_HAS_ONNX
 
 }; // class export_onnx
 
 std::unique_ptr<callback_base>
 build_export_onnx_callback_from_pbuf(
   const google::protobuf::Message& proto_msg,
-  const std::shared_ptr<lbann_summary>& summarizer);
+  const std::shared_ptr<lbann_summary>&);
 
 } // namespace callback
 } // namespace lbann

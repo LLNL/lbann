@@ -44,8 +44,11 @@
 namespace lbann {
 namespace callback {
 
-export_onnx::export_onnx(std::shared_ptr<lbann_summary> const& summarizer)
-  : m_summarizer(summarizer)
+export_onnx::export_onnx(bool print_debug_string,
+                         std::string output_file)
+  : callback_base(/*batch_interval=*/1),
+    m_print_debug_string(print_debug_string),
+    m_output_file(output_file)
 {}
 
 #ifdef LBANN_HAS_ONNX
@@ -77,18 +80,15 @@ void export_onnx::on_train_begin(model* m)
   for (auto const* layer : layers) {
     layer->fill_onnx_node(*gp);
   }
-  std::string model_name = "Model Name: " + m->get_name() + ", ";
-  std::string layer_names = "Model Layers: ";
-  for( auto const* layer : layers) {
-    layer_names.append(layer->get_name() + ", ");
-  }
-  std::string model_type = "Model Type: " + m->get_type();
-  gp->set_doc_string(model_name + layer_names + model_type);
+  gp->set_doc_string(m->get_name());
 
   auto rank = m->get_comm()->get_rank_in_trainer();
   if( rank == 0 ) {
-    std::ofstream onnx_out("./test_output.onnx");
+    std::ofstream onnx_out(m_output_file);
     mp_.SerializeToOstream(&onnx_out);
+
+    if(m_print_debug_string)
+      std::cout << mp_.DebugString() << std::endl;
   }
 }
 #endif // LBANN_HAS_ONNX
@@ -96,9 +96,12 @@ void export_onnx::on_train_begin(model* m)
 std::unique_ptr<callback_base>
 build_export_onnx_callback_from_pbuf(
   const google::protobuf::Message& proto_msg,
-  const std::shared_ptr<lbann_summary>& summarizer) {
-
-  return make_unique<export_onnx>(summarizer);
+  const std::shared_ptr<lbann_summary>&) {
+  const auto& params =
+    dynamic_cast<const lbann_data::Callback::CallbackExportOnnx&>(proto_msg);
+  return make_unique<export_onnx>(
+    params.print_debug_string(),
+    params.output_file());
 }
 }// namespace callback
 }// namespace lbann

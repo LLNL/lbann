@@ -142,7 +142,7 @@ class input_layer : public data_type_layer<TensorDataType> {
 
       auto* dims = input_type->mutable_tensor_type()->mutable_shape()->add_dim();
       dims->set_dim_param("batch");
-      for( auto const& dim : child->get_output_dims() ) {
+      for( auto const& dim : this->get_output_dims(idx) ) {
         dims = input_type->mutable_tensor_type()->mutable_shape()->add_dim();
         dims->set_dim_value(dim);
       }

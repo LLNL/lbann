@@ -145,20 +145,6 @@ public:
     dims->set_dim_param("batch");
     dims = graph_output_type->mutable_tensor_type()->mutable_shape()->add_dim();
     dims->set_dim_value(1);
-    dims = graph_output_type->mutable_tensor_type()->mutable_shape()->add_dim();
-    dims->set_dim_value(28);
-    dims = graph_output_type->mutable_tensor_type()->mutable_shape()->add_dim();
-    dims->set_dim_value(28);
-
-    //initializer->add_dims(1);
-    //auto const parents = this->get_parent_layers();
-    //for( auto const& dim : parents[0]->get_output_dims() ) {
-      //initializer->add_dims(dim);
-      //dims = graph_output_type->mutable_tensor_type()->mutable_shape()->add_dim();
-      //dims->set_dim_value(dim);
-      //dims->set_denotation("N/A");
-    // }
-
   }
 #endif // LBANN_HAS_ONNX
 

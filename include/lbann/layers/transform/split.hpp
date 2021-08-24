@@ -76,10 +76,11 @@ public:
   std::string get_onnx_op_type() const override { return "Identity"; }
 
   void fill_onnx_node(onnx::GraphProto& graph) const override {
+    const auto& parent = this->get_parent_layer();
+    const size_t idx_in_parent = parent.find_child_layer_index(*this);
     for(auto const* child : this->get_child_layers()) {
       auto* node = graph.add_node();
-      for(auto const* parent : this->get_parent_layers())
-        node->add_input(parent->get_name() + "_0");
+      node->add_input(parent.get_name() + "_" + std::to_string(idx_in_parent));
       size_t idx = this->find_child_layer_index(*child);
       node->add_output(this->get_name() + "_" + std::to_string(idx));
       node->set_name(this->get_name() + std::to_string(idx));

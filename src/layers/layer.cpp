@@ -546,7 +546,9 @@ void Layer::fill_onnx_node(onnx::GraphProto& graph) const {
 }
 
 std::string Layer::get_onnx_op_type() const {
-  return this->get_type();
+  LBANN_ERROR( "ONNX export is not supported for ", this->get_type(),
+               " layer \"",this->get_name(),"\"");
+  return "";
 }
 #endif // LBANN_HAS_ONNX
 
