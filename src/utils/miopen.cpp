@@ -406,7 +406,7 @@ void RNNDescriptor::set(
   miopenRNNInputMode_t input_mode,
   miopenDataType_t data_type,
   miopenDataType_t math_precision,
-  int math_type, // placeholder
+  int /*math_type*/, // placeholder
   size_t input_size,
   size_t hidden_size,
   size_t proj_size,
@@ -459,9 +459,9 @@ ConvolutionDescriptor::ConvolutionDescriptor(const ConvolutionDescriptor& rhs)
     return;
   }
 
-  int math_type; // placeholder
   miopenConvolutionMode_t mode;
   miopenDataType_t data_type; // placeholder
+  data_type = miopenFloat; // silence warning about uninitialized usage.
   int num_dims;
   // TODO: how to get group count?
   int num_groups = 1;
@@ -484,7 +484,6 @@ ConvolutionDescriptor::ConvolutionDescriptor(const ConvolutionDescriptor& rhs)
   // Now set up this one
   this->set(
     pads, strides, dilations, data_type, mode);
-  //this->set_math_mode(math_type);
   this->set_group_count(num_groups);
 }
 
@@ -555,7 +554,7 @@ void ConvolutionDescriptor::set(
     int const pad[],
     int const stride[],
     int const dilation[],
-    miopenDataType_t data_type,
+    miopenDataType_t /*data_type*/,
     miopenConvolutionMode_t mode)
 {
   this->create();
@@ -567,7 +566,7 @@ void ConvolutionDescriptor::set(
       desc_, array_dim, local_pad, local_stride, local_dilation, mode));
 }
 
-void ConvolutionDescriptor::set_math_mode(int math_type)
+void ConvolutionDescriptor::set_math_mode(int /*math_type*/)
 {
 }
 
@@ -614,6 +613,7 @@ PoolingDescriptor::PoolingDescriptor(const PoolingDescriptor& rhs)
 
   miopenPoolingMode_t mode;
   miopenNanPropagation_t nan_prop; // placeholder
+  nan_prop = MIOPEN_NOT_PROPAGATE_NAN; // silence warning
   int num_dims;
   CHECK_MIOPEN(
     miopenGetNdPoolingDescriptor(
@@ -1469,7 +1469,6 @@ int convert_to_dnn_math_type(ProtoTensorOpEnumType mt)
 }
 
 #define PROTO(T)                                        \
-  template miopenDataType_t get_data_type<T>();          \
   template class layer_tensor_manager<T>;               \
   template class data_parallel_layer_tensor_manager<T>; \
   template class entrywise_layer_tensor_manager<T>
