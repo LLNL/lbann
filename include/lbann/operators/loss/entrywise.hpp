@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -24,37 +24,27 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <lbann/layers/math/math_builders.hpp>
-#include <lbann/layers/math/matmul.hpp>
+#ifndef LBANN_INCLUDE_LBANN_OPERATORS_LOSS_ENTRYWISE_HPP_INCLUDED
+#define LBANN_INCLUDE_LBANN_OPERATORS_LOSS_ENTRYWISE_HPP_INCLUDED
 
-#include <lbann/proto/proto_common.hpp>
-#include <layers.pb.h>
+#include "lbann/operators/declare_stateless_op.hpp"
 
-namespace lbann
-{
+namespace lbann {
 
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-std::unique_ptr<Layer> build_matmul_layer_from_pbuf(
-  lbann_comm* comm, lbann_data::Layer const& proto_layer)
-{
-  LBANN_ASSERT_MSG_HAS_FIELD(proto_layer, matmul);
-  if constexpr (Layout == data_layout::DATA_PARALLEL) {
-    using LayerType = matmul_layer<TensorDataType, Layout, Device>;
-    const auto& params = proto_layer.matmul();
-    return lbann::make_unique<LayerType>(
-      comm,
-      params.transpose_a(),
-      params.transpose_b());
-  }
-  else {
-    (void) comm;
-    (void) proto_layer;
-    LBANN_ERROR("matrix multiply layer is only supported with "
-                "a data-parallel layout");
-  }
-}
+// Cross entropy loss
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(BinaryCrossEntropy,
+                                             "binary cross entropy");
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(SigmoidBinaryCrossEntropy,
+                                             "sigmoid binary cross entropy");
 
-#define PROTO_DEVICE(T,D)                               \
-  LBANN_LAYER_BUILDER_ETI(matmul, T, D)
-#include <lbann/macros/instantiate_device.hpp>
+// Boolean loss functions
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(BooleanAccuracy,
+                                             "Boolean accuracy");
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(BooleanFalseNegative,
+                                             "Boolean false negative rate");
+LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(BooleanFalsePositive,
+                                             "Boolean false positive rate");
+
 } // namespace lbann
+
+#endif // LBANN_INCLUDE_LBANN_OPERATORS_LOSS_ENTRYWISE_HPP_INCLUDED

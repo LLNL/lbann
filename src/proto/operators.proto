@@ -105,6 +105,7 @@ message LogicalXorOperator {}
 
 /// @}
 /** @name Activation Operators */
+/// @{
 message LogSigmoidOperator {}
 
 /** @brief Logarithm of softmax function.
@@ -132,4 +133,12 @@ message SoftsignOperator {}
 //   SoftmaxMode softmax_mode = 1;
 // }
 
+///@}
+/** @brief Loss operators */
+///@{
+message BinaryCrossEntropyOperator {}
+message SigmoidBinaryCrossEntropyOperator {}
+message BooleanAccuracyOperator {}
+message BooleanFalseNegativeOperator {}
+message BooleanFalsePositiveOperator {}
 ///@}

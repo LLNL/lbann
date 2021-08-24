@@ -3,6 +3,7 @@ set(THIS_DIR_SOURCES)
 
 # Add the subdirectories
 add_subdirectory(activations)
+add_subdirectory(loss)
 add_subdirectory(math)
 
 # Propagate the files up the tree

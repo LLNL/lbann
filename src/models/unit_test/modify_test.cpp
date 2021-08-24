@@ -29,7 +29,6 @@
 #include "MPITestHelpers.hpp"
 #include "TestHelpers.hpp"
 
-#include "lbann/layers/activations/activations.hpp"
 #include "lbann/layers/activations/relu.hpp"
 #include "lbann/layers/layer.hpp"
 #include <lbann/base.hpp>

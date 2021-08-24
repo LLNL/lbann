@@ -30,6 +30,7 @@
 #include "lbann/proto/operator_factory.hpp"
 
 #include "lbann/operators/activations/activation_builders.hpp"
+#include "lbann/operators/loss/loss_builders.hpp"
 #include "lbann/operators/math/math_builders.hpp"
 #include "lbann/operators/operator.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
@@ -57,6 +58,10 @@ OperatorFactory<InT, OutT, D> build_default_factory()
     LBANN_REGISTER_BUILDER(Asinh, asinh);
     LBANN_REGISTER_BUILDER(Atan, atan);
     LBANN_REGISTER_BUILDER(Atanh, atanh);
+    LBANN_REGISTER_BUILDER(BinaryCrossEntropy, binary_cross_entropy);
+    LBANN_REGISTER_BUILDER(BooleanAccuracy, boolean_accuracy);
+    LBANN_REGISTER_BUILDER(BooleanFalseNegative, boolean_false_negative);
+    LBANN_REGISTER_BUILDER(BooleanFalsePositive, boolean_false_positive);
     LBANN_REGISTER_BUILDER(Ceil, ceil);
     LBANN_REGISTER_BUILDER(Clamp, clamp);
     LBANN_REGISTER_BUILDER(Cos, cos);
@@ -93,6 +98,8 @@ OperatorFactory<InT, OutT, D> build_default_factory()
     LBANN_REGISTER_BUILDER(SafeReciprocal, safe_reciprocal);
     LBANN_REGISTER_BUILDER(Selu, selu);
     LBANN_REGISTER_BUILDER(Sigmoid, sigmoid);
+    LBANN_REGISTER_BUILDER(SigmoidBinaryCrossEntropy,
+                           sigmoid_binary_cross_entropy);
     LBANN_REGISTER_BUILDER(Sign, sign);
     LBANN_REGISTER_BUILDER(Sin, sin);
     LBANN_REGISTER_BUILDER(Sinh, sinh);

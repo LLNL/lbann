@@ -1,6 +1,8 @@
 # Add the headers for this directory
 set_full_path(THIS_DIR_HEADERS
-  matmul.hpp
+  entrywise.hpp
+  loss_builders.hpp
+  loss_builders_impl.hpp
   )
 
 # Propagate the files up the tree

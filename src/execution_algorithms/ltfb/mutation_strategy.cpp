@@ -28,18 +28,23 @@
 
 #include "lbann/comm_impl.hpp"
 
-#include "lbann/layers/activations/activations.hpp"
 #include "lbann/layers/activations/elu.hpp"
 #include "lbann/layers/activations/leaky_relu.hpp"
 #include "lbann/layers/activations/log_softmax.hpp"
 #include "lbann/layers/activations/relu.hpp"
 #include "lbann/layers/activations/softmax.hpp"
-#include "lbann/layers/math/unary.hpp"
+#include "lbann/layers/operator_layer.hpp"
+
+#include "lbann/operators/activations/activations.hpp" // SigmoidOperator
+#include "lbann/operators/math/unary.hpp"              // TanhOperator
 
 #include "lbann/layers/learning/convolution.hpp"
 
 #include "lbann/models/model.hpp"
+#include "lbann/operators/math/unary.hpp"
 #include "lbann/utils/random.hpp"
+#include "lbann_config.hpp"
+#include <memory>
 
 #ifdef LBANN_HAS_GPU
 constexpr El::Device Dev = El::Device::GPU;
@@ -70,9 +75,10 @@ make_new_activation_layer(lbann_comm& comm,
         &comm);
   }
   else if (new_type == "tanh") {
-    layer =
-      std::make_unique<tanh_layer<DataType, data_layout::DATA_PARALLEL, Dev>>(
-        &comm);
+    layer = std::make_unique<
+      OperatorLayer<DataType, DataType, data_layout::DATA_PARALLEL, Dev>>(
+      comm,
+      std::make_unique<TanhOperator<DataType, Dev>>());
   }
   else if (new_type == "softmax") {
     layer = std::make_unique<
@@ -96,7 +102,9 @@ make_new_activation_layer(lbann_comm& comm,
   }
   else if (new_type == "sigmoid") {
     layer = std::make_unique<
-      sigmoid_layer<DataType, data_layout::DATA_PARALLEL, Dev>>(&comm);
+      OperatorLayer<DataType, DataType, data_layout::DATA_PARALLEL, Dev>>(
+      comm,
+      std::make_unique<SigmoidOperator<DataType, Dev>>());
   }
   else {
     LBANN_ERROR("Unknown new layer type: ", new_type);
