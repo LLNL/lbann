@@ -223,7 +223,6 @@ TEMPLATE_LIST_TEST_CASE("Clamp operator serialization",
   using ThisOpType = TestType;
   using BaseOpType = BaseOperatorType<ThisOpType>;
   using BaseOpPtr = std::unique_ptr<BaseOpType>;
-  using DataType = ValueType<ThisOpType>;
 
   auto& world_comm = unit_test::utilities::current_world_comm();
   // int const size_of_world = world_comm.get_procs_in_world();

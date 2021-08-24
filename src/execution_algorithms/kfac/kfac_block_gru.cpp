@@ -893,7 +893,7 @@ void kfac_block_gru<Device>::get_gradient_matrix(
   optimizer *opt = weights.get_optimizer();
   auto* dto = dynamic_cast<data_type_optimizer<DataType>*>(opt);
   const auto& gradients = dto->get_gradient().LockedMatrix();
-  assert(gradients.Height() == hidden_size*3);
+  LBANN_ASSERT(static_cast<size_t>(gradients.Height()) == hidden_size*3);
   const auto gradients_mat = El::LockedView(
       (El::Matrix<DataType, Device>&) gradients,
       El::IR(hidden_size*ids.second, hidden_size*(ids.second+1)), El::ALL);
@@ -912,7 +912,7 @@ void kfac_block_gru<Device>::get_gradient_buffer(
   optimizer *opt = weights.get_optimizer();
   auto& grad_buffer = opt->get_gradient_buffer(
       dst_scale, gradient_scale, false).Matrix();
-  assert(grad_buffer.Height() == hidden_size*3);
+  LBANN_ASSERT(static_cast<size_t>(grad_buffer.Height()) == hidden_size*3);
   auto grad_buffer_mat = El::View(
       (El::Matrix<DataType, Device>&) grad_buffer,
       El::IR(hidden_size*ids.second, hidden_size*(ids.second+1)), El::ALL);
