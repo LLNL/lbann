@@ -128,45 +128,21 @@ class input_layer : public data_type_layer<TensorDataType> {
   }
 
   std::string get_type() const override { return "input"; }
-<<<<<<< HEAD
-
-=======
->>>>>>> added export_onnx callback
 #ifdef LBANN_HAS_ONNX
   std::string get_onnx_op_type() const override { return "Identity"; }
   void fill_onnx_node(onnx::GraphProto& graph) const override {
     auto child_layers = this->get_child_layers();
-<<<<<<< HEAD
-=======
-    std::cout << "Num child layers: " << child_layers.size() << std::endl;
->>>>>>> added export_onnx callback
     for(auto const* child : this->get_child_layers()) {
       auto idx = this->find_child_layer_index(*child);
       auto* input = graph.add_input();
       input->set_name(this->get_name() + "_" + std::to_string(idx));
-<<<<<<< HEAD
-=======
-      std::cout << "NAME: " << child->get_name() << std::endl;
->>>>>>> added export_onnx callback
       auto* input_type = input->mutable_type();
       // FIXME: enum type. 1 is float. Get TensorDataType?
       input_type->mutable_tensor_type()->set_elem_type(1);
 
       auto* dims = input_type->mutable_tensor_type()->mutable_shape()->add_dim();
       dims->set_dim_param("batch");
-<<<<<<< HEAD
-
       for( auto const& dim : this->get_output_dims(idx) ) {
-        dims = input_type->mutable_tensor_type()->mutable_shape()->add_dim();
-        dims->set_dim_value(dim);
-      }
-     input->set_doc_string("Input layer info");
-    }
-  }
-#endif // LBANN_HAS_ONNX
-
-=======
-      for( auto const& dim : child->get_output_dims() ) {
         dims = input_type->mutable_tensor_type()->mutable_shape()->add_dim();
         dims->set_dim_value(dim);
       }
@@ -174,7 +150,6 @@ class input_layer : public data_type_layer<TensorDataType> {
     }
   }
 #endif // LBANN_HAS_ONNX
->>>>>>> added export_onnx callback
   // description get_description() const override {
   //   auto desc = io_layer<TensorDataType>::get_description();
   //   return desc;
