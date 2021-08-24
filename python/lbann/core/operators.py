@@ -64,3 +64,534 @@ class Clamp(Operator):
         params.min = self.min
         params.max = self.max
         return params
+
+class Abs(Operator):
+    """Apply the Abs operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.AbsOperator()
+        return params
+
+class Acos(Operator):
+    """Apply the Acos operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.AcosOperator()
+        return params
+
+class Acosh(Operator):
+    """Apply the Acosh operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.AcoshOperator()
+        return params
+
+class Add(Operator):
+    """Apply the Add operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.AddOperator()
+        return params
+
+class Asin(Operator):
+    """Apply the Asin operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.AsinOperator()
+        return params
+
+class Asinh(Operator):
+    """Apply the Asinh operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.AsinhOperator()
+        return params
+
+class Atan(Operator):
+    """Apply the Atan operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.AtanOperator()
+        return params
+
+class Atanh(Operator):
+    """Apply the Atanh operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.AtanhOperator()
+        return params
+
+class BinaryCrossEntropy(Operator):
+    """Apply the BinaryCrossEntropy operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.BinaryCrossEntropyOperator()
+        return params
+
+class BooleanAccuracy(Operator):
+    """Apply the BooleanAccuracy operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.BooleanAccuracyOperator()
+        return params
+
+class BooleanFalseNegative(Operator):
+    """Apply the BooleanFalseNegative operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.BooleanFalseNegativeOperator()
+        return params
+
+class BooleanFalsePositive(Operator):
+    """Apply the BooleanFalsePositive operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.BooleanFalsePositiveOperator()
+        return params
+
+class Ceil(Operator):
+    """Apply the Ceil operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.CeilOperator()
+        return params
+
+class Cos(Operator):
+    """Apply the Cos operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.CosOperator()
+        return params
+
+class Cosh(Operator):
+    """Apply the Cosh operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.CoshOperator()
+        return params
+
+class Divide(Operator):
+    """Apply the Divide operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.DivideOperator()
+        return params
+
+class Equal(Operator):
+    """Apply the Equal operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.EqualOperator()
+        return params
+
+class Erf(Operator):
+    """Apply the Erf operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.ErfOperator()
+        return params
+
+class ErfInv(Operator):
+    """Apply the ErfInv operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.ErfInvOperator()
+        return params
+
+class Exp(Operator):
+    """Apply the Exp operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.ExpOperator()
+        return params
+
+class Expm1(Operator):
+    """Apply the Expm1 operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.Expm1Operator()
+        return params
+
+class Floor(Operator):
+    """Apply the Floor operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.FloorOperator()
+        return params
+
+class Greater(Operator):
+    """Apply the Greater operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.GreaterOperator()
+        return params
+
+class GreaterEqual(Operator):
+    """Apply the GreaterEqual operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.GreaterEqualOperator()
+        return params
+
+class Less(Operator):
+    """Apply the Less operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.LessOperator()
+        return params
+
+class LessEqual(Operator):
+    """Apply the LessEqual operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.LessEqualOperator()
+        return params
+
+class Log(Operator):
+    """Apply the Log operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.LogOperator()
+        return params
+
+class Log1p(Operator):
+    """Apply the Log1p operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.Log1pOperator()
+        return params
+
+class LogSigmoid(Operator):
+    """Apply the LogSigmoid operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.LogSigmoidOperator()
+        return params
+
+class LogicalAnd(Operator):
+    """Apply the LogicalAnd operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.LogicalAndOperator()
+        return params
+
+class LogicalNot(Operator):
+    """Apply the LogicalNot operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.LogicalNotOperator()
+        return params
+
+class LogicalOr(Operator):
+    """Apply the LogicalOr operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.LogicalOrOperator()
+        return params
+
+class LogicalXor(Operator):
+    """Apply the LogicalXor operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.LogicalXorOperator()
+        return params
+
+class Max(Operator):
+    """Apply the Max operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.MaxOperator()
+        return params
+
+class Min(Operator):
+    """Apply the Min operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.MinOperator()
+        return params
+
+class Mod(Operator):
+    """Apply the Mod operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.ModOperator()
+        return params
+
+class Multiply(Operator):
+    """Apply the Multiply operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.MultiplyOperator()
+        return params
+
+class Negative(Operator):
+    """Apply the Negative operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.NegativeOperator()
+        return params
+
+class NotEqual(Operator):
+    """Apply the NotEqual operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.NotEqualOperator()
+        return params
+
+class Pow(Operator):
+    """Apply the Pow operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.PowOperator()
+        return params
+
+class Reciprocal(Operator):
+    """Apply the Reciprocal operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.ReciprocalOperator()
+        return params
+
+class Round(Operator):
+    """Apply the Round operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.RoundOperator()
+        return params
+
+class Rsqrt(Operator):
+    """Apply the Rsqrt operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.RsqrtOperator()
+        return params
+
+class SafeDivide(Operator):
+    """Apply the SafeDivide operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.SafeDivideOperator()
+        return params
+
+class SafeReciprocal(Operator):
+    """Apply the SafeReciprocal operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.SafeReciprocalOperator()
+        return params
+
+class Selu(Operator):
+    """Apply the Selu operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.SeluOperator()
+        return params
+
+class Sigmoid(Operator):
+    """Apply the Sigmoid operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.SigmoidOperator()
+        return params
+
+class SigmoidBinaryCrossEntropy(Operator):
+    """Apply the SigmoidBinaryCrossEntropy operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.SigmoidBinaryCrossEntropyOperator()
+        return params
+
+class Sign(Operator):
+    """Apply the Sign operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.SignOperator()
+        return params
+
+class Sin(Operator):
+    """Apply the Sin operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.SinOperator()
+        return params
+
+class Sinh(Operator):
+    """Apply the Sinh operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.SinhOperator()
+        return params
+
+class Softplus(Operator):
+    """Apply the Softplus operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.SoftplusOperator()
+        return params
+
+class Softsign(Operator):
+    """Apply the Softsign operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.SoftsignOperator()
+        return params
+
+class Sqrt(Operator):
+    """Apply the Sqrt operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.SqrtOperator()
+        return params
+
+class Square(Operator):
+    """Apply the Square operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.SquareOperator()
+        return params
+
+class SquaredDifference(Operator):
+    """Apply the SquaredDifference operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.SquaredDifferenceOperator()
+        return params
+
+class Subtract(Operator):
+    """Apply the Subtract operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.SubtractOperator()
+        return params
+
+class Tan(Operator):
+    """Apply the Tan operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.TanOperator()
+        return params
+
+class Tanh(Operator):
+    """Apply the Tanh operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.TanhOperator()
+        return params
