@@ -155,6 +155,7 @@ def setup_motifs(script, config):
         graph_ingest_exec,
         '-p 1',
         '-f 2.00',
+        '-d 1',     # Undirected graph
         f'-o {distributed_graph_dir}',
         graph_file,
     ])
