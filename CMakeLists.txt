@@ -602,13 +602,6 @@ if (LBANN_WITH_ONNX)
   find_package(ONNX CONFIG REQUIRED)
 endif ()
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-
-=======
->>>>>>> added LBANN_HAS_ONNX option, cleaned up FIXMEs
-=======
->>>>>>> added export_onnx callback
 ################################################################
 # Build LBANN
 ################################################################
@@ -640,29 +633,9 @@ target_include_directories(lbann PUBLIC
 target_compile_features(lbann PUBLIC cxx_std_17)
 
 # Use the IMPORTED targets when possible.
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 if (LBANN_HAS_ONNX)
   target_link_libraries(lbann PUBLIC onnx)
 endif ()
-=======
-target_link_libraries(lbann PUBLIC onnx)
->>>>>>> Added callback to CMakelists
-=======
-target_link_libraries(lbann PUBLIC onnx)
->>>>>>> Added callback to CMakelists
-=======
-if (LBANN_HAS_ONNX)
-  target_link_libraries(lbann PUBLIC onnx)
-endif ()
->>>>>>> added LBANN_HAS_ONNX option, cleaned up FIXMEs
-=======
-if (LBANN_HAS_ONNX)
-  target_link_libraries(lbann PUBLIC onnx)
-endif ()
->>>>>>> added export_onnx callback
 target_link_libraries(lbann PUBLIC LbannProto)
 if (LBANN_HAS_TBINF)
   target_link_libraries(lbann PUBLIC TBinf)
