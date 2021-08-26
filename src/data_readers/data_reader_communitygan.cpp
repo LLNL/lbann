@@ -39,6 +39,7 @@ communitygan_reader::communitygan_reader(
   size_t motif_size,
   size_t walk_length,
   size_t walks_per_vertex,
+  size_t path_limit,
   size_t epoch_size)
   : generic_data_reader(true),
     m_embedding_weights_name(std::move(embedding_weights_name)),
@@ -48,6 +49,7 @@ communitygan_reader::communitygan_reader(
     m_motif_size(motif_size),
     m_walk_length(walk_length),
     m_walks_per_vertex(walks_per_vertex),
+    m_path_limit(path_limit),
     m_epoch_size(epoch_size) {
 }
 
@@ -200,10 +202,25 @@ std::vector<std::vector<size_t>> communitygan_reader::generate_samples(
   if (trainer_rank < m_num_vertices % trainer_size) {
     ++num_local_vertices;
   }
-  std::vector<int> starts;
-  starts.reserve(num_local_vertices);
-  for (size_t i=0; i<num_local_vertices; ++i) {
-    starts.push_back(i * trainer_size + trainer_rank);
+  std::vector <int> starts;
+  const size_t num_local_starts = m_epoch_size / trainer_size;
+  if (num_local_starts >= num_local_vertices) {
+    // Start walks from all local vertices
+    starts.reserve(num_local_vertices);
+    for (size_t i=0; i<num_local_vertices; ++i) {
+      starts.push_back(i * trainer_size + trainer_rank);
+    }
+  }
+  else {
+    // Start walks from randomly chosen local vertices
+    std::unordered_set<int> starts_set;
+    starts_set.reserve(num_local_starts);
+    while (starts_set.size() < num_local_starts) {
+      auto i = fast_rand_int(get_io_generator(), num_local_vertices);
+      starts_set.insert(i * trainer_size + trainer_rank);
+    }
+    starts.reserve(num_local_starts);
+    starts.assign(starts_set.cbegin(), starts_set.cend());
   }
 
   // Perform random walks

@@ -30,7 +30,7 @@
 #include "data_reader.hpp"
 #include "lbann/callbacks/setup_communitygan_data_reader.hpp"
 #ifdef LBANN_HAS_COMMUNITYGAN_WALKER
-#include "CommunityGANWalker.hpp"
+#include "CommunityGANWalker_optimized.hpp"
 
 namespace lbann {
 
@@ -45,6 +45,7 @@ public:
     size_t motif_size,
     size_t walk_length,
     size_t walks_per_vertex,
+    size_t path_limit,
     size_t epoch_size);
   communitygan_reader(const communitygan_reader&) = delete;
   communitygan_reader& operator=(const communitygan_reader&) = delete;
@@ -86,6 +87,8 @@ private:
   size_t m_walk_length;
   /** @brief Number of walks to start on each local vertex. */
   size_t m_walks_per_vertex;
+  /** @brief Maximum number of vertices to visit when generating a walk */
+  size_t m_path_limit;
 
   /** @brief Number of data samples per "epoch".
    *
@@ -93,7 +96,7 @@ private:
    */
   size_t m_epoch_size;
 
-  std::unique_ptr<::CommunityGANWalker> m_walker;
+  std::unique_ptr<::CommunityGANWalker_optimized> m_walker;
 
   std::vector<std::vector<size_t>> m_motifs;
 

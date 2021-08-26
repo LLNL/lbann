@@ -101,8 +101,8 @@ message Reader {
   //------------- end of only for HDF5 data reader ------------------
 
   //-------- start of only for new (generalized) HDF5 data reader -------------
-  string data_schema_filename = 800; 
-  string experiment_schema_filename = 801; 
+  string data_schema_filename = 800;
+  string experiment_schema_filename = 801;
   //-------- end of only for new (generalized) HDF5 data reader -------------
 
 }
@@ -132,7 +132,8 @@ message CommunityGANDataReader {
   uint64 motif_size = 5;
   uint64 walk_length = 6;
   uint64 walks_per_vertex = 7;
-  uint64 epoch_size = 8;
+  uint64 path_limit = 8;
+  uint64 epoch_size = 9;
 }
 
 message DataSetMetaData {

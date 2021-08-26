@@ -95,6 +95,10 @@ def setup_config(args, work_dir):
         distributed_walks_dir = os.path.join(work_dir, 'distributed_walks')
     distributed_walks_dir = os.path.realpath(distributed_walks_dir)
     config.set('Walks', 'distributed_walks_dir', distributed_walks_dir)
+    path_limit = config.getint('Walks', 'path_limit')
+    if not path_limit:
+        path_limit = 2*config.getint('Walks', 'walk_length')
+    config.set('Walks', 'path_limit', str(path_limit))
 
     # Default parameters for training embeddings
     num_vertices = config.getint('Graph', 'num_vertices', fallback=0)
@@ -155,7 +159,7 @@ def setup_motifs(script, config):
         graph_ingest_exec,
         '-p 1',
         '-f 2.00',
-        '-d 1',     # Undirected graph
+        '-u 1',     # Undirected graph
         f'-o {distributed_graph_dir}',
         graph_file,
     ])

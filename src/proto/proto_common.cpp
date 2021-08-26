@@ -404,6 +404,7 @@ void init_data_readers(
         params.motif_size(),
         params.walk_length(),
         params.walks_per_vertex(),
+        params.path_limit(),
         params.epoch_size());
 #else
       LBANN_ERROR("attempted to construct CommunityGAN data reader, "
