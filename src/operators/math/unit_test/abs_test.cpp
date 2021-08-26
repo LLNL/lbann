@@ -62,10 +62,13 @@ using AbsOperatorAllDevices = h2::meta::TL<
   AbsOperator<T, El::Device::CPU>>;
 
 using AllAbsOpTypes =
-  h2::meta::tlist::Append<AbsOperatorAllDevices<float>,
-                          AbsOperatorAllDevices<double>,
-                          AbsOperatorAllDevices<El::Complex<float>>,
-                          AbsOperatorAllDevices<El::Complex<double>>>;
+  h2::meta::tlist::Append<
+#if !defined LBANN_HAS_ROCM
+  AbsOperatorAllDevices<El::Complex<float>>,
+  AbsOperatorAllDevices<El::Complex<double>>,
+#endif // LBANN_HAS_ROCM
+  AbsOperatorAllDevices<float>,
+  AbsOperatorAllDevices<double>>;
 
 namespace lbann {
 template <typename T, El::Device D>
