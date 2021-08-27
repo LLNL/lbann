@@ -457,12 +457,21 @@ make_replace_convolution(google::protobuf::Message const& msg)
   return std::make_unique<lbann::ltfb::ReplaceConvolution>();
 }
 
+std::unique_ptr<lbann::ltfb::HybridMutation>
+make_hybrid_mutation(google::protobuf::Message const& msg)
+{
+  using HybridMutation = lbann_data::MutationStrategy::HybridMutation;
+  LBANN_ASSERT(dynamic_cast<HybridMutation const*>(&msg));
+  return std::make_unique<lbann::ltfb::HybridMutation>();
+}
+
 MutationStrategyFactory build_default_mutation_factory()
 {
   MutationStrategyFactory factory;
   factory.register_builder("NullMutation", make_null_mutation);
   factory.register_builder("ReplaceActivation", make_replace_activation);
   factory.register_builder("ReplaceConvolution", make_replace_convolution);
+  factory.register_builder("HybridMutation", make_hybrid_mutation);
   return factory;
 }
 

@@ -317,5 +317,27 @@ void ReplaceConvolution::mutate(model& m, const int& step)
   }
 }
 
+void HybridMutation::mutate(model& m, const int& step)
+{
+  // Generate a random number to alternate between ReplaceActivation and ReplaceConvolution
+  int mutation_choice; // 0 - ReplaceActivation, 1 - ReplaceConvolution
+
+  if (m.get_comm()->am_trainer_master()) {
+    mutation_choice = fast_rand_int(get_fast_generator(), 2); // either 0 or 1
+  }
+  m.get_comm()->trainer_broadcast(m.get_comm()->get_trainer_master(),
+                                  mutation_choice);
+
+  ReplaceActivation *RA = new ReplaceActivation();
+  ReplaceConvolution *RC = new ReplaceConvolution();
+
+  if (mutation_choice == 0) {
+    RA->mutate(m, step);
+  }
+  else {
+    RC->mutate(m, step);
+  }    
+}
+
 } // namespace ltfb
 } // namespace lbann

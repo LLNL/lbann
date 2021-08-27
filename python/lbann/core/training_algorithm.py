@@ -212,6 +212,9 @@ class MutationStrategy:
         elif self.strategy == "replace_convolution":
             ReplaceConvolutionMsg = MutationStrategyMsg.ReplaceConvolution
             msg.replace_convolution.CopyFrom(ReplaceConvolutionMsg())
+        elif self.strategy == "hybrid_mutation":
+            HybridMutationMsg = MutationStrategyMsg.HybridMutation
+            msg.hybrid_mutation.CopyFrom(HybridMutationMsg())
         else:
             raise ValueError("Unknown Strategy")
         return msg
@@ -397,6 +400,31 @@ class TruncationSelectionExchange(MetaLearningStrategy):
             msg.metric_name_strategy_map[key] = value
         msg.truncation_k = self.truncation_k
         return msg
+
+class RegularizedEvolution(MetaLearningStrategy):
+    """ Later
+    """
+
+    class MetricStrategy:
+        LOWER_IS_BETTER: int = 0
+        HIGHER_IS_BETTER: int = 1
+
+    def __init__(self,
+                 metric_strategies: dict[str,int] = {},
+                 mutation_strategy = MutationStrategy()):
+        
+        self.metric_strategies = metric_strategies
+        self.mutation_strategy = mutation_strategy
+
+    def export_proto(self):
+        """Get a protobuf representation of this object."""
+
+        msg = AlgoProto.RegularizedEvolution()
+        for key, value in self.metric_strategies.items():
+            msg.metric_name_strategy_map[key] = value
+
+        msg.mutation_strategy.CopyFrom(self.mutation_strategy.export_proto())
+        return msg 
 
 class KFAC(TrainingAlgorithm):
     """Kronecker-Factored Approximate Curvature algorithm.

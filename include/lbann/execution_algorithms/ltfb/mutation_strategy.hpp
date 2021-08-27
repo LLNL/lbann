@@ -71,6 +71,15 @@ public:
   void mutate(model& m, const int& step) final;
 };
 
+// Hybrid mutation for Regularized Evolution mutation
+// Alternates between ReplaceActivation and ReplaceConvolution randomly
+class HybridMutation final : public Cloneable<HybridMutation, MutationStrategy>
+{
+public:
+  HybridMutation() = default;
+  void mutate(model& m, const int& step) final;
+};
+
 } // namespace ltfb
 } // namespace lbann
 #endif // LBANN_EXECUTION_ALGORITHMS_LTFB_MUTATION_STRATEGY_HPP_INCLUDED

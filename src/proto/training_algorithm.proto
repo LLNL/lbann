@@ -76,10 +76,14 @@ message MutationStrategy {
   message ReplaceConvolution {
   }
 
+  message HybridMutation {
+  }
+
   oneof strategy {
     NullMutation null_mutation = 1;
     ReplaceActivation replace_activation = 2;
     ReplaceConvolution replace_convolution = 3;
+    HybridMutation hybrid_mutation = 4;
   }
 } //message Mutation Strategy
 
