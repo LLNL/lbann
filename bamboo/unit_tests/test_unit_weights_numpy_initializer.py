@@ -8,7 +8,7 @@ import numpy as np
 # Bamboo utilities
 current_file = os.path.realpath(__file__)
 current_dir = os.path.dirname(current_file)
-weights_dir = os.path.join(current_dir, 'weights')
+weights_dir = os.path.join(current_dir, 'temp')
 sys.path.insert(0, os.path.join(os.path.dirname(current_dir), 'common_python'))
 import tools
 os.makedirs(weights_dir, exist_ok=True)

@@ -77,7 +77,7 @@ public:
 
 };
 
-/** @brief Fill weights with a constant value. */
+/** @brief Fill weights with a single constant value. */
 template <typename TensorDataType>
 class constant_initializer
   : public Cloneable<constant_initializer<TensorDataType>,
@@ -110,6 +110,9 @@ private:
  *
  *  The number of weight entries must exactly match the number of
  *  provided values.
+ *
+ *  @note Most weights are stored in row-major order. However, the
+ *  fully-connected layer's linearity weights are column-major.
  */
 template <typename TensorDataType>
 class value_initializer
@@ -139,6 +142,9 @@ private:
 };
 
 /** @brief Fill weights with values from a NumPy file.
+ *
+ *  Expects a .npy file with float32 or float64 values in C-style,
+ *  row-major order.
  */
 template <typename TensorDataType>
 class numpy_initializer

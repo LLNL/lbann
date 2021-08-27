@@ -171,6 +171,8 @@ void numpy_initializer<TensorDataType>::fill(AbsDistMatrixType& matrix) {
       matrix.Root());
   }
   else {
+    // Weights in fully-connected layer are in Fortran-order. Need to
+    // transpose NumPy array before copying in Hydrogen matrix
     if (array.shape.size() != 2) {
       LBANN_ERROR(
         "NumPy weight initializer attempted to initialize a ",

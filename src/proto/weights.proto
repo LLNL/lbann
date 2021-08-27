@@ -54,13 +54,30 @@ message Initializer {
   }
 
   // Weight initializers
+
+  /** @brief Fill weights with a single constant value. */
   message ConstantInitializer {
     double value = 1;
   }
+  /** @brief Fill weights with values from a list.
+   *
+   *  The number of weight entries must exactly match the number of
+   *  provided values.
+   *
+   *  @note Most weights are stored in row-major order. However, the
+   *  fully-connected layer's linearity weights are column-major.
+   */
   message ValueInitializer {
+    /// Space-separated list of values
     string values = 1;
   }
+  /** @brief Fill weights with values from a NumPy file.
+   *
+   *  Expects a .npy file with float32 or float64 values in C-style,
+   *  row-major order.
+   */
   message NumpyInitializer {
+    /// NumPy file
     string file = 1;
   }
   message UniformInitializer {
