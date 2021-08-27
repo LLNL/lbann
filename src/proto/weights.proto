@@ -42,14 +42,15 @@ message Initializer {
   oneof initializer_type {
     ConstantInitializer constant_initializer = 20;
     ValueInitializer value_initializer = 21;
-    UniformInitializer uniform_initializer = 22;
-    NormalInitializer normal_initializer = 23;
-    GlorotNormalInitializer glorot_normal_initializer = 24;
-    GlorotUniformInitializer glorot_uniform_initializer = 25;
-    HeNormalInitializer he_normal_initializer = 26;
-    HeUniformInitializer he_uniform_initializer = 27;
-    LeCunNormalInitializer lecun_normal_initializer = 28;
-    LeCunUniformInitializer lecun_uniform_initializer = 29;
+    NumpyInitializer numpy_initializer = 22;
+    UniformInitializer uniform_initializer = 23;
+    NormalInitializer normal_initializer = 24;
+    GlorotNormalInitializer glorot_normal_initializer = 25;
+    GlorotUniformInitializer glorot_uniform_initializer = 26;
+    HeNormalInitializer he_normal_initializer = 27;
+    HeUniformInitializer he_uniform_initializer = 28;
+    LeCunNormalInitializer lecun_normal_initializer = 29;
+    LeCunUniformInitializer lecun_uniform_initializer = 30;
   }
 
   // Weight initializers
@@ -58,6 +59,9 @@ message Initializer {
   }
   message ValueInitializer {
     string values = 1;
+  }
+  message NumpyInitializer {
+    string file = 1;
   }
   message UniformInitializer {
     double min = 1;

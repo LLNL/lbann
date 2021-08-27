@@ -63,6 +63,8 @@ public:
   /** @brief The tensor type expected in this object. */
   using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
 
+  ///@}
+
 public:
   data_type_weights_initializer() = default;
   virtual ~data_type_weights_initializer() = default;
@@ -86,6 +88,8 @@ public:
 
   /** @brief The tensor type expected in this object. */
   using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+  ///@}
 
 public:
   constant_initializer(TensorDataType value)
@@ -118,6 +122,8 @@ public:
   /** @brief The tensor type expected in this object. */
   using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
 
+  ///@}
+
 public:
   value_initializer(std::vector<TensorDataType> values)
     : m_values{std::move(values)}
@@ -132,6 +138,35 @@ private:
 
 };
 
+/** @brief Fill weights with values from a NumPy file.
+ */
+template <typename TensorDataType>
+class numpy_initializer
+  : public Cloneable<numpy_initializer<TensorDataType>,
+                     data_type_weights_initializer<TensorDataType>> {
+public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+  ///@}
+
+public:
+  numpy_initializer(std::string file)
+    : m_file{std::move(file)}
+  {}
+  std::string get_type() const override { return "NumPy"; }
+  void fill(AbsDistMatrixType& matrix) override;
+
+private:
+
+  /** NumPy file */
+  std::string m_file;
+
+};
+
 /** @brief Draw weights values from a uniform random distribution. */
 template <typename TensorDataType>
 class uniform_initializer
@@ -143,6 +178,8 @@ public:
 
   /** @brief The tensor type expected in this object. */
   using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+  ///@}
 
  public:
   uniform_initializer(TensorDataType min = El::To<TensorDataType>(0),
@@ -206,6 +243,10 @@ build_value_initializer_from_pbuf(google::protobuf::Message const& msg);
 
 template <typename TensorDataType>
 std::unique_ptr<weights_initializer>
+build_numpy_initializer_from_pbuf(google::protobuf::Message const& msg);
+
+template <typename TensorDataType>
+std::unique_ptr<weights_initializer>
 build_uniform_initializer_from_pbuf(google::protobuf::Message const& msg);
 
 template <typename TensorDataType>
@@ -217,6 +258,7 @@ build_normal_initializer_from_pbuf(google::protobuf::Message const& msg);
   extern template class data_type_weights_initializer<T>; \
   extern template class constant_initializer<T>;          \
   extern template class value_initializer<T>;             \
+  extern template class numpy_initializer<T>;             \
   extern template class uniform_initializer<T>;           \
   extern template class normal_initializer<T>
 
