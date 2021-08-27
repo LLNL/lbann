@@ -30,6 +30,9 @@
 
 #include "data_reader.hpp"
 
+// Forward declaration
+class DataReaderSyntheticWhiteboxTester;
+
 namespace lbann {
 
 /**
@@ -82,6 +85,9 @@ class data_reader_synthetic : public generic_data_reader {
   bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
   bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;
   bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override;
+
+  // Designate a whitebox testing friend
+  friend class ::DataReaderSyntheticWhiteboxTester;
 
  private:
   /** Number of samples in the dataset. */
