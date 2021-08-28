@@ -93,52 +93,8 @@ int lbann::generic_data_reader::fetch(std::map<input_data_type, CPUMat*>& input_
   if(buf == nullptr || buf->Height() == 0 || buf->Width() == 0) {
     LBANN_ERROR("fetch function called with invalid buffer: h=", buf->Height(), " x ", buf->Width());
   }
-  int num_samples_fetched = fetch_data(*(buf), indices_fetched);
-  // Fetch label is applicable
-  buf = input_buffers[input_data_type::LABELS];
-  if(has_labels() && buf != nullptr && buf->Height() != 0 && buf->Width() != 0) {
-    if(input_buffers[input_data_type::LABELS] == nullptr) {
-      LBANN_ERROR("LABELS is not defined");
-    }
-    int num_labels_fetched = fetch_labels(*(input_buffers[input_data_type::LABELS]));
-    if(num_labels_fetched != num_samples_fetched) {
-      LBANN_ERROR("Number of samples: ",
-                  std::to_string(num_samples_fetched),
-                  " does not match the number of labels: ",
-                  std::to_string(num_labels_fetched));
-    }
-  }
-  // Fetch response is applicable
-  buf = input_buffers[input_data_type::RESPONSES];
-  if(has_responses() && buf != nullptr && buf->Height() != 0 && buf->Width() != 0) {
-    int num_responses_fetched = fetch_responses(*(input_buffers[input_data_type::RESPONSES]));
-    if(num_responses_fetched != num_samples_fetched) {
-      LBANN_ERROR("Number of samples: ",
-                  std::to_string(num_samples_fetched),
-                  " does not match the number of responses: ",
-                  std::to_string(num_responses_fetched));
-    }
-  }
-  return num_samples_fetched;
-}
+  // BVE FIXME
 
-bool lbann::generic_data_reader::fetch_data_block(CPUMat& X, El::Int block_offset, El::Int block_stride, El::Int mb_size, El::Matrix<El::Int>& indices_fetched) {
-  locked_io_rng_ref io_rng = set_io_generators_local_index(block_offset);
-
-  for (int s = block_offset; s < mb_size; s+=block_stride) {
-    int n = m_current_pos + (s * m_sample_stride);
-    int index = m_shuffled_indices[n];
-    bool valid = fetch_datum(X, index, s);
-    if (!valid) {
-      LBANN_ERROR("invalid datum (index ", std::to_string(index), ")");
-    }
-    indices_fetched.Set(s, 0, index);
-  }
-
-  return true;
-}
-
-int lbann::generic_data_reader::fetch_data(CPUMat& X, El::Matrix<El::Int>& indices_fetched) {
   #ifdef DEBUG
   if (m_current_pos == 0) {
     if (is_master()) {
@@ -156,7 +112,7 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X, El::Matrix<El::Int>& indic
 
   const int end_pos = std::min(static_cast<size_t>(m_current_pos+loaded_batch_size), m_shuffled_indices.size());
   const int mb_size = std::min(El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
-      X.Width());
+      buf->Width());
 
   if(!position_valid()) {
     if(position_is_overrun()) {
@@ -189,12 +145,12 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X, El::Matrix<El::Int>& indic
       continue;
     }else {
       m_io_thread_pool->submit_job_to_work_group(
-        std::bind(&generic_data_reader::fetch_data_block, this, std::ref(X), t,
+        std::bind(&generic_data_reader::fetch_data_block, this, std::ref(input_buffers), t,
                   m_io_thread_pool->get_num_threads(),
                   mb_size, std::ref(indices_fetched)));
     }
   }
-  fetch_data_block(X,
+  fetch_data_block(input_buffers,
                    m_io_thread_pool->get_local_thread_id(),
                    m_io_thread_pool->get_num_threads(),
                    mb_size,
@@ -210,6 +166,107 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X, El::Matrix<El::Int>& indic
   }
 
   return mb_size;
+  // BVE FIXME
+
+
+  // int num_samples_fetched = fetch_data(*(buf), indices_fetched);
+  // // Fetch label is applicable
+  // buf = input_buffers[input_data_type::LABELS];
+  // if(has_labels() && buf != nullptr && buf->Height() != 0 && buf->Width() != 0) {
+  //   if(input_buffers[input_data_type::LABELS] == nullptr) {
+  //     LBANN_ERROR("LABELS is not defined");
+  //   }
+  //   int num_labels_fetched = fetch_labels(*(input_buffers[input_data_type::LABELS]));
+  //   if(num_labels_fetched != num_samples_fetched) {
+  //     LBANN_ERROR("Number of samples: ",
+  //                 std::to_string(num_samples_fetched),
+  //                 " does not match the number of labels: ",
+  //                 std::to_string(num_labels_fetched));
+  //   }
+  // }
+  // // Fetch response is applicable
+  // buf = input_buffers[input_data_type::RESPONSES];
+  // if(has_responses() && buf != nullptr && buf->Height() != 0 && buf->Width() != 0) {
+  //   int num_responses_fetched = fetch_responses(*(input_buffers[input_data_type::RESPONSES]));
+  //   if(num_responses_fetched != num_samples_fetched) {
+  //     LBANN_ERROR("Number of samples: ",
+  //                 std::to_string(num_samples_fetched),
+  //                 " does not match the number of responses: ",
+  //                 std::to_string(num_responses_fetched));
+  //   }
+  // }
+  //  return num_samples_fetched;
+}
+
+bool lbann::generic_data_reader::fetch_data_block(std::map<input_data_type, CPUMat*>& input_buffers, El::Int block_offset, El::Int block_stride, El::Int mb_size, El::Matrix<El::Int>& indices_fetched) {
+  locked_io_rng_ref io_rng = set_io_generators_local_index(block_offset);
+  //  auto buf = input_buffers[input_data_type::SAMPLES];
+
+  //  CPUMat& X
+  for (int s = block_offset; s < mb_size; s+=block_stride) {
+    int n = m_current_pos + (s * m_sample_stride);
+    int index = m_shuffled_indices[n];
+    indices_fetched.Set(s, 0, index);
+
+    //    for (auto& data_field : m_active_data_fields) {
+    for (auto& [data_field, buf] : input_buffers) {
+      bool valid = false;
+      // std::cout << "data coordinator has the following active fields "
+      //           << to_string(data_field) << std::endl;
+      // input_data_type data_field_hack;
+      if (data_field == input_data_type::SAMPLES) {
+        if (buf == nullptr || buf->Height() == 0 || buf->Width() == 0) {
+          LBANN_ERROR(
+            "fetch_data_block function called with invalid buffer: h=",
+            buf->Height(),
+            " x ",
+            buf->Width());
+        }
+        //        El::Zeros_seq(*buf, buf->Height(), buf->Width());
+        valid = fetch_datum(*buf, index, s);
+        //        valid = fetch_datum(*buf, index, s);
+        if (!valid) {
+          LBANN_ERROR("invalid datum (index ", std::to_string(index), ")");
+        }
+      }
+      else if (data_field == input_data_type::LABELS && has_labels()) {
+        if (buf == nullptr || buf->Height() == 0 || buf->Width() == 0) {
+          LBANN_ERROR(
+            "fetch_data_block function called with invalid buffer: h=",
+            buf->Height(),
+            " x ",
+            buf->Width());
+        }
+        //        El::Zeros_seq(*buf, buf->Height(), buf->Width());
+        valid = fetch_label(*buf, index, s);
+        if (!valid) {
+          LBANN_ERROR("invalid datum (index ", std::to_string(index), ")");
+        }
+      }
+      else if (data_field == input_data_type::RESPONSES && has_responses()) {
+        if (buf == nullptr || buf->Height() == 0 || buf->Width() == 0) {
+          LBANN_ERROR(
+            "fetch_data_block function called with invalid buffer: h=",
+            buf->Height(),
+            " x ",
+            buf->Width());
+        }
+        //        El::Zeros_seq(*buf, buf->Height(), buf->Width());
+        valid = fetch_response(*buf, index, s);
+        if (!valid) {
+          LBANN_ERROR("invalid datum (index ", std::to_string(index), ")");
+        }
+      }
+      // else {
+      //   LBANN_ERROR("Unknown data_field_type value provided: "/* +
+      //                                                            data_field*/);
+      // }
+      // bool valid = fetch_datum(X, index, s);
+    }
+
+  }
+
+  return true;
 }
 
 void lbann::generic_data_reader::set_jag_variables(int mb_size) {
@@ -236,73 +293,6 @@ void lbann::generic_data_reader::set_jag_variables(int mb_size) {
   m_iteration_stride = 1;
 
   m_world_master_mini_batch_adjustment = 0;
-}
-
-int lbann::generic_data_reader::fetch_labels(CPUMat& Y) {
-  int loaded_batch_size = get_loaded_mini_batch_size();
-  const int end_pos = std::min(static_cast<size_t>(m_current_pos+loaded_batch_size),
-                               m_shuffled_indices.size());
-  const int mb_size = std::min(
-    El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
-    Y.Width());
-
-  El::Zeros_seq(Y, Y.Height(), Y.Width());
-
-  if(!position_valid()) {
-    if(position_is_overrun()) {
-      return 0;
-    }else {
-      LBANN_ERROR(std::string{} + "generic data reader load error: !position_valid"
-                  + " -- current pos = " + std::to_string(m_current_pos)
-                  + " and there are " + std::to_string(m_shuffled_indices.size()) + " indices");
-    }
-  }
-
-  std::string error_message;
-  for (int s = 0; s < mb_size; s++) {
-    int n = m_current_pos + (s * m_sample_stride);
-    int index = m_shuffled_indices[n];
-    bool valid = fetch_label(Y, index, s);
-    if (!valid) {
-      error_message = "invalid label (index " + std::to_string(index) + ")";
-    }
-  }
-  if (!error_message.empty()) { LBANN_ERROR(error_message); }
-
-  return mb_size;
-}
-
-int lbann::generic_data_reader::fetch_responses(CPUMat& Y) {
-  int loaded_batch_size = get_loaded_mini_batch_size();
-  const int end_pos = std::min(static_cast<size_t>(m_current_pos+loaded_batch_size),
-                               m_shuffled_indices.size());
-  const int mb_size = std::min(
-    El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
-    Y.Width());
-
-  El::Zeros_seq(Y, Y.Height(), Y.Width());
-
-  if(!position_valid()) {
-    if(position_is_overrun()) {
-      return 0;
-    }else {
-      LBANN_ERROR(std::string{} + "generic data reader load error: !position_valid"
-                  + " -- current pos = " + std::to_string(m_current_pos)
-                  + " and there are " + std::to_string(m_shuffled_indices.size()) + " indices");
-    }
-  }
-
-  std::string error_message;
-  for (int s = 0; s < mb_size; s++) {
-    int n = m_current_pos + (s * m_sample_stride);
-    int index = m_shuffled_indices[n];
-    bool valid = fetch_response(Y, index, s);
-    if (!valid) {
-      error_message = "invalid response (index " + std::to_string(index) + ")";
-    }
-  }
-  if (!error_message.empty()) { LBANN_ERROR(error_message); }
-  return mb_size;
 }
 
 bool generic_data_reader::update(bool is_active_reader) {

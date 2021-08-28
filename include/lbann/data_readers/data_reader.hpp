@@ -298,12 +298,6 @@ class generic_data_reader {
 
   /** @brief Fetch a mini-batch worth of data, including samples, labels, responses (as appropriate) */
   int fetch(std::map<input_data_type, CPUMat*>& input_buffers, El::Matrix<El::Int>& indices_fetched);
-  /// Fetch this mini-batch's samples into X.
-  virtual int fetch_data(CPUMat& X, El::Matrix<El::Int>& indices_fetched);
-  /// Fetch this mini-batch's labels into Y.
-  virtual int fetch_labels(CPUMat& Y);
-  /// Fetch this mini-batch's responses into Y.
-  virtual int fetch_responses(CPUMat& Y);
 
   virtual bool has_labels() const { return m_supported_input_types.at(input_data_type::LABELS); }
   virtual bool has_responses() const { return m_supported_input_types.at(input_data_type::RESPONSES); }
@@ -726,7 +720,7 @@ class generic_data_reader {
 
   lbann_comm *m_comm;
 
-  virtual bool fetch_data_block(CPUMat& X, El::Int block_offset, El::Int block_stride, El::Int mb_size, El::Matrix<El::Int>& indices_fetched);
+  virtual bool fetch_data_block(std::map<input_data_type, CPUMat*>& input_buffers, El::Int block_offset, El::Int block_stride, El::Int mb_size, El::Matrix<El::Int>& indices_fetched);
 
   /**
    * Fetch a single sample into a matrix.

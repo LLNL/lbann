@@ -185,7 +185,7 @@ TEST_CASE("Synthetic data reader regression tests",
 
   El::Int num_samples = 4;
   //  El::Int num_labels = 10;
-  std::vector<int> dims = {4, 4};
+  std::vector<int> dims = {2, 2};
   std::vector<int> response_dims = {3, 3};
   lbann::data_reader_synthetic* dr = new lbann::data_reader_synthetic(
           num_samples,
@@ -209,22 +209,22 @@ TEST_CASE("Synthetic data reader regression tests",
     auto io_rng = lbann::set_io_generators_local_index(0);
     //    El::Zeros_seq(X, 10, num_labels);
     for(El::Int i = 0; i < num_samples; i++) {
-      // white_box_tester.fetch_datum(*dr, X, 0, i);
-      // El::Print(X);
-      white_box_tester.fetch_response(*dr, Y, 0, i);
-      El::Print(Y);
+      white_box_tester.fetch_datum(*dr, X, 0, i);
+      El::Print(X);
+      // white_box_tester.fetch_response(*dr, Y, 0, i);
+      // El::Print(Y);
     }
     //    El::Print(X);
 
     //    CHECK(X.Width() == Y.Width());
 
     for(El::Int j = 0; j < num_samples; j++) {
-      // for(El::Int i = 0; i < X.Height(); i++) {
-      //   CHECK(X(i,j) == dist(ref_fast_generator));
-      // }
-      for(El::Int i = 0; i < Y.Height(); i++) {
-        CHECK(Y(i,j) == dist(ref_fast_generator));
+      for(El::Int i = 0; i < X.Height(); i++) {
+        CHECK(X(i,j) == dist(ref_fast_generator));
       }
+      // for(El::Int i = 0; i < Y.Height(); i++) {
+      //   CHECK(Y(i,j) == dist(ref_fast_generator));
+      // }
       // auto index = lbann::fast_rand_int(ref_fast_generator, num_labels);
       // std::cout << "Here is the reference value " << index << std::endl;
       // for(El::Int i = 0; i < Y.Height(); i++) {

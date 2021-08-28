@@ -1423,41 +1423,41 @@ bool data_reader_jag_conduit::fetch(CPUMat& X, int data_id, conduit::Node& sampl
   return true;
 }
 
-int data_reader_jag_conduit::reuse_data(CPUMat& X) {
-  El::Copy(m_data_cache, X);
-  return m_cached_data_mb_size;
-}
+// int data_reader_jag_conduit::reuse_data(CPUMat& X) {
+//   El::Copy(m_data_cache, X);
+//   return m_cached_data_mb_size;
+// }
 
-int data_reader_jag_conduit::reuse_responses(CPUMat& Y) {
-  El::Copy(m_response_cache, Y);
-  return m_cached_response_mb_size;
-}
+// int data_reader_jag_conduit::reuse_responses(CPUMat& Y) {
+//   El::Copy(m_response_cache, Y);
+//   return m_cached_response_mb_size;
+// }
 
-int data_reader_jag_conduit::reuse_labels(CPUMat& Y) {
-  El::Copy(m_label_cache, Y);
-  return m_cached_label_mb_size;
-}
+// int data_reader_jag_conduit::reuse_labels(CPUMat& Y) {
+//   El::Copy(m_label_cache, Y);
+//   return m_cached_label_mb_size;
+// }
 
-int data_reader_jag_conduit::fetch_data(CPUMat& X, El::Matrix<El::Int>& indices_fetched) {
-  m_cached_data_mb_size = generic_data_reader::fetch_data(X, indices_fetched);
-  El::Copy(X, m_data_cache);
+// int data_reader_jag_conduit::fetch_data(CPUMat& X, El::Matrix<El::Int>& indices_fetched) {
+//   m_cached_data_mb_size = generic_data_reader::fetch_data(X, indices_fetched);
+//   El::Copy(X, m_data_cache);
 
-  return m_cached_data_mb_size;
-}
+//   return m_cached_data_mb_size;
+// }
 
-int data_reader_jag_conduit::fetch_responses(CPUMat& Y) {
-  m_cached_response_mb_size = generic_data_reader::fetch_responses(Y);
-  El::Copy(Y, m_response_cache);
+// int data_reader_jag_conduit::fetch_responses(CPUMat& Y) {
+//   m_cached_response_mb_size = generic_data_reader::fetch_responses(Y);
+//   El::Copy(Y, m_response_cache);
 
-  return m_cached_response_mb_size;
-}
+//   return m_cached_response_mb_size;
+// }
 
-int data_reader_jag_conduit::fetch_labels(CPUMat& Y) {
-  m_cached_label_mb_size = generic_data_reader::fetch_labels(Y);
-  El::Copy(Y, m_label_cache);
+// int data_reader_jag_conduit::fetch_labels(CPUMat& Y) {
+//   m_cached_label_mb_size = generic_data_reader::fetch_labels(Y);
+//   El::Copy(Y, m_label_cache);
 
-  return m_cached_label_mb_size;
-}
+//   return m_cached_label_mb_size;
+// }
 
 
 bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx) {

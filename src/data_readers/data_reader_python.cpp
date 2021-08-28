@@ -105,12 +105,13 @@ int python_reader::get_linearized_label_size() const {
   return get_num_labels();
 }
 
-bool python_reader::fetch_data_block(CPUMat& X,
+bool python_reader::fetch_data_block(std::map<input_data_type, CPUMat*>& input_buffers,
                                      El::Int block_offset,
                                      El::Int block_stride,
                                      El::Int mb_size,
                                      El::Matrix<El::Int>& indices_fetched) {
 
+  CPUMat& X = *(input_buffers[input_data_type::SAMPLES]);
   // Acquire Python GIL on first IO thread
   // Note: Do nothing on other IO threads.
   if (block_offset != 0) { return true; }

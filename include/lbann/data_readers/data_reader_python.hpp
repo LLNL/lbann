@@ -59,7 +59,7 @@ public:
   void load() override;
 
 protected:
-  bool fetch_data_block(CPUMat& X,
+  bool fetch_data_block(std::map<input_data_type, CPUMat*>& input_buffers,
                         El::Int block_offset,
                         El::Int block_stride,
                         El::Int mb_size,
