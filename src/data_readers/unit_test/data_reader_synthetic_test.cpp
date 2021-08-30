@@ -59,44 +59,6 @@ public:
   // }
 };
 
-// std::vector<float> const samples = {-0.89827055,
-//                                     -0.56626886,
-//                                     -1.3846669,
-//                                     1.3600844,
-//                                     -1.9542403,
-//                                     -0.70621073,
-//                                     -0.74526459,
-//                                     0.95250905,
-//                                     0.10628668,
-//                                     1.1374304,
-//                                     0.16106518,
-//                                     0.28827614,
-//                                     0.020423787,
-//                                     -0.54684663,
-//                                     1.1501037,
-//                                     -1.1680318};
-
-// std::vector<long> const label_indices = {2,
-//   8,
-//   8,
-//   8,
-//   9,
-//   4,
-//   4,
-//   4,
-//   3,
-//   7};
-
-// std::vector<float> const responses = {-1.7044438,
-//   -0.12688982,
-//   0.81554914,
-//   0.84976405,
-//   2.0809455,
-//   0.62109607,
-//   -1.9912087,
-//   -3.7694533,
-//   1.7465373};
-
 TEST_CASE("Synthetic data reader classification tests",
           "[data_reader][synthetic][classification]")
 {
@@ -104,75 +66,61 @@ TEST_CASE("Synthetic data reader classification tests",
   lbann::init_random(42, 1);
   lbann::init_data_seq_random(42);
 
-  El::Int num_samples = 7;
-  El::Int num_labels = 10;
-  std::vector<int> dims = {4, 4};
-  lbann::data_reader_synthetic* dr = new lbann::data_reader_synthetic(
-          num_samples,
-          dims,
-          num_labels,
-          false);
   DataReaderSyntheticWhiteboxTester white_box_tester;
 
   // Create a local copy of the RNG to check the synthetic data reader
   lbann::fast_rng_gen ref_fast_generator;
   ref_fast_generator.seed(lbann::hash_combine(42, 0));
-  std::normal_distribution<lbann::DataType> dist(float(0), float(1));
 
-  SECTION("fetch data and label")
-  {
-    lbann::CPUMat X;
-    X.Resize(dims[0]*dims[1], num_samples);
-    lbann::CPUMat Y;
-    Y.Resize(num_labels, num_samples);
-    El::Zeros_seq(Y, num_labels, num_samples);
+  for(auto s = 1; s <= 4; s++) {
+    El::Int num_samples = s;
+    std::vector<int> dims = {s,s};;
+    El::Int num_labels = s*2;
 
-    auto io_rng = lbann::set_io_generators_local_index(0);
-    for(auto j = 0; j < num_samples; j++) {
-      white_box_tester.fetch_datum(*dr, X, 0, j);
-      El::Print(X);
+    SECTION("fetch data and label s=" + std::to_string(s))
+    {
+      auto dr = std::make_unique<lbann::data_reader_synthetic>(
+        num_samples,
+        dims,
+        num_labels,
+        false);
+      lbann::CPUMat X;
+      X.Resize(dims[0] * dims[1], num_samples);
+      lbann::CPUMat Y;
+      Y.Resize(num_labels, num_samples);
+      El::Zeros_seq(Y, num_labels, num_samples);
 
-      //      El::Zeros_seq(Y, 10, num_labels);
-      // for(El::Int i = 0; i < Y.Width(); i++) {
+      auto io_rng = lbann::set_io_generators_local_index(0);
+      for (auto j = 0; j < num_samples; j++) {
+        white_box_tester.fetch_datum(*dr, X, 0, j);
+        // El::Print(X);
         white_box_tester.fetch_label(*dr, Y, 0, j);
-      // }
-      El::Print(Y);
-    }
-
-    CHECK(X.Width() == Y.Width());
-
-    for(El::Int j = 0; j < Y.Width(); j++) {
-      for(El::Int i = 0; i < X.Height(); i++) {
-        CHECK(X(i,j) == dist(ref_fast_generator));
+        // El::Print(Y);
       }
-      auto index = lbann::fast_rand_int(ref_fast_generator, num_labels);
-      std::cout << "Here is the reference value " << index << std::endl;
-      for(El::Int i = 0; i < Y.Height(); i++) {
-        if(index == i) {
-          CHECK(Y(i,j) == 1);
-        }else {
-          CHECK(Y(i,j) == 0);
+
+      for (El::Int j = 0; j < num_samples; j++) {
+        // Create a new normal distribution for each sample.  This ensures
+        // that the behavior matches the implementation in the synthetic data
+        // reader and handles the case of odd numbers of entries with a normal
+        // distriubtion implementation. (Specifically that entries for a
+        // normal distribution are generated in pairs.)
+        std::normal_distribution<lbann::DataType> dist(float(0), float(1));
+        for (El::Int i = 0; i < X.Height(); i++) {
+          CHECK(X(i, j) == dist(ref_fast_generator));
+        }
+
+        auto index = lbann::fast_rand_int(ref_fast_generator, num_labels);
+        std::cout << "Here is the reference value " << index << std::endl;
+        for (El::Int i = 0; i < Y.Height(); i++) {
+          if (index == i) {
+            CHECK(Y(i, j) == 1);
+          }
+          else {
+            CHECK(Y(i, j) == 0);
+          }
         }
       }
     }
-
-    // CHECK(X.Height() == samples.size());
-
-    // for(El::Int i = 0; i < X.Height(); i++) {
-    //   CHECK(X(i,0) == samples[i]);
-    // }
-
-    // CHECK(Y.Width() == label_indices.size());
-
-    // for(El::Int j = 0; j < Y.Width(); j++) {
-    //   for(El::Int i = 0; i < Y.Height(); i++) {
-    //     if(label_indices[j] == i) {
-    //       CHECK(Y(i,j) == 1);
-    //     }else {
-    //       CHECK(Y(i,j) == 0);
-    //     }
-    //   }
-    // }
   }
 }
 
@@ -183,85 +131,62 @@ TEST_CASE("Synthetic data reader regression tests",
   lbann::init_random(42, 1);
   lbann::init_data_seq_random(42);
 
-  El::Int num_samples = 4;
-  //  El::Int num_labels = 10;
-  std::vector<int> dims = {3,3};;
-  std::vector<int> response_dims = {3, 3};
+  DataReaderSyntheticWhiteboxTester white_box_tester;
 
   // Create a local copy of the RNG to check the synthetic data reader
   lbann::fast_rng_gen ref_fast_generator;
   ref_fast_generator.seed(lbann::hash_combine(42, 0));
-  std::normal_distribution<lbann::DataType> dist(float(0), float(1));
 
-  for(auto k = 1; k < 10; k++) {
-    dims[0] = k;
-    for(auto l = 1; l < 10; l++) {
-      response_dims[0] = l;
+  for(auto s = 1; s <= 4; s++) {
+    El::Int num_samples = s;
+    std::vector<int> dims = {s,s};;
+    std::vector<int> response_dims = {s+1, s+1};
 
-      SECTION("fetch data and response k=" + std::to_string(k) + " and l=" +std::to_string(l))
-      {
-        std::cout << "Starting section for k = " << k << std::endl;
-        lbann::data_reader_synthetic* dr = new lbann::data_reader_synthetic(
-                num_samples,
-                dims,
-                response_dims,
-                false);
-        DataReaderSyntheticWhiteboxTester white_box_tester;
+    SECTION("fetch data and response s=" + std::to_string(s))
+    {
+      auto dr = std::make_unique<lbann::data_reader_synthetic>(
+        num_samples,
+        dims,
+        response_dims,
+        false);
 
-        lbann::CPUMat X;
-        X.Resize(dims[0]*dims[1], num_samples);
-        lbann::CPUMat Y;
-        Y.Resize(response_dims[0]*response_dims[1], num_samples);
+      lbann::CPUMat X;
+      X.Resize(dims[0] * dims[1], num_samples);
+      lbann::CPUMat Y;
+      Y.Resize(response_dims[0] * response_dims[1], num_samples);
 
-        auto io_rng = lbann::set_io_generators_local_index(0);
-        //    El::Zeros_seq(X, 10, num_labels);
-        for(El::Int i = 0; i < num_samples; i++) {
-          white_box_tester.fetch_datum(*dr, X, 0, i);
-          //      El::Print(X);
-          white_box_tester.fetch_response(*dr, Y, 0, i);
-          // El::Print(Y);
+      auto io_rng = lbann::set_io_generators_local_index(0);
+      for (El::Int i = 0; i < num_samples; i++) {
+        white_box_tester.fetch_datum(*dr, X, 0, i);
+        // El::Print(X);
+        white_box_tester.fetch_response(*dr, Y, 0, i);
+        // El::Print(Y);
+      }
+
+      for (El::Int j = 0; j < num_samples; j++) {
+        {
+          // Create a new normal distribution for each sample.  This ensures
+          // that the behavior matches the implementation in the synthetic data
+          // reader and handles the case of odd numbers of entries with a normal
+          // distriubtion implementation. (Specifically that entries for a
+          // normal distribution are generated in pairs.)
+          std::normal_distribution<lbann::DataType> dist(float(0), float(1));
+          for (El::Int i = 0; i < X.Height(); i++) {
+            CHECK(X(i, j) == dist(ref_fast_generator));
+          }
         }
-        //    El::Print(X);
-
-        //    CHECK(X.Width() == Y.Width());
-
-        for(El::Int j = 0; j < num_samples; j++) {
-          for(El::Int i = 0; i < X.Height(); i++) {
-            CHECK(X(i,j) == dist(ref_fast_generator));
+        {
+          // Create a new normal distribution for each sample.  This ensures
+          // that the behavior matches the implementation in the synthetic data
+          // reader and handles the case of odd numbers of entries with a normal
+          // distriubtion implementation. (Specifically that entries for a
+          // normal distribution are generated in pairs.)
+          std::normal_distribution<lbann::DataType> dist(float(0), float(1));
+          for (El::Int i = 0; i < Y.Height(); i++) {
+            CHECK(Y(i, j) == dist(ref_fast_generator));
           }
-          if(X.Height() % 2 == 1) {
-            // Throw away a value for odd sizes
-            dist(ref_fast_generator);
-          }
-          for(El::Int i = 0; i < Y.Height(); i++) {
-            CHECK(Y(i,j) == dist(ref_fast_generator));
-          }
-          if(Y.Height() % 2 == 1) {
-            // Throw away a value for odd sizes
-            dist(ref_fast_generator);
-          }
-          // auto index = lbann::fast_rand_int(ref_fast_generator, num_labels);
-          // std::cout << "Here is the reference value " << index << std::endl;
-          // for(El::Int i = 0; i < Y.Height(); i++) {
-          //   if(index == i) {
-          //     CHECK(Y(i,j) == 1);
-          //   }else {
-          //     CHECK(Y(i,j) == 0);
-          //   }
-          // }
         }
       }
-    // CHECK(X.Height() == samples.size());
-
-    // for(El::Int i = 0; i < X.Height(); i++) {
-    //   CHECK(X(i,0) == samples[i]);
-    // }
-
-    // CHECK(Y.Height() == responses.size());
-
-    // for(El::Int i = 0; i < Y.Height(); i++) {
-    //   CHECK(Y(i,0) == responses[i]);
-    // }
     }
   }
 }

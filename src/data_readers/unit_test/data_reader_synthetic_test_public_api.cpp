@@ -118,34 +118,41 @@ TEST_CASE("Synthetic data reader public API classification tests",
   El::Matrix<El::Int> indices_fetched;
   El::Zeros_seq(indices_fetched, num_samples, 1);
 
-  SECTION("fetch data and label")
-  {
-    dr->fetch(local_input_buffers, indices_fetched);
+  // for(auto k = 1; k < 10; k++) {
+  //   dims[0] = k;
+  //   for(auto l = 1; l < 10; l++) {
+  //     response_dims[0] = l;
 
-    for(auto& [field, buf] : local_input_buffers) {
-      std::cout << "For field " << to_string(field) << std::endl;
-      El::Print(*buf);
-    }
+      SECTION("fetch data and label")
+      {
+        dr->fetch(local_input_buffers, indices_fetched);
 
-    auto& X = *(local_input_buffers[lbann::input_data_type::SAMPLES]);
-    auto& Y = *(local_input_buffers[lbann::input_data_type::LABELS]);
-    CHECK(X.Width() == Y.Width());
+        for(auto& [field, buf] : local_input_buffers) {
+          std::cout << "For field " << to_string(field) << std::endl;
+          El::Print(*buf);
+        }
 
-    for(El::Int j = 0; j < Y.Width(); j++) {
-      for(El::Int i = 0; i < X.Height(); i++) {
-        CHECK(X(i,j) == dist(ref_fast_generator));
-      }
-      auto index = lbann::fast_rand_int(ref_fast_generator, num_labels);
-      std::cout << "Here is the reference value " << index << std::endl;
-      for(El::Int i = 0; i < Y.Height(); i++) {
-        if(index == i) {
-          CHECK(Y(i,j) == 1);
-        }else {
-          CHECK(Y(i,j) == 0);
+        auto& X = *(local_input_buffers[lbann::input_data_type::SAMPLES]);
+        auto& Y = *(local_input_buffers[lbann::input_data_type::LABELS]);
+        CHECK(X.Width() == Y.Width());
+
+        for(El::Int j = 0; j < Y.Width(); j++) {
+          for(El::Int i = 0; i < X.Height(); i++) {
+            CHECK(X(i,j) == dist(ref_fast_generator));
+          }
+          auto index = lbann::fast_rand_int(ref_fast_generator, num_labels);
+          std::cout << "Here is the reference value " << index << std::endl;
+          for(El::Int i = 0; i < Y.Height(); i++) {
+            if(index == i) {
+              CHECK(Y(i,j) == 1);
+            }else {
+              CHECK(Y(i,j) == 0);
+            }
+          }
         }
       }
-    }
-  }
+  //   }
+  // }
 
   for(auto& [field, buf] : local_input_buffers) {
     delete buf;

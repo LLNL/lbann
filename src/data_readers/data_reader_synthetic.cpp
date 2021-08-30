@@ -36,13 +36,14 @@ namespace lbann {
 namespace {
 
 void fill_matrix(CPUMat& mat) {
+  //  std::uniform_real_distribution<DataType> dist(DataType(0), DataType(1));
   std::normal_distribution<DataType> dist(DataType(0), DataType(1));
   auto& gen = get_fast_io_generator();
   const El::Int height = mat.Height();  // Width is 1.
   DataType * __restrict__ buf = mat.Buffer();
   for (El::Int i = 0; i < height; ++i) {
     buf[i] = dist(gen);
-    std::cout << "buf[" << i << "] = "<< buf[i] << std::endl;
+    // std::cout << "buf[" << i << "] = "<< buf[i] << std::endl;
   }
 }
 
@@ -71,7 +72,7 @@ data_reader_synthetic::data_reader_synthetic(int num_samples,
 
 bool data_reader_synthetic::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
   auto X_v = El::View(X, El::ALL, El::IR(mb_idx, mb_idx + 1));
-  std::cout << "fetch_datum is filling the matrix for index " << mb_idx << std::endl;
+  // std::cout << "fetch_datum is filling the matrix for index " << mb_idx << std::endl;
   fill_matrix(X_v);
   return true;
 }
@@ -83,7 +84,7 @@ bool data_reader_synthetic::fetch_label(CPUMat& Y, int data_id, int mb_idx) {
   //  auto io_rng = set_io_generators_local_index(0);
   auto index = fast_rand_int(get_fast_io_generator(), m_num_labels);
   Y.Set(index, mb_idx, 1);
-  std::cout << "index = " << index << " mb_idx = " << mb_idx << std::endl;
+  // std::cout << "index = " << index << " mb_idx = " << mb_idx << std::endl;
   //  Y.Set(fast_rand_int(get_fast_io_generator(), m_num_labels), mb_idx, 1);
   return true;
 }
@@ -93,10 +94,10 @@ bool data_reader_synthetic::fetch_response(CPUMat& Y, int data_id, int mb_idx) {
     LBANN_ERROR("Synthetic data reader does not have responses");
   }
   //  if(m_response_dimensions[0] * m_response_dimensions[1] != Y.Height()) {
-    std::cout << "response dimensions " << m_response_dimensions[0] << " x " <<  m_response_dimensions[1] << " != " << Y.Height() << std::endl;
+    // std::cout << "response dimensions " << m_response_dimensions[0] << " x " <<  m_response_dimensions[1] << " != " << Y.Height() << std::endl;
     //  }
   auto Y_v = El::View(Y, El::ALL, El::IR(mb_idx, mb_idx + 1));
-  std::cout << "fetch_response is filling the matrix for index " << mb_idx << std::endl;
+  // std::cout << "fetch_response is filling the matrix for index " << mb_idx << std::endl;
   fill_matrix(Y_v);
   return true;
 }
