@@ -127,13 +127,11 @@ public:
   ///@{
 
   template <typename ArchiveT>
-  void serialize(ArchiveT& ar){};
+  void serialize(ArchiveT& ar);
 
   ///@}
-
-  // ===========================================================
-  // Forward prop compute function
-  // ===========================================================
+  /** @name Computational interface */
+  ///@{
 
   /** @brief Apply operator's forward operation.
    *  @details Given the input tensors, the output tensors are
@@ -143,10 +141,6 @@ public:
   fp_compute(std::vector<ConstInputTensorType> const& inputs,
              std::vector<OutputTensorType> const& outputs) const = 0;
 
-  // ===========================================================
-  // Back prop compute function
-  // ===========================================================
-
   /** @brief Compute operator's "backward" operation
    *  @details Given the inputs, outputs, and gradient w.r.t. output
    *           tensors, the gradient w.r.t. input tensors are
@@ -155,7 +149,8 @@ public:
   virtual void
   bp_compute(std::vector<ConstInputTensorType> const& inputs,
              std::vector<ConstOutputTensorType> const& gradient_wrt_outputs,
-             std::vector<InputTensorType> const& gradient_wrt_inputs) const {};
+             std::vector<InputTensorType> const& gradient_wrt_inputs) const;
+  ///@}
 
 protected:
   Operator(Operator&& other) noexcept = default;
@@ -199,6 +194,18 @@ Description Operator<InputT, OutputT, D>::get_description() const
 
   return desc;
 }
+
+template <typename InputT, typename OutputT, El::Device D>
+void Operator<InputT, OutputT, D>::bp_compute(
+  std::vector<ConstInputTensorType> const&,
+  std::vector<ConstOutputTensorType> const&,
+  std::vector<InputTensorType> const&) const
+{}
+
+template <typename InputT, typename OutputT, El::Device D>
+template <typename ArchiveT>
+void Operator<InputT, OutputT, D>::serialize(ArchiveT& ar)
+{}
 
 } // namespace lbann
 #endif // LBANN_OPERATORS_OPERATOR_HPP_INCLUDED
