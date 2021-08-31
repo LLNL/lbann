@@ -56,8 +56,7 @@ public:
 
   /** @brief Destroy the threadpool */
   ~thread_pool() {
-    all_work_done_ = true;
-    global_work_queue_.wake_all(true);
+    reap_threads();
   }
 
   /** @brief Launch the threads */
