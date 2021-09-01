@@ -562,11 +562,6 @@ inline void sample_list<sample_name_t>
   int me = comm.get_rank_in_trainer();
   int np = comm.get_procs_per_trainer();
 
-  size_t g = 0;
-  for (auto t : packed_sizes) {
-    g += t;
-  }
-
   for (int p=0; p<np; p++) {
     gathered_archive[p].resize(packed_sizes[p]);
     if (me == p) {
