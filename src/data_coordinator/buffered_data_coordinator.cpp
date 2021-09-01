@@ -71,7 +71,7 @@ void buffered_data_coordinator<TensorDataType>::setup_data_fields(int max_mini_b
 #endif // LBANN_HAS_DISTCONV
 
   for(auto& data_field : m_active_data_fields) {
-    std::cout << "data coordinator has the following active fields " << data_field << std::endl;
+    // std::cout << "data coordinator has the following active fields " << data_field << std::endl;
     for (const auto& buf_map : m_data_buffers) {
       const data_buffer_map_t& buffer_map = buf_map;
       for (const auto& b : buffer_map) {

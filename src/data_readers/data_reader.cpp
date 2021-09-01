@@ -136,18 +136,62 @@ int lbann::generic_data_reader::fetch(std::map<input_data_type, CPUMat*>& input_
     set_jag_variables(mb_size);
   }
 
+  /// BVE FIXME - for the time being certain data fields, such as the
+  /// labels have to be zeroed out because they will typically only
+  /// set the single index corresponding to the categorical value.
+  /// With general data fields this will have to be the responsibilty
+  /// of the concrete data reader.
+  for (auto& [data_field, buf] : input_buffers) {
+    bool valid = false;
+    // std::cout << "data coordinator has the following active fields "
+    //           << to_string(data_field) << std::endl;
+    // input_data_type data_field_hack;
+    if (data_field == input_data_type::SAMPLES) {
+      if (buf == nullptr || buf->Height() == 0 || buf->Width() == 0) {
+        LBANN_ERROR("fetch_data_block function called with invalid buffer: h=",
+                    buf->Height(),
+                    " x ",
+                    buf->Width());
+      }
+      //        El::Zeros_seq(*buf, buf->Height(), buf->Width());
+    }
+    else if (data_field == input_data_type::LABELS && has_labels()) {
+      if (buf == nullptr || buf->Height() == 0 || buf->Width() == 0) {
+        LBANN_ERROR("fetch_data_block function called with invalid buffer: h=",
+                    buf->Height(),
+                    " x ",
+                    buf->Width());
+      }
+      El::Zeros_seq(*buf, buf->Height(), buf->Width());
+    }
+    else if (data_field == input_data_type::RESPONSES && has_responses()) {
+      if (buf == nullptr || buf->Height() == 0 || buf->Width() == 0) {
+        LBANN_ERROR("fetch_data_block function called with invalid buffer: h=",
+                    buf->Height(),
+                    " x ",
+                    buf->Width());
+      }
+      //        El::Zeros_seq(*buf, buf->Height(), buf->Width());
+    }
+  }
+
   // Fetch data is executed by the thread pool so it has to dispatch
   // work to other threads in the thread pool and do some work locally
   for (int t = 0; t < static_cast<int>(m_io_thread_pool->get_num_threads()); t++) {
     // Queue up work into other threads and then finish off the
     // mini-batch in the active thread
-    if(t == m_io_thread_pool->get_local_thread_id()) {
+    if (t == m_io_thread_pool->get_local_thread_id()) {
       continue;
-    }else {
+    }
+    else {
       m_io_thread_pool->submit_job_to_work_group(
-        std::bind(&generic_data_reader::fetch_data_block, this, std::ref(input_buffers), t,
+        std::bind(&generic_data_reader::fetch_data_block,
+                  this,
+                  std::ref(input_buffers),
+                  t,
                   m_io_thread_pool->get_num_threads(),
-                  mb_size, std::ref(indices_fetched)));
+                  mb_size,
+                  std::ref(indices_fetched)));
     }
   }
   fetch_data_block(input_buffers,
@@ -166,36 +210,39 @@ int lbann::generic_data_reader::fetch(std::map<input_data_type, CPUMat*>& input_
   }
 
   return mb_size;
-  // BVE FIXME
+    // BVE FIXME
 
-
-  // int num_samples_fetched = fetch_data(*(buf), indices_fetched);
-  // // Fetch label is applicable
-  // buf = input_buffers[input_data_type::LABELS];
-  // if(has_labels() && buf != nullptr && buf->Height() != 0 && buf->Width() != 0) {
-  //   if(input_buffers[input_data_type::LABELS] == nullptr) {
-  //     LBANN_ERROR("LABELS is not defined");
-  //   }
-  //   int num_labels_fetched = fetch_labels(*(input_buffers[input_data_type::LABELS]));
-  //   if(num_labels_fetched != num_samples_fetched) {
-  //     LBANN_ERROR("Number of samples: ",
-  //                 std::to_string(num_samples_fetched),
-  //                 " does not match the number of labels: ",
-  //                 std::to_string(num_labels_fetched));
-  //   }
-  // }
-  // // Fetch response is applicable
-  // buf = input_buffers[input_data_type::RESPONSES];
-  // if(has_responses() && buf != nullptr && buf->Height() != 0 && buf->Width() != 0) {
-  //   int num_responses_fetched = fetch_responses(*(input_buffers[input_data_type::RESPONSES]));
-  //   if(num_responses_fetched != num_samples_fetched) {
-  //     LBANN_ERROR("Number of samples: ",
-  //                 std::to_string(num_samples_fetched),
-  //                 " does not match the number of responses: ",
-  //                 std::to_string(num_responses_fetched));
-  //   }
-  // }
-  //  return num_samples_fetched;
+    // int num_samples_fetched = fetch_data(*(buf), indices_fetched);
+    // // Fetch label is applicable
+    // buf = input_buffers[input_data_type::LABELS];
+    // if(has_labels() && buf != nullptr && buf->Height() != 0 && buf->Width()
+    // != 0) {
+    //   if(input_buffers[input_data_type::LABELS] == nullptr) {
+    //     LBANN_ERROR("LABELS is not defined");
+    //   }
+    //   int num_labels_fetched =
+    //   fetch_labels(*(input_buffers[input_data_type::LABELS]));
+    //   if(num_labels_fetched != num_samples_fetched) {
+    //     LBANN_ERROR("Number of samples: ",
+    //                 std::to_string(num_samples_fetched),
+    //                 " does not match the number of labels: ",
+    //                 std::to_string(num_labels_fetched));
+    //   }
+    // }
+    // // Fetch response is applicable
+    // buf = input_buffers[input_data_type::RESPONSES];
+    // if(has_responses() && buf != nullptr && buf->Height() != 0 &&
+    // buf->Width() != 0) {
+    //   int num_responses_fetched =
+    //   fetch_responses(*(input_buffers[input_data_type::RESPONSES]));
+    //   if(num_responses_fetched != num_samples_fetched) {
+    //     LBANN_ERROR("Number of samples: ",
+    //                 std::to_string(num_samples_fetched),
+    //                 " does not match the number of responses: ",
+    //                 std::to_string(num_responses_fetched));
+    //   }
+    // }
+    //  return num_samples_fetched;
 }
 
 bool lbann::generic_data_reader::fetch_data_block(std::map<input_data_type, CPUMat*>& input_buffers, El::Int block_offset, El::Int block_stride, El::Int mb_size, El::Matrix<El::Int>& indices_fetched) {
@@ -222,9 +269,7 @@ bool lbann::generic_data_reader::fetch_data_block(std::map<input_data_type, CPUM
             " x ",
             buf->Width());
         }
-        //        El::Zeros_seq(*buf, buf->Height(), buf->Width());
         valid = fetch_datum(*buf, index, s);
-        //        valid = fetch_datum(*buf, index, s);
         if (!valid) {
           LBANN_ERROR("invalid datum (index ", std::to_string(index), ")");
         }
@@ -237,7 +282,6 @@ bool lbann::generic_data_reader::fetch_data_block(std::map<input_data_type, CPUM
             " x ",
             buf->Width());
         }
-        //        El::Zeros_seq(*buf, buf->Height(), buf->Width());
         valid = fetch_label(*buf, index, s);
         if (!valid) {
           LBANN_ERROR("invalid datum (index ", std::to_string(index), ")");
@@ -251,7 +295,6 @@ bool lbann::generic_data_reader::fetch_data_block(std::map<input_data_type, CPUM
             " x ",
             buf->Width());
         }
-        //        El::Zeros_seq(*buf, buf->Height(), buf->Width());
         valid = fetch_response(*buf, index, s);
         if (!valid) {
           LBANN_ERROR("invalid datum (index ", std::to_string(index), ")");
