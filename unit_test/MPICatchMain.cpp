@@ -45,9 +45,6 @@ int main(int argc, char* argv[])
   lbann::init_random(13);
   expert::register_world_comm(*world_comm);
 
-  // as of Mar 2021, required for data_readers
-  lbann::options::get()->init(argc, argv);
-
   // Initialize Catch2
   Catch::Session session;
 
