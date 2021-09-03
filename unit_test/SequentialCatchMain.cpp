@@ -28,12 +28,15 @@
 #include <catch2/catch.hpp>
 #include <lbann/utils/dnn_lib/helpers.hpp>
 #include <lbann/utils/random_number_generators.hpp>
+#include <lbann/utils/options.hpp>
 
 int main(int argc, char* argv[]) {
 #ifdef LBANN_HAS_DNN_LIB
   hydrogen::gpu::Initialize();
   lbann::dnn_lib::initialize();
 #endif // LBANN_HAS_DNN_LIB
+
+  lbann::construct_all_options();
 
   // Initialize the general RNGs and the data sequence RNGs
   int random_seed = 42;

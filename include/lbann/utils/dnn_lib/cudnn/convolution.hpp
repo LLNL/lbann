@@ -42,7 +42,7 @@ namespace dnn_lib
 using namespace cudnn;
 
 inline size_t
-get_fwd_conv_workspace_size(TensorDescriptor const& wDesc,
+get_fwd_conv_workspace_size(FilterDescriptor const& wDesc,
                             TensorDescriptor const& xDesc,
                             ConvolutionDescriptor const& convDesc,
                             TensorDescriptor const& yDesc,
@@ -54,7 +54,7 @@ get_fwd_conv_workspace_size(TensorDescriptor const& wDesc,
 
 inline size_t
 get_bwd_data_conv_workspace_size(TensorDescriptor const& dyDesc,
-                                 TensorDescriptor const& wDesc,
+                                 FilterDescriptor const& wDesc,
                                  ConvolutionDescriptor const& convDesc,
                                  TensorDescriptor const& dxDesc,
                                  El::SyncInfo<El::Device::GPU> const& si)
@@ -67,7 +67,7 @@ inline size_t
 get_bwd_weights_conv_workspace_size(TensorDescriptor const& dyDesc,
                                     TensorDescriptor const& xDesc,
                                     ConvolutionDescriptor const& convDesc,
-                                    TensorDescriptor const& dwDesc,
+                                    FilterDescriptor const& dwDesc,
                                     El::SyncInfo<El::Device::GPU> const& si)
 {
   size_t size = 1 << 30; // @todo Allocate largest free block
