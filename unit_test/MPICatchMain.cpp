@@ -40,6 +40,8 @@
 using namespace unit_test::utilities;
 int main(int argc, char* argv[])
 {
+  lbann::construct_all_options();
+
   // Set up the communication domain
   auto world_comm = lbann::initialize(argc, argv);
   lbann::init_random(13);

@@ -68,9 +68,7 @@ int guess_global_rank() noexcept
 int main(int argc, char* argv[])
 {
   auto& arg_parser = global_argument_parser();
-  construct_std_options();
-  construct_datastore_options();
-  construct_datareader_options();
+  construct_all_options();
   try {
     arg_parser.parse(argc, argv);
   }
