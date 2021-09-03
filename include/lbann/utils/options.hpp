@@ -14,7 +14,6 @@ namespace lbann {
 // Bool flags
 #define DISABLE_BACKGROUND_IO_ACTIVITY "disable_background_io_activity"
 #define DISABLE_CUDA "disable_cuda"
-#define FN "fn"
 #define LOAD_MODEL_WEIGHTS_DIR_IS_COMPLETE "load_model_weights_dir_is_complete"
 #define LTFB_ALLOW_GLOBAL_STATISTICS "LTFB Allow global statistics"
 #define LTFB_VERBOSE "ltfb_verbose"
