@@ -36,7 +36,7 @@ using namespace lbann;
 
 int main(int argc, char *argv[]) {
   auto& arg_parser = global_argument_parser();
-  construct_std_options();
+  construct_all_options();
 
   try {
     arg_parser.parse(argc, argv);
