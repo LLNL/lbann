@@ -101,11 +101,11 @@ void data_reader_sample_list<SampleListT>::load_list_of_samples(
 {
   // load the sample list
   double tm1 = get_time();
-  options* opts = options::get();
+  auto& arg_parser = global_argument_parser();
 
   // dah: I've not a clue what this next block does;
   //      is it a hack that should come out?
-  if (this->m_keep_sample_order || opts->has_string("keep_sample_order")) {
+  if (this->m_keep_sample_order || arg_parser.get<bool>(KEEP_SAMPLE_ORDER)) {
     m_sample_list.keep_sample_order(true);
   }
   else {
@@ -113,7 +113,7 @@ void data_reader_sample_list<SampleListT>::load_list_of_samples(
   }
 
   // Load the sample list
-  if (opts->has_string("load_full_sample_list_once")) {
+  if (arg_parser.get<bool>(LOAD_FULL_SAMPLE_LIST_ONCE)) {
     std::vector<char> buffer;
     if (m_comm->am_trainer_master()) {
       load_file(sample_list_file, buffer);

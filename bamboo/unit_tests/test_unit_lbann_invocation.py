@@ -56,53 +56,35 @@ def test_unit_one_model_bad(cluster, dirname):
     )
     return_code = os.system(command)
     tools.assert_failure(return_code,
-                         'you specified 1 model filenames, and 0 optimizer filenames; you must specify either one or 1 optimizer filenames',
+                         'you specified 1 model filenames, and 0 optimizer filenames; you must specify 1 optimizer filenames',
                          error_file_name)
 
 
-# Run with python3 -m pytest -s test_unit_lbann_invocation.py -k 'test_unit_two_models_bad'
-def test_unit_two_models_bad(cluster, dirname):
-    print('TESTING: run lbann with two models but no optimizer or reader; lbann should throw exception\n')
-    (_, model_path, _) = get_default_parameters(dirname)
-    (output_file_name, error_file_name) = get_file_names(dirname, 'two_models_bad')
+# Run with python3 -m pytest -s test_unit_lbann_invocation.py -k 'test_unit_two_models'
+def test_unit_two_models(cluster, dirname):
+    print('TESTING: run lbann with two models; lbann should throw exception\n')
+    (data_reader_path, model_path, optimizer_path) = get_default_parameters(dirname)
+    (output_file_name, error_file_name) = get_file_names(dirname, 'two_models')
     command = tools.get_command(
-        cluster=cluster,
+        cluster=cluster, data_reader_path=data_reader_path,
+        data_filedir_default='/p/lscratchh/brainusr/datasets/MNIST',
         exit_after_setup=True,
         model_path=model_path,
+        optimizer_path=optimizer_path,
         num_processes=1,
         output_file_name=output_file_name,
         error_file_name=error_file_name
     )
     return_code = os.system(command)
     tools.assert_failure(return_code,
-                         'you specified 2 model filenames, and 0 optimizer filenames; you must specify either one or 2 optimizer filenames',
-                         error_file_name)
-
-
-# Run with python3 -m pytest -s test_unit_lbann_invocation.py -k 'test_unit_two_models_bad2'
-def test_unit_two_models_bad2(cluster, dirname):
-    print('TESTING: run lbann with two models with missing {; lbann should throw exception\n')
-    (_, model_path, _) = get_default_parameters(dirname, two_models=False)
-    model_path = '{mp},{mp}}}'.format(mp=model_path)
-    (output_file_name, error_file_name) = get_file_names(dirname, 'two_models_bad2')
-    command = tools.get_command(
-        cluster=cluster,
-        exit_after_setup=True,
-        model_path=model_path,
-        num_processes=1,
-        output_file_name=output_file_name,
-        error_file_name=error_file_name
-    )
-    return_code = os.system(command)
-    tools.assert_failure(return_code,
-                         "possibly you left out '{' or '}' or both",
+                         'Arguments could not be parsed.',
                          error_file_name)
 
 
 # Run with python3 -m pytest -s test_unit_lbann_invocation.py -k 'test_unit_missing_optimizer'
 def test_unit_missing_optimizer(cluster, dirname):
-    print('TESTING: run lbann with two models, reader, but no optimizer; lbann should throw exception\n')
-    (data_reader_path, model_path, _) = get_default_parameters(dirname)
+    print('TESTING: run lbann with model, reader, but no optimizer; lbann should throw exception\n')
+    (data_reader_path, model_path, _) = get_default_parameters(dirname, two_models=False)
     (output_file_name, error_file_name) = get_file_names(dirname, 'missing_optimizer')
     command = tools.get_command(
         cluster=cluster,
@@ -115,14 +97,14 @@ def test_unit_missing_optimizer(cluster, dirname):
     )
     return_code = os.system(command)
     tools.assert_failure(return_code,
-                         'you specified 2 model filenames, and 0 optimizer filenames; you must specify either one or 2 optimizer filenames',
+                         'you specified 1 model filenames, and 0 optimizer filenames; you must specify 1 optimizer filenames',
                          error_file_name)
 
 
 # Run with python3 -m pytest -s test_unit_lbann_invocation.py -k 'test_unit_missing_reader'
 def test_unit_missing_reader(cluster, dirname):
-    print('TESTING: run lbann with two models, reader, but no reader; lbann should throw exception\n')
-    (_, model_path, optimizer_path) = get_default_parameters(dirname)
+    print('TESTING: run lbann with model, optimizer, but no reader; lbann should throw exception\n')
+    (_, model_path, optimizer_path) = get_default_parameters(dirname, two_models=False)
     (output_file_name, error_file_name) = get_file_names(dirname, 'missing_reader')
     command = tools.get_command(
         cluster=cluster,
@@ -134,7 +116,7 @@ def test_unit_missing_reader(cluster, dirname):
     )
     return_code = os.system(command)
     tools.assert_failure(return_code,
-                         'you specified 2 model filenames, and 0 reader filenames; you must specify either one or 2 reader filenames',
+                         'you specified 1 model filenames, and 0 reader filenames; you must specify 1 reader filenames',
                          error_file_name)
 
 
@@ -143,7 +125,7 @@ def test_unit_bad_params(cluster, dirname):
     exe = shutil.which('lbann')
     print('TESTING: run lbann with ill-formed param (exit_after_setup should have `--` not `-`) lbann should throw exception\n')
     (data_reader_path, model_path, optimizer_path) = get_default_parameters(
-        dirname)
+        dirname, two_models=False)
     (command_allocate, command_run, _, _) = tools.get_command(
         cluster=cluster,
         num_processes=1,
@@ -156,15 +138,15 @@ def test_unit_bad_params(cluster, dirname):
     )
     return_code = os.system(command_string)
     tools.assert_failure(return_code,
-                         "badly formed cmd line param; must begin with '--': -exit_after_setup",
+                         "Arguments could not be parsed.",
                          error_file_name)
 
 
 # Run with python3 -m pytest -s test_unit_lbann_invocation.py -k 'test_unit_should_work'
 def test_unit_should_work(cluster, dirname):
-    print('TESTING: run lbann with two models, reader, and optimizer; lbann should NOT throw exception\n')
+    print('TESTING: run lbann with model, reader, and optimizer; lbann should NOT throw exception\n')
     (data_reader_path, model_path, optimizer_path) = get_default_parameters(
-        dirname)
+        dirname, two_models=False)
     (output_file_name, error_file_name) = get_file_names(dirname, 'should_work')
     command = tools.get_command(
         cluster=cluster, data_reader_path=data_reader_path,

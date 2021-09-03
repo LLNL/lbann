@@ -60,7 +60,7 @@ hdf5_reader<TensorDataType>::hdf5_reader(const bool shuffle,
                          const std::string key_responses,
                          const bool hyperslab_labels)
     : generic_data_reader(shuffle),
-      m_use_data_store(options::get()->get_bool("use_data_store")),
+      m_use_data_store(global_argument_parser().get<bool>(USE_DATA_STORE)),
       m_key_data(key_data),
       m_key_labels(key_labels),
       m_key_responses(key_responses),
@@ -229,8 +229,8 @@ void hdf5_reader<TensorDataType>::load() {
   m_dxpl = H5P_DEFAULT;
 #endif
   std::vector<int> local_list_sizes;
-  options *opts = options::get();
-  if (opts->get_bool("preload_data_store")) {
+  auto& arg_parser = global_argument_parser();
+  if (arg_parser.get<bool>(PRELOAD_DATA_STORE)) {
     LBANN_ERROR("preload_data_store not supported on HDF5 data reader");
   }
   if (m_use_data_store) {

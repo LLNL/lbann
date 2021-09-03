@@ -82,12 +82,6 @@ void print_parameters(const lbann_comm& comm,
                       std::vector<int>& random_seeds,
                       std::vector<int>& data_seq_random_seeds);
 
-/** @brief prints usage information */
-void print_help(const lbann_comm& comm);
-
-/** @brief prints usage information */
-void print_help(std::ostream& os);
-
 /** @brief prints prototext file, cmd line, etc to file */
 void save_session(const lbann_comm& comm,
                   const int argc, char * const* argv,

@@ -41,49 +41,38 @@ namespace protobuf_utils {
 std::vector<prototext_fn_triple>
 parse_prototext_filenames_from_command_line(
                const bool master,
-               const int argc,
-               char * const argv[],
                const int trainer_rank) {
+  auto& arg_parser = global_argument_parser();
   std::vector<std::string> models;
   std::vector<std::string> optimizers;
   std::vector<std::string> readers;
   std::vector<std::string> data_set_metadata;
   bool single_file_load = false;
-  for (int k=1; k<argc; k++) {
-    std::string s(argv[k]);
-    if (s[0] != '-' or s[1] != '-') {
-      LBANN_ERROR("badly formed cmd line param; must begin with '--': ", s);
-    }
-    if (s.find(',') != std::string::npos) {
-      LBANN_ERROR(" badly formed param; contains ','; ", s, 
-          "; possibly you left out '{' or '}' or both");
-    }
 
-    size_t equal_sign = s.find("=");
-    if (equal_sign != std::string::npos) {
-      std::string which = s.substr(2, equal_sign-2);
-      std::string fn = s.substr(equal_sign+1);
-      //check if trainer is append to filename string
+  std::string params[] = { PROTOTEXT, MODEL, READER, METADATA, OPTIMIZER };
+  for(auto & which : params) {
+    std::string fn = arg_parser.get<std::string>(which);
+    if (fn != "") {
       size_t t_pos = fn.find("trainer");
       if(t_pos != std::string::npos) {
-         //append appropriate trainer id to prototext filename
-         std::string fname = fn.substr(0,t_pos+7)+ std::to_string(trainer_rank);
-         fn = fname;
+        //append appropriate trainer id to prototext filename
+        std::string fname = fn.substr(0,t_pos+7)+ std::to_string(trainer_rank);
+        fn = fname;
       }
-      if (which == "prototext") {
+      if (which == PROTOTEXT) {
         models.push_back(fn);
         single_file_load = true;
       }
-      if (which == "model") {
+      if (which == MODEL) {
         models.push_back(fn);
       }
-      if (which == "reader") {
+      if (which == READER) {
         readers.push_back(fn);
       }
-      if (which == "metadata") {
+      if (which == METADATA) {
         data_set_metadata.push_back(fn);
       }
-      if (which == "optimizer") {
+      if (which == OPTIMIZER) {
         optimizers.push_back(fn);
       }
     }
@@ -94,21 +83,17 @@ parse_prototext_filenames_from_command_line(
     if (! (optimizers.size() == 1 || optimizers.size() == n)) {
       LBANN_ERROR(
         "you specified ", n, " model filenames, and ", optimizers.size(), 
-        " optimizer filenames; you must specify either one or ", 
-       n, " optimizer filenames");
+        " optimizer filenames; you must specify 1 optimizer filenames");
     }
     if (! (readers.size() == 1 || readers.size() == n)) {
       LBANN_ERROR(
         "you specified ", n, " model filenames, and ", readers.size(),
-        " reader filenames; you must specify either one or ", n,
-        " reader filenames");
+        " reader filenames; you must specify 1 reader filenames");
     }
-
     if (! (data_set_metadata.size() == 0 || data_set_metadata.size() == 1 || data_set_metadata.size() == n)) {
       LBANN_ERROR(
         "you specified ", n, " model filenames, and ", data_set_metadata.size(),
-        " data set metadata filenames; you must specify either zero, one, or ",
-        n, " data set metadata filenames");
+        " data set metadata filenames; you must specify 1 data set metadata filenames");
     }
   }
 
@@ -175,11 +160,9 @@ read_in_prototext_files(
 std::vector<std::unique_ptr<lbann_data::LbannPB>>
 load_prototext(
   const bool master,
-  const int argc,
-  char* const argv[],
   const int trainer_rank)
 {
-  auto names = parse_prototext_filenames_from_command_line(master, argc, argv, trainer_rank);
+  auto names = parse_prototext_filenames_from_command_line(master, trainer_rank);
   auto models_out = read_in_prototext_files(master, names);
   if (models_out.size() == 0 && master) {
     LBANN_ERROR("Failed to load any prototext files");
