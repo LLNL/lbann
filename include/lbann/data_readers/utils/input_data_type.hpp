@@ -27,7 +27,6 @@
 #ifndef LBANN_INPUT_DATA_TYPE_HPP_INCLUDED
 #define LBANN_INPUT_DATA_TYPE_HPP_INCLUDED
 
-#include "lbann/utils/enum_iterator.hpp"
 #include <string>
 
 namespace lbann {
@@ -36,10 +35,6 @@ using data_field_type = std::string;
 #define INPUT_DATA_TYPE_SAMPLES "samples"
 #define INPUT_DATA_TYPE_LABELS "labels"
 #define INPUT_DATA_TYPE_RESPONSES "responses"
-
-enum class input_data_type {SAMPLES, LABELS, RESPONSES};
-using input_data_type_iterator = enum_iterator<input_data_type, input_data_type::SAMPLES, input_data_type::RESPONSES>;
-std::string to_string(input_data_type const& idt);
 
 }
 

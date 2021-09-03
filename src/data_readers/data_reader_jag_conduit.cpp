@@ -229,8 +229,8 @@ void data_reader_jag_conduit::set_defaults() {
   m_list_per_trainer = false;
   m_list_per_model = false;
 
-  m_supported_input_types[input_data_type::LABELS] = true;
-  m_supported_input_types[input_data_type::RESPONSES] = true;
+  m_supported_input_types[INPUT_DATA_TYPE_LABELS] = true;
+  m_supported_input_types[INPUT_DATA_TYPE_RESPONSES] = true;
 }
 
 void data_reader_jag_conduit::setup(int num_io_threads, observer_ptr<thread_pool> io_thread_pool) {

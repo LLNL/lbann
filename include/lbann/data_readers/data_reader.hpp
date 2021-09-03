@@ -106,10 +106,7 @@ class generic_data_reader {
     m_issue_warning(true)
   {
     // By default only support fetching input samples
-    for(auto i : input_data_type_iterator()) {
-      m_supported_input_types[i] = false;
-    }
-    m_supported_input_types[input_data_type::SAMPLES] = true;
+    m_supported_input_types[INPUT_DATA_TYPE_SAMPLES] = true;
   }
   generic_data_reader(const generic_data_reader&) = default;
   generic_data_reader& operator=(const generic_data_reader&) = default;
@@ -297,15 +294,24 @@ class generic_data_reader {
   virtual std::string get_type() const = 0;
 
   /** @brief Fetch a mini-batch worth of data, including samples, labels, responses (as appropriate) */
-  int fetch(std::map<input_data_type, CPUMat*>& input_buffers, El::Matrix<El::Int>& indices_fetched);
+  int fetch(std::map<data_field_type, CPUMat*>& input_buffers, El::Matrix<El::Int>& indices_fetched);
 
-  virtual bool has_labels() const { return m_supported_input_types.at(input_data_type::LABELS); }
-  virtual bool has_responses() const { return m_supported_input_types.at(input_data_type::RESPONSES); }
+  /** @brief Check to see if the data reader supports this specific data field */
+  virtual bool has_data_field(data_field_type data_field) const {
+    if(m_supported_input_types.find(data_field) != m_supported_input_types.end()) {
+      return m_supported_input_types.at(data_field);
+    }else {
+      return false;
+    }
+  }
+
+  virtual bool has_labels() const { return has_data_field(INPUT_DATA_TYPE_LABELS); }
+  virtual bool has_responses() const { return has_data_field(INPUT_DATA_TYPE_RESPONSES); }
 
   /// Whether or not a data reader has labels
-  virtual void set_has_labels(const bool b) { m_supported_input_types[input_data_type::LABELS] = b; }
+  virtual void set_has_labels(const bool b) { m_supported_input_types[INPUT_DATA_TYPE_LABELS] = b; }
   /// Whether or not a data reader has a response field
-  virtual void set_has_responses(const bool b) { m_supported_input_types[input_data_type::RESPONSES] = b; }
+  virtual void set_has_responses(const bool b) { m_supported_input_types[INPUT_DATA_TYPE_RESPONSES] = b; }
 
   /**
    * During the network's update phase, the data reader will
@@ -720,7 +726,7 @@ class generic_data_reader {
 
   lbann_comm *m_comm;
 
-  virtual bool fetch_data_block(std::map<input_data_type, CPUMat*>& input_buffers, El::Int block_offset, El::Int block_stride, El::Int mb_size, El::Matrix<El::Int>& indices_fetched);
+  virtual bool fetch_data_block(std::map<data_field_type, CPUMat*>& input_buffers, El::Int block_offset, El::Int block_stride, El::Int mb_size, El::Matrix<El::Int>& indices_fetched);
 
   /**
    * Fetch a single sample into a matrix.
@@ -853,7 +859,7 @@ private:
 
   /** @brief Holds a true value for each input data type that is supported.
    *  Use an ordered map so that checkpoints are stable. */
-  std::map<input_data_type, bool> m_supported_input_types;
+  std::map<data_field_type, bool> m_supported_input_types;
 
   //var to support GAN
   bool m_gan_labelling; //boolean flag of whether its GAN binary label, default is false

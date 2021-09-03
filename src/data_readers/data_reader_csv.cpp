@@ -38,9 +38,9 @@ namespace lbann {
 csv_reader::csv_reader(bool shuffle)
   : generic_data_reader(shuffle) {
   // By default assume that there are labels in the CSV data set
-  m_supported_input_types[input_data_type::LABELS] = true;
+  m_supported_input_types[INPUT_DATA_TYPE_LABELS] = true;
   // By default assume that there are not responses in the CSV data set
-  m_supported_input_types[input_data_type::RESPONSES] = false;
+  m_supported_input_types[INPUT_DATA_TYPE_RESPONSES] = false;
 }
 
 csv_reader::csv_reader(const csv_reader& other) :

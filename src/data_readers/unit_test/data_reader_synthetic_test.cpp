@@ -69,7 +69,7 @@ TEST_CASE("Synthetic data reader classification tests",
   lbann::fast_rng_gen ref_fast_generator;
   ref_fast_generator.seed(lbann::hash_combine(42, 0));
 
-  auto s = GENERATE(range(1, 4));
+  auto s = GENERATE(range(1, 11));
   El::Int num_samples = s;
   std::vector<int> dims = {s,s};;
   El::Int num_labels = s*2;
@@ -130,7 +130,7 @@ TEST_CASE("Synthetic data reader regression tests",
   lbann::fast_rng_gen ref_fast_generator;
   ref_fast_generator.seed(lbann::hash_combine(42, 0));
 
-  auto s = GENERATE(range(1, 4));
+  auto s = GENERATE(range(1, 11));
   El::Int num_samples = s;
   std::vector<int> dims = {s,s};;
   std::vector<int> response_dims = {s+1, s+1};

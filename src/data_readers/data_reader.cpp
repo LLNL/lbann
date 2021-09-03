@@ -87,13 +87,36 @@ void generic_data_reader::setup(int num_io_threads, observer_ptr<thread_pool> io
   m_io_thread_pool = io_thread_pool;
 }
 
-int lbann::generic_data_reader::fetch(std::map<input_data_type, CPUMat*>& input_buffers, El::Matrix<El::Int>& indices_fetched) {
-  // Fetch sample
-  auto buf = input_buffers[input_data_type::SAMPLES];
-  if(buf == nullptr || buf->Height() == 0 || buf->Width() == 0) {
-    LBANN_ERROR("fetch function called with invalid buffer: h=", buf->Height(), " x ", buf->Width());
+int lbann::generic_data_reader::fetch(std::map<data_field_type, CPUMat*>& input_buffers, El::Matrix<El::Int>& indices_fetched) {
+  // Check to make sure that a valid map was passed
+  if(input_buffers.empty()) {
+    LBANN_ERROR("fetch function called with no valid buffer");
   }
-  // BVE FIXME
+  //  Check that all buffers within the map are valid and hold the
+  //  same number of samples
+  El::Int buffer_width = 0;
+  for (auto& [data_field, buf] : input_buffers) {
+    if (buf == nullptr || buf->Height() == 0 || buf->Width() == 0) {
+      LBANN_ERROR("fetch function called with invalid buffer: h=",
+                  buf->Height(),
+                  " x ",
+                  buf->Width(),
+                  " for data field ",
+                  data_field);
+    }
+    if(buffer_width == 0) {
+      buffer_width = buf->Width();
+    }else {
+      if(buffer_width != buf->Width()) {
+        LBANN_ERROR("fetch function called with a set of buffers that have mismatched widths: h=",
+                    buf->Height(),
+                    " x ",
+                    buf->Width(),
+                    " for data field ",
+                    data_field);
+      }
+    }
+  }
 
   #ifdef DEBUG
   if (m_current_pos == 0) {
@@ -112,7 +135,7 @@ int lbann::generic_data_reader::fetch(std::map<input_data_type, CPUMat*>& input_
 
   const int end_pos = std::min(static_cast<size_t>(m_current_pos+loaded_batch_size), m_shuffled_indices.size());
   const int mb_size = std::min(El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
-      buf->Width());
+      buffer_width);
 
   if(!position_valid()) {
     if(position_is_overrun()) {
@@ -141,38 +164,9 @@ int lbann::generic_data_reader::fetch(std::map<input_data_type, CPUMat*>& input_
   /// set the single index corresponding to the categorical value.
   /// With general data fields this will have to be the responsibilty
   /// of the concrete data reader.
-  for (auto& [data_field, buf] : input_buffers) {
-    bool valid = false;
-    // std::cout << "data coordinator has the following active fields "
-    //           << to_string(data_field) << std::endl;
-    // input_data_type data_field_hack;
-    if (data_field == input_data_type::SAMPLES) {
-      if (buf == nullptr || buf->Height() == 0 || buf->Width() == 0) {
-        LBANN_ERROR("fetch_data_block function called with invalid buffer: h=",
-                    buf->Height(),
-                    " x ",
-                    buf->Width());
-      }
-      //        El::Zeros_seq(*buf, buf->Height(), buf->Width());
-    }
-    else if (data_field == input_data_type::LABELS && has_labels()) {
-      if (buf == nullptr || buf->Height() == 0 || buf->Width() == 0) {
-        LBANN_ERROR("fetch_data_block function called with invalid buffer: h=",
-                    buf->Height(),
-                    " x ",
-                    buf->Width());
-      }
-      El::Zeros_seq(*buf, buf->Height(), buf->Width());
-    }
-    else if (data_field == input_data_type::RESPONSES && has_responses()) {
-      if (buf == nullptr || buf->Height() == 0 || buf->Width() == 0) {
-        LBANN_ERROR("fetch_data_block function called with invalid buffer: h=",
-                    buf->Height(),
-                    " x ",
-                    buf->Width());
-      }
-      //        El::Zeros_seq(*buf, buf->Height(), buf->Width());
-    }
+  if (has_labels() && input_buffers.find(INPUT_DATA_TYPE_LABELS) != input_buffers.end()) {
+    auto& buf = input_buffers[INPUT_DATA_TYPE_LABELS];
+    El::Zeros_seq(*buf, buf->Height(), buf->Width());
   }
 
   // Fetch data is executed by the thread pool so it has to dispatch
@@ -245,7 +239,7 @@ int lbann::generic_data_reader::fetch(std::map<input_data_type, CPUMat*>& input_
     //  return num_samples_fetched;
 }
 
-bool lbann::generic_data_reader::fetch_data_block(std::map<input_data_type, CPUMat*>& input_buffers, El::Int block_offset, El::Int block_stride, El::Int mb_size, El::Matrix<El::Int>& indices_fetched) {
+bool lbann::generic_data_reader::fetch_data_block(std::map<data_field_type, CPUMat*>& input_buffers, El::Int block_offset, El::Int block_stride, El::Int mb_size, El::Matrix<El::Int>& indices_fetched) {
   locked_io_rng_ref io_rng = set_io_generators_local_index(block_offset);
   //  auto buf = input_buffers[input_data_type::SAMPLES];
 
@@ -261,7 +255,7 @@ bool lbann::generic_data_reader::fetch_data_block(std::map<input_data_type, CPUM
       // std::cout << "data coordinator has the following active fields "
       //           << to_string(data_field) << std::endl;
       // input_data_type data_field_hack;
-      if (data_field == input_data_type::SAMPLES) {
+      if (data_field == INPUT_DATA_TYPE_SAMPLES) {
         if (buf == nullptr || buf->Height() == 0 || buf->Width() == 0) {
           LBANN_ERROR(
             "fetch_data_block function called with invalid buffer: h=",
@@ -274,7 +268,7 @@ bool lbann::generic_data_reader::fetch_data_block(std::map<input_data_type, CPUM
           LBANN_ERROR("invalid datum (index ", std::to_string(index), ")");
         }
       }
-      else if (data_field == input_data_type::LABELS && has_labels()) {
+      else if (data_field == INPUT_DATA_TYPE_LABELS && has_labels()) {
         if (buf == nullptr || buf->Height() == 0 || buf->Width() == 0) {
           LBANN_ERROR(
             "fetch_data_block function called with invalid buffer: h=",
@@ -287,7 +281,7 @@ bool lbann::generic_data_reader::fetch_data_block(std::map<input_data_type, CPUM
           LBANN_ERROR("invalid datum (index ", std::to_string(index), ")");
         }
       }
-      else if (data_field == input_data_type::RESPONSES && has_responses()) {
+      else if (data_field == INPUT_DATA_TYPE_RESPONSES && has_responses()) {
         if (buf == nullptr || buf->Height() == 0 || buf->Width() == 0) {
           LBANN_ERROR(
             "fetch_data_block function called with invalid buffer: h=",

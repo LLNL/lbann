@@ -83,12 +83,12 @@ void numpy_reader::load() {
       "numpy_reader: fortran order not supported");
   }
   // Don't currently support both labels and responses.
-  if (m_supported_input_types[input_data_type::LABELS] && m_supported_input_types[input_data_type::RESPONSES]) {
+  if (m_supported_input_types[INPUT_DATA_TYPE_LABELS] && m_supported_input_types[INPUT_DATA_TYPE_RESPONSES]) {
     throw lbann_exception(
       "numpy_reader: labels and responses not supported at same time");
   }
 
-  if (m_supported_input_types[input_data_type::LABELS]) {
+  if (m_supported_input_types[INPUT_DATA_TYPE_LABELS]) {
     // Shift feature count because the last becomes the label.
     m_num_features -= 1;
     // Determine number of label classes.
@@ -114,7 +114,7 @@ void numpy_reader::load() {
     }
     m_num_labels = label_classes.size();
   }
-  if (m_supported_input_types[input_data_type::RESPONSES]) {
+  if (m_supported_input_types[INPUT_DATA_TYPE_RESPONSES]) {
     // Last feature becomes the response.
     m_num_features -= 1;
   }
@@ -129,7 +129,7 @@ void numpy_reader::load() {
 
 bool numpy_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
   int features_size = m_num_features;
-  if (m_supported_input_types[input_data_type::LABELS] || m_supported_input_types[input_data_type::RESPONSES]) {
+  if (m_supported_input_types[INPUT_DATA_TYPE_LABELS] || m_supported_input_types[INPUT_DATA_TYPE_RESPONSES]) {
     features_size += 1;
   }
   if (m_data.word_size == 4) {
@@ -147,7 +147,7 @@ bool numpy_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
 }
 
 bool numpy_reader::fetch_label(Mat& Y, int data_id, int mb_idx) {
-  if (!m_supported_input_types[input_data_type::LABELS]) {
+  if (!m_supported_input_types[INPUT_DATA_TYPE_LABELS]) {
     throw lbann_exception("numpy_reader: do not have labels");
   }
   int label = 0;
@@ -163,7 +163,7 @@ bool numpy_reader::fetch_label(Mat& Y, int data_id, int mb_idx) {
 }
 
 bool numpy_reader::fetch_response(Mat& Y, int data_id, int mb_idx) {
-  if (!m_supported_input_types[input_data_type::RESPONSES]) {
+  if (!m_supported_input_types[INPUT_DATA_TYPE_RESPONSES]) {
     throw lbann_exception("numpy_reader: do not have responses");
   }
   auto response = DataType(0);

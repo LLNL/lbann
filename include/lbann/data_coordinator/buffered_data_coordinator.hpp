@@ -106,6 +106,19 @@ class buffered_data_coordinator : public data_coordinator {
   /** Archive for checkpoint and restart */
   template <class Archive> void serialize( Archive & ar );
 
+  /** @brief After registering the active data field, allocate storage for each
+   *  data field in the context maps within the double buffer.
+   */
+  void register_active_data_field(data_field_type const data_field) override {
+    data_coordinator::register_active_data_field(data_field);
+    for (const auto& buf_map : m_data_buffers) {
+      const data_buffer_map_t& buffer_map = buf_map;
+      for (auto& [mode, buffer] : buffer_map) {
+        buffer->initialize_buffer_for_data_field(data_field, m_comm);
+      }
+    }
+  }
+
   void setup_data_fields(int max_mini_batch_size) override;
 
   void fp_setup_data(data_buffer<IODataType>& buffer, El::Int cur_mini_batch_size);

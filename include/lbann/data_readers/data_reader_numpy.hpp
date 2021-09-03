@@ -64,7 +64,7 @@ class numpy_reader : public generic_data_reader {
   const std::vector<int> get_data_dims() const override {
     std::vector<int> dims(m_data.shape.begin() + 1,
                           m_data.shape.end());
-    if (m_supported_input_types.at(input_data_type::LABELS) || m_supported_input_types.at(input_data_type::RESPONSES)) {
+    if (m_supported_input_types.at(INPUT_DATA_TYPE_LABELS) || m_supported_input_types.at(INPUT_DATA_TYPE_RESPONSES)) {
       dims.back() -= 1;
     }
     return dims;

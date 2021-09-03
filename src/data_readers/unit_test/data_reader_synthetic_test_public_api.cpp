@@ -73,35 +73,31 @@ TEST_CASE("Synthetic data reader public API tests",
   auto io_thread_pool = lbann::make_unique<lbann::thread_pool>();
   io_thread_pool->launch_pinned_threads(1, 1);
 
-  std::vector<std::string> active_data_fields = {"samples"};
-  active_data_fields.emplace_back(GENERATE("labels", "responses"));
+  std::set<std::string> active_data_fields = {"samples"};
+  active_data_fields.insert(GENERATE("labels", "responses"));
   auto s = GENERATE(range(1, 11));
   El::Int num_samples = s;
   std::vector<int> dims = {s,s};;
   El::Int num_labels = s*2;
   std::vector<int> response_dims = {s+1, s+1};
 
-  std::map<lbann::input_data_type, std::unique_ptr<lbann::CPUMat>> owning_local_input_buffers;
-  std::map<lbann::input_data_type, lbann::CPUMat*> local_input_buffers;
+  std::map<lbann::data_field_type, std::unique_ptr<lbann::CPUMat>> owning_local_input_buffers;
+  std::map<lbann::data_field_type, lbann::CPUMat*> local_input_buffers;
   for (auto& data_field : active_data_fields) {
-    lbann::input_data_type data_field_hack;
     auto local_mat = std::make_unique<lbann::CPUMat>();
     if (data_field == INPUT_DATA_TYPE_SAMPLES) {
-      data_field_hack = lbann::input_data_type::SAMPLES;
       local_mat->Resize(dims[0] * dims[1], num_samples);
       El::Zeros_seq(*local_mat, dims[0] * dims[1], num_samples);
     }
     else if (data_field == INPUT_DATA_TYPE_LABELS) {
-      data_field_hack = lbann::input_data_type::LABELS;
       local_mat->Resize(num_labels, num_samples);
       El::Zeros_seq(*local_mat, num_labels, num_samples);
     }
     else if (data_field == INPUT_DATA_TYPE_RESPONSES) {
-      data_field_hack = lbann::input_data_type::RESPONSES;
       local_mat->Resize(response_dims[0] * response_dims[1], num_samples);
     }
-    local_input_buffers[data_field_hack] = local_mat.get();
-    owning_local_input_buffers[data_field_hack] = std::move(local_mat);
+    local_input_buffers[data_field] = local_mat.get();
+    owning_local_input_buffers[data_field] = std::move(local_mat);
   }
   El::Matrix<El::Int> indices_fetched;
   El::Zeros_seq(indices_fetched, num_samples, 1);
@@ -109,14 +105,14 @@ TEST_CASE("Synthetic data reader public API tests",
   SECTION("fetch data fields")
   {
     std::unique_ptr<lbann::data_reader_synthetic> dr;
-    if(owning_local_input_buffers.find(lbann::input_data_type::LABELS) != owning_local_input_buffers.end()) {
+    if(owning_local_input_buffers.find(INPUT_DATA_TYPE_LABELS) != owning_local_input_buffers.end()) {
       dr = std::make_unique<lbann::data_reader_synthetic>(
         num_samples,
         dims,
         num_labels,
         false);
     }
-    else if(owning_local_input_buffers.find(lbann::input_data_type::RESPONSES) != owning_local_input_buffers.end()) {
+    else if(owning_local_input_buffers.find(INPUT_DATA_TYPE_RESPONSES) != owning_local_input_buffers.end()) {
       dr = std::make_unique<lbann::data_reader_synthetic>(
         num_samples,
         dims,
@@ -137,7 +133,7 @@ TEST_CASE("Synthetic data reader public API tests",
     dr->fetch(local_input_buffers, indices_fetched);
 
     // for (auto& [field, buf] : local_input_buffers) {
-    //   std::cout << "For field " << to_string(field) << std::endl;
+    //   std::cout << "For field " << field << std::endl;
     //   El::Print(*buf);
     // }
 
@@ -145,20 +141,9 @@ TEST_CASE("Synthetic data reader public API tests",
     // data fields are accessed in the same order that they are in the map
     for (El::Int j = 0; j < num_samples; j++) {
       for (auto& data_field : active_data_fields) {
-        lbann::input_data_type data_field_hack;
-        if (data_field == INPUT_DATA_TYPE_SAMPLES) {
-          data_field_hack = lbann::input_data_type::SAMPLES;
-        }
-        else if (data_field == INPUT_DATA_TYPE_LABELS) {
-          data_field_hack = lbann::input_data_type::LABELS;
-        }
-        else if (data_field == INPUT_DATA_TYPE_RESPONSES) {
-          data_field_hack = lbann::input_data_type::RESPONSES;
-        }
-
-        if (data_field_hack == lbann::input_data_type::SAMPLES ||
-            data_field_hack == lbann::input_data_type::RESPONSES) {
-          auto& X = *(local_input_buffers[data_field_hack]);
+        if (data_field == INPUT_DATA_TYPE_SAMPLES ||
+            data_field == INPUT_DATA_TYPE_RESPONSES) {
+          auto& X = *(local_input_buffers[data_field]);
           // Create a new normal distribution for each sample.  This ensures
           // that the behavior matches the implementation in the synthetic
           // data reader and handles the case of odd numbers of entries with a
@@ -170,7 +155,7 @@ TEST_CASE("Synthetic data reader public API tests",
           }
         }
         else if (data_field == INPUT_DATA_TYPE_LABELS) {
-          auto& Y = *(local_input_buffers[lbann::input_data_type::LABELS]);
+          auto& Y = *(local_input_buffers[INPUT_DATA_TYPE_LABELS]);
           auto index = lbann::fast_rand_int(ref_fast_generator, num_labels);
           // std::cout << "Here is the reference value " << index <<
           // std::endl;

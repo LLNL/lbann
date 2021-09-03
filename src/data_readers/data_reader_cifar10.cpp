@@ -44,7 +44,7 @@ void cifar10_reader::set_defaults() {
   m_image_num_channels = 3;
   set_linearized_image_size();
   m_num_labels = 10;
-  m_supported_input_types[input_data_type::LABELS] = true;
+  m_supported_input_types[INPUT_DATA_TYPE_LABELS] = true;
 }
 
 void cifar10_reader::load() {

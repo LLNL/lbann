@@ -46,9 +46,9 @@ void buffered_data_coordinator<TensorDataType>::setup_data_fields(int max_mini_b
     LBANN_ERROR("Models have not registered data fields with the data coordinator");
   }
 
-  El::Int num_neurons = get_linearized_data_size();
 #ifdef LBANN_HAS_DISTCONV
   if (dc::is_cosmoflow_parallel_io_enabled()) {
+    El::Int num_neurons = get_linearized_data_size();
     num_neurons /= dc::get_number_of_io_partitions();
     // TODO: Make sure that TensorDatType is equivalent to the HDF5
     // data reader's data type (float as default).
@@ -62,8 +62,8 @@ void buffered_data_coordinator<TensorDataType>::setup_data_fields(int max_mini_b
   /// @todo BVE This is where we are going to have to limit how many
   /// ranks are participating in I/O
   El::Int local_mini_batch_size = max_mini_batch_size / this->m_comm->get_procs_per_trainer();
-  El::Int partial_mini_batch_size = max_mini_batch_size % this->m_comm->get_procs_per_trainer();
 #ifdef LBANN_HAS_DISTCONV
+  El::Int partial_mini_batch_size = max_mini_batch_size % this->m_comm->get_procs_per_trainer();
   if (dc::is_cosmoflow_parallel_io_enabled()) {
     assert_eq(local_mini_batch_size, 1);
     assert_eq(partial_mini_batch_size, 0);
@@ -71,35 +71,19 @@ void buffered_data_coordinator<TensorDataType>::setup_data_fields(int max_mini_b
 #endif // LBANN_HAS_DISTCONV
 
   for(auto& data_field : m_active_data_fields) {
-    // std::cout << "data coordinator has the following active fields " << data_field << std::endl;
     for (const auto& buf_map : m_data_buffers) {
       const data_buffer_map_t& buffer_map = buf_map;
-      for (const auto& b : buffer_map) {
-        observer_ptr<data_buffer<IODataType>> data_buffer = b.second.get();
-        if (data_field == INPUT_DATA_TYPE_SAMPLES) {
-          data_buffer->m_input_buffers[input_data_type::SAMPLES]->Resize(
-            num_neurons,
-            max_mini_batch_size);
-        }
-        else if (data_field == INPUT_DATA_TYPE_LABELS && has_labels()) {
-          data_buffer->m_input_buffers[input_data_type::LABELS]->Resize(
-            get_linearized_label_size(),
-            max_mini_batch_size);
-        }
-        else if (data_field == INPUT_DATA_TYPE_LABELS && has_responses()) {
-          data_buffer->m_input_buffers[input_data_type::RESPONSES]->Resize(
-            get_linearized_response_size(),
-            max_mini_batch_size);
-        }
-        else {
-          LBANN_ERROR("Unknown data_field_type value provided: " + data_field);
-        }
+      for (const auto& [mode, data_buffer] : buffer_map) {
+        El::Int linearized_size = get_linearized_size(data_field);
+        data_buffer->m_input_buffers[data_field]->Resize(
+          linearized_size,
+          max_mini_batch_size);
+
         /// The amount of space needed will vary based on input layer type,
         /// but the batch size is the maximum space necessary
         El::Zeros_seq(data_buffer->m_indices_fetched_per_mb,
                       local_mini_batch_size,
                       1);
-        // }
       }
     }
   }
@@ -124,10 +108,11 @@ int buffered_data_coordinator<TensorDataType>::fetch_to_local_matrix(data_buffer
   }
 
   buf.m_num_samples_fetched = 0;
+  /// BVE FIXME change the guard
   if (this->m_comm->get_rank_in_trainer() < num_parallel_readers
-      && (buf.m_input_buffers[input_data_type::SAMPLES]->LocalHeight() != 0 && buf.m_input_buffers[input_data_type::SAMPLES]->LocalWidth() != 0)) {
+      && (buf.m_input_buffers[INPUT_DATA_TYPE_SAMPLES]->LocalHeight() != 0 && buf.m_input_buffers[INPUT_DATA_TYPE_SAMPLES]->LocalWidth() != 0)) {
     /// Create a map of the local matrices to pass into the data reader
-    std::map<input_data_type, CPUMat*> local_input_buffers;
+    std::map<data_field_type, CPUMat*> local_input_buffers;
     for(auto& b : buf.m_input_buffers) {
       local_input_buffers[b.first] = static_cast<CPUMat*>(&(b.second->Matrix()));
     }
@@ -148,9 +133,8 @@ void buffered_data_coordinator<TensorDataType>::fp_setup_data(data_buffer<IOData
 #ifdef LBANN_HAS_DISTCONV
   cur_mini_batch_size *= dc::get_number_of_io_partitions();
 #endif
-  for(auto idt : input_data_type_iterator()) {
-    auto& mat = *buffer.m_input_buffers[idt];
-    mat.Resize(mat.Height(), cur_mini_batch_size);
+  for(auto& [data_field, mat] : buffer.m_input_buffers) {
+    mat->Resize(mat->Height(), cur_mini_batch_size);
   }
 }
 
@@ -314,18 +298,18 @@ void buffered_data_coordinator<TensorDataType>::distribute_from_local_matrix(exe
   prof_region_begin("distribute_from_local_matrix", prof_colors[3], false);
   data_buffer<IODataType>& buf = get_active_buffer(mode);
   if(data_field == INPUT_DATA_TYPE_SAMPLES) {
-    view_or_copy_tensor(*buf.m_input_buffers[input_data_type::SAMPLES], input_buffer);
+    view_or_copy_tensor(*buf.m_input_buffers[INPUT_DATA_TYPE_SAMPLES], input_buffer);
   }else if(data_field == INPUT_DATA_TYPE_LABELS) {
-    view_or_copy_tensor(*buf.m_input_buffers[input_data_type::LABELS], input_buffer);
+    view_or_copy_tensor(*buf.m_input_buffers[INPUT_DATA_TYPE_LABELS], input_buffer);
   }else if(data_field == INPUT_DATA_TYPE_RESPONSES) {
-    view_or_copy_tensor(*buf.m_input_buffers[input_data_type::RESPONSES], input_buffer);
+    view_or_copy_tensor(*buf.m_input_buffers[INPUT_DATA_TYPE_RESPONSES], input_buffer);
   }else {
     LBANN_ERROR("Unknown data_field_type value provided: " + data_field);
   }
 #ifdef LBANN_HAS_DISTCONV
   // BVE FIXME
-  if (dc::is_cosmoflow_parallel_io_enabled() && input_buffers.count(input_data_type::RESPONSES)) {
-    auto& response = *(input_buffers[input_data_type::RESPONSES]);
+  if (dc::is_cosmoflow_parallel_io_enabled() && input_buffers.count(INPUT_DATA_TYPE_RESPONSES)) {
+    auto& response = *(input_buffers[INPUT_DATA_TYPE_RESPONSES]);
     El::Int new_width = response.Width() / dc::get_number_of_io_partitions();
     if (response.Viewing()) {
       El::LockedView(response, response, El::ALL, El::IR(0, new_width));

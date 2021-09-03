@@ -46,7 +46,7 @@ void imagenet_reader::set_defaults() {
   m_image_num_channels = 3;
   set_linearized_image_size();
   m_num_labels = 1000;
-  m_supported_input_types[input_data_type::LABELS] = true;
+  m_supported_input_types[INPUT_DATA_TYPE_LABELS] = true;
 }
 
 CPUMat imagenet_reader::create_datum_view(CPUMat& X, const int mb_idx) const {
