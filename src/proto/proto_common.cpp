@@ -400,6 +400,7 @@ void init_data_readers(
         params.embedding_weights(),
         params.motif_file(),
         params.graph_file(),
+        params.start_vertices_file(),
         params.num_vertices(),
         params.motif_size(),
         params.walk_length(),

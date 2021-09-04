@@ -128,12 +128,13 @@ message CommunityGANDataReader {
   string embedding_weights = 1;
   string motif_file = 2;
   string graph_file = 3;
-  uint64 num_vertices = 4;
-  uint64 motif_size = 5;
-  uint64 walk_length = 6;
-  uint64 walks_per_vertex = 7;
-  uint64 path_limit = 8;
-  uint64 epoch_size = 9;
+  string start_vertices_file = 4;
+  uint64 num_vertices = 5;
+  uint64 motif_size = 6;
+  uint64 walk_length = 7;
+  uint64 walks_per_vertex = 8;
+  uint64 path_limit = 9;
+  uint64 epoch_size = 10;
 }
 
 message DataSetMetaData {

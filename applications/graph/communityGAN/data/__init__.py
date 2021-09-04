@@ -28,6 +28,7 @@ def make_online_data_reader(config):
     motif_size = config.getint('Motifs', 'motif_size')
     walk_length = config.getint('Walks', 'walk_length')
     walks_per_vertex = config.getint('Walks', 'num_walkers')
+    start_vertices_file = config.get('Walks', 'start_vertices_file')
     path_limit = config.getint('Walks', 'path_limit')
     mini_batch_size = config.getint('Embeddings', 'mini_batch_size')
     sgd_steps_per_epoch = config.getint('Embeddings', 'sgd_steps_per_epoch')
@@ -41,6 +42,7 @@ def make_online_data_reader(config):
     _reader.communitygan.embedding_weights = embedding_weights
     _reader.communitygan.motif_file = motif_file
     _reader.communitygan.graph_file = graph_file
+    _reader.communitygan.start_vertices_file = start_vertices_file
     _reader.communitygan.num_vertices = num_vertices
     _reader.communitygan.motif_size = motif_size
     _reader.communitygan.walk_length = walk_length

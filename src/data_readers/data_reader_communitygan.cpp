@@ -35,6 +35,7 @@ communitygan_reader::communitygan_reader(
   std::string embedding_weights_name,
   std::string motif_file,
   std::string graph_file,
+  std::string start_vertices_file,
   size_t num_vertices,
   size_t motif_size,
   size_t walk_length,
@@ -45,6 +46,7 @@ communitygan_reader::communitygan_reader(
     m_embedding_weights_name(std::move(embedding_weights_name)),
     m_motif_file(std::move(motif_file)),
     m_graph_file(std::move(graph_file)),
+    m_start_vertices_file(std::move(start_vertices_file)),
     m_num_vertices(num_vertices),
     m_motif_size(motif_size),
     m_walk_length(walk_length),
@@ -131,40 +133,81 @@ void communitygan_reader::load() {
   const size_t trainer_rank = comm.get_rank_in_trainer();
   const size_t trainer_size = comm.get_procs_per_trainer();
 
-  // Reset motifs
-  m_motifs.clear();
-
-  // Iterate through lines in file
-  std::ifstream ifs(m_motif_file.c_str());
-  std::string line;
-  std::vector<size_t> vertices;
-  vertices.reserve(m_motif_size);
-  while (std::getline(ifs, line)) {
-
-    // Objects for parsing line
-    std::istringstream iss(line);
-    size_t vertex;
-    iss >> vertex; // First index is motif ID, so discard
-
-    // Parse vertices in motif
-    // Note: Keep track of vertices that are local or remote
-    bool has_local_vertex = false;
-    vertices.clear();
-    for (size_t i=0; i<m_motif_size; ++i) {
+  // Choose local vertices to start walks from
+  m_start_vertices.clear();
+  if (m_start_vertices_file.empty()) {
+    // Use all local vertices as start vertices
+    const auto num_local_vertices = get_num_local_vertices();
+    m_start_vertices.reserve(num_local_vertices);
+    for (size_t i=0; i<num_local_vertices; ++i) {
+      m_start_vertices.push_back(i * trainer_size + trainer_rank);
+    }
+  }
+  else {
+    // Read start vertices from file
+    std::ifstream ifs(m_start_vertices_file.c_str());
+    std::string line;
+    while (std::getline(ifs, line)) {
+      std::istringstream iss(line);
+      size_t vertex;
       iss >> vertex;
-      vertices.push_back(vertex);
       if (vertex % trainer_size == trainer_rank) {
-        has_local_vertex = true;
+        m_start_vertices.push_back(vertex);
       }
     }
+  }
+  if (m_start_vertices.empty()) {
+    LBANN_ERROR(
+      "CommunityGAN data reader found no local vertices for walk starts");
+  }
 
-    // Save motif if it has a local vertex
-    if (has_local_vertex) {
-      m_motifs.emplace_back(vertices);
+  // Store start vertices in hash table
+  const std::unordered_set<size_t> start_vertices_set(
+    m_start_vertices.cbegin(),
+    m_start_vertices.cend());
+  if (start_vertices_set.size() != m_start_vertices.size()) {
+    m_start_vertices.assign(
+      start_vertices_set.cbegin(),
+      start_vertices_set.cend());
+  }
+
+  // Read motifs from file
+  // Note: Only store motifs that contain one of the start vertices
+  m_motifs.clear();
+  {
+
+    // Iterate through lines in file
+    std::ifstream ifs(m_motif_file.c_str());
+    std::string line;
+    std::vector<size_t> vertices;
+    vertices.reserve(m_motif_size);
+    while (std::getline(ifs, line)) {
+
+      // Objects for parsing line
+      std::istringstream iss(line);
+      size_t vertex;
+      iss >> vertex; // First index is motif ID, so discard
+
+      // Parse vertices in motif
+      // Note: Keep track if motif contains a start vertex
+      bool keep_motif = false;
+      vertices.clear();
+      for (size_t i=0; i<m_motif_size; ++i) {
+        iss >> vertex;
+        vertices.push_back(vertex);
+        if (start_vertices_set.count(vertex) > 0) {
+          keep_motif = true;
+        }
+      }
+
+      // Save motif if it contains a start vertex
+      if (keep_motif) {
+        m_motifs.emplace_back(vertices);
+      }
+
     }
 
   }
-
   if (m_motifs.empty()) {
     LBANN_ERROR(
       "CommunityGAN data reader found no local vertices ",
@@ -182,6 +225,17 @@ void communitygan_reader::load() {
 
 }
 
+size_t communitygan_reader::get_num_local_vertices() const {
+  const auto& comm = *get_comm();
+  const size_t trainer_rank = comm.get_rank_in_trainer();
+  const size_t trainer_size = comm.get_procs_per_trainer();
+  size_t num_local_vertices = m_num_vertices / trainer_size;
+  if (trainer_rank < m_num_vertices % trainer_size) {
+    ++num_local_vertices;
+  }
+  return num_local_vertices;
+}
+
 std::vector<std::vector<size_t>> communitygan_reader::generate_samples(
   const locked_io_rng_ref&) {
 
@@ -194,30 +248,22 @@ std::vector<std::vector<size_t>> communitygan_reader::generate_samples(
 
   // Trainer info
   auto& comm = *get_comm();
-  const size_t trainer_rank = comm.get_rank_in_trainer();
   const size_t trainer_size = comm.get_procs_per_trainer();
 
   // Start walks from local vertices
-  size_t num_local_vertices = m_num_vertices / trainer_size;
-  if (trainer_rank < m_num_vertices % trainer_size) {
-    ++num_local_vertices;
-  }
   std::vector <int> starts;
   const size_t num_local_starts = m_epoch_size / trainer_size;
-  if (num_local_starts >= num_local_vertices) {
-    // Start walks from all local vertices
-    starts.reserve(num_local_vertices);
-    for (size_t i=0; i<num_local_vertices; ++i) {
-      starts.push_back(i * trainer_size + trainer_rank);
-    }
+  if (num_local_starts >= m_start_vertices.size()) {
+    starts.reserve(m_start_vertices.size());
+    starts.assign(m_start_vertices.cbegin(), m_start_vertices.cend());
   }
   else {
     // Start walks from randomly chosen local vertices
     std::unordered_set<int> starts_set;
     starts_set.reserve(num_local_starts);
     while (starts_set.size() < num_local_starts) {
-      auto i = fast_rand_int(get_io_generator(), num_local_vertices);
-      starts_set.insert(i * trainer_size + trainer_rank);
+      auto i = fast_rand_int(get_io_generator(), m_start_vertices.size());
+      starts_set.insert(m_start_vertices[i]);
     }
     starts.reserve(num_local_starts);
     starts.assign(starts_set.cbegin(), starts_set.cend());

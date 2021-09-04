@@ -41,6 +41,7 @@ public:
     std::string embedding_weights_name,
     std::string motif_file,
     std::string graph_file,
+    std::string start_vertices_file,
     size_t num_vertices,
     size_t motif_size,
     size_t walk_length,
@@ -74,9 +75,29 @@ private:
 
   friend class ::lbann::callback::setup_communitygan_data_reader;
 
+  /** @brief File with initial embedding values.
+   *
+   *  If provided, should be a space delimited text file. The first
+   *  line specifies the matrix dimensions ((num vertices) x (embed
+   *  dim)).
+   */
   std::string m_embedding_weights_name;
+  /** @brief Motif file.
+   *
+   *  Should be a space delimited text file. Each line corresponds to
+   *  a motif: the first value is the motif ID (ignored) and the
+   *  remaining are vertex IDs.
+   */
   std::string m_motif_file;
+  /** @brief Graph file. */
   std::string m_graph_file;
+  /** @brief File containing start vertices for random walks.
+   *
+   *  If provided, should be a text file where each line is a vertex
+   *  ID. All random walks will start from one of these vertices. If
+   *  not provided, then random walks can start from any vertex.
+   */
+  std::string m_start_vertices_file;
 
   /** @brief Number of vertices in graph. */
   size_t m_num_vertices;
@@ -98,13 +119,20 @@ private:
 
   std::unique_ptr<::CommunityGANWalker_optimized> m_walker;
 
+  /** @brief Motifs that contain a local vertex. */
   std::vector<std::vector<size_t>> m_motifs;
+
+  /** @brief Start vertices for random walks. */
+  std::vector<size_t> m_start_vertices;
 
   /** @brief Data samples for current training epoch. */
   std::vector<std::vector<size_t>> m_cache;
 
   /** @brief Current position in sample cache. */
   size_t m_cache_pos = 0;
+
+  /** @brief Number of local vertices in graph. */
+  size_t get_num_local_vertices() const;
 
   /** @brief Perform random walks, starting from local vertices.
    *
