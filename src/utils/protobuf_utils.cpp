@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -82,7 +82,7 @@ parse_prototext_filenames_from_command_line(
     size_t n = models.size();
     if (! (optimizers.size() == 1 || optimizers.size() == n)) {
       LBANN_ERROR(
-        "you specified ", n, " model filenames, and ", optimizers.size(), 
+        "you specified ", n, " model filenames, and ", optimizers.size(),
         " optimizer filenames; you must specify 1 optimizer filenames");
     }
     if (! (readers.size() == 1 || readers.size() == n)) {

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -112,7 +112,7 @@ int main(int argc, char *argv[]) {
 
           if (name == "frames") {
             //pass
-          } 
+          }
 
           else if (name == "bbs") {
             float *data = a[name].data<float>();
@@ -120,7 +120,7 @@ int main(int argc, char *argv[]) {
             node[LBANN_DATA_ID_STR(sample_index) + "/" + name + "/data"].set(data + offset, num_words[name]);
             node[LBANN_DATA_ID_STR(sample_index) + "/" + name + "/shape"].set(shapes[name]);
             node[LBANN_DATA_ID_STR(sample_index) + "/" + name + "/size"].set(num_words[name]);
-          } 
+          }
 
           else { // rots, states, tilts, density_sig1, probs
             size_t offset = sample_index*num_words[name];
@@ -155,4 +155,3 @@ int main(int argc, char *argv[]) {
   // Clean up
   return EXIT_SUCCESS;
 }
-
