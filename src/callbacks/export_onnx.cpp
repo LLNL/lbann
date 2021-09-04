@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -26,18 +26,17 @@
 // export_onnx .hpp .cpp - Exports trained model to onnx format
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <iostream>
-#include <fstream>
-
 #include "lbann/callbacks/export_onnx.hpp"
-#include "lbann/layers/io/input_layer.hpp"
 
+#include "lbann/layers/io/input_layer.hpp"
 #include "lbann/proto/helpers.hpp"
 #include "lbann/utils/factory.hpp"
 #include "lbann/utils/summary_impl.hpp"
 
 #include <callbacks.pb.h>
 
+#include <fstream>
+#include <iostream>
 #include <string>
 
 

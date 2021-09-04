@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -29,12 +29,14 @@
 #ifndef LBANN_CALLBACKS_EXPORT_ONNX_HPP_INCLUDED
 #define LBANN_CALLBACKS_EXPORT_ONNX_HPP_INCLUDED
 
+#include "lbann/callbacks/callback.hpp"
+#include <lbann/base.hpp>
+
 #ifdef LBANN_HAS_ONNX
 #include <onnx/onnx_pb.h>
 #endif // LBANN_HAS_ONNX
-#include "lbann/callbacks/callback.hpp"
 #include <google/protobuf/message.h>
-#include <lbann/base.hpp>
+
 #include <iostream>
 #include <memory>
 #include <vector>
@@ -55,10 +57,9 @@ public:
   export_onnx(bool print_debug_string = false,
               std::string output_file = "lbann_output.onnx");
 
-  /** @brief Copy constructor */
-  callback_base* copy() const override {
-    LBANN_ERROR( "This callback is not copyable.");
-    return nullptr;
+  /** @brief Copy interface */
+  export_onnx* copy() const override {
+    return new export_onnx(*this);
   }
 
   /** @brief Return name of callback */
