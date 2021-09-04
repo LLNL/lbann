@@ -25,6 +25,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include <catch2/catch.hpp>
+
 #include "TestHelpers.hpp"
 #include "MPITestHelpers.hpp"
 
@@ -34,7 +35,9 @@
 #include "lbann/callbacks/callback.hpp"
 #include <google/protobuf/message.h>
 #include <lbann/base.hpp>
+
 #include <onnx/onnx_pb.h>
+
 #include <iostream>
 #include <memory>
 
