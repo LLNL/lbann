@@ -44,25 +44,32 @@ LBANN_ABS_OP_COMPLEX_ETI(El::Device::GPU);
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(acos, T, D);                          \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(acosh, T, D);                         \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(add, T, D);                           \
+  LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(add_constant, T, D);                  \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(asin, T, D);                          \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(asinh, T, D);                         \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(atan, T, D);                          \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(atanh, T, D);                         \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(ceil, T, D);                          \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(clamp, T, D);                         \
+  LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(constant_subtract, T, D);             \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(cos, T, D);                           \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(cosh, T, D);                          \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(divide, T, D);                        \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(equal, T, D);                         \
+  LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(equal_constant, T, D);                \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(erf, T, D);                           \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(erfinv, T, D);                        \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(exp, T, D);                           \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(expm1, T, D);                         \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(floor, T, D);                         \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(greater, T, D);                       \
+  LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(greater_constant, T, D);              \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(greater_equal, T, D);                 \
+  LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(greater_equal_constant, T, D);        \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(less, T, D);                          \
+  LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(less_constant, T, D);                 \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(less_equal, T, D);                    \
+  LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(less_equal_constant, T, D);           \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(log, T, D);                           \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(log1p, T, D);                         \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(logical_and, T, D);                   \
@@ -70,17 +77,21 @@ LBANN_ABS_OP_COMPLEX_ETI(El::Device::GPU);
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(logical_or, T, D);                    \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(logical_xor, T, D);                   \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(max, T, D);                           \
+  LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(max_constant, T, D);                  \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(min, T, D);                           \
+  LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(min_constant, T, D);                  \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(mod, T, D);                           \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(multiply, T, D);                      \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(negative, T, D);                      \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(not_equal, T, D);                     \
+  LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(not_equal_constant, T, D);            \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(pow, T, D);                           \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(reciprocal, T, D);                    \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(round, T, D);                         \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(rsqrt, T, D);                         \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(safe_divide, T, D);                   \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(safe_reciprocal, T, D);               \
+  LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(scale, T, D);                         \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(sign, T, D);                          \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(sin, T, D);                           \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(sinh, T, D);                          \
@@ -88,6 +99,7 @@ LBANN_ABS_OP_COMPLEX_ETI(El::Device::GPU);
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(square, T, D);                        \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(squared_difference, T, D);            \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(subtract, T, D);                      \
+  LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(subtract_constant, T, D);             \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(tan, T, D);                           \
   LBANN_SINGLE_TYPE_OPERATOR_BUILDER_ETI(tanh, T, D)
 

@@ -30,10 +30,12 @@
 
 #include "lbann/operators/math/abs.hpp"
 #include "lbann/operators/math/binary.hpp"
+#include "lbann/operators/math/binary_with_constant.hpp"
 #include "lbann/operators/math/clamp.hpp"
 #include "lbann/operators/math/unary.hpp"
 
 #include "lbann/proto/datatype_helpers.hpp"
+#include <operators.pb.h>
 
 template <typename DataT, El::Device D>
 std::unique_ptr<lbann::Operator<DataT, DataT, D>>
@@ -52,6 +54,33 @@ lbann::build_abs_operator(lbann_data::Operator const& op)
   details::AssertConsistentTypeParameters<DataT, El::Base<DataT>, D>(op);
   return std::make_unique<AbsOperator<DataT, D>>();
 }
+
+#define LBANN_DEFINE_BIN_WITH_CONSTANT_BUILDER(OP_NAME, OP_LOWER_NAME)         \
+  template <typename DataT, El::Device D>                                      \
+  std::unique_ptr<lbann::Operator<DataT, DataT, D>>                            \
+    lbann::build_##OP_LOWER_NAME##_operator(lbann_data::Operator const& op)    \
+  {                                                                            \
+    details::AssertConsistentTypeParameters<DataT, DataT, D>(op);              \
+    lbann_data::OP_NAME##Operator params;                                      \
+    LBANN_ASSERT(op.parameters().UnpackTo(&params));                           \
+    return std::make_unique<OP_NAME##Operator<DataT, D>>(params.constant());   \
+  }
+
+LBANN_DEFINE_BIN_WITH_CONSTANT_BUILDER(AddConstant, add_constant)
+LBANN_DEFINE_BIN_WITH_CONSTANT_BUILDER(ConstantSubtract, constant_subtract)
+LBANN_DEFINE_BIN_WITH_CONSTANT_BUILDER(EqualConstant, equal_constant)
+LBANN_DEFINE_BIN_WITH_CONSTANT_BUILDER(GreaterConstant, greater_constant)
+LBANN_DEFINE_BIN_WITH_CONSTANT_BUILDER(GreaterEqualConstant,
+                                       greater_equal_constant)
+LBANN_DEFINE_BIN_WITH_CONSTANT_BUILDER(LessConstant, less_constant)
+LBANN_DEFINE_BIN_WITH_CONSTANT_BUILDER(LessEqualConstant, less_equal_constant)
+LBANN_DEFINE_BIN_WITH_CONSTANT_BUILDER(MaxConstant, max_constant)
+LBANN_DEFINE_BIN_WITH_CONSTANT_BUILDER(MinConstant, min_constant)
+LBANN_DEFINE_BIN_WITH_CONSTANT_BUILDER(NotEqualConstant, not_equal_constant)
+LBANN_DEFINE_BIN_WITH_CONSTANT_BUILDER(Scale, scale)
+LBANN_DEFINE_BIN_WITH_CONSTANT_BUILDER(SubtractConstant, subtract_constant)
+
+#undef LBANN_DEFINE_BIN_WITH_CONSTANT_BUILDER
 
 LBANN_DEFINE_OPERATOR_BUILDER(acos, Acos)
 LBANN_DEFINE_OPERATOR_BUILDER(acosh, Acosh)
