@@ -474,11 +474,20 @@ public:
   virtual void write_proto(lbann_data::Layer* proto) const;
 
 #ifdef LBANN_HAS_ONNX
-  /** @brief Add layer specific data to onnx graph */
+  /** @brief Add layer specific data to onnx graph
+   *  Fills layer specific data in onnx nodes. Needs to
+   *  be overridden by layers that cannot be represented
+   *  by a single onnx operator type.
+   */
   virtual void fill_onnx_node(onnx::GraphProto& graph) const;
 
 private:
-  //** @brief Get ONNX operator type */
+  /** @brief Get ONNX operator type
+   *  Unsupported layers and layers that cannot be represented
+   *  by a single ONNX operator type will throw an LBANN error.
+   *  The operator types for these layers must be included
+   *  manually in the overridden fill_onnx_node() function.
+   */
   virtual std::string get_onnx_op_type() const;
 #endif // LBANN_HAS_ONNX
 
