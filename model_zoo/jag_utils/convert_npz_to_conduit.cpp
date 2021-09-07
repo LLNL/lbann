@@ -46,10 +46,23 @@ int main(int argc, char *argv[]) {
 
   try {
     // Initialize options db (this parses the command line)
-    options *opts = options::get();
-    opts->init(argc, argv);
+    auto& arg_parser = global_argument_parser();
+    construct_std_options();
+    construct_jag_options();
+		try {
+			arg_parser.parse(argc, argv);
+		}
+		catch (std::exception const& e) {
+			auto guessed_rank = guess_global_rank();
+			if (guessed_rank <= 0)
+				// Cannot call `El::ReportException` because MPI hasn't been
+				// initialized yet.
+				std::cerr << "Error during argument parsing:\n\ne.what():\n\n  "
+									<< e.what() << "\n\nProcess terminating." << std::endl;
+			std::terminate();
+		}
 
-    if (! opts->has_string("filelist")) {
+    if (arg_parser.get<std::string>(FILELIST) == "") {
       if (master) {
         std::cerr << "usage: " << argv[1] << " --filelist=<string>\n"
                   << "function: converts npz files to conduit\n";
@@ -58,7 +71,7 @@ int main(int argc, char *argv[]) {
       return EXIT_FAILURE;
     }
 
-    const std::string input_fn = opts->get_string("filelist");
+    const std::string input_fn = arg_parser.get<std::string>(FILELIST);
 
     int rank = comm->get_rank_in_world();
     int np = comm->get_procs_in_world();

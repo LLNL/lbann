@@ -63,7 +63,7 @@ int guess_global_rank() noexcept
 
 int main(int argc, char *argv[]) {
   auto& arg_parser = global_argument_parser();
-  construct_std_options();
+  construct_all_options();
 
   try {
     arg_parser.parse(argc, argv);
@@ -86,17 +86,15 @@ int main(int argc, char *argv[]) {
     // Split MPI into trainers
     allocate_trainer_resources(comm.get());
 
-    // Initialize options db (this parses the command line)
-    options *opts = options::get();
-    opts->init(argc, argv);
-    if (opts->has_string("h") or opts->has_string("help") or argc == 1) {
-      print_help(*comm);
+    if (arg_parser.help_requested() or argc == 1) {
+      if (master)
+        std::cout << arg_parser << std::endl;
       return EXIT_SUCCESS;
     }
 
     std::ostringstream err;
 
-    auto pbs = protobuf_utils::load_prototext(master, argc, argv);
+    auto pbs = protobuf_utils::load_prototext(master);
     // Optionally over-ride some values in the prototext for each model
     for(size_t i = 0; i < pbs.size(); i++) {
       get_cmdline_overrides(*comm, *(pbs[i]));
@@ -106,7 +104,7 @@ int main(int argc, char *argv[]) {
     lbann_data::Trainer *pb_trainer = pb.mutable_trainer();
 
     // Construct the trainer
-    auto& trainer = construct_trainer(comm.get(), pb_trainer, *(pbs[0]), opts);
+    auto& trainer = construct_trainer(comm.get(), pb_trainer, *(pbs[0]));
 
     thread_pool& io_thread_pool = trainer.get_io_thread_pool();
 
@@ -117,7 +115,7 @@ int main(int argc, char *argv[]) {
     }
 
     auto model_1 = build_model_from_prototext(argc, argv, pb_trainer, *(pbs[0]),
-                                              comm.get(), opts, io_thread_pool,
+                                              comm.get(), io_thread_pool,
                                               trainer.get_callbacks_with_ownership(),
                                               training_dr_linearized_data_size); //ae
     std::unique_ptr<model>
@@ -127,14 +125,14 @@ int main(int argc, char *argv[]) {
 
     if (pbs.size() > 1) {
       model_2 = build_model_from_prototext(argc, argv, pb_trainer, *(pbs[1]),
-                                           comm.get(), opts, io_thread_pool,
+                                           comm.get(), io_thread_pool,
                                            trainer.get_callbacks_with_ownership(),
                                            training_dr_linearized_data_size);
     }
 
     if (pbs.size() > 2) {
       model_3 = build_model_from_prototext(argc, argv, pb_trainer, *(pbs[2]),
-                                           comm.get(), opts, io_thread_pool,
+                                           comm.get(), io_thread_pool,
                                            trainer.get_callbacks_with_ownership(),
                                            training_dr_linearized_data_size);
     }

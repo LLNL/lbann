@@ -48,77 +48,6 @@
 
 namespace lbann {
 
-void construct_std_options() {
-  auto& arg_parser = global_argument_parser();
-  arg_parser.add_option(MAX_RNG_SEEDS_DISPLAY,
-                        {"--rng_seeds_per_trainer_to_display"},
-                        utils::ENV("LBANN_RNG_SEEDS_PER_TRAINER_TO_DISPLAY"),
-                        "Limit how many random seeds LBANN should display "
-                        "from each trainer",
-                        2);
-  arg_parser.add_option(NUM_IO_THREADS,
-                        {"--num_io_threads"},
-                        utils::ENV("LBANN_NUM_IO_THREADS"),
-                        "Number of threads available to both I/O and "
-                        "initial data transformations for each rank.",
-                        64);
-  arg_parser.add_option(NUM_TRAIN_SAMPLES,
-                        {"--num_train_samples"},
-                        utils::ENV("LBANN_NUM_TRAIN_SAMPLES"),
-                        "Set the number of training samples to ingest.",
-                        0);
-  arg_parser.add_option(NUM_VALIDATE_SAMPLES,
-                        {"--num_validate_samples"},
-                        utils::ENV("LBANN_NUM_VALIDATE_SAMPLES"),
-                        "Set the number of validate samples to ingest.",
-                        0);
-  arg_parser.add_option(NUM_TEST_SAMPLES,
-                        {"--num_test_samples"},
-                        utils::ENV("LBANN_NUM_TEST_SAMPLES"),
-                        "Set the number of testing samples to ingest.",
-                        0);
-  arg_parser.add_flag(ALLOW_GLOBAL_STATISTICS,
-                      {"--ltfb_allow_global_statistics"},
-                      utils::ENV("LBANN_LTFB_ALLOW_GLOBAL_STATISTICS"),
-                      "Allow the print_statistics callback to report "
-                      "global (inter-trainer) summary statistics.");
-  arg_parser.add_option(PROCS_PER_TRAINER,
-                        {"--procs_per_trainer"},
-                        utils::ENV("LBANN_PROCS_PER_TRAINER"),
-                        "Number of MPI ranks per LBANN trainer, "
-                        "If the field is not set (or set to 0) then "
-                        " all MPI ranks are assigned to one trainer."
-                        " The number of processes per trainer must "
-                        " evenly divide the total number of MPI ranks. "
-                        " The number of resulting trainers is "
-                        " num_procs / procs_per_trainer.",
-                        0);
-  arg_parser.add_option(TRAINER_GRID_HEIGHT,
-                        {"--trainer_grid_height"},
-                        utils::ENV("LBANN_TRAINER_GRID_HEIGHT"),
-                        "Height of 2D process grid for each trainer. "
-                        "Default grid is approximately square.",
-                        -1);
-  arg_parser.add_option(TRAINER_PRIMARY_GRID_SIZE,
-                        {"--trainer_primary_grid_size"},
-                        utils::ENV("LBANN_TRAINER_PRIMARY_GRID_SIZE"),
-                        "Primary grid size per trainer. "
-                        "Disables Sub-grid parallelism, when it is 0",
-                        0);
-  arg_parser.add_option(TRAINER_CREATE_TWO_MODELS,
-                        {"--trainer_create_two_models"},
-                        utils::ENV("LBANN_TRAINER_CREATE_TWO_MODELS"),
-                        "Create two models (one each for primary and secondary grid). "
-                        "Default is False.",
-                        false);
-  arg_parser.add_option(SMILES_BUFFER_SIZE,
-                        {"--smiles_buffer_size"},
-                        utils::ENV("LBANN_SMILES_BUFFER_SIZE"),
-                        "Size of the read buffer for the SMILES "
-                        "data reader.",
-                        16*1024*1024UL);
-}
-
 // Creates a datareader metadata to get around the need for an actual
 // datareader in inference only mode
 auto mock_dr_metadata(std::vector<int> input_dims,
@@ -171,7 +100,7 @@ int allocate_trainer_resources(lbann_comm *comm) {
       || trainer_grid_height != comm->get_trainer_grid().Height()) {
     comm->split_trainers(procs_per_trainer, trainer_grid_height);
   }
-  
+
   // Split trainer when sub-grid parallelism is enabled
   if(trainer_primary_grid_size > 0) {
     comm->split_trainer_grid(trainer_primary_grid_size, trainer_create_two_models);
@@ -204,11 +133,11 @@ void finalize_trainer() {
 /// Construct a trainer that contains a lbann comm object and threadpool
 trainer& construct_trainer(lbann_comm *comm,
                            lbann_data::Trainer* pb_trainer,
-                           lbann_data::LbannPB &pb,
-                           options *opts) {
+                           lbann_data::LbannPB &pb) {
   if (pb_trainer->num_parallel_readers() > comm->get_procs_per_trainer()) {
     pb_trainer->set_num_parallel_readers(comm->get_procs_per_trainer());
   }
+  auto& arg_parser = global_argument_parser();
 
   // Adjust the number of parallel readers; this may be adjusted
   // after calling split_trainers()
@@ -222,7 +151,7 @@ trainer& construct_trainer(lbann_comm *comm,
   }
 
   // Initalize a per-trainer I/O thread pool
-  std::unique_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(comm, opts, serialized_io);
+  std::unique_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(comm, serialized_io);
 
   // Setup I/O threads
   auto io_threads_per_process = io_thread_pool->get_num_threads();
@@ -252,12 +181,12 @@ trainer& construct_trainer(lbann_comm *comm,
 
   // If the checkpoint directory has been overridden reset it before
   // setting up the trainer
-  if (opts && opts->has_string("ckpt_dir")) {
+  if (arg_parser.get<std::string>(CKPT_DIR) != "") {
     for (auto&& c : global_trainer_->get_callbacks()) {
       {
         auto* cb = dynamic_cast<callback::checkpoint*>(c);
         if(cb != nullptr) {
-          cb->set_checkpoint_dir(opts->get_string("ckpt_dir"));
+          cb->set_checkpoint_dir(arg_parser.get<std::string>(CKPT_DIR));
           if(comm->am_trainer_master()) {
             std::cout << "Setting the checkpoint directory to " << cb->get_checkpoint_dir() << std::endl;
           }
@@ -265,12 +194,12 @@ trainer& construct_trainer(lbann_comm *comm,
       }
     }
   }
-  if (opts && opts->has_string("restart_dir")) {
+  if (arg_parser.get<std::string>(RESTART_DIR) != "") {
     for (auto&& c : global_trainer_->get_callbacks()) {
       {
         auto* cb = dynamic_cast<callback::checkpoint*>(c);
         if(cb != nullptr) {
-          cb->set_restart_dir(opts->get_string("restart_dir"));
+          cb->set_restart_dir(arg_parser.get<std::string>(RESTART_DIR));
           if(comm->am_trainer_master()) {
             std::cout << "Setting the restart directory to " << cb->get_restart_dir() << std::endl;
           }
@@ -344,7 +273,7 @@ trainer& construct_trainer(lbann_comm *comm,
 
   global_trainer_->setup(std::move(io_thread_pool), data_readers);
 
-  if(opts->get_bool("disable_background_io_activity")) {
+  if (arg_parser.get<bool>(DISABLE_BACKGROUND_IO_ACTIVITY)) {
     global_trainer_->allow_background_io_activity(false);
   }
 
@@ -366,7 +295,7 @@ trainer& construct_trainer(lbann_comm *comm,
 }
 
 // Setup I/O thread pool that is shared across all models
-  std::unique_ptr<thread_pool> construct_io_thread_pool(lbann_comm *comm, options *opts, bool serialized_io) {
+  std::unique_ptr<thread_pool> construct_io_thread_pool(lbann_comm *comm, bool serialized_io) {
   int max_io_threads = num_free_cores_per_process(comm);
   // Allow the trainer to override the command-line option or environment variable
   if(serialized_io) {
@@ -396,7 +325,6 @@ std::unique_ptr<model> build_model_from_prototext(
   const lbann_data::Trainer* pb_trainer,
   lbann_data::LbannPB &pb,
   lbann_comm *comm,
-  options *opts,
   thread_pool& io_thread_pool,
   std::vector<std::shared_ptr<callback_base>>& shared_callbacks,
   int training_dr_linearized_data_size) {
@@ -413,7 +341,8 @@ std::unique_ptr<model> build_model_from_prototext(
   save_session(*comm, argc, argv, pb);
 
   // Display how the OpenMP threads are provisioned
-  if (opts->has_string("print_affinity")) {
+  auto& arg_parser = global_argument_parser();
+  if (arg_parser.get<bool>(PRINT_AFFINITY)) {
     display_omp_setup();
   }
 
@@ -431,12 +360,12 @@ std::unique_ptr<model> build_model_from_prototext(
 
   // If the checkpoint directory has been overridden reset it before
   // setting up the model
-  if (opts && opts->has_string("ckpt_dir")) {
+  if (arg_parser.get<std::string>(CKPT_DIR) != "") {
     for (auto&& c : ret_model->get_callbacks()) {
       {
         auto* cb = dynamic_cast<callback::dump_weights*>(c);
         if(cb != nullptr) {
-          cb->set_target_dir(opts->get_string("ckpt_dir"));
+          cb->set_target_dir(arg_parser.get<std::string>(CKPT_DIR));
           if(comm->am_trainer_master()) {
             std::cout << "Setting the dump weights directory to " << cb->get_target_dir() << std::endl;
           }
@@ -445,7 +374,7 @@ std::unique_ptr<model> build_model_from_prototext(
       {
         auto* cb = dynamic_cast<callback::save_model*>(c);
         if(cb != nullptr) {
-          cb->set_target_dir(opts->get_string("ckpt_dir"));
+          cb->set_target_dir(arg_parser.get<std::string>(CKPT_DIR));
           if(comm->am_trainer_master()) {
             std::cout << "Setting the dump weights directory to " << cb->get_target_dir() << std::endl;
           }
@@ -454,7 +383,7 @@ std::unique_ptr<model> build_model_from_prototext(
     }
   }
 
-  if (opts && opts->has_string("load_model_weights_dir")) {
+  if (arg_parser.get<std::string>(LOAD_MODEL_WEIGHTS_DIR) != "") {
     callback::load_model* cb = nullptr;
     for (auto&& c : ret_model->get_callbacks()) {
       cb = dynamic_cast<callback::load_model*>(c);
@@ -464,8 +393,8 @@ std::unique_ptr<model> build_model_from_prototext(
     }
 
     std::string active_load_model_dir;
-    std::string load_model_dir = opts->get_string("load_model_weights_dir");
-    if(opts->get_bool("load_model_weights_dir_is_complete")) {
+    std::string load_model_dir = arg_parser.get<std::string>(LOAD_MODEL_WEIGHTS_DIR);
+    if(arg_parser.get<bool>(LOAD_MODEL_WEIGHTS_DIR_IS_COMPLETE)) {
       active_load_model_dir = load_model_dir;
     }else {
       size_t epochLast = std::numeric_limits<size_t>::max();;
@@ -495,7 +424,7 @@ std::unique_ptr<model> build_model_from_prototext(
       }
 #endif
     }else {
-      cb->add_dir(opts->get_string("load_model_weights_dir"));
+      cb->add_dir(arg_parser.get<std::string>(LOAD_MODEL_WEIGHTS_DIR));
     }
   }
 

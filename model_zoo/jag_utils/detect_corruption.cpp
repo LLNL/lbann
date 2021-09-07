@@ -54,17 +54,30 @@ int main(int argc, char *argv[]) {
   const int np = comm->get_procs_in_world();
 
   try {
-    options *opts = options::get();
-    opts->init(argc, argv);
+    auto& arg_parser = global_argument_parser();
+    construct_std_options();
+    construct_jag_options();
+    try {
+      arg_parser.parse(argc, argv);
+    }
+    catch (std::exception const& e) {
+      auto guessed_rank = guess_global_rank();
+      if (guessed_rank <= 0)
+        // Cannot call `El::ReportException` because MPI hasn't been
+        // initialized yet.
+        std::cerr << "Error during argument parsing:\n\ne.what():\n\n  "
+                  << e.what() << "\n\nProcess terminating." << std::endl;
+      std::terminate();
+    }
 
     // sanity check invocation
-    if (!opts->has_string("filelist")) {
+    if (arg_parser.get<std::string>(FILELIST) == "") {
       if (master) {
         throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: usage: " + argv[0] + " --filelist=<string> \nwhere: 'filelist' is a file that contains the fully qualified filenames of the conduit *'bundle' files that are to be inspected.\nfunction: attemptsto detect and report currupt files and/or samples within those files.");
       }
     }
 
-    const std::string fn = opts->get_string("filelist");
+    const std::string fn = arg_parser.get<std::string>(FILELIST);
     std::vector<std::string> filenames;
     read_filelist(comm.get(), fn, filenames);
 

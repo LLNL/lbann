@@ -40,6 +40,7 @@
 #include "lbann/utils/options.hpp"
 #include "lbann/transforms/transform_pipeline.hpp"
 #include "lbann/utils/distconv.hpp"
+#include "lbann/utils/argument_parser.hpp"
 
 #include <cassert>
 #include <algorithm>
@@ -76,7 +77,7 @@ class generic_data_reader {
    * ctor
    */
   generic_data_reader(bool shuffle = true) :
-    m_verbose(options::get()->get_bool("verbose")),
+    m_verbose(global_argument_parser().get<bool>(VERBOSE)),
     m_data_store(nullptr),
     m_comm(nullptr),
     m_mini_batch_size(0), m_current_pos(0),

@@ -56,17 +56,30 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  options *opts = options::get();
-  opts->init(argc, argv);
+	auto& arg_parser = global_argument_parser();
+	construct_std_options();
+	construct_jag_options();
+	try {
+		arg_parser.parse(argc, argv);
+	}
+	catch (std::exception const& e) {
+		auto guessed_rank = guess_global_rank();
+		if (guessed_rank <= 0)
+			// Cannot call `El::ReportException` because MPI hasn't been
+			// initialized yet.
+			std::cerr << "Error during argument parsing:\n\ne.what():\n\n  "
+								<< e.what() << "\n\nProcess terminating." << std::endl;
+		std::terminate();
+	}
 
   // sanity check invocation
-  if (!opts->has_string("filename")) {
+  if (arg_parser.get<std::string>(FILENAME) == "") {
     if (master) {
       throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: usage: " + argv[0] + " --filename=<string>\ne.g: --filename=/p/lscratchh/brainusr/datasets/conduit_test/from_100M.bundle");
     }
   }
 
-    const std::string filename = opts->get_string("filename");
+    const std::string filename = arg_parser.get<std::string>(FILENAME);
 
     // get lists of inputs and scalars to read from file
     std::unordered_set<std::string> input_names;

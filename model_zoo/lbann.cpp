@@ -68,19 +68,7 @@ int guess_global_rank() noexcept
 int main(int argc, char* argv[])
 {
   auto& arg_parser = global_argument_parser();
-  construct_std_options();
-  auto use_cudnn_tensor_ops =
-    arg_parser.add_flag("use cudnn tensor ops",
-                        {"--use-cudnn-tensor-ops"},
-                        utils::ENV("LBANN_USE_CUDNN_TENSOR_OPS"),
-                        "Set the default cuDNN math mode to use "
-                        "Tensor Core operations when available.");
-  auto use_cublas_tensor_ops =
-    arg_parser.add_flag("use cublas tensor ops",
-                        {"--use-cublas-tensor-ops"},
-                        utils::ENV("LBANN_USE_CUBLAS_TENSOR_OPS"),
-                        "Set the default cuBLAS math mode to use "
-                        "Tensor Core operations when available.");
+  construct_all_options();
   try {
     arg_parser.parse(argc, argv);
   }
@@ -108,17 +96,15 @@ int main(int argc, char* argv[])
   }
 
   try {
-    // Initialize options db (this parses the command line)
-    options* opts = options::get();
-    opts->init(argc, argv);
-    if (opts->has_string("h") or opts->has_string("help") or argc == 1) {
+    if (arg_parser.help_requested() or argc == 1) {
       if (master)
         std::cout << arg_parser << std::endl;
-      print_help(*comm);
       return EXIT_SUCCESS;
     }
 
     // Setup cuDNN and cuBLAS defaults
+    auto use_cudnn_tensor_ops = arg_parser.get<bool>(USE_CUDNN_TENSOR_OPS);
+    auto use_cublas_tensor_ops = arg_parser.get<bool>(USE_CUBLAS_TENSOR_OPS);
     if (master) {
       std::cout << "Default tensor core settings:\n"
                 << "   cuDNN: " << (use_cudnn_tensor_ops ? "" : "NOT ")
@@ -138,10 +124,10 @@ int main(int argc, char* argv[])
       El::gpu_blas::RequestTensorOperations();
 #endif // LBANN_HAS_CUDA
 
-    // this must be called after call to opts->init();
-    if (!opts->get_bool("disable_signal_handler")) {
+    // this must be called after call to arg_parser.parse();
+    if (!arg_parser.get<bool>(DISABLE_SIGNAL_HANDLER)) {
       std::string file_base =
-        (opts->get_bool("stack_trace_to_file") ? "stack_trace" : "");
+        (arg_parser.get<bool>(STACK_TRACE_TO_FILE) ? "stack_trace" : "");
       stack_trace::register_signal_handler(file_base);
     }
 
@@ -152,11 +138,11 @@ int main(int argc, char* argv[])
     allocate_trainer_resources(comm.get());
 
     int trainer_rank = 0;
-    if (opts->get_bool("generate_multi_proto")) {
+    if (arg_parser.get<bool>(GENERATE_MULTI_PROTO)) {
       trainer_rank = comm->get_trainer_rank();
     }
     // Load the prototexts specificed on the command line
-    auto pbs = protobuf_utils::load_prototext(master, argc, argv, trainer_rank);
+    auto pbs = protobuf_utils::load_prototext(master, trainer_rank);
     // Optionally over-ride some values in the prototext for each model
     for (size_t i = 0; i < pbs.size(); i++) {
       get_cmdline_overrides(*comm, *(pbs[i]));
@@ -167,7 +153,7 @@ int main(int argc, char* argv[])
 
     // Construct the trainer
     auto& trainer =
-      construct_trainer(comm.get(), pb_trainer, pb, opts);
+      construct_trainer(comm.get(), pb_trainer, pb);
 
     thread_pool& io_thread_pool = trainer.get_io_thread_pool();
 
@@ -185,16 +171,15 @@ int main(int argc, char* argv[])
                                  pb_trainer,
                                  pb,
                                  comm.get(),
-                                 opts,
                                  io_thread_pool,
                                  trainer.get_callbacks_with_ownership(),
                                  training_dr_linearized_data_size);
 
-    if (opts->has_string("create_tarball")) {
+    if (arg_parser.get<bool>(CREATE_TARBALL)) {
       return EXIT_SUCCESS;
     }
 
-    if (!opts->get_bool("exit_after_setup")) {
+    if (!arg_parser.get<bool>(EXIT_AFTER_SETUP)) {
 
       // Train model
       trainer.train(model.get(), pb_model->num_epochs());
@@ -221,7 +206,7 @@ int main(int argc, char* argv[])
     }
   }
   catch (exception& e) {
-    if (options::get()->get_bool("stack_trace_to_file")) {
+    if (arg_parser.get<bool>(STACK_TRACE_TO_FILE)) {
       std::ostringstream ss("stack_trace");
       const auto& rank = get_rank_in_world();
       if (rank >= 0) {

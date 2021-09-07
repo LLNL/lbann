@@ -35,20 +35,6 @@ namespace lbann {
 
 const int lbann_default_random_seed = 42;
 
-#define MAX_RNG_SEEDS_DISPLAY "RNG seeds per trainer to display"
-#define NUM_IO_THREADS "Num. IO threads"
-#define NUM_TRAIN_SAMPLES "Num train samples"
-#define NUM_VALIDATE_SAMPLES "Num validate samples"
-#define NUM_TEST_SAMPLES "Num test samples"
-#define ALLOW_GLOBAL_STATISTICS "LTFB Allow global statistics"
-#define PROCS_PER_TRAINER "Processes per trainer"
-#define TRAINER_GRID_HEIGHT "Height of 2D process grid for each trainer"
-#define TRAINER_PRIMARY_GRID_SIZE "Primary Grid Size per trainer"
-#define TRAINER_CREATE_TWO_MODELS "Create two models in Sub-grid parallelism"
-#define SMILES_BUFFER_SIZE "SMILES Data Reader buffer size"
-
-void construct_std_options();
-
 /** @brief Loads a trained model from checkpoint for inference only
  * @param[in] lc An LBANN Communicator
  * @param[in] cp_dir The model checkpoint directory
@@ -84,17 +70,15 @@ int allocate_trainer_resources(lbann_comm *comm);
 // to this global trainer.
 trainer& construct_trainer(lbann_comm *comm,
                            lbann_data::Trainer* pb_trainer,
-                           lbann_data::LbannPB &pb,
-                           options *opts);
+                           lbann_data::LbannPB &pb);
 
-std::unique_ptr<thread_pool> construct_io_thread_pool(lbann_comm *comm, options *opts, bool serialized_io);
+std::unique_ptr<thread_pool> construct_io_thread_pool(lbann_comm *comm, bool serialized_io);
 
 std::unique_ptr<model> build_model_from_prototext(
     int argc, char **argv,
     const lbann_data::Trainer* pb_trainer,
     lbann_data::LbannPB &pb,
     lbann_comm *comm,
-    options *opts,
     thread_pool& io_thread_pool,
     std::vector<std::shared_ptr<callback_base>>& shared_callbacks,
     int training_dr_linearized_data_size);

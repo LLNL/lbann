@@ -36,7 +36,7 @@ using namespace lbann;
 
 int main(int argc, char *argv[]) {
   auto& arg_parser = global_argument_parser();
-  construct_std_options();
+  construct_all_options();
 
   try {
     arg_parser.parse(argc, argv);
@@ -49,7 +49,5 @@ int main(int argc, char *argv[]) {
   }
   // Output help message from the arg_parser
   std::cout << arg_parser << std::endl;
-  // Output manual help message
-  print_help(std::cerr);
   return EXIT_SUCCESS;
 }

@@ -492,7 +492,7 @@ inline void sample_list<sample_name_t>
 ::all_gather_archive(const std::string &archive,
                      std::vector<std::string>& gathered_archive,
                      lbann_comm& comm) {
-  if (!options::get()->get_bool("all_gather_old")) {
+  if (!global_argument_parser().get<bool>(ALL_GATHER_OLD)) {
     all_gather_archive_new(archive, gathered_archive, comm);
     return;
   }
@@ -561,11 +561,6 @@ inline void sample_list<sample_name_t>
 
   int me = comm.get_rank_in_trainer();
   int np = comm.get_procs_per_trainer();
-
-  size_t g = 0;
-  for (auto t : packed_sizes) {
-    g += t;
-  }
 
   for (int p=0; p<np; p++) {
     gathered_archive[p].resize(packed_sizes[p]);

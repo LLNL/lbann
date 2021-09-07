@@ -81,7 +81,7 @@ TEST_CASE("functional black-box", "[.filesystem][data reader][mpi][smiles]")
   auto& comm = unit_test::utilities::current_world_comm();
   lbann::init_random(0, 2);
   lbann::init_data_seq_random(42);
-  lbann::construct_std_options();
+  lbann::construct_all_options();
 
   //make non-const copies
   std::string smiles_reader_prototext(smiles_reader_prototext_const);
@@ -198,12 +198,12 @@ TEST_CASE("functional black-box", "[.filesystem][data reader][mpi][smiles]")
   }
 
   // set up the options that the reader expects
-  lbann::options *opts = lbann::options::get();
-  opts->set_option("use_data_store", true);
-  opts->set_option("preload_data_store", true);
-  opts->set_option("sequence_length", Max_seq_len);
-  opts->set_option("vocab", vocab_fn);
-  opts->set_option("prototext", prototext_fn);
+  // TODO MRW
+  //opts->set_option("use_data_store", true);
+  //opts->set_option("preload_data_store", true);
+  //opts->set_option("sequence_length", Max_seq_len);
+  //opts->set_option("vocab", vocab_fn);
+  //opts->set_option("prototext", prototext_fn);
 
   // instantiate and load the data readers
   std::map<lbann::execution_mode, lbann::generic_data_reader*> data_readers;

@@ -41,6 +41,39 @@ namespace dnn_lib
 
 using namespace cudnn;
 
+inline size_t
+get_fwd_conv_workspace_size(FilterDescriptor const& wDesc,
+                            TensorDescriptor const& xDesc,
+                            ConvolutionDescriptor const& convDesc,
+                            TensorDescriptor const& yDesc,
+                            El::SyncInfo<El::Device::GPU> const& si)
+{
+  size_t size = 1 << 30; // @todo Allocate largest free block
+  return size;
+}
+
+inline size_t
+get_bwd_data_conv_workspace_size(TensorDescriptor const& dyDesc,
+                                 FilterDescriptor const& wDesc,
+                                 ConvolutionDescriptor const& convDesc,
+                                 TensorDescriptor const& dxDesc,
+                                 El::SyncInfo<El::Device::GPU> const& si)
+{
+  size_t size = 1 << 30; // @todo Allocate largest free block
+  return size;
+}
+
+inline size_t
+get_bwd_weights_conv_workspace_size(TensorDescriptor const& dyDesc,
+                                    TensorDescriptor const& xDesc,
+                                    ConvolutionDescriptor const& convDesc,
+                                    FilterDescriptor const& dwDesc,
+                                    El::SyncInfo<El::Device::GPU> const& si)
+{
+  size_t size = 1 << 30; // @todo Allocate largest free block
+  return size;
+}
+
 template <typename TensorDataType, typename ScalarParameterType>
 void convolution_forward(
   ScalarParameterType const& alpha_in,

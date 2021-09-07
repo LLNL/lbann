@@ -70,8 +70,11 @@ void data_coordinator::setup(thread_pool& io_thread_pool, int max_mini_batch_siz
     calculate_num_iterations_per_epoch(max_mini_batch_size, dr.second);
   }
 
-  options *opts = options::get();
-  if (opts->get_bool("use_data_store") || opts->get_bool("preload_data_store") || opts->get_bool("data_store_cache") || opts->has_string("data_store_spill")) {
+  auto& arg_parser = global_argument_parser();
+  if (arg_parser.get<bool>(USE_DATA_STORE) ||
+      arg_parser.get<bool>(PRELOAD_DATA_STORE) ||
+      arg_parser.get<bool>(DATA_STORE_CACHE) ||
+      arg_parser.get<std::string>(DATA_STORE_SPILL) != "") {
     bool master = m_comm->am_world_master();
     if (master) {
       std::cout << "\nUSING DATA STORE!\n\n";

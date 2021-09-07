@@ -58,17 +58,30 @@ void test_jag(string filename);
 int main(int argc, char *argv[]) {
   world_comm_ptr comm = initialize(argc, argv);
 
-  options *opts = options::get();
-  opts->init(argc, argv);
+	auto& arg_parser = global_argument_parser();
+	construct_std_options();
+	construct_jag_options();
+	try {
+		arg_parser.parse(argc, argv);
+	}
+	catch (std::exception const& e) {
+		auto guessed_rank = guess_global_rank();
+		if (guessed_rank <= 0)
+			// Cannot call `El::ReportException` because MPI hasn't been
+			// initialized yet.
+			std::cerr << "Error during argument parsing:\n\ne.what():\n\n  "
+								<< e.what() << "\n\nProcess terminating." << std::endl;
+		std::terminate();
+	}
 
-  if (!(opts->has_string("filelist") && opts->has_int("jag"))) {
-    LBANN_ERROR("usage: test_speed_hydra_ --filelist=<string> --jag=<0|1>");
+  if (arg_parser.get<std::string>(FILELIST) == "") {
+    LBANN_ERROR("usage: test_speed_hydra_ --filelist=<string> --jag");
   }
 
-  if (opts->get_int("jag")) {
-    test_jag(opts->get_string("filelist"));
+  if (arg_parser.get<bool>(JAG)) {
+    test_jag(arg_parser.get<std::string>(FILELIST));
   } else {
-    test_hydra(opts->get_string("filelist"));
+    test_hydra(arg_parser.get<std::string>(FILELIST));
   }
   return EXIT_SUCCESS;
 }
