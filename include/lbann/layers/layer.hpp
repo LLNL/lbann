@@ -482,22 +482,12 @@ public:
   virtual void fill_onnx_node(onnx::GraphProto& graph) const;
 
 private:
-
   /** @brief Get ONNX operator type
    *  Unsupported layers and layers that cannot be represented
    *  by a single ONNX operator type will throw an LBANN error.
    *  The operator types for these layers must be included
    *  manually in the overridden fill_onnx_node() function.
    */
-  virtual std::string get_onnx_op_type() const;
-#endif // LBANN_HAS_ONNX
-
-public:
-
-  //** @brief Get ONNX operator type */
-  virtual std::string get_onnx_op_type() const;
-
-  //** @brief Get ONNX operator type */
   virtual std::string get_onnx_op_type() const;
 #endif // LBANN_HAS_ONNX
 
