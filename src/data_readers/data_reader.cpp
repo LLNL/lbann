@@ -159,11 +159,11 @@ int lbann::generic_data_reader::fetch(std::map<data_field_type, CPUMat*>& input_
     set_jag_variables(mb_size);
   }
 
-  /// BVE FIXME - for the time being certain data fields, such as the
-  /// labels have to be zeroed out because they will typically only
-  /// set the single index corresponding to the categorical value.
-  /// With general data fields this will have to be the responsibilty
-  /// of the concrete data reader.
+  // BVE FIXME - for the time being certain data fields, such as the
+  // labels have to be zeroed out because they will typically only
+  // set the single index corresponding to the categorical value.
+  // With general data fields this will have to be the responsibilty
+  // of the concrete data reader.
   if (has_labels() && input_buffers.find(INPUT_DATA_TYPE_LABELS) != input_buffers.end()) {
     auto& buf = input_buffers[INPUT_DATA_TYPE_LABELS];
     El::Zeros_seq(*buf, buf->Height(), buf->Width());
@@ -204,44 +204,10 @@ int lbann::generic_data_reader::fetch(std::map<data_field_type, CPUMat*>& input_
   }
 
   return mb_size;
-    // BVE FIXME
-
-    // int num_samples_fetched = fetch_data(*(buf), indices_fetched);
-    // // Fetch label is applicable
-    // buf = input_buffers[input_data_type::LABELS];
-    // if(has_labels() && buf != nullptr && buf->Height() != 0 && buf->Width()
-    // != 0) {
-    //   if(input_buffers[input_data_type::LABELS] == nullptr) {
-    //     LBANN_ERROR("LABELS is not defined");
-    //   }
-    //   int num_labels_fetched =
-    //   fetch_labels(*(input_buffers[input_data_type::LABELS]));
-    //   if(num_labels_fetched != num_samples_fetched) {
-    //     LBANN_ERROR("Number of samples: ",
-    //                 std::to_string(num_samples_fetched),
-    //                 " does not match the number of labels: ",
-    //                 std::to_string(num_labels_fetched));
-    //   }
-    // }
-    // // Fetch response is applicable
-    // buf = input_buffers[input_data_type::RESPONSES];
-    // if(has_responses() && buf != nullptr && buf->Height() != 0 &&
-    // buf->Width() != 0) {
-    //   int num_responses_fetched =
-    //   fetch_responses(*(input_buffers[input_data_type::RESPONSES]));
-    //   if(num_responses_fetched != num_samples_fetched) {
-    //     LBANN_ERROR("Number of samples: ",
-    //                 std::to_string(num_samples_fetched),
-    //                 " does not match the number of responses: ",
-    //                 std::to_string(num_responses_fetched));
-    //   }
-    // }
-    //  return num_samples_fetched;
 }
 
 bool lbann::generic_data_reader::fetch_data_block(std::map<data_field_type, CPUMat*>& input_buffers, El::Int block_offset, El::Int block_stride, El::Int mb_size, El::Matrix<El::Int>& indices_fetched) {
   locked_io_rng_ref io_rng = set_io_generators_local_index(block_offset);
-  //  auto buf = input_buffers[input_data_type::SAMPLES];
 
   //  CPUMat& X
   for (int s = block_offset; s < mb_size; s+=block_stride) {
@@ -249,12 +215,8 @@ bool lbann::generic_data_reader::fetch_data_block(std::map<data_field_type, CPUM
     int index = m_shuffled_indices[n];
     indices_fetched.Set(s, 0, index);
 
-    //    for (auto& data_field : m_active_data_fields) {
     for (auto& [data_field, buf] : input_buffers) {
       bool valid = false;
-      // std::cout << "data coordinator has the following active fields "
-      //           << to_string(data_field) << std::endl;
-      // input_data_type data_field_hack;
       if (data_field == INPUT_DATA_TYPE_SAMPLES) {
         if (buf == nullptr || buf->Height() == 0 || buf->Width() == 0) {
           LBANN_ERROR(
@@ -294,11 +256,6 @@ bool lbann::generic_data_reader::fetch_data_block(std::map<data_field_type, CPUM
           LBANN_ERROR("invalid datum (index ", std::to_string(index), ")");
         }
       }
-      // else {
-      //   LBANN_ERROR("Unknown data_field_type value provided: "/* +
-      //                                                            data_field*/);
-      // }
-      // bool valid = fetch_datum(X, index, s);
     }
 
   }

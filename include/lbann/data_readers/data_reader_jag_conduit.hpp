@@ -172,12 +172,6 @@ class data_reader_jag_conduit : public generic_data_reader {
   bool has_list_per_trainer() const override { return m_list_per_trainer; }
 
 
-  // /// Fetch data of a mini-batch or reuse it from the cache of the leading reader
-  // int fetch_data(CPUMat& X, El::Matrix<El::Int>& indices_fetched) override;
-  // /// Fetch responses of a mini-batch or reuse it from the cache of the leading reader
-  // int fetch_responses(CPUMat& Y) override;
-  // /// Fetch labels of a mini-batch or reuse it from the cache of the leading reader
-  // int fetch_labels(CPUMat& Y) override;
 
   /// Return the number of measurement views
   unsigned int get_num_img_srcs() const;
@@ -282,11 +276,6 @@ class data_reader_jag_conduit : public generic_data_reader {
     create_datum_views(CPUMat& X, const std::vector<size_t>& sizes, const int mb_idx) const;
 
   /// Export cached data minibatch
-  // int reuse_data(CPUMat& X);
-  // /// Export cached responses minibatch
-  // int reuse_responses(CPUMat& Y);
-  // /// Export cached labels minibatch
-  // int reuse_labels(CPUMat& Y);
 
   bool fetch(CPUMat& X, int data_id, conduit::Node& sample, int mb_idx, int tid,
              const variable_t vt, const std::string tag);

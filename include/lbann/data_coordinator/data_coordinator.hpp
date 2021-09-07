@@ -292,10 +292,8 @@ class data_coordinator {
    */
   long get_linearized_size(data_field_type const& data_field) const {
     long linearized_size = -1;
-    generic_data_reader *dr;
     for(auto mode : execution_mode_iterator()) {
-      dr = get_data_reader(mode);
-      if (dr != nullptr) {
+      if (generic_data_reader const* const dr = get_data_reader(mode)) {
         long tmp_size = dr->get_linearized_size(data_field);
         if (linearized_size != -1 && linearized_size != tmp_size) {
           LBANN_ERROR("data_coordinator: ", to_string(mode),

@@ -74,7 +74,8 @@ TEST_CASE("Synthetic data reader public API tests",
   io_thread_pool->launch_pinned_threads(1, 1);
 
   std::set<std::string> active_data_fields = {"samples"};
-  active_data_fields.insert(GENERATE("labels", "responses"));
+  active_data_fields.insert(GENERATE(std::string("labels"),
+                                     std::string("responses")));
   auto s = GENERATE(range(1, 11));
   El::Int num_samples = s;
   std::vector<int> dims = {s,s};;

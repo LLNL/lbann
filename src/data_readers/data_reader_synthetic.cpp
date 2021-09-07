@@ -36,7 +36,6 @@ namespace lbann {
 namespace {
 
 void fill_matrix(CPUMat& mat) {
-  //  std::uniform_real_distribution<DataType> dist(DataType(0), DataType(1));
   std::normal_distribution<DataType> dist(DataType(0), DataType(1));
   auto& gen = get_fast_io_generator();
   const El::Int height = mat.Height();  // Width is 1.
