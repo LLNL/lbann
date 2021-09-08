@@ -84,13 +84,7 @@ public:
   template <class Archive> void serialize( Archive & ar );
 
   /** @brief Create a data parallel distributed matrix to hold the input data for the field */
-  void initialize_buffer_for_data_field(data_field_type const data_field, lbann_comm *comm) {
-    m_input_buffers[data_field] = make_unique<StarVCMatDT<TensorDataType, El::Device::CPU>>(comm->get_trainer_grid());
-#if defined(LBANN_HAS_GPU)
-    // Pin the memory so that we get efficient GPU data transfer
-    m_input_buffers[data_field]->Matrix().SetMemoryMode(1);
-#endif // LBANN_HAS_GPU
-  }
+  void initialize_buffer_for_data_field(data_field_type const data_field, lbann_comm *comm);
 
   void set_fetch_data_in_background(bool flag) { m_fetch_data_in_background = flag; }
 
