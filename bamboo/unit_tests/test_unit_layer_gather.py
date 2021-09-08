@@ -67,7 +67,7 @@ def construct_model(lbann):
     # Input data
     # Note: Sum with a weights layer so that gradient checking will
     # verify that error signals are correct.
-    x = lbann.Identity(lbann.Input(data_field='samples'))
+    x = lbann.Input(data_field='samples')
     x_slice = lbann.Slice(
         x,
         slice_points=tools.str_list([0,input_size,input_size+output_size]),
