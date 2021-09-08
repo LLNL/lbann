@@ -21,6 +21,7 @@ def slice_graph_data(input_layer,
     """
     
     slice_points = []
+    slice_points.append(0)
 
     # Slice points for node features
     
@@ -78,8 +79,8 @@ def slice_graph_data(input_layer,
     cov_adj_sources = lbann.Identity(sliced_input, name="Covalent_Adj_sources_input")
     cov_adj_targets = lbann.Identity(sliced_input, name="Covalent_Adj_targets_input")
 
-    cov_adj_sources = lbann.Reshape(cov_adj_sources, dims=str_list([num_cov_edges]), names="Covalent_Adj_sources")
-    cov_adj_targets = lbann.Reshape(cov_adj_targets, dims=str_list([num_cov_edges]), names="Covalent_Adj_targets")
+    cov_adj_sources = lbann.Reshape(cov_adj_sources, dims=str_list([num_cov_edges]), name="Covalent_Adj_sources")
+    cov_adj_targets = lbann.Reshape(cov_adj_targets, dims=str_list([num_cov_edges]), name="Covalent_Adj_targets")
 
     noncov_adj_mat_sources = lbann.Reshape(lbann.Identity(sliced_input), dims=str_list([num_non_cov_edges]), name="Noncovalent_adj_sources")
     noncov_adj_mat_targets = lbann.Reshape(lbann.Identity(sliced_input), dims=str_list([num_non_cov_edges]), name="Noncovalent_adj_targets")
@@ -88,7 +89,7 @@ def slice_graph_data(input_layer,
 
     edge_fts = lbann.Reshape(edge_fts_inp, dims=str_list([num_non_cov_edges, 1, edge_features]), name="Edge_FTS")
     
-    ligand_only_nodes = lbann.Reshape(lbann.Identity(sliced_input), dims=str_list([1, ligand_only_nodes]), name="Ligand_only_nodes")
+    ligand_only_nodes = lbann.Reshape(lbann.Identity(sliced_input), dims=str_list([1, num_nodes]), name="Ligand_only_nodes")
     
     target = lbann.Reshape(lbann.Identity(sliced_input), dims="1", name="Target")
 

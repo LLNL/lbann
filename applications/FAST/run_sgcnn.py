@@ -58,13 +58,15 @@ def make_model(num_epochs,
     sgcnn_model = SGCNN(num_nodes=num_nodes,
                         num_covalent_edges=num_cov_edges,
                         num_non_covalent_edges=num_non_cov_edges,
-                        input_channels=num_node_features,
-                        )
+                        input_channels=num_node_features)
 
     input_ = lbann.Input(target_mode='N/A')
     graph_data = slice_graph_data(input_, 
                                   num_nodes=num_nodes,
-                                  )
+                                  num_cov_edges=num_cov_edges,
+                                  num_non_cov_edges=num_non_cov_edges,
+                                  node_features=num_node_features,
+                                  edge_features=num_edge_features)
 
     node_features = graph_data['node_features']
     edge_features = graph_data['edge_features']
@@ -86,14 +88,15 @@ def make_model(num_epochs,
     loss = lbann.MeanAbsoluteError([predicted, target], name='MAE_loss')
     layers = lbann.traverse_layer_graph(input_)
     metrics = [lbann.Metric(loss, name='MAE')]
-    # Prints initial Model after Setup
-    # print_model = lbann.CallbackPrintModelDescription()
     # Prints training progress
     training_output = lbann.CallbackPrint(interval=1,
                                           print_global_stat_only=False)
     gpu_usage = lbann.CallbackGPUMemoryUsage()
     timer = lbann.CallbackTimer()
     callbacks = [training_output, gpu_usage, timer]
+    # Prints initial Model after Setup
+    print_model = lbann.CallbackPrintModelDescription()
+    callbacks.append(print_model)
     model = lbann.Model(num_epochs,
                         layers=layers,
                         objective_function=loss,

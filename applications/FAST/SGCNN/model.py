@@ -69,16 +69,25 @@ class Graph_Conv(Module):
     https://github.com/LLNL/FAST/blob/5b8c2d775a67ad1716e26938492f1f5d037962a3/model/sgcnn/src/sgcnn/ggcnn.py#L22
     """
     def __init__(self,
+                 num_nodes,
+                 num_edges,
                  input_feature_dim,
                  output_feature_dim,
                  edge_feature_dim,
                  num_layers,
-                 num_vertices,
                  edge_nn=None,
                  name=None):
+        """ Constructor for Graph_Conv object 
+            Args:
+                num_nodes (int)
+                num_edges (int)
+                input_feature_dim (int)
+                output_feature_dim (int)
+        """
         super(Graph_Conv, self).__init__()
         Graph_Conv.global_count += 1
-        self.output_channels = output_channels
+        self.output_channel_dim = output_feature_dim
+        self.input_feature_dim = input_feature_dim
         self.num_layers = num_layers
         self.num_nodes = num_nodes
         self.num_edges = num_edges
@@ -86,13 +95,14 @@ class Graph_Conv(Module):
         self.edge_conv = NNConv(sequential_nn=edge_nn,
                                 num_nodes=num_nodes,
                                 num_edges=num_edges,
-                                input_channels=edge_feature_dim,
-                                output_channels=output_feature_dim)
+                                input_channels=output_feature_dim,
+                                output_channels=output_feature_dim,
+                                edge_input_channels=edge_feature_dim)
 
         self.name = (name if name else
                      'GraphConv_{}'.format(Graph_Conv.global_count))
 
-        self.rnn = nn.ChannelwiseGRU(self.output_channel_dim)
+        self.rnn = nn.ChannelwiseGRU(self.output_channel_dim, self.num_nodes)
 
         self.weights = []
 
@@ -142,7 +152,8 @@ class Graph_Conv(Module):
             # Generate the neighbor matrices with gather 
 
             neighbor_features = lbann.Reshape(lbann.Gather(node_features, edge_source_indices),
-                                              dims=str_list([self.num_edges, 1, self.output_channel_dim]))
+                                              dims=str_list([self.num_edges, 1, self.output_channel_dim]),
+                                              name=f"{self.name}_{layer}_reshape")
             Node_FT_GRU_PrevState = self.edge_conv(node_features,
                                                    neighbor_features,
                                                    edge_features,
@@ -175,22 +186,21 @@ class Graph_Attention(Module):
 
     def forward(self,
                 updated_nodes,
-                original_nodes,
-                num_nodes):
+                original_nodes):
         """
         Args:
             updated_nodes (Layer): 
             original_nodes (Layer): 
         """
-        concat = lbann.Concatenation(original_nodes,updated_nodes, axis=1)
+        concat = lbann.Concatenation(original_nodes, updated_nodes, axis=1)
         attention_vector = self.nn_1(concat)
         attention_score = lbann.Softmax(attention_vector,
-                                        softmax_mode = "channel",
-                                        name=self.name+"softmax")
+                                        softmax_mode="channel",
+                                        name=self.name + "softmax")
 
         updated_nodes = self.nn_2(updated_nodes)
         updated_nodes = lbann.Multiply(attention_score, updated_nodes,
-                                       name=self.name+"_output")
+                                       name=self.name + "_output")
 
         return updated_nodes
 
@@ -215,17 +225,17 @@ class SGCNN(Module):
         cov_out = covalent_out_channels
         noncov_out = noncovalent_out_channels
         covalent_edge_nn = \
-            Sequential([nn.ChannelwiseFullyConnectedModule(int(cov_out / 2), 
+            [nn.ChannelwiseFullyConnectedModule(int(cov_out / 2), 
                                                            activation=lbann.Softsign),
                         nn.ChannelwiseFullyConnectedModule(cov_out * cov_out, 
                                                            activation=lbann.Softsign)
-                        ])
+                        ]
         noncovalent_edge_nn = \
-            Sequential([nn.ChannelwiseFullyConnectedModule(int(noncov_out / 2)),
+            [nn.ChannelwiseFullyConnectedModule(int(noncov_out / 2)),
                         lbann.Softsign,
                         nn.ChannelwiseFullyConnectedModule(noncov_out * noncov_out),
                         lbann.Softsign
-                        ])
+                        ]
 
         self.covalent_propagation = Graph_Conv(input_feature_dim=input_channels,
                                                output_feature_dim=covalent_out_channels,
@@ -240,6 +250,7 @@ class SGCNN(Module):
                                                    edge_feature_dim=edge_feature_dim,
                                                    num_layers=noncovalent_layers,
                                                    num_nodes=num_nodes,
+                                                   num_edges=num_non_covalent_edges,
                                                    edge_nn=noncovalent_edge_nn)
 
         self.cov_attention = Graph_Attention(covalent_out_channels,
