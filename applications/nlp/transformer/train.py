@@ -37,7 +37,7 @@ def make_model(
     )
 
     # Input is two sequences of token IDs
-    input_ = lbann.Identity(lbann.Input(data_field='samples'))
+    input_ = lbann.Input(data_field='samples')
 
     # Get sequences of embedding vectors
     # Note: Scale embeddings by sqrt(embed_dim).
