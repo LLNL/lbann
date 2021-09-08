@@ -17,6 +17,7 @@ if (LBANN_HAS_GPU)
 
     abs.cu
     binary.cu
+    binary_with_constant.cu
     clamp.cu
     unary.cu
     )
