@@ -44,6 +44,7 @@ setup_dims(DataReaderMetaData& dr_metadata) {
   for (int i = 0; i < this->get_num_children(); ++i) {
     this->set_output_dims(get_data_dims(dr_metadata, i), i);
   }
+  if(m_data_field == "") { LBANN_ERROR("Failed to setup input layer with empty data field"); }
   get_trainer().get_data_coordinator().register_active_data_field(m_data_field);
 }
 
