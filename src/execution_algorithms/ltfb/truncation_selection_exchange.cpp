@@ -269,10 +269,13 @@ void TruncationSelectionExchange::select_next(model& m,
     auto& partner_model = *partner_model_ptr;
     unpack(partner_model, rcv_str);
     auto& trainer = get_trainer();
-    auto&& metadata = trainer.get_data_coordinator().get_dr_metadata();
-    m.setup(trainer.get_max_mini_batch_size(),
+    auto& dc = trainer.get_data_coordinator();
+    auto&& metadata = dc.get_dr_metadata();
+    auto&& max_mini_batch_size = trainer.get_max_mini_batch_size();
+    m.setup(max_mini_batch_size,
             metadata,
-            /*force=*/true);
+            /*force*/true);
+    dc.setup_data_fields(max_mini_batch_size);
   }
 }
 
