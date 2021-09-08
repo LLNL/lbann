@@ -68,7 +68,7 @@ def construct_model(lbann):
     """
 
     # Layer graph
-    step_id = lbann.Identity(lbann.Input(data_field='samples'))
+    step_id = lbann.Input(data_field='samples')
     for l in lbann.traverse_layer_graph(step_id):
         l.device = 'CPU'
 

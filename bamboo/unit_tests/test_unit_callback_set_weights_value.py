@@ -67,7 +67,7 @@ def construct_model(lbann):
         callbacks.append(
             lbann.CallbackSetWeightsValue(weights=w.name, value=val, step=step)
         )
-    x_lbann = lbann.Identity(lbann.Input(data_field='samples'))
+    x_lbann = lbann.Input(data_field='samples')
     x = x_lbann
     y = lbann.WeightsLayer(weights=w, dims='1')
     z = lbann.Multiply(x, y)

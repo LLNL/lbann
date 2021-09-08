@@ -77,7 +77,7 @@ def construct_model(lbann):
     # Layer graph
     weight = lbann.Weights(initializer=lbann.UniformInitializer(min=0, max=1))
     weight = lbann.WeightsLayer(weights=weight, dims=tools.str_list([1]))
-    rand = lbann.Identity(lbann.Input(data_field='samples'))
+    rand = lbann.Input(data_field='samples')
     layers = list(lbann.traverse_layer_graph([weight, rand]))
     for l in layers:
         l.device = 'CPU'
