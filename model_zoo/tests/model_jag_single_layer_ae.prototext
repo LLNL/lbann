@@ -70,7 +70,7 @@ model {
   # Data
   layer {
     input {
-      data_field: "datum"
+      data_field: "samples"
     }
     name: "data"
     data_layout: "data_parallel"

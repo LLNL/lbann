@@ -76,6 +76,7 @@ def construct_model(lbann):
     ltfb_interval = 3
     metrics = [lbann.Metric(step_id, name='step id')]
     callbacks = [
+        lbann.CallbackPrint(),
         lbann.CallbackLTFB(
             batch_interval=ltfb_interval,
             metric=metrics[-1].name,
