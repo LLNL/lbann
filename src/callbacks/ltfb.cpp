@@ -746,11 +746,14 @@ void ltfb::on_batch_begin(model* m)
     local_model.swap_metrics(partner_model);
     local_model.swap_objective_function(partner_model);
     auto& trainer_ = get_trainer();
-    auto&& metadata = trainer_.get_data_coordinator().get_dr_metadata();
+    auto& dc = trainer_.get_data_coordinator();
+    auto&& metadata = dc.get_dr_metadata();
+    auto&& max_mini_batch_size = trainer_.get_max_mini_batch_size();
     local_model.setup(
-      trainer_.get_max_mini_batch_size(),
+      max_mini_batch_size,
       metadata,
       true);
+    dc.setup_data_fields(max_mini_batch_size);
   }
 
   // Report tournament winner
