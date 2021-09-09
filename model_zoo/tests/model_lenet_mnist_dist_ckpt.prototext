@@ -78,7 +78,7 @@ model {
     name: "image"
     data_layout: "data_parallel"
     input {
-      data_field: "datum"
+      data_field: "samples"
     }
   }
 
