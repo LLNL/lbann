@@ -415,7 +415,7 @@ message Layer {
   // Input layers //
   //////////////////
   message Input {
-    string data_field = 1; // legacy names are: datum, label, regression
+    string data_field = 1; // legacy names are: samples, labels, responses
   }
 
   //////////////////////

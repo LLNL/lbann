@@ -317,15 +317,7 @@ template <typename TensorDataType>
 void buffered_data_coordinator<TensorDataType>::distribute_from_local_matrix(execution_mode mode, data_field_type const data_field, AbsDistMatrixType& input_buffer) {
   prof_region_begin("distribute_from_local_matrix", prof_colors[3], false);
   data_buffer<IODataType>& buf = get_active_buffer(mode);
-  if(data_field == INPUT_DATA_TYPE_SAMPLES) {
-    view_or_copy_tensor(*buf.m_input_buffers[INPUT_DATA_TYPE_SAMPLES], input_buffer);
-  }else if(data_field == INPUT_DATA_TYPE_LABELS) {
-    view_or_copy_tensor(*buf.m_input_buffers[INPUT_DATA_TYPE_LABELS], input_buffer);
-  }else if(data_field == INPUT_DATA_TYPE_RESPONSES) {
-    view_or_copy_tensor(*buf.m_input_buffers[INPUT_DATA_TYPE_RESPONSES], input_buffer);
-  }else {
-    LBANN_ERROR("Unknown data_field_type value provided: " + data_field);
-  }
+  view_or_copy_tensor(*buf.m_input_buffers[data_field], input_buffer);
 #ifdef LBANN_HAS_DISTCONV
   // BVE FIXME
   if (dc::is_cosmoflow_parallel_io_enabled() && input_buffers.count(INPUT_DATA_TYPE_RESPONSES)) {
