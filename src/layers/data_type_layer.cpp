@@ -679,6 +679,22 @@ setup_matrices(const El::Grid& grid) {
     }
   }
 
+#ifdef LBANN_HAS_GPU
+  // Use default-allocated device memory for forward prop matrices
+  // Note: Using the GPU memory pool uses more memory than directly
+  // allocating GPU buffers. Since forward prop buffers are rarely
+  // reallocated, the memory pool also has no performance benefit.
+  /// @todo Consider using default-allocated device memory when
+  /// training with persistent error signals.
+  if (this->get_device_allocation() == El::Device::GPU) {
+    for (auto& input : m_inputs) {
+      input->Matrix().SetMemoryMode(0);
+    }
+    for (auto& output : m_outputs) {
+      output->Matrix().SetMemoryMode(0);
+    }
+  }
+#endif // LBANN_HAS_GPU
 
 }
 
