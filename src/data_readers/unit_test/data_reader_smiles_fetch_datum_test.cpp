@@ -190,8 +190,6 @@ TEST_CASE("functional black-box", "[.filesystem][data reader][mpi][smiles]")
   //=========================================================================
   // instantiate and setup the data reader
   //=========================================================================
-  const int Max_seq_len = 56;
-
   lbann_data::LbannPB my_proto;
   if (!pb::TextFormat::ParseFromString(smiles_reader_prototext, &my_proto)) {
     throw "Parsing protobuf failed.";

@@ -325,13 +325,10 @@ void RandomPairwiseExchange::select_next(model& m,
     m_mutate_algo->mutate(m, step);
 
     auto& trainer = get_trainer();
-    auto& dc = trainer.get_data_coordinator();
     auto&& metadata = dc.get_dr_metadata();
-    auto&& max_mini_batch_size = trainer.get_max_mini_batch_size();
-    m.setup(max_mini_batch_size,
+    m.setup(trainer.get_max_mini_batch_size(),
             metadata,
             /*force*/true);
-    dc.setup_data_fields(max_mini_batch_size);
   }
 
   LBANN_LOG_TRAINER_MASTER(comm,
