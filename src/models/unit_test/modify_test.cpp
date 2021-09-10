@@ -35,6 +35,7 @@
 #include <lbann/base.hpp>
 #include <lbann/models/directed_acyclic_graph.hpp>
 #include <lbann/models/model.hpp>
+#include <lbann/utils/lbann_library.hpp>
 
 #include <google/protobuf/text_format.h>
 #include <lbann.pb.h>
@@ -62,6 +63,10 @@ auto make_model(lbann::lbann_comm& comm)
   lbann_data::LbannPB my_proto;
   if (!pb::TextFormat::ParseFromString(model_prototext, &my_proto))
     throw "Parsing protobuf failed.";
+  // Construct a trainer so that the model can register the input layer
+  lbann::construct_trainer(&comm,
+                           my_proto.mutable_trainer(),
+                           my_proto);
   auto metadata = mock_datareader_metadata();
   auto my_model = lbann::proto::construct_model(&comm,
                                                 -1,
