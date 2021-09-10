@@ -48,7 +48,7 @@ model {
     name: "layer1"
     children: "layer2"
     input {
-      target_mode: "N/A"
+      data_field: "samples"
     }
   }
   layer {
