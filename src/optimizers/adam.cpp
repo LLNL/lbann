@@ -107,6 +107,12 @@ void adam<TensorDataType>::setup(WeightsType* w) {
   const auto& gradient = this->get_gradient();
   m_moment1.reset(AbsDistMatrixType::Instantiate(gradient.DistData()));
   m_moment2.reset(AbsDistMatrixType::Instantiate(gradient.DistData()));
+  if (m_moment1->GetLocalDevice() == El::Device::GPU) {
+    m_moment1->Matrix().SetMemoryMode(0); // Default-allocated memory
+  }
+  if (m_moment2->GetLocalDevice() == El::Device::GPU) {
+    m_moment2->Matrix().SetMemoryMode(0); // Default-allocated memory
+  }
   El::Zeros(*m_moment1, gradient.Height(), gradient.Width());
   El::Zeros(*m_moment2, gradient.Height(), gradient.Width());
 }

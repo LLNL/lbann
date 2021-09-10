@@ -212,31 +212,45 @@ void data_type_weights<TensorDataType>::set_optimizer(
 template <typename TensorDataType>
 void data_type_weights<TensorDataType>::do_setup_() {
 
-  if (!m_values)
-  {
-    auto matrix_dist = this->get_matrix_distribution();
-    // Construct weights matrix
-    m_values.reset(AbsDistMatrixType::Instantiate(*matrix_dist.grid,
-                                                  matrix_dist.root,
-                                                  matrix_dist.colDist,
-                                                  matrix_dist.rowDist,
-                                                  (matrix_dist.blockHeight == 1
-                                                   && matrix_dist.blockWidth == 1 ?
-                                                   El::ELEMENT : El::BLOCK),
-                                                  matrix_dist.device));
-    m_values->AlignWith(matrix_dist);
-    m_values->Resize(this->get_matrix_height(), this->get_matrix_width());
-    if (m_initializer != nullptr) {
-      m_initializer->fill(*m_values);
-    } else {
-      El::Zero(*m_values);
-    }
-
-    // Setup optimizer
-    if (m_optimizer != nullptr) {
-      m_optimizer->setup(this);
-    }
+  // Return immediately if possible
+  if (m_values != nullptr) {
+    return;
   }
+
+  // Construct matrix for weights values
+  auto matrix_dist = this->get_matrix_distribution();
+  m_values.reset(
+    AbsDistMatrixType::Instantiate(
+      *matrix_dist.grid,
+      matrix_dist.root,
+      matrix_dist.colDist,
+      matrix_dist.rowDist,
+      (matrix_dist.blockHeight == 1
+       && matrix_dist.blockWidth == 1 ?
+       El::ELEMENT : El::BLOCK),
+      matrix_dist.device));
+
+  // Allocate memory
+#ifdef LBANN_HAS_GPU
+  if (matrix_dist.device == El::Device::GPU) {
+    m_values->Matrix().SetMemoryMode(0); // Default-allocated memory
+  }
+#endif // LBANN_HAS_GPU
+  m_values->AlignWith(matrix_dist);
+  m_values->Resize(this->get_matrix_height(), this->get_matrix_width());
+
+  // Initialize values
+  if (m_initializer != nullptr) {
+    m_initializer->fill(*m_values);
+  } else {
+    El::Zero(*m_values);
+  }
+
+  // Setup optimizer
+  if (m_optimizer != nullptr) {
+    m_optimizer->setup(this);
+  }
+
 }
 
 // -----------------------------------------------
