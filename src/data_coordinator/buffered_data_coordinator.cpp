@@ -317,17 +317,18 @@ template <typename TensorDataType>
 void buffered_data_coordinator<TensorDataType>::distribute_from_local_matrix(execution_mode mode, data_field_type const data_field, AbsDistMatrixType& input_buffer) {
   prof_region_begin("distribute_from_local_matrix", prof_colors[3], false);
   data_buffer<IODataType>& buf = get_active_buffer(mode);
+  if(buf.m_input_buffers.find(data_field) == buf.m_input_buffers.end()) {
+    LBANN_ERROR("Unknown data_field_type value requested: " + data_field);
+  }
   view_or_copy_tensor(*buf.m_input_buffers[data_field], input_buffer);
 #ifdef LBANN_HAS_DISTCONV
-  // BVE FIXME
-  if (dc::is_cosmoflow_parallel_io_enabled() && input_buffers.count(INPUT_DATA_TYPE_RESPONSES)) {
-    auto& response = *(input_buffers[INPUT_DATA_TYPE_RESPONSES]);
-    El::Int new_width = response.Width() / dc::get_number_of_io_partitions();
-    if (response.Viewing()) {
-      El::LockedView(response, response, El::ALL, El::IR(0, new_width));
+  if (dc::is_cosmoflow_parallel_io_enabled() && data_field == INPUT_DATA_TYPE_RESPONSES) {
+    El::Int new_width = input_buffer.Width() / dc::get_number_of_io_partitions();
+    if (input_buffer.Viewing()) {
+      El::LockedView(input_buffer, input_buffer, El::ALL, El::IR(0, new_width));
     }
     else {
-      response.Resize(response.Height(), new_width);
+      input_buffer.Resize(input_buffer.Height(), new_width);
     }
   }
 #endif
