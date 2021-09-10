@@ -39,9 +39,16 @@ I/O & data readers:
    SMILES data reader to minimize file access
  - Sample lists with integral indices can use range format (start ... end)
  - Added a new extensible HDF5 data reader that uses a data set schema
- and experiment schema files to define how the data is represented.
- This allows the user to change the representation of data without
- changing the data reader.
+   and experiment schema files to define how the data is represented.
+   This allows the user to change the representation of data without
+   changing the data reader.
+ - Changed the input layer to take a data field and only produce a
+   single output.  Currently valid Data fields are samples, labels,
+   and responses.
+ - Updated the data coordinator and data readers to
+   take dynamic data fields rather than fixed fields.  Input buffers
+   are no long allocated for fields that are not used in active
+   models.
 
 Build system:
 
