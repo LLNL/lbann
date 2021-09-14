@@ -238,9 +238,7 @@ void trainer::train(observer_ptr<model> model,
       "sgd_train", std::move(stopping));
   }
   DataReaderMetaData dr_metadata = get_data_coordinator().get_dr_metadata();
-  LBANN_MSG("About to setup the models");
   m_training_alg->setup_models({model}, get_max_mini_batch_size(), dr_metadata);
-  LBANN_MSG("Models are setup");
 
   // FIXME (trb 04/27/2021): This is a hack to support the current
   // checkpoint/restart mechanisms. This needs to be refactored to be
@@ -250,7 +248,6 @@ void trainer::train(observer_ptr<model> model,
     auto key = check_and_build_execution_context(*m_training_alg,
                                                  model,
                                                  execution_mode::training);
-    LBANN_MSG("apply the training algorithm");
     m_training_alg->apply(*(m_model_execution_context[key]),
                           *model,
                           get_data_coordinator(),

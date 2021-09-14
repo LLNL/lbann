@@ -806,16 +806,11 @@ void data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::ensu
 template <typename InputTensorDataType, typename OutputTensorDataType>
 void data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::copy_out_activations() {
   auto &l = dynamic_cast<data_type_layer<InputTensorDataType, OutputTensorDataType>&>(layer());
-  LBANN_WARNING("In the distconf adapter");
-  //  std::cout << "In the distconf adapter" << std::endl;
   for (int i = 0; i < l.get_num_children(); ++i) {
-    LBANN_WARNING("About to copy out the activations for each child ", i);
     if (!child_copy_required(i)) continue;
     if (i != 0) {
       LBANN_ERROR(layer().get_name(), ": Copyout of non-first tensor not supported");
     }
-    LBANN_WARNING("Starging to copy out the activations for each child ", i);
-    //std::cout << "Starging to copy out the activations for each child " << i << std::endl;
     dc::MPIPrintStreamDebug()
         << "Copying activations back to sample decomposition";
     assert0(dc::tensor::View(
@@ -823,12 +818,10 @@ void data_type_distconv_adapter<InputTensorDataType, OutputTensorDataType>::copy
     auto &shuffler = get_activations_shuffler(
         get_activations(),
         get_original_activations());
-    LBANN_WARNING("starting shuffle forward to copy out the activations for each child ", i);
     shuffler.shuffle_forward(
         get_activations().get_const_base_ptr(),
         get_original_activations().get_base_ptr(),
         hydrogen::cuda::GetDefaultStream());
-    LBANN_WARNING("finished shuffle forward to copy out the activations for each child ", i);
   }
 }
 
