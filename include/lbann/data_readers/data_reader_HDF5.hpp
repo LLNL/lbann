@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -27,8 +27,8 @@
 #define LBANN_DATA_READER_HDF5_REVISED_HPP
 
 #include "lbann/data_readers/data_reader.hpp"
-#include "lbann/data_readers/sample_list_hdf5.hpp"
 #include "lbann/data_readers/data_reader_sample_list.hpp"
+#include "lbann/data_readers/sample_list_hdf5.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
 
 // Forward declaration
@@ -71,7 +71,7 @@ public:
    * in lbann (datum, label, response); in general, it can be
    * any pack field in the experiment schema: pack: <string>
    */
-  bool fetch(std::string which, CPUMat& Y, int data_id, int mb_idx);
+  bool fetch(data_field_type data_field, CPUMat& Y, int data_id, int mb_idx);
 
   bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override
   {
@@ -249,7 +249,7 @@ private:
    *  which is one of: float32, float64, int32, int64, uint64, uint32
    */
   const void* get_data(const size_t sample_id_in,
-                       std::string field_name_in,
+                       data_field_type data_field,
                        size_t& num_elts_out,
                        std::string& dtype_out) const;
 

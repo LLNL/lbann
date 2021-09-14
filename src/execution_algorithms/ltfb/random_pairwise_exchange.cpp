@@ -138,8 +138,8 @@ RandomPairwiseExchange::RandomPairwiseExchange(
   std::unordered_map<std::string, metric_strategy> metrics,
   std::unique_ptr<ExchangeStrategy> comm_algo,
   std::unique_ptr<MutationStrategy> mutate_algo)
-  : m_metrics{std::move(metrics)}, 
-    m_comm_algo{std::move(comm_algo)}, 
+  : m_metrics{std::move(metrics)},
+    m_comm_algo{std::move(comm_algo)},
     m_mutate_algo{std::move(mutate_algo)}
 {
   LBANN_ASSERT(m_metrics.size());
@@ -151,13 +151,13 @@ RandomPairwiseExchange::RandomPairwiseExchange(
   std::unique_ptr<ExchangeStrategy> comm_algo,
   std::unique_ptr<MutationStrategy> mutate_algo)
   : RandomPairwiseExchange({{metric_name, winner_strategy}},
-                           std::move(comm_algo), 
+                           std::move(comm_algo),
                            std::move(mutate_algo))
 {}
 
 RandomPairwiseExchange::RandomPairwiseExchange(
   RandomPairwiseExchange const& other)
-  : m_metrics{other.m_metrics}, 
+  : m_metrics{other.m_metrics},
     m_comm_algo{other.m_comm_algo->clone()},
     m_mutate_algo{other.m_mutate_algo->clone()}
 {}
@@ -325,7 +325,7 @@ void RandomPairwiseExchange::select_next(model& m,
     m_mutate_algo->mutate(m, step);
 
     auto& trainer = get_trainer();
-    auto&& metadata = trainer.get_data_coordinator().get_dr_metadata();
+    auto&& metadata = dc.get_dr_metadata();
     m.setup(trainer.get_max_mini_batch_size(),
             metadata,
             /*force*/true);
@@ -438,7 +438,7 @@ make_null_mutation(google::protobuf::Message const& msg)
 {
   using NullMutation = lbann_data::MutationStrategy::NullMutation;
   LBANN_ASSERT(dynamic_cast<NullMutation const*>(&msg));
-  return std::make_unique<lbann::ltfb::NullMutation>();  
+  return std::make_unique<lbann::ltfb::NullMutation>();
 }
 
 std::unique_ptr<lbann::ltfb::ReplaceActivation>
@@ -505,7 +505,7 @@ lbann::make_abstract<lbann::ltfb::MutationStrategy>(
   using ProtoStrategy = lbann_data::MutationStrategy;
   auto const& params = dynamic_cast<ProtoStrategy const&>(msg);
 
-  auto const& mutate_params = 
+  auto const& mutate_params =
     proto::helpers::get_oneof_message(params, "strategy");
   return get_mutation_factory().create_object(
     proto::helpers::message_type(mutate_params),
@@ -535,8 +535,7 @@ lbann::make<lbann::ltfb::RandomPairwiseExchange>(
 
   using ExchangeStrategyType =
     lbann::ltfb::RandomPairwiseExchange::ExchangeStrategy;
-  using MutationStrategyType = 
-    lbann::ltfb::MutationStrategy;
+  using MutationStrategyType = lbann::ltfb::MutationStrategy;
   return make_unique<lbann::ltfb::RandomPairwiseExchange>(
     std::move(metric_map),
     make_abstract<ExchangeStrategyType>(msg.exchange_strategy()),

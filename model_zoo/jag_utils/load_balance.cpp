@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -100,7 +100,10 @@ int main(int argc, char *argv[]) {
       std::stringstream s;
       std::ifstream in(arg_parser.get<std::string>(FILELIST).c_str());
       if (!in) {
-          throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: failed to open " + arg_parser.get<std::string>(FILELIST) + " for reading");
+        throw lbann_exception(std::string{} + __FILE__ + " " +
+                              std::to_string(__LINE__) + " :: failed to open " +
+                              arg_parser.get<std::string>(FILELIST) +
+                              " for reading");
       }
       std::string line;
       while (getline(in, line)) {

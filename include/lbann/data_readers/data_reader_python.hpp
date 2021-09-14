@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -59,7 +59,7 @@ public:
   void load() override;
 
 protected:
-  bool fetch_data_block(CPUMat& X,
+  bool fetch_data_block(std::map<data_field_type, CPUMat*>& input_buffers,
                         El::Int block_offset,
                         El::Int block_stride,
                         El::Int mb_size,

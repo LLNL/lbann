@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -190,8 +190,6 @@ TEST_CASE("functional black-box", "[.filesystem][data reader][mpi][smiles]")
   //=========================================================================
   // instantiate and setup the data reader
   //=========================================================================
-  const int Max_seq_len = 56;
-
   lbann_data::LbannPB my_proto;
   if (!pb::TextFormat::ParseFromString(smiles_reader_prototext, &my_proto)) {
     throw "Parsing protobuf failed.";
@@ -199,11 +197,11 @@ TEST_CASE("functional black-box", "[.filesystem][data reader][mpi][smiles]")
 
   // set up the options that the reader expects
   // TODO MRW
-  //opts->set_option("use_data_store", true);
-  //opts->set_option("preload_data_store", true);
-  //opts->set_option("sequence_length", Max_seq_len);
-  //opts->set_option("vocab", vocab_fn);
-  //opts->set_option("prototext", prototext_fn);
+  // opts->set_option("use_data_store", true);
+  // opts->set_option("preload_data_store", true);
+  // opts->set_option("sequence_length", Max_seq_len);
+  // opts->set_option("vocab", vocab_fn);
+  // opts->set_option("prototext", prototext_fn);
 
   // instantiate and load the data readers
   std::map<lbann::execution_mode, lbann::generic_data_reader*> data_readers;

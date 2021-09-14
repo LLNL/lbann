@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -276,13 +276,7 @@ std::unique_ptr<Layer> construct_layer_legacy(
   // arguments.
   if (proto_layer.has_input()) {
     const auto& params = proto_layer.input();
-    const auto& mode_str = params.target_mode();
-    data_reader_target_mode target_mode = data_reader_target_mode::NA;
-    if (mode_str == "classification") { target_mode = data_reader_target_mode::CLASSIFICATION; }
-    if (mode_str == "regression")                         { target_mode = data_reader_target_mode::REGRESSION; }
-    if (mode_str == "reconstruction")                     { target_mode = data_reader_target_mode::RECONSTRUCTION; }
-    if (mode_str == "label_reconstruction")               { target_mode = data_reader_target_mode::LABEL_RECONSTRUCTION; }
-    if (mode_str.empty() || mode_str == "na" || mode_str == "NA" || mode_str == "N/A") { target_mode = data_reader_target_mode::NA; }
+    const auto& data_field = params.data_field();
     if (Layout != data_layout::DATA_PARALLEL) {
       LBANN_ERROR("input layer is only supported with "
                   "a data-parallel layout");
@@ -292,10 +286,9 @@ std::unique_ptr<Layer> construct_layer_legacy(
     /// this is not related to this PR.
     if ((typeid(TensorDataType) == typeid(DataType))
         && (Layout == data_layout::DATA_PARALLEL)) {
-      return lbann::make_unique<input_layer<DataType,
-                                            data_layout::DATA_PARALLEL,
-                                            Device>>(comm,
-                                                     target_mode);
+      return lbann::make_unique<
+        input_layer<DataType, data_layout::DATA_PARALLEL, Device>>(comm,
+                                                                   data_field);
     }
     else {
       LBANN_ERROR("Input layers are only valid with "

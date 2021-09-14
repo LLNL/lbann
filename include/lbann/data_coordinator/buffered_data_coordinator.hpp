@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -106,10 +106,10 @@ class buffered_data_coordinator : public data_coordinator {
   /** Archive for checkpoint and restart */
   template <class Archive> void serialize( Archive & ar );
 
-  void setup(
-    thread_pool& io_thread_pool,
-    int max_mini_batch_size,
-    std::map<execution_mode, generic_data_reader *> data_readers) override;
+  /** @brief After registering the active data field, allocate storage for each
+   *  data field in the context maps within the double buffer.
+   */
+  void register_active_data_field(data_field_type const data_field) override;
 
   void fp_setup_data(data_buffer<IODataType>& buffer, El::Int cur_mini_batch_size);
 
@@ -133,9 +133,9 @@ class buffered_data_coordinator : public data_coordinator {
   const data_buffer<IODataType>& get_data_buffer(const data_buffer_map_t& buffer_map, const execution_mode mode) const;
   data_buffer<IODataType>& get_data_buffer(data_buffer_map_t& buffer_map, const execution_mode mode);
 
-
   void distribute_from_local_matrix(execution_mode mode,
-                                    std::map<input_data_type, AbsDistMatrixType*>& input_buffers);
+                                    data_field_type data_field,
+                                    AbsDistMatrixType& input_buffer);
 
 protected:
   int fetch_to_local_matrix(data_buffer_map_t& buffer_map, const execution_mode mode);
@@ -167,6 +167,10 @@ protected:
   bool load_from_checkpoint_distributed(persist& p) override;
 
 protected:
+  /** @brief After a data field has been registered with the data
+   *  coordinator setup its buffers. Note this can be called after
+   *  each call to register_active_data_field. */
+  void setup_data_fields(int max_mini_batch_size);
 
   /**
    * Map from execution context to the index of the active data buffer

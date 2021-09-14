@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -89,11 +89,11 @@ get_bwd_weights_conv_workspace_size(TensorDescriptor const& dyDesc,
   auto handle_manager = internal::make_default_handle_manager(si);
   CHECK_MIOPEN(
     miopenConvolutionBackwardWeightsGetWorkSpaceSize(handle_manager.get(),
-                                                    dyDesc,
-                                                    xDesc,
-                                                    convDesc,
-                                                    dwDesc,
-                                                    &size));
+                                                     dyDesc,
+                                                     xDesc,
+                                                     convDesc,
+                                                     dwDesc,
+                                                     &size));
   return size;
 }
 

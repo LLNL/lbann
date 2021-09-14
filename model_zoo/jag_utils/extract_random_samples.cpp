@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -123,7 +123,7 @@ int main(int argc, char *argv[]) {
     }
     comm->world_broadcast<int>(0, &num_output_dirs, 1);
     // TODO MRW
-    //opts->set_option("num_output_dirs", num_output_dirs);
+    // opts->set_option("num_output_dirs", num_output_dirs);
 
     // get the set of global indices for the samples in our extracted set
     std::set<int> indices;
@@ -188,17 +188,25 @@ void get_random_sample_indices(const std::unordered_set<int> &exclude, std::set<
 }
 
 std::string usage() {
-    std::string u =
-      "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n"
-      "usage: extract_random_samples --index_fn=<string> --num_samples=<int> --output_base_dir=<string> --random_seed=<int> [ --exclude=<string> ] [ --num_samples_per_output_file=<int> ]\n"
-      "where: --index_fn is the output file from the build_index executable\n"
-      "       --num_samples is the number of random samples to be extracted\n"
-      "       --output_base_dir will be created if it doesn't exist\n"
-      "       --exclude is an optional filename containing IDs of samples that should not appear in the output\n"
-      "       --random_seed is required to ensure all procs generate identical random sample indices.\n"
-      "       --num_samples_per_file is number of samples per output file; default is 1000 (a maximum of one output file per processor may contain fewer)\n"
-      "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n\n";
-    return u;
+  std::string u =
+    "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+    "+++\n"
+    "usage: extract_random_samples --index_fn=<string> --num_samples=<int> "
+    "--output_base_dir=<string> --random_seed=<int> [ --exclude=<string> ] [ "
+    "--num_samples_per_output_file=<int> ]\n"
+    "where: --index_fn is the output file from the build_index executable\n"
+    "       --num_samples is the number of random samples to be extracted\n"
+    "       --output_base_dir will be created if it doesn't exist\n"
+    "       --exclude is an optional filename containing IDs of samples that "
+    "should not appear in the output\n"
+    "       --random_seed is required to ensure all procs generate identical "
+    "random sample indices.\n"
+    "       --num_samples_per_file is number of samples per output file; "
+    "default is 1000 (a maximum of one output file per processor may contain "
+    "fewer)\n"
+    "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+    "+++\n\n";
+  return u;
 }
 
 void build_exclusion_set(std::unordered_set<int> &exclude) {

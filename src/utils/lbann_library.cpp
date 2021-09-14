@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -131,9 +131,10 @@ void finalize_trainer() {
 }
 
 /// Construct a trainer that contains a lbann comm object and threadpool
-trainer& construct_trainer(lbann_comm *comm,
+trainer& construct_trainer(lbann_comm* comm,
                            lbann_data::Trainer* pb_trainer,
-                           lbann_data::LbannPB &pb) {
+                           lbann_data::LbannPB& pb)
+{
   if (pb_trainer->num_parallel_readers() > comm->get_procs_per_trainer()) {
     pb_trainer->set_num_parallel_readers(comm->get_procs_per_trainer());
   }
@@ -151,7 +152,8 @@ trainer& construct_trainer(lbann_comm *comm,
   }
 
   // Initalize a per-trainer I/O thread pool
-  std::unique_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(comm, serialized_io);
+  std::unique_ptr<thread_pool> io_thread_pool =
+    construct_io_thread_pool(comm, serialized_io);
 
   // Setup I/O threads
   auto io_threads_per_process = io_thread_pool->get_num_threads();
@@ -277,7 +279,6 @@ trainer& construct_trainer(lbann_comm *comm,
     global_trainer_->allow_background_io_activity(false);
   }
 
-
   // Report useful information
   if (comm->am_world_master()) {
     print_lbann_configuration(comm,
@@ -295,7 +296,9 @@ trainer& construct_trainer(lbann_comm *comm,
 }
 
 // Setup I/O thread pool that is shared across all models
-  std::unique_ptr<thread_pool> construct_io_thread_pool(lbann_comm *comm, bool serialized_io) {
+std::unique_ptr<thread_pool> construct_io_thread_pool(lbann_comm* comm,
+                                                      bool serialized_io)
+{
   int max_io_threads = num_free_cores_per_process(comm);
   // Allow the trainer to override the command-line option or environment variable
   if(serialized_io) {
@@ -393,10 +396,12 @@ std::unique_ptr<model> build_model_from_prototext(
     }
 
     std::string active_load_model_dir;
-    std::string load_model_dir = arg_parser.get<std::string>(LOAD_MODEL_WEIGHTS_DIR);
-    if(arg_parser.get<bool>(LOAD_MODEL_WEIGHTS_DIR_IS_COMPLETE)) {
+    std::string load_model_dir =
+      arg_parser.get<std::string>(LOAD_MODEL_WEIGHTS_DIR);
+    if (arg_parser.get<bool>(LOAD_MODEL_WEIGHTS_DIR_IS_COMPLETE)) {
       active_load_model_dir = load_model_dir;
-    }else {
+    }
+    else {
       size_t epochLast = std::numeric_limits<size_t>::max();;
       size_t stepLast = std::numeric_limits<size_t>::max();;
       execution_mode mode = execution_mode::invalid;

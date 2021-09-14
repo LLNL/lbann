@@ -15,29 +15,23 @@ model {
   }
   num_epochs: 20
   layer {
-    name: "layer1"
-    children: "layer2 layer3"
+    name: "image"
+    data_layout: "data_parallel"
     input {
-      target_mode: "classification"
+      data_field: "samples"
     }
   }
+
   layer {
-    name: "layer3"
-    parents: "layer1"
-    children: "layer16 layer17"
-    identity {
-    }
-  }
-  layer {
-    name: "layer2"
-    parents: "layer1"
-    children: "layer4"
-    identity {
+    name: "label"
+    data_layout: "data_parallel"
+    input {
+      data_field: "labels"
     }
   }
   layer {
     name: "layer4"
-    parents: "layer2"
+    parents: "image"
     children: "layer5"
     convolution {
       num_dims: 2
@@ -149,13 +143,13 @@ model {
   }
   layer {
     name: "layer17"
-    parents: "layer15 layer3"
+    parents: "layer15 label"
     categorical_accuracy {
     }
   }
   layer {
     name: "layer16"
-    parents: "layer15 layer3"
+    parents: "layer15 label"
     cross_entropy {
     }
   }

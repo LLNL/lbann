@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -223,7 +223,7 @@ void hdf5_data_reader::load()
   // May go away; for now, this reader only supports preloading mode
   // with data store
   // TODO MRW
-  //opts->set_option("preload_data_store", true);
+  // opts->set_option("preload_data_store", true);
 
   // Load the sample list(s)
   data_reader_sample_list::load();
@@ -897,14 +897,14 @@ void hdf5_data_reader::construct_linearized_size_lookup_tables()
   }
 }
 
-bool hdf5_data_reader::fetch(std::string which,
+bool hdf5_data_reader::fetch(data_field_type data_field,
                              CPUMat& Y,
                              int data_id,
                              int mb_idx)
 {
   size_t n_elts = 0;
   std::string dtype;
-  const void* d = get_data(data_id, which, n_elts, dtype);
+  const void* d = get_data(data_id, data_field, n_elts, dtype);
 
   if (dtype == "float64") {
     const conduit::float64* data = reinterpret_cast<const conduit::float64*>(d);
@@ -1027,7 +1027,7 @@ void hdf5_data_reader::set_experiment_schema(const conduit::Node& s)
 // Note to developers and reviewer: this is very conduit-ishy; I keep thinking
 // there's a simpler, more elegant way to do this, but I'm not seeing it.
 const void* hdf5_data_reader::get_data(const size_t sample_id_in,
-                                       std::string field_name_in,
+                                       data_field_type data_field,
                                        size_t& num_elts_out,
                                        std::string& dtype_out) const
 {
@@ -1035,7 +1035,7 @@ const void* hdf5_data_reader::get_data(const size_t sample_id_in,
   // get the pathname to the data, and verify it exists in the conduit::Node
   const conduit::Node& node = m_data_store->get_conduit_node(sample_id_in);
   std::ostringstream ss;
-  ss << node.name() << node.child(0).name() + "/" << field_name_in;
+  ss << node.name() << node.child(0).name() + "/" << data_field;
   if (!node.has_path(ss.str())) {
     LBANN_ERROR("no path: ", ss.str());
   }

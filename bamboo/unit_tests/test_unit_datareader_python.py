@@ -57,7 +57,7 @@ def construct_model(lbann):
     """
 
     # Layer graph
-    x = lbann.Input()
+    x = lbann.Input(data_field='samples')
     y = lbann.L2Norm2(x)
     layers = list(lbann.traverse_layer_graph(x))
     metric = lbann.Metric(y, name='obj')

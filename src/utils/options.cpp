@@ -29,105 +29,106 @@
 
 namespace lbann {
 
-void construct_std_options() {
+void construct_std_options()
+{
   auto& arg_parser = global_argument_parser();
 
   // Bool flags
-  arg_parser.add_flag(DISABLE_BACKGROUND_IO_ACTIVITY,
-                      {"--disable_background_io_activity"},
-                      "[STD] prevent the input layers from fetching data in the background");
-  arg_parser.add_flag(DISABLE_CUDA,
-                      {"--disable_cuda"},
-                      "[STD] has no effect unless LBANN was compiled with LBANN_HAS_CUDNN");
-  arg_parser.add_flag(LOAD_MODEL_WEIGHTS_DIR_IS_COMPLETE,
-                      {"--load_model_weights_dir_is_complete"},
-                      "[STD] Use load_model_weights_dir as given, ignoring checkpoint hierarchy");
+  arg_parser.add_flag(
+    DISABLE_BACKGROUND_IO_ACTIVITY,
+    {"--disable_background_io_activity"},
+    "[STD] prevent the input layers from fetching data in the background");
+  arg_parser.add_flag(
+    DISABLE_CUDA,
+    {"--disable_cuda"},
+    "[STD] has no effect unless LBANN was compiled with LBANN_HAS_CUDNN");
+  arg_parser.add_flag(
+    LOAD_MODEL_WEIGHTS_DIR_IS_COMPLETE,
+    {"--load_model_weights_dir_is_complete"},
+    "[STD] Use load_model_weights_dir as given, ignoring checkpoint hierarchy");
   arg_parser.add_flag(LTFB_ALLOW_GLOBAL_STATISTICS,
                       {"--ltfb_allow_global_statistics"},
                       utils::ENV("LBANN_LTFB_ALLOW_GLOBAL_STATISTICS"),
                       "[STD] Allow the print_statistics callback to report "
                       "global (inter-trainer) summary statistics.");
-  arg_parser.add_flag(LTFB_VERBOSE,
-                      {"--ltfb_verbose"},
-                      "[STD] Increases number of per-trainer messages that are reported");
-  arg_parser.add_flag(NO_IM_COMM,
-                      {"--no_im_comm"},
-                      "[STD] removed ImComm callback, if present; this is intended for"
-                      "running alexnet with a single model, but may be useful elsewhere");
+  arg_parser.add_flag(
+    LTFB_VERBOSE,
+    {"--ltfb_verbose"},
+    "[STD] Increases number of per-trainer messages that are reported");
+  arg_parser.add_flag(
+    NO_IM_COMM,
+    {"--no_im_comm"},
+    "[STD] removed ImComm callback, if present; this is intended for"
+    "running alexnet with a single model, but may be useful elsewhere");
   arg_parser.add_flag(PRELOAD_DATA_STORE,
                       {"--preload_data_store"},
-                      "[STD] Preloads the data store in-memory structure druing data reader load time");
-  arg_parser.add_flag(PRINT_AFFINITY,
-                      {"--print_affinity"},
-                      "[STD] display information on how OpenMP threads are provisioned");
-  arg_parser.add_flag(SERIALIZE_IO,
-                      {"--serialize_io"},
-                      "[STD] force data readers to use a single threaded for I/O");
-  arg_parser.add_flag(ST_FULL_TRACE,
-                      {"--st_full_trace"},
-                      "[STD] TODO");
-  arg_parser.add_flag(ST_ON,
-                      {"--st_on"},
-                      "[STD] TODO");
-	arg_parser.add_flag(USE_CUBLAS_TENSOR_OPS,
-											{"--use-cublas-tensor-ops"},
-											utils::ENV("LBANN_USE_CUBLAS_TENSOR_OPS"),
-											"[STD] Set the default cuBLAS math mode to use "
-											"Tensor Core operations when available.");
-	arg_parser.add_flag(USE_CUDNN_TENSOR_OPS,
-											{"--use-cudnn-tensor-ops"},
-											utils::ENV("LBANN_USE_CUDNN_TENSOR_OPS"),
-											"[STD] Set the default cuDNN math mode to use "
-											"Tensor Core operations when available.");
+                      "[STD] Preloads the data store in-memory structure "
+                      "druing data reader load time");
+  arg_parser.add_flag(
+    PRINT_AFFINITY,
+    {"--print_affinity"},
+    "[STD] display information on how OpenMP threads are provisioned");
+  arg_parser.add_flag(
+    SERIALIZE_IO,
+    {"--serialize_io"},
+    "[STD] force data readers to use a single threaded for I/O");
+  arg_parser.add_flag(ST_FULL_TRACE, {"--st_full_trace"}, "[STD] TODO");
+  arg_parser.add_flag(ST_ON, {"--st_on"}, "[STD] TODO");
+  arg_parser.add_flag(USE_CUBLAS_TENSOR_OPS,
+                      {"--use-cublas-tensor-ops"},
+                      utils::ENV("LBANN_USE_CUBLAS_TENSOR_OPS"),
+                      "[STD] Set the default cuBLAS math mode to use "
+                      "Tensor Core operations when available.");
+  arg_parser.add_flag(USE_CUDNN_TENSOR_OPS,
+                      {"--use-cudnn-tensor-ops"},
+                      utils::ENV("LBANN_USE_CUDNN_TENSOR_OPS"),
+                      "[STD] Set the default cuDNN math mode to use "
+                      "Tensor Core operations when available.");
   arg_parser.add_flag(USE_DATA_STORE,
                       {"--use_data_store"},
                       "[STD] Enables the data store in-memory structure");
-  arg_parser.add_flag(USE_LTFB,
-                      {"--ltfb"},
-                      "[STD] TODO");
+  arg_parser.add_flag(USE_LTFB, {"--ltfb"}, "[STD] TODO");
   arg_parser.add_flag(VERBOSE,
                       {"--verbose", "--verbose_print"},
                       "[STD] Turns on verbose mode");
   arg_parser.add_flag(WRITE_SAMPLE_LIST,
                       {"--write_sample_list"},
-                      "[STD] Writes out the sample list that was loaded into the current directory");
+                      "[STD] Writes out the sample list that was loaded into "
+                      "the current directory");
 
   // Input options
-  arg_parser.add_option(CKPT_DIR,
-                        {"--checkpoint_dir", "--ckpt_dir"},
-                        "[STD] Save to or restart from a specific checkpoint directory.\n"
-                        "Additionally, sets the output directory for dumping weights.\n"
-                        "Modifies callbacks: checkpoint, save_model, dump_weights\n",
-                        "");
+  arg_parser.add_option(
+    CKPT_DIR,
+    {"--checkpoint_dir", "--ckpt_dir"},
+    "[STD] Save to or restart from a specific checkpoint directory.\n"
+    "Additionally, sets the output directory for dumping weights.\n"
+    "Modifies callbacks: checkpoint, save_model, dump_weights\n",
+    "");
   arg_parser.add_option(HYDROGEN_BLOCK_SIZE,
                         {"--hydrogen_block_size"},
                         "[STD] Block size for Hydrogen",
                         0);
-  arg_parser.add_option(LOAD_MODEL_WEIGHTS_DIR,
-                        {"--load_model_weights_dir"},
-                        "[STD] Load model wieghts found in the given directory.\n"
-                        "If the directory doesn't exist, doesn't contain valid weights,\n"
-                        "or doesn't contain a checkpoint,\n"
-                        "an error will be thrown.\n",
-                        "");
-  arg_parser.add_option(MAX_RNG_SEEDS_DISPLAY,
-                        {"--rng_seeds_per_trainer_to_display"},
-                        utils::ENV("LBANN_RNG_SEEDS_PER_TRAINER_TO_DISPLAY"),
-                        "[STD] Limit how many random seeds LBANN should display "
-                        "from each trainer",
-                        2);
-  arg_parser.add_option(METADATA,
-                        {"--metadata"},
-                        "[STD] TODO",
-                        "");
+  arg_parser.add_option(
+    LOAD_MODEL_WEIGHTS_DIR,
+    {"--load_model_weights_dir"},
+    "[STD] Load model wieghts found in the given directory.\n"
+    "If the directory doesn't exist, doesn't contain valid weights,\n"
+    "or doesn't contain a checkpoint,\n"
+    "an error will be thrown.\n",
+    "");
+  arg_parser.add_option(
+    MAX_RNG_SEEDS_DISPLAY,
+    {"--rng_seeds_per_trainer_to_display"},
+    utils::ENV("LBANN_RNG_SEEDS_PER_TRAINER_TO_DISPLAY"),
+    "[STD] Limit how many random seeds LBANN should display "
+    "from each trainer",
+    2);
+  arg_parser.add_option(METADATA, {"--metadata"}, "[STD] TODO", "");
   arg_parser.add_option(MINI_BATCH_SIZE,
                         {"--mini_batch_size"},
                         "[STD] Size of mini batches",
                         -1);
-  arg_parser.add_option(MODEL,
-                        {"--model"},
-                        "[STD] TODO",
-                        "");
+  arg_parser.add_option(MODEL, {"--model"}, "[STD] TODO", "");
   arg_parser.add_option(NUM_EPOCHS,
                         {"--num_epochs"},
                         "[STD] Number of epochs to train model",
@@ -157,10 +158,7 @@ void construct_std_options() {
                         utils::ENV("LBANN_NUM_VALIDATE_SAMPLES"),
                         "[STD] Set the number of validate samples to ingest.",
                         -1);
-  arg_parser.add_option(OPTIMIZER,
-                        {"--optimizer"},
-                        "[STD] TODO",
-                        "");
+  arg_parser.add_option(OPTIMIZER, {"--optimizer"}, "[STD] TODO", "");
   arg_parser.add_option(PROCS_PER_TRAINER,
                         {"--procs_per_trainer"},
                         utils::ENV("LBANN_PROCS_PER_TRAINER"),
@@ -180,22 +178,21 @@ void construct_std_options() {
                         {"--random_seed", "--rand_seed"},
                         "[STD] Value to seed RNG",
                         -1);
-  arg_parser.add_option(READER,
-                        {"--reader"},
-                        "[STD] TODO",
-                        "");
-  arg_parser.add_option(RESTART_DIR,
-                        {"--restart_dir"},
-                        "[STD] Restart from a checkpoint found in the given directory.\n"
-                        "If the directory doesn't exist or doesn't contain a checkpoint,\n"
-                        "an error will be thrown.\n",
-                        "");
-  arg_parser.add_option(TRAINER_CREATE_TWO_MODELS,
-                        {"--trainer_create_two_models"},
-                        utils::ENV("LBANN_TRAINER_CREATE_TWO_MODELS"),
-                        "[STD] Create two models (one each for primary and secondary grid). "
-                        "Default is False.",
-                        false);
+  arg_parser.add_option(READER, {"--reader"}, "[STD] TODO", "");
+  arg_parser.add_option(
+    RESTART_DIR,
+    {"--restart_dir"},
+    "[STD] Restart from a checkpoint found in the given directory.\n"
+    "If the directory doesn't exist or doesn't contain a checkpoint,\n"
+    "an error will be thrown.\n",
+    "");
+  arg_parser.add_option(
+    TRAINER_CREATE_TWO_MODELS,
+    {"--trainer_create_two_models"},
+    utils::ENV("LBANN_TRAINER_CREATE_TWO_MODELS"),
+    "[STD] Create two models (one each for primary and secondary grid). "
+    "Default is False.",
+    false);
   arg_parser.add_option(TRAINER_GRID_HEIGHT,
                         {"--trainer_grid_height"},
                         utils::ENV("LBANN_TRAINER_GRID_HEIGHT"),
@@ -210,7 +207,8 @@ void construct_std_options() {
                         0);
 }
 
-void construct_datastore_options() {
+void construct_datastore_options()
+{
   auto& arg_parser = global_argument_parser();
 
   // Bool flags
@@ -247,16 +245,15 @@ void construct_datastore_options() {
                         "");
 }
 
-void construct_datareader_options() {
+void construct_datareader_options()
+{
   auto& arg_parser = global_argument_parser();
 
   // Bool flags
   arg_parser.add_flag(ALL_GATHER_OLD,
                       {"--all_gather_old"},
                       "[DATAREADER] TODO");
-  arg_parser.add_flag(CHECK_DATA,
-                      {"--check_data"},
-                      "[DATAREADER] TODO");
+  arg_parser.add_flag(CHECK_DATA, {"--check_data"}, "[DATAREADER] TODO");
   arg_parser.add_flag(CREATE_TARBALL,
                       {"--create_tarball"},
                       "[DATAREADER] TODO");
@@ -287,31 +284,26 @@ void construct_datareader_options() {
   arg_parser.add_flag(NODE_SIZES_VARY,
                       {"--node_sizes_vary"},
                       "[DATAREADER] TODO");
-  arg_parser.add_flag(QUIET,
-                      {"--quiet"},
-                      "[DATAREADER] TODO");
+  arg_parser.add_flag(QUIET, {"--quiet"}, "[DATAREADER] TODO");
   arg_parser.add_flag(STACK_TRACE_TO_FILE,
                       {"--stack_trace_to_file"},
                       "[DATAREADER] TODO");
-  arg_parser.add_flag(TEST_ENCODE,
-                      {"--test_encode"},
-                      "[DATAREADER] TODO");
+  arg_parser.add_flag(TEST_ENCODE, {"--test_encode"}, "[DATAREADER] TODO");
   arg_parser.add_flag(WRITE_SAMPLE_LABEL_LIST,
                       {"--write_sample_label_list"},
                       "[DATAREADER] TODO");
-  arg_parser.add_flag(Z_SCORE,
-                      {"--z_score"},
-                      "[DATAREADER] TODO");
+  arg_parser.add_flag(Z_SCORE, {"--z_score"}, "[DATAREADER] TODO");
 
   // Input options
   arg_parser.add_option(ABSOLUTE_SAMPLE_COUNT,
                         {"--absolute_sample_count"},
                         "[DATAREADER] TODO",
                         -1);
-  arg_parser.add_option(DATA_FILEDIR,
-                        {"--data_filedir"},
-                        "[DATAREADER] Sets the file direcotry for train and test data",
-                        "");
+  arg_parser.add_option(
+    DATA_FILEDIR,
+    {"--data_filedir"},
+    "[DATAREADER] Sets the file direcotry for train and test data",
+    "");
   arg_parser.add_option(DATA_FILEDIR_TEST,
                         {"--data_filedir_test"},
                         "[DATAREADER] TODO",
@@ -340,10 +332,7 @@ void construct_datareader_options() {
                         {"--data_reader_percent"},
                         "[DATAREADER] TODO",
                         (float)-1);
-  arg_parser.add_option(DELIMITER,
-                        {"--delimiter"},
-                        "[DATAREADER] TODO",
-                        "");
+  arg_parser.add_option(DELIMITER, {"--delimiter"}, "[DATAREADER] TODO", "");
   arg_parser.add_option(IMAGE_SIZES_FILENAME,
                         {"--image_sizes_filename"},
                         "[DATAREADER] TODO",
@@ -364,14 +353,8 @@ void construct_datareader_options() {
                         {"--normalization"},
                         "[DATAREADER] TODO",
                         "");
-  arg_parser.add_option(N_LINES,
-                        {"--n_lines"},
-                        "[DATAREADER] TODO",
-                        -1);
-  arg_parser.add_option(PAD_INDEX,
-                        {"--pad_index"},
-                        "[DATAREADER] TODO",
-                        -1);
+  arg_parser.add_option(N_LINES, {"--n_lines"}, "[DATAREADER] TODO", -1);
+  arg_parser.add_option(PAD_INDEX, {"--pad_index"}, "[DATAREADER] TODO", -1);
   arg_parser.add_option(PILOT2_READ_FILE_SIZES,
                         {"--pilot2_read_file_sizes"},
                         "[DATAREADER] TODO",
@@ -401,61 +384,31 @@ void construct_datareader_options() {
                         utils::ENV("LBANN_SMILES_BUFFER_SIZE"),
                         "[DATAREADER] Size of the read buffer for the SMILES "
                         "data reader.",
-                        16*1024*1024UL);
+                        16 * 1024 * 1024UL);
   arg_parser.add_option(TEST_TARBALL,
                         {"--test_tarball"},
                         "[DATAREADER] TODO",
                         -1);
-  arg_parser.add_option(VOCAB,
-                        {"--vocab"},
-                        "[DATAREADER] TODO",
-                        "");
+  arg_parser.add_option(VOCAB, {"--vocab"}, "[DATAREADER] TODO", "");
 }
 
-void construct_jag_options() {
+void construct_jag_options()
+{
   auto& arg_parser = global_argument_parser();
 
   // Bool flags
-  arg_parser.add_flag(JAG,
-                      {"--jag"},
-                      "[JAG] TODO");
-  arg_parser.add_flag(JAG_PARTITIONED,
-                      {"--jag_partitioned"},
-                      "[JAG] TODO");
+  arg_parser.add_flag(JAG, {"--jag"}, "[JAG] TODO");
+  arg_parser.add_flag(JAG_PARTITIONED, {"--jag_partitioned"}, "[JAG] TODO");
 
   // Input options
-  arg_parser.add_option(BASE_DIR,
-                        {"--base_dir"},
-                        "[JAG] TODO",
-                        "");
-  arg_parser.add_option(FILELIST,
-                        {"--filelist"},
-                        "[JAG] TODO",
-                        "");
-  arg_parser.add_option(FILENAME,
-                        {"--filename"},
-                        "[JAG] TODO",
-                        "");
-  arg_parser.add_option(FORMAT,
-                        {"--format"},
-                        "[JAG] TODO",
-                        "");
-  arg_parser.add_option(INDEX_FN,
-                        {"--index_fn"},
-                        "[JAG] TODO",
-                        "");
-  arg_parser.add_option(MAPPING_FN,
-                        {"--mapping_fn"},
-                        "[JAG] TODO",
-                        "");
-  arg_parser.add_option(NUM_LISTS,
-                        {"--num_lists"},
-                        "[JAG] TODO",
-                        -1);
-  arg_parser.add_option(NUM_SAMPLES,
-                        {"--num_samples"},
-                        "[JAG] TODO",
-                        -1);
+  arg_parser.add_option(BASE_DIR, {"--base_dir"}, "[JAG] TODO", "");
+  arg_parser.add_option(FILELIST, {"--filelist"}, "[JAG] TODO", "");
+  arg_parser.add_option(FILENAME, {"--filename"}, "[JAG] TODO", "");
+  arg_parser.add_option(FORMAT, {"--format"}, "[JAG] TODO", "");
+  arg_parser.add_option(INDEX_FN, {"--index_fn"}, "[JAG] TODO", "");
+  arg_parser.add_option(MAPPING_FN, {"--mapping_fn"}, "[JAG] TODO", "");
+  arg_parser.add_option(NUM_LISTS, {"--num_lists"}, "[JAG] TODO", -1);
+  arg_parser.add_option(NUM_SAMPLES, {"--num_samples"}, "[JAG] TODO", -1);
   arg_parser.add_option(NUM_SAMPLES_PER_FILE,
                         {"--num_samples_per_file"},
                         "[JAG] TODO",
@@ -464,33 +417,22 @@ void construct_jag_options() {
                         {"--num_samples_per_list"},
                         "[JAG] TODO",
                         -1);
-  arg_parser.add_option(NUM_SUBDIRS,
-                        {"--num_subdirs"},
-                        "[JAG] TODO",
-                        -1);
+  arg_parser.add_option(NUM_SUBDIRS, {"--num_subdirs"}, "[JAG] TODO", -1);
   arg_parser.add_option(OUTPUT_BASE_DIR,
                         {"--output_base_dir"},
                         "[JAG] TODO",
                         "");
-  arg_parser.add_option(OUTPUT_BASE_FN,
-                        {"--output_base_fn"},
-                        "[JAG] TODO",
-                        "");
-  arg_parser.add_option(OUTPUT_DIR,
-                        {"--output_dir"},
-                        "[JAG] TODO",
-                        "");
-  arg_parser.add_option(OUTPUT_FN,
-                        {"--output_fn"},
-                        "[JAG] TODO",
-                        "");
+  arg_parser.add_option(OUTPUT_BASE_FN, {"--output_base_fn"}, "[JAG] TODO", "");
+  arg_parser.add_option(OUTPUT_DIR, {"--output_dir"}, "[JAG] TODO", "");
+  arg_parser.add_option(OUTPUT_FN, {"--output_fn"}, "[JAG] TODO", "");
   arg_parser.add_option(SAMPLES_PER_FILE,
                         {"--samples_per_file"},
                         "[JAG] TODO",
                         -1);
 }
 
-void construct_all_options() {
+void construct_all_options()
+{
   construct_std_options();
   construct_datastore_options();
   construct_datareader_options();

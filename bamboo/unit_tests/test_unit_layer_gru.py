@@ -114,7 +114,7 @@ def construct_model(lbann):
                               name='input')
     h_weights = lbann.Weights(initializer=lbann.ConstantInitializer(value=0.0),
                               name='inital_hidden')
-    input_ = lbann.Identity(lbann.Input())
+    input_ = lbann.Input(data_field='samples')
     input_slice = lbann.Slice(
         input_,
         slice_points=tools.str_list([0, _sequence_length*_input_size, _sample_size]),

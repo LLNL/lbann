@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -44,6 +44,10 @@ setup_dims(DataReaderMetaData& dr_metadata) {
   for (int i = 0; i < this->get_num_children(); ++i) {
     this->set_output_dims(get_data_dims(dr_metadata, i), i);
   }
+  if (m_data_field == "") {
+    LBANN_ERROR("Failed to setup input layer with empty data field");
+  }
+  get_trainer().get_data_coordinator().register_active_data_field(m_data_field);
 }
 
 template <typename TensorDataType,
@@ -106,26 +110,9 @@ void input_layer<TensorDataType, T_layout, Dev>::fp_compute()
       static_cast<buffered_data_coordinator<TensorDataType>&>(
         get_trainer().get_data_coordinator());
 
-    //  partitioned_io_buffer<TensorDataType>* io_buffer = dc.get_active_buffer(mode);
-    // generic_io_buffer<TensorDataType>* io_buffer = dc.m_io_buffers[dc.get_active_buffer_idx(mode) % dc.m_io_buffers.size()];
-
-    // if(dynamic_cast<partitioned_io_buffer<TensorDataType>*>(io_buffer) != nullptr) {
-    // Use the predetermined size of the mini-batch to set the current
-    // batch size for the neural network
-    int num_samples_in_batch = dc.get_current_mini_batch_size(mode);
-
-    dc.update_num_samples_processed(mode, num_samples_in_batch);
-    std::map<input_data_type, AbsDistMatrixType*> input_buffers;
-    input_buffers[input_data_type::SAMPLES] = &(this->get_activations(0));
-    if(this->m_expected_num_child_layers > 1) {
-      if(is_for_regression()) {
-        input_buffers[input_data_type::RESPONSES] = &(this->get_activations(1));
-      }else {
-        input_buffers[input_data_type::LABELS] = &(this->get_activations(1));
-      }
-    }
-
-    dc.distribute_from_local_matrix(mode, input_buffers);
+    dc.distribute_from_local_matrix(mode,
+                                    m_data_field,
+                                    this->get_activations(0));
 
 #ifdef LBANN_HAS_DISTCONV
     if (this->distconv_enabled()) {
@@ -149,12 +136,20 @@ template <typename TensorDataType,
           El::Device Dev>
 std::vector<int> input_layer<TensorDataType, T_layout, Dev>::
 get_data_dims(DataReaderMetaData& dr_metadata, int child_index) const {
-  if(child_index == 0) {
-    return dr_metadata.data_dims[data_reader_target_mode::INPUT];
-  }else if(child_index == 1) {
-    return dr_metadata.data_dims[this->m_data_reader_mode];
-  }else {
+  if (child_index != 0) {
     LBANN_ERROR("get_data_dims: Invalid child index");
+  }
+  if (m_data_field == INPUT_DATA_TYPE_SAMPLES) {
+    return dr_metadata.data_dims[data_reader_target_mode::INPUT];
+  }
+  else if (m_data_field == INPUT_DATA_TYPE_LABELS) {
+    return dr_metadata.data_dims[data_reader_target_mode::CLASSIFICATION];
+  }
+  else if (m_data_field == INPUT_DATA_TYPE_RESPONSES) {
+    return dr_metadata.data_dims[data_reader_target_mode::REGRESSION];
+  }
+  else {
+    LBANN_ERROR("Unknown data_field_type value provided: " + m_data_field);
   }
   return std::vector<int>(1, 0);
 }

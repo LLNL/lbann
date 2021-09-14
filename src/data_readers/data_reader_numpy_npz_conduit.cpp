@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -79,7 +79,8 @@ void numpy_npz_conduit_reader::load() {
 
   auto& arg_parser = global_argument_parser();
 
-  if (! (arg_parser.get<bool>(PRELOAD_DATA_STORE) || arg_parser.get<bool>(USE_DATA_STORE))) {
+  if (!(arg_parser.get<bool>(PRELOAD_DATA_STORE) ||
+        arg_parser.get<bool>(USE_DATA_STORE))) {
     LBANN_ERROR("numpy_npz_conduit_reader requires data_store; please pass either --use_data_store or --preload_data_store on the cmd line");
   }
 
@@ -103,7 +104,8 @@ void numpy_npz_conduit_reader::load() {
   resize_shuffled_indices();
   m_num_samples = m_shuffled_indices.size();
 
-  if (m_num_labels == 0 && !arg_parser.get<bool>(PRELOAD_DATA_STORE) && arg_parser.get<bool>(USE_DATA_STORE)) {
+  if (m_num_labels == 0 && !arg_parser.get<bool>(PRELOAD_DATA_STORE) &&
+      arg_parser.get<bool>(USE_DATA_STORE)) {
     LBANN_WARNING("when not preloading you must specify the number of labels in the prototext file if you are doing classification");
   }
 
@@ -127,14 +129,15 @@ void numpy_npz_conduit_reader::do_preload_data_store() {
 
   std::unordered_set<int> label_classes;
 
-  bool threaded = ! global_argument_parser().get<bool>(DATA_STORE_NO_THREAD);
+  bool threaded = !global_argument_parser().get<bool>(DATA_STORE_NO_THREAD);
 
   //threaded mode
   if (threaded) {
     if (is_master()) {
       std::cout << "mode: data_store_thread\n";
     }
-    std::shared_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(m_comm, false);
+    std::shared_ptr<thread_pool> io_thread_pool =
+      construct_io_thread_pool(m_comm, false);
     int num_threads = static_cast<int>(io_thread_pool->get_num_threads());
 
     //collect the set of indices that belong to this rank
@@ -182,7 +185,7 @@ void numpy_npz_conduit_reader::do_preload_data_store() {
   // Nikoli says we're not using labels, so I'm commenting this section out
   // (this section is a mess, anyway)
   #if 0
-  if (m_supported_input_types[input_data_type::LABELS]) {
+  if (m_supported_input_types[INPUT_DATA_TYPE_LABELS]) {
 
     // get max element. Yes, I know you can do this with, e.g, lambda
     // expressions and c++11 and etc, etc. But that's just B-ugly and
@@ -301,7 +304,7 @@ bool numpy_npz_conduit_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
 }
 
 bool numpy_npz_conduit_reader::fetch_label(Mat& Y, int data_id, int mb_idx) {
-  if (!m_supported_input_types[input_data_type::LABELS]) {
+  if (!m_supported_input_types[INPUT_DATA_TYPE_LABELS]) {
     LBANN_ERROR("numpy_npz_conduit_reader: do not have labels");
   }
   if (m_num_labels == 0) {
@@ -318,7 +321,7 @@ bool numpy_npz_conduit_reader::fetch_label(Mat& Y, int data_id, int mb_idx) {
 }
 
 bool numpy_npz_conduit_reader::fetch_response(Mat& Y, int data_id, int mb_idx) {
-  if (!m_supported_input_types[input_data_type::RESPONSES]) {
+  if (!m_supported_input_types[INPUT_DATA_TYPE_RESPONSES]) {
     LBANN_ERROR("numpy_npz_conduit_reader: do not have responses");
   }
 
@@ -405,14 +408,14 @@ void numpy_npz_conduit_reader::fill_in_metadata() {
     std::cout << "data word size: " << m_data_word_size << "\n";
   }
 
-  if (m_supported_input_types[input_data_type::LABELS]) {
+  if (m_supported_input_types[INPUT_DATA_TYPE_LABELS]) {
     word_size = node[LBANN_DATA_ID_STR(data_id) + "/frm/word_size"].value();
     if (word_size != 4) {
       LBANN_ERROR("numpy_npz_conduit_reader: label should be in int32, but word_size= " + std::to_string(word_size));
     }
   }
 
-  if (m_supported_input_types[input_data_type::RESPONSES]) {
+  if (m_supported_input_types[INPUT_DATA_TYPE_RESPONSES]) {
     m_response_word_size = node[LBANN_DATA_ID_STR(data_id) + "/responses/word_size"].value();
     auto r_shape = node[LBANN_DATA_ID_STR(data_id) + "/responses/shape"].as_uint64_array();
     int n = r_shape.number_of_elements();

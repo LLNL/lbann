@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -770,8 +770,7 @@ auto argument_parser<ErrorHandler>::add_flag_impl_(
 
 }// namespace utils
 
-using default_arg_parser_type =
-         utils::argument_parser<utils::strict_parsing>;
+using default_arg_parser_type = utils::argument_parser<utils::strict_parsing>;
 
 default_arg_parser_type& global_argument_parser();
 

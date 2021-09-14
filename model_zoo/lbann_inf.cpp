@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -92,8 +92,12 @@ int main(int argc, char *argv[]) {
     std::vector<std::unique_ptr<model>> models;
     for(auto&& pb_model : pbs) {
       models.emplace_back(
-        build_model_from_prototext(argc, argv, pb_trainer, *pb_model,
-                                   comm.get(), io_thread_pool,
+        build_model_from_prototext(argc,
+                                   argv,
+                                   pb_trainer,
+                                   *pb_model,
+                                   comm.get(),
+                                   io_thread_pool,
                                    trainer.get_callbacks_with_ownership(),
                                    training_dr_linearized_data_size));
     }

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -49,14 +49,15 @@ parse_prototext_filenames_from_command_line(
   std::vector<std::string> data_set_metadata;
   bool single_file_load = false;
 
-  std::string params[] = { PROTOTEXT, MODEL, READER, METADATA, OPTIMIZER };
-  for(auto & which : params) {
+  std::string params[] = {PROTOTEXT, MODEL, READER, METADATA, OPTIMIZER};
+  for (auto& which : params) {
     std::string fn = arg_parser.get<std::string>(which);
     if (fn != "") {
       size_t t_pos = fn.find("trainer");
       if(t_pos != std::string::npos) {
-        //append appropriate trainer id to prototext filename
-        std::string fname = fn.substr(0,t_pos+7)+ std::to_string(trainer_rank);
+        // append appropriate trainer id to prototext filename
+        std::string fname =
+          fn.substr(0, t_pos + 7) + std::to_string(trainer_rank);
         fn = fname;
       }
       if (which == PROTOTEXT) {
@@ -82,18 +83,26 @@ parse_prototext_filenames_from_command_line(
     size_t n = models.size();
     if (! (optimizers.size() == 1 || optimizers.size() == n)) {
       LBANN_ERROR(
-        "you specified ", n, " model filenames, and ", optimizers.size(), 
+        "you specified ",
+        n,
+        " model filenames, and ",
+        optimizers.size(),
         " optimizer filenames; you must specify 1 optimizer filenames");
     }
     if (! (readers.size() == 1 || readers.size() == n)) {
-      LBANN_ERROR(
-        "you specified ", n, " model filenames, and ", readers.size(),
-        " reader filenames; you must specify 1 reader filenames");
+      LBANN_ERROR("you specified ",
+                  n,
+                  " model filenames, and ",
+                  readers.size(),
+                  " reader filenames; you must specify 1 reader filenames");
     }
     if (! (data_set_metadata.size() == 0 || data_set_metadata.size() == 1 || data_set_metadata.size() == n)) {
-      LBANN_ERROR(
-        "you specified ", n, " model filenames, and ", data_set_metadata.size(),
-        " data set metadata filenames; you must specify 1 data set metadata filenames");
+      LBANN_ERROR("you specified ",
+                  n,
+                  " model filenames, and ",
+                  data_set_metadata.size(),
+                  " data set metadata filenames; you must specify 1 data set "
+                  "metadata filenames");
     }
   }
 
@@ -162,7 +171,8 @@ load_prototext(
   const bool master,
   const int trainer_rank)
 {
-  auto names = parse_prototext_filenames_from_command_line(master, trainer_rank);
+  auto names =
+    parse_prototext_filenames_from_command_line(master, trainer_rank);
   auto models_out = read_in_prototext_files(master, names);
   if (models_out.size() == 0 && master) {
     LBANN_ERROR("Failed to load any prototext files");

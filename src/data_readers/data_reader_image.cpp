@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -178,10 +178,11 @@ void image_data_reader::load() {
     }
     m_sample_list.write(s.str());
   }
-  if (arg_parser.get<bool>("write_sample_label_list") && m_comm->am_trainer_master()) {
+  if (arg_parser.get<bool>("write_sample_label_list") &&
+      m_comm->am_trainer_master()) {
     if (!(m_keep_sample_order || arg_parser.get<bool>(KEEP_SAMPLE_ORDER))) {
-    std::cout << "Writting sample label list without the option "
-              << "`keep_sample_order' set." << std::endl;
+      std::cout << "Writting sample label list without the option "
+                << "`keep_sample_order' set." << std::endl;
     }
     std::string dump_file = "image_list.trainer"
                           + std::to_string(m_comm->get_trainer_rank())
@@ -231,12 +232,13 @@ void image_data_reader::do_preload_data_store() {
 
   int rank = m_comm->get_rank_in_trainer();
 
-  bool threaded = ! arg_parser.get<bool>(DATA_STORE_NO_THREAD);
+  bool threaded = !arg_parser.get<bool>(DATA_STORE_NO_THREAD);
   if (threaded) {
     if (is_master()) {
       std::cout << "mode: data_store_thread\n";
     }
-    std::shared_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(m_comm, false);
+    std::shared_ptr<thread_pool> io_thread_pool =
+      construct_io_thread_pool(m_comm, false);
     int num_threads = static_cast<int>(io_thread_pool->get_num_threads());
 
     std::vector<std::unordered_set<int>> data_ids(num_threads);
@@ -333,7 +335,8 @@ void image_data_reader::load_list_of_samples(const std::string sample_list_file)
 
   if (m_keep_sample_order || arg_parser.get<bool>(KEEP_SAMPLE_ORDER)) {
     m_sample_list.keep_sample_order(true);
-  } else {
+  }
+  else {
     m_sample_list.keep_sample_order(false);
   }
 
@@ -354,7 +357,8 @@ void image_data_reader::load_list_of_samples(const std::string sample_list_file)
 
     m_sample_list.set_sample_list_name(sample_list_file);
     m_sample_list.load(iss, *m_comm, true);
-  } else {
+  }
+  else {
     m_sample_list.load(sample_list_file, *m_comm, true);
   }
 
@@ -424,7 +428,8 @@ void image_data_reader::gen_list_of_samples() {
 
   if (m_keep_sample_order || arg_parser.get<bool>(KEEP_SAMPLE_ORDER)) {
     m_sample_list.keep_sample_order(true);
-  } else {
+  }
+  else {
     m_sample_list.keep_sample_order(false);
   }
 
@@ -457,7 +462,8 @@ void image_data_reader::gen_list_of_samples() {
     vectorwrapbuf<char> strmbuf(buffer);
     std::istream iss(&strmbuf);
     m_sample_list.load(header, iss, *m_comm, true);
-  } else {
+  }
+  else {
     // The trainer master counts the number of samples (lines) and broadcasts
     // the result
     size_t num_samples = 0ul;

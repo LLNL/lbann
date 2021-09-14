@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -422,12 +422,14 @@ void init_data_readers(
         reader->set_absolute_sample_count(arg_parser.get<int>(TEST_TARBALL));
         reader->set_use_percent( 0. );
         reader->set_first_n(0);
-      } else {
+      }
+      else {
         reader->set_absolute_sample_count( 0. );
         reader->set_use_percent( 1.0 );
         reader->set_first_n( 0 );
       }
-    } else {
+    }
+    else {
       reader->set_absolute_sample_count( readme.absolute_sample_count() );
       reader->set_use_percent( readme.percent_of_data_to_use() );
       reader->set_first_n( readme.first_n() );
@@ -450,12 +452,14 @@ void init_data_readers(
     if (readme.role() == "train") {
       if (arg_parser.get<bool>(CREATE_TARBALL) || separate_validation) {
         reader->set_execution_mode_split_percent(execution_mode::validation, 0. );
-      } else {
+      }
+      else {
         reader->set_execution_mode_split_percent(execution_mode::validation, readme.validation_percent() );
       }
       if (arg_parser.get<bool>(CREATE_TARBALL) || separate_tournament) {
         reader->set_execution_mode_split_percent(execution_mode::tournament, 0. );
-      } else {
+      }
+      else {
         reader->set_execution_mode_split_percent(execution_mode::tournament, readme.tournament_percent() );
       }
     }
@@ -721,7 +725,8 @@ void set_data_readers_filenames(
       s << "data_filedir_" << which;
       if (arg_parser.get<std::string>(s.str()) != "") {
         r->set_data_filedir(arg_parser.get<std::string>(s.str()));
-      }else {
+      }
+      else {
         s.clear();
         s.str("");
         s << "data_filedir";
@@ -829,22 +834,22 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
     }
   }
 
-  if ((arg_parser.get<std::string>(DATA_FILEDIR) != "")
-      or (arg_parser.get<std::string>(DATA_FILEDIR_TRAIN) != "")
-      or (arg_parser.get<std::string>(DATA_FILENAME_TRAIN) != "")
-      or (arg_parser.get<std::string>(LABEL_FILENAME_TRAIN) != "")) {
+  if ((arg_parser.get<std::string>(DATA_FILEDIR) != "") or
+      (arg_parser.get<std::string>(DATA_FILEDIR_TRAIN) != "") or
+      (arg_parser.get<std::string>(DATA_FILENAME_TRAIN) != "") or
+      (arg_parser.get<std::string>(LABEL_FILENAME_TRAIN) != "")) {
     set_data_readers_filenames("train", p);
   }
-  if ((arg_parser.get<std::string>(DATA_FILEDIR) != "")
-      or (arg_parser.get<std::string>(DATA_FILEDIR_VALIDATE) != "")
-      or (arg_parser.get<std::string>(DATA_FILENAME_VALIDATE) != "")
-      or (arg_parser.get<std::string>(LABEL_FILENAME_VALIDATE) != "")) {
+  if ((arg_parser.get<std::string>(DATA_FILEDIR) != "") or
+      (arg_parser.get<std::string>(DATA_FILEDIR_VALIDATE) != "") or
+      (arg_parser.get<std::string>(DATA_FILENAME_VALIDATE) != "") or
+      (arg_parser.get<std::string>(LABEL_FILENAME_VALIDATE) != "")) {
     set_data_readers_filenames("validate", p);
   }
-  if ((arg_parser.get<std::string>(DATA_FILEDIR) != "")
-      or (arg_parser.get<std::string>(DATA_FILEDIR_TEST) != "")
-      or (arg_parser.get<std::string>(DATA_FILENAME_TEST) != "")
-      or (arg_parser.get<std::string>(LABEL_FILENAME_TEST) != "")) {
+  if ((arg_parser.get<std::string>(DATA_FILEDIR) != "") or
+      (arg_parser.get<std::string>(DATA_FILEDIR_TEST) != "") or
+      (arg_parser.get<std::string>(DATA_FILENAME_TEST) != "") or
+      (arg_parser.get<std::string>(LABEL_FILENAME_TEST) != "")) {
     set_data_readers_filenames("test", p);
   }
   if (arg_parser.get<std::string>(SAMPLE_LIST_TRAIN) != "") {
@@ -878,7 +883,8 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
     trainer->set_hydrogen_block_size(arg_parser.get<int>(HYDROGEN_BLOCK_SIZE));
   }
   if (arg_parser.get<int>(NUM_PARALLEL_READERS) != -1) {
-    trainer->set_num_parallel_readers(arg_parser.get<int>(NUM_PARALLEL_READERS));
+    trainer->set_num_parallel_readers(
+      arg_parser.get<int>(NUM_PARALLEL_READERS));
   }
   if (arg_parser.get<bool>(DISABLE_CUDA)) {
     model->set_disable_cuda(arg_parser.get<bool>(DISABLE_CUDA));
@@ -886,10 +892,9 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
   if (arg_parser.get<int>(RANDOM_SEED) == -1) {
     trainer->set_random_seed(arg_parser.get<int>(RANDOM_SEED));
   }
-  if(arg_parser.get<bool>(SERIALIZE_IO)) {
+  if (arg_parser.get<bool>(SERIALIZE_IO)) {
     trainer->set_serialize_io(arg_parser.get<bool>(SERIALIZE_IO));
   }
-
 }
 
 void print_parameters(const lbann_comm& comm,

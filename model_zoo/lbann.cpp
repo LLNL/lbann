@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -152,8 +152,7 @@ int main(int argc, char* argv[])
     lbann_data::Trainer* pb_trainer = pb.mutable_trainer();
 
     // Construct the trainer
-    auto& trainer =
-      construct_trainer(comm.get(), pb_trainer, pb);
+    auto& trainer = construct_trainer(comm.get(), pb_trainer, pb);
 
     thread_pool& io_thread_pool = trainer.get_io_thread_pool();
 

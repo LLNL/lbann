@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -36,6 +36,7 @@ template <class Archive>
 void data_coordinator::serialize( Archive & ar ) {
   ar(/*CEREAL_NVP(m_io_buffer),*/
      CEREAL_NVP(m_datasets)/*,
+     CEREAL_NVP(m_active_data_fields),
      CEREAL_NVP(m_data_readers),
      CEREAL_NVP(m_data_set_processed)*/);
 }

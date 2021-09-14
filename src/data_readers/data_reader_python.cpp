@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -105,12 +105,15 @@ int python_reader::get_linearized_label_size() const {
   return get_num_labels();
 }
 
-bool python_reader::fetch_data_block(CPUMat& X,
-                                     El::Int block_offset,
-                                     El::Int block_stride,
-                                     El::Int mb_size,
-                                     El::Matrix<El::Int>& indices_fetched) {
+bool python_reader::fetch_data_block(
+  std::map<data_field_type, CPUMat*>& input_buffers,
+  El::Int block_offset,
+  El::Int block_stride,
+  El::Int mb_size,
+  El::Matrix<El::Int>& indices_fetched)
+{
 
+  CPUMat& X = *(input_buffers[INPUT_DATA_TYPE_SAMPLES]);
   // Acquire Python GIL on first IO thread
   // Note: Do nothing on other IO threads.
   if (block_offset != 0) { return true; }

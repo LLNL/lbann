@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -29,6 +29,9 @@
 #define LBANN_DATA_READER_SYNTHETIC_HPP
 
 #include "data_reader.hpp"
+
+// Forward declaration
+class DataReaderSyntheticWhiteboxTester;
 
 namespace lbann {
 
@@ -83,7 +86,10 @@ class data_reader_synthetic : public generic_data_reader {
   bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;
   bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override;
 
- private:
+  // Designate a whitebox testing friend
+  friend class ::DataReaderSyntheticWhiteboxTester;
+
+private:
   /** Number of samples in the dataset. */
   int m_num_samples;
   /** Number of labels in the dataset. */

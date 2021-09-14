@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -58,18 +58,18 @@ int main(int argc, char *argv[]) {
     auto& arg_parser = global_argument_parser();
     construct_std_options();
     construct_jag_options();
-		try {
-			arg_parser.parse(argc, argv);
-		}
-		catch (std::exception const& e) {
-			auto guessed_rank = guess_global_rank();
-			if (guessed_rank <= 0)
-				// Cannot call `El::ReportException` because MPI hasn't been
-				// initialized yet.
-				std::cerr << "Error during argument parsing:\n\ne.what():\n\n  "
-									<< e.what() << "\n\nProcess terminating." << std::endl;
-			std::terminate();
-		}
+    try {
+      arg_parser.parse(argc, argv);
+    }
+    catch (std::exception const& e) {
+      auto guessed_rank = guess_global_rank();
+      if (guessed_rank <= 0)
+        // Cannot call `El::ReportException` because MPI hasn't been
+        // initialized yet.
+        std::cerr << "Error during argument parsing:\n\ne.what():\n\n  "
+                  << e.what() << "\n\nProcess terminating." << std::endl;
+      std::terminate();
+    }
 
     if (argc == 1) {
       if (master) {

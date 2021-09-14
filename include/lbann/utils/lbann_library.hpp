@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -68,11 +68,12 @@ int allocate_trainer_resources(lbann_comm *comm);
 
 // The constructed trainer has global scope. This returns a reference
 // to this global trainer.
-trainer& construct_trainer(lbann_comm *comm,
+trainer& construct_trainer(lbann_comm* comm,
                            lbann_data::Trainer* pb_trainer,
-                           lbann_data::LbannPB &pb);
+                           lbann_data::LbannPB& pb);
 
-std::unique_ptr<thread_pool> construct_io_thread_pool(lbann_comm *comm, bool serialized_io);
+std::unique_ptr<thread_pool> construct_io_thread_pool(lbann_comm* comm,
+                                                      bool serialized_io);
 
 std::unique_ptr<model> build_model_from_prototext(
     int argc, char **argv,
