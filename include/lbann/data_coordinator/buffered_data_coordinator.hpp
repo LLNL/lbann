@@ -63,19 +63,6 @@ class buffered_data_coordinator : public data_coordinator {
       }
     }
 
-    // If there are any data fields defined (or restored) create
-    // buffers for them
-    // for (const auto& data_field : m_active_data_fields) {
-    //   for (const auto& buf_map : m_data_buffers) {
-    //     const data_buffer_map_t& buffer_map = buf_map;
-    //     for (auto& [mode, buffer] : buffer_map) {
-    //       buffer->initialize_buffer_for_data_field(data_field, m_comm);
-    //     }
-    //   }
-    // }
-
-    // setup_data_fields(get_trainer().get_max_mini_batch_size());
-
     for(auto m : execution_mode_iterator()) {
       if(m != execution_mode::invalid) {
         this->m_active_buffer[m].store(-1);
