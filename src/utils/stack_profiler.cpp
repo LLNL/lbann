@@ -95,7 +95,8 @@ void stack_profiler::activate(int thread) {
         c_hash_fp_full_stack_trace_metadata = fopen("full_stack_trace.txt", "w");
       }
     }
-  } else {
+  }
+  else {
     c_hash_profiling_is_turned_on = 0;
   }
 }

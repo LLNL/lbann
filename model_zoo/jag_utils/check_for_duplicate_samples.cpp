@@ -59,17 +59,17 @@ int main(int argc, char *argv[]) {
     construct_std_options();
     construct_jag_options();
     try {
-    arg_parser.parse(argc, argv);
-		}
-		catch (std::exception const& e) {
-			auto guessed_rank = guess_global_rank();
-			if (guessed_rank <= 0)
-				// Cannot call `El::ReportException` because MPI hasn't been
-				// initialized yet.
-				std::cerr << "Error during argument parsing:\n\ne.what():\n\n  "
-									<< e.what() << "\n\nProcess terminating." << std::endl;
-			std::terminate();
-		}
+      arg_parser.parse(argc, argv);
+    }
+    catch (std::exception const& e) {
+      auto guessed_rank = guess_global_rank();
+      if (guessed_rank <= 0)
+        // Cannot call `El::ReportException` because MPI hasn't been
+        // initialized yet.
+        std::cerr << "Error during argument parsing:\n\ne.what():\n\n  "
+                  << e.what() << "\n\nProcess terminating." << std::endl;
+      std::terminate();
+    }
 
     // sanity check invocation
     if (arg_parser.get<std::string>(FILELIST) == "") {

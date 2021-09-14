@@ -41,10 +41,15 @@ void data_buffer<TensorDataType>::serialize( Archive & ar ) {
 }
 
 template <typename TensorDataType>
-void data_buffer<TensorDataType>::initialize_buffer_for_data_field(data_field_type const data_field, lbann_comm *comm) {
+void data_buffer<TensorDataType>::initialize_buffer_for_data_field(
+  data_field_type const data_field,
+  lbann_comm* comm)
+{
   // Allocate a buffer if the data field doesn't exist
-  if(m_input_buffers.find(data_field) == m_input_buffers.end()) {
-    m_input_buffers[data_field] = make_unique<StarVCMatDT<TensorDataType, El::Device::CPU>>(comm->get_trainer_grid());
+  if (m_input_buffers.find(data_field) == m_input_buffers.end()) {
+    m_input_buffers[data_field] =
+      make_unique<StarVCMatDT<TensorDataType, El::Device::CPU>>(
+        comm->get_trainer_grid());
 #if defined(LBANN_HAS_GPU)
     // Pin the memory so that we get efficient GPU data transfer
     m_input_buffers[data_field]->Matrix().SetMemoryMode(1);

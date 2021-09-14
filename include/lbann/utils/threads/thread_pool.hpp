@@ -55,9 +55,7 @@ public:
   thread_pool(size_type max_threads);
 
   /** @brief Destroy the threadpool */
-  ~thread_pool() {
-    reap_threads();
-  }
+  ~thread_pool() { reap_threads(); }
 
   /** @brief Launch the threads */
   void launch_threads(size_type num_threads);

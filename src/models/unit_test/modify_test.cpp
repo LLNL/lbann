@@ -64,9 +64,7 @@ auto make_model(lbann::lbann_comm& comm)
   if (!pb::TextFormat::ParseFromString(model_prototext, &my_proto))
     throw "Parsing protobuf failed.";
   // Construct a trainer so that the model can register the input layer
-  lbann::construct_trainer(&comm,
-                           my_proto.mutable_trainer(),
-                           my_proto);
+  lbann::construct_trainer(&comm, my_proto.mutable_trainer(), my_proto);
   auto metadata = mock_datareader_metadata();
   auto my_model = lbann::proto::construct_model(&comm,
                                                 -1,

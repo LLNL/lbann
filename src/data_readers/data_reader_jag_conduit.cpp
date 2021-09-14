@@ -884,7 +884,8 @@ void data_reader_jag_conduit::load_list_of_samples(const std::string sample_list
 
   if (this->m_keep_sample_order || arg_parser.get<bool>(KEEP_SAMPLE_ORDER)) {
     m_sample_list.keep_sample_order(true);
-  } else {
+  }
+  else {
     m_sample_list.keep_sample_order(false);
   }
 
@@ -907,7 +908,8 @@ void data_reader_jag_conduit::load_list_of_samples(const std::string sample_list
 
     m_sample_list.set_sample_list_name(sample_list_file);
     m_sample_list.load(iss, *(this->m_comm), true);
-  } else {
+  }
+  else {
     m_sample_list.load(sample_list_file, *(this->m_comm), true);
   }
 

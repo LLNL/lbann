@@ -84,7 +84,7 @@ void ras_lipid_conduit_data_reader::load() {
 
   auto& arg_parser = global_argument_parser();
   // TODO MRW
-  //opts->set_option(PRELOAD_DATA_STORE, 1);
+  // opts->set_option(PRELOAD_DATA_STORE, 1);
 
   // Error check some settings
   size_t count = get_absolute_sample_count();
@@ -105,7 +105,8 @@ void ras_lipid_conduit_data_reader::load() {
   // of samples before we sequentially-concatenate them)
   if (arg_parser.get<std::string>("pilot2_read_file_sizes") != "") {
     read_file_sizes();
-  } else {
+  }
+  else {
     double tm3 = get_time();
     get_samples_per_file();
     if (is_master()) std::cout << "time to compute samples_per_file: " << get_time() - tm3 << std::endl;
@@ -442,7 +443,8 @@ void ras_lipid_conduit_data_reader::write_file_sizes() {
   if (! is_master()) {
     return;
   }
-  std::string fn = global_argument_parser().get<std::string>(PILOT2_SAVE_FILE_SIZES);
+  std::string fn =
+    global_argument_parser().get<std::string>(PILOT2_SAVE_FILE_SIZES);
   std::ofstream out(fn.c_str());
   if (!out) {
     LBANN_ERROR("failed to open ", fn, " for writing");
@@ -454,7 +456,8 @@ void ras_lipid_conduit_data_reader::write_file_sizes() {
 }
 
 void ras_lipid_conduit_data_reader::read_file_sizes() {
-  std::string fn = global_argument_parser().get<std::string>(PILOT2_READ_FILE_SIZES);
+  std::string fn =
+    global_argument_parser().get<std::string>(PILOT2_READ_FILE_SIZES);
   std::ifstream in(fn.c_str());
   if (!in) {
     LBANN_ERROR("failed to open ", fn, " for reading");
@@ -481,7 +484,7 @@ void ras_lipid_conduit_data_reader::read_normalization_data() {
   m_use_z_score = false;
   auto& arg_parser = global_argument_parser();
   if (arg_parser.get<std::string>(NORMALIZATION) != "") {
-   m_use_min_max = true;
+    m_use_min_max = true;
     m_use_z_score = arg_parser.get<bool>(Z_SCORE);
     if (is_master()) {
       if (m_use_z_score) {
@@ -513,7 +516,8 @@ void ras_lipid_conduit_data_reader::read_normalization_data() {
     if (m_min.size() != 14) {
       LBANN_ERROR("normalization.size() = ", m_min.size(), "; should be 14");
     }
-  } else {
+  }
+  else {
     if (is_master()) {
       std::cout << "NOT Normalizing data!" << std::endl;
     }

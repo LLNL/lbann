@@ -770,8 +770,7 @@ auto argument_parser<ErrorHandler>::add_flag_impl_(
 
 }// namespace utils
 
-using default_arg_parser_type =
-         utils::argument_parser<utils::strict_parsing>;
+using default_arg_parser_type = utils::argument_parser<utils::strict_parsing>;
 
 default_arg_parser_type& global_argument_parser();
 

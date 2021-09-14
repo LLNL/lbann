@@ -53,18 +53,18 @@ int main(int argc, char *argv[]) {
     auto& arg_parser = global_argument_parser();
     construct_std_options();
     construct_jag_options();
-		try {
-				arg_parser.parse(argc, argv);
-		}
-		catch (std::exception const& e) {
-			auto guessed_rank = guess_global_rank();
-			if (guessed_rank <= 0)
-				// Cannot call `El::ReportException` because MPI hasn't been
-				// initialized yet.
-				std::cerr << "Error during argument parsing:\n\ne.what():\n\n  "
-									<< e.what() << "\n\nProcess terminating." << std::endl;
-			std::terminate();
-		}
+    try {
+      arg_parser.parse(argc, argv);
+    }
+    catch (std::exception const& e) {
+      auto guessed_rank = guess_global_rank();
+      if (guessed_rank <= 0)
+        // Cannot call `El::ReportException` because MPI hasn't been
+        // initialized yet.
+        std::cerr << "Error during argument parsing:\n\ne.what():\n\n  "
+                  << e.what() << "\n\nProcess terminating." << std::endl;
+      std::terminate();
+    }
 
     if (arg_parser.get<std::string>(FILELIST) == "" ||
         arg_parser.get<std::string>(OUTPUT_DIR) == "") {
@@ -91,7 +91,10 @@ int main(int argc, char *argv[]) {
       std::stringstream s;
       std::ifstream in(arg_parser.get<std::string>(FILELIST).c_str());
       if (!in) {
-        throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: failed to open " + arg_parser.get<std::string>(FILELIST) + " for reading");
+        throw lbann_exception(std::string{} + __FILE__ + " " +
+                              std::to_string(__LINE__) + " :: failed to open " +
+                              arg_parser.get<std::string>(FILELIST) +
+                              " for reading");
       }
       std::string line;
       while (getline(in, line)) {

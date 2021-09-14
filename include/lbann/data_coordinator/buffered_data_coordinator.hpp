@@ -146,7 +146,6 @@ class buffered_data_coordinator : public data_coordinator {
   const data_buffer<IODataType>& get_data_buffer(const data_buffer_map_t& buffer_map, const execution_mode mode) const;
   data_buffer<IODataType>& get_data_buffer(data_buffer_map_t& buffer_map, const execution_mode mode);
 
-
   void distribute_from_local_matrix(execution_mode mode,
                                     data_field_type data_field,
                                     AbsDistMatrixType& input_buffer);
@@ -181,7 +180,6 @@ protected:
   bool load_from_checkpoint_distributed(persist& p) override;
 
 protected:
-
   /** @brief After a data field has been registered with the data
    *  coordinator setup its buffers. Note this can be called after
    *  each call to register_active_data_field. */

@@ -272,7 +272,7 @@ void TruncationSelectionExchange::select_next(model& m,
     auto&& metadata = dc.get_dr_metadata();
     m.setup(trainer.get_max_mini_batch_size(),
             metadata,
-            /*force*/true);
+            /*force*/ true);
   }
 }
 

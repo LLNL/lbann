@@ -39,20 +39,32 @@
 //#include "./data_reader_common_catch2.hpp"
 #include "lbann/data_readers/data_reader_synthetic.hpp"
 #include "lbann/data_readers/utils/input_data_type.hpp"
+#include "lbann/utils/hash.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
 #include "lbann/utils/threads/thread_utils.hpp"
-#include "lbann/utils/hash.hpp"
 
 class DataReaderSyntheticWhiteboxTester
 {
 public:
-  bool fetch_datum(lbann::data_reader_synthetic& dr, lbann::CPUMat& X, int data_id, int mb_idx) {
+  bool fetch_datum(lbann::data_reader_synthetic& dr,
+                   lbann::CPUMat& X,
+                   int data_id,
+                   int mb_idx)
+  {
     return dr.fetch_datum(X, data_id, mb_idx);
   }
-  bool fetch_label(lbann::data_reader_synthetic& dr, lbann::CPUMat& Y, int data_id, int mb_idx) {
+  bool fetch_label(lbann::data_reader_synthetic& dr,
+                   lbann::CPUMat& Y,
+                   int data_id,
+                   int mb_idx)
+  {
     return dr.fetch_label(Y, data_id, mb_idx);
   }
-  bool fetch_response(lbann::data_reader_synthetic& dr, lbann::CPUMat& Y, int data_id, int mb_idx) {
+  bool fetch_response(lbann::data_reader_synthetic& dr,
+                      lbann::CPUMat& Y,
+                      int data_id,
+                      int mb_idx)
+  {
     return dr.fetch_response(Y, data_id, mb_idx);
   }
 };
@@ -74,15 +86,16 @@ TEST_CASE("Synthetic data reader public API tests",
   io_thread_pool->launch_pinned_threads(1, 1);
 
   std::set<std::string> active_data_fields = {"samples"};
-  active_data_fields.insert(GENERATE(std::string("labels"),
-                                     std::string("responses")));
+  active_data_fields.insert(
+    GENERATE(std::string("labels"), std::string("responses")));
   auto s = GENERATE(range(1, 11));
   El::Int num_samples = s;
-  std::vector<int> dims = {s,s};;
-  El::Int num_labels = s*2;
-  std::vector<int> response_dims = {s+1, s+1};
+  std::vector<int> dims = {s, s};
+  El::Int num_labels = s * 2;
+  std::vector<int> response_dims = {s + 1, s + 1};
 
-  std::map<lbann::data_field_type, std::unique_ptr<lbann::CPUMat>> owning_local_input_buffers;
+  std::map<lbann::data_field_type, std::unique_ptr<lbann::CPUMat>>
+    owning_local_input_buffers;
   std::map<lbann::data_field_type, lbann::CPUMat*> local_input_buffers;
   for (auto& data_field : active_data_fields) {
     auto local_mat = std::make_unique<lbann::CPUMat>();
@@ -106,20 +119,21 @@ TEST_CASE("Synthetic data reader public API tests",
   SECTION("fetch data fields")
   {
     std::unique_ptr<lbann::data_reader_synthetic> dr;
-    if(owning_local_input_buffers.find(INPUT_DATA_TYPE_LABELS) != owning_local_input_buffers.end()) {
-      dr = std::make_unique<lbann::data_reader_synthetic>(
-        num_samples,
-        dims,
-        num_labels,
-        false);
+    if (owning_local_input_buffers.find(INPUT_DATA_TYPE_LABELS) !=
+        owning_local_input_buffers.end()) {
+      dr = std::make_unique<lbann::data_reader_synthetic>(num_samples,
+                                                          dims,
+                                                          num_labels,
+                                                          false);
     }
-    else if(owning_local_input_buffers.find(INPUT_DATA_TYPE_RESPONSES) != owning_local_input_buffers.end()) {
-      dr = std::make_unique<lbann::data_reader_synthetic>(
-        num_samples,
-        dims,
-        response_dims,
-        false);
-    }else {
+    else if (owning_local_input_buffers.find(INPUT_DATA_TYPE_RESPONSES) !=
+             owning_local_input_buffers.end()) {
+      dr = std::make_unique<lbann::data_reader_synthetic>(num_samples,
+                                                          dims,
+                                                          response_dims,
+                                                          false);
+    }
+    else {
       LBANN_ERROR("Unknown data field");
     }
     dr->setup(io_thread_pool->get_num_threads(), io_thread_pool.get());

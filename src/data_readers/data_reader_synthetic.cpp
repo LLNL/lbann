@@ -23,7 +23,8 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_data_reader_synthetic .hpp .cpp - generic_data_reader class for synthetic (unit testing) data
+// lbann_data_reader_synthetic .hpp .cpp - generic_data_reader class for
+// synthetic (unit testing) data
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_synthetic.hpp"
@@ -53,9 +54,13 @@ data_reader_synthetic::data_reader_synthetic(int num_samples, int num_features,
 
 data_reader_synthetic::data_reader_synthetic(int num_samples,
                                              std::vector<int> dims,
-                                             int num_labels, bool shuffle)
-  : generic_data_reader(shuffle), m_num_samples(num_samples),
-    m_num_labels(num_labels), m_dimensions(dims) {
+                                             int num_labels,
+                                             bool shuffle)
+  : generic_data_reader(shuffle),
+    m_num_samples(num_samples),
+    m_num_labels(num_labels),
+    m_dimensions(dims)
+{
   set_has_labels(true);
 }
 
@@ -63,8 +68,12 @@ data_reader_synthetic::data_reader_synthetic(int num_samples,
                                              std::vector<int> dims,
                                              std::vector<int> response_dims,
                                              bool shuffle)
-  : generic_data_reader(shuffle), m_num_samples(num_samples),
-    m_num_labels(0), m_dimensions(dims), m_response_dimensions(response_dims) {
+  : generic_data_reader(shuffle),
+    m_num_samples(num_samples),
+    m_num_labels(0),
+    m_dimensions(dims),
+    m_response_dimensions(response_dims)
+{
   set_has_responses(true);
 }
 

@@ -83,8 +83,10 @@ public:
   /** Archive for checkpoint and restart */
   template <class Archive> void serialize( Archive & ar );
 
-  /** @brief Create a data parallel distributed matrix to hold the input data for the field */
-  void initialize_buffer_for_data_field(data_field_type const data_field, lbann_comm *comm);
+  /** @brief Create a data parallel distributed matrix to hold the input data
+   * for the field */
+  void initialize_buffer_for_data_field(data_field_type const data_field,
+                                        lbann_comm* comm);
 
   void set_fetch_data_in_background(bool flag) { m_fetch_data_in_background = flag; }
 

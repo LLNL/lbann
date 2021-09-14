@@ -35,7 +35,6 @@ using data_field_type = std::string;
 #define INPUT_DATA_TYPE_SAMPLES "samples"
 #define INPUT_DATA_TYPE_LABELS "labels"
 #define INPUT_DATA_TYPE_RESPONSES "responses"
-
 }
 
 #endif // LBANN_INPUT_DATA_TYPE_HPP_INCLUDED

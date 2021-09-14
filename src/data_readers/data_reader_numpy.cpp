@@ -83,7 +83,8 @@ void numpy_reader::load() {
       "numpy_reader: fortran order not supported");
   }
   // Don't currently support both labels and responses.
-  if (m_supported_input_types[INPUT_DATA_TYPE_LABELS] && m_supported_input_types[INPUT_DATA_TYPE_RESPONSES]) {
+  if (m_supported_input_types[INPUT_DATA_TYPE_LABELS] &&
+      m_supported_input_types[INPUT_DATA_TYPE_RESPONSES]) {
     throw lbann_exception(
       "numpy_reader: labels and responses not supported at same time");
   }
@@ -129,7 +130,8 @@ void numpy_reader::load() {
 
 bool numpy_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
   int features_size = m_num_features;
-  if (m_supported_input_types[INPUT_DATA_TYPE_LABELS] || m_supported_input_types[INPUT_DATA_TYPE_RESPONSES]) {
+  if (m_supported_input_types[INPUT_DATA_TYPE_LABELS] ||
+      m_supported_input_types[INPUT_DATA_TYPE_RESPONSES]) {
     features_size += 1;
   }
   if (m_data.word_size == 4) {

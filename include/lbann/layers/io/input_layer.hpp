@@ -27,12 +27,12 @@
 #ifndef LBANN_LAYERS_INPUT_LAYER_HPP_INCLUDED
 #define LBANN_LAYERS_INPUT_LAYER_HPP_INCLUDED
 
-#include "lbann/layers/data_type_layer.hpp"
 #include "lbann/data_coordinator/buffered_data_coordinator.hpp"
 #include "lbann/data_readers/utils/input_data_type.hpp"
-#include "lbann/utils/exception.hpp"
-#include "lbann/utils/distconv.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 #include "lbann/models/model.hpp"
+#include "lbann/utils/distconv.hpp"
+#include "lbann/utils/exception.hpp"
 
 namespace lbann {
 
@@ -106,15 +106,14 @@ class input_layer : public data_type_layer<TensorDataType> {
  public:
 
   /// @todo make the map and vector references
-  input_layer(lbann_comm *comm,
-              std::string const data_field = "")
-    : data_type_layer<TensorDataType>(comm),
-    m_data_field(data_field) {
+   input_layer(lbann_comm* comm, std::string const data_field = "")
+     : data_type_layer<TensorDataType>(comm), m_data_field(data_field)
+   {
 
-    // Input layers have no parents
-    this->m_expected_num_parent_layers = 0;
-    this->m_expected_num_child_layers = 1;
-  }
+     // Input layers have no parents
+     this->m_expected_num_parent_layers = 0;
+     this->m_expected_num_child_layers = 1;
+   }
 
   input_layer(const input_layer&) = default;
   input_layer& operator=(const input_layer&) = default;
@@ -161,9 +160,7 @@ class input_layer : public data_type_layer<TensorDataType> {
 
  private:
   friend cereal::access;
-  input_layer()
-    : input_layer(nullptr)
-  {}
+  input_layer() : input_layer(nullptr) {}
 
   // This is to track if samples are loaded with set_samples(), if so the
   // fp_compute() sample loading is no longer necessary

@@ -27,8 +27,8 @@
 #define CATCH_CONFIG_RUNNER
 #include <catch2/catch.hpp>
 #include <lbann/utils/dnn_lib/helpers.hpp>
-#include <lbann/utils/random_number_generators.hpp>
 #include <lbann/utils/options.hpp>
+#include <lbann/utils/random_number_generators.hpp>
 
 int main(int argc, char* argv[]) {
 #ifdef LBANN_HAS_DNN_LIB

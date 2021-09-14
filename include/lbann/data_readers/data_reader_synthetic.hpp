@@ -89,7 +89,7 @@ class data_reader_synthetic : public generic_data_reader {
   // Designate a whitebox testing friend
   friend class ::DataReaderSyntheticWhiteboxTester;
 
- private:
+private:
   /** Number of samples in the dataset. */
   int m_num_samples;
   /** Number of labels in the dataset. */

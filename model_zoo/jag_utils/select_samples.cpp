@@ -164,13 +164,13 @@ int main(int argc, char **argv) {
 void check_cmd_line() {
   auto& arg_parser = global_argument_parser();
   stringstream err;
-  if (! (arg_parser.get<std::string>(INDEX_FN) != "" &&
-         arg_parser.get<std::string>(MAPPING_FN) != "" &&
-         arg_parser.get<int>(NUM_SAMPLES_PER_LIST) != -1 &&
-         arg_parser.get<int>(NUM_LISTS) != -1 &&
-         arg_parser.get<int>(RANDOM_SEED) != -1 &&
-         arg_parser.get<std::string>(OUTPUT_DIR) != "" &&
-         arg_parser.get<std::string>(OUTPUT_BASE_FN) != "")) {
+  if (!(arg_parser.get<std::string>(INDEX_FN) != "" &&
+        arg_parser.get<std::string>(MAPPING_FN) != "" &&
+        arg_parser.get<int>(NUM_SAMPLES_PER_LIST) != -1 &&
+        arg_parser.get<int>(NUM_LISTS) != -1 &&
+        arg_parser.get<int>(RANDOM_SEED) != -1 &&
+        arg_parser.get<std::string>(OUTPUT_DIR) != "" &&
+        arg_parser.get<std::string>(OUTPUT_BASE_FN) != "")) {
     cout << help_msg();
     if (arg_parser.get<std::string>(INDEX_FN) == "") {
       cout << "missing --index_fn=<string> \n";

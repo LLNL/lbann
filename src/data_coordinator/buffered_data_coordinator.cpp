@@ -41,7 +41,9 @@
 namespace lbann {
 
 template <typename TensorDataType>
-void buffered_data_coordinator<TensorDataType>::register_active_data_field(data_field_type const data_field) {
+void buffered_data_coordinator<TensorDataType>::register_active_data_field(
+  data_field_type const data_field)
+{
   data_coordinator::register_active_data_field(data_field);
   for (const auto& buf_map : m_data_buffers) {
     const data_buffer_map_t& buffer_map = buf_map;
@@ -53,9 +55,12 @@ void buffered_data_coordinator<TensorDataType>::register_active_data_field(data_
 }
 
 template <typename TensorDataType>
-void buffered_data_coordinator<TensorDataType>::setup_data_fields(int max_mini_batch_size) {
-  if(m_active_data_fields.size() == 0) {
-    LBANN_ERROR("Models have not registered data fields with the data coordinator");
+void buffered_data_coordinator<TensorDataType>::setup_data_fields(
+  int max_mini_batch_size)
+{
+  if (m_active_data_fields.size() == 0) {
+    LBANN_ERROR(
+      "Models have not registered data fields with the data coordinator");
   }
 
 #ifdef LBANN_HAS_DISTCONV
@@ -86,14 +91,15 @@ void buffered_data_coordinator<TensorDataType>::setup_data_fields(int max_mini_b
   }
 
   // Check to see if there are any data fields with unallocated buffers
-  for(auto& data_field : m_active_data_fields) {
+  for (auto& data_field : m_active_data_fields) {
     for (const auto& buf_map : m_data_buffers) {
       const data_buffer_map_t& buffer_map = buf_map;
       for (const auto& [mode, data_buffer] : buffer_map) {
         auto& phase_io_buffer = data_buffer->m_input_buffers[data_field];
         // Check to see if a buffer has already been allocated.  If
         // not, resize and zero it
-        if(phase_io_buffer->IsEmpty() || phase_io_buffer->Width() == 0 || phase_io_buffer->Height() == 0) {
+        if (phase_io_buffer->IsEmpty() || phase_io_buffer->Width() == 0 ||
+            phase_io_buffer->Height() == 0) {
           El::Int linearized_size = get_linearized_size(data_field);
           data_buffer->m_input_buffers[data_field]->Resize(linearized_size,
                                                            max_mini_batch_size);
@@ -129,8 +135,9 @@ int buffered_data_coordinator<TensorDataType>::fetch_to_local_matrix(data_buffer
 
   buf.m_num_samples_fetched = 0;
   /// BVE FIXME change the guard
-  if (this->m_comm->get_rank_in_trainer() < num_parallel_readers
-      && (buf.m_input_buffers[INPUT_DATA_TYPE_SAMPLES]->LocalHeight() != 0 && buf.m_input_buffers[INPUT_DATA_TYPE_SAMPLES]->LocalWidth() != 0)) {
+  if (this->m_comm->get_rank_in_trainer() < num_parallel_readers &&
+      (buf.m_input_buffers[INPUT_DATA_TYPE_SAMPLES]->LocalHeight() != 0 &&
+       buf.m_input_buffers[INPUT_DATA_TYPE_SAMPLES]->LocalWidth() != 0)) {
     /// Create a map of the local matrices to pass into the data reader
     std::map<data_field_type, CPUMat*> local_input_buffers;
     for(auto& b : buf.m_input_buffers) {
@@ -153,7 +160,7 @@ void buffered_data_coordinator<TensorDataType>::fp_setup_data(data_buffer<IOData
 #ifdef LBANN_HAS_DISTCONV
   cur_mini_batch_size *= dc::get_number_of_io_partitions();
 #endif
-  for(auto& [data_field, mat] : buffer.m_input_buffers) {
+  for (auto& [data_field, mat] : buffer.m_input_buffers) {
     mat->Resize(mat->Height(), cur_mini_batch_size);
   }
 }
@@ -220,11 +227,11 @@ void buffered_data_coordinator<TensorDataType>::fetch_data(execution_mode mode) 
 
 template <typename TensorDataType>
 bool buffered_data_coordinator<TensorDataType>::epoch_complete(execution_mode mode) {
-      // Use the predetermined size of the mini-batch to set the current
-    // batch size for the neural network
+  // Use the predetermined size of the mini-batch to set the current
+  // batch size for the neural network
   int num_samples_in_batch = get_current_mini_batch_size(mode);
   // BVE When we finish the epoch we can increment the number of
-  //samples that have been
+  // samples that have been
   update_num_samples_processed(mode, num_samples_in_batch);
   m_data_set_processed = update_data_set(get_data_reader(mode), mode);
 
@@ -314,16 +321,22 @@ bool buffered_data_coordinator<TensorDataType>::update_data_set(generic_data_rea
 }
 
 template <typename TensorDataType>
-void buffered_data_coordinator<TensorDataType>::distribute_from_local_matrix(execution_mode mode, data_field_type const data_field, AbsDistMatrixType& input_buffer) {
+void buffered_data_coordinator<TensorDataType>::distribute_from_local_matrix(
+  execution_mode mode,
+  data_field_type const data_field,
+  AbsDistMatrixType& input_buffer)
+{
   prof_region_begin("distribute_from_local_matrix", prof_colors[3], false);
   data_buffer<IODataType>& buf = get_active_buffer(mode);
-  if(buf.m_input_buffers.find(data_field) == buf.m_input_buffers.end()) {
+  if (buf.m_input_buffers.find(data_field) == buf.m_input_buffers.end()) {
     LBANN_ERROR("Unknown data_field_type value requested: " + data_field);
   }
   view_or_copy_tensor(*buf.m_input_buffers[data_field], input_buffer);
 #ifdef LBANN_HAS_DISTCONV
-  if (dc::is_cosmoflow_parallel_io_enabled() && data_field == INPUT_DATA_TYPE_RESPONSES) {
-    El::Int new_width = input_buffer.Width() / dc::get_number_of_io_partitions();
+  if (dc::is_cosmoflow_parallel_io_enabled() &&
+      data_field == INPUT_DATA_TYPE_RESPONSES) {
+    El::Int new_width =
+      input_buffer.Width() / dc::get_number_of_io_partitions();
     if (input_buffer.Viewing()) {
       El::LockedView(input_buffer, input_buffer, El::ALL, El::IR(0, new_width));
     }

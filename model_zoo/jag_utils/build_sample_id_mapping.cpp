@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
   auto& arg_parser = global_argument_parser();
   construct_std_options();
   construct_jag_options();
-	try {
+  try {
     arg_parser.parse(argc, argv);
   }
   catch (std::exception const& e) {

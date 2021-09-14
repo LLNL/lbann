@@ -87,9 +87,12 @@ void generic_data_reader::setup(int num_io_threads, observer_ptr<thread_pool> io
   m_io_thread_pool = io_thread_pool;
 }
 
-int lbann::generic_data_reader::fetch(std::map<data_field_type, CPUMat*>& input_buffers, El::Matrix<El::Int>& indices_fetched) {
+int lbann::generic_data_reader::fetch(
+  std::map<data_field_type, CPUMat*>& input_buffers,
+  El::Matrix<El::Int>& indices_fetched)
+{
   // Check to make sure that a valid map was passed
-  if(input_buffers.empty()) {
+  if (input_buffers.empty()) {
     LBANN_ERROR("fetch function called with no valid buffer");
   }
   //  Check that all buffers within the map are valid and hold the
@@ -104,11 +107,13 @@ int lbann::generic_data_reader::fetch(std::map<data_field_type, CPUMat*>& input_
                   " for data field ",
                   data_field);
     }
-    if(buffer_width == 0) {
+    if (buffer_width == 0) {
       buffer_width = buf->Width();
-    }else {
-      if(buffer_width != buf->Width()) {
-        LBANN_ERROR("fetch function called with a set of buffers that have mismatched widths: h=",
+    }
+    else {
+      if (buffer_width != buf->Width()) {
+        LBANN_ERROR("fetch function called with a set of buffers that have "
+                    "mismatched widths: h=",
                     buf->Height(),
                     " x ",
                     buf->Width(),
@@ -118,7 +123,7 @@ int lbann::generic_data_reader::fetch(std::map<data_field_type, CPUMat*>& input_
     }
   }
 
-  #ifdef DEBUG
+#ifdef DEBUG
   if (m_current_pos == 0) {
     if (is_master()) {
       std::cout << "role: " << get_role() << " model: " << m_trainer->get_name()
@@ -134,8 +139,10 @@ int lbann::generic_data_reader::fetch(std::map<data_field_type, CPUMat*>& input_
   int loaded_batch_size = get_loaded_mini_batch_size();
 
   const int end_pos = std::min(static_cast<size_t>(m_current_pos+loaded_batch_size), m_shuffled_indices.size());
-  const int mb_size = std::min(El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
-      buffer_width);
+  const int mb_size =
+    std::min(El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) /
+                     m_sample_stride},
+             buffer_width);
 
   if(!position_valid()) {
     if(position_is_overrun()) {
@@ -164,7 +171,8 @@ int lbann::generic_data_reader::fetch(std::map<data_field_type, CPUMat*>& input_
   // set the single index corresponding to the categorical value.
   // With general data fields this will have to be the responsibilty
   // of the concrete data reader.
-  if (has_labels() && input_buffers.find(INPUT_DATA_TYPE_LABELS) != input_buffers.end()) {
+  if (has_labels() &&
+      input_buffers.find(INPUT_DATA_TYPE_LABELS) != input_buffers.end()) {
     auto& buf = input_buffers[INPUT_DATA_TYPE_LABELS];
     El::Zeros_seq(*buf, buf->Height(), buf->Width());
   }
@@ -206,11 +214,17 @@ int lbann::generic_data_reader::fetch(std::map<data_field_type, CPUMat*>& input_
   return mb_size;
 }
 
-bool lbann::generic_data_reader::fetch_data_block(std::map<data_field_type, CPUMat*>& input_buffers, El::Int block_offset, El::Int block_stride, El::Int mb_size, El::Matrix<El::Int>& indices_fetched) {
+bool lbann::generic_data_reader::fetch_data_block(
+  std::map<data_field_type, CPUMat*>& input_buffers,
+  El::Int block_offset,
+  El::Int block_stride,
+  El::Int mb_size,
+  El::Matrix<El::Int>& indices_fetched)
+{
   locked_io_rng_ref io_rng = set_io_generators_local_index(block_offset);
 
   //  CPUMat& X
-  for (int s = block_offset; s < mb_size; s+=block_stride) {
+  for (int s = block_offset; s < mb_size; s += block_stride) {
     int n = m_current_pos + (s * m_sample_stride);
     int index = m_shuffled_indices[n];
     indices_fetched.Set(s, 0, index);
@@ -257,7 +271,6 @@ bool lbann::generic_data_reader::fetch_data_block(std::map<data_field_type, CPUM
         }
       }
     }
-
   }
 
   return true;
@@ -670,10 +683,10 @@ double generic_data_reader::get_use_percent() const {
 void generic_data_reader::instantiate_data_store() {
   double tm1 = get_time();
   auto& arg_parser = global_argument_parser();
-  if (! (arg_parser.get<bool>(USE_DATA_STORE) ||
-         arg_parser.get<bool>(PRELOAD_DATA_STORE) ||
-         arg_parser.get<bool>(DATA_STORE_CACHE) ||
-         arg_parser.get<std::string>(DATA_STORE_SPILL) != "")) {
+  if (!(arg_parser.get<bool>(USE_DATA_STORE) ||
+        arg_parser.get<bool>(PRELOAD_DATA_STORE) ||
+        arg_parser.get<bool>(DATA_STORE_CACHE) ||
+        arg_parser.get<std::string>(DATA_STORE_SPILL) != "")) {
     if (m_data_store != nullptr) {
       delete m_data_store;
       m_data_store = nullptr;
@@ -761,8 +774,8 @@ void generic_data_reader::set_mini_batch_size(const int s) {
 
 void generic_data_reader::set_role(std::string role) {
   m_role = role;
-  if (global_argument_parser().get<bool>(JAG_PARTITIONED)
-      && get_role() == "train") {
+  if (global_argument_parser().get<bool>(JAG_PARTITIONED) &&
+      get_role() == "train") {
     m_jag_partitioned = true;
     if (is_master()) {
       std::cout << "USING JAG DATA PARTITIONING\n";

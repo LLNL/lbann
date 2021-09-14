@@ -290,16 +290,21 @@ class data_coordinator {
   /**
    * Get the linearized size of the underlying data.
    */
-  long get_linearized_size(data_field_type const& data_field) const {
+  long get_linearized_size(data_field_type const& data_field) const
+  {
     long linearized_size = -1;
-    for(auto mode : execution_mode_iterator()) {
+    for (auto mode : execution_mode_iterator()) {
       if (generic_data_reader const* const dr = get_data_reader(mode)) {
         long tmp_size = dr->get_linearized_size(data_field);
         if (linearized_size != -1 && linearized_size != tmp_size) {
-          LBANN_ERROR("data_coordinator: ", to_string(mode),
-                      " data set size (", std::to_string(tmp_size),
-                      ") does not match the currently established data set size (",
-                      std::to_string(linearized_size), ")");
+          LBANN_ERROR(
+            "data_coordinator: ",
+            to_string(mode),
+            " data set size (",
+            std::to_string(tmp_size),
+            ") does not match the currently established data set size (",
+            std::to_string(linearized_size),
+            ")");
         }
         linearized_size = tmp_size;
       }
@@ -466,7 +471,8 @@ class data_coordinator {
     return at_new_epoch(execution_mode::training);
   }
 
-  virtual void register_active_data_field(data_field_type const data_field) {
+  virtual void register_active_data_field(data_field_type const data_field)
+  {
     m_active_data_fields.insert(data_field);
   }
 

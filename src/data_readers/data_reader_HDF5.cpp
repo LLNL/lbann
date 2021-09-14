@@ -223,7 +223,7 @@ void hdf5_data_reader::load()
   // May go away; for now, this reader only supports preloading mode
   // with data store
   // TODO MRW
-  //opts->set_option("preload_data_store", true);
+  // opts->set_option("preload_data_store", true);
 
   // Load the sample list(s)
   data_reader_sample_list::load();

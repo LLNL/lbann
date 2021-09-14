@@ -52,9 +52,7 @@ int main(int argc, char *argv[]) {
     // Initialize options db (this parses the command line)
     auto& arg_parser = global_argument_parser();
     construct_all_options();
-		arg_parser.add_flag("fn",
-												{"--fn"},
-												"TODO");
+    arg_parser.add_flag("fn", {"--fn"}, "TODO");
     arg_parser.parse(argc, argv);
 
     if (arg_parser.help_requested() or argc == 1) {

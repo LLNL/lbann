@@ -55,17 +55,17 @@ namespace lbann {
 
 template <typename TensorDataType>
 hdf5_reader<TensorDataType>::hdf5_reader(const bool shuffle,
-                         const std::string key_data,
-                         const std::string key_labels,
-                         const std::string key_responses,
-                         const bool hyperslab_labels)
-    : generic_data_reader(shuffle),
-      m_use_data_store(global_argument_parser().get<bool>(USE_DATA_STORE)),
-      m_key_data(key_data),
-      m_key_labels(key_labels),
-      m_key_responses(key_responses),
-      m_hyperslab_labels(hyperslab_labels) {
-}
+                                         const std::string key_data,
+                                         const std::string key_labels,
+                                         const std::string key_responses,
+                                         const bool hyperslab_labels)
+  : generic_data_reader(shuffle),
+    m_use_data_store(global_argument_parser().get<bool>(USE_DATA_STORE)),
+    m_key_data(key_data),
+    m_key_labels(key_labels),
+    m_key_responses(key_responses),
+    m_hyperslab_labels(hyperslab_labels)
+{}
 
 template <typename TensorDataType>
 hdf5_reader<TensorDataType>::hdf5_reader(const hdf5_reader& rhs)  : generic_data_reader(rhs) {

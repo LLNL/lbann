@@ -114,27 +114,42 @@ int main(int argc, char *argv[]) {
       training_dr_linearized_data_size = dr->get_linearized_data_size();
     }
 
-    auto model_1 = build_model_from_prototext(argc, argv, pb_trainer, *(pbs[0]),
-                                              comm.get(), io_thread_pool,
-                                              trainer.get_callbacks_with_ownership(),
-                                              training_dr_linearized_data_size); //ae
+    auto model_1 =
+      build_model_from_prototext(argc,
+                                 argv,
+                                 pb_trainer,
+                                 *(pbs[0]),
+                                 comm.get(),
+                                 io_thread_pool,
+                                 trainer.get_callbacks_with_ownership(),
+                                 training_dr_linearized_data_size); // ae
     std::unique_ptr<model>
       model_2, //cycgan
       model_3; //ae+cycgan
 
 
     if (pbs.size() > 1) {
-      model_2 = build_model_from_prototext(argc, argv, pb_trainer, *(pbs[1]),
-                                           comm.get(), io_thread_pool,
-                                           trainer.get_callbacks_with_ownership(),
-                                           training_dr_linearized_data_size);
+      model_2 =
+        build_model_from_prototext(argc,
+                                   argv,
+                                   pb_trainer,
+                                   *(pbs[1]),
+                                   comm.get(),
+                                   io_thread_pool,
+                                   trainer.get_callbacks_with_ownership(),
+                                   training_dr_linearized_data_size);
     }
 
     if (pbs.size() > 2) {
-      model_3 = build_model_from_prototext(argc, argv, pb_trainer, *(pbs[2]),
-                                           comm.get(), io_thread_pool,
-                                           trainer.get_callbacks_with_ownership(),
-                                           training_dr_linearized_data_size);
+      model_3 =
+        build_model_from_prototext(argc,
+                                   argv,
+                                   pb_trainer,
+                                   *(pbs[2]),
+                                   comm.get(),
+                                   io_thread_pool,
+                                   trainer.get_callbacks_with_ownership(),
+                                   training_dr_linearized_data_size);
     }
 
 

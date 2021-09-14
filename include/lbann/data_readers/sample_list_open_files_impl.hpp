@@ -805,10 +805,10 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
       clear_file_handle(victim_fd);
     }
 
-    /// Before we can enqueue the any new access times for this descriptor, remove any
-    /// earlier descriptor
+    /// Before we can enqueue the any new access times for this descriptor,
+    /// remove any earlier descriptor
     std::sort_heap(m_open_fd_pq.begin(), m_open_fd_pq.end(), pq_cmp);
-    if(m_open_fd_pq.front().first == id) {
+    if (m_open_fd_pq.front().first == id) {
       m_open_fd_pq.pop_front();
     }
     std::make_heap(m_open_fd_pq.begin(), m_open_fd_pq.end(), pq_cmp);

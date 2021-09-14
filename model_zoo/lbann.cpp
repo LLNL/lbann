@@ -152,8 +152,7 @@ int main(int argc, char* argv[])
     lbann_data::Trainer* pb_trainer = pb.mutable_trainer();
 
     // Construct the trainer
-    auto& trainer =
-      construct_trainer(comm.get(), pb_trainer, pb);
+    auto& trainer = construct_trainer(comm.get(), pb_trainer, pb);
 
     thread_pool& io_thread_pool = trainer.get_io_thread_pool();
 

@@ -27,8 +27,8 @@
 #define LBANN_DATA_READER_HDF5_REVISED_HPP
 
 #include "lbann/data_readers/data_reader.hpp"
-#include "lbann/data_readers/sample_list_hdf5.hpp"
 #include "lbann/data_readers/data_reader_sample_list.hpp"
+#include "lbann/data_readers/sample_list_hdf5.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
 
 // Forward declaration

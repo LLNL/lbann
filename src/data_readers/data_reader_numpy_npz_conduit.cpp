@@ -79,7 +79,8 @@ void numpy_npz_conduit_reader::load() {
 
   auto& arg_parser = global_argument_parser();
 
-  if (! (arg_parser.get<bool>(PRELOAD_DATA_STORE) || arg_parser.get<bool>(USE_DATA_STORE))) {
+  if (!(arg_parser.get<bool>(PRELOAD_DATA_STORE) ||
+        arg_parser.get<bool>(USE_DATA_STORE))) {
     LBANN_ERROR("numpy_npz_conduit_reader requires data_store; please pass either --use_data_store or --preload_data_store on the cmd line");
   }
 
@@ -103,7 +104,8 @@ void numpy_npz_conduit_reader::load() {
   resize_shuffled_indices();
   m_num_samples = m_shuffled_indices.size();
 
-  if (m_num_labels == 0 && !arg_parser.get<bool>(PRELOAD_DATA_STORE) && arg_parser.get<bool>(USE_DATA_STORE)) {
+  if (m_num_labels == 0 && !arg_parser.get<bool>(PRELOAD_DATA_STORE) &&
+      arg_parser.get<bool>(USE_DATA_STORE)) {
     LBANN_WARNING("when not preloading you must specify the number of labels in the prototext file if you are doing classification");
   }
 
@@ -127,14 +129,15 @@ void numpy_npz_conduit_reader::do_preload_data_store() {
 
   std::unordered_set<int> label_classes;
 
-  bool threaded = ! global_argument_parser().get<bool>(DATA_STORE_NO_THREAD);
+  bool threaded = !global_argument_parser().get<bool>(DATA_STORE_NO_THREAD);
 
   //threaded mode
   if (threaded) {
     if (is_master()) {
       std::cout << "mode: data_store_thread\n";
     }
-    std::shared_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(m_comm, false);
+    std::shared_ptr<thread_pool> io_thread_pool =
+      construct_io_thread_pool(m_comm, false);
     int num_threads = static_cast<int>(io_thread_pool->get_num_threads());
 
     //collect the set of indices that belong to this rank

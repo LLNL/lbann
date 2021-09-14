@@ -84,8 +84,8 @@ data_store_conduit::data_store_conduit(
     LBANN_ERROR("data_store_conduit is throwing a fake exception; this is for use during testing");
   }
 
-  if (arg_parser.get<std::string>(DATA_STORE_TEST_CHECKPOINT) != ""
-      && arg_parser.get<std::string>(DATA_STORE_SPILL) != "") {
+  if (arg_parser.get<std::string>(DATA_STORE_TEST_CHECKPOINT) != "" &&
+      arg_parser.get<std::string>(DATA_STORE_SPILL) != "") {
     LBANN_ERROR("you passed both --data_store_test_checkpoint and --data_store_spill; please use one or the other or none, but not both");
   }
   if (arg_parser.get<std::string>(DATA_STORE_TEST_CHECKPOINT) != "") {
@@ -1866,7 +1866,8 @@ void data_store_conduit::open_informational_files() {
   }
 
   // optionally, each <rank, reader_role> pair opens a debug file
-  if (arg_parser.get<bool>(DATA_STORE_DEBUG) && !m_debug && m_reader != nullptr) {
+  if (arg_parser.get<bool>(DATA_STORE_DEBUG) && !m_debug &&
+      m_reader != nullptr) {
     m_debug_filename = m_debug_filename_base + "_" + m_reader->get_role() + "." + std::to_string(m_comm->get_rank_in_world()) + ".txt";
     m_debug = new std::ofstream(m_debug_filename.c_str());
     if (!m_debug) {
@@ -1875,7 +1876,8 @@ void data_store_conduit::open_informational_files() {
   }
 
   // optionally, <P_0, reader_role> pair opens a file for writing
-  if (arg_parser.get<bool>(DATA_STORE_PROFILE) && m_world_master && !m_profile && m_reader != nullptr) {
+  if (arg_parser.get<bool>(DATA_STORE_PROFILE) && m_world_master &&
+      !m_profile && m_reader != nullptr) {
     m_profile_filename = m_profile_filename_base + "_" + m_reader->get_role() + ".txt";
     m_profile = new std::ofstream(m_profile_filename.c_str());
     if (!m_profile) {

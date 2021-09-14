@@ -102,8 +102,8 @@ int main(int argc, char *argv[]) {
     }
 
     if (!arg_parser.get<bool>(DISABLE_SIGNAL_HANDLER)) {
-      std::string file_base = (arg_parser.get<bool>(STACK_TRACE_TO_FILE) ?
-                               "stack_trace" : "");
+      std::string file_base =
+        (arg_parser.get<bool>(STACK_TRACE_TO_FILE) ? "stack_trace" : "");
       stack_trace::register_signal_handler(file_base);
     }
 
@@ -132,11 +132,16 @@ int main(int argc, char *argv[]) {
       training_dr_linearized_data_size = dr->get_linearized_data_size();
     }
 
-    auto model_1 = build_model_from_prototext(argc, argv, pb_trainer, *(pbs[0]),
-                                              comm.get(), io_thread_pool,
-                                              trainer.get_callbacks_with_ownership(),
-                                              training_dr_linearized_data_size); //D1 solver
-    //hack, overide model name to make reporting easy, what can break?"
+    auto model_1 =
+      build_model_from_prototext(argc,
+                                 argv,
+                                 pb_trainer,
+                                 *(pbs[0]),
+                                 comm.get(),
+                                 io_thread_pool,
+                                 trainer.get_callbacks_with_ownership(),
+                                 training_dr_linearized_data_size); // D1 solver
+    // hack, overide model name to make reporting easy, what can break?"
     std::unique_ptr<model> model_2, //G1 solver
       model_3, //G2 solver
 
@@ -145,31 +150,51 @@ int main(int argc, char *argv[]) {
       ae_cycgan_model; //contain layer(s) from (cyc)GAN
 
     if (pbs.size() > 1) {
-      model_2 = build_model_from_prototext(argc, argv, pb_trainer, *(pbs[1]),
-                                           comm.get(), io_thread_pool,
-                                           trainer.get_callbacks_with_ownership(),
-                                           training_dr_linearized_data_size);
+      model_2 =
+        build_model_from_prototext(argc,
+                                   argv,
+                                   pb_trainer,
+                                   *(pbs[1]),
+                                   comm.get(),
+                                   io_thread_pool,
+                                   trainer.get_callbacks_with_ownership(),
+                                   training_dr_linearized_data_size);
     }
 
     if (pbs.size() > 2) {
-      model_3 = build_model_from_prototext(argc, argv, pb_trainer, *(pbs[2]),
-                                           comm.get(), io_thread_pool,
-                                           trainer.get_callbacks_with_ownership(),
-                                           training_dr_linearized_data_size);
+      model_3 =
+        build_model_from_prototext(argc,
+                                   argv,
+                                   pb_trainer,
+                                   *(pbs[2]),
+                                   comm.get(),
+                                   io_thread_pool,
+                                   trainer.get_callbacks_with_ownership(),
+                                   training_dr_linearized_data_size);
     }
 
     if (pbs.size() > 3) {
-      ae_model = build_model_from_prototext(argc, argv, pb_trainer, *(pbs[3]),
-                                            comm.get(), io_thread_pool,
-                                            trainer.get_callbacks_with_ownership(),
-                                            training_dr_linearized_data_size);
+      ae_model =
+        build_model_from_prototext(argc,
+                                   argv,
+                                   pb_trainer,
+                                   *(pbs[3]),
+                                   comm.get(),
+                                   io_thread_pool,
+                                   trainer.get_callbacks_with_ownership(),
+                                   training_dr_linearized_data_size);
     }
 
     if (pbs.size() > 4) {
-      ae_cycgan_model = build_model_from_prototext(argc, argv, pb_trainer, *(pbs[4]),
-                                                   comm.get(), io_thread_pool,
-                                                   trainer.get_callbacks_with_ownership(),
-                                                   training_dr_linearized_data_size);
+      ae_cycgan_model =
+        build_model_from_prototext(argc,
+                                   argv,
+                                   pb_trainer,
+                                   *(pbs[4]),
+                                   comm.get(),
+                                   io_thread_pool,
+                                   trainer.get_callbacks_with_ownership(),
+                                   training_dr_linearized_data_size);
     }
 
     const lbann_data::Model pb_model = pbs[0]->model();

@@ -44,7 +44,9 @@ setup_dims(DataReaderMetaData& dr_metadata) {
   for (int i = 0; i < this->get_num_children(); ++i) {
     this->set_output_dims(get_data_dims(dr_metadata, i), i);
   }
-  if(m_data_field == "") { LBANN_ERROR("Failed to setup input layer with empty data field"); }
+  if (m_data_field == "") {
+    LBANN_ERROR("Failed to setup input layer with empty data field");
+  }
   get_trainer().get_data_coordinator().register_active_data_field(m_data_field);
 }
 
@@ -108,7 +110,9 @@ void input_layer<TensorDataType, T_layout, Dev>::fp_compute()
       static_cast<buffered_data_coordinator<TensorDataType>&>(
         get_trainer().get_data_coordinator());
 
-    dc.distribute_from_local_matrix(mode, m_data_field, this->get_activations(0));
+    dc.distribute_from_local_matrix(mode,
+                                    m_data_field,
+                                    this->get_activations(0));
 
 #ifdef LBANN_HAS_DISTCONV
     if (this->distconv_enabled()) {
@@ -132,14 +136,19 @@ template <typename TensorDataType,
           El::Device Dev>
 std::vector<int> input_layer<TensorDataType, T_layout, Dev>::
 get_data_dims(DataReaderMetaData& dr_metadata, int child_index) const {
-  if(child_index != 0) {LBANN_ERROR("get_data_dims: Invalid child index"); }
-  if(m_data_field == INPUT_DATA_TYPE_SAMPLES) {
+  if (child_index != 0) {
+    LBANN_ERROR("get_data_dims: Invalid child index");
+  }
+  if (m_data_field == INPUT_DATA_TYPE_SAMPLES) {
     return dr_metadata.data_dims[data_reader_target_mode::INPUT];
-  }else if(m_data_field == INPUT_DATA_TYPE_LABELS) {
+  }
+  else if (m_data_field == INPUT_DATA_TYPE_LABELS) {
     return dr_metadata.data_dims[data_reader_target_mode::CLASSIFICATION];
-  }else if(m_data_field == INPUT_DATA_TYPE_RESPONSES) {
+  }
+  else if (m_data_field == INPUT_DATA_TYPE_RESPONSES) {
     return dr_metadata.data_dims[data_reader_target_mode::REGRESSION];
-  }else {
+  }
+  else {
     LBANN_ERROR("Unknown data_field_type value provided: " + m_data_field);
   }
   return std::vector<int>(1, 0);

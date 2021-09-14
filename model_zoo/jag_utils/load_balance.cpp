@@ -100,7 +100,10 @@ int main(int argc, char *argv[]) {
       std::stringstream s;
       std::ifstream in(arg_parser.get<std::string>(FILELIST).c_str());
       if (!in) {
-          throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: failed to open " + arg_parser.get<std::string>(FILELIST) + " for reading");
+        throw lbann_exception(std::string{} + __FILE__ + " " +
+                              std::to_string(__LINE__) + " :: failed to open " +
+                              arg_parser.get<std::string>(FILELIST) +
+                              " for reading");
       }
       std::string line;
       while (getline(in, line)) {

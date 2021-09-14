@@ -184,7 +184,8 @@ void print_statistics::report_results(model *m) {
     const int num_trainers = comm->get_num_trainers();
 
     auto& arg_parser = global_argument_parser();
-    bool allow_global_statistics = arg_parser.get<bool>(LTFB_ALLOW_GLOBAL_STATISTICS);
+    bool allow_global_statistics =
+      arg_parser.get<bool>(LTFB_ALLOW_GLOBAL_STATISTICS);
     std::stringstream report;
 
     // Report objective function value

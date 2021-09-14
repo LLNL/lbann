@@ -30,17 +30,17 @@
 #define LBANN_DATA_READER_HPP
 
 #include "lbann/base.hpp"
-#include "lbann/data_coordinator/data_coordinator_metadata.hpp"
-#include "lbann/utils/random_number_generators.hpp"
-#include "lbann/data_readers/utils/input_data_type.hpp"
-#include "lbann/utils/exception.hpp"
 #include "lbann/comm.hpp"
+#include "lbann/data_coordinator/data_coordinator_metadata.hpp"
+#include "lbann/data_readers/utils/input_data_type.hpp"
 #include "lbann/io/file_io.hpp"
 #include "lbann/io/persist.hpp"
-#include "lbann/utils/options.hpp"
 #include "lbann/transforms/transform_pipeline.hpp"
-#include "lbann/utils/distconv.hpp"
 #include "lbann/utils/argument_parser.hpp"
+#include "lbann/utils/distconv.hpp"
+#include "lbann/utils/exception.hpp"
+#include "lbann/utils/options.hpp"
+#include "lbann/utils/random_number_generators.hpp"
 
 #include <cassert>
 #include <algorithm>
@@ -76,34 +76,45 @@ class generic_data_reader {
   /**
    * ctor
    */
-  generic_data_reader(bool shuffle = true) :
-    m_verbose(global_argument_parser().get<bool>(VERBOSE)),
-    m_data_store(nullptr),
-    m_comm(nullptr),
-    m_mini_batch_size(0), m_current_pos(0),
-    m_stride_to_next_mini_batch(0), m_base_offset(0), m_model_offset(0),
-    m_sample_stride(1), m_iteration_stride(1),
-    m_last_mini_batch_size(0),
-    m_stride_to_last_mini_batch(0),
-    m_reset_mini_batch_index(0),
-    m_loaded_mini_batch_idx(0),
-    m_current_mini_batch_idx(0),
-    m_num_iterations_per_epoch(0), m_global_mini_batch_size(0),
-    m_global_last_mini_batch_size(0),
-    m_world_master_mini_batch_adjustment(0),
-    m_num_parallel_readers(0), m_rank_in_model(0),
-    m_max_files_to_load(0),
-    m_file_dir(""), m_data_sample_list(""), m_data_fn(""), m_label_fn(""),
-    m_shuffle(shuffle), m_absolute_sample_count(0),
-    m_use_percent(1.0),
-    m_master(false),
-    m_gan_labelling(false), //default, not GAN
-    m_gan_label_value(0),  //If GAN, default for fake label, discriminator model
-    m_io_thread_pool(nullptr),
-    m_jag_partitioned(false),
-    m_keep_sample_order(false),
-    m_trainer(nullptr),
-    m_issue_warning(true)
+  generic_data_reader(bool shuffle = true)
+    : m_verbose(global_argument_parser().get<bool>(VERBOSE)),
+      m_data_store(nullptr),
+      m_comm(nullptr),
+      m_mini_batch_size(0),
+      m_current_pos(0),
+      m_stride_to_next_mini_batch(0),
+      m_base_offset(0),
+      m_model_offset(0),
+      m_sample_stride(1),
+      m_iteration_stride(1),
+      m_last_mini_batch_size(0),
+      m_stride_to_last_mini_batch(0),
+      m_reset_mini_batch_index(0),
+      m_loaded_mini_batch_idx(0),
+      m_current_mini_batch_idx(0),
+      m_num_iterations_per_epoch(0),
+      m_global_mini_batch_size(0),
+      m_global_last_mini_batch_size(0),
+      m_world_master_mini_batch_adjustment(0),
+      m_num_parallel_readers(0),
+      m_rank_in_model(0),
+      m_max_files_to_load(0),
+      m_file_dir(""),
+      m_data_sample_list(""),
+      m_data_fn(""),
+      m_label_fn(""),
+      m_shuffle(shuffle),
+      m_absolute_sample_count(0),
+      m_use_percent(1.0),
+      m_master(false),
+      m_gan_labelling(false), // default, not GAN
+      m_gan_label_value(
+        0), // If GAN, default for fake label, discriminator model
+      m_io_thread_pool(nullptr),
+      m_jag_partitioned(false),
+      m_keep_sample_order(false),
+      m_trainer(nullptr),
+      m_issue_warning(true)
   {
     // By default only support fetching input samples
     m_supported_input_types[INPUT_DATA_TYPE_SAMPLES] = true;
@@ -294,24 +305,41 @@ class generic_data_reader {
   virtual std::string get_type() const = 0;
 
   /** @brief Fetch a mini-batch worth of data, including samples, labels, responses (as appropriate) */
-  int fetch(std::map<data_field_type, CPUMat*>& input_buffers, El::Matrix<El::Int>& indices_fetched);
+  int fetch(std::map<data_field_type, CPUMat*>& input_buffers,
+            El::Matrix<El::Int>& indices_fetched);
 
-  /** @brief Check to see if the data reader supports this specific data field */
-  virtual bool has_data_field(data_field_type data_field) const {
-    if(m_supported_input_types.find(data_field) != m_supported_input_types.end()) {
+  /** @brief Check to see if the data reader supports this specific data field
+   */
+  virtual bool has_data_field(data_field_type data_field) const
+  {
+    if (m_supported_input_types.find(data_field) !=
+        m_supported_input_types.end()) {
       return m_supported_input_types.at(data_field);
-    }else {
+    }
+    else {
       return false;
     }
   }
 
-  virtual bool has_labels() const { return has_data_field(INPUT_DATA_TYPE_LABELS); }
-  virtual bool has_responses() const { return has_data_field(INPUT_DATA_TYPE_RESPONSES); }
+  virtual bool has_labels() const
+  {
+    return has_data_field(INPUT_DATA_TYPE_LABELS);
+  }
+  virtual bool has_responses() const
+  {
+    return has_data_field(INPUT_DATA_TYPE_RESPONSES);
+  }
 
   /// Whether or not a data reader has labels
-  virtual void set_has_labels(const bool b) { m_supported_input_types[INPUT_DATA_TYPE_LABELS] = b; }
+  virtual void set_has_labels(const bool b)
+  {
+    m_supported_input_types[INPUT_DATA_TYPE_LABELS] = b;
+  }
   /// Whether or not a data reader has a response field
-  virtual void set_has_responses(const bool b) { m_supported_input_types[INPUT_DATA_TYPE_RESPONSES] = b; }
+  virtual void set_has_responses(const bool b)
+  {
+    m_supported_input_types[INPUT_DATA_TYPE_RESPONSES] = b;
+  }
 
   /**
    * During the network's update phase, the data reader will
@@ -350,14 +378,18 @@ class generic_data_reader {
     return 1;
   }
   /// get the linearized size of what is identified by desc.
-  virtual int get_linearized_size(data_field_type const& data_field) const {
-    if(data_field == INPUT_DATA_TYPE_SAMPLES) {
+  virtual int get_linearized_size(data_field_type const& data_field) const
+  {
+    if (data_field == INPUT_DATA_TYPE_SAMPLES) {
       return get_linearized_data_size();
-    }else if(data_field == INPUT_DATA_TYPE_LABELS) {
+    }
+    else if (data_field == INPUT_DATA_TYPE_LABELS) {
       return get_linearized_label_size();
-    }else if(data_field == INPUT_DATA_TYPE_RESPONSES) {
+    }
+    else if (data_field == INPUT_DATA_TYPE_RESPONSES) {
       return get_linearized_response_size();
-    }else {
+    }
+    else {
       LBANN_ERROR("Unknown data_field_type value provided: " + data_field);
     }
     return 0;
@@ -726,7 +758,12 @@ class generic_data_reader {
 
   lbann_comm *m_comm;
 
-  virtual bool fetch_data_block(std::map<data_field_type, CPUMat*>& input_buffers, El::Int block_offset, El::Int block_stride, El::Int mb_size, El::Matrix<El::Int>& indices_fetched);
+  virtual bool
+  fetch_data_block(std::map<data_field_type, CPUMat*>& input_buffers,
+                   El::Int block_offset,
+                   El::Int block_stride,
+                   El::Int mb_size,
+                   El::Matrix<El::Int>& indices_fetched);
 
   /**
    * Fetch a single sample into a matrix.

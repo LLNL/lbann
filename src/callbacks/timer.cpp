@@ -143,7 +143,8 @@ void timer::timing_end(model& m) {
   if (comm.am_trainer_master()) {
 
     auto& arg_parser = global_argument_parser();
-    bool allow_global_statistics = arg_parser.get<bool>(LTFB_ALLOW_GLOBAL_STATISTICS);
+    bool allow_global_statistics =
+      arg_parser.get<bool>(LTFB_ALLOW_GLOBAL_STATISTICS);
     std::stringstream report;
 
     if(allow_global_statistics) {

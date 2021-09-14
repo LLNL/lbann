@@ -347,10 +347,9 @@ std::unique_ptr<Layer> construct_layer_legacy(
     /// this is not related to this PR.
     if ((typeid(TensorDataType) == typeid(DataType))
         && (Layout == data_layout::DATA_PARALLEL)) {
-      return lbann::make_unique<input_layer<DataType,
-                                            data_layout::DATA_PARALLEL,
-                                            Device>>(comm,
-                                                     data_field);
+      return lbann::make_unique<
+        input_layer<DataType, data_layout::DATA_PARALLEL, Device>>(comm,
+                                                                   data_field);
     }
     else {
       LBANN_ERROR("Input layers are only valid with "
