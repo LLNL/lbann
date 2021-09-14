@@ -60,7 +60,7 @@ EvalType compute_objective_function(model& m) {
     for (auto&& l : m.get_layers()) {
       if (dynamic_cast<input_layer<DataType>*>(l) == nullptr && l->get_run_layer_in_subgraph()) {
         l->forward_prop();
-          
+
       }
     }
   }
@@ -68,7 +68,7 @@ EvalType compute_objective_function(model& m) {
   {
     for (auto&& l : m.get_layers()) {
       if (dynamic_cast<input_layer<DataType>*>(l) == nullptr) {
-        
+
         l->forward_prop();
       }
     }
@@ -76,7 +76,7 @@ EvalType compute_objective_function(model& m) {
   }
 
 
-  
+
 
   // Get objective function value
   auto&& obj = m.get_objective_function();
@@ -249,11 +249,13 @@ void check_gradients::do_check_gradients(model& m) const {
     if (opt != nullptr) { opt->clear_gradient(); }
   }
 
+  LBANN_MSG("CB is about to fetch data");
   // Load data in input layers
   data_coordinator& dc = get_trainer().get_data_coordinator();
   dc.fetch_data(mode);
+  LBANN_MSG("CB has fetched data");
 
-  //checking subgrpah parallelism 
+  //checking subgrpah parallelism
   if(m.is_subgraph_parallelism_enabled())
   {
     for (auto&& l : m.get_layers()) {
@@ -274,7 +276,7 @@ void check_gradients::do_check_gradients(model& m) const {
 
   }
 
-  
+
 
   // Compute objective function
   const EvalType objective = compute_objective_function(m);
@@ -303,7 +305,7 @@ void check_gradients::do_check_gradients(model& m) const {
   m.get_objective_function()->differentiate();
   m.get_objective_function()->compute_weight_regularization();
 
-  //checking subgraph parallelism 
+  //checking subgraph parallelism
   if(m.is_subgraph_parallelism_enabled())
   {
     for (El::Int i = layers.size()-1; i >= 0; --i) {
@@ -311,7 +313,7 @@ void check_gradients::do_check_gradients(model& m) const {
       {
         layers[i]->back_prop();
       }
-      
+
     }
 
   }
@@ -322,7 +324,7 @@ void check_gradients::do_check_gradients(model& m) const {
     }
 
   }
-  
+
 
   // Print objective function value
   if (comm.am_world_master()) {

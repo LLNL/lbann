@@ -74,16 +74,16 @@ void buffered_data_coordinator<TensorDataType>::setup_data_fields(int max_mini_b
   /// @todo BVE This is where we are going to have to limit how many
   /// ranks are participating in I/O
   El::Int local_mini_batch_size = max_mini_batch_size / this->m_comm->get_procs_per_trainer();
-#ifdef LBANN_HAS_DISTCONV
   El::Int partial_mini_batch_size = max_mini_batch_size % this->m_comm->get_procs_per_trainer();
+#ifdef LBANN_HAS_DISTCONV
   if (dc::is_cosmoflow_parallel_io_enabled()) {
     assert_eq(local_mini_batch_size, 1);
     assert_eq(partial_mini_batch_size, 0);
   }
+#endif // LBANN_HAS_DISTCONV
   if(partial_mini_batch_size > 0 && this->m_comm->get_rank_in_trainer() < partial_mini_batch_size) {
     local_mini_batch_size++;
   }
-#endif // LBANN_HAS_DISTCONV
 
   // Check to see if there are any data fields with unallocated buffers
   for(auto& data_field : m_active_data_fields) {

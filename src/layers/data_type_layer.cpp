@@ -117,6 +117,7 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::forward_prop() 
   m_fp_compute_time += get_time() - fp_compute_start;
 
 #ifdef LBANN_HAS_DISTCONV
+  LBANN_MSG("About to start fp_postprocess");
   if (distconv_enabled()) get_distconv_adapter().fp_postprocess();
 #endif // LBANN_HAS_DISTCONV
 

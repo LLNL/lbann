@@ -96,19 +96,24 @@ void sgd_training_algorithm::train(sgd_execution_context& c,
   evaluation_context.set_effective_mini_batch_size(
     dc.get_mini_batch_size(execution_mode::validation));
 
+  LBANN_MSG("SGD - starting the training algorithm");
   // Initialize some state so it knows we're training now.
   c.set_execution_mode(execution_mode::training);
   model.reset_mode(c, execution_mode::training);
+  LBANN_MSG("about to reset the data coordinator");
   dc.reset_mode(c);
 
+  LBANN_MSG("running the callbacks");
   // Run callbacks.
   do_train_begin_cbs(model);
+  LBANN_MSG("finished setting up the callbacks");
 
   // Start iterating
   bool is_start_of_epoch = true;
   c.start_timer();
   while (!term(c)) {
 
+    LBANN_MSG("about to reset the model");
     if (is_start_of_epoch) {
       // Initialize epoch
       model.reset_mode(c, execution_mode::training);
@@ -118,6 +123,7 @@ void sgd_training_algorithm::train(sgd_execution_context& c,
       is_start_of_epoch = false;
     }
 
+    LBANN_MSG("SGD - starting the mini batch");
     // Train a mini batch. Returns "true" if the data_coordinator
     // detects the end of an epoch.
     if (train_mini_batch(c, model, dc)) {
@@ -174,6 +180,7 @@ bool sgd_training_algorithm::train_mini_batch(sgd_execution_context& c,
 
   bool finished = false;
 
+  LBANN_MSG("training hte mini-batch");
   dc.fetch_data(execution_mode::training);
 
 #if defined(LBANN_HAVE_OMP_TASKLOOP)
