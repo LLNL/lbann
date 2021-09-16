@@ -50,7 +50,6 @@ export_onnx::export_onnx(bool print_debug_string,
     m_output_file(output_file)
 {}
 
-#ifdef LBANN_HAS_ONNX
 void export_onnx::on_setup_end(model* m)
 {
   mp_.set_ir_version(7);
@@ -90,7 +89,6 @@ void export_onnx::on_train_begin(model* m)
       std::cout << mp_.DebugString() << std::endl;
   }
 }
-#endif // LBANN_HAS_ONNX
 
 std::unique_ptr<callback_base>
 build_export_onnx_callback_from_pbuf(

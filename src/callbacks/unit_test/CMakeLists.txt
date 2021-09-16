@@ -1,7 +1,10 @@
 set_full_path(THIS_DIR_MPI_CATCH2_TEST_FILES
   print_statistics_test.cpp
-  export_onnx_test.cpp
   )
+
+if(LBANN_HAS_ONNX)
+    list(APPEND THIS_DIR_MPI_CATCH2_TEST_FILES ${CMAKE_CURRENT_SOURCE_DIR}/export_onnx_test.cpp)
+endif ()
 
 set(LBANN_MPI_CATCH2_TEST_FILES
   "${LBANN_MPI_CATCH2_TEST_FILES}"
