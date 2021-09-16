@@ -897,7 +897,7 @@ void hdf5_data_reader::construct_linearized_size_lookup_tables()
   }
 }
 
-bool hdf5_data_reader::fetch(data_field_type data_field,
+bool hdf5_data_reader::fetch_data_field(data_field_type data_field,
                              CPUMat& Y,
                              int data_id,
                              int mb_idx)

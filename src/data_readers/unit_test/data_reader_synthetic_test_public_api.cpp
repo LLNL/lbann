@@ -191,3 +191,205 @@ TEST_CASE("Synthetic data reader public API tests",
     }
   }
 }
+
+TEST_CASE("Synthetic data reader public API tests - arbitrary field",
+          "[mpi][data_reader][synthetic][public][data_field]")
+{
+  // initialize stuff (boilerplate)
+  auto& comm = unit_test::utilities::current_world_comm();
+  lbann::init_random(42, 1);
+  lbann::init_data_seq_random(42);
+
+  // Create a local copy of the RNG to check the synthetic data reader
+  lbann::fast_rng_gen ref_fast_generator;
+  ref_fast_generator.seed(lbann::hash_combine(42, 0));
+
+  // Initalize a per-trainer I/O thread pool
+  auto io_thread_pool = lbann::make_unique<lbann::thread_pool>();
+  io_thread_pool->launch_pinned_threads(1, 1);
+
+  //  std::set<std::string> active_data_fields = {"samples"};
+  auto s = GENERATE(range(1, 2));
+  El::Int num_samples = s;
+  std::set<lbann::data_field_type> data_fields = {"foo", "bar"};
+  std::map<lbann::data_field_type, std::vector<int>> fields;
+  int f = 0;
+  std::map<lbann::data_field_type, std::unique_ptr<lbann::CPUMat>>
+    owning_local_input_buffers;
+  std::map<lbann::data_field_type, lbann::CPUMat*> local_input_buffers;
+  for(auto data_field : data_fields) {
+    std::vector<int> dims = {s+f, s+f};
+    fields[data_field] = dims;
+    f++;
+    auto local_mat = std::make_unique<lbann::CPUMat>();
+    auto sample_size =
+      std::accumulate(dims.begin(), dims.end(), 1, std::multiplies<int>());
+    local_mat->Resize(sample_size, num_samples);
+    El::Zeros_seq(*local_mat, sample_size, num_samples);
+    local_input_buffers[data_field] = local_mat.get();
+    owning_local_input_buffers[data_field] = std::move(local_mat);
+  }
+  El::Matrix<El::Int> indices_fetched;
+  El::Zeros_seq(indices_fetched, num_samples, 1);
+
+  SECTION("fetch arbitrary data fields")
+  {
+    auto dr = std::make_unique<lbann::data_reader_synthetic>(num_samples,
+                                                             fields,
+                                                             false);
+    dr->setup(io_thread_pool->get_num_threads(), io_thread_pool.get());
+    dr->set_rank(0);
+    dr->set_comm(&comm);
+    dr->set_num_parallel_readers(1);
+    dr->load();
+    dr->set_mini_batch_size(num_samples);
+    dr->set_last_mini_batch_size(num_samples);
+    dr->set_initial_position();
+
+    dr->fetch(local_input_buffers, indices_fetched);
+
+    // Check all of the results that were fetched.  Ensure that the
+    // data fields are accessed in the same order that they are in the map
+    for (El::Int j = 0; j < num_samples; j++) {
+      for(auto data_field : data_fields) {
+        std::cout << "checking " << data_field << std::endl;
+        auto& X = *(local_input_buffers[data_field]);
+        // Create a new normal distribution for each sample.  This ensures
+        // that the behavior matches the implementation in the synthetic
+        // data reader and handles the case of odd numbers of entries with a
+        // normal distriubtion implementation. (Specifically that entries
+        // for a normal distribution are generated in pairs.)
+        std::normal_distribution<lbann::DataType> dist(float(0), float(1));
+        for (El::Int i = 0; i < X.Height(); i++) {
+          CHECK(X(i, j) == dist(ref_fast_generator));
+        }
+      }
+    }
+  }
+
+  SECTION("fetch arbitrary bad data field with extra fields")
+  {
+    std::map<lbann::data_field_type, std::vector<int>> test_fields;
+    lbann::data_field_type bad_field = "bar";
+    for(auto& data_field : data_fields) {
+      if(data_field != bad_field) {
+        test_fields[data_field] = fields[data_field];
+      }
+    }
+    auto dr = std::make_unique<lbann::data_reader_synthetic>(num_samples,
+                                                             test_fields,
+                                                             false);
+    dr->setup(io_thread_pool->get_num_threads(), io_thread_pool.get());
+    dr->set_rank(0);
+    dr->set_comm(&comm);
+    dr->set_num_parallel_readers(1);
+    dr->load();
+    dr->set_mini_batch_size(num_samples);
+    dr->set_last_mini_batch_size(num_samples);
+    dr->set_initial_position();
+
+    CHECK_THROWS(dr->fetch(local_input_buffers, indices_fetched));
+
+    // All data buffers should be empty since it will have thrown an exception
+    for (El::Int j = 0; j < num_samples; j++) {
+      for(auto data_field : data_fields) {
+        std::cout << "checking " << data_field << std::endl;
+        auto& X = *(local_input_buffers[data_field]);
+        for (El::Int i = 0; i < X.Height(); i++) {
+          CHECK(X(i, j) == 0.0f);
+        }
+      }
+    }
+  }
+
+  SECTION("fetch arbitrary bad data fields - no extra buffers")
+  {
+    std::map<lbann::data_field_type, std::vector<int>> test_fields;
+    std::map<lbann::data_field_type, lbann::CPUMat*> test_local_input_buffers;
+    lbann::data_field_type bad_field = "bar";
+    for(auto& data_field : data_fields) {
+      if(data_field != bad_field) {
+        test_fields[data_field] = fields[data_field];
+        test_local_input_buffers[data_field] = local_input_buffers[data_field];
+      }
+    }
+    auto dr = std::make_unique<lbann::data_reader_synthetic>(num_samples,
+                                                             test_fields,
+                                                             false);
+    dr->setup(io_thread_pool->get_num_threads(), io_thread_pool.get());
+    dr->set_rank(0);
+    dr->set_comm(&comm);
+    dr->set_num_parallel_readers(1);
+    dr->load();
+    dr->set_mini_batch_size(num_samples);
+    dr->set_last_mini_batch_size(num_samples);
+    dr->set_initial_position();
+
+    dr->fetch(test_local_input_buffers, indices_fetched);
+
+    // Check all of the results that were fetched.  Ensure that the
+    // data fields are accessed in the same order that they are in the map
+    for (El::Int j = 0; j < num_samples; j++) {
+      for(auto data_field : data_fields) {
+        std::cout << "checking " << data_field << std::endl;
+        auto& X = *(local_input_buffers[data_field]);
+        if(data_field == bad_field) {
+          for (El::Int i = 0; i < X.Height(); i++) {
+            CHECK(X(i, j) == 0.0f);
+          }
+        }
+        else {
+          // Create a new normal distribution for each sample.  This ensures
+          // that the behavior matches the implementation in the synthetic
+          // data reader and handles the case of odd numbers of entries with a
+          // normal distriubtion implementation. (Specifically that entries
+          // for a normal distribution are generated in pairs.)
+          std::normal_distribution<lbann::DataType> dist(float(0), float(1));
+          for (El::Int i = 0; i < X.Height(); i++) {
+            CHECK(X(i, j) == dist(ref_fast_generator));
+          }
+        }
+      }
+    }
+  }
+
+  SECTION("fetch arbitrary check has data field guard")
+  {
+    // std::map<lbann::data_field_type, std::vector<int>> test_fields;
+    // lbann::data_field_type bad_field = "bar";
+    // for(auto& data_field : data_fields) {
+    //   if(data_field != bad_field) {
+    //     test_fields[data_field] = fields[data_field];
+    //   }
+    // }
+    auto dr = std::make_unique<lbann::data_reader_synthetic>(num_samples,
+                                                             fields,
+                                                             false);
+    dr->setup(io_thread_pool->get_num_threads(), io_thread_pool.get());
+    dr->set_rank(0);
+    dr->set_comm(&comm);
+    dr->set_num_parallel_readers(1);
+    dr->load();
+    dr->set_mini_batch_size(num_samples);
+    dr->set_last_mini_batch_size(num_samples);
+    dr->set_initial_position();
+
+    for(auto& data_field : data_fields) {
+      dr->set_has_data_field(data_field, false);
+    }
+
+    CHECK_THROWS(dr->fetch(local_input_buffers, indices_fetched));
+
+    // All data buffers should be empty since it will have thrown an exception
+    for (El::Int j = 0; j < num_samples; j++) {
+      for(auto data_field : data_fields) {
+        std::cout << "checking " << data_field << std::endl;
+        auto& X = *(local_input_buffers[data_field]);
+        for (El::Int i = 0; i < X.Height(); i++) {
+          CHECK(X(i, j) == 0.0f);
+        }
+      }
+    }
+  }
+
+}

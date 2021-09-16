@@ -330,6 +330,12 @@ class generic_data_reader {
     return has_data_field(INPUT_DATA_TYPE_RESPONSES);
   }
 
+  /// Whether or not a data reader has a data field
+  virtual void set_has_data_field(data_field_type const data_field, const bool b)
+  {
+    m_supported_input_types[data_field] = b;
+  }
+
   /// Whether or not a data reader has labels
   virtual void set_has_labels(const bool b)
   {
@@ -764,6 +770,24 @@ class generic_data_reader {
                    El::Int block_stride,
                    El::Int mb_size,
                    El::Matrix<El::Int>& indices_fetched);
+
+  /** @brief Called by fetch_data, fetch_label, fetch_response
+   *
+   * Fetch data from a single data field into a matrix.
+   * @param data_field The name of the data field.  May be one of the commonly
+   *        used (samples, labels, responses) or any data_field that exists
+   *        within an HDF5 experiment schema, Python DR schema, or synthetic
+   *        data reader
+   * @param X The matrix to load data into.
+   * @param data_id The index of the datum to fetch.
+   * @param mb_idx The index within the mini-batch.
+   *
+   */
+  virtual bool fetch_data_field(data_field_type data_field, CPUMat& Y, int data_id, int mb_idx)
+  {
+    NOT_IMPLEMENTED("fetch_data_field");
+    return false;
+  }
 
   /**
    * Fetch a single sample into a matrix.

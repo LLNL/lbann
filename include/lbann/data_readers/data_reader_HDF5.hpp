@@ -65,27 +65,21 @@ public:
 
   void load() override;
 
-  /** @brief Called by fetch_data, fetch_label, fetch_response
-   *
-   * Note that 'which' is not confined to the three commonly used
-   * in lbann (datum, label, response); in general, it can be
-   * any pack field in the experiment schema: pack: <string>
-   */
-  bool fetch(data_field_type data_field, CPUMat& Y, int data_id, int mb_idx);
+  bool fetch_data_field(data_field_type data_field, CPUMat& Y, int data_id, int mb_idx) override;
 
   bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override
   {
-    return fetch("datum", X, data_id, mb_idx);
+    return fetch_data_field("datum", X, data_id, mb_idx);
   }
 
   bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override
   {
-    return fetch("response", Y, data_id, mb_idx);
+    return fetch_data_field("response", Y, data_id, mb_idx);
   }
 
   bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override
   {
-    return fetch("label", Y, data_id, mb_idx);
+    return fetch_data_field("label", Y, data_id, mb_idx);
   }
 
   /** @brief Sets the name of the yaml experiment file */
