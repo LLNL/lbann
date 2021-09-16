@@ -24,10 +24,7 @@
 // permissions and limitations under the license.
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifdef LBANN_HAS_ONNX
-
 #include <catch2/catch.hpp>
-
 #include "TestHelpers.hpp"
 #include "MPITestHelpers.hpp"
 
@@ -37,9 +34,7 @@
 #include "lbann/callbacks/callback.hpp"
 #include <google/protobuf/message.h>
 #include <lbann/base.hpp>
-#ifdef LBANN_HAS_ONNX
 #include <onnx/onnx_pb.h>
-#endif //LBANN_HAS_ONNX
 #include <iostream>
 #include <memory>
 
@@ -58,5 +53,3 @@ TEST_CASE("Serializing \"export onnx\" callback",
 
   // FIXME: Testing if onnx is defined? How to do this?
 }
-
-#endif // LBANN_HAS_ONNX
