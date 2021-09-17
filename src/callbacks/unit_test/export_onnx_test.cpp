@@ -34,9 +34,13 @@
 #include "lbann/callbacks/callback.hpp"
 #include <google/protobuf/message.h>
 #include <lbann/base.hpp>
+<<<<<<< HEAD
 
 #include <onnx/onnx_pb.h>
 
+=======
+#include <onnx/onnx_pb.h>
+>>>>>>> d78cf405abc5512cfeb69b08a995677db80824c3
 #include <iostream>
 #include <memory>
 
