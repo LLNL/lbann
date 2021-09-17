@@ -9,8 +9,13 @@ if sys.version_info[0] != 3:
     raise ImportError('Python 3 is required')
 
 # Try getting build-specific paths from config file
-_config_file = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                            'python_config.ini')
+if 'LBANN_PYTHON_CONFIG_FILE' in os.environ:
+    _config_file = os.environ['LBANN_PYTHON_CONFIG_FILE']
+else:
+    _config_file = os.path.join(
+        os.path.dirname(os.path.realpath(__file__)),
+        'python_config.ini',
+    )
 _lbann_exe = None
 _lbann_has_proto_definitions = False
 if os.path.isfile(_config_file):
