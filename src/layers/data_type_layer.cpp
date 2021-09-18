@@ -33,6 +33,8 @@
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/trainers/trainer.hpp"
+#include "lbann/utils/argument_parser.hpp"
+#include "lbann/utils/options.hpp"
 #include "lbann/utils/summary_impl.hpp"
 #include "lbann/utils/tensor_impl.hpp"
 
@@ -680,17 +682,20 @@ setup_matrices(const El::Grid& grid) {
   }
 
 #ifdef LBANN_HAS_GPU
-  // Use default-allocated GPU memory for forward prop matrices
+  // Use directly-allocated GPU memory for forward prop matrices
   // Note: GPU memory pool uses more memory and these buffers are
   // rarely reallocated
-  /// @todo Consider using default-allocated device memory when
+  /// @todo Consider using directly-allocated device memory when
   /// training with persistent error signals
   if (this->get_device_allocation() == El::Device::GPU) {
-    for (auto& input : m_inputs) {
-      input->Matrix().SetMemoryMode(0);
-    }
-    for (auto& output : m_outputs) {
-      output->Matrix().SetMemoryMode(0);
+    const auto& arg_parser = global_argument_parser();
+    if (!arg_parser.get<bool>(USE_GPU_DEFAULT_MEMORY_IN_FORWARD_PROP)) {
+      for (auto& input : m_inputs) {
+        input->Matrix().SetMemoryMode(0);
+      }
+      for (auto& output : m_outputs) {
+        output->Matrix().SetMemoryMode(0);
+      }
     }
   }
 #endif // LBANN_HAS_GPU

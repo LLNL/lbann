@@ -29,6 +29,7 @@ namespace lbann {
 #define USE_LTFB "ltfb"
 #define VERBOSE "verbose"
 #define WRITE_SAMPLE_LIST "write_sample_list"
+#define USE_GPU_DEFAULT_MEMORY_IN_FORWARD_PROP "Use Hydrogen's default memory mode for GPU buffers in forward prop"
 
 // Input options
 #define CKPT_DIR "ckpt_dir"
