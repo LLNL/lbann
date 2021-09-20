@@ -250,7 +250,7 @@ private:
   const std::vector<int> get_data_dims(std::string name = "") const;
 
   /** Returns the size of the requested field (datum, label, response, etc) */
-  int get_linearized_size(std::string const& name) const override;
+  int get_linearized_size(data_field_type const& data_field) const override;
 
   /** P_0 reads and bcasts the schema */
   void load_sample_schema(conduit::Schema& s);
@@ -332,7 +332,9 @@ private:
 
   /** Constructs m_data_dims_lookup_table and m_linearized_size_lookup_table */
   void construct_linearized_size_lookup_tables();
-
+public:
+  void construct_linearized_size_lookup_tables(conduit::Node& node);
+private:
   /** sanity check; call after adjust_metadata */
   void test_that_all_nodes_contain_metadata(conduit::Node& node);
 

@@ -824,14 +824,14 @@ const std::vector<int> hdf5_data_reader::get_data_dims(std::string name) const
   return iter->second;
 }
 
-int hdf5_data_reader::get_linearized_size(std::string const& name) const
+int hdf5_data_reader::get_linearized_size(data_field_type const& data_field) const
 {
   std::unordered_map<std::string, int>::const_iterator iter =
-    m_linearized_size_lookup_table.find(name);
+    m_linearized_size_lookup_table.find(data_field);
   if (iter == m_linearized_size_lookup_table.end()) {
     LBANN_ERROR("get_linearized_data_size was asked for info about an unknown "
-                "field name: ",
-                name,
+                "data field: ",
+                data_field,
                 "; table size: ",
                 m_linearized_size_lookup_table.size(),
                 " for role: ",
@@ -843,6 +843,7 @@ int hdf5_data_reader::get_linearized_size(std::string const& name) const
 // fills in: m_data_dims_lookup_table and m_linearized_size_lookup_table;
 void hdf5_data_reader::construct_linearized_size_lookup_tables()
 {
+  LBANN_MSG("constructing the lookup tables num indices = ", m_shuffled_indices.size() );
   // If there are no loaded samples bail out
   if(m_shuffled_indices.size() == 0) { return; }
   m_linearized_size_lookup_table.clear();
@@ -851,10 +852,18 @@ void hdf5_data_reader::construct_linearized_size_lookup_tables()
   conduit::Node node;
   size_t index = random() % m_shuffled_indices.size();
 
+  LBANN_MSG("finding node with index ", index);
+
   // must load a sample to get data sizes. Alternatively, this metadata
   // could be included in the schemas
   load_sample(node, index);
 
+  node.print();
+  return construct_linearized_size_lookup_tables(node);
+}
+
+void hdf5_data_reader::construct_linearized_size_lookup_tables(conduit::Node& node)
+{
   std::unordered_map<std::string, conduit::Node*> leaves;
   get_leaves(&node, leaves);
 
@@ -1035,7 +1044,19 @@ const void* hdf5_data_reader::get_data(const size_t sample_id_in,
   // get the pathname to the data, and verify it exists in the conduit::Node
   const conduit::Node& node = m_data_store->get_conduit_node(sample_id_in);
   std::ostringstream ss;
-  ss << node.name() << node.child(0).name() + "/" << data_field;
+  LBANN_MSG("Here is the node");
+  node.print();
+  LBANN_MSG("And its schema");
+  node.schema().print();
+  LBANN_MSG("Here is a copy of the node");
+  conduit::Node ninfo;
+  ninfo = node;
+  //  node.info(ninfo);
+  ninfo.print();
+  LBANN_MSG("I think that the node copy name is ", ninfo.name(), " nested with ", ninfo.child(0).name(), " for field ", data_field, " and the path is ", node.path());
+              //  node.parent().print();
+  LBANN_MSG("I think that the node name is ", node.name(), " nested with ", node.child(0).name(), " for field ", data_field, " and the path is ", node.path());
+  ss << node.name()+ "/" << node.child(0).name() + "/" << data_field;
   if (!node.has_path(ss.str())) {
     LBANN_ERROR("no path: ", ss.str());
   }

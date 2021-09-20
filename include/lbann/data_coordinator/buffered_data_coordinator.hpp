@@ -170,7 +170,7 @@ protected:
   /** @brief After a data field has been registered with the data
    *  coordinator setup its buffers. Note this can be called after
    *  each call to register_active_data_field. */
-  void setup_data_fields(int max_mini_batch_size);
+  void setup_data_fields(int max_mini_batch_size) override;
 
   /**
    * Map from execution context to the index of the active data buffer
