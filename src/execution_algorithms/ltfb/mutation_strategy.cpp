@@ -31,6 +31,9 @@
 #include "lbann/proto/helpers.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
+#include "lbann/utils/factory.hpp"
+
+#include <training_algorithm.pb.h>
 
 #include "lbann/layers/activations/elu.hpp"
 #include "lbann/layers/activations/leaky_relu.hpp"
