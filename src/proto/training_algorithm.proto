@@ -140,6 +140,7 @@ message RegularizedEvolution {
 
   map<string, MetricStrategy> metric_name_strategy_map = 1;
   MutationStrategy mutation_strategy = 2;
+  uint64 sample_size = 3;
 }// message RegularizedEvolution
 
 message KFAC {

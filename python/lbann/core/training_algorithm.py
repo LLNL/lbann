@@ -411,10 +411,12 @@ class RegularizedEvolution(MetaLearningStrategy):
 
     def __init__(self,
                  metric_strategies: dict[str,int] = {},
-                 mutation_strategy = MutationStrategy()):
+                 mutation_strategy = MutationStrategy(),
+                 sample_size = 0):
         
         self.metric_strategies = metric_strategies
         self.mutation_strategy = mutation_strategy
+        self.sample_size = sample_size
 
     def export_proto(self):
         """Get a protobuf representation of this object."""
@@ -424,6 +426,7 @@ class RegularizedEvolution(MetaLearningStrategy):
             msg.metric_name_strategy_map[key] = value
 
         msg.mutation_strategy.CopyFrom(self.mutation_strategy.export_proto())
+        msg.sample_size = self.sample_size
         return msg 
 
 class KFAC(TrainingAlgorithm):

@@ -57,10 +57,12 @@ public:
 public:
   RegularizedEvolution(std::string metric_name,
                        metric_strategy winner_strategy,
-                       std::unique_ptr<MutationStrategy> mutate_algo);
+                       std::unique_ptr<MutationStrategy> mutate_algo,
+                       int sample_size);
 
   RegularizedEvolution(std::unordered_map<std::string, metric_strategy> metrics,
-                       std::unique_ptr<MutationStrategy> mutate_algo);
+                       std::unique_ptr<MutationStrategy> mutate_algo,
+                       int sample_size);
 
   ~RegularizedEvolution() = default;
   RegularizedEvolution(RegularizedEvolution const& other);
@@ -86,12 +88,16 @@ private:
 
   /** @brief The strategy for mutation of a model
    *
-   *  When a trainer loses in a LTFB tournament, the winning model is 
+   *  When a trainer loses in a LTFB tournament, the winning model is
    *  copied over to it and this mutation strategy is applied to the
    *  copied model to explore a new model. This is relevant to neural
-   *  architecture search (NAS). 
+   *  architecture search (NAS).
    */
-  std::unique_ptr<MutationStrategy> m_mutate_algo;  
+  std::unique_ptr<MutationStrategy> m_mutate_algo;
+
+  /** @brief The size of the sample to choose from the population in every step
+   */
+  int m_sample_size;
 
 }; // class RegularizedEvolution
 

@@ -28,8 +28,6 @@
 
 #include "lbann/execution_algorithms/ltfb/regularized_evolution.hpp"
 
-//#include "lbann/execution_algorithms/ltfb/random_pairwise_exchange.hpp"
-
 #include "lbann/base.hpp"
 #include "lbann/comm_impl.hpp"
 #include "lbann/data_coordinator/data_coordinator.hpp"
@@ -106,8 +104,11 @@ void unpack(model& m, std::string const& str)
 
 RegularizedEvolution::RegularizedEvolution(
   std::unordered_map<std::string, metric_strategy> metrics,
-  std::unique_ptr<MutationStrategy> mutate_algo)
-  : m_metrics{std::move(metrics)}, m_mutate_algo{std::move(mutate_algo)}
+  std::unique_ptr<MutationStrategy> mutate_algo,
+  int sample_size)
+  : m_metrics{std::move(metrics)},
+    m_mutate_algo{std::move(mutate_algo)},
+    m_sample_size{std::move(sample_size)}
 {
   LBANN_ASSERT(m_metrics.size());
 }
@@ -115,13 +116,17 @@ RegularizedEvolution::RegularizedEvolution(
 RegularizedEvolution::RegularizedEvolution(
   std::string metric_name,
   metric_strategy winner_strategy,
-  std::unique_ptr<MutationStrategy> mutate_algo)
+  std::unique_ptr<MutationStrategy> mutate_algo,
+  int sample_size)
   : RegularizedEvolution({{std::move(metric_name), winner_strategy}},
-                         std::move(mutate_algo))
+                         std::move(mutate_algo),
+                         sample_size)
 {}
 
 RegularizedEvolution::RegularizedEvolution(RegularizedEvolution const& other)
-  : m_metrics{other.m_metrics}, m_mutate_algo{other.m_mutate_algo->clone()}
+  : m_metrics{other.m_metrics},
+    m_mutate_algo{other.m_mutate_algo->clone()},
+    m_sample_size{other.m_sample_size}
 {}
 
 EvalType RegularizedEvolution::evaluate_model(model& m,
@@ -170,7 +175,7 @@ EvalType RegularizedEvolution::evaluate_model(model& m,
                 "\"");
   }
 
-  m.make_data_store_preloaded(execution_mode::testing);
+  m.make_data_store_preloaded(execution_mode::tournament);
 
   // Clean up and return metric score
   m.reset_mode(ctxt, original_mode);
@@ -192,8 +197,6 @@ void RegularizedEvolution::select_next(model& m,
   const int trainer_id = comm.get_trainer_rank();
   auto const step = ctxt.get_step();
 
-  // Choose sample S<=P
-  El::Int S = 3; //num_trainers;
   std::vector<EvalType> sample_trainers(num_trainers);
   if (comm.am_world_master()) {
     for (unsigned int i = 0; i < num_trainers; i++)
@@ -206,17 +209,20 @@ void RegularizedEvolution::select_next(model& m,
                        sample_trainers.data(),
                        num_trainers);
 
-  // if rank within first S, send score , else score = 0
+  // If rank within first S, send score , else score = 0
   auto it =
     std::find(sample_trainers.begin(), sample_trainers.end(), trainer_id);
 
-  El::Int score;
+  El::Int score = evaluate_model(m, ctxt, dc);
   // If in sample, send true score
-  if (std::distance(sample_trainers.begin(), it) < S) {
-    score = evaluate_model(m, ctxt, dc);
+  if (std::distance(sample_trainers.begin(), it) < m_sample_size) {
+    // score = evaluate_model(m, ctxt, dc);
+    if (comm.am_trainer_master())
+      std::cout << "Trainer " << trainer_id << " in sample" << std::endl;
   }
-  // Else send dummy score
+  // Else force score to 0
   else {
+    // score = evaluate_model(m, ctxt, dc);
     score = 0;
   }
 
@@ -332,5 +338,6 @@ lbann::make<lbann::ltfb::RegularizedEvolution>(
 
   return make_unique<lbann::ltfb::RegularizedEvolution>(
     std::move(metric_map),
-    make_abstract<MutationStrategyType>(msg.mutation_strategy()));
+    make_abstract<MutationStrategyType>(msg.mutation_strategy()),
+    msg.sample_size());
 }
