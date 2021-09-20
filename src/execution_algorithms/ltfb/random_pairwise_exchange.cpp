@@ -505,6 +505,7 @@ lbann::make_abstract<lbann::ltfb::RandomPairwiseExchange::ExchangeStrategy>(
     exchange_params);
 }
 
+<<<<<<< HEAD
 // For MutationStrategy
 template <>
 std::unique_ptr<lbann::ltfb::MutationStrategy>
@@ -521,6 +522,8 @@ lbann::make_abstract<lbann::ltfb::MutationStrategy>(
     mutate_params);
 }
 
+=======
+>>>>>>> b953e889a (refactoring MutationStrategy factory methods - build failing)
 template <>
 std::unique_ptr<lbann::ltfb::RandomPairwiseExchange>
 lbann::make<lbann::ltfb::RandomPairwiseExchange>(

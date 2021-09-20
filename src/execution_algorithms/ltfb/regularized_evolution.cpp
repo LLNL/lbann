@@ -28,6 +28,8 @@
 
 #include "lbann/execution_algorithms/ltfb/regularized_evolution.hpp"
 
+//#include "lbann/execution_algorithms/ltfb/random_pairwise_exchange.hpp"
+
 #include "lbann/base.hpp"
 #include "lbann/comm_impl.hpp"
 #include "lbann/data_coordinator/data_coordinator.hpp"
@@ -105,8 +107,7 @@ void unpack(model& m, std::string const& str)
 RegularizedEvolution::RegularizedEvolution(
   std::unordered_map<std::string, metric_strategy> metrics,
   std::unique_ptr<MutationStrategy> mutate_algo)
-  : m_metrics{std::move(metrics)},
-    m_mutate_algo{std::move(mutate_algo)}
+  : m_metrics{std::move(metrics)}, m_mutate_algo{std::move(mutate_algo)}
 {
   LBANN_ASSERT(m_metrics.size());
 }
@@ -115,13 +116,12 @@ RegularizedEvolution::RegularizedEvolution(
   std::string metric_name,
   metric_strategy winner_strategy,
   std::unique_ptr<MutationStrategy> mutate_algo)
-  : RegularizedEvolution({metric_name, winner_strategy},
+  : RegularizedEvolution({{std::move(metric_name), winner_strategy}},
                          std::move(mutate_algo))
 {}
 
-RegularizedEvolution::RegularizedEvolution(
-  RegularizedEvolution const& other)
-  : m_metrics{other.m_metrics}, m_mutate_algo{other.m_mutate_algo}
+RegularizedEvolution::RegularizedEvolution(RegularizedEvolution const& other)
+  : m_metrics{other.m_metrics}, m_mutate_algo{other.m_mutate_algo->clone()}
 {}
 
 EvalType RegularizedEvolution::evaluate_model(model& m,
@@ -158,7 +158,7 @@ EvalType RegularizedEvolution::evaluate_model(model& m,
       score += met->get_mean_value(execution_mode::tournament);
       break;
     }
-  } 
+  }
 
   // sanity check
   if (!found_metric) {
@@ -184,7 +184,8 @@ void RegularizedEvolution::select_next(model& m,
 {
   // Find the best model trainer
   // Find the oldest model trainer (highest age)
-  // Copy the best model trainer to oldest model trainer, mutate it and set its age to 0
+  // Copy the best model trainer to oldest model trainer, mutate it and set its
+  // age to 0
 
   auto const& comm = *(m.get_comm());
   const unsigned int num_trainers = comm.get_num_trainers();
@@ -192,17 +193,23 @@ void RegularizedEvolution::select_next(model& m,
   auto const step = ctxt.get_step();
 
   // Choose sample S<=P
-  El::Int S = num_trainers;
+  El::Int S = 3; //num_trainers;
   std::vector<EvalType> sample_trainers(num_trainers);
   if (comm.am_world_master()) {
-    for (int i = 0; i < num_trainers; i++) sample_trainers[i] = i;
-    std::shuffle(sample_trainers.begin(), sample_trainers.end(), get_ltfb_generator());
+    for (unsigned int i = 0; i < num_trainers; i++)
+      sample_trainers[i] = i;
+    std::shuffle(sample_trainers.begin(),
+                 sample_trainers.end(),
+                 get_ltfb_generator());
   }
-  comm.world_broadcast(comm.get_world_master(), sample_trainers.data(), num_trainers);
+  comm.world_broadcast(comm.get_world_master(),
+                       sample_trainers.data(),
+                       num_trainers);
 
   // if rank within first S, send score , else score = 0
-  auto it = std::find(sample_trainers.begin(), sample_trainers.end(), trainer_id);
-  
+  auto it =
+    std::find(sample_trainers.begin(), sample_trainers.end(), trainer_id);
+
   El::Int score;
   // If in sample, send true score
   if (std::distance(sample_trainers.begin(), it) < S) {
@@ -211,45 +218,59 @@ void RegularizedEvolution::select_next(model& m,
   // Else send dummy score
   else {
     score = 0;
-  }  
- 
+  }
+
   std::vector<EvalType> score_list(num_trainers);
   comm.trainer_barrier();
   if (comm.am_trainer_master()) {
     comm.all_gather<EvalType>(score, score_list, comm.get_intertrainer_comm());
   }
-  // Communicate trainer score list from trainer master to other procs in trainer
-  comm.trainer_broadcast(comm.get_trainer_master(), score_list.data(), num_trainers);
-  
+  // Communicate trainer score list from trainer master to other procs in
+  // trainer
+  comm.trainer_broadcast(comm.get_trainer_master(),
+                         score_list.data(),
+                         num_trainers);
+
   // Find winning trainer (in sample)
-  El::Int winner_id = std::distance(score_list.begin(), 
-                         std::max_element(score_list.begin(), score_list.end()));
+  El::Int winner_id =
+    std::distance(score_list.begin(),
+                  std::max_element(score_list.begin(), score_list.end()));
 
   // Find oldest trainer - cycle through trainer ids
   El::Int oldest_id = step % num_trainers;
 
+  // DEBUG
+  std::cout << "Winner - " << winner_id << ", Oldest - " << oldest_id
+            << std::endl;
+
   if (trainer_id == winner_id) {
-    auto model_string = pack(m);
-    if (comm.am_trainer_master()) {
-      send_string(comm, model_string, oldest_id);
-      std::cout << "In Reg Evo step " << step << ", trainer " << trainer_id
-                << " with score " << score_list[trainer_id];
-      std::cout << " sends model to trainer " << oldest_id << std::endl;
+
+    if (winner_id != oldest_id) {
+      auto model_string = pack(m);
+      if (comm.am_trainer_master()) {
+        send_string(comm, model_string, oldest_id);
+        std::cout << "In Reg Evo step " << step << ", trainer " << trainer_id
+                  << " with score " << score_list[trainer_id];
+        std::cout << " sends model to trainer " << oldest_id << std::endl;
+      }
     }
   }
 
   if (trainer_id == oldest_id) {
 
-    std::string rcv_str;
-    if (comm.am_trainer_master()) {
-      rcv_str = recv_string(comm, winner_id);
-      std::cout << "In Reg Evo step " << step << ", trainer " << trainer_id;
-      std::cout << " receives model from trainer " << src << std::endl;
-    }   
-
     auto partner_model_ptr = m.copy_model();
     auto& partner_model = *partner_model_ptr;
-    unpack(partner_model, rcv_str);
+
+    if (winner_id != oldest_id) {
+      std::string rcv_str;
+      if (comm.am_trainer_master()) {
+        rcv_str = recv_string(comm, winner_id);
+        std::cout << "In Reg Evo step " << step << ", trainer " << trainer_id;
+        std::cout << " receives model from trainer " << winner_id << std::endl;
+      }
+
+      unpack(partner_model, rcv_str);
+    }
 
     // Mutating oldest model
     m_mutate_algo->mutate(partner_model, step);
@@ -258,7 +279,7 @@ void RegularizedEvolution::select_next(model& m,
     auto&& metadata = trainer.get_data_coordinator().get_dr_metadata();
     m.setup(trainer.get_max_mini_batch_size(),
             metadata,
-            /*force*/true);
+            /*force*/ true);
   }
 }
 
@@ -270,15 +291,12 @@ namespace {
 lbann::ltfb::RegularizedEvolution::metric_strategy
 to_lbann(lbann_data::RegularizedEvolution::MetricStrategy strategy)
 {
-  using LBANNEnumType =
-    lbann::ltfb::RegularizedEvolution::metric_strategy;
+  using LBANNEnumType = lbann::ltfb::RegularizedEvolution::metric_strategy;
   using ProtoEnumType = lbann_data::RegularizedEvolution::MetricStrategy;
   switch (strategy) {
-  case ProtoEnumType::
-    RegularizedEvolution_MetricStrategy_LOWER_IS_BETTER:
+  case ProtoEnumType::RegularizedEvolution_MetricStrategy_LOWER_IS_BETTER:
     return LBANNEnumType::LOWER_IS_BETTER;
-  case ProtoEnumType::
-    RegularizedEvolution_MetricStrategy_HIGHER_IS_BETTER:
+  case ProtoEnumType::RegularizedEvolution_MetricStrategy_HIGHER_IS_BETTER:
     return LBANNEnumType::HIGHER_IS_BETTER;
   default:
     LBANN_ERROR("Unknown enum value: ", static_cast<int>(strategy));
@@ -286,78 +304,7 @@ to_lbann(lbann_data::RegularizedEvolution::MetricStrategy strategy)
   return LBANNEnumType::LOWER_IS_BETTER;
 }
 
-using MutationStrategyFactory = lbann::generic_factory<
-  lbann::ltfb::MutationStrategy,
-  std::string,
-  lbann::proto::generate_builder_type<
-    lbann::ltfb::MutationStrategy,
-    google::protobuf::Message const&>>;
-
-std::unique_ptr<lbann::ltfb::NullMutation>
-make_null_mutation(google::protobuf::Message const& msg)
-{
-  using NullMutation = lbann_data::MutationStrategy::NullMutation;
-  LBANN_ASSERT(dynamic_cast<NullMutation const*>(&msg));
-  return std::make_unique<lbann::ltfb::NullMutation>();  
-}
-
-std::unique_ptr<lbann::ltfb::ReplaceActivation>
-make_replace_activation(google::protobuf::Message const& msg)
-{
-  using ReplaceActivation = lbann_data::MutationStrategy::ReplaceActivation;
-  LBANN_ASSERT(dynamic_cast<ReplaceActivation const*>(&msg));
-  return std::make_unique<lbann::ltfb::ReplaceActivation>();
-}
-
-std::unique_ptr<lbann::ltfb::ReplaceConvolution>
-make_replace_convolution(google::protobuf::Message const& msg)
-{
-  using ReplaceConvolution = lbann_data::MutationStrategy::ReplaceConvolution;
-  LBANN_ASSERT(dynamic_cast<ReplaceConvolution const*>(&msg));
-  return std::make_unique<lbann::ltfb::ReplaceConvolution>();
-}
-
-std::unique_ptr<lbann::ltfb::HybridMutation>
-make_hybrid_mutation(google::protobuf::Message const& msg)
-{ 
-  using HybridMutation = lbann_data::MutationStrategy::HybridMutation;
-  LBANN_ASSERT(dynamic_cast<HybridMutation const*>(&msg));
-  return std::make_unique<lbann::ltfb::HybridMutation>();
-}
-
-MutationStrategyFactory build_default_mutation_factory()
-{ 
-  MutationStrategyFactory factory;
-  factory.register_builder("NullMutation", make_null_mutation);
-  factory.register_builder("ReplaceActivation", make_replace_activation);
-  factory.register_builder("ReplaceConvolution", make_replace_convolution);
-  factory.register_builder("HybridMutation", make_hybrid_mutation);
-  return factory;
-}
-
-MutationStrategyFactory& get_mutation_factory()
-{ 
-  static MutationStrategyFactory factory = build_default_mutation_factory();
-  return factory;
-}
-
 } // namespace
-
-// For MutationStrategy
-template <>
-std::unique_ptr<lbann::ltfb::MutationStrategy>
-lbann::make_abstract<lbann::ltfb::MutationStrategy>(
-  const google::protobuf::Message& msg)
-{
-  using ProtoStrategy = lbann_data::MutationStrategy;
-  auto const& params = dynamic_cast<ProtoStrategy const&>(msg);
-
-  auto const& mutate_params = 
-    proto::helpers::get_oneof_message(params, "strategy");
-  return get_mutation_factory().create_object(
-    proto::helpers::message_type(mutate_params),
-    mutate_params);
-}
 
 template <>
 std::unique_ptr<lbann::ltfb::RegularizedEvolution>
@@ -381,10 +328,9 @@ lbann::make<lbann::ltfb::RegularizedEvolution>(
                    return ValueType{kvp.first, to_lbann(kvp.second)};
                  });
 
-  using MutationStrategyType =
-    lbann::ltfb::MutationStrategy;
+  using MutationStrategyType = lbann::ltfb::MutationStrategy;
 
   return make_unique<lbann::ltfb::RegularizedEvolution>(
     std::move(metric_map),
     make_abstract<MutationStrategyType>(msg.mutation_strategy()));
-}                                                                                         
+}

@@ -131,6 +131,17 @@ message TruncationSelectionExchange {
   uint64 truncation_k = 2; //what should be default, 1?
 }// message TruncationSelectionExchange
 
+// Regularized Evolution strategy Implements MetaLearningStrategy.
+message RegularizedEvolution {
+  enum MetricStrategy {
+    LOWER_IS_BETTER = 0;
+    HIGHER_IS_BETTER = 1;
+  }
+
+  map<string, MetricStrategy> metric_name_strategy_map = 1;
+  MutationStrategy mutation_strategy = 2;
+}// message RegularizedEvolution
+
 message KFAC {
 
   SGD sgd = 1;
