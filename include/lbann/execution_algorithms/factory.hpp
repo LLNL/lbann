@@ -69,11 +69,9 @@ void register_new_training_algorithm(TrainingAlgorithmKey key,
 
 } // namespace lbann
 
-/** @brief Get the factory for a given key from the default factory
- *         factory.
- *  @param[in] key The identifier for the training algorithm.
- *  @return The abstract factory that can build components of the
- *          requested training algorithm.
+/** @brief Create a new training_algorithm instance.
+ *  @param[in] params A protobuf message describing the algorithm.
+ *  @return A newly-constructed training algorithm.
  */
 template <>
 std::unique_ptr<lbann::training_algorithm>
