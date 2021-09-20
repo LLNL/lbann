@@ -1056,7 +1056,7 @@ const void* hdf5_data_reader::get_data(const size_t sample_id_in,
   LBANN_MSG("I think that the node copy name is ", ninfo.name(), " nested with ", ninfo.child(0).name(), " for field ", data_field, " and the path is ", node.path());
               //  node.parent().print();
   LBANN_MSG("I think that the node name is ", node.name(), " nested with ", node.child(0).name(), " for field ", data_field, " and the path is ", node.path());
-  ss << node.name()+ "/" << node.child(0).name() + "/" << data_field;
+  ss << node.child(0).name() + "/" << data_field;
   if (!node.has_path(ss.str())) {
     LBANN_ERROR("no path: ", ss.str());
   }
