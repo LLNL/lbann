@@ -26,7 +26,9 @@
 
 #include "lbann/optimizers/sgd_impl.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/argument_parser.hpp"
 #include "lbann/utils/memory.hpp"
+#include "lbann/utils/options.hpp"
 
 namespace lbann {
 
@@ -84,7 +86,10 @@ void sgd<TensorDataType>::setup(WeightsType* w) {
   m_velocity.reset(AbsDistMatrixType::Instantiate(gradient.DistData()));
 #ifdef LBANN_HAS_GPU
   if (m_velocity->GetLocalDevice() == El::Device::GPU) {
-    m_velocity->Matrix().SetMemoryMode(0); // Default-allocated memory
+    const auto& arg_parser = global_argument_parser();
+    if (!arg_parser.get<bool>(USE_GPU_DEFAULT_MEMORY_IN_FORWARD_PROP)) {
+      m_velocity->Matrix().SetMemoryMode(0); // Directly-allocated memory
+    }
   }
 #endif // LBANN_HAS_GPU
   El::Zeros(*m_velocity, gradient.Height(), gradient.Width());

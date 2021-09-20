@@ -691,10 +691,10 @@ setup_matrices(const El::Grid& grid) {
     const auto& arg_parser = global_argument_parser();
     if (!arg_parser.get<bool>(USE_GPU_DEFAULT_MEMORY_IN_FORWARD_PROP)) {
       for (auto& input : m_inputs) {
-        input->Matrix().SetMemoryMode(0);
+        input->Matrix().SetMemoryMode(0); // Directly-allocated memory
       }
       for (auto& output : m_outputs) {
-        output->Matrix().SetMemoryMode(0);
+        output->Matrix().SetMemoryMode(0); // Directly-allocated memory
       }
     }
   }

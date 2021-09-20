@@ -29,8 +29,10 @@
 #include "lbann/weights/data_type_weights.hpp"
 #include "lbann/weights/data_type_weights_impl.hpp"
 #include "lbann/optimizers/optimizer.hpp"
-#include "lbann/utils/exception.hpp"
 #include "lbann/io/file_io.hpp"
+#include "lbann/utils/argument_parser.hpp"
+#include "lbann/utils/exception.hpp"
+#include "lbann/utils/options.hpp"
 
 #include <layers.pb.h>
 
@@ -233,7 +235,10 @@ void data_type_weights<TensorDataType>::do_setup_() {
   // Allocate memory
 #ifdef LBANN_HAS_GPU
   if (matrix_dist.device == El::Device::GPU) {
-    m_values->Matrix().SetMemoryMode(0); // Default-allocated memory
+    const auto& arg_parser = global_argument_parser();
+    if (!arg_parser.get<bool>(USE_GPU_DEFAULT_MEMORY_IN_FORWARD_PROP)) {
+      m_values->Matrix().SetMemoryMode(0); // Directly-allocated memory
+    }
   }
 #endif // LBANN_HAS_GPU
   m_values->AlignWith(matrix_dist);
