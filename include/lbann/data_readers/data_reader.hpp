@@ -926,8 +926,6 @@ private:
   bool m_gan_labelling; //boolean flag of whether its GAN binary label, default is false
   int m_gan_label_value; //zero(0) or 1 label value for discriminator, default is 0
 
-  std::vector<std::vector<char>> m_thread_buffer;
-
   observer_ptr<thread_pool> m_io_thread_pool;
 
   /// special handling for 1B jag; each reader

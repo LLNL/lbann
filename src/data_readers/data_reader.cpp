@@ -80,10 +80,6 @@ void generic_data_reader::setup(int num_io_threads, observer_ptr<thread_pool> io
 
   shuffle_indices();
 
-  m_thread_buffer.resize(num_io_threads, std::vector<char>());
-  for(int tid = 0; tid < num_io_threads; ++tid) {
-    m_thread_buffer[tid].resize(get_linearized_data_size());
-  }
   m_io_thread_pool = io_thread_pool;
 }
 
