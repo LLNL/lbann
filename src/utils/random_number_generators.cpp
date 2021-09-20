@@ -130,52 +130,40 @@ fast_rng_gen& get_fast_io_generator() {
 void init_random(int seed, int num_io_RNGs, lbann_comm *comm) {
   generator_inited = true;
   fast_generator_inited = true;
-  if (seed != -1) {
-    // Seed every OpenMP thread, if present.
-    // Note: Threadprivate OMP variables don't work with dynamic threads.
-#ifdef _OPENMP
-    #pragma omp parallel
-    {
-      get_generator().seed(hash_combine(seed, omp_get_thread_num()));
-      get_fast_generator().seed(hash_combine(seed, omp_get_thread_num()));
-    }
-#else
-    get_generator().seed(seed);
-    get_fast_generator().seed(seed);
-#endif
 
-    // Set Elemental's RNG seed
-    auto elemental_seed = hash_combine(seed, 104729); // 10000th prime
-    int mpi_initialized = 0;
-    MPI_Initialized(&mpi_initialized);
-    if(mpi_initialized) {
-      // If MPI is initialized mix in the rank to ensure that Hydrogen
-      // has good RNGs.  Note that under some configurations LBANN
-      // will not do this, so it is good to ensure that Hydrogen is
-      // well seeded.
-      elemental_seed = (comm == nullptr
-                        ? hash_combine(elemental_seed, El::mpi::Rank(El::mpi::COMM_WORLD))
-                        : hash_combine(elemental_seed, comm->get_rank_in_trainer()));
-    }
-    El::Generator().seed(elemental_seed);
-  } else {
-    // Seed with a random value.
+  // Use different seed on each rank in trainer
+  if (seed == -1) {
     std::random_device rd;
-    unsigned rand_val = rd();
-#ifdef _OPENMP
-    #pragma omp parallel
-    {
-      get_generator().seed(hash_combine(rand_val, omp_get_thread_num()));
-      get_fast_generator().seed(hash_combine(rand_val, omp_get_thread_num()));
-    }
-#else
-    get_generator().seed(rand_val);
-    get_fast_generator().seed(rand_val);
-#endif
-    El::Generator().seed(rand_val);
+    seed = rd();
+  }
+  else if (comm != nullptr) {
+    seed = hash_combine(seed, comm->get_rank_in_trainer());
+  }
+  else if (El::mpi::Initialized()) {
+    seed = hash_combine(seed, El::mpi::Rank(El::mpi::COMM_WORLD));
   }
 
+  // Seed every OpenMP thread, if present.
+  // Note: Threadprivate OMP variables don't work with dynamic threads.
+#ifdef _OPENMP
+  #pragma omp parallel
+  {
+    const int thread = omp_get_thread_num();
+    const int thread_seed = hash_combine(seed, thread);
+    get_generator().seed(thread_seed);
+    get_fast_generator().seed(hash_combine(thread_seed, 132241)); // 12345th prime
+  }
+#else
+  get_generator().seed(seed);
+  get_fast_generator().seed(hash_combine(seed, 41263)); // 4321th prime
+#endif
+
+  // Set Elemental's RNG seed
+  El::Generator().seed(hash_combine(seed, 104729)); // 10000th prime
+
+  // Initialize IO RNGs
   init_io_random(seed, num_io_RNGs);
+
 }
 
 void init_data_seq_random(int seed) {
@@ -193,8 +181,6 @@ void init_data_seq_random(int seed) {
 
 void init_ltfb_random(int seed) {
   if (seed == -1) {
-    // Seed with a random value.
-    std::random_device rd;
     seed = 20201003;
   }
 
