@@ -299,9 +299,14 @@ public:
            std::string const& description)
   {
     if (env.exists() && env.template value<bool>())
-      return add_flag_impl_(name, std::move(cli_flags), description, true);
+      return add_flag_impl_(name,
+                            std::move(cli_flags),
+                            description + "\nENV: {" + env.name() + "}",
+                            true);
     else
-      return add_flag(name, std::move(cli_flags), description);
+      return add_flag(name,
+                      std::move(cli_flags),
+                      description + "\nENV: {" + env.name() + "}");
   }
 
   /** @brief Add an additional named option.
@@ -368,10 +373,14 @@ public:
              T default_value = T())
   {
     if (env.exists())
-      return add_option(name, std::move(cli_flags), description,
+      return add_option(name,
+                        std::move(cli_flags),
+                        description + "\nENV: {" + env.name() + "}",
                         env.template value<T>());
     else
-      return add_option(name, std::move(cli_flags), description,
+      return add_option(name,
+                        std::move(cli_flags),
+                        description + "\nENV: {" + env.name() + "}",
                         std::move(default_value));
   }
 
@@ -429,8 +438,11 @@ public:
              std::string const& description,
              char const* default_value)
   {
-    return add_option(name, cli_flags, std::move(env),
-                      description, std::string(default_value));
+    return add_option(name,
+                      cli_flags,
+                      std::move(env),
+                      description + "\nENV: {" + env.name() + "}",
+                      std::string(default_value));
   }
 
   /** @brief Add an optional positional argument.
