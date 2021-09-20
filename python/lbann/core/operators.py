@@ -101,6 +101,17 @@ class Add(Operator):
         params = OpProto.AddOperator()
         return params
 
+class AddConstant(Operator):
+    """Add a constant to each input value (x+c)."""
+    def __init__(self, constant: float = 0.0, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.constant = constant
+
+    def do_export_proto(self):
+        params = OpProto.AddConstantOperator()
+        params.constant = self.constant
+        return params
+
 class Asin(Operator):
     """Apply the Asin operator entrywise."""
     def __init__(self, *args, **kwargs):
@@ -182,6 +193,17 @@ class Ceil(Operator):
         params = OpProto.CeilOperator()
         return params
 
+class ConstantSubtract(Operator):
+    """Subtract each input value from a constant (c-x)."""
+    def __init__(self, constant: float = 0.0, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.constant = constant
+
+    def do_export_proto(self):
+        params = OpProto.ConstantSubtractOperator()
+        params.constant = self.constant
+        return params
+
 class Cos(Operator):
     """Apply the Cos operator entrywise."""
     def __init__(self, *args, **kwargs):
@@ -216,6 +238,17 @@ class Equal(Operator):
 
     def do_export_proto(self):
         params = OpProto.EqualOperator()
+        return params
+
+class EqualConstant(Operator):
+    """Test each value for equality with a constant (x==c)."""
+    def __init__(self, constant: float = 0.0, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.constant = constant
+
+    def do_export_proto(self):
+        params = OpProto.EqualConstantOperator()
+        params.constant = self.constant
         return params
 
 class Erf(Operator):
@@ -272,6 +305,17 @@ class Greater(Operator):
         params = OpProto.GreaterOperator()
         return params
 
+class GreaterConstant(Operator):
+    """Test each value for "greater-than" with a constant (x>c)."""
+    def __init__(self, constant: float = 0.0, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.constant = constant
+
+    def do_export_proto(self):
+        params = OpProto.GreaterConstantOperator()
+        params.constant = self.constant
+        return params
+
 class GreaterEqual(Operator):
     """Apply the GreaterEqual operator entrywise."""
     def __init__(self, *args, **kwargs):
@@ -279,6 +323,17 @@ class GreaterEqual(Operator):
 
     def do_export_proto(self):
         params = OpProto.GreaterEqualOperator()
+        return params
+
+class GreaterEqualConstant(Operator):
+    """Test each value for "greater-than-or-equal-to" with a constant (x>=c)."""
+    def __init__(self, constant: float = 0.0, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.constant = constant
+
+    def do_export_proto(self):
+        params = OpProto.GreaterEqualConstantOperator()
+        params.constant = self.constant
         return params
 
 class Less(Operator):
@@ -290,6 +345,17 @@ class Less(Operator):
         params = OpProto.LessOperator()
         return params
 
+class LessConstant(Operator):
+    """Test each value for "less-than" with a constant (x<c)."""
+    def __init__(self, constant: float = 0.0, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.constant = constant
+
+    def do_export_proto(self):
+        params = OpProto.LessConstantOperator()
+        params.constant = self.constant
+        return params
+
 class LessEqual(Operator):
     """Apply the LessEqual operator entrywise."""
     def __init__(self, *args, **kwargs):
@@ -297,6 +363,17 @@ class LessEqual(Operator):
 
     def do_export_proto(self):
         params = OpProto.LessEqualOperator()
+        return params
+
+class LessEqualConstant(Operator):
+    """Test each value for "less-than-or-equal-to with a constant (x<=c)."""
+    def __init__(self, constant: float = 0.0, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.constant = constant
+
+    def do_export_proto(self):
+        params = OpProto.LessEqualConstantOperator()
+        params.constant = self.constant
         return params
 
 class Log(Operator):
@@ -416,6 +493,17 @@ class NotEqual(Operator):
         params = OpProto.NotEqualOperator()
         return params
 
+class NotEqualConstant(Operator):
+    """Test each value for inequality with a constant (x!=c)."""
+    def __init__(self, constant: float = 0.0, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.constant = constant
+
+    def do_export_proto(self):
+        params = OpProto.NotEqualConstantOperator()
+        params.constant = self.constant
+        return params
+
 class Pow(Operator):
     """Apply the Pow operator entrywise."""
     def __init__(self, *args, **kwargs):
@@ -468,6 +556,17 @@ class SafeReciprocal(Operator):
 
     def do_export_proto(self):
         params = OpProto.SafeReciprocalOperator()
+        return params
+
+class Scale(Operator):
+    """Scale each input value by a constant value (c*x)."""
+    def __init__(self, constant: float = 0.0, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.constant = constant
+
+    def do_export_proto(self):
+        params = OpProto.ScaleOperator()
+        params.constant = self.constant
         return params
 
 class Selu(Operator):
@@ -576,6 +675,17 @@ class Subtract(Operator):
 
     def do_export_proto(self):
         params = OpProto.SubtractOperator()
+        return params
+
+class SubtractConstant(Operator):
+    """Subtract a constant from each input value (x-c)."""
+    def __init__(self, constant: float = 0.0, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.constant = constant
+
+    def do_export_proto(self):
+        params = OpProto.SubtractConstantOperator()
+        params.constant = self.constant
         return params
 
 class Tan(Operator):
