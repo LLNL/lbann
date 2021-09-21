@@ -227,15 +227,8 @@ trainer& construct_trainer(lbann_comm* comm,
 #ifndef LBANN_DETERMINISTIC
   if (!pb_trainer->random_init_trainers_identically()) {
     random_seed = hash_combine(random_seed, comm->get_trainer_rank());
-    // Also update the data sequence random seed
     data_seq_random_seed = random_seed;
   }
-
-  // Under normal conditions, reinitialize the random number generator so
-  // that regularization techniques (e.g. dropout) generate unique patterns
-  // on different ranks.
-  // At this point the data sequence random seed is no longer updated
-  random_seed = hash_combine(random_seed, comm->get_rank_in_world());
 #else
   if(comm->am_world_master()) {
     std::cout <<

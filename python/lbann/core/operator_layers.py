@@ -12,24 +12,42 @@ from lbann.core.layer import OperatorLayer
 import lbann.core.operators
 
 def generate_operator_layer(operator_class):
+    """Create operator layer class for a single operator
 
-    def create_layer(*args, **kwargs):
-        # Yeahhhh this seems like a GREAT idea... But it honestly
-        # seems dumber to copy the list from layers.py, thereby
-        # creating two glaring maintenance issues where there is
-        # currently only one.
-        layer_keys = lbann.Layer.__init__.__kwdefaults__.keys()
-        layer_kwargs = { k: v for k,v in kwargs.items() if k in layer_keys }
-        op_kwargs = { k: v for k,v in kwargs.items() if k not in layer_keys }
+    Returns a class that inherits from lbann.OperatorLayer.
 
+    Args:
+        operator_class (type): A derived class of
+            lbann.operators.Operator
+
+    """
+
+    def __init__(self, *args, **kwargs):
+        """Operator layer with a single operator
+
+        Forwards arguments to lbann.OperatorLayer or sub-class of
+        lbann.Operator.
+
+        """
+        layer_kwargs = lbann.Layer.__init__.__kwdefaults__.copy()
+        op_kwargs = {}
+        for key, value in kwargs.items():
+            if key in layer_kwargs:
+                layer_kwargs[key] = value
+            else:
+                op_kwargs[key] = value
         layer_kwargs['ops'] = [ operator_class(**op_kwargs) ]
-        return OperatorLayer(*args, **layer_kwargs)
+        OperatorLayer.__init__(self, *args, **layer_kwargs)
 
-    return create_layer
+    # Return operator layer class
+    class_name = operator_class.__name__
+    class_dict = {'__init__': __init__}
+    return type(class_name, (OperatorLayer,), class_dict)
 
 def is_operator_class(obj):
     return inspect.isclass(obj) and issubclass(obj, lbann.core.operators.Operator) and obj is not lbann.core.operators.Operator
 
+# Generate operator layer classes based on operator classes
 ops_classes = inspect.getmembers(lbann.core.operators, is_operator_class)
 for op in ops_classes:
     op_name, op_class = op
