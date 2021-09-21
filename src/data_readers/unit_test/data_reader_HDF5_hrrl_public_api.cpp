@@ -285,8 +285,8 @@ TEST_CASE("hdf5 data reader data field fetch tests",
   lbann::init_random(0, 2);
   lbann::init_data_seq_random(42);
 
-  // conduit::Node node;
-  // node.parse(hdf5_hrrl_data_sample, "yaml");
+  conduit::Node ref_node;
+  ref_node.parse(hdf5_hrrl_data_sample_id, "yaml");
 
   // LBANN_MSG("I think that the initial node name is ", node.name(), " nested with ", node.child(0).name());
   // conduit::Node compact_node;
@@ -344,9 +344,9 @@ TEST_CASE("hdf5 data reader data field fetch tests",
   SECTION("fetch data field")
   {
     lbann::CPUMat X;
-    std::vector<std::string> fields = {"Epmax", "Etot", "Image", "N", "T", "alpha"};
-    // for (auto f : fields) {
-    // }
+    //std::vector<std::string> fields = {"Epmax", "Etot"};
+    std::vector<std::string> fields = {"Epmax", "Etot", "N", "T", "alpha"};
+    //    std::vector<std::string> fields = {"Epmax", "Etot", "Image", "N", "T", "alpha"};
     for (auto& data_field : fields) {
       std::cout << "Fetching " << data_field << std::endl;
       //      X.Resize(white_box_tester.get_linearized_size(*hdf5_dr, data_field), num_samples);
@@ -358,23 +358,22 @@ TEST_CASE("hdf5 data reader data field fetch tests",
       }
 
 
-      // const std::string test_pathname("RUN_ID/000000334/" + f);
-      // for (El::Int j = 0; j < num_samples; j++) {
-      //   // Check to make sure that each element in the transformed field are properly normalized
-      //   size_t num_elements = node[test_pathname].dtype().number_of_elements();
-      //   if(num_elements > 1) {
-      //     for(size_t i = 0; i < num_elements; i++) {
-      //       double check = node[test_pathname].as_double_array()[i] * metadata["scale"].as_double() + metadata["bias"].as_double();
-      //       CHECK(test_node[test_pathname].as_double_array()[i] == Approx(check));
-      //   }
-      //   }else {
-      //     double check = node[test_pathname].as_double() * metadata["scale"].as_double() + metadata["bias"].as_double();
-      //     CHECK(test_node[test_pathname].as_double() == Approx(check));
-      //   }
-      //   type name(args) const;or (El::Int i = 0; i < X.Height(); i++) {
-      //     CHECK(X(i, j) == node[test_pathname].as_double();
-      //   }
-      // }
+      El::Print(X);;
+      const std::string test_pathname("000000334/" + data_field);
+      for (El::Int j = 0; j < num_samples; j++) {
+        // Check to make sure that each element in the transformed field are properly normalized
+        size_t num_elements = ref_node[test_pathname].dtype().number_of_elements();
+        if(num_elements > 1) {
+          for(size_t i = 0; i < num_elements; i++) {
+            double check = ref_node[test_pathname].as_double_array()[i];
+            CHECK(X(i,0) == Approx(check));
+          }
+        }
+        else {
+          double check = ref_node[test_pathname].as_double();
+          CHECK(X(0,0) == Approx(check));
+        }
+      }
     }
   //    CHECK_THROWS(white_box_tester.fetch_data_field(*dr, "foobar", X, 0, 0));
   }
