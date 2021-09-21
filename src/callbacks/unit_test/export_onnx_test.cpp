@@ -43,7 +43,7 @@
 
 using unit_test::utilities::IsValidPtr;
 TEST_CASE("Serializing \"export onnx\" callback",
-          "[mpi][callback][serialize]")
+          "[mpi][callback][serialize][onnx]")
 {
   using CallbackType = lbann::callback::export_onnx;
 
