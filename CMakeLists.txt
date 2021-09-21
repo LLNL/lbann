@@ -472,25 +472,6 @@ if (LBANN_WITH_HWLOC)
 endif (LBANN_WITH_HWLOC)
 
 if (LBANN_WITH_CONDUIT)
-<<<<<<< HEAD
-=======
-  # Apparently we have to find HDF5, too.
-  #find_package(HDF5 CONFIG QUIET
-  #  HINTS ${HDF5_DIR} $ENV{HDF5_DIR}
-  #  PATH_SUFFIXES share/cmake/hdf5
-  #  NO_DEFAULT_PATH)
-  #if (NOT HDF5_FOUND)
-  #  find_package(HDF5 CONFIG QUIET)
-  #endif ()
-  #if (NOT HDF5_FOUND)
-  #  enable_language(C) # WHY??????????????
-  #  find_package(HDF5 REQUIRED)
-  #  set(HDF5_FOUND_WITH_MODULE TRUE)
-  #else ()
-  #  message(STATUS "Found HDF5: ${HDF5_DIR}")
-  #endif ()
-
->>>>>>> d78cf405abc5512cfeb69b08a995677db80824c3
   find_package(Conduit CONFIG QUIET
     HINTS ${Conduit_DIR} $ENV{Conduit_DIR} ${CONDUIT_DIR} $ENV{CONDUIT_DIR}
     PATH_SUFFIXES lib64/cmake lib/cmake
