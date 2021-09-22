@@ -74,12 +74,16 @@ TEST_CASE("Synthetic data reader public API tests",
 {
   // initialize stuff (boilerplate)
   auto& comm = unit_test::utilities::current_world_comm();
-  lbann::init_random(42, 1);
-  lbann::init_data_seq_random(42);
+  int seed = 42;
+  lbann::init_random(seed, 1);
+  lbann::init_data_seq_random(seed);
 
   // Create a local copy of the RNG to check the synthetic data reader
   lbann::fast_rng_gen ref_fast_generator;
-  ref_fast_generator.seed(lbann::hash_combine(42, 0));
+  // Mix in the rank in trainer
+  seed = lbann::hash_combine(seed, comm.get_rank_in_trainer());
+  // Mix in the I/O thread rank
+  ref_fast_generator.seed(lbann::hash_combine(seed, 0));
 
   // Initalize a per-trainer I/O thread pool
   auto io_thread_pool = lbann::make_unique<lbann::thread_pool>();
