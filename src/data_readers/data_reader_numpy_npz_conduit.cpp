@@ -389,7 +389,7 @@ void numpy_npz_conduit_reader::fill_in_metadata() {
   for (int k=1; k<shape_num_elts; k++) {
     m_data_dims.push_back(shape[k]);
   }
-  m_num_features = std::accumulate(m_data_dims.begin() + 1,
+  m_num_features = std::accumulate(m_data_dims.begin(),
                                    m_data_dims.end(),
                                    (unsigned) 1,
                                    std::multiplies<unsigned>());
