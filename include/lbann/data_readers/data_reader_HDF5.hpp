@@ -332,9 +332,8 @@ private:
 
   /** Constructs m_data_dims_lookup_table and m_linearized_size_lookup_table */
   void construct_linearized_size_lookup_tables();
-public:
   void construct_linearized_size_lookup_tables(conduit::Node& node);
-private:
+
   /** sanity check; call after adjust_metadata */
   void test_that_all_nodes_contain_metadata(conduit::Node& node);
 

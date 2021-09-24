@@ -304,13 +304,7 @@ void data_store_conduit::set_preloaded_conduit_node(int data_id, const conduit::
   {
     conduit::Node n2 = node;  // node == m_data[data_id]
     std::lock_guard<std::mutex> lock(m_mutex);
-    LBANN_MSG("I am going to pack the node.  orig");
-    node.print();
     build_node_for_sending(n2, m_data[data_id]);
-    LBANN_MSG("Prepend data has packed the node.  orig");
-    node.print();
-    LBANN_MSG("Here is the copy of the node before it was packed");
-    n2.print();
   }
   if (!m_node_sizes_vary) {
     error_check_compacted_node(m_data[data_id], data_id);
@@ -431,16 +425,12 @@ const conduit::Node & data_store_conduit::get_conduit_node(int data_id) const {
     return t3->second;
   }
 
-  std::unordered_map<int, conduit::Node>::const_iterator t2 = m_minibatch_data.find(data_id);
+  iterator_t t2 = m_minibatch_data.find(data_id);
   // if not preloaded, and get_label() or get_response() is called,
   // we need to check m_data
   if (t2 == m_minibatch_data.end()) {
-    std::unordered_map<int, conduit::Node>::const_iterator t3 = m_data.find(data_id);
+    iterator_t t3 = m_data.find(data_id);
     if (t3 != m_data.end()) {
-      LBANN_MSG("Here is the sample that we have found");
-      t3->second.print();
-      LBANN_MSG("And the data field for it");
-      t3->second["data"].print();
       return t3->second["data"];
     }
     LBANN_ERROR("failed to find data_id: ", data_id, " in m_minibatch_data; m_minibatch_data.size: ", m_minibatch_data.size(), " and also failed to find it in m_data; m_data.size: ", m_data.size(), "; role: ", m_reader->get_role());

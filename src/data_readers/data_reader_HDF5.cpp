@@ -858,7 +858,6 @@ void hdf5_data_reader::construct_linearized_size_lookup_tables()
   // could be included in the schemas
   load_sample(node, index);
 
-  node.print();
   return construct_linearized_size_lookup_tables(node);
 }
 

@@ -332,8 +332,6 @@ TEST_CASE("hdf5 data reader data field fetch tests",
         white_box_tester.fetch_data_field(*hdf5_dr, data_field, X, 0, j);
       }
 
-
-      El::Print(X);;
       const std::string test_pathname("000000334/" + data_field);
       for (El::Int j = 0; j < num_samples; j++) {
         // Check to make sure that each element in the transformed field are properly normalized
