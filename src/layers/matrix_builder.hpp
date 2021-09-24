@@ -73,7 +73,7 @@ class DefaultMemoryMatrixBuilder : public MatrixBuilder<T>
   // Pinned host memory; memory-pooled device memory
   static constexpr unsigned memory_mode_ = 1U;
 #elif defined(HYDROGEN_HAVE_GPU)
-  // Pinned host memory; default-allocated device memory
+  // Pinned host memory; directly-allocated device memory
   static constexpr unsigned memory_mode_ = (D == El::Device::CPU ? 1U : 0U);
 #else
   // Default memory

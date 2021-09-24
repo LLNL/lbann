@@ -95,6 +95,14 @@ void construct_std_options()
                       {"--write_sample_list"},
                       "[STD] Writes out the sample list that was loaded into "
                       "the current directory");
+  arg_parser.add_flag(
+    USE_GPU_DEFAULT_MEMORY_IN_FORWARD_PROP,
+    {"--use_gpu_default_memory_in_forward_prop"},
+    utils::ENV("LBANN_GPU_DEFAULT_MEMORY_IN_FORWARD_PROP"),
+    "[STD] Use Hydrogen's default memory mode for GPU buffers in "
+    "forward prop (namely activations and weights). This will "
+    "typically use a GPU memory pool, which uses more memory than "
+    "directly allocating GPU memory.");
 
   // Input options
   arg_parser.add_option(
