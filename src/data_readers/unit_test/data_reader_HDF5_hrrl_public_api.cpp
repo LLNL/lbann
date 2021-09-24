@@ -288,10 +288,6 @@ TEST_CASE("hdf5 data reader data field fetch tests",
   conduit::Node ref_node;
   ref_node.parse(hdf5_hrrl_data_sample_id, "yaml");
 
-  // LBANN_MSG("I think that the initial node name is ", node.name(), " nested with ", node.child(0).name());
-  // conduit::Node compact_node;
-  // compact_node["data"].update(node);
-
   lbann::hdf5_data_reader* hdf5_dr = new lbann::hdf5_data_reader();
   DataReaderHDF5WhiteboxTester white_box_tester;
 
@@ -300,38 +296,23 @@ TEST_CASE("hdf5 data reader data field fetch tests",
   data_schema.parse(hdf5_hrrl_data_schema_test, "yaml");
   conduit::Node& experiment_schema = white_box_tester.get_experiment_schema(*hdf5_dr);
   experiment_schema.parse(hdf5_hrrl_experiment_schema_test, "yaml");
-  //  hdf5_dr->set_shuffled_indices({0});
   white_box_tester.parse_schemas(*hdf5_dr);
-  //  hdf5_dr->construct_linearized_size_lookup_tables(node);
+  // Manually tell the data reader to extract all of the data fields
+  white_box_tester.construct_linearized_size_lookup_tables(*hdf5_dr, ref_node);
 
   hdf5_dr->set_rank(0);
   hdf5_dr->set_comm(&comm);
-  // conduit::Node schema;
-  // schema.parse(hdf5_hrrl_data_schema_test, "yaml");
 
   El::Int num_samples = 1;
 
-  auto data_store = new lbann::data_store_conduit(hdf5_dr);  // *data_store_conduit
+  auto data_store = new lbann::data_store_conduit(hdf5_dr);
   hdf5_dr->set_data_store(data_store);
-  //  hdf5_dr->instantiate_data_store();
   // Take the sample and place it into the data store
   int index = 0;
   auto& ds = hdf5_dr->get_data_store();
   conduit::Node& ds_node = ds.get_empty_node(index);
-  LBANN_MSG("Here is the empty node");
-  ds_node.print();
-  //  ds_node.update(compact_node);
   ds_node.parse(hdf5_hrrl_data_sample_id, "yaml");
-  LBANN_MSG("Now it is full");
-  ds_node.print();
   ds.set_preloaded_conduit_node(index, ds_node);
-  //  ds.compact_nodes();
-  LBANN_MSG("Here is the reference to the node that was put into the DS");
-  ds_node.print();
-
-  //  node.print();
-
-  //  white_box_tester.parse_schemas(*hdf5_dr);
 
   // Initalize a per-trainer I/O thread pool
   auto io_thread_pool = lbann::make_unique<lbann::thread_pool>();
@@ -339,18 +320,12 @@ TEST_CASE("hdf5 data reader data field fetch tests",
   hdf5_dr->setup(io_thread_pool->get_num_threads(), io_thread_pool.get());
   hdf5_dr->set_num_parallel_readers(1);
 
-  //  white_box_tester.parse_schemas(*hdf5_dr);
-
   SECTION("fetch data field")
   {
     lbann::CPUMat X;
-    //std::vector<std::string> fields = {"Epmax", "Etot"};
-    std::vector<std::string> fields = {"Epmax", "Etot", "N", "T", "alpha"};
-    //    std::vector<std::string> fields = {"Epmax", "Etot", "Image", "N", "T", "alpha"};
+    std::vector<std::string> fields = {"Epmax", "Etot", "Image", "N", "T", "alpha"};
     for (auto& data_field : fields) {
-      std::cout << "Fetching " << data_field << std::endl;
-      //      X.Resize(white_box_tester.get_linearized_size(*hdf5_dr, data_field), num_samples);
-      X.Resize(1, num_samples);
+      X.Resize(white_box_tester.get_linearized_size(*hdf5_dr, data_field), num_samples);
 
       auto io_rng = lbann::set_io_generators_local_index(0);
       for (auto j = 0; j < num_samples; j++) {
