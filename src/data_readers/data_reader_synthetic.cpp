@@ -82,9 +82,9 @@ data_reader_synthetic::data_reader_synthetic(int num_samples,
                                              bool shuffle)
   : generic_data_reader(shuffle),
     m_num_samples(num_samples),
-    m_synthetic_data_fields(data_fields)
+    m_synthetic_data_fields(std::move(data_fields))
 {
-  for(auto const& [data_field, dims] : data_fields) {
+  for (auto const& [data_field, dims] : m_synthetic_data_fields) {
     set_has_data_field(data_field, true);
   }
 }

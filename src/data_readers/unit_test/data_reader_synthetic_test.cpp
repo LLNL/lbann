@@ -219,10 +219,10 @@ TEST_CASE("Synthetic data reader data field",
   std::vector<lbann::data_field_type> data_fields = {"foo", "bar"};
   std::map<lbann::data_field_type, std::vector<int>> fields;
   int f = 0;
-  for(auto data_field : data_fields) {
+  for (auto const& data_field : data_fields) {
     std::vector<int> dims = {s+f, s+f};
     fields[data_field] = dims;
-    f++;
+    ++f;
   }
 
   SECTION("fetch data field")
@@ -231,12 +231,12 @@ TEST_CASE("Synthetic data reader data field",
                                                              fields,
                                                              false);
     lbann::CPUMat X;
-    for (auto& [data_field, dims] : fields) {
+    for (auto const& [data_field, dims] : fields) {
       std::cout << "Fetching " << data_field << std::endl;
       X.Resize(dims[0] * dims[1], num_samples);
 
       auto io_rng = lbann::set_io_generators_local_index(0);
-      for (auto j = 0; j < num_samples; j++) {
+      for (El::Int j = 0; j < num_samples; j++) {
         white_box_tester.fetch_data_field(*dr, data_field, X, 0, j);
       }
 

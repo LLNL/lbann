@@ -217,10 +217,10 @@ TEST_CASE("Synthetic data reader public API tests - arbitrary field",
   std::map<lbann::data_field_type, std::unique_ptr<lbann::CPUMat>>
     owning_local_input_buffers;
   std::map<lbann::data_field_type, lbann::CPUMat*> local_input_buffers;
-  for(auto data_field : data_fields) {
+  for (auto const& data_field : data_fields) {
     std::vector<int> dims = {s+f, s+f};
     fields[data_field] = dims;
-    f++;
+    ++f;
     auto local_mat = std::make_unique<lbann::CPUMat>();
     auto sample_size =
       std::accumulate(dims.begin(), dims.end(), 1, std::multiplies<int>());
@@ -251,7 +251,7 @@ TEST_CASE("Synthetic data reader public API tests - arbitrary field",
     // Check all of the results that were fetched.  Ensure that the
     // data fields are accessed in the same order that they are in the map
     for (El::Int j = 0; j < num_samples; j++) {
-      for(auto data_field : data_fields) {
+      for (auto const& data_field : data_fields) {
         std::cout << "checking " << data_field << std::endl;
         auto& X = *(local_input_buffers[data_field]);
         // Create a new normal distribution for each sample.  This ensures
@@ -271,8 +271,8 @@ TEST_CASE("Synthetic data reader public API tests - arbitrary field",
   {
     std::map<lbann::data_field_type, std::vector<int>> test_fields;
     lbann::data_field_type bad_field = "bar";
-    for(auto& data_field : data_fields) {
-      if(data_field != bad_field) {
+    for (auto const& data_field : data_fields) {
+      if (data_field != bad_field) {
         test_fields[data_field] = fields[data_field];
       }
     }
@@ -292,7 +292,7 @@ TEST_CASE("Synthetic data reader public API tests - arbitrary field",
 
     // All data buffers should be empty since it will have thrown an exception
     for (El::Int j = 0; j < num_samples; j++) {
-      for(auto data_field : data_fields) {
+      for (auto const& data_field : data_fields) {
         std::cout << "checking " << data_field << std::endl;
         auto& X = *(local_input_buffers[data_field]);
         for (El::Int i = 0; i < X.Height(); i++) {
@@ -307,8 +307,8 @@ TEST_CASE("Synthetic data reader public API tests - arbitrary field",
     std::map<lbann::data_field_type, std::vector<int>> test_fields;
     std::map<lbann::data_field_type, lbann::CPUMat*> test_local_input_buffers;
     lbann::data_field_type bad_field = "bar";
-    for(auto& data_field : data_fields) {
-      if(data_field != bad_field) {
+    for (auto const& data_field : data_fields) {
+      if (data_field != bad_field) {
         test_fields[data_field] = fields[data_field];
         test_local_input_buffers[data_field] = local_input_buffers[data_field];
       }
@@ -330,10 +330,10 @@ TEST_CASE("Synthetic data reader public API tests - arbitrary field",
     // Check all of the results that were fetched.  Ensure that the
     // data fields are accessed in the same order that they are in the map
     for (El::Int j = 0; j < num_samples; j++) {
-      for(auto data_field : data_fields) {
+      for (auto const& data_field : data_fields) {
         std::cout << "checking " << data_field << std::endl;
         auto& X = *(local_input_buffers[data_field]);
-        if(data_field == bad_field) {
+        if (data_field == bad_field) {
           for (El::Int i = 0; i < X.Height(); i++) {
             CHECK(X(i, j) == 0.0f);
           }
@@ -374,7 +374,7 @@ TEST_CASE("Synthetic data reader public API tests - arbitrary field",
     dr->set_last_mini_batch_size(num_samples);
     dr->set_initial_position();
 
-    for(auto& data_field : data_fields) {
+    for(auto const& data_field : data_fields) {
       dr->set_has_data_field(data_field, false);
     }
 
@@ -382,7 +382,7 @@ TEST_CASE("Synthetic data reader public API tests - arbitrary field",
 
     // All data buffers should be empty since it will have thrown an exception
     for (El::Int j = 0; j < num_samples; j++) {
-      for(auto data_field : data_fields) {
+      for (auto const& data_field : data_fields) {
         std::cout << "checking " << data_field << std::endl;
         auto& X = *(local_input_buffers[data_field]);
         for (El::Int i = 0; i < X.Height(); i++) {
