@@ -40,8 +40,10 @@
 #endif // LBANN_HAS_SHMEM
 
 #include "lbann/comm_impl.hpp"
+#include "lbann/utils/argument_parser.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/omp_diagnostics.hpp"
+#include "lbann/utils/options.hpp"
 #include "lbann/utils/stack_trace.hpp"
 
 #ifdef LBANN_HAS_DNN_LIB
@@ -79,6 +81,11 @@ MPI_Errhandler err_handle;
 
 std::unique_ptr<lbann_comm> initialize_lbann(El::mpi::Comm&& c)
 {
+
+  // Parse command-line arguments and environment variables
+  auto& arg_parser = global_argument_parser();
+  (void) arg_parser;
+
   // to ensure that all the necessary infrastructure in Hydrogen and
   // Aluminum has been setup.
   El::Initialize();
@@ -119,7 +126,7 @@ std::unique_ptr<lbann_comm> initialize_lbann(El::mpi::Comm&& c)
 
 #ifdef LBANN_HAS_SHMEM
   // Initialize SHMEM
-  {
+  if (arg_parser.get<bool>(LBANN_OPTION_INIT_SHMEM)) {
     int threading_level = SHMEM_THREAD_MULTIPLE;
     int status = shmem_init_thread(threading_level, &threading_level);
     if (status != 0 || threading_level != SHMEM_THREAD_MULTIPLE) {
@@ -127,6 +134,11 @@ std::unique_ptr<lbann_comm> initialize_lbann(El::mpi::Comm&& c)
     }
   }
 #endif // LBANN_HAS_SHMEM
+#ifdef LBANN_HAS_NVSHMEM
+  if (arg_parser.get<bool>(LBANN_OPTION_INIT_NVSHMEM)) {
+    nvshmem::initialize();
+  }
+#endif // LBANN_HAS_NVSHMEM
 
 #ifdef LBANN_HAS_DISTCONV
   dc::initialize(MPI_COMM_WORLD);
@@ -173,6 +185,11 @@ void finalize_lbann(lbann_comm* comm) {
 }
 
 world_comm_ptr initialize(int& argc, char**& argv) {
+
+  // Parse command-line arguments and environment variables
+  auto& arg_parser = global_argument_parser();
+  (void) arg_parser;
+
   // Initialize Elemental.
   El::Initialize(argc, argv);
 
@@ -213,7 +230,7 @@ world_comm_ptr initialize(int& argc, char**& argv) {
 
 #ifdef LBANN_HAS_SHMEM
   // Initialize SHMEM
-  {
+  if (arg_parser.get<bool>(LBANN_OPTION_INIT_SHMEM)) {
     int threading_level = SHMEM_THREAD_MULTIPLE;
     int status = shmem_init_thread(threading_level, &threading_level);
     if (status != 0 || threading_level != SHMEM_THREAD_MULTIPLE) {
@@ -221,6 +238,11 @@ world_comm_ptr initialize(int& argc, char**& argv) {
     }
   }
 #endif // LBANN_HAS_SHMEM
+#ifdef LBANN_HAS_NVSHMEM
+  if (arg_parser.get<bool>(LBANN_OPTION_INIT_NVSHMEM)) {
+    nvshmem::initialize();
+  }
+#endif // LBANN_HAS_NVSHMEM
 
 #ifdef LBANN_HAS_DISTCONV
   dc::initialize(MPI_COMM_WORLD);
