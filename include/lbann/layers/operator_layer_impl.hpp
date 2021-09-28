@@ -231,6 +231,8 @@ auto lbann::build_operator_layer_from_pbuf(lbann_comm* comm,
   auto const& params = msg.operator_layer();
 
   auto const num_ops = params.ops_size();
+  LBANN_ASSERT(num_ops == 1UL); // Only support single operator.
+
   std::vector<OperatorPtr> ops;
   ops.reserve(num_ops);
   for (int ii = 0; ii < num_ops; ++ii) {
@@ -238,8 +240,11 @@ auto lbann::build_operator_layer_from_pbuf(lbann_comm* comm,
     LBANN_ASSERT(msg.datatype() == params.ops(ii).input_datatype());
     LBANN_ASSERT(msg.datatype() == params.ops(ii).output_datatype());
 #endif
-    ops.emplace_back(
-      proto::construct_operator<InputT, OutputT, D>(params.ops(ii)));
+    lbann_data::Operator op;
+    op.CopyFrom(params.ops(ii));
+    op.set_input_datatype(msg.datatype());
+    op.set_output_datatype(msg.datatype());
+    ops.emplace_back(proto::construct_operator<InputT, OutputT, D>(op));
   }
   return std::make_unique<LayerType>(*comm, std::move(ops));
 }
