@@ -151,11 +151,6 @@ TEST_CASE("Synthetic data reader public API tests",
 
     dr->fetch(local_input_buffers, indices_fetched);
 
-    // for (auto& [field, buf] : local_input_buffers) {
-    //   std::cout << "For field " << field << std::endl;
-    //   El::Print(*buf);
-    // }
-
     // Check all of the results that were fetched.  Ensure that the
     // data fields are accessed in the same order that they are in the map
     for (El::Int j = 0; j < num_samples; j++) {
@@ -176,8 +171,6 @@ TEST_CASE("Synthetic data reader public API tests",
         else if (data_field == INPUT_DATA_TYPE_LABELS) {
           auto& Y = *(local_input_buffers[INPUT_DATA_TYPE_LABELS]);
           auto index = lbann::fast_rand_int(ref_fast_generator, num_labels);
-          // std::cout << "Here is the reference value " << index <<
-          // std::endl;
           for (El::Int i = 0; i < Y.Height(); i++) {
             if (index == i) {
               CHECK(Y(i, j) == 1);
@@ -355,13 +348,6 @@ TEST_CASE("Synthetic data reader public API tests - arbitrary field",
 
   SECTION("fetch arbitrary check has data field guard")
   {
-    // std::map<lbann::data_field_type, std::vector<int>> test_fields;
-    // lbann::data_field_type bad_field = "bar";
-    // for(auto& data_field : data_fields) {
-    //   if(data_field != bad_field) {
-    //     test_fields[data_field] = fields[data_field];
-    //   }
-    // }
     auto dr = std::make_unique<lbann::data_reader_synthetic>(num_samples,
                                                              fields,
                                                              false);
