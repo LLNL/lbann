@@ -177,6 +177,19 @@ TEST_CASE("hdf5 data reader data field fetch tests",
         }
       }
     }
-  //    CHECK_THROWS(white_box_tester.fetch_data_field(*dr, "foobar", X, 0, 0));
+  }
+
+  SECTION("fetch invalid data field")
+  {
+    lbann::CPUMat X;
+    std::vector<std::string> fields = {"foo"};
+    for (auto& data_field : fields) {
+      CHECK_THROWS(X.Resize(white_box_tester.get_linearized_size(*hdf5_dr, data_field), num_samples));
+
+      auto io_rng = lbann::set_io_generators_local_index(0);
+      for (auto j = 0; j < num_samples; j++) {
+        CHECK_THROWS(white_box_tester.fetch_data_field(*hdf5_dr, data_field, X, 0, j));
+      }
+    }
   }
 }
