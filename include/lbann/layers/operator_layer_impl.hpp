@@ -236,10 +236,6 @@ auto lbann::build_operator_layer_from_pbuf(lbann_comm* comm,
   std::vector<OperatorPtr> ops;
   ops.reserve(num_ops);
   for (int ii = 0; ii < num_ops; ++ii) {
-#ifdef LBANN_DEBUG
-    LBANN_ASSERT(msg.datatype() == params.ops(ii).input_datatype());
-    LBANN_ASSERT(msg.datatype() == params.ops(ii).output_datatype());
-#endif
     lbann_data::Operator op;
     op.CopyFrom(params.ops(ii));
     op.set_input_datatype(msg.datatype());
