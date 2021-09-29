@@ -41,6 +41,8 @@ def generate_operator_layer(operator_class):
 
     def export_proto(self):
         """Construct and return a protobuf message."""
+        if (self.datatype is None):
+            self.datatype = 0 # Use the default value.
         for o in self.ops:
             o.input_type = self.datatype
             o.output_type = self.datatype
